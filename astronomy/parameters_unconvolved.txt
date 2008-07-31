@@ -1,0 +1,27 @@
+number_parameters: 4
+background_weight: 0.0
+background_parameters: 1.0, 0.67, 13.5, 1.0
+background_h: 0.02, 0.004, 0.09, 0.02
+background_mutation_range: 0.2, 0.2, 20.0, 0.2
+background_parameter_min: 0.0, 0.3, 1.0, 0.1
+background_parameter_max: 3.0, 1.0, 30.0, 3.0
+optimize_parameter: false, true, true, false
+number_streams: 1, 5
+stream_weight: -1.73460106
+stream_weight_h: 0.001
+stream_weight_mutation_range: 5.0
+stream_weight_min: -20.0
+stream_weight_max: 20.0
+optimize_weight: true
+stream_parameters: 33.35264467, 27.42378128, 1.2448028129449469, 1.9149509834514764, 2.5
+stream_h: 0.03, 0.01, 0.01, 0.01, 0.001
+stream_mutation_range: 20.0, 10.0, 0.5, 0.5, 1.0
+stream_parameter_min: -53.0, 0.7, 0.0, 0.0, 1.0
+stream_parameter_max: 76.0, 45.7, 6.283185307179586, 6.283185307179586, 20.0
+optimize_parameter: true, true, true, true, true
+convolve: 30
+wedge: 82
+r_steps: 350
+mu_steps: 800
+nu_steps: 40
+info: empty

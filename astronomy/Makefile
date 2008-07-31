@@ -1,0 +1,25 @@
+BOINC_DIR = /projects/wcl/software/boinc
+
+CXX = mpicc
+
+MPI_ASTRONOMY = mpi_astronomy.o
+ASTRONOMY_OBJS = atSurveyGeometry.o numericalIntegration.o parameters.o probability.o stCoords.o stCnum.o stMath.o stVector.o star_points.o evaluation.o
+SEARCH_OBJS = ../searches/genetic_search.o ../searches/newton_method.o ../searches/differential_evolution.o ../searches/particle_swarm.o ../searches/synchronous_search.o ../searches/recombination.o ../searches/gradient.o ../searches/hessian.o ../searches/population.o
+UTIL_OBJS = ../util/io_util.o ../util/matrix.o
+EVALUATION_OBJS = ../evaluation/mpi_evaluator.o
+
+PROGS = mpi_astronomy
+
+all: $(PROGS)
+
+mpi_astronomy: $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+	$(CXX) -lm -Wall -o mpi_astronomy $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+
+.c.o:
+	$(CXX) -Wall -c $< -o $@
+
+.C.o:
+	$(CXX) -Wall -c $< -o $@
+
+clean:
+	rm $(ASTRONOMY_OBJS) $(MPI_ASTRONOMY) $(SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
