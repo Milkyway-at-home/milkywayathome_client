@@ -10,6 +10,29 @@
 /****
          *      BOINC includes
 ****/
+#ifdef GMLE_BOINC
+	#ifdef _WIN32
+		#include "boinc_win.h"
+	#else
+		#include "config.h"
+	#endif
+
+	#ifndef _WIN32
+		#include <cstdio>
+		#include <cctype>
+		#include <ctime>
+		#include <cstring>
+			#include <cstdlib>
+		#include <csignal>
+		#include <unistd.h>
+	#endif
+
+	#include "diagnostics.h"
+	#include "util.h"
+	#include "filesys.h"
+	#include "boinc_api.h"
+	#include "mfile.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -386,3 +409,46 @@ void split_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, int rank, int max_rank
 
 //	printf("div: [%d %d %d] rank: [%d / %d] [r_min: %lf, r_max: %lf, r_steps: %d], [mu_min: %lf, mu_max: %lf, mu_steps: %d], [nu_min: %lf, nu_max: %lf, nu_steps: %d]\n", r_divisor, mu_divisor, nu_divisor, rank, max_rank, ap->r_min, ap->r_max, ap->r_steps, ap->mu_min, ap->mu_max, ap->mu_steps, ap->nu_min, ap->nu_max, ap->nu_steps);
 }
+
+#ifdef GMLE_BOINC
+	int boinc_read_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS *ap) {
+	char input_path[512];
+		int retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
+
+		if (retval) {
+			fprintf(stderr, "APP: error resolving parameters file [%s], %d\n", filename, retval);
+			return retval;
+		}
+
+		FILE* data_file = boinc_fopen(input_path, "r");
+		if (!data_file) {
+			fprintf(stderr, "Couldn't find input file [%s] to read astronomy parameters.\n", filename);
+			return 1;
+		}
+
+		fread_astronomy_parameters(data_file, ap);
+		fclose(data_file);
+		return 0;
+	}
+
+	int boinc_write_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS *ap) {
+		char input_path[512];
+		int retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
+
+		if (retval) {
+			fprintf(stderr, "APP: error writing astronomy parameters [%s], %d\n", filename, retval);
+			return retval;
+		}
+
+		FILE* data_file = boinc_fopen(input_path, "w");
+		if (!data_file) {
+			fprintf(stderr, "Couldn't find output file [%s] to write astronomy parameters.\n", filename);
+			return 1;
+		}
+
+		fwrite_astronomy_parameters(data_file, ap);
+		fclose(data_file);
+		return 0;
+	}
+
+#endif

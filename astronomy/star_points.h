@@ -24,4 +24,8 @@ void	free_star_points(STAR_POINTS* sp);
 
 void	split_star_points(STAR_POINTS* sp, int rank, int max_rank);
 
+#ifdef GMLE_BOINC
+	int	boinc_read_star_points(const char* file, STAR_POINTS* sp);
+#endif
+
 #endif

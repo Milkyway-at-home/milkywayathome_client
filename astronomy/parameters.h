@@ -55,4 +55,8 @@ void	get_min_parameters(ASTRONOMY_PARAMETERS* ap, double** parameters);
 void	get_max_parameters(ASTRONOMY_PARAMETERS* ap, double** parameters);
 void	get_step(ASTRONOMY_PARAMETERS* ap, double** step);
 
+#ifdef GMLE_BOINC
+	int	boinc_read_astronomy_parameters(const char* file, ASTRONOMY_PARAMETERS *ap);
+	int	boinc_write_astronomy_parameters(const char* file, ASTRONOMY_PARAMETERS *ap);
+#endif
 #endif
