@@ -1,8 +1,0 @@
-
-
-
-
-
-void reflective_descent() {
-
-}
