@@ -51,6 +51,7 @@ double mpi_integral_evaluate(double* integral_parameters) {
 	double* likelihood_results_send;
 	double* likelihood_results_recv;
 	double result;
+	int i;
 
 	likelihood_parameters = (double*)malloc(sizeof(double) * likelihood_parameter_length);
 	likelihood_results_recv = (double*)malloc(sizeof(double) * likelihood_results_length);
