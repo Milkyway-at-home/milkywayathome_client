@@ -16,10 +16,10 @@ mpi_astronomy: $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(
 	$(CXX) -lm -Wall -o mpi_astronomy $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
 
 .c.o:
-	$(CXX) -Wall -c $< -o $@
+	$(CXX) $(CXXFLAGS) -Wall -x c -c $< -o $@
 
 .C.o:
-	$(CXX) -Wall -c $< -o $@
+	$(CXX) $(CXXFLAGS) -Wall -x c -c $< -o $@
 
 clean:
 	rm $(ASTRONOMY_OBJS) $(MPI_ASTRONOMY) $(SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)

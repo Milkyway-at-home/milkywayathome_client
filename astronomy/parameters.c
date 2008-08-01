@@ -120,13 +120,6 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 	ap->mu_step_size = (ap->mu_max - ap->mu_min)/ap->mu_steps;
 	ap->nu_step_size = (ap->nu_max - ap->nu_min)/ap->nu_steps;
 
-	fscanf(file, "limits: %d\n", &ap->number_limits);
-	ap->limits = (double**)malloc(sizeof(double*) * ap->number_limits);
-	for (i = 0; i < ap->number_limits; i++) {
-		ap->limits[i] = (double*)malloc(sizeof(double) * 3);
-		fscanf(file, "%lf, %lf, %lf\n", &ap->limits[i][0], &ap->limits[i][1], &ap->limits[i][2]);
-	}
-
 	ap->number_parameters = 0;
 	for (i = 0; i < ap->number_background_parameters; i++) {
 		if (ap->background_optimize[i]) {
@@ -178,10 +171,6 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 	fprintf(file, "r[min,max,steps]: %lf, %lf, %d\n", ap->r_min, ap->r_max, ap->r_steps);
 	fprintf(file, "mu[min,max,steps]: %lf, %lf, %d\n", ap->mu_min, ap->mu_max, ap->mu_steps);
 	fprintf(file, "nu[min,max,steps]: %lf, %lf, %d\n", ap->nu_min, ap->nu_max, ap->nu_steps);
-	fprintf(file, "limits: %d\n", ap->number_limits);
-	for (i = 0; i < ap->number_limits; i++) {
-		fprintf(file, "%lf, %lf, %lf\n", ap->limits[i][0], ap->limits[i][1], ap->limits[i][2]);
-	}
 }
 
 void set_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, double* parameters) {
@@ -322,10 +311,13 @@ void get_max_parameters(ASTRONOMY_PARAMETERS *ap, double** result) {
 
 
 void split(int rank, int max_rank, int divisor, double *min, double *max, int *steps, double step) {
-	int sub_rank = rank % divisor;
-	int next_sub_rank = sub_rank + 1;
+	int sub_rank, next_sub_rank, extra;
 
-	int extra = (*steps) % divisor;
+	printf("rank: %d, max_rank: %d, divisor: %d, min: %lf, max: %lf, steps: %d, step: %lf\n", rank, max_rank, divisor, (*min), (*max), (*steps), step);
+	sub_rank = rank % divisor;
+	next_sub_rank = sub_rank + 1;
+	extra = (*steps) % divisor;
+
 	(*steps) = (*steps) / divisor;
 
 	int min_slice, max_slice;
@@ -351,6 +343,8 @@ void split_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, int rank, int max_rank
 	int mu_divisor = 1;
 	int nu_divisor = 1;
 
+	if (rank == 0 && max_rank == 0) return;
+
 	while (r_divisor > ap->r_steps) {
 		if (r_divisor > ap->r_steps && (r_divisor % 2) != 0) {
 			printf("ERROR cannot split data,  slices > ap->r_steps and not divisible by 2");
@@ -370,16 +364,21 @@ void split_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, int rank, int max_rank
 
 //	printf("r_divisor: %d, mu_divisor: %d, nu_divisor: %d\n", r_divisor, mu_divisor, nu_divisor);
 
+	printf("splitting ap->r\n");
 	/********
 		*	Split ap->r
 	 ********/
 	split(rank, max_rank, r_divisor, &(ap->r_min), &(ap->r_max), &(ap->r_steps), ap->r_step_size);
 
+
+	printf("splitting ap->mu\n");
 	/********
 		*	Split ap->mu
 	 ********/
 	split((rank/r_divisor), max_rank, mu_divisor, &(ap->mu_min), &(ap->mu_max), &(ap->mu_steps), ap->mu_step_size);
 
+
+	printf("splitting ap->nu\n");
 	/********
 		*	Split ap->nu
 	 ********/

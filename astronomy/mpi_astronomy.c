@@ -17,7 +17,7 @@
 
 #define max_iterations			35000
 #define astronomy_parameters_file	"parameters.txt"
-#define star_points_file		"stars_convolved_82.txt"
+#define star_points_file		"stars_unconvolved_82.txt"
 #define population_file_name		"population.txt"
 
 ASTRONOMY_PARAMETERS *ap;
@@ -26,30 +26,38 @@ EVALUATION_STATE *es;
 int total_number_stars;
 
 void read_data(int rank, int max_rank) {
+	ap = (ASTRONOMY_PARAMETERS*)malloc(sizeof(ASTRONOMY_PARAMETERS));
 	/********
 		*	READ THE ASTRONOMY PARAMETERS
 	 ********/
+	printf("reading parameters...\n");
 	int retval = read_astronomy_parameters(astronomy_parameters_file, ap);
 	if (retval) {
 		fprintf(stderr, "APP: error reading astronomy parameters: %d\n", retval);
 		exit(1);
 	}
+	fwrite_astronomy_parameters(stdout, ap);
+	printf("splitting parameters...\n");
 	split_astronomy_parameters(ap, rank, max_rank);
-
 	/********
 		*	READ THE STAR POINTS
 	 ********/
+	printf("reading star points...\n");
+	sp = (STAR_POINTS*)malloc(sizeof(STAR_POINTS));
 	retval = read_star_points(star_points_file, sp);
 	if (retval) {
 		fprintf(stderr, "APP: error reading star points: %d\n", retval);
 		exit(1);
 	}
+	printf("read %d stars.\n", sp->number_stars);
 	total_number_stars = sp->number_stars;
 	split_star_points(sp, rank, max_rank);
 
 	/********
 		*	INITIALIZE THE EVALUATION STATE
 	 ********/
+	printf("initializing state...\n");
+	es = (EVALUATION_STATE*)malloc(sizeof(EVALUATION_STATE));
 	initialize_state(es, ap->number_streams);
 }
 
@@ -81,7 +89,7 @@ double* integral_f(double* parameters) {
 	double *results = (double*)malloc(sizeof(double) * 2);
 	results[0] = es->background_integral;
 	results[1] = es->stream_integrals[0];
-//	printf("calculated integrals: %lf, %lf\n", results[0], results[1]);
+	printf("calculated integrals: %lf, %lf\n", results[0], results[1]);
 	return results;
 }
 
@@ -94,14 +102,14 @@ double* integral_compose(double* integral_results, int num_results) {
 		results[0] += integral_results[(2*i)];
 		results[1] += integral_results[(2*i)+1];
 	}
-//	printf("composed integrals: %lf, %lf\n", results[0], results[1]);
+	printf("composed integrals: %lf, %lf\n", results[0], results[1]);
 	return results;
 }
 
 double* likelihood_f(double* integrals) {
-//	printf("calculating likelihood function\n");
 	es->background_integral = integrals[0];
 	es->stream_integrals[0] = integrals[1];
+
 	/********
 		*	CALCULATE THE LIKELIHOOD
 	 ********/
@@ -113,7 +121,7 @@ double* likelihood_f(double* integrals) {
 	double *results = (double*)malloc(sizeof(double) * 2);
 	results[0] = es->prob_sum;
 	results[1] = es->bad_jacobians;
-//	printf("calculated likelihood: %lf, bad_jacobs: %lf\n", results[0], results[1]);
+	printf("calculated likelihood: %lf, bad_jacobs: %lf\n", results[0], results[1]);
 	return results;
 }
 
@@ -127,7 +135,7 @@ double likelihood_compose(double* results, int num_results) {
 	}
 	prob_sum /= (total_number_stars - bad_jacobians);
 	prob_sum *= -1;
-//	printf("composed likelihood: %lf\n", prob_sum);
+	printf("composed likelihood: %lf\n", prob_sum);
 	return prob_sum;
 }
 
@@ -144,16 +152,22 @@ int main(int number_arguments, char **arguments){
 	likelihood_parameter_length = 2;
 	likelihood_results_length = 2;
 
+	printf("init data...\n");
 	evaluator__init_data(read_data);
+	printf("init integral...\n");
 	evaluator__init_integral(integral_f, integral_parameter_length, integral_compose, integral_results_length);
+	printf("init likelihood...\n");
 	evaluator__init_likelihood(likelihood_f, likelihood_parameter_length, likelihood_compose, likelihood_results_length);
+	printf("starting...\n");
 	mpi_evaluator__start(number_arguments, arguments);
 
+	printf("getting parameters...\n");
 	get_min_parameters(ap, &min_parameters);
 	get_max_parameters(ap, &max_parameters);
 	get_search_parameters(ap, &point);
 	get_step(ap, &step);
 
+	printf("searching...\n");
         if (arguments[2][0] == 'g') {
                 synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, ap->number_parameters, start_genetic_search);
         } else if (arguments[2][0] == 'd') {

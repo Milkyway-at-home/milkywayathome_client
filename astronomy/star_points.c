@@ -46,12 +46,17 @@ void free_star_points(STAR_POINTS* sp) {
 }
 
 void split_star_points(STAR_POINTS* sp, int rank, int max_rank) {
-	int first_star = ((double)sp->number_stars) * (((double)rank)/((double)max_rank));
-	int last_star = ((double)sp->number_stars) * (((double)rank+1.0)/((double)max_rank));
-	int num_stars = last_star-first_star;
-
-	double** new_stars = (double**)malloc(sizeof(double*) * num_stars);
+	int first_star, last_star, num_stars;
 	int i;
+	double** new_stars;
+
+	if (rank == 0 && max_rank == 0) return;
+
+	first_star = ((double)sp->number_stars) * (((double)rank)/((double)max_rank));
+	last_star = ((double)sp->number_stars) * (((double)rank+1.0)/((double)max_rank));
+	num_stars = last_star-first_star;
+	new_stars = (double**)malloc(sizeof(double*) * num_stars);
+
 	for (i = 0; i < num_stars; i++) {
 		new_stars[i] = (double*)malloc(sizeof(double) * 3);
 		new_stars[i][0] = sp->stars[i+first_star][0];

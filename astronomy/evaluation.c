@@ -62,7 +62,6 @@
 
 void initialize_state(EVALUATION_STATE* es, int number_streams) {
 	int i;
-
 	es->r_step_current = 0;
 	es->mu_step_current = 0;
 	es->nu_step_current = 0;

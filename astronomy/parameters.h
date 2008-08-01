@@ -39,9 +39,6 @@ typedef struct astronomy_parameters {
 	double r_min, r_max, r_step_size;
 	double mu_min, mu_max, mu_step_size;
 	double nu_min, nu_max, nu_step_size;
-
-	int number_limits;
-	double** limits;
 } ASTRONOMY_PARAMETERS;
 
 int	read_astronomy_parameters(const char* file, ASTRONOMY_PARAMETERS *ap);
