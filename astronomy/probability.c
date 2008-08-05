@@ -113,8 +113,9 @@ double stPsgFunction(const double* coordpar, const double* spars, int wedge) {
 	//update: allow for new coordinate transforms
 	double xyz[3], lbr[3], a[3], c[3];
 	double mu, r, theta, phi, sigma;
-	double ra, dec, l, b;
+//vickej2	double ra, dec, l, b;
 	double dotted, xyz_norm, prob;
+	double lamda, beta, l, b; //vickej2
 	
 	mu = spars[0];
 	r = spars[1];
@@ -123,8 +124,16 @@ double stPsgFunction(const double* coordpar, const double* spars, int wedge) {
 	sigma = spars[4];
 
 	//update: convert from mu, nu, r geometry to a and c geometry
-	atGCToEq(mu, 0, &ra, &dec, get_node(), wedge_incl(wedge));
-	atEqToGal(ra, dec, &l, &b);
+//vickej2	atGCToEq(mu, 0, &ra, &dec, get_node(), wedge_incl(wedge));
+//vickej2	atEqToGal(ra, dec, &l, &b);
+
+	gcToSgr(mu, 0, wedge, &lamda, &beta); //vickej2
+	sgrToGal(lamda, beta, &l, &b); //vickej2
+
+//vickej2 <<<make sure the conversion is correct (check with conversiontester.vb)>>>
+//printf(" wedge=%i, mui=%f, nui=0, lamda=%f, beta=%f, l=%f, b=%f", wedge, mu, lamda, beta, l, b);  //vickej2
+//vickej2 <<<end>>>
+
 	lbr[0] = l;
 	lbr[1] = b;
 	lbr[2] = r;
