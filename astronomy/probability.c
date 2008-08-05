@@ -109,13 +109,12 @@ double stPbxFunction(const double* coordpar, const double* bpars) {
    -1 - a parameters is NaN
    -2 - an error occured in the call to lbr2stream
 */
-double stPsgFunction(const double* coordpar, const double* spars, int wedge) {
+double stPsgFunction(const double* coordpar, const double* spars, int wedge, int sgr_coordinates) {
 	//update: allow for new coordinate transforms
 	double xyz[3], lbr[3], a[3], c[3];
 	double mu, r, theta, phi, sigma;
-//vickej2	double ra, dec, l, b;
 	double dotted, xyz_norm, prob;
-	double lamda, beta, l, b; //vickej2
+	double ra, dec, lamda, beta, l, b; //vickej2
 	
 	mu = spars[0];
 	r = spars[1];
@@ -124,15 +123,18 @@ double stPsgFunction(const double* coordpar, const double* spars, int wedge) {
 	sigma = spars[4];
 
 	//update: convert from mu, nu, r geometry to a and c geometry
-//vickej2	atGCToEq(mu, 0, &ra, &dec, get_node(), wedge_incl(wedge));
-//vickej2	atEqToGal(ra, dec, &l, &b);
-
-	gcToSgr(mu, 0, wedge, &lamda, &beta); //vickej2
-	sgrToGal(lamda, beta, &l, &b); //vickej2
-
-//vickej2 <<<make sure the conversion is correct (check with conversiontester.vb)>>>
-//printf(" wedge=%i, mui=%f, nui=0, lamda=%f, beta=%f, l=%f, b=%f", wedge, mu, lamda, beta, l, b);  //vickej2
-//vickej2 <<<end>>>
+        if (sgr_coordinates == 0) {
+       		atGCToEq(mu, 0, &ra, &dec, get_node(), wedge_incl(wedge));
+	       	atEqToGal(ra, dec, &l, &b);
+        } else if (sgr_coordinates == 1) {
+	        gcToSgr(mu, 0, wedge, &lamda, &beta); //vickej2
+	        sgrToGal(lamda, beta, &l, &b); //vickej2
+		//vickej2 <<<make sure the conversion is correct (check with conversiontester.vb)>>>
+		//printf(" wedge=%i, mui=%f, nui=0, lamda=%f, beta=%f, l=%f, b=%f", wedge, mu, lamda, beta, l, b);  //vickej2
+		//vickej2 <<<end>>>
+        } else {
+                printf("Error: sgr_coordinates not valid");
+        }
 
 	lbr[0] = l;
 	lbr[1] = b;
@@ -220,7 +222,7 @@ double stPbx(const double* coordpar, const double* bpars) {
         return prob;
 }
 
-double stPsgConvolved(const double* coordpar, const double* spars, int wedge, int numpoints) {
+double stPsgConvolved(const double* coordpar, const double* spars, int wedge, int numpoints, int sgr_coordinates) {
 	int i;
 	double psg, reff_value, prob, rPrime, rPrime3, a, b; 
 
@@ -245,7 +247,7 @@ double stPsgConvolved(const double* coordpar, const double* spars, int wedge, in
         //fprintf(stderr, "spars: %g, %g, %g, %g\n", spars[0], spars[1], spars[2], spars[3]);
         //fprintf(stderr, "sparsConvolved: %g, %g, %g, %g\n", sparsConvolved[0], sparsConvolved[1], sparsConvolved[2], sparsConvolved[3]);
 
-        psg = qgaus(streamConvolve, a, b, numpoints, wedge);
+        psg = qgaus_stream(streamConvolve, a, b, numpoints, wedge, sgr_coordinates);
 	psg *= 1/rPrime3;
        
         //fprintf(stderr, "psg: %lf\n", psg);
@@ -257,14 +259,14 @@ double stPsgConvolved(const double* coordpar, const double* spars, int wedge, in
 	return prob;
 }
 
-double stPsg(const double* coordpar, const double* spars, int wedge) {
+double stPsg(const double* coordpar, const double* spars, int wedge, int sgr_coordinates) {
 //        int i;
         double psg, reff_value, prob; 
 
         //fprintf(stderr, "coordpar: %g, %g, %g\n", coordpar[0], coordpar[1], coordpar[2]);
         //fprintf(stderr, "spars: %g, %g, %g, %g\n", spars[0], spars[1], spars[2], spars[3]);
 
-	psg = stPsgFunction(coordpar, spars, wedge);
+	psg = stPsgFunction(coordpar, spars, wedge, sgr_coordinates);
         //fprintf(stderr, "psg: %lf\n", psg);
 
         reff_value = reff(coordpar[2]);
@@ -293,7 +295,7 @@ double backgroundConvolve(double g, int wedge) {
         return prob;
 }
 
-double streamConvolve(double g, int wedge) {
+double streamConvolve(double g, int wedge, int sgr_coordinates) {
         double exponent, coeff, psg, r3, N, r, prob;
 
         r = mag2r(g)/1000;      //r in kpc
@@ -304,7 +306,7 @@ double streamConvolve(double g, int wedge) {
         coeff = 1 / (stdev * sqrt(2*PI));
         N = coeff * exp(-exponent);     //value of gaussian convolution function
 
-        psg = stPsgFunction(coordparConvolved, sparsConvolved, wedge);         //prob of star in stream given app. mag. g
+        psg = stPsgFunction(coordparConvolved, sparsConvolved, wedge, sgr_coordinates);         //prob of star in stream given app. mag. g
         prob = psg * r3 * N;
         return prob;
 }

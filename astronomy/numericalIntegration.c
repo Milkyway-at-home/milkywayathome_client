@@ -64,3 +64,27 @@ double qgaus(double (*func)(double, int), double a, double b, int n, int wedge) 
 	free(w);
 	return s *= xr;
 }
+
+double qgaus_stream(double (*func)(double, int, int), double a, double b, int n, int wedge, int sgr_coordinates) {
+        int j;
+        double xr, xm, dx, s;
+        double *x;
+        double *w;
+
+        x = (double*)malloc(sizeof(double)*n);
+        w = (double*)malloc(sizeof(double)*n);
+
+        gaussLegendre(-1.0, 1.0, x, w, n);
+
+        xm = 0.5*(b+a);
+        xr = 0.5*(b-a);
+        s = 0;
+        for (j = 0; j < n; j++) {
+                dx = xr*x[j];
+                s += w[j]*((*func)(xm+dx, wedge, sgr_coordinates));
+        }
+
+        free(x);
+        free(w);
+        return s *= xr;
+}

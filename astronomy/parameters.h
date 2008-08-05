@@ -32,6 +32,7 @@ typedef struct astronomy_parameters {
 	int **stream_optimize;
 
 	int convolve;
+	int sgr_coordinates;
 	int wedge;
 	int r_steps;
 	int mu_steps;
@@ -39,6 +40,14 @@ typedef struct astronomy_parameters {
 	double r_min, r_max, r_step_size;
 	double mu_min, mu_max, mu_step_size;
 	double nu_min, nu_max, nu_step_size;
+	
+	int r_cut_steps;
+	int mu_cut_steps;
+	int nu_cut_steps;
+	double r_cut_min, r_cut_max, r_cut_step_size;
+	double mu_cut_min, mu_cut_max, mu_cut_step_size;
+	double nu_cut_min, nu_cut_max, nu_cut_step_size;
+
 } ASTRONOMY_PARAMETERS;
 
 int	read_astronomy_parameters(const char* file, ASTRONOMY_PARAMETERS *ap);

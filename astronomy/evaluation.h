@@ -11,6 +11,9 @@ typedef struct evaluation_state {
 	int r_step_current;
 	int mu_step_current;
 	int nu_step_current;
+	int r_cut_step_current;
+	int mu_cut_step_current;
+	int nu_cut_step_current;
 	int number_streams;
 	double background_integral;
 	double* stream_integrals;
