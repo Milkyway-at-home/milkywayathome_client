@@ -154,6 +154,11 @@ void free_state(EVALUATION_STATE* es) {
 #endif
 
 int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp) {
+  
+//vickej2 <<<rmax is messed up by the time it gets here>>>
+         //printf("rmax=%g\n", ap->r_max); //vickej2
+//vickej2 <<<end>>>
+
 	int first_run = 1;
 	double total_volume = 0;
 	double V = 0;
@@ -191,16 +196,35 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 
 					V = ir * id * ap->mu_step_size / deg;
 
-					double ra = 0.0;
-					double dec = 0.0;
+//vickej2					double ra = 0.0;
+//vickej2					double dec = 0.0;
 					double point0 = 0.0;
 					double point1 = 0.0;
+					double lamda = 0.0;
+					double beta = 0.0;
+					
+//vickej2 <<<make sure all my parameters are being taken correctly>>>
+                   //printf("rmax=%f",ap->r_max); //vickej2
+                   //printf("wedge=%i, r_steps=%i, mu_steps=%i, nu_steps=%i, nu_min=%f, nu_max=%f, r_min=%f, r_max=%f, mu_min=%f, mu_max=%f, nu_step_size=%f, r_step_size=%f, mu_step_size=%f", ap->wedge, ap->r_steps, ap->mu_steps, ap->nu_steps, ap->nu_min, ap->nu_max, ap->r_min, ap->r_max, ap->mu_min, ap->mu_max, ap->nu_step_size, ap->r_step_size, ap->mu_step_size);  //vickej2
+//vickej2 <<<end>>>
 
-					atGCToEq(mu + 0.5 * ap->mu_step_size, nu + 0.5 * ap->nu_step_size, &ra, &dec, get_node(), wedge_incl(ap->wedge));
-					atEqToGal(ra, dec, &point0, &point1);
+//vickej2					atGCToEq(mu + 0.5 * ap->mu_step_size, nu + 0.5 * ap->nu_step_size, &ra, &dec, get_node(), wedge_incl(ap->wedge));
+//vickej2					atEqToGal(ra, dec, &point0, &point1);
+					
+					gcToSgr(mu + 0.5 * ap->mu_step_size, nu + 0.5 * ap->nu_step_size, ap->wedge, &lamda, &beta); //vickej2
+					sgrToGal(lamda, beta, &point0, &point1); //vickej2
+					
+//vickej2 <<<make sure the conversion is correct (check with conversiontester.vb)>>>
+                   //printf(" mui=%f, nui=%f, lamda=%f, beta=%f, l=%f, b=%f", mu + 0.5 * ap->mu_step_size, nu + 0.5 * ap->nu_step_size, lamda, beta, point0, point1);  //vickej2
+//vickej2 <<<end>>>
+
 					integral_point[0] = point0;
 					integral_point[1] = point1;
 					integral_point[2] = (next_r+r)/2.0;
+					
+//vickej2 <<<testing if r stays within its bounds>>>
+                   //printf("<<<%f>>>\n", r); //vickej2
+//vickej2 <<<end>>>
 
 					total_volume += V;
 				} else {
