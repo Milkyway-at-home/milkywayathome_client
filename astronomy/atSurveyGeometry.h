@@ -54,4 +54,8 @@ double slaDranrm ( double angle );
 
 void slaEqgal ( double dr, double dd, double *dl, double *db );
 
+void gcToSgr ( double mu, double nu, int wedge, double *lamda, double *beta );
+
+void sgrToGal ( double lamda, double beta, double *l, double *b);
+
 #endif
