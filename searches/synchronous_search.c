@@ -10,6 +10,8 @@ void synchronous_search(char *search_path, char *search_parameters, double *min_
 	double fitness;
 	double *individual;
 	char *metadata;
+	FILE *file;
+	char sp[1024];
 
 	init_search(search_path, search_parameters, min_parameters, max_parameters, number_parameters, &population);
 	while (population->current_evaluation < population->max_evaluations) {
@@ -19,6 +21,14 @@ void synchronous_search(char *search_path, char *search_parameters, double *min_
 
 		printf("iteration %d: current: %lf, ", population->current_evaluation, fitness);
 		fwrite_population_statistics(stdout, population);
+
+                //printf("%s", search_path);
+                sprintf(sp, "%s/population", search_path);
+		file = fopen(sp, "w");
+	        fwrite_population(file, population);
+
+                fclose(file);
+
 		printf("\n");
 
 		free(individual);
