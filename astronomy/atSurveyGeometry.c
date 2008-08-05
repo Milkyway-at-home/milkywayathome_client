@@ -207,3 +207,146 @@ void slaEqgal ( double dr, double dd, double *dl, double *db )
    *db = slaDrange ( *db );
 }
 
+//vickej2 for sgr stripes, the great circles are defined thus:
+//sgr stripes run parallel to sgr longitude lines, centered on lamda=2.5*wedge number
+//with mu=0 at the sgr equator and increasing in the +z direction (increasing from the equator with beta)
+//and nu=0 at the center and increasing in the -y direction (inversely to lamda)
+//in this manner an equatorial stripe of standard coordinate conventions is created.
+void gcToSgr ( double mu, double nu, int wedge, double *lamda, double *beta )
+{
+        //printf(" ***mui=%f, nui=%f", mu, nu);
+	double radpdeg = 3.141592653589793/180;
+	mu=mu*radpdeg;
+	nu=nu*radpdeg;
+
+	double x=cos(mu)*cos(nu);
+	double y=-sin(nu);
+	double z=sin(mu)*cos(nu);
+
+	*lamda=atan2(y, x);
+	*lamda=*lamda/radpdeg;
+	*lamda=*lamda+2.5*wedge;
+	if (*lamda<0){
+		*lamda=*lamda+360;
+	}
+
+	*beta=asin(z);
+	*beta=*beta/radpdeg;
+	
+	//printf(" lamdao=%f, betao=%f", *lamda, *beta);
+
+	return;
+}
+
+//vickej2 for sgr stripes
+//mathematic reversal of majewski's defined rotations for lbr->sgr conversion
+void sgrToGal ( double lamda, double beta, double *l, double *b)
+{
+	double radpdeg=3.141592653589793/180;
+	double rot11=0.964034802;
+	double rot12=-0.258052497;
+	double rot13=-0.063606679;
+	double rot21=0.120058803;
+	double rot22=0.209312983;
+	double rot23=0.970450390;
+	double rot31=-0.237113443;
+	double rot32=-0.943184491;
+	double rot33=0.232766474;
+	double x2 = 0.0, y2 = 0.0;
+	
+	//printf(" lamdai=%f, betai=%f", lamda, beta);
+
+	if (beta>90){
+		beta=90-(beta-90);
+		lamda=lamda+180;
+		if (lamda>360) {
+			lamda=lamda-360;
+		}
+	}
+	if (beta<-90){
+		beta=-90-(beta+90);
+		lamda=lamda+180;
+		if(lamda>360) {
+			lamda=lamda-360;
+		}
+	}
+	if (lamda<0) {
+		lamda=lamda+360;
+	}
+
+	beta=beta+90;
+
+	beta=beta*radpdeg;
+	double z2=cos(beta);
+
+	if (lamda==0) {
+		lamda=lamda*radpdeg;
+		x2=sin(beta);
+		y2=0;
+
+	} else if (lamda<90) {
+		lamda=lamda*radpdeg;
+		x2=sqrt((1-cos(beta)*cos(beta))/(1+tan(lamda)*tan(lamda)));
+		y2=x2*tan(lamda);
+
+	} else if (lamda==90) {
+		lamda=lamda*radpdeg;
+		x2=0;
+		y2=sin(beta);
+
+	} else  if (lamda<180) {
+		lamda=lamda*radpdeg;
+		y2=sqrt((1-cos(beta)*cos(beta))/(1/(tan(lamda)*tan(lamda))+1));
+		x2=y2/tan(lamda);
+
+	} else if (lamda==180) {
+		lamda=lamda*radpdeg;
+		x2=-sin(beta);
+		y2=0;
+
+	} else if (lamda<270) {
+		lamda=lamda*radpdeg;
+		x2=sqrt((1-cos(beta)*cos(beta))/(1+tan(lamda)*tan(lamda)));
+		y2=x2*tan(lamda);
+		x2=-x2;
+		y2=-y2;
+
+	} else if (lamda==270) {
+		lamda=lamda*radpdeg;
+		x2=0;
+		y2=-sin(beta);
+	
+	} else if (lamda<360) {
+		lamda=lamda*radpdeg;
+		x2=sqrt((1-cos(beta)*cos(beta))/(1+tan(lamda)*tan(lamda)));
+		y2=x2*tan(lamda);
+
+	} else if (lamda==360) {
+		lamda=lamda*radpdeg;
+		x2=sin(beta);
+		y2=0;
+	}
+
+	double x1=rot11*x2+rot12*y2+rot13*z2;
+	double y1=rot21*x2+rot22*y2+rot23*z2;
+	double z1=rot31*x2+rot32*y2+rot33*z2;
+
+	if (z1>1) {
+		*l=0;
+		*b=90;
+	} else {
+		*b=asin(z1);
+		*b=*b/radpdeg;
+		*l=atan2(y1, x1);
+		*l=*l/radpdeg;
+		if (*l<0) {
+			*l=*l+360;
+		}
+	}
+
+//vickej2 <<<compare this to plot of l&b on m31>>>
+                  //printf(" l=%f, b=%f", *l, *b);
+//vickej2 <<<end>>>
+
+	return;
+}
