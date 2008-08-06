@@ -7,6 +7,7 @@
 #include "star_points.h"
 #include "evaluation.h"
 
+#include "../searches/gradient_descent.h"
 #include "../searches/synchronous_search.h"
 #include "../searches/genetic_search.h"
 #include "../searches/differential_evolution.h"
@@ -89,7 +90,7 @@ double* integral_f(double* parameters) {
 	double *results = (double*)malloc(sizeof(double) * 2);
 	results[0] = es->background_integral;
 	results[1] = es->stream_integrals[0];
-	printf("calculated integrals: %lf, %lf\n", results[0], results[1]);
+//	printf("calculated integrals: %lf, %lf\n", results[0], results[1]);
 	return results;
 }
 
@@ -102,7 +103,7 @@ double* integral_compose(double* integral_results, int num_results) {
 		results[0] += integral_results[(2*i)];
 		results[1] += integral_results[(2*i)+1];
 	}
-	printf("composed integrals: %lf, %lf\n", results[0], results[1]);
+//	printf("composed integrals: %lf, %lf\n", results[0], results[1]);
 	return results;
 }
 
@@ -121,7 +122,7 @@ double* likelihood_f(double* integrals) {
 	double *results = (double*)malloc(sizeof(double) * 2);
 	results[0] = es->prob_sum;
 	results[1] = es->bad_jacobians;
-	printf("calculated likelihood: %lf, bad_jacobs: %lf\n", results[0], results[1]);
+//	printf("calculated likelihood: %lf, bad_jacobs: %lf\n", results[0], results[1]);
 	return results;
 }
 
@@ -135,7 +136,7 @@ double likelihood_compose(double* results, int num_results) {
 	}
 	prob_sum /= (total_number_stars - bad_jacobians);
 	prob_sum *= -1;
-	printf("composed likelihood: %lf\n", prob_sum);
+//	printf("composed likelihood: %lf\n", prob_sum);
 	return prob_sum;
 }
 
@@ -147,13 +148,14 @@ int main(int number_arguments, char **arguments){
 	double *point;
 	double *step;
 
-	integral_parameter_length = 8;
-	integral_results_length = 2;
-	likelihood_parameter_length = 2;
-	likelihood_results_length = 2;
-
 	printf("init data...\n");
 	evaluator__init_data(read_data);
+
+	integral_parameter_length = ap->number_parameters;
+	integral_results_length = 1 + ap->number_streams;
+	likelihood_parameter_length = 1 + ap->number_streams;
+	likelihood_results_length = 2;
+
 	printf("init integral...\n");
 	evaluator__init_integral(integral_f, integral_parameter_length, integral_compose, integral_results_length);
 	printf("init likelihood...\n");
@@ -168,15 +170,18 @@ int main(int number_arguments, char **arguments){
 	get_step(ap, &step);
 
 	printf("searching...\n");
-        if (arguments[2][0] == 'g') {
-                synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, ap->number_parameters, start_genetic_search);
-        } else if (arguments[2][0] == 'd') {
-                synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, ap->number_parameters, start_differential_evolution);
-        } else if (arguments[2][0] == 'p') {
-                synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, ap->number_parameters, start_particle_swarm);
-        } else if (arguments[2][0] == 'n') {
-                synchronous_newton_method(arguments[1], arguments[2], point, step, ap->number_parameters);
-        }
-
+	if (arguments[2][0] == 'g' && arguments[2][1] == 'd') {
+		synchronous_gradient_descent(arguments[1], arguments[2], point, step, ap->number_parameters);
+	} else if (arguments[2][0] == 'c') {
+		synchronous_conjugate_gradient_descent(arguments[1], arguments[2], point, step, ap->number_parameters);
+	} else if (arguments[2][0] == 'n') {
+		synchronous_newton_method(arguments[1], arguments[2], point, step, ap->number_parameters);
+	} else if (arguments[2][0] == 'g' && arguments[2][1] == 's') {
+		synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, ap->number_parameters, start_genetic_search);
+	} else if (arguments[2][0] == 'd') {
+		synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, ap->number_parameters, start_differential_evolution);
+	} else if (arguments[2][0] == 'p') {
+		synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, ap->number_parameters, start_particle_swarm);
+	}
 	return 0;
 }

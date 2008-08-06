@@ -4,6 +4,35 @@
 
 #include "gradient.h"
 #include "search.h"
+#include "../evaluation/evaluator.h"
+
+void synchronous_get_gradient(double* point, double* step, int number_parameters, GRADIENT** gradient) {
+        char **metadata;
+        double **individuals;
+        double *fitness;
+	int j;
+	int number_individuals = 1;
+
+	create_gradient(point, step, 0, number_parameters, gradient);
+	while (!gradient__complete(*gradient)) {
+		gradient__get_individuals(*gradient, number_individuals, &individuals, &metadata);
+		fitness = (double*)malloc(sizeof(double) * number_individuals);
+		for (j = 0; j < number_individuals; j++) {
+			fitness[j] = evaluate(individuals[j]);
+		}
+		gradient__insert_individuals(*gradient, number_individuals, fitness, metadata);
+
+		for (j = 0; j < number_individuals; j++) {
+			free(individuals[j]);
+			free(metadata[j]);
+		}
+		free(individuals);
+		free(metadata);
+		free(fitness);
+	}
+	fprintf_gradient(stdout, *gradient);
+}
+
 
 void fprintf_gradient(FILE* file, GRADIENT* gradient) {
 	int i;

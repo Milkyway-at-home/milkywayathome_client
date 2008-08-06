@@ -24,6 +24,8 @@ int gradient__complete(GRADIENT* gradient);
 void gradient__insert_individuals(GRADIENT* gradient, int number_individuals, double* fitness, char** metadata);
 void gradient__get_individuals(GRADIENT* gradient, int number_individuals, double*** parameters, char*** metadata);
 
+void synchronous_get_gradient(double* point, double* step, int number_parameters, GRADIENT** gradient);
+
 void fprintf_gradient(FILE *file, GRADIENT* gradient);
 
 #endif
