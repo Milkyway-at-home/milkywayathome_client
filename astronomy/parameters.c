@@ -143,13 +143,30 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 	ap->r_step_size = (ap->r_max - ap->r_min)/(double)ap->r_steps;
 	ap->mu_step_size = (ap->mu_max - ap->mu_min)/ap->mu_steps;
 	ap->nu_step_size = (ap->nu_max - ap->nu_min)/ap->nu_steps;
-	
-        fscanf(file, "r_cut[min,max,steps]: %lf, %lf, %d\n", &ap->r_cut_min, &ap->r_cut_max, &ap->r_cut_steps);
-        fscanf(file, "mu_cut[min,max,steps]: %lf, %lf, %d\n", &ap->mu_cut_min, &ap->mu_cut_max, &ap->mu_cut_steps);
-        fscanf(file, "nu_cut[min,max,steps]: %lf, %lf, %d\n", &ap->nu_cut_min, &ap->nu_cut_max, &ap->nu_cut_steps);
-        ap->r_cut_step_size = (ap->r_cut_max - ap->r_cut_min)/(double)ap->r_cut_steps;
-        ap->mu_cut_step_size = (ap->mu_cut_max - ap->mu_cut_min)/ap->mu_cut_steps;
-        ap->nu_cut_step_size = (ap->nu_cut_max - ap->nu_cut_min)/ap->nu_cut_steps;
+
+	fscanf(file, "number_cuts: %d\n", &ap->number_cuts);	
+	ap->r_cut		= (double**)malloc(sizeof(double*) * ap->number_cuts);
+	ap->mu_cut		= (double**)malloc(sizeof(double*) * ap->number_cuts);
+	ap->nu_cut 		= (double**)malloc(sizeof(double*) * ap->number_cuts);
+	ap->r_cut_step_size	= (double*)malloc(sizeof(double) * ap->number_cuts);
+	ap->mu_cut_step_size	= (double*)malloc(sizeof(double) * ap->number_cuts);
+	ap->nu_cut_step_size	= (double*)malloc(sizeof(double) * ap->number_cuts);
+
+	for (i = 0; i < ap->number_cuts; i++) {
+		read_double_array(file, "r_cut[min,max,steps]: ", 3, &ap->r_cut[i]);
+		read_double_array(file, "mu_cut[min,max,steps]: ", 3, &ap->mu_cut[i]);
+		read_double_array(file, "nu_cut[min,max,steps]: ", 3, &ap->nu_cut[i]); 
+
+		if (ap->r_cut[i][2] == 0 || ap->mu_cut[i][2] == 0 || ap->nu_cut[i][2] == 0) {
+			ap->r_cut_step_size[i] = 0.0;	
+			ap->mu_cut_step_size[i] = 0.0;	
+			ap->nu_cut_step_size[i] = 0.0;	
+		} else {	
+			ap->r_cut_step_size[i] = (ap->r_cut[i][1] - ap->r_cut[i][0])/(double)ap->r_cut[i][2];
+			ap->mu_cut_step_size[i] = (ap->mu_cut[i][1] - ap->mu_cut[i][0])/(double)ap->mu_cut[i][2];
+			ap->nu_cut_step_size[i] = (ap->nu_cut[i][1] - ap->nu_cut[i][0])/(double)ap->nu_cut[i][2];
+		}
+	}
 
 	ap->number_parameters = 0;
 	for (i = 0; i < ap->number_background_parameters; i++) {
@@ -203,11 +220,13 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 	fprintf(file, "r[min,max,steps]: %lf, %lf, %d\n", ap->r_min, ap->r_max, ap->r_steps);
 	fprintf(file, "mu[min,max,steps]: %lf, %lf, %d\n", ap->mu_min, ap->mu_max, ap->mu_steps);
 	fprintf(file, "nu[min,max,steps]: %lf, %lf, %d\n", ap->nu_min, ap->nu_max, ap->nu_steps);
-
-        fprintf(file, "r_cut[min,max,steps]: %lf, %lf, %d\n", ap->r_cut_min, ap->r_cut_max, ap->r_cut_steps);
-        fprintf(file, "mu_cut[min,max,steps]: %lf, %lf, %d\n", ap->mu_cut_min, ap->mu_cut_max, ap->mu_cut_steps);
-        fprintf(file, "nu_cut[min,max,steps]: %lf, %lf, %d\n", ap->nu_cut_min, ap->nu_cut_max, ap->nu_cut_steps);
-
+	
+	fprintf(file, "number_cuts: %d\n", ap->number_cuts);
+	for (i = 0; i < ap->number_cuts; i++) {
+		print_double_array(file, "r_cut[min,max,steps]: ", 3, ap->r_cut[i]);
+		print_double_array(file, "mu_cut[min,max,steps]: ", 3, ap->mu_cut[i]);
+		print_double_array(file, "nu_cut[min,max,steps]: ", 3, ap->nu_cut[i]);
+	}
 }
 
 void set_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, double* parameters) {
@@ -423,55 +442,56 @@ void split_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, int rank, int max_rank
 
 //	printf("div: [%d %d %d] rank: [%d / %d] [r_min: %lf, r_max: %lf, r_steps: %d], [mu_min: %lf, mu_max: %lf, mu_steps: %d], [nu_min: %lf, nu_max: %lf, nu_steps: %d]\n", r_divisor, mu_divisor, nu_divisor, rank, max_rank, ap->r_min, ap->r_max, ap->r_steps, ap->mu_min, ap->mu_max, ap->mu_steps, ap->nu_min, ap->nu_max, ap->nu_steps);
 
-/*cut splitting*/
+	/*** Volume cut splitting ***/
+	int i;
+	for (i = 0; i < ap->number_cuts; i++) {
+		int r_cut_divisor = max_rank;
+		int mu_cut_divisor = 1;
+		int nu_cut_divisor = 1;
+	
+        	if (rank == 0 && max_rank == 0) return;
+	
+        	while (r_cut_divisor > ap->r_cut[i][2]) {
+        	        if (r_cut_divisor > ap->r_cut[i][2] && (r_cut_divisor % 2) != 0) {
+        	                printf("ERROR cannot split data,  slices > ap->r_cut_steps[%d] and not divisible by 2", i);
+        	        }
+	
+	                r_cut_divisor /= 2;
+	                mu_cut_divisor *= 2;
+	        }
+	        while (mu_cut_divisor > ap->mu_cut[i][2]) {
+	                if (mu_cut_divisor > ap->mu_cut[i][2] && (mu_cut_divisor % 2) != 0) {
+	                        printf("ERROR cannot split data,  slices > ap->r_cut_steps[%d] and not divisible by 2", i);
+	                }
+	
+	                mu_cut_divisor /= 2;
+	                nu_cut_divisor *= 2;
+	        }
 
-	int r_cut_divisor = max_rank;
-	int mu_cut_divisor = 1;
-	int nu_cut_divisor = 1;
+	//      printf("r_divisor: %d, mu_divisor: %d, nu_divisor: %d\n", r_divisor, mu_divisor, nu_divisor);
 
-        if (rank == 0 && max_rank == 0) return;
-
-        while (r_cut_divisor > ap->r_cut_steps) {
-                if (r_cut_divisor > ap->r_cut_steps && (r_cut_divisor % 2) != 0) {
-                        printf("ERROR cannot split data,  slices > ap->r_cut_steps and not divisible by 2");
-                }
-
-                r_cut_divisor /= 2;
-                mu_cut_divisor *= 2;
-        }
-        while (mu_cut_divisor > ap->mu_cut_steps) {
-                if (mu_cut_divisor > ap->mu_cut_steps && (mu_cut_divisor % 2) != 0) {
-                        printf("ERROR cannot split data,  slices > ap->r_cut_steps and not divisible by 2");
-                }
-
-                mu_cut_divisor /= 2;
-                nu_cut_divisor *= 2;
-        }
-
-//      printf("r_divisor: %d, mu_divisor: %d, nu_divisor: %d\n", r_divisor, mu_divisor, nu_divisor);
-
-        printf("splitting ap->r_cut\n");
-        /********
-                *       Split ap->r
-         ********/
-        split(rank, max_rank, r_cut_divisor, &(ap->r_cut_min), &(ap->r_cut_max), &(ap->r_cut_steps), ap->r_cut_step_size);
-
-
-        printf("splitting ap->mu_cut\n");
-        /********
-                *       Split ap->mu
-         ********/
-        split((rank/r_cut_divisor), max_rank, mu_cut_divisor, &(ap->mu_cut_min), &(ap->mu_cut_max), &(ap->mu_cut_steps), ap->mu_cut_step_size);
-
-
-        printf("splitting ap->nu_cut\n");
-        /********
-                *       Split ap->nu
-         ********/
-        split(rank/(r_cut_divisor*mu_cut_divisor), max_rank, nu_cut_divisor, &(ap->nu_cut_min), &(ap->nu_cut_max), &(ap->nu_cut_steps), ap->nu_cut_step_size);
-
-}	
-
+	        printf("splitting ap->r_cut[%d]\n", i);
+        	/********
+                	*       Split ap->r
+         	********/
+       	 	split(rank, max_rank, r_cut_divisor, &(ap->r_cut[i][0]), &(ap->r_cut[i][1]), (int*)&(ap->r_cut[i][2]), ap->r_cut_step_size[i]);
+	
+	
+	        printf("splitting ap->mu_cut[%d]\n", i);
+	        /********
+	                *       Split ap->mu
+	         ********/
+	        split((rank/r_cut_divisor), max_rank, mu_cut_divisor, &(ap->mu_cut[i][0]), &(ap->mu_cut[i][1]), (int*)&(ap->mu_cut[i][2]), ap->mu_cut_step_size[i]);
+	
+	
+	        printf("splitting ap->nu_cut[%d]\n", i);
+	        /********
+	                *       Split ap->nu
+	         ********/
+	        split(rank/(r_cut_divisor*mu_cut_divisor), max_rank, nu_cut_divisor, &(ap->nu_cut[i][0]), &(ap->nu_cut[i][1]), (int*)&(ap->nu_cut[i][2]), ap->nu_cut_step_size[i]);
+	
+	}	
+}
 
 #ifdef GMLE_BOINC
 	int boinc_read_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS *ap) {
