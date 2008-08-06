@@ -386,13 +386,13 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 		volumes[i+1] = total_volume;
 	}
 	/*** End volume removal ***/
-	printf("VOLUMES: 	total_volume: %lf\n", volumes[0]);
+//	printf("VOLUMES: 	total_volume: %lf\n", volumes[0]);
 	double vc = volumes[0];
 	for (i = 1; i <= ap->number_cuts; i++) {
 		vc -= volumes[i]; 	
-		printf("VOLUMES:	volume_cut[%d]: %lf\n", i, vc);
+//		printf("VOLUMES:	volume_cut[%d]: %lf\n", i, vc);
 	}
-	printf("VOLUMES: 	total_integrated_volume: %lf\n", volumes[ap->number_cuts]);
+//	printf("VOLUMES: 	total_integrated_volume: %lf\n", volumes[ap->number_cuts]);
 
 	#ifdef GMLE_BOINC
 		retval = write_checkpoint(es);

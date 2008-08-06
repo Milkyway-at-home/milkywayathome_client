@@ -70,6 +70,18 @@ void free_parameters(ASTRONOMY_PARAMETERS* ap) {
 	free(ap->stream_min);
 	free(ap->stream_max);
 	free(ap->stream_optimize);
+
+	for (i = 0; i < ap->number_cuts; i++) {
+		free(ap->r_cut[i]);
+		free(ap->mu_cut[i]);
+		free(ap->nu_cut[i]);
+	}
+	free(ap->r_cut);
+	free(ap->mu_cut);
+	free(ap->nu_cut);
+	free(ap->r_cut_step_size);
+	free(ap->mu_cut_step_size);
+	free(ap->nu_cut_step_size);
 }
 
 int read_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS *ap) {
@@ -152,10 +164,13 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 	ap->mu_cut_step_size	= (double*)malloc(sizeof(double) * ap->number_cuts);
 	ap->nu_cut_step_size	= (double*)malloc(sizeof(double) * ap->number_cuts);
 
+	printf("reading %d cuts\n", ap->number_cuts);
 	for (i = 0; i < ap->number_cuts; i++) {
 		read_double_array(file, "r_cut[min,max,steps]: ", 3, &ap->r_cut[i]);
 		read_double_array(file, "mu_cut[min,max,steps]: ", 3, &ap->mu_cut[i]);
 		read_double_array(file, "nu_cut[min,max,steps]: ", 3, &ap->nu_cut[i]); 
+
+		printf("read %dth cut\n", i);
 
 		if (ap->r_cut[i][2] == 0 || ap->mu_cut[i][2] == 0 || ap->nu_cut[i][2] == 0) {
 			ap->r_cut_step_size[i] = 0.0;	
