@@ -261,4 +261,36 @@ void gc2lb( int wedge, double mu, double nu, double* l, double* b ) {
     atEqToGal( ra, dec, l, b );
 }
 
+/*Get normal vector of data slice from stripe number*/
+void stripe_normal( int wedge, double *xyz ) {
+	double eta, ra, dec, l, b;
+	
+	eta = atEtaFromStripeNumber(wedge);
+	atSurveyToEq(0, 90.0+eta, &ra, &dec);
+	atEqToGal(ra, dec, &l, &b);
+	lbToXyz(l, b, xyz);
+}
 
+/*convert galactic coordinates l,b into cartesian x,y,z*/
+void lbToXyz(double l, double b, double *xyz) {
+	l = l/deg;
+	b = b/deg;
+
+	xyz[0] = cos(l) * cos(b);
+	xyz[1] = sin(l) * cos(b);
+	xyz[2] = sin(b);
+}
+
+/*wrapper that converts a point into magnitude-space pseudo-xyz*/
+void xyz_mag(double* point, double offset, double* logPoint) {
+	double lbg[3];
+	xyz2lbg(point, offset, lbg);
+	lbr2xyz(lbg, logPoint);
+}
+
+void xyz2lbg(double* point, double offset, double* lbg) {
+	xyz2lbr(point, lbg);
+	double g = 5.0 * (log(100.0*lbg[2]) / log(10.0) ) + 4.2 - offset;
+	
+	lbg[2] = g;
+}

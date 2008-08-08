@@ -175,10 +175,10 @@ void separation(char* filename, double background_integral, double* stream_integ
 
 		if (twoPanel == 1) {
 			if (ap->convolve != 0) {
-				prob_s = stPsgConvolved(star_coords, ap->stream_parameters[0], ap->wedge, ap->convolve);
-				prob_b = stPbxConvolved(star_coords, ap->background_parameters, ap->convolve);
+				prob_s = stPsgConvolved(star_coords, ap->stream_parameters[0], ap->wedge, ap->convolve, ap->sgr_coordinates);
+				prob_b = stPbxConvolved(star_coords, ap->background_parameters, ap->convolve, ap->wedge);
 			} else {
-                        	prob_s = stPsg(star_coords, ap->stream_parameters[0], ap->wedge);
+                        	prob_s = stPsg(star_coords, ap->stream_parameters[0], ap->wedge, ap->sgr_coordinates);
 				prob_b = stPbx(star_coords, ap->background_parameters);
                    	}
 
@@ -192,18 +192,20 @@ void separation(char* filename, double background_integral, double* stream_integ
 			nstars += sprob;
 		}
 
+
 		/*determine if star with sprob should be put into stream*/	
 		s_ok = prob_ok(sprob);
 		if (s_ok == 1) q++;
 
 		lbr2xyz(star_coords, starxyz);
-		starxyzTransform = transform_point(starxyz, cmatrix);	
+		transform_point(starxyz, cmatrix, xsun, starxyzTransform);	
 
 		fprintf(file, "%d %lf %lf %lf\n", s_ok, starxyzTransform[0], starxyzTransform[1], starxyzTransform[2]);
-		free(starxyz);
-		free(starxyzTransform);
+		//free(starxyz);
+		//free(starxyzTransform);
 
 		total += 1;
+
 
 		if( (total % 10000) == 0 ) printf("%d\n", total);
 	}

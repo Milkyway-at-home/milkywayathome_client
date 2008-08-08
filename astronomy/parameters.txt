@@ -19,7 +19,7 @@ optimize_parameter: 1, 1, 1, 1, 1
 convolve: 0
 sgr_coordinates: 0
 wedge: 82
-r[min,max,steps]: 16.0, 22.5, 20
-mu[min,max,steps]: 310, 419, 50
-nu[min,max,steps]: -1.25, 1.25, 10
+r[min,max,steps]: 16.0, 22.5, 50
+mu[min,max,steps]: 310, 419, 100
+nu[min,max,steps]: -1.25, 1.25, 5
 number_cuts: 0

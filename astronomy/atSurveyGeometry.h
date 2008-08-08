@@ -58,4 +58,8 @@ void gcToSgr ( double mu, double nu, int wedge, double *lamda, double *beta );
 
 void sgrToGal ( double lamda, double beta, double *l, double *b);
 
+void atSurveyToEq ( double slong, double slat, double *ra, double *dec);
+
+double atEtaFromStripeNumber ( int wedge );
+
 #endif

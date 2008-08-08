@@ -310,3 +310,18 @@ double streamConvolve(double g, int wedge, int sgr_coordinates) {
         prob = psg * r3 * N;
         return prob;
 }
+
+/*determines if star with prob p should be separrated into stream*/
+int prob_ok(double p) {
+	int ok;
+	double r;
+
+	r = drand48();
+	
+	if (p > r) {
+		ok = 1;
+	} else { 
+		ok = 0;
+	} 
+	return ok;
+}

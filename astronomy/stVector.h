@@ -13,6 +13,9 @@ void crossp( const double* a, const double* b, double* prod );
 double vecangle( const double* a, const double* b );
 
 void get_transform( const double* f, const double* t, double** mat );
+
 void do_transform( double* v, double* const* mat );
+
+void transform_point( double* point, double** cmat, double* xsun, double* logPoint ); 
 
 #endif /* SPVECTOR_H */

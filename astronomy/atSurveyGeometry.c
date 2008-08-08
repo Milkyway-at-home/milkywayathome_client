@@ -3,7 +3,6 @@
 #include "atSurveyGeometry.h"
 #include "stVector.h"
 
-
 void atGCToEq (
 	       double amu,	/* IN -- mu in degrees */
 	       double anu,	/* IN -- nu in degrees */
@@ -349,4 +348,46 @@ void sgrToGal ( double lamda, double beta, double *l, double *b)
 //vickej2 <<<end>>>
 
 	return;
+}
+
+/* Return ra & dec from survey longitude and latitude */
+void atSurveyToEq (double slong, double slat, double *ra, double *dec) {
+	double anode, etaPole;
+	double x1, y1, z1;
+
+	double surveyCenterRa = at_surveyCenterRa;
+	double surveyCenterDec = at_surveyCenterDec;
+	
+	/* Convert to radians */
+	slong = slong * at_deg2Rad;
+	slat = slat * at_deg2Rad;
+	anode = surveyCenterRa - 90.0;
+	anode = anode * at_deg2Rad;
+	etaPole = surveyCenterDec * at_deg2Rad;
+
+	/* Rotation */
+	x1 = -sin(slong);
+	y1 = cos(slat+etaPole) * cos(slong);
+	z1 = sin(slat+etaPole) * cos(slong);
+	*ra = atan2(y1,x1) + anode;
+	*dec = asin(z1);
+	*ra = *ra * at_rad2Deg;
+	*dec = *dec * at_rad2Deg;
+	atBound2(dec, ra);
+	
+	return;
+}
+
+/* Return eta from stripe number */
+double atEtaFromStripeNumber(int wedge) {
+	double eta;
+	double stripeSeparation = at_stripeSeparation;
+
+	if(wedge <= 46) {
+		eta = wedge * stripeSeparation - 57.5;
+	} else {
+		eta = wedge * stripeSeparation - 57.5 - 180.0;
+	}
+	
+	return eta;
 }
