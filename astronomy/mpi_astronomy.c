@@ -102,7 +102,7 @@ void integral_compose(double* integral_results, int num_results, double** result
 		(*results)[0] += integral_results[(2*i)];
 		(*results)[1] += integral_results[(2*i)+1];
 	}
-	printf("composed integrals: %lf, %lf\n", (*results)[0], (*results)[1]);
+//	printf("composed integrals: %lf, %lf\n", (*results)[0], (*results)[1]);
 }
 
 void likelihood_f(double* integrals, double** results) {

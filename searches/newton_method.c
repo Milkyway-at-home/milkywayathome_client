@@ -46,13 +46,15 @@ void synchronous_newton_method(char* search_path, char* search_parameters, doubl
 	char **metadata;
 	double **individuals;
 	double *fitness;
+	double current_fitness;
 	int number_individuals;
 	int number_iterations;
 	int i, j;
 
 	number_individuals = 1;
 
-	printf("iteration: %d, current point:", 0);
+	current_fitness = evaluate(point);
+	printf("iteration: %d, fitness: %lf, current point:", 0, current_fitness);
 	for (j = 0; j < number_parameters; j++) {
 		printf(" %lf", point[j]);
 	}
@@ -102,7 +104,9 @@ void synchronous_newton_method(char* search_path, char* search_parameters, doubl
 
 		newton_step(point, gradient, hessian);
 
-		printf("iteration: %d, current point:", i);
+		current_fitness = evaluate(point);
+
+		printf("iteration: %d, fitness: %lf, current point:", i, current_fitness);
 		for (j = 0; j < number_parameters; j++) {
 			printf(" %lf", point[j]);
 		}
