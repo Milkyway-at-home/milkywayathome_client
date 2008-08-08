@@ -67,7 +67,7 @@ void read_data(int rank, int max_rank) {
 	initialize_state(es, ap->number_streams);
 }
 
-double* integral_f(double* parameters) {
+void integral_f(double* parameters, double** results) {
 	int i;
 	/********
 		*	CALCULATE THE INTEGRALS
@@ -92,11 +92,10 @@ double* integral_f(double* parameters) {
 		fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
 		exit(retval);
 	}
-	double *results = (double*)malloc(sizeof(double) * 2);
-	results[0] = es->background_integral;
-	results[1] = es->stream_integrals[0];
-	printf("calculated integrals: %lf, %lf\n", results[0], results[1]);
-	return results;
+	(*results) = (double*)malloc(sizeof(double) * 2);
+	(*results)[0] = es->background_integral;
+	(*results)[1] = es->stream_integrals[0];
+//	printf("calculated integrals: %lf, %lf\n", (*results)[0], (*results)[1]);
 }
 
 double integral_compose(double* integral_results, int num_results) {
@@ -221,7 +220,7 @@ int main(int number_arguments, char **arguments){
 	double *point;
 
 	printf("init data...\n");
-	evaluator__init_data(read_data);
+	evaluator__init(&number_arguments, &arguments, read_data);
 
 	integral_parameter_length = ap->number_parameters;
 	integral_results_length = 1 + ap->number_streams;
@@ -229,7 +228,7 @@ int main(int number_arguments, char **arguments){
 	printf("init integral...\n");
 	evaluator__init_likelihood(integral_f, integral_parameter_length, integral_compose, integral_results_length);
 	printf("starting...\n");
-	mpi_evaluator__start(number_arguments, arguments);
+	mpi_evaluator__start();
 
 	printf("getting parameters...\n");
 	get_search_parameters(ap, &point);

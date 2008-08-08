@@ -64,7 +64,7 @@ void read_data(int rank, int max_rank) {
 	initialize_state(es, ap->number_streams);
 }
 
-double* integral_f(double* parameters) {
+void integral_f(double* parameters, double** results) {
 	int i;
 	/********
 		*	CALCULATE THE INTEGRALS
@@ -89,27 +89,25 @@ double* integral_f(double* parameters) {
 		fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
 		exit(retval);
 	}
-	double *results = (double*)malloc(sizeof(double) * 2);
-	results[0] = es->background_integral;
-	results[1] = es->stream_integrals[0];
-//	printf("calculated integrals: %lf, %lf\n", results[0], results[1]);
-	return results;
+	(*results) = (double*)malloc(sizeof(double) * 2);
+	(*results)[0] = es->background_integral;
+	(*results)[1] = es->stream_integrals[0];
+//	printf("calculated integrals: %lf, %lf\n", (*results)[0], (*results)[1]);
 }
 
-double* integral_compose(double* integral_results, int num_results) {
+void integral_compose(double* integral_results, int num_results, double** results) {
 	int i;
-	double *results = (double*)malloc(sizeof(double) * 2);
-	results[0] = 0.0;
-	results[1] = 0.0;
+	(*results) = (double*)malloc(sizeof(double) * 2);
+	(*results)[0] = 0.0;
+	(*results)[1] = 0.0;
 	for (i = 0; i < num_results; i++) {
-		results[0] += integral_results[(2*i)];
-		results[1] += integral_results[(2*i)+1];
+		(*results)[0] += integral_results[(2*i)];
+		(*results)[1] += integral_results[(2*i)+1];
 	}
-//	printf("composed integrals: %lf, %lf\n", results[0], results[1]);
-	return results;
+	printf("composed integrals: %lf, %lf\n", (*results)[0], (*results)[1]);
 }
 
-double* likelihood_f(double* integrals) {
+void likelihood_f(double* integrals, double** results) {
 	es->background_integral = integrals[0];
 	es->stream_integrals[0] = integrals[1];
 
@@ -121,11 +119,10 @@ double* likelihood_f(double* integrals) {
 		fprintf(stderr, "APP: error calculating likelihood: %d\n", retval);
 		exit(retval);
 	}
-	double *results = (double*)malloc(sizeof(double) * 2);
-	results[0] = es->prob_sum;
-	results[1] = es->bad_jacobians;
-//	printf("calculated likelihood: %lf, bad_jacobs: %lf\n", results[0], results[1]);
-	return results;
+	(*results) = (double*)malloc(sizeof(double) * 2);
+	(*results)[0] = es->prob_sum;
+	(*results)[1] = es->bad_jacobians;
+//	printf("calculated likelihood: %lf, bad_jacobs: %lf\n", (*results)[0], (*results)[1]);
 }
 
 double likelihood_compose(double* results, int num_results) {
@@ -138,7 +135,7 @@ double likelihood_compose(double* results, int num_results) {
 	}
 	prob_sum /= (total_number_stars - bad_jacobians);
 	prob_sum *= -1;
-//	printf("composed likelihood: %lf\n", prob_sum);
+	printf("composed likelihood: %lf\n", prob_sum);
 	return prob_sum;
 }
 
@@ -202,7 +199,7 @@ int main(int number_arguments, char **arguments){
 	double *step;
 
 	printf("init data...\n");
-	evaluator__init_data(read_data);
+	evaluator__init(&number_arguments, &arguments, read_data);
 
 	integral_parameter_length = ap->number_parameters;
 	integral_results_length = 1 + ap->number_streams;
@@ -214,7 +211,7 @@ int main(int number_arguments, char **arguments){
 	printf("init likelihood...\n");
 	evaluator__init_likelihood(likelihood_f, likelihood_parameter_length, likelihood_compose, likelihood_results_length);
 	printf("starting...\n");
-	mpi_evaluator__start(number_arguments, arguments);
+	mpi_evaluator__start();
 
 	printf("getting parameters...\n");
 	get_search_parameters(ap, &point);
