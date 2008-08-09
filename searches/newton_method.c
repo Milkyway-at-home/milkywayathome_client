@@ -36,7 +36,7 @@ void newton_step(double* point, GRADIENT* gradient, HESSIAN* hessian) {
 
 	printf("updating point\n");
 	for (i = 0; i < hessian->number_parameters; i++) {
-		point[i] = point[i] + step[i];
+		point[i] = point[i] - step[i];
 	}
 }
 
