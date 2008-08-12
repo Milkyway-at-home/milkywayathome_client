@@ -271,6 +271,29 @@ void stripe_normal( int wedge, double *xyz ) {
 	lbToXyz(l, b, xyz);
 }
 
+//vickej2 change made to account for sgr_Stripes, calculates normal vector by crossmultiplication
+void sgr_stripe_normal(int wedge, double *xyz) {
+        double lamda1, beta1, lamda2, beta2, l1, b1, l2, b2, xyz1[3], xyz2[3];
+        lamda1=wedge*2.5;
+        lamda2=wedge*2.5;
+
+        beta1=0;
+        beta2=90;
+
+        sgrToGal(lamda1, beta1, &l1, &b1);
+        sgrToGal(lamda2, beta2, &l2, &b2);
+
+        lbToXyz(l1, b1, xyz1);
+        lbToXyz(l2, b2, xyz2);
+
+        //printf("lamda=%f, beta=%f, l=%f, b=%f, x=%f, y=%f, z=%f", lamda1, beta1, l1, b1, xyz1[0], xyz1[1], xyz1[2]);
+
+//crossmultiplication of the 2 vectors
+        xyz[0]=xyz1[1]*xyz2[2]-xyz1[2]*xyz2[1];
+        xyz[1]=xyz1[2]*xyz2[0]-xyz1[0]*xyz2[2];
+        xyz[2]=xyz1[0]*xyz2[1]-xyz1[1]*xyz2[0];
+}
+
 /*convert galactic coordinates l,b into cartesian x,y,z*/
 void lbToXyz(double l, double b, double *xyz) {
 	l = l/deg;
