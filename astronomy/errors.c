@@ -2,6 +2,7 @@
 	*	Includes for astronomy
  ********/
 #include "mpi.h"
+#include "math.h"
 
 #include "parameters.h"
 #include "star_points.h"
@@ -152,7 +153,7 @@ void errors(char* filename, double* point, double* step, int number_parameters, 
 
         int number_individuals = 1;
 
-
+int count = 0;
         printf("Calculating hessian...\n");
         create_hessian(point, step, 0, number_parameters, &hessian);
         while (!hessian__complete(hessian)) {
@@ -160,6 +161,8 @@ void errors(char* filename, double* point, double* step, int number_parameters, 
                 fitness = (double*)malloc(sizeof(double) * number_individuals);
                 for (j = 0; j < number_individuals; j++) {
                         fitness[j] = evaluate(individuals[j]);
+			printf("fitness[%d/%d] = %lf\n", count, hessian->number_parameters*hessian->number_parameters*4, fitness[j]);
+			count++;
                 }
                 hessian__insert_individuals(hessian, number_individuals, fitness, metadata);
 
@@ -177,7 +180,8 @@ void errors(char* filename, double* point, double* step, int number_parameters, 
 
         fprintf(file, "\n");
 
-        printf("Inverting hessian to get SIGMA...\n");
+        printf("\nInverting hessian to get SIGMA...\n");
+	printf("Number of stars: %d\n", number_stars);
         matrix_invert(hessian->values, hessian->number_parameters, hessian->number_parameters, &sigma);
         printf("SIGMA:\n");
 	fprintf(file, "SIGMA:\n");
@@ -190,6 +194,18 @@ void errors(char* filename, double* point, double* step, int number_parameters, 
                 printf("\n");
 		fprintf(file, "\n");
         }
+	printf("\nCalculating standard deviations (errors)...\n");
+	double stdDevs[hessian->number_parameters];
+	printf("\nErrors: q, r0, epsilon, mu, r, theta, phi, sigma\n");
+	fprintf(file,"\nErrors: q, r0, epsilon, mu, r, theta, phi, sigma\n");
+	for (i = 0; i < hessian->number_parameters; i++) {
+		stdDevs[i] = sqrt(sigma[i][i]);
+		printf(" %lf", stdDevs[i]);
+                fprintf(file, " %lf", stdDevs[i]);
+	}
+	printf("\n");
+	fprintf(file, "\n");
+
 }
 
 int main(int number_arguments, char **arguments){
