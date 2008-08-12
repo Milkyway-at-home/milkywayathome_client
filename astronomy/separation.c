@@ -23,7 +23,7 @@
 
 #define max_iterations			35000
 #define astronomy_parameters_file	"parameters.txt"
-#define star_points_file		"stars_unconvolved_82.txt"
+#define star_points_file		"search9.txt"
 #define population_file_name		"population.txt"
 
 ASTRONOMY_PARAMETERS *ap;
@@ -142,7 +142,14 @@ void separation(char* filename, double background_integral, double* stream_integ
 	printf("Integral complete.\n Beginning probability calculations...\n");
 	file = fopen(filename, "w");
 
-	stripe_normal(ap->wedge, dnormal);
+        if(ap->sgr_coordinates == 0){
+               stripe_normal(ap->wedge, dnormal);
+        }else if (ap->sgr_coordinates == 1) {
+               sgr_stripe_normal(ap->wedge, dnormal);
+        } else {
+               printf("Error: ap->sgr_coordinates not valid");
+        }
+
 
 	cmatrix = (double**)malloc(sizeof(double*) * 3);
 	for (i = 0; i < 3; i++) cmatrix[i] = (double*)malloc(sizeof(double) * 3);
@@ -192,7 +199,7 @@ void separation(char* filename, double background_integral, double* stream_integ
 		}
 
 
-		/*determine if star with sprob should be put into stream*/	
+		/*determine if star with sprob should be put into stream*/
 		s_ok = prob_ok(sprob);
 		if (s_ok == 1) q++;
 
