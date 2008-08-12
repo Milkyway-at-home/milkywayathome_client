@@ -26,4 +26,6 @@ void xyz_mag(double* point, double offset, double* logPoint);
 
 void xyz2lbg(double* point, double offset, double* logPoint);
 
+void sgr_stripe_normal(int wedge, double *xyz);
+
 #endif /* STCOORDS_H */
