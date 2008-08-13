@@ -131,7 +131,7 @@ void separation(char* filename, double background_integral, double* stream_integ
 	double starxyz[3];
 	double starxyzTransform[3];
 	int s_ok;
-	int i;
+	int i, retval;
 	FILE *file;
 
 	twoPanel = 1;
@@ -149,6 +149,16 @@ void separation(char* filename, double background_integral, double* stream_integ
         } else {
                printf("Error: ap->sgr_coordinates not valid");
         }
+
+	free_star_points(sp);
+	free(sp);
+        sp = (STAR_POINTS*)malloc(sizeof(STAR_POINTS));
+        retval = read_star_points(star_points_file, sp);
+        if (retval) {
+                fprintf(stderr, "APP: error reading star points: %d\n", retval);
+                exit(1);
+        }
+        printf("read %d stars.\n", sp->number_stars);
 
 
 	cmatrix = (double**)malloc(sizeof(double*) * 3);
