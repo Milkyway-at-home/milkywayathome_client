@@ -139,3 +139,48 @@ void hessian__get_individuals(HESSIAN* hessian, int number_individuals, double**
 		}
 	}
 }
+
+/*
+void pointwise_newton(double** points, double* fitness, int number_points, int number_parameters, double** hessian, double* gradient) {
+	double* Y;
+	double** X;
+	double** X2;
+	double** X_transpose;
+	double** X_inverse;
+	double** W;
+	double** y;
+	int x_len
+
+	x_len = 1 + number_parameters + (number_parameters * number_parameters);
+
+	Y = (double*)malloc(sizeof(double) * number_points);
+	X = (double**)malloc(sizeof(double) * number_points);
+	for (i = 0; i < number_points; i++) {
+                Y[i] = point[i];
+                X[i] = (double*)malloc(sizeof(double) * x_len);
+                X[i][0] = 1;
+                for (j = 0; j < number_parameters; j++) {
+                        X[i][1+j] = points[i][j];
+                        for (k = 0; k < number_parameters; k++) {
+                                X[i][1+number_parameters+(j*number_parameters)+k] = points[i][j] * points[i][k];
+                        }
+                }
+        }
+        matrix_transpose(X, number_points, x_len, &X_transpose);
+        matrix_multiply(X_transpose, x_len, number_points, X, number_points, x_len, &X2);
+        matrix_invert(X2, x_len, x_len, &X_inverse);
+        matrix_multiply(X_inverse, x_len, x_len, X_transpose, x_len, number_points, &X3);
+	matrix_multiply(X3, x_len, number_points, Y, number_points, 1, &W);
+	//W is x_len by 1
+
+	(*gradient) = (double*)malloc(sizeof(double) * number_parameters);
+	(*hessian) = (double**)malloc(sizeof(double*) * number_parameters);
+	for (i = 0; i < number_parameters; i++) {
+		gradient[i] = W[1+i];
+		(*hessian)[i] = (double*)malloc(sizeof(double) * number_parameters);
+		for (j = 0; j < number_parameters; j++) {
+			(*hessian)[i][j] = W[1+number_parameters+(i*number_parameters)+j];
+		}
+	}
+}
+*/

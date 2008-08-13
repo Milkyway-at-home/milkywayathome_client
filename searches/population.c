@@ -6,49 +6,6 @@
 
 #include "population.h"
 
-int number_populations = 0;
-POPULATION** populations;
-
-
-void insert_population(POPULATION* population, int position) {
-	int i;
-
-	if (position < 0) {
-		for (position = 0; position < number_populations; position++) {
-			if (strcmp(populations[position]->search_path, population->search_path) == 0) {
-				fprintf(stderr, "ERROR: Inserting a population that was already known: %s.\n", population->search_path);
-				return;
-			} else if (strcmp(populations[position]->search_path, population->search_path) > 0) {
-				break;
-			}
-		}
-	}
-
-	number_populations++;
-	populations = (POPULATION**)realloc(populations, number_populations * sizeof(POPULATION*));
-
-	for (i = number_populations - 1; i > position; i++) populations[i] = populations[i-1];
-	populations[position] = population;
-}
-
-POPULATION* get_population(char search_path[512]) {
-	POPULATION *population;
-	int i;
-
-	for (i = 0; i < number_populations; i++){
-		if (strcmp(search_path, populations[i]->search_path) == 0) {
-			return populations[i];
-		} else if (strcmp(search_path, populations[i]->search_path) > 0) {
-			break;
-		}
-	}
-
-	population = read_population(search_path);
-	insert_population(population, i);
-
-	return populations[i];
-}
-
 POPULATION* new_population(char search_path[512], char search_parameters[512], double *min_parameters, double *max_parameters, int number_parameters, int population_size, int max_evaluations) {
 	POPULATION* population;
 	int i;
@@ -75,7 +32,6 @@ POPULATION* new_population(char search_path[512], char search_parameters[512], d
 	i = 0;
 
 	write_population(search_path, population);
-	insert_population(population, -1);
 
 	return population;
 }

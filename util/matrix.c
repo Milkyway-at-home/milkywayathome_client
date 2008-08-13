@@ -34,10 +34,10 @@ void matrix_invert(double** initial, int rows, int cols, double*** inverse) {
 	double working_value;
 
 	matrix = (double**)malloc(sizeof(double*) * rows);
-	(*inverse) = (double**)malloc(sizeof(double*) * rows);
+	(*inverse) = (double**)malloc(sizeof(double*) * cols);
 	for (i = 0; i < rows; i++) {
 		matrix[i] = (double*)malloc(sizeof(double) * cols);
-		(*inverse)[i] = (double*)malloc(sizeof(double) * cols);
+		(*inverse)[i] = (double*)malloc(sizeof(double) * rows);
 		for (j = 0; j < cols; j++) {
 			matrix[i][j] = initial[i][j];
 			(*inverse)[i][j] = 0;
@@ -68,7 +68,7 @@ void matrix_invert(double** initial, int rows, int cols, double*** inverse) {
 			(*inverse)[i][j] /= working_value;
 		}
 
-		for (next = 1; next < rows; next++) {
+		for (next = 0; next < rows; next++) {
 			working_value = matrix[next][i];
 			if (next == i || working_value == 0) continue;
 			for (j = 0; j < cols; j++) {

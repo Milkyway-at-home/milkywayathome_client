@@ -43,7 +43,6 @@ void write_population(char path[512], POPULATION* population);
 void fwrite_population_statistics(FILE *file, POPULATION* population);
 
 POPULATION* new_population(char search_path[512], char search_parameters[512], double *min_parameters, double *max_parameters, int number_parameters, int population_size, int max_evaluations);
-POPULATION* get_population(char search_path[512]);
 
 void insert_sorted(POPULATION* population, double* parameters, double fitness);
 void replace(POPULATION* population, int position, double* parameters, double fitness);
