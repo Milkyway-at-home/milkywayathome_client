@@ -75,7 +75,7 @@ void synchronous_conjugate_gradient_descent(char* search_path, char* search_para
 
 			// dpres = -g_pres + bet * d_prev;
 			for (j = 0; j < number_parameters; j++) {
-				direction[j] = -gradient->values[j] + bet * previous_direction[j];
+				direction[j] = gradient->values[j] + bet * previous_direction[j];
 			}
 		} else {
 			memcpy(direction, gradient->values, sizeof(double) * number_parameters);
