@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "../searches/gradient_descent.h"
 #include "../searches/differential_evolution.h"
 #include "../searches/genetic_search.h"
 #include "../searches/particle_swarm.h"
@@ -39,7 +40,6 @@ int main(int number_arguments, char** arguments) {
 		return 0;
 	}
 
-
 	number_parameters = 10;
 	min_parameters = (double*)malloc(sizeof(double) * number_parameters);
 	max_parameters = (double*)malloc(sizeof(double) * number_parameters);
@@ -53,15 +53,20 @@ int main(int number_arguments, char** arguments) {
 	}
 
 	init_simple_evaluator(sum_of_squares);
-	if (arguments[2][0] == 'g') {
-		synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, number_parameters, start_genetic_search);
-	} else if (arguments[2][0] == 'd') {
-		synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, number_parameters, start_differential_evolution);
-	} else if (arguments[2][0] == 'p') {
-		synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, number_parameters, start_particle_swarm);
-	} else if (arguments[2][0] == 'n') {
-		synchronous_newton_method(arguments[1], arguments[2], point, step, number_parameters);
-	}
+        printf("searching...\n");
+        if (arguments[2][0] == 'g' && arguments[2][1] == 'd') {
+                synchronous_gradient_descent(arguments[1], arguments[2], point, step, number_parameters);
+        } else if (arguments[2][0] == 'c') {
+                synchronous_conjugate_gradient_descent(arguments[1], arguments[2], point, step, number_parameters);
+        } else if (arguments[2][0] == 'n') {
+                synchronous_newton_method(arguments[1], arguments[2], point, step, number_parameters);
+        } else if (arguments[2][0] == 'g' && arguments[2][1] == 's') {         
+                synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, number_parameters, start_genetic_search);
+        } else if (arguments[2][0] == 'd') {
+                synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, number_parameters, start_differential_evolution);
+        } else if (arguments[2][0] == 'p') {
+                synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, number_parameters, start_particle_swarm);
+        }
 
 	return 0;
 }
