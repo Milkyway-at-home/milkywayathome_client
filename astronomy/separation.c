@@ -99,12 +99,17 @@ void integral_f(double* parameters, double** results) {
 }
 
 double integral_compose(double* integral_results, int num_results) {
-	int i;
+	int i, j;
+
 	es->background_integral = 0.0;
-	es->stream_integrals[0] = 0.0;
+	for (i = 0; i < ap->number_streams; i++) {
+		es->stream_integrals[i] = 0.0;
+	}
 	for (i = 0; i < num_results; i++) {
 		es->background_integral += integral_results[(2*i)];
-		es->stream_integrals[0] += integral_results[(2*i)+1];
+		for (j = 0; j < ap->number_streams; j++) {
+			es->stream_integrals[0] += integral_results[(2*i)+1];
+		}
 	}
 	printf("composed integrals: %lf, %lf\n", es->background_integral, es->stream_integrals[0]);
 	return -1;

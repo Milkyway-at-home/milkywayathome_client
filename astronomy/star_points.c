@@ -45,17 +45,34 @@
 
 
 int read_star_points(const char* filename, STAR_POINTS* sp) {
+	int retval;
 	FILE* data_file = fopen(filename, "r");
-	return fread_star_points(data_file, filename, sp);
-}
 
-int fread_star_points(FILE* data_file, const char* filename, STAR_POINTS* sp) {
-	int i;
 	if (!data_file) {
 		fprintf(stderr, "Couldn't find input file %s.\n", filename);
 		return 1;
 	}
 
+	retval = fread_star_points(data_file, sp);
+	fclose(data_file);
+	return retval;
+}
+
+int write_star_points(const char* filename, STAR_POINTS* sp) {
+	int retval;
+	FILE* data_file = fopen(filename, "w");
+	if (!data_file) {
+		fprintf(stderr, "Couldn't find input file %s.\n", filename);
+		return 1;
+	}
+
+	retval = fwrite_star_points(data_file, sp);
+	fclose(data_file);
+	return retval;
+}
+
+int fread_star_points(FILE* data_file, STAR_POINTS* sp) {
+	int i;
 	fscanf(data_file, "%d\n", &sp->number_stars);
 
 	sp->stars = (double**)malloc(sizeof(double*) * sp->number_stars);
@@ -63,7 +80,16 @@ int fread_star_points(FILE* data_file, const char* filename, STAR_POINTS* sp) {
 		sp->stars[i] = (double*)malloc(sizeof(double)*3);
 		fscanf(data_file, "%lf %lf %lf\n", &sp->stars[i][0], &sp->stars[i][1], &sp->stars[i][2]);
 	}
-	fclose(data_file);
+	return 0;
+}
+
+int fwrite_star_points(FILE* data_file, STAR_POINTS* sp) {
+	int i;
+	fprintf(data_file, "%d\n", sp->number_stars);
+
+	for (i = 0; i < sp->number_stars; i++) {
+		fprintf(data_file, "%lf %lf %lf\n", sp->stars[i][0], sp->stars[i][1], sp->stars[i][2]);
+	}
 	return 0;
 }
 

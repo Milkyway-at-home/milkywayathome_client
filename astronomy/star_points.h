@@ -19,7 +19,9 @@ typedef struct star_points {
 } STAR_POINTS;
 
 int	read_star_points(const char* file, STAR_POINTS* sp);
-int	fread_star_points(FILE* data_file, const char* file, STAR_POINTS* sp);
+int	fread_star_points(FILE* data_file, STAR_POINTS* sp);
+int	write_star_points(const char* file, STAR_POINTS* sp);
+int	fwrite_star_points(FILE* data_file, STAR_POINTS* sp);
 void	free_star_points(STAR_POINTS* sp);
 
 void	split_star_points(STAR_POINTS* sp, int rank, int max_rank);

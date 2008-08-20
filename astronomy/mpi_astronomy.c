@@ -108,7 +108,7 @@ void integral_compose(double* integral_results, int num_results, double** result
 	for (i = 0; i < num_results; i++) {
 		(*results)[0] += integral_results[((ap->number_streams+1)*i)];
 		for (j = 0; j < ap->number_streams; j++) {
-			(*results)[j+1] += integral_results[((ap->number_streams+1)*i)+1];
+			(*results)[j+1] += integral_results[((ap->number_streams+1)*i)+j];
 		}
 	}
 	printf("background integral: %lf, stream integrals:", (*results)[0]);
