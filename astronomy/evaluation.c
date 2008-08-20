@@ -169,7 +169,9 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 	double V = 0;
 
 	es->background_integral = 0;
-	es->stream_integrals[0] = 0;
+	for (s = 0; s < ap->number_streams; s++) {
+		es->stream_integrals[s] = 0;
+	}
 
 	#ifdef GMLE_BOINC
 		int retval = read_checkpoint(es);
