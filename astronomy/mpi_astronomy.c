@@ -87,27 +87,40 @@ void integral_f(double* parameters, double** results) {
 		fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
 		exit(retval);
 	}
-	(*results) = (double*)malloc(sizeof(double) * 2);
+	(*results) = (double*)malloc(sizeof(double) * (1 + ap->number_streams));
 	(*results)[0] = es->background_integral;
-	(*results)[1] = es->stream_integrals[0];
-//	printf("calculated integrals: %lf, %lf\n", (*results)[0], (*results)[1]);
+	printf("background integral: %lf, stream integrals: ", (*results[0]));
+	for (i = 1; i <= ap->number_streams; i++) {
+		(*results)[i] = es->stream_integrals[i-1];
+		printf(" %lf", (*results)[i]);
+	}
+	printf("\n");
 }
 
 void integral_compose(double* integral_results, int num_results, double** results) {
-	int i;
-	(*results) = (double*)malloc(sizeof(double) * 2);
+	int i, j;
+	(*results) = (double*)malloc(sizeof(double) * (1 + ap->number_streams));
 	(*results)[0] = 0.0;
-	(*results)[1] = 0.0;
-	for (i = 0; i < num_results; i++) {
-		(*results)[0] += integral_results[(2*i)];
-		(*results)[1] += integral_results[(2*i)+1];
+	for (i = 0; i < ap->number_streams; i++) {
+		(*results)[i] = 0.0;
 	}
-//	printf("composed integrals: %lf, %lf\n", (*results)[0], (*results)[1]);
+
+	for (i = 0; i < num_results; i++) {
+		(*results)[0] += integral_results[((ap->number_streams+1)*i)];
+		for (j = 0; j < ap->number_streams; j++) {
+			(*results)[j+1] += integral_results[((ap->number_streams+1)*i)+1];
+		}
+	}
+	printf("background integral: %lf, stream integrals:", (*results)[0]);
+	for (i = 0; i < ap->number_streams; i++) printf(" %lf", (*results)[i+1]);
+	printf("\n");
 }
 
 void likelihood_f(double* integrals, double** results) {
+	int i;
+
 	es->background_integral = integrals[0];
-	es->stream_integrals[0] = integrals[1];
+	for (i = 0; i < ap->number_streams; i++) es->stream_integrals[i] = integrals[i+1];
 
 	/********
 		*	CALCULATE THE LIKELIHOOD
