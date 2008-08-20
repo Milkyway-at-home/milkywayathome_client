@@ -106,12 +106,14 @@ double integral_compose(double* integral_results, int num_results) {
 		es->stream_integrals[i] = 0.0;
 	}
 	for (i = 0; i < num_results; i++) {
-		es->background_integral += integral_results[(2*i)];
+		es->background_integral += integral_results[((ap->number_streams+1)*i)];
 		for (j = 0; j < ap->number_streams; j++) {
-			es->stream_integrals[0] += integral_results[(2*i)+1];
+			es->stream_integrals[j] += integral_results[((ap->number_streams+1)*i)+j];
 		}
 	}
-	printf("composed integrals: %lf, %lf\n", es->background_integral, es->stream_integrals[0]);
+        printf("background integral: %lf, stream integrals:", es->background_integral);
+        for (i = 0; i < ap->number_streams; i++) printf(" %lf", es->stream_integrals[i]);
+        printf("\n");
 	return -1;
 }
 

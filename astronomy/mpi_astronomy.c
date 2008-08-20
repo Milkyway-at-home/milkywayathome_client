@@ -87,31 +87,34 @@ void integral_f(double* parameters, double** results) {
 		fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
 		exit(retval);
 	}
+
 	(*results) = (double*)malloc(sizeof(double) * (1 + ap->number_streams));
 	(*results)[0] = es->background_integral;
-	printf("background integral: %lf, stream integrals: ", (*results[0]));
-	for (i = 1; i <= ap->number_streams; i++) {
-		(*results)[i] = es->stream_integrals[i-1];
-		printf(" %lf", (*results)[i]);
+	for (i = 0; i < ap->number_streams; i++) {
+		(*results)[i+1] = es->stream_integrals[i];
 	}
+
+	printf("[worker] background integral: %lf, stream integrals:", (*results)[0]);
+	for (i = 0; i < ap->number_streams; i++) printf(" %lf", (*results)[i+1]);
 	printf("\n");
 }
 
 void integral_compose(double* integral_results, int num_results, double** results) {
-	int i, j;
+	int i, j, current;
 	(*results) = (double*)malloc(sizeof(double) * (1 + ap->number_streams));
 	(*results)[0] = 0.0;
 	for (i = 0; i < ap->number_streams; i++) {
-		(*results)[i] = 0.0;
+		(*results)[i+1] = 0.0;
 	}
 
 	for (i = 0; i < num_results; i++) {
-		(*results)[0] += integral_results[((ap->number_streams+1)*i)];
+		current = (ap->number_streams + 1) * i;
+		(*results)[0] += integral_results[current];
 		for (j = 0; j < ap->number_streams; j++) {
-			(*results)[j+1] += integral_results[((ap->number_streams+1)*i)+j];
+			(*results)[j+1] += integral_results[current + j];
 		}
 	}
-	printf("background integral: %lf, stream integrals:", (*results)[0]);
+	printf("[compose] background integral: %lf, stream integrals:", (*results)[0]);
 	for (i = 0; i < ap->number_streams; i++) printf(" %lf", (*results)[i+1]);
 	printf("\n");
 }
