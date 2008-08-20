@@ -260,7 +260,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 						st_prob = stPsg(integral_point, ap->stream_parameters[s], ap->wedge, ap->sgr_coordinates);
 					}
 					es->stream_integrals[s] += st_prob * V;
-				}
+ 				}
 				first_run = 0;
 
 				#ifdef GMLE_BOINC
@@ -367,7 +367,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 					for (s = 0; s < ap->number_streams; s++) {
 						if (ap->convolve > 0) {
 							st_prob = stPsgConvolved(integral_point, ap->stream_parameters[s], ap->wedge, ap->convolve, ap->sgr_coordinates);
-							} else {
+						} else {
 							st_prob = stPsg(integral_point, ap->stream_parameters[s], ap->wedge, ap->sgr_coordinates);
 						}
 						es->stream_integrals[s] += st_prob * V;
