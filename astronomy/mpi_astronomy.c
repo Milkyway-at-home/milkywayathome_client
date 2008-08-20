@@ -111,7 +111,7 @@ void integral_compose(double* integral_results, int num_results, double** result
 		current = (ap->number_streams + 1) * i;
 		(*results)[0] += integral_results[current];
 		for (j = 0; j < ap->number_streams; j++) {
-			(*results)[j+1] += integral_results[current + j];
+			(*results)[j+1] += integral_results[current + j + 1];
 		}
 	}
 	printf("[compose] background integral: %lf, stream integrals:", (*results)[0]);
