@@ -248,18 +248,17 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 
 				if (ap->convolve > 0) {
 					bg_prob = stPbxConvolved(integral_point, ap->background_parameters, ap->wedge, ap->convolve);
-					for (s = 0; s < ap->number_streams; s++) {
-						st_prob = stPsgConvolved(integral_point, ap->stream_parameters[s], ap->wedge, ap->convolve, ap->sgr_coordinates);
-					}
 				} else {
 					bg_prob = stPbx(integral_point, ap->background_parameters);
-					for (s = 0; s < ap->number_streams; s++) {
+				}
+				es->background_integral += bg_prob * V;
+
+				for (s = 0; s < ap->number_streams; s++) {
+					if (ap->convolve > 0) {
+						st_prob = stPsgConvolved(integral_point, ap->stream_parameters[s], ap->wedge, ap->convolve, ap->sgr_coordinates);
+					} else {
 						st_prob = stPsg(integral_point, ap->stream_parameters[s], ap->wedge, ap->sgr_coordinates);
 					}
-				}
-
-				es->background_integral += bg_prob * V;
-				for (s = 0; s < ap->number_streams; s++) {
 					es->stream_integrals[s] += st_prob * V;
 				}
 				first_run = 0;
@@ -358,21 +357,20 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 	                                double bg_prob = 0.0;
 	                                double st_prob = 0.0;
 	
-	                                if (ap->convolve > 0) {
-	                                        bg_prob = stPbxConvolved(integral_point, ap->background_parameters, ap->wedge, ap->convolve);
-						for (s = 0; s < ap->number_streams; s++) {
-	                                        	st_prob = stPsgConvolved(integral_point, ap->stream_parameters[s], ap->wedge, ap->convolve, ap->sgr_coordinates);
-						}
-	                                } else {
-	                                        bg_prob = stPbx(integral_point, ap->background_parameters);
-						for (s = 0; s < ap->number_streams; s++) {
-	                                        	st_prob = stPsg(integral_point, ap->stream_parameters[s], ap->wedge, ap->sgr_coordinates);
-						}
-	                                }
-	
-	                                es->background_integral -= bg_prob * V;
+					if (ap->convolve > 0) {
+						bg_prob = stPbxConvolved(integral_point, ap->background_parameters, ap->wedge, ap->convolve);
+					} else {
+						bg_prob = stPbx(integral_point, ap->background_parameters);
+					}
+					es->background_integral += bg_prob * V;
+
 					for (s = 0; s < ap->number_streams; s++) {
-	                                	es->stream_integrals[s] -= st_prob * V;
+						if (ap->convolve > 0) {
+							st_prob = stPsgConvolved(integral_point, ap->stream_parameters[s], ap->wedge, ap->convolve, ap->sgr_coordinates);
+							} else {
+							st_prob = stPsg(integral_point, ap->stream_parameters[s], ap->wedge, ap->sgr_coordinates);
+						}
+						es->stream_integrals[s] += st_prob * V;
 					}
 	                                first_run = 0;
 	
