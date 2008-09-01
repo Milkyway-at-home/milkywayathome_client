@@ -36,6 +36,25 @@ POPULATION* new_population(char search_path[512], char search_parameters[512], d
 	return population;
 }
 
+void free_population(POPULATION* population) {
+	int i;
+
+	free(population->search_path);
+	free(population->search_parameters);
+
+	for (i = 0; i < population->max_size; i++) {
+		free(population->individuals[i]);
+	}
+	free(population->fitness);
+	free(population->min_parameters);
+	free(population->max_parameters);
+
+	/********
+		*	TODO: need free_parameters method in struct
+		*	population->free_parameters(population->parameters);
+	 ********/
+	free(population->parameters);
+}
 
 POPULATION* fread_population(FILE* file) {
 	POPULATION *population;
@@ -211,6 +230,7 @@ void insert_sorted(POPULATION* population, double* parameters, double fitness) {
 
 void replace(POPULATION* population, int position, double* parameters, double fitness) {
 	int i;
+
 	if (population->individuals[position] == NULL) {
 		population->individuals[position] = (double*)malloc(sizeof(double) * population->number_parameters);
 		population->current_size++;
@@ -243,7 +263,7 @@ void get_n_distinct(POPULATION *population, int number_parents, double ***parent
 	parent_positions = (int*)malloc(sizeof(int) * number_parents);
 
 	for (i = 0; i < number_parents; i++) {
-		target = drand48() * (population->max_size - i);
+		target = (int)(drand48() * (population->max_size - i));
 		for (j = 0; j < i; j++) {
 			for (k = 0; k < i; k++) {
 				if (target == parent_positions[k]) target++;

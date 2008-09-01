@@ -1,5 +1,5 @@
-#ifndef GEM_EVALUATOR_H
-#define GEM_EVALUATOR_H
+#ifndef FGDO_EVALUATOR_H
+#define FGDO_EVALUATOR_H
 
 double (*evaluate)(double*);
 

@@ -5,8 +5,7 @@
 #include "particle_swarm.h"
 #include "recombination.h"
 #include "population.h"
-
-#include "../evaluation/evaluator.h"
+#include "../settings.h"
 
 void invalid_particle_swarm() {
 	fprintf(stderr, "Particle swarm was illdefined:\n");
@@ -116,7 +115,7 @@ void particle_swarm__get_individual(POPULATION *population, double **parameters,
 	int i;
 
 	ps = (PARTICLE_SWARM*)population->parameters;
-	(*metadata) = (char*)malloc(sizeof(char) * metadata_size);
+	(*metadata) = (char*)malloc(sizeof(char) * METADATA_SIZE);
 	if (population->current_size < population->max_size) {
 		(*parameters) = random_recombination(population->min_parameters, population->max_parameters, population->number_parameters);
 		sprintf((*metadata), "position:%d,random", ps->next_generated);

@@ -4,6 +4,8 @@
 #include "hessian.h"
 #include "gradient.h"
 
+#include "../searches/population.h"
+#include "../searches/recombination.h"
 #include "../evaluation/evaluator.h"
 #include "../util/matrix.h"
 
@@ -11,6 +13,10 @@ void parse_newton_parameters(char* parameters, int *number_iterations) {
 	sscanf(parameters, "newton/%d", number_iterations);
 }
 
+
+void parse_randomized_newton(char* parameters, int *population_size, int *max_evaluations, int *number_iterations) {
+	sscanf(parameters, "randomized_newton/%d/%d/%d", population_size, max_evaluations, number_iterations);
+}
 
 void newton_step(double* point, GRADIENT* gradient, HESSIAN* hessian) {
 	double* step;
@@ -117,4 +123,77 @@ void synchronous_newton_method(char* search_path, char* search_parameters, doubl
 		free(gradient);
 		free(hessian);
 	}
+}
+
+void randomized_newton_method(char* search_path, char* search_parameters, double* point, double* step, int number_parameters) {
+	POPULATION* p;
+	double *current_point, *min_parameters, *max_parameters;
+	double* parameters;
+	double fitness;
+	double** hessian;
+	double* gradient;
+	double** inverse_hessian;
+	int population_size, max_evaluations, number_iterations;
+	int i, j, k;
+
+	parse_randomized_newton(search_parameters, &population_size, &max_evaluations, &number_iterations);
+
+	current_point = (double*)malloc(sizeof(double) * number_parameters);
+	min_parameters = (double*)malloc(sizeof(double) * number_parameters);
+	max_parameters = (double*)malloc(sizeof(double) * number_parameters);
+
+	printf("initial point:");
+	for (j = 0; j < number_parameters; j++) {
+		current_point[j] = point[j];
+		printf(" %lf", current_point[j]);
+	}
+	printf("\n\n");
+
+	for (i = 0; i < number_iterations; i++) {
+		for (j = 0; j < number_parameters; j++) {
+			min_parameters[j] = current_point[j] - step[j];
+			max_parameters[j] = current_point[j] + step[j];
+		}
+		p = new_population(search_path, search_parameters, min_parameters, max_parameters, number_parameters, population_size, max_evaluations);
+
+		for (j = 0; j < population_size; j++) {
+			parameters = random_recombination(min_parameters, max_parameters, number_parameters);
+			fitness = evaluate(parameters);
+			replace(p, j, parameters, fitness);
+			free(parameters);
+		}
+
+		randomized_hessian(p->individuals, p->fitness, population_size, number_parameters, &hessian, &gradient);
+
+		/********
+			*	Take the newton step:  y = -hessian^-1 * gradient
+		 ********/
+		matrix_invert(hessian, number_parameters, number_parameters, &inverse_hessian);
+		printf("took step:");
+		for (j = 0; j < number_parameters; j++) {
+			current_point[j] = 0;
+			for (k = 0; k < number_parameters; k++) current_point[j] += inverse_hessian[j][k] * gradient[j];
+			current_point[j] = -current_point[j];
+
+			printf(" %lf", current_point[j]);
+		}
+		printf("\n");
+
+		/********
+			*	TODO
+			*	Optional: use previous current_point with new point as a line search direction
+		 ********/
+
+		for (j = 0; j < number_parameters; j++) {
+			free(inverse_hessian[j]);
+			free(hessian[j]);
+		}
+		free(hessian);
+		free(gradient);
+		free_population(p);
+		free(p);
+	}
+	free(current_point);
+	free(min_parameters);
+	free(max_parameters);
 }

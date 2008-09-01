@@ -24,6 +24,8 @@ int hessian__complete(HESSIAN* hessian);
 void hessian__insert_individuals(HESSIAN* hessian, int number_individuals, double* fitness, char** metadata);
 void hessian__get_individuals(HESSIAN* hessian, int number_individuals, double*** parameters, char*** metadata);
 
+void randomized_hessian(double** points, double* fitness, int number_points, int number_parameters, double*** hessian, double** gradient);
+
 void fprintf_hessian(FILE* file, HESSIAN* hessian);
 
 #endif

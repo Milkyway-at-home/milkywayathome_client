@@ -6,8 +6,6 @@
 #include "recombination.h"
 #include "population.h"
 
-#include "../evaluation/evaluator.h"
-
 #define DE_RAND 0
 #define DE_BEST 1
 #define DE_CURRENT_TO_RAND 2
@@ -141,12 +139,12 @@ void differential_evolution__get_individual(POPULATION *population, double **par
 
 	parent = (double*)malloc(sizeof(double) * population->number_parameters);
 	if (de->parent_type == DE_RAND) {
-		target = drand48() * population->current_size;
+		target = (int)(drand48() * population->current_size);
 		for (i = 0; i < population->number_parameters; i++) parent[i] = population->individuals[target][i];
 	} else if (de->parent_type == DE_BEST) {
 		for (i = 0; i < population->number_parameters; i++) parent[i] = population->individuals[de->current_best][i];
 	} else if (de->parent_type == DE_CURRENT_TO_RAND) {
-		target = drand48() * population->current_size;
+		target = (int)(drand48() * population->current_size);
 		for (i = 0; i < population->number_parameters; i++) {
 			parent[i] = population->individuals[de->next_generated][i] + de->parent_scale * (population->individuals[target][i] - population->individuals[de->next_generated][i]);
 		}
@@ -170,13 +168,13 @@ void differential_evolution__get_individual(POPULATION *population, double **par
 
 	(*parameters) = (double*)malloc(sizeof(double) * population->number_parameters);
 	if (de->recombination_type == DE_BINOMIAL) {
-		target = drand48() * population->number_parameters;
+		target = (int)(drand48() * population->number_parameters);
 		for (i = 0; i < population->number_parameters; i++) {
 			if (i == target || drand48() < de->crossover_rate) (*parameters)[i] = parent[i] + pair_sum[i];
 			else (*parameters)[i] = population->individuals[de->next_generated][i];
 		}
 	} else if (de->recombination_type == DE_EXPONENTIAL) {
-		target = drand48() * population->number_parameters;
+		target = (int)(drand48() * population->number_parameters);
 		for (i = 0; i < population->number_parameters; i++) {
 			if (i == target || drand48() < de->crossover_rate) break;
 			else (*parameters)[i] = population->individuals[de->next_generated][i];

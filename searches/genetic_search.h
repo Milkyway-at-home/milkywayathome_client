@@ -16,6 +16,7 @@ typedef struct genetic_search {
 	double crossover_rate, crossover_scale;
 } GENETIC_SEARCH;
 
+void parse_genetic_search(char search_parameters[512], GENETIC_SEARCH *gs, int *population_size, int *max_evaluations);
 
 void genetic_search__insert_individual(POPULATION *population, double* parameters, double fitness, char *metadata);
 

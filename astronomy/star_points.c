@@ -108,8 +108,8 @@ void split_star_points(STAR_POINTS* sp, int rank, int max_rank) {
 
 	if (rank == 0 && max_rank == 0) return;
 
-	first_star = ((double)sp->number_stars) * (((double)rank)/((double)max_rank));
-	last_star = ((double)sp->number_stars) * (((double)rank+1.0)/((double)max_rank));
+	first_star = (int) (((double)sp->number_stars) * (((double)rank)/((double)max_rank)));
+	last_star = (int) (((double)sp->number_stars) * (((double)rank+1.0)/((double)max_rank)));
 	num_stars = last_star-first_star;
 	new_stars = (double**)malloc(sizeof(double*) * num_stars);
 

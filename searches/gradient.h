@@ -28,4 +28,6 @@ void synchronous_get_gradient(double* point, double* step, int number_parameters
 
 void fprintf_gradient(FILE *file, GRADIENT* gradient);
 
+int gradient_below_threshold(GRADIENT* gradient, double threshold);
+
 #endif

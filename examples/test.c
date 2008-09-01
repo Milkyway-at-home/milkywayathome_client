@@ -33,14 +33,16 @@ int main(int number_arguments, char** arguments) {
 	double* step;
 	double* point;
 
-	if (number_arguments != 3) {
+	if (number_arguments != 4) {
 		fprintf(stderr, "Invalid Arguments, proper usage:\n");
-		fprintf(stderr, "\ttest <search_path> <search_parameters>\n");
+		fprintf(stderr, "\ttest <number_parameters> <search_path> <search_parameters>\n");
 
 		return 0;
 	}
 
-	number_parameters = 10;
+	srand48(23);
+
+	number_parameters = atoi(arguments[1]);
 	min_parameters = (double*)malloc(sizeof(double) * number_parameters);
 	max_parameters = (double*)malloc(sizeof(double) * number_parameters);
 	step = (double*)malloc(sizeof(double) * number_parameters);
@@ -48,24 +50,27 @@ int main(int number_arguments, char** arguments) {
 	for (i = 0; i < number_parameters; i++) {
 		min_parameters[i] = -100.0;
 		max_parameters[i] = 100.0;
-		step[i] = 0.0001;
-		point[i] = (drand48() * (max_parameters[i] - min_parameters[i])) + min_parameters[i];
+		step[i] = 2.0;
+		point[i] = (drand48() * (double)(max_parameters[i] - min_parameters[i])) + (double)min_parameters[i];
+		printf("point[%d]: %lf\n", i, point[i]);
 	}
 
 	init_simple_evaluator(sum_of_squares);
         printf("searching...\n");
-        if (arguments[2][0] == 'g' && arguments[2][1] == 'd') {
-                synchronous_gradient_descent(arguments[1], arguments[2], point, step, number_parameters);
-        } else if (arguments[2][0] == 'c') {
-                synchronous_conjugate_gradient_descent(arguments[1], arguments[2], point, step, number_parameters);
-        } else if (arguments[2][0] == 'n') {
-                synchronous_newton_method(arguments[1], arguments[2], point, step, number_parameters);
-        } else if (arguments[2][0] == 'g' && arguments[2][1] == 's') {         
-                synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, number_parameters, start_genetic_search);
-        } else if (arguments[2][0] == 'd') {
-                synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, number_parameters, start_differential_evolution);
-        } else if (arguments[2][0] == 'p') {
-                synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, number_parameters, start_particle_swarm);
+        if (arguments[3][0] == 'g' && arguments[3][1] == 'd') {
+                synchronous_gradient_descent(arguments[2], arguments[3], point, step, number_parameters);
+        } else if (arguments[3][0] == 'c') {
+                synchronous_conjugate_gradient_descent(arguments[2], arguments[3], point, step, number_parameters);
+        } else if (arguments[3][0] == 'n') {
+                synchronous_newton_method(arguments[2], arguments[3], point, step, number_parameters);
+	} else if (arguments[3][0] == 'r') {
+                randomized_newton_method(arguments[2], arguments[3], point, step, number_parameters);
+        } else if (arguments[3][0] == 'g' && arguments[3][1] == 's') {         
+                synchronous_search(arguments[2], arguments[3], min_parameters, max_parameters, number_parameters, start_genetic_search);
+        } else if (arguments[3][0] == 'd') {
+                synchronous_search(arguments[2], arguments[3], min_parameters, max_parameters, number_parameters, start_differential_evolution);
+        } else if (arguments[3][0] == 'p') {
+                synchronous_search(arguments[2], arguments[3], min_parameters, max_parameters, number_parameters, start_particle_swarm);
         }
 
 	return 0;

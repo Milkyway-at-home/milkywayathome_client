@@ -5,6 +5,7 @@
 #include "genetic_search.h"
 #include "recombination.h"
 #include "population.h"
+#include "../settings.h"
 
 #define GS_AVERAGE 0
 #define GS_DOUBLE_SHOT 1
@@ -100,13 +101,13 @@ void genetic_search__get_individual(POPULATION *population, double **parameters,
 
 	gs = (GENETIC_SEARCH*) population->parameters;
 
-	(*metadata) = (char*)malloc(sizeof(char) * metadata_size);
+	(*metadata) = (char*)malloc(sizeof(char) * METADATA_SIZE);
 	if (population->current_size <population->max_size) {
 		(*parameters) = random_recombination(population->min_parameters, population->max_parameters, population->number_parameters);
 
 	} else if (drand48() < gs->mutation_rate) {
 		(*parameters) = (double*)malloc(sizeof(double));
-		target = drand48() * population->current_size;
+		target = (int)(drand48() * population->current_size);
 		(*parameters) = mutate(population->individuals[target], population->min_parameters, population->max_parameters, population->number_parameters);
 
 	} else {

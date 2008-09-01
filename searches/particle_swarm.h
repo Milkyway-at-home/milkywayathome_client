@@ -18,6 +18,7 @@ typedef struct particle_swarm {
 	double global_best_fitness;
 } PARTICLE_SWARM;
 
+void parse_particle_swarm(char search_parameters[512], PARTICLE_SWARM *ps, int *population_size, int *max_evaluations);
 
 void start_particle_swarm(char search_path[512], char search_parameters[512], double* min_parameters, double* max_parameters, int number_parameters, POPULATION **population);
 

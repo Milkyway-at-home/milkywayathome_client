@@ -8,6 +8,8 @@
 #include "../evaluation/evaluator.h"
 #include "../util/io_util.h"
 
+#define min_gradient_threshold 0.00001
+
 void parse_gradient_parameters(char* parameters, int *number_iterations) {
 	if (parameters[0] == 'g') {
 		sscanf(parameters, "gd/%d", number_iterations);
@@ -28,6 +30,15 @@ void synchronous_gradient_descent(char* search_path, char* search_parameters, do
 	for (i = 0; i < number_iterations; i++) {
 		printf("iteration %d:\n", i);
 		synchronous_get_gradient(point, step, number_parameters, &gradient);
+
+		if (gradient_below_threshold(gradient, min_gradient_threshold)) {
+			printf("Gradient dropped below threshold %lf\n", min_gradient_threshold);
+			print_double_array(stdout, "\tgradient:", number_parameters, gradient->values);
+
+			free_gradient(gradient);
+			free(gradient);
+			break;
+		}
 
 		evaluations = synchronous_line_search(point, point_fitness, gradient->values, number_parameters, &new_point, &point_fitness);
 		print_double_array(stdout, "\tnew point:", number_parameters, new_point);

@@ -16,6 +16,7 @@ typedef struct differential_evolution {
 	int next_generated;
 } DIFFERENTIAL_EVOLUTION;
 
+void parse_differential_evolution(char search_parameters[512], DIFFERENTIAL_EVOLUTION *de, int *population_size, int *max_evaluations);
 
 void start_differential_evolution(char search_path[512], char search_parameters[512], double* min_parameters, double* max_parameters, int number_parameters, POPULATION **population);
 

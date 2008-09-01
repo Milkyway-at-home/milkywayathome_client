@@ -9,7 +9,7 @@ double* mutate(double* parent, double* min_parameters, double* max_parameters, i
 	double *parameters;
 	parameters = (double*)malloc(sizeof(double) * number_parameters);
 
-	target = drand48() * number_parameters;
+	target = (int)(drand48() * number_parameters);
 	for (i = 0; i < number_parameters; i++) {
 		if (i == target) {
 			parameters[i] = min_parameters[i] + (max_parameters[i] - min_parameters[i]) * drand48();
@@ -40,8 +40,8 @@ double* get_pair_sum(double **individuals, int number_individuals, int number_pa
 	parameters = (double*)malloc(sizeof(double) * number_parameters);
 	for (i = 0; i < number_parameters; i++) parameters[i] = 0;
 	for (i = 0; i < number_pairs; i++) {
-		pair1 = drand48() * number_individuals;
-		pair2 = drand48() * (number_individuals - 1);
+		pair1 = (int)(drand48() * number_individuals);
+		pair2 = (int)(drand48() * (number_individuals - 1));
 		if (pair2 == pair1) pair2++;
 
 		for (j = 0; j < number_parameters; j++) {
@@ -61,8 +61,8 @@ double* get_dir_sum(double **individuals, double *fitness, int number_individual
 	parameters = (double*)malloc(sizeof(double) * number_parameters);
 	for (i = 0; i < number_parameters; i++) parameters[i] = 0;
 	for (i = 0; i < number_pairs; i++) {
-		pair1 = drand48() * number_individuals;
-		pair2 = drand48() * (number_individuals - 1);
+		pair1 = (int)(drand48() * number_individuals);
+		pair2 = (int)(drand48() * (number_individuals - 1));
 		if (pair2 == pair1) pair2++;
 
 		if (fitness[pair1] > fitness[pair2]) {

@@ -5,6 +5,8 @@
 #include "hessian.h"
 #include "search.h"
 
+#include "../util/matrix.h"
+
 void fprintf_hessian(FILE* file, HESSIAN* hessian) {
 	int i, j;
 	fprintf(file, "hessian:\n");
@@ -140,47 +142,112 @@ void hessian__get_individuals(HESSIAN* hessian, int number_individuals, double**
 	}
 }
 
-/*
-void pointwise_newton(double** points, double* fitness, int number_points, int number_parameters, double** hessian, double* gradient) {
-	double* Y;
+void randomized_hessian(double** points, double* fitness, int number_points, int number_parameters, double*** hessian, double** gradient) {
+	double** Y;
 	double** X;
 	double** X2;
+	double** X3;
 	double** X_transpose;
 	double** X_inverse;
 	double** W;
-	double** y;
-	int x_len
+	int x_len, i, j, k;
+
+
+	double **p1, **p2, **test;
+	p1 = (double**)malloc(sizeof(double*) * number_parameters);
+	p2 = (double**)malloc(sizeof(double*) * 1);
+	p2[0] = (double*)malloc(sizeof(double) * number_parameters);
+	for (i = 0; i < number_parameters; i++) {
+		p1[i] = (double*)malloc(sizeof(double) * 1);
+		p1[i][0] = points[0][i];
+		p2[0][i] = points[0][i];
+	}
+
+	matrix_print(stdout, "p1", p1, number_parameters, 1);
+	matrix_print(stdout, "p2", p2, 1, number_parameters);
+	matrix_multiply(p1, number_parameters, 1, p2, 1, number_parameters, &test);
+	matrix_print(stdout, "test", test, number_parameters, number_parameters);
+
 
 	x_len = 1 + number_parameters + (number_parameters * number_parameters);
 
-	Y = (double*)malloc(sizeof(double) * number_points);
+	Y = (double**)malloc(sizeof(double*) * number_points);
 	X = (double**)malloc(sizeof(double) * number_points);
 	for (i = 0; i < number_points; i++) {
-                Y[i] = point[i];
-                X[i] = (double*)malloc(sizeof(double) * x_len);
-                X[i][0] = 1;
-                for (j = 0; j < number_parameters; j++) {
-                        X[i][1+j] = points[i][j];
-                        for (k = 0; k < number_parameters; k++) {
-                                X[i][1+number_parameters+(j*number_parameters)+k] = points[i][j] * points[i][k];
-                        }
-                }
-        }
+		Y[i] = (double*)malloc(sizeof(double) * 1);
+		Y[i][0] = fitness[i];
+		X[i] = (double*)malloc(sizeof(double) * x_len);
+		X[i][0] = 1;
+		for (j = 0; j < number_parameters; j++) {
+			X[i][1+j] = points[i][j];
+		}
+		for (j = 0; j < number_parameters; j++) {
+			for (k = 0; k < number_parameters; k++) {
+				X[i][1+number_parameters+(j*number_parameters)+k] = points[i][j] * points[i][k];
+			}
+		}
+	}
+
+	matrix_print(stdout, "X", X, number_points, x_len);
+	printf("\n\n");
+
         matrix_transpose(X, number_points, x_len, &X_transpose);
+	matrix_print(stdout, "transpose", X_transpose, x_len, number_points);
+	printf("\n\n");
+
         matrix_multiply(X_transpose, x_len, number_points, X, number_points, x_len, &X2);
+	matrix_print(stdout, "X2", X2, x_len, x_len);
+	printf("\n\n");
+
         matrix_invert(X2, x_len, x_len, &X_inverse);
+	matrix_print(stdout, "X_inverse", X_inverse, x_len, x_len);
+	printf("\n\n");
+
         matrix_multiply(X_inverse, x_len, x_len, X_transpose, x_len, number_points, &X3);
+	matrix_print(stdout, "X3", X2, x_len, number_points);
+	printf("\n\n");
+
 	matrix_multiply(X3, x_len, number_points, Y, number_points, 1, &W);
-	//W is x_len by 1
+	matrix_print(stdout, "W", X2, x_len, 1);
+	printf("\n\n");
+
+	printf("did math\n");
 
 	(*gradient) = (double*)malloc(sizeof(double) * number_parameters);
 	(*hessian) = (double**)malloc(sizeof(double*) * number_parameters);
 	for (i = 0; i < number_parameters; i++) {
-		gradient[i] = W[1+i];
+		(*gradient)[i] = W[1+i][0];
 		(*hessian)[i] = (double*)malloc(sizeof(double) * number_parameters);
 		for (j = 0; j < number_parameters; j++) {
-			(*hessian)[i][j] = W[1+number_parameters+(i*number_parameters)+j];
+			(*hessian)[i][j] = W[1+number_parameters+(i*number_parameters)+j][0];
 		}
 	}
+
+	/********
+		*	Y = number_points by 1
+		*	X = number_points by x_len
+		*	X2 = x_len by x_len
+		*	X3 = x_len by number_points
+		*	X_transpose = x_len by number_points
+		*	X_inverse = x_len by x_len
+		*	W = x_len by 1
+	 ********/
+	for (i = 0; i < number_points; i++) {
+		free(Y[i]);
+		free(X[i]);
+	}
+	for (i = 0; i < x_len; i++) {
+		free(X2[i]);
+		free(X3[i]);
+		free(X_transpose[i]);
+		free(X_inverse[i]);
+		free(W[i]);
+	}
+	free(Y);
+	free(X);
+	free(X2);
+	free(X3);
+	free(X_transpose);
+	free(X_inverse);
+	free(W);
 }
-*/

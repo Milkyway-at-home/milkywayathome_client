@@ -142,3 +142,11 @@ void gradient__get_individuals(GRADIENT* gradient, int number_individuals, doubl
 		}
 	}
 }
+
+int gradient_below_threshold(GRADIENT* gradient, double threshold) {
+	int i;
+	for (i = 0; i < gradient->number_parameters; i++) {
+		if (gradient->values[i] > threshold || gradient->values[i] < -threshold) return 0;
+	}
+	return 1;
+}
