@@ -74,6 +74,15 @@ void synchronous_conjugate_gradient_descent(char* search_path, char* search_para
         for (i = 0; i < number_iterations; i++) {
                 printf("iteration %d:\n", i);
                 synchronous_get_gradient(point, step, number_parameters, &gradient);
+		if (gradient_below_threshold(gradient, min_gradient_threshold)) {
+			printf("Gradient dropped below threshold %lf\n", min_gradient_threshold);
+			print_double_array(stdout, "\tgradient:", number_parameters, gradient->values);
+
+			free_gradient(gradient);
+			free(gradient);
+			break;
+		}
+
 		if (i > 0 && (i % reset) != 0) {
 			// bet = gpres' * (gpres - gprev) / (gprev' * g_prev);
 			bet = 0;
