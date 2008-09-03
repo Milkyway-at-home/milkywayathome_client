@@ -52,7 +52,6 @@ int main(int number_arguments, char** arguments) {
 		max_parameters[i] = 100.0;
 		step[i] = 2.0;
 		point[i] = (drand48() * (double)(max_parameters[i] - min_parameters[i])) + (double)min_parameters[i];
-		printf("point[%d]: %lf\n", i, point[i]);
 	}
 
 	init_simple_evaluator(sum_of_squares);

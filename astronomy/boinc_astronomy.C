@@ -84,6 +84,12 @@ void worker() {
 	initialize_state(es, ap->number_streams);
 
 	/********
+		*	READ THE SEARCH PARAMETERS
+	 ********/
+
+
+
+	/********
 		*	CALCULATE THE INTEGRALS
 	 ********/
 	retval = calculate_integrals(ap, es, sp);
@@ -176,4 +182,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.2 2008/08/01 02:48:01 deselt Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.3 2008/09/03 21:33:27 deselt Exp $";

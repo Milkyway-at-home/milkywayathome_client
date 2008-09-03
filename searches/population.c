@@ -36,6 +36,17 @@ POPULATION* new_population(char search_path[512], char search_parameters[512], d
 	return population;
 }
 
+void reset_population(POPULATION* population, double* min_parameters, double* max_parameters) {
+	int i;
+	population->current_size = 0;
+	population->current_evaluation = 0;
+
+	for (i = 0; i < population->number_parameters; i++) {
+		population->min_parameters[i] = min_parameters[i];
+		population->max_parameters[i] = max_parameters[i];
+	}
+}
+
 void free_population(POPULATION* population) {
 	int i;
 

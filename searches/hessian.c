@@ -150,26 +150,14 @@ void randomized_hessian(double** points, double* fitness, int number_points, int
 	double** X_transpose;
 	double** X_inverse;
 	double** W;
-	int x_len, i, j, k;
+	int x_len, i, j, k, current;
 
+	/********
+		*	X = [1, x1, ... xn, 0.5*x1^2, ... 0.5*xn^2, x1*x2, ..., x1*xn, x2*x3, ..., x2*xn, ...]
+	 ********/
+	x_len = 1 + number_parameters + number_parameters;
+	for (i = number_parameters - 1; i > 0; i--) x_len += i;
 
-	double **p1, **p2, **test;
-	p1 = (double**)malloc(sizeof(double*) * number_parameters);
-	p2 = (double**)malloc(sizeof(double*) * 1);
-	p2[0] = (double*)malloc(sizeof(double) * number_parameters);
-	for (i = 0; i < number_parameters; i++) {
-		p1[i] = (double*)malloc(sizeof(double) * 1);
-		p1[i][0] = points[0][i];
-		p2[0][i] = points[0][i];
-	}
-
-	matrix_print(stdout, "p1", p1, number_parameters, 1);
-	matrix_print(stdout, "p2", p2, 1, number_parameters);
-	matrix_multiply(p1, number_parameters, 1, p2, 1, number_parameters, &test);
-	matrix_print(stdout, "test", test, number_parameters, number_parameters);
-
-
-	x_len = 1 + number_parameters + (number_parameters * number_parameters);
 
 	Y = (double**)malloc(sizeof(double*) * number_points);
 	X = (double**)malloc(sizeof(double) * number_points);
@@ -180,46 +168,55 @@ void randomized_hessian(double** points, double* fitness, int number_points, int
 		X[i][0] = 1;
 		for (j = 0; j < number_parameters; j++) {
 			X[i][1+j] = points[i][j];
+			X[i][1+number_parameters+j] = 0.5 * points[i][j] * points[i][j];
 		}
+		current = 0;
 		for (j = 0; j < number_parameters; j++) {
-			for (k = 0; k < number_parameters; k++) {
-				X[i][1+number_parameters+(j*number_parameters)+k] = points[i][j] * points[i][k];
+			for (k = j+1; k < number_parameters; k++) {
+				X[i][1+number_parameters+number_parameters+current] = points[i][j] * points[i][k];
+				current++;
 			}
 		}
 	}
 
-	matrix_print(stdout, "X", X, number_points, x_len);
-	printf("\n\n");
+//	matrix_print(stdout, "X", X, number_points, x_len);
+//	printf("\n\n");
 
         matrix_transpose(X, number_points, x_len, &X_transpose);
-	matrix_print(stdout, "transpose", X_transpose, x_len, number_points);
-	printf("\n\n");
+//	matrix_print(stdout, "transpose", X_transpose, x_len, number_points);
+//	printf("\n\n");
 
         matrix_multiply(X_transpose, x_len, number_points, X, number_points, x_len, &X2);
-	matrix_print(stdout, "X2", X2, x_len, x_len);
-	printf("\n\n");
+//	matrix_print(stdout, "X2", X2, x_len, x_len);
+//	printf("\n\n");
 
-        matrix_invert(X2, x_len, x_len, &X_inverse);
-	matrix_print(stdout, "X_inverse", X_inverse, x_len, x_len);
-	printf("\n\n");
+	matrix_invert(X2, x_len, x_len, &X_inverse);
+//	matrix_print(stdout, "X_inverse", X_inverse, x_len, x_len);
+//	printf("\n\n");
 
         matrix_multiply(X_inverse, x_len, x_len, X_transpose, x_len, number_points, &X3);
-	matrix_print(stdout, "X3", X2, x_len, number_points);
-	printf("\n\n");
+//	matrix_print(stdout, "X3", X2, x_len, number_points);
+//	printf("\n\n");
 
 	matrix_multiply(X3, x_len, number_points, Y, number_points, 1, &W);
-	matrix_print(stdout, "W", X2, x_len, 1);
-	printf("\n\n");
-
-	printf("did math\n");
+//	matrix_print(stdout, "W", W, x_len, 1);
+//	printf("\n\n");
 
 	(*gradient) = (double*)malloc(sizeof(double) * number_parameters);
 	(*hessian) = (double**)malloc(sizeof(double*) * number_parameters);
+	for (i = 0; i < number_parameters; i++) (*hessian)[i] = (double*)malloc(sizeof(double) * number_parameters);
+
 	for (i = 0; i < number_parameters; i++) {
 		(*gradient)[i] = W[1+i][0];
-		(*hessian)[i] = (double*)malloc(sizeof(double) * number_parameters);
-		for (j = 0; j < number_parameters; j++) {
-			(*hessian)[i][j] = W[1+number_parameters+(i*number_parameters)+j][0];
+		(*hessian)[i][i] = W[1 + number_parameters + i][0];
+
+		current = 0;
+		for (j = i; j < number_parameters; j++) {
+			for (k = j+1; k < number_parameters; k++) {
+				(*hessian)[j][k] = W[1 + number_parameters + number_parameters + current][0];
+				(*hessian)[k][j] = W[1 + number_parameters + number_parameters + current][0];
+				current++;
+			}
 		}
 	}
 

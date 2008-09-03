@@ -70,8 +70,7 @@ void matrix_invert(double** initial, int rows, int cols, double*** inverse) {
 		}
 	}
 
-	printf("\n\ndid setup\n");
-	matrix_print(stdout, "initial", initial, rows, cols);
+//	matrix_print(stdout, "initial for invert", initial, rows, cols);
 
 	for (i = 0; i < rows; i++) {
 		working_value = matrix[i][i];
@@ -92,7 +91,7 @@ void matrix_invert(double** initial, int rows, int cols, double*** inverse) {
 			working_value = matrix[i][i];
 			next++;
 		}
-		printf("working on row %d with value: %lf\n", i, working_value);
+//		printf("working on row %d with value: %lf\n", i, working_value);
 
 		for (j = 0; j < cols; j++) {
 			matrix[i][j] /= working_value;
@@ -108,9 +107,9 @@ void matrix_invert(double** initial, int rows, int cols, double*** inverse) {
 				(*inverse)[next][j] -= (*inverse)[i][j] * working_value;
 			}
 		}
-		matrix_print(stdout, "matrix", matrix, rows, cols);
-		matrix_print(stdout, "inverse", (*inverse), rows, cols);
-		printf("\n\n");
+//		matrix_print(stdout, "matrix", matrix, rows, cols);
+//		matrix_print(stdout, "inverse", (*inverse), rows, cols);
+//		printf("\n\n");
 	}
 
 	for (i = 0; i < rows; i++) {
