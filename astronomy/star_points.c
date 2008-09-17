@@ -136,6 +136,8 @@ void split_star_points(STAR_POINTS* sp, int rank, int max_rank) {
 		}
 
 		FILE* data_file = boinc_fopen(input_path, "r");
-		return fread_star_points(data_file, filename, sp);
+		retval = fread_star_points(data_file, sp);
+		fclose(data_file);
+		return retval;
 	}
 #endif

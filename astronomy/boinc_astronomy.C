@@ -35,15 +35,17 @@
 using std::string;
 
 #define OUTPUT_FILENAME "out"
-#define PARAMETER_FILENAME "parameters.txt"
+#define SEARCH_PARAMETER_FILENAME "search_parameters.txt"
+#define ASTRONOMY_PARAMETER_FILENAME "astronomy_parameters.txt"
 #define STAR_POINTS_FILENAME "stars.txt"
 
 /********
 	*	Includes for astronomy
  ********/
-#include "boinc_parameters.h"
-#include "boinc_star_points.h"
+#include "parameters.h"
+#include "star_points.h"
 #include "evaluation.h"
+#include "../searches/search_parameters.h"
 
 #ifdef _WIN32
 	void AppInvalidParameterHandler(const wchar_t* expression, const wchar_t* function, const wchar_t* file, unsigned int line, uintptr_t pReserved ) {
@@ -56,12 +58,11 @@ using std::string;
 
 
 void worker() {
-	int i;
 	/********
 		*	READ THE ASTRONOMY PARAMETERS
 	 ********/
 	ASTRONOMY_PARAMETERS *ap = (ASTRONOMY_PARAMETERS*)malloc(sizeof(ASTRONOMY_PARAMETERS));
-	int retval = boinc_read_astronomy_parameters(PARAMETER_FILENAME, ap);
+	int retval = boinc_read_astronomy_parameters(ASTRONOMY_PARAMETER_FILENAME, ap);
 	if (retval) {
 		fprintf(stderr, "APP: error reading astronomy parameters: %d\n", retval);
 		boinc_finish(1);
@@ -84,10 +85,12 @@ void worker() {
 	initialize_state(es, ap->number_streams);
 
 	/********
-		*	READ THE SEARCH PARAMETERS
+		*	READ AND SET THE SEARCH PARAMETERS
 	 ********/
-
-
+	SEARCH_PARAMETERS *s = (SEARCH_PARAMETERS*)malloc(sizeof(SEARCH_PARAMETERS));
+	retval = boinc_read_search_parameters(SEARCH_PARAMETER_FILENAME, s);
+	fwrite_search_parameters(stdout, s);
+	set_astronomy_parameters(ap, s->parameters);
 
 	/********
 		*	CALCULATE THE INTEGRALS
@@ -97,6 +100,7 @@ void worker() {
 		fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
 		boinc_finish(retval);
 	}
+	printf("calculated integrals: %lf, %lf\n", es->background_integral, es->stream_integrals[0]);
 
 	/********
 		*	CALCULATE THE LIKELIHOOD
@@ -106,38 +110,14 @@ void worker() {
 		fprintf(stderr, "APP: error calculating likelihood: %d\n", retval);
 		boinc_finish(retval);
 	}
-	double* double_parameters = get_as_double_array(ap);
+	double likelihood = es->prob_sum / (sp->number_stars - es->bad_jacobians);
+	printf("calculated likelihood: %lf\n", likelihood);
 
 	/********
 		*	RESOLVE THE OUTPUT FILE & WRITE THE RESULT
 	 ********/
-	char output_path[512];
-	retval = boinc_resolve_filename(OUTPUT_FILENAME, output_path, sizeof(output_path));
+	boinc_write_search_parameters(OUTPUT_FILENAME, s, likelihood);
 
-	MFILE out;
-	retval = out.open(output_path, "w");
-	if (retval) {
-		fprintf(stderr, "APP: error opening output file\n");
-		boinc_finish(retval);
-	}
-
-	es->prob_sum /= (sp->number_stars - es->bad_jacobians);
-
-	out.printf("likelihood: %lf\n", es->prob_sum);
-	out.printf("parameters [%d]:", ap->number_parameters);
-	for (i = 0; i < ap->number_parameters; i++) {
-		out.printf(" %lf", double_parameters[i]);
-	}
-	out.printf("\nvolume size: %d\n", (ap->r_steps * ap->mu_steps * ap->nu_steps) );
-	out.printf("info: %s\n", ap->parameter_info);
-
-	if (out.flush()) {
-		fprintf(stderr, "APP: astronomy flush failed.\n");
-		boinc_finish(1);
-	}
-	out.close();
-
-	free(double_parameters);
 	free_state(es);
 	free(es);
 	free_parameters(ap);
@@ -182,4 +162,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.3 2008/09/03 21:33:27 deselt Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.4 2008/09/17 17:05:27 deselt Exp $";

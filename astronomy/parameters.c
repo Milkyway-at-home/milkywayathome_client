@@ -164,7 +164,6 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 	ap->mu_cut_step_size	= (double*)malloc(sizeof(double) * ap->number_cuts);
 	ap->nu_cut_step_size	= (double*)malloc(sizeof(double) * ap->number_cuts);
 
-	printf("reading %d cuts\n", ap->number_cuts);
 	for (i = 0; i < ap->number_cuts; i++) {
 		read_double_array(file, "r_cut[min,max,steps]: ", 3, &ap->r_cut[i]);
 		read_double_array(file, "mu_cut[min,max,steps]: ", 3, &ap->mu_cut[i]);
@@ -510,7 +509,7 @@ void split_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, int rank, int max_rank
 
 #ifdef GMLE_BOINC
 	int boinc_read_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS *ap) {
-	char input_path[512];
+		char input_path[512];
 		int retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
 
 		if (retval) {
