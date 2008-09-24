@@ -72,9 +72,36 @@ void initialize_state(EVALUATION_STATE* es, int number_streams) {
 
 	es->number_streams = number_streams;
 
+	es->main_integral_calculated = 0;
+	es->current_cut = 0;
+
 	es->background_integral = 0.0;
 	es->stream_integrals = (double*)malloc(sizeof(double) * number_streams);
 	for (i = 0; i < number_streams; i++) {
+		es->stream_integrals[i] = 0.0;
+	}
+
+	es->current_star_point = 0;
+	es->num_zero = 0;
+	es->bad_jacobians = 0;
+	es->prob_sum = 0.0;
+}
+
+void reset_evaluation_state(EVALUATION_STATE *es) {
+	int i;
+	es->r_step_current = 0;
+	es->mu_step_current = 0;
+	es->nu_step_current = 0;
+	
+	es->r_cut_step_current = 0;
+	es->mu_cut_step_current = 0;
+	es->nu_cut_step_current = 0;
+
+	es->main_integral_calculated = 0;
+	es->current_cut = 0;
+
+	es->background_integral = 0.0;
+	for (i = 0; i < es->number_streams; i++) {
 		es->stream_integrals[i] = 0.0;
 	}
 
@@ -105,6 +132,8 @@ void free_state(EVALUATION_STATE* es) {
 		cp.printf("mu_step_current: %d\n", es->mu_step_current);
 		cp.printf("nu_step_current: %d\n", es->nu_step_current);
 
+		cp.printf("main_integral_calculated: %d\n", es->main_integral_calculated);
+		cp.printf("current_cut: %d\n", es->current_cut);
 		cp.printf("background_integral: %lf\n", es->background_integral);
 		cp.printf("stream_integrals [%d]:", es->number_streams);
 		for (i = 0; i < es->number_streams; i++) cp.printf(" %lf", es->stream_integrals[i]);
@@ -143,6 +172,8 @@ void free_state(EVALUATION_STATE* es) {
 		fscanf(data_file, "mu_step_current: %d\n", &es->mu_step_current);
 		fscanf(data_file, "nu_step_current: %d\n", &es->nu_step_current);
 	
+		fscanf(data_file, "main_integral_calculated: %d\n", &es->main_integral_calculated);
+		fscanf(data_file, "current_cut: %d\n", &es->current_cut);
 		fscanf(data_file, "background_integral: %lf\n", &es->background_integral);
 		fscanf(data_file, "stream_integrals [%d]:", &es->number_streams);
 		for (i = 0; i < es->number_streams; i++) fscanf(data_file, " %lf", &es->stream_integrals[i]);
@@ -158,14 +189,8 @@ void free_state(EVALUATION_STATE* es) {
 #endif
 
 int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp) {
-  
-	//vickej2 <<<rmax is messed up by the time it gets here>>>
-        //printf("rmax=%g\n", ap->r_max); //vickej2
-	//vickej2 <<<end>>>
 	int s;
 	int first_run = 1;
-	double total_volume = 0;
-	double volumes[ap->number_cuts+1];
 	double V = 0;
 
 	es->background_integral = 0;
@@ -181,139 +206,129 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 		}
 	#endif
 
-	for (; es->mu_step_current < ap->mu_steps; es->mu_step_current++) {
-		double mu = ap->mu_min + (es->mu_step_current * ap->mu_step_size);
+	if (!es->main_integral_calculated) {
+		for (; es->mu_step_current < ap->mu_steps; es->mu_step_current++) {
+			double mu = ap->mu_min + (es->mu_step_current * ap->mu_step_size);
 
-		if (!first_run) es->nu_step_current = 0;
-		for (; es->nu_step_current < ap->nu_steps; es->nu_step_current++) {
-			double nu = ap->nu_min + (es->nu_step_current * ap->nu_step_size);
+			for (; es->nu_step_current < ap->nu_steps; es->nu_step_current++) {
+				double nu = ap->nu_min + (es->nu_step_current * ap->nu_step_size);
 
+				for (; es->r_step_current < ap->r_steps; es->r_step_current++) {
+					double integral_point[3], xyz[3];
 
-			if (!first_run) es->r_step_current = 0;
-			for (; es->r_step_current < ap->r_steps; es->r_step_current++) {
-				double integral_point[3], xyz[3];
+					double log_r = ap->r_min + (es->r_step_current * ap->r_step_size);
+					double r = pow(10.0, (log_r-14.2)/5.0);
+					double next_r = pow(10.0, (log_r+ap->r_step_size-14.2)/5.0);
 
-				double log_r = ap->r_min + (es->r_step_current * ap->r_step_size);
-				double r = pow(10.0, (log_r-14.2)/5.0);
-				double next_r = pow(10.0, (log_r+ap->r_step_size-14.2)/5.0);
+					if (ap->wedge > 0) {
+						double ir = (pow(next_r,3.0) - pow(r, 3.0))/3.0;
+						double id = cos((90 - nu - ap->nu_step_size)/deg) - cos((90 - nu)/deg);
 
-				if (ap->wedge > 0) {
-					double ir = (pow(next_r,3.0) - pow(r, 3.0))/3.0;
-					double id = cos((90 - nu - ap->nu_step_size)/deg) - cos((90 - nu)/deg);
+						V = ir * id * ap->mu_step_size / deg;
 
-					V = ir * id * ap->mu_step_size / deg;
-
-					double ra = 0.0;
-					double dec = 0.0;
-					double point0 = 0.0;
-					double point1 = 0.0;
-					double lamda = 0.0;
-					double beta = 0.0;
-                                	//vickej2 <<<make sure all my parameters are being taken correctly>>>
-                                	//printf("rmax=%f",ap->r_max); //vickej2
-                                	//printf("wedge=%i, r_steps=%i, mu_steps=%i, nu_steps=%i, nu_min=%f, nu_max=%f, r_min=%f, r_max=%f, mu_min=%f, mu_max=%f, nu_step_size=%f, r_step_size=%f, mu_step_size=%f", ap->wedge, ap->r_steps, ap->mu_steps, ap->nu_steps, ap->nu_min, ap->nu_max, ap->r_min, ap->r_max, ap->mu_min, ap->mu_max, ap->nu_step_size, ap->r_step_size, ap->mu_step_size);  //vickej2
-                                	//vickej2 <<<end>>>
+						double ra = 0.0;
+						double dec = 0.0;
+						double point0 = 0.0;
+						double point1 = 0.0;
+						double lamda = 0.0;
+						double beta = 0.0;
+        	                        	//vickej2 <<<make sure all my parameters are being taken correctly>>>
+        	                        	//printf("rmax=%f",ap->r_max); //vickej2
+                	                	//printf("wedge=%i, r_steps=%i, mu_steps=%i, nu_steps=%i, nu_min=%f, nu_max=%f, r_min=%f, r_max=%f, mu_min=%f, mu_max=%f, nu_step_size=%f, r_step_size=%f, mu_step_size=%f", ap->wedge, ap->r_steps, ap->mu_steps, ap->nu_steps, ap->nu_min, ap->nu_max, ap->r_min, ap->r_max, ap->mu_min, ap->mu_max, ap->nu_step_size, ap->r_step_size, ap->mu_step_size);  //vickej2
+        	                        	//vickej2 <<<end>>>
 				
-					if (ap->sgr_coordinates == 0) {
-						atGCToEq(mu + 0.5 * ap->mu_step_size, nu + 0.5 * ap->nu_step_size, &ra, &dec, get_node(), wedge_incl(ap->wedge));
-						atEqToGal(ra, dec, &point0, &point1);
-					} else if (ap->sgr_coordinates == 1) {					
-						gcToSgr(mu + 0.5 * ap->mu_step_size, nu + 0.5 * ap->nu_step_size, ap->wedge, &lamda, &beta); //vickej2
-						sgrToGal(lamda, beta, &point0, &point1); //vickej2
+						if (ap->sgr_coordinates == 0) {
+							atGCToEq(mu + 0.5 * ap->mu_step_size, nu + 0.5 * ap->nu_step_size, &ra, &dec, get_node(), wedge_incl(ap->wedge));
+							atEqToGal(ra, dec, &point0, &point1);
+						} else if (ap->sgr_coordinates == 1) {					
+							gcToSgr(mu + 0.5 * ap->mu_step_size, nu + 0.5 * ap->nu_step_size, ap->wedge, &lamda, &beta); //vickej2
+							sgrToGal(lamda, beta, &point0, &point1); //vickej2
 						
-						//vickej2 <<<make sure the conversion is correct (check with conversiontester.vb)>>>
-        	           			//printf(" mui=%f, nui=%f, lamda=%f, beta=%f, l=%f, b=%f", mu + 0.5 * ap->mu_step_size, nu + 0.5 * ap->nu_step_size, lamda, beta, point0, point1);  //vickej2
-						//vickej2 <<<end>>>
-					} else { 
-						printf("Error: ap->sgr_coordinates not valid");
-					}
-
+							//vickej2 <<<make sure the conversion is correct (check with conversiontester.vb)>>>
+        		           			//printf(" mui=%f, nui=%f, lamda=%f, beta=%f, l=%f, b=%f", mu + 0.5 * ap->mu_step_size, nu + 0.5 * ap->nu_step_size, lamda, beta, point0, point1);  //vickej2
+							//vickej2 <<<end>>>
+						} else { 
+							printf("Error: ap->sgr_coordinates not valid");
+						}
+	
 						integral_point[0] = point0;
 						integral_point[1] = point1;
 						integral_point[2] = (next_r+r)/2.0;
 					
-					//vickej2 <<<testing if r stays within its bounds>>>
-                	   		//printf("<<<%f>>>\n", r); //vickej2
-					//vickej2 <<<end>>>
-
-					total_volume += V;
-				} else {
-					V = ap->mu_step_size * ap->nu_step_size * ap->r_step_size;
-					xyz[0] = mu + (0.5 * ap->mu_step_size);
-					xyz[1] = nu + (0.5 * ap->nu_step_size);
-					xyz[2] = r + (0.5 * ap->r_step_size);
-					xyz2lbr(xyz, integral_point);
-				}
-
-				double bg_prob = 0.0;
-				double st_prob = 0.0;
-
-				if (ap->convolve > 0) {
-					bg_prob = stPbxConvolved(integral_point, ap->background_parameters, ap->wedge, ap->convolve);
-				} else {
-					bg_prob = stPbx(integral_point, ap->background_parameters);
-				}
-				es->background_integral += bg_prob * V;
-
-				for (s = 0; s < ap->number_streams; s++) {
-					if (ap->convolve > 0) {
-						st_prob = stPsgConvolved(integral_point, ap->stream_parameters[s], ap->wedge, ap->convolve, ap->sgr_coordinates);
+						//vickej2 <<<testing if r stays within its bounds>>>
+                		   		//printf("<<<%f>>>\n", r); //vickej2
+						//vickej2 <<<end>>>
 					} else {
-						st_prob = stPsg(integral_point, ap->stream_parameters[s], ap->wedge, ap->sgr_coordinates);
+						V = ap->mu_step_size * ap->nu_step_size * ap->r_step_size;
+						xyz[0] = mu + (0.5 * ap->mu_step_size);
+						xyz[1] = nu + (0.5 * ap->nu_step_size);
+						xyz[2] = r + (0.5 * ap->r_step_size);
+						xyz2lbr(xyz, integral_point);
 					}
-					es->stream_integrals[s] += st_prob * V;
- 				}
-				first_run = 0;
 
-				#ifdef GMLE_BOINC
-					if (boinc_time_to_checkpoint()) {
-						retval = write_checkpoint(es);
-						if (retval) {
-							fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
-							return retval;
-						}
-						boinc_checkpoint_completed();
+					double bg_prob = 0.0;
+					double st_prob = 0.0;
+
+					if (ap->convolve > 0) {
+						bg_prob = stPbxConvolved(integral_point, ap->background_parameters, ap->wedge, ap->convolve);
+					} else {
+						bg_prob = stPbx(integral_point, ap->background_parameters);
 					}
-					double f = es->r_step_current + (es->nu_step_current * ap->r_steps) + (es->mu_step_current * ap->nu_steps * ap->r_steps);
-					f /= (ap->mu_steps * ap->nu_steps * ap->r_steps);
-					f *= 0.5;
-					boinc_fraction_done(f);
-				#endif
+					es->background_integral += bg_prob * V;
+
+					for (s = 0; s < ap->number_streams; s++) {
+						if (ap->convolve > 0) {
+							st_prob = stPsgConvolved(integral_point, ap->stream_parameters[s], ap->wedge, ap->convolve, ap->sgr_coordinates);
+						} else {
+							st_prob = stPsg(integral_point, ap->stream_parameters[s], ap->wedge, ap->sgr_coordinates);
+						}
+						es->stream_integrals[s] += st_prob * V;
+	 				}
+					first_run = 0;
+
+					#ifdef GMLE_BOINC
+						if (boinc_time_to_checkpoint()) {
+							retval = write_checkpoint(es);
+							if (retval) {
+								fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
+								return retval;
+							}
+							boinc_checkpoint_completed();
+						}
+						double f = es->r_step_current + (es->nu_step_current * ap->r_steps) + (es->mu_step_current * ap->nu_steps * ap->r_steps);
+						f /= (ap->mu_steps * ap->nu_steps * ap->r_steps);
+						f *= 0.5;
+						boinc_fraction_done(f);
+					#endif
+				}
+				es->r_step_current = 0;
 			}
-			if (es->mu_step_current != ap->mu_steps-1) es->r_step_current = 0;
+			es->nu_step_current = 0;
 		}
-		if (es->nu_step_current != ap->nu_steps-1) es->nu_step_current = 0;
+		es->mu_step_current = 0;
 	}
-	
-		
-	volumes[0] = total_volume;
+	es->main_integral_calculated = 1;	
+
 	/*** Begin volume removal ***/
-	int i;
-	for (i = 0; i < ap->number_cuts; i++) {
-		es->mu_cut_step_current = 0;
-		es->nu_cut_step_current = 0;
-		es->r_cut_step_current = 0;
-        	for (; es->mu_cut_step_current < ap->mu_cut[i][2]; es->mu_cut_step_current++) {
-        	        double mu = ap->mu_cut[i][0] + (es->mu_cut_step_current * ap->mu_cut_step_size[i]);
+	for (; es->current_cut < ap->number_cuts; es->current_cut++) {
+        	for (; es->mu_cut_step_current < ap->mu_cut[es->current_cut][2]; es->mu_cut_step_current++) {
+        	        double mu = ap->mu_cut[es->current_cut][0] + (es->mu_cut_step_current * ap->mu_cut_step_size[es->current_cut]);
 	
-	                if (!first_run) es->nu_cut_step_current = 0;
-	                for (; es->nu_cut_step_current < ap->nu_cut[i][2]; es->nu_cut_step_current++) {
-	                        double nu = ap->nu_cut[i][0] + (es->nu_cut_step_current * ap->nu_cut_step_size[i]);
+	                for (; es->nu_cut_step_current < ap->nu_cut[es->current_cut][2]; es->nu_cut_step_current++) {
+	                        double nu = ap->nu_cut[es->current_cut][0] + (es->nu_cut_step_current * ap->nu_cut_step_size[es->current_cut]);
 	
-	
-	                        if (!first_run) es->r_cut_step_current = 0;
-	                        for (; es->r_cut_step_current < ap->r_cut[i][2]; es->r_cut_step_current++) {
+	                        for (; es->r_cut_step_current < ap->r_cut[es->current_cut][2]; es->r_cut_step_current++) {
 	                                double integral_point[3], xyz[3];
 
-        	                        double log_r = ap->r_cut[i][0] + (es->r_cut_step_current * ap->r_cut_step_size[i]);
+        	                        double log_r = ap->r_cut[es->current_cut][0] + (es->r_cut_step_current * ap->r_cut_step_size[es->current_cut]);
         	                        double r = pow(10.0, (log_r-14.2)/5.0);
-        	                        double next_r = pow(10.0, (log_r+ap->r_cut_step_size[i]-14.2)/5.0);
+        	                        double next_r = pow(10.0, (log_r+ap->r_cut_step_size[es->current_cut]-14.2)/5.0);
 	
 	                                if (ap->wedge > 0) {
 	                                        double ir = (pow(next_r,3.0) - pow(r, 3.0))/3.0;
-	                                        double id = cos((90 - nu - ap->nu_cut_step_size[i])/deg) - cos((90 - nu)/deg);
+	                                        double id = cos((90 - nu - ap->nu_cut_step_size[es->current_cut])/deg) - cos((90 - nu)/deg);
 	
-	                                        V = ir * id * ap->mu_cut_step_size[i] / deg;
+	                                        V = ir * id * ap->mu_cut_step_size[es->current_cut] / deg;
 	
 	                                        double ra = 0.0;
 	                                        double dec = 0.0;
@@ -327,10 +342,10 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 	                                        //vickej2 <<<end>>>
 	
 	                                        if (ap->sgr_coordinates == 0) {
-	                                                atGCToEq(mu + 0.5 * ap->mu_cut_step_size[i], nu + 0.5 * ap->nu_cut_step_size[i], &ra, &dec, get_node(), wedge_incl(ap->wedge));
+	                                                atGCToEq(mu + 0.5 * ap->mu_cut_step_size[es->current_cut], nu + 0.5 * ap->nu_cut_step_size[es->current_cut], &ra, &dec, get_node(), wedge_incl(ap->wedge));
 	                                                atEqToGal(ra, dec, &point0, &point1);
        		                               	} else if (ap->sgr_coordinates == 1) {                                 
-                                                	gcToSgr(mu + 0.5 * ap->mu_cut_step_size[i], nu + 0.5 * ap->nu_cut_step_size[i], ap->wedge, &lamda, &beta); //vickej2
+                                                	gcToSgr(mu + 0.5 * ap->mu_cut_step_size[es->current_cut], nu + 0.5 * ap->nu_cut_step_size[es->current_cut], ap->wedge, &lamda, &beta); //vickej2
                                                 	sgrToGal(lamda, beta, &point0, &point1); //vickej2
 	
 	                                                //vickej2 <<<make sure the conversion is correct (check with conversiontester.vb)>>>
@@ -347,13 +362,11 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 	                                        //vickej2 <<<testing if r stays within its bounds>>>
 	                                        //printf("<<<%f>>>\n", r); //vickej2
 	                                        //vickej2 <<<end>>>
-	
-	                                        total_volume -= V;
 	                                } else {
-	                                        V = ap->mu_cut_step_size[i] * ap->nu_cut_step_size[i] * ap->r_cut_step_size[i];
-	                                        xyz[0] = mu + (0.5 * ap->mu_cut_step_size[i]);
-	                                        xyz[1] = nu + (0.5 * ap->nu_cut_step_size[i]);
-	                                        xyz[2] = r + (0.5 * ap->r_cut_step_size[i]);
+	                                        V = ap->mu_cut_step_size[es->current_cut] * ap->nu_cut_step_size[es->current_cut] * ap->r_cut_step_size[es->current_cut];
+	                                        xyz[0] = mu + (0.5 * ap->mu_cut_step_size[es->current_cut]);
+	                                        xyz[1] = nu + (0.5 * ap->nu_cut_step_size[es->current_cut]);
+	                                        xyz[2] = r + (0.5 * ap->r_cut_step_size[es->current_cut]);
 	                                        xyz2lbr(xyz, integral_point);
 	                                }
 	                                double bg_prob = 0.0;
@@ -364,7 +377,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 					} else {
 						bg_prob = stPbx(integral_point, ap->background_parameters);
 					}
-					es->background_integral += bg_prob * V;
+					es->background_integral -= bg_prob * V;
 
 					for (s = 0; s < ap->number_streams; s++) {
 						if (ap->convolve > 0) {
@@ -372,7 +385,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 						} else {
 							st_prob = stPsg(integral_point, ap->stream_parameters[s], ap->wedge, ap->sgr_coordinates);
 						}
-						es->stream_integrals[s] += st_prob * V;
+						es->stream_integrals[s] -= st_prob * V;
 					}
 	                                first_run = 0;
 	
@@ -385,26 +398,19 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 	                                                }
 	                                                boinc_checkpoint_completed();
 	                                        }
-	                                        double f = es->r_cut_step_current + (es->nu_cut_step_current * ap->r_cut[i][2]) + (es->mu_cut_step_current * ap->nu_cut[i][2] * ap->r_cut[i][2]);
-	                                        f /= (ap->mu_cut[i][2] * ap->nu_cut[i][2] * ap->r_cut[i][2]);
+	                                        double f = es->r_cut_step_current + (es->nu_cut_step_current * ap->r_cut[es->current_cut][2]) + (es->mu_cut_step_current * ap->nu_cut[es->current_cut][2] * ap->r_cut[es->current_cut][2]);
+	                                        f /= (ap->mu_cut[es->current_cut][2] * ap->nu_cut[es->current_cut][2] * ap->r_cut[es->current_cut][2]);
 	                                        f *= 0.5;
 	                                        boinc_fraction_done(f);
 	                                #endif
 	                        }
-	                        if (es->mu_cut_step_current != ap->mu_cut[i][2]-1) es->r_cut_step_current = 0;
+				es->r_cut_step_current = 0;
 	                }
-	                if (es->nu_cut_step_current != ap->nu_cut[i][2]-1) es->nu_cut_step_current = 0;
+			es->nu_cut_step_current = 0;
 	        }
-		volumes[i+1] = total_volume;
+		es->mu_cut_step_current = 0;
 	}
 	/*** End volume removal ***/
-//	printf("VOLUMES: 	total_volume: %lf\n", volumes[0]);
-	double vc = volumes[0];
-	for (i = 1; i <= ap->number_cuts; i++) {
-		vc -= volumes[i]; 	
-//		printf("VOLUMES:	volume_cut[%d]: %lf\n", i, vc);
-	}
-//	printf("VOLUMES: 	total_integrated_volume: %lf\n", volumes[ap->number_cuts]);
 
 	#ifdef GMLE_BOINC
 		retval = write_checkpoint(es);

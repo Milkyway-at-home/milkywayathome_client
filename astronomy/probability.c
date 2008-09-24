@@ -193,28 +193,25 @@ double stPbxConvolved(const double* coordpar, const double* bpars, int numpoints
 //	fprintf(stderr, "bpars: %g, %g, %g, %g\n", bpars[0], bpars[1], bpars[2], bpars[3]);
 //	fprintf(stderr, "bparsConvolved: %g, %g, %g, %g\n", bparsConvolved[0], bparsConvolved[1], bparsConvolved[2], bparsConvolved[3]);
 	
+//	printf("a: %lf, b: %lf, numpoints: %d, wedge: %d\n", a, b, numpoints, wedge);
 	pbx = qgaus(backgroundConvolve, a, b, numpoints, wedge);
 	pbx *= 1/rPrime3;
 //	fprintf(stderr, "pbx: %lf\n", pbx);
 
 	reff_value = reff(coordpar[2]);
 	prob = pbx*reff_value;
-	
+
 	return prob;
 }
 
 double stPbx(const double* coordpar, const double* bpars) {
-//        int i;
         double pbx, reff_value, prob;
-//		double rPrime, rPrime3, a, b;
 
-//      fprintf(stderr, "rPrime: %lf\n", rPrime);
+//	fprintf(stderr, "coordpar: %g, %g, %g\n", coordpar[0], coordpar[1], coordpar[2]);
+//	fprintf(stderr, "bpars: %g, %g, %g, %g\n", bpars[0], bpars[1], bpars[2], bpars[3]);
 
-//      fprintf(stderr, "coordpar: %g, %g, %g\n", coordpar[0], coordpar[1], coordpar[2]);
-//      fprintf(stderr, "bpars: %g, %g, %g, %g\n", bpars[0], bpars[1], bpars[2], bpars[3]);
-
-        pbx = stPbxFunction(coordpar, bpars);
-//      fprintf(stderr, "pbx: %lf\n", pbx);
+	pbx = stPbxFunction(coordpar, bpars);
+//	fprintf(stderr, "pbx: %lf\n", pbx);
 
         reff_value = reff(coordpar[2]);
         prob = pbx*reff_value;

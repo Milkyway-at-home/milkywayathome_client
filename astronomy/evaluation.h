@@ -15,6 +15,8 @@ typedef struct evaluation_state {
 	int mu_cut_step_current;
 	int nu_cut_step_current;
 	int number_streams;
+	int current_cut;
+	int main_integral_calculated;
 	double background_integral;
 	double* stream_integrals;
 
@@ -29,6 +31,7 @@ typedef struct evaluation_state {
 
 void	initialize_state(EVALUATION_STATE* es, int number_streams);
 void	free_state(EVALUATION_STATE* es);
+void	reset_evaluation_state(EVALUATION_STATE *es);
 
 int	write_checkpoint(EVALUATION_STATE* es);
 int	read_checkpoint(EVALUATION_STATE* es);

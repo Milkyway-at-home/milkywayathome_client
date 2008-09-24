@@ -68,19 +68,7 @@ void integral_f(double* parameters, double** results) {
 		*	CALCULATE THE INTEGRALS
 	 ********/
 	set_astronomy_parameters(ap, parameters);
-
-	es->r_step_current = 0;
-	es->mu_step_current = 0;
-	es->nu_step_current = 0;
-
-	es->background_integral = 0.0;
-	for (i = 0; i < es->number_streams; i++) {
-		es->stream_integrals[i] = 0.0;
-	}
-	es->current_star_point = 0;
-	es->num_zero = 0;
-	es->bad_jacobians = 0;
-	es->prob_sum = 0.0;
+	reset_evaluation_state(es);
 
 	int retval = calculate_integrals(ap, es, sp);
 	if (retval) {
