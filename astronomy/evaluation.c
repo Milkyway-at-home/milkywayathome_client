@@ -232,10 +232,6 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 						double point1 = 0.0;
 						double lamda = 0.0;
 						double beta = 0.0;
-        	                        	//vickej2 <<<make sure all my parameters are being taken correctly>>>
-        	                        	//printf("rmax=%f",ap->r_max); //vickej2
-                	                	//printf("wedge=%i, r_steps=%i, mu_steps=%i, nu_steps=%i, nu_min=%f, nu_max=%f, r_min=%f, r_max=%f, mu_min=%f, mu_max=%f, nu_step_size=%f, r_step_size=%f, mu_step_size=%f", ap->wedge, ap->r_steps, ap->mu_steps, ap->nu_steps, ap->nu_min, ap->nu_max, ap->r_min, ap->r_max, ap->mu_min, ap->mu_max, ap->nu_step_size, ap->r_step_size, ap->mu_step_size);  //vickej2
-        	                        	//vickej2 <<<end>>>
 				
 						if (ap->sgr_coordinates == 0) {
 							atGCToEq(mu + 0.5 * ap->mu_step_size, nu + 0.5 * ap->nu_step_size, &ra, &dec, get_node(), wedge_incl(ap->wedge));
@@ -243,10 +239,6 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 						} else if (ap->sgr_coordinates == 1) {					
 							gcToSgr(mu + 0.5 * ap->mu_step_size, nu + 0.5 * ap->nu_step_size, ap->wedge, &lamda, &beta); //vickej2
 							sgrToGal(lamda, beta, &point0, &point1); //vickej2
-						
-							//vickej2 <<<make sure the conversion is correct (check with conversiontester.vb)>>>
-        		           			//printf(" mui=%f, nui=%f, lamda=%f, beta=%f, l=%f, b=%f", mu + 0.5 * ap->mu_step_size, nu + 0.5 * ap->nu_step_size, lamda, beta, point0, point1);  //vickej2
-							//vickej2 <<<end>>>
 						} else { 
 							printf("Error: ap->sgr_coordinates not valid");
 						}
