@@ -41,21 +41,21 @@ void gaussLegendre(double x1, double x2, double x[], double w[], int n)
 	}
 }
 
-double qgaus(double (*func)(double, int), double a, double b, int n, int wedge) {
+double qgaus(double (*func)(double, int), double a, double b, int wedge, int numpoints) {
 	int j;
 	double xr, xm, dx, s;
 	double *x;
 	double *w;
 
-	x = (double*)malloc(sizeof(double)*n);
-	w = (double*)malloc(sizeof(double)*n);
+	x = (double*)malloc(sizeof(double)*numpoints);
+	w = (double*)malloc(sizeof(double)*numpoints);
 
-	gaussLegendre(-1.0, 1.0, x, w, n);
+	gaussLegendre(-1.0, 1.0, x, w, numpoints);
 
 	xm = 0.5*(b+a);
 	xr = 0.5*(b-a);
 	s = 0;
-	for (j = 0; j < n; j++) {
+	for (j = 0; j < numpoints; j++) {
 		dx = xr*x[j];
 		s += w[j]*((*func)(xm+dx, wedge));
 	}
@@ -65,21 +65,21 @@ double qgaus(double (*func)(double, int), double a, double b, int n, int wedge) 
 	return s *= xr;
 }
 
-double qgaus_stream(double (*func)(double, int, int), double a, double b, int n, int wedge, int sgr_coordinates) {
+double qgaus_stream(double (*func)(double, int, int), double a, double b, int wedge, int numpoints, int sgr_coordinates) {
         int j;
         double xr, xm, dx, s;
         double *x;
         double *w;
 
-        x = (double*)malloc(sizeof(double)*n);
-        w = (double*)malloc(sizeof(double)*n);
+        x = (double*)malloc(sizeof(double)*numpoints);
+        w = (double*)malloc(sizeof(double)*numpoints);
 
-        gaussLegendre(-1.0, 1.0, x, w, n);
+        gaussLegendre(-1.0, 1.0, x, w, numpoints);
 
         xm = 0.5*(b+a);
         xr = 0.5*(b-a);
         s = 0;
-        for (j = 0; j < n; j++) {
+        for (j = 0; j < numpoints; j++) {
                 dx = xr*x[j];
                 s += w[j]*((*func)(xm+dx, wedge, sgr_coordinates));
         }

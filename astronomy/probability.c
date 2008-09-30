@@ -167,7 +167,7 @@ double stPsgFunction(const double* coordpar, const double* spars, int wedge, int
 	return prob;
 }
 
-double stPbxConvolved(const double* coordpar, const double* bpars, int numpoints, int wedge) {
+double stPbxConvolved(const double* coordpar, const double* bpars, int wedge, int numpoints) {
 	int i;
     	double pbx, reff_value, prob, rPrime, rPrime3, a, b;
 
@@ -194,7 +194,7 @@ double stPbxConvolved(const double* coordpar, const double* bpars, int numpoints
 //	fprintf(stderr, "bparsConvolved: %g, %g, %g, %g\n", bparsConvolved[0], bparsConvolved[1], bparsConvolved[2], bparsConvolved[3]);
 	
 //	printf("a: %lf, b: %lf, numpoints: %d, wedge: %d\n", a, b, numpoints, wedge);
-	pbx = qgaus(backgroundConvolve, a, b, numpoints, wedge);
+	pbx = qgaus(backgroundConvolve, a, b, wedge, numpoints);
 	pbx *= 1/rPrime3;
 //	fprintf(stderr, "pbx: %lf\n", pbx);
 
@@ -244,7 +244,7 @@ double stPsgConvolved(const double* coordpar, const double* spars, int wedge, in
         //fprintf(stderr, "spars: %g, %g, %g, %g\n", spars[0], spars[1], spars[2], spars[3]);
         //fprintf(stderr, "sparsConvolved: %g, %g, %g, %g\n", sparsConvolved[0], sparsConvolved[1], sparsConvolved[2], sparsConvolved[3]);
 
-        psg = qgaus_stream(streamConvolve, a, b, numpoints, wedge, sgr_coordinates);
+        psg = qgaus_stream(streamConvolve, a, b, wedge, numpoints, sgr_coordinates);
 	psg *= 1/rPrime3;
        
         //fprintf(stderr, "psg: %lf\n", psg);
