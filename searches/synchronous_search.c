@@ -36,6 +36,7 @@ void synchronous_search(char *search_path, char *search_parameters, double *min_
 	}
 }
 
+
 /*
 void synchronous_parallel_search(POPULATION* population, double (*likelihood_function)(double*), double (*likelihood_compose)(double*, int), int number_workers) {
 	double fitness;

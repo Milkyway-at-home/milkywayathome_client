@@ -18,24 +18,25 @@
 
 /* Convert sun-centered lbr into galactic xyz coordinates. */
 void lbr2xyz(const double* lbr, double* xyz) {
-    double r0, sinb, sinl, cosb, cosl, sint, cost;
-    double zp, d;
-    
-    r0 = 8.5;
-    sinb = sin(lbr[1] / deg);
-    sinl = sin(lbr[0] / deg);
-    cosb = cos(lbr[1] / deg);
-    cosl = cos(lbr[0] / deg);
+	double r0, sinb, sinl, cosb, cosl, zp, d;
 
-    xyz[2] = lbr[2] * sinb;
-    zp = lbr[2] * cosb;
-    d = sqrt( r0 * r0 + zp * zp - 2 * r0 * zp *cosl );
+	r0 = 8.5;
+	sinb = sin(lbr[1] / deg);
+	sinl = sin(lbr[0] / deg);
+	cosb = cos(lbr[1] / deg);
+	cosl = cos(lbr[0] / deg);
 
-    sint = (zp * sinl) / d;
-    cost = (zp * zp - r0 * r0 - d * d) / (2 * d * r0);
+	xyz[2] = lbr[2] * sinb;
+	zp = lbr[2] * cosb;
+	d = sqrt( r0 * r0 + zp * zp - 2 * r0 * zp * cosl);
 
-    xyz[0] = d * cost;
-    xyz[1] = d * sint;
+//	cost = (zp * zp - r0 * r0 - d * d) / (2 * d * r0);
+//	xyz[0] = d * cost;
+	xyz[0] = (zp * zp - r0 * r0 - d * d) / (2 * r0);
+
+//	sint = (zp * sinl) / d;
+//	xyz[1] = d * sint;
+	xyz[1] = zp * sinl;
 }
 
 
@@ -140,7 +141,7 @@ int xyz2stream(const double* xyz, const double* spars, double* stream, int verb)
                 sint = 0;
             } else {
                 sint = sqrt(1 - cost[i] * cost[i]);
-			}
+	    }
 			
             for (j = 0; j < 3; ++j) distv[j] = a[j] * cost[i] + b[j] * sint - cxyz[j];
             
