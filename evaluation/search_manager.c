@@ -21,6 +21,10 @@
 int number_searches = 0;
 POPULATION** searches;
 
+
+void init_search_manager(int argc, char** argv, 
+
+
 POPULATION* get_search(char* search_name) {
 	char search_type[512];
 	char population_path[2048], population_file_name[2048];

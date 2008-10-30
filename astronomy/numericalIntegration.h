@@ -3,7 +3,7 @@
 
 void gaussLegendre(double x1, double x2, double x[], double w[], int n);
 
-void setWeights(double x[], double w[], int numpoints);
+void setWeights(int numpoints);
 
 void freeWeights();
 
