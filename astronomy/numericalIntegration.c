@@ -5,6 +5,8 @@
 #define EPS 3.0e-11
 #define PI 3.1415926535897932384626433832795028841971693993751
 
+double *qgausX, *qgausW;
+
 /*Gauss-Legendre quadrature taken from Numerical Recipes in C*/
 void gaussLegendre(double x1, double x2, double x[], double w[], int n)
 {
@@ -41,50 +43,42 @@ void gaussLegendre(double x1, double x2, double x[], double w[], int n)
 	}
 }
 
-double qgaus(double (*func)(double, int), double a, double b, int wedge, int numpoints) {
+void setWeights(int numpoints)
+{
+		qgausX = (double*)malloc(sizeof(double)*numpoints);
+		qgausW = (double*)malloc(sizeof(double)*numpoints);
+		gaussLegendre(-1.0, 1.0, qgausX, qgausW, numpoints);
+}
+
+void freeWeights()
+{
+	free(qgausX);
+	free(qgausW);
+}
+
+double qgaus(double (*func)(double, int), double xm, double xr, int wedge, int numpoints) {
 	int j;
-	double xr, xm, dx, s;
-	double *x;
-	double *w;
+	double dx, s;
 
-	x = (double*)malloc(sizeof(double)*numpoints);
-	w = (double*)malloc(sizeof(double)*numpoints);
-
-	gaussLegendre(-1.0, 1.0, x, w, numpoints);
-
-	xm = 0.5*(b+a);
-	xr = 0.5*(b-a);
 	s = 0;
 	for (j = 0; j < numpoints; j++) {
-		dx = xr*x[j];
-		s += w[j]*((*func)(xm+dx, wedge));
+		dx = xr*qgausX[j];
+		s += qgausW[j]*((*func)(xm+dx, wedge));
 	}
 
-	free(x);
-	free(w);
 	return s *= xr;
 }
 
-double qgaus_stream(double (*func)(double, int, int), double a, double b, int wedge, int numpoints, int sgr_coordinates) {
+double qgaus_stream(double (*func)(double, int, int), double xm, double xr, int wedge, int numpoints, int sgr_coordinates) {
         int j;
-        double xr, xm, dx, s;
-        double *x;
-        double *w;
+        double dx, s;
 
-        x = (double*)malloc(sizeof(double)*numpoints);
-        w = (double*)malloc(sizeof(double)*numpoints);
 
-        gaussLegendre(-1.0, 1.0, x, w, numpoints);
-
-        xm = 0.5*(b+a);
-        xr = 0.5*(b-a);
         s = 0;
         for (j = 0; j < numpoints; j++) {
-                dx = xr*x[j];
-                s += w[j]*((*func)(xm+dx, wedge, sgr_coordinates));
+                dx = xr*qgausX[j];
+                s += qgausW[j]*((*func)(xm+dx, wedge, sgr_coordinates));
         }
 
-        free(x);
-        free(w);
         return s *= xr;
 }

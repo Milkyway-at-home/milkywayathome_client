@@ -51,6 +51,7 @@
 #include "stCoords.h"
 #include "atSurveyGeometry.h"
 #include "star_points.h"
+#include "numericalIntegration.h"
 
 #ifndef _WIN32
 	#define pi M_PI
@@ -192,6 +193,8 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 	int s;
 	int first_run = 1;
 	double V = 0;
+	
+	setWeights(ap->convolve);
 
 	es->background_integral = 0;
 	for (s = 0; s < ap->number_streams; s++) {
@@ -260,7 +263,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 
 					double bg_prob = 0.0;
 					double st_prob = 0.0;
-
+							   
 					if (ap->convolve > 0) {
 						bg_prob = stPbxConvolved(integral_point, ap->background_parameters, ap->wedge, ap->convolve);
 					} else {
@@ -507,5 +510,6 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
 	#endif
 
 	free(exp_stream_weights);
+	freeWeights();
 	return 0;
 }

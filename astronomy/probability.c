@@ -11,6 +11,7 @@
 #define PI 3.1415926535897932384626433832795028841971693993751
 double sigmoid_curve_parameters[3] = { 0.9402, 1.6171, 23.5877 };
 double stdev = 0.6;
+double xr=3*stdev;
 
 double coordparConvolved[3];
 double bparsConvolved[4];
@@ -169,7 +170,7 @@ double stPsgFunction(const double* coordpar, const double* spars, int wedge, int
 
 double stPbxConvolved(const double* coordpar, const double* bpars, int wedge, int numpoints) {
 	int i;
-    	double pbx, reff_value, prob, rPrime, rPrime3, a, b;
+    	double pbx, reff_value, prob, rPrime, rPrime3;
 
 	rPrime = coordpar[2];
 	gPrime = r2mag(rPrime*1000);
@@ -178,8 +179,6 @@ double stPbxConvolved(const double* coordpar, const double* bpars, int wedge, in
 //	fprintf(stderr, "rPrime: %lf\n", rPrime);
 //	fprintf(stderr, "gPrime: %lf\n", gPrime);
 //	fprintf(stderr, "rPrime3: %lf\n", rPrime3);
-	a = gPrime - 3.0*stdev;
-	b = gPrime + 3.0*stdev; 
 	
 	for (i = 0; i < 3; i++) {
 		coordparConvolved[i] = coordpar[i];
@@ -194,7 +193,7 @@ double stPbxConvolved(const double* coordpar, const double* bpars, int wedge, in
 //	fprintf(stderr, "bparsConvolved: %g, %g, %g, %g\n", bparsConvolved[0], bparsConvolved[1], bparsConvolved[2], bparsConvolved[3]);
 	
 //	printf("a: %lf, b: %lf, numpoints: %d, wedge: %d\n", a, b, numpoints, wedge);
-	pbx = qgaus(backgroundConvolve, a, b, wedge, numpoints);
+	pbx = qgaus(backgroundConvolve, gPrime, xr, wedge, numpoints);
 	pbx *= 1/rPrime3;
 //	fprintf(stderr, "pbx: %lf\n", pbx);
 
@@ -221,7 +220,7 @@ double stPbx(const double* coordpar, const double* bpars) {
 
 double stPsgConvolved(const double* coordpar, const double* spars, int wedge, int numpoints, int sgr_coordinates) {
 	int i;
-	double psg, reff_value, prob, rPrime, rPrime3, a, b; 
+	double psg, reff_value, prob, rPrime, rPrime3; 
 
         rPrime = coordpar[2];
         //fprintf(stderr, "rPrime: %lf\n", rPrime);
@@ -229,8 +228,6 @@ double stPsgConvolved(const double* coordpar, const double* spars, int wedge, in
         //fprintf(stderr, "gPrime: %lf\n", gPrime);
         rPrime3 =  rPrime * rPrime * rPrime;
         //fprintf(stderr, "rPrime3: %lf\n", rPrime3);
-	a = gPrime - 3.0*stdev;
-	b = gPrime + 3.0*stdev;
 
         for (i = 0; i < 3; i++) {
                 coordparConvolved[i] = coordpar[i];
@@ -244,7 +241,7 @@ double stPsgConvolved(const double* coordpar, const double* spars, int wedge, in
         //fprintf(stderr, "spars: %g, %g, %g, %g\n", spars[0], spars[1], spars[2], spars[3]);
         //fprintf(stderr, "sparsConvolved: %g, %g, %g, %g\n", sparsConvolved[0], sparsConvolved[1], sparsConvolved[2], sparsConvolved[3]);
 
-        psg = qgaus_stream(streamConvolve, a, b, wedge, numpoints, sgr_coordinates);
+        psg = qgaus_stream(streamConvolve, gPrime, xr, wedge, numpoints, sgr_coordinates);
 	psg *= 1/rPrime3;
        
         //fprintf(stderr, "psg: %lf\n", psg);
