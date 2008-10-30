@@ -203,10 +203,10 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 
 	#ifdef GMLE_BOINC
 		int retval = read_checkpoint(es);
-		if (retval) {
-			fprintf(stderr,"APP: failed reading checkpoint %d\n", retval);
-			return retval;
-		}
+//		if (retval) {
+//			fprintf(stderr,"APP: failed reading checkpoint %d\n", retval);
+//			return retval;
+//		}
 	#endif
 
 	if (!es->main_integral_calculated) {

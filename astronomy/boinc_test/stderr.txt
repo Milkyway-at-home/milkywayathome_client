@@ -1,12 +1,20 @@
-shmget: Invalid argument
+shmget in attach_shmem: Invalid argument
 Can't set up shared mem: -1
 Will run in standalone mode.
-APP: error resolving search parameters file (for write): -108
-	filename: out
-	resolved output path: out
-shmget: Invalid argument
+APP: error reading checkpoint (opening file)
+APP: failed reading checkpoint 1
+APP: error calculating integrals: 1
+called boinc_finish
+shmget in attach_shmem: Invalid argument
 Can't set up shared mem: -1
 Will run in standalone mode.
-APP: error resolving search parameters file (for write): -108
-	filename: out
-	resolved output path: out
+APP: error reading checkpoint (opening file)
+called boinc_finish
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+called boinc_finish
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+called boinc_finish
