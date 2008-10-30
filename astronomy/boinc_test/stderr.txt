@@ -1,0 +1,12 @@
+shmget: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+APP: error resolving search parameters file (for write): -108
+	filename: out
+	resolved output path: out
+shmget: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+APP: error resolving search parameters file (for write): -108
+	filename: out
+	resolved output path: out
