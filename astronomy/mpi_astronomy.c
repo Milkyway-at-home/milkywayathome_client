@@ -31,35 +31,36 @@ void read_data(int rank, int max_rank) {
 	/********
 		*	READ THE ASTRONOMY PARAMETERS
 	 ********/
-	printf("reading parameters...\n");
+	printf("[worker: %d] reading parameters...\n", rank);
 	int retval = read_astronomy_parameters(astronomy_parameters_file, ap);
 	if (retval) {
 		fprintf(stderr, "APP: error reading astronomy parameters: %d\n", retval);
 		exit(1);
 	}
-	fwrite_astronomy_parameters(stdout, ap);
-	printf("splitting parameters...\n");
+//	fwrite_astronomy_parameters(stdout, ap);
+	printf("[worker: %d] splitting parameters...\n", rank);
 	split_astronomy_parameters(ap, rank, max_rank);
 	/********
 		*	READ THE STAR POINTS
 	 ********/
-	printf("reading star points...\n");
+	printf("[worker: %d] reading star points...\n", rank);
 	sp = (STAR_POINTS*)malloc(sizeof(STAR_POINTS));
 	retval = read_star_points(star_points_file, sp);
 	if (retval) {
 		fprintf(stderr, "APP: error reading star points: %d\n", retval);
 		exit(1);
 	}
-	printf("read %d stars.\n", sp->number_stars);
+	printf("[worker: %d] read %d stars.\n", rank, sp->number_stars);
 	total_number_stars = sp->number_stars;
 	split_star_points(sp, rank, max_rank);
 
 	/********
 		*	INITIALIZE THE EVALUATION STATE
 	 ********/
-	printf("initializing state...\n");
+	printf("[worker: %d] initializing state...\n", rank);
 	es = (EVALUATION_STATE*)malloc(sizeof(EVALUATION_STATE));
 	initialize_state(es, ap->number_streams);
+
 }
 
 void integral_f(double* parameters, double** results) {
@@ -81,10 +82,9 @@ void integral_f(double* parameters, double** results) {
 	for (i = 0; i < ap->number_streams; i++) {
 		(*results)[i+1] = es->stream_integrals[i];
 	}
-
-	printf("[worker] background integral: %lf, stream integrals:", (*results)[0]);
-	for (i = 0; i < ap->number_streams; i++) printf(" %lf", (*results)[i+1]);
-	printf("\n");
+//	printf("[worker] background integral: %lf, stream integrals:", (*results)[0]);
+//	for (i = 0; i < ap->number_streams; i++) printf(" %lf", (*results)[i+1]);
+//	printf("\n");
 }
 
 void integral_compose(double* integral_results, int num_results, double** results) {
@@ -102,9 +102,9 @@ void integral_compose(double* integral_results, int num_results, double** result
 			(*results)[j+1] += integral_results[current + j + 1];
 		}
 	}
-	printf("[compose] background integral: %lf, stream integrals:", (*results)[0]);
-	for (i = 0; i < ap->number_streams; i++) printf(" %lf", (*results)[i+1]);
-	printf("\n");
+//	printf("[compose] background integral: %lf, stream integrals:", (*results)[0]);
+//	for (i = 0; i < ap->number_streams; i++) printf(" %lf", (*results)[i+1]);
+//	printf("\n");
 }
 
 void likelihood_f(double* integrals, double** results) {
@@ -137,7 +137,7 @@ double likelihood_compose(double* results, int num_results) {
 	}
 	prob_sum /= (total_number_stars - bad_jacobians);
 	prob_sum *= -1;
-	printf("composed likelihood: %lf\n", prob_sum);
+	printf("[worker: %d] composed likelihood: %lf\n", get_mpi_rank(), prob_sum);
 	return prob_sum;
 }
 
@@ -149,23 +149,18 @@ int main(int number_arguments, char **arguments){
 	double *point;
 	double *step;
 
-	printf("init data...\n");
 	evaluator__init(&number_arguments, &arguments, read_data);
-	printf("data initted\n");
 
 	integral_parameter_length = ap->number_parameters;
 	integral_results_length = 1 + ap->number_streams;
 	likelihood_parameter_length = 1 + ap->number_streams;
 	likelihood_results_length = 2;
 
-	printf("init integral...\n");
 	evaluator__init_integral(integral_f, integral_parameter_length, integral_compose, integral_results_length);
-	printf("init likelihood...\n");
 	evaluator__init_likelihood(likelihood_f, likelihood_parameter_length, likelihood_compose, likelihood_results_length);
 	printf("starting...\n");
 	mpi_evaluator__start();
 
-	printf("getting parameters...\n");
 	get_min_parameters(ap, &min_parameters);
 	get_max_parameters(ap, &max_parameters);
 	get_search_parameters(ap, &point);

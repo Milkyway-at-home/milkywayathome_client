@@ -383,7 +383,7 @@ void get_max_parameters(ASTRONOMY_PARAMETERS *ap, double** result) {
 void split(int rank, int max_rank, int divisor, double *min, double *max, int *steps, double step) {
 	int sub_rank, next_sub_rank, extra;
 
-	printf("rank: %d, max_rank: %d, divisor: %d, min: %lf, max: %lf, steps: %d, step: %lf\n", rank, max_rank, divisor, (*min), (*max), (*steps), step);
+//Ã	printf("rank: %d, max_rank: %d, divisor: %d, min: %lf, max: %lf, steps: %d, step: %lf\n", rank, max_rank, divisor, (*min), (*max), (*steps), step);
 	sub_rank = rank % divisor;
 	next_sub_rank = sub_rank + 1;
 	extra = (*steps) % divisor;
@@ -434,21 +434,21 @@ void split_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, int rank, int max_rank
 
 //	printf("r_divisor: %d, mu_divisor: %d, nu_divisor: %d\n", r_divisor, mu_divisor, nu_divisor);
 
-	printf("splitting ap->r\n");
+//	printf("splitting ap->r\n");
 	/********
 		*	Split ap->r
 	 ********/
 	split(rank, max_rank, r_divisor, &(ap->r_min), &(ap->r_max), &(ap->r_steps), ap->r_step_size);
 
 
-	printf("splitting ap->mu\n");
+//	printf("splitting ap->mu\n");
 	/********
 		*	Split ap->mu
 	 ********/
 	split((rank/r_divisor), max_rank, mu_divisor, &(ap->mu_min), &(ap->mu_max), &(ap->mu_steps), ap->mu_step_size);
 
 
-	printf("splitting ap->nu\n");
+//	printf("splitting ap->nu\n");
 	/********
 		*	Split ap->nu
 	 ********/
@@ -484,21 +484,21 @@ void split_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, int rank, int max_rank
 
 	//      printf("r_divisor: %d, mu_divisor: %d, nu_divisor: %d\n", r_divisor, mu_divisor, nu_divisor);
 
-	        printf("splitting ap->r_cut[%d]\n", i);
+//	        printf("splitting ap->r_cut[%d]\n", i);
         	/********
                 	*       Split ap->r
          	********/
        	 	split(rank, max_rank, r_cut_divisor, &(ap->r_cut[i][0]), &(ap->r_cut[i][1]), (int*)&(ap->r_cut[i][2]), ap->r_cut_step_size[i]);
 	
 	
-	        printf("splitting ap->mu_cut[%d]\n", i);
+//	        printf("splitting ap->mu_cut[%d]\n", i);
 	        /********
 	                *       Split ap->mu
 	         ********/
 	        split((rank/r_cut_divisor), max_rank, mu_cut_divisor, &(ap->mu_cut[i][0]), &(ap->mu_cut[i][1]), (int*)&(ap->mu_cut[i][2]), ap->mu_cut_step_size[i]);
 	
 	
-	        printf("splitting ap->nu_cut[%d]\n", i);
+//	        printf("splitting ap->nu_cut[%d]\n", i);
 	        /********
 	                *       Split ap->nu
 	         ********/

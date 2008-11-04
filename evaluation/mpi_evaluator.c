@@ -30,6 +30,10 @@ double* 	integral_parameters;
 double* 	integral_results_send;
 double*		integral_results_recv;
 
+int get_mpi_rank() {
+	return rank;
+}
+
 double mpi_evaluate(double* likelihood_parameters) {
 	double result = -1.0;
 
@@ -46,20 +50,24 @@ double mpi_evaluate(double* likelihood_parameters) {
 
 double mpi_integral_evaluate(double* integral_parameters) {
 	double result;
+	int i;
 
 	if (rank == 0) {
 		MPI_Bcast(integral_parameters, integral_parameter_length, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		__integral_function(integral_parameters, &integral_results_send);
+
 		MPI_Gather(integral_results_send, integral_results_length, MPI_DOUBLE, integral_results_recv, integral_results_length, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		__integral_combinator(integral_results_recv, number_processes, &likelihood_parameters);
 
 		MPI_Bcast(likelihood_parameters, likelihood_parameter_length, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		__likelihood_function(likelihood_parameters, &likelihood_results_send);
+
 		MPI_Gather(likelihood_results_send, likelihood_results_length, MPI_DOUBLE, likelihood_results_recv, likelihood_results_length, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		result = __likelihood_combinator(likelihood_results_recv, number_processes);
 
 		free(integral_results_send);
 		free(likelihood_results_send);
+
 		return result;
 	} else {
 		fprintf(stderr, "ERROR: calling evaluate from non-master process.");
@@ -74,7 +82,7 @@ void evaluator__init_likelihood(void (*l_f)(double*, double**), int l_p_l, doubl
 	likelihood_parameter_length = l_p_l;
 	likelihood_results_length = l_r_l;
 
-	likelihood_results_recv = (double*)malloc(sizeof(double) * likelihood_results_length);
+	likelihood_results_recv = (double*)malloc(sizeof(double) * likelihood_results_length * number_processes);
 
 	likelihood_defined = 1;
 	if (integral_defined == 0) evaluate = mpi_evaluate;
@@ -89,7 +97,7 @@ void evaluator__init_integral(void (*i_f)(double*, double**), int i_p_l, void (*
 	integral_parameter_length = i_p_l;
 	integral_results_length = i_r_l;
 
-	integral_results_recv = (double*)malloc(sizeof(double) * integral_results_length);
+	integral_results_recv = (double*)malloc(sizeof(double) * integral_results_length * number_processes);
 
 	integral_defined = 1;
 	evaluate = mpi_integral_evaluate;

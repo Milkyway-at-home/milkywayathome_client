@@ -52,6 +52,7 @@
 #include "atSurveyGeometry.h"
 #include "star_points.h"
 #include "numericalIntegration.h"
+#include "../evaluation/mpi_evaluator.h"
 
 #ifndef _WIN32
 	#define pi M_PI
@@ -431,12 +432,11 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
 	sum_exp_weights += background_weight;
 
 	int first_run = 1;
-
 	for (; es->current_star_point < sp->number_stars; es->current_star_point++) {
-		double* star_coords = sp->stars[es->current_star_point];
-
 		double star_prob = 0.0;
 		double sum_integrals = 0.0;
+		double* star_coords = sp->stars[es->current_star_point];
+
 		for (current_stream = 0; current_stream < ap->number_streams; current_stream++) {
 			if (new_formula) {
 				if (ap->convolve > 0) {

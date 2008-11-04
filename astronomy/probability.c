@@ -9,9 +9,10 @@
 #include "numericalIntegration.h"
 
 #define PI 3.1415926535897932384626433832795028841971693993751
+#define stdev 0.6
+#define xr 3 * stdev
+
 double sigmoid_curve_parameters[3] = { 0.9402, 1.6171, 23.5877 };
-double stdev = 0.6;
-double xr=3*stdev;
 
 double coordparConvolved[3];
 double bparsConvolved[4];
@@ -123,6 +124,7 @@ double stPsgFunction(const double* coordpar, const double* spars, int wedge, int
 	phi = spars[3];
 	sigma = spars[4];
 
+
 	//update: convert from mu, nu, r geometry to a and c geometry
         if (sgr_coordinates == 0) {
        		atGCToEq(mu, 0, &ra, &dec, get_node(), wedge_incl(wedge));
@@ -175,27 +177,12 @@ double stPbxConvolved(const double* coordpar, const double* bpars, int wedge, in
 	rPrime = coordpar[2];
 	gPrime = r2mag(rPrime*1000);
 	rPrime3 = rPrime * rPrime * rPrime;
-
-//	fprintf(stderr, "rPrime: %lf\n", rPrime);
-//	fprintf(stderr, "gPrime: %lf\n", gPrime);
-//	fprintf(stderr, "rPrime3: %lf\n", rPrime3);
 	
-	for (i = 0; i < 3; i++) {
-		coordparConvolved[i] = coordpar[i];
-	}	
-	for (i = 0; i < 4; i++) {
-		bparsConvolved[i] = bpars[i];
-	}
+	for (i = 0; i < 3; i++) coordparConvolved[i] = coordpar[i];
+	for (i = 0; i < 4; i++) bparsConvolved[i] = bpars[i];
 
-//	fprintf(stderr, "coordpar: %g, %g, %g\n", coordpar[0], coordpar[1], coordpar[2]);
-//	fprintf(stderr, "coordparConvolved: %g, %g, %g\n", coordparConvolved[0], coordparConvolved[1], coordparConvolved[2]);
-//	fprintf(stderr, "bpars: %g, %g, %g, %g\n", bpars[0], bpars[1], bpars[2], bpars[3]);
-//	fprintf(stderr, "bparsConvolved: %g, %g, %g, %g\n", bparsConvolved[0], bparsConvolved[1], bparsConvolved[2], bparsConvolved[3]);
-	
-//	printf("a: %lf, b: %lf, numpoints: %d, wedge: %d\n", a, b, numpoints, wedge);
 	pbx = qgaus(backgroundConvolve, gPrime, xr, wedge, numpoints);
 	pbx *= 1/rPrime3;
-//	fprintf(stderr, "pbx: %lf\n", pbx);
 
 	reff_value = reff(coordpar[2]);
 	prob = pbx*reff_value;
@@ -206,15 +193,10 @@ double stPbxConvolved(const double* coordpar, const double* bpars, int wedge, in
 double stPbx(const double* coordpar, const double* bpars) {
         double pbx, reff_value, prob;
 
-//	fprintf(stderr, "coordpar: %g, %g, %g\n", coordpar[0], coordpar[1], coordpar[2]);
-//	fprintf(stderr, "bpars: %g, %g, %g, %g\n", bpars[0], bpars[1], bpars[2], bpars[3]);
-
 	pbx = stPbxFunction(coordpar, bpars);
-//	fprintf(stderr, "pbx: %lf\n", pbx);
 
         reff_value = reff(coordpar[2]);
         prob = pbx*reff_value;
-
         return prob;
 }
 
@@ -223,50 +205,27 @@ double stPsgConvolved(const double* coordpar, const double* spars, int wedge, in
 	double psg, reff_value, prob, rPrime, rPrime3; 
 
         rPrime = coordpar[2];
-        //fprintf(stderr, "rPrime: %lf\n", rPrime);
         gPrime = r2mag(rPrime*1000);
-        //fprintf(stderr, "gPrime: %lf\n", gPrime);
         rPrime3 =  rPrime * rPrime * rPrime;
-        //fprintf(stderr, "rPrime3: %lf\n", rPrime3);
 
-        for (i = 0; i < 3; i++) {
-                coordparConvolved[i] = coordpar[i];
-        }
-        for (i = 0; i < 5; i++) {
-                sparsConvolved[i] = spars[i];
-        }
-        
-	//fprintf(stderr, "coordpar: %g, %g, %g\n", coordpar[0], coordpar[1], coordpar[2]);
-        //fprintf(stderr, "coordparConvolved: %g, %g, %g\n", coordparConvolved[0], coordparConvolved[1], coordparConvolved[2]);
-        //fprintf(stderr, "spars: %g, %g, %g, %g\n", spars[0], spars[1], spars[2], spars[3]);
-        //fprintf(stderr, "sparsConvolved: %g, %g, %g, %g\n", sparsConvolved[0], sparsConvolved[1], sparsConvolved[2], sparsConvolved[3]);
+        for (i = 0; i < 3; i++) coordparConvolved[i] = coordpar[i];
+        for (i = 0; i < 5; i++) sparsConvolved[i] = spars[i];
 
         psg = qgaus_stream(streamConvolve, gPrime, xr, wedge, numpoints, sgr_coordinates);
 	psg *= 1/rPrime3;
        
-        //fprintf(stderr, "psg: %lf\n", psg);
-
         reff_value = reff(coordpar[2]);
-//      fprintf(stderr, "reff_value: %lf\n", reff_value);
         prob = psg * reff_value;
-//      fprintf(stderr, "prob after ref: %lf\n", prob);
 	return prob;
 }
 
 double stPsg(const double* coordpar, const double* spars, int wedge, int sgr_coordinates) {
-//        int i;
         double psg, reff_value, prob; 
 
-        //fprintf(stderr, "coordpar: %g, %g, %g\n", coordpar[0], coordpar[1], coordpar[2]);
-        //fprintf(stderr, "spars: %g, %g, %g, %g\n", spars[0], spars[1], spars[2], spars[3]);
-
 	psg = stPsgFunction(coordpar, spars, wedge, sgr_coordinates);
-        //fprintf(stderr, "psg: %lf\n", psg);
-
+ 
         reff_value = reff(coordpar[2]);
-//      fprintf(stderr, "reff_value: %lf\n", reff_value);
         prob = psg * reff_value;
-//      fprintf(stderr, "prob after ref: %lf\n", prob);
         return prob;
 }
 
