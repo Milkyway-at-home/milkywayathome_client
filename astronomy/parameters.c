@@ -417,7 +417,9 @@ void split_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, int rank, int max_rank
 
 	while (r_divisor > ap->r_steps) {
 		if (r_divisor > ap->r_steps && (r_divisor % 2) != 0) {
-			printf("ERROR cannot split data,  slices > ap->r_steps and not divisible by 2");
+			printf("ERROR cannot split data, slices [%d] > ap->r_steps [%d] and not divisible by 2\n", r_divisor, ap->r_steps);
+			printf("\trank: %d, max_rank: %d\n", rank, max_rank);
+			exit(0);
 		}
 
 		r_divisor /= 2;
@@ -425,7 +427,9 @@ void split_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, int rank, int max_rank
 	}
 	while (mu_divisor > ap->mu_steps) {
 		if (mu_divisor > ap->mu_steps && (mu_divisor % 2) != 0) {
-			printf("ERROR cannot split data,  slices > ap->r_steps and not divisible by 2");
+			printf("ERROR cannot split data, slices [%d] > ap->mu_steps [%d] and not divisible by 2\n", mu_divisor, ap->mu_steps);
+			printf("\trank: %d, max_rank: %d\n", rank, max_rank);
+			exit(0);
 		}
 
 		mu_divisor /= 2;

@@ -8,10 +8,6 @@
 #include "evaluation.h"
 
 #include "../searches/gradient_descent.h"
-#include "../searches/synchronous_search.h"
-#include "../searches/genetic_search.h"
-#include "../searches/differential_evolution.h"
-#include "../searches/particle_swarm.h"
 #include "../searches/newton_method.h"
 #include "../evaluation/mpi_evaluator.h"
 #include "../evaluation/evaluator.h"
@@ -173,12 +169,6 @@ int main(int number_arguments, char **arguments){
 		synchronous_conjugate_gradient_descent(arguments[1], arguments[2], point, step, ap->number_parameters);
 	} else if (arguments[2][0] == 'n') {
 		synchronous_newton_method(arguments[1], arguments[2], point, step, ap->number_parameters);
-	} else if (arguments[2][0] == 'g' && arguments[2][1] == 's') {
-		synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, ap->number_parameters, start_genetic_search);
-	} else if (arguments[2][0] == 'd') {
-		synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, ap->number_parameters, start_differential_evolution);
-	} else if (arguments[2][0] == 'p') {
-		synchronous_search(arguments[1], arguments[2], min_parameters, max_parameters, ap->number_parameters, start_particle_swarm);
 	}
 	return 0;
 }

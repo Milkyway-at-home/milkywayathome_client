@@ -18,9 +18,9 @@ stream_max[5]: 76.0, 45.7, 6.283185307179586, 6.283185307179586, 20.0
 optimize_parameter[5]: 1, 1, 1, 1, 1
 convolve: 30
 wedge: 82
-r[min,max,steps][3]: 13.425490, 22.499581, 175
-mu[min,max,steps][3]: 310, 419, 400
-nu[min,max,steps][3]: -1.25, 1.25, 20
+r[min,max,steps]: 13.425490, 22.499581, 175
+mu[min,max,steps]: 310, 419, 400
+nu[min,max,steps]: -1.25, 1.25, 20
 limits: 21
 9, 122, 238
 10, 117, 249

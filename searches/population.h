@@ -27,6 +27,6 @@ void insert_sorted(POPULATION* population, double* parameters, double fitness);
 void replace(POPULATION* population, int position, double* parameters, double fitness);
 void replace_if_better(POPULATION* population, int position, double* parameters, double fitness);
 
-void get_n_distinct(POPULATION *population, int number_parents, POPULATION *n_distinct);
+void get_n_distinct(POPULATION *population, int number_parents, POPULATION **n_distinct);
 
 #endif

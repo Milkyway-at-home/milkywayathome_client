@@ -155,9 +155,7 @@ void randomized_newton_method(char* search_path, char* search_parameters, double
 		print_double_array(stdout, "max range: ", number_parameters, max_parameters);
 		
 		if (p == NULL) {
-			p = new_population(search_path, search_parameters, min_parameters, max_parameters, number_parameters, population_size, max_evaluations);
-		} else {
-			reset_population(p, min_parameters, max_parameters);
+			new_population(max_evaluations, number_parameters, &p);
 		}
 
 		printf("\nevaluating individuals (fitness : parameters):\n");
@@ -208,43 +206,4 @@ void randomized_newton_method(char* search_path, char* search_parameters, double
 	free(current_point);
 	free(min_parameters);
 	free(max_parameters);
-}
-
-
-typedef struct newton_method_search {
-	int current_iteration, maximum_iteration;
-	int current_evaluation, evaluations_per_iteration;
-	double *current_parameters;
-	double *parameter_range;
-
-	double best_fitness;
-	double *best_parameters;
-
-	POPULATION *current_population;
-} NEWTON_METHOD_SEARCH;
-
-int newton_generate_parameters(SEARCH* search, SEARCH_PARAMETERS* sp) {
-	NEWTON_METHOD_SEARCH *nms = (NEWTON_METHOD_SEARCH*)(search->search_data);
-	POPULATION *p = nms->current_population;
-
-	if (current_iteration <= maximum_iteration) {
-		char metadata[METADATA_SIZE];
-		sprintf(metadata, "", );
-		new_search_parameters(&sp, search->search_name, p->number_parameters, random_recombination(p->min_parameters, p->max_parameters, p->number_parameters), metadata);
-	}
-}
-
-int newton_insert_parameters(SEARCH* search, SEARCH_PARAMETERS* sp) {
-	NEWTON_METHOD_SEARCH *nms = (NEWTON_METHOD_SEARCH*)(search->search_data);
-
-	/********
-		*	Insert parameters into population.  If cutoff reached, calculate hessian
-		*	and generate new population.
-	 ********/
-}
-
-int init_newton_method(char* search_name, SEARCH* search) {
-
-
-
 }
