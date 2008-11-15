@@ -113,11 +113,11 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 	fscanf(file, "number_parameters: %d\n", &ap->number_background_parameters);
 	fscanf(file, "background_weight: %lf\n", &ap->background_weight);
 
-	read_double_array(file, "background_parameters: ", ap->number_background_parameters, &ap->background_parameters);
-	read_double_array(file, "background_step: ", ap->number_background_parameters, &ap->background_step);
-	read_double_array(file, "background_min: ", ap->number_background_parameters, &ap->background_min);
-	read_double_array(file, "background_max: ", ap->number_background_parameters, &ap->background_max);
-	read_int_array(file, "optimize_parameter: ", ap->number_background_parameters, &ap->background_optimize);
+	read_double_array(file, "background_parameters", &ap->background_parameters);
+	read_double_array(file, "background_step", &ap->background_step);
+	read_double_array(file, "background_min", &ap->background_min);
+	read_double_array(file, "background_max", &ap->background_max);
+	read_int_array(file, "optimize_parameter", &ap->background_optimize);
 
 	fscanf(file, "number_streams: %d, %d\n", &ap->number_streams, &ap->number_stream_parameters);
 	ap->stream_weights				= (double*)malloc(sizeof(double) * ap->number_streams);
@@ -139,11 +139,11 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 		fscanf(file, "stream_weight_max: %lf\n", &ap->stream_weight_max[i]);
 		fscanf(file, "optimize_weight: %d\n", &ap->stream_weight_optimize[i]);
 
-		read_double_array(file, "stream_parameters: ", ap->number_stream_parameters, &ap->stream_parameters[i]);
-		read_double_array(file, "stream_step: ", ap->number_stream_parameters, &ap->stream_step[i]);
-		read_double_array(file, "stream_min: ", ap->number_stream_parameters, &ap->stream_min[i]);
-		read_double_array(file, "stream_max: ", ap->number_stream_parameters, &ap->stream_max[i]);
-		read_int_array(file, "optimize_parameter: ", ap->number_stream_parameters, &ap->stream_optimize[i]);
+		read_double_array(file, "stream_parameters", &ap->stream_parameters[i]);
+		read_double_array(file, "stream_step", &ap->stream_step[i]);
+		read_double_array(file, "stream_min", &ap->stream_min[i]);
+		read_double_array(file, "stream_max", &ap->stream_max[i]);
+		read_int_array(file, "optimize_parameter", &ap->stream_optimize[i]);
 	}
 
 	fscanf(file, "convolve: %d\n", &ap->convolve);
@@ -165,9 +165,9 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 	ap->nu_cut_step_size	= (double*)malloc(sizeof(double) * ap->number_cuts);
 
 	for (i = 0; i < ap->number_cuts; i++) {
-		read_double_array(file, "r_cut[min,max,steps]: ", 3, &ap->r_cut[i]);
-		read_double_array(file, "mu_cut[min,max,steps]: ", 3, &ap->mu_cut[i]);
-		read_double_array(file, "nu_cut[min,max,steps]: ", 3, &ap->nu_cut[i]); 
+		read_double_array(file, "r_cut[min,max,steps]", &ap->r_cut[i]);
+		read_double_array(file, "mu_cut[min,max,steps]", &ap->mu_cut[i]);
+		read_double_array(file, "nu_cut[min,max,steps]", &ap->nu_cut[i]); 
 
 		printf("read %dth cut\n", i);
 
@@ -207,11 +207,11 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 
 	fprintf(file, "number_parameters: %d\n", ap->number_background_parameters);
 	fprintf(file, "background_weight: %lf\n", ap->background_weight);
-	print_double_array(file, "background_parameters: ", ap->number_background_parameters, ap->background_parameters);
-	print_double_array(file, "background_step: ", ap->number_background_parameters, ap->background_step);
-	print_double_array(file, "background_min: ", ap->number_background_parameters, ap->background_min);
-	print_double_array(file, "background_max: ", ap->number_background_parameters, ap->background_max);
-	print_int_array(file, "optimize_parameter: ", ap->number_background_parameters, ap->background_optimize);
+	print_double_array(file, "background_parameters", ap->number_background_parameters, ap->background_parameters);
+	print_double_array(file, "background_step", ap->number_background_parameters, ap->background_step);
+	print_double_array(file, "background_min", ap->number_background_parameters, ap->background_min);
+	print_double_array(file, "background_max", ap->number_background_parameters, ap->background_max);
+	print_int_array(file, "optimize_parameter", ap->number_background_parameters, ap->background_optimize);
 	
 	fprintf(file, "number_streams: %d, %d\n", ap->number_streams, ap->number_stream_parameters);
 	for (i = 0; i < ap->number_streams; i++) {
@@ -221,11 +221,11 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 		fprintf(file, "stream_weight_max: %lf\n", ap->stream_weight_max[i]);
 		fprintf(file, "optimize_weight: %d\n", ap->stream_weight_optimize[i]);
 
-		print_double_array(file, "stream_parameters: ", ap->number_stream_parameters, ap->stream_parameters[i]);
-		print_double_array(file, "stream_step: ", ap->number_stream_parameters, ap->stream_step[i]);
-		print_double_array(file, "stream_min: ", ap->number_stream_parameters, ap->stream_min[i]);
-		print_double_array(file, "stream_max: ", ap->number_stream_parameters, ap->stream_max[i]);
-		print_int_array(file, "optimize_parameter: ", ap->number_stream_parameters, ap->stream_optimize[i]);
+		print_double_array(file, "stream_parameters", ap->number_stream_parameters, ap->stream_parameters[i]);
+		print_double_array(file, "stream_step", ap->number_stream_parameters, ap->stream_step[i]);
+		print_double_array(file, "stream_min", ap->number_stream_parameters, ap->stream_min[i]);
+		print_double_array(file, "stream_max", ap->number_stream_parameters, ap->stream_max[i]);
+		print_int_array(file, "optimize_parameter", ap->number_stream_parameters, ap->stream_optimize[i]);
 	}
 
         fprintf(file, "convolve: %d\n", ap->convolve);
@@ -237,9 +237,9 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 	
 	fprintf(file, "number_cuts: %d\n", ap->number_cuts);
 	for (i = 0; i < ap->number_cuts; i++) {
-		print_double_array(file, "r_cut[min,max,steps]: ", 3, ap->r_cut[i]);
-		print_double_array(file, "mu_cut[min,max,steps]: ", 3, ap->mu_cut[i]);
-		print_double_array(file, "nu_cut[min,max,steps]: ", 3, ap->nu_cut[i]);
+		print_double_array(file, "r_cut[min,max,steps]", 3, ap->r_cut[i]);
+		print_double_array(file, "mu_cut[min,max,steps]", 3, ap->mu_cut[i]);
+		print_double_array(file, "nu_cut[min,max,steps]", 3, ap->nu_cut[i]);
 	}
 }
 

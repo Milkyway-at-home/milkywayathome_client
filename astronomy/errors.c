@@ -8,12 +8,6 @@
 #include "star_points.h"
 #include "evaluation.h"
 
-#include "../searches/gradient_descent.h"
-#include "../searches/synchronous_search.h"
-#include "../searches/genetic_search.h"
-#include "../searches/differential_evolution.h"
-#include "../searches/particle_swarm.h"
-#include "../searches/newton_method.h"
 #include "../evaluation/mpi_evaluator.h"
 #include "../evaluation/evaluator.h"
 #include "../searches/hessian.h"

@@ -50,7 +50,6 @@ double mpi_evaluate(double* likelihood_parameters) {
 
 double mpi_integral_evaluate(double* integral_parameters) {
 	double result;
-	int i;
 
 	if (rank == 0) {
 		MPI_Bcast(integral_parameters, integral_parameter_length, MPI_DOUBLE, 0, MPI_COMM_WORLD);

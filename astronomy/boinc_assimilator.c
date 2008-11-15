@@ -6,10 +6,7 @@
 	*	FGDO includes
  ********/
 #include "../evaluation/search_manager.h"
-#include "../searches/genetic_search.h"
 #include "../searches/newton_method.h"
-#include "../searches/differential_evolution.h"
-#include "../searches/particle_swarm.h"
 #include "../searches/search_parameters.h"
 
 /********
@@ -27,10 +24,10 @@ void print_arguments() {
 }
 
 int main(int argc, char** argv) {
-	register_search("nm", start_newton_method);
-	register_search("gs", start_genetic_search);
-	register_search("de", start_differential_evolution);
-	register_search("pso", start_particle_swarm);
+	register_search("nm", init_newton_method);
+//	register_search("gs", start_genetic_search);
+//	register_search("de", start_differential_evolution);
+//	register_search("pso", start_particle_swarm);
 
 	init_add_workunit();
 

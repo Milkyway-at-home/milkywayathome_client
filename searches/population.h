@@ -1,56 +1,32 @@
-#ifndef GEO_POPULATION_H
-#define GEO_POPULATION_H
+#ifndef FGDO_POPULATION_H
+#define FGDO_POPULATION_H
 
 #include <stdio.h>
+#include "../util/settings.h"
 
-#include "../settings.h"
-
-typedef struct population POPULATION;
-
-typedef void (*get_function_type)(POPULATION*, double**, char**);
-
-typedef void (*insert_function_type)(POPULATION*, double*, double, char*);
-
-struct population {
-	char* search_path;
-	char* search_parameters;
-
-	int current_size;
+typedef struct population {
+	int size;
 	int max_size;
-
-	int current_evaluation;
-	int max_evaluations;
 
 	int number_parameters;
 	double** individuals;
 	double* fitness;
+} POPULATION;
 
-	double* min_parameters;
-	double* max_parameters;
+int fread_population(FILE* file, POPULATION** p);
+int read_population(char path[512], POPULATION** p);
 
-	get_function_type get_individual;
-	insert_function_type insert_individual;
+int fwrite_population(FILE* file, POPULATION* population);
+int write_population(char path[512], POPULATION* population);
 
-	void* parameters;
-};
-
-POPULATION* fread_population(FILE* file);
-POPULATION* read_population(char path[512]);
-
-void fwrite_population(FILE* file, POPULATION* population);
-void write_population(char path[512], POPULATION* population);
-
-void fwrite_population_statistics(FILE *file, POPULATION* population);
-
-POPULATION* new_population(char search_path[512], char search_parameters[512], double *min_parameters, double *max_parameters, int number_parameters, int population_size, int max_evaluations);
+int new_population(int max_size, int number_parameters, POPULATION** population);
 void free_population(POPULATION* population);
-void reset_population(POPULATION* population, double* min_parameters, double* max_parameters);
 
+void add(POPULATION* population, double* parameters, double fitness);
 void insert_sorted(POPULATION* population, double* parameters, double fitness);
 void replace(POPULATION* population, int position, double* parameters, double fitness);
 void replace_if_better(POPULATION* population, int position, double* parameters, double fitness);
 
-void get_n_distinct(POPULATION *population, int number_parents, double ***parents, double **parent_fitness);
-void bound_parameters(POPULATION *population, double *parameters);
+void get_n_distinct(POPULATION *population, int number_parents, POPULATION *n_distinct);
 
 #endif

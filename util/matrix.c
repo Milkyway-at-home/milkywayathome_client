@@ -1,5 +1,5 @@
-#include "stdio.h"
-#include "stdlib.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 void matrix_print(FILE* file, const char* name, double** m, int r, int c) {
 	int i, j;

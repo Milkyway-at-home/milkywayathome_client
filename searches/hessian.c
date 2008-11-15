@@ -3,8 +3,7 @@
 #include <string.h>
 
 #include "hessian.h"
-#include "search.h"
-
+#include "../util/settings.h"
 #include "../util/matrix.h"
 
 void fprintf_hessian(FILE* file, HESSIAN* hessian) {

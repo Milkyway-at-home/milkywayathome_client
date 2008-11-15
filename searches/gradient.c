@@ -3,8 +3,8 @@
 #include <string.h>
 
 #include "gradient.h"
-#include "search.h"
 #include "../evaluation/evaluator.h"
+#include "../util/settings.h"
 
 void synchronous_get_gradient(double* point, double* step, int number_parameters, GRADIENT** gradient) {
         char **metadata;

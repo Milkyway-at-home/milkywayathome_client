@@ -1,7 +1,22 @@
-#ifndef GEM_SEARCH_H
-#define GEM_SEARCH_H
+#ifndef FGDO_SEARCH_H
+#define FGDO_SEARCH_H
 
-#define METADATA_SIZE 2048
+#include "../searches/search_parameters.h"
 
+/********
+	*	Generic search data.
+ ********/
+
+typedef struct search SEARCH;
+
+typedef int (*generate_parameters_type)(SEARCH*, SEARCH_PARAMETERS*);
+typedef int (*insert_parameters_type)(SEARCH*, SEARCH_PARAMETERS*);
+
+struct search {
+	char*				search_name;
+	void*				search_data;
+	generate_parameters_type	generate_parameters;
+	insert_parameters_type		insert_parameters;
+};
 
 #endif

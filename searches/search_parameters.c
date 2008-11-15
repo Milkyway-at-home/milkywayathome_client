@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 #include "search_parameters.h"
-#include "../settings.h"
+#include "../util/settings.h"
 
 /****
          *     BOINC includes
@@ -37,20 +37,17 @@
 
 void free_search_parameters(SEARCH_PARAMETERS *parameters) {
 	free(parameters->search_name);
-	free(parameters->search_path);
 	free(parameters->parameters);
 	free(parameters->metadata);
 }
 
-void new_search_parameters(SEARCH_PARAMETERS **p, char *search_name, char *search_path, int number_parameters, double* parameters, char* metadata) {
+void new_search_parameters(SEARCH_PARAMETERS **p, char *search_name, int number_parameters, double* parameters, char* metadata) {
 	(*p) = (SEARCH_PARAMETERS*)malloc(sizeof(SEARCH_PARAMETERS));
 
 	(*p)->search_name = (char*)malloc(sizeof(char) * 1024);
-	(*p)->search_path = (char*)malloc(sizeof(char) * 1024);
 	(*p)->metadata = (char*)malloc(sizeof(char) * METADATA_SIZE);
 
 	strcpy((*p)->search_name, search_name);
-	strcpy((*p)->search_path, search_path);
 	strcpy((*p)->metadata, metadata);
 
 	(*p)->number_parameters = number_parameters;
@@ -60,9 +57,7 @@ void new_search_parameters(SEARCH_PARAMETERS **p, char *search_name, char *searc
 int fread_search_parameters(FILE* file, SEARCH_PARAMETERS *parameters) {
 	int i;
 	parameters->search_name = (char*)malloc(sizeof(char) * 1024);
-	parameters->search_path = (char*)malloc(sizeof(char) * 1024);
 	if (fscanf(file, "%s\n", parameters->search_name) != 1) return 1;
-	if (fscanf(file, "%s\n", parameters->search_path) != 1) return 1;
 	if (fscanf(file, "parameters [%d]:", &(parameters->number_parameters)) != 1) return 1;
 
 	parameters->parameters = (double*)malloc(sizeof(double) * parameters->number_parameters);
@@ -79,7 +74,6 @@ int fread_search_parameters(FILE* file, SEARCH_PARAMETERS *parameters) {
 int fwrite_search_parameters(FILE* file, SEARCH_PARAMETERS *parameters) {
 	int i;
 	if (fprintf(file, "%s\n", parameters->search_name) < 0) return 1;
-	if (fprintf(file, "%s\n", parameters->search_path) < 0) return 1;
 	if (fprintf(file, "parameters [%d]:", parameters->number_parameters) < 0) return 1;
 
 	for (i = 0; i < parameters->number_parameters; i++) {
@@ -148,7 +142,7 @@ int write_search_parameters(const char* filename, SEARCH_PARAMETERS *parameters)
 
 		FILE* data_file = boinc_fopen(output_path, "w");
 		retval = fwrite_search_parameters(data_file, parameters);
-		fprintf(data_file, "fitness: %d\n", fitness);
+		fprintf(data_file, "fitness: %lf\n", fitness);
 		fclose(data_file);
 		return retval;
 	}

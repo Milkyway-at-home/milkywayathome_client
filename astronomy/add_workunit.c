@@ -67,7 +67,7 @@ void add_workunit(SEARCH_PARAMETERS* parameters) {
 		return;
 	}
 
-	sprintf(astronomy_file, "%s/astronomy_parameters.txt", parameters->search_path);
+	sprintf(astronomy_file, "%s/%s/astronomy_parameters.txt", get_working_directory(), parameters->search_name);
 	ASTRONOMY_PARAMETERS *ap = (ASTRONOMY_PARAMETERS*)malloc(sizeof(ASTRONOMY_PARAMETERS));
 	int retval = read_astronomy_parameters(astronomy_file, ap);
 	if (retval) {
@@ -84,7 +84,7 @@ void add_workunit(SEARCH_PARAMETERS* parameters) {
 			return;
 		}
 	}
-	sprintf(star_file, "%s/stars.txt", parameters->search_path);
+	sprintf(star_file, "%s/%s/stars.txt", get_working_directory(), parameters->search_name);
 	if (sched_config.download_path(star_file, star_path)) {
 		/********
 			*	Stars not moved to the download diretory yet, do this.

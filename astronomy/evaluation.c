@@ -351,9 +351,9 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 	                                                printf("Error: ap->sgr_coordinates not valid");
 	                                        }
 	
-	                                                integral_point[0] = point0;
-	                                                integral_point[1] = point1;
-	                                                integral_point[2] = (next_r+r)/2.0;
+						integral_point[0] = point0;
+						integral_point[1] = point1;
+						integral_point[2] = (next_r+r)/2.0;
 	
 	                                        //vickej2 <<<testing if r stays within its bounds>>>
 	                                        //printf("<<<%f>>>\n", r); //vickej2

@@ -13,11 +13,6 @@
 #include "probability.h"
 #include "stCoords.h"
 
-#include "../searches/synchronous_search.h"
-#include "../searches/genetic_search.h"
-#include "../searches/differential_evolution.h"
-#include "../searches/particle_swarm.h"
-#include "../searches/newton_method.h"
 #include "../evaluation/mpi_evaluator.h"
 #include "../evaluation/evaluator.h"
 

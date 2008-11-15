@@ -9,7 +9,7 @@
 void print_double_array(FILE *file, const char *array_name, int size, double *array_t) {
 	int i;
 
-	fprintf(file, array_name);
+	fprintf(file, "%s[%d]: ", array_name, size);
 	for (i = 0; i < size; i++) {
 		fprintf(file, "%lf", array_t[i]);
 		if (i < size-1) fprintf(file, ", ");
@@ -20,7 +20,7 @@ void print_double_array(FILE *file, const char *array_name, int size, double *ar
 void print_int_array(FILE *file, const char *array_name, int size, int *array_t) {
 	int i;
 
-	fprintf(file, array_name);
+	fprintf(file, "%s[%d]: ", array_name, size);
 	for (i = 0; i < size; i++) {
 		if (i == 0) fprintf(file, " %d", array_t[i]);
 		else fprintf(file, ", %d", array_t[i]);
@@ -31,11 +31,13 @@ void print_int_array(FILE *file, const char *array_name, int size, int *array_t)
 /****
 	*	Functions for reading parameters from files
 *****/
-void read_double_array(FILE *file, const char *array_name, int size, double** array_t) {
-	int i;
+int read_double_array(FILE *file, const char *array_name, double** array_t) {
+	int i, size;
+	fscanf(file, array_name);
+	fscanf(file, "[%d]: ", &size);
+
 	(*array_t) = (double*)malloc(sizeof(double) * size);
 
-	fscanf(file, array_name);
 	for (i = 0; i < size; i++) {
 		if (fscanf(file, "%lf", &(*array_t)[i]) != 1) {
 			fprintf(stderr,"Error reading into %s\n",array_name);
@@ -44,13 +46,16 @@ void read_double_array(FILE *file, const char *array_name, int size, double** ar
 		if (i < size-1) fscanf(file, ", ");
 	}
 	fscanf(file, "\n");
+	return size;
 }
 
-void read_int_array(FILE *file, const char *array_name, int size, int **array_t) {
-	int i;
+int read_int_array(FILE *file, const char *array_name, int **array_t) {
+	int i, size;
+	fscanf(file, array_name);
+	fscanf(file, "[%d]: ", &size);
+
 	(*array_t) = (int*)malloc(sizeof(int) * size);
 
-	fscanf(file, array_name);
 	for (i = 0; i < size; i++) {
 		if (fscanf(file, "%d", &(*array_t)[i]) != 1) {
 			fprintf(stderr,"Error reading into %s\n",array_name);
@@ -59,4 +64,5 @@ void read_int_array(FILE *file, const char *array_name, int size, int **array_t)
 		if (i < size-1) fscanf(file, ", ");
 	}
 	fscanf(file, "\n");
+	return size;
 }

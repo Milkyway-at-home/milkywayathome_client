@@ -1,0 +1,83 @@
+CXX = mpicc
+
+FGDO_DIR = ..
+EVALUATION_DIR = $(FGDO_DIR)/evaluation
+SEARCH_DIR = $(FGDO_DIR)/searches
+UTIL_DIR = $(FGDO_DIR)/util
+
+APP_DIR = ../astronomy
+
+MPI_ASYNCH = \
+	$(APP_DIR)/mpi_asynchronous_astronomy.o
+MPI_SYNCH = \
+	$(APP_DIR)/mpi_synchronous_astronomy.o
+SEPARATION = \
+	$(APP_DIR)/separation.o
+ERRORS = \
+	$(APP_DIR)/errors.o
+
+ASTRONOMY_OBJS = \
+	$(APP_DIR)/atSurveyGeometry.o \
+	$(APP_DIR)/numericalIntegration.o \
+	$(APP_DIR)/parameters.o \
+	$(APP_DIR)/probability.o \
+	$(APP_DIR)/stCoords.o \
+	$(APP_DIR)/stCnum.o \
+	$(APP_DIR)/stMath.o \
+	$(APP_DIR)/stVector.o \
+	$(APP_DIR)/star_points.o \
+	$(APP_DIR)/evaluation.o
+
+EVALUATION_OBJS = \
+	$(EVALUATION_DIR)/mpi_evaluator.o
+SYNCH_SEARCH_OBJS = \
+	$(SEARCH_DIR)/gradient_descent.o \
+	$(SEARCH_DIR/line_search.o \
+	$(SEARCH_DIR)/genetic_search.o \
+	$(SEARCH_DIR)/newton_method.o \
+	$(SEARCH_DIR)/differential_evolution.o \
+	$(SEARCH_DIR)/particle_swarm.o \
+	$(SEARCH_DIR)/synchronous_search.o \
+	$(SEARCH_DIR)/recombination.o \
+	$(SEARCH_DIR)/gradient.o \
+	$(SEARCH_DIR)/hessian.o \
+	$(SEARCH_DIR)/population.o
+ASYNCH_SEARCH_OBJS = \
+	$(SEARCH_DIR)/asynchronous_newton_method.o \
+	$(SEARCH_DIR)/recombination.o \
+	$(SEARCH_DIR)/gradient.o \
+	$(SEARCH_DIR)/hessian.o \
+	$(SEARCH_DIR)/population.o \
+	$(SEARCH_DIR)/search_parameters.o
+UTIL_OBJS = \
+	$(UTIL_DIR)/io_util.o \
+	$(UTIL_DIR)/matrix.o \
+	$(UTIL_DIR)/settings.o
+ERROR_OBJS = \
+	$(SEARCH_DIR)/hessian.o
+
+
+PROGS = mpi_asynchronous_astronomy mpi_synchronous_astronomy separation errors
+
+all: $(PROGS)
+
+mpi_synch: $(MPI_SYNCH) $(ASTRONOMY_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+	$(CXX) -lm -Wall -o mpi_astronomy $(MPI_ASYNCH) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+
+mpi_asynch: $(MPI_ASYNCH) $(ASTRONOMY_OBJS) $(ASYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+	$(CXX) -lm -Wall -o mpi_astronomy $(MPI_SYNCH) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+
+separation: $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS)
+	$(CXX) -lm -Wall -o separation $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS)
+
+errors: $(ERRORS) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS) $(ERROR_OBJS)
+	$(CXX) -lm -Wall -o errors $(ERRORS) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS) $(ERROR_OBJS)
+
+.c.o:
+	$(CXX) $(CXXFLAGS) -Wall -x c -c $< -o $@
+
+.C.o:
+	$(CXX) $(CXXFLAGS) -Wall -x c -c $< -o $@
+
+clean:
+	rm -f $(PROGS) $(MPI_SYNCH) $(MPI_ASYNCH) $(ASTRONOMY_OBJS) $(SYNCH_SEARCH_OBJS) $(ASYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS) $(ERROR_OBJS)

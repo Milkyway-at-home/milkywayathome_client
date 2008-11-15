@@ -5,15 +5,17 @@
 
 typedef struct search_parameters {
 	char *search_name;
-	char *search_path;
 
 	int number_parameters;
 	double* parameters;
 	char* metadata;
+
+	int has_result;
+	double fitness;
 } SEARCH_PARAMETERS;
 
 void free_search_parameters(SEARCH_PARAMETERS *parameters);
-void new_search_parameters(SEARCH_PARAMETERS **p, char *search_name, char *search_path, int number_parameters, double* parameters, char* metadata);
+void new_search_parameters(SEARCH_PARAMETERS **p, char *search_name, int number_parameters, double* parameters, char* metadata);
 
 int fread_search_parameters(FILE* file, SEARCH_PARAMETERS *parameters);
 int fwrite_search_parameters(FILE* file, SEARCH_PARAMETERS *parameters);
