@@ -65,7 +65,6 @@ double qgaus(double (*func)(double, int), double xm, double xr, int wedge, int n
 		dx = xr*qgausX[j];
 		s += qgausW[j]*((*func)(xm+dx, wedge));
 	}
-
 	return s *= xr;
 }
 
@@ -73,12 +72,10 @@ double qgaus_stream(double (*func)(double, int, int), double xm, double xr, int 
         int j;
         double dx, s;
 
-
         s = 0;
         for (j = 0; j < numpoints; j++) {
                 dx = xr*qgausX[j];
                 s += qgausW[j]*((*func)(xm+dx, wedge, sgr_coordinates));
         }
-
         return s *= xr;
 }

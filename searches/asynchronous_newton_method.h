@@ -24,6 +24,8 @@ int write_newton_method(char* file, NEWTON_METHOD_SEARCH *nms);
 int fread_newton_method(FILE* file, NEWTON_METHOD_SEARCH **nms);
 int read_newton_method(char* file, NEWTON_METHOD_SEARCH **nms);
 
+NEWTON_METHOD_SEARCH* create_newton_method(char* search_name, int number_parameters, double* parameters, double* parameter_range, int maximum_iteration, int evaluations_per_iteration);
+
 int init_newton_method(char* search_name, SEARCH* search);
 
 #endif

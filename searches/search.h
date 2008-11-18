@@ -9,7 +9,7 @@
 
 typedef struct search SEARCH;
 
-typedef int (*generate_parameters_type)(SEARCH*, SEARCH_PARAMETERS*);
+typedef int (*generate_parameters_type)(SEARCH*, SEARCH_PARAMETERS**);
 typedef int (*insert_parameters_type)(SEARCH*, SEARCH_PARAMETERS*);
 
 struct search {

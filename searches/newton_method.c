@@ -158,15 +158,15 @@ void randomized_newton_method(char* search_path, char* search_parameters, double
 			new_population(max_evaluations, number_parameters, &p);
 		}
 
-		printf("\nevaluating individuals (fitness : parameters):\n");
+//		printf("\nevaluating individuals (fitness : parameters):\n");
 		for (j = 0; j < population_size; j++) {
 			parameters = random_recombination(min_parameters, max_parameters, number_parameters);
 			fitness = evaluate(parameters);
 			replace(p, j, parameters, fitness);
 
-			printf("\t%lf :", fitness);
-			for (k = 0; k < number_parameters; k++) printf(" %lf", parameters[k]);
-			printf("\n");
+//			printf("\t%lf :", fitness);
+//			for (k = 0; k < number_parameters; k++) printf(" %lf", parameters[k]);
+//			printf("\n");
 
 			free(parameters);
 		}
@@ -174,9 +174,9 @@ void randomized_newton_method(char* search_path, char* search_parameters, double
 		randomized_hessian(p->individuals, p->fitness, population_size, number_parameters, &hessian, &gradient);
 
 		printf("\n");
-		print_double_array(stdout, "gradient: ", number_parameters, gradient);
-		printf("\n");
 		matrix_print(stdout, "hessian", hessian, number_parameters, number_parameters);
+		printf("\n");
+		print_double_array(stdout, "gradient: ", number_parameters, gradient);
 		printf("\n");
 
 		/********

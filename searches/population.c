@@ -8,11 +8,13 @@
 
 
 int new_population(int max_size, int number_parameters, POPULATION** population) {
+	int i;
 	(*population) = (POPULATION*)malloc(sizeof(POPULATION));
 	(*population)->size = 0;
 	(*population)->max_size = max_size;
 	(*population)->number_parameters = number_parameters;
 	(*population)->individuals = (double**)malloc(sizeof(double*) * max_size);
+	for (i = 0; i < (*population)->max_size; i++) (*population)->individuals[i] = NULL;
 	(*population)->fitness = (double*)malloc(sizeof(double) * max_size);
 
 	return 1;
@@ -78,7 +80,6 @@ void get_n_distinct(POPULATION *population, int number_parents, POPULATION **n_d
 	new_population(number_parents, population->number_parameters, n_distinct);
 
 	parent_positions = (int*)malloc(sizeof(int) * number_parents);
-
 	for (i = 0; i < number_parents; i++) {
 		target = (int)(drand48() * (population->max_size - i));
 		for (j = 0; j < i; j++) {
@@ -127,16 +128,17 @@ int read_population(char *filename, POPULATION **population) {
 
 
 int fwrite_population(FILE *file, POPULATION *population) {
-	int i, j;
+	int i, j, count;
 
 	fprintf(file, "size: %d, max_size: %d\n", population->size, population->max_size);
 	fprintf(file, "number_parameters: %d\n", population->number_parameters);
-	for (i = 0; i < population->max_size; i++) {
+	for (count = 0, i = 0; count < population->size && i < population->max_size; i++) {
 		if (population->individuals[i] == NULL) continue;
+		count++;
 
-		fprintf(file, "[%d] %lf :", i, population->fitness[i]);
+		fprintf(file, "[%d] %.10lf :", i, population->fitness[i]);
 		for (j = 0; j < population->number_parameters; j++) {
-			fprintf(file, " %lf", population->individuals[i][j]);
+			fprintf(file, " %.10lf", population->individuals[i][j]);
 		}
 		fprintf(file, "\n");
 	}

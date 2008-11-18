@@ -55,12 +55,12 @@ bool		one_pass = false;
 int		one_pass_N_WU = 0;
 long		processed_wus = 0;
 int		unsent_wu_buffer = 400;
-int		wus_to_generate = 500;
 
-void init_search_manager(int argc, char** argv, void (*add_wu)(SEARCH_PARAMETERS*)) {
+void init_boinc_search_manager(int argc, char** argv, void (*add_wu)(SEARCH_PARAMETERS*)) {
 	int i, retval;
 	char buf[256];
 
+	init_search_manager(argc, argv);
 	check_stop_daemons();
 	for (i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-one_pass_N_WU")) {
@@ -90,18 +90,11 @@ void init_search_manager(int argc, char** argv, void (*add_wu)(SEARCH_PARAMETERS
 		} else if (!strcmp(argv[i], "-mod")) {
 			wu_id_modulus   = atoi(argv[++i]);
 			wu_id_remainder = atoi(argv[++i]);
-		} else if (!strcmp(argv[i], "-wus_to_generate")) {
-			/********
-				*	Generate this many new workunits when generating new work.
-			 ********/
-			wus_to_generate = atoi(argv[++i]);
 		} else if (!strcmp(argv[i], "-unsent_wu_buffer")) {
 			/********
 				*	Generate more workunits if less than this number are available on the server.
 			 ********/
 			unsent_wu_buffer = atoi(argv[++i]);
-		} else if (!strcmp(argv[i], "-cwd")) {
-			set_working_directory(argv[++i]);
 		} else {
 			log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "Unrecognized arg: %s\n", argv[i]);
 		}
@@ -138,8 +131,8 @@ int generate_workunits() {
 	int generated, i;
 	SEARCH_PARAMETERS **sp;
 
-	sp = (SEARCH_PARAMETERS**)malloc(sizeof(SEARCH_PARAMETERS*) * wus_to_generate);
-	generated = generate_search_parameters(wus_to_generate, sp);
+	sp = (SEARCH_PARAMETERS**)malloc(sizeof(SEARCH_PARAMETERS*) * get_generation_rate());
+	generated = generate_search_parameters(sp);
 	for (i = 0; i < generated; i++) {
 		add_workunit(sp[i]);
 		free_search_parameters(sp[i]);

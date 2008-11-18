@@ -6,7 +6,7 @@ void matrix_print(FILE* file, const char* name, double** m, int r, int c) {
 	fprintf(file, "%s [%d x %d]:\n", name, r, c);
 	for (i = 0; i < r; i++) {
 		for (j = 0; j < c; j++) {
-			fprintf(file, " %lf", m[i][j]);
+			fprintf(file, " %.10lf", m[i][j]);
 		}
 		fprintf(file, "\n");
 	}

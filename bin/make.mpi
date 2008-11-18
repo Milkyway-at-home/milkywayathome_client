@@ -27,6 +27,18 @@ ASTRONOMY_OBJS = \
 	$(APP_DIR)/stVector.o \
 	$(APP_DIR)/star_points.o \
 	$(APP_DIR)/evaluation.o
+ASTRONOMY_OPT_OBJS = \
+	$(APP_DIR)/atSurveyGeometry.o \
+	$(APP_DIR)/numericalIntegration.o \
+	$(APP_DIR)/parameters.o \
+	$(APP_DIR)/probability.o \
+	$(APP_DIR)/stCoords.o \
+	$(APP_DIR)/stCnum.o \
+	$(APP_DIR)/stMath.o \
+	$(APP_DIR)/stVector.o \
+	$(APP_DIR)/star_points.o \
+	$(APP_DIR)/evaluation_optimized.o
+
 
 EVALUATION_OBJS = \
 	$(EVALUATION_DIR)/mpi_evaluator.o
@@ -39,6 +51,8 @@ SYNCH_SEARCH_OBJS = \
 	$(SEARCH_DIR)/hessian.o \
 	$(SEARCH_DIR)/population.o
 ASYNCH_SEARCH_OBJS = \
+	$(EVALUATION_DIR)/search_manager.o \
+	$(EVALUATION_DIR)/mpi_search_manager.o \
 	$(SEARCH_DIR)/asynchronous_newton_method.o \
 	$(SEARCH_DIR)/recombination.o \
 	$(SEARCH_DIR)/gradient.o \
@@ -63,6 +77,9 @@ mpi_asynch: $(MPI_ASYNCH) $(ASTRONOMY_OBJS) $(ASYNCH_SEARCH_OBJS) $(UTIL_OBJS) $
 mpi_synch: $(MPI_SYNCH) $(ASTRONOMY_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
 	$(CXX) -lm -Wall -o mpi_synchronous_astronomy $(MPI_SYNCH) $(ASTRONOMY_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
 
+mpi_synch_opt: $(MPI_SYNCH) $(ASTRONOMY_OPT_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+	$(CXX) -lm -Wall -o mpi_synchronous_astronomy_opt $(MPI_SYNCH) $(ASTRONOMY_OPT_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+
 separation: $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS)
 	$(CXX) -lm -Wall -o separation $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS)
 
@@ -76,4 +93,4 @@ errors: $(ERRORS) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS) $(ERROR_OBJS
 	$(CXX) $(CXXFLAGS) -Wall -x c -c $< -o $@
 
 clean:
-	rm -f $(PROGS) $(MPI_SYNCH) $(MPI_ASYNCH) $(ASTRONOMY_OBJS) $(SYNCH_SEARCH_OBJS) $(ASYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS) $(ERROR_OBJS)
+	rm -f $(PROGS) $(MPI_SYNCH) $(MPI_ASYNCH) $(ASTRONOMY_OBJS) $(ASTRONOMY_OPT_OBJS) $(SYNCH_SEARCH_OBJS) $(ASYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS) $(ERROR_OBJS)

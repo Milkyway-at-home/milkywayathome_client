@@ -43,8 +43,6 @@ int main(int argc, char** argv) {
 //	register_search("pso", init_particle_swarm);
 
 	init_add_workunit();
-
-	init_search_manager(argc, argv, add_workunit);
-	manage_search(search_name);
+	init_boinc_search_manager(argc, argv, add_workunit);
 	generate_workunits();
 }

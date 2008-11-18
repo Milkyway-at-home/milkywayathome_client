@@ -124,7 +124,6 @@ double stPsgFunction(const double* coordpar, const double* spars, int wedge, int
 	phi = spars[3];
 	sigma = spars[4];
 
-
 	//update: convert from mu, nu, r geometry to a and c geometry
         if (sgr_coordinates == 0) {
        		atGCToEq(mu, 0, &ra, &dec, get_node(), wedge_incl(wedge));
@@ -213,7 +212,7 @@ double stPsgConvolved(const double* coordpar, const double* spars, int wedge, in
 
         psg = qgaus_stream(streamConvolve, gPrime, xr, wedge, numpoints, sgr_coordinates);
 	psg *= 1/rPrime3;
-       
+
         reff_value = reff(coordpar[2]);
         prob = psg * reff_value;
 	return prob;
@@ -238,7 +237,7 @@ double backgroundConvolve(double g, int wedge) {
         r3 =  r * r * r;
         coordparConvolved[2] = r;
 
-        exponent = pow( (g-gPrime), 2 ) / (2*stdev*stdev);
+        exponent = (g-gPrime) * (g-gPrime) / (2*stdev*stdev);
         coeff = 1 / (stdev * sqrt(2*PI));
         N = coeff * exp(-exponent);     //value of gaussian convolution function
 
@@ -255,7 +254,7 @@ double streamConvolve(double g, int wedge, int sgr_coordinates) {
         r3 =  r * r * r;
         coordparConvolved[2] = r;
 
-        exponent = pow( (g-gPrime), 2 ) / (2*stdev*stdev);
+        exponent = (g-gPrime) * (g-gPrime) / (2*stdev*stdev);
         coeff = 1 / (stdev * sqrt(2*PI));
         N = coeff * exp(-exponent);     //value of gaussian convolution function
 

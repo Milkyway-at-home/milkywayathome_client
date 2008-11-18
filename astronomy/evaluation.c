@@ -44,6 +44,7 @@
 	*	Astronomy includes
 *****/
 #include <math.h>
+#include <time.h>
 
 #include "evaluation.h"
 #include "parameters.h"
@@ -194,6 +195,9 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 	int s;
 	int first_run = 1;
 	double V = 0;
+	time_t start_time, finish_time;
+
+	time(&start_time);
 	
 	setWeights(ap->convolve);
 
@@ -271,7 +275,6 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 						bg_prob = stPbx(integral_point, ap->background_parameters);
 					}
 					es->background_integral += bg_prob * V;
-
 					for (s = 0; s < ap->number_streams; s++) {
 						if (ap->convolve > 0) {
 							st_prob = stPsgConvolved(integral_point, ap->stream_parameters[s], ap->wedge, ap->convolve, ap->sgr_coordinates);
@@ -303,7 +306,13 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 		}
 		es->mu_step_current = 0;
 	}
-	es->main_integral_calculated = 1;	
+	es->main_integral_calculated = 1;
+	printf("background_integral: %.10lf\n", es->background_integral);
+	for (s = 0; s < ap->number_streams; s++) {
+		printf("stream_integral[s]: %.10lf\n", es->stream_integrals[s]);
+	}
+
+
 
 	/*** Begin volume removal ***/
 	for (; es->current_cut < ap->number_cuts; es->current_cut++) {
@@ -415,12 +424,19 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 			return retval;
 		}
 	#endif
+
+	time(&finish_time);
+	printf("integrals calculated in: %lf\n", (double)finish_time - (double)start_time);
+
 	return 0;
 }
 
 int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp) {
 	int i, current_stream;
 	int new_formula = 0;
+	time_t start_time, finish_time;
+
+	time(&start_time);
 
 	double background_weight = exp(ap->background_weight);
 	double sum_exp_weights = 0.0;
@@ -511,5 +527,9 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
 
 	free(exp_stream_weights);
 	freeWeights();
+
+	time(&finish_time);
+	printf("likelihood calculated in: %lf\n", (double)finish_time - (double)start_time);
+
 	return 0;
 }

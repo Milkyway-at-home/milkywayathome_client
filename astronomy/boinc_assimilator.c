@@ -29,8 +29,6 @@ int main(int argc, char** argv) {
 //	register_search("de", start_differential_evolution);
 //	register_search("pso", start_particle_swarm);
 
-	init_add_workunit();
-
-	init_search_manager(argc, argv, add_workunit);
-	start_search_manager();
+	init_boinc_add_workunit();
+	start_boinc_search_manager(argc, argv, add_workunit);
 }

@@ -19,12 +19,13 @@ typedef struct registered_search {
 /********
 	*	Search manager functions.
  ********/
-void init_search_manager(int argc, char** argv, void (*add_wu)(SEARCH_PARAMETERS*));
-void register_search(char* search_name, init_search_type is);
-void manage_search(char* search_name);
-void start_search_manager();
+int get_generation_rate();
 
-int generate_search_parameters(int n, SEARCH_PARAMETERS **sp);
+void init_search_manager(int argc, char** argv);
+void register_search(char* search_name, init_search_type is);
+int manage_search(char* search_name);
+
+int generate_search_parameters(SEARCH_PARAMETERS **sp);
 int insert_search_parameters(SEARCH_PARAMETERS *sp);
 
 int get_qualifier_from_name(char* search_name, char **search_qualifier);

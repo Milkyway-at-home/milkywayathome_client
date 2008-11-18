@@ -133,7 +133,7 @@ double likelihood_compose(double* results, int num_results) {
 	}
 	prob_sum /= (total_number_stars - bad_jacobians);
 	prob_sum *= -1;
-	printf("[worker: %d] composed likelihood: %lf\n", get_mpi_rank(), prob_sum);
+	printf("[worker: %d] composed likelihood: %.10lf\n", get_mpi_rank(), prob_sum);
 	return prob_sum;
 }
 
@@ -169,6 +169,8 @@ int main(int number_arguments, char **arguments){
 		synchronous_conjugate_gradient_descent(arguments[1], arguments[2], point, step, ap->number_parameters);
 	} else if (arguments[2][0] == 'n') {
 		synchronous_newton_method(arguments[1], arguments[2], point, step, ap->number_parameters);
+	} else if (arguments[2][0] == 'r') {
+		randomized_newton_method(arguments[1], arguments[2], point, step, ap->number_parameters);
 	}
 	return 0;
 }
