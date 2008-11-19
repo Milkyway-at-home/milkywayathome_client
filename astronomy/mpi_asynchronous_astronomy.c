@@ -19,9 +19,12 @@
 #include "../evaluation/evaluator.h"
 #include "../evaluation/mpi_search_manager.h"
 #include "../evaluation/search_manager.h"
+#include "../searches/asynchronous_search.h"
 #include "../searches/asynchronous_newton_method.h"
 //#include "../searches/asynchronous_genetic_search.h"
 #include "../searches/search_parameters.h"
+
+#include "../util/io_util.h"
 
 #define max_iterations			35000
 #define astronomy_parameters_file	"parameters.txt"
@@ -75,6 +78,8 @@ void integral_f(double* parameters, double** results) {
 	/********
 		*	CALCULATE THE INTEGRALS
 	 ********/
+//	printf("[worker: %d] ", get_mpi_rank());
+//	print_double_array(stdout, "parameters", ap->number_parameters, parameters);
 	set_astronomy_parameters(ap, parameters);
 	reset_evaluation_state(es);
 
@@ -177,7 +182,7 @@ int main(int argc, char **argv) {
 	get_step(ap, &step);
 
 	printf("searching...\n");
-	register_search("nm", init_newton_method);
+	register_search(asynchronous_newton_method);
 //	register_search("gs", init_genetic_search);
 //	register_search("de", init_differential_evolution);
 //	register_search("pso", init_particle_swarm);
@@ -190,7 +195,7 @@ int main(int argc, char **argv) {
 
 			if (!strcmp(search_qualifier, "nm")) {
 				printf("creating newton method...\n");
-				create_newton_method(search_name, ap->number_parameters, point, step, 10, 5000);
+				create_newton_method(search_name, 10, 600, ap->number_parameters, point, step);
 				printf("created.\n");
 			} else if (!strcmp(search_qualifier, "gs")) {
 //				printf("creating genetic search...\n");

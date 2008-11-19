@@ -71,8 +71,8 @@ PROGS = mpi_asynchronous_astronomy mpi_synchronous_astronomy separation errors
 
 all: $(PROGS)
 
-mpi_asynch: $(MPI_ASYNCH) $(ASTRONOMY_OBJS) $(ASYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
-	$(CXX) -lm -Wall -o mpi_asynchronous_astronomy $(MPI_ASYNCH) $(ASTRONOMY_OBJS) $(ASYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+mpi_asynch: $(MPI_ASYNCH) $(ASTRONOMY_OPT_OBJS) $(ASYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+	$(CXX) -lm -Wall -o mpi_asynchronous_astronomy $(MPI_ASYNCH) $(ASTRONOMY_OPT_OBJS) $(ASYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
 
 mpi_synch: $(MPI_SYNCH) $(ASTRONOMY_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
 	$(CXX) -lm -Wall -o mpi_synchronous_astronomy $(MPI_SYNCH) $(ASTRONOMY_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)

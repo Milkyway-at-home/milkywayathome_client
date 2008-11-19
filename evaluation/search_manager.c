@@ -5,7 +5,7 @@
 
 #include "../util/settings.h"
 #include "../searches/search_parameters.h"
-#include "../searches/search.h"
+#include "../searches/asynchronous_search.h"
 
 
 /********
@@ -33,12 +33,11 @@ void init_search_manager(int argc, char **argv) {
 }
 
 
-
 /********
 	*	Handle registered searches.
  ********/
 int number_registered_searches = 0;
-REGISTERED_SEARCH **registered_searches;
+ASYNCHRONOUS_SEARCH **registered_searches;
 
 int get_registered_search_pos(char* search_qualifier) {
 	int cmp, i;
@@ -50,31 +49,28 @@ int get_registered_search_pos(char* search_qualifier) {
 	return -1 - i;
 }
 
-REGISTERED_SEARCH* get_registered_search(char* search_qualifier) {
+ASYNCHRONOUS_SEARCH* get_registered_search(char* search_qualifier) {
 	int pos = get_registered_search_pos(search_qualifier);
 	if (pos >= 0) return registered_searches[pos];
 	else return NULL;
 }
 
-void register_search(char* search_qualifier, init_search_type is) {
+void register_search(ASYNCHRONOUS_SEARCH as) {
 	int i;
-	int pos = get_registered_search_pos(search_qualifier);
+	int pos = get_registered_search_pos(as.search_qualifier);
 	if (pos < 0) {
 		/********
 			*	Search is not known. Inorder position to put the search is -(pos + 1).
 		 ********/
 		pos = -(pos + 1);
 		number_registered_searches++;
-		registered_searches = (REGISTERED_SEARCH**)realloc(registered_searches, sizeof(REGISTERED_SEARCH*) * number_registered_searches);
+		registered_searches = (ASYNCHRONOUS_SEARCH**)realloc(registered_searches, sizeof(ASYNCHRONOUS_SEARCH*) * number_registered_searches);
 		for (i = number_registered_searches-1; i > pos; i--) {
 			registered_searches[i] = registered_searches[i-1];
 		}
-		registered_searches[pos] = (REGISTERED_SEARCH*)malloc(sizeof(REGISTERED_SEARCH));
-		registered_searches[pos]->search_qualifier = (char*)malloc(sizeof(char) * SEARCH_QUALIFIER_SIZE);
-		strcpy(registered_searches[pos]->search_qualifier, search_qualifier);
-		registered_searches[pos]->init_search = is;
+		registered_searches[pos] = &as;
 	} else {
-		fprintf(stderr, "ERROR registering search %s, already known.\n", search_qualifier);
+		fprintf(stderr, "ERROR registering search %s, already known.\n", as.search_qualifier);
 	}
 }
 
@@ -84,7 +80,7 @@ void register_search(char* search_qualifier, init_search_type is) {
  ********/
 
 int number_searches = 0;
-SEARCH** searches;  
+MANAGED_SEARCH** searches;  
 
 int get_search_pos(char* search_name) {
 	int cmp, i;
@@ -96,7 +92,7 @@ int get_search_pos(char* search_name) {
 	return -1 - i;
 }
 
-SEARCH* get_search(char* search_name) {
+MANAGED_SEARCH* get_search(char* search_name) {
 	int pos = get_search_pos(search_name);
 	if (pos >= 0) return searches[pos];
 	else return NULL;
@@ -117,8 +113,9 @@ int get_qualifier_from_name(char* search_name, char** search_qualifier) {
 
 int manage_search(char* search_name) {
 	char *search_qualifier;
-	REGISTERED_SEARCH *rs;
-	SEARCH *s;
+	MANAGED_SEARCH *ms;
+	ASYNCHRONOUS_SEARCH *as;
+	void *search_data;
 	int search_pos, i, success;
 	/********
 		*	Check to see if the search is already being managed.
@@ -142,24 +139,29 @@ int manage_search(char* search_name) {
 	}
 
 	printf("getting registered search\n");
-	rs = get_registered_search(search_qualifier);
-	if (rs == NULL) {
+	as = get_registered_search(search_qualifier);
+	if (as == NULL) {
 		fprintf(stderr, "ERROR managing search %s, unknown search: %s\n", search_name, search_qualifier);
 		return -1;
 	}
 	free(search_qualifier);
 
 	printf("init search\n");
-	s = (SEARCH*)malloc(sizeof(SEARCH));
 	printf("doing init\n");
-	rs->init_search(search_name, s);
+	as->read_search(search_name, &search_data);
 	printf("success\n");
+	ms = (MANAGED_SEARCH*)malloc(sizeof(MANAGED_SEARCH));
+	ms->search_name = (char*)malloc(sizeof(char) * SEARCH_NAME_SIZE);
+	strcpy(ms->search_name, search_name);
+	ms->search_data = search_data;
+	ms->search = as;
+
 	number_searches++;
-	searches = (SEARCH**)realloc(searches, sizeof(SEARCH*) * number_searches);
+	searches = (MANAGED_SEARCH**)realloc(searches, sizeof(MANAGED_SEARCH*) * number_searches);
 	for (i = number_searches; i > search_pos; i--) {
 		searches[i] = searches[i-1];
 	}
-	searches[search_pos] = s;
+	searches[search_pos] = ms;
 	printf("inserted search in position: %d\n", search_pos);
 	return 1;
 }
@@ -171,9 +173,7 @@ int generate_search_parameters(SEARCH_PARAMETERS **sp) {
 	for (i = 0; i < number_searches; i++) {
 		generated = (generation_rate - current) / (number_searches - i);
 		for (j = 0; j < generated; j++) {
-			if (searches[i]->generate_parameters == NULL) printf("gen params == NULL.\n");
-			searches[i]->generate_parameters(searches[i], &(sp[current]));
-			strcpy(sp[current]->search_name, searches[i]->search_name);
+			searches[i]->search->generate_parameters(searches[i]->search_name, searches[i]->search_data, &(sp[current]));
 			current++;
 		}
 	}
@@ -181,9 +181,9 @@ int generate_search_parameters(SEARCH_PARAMETERS **sp) {
 }
 
 int insert_search_parameters(SEARCH_PARAMETERS *sp) {
-	SEARCH *s = get_search(sp->search_name);
-	if (s != NULL) {
-		s->insert_parameters(s, sp);
+	MANAGED_SEARCH *ms = get_search(sp->search_name);
+	if (ms != NULL) {
+		ms->search->insert_parameters(ms->search_name, ms->search_data, sp);
 		return 1;
 	}
 	return -1;

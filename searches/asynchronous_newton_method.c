@@ -1,8 +1,10 @@
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 
+#include "asynchronous_search.h"
 #include "asynchronous_newton_method.h"
 #include "gradient.h"
 #include "hessian.h"
@@ -15,25 +17,112 @@
 #include "../util/matrix.h"
 #include "../util/io_util.h"
 
+const ASYNCHRONOUS_SEARCH asynchronous_newton_method = { "nm", create_newton_method, read_newton_method, checkpoint_newton_method, newton_generate_parameters, newton_insert_parameters };
 
-int newton_generate_parameters(SEARCH* search, SEARCH_PARAMETERS** sp) {
+/********
+	*	Parameters: int maximum_iteration, int evaluations_per_iteration, int number_parameters, double* point, double* range
+ ********/
+int create_newton_method(char* search_name, ...) {
+	char search_directory[FILENAME_SIZE];
 	NEWTON_METHOD_SEARCH *nms;
-	POPULATION *p;
+	va_list vl;
+	double *point, *range;
 
-	nms = (NEWTON_METHOD_SEARCH*)(search->search_data);
-	p = nms->current_population;
+	sprintf(search_directory, "%s/%s", get_working_directory(), search_name);
+	mkdir(search_directory, 0777);
+
+	nms = (NEWTON_METHOD_SEARCH*)malloc(sizeof(NEWTON_METHOD_SEARCH));
+	va_start(vl, search_name);
+	nms->maximum_iteration = va_arg(vl, int);
+	nms->evaluations_per_iteration = va_arg(vl, int);
+	nms->number_parameters = va_arg(vl, int);
+	point = va_arg(vl, double*);
+	range = va_arg(vl, double*);
+
+	nms->parameters = (double*)malloc(sizeof(double) * nms->number_parameters);
+	nms->parameter_range = (double*)malloc(sizeof(double) * nms->number_parameters);
+	memcpy(nms->parameters, point, sizeof(double) * nms->number_parameters);
+	memcpy(nms->parameter_range, range, sizeof(double) * nms->number_parameters);
+
+	new_population(nms->evaluations_per_iteration, nms->number_parameters, &(nms->population));
+
+	return checkpoint_newton_method(search_name, nms);	
+}
+
+int read_newton_method(char* search_name, void** search_data) {
+	char search_filename[FILENAME_SIZE], population_filename[FILENAME_SIZE];
+	FILE *search_file;
+	int result, np, i;
+	NEWTON_METHOD_SEARCH **nms;
+	nms = (NEWTON_METHOD_SEARCH**)search_data;
+	(*nms) = (NEWTON_METHOD_SEARCH*)malloc(sizeof(NEWTON_METHOD_SEARCH));
+
+	sprintf(search_filename, "%s/%s/search", get_working_directory(), search_name);
+	search_file = fopen(search_filename, "r");
+	if (search_file == NULL) return -1;
+	(*nms)->number_parameters = read_double_array(search_file, "parameters", &((*nms)->parameters));
+	read_double_array(search_file, "parameter_range", &((*nms)->parameter_range));
+	fscanf(search_file, "current_iteration: %d, maximum_iteration: %d\n", &((*nms)->current_iteration), &((*nms)->maximum_iteration));
+	fscanf(search_file, "current_evaluation: %d, evaluations_per_iteration: %d\n", &((*nms)->current_evaluation), &((*nms)->evaluations_per_iteration));
+
+	np = (*nms)->number_parameters;
+	(*nms)->min_parameters = (double*)malloc(sizeof(double) * np);
+	(*nms)->max_parameters = (double*)malloc(sizeof(double) * np);
+	for (i = 0; i < np; i++) {
+		(*nms)->min_parameters[i] = (*nms)->parameters[i] - (*nms)->parameter_range[i];
+		(*nms)->max_parameters[i] = (*nms)->parameters[i] + (*nms)->parameter_range[i];
+	}
+	fclose(search_file);
+
+	sprintf(population_filename, "%s/%s/population_%d", get_working_directory(), search_name, (*nms)->current_iteration);
+	result = read_population(population_filename, &((*nms)->population));
+	if (result < 0) return result;
+	(*nms)->current_evaluation = (*nms)->population->size;
+
+	return 1;
+}
+
+int checkpoint_newton_method(char* search_name, void* search_data) {
+	char search_filename[FILENAME_SIZE], population_filename[FILENAME_SIZE];
+	FILE *search_file;
+	int result;
+	NEWTON_METHOD_SEARCH *nms = (NEWTON_METHOD_SEARCH*)search_data;
+
+	sprintf(search_filename, "%s/%s/search", get_working_directory(), search_name);
+	search_file = fopen(search_filename, "w+");
+	if (search_file == NULL) return -1;
+	print_double_array(search_file, "parameters", nms->number_parameters, nms->parameters);
+	print_double_array(search_file, "parameter_range", nms->number_parameters, nms->parameter_range);
+	fprintf(search_file, "current_iteration: %d, maximum_iteration: %d\n", nms->current_iteration, nms->maximum_iteration);
+	fprintf(search_file, "current_evaluation: %d, evaluations_per_iteration: %d\n", nms->current_evaluation, nms->evaluations_per_iteration);
+	fclose(search_file);
+
+	sprintf(population_filename, "%s/%s/population_%d", get_working_directory(), search_name, nms->current_iteration);
+	result = write_population(population_filename, nms->population);
+	if (result < 0) return result;
+
+	return 1;
+}
+
+
+int newton_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS** sp) {
+	POPULATION *p;
+	NEWTON_METHOD_SEARCH *nms = (NEWTON_METHOD_SEARCH*)search_data;
+
+	nms = (NEWTON_METHOD_SEARCH*)(search_data);
+	p = nms->population;
 
 	if (nms->current_iteration < nms->maximum_iteration) {
 		char metadata[METADATA_SIZE];
 		sprintf(metadata, "iteration: %d, evaluation: %d", nms->current_iteration, nms->current_evaluation);
-		new_search_parameters(sp, search->search_name, p->number_parameters, random_recombination(nms->min_parameters, nms->max_parameters, p->number_parameters), metadata);
+		new_search_parameters(sp, search_name, p->number_parameters, random_recombination(nms->min_parameters, nms->max_parameters, p->number_parameters), metadata);
 	}
 	return 1;
 }
 
-int newton_insert_parameters(SEARCH* search, SEARCH_PARAMETERS* sp) {
-	NEWTON_METHOD_SEARCH *nms = (NEWTON_METHOD_SEARCH*)(search->search_data);
-	POPULATION *p = nms->current_population;
+int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
+	NEWTON_METHOD_SEARCH *nms = (NEWTON_METHOD_SEARCH*)search_data;
+	POPULATION *p = nms->population;
 
 	/********
 		*	Insert parameters into population.  If cutoff reached, calculate hessian
@@ -85,132 +174,16 @@ int newton_insert_parameters(SEARCH* search, SEARCH_PARAMETERS* sp) {
 					*	TODO
 					*	Optional: use previous parameters with new point as a line search direction
 				 ********/
-				sprintf(filename, "%s/%s/population_%d", get_working_directory(), search->search_name, nms->current_iteration-1);
+				sprintf(filename, "%s/%s/population_%d", get_working_directory(), search_name, nms->current_iteration-1);
 				write_population(filename, p);
 				free_population(p);
 				free(p);
 
-				new_population(nms->evaluations_per_iteration, nms->number_parameters, &(nms->current_population));
-				sprintf(filename, "%s/%s/population_%d", get_working_directory(), search->search_name, nms->current_iteration);
+				new_population(nms->evaluations_per_iteration, nms->number_parameters, &(nms->population));
+				sprintf(filename, "%s/%s/population_%d", get_working_directory(), search_name, nms->current_iteration);
 				write_population(filename, p);
 			}
 		}
 	}
-	return 1;
-}
-
-int fwrite_newton_method(FILE* file, NEWTON_METHOD_SEARCH *nms) {
-	print_double_array(file, "parameters", nms->number_parameters, nms->parameters);
-	print_double_array(file, "parameter_range", nms->number_parameters, nms->parameter_range);
-	fprintf(file, "current_iteration: %d, maximum_iteration: %d\n", nms->current_iteration, nms->maximum_iteration);
-	fprintf(file, "current_evaluation: %d, evaluations_per_iteration: %d\n", nms->current_evaluation, nms->evaluations_per_iteration);
-	return 1;
-}
-
-int write_newton_method(char* file, NEWTON_METHOD_SEARCH *nms) {
-	int result;
-	FILE *f = fopen(file, "w+");
-	if (f == NULL) return -1;
-	else result = fwrite_newton_method(f, nms);
-	fclose(f);
-	return result;
-}
-
-int fread_newton_method(FILE* file, NEWTON_METHOD_SEARCH **nms) {
-	int scanned, i, np;
-
-	(*nms) = (NEWTON_METHOD_SEARCH*)malloc(sizeof(NEWTON_METHOD_SEARCH));
-	printf("reading parameters\n");
-	scanned = read_double_array(file, "parameters", &((*nms)->parameters));
-	if (scanned < 1) return scanned;
-	(*nms)->number_parameters = scanned;
-
-	printf("reading parameter_range\n");
-	scanned = read_double_array(file, "parameter_range", &((*nms)->parameter_range));
-	if (scanned < 1) return scanned;
-
-	printf("reading iterations\n");
-	scanned = fscanf(file, "current_iteration: %d, maximum_iteration: %d\n", &((*nms)->current_iteration), &((*nms)->maximum_iteration));
-	if (scanned < 2) return -1;
-
-	printf("reading evaluations\n");
-	scanned = fscanf(file, "current_evaluation: %d, evaluations_per_iteration: %d\n", &((*nms)->current_evaluation), &((*nms)->evaluations_per_iteration));
-	if (scanned < 2) return -1;
-
-	printf("creating min/max\n");
-	np = (*nms)->number_parameters;
-	(*nms)->min_parameters = (double*)malloc(sizeof(double) * np);
-	(*nms)->max_parameters = (double*)malloc(sizeof(double) * np);
-	for (i = 0; i < np; i++) {
-		(*nms)->min_parameters[i] = (*nms)->parameters[i] - (*nms)->parameter_range[i];
-		(*nms)->max_parameters[i] = (*nms)->parameters[i] + (*nms)->parameter_range[i];
-	}
-	return 1;
-}
-
-int read_newton_method(char* file, NEWTON_METHOD_SEARCH **nms) {
-	int result;
-	FILE *f = fopen(file, "r");
-	if (f == NULL) return -1;
-	else result = fread_newton_method(f, nms);
-	fclose(f);
-	return result;
-}
-
-NEWTON_METHOD_SEARCH* create_newton_method(char* search_name, int number_parameters, double* parameters, double* parameter_range, int maximum_iteration, int evaluations_per_iteration) {
-	NEWTON_METHOD_SEARCH* nms;
-	POPULATION* p;
-	char search_file[FILENAME_SIZE], population_file[FILENAME_SIZE], search_directory[FILENAME_SIZE];
-
-	sprintf(search_directory, "%s/%s", get_working_directory(), search_name);
-	mkdir(search_directory, 0777);
-
-	nms = (NEWTON_METHOD_SEARCH*)malloc(sizeof(NEWTON_METHOD_SEARCH));
-
-	nms->number_parameters = number_parameters;
-	nms->parameters = (double*)malloc(sizeof(double) * number_parameters);
-	memcpy(nms->parameters, parameters, sizeof(double) * number_parameters);
-	nms->parameter_range = (double*)malloc(sizeof(double) * number_parameters);
-	memcpy(nms->parameter_range, parameter_range, sizeof(double) * number_parameters);
-
-	nms->current_iteration = 0;
-	nms->maximum_iteration = maximum_iteration;
-	nms->current_iteration = 0;
-	nms->evaluations_per_iteration = evaluations_per_iteration;
-
-	sprintf(search_file, "%s/%s/search", get_working_directory(), search_name);
-	write_newton_method(search_file, nms);	
-
-	sprintf(population_file, "%s/%s/population_0", get_working_directory(), search_name);
-	new_population(evaluations_per_iteration, number_parameters, &p);
-	write_population(population_file, p);
-
-	return nms;
-}
-
-int init_newton_method(char* search_name, SEARCH* search) {
-	NEWTON_METHOD_SEARCH* nms;
-	char search_file[FILENAME_SIZE], population_file[FILENAME_SIZE];
-	int result;
-
-	printf("doing init search\n");
-
-	sprintf(search_file, "%s/%s/search", get_working_directory(), search_name);
-	printf("reading newton method from: %s\n", search_file);
-	result = read_newton_method(search_file, &nms);
-	printf("result: %d\n", result);
-	fwrite_newton_method(stdout, nms);
-
-	printf("reading population\n");
-
-	sprintf(population_file, "%s/%s/population_%d", get_working_directory(), search_name, nms->current_iteration);
-	read_population(population_file, (&nms->current_population));
-	if (nms->current_population == NULL) new_population(nms->evaluations_per_iteration, nms->number_parameters, &(nms->current_population));
-	nms->current_iteration = nms->current_population->size;
-
-	search->search_data = nms;
-	search->search_name = search_name;
-	search->generate_parameters = newton_generate_parameters;
-	search->insert_parameters = newton_insert_parameters;
 	return 1;
 }

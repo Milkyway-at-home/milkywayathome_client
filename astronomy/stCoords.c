@@ -29,13 +29,7 @@ void lbr2xyz(const double* lbr, double* xyz) {
 	xyz[2] = lbr[2] * sinb;
 	zp = lbr[2] * cosb;
 	d = sqrt( r0 * r0 + zp * zp - 2 * r0 * zp * cosl);
-
-//	cost = (zp * zp - r0 * r0 - d * d) / (2 * d * r0);
-//	xyz[0] = d * cost;
 	xyz[0] = (zp * zp - r0 * r0 - d * d) / (2 * r0);
-
-//	sint = (zp * sinl) / d;
-//	xyz[1] = d * sint;
 	xyz[1] = zp * sinl;
 }
 

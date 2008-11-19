@@ -176,7 +176,7 @@ double stPbxConvolved(const double* coordpar, const double* bpars, int wedge, in
 	rPrime = coordpar[2];
 	gPrime = r2mag(rPrime*1000);
 	rPrime3 = rPrime * rPrime * rPrime;
-	
+
 	for (i = 0; i < 3; i++) coordparConvolved[i] = coordpar[i];
 	for (i = 0; i < 4; i++) bparsConvolved[i] = bpars[i];
 

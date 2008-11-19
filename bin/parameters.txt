@@ -1,7 +1,7 @@
 number_parameters: 4
 background_weight: 0.0
 background_parameters[4]: 1.0, 0.67, 13.5, 1.0
-background_step[4]: 0.0002, 0.00004, 0.0009, 0.0002
+background_step[4]: 0.02, 0.04, 0.9, 0.02
 background_min[4]: 0.0, 0.3, 1.0, 0.1
 background_max[4]: 3.0, 1.0, 30.0, 3.0
 optimize_parameter[4]: 0, 1, 1, 0
@@ -12,7 +12,7 @@ stream_weight_min: -20.0
 stream_weight_max: 20.0
 optimize_weight: 1
 stream_parameters[5]: 33.35264467, 27.42378128, 1.2448028129449469, 1.9149509834514764, 2.5
-stream_step[5]: 0.0003, 0.0001, 0.0001, 0.0001, 0.00001
+stream_step[5]: 0.3, 0.3, 0.1, 0.1, 0.01
 stream_min[5]: -53.0, 0.7, 0.0, 0.0, 1.0
 stream_max[5]: 76.0, 45.7, 6.283185307179586, 6.283185307179586, 20.0
 optimize_parameter[5]: 1, 1, 1, 1, 1

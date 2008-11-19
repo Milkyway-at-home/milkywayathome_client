@@ -15,17 +15,15 @@ typedef struct newton_method_search {
 	int current_iteration, maximum_iteration;
 	int current_evaluation, evaluations_per_iteration;
 
-	POPULATION *current_population;
+	POPULATION *population;
 } NEWTON_METHOD_SEARCH;
 
-int fwrite_newton_method(FILE* file, NEWTON_METHOD_SEARCH *nms);
-int write_newton_method(char* file, NEWTON_METHOD_SEARCH *nms);
+int create_newton_method(char* search_name, ...);
+int read_newton_method(char* search_name, void** search_data);
+int checkpoint_newton_method(char* search_name, void* search_data);
+int newton_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS **sp);
+int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS *sp);
 
-int fread_newton_method(FILE* file, NEWTON_METHOD_SEARCH **nms);
-int read_newton_method(char* file, NEWTON_METHOD_SEARCH **nms);
-
-NEWTON_METHOD_SEARCH* create_newton_method(char* search_name, int number_parameters, double* parameters, double* parameter_range, int maximum_iteration, int evaluations_per_iteration);
-
-int init_newton_method(char* search_name, SEARCH* search);
+const extern ASYNCHRONOUS_SEARCH asynchronous_newton_method;
 
 #endif
