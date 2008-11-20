@@ -236,7 +236,7 @@ void free_state(ASTRONOMY_PARAMETERS *ap, EVALUATION_STATE* es) {
 		return 0;
 	}
 
-	int read_checkpoint(EVALUATION_STATE* es) {
+	int read_checkpoint(ASTRONOMY_PARAMETERS *ap, EVALUATION_STATE* es) {
 		int i, number_cuts, number_streams;
 		char input_path[512];
 		int retval = boinc_resolve_filename(CHECKPOINT_FILE, input_path, sizeof(input_path));
@@ -249,7 +249,8 @@ void free_state(ASTRONOMY_PARAMETERS *ap, EVALUATION_STATE* es) {
 	                fprintf(stderr, "APP: error reading checkpoint (opening file)\n");
 	                return 1;
 	        }
-		fscanf(file, "background_integral: %lf\n", &(es->background_integral));
+
+		if (1 > fscanf(file, "background_integral: %lf\n", &(es->background_integral))) return 1;
 		number_streams = read_double_array(file, "stream_integrals", &(es->stream_integrals));
 
 		fscanf(file, "prob_sum: %lf, num_zero: %d, bad_jacobians: %d\n", &(es->prob_sum), &(es->num_zero), &(es->bad_jacobians));

@@ -37,6 +37,6 @@ void	free_state(ASTRONOMY_PARAMETERS *ap, EVALUATION_STATE* es);
 void	reset_evaluation_state(ASTRONOMY_PARAMETERS *ap, EVALUATION_STATE *es);
 
 int	write_checkpoint(ASTRONOMY_PARAMETERS *ap, EVALUATION_STATE* es);
-int	read_checkpoint(EVALUATION_STATE* es);
+int	read_checkpoint(ASTRONOMY_PARAMETERS *ap, EVALUATION_STATE* es);
 
 #endif

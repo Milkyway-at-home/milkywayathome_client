@@ -1,0 +1,65 @@
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+APP: error reading checkpoint (opening file)
+boinc_astronomy in realloc(): warning: chunk is already free
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+SIGSEGV: segmentation violation
+
+Exiting...
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+APP: error reading checkpoint (opening file)
+boinc_astronomy in realloc(): warning: chunk is already free
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+SIGSEGV: segmentation violation
+
+Exiting...
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+SIGSEGV: segmentation violation
+
+Exiting...
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+SIGSEGV: segmentation violation
+
+Exiting...
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+APP: error reading checkpoint (opening file)
+boinc_astronomy in realloc(): warning: chunk is already free
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+APP: error reading checkpoint (opening file)
+boinc_astronomy in realloc(): warning: chunk is already free
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+APP: error reading checkpoint (opening file)
+boinc_astronomy in realloc(): warning: chunk is already free
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+SIGSEGV: segmentation violation
+
+Exiting...
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+APP: error reading checkpoint (opening file)
+boinc_astronomy in realloc(): warning: chunk is already free
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+APP: error reading checkpoint (opening file)
+boinc_astronomy in realloc(): warning: chunk is already free
