@@ -413,7 +413,9 @@ void split_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, int rank, int max_rank
 	int mu_divisor = 1;
 	int nu_divisor = 1;
 
-	if (rank == 0 && max_rank == 0) return;
+	printf("rank: %d, max_rank: %d\n", rank, max_rank);
+
+	if (rank == 0 && max_rank == 1) return;
 
 	while (r_divisor > ap->r_steps) {
 		if (r_divisor > ap->r_steps && (r_divisor % 2) != 0) {

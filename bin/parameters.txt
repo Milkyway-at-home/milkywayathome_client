@@ -22,7 +22,4 @@ wedge: 86
 r[min,max,steps]: 16.0, 22.5, 175
 mu[min,max,steps]: 310, 420, 400
 nu[min,max,steps]: -1.25, 1.25, 20
-number_cuts: 1
-r_cut[min,max,steps]: 16.0, 22.5, 175
-mu_cut[min,max,steps]: 21.6, 22.3, 100
-nu_cut[min,max,steps]: -1.25, 1.25, 20
+number_cuts: 0
