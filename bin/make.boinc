@@ -25,7 +25,8 @@ APP_OBJS = \
 	$(APP_DIR)/stMath.o \
 	$(APP_DIR)/stVector.o \
 	$(APP_DIR)/star_points.o \
-	$(APP_DIR)/evaluation.o
+	$(APP_DIR)/evaluation_optimized.o \
+	$(APP_DIR)/evaluation_state.o
 BOINC_ADD_OBJS = \
 	$(APP_DIR)/add_workunit.o \
 	$(APP_DIR)/parameters.o \

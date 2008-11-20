@@ -44,7 +44,7 @@ using std::string;
  ********/
 #include "parameters.h"
 #include "star_points.h"
-#include "evaluation.h"
+#include "evaluation_optimized.h"
 #include "../searches/search_parameters.h"
 
 #ifdef _WIN32
@@ -85,7 +85,7 @@ void worker() {
 		*	INITIALIZE THE EVALUATION STATE
 	 ********/
 	EVALUATION_STATE *es = (EVALUATION_STATE*)malloc(sizeof(EVALUATION_STATE));
-	initialize_state(es, ap->number_streams);
+	initialize_state(ap, es);
 	printf("read evaluation state\n");
 
 	/********
@@ -123,7 +123,7 @@ void worker() {
 	 ********/
 	boinc_write_search_parameters(OUTPUT_FILENAME, s, likelihood);
 
-	free_state(es);
+	free_state(ap, es);
 	free(es);
 	free_parameters(ap);
 	free(ap);
@@ -167,4 +167,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.5 2008/11/18 07:57:59 deselt Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.6 2008/11/20 19:09:45 deselt Exp $";

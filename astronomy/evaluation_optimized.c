@@ -333,11 +333,12 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 					}
 				}
 				#ifdef GMLE_BOINC
+					int retval;
 					if (boinc_time_to_checkpoint()) {
-						retval = write_checkpoint(es);
+						retval = write_checkpoint(ap, es);
 						if (retval) {
 							fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
-							return retval;
+							return;
 						}
 						boinc_checkpoint_completed();
 					}
@@ -396,7 +397,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 //		printf("[main] background: %.10lf, stream[0]: %.10lf\n", current_area->background_integral, current_area->stream_integrals[0]); 
 
 		#ifdef GMLE_BOINC
-			retval = write_checkpoint(es);
+			retval = write_checkpoint(ap, es);
 			if (retval) {
 				fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
 				return retval;
@@ -416,7 +417,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 //		printf("[cut %d] background: %.10lf, stream[0]: %.10lf\n", es->current_cut, current_area->background_integral, current_area->stream_integrals[0]); 
 
 		#ifdef GMLE_BOINC
-			retval = write_checkpoint(es);
+			retval = write_checkpoint(ap, es);
 			if (retval) {
 				fprintf(stderr,"APP: astronomy checkpoint failed %d\n", retval);
 				return retval;
@@ -507,7 +508,7 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
 
 		#ifdef GMLE_BOINC
 			if (boinc_time_to_checkpoint()) {
-				int retval = write_checkpoint(es);
+				int retval = write_checkpoint(ap, es);
 				if (retval) {
 					fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
 					return retval;
@@ -523,7 +524,7 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
 	}
 
 	#ifdef GMLE_BOINC
-		int retval = write_checkpoint(es);
+		int retval = write_checkpoint(ap, es);
 		if (retval) {
 			fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
 			return retval;

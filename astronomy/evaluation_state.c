@@ -55,6 +55,7 @@
 #include "star_points.h"
 #include "numericalIntegration.h"
 #include "../evaluation/mpi_evaluator.h"
+#include "../util/io_util.h"
 
 #ifndef _WIN32
 	#define pi M_PI
@@ -64,32 +65,59 @@
 
 #define deg (180.0/pi)
 
-void print_integral_area(FILE *file, INTEGRAL_AREA *ia) {
-	int i;
-	fprintf(file, "mu[min,steps,step_size]: %.10lf, %d, %.10lf\n", ia->mu_min, ia->mu_steps, ia->mu_step_size);
-	fprintf(file, "nu[min,steps,step_size]: %.10lf, %d, %.10lf\n", ia->nu_min, ia->nu_steps, ia->nu_step_size);
-	fprintf(file, " r[min,steps,step_size]: %.10lf, %d, %.10lf\n", ia->r_min, ia->r_steps, ia->r_step_size);
-	fprintf(file, "background integral: %.10lf\n", ia->background_integral);
-	for(i = 0; i < sizeof(ia->stream_integrals)/sizeof(double); i++) {
-		fprintf(file, "stream integral[%d]: %.10lf\n", i, ia->stream_integrals[i]);
+#ifdef GMLE_BOINC
+	void boinc_fwrite_integral_area(MFILE file, INTEGRAL_AREA *ia, int number_streams) {
+		int i;
+		file.printf("mu[min,max,steps,current_step]: %.10lf, %.10lf, %d, %d\n", ia->mu_min, ia->mu_max, ia->mu_steps, ia->mu_step_current);
+		file.printf("nu[min,max,steps,current_step]: %.10lf, %.10lf, %d, %d\n", ia->nu_min, ia->nu_max, ia->nu_steps, ia->nu_step_current);
+		file.printf(" r[min,max,steps,current_step]: %.10lf, %.10lf, %d, %d\n", ia->r_min, ia->r_max, ia->r_steps, ia->r_step_current);
+		file.printf("background integral: %.10lf\n", ia->background_integral);
+		file.printf("stream_integrals[%d]: ", number_streams);
+		for (i = 0; i < number_streams; i++) {
+			file.printf("%lf", ia->stream_integrals[i]);
+			if (i != (number_streams-1)) file.printf(" ,");
+		}
 	}
+#endif
+
+void fwrite_integral_area(FILE *file, INTEGRAL_AREA *ia) {
+	fprintf(file, "mu[min,max,steps,current_step]: %.10lf, %.10lf, %d, %d\n", ia->mu_min, ia->mu_max, ia->mu_steps, ia->mu_step_current);
+	fprintf(file, "nu[min,max,steps,current_step]: %.10lf, %.10lf, %d, %d\n", ia->nu_min, ia->nu_max, ia->nu_steps, ia->nu_step_current);
+	fprintf(file, " r[min,max,steps,current_step]: %.10lf, %.10lf, %d, %d\n", ia->r_min, ia->r_max, ia->r_steps, ia->r_step_current);
+	fprintf(file, "background integral: %.10lf\n", ia->background_integral);
+	print_double_array(file, "stream_integrals", sizeof(ia->stream_integrals)/sizeof(double), ia->stream_integrals);
 }
 
-void initialize_integal_area(INTEGRAL_AREA *ia, double mu_min, int mu_steps, double mu_step_size, double nu_min, int nu_steps, double nu_step_size, double r_min, int r_steps, double r_step_size, int number_streams) {
+void fread_integral_area(FILE *file, INTEGRAL_AREA *ia) {
+	fscanf(file, "mu[min,max,steps,current_step]: %lf, %lf, %d, %d\n", &(ia->mu_min), &(ia->mu_max), &(ia->mu_steps), &(ia->mu_step_current));
+	ia->mu_step_size = (ia->mu_max - ia->mu_min) / ia->mu_steps;
+	fscanf(file, "nu[min,max,steps,current_step]: %lf, %lf, %d, %d\n", &(ia->nu_min), &(ia->nu_max), &(ia->nu_steps), &(ia->nu_step_current));
+	ia->nu_step_size = (ia->nu_max - ia->nu_min) / ia->nu_steps;
+	fscanf(file, " r[min,max,steps,current_step]: %lf, %lf, %d, %d\n", &(ia->r_min), &(ia->r_max), &(ia->r_steps), &(ia->r_step_current));
+	ia->r_step_size = (ia->r_max - ia->r_min) / ia->r_steps;
+	fscanf(file, "background_integral: %lf\n", &(ia->background_integral));
+	read_double_array(file, "stream_integrals", &(ia->stream_integrals));
+}
+
+void initialize_integal_area(INTEGRAL_AREA *ia, double mu_min, double mu_max, int mu_steps, double nu_min, double nu_max, int nu_steps, double r_min, double r_max, int r_steps, int number_streams) {
 	int i;
 
 	ia->mu_min		= mu_min;
+	ia->mu_max		= mu_max;
 	ia->mu_steps		= mu_steps;
-	ia->mu_step_size	= mu_step_size;
 	ia->mu_step_current	= 0;
 	ia->nu_min		= nu_min;
+	ia->nu_max		= nu_max;
 	ia->nu_steps		= nu_steps;
-	ia->nu_step_size	= nu_step_size;
 	ia->nu_step_current	= 0;
 	ia->r_min		= r_min;
+	ia->r_max		= r_max;
 	ia->r_steps		= r_steps;
-	ia->r_step_size		= r_step_size;
 	ia->r_step_current	= 0;
+
+	ia->mu_step_size = (ia->mu_max - ia->mu_min) / ia->mu_steps;
+	ia->nu_step_size = (ia->nu_max - ia->nu_min) / ia->nu_steps;
+	ia->r_step_size = (ia->r_max - ia->r_min) / ia->r_steps;
 
 	ia->background_integral	= 0;
 	ia->stream_integrals	= (double*)malloc(sizeof(double) * number_streams);
@@ -112,12 +140,12 @@ void initialize_state(ASTRONOMY_PARAMETERS *ap, EVALUATION_STATE *es) {
 	es->prob_sum = 0;
 
 	es->main_integral = (INTEGRAL_AREA*)malloc(sizeof(INTEGRAL_AREA));
-	initialize_integal_area(es->main_integral, ap->mu_min, ap->mu_steps, ap->mu_step_size, ap->nu_min, ap->nu_steps, ap->nu_step_size, ap->r_min, ap->r_steps, ap->r_step_size, ap->number_streams);
+	initialize_integal_area(es->main_integral, ap->mu_min, ap->mu_max, ap->mu_steps, ap->nu_min, ap->nu_max, ap->nu_steps, ap->r_min, ap->r_max, ap->r_steps, ap->number_streams);
 
 	es->cuts = (INTEGRAL_AREA**)malloc(sizeof(INTEGRAL_AREA*) * ap->number_cuts);
 	for (i = 0; i < ap->number_cuts; i++) {
 		es->cuts[i] = (INTEGRAL_AREA*)malloc(sizeof(INTEGRAL_AREA));
-		initialize_integal_area(es->cuts[i], ap->mu_cut[i][0], ap->mu_cut[i][2], ap->mu_cut_step_size[i], ap->nu_cut[i][0], ap->nu_cut[i][2], ap->nu_cut_step_size[i], ap->r_cut[i][0], ap->r_cut[i][2], ap->r_cut_step_size[i], ap->number_streams);
+		initialize_integal_area(es->cuts[i], ap->mu_cut[i][0], ap->mu_cut[i][1], (int)ap->mu_cut[i][2], ap->nu_cut[i][0], ap->nu_cut[i][1], (int)ap->nu_cut[i][2], ap->r_cut[i][0], ap->r_cut[i][1], (int)ap->r_cut[i][2], ap->number_streams);
 	}
 }
 
@@ -167,7 +195,7 @@ void free_state(ASTRONOMY_PARAMETERS *ap, EVALUATION_STATE* es) {
 }
 
 #ifdef GMLE_BOINC
-	int write_checkpoint(EVALUATION_STATE* es) {
+	int write_checkpoint(ASTRONOMY_PARAMETERS *ap, EVALUATION_STATE* es) {
 		int i;
 		char output_path[512];
 		boinc_resolve_filename(CHECKPOINT_FILE, output_path, sizeof(output_path));
@@ -178,20 +206,22 @@ void free_state(ASTRONOMY_PARAMETERS *ap, EVALUATION_STATE* es) {
 	                fprintf(stderr, "APP: error writing checkpoint (opening checkpoint file) %d\n", retval);
 	                return retval;
 		}
-
-		cp.printf("r_step_current: %d\n", es->r_step_current);
-		cp.printf("mu_step_current: %d\n", es->mu_step_current);
-		cp.printf("nu_step_current: %d\n", es->nu_step_current);
-
-		cp.printf("main_integral_calculated: %d\n", es->main_integral_calculated);
-		cp.printf("current_cut: %d\n", es->current_cut);
 		cp.printf("background_integral: %lf\n", es->background_integral);
-		cp.printf("stream_integrals [%d]:", es->number_streams);
-		for (i = 0; i < es->number_streams; i++) cp.printf(" %lf", es->stream_integrals[i]);
-		cp.printf("\ncurrent_star_point: %d\n", es->current_star_point);
-		cp.printf("num_zero: %d\n", es->num_zero);
-		cp.printf("bad_jacobians: %d\n", es->bad_jacobians);
-		cp.printf("prob_sum: %lf\n", es->prob_sum);
+		cp.printf("stream_integrals[%d]: ", ap->number_streams);
+		for (i = 0; i < ap->number_streams; i++) {
+			cp.printf("%lf", es->stream_integrals[i]);
+			if (i != (ap->number_streams-1)) cp.printf(", ");
+		}
+
+		cp.printf("prob_sum: %lf, num_zero: %d, bad_jacobians: %d\n", es->prob_sum, es->num_zero, es->bad_jacobians);
+		cp.printf("current_star_point: %d\n", es->current_star_point);
+		cp.printf("current_cut: %d\n", es->current_cut);
+		cp.printf("main_volume:\n");
+		boinc_fwrite_integral_area(cp, es->main_integral, ap->number_streams);
+		cp.printf("cuts: %d\n", ap->number_cuts);
+		for (i = 0; i < ap->number_cuts; i++) {
+			boinc_fwrite_integral_area(cp, es->cuts[i], ap->number_streams);
+		}
 
 		retval = cp.flush();
 		if (retval) {
@@ -207,34 +237,32 @@ void free_state(ASTRONOMY_PARAMETERS *ap, EVALUATION_STATE* es) {
 	}
 
 	int read_checkpoint(EVALUATION_STATE* es) {
-		int i;
+		int i, number_cuts, number_streams;
 		char input_path[512];
 		int retval = boinc_resolve_filename(CHECKPOINT_FILE, input_path, sizeof(input_path));
 		if (retval) {
 			return 0;
 		}
 
-	        FILE* data_file = boinc_fopen(input_path, "r");
-	        if (!data_file) {
+	        FILE* file = boinc_fopen(input_path, "r");
+	        if (!file) {
 	                fprintf(stderr, "APP: error reading checkpoint (opening file)\n");
 	                return 1;
 	        }
-		fscanf(data_file, "r_step_current: %d\n", &es->r_step_current);
-		fscanf(data_file, "mu_step_current: %d\n", &es->mu_step_current);
-		fscanf(data_file, "nu_step_current: %d\n", &es->nu_step_current);
-	
-		fscanf(data_file, "main_integral_calculated: %d\n", &es->main_integral_calculated);
-		fscanf(data_file, "current_cut: %d\n", &es->current_cut);
-		fscanf(data_file, "background_integral: %lf\n", &es->background_integral);
-		fscanf(data_file, "stream_integrals [%d]:", &es->number_streams);
-		for (i = 0; i < es->number_streams; i++) fscanf(data_file, " %lf", &es->stream_integrals[i]);
+		fscanf(file, "background_integral: %lf\n", &(es->background_integral));
+		number_streams = read_double_array(file, "stream_integrals", &(es->stream_integrals));
 
-		fscanf(data_file, "\ncurrent_star_point: %d\n", &es->current_star_point);
-		fscanf(data_file, "num_zero: %d\n", &es->num_zero);
-		fscanf(data_file, "bad_jacobians: %d\n", &es->bad_jacobians);
-		fscanf(data_file, "prob_sum: %lf\n", &es->prob_sum);
+		fscanf(file, "prob_sum: %lf, num_zero: %d, bad_jacobians: %d\n", &(es->prob_sum), &(es->num_zero), &(es->bad_jacobians));
+		fscanf(file, "current_star_point: %d\n", &(es->current_star_point));
+		fscanf(file, "current_cut: %d\n", &(es->current_cut));
+		fscanf(file, "main_volume:\n");
+		fread_integral_area(file, es->main_integral);
+		fscanf(file, "cuts: %d\n", &number_cuts);
+		for (i = 0; i < number_cuts; i++) {
+			fread_integral_area(file, es->cuts[i]);
+		}
 
-	        fclose(data_file);
+	        fclose(file);
 	        return 0;
 	}
 #endif
