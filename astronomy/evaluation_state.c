@@ -201,21 +201,24 @@ void free_state(ASTRONOMY_PARAMETERS *ap, EVALUATION_STATE* es) {
 		boinc_resolve_filename(CHECKPOINT_FILE, output_path, sizeof(output_path));
 
 		MFILE cp;
-		int retval = cp.open(output_path, "w");
+		int retval = cp.open(output_path, "w+");
 		if (retval) {
 	                fprintf(stderr, "APP: error writing checkpoint (opening checkpoint file) %d\n", retval);
 	                return retval;
 		}
+
 		cp.printf("background_integral: %lf\n", es->background_integral);
 		cp.printf("stream_integrals[%d]: ", ap->number_streams);
 		for (i = 0; i < ap->number_streams; i++) {
 			cp.printf("%lf", es->stream_integrals[i]);
 			if (i != (ap->number_streams-1)) cp.printf(", ");
 		}
+		cp.printf("\n");
 
 		cp.printf("prob_sum: %lf, num_zero: %d, bad_jacobians: %d\n", es->prob_sum, es->num_zero, es->bad_jacobians);
 		cp.printf("current_star_point: %d\n", es->current_star_point);
 		cp.printf("current_cut: %d\n", es->current_cut);
+
 		cp.printf("main_volume:\n");
 		boinc_fwrite_integral_area(cp, es->main_integral, ap->number_streams);
 		cp.printf("cuts: %d\n", ap->number_cuts);
@@ -228,11 +231,13 @@ void free_state(ASTRONOMY_PARAMETERS *ap, EVALUATION_STATE* es) {
 	                fprintf(stderr, "APP: error writing checkpoint (flushing checkpoint file) %d\n", retval);
 	                return retval;
 		}
+
 		retval = cp.close();
 		if (retval) {
 	                fprintf(stderr, "APP: error writing checkpoint (closing checkpoint file) %d\n", retval);
 	                return retval;
 		}
+
 		return 0;
 	}
 

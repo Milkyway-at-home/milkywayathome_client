@@ -61,14 +61,13 @@ void worker() {
 	/********
 		*	READ THE ASTRONOMY PARAMETERS
 	 ********/
-	printf("doing worker\n");
 	ASTRONOMY_PARAMETERS *ap = (ASTRONOMY_PARAMETERS*)malloc(sizeof(ASTRONOMY_PARAMETERS));
 	int retval = boinc_read_astronomy_parameters(ASTRONOMY_PARAMETER_FILENAME, ap);
 	if (retval) {
 		fprintf(stderr, "APP: error reading astronomy parameters: %d\n", retval);
 		boinc_finish(1);
 	}
-	printf("read astronomy parameters\n");
+//	printf("read astronomy parameters\n");
 
 	/********
 		*	READ THE STAR POINTS
@@ -79,14 +78,14 @@ void worker() {
 		fprintf(stderr, "APP: error reading star points: %d\n", retval);
 		boinc_finish(1);
 	}
-	printf("read star points\n");
+//	printf("read star points\n");
 
 	/********
 		*	INITIALIZE THE EVALUATION STATE
 	 ********/
 	EVALUATION_STATE *es = (EVALUATION_STATE*)malloc(sizeof(EVALUATION_STATE));
 	initialize_state(ap, es);
-	printf("read evaluation state\n");
+//	printf("read evaluation state\n");
 
 	/********
 		*	READ AND SET THE SEARCH PARAMETERS
@@ -95,7 +94,7 @@ void worker() {
 	retval = boinc_read_search_parameters(SEARCH_PARAMETER_FILENAME, s);
 	fwrite_search_parameters(stdout, s);
 	set_astronomy_parameters(ap, s->parameters);
-	printf("read search parameters\n");
+//	printf("read search parameters\n");
 
 	/********
 		*	CALCULATE THE INTEGRALS
@@ -105,7 +104,7 @@ void worker() {
 		fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
 		boinc_finish(retval);
 	}
-	printf("calculated integrals: %lf, %lf\n", es->background_integral, es->stream_integrals[0]);
+//	printf("calculated integrals: %lf, %lf\n", es->background_integral, es->stream_integrals[0]);
 
 	/********
 		*	CALCULATE THE LIKELIHOOD
@@ -116,7 +115,7 @@ void worker() {
 		boinc_finish(retval);
 	}
 	double likelihood = es->prob_sum / (sp->number_stars - es->bad_jacobians);
-	printf("calculated likelihood: %lf\n", likelihood);
+//	printf("calculated likelihood: %lf\n", likelihood);
 
 	/********
 		*	RESOLVE THE OUTPUT FILE & WRITE THE RESULT
@@ -167,4 +166,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.6 2008/11/20 19:09:45 deselt Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.7 2008/11/20 19:37:58 deselt Exp $";
