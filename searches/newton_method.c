@@ -171,7 +171,7 @@ void randomized_newton_method(char* search_path, char* search_parameters, double
 			free(parameters);
 		}
 
-		randomized_hessian(p->individuals, p->fitness, population_size, number_parameters, &hessian, &gradient);
+		randomized_hessian(p->individuals, current_point, p->fitness, population_size, number_parameters, &hessian, &gradient);
 
 		printf("\n");
 		matrix_print(stdout, "hessian", hessian, number_parameters, number_parameters);

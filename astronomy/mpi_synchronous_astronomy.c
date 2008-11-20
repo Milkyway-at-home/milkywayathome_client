@@ -56,7 +56,6 @@ void read_data(int rank, int max_rank) {
 	printf("[worker: %d] initializing state...\n", rank);
 	es = (EVALUATION_STATE*)malloc(sizeof(EVALUATION_STATE));
 	initialize_state(es, ap->number_streams);
-
 }
 
 void integral_f(double* parameters, double** results) {

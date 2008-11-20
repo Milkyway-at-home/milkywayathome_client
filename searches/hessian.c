@@ -141,7 +141,7 @@ void hessian__get_individuals(HESSIAN* hessian, int number_individuals, double**
 	}
 }
 
-void randomized_hessian(double** points, double* fitness, int number_points, int number_parameters, double*** hessian, double** gradient) {
+void randomized_hessian(double** actual_points, double* center, double* fitness, int number_points, int number_parameters, double*** hessian, double** gradient) {
 	double** Y;
 	double** X;
 	double** X2;
@@ -149,7 +149,17 @@ void randomized_hessian(double** points, double* fitness, int number_points, int
 	double** X_transpose;
 	double** X_inverse;
 	double** W;
+	double** points;
 	int x_len, i, j, k, current;
+
+	points = (double**)malloc(sizeof(double*) * number_points);
+	for (i = 0; i < number_points; i++) {
+		points[i] = (double*)malloc(sizeof(double) * number_parameters);
+		for (j = 0; j < number_parameters; j++) {
+			points[i][j] = center[j] - actual_points[i][j];
+		}
+	}
+
 
 	/********
 		*	X = [1, x1, ... xn, 0.5*x1^2, ... 0.5*xn^2, x1*x2, ..., x1*xn, x2*x3, ..., x2*xn, ...]
@@ -231,6 +241,7 @@ void randomized_hessian(double** points, double* fitness, int number_points, int
 	for (i = 0; i < number_points; i++) {
 		free(Y[i]);
 		free(X[i]);
+		free(points[i]);
 	}
 	for (i = 0; i < x_len; i++) {
 		free(X2[i]);
@@ -239,6 +250,7 @@ void randomized_hessian(double** points, double* fitness, int number_points, int
 		free(X_inverse[i]);
 		free(W[i]);
 	}
+	free(points);
 	free(Y);
 	free(X);
 	free(X2);

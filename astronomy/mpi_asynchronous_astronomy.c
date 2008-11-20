@@ -69,8 +69,8 @@ void read_data(int rank, int max_rank) {
 	 ********/
 	printf("[worker: %d] initializing state...\n", rank);
 	es = (EVALUATION_STATE*)malloc(sizeof(EVALUATION_STATE));
-	initialize_state(es, ap->number_streams);
-
+	initialize_state(ap, es);
+	printf("[worker: %d] initialized.\n", rank);
 }
 
 void integral_f(double* parameters, double** results) {
@@ -81,7 +81,7 @@ void integral_f(double* parameters, double** results) {
 //	printf("[worker: %d] ", get_mpi_rank());
 //	print_double_array(stdout, "parameters", ap->number_parameters, parameters);
 	set_astronomy_parameters(ap, parameters);
-	reset_evaluation_state(es);
+	reset_evaluation_state(ap, es);
 
 	int retval = calculate_integrals(ap, es, sp);
 	if (retval) {
@@ -149,7 +149,7 @@ double likelihood_compose(double* results, int num_results) {
 	}
 	prob_sum /= (total_number_stars - bad_jacobians);
 	prob_sum *= -1;
-//	printf("[worker: %d] composed likelihood: %.10lf\n", get_mpi_rank(), prob_sum);
+	printf("[worker: %d] composed likelihood: %.10lf\n", get_mpi_rank(), prob_sum);
 	return prob_sum;
 }
 
@@ -195,7 +195,7 @@ int main(int argc, char **argv) {
 
 			if (!strcmp(search_qualifier, "nm")) {
 				printf("creating newton method...\n");
-				create_newton_method(search_name, 10, 600, ap->number_parameters, point, step);
+				create_newton_method(search_name, 10, 300, ap->number_parameters, point, step);
 				printf("created.\n");
 			} else if (!strcmp(search_qualifier, "gs")) {
 //				printf("creating genetic search...\n");

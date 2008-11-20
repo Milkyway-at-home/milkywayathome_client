@@ -184,6 +184,7 @@ double stPbxConvolved(const double* coordpar, const double* bpars, int wedge, in
 	pbx *= 1/rPrime3;
 
 	reff_value = reff(coordpar[2]);
+
 	prob = pbx*reff_value;
 
 	return prob;

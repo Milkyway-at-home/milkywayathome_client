@@ -141,7 +141,7 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 				int j, k;
 				char filename[FILENAME_SIZE];
 
-				randomized_hessian(p->individuals, p->fitness, p->size, p->number_parameters, &hessian, &gradient);
+				randomized_hessian(p->individuals, nms->parameters, p->fitness, p->size, p->number_parameters, &hessian, &gradient);
 
 				printf("\n");
 				matrix_print(stdout, "hessian", hessian, p->number_parameters, p->number_parameters);

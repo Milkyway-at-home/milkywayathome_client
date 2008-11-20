@@ -11,6 +11,8 @@ MPI_ASYNCH = \
 	$(APP_DIR)/mpi_asynchronous_astronomy.o
 MPI_SYNCH = \
 	$(APP_DIR)/mpi_synchronous_astronomy.o
+MPI_SYNCH_OPT = \
+	$(APP_DIR)/mpi_synchronous_astronomy_opt.o
 SEPARATION = \
 	$(APP_DIR)/separation.o
 ERRORS = \
@@ -37,8 +39,8 @@ ASTRONOMY_OPT_OBJS = \
 	$(APP_DIR)/stMath.o \
 	$(APP_DIR)/stVector.o \
 	$(APP_DIR)/star_points.o \
-	$(APP_DIR)/evaluation_optimized.o
-
+	$(APP_DIR)/evaluation_optimized.o\
+	$(APP_DIR)/evaluation_state.o
 
 EVALUATION_OBJS = \
 	$(EVALUATION_DIR)/mpi_evaluator.o
@@ -77,8 +79,8 @@ mpi_asynch: $(MPI_ASYNCH) $(ASTRONOMY_OPT_OBJS) $(ASYNCH_SEARCH_OBJS) $(UTIL_OBJ
 mpi_synch: $(MPI_SYNCH) $(ASTRONOMY_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
 	$(CXX) -lm -Wall -o mpi_synchronous_astronomy $(MPI_SYNCH) $(ASTRONOMY_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
 
-mpi_synch_opt: $(MPI_SYNCH) $(ASTRONOMY_OPT_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
-	$(CXX) -lm -Wall -o mpi_synchronous_astronomy_opt $(MPI_SYNCH) $(ASTRONOMY_OPT_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+mpi_synch_opt: $(MPI_SYNCH_OPT) $(ASTRONOMY_OPT_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+	$(CXX) -lm -Wall -o mpi_synchronous_astronomy_opt $(MPI_SYNCH_OPT) $(ASTRONOMY_OPT_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
 
 separation: $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS)
 	$(CXX) -lm -Wall -o separation $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS)
