@@ -22,9 +22,10 @@ double gPrime;
 /* Convert r in parsecs into the apparent magnitude, given an absolute magnitude
    of 4.2. */ 
 double r2mag(double r) {
-    double absm, result;
+	double absm, result;
+
 	absm = 4.2;
-    result = 5 * (log10( r ) - 1) + absm;
+	result = 5 * (log10( r ) - 1) + absm;
 
 	return result;
 }

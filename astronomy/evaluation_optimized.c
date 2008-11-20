@@ -65,6 +65,9 @@
 #define stdev 0.6
 #define xr 3 * stdev
 #define lbr_r 8.5
+#define absm 4.2
+
+double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
 double alpha, q, r0, delta, coeff;
 double *qgaus_X, *qgaus_W, **xyz, *dx;
@@ -143,23 +146,29 @@ void free_constants(ASTRONOMY_PARAMETERS *ap) {
 	}
 }
 
-
 void set_probability_constants(ASTRONOMY_PARAMETERS *ap, double coords, double **r_point, double **r3, double **N, double *rPrime3, double *reff_value) {
-	double gPrime;
+	double gPrime, exp_result, g, exponent;
 	int i;
 
 	(*r_point) = (double*)malloc(sizeof(double) * ap->convolve);
 	(*r3) = (double*)malloc(sizeof(double) * ap->convolve);
 	(*N) = (double*)malloc(sizeof(double) * ap->convolve);
 
-	gPrime = r2mag(coords * 1000);
+	//R2MAG
+	gPrime = 5.0 * (log10(coords * 1000) - 1.0) + absm;
+
+	//REFF
+	exp_result = exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));
+	(*reff_value) = sigmoid_curve_params[0] / (exp_result + 1);
+
 	(*rPrime3) = coords * coords * coords;
-	(*reff_value) = reff(coords);
 
 	for (i = 0; i < ap->convolve; i++) {
-		double exponent, g;
 		g = gPrime + dx[i];
-		(*r_point)[i] = mag2r(g)/1000;
+
+		//MAG2R
+		(*r_point)[i] = pow(10.0, (g - absm)/5.0 + 1.0) / 1000.0;
+
 		(*r3)[i] = (*r_point)[i] * (*r_point)[i] * (*r_point)[i];
 		exponent = (g-gPrime) * (g-gPrime) / (2 * stdev * stdev);
 		(*N)[i] = coeff * exp(-exponent);
@@ -401,8 +410,8 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 	for (; es->current_cut < ap->number_cuts; es->current_cut++) {
 		current_area = es->cuts[es->current_cut];
 		calculate_integral(ap, current_area, es);
-//		es->background_integral -= current_area->background_integral;
-//		for (i = 0; i < ap->number_streams; i++) es->stream_integrals[i] -= current_area->stream_integrals[i];
+		es->background_integral -= current_area->background_integral;
+		for (i = 0; i < ap->number_streams; i++) es->stream_integrals[i] -= current_area->stream_integrals[i];
 
 		printf("[cut %d] background: %.10lf, stream[0]: %.10lf\n", es->current_cut, current_area->background_integral, current_area->stream_integrals[0]); 
 

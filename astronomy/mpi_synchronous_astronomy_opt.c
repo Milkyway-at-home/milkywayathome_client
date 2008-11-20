@@ -14,7 +14,7 @@
 
 #define max_iterations			35000
 #define astronomy_parameters_file	"parameters.txt"
-#define star_points_file		"stars_unconvolved_82.txt"
+#define star_points_file		"86-cut.txt"
 #define population_file_name		"population.txt"
 
 ASTRONOMY_PARAMETERS *ap;
