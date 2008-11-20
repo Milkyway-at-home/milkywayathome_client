@@ -374,9 +374,9 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp) {
 	INTEGRAL_AREA *current_area;
 	int i;
-	time_t start_time, finish_time;
+//	time_t start_time, finish_time;
+//	time(&start_time);
 
-	time(&start_time);
 	#ifdef GMLE_BOINC
 		int retval = read_checkpoint(es);
 	#endif
@@ -393,7 +393,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 		for (i = 0; i < ap->number_streams; i++) es->stream_integrals[i] = current_area->stream_integrals[i];
 		es->current_cut = 0;
 
-		printf("[main] background: %.10lf, stream[0]: %.10lf\n", current_area->background_integral, current_area->stream_integrals[0]); 
+//		printf("[main] background: %.10lf, stream[0]: %.10lf\n", current_area->background_integral, current_area->stream_integrals[0]); 
 
 		#ifdef GMLE_BOINC
 			retval = write_checkpoint(es);
@@ -413,7 +413,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 		es->background_integral -= current_area->background_integral;
 		for (i = 0; i < ap->number_streams; i++) es->stream_integrals[i] -= current_area->stream_integrals[i];
 
-		printf("[cut %d] background: %.10lf, stream[0]: %.10lf\n", es->current_cut, current_area->background_integral, current_area->stream_integrals[0]); 
+//		printf("[cut %d] background: %.10lf, stream[0]: %.10lf\n", es->current_cut, current_area->background_integral, current_area->stream_integrals[0]); 
 
 		#ifdef GMLE_BOINC
 			retval = write_checkpoint(es);
@@ -424,33 +424,37 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 		#endif
 	}
 
-	time(&finish_time);
+//	time(&finish_time);
 //	printf("background integral: %.10lf\n", es->background_integral);
 //	for (i = 0; i < ap->number_streams; i++) printf("stream integral[%d]: %.10lf\n", i, es->stream_integrals[i]);
-	printf("integrals calculated in: %lf\n", (double)finish_time - (double)start_time);
+//	printf("integrals calculated in: %lf\n", (double)finish_time - (double)start_time);
 	return 0;
 }
 
 #define new_formula 0
 int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp) {
 	int i, current_stream;
-	time_t start_time, finish_time;
+	double bg_prob, *st_prob;
+	double background_weight, sum_exp_weights, *exp_stream_weights;
+	double *r_point, *r3, *N, rPrime3, reff_value;
+//	time_t start_time, finish_time;
+//	time (&start_time);
 
-	time (&start_time);
-
-	double background_weight = exp(ap->background_weight);
-	double sum_exp_weights = 0.0;
-	double* exp_stream_weights = (double*)malloc(sizeof(double) * ap->number_streams);
+	background_weight = exp(ap->background_weight);
+	sum_exp_weights = 0.0;
+	exp_stream_weights = (double*)malloc(sizeof(double) * ap->number_streams);
 	for (i = 0; i < ap->number_streams; i++) {
 		exp_stream_weights[i] = exp(ap->stream_weights[i]);
 		sum_exp_weights += exp(ap->stream_weights[i]);
 	}
 	sum_exp_weights += background_weight;
 
-	double bg_prob;
-	double *st_prob = (double*)malloc(sizeof(double) * ap->number_streams);
-	double *r_point, *r3, *N, rPrime3, reff_value;
-
+	if (ap->convolve > 0) {
+		st_prob = (double*)malloc(sizeof(double) * ap->number_streams);
+		r_point = (double*)malloc(sizeof(double) * ap->convolve);
+		r3 = (double*)malloc(sizeof(double) * ap->convolve);
+		N = (double*)malloc(sizeof(double) * ap->convolve);
+	}
 	for (; es->current_star_point < sp->number_stars; es->current_star_point++) {
 		double star_prob = 0.0;
 		double sum_integrals = 0.0;
@@ -528,13 +532,15 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
 
 	free_constants(ap);
 	free(exp_stream_weights);
-	free(st_prob);
-	free(r_point);
-	free(r3);
-	free(N);
+	if (ap->convolve > 0) {
+		free(st_prob);
+		free(r_point);
+		free(r3);
+		free(N);
+	}
 
-	time(&finish_time);
-	printf("likelihood calculated in: %lf\n", (double)finish_time - (double)start_time);
+//	time(&finish_time);
+//	printf("likelihood calculated in: %lf\n", (double)finish_time - (double)start_time);
 
 	return 0;
 }

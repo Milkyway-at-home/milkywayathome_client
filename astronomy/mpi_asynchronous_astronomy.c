@@ -13,7 +13,7 @@
 
 #include "parameters.h"
 #include "star_points.h"
-#include "evaluation.h"
+#include "evaluation_optimized.h"
 
 #include "../evaluation/mpi_evaluator.h"
 #include "../evaluation/evaluator.h"
@@ -28,7 +28,7 @@
 
 #define max_iterations			35000
 #define astronomy_parameters_file	"parameters.txt"
-#define star_points_file		"stars_unconvolved_82.txt"
+#define star_points_file		"86-cut.txt"
 #define population_file_name		"population.txt"
 
 ASTRONOMY_PARAMETERS *ap;
@@ -70,7 +70,6 @@ void read_data(int rank, int max_rank) {
 	printf("[worker: %d] initializing state...\n", rank);
 	es = (EVALUATION_STATE*)malloc(sizeof(EVALUATION_STATE));
 	initialize_state(ap, es);
-	printf("[worker: %d] initialized.\n", rank);
 }
 
 void integral_f(double* parameters, double** results) {
