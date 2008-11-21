@@ -374,13 +374,15 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 
 int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp) {
 	INTEGRAL_AREA *current_area;
-	int i;
+	int i, retval;
 //	time_t start_time, finish_time;
 //	time(&start_time);
 
 	#ifdef GMLE_BOINC
-		int retval = read_checkpoint(ap, es);
+		read_checkpoint(ap, es);
 	#endif
+
+	printf("read checkpoint\n");
 
 	init_constants(ap);
 
@@ -394,7 +396,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 		for (i = 0; i < ap->number_streams; i++) es->stream_integrals[i] = current_area->stream_integrals[i];
 		es->current_cut = 0;
 
-//		printf("[main] background: %.10lf, stream[0]: %.10lf\n", current_area->background_integral, current_area->stream_integrals[0]); 
+		printf("[main] background: %.10lf, stream[0]: %.10lf\n", current_area->background_integral, current_area->stream_integrals[0]); 
 
 		#ifdef GMLE_BOINC
 			retval = write_checkpoint(ap, es);
@@ -403,6 +405,8 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 				return retval;
 			}
 		#endif
+
+		printf("wrote checkpoint\n");
 	}
 
 	/********
@@ -414,7 +418,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 		es->background_integral -= current_area->background_integral;
 		for (i = 0; i < ap->number_streams; i++) es->stream_integrals[i] -= current_area->stream_integrals[i];
 
-//		printf("[cut %d] background: %.10lf, stream[0]: %.10lf\n", es->current_cut, current_area->background_integral, current_area->stream_integrals[0]); 
+		printf("[cut %d] background: %.10lf, stream[0]: %.10lf\n", es->current_cut, current_area->background_integral, current_area->stream_integrals[0]); 
 
 		#ifdef GMLE_BOINC
 			retval = write_checkpoint(ap, es);

@@ -65,27 +65,13 @@
 
 #define deg (180.0/pi)
 
-#ifdef GMLE_BOINC
-	void boinc_fwrite_integral_area(MFILE file, INTEGRAL_AREA *ia, int number_streams) {
-		int i;
-		file.printf("mu[min,max,steps,current_step]: %.10lf, %.10lf, %d, %d\n", ia->mu_min, ia->mu_max, ia->mu_steps, ia->mu_step_current);
-		file.printf("nu[min,max,steps,current_step]: %.10lf, %.10lf, %d, %d\n", ia->nu_min, ia->nu_max, ia->nu_steps, ia->nu_step_current);
-		file.printf(" r[min,max,steps,current_step]: %.10lf, %.10lf, %d, %d\n", ia->r_min, ia->r_max, ia->r_steps, ia->r_step_current);
-		file.printf("background integral: %.10lf\n", ia->background_integral);
-		file.printf("stream_integrals[%d]: ", number_streams);
-		for (i = 0; i < number_streams; i++) {
-			file.printf("%lf", ia->stream_integrals[i]);
-			if (i != (number_streams-1)) file.printf(" ,");
-		}
-	}
-#endif
 
-void fwrite_integral_area(FILE *file, INTEGRAL_AREA *ia) {
+void fwrite_integral_area(FILE *file, INTEGRAL_AREA *ia, int number_streams) {
 	fprintf(file, "mu[min,max,steps,current_step]: %.10lf, %.10lf, %d, %d\n", ia->mu_min, ia->mu_max, ia->mu_steps, ia->mu_step_current);
 	fprintf(file, "nu[min,max,steps,current_step]: %.10lf, %.10lf, %d, %d\n", ia->nu_min, ia->nu_max, ia->nu_steps, ia->nu_step_current);
 	fprintf(file, " r[min,max,steps,current_step]: %.10lf, %.10lf, %d, %d\n", ia->r_min, ia->r_max, ia->r_steps, ia->r_step_current);
 	fprintf(file, "background integral: %.10lf\n", ia->background_integral);
-	print_double_array(file, "stream_integrals", sizeof(ia->stream_integrals)/sizeof(double), ia->stream_integrals);
+	print_double_array(file, "stream_integrals", number_streams, ia->stream_integrals);
 }
 
 void fread_integral_area(FILE *file, INTEGRAL_AREA *ia) {
@@ -196,44 +182,43 @@ void free_state(ASTRONOMY_PARAMETERS *ap, EVALUATION_STATE* es) {
 
 #ifdef GMLE_BOINC
 	int write_checkpoint(ASTRONOMY_PARAMETERS *ap, EVALUATION_STATE* es) {
-		int i;
+		int i, retval;
 		char output_path[512];
+		FILE *file;
+
 		boinc_resolve_filename(CHECKPOINT_FILE, output_path, sizeof(output_path));
 
-		MFILE cp;
-		int retval = cp.open(output_path, "w+");
-		if (retval) {
-	                fprintf(stderr, "APP: error writing checkpoint (opening checkpoint file) %d\n", retval);
-	                return retval;
+		file = boinc_fopen(output_path, "w+");
+		if (!file) {
+			fprintf(stderr, "APP: error writing checkpoint (opening checkpoint file)\n");
+			return 1;
 		}
 
-		cp.printf("background_integral: %lf\n", es->background_integral);
-		cp.printf("stream_integrals[%d]: ", ap->number_streams);
+		fprintf(file, "background_integral: %lf\n", es->background_integral);
+		fprintf(file, "stream_integrals[%d]: ", ap->number_streams);
 		for (i = 0; i < ap->number_streams; i++) {
-			cp.printf("%lf", es->stream_integrals[i]);
-			if (i != (ap->number_streams-1)) cp.printf(", ");
+			fprintf(file, "%lf", es->stream_integrals[i]);
+			if (i != (ap->number_streams-1)) fprintf(file, ", ");
 		}
-		cp.printf("\n");
+		fprintf(file, "\n");
 
-		cp.printf("prob_sum: %lf, num_zero: %d, bad_jacobians: %d\n", es->prob_sum, es->num_zero, es->bad_jacobians);
-		cp.printf("current_star_point: %d\n", es->current_star_point);
-		cp.printf("current_cut: %d\n", es->current_cut);
+		fprintf(file, "prob_sum: %lf, num_zero: %d, bad_jacobians: %d\n", es->prob_sum, es->num_zero, es->bad_jacobians);
+		fprintf(file, "current_star_point: %d\n", es->current_star_point);
+		fprintf(file, "current_cut: %d\n", es->current_cut);
 
-		cp.printf("main_volume:\n");
-		boinc_fwrite_integral_area(cp, es->main_integral, ap->number_streams);
-		cp.printf("cuts: %d\n", ap->number_cuts);
+		fprintf(file, "main_volume:\n");
+		fwrite_integral_area(file, es->main_integral, ap->number_streams);
+		fprintf(file, "cuts: %d\n", ap->number_cuts);
 		for (i = 0; i < ap->number_cuts; i++) {
-			boinc_fwrite_integral_area(cp, es->cuts[i], ap->number_streams);
+			fwrite_integral_area(file, es->cuts[i], ap->number_streams);
 		}
 
-		retval = cp.flush();
-		if (retval) {
+		if (!(retval = fflush(file))) {
 	                fprintf(stderr, "APP: error writing checkpoint (flushing checkpoint file) %d\n", retval);
 	                return retval;
 		}
 
-		retval = cp.close();
-		if (retval) {
+		if (!(retval = fclose(file))) {
 	                fprintf(stderr, "APP: error writing checkpoint (closing checkpoint file) %d\n", retval);
 	                return retval;
 		}
