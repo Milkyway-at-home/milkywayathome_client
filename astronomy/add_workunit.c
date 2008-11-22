@@ -55,7 +55,7 @@ void add_workunit(SEARCH_PARAMETERS* parameters) {
 	char astronomy_file[1024], astronomy_path[1024];
 	char wu_astronomy_file[1024], wu_star_file[1024];
 	char credit_str[512];
-	long current_time;
+	time_t current_time;
 	const char *required_files[3];
 	int retval;
 
@@ -65,15 +65,22 @@ void add_workunit(SEARCH_PARAMETERS* parameters) {
 
 	printf("checked\n");
 
-	current_time = time(NULL) + getpid(); 
-	sprintf(wu_name, "%s_%d_%ld", parameters->search_name, generated_wus, current_time);
-	printf("made wu_name: %s\n");
+	time(&current_time);
+	printf("got time: %ld\n", (long)current_time);
+	printf("generated wus: %d\n", generated_wus);
+
+	if (parameters == NULL) printf("ERROR! parameters = null!\n");
+	if (parameters->search_name == NULL) printf("ERROR! search name == null!!!\n");
+	printf("search name: %s\n", parameters->search_name);
+
+	sprintf(wu_name, "%s_%d_%ld", parameters->search_name, generated_wus, (long)current_time);
+	printf("made wu_name: %s\n", wu_name);
 
 	sprintf(wu_file, "%s_search_parameters_%d_%ld", parameters->search_name, generated_wus, current_time);
-	printf("made wu_file: %s\n");
+	printf("made wu_file: %s\n", wu_file);
 
 	sprintf(wu_astronomy_file, "%s_astronomy_parameters_%d_%ld", parameters->search_name, generated_wus, current_time);
-	printf("made wu_astronomy_file: %s\n");
+	printf("made wu_astronomy_file: %s\n", wu_astronomy_file);
 
 	sprintf(wu_star_file, "stars.txt");
 

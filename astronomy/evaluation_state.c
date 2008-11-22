@@ -54,7 +54,6 @@
 #include "atSurveyGeometry.h"
 #include "star_points.h"
 #include "numericalIntegration.h"
-#include "../evaluation/mpi_evaluator.h"
 #include "../util/io_util.h"
 
 #ifndef _WIN32
