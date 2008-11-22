@@ -1,0 +1,96 @@
+APP_VERSION = 0.1
+
+BOINC_DIR = /Users/deselt/Research/software/boinc
+BOINC_API_DIR = $(BOINC_DIR)/api
+BOINC_LIB_DIR = $(BOINC_DIR)/lib
+BOINC_LIB_LINK_DIR = $(BOINC_DIR)/mac_build/build/Deployment
+FRAMEWORKS_DIR = /System/Library/Frameworks
+
+VARIANTFLAGS = -DGMLE_BOINC
+
+CXXFLAGS_ALL = $(VARIANTFLAGS) \
+	-g \
+	-DAPP_GRAPHICS \
+	-I$(BOINC_DIR) \
+	-I$(BOINC_DIR)/clientgui/mac/ \
+	-I$(BOINC_LIB_DIR) \
+	-I$(BOINC_API_DIR) \
+	-L$(BOINC_LIB_LINK_DIR) \
+	-L.
+
+CC_PPC = /usr/bin/gcc-3.3
+CXX_PPC = /usr/bin/g++-3.3
+CXXFLAGS_PPC = -arch ppc -D_NONSTD_SOURCE -isystem /Developer/SDKs/MacOSX10.3.9.sdk \
+	-DMAC_OS_X_VERSION_MIN_REQUIRED=1030 $(CXXFLAGS_ALL)
+LDFLAGS_PPC = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.3.9.sdk,-arch,ppc
+
+CC_i386 = /usr/bin/gcc-4.0
+CXX_i386 = /usr/bin/g++-4.0
+CXXFLAGS_i386 = -arch i386 -isysroot /Developer/SDKs/MacOSX10.4u.sdk \
+	-mmacosx-version-min=10.4 \
+	$(CXXFLAGS_ALL)
+LDFLAGS_i386 = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk,-arch,i386
+
+CC_x86_64 = /usr/bin/gcc-4.0
+CXX_x86_64 = /usr/bin/g++-4.0
+CXXFLAGS_x86_64 = -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.5.sdk \
+	-mmacosx-version-min=10.5 \
+	$(CXXFLAGS_ALL)
+LDFLAGS_x86_64 = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.5.sdk,-arch,x86_64
+
+
+APP_DIR = ../astronomy
+FGDO_DIR = ..
+SCHED_DIR = $(FGDO_DIR)/evaluation
+SEARCH_DIR = $(FGDO_DIR)/searches
+UTIL_DIR = $(FGDO_DIR)/util
+
+APP_OBJS = \
+	$(APP_DIR)/boinc_astronomy.o \
+	$(APP_DIR)/atSurveyGeometry.o \
+	$(APP_DIR)/numericalIntegration.o \
+	$(APP_DIR)/parameters.o \
+	$(APP_DIR)/probability.o \
+	$(APP_DIR)/stCoords.o \
+	$(APP_DIR)/stCnum.o \
+	$(APP_DIR)/stMath.o \
+	$(APP_DIR)/stVector.o \
+	$(APP_DIR)/star_points.o \
+	$(APP_DIR)/evaluation_optimized.o \
+	$(APP_DIR)/evaluation_state.o
+SEARCH_OBJS = \
+	$(SEARCH_DIR)/search_parameters.o
+UTIL_OBJS = \
+	$(UTIL_DIR)/io_util.o \
+	$(UTIL_DIR)/settings.o
+
+PROGS = milkyway_$(APP_VERSION)_powerpc-apple-darwin milkyway_$(APP_VERSION)_i386-apple-darwin milkyway_$(APP_VERSION)_x86_64-apple-darwin
+
+all: $(PROGS)
+
+app_ppc: OBJ_CXX = $(CXX_PPC)
+app_ppc: OBJ_CXXFLAGS = $(CXXFLAGS_PPC)
+app_ppc: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(BOINC_LIB_LINK_DIR)/libboinc_api.a $(BOINC_LIB_LINK_DIR)/libboinc.a
+	$(CXX_PPC) $(LDFLAGS_PPC) $(CXXFLAGS_PPC) -o milkyway_$(APP_VERSION)_powerpc-apple-darwin $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lboinc -lboinc_api
+
+app_i386: OBJ_CXX = $(CXX_i386)
+app_i386: OBJ_CXXFLAGS = $(CXXFLAGS_i386)
+app_i386: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(BOINC_LIB_LINK_DIR)/libboinc_api.a $(BOINC_LIB_LINK_DIR)/libboinc.a
+	$(CXX_i386) $(LDFLAGS_i386) $(CXXFLAGS_i386) -o milkyway_$(APP_VERSION)_i386_apple_darwin $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lboinc -lboinc_api
+
+app_x86_64: OBJ_CXX = $(CXX_x86_64)
+app_x86_64: OBJ_CXXFLAGS = $(CXXFLAGS_x86_64)
+app_x86_64: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(BOINC_LIB_LINK_DIR)/libboinc_api.a $(BOINC_LIB_LINK_DIR)/libboinc.a
+	$(CXX_x86_64) $(LDFLAGS_x86_64) $(CXXFLAGS_x86_64) -o milkyway_$(APP_VERSION)_x86_64-apple-darwin $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lboinc -lboinc_api
+
+.C.o:
+	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(INC) -Wall -c $< -o $@
+.c.o:
+	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(INC) -Wall -c $< -o $@
+
+
+clean:
+	rm -f $(SEARCH_OBJS) $(UTIL_OBJS) $(APP_OBJS)
+
+clean_all:
+	rm -f $(PROGS) $(SEARCH_OBJS) $(UTIL_OBJS) $(APP_OBJS)
