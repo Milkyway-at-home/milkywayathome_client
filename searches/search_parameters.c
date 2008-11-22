@@ -102,14 +102,14 @@ int read_search_parameters(const char* filename, SEARCH_PARAMETERS *parameters) 
 
 int write_search_parameters(const char* filename, SEARCH_PARAMETERS *parameters) {
 	int retval;
-	FILE* data_file = fopen(filename, "w");
+	FILE* data_file = fopen(filename, "w+");
 
 	if (!data_file) {
 		fprintf(stderr, "Error writing search parameters: Couldn't find input file %s.\n", filename);
 		return 1;
 	}
         
-	retval = fread_search_parameters(data_file, parameters);
+	retval = fwrite_search_parameters(data_file, parameters);
 	fclose(data_file);
 	return retval;
 }

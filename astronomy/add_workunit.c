@@ -43,6 +43,8 @@ SCHED_CONFIG sched_config;
 DB_APP app;
 int generated_wus = 0;
 
+#define config_dir "/export/www/boinc/milkyway"
+
 /*
  *	This creates a workunit from the specified parameters
  */
@@ -51,41 +53,71 @@ void add_workunit(SEARCH_PARAMETERS* parameters) {
 	char wu_name[1024], wu_file[1024], wu_path[1024];
 	char star_file[1024], star_path[1024];
 	char astronomy_file[1024], astronomy_path[1024];
+	char wu_astronomy_file[1024], wu_star_file[1024];
 	char credit_str[512];
 	long current_time;
 	const char *required_files[3];
+	int retval;
+
+	printf("checking stop daemons\n");
 
 	check_stop_daemons();
 
+	printf("checked\n");
+
 	current_time = time(NULL) + getpid(); 
 	sprintf(wu_name, "%s_%d_%ld", parameters->search_name, generated_wus, current_time);
-	sprintf(wu_file, "%s_parameters_%d_%ld", parameters->search_name, generated_wus, current_time);
+	printf("made wu_name: %s\n");
+
+	sprintf(wu_file, "%s_search_parameters_%d_%ld", parameters->search_name, generated_wus, current_time);
+	printf("made wu_file: %s\n");
+
+	sprintf(wu_astronomy_file, "%s_astronomy_parameters_%d_%ld", parameters->search_name, generated_wus, current_time);
+	printf("made wu_astronomy_file: %s\n");
+
+	sprintf(wu_star_file, "stars.txt");
+
 	generated_wus++;
 
-	if (sched_config.download_path(wu_file, wu_path)) {
+
+	if (!sched_config.download_path(wu_file, wu_path)) {
+		printf("writing wu to path: %s\n", wu_path);
+		retval = write_search_parameters(wu_path, parameters);
+		if (retval) {
+			log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "assimilator could not open search parameters file for write: %s\n", wu_path);
+			return;
+		}
+	} else {
 		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "assimilator couldnt open fgdo workunit file for write: %s\n", wu_path);
 		return;
 	}
 
+	printf("reading astronomy file: %s/%s/astronomy_parameters.txt\n", get_working_directory(), parameters->search_name);
+
 	sprintf(astronomy_file, "%s/%s/astronomy_parameters.txt", get_working_directory(), parameters->search_name);
+
 	ASTRONOMY_PARAMETERS *ap = (ASTRONOMY_PARAMETERS*)malloc(sizeof(ASTRONOMY_PARAMETERS));
-	int retval = read_astronomy_parameters(astronomy_file, ap);
+	retval = read_astronomy_parameters(astronomy_file, ap);
 	if (retval) {
 		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "assimlator could not open parameter file for read: %s\n", astronomy_file);
 		return;
 	}
-	if (sched_config.download_path(astronomy_file, astronomy_path)) {
+	if (!sched_config.download_path(wu_astronomy_file, astronomy_path)) {
 		/********
 			*	Astronomy parameters not moved to the download diretory yet, do this.
 		 ********/
+		printf("writing astronomy parameters to: %s\n", astronomy_path);
 		retval = write_astronomy_parameters(astronomy_path, ap);
 		if (retval) {
 			log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "assimilator could not open parameter file for write: %s\n", astronomy_path);
 			return;
 		}
 	}
+
+	printf("reading star file: %s/%s/stars.txt\n", get_working_directory(), parameters->search_name);
+
 	sprintf(star_file, "%s/%s/stars.txt", get_working_directory(), parameters->search_name);
-	if (sched_config.download_path(star_file, star_path)) {
+	if (sched_config.download_path(wu_star_file, star_path)) {
 		/********
 			*	Stars not moved to the download diretory yet, do this.
 		 ********/
@@ -95,6 +127,7 @@ void add_workunit(SEARCH_PARAMETERS* parameters) {
 			log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "assimilator could not open star file for read: %s\n", star_file);
 			return;
 		}
+		printf("writing stars to: %s\n", star_path);
 		retval = write_star_points(star_path, sp);
 		if (retval) {
 			log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "assimilator could not open star file for write: %s\n", star_path);
@@ -103,18 +136,6 @@ void add_workunit(SEARCH_PARAMETERS* parameters) {
 		free_star_points(sp);
 		free(sp);
 	}
-
-
-	FILE *out_p = fopen(wu_path, "w+");
-        fprintf(out_p, "%s\n", parameters->search_name);
-
-        fprintf(out_p, "%d:", parameters->number_parameters);
-        for (int i = 0; i < parameters->number_parameters; i++) fprintf(out_p, " %lf", parameters->parameters[i]);
-
-	fprintf(out_p, "\n%s\n", parameters->metadata);
-
-	fflush(out_p);
-	fclose(out_p);
 
 	wu.clear();
 	wu.appid = app.id;
@@ -131,9 +152,9 @@ void add_workunit(SEARCH_PARAMETERS* parameters) {
 	wu.max_success_results = 1;
 
 	int number_required_files = 3;
-	required_files[0] = wu_file;
-	required_files[1] = astronomy_file;
-	required_files[2] = star_file;
+	required_files[0] = wu_astronomy_file;
+	required_files[1] = wu_star_file;
+	required_files[2] = wu_file;
 
         double credit = ((double)ap->r_steps * (double)ap->mu_steps * (double)ap->nu_steps) / (350.0 * 800.0 * 80.0);
         if (ap->convolve > 0) {
@@ -143,7 +164,11 @@ void add_workunit(SEARCH_PARAMETERS* parameters) {
         credit /= 1.6;
 
 	sprintf(credit_str, "<credit>%lf</credit>", credit);
-	create_work(wu, wu_template, "templates/a_result.xml", "../templates/a_result.xml", required_files, number_required_files, sched_config, "", credit_str);
+
+	char result_xml_path[1024];
+	sprintf(result_xml_path, "%s/templates/a_result.xml", config_dir);
+
+	create_work(wu, wu_template, "templates/a_result.xml", result_xml_path, required_files, number_required_files, sched_config, "", credit_str);
 
 	free_parameters(ap);
 	free(ap);
@@ -151,30 +176,32 @@ void add_workunit(SEARCH_PARAMETERS* parameters) {
 
 void init_add_workunit() {
 	char buf[512];
+	char wu_template_file[1024];
 	int retval;
 
-	retval = config.parse_file("..");
+	retval = sched_config.parse_file(config_dir);
 	if (retval) {
 		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "Can't parse ../config.xml: %s\n", boincerror(retval));
 		exit(1);
 	}
 	log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Starting\n");
 
-	retval = boinc_db.open(config.db_name, config.db_host, config.db_user, config.db_passwd);
+	retval = boinc_db.open(sched_config.db_name, sched_config.db_host, sched_config.db_user, sched_config.db_passwd);
 	if (retval) { 
 		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "Can't open DB\n");
 		exit(1);
 	}
 
-	sprintf(buf, "where name='%s'", app.name);
+	sprintf(buf, "where name='milkyway'");
 	retval = app.lookup(buf);
 	if (retval) {
-		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "Can't find app\n");
+		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "Can't find app: milkyway\n");
 		exit(1);
 	}
 
-	if ( read_file_malloc("../templates/a_wu2.xml", wu_template) ) {
-		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "can't read astronomy WU template\n");
+	sprintf(wu_template_file, "%s/templates/milkyway_wu.xml", config_dir);
+	if ( read_file_malloc(wu_template_file, wu_template) ) {
+		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "can't read milkyway WU template\n");
 		exit(1);
 	}
 }

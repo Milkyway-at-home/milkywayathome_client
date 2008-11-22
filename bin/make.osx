@@ -1,4 +1,4 @@
-APP_VERSION = 0.1
+APP_VERSION = 0.2
 
 BOINC_DIR = /Users/deselt/Research/software/boinc
 BOINC_API_DIR = $(BOINC_DIR)/api

@@ -84,7 +84,7 @@ void worker() {
 		*	INITIALIZE THE EVALUATION STATE
 	 ********/
 	EVALUATION_STATE *es = (EVALUATION_STATE*)malloc(sizeof(EVALUATION_STATE));
-	initialize_state(ap, es);
+	initialize_state(ap, sp, es);
 //	printf("read evaluation state\n");
 
 	/********
@@ -122,7 +122,7 @@ void worker() {
 	 ********/
 	boinc_write_search_parameters(OUTPUT_FILENAME, s, likelihood);
 
-	free_state(ap, es);
+	free_state(es);
 	free(es);
 	free_parameters(ap);
 	free(ap);
@@ -166,4 +166,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.7 2008/11/20 19:37:58 deselt Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.8 2008/11/22 12:24:56 deselt Exp $";

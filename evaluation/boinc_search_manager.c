@@ -30,13 +30,15 @@
  ********/
 #include "search_manager.h"
 #include "boinc_add_wu.h"
-#include "../searches/search.h"
+#include "../searches/asynchronous_search.h"
 #include "../searches/search_parameters.h"
 #include "../util/settings.h"
 
 #define		LOCKFILE	"assimilator.out"
 #define		PIDFILE		"assimilator.pid"
 #define		SLEEP_INTERVAL	10
+
+#define config_dir "/export/www/boinc/milkyway"
 
 using std::vector;
 using std::string;
@@ -104,7 +106,7 @@ void init_boinc_search_manager(int argc, char** argv, void (*add_wu)(SEARCH_PARA
 		log_messages.printf(SCHED_MSG_LOG::MSG_DEBUG, "Using mod'ed WU enumeration.  modulus = %d  remainder = %d\n", wu_id_modulus, wu_id_remainder);
 	}
 
-	retval = bsm_config.parse_file("..");
+	retval = bsm_config.parse_file(config_dir);
 	if (retval) {
 		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "Can't parse ../config.xml: %s\n", boincerror(retval));
 		exit(1);
@@ -117,12 +119,17 @@ void init_boinc_search_manager(int argc, char** argv, void (*add_wu)(SEARCH_PARA
 		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "Can't open DB\n");
 		exit(1);
 	}
+
+	printf("looking up app\n");
+
 	sprintf(buf, "where name='%s'", bsm_app.name);
 	retval = bsm_app.lookup(buf);
 	if (retval) {
 		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "Can't find app\n");
 		exit(1);
 	}
+
+	printf("installing stop signal handler\n");
 
 	install_stop_signal_handler();
 }
@@ -131,10 +138,15 @@ int generate_workunits() {
 	int generated, i;
 	SEARCH_PARAMETERS **sp;
 
+	printf("generating workunits\n");
+
 	sp = (SEARCH_PARAMETERS**)malloc(sizeof(SEARCH_PARAMETERS*) * get_generation_rate());
 	generated = generate_search_parameters(sp);
 	for (i = 0; i < generated; i++) {
+		printf("wu[%d]\n", i);
+
 		add_workunit(sp[i]);
+		printf("added\n");
 		free_search_parameters(sp[i]);
 	}
 	free(sp);

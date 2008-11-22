@@ -22,6 +22,7 @@ void init_search_manager(int argc, char **argv) {
 	for (i = 0; i < argc; i++) {
 		if (!strcmp(argv[i], "-cwd")) {
 			set_working_directory(argv[++i]);
+			printf("set working directory: %s\n", get_working_directory());
 		} else if (!strcmp(argv[i], "-gen")) {
 			generation_rate = atoi(argv[++i]);
 		} else if (!strcmp(argv[i], "-s")) {

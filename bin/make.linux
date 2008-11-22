@@ -1,0 +1,75 @@
+APP_VERSION = 0.2
+
+CXX = g++
+CXXFLAGS = -g -O -I/software/boinc-6.3.14-0/pkg/include/boinc/ -DGMLE_BOINC
+LDFLAGS = -g -L/usr/local/lib -L/usr/X11R6/lib
+
+BOINC_DIR = /projects/wcl/software/boinc
+MYSQL_DIR = /usr/local/include/mysql
+INC = -I$(BOINC_DIR) -I$(BOINC_DIR)/lib -I$(BOINC_DIR)/db -I$(BOINC_DIR)/tools -I$(BOINC_DIR)/api -I$(BOINC_DIR)/sched -I$(MYSQL_DIR)
+LIBS = -L$(BOINCDIR)/sched -I$(BOINCDIR)/lib -lsched -L$(BOINCDIR)/lib -lboinc
+MYSQL = -L/usr/local/lib/mysql -lmysqlclient
+
+APP_DIR = ../astronomy
+FGDO_DIR = ..
+SCHED_DIR = $(FGDO_DIR)/evaluation
+SEARCH_DIR = $(FGDO_DIR)/searches
+UTIL_DIR = $(FGDO_DIR)/util
+
+APP_OBJS = \
+	$(APP_DIR)/boinc_astronomy.o \
+	$(APP_DIR)/atSurveyGeometry.o \
+	$(APP_DIR)/numericalIntegration.o \
+	$(APP_DIR)/parameters.o \
+	$(APP_DIR)/probability.o \
+	$(APP_DIR)/stCoords.o \
+	$(APP_DIR)/stCnum.o \
+	$(APP_DIR)/stMath.o \
+	$(APP_DIR)/stVector.o \
+	$(APP_DIR)/star_points.o \
+	$(APP_DIR)/evaluation_optimized.o \
+	$(APP_DIR)/evaluation_state.o
+BOINC_ADD_OBJS = \
+	$(APP_DIR)/add_workunit.o \
+	$(APP_DIR)/parameters.o \
+	$(APP_DIR)/star_points.o
+START_OBJS = \
+	$(APP_DIR)/boinc_start_search.o
+ASSIMILATOR_OBJS = \
+	$(APP_DIR)/boinc_assimilator.o 
+
+SCHED_OBJS = \
+	$(SCHED_DIR)/search_manager.o \
+	$(SCHED_DIR)/boinc_search_manager.o \
+	$(SCHED_DIR)/validate_util.o
+SEARCH_OBJS = \
+	$(SEARCH_DIR)/search_parameters.o \
+	$(SEARCH_DIR)/asynchronous_newton_method.o \
+	$(SEARCH_DIR)/hessian.o \
+	$(SEARCH_DIR)/gradient.o \
+	$(SEARCH_DIR)/population.o \
+	$(SEARCH_DIR)/recombination.o
+UTIL_OBJS = \
+	$(UTIL_DIR)/io_util.o \
+	$(UTIL_DIR)/matrix.o \
+	$(UTIL_DIR)/settings.o
+
+PROGS = boinc_astronomy boinc_astronomy_start_search boinc_astronomy_assimilator
+
+all: $(PROGS)
+
+app_x86_64: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(BOINC_DIR)/api/libboinc_api.a $(BOINC_DIR)/lib/libboinc.a
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(INC) -Wl --export_dynamic -o milkyway_$(APP_VERSION)_x86_64-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lm -lboinc_api -lboinc -pthread
+
+app_i686: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(BOINC_DIR)/api/libboinc_api.a $(BOINC_DIR)/lib/libboinc.a
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(INC) -Wl --export_dynamic -o milkyway_$(APP_VERSION)_i686-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lm -lboinc_api -lboinc -pthread
+
+
+.C.o:
+	$(CXX) $(CXXFLAGS) $(INC) -Wall -x c++ -c $< -o $@
+
+.c.o:
+	$(CXX) $(CXXFLAGS) $(INC) -Wall -x c++ -c $< -o $@
+
+clean:
+	rm -f $(PROGS) $(BOINC_ADD_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(PROGS) $(APP_OBJS) $(START_OBJS) $(ASSIMILATOR_OBJS) $(SCHED_OBJS)

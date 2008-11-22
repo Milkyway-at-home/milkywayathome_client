@@ -29,11 +29,14 @@ int create_newton_method(char* search_name, ...) {
 	double *point, *range;
 
 	sprintf(search_directory, "%s/%s", get_working_directory(), search_name);
+	printf("making directory: %s\n", search_directory);
 	mkdir(search_directory, 0777);
 
 	nms = (NEWTON_METHOD_SEARCH*)malloc(sizeof(NEWTON_METHOD_SEARCH));
 	va_start(vl, search_name);
+	nms->current_iteration = 0;
 	nms->maximum_iteration = va_arg(vl, int);
+	nms->current_evaluation = 0;
 	nms->evaluations_per_iteration = va_arg(vl, int);
 	nms->number_parameters = va_arg(vl, int);
 	point = va_arg(vl, double*);
