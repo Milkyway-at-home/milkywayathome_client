@@ -210,28 +210,23 @@ void calculate_probabilities(double *r_point, double *r3, double *N, double reff
 
 	for (i = 0; i < ap->number_streams; i++) {
 		st_prob[i] = 0;
+		if (stream_sigma[i] > -0.0001 && stream_sigma[i] < 0.0001) {
+			continue;
+		}
 		for (j = 0; j < ap->convolve; j++) {
-                        xyzs[0] = xyz[j][0];
-                        xyzs[1] = xyz[j][1];
-                        xyzs[2] = xyz[j][2];
+			xyzs[0] = xyz[j][0] - stream_c[i][0];
+			xyzs[1] = xyz[j][1] - stream_c[i][1];
+			xyzs[2] = xyz[j][2] - stream_c[i][2];
 
-			xyzs[0] = xyzs[0] - stream_c[i][0];
-			xyzs[1] = xyzs[1] - stream_c[i][1];
-			xyzs[2] = xyzs[2] - stream_c[i][2];
+			dotted = stream_a[i][0] * xyzs[0] + stream_a[i][1] * xyzs[1] + stream_a[i][2] * xyzs[2];
 
-			dotted = dotp(stream_a[i], xyzs);
 			xyzs[0] = xyzs[0] - dotted * stream_a[i][0];
 			xyzs[1] = xyzs[1] - dotted * stream_a[i][1];
 			xyzs[2] = xyzs[2] - dotted * stream_a[i][2];
 
-			xyz_norm = norm(xyzs);
+			xyz_norm = xyzs[0] * xyzs[0] + xyzs[1] * xyzs[1] + xyzs[2] * xyzs[2];
 
-			//Sigma near 0 so star prob is 0.
-			if (stream_sigma[i] > -0.0001 && stream_sigma[i] < 0.0001) {
-				psg = 0;
-			} else {
-				psg = exp( -(xyz_norm*xyz_norm) / 2 / (stream_sigma[i] * stream_sigma[i]) );
-			}
+			psg = exp( -xyz_norm / 2 / (stream_sigma[i] * stream_sigma[i]) );
 
 			st_prob[i] += qgaus_W[j] * r3[j] * N[j] * psg;
 		}

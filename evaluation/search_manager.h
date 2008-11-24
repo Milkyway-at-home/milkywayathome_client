@@ -16,6 +16,13 @@ typedef struct managed_search {
 } MANAGED_SEARCH;
 
 
+extern int number_registered_searches;
+extern ASYNCHRONOUS_SEARCH **registered_searches;
+
+extern int number_searches;
+extern MANAGED_SEARCH** searches;
+
+
 /********
 	*	Search manager functions.
  ********/

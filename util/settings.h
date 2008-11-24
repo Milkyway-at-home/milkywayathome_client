@@ -10,4 +10,6 @@
 char* get_working_directory();
 void set_working_directory(char* working_directory);
 
+void remove_arg(int *target, int *count, char ***values);
+
 #endif

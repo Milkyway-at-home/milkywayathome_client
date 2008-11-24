@@ -216,11 +216,6 @@ void free_state(EVALUATION_STATE* es) {
 			fwrite_integral_area(file, es->cuts[i]);
 		}
 
-		if (!(retval = fflush(file))) {
-	                fprintf(stderr, "APP: error writing checkpoint (flushing checkpoint file) %d\n", retval);
-	                return retval;
-		}
-
 		if (!(retval = fclose(file))) {
 	                fprintf(stderr, "APP: error writing checkpoint (closing checkpoint file) %d\n", retval);
 	                return retval;

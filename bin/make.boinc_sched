@@ -1,0 +1,84 @@
+BOINC_DIR = /software/boinc-6.3.14-0/pkg
+BOINC_LIB_DIR = /projects/wcl/software/boinc
+MYSQL_DIR = /usr/local/include/mysql
+
+CXX = g++
+CXXFLAGS = -g -O -I$(BOINC_DIR)/include/boinc -I$(MYSQL_DIR) -DGMLE_BOINC
+LDFLAGS = -g -L/usr/local/lib -L/usr/X11R6/lib
+
+LIBS = -lm -pthread -L$(BOINC_DIR)/lib/ -lsched -lboinc
+MYSQL = -L/usr/local/lib/mysql -lmysqlclient
+
+
+APP_DIR = ../astronomy
+FGDO_DIR = ..
+SCHED_DIR = $(FGDO_DIR)/evaluation
+SEARCH_DIR = $(FGDO_DIR)/searches
+UTIL_DIR = $(FGDO_DIR)/util
+
+
+SEARCH_OBJS = \
+	$(SEARCH_DIR)/search_parameters.o \
+	$(SEARCH_DIR)/asynchronous_newton_method.o \
+	$(SEARCH_DIR)/hessian.o \
+	$(SEARCH_DIR)/gradient.o \
+	$(SEARCH_DIR)/population.o \
+	$(SEARCH_DIR)/recombination.o
+SCHED_OBJS = \
+	$(SCHED_DIR)/search_manager.o \
+	$(SCHED_DIR)/boinc_search_manager.o \
+	$(SCHED_DIR)/validate_util.o
+UTIL_OBJS = \
+	$(UTIL_DIR)/io_util.o \
+	$(UTIL_DIR)/matrix.o \
+	$(UTIL_DIR)/settings.o
+BOINC_ADD_OBJS = \
+	$(APP_DIR)/add_workunit.o \
+	$(APP_DIR)/parameters.o \
+	$(APP_DIR)/star_points.o
+
+START_OBJS = \
+	$(APP_DIR)/boinc_start_search.o \
+	$(BOINC_ADD_OBJS) \
+	$(SEARCH_OBJS) \
+	$(SCHED_OBJS) \
+	$(UTIL_OBJS)
+
+ASSIMILATOR_OBJS = \
+	$(APP_DIR)/boinc_assimilator.o \
+	$(BOINC_ADD_OBJS) \
+	$(SEARCH_OBJS) \
+	$(SCHED_OBJS) \
+	$(UTIL_OBJS)
+
+VALIDATOR_OBJS = \
+	$(SCHED_DIR)/validate_util.o \
+	$(SCHED_DIR)/validate_util2.o \
+	$(SCHED_DIR)/validator.o \
+	$(SCHED_DIR)/validator_astronomy.o \
+	$(SEARCH_DIR)/search_parameters.o \
+	$(UTIL_OBJS)
+
+
+PROGS = milkyway_assimilator milkyway_start_search milkyway_validator
+
+all: assimilator start validator
+
+assimilator: $(ASSIMILATOR_OBJS) 
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_assimilator $(ASSIMILATOR_OBJS) $(MYSQL) $(LIBS)
+
+start: $(START_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_start_search $(START_OBJS) $(LIBS) $(MYSQL)
+
+validator: $(VALIDATOR_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_validator $(VALIDATOR_OBJS) $(LIBS) $(MYSQL) 
+
+
+.C.o:
+	$(CXX) $(CXXFLAGS) -Wall -x c++ -c $< -o $@
+
+.c.o:
+	$(CXX) $(CXXFLAGS) -Wall -x c++ -c $< -o $@
+
+clean:
+	rm -f $(PROGS) $(ASSIMILATOR_OBJS) $(START_OBJS) $(VALIDATOR_OBJS)

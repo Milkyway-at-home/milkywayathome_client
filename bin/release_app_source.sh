@@ -52,4 +52,5 @@ cp ../parameters-unconvolved-small.txt ./bin/test_files/astronomy_parameters-unc
 
 cd ..
 tar cvzf milkyway_release_$1.tar milkyway
+zip -r milkyway_release_$1.zip milkyway
 rm -r milkyway

@@ -14,7 +14,7 @@
 
 #define max_iterations			35000
 #define astronomy_parameters_file	"parameters.txt"
-#define star_points_file		"86-cut.txt"
+#define star_points_file		"stars-86-cut.txt"
 #define population_file_name		"population.txt"
 
 ASTRONOMY_PARAMETERS *ap;
@@ -55,7 +55,7 @@ void read_data(int rank, int max_rank) {
 	 ********/
 	printf("[worker: %d] initializing state...\n", rank);
 	es = (EVALUATION_STATE*)malloc(sizeof(EVALUATION_STATE));
-	initialize_state(ap, es);
+	initialize_state(ap, sp, es);
 }
 
 void integral_f(double* parameters, double** results) {
@@ -64,7 +64,7 @@ void integral_f(double* parameters, double** results) {
 		*	CALCULATE THE INTEGRALS
 	 ********/
 	set_astronomy_parameters(ap, parameters);
-	reset_evaluation_state(ap, es);
+	reset_evaluation_state(es);
 
 	int retval = calculate_integrals(ap, es, sp);
 	if (retval) {

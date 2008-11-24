@@ -3,7 +3,7 @@
 
 #include "../searches/search_parameters.h"
 
-void init_boinc_search_manager(int argc, char** argv, void (*add_wu)(SEARCH_PARAMETERS*));
+void init_boinc_search_manager(int argc, char** argv);
 int generate_workunits();
 
 #endif

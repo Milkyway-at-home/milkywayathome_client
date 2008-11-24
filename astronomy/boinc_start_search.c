@@ -9,20 +9,32 @@
 #include "../evaluation/boinc_search_manager.h"
 #include "../searches/asynchronous_newton_method.h"
 #include "../searches/search_parameters.h"
+#include "../util/settings.h"
 
 /********
 	*	Astronomy includes
  ********/
-#include "add_workunit.h"
+#include "../evaluation/boinc_add_workunit.h"
 #include "parameters.h"
 #include "star_points.h"
 
 
-void print_arguments() {
+void print_usage() {
 	printf("Usage:\n");
-	printf("\t-d <working_directory>, default: ./\n");
-	printf("\t-s <search_name>, required.\n");
-	printf("\t-wus <wus_to_generate>, required.\n");
+	printf("\t-app <application\n");
+	printf("\t\tspecifies the application: (should be milkyway) -- required\n");
+	printf("\t-cwd <working_directory>\n");
+	printf("\t\tspecifies the directory to put the search in -- default: ./\n");
+	printf("\t-s <search_name>\n");
+	printf("\t\tspecifies the name of the search -- required.\n");
+	printf("\t-gen #\n");
+	printf("\t\tspecifies how many workunits to generate -- required\n");
+	printf("\t-mw_stars <star_file>\n");
+	printf("\t\tspecifies the stars file -- required\n");
+	printf("\t-mw_parameters <parameters_file>\n");
+	printf("\t\tspecifies the parameter file -- required\n");
+	printf("\t-h\n");
+	printf("\t\tprints this help message.\n");
 	exit(1);
 }
 
@@ -37,11 +49,20 @@ int main(int argc, char** argv) {
 	printf("registering search\n");
 	register_search(asynchronous_newton_method);
 
-	printf("sending arguments to boinc search manager\n");
-	init_boinc_search_manager(argc, argv, add_workunit);
 	printf("parsing arguments\n");
+	if (argc == 1) {
+		print_usage();
+		exit(0);
+	}
         for (i = 0; i < argc; i++) {
-                if (!strcmp(argv[i], "-s")) {
+		if (!strcmp(argv[i], "-h")) {
+			print_usage();
+			exit(0);
+		} else if (!strcmp(argv[i], "-s")) {
+			if (search_name != NULL) {
+				printf("ERROR: multiple searches specified, can only create workunits for one search at a time.\n");
+				return 0;
+			}
 			search_name = (char*)malloc(sizeof(char) * SEARCH_NAME_SIZE);
 			strcpy(search_name, argv[++i]);
                 } else if (!strcmp(argv[i], "-mw_parameters")) {
@@ -50,6 +71,8 @@ int main(int argc, char** argv) {
 		} else if (!strcmp(argv[i], "-mw_stars")) {
 			stars_name = (char*)malloc(sizeof(char) * FILENAME_SIZE);
 			strcpy(stars_name, argv[++i]);
+		} else if (!strcmp(argv[i], "-cwd")) {
+			set_working_directory(argv[++i]);
 		}
         }
 
@@ -106,8 +129,9 @@ int main(int argc, char** argv) {
 	}
 	free(outfile);
 
-	printf("adding workunits\n");
+	printf("sending arguments to boinc search manager\n");
+	init_boinc_search_manager(argc, argv);
 
-	init_add_workunit();
+	printf("generating workunits\n");
 	generate_workunits();
 }

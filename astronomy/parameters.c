@@ -169,8 +169,6 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 		read_double_array(file, "mu_cut[min,max,steps]", &ap->mu_cut[i]);
 		read_double_array(file, "nu_cut[min,max,steps]", &ap->nu_cut[i]); 
 
-		printf("read %dth cut\n", i);
-
 		if (ap->r_cut[i][2] == 0 || ap->mu_cut[i][2] == 0 || ap->nu_cut[i][2] == 0) {
 			ap->r_cut_step_size[i] = 0.0;	
 			ap->mu_cut_step_size[i] = 0.0;	

@@ -29,7 +29,7 @@
 	*	FGDO includes
  ********/
 #include "search_manager.h"
-#include "boinc_add_wu.h"
+#include "boinc_add_workunit.h"
 #include "../searches/asynchronous_search.h"
 #include "../searches/search_parameters.h"
 #include "../util/settings.h"
@@ -43,7 +43,6 @@
 using std::vector;
 using std::string;
 
-SCHED_CONFIG	bsm_config;
 DB_APP		bsm_app;
 bool		update_db = true;
 bool		noinsert = false;
@@ -58,7 +57,9 @@ int		one_pass_N_WU = 0;
 long		processed_wus = 0;
 int		unsent_wu_buffer = 400;
 
-void init_boinc_search_manager(int argc, char** argv, void (*add_wu)(SEARCH_PARAMETERS*)) {
+WORKUNIT_INFO** workunit_info;
+
+void init_boinc_search_manager(int argc, char** argv) {
 	int i, retval;
 	char buf[256];
 
@@ -97,8 +98,6 @@ void init_boinc_search_manager(int argc, char** argv, void (*add_wu)(SEARCH_PARA
 				*	Generate more workunits if less than this number are available on the server.
 			 ********/
 			unsent_wu_buffer = atoi(argv[++i]);
-		} else {
-			log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "Unrecognized arg: %s\n", argv[i]);
 		}
 	}
 
@@ -106,7 +105,7 @@ void init_boinc_search_manager(int argc, char** argv, void (*add_wu)(SEARCH_PARA
 		log_messages.printf(SCHED_MSG_LOG::MSG_DEBUG, "Using mod'ed WU enumeration.  modulus = %d  remainder = %d\n", wu_id_modulus, wu_id_remainder);
 	}
 
-	retval = bsm_config.parse_file(config_dir);
+	retval = config.parse_file(config_dir);
 	if (retval) {
 		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "Can't parse ../config.xml: %s\n", boincerror(retval));
 		exit(1);
@@ -114,7 +113,7 @@ void init_boinc_search_manager(int argc, char** argv, void (*add_wu)(SEARCH_PARA
 
 	log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Starting\n");
 
-	retval = boinc_db.open(bsm_config.db_name, bsm_config.db_host, bsm_config.db_user, bsm_config.db_passwd);
+	retval = boinc_db.open(config.db_name, config.db_host, config.db_user, config.db_passwd);
 	if (retval) {
 		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "Can't open DB\n");
 		exit(1);
@@ -132,25 +131,34 @@ void init_boinc_search_manager(int argc, char** argv, void (*add_wu)(SEARCH_PARA
 	printf("installing stop signal handler\n");
 
 	install_stop_signal_handler();
+
+	printf("initializing workunit info\n");
+	workunit_info = (WORKUNIT_INFO**)malloc(sizeof(WORKUNIT_INFO*) * number_searches);
+	for (i = 0; i < number_searches; i++) {
+		printf("\tfor search: %s\n", searches[i]->search_name);
+		init_workunit_info(searches[i]->search_name, &(workunit_info[i]));
+		printf("\tsuccess.\n");
+	}
+	printf("finished.\n");
 }
 
 int generate_workunits() {
-	int generated, i;
-	SEARCH_PARAMETERS **sp;
+	int i, j, generated, current, generation_rate;
+	SEARCH_PARAMETERS *sp;
 
-	printf("generating workunits\n");
-
-	sp = (SEARCH_PARAMETERS**)malloc(sizeof(SEARCH_PARAMETERS*) * get_generation_rate());
-	generated = generate_search_parameters(sp);
-	for (i = 0; i < generated; i++) {
-		printf("wu[%d]\n", i);
-
-		add_workunit(sp[i]);
-		printf("added\n");
-		free_search_parameters(sp[i]);
-	}
-	free(sp);
-	return generated;
+	generation_rate = get_generation_rate();
+	current = 0;
+        for (i = 0; i < number_searches; i++) {
+                generated = (generation_rate - current) / (number_searches - i);
+                for (j = 0; j < generated; j++) {
+                        searches[i]->search->generate_parameters(searches[i]->search_name, searches[i]->search_data, &sp);
+			current++;
+			add_workunit(sp, workunit_info[i]);
+			free_search_parameters(sp);
+			free(sp);
+                }
+        }
+	return current;
 }
 
 int insert_workunit(WORKUNIT& wu, vector<RESULT>& /*results*/, RESULT& canonical_result) {
