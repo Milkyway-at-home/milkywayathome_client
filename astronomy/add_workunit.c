@@ -148,10 +148,12 @@ void init_workunit_info(char* search_name, WORKUNIT_INFO **wu_info) {
 		}
 	}
 
+	double calc_prob_count;
 	double credit = ((double)ap->r_steps * (double)ap->mu_steps * (double)ap->nu_steps * (double)ap->convolve) + ((double)sp->number_stars * (double)ap->convolve);
 	for (i = 0; i < ap->number_cuts; i++) {
 		credit += (ap->r_cut[i][2] * ap->mu_cut[i][2] * ap->nu_cut[i][2]);
 	}
+	calc_prob_count = credit;
 	credit /= 270000000.0;
 
 	printf("awarded credit: %lf\n", credit);
@@ -170,8 +172,10 @@ void init_workunit_info(char* search_name, WORKUNIT_INFO **wu_info) {
 	strcpy((*wu_info)->required_files[0], wu_astronomy_file);
 	strcpy((*wu_info)->required_files[1], wu_star_file);
 
-	(*wu_info)->rsc_fpops_est = 1e12;
-	(*wu_info)->rsc_fpops_bound = 1e14;
+	(*wu_info)->rsc_fpops_est = calc_prob_count * (40 + (45 * ap->convolve) + ap->number_streams * (5 + ap->convolve * 30));
+	printf("calculated fpops: %lf\n", (*wu_info)->rsc_fpops_est);
+
+	(*wu_info)->rsc_fpops_bound = (*wu_info)->rsc_fpops_est * 100;
 	(*wu_info)->rsc_memory_bound = 5e8;
 	(*wu_info)->rsc_disk_bound = 15e6;			//15 MB
 	(*wu_info)->delay_bound = 60 * 60 * 24 * 5;		//5 days
