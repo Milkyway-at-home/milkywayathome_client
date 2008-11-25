@@ -56,7 +56,7 @@ void new_search_parameters(SEARCH_PARAMETERS **p, char *search_name, int number_
 }
 
 int fread_search_parameters(FILE* file, SEARCH_PARAMETERS *parameters) {
-	int i;
+	int i, c;
 	parameters->search_name = (char*)malloc(sizeof(char) * 1024);
 	if (fscanf(file, "%s\n", parameters->search_name) != 1) return 1;
 	if (fscanf(file, "parameters [%d]:", &(parameters->number_parameters)) != 1) return 1;
@@ -67,8 +67,20 @@ int fread_search_parameters(FILE* file, SEARCH_PARAMETERS *parameters) {
 	}
 	if (fscanf(file, "\n") != 0) return 1;
 	parameters->metadata = (char*)malloc(sizeof(char) * METADATA_SIZE);
-	if (fscanf(file, "metadata: %s\n", parameters->metadata) != 1) return 1;
-
+	fscanf(file, "metadata: ");
+	c = fgetc(file);
+	i = 0;
+	while (i < METADATA_SIZE && c != '\n' && c != '\0') {
+		if (c == 13) {
+			c = fgetc(file);
+			continue;
+		}
+		parameters->metadata[i] = c;
+		c = fgetc(file);
+		i++;
+	}
+	parameters->metadata[i] = '\0';
+	if (c == '\0' || i == METADATA_SIZE) return 1;
 	return 0;
 }
 
@@ -127,6 +139,7 @@ int write_search_parameters(const char* filename, SEARCH_PARAMETERS *parameters)
 
 		FILE* data_file = boinc_fopen(input_path, "r");
 		retval = fread_search_parameters(data_file, parameters);
+		fscanf(data_file, "fitness: %lf\n", &(parameters->fitness));
 		fclose(data_file);
 		return retval;
 	}

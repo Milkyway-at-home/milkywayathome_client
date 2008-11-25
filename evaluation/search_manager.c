@@ -1,5 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "search_manager.h"
 
@@ -64,7 +66,11 @@ void register_search(ASYNCHRONOUS_SEARCH as) {
 		 ********/
 		pos = -(pos + 1);
 		number_registered_searches++;
-		registered_searches = (ASYNCHRONOUS_SEARCH**)realloc(registered_searches, sizeof(ASYNCHRONOUS_SEARCH*) * number_registered_searches);
+		if (registered_searches == NULL) {
+			registered_searches = (ASYNCHRONOUS_SEARCH**)malloc(sizeof(ASYNCHRONOUS_SEARCH*));
+		} else {
+			registered_searches = (ASYNCHRONOUS_SEARCH**)realloc(registered_searches, sizeof(ASYNCHRONOUS_SEARCH*) * number_registered_searches);
+		}
 		for (i = number_registered_searches-1; i > pos; i--) {
 			registered_searches[i] = registered_searches[i-1];
 		}
@@ -163,7 +169,17 @@ int manage_search(char* search_name) {
 	}
 	searches[search_pos] = ms;
 	printf("inserted search in position: %d\n", search_pos);
-	return 1;
+	return search_pos;
+}
+
+int search_exists(char* search_name) {
+	int success;
+	struct stat buf;
+	char directory[FILENAME_SIZE];
+	sprintf(directory, "%s/%s", get_working_directory(), search_name);
+
+	success = stat(directory, &buf);
+	return (success == 0);
 }
 
 int generate_search_parameters(SEARCH_PARAMETERS **sp) {
@@ -182,9 +198,13 @@ int generate_search_parameters(SEARCH_PARAMETERS **sp) {
 
 int insert_search_parameters(SEARCH_PARAMETERS *sp) {
 	MANAGED_SEARCH *ms = get_search(sp->search_name);
-	if (ms != NULL) {
-		ms->search->insert_parameters(ms->search_name, ms->search_data, sp);
-		return 1;
+
+	if (ms == NULL) {
+		int pos = manage_search(sp->search_name);
+		if (pos < 0) return -1;
+		ms = searches[pos];
 	}
-	return -1;
+
+	ms->search->insert_parameters(ms->search_name, ms->search_data, sp);
+	return 1;
 }

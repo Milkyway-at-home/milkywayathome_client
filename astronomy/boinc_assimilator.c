@@ -5,30 +5,23 @@
 /********
 	*	FGDO includes
  ********/
+#include "../evaluation/boinc_search_manager.h"
 #include "../evaluation/search_manager.h"
-#include "../searches/newton_method.h"
-#include "../searches/search_parameters.h"
-
-/********
-	*	Astronomy includes
- ********/
-#include "add_workunit.h"
-
+#include "../searches/asynchronous_newton_method.h"
 
 void print_arguments() {
 	printf("Usage:\n");
-	printf("\t-d <working_directory>, default: ./\n");
-	printf("\t-s <search_name>, required.\n");
+	printf("\t-cwd <working_directory>, default: ./\n");
 	printf("\t-wus <wus_to_generate>, required.\n");
 	exit(1);
 }
 
 int main(int argc, char** argv) {
-	register_search("nm", init_newton_method);
+	register_search(asynchronous_newton_method);
 //	register_search("gs", start_genetic_search);
 //	register_search("de", start_differential_evolution);
 //	register_search("pso", start_particle_swarm);
 
-	init_boinc_add_workunit();
-	start_boinc_search_manager(argc, argv, add_workunit);
+	init_boinc_search_manager(argc, argv);
+	start_search_manager();
 }

@@ -132,6 +132,8 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 		*	and generate new population.
 	 ********/
 	
+	printf("newton insert parameters, current iteration: %d, max iteration: %d, current evaluation: %d, max evaluation: %d\n", nms->current_iteration, nms->maximum_iteration, nms->current_evaluation, nms->evaluations_per_iteration);
+
 	if (nms->current_iteration < nms->maximum_iteration) {
 		replace(p, nms->current_evaluation, sp->parameters, sp->fitness);
 		nms->current_evaluation++;
@@ -157,7 +159,7 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 				 ********/
 				matrix_invert(hessian, p->number_parameters, p->number_parameters, &inverse_hessian);
 				for (j = 0; j < p->number_parameters; j++) {
-					nms->parameters[j] = 0;
+//					nms->parameters[j] = 0;
 					for (k = 0; k < p->number_parameters; k++) nms->parameters[j] -= inverse_hessian[j][k] * gradient[j];
 					nms->min_parameters[j] = nms->parameters[j] - nms->parameter_range[j];
 					nms->max_parameters[j] = nms->parameters[j] + nms->parameter_range[j];
@@ -188,5 +190,5 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 			}
 		}
 	}
-	return 1;
+	return 0;
 }

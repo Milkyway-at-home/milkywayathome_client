@@ -97,12 +97,14 @@ void add_workunit(SEARCH_PARAMETERS* parameters, WORKUNIT_INFO *wu_info) {
 	create_work(wu, wu_template, "templates/a_result.xml", wu_info->result_xml_path, required_files, number_required_files, config, "", wu_info->credit_str);
 }
 
-void init_workunit_info(char* search_name, WORKUNIT_INFO **wu_info) {
+void init_workunit_info(char* search_name, WORKUNIT_INFO **wu_info, DB_APP db_app) {
 	char wu_template_file[1024];
 	char star_file[1024], star_path[1024];
 	char wu_astronomy_file[1024], wu_star_file[1024];
 	char astronomy_file[1024], astronomy_path[1024];
 	int retval, i;
+
+	app = db_app;
 
 	sprintf(wu_template_file, "%s/templates/milkyway_wu.xml", config_dir);
 	if ( read_file_malloc(wu_template_file, wu_template) ) {
@@ -189,5 +191,4 @@ void init_workunit_info(char* search_name, WORKUNIT_INFO **wu_info) {
 	free(ap);
 	free_star_points(sp);
 	free(sp);
-
 }

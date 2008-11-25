@@ -1,17 +1,18 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "settings.h"
 
-char* working_directory = ".";
+char working_directory[FILENAME_SIZE] = ".";
 
 char* get_working_directory() {
 	return working_directory;
 }
 
 void set_working_directory(char* wd) {
-	free(working_directory);
-	working_directory = wd;
+	sprintf(working_directory, "%s", wd);
+	working_directory[strlen(wd)] = '\0';
 }
 
 void remove_arg(int *target, int *count, char ***values) {
@@ -34,6 +35,4 @@ void remove_arg(int *target, int *count, char ***values) {
 	(*values) = new_values;
 	(*target)--;
 	(*count)--;
-
-
 }

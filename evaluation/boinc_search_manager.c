@@ -136,7 +136,7 @@ void init_boinc_search_manager(int argc, char** argv) {
 	workunit_info = (WORKUNIT_INFO**)malloc(sizeof(WORKUNIT_INFO*) * number_searches);
 	for (i = 0; i < number_searches; i++) {
 		printf("\tfor search: %s\n", searches[i]->search_name);
-		init_workunit_info(searches[i]->search_name, &(workunit_info[i]));
+		init_workunit_info(searches[i]->search_name, &(workunit_info[i]), bsm_app);
 		printf("\tsuccess.\n");
 	}
 	printf("finished.\n");
@@ -145,8 +145,10 @@ void init_boinc_search_manager(int argc, char** argv) {
 int generate_workunits() {
 	int i, j, generated, current, generation_rate;
 	SEARCH_PARAMETERS *sp;
+	SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
 
 	generation_rate = get_generation_rate();
+	log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Generating %d new workunits.\n", generation_rate);
 	current = 0;
         for (i = 0; i < number_searches; i++) {
                 generated = (generation_rate - current) / (number_searches - i);
@@ -157,6 +159,7 @@ int generate_workunits() {
 			free_search_parameters(sp);
 			free(sp);
                 }
+		scope_messages.printf("[%s] Generated %d workunits.\n", searches[i]->search_name, j);
         }
 	return current;
 }
@@ -171,13 +174,17 @@ int insert_workunit(WORKUNIT& wu, vector<RESULT>& /*results*/, RESULT& canonical
 		log_messages.printf_multiline(SCHED_MSG_LOG::MSG_DEBUG, canonical_result.xml_doc_out, "[%s] canonical result", wu.name);
 
 		get_output_file_path(canonical_result, output_file_name);
-		success = read_search_parameters(output_file_name.c_str(), sp);
-		if (success <= 0) scope_messages.printf("[%s] Error parsing result file: %s [%d]\n", wu.name, output_file_name.c_str(), success);
+		success = boinc_read_search_parameters(output_file_name.c_str(), sp);
+		if (success != 0) scope_messages.printf("[%s] Error parsing result file: %s [%d]\n", wu.name, output_file_name.c_str(), success);
 
 		scope_messages.printf("[%s] Assimilating, search_name: [%s], fitness: [%lf], metadata: [%s]\n", wu.name, sp->search_name, sp->fitness, sp->metadata);
+		/********
+			*	NEED TO REGISTER SEARCHES
+		 ********/
+
 
 		success = insert_search_parameters(sp);
-		if (success <= 0) scope_messages.printf("[%s] Error inserting results to search: %s [%d]\n", wu.name, sp->search_name, success);
+		if (success != 0) scope_messages.printf("[%s] Error inserting results to search: %s [%d]\n", wu.name, sp->search_name, success);
 
 		free_search_parameters(sp);
 		free(sp);

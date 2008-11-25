@@ -25,6 +25,6 @@ typedef struct workunit_info {
 
 void add_workunit(SEARCH_PARAMETERS *parameters, WORKUNIT_INFO *wu_info);
 
-void init_workunit_info(char* search_name, WORKUNIT_INFO **wu_info);
+void init_workunit_info(char* search_name, WORKUNIT_INFO **wu_info, DB_APP db_app);
 
 #endif
