@@ -35,6 +35,8 @@ void register_search(ASYNCHRONOUS_SEARCH as);
 int manage_search(char* search_name);
 int search_exists(char* search_name);
 
+MANAGED_SEARCH* get_search(char* search_name);
+
 int generate_search_parameters(SEARCH_PARAMETERS **sp);
 int insert_search_parameters(SEARCH_PARAMETERS *sp);
 

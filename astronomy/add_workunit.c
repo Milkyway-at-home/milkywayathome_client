@@ -112,7 +112,7 @@ void init_workunit_info(char* search_name, WORKUNIT_INFO **wu_info, DB_APP db_ap
 		exit(1);
 	}
 
-	sprintf(wu_astronomy_file, "%s_astronomy_parameters.txt", search_name);
+	sprintf(wu_astronomy_file, "astronomy_parameters_%s.txt", search_name);
 	sprintf(astronomy_file, "%s/%s/astronomy_parameters.txt", get_working_directory(), search_name);
 	ASTRONOMY_PARAMETERS *ap = (ASTRONOMY_PARAMETERS*)malloc(sizeof(ASTRONOMY_PARAMETERS));
 	retval = read_astronomy_parameters(astronomy_file, ap);
@@ -131,7 +131,7 @@ void init_workunit_info(char* search_name, WORKUNIT_INFO **wu_info, DB_APP db_ap
 		}
 	}
 
-	sprintf(wu_star_file, "%s_stars.txt", search_name);
+	sprintf(wu_star_file, "stars_%s.txt", search_name);
 	sprintf(star_file, "%s/%s/stars.txt", get_working_directory(), search_name);
 	STAR_POINTS *sp = (STAR_POINTS*)malloc(sizeof(STAR_POINTS));
 	retval = read_star_points(star_file, sp);

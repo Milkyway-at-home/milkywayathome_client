@@ -152,6 +152,7 @@ int generate_workunits() {
 	current = 0;
         for (i = 0; i < number_searches; i++) {
                 generated = (generation_rate - current) / (number_searches - i);
+		scope_messages.printf("generating for search[%d]: %s\n", i, searches[i]->search_name);
                 for (j = 0; j < generated; j++) {
                         searches[i]->search->generate_parameters(searches[i]->search_name, searches[i]->search_data, &sp);
 			current++;
@@ -171,6 +172,7 @@ int insert_workunit(WORKUNIT& wu, vector<RESULT>& /*results*/, RESULT& canonical
 	SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
 
 	if (wu.canonical_resultid) {
+		MANAGED_SEARCH *ms;
 		log_messages.printf_multiline(SCHED_MSG_LOG::MSG_DEBUG, canonical_result.xml_doc_out, "[%s] canonical result", wu.name);
 
 		get_output_file_path(canonical_result, output_file_name);
@@ -182,8 +184,19 @@ int insert_workunit(WORKUNIT& wu, vector<RESULT>& /*results*/, RESULT& canonical
 			*	NEED TO REGISTER SEARCHES
 		 ********/
 
-
-		success = insert_search_parameters(sp);
+		ms = get_search(sp->search_name);
+		if (ms == NULL) {
+			int pos, i;
+			pos = manage_search(sp->search_name);
+			if (pos < 0) return -1;
+			ms = searches[pos];
+			workunit_info = (WORKUNIT_INFO**)realloc(workunit_info, sizeof(WORKUNIT_INFO*) * number_searches);
+			for (i = number_searches; i > pos; i--) {
+				workunit_info[i] = workunit_info[i-1];
+			}
+			init_workunit_info(searches[pos]->search_name, &(workunit_info[pos]), bsm_app);
+		}
+		success = ms->search->insert_parameters(ms->search_name, ms->search_data, sp);
 		if (success != 0) scope_messages.printf("[%s] Error inserting results to search: %s [%d]\n", wu.name, sp->search_name, success);
 
 		free_search_parameters(sp);
@@ -234,7 +247,11 @@ void start_search_manager() {
 				results.push_back(result);
 				if (result.id == wu.canonical_resultid) canonical_result = result;
 			}
-			insert_workunit(wu, results, canonical_result);
+			retval = insert_workunit(wu, results, canonical_result);
+
+			if (retval < 0) {
+				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL "[%s] could not be assimilated, insert failed with error [%d]\n", wu.name, retval);
+			}
 
 			if (update_db) {
 				sprintf(buf, "assimilate_state=%d, transition_time=%d", ASSIMILATE_DONE, (int)time(0));
@@ -251,7 +268,7 @@ void start_search_manager() {
 
 		if (num_assimilated)  {
 			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Assimilated %d workunits.\n", num_assimilated);
-			count_unsent_results(unsent_wus, 0);
+			count_unsent_results(unsent_wus, bsm_app.id);
 
 			processed_wus += num_assimilated;
 			time(&current_time);

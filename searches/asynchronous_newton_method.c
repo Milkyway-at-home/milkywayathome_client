@@ -116,9 +116,23 @@ int newton_generate_parameters(char* search_name, void* search_data, SEARCH_PARA
 	p = nms->population;
 
 	if (nms->current_iteration < nms->maximum_iteration) {
-		char metadata[METADATA_SIZE];
+		double *random_parameters;
+		char *metadata = (char*)malloc(sizeof(char) * METADATA_SIZE);
 		sprintf(metadata, "iteration: %d, evaluation: %d", nms->current_iteration, nms->current_evaluation);
-		new_search_parameters(sp, search_name, p->number_parameters, random_recombination(nms->min_parameters, nms->max_parameters, p->number_parameters), metadata);
+
+		random_recombination(nms->min_parameters, nms->max_parameters, p->number_parameters, &random_parameters);
+
+		new_search_parameters(sp, search_name, p->number_parameters, random_parameters, metadata);
+		free(random_parameters);
+		free(metadata);
+	}
+	return 1;
+}
+
+int within_bounds(int number_parameters, double *p, double *min, double *max) {
+	int i;
+	for (i = 0; i < number_parameters; i++) {
+		if (p[i] < min[i] || p[i] > max[i]) return 0;
 	}
 	return 1;
 }
@@ -135,6 +149,11 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 	printf("newton insert parameters, current iteration: %d, max iteration: %d, current evaluation: %d, max evaluation: %d\n", nms->current_iteration, nms->maximum_iteration, nms->current_evaluation, nms->evaluations_per_iteration);
 
 	if (nms->current_iteration < nms->maximum_iteration) {
+		if (!within_bounds(nms->number_parameters, sp->parameters, nms->min_parameters, nms->max_parameters)) {
+			printf("WU discarded, not within bounds of current iteration.\n");
+			return 0;
+		}
+
 		replace(p, nms->current_evaluation, sp->parameters, sp->fitness);
 		nms->current_evaluation++;
 		if (nms->current_evaluation >= nms->evaluations_per_iteration) {
@@ -185,8 +204,7 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 				free(p);
 
 				new_population(nms->evaluations_per_iteration, nms->number_parameters, &(nms->population));
-				sprintf(filename, "%s/%s/population_%d", get_working_directory(), search_name, nms->current_iteration);
-				write_population(filename, p);
+				checkpoint_newton_method(search_name, nms);
 			}
 		}
 	}

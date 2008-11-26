@@ -123,6 +123,13 @@ int manage_search(char* search_name) {
 	ASYNCHRONOUS_SEARCH *as;
 	void *search_data;
 	int search_pos, i, success;
+
+	/********
+		*	Check to see if the search exists.
+	 ********/
+	if (!search_exists(search_name)) return -1;
+
+
 	/********
 		*	Check to see if the search is already being managed.
 	 ********/
@@ -206,5 +213,5 @@ int insert_search_parameters(SEARCH_PARAMETERS *sp) {
 	}
 
 	ms->search->insert_parameters(ms->search_name, ms->search_data, sp);
-	return 1;
+	return 0;
 }

@@ -81,8 +81,4 @@ validator: $(VALIDATOR_OBJS)
 	$(CXX) $(CXXFLAGS) -Wall -x c++ -c $< -o $@
 
 clean:
-	rm -f $(ASSIMILATOR_OBJS) $(START_OBJS) $(VALIDATOR_OBJS)
-
-clean_all:
 	rm -f $(PROGS) $(ASSIMILATOR_OBJS) $(START_OBJS) $(VALIDATOR_OBJS)
-

@@ -156,7 +156,7 @@ int write_search_parameters(const char* filename, SEARCH_PARAMETERS *parameters)
 
 		FILE* data_file = boinc_fopen(output_path, "w");
 		retval = fwrite_search_parameters(data_file, parameters);
-		fprintf(data_file, "fitness: %lf\n", fitness);
+		fprintf(data_file, "fitness: %0.15lf\n", fitness);
 		fclose(data_file);
 		return retval;
 	}
