@@ -90,7 +90,7 @@ int fwrite_search_parameters(FILE* file, SEARCH_PARAMETERS *parameters) {
 	if (fprintf(file, "parameters [%d]:", parameters->number_parameters) < 0) return 1;
 
 	for (i = 0; i < parameters->number_parameters; i++) {
-		if (fprintf(file, " %.10lf", parameters->parameters[i]) < 0) return 1;
+		if (fprintf(file, " %.15lf", parameters->parameters[i]) < 0) return 1;
 	}
 	if (fprintf(file, "\n") < 0) return 1;
 	if (fprintf(file, "metadata: %s\n", parameters->metadata) < 0) return 1;
