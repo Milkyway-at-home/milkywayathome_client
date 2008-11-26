@@ -7,6 +7,9 @@
 #include "probability.h"
 #include "stVector.h"
 #include "numericalIntegration.h"
+#ifdef _WIN32
+#define drand48() ((double) rand() / RAND_MAX)
+#endif
 
 #define PI 3.1415926535897932384626433832795028841971693993751
 #define stdev 0.6
@@ -20,7 +23,7 @@ double sparsConvolved[5];
 double gPrime;
 
 /* Convert r in parsecs into the apparent magnitude, given an absolute magnitude
-   of 4.2. */ 
+   of 4.2. */
 double r2mag(double r) {
 	double absm, result;
 
@@ -37,8 +40,8 @@ double mag2r(double g) {
 	exponent = (g - absm)/5 + 1;
 	result = pow(10, exponent);
 	return result;
-} 
-          
+}
+
 /* Get the detection efficiency at a distance of kr kiloparsecs. */
 double reff(double kr) {
     double gstar, result, exp_result, pre_exp;
@@ -48,21 +51,21 @@ double reff(double kr) {
 	pre_exp = sigmoid_curve_parameters[1] * (gstar - sigmoid_curve_parameters[2]);
 	exp_result = exp(pre_exp);
 	result = sigmoid_curve_parameters[0] / (exp_result + 1);
-	
+
 	return result;
 }
 
 /* Calculate the Jacobian for a given stream coordinate */
 double Jacob(const double* a, const double* b, double sint, double xp, int verb) {
     double aa, bb, abn, tmp, j;
-    
+
     aa = dotp(a, a);
     bb = dotp(b, b);
     abn = norm(a) * norm(b);
-    
+
     tmp = aa * sint * sint + bb * ((1 - sint * sint)*(1 - sint * sint));
     j = sqrt(tmp) + (abn * xp) / tmp;
-        
+
     return fabs(j);
 }
 
@@ -79,9 +82,9 @@ double stPbxFunction(const double* coordpar, const double* bpars) {
     double xg[3];
     double alpha, q, delta, P;
     double r0, rg;
-    
+
     lbr2xyz(coordpar, xg);
-    
+
     /* alpha more negative, background falls off faster
      * q bigger means more squashed galaxy
      * r0, z0 defines the cylinder in the middle of the galaxy that will be empty
@@ -90,10 +93,10 @@ double stPbxFunction(const double* coordpar, const double* bpars) {
     q     = bpars[1];
     r0    = bpars[2];
     delta = bpars[3];
-    
+
     /* if q is 0, there is no probability */
     if (q == 0) return -1;
-    
+
     /* background probability */
     rg = sqrt(xg[0]*xg[0] + xg[1]*xg[1] + (xg[2]/q)*(xg[2]/q));
 
@@ -107,8 +110,8 @@ double stPbxFunction(const double* coordpar, const double* bpars) {
    are solar-centered and xyz coordinates are galactic centered.
    verb flags the function to output it's work as it executes.
    Return: a double value is returned indicating the probability that the star is in the stream.
-   A higher value indicates a higher probability. 
-   If a value < 0 is returned, an error occured. 
+   A higher value indicates a higher probability.
+   If a value < 0 is returned, an error occured.
    -1 - a parameters is NaN
    -2 - an error occured in the call to lbr2stream
 */
@@ -118,7 +121,7 @@ double stPsgFunction(const double* coordpar, const double* spars, int wedge, int
 	double mu, r, theta, phi, sigma;
 	double dotted, xyz_norm, prob;
 	double ra, dec, lamda, beta, l, b; //vickej2
-	
+
 	mu = spars[0];
 	r = spars[1];
 	theta = spars[2];
@@ -155,14 +158,14 @@ double stPsgFunction(const double* coordpar, const double* spars, int wedge, int
 	xyz[0] = xyz[0] - c[0];
 	xyz[1] = xyz[1] - c[1];
 	xyz[2] = xyz[2] - c[2];
-                
+
 	dotted = dotp(a, xyz);
 	xyz[0] = xyz[0] - dotted*a[0];
 	xyz[1] = xyz[1] - dotted*a[1];
 	xyz[2] = xyz[2] - dotted*a[2];
 
 	xyz_norm = norm(xyz);
-	
+
 //	fprintf(stderr, "dotted: %lf, xyz_norm: %lf, sigma: %lf\n", dotted, xyz_norm, sigma);
 	prob = exp( -(xyz_norm*xyz_norm) / 2 / (sigma*sigma) );
 
@@ -203,7 +206,7 @@ double stPbx(const double* coordpar, const double* bpars) {
 
 double stPsgConvolved(const double* coordpar, const double* spars, int wedge, int numpoints, int sgr_coordinates) {
 	int i;
-	double psg, reff_value, prob, rPrime, rPrime3; 
+	double psg, reff_value, prob, rPrime, rPrime3;
 
         rPrime = coordpar[2];
         gPrime = r2mag(rPrime*1000);
@@ -221,10 +224,10 @@ double stPsgConvolved(const double* coordpar, const double* spars, int wedge, in
 }
 
 double stPsg(const double* coordpar, const double* spars, int wedge, int sgr_coordinates) {
-        double psg, reff_value, prob; 
+        double psg, reff_value, prob;
 
 	psg = stPsgFunction(coordpar, spars, wedge, sgr_coordinates);
- 
+
         reff_value = reff(coordpar[2]);
         prob = psg * reff_value;
         return prob;
@@ -271,11 +274,11 @@ int prob_ok(double p) {
 	double r;
 
 	r = drand48();
-	
+
 	if (p > r) {
 		ok = 1;
-	} else { 
+	} else {
 		ok = 0;
-	} 
+	}
 	return ok;
 }

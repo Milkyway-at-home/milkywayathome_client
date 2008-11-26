@@ -1,5 +1,4 @@
-#-*- Makefile -*-
-APP_VERSION = 0.3
+APP_VERSION = 0.2
 
 BOINC_DIR = /software/boinc-6.3.14-0/pkg/include/boinc
 BOINC_API_DIR = $(BOINC_DIR)/api
@@ -7,21 +6,21 @@ BOINC_LIB_DIR = $(BOINC_DIR)/lib
 BOINC_LINK_DIR = /projects/wcl/software/boinc
 BOINC_LIB_LINK_DIR = $(BOINC_LINK_DIR)/lib
 BOINC_API_LINK_DIR = $(BOINC_LINK_DIR)/api
- 
-VARIANTFLAGS = -DGMLE_BOINC
 
+VARIANTFLAGS = -DGMLE_BOINC
+        
 CXXFLAGS_ALL = $(VARIANTFLAGS) \
 	-g \
 	-O \
 	-I$(BOINC_DIR)
 
 CXX_i686 = g++
-CXXFLAGS_i686 = -m32 $(CXXFLAGS_ALL)
+CXXFLAGS_i686 = -m32 -O2 -ftree-vectorize -funroll-loops -ffast-math $(CXXFLAGS_ALL)
 LDFLAGS_i686 = -L/usr/local/lib -L/usr/X11R6/lib
 #LDFLAGS_i686 = -L$(BOINC_LIB_LINK_DIR) -L$(BOINC_API_LINK_DIR)
 
 CXX_x86_64 = g++
-CXXFLAGS_x86_64 = $(CXXFLAGS_ALL)
+CXXFLAGS_x86_64 = -O2 -msse2 -ftree-vectorize -funroll-loops -ffast-math $(CXXFLAGS_ALL)
 LDFLAGS_x86_64 = -L/usr/local/lib
 #LDFLAGS_x86_64 = -L/usr/local/lib -L/usr/X11R6/lib
 #LDFLAGS_x86_64 = -L$(BOINC_LIB_LINK_DIR) -L$(BOINC_API_LINK_DIR)
