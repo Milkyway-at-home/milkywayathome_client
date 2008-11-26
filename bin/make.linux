@@ -1,4 +1,4 @@
-APP_VERSION = 0.2
+APP_VERSION = 0.4
 
 BOINC_DIR = /software/boinc-6.3.14-0/pkg/include/boinc
 BOINC_API_DIR = $(BOINC_DIR)/api
@@ -16,7 +16,7 @@ CXXFLAGS_ALL = $(VARIANTFLAGS) \
 
 CXX_i686 = g++
 CXXFLAGS_i686 = -m32 -O2 -ftree-vectorize -funroll-loops $(CXXFLAGS_ALL)
-LDFLAGS_i686 = -L/usr/local/lib -L/usr/X11R6/lib
+LDFLAGS_i686 = -L/usr/X11R6/lib -L../../linux32_libboinc
 #LDFLAGS_i686 = -L$(BOINC_LIB_LINK_DIR) -L$(BOINC_API_LINK_DIR)
 
 CXX_x86_64 = g++
