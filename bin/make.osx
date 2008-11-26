@@ -20,20 +20,20 @@ CXXFLAGS_ALL = $(VARIANTFLAGS) \
 
 CC_PPC = /usr/bin/gcc-3.3
 CXX_PPC = /usr/bin/g++-3.3
-CXXFLAGS_PPC = -arch ppc -O2 -ftree-vectorize -funroll-loops -ffast-math -maltivec -mabi=altivec -mcpu=7400 -D_NONSTD_SOURCE -isystem /Developer/SDKs/MacOSX10.3.9.sdk \
+CXXFLAGS_PPC = -arch ppc -O2 -ftree-vectorize -funroll-loops -maltivec -mabi=altivec -mcpu=7400 -D_NONSTD_SOURCE -isystem /Developer/SDKs/MacOSX10.3.9.sdk \
 	-DMAC_OS_X_VERSION_MIN_REQUIRED=1030 $(CXXFLAGS_ALL)
 LDFLAGS_PPC = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.3.9.sdk,-arch,ppc
 
 CC_i386 = /usr/bin/gcc-4.0
 CXX_i386 = /usr/bin/g++-4.0
-CXXFLAGS_i386 = -arch i386 -O2 -ftree-vectorize -funroll-loops -ffast-math  -msse2 -mfpmath=sse -mtune=prescott -isysroot /Developer/SDKs/MacOSX10.4u.sdk \
+CXXFLAGS_i386 = -arch i386 -O2 -ftree-vectorize -funroll-loops -msse2 -mfpmath=sse -mtune=prescott -isysroot /Developer/SDKs/MacOSX10.4u.sdk \
 	-mmacosx-version-min=10.4 \
 	$(CXXFLAGS_ALL)
 LDFLAGS_i386 = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk,-arch,i386
 
 CC_x86_64 = /usr/bin/gcc-4.0
 CXX_x86_64 = /usr/bin/g++-4.0
-CXXFLAGS_x86_64 = -arch x86_64 -O2 -ftree-vectorize -funroll-loops -ffast-math -msse2 -mfpmath=sse -mtune=nocona -isysroot /Developer/SDKs/MacOSX10.5.sdk \
+CXXFLAGS_x86_64 = -arch x86_64 -O2 -ftree-vectorize -funroll-loops -msse2 -mfpmath=sse -mtune=nocona -isysroot /Developer/SDKs/MacOSX10.5.sdk \
 	-mmacosx-version-min=10.5 \
 	$(CXXFLAGS_ALL)
 LDFLAGS_x86_64 = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.5.sdk,-arch,x86_64
