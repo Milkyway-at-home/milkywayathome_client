@@ -15,13 +15,15 @@
 
 
 typedef struct workunit_info {
-	char* credit_str, *result_xml_path;
-	char** required_files;
-
+	int number_parameters;
 	double rsc_fpops_est, rsc_fpops_bound, rsc_memory_bound, rsc_disk_bound;
 	int delay_bound, min_quorum, target_nresults, max_error_results, max_total_results, max_success_results;
+	char* credit_str, *result_xml_path;
+	char** required_files;
 } WORKUNIT_INFO;
 
+
+void fwrite_workunit_info(FILE* out, WORKUNIT_INFO *wu_info);
 
 void add_workunit(SEARCH_PARAMETERS *parameters, WORKUNIT_INFO *wu_info);
 

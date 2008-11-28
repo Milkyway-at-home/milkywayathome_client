@@ -51,6 +51,8 @@ typedef struct astronomy_parameters {
 	
 } ASTRONOMY_PARAMETERS;
 
+int	get_optimized_parameter_count(ASTRONOMY_PARAMETERS *ap);
+
 int	read_astronomy_parameters(const char* file, ASTRONOMY_PARAMETERS *ap);
 void	fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap);
 int	write_astronomy_parameters(const char* file, ASTRONOMY_PARAMETERS *ap);

@@ -21,7 +21,7 @@ typedef struct newton_method_search {
 int create_newton_method(char* search_name, ...);
 int read_newton_method(char* search_name, void** search_data);
 int checkpoint_newton_method(char* search_name, void* search_data);
-int newton_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS **sp);
+int newton_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS *sp);
 int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS *sp);
 
 const extern ASYNCHRONOUS_SEARCH asynchronous_newton_method;

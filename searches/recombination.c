@@ -21,11 +21,9 @@ double* mutate(double* parent, double* min_parameters, double* max_parameters, i
 }
 
 
-void random_recombination(double *min_parameters, double *max_parameters, int number_parameters, double **parameters) {
+void random_recombination(double *min_parameters, double *max_parameters, int number_parameters, double *parameters) {
 	int i;
-
-	(*parameters) = (double*)malloc(sizeof(double) * number_parameters);
-	for (i = 0; i < number_parameters; i++) (*parameters)[i] = min_parameters[i] + (max_parameters[i] - min_parameters[i]) * drand48();
+	for (i = 0; i < number_parameters; i++) parameters[i] = min_parameters[i] + (max_parameters[i] - min_parameters[i]) * drand48();
 }
 
 

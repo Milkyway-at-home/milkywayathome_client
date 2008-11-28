@@ -58,6 +58,7 @@ long		processed_wus = 0;
 int		unsent_wu_buffer = 400;
 
 WORKUNIT_INFO** workunit_info;
+SEARCH_PARAMETERS **gen_sp, *insert_sp;
 
 void init_boinc_search_manager(int argc, char** argv) {
 	int i, retval;
@@ -133,18 +134,21 @@ void init_boinc_search_manager(int argc, char** argv) {
 	install_stop_signal_handler();
 
 	printf("initializing workunit info\n");
-	workunit_info = (WORKUNIT_INFO**)malloc(sizeof(WORKUNIT_INFO*) * number_searches);
-	for (i = 0; i < number_searches; i++) {
-		printf("\tfor search: %s\n", searches[i]->search_name);
-		init_workunit_info(searches[i]->search_name, &(workunit_info[i]), bsm_app);
-		printf("\tsuccess.\n");
+	if (number_searches > 0) {
+		workunit_info = (WORKUNIT_INFO**)malloc(sizeof(WORKUNIT_INFO*) * number_searches);
+		for (i = 0; i < number_searches; i++) {
+			printf("\tfor search: %s\n", searches[i]->search_name);
+			init_workunit_info(searches[i]->search_name, &(workunit_info[i]), bsm_app);
+			printf("\tsuccess.\n");
+		}
 	}
 	printf("finished.\n");
+
+	init_search_parameters(&insert_sp, 8);
 }
 
 int generate_workunits() {
-	int i, j, generated, current, generation_rate;
-	SEARCH_PARAMETERS *sp;
+	int i, j, generated, current, generation_rate, initial, result;
 	SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
 
 	generation_rate = get_generation_rate();
@@ -152,23 +156,51 @@ int generate_workunits() {
 	current = 0;
         for (i = 0; i < number_searches; i++) {
                 generated = (generation_rate - current) / (number_searches - i);
-		scope_messages.printf("generating for search[%d]: %s\n", i, searches[i]->search_name);
+		initial = current;
+		scope_messages.printf("Generating for search[%d]: %s\n", i, searches[i]->search_name);
                 for (j = 0; j < generated; j++) {
-                        searches[i]->search->generate_parameters(searches[i]->search_name, searches[i]->search_data, &sp);
+			result = searches[i]->search->generate_parameters(searches[i]->search_name, searches[i]->search_data, gen_sp[i]);
+			if (result != AS_GEN_SUCCESS) {
+				scope_messages.printf("Not generating workunits: [%s]\n", AS_GEN_STR[result]);
+				break;
+			}
 			current++;
-			add_workunit(sp, workunit_info[i]);
-			free_search_parameters(sp);
-			free(sp);
+			add_workunit(gen_sp[i], workunit_info[i]);
                 }
-		scope_messages.printf("[%s] Generated %d workunits.\n", searches[i]->search_name, j);
+		scope_messages.printf("[%s] Generated %d workunits.\n", searches[i]->search_name, (current-initial));
         }
 	return current;
 }
 
+void update_workunit_info(int pos) {
+	int i, current;
+	WORKUNIT_INFO **temp_wu;
+	SEARCH_PARAMETERS **temp_sp;
+
+	temp_wu = (WORKUNIT_INFO**)malloc(sizeof(WORKUNIT_INFO*) * number_searches);
+	temp_sp = (SEARCH_PARAMETERS**)malloc(sizeof(SEARCH_PARAMETERS*) * number_searches);
+	current = 0;
+	printf("inserting wu_info to pos %d of %d\n", pos, number_searches);
+	for (i = 0; i < number_searches; i++) {
+		if (i == pos) {
+			init_workunit_info(searches[pos]->search_name, &(temp_wu[pos]), bsm_app);
+			init_search_parameters(&temp_sp[i], temp_wu[pos]->number_parameters);
+			sprintf(temp_sp[i]->search_name, searches[i]->search_name);
+		} else {
+			temp_wu[i] = workunit_info[current];
+			temp_sp[i] = gen_sp[current];
+			current++;
+		}
+	}
+	free(workunit_info);
+	free(gen_sp);
+	workunit_info = temp_wu;
+	gen_sp = temp_sp;
+}
+
 int insert_workunit(WORKUNIT& wu, vector<RESULT>& /*results*/, RESULT& canonical_result) {
-	int success;
+	int result;
 	string output_file_name;
-	SEARCH_PARAMETERS* sp = (SEARCH_PARAMETERS*)malloc(sizeof(SEARCH_PARAMETERS));
 	SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
 
 	if (wu.canonical_resultid) {
@@ -176,31 +208,23 @@ int insert_workunit(WORKUNIT& wu, vector<RESULT>& /*results*/, RESULT& canonical
 		log_messages.printf_multiline(SCHED_MSG_LOG::MSG_DEBUG, canonical_result.xml_doc_out, "[%s] canonical result", wu.name);
 
 		get_output_file_path(canonical_result, output_file_name);
-		success = boinc_read_search_parameters(output_file_name.c_str(), sp);
-		if (success != 0) scope_messages.printf("[%s] Error parsing result file: %s [%d]\n", wu.name, output_file_name.c_str(), success);
+		result = boinc_read_search_parameters(output_file_name.c_str(), insert_sp);
+		if (result != 0) {
+			scope_messages.printf("[%s] could not read search parameters file: [%s]\n", wu.name, output_file_name.c_str());
+			return result;
+		}
 
-		scope_messages.printf("[%s] Assimilating, search_name: [%s], fitness: [%lf], metadata: [%s]\n", wu.name, sp->search_name, sp->fitness, sp->metadata);
-		/********
-			*	NEED TO REGISTER SEARCHES
-		 ********/
-
-		ms = get_search(sp->search_name);
+		ms = get_search(insert_sp->search_name);
 		if (ms == NULL) {
-			int pos, i;
-			pos = manage_search(sp->search_name);
+			int pos;
+			pos = manage_search(insert_sp->search_name);
 			if (pos < 0) return -1;
 			ms = searches[pos];
-			workunit_info = (WORKUNIT_INFO**)realloc(workunit_info, sizeof(WORKUNIT_INFO*) * number_searches);
-			for (i = number_searches; i > pos; i--) {
-				workunit_info[i] = workunit_info[i-1];
-			}
-			init_workunit_info(searches[pos]->search_name, &(workunit_info[pos]), bsm_app);
+			update_workunit_info(pos);
 		}
-		success = ms->search->insert_parameters(ms->search_name, ms->search_data, sp);
-		if (success != 0) scope_messages.printf("[%s] Error inserting results to search: %s [%d]\n", wu.name, sp->search_name, success);
 
-		free_search_parameters(sp);
-		free(sp);
+		result = ms->search->insert_parameters(ms->search_name, ms->search_data, insert_sp);
+		scope_messages.printf("[%s] Assimilated fitness: [%.15lf], result: [%s]\n", wu.name, insert_sp->fitness, AS_INSERT_STR[result]);
 	} else {
 		scope_messages.printf("[%s] No canonical result\n", wu.name);
 	}
@@ -250,7 +274,7 @@ void start_search_manager() {
 			retval = insert_workunit(wu, results, canonical_result);
 
 			if (retval < 0) {
-				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL "[%s] could not be assimilated, insert failed with error [%d]\n", wu.name, retval);
+				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[%s] could not be assimilated, insert failed with error [%d]\n", wu.name, retval);
 			}
 
 			if (update_db) {
@@ -273,7 +297,7 @@ void start_search_manager() {
 			processed_wus += num_assimilated;
 			time(&current_time);
 			wus_per_second = (double)processed_wus/((double)current_time-(double)start_time);
-			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "wus/sec: %lf, unsent wus: %d\n", wus_per_second, unsent_wus);
+			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[appid: %d], wus/sec: %lf, unsent wus: %d\n", bsm_app.id, wus_per_second, unsent_wus);
 
 			if (unsent_wus < unsent_wu_buffer) {
 				num_generated = generate_workunits();

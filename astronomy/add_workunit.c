@@ -48,7 +48,7 @@ int generated_wus = 0;
  */
 void add_workunit(SEARCH_PARAMETERS* parameters, WORKUNIT_INFO *wu_info) {
 	DB_WORKUNIT wu;
-	char wu_name[1024], wu_file[1024], wu_path[1024];
+	char wu_name[1024], wu_file[1024], wu_path[1024], ap_file[1024], sp_file[1024];
 	time_t current_time;
 	const char *required_files[3];
 	int retval;
@@ -90,8 +90,11 @@ void add_workunit(SEARCH_PARAMETERS* parameters, WORKUNIT_INFO *wu_info) {
 	wu.max_success_results = wu_info->max_success_results;
 
 	int number_required_files = 3;
-	required_files[0] = wu_info->required_files[0];		//	wu_astronomy_file
-	required_files[1] = wu_info->required_files[1];		//	wu_star_file
+	sprintf(ap_file, "%s", wu_info->required_files[0]);		//	wu_astronomy_file
+	sprintf(sp_file, "%s", wu_info->required_files[1]);		//	wu_star_file
+
+	required_files[0] = ap_file;
+	required_files[1] = sp_file;
 	required_files[2] = wu_file;
 
 	create_work(wu, wu_template, "templates/a_result.xml", wu_info->result_xml_path, required_files, number_required_files, config, "", wu_info->credit_str);
@@ -161,6 +164,10 @@ void init_workunit_info(char* search_name, WORKUNIT_INFO **wu_info, DB_APP db_ap
 	printf("awarded credit: %lf\n", credit);
 
 	(*wu_info) = (WORKUNIT_INFO*)malloc(sizeof(WORKUNIT_INFO));
+
+	(*wu_info)->number_parameters = get_optimized_parameter_count(ap);
+	printf("number parameters: %d\n", (*wu_info)->number_parameters);
+
 	(*wu_info)->credit_str = (char*)malloc(sizeof(char) * 1024);
 	(*wu_info)->result_xml_path = (char*)malloc(sizeof(char) * 1024);
 

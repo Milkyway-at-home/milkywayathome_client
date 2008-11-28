@@ -41,32 +41,39 @@ void free_search_parameters(SEARCH_PARAMETERS *parameters) {
 	free(parameters->metadata);
 }
 
-void new_search_parameters(SEARCH_PARAMETERS **p, char *search_name, int number_parameters, double* parameters, char* metadata) {
+void init_search_parameters(SEARCH_PARAMETERS **p, int number_parameters) {
 	(*p) = (SEARCH_PARAMETERS*)malloc(sizeof(SEARCH_PARAMETERS));
-
 	(*p)->search_name = (char*)malloc(sizeof(char) * 1024);
-	strcpy((*p)->search_name, search_name);
-
 	(*p)->metadata = (char*)malloc(sizeof(char) * METADATA_SIZE);
-	strcpy((*p)->metadata, metadata);
-
 	(*p)->number_parameters = number_parameters;
 	(*p)->parameters = (double*)malloc(sizeof(double) * number_parameters);
-	memcpy((*p)->parameters, parameters, sizeof(double) * number_parameters);
 }
 
-int fread_search_parameters(FILE* file, SEARCH_PARAMETERS *parameters) {
-	int i, c;
-	parameters->search_name = (char*)malloc(sizeof(char) * 1024);
-	if (fscanf(file, "%s\n", parameters->search_name) != 1) return 1;
-	if (fscanf(file, "parameters [%d]:", &(parameters->number_parameters)) != 1) return 1;
+void set_search_parameters(SEARCH_PARAMETERS *p, char *search_name, int number_parameters, double* parameters, char* metadata) {
+	strcpy(p->search_name, search_name);
+	strcpy(p->metadata, metadata);
 
-	parameters->parameters = (double*)malloc(sizeof(double) * parameters->number_parameters);
-	for (i = 0; i < parameters->number_parameters; i++) {
-		if (fscanf(file, " %lf", &(parameters->parameters[i])) != 1) return 1;
+	if (p->number_parameters != number_parameters) {
+		p->number_parameters = number_parameters;
+		p->parameters = (double*)realloc(p->parameters, sizeof(double) * number_parameters);
+	}
+	memcpy(p->parameters, parameters, sizeof(double) * number_parameters);
+}
+
+int fread_search_parameters(FILE* file, SEARCH_PARAMETERS *p) {
+	int i, c, number_parameters;
+	if (fscanf(file, "%s\n", p->search_name) != 1) return 1;
+	if (fscanf(file, "parameters [%d]:", &number_parameters) != 1) return 1;
+
+	if (p->number_parameters != number_parameters) {
+		p->number_parameters = number_parameters;
+		p->parameters = (double*)realloc(p->parameters, sizeof(double) * number_parameters);
+	}
+	for (i = 0; i < number_parameters; i++) {
+		if (fscanf(file, " %lf", &(p->parameters[i])) != 1) return 1;
 	}
 	if (fscanf(file, "\n") != 0) return 1;
-	parameters->metadata = (char*)malloc(sizeof(char) * METADATA_SIZE);
+
 	fscanf(file, "metadata: ");
 	c = fgetc(file);
 	i = 0;
@@ -75,11 +82,11 @@ int fread_search_parameters(FILE* file, SEARCH_PARAMETERS *parameters) {
 			c = fgetc(file);
 			continue;
 		}
-		parameters->metadata[i] = c;
+		p->metadata[i] = c;
 		c = fgetc(file);
 		i++;
 	}
-	parameters->metadata[i] = '\0';
+	p->metadata[i] = '\0';
 	if (c == '\0' || i == METADATA_SIZE) return 1;
 	return 0;
 }

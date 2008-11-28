@@ -241,6 +241,21 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 	}
 }
 
+int get_optimized_parameter_count(ASTRONOMY_PARAMETERS *ap) {
+	int i, j, count;
+	count = 0;
+	for (i = 0; i < ap->number_background_parameters; i++) {
+		if (ap->background_optimize[i]) count++;
+	}
+	for (i = 0; i < ap->number_streams; i++) {
+		if (ap->stream_weight_optimize[i]) count++;
+		for (j = 0; j < ap->number_stream_parameters; j++) {
+			if (ap->stream_optimize[i][j]) count++;
+		}
+	}
+	return count;
+}
+
 void set_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, double* parameters) {
 	int i, j;
 	int current;

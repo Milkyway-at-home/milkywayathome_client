@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -108,7 +109,7 @@ int checkpoint_newton_method(char* search_name, void* search_data) {
 }
 
 
-int newton_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS** sp) {
+int newton_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
 	POPULATION *p;
 	NEWTON_METHOD_SEARCH *nms = (NEWTON_METHOD_SEARCH*)search_data;
 
@@ -116,43 +117,41 @@ int newton_generate_parameters(char* search_name, void* search_data, SEARCH_PARA
 	p = nms->population;
 
 	if (nms->current_iteration < nms->maximum_iteration) {
-		double *random_parameters;
-		char *metadata = (char*)malloc(sizeof(char) * METADATA_SIZE);
-		sprintf(metadata, "iteration: %d, evaluation: %d", nms->current_iteration, nms->current_evaluation);
-
-		random_recombination(nms->min_parameters, nms->max_parameters, p->number_parameters, &random_parameters);
-
-		new_search_parameters(sp, search_name, p->number_parameters, random_parameters, metadata);
-		free(random_parameters);
-		free(metadata);
+		sprintf(sp->metadata, "iteration: %d, evaluation: %d", nms->current_iteration, nms->current_evaluation);
+		random_recombination(nms->min_parameters, nms->max_parameters, p->number_parameters, sp->parameters);
+		return AS_GEN_SUCCESS;
+	} else {
+		return AS_GEN_OVER;
 	}
-	return 1;
 }
 
-int within_bounds(int number_parameters, double *p, double *min, double *max) {
+int outside_bounds(int number_parameters, double *p, double *min, double *max) {
 	int i;
 	for (i = 0; i < number_parameters; i++) {
-		if (p[i] < min[i] || p[i] > max[i]) return 0;
+		if (isnan(p[i])) return AS_INSERT_PARAMETERS_NAN;
+		if (p[i] < min[i] || p[i] > max[i]) return AS_INSERT_OUT_OF_BOUNDS;
 	}
-	return 1;
+	return 0;
 }
 
 int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
 	NEWTON_METHOD_SEARCH *nms = (NEWTON_METHOD_SEARCH*)search_data;
 	POPULATION *p = nms->population;
+	int result;
 
 	/********
 		*	Insert parameters into population.  If cutoff reached, calculate hessian
 		*	and generate new population.
 	 ********/
 	
-	printf("newton insert parameters, current iteration: %d, max iteration: %d, current evaluation: %d, max evaluation: %d\n", nms->current_iteration, nms->maximum_iteration, nms->current_evaluation, nms->evaluations_per_iteration);
-
 	if (nms->current_iteration < nms->maximum_iteration) {
-		if (!within_bounds(nms->number_parameters, sp->parameters, nms->min_parameters, nms->max_parameters)) {
-			printf("WU discarded, not within bounds of current iteration.\n");
-			return 0;
+		if ((result = outside_bounds(nms->number_parameters, sp->parameters, nms->min_parameters, nms->max_parameters))) {
+			return result;
 		}
+		if (isnan(sp->fitness)) {
+			return AS_INSERT_FITNESS_NAN;
+		}
+		printf("newton insert parameters, current iteration: %d, max iteration: %d, current evaluation: %d, max evaluation: %d\n", nms->current_iteration, nms->maximum_iteration, nms->current_evaluation, nms->evaluations_per_iteration);
 
 		replace(p, nms->current_evaluation, sp->parameters, sp->fitness);
 		nms->current_evaluation++;
@@ -178,7 +177,6 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 				 ********/
 				matrix_invert(hessian, p->number_parameters, p->number_parameters, &inverse_hessian);
 				for (j = 0; j < p->number_parameters; j++) {
-//					nms->parameters[j] = 0;
 					for (k = 0; k < p->number_parameters; k++) nms->parameters[j] -= inverse_hessian[j][k] * gradient[j];
 					nms->min_parameters[j] = nms->parameters[j] - nms->parameter_range[j];
 					nms->max_parameters[j] = nms->parameters[j] + nms->parameter_range[j];
@@ -207,6 +205,8 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 				checkpoint_newton_method(search_name, nms);
 			}
 		}
+	} else {
+		return AS_INSERT_OVER;
 	}
-	return 0;
+	return AS_INSERT_SUCCESS;
 }
