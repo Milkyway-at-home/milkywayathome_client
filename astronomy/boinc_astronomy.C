@@ -90,9 +90,10 @@ void worker() {
 	/********
 		*	READ AND SET THE SEARCH PARAMETERS
 	 ********/
-	SEARCH_PARAMETERS *s = (SEARCH_PARAMETERS*)malloc(sizeof(SEARCH_PARAMETERS));
+	SEARCH_PARAMETERS *s;
+	init_search_parameters(&s, get_optimized_parameter_count(ap));
 	retval = boinc_read_search_parameters(SEARCH_PARAMETER_FILENAME, s);
-	fwrite_search_parameters(stdout, s);
+//	fwrite_search_parameters(stdout, s);
 	set_astronomy_parameters(ap, s->parameters);
 //	printf("read search parameters\n");
 
@@ -166,4 +167,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.8 2008/11/22 12:24:56 deselt Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.9 2008/11/30 23:19:29 deselt Exp $";

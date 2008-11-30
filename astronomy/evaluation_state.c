@@ -74,6 +74,8 @@ void fwrite_integral_area(FILE *file, INTEGRAL_AREA *ia) {
 }
 
 void fread_integral_area(FILE *file, INTEGRAL_AREA *ia) {
+	int i;
+
 	fscanf(file, "mu[min,max,steps,current_step]: %lf, %lf, %d, %d\n", &(ia->mu_min), &(ia->mu_max), &(ia->mu_steps), &(ia->mu_step_current));
 	ia->mu_step_size = (ia->mu_max - ia->mu_min) / ia->mu_steps;
 	fscanf(file, "nu[min,max,steps,current_step]: %lf, %lf, %d, %d\n", &(ia->nu_min), &(ia->nu_max), &(ia->nu_steps), &(ia->nu_step_current));
@@ -81,7 +83,11 @@ void fread_integral_area(FILE *file, INTEGRAL_AREA *ia) {
 	fscanf(file, " r[min,max,steps,current_step]: %lf, %lf, %d, %d\n", &(ia->r_min), &(ia->r_max), &(ia->r_steps), &(ia->r_step_current));
 	ia->r_step_size = (ia->r_max - ia->r_min) / ia->r_steps;
 	fscanf(file, "background_integral: %lf\n", &(ia->background_integral));
-	ia->number_streams = read_double_array(file, "stream_integrals", &(ia->stream_integrals));
+	fscanf(file, "stream_integrals[%d]: ", &(ia->number_streams));
+	for (i = 0; i < ia->number_streams; i++) {
+		fscanf(file, "%lf", &(ia->stream_integrals[i]));
+		if (i != ia->number_streams-1) fscanf(file, ", ");
+	}
 }
 
 void initialize_integal_area(INTEGRAL_AREA *ia, double mu_min, double mu_max, int mu_steps, double nu_min, double nu_max, int nu_steps, double r_min, double r_max, int r_steps, int number_streams) {
@@ -234,8 +240,7 @@ void free_state(EVALUATION_STATE* es) {
 
 	        FILE* file = boinc_fopen(input_path, "r");
 	        if (file == NULL) {
-			fprintf(stderr, "APP: error reading checkpoint (opening file)\n");
-	                return 1;
+	                return 0;
 	        }
 
 		if (1 > fscanf(file, "background_integral: %lf\n", &(es->background_integral))) return 1;
@@ -245,7 +250,9 @@ void free_state(EVALUATION_STATE* es) {
 		fscanf(file, "current_star_point: %d\n", &(es->current_star_point));
 		fscanf(file, "current_cut: %d\n", &(es->current_cut));
 		fscanf(file, "main_volume:\n");
+
 		fread_integral_area(file, es->main_integral);
+
 		fscanf(file, "cuts: %d\n", &es->number_cuts);
 		for (i = 0; i < es->number_cuts; i++) {
 			fread_integral_area(file, es->cuts[i]);

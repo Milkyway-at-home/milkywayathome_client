@@ -1,76 +1,108 @@
-Can't open init data file - running in standalone mode
-boinc_milkyway(13615,0xa0043fa0) malloc: *** error for object 0x11ae6b0: pointer being reallocated was not allocated
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+milkyway_0.5_i686-apple-darwin(38628,0xa0043fa0) malloc: *** mmap(size=4294946816) failed (error code=12)
+*** error: can't allocate region
 *** set a breakpoint in malloc_error_break to debug
-SIGBUS: bus error
-
-Crashed executable name: boinc_milkyway
-built using BOINC library version 6.5.0
-Machine type Intel 80486 (32-bit executable)
-System version: Macintosh OS 10.5.5 build 9F33
-Fri Nov 21 07:52:41 2008
-
-atos cannot load symbols for the file boinc_milkyw.
-  0  0x000265b1    1  0x0001c37a    2  0x900ae09b    3  0xffffffff    4  0x900473ab    5  0x900c7f5b    6  0x0001e17b    7  0x00013751    8  0x0001213d    9  0x0000209a   10  0x000021f5   11  0x00001f1a  
-SIGPIPE: write on a pipe with no reader
-Thread 0 crashed with X86 Thread State (32-bit):
-  eax: 0xffffffe1 ebx: 0x90075e62 ecx: 0xbfffde1c edx: 0x900414a6
-  edi: 0x00000000 esi: 0x00000000 ebp: 0xbfffde58 esp: 0xbfffde1c
-   ss: 0x0000001f efl: 0x00000206 eip: 0x900414a6  cs: 0x00000007
-   ds: 0x0000001f  es: 0x0000001f  fs: 0x00000000  gs: 0x00000037
-
-Binary Images Description:
-    0x1000 -    0x34fff /Users/deselt/Research/software/fgdo/bin/test_boinc/./boinc_milkyway
-0x90040000 - 0x901a0fff /usr/lib/libSystem.B.dylib
-0x9396a000 - 0x93971fff /usr/lib/libgcc_s.1.dylib
-0x953cb000 - 0x953cffff /usr/lib/system/libmathCommon.A.dylib
-0x95a60000 - 0x95abdfff /usr/lib/libstdc++.6.dylib
-
-
-Exiting...
-Can't open init data file - running in standalone mode
-APP: error writing checkpoint (flushing checkpoint file) 0
-APP: error writing checkpoint (flushing checkpoint file) 0
+milkyway_0.5_i686-apple-darwin(38628,0xa0043fa0) malloc: *** mmap(size=4294946816) failed (error code=12)
+*** error: can't allocate region
+*** set a breakpoint in malloc_error_break to debug
 called boinc_finish
 shmget in attach_shmem: Invalid argument
 Can't set up shared mem: -1
 Will run in standalone mode.
 APP: error reading checkpoint (opening file)
-APP: error writing checkpoint (flushing checkpoint file) 0
-APP: error writing checkpoint (flushing checkpoint file) 0
-APP: error writing checkpoint (flushing checkpoint file) 0
 called boinc_finish
 shmget in attach_shmem: Invalid argument
 Can't set up shared mem: -1
 Will run in standalone mode.
-boinc_milkyway(13706,0xa0043fa0) malloc: *** mmap(size=4294950912) failed (error code=12)
+APP: error reading checkpoint (opening file): astronomy_checkpoint
+called boinc_finish
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+milkyway_0.5_i686-apple-darwin(38703,0xa0043fa0) malloc: *** mmap(size=4294946816) failed (error code=12)
 *** error: can't allocate region
 *** set a breakpoint in malloc_error_break to debug
-SIGBUS: bus error
-
-Crashed executable name: boinc_milkyway
-built using BOINC library version 6.5.0
-Machine type Intel 80486 (32-bit executable)
-System version: Macintosh OS 10.5.5 build 9F33
-Fri Nov 21 08:07:16 2008
-
-atos cannot load symbols for the file boinc_milkyw.
-  0  0x000265f9    1  0x0001c3c2    2  0x900ae09b  SIGPIPE: write on a pipe with no reader
-  3  0xffffffff    4  0x00012c8e  SIGPIPE: write on a pipe with no reader
-  5  0x00013755    6  0x00012acc  SIGPIPE: write on a pipe with no reader
-  7  0x00002356    8  0x00002461  SIGPIPE: write on a pipe with no reader
-  9  0x00002186  
-Thread 0 crashed with X86 Thread State (32-bit):
-  eax: 0xffffffe1 ebx: 0x90075e62 ecx: 0xbfffddfc edx: 0x900414a6
-  edi: 0x00000000 esi: 0x00000000 ebp: 0xbfffde38 esp: 0xbfffddfc
-   ss: 0x0000001f efl: 0x00000206 eip: 0x900414a6  cs: 0x00000007
-   ds: 0x0000001f  es: 0x0000001f  fs: 0x00000000  gs: 0x00000037
-
-Binary Images Description:
-    0x1000 -    0x34fff /Users/deselt/Research/software/fgdo/bin/test_boinc/./boinc_milkyway
-0x90040000 - 0x901a0fff /usr/lib/libSystem.B.dylib
-0x9396a000 - 0x93971fff /usr/lib/libgcc_s.1.dylib
-0x953cb000 - 0x953cffff /usr/lib/system/libmathCommon.A.dylib
-0x95a60000 - 0x95abdfff /usr/lib/libstdc++.6.dylib
-
-
-Exiting...
+milkyway_0.5_i686-apple-darwin(38703,0xa0043fa0) malloc: *** mmap(size=4294946816) failed (error code=12)
+*** error: can't allocate region
+*** set a breakpoint in malloc_error_break to debug
+called boinc_finish
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+milkyway_0.5_i686-apple-darwin(38704,0xa0043fa0) malloc: *** mmap(size=4294946816) failed (error code=12)
+*** error: can't allocate region
+*** set a breakpoint in malloc_error_break to debug
+milkyway_0.5_i686-apple-darwin(38704,0xa0043fa0) malloc: *** mmap(size=4294946816) failed (error code=12)
+*** error: can't allocate region
+*** set a breakpoint in malloc_error_break to debug
+called boinc_finish
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+called boinc_finish
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+milkyway_0.5_i686-apple-darwin(38724,0xa0043fa0) malloc: *** mmap(size=4294946816) failed (error code=12)
+*** error: can't allocate region
+*** set a breakpoint in malloc_error_break to debug
+milkyway_0.5_i686-apple-darwin(38724,0xa0043fa0) malloc: *** mmap(size=4294946816) failed (error code=12)
+*** error: can't allocate region
+*** set a breakpoint in malloc_error_break to debug
+called boinc_finish
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+called boinc_finish
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+milkyway_0.5_i686-apple-darwin(38746,0xa0043fa0) malloc: *** mmap(size=4294946816) failed (error code=12)
+*** error: can't allocate region
+*** set a breakpoint in malloc_error_break to debug
+milkyway_0.5_i686-apple-darwin(38746,0xa0043fa0) malloc: *** mmap(size=4294946816) failed (error code=12)
+*** error: can't allocate region
+*** set a breakpoint in malloc_error_break to debug
+called boinc_finish
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+milkyway_0.5_i686-apple-darwin(38761,0xa0043fa0) malloc: *** mmap(size=4294946816) failed (error code=12)
+*** error: can't allocate region
+*** set a breakpoint in malloc_error_break to debug
+milkyway_0.5_i686-apple-darwin(38761,0xa0043fa0) malloc: *** mmap(size=4294946816) failed (error code=12)
+*** error: can't allocate region
+*** set a breakpoint in malloc_error_break to debug
+called boinc_finish
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+milkyway_0.5_i686-apple-darwin(38781,0xa0043fa0) malloc: *** mmap(size=4294946816) failed (error code=12)
+*** error: can't allocate region
+*** set a breakpoint in malloc_error_break to debug
+milkyway_0.5_i686-apple-darwin(38781,0xa0043fa0) malloc: *** mmap(size=4294946816) failed (error code=12)
+*** error: can't allocate region
+*** set a breakpoint in malloc_error_break to debug
+called boinc_finish
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+called boinc_finish
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+called boinc_finish
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+called boinc_finish
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+called boinc_finish
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+called boinc_finish
