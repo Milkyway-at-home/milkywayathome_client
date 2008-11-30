@@ -156,7 +156,7 @@ void init_workunit_info(char* search_name, WORKUNIT_INFO **wu_info, DB_APP db_ap
 	double calc_prob_count;
 	double credit = ((double)ap->r_steps * (double)ap->mu_steps * (double)ap->nu_steps * (double)ap->convolve) + ((double)sp->number_stars * (double)ap->convolve);
 	for (i = 0; i < ap->number_cuts; i++) {
-		credit += (ap->r_cut[i][2] * ap->mu_cut[i][2] * ap->nu_cut[i][2]);
+		credit += (ap->r_cut[i][2] * ap->mu_cut[i][2] * ap->nu_cut[i][2] * (double)ap->convolve);
 	}
 	calc_prob_count = credit;
 	credit /= 270000000.0;

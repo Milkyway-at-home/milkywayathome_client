@@ -216,7 +216,7 @@ void free_state(EVALUATION_STATE* es) {
 			fwrite_integral_area(file, es->cuts[i]);
 		}
 
-		if (!(retval = fclose(file))) {
+		if ((retval = fclose(file))) {
 	                fprintf(stderr, "APP: error writing checkpoint (closing checkpoint file) %d\n", retval);
 	                return retval;
 		}
@@ -233,8 +233,8 @@ void free_state(EVALUATION_STATE* es) {
 		}
 
 	        FILE* file = boinc_fopen(input_path, "r");
-	        if (!file) {
-	                fprintf(stderr, "APP: error reading checkpoint (opening file)\n");
+	        if (file == NULL) {
+			fprintf(stderr, "APP: error reading checkpoint (opening file)\n");
 	                return 1;
 	        }
 

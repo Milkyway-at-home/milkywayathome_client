@@ -60,6 +60,33 @@ int		unsent_wu_buffer = 400;
 WORKUNIT_INFO** workunit_info;
 SEARCH_PARAMETERS **gen_sp, *insert_sp;
 
+
+void update_workunit_info(int pos) {
+	int i, current;
+	WORKUNIT_INFO **temp_wu;
+	SEARCH_PARAMETERS **temp_sp;
+
+	temp_wu = (WORKUNIT_INFO**)malloc(sizeof(WORKUNIT_INFO*) * number_searches);
+	temp_sp = (SEARCH_PARAMETERS**)malloc(sizeof(SEARCH_PARAMETERS*) * number_searches);
+	current = 0;
+	printf("inserting wu_info to pos %d of %d\n", pos, number_searches);
+	for (i = 0; i < number_searches; i++) {
+		if (i == pos) {
+			init_workunit_info(searches[pos]->search_name, &(temp_wu[pos]), bsm_app);
+			init_search_parameters(&temp_sp[i], temp_wu[pos]->number_parameters);
+			sprintf(temp_sp[i]->search_name, searches[i]->search_name);
+		} else {
+			temp_wu[i] = workunit_info[current];
+			temp_sp[i] = gen_sp[current];
+			current++;
+		}
+	}
+	free(workunit_info);
+	free(gen_sp);
+	workunit_info = temp_wu;
+	gen_sp = temp_sp;
+}
+
 void init_boinc_search_manager(int argc, char** argv) {
 	int i, retval;
 	char buf[256];
@@ -120,8 +147,6 @@ void init_boinc_search_manager(int argc, char** argv) {
 		exit(1);
 	}
 
-	printf("looking up app\n");
-
 	sprintf(buf, "where name='%s'", bsm_app.name);
 	retval = bsm_app.lookup(buf);
 	if (retval) {
@@ -129,20 +154,14 @@ void init_boinc_search_manager(int argc, char** argv) {
 		exit(1);
 	}
 
-	printf("installing stop signal handler\n");
-
 	install_stop_signal_handler();
 
-	printf("initializing workunit info\n");
 	if (number_searches > 0) {
 		workunit_info = (WORKUNIT_INFO**)malloc(sizeof(WORKUNIT_INFO*) * number_searches);
 		for (i = 0; i < number_searches; i++) {
-			printf("\tfor search: %s\n", searches[i]->search_name);
-			init_workunit_info(searches[i]->search_name, &(workunit_info[i]), bsm_app);
-			printf("\tsuccess.\n");
+			update_workunit_info(i);
 		}
 	}
-	printf("finished.\n");
 
 	init_search_parameters(&insert_sp, 8);
 }
@@ -170,32 +189,6 @@ int generate_workunits() {
 		scope_messages.printf("[%s] Generated %d workunits.\n", searches[i]->search_name, (current-initial));
         }
 	return current;
-}
-
-void update_workunit_info(int pos) {
-	int i, current;
-	WORKUNIT_INFO **temp_wu;
-	SEARCH_PARAMETERS **temp_sp;
-
-	temp_wu = (WORKUNIT_INFO**)malloc(sizeof(WORKUNIT_INFO*) * number_searches);
-	temp_sp = (SEARCH_PARAMETERS**)malloc(sizeof(SEARCH_PARAMETERS*) * number_searches);
-	current = 0;
-	printf("inserting wu_info to pos %d of %d\n", pos, number_searches);
-	for (i = 0; i < number_searches; i++) {
-		if (i == pos) {
-			init_workunit_info(searches[pos]->search_name, &(temp_wu[pos]), bsm_app);
-			init_search_parameters(&temp_sp[i], temp_wu[pos]->number_parameters);
-			sprintf(temp_sp[i]->search_name, searches[i]->search_name);
-		} else {
-			temp_wu[i] = workunit_info[current];
-			temp_sp[i] = gen_sp[current];
-			current++;
-		}
-	}
-	free(workunit_info);
-	free(gen_sp);
-	workunit_info = temp_wu;
-	gen_sp = temp_sp;
 }
 
 int insert_workunit(WORKUNIT& wu, vector<RESULT>& /*results*/, RESULT& canonical_result) {
