@@ -92,6 +92,8 @@ int checkpoint_newton_method(char* search_name, void* search_data) {
 	int result;
 	NEWTON_METHOD_SEARCH *nms = (NEWTON_METHOD_SEARCH*)search_data;
 
+	if (nms->current_iteration >= nms->maximum_iteration) return AS_CP_OVER;
+
 	sprintf(search_filename, "%s/%s/search", get_working_directory(), search_name);
 	search_file = fopen(search_filename, "w+");
 	if (search_file == NULL) return -1;
@@ -103,9 +105,9 @@ int checkpoint_newton_method(char* search_name, void* search_data) {
 
 	sprintf(population_filename, "%s/%s/population_%d", get_working_directory(), search_name, nms->current_iteration);
 	result = write_population(population_filename, nms->population);
-	if (result < 0) return result;
+	if (result < 0) return AS_CP_ERROR;
 
-	return 1;
+	return AS_CP_SUCCESS;
 }
 
 
@@ -151,7 +153,7 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 		if (isnan(sp->fitness)) {
 			return AS_INSERT_FITNESS_NAN;
 		}
-		printf("newton insert parameters, current iteration: %d, max iteration: %d, current evaluation: %d, max evaluation: %d\n", nms->current_iteration, nms->maximum_iteration, nms->current_evaluation, nms->evaluations_per_iteration);
+		sprintf(AS_MSG, "evaluation: %d/%d, iteration: %d/%d", nms->current_evaluation, nms->evaluations_per_iteration, nms->current_iteration, nms->maximum_iteration);
 
 		replace(p, nms->current_evaluation, sp->parameters, sp->fitness);
 		nms->current_evaluation++;

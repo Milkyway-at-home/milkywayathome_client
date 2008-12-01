@@ -22,8 +22,8 @@ extern const char *AS_GEN_STR[];
 
 extern const char *AS_CP_STR[];
 #define AS_CP_SUCCESS 0
-#define AS_GEN_OVER 1
-#define AS_GEN_ERROR 2
+#define AS_CP_OVER 1
+#define AS_CP_ERROR 2
 
 extern char AS_MSG[1024];
 

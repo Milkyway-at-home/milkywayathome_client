@@ -1,4 +1,4 @@
-APP_VERSION = 0.4
+APP_VERSION = 0.6
 
 BOINC_DIR = /software/boinc-6.3.14-0/pkg/include/boinc
 BOINC_API_DIR = $(BOINC_DIR)/api

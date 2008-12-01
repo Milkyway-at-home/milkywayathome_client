@@ -61,8 +61,6 @@ WORKUNIT_INFO** workunit_info;
 SEARCH_PARAMETERS **gen_sp, *insert_sp;
 
 long checkpoint_time = 360;		//	1 hour
-time_t last_checkpoint;
-
 
 void update_workunit_info(int pos) {
 	int i, current;
@@ -222,7 +220,8 @@ int insert_workunit(WORKUNIT& wu, vector<RESULT>& /*results*/, RESULT& canonical
 		}
 
 		result = ms->search->insert_parameters(ms->search_name, ms->search_data, insert_sp);
-		scope_messages.printf("[%s] Assimilated fitness: [%.15lf], result: [%s]\n", wu.name, insert_sp->fitness, AS_INSERT_STR[result]);
+		scope_messages.printf("[%s] fitness: [%.15lf], result: [%s], msg: [%s]\n", wu.name, insert_sp->fitness, AS_INSERT_STR[result], AS_MSG);
+		AS_MSG[0] = '\0';
 	} else {
 		scope_messages.printf("[%s] No canonical result\n", wu.name);
 	}
@@ -238,11 +237,12 @@ void start_search_manager() {
 	DB_WORKUNIT wu;
 	DB_RESULT canonical_result, result;
 	bool did_something = false;
-	int retval, num_generated, unsent_wus, processed_wus, num_assimilated;
-	time_t start_time, current_time;
+	int retval, num_generated, unsent_wus, processed_wus, num_assimilated, i;
+	time_t start_time, current_time, last_checkpoint;
 	double wus_per_second;
 
 	time(&start_time);
+	time(&last_checkpoint);
 	log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Starting at: %d\n", (int)start_time);
 
 	processed_wus = 0;
@@ -303,12 +303,12 @@ void start_search_manager() {
 			}
 
 			if ((current_time - last_checkpoint) > checkpoint_time) {
-				log_messages.printf(SCHED_MSG_LOG:MSG_NORMAL, "Checkpointing %d searches after %ld seconds.\n", number_searches, (current_time - last_checkpoint));
+				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Checkpointing %d searches after %ld seconds.\n", number_searches, (current_time - last_checkpoint));
 				for (i = 0; i < number_searches; i++) {
 					retval = searches[i]->search->checkpoint_search(searches[i]->search_name, searches[i]->search_data);
-					log_messages.printf(SCHED_MSG_LOG:MSG_NORMAL, "[%s] checkpointed with result: [%s]\n", searches[i]->search_name, AS_CP_STR[retval]);
+					log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[%s] checkpointed with result: [%s]\n", searches[i]->search_name, AS_CP_STR[retval]);
 				}
-				log_messages.printf(SCHED_MSG_LOG:MSG_NORMAL, "Completed.\n");
+				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Completed.\n");
 
 				last_checkpoint = current_time;
 			}
