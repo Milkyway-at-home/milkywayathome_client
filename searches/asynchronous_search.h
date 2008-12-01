@@ -20,6 +20,12 @@ extern const char *AS_GEN_STR[];
 #define AS_GEN_OVER 1
 #define AS_GEN_ERROR 2
 
+extern const char *AS_CP_STR[];
+#define AS_CP_SUCCESS 0
+#define AS_GEN_OVER 1
+#define AS_GEN_ERROR 2
+
+extern char AS_MSG[1024];
 
 typedef int (*create_search_type)(char*, ...);
 typedef int (*read_search_type)(char*, void**);

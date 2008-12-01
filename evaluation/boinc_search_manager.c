@@ -60,6 +60,9 @@ int		unsent_wu_buffer = 400;
 WORKUNIT_INFO** workunit_info;
 SEARCH_PARAMETERS **gen_sp, *insert_sp;
 
+long checkpoint_time = 360;		//	1 hour
+time_t last_checkpoint;
+
 
 void update_workunit_info(int pos) {
 	int i, current;
@@ -126,6 +129,8 @@ void init_boinc_search_manager(int argc, char** argv) {
 				*	Generate more workunits if less than this number are available on the server.
 			 ********/
 			unsent_wu_buffer = atoi(argv[++i]);
+		} else if (!strcmp(argv[i], "-cp_time")) {
+			checkpoint_time = atoi(argv[++i]);
 		}
 	}
 
@@ -295,6 +300,17 @@ void start_search_manager() {
 			if (unsent_wus < unsent_wu_buffer) {
 				num_generated = generate_workunits();
 				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Generated %d new workunits.\n", num_generated);
+			}
+
+			if ((current_time - last_checkpoint) > checkpoint_time) {
+				log_messages.printf(SCHED_MSG_LOG:MSG_NORMAL, "Checkpointing %d searches after %ld seconds.\n", number_searches, (current_time - last_checkpoint));
+				for (i = 0; i < number_searches; i++) {
+					retval = searches[i]->search->checkpoint_search(searches[i]->search_name, searches[i]->search_data);
+					log_messages.printf(SCHED_MSG_LOG:MSG_NORMAL, "[%s] checkpointed with result: [%s]\n", searches[i]->search_name, AS_CP_STR[retval]);
+				}
+				log_messages.printf(SCHED_MSG_LOG:MSG_NORMAL, "Completed.\n");
+
+				last_checkpoint = current_time;
 			}
 		}
 		if (!one_pass) sleep(sleep_interval);
