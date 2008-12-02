@@ -42,13 +42,11 @@ void newton_step(double* point, double *point_fitness, GRADIENT* gradient, HESSI
 	printf("\n");
 
 	printf("updating point with line search\n");
-//	for (i = 0; i < hessian->number_parameters; i++) {
-//		point[i] = point[i] + step[i];
-//	}
-
 	evaluations = synchronous_line_search(point, (*point_fitness), step, hessian->number_parameters, &new_point, point_fitness);
 	print_double_array(stdout, "\tnew point:", hessian->number_parameters, new_point);
 	printf("\tline search took: %d evaluations for new fitness: %lf\n", evaluations, *(point_fitness));
+	for (i = 0; i < hessian->number_parameters; i++) point[i] = new_point[i];
+	free(new_point);
 }
 
 void synchronous_newton_method(char* search_path, char* search_parameters, double* point, double* step, int number_parameters) {
