@@ -4,6 +4,7 @@
 #include "hessian.h"
 #include "gradient.h"
 
+#include "../searches/line_search.h"
 #include "../searches/population.h"
 #include "../searches/recombination.h"
 #include "../evaluation/evaluator.h"
@@ -18,10 +19,10 @@ void parse_randomized_newton(char* parameters, int *population_size, int *max_ev
 	sscanf(parameters, "randomized_newton/%d/%d/%d", population_size, max_evaluations, number_iterations);
 }
 
-void newton_step(double* point, GRADIENT* gradient, HESSIAN* hessian) {
-	double* step;
-	double** inverse_hessian;
-	int i, j;
+void newton_step(double* point, double *point_fitness, GRADIENT* gradient, HESSIAN* hessian) {
+	double *step, *new_point;
+	double **inverse_hessian;
+	int i, j, evaluations;
 
 	printf("inverting\n");
 	matrix_invert(hessian->values, hessian->number_parameters, hessian->number_parameters, &inverse_hessian);
@@ -40,10 +41,14 @@ void newton_step(double* point, GRADIENT* gradient, HESSIAN* hessian) {
 	for (i = 0; i < hessian->number_parameters; i++) printf(" %lf", step[i]);
 	printf("\n");
 
-	printf("updating point\n");
-	for (i = 0; i < hessian->number_parameters; i++) {
-		point[i] = point[i] + step[i];
-	}
+	printf("updating point with line search\n");
+//	for (i = 0; i < hessian->number_parameters; i++) {
+//		point[i] = point[i] + step[i];
+//	}
+
+	evaluations = synchronous_line_search(point, (*point_fitness), step, hessian->number_parameters, &new_point, point_fitness);
+	print_double_array(stdout, "\tnew point:", hessian->number_parameters, new_point);
+	printf("\tline search took: %d evaluations for new fitness: %lf\n", evaluations, *(point_fitness));
 }
 
 void synchronous_newton_method(char* search_path, char* search_parameters, double* point, double* step, int number_parameters) {
@@ -108,9 +113,8 @@ void synchronous_newton_method(char* search_path, char* search_parameters, doubl
 		}
 		fprintf_gradient(stdout, gradient);
 
-		newton_step(point, gradient, hessian);
-
-		current_fitness = evaluate(point);
+		newton_step(point, &current_fitness, gradient, hessian);
+//		current_fitness = evaluate(point);
 
 		printf("iteration: %d, fitness: %lf, current point:", i, current_fitness);
 		for (j = 0; j < number_parameters; j++) {
