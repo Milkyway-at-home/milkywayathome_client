@@ -141,6 +141,7 @@ void randomized_newton_method(char* search_path, char* search_parameters, double
 	current_point = (double*)malloc(sizeof(double) * number_parameters);
 	min_parameters = (double*)malloc(sizeof(double) * number_parameters);
 	max_parameters = (double*)malloc(sizeof(double) * number_parameters);
+	parameters = (double*)malloc(sizeof(double) * number_parameters);
 
 	for (i = 0; i < number_parameters; i++) current_point[i] = point[i];
 
@@ -160,15 +161,13 @@ void randomized_newton_method(char* search_path, char* search_parameters, double
 
 //		printf("\nevaluating individuals (fitness : parameters):\n");
 		for (j = 0; j < population_size; j++) {
-			parameters = random_recombination(min_parameters, max_parameters, number_parameters);
+			random_recombination(min_parameters, max_parameters, number_parameters, parameters);
 			fitness = evaluate(parameters);
 			replace(p, j, parameters, fitness);
 
 //			printf("\t%lf :", fitness);
 //			for (k = 0; k < number_parameters; k++) printf(" %lf", parameters[k]);
 //			printf("\n");
-
-			free(parameters);
 		}
 
 		randomized_hessian(p->individuals, current_point, p->fitness, population_size, number_parameters, &hessian, &gradient);

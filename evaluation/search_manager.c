@@ -157,7 +157,7 @@ int manage_search(char* search_name) {
 	as->read_search(search_name, &search_data);
 
 	ms = (MANAGED_SEARCH*)malloc(sizeof(MANAGED_SEARCH));
-	ms->modified = 0;
+	ms->completed = 0;
 	ms->search_name = (char*)malloc(sizeof(char) * SEARCH_NAME_SIZE);
 	strcpy(ms->search_name, search_name);
 	ms->search_data = search_data;

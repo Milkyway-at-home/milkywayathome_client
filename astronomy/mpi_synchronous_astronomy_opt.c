@@ -13,9 +13,9 @@
 #include "../evaluation/evaluator.h"
 
 #define max_iterations			35000
-#define astronomy_parameters_file	"parameters.txt"
-#define star_points_file		"stars-86-cut.txt"
-#define population_file_name		"population.txt"
+
+char astronomy_parameters_file[1024] = "parameters.txt";
+char star_points_file[1024] = "stars-86-cut.txt";
 
 ASTRONOMY_PARAMETERS *ap;
 STAR_POINTS *sp;
@@ -27,7 +27,7 @@ void read_data(int rank, int max_rank) {
 	/********
 		*	READ THE ASTRONOMY PARAMETERS
 	 ********/
-	printf("[worker: %d] reading parameters...\n", rank);
+	printf("[worker: %d] reading parameters [%s]...\n", rank, astronomy_parameters_file);
 	int retval = read_astronomy_parameters(astronomy_parameters_file, ap);
 	if (retval) {
 		fprintf(stderr, "APP: error reading astronomy parameters: %d\n", retval);
@@ -39,7 +39,7 @@ void read_data(int rank, int max_rank) {
 	/********
 		*	READ THE STAR POINTS
 	 ********/
-	printf("[worker: %d] reading star points...\n", rank);
+	printf("[worker: %d] reading star points [%s]...\n", rank, star_points_file);
 	sp = (STAR_POINTS*)malloc(sizeof(STAR_POINTS));
 	retval = read_star_points(star_points_file, sp);
 	if (retval) {
@@ -137,12 +137,22 @@ double likelihood_compose(double* results, int num_results) {
 }
 
 int main(int number_arguments, char **arguments){
+	int i;
 	int integral_parameter_length, integral_results_length;
 	int likelihood_parameter_length, likelihood_results_length;
 	double *min_parameters;
 	double *max_parameters;
 	double *point;
 	double *step;
+
+	for (i = 0; i < number_arguments; i++) {
+		printf("arguments[%d]: %s\n", i, arguments[i]);
+		if (!strcmp(arguments[i], "-mw_stars")) {
+			strcpy(star_points_file, arguments[++i]);
+		} else if (!strcmp(arguments[i], "-mw_parameters")) {
+			strcpy(astronomy_parameters_file, arguments[++i]);
+		}
+	}
 
 	evaluator__init(&number_arguments, &arguments, read_data);
 

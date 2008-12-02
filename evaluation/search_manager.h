@@ -10,7 +10,7 @@
  ********/
 
 typedef struct managed_search {
-	int			modified;
+	int			completed;
 	char*			search_name;
 	void*			search_data;
 	ASYNCHRONOUS_SEARCH*	search;

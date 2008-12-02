@@ -86,13 +86,11 @@ int read_newton_method(char* search_name, void** search_data) {
 	return 1;
 }
 
-int checkpoint_newton_method(char* search_name, void* search_data) {
+int write_newton_method(char* search_name, void* search_data) {
 	char search_filename[FILENAME_SIZE], population_filename[FILENAME_SIZE];
 	FILE *search_file;
 	int result;
 	NEWTON_METHOD_SEARCH *nms = (NEWTON_METHOD_SEARCH*)search_data;
-
-	if (nms->current_iteration >= nms->maximum_iteration) return AS_CP_OVER;
 
 	sprintf(search_filename, "%s/%s/search", get_working_directory(), search_name);
 	search_file = fopen(search_filename, "w+");
@@ -110,6 +108,14 @@ int checkpoint_newton_method(char* search_name, void* search_data) {
 	return AS_CP_SUCCESS;
 }
 
+
+int checkpoint_newton_method(char* search_name, void* search_data) {
+	NEWTON_METHOD_SEARCH *nms = (NEWTON_METHOD_SEARCH*)search_data;
+
+	sprintf(AS_MSG, "evaluation: %d/%d, iteration: %d/%d", nms->current_evaluation, nms->evaluations_per_iteration, nms->current_iteration, nms->maximum_iteration);
+	if (nms->current_iteration >= nms->maximum_iteration) return AS_CP_OVER;
+	else return write_newton_method(search_name, search_data);
+}
 
 int newton_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
 	POPULATION *p;
@@ -150,9 +156,9 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 		if ((result = outside_bounds(nms->number_parameters, sp->parameters, nms->min_parameters, nms->max_parameters))) {
 			return result;
 		}
-		if (isnan(sp->fitness)) {
-			return AS_INSERT_FITNESS_NAN;
-		}
+		if (isnan(sp->fitness)) return AS_INSERT_FITNESS_NAN;
+		if (sp->fitness >= -2.8) return AS_INSERT_FITNESS_INVALID;
+
 		sprintf(AS_MSG, "evaluation: %d/%d, iteration: %d/%d", nms->current_evaluation, nms->evaluations_per_iteration, nms->current_iteration, nms->maximum_iteration);
 
 		replace(p, nms->current_evaluation, sp->parameters, sp->fitness);
@@ -179,7 +185,7 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 				 ********/
 				matrix_invert(hessian, p->number_parameters, p->number_parameters, &inverse_hessian);
 				for (j = 0; j < p->number_parameters; j++) {
-					for (k = 0; k < p->number_parameters; k++) nms->parameters[j] -= inverse_hessian[j][k] * gradient[j];
+					for (k = 0; k < p->number_parameters; k++) nms->parameters[j] += inverse_hessian[j][k] * gradient[j];
 					nms->min_parameters[j] = nms->parameters[j] - nms->parameter_range[j];
 					nms->max_parameters[j] = nms->parameters[j] + nms->parameter_range[j];
 				}
@@ -205,6 +211,8 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 
 				new_population(nms->evaluations_per_iteration, nms->number_parameters, &(nms->population));
 				checkpoint_newton_method(search_name, nms);
+			} else {
+				write_newton_method(search_name, nms);
 			}
 		}
 	} else {

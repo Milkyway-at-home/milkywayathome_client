@@ -170,22 +170,27 @@ void init_boinc_search_manager(int argc, char** argv) {
 }
 
 int generate_workunits() {
-	int i, j, generated, current, generation_rate, initial, result;
+	int i, j, generated, current, generation_rate, initial, result, number_completed, count_completed;
 	SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
 
 	generation_rate = get_generation_rate();
 	log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Generating %d new workunits.\n", generation_rate);
 	current = 0;
+	number_completed = 0;
+	count_completed = 0;
+	for (i = 0; i < number_searches; i++) if (searches[i]->completed) number_completed++;
+
         for (i = 0; i < number_searches; i++) {
-                generated = (generation_rate - current) / (number_searches - i);
+		if (searches[i]->completed) count_completed++;
+                generated = (generation_rate - current) / ((number_searches - number_completed) - (i - count_completed));
 		initial = current;
-		scope_messages.printf("Generating for search[%d]: %s\n", i, searches[i]->search_name);
                 for (j = 0; j < generated; j++) {
 			result = searches[i]->search->generate_parameters(searches[i]->search_name, searches[i]->search_data, gen_sp[i]);
 			if (result != AS_GEN_SUCCESS) {
+				if (result == AS_GEN_OVER) searches[i]->completed = 1;
 				scope_messages.printf("Not generating workunits: [%s]\n", AS_GEN_STR[result]);
 				break;
-			}
+			} 
 			current++;
 			add_workunit(gen_sp[i], workunit_info[i]);
                 }
@@ -272,7 +277,8 @@ void start_search_manager() {
 			retval = insert_workunit(wu, results, canonical_result);
 
 			if (retval < 0) {
-				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[%s] could not be assimilated, insert failed with error [%d]\n", wu.name, retval);
+				SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
+				scope_messages.printf("[%s] could not be assimilated, insert failed with error [%d]\n", wu.name, retval);
 			}
 
 			if (update_db) {
@@ -289,13 +295,12 @@ void start_search_manager() {
 		if (did_something) boinc_db.commit_transaction();
 
 		if (num_assimilated)  {
-			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Assimilated %d workunits.\n", num_assimilated);
 			count_unsent_results(unsent_wus, bsm_app.id);
 
 			processed_wus += num_assimilated;
 			time(&current_time);
 			wus_per_second = (double)processed_wus/((double)current_time-(double)start_time);
-			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[appid: %d], wus/sec: %lf, unsent wus: %d\n", bsm_app.id, wus_per_second, unsent_wus);
+			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[appid: %d] assimilated %d workunits, wus/sec: %lf, unsent wus: %d\n", bsm_app.id, num_assimilated, wus_per_second, unsent_wus);
 
 			if (unsent_wus < unsent_wu_buffer) {
 				num_generated = generate_workunits();
@@ -303,12 +308,15 @@ void start_search_manager() {
 			}
 
 			if ((current_time - last_checkpoint) > checkpoint_time) {
+				SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
 				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Checkpointing %d searches after %ld seconds.\n", number_searches, (current_time - last_checkpoint));
 				for (i = 0; i < number_searches; i++) {
 					retval = searches[i]->search->checkpoint_search(searches[i]->search_name, searches[i]->search_data);
-					log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[%s] checkpointed with result: [%s]\n", searches[i]->search_name, AS_CP_STR[retval]);
+					scope_messages.printf("[%s] checkpointed with result: [%s], msg: [%s]\n", searches[i]->search_name, AS_CP_STR[retval], AS_MSG);
+					if (retval == AS_CP_OVER) searches[i]->completed = 1;
+					AS_MSG[0] = '\0';
 				}
-				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Completed.\n");
+				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Checkpointing completed.\n");
 
 				last_checkpoint = current_time;
 			}

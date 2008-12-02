@@ -112,6 +112,7 @@ int fread_population(FILE* file, POPULATION **population) {
 		}
 		fscanf(file, "\n");
 	}
+	(*population)->size = size;
 	return 1;
 }
 
