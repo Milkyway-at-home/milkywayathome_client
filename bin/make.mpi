@@ -1,5 +1,7 @@
 CXX = mpicc
 
+CXXFLAGS = -O2 -msse2 -ftree-vectorize -funroll-loops
+
 FGDO_DIR = ..
 EVALUATION_DIR = $(FGDO_DIR)/evaluation
 SEARCH_DIR = $(FGDO_DIR)/searches
@@ -74,19 +76,19 @@ PROGS = mpi_asynchronous_astronomy mpi_synchronous_astronomy separation errors
 all: $(PROGS)
 
 mpi_asynch: $(MPI_ASYNCH) $(ASTRONOMY_OPT_OBJS) $(ASYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
-	$(CXX) -lm -Wall -o mpi_asynchronous_astronomy $(MPI_ASYNCH) $(ASTRONOMY_OPT_OBJS) $(ASYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_asynchronous_astronomy $(MPI_ASYNCH) $(ASTRONOMY_OPT_OBJS) $(ASYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
 
 mpi_synch: $(MPI_SYNCH) $(ASTRONOMY_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
-	$(CXX) -lm -Wall -o mpi_synchronous_astronomy $(MPI_SYNCH) $(ASTRONOMY_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_synchronous_astronomy $(MPI_SYNCH) $(ASTRONOMY_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
 
 mpi_synch_opt: $(MPI_SYNCH_OPT) $(ASTRONOMY_OPT_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
-	$(CXX) -lm -Wall -o mpi_synchronous_astronomy_opt $(MPI_SYNCH_OPT) $(ASTRONOMY_OPT_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_synchronous_astronomy_opt $(MPI_SYNCH_OPT) $(ASTRONOMY_OPT_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
 
 separation: $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS)
-	$(CXX) -lm -Wall -o separation $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS)
+	$(CXX) $(CXXFLAGS) -lm -Wall -o separation $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS)
 
 errors: $(ERRORS) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS) $(ERROR_OBJS)
-	$(CXX) -lm -Wall -o errors $(ERRORS) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS) $(ERROR_OBJS)
+	$(CXX) $(CXXFLAGS) -lm -Wall -o errors $(ERRORS) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS) $(ERROR_OBJS)
 
 .c.o:
 	$(CXX) $(CXXFLAGS) -Wall -x c -c $< -o $@

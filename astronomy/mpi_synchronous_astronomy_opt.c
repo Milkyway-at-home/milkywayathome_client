@@ -131,7 +131,6 @@ double likelihood_compose(double* results, int num_results) {
 		bad_jacobians += results[(2*i)+1];
 	}
 	prob_sum /= (total_number_stars - bad_jacobians);
-	prob_sum *= -1;
 	printf("[worker: %d] composed likelihood: %.10lf\n", get_mpi_rank(), prob_sum);
 	return prob_sum;
 }
