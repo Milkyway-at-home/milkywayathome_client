@@ -3,8 +3,14 @@
 #include "stdlib.h"
 #include "string.h"
 
+#include "line_search.h"
 #include "../evaluation/evaluator.h"
 #include "../util/io_util.h"
+
+const char *LS_STR[] = {"success", "nan fitness in loop 1", "nan fitness in loop 2", "nan fitness in loop 3", "step < tol in loop 1", "eval max reached in loop 1", "eval max reached in loop 2"};
+
+#define LOOP1_MAX 10
+#define LOOP2_MAX 10
 
 /********
 	*	Stopping Conditions
@@ -20,8 +26,8 @@ double evaluate_step(double* point, double step, double* direction, int number_p
 	return evaluate(current_point);
 }
 
-int synchronous_line_search(double* point, double initial_fitness, double* direction, int number_parameters, double** minimum, double* fitness) {
-	int i, jump, evaluations_done;
+int line_search(double* point, double initial_fitness, double* direction, int number_parameters, double** minimum, double* fitness, int *evaluations_done) {
+	int i, jump, eval_count;
 	double f1, f2, f3, fs;
 	double d1, d2, d3, dstar;
 	double step, a, b;
@@ -29,7 +35,7 @@ int synchronous_line_search(double* point, double initial_fitness, double* direc
 
 	current_point = (double*)malloc(sizeof(double) * number_parameters);
 
-	printf("\tline search starting at fitness: %lf\n", initial_fitness);
+	printf("\tline search starting at fitness: %.15lf\n", initial_fitness);
 	print_double_array(stdout, "\tinitial point: ", number_parameters, point);
 	/********
 		*	Find f1 > f2
@@ -38,19 +44,22 @@ int synchronous_line_search(double* point, double initial_fitness, double* direc
 	f1 = initial_fitness;
 	// f2 = evaluate( point + (direction * step) );
 	f2 = evaluate_step(point, step, direction, number_parameters, current_point);
-	evaluations_done = 1;
-	printf("\t\tloop 1, evaluations: %d, step: %lf, fitness: %lf\n", evaluations_done, step, f2);
+	(*evaluations_done) = 1;
+	printf("\t\tloop 1, evaluations: %d, step: %.15lf, fitness: %.15lf\n", (*evaluations_done), step, f2);
 
-	while (step > tol && (f1 < f2 || isnan(f2))) {
+	eval_count = 0;
+	while (step > tol && (f1 < f2 || isnan(f2)) && eval_count < LOOP1_MAX) {
 		step /= 2.0;
 
 		// f2 = evaluate( point + (direction * step) );
 		f2 = evaluate_step(point, step, direction, number_parameters, current_point);
-		evaluations_done++;
-		printf("\t\tloop 1, evaluations: %d, step: %lf, fitness: %lf\n", evaluations_done, step, f2);
+		(*evaluations_done)++;
+		printf("\t\tloop 1, evaluations: %d, step: %.15lf, fitness: %.15lf\n", (*evaluations_done), step, f2);
+		eval_count++;
 	}
-	if (isnan(f2)) return -1;
-	if (step < tol) return -1;
+	if (isnan(f2)) return LS_LOOP1_NAN;
+	if (step < tol) return LS_LOOP1_TOL;
+	if (eval_count == LOOP2_MAX) return LS_LOOP1_MAX;
 
 	/********
 		*	Find f1 > f2 < f3
@@ -61,10 +70,10 @@ int synchronous_line_search(double* point, double initial_fitness, double* direc
 	d3 = 2.0;
 	// f3 = evaluate( point = (d3 * step * direction) );
 	f3 = evaluate_step(point, d3 * step, direction, number_parameters, current_point);
-	evaluations_done++;
-	printf("\t\tloop 2, evaluations: %d, step: %lf, fitness: %lf\n", evaluations_done, d3 * step, f3);
-
-	while (f3 <= f2 && !isnan(f1 - f2 - f3)) {
+	(*evaluations_done)++;
+	printf("\t\tloop 2, evaluations: %d, step: %.15lf, fitness: %.15lf\n", (*evaluations_done), d3 * step, f3);
+	eval_count = 0;
+	while (f3 <= f2 && !isnan(f1 - f2 - f3) && eval_count < LOOP2_MAX) {
 		d1 = d2;
 		f1 = f2;
 		d2 = d3;
@@ -73,10 +82,12 @@ int synchronous_line_search(double* point, double initial_fitness, double* direc
 
 		// f3 = evaluate( point + (d3 * step * direction) );
 		f3 = evaluate_step(point, d3 * step, direction, number_parameters, current_point);
-		evaluations_done++;
-		printf("\t\tloop 2, evaluations: %d, step: %lf, fitness: %lf\n", evaluations_done, d3 * step, f3);
+		(*evaluations_done)++;
+		eval_count++;
+		printf("\t\tloop 2, evaluations: %d, step: %.15lf, fitness: %.15lf\n", (*evaluations_done), d3 * step, f3);
 	}
-	if (isnan(f1 - f2 - f3)) return -1;
+	if (isnan(f1 - f2 - f3)) return LS_LOOP2_NAN;
+	if (eval_count == LOOP2_MAX) return LS_LOOP2_MAX;
 
 	/********
 		*	Find minimum
@@ -91,9 +102,9 @@ int synchronous_line_search(double* point, double initial_fitness, double* direc
 
 		// fs = evaluate(point + (dstar * step * direction));
 		fs = evaluate_step(point, dstar * step, direction, number_parameters, current_point);
-		evaluations_done++;
-		printf("\t\tloop 3, evaluations: %d, step: %lf, fitness: %lf\n", evaluations_done, (dstar * step), fs);
-		if (isnan(fs)) return -1;
+		(*evaluations_done)++;
+		printf("\t\tloop 3, evaluations: %d, step: %.15lf, fitness: %.15lf\n", (*evaluations_done), (dstar * step), fs);
+		if (isnan(fs)) return LS_LOOP3_NAN;
 
 		if (dstar > d2 + tol) {
 			if (fs > f2) {
@@ -123,5 +134,5 @@ int synchronous_line_search(double* point, double initial_fitness, double* direc
 	(*fitness) = fs;
 
 	free(current_point);
-	return evaluations_done;
+	return LS_SUCCESS;
 }

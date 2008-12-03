@@ -20,7 +20,7 @@ void parse_gradient_parameters(char* parameters, int *number_iterations) {
 
 void synchronous_gradient_descent(char* search_path, char* search_parameters, double* point, double* step, int number_parameters) {
 	GRADIENT *gradient;
-	int i, evaluations, number_iterations;
+	int i, evaluations, number_iterations, retval;
 	double point_fitness;
 	double *new_point;
 
@@ -32,7 +32,7 @@ void synchronous_gradient_descent(char* search_path, char* search_parameters, do
 		synchronous_get_gradient(point, step, number_parameters, &gradient);
 
 		if (gradient_below_threshold(gradient, min_gradient_threshold)) {
-			printf("Gradient dropped below threshold %lf\n", min_gradient_threshold);
+			printf("Gradient dropped below threshold %.15lf\n", min_gradient_threshold);
 			print_double_array(stdout, "\tgradient:", number_parameters, gradient->values);
 
 			free_gradient(gradient);
@@ -40,9 +40,9 @@ void synchronous_gradient_descent(char* search_path, char* search_parameters, do
 			break;
 		}
 
-		evaluations = synchronous_line_search(point, point_fitness, gradient->values, number_parameters, &new_point, &point_fitness);
+		retval = line_search(point, point_fitness, gradient->values, number_parameters, &new_point, &point_fitness, &evaluations);
 		print_double_array(stdout, "\tnew point:", number_parameters, new_point);
-		printf("\tline search took: %d evaluations for new fitness: %lf\n", evaluations, point_fitness);
+		printf("\tline search took: %d evaluations for new fitness: %.15lf, with result: [%s]\n", evaluations, point_fitness, LS_STR[retval]);
 
 		free_gradient(gradient);
 		free(gradient);
@@ -58,7 +58,7 @@ void synchronous_conjugate_gradient_descent(char* search_path, char* search_para
 	double *direction;
 	double *previous_gradient;
 	double *previous_direction;
-        int i, j, evaluations, number_iterations;
+        int i, j, evaluations, number_iterations, retval;
 	int reset;
         double point_fitness;
         double *new_point;
@@ -75,7 +75,7 @@ void synchronous_conjugate_gradient_descent(char* search_path, char* search_para
                 printf("iteration %d:\n", i);
                 synchronous_get_gradient(point, step, number_parameters, &gradient);
 		if (gradient_below_threshold(gradient, min_gradient_threshold)) {
-			printf("Gradient dropped below threshold %lf\n", min_gradient_threshold);
+			printf("Gradient dropped below threshold %.15lf\n", min_gradient_threshold);
 			print_double_array(stdout, "\tgradient:", number_parameters, gradient->values);
 
 			free_gradient(gradient);
@@ -105,9 +105,9 @@ void synchronous_conjugate_gradient_descent(char* search_path, char* search_para
 
 		print_double_array(stdout, "\tconjugate direction: ", number_parameters, direction);
 
-                evaluations = synchronous_line_search(point, point_fitness, direction, number_parameters, &new_point, &point_fitness);
-                print_double_array(stdout, "\tnew point:", number_parameters, new_point);
-                printf("\tline search took: %d evaluations for new fitness: %lf\n", evaluations, point_fitness);
+		retval = line_search(point, point_fitness, gradient->values, number_parameters, &new_point, &point_fitness, &evaluations);
+		print_double_array(stdout, "\tnew point:", number_parameters, new_point);
+		printf("\tline search took: %d evaluations for new fitness: %.15lf, with result: [%s]\n", evaluations, point_fitness, LS_STR[retval]);
 
                 free_gradient(gradient);
                 free(gradient);

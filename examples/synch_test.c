@@ -52,7 +52,7 @@ int main(int number_arguments, char** arguments) {
 	if (arguments[3][0] == 'n') {
                 newton_method(number_parameters, point, step, 10);
 	} else if (arguments[3][0] == 'r') {
-                randomized_newton_method(number_parameters, point, step, 50, 10);
+                randomized_newton_method(number_parameters, point, step, 200, 10);
         }
 
 	return 0;

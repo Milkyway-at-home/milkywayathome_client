@@ -176,7 +176,7 @@ void set_probability_constants(ASTRONOMY_PARAMETERS *ap, double coords, double *
 }
 
 void calculate_probabilities(double *r_point, double *r3, double *N, double reff_value, double rPrime3, double *integral_point, ASTRONOMY_PARAMETERS *ap, double *bg_prob, double *st_prob) {
-	double sinb, sinl, cosb, cosl, zp, d;
+	double sinb, sinl, cosb, cosl, zp;
 	double psg, xyzs[3], dotted, xyz_norm;
 	double rg, pbx;
 	int i, j;
@@ -190,8 +190,7 @@ void calculate_probabilities(double *r_point, double *r3, double *N, double reff
 	for (i = 0; i < ap->convolve; i++) {
 		xyz[i][2] = r_point[i] * sinb;
 		zp = r_point[i] * cosb;
-		d = sqrt( lbr_r * lbr_r + zp * zp - 2 * lbr_r * zp * cosl);
-		xyz[i][0] = (zp * zp - lbr_r * lbr_r - d * d) / (2 * lbr_r);
+		xyz[i][0] = zp * cosl - lbr_r;
 		xyz[i][1] = zp * sinl;
 
 		/* if q is 0, there is no probability */
@@ -392,7 +391,7 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 
 int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp) {
 	INTEGRAL_AREA *current_area;
-	int i, retval;
+	int i;
 //	time_t start_time, finish_time;
 //	time(&start_time);
 
