@@ -16,6 +16,8 @@ typedef struct gradient {
 } GRADIENT;
 
 
+void get_gradient(int number_parameters, double *point, double *step, double *gradient);
+
 void create_gradient(double* point, double* step, int iteration, int number_parameters, GRADIENT** gradi);
 void free_gradient(GRADIENT* gradient);
 
@@ -29,5 +31,6 @@ void synchronous_get_gradient(double* point, double* step, int number_parameters
 void fprintf_gradient(FILE *file, GRADIENT* gradient);
 
 int gradient_below_threshold(GRADIENT* gradient, double threshold);
+
 
 #endif

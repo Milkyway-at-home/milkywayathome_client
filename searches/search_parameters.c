@@ -145,6 +145,10 @@ int write_search_parameters(const char* filename, SEARCH_PARAMETERS *parameters)
 		}
 
 		FILE* data_file = boinc_fopen(input_path, "r");
+		if (data_file == NULL) {
+			fprintf(stderr, "APP: error reading search parameters file (for read): data_file == NULL\n");
+			return 1;
+		}
 		retval = fread_search_parameters(data_file, parameters);
 		fscanf(data_file, "fitness: %lf\n", &(parameters->fitness));
 		fclose(data_file);

@@ -3,7 +3,7 @@
 
 double* mutate(double* parent, double* min_parameters, double* max_parameters, int number_parameters);
 
-void random_recombination(double* min_parameters, double* max_parameters, int number_parameters, double* result);
+void random_recombination(int number_parameters, double* min_parameters, double* max_parameters, double* result);
 
 double* average_recombination(double** parents, int number_parents, int number_parameters);
 double* higher_recombination(double** parents, int number_parents, int number_parameters);

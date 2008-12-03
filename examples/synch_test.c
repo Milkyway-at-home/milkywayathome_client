@@ -1,15 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../searches/gradient_descent.h"
-#include "../searches/differential_evolution.h"
-#include "../searches/genetic_search.h"
-#include "../searches/particle_swarm.h"
 #include "../searches/newton_method.h"
-#include "../searches/synchronous_search.h"
-
 #include "../evaluation/simple_evaluator.h"
-
 
 double *min_parameters, *max_parameters;
 int number_parameters;
@@ -56,20 +49,10 @@ int main(int number_arguments, char** arguments) {
 
 	init_simple_evaluator(sum_of_squares);
         printf("searching...\n");
-        if (arguments[3][0] == 'g' && arguments[3][1] == 'd') {
-                synchronous_gradient_descent(arguments[2], arguments[3], point, step, number_parameters);
-        } else if (arguments[3][0] == 'c') {
-                synchronous_conjugate_gradient_descent(arguments[2], arguments[3], point, step, number_parameters);
-        } else if (arguments[3][0] == 'n') {
-                synchronous_newton_method(arguments[2], arguments[3], point, step, number_parameters);
+	if (arguments[3][0] == 'n') {
+                newton_method(number_parameters, point, step, 10);
 	} else if (arguments[3][0] == 'r') {
-                randomized_newton_method(arguments[2], arguments[3], point, step, number_parameters);
-        } else if (arguments[3][0] == 'g' && arguments[3][1] == 's') {         
-                synchronous_search(arguments[2], arguments[3], min_parameters, max_parameters, number_parameters, start_genetic_search);
-        } else if (arguments[3][0] == 'd') {
-                synchronous_search(arguments[2], arguments[3], min_parameters, max_parameters, number_parameters, start_differential_evolution);
-        } else if (arguments[3][0] == 'p') {
-                synchronous_search(arguments[2], arguments[3], min_parameters, max_parameters, number_parameters, start_particle_swarm);
+                randomized_newton_method(number_parameters, point, step, 50, 10);
         }
 
 	return 0;

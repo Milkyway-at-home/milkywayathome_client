@@ -13,7 +13,7 @@ char    	hostname[MPI_MAX_PROCESSOR_NAME];
 int     	hostname_length;
 int     	rank, number_processes;
 
-int		integral_defined = 0, likelihood_defined = 0;
+int		integral_defined = 0;
 
 void		(*__integral_function)(double*, double**) = NULL;
 void		(*__integral_combinator)(double*, int, double**) = NULL;
@@ -77,17 +77,11 @@ double mpi_integral_evaluate(double* integral_parameters) {
 void evaluator__init_likelihood(void (*l_f)(double*, double**), int l_p_l, double (*l_c)(double*, int), int l_r_l) {
 	__likelihood_function = (*l_f);
 	__likelihood_combinator = (*l_c);
-
 	likelihood_parameter_length = l_p_l;
 	likelihood_results_length = l_r_l;
 
+	if (evaluate == NULL) evaluate = mpi_evaluate;
 	likelihood_results_recv = (double*)malloc(sizeof(double) * likelihood_results_length * number_processes);
-
-	likelihood_defined = 1;
-	if (integral_defined == 0) evaluate = mpi_evaluate;
-	else {
-		likelihood_parameters = (double*)malloc(sizeof(double) * likelihood_parameter_length);
-	}
 }
 
 void evaluator__init_integral(void (*i_f)(double*, double**), int i_p_l, void (*i_c)(double*, int, double**), int i_r_l) {
@@ -96,21 +90,19 @@ void evaluator__init_integral(void (*i_f)(double*, double**), int i_p_l, void (*
 	integral_parameter_length = i_p_l;
 	integral_results_length = i_r_l;
 
-	integral_results_recv = (double*)malloc(sizeof(double) * integral_results_length * number_processes);
-
 	integral_defined = 1;
 	evaluate = mpi_integral_evaluate;
-	if (likelihood_defined == 1) {
-		likelihood_parameters = (double*)malloc(sizeof(double) * likelihood_parameter_length);
-	}
+	integral_results_recv = (double*)malloc(sizeof(double) * integral_results_length * number_processes);
 }
 
-void evaluator__init(int *number_arguments, char*** arguments, void (*r_d)(int, int)) {
+void mpi_evaluator__init(int *number_arguments, char*** arguments) {
 	MPI_Init(number_arguments, arguments);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &number_processes);
 	MPI_Get_processor_name(hostname, &hostname_length);
+}
 
+void mpi_evaluator__read_data(void (*r_d)(int, int)) {
 	r_d(rank, number_processes);
 }
 

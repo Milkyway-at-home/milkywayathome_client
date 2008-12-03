@@ -6,6 +6,21 @@
 #include "../evaluation/evaluator.h"
 #include "../util/settings.h"
 
+void get_gradient(int number_parameters, double *point, double *step, double *gradient) {
+	int j;
+	double e1, e2;
+	for (j = 0; j < number_parameters; j++) {
+		point[j] += step[j];
+		e1 = evaluate(point);
+		point[j] -= step[j] + step[j];
+		e2 = evaluate(point);
+		point[j] += step[j];
+
+		gradient[j] = (e1 - e2)/(step[j] + step[j]);
+	}
+}
+
+
 void synchronous_get_gradient(double* point, double* step, int number_parameters, GRADIENT** gradient) {
         char **metadata;
         double **individuals;

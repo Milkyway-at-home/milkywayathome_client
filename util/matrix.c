@@ -40,11 +40,23 @@ void matrix_multiply(double** m1, int r1, int c1, double** m2, int r2, int c2, d
 	}
 }
 
-void matrix_vector_multiply(double* m1, int c1, double** m2, int r2, int c2, double** result) {
+void matrix_vector_multiply(double** m2, int r2, int c2, double* m1, int c1, double** result) {
 	int j, k;
 
-	(*result) = (double*)malloc(sizeof(double) * c2);
-	for (j = 0; j < c2; j++) {
+	(*result) = (double*)malloc(sizeof(double) * r2);
+	for (j = 0; j < r2; j++) {
+		(*result)[j] = 0;
+		for (k = 0; k < c1; k++) {
+			(*result)[j] += m1[k] * m2[j][k];
+		}
+	}
+}
+
+void vector_matrix_multiply(double* m1, int c1, double** m2, int r2, int c2, double** result) {
+	int j, k;
+
+	(*result) = (double*)malloc(sizeof(double) * r2);
+	for (j = 0; j < r2; j++) {
 		(*result)[j] = 0;
 		for (k = 0; k < c1; k++) {
 			(*result)[j] += m1[k] * m2[k][j];

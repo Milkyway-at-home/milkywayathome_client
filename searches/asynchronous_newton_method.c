@@ -126,7 +126,7 @@ int newton_generate_parameters(char* search_name, void* search_data, SEARCH_PARA
 
 	if (nms->current_iteration < nms->maximum_iteration) {
 		sprintf(sp->metadata, "iteration: %d, evaluation: %d", nms->current_iteration, nms->current_evaluation);
-		random_recombination(nms->min_parameters, nms->max_parameters, p->number_parameters, sp->parameters);
+		random_recombination(p->number_parameters, nms->min_parameters, nms->max_parameters, sp->parameters);
 		return AS_GEN_SUCCESS;
 	} else {
 		return AS_GEN_OVER;

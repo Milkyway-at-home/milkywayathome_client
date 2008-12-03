@@ -277,8 +277,7 @@ void start_search_manager() {
 			retval = insert_workunit(wu, results, canonical_result);
 
 			if (retval < 0) {
-				SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
-				scope_messages.printf("[%s] could not be assimilated, insert failed with error [%d]\n", wu.name, retval);
+				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[%s] could not be assimilated, insert failed with error [%d]\n", wu.name, retval);
 			}
 
 			if (update_db) {
@@ -303,21 +302,20 @@ void start_search_manager() {
 			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[appid: %d] assimilated %d workunits, wus/sec: %lf, unsent wus: %d\n", bsm_app.id, num_assimilated, wus_per_second, unsent_wus);
 
 			if (unsent_wus < unsent_wu_buffer) {
+				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Generating %d new workunits.\n", get_generation_rate());
 				num_generated = generate_workunits();
 				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Generated %d new workunits.\n", num_generated);
 			}
 
 			if ((current_time - last_checkpoint) > checkpoint_time) {
-				SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
 				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Checkpointing %d searches after %ld seconds.\n", number_searches, (current_time - last_checkpoint));
 				for (i = 0; i < number_searches; i++) {
 					retval = searches[i]->search->checkpoint_search(searches[i]->search_name, searches[i]->search_data);
-					scope_messages.printf("[%s] checkpointed with result: [%s], msg: [%s]\n", searches[i]->search_name, AS_CP_STR[retval], AS_MSG);
+					log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[%s] checkpointed with result: [%s], msg: [%s]\n", searches[i]->search_name, AS_CP_STR[retval], AS_MSG);
 					if (retval == AS_CP_OVER) searches[i]->completed = 1;
 					AS_MSG[0] = '\0';
 				}
 				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Checkpointing completed.\n");
-
 				last_checkpoint = current_time;
 			}
 		}

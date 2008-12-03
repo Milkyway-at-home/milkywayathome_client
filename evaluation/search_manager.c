@@ -9,7 +9,9 @@
 #include "../util/settings.h"
 #include "../searches/search_parameters.h"
 #include "../searches/asynchronous_search.h"
+#include "evaluator.h"
 
+double (*evaluate)(double*);
 
 /********
 	*	Initialization

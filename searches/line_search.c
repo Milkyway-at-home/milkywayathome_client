@@ -41,7 +41,7 @@ int synchronous_line_search(double* point, double initial_fitness, double* direc
 	evaluations_done = 1;
 	printf("\t\tloop 1, evaluations: %d, step: %lf, fitness: %lf\n", evaluations_done, step, f2);
 
-	while (!isnan(f2) && f1 < f2 && step > tol) {
+	while (step > tol && (f1 < f2 || isnan(f2))) {
 		step /= 2.0;
 
 		// f2 = evaluate( point + (direction * step) );

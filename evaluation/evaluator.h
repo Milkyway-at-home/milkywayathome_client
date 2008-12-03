@@ -1,7 +1,7 @@
 #ifndef FGDO_EVALUATOR_H
 #define FGDO_EVALUATOR_H
 
-double (*evaluate)(double*);
+extern double (*evaluate)(double*);
 
 void evaluator__init(int *number_arguments, char*** arguments, void (*read_data)(int, int));
 void evaluator__init_integral(void (*i_f)(double*, double**), int i_p_l, void (*i_c)(double*, int, double**), int i_r_l);

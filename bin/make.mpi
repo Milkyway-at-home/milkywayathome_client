@@ -51,6 +51,7 @@ SYNCH_SEARCH_OBJS = \
 	$(SEARCH_DIR)/line_search.o \
 	$(SEARCH_DIR)/newton_method.o \
 	$(SEARCH_DIR)/recombination.o \
+	$(SEARCH_DIR)/regression.o \
 	$(SEARCH_DIR)/gradient.o \
 	$(SEARCH_DIR)/hessian.o \
 	$(SEARCH_DIR)/population.o

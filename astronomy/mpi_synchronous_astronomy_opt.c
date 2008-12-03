@@ -137,26 +137,39 @@ double likelihood_compose(double* results, int num_results) {
 }
 
 int main(int number_arguments, char **arguments){
-	int i;
+	int i, number_parameters;
 	int integral_parameter_length, integral_results_length;
 	int likelihood_parameter_length, likelihood_results_length;
 	double *min_parameters;
 	double *max_parameters;
 	double *point;
 	double *step;
+	char search[1024];
+	int iterations, evaluations_per_iteration;
 
+	mpi_evaluator__init(&number_arguments, &arguments);
+
+	iterations = -1;
+	evaluations_per_iteration = -1;
 	for (i = 0; i < number_arguments; i++) {
-		printf("arguments[%d]: %s\n", i, arguments[i]);
 		if (!strcmp(arguments[i], "-mw_stars")) {
 			strcpy(star_points_file, arguments[++i]);
 		} else if (!strcmp(arguments[i], "-mw_parameters")) {
 			strcpy(astronomy_parameters_file, arguments[++i]);
+		} else if (!strcmp(arguments[i], "-search")) {
+			strcpy(search, arguments[++i]);
+		} else if (!strcmp(arguments[i], "-iterations")) {
+			iterations = atoi(arguments[++i]);
+		} else if (!strcmp(arguments[i], "-evaluations_per_iteration")) {
+			evaluations_per_iteration = atoi(arguments[++i]);
 		}
 	}
 
-	evaluator__init(&number_arguments, &arguments, read_data);
+	mpi_evaluator__read_data(read_data);
+	number_parameters = get_optimized_parameter_count(ap);
+	printf("ap->number_parameters: %d, number_parameters: %d\n", ap->number_parameters, number_parameters);
 
-	integral_parameter_length = ap->number_parameters;
+	integral_parameter_length = number_parameters;
 	integral_results_length = 1 + ap->number_streams;
 	likelihood_parameter_length = 1 + ap->number_streams;
 	likelihood_results_length = 2;
@@ -172,14 +185,33 @@ int main(int number_arguments, char **arguments){
 	get_step(ap, &step);
 
 	printf("searching...\n");
-	if (arguments[2][0] == 'g' && arguments[2][1] == 'd') {
-		synchronous_gradient_descent(arguments[1], arguments[2], point, step, ap->number_parameters);
-	} else if (arguments[2][0] == 'c') {
-		synchronous_conjugate_gradient_descent(arguments[1], arguments[2], point, step, ap->number_parameters);
-	} else if (arguments[2][0] == 'n') {
-		synchronous_newton_method(arguments[1], arguments[2], point, step, ap->number_parameters);
-	} else if (arguments[2][0] == 'r') {
-		randomized_newton_method(arguments[1], arguments[2], point, step, ap->number_parameters);
+	if (!strcmp(search, "newton")) {
+		if (iterations == -1) {
+			printf("ERROR: iterations not specified (use the -iterations # flag)\n");
+			return 0;
+		}
+
+		newton_method(number_parameters, point, step, iterations);
+	} else if (!strcmp(search, "randomized_newton")) {
+		if (iterations == -1) {
+			printf("ERROR: iterations not specified (use the -iterations # flag)\n");
+			return 0;
+		}
+		if (evaluations_per_iteration == -1) {
+			printf("ERROR: evaluations_per_iteration not specified (use the -evaluations_per_iteration # flag)\n");
+			return 0;
+		}
+		randomized_newton_method(number_parameters, point, step, evaluations_per_iteration, iterations);
 	}
-	return 0;
+
+/*	if (arguments[2][0] == 'g' && arguments[2][1] == 'd') {
+		synchronous_gradient_descent(arguments[1], arguments[2], point, step, number_parameters);
+	} else if (arguments[2][0] == 'c') {
+		synchronous_conjugate_gradient_descent(arguments[1], arguments[2], point, step, number_parameters);
+	} else if (arguments[2][0] == 'n') {
+		newton_method(number_parameters, point, step, 10);
+	} else if (arguments[2][0] == 'r') {
+		randomized_newton_method(arguments[1], arguments[2], point, step, number_parameters);
+	}
+*/	return 0;
 }
