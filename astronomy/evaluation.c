@@ -418,7 +418,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 	/*** End volume removal ***/
 
 	#ifdef GMLE_BOINC
-		retval = write_checkpoint(es);
+		int retval = write_checkpoint(es);
 		if (retval) {
 			fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
 			return retval;
