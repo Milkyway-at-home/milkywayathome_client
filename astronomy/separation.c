@@ -17,8 +17,8 @@
 #include "../evaluation/evaluator.h"
 
 #define max_iterations			35000
-#define astronomy_parameters_file	"parameters.txt"
-#define star_points_file		"search9.txt"
+#define astronomy_parameters_file	"parameters-79.txt"
+#define star_points_file		"stars-79.txt"
 #define population_file_name		"population.txt"
 
 ASTRONOMY_PARAMETERS *ap;
@@ -103,7 +103,7 @@ double integral_compose(double* integral_results, int num_results) {
 	for (i = 0; i < num_results; i++) {
 		es->background_integral += integral_results[((ap->number_streams+1)*i)];
 		for (j = 0; j < ap->number_streams; j++) {
-			es->stream_integrals[j] += integral_results[((ap->number_streams+1)*i)+j];
+			es->stream_integrals[j] += integral_results[((ap->number_streams+1)*i)+j+1];
 		}
 	}
         printf("background integral: %lf, stream integrals:", es->background_integral);
@@ -239,7 +239,8 @@ int main(int number_arguments, char **arguments){
 	double *point;
 
 	printf("init data...\n");
-	evaluator__init(&number_arguments, &arguments, read_data);
+	mpi_evaluator__init(&number_arguments, &arguments);
+	mpi_evaluator__read_data(read_data);
 
 	integral_parameter_length = ap->number_parameters;
 	integral_results_length = 1 + ap->number_streams;

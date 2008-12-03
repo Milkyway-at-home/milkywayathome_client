@@ -23,6 +23,8 @@ void		(*__likelihood_function)(double*, double**) = NULL;
 double		(*__likelihood_combinator)(double*, int) = NULL;
 int		likelihood_parameter_length, likelihood_results_length;
 
+double (*evaluate)(double*);
+
 double* 	likelihood_parameters;
 double* 	likelihood_results_send;
 double* 	likelihood_results_recv;

@@ -396,7 +396,7 @@ void get_max_parameters(ASTRONOMY_PARAMETERS *ap, double** result) {
 void split(int rank, int max_rank, int divisor, double *min, double *max, int *steps, double step) {
 	int sub_rank, next_sub_rank, extra;
 
-//Ã	printf("rank: %d, max_rank: %d, divisor: %d, min: %lf, max: %lf, steps: %d, step: %lf\n", rank, max_rank, divisor, (*min), (*max), (*steps), step);
+//	printf("rank: %d, max_rank: %d, divisor: %d, min: %lf, max: %lf, steps: %d, step: %lf\n", rank, max_rank, divisor, (*min), (*max), (*steps), step);
 	sub_rank = rank % divisor;
 	next_sub_rank = sub_rank + 1;
 	extra = (*steps) % divisor;

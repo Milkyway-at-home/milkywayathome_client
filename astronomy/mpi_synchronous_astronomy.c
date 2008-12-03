@@ -144,7 +144,8 @@ int main(int number_arguments, char **arguments){
 	double *point;
 	double *step;
 
-	evaluator__init(&number_arguments, &arguments, read_data);
+	mpi_evaluator__init(&number_arguments, &arguments);
+	mpi_evaluator__read_data(read_data);
 
 	integral_parameter_length = ap->number_parameters;
 	integral_results_length = 1 + ap->number_streams;
@@ -166,10 +167,10 @@ int main(int number_arguments, char **arguments){
 		synchronous_gradient_descent(arguments[1], arguments[2], point, step, ap->number_parameters);
 	} else if (arguments[2][0] == 'c') {
 		synchronous_conjugate_gradient_descent(arguments[1], arguments[2], point, step, ap->number_parameters);
-	} else if (arguments[2][0] == 'n') {
-		synchronous_newton_method(arguments[1], arguments[2], point, step, ap->number_parameters);
-	} else if (arguments[2][0] == 'r') {
-		randomized_newton_method(arguments[1], arguments[2], point, step, ap->number_parameters);
+//	} else if (arguments[2][0] == 'n') {
+//		synchronous_newton_method(arguments[1], arguments[2], point, step, ap->number_parameters);
+//	} else if (arguments[2][0] == 'r') {
+//		randomized_newton_method(arguments[1], arguments[2], point, step, ap->number_parameters);
 	}
 	return 0;
 }
