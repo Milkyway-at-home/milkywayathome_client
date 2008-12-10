@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 
 #include "atSurveyGeometry.h"
 #include "stCoords.h"
@@ -272,7 +273,7 @@ double streamConvolve(double g, int wedge, int sgr_coordinates) {
 int prob_ok(double p) {
 	int ok;
 	double r;
-
+		
 	r = drand48();
 
 	if (p > r) {
@@ -281,4 +282,9 @@ int prob_ok(double p) {
 		ok = 0;
 	}
 	return ok;
+}
+
+/*Initialize seed for prob_ok*/
+void prob_ok_init() {
+	srand48(time(NULL));
 }
