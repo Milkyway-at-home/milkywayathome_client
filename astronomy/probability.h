@@ -18,5 +18,6 @@ double backgroundConvolve(double g, int wedge);
 double streamConvolve(double g, int wedge, int sgr_coordinates);
 
 int prob_ok (double p);
+void prob_ok_init ();
 
 #endif
