@@ -17,8 +17,8 @@
 #include "../evaluation/evaluator.h"
 
 #define max_iterations			35000
-#define astronomy_parameters_file	"parameters-79.txt"
-#define star_points_file		"stars-79.txt"
+#define astronomy_parameters_file	"parameters-20.txt"
+#define star_points_file		"20-f-cut-noMon.txt"
 #define population_file_name		"population.txt"
 
 ASTRONOMY_PARAMETERS *ap;
@@ -87,9 +87,11 @@ void integral_f(double* parameters, double** results) {
 		fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
 		exit(retval);
 	}
-	(*results) = (double*)malloc(sizeof(double) * 2);
+	(*results) = (double*)malloc(sizeof(double) * 1+ap->number_streams);
 	(*results)[0] = es->background_integral;
-	(*results)[1] = es->stream_integrals[0];
+	for(i = 0; i < ap->number_streams; i++) {
+		(*results)[i+1] = es->stream_integrals[i];
+	}
 //	printf("calculated integrals: %lf, %lf\n", (*results)[0], (*results)[1]);
 }
 
@@ -114,32 +116,36 @@ double integral_compose(double* integral_results, int num_results) {
 
 
 void separation(char* filename, double background_integral, double* stream_integrals) {
-	int q;
-	double nstars;
+	int q[ap->number_streams];
+	double nstars[ap->number_streams];
 	int total;
-	double sprob;
-	double prob_s;
+	double sprob[ap->number_streams];
+	double prob_s[ap->number_streams];
 	double prob_b;
 	double pbx;
-	double psg;
+	double psg[ap->number_streams];
 	double d;
 	int twoPanel;
 	double **cmatrix;
 	double dnormal[3];
 	double dortho[3];
 	double xsun[3];
-	double epsilon_s, epsilon_b;
+	double epsilon_s[ap->number_streams];
+	double epsilon_b;
 	double *star_coords;
 	double starxyz[3];
 	double starxyzTransform[3];
 	int s_ok;
-	int i, retval;
+	int i, j, retval;
 	FILE *file;
 
 	twoPanel = 1;
-	nstars = 0;
+	for(j = 0; j < ap->number_streams; j++) {
+		nstars[j] = 0;
+		q[j] = 0;
+	}
 	total = 0;
-	q = 0;
+	prob_ok_init();
 
 	printf("Integral complete.\n Beginning probability calculations...\n");
 	file = fopen(filename, "w");
@@ -173,47 +179,99 @@ void separation(char* filename, double background_integral, double* stream_integ
 	printf("\nTransformation matrix:\n");
 	printf("\t%lf %lf %lf\n", cmatrix[0][0], cmatrix[0][1], cmatrix[0][2]);
 	printf("\t%lf %lf %lf\n", cmatrix[1][0], cmatrix[1][1], cmatrix[1][2]);
-	printf("\t%lf %lf %lf\n", cmatrix[2][0], cmatrix[2][1], cmatrix[2][2]);
+	printf("\t%lf %lf %lf\n\n", cmatrix[2][0], cmatrix[2][1], cmatrix[2][2]);
 
 	xsun[0] = -8.5;
 	xsun[1] = 0.0;
 	xsun[2] = 0.0;
 	d = dotp(dnormal, xsun);
 
-	printf("bint: %lf, sint: %lf\n", background_integral, stream_integrals[0]);
+	printf("==============================================\n");
+	printf("bint: %lf", background_integral);
+	for(j = 0; j < ap->number_streams; j++) { 
+		printf(", ");
+		printf("sint[%d]: %lf", j, stream_integrals[j]);
+	} 
+	printf("\n");
 
 	/*get stream & background weight constants*/
-	epsilon_s = exp(ap->stream_weights[0]) / (1.0 + exp(ap->stream_weights[0]));
-	epsilon_b = 1.0 / (1 + exp(ap->stream_weights[0]));
-	printf("epsilon_s: %lf\n", epsilon_s);
-	printf("epsilon_b: %lf\n", epsilon_b);
+	double denom = 1.0;
+	for(j = 0; j < ap->number_streams; j++) {
+		denom += exp(ap->stream_weights[j]);
+	}
+	for(j = 0; j < ap->number_streams; j++) {
+		epsilon_s[j] = exp(ap->stream_weights[j]) / denom;
+		printf("epsilon_s[%d]: %lf\n", j, epsilon_s[j]);
+	}
+	epsilon_b = 1.0 / denom;
+	printf("epsilon_b:    %lf\n", epsilon_b);
 	
 	for (i = 0; i < sp->number_stars; i++) {
 		star_coords = sp->stars[i];
+		//printf("star_coords: %g %g %g\n", star_coords[0], star_coords[1], star_coords[2]);
+	
+		//printf("twoPanel: %d\n", twoPanel);
 
 		if (twoPanel == 1) {
 			if (ap->convolve != 0) {
-				prob_s = stPsgConvolved(star_coords, ap->stream_parameters[0], ap->wedge, ap->convolve, ap->sgr_coordinates);
+				for(j = 0; j < ap->number_streams; j++) {
+					prob_s[j] = stPsgConvolved(star_coords, ap->stream_parameters[j], ap->wedge, ap->convolve, ap->sgr_coordinates);
+				}
 				prob_b = stPbxConvolved(star_coords, ap->background_parameters, ap->convolve, ap->wedge);
 			} else {
-                        	prob_s = stPsg(star_coords, ap->stream_parameters[0], ap->wedge, ap->sgr_coordinates);
+				for(j = 0; j < ap->number_streams; j++) {
+                        		prob_s[j] = stPsg(star_coords, ap->stream_parameters[j], ap->wedge, ap->sgr_coordinates);
+				}
 				prob_b = stPbx(star_coords, ap->background_parameters);
                    	}
-
+		
+			//printf("prob_s: %g\n", prob_s);
+			//printf("prob_b: %g\n", prob_b);
+	
 			pbx = epsilon_b * prob_b / background_integral;
-			psg = epsilon_s * prob_s / stream_integrals[0]; 
+			
+			for(j = 0; j < ap->number_streams; j++) {
+				psg[j] = epsilon_s[j] * prob_s[j] / stream_integrals[j]; 
+			}
 
-			sprob = psg / (psg + pbx);
-			nstars += sprob;
+			//printf("pbx: %g\n", pbx);
+			//printf("psg: %g\n", psg);
+				
+			double psgSum = 0;
+			for(j = 0; j < ap->number_streams; j++) {
+				psgSum += psg[j];
+			}
+			for(j = 0; j < ap->number_streams; j++) {
+				sprob[j] = psg[j] / (psgSum + pbx);
+			}
+
+			//printf("sprob: %g\n", sprob);
+
+			for(j = 0; j < ap->number_streams; j++) {
+				nstars[j] += sprob[j];
+			}
 		} else {	
-			sprob = 1.0;
-			nstars += sprob;
+			for(j = 0; j < ap->number_streams; j++) {
+				sprob[j] = 1.0;
+				nstars[j] += 1.0;
+			}
 		}
 
 
 		/*determine if star with sprob should be put into stream*/
-		s_ok = prob_ok(sprob);
-		if (s_ok == 1) q++;
+		for(j = 0; j < ap->number_streams; j++) {
+			s_ok = prob_ok(sprob[j]);
+			if (s_ok == 1) {	
+				s_ok += j;
+				break;
+			}
+		}
+
+		//printf("s_ok: %d\n", s_ok);
+
+		if (s_ok >= 1) {
+			q[s_ok-1]++;
+		}
 
 		lbr2xyz(star_coords, starxyz);
 		transform_point(starxyz, cmatrix, xsun, starxyzTransform);	
@@ -228,8 +286,14 @@ void separation(char* filename, double background_integral, double* stream_integ
 		if( (total % 10000) == 0 ) printf("%d\n", total);
 	}
 		
-	printf("%d total stars, %lf in stream (%lf %% )\n", total, nstars, (nstars/total*100));
-	printf("%d stars separated into stream\n", q);
+	printf("%d total stars\n", total); 
+	for(j=0; j<ap->number_streams;j++) {
+		printf("%lf in stream[%d] (%lf%%)\n", nstars[j], j, (nstars[j]/total*100));
+	}
+
+	for(j=0; j<ap->number_streams;j++) {
+		printf("%d stars separated into stream\n", q[j]);
+	}
 	fclose(file);
 	printf("Output written to: %s\n", filename);
 }
