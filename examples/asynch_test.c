@@ -10,7 +10,7 @@
 #include "../evaluation/simple_evaluator.h"
 
 
-double *min_parameters, *max_parameters;
+double *min_bound, *max_bound;
 int number_parameters;
 
 
@@ -33,19 +33,19 @@ int main(int argc, char** argv) {
 	srand48(23);
 
 	number_parameters = atoi(argv[1]);
-	min_parameters = (double*)malloc(sizeof(double) * number_parameters);
-	max_parameters = (double*)malloc(sizeof(double) * number_parameters);
+	min_bound = (double*)malloc(sizeof(double) * number_parameters);
+	max_bound = (double*)malloc(sizeof(double) * number_parameters);
 	step = (double*)malloc(sizeof(double) * number_parameters);
 	point = (double*)malloc(sizeof(double) * number_parameters);
 	for (i = 0; i < number_parameters; i++) {
-		min_parameters[i] = -100.0;
-		max_parameters[i] = 100.0;
+		min_bound[i] = -100.0;
+		max_bound[i] = 100.0;
 		step[i] = 2.0;
-		point[i] = (drand48() * (double)(max_parameters[i] - min_parameters[i])) + (double)min_parameters[i];
+		point[i] = (drand48() * (double)(max_bound[i] - min_bound[i])) + (double)min_bound[i];
 	}
 
 	init_simple_evaluator(sum_of_squares);
-	register_search(asynchronous_newton_method);
+	register_search(get_asynchronous_newton_method());
 
 	for (i = 0; i < argc; i++) {
 		if (!strcmp(argv[i], "-s")) {
@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
 
 			if (!strcmp(search_qualifier, "nm")) {
 				printf("creating newton method...\n");
-				create_newton_method(search_name, 10, 100, number_parameters, point, step);
+				create_newton_method(search_name, NEWTON_PARABOLIC_LINE_SEARCH, 3, 300, number_parameters, point, step, min_bound, max_bound);
 				printf("created.\n");
 			} else if (!strcmp(search_qualifier, "gs")) {
 			} else if (!strcmp(search_qualifier, "de")) {

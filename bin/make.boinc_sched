@@ -6,7 +6,7 @@ CXX = g++
 CXXFLAGS = -g -O -I$(BOINC_DIR)/include/boinc -I$(MYSQL_DIR) -DGMLE_BOINC
 LDFLAGS = -g -L/usr/local/lib -L/usr/X11R6/lib
 
-LIBS = -lm -pthread -L$(BOINC_DIR)/lib/ -lsched -lboinc
+LIBS = -lm -pthread -L$(BOINC_DIR)/lib/ -lsched -lboinc -lm
 MYSQL = -L/usr/local/lib/mysql -lmysqlclient
 
 
@@ -21,10 +21,14 @@ SEARCH_OBJS = \
 	$(SEARCH_DIR)/search_parameters.o \
 	$(SEARCH_DIR)/asynchronous_search.o \
 	$(SEARCH_DIR)/asynchronous_newton_method.o \
+	$(SEARCH_DIR)/newton_method.o \
 	$(SEARCH_DIR)/hessian.o \
 	$(SEARCH_DIR)/gradient.o \
+	$(SEARCH_DIR)/outliers.o \
 	$(SEARCH_DIR)/population.o \
-	$(SEARCH_DIR)/recombination.o
+	$(SEARCH_DIR)/recombination.o \
+	$(SEARCH_DIR)/regression.o \
+	$(SEARCH_DIR)/search_log.o
 SCHED_OBJS = \
 	$(SCHED_DIR)/boinc_add_workunit.o \
 	$(SCHED_DIR)/search_manager.o \

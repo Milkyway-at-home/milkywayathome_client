@@ -1,6 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void init_matrix(double ***m, int r, int c) {
+	int i;
+	(*m) = (double**)malloc(sizeof(double*) * r);
+	for (i = 0; i < r; i++) (*m)[i] = (double*)malloc(sizeof(double) * c);
+}
+
+void free_matrix(double ***m, int r, int c) {
+	int i;
+	for (i = 0; i < r; i++) free( (*m)[i] );
+	free( (*m) );
+}
+
+
 void matrix_print(FILE* file, const char* name, double** m, int r, int c) {
 	int i, j;
 	fprintf(file, "%s [%d x %d]:\n", name, r, c);

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../searches/newton_method.h"
+#include "../searches/synchronous_newton_method.h"
 #include "../evaluation/simple_evaluator.h"
 
 double *min_parameters, *max_parameters;
@@ -16,7 +16,7 @@ double sum_of_squares(double* parameters) {
 	for (i = 0; i < number_parameters; i++) {
 		sum += parameters[i] * parameters[i];
 	}
-	return sum;
+	return -sum;
 }
 
 
@@ -26,9 +26,9 @@ int main(int number_arguments, char** arguments) {
 	double* step;
 	double* point;
 
-	if (number_arguments != 4) {
+	if (number_arguments != 3) {
 		fprintf(stderr, "Invalid Arguments, proper usage:\n");
-		fprintf(stderr, "\ttest <number_parameters> <search_path> <search_parameters>\n");
+		fprintf(stderr, "\tsynch_test <number_parameters> <search_parameters>\n");
 
 		return 0;
 	}
@@ -49,11 +49,13 @@ int main(int number_arguments, char** arguments) {
 
 	init_simple_evaluator(sum_of_squares);
         printf("searching...\n");
-	if (arguments[3][0] == 'n') {
+	if (arguments[2][0] == 'n') {
                 newton_method(number_parameters, point, step, 10);
-	} else if (arguments[3][0] == 'r') {
-                randomized_newton_method(number_parameters, point, step, 200, 10);
-        }
+	} else if (arguments[2][0] == 'r') {
+                randomized_newton_method(number_parameters, point, step, 0, 200, 10, 0, 0);
+        } else if (arguments[2][0] == 'l') {
+		randomized_newton_method(number_parameters, point, step, 1, 200, 2, 200, 3);
+	}
 
 	return 0;
 }

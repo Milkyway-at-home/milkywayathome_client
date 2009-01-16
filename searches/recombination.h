@@ -5,6 +5,9 @@ double* mutate(double* parent, double* min_parameters, double* max_parameters, i
 
 void random_recombination(int number_parameters, double* min_parameters, double* max_parameters, double* result);
 
+void range_recombination(int number_parameters, double* point, double* range, double *result);
+double random_linear_recombination(int number_parameters, double min, double max, double* initial, double* step, double *parameters);
+
 double* average_recombination(double** parents, int number_parents, int number_parameters);
 double* higher_recombination(double** parents, int number_parents, int number_parameters);
 double* lower_recombination(double** parents, int number_parents, int number_parameters);

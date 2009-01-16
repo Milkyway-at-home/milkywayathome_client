@@ -1,3 +1,4 @@
+#include <math.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -5,7 +6,9 @@
 #include <sys/stat.h>
 
 #include "population.h"
+#include "regression.h"
 
+#include "../util/matrix.h"
 
 int new_population(int max_size, int number_parameters, POPULATION** population) {
 	int i;
@@ -28,7 +31,58 @@ void free_population(POPULATION* population) {
 	free(population->fitness);
 }
 
-void insert(POPULATION* population, double* parameters, double fitness) {
+
+int population_contains(POPULATION *p, double fitness, double *point) {
+	int i, j, count;
+
+	for (i = 0; i < p->size; i++) {
+		if (p->fitness[i] == fitness) return 1;
+
+		count = 0;
+		for (j = 0; j < p->number_parameters; j++) {
+			if (fabs(point[j] - p->individuals[i][j]) > 10e-10) break;
+			count++;
+		}
+		if (count == p->number_parameters) return 1;
+	}
+	return 0;
+}
+
+
+void get_population_statistics(POPULATION *p, double *best_point, double *best_fitness, double *average_fitness, double *worst_fitness, double *standard_deviation) {
+	double best, avg, worst, st_dev;
+	int best_pos, i;
+
+	best = p->fitness[0];
+	avg = p->fitness[0];
+	worst = p->fitness[0];
+	best_pos = 0;
+	for (i = 1; i < p->size; i++) {
+		avg += p->fitness[i];
+		if (best > p->fitness[i]) {
+			best = p->fitness[i];
+			best_pos = i;
+		}
+		if (worst < p->fitness[i]) worst = p->fitness[i];
+	}
+	st_dev = 0;
+	for (i = 0; i < p->size; i++) {
+		st_dev += (p->fitness[i] - best) * (p->fitness[i] - best);
+	}
+	st_dev /= p->size;
+	st_dev = sqrt(st_dev);
+
+	(*average_fitness) = avg / p->size;
+	(*best_fitness) = best;
+	(*worst_fitness) = worst;
+	(*standard_deviation) = st_dev;
+	for (i = 0; i < p->number_parameters; i++) best_point[i] = p->individuals[best_pos][i];
+}
+
+
+void insert_incremental(POPULATION* population, double* parameters, double fitness) {
+	if (population->size == population->max_size) return;
+
 	if (population->individuals[population->size] == NULL) {
 		population->individuals[population->size] = (double*)malloc(sizeof(double) * population->number_parameters);
 	}
@@ -36,6 +90,20 @@ void insert(POPULATION* population, double* parameters, double fitness) {
 	population->fitness[population->size] = fitness;
 	population->size++;
 }
+
+void remove_incremental(POPULATION* population, int position) {
+	int i, j;
+	for (i = position; i < population->size-1; i++) {
+		population->fitness[i] = population->fitness[i+1];
+		for (j = 0; j < population->number_parameters; j++) {
+			population->individuals[i][j] = population->individuals[i+1][j];
+		}
+	}
+	free(population->individuals[i]);
+	population->fitness[i] = -1;
+	population->size--;
+}
+
 
 void insert_sorted(POPULATION* population, double* parameters, double fitness) {
 	int i, j;
@@ -52,6 +120,10 @@ void insert_sorted(POPULATION* population, double* parameters, double fitness) {
 			break;
 		}
         }
+}
+
+void remove_sorted(POPULATION *population, int position) {
+	remove_incremental(population, position);
 }
 
 void replace(POPULATION* population, int position, double* parameters, double fitness) {
@@ -127,21 +199,25 @@ int read_population(char *filename, POPULATION **population) {
 	return result;
 }
 
+int fwrite_individual(FILE *file, POPULATION *population, int position) {
+	int j;
+	fprintf(file, "[%d] %.20lf :", position, population->fitness[position]);
+	for (j = 0; j < population->number_parameters; j++) {
+		fprintf(file, " %.20lf", population->individuals[position][j]);
+	}
+	fprintf(file, "\n");
+	return 0;
+}
 
 int fwrite_population(FILE *file, POPULATION *population) {
-	int i, j, count;
+	int i, count;
 
 	fprintf(file, "size: %d, max_size: %d\n", population->size, population->max_size);
 	fprintf(file, "number_parameters: %d\n", population->number_parameters);
 	for (count = 0, i = 0; count < population->size && i < population->max_size; i++) {
 		if (population->individuals[i] == NULL) continue;
+		fwrite_individual(file, population, i);
 		count++;
-
-		fprintf(file, "[%d] %.10lf :", i, population->fitness[i]);
-		for (j = 0; j < population->number_parameters; j++) {
-			fprintf(file, " %.10lf", population->individuals[i][j]);
-		}
-		fprintf(file, "\n");
 	}
 	fflush(file);
 	return 1;
@@ -172,5 +248,5 @@ void fwrite_population_statistics(FILE* file, POPULATION *population) {
 	}
 	avg_fitness /= population->size;
 
-	fprintf(file, "min: %lf, avg: %lf, max: %lf", min_fitness, avg_fitness, max_fitness);
+	fprintf(file, "min: %lf, avg: %lf, max: %lf\n", min_fitness, avg_fitness, max_fitness);
 }

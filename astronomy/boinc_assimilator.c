@@ -17,7 +17,7 @@ void print_arguments() {
 }
 
 int main(int argc, char** argv) {
-	register_search(asynchronous_newton_method);
+	register_search(get_asynchronous_newton_method());
 //	register_search("gs", start_genetic_search);
 //	register_search("de", start_differential_evolution);
 //	register_search("pso", start_particle_swarm);

@@ -66,9 +66,9 @@
 
 
 void fwrite_integral_area(FILE *file, INTEGRAL_AREA *ia) {
-	fprintf(file, "mu[min,max,steps,current_step]: %.10lf, %.10lf, %d, %d\n", ia->mu_min, ia->mu_max, ia->mu_steps, ia->mu_step_current);
-	fprintf(file, "nu[min,max,steps,current_step]: %.10lf, %.10lf, %d, %d\n", ia->nu_min, ia->nu_max, ia->nu_steps, ia->nu_step_current);
-	fprintf(file, " r[min,max,steps,current_step]: %.10lf, %.10lf, %d, %d\n", ia->r_min, ia->r_max, ia->r_steps, ia->r_step_current);
+	fprintf(file, "mu[min,max,steps,current_step]: %.20lf, %.10lf, %d, %d\n", ia->mu_min, ia->mu_max, ia->mu_steps, ia->mu_step_current);
+	fprintf(file, "nu[min,max,steps,current_step]: %.20lf, %.10lf, %d, %d\n", ia->nu_min, ia->nu_max, ia->nu_steps, ia->nu_step_current);
+	fprintf(file, " r[min,max,steps,current_step]: %.20lf, %.10lf, %d, %d\n", ia->r_min, ia->r_max, ia->r_steps, ia->r_step_current);
 	fprintf(file, "background integral: %.10lf\n", ia->background_integral);
 	print_double_array(file, "stream_integrals", ia->number_streams, ia->stream_integrals);
 }
@@ -203,15 +203,15 @@ void free_state(EVALUATION_STATE* es) {
 			return 1;
 		}
 
-		fprintf(file, "background_integral: %lf\n", es->background_integral);
+		fprintf(file, "background_integral: %.20lf\n", es->background_integral);
 		fprintf(file, "stream_integrals[%d]: ", es->number_streams);
 		for (i = 0; i < es->number_streams; i++) {
-			fprintf(file, "%lf", es->stream_integrals[i]);
+			fprintf(file, "%.20lf", es->stream_integrals[i]);
 			if (i != (es->number_streams-1)) fprintf(file, ", ");
 		}
 		fprintf(file, "\n");
 
-		fprintf(file, "prob_sum: %lf, num_zero: %d, bad_jacobians: %d\n", es->prob_sum, es->num_zero, es->bad_jacobians);
+		fprintf(file, "prob_sum: %.20lf, num_zero: %d, bad_jacobians: %d\n", es->prob_sum, es->num_zero, es->bad_jacobians);
 		fprintf(file, "current_star_point: %d\n", es->current_star_point);
 		fprintf(file, "current_cut: %d\n", es->current_cut);
 

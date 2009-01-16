@@ -73,7 +73,9 @@ void update_workunit_info(int pos) {
 	printf("inserting wu_info to pos %d of %d\n", pos, number_searches);
 	for (i = 0; i < number_searches; i++) {
 		if (i == pos) {
-			init_workunit_info(searches[pos]->search_name, &(temp_wu[pos]), bsm_app);
+			char *workunit_info_file = (char*)malloc(sizeof(char) * FILENAME_SIZE);
+			sprintf(workunit_info_file, "%s/%s/workunit_info", get_working_directory(), searches[pos]->search_name);
+			read_workunit_info(workunit_info_file, &(temp_wu[pos]));
 			init_search_parameters(&temp_sp[i], temp_wu[pos]->number_parameters);
 			sprintf(temp_sp[i]->search_name, searches[i]->search_name);
 		} else {
@@ -159,13 +161,6 @@ void init_boinc_search_manager(int argc, char** argv) {
 
 	install_stop_signal_handler();
 
-	if (number_searches > 0) {
-		workunit_info = (WORKUNIT_INFO**)malloc(sizeof(WORKUNIT_INFO*) * number_searches);
-		for (i = 0; i < number_searches; i++) {
-			update_workunit_info(i);
-		}
-	}
-
 	init_search_parameters(&insert_sp, 8);
 }
 
@@ -174,7 +169,6 @@ int generate_workunits() {
 	SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
 
 	generation_rate = get_generation_rate();
-	log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Generating %d new workunits.\n", generation_rate);
 	current = 0;
 	number_completed = 0;
 	count_completed = 0;
@@ -184,6 +178,7 @@ int generate_workunits() {
 		if (searches[i]->completed) count_completed++;
                 generated = (generation_rate - current) / ((number_searches - number_completed) - (i - count_completed));
 		initial = current;
+		scope_messages.printf("[%s] Attempting to generate %d workunits.\n", searches[i]->search_name, generated);
                 for (j = 0; j < generated; j++) {
 			result = searches[i]->search->generate_parameters(searches[i]->search_name, searches[i]->search_data, gen_sp[i]);
 			if (result != AS_GEN_SUCCESS) {
@@ -192,16 +187,24 @@ int generate_workunits() {
 				break;
 			} 
 			current++;
-			add_workunit(gen_sp[i], workunit_info[i]);
+			add_workunit(gen_sp[i], workunit_info[i], bsm_app);
                 }
 		scope_messages.printf("[%s] Generated %d workunits.\n", searches[i]->search_name, (current-initial));
         }
 	return current;
 }
 
+void generate_search_workunits(char *search_name) {
+	manage_search(search_name);
+	update_workunit_info(0);
+	generate_workunits();
+}
+
 int insert_workunit(WORKUNIT& wu, vector<RESULT>& /*results*/, RESULT& canonical_result) {
-	int result;
+	int result, hostid, userid;
 	string output_file_name;
+	int sent_time, received_time, trip_time;
+	double cpu_time;
 	SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
 
 	if (wu.canonical_resultid) {
@@ -211,24 +214,36 @@ int insert_workunit(WORKUNIT& wu, vector<RESULT>& /*results*/, RESULT& canonical
 		get_output_file_path(canonical_result, output_file_name);
 		result = boinc_read_search_parameters(output_file_name.c_str(), insert_sp);
 		if (result != 0) {
-			scope_messages.printf("[%s] could not read search parameters file: [%s]\n", wu.name, output_file_name.c_str());
+			scope_messages.printf("[%-18s] could not read search parameters file: [%s]\n", wu.name, output_file_name.c_str());
 			return result;
 		}
 
+		hostid = canonical_result.hostid;
+		userid = canonical_result.userid;
+		cpu_time = canonical_result.cpu_time;
+		sent_time = canonical_result.sent_time;
+		received_time = canonical_result.received_time;
+		trip_time = received_time - sent_time;
+
 		ms = get_search(insert_sp->search_name);
+
+//		scope_messages.printf("[%-18s] Inserting workunit.\n", insert_sp->search_name);
 		if (ms == NULL) {
 			int pos;
 			pos = manage_search(insert_sp->search_name);
-			if (pos < 0) return -1;
+			if (pos < 0) {
+		   		scope_messages.printf("[%-18s] [%-110s][%-25s] trip/cpu[%*d/%*.2lf], u/h[%*d/%*d]\n", insert_sp->search_name, wu.name, "unknown search", 6, trip_time, 8, cpu_time, 6, userid, 6, hostid);
+				return 1;
+			}
 			ms = searches[pos];
 			update_workunit_info(pos);
 		}
 
 		result = ms->search->insert_parameters(ms->search_name, ms->search_data, insert_sp);
-		scope_messages.printf("[%s] fitness: [%.15lf], result: [%s], msg: [%s]\n", wu.name, insert_sp->fitness, AS_INSERT_STR[result], AS_MSG);
+   		scope_messages.printf("[%-18s] [%-110s][%-25s] trip/cpu[%*d/%*.2lf], u/h[%*d/%*d]\n", insert_sp->search_name, AS_MSG, AS_INSERT_STR[result], 6, trip_time, 8, cpu_time, 6, userid, 6, hostid);
 		AS_MSG[0] = '\0';
 	} else {
-		scope_messages.printf("[%s] No canonical result\n", wu.name);
+		scope_messages.printf("[%-18s] No canonical result\n", wu.name);
 	}
 
 	if (wu.error_mask&WU_ERROR_COULDNT_SEND_RESULT)		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[%s] Error: couldn't send a result\n", wu.name);
@@ -274,11 +289,8 @@ void start_search_manager() {
 				results.push_back(result);
 				if (result.id == wu.canonical_resultid) canonical_result = result;
 			}
-			retval = insert_workunit(wu, results, canonical_result);
 
-			if (retval < 0) {
-				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[%s] could not be assimilated, insert failed with error [%d]\n", wu.name, retval);
-			}
+			insert_workunit(wu, results, canonical_result);
 
 			if (update_db) {
 				sprintf(buf, "assimilate_state=%d, transition_time=%d", ASSIMILATE_DONE, (int)time(0));
@@ -309,11 +321,15 @@ void start_search_manager() {
 
 			if ((current_time - last_checkpoint) > checkpoint_time) {
 				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Checkpointing %d searches after %ld seconds.\n", number_searches, (current_time - last_checkpoint));
-				for (i = 0; i < number_searches; i++) {
-					retval = searches[i]->search->checkpoint_search(searches[i]->search_name, searches[i]->search_data);
-					log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[%s] checkpointed with result: [%s], msg: [%s]\n", searches[i]->search_name, AS_CP_STR[retval], AS_MSG);
-					if (retval == AS_CP_OVER) searches[i]->completed = 1;
-					AS_MSG[0] = '\0';
+				{
+					SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
+					for (i = 0; i < number_searches; i++) {
+						scope_messages.printf("[%-18s] beginning checkpoint\n", searches[i]->search_name);
+						retval = searches[i]->search->checkpoint_search(searches[i]->search_name, searches[i]->search_data);
+						scope_messages.printf("[%-18s] checkpointed with result: [%s], msg: [%s]\n", searches[i]->search_name, AS_CP_STR[retval], AS_MSG);
+						if (retval == AS_CP_OVER) searches[i]->completed = 1;
+						AS_MSG[0] = '\0';
+					}
 				}
 				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Checkpointing completed.\n");
 				last_checkpoint = current_time;

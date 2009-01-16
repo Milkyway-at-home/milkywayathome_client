@@ -29,10 +29,6 @@ void init_search_manager(int argc, char **argv) {
 			set_working_directory(argv[++i]);
 		} else if (!strcmp(argv[i], "-gen")) {
 			generation_rate = atoi(argv[++i]);
-		} else if (!strcmp(argv[i], "-s")) {
-			if (manage_search(argv[++i]) < 0) {
-				fprintf(stderr, "ERROR: unknown search %s specified.\n", argv[i]);
-			}
 		}
 	}
 }
@@ -43,6 +39,12 @@ void init_search_manager(int argc, char **argv) {
  ********/
 int number_registered_searches = 0;
 ASYNCHRONOUS_SEARCH **registered_searches;
+
+void print_registered_searches() {
+	int i;
+	fprintf(stderr, "registered searches: \n");
+	for (i = 0; i < number_registered_searches; i++) fprintf(stderr, "\t%s\n", registered_searches[i]->search_qualifier);
+}
 
 int get_registered_search_pos(char* search_qualifier) {
 	int cmp, i;
@@ -60,16 +62,16 @@ ASYNCHRONOUS_SEARCH* get_registered_search(char* search_qualifier) {
 	else return NULL;
 }
 
-void register_search(ASYNCHRONOUS_SEARCH as) {
+void register_search(ASYNCHRONOUS_SEARCH *as) {
 	int i;
-	int pos = get_registered_search_pos(as.search_qualifier);
+	int pos = get_registered_search_pos(as->search_qualifier);
 	if (pos < 0) {
 		/********
 			*	Search is not known. Inorder position to put the search is -(pos + 1).
 		 ********/
 		pos = -(pos + 1);
 		number_registered_searches++;
-		if (registered_searches == NULL) {
+		if (number_registered_searches == 0) {
 			registered_searches = (ASYNCHRONOUS_SEARCH**)malloc(sizeof(ASYNCHRONOUS_SEARCH*));
 		} else {
 			registered_searches = (ASYNCHRONOUS_SEARCH**)realloc(registered_searches, sizeof(ASYNCHRONOUS_SEARCH*) * number_registered_searches);
@@ -77,10 +79,12 @@ void register_search(ASYNCHRONOUS_SEARCH as) {
 		for (i = number_registered_searches-1; i > pos; i--) {
 			registered_searches[i] = registered_searches[i-1];
 		}
-		registered_searches[pos] = &as;
+		registered_searches[pos] = as;
 	} else {
-		fprintf(stderr, "ERROR registering search %s, already known.\n", as.search_qualifier);
+		fprintf(stderr, "ERROR registering search %s, already known.\n", as->search_qualifier);
 	}
+	fprintf(stderr, "registered searches: \n");
+	for (i = 0; i < number_registered_searches; i++) fprintf(stderr, "\t%s\n", registered_searches[i]->search_qualifier);
 }
 
 
@@ -152,6 +156,8 @@ int manage_search(char* search_name) {
 	as = get_registered_search(search_qualifier);
 	if (as == NULL) {
 		fprintf(stderr, "ERROR managing search %s, unknown search: %s\n", search_name, search_qualifier);
+		fprintf(stderr, "registered searches: \n");
+		for (i = 0; i < number_registered_searches; i++) fprintf(stderr, "\t%s\n", registered_searches[i]->search_qualifier);
 		return -1;
 	}
 	free(search_qualifier);

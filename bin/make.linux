@@ -1,4 +1,4 @@
-APP_VERSION = 0.6
+APP_VERSION = 0.7
 
 BOINC_DIR = /software/boinc-6.3.14-0/pkg/include/boinc
 BOINC_API_DIR = $(BOINC_DIR)/api
@@ -7,8 +7,8 @@ BOINC_LINK_DIR = /projects/wcl/software/boinc
 BOINC_LIB_LINK_DIR = $(BOINC_LINK_DIR)/lib
 BOINC_API_LINK_DIR = $(BOINC_LINK_DIR)/api
 
-VARIANTFLAGS = -DGMLE_BOINC -static-libgcc --export-dynamic
-        
+VARIANTFLAGS = -DGMLE_BOINC
+
 CXXFLAGS_ALL = $(VARIANTFLAGS) \
 	-g \
 	-O \
@@ -58,12 +58,12 @@ all: $(PROGS)
 app_i686: OBJ_CXX = $(CXX_i686)
 app_i686: OBJ_CXXFLAGS = $(CXXFLAGS_i686)
 app_i686: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(BOINC_API_LINK_DIR)/libboinc_api.a $(BOINC_LIB_LINK_DIR)/libboinc.a
-	$(CXX_i686) $(LDFLAGS_i686) $(CXXFLAGS_i686) -Wl -o milkyway_$(APP_VERSION)_i686-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lm -lboinc_api -lboinc -pthread
+	$(CXX_i686) $(LDFLAGS_i686) $(CXXFLAGS_i686) -Wl -static -static-libgcc -Wl,-Bstatic `gcc -print-file-name=libstdc++.a` -Wl,-Bdynamic -o milkyway_$(APP_VERSION)_i686-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lm -lboinc_api -lboinc -pthread
 
 app_x86_64: OBJ_CXX = $(CXX_x86_64)
 app_x86_64: OBJ_CXXFLAGS = $(CXXFLAGS_x86_64)
 app_x86_64: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(BOINC_API_LINK_DIR)/libboinc_api.a $(BOINC_LIB_LINK_DIR)/libboinc.a
-	$(CXX_x86_64) $(LDFLAGS_x86_64) $(CXXFLAGS_x86_64) -Wl -o milkyway_$(APP_VERSION)_x86_64-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lm -lboinc_api -lboinc -pthread
+	$(CXX_x86_64) $(LDFLAGS_x86_64) $(CXXFLAGS_x86_64) -Wl -static -static-libgcc -Wl,-Bstatic `gcc -print-file-name=libstdc++.a` -Wl,-Bdynamic -o milkyway_$(APP_VERSION)_x86_64-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lm -lboinc_api -lboinc -pthread
 
 .C.o:
 	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(INC) -Wall -x c++ -c $< -o $@

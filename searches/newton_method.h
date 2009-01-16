@@ -1,6 +1,7 @@
-#ifndef GEM_NEWTON_METHOD_H
-#define GEM_NEWTON_METHOD_H
+#ifndef FGDO_NEWTON_METHOD_H
+#define FGDO_NEWTON_METHOD_H
 
-void newton_method(int number_parameters, double *point, double *step, int iterations);
-void randomized_newton_method(int number_parameters, double *point, double *step, int evaluations_per_iteration, int iterations);
+void newton_step_i(int number_parameters, double **hessian, double *gradient, double **step);
+void newton_step(int number_parameters, double **hessian, double *gradient, double *step);
+
 #endif

@@ -26,6 +26,22 @@ void random_recombination(int number_parameters, double *min_parameters, double 
 	for (i = 0; i < number_parameters; i++) parameters[i] = min_parameters[i] + (max_parameters[i] - min_parameters[i]) * drand48();
 }
 
+void range_recombination(int number_parameters, double* point, double* range, double *result) {
+	int i;
+	for (i = 0; i < number_parameters; i++) {
+		result[i] = point[i] + (((drand48() * 2.0) - 1.0) * range[i]);
+	}
+}
+
+double random_linear_recombination(int number_parameters, double min, double max, double* initial, double* step, double *parameters) {
+	int i;
+	double value = min + ((max - min) * drand48());
+	for (i = 0; i < number_parameters; i++) {
+		parameters[i] = initial[i] + (value * step[i]);
+	}
+	return value;
+}
+
 
 double* get_pair_sum(double **individuals, int number_individuals, int number_parameters, int number_pairs, double scale) {
 	int pair1, pair2;

@@ -69,7 +69,7 @@
 
 double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
-double alpha, q, r0, delta, coeff;
+double alpha, q, r0, delta, coeff, alpha_neg, alpha_delta3;
 double *qgaus_X, *qgaus_W, **xyz, *dx;
 double **stream_a, **stream_c, *stream_sigma;
 
@@ -86,10 +86,13 @@ void init_constants(ASTRONOMY_PARAMETERS *ap) {
 		stream_c	= (double**)malloc(sizeof(double*) * ap->number_streams);	
 
 		alpha	= ap->background_parameters[0];
+		alpha_neg = -alpha;
 		q	= ap->background_parameters[1];
 		r0	= ap->background_parameters[2];
 		delta	= ap->background_parameters[3];
+		alpha_delta3 = alpha - delta - 3.0;
 		coeff	= 1 / (stdev * sqrt(2*pi));
+
 
 		gaussLegendre(-1.0, 1.0, qgaus_X, qgaus_W, ap->convolve);
 
@@ -146,13 +149,9 @@ void free_constants(ASTRONOMY_PARAMETERS *ap) {
 	}
 }
 
-void set_probability_constants(ASTRONOMY_PARAMETERS *ap, double coords, double **r_point, double **r3, double **N, double *rPrime3, double *reff_value) {
+void set_probability_constants(ASTRONOMY_PARAMETERS *ap, double coords, double *r_point, double *r3, double *N, double *rPrime3, double *reff_value) {
 	double gPrime, exp_result, g, exponent;
 	int i;
-
-	(*r_point) = (double*)malloc(sizeof(double) * ap->convolve);
-	(*r3) = (double*)malloc(sizeof(double) * ap->convolve);
-	(*N) = (double*)malloc(sizeof(double) * ap->convolve);
 
 	//R2MAG
 	gPrime = 5.0 * (log10(coords * 1000) - 1.0) + absm;
@@ -167,11 +166,11 @@ void set_probability_constants(ASTRONOMY_PARAMETERS *ap, double coords, double *
 		g = gPrime + dx[i];
 
 		//MAG2R
-		(*r_point)[i] = pow(10.0, (g - absm)/5.0 + 1.0) / 1000.0;
+		r_point[i] = pow(10.0, (g - absm)/5.0 + 1.0) / 1000.0;
 
-		(*r3)[i] = (*r_point)[i] * (*r_point)[i] * (*r_point)[i];
+		r3[i] = r_point[i] * r_point[i] * r_point[i];
 		exponent = (g-gPrime) * (g-gPrime) / (2 * stdev * stdev);
-		(*N)[i] = coeff * exp(-exponent);
+		N[i] = coeff * exp(-exponent);
 	}
 }
 
@@ -187,31 +186,29 @@ void calculate_probabilities(double *r_point, double *r3, double *N, double reff
         cosl = cos(integral_point[0] / deg);
 
 	(*bg_prob) = 0;
-	for (i = 0; i < ap->convolve; i++) {
-		xyz[i][2] = r_point[i] * sinb;
-		zp = r_point[i] * cosb;
-		xyz[i][0] = zp * cosl - lbr_r;
-		xyz[i][1] = zp * sinl;
+	/* if q is 0, there is no probability */
+	if (q == 0) {
+		(*bg_prob) -= 1;
+	} else {
+		for (i = 0; i < ap->convolve; i++) {
+			xyz[i][2] = r_point[i] * sinb;
+			zp = r_point[i] * cosb;
+			xyz[i][0] = zp * cosl - lbr_r;
+			xyz[i][1] = zp * sinl;
 
-		/* if q is 0, there is no probability */
-		if (q == 0) {
-			(*bg_prob) -= 1;
-			continue;
+			/* background probability */
+			rg = sqrt(xyz[i][0]*xyz[i][0] + xyz[i][1]*xyz[i][1] + (xyz[i][2]/q)*(xyz[i][2]/q));
+			pbx = pow(rg, alpha_neg) * pow(rg + r0, alpha_delta3);
+//			pbx = 1 / (pow(rg, alpha) * pow(rg + r0, 3 - alpha + delta));
+
+			(*bg_prob) += qgaus_W[i] * pbx * r3[i] * N[i];
 		}
-
-		/* background probability */
-		rg = sqrt(xyz[i][0]*xyz[i][0] + xyz[i][1]*xyz[i][1] + (xyz[i][2]/q)*(xyz[i][2]/q));
-		pbx = 1 / (pow(rg, alpha) * pow(rg + r0, 3 - alpha + delta));
-
-		(*bg_prob) += qgaus_W[i] * pbx * r3[i] * N[i];
 	}
 	(*bg_prob) *= reff_value * xr / rPrime3;
 
 	for (i = 0; i < ap->number_streams; i++) {
 		st_prob[i] = 0;
-		if (stream_sigma[i] > -0.0001 && stream_sigma[i] < 0.0001) {
-			continue;
-		}
+		if (stream_sigma[i] > -0.0001 && stream_sigma[i] < 0.0001) continue;
 		for (j = 0; j < ap->convolve; j++) {
 			xyzs[0] = xyz[j][0] - stream_c[i][0];
 			xyzs[1] = xyz[j][1] - stream_c[i][1];
@@ -293,7 +290,11 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 		rPrime	= (next_r+r)/2.0;
 
 		if (ap->convolve > 0) {
-			set_probability_constants(ap, rPrime, &(r_point[i]), &(r3[i]), &(N[i]), &(rPrime3[i]), &(reff_value[i]));
+			r_point[i] = (double*)malloc(sizeof(double) * ap->convolve);
+			r3[i] = (double*)malloc(sizeof(double) * ap->convolve);
+			N[i] = (double*)malloc(sizeof(double) * ap->convolve);
+
+			set_probability_constants(ap, rPrime, r_point[i], r3[i], N[i], &(rPrime3[i]), &(reff_value[i]));
 		} else {
 			r_unconvolved[i] = rPrime;
 		}
@@ -467,7 +468,7 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
 		star_coords[2] = sp->stars[es->current_star_point][2];
 
 		if (ap->convolve > 0) {
-			set_probability_constants(ap, star_coords[2], &r_point, &r3, &N, &rPrime3, &reff_value);
+			set_probability_constants(ap, star_coords[2], r_point, r3, N, &rPrime3, &reff_value);
 			calculate_probabilities(r_point, r3, N, reff_value, rPrime3, star_coords, ap, &bg_prob, st_prob);
 			if (new_formula) {
 				for (current_stream = 0; current_stream < ap->number_streams; current_stream++) {

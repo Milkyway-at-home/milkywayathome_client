@@ -13,4 +13,6 @@ extern const char *LS_STR[];
 
 int line_search(double* point, double initial_fitness, double* direction, int number_parameters, double** minimum, double* fitness, int *evaluations_done);
 
+void randomized_line_search(int number_parameters, double *point, double *step, int ls_evaluations, int ls_iterations, double **new_point, double *fitness);
+
 #endif

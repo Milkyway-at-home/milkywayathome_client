@@ -4,6 +4,7 @@
 #include "string.h"
 
 #include "line_search.h"
+#include "regression.h"
 #include "../evaluation/evaluator.h"
 #include "../util/io_util.h"
 
@@ -135,4 +136,45 @@ int line_search(double* point, double initial_fitness, double* direction, int nu
 
 	free(current_point);
 	return LS_SUCCESS;
+}
+
+
+void randomized_line_search(int number_parameters, double *point, double *step, int ls_evaluations, int ls_iterations, double **new_point, double *current_fitness) {
+	int i, j, k;
+	double *x, *y;
+	double a, b, c;
+	double a_error, b_error, c_error;
+	double center, error;
+	double *current;
+	double min_step = -1;
+	double max_step = 2;
+	x = malloc(sizeof(double) * ls_evaluations);
+	y = malloc(sizeof(double) * ls_evaluations);
+	current = malloc(sizeof(double) * number_parameters);
+
+	center = 0;
+	for (k = 0; k < number_parameters; k++) current[k] = point[k];
+	for (i = 0; i < ls_iterations; i++) {
+		for (j = 0; j < ls_evaluations; j++) {
+			x[j] = (drand48() * (max_step - min_step)) + min_step;
+			for (k = 0; k < number_parameters; k++) current[k] = point[k] - (x[j] * step[k]);
+			y[j] = evaluate(current);
+		}
+
+		parabolic_regression(ls_evaluations, x, y, &a, &b, &c, &a_error, &b_error, &c_error);
+		printf("a: %.20lf, b: %.20lf, c: %.20lf, a_err: %.20lf, b_err: %.20lf, c_err: %.20lf\n", a, b, c, a_error, b_error, c_error);
+
+		center = parabolic_center(a, b, c);
+		error = parabolic_center(a_error, b_error, c_error);
+		min_step = center - error;
+		max_step = center + error;
+		for (k = 0; k < number_parameters; k++) current[k] = point[k] - (center * step[k]);
+		(*current_fitness) = evaluate(current);
+		printf("line search iteration [%d], fitness: %.20lf, min/center/max: [%.20lf/%.20lf/%.20lf]\n\n", i, (*current_fitness), min_step, center, max_step);
+	}
+	(*new_point) = malloc(sizeof(double) * number_parameters);
+	for (k = 0; k < number_parameters; k++) (*new_point)[k] = current[k];
+	free(current);
+	free(x);
+	free(y);
 }

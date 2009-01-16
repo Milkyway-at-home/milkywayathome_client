@@ -32,7 +32,9 @@ int get_generation_rate();
 void init_search_manager(int argc, char** argv);
 void start_search_manager();
 
-void register_search(ASYNCHRONOUS_SEARCH as);
+void register_search(ASYNCHRONOUS_SEARCH* as);
+void print_registered_searches();
+
 int manage_search(char* search_name);
 int search_exists(char* search_name);
 

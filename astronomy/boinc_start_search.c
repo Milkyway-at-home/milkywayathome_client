@@ -10,6 +10,7 @@
 #include "../searches/asynchronous_newton_method.h"
 #include "../searches/search_parameters.h"
 #include "../util/settings.h"
+#include "../util/io_util.h"
 
 /********
 	*	Astronomy includes
@@ -17,6 +18,11 @@
 #include "../evaluation/boinc_add_workunit.h"
 #include "parameters.h"
 #include "star_points.h"
+
+/********
+	*	BOINC includes
+ ********/
+#include "util.h"
 
 
 void print_usage() {
@@ -38,17 +44,40 @@ void print_usage() {
 	exit(1);
 }
 
+
+void get_filename(char *filepath, char *filename) {
+	int i, length;
+	for (i = 0; i < (int)strlen(filepath); i++) {
+		if (filepath[i] == '/') break;
+	}
+	if (i == (int)strlen(filepath)) i = 0;
+	length = strlen(filepath) - i;
+	strncpy(filename, &(filepath[i]), length);
+	filename[length] = '\0';
+}
+
 int main(int argc, char** argv) {
-	int i, retval, app_specified;
-	char *search_name, *parameters_name, *stars_name, *search_qualifier, *outfile;
-	double *point, *step;
+	int i, retval, app_specified, nm_type, nm_line_search;
+	char *astronomy_name, *astronomy_path, *wu_astronomy_path;
+	char *star_name, *star_path, *wu_star_path;
+	char *search_name, *wu_info_file, *search_qualifier;
+	double *point, *step, *min_bound, *max_bound;
+
 	search_name = NULL;
-	parameters_name = NULL;
-	stars_name = NULL;
 	app_specified = 0;
 
 	printf("registering search\n");
-	register_search(asynchronous_newton_method);
+	register_search(get_asynchronous_newton_method());
+
+	astronomy_path = NULL;
+	astronomy_name = (char*)malloc(sizeof(char) * FILENAME_SIZE);
+	wu_astronomy_path = (char*)malloc(sizeof(char) * FILENAME_SIZE);
+	star_path = NULL;
+	star_name = (char*)malloc(sizeof(char) * FILENAME_SIZE);
+	wu_star_path = (char*)malloc(sizeof(char) * FILENAME_SIZE);
+	wu_info_file = (char*)malloc(sizeof(char) * FILENAME_SIZE);
+	nm_type = -1;
+	nm_line_search = 0;
 
         for (i = 0; i < argc; i++) {
 		if (!strcmp(argv[i], "-h")) {
@@ -62,16 +91,34 @@ int main(int argc, char** argv) {
 			search_name = (char*)malloc(sizeof(char) * SEARCH_NAME_SIZE);
 			strcpy(search_name, argv[++i]);
                 } else if (!strcmp(argv[i], "-mw_parameters")) {
-			parameters_name = (char*)malloc(sizeof(char) * FILENAME_SIZE);
-			strcpy(parameters_name, argv[++i]);
+			astronomy_path = (char*)malloc(sizeof(char) * FILENAME_SIZE);
+			strcpy(astronomy_path, argv[++i]);
+			get_filename(astronomy_path, astronomy_name);
 		} else if (!strcmp(argv[i], "-mw_stars")) {
-			stars_name = (char*)malloc(sizeof(char) * FILENAME_SIZE);
-			strcpy(stars_name, argv[++i]);
+			star_path = (char*)malloc(sizeof(char) * FILENAME_SIZE);
+			strcpy(star_path, argv[++i]);
+			get_filename(star_path, star_name);
 		} else if (!strcmp(argv[i], "-cwd")) {
 			set_working_directory(argv[++i]);
 		} else if (!strcmp(argv[i], "-app")) {
 			app_specified = 1;
 			i++;
+		} else if (!strcmp(argv[i], "-nm_type")) {
+			char nm_type_str[1024];
+			strcpy(nm_type_str, argv[++i]);
+			if (!strcmp(nm_type_str, "fixed_range")) {
+				nm_type = NEWTON_FIXED_RANGE;
+			} else if (!strcmp(nm_type_str, "error_range")) {
+				nm_type = NEWTON_ERROR_RANGE;
+			} else if (!strcmp(nm_type_str, "update_range")) {
+				nm_type = NEWTON_UPDATE_RANGE;
+			} else {
+				printf("Invalid newton type: %s\n", nm_type_str);
+				printf("valid types: fixed_range, error_range, random_line_search, parabolic_line_search\n");
+				exit(0);
+			}
+		} else if (!strcmp(argv[i], "-nm_line_search")) {
+			nm_line_search = 1;
 		}
         }
 
@@ -87,32 +134,45 @@ int main(int argc, char** argv) {
 		exit(0);
 	}
 	
+	printf("sending arguments to boinc search manager\n");
+	init_boinc_search_manager(argc, argv);
+
 	if (!search_exists(search_name)) {
-		if (parameters_name == NULL) {
-			fprintf(stderr, "ERROR: parameters file not specified, required for starting a new search.\n");
+		printf("search doesnt exist\n");
+
+		if (astronomy_path == NULL) {
+			fprintf(stderr, "[start search] parameters file not specified, required for starting a new search.\n");
 			print_usage();
 			exit(0);
 		}
-		if (stars_name == NULL) {
-			fprintf(stderr, "ERROR: stars file not specified, required for starting a new search.\n");
+		if (star_path == NULL) {
+			fprintf(stderr, "[start search] stars file not specified, required for starting a new search.\n");
 			print_usage();
 			exit(0);
 		}
 
 		ASTRONOMY_PARAMETERS *ap = (ASTRONOMY_PARAMETERS*)malloc(sizeof(ASTRONOMY_PARAMETERS));
-		retval = read_astronomy_parameters(parameters_name, ap);
+		retval = read_astronomy_parameters(astronomy_path, ap);
 		if (retval) {
 			fprintf(stderr, "ERROR: reading astronomy parameters\n");
 			exit(0);
 		}
 	        get_search_parameters(ap, &point);
 	        get_step(ap, &step);
+		get_min_parameters(ap, &min_bound);
+		get_max_parameters(ap, &max_bound);
 
 		get_qualifier_from_name(search_name, &search_qualifier);
 		printf("qualifier: %s\n", search_qualifier);
+
 		if (!strcmp(search_qualifier, "nm")) {
+			if (nm_type < 0) {
+				printf("Unspecified newton type:\n");
+				printf("valid types: fixed_range, error_range, random_line_search, parabolic_line_search\n");
+				exit(0);
+			}
 			printf("creating newton method...\n");
-			create_newton_method(search_name, 10, 300, ap->number_parameters, point, step);
+			create_newton_method(search_name, nm_type, nm_line_search, 100, 300, ap->number_parameters, point, step, min_bound, max_bound);
 			printf("created.\n");
 		} else if (!strcmp(search_qualifier, "gs")) {
 		} else if (!strcmp(search_qualifier, "de")) {
@@ -120,36 +180,104 @@ int main(int argc, char** argv) {
 		}
 		free(search_qualifier);
 
-		printf("copying parameters\n");
-		outfile = (char*)malloc(sizeof(char) * FILENAME_SIZE);
-		sprintf(outfile, "%s/%s/astronomy_parameters.txt", get_working_directory(), search_name);
-		retval = write_astronomy_parameters(outfile, ap);
-		if (retval) {
-			fprintf(stderr, "ERROR: writing astronomy parameters to search directory\n");
-			exit(0);
+		/********
+			*	Move input files
+		 ********/
+		if (!config.download_path(astronomy_name, wu_astronomy_path)) {
+			/********
+				*	Astronomy parameters not moved to the download diretory yet, do this.
+			********/
+			retval = write_astronomy_parameters(wu_astronomy_path, ap);
+			printf("[start search] copied [%s] to [%s]\n", astronomy_path, wu_astronomy_path);
+			if (retval) {
+				fprintf(stderr, "[start search] could not open parameter file for write: %s\n", astronomy_path);
+				exit(0);
+			}
+		} else {
+			printf("[start search] [%s] already existed at [%s]\n", astronomy_path, wu_astronomy_path);
 		}
-		free(outfile);
-		outfile = (char*)malloc(sizeof(char) * FILENAME_SIZE);
 
-		printf("copying stars\n");
 		STAR_POINTS *sp = (STAR_POINTS*)malloc(sizeof(STAR_POINTS));
-		retval = read_star_points(stars_name, sp);
+		retval = read_star_points(star_path, sp);
 		if (retval) {
-			fprintf(stderr, "ERROR: reading star points\n");
+			fprintf(stderr, "[start search] could not open star file for read: %s\n", star_path);
 			exit(0);
 		}
-		sprintf(outfile, "%s/%s/stars.txt", get_working_directory(), search_name);
-		retval = write_star_points(outfile, sp);
-		if (retval) {
-			fprintf(stderr, "ERROR: writing star points to search directory\n");
+		if (!config.download_path(star_name, wu_star_path)) {
+			/********   
+				*	Stars not moved to the download diretory yet, do this.
+			 ********/
+			retval = write_star_points(wu_star_path, sp);
+			printf("[start search] copied [%s] to [%s]\n", star_path, wu_star_path);
+			if (retval) {
+				fprintf(stderr, "[start search] could not open star file for write: %s\n", star_path);
+				exit(0);
+			}
+		} else {
+			printf("[start search] [%s] already existed at [%s]\n", star_path, wu_star_path);
+		}
+
+		/********
+			*	Create workunit info
+		 ********/
+		WORKUNIT_INFO *wu_info = (WORKUNIT_INFO*)malloc(sizeof(WORKUNIT_INFO));
+		double calc_prob_count;
+		double credit = ((double)ap->r_steps * (double)ap->mu_steps * (double)ap->nu_steps * (double)ap->convolve) + ((double)sp->number_stars * (double)ap->convolve);
+		for (i = 0; i < ap->number_cuts; i++) {
+			credit += (ap->r_cut[i][2] * ap->mu_cut[i][2] * ap->nu_cut[i][2] * (double)ap->convolve);
+		}
+		calc_prob_count = credit;
+		credit /= 270000000.0;
+
+		printf("awarded credit: %lf\n", credit);
+		wu_info->number_parameters = get_optimized_parameter_count(ap);
+		printf("number parameters: %d\n", wu_info->number_parameters);
+
+		wu_info->credit_str = (char*)malloc(sizeof(char) * 1024);
+		wu_info->result_xml_path = (char*)malloc(sizeof(char) * 1024);
+
+		sprintf(wu_info->credit_str, "<credit>%lf</credit>", credit);
+		sprintf(wu_info->result_xml_path, "/export/www/boinc/milkyway/templates/a_result.xml");
+
+		wu_info->template_filename = (char*)malloc(sizeof(char) * 1024);
+		sprintf(wu_info->template_filename, "/export/www/boinc/milkyway/templates/milkyway_wu.xml");
+		if (read_file_malloc(wu_info->template_filename, wu_info->template_file)) {
+			fprintf(stderr, "[start search] could not read workunit result template: %s\n", wu_info->template_filename);
 			exit(0);
 		}
-		free(outfile);
+
+		wu_info->number_required_files = 2;
+		wu_info->required_files = (char**)malloc(sizeof(char*) * 2);
+		wu_info->required_files[0] = (char*)malloc(sizeof(char) * 1024);
+		wu_info->required_files[1] = (char*)malloc(sizeof(char) * 1024);
+
+		strcpy(wu_info->required_files[0], astronomy_name);
+		strcpy(wu_info->required_files[1], star_name);
+
+		wu_info->rsc_fpops_est = calc_prob_count * (40 + (45 * ap->convolve) + ap->number_streams * (5 + ap->convolve * 30));
+		printf("calculated fpops: %lf\n", wu_info->rsc_fpops_est);
+
+		wu_info->rsc_fpops_bound = wu_info->rsc_fpops_est * 100;
+		wu_info->rsc_memory_bound = 5e8;
+		wu_info->rsc_disk_bound = 15e6;                      //15 MB
+		wu_info->delay_bound = 60 * 60 * 24 * 5;             //5 days
+		wu_info->min_quorum = 1;
+		wu_info->target_nresults = 1;
+		wu_info->max_error_results = 0;
+		wu_info->max_total_results = 4;
+		wu_info->max_success_results = 1;
+
+		sprintf(wu_info_file, "%s/%s/workunit_info", get_working_directory(), search_name);
+		retval = write_workunit_info(wu_info_file, wu_info);
+		if (retval) {
+			fprintf(stderr, "[start search] could not write workunit info: %s\n", wu_info_file);
+			exit(0);
+		}
+
+		free_parameters(ap);
+		free(ap);
+		free_star_points(sp);
+		free(sp);
 	}
-
-	printf("sending arguments to boinc search manager\n");
-	init_boinc_search_manager(argc, argv);
-
-	printf("generating workunits\n");
-	generate_workunits();
+	generate_search_workunits(search_name);
 }
