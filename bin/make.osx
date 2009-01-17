@@ -9,6 +9,7 @@ FRAMEWORKS_DIR = /System/Library/Frameworks
 VARIANTFLAGS = -DGMLE_BOINC
 
 CXXFLAGS_ALL = $(VARIANTFLAGS) \
+	-pedantic \
 	-g \
 	-DAPP_GRAPHICS \
 	-I$(BOINC_DIR) \

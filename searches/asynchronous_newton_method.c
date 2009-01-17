@@ -30,7 +30,7 @@ ASYNCHRONOUS_SEARCH* get_asynchronous_newton_method() {
 	return as;
 }
 
-int create_newton_method(char* search_name, int type, int line_search, int maximum_iteration, int evaluations_per_iteration, int number_parameters, double *point, double *range, double *min_bound, double *max_bound) {
+int create_newton_method(char* search_name, int type, int line_search, int remove_outliers, int maximum_iteration, int evaluations_per_iteration, int number_parameters, double *point, double *range, double *min_bound, double *max_bound) {
 	char search_directory[FILENAME_SIZE];
 	NEWTON_METHOD_SEARCH *nms;
 	int i = 0;
@@ -42,6 +42,7 @@ int create_newton_method(char* search_name, int type, int line_search, int maxim
 	nms = (NEWTON_METHOD_SEARCH*)malloc(sizeof(NEWTON_METHOD_SEARCH));
 
 	nms->type = type;
+	nms->remove_outliers = remove_outliers;
 	nms->current_iteration = 0;
 	nms->maximum_iteration = maximum_iteration;
 	nms->current_evaluation = 0;
@@ -151,18 +152,12 @@ int write_newton_method(char* search_name, void* search_data) {
 	int result;
 	NEWTON_METHOD_SEARCH *nms = (NEWTON_METHOD_SEARCH*)search_data;
 
-	printf("opening file\n");
-
 	sprintf(search_filename, "%s/%s/search", get_working_directory(), search_name);
 	search_file = fopen(search_filename, "w+");
 	if (search_file == NULL) return -1;
 
-	printf("writing newton method!\n");
-
 	fprintf(search_file, "type: %d\n", nms->type);
 	fprintf(search_file, "mode: %d\n", nms->mode);
-
-	printf("wrote type/mode\n");
 
 	print_double_array(stdout, "current_point", nms->number_parameters, nms->current_point);
 	print_double_array(stdout, "previous_point", nms->number_parameters, nms->previous_point);
@@ -178,12 +173,8 @@ int write_newton_method(char* search_name, void* search_data) {
 	print_double_array(search_file, "min_bound", nms->number_parameters, nms->min_bound);
 	print_double_array(search_file, "max_bound", nms->number_parameters, nms->max_bound);
 
-	printf("wrote double arrays\n");
-
 	fprintf(search_file, "current_iteration: %d, maximum_iteration: %d\n", nms->current_iteration, nms->maximum_iteration);
 	fprintf(search_file, "current_evaluation: %d, evaluations_per_iteration: %d\n", nms->current_evaluation, nms->evaluations_per_iteration);
-
-	printf("writing line search: %d\n", (nms->line_search != NULL));
 
 	fprintf(search_file, "line_search: %d\n", (nms->line_search != NULL));
 	if (nms->line_search != NULL) {
@@ -192,8 +183,6 @@ int write_newton_method(char* search_name, void* search_data) {
 		fprintf(search_file, "center: %lf, min_range: %lf, max_range: %lf\n", nms->line_search->center, nms->line_search->min_range, nms->line_search->max_range);
 	}
 	fclose(search_file);
-
-	printf("closed search file, writing population\n");
 
 	if (nms->line_search != NULL && nms->mode == NMS_LINE_SEARCH) {
 		sprintf(population_filename, "%s/%s/population_%d_ls_%d", get_working_directory(), search_name, nms->current_iteration, nms->line_search->iteration);
@@ -389,7 +378,7 @@ void iterate_line_search(NEWTON_METHOD_SEARCH *nms) {
 int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
 	NEWTON_METHOD_SEARCH *nms = (NEWTON_METHOD_SEARCH*)search_data;
 	POPULATION *p = nms->population;
-	int result, j;
+	int result, j, k;
 
 	/********
 		*	Insert parameters into population.  If cutoff reached, calculate hessian
@@ -424,7 +413,15 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 
 				fwrite_population_statistics(logfile, nms->population);
 
-				remove_outliers(p, 2.0);
+				if (nms->remove_outliers > 0) {
+					for (j = 0; j < p->size; j++) {
+						for (k = 0; k < p->number_parameters; k++) p->individuals[j][k] -= nms->current_point[k];
+					}
+					remove_outliers(p, 2.0);
+					for (j = 0; j < p->size; j++) {
+						for (k = 0; k < p->number_parameters; k++) p->individuals[j][k] += nms->current_point[k];
+					}
+				}
 
 				fwrite_population_statistics(logfile, nms->population);
 				fclose(logfile);

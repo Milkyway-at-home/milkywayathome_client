@@ -178,7 +178,6 @@ int generate_workunits() {
 		if (searches[i]->completed) count_completed++;
                 generated = (generation_rate - current) / ((number_searches - number_completed) - (i - count_completed));
 		initial = current;
-		scope_messages.printf("[%s] Attempting to generate %d workunits.\n", searches[i]->search_name, generated);
                 for (j = 0; j < generated; j++) {
 			result = searches[i]->search->generate_parameters(searches[i]->search_name, searches[i]->search_data, gen_sp[i]);
 			if (result != AS_GEN_SUCCESS) {
@@ -232,7 +231,7 @@ int insert_workunit(WORKUNIT& wu, vector<RESULT>& /*results*/, RESULT& canonical
 			int pos;
 			pos = manage_search(insert_sp->search_name);
 			if (pos < 0) {
-		   		scope_messages.printf("[%-18s] [%-110s][%-25s] trip/cpu[%*d/%*.2lf], u/h[%*d/%*d]\n", insert_sp->search_name, wu.name, "unknown search", 6, trip_time, 8, cpu_time, 6, userid, 6, hostid);
+		   		scope_messages.printf("[%-18s] [%-120s][%-25s] trip/cpu[%*d/%*.2lf], u/h[%*d/%*d]\n", insert_sp->search_name, wu.name, "unknown search", 6, trip_time, 8, cpu_time, 6, userid, 6, hostid);
 				return 1;
 			}
 			ms = searches[pos];
@@ -240,7 +239,7 @@ int insert_workunit(WORKUNIT& wu, vector<RESULT>& /*results*/, RESULT& canonical
 		}
 
 		result = ms->search->insert_parameters(ms->search_name, ms->search_data, insert_sp);
-   		scope_messages.printf("[%-18s] [%-110s][%-25s] trip/cpu[%*d/%*.2lf], u/h[%*d/%*d]\n", insert_sp->search_name, AS_MSG, AS_INSERT_STR[result], 6, trip_time, 8, cpu_time, 6, userid, 6, hostid);
+   		scope_messages.printf("[%-18s] [%-120s][%-25s] trip/cpu[%*d/%*.2lf], u/h[%*d/%*d]\n", insert_sp->search_name, AS_MSG, AS_INSERT_STR[result], 6, trip_time, 8, cpu_time, 6, userid, 6, hostid);
 		AS_MSG[0] = '\0';
 	} else {
 		scope_messages.printf("[%-18s] No canonical result\n", wu.name);
@@ -324,7 +323,6 @@ void start_search_manager() {
 				{
 					SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
 					for (i = 0; i < number_searches; i++) {
-						scope_messages.printf("[%-18s] beginning checkpoint\n", searches[i]->search_name);
 						retval = searches[i]->search->checkpoint_search(searches[i]->search_name, searches[i]->search_data);
 						scope_messages.printf("[%-18s] checkpointed with result: [%s], msg: [%s]\n", searches[i]->search_name, AS_CP_STR[retval], AS_MSG);
 						if (retval == AS_CP_OVER) searches[i]->completed = 1;
