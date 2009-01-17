@@ -563,7 +563,6 @@ void split_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, int rank, int max_rank
 		}
 
 		fwrite_astronomy_parameters(data_file, ap);
-		fprintf(data_file, "stock\n");
 		fclose(data_file);
 		return 0;
 	}

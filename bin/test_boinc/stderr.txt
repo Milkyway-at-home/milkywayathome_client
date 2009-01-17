@@ -1,3 +1,8 @@
-Can't acquire lockfile - exiting
-Can't acquire lockfile - exiting
-Can't acquire lockfile - exiting
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+called boinc_finish
+shmget in attach_shmem: Invalid argument
+Can't set up shared mem: -1
+Will run in standalone mode.
+called boinc_finish

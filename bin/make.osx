@@ -1,4 +1,4 @@
-APP_VERSION = 0.7
+APP_VERSION = 0.9
 
 BOINC_DIR = /Users/deselt/Research/software/boinc
 BOINC_API_DIR = $(BOINC_DIR)/api
@@ -9,8 +9,10 @@ FRAMEWORKS_DIR = /System/Library/Frameworks
 VARIANTFLAGS = -DGMLE_BOINC
 
 CXXFLAGS_ALL = $(VARIANTFLAGS) \
-	-pedantic \
 	-g \
+	-fexpensive-optimizations \
+	-pipe \
+	-frename-registers \
 	-DAPP_GRAPHICS \
 	-I$(BOINC_DIR) \
 	-I$(BOINC_DIR)/clientgui/mac/ \
