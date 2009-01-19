@@ -81,7 +81,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
-double alpha, q, r0, delta, coeff, alpha_neg, alpha_delta3;
+double alpha, q, r0, delta, coeff, alpha_delta3;
 double *qgaus_X, *qgaus_W, **xyz, *dx;
 double **stream_a, **stream_c, *stream_sigma;
 
@@ -98,11 +98,10 @@ void init_constants(ASTRONOMY_PARAMETERS *ap) {
 		stream_c	= (double**)malloc(sizeof(double*) * ap->number_streams);	
 
 		alpha	= ap->background_parameters[0];
-		alpha_neg = -alpha;
 		q	= ap->background_parameters[1];
 		r0	= ap->background_parameters[2];
 		delta	= ap->background_parameters[3];
-		alpha_delta3 = alpha - delta - 3.0;
+		alpha_delta3 = 3 - alpha + delta;
 		coeff	= 1 / (stdev * sqrt(2*pi));
 
 
@@ -210,8 +209,7 @@ void calculate_probabilities(double *r_point, double *r3, double *N, double reff
 
 			/* background probability */
 			rg = sqrt(xyz[i][0]*xyz[i][0] + xyz[i][1]*xyz[i][1] + (xyz[i][2]/q)*(xyz[i][2]/q));
-			pbx = pow(rg, alpha_neg) * pow(rg + r0, alpha_delta3);
-//			pbx = 1 / (pow(rg, alpha) * pow(rg + r0, 3 - alpha + delta));
+			pbx = 1 / (pow(rg, alpha) * pow(rg + r0, 3 - alpha + delta));
 
 			(*bg_prob) += qgaus_W[i] * pbx * r3[i] * N[i];
 		}
