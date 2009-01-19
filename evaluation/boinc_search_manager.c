@@ -253,13 +253,13 @@ int insert_workunit(WORKUNIT& wu, vector<RESULT>& /*results*/, RESULT& canonical
 		else if (host.os_name[0] = 'D') sprintf(insert_sp->host_os, "Darwin");
 		else if (host.os_name[0] = 'L') sprintf(insert_sp->host_os, "Linux");
 		else sprintf(insert_sp->host_os, "?");
-//		sprintf(insert_sp->host_os, "%s %s", host.os_name, host.os_version);
 
-		printf("SET VERSION: %s, OS: %s\n", insert_sp->app_version, insert_sp->host_os);
+//		printf("SET VERSION: %s, OS: %s\n", insert_sp->app_version, insert_sp->host_os);
 
 		result = ms->search->insert_parameters(ms->search_name, ms->search_data, insert_sp);
-		scope_messages.printf("[%-18s] [%-120s][%-25s] v[%-2d:%10s] [%-45s]\n", insert_sp->search_name, AS_MSG, AS_INSERT_STR[result], v_num, version, host.os_name);
-//		scope_messages.printf("[%-18s] [%-120s][%-25s] v[%-2d:%10s] trip/cpu[%*d/%*.2lf] u/h[%*d/%*d]\n", insert_sp->search_name, AS_MSG, AS_INSERT_STR[result], v_num, version, 6, trip_time, 8, cpu_time, 6, userid, 6, hostid);
+
+//		scope_messages.printf("[%-18s] [%-120s][%-25s] v[%-2d:%10s] [%-45s]\n", insert_sp->search_name, AS_MSG, AS_INSERT_STR[result], v_num, version, host.os_name);
+		scope_messages.printf("[%-18s] [%-120s][%-25s] v[%-2d:%10s] trip/cpu[%*d/%*.2lf] u/h[%*d/%*d]\n", insert_sp->search_name, AS_MSG, AS_INSERT_STR[result], v_num, insert_sp->app_version, 6, trip_time, 8, cpu_time, 6, userid, 6, hostid);
 //		scope_messages.printf("[%-18s] [%-120s][%-25s] time[%*d/%*.2lf] u/h[%*d/%*d] v[%3d] OS[%s]\n", insert_sp->search_name, AS_MSG, AS_INSERT_STR[result], 6, trip_time, 8, cpu_time, 6, userid, 6, hostid, v_num, host.os_name);
 		AS_MSG[0] = '\0';
 	} else {

@@ -1,4 +1,5 @@
-APP_VERSION = 0.9
+APP_VERSION = 0.11
+APP_NAME = stock_osx
 
 BOINC_DIR = /Users/deselt/Research/software/boinc
 BOINC_API_DIR = $(BOINC_DIR)/api
@@ -6,13 +7,10 @@ BOINC_LIB_DIR = $(BOINC_DIR)/lib
 BOINC_LIB_LINK_DIR = $(BOINC_DIR)/mac_build/build/Deployment
 FRAMEWORKS_DIR = /System/Library/Frameworks
 
-VARIANTFLAGS = -DGMLE_BOINC
+VARIANTFLAGS = -DGMLE_BOINC -DBOINC_APP_NAME='"$(APP_NAME)"' -DBOINC_APP_VERSION=$(APP_VERSION)
 
 CXXFLAGS_ALL = $(VARIANTFLAGS) \
 	-g \
-	-fexpensive-optimizations \
-	-pipe \
-	-frename-registers \
 	-DAPP_GRAPHICS \
 	-I$(BOINC_DIR) \
 	-I$(BOINC_DIR)/clientgui/mac/ \
@@ -43,7 +41,7 @@ CXX_x86_64 = /usr/bin/g++-4.0
 CXXFLAGS_x86_64 = -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.5.sdk \
 	-mmacosx-version-min=10.5 \
 	$(CXXFLAGS_ALL) \
-	-O2 -mfpmath=sse -mtune=nocona -msse2 \
+	-O2 -mfpmath=sse -march=nocona -msse2 \
 	-ftree-vectorize -funroll-loops
 LDFLAGS_x86_64 = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.5.sdk,-arch,x86_64
 
