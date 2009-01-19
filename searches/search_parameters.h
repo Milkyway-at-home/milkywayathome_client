@@ -9,6 +9,8 @@ typedef struct search_parameters {
 	int number_parameters;
 	double* parameters;
 	char* metadata;
+	char app_version[128];
+	char host_os[256];
 
 	int has_result;
 	double fitness;
@@ -26,6 +28,7 @@ int write_search_parameters(const char* filename, SEARCH_PARAMETERS *parameters)
 
 #ifdef GMLE_BOINC
 	int boinc_read_search_parameters(const char* filename, SEARCH_PARAMETERS* parameters);
+	int boinc_read_search_parameters2(const char* filename, SEARCH_PARAMETERS* parameters, char* version);
 	int boinc_write_search_parameters(const char* filename, SEARCH_PARAMETERS* parameters, double fitness);
 #endif
 

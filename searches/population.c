@@ -18,6 +18,13 @@ int new_population(int max_size, int number_parameters, POPULATION** population)
 	(*population)->number_parameters = number_parameters;
 	(*population)->individuals = (double**)malloc(sizeof(double*) * max_size);
 	for (i = 0; i < (*population)->max_size; i++) (*population)->individuals[i] = NULL;
+
+	(*population)->os_names = (char**)malloc(sizeof(char*) * max_size);
+	for (i = 0; i < (*population)->max_size; i++) (*population)->os_names[i] = NULL;
+
+	(*population)->app_versions = (char**)malloc(sizeof(char*) * max_size);
+	for (i = 0; i < (*population)->max_size; i++) (*population)->app_versions[i] = NULL;
+
 	(*population)->fitness = (double*)malloc(sizeof(double) * max_size);
 
 	return 1;
@@ -91,12 +98,31 @@ void insert_incremental(POPULATION* population, double* parameters, double fitne
 	population->size++;
 }
 
+void insert_incremental_info(POPULATION* population, double* parameters, double fitness, char* os_name, char* app_version) {
+	if (population->size == population->max_size) return;
+
+	if (population->individuals[population->size] == NULL) population->individuals[population->size] = (double*)malloc(sizeof(double) * population->number_parameters);
+	memcpy(population->individuals[population->size], parameters, sizeof(double) * population->number_parameters);
+
+	if (population->app_versions[population->size] == NULL) population->app_versions[population->size] = (char*)malloc(sizeof(char) * 512);
+	sprintf(population->app_versions[population->size], "%s", app_version);
+
+	if (population->os_names[population->size] == NULL) population->os_names[population->size] = (char*)malloc(sizeof(char) * 512);
+	sprintf(population->os_names[population->size], "%s", os_name);
+
+
+	population->fitness[population->size] = fitness;
+	population->size++;
+}
+
 void remove_incremental(POPULATION* population, int position) {
 	int i, j;
 	for (i = position; i < population->size-1; i++) {
 		population->fitness[i] = population->fitness[i+1];
 		for (j = 0; j < population->number_parameters; j++) {
 			population->individuals[i][j] = population->individuals[i+1][j];
+			if (population->os_names[i] != NULL && population->os_names[i+1] != NULL) sprintf(population->os_names[i], population->os_names[i+1]);
+			if (population->app_versions[i] != NULL && population->app_versions[i+1] != NULL) sprintf(population->app_versions[i], population->app_versions[i+1]);
 		}
 	}
 	free(population->individuals[i]);
@@ -182,6 +208,7 @@ int fread_population(FILE* file, POPULATION **population) {
 		for (j = 0; j < number_parameters; j++) {
 			fscanf(file, " %lf", &((*population)->individuals[position][j]));
 		}
+		fscanf(file, ", %s, %s", &((*population)->app_versions[position]), &((*population)->os_names[position]));
 		fscanf(file, "\n");
 	}
 	(*population)->size = size;
@@ -205,7 +232,7 @@ int fwrite_individual(FILE *file, POPULATION *population, int position) {
 	for (j = 0; j < population->number_parameters; j++) {
 		fprintf(file, " %.20lf", population->individuals[position][j]);
 	}
-	fprintf(file, "\n");
+	fprintf(file, ", %s, %s\n", population->app_versions[position], population->os_names[position]);
 	return 0;
 }
 
@@ -232,21 +259,4 @@ int write_population(char *filename, POPULATION *population) {
 	result = fwrite_population(file, population);
 	fclose(file);
 	return result;
-}
-
-void fwrite_population_statistics(FILE* file, POPULATION *population) {
-	double min_fitness, avg_fitness, max_fitness;
-	int i;
-
-	min_fitness = population->fitness[0];
-	max_fitness = population->fitness[0];
-	avg_fitness = 0;
-	for (i = 0; i < population->size; i++) {
-		avg_fitness += population->fitness[i];
-		if (min_fitness > population->fitness[i]) min_fitness = population->fitness[i];
-		else if (max_fitness < population->fitness[i]) max_fitness = population->fitness[i];
-	}
-	avg_fitness /= population->size;
-
-	fprintf(file, "min: %lf, avg: %lf, max: %lf\n", min_fitness, avg_fitness, max_fitness);
 }

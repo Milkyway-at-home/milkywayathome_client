@@ -25,7 +25,7 @@ typedef struct line_search {
 } LINE_SEARCH;
 
 typedef struct newton_method_search {
-	int type, mode;
+	int type, mode, remove_outliers;
 
 	int number_parameters;
 	double *current_point, *previous_point;
@@ -43,7 +43,7 @@ typedef struct newton_method_search {
 
 ASYNCHRONOUS_SEARCH* get_asynchronous_newton_method();
 
-int create_newton_method(char* search_name, int type, int line_search, int maximum_iteration, int evaluations_per_iteration, int number_parameters, double *point, double *range, double* min_bound, double* max_bound);
+int create_newton_method(char* search_name, int type, int line_search, int remove_outliers, int maximum_iteration, int evaluations_per_iteration, int number_parameters, double *point, double *range, double* min_bound, double* max_bound);
 int read_newton_method(char* search_name, void** search_data);
 int checkpoint_newton_method(char* search_name, void* search_data);
 int newton_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS *sp);

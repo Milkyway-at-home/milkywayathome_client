@@ -200,18 +200,21 @@ void generate_search_workunits(char *search_name) {
 }
 
 int insert_workunit(WORKUNIT& wu, vector<RESULT>& /*results*/, RESULT& canonical_result) {
-	int result, hostid, userid;
+	int result, hostid, userid, retval;
 	string output_file_name;
 	int sent_time, received_time, trip_time;
 	double cpu_time;
+	int v_num;
+	char version[512];
 	SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
+	DB_HOST host;
 
 	if (wu.canonical_resultid) {
 		MANAGED_SEARCH *ms;
 		log_messages.printf_multiline(SCHED_MSG_LOG::MSG_DEBUG, canonical_result.xml_doc_out, "[%s] canonical result", wu.name);
 
 		get_output_file_path(canonical_result, output_file_name);
-		result = boinc_read_search_parameters(output_file_name.c_str(), insert_sp);
+		result = boinc_read_search_parameters2(output_file_name.c_str(), insert_sp, version);
 		if (result != 0) {
 			scope_messages.printf("[%-18s] could not read search parameters file: [%s]\n", wu.name, output_file_name.c_str());
 			return result;
@@ -223,23 +226,41 @@ int insert_workunit(WORKUNIT& wu, vector<RESULT>& /*results*/, RESULT& canonical
 		sent_time = canonical_result.sent_time;
 		received_time = canonical_result.received_time;
 		trip_time = received_time - sent_time;
+		v_num = canonical_result.app_version_num;
 
 		ms = get_search(insert_sp->search_name);
 
-//		scope_messages.printf("[%-18s] Inserting workunit.\n", insert_sp->search_name);
+		retval = host.lookup_id(hostid);
+		if (retval) {
+			log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[RESULT#%d] lookup of host %d failed %d\n", canonical_result.id, canonical_result.hostid, retval);
+			return retval;   
+		}
+
+//		scope_messages.printf("[%-18s] OS[%s -- %s] CPU[%s -- %s]\n", insert_sp->search_name, host.os_name, host.os_version, host.p_vendor, host.p_model);
 		if (ms == NULL) {
 			int pos;
 			pos = manage_search(insert_sp->search_name);
 			if (pos < 0) {
-		   		scope_messages.printf("[%-18s] [%-120s][%-25s] trip/cpu[%*d/%*.2lf], u/h[%*d/%*d]\n", insert_sp->search_name, wu.name, "unknown search", 6, trip_time, 8, cpu_time, 6, userid, 6, hostid);
+		   		scope_messages.printf("[%-18s] [%-120s][%-25s] v[%-2d:%10s] trip/cpu[%*d/%*.2lf] u/h[%*d/%*d]\n", insert_sp->search_name, wu.name, "unknown search", v_num, version, 6, trip_time, 8, cpu_time, 6, userid, 6, hostid);
 				return 1;
 			}
 			ms = searches[pos];
 			update_workunit_info(pos);
 		}
 
+		sprintf(insert_sp->app_version, "%s", version);
+		if (host.os_name[0] = 'M') sprintf(insert_sp->host_os, "Windows");
+		else if (host.os_name[0] = 'D') sprintf(insert_sp->host_os, "Darwin");
+		else if (host.os_name[0] = 'L') sprintf(insert_sp->host_os, "Linux");
+		else sprintf(insert_sp->host_os, "?");
+//		sprintf(insert_sp->host_os, "%s %s", host.os_name, host.os_version);
+
+		printf("SET VERSION: %s, OS: %s\n", insert_sp->app_version, insert_sp->host_os);
+
 		result = ms->search->insert_parameters(ms->search_name, ms->search_data, insert_sp);
-   		scope_messages.printf("[%-18s] [%-120s][%-25s] trip/cpu[%*d/%*.2lf], u/h[%*d/%*d]\n", insert_sp->search_name, AS_MSG, AS_INSERT_STR[result], 6, trip_time, 8, cpu_time, 6, userid, 6, hostid);
+		scope_messages.printf("[%-18s] [%-120s][%-25s] v[%-2d:%10s] [%-45s]\n", insert_sp->search_name, AS_MSG, AS_INSERT_STR[result], v_num, version, host.os_name);
+//		scope_messages.printf("[%-18s] [%-120s][%-25s] v[%-2d:%10s] trip/cpu[%*d/%*.2lf] u/h[%*d/%*d]\n", insert_sp->search_name, AS_MSG, AS_INSERT_STR[result], v_num, version, 6, trip_time, 8, cpu_time, 6, userid, 6, hostid);
+//		scope_messages.printf("[%-18s] [%-120s][%-25s] time[%*d/%*.2lf] u/h[%*d/%*d] v[%3d] OS[%s]\n", insert_sp->search_name, AS_MSG, AS_INSERT_STR[result], 6, trip_time, 8, cpu_time, 6, userid, 6, hostid, v_num, host.os_name);
 		AS_MSG[0] = '\0';
 	} else {
 		scope_messages.printf("[%-18s] No canonical result\n", wu.name);

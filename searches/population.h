@@ -11,6 +11,8 @@ typedef struct population {
 	int number_parameters;
 	double** individuals;
 	double* fitness;
+	char** os_names;
+	char** app_versions;
 } POPULATION;
 
 int fread_population(FILE* file, POPULATION** p);
@@ -30,6 +32,7 @@ void get_population_statistics(POPULATION *p, double *best_point, double *best_f
 int population_contains(POPULATION* population, double fitness, double *point);
 
 void insert_incremental(POPULATION* population, double* parameters, double fitness);
+void insert_incremental_info(POPULATION* population, double* parameters, double fitness, char *os_name, char *app_version);
 void remove_incremental(POPULATION* population, int position);
 
 void insert_sorted(POPULATION* population, double* parameters, double fitness);

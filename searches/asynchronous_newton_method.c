@@ -112,6 +112,7 @@ int read_newton_method(char* search_name, void** search_data) {
 	fscanf(search_file, "current_iteration: %d, maximum_iteration: %d\n", &((*nms)->current_iteration), &((*nms)->maximum_iteration));
 	fscanf(search_file, "current_evaluation: %d, evaluations_per_iteration: %d\n", &((*nms)->current_evaluation), &((*nms)->evaluations_per_iteration));
 
+	fscanf(search_file, "remove_outliers: %d\n", &((*nms)->remove_outliers));
 	fscanf(search_file, "line_search: %d\n", &line_search);
 	if (line_search) {
 		LINE_SEARCH *ls;
@@ -159,13 +160,6 @@ int write_newton_method(char* search_name, void* search_data) {
 	fprintf(search_file, "type: %d\n", nms->type);
 	fprintf(search_file, "mode: %d\n", nms->mode);
 
-	print_double_array(stdout, "current_point", nms->number_parameters, nms->current_point);
-	print_double_array(stdout, "previous_point", nms->number_parameters, nms->previous_point);
-	print_double_array(stdout, "direction", nms->number_parameters, nms->direction);
-	print_double_array(stdout, "parameter_range", nms->number_parameters, nms->parameter_range);
-	print_double_array(stdout, "min_bound", nms->number_parameters, nms->min_bound);
-	print_double_array(stdout, "max_bound", nms->number_parameters, nms->max_bound);
-
 	print_double_array(search_file, "current_point", nms->number_parameters, nms->current_point);
 	print_double_array(search_file, "previous_point", nms->number_parameters, nms->previous_point);
 	print_double_array(search_file, "direction", nms->number_parameters, nms->direction);
@@ -176,6 +170,7 @@ int write_newton_method(char* search_name, void* search_data) {
 	fprintf(search_file, "current_iteration: %d, maximum_iteration: %d\n", nms->current_iteration, nms->maximum_iteration);
 	fprintf(search_file, "current_evaluation: %d, evaluations_per_iteration: %d\n", nms->current_evaluation, nms->evaluations_per_iteration);
 
+	fprintf(search_file, "remove_outliers: %d\n", nms->remove_outliers);
 	fprintf(search_file, "line_search: %d\n", (nms->line_search != NULL));
 	if (nms->line_search != NULL) {
 		fprintf(search_file, "iteration: %d, max_iteration: %d\n", nms->line_search->iteration, nms->line_search->max_iteration);
@@ -264,7 +259,7 @@ int verify(NEWTON_METHOD_SEARCH* nms, SEARCH_PARAMETERS* sp) {
 
 	if (isnan(sp->fitness)) {
 		return AS_INSERT_FITNESS_NAN;
-	} else if (sp->fitness >= -2.9) {
+	} else if (sp->fitness >= -2.8) {
 		return AS_INSERT_FITNESS_INVALID;
 	}
 
@@ -395,7 +390,8 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 		result = verify(nms, sp);
 		if (result != 0) return result;
 
-		insert_incremental(p, sp->parameters, sp->fitness);
+		insert_incremental_info(p, sp->parameters, sp->fitness, sp->host_os, sp->app_version);
+//		insert_incremental(p, sp->parameters, sp->fitness);
 		nms->current_evaluation++;
 
 		if (nms->current_evaluation >= nms->evaluations_per_iteration) {
@@ -405,13 +401,13 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 				/********
 					*	Remove any outliers.
 				 ********/
-				FILE *logfile;
+				double *best_point, best_fitness, average_fitness, worst_fitness, standard_deviation;
+				best_point = (double*)malloc(sizeof(double) * nms->number_parameters);
 
 				write_newton_method(search_name, nms);
 
-				logfile = log_open(search_name);
-
-				fwrite_population_statistics(logfile, nms->population);
+				get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
+				log_printf(search_name, "best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);
 
 				if (nms->remove_outliers > 0) {
 					for (j = 0; j < p->size; j++) {
@@ -421,10 +417,10 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 					for (j = 0; j < p->size; j++) {
 						for (k = 0; k < p->number_parameters; k++) p->individuals[j][k] += nms->current_point[k];
 					}
+					get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
+					log_printf(search_name, "OUTLIERS REMOVED: best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);
 				}
-
-				fwrite_population_statistics(logfile, nms->population);
-				fclose(logfile);
+				free(best_point);
 
 				if (nms->line_search != NULL) {
 					if (nms->mode == NMS_LINE_SEARCH) {
@@ -479,7 +475,6 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 
 				log_print_double_array(search_name, "current_point", nms->number_parameters, nms->current_point);
 				log_print_double_array(search_name, "direction", nms->number_parameters, nms->direction);
-				fwrite_population_statistics(log_open(search_name), nms->population);
 				log_printf(search_name, "\n");
 			}
 		}

@@ -1,4 +1,5 @@
-APP_VERSION = 0.8
+APP_VERSION = 0.10
+APP_NAME = stock
 
 BOINC_DIR = /software/boinc-6.3.14-0/pkg/include/boinc
 BOINC_API_DIR = $(BOINC_DIR)/api
@@ -7,15 +8,9 @@ BOINC_LINK_DIR = /projects/wcl/software/boinc
 BOINC_LIB_LINK_DIR = $(BOINC_LINK_DIR)/lib
 BOINC_API_LINK_DIR = $(BOINC_LINK_DIR)/api
 
-VARIANTFLAGS = -DGMLE_BOINC
+VARIANTFLAGS = -DGMLE_BOINC -DBOINC_APP_VERSION=$(APP_VERSION) -DBOINC_APP_NAME='"$(APP_NAME)"'
 
 CXXFLAGS_ALL = $(VARIANTFLAGS) \
-	-pedantic \
-	-pipe \
-	-frename-registers \
-	-fweb \
-	-fexpensive-optimizations \
-	-fno-strict-aliasing \
 	-funroll-loops \
 	-g \
 	-O \

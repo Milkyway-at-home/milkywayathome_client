@@ -57,7 +57,7 @@ void get_filename(char *filepath, char *filename) {
 }
 
 int main(int argc, char** argv) {
-	int i, retval, app_specified, nm_type, nm_line_search;
+	int i, retval, app_specified, nm_type, nm_line_search, nm_remove_outliers;
 	char *astronomy_name, *astronomy_path, *wu_astronomy_path;
 	char *star_name, *star_path, *wu_star_path;
 	char *search_name, *wu_info_file, *search_qualifier;
@@ -78,6 +78,7 @@ int main(int argc, char** argv) {
 	wu_info_file = (char*)malloc(sizeof(char) * FILENAME_SIZE);
 	nm_type = -1;
 	nm_line_search = 0;
+	nm_remove_outliers = 0;
 
         for (i = 0; i < argc; i++) {
 		if (!strcmp(argv[i], "-h")) {
@@ -119,6 +120,8 @@ int main(int argc, char** argv) {
 			}
 		} else if (!strcmp(argv[i], "-nm_line_search")) {
 			nm_line_search = 1;
+		} else if (!strcmp(argv[i], "-nm_remove_outliers")) {
+			nm_remove_outliers = 1;
 		}
         }
 
@@ -172,7 +175,7 @@ int main(int argc, char** argv) {
 				exit(0);
 			}
 			printf("creating newton method...\n");
-			create_newton_method(search_name, nm_type, nm_line_search, 100, 300, ap->number_parameters, point, step, min_bound, max_bound);
+			create_newton_method(search_name, nm_type, nm_line_search, nm_remove_outliers, 100, 1000, ap->number_parameters, point, step, min_bound, max_bound);
 			printf("created.\n");
 		} else if (!strcmp(search_qualifier, "gs")) {
 		} else if (!strcmp(search_qualifier, "de")) {

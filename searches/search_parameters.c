@@ -151,6 +151,41 @@ int write_search_parameters(const char* filename, SEARCH_PARAMETERS *parameters)
 		}
 		retval = fread_search_parameters(data_file, parameters);
 		fscanf(data_file, "fitness: %lf\n", &(parameters->fitness));
+
+		fclose(data_file);
+		return retval;
+	}
+	int boinc_read_search_parameters2(const char* filename, SEARCH_PARAMETERS* parameters, char* version) {
+		char input_path[512];
+		char v_str[64];
+		double v;
+		int retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
+		if (retval) {
+			fprintf(stderr, "APP: error resolving search parameters file (for read): %d\n", retval);
+			fprintf(stderr, "\tfilename: %s\n", filename);
+			fprintf(stderr, "\tresolved input path: %s\n", input_path);
+			return retval;
+		}
+
+		FILE* data_file = boinc_fopen(input_path, "r");
+		if (data_file == NULL) {
+			fprintf(stderr, "APP: error reading search parameters file (for read): data_file == NULL\n");
+			return 1;
+		}
+		retval = fread_search_parameters(data_file, parameters);
+		fscanf(data_file, "fitness: %lf\n", &(parameters->fitness));
+
+		v = 0.0;
+		if (fscanf(data_file, "%s %lf\n", v_str, &v) == 2) {
+			if (strcmp(v_str, "stock:")) {
+				sprintf(version, "nonstock");
+			} else {
+				sprintf(version, "%s%1.1lf", v_str, v);
+			}
+		} else {
+			sprintf(version, "?");
+		}
+
 		fclose(data_file);
 		return retval;
 	}
@@ -168,7 +203,11 @@ int write_search_parameters(const char* filename, SEARCH_PARAMETERS *parameters)
 		FILE* data_file = boinc_fopen(output_path, "w");
 		retval = fwrite_search_parameters(data_file, parameters);
 		fprintf(data_file, "fitness: %0.15lf\n", fitness);
-		fprintf(data_file, "stock: 0.9\n");
+#ifdef BOINC_APP_NAME
+#ifdef BOINC_APP_VERSION
+		fprintf(data_file, "%s: %1.2lf\n", BOINC_APP_NAME, BOINC_APP_VERSION);
+#endif
+#endif
 		fclose(data_file);
 		return retval;
 	}
