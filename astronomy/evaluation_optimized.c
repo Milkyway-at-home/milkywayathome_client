@@ -272,10 +272,10 @@ double calculate_progress(EVALUATION_STATE *s) {
 void calculate_integral_unconvolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_STATE *es) {
 	int i;
 	double bg_prob, st_prob, V;
-	double *ir, *r_unconvolved;
+	double *irv, *r_unconvolved;
 	double integral_point[3];
 
-	ir = (double*)malloc(sizeof(double) * ia->r_steps);
+	irv = (double*)malloc(sizeof(double) * ia->r_steps);
 	r_unconvolved	= (double*)malloc(sizeof(double) * ia->r_steps);
 	
 	double rPrime, log_r, r, next_r;
@@ -284,7 +284,7 @@ void calculate_integral_unconvolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia,
 		r	=	pow(10.0, (log_r-14.2)/5.0);
 		next_r	=	pow(10.0, (log_r + ia->r_step_size - 14.2)/5.0);
 
-		ir[i]	= ((next_r * next_r * next_r) - (r * r * r))/3.0;
+		irv[i]	= (((next_r * next_r * next_r) - (r * r * r))/3.0) * ia->mu_step_size / deg;
 		rPrime	= (next_r+r)/2.0;
 
 		r_unconvolved[i] = rPrime;
@@ -353,10 +353,10 @@ void calculate_integral_unconvolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia,
 						xyz[2] = r + (0.5 * ia->r_step_size);
 						xyz2lbr(xyz, integral_point);
 					} else {
-						V = ir[ia->r_step_current] * id * ia->mu_step_size / deg;
+						V = irv[ia->r_step_current] * id;
 					}
 				#else
-					V = ir[ia->r_step_current] * id * ia->mu_step_size / deg;
+					V = irv[ia->r_step_current] * id;
 				#endif
 
 				integral_point[2] = r_unconvolved[ia->r_step_current];
@@ -373,18 +373,18 @@ void calculate_integral_unconvolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia,
 	}
 	ia->mu_step_current = 0;
 
-	free(ir);
+	free(irv);
 	free(r_unconvolved);
 }
 
 void calculate_integral_convolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_STATE *es) {
 	int i;
 	double bg_prob, *st_probs, V;
-	double *ir;
+	double *irv;
 	double *rPrime3, *reff_value, **N, **r3, **r_point;
 	double integral_point[3];
 
-	ir		= (double*)malloc(sizeof(double) * ia->r_steps);
+	irv		= (double*)malloc(sizeof(double) * ia->r_steps);
 	st_probs	= (double*)malloc(sizeof(double) * ap->number_streams); 
 	rPrime3		= (double*)malloc(sizeof(double) * ia->r_steps);
 	reff_value	= (double*)malloc(sizeof(double) * ia->r_steps);
@@ -398,7 +398,7 @@ void calculate_integral_convolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, E
 		r	=	pow(10.0, (log_r-14.2)/5.0);
 		next_r	=	pow(10.0, (log_r + ia->r_step_size - 14.2)/5.0);
 
-		ir[i]	= ((next_r * next_r * next_r) - (r * r * r))/3.0;
+		irv[i]	= (((next_r * next_r * next_r) - (r * r * r))/3.0) * ia->mu_step_size / deg;
 		rPrime	= (next_r+r)/2.0;
 
 		r_point[i] = (double*)malloc(sizeof(double) * ap->convolve);
@@ -471,10 +471,10 @@ void calculate_integral_convolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, E
 						xyz[2] = r + (0.5 * ia->r_step_size);
 						xyz2lbr(xyz, integral_point);
 					} else {
-						V = ir[ia->r_step_current] * id * ia->mu_step_size / deg;
+						V = irv[ia->r_step_current] * id;
 					}
 				#else
-					V = ir[ia->r_step_current] * id * ia->mu_step_size / deg;
+					V = irv[ia->r_step_current] * id;
 				#endif
 
 				calculate_probabilities(r_point[ia->r_step_current], r3[ia->r_step_current], N[ia->r_step_current], reff_value[ia->r_step_current], rPrime3[ia->r_step_current], integral_point, ap, &bg_prob, st_probs);
@@ -489,7 +489,7 @@ void calculate_integral_convolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, E
 	}
 	ia->mu_step_current = 0;
 
-	free(ir);
+	free(irv);
 	free(st_probs);
 	free(rPrime3);
 	free(reff_value);
