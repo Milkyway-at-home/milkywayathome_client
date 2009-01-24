@@ -1,168 +1,88 @@
-/*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
-Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
-and Rensselaer Polytechnic Institute.
+// Berkeley Open Infrastructure for Network Computing
+// http://boinc.berkeley.edu
+// Copyright (C) 2005 University of California
+//
+// This is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation;
+// either version 2.1 of the License, or (at your option) any later version.
+//
+// This software is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// To view the GNU Lesser General Public License visit
+// http://www.gnu.org/copyleft/lesser.html
+// or write to the Free Software Foundation, Inc.,
+// 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-This file is part of Milkway@Home.
+// validator - check and validate results, and grant credit
+//  -app appname
+//  [-d debug_level]
+//  [-one_pass_N_WU N]      // Validate only N WU in one pass, then exit
+//  [-one_pass]             // make one pass through WU table, then exit
+//  [-mod n i]              // process only WUs with (id mod n) == i
+//  [-max_credit_per_cpu_second X] // limit maximum credit per compute time
+//  [-max_granted_credit X] // limit maximum granted credit to X
+//  [-max_claimed_credit Y] // invalid if claims more than Y
+//  [-grant_claimed_credit] // just grant whatever is claimed 
+//  [-update_credited_job]  // add userid/wuid pair to credited_job table
+//  [-credit_from_wu]       // get credit from WU XML
+//
+// This program must be linked with two project-specific functions:
+// check_set() and check_pair().
+// See doc/validate.php for a description.
 
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+using namespace std;
 
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#include <cstring>
-#include <cstdlib>
-#include <unistd.h>
-#include <ctime>
-#include <vector>
-#include <string.h>
-#include <iostream>
-#include <sstream>
-
-#include "time.h"
-
-/********
-	*	BOINC includes
- ********/
-#include "backend_lib.h"
-#include "boinc_db.h"
 #include "config.h"
-#include "error_numbers.h"
-#include "parse.h"
-#include "str_util.h"
-#include "util.h"
-#include "validate_util.h"
+#include <unistd.h>
+#include <cmath>
+#include <vector>
 
-#include "sched_msgs.h"
+#include "boinc_db.h"
+#include "util.h"
+#include "str_util.h"
+#include "error_numbers.h"
+
 #include "sched_config.h"
 #include "sched_util.h"
+#include "sched_msgs.h"
+#include "validate_util.h"
 
-/********
-	*	FGDO includes
- ********/
-#include "search_manager.h"
-#include "boinc_add_workunit.h"
-#include "../searches/asynchronous_search.h"
-#include "../searches/search_parameters.h"
-#include "../util/settings.h"
-
-#define		LOCKFILE	"assimilator.out"
-#define		PIDFILE		"assimilator.pid"
-#define		SLEEP_INTERVAL	10
-
-#define config_dir "/export/www/boinc/milkyway"
-
-using std::vector;
-using std::string;
+#define LOCKFILE "validate.out"
+#define PIDFILE  "validate.pid"
 
 #define SELECT_LIMIT    1000
 #define SLEEP_PERIOD    5
 
+int sleep_interval = SLEEP_PERIOD;
+
 typedef enum { NEVER, DELAYED, IMMEDIATE, NO_CHANGE } TRANSITION_TIME;
 
-DB_APP		bsm_app;
-bool		update_db = true;
-bool		noinsert = false;
-
-int		wu_id_modulus = 0;
-int		wu_id_remainder = 0;
-
-int		sleep_interval = SLEEP_INTERVAL;
-
-bool		one_pass = false;
-int		one_pass_N_WU = 0;
-long		validated_wus = 0;
-long		assimilated_wus = 0;
-int		unsent_wu_buffer = 400;
-double		max_credit_per_cpu_second = 0;
-double		max_granted_credit = 0;  
-double		max_claimed_credit = 0;
-bool		grant_claimed_credit = false;
-bool		update_credited_job = false;
-bool		credit_from_wu = false;
-
-
-WORKUNIT_INFO** workunit_info;
-SEARCH_PARAMETERS **gen_sp, *insert_sp;
-
-long checkpoint_time = 360;		//	1 hour
-
-void print_message(char *search_name, char *as_msg, const char *as_result, char *verify_msg, int v_num, char *version, char *host_os, double credit, RESULT& result) {
-	SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
-
-	scope_messages.printf("[%-18s] [%-80s][%-30s][%-8s] v[%-25s, %-7s] c[%*.5lf], t[%*d/%*.2lf] h[%*d]\n", search_name, as_msg, as_result, verify_msg, version, host_os, 9, credit, 6, result.received_time-result.sent_time, 8, result.cpu_time, 6, result.hostid);
-}
-
-void update_workunit_info(int pos) {
-	int i, current;
-	WORKUNIT_INFO **temp_wu;
-	SEARCH_PARAMETERS **temp_sp;
-
-	temp_wu = (WORKUNIT_INFO**)malloc(sizeof(WORKUNIT_INFO*) * number_searches);
-	temp_sp = (SEARCH_PARAMETERS**)malloc(sizeof(SEARCH_PARAMETERS*) * number_searches);
-	current = 0;
-	for (i = 0; i < number_searches; i++) {
-		if (i == pos) {
-			char *workunit_info_file = (char*)malloc(sizeof(char) * FILENAME_SIZE);
-			sprintf(workunit_info_file, "%s/%s/workunit_info", get_working_directory(), searches[pos]->search_name);
-			read_workunit_info(workunit_info_file, &(temp_wu[pos]));
-			init_search_parameters(&temp_sp[i], temp_wu[pos]->number_parameters);
-			sprintf(temp_sp[i]->search_name, searches[i]->search_name);
-		} else {
-			temp_wu[i] = workunit_info[current];
-			temp_sp[i] = gen_sp[current];
-			current++;
-		}
-	}
-	free(workunit_info);
-	free(gen_sp);
-	workunit_info = temp_wu;
-	gen_sp = temp_sp;
-}
-
-void get_search_name(const char* wu_name, char *search_name) {
-	int i, found_underscore;
-	found_underscore = 0;
-	memset(search_name, '\0', 64);
-	for (i = strlen(wu_name)-1; i >= 0; i--) {
-		if (found_underscore >= 2) {
-			search_name[i] = wu_name[i];
-		} else if (wu_name[i] == '_') found_underscore++;
-	}
-}
-
-MANAGED_SEARCH* get_search_from_wu_name(const char* wu_name) {
-	MANAGED_SEARCH *ms;
-	char search_name[64];
-	get_search_name(wu_name, search_name);
-	ms = get_search(search_name);
-	if (ms == NULL) {
-		int pos;
-		pos = manage_search(search_name);
-		if (pos < 0) return NULL;
-		ms = searches[pos];
-		update_workunit_info(pos);
-	}
-        return ms;        
-}
+//SCHED_CONFIG config;
+char app_name[256];
+int wu_id_modulus=0;
+int wu_id_remainder=0;
+int one_pass_N_WU=0;
+bool one_pass = false;
+double max_credit_per_cpu_second = 0;
+double max_granted_credit = 0;
+double max_claimed_credit = 0;
+bool grant_claimed_credit = false;
+bool update_credited_job = false;
+bool credit_from_wu = false;
 
 void update_error_rate(DB_HOST& host, bool valid) {
 	if (host.error_rate > 1) host.error_rate = 1;
 	if (host.error_rate <= 0) host.error_rate = 0.1;
 
 	host.error_rate *= 0.95;
-	if (!valid) host.error_rate += 0.05;
+	if (!valid) {
+		host.error_rate += 0.05;
+	}
 }
-
 
 // Here when a result has been validated and its granted_credit has been set.
 // Grant credit to host, user and team, and update host error rate.
@@ -263,73 +183,46 @@ int is_invalid(RESULT& result) {
 	return 0;
 }
 
-double update_workunit(DB_VALIDATOR_ITEM_SET& validator, int valid_state, RESULT& result, WORKUNIT &wu) {
-	SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
-	int retval, x;
+double update_workunit(DB_VALIDATOR_ITEM_SET& validator, int valid_state, RESULT& result) {
 	bool assimilate = false;
-	vector<RESULT> results;
-	double credit = 0;
-	TRANSITION_TIME transition_time = NO_CHANGE;
-
 	switch (valid_state) {
 		case AS_VERIFY_VALID:
-			results.push_back(result);
 			// grant credit for valid results
-			credit = get_credit_from_wu(wu, results);
-
 			result.granted_credit = grant_claimed_credit ? result.claimed_credit : credit;
-			if (max_granted_credit && result.granted_credit > max_granted_credit) result.granted_credit = max_granted_credit;
+			if (max_granted_credit && result.granted_credit > max_granted_credit) result.granted_credit = max_granted_credit
 			if (max_credit_per_cpu_second && (result.granted_credit / result.cpu_time) > max_credit_per_cpu_second) result.granted_credit = result.cpu_time * max_credit_per_cpu_second;
-			credit = result.granted_credit;
 
 			result.validate_state = VALIDATE_STATE_VALID;
 			if (update_db) {
 				retval = is_valid(result, wu);
 				if (retval) log_messages.printf(SCHED_MSG_LOG::MSG_DEBUG, "[RESULT#%d %s] is_valid() failed: %d\n", result.id, result.name, retval);
 			}
-//			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[RESULT#%d %s] Granted %f credit to valid result [HOST#%d]\n", result.id, result.name, result.granted_credit, result.hostid);
+			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[RESULT#%d %s] Granted %f credit to valid result [HOST#%d]\n", result.id, result.name, result.granted_credit, result.hostid);
 			assimilate = true;
-			transition_time = IMMEDIATE;
 			break;
 		case AS_VERIFY_INVALID:
 			result.validate_state = VALIDATE_STATE_INVALID;
 			if (update_db) is_invalid(result);
 			assimilate = true;
-			transition_time = IMMEDIATE;
 			break;
-		case AS_VERIFY_IN_PROGRESS:
+		case AS_VERIFY_INCONCLUSIVE:
+			ms->search->insert_parameters(ms->search_name, ms->search_data, insert_sp);
 			result.validate_state = VALIDATE_STATE_INCONCLUSIVE;
-			wu.need_validate = 1;
-			transition_time = DELAYED;
 			break;
 	}
 
 	if (update_db && assimilate) {
-		DB_WORKUNIT db_wu;
-//		log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[RESULT#%d %s] granted_credit %f\n",  result.id, result.name, result.granted_credit);
-
+		log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[RESULT#%d %s] granted_credit %f\n",  result.id, result.name, result.granted_credit);
 		retval = validator.update_result(result);
 		if (retval) log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[RESULT#%d %s] Can't update result: %d\n", result.id, result.name, retval);
 
-		wu.assimilate_state = ASSIMILATE_READY;
+		sprintf(buf, "assimilate_state=%d, transition_time=%d", ASSIMILATE_DONE, (int)time(0));
+		retval = wu.update_field(buf);
+		if (retval) {
+			log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[%s] update failed: %d\n", wu.name, retval);
+			exit(1);
+		}
 	}
-	switch (transition_time) {
-		case IMMEDIATE:
-			wu.transition_time = time(0);
-			break;
-		case DELAYED:
-			x = time(0) + 6*3600;
-			if (x < wu.transition_time) wu.transition_time = x;
-			break;
-		case NEVER:
-			wu.transition_time = INT_MAX;
-			break;
-		case NO_CHANGE:   
-			break;
-	}
-	validator.update_workunit(wu);
-
-	return credit;
 }
 
 
@@ -362,45 +255,42 @@ int generate_workunits() {
 	return current;
 }
 
+void generate_search_workunits(char *search_name) {
+	manage_search(search_name);
+	update_workunit_info(0);
+	generate_workunits();
+}
+
 
 int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM>& items) { 
-	SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
-	int retval = 0, valid_state;
+	int canonical_result_index = -1;
+	bool update_result, retry;
+	TRANSITION_TIME transition_time = NO_CHANGE;
+	int retval = 0, canonicalid = 0, x;
 	double credit = 0;
 	unsigned int i;
-	char search_name[64];
-	DB_HOST host;
-	bool has_valid = false;
 
 	WORKUNIT& wu = items[0].wu;
+
+	if (items.size() > 1) printf("MORE THAN 1 ITEM IN WORKUNIT!\n");
 
 	for (i = 0; i < items.size(); i++) {
 		WORKUNIT& wu = items[i].wu;
 		RESULT& result = items[i].res;
 		MANAGED_SEARCH *ms;
 		string output_file_name;
-
-		get_search_name(wu.name, search_name);
-
-		if ((result.server_state != RESULT_SERVER_STATE_OVER) || (result.outcome != RESULT_OUTCOME_SUCCESS)) {
-			print_message(search_name, "RESULT NOT COMPLETED", "", "in prog", result.app_version_num, "?", "?", credit, result);
-			continue;
-		}
-
-		if (result.validate_state != VALIDATE_STATE_INIT) {
-			print_message(search_name, "RESULT ALREADY VALIDATED", "", wu.name, result.app_version_num, "?", "?", credit, result);
-			has_valid = true;
-			continue;
-		}
+		double credit;
 
 		ms = get_search_from_wu_name(wu.name);
+		/********
+			*	Check if this is a valid search.
+		 ********/
 		if (ms == NULL) {
-			credit = update_workunit(validator, AS_VERIFY_VALID, result, wu);
-			print_message(search_name, "completed search", "", "valid", result.app_version_num, "?", "?", credit, result);
-			has_valid = true;
+			credit = update_workunit(validator, AS_VERIFY_VALID, result);
+			print_message(scope_messages, ms->search_name, "completed search", VALIDATE_MSG, credit, result);
+			transition_time = IMMEDIATE;
 			continue;
 		}
-
 
 		/********
 			*	Read the result file
@@ -408,95 +298,25 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 		get_output_file_path(result, output_file_name);
 		retval = boinc_read_search_parameters2(output_file_name.c_str(), insert_sp);
 		if (retval) {
-			credit = update_workunit(validator, AS_VERIFY_INVALID, result, wu);
-			print_message(ms->search_name, "error reading result", "", "invalid", result.app_version_num, insert_sp->app_version, "?", credit, result);
+			credit = update_workunit(validator, AS_VERIFY_INVALID, result);
+			print_message(scope_messages, ms->search_name, "error reading result", VALIDATE_MSG, credit, result);
+			transition_time = IMMEDIATE;
 			continue;
 		}
 
-		if (ms->search == NULL) printf("search == NULL\n");
-		if (ms->search_name == NULL) printf("search_name == NULL\n");
-		if (ms->search_data == NULL) printf("search_data == NULL\n");
-	
-		retval = host.lookup_id(result.hostid);
-		if (retval) {
-			log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[RESULT#%d] lookup of host %d failed %d\n", result.id, result.hostid, retval);
-			return retval;
-		}       
-
-		if (host.os_name[0] == 'M') sprintf(insert_sp->host_os, "Windows");
-		else if (host.os_name[0] == 'D') sprintf(insert_sp->host_os, "Darwin");
-		else if (host.os_name[0] == 'L') sprintf(insert_sp->host_os, "Linux");
-		else sprintf(insert_sp->host_os, "?");
-
-		if (insert_sp->app_version[0] != '?' && !(insert_sp->app_version[0] == 't' && insert_sp->app_version[1] == 'i' && insert_sp->app_version[2] == 'm' && insert_sp->app_version[3] == 'e')) {
-			retval = ms->search->insert_parameters(ms->search_name, ms->search_data, insert_sp);
-
-			switch(retval) {
-				case AS_INSERT_SUCCESS:
-					valid_state = AS_VERIFY_IN_PROGRESS;
-				break;
-				case AS_INSERT_OVER:
-				case AS_INSERT_OUT_OF_RANGE:
-				case AS_INSERT_OUT_OF_ITERATION:
-				case AS_INSERT_BAD_METADATA:
-				case AS_INSERT_NOT_UNIQUE:
-				case AS_INSERT_FITNESS_INVALID:		// NEED TO MOVE THIS TO INVALID
-					//compare to previous iteration values
-					valid_state = AS_VERIFY_VALID;
-				break;
-				case AS_INSERT_FITNESS_NAN:
-				case AS_INSERT_PARAMETERS_NAN:
-				case AS_INSERT_OUT_OF_BOUNDS:
-				case AS_INSERT_ERROR:
-					valid_state = AS_VERIFY_INVALID;
-				break;
-				default:
-					valid_state = AS_VERIFY_VALID;
-				break;
-			}
-		} else {
-			sprintf(AS_MSG, "not inserted, invalid app_version");
-			valid_state = AS_VERIFY_INVALID;
-		}
-
-		if (valid_state == AS_VERIFY_IN_PROGRESS) {
-//			transition_time = DELAYED;
-//			wu.need_validate = 1;
-			valid_state = AS_VERIFY_VALID;
-			sprintf(AS_VERIFY_MSG, "valid");
-			has_valid = true;
-		} else if (valid_state == AS_VERIFY_VALID) {
-			sprintf(AS_VERIFY_MSG, "valid");
-			has_valid = true;
-		} else {
-			sprintf(AS_VERIFY_MSG, "invalid");
-		}
-		credit = update_workunit(validator, valid_state, result, wu);
-		print_message(ms->search_name, AS_MSG, AS_INSERT_STR[retval], AS_VERIFY_MSG, result.app_version_num, insert_sp->app_version, insert_sp->host_os, credit, result);
-		AS_VERIFY_MSG[0] = '\0';
-	}
-
-	if (has_valid) {
+		valid_state = ms->search->verify(ms->search_name, ms->search_data, insert_sp), result);
 		/********
-			*	Already have a result, don't sent any unsent results.
+			*
 		 ********/
-		for (i = 0; i < items.size(); i++) {
-			RESULT& result = items[i].res;
-			if (result.server_state != RESULT_SERVER_STATE_UNSENT && result.outcome != RESULT_OUTCOME_NO_REPLY && result.outcome != RESULT_OUTCOME_DIDNT_NEED) continue;
-
-			result.server_state = RESULT_SERVER_STATE_OVER;
-			result.outcome = RESULT_OUTCOME_DIDNT_NEED;
-			retval = validator.update_result(result);
-			if (retval) {
-				log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[RESULT#%d %s] result.update() failed: %d\n", result.id, result.name, retval);
-			}
+		credit = update_workunit(validator, valid_state, result);
+		if (valid_state == AS_VERIFY_IN_PROGRESS) {
+			retval = ms->search->insert_parameters(ms->search_name, ms->search_data, insert_sp);
+			transition_time = DELAYED;
+			wu.need_validate = 1;
+		} else {
+			transition_time = IMMEDIATE;
 		}
-		wu.need_validate = 0;
-		retval = validator.update_workunit(wu);
-		if (retval) {            
-			log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[WU#%d %s] update_workunit() failed: %d; exiting\n", wu.id, wu.name, retval);
-			return retval;
-		}
+		print_message(scope_messages, ms->search_name, AS_MSG, VALIDATE_MSG, credit, result);
 	}
 
         if (wu.error_mask&WU_ERROR_COULDNT_SEND_RESULT)         log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[%s] Error: couldn't send a result\n", wu.name);
@@ -505,6 +325,160 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
         if (wu.error_mask&WU_ERROR_TOO_MANY_SUCCESS_RESULTS)    log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[%s] Error: too many success results\n", wu.name);
 
 	return 0;
+}
+
+// make one pass through the workunits with need_validate set.
+// return true if there were any
+//
+bool do_validate_scan(APP& app) {
+	DB_VALIDATOR_ITEM_SET validator;
+	std::vector<VALIDATOR_ITEM> items;
+	bool found=false;
+	int retval;
+
+	/********
+		*	loop over entries that need to be checked
+	 ********/
+	while (1) {
+		retval = validator.enumerate(app.id, one_pass_N_WU?one_pass_N_WU:SELECT_LIMIT, wu_id_modulus, wu_id_remainder, items);
+		if (retval) break;
+		retval = handle_wu(validator, items);
+		if (!retval) found = true;
+	}
+	return found;
+}
+
+int main_loop() {
+	int retval;
+	DB_APP app;
+	bool did_something;
+	char buf[256];
+
+	retval = boinc_db.open(config.db_name, config.db_host, config.db_user, config.db_passwd);
+	if (retval) {
+		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "boinc_db.open failed: %d\n", retval);
+		exit(1);
+	}
+
+	sprintf(buf, "where name='%s'", app_name);
+	retval = app.lookup(buf);
+	if (retval) {
+		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "can't find app %s\n", app_name);
+		exit(1);
+	}
+
+	while (1) {
+		check_stop_daemons();
+		did_something = do_validate_scan(app);
+		if (!did_something) {
+			if (one_pass) break;
+			sleep(sleep_interval);
+		}
+	}
+	return 0;
+}
+
+// For use by user routines check_set() and check_match() that link to
+// this code.
+int boinc_validator_debuglevel=0;
+
+int main(int argc, char** argv) {
+    int i, retval;
+
+#if 0
+    int mypid=getpid();
+    char debugcmd[512];
+    sprintf(debugcmd, "ddd %s %d &", argv[0], mypid);
+    system(debugcmd);
+    sleep(30);
+#endif
+
+    const char *usage = 
+      "\nUsage: %s -app <app-name> [OPTIONS]\n"
+      "Start validator for application <app-name>\n\n"
+      "Optional arguments:\n"
+      "  -one_pass_N_WU N                Validate at most N WUs, then exit\n"
+      "  -one_pass                       Make one pass through WU table, then exit\n"
+      "  -mod n i                        Process only WUs with (id mod n) == i\n"
+      "  -max_credit_per_cpu_second X    Limit credit per compute second\n"
+      "  -max_claimed_credit X           If a result claims more credit than this, mark it as invalid\n"
+      "  -max_granted_credit X           Grant no more than this amount of credit to a result\n"
+      "  -grant_claimed_credit           Grant the claimed credit, regardless of what other results for this workunit claimed\n"
+      "  -update_credited_job            Add record to credited_job table after granting credit\n"
+      "  -credit_from_wu                 Credit is specified in WU XML\n"
+      "  -sleep_interval n               Set sleep-interval to n\n"
+      "  -d level                        Set debug-level\n\n";
+
+    if ( (argc > 1) && ( !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help") ) ) {
+      printf (usage, argv[0] );
+      exit(1);
+    }
+
+
+    check_stop_daemons();
+
+    for (i=1; i<argc; i++) {
+        if (!strcmp(argv[i], "-one_pass_N_WU")) {
+            one_pass_N_WU = atoi(argv[++i]);
+            one_pass = true;
+        } else if (!strcmp(argv[i], "-sleep_interval")) {
+            sleep_interval = atoi(argv[++i]);
+        } else if (!strcmp(argv[i], "-one_pass")) {
+            one_pass = true;
+        } else if (!strcmp(argv[i], "-app")) {
+            strcpy(app_name, argv[++i]);
+        } else if (!strcmp(argv[i], "-d")) {
+            boinc_validator_debuglevel=atoi(argv[++i]);
+            log_messages.set_debug_level(boinc_validator_debuglevel);
+        } else if (!strcmp(argv[i], "-mod")) {
+            wu_id_modulus = atoi(argv[++i]);
+            wu_id_remainder = atoi(argv[++i]);
+        } else if (!strcmp(argv[i], "-max_credit_per_cpu_second")) {
+            max_credit_per_cpu_second = atof(argv[++i]);
+        } else if (!strcmp(argv[i], "-max_granted_credit")) {
+            max_granted_credit = atof(argv[++i]);
+        } else if (!strcmp(argv[i], "-max_claimed_credit")) {
+            max_claimed_credit = atof(argv[++i]);
+        } else if (!strcmp(argv[i], "-grant_claimed_credit")) {
+            grant_claimed_credit = true;
+        } else if (!strcmp(argv[i], "-update_credited_job")) {
+            update_credited_job = true;
+        } else if (!strcmp(argv[i], "-credit_from_wu")) {
+            credit_from_wu = true;
+        } else {
+            fprintf(stderr, "Invalid option '%s'\nTry `%s --help` for more information\n", argv[i], argv[0]);
+            log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "unrecognized arg: %s\n", argv[i]);
+            exit(1);
+        }
+    }
+
+    // -app is required
+    if ( app_name[0] == 0 ) {
+      fprintf (stderr, "\nERROR: use '-app' to specify the application to run the validator for.\n");
+      printf (usage, argv[0] );
+      exit(1);      
+    }
+
+    retval = config.parse_file("..");
+    if (retval) {
+        log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL,
+            "Can't parse ../config.xml: %s\n", boincerror(retval)
+        );
+        exit(1);
+    }
+
+    log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL,
+        "Starting validator, debug level %d\n", log_messages.debug_level
+    );
+    if (wu_id_modulus) {
+        log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL,
+            "Modulus %d, remainder %d\n", wu_id_modulus, wu_id_remainder
+        );
+    }
+
+    install_stop_signal_handler();
+
+    main_loop();
 }
 
 
@@ -549,18 +523,6 @@ void init_boinc_search_manager(int argc, char** argv) {
 			unsent_wu_buffer = atoi(argv[++i]);
 		} else if (!strcmp(argv[i], "-cp_time")) {
 			checkpoint_time = atoi(argv[++i]);
-		} else if (!strcmp(argv[i], "-max_credit_per_cpu_second")) {
-			max_credit_per_cpu_second = atof(argv[++i]);
-		} else if (!strcmp(argv[i], "-max_granted_credit")) {
-			max_granted_credit = atof(argv[++i]);
-		} else if (!strcmp(argv[i], "-max_claimed_credit")) {
-			max_claimed_credit = atof(argv[++i]);
-		} else if (!strcmp(argv[i], "-grant_claimed_credit")) {
-			grant_claimed_credit = true;
-		} else if (!strcmp(argv[i], "-update_credited_job")) {
-			update_credited_job = true;
-		} else if (!strcmp(argv[i], "-credit_from_wu")) {
-			credit_from_wu = true;
 		}
 	}
 
@@ -598,7 +560,7 @@ void start_search_manager() {
 	DB_WORKUNIT wu;
 	DB_RESULT canonical_result, result;
 	bool did_something = false;
-	int retval, num_generated, unsent_wus, num_validated, num_assimilated, i;
+	int retval, num_generated, unsent_wus, processed_wus, num_assimilated, i;
 	time_t start_time, current_time, last_checkpoint;
 	double wus_per_second;
 
@@ -606,71 +568,54 @@ void start_search_manager() {
 	time(&last_checkpoint);
 	log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Starting at: %d\n", (int)start_time);
 
+	processed_wus = 0;
+
 	DB_VALIDATOR_ITEM_SET validator;
 	while (!one_pass) {
 		char buf[256], mod_clause[256];
-		std::vector<VALIDATOR_ITEM> items;
-        
+
 		check_stop_daemons();
 
-		num_validated = 0;
+		if (wu_id_modulus)	sprintf(mod_clause, " and workunit.id %% %d = %d ", wu_id_modulus, wu_id_remainder);
+		else			strcpy(mod_clause, "");
+		sprintf(buf, "where appid=%d and assimilate_state=%d %s limit %d", bsm_app.id, ASSIMILATE_READY, mod_clause, one_pass_N_WU ? one_pass_N_WU : 1000);
+
+		num_assimilated = 0;
+
+
+		std::vector<VALIDATOR_ITEM> items;
+		bool found=false;
+		int retval;
+        
 		/********
 			*       loop over entries that need to be checked
 		 ********/
-	        while (!validator.enumerate(bsm_app.id, one_pass_N_WU?one_pass_N_WU:SELECT_LIMIT, wu_id_modulus, wu_id_remainder, items)) {
+	        while (!validator.enumerate(app.id, one_pass_N_WU?one_pass_N_WU:SELECT_LIMIT, wu_id_modulus, wu_id_remainder, items) {
 			/********
 				*	for testing purposes, pretend we did nothing
 			 ********/
 			if (update_db) did_something = true;
+			log_messages.printf(SCHED_MSG_LOG::MSG_DEBUG, "[%s] validating/assimilating boinc WU %d; state=%d\n", wu.name, wu.id, wu.assimilate_state);
 
-			insert_workunit(validator, items);
-
-			num_validated++;
-		}
-		validated_wus += num_validated;
-		time(&current_time);
-		wus_per_second = (double)validated_wus/((double)current_time-(double)start_time);
-		log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[appid: %d] validated %d results, wus/sec: %lf, unsent wus: %d\n", bsm_app.id, num_validated, wus_per_second, unsent_wus);
-
-
-                if (wu_id_modulus)      sprintf(mod_clause, " and workunit.id %% %d = %d ", wu_id_modulus, wu_id_remainder);
-                else                    strcpy(mod_clause, "");
-                sprintf(buf, "where appid=%d and assimilate_state=%d %s limit %d", bsm_app.id, ASSIMILATE_READY, mod_clause, one_pass_N_WU ? one_pass_N_WU : 1000);
-                         
-		num_assimilated = 0;
-		while (!wu.enumerate(buf)) {
-			vector<RESULT> results;     // must be inside while()!
-
-//			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[%s] assimilating boinc WU %d; state=%d\n", wu.name, wu.id, wu.assimilate_state);
-        
 			sprintf(buf, "where workunitid=%d", wu.id);
 			while (!result.enumerate(buf)) {
 				results.push_back(result);
 				if (result.id == wu.canonical_resultid) canonical_result = result;
 			}
-        
-			if (update_db) {
-				did_something = true;
-				sprintf(buf, "assimilate_state=%d, transition_time=%d", ASSIMILATE_DONE, (int)time(0));
-                                
-				retval = wu.update_field(buf);
-				if (retval) {
-					log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[%s] update failed: %d\n", wu.name, retval);
-					exit(1);
-				}
-			}
+
+			insert_workunit(validator, items);
+
 			num_assimilated++;
 		}
-		assimilated_wus += num_assimilated;
-		time(&current_time);
-		wus_per_second = (double)assimilated_wus/((double)current_time-(double)start_time);
-		log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[appid: %d] assimilated %d workunits, wus/sec: %lf, unsent wus: %d\n", bsm_app.id, num_assimilated, wus_per_second, unsent_wus);
-
-
 		if (did_something) boinc_db.commit_transaction();
 
-		if (num_validated)  {
+		if (num_assimilated)  {
 			count_unsent_results(unsent_wus, bsm_app.id);
+
+			processed_wus += num_assimilated;
+			time(&current_time);
+			wus_per_second = (double)processed_wus/((double)current_time-(double)start_time);
+			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[appid: %d] assimilated %d workunits, wus/sec: %lf, unsent wus: %d\n", bsm_app.id, num_assimilated, wus_per_second, unsent_wus);
 
 			if (unsent_wus < unsent_wu_buffer) {
 				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Generating %d new workunits.\n", get_generation_rate());
@@ -695,10 +640,4 @@ void start_search_manager() {
 		}
 		if (!one_pass) sleep(sleep_interval);
 	}
-}
-
-void generate_search_workunits(char *search_name) {
-        manage_search(search_name);
-        update_workunit_info(0);
-        generate_workunits();
 }

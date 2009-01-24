@@ -49,7 +49,7 @@ int write_search_parameters(const char* filename, SEARCH_PARAMETERS *parameters)
 
 #ifdef GMLE_BOINC
 	int boinc_read_search_parameters(const char* filename, SEARCH_PARAMETERS* parameters);
-	int boinc_read_search_parameters2(const char* filename, SEARCH_PARAMETERS* parameters, char* version);
+	int boinc_read_search_parameters2(const char* filename, SEARCH_PARAMETERS* parameters);
 	int boinc_write_search_parameters(const char* filename, SEARCH_PARAMETERS* parameters, double fitness);
 #endif
 

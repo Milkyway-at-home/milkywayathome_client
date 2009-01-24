@@ -227,6 +227,7 @@ int generate_search_parameters(SEARCH_PARAMETERS **sp) {
 	for (i = 0; i < number_searches; i++) {
 		generated = (generation_rate - current) / (number_searches - i);
 		for (j = 0; j < generated; j++) {
+			sprintf(sp[current]->search_name, "%s", searches[i]->search_name);
 			searches[i]->search->generate_parameters(searches[i]->search_name, searches[i]->search_data, sp[current]);
 			current++;
 		}
@@ -242,7 +243,6 @@ int insert_search_parameters(SEARCH_PARAMETERS *sp) {
 		if (pos < 0) return -1;
 		ms = searches[pos];
 	}
-
 	ms->search->insert_parameters(ms->search_name, ms->search_data, sp);
 	return 0;
 }

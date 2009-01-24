@@ -55,6 +55,7 @@ void start_search_manager();
 
 void register_search(ASYNCHRONOUS_SEARCH* as);
 void print_registered_searches();
+ASYNCHRONOUS_SEARCH* get_registered_search(char* search_qualifier);
 
 int manage_search(char* search_name);
 int search_exists(char* search_name);

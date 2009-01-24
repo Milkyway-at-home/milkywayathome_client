@@ -446,16 +446,11 @@ bool do_validate_scan(APP& app) {
 	bool found=false;
 	int retval;
 
-
 	/********
 		*	loop over entries that need to be checked
 	 ********/
 	while (1) {
-		retval = validator.enumerate(
-			app.id, one_pass_N_WU?one_pass_N_WU:SELECT_LIMIT,
-			wu_id_modulus, wu_id_remainder,
-			items
-		);
+		retval = validator.enumerate(app.id, one_pass_N_WU?one_pass_N_WU:SELECT_LIMIT, wu_id_modulus, wu_id_remainder, items);
 		if (retval) break;
 		retval = handle_wu(validator, items);
 		if (!retval) found = true;
@@ -596,4 +591,4 @@ int main(int argc, char** argv) {
     main_loop();
 }
 
-const char *BOINC_RCSID_634dbda0b9 = "$Id: validator.C,v 1.1 2008/12/03 18:10:48 deselt Exp $";
+const char *BOINC_RCSID_634dbda0b9 = "$Id: validator.C,v 1.2 2009/01/24 18:28:05 deselt Exp $";

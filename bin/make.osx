@@ -1,5 +1,5 @@
 APP_VERSION = 0.11
-APP_NAME = stock_osx
+APP_NAME = your_app_name
 
 BOINC_DIR = /Users/deselt/Research/software/boinc
 BOINC_API_DIR = $(BOINC_DIR)/api

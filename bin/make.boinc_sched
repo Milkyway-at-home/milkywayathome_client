@@ -32,7 +32,6 @@ SEARCH_OBJS = \
 SCHED_OBJS = \
 	$(SCHED_DIR)/boinc_add_workunit.o \
 	$(SCHED_DIR)/search_manager.o \
-	$(SCHED_DIR)/boinc_search_manager.o \
 	$(SCHED_DIR)/validate_util.o
 UTIL_OBJS = \
 	$(UTIL_DIR)/io_util.o \
@@ -45,6 +44,7 @@ BOINC_ADD_OBJS = \
 
 START_OBJS = \
 	$(APP_DIR)/boinc_start_search.o \
+	$(SCHED_DIR)/boinc_search_manager.o \
 	$(BOINC_ADD_OBJS) \
 	$(SEARCH_OBJS) \
 	$(SCHED_OBJS) \
@@ -52,10 +52,18 @@ START_OBJS = \
 
 ASSIMILATOR_OBJS = \
 	$(APP_DIR)/boinc_assimilator.o \
+	$(SCHED_DIR)/boinc_search_manager.o \
 	$(BOINC_ADD_OBJS) \
 	$(SEARCH_OBJS) \
 	$(SCHED_OBJS) \
 	$(UTIL_OBJS)
+
+REMOVAL_OBJS = \
+	$(APP_DIR)/boinc_assimilator.o \
+	$(SCHED_DIR)/boinc_removal.o \
+	$(SCHED_OBJS) \
+	$(UTIL_OBJS) \
+	$(SEARCH_OBJS)
 
 VALIDATOR_OBJS = \
 	$(SCHED_DIR)/validate_util.o \
@@ -70,14 +78,15 @@ PROGS = milkyway_assimilator milkyway_start_search milkyway_validator
 
 all: assimilator start validator
 
-assimilator: $(ASSIMILATOR_OBJS) 
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_assimilator $(ASSIMILATOR_OBJS) $(MYSQL) $(LIBS)
+removal: $(REMOVAL_OBJS) 
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_removal $(REMOVAL_OBJS) $(MYSQL) $(LIBS)
+
+assimilator: $(ASSIMILATOR_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_av $(ASSIMILATOR_OBJS) $(MYSQL) $(LIBS)
 
 start: $(START_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_start_search $(START_OBJS) $(LIBS) $(MYSQL)
 
-validator: $(VALIDATOR_OBJS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_validator $(VALIDATOR_OBJS) $(LIBS) $(MYSQL) 
 
 
 .C.o:
@@ -87,4 +96,4 @@ validator: $(VALIDATOR_OBJS)
 	$(CXX) $(CXXFLAGS) -Wall -x c++ -c $< -o $@
 
 clean:
-	rm -f $(PROGS) $(ASSIMILATOR_OBJS) $(START_OBJS) $(VALIDATOR_OBJS)
+	rm -f $(PROGS) $(ASSIMILATOR_OBJS) $(START_OBJS) $(VALIDATOR_OBJS) $(ASSIM2_OBJS)

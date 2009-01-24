@@ -66,11 +66,11 @@ void get_population_statistics(POPULATION *p, double *best_point, double *best_f
 	best_pos = 0;
 	for (i = 1; i < p->size; i++) {
 		avg += p->fitness[i];
-		if (best > p->fitness[i]) {
+		if (p->fitness[i] > best) {
 			best = p->fitness[i];
 			best_pos = i;
 		}
-		if (worst < p->fitness[i]) worst = p->fitness[i];
+		if (p->fitness[i] < worst) worst = p->fitness[i];
 	}
 	st_dev = 0;
 	for (i = 0; i < p->size; i++) {
@@ -208,8 +208,20 @@ int fread_population(FILE* file, POPULATION **population) {
 		for (j = 0; j < number_parameters; j++) {
 			fscanf(file, " %lf", &((*population)->individuals[position][j]));
 		}
-		fscanf(file, ", %s, %s", &((*population)->app_versions[position]), &((*population)->os_names[position]));
-		fscanf(file, "\n");
+		(*population)->app_versions[position] = (char*)malloc(sizeof(char) * 512);
+		(*population)->os_names[position] = (char*)malloc(sizeof(char) * 512);
+
+		fscanf(file, ", %s ", (*population)->os_names[position]);
+		fgets((*population)->app_versions[position], 512, file);
+
+		for (j = strlen((*population)->app_versions[position]); j >= 0; j--) {
+			if ((*population)->app_versions[position][j] == '\0') {
+			} else if ((*population)->app_versions[position][j] == ' ' || (*population)->app_versions[position][j] == 10 || (*population)->app_versions[position][j] == 13) {
+				(*population)->app_versions[position][j] = '\0';
+			} else {
+				break;
+			}
+		}
 	}
 	(*population)->size = size;
 	return 1;
@@ -232,7 +244,7 @@ int fwrite_individual(FILE *file, POPULATION *population, int position) {
 	for (j = 0; j < population->number_parameters; j++) {
 		fprintf(file, " %.20lf", population->individuals[position][j]);
 	}
-	fprintf(file, ", %s, %s\n", population->app_versions[position], population->os_names[position]);
+	fprintf(file, ", %s %s\n", population->os_names[position], population->app_versions[position]);
 	return 0;
 }
 

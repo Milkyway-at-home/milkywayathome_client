@@ -22,6 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef FGDO_MPI_SEARCH_MANAGER_H
 #define FGDO_MPI_SEARCH_MANAGER_H
 
-void start_mpi_search_manager(int argc, char **argv);
+void start_mpi_search_manager(int argc, char **argv, int number_parameters);
+void mpi_asynchronous_search(int number_arguments, char** arguments, int number_parameters, double *point, double *range, double *min_bound, double *max_bound);
 
 #endif

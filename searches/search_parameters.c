@@ -176,10 +176,9 @@ int write_search_parameters(const char* filename, SEARCH_PARAMETERS *parameters)
 		fclose(data_file);
 		return retval;
 	}
-	int boinc_read_search_parameters2(const char* filename, SEARCH_PARAMETERS* parameters, char* version) {
+	int boinc_read_search_parameters2(const char* filename, SEARCH_PARAMETERS* parameters) {
 		char input_path[512];
-		char v_str[64];
-		double v;
+		int i;
 		int retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
 		if (retval) {
 			fprintf(stderr, "APP: error resolving search parameters file (for read): %d\n", retval);
@@ -196,15 +195,21 @@ int write_search_parameters(const char* filename, SEARCH_PARAMETERS *parameters)
 		retval = fread_search_parameters(data_file, parameters);
 		fscanf(data_file, "fitness: %lf\n", &(parameters->fitness));
 
-		v = 0.0;
-		if (fscanf(data_file, "%s %lf\n", v_str, &v) == 2) {
-			if (strcmp(v_str, "stock:")) {
-				sprintf(version, "nonstock");
-			} else {
-				sprintf(version, "%s%1.1lf", v_str, v);
-			}
+		memset(parameters->app_version, '\0', sizeof(char) * 128);
+		if (fgets(parameters->app_version, 128, data_file) == NULL || strlen(parameters->app_version) < 5) {
+			sprintf(parameters->app_version, "?");
 		} else {
-			sprintf(version, "?");
+//			int count = 0;
+			for (i = strlen(parameters->app_version); i >= 0; i--) {
+				if (parameters->app_version[i] == '\0') {
+				} else if (parameters->app_version[i] == ' ' || parameters->app_version[i] == 10 || parameters->app_version[i] == 13) {
+					parameters->app_version[i] = '\0';
+//					count++;
+				} else {
+//					printf("breaked after count: %d\n", count);
+					break;
+				}
+			}
 		}
 
 		fclose(data_file);

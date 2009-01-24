@@ -78,10 +78,10 @@ void get_filename(char *filepath, char *filename) {
 }
 
 int main(int argc, char** argv) {
-	int i, retval, app_specified, nm_type, nm_line_search, nm_remove_outliers;
+	int i, retval, app_specified;
 	char *astronomy_name, *astronomy_path, *wu_astronomy_path;
 	char *star_name, *star_path, *wu_star_path;
-	char *search_name, *wu_info_file, *search_qualifier;
+	char *search_name, *wu_info_file;
 	double *point, *step, *min_bound, *max_bound;
 
 	search_name = NULL;
@@ -97,9 +97,6 @@ int main(int argc, char** argv) {
 	star_name = (char*)malloc(sizeof(char) * FILENAME_SIZE);
 	wu_star_path = (char*)malloc(sizeof(char) * FILENAME_SIZE);
 	wu_info_file = (char*)malloc(sizeof(char) * FILENAME_SIZE);
-	nm_type = -1;
-	nm_line_search = 0;
-	nm_remove_outliers = 0;
 
         for (i = 0; i < argc; i++) {
 		if (!strcmp(argv[i], "-h")) {
@@ -125,24 +122,6 @@ int main(int argc, char** argv) {
 		} else if (!strcmp(argv[i], "-app")) {
 			app_specified = 1;
 			i++;
-		} else if (!strcmp(argv[i], "-nm_type")) {
-			char nm_type_str[1024];
-			strcpy(nm_type_str, argv[++i]);
-			if (!strcmp(nm_type_str, "fixed_range")) {
-				nm_type = NEWTON_FIXED_RANGE;
-			} else if (!strcmp(nm_type_str, "error_range")) {
-				nm_type = NEWTON_ERROR_RANGE;
-			} else if (!strcmp(nm_type_str, "update_range")) {
-				nm_type = NEWTON_UPDATE_RANGE;
-			} else {
-				printf("Invalid newton type: %s\n", nm_type_str);
-				printf("valid types: fixed_range, error_range, random_line_search, parabolic_line_search\n");
-				exit(0);
-			}
-		} else if (!strcmp(argv[i], "-nm_line_search")) {
-			nm_line_search = 1;
-		} else if (!strcmp(argv[i], "-nm_remove_outliers")) {
-			nm_remove_outliers = 1;
 		}
         }
 
@@ -186,23 +165,8 @@ int main(int argc, char** argv) {
 		get_min_parameters(ap, &min_bound);
 		get_max_parameters(ap, &max_bound);
 
-		get_qualifier_from_name(search_name, &search_qualifier);
-		printf("qualifier: %s\n", search_qualifier);
+		asynchronous_search__init(argc, argv, get_optimized_parameter_count(ap), point, step, min_bound, max_bound);
 
-		if (!strcmp(search_qualifier, "nm")) {
-			if (nm_type < 0) {
-				printf("Unspecified newton type:\n");
-				printf("valid types: fixed_range, error_range, random_line_search, parabolic_line_search\n");
-				exit(0);
-			}
-			printf("creating newton method...\n");
-			create_newton_method(search_name, nm_type, nm_line_search, nm_remove_outliers, 100, 1000, ap->number_parameters, point, step, min_bound, max_bound);
-			printf("created.\n");
-		} else if (!strcmp(search_qualifier, "gs")) {
-		} else if (!strcmp(search_qualifier, "de")) {
-		} else if (!strcmp(search_qualifier, "pso")) {
-		}
-		free(search_qualifier);
 
 		/********
 			*	Move input files

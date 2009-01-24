@@ -10,7 +10,7 @@ UTIL_DIR = $(FGDO_DIR)/util
 APP_DIR = ../astronomy
 
 MPI_ASYNCH = \
-	$(APP_DIR)/mpi_asynchronous_astronomy.o
+	$(APP_DIR)/mpi_asynchronous.o
 MPI_SYNCH = \
 	$(APP_DIR)/mpi_synchronous_astronomy.o
 MPI_SYNCH_OPT = \
@@ -32,6 +32,7 @@ ASTRONOMY_OBJS = \
 	$(APP_DIR)/star_points.o \
 	$(APP_DIR)/evaluation.o
 ASTRONOMY_OPT_OBJS = \
+	$(APP_DIR)/astronomy_worker.o \
 	$(APP_DIR)/atSurveyGeometry.o \
 	$(APP_DIR)/numericalIntegration.o \
 	$(APP_DIR)/parameters.o \
@@ -59,10 +60,14 @@ ASYNCH_SEARCH_OBJS = \
 	$(EVALUATION_DIR)/search_manager.o \
 	$(EVALUATION_DIR)/mpi_search_manager.o \
 	$(SEARCH_DIR)/asynchronous_newton_method.o \
-	$(SEARCH_DIR)/recombination.o \
+	$(SEARCH_DIR)/asynchronous_search.o \
 	$(SEARCH_DIR)/gradient.o \
 	$(SEARCH_DIR)/hessian.o \
+	$(SEARCH_DIR)/newton_method.o \
 	$(SEARCH_DIR)/population.o \
+	$(SEARCH_DIR)/recombination.o \
+	$(SEARCH_DIR)/regression.o \
+	$(SEARCH_DIR)/search_log.o \
 	$(SEARCH_DIR)/search_parameters.o
 UTIL_OBJS = \
 	$(UTIL_DIR)/io_util.o \
@@ -77,7 +82,7 @@ PROGS = mpi_asynchronous_astronomy mpi_synchronous_astronomy separation errors
 all: $(PROGS)
 
 mpi_asynch: $(MPI_ASYNCH) $(ASTRONOMY_OPT_OBJS) $(ASYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
-	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_asynchronous_astronomy $(MPI_ASYNCH) $(ASTRONOMY_OPT_OBJS) $(ASYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_asynch_astronomy $(MPI_ASYNCH) $(ASTRONOMY_OPT_OBJS) $(ASYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
 
 mpi_synch: $(MPI_SYNCH) $(ASTRONOMY_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
 	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_synchronous_astronomy $(MPI_SYNCH) $(ASTRONOMY_OBJS) $(SYNCH_SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)

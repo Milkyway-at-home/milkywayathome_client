@@ -6,6 +6,13 @@
 /********
 	*	Generic search data.
  ********/
+#define AS_CREATE_SUCCESS 0;
+#define AS_CREATE_FAIL 1;
+
+extern char AS_VERIFY_MSG[1024];
+#define AS_VERIFY_VALID 0
+#define AS_VERIFY_INVALID 1
+#define AS_VERIFY_IN_PROGRESS 2
 
 extern const char *AS_INSERT_STR[];
 #define AS_INSERT_SUCCESS 0
@@ -33,6 +40,7 @@ extern const char *AS_CP_STR[];
 
 extern char AS_MSG[1024];
 
+typedef int (*create_search_type)(char*, int, char**, int, double*, double*, double*, double*);
 typedef int (*read_search_type)(char*, void**);
 typedef int (*checkpoint_search_type)(char*, void*);
 typedef int (*generate_parameters_type)(char*, void*, SEARCH_PARAMETERS*);
@@ -41,10 +49,13 @@ typedef int (*insert_parameters_type)(char*, void*, SEARCH_PARAMETERS*);
 typedef struct asynchronous_search {
 	char*				search_qualifier;
 
+	create_search_type		create_search;
 	read_search_type		read_search;
 	checkpoint_search_type		checkpoint_search;
 	generate_parameters_type	generate_parameters;
 	insert_parameters_type		insert_parameters;
 } ASYNCHRONOUS_SEARCH;
+
+void asynchronous_search__init(int number_arguments, char** arguments, int number_parameters, double *point, double *range, double *min_bound, double *max_bound);
 
 #endif

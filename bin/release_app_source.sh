@@ -2,12 +2,14 @@ echo "creating files for milkyway app relase "$1
 
 mkdir milkyway
 cd milkyway
+mkdir license
 mkdir astronomy
 mkdir searches
 mkdir util
 mkdir bin
 mkdir bin/test_files/
 
+cp ../../license/GPL.txt ./license/
 cp ../../astronomy/boinc_astronomy.C ./astronomy/
 cp ../../astronomy/atSurveyGeometry.c ./astronomy/
 cp ../../astronomy/atSurveyGeometry.h ./astronomy/
@@ -42,13 +44,16 @@ cp ../../util/settings.h ./util/
 
 cp ../make.osx ./bin/
 cp ../make.linux ./bin/
-cp ../stars.txt ./bin/test_files/stars.txt
-cp ../search_parameters.txt ./bin/test_files/search_parameters.txt
-cp ../parameters.txt ./bin/test_files/astronomy_parameters.txt
-cp ../parameters-cut-large.txt ./bin/test_files/astronomy_parameters-cut-large.txt
-cp ../parameters-cut-medium.txt ./bin/test_files/astronomy_parameters-cut-medium.txt
-cp ../parameters-nocut-small.txt ./bin/test_files/astronomy_parameters-nocut-small.txt
-cp ../parameters-unconvolved-small.txt ./bin/test_files/astronomy_parameters-unconvolved-small.txt
+cp ../test_boinc/set_parameters.sh ./bin/test_files/set_parameters.sh
+cp ../test_boinc/search_parameters-79.txt ./bin/test_files/search_parameters-79.txt
+cp ../test_boinc/search_parameters-82.txt ./bin/test_files/search_parameters-82.txt
+cp ../test_boinc/search_parameters-86.txt ./bin/test_files/search_parameters-86.txt
+cp ../test_boinc/astronomy_parameters-79.txt ./bin/test_files/astronomy_parameters-79.txt
+cp ../test_boinc/astronomy_parameters-82.txt ./bin/test_files/astronomy_parameters-82.txt
+cp ../test_boinc/astronomy_parameters-86.txt ./bin/test_files/astronomy_parameters-86.txt
+cp ../test_boinc/stars-79.txt ./bin/test_files/stars-79.txt
+cp ../test_boinc/stars-82.txt ./bin/test_files/stars-82.txt
+cp ../test_boinc/stars-86.txt ./bin/test_files/stars-86.txt
 
 cd ..
 tar cvzf milkyway_release_$1.tar milkyway

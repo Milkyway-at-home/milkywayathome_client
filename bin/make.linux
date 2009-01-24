@@ -1,5 +1,5 @@
-APP_VERSION = 0.10
-APP_NAME = stock
+APP_VERSION = 0.12
+APP_NAME = stock_linux
 
 BOINC_DIR = /software/boinc-6.3.14-0/pkg/include/boinc
 BOINC_API_DIR = $(BOINC_DIR)/api
@@ -11,18 +11,16 @@ BOINC_API_LINK_DIR = $(BOINC_LINK_DIR)/api
 VARIANTFLAGS = -DGMLE_BOINC -DBOINC_APP_VERSION=$(APP_VERSION) -DBOINC_APP_NAME='"$(APP_NAME)"'
 
 CXXFLAGS_ALL = $(VARIANTFLAGS) \
-	-funroll-loops \
 	-g \
-	-O \
 	-I$(BOINC_DIR)
 
 CXX_i686 = g++
-CXXFLAGS_i686 = -m32 -O2 -ftree-vectorize $(CXXFLAGS_ALL)
+CXXFLAGS_i686 = -m32 -O2 -ftree-vectorize -funroll-loops $(CXXFLAGS_ALL)
 LDFLAGS_i686 = -L/usr/X11R6/lib -L../../linux32_libboinc
 #LDFLAGS_i686 = -L$(BOINC_LIB_LINK_DIR) -L$(BOINC_API_LINK_DIR)
 
 CXX_x86_64 = g++
-CXXFLAGS_x86_64 = -O2 -msse2 -ftree-vectorize $(CXXFLAGS_ALL)
+CXXFLAGS_x86_64 = -O2 -msse2 -ftree-vectorize -funroll-loops $(CXXFLAGS_ALL)
 LDFLAGS_x86_64 = -L/usr/local/lib
 #LDFLAGS_x86_64 = -L/usr/local/lib -L/usr/X11R6/lib
 #LDFLAGS_x86_64 = -L$(BOINC_LIB_LINK_DIR) -L$(BOINC_API_LINK_DIR)
