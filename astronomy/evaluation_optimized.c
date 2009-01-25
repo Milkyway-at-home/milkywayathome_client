@@ -575,7 +575,7 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
 			#endif
 
 			#ifdef GMLE_BOINC
-			if (boinc_time_to_checkpoint()) {
+				if (boinc_time_to_checkpoint()) {
 					int retval = write_checkpoint(es);
 					if (retval) {
 						fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);

@@ -78,10 +78,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 void fwrite_integral_area(FILE *file, INTEGRAL_AREA *ia) {
-	fprintf(file, "mu[min,max,steps,current_step]: %.20lf, %.10lf, %d, %d\n", ia->mu_min, ia->mu_max, ia->mu_steps, ia->mu_step_current);
-	fprintf(file, "nu[min,max,steps,current_step]: %.20lf, %.10lf, %d, %d\n", ia->nu_min, ia->nu_max, ia->nu_steps, ia->nu_step_current);
-	fprintf(file, " r[min,max,steps,current_step]: %.20lf, %.10lf, %d, %d\n", ia->r_min, ia->r_max, ia->r_steps, ia->r_step_current);
-	fprintf(file, "background integral: %.10lf\n", ia->background_integral);
+	fprintf(file, "mu[min,max,steps,current_step]: %.20lf, %.20lf, %d, %d\n", ia->mu_min, ia->mu_max, ia->mu_steps, ia->mu_step_current);
+	fprintf(file, "nu[min,max,steps,current_step]: %.20lf, %.20lf, %d, %d\n", ia->nu_min, ia->nu_max, ia->nu_steps, ia->nu_step_current);
+	fprintf(file, " r[min,max,steps,current_step]: %.20lf, %.20lf, %d, %d\n", ia->r_min, ia->r_max, ia->r_steps, ia->r_step_current);
+	fprintf(file, "background integral: %.20lf\n", ia->background_integral);
 	print_double_array(file, "stream_integrals", ia->number_streams, ia->stream_integrals);
 }
 
