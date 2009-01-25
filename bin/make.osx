@@ -1,4 +1,4 @@
-APP_VERSION = 0.14
+APP_VERSION = 0.16
 APP_NAME = your_app_name
 
 BOINC_DIR = /Users/deselt/Research/software/boinc

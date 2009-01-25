@@ -12,4 +12,7 @@ FILE* log_open(char *search_name);
 void log_print_double_array(char *search_name, char* a_name, int a_length, double* a);
 void log_printf(char *search_name, char* text, ...);
 
+FILE* error_log_open(char *search_name);
+void error_log_printf(char *search_name, char* text, ...);
+
 #endif

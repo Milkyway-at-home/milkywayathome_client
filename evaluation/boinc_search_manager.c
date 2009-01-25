@@ -52,6 +52,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "search_manager.h"
 #include "boinc_add_workunit.h"
 #include "../searches/asynchronous_search.h"
+#include "../searches/search_log.h"
 #include "../searches/search_parameters.h"
 #include "../util/settings.h"
 
@@ -428,7 +429,9 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 		else if (host.os_name[0] == 'L') sprintf(insert_sp->host_os, "Linux");
 		else sprintf(insert_sp->host_os, "?");
 
-		if (insert_sp->app_version[0] != '?' && !(insert_sp->app_version[0] == 't' && insert_sp->app_version[1] == 'i' && insert_sp->app_version[2] == 'm' && insert_sp->app_version[3] == 'e')) {
+		if (insert_sp->app_version[0] != '?' && strcmp(insert_sp->app_version, "#IND00000000000") && !(insert_sp->app_version[0] == 't' && insert_sp->app_version[1] == 'i' && insert_sp->app_version[2] == 'm' && insert_sp->app_version[3] == 'e')) {
+			FILE *error_file;
+
 			retval = ms->search->insert_parameters(ms->search_name, ms->search_data, insert_sp);
 
 			switch(retval) {
@@ -440,8 +443,14 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 				case AS_INSERT_OUT_OF_ITERATION:
 				case AS_INSERT_BAD_METADATA:
 				case AS_INSERT_NOT_UNIQUE:
+					valid_state = AS_VERIFY_VALID;
+				break;
 				case AS_INSERT_FITNESS_INVALID:		// NEED TO MOVE THIS TO INVALID
 					//compare to previous iteration values
+					error_file = error_log_open(ms->search_name);
+					fprintf(error_file, "[%s] [%s] [invalid fitness]\n", insert_sp->app_version, AS_MSG);
+					fwrite_search_parameters(error_file, insert_sp);
+					fclose(error_file);
 					valid_state = AS_VERIFY_VALID;
 				break;
 				case AS_INSERT_FITNESS_NAN:

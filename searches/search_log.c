@@ -33,3 +33,21 @@ void log_printf(char *search_name, char* text, ...) {
 	fclose(logfile);
 }
 
+FILE* error_log_open(char *search_name) {
+	char logfilename[1024];
+	sprintf(logfilename, "%s/%s/error", get_working_directory(), search_name);
+	return fopen(logfilename, "a");
+}
+
+void error_log_printf(char *search_name, char* text, ...) {
+        va_list args;
+        FILE *error_file = error_log_open(search_name);
+        if (error_file == NULL) {
+                printf("ERROR, COULD NOT OPEN ERROR LOG FILE");
+                return;
+        }
+        va_start(args, text);
+        vfprintf(error_file, text, args);
+        va_end(args);
+        fclose(error_file);
+}
