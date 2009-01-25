@@ -215,7 +215,7 @@ int main(int argc, char** argv) {
 			credit += (ap->r_cut[i][2] * ap->mu_cut[i][2] * ap->nu_cut[i][2] * (double)ap->convolve);
 		}
 		calc_prob_count = credit;
-		credit /= 270000000.0;
+		credit /= 400000000.0;
 
 		printf("awarded credit: %lf\n", credit);
 		wu_info->number_parameters = get_optimized_parameter_count(ap);

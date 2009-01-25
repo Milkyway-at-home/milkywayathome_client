@@ -1,4 +1,4 @@
-APP_VERSION = 0.11
+APP_VERSION = 0.14
 APP_NAME = your_app_name
 
 BOINC_DIR = /Users/deselt/Research/software/boinc
@@ -41,7 +41,7 @@ CXX_x86_64 = /usr/bin/g++-4.0
 CXXFLAGS_x86_64 = -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.5.sdk \
 	-mmacosx-version-min=10.5 \
 	$(CXXFLAGS_ALL) \
-	-O2 -mfpmath=sse -march=nocona -msse2 \
+	-O3 -mfpmath=sse -march=nocona -msse3 \
 	-ftree-vectorize -funroll-loops
 LDFLAGS_x86_64 = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.5.sdk,-arch,x86_64
 

@@ -426,7 +426,11 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 	if (nms->line_search == NULL) {
 		sprintf(AS_MSG, "ev: %*d/%*d, it: %*d/%*d, f: %.15lf", 3, nms->current_evaluation, 3, nms->evaluations_per_iteration, 3, nms->current_iteration, 3, nms->maximum_iteration, sp->fitness);
 	} else {
-		sprintf(AS_MSG, "ev: %*d/%*d, it: %*d/%*d, f: %.15lf, ls", 3, nms->current_evaluation, 3, nms->evaluations_per_iteration, 3, nms->current_iteration, 3, nms->maximum_iteration, sp->fitness);
+		if (nms->mode == NMS_HESSIAN) {
+		sprintf(AS_MSG, "ev: %*d/%*d, it: %*d/%*d, f: %.15lf, hessian", 3, nms->current_evaluation, 3, nms->evaluations_per_iteration, 3, nms->current_iteration, 3, nms->maximum_iteration, sp->fitness);
+		} else {
+			sprintf(AS_MSG, "ev: %*d/%*d, it: %*d/%*d, f: %.15lf, ls", 3, nms->current_evaluation, 3, nms->evaluations_per_iteration, 3, nms->current_iteration, 3, nms->maximum_iteration, sp->fitness);
+		}
 	}
 
 	if (nms->current_iteration < nms->maximum_iteration) {

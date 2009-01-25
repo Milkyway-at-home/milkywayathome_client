@@ -297,6 +297,19 @@ void calculate_integral_unconvolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia,
 			double id = 0;
 			double nu = ia->nu_min + (ia->nu_step_current * ia->nu_step_size);
 
+			#ifdef GMLE_BOINC
+				int retval;
+				if (boinc_time_to_checkpoint()) {
+					retval = write_checkpoint(es);
+					if (retval) {
+						fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
+						return;
+					}
+					boinc_checkpoint_completed();
+				}
+				boinc_fraction_done(calculate_progress(es));
+			#endif
+
 			#if WEDGE_ALLOW_ZERO == 1
 				if (ap->wedge > 0) {
 					id = cos((90 - nu - ia->nu_step_size)/deg) - cos((90 - nu)/deg);
@@ -328,19 +341,6 @@ void calculate_integral_unconvolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia,
 			#endif
 
 			for (; ia->r_step_current < ia->r_steps; ia->r_step_current++) {
-				#ifdef GMLE_BOINC
-					int retval;
-					if (boinc_time_to_checkpoint()) {
-						retval = write_checkpoint(es);
-						if (retval) {
-							fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
-							return;
-						}
-						boinc_checkpoint_completed();
-					}
-					boinc_fraction_done(calculate_progress(es));
-				#endif
-
 				#if WEDGE_ALLOW_ZERO == 1
 					if (ap->wedge == 0) {
 						double xyz[3];
@@ -415,6 +415,19 @@ void calculate_integral_convolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, E
 			double id = 0;
 			double nu = ia->nu_min + (ia->nu_step_current * ia->nu_step_size);
 
+			#ifdef GMLE_BOINC
+				int retval;
+				if (boinc_time_to_checkpoint()) {
+					retval = write_checkpoint(es);
+					if (retval) {
+						fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
+						return;
+					}
+					boinc_checkpoint_completed();
+				}
+				boinc_fraction_done(calculate_progress(es));
+			#endif
+
 			#if WEDGE_ALLOW_ZERO == 1
 				if (ap->wedge > 0) {
 					id = cos((90 - nu - ia->nu_step_size)/deg) - cos((90 - nu)/deg);
@@ -446,19 +459,6 @@ void calculate_integral_convolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, E
 			#endif
 
 			for (; ia->r_step_current < ia->r_steps; ia->r_step_current++) {
-				#ifdef GMLE_BOINC
-					int retval;
-					if (boinc_time_to_checkpoint()) {
-						retval = write_checkpoint(es);
-						if (retval) {
-							fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
-							return;
-						}
-						boinc_checkpoint_completed();
-					}
-					boinc_fraction_done(calculate_progress(es));
-				#endif
-
 				#if WEDGE_ALLOW_ZERO == 1
 					if (ap->wedge == 0) {
 						double xyz[3];
@@ -536,14 +536,6 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 //			printf("[cut %d] background: %.10lf, stream[0]: %.10lf\n", es->current_cut, current_area->background_integral, current_area->stream_integrals[0]); 
 		}
 	}
-	#ifdef GMLE_BOINC
-		int retval = write_checkpoint(es);
-		if (retval) {
-			fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
-			return retval;
-		}
-	#endif
-
 
 //	time(&finish_time);
 //	printf("background integral: %.10lf\n", es->background_integral);
@@ -684,14 +676,6 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
 			}
 		}
 	}
-
-	#ifdef GMLE_BOINC
-		int retval = write_checkpoint(es);
-		if (retval) {
-			fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
-			return retval;
-		}
-	#endif
 
 	free_constants(ap);
 	free(exp_stream_weights);

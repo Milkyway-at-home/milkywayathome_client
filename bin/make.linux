@@ -1,5 +1,5 @@
-APP_VERSION = 0.12
-APP_NAME = stock_linux
+APP_VERSION = 0.14
+APP_NAME = your_app_name
 
 BOINC_DIR = /software/boinc-6.3.14-0/pkg/include/boinc
 BOINC_API_DIR = $(BOINC_DIR)/api
