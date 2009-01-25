@@ -298,9 +298,8 @@ void calculate_integral_unconvolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia,
 			double nu = ia->nu_min + (ia->nu_step_current * ia->nu_step_size);
 
 			#ifdef GMLE_BOINC
-				int retval;
 				if (boinc_time_to_checkpoint()) {
-					retval = write_checkpoint(es);
+					int retval = write_checkpoint(es);
 					if (retval) {
 						fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
 						return;
@@ -416,9 +415,8 @@ void calculate_integral_convolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, E
 			double nu = ia->nu_min + (ia->nu_step_current * ia->nu_step_size);
 
 			#ifdef GMLE_BOINC
-				int retval;
 				if (boinc_time_to_checkpoint()) {
-					retval = write_checkpoint(es);
+					int retval = write_checkpoint(es);
 					if (retval) {
 						fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
 						return;
@@ -505,7 +503,7 @@ void calculate_integral_convolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, E
 
 int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp) {
 	INTEGRAL_AREA *current_area;
-	int i;
+	int i, j;
 //	time_t start_time, finish_time;
 //	time(&start_time);
 
@@ -525,16 +523,14 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 		} else {
 			calculate_integral_unconvolved(ap, current_area, es);
 		}
+	}
 
-		if (es->current_cut == -1) {
-			es->background_integral = current_area->background_integral;
-			for (i = 0; i < ap->number_streams; i++) es->stream_integrals[i] = current_area->stream_integrals[i];
-//			printf("[main] background: %.10lf, stream[0]: %.10lf\n", current_area->background_integral, current_area->stream_integrals[0]); 
-		} else {
-			es->background_integral -= current_area->background_integral;
-			for (i = 0; i < ap->number_streams; i++) es->stream_integrals[i] -= current_area->stream_integrals[i];
-//			printf("[cut %d] background: %.10lf, stream[0]: %.10lf\n", es->current_cut, current_area->background_integral, current_area->stream_integrals[0]); 
-		}
+	es->background_integral = es->main_integral->background_integral;
+	for (i = 0; i < ap->number_streams; i++) es->stream_integrals[i] = es->main_integral->stream_integrals[i];
+
+	for (i = 0; i < ap->number_cuts; i++) {
+		es->background_integral -= es->cuts[i]->background_integral;
+		for (j = 0; j < ap->number_streams; j++) es->stream_integrals[j] -= es->cuts[i]->stream_integrals[j];
 	}
 
 //	time(&finish_time);
