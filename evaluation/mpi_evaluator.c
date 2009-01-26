@@ -78,7 +78,7 @@ double mpi_integral_evaluate(double* parameters) {
 	int i;
 	double result;
 
-	for (i = 0; i < likelihood_parameter_length; i++) integral_parameters[i] = parameters[i];
+	for (i = 0; i < integral_parameter_length; i++) integral_parameters[i] = parameters[i];
 
 	if (rank == 0) {
 //		printf("[worker: %d] integral_parameter_length: %d, integral_result_length: %d, likelihood_parameter_length: %d, likelihood_result_length: %d\n", rank,

@@ -52,7 +52,6 @@ void read_data(int rank, int max_rank) {
 	}
 	split_astronomy_parameters(ap, rank, max_rank);
 
-
 	/********
 		*	READ THE STAR POINTS
 	 ********/

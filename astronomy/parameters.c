@@ -485,7 +485,7 @@ void split_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, int rank, int max_rank
 	 ********/
 	split(rank/(r_divisor*mu_divisor), max_rank, nu_divisor, &(ap->nu_min), &(ap->nu_max), &(ap->nu_steps), ap->nu_step_size);
 
-	printf("[worker: %d] div: [%d %d %d] [r_min: %lf, r_max: %lf, r_steps: %d], [mu_min: %lf, mu_max: %lf, mu_steps: %d], [nu_min: %lf, nu_max: %lf, nu_steps: %d]\n", rank, r_divisor, mu_divisor, nu_divisor, ap->r_min, ap->r_max, ap->r_steps, ap->mu_min, ap->mu_max, ap->mu_steps, ap->nu_min, ap->nu_max, ap->nu_steps);
+//	printf("[worker: %d] div: [%d %d %d] [r_min: %lf, r_max: %lf, r_steps: %d], [mu_min: %lf, mu_max: %lf, mu_steps: %d], [nu_min: %lf, nu_max: %lf, nu_steps: %d]\n", rank, r_divisor, mu_divisor, nu_divisor, ap->r_min, ap->r_max, ap->r_steps, ap->mu_min, ap->mu_max, ap->mu_steps, ap->nu_min, ap->nu_max, ap->nu_steps);
 
 	/*** Volume cut splitting ***/
 	int i;
@@ -535,13 +535,12 @@ void split_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, int rank, int max_rank
 	         ********/
 	        split(rank/(r_cut_divisor*mu_cut_divisor), max_rank, nu_cut_divisor, &(ap->nu_cut[i][0]), &(ap->nu_cut[i][1]), (int*)&(ap->nu_cut[i][2]), ap->nu_cut_step_size[i]);
 	
-		printf("[worker: %d] [cut: %d] div: [%d %d %d] [r_min: %lf, r_max: %lf, r_steps: %lf], [mu_min: %lf, mu_max: %lf, mu_steps: %lf], [nu_min: %lf, nu_max: %lf, nu_steps: %lf]\n",
-			rank, i, 
-			r_divisor, mu_divisor, nu_divisor, 
-			ap->r_cut[i][0], ap->r_cut[i][1], ap->r_cut[i][2], 
-			ap->mu_cut[i][0], ap->mu_cut[i][1], ap->mu_cut[i][2], 
-			ap->nu_cut[i][0], ap->nu_cut[i][1], ap->nu_cut[i][2]);
-
+//		printf("[worker: %d] [cut: %d] div: [%d %d %d] [r_min: %lf, r_max: %lf, r_steps: %lf], [mu_min: %lf, mu_max: %lf, mu_steps: %lf], [nu_min: %lf, nu_max: %lf, nu_steps: %lf]\n",
+//			rank, i, 
+//			r_divisor, mu_divisor, nu_divisor, 
+//			ap->r_cut[i][0], ap->r_cut[i][1], ap->r_cut[i][2], 
+//			ap->mu_cut[i][0], ap->mu_cut[i][1], ap->mu_cut[i][2], 
+//			ap->nu_cut[i][0], ap->nu_cut[i][1], ap->nu_cut[i][2]);
 	}	
 }
 

@@ -526,7 +526,10 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 	}
 
 	es->background_integral = es->main_integral->background_integral;
-	for (i = 0; i < ap->number_streams; i++) es->stream_integrals[i] = es->main_integral->stream_integrals[i];
+	for (i = 0; i < ap->number_streams; i++) {
+		printf("\tsetting stream_integrals[%d]: %lf\n", i, es->main_integral->stream_integrals[i]);
+		es->stream_integrals[i] = es->main_integral->stream_integrals[i];
+	}
 
 	for (i = 0; i < ap->number_cuts; i++) {
 		es->background_integral -= es->cuts[i]->background_integral;
@@ -534,8 +537,8 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 	}
 
 //	time(&finish_time);
-//	printf("background integral: %.10lf\n", es->background_integral);
-//	for (i = 0; i < ap->number_streams; i++) printf("stream integral[%d]: %.10lf\n", i, es->stream_integrals[i]);
+//	printf("background integral: %.20lf\n", es->background_integral);
+//	for (i = 0; i < ap->number_streams; i++) printf("stream integral[%d]: %.20lf\n", i, es->stream_integrals[i]);
 //	printf("integrals calculated in: %lf\n", (double)finish_time - (double)start_time);
 	return 0;
 }

@@ -115,7 +115,7 @@ void free_star_points(STAR_POINTS* sp) {
 
 void split_star_points(STAR_POINTS* sp, int rank, int max_rank) {
 	int first_star, last_star, num_stars;
-	int i;
+	int i, total_stars;
 	double** new_stars;
 
 	if (rank == 0 && max_rank == 0) return;
@@ -124,6 +124,7 @@ void split_star_points(STAR_POINTS* sp, int rank, int max_rank) {
 	last_star = (int) (((double)sp->number_stars) * (((double)rank+1.0)/((double)max_rank)));
 	num_stars = last_star-first_star;
 	new_stars = (double**)malloc(sizeof(double*) * num_stars);
+	total_stars = sp->number_stars;
 
 	for (i = 0; i < num_stars; i++) {
 		new_stars[i] = (double*)malloc(sizeof(double) * 3);
@@ -135,7 +136,7 @@ void split_star_points(STAR_POINTS* sp, int rank, int max_rank) {
 	sp->stars = new_stars;
 	sp->number_stars = num_stars;
 
-	printf("[worker: %d] using [%d] stars\n", rank, sp->number_stars);
+//	printf("[worker: %d] using [%d/%d] stars\n", rank, sp->number_stars, total_stars);
 }
 
 #ifdef GMLE_BOINC
