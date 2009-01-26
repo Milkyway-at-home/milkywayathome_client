@@ -17,87 +17,53 @@ int double_compare(const void *p1, const void *p2) {
 }
 
 int remove_outliers(POPULATION *p, double range) {
-	double *median_diff, *median_diff2, *fitness;
-	double median, median2;
-	double **hessian, **hessian_error, *gradient, *gradient_error, c, c_error;
-	double *errors, avg_error;
-	POPULATION *sample_population;
-	int i, j, current;
+	double *diff, *sorted_diff, median_diff;
+	double distance;
+	int i, j, k;
 
-	median_diff2 = (double*)malloc(sizeof(double) * p->size);
-	median_diff = (double*)malloc(sizeof(double) * p->size);
-	fitness = (double*)malloc(sizeof(double) * p->size);
-
-	memcpy(fitness, p->fitness, sizeof(double) * p->size);
-
-	mergesort(fitness, p->size, sizeof(double), double_compare);
-	median = fitness[p->size/2];
+	/********
+		*	calculate sqrt sum difference/(distance)^2 / (N-1)
+	 ********/
+	diff = (double*)malloc(sizeof(double) * p->size);
+	sorted_diff = (double*)malloc(sizeof(double) * p->size);
+	for (i = 0; i < p->size; i++) diff[i] = 0.0;
 	for (i = 0; i < p->size; i++) {
-		median_diff[i] = fabs(p->fitness[i] - median);
-	}
-
-	memcpy(median_diff2, median_diff, sizeof(double) * p->size);
-	mergesort(median_diff2, p->size, sizeof(double), double_compare);
-	median2 = median_diff2[p->size/2];
-	for (i = 0; i < p->size; i++) {
-		median_diff2[i] = fabs(median_diff[i] - median2);
-	}
-
-        init_matrix(&hessian, p->number_parameters, p->number_parameters);
-        init_matrix(&hessian_error, p->number_parameters, p->number_parameters);
-        gradient = (double*)malloc(sizeof(double) * p->number_parameters);
-        gradient_error = (double*)malloc(sizeof(double) * p->number_parameters);
-                
-	new_population(p->size, p->number_parameters, &sample_population);
-	sample_population->size = p->size - 1;
-	for (i = 0; i < p->size-1; i++) {
-		sample_population->fitness[i] = p->fitness[i+1];
-		if (sample_population->individuals[i] == NULL) sample_population->individuals[i] = (double*)malloc(sizeof(double) * p->number_parameters);
-		for (j = 0; j < p->number_parameters; j++) sample_population->individuals[i][j] = p->individuals[i+1][j];
-	}
-
-	errors = (double*)malloc(sizeof(double) * p->size);
-	avg_error = 0;
-	for (i = 0; i < p->size; i++) {
-	        parabolic_2d_regression_error(sample_population->size, sample_population->number_parameters, sample_population->individuals, sample_population->fitness, hessian, hessian_error, gradient, gradient_error, &c, &c_error);
-		errors[i] = fabs(p->fitness[i] - parabolic_2d_evaluate(p->number_parameters, p->individuals[i], hessian, gradient, c));
-
-		if (i < p->size - 1) {
-			sample_population->fitness[i] = p->fitness[i];
-			for (j = 0; j < p->number_parameters; j++) sample_population->individuals[i][j] = p->individuals[i][j];
+		for (j = i+1; j < p->size; j++) {
+			distance = 0;
+			for (k = 0; k < p->number_parameters; k++) {
+				distance += fabs(p->individuals[i][k] - p->individuals[j][k]);
+			}
+			diff[i] += fabs(p->fitness[i] - p->fitness[j]) / distance;
+			diff[j] += fabs(p->fitness[i] - p->fitness[j]) / distance;
 		}
-		avg_error += errors[i];
+		diff[i] /= p->size-1;
+		sorted_diff[i] = diff[i];
 	}
-	avg_error /= p->size;
+	qsort(sorted_diff, p->size, sizeof(double), double_compare);
+	median_diff = sorted_diff[p->size/2];
 
-	printf("errors: median [%.20lf], median of median [%.20lf], error[avg: %.20lf], c: [%.20lf]\n", median, median2, avg_error, c);
+	printf("removing individuals, median_diff: %.20lf\n", median_diff);
 	for (i = 0; i < p->size; i++) {
-		printf("\t[%d] %.20lf, %.20lf, %.20lf", i, median_diff[i], median_diff2[i], errors[i]);
-		if (errors[i] >= range * avg_error) printf(" -- REMOVED");
+		fwrite_individual(stdout, p, i);
+		printf("diff[%d]: %.20lf", i, diff[i]);
+		if (diff[i] > range * median_diff) {
+			printf(" -- REMOVED");
+
+			p->size--;
+			p->fitness[i] = p->fitness[p->size];
+			for (j = 0; j < p->number_parameters; j++) p->individuals[i][j] = p->individuals[p->size][j];
+
+			if (p->os_names[p->size] == NULL) p->os_names[i] = NULL;
+			else sprintf(p->os_names[i], "%s", p->os_names[p->size]);
+
+			if (p->app_versions[p->size] == NULL) p->app_versions[i] = NULL;
+			else sprintf(p->app_versions[i], "%s", p->app_versions[p->size]);
+			i--;
+		}
 		printf("\n");
 	}
-
-	current = 0;
-	for (i = 0; i < p->size; i++) {
-		if (errors[i] < range * avg_error) {
-			p->fitness[current] = p->fitness[i];
-			for (j = 0; j < p->number_parameters; j++) p->individuals[current][j] = p->individuals[i][j];
-			current++;
-		}
-	}
-	p->size = current;
-
-	free_population(sample_population);
-	free(sample_population);
-
-        free_matrix(&hessian, p->number_parameters, p->number_parameters);
-        free_matrix(&hessian_error, p->number_parameters, p->number_parameters);
-        free(gradient);
-        free(gradient_error);
-
-	free(median_diff);
-	free(median_diff2);
-	free(errors);
+	free(diff);
+	free(sorted_diff);
 
 	return 0;
 }

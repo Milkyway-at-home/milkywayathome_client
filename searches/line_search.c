@@ -22,7 +22,7 @@ double		tol = 1e-6;
 double evaluate_step(double* point, double step, double* direction, int number_parameters, double* current_point) {
 	int i;
 	for (i = 0; i < number_parameters; i++) {
-		current_point[i] = point[i] - (step * direction[i]);
+		current_point[i] = point[i] + (step * direction[i]);
 	}
 	return evaluate(current_point);
 }
@@ -39,7 +39,7 @@ int line_search(double* point, double initial_fitness, double* direction, int nu
 	printf("\tline search starting at fitness: %.15lf\n", initial_fitness);
 	print_double_array(stdout, "\tinitial point: ", number_parameters, point);
 	/********
-		*	Find f1 > f2
+		*	Find f1 < f2
 	 ********/
 	step = 1.0;
 	f1 = initial_fitness;
@@ -49,7 +49,7 @@ int line_search(double* point, double initial_fitness, double* direction, int nu
 	printf("\t\tloop 1, evaluations: %d, step: %.15lf, fitness: %.15lf\n", (*evaluations_done), step, f2);
 
 	eval_count = 0;
-	while (step > tol && (f1 < f2 || isnan(f2)) && eval_count < LOOP1_MAX) {
+	while (step > tol && (f1 > f2 || isnan(f2)) && eval_count < LOOP1_MAX) {
 		step /= 2.0;
 
 		// f2 = evaluate( point + (direction * step) );
@@ -63,7 +63,7 @@ int line_search(double* point, double initial_fitness, double* direction, int nu
 	if (eval_count == LOOP2_MAX) return LS_LOOP1_MAX;
 
 	/********
-		*	Find f1 > f2 < f3
+		*	Find f1 < f2 > f3
 	 ********/
 	jump = 2.0;
 	d1 = 0.0;
@@ -74,7 +74,7 @@ int line_search(double* point, double initial_fitness, double* direction, int nu
 	(*evaluations_done)++;
 	printf("\t\tloop 2, evaluations: %d, step: %.15lf, fitness: %.15lf\n", (*evaluations_done), d3 * step, f3);
 	eval_count = 0;
-	while (f3 <= f2 && !isnan(f1 - f2 - f3) && eval_count < LOOP2_MAX) {
+	while (f3 >= f2 && !isnan(f1 - f2 - f3) && eval_count < LOOP2_MAX) {
 		d1 = d2;
 		f1 = f2;
 		d2 = d3;

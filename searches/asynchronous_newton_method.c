@@ -452,6 +452,9 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 				if (nms->line_search == NULL || nms->mode == NMS_HESSIAN) {
 					double *step, *step_error;
 					double scaling_factor = 0.4;
+
+					remove_outliers(p, 3.0);
+
 					step = (double*)malloc(sizeof(double) * nms->number_parameters);
 					step_error = (double*)malloc(sizeof(double) * nms->number_parameters);
 
@@ -509,7 +512,7 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 					free(step);
 					free(step_error);
 				} else {
-					//remove_outliers(p, 2.0);
+					remove_outliers(p, 3.0);
 					get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
 					log_printf(search_name, "iteration: %d/%d, line_search\n", nms->current_iteration, nms->maximum_iteration);
 					log_printf(search_name, "best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);

@@ -2,29 +2,31 @@
 #include "stdio.h"
 #include "string.h"
 
-#include "gradient_descent.h"
+#include "synchronous_gradient_descent.h"
 #include "gradient.h"
 #include "line_search.h"
+#include "search_arguments.h"
 #include "../evaluation/evaluator.h"
 #include "../util/io_util.h"
 
-#define min_gradient_threshold 0.00001
-
-void parse_gradient_parameters(char* parameters, int *number_iterations) {
-	if (parameters[0] == 'g') {
-		sscanf(parameters, "gd/%d", number_iterations);
-	} else {
-		sscanf(parameters, "cgd/%d", number_iterations);
-	}
-}
-
-void synchronous_gradient_descent(char* search_path, char* search_parameters, double* point, double* step, int number_parameters) {
+void synchronous_gradient_descent(int number_arguments, char **arguments, int number_parameters, double *point, double *step) {
 	GRADIENT *gradient;
 	int i, evaluations, number_iterations, retval;
 	double point_fitness;
 	double *new_point;
+	double min_gradient_threshold;
 
-	parse_gradient_parameters(search_parameters, &number_iterations);
+	number_iterations = get_int_arg("-gd_iterations", number_arguments, arguments);
+	if (number_iterations <= 0) {
+		printf("argument: '-gd_iterations #' not specified, quitting.\n");
+		return;
+	}
+
+	min_gradient_threshold = get_double_arg("-gd_min_threshold", number_arguments, arguments);
+	if (min_gradient_threshold < 0) {
+		printf("argument: '-gd_min_threshold #' not specified, quitting.\n");
+		return;
+	}
 
 	point_fitness = evaluate(point);
 	for (i = 0; i < number_iterations; i++) {
@@ -53,7 +55,7 @@ void synchronous_gradient_descent(char* search_path, char* search_parameters, do
 	free(new_point);
 }
 
-void synchronous_conjugate_gradient_descent(char* search_path, char* search_parameters, double* point, double* step, int number_parameters) {
+void synchronous_conjugate_gradient_descent(int number_arguments, char **arguments, int number_parameters, double *point, double *step) {
         GRADIENT *gradient;
 	double *direction;
 	double *previous_gradient;
@@ -63,9 +65,25 @@ void synchronous_conjugate_gradient_descent(char* search_path, char* search_para
         double point_fitness;
         double *new_point;
 	double bet, betdiv;
+	double min_gradient_threshold;
 
-	reset = 8;
-        parse_gradient_parameters(search_parameters, &number_iterations);
+	number_iterations = get_int_arg("-gd_iterations", number_arguments, arguments);
+	if (number_iterations <= 0) {
+		printf("argument: '-gd_iterations #' not specified, quitting.\n");
+		return;
+	}
+
+	reset = get_int_arg("-gd_reset", number_arguments, arguments);
+	if (reset < 0) {
+		printf("argument: '-gd_reset #' not specified, quitting.\n");
+		return;
+	}
+
+	min_gradient_threshold = get_double_arg("-gd_min_threshold", number_arguments, arguments);
+	if (min_gradient_threshold < 0) {
+		printf("argument: '-gd_min_threshold #' not specified, quitting.\n");
+		return;
+	}
 
 	previous_gradient = (double*)malloc(sizeof(double) * number_parameters);
 	previous_direction = (double*)malloc(sizeof(double) * number_parameters);
