@@ -527,7 +527,6 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 
 	es->background_integral = es->main_integral->background_integral;
 	for (i = 0; i < ap->number_streams; i++) {
-		printf("\tsetting stream_integrals[%d]: %lf\n", i, es->main_integral->stream_integrals[i]);
 		es->stream_integrals[i] = es->main_integral->stream_integrals[i];
 	}
 

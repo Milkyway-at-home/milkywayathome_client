@@ -89,9 +89,9 @@ void integral_f(double* parameters, double* results) {
 	for (i = 0; i < ap->number_streams; i++) {
 		results[i+1] = es->stream_integrals[i];
 	}
-	printf("[worker: %d] background integral: %lf, stream integrals:", get_mpi_rank(), results[0]);
-	for (i = 0; i < ap->number_streams; i++) printf(" %lf", results[i+1]);
-	printf("\n");
+//	printf("[worker: %d] background integral: %lf, stream integrals:", get_mpi_rank(), results[0]);
+//	for (i = 0; i < ap->number_streams; i++) printf(" %lf", results[i+1]);
+//	printf("\n");
 }
 
 void integral_compose(double* integral_results, int num_results, double* results) {
@@ -108,9 +108,9 @@ void integral_compose(double* integral_results, int num_results, double* results
 			results[j+1] += integral_results[current + j + 1];
 		}
 	}
-	printf("[worker: %d] [compose] background integral: %lf, stream integrals:", get_mpi_rank(), results[0]);
-	for (i = 0; i < ap->number_streams; i++) printf(" %lf", results[i+1]);
-	printf("\n");
+//	printf("[worker: %d] [compose] background integral: %lf, stream integrals:", get_mpi_rank(), results[0]);
+//	for (i = 0; i < ap->number_streams; i++) printf(" %lf", results[i+1]);
+//	printf("\n");
 }
 
 void likelihood_f(double* integrals, double* results) {
@@ -129,7 +129,7 @@ void likelihood_f(double* integrals, double* results) {
 	}
 	results[0] = es->prob_sum;
 	results[1] = es->bad_jacobians;
-	printf("[worker: %d] calculated likelihood: %lf, bad_jacobs: %lf\n", get_mpi_rank(), results[0], results[1]);
+//	printf("[worker: %d] calculated likelihood: %lf, bad_jacobs: %lf\n", get_mpi_rank(), results[0], results[1]);
 }
 
 double likelihood_compose(double* results, int num_results) {
@@ -141,6 +141,6 @@ double likelihood_compose(double* results, int num_results) {
 		bad_jacobians += results[(2*i)+1];
 	}
 	prob_sum /= (total_number_stars - bad_jacobians);
-	printf("[worker: %d] [compose] likelihood: %.10lf\n", get_mpi_rank(), prob_sum);
+//	printf("[worker: %d] [compose] likelihood: %.10lf\n", get_mpi_rank(), prob_sum);
 	return prob_sum;
 }

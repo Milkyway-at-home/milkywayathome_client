@@ -30,7 +30,7 @@ void synchronous_gradient_descent(int number_arguments, char **arguments, int nu
 
 	point_fitness = evaluate(point);
 	for (i = 0; i < number_iterations; i++) {
-		printf("iteration %d:\n", i);
+                printf("iteration %d: current_fitness: %.20lf\n", i, point_fitness);
 		synchronous_get_gradient(point, step, number_parameters, &gradient);
 
 		if (gradient_below_threshold(gradient, min_gradient_threshold)) {
@@ -89,8 +89,9 @@ void synchronous_conjugate_gradient_descent(int number_arguments, char **argumen
 	previous_direction = (double*)malloc(sizeof(double) * number_parameters);
 	direction = (double*)malloc(sizeof(double) * number_parameters);
         point_fitness = evaluate(point);
+
         for (i = 0; i < number_iterations; i++) {
-                printf("iteration %d:\n", i);
+                printf("iteration %d: current_fitness: %.20lf\n", i, point_fitness);
                 synchronous_get_gradient(point, step, number_parameters, &gradient);
 		if (gradient_below_threshold(gradient, min_gradient_threshold)) {
 			printf("Gradient dropped below threshold %.15lf\n", min_gradient_threshold);
