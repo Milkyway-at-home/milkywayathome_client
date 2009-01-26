@@ -19,121 +19,20 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/********
-	*	Includes for astronomy
- ********/
 #include "mpi.h"
 #include "stdio.h"
 #include "stdlib.h"
 #include "math.h"
 
+#include "astronomy_worker.h"
 #include "parameters.h"
-#include "star_points.h"
-#include "evaluation.h"
-#include "stVector.h"
 #include "probability.h"
+#include "star_points.h"
 #include "stCoords.h"
+#include "stVector.h"
 
-#include "../evaluation/mpi_evaluator.h"
 #include "../evaluation/evaluator.h"
-
-#define max_iterations			35000
-#define astronomy_parameters_file	"parameters-20.txt"
-#define star_points_file		"20-f-cut-noMon.txt"
-#define population_file_name		"population.txt"
-
-ASTRONOMY_PARAMETERS *ap;
-STAR_POINTS *sp;
-EVALUATION_STATE *es;
-int total_number_stars;
-
-void read_data(int rank, int max_rank) {
-	ap = (ASTRONOMY_PARAMETERS*)malloc(sizeof(ASTRONOMY_PARAMETERS));
-	/********
-		*	READ THE ASTRONOMY PARAMETERS
-	 ********/
-	printf("reading parameters...\n");
-	int retval = read_astronomy_parameters(astronomy_parameters_file, ap);
-	if (retval) {
-		fprintf(stderr, "APP: error reading astronomy parameters: %d\n", retval);
-		exit(1);
-	}
-	fwrite_astronomy_parameters(stdout, ap);
-	printf("splitting parameters...\n");
-	split_astronomy_parameters(ap, rank, max_rank);
-	/********
-		*	READ THE STAR POINTS
-	 ********/
-	printf("reading star points...\n");
-	sp = (STAR_POINTS*)malloc(sizeof(STAR_POINTS));
-	retval = read_star_points(star_points_file, sp);
-	if (retval) {
-		fprintf(stderr, "APP: error reading star points: %d\n", retval);
-		exit(1);
-	}
-	printf("read %d stars.\n", sp->number_stars);
-	total_number_stars = sp->number_stars;
-	split_star_points(sp, rank, max_rank);
-
-	/********
-		*	INITIALIZE THE EVALUATION STATE
-	 ********/
-	printf("initializing state...\n");
-	es = (EVALUATION_STATE*)malloc(sizeof(EVALUATION_STATE));
-	initialize_state(es, ap->number_streams);
-}
-
-void integral_f(double* parameters, double** results) {
-	int i;
-	/********
-		*	CALCULATE THE INTEGRALS
-	 ********/
-	set_astronomy_parameters(ap, parameters);
-
-	es->r_step_current = 0;
-	es->mu_step_current = 0;
-	es->nu_step_current = 0;
-
-	es->background_integral = 0.0;
-	for (i = 0; i < es->number_streams; i++) {
-		es->stream_integrals[i] = 0.0;
-	}
-	es->current_star_point = 0;
-	es->num_zero = 0;
-	es->bad_jacobians = 0;
-	es->prob_sum = 0.0;
-
-	int retval = calculate_integrals(ap, es, sp);
-	if (retval) {
-		fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
-		exit(retval);
-	}
-	(*results) = (double*)malloc(sizeof(double) * 1+ap->number_streams);
-	(*results)[0] = es->background_integral;
-	for(i = 0; i < ap->number_streams; i++) {
-		(*results)[i+1] = es->stream_integrals[i];
-	}
-//	printf("calculated integrals: %lf, %lf\n", (*results)[0], (*results)[1]);
-}
-
-double integral_compose(double* integral_results, int num_results) {
-	int i, j;
-
-	es->background_integral = 0.0;
-	for (i = 0; i < ap->number_streams; i++) {
-		es->stream_integrals[i] = 0.0;
-	}
-	for (i = 0; i < num_results; i++) {
-		es->background_integral += integral_results[((ap->number_streams+1)*i)];
-		for (j = 0; j < ap->number_streams; j++) {
-			es->stream_integrals[j] += integral_results[((ap->number_streams+1)*i)+j+1];
-		}
-	}
-        printf("background integral: %lf, stream integrals:", es->background_integral);
-        for (i = 0; i < ap->number_streams; i++) printf(" %lf", es->stream_integrals[i]);
-        printf("\n");
-	return -1;
-}
+#include "../evaluation/mpi_evaluator.h"
 
 
 void separation(char* filename, double background_integral, double* stream_integrals) {
@@ -156,7 +55,7 @@ void separation(char* filename, double background_integral, double* stream_integ
 	double *star_coords;
 	double starxyz[3];
 	double starxyzTransform[3];
-	int s_ok;
+	int s_ok = 0;
 	int i, j, retval;
 	FILE *file;
 
@@ -320,11 +219,22 @@ void separation(char* filename, double background_integral, double* stream_integ
 }
 
 int main(int number_arguments, char **arguments){
-	int integral_parameter_length, integral_results_length;
+	int integral_parameter_length, integral_results_length, i;
 	double *point;
 
 	printf("init data...\n");
 	mpi_evaluator__init(&number_arguments, &arguments);
+
+	sprintf(star_points_file, "stars.txt");
+	sprintf(astronomy_parameters_file, "parameters.txt");
+	for (i = 0; i < number_arguments; i++) {
+		if (!strcmp(arguments[i], "-stars")) {
+			sprintf(star_points_file, "%s", arguments[++i]);
+		} else if (!strcmp(arguments[i], "-parameters")) {
+			sprintf(astronomy_parameters_file, "%s", arguments[++i]);
+		}
+	}
+
 	mpi_evaluator__read_data(read_data);
 
 	integral_parameter_length = ap->number_parameters;

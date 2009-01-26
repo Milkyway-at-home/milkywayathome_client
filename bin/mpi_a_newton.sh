@@ -1,1 +1,1 @@
-mpirun -np 32 -machinefile machinefiles/mpi_machinefile ./mpi_astronomy -asynch -stars stars-$1.txt -parameters parameters-$1.txt -nm -s $2 -nm_type line_search -nm_evaluations $3 -nm_iterations $4
+mpirun -np 32 -machinefile machinefiles/mpi_machinefile ./mpi_astronomy -asynch -stars $1 -parameters $2 -nm -s $3 -nm_type line_search -nm_evaluations $4 -nm_iterations $5

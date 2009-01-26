@@ -18,7 +18,7 @@ int double_compare(const void *p1, const void *p2) {
 
 int remove_outliers(POPULATION *p, double range) {
 	double *diff, *sorted_diff, median_diff;
-	double distance;
+	double distance, avg_diff;
 	int i, j, k;
 
 	/********
@@ -41,12 +41,15 @@ int remove_outliers(POPULATION *p, double range) {
 	}
 	qsort(sorted_diff, p->size, sizeof(double), double_compare);
 	median_diff = sorted_diff[p->size/2];
+	avg_diff = 0;
+	for (i = 0; i < p->size; i++) avg_diff += diff[i];
+	avg_diff /= p->size;
 
-	printf("removing individuals, median_diff: %.20lf\n", median_diff);
+	printf("removing individuals, median_diff: %.20lf, avg_diff: %.20lf\n", median_diff, avg_diff);
 	for (i = 0; i < p->size; i++) {
 		fwrite_individual(stdout, p, i);
 		printf("diff[%d]: %.20lf", i, diff[i]);
-		if (diff[i] > range * median_diff) {
+		if (diff[i] > range * avg_diff) {
 			printf(" -- REMOVED");
 
 			p->size--;

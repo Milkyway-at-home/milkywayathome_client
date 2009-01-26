@@ -33,6 +33,8 @@ extern char astronomy_parameters_file[1024];
 extern char star_points_file[1024];
 
 extern ASTRONOMY_PARAMETERS *ap;
+extern STAR_POINTS *sp;
+extern EVALUATION_STATE *es;
 
 void read_data(int rank, int max_rank);
 
