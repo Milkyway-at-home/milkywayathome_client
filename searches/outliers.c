@@ -50,6 +50,7 @@ int remove_outliers(POPULATION *p, double range) {
 			printf(" -- REMOVED");
 
 			p->size--;
+			diff[i] = diff[p->size];
 			p->fitness[i] = p->fitness[p->size];
 			for (j = 0; j < p->number_parameters; j++) p->individuals[i][j] = p->individuals[p->size][j];
 
