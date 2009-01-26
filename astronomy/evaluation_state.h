@@ -60,6 +60,8 @@ void	initialize_state(ASTRONOMY_PARAMETERS *ap, STAR_POINTS *sp, EVALUATION_STAT
 void	free_state(EVALUATION_STATE* es);
 void	reset_evaluation_state(EVALUATION_STATE *es);
 
+void	fwrite_integral_area(FILE* file, INTEGRAL_AREA *ia);
+
 int	write_checkpoint(EVALUATION_STATE* es);
 int	read_checkpoint(EVALUATION_STATE* es);
 

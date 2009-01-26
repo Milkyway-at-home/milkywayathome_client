@@ -66,10 +66,6 @@ int main(int number_arguments, char **arguments){
 	likelihood_parameter_length = 1 + ap->number_streams;
 	likelihood_results_length = 2;
 
-	printf("number_parameters: %d\n", number_parameters);
-	printf("integral_parameter_length: %d, integral_results_length: %d\n", integral_parameter_length, integral_results_length);
-	printf("likelihood_parameter_length: %d, likelihood_results_length: %d\n", likelihood_parameter_length, likelihood_results_length);
-
 	evaluator__init_integral(integral_f, integral_parameter_length, integral_compose, integral_results_length);
 	evaluator__init_likelihood(likelihood_f, likelihood_parameter_length, likelihood_compose, likelihood_results_length);
 
@@ -77,7 +73,6 @@ int main(int number_arguments, char **arguments){
 		*	Start the mpi_evaluator
 	 ********/
 
-	printf("starting...\n");
 	mpi_evaluator__start();
 
 	get_min_parameters(ap, &min_bound);

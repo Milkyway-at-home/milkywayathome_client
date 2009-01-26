@@ -38,10 +38,10 @@ extern EVALUATION_STATE *es;
 
 void read_data(int rank, int max_rank);
 
-void integral_f(double* parameters, double** results);
-void integral_compose(double* integral_results, int num_results, double** results);
+void integral_f(double* parameters, double* results);
+void integral_compose(double* integral_results, int num_results, double* results);
 
-void likelihood_f(double* integrals, double** results);
+void likelihood_f(double* integrals, double* results);
 double likelihood_compose(double* results, int num_results);
 
 #endif

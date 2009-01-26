@@ -135,7 +135,7 @@ void split_star_points(STAR_POINTS* sp, int rank, int max_rank) {
 	sp->stars = new_stars;
 	sp->number_stars = num_stars;
 
-	printf("rank [%d / %d] stars [%d]\n", rank, max_rank, sp->number_stars);
+	printf("[worker: %d] using [%d] stars\n", rank, sp->number_stars);
 }
 
 #ifdef GMLE_BOINC

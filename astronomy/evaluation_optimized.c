@@ -95,8 +95,8 @@ void init_constants(ASTRONOMY_PARAMETERS *ap) {
 		qgaus_X		= (double*)malloc(sizeof(double) * ap->convolve);
 		qgaus_W		= (double*)malloc(sizeof(double) * ap->convolve);
 		dx		= (double*)malloc(sizeof(double) * ap->convolve);
-		stream_sigma	= (double*)malloc(sizeof(double) * ap->number_streams);
 		xyz		= (double**)malloc(sizeof(double*) * ap->convolve);
+		stream_sigma	= (double*)malloc(sizeof(double) * ap->number_streams);
 		stream_a	= (double**)malloc(sizeof(double*) * ap->number_streams);	
 		stream_c	= (double**)malloc(sizeof(double*) * ap->number_streams);	
 
@@ -106,7 +106,6 @@ void init_constants(ASTRONOMY_PARAMETERS *ap) {
 		delta	= ap->background_parameters[3];
 		alpha_delta3 = 3 - alpha + delta;
 		coeff	= 1 / (stdev * sqrt(2*pi));
-
 
 		gaussLegendre(-1.0, 1.0, qgaus_X, qgaus_W, ap->convolve);
 
@@ -392,6 +391,7 @@ void calculate_integral_convolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, E
 	r_point		= (double**)malloc(sizeof(double*) * ia->r_steps);
 	
 	double rPrime, log_r, r, next_r;
+
 	for (i = 0; i < ia->r_steps; i++) {
 		log_r	=	ia->r_min + (i * ia->r_step_size);
 		r	=	pow(10.0, (log_r-14.2)/5.0);
@@ -491,7 +491,7 @@ void calculate_integral_convolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, E
 	free(st_probs);
 	free(rPrime3);
 	free(reff_value);
-	for (i = 0; i < ap->convolve; i++) {
+	for (i = 0; i < ia->r_steps; i++) {
 		free(N[i]);
 		free(r_point[i]);
 		free(r3[i]);
