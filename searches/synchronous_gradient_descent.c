@@ -37,8 +37,8 @@ void synchronous_gradient_descent(int number_arguments, char **arguments, int nu
 			printf("Gradient dropped below threshold %.15lf\n", min_gradient_threshold);
 			print_double_array(stdout, "\tgradient:", number_parameters, gradient->values);
 
-			free_gradient(gradient);
-			free(gradient);
+//			free_gradient(gradient);
+//			free(gradient);
 			break;
 		}
 
@@ -96,8 +96,8 @@ void synchronous_conjugate_gradient_descent(int number_arguments, char **argumen
 			printf("Gradient dropped below threshold %.15lf\n", min_gradient_threshold);
 			print_double_array(stdout, "\tgradient:", number_parameters, gradient->values);
 
-			free_gradient(gradient);
-			free(gradient);
+//			free_gradient(gradient);
+//			free(gradient);
 			break;
 		}
 
