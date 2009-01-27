@@ -61,7 +61,7 @@ ERROR_OBJS = \
 	$(SEARCH_DIR)/hessian.o
 
 
-PROGS = mpi_astronomy mpi_separation mpi_errors
+PROGS = mpi_astronomy mpi_separation mpi_errors parameter_test
 
 all: $(PROGS)
 

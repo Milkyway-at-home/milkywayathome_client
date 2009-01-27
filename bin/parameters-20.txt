@@ -5,7 +5,7 @@ background_step[4]: 0.02, 0.000004, 0.00008, 0.02
 background_min[4]: 0.0, 0.3, 1.0, 0.1
 background_max[4]: 3.0, 1.0, 30.0, 3.0
 optimize_parameter[4]: 0, 1, 1, 0
-number_streams: 1, 5
+number_streams: 2, 5
 stream_weight: -3.305187
 stream_weight_step: 0.000001
 stream_weight_min: -20.0
