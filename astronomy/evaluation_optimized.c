@@ -527,7 +527,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 			calculate_integral_unconvolved(ap, es->integral[es->current_integral], es);
 		}
 //		printf("bg_int: %lf\n", es->integral[es->current_integral]->background_integral);
-//		printf("st_int: %lf\n", es->integral[es->current_integral]->stream_integrals[0]);
+//		for (i = 0; i < ap->number_streams; i++) printf("st_int[%d]: %lf\n", i, es->integral[es->current_integral]->stream_integrals[i]);
 	}
 
 	es->background_integral = es->integral[0]->background_integral;
