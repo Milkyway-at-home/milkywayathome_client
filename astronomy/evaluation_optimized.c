@@ -519,17 +519,17 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 		read_checkpoint(es);
 	#endif
 
-	printf("init constants\n");
+//	printf("init constants\n");
 	init_constants(ap);
-	printf("calculating integrals\n");
+//	printf("calculating integrals\n");
 	for (; es->current_integral < ap->number_integrals; es->current_integral++) {
 		if (ap->convolve > 0) {
 			calculate_integral_convolved(ap, es->integral[es->current_integral], es);
 		} else {
 			calculate_integral_unconvolved(ap, es->integral[es->current_integral], es);
 		}
-		printf("bg_int: %lf\n", es->integral[es->current_integral]->background_integral);
-		for (i = 0; i < ap->number_streams; i++) printf("st_int[%d]: %lf\n", i, es->integral[es->current_integral]->stream_integrals[i]);
+//		printf("bg_int: %lf\n", es->integral[es->current_integral]->background_integral);
+//		for (i = 0; i < ap->number_streams; i++) printf("st_int[%d]: %lf\n", i, es->integral[es->current_integral]->stream_integrals[i]);
 	}
 
 	es->background_integral = es->integral[0]->background_integral;
