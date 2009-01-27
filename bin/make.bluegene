@@ -1,6 +1,6 @@
 CXX = mpixlc
 
-CXXFLAGS = -O3 -msse3 -ftree-vectorize -funroll-loops
+CXXFLAGS = -O3
 
 FGDO_DIR = ..
 EVALUATION_DIR = $(FGDO_DIR)/evaluation
@@ -61,24 +61,24 @@ ERROR_OBJS = \
 	$(SEARCH_DIR)/hessian.o
 
 
-PROGS = mpi_astronomy mpi_separation mpi_errors parameter_test
+PROGS = bg_astronomy bg_separation bg_errors
 
 all: $(PROGS)
 
-mpi_astronomy: $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(EVALUATION_OBJS) $(MANAGER_OBJS) $(UTIL_OBJS)
-	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_astronomy $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(EVALUATION_OBJS) $(MANAGER_OBJS) $(UTIL_OBJS)
+astronomy: $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(EVALUATION_OBJS) $(MANAGER_OBJS) $(UTIL_OBJS)
+	$(CXX) $(CXXFLAGS) -lm -o bg_astronomy $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(EVALUATION_OBJS) $(MANAGER_OBJS) $(UTIL_OBJS)
 
 separation: $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS)
-	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_separation $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS)
+	$(CXX) $(CXXFLAGS) -lm -o bg_separation $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS)
 
 errors: $(ERRORS) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS) $(ERROR_OBJS)
-	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_errors $(ERRORS) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS) $(ERROR_OBJS)
+	$(CXX) $(CXXFLAGS) -lm -o bg_errors $(ERRORS) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS) $(ERROR_OBJS)
 
 .c.o:
-	$(CXX) $(CXXFLAGS) -Wall -x c -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 .C.o:
-	$(CXX) $(CXXFLAGS) -Wall -x c -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
 	rm -f $(PROGS) $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS) $(ERROR_OBJS) $(MANAGER_OBJS)
