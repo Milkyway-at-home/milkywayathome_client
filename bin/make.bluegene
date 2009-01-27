@@ -1,34 +1,84 @@
-BOINC_DIR = /projects/wcl/software/boinc
-
 CXX = mpixlc
 
-MPI_ASTRONOMY = mpi_astronomy.o
-SEPARATION = separation.o
-ERRORS = errors.o
-ASTRONOMY_OBJS = atSurveyGeometry.o numericalIntegration.o parameters.o probability.o stCoords.o stCnum.o stMath.o stVector.o star_points.o evaluation.o
-SEARCH_OBJS = ../searches/gradient_descent.o ../searches/line_search.o ../searches/genetic_search.o ../searches/newton_method.o ../searches/differential_evolution.o ../searches/particle_swarm.o ../searches/synchronous_search.o ../searches/recombination.o ../searches/gradient.o ../searches/hessian.o ../searches/population.o
-UTIL_OBJS = ../util/io_util.o ../util/matrix.o
-EVALUATION_OBJS = ../evaluation/mpi_evaluator.o
+CXXFLAGS = -O3 -msse3 -ftree-vectorize -funroll-loops
 
-PROGS = astronomy
+FGDO_DIR = ..
+EVALUATION_DIR = $(FGDO_DIR)/evaluation
+SEARCH_DIR = $(FGDO_DIR)/searches
+UTIL_DIR = $(FGDO_DIR)/util
+
+APP_DIR = ../astronomy
+
+MPI_ASTRONOMY = \
+	$(APP_DIR)/mpi_astronomy.o
+SEPARATION = \
+	$(APP_DIR)/separation.o
+ERRORS = \
+	$(APP_DIR)/errors.o
+
+ASTRONOMY_OBJS = \
+	$(APP_DIR)/astronomy_worker.o \
+	$(APP_DIR)/atSurveyGeometry.o \
+	$(APP_DIR)/numericalIntegration.o \
+	$(APP_DIR)/parameters.o \
+	$(APP_DIR)/probability.o \
+	$(APP_DIR)/stCoords.o \
+	$(APP_DIR)/stCnum.o \
+	$(APP_DIR)/stMath.o \
+	$(APP_DIR)/stVector.o \
+	$(APP_DIR)/star_points.o \
+	$(APP_DIR)/evaluation_optimized.o\
+	$(APP_DIR)/evaluation_state.o
+
+EVALUATION_OBJS = \
+	$(EVALUATION_DIR)/mpi_evaluator.o
+
+MANAGER_OBJS = \
+	$(EVALUATION_DIR)/search_manager.o \
+	$(EVALUATION_DIR)/mpi_search_manager.o
+
+SEARCH_OBJS = \
+	$(SEARCH_DIR)/asynchronous_newton_method.o \
+	$(SEARCH_DIR)/asynchronous_search.o \
+	$(SEARCH_DIR)/gradient.o \
+	$(SEARCH_DIR)/hessian.o \
+	$(SEARCH_DIR)/line_search.o \
+	$(SEARCH_DIR)/newton_method.o \
+	$(SEARCH_DIR)/outliers.o \
+	$(SEARCH_DIR)/population.o \
+	$(SEARCH_DIR)/recombination.o \
+	$(SEARCH_DIR)/regression.o \
+	$(SEARCH_DIR)/search_arguments.o \
+	$(SEARCH_DIR)/search_log.o \
+	$(SEARCH_DIR)/search_parameters.o \
+	$(SEARCH_DIR)/synchronous_gradient_descent.o \
+	$(SEARCH_DIR)/synchronous_newton_method.o
+UTIL_OBJS = \
+	$(UTIL_DIR)/io_util.o \
+	$(UTIL_DIR)/matrix.o \
+	$(UTIL_DIR)/settings.o
+ERROR_OBJS = \
+	$(SEARCH_DIR)/hessian.o
+
+
+PROGS = mpi_astronomy mpi_separation mpi_errors parameter_test
 
 all: $(PROGS)
 
-astronomy: $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
-	$(CXX) -lm -o bluegene_astronomy $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+mpi_astronomy: $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(EVALUATION_OBJS) $(MANAGER_OBJS) $(UTIL_OBJS)
+	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_astronomy $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(EVALUATION_OBJS) $(MANAGER_OBJS) $(UTIL_OBJS)
 
-separation: $(SEPARATION) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
-	$(CXX) -lm -o bluegene_separation $(SEPARATION) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+separation: $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS)
+	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_separation $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS)
 
-
-errors: $(ERRORS) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS) 
-	$(CXX) -lm -o bluegene_errors $(ERRORS) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+errors: $(ERRORS) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS) $(ERROR_OBJS)
+	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_errors $(ERRORS) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS) $(ERROR_OBJS)
 
 .c.o:
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -Wall -x c -c $< -o $@
 
 .C.o:
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -Wall -x c -c $< -o $@
 
 clean:
-	rm $(ASTRONOMY_OBJS) $(MPI_ASTRONOMY) $(SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS)
+	rm -f $(PROGS) $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(EVALUATION_OBJS) $(ERROR_OBJS) $(MANAGER_OBJS)
