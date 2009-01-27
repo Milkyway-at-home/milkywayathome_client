@@ -31,7 +31,8 @@ typedef struct integral_area {
 	double mu_min, nu_min, r_min;
 	double mu_max, nu_max, r_max;
 	double mu_step_size, nu_step_size, r_step_size;
-	int mu_step_current, nu_step_current, r_step_current;	
+
+	long min_calculation, max_calculation, current_calculation;
 
 	int number_streams;
 	double background_integral, *stream_integrals;
@@ -41,8 +42,8 @@ typedef struct evaluation_state {
 	/********
 		*	State for integral calculation.
 	 ********/
-	INTEGRAL_AREA *main_integral, **cuts;
-	int current_cut, number_streams, number_cuts;
+	INTEGRAL_AREA **integral;
+	int current_integral, number_streams, number_integrals;
 
 	double background_integral;
 	double* stream_integrals;
@@ -55,6 +56,8 @@ typedef struct evaluation_state {
 	int bad_jacobians;
 	double prob_sum;
 } EVALUATION_STATE;
+
+void	get_steps(INTEGRAL_AREA *ia, int *mu_step_current, int *nu_step_current, int *r_step_current);
 
 void	initialize_state(ASTRONOMY_PARAMETERS *ap, STAR_POINTS *sp, EVALUATION_STATE* es);
 void	free_state(EVALUATION_STATE* es);

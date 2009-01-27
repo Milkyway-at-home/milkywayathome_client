@@ -26,9 +26,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct astronomy_parameters {
-	int number_parameters;
+typedef struct integral {
+	double r_min, r_max, r_step_size;
+	double nu_min, nu_max, nu_step_size;
+	double mu_min, mu_max, mu_step_size;
+	int r_steps, nu_steps, mu_steps;
 
+	long min_calculation, max_calculation;
+} INTEGRAL;
+
+typedef struct astronomy_parameters {
 	int number_background_parameters;
 	double background_weight;
 	double *background_parameters;
@@ -55,21 +62,9 @@ typedef struct astronomy_parameters {
 	int convolve;
 	int sgr_coordinates;
 	int wedge;
-	int r_steps;
-	int mu_steps;
-	int nu_steps;
-	double r_min, r_max, r_step_size;
-	double mu_min, mu_max, mu_step_size;
-	double nu_min, nu_max, nu_step_size;
 
-	int number_cuts;
-	double **r_cut;
-	double **mu_cut;
-	double **nu_cut;
-	double *r_cut_step_size;
-	double *mu_cut_step_size;
-	double *nu_cut_step_size;
-	
+	int number_integrals;
+	INTEGRAL** integral;
 } ASTRONOMY_PARAMETERS;
 
 int	get_optimized_parameter_count(ASTRONOMY_PARAMETERS *ap);

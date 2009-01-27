@@ -309,7 +309,7 @@ int verify(NEWTON_METHOD_SEARCH *nms, SEARCH_PARAMETERS *sp) {
 
 	if (isnan(sp->fitness)) {
 		return AS_INSERT_FITNESS_NAN;
-	} else if (sp->fitness >= -2.8 || sp->fitness <= -4.0) {
+	} else if (sp->fitness >= -2.8) {
 		return AS_INSERT_FITNESS_INVALID;
 	}
 
@@ -453,7 +453,14 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 					double *step, *step_error;
 					double scaling_factor = 0.4;
 
+					log_printf(search_name, "iteration: %d/%d\n", nms->current_iteration, nms->maximum_iteration);
+					get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
+					log_printf(search_name, "[before outliers] best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);
+
 					remove_outliers(p, 3.0);
+
+					get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
+					log_printf(search_name, "[after outliers ] best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);
 
 					step = (double*)malloc(sizeof(double) * nms->number_parameters);
 					step_error = (double*)malloc(sizeof(double) * nms->number_parameters);
@@ -491,10 +498,6 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 						return AS_INSERT_OVER;
 					}
 
-					get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
-
-					log_printf(search_name, "iteration: %d/%d\n", nms->current_iteration, nms->maximum_iteration);
-					log_printf(search_name, "best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);
 					log_print_double_array(search_name, "current_point", nms->number_parameters, nms->current_point);
 
 					free_population(nms->population);
@@ -512,10 +515,14 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 					free(step);
 					free(step_error);
 				} else {
-					remove_outliers(p, 3.0);
-					get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
 					log_printf(search_name, "iteration: %d/%d, line_search\n", nms->current_iteration, nms->maximum_iteration);
-					log_printf(search_name, "best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);
+					get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
+					log_printf(search_name, "[before outliers] best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);
+
+					remove_outliers(p, 3.0);
+
+					get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
+					log_printf(search_name, "[after outliers ] best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);
 
 					for (i = 0; i < nms->number_parameters; i++) {
 						nms->current_point[i] = nms->current_point[i] + (nms->line_search->direction[i] * best_point[0]);

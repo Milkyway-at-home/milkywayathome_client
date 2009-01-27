@@ -244,21 +244,22 @@ void calculate_probabilities(double *r_point, double *r3, double *N, double reff
 
 double calculate_progress(EVALUATION_STATE *s) {
 	long total_calc_probs, current_calc_probs, current_probs, i;
+	int mu_step_current, nu_step_current, r_step_current;
 	INTEGRAL_AREA *ia;
 
 	total_calc_probs = 0;
 	current_calc_probs = 0;
 
-	for (i = -1; i < s->number_cuts; i++) {
-		if (i == -1) ia = s->main_integral;
-		else ia = s->cuts[i];
+ 	for (i = 0; i < s->number_integrals; i++) {
+		ia = s->integral[i];
 
+		get_steps(ia, &mu_step_current, &nu_step_current, &r_step_current);
 		current_probs = ia->r_steps * ia->mu_steps * ia->nu_steps;
 		total_calc_probs += current_probs;
-		if (i < s->current_cut) {
+		if (i < s->current_integral) {
 			current_calc_probs += current_probs;
-		} else if (i == s->current_cut) {
-			current_calc_probs += ia->r_step_current + (ia->nu_step_current * ia->r_steps) + (ia->mu_step_current * ia->nu_steps * ia->r_steps);
+		} else if (i == s->current_integral) {
+			current_calc_probs += r_step_current + (nu_step_current * ia->r_steps) + (mu_step_current * ia->nu_steps * ia->r_steps);
 		}
 	}
 
@@ -270,6 +271,7 @@ double calculate_progress(EVALUATION_STATE *s) {
 
 void calculate_integral_unconvolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_STATE *es) {
 	int i;
+	int mu_step_current, nu_step_current, r_step_current;
 	double bg_prob, st_prob, V;
 	double *irv, *r_unconvolved;
 	double integral_point[3];
@@ -289,12 +291,13 @@ void calculate_integral_unconvolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia,
 		r_unconvolved[i] = rPrime;
 	}
 
-	for (; ia->mu_step_current < ia->mu_steps; ia->mu_step_current++) {
-		double mu = ia->mu_min + (ia->mu_step_current * ia->mu_step_size);
+	get_steps(ia, &mu_step_current, &nu_step_current, &r_step_current);
+	for (; mu_step_current < ia->mu_steps; mu_step_current++) {
+		double mu = ia->mu_min + (mu_step_current * ia->mu_step_size);
 
-		for (; ia->nu_step_current < ia->nu_steps; ia->nu_step_current++) {
+		for (; nu_step_current < ia->nu_steps; nu_step_current++) {
 			double id = 0;
-			double nu = ia->nu_min + (ia->nu_step_current * ia->nu_step_size);
+			double nu = ia->nu_min + (nu_step_current * ia->nu_step_size);
 
 			#ifdef GMLE_BOINC
 				if (boinc_time_to_checkpoint()) {
@@ -338,11 +341,11 @@ void calculate_integral_unconvolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia,
 				}
 			#endif
 
-			for (; ia->r_step_current < ia->r_steps; ia->r_step_current++) {
+			for (; r_step_current < ia->r_steps; r_step_current++) {
 				#if WEDGE_ALLOW_ZERO == 1
 					if (ap->wedge == 0) {
 						double xyz[3];
-						double log_r = ia->r_min + (ia->r_step_current * ia->r_step_size);
+						double log_r = ia->r_min + (r_step_current * ia->r_step_size);
 						double r = pow(10.0, (log_r-14.2)/5.0);
 
 						V = ia->mu_step_size * ia->nu_step_size * ia->r_step_size;
@@ -351,13 +354,13 @@ void calculate_integral_unconvolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia,
 						xyz[2] = r + (0.5 * ia->r_step_size);
 						xyz2lbr(xyz, integral_point);
 					} else {
-						V = irv[ia->r_step_current] * id;
+						V = irv[r_step_current] * id;
 					}
 				#else
-					V = irv[ia->r_step_current] * id;
+					V = irv[r_step_current] * id;
 				#endif
 
-				integral_point[2] = r_unconvolved[ia->r_step_current];
+				integral_point[2] = r_unconvolved[r_step_current];
 				bg_prob = stPbx(integral_point, ap->background_parameters);
 				ia->background_integral += bg_prob * V;
 				for (i = 0; i < ap->number_streams; i++) {
@@ -365,11 +368,11 @@ void calculate_integral_unconvolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia,
 					ia->stream_integrals[i] += st_prob * V;
 				}
 			}
-			ia->r_step_current = 0;
+			r_step_current = 0;
 		}
-		ia->nu_step_current = 0;
+		nu_step_current = 0;
 	}
-	ia->mu_step_current = 0;
+	mu_step_current = 0;
 
 	free(irv);
 	free(r_unconvolved);
@@ -377,6 +380,7 @@ void calculate_integral_unconvolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia,
 
 void calculate_integral_convolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_STATE *es) {
 	int i;
+	int mu_step_current, nu_step_current, r_step_current;
 	double bg_prob, *st_probs, V;
 	double *irv;
 	double *rPrime3, *reff_value, **N, **r3, **r_point;
@@ -407,12 +411,13 @@ void calculate_integral_convolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, E
 		set_probability_constants(ap, rPrime, r_point[i], r3[i], N[i], &(rPrime3[i]), &(reff_value[i]));
 	}
 
-	for (; ia->mu_step_current < ia->mu_steps; ia->mu_step_current++) {
-		double mu = ia->mu_min + (ia->mu_step_current * ia->mu_step_size);
+	get_steps(ia, &mu_step_current, &nu_step_current, &r_step_current);
+	for (; mu_step_current < ia->mu_steps; mu_step_current++) {
+		double mu = ia->mu_min + (mu_step_current * ia->mu_step_size);
 
-		for (; ia->nu_step_current < ia->nu_steps; ia->nu_step_current++) {
+		for (; nu_step_current < ia->nu_steps; nu_step_current++) {
 			double id = 0;
-			double nu = ia->nu_min + (ia->nu_step_current * ia->nu_step_size);
+			double nu = ia->nu_min + (nu_step_current * ia->nu_step_size);
 
 			#ifdef GMLE_BOINC
 				if (boinc_time_to_checkpoint()) {
@@ -456,11 +461,11 @@ void calculate_integral_convolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, E
 				}
 			#endif
 
-			for (; ia->r_step_current < ia->r_steps; ia->r_step_current++) {
+			for (; r_step_current < ia->r_steps; r_step_current++) {
 				#if WEDGE_ALLOW_ZERO == 1
 					if (ap->wedge == 0) {
 						double xyz[3];
-						double log_r = ia->r_min + (ia->r_step_current * ia->r_step_size);
+						double log_r = ia->r_min + (r_step_current * ia->r_step_size);
 						double r = pow(10.0, (log_r-14.2)/5.0);
 
 						V = ia->mu_step_size * ia->nu_step_size * ia->r_step_size;
@@ -469,23 +474,27 @@ void calculate_integral_convolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, E
 						xyz[2] = r + (0.5 * ia->r_step_size);
 						xyz2lbr(xyz, integral_point);
 					} else {
-						V = irv[ia->r_step_current] * id;
+						V = irv[r_step_current] * id;
 					}
 				#else
-					V = irv[ia->r_step_current] * id;
+					V = irv[r_step_current] * id;
 				#endif
 
-				calculate_probabilities(r_point[ia->r_step_current], r3[ia->r_step_current], N[ia->r_step_current], reff_value[ia->r_step_current], rPrime3[ia->r_step_current], integral_point, ap, &bg_prob, st_probs);
+				calculate_probabilities(r_point[r_step_current], r3[r_step_current], N[r_step_current], reff_value[r_step_current], rPrime3[r_step_current], integral_point, ap, &bg_prob, st_probs);
 				ia->background_integral += bg_prob * V;
 				for (i = 0; i < ap->number_streams; i++) {
 					ia->stream_integrals[i] += st_probs[i] * V;
 				}
+				ia->current_calculation++;
+				if (ia->current_calculation >= ia->max_calculation) break;
 			}
-			ia->r_step_current = 0;
+			if (ia->current_calculation >= ia->max_calculation) break;
+			r_step_current = 0;
 		}
-		ia->nu_step_current = 0;
+		if (ia->current_calculation >= ia->max_calculation) break;
+		nu_step_current = 0;
 	}
-	ia->mu_step_current = 0;
+	mu_step_current = 0;
 
 	free(irv);
 	free(st_probs);
@@ -502,7 +511,6 @@ void calculate_integral_convolved(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, E
 }
 
 int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp) {
-	INTEGRAL_AREA *current_area;
 	int i, j;
 //	time_t start_time, finish_time;
 //	time(&start_time);
@@ -512,27 +520,24 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 	#endif
 
 	init_constants(ap);
-	for (; es->current_cut < ap->number_cuts; es->current_cut++) {
-		if (es->current_cut == -1) {
-			current_area = es->main_integral;
-		} else {
-			current_area = es->cuts[es->current_cut];
-		}
+	for (; es->current_integral < ap->number_integrals; es->current_integral++) {
 		if (ap->convolve > 0) {
-			calculate_integral_convolved(ap, current_area, es);
+			calculate_integral_convolved(ap, es->integral[es->current_integral], es);
 		} else {
-			calculate_integral_unconvolved(ap, current_area, es);
+			calculate_integral_unconvolved(ap, es->integral[es->current_integral], es);
 		}
+//		printf("bg_int: %lf\n", es->integral[es->current_integral]->background_integral);
+//		printf("st_int: %lf\n", es->integral[es->current_integral]->stream_integrals[0]);
 	}
 
-	es->background_integral = es->main_integral->background_integral;
+	es->background_integral = es->integral[0]->background_integral;
 	for (i = 0; i < ap->number_streams; i++) {
-		es->stream_integrals[i] = es->main_integral->stream_integrals[i];
+		es->stream_integrals[i] = es->integral[0]->stream_integrals[i];
 	}
 
-	for (i = 0; i < ap->number_cuts; i++) {
-		es->background_integral -= es->cuts[i]->background_integral;
-		for (j = 0; j < ap->number_streams; j++) es->stream_integrals[j] -= es->cuts[i]->stream_integrals[j];
+	for (i = 1; i < ap->number_integrals; i++) {
+		es->background_integral -= es->integral[i]->background_integral;
+		for (j = 0; j < ap->number_streams; j++) es->stream_integrals[j] -= es->integral[i]->stream_integrals[j];
 	}
 
 //	time(&finish_time);

@@ -210,9 +210,9 @@ int main(int argc, char** argv) {
 		 ********/
 		WORKUNIT_INFO *wu_info = (WORKUNIT_INFO*)malloc(sizeof(WORKUNIT_INFO));
 		double calc_prob_count;
-		double credit = ((double)ap->r_steps * (double)ap->mu_steps * (double)ap->nu_steps * (double)ap->convolve) + ((double)sp->number_stars * (double)ap->convolve);
-		for (i = 0; i < ap->number_cuts; i++) {
-			credit += (ap->r_cut[i][2] * ap->mu_cut[i][2] * ap->nu_cut[i][2] * (double)ap->convolve);
+		double credit = (double)sp->number_stars * (double)ap->convolve;
+		for (i = 0; i < ap->number_integrals; i++) {
+			credit += (double)ap->integral[i]->r_steps * (double)ap->integral[i]->mu_steps * (double)ap->integral[i]->nu_steps * (double)ap->convolve;
 		}
 		calc_prob_count = credit;
 		credit /= 400000000.0;
