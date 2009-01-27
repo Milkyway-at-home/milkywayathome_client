@@ -10,10 +10,9 @@
 #include "../util/io_util.h"
 
 void synchronous_gradient_descent(int number_arguments, char **arguments, int number_parameters, double *point, double *step) {
-	GRADIENT *gradient;
 	int i, evaluations, number_iterations, retval;
 	double point_fitness;
-	double *new_point;
+	double *new_point, *gradient;
 	double min_gradient_threshold;
 
 	number_iterations = get_int_arg("-gd_iterations", number_arguments, arguments);
@@ -28,35 +27,33 @@ void synchronous_gradient_descent(int number_arguments, char **arguments, int nu
 		return;
 	}
 
+	new_point = (double*)malloc(sizeof(double) * number_parameters);
+	gradient = (double*)malloc(sizeof(double) * number_parameters);
+
 	point_fitness = evaluate(point);
 	for (i = 0; i < number_iterations; i++) {
                 printf("iteration %d: current_fitness: %.20lf\n", i, point_fitness);
-		synchronous_get_gradient(point, step, number_parameters, &gradient);
+		get_gradient(number_parameters, point, step, gradient);
 
-		if (gradient_below_threshold(gradient, min_gradient_threshold)) {
+		if (gradient_below_threshold(number_parameters, gradient, min_gradient_threshold)) {
 			printf("Gradient dropped below threshold %.15lf\n", min_gradient_threshold);
-			print_double_array(stdout, "\tgradient:", number_parameters, gradient->values);
-
-//			free_gradient(gradient);
-//			free(gradient);
+			print_double_array(stdout, "\tgradient:", number_parameters, gradient);
 			break;
 		}
 
-		retval = line_search(point, point_fitness, gradient->values, number_parameters, &new_point, &point_fitness, &evaluations);
+		retval = line_search(point, point_fitness, gradient, number_parameters, new_point, &point_fitness, &evaluations);
 		print_double_array(stdout, "\tnew point:", number_parameters, new_point);
 		printf("\tline search took: %d evaluations for new fitness: %.15lf, with result: [%s]\n", evaluations, point_fitness, LS_STR[retval]);
-
-		free_gradient(gradient);
-		free(gradient);
 
 		if (evaluations < 0) return;
 		memcpy(point, new_point, sizeof(double) * number_parameters);
 	}
 	free(new_point);
+	free(gradient);
 }
 
 void synchronous_conjugate_gradient_descent(int number_arguments, char **arguments, int number_parameters, double *point, double *step) {
-        GRADIENT *gradient;
+        double *gradient;
 	double *direction;
 	double *previous_gradient;
 	double *previous_direction;
@@ -88,17 +85,17 @@ void synchronous_conjugate_gradient_descent(int number_arguments, char **argumen
 	previous_gradient = (double*)malloc(sizeof(double) * number_parameters);
 	previous_direction = (double*)malloc(sizeof(double) * number_parameters);
 	direction = (double*)malloc(sizeof(double) * number_parameters);
+	gradient = (double*)malloc(sizeof(double) * number_parameters);
+	new_point = (double*)malloc(sizeof(double) * number_parameters);
         point_fitness = evaluate(point);
 
         for (i = 0; i < number_iterations; i++) {
                 printf("iteration %d: current_fitness: %.20lf\n", i, point_fitness);
-                synchronous_get_gradient(point, step, number_parameters, &gradient);
-		if (gradient_below_threshold(gradient, min_gradient_threshold)) {
+                get_gradient(number_parameters, point, step, gradient);
+		if (gradient_below_threshold(number_parameters, gradient, min_gradient_threshold)) {
 			printf("Gradient dropped below threshold %.15lf\n", min_gradient_threshold);
-			print_double_array(stdout, "\tgradient:", number_parameters, gradient->values);
+			print_double_array(stdout, "\tgradient:", number_parameters, gradient);
 
-//			free_gradient(gradient);
-//			free(gradient);
 			break;
 		}
 
@@ -107,33 +104,30 @@ void synchronous_conjugate_gradient_descent(int number_arguments, char **argumen
 			bet = 0;
 			betdiv = 0;
 			for (j = 0; j < number_parameters; j++) {
-				bet += (gradient->values[j] - previous_gradient[j]) * gradient->values[j];
+				bet += (gradient[j] - previous_gradient[j]) * gradient[j];
 				betdiv += previous_gradient[j] * previous_gradient[j];
 			}
 			bet /= betdiv;
 
 			// dpres = -g_pres + bet * d_prev;
 			for (j = 0; j < number_parameters; j++) {
-				direction[j] = gradient->values[j] + bet * previous_direction[j];
+				direction[j] = gradient[j] + bet * previous_direction[j];
 			}
 		} else {
-			memcpy(direction, gradient->values, sizeof(double) * number_parameters);
+			memcpy(direction, gradient, sizeof(double) * number_parameters);
 		}
 		memcpy(previous_direction, direction, sizeof(double) * number_parameters);
-		memcpy(previous_gradient, gradient->values, sizeof(double) * number_parameters);
+		memcpy(previous_gradient, gradient, sizeof(double) * number_parameters);
 
 		print_double_array(stdout, "\tconjugate direction: ", number_parameters, direction);
 
-		retval = line_search(point, point_fitness, gradient->values, number_parameters, &new_point, &point_fitness, &evaluations);
+		retval = line_search(point, point_fitness, gradient, number_parameters, new_point, &point_fitness, &evaluations);
 		print_double_array(stdout, "\tnew point:", number_parameters, new_point);
 		printf("\tline search took: %d evaluations for new fitness: %.15lf, with result: [%s]\n", evaluations, point_fitness, LS_STR[retval]);
-
-                free_gradient(gradient);
-                free(gradient);
 
                 if (evaluations < 0) break;
                 memcpy(point, new_point, sizeof(double) * number_parameters);
         }
         free(new_point);
-
+	free(gradient);
 }

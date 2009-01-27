@@ -27,7 +27,7 @@ double evaluate_step(double* point, double step, double* direction, int number_p
 	return evaluate(current_point);
 }
 
-int line_search(double* point, double initial_fitness, double* direction, int number_parameters, double** minimum, double* fitness, int *evaluations_done) {
+int line_search(double* point, double initial_fitness, double* direction, int number_parameters, double* minimum, double* fitness, int *evaluations_done) {
 	int i, jump, eval_count;
 	double f1, f2, f3, fs;
 	double d1, d2, d3, dstar;
@@ -130,8 +130,7 @@ int line_search(double* point, double initial_fitness, double* direction, int nu
 		}
 	}
 
-	(*minimum) = (double*)malloc(sizeof(double) * number_parameters); 
-	memcpy((*minimum), current_point, sizeof(double) * number_parameters);
+	memcpy(minimum, current_point, sizeof(double) * number_parameters);
 	(*fitness) = fs;
 
 	free(current_point);
