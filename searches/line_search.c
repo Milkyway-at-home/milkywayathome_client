@@ -10,7 +10,7 @@
 
 const char *LS_STR[] = {"success", "nan fitness in loop 1", "nan fitness in loop 2", "nan fitness in loop 3", "step < tol in loop 1", "eval max reached in loop 1", "eval max reached in loop 2"};
 
-#define LOOP1_MAX 10
+#define LOOP1_MAX 30
 #define LOOP2_MAX 10
 
 /********
