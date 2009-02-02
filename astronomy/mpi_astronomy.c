@@ -103,5 +103,6 @@ int main(int number_arguments, char **arguments){
 			return 0;
 		}
 	}
+	MPI_Abort(MPI_COMM_WORLD, 0);
 	return 0;
 }

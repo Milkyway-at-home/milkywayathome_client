@@ -172,6 +172,7 @@ void reset_evaluation_state(EVALUATION_STATE *es) {
 
 	es->current_integral = 0;
 	es->background_integral = 0;
+	for (i = 0; i < es->number_streams; i++) es->stream_integrals[i] = 0;
 	es->current_star_point = 0;
 	es->num_zero = 0;
 	es->bad_jacobians = 0;
@@ -179,8 +180,8 @@ void reset_evaluation_state(EVALUATION_STATE *es) {
 
 	for (i = 0; i < es->number_integrals; i++) {
 		es->integral[i]->background_integral = 0;
-		for (j = 0; j < es->number_streams; j++) {
-			es->integral[i]->stream_integrals[i] = 0;
+		for (j = 0; j < es->integral[i]->number_streams; j++) {
+			es->integral[i]->stream_integrals[j] = 0;
 		}
 		es->integral[i]->current_calculation = es->integral[i]->min_calculation;
 	}

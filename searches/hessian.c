@@ -33,7 +33,7 @@ void get_hessian(int number_parameters, double *point, double *step, double **he
 			point[k] = pk;
 
 			hessian[j][k] = (((e1 - e2) - (e3 - e4)) / (step[k] + step[k])) / (step[j] + step[j]);
-			printf("\t\thessian[%d][%d]: %.20lf\n", j, k, hessian[j][k]);
+			printf("\t\thessian[%d][%d]: %.20lf, ((%.20lf - %.20lf) - (%.20lf - %.20lf) / (2 * %.20lf) / (2 * %.20lf)\n", j, k, hessian[j][k], e1, e2, e3, e4, step[k], step[j]);
 		}
 	}
 }
