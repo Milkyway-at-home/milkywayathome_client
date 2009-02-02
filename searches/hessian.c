@@ -10,26 +10,30 @@
 void get_hessian(int number_parameters, double *point, double *step, double **hessian) {
 	int j, k;
 	double e1, e2, e3, e4;
+	double pj, pk;
 
 	for (j = 0; j < number_parameters; j++) {
 		for (k = 0; k < number_parameters; k++) {
-			point[j] += step[j];
-			point[k] += step[k];
+			pj = point[j];
+			pk = point[k];
+			point[j] = pj + step[j];
+			point[k] = pk + step[k];
 			e1 = evaluate(point);
 
-			point[k] -= step[k] + step[k];
+			point[k] = pk - step[k];
 			e2 = evaluate(point);
 
-			point[j] -= step[j] + step[j];
+			point[j] = pj - step[j];
 			e4 = evaluate(point);
 
-			point[k] += step[k] + step[k];
+			point[k] = pk + step[k];
 			e3 = evaluate(point);
 
-			point[j] += step[j];
-			point[k] -= step[k];
+			point[j] = pj;
+			point[k] = pk;
 
 			hessian[j][k] = (((e1 - e2) - (e3 - e4)) / (step[k] + step[k])) / (step[j] + step[j]);
+			printf("\t\thessian[%d][%d]: %.20lf\n", j, k, hessian[j][k]);
 		}
 	}
 }

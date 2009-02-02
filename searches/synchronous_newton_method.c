@@ -17,10 +17,10 @@
 #include "../util/io_util.h"
 
 void synchronous_newton_method(int number_arguments, char** arguments, int number_parameters, double *point, double *range) {
-	int i, j, k;
-	double **hessian, *gradient, *step;
+	int i, j;
+	double **hessian, *gradient, *step, *new_point;
 	double current_fitness;
-	int iterations;
+	int iterations, retval, evaluations;
 
 	iterations = get_int_arg("-nm_iterations", number_arguments, arguments);
 	if (iterations <= 0) {
@@ -34,33 +34,34 @@ void synchronous_newton_method(int number_arguments, char** arguments, int numbe
 	for (i = 0; i < number_parameters; i++) printf(" %.15lf", point[i]);
 	printf("\n");
 
+	new_point = (double*)malloc(sizeof(double) * number_parameters);
 	step = (double*)malloc(sizeof(double) * number_parameters);
 	gradient = (double*)malloc(sizeof(double) * number_parameters);
 	hessian = (double**)malloc(sizeof(double*) * number_parameters);
-	for (i = 0; i < number_parameters; i++) {
-		hessian[i] = (double*)malloc(sizeof(double) * number_parameters);
-	}
+
+	for (i = 0; i < number_parameters; i++) hessian[i] = (double*)malloc(sizeof(double) * number_parameters);
 
 	for (i = 0; i < iterations; i++) {
+		printf("iteration %d: current_fitness: %.20lf\n", i, current_fitness);
+
+		printf("\tcalculating gradient.\n");
 		get_gradient(number_parameters, point, range, gradient);
-		printf("gradient:");
-		for (j = 0; j < number_parameters; j++) printf(" %.15lf", gradient[j]);
-		printf("\n");
 
+		printf("\tcalculating hessian.\n");
 		get_hessian(number_parameters, point, range, hessian);
-		printf("hessian:\n");
-		for (j = 0; j < number_parameters; j++) {
-			printf(" ");
-			for (k = 0; k < number_parameters; k++) printf(" %.15lf", hessian[j][k]);
-			printf("\n");
-		}
 
+		printf("\tcalculating direction.\n");
 		newton_step(number_parameters, hessian, gradient, step);
-		for (j = 0; j < number_parameters; j++) point[j] -= step[j];
-		current_fitness = evaluate(point);
+		print_double_array(stdout, "\tdirection:", number_parameters, step);
 
-		printf("iteration %d [fitness : point] -- %.15lf :", i, current_fitness);
-		for (j = 0; j < number_parameters; j++) printf(" %.15lf", point[j]);
-		printf("\n");
+		retval = line_search(point, current_fitness, step, number_parameters, new_point, &current_fitness, &evaluations);
+		print_double_array(stdout, "\tnew point:", number_parameters, new_point);
+		printf("\tline search took: %d evaluations for new fitness: %.15lf, with result: [%s]\n", evaluations, current_fitness, LS_STR[retval]);
+		for (j = 0; j < number_parameters; j++) point[j] = new_point[j];
 	}
+	free(new_point);
+	free(step);
+	free(gradient);
+	for (i = 0; i < number_parameters; i++) free(hessian[i]);
+	free(hessian);
 }

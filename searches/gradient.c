@@ -8,15 +8,17 @@
 
 void get_gradient(int number_parameters, double *point, double *step, double *gradient) {
 	int j;
-	double e1, e2;
+	double e1, e2, pj;
 	for (j = 0; j < number_parameters; j++) {
-		point[j] += step[j];
+		pj = point[j];
+		point[j] = pj + step[j];
 		e1 = evaluate(point);
-		point[j] -= step[j] + step[j];
+		point[j] = pj - step[j];
 		e2 = evaluate(point);
-		point[j] += step[j];
+		point[j] = pj;
 
 		gradient[j] = (e1 - e2)/(step[j] + step[j]);
+		printf("\t\tgradient[%d]: %.20lf\n", j, gradient[j]);
 	}
 }
 

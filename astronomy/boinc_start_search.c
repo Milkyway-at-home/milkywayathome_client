@@ -210,12 +210,15 @@ int main(int argc, char** argv) {
 		 ********/
 		WORKUNIT_INFO *wu_info = (WORKUNIT_INFO*)malloc(sizeof(WORKUNIT_INFO));
 		double calc_prob_count;
-		double credit = (double)sp->number_stars * (double)ap->convolve;
+		double stream_modifier = (1.0 + (double)ap->number_streams)/(2.0 + (double)ap->number_streams); 
+		double credit = (double)sp->number_stars;
 		for (i = 0; i < ap->number_integrals; i++) {
-			credit += (double)ap->integral[i]->r_steps * (double)ap->integral[i]->mu_steps * (double)ap->integral[i]->nu_steps * (double)ap->convolve;
+			credit += (double)ap->integral[i]->r_steps * (double)ap->integral[i]->mu_steps * (double)ap->integral[i]->nu_steps;
 		}
-		calc_prob_count = credit;
-		credit /= 400000000.0;
+		credit *= (double)ap->convolve * stream_modifier;
+		calc_prob_count = credit * (double)ap->convolve * stream_modifier;
+		calc_prob_count /= 10;
+		credit /= 300000000.0;
 
 		printf("awarded credit: %lf\n", credit);
 		wu_info->number_parameters = get_optimized_parameter_count(ap);

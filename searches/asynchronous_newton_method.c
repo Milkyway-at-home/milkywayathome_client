@@ -92,12 +92,14 @@ int create_newton_method(char* search_name, int number_arguments, char** argumen
 	printf("nms->type: %d\nnms->maximum_iteration: %d\nnms->evaluations_per_iteration: %d\nnms->number_parameters: %d\n", nms->type, nms->maximum_iteration, nms->evaluations_per_iteration, nms->number_parameters);
 
 	nms->current_point = (double*)malloc(sizeof(double) * nms->number_parameters);
+	nms->initial_range = (double*)malloc(sizeof(double) * nms->number_parameters);
 	nms->parameter_range = (double*)malloc(sizeof(double) * nms->number_parameters);
 	nms->min_bound = (double*)malloc(sizeof(double) * nms->number_parameters);
 	nms->max_bound = (double*)malloc(sizeof(double) * nms->number_parameters);
 
 	memcpy(nms->current_point, point, sizeof(double) * nms->number_parameters);
 	memcpy(nms->parameter_range, range, sizeof(double) * nms->number_parameters);
+	memcpy(nms->initial_range, range, sizeof(double) * nms->number_parameters);
 	memcpy(nms->min_bound, min_bound, sizeof(double) * nms->number_parameters);
 	memcpy(nms->max_bound, max_bound, sizeof(double) * nms->number_parameters);
 
@@ -125,6 +127,7 @@ int write_newton_method(char* search_name, void* search_data) {
 	fprintf(search_file, "mode: %d\n", nms->mode);
 
 	print_double_array(search_file, "current_point", nms->number_parameters, nms->current_point);
+	print_double_array(search_file, "initial_range", nms->number_parameters, nms->parameter_range);
 	print_double_array(search_file, "parameter_range", nms->number_parameters, nms->parameter_range);
 	print_double_array(search_file, "min_bound", nms->number_parameters, nms->min_bound);
 	print_double_array(search_file, "max_bound", nms->number_parameters, nms->max_bound);
@@ -216,6 +219,7 @@ int read_newton_method(char* search_name, void** search_data) {
 	fscanf(search_file, "mode: %d\n", &((*nms)->mode));
 
 	(*nms)->number_parameters = read_double_array(search_file, "current_point", &((*nms)->current_point));
+	read_double_array(search_file, "initial_range", &((*nms)->initial_range));
 	read_double_array(search_file, "parameter_range", &((*nms)->parameter_range));
 	read_double_array(search_file, "min_bound", &((*nms)->min_bound));
 	read_double_array(search_file, "max_bound", &((*nms)->max_bound));
@@ -413,6 +417,11 @@ void get_line_search_step(char* search_name, NEWTON_METHOD_SEARCH *nms, double *
         free(individuals);
 }
 
+double fmin(double f1, double f2) {
+	if (f1 < f2) return f1;
+	else return f2;
+}
+
 int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
 	NEWTON_METHOD_SEARCH *nms = (NEWTON_METHOD_SEARCH*)search_data;
 	POPULATION *p = nms->population;
@@ -526,7 +535,7 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 
 					for (i = 0; i < nms->number_parameters; i++) {
 						nms->current_point[i] = nms->current_point[i] + (nms->line_search->direction[i] * best_point[0]);
-						nms->parameter_range[i] = fabs(nms->line_search->direction[i] * best_point[0]);
+						nms->parameter_range[i] = fmin(fabs(nms->line_search->direction[i] * best_point[0]), nms->initial_range[i]);
 					}
 
 					log_print_double_array(search_name, "current_point", nms->number_parameters, nms->current_point);

@@ -24,6 +24,7 @@ typedef struct newton_method_search {
 
 	int number_parameters;
 	double *current_point;
+	double *initial_range;
 	double *parameter_range;
 	double *min_bound, *max_bound;
 
