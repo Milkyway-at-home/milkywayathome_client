@@ -16,28 +16,29 @@ void get_hessian(int number_parameters, double *point, double *step, double **he
 		for (k = 0; k < number_parameters; k++) {
 			pj = point[j];
 			pk = point[k];
-			if (j == k) point[j] = pj + step[j] + step[j];
-			else {
+			if (j == k) {
+				point[j] = pj + step[j] + step[j];
+				e1 = evaluate(point);
+				point[j] = pj;
+				e2 = evaluate(point);
+				e3 = e2;
+				point[j] = pj - step[j] - step[j];
+				e4 = evaluate(point);
+			} else {
 				point[j] = pj + step[j];
 				point[k] = pk + step[k];
-			}
-			e1 = evaluate(point);
+				e1 = evaluate(point);
+				
+				point[k] = pk - step[k];
+				e2 = evaluate(point);
 
-			if (j == k) point[k] = pk;
-			else point[k] = pk - step[k];
-			e2 = evaluate(point);
-
-			if (j == k) point[j] = pj;
-			else {
 				point[j] = pj - step[j];
 				point[k] = pk + step[k];
+				e3 = evaluate(point);
+
+				point[k] = pk - step[k];
+				e4 = evaluate(point);
 			}
-			e3 = evaluate(point);
-
-			if (j == k) point[j] = pj - step[j] - step[j];
-			else point[k] = pk - step[k];
-			e4 = evaluate(point);
-
 			point[j] = pj;
 			point[k] = pk;
 
