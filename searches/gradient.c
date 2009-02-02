@@ -18,7 +18,7 @@ void get_gradient(int number_parameters, double *point, double *step, double *gr
 		point[j] = pj;
 
 		gradient[j] = (e1 - e2)/(step[j] + step[j]);
-		printf("\t\tgradient[%d]: %.20lf, (%.20lf - %.20lf)/(2 * %.20lf)\n", j, gradient[j], e1, e2, step[j]);
+		printf("\t\tgradient[%d]: %.20lf, (%.20lf - %.20lf)/(2 * %lf)\n", j, gradient[j], e1, e2, step[j]);
 	}
 }
 
