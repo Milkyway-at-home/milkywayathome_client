@@ -45,7 +45,8 @@ void synchronous_gradient_descent(int number_arguments, char **arguments, int nu
 		print_double_array(stdout, "\tnew point:", number_parameters, new_point);
 		printf("\tline search took: %d evaluations for new fitness: %.15lf, with result: [%s]\n", evaluations, point_fitness, LS_STR[retval]);
 
-		if (evaluations < 0) return;
+		if (retval != LS_SUCCESS) break;
+		if (evaluations < 0) break;
 		memcpy(point, new_point, sizeof(double) * number_parameters);
 	}
 	free(new_point);
@@ -125,6 +126,7 @@ void synchronous_conjugate_gradient_descent(int number_arguments, char **argumen
 		print_double_array(stdout, "\tnew point:", number_parameters, new_point);
 		printf("\tline search took: %d evaluations for new fitness: %.15lf, with result: [%s]\n", evaluations, point_fitness, LS_STR[retval]);
 
+		if (retval != LS_SUCCESS) break;
                 if (evaluations < 0) break;
                 memcpy(point, new_point, sizeof(double) * number_parameters);
         }
