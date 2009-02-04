@@ -237,7 +237,7 @@ int main(int number_arguments, char **arguments){
 
 	mpi_evaluator__read_data(read_data);
 
-	integral_parameter_length = ap->number_parameters;
+	integral_parameter_length = get_optimized_parameter_count(ap);
 	integral_results_length = 1 + ap->number_streams;
 
 	printf("init integral...\n");

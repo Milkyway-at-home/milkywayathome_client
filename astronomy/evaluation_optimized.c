@@ -210,7 +210,8 @@ void calculate_probabilities(double *r_point, double *r3, double *N, double reff
 			xyz[i][1] = zp * sinl;
 
 			/* background probability */
-			rg = sqrt(xyz[i][0]*xyz[i][0] + xyz[i][1]*xyz[i][1] + (xyz[i][2]/q)*(xyz[i][2]/q));
+			// rg = sqrt(xyz[i][0]*xyz[i][0] + xyz[i][1]*xyz[i][1] + (xyz[i][2]/q)*(xyz[i][2]/q));
+			rg = sqrt(xyz[i][0]*xyz[i][0] + xyz[i][1]*xyz[i][1] + (xyz[i][2]*xyz[i][2])/q);
 			pbx = 1 / (pow(rg, alpha) * pow(rg + r0, 3 - alpha + delta));
 
 			(*bg_prob) += qgaus_W[i] * pbx * r3[i] * N[i];

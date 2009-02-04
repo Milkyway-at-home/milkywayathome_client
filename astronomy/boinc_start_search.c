@@ -209,16 +209,11 @@ int main(int argc, char** argv) {
 			*	Create workunit info
 		 ********/
 		WORKUNIT_INFO *wu_info = (WORKUNIT_INFO*)malloc(sizeof(WORKUNIT_INFO));
-		double calc_prob_count;
-		double stream_modifier = (1.0 + (double)ap->number_streams)/(2.0 + (double)ap->number_streams); 
-		double credit = (double)sp->number_stars;
-		for (i = 0; i < ap->number_integrals; i++) {
-			credit += (double)ap->integral[i]->r_steps * (double)ap->integral[i]->mu_steps * (double)ap->integral[i]->nu_steps;
-		}
-		credit *= (double)ap->convolve * stream_modifier;
-		calc_prob_count = credit * (double)ap->convolve * stream_modifier;
-		calc_prob_count /= 10;
-		credit /= 300000000.0;
+
+		double calc_prob_count = (double)sp->number_stars;
+		for (i = 0; i < ap->number_integrals; i++) calc_prob_count += ap->integral[i]->r_steps * ap->integral[i]->mu_steps * ap->integral[i]->nu_steps;
+		double flops = calc_prob_count * (27.0 + (ap->convolve * 66.0) + (ap->number_streams * (7.0 + (ap->convolve * 33))));
+		double credit = flops / 35000000000.0;
 
 		printf("awarded credit: %lf\n", credit);
 		wu_info->number_parameters = get_optimized_parameter_count(ap);
@@ -245,7 +240,7 @@ int main(int argc, char** argv) {
 		strcpy(wu_info->required_files[0], astronomy_name);
 		strcpy(wu_info->required_files[1], star_name);
 
-		wu_info->rsc_fpops_est = calc_prob_count * (40 + (45 * ap->convolve) + ap->number_streams * (5 + ap->convolve * 30));
+		wu_info->rsc_fpops_est = flops;
 		printf("calculated fpops: %lf\n", wu_info->rsc_fpops_est);
 
 		wu_info->rsc_fpops_bound = wu_info->rsc_fpops_est * 100;

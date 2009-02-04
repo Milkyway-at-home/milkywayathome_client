@@ -125,6 +125,6 @@ int main(int number_arguments, char **arguments){
 	get_search_parameters(ap, &point);
 	get_step(ap, &step);
 
-      	errors(arguments[1], point, step, ap->number_parameters, sp->number_stars);
+      	errors(arguments[1], point, step, get_optimized_parameter_count(ap), sp->number_stars);
 	return 0;
 }
