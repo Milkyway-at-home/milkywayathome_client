@@ -101,7 +101,7 @@ void synchronous_conjugate_gradient_descent(int number_arguments, char **argumen
 		}
 
 		if (i > 0 && (i % reset) != 0) {
-			// bet = gpres' * (gpres - gprev) / (gprev' * g_prev);
+			// bet = g_pres' * (g_pres - g_prev) / (g_prev' * g_prev);
 			bet = 0;
 			betdiv = 0;
 			for (j = 0; j < number_parameters; j++) {
@@ -112,7 +112,7 @@ void synchronous_conjugate_gradient_descent(int number_arguments, char **argumen
 
 			// dpres = -g_pres + bet * d_prev;
 			for (j = 0; j < number_parameters; j++) {
-				direction[j] = gradient[j] + bet * previous_direction[j];
+				direction[j] = -gradient[j] + bet * previous_direction[j];
 			}
 		} else {
 			memcpy(direction, gradient, sizeof(double) * number_parameters);
