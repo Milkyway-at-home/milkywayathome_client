@@ -72,6 +72,7 @@ void get_filename(char *filepath, char *filename) {
 		if (filepath[i] == '/') break;
 	}
 	if (i == (int)strlen(filepath)) i = 0;
+	else i++;
 	length = strlen(filepath) - i;
 	strncpy(filename, &(filepath[i]), length);
 	filename[length] = '\0';

@@ -185,12 +185,16 @@ int is_invalid(RESULT& result) {
 
 double update_workunit(DB_VALIDATOR_ITEM_SET& validator, int valid_state, RESULT& result) {
 	bool assimilate = false;
+	double cpu_time = result.cpu_time;
+
 	switch (valid_state) {
 		case AS_VERIFY_VALID:
 			// grant credit for valid results
 			result.granted_credit = grant_claimed_credit ? result.claimed_credit : credit;
 			if (max_granted_credit && result.granted_credit > max_granted_credit) result.granted_credit = max_granted_credit
-			if (max_credit_per_cpu_second && (result.granted_credit / result.cpu_time) > max_credit_per_cpu_second) result.granted_credit = result.cpu_time * max_credit_per_cpu_second;
+
+			if (result.cpu_time > 0.3 * round_trip_time) cpu_time = 0.2 * round_trip_time;
+			if (max_credit_per_cpu_second && (result.granted_credit / cpu_time) > max_credit_per_cpu_second) result.granted_credit = cpu_time * max_credit_per_cpu_second;
 
 			result.validate_state = VALIDATE_STATE_VALID;
 			if (update_db) {

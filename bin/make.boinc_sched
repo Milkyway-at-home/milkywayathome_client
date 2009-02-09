@@ -58,12 +58,8 @@ ASSIMILATOR_OBJS = \
 	$(SCHED_OBJS) \
 	$(UTIL_OBJS)
 
-REMOVAL_OBJS = \
-	$(APP_DIR)/boinc_assimilator.o \
-	$(SCHED_DIR)/boinc_removal.o \
-	$(SCHED_OBJS) \
-	$(UTIL_OBJS) \
-	$(SEARCH_OBJS)
+PURGE_OBJS = \
+	$(SCHED_DIR)/db_purge.o
 
 VALIDATOR_OBJS = \
 	$(SCHED_DIR)/validate_util.o \
@@ -74,12 +70,9 @@ VALIDATOR_OBJS = \
 	$(UTIL_OBJS)
 
 
-PROGS = milkyway_assimilator milkyway_start_search milkyway_validator
+PROGS = milkyway_assimilator milkyway_start_search milkyway_validator milkyway_purge
 
-all: assimilator start validator
-
-removal: $(REMOVAL_OBJS) 
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_removal $(REMOVAL_OBJS) $(MYSQL) $(LIBS)
+all: assimilator start validator purge
 
 assimilator: $(ASSIMILATOR_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_av $(ASSIMILATOR_OBJS) $(MYSQL) $(LIBS)
@@ -87,7 +80,8 @@ assimilator: $(ASSIMILATOR_OBJS)
 start: $(START_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_start_search $(START_OBJS) $(LIBS) $(MYSQL)
 
-
+purge: $(PURGE_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_purge $(PURGE_OBJS) -lsched -lboinc $(MYSQL)
 
 .C.o:
 	$(CXX) $(CXXFLAGS) -Wall -x c++ -c $< -o $@
@@ -96,4 +90,4 @@ start: $(START_OBJS)
 	$(CXX) $(CXXFLAGS) -Wall -x c++ -c $< -o $@
 
 clean:
-	rm -f $(PROGS) $(ASSIMILATOR_OBJS) $(START_OBJS) $(VALIDATOR_OBJS) $(ASSIM2_OBJS)
+	rm -f $(PROGS) $(ASSIMILATOR_OBJS) $(START_OBJS) $(VALIDATOR_OBJS) $(ASSIM2_OBJS) $(PURGE_OBJS)

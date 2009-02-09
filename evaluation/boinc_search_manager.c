@@ -100,7 +100,7 @@ long checkpoint_time = 360;		//	1 hour
 void print_message(char *search_name, char *as_msg, const char *as_result, char *verify_msg, int v_num, char *version, char *host_os, double credit, RESULT& result) {
 	SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
 
-	scope_messages.printf("[%-18s] [%-80s][%-30s][%-8s] v[%-25s, %-7s] c[%*.5lf], t[%*d/%*.2lf] h[%*d]\n", search_name, as_msg, as_result, verify_msg, version, host_os, 9, credit, 6, result.received_time-result.sent_time, 8, result.cpu_time, 6, result.hostid);
+	scope_messages.printf("[%-18s] [%-80s][%-20s][%-8s] v[%-40s][%-7s] c[%*.5lf], t[%*d/%*.2lf] h[%*d]\n", search_name, as_msg, as_result, verify_msg, version, host_os, 9, credit, 6, result.received_time-result.sent_time, 8, result.cpu_time, 6, result.hostid);
 }
 
 void update_workunit_info(int pos) {
@@ -202,7 +202,7 @@ int is_valid(RESULT& result, WORKUNIT& wu) {
 	// compute new credit per CPU time
 	retval = update_credit_per_cpu_sec(result.granted_credit, result.cpu_time, host.credit_per_cpu_sec);
 	if (retval) {
-		log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[RESULT#%d][HOST#%d] claimed too much credit (%f) in too little CPU time (%f)\n", result.id, result.hostid, result.granted_credit, result.cpu_time);
+		//log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[RESULT#%d][HOST#%d] claimed too much credit (%f) in too little CPU time (%f)\n", result.id, result.hostid, result.granted_credit, result.cpu_time);
 	}
 
 	double old_error_rate = host.error_rate;
@@ -271,6 +271,8 @@ double update_workunit(DB_VALIDATOR_ITEM_SET& validator, int valid_state, RESULT
 	vector<RESULT> results;
 	double credit = 0;
 	TRANSITION_TIME transition_time = NO_CHANGE;
+	long trip_time = result.received_time - result.sent_time;
+	double cpu_time = result.cpu_time;
 
 	switch (valid_state) {
 		case AS_VERIFY_VALID:
@@ -280,7 +282,13 @@ double update_workunit(DB_VALIDATOR_ITEM_SET& validator, int valid_state, RESULT
 
 			result.granted_credit = grant_claimed_credit ? result.claimed_credit : credit;
 			if (max_granted_credit && result.granted_credit > max_granted_credit) result.granted_credit = max_granted_credit;
-			if (max_credit_per_cpu_second && (result.granted_credit / result.cpu_time) > max_credit_per_cpu_second) result.granted_credit = result.cpu_time * max_credit_per_cpu_second;
+
+			if (cpu_time == trip_time) cpu_time = 0.01 * trip_time;
+//			else if (cpu_time > 0.35 * trip_time) cpu_time = 0.15 * trip_time;
+
+			if (max_credit_per_cpu_second && (result.granted_credit / cpu_time) > max_credit_per_cpu_second) result.granted_credit = cpu_time * max_credit_per_cpu_second;
+			if (cpu_time > 5 && cpu_time < 30) result.granted_credit *= 3.0;
+
 			credit = result.granted_credit;
 
 			result.validate_state = VALIDATE_STATE_VALID;
@@ -605,7 +613,7 @@ void init_boinc_search_manager(int argc, char** argv) {
 
 void start_search_manager() {
 	DB_WORKUNIT wu;
-	DB_RESULT canonical_result, result;
+	DB_RESULT result;
 	bool did_something = false;
 	int retval, num_generated, unsent_wus, num_validated, num_assimilated, i;
 	time_t start_time, current_time, last_checkpoint;
@@ -639,8 +647,8 @@ void start_search_manager() {
 		validated_wus += num_validated;
 		time(&current_time);
 		wus_per_second = (double)validated_wus/((double)current_time-(double)start_time);
+		count_unsent_results(unsent_wus, bsm_app.id);
 		log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[appid: %d] validated %d results, wus/sec: %lf, unsent wus: %d\n", bsm_app.id, num_validated, wus_per_second, unsent_wus);
-
 
                 if (wu_id_modulus)      sprintf(mod_clause, " and workunit.id %% %d = %d ", wu_id_modulus, wu_id_remainder);
                 else                    strcpy(mod_clause, "");
@@ -648,17 +656,10 @@ void start_search_manager() {
                          
 		num_assimilated = 0;
 		while (!wu.enumerate(buf)) {
-			vector<RESULT> results;     // must be inside while()!
+			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[%s] assimilating boinc WU %d; state=%d\n", wu.name, wu.id, wu.assimilate_state);
 
-//			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[%s] assimilating boinc WU %d; state=%d\n", wu.name, wu.id, wu.assimilate_state);
-        
-			sprintf(buf, "where workunitid=%d", wu.id);
-			while (!result.enumerate(buf)) {
-				results.push_back(result);
-				if (result.id == wu.canonical_resultid) canonical_result = result;
-			}
-        
 			if (update_db) {
+				char buf[256];
 				did_something = true;
 				sprintf(buf, "assimilate_state=%d, transition_time=%d", ASSIMILATE_DONE, (int)time(0));
                                 
@@ -670,37 +671,32 @@ void start_search_manager() {
 			}
 			num_assimilated++;
 		}
+		if (did_something) boinc_db.commit_transaction();
+
 		assimilated_wus += num_assimilated;
 		time(&current_time);
 		wus_per_second = (double)assimilated_wus/((double)current_time-(double)start_time);
 		log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[appid: %d] assimilated %d workunits, wus/sec: %lf, unsent wus: %d\n", bsm_app.id, num_assimilated, wus_per_second, unsent_wus);
 
+		if (unsent_wus < unsent_wu_buffer) {
+			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Generating %d new workunits.\n", get_generation_rate());
+			num_generated = generate_workunits();
+			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Generated %d new workunits.\n", num_generated);
+		}
 
-		if (did_something) boinc_db.commit_transaction();
-
-		if (num_validated)  {
-			count_unsent_results(unsent_wus, bsm_app.id);
-
-			if (unsent_wus < unsent_wu_buffer) {
-				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Generating %d new workunits.\n", get_generation_rate());
-				num_generated = generate_workunits();
-				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Generated %d new workunits.\n", num_generated);
-			}
-
-			if ((current_time - last_checkpoint) > checkpoint_time) {
-				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Checkpointing %d searches after %ld seconds.\n", number_searches, (current_time - last_checkpoint));
-				{
-					SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
-					for (i = 0; i < number_searches; i++) {
-						retval = searches[i]->search->checkpoint_search(searches[i]->search_name, searches[i]->search_data);
-						scope_messages.printf("[%-18s] checkpointed with result: [%s], msg: [%s]\n", searches[i]->search_name, AS_CP_STR[retval], AS_MSG);
-						if (retval == AS_CP_OVER) searches[i]->completed = 1;
-						AS_MSG[0] = '\0';
-					}
+		if (num_validated && (current_time - last_checkpoint) > checkpoint_time) {
+			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Checkpointing %d searches after %ld seconds.\n", number_searches, (current_time - last_checkpoint));
+			{
+				SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
+				for (i = 0; i < number_searches; i++) {
+					retval = searches[i]->search->checkpoint_search(searches[i]->search_name, searches[i]->search_data);
+					scope_messages.printf("[%-18s] checkpointed with result: [%s], msg: [%s]\n", searches[i]->search_name, AS_CP_STR[retval], AS_MSG);
+					if (retval == AS_CP_OVER) searches[i]->completed = 1;
+					AS_MSG[0] = '\0';
 				}
-				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Checkpointing completed.\n");
-				last_checkpoint = current_time;
 			}
+			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Checkpointing completed.\n");
+			last_checkpoint = current_time;
 		}
 		if (!one_pass) sleep(sleep_interval);
 	}

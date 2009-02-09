@@ -451,3 +451,49 @@ int main(int argc, char **argv) {
 }
 
 #endif
+
+
+#ifdef ASTRONOMY_PARAMETERS_PERMUTE
+#include <time.h>
+
+int main(int argc, char **argv) {
+	ASTRONOMY_PARAMETERS *ap;
+	double *point, *min_bound, *max_bound, range, current_range, test;
+	int i, number_parameters;
+	time_t t1;
+
+	time(&t1);
+
+	range = atof(argv[3]);
+	printf("in: %s, out: %s, range: %lf\n", argv[1], argv[2], range);
+
+	srand48((long) t1);
+
+	ap = (ASTRONOMY_PARAMETERS*)malloc(sizeof(ASTRONOMY_PARAMETERS));
+	read_astronomy_parameters(argv[1], ap);
+	fwrite_astronomy_parameters(stdout, ap);
+
+	printf("\n\n");
+
+	number_parameters = get_optimized_parameter_count(ap);
+	get_search_parameters(ap, &point);
+	get_min_parameters(ap, &min_bound);
+	get_max_parameters(ap, &max_bound);
+
+	for (i = 0; i < number_parameters; i++) {
+		current_range = (max_bound[i] - min_bound[i]) * range;
+		test = 0.0;
+		while (test == 0.0 || test > max_bound[i] || test < min_bound[i]) {
+			test = point[i] + ((drand48() * current_range * 2.0) - current_range);
+		}
+		point[i] = test;
+	}
+	set_astronomy_parameters(ap, point);
+
+	fwrite_astronomy_parameters(stdout, ap);
+	write_astronomy_parameters(argv[2], ap);
+
+	return 0;
+}
+
+#endif
