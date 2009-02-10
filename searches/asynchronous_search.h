@@ -26,6 +26,8 @@ extern const char *AS_INSERT_STR[];
 #define AS_INSERT_OUT_OF_ITERATION 8
 #define AS_INSERT_BAD_METADATA 9
 #define AS_INSERT_NOT_UNIQUE 10
+#define AS_INSERT_OUTLIER 11
+#define AS_INSERT_INVALID_METADATA 12
 
 extern const char *AS_GEN_STR[];
 #define AS_GEN_SUCCESS 0
@@ -37,6 +39,9 @@ extern const char *AS_CP_STR[];
 #define AS_CP_SUCCESS 0
 #define AS_CP_OVER 1
 #define AS_CP_ERROR 2
+
+#define AS_READ_SUCCESS 0
+#define AS_READ_ERROR 1
 
 extern char AS_MSG[1024];
 
@@ -57,5 +62,7 @@ typedef struct asynchronous_search {
 } ASYNCHRONOUS_SEARCH;
 
 void asynchronous_search__init(int number_arguments, char** arguments, int number_parameters, double *point, double *range, double *min_bound, double *max_bound);
+
+void asynchronous_search(int number_arguments, char** arguments, int number_parameters, double *point, double *range, double *min_bound, double *max_bound);
 
 #endif

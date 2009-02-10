@@ -32,7 +32,7 @@ void print_double_array(FILE *file, const char *array_name, int size, double *ar
 
 	fprintf(file, "%s[%d]: ", array_name, size);
 	for (i = 0; i < size; i++) {
-		fprintf(file, "%.10lf", array_t[i]);
+		fprintf(file, "%.20lf", array_t[i]);
 		if (i < size-1) fprintf(file, ", ");
 	}
 	fprintf(file, "\n");

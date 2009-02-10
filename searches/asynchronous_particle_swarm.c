@@ -1,16 +1,16 @@
 #include <math.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <float.h>
 
 #include "asynchronous_search.h"
-#include "asynchronous_newton_method.h"
-#include "gradient.h"
-#include "hessian.h"
+#include "asynchronous_particle_swarm.h"
+#include "outliers.h"
 #include "population.h"
 #include "recombination.h"
+#include "search_log.h"
 #include "search_parameters.h"
 
 #include "../evaluation/search_manager.h"
@@ -18,214 +18,254 @@
 #include "../util/matrix.h"
 #include "../util/io_util.h"
 
-const ASYNCHRONOUS_SEARCH asynchronous_newton_method = { "nm", create_newton_method, read_newton_method, checkpoint_newton_method, newton_generate_parameters, newton_insert_parameters };
+ASYNCHRONOUS_SEARCH* get_asynchronous_particle_swarm() {
+	ASYNCHRONOUS_SEARCH *as = (ASYNCHRONOUS_SEARCH*)malloc(sizeof(ASYNCHRONOUS_SEARCH));
+	as->search_qualifier = (char*)malloc(sizeof(char) * SEARCH_QUALIFIER_SIZE);
+	strcpy(as->search_qualifier, "ps");
+	as->create_search = create_particle_swarm;
+	as->read_search = read_particle_swarm;
+	as->checkpoint_search = checkpoint_particle_swarm;
+	as->generate_parameters = pso_generate_parameters;
+	as->insert_parameters = pso_insert_parameters;
+	return as;
+}
 
-/********
-	*	Parameters: int maximum_iteration, int evaluations_per_iteration, int number_parameters, double* point, double* range
- ********/
-int create_newton_method(char* search_name, ...) {
+int create_particle_swarm(char* search_name, int number_arguments, char** arguments, int number_parameters, double* point, double *range, double *min_bound, double *max_bound) {
 	char search_directory[FILENAME_SIZE];
-	NEWTON_METHOD_SEARCH *nms;
-	va_list vl;
-	double *point, *range;
+	PARTICLE_SWARM_OPTIMIZATION *pso;
+	int i, remove_outliers, size;
+	double w, c1, c2;
+
+	remove_outliers = 0;
+	size = 400;
+	w = 0.95;
+	c1 = 2.0;
+	c2 = 2.0;
+	for (i = 0; i < number_arguments; i++) {
+		if (!strcmp(arguments[i], "-pso_size")) size = atoi(arguments[++i]);
+		else if (!strcmp(arguments[i], "-w")) w = atof(arguments[++i]);
+		else if (!strcmp(arguments[i], "-c1")) c1 = atof(arguments[++i]);
+		else if (!strcmp(arguments[i], "-c2")) c2 = atof(arguments[++i]);
+		else if (!strcmp(arguments[i], "-remove_outliers")) remove_outliers = 1;
+	}
 
 	sprintf(search_directory, "%s/%s", get_working_directory(), search_name);
 	printf("making directory: %s\n", search_directory);
 	mkdir(search_directory, 0777);
 
-	nms = (NEWTON_METHOD_SEARCH*)malloc(sizeof(NEWTON_METHOD_SEARCH));
-	va_start(vl, search_name);
-	nms->current_iteration = 0;
-	nms->maximum_iteration = va_arg(vl, int);
-	nms->current_evaluation = 0;
-	nms->evaluations_per_iteration = va_arg(vl, int);
-	nms->number_parameters = va_arg(vl, int);
-	point = va_arg(vl, double*);
-	range = va_arg(vl, double*);
+	pso = (PARTICLE_SWARM_OPTIMIZATION*)malloc(sizeof(PARTICLE_SWARM_OPTIMIZATION));
+	pso->remove_outliers = remove_outliers;
+	pso->current_particle = 0;
+	pso->size = size;
+	pso->number_parameters = number_parameters;
+	pso->w = w;
+	pso->c1 = c1;
+	pso->c2 = c2;
 
-	nms->parameters = (double*)malloc(sizeof(double) * nms->number_parameters);
-	nms->parameter_range = (double*)malloc(sizeof(double) * nms->number_parameters);
-	memcpy(nms->parameters, point, sizeof(double) * nms->number_parameters);
-	memcpy(nms->parameter_range, range, sizeof(double) * nms->number_parameters);
+	pso->global_best_fitness = -DBL_MAX;
+	pso->global_best = (double*)malloc(sizeof(double) * pso->number_parameters);
+	memset(pso->global_best, 0.0, sizeof(double) * pso->number_parameters);
 
-	new_population(nms->evaluations_per_iteration, nms->number_parameters, &(nms->population));
+	pso->min_bound = (double*)malloc(sizeof(double) * pso->number_parameters);
+	pso->max_bound = (double*)malloc(sizeof(double) * pso->number_parameters);
+	memcpy(pso->min_bound, min_bound, sizeof(double) * pso->number_parameters);
+	memcpy(pso->max_bound, max_bound, sizeof(double) * pso->number_parameters);
 
-	return checkpoint_newton_method(search_name, nms);	
+	new_population(pso->size, pso->number_parameters, &(pso->local_best));
+	new_population(pso->size, pso->number_parameters, &(pso->particles));
+	new_population(pso->size, pso->number_parameters, &(pso->velocities));
+
+	return checkpoint_particle_swarm(search_name, pso);
 }
 
-int read_newton_method(char* search_name, void** search_data) {
+int write_particle_swarm(char* search_name, void* search_data) {
 	char search_filename[FILENAME_SIZE], population_filename[FILENAME_SIZE];
 	FILE *search_file;
-	int result, np, i;
-	NEWTON_METHOD_SEARCH **nms;
-	nms = (NEWTON_METHOD_SEARCH**)search_data;
-	(*nms) = (NEWTON_METHOD_SEARCH*)malloc(sizeof(NEWTON_METHOD_SEARCH));
-
-	sprintf(search_filename, "%s/%s/search", get_working_directory(), search_name);
-	search_file = fopen(search_filename, "r");
-	if (search_file == NULL) return -1;
-	(*nms)->number_parameters = read_double_array(search_file, "parameters", &((*nms)->parameters));
-	read_double_array(search_file, "parameter_range", &((*nms)->parameter_range));
-	fscanf(search_file, "current_iteration: %d, maximum_iteration: %d\n", &((*nms)->current_iteration), &((*nms)->maximum_iteration));
-	fscanf(search_file, "current_evaluation: %d, evaluations_per_iteration: %d\n", &((*nms)->current_evaluation), &((*nms)->evaluations_per_iteration));
-
-	np = (*nms)->number_parameters;
-	(*nms)->min_parameters = (double*)malloc(sizeof(double) * np);
-	(*nms)->max_parameters = (double*)malloc(sizeof(double) * np);
-	for (i = 0; i < np; i++) {
-		(*nms)->min_parameters[i] = (*nms)->parameters[i] - (*nms)->parameter_range[i];
-		(*nms)->max_parameters[i] = (*nms)->parameters[i] + (*nms)->parameter_range[i];
-	}
-	fclose(search_file);
-
-	sprintf(population_filename, "%s/%s/population_%d", get_working_directory(), search_name, (*nms)->current_iteration);
-	result = read_population(population_filename, &((*nms)->population));
-	if (result < 0) return result;
-	(*nms)->current_evaluation = (*nms)->population->size;
-
-	return 1;
-}
-
-int checkpoint_newton_method(char* search_name, void* search_data) {
-	char search_filename[FILENAME_SIZE], population_filename[FILENAME_SIZE];
-	FILE *search_file;
-	int result;
-	NEWTON_METHOD_SEARCH *nms = (NEWTON_METHOD_SEARCH*)search_data;
-
-	if (nms->current_iteration >= nms->maximum_iteration) return AS_CP_OVER;
+	PARTICLE_SWARM_OPTIMIZATION *pso = (PARTICLE_SWARM_OPTIMIZATION*)search_data;
 
 	sprintf(search_filename, "%s/%s/search", get_working_directory(), search_name);
 	search_file = fopen(search_filename, "w+");
-	if (search_file == NULL) return -1;
-	print_double_array(search_file, "parameters", nms->number_parameters, nms->parameters);
-	print_double_array(search_file, "parameter_range", nms->number_parameters, nms->parameter_range);
-	fprintf(search_file, "current_iteration: %d, maximum_iteration: %d\n", nms->current_iteration, nms->maximum_iteration);
-	fprintf(search_file, "current_evaluation: %d, evaluations_per_iteration: %d\n", nms->current_evaluation, nms->evaluations_per_iteration);
+	if (search_file == NULL) return AS_CP_ERROR;
+
+	fprintf(search_file, "current_particle: %d, size: %d\n", pso->current_particle, pso->size);
+	fprintf(search_file, "w: %lf, c1: %lf, c2: %lf\n", pso->w, pso->c1, pso->c2);
+	fprintf(search_file, "number_parameters: %d\n", pso->number_parameters); 
+	print_double_array(search_file, "min_bound", pso->number_parameters, pso->min_bound);
+	print_double_array(search_file, "max_bound", pso->number_parameters, pso->max_bound);
+	fprintf(search_file, "global_best_fitness: %lf\n", pso->global_best_fitness);
+	print_double_array(search_file, "global_best", pso->number_parameters, pso->global_best);
 	fclose(search_file);
 
-	sprintf(population_filename, "%s/%s/population_%d", get_working_directory(), search_name, nms->current_iteration);
-	result = write_population(population_filename, nms->population);
-	if (result < 0) return AS_CP_ERROR;
+	sprintf(population_filename, "%s/%s/particles", get_working_directory(), search_name);
+	if (0 > write_population(population_filename, pso->particles)) return AS_CP_ERROR;
+
+	sprintf(population_filename, "%s/%s/velocities", get_working_directory(), search_name);
+	if (0 > write_population(population_filename, pso->velocities)) return AS_CP_ERROR;
+
+	sprintf(population_filename, "%s/%s/local_best", get_working_directory(), search_name);
+	if (0 > write_population(population_filename, pso->local_best)) return AS_CP_ERROR;
 
 	return AS_CP_SUCCESS;
 }
 
+int read_particle_swarm(char* search_name, void** search_data) {
+	char search_filename[FILENAME_SIZE], population_filename[FILENAME_SIZE];
+	FILE *search_file;
+	PARTICLE_SWARM_OPTIMIZATION *pso;
+	(*search_data) = (PARTICLE_SWARM_OPTIMIZATION*)malloc(sizeof(PARTICLE_SWARM_OPTIMIZATION));
+	pso = (PARTICLE_SWARM_OPTIMIZATION*)(*search_data);
 
-int ps_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
-	double **cp, **lb, **gb, *velocity;
-	int current;
-	double r1, r2;
-	PARTICLE_SWARM *ps = (PARTICLE_SWARM*)search_data;
+	sprintf(search_filename, "%s/%s/search", get_working_directory(), search_name);
+	search_file = fopen(search_filename, "r");
+	if (search_file == NULL) return AS_READ_ERROR;
 
-	gb = ps->global_best;
-	lb = ps->local_best;
-	cp = ps->current_population;
-	current = ps->current;
+	fscanf(search_file, "current_particle: %d, size: %d\n", &(pso->current_particle), &(pso->size));
+	fscanf(search_file, "w: %lf, c1: %lf, c2: %lf\n", &(pso->w), &(pso->c1), &(pso->c2));
+	fscanf(search_file, "number_parameters: %d\n", &(pso->number_parameters));
 
-	r1 = drand48();
-	r2 = drand48();
+	read_double_array(search_file, "min_bound", &(pso->min_bound));
+	read_double_array(search_file, "max_bound", &(pso->max_bound));
 
-	if (ps->current_evaluation < ps->maximum_evaluation) {
-		for (i = 0; i < ps->number_parameters; i++) {
-			new_velocity[i] = velocity[current][i] * ps->c1 * r1 * (lb[current][i] - cp[current][i]) + ps->c2 * r2 * (gb[current][i] - cp[current][i]);
-			new_velocity[i] *= ps->constriction;
-		}
-		sprintf(sp->metadata, "position: %d, particle iteration: %d, evaluation: %d, velocity:", current, lb->count[current], ps->current_evaluation);
-		for (i = 0; i < ps->number_parameters; i++) {
-			strcat(sp->metadata, " %.15lf", new_velocity[current][i]);
-		}
-		ps->current++;
-		if (ps->current == ps->size) ps->current = 0;
-		return AS_GEN_SUCCESS;
-	} else {
-		return AS_GEN_OVER:
-	}
+	fscanf(search_file, "global_best_fitness: %lf\n", &(pso->global_best_fitness));
+	read_double_array(search_file, "global_best", &(pso->global_best));
+	fclose(search_file);
+
+	sprintf(population_filename, "%s/%s/particles", get_working_directory(), search_name);
+	if (0 > read_population(population_filename, &(pso->particles)) ) return AS_READ_ERROR;
+	
+	sprintf(population_filename, "%s/%s/velocities", get_working_directory(), search_name);
+	if (0 > read_population(population_filename, &(pso->velocities)) ) return AS_READ_ERROR;
+
+	sprintf(population_filename, "%s/%s/local_best", get_working_directory(), search_name);
+	if (0 > read_population(population_filename, &(pso->local_best)) ) return AS_READ_ERROR;
+
+	return AS_READ_SUCCESS;
 }
 
-int outside_bounds(int number_parameters, double *p, double *min, double *max) {
-	int i;
-	for (i = 0; i < number_parameters; i++) {
-		if (isnan(p[i])) return AS_INSERT_PARAMETERS_NAN;
-		if (p[i] < min[i] || p[i] > max[i]) return AS_INSERT_OUT_OF_BOUNDS;
+
+int checkpoint_particle_swarm(char* search_name, void* search_data) {
+	PARTICLE_SWARM_OPTIMIZATION *pso = (PARTICLE_SWARM_OPTIMIZATION*)search_data;
+
+	sprintf(AS_MSG, "current_particle: %d", pso->current_particle);
+	return write_particle_swarm(search_name, search_data);
+}
+
+int pso_bound_parameters(int number_parameters, double *parameters, double *min_bound, double *max_bound) {
+	int j;
+	for (j = 0; j < number_parameters; j++) {
+		if (isnan(parameters[j])) return AS_GEN_FAIL;
+		if (parameters[j] < min_bound[j]) parameters[j] = min_bound[j];
+		if (parameters[j] > max_bound[j]) parameters[j] = max_bound[j];
 	}
+	return AS_GEN_SUCCESS;
+}
+
+int pso_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
+	PARTICLE_SWARM_OPTIMIZATION *pso = (PARTICLE_SWARM_OPTIMIZATION*)search_data;
+	int i;
+
+	if (!individual_exists(pso->particles, pso->current_particle)) {
+		/********
+			*	This particle hasn't yet been created.
+		 ********/
+		random_recombination(pso->number_parameters, pso->min_bound, pso->max_bound, sp->parameters);
+		sprintf(sp->metadata, "p: %d, v:", pso->current_particle);
+		for (i = 0; i < pso->number_parameters; i++) sprintf(strchr(sp->metadata, 0), " %lf", 0.0);
+	} else {
+		double *local_best, *velocity, *particle;
+		local_best = pso->local_best->individuals[pso->current_particle];
+		velocity = pso->velocities->individuals[pso->current_particle];
+		particle = pso->particles->individuals[pso->current_particle];
+
+		sprintf(sp->metadata, "p: %d, v:", pso->current_particle);
+		for (i = 0; i < pso->number_parameters; i++) {
+			velocity[i] = (pso->w * velocity[i]) + (pso->c1 * drand48() * (local_best[i] - particle[i])) + (pso->c2 * drand48() * (pso->global_best[i] - particle[i]));
+			particle[i] = particle[i] + velocity[i];
+			sp->parameters[i] = particle[i];
+			sprintf(strchr(sp->metadata, 0), " %.20lf", velocity[i]);
+		}
+	}
+	pso->current_particle++;
+	if (pso->current_particle >= pso->particles->max_size) pso->current_particle = 0;
+
+	return pso_bound_parameters(pso->number_parameters, sp->parameters, pso->min_bound, pso->max_bound);
+}
+
+int parse(PARTICLE_SWARM_OPTIMIZATION *pso, SEARCH_PARAMETERS *sp, int *particle, double *velocity) {
+	int i;
+	char *current_token;
+
+	if (isnan(sp->fitness)) {
+		return AS_INSERT_FITNESS_NAN;
+//	} else if (sp->fitness >= -2.8) {
+//		return AS_INSERT_FITNESS_INVALID;
+	}
+
+	for (i = 0; i < pso->number_parameters; i++) {
+		if (isnan(sp->parameters[i])) return AS_INSERT_PARAMETERS_NAN;
+		if (sp->parameters[i] < pso->min_bound[i] || sp->parameters[i] > pso->max_bound[i]) return AS_INSERT_OUT_OF_BOUNDS;
+	}
+
+	if (1 != sscanf(sp->metadata, "p: %d, v:", particle)) return AS_INSERT_INVALID_METADATA;
+	current_token = strtok(strchr(sp->metadata, 'v'), ", :");
+	for (i = 0; i < pso->number_parameters; i++) {
+		if (current_token == NULL) return AS_INSERT_INVALID_METADATA;
+		velocity[i] = atof(current_token);
+		current_token = strtok(NULL, " ");
+	}
+
 	return 0;
 }
 
-int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
-	NEWTON_METHOD_SEARCH *nms = (NEWTON_METHOD_SEARCH*)search_data;
-	POPULATION *p = nms->population;
-	int result;
+int pso_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
+	PARTICLE_SWARM_OPTIMIZATION *pso = (PARTICLE_SWARM_OPTIMIZATION*)search_data;
+	int result, particle;
+	double *velocity = (double*)malloc(sizeof(double) * pso->number_parameters);
+
+	result = parse(pso, sp, &particle, velocity);
+	if (result != 0) {
+		free(velocity);
+		return result;
+	}
 
 	/********
-		*	Insert parameters into population.  If cutoff reached, calculate hessian
-		*	and generate new population.
+		*	Insert the particle if there is no current local best, or if it's better than the local best.
 	 ********/
-	
-	if (nms->current_iteration < nms->maximum_iteration) {
-		if ((result = outside_bounds(nms->number_parameters, sp->parameters, nms->min_parameters, nms->max_parameters))) {
-			return result;
-		}
-		if (isnan(sp->fitness)) {
-			return AS_INSERT_FITNESS_NAN;
-		}
-		sprintf(AS_MSG, "evaluation: %d/%d, iteration: %d/%d", nms->current_evaluation, nms->evaluations_per_iteration, nms->current_iteration, nms->maximum_iteration);
+	if (!individual_exists(pso->local_best, particle) || sp->fitness > pso->local_best->fitness[particle]) {
+		double previous;
+		/********
+			*	We don't insert the particle unless it's better than the local best, so check and see if it's an outlier here.
+		 ********/
+		previous = pso->local_best->fitness[particle];
+		if (pso->remove_outliers && pso->local_best->size > 50) {
+			double min_error, max_error, median_error, average_error, particle_error;
 
-		replace(p, nms->current_evaluation, sp->parameters, sp->fitness);
-		nms->current_evaluation++;
-		if (nms->current_evaluation >= nms->evaluations_per_iteration) {
-			nms->current_evaluation = 0;
-			nms->current_iteration++;
-			if (nms->current_iteration < nms->maximum_iteration) {
-				double **hessian, **inverse_hessian;
-				double *gradient;
-				int j, k;
-				char filename[FILENAME_SIZE];
+			population_error_stats(pso->local_best, &min_error, &max_error, &median_error, &average_error);
+			particle_error = distance_error_from(pso->local_best, sp->fitness, sp->parameters); 
 
-				randomized_hessian(p->individuals, nms->parameters, p->fitness, p->size, p->number_parameters, &hessian, &gradient);
-
-				printf("\n");
-				matrix_print(stdout, "hessian", hessian, p->number_parameters, p->number_parameters);
-				printf("\n");
-				print_double_array(stdout, "gradient: ", p->number_parameters, gradient);
-				printf("\n");
-
-				/********
-					*	Take the newton step:  y = -hessian^-1 * gradient
-				 ********/
-				matrix_invert(hessian, p->number_parameters, p->number_parameters, &inverse_hessian);
-				for (j = 0; j < p->number_parameters; j++) {
-					for (k = 0; k < p->number_parameters; k++) nms->parameters[j] += inverse_hessian[j][k] * gradient[j];
-					nms->min_parameters[j] = nms->parameters[j] - nms->parameter_range[j];
-					nms->max_parameters[j] = nms->parameters[j] + nms->parameter_range[j];
-				}
-				print_double_array(stdout, "current point", nms->number_parameters, nms->parameters);
-				print_double_array(stdout, "min range", nms->number_parameters, nms->min_parameters);
-				print_double_array(stdout, "max range", nms->number_parameters, nms->max_parameters);
-
-				for (j = 0; j < p->number_parameters; j++) {
-					free(inverse_hessian[j]);
-					free(hessian[j]);
-				}
-				free(hessian);
-				free(gradient);
-
-				/********
-					*	TODO
-					*	Optional: use previous parameters with new point as a line search direction
-				 ********/
-				sprintf(filename, "%s/%s/population_%d", get_working_directory(), search_name, nms->current_iteration-1);
-				write_population(filename, p);
-				free_population(p);
-				free(p);
-
-				new_population(nms->evaluations_per_iteration, nms->number_parameters, &(nms->population));
-				checkpoint_newton_method(search_name, nms);
-			} else {
-				checkpoint_newton_method(search_name, nms);
+			if (particle_error > median_error * 15.0) {
+				sprintf(AS_MSG, "p: %d - %.15lf, f: %.15lf, g: %.15lf, OUTLIER", particle, sp->fitness, previous, pso->global_best_fitness);
+				return AS_INSERT_OUTLIER;
 			}
 		}
+
+		/********
+			*	Actually insert the particle.
+		 ********/
+		insert_individual_info(pso->particles, particle, sp->parameters, sp->fitness, sp->host_os, sp->app_version);
+		insert_individual_info(pso->velocities, particle, velocity, sp->fitness, sp->host_os, sp->app_version);
+		insert_individual_info(pso->local_best, particle, sp->parameters, sp->fitness, sp->host_os, sp->app_version);
+		if (sp->fitness > pso->global_best_fitness) {
+			pso->global_best_fitness = sp->fitness;
+			memcpy(pso->global_best, sp->parameters, sizeof(double) * pso->number_parameters);
+			sprintf(AS_MSG, "p: %d - %.15lf, f: %.15lf, g: %.15lf, GLOBAL BEST", particle, sp->fitness, previous, pso->global_best_fitness);
+		} else {
+			sprintf(AS_MSG, "p: %d - %.15lf, f: %.15lf, g: %.15lf, LOCAL BEST", particle, sp->fitness, previous, pso->global_best_fitness);
+		}
 	} else {
-		return AS_INSERT_OVER;
+		sprintf(AS_MSG, "p: %d - %.15lf, f: %.15lf, g: %.15lf, NOT INSERTED", particle, sp->fitness, pso->local_best->fitness[particle], pso->global_best_fitness);
 	}
+
+	free(velocity);
 	return AS_INSERT_SUCCESS;
 }

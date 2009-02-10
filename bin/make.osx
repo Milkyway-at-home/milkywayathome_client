@@ -1,5 +1,5 @@
-APP_VERSION = 0.16
-APP_NAME = your_app_name
+APP_VERSION = 0.18
+APP_NAME = stock_osx
 
 BOINC_DIR = /Users/deselt/Research/software/boinc
 BOINC_API_DIR = $(BOINC_DIR)/api
@@ -31,7 +31,7 @@ CXX_i686 = /usr/bin/g++-4.0
 CXXFLAGS_i686 = -arch i386 -isysroot /Developer/SDKs/MacOSX10.4u.sdk \
 	-mmacosx-version-min=10.4 \
 	$(CXXFLAGS_ALL) \
-	-O2 -msse2 -mfpmath=sse -mtune=prescott \
+	-O3 -msse3 -mfpmath=sse -mtune=prescott \
 	-ftree-vectorize -funroll-loops
 
 LDFLAGS_i686 = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk,-arch,i386

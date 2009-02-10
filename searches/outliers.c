@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 
 #include "population.h"
 #include "regression.h"
@@ -16,58 +17,117 @@ int double_compare(const void *p1, const void *p2) {
 	else return 1;
 }
 
-int remove_outliers(POPULATION *p, double range) {
-	double *diff, *sorted_diff, median_diff;
-	double distance, avg_diff;
-	int i, j, k;
+double get_distance(int number_parameters, double f1, double *p1, double f2, double *p2) {
+	int i;
+	double distance = 0;
 
-	/********
-		*	calculate sqrt sum difference/(distance)^2 / (N-1)
-	 ********/
-	diff = (double*)malloc(sizeof(double) * p->size);
-	sorted_diff = (double*)malloc(sizeof(double) * p->size);
-	for (i = 0; i < p->size; i++) diff[i] = 0.0;
-	for (i = 0; i < p->size; i++) {
-		for (j = i+1; j < p->size; j++) {
-			distance = 0;
-			for (k = 0; k < p->number_parameters; k++) {
-				distance += fabs(p->individuals[i][k] - p->individuals[j][k]);
-			}
-			diff[i] += fabs(p->fitness[i] - p->fitness[j]) / distance;
-			diff[j] += fabs(p->fitness[i] - p->fitness[j]) / distance;
-		}
-		diff[i] /= p->size-1;
-		sorted_diff[i] = diff[i];
+	for (i = 0; i < number_parameters; i++) {
+		distance += fabs(p1[i] - p2[i]);
 	}
-	qsort(sorted_diff, p->size, sizeof(double), double_compare);
-	median_diff = sorted_diff[p->size/2];
-	avg_diff = 0;
-	for (i = 0; i < p->size; i++) avg_diff += diff[i];
-	avg_diff /= p->size;
+	return fabs(f1 - f2)/distance;
+}
 
-	printf("removing individuals, median_diff: %.20lf, avg_diff: %.20lf\n", median_diff, avg_diff);
-	for (i = 0; i < p->size; i++) {
-		fwrite_individual(stdout, p, i);
-		printf("diff[%d]: %.20lf", i, diff[i]);
-		if (diff[i] > range * avg_diff) {
+double distance_error_from(POPULATION *p, double fitness, double *parameters) {
+	double distance;
+	int i;
+
+	distance = 0;
+	for (i = 0; i < p->max_size; i++) {
+		if (!individual_exists(p, i)) continue;
+		distance += get_distance(p->number_parameters, p->fitness[i], p->individuals[i], fitness, parameters);
+	}
+	return distance / p->size;
+}
+
+int get_distance_errors(POPULATION *p, double **errors) {
+	int i, j, current_i, current_j;
+	double *e;
+	(*errors) = (double*)malloc(sizeof(double) * p->size);
+	e = (*errors);
+
+	for (i = 0; i < p->size; i++) e[i] = 0.0;
+
+	current_i = 0;
+	current_j = 0;
+	for (i = 0; i < p->max_size; i++) {
+		if (!individual_exists(p, i)) continue;
+
+		for (j = 0; j < p->max_size; j++) {
+			if (!individual_exists(p, j)) continue;
+
+			e[current_i] += get_distance(p->number_parameters, p->fitness[i], p->individuals[i], p->fitness[j], p->individuals[j]);
+			e[current_j] += e[current_i];
+
+			current_j++;
+		}
+		current_i++;
+	}
+	return p->size;
+}
+
+void get_error_stats(double *errors, int error_size, double *min_error, double *max_error, double *median_error, double *average_error) {
+	int i;
+	double sum;
+
+	sum = 0.0;
+	(*min_error) = DBL_MAX;
+	(*max_error) = DBL_MIN;
+	for (i = 0; i < error_size; i++) {
+		if (errors[i] < (*min_error)) (*min_error) = errors[i];
+		if (errors[i] > (*max_error)) (*max_error) = errors[i];
+		sum += errors[i];
+	}
+	(*average_error) = sum / error_size;
+	(*median_error) = errors[error_size/2];
+}
+
+void population_error_stats(POPULATION *p, double *min_error, double *max_error, double *median_error, double *average_error) {
+	double *errors;
+	int error_size;
+
+	error_size = get_distance_errors(p, &errors);
+	get_error_stats(errors, error_size, min_error, max_error, median_error, average_error);
+	free(errors);
+}
+
+#define REMOVE_OUTLIERS_INDIVIDUAL 1
+#define REMOVE_OUTLIERS_INCREMENTAL 2
+#define REMOVE_OUTLIERS_SORTED 3
+
+void remove_outliers_helper(POPULATION *p, double range, int type) {
+	double *errors, min_error, max_error, median_error, average_error;
+	int i, error_size, current;
+
+	error_size = get_distance_errors(p, &errors);
+	get_error_stats(errors, error_size, &min_error, &max_error, &median_error, &average_error);
+
+	printf("removing individuals, median_error: %.20lf, average_error: %.20lf\n", median_error, average_error);
+	current = 0;
+	for (i = 0; i < p->max_size; i++) {
+		if (!individual_exists(p, i)) continue;
+		printf("errors[%d]: %.20lf, fitness: %.20lf", i, errors[current], p->fitness[i]);
+		if (errors[current] > range * average_error) {
 			printf(" -- REMOVED");
-
-			p->size--;
-			diff[i] = diff[p->size];
-			p->fitness[i] = p->fitness[p->size];
-			for (j = 0; j < p->number_parameters; j++) p->individuals[i][j] = p->individuals[p->size][j];
-
-			if (p->os_names[p->size] == NULL) p->os_names[i] = NULL;
-			else sprintf(p->os_names[i], "%s", p->os_names[p->size]);
-
-			if (p->app_versions[p->size] == NULL) p->app_versions[i] = NULL;
-			else sprintf(p->app_versions[i], "%s", p->app_versions[p->size]);
-			i--;
+			if (type == REMOVE_OUTLIERS_INDIVIDUAL) remove_individual(p, i);
+			else if (type == REMOVE_OUTLIERS_INCREMENTAL || type == REMOVE_OUTLIERS_SORTED) {
+				remove_incremental(p, i);
+				i--;
+			}
 		}
 		printf("\n");
+		current++;
 	}
-	free(diff);
-	free(sorted_diff);
+	free(errors);
+}
 
-	return 0;
+void remove_outliers(POPULATION *p, double range) {
+	remove_outliers_helper(p, range, REMOVE_OUTLIERS_INDIVIDUAL);
+}
+
+void remove_outliers_incremental(POPULATION *p, double range) {
+	remove_outliers_helper(p, range, REMOVE_OUTLIERS_INDIVIDUAL);
+}
+
+void remove_outliers_sorted(POPULATION *p, double range) {
+	remove_outliers_helper(p, range, REMOVE_OUTLIERS_INDIVIDUAL);
 }

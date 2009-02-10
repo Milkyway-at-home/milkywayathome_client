@@ -38,24 +38,6 @@ void free_population(POPULATION* population) {
 	free(population->fitness);
 }
 
-
-int population_contains(POPULATION *p, double fitness, double *point) {
-	int i, j, count;
-
-	for (i = 0; i < p->size; i++) {
-		if (p->fitness[i] == fitness) return 1;
-
-		count = 0;
-		for (j = 0; j < p->number_parameters; j++) {
-			if (fabs(point[j] - p->individuals[i][j]) > 10e-10) break;
-			count++;
-		}
-		if (count == p->number_parameters) return 1;
-	}
-	return 0;
-}
-
-
 void get_population_statistics(POPULATION *p, double *best_point, double *best_fitness, double *average_fitness, double *worst_fitness, double *standard_deviation) {
 	double best, avg, worst, st_dev;
 	int best_pos, i;
@@ -86,6 +68,57 @@ void get_population_statistics(POPULATION *p, double *best_point, double *best_f
 	for (i = 0; i < p->number_parameters; i++) best_point[i] = p->individuals[best_pos][i];
 }
 
+/********
+	*	Functions to check for existence of individuals
+ ********/
+int population_contains(POPULATION *p, double fitness, double *point) {
+	int i, j, count;
+
+	for (i = 0; i < p->max_size; i++) {
+		if (p->individuals[i] == NULL) continue;
+		if (p->fitness[i] == fitness) return 1;
+
+		count = 0;
+		for (j = 0; j < p->number_parameters; j++) {
+			if (fabs(point[j] - p->individuals[i][j]) > 10e-10) break;
+			count++;
+		}
+		if (count == p->number_parameters) return 1;
+	}
+	return 0;
+}
+
+int individual_exists(POPULATION *p, int position) {
+	return p->individuals[position] != NULL;
+}
+
+/********
+	*	Functions for inserting individuals
+ ********/
+
+void insert_individual(POPULATION* population, int position, double* parameters, double fitness) {
+	if (population->individuals[position] == NULL) {
+		population->individuals[position] = (double*)malloc(sizeof(double) * population->number_parameters);
+		population->size++;
+	}
+	memcpy(population->individuals[position], parameters, sizeof(double) * population->number_parameters);
+	population->fitness[position] = fitness;
+}
+
+void insert_individual_info(POPULATION* population, int position, double* parameters, double fitness, char *os_name, char* app_version) {
+	if (population->individuals[position] == NULL) {
+		population->individuals[position] = (double*)malloc(sizeof(double) * population->number_parameters);
+		population->size++;
+	}
+	memcpy(population->individuals[position], parameters, sizeof(double) * population->number_parameters);
+	population->fitness[position] = fitness;
+
+	if (population->app_versions[position] == NULL) population->app_versions[position] = (char*)malloc(sizeof(char) * 512);
+	if (app_version != NULL) sprintf(population->app_versions[position], "%s", app_version);
+
+	if (population->os_names[position] == NULL) population->os_names[position] = (char*)malloc(sizeof(char) * 512);
+	if (os_name != NULL) sprintf(population->os_names[position], "%s", os_name);
+}
 
 void insert_incremental(POPULATION* population, double* parameters, double fitness) {
 	if (population->size == population->max_size) return;
@@ -104,32 +137,14 @@ void insert_incremental_info(POPULATION* population, double* parameters, double 
 	if (population->individuals[population->size] == NULL) population->individuals[population->size] = (double*)malloc(sizeof(double) * population->number_parameters);
 	memcpy(population->individuals[population->size], parameters, sizeof(double) * population->number_parameters);
 
+	population->fitness[population->size] = fitness;
 	if (population->app_versions[population->size] == NULL) population->app_versions[population->size] = (char*)malloc(sizeof(char) * 512);
-	sprintf(population->app_versions[population->size], "%s", app_version);
+	if (app_version != NULL) sprintf(population->app_versions[population->size], "%s", app_version);
 
 	if (population->os_names[population->size] == NULL) population->os_names[population->size] = (char*)malloc(sizeof(char) * 512);
-	sprintf(population->os_names[population->size], "%s", os_name);
-
-
-	population->fitness[population->size] = fitness;
+	if (os_name != NULL) sprintf(population->os_names[population->size], "%s", os_name);
 	population->size++;
 }
-
-void remove_incremental(POPULATION* population, int position) {
-	int i, j;
-	for (i = position; i < population->size-1; i++) {
-		population->fitness[i] = population->fitness[i+1];
-		for (j = 0; j < population->number_parameters; j++) {
-			population->individuals[i][j] = population->individuals[i+1][j];
-			if (population->os_names[i] != NULL && population->os_names[i+1] != NULL) sprintf(population->os_names[i], population->os_names[i+1]);
-			if (population->app_versions[i] != NULL && population->app_versions[i+1] != NULL) sprintf(population->app_versions[i], population->app_versions[i+1]);
-		}
-	}
-	free(population->individuals[i]);
-	population->fitness[i] = -1;
-	population->size--;
-}
-
 
 void insert_sorted(POPULATION* population, double* parameters, double fitness) {
 	int i, j;
@@ -148,29 +163,60 @@ void insert_sorted(POPULATION* population, double* parameters, double fitness) {
         }
 }
 
+void insert_sorted_info(POPULATION* population, double* parameters, double fitness, char *os_name, char* app_version) {
+	int i, j;
+        for (i = 0; i < population->size; i++) {
+                if (fitness > population->fitness[i]) {
+			if (population->size == population->max_size) free(population->individuals[population->size-1]);
+			for (j = population->size - 1; j > i; j--) {
+				population->individuals[j] = population->individuals[j-1];
+				population->fitness[j] = population->fitness[j-1];
+			}
+			population->individuals[i] = (double*)malloc(sizeof(double) * population->number_parameters);
+			memcpy(population->individuals[i], parameters, sizeof(double) * population->number_parameters);
+			population->fitness[i] = fitness;
+
+			if (population->app_versions[i] == NULL) population->app_versions[i] = (char*)malloc(sizeof(char) * 512);
+			if (app_version != NULL) sprintf(population->app_versions[i], "%s", app_version);
+
+			if (population->os_names[i] == NULL) population->os_names[i] = (char*)malloc(sizeof(char) * 512);
+			if (os_name != NULL) sprintf(population->os_names[i], "%s", os_name);
+			break;
+		}
+        }
+}
+
+/********
+	*	Functions for removing individuals
+ ********/
+
+void remove_individual(POPULATION* population, int position) {
+	free(population->individuals[position]);
+	population->individuals[position] = NULL;
+}
+
+void remove_incremental(POPULATION* population, int position) {
+	int i, j;
+	for (i = position; i < population->size-1; i++) {
+		population->fitness[i] = population->fitness[i+1];
+		for (j = 0; j < population->number_parameters; j++) {
+			population->individuals[i][j] = population->individuals[i+1][j];
+			if (population->os_names[i] != NULL && population->os_names[i+1] != NULL) sprintf(population->os_names[i], population->os_names[i+1]);
+			if (population->app_versions[i] != NULL && population->app_versions[i+1] != NULL) sprintf(population->app_versions[i], population->app_versions[i+1]);
+		}
+	}
+	free(population->individuals[i]);
+	population->fitness[i] = -1;
+	population->size--;
+}
+
 void remove_sorted(POPULATION *population, int position) {
 	remove_incremental(population, position);
 }
 
-void replace(POPULATION* population, int position, double* parameters, double fitness) {
-	if (population->individuals[position] == NULL) {
-		population->individuals[position] = (double*)malloc(sizeof(double) * population->number_parameters);
-		population->size++;
-	}
-	memcpy(population->individuals[position], parameters, sizeof(double) * population->number_parameters);
-	population->fitness[position] = fitness;
-}
-
-void replace_if_better(POPULATION* population, int position, double* parameters, double fitness) {
-	if (population->individuals[position] != NULL && population->fitness[position] <= fitness) return;
-	if (population->individuals[position] == NULL) {
-		population->individuals[position] = (double*)malloc(sizeof(double) * population->number_parameters);
-		population->size++;
-	}
-	memcpy(population->individuals[position], parameters, sizeof(double) * population->number_parameters);
-	population->fitness[position] = fitness;
-}
-
+/********
+	*	Get n distinct individuals from the population as a new population
+ ********/
 void get_n_distinct(POPULATION *population, int number_parents, POPULATION **n_distinct) {
 	int i, j, k, target;
 	int *parent_positions;
@@ -192,6 +238,10 @@ void get_n_distinct(POPULATION *population, int number_parents, POPULATION **n_d
 		insert_sorted((*n_distinct), population->individuals[parent_positions[i]], population->fitness[parent_positions[i]]);
 	}
 }
+
+/********
+	*	Functions for reading/writing populations
+ ********/
 
 int fread_population(FILE* file, POPULATION **population) {
 	int i, j, size, max_size, number_parameters, position;

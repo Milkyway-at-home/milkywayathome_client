@@ -278,7 +278,7 @@ int checkpoint_newton_method(char* search_name, void* search_data) {
 	else return write_newton_method(search_name, search_data);
 }
 
-int bound_parameters(int number_parameters, double *parameters, double *min_bound, double *max_bound) {
+int newton_bound_parameters(int number_parameters, double *parameters, double *min_bound, double *max_bound) {
 	int j;
 	for (j = 0; j < number_parameters; j++) {
 		if (parameters[j] < min_bound[j]) parameters[j] = min_bound[j];
@@ -303,7 +303,7 @@ int newton_generate_parameters(char* search_name, void* search_data, SEARCH_PARA
 		double point = random_linear_recombination(nms->number_parameters, nms->line_search->min_range, nms->line_search->max_range, nms->current_point, nms->line_search->direction, sp->parameters);
 		sprintf(sp->metadata, "ls, point: %.20lf, it: %d, ev: %d", point, nms->current_iteration, nms->current_evaluation);
 	}
-	if (bound_parameters(sp->number_parameters, sp->parameters, nms->min_bound, nms->max_bound)) return AS_GEN_FAIL;
+	if (newton_bound_parameters(sp->number_parameters, sp->parameters, nms->min_bound, nms->max_bound)) return AS_GEN_FAIL;
 
 	return AS_GEN_SUCCESS;
 }
@@ -466,7 +466,7 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 					get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
 					log_printf(search_name, "[before outliers] best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);
 
-					remove_outliers(p, 25.0);
+					remove_outliers_incremental(p, 25.0);
 
 					get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
 					log_printf(search_name, "[after outliers ] best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);
@@ -528,7 +528,7 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 					get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
 					log_printf(search_name, "[before outliers] best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);
 
-					remove_outliers(p, 25.0);
+					remove_outliers_incremental(p, 25.0);
 
 					get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
 					log_printf(search_name, "[after outliers ] best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);
