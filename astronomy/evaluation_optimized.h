@@ -26,8 +26,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "parameters.h"
 #include "star_points.h"
 
-void	set_probability_constants(ASTRONOMY_PARAMETERS *ap, double coords, double *r_point, double *r3, double *N, double *rPrime3, double *reff_value);
-void	calculate_probabilities(double *r_point, double *r3, double *N, double reff_value, double rPrime3, double *integral_point, ASTRONOMY_PARAMETERS *ap, double *bg_prob, double *st_prob);
+void	set_probability_constants(ASTRONOMY_PARAMETERS *ap, double coords, double *r_point, double *qw_r3_N, double *reff_xr_rp3);
+void	calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp3, double *integral_point, ASTRONOMY_PARAMETERS *ap, double *bg_prob, double *st_prob);
 
 int	calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp);
 int	calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp);

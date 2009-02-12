@@ -58,7 +58,7 @@ void separation(char* filename, double background_integral, double* stream_integ
 	int s_ok = 0;
 	int i, j, retval;
 	FILE *file;
-	double reff_value, rPrime3, *r_point, *N, *r3;
+	double reff_xr_rp3, *qw_r3_N, *r_point;
 
 	twoPanel = 1;
 	for(j = 0; j < ap->number_streams; j++) {
@@ -129,8 +129,7 @@ void separation(char* filename, double background_integral, double* stream_integ
 	
 	if (ap->convolve > 0) {
                 r_point = (double*)malloc(sizeof(double) * ap->convolve);
-                r3 = (double*)malloc(sizeof(double) * ap->convolve);
-                N = (double*)malloc(sizeof(double) * ap->convolve);
+                qw_r3_N = (double*)malloc(sizeof(double) * ap->convolve);
 	}
 	for (i = 0; i < sp->number_stars; i++) {
 		star_coords[0] = sp->stars[i][0];
@@ -142,8 +141,8 @@ void separation(char* filename, double background_integral, double* stream_integ
 
 		if (twoPanel == 1) {
 			if (ap->convolve > 0) {
-				set_probability_constants(ap, star_coords[2], r_point, r3, N, &rPrime3, &reff_value);
-				calculate_probabilities(r_point, r3, N, reff_value, rPrime3, star_coords, ap, &prob_b, prob_s);
+				set_probability_constants(ap, star_coords[2], r_point, qw_r3_N, &reff_xr_rp3);
+				calculate_probabilities(r_point, qw_r3_N, reff_xr_rp3, star_coords, ap, &prob_b, prob_s);
 			} else {
 				for(j = 0; j < ap->number_streams; j++) {
                         		prob_s[j] = stPsg(star_coords, ap->stream_parameters[j], ap->wedge, ap->sgr_coordinates);
@@ -224,8 +223,7 @@ void separation(char* filename, double background_integral, double* stream_integ
 	printf("Output written to: %s\n", filename);
 	if (ap->convolve > 0) {
 		free(r_point);
-		free(r3);
-		free(N);
+		free(qw_r3_N);
 	}
 }
 
