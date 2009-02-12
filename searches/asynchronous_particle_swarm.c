@@ -150,16 +150,6 @@ int checkpoint_particle_swarm(char* search_name, void* search_data) {
 	return write_particle_swarm(search_name, search_data);
 }
 
-int pso_bound_parameters(int number_parameters, double *parameters, double *min_bound, double *max_bound) {
-	int j;
-	for (j = 0; j < number_parameters; j++) {
-		if (isnan(parameters[j])) return AS_GEN_FAIL;
-		if (parameters[j] < min_bound[j]) parameters[j] = min_bound[j];
-		if (parameters[j] > max_bound[j]) parameters[j] = max_bound[j];
-	}
-	return AS_GEN_SUCCESS;
-}
-
 int pso_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
 	PARTICLE_SWARM_OPTIMIZATION *pso = (PARTICLE_SWARM_OPTIMIZATION*)search_data;
 	int i;
@@ -180,7 +170,12 @@ int pso_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMET
 		sprintf(sp->metadata, "p: %d, v:", pso->current_particle);
 		for (i = 0; i < pso->number_parameters; i++) {
 			velocity[i] = (pso->w * velocity[i]) + (pso->c1 * drand48() * (local_best[i] - particle[i])) + (pso->c2 * drand48() * (pso->global_best[i] - particle[i]));
+			if (particle[i] + velocity[i] > pso->max_bound[i]) velocity[i] = (pso->max_bound[i] - particle[i]) * 0.99;
+			if (particle[i] + velocity[i] < pso->min_bound[i]) velocity[i] = (pso->min_bound[i] - particle[i]) * 0.99;
 			particle[i] = particle[i] + velocity[i];
+
+			if (isnan(particle[i])) return AS_GEN_FAIL;
+
 			sp->parameters[i] = particle[i];
 			sprintf(strchr(sp->metadata, 0), " %.20lf", velocity[i]);
 		}
@@ -188,7 +183,7 @@ int pso_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMET
 	pso->current_particle++;
 	if (pso->current_particle >= pso->particles->max_size) pso->current_particle = 0;
 
-	return pso_bound_parameters(pso->number_parameters, sp->parameters, pso->min_bound, pso->max_bound);
+	return AS_GEN_SUCCESS;
 }
 
 int parse(PARTICLE_SWARM_OPTIMIZATION *pso, SEARCH_PARAMETERS *sp, int *particle, double *velocity) {
