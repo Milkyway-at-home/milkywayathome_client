@@ -52,12 +52,13 @@ void separation(char* filename, double background_integral, double* stream_integ
 	double xsun[3];
 	double epsilon_s[ap->number_streams];
 	double epsilon_b;
-	double *star_coords;
+	double star_coords[3];
 	double starxyz[3];
 	double starxyzTransform[3];
 	int s_ok = 0;
 	int i, j, retval;
 	FILE *file;
+	double reff_value, rPrime3, *r_point, *N, *r3;
 
 	twoPanel = 1;
 	for(j = 0; j < ap->number_streams; j++) {
@@ -126,18 +127,23 @@ void separation(char* filename, double background_integral, double* stream_integ
 	epsilon_b = 1.0 / denom;
 	printf("epsilon_b:    %lf\n", epsilon_b);
 	
+	if (ap->convolve > 0) {
+                r_point = (double*)malloc(sizeof(double) * ap->convolve);
+                r3 = (double*)malloc(sizeof(double) * ap->convolve);
+                N = (double*)malloc(sizeof(double) * ap->convolve);
+	}
 	for (i = 0; i < sp->number_stars; i++) {
-		star_coords = sp->stars[i];
+		star_coords[0] = sp->stars[i][0];
+		star_coords[1] = sp->stars[i][1];
+		star_coords[2] = sp->stars[i][2];
 		//printf("star_coords: %g %g %g\n", star_coords[0], star_coords[1], star_coords[2]);
 	
 		//printf("twoPanel: %d\n", twoPanel);
 
 		if (twoPanel == 1) {
-			if (ap->convolve != 0) {
-				for(j = 0; j < ap->number_streams; j++) {
-					prob_s[j] = stPsgConvolved(star_coords, ap->stream_parameters[j], ap->wedge, ap->convolve, ap->sgr_coordinates);
-				}
-				prob_b = stPbxConvolved(star_coords, ap->background_parameters, ap->convolve, ap->wedge);
+			if (ap->convolve > 0) {
+				set_probability_constants(ap, star_coords[2], r_point, r3, N, &rPrime3, &reff_value);
+				calculate_probabilities(r_point, r3, N, reff_value, rPrime3, star_coords, ap, &prob_b, prob_s);
 			} else {
 				for(j = 0; j < ap->number_streams; j++) {
                         		prob_s[j] = stPsg(star_coords, ap->stream_parameters[j], ap->wedge, ap->sgr_coordinates);
@@ -216,11 +222,17 @@ void separation(char* filename, double background_integral, double* stream_integ
 	}
 	fclose(file);
 	printf("Output written to: %s\n", filename);
+	if (ap->convolve > 0) {
+		free(r_point);
+		free(r3);
+		free(N);
+	}
 }
 
 int main(int number_arguments, char **arguments){
 	int integral_parameter_length, integral_results_length, i;
 	double *point;
+	char outfile[512];
 
 	printf("init data...\n");
 	mpi_evaluator__init(&number_arguments, &arguments);
@@ -232,6 +244,8 @@ int main(int number_arguments, char **arguments){
 			sprintf(star_points_file, "%s", arguments[++i]);
 		} else if (!strcmp(arguments[i], "-parameters")) {
 			sprintf(astronomy_parameters_file, "%s", arguments[++i]);
+		} else if (!strcmp(arguments[i], "-outfile")) {
+			sprintf(outfile, "%s", arguments[++i]);
 		}
 	}
 
@@ -248,8 +262,11 @@ int main(int number_arguments, char **arguments){
 	printf("getting parameters...\n");
 	get_search_parameters(ap, &point);
 
+	printf("evaluating point...\n");
 	evaluate(point);
-	separation(arguments[1], es->background_integral, es->stream_integrals);
+
+	printf("performing separation...\n");
+	separation(outfile, es->background_integral, es->stream_integrals);
 
 	return 0;
 }
