@@ -239,8 +239,8 @@ void calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp
 }
 
 double calculate_progress(EVALUATION_STATE *s) {
-	long total_calc_probs, current_calc_probs, current_probs, i;
-	int mu_step_current, nu_step_current, r_step_current;
+	long total_calc_probs, current_calc_probs, current_probs;
+	int i, mu_step_current, nu_step_current, r_step_current;
 	INTEGRAL_AREA *ia;
 
 	total_calc_probs = 0;
@@ -370,6 +370,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 	#endif
 
 	init_constants(ap);
+
 	for (; es->current_integral < ap->number_integrals; es->current_integral++) {
 		calculate_integral(ap, es->integral[es->current_integral], es);
 //		printf("bg_int: %lf\n", es->integral[es->current_integral]->background_integral);

@@ -62,6 +62,6 @@ cp ../test_boinc/stars-82.txt ./bin/test_files/stars-82.txt
 cp ../test_boinc/stars-86.txt ./bin/test_files/stars-86.txt
 
 cd ..
-tar cvzf milkyway_release_$1.tar milkyway
-zip -r milkyway_release_$1.zip milkyway
+tar cvzf mw_$1.tar milkyway
+zip -r mw_$1.zip milkyway
 rm -r milkyway
