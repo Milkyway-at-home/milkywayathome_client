@@ -73,8 +73,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 	#define pi 3.1415926535897932384626433832795028841971693993751
 #endif
 
-#define WEDGE_ALLOW_ZERO 0
-
 #define deg (180.0/pi)
 #define stdev 0.6
 #define xr 3 * stdev
@@ -267,6 +265,20 @@ double calculate_progress(EVALUATION_STATE *s) {
 	return (double)current_calc_probs / (double)total_calc_probs;
 }
 
+#ifdef GMLE_BOINC
+	void do_boinc_checkpoint(EVALUATION_STATE *es) {
+		if (boinc_time_to_checkpoint()) {
+			int retval = write_checkpoint(es);
+			if (retval) {
+				fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
+				return;
+			}
+			boinc_checkpoint_completed();
+		}
+		boinc_fraction_done(calculate_progress(es));
+	}
+#endif
+
 void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_STATE *es) {
 	int i, mu_step_current, nu_step_current, r_step_current;
 	double bg_prob, *st_probs, V;
@@ -298,69 +310,27 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 		double mu = ia->mu_min + (mu_step_current * ia->mu_step_size);
 
 		for (; nu_step_current < ia->nu_steps; nu_step_current++) {
-			double id = 0;
 			double nu = ia->nu_min + (nu_step_current * ia->nu_step_size);
+			double id = cos((90 - nu - ia->nu_step_size)/deg) - cos((90 - nu)/deg);
 
 			#ifdef GMLE_BOINC
-				if (boinc_time_to_checkpoint()) {
-					int retval = write_checkpoint(es);
-					if (retval) {
-						fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
-						return;
-					}
-					boinc_checkpoint_completed();
-				}
-				boinc_fraction_done(calculate_progress(es));
+				do_boinc_checkpoint(es);
 			#endif
 
-			#if WEDGE_ALLOW_ZERO == 1
-				if (ap->wedge > 0) {
-					id = cos((90 - nu - ia->nu_step_size)/deg) - cos((90 - nu)/deg);
-					if (ap->sgr_coordinates == 0) {
-						double ra, dec;
-						atGCToEq(mu + 0.5 * ia->mu_step_size, nu + 0.5 * ia->nu_step_size, &ra, &dec, get_node(), wedge_incl(ap->wedge));
-						atEqToGal(ra, dec, &integral_point[0], &integral_point[1]);
-					} else if (ap->sgr_coordinates == 1) {					
-						double lamda, beta;
-						gcToSgr(mu + 0.5 * ia->mu_step_size, nu + 0.5 * ia->nu_step_size, ap->wedge, &lamda, &beta);
-						sgrToGal(lamda, beta, &integral_point[0], &integral_point[1]);
-					} else { 
-						printf("Error: ap->sgr_coordinates not valid");
-					}
-				}
-			#else
-				id = cos((90 - nu - ia->nu_step_size)/deg) - cos((90 - nu)/deg);
-				if (ap->sgr_coordinates == 0) {
-					double ra, dec;
-					atGCToEq(mu + 0.5 * ia->mu_step_size, nu + 0.5 * ia->nu_step_size, &ra, &dec, get_node(), wedge_incl(ap->wedge));
-					atEqToGal(ra, dec, &integral_point[0], &integral_point[1]);
-				} else if (ap->sgr_coordinates == 1) {					
-					double lamda, beta;
-					gcToSgr(mu + 0.5 * ia->mu_step_size, nu + 0.5 * ia->nu_step_size, ap->wedge, &lamda, &beta);
-					sgrToGal(lamda, beta, &integral_point[0], &integral_point[1]);
-				} else { 
-					printf("Error: ap->sgr_coordinates not valid");
-				}
-			#endif
+			if (ap->sgr_coordinates == 0) {
+				double ra, dec;
+				atGCToEq(mu + 0.5 * ia->mu_step_size, nu + 0.5 * ia->nu_step_size, &ra, &dec, get_node(), wedge_incl(ap->wedge));
+				atEqToGal(ra, dec, &integral_point[0], &integral_point[1]);
+			} else if (ap->sgr_coordinates == 1) {					
+				double lamda, beta;
+				gcToSgr(mu + 0.5 * ia->mu_step_size, nu + 0.5 * ia->nu_step_size, ap->wedge, &lamda, &beta);
+				sgrToGal(lamda, beta, &integral_point[0], &integral_point[1]);
+			} else { 
+				printf("Error: ap->sgr_coordinates not valid");
+			}
 
 			for (; r_step_current < ia->r_steps; r_step_current++) {
-				#if WEDGE_ALLOW_ZERO == 1
-					if (ap->wedge == 0) {
-						double xyz[3];
-						double log_r = ia->r_min + (r_step_current * ia->r_step_size);
-						double r = pow(10.0, (log_r-14.2)/5.0);
-
-						V = ia->mu_step_size * ia->nu_step_size * ia->r_step_size;
-						xyz[0] = mu + (0.5 * ia->mu_step_size);
-						xyz[1] = nu + (0.5 * ia->nu_step_size);
-						xyz[2] = r + (0.5 * ia->r_step_size);
-						xyz2lbr(xyz, integral_point);
-					} else {
-						V = irv[r_step_current] * id;
-					}
-				#else
-					V = irv[r_step_current] * id;
-				#endif
+				V = irv[r_step_current] * id;
 
 				calculate_probabilities(r_point[r_step_current], qw_r3_N[r_step_current], reff_xr_rp3[r_step_current], integral_point, ap, &bg_prob, st_probs);
 	
@@ -442,28 +412,20 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
 	}
 
 	for (; es->current_star_point < sp->number_stars; es->current_star_point++) {
-		double star_prob = 0.0;
+		double star_prob;
 		#ifdef GMLE_BOINC
-			if (boinc_time_to_checkpoint()) {
-				int retval = write_checkpoint(es);
-				if (retval) {
-					fprintf(stderr,"APP: astronomy checkpoint failed %d\n",retval);
-					return retval;
-				}
-				boinc_checkpoint_completed();
-			}
-			boinc_fraction_done(calculate_progress(es));
+			do_boinc_checkpoint(es);
 		#endif
 
 		set_probability_constants(ap, sp->stars[es->current_star_point][2], r_point, qw_r3_N, &reff_xr_rp3);
 		calculate_probabilities(r_point, qw_r3_N, reff_xr_rp3, sp->stars[es->current_star_point], ap, &bg_prob, st_prob);
+
+		star_prob = (bg_prob/es->background_integral) * exp_background_weight;
 		for (current_stream = 0; current_stream < ap->number_streams; current_stream++) {
 			star_prob += (st_prob[current_stream]/es->stream_integrals[current_stream]) * exp_stream_weights[current_stream];
 		}
-		star_prob += (bg_prob/es->background_integral) * exp_background_weight;
 		star_prob /= sum_exp_weights;
 
-		//update: check star_prob==0, not prob_sum
 		if (star_prob != 0.0) {
 			es->prob_sum += log(star_prob)/log(10.0);
 		} else {
