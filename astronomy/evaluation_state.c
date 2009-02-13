@@ -224,13 +224,11 @@ void free_state(EVALUATION_STATE* es) {
 
 		fprintf(file, "prob_sum: %.20lf, num_zero: %d, bad_jacobians: %d\n", es->prob_sum, es->num_zero, es->bad_jacobians);
 		fprintf(file, "current_star_point: %d\n", es->current_star_point);
-		fprintf(file, "current_cut: %d\n", es->current_integral);
+		fprintf(file, "current_integral: %d\n", es->current_integral);
 
-		fprintf(file, "main_volume:\n");
-		fwrite_integral_area(file, es->main_integral);
-		fprintf(file, "cuts: %d\n", es->number_cuts);
-		for (i = 0; i < es->number_cuts; i++) {
-			fwrite_integral_area(file, es->cuts[i]);
+		fprintf(file, "number_integrals: %d\n", es->number_integrals);
+		for (i = 0; i < es->number_integrals; i++) {
+			fwrite_integral_area(file, es->integral[i]);
 		}
 
 		if ((retval = fclose(file))) {
@@ -259,14 +257,10 @@ void free_state(EVALUATION_STATE* es) {
 
 		fscanf(file, "prob_sum: %lf, num_zero: %d, bad_jacobians: %d\n", &(es->prob_sum), &(es->num_zero), &(es->bad_jacobians));
 		fscanf(file, "current_star_point: %d\n", &(es->current_star_point));
-		fscanf(file, "current_cut: %d\n", &(es->current_integral));
-		fscanf(file, "main_volume:\n");
-
-		fread_integral_area(file, es->main_integral);
-
-		fscanf(file, "cuts: %d\n", &es->number_cuts);
-		for (i = 0; i < es->number_cuts; i++) {
-			fread_integral_area(file, es->cuts[i]);
+		fscanf(file, "current_integral: %d\n", &(es->current_integral));
+		fscanf(file, "number_integrals: %d\n", &es->number_integrals);
+		for (i = 0; i < es->number_integrals; i++) {
+			fread_integral_area(file, es->integral[i]);
 		}
 
 	        fclose(file);
