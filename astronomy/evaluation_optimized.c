@@ -197,7 +197,7 @@ void calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp
         sinb = sin(integral_point[1] / deg);
         sinl = sin(integral_point[0] / deg);
         cosb = cos(integral_point[1] / deg);
-        cosl = cos(integral_point[1] / deg);
+        cosl = cos(integral_point[0] / deg);
 
 	/* if q is 0, there is no probability */
 	if (q == 0) {

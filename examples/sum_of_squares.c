@@ -13,13 +13,22 @@
 double *min_bound, *max_bound;
 int number_parameters;
 
+#define ERROR_RATE 0.3
+
 double sum_of_squares(double* parameters) {
 	int i;
 	double sum;
 
-	sum = 0.0;
-	for (i = 0; i < number_parameters; i++) {
-		sum += parameters[i] * parameters[i];
+	if (drand48() < ERROR_RATE) {
+		sum = 0.0;
+		for (i = 0; i < number_parameters; i++) {
+			sum += pow((max_bound[i] - min_bound[i]) * drand48(), 2);
+		}
+	} else {
+		sum = 0.0;
+		for (i = 0; i < number_parameters; i++) {
+			sum += parameters[i] * parameters[i];
+		}
 	}
 	return -sum;
 }
