@@ -40,7 +40,7 @@ double distance_error_from(POPULATION *p, double fitness, double *parameters) {
 }
 
 int get_distance_errors(POPULATION *p, double **errors) {
-	int i, j, current_i, current_j;
+	int i, j, current_i;
 	double *e;
 	(*errors) = (double*)malloc(sizeof(double) * p->size);
 	e = (*errors);
@@ -48,21 +48,21 @@ int get_distance_errors(POPULATION *p, double **errors) {
 	for (i = 0; i < p->size; i++) e[i] = 0.0;
 
 	current_i = 0;
-	current_j = 0;
 	for (i = 0; i < p->max_size; i++) {
 		if (!individual_exists(p, i)) continue;
 
 		for (j = 0; j < p->max_size; j++) {
 			if (!individual_exists(p, j)) continue;
+			if (i == j) continue;
 
 			e[current_i] += get_distance(p->number_parameters, p->fitness[i], p->individuals[i], p->fitness[j], p->individuals[j]);
-			e[current_j] += e[current_i];
 
-			current_j++;
+			if (isnan(e[current_i])) printf("ERROR: distance [%d] to [%d] resulted in nan\n", i, j);
 		}
 		current_i++;
 	}
-	return p->size;
+	for (i = 0; i < p->size; i++) e[i] /= current_i;
+	return current_i;
 }
 
 void get_error_stats(double *errors, int error_size, double *min_error, double *max_error, double *median_error, double *average_error) {
@@ -107,9 +107,12 @@ void remove_outliers_helper(POPULATION *p, double range, int type) {
 		if (!individual_exists(p, i)) continue;
 		printf("errors[%d]: %.20lf, fitness: %.20lf", i, errors[current], p->fitness[i]);
 		if (errors[current] > range * average_error) {
-			printf(" -- REMOVED");
-			if (type == REMOVE_OUTLIERS_INDIVIDUAL) remove_individual(p, i);
-			else if (type == REMOVE_OUTLIERS_INCREMENTAL || type == REMOVE_OUTLIERS_SORTED) {
+			printf("i -- REMOVED");
+			if (type == REMOVE_OUTLIERS_INDIVIDUAL) {
+				printf(" -- INDIVIDUAL");
+				remove_individual(p, i);
+			} else if (type == REMOVE_OUTLIERS_INCREMENTAL || type == REMOVE_OUTLIERS_SORTED) {
+				printf(" -- INCREMENTAL");
 				remove_incremental(p, i);
 				i--;
 			}
@@ -125,9 +128,9 @@ void remove_outliers(POPULATION *p, double range) {
 }
 
 void remove_outliers_incremental(POPULATION *p, double range) {
-	remove_outliers_helper(p, range, REMOVE_OUTLIERS_INDIVIDUAL);
+	remove_outliers_helper(p, range, REMOVE_OUTLIERS_INCREMENTAL);
 }
 
 void remove_outliers_sorted(POPULATION *p, double range) {
-	remove_outliers_helper(p, range, REMOVE_OUTLIERS_INDIVIDUAL);
+	remove_outliers_helper(p, range, REMOVE_OUTLIERS_SORTED);
 }

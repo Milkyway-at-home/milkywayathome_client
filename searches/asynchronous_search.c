@@ -81,6 +81,6 @@ void asynchronous_search(int number_arguments, char** arguments, int number_para
                 if (i % 100 == 0) ms->search->checkpoint_search(ms->search_name, ms->search_data);
                 free(sp->parameters);
                 sp->number_parameters = number_parameters;
-                sp->parameters = malloc(sizeof(double) * number_parameters);
+                sp->parameters = (double*)malloc(sizeof(double) * number_parameters);
         }
 }

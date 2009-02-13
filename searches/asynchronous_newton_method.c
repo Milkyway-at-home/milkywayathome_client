@@ -466,7 +466,9 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 					get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
 					log_printf(search_name, "[before outliers] best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);
 
+					printf("removing outliers for: %s\n", search_name);
 					remove_outliers_incremental(p, 25.0);
+					printf("removed outliers.\n");
 
 					get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
 					log_printf(search_name, "[after outliers ] best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);
@@ -474,11 +476,9 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 					step = (double*)malloc(sizeof(double) * nms->number_parameters);
 					step_error = (double*)malloc(sizeof(double) * nms->number_parameters);
 
-					/********
-						*	Remove outliers here
-					 ********/
-
+					printf("getting newton step\n");
 					get_newton_step(nms, step, step_error);
+					printf("got newton step\n");
 					for (i = 0; i < nms->number_parameters; i++) {
 						if (nms->line_search == NULL) {
 							nms->current_point[i] -= step[i] * scaling_factor;

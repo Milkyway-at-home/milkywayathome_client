@@ -64,7 +64,7 @@ int create_particle_swarm(char* search_name, int number_arguments, char** argume
 
 	pso->global_best_fitness = -DBL_MAX;
 	pso->global_best = (double*)malloc(sizeof(double) * pso->number_parameters);
-	memset(pso->global_best, 0.0, sizeof(double) * pso->number_parameters);
+	for (i = 0; i < pso->size; i++) pso->global_best[i] = 0.0;
 
 	pso->min_bound = (double*)malloc(sizeof(double) * pso->number_parameters);
 	pso->max_bound = (double*)malloc(sizeof(double) * pso->number_parameters);

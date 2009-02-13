@@ -46,7 +46,9 @@ void get_population_statistics(POPULATION *p, double *best_point, double *best_f
 	avg = p->fitness[0];
 	worst = p->fitness[0];
 	best_pos = 0;
-	for (i = 1; i < p->size; i++) {
+	printf("getting stats, size: %d, max_size: %d\n", p->size, p->max_size);
+	for (i = 1; i < p->max_size; i++) {
+		if (!individual_exists(p, i)) continue;
 		avg += p->fitness[i];
 		if (p->fitness[i] > best) {
 			best = p->fitness[i];
@@ -56,6 +58,7 @@ void get_population_statistics(POPULATION *p, double *best_point, double *best_f
 	}
 	st_dev = 0;
 	for (i = 0; i < p->size; i++) {
+		if (!individual_exists(p, i)) continue;
 		st_dev += (p->fitness[i] - best) * (p->fitness[i] - best);
 	}
 	st_dev /= p->size;
@@ -206,6 +209,7 @@ void remove_incremental(POPULATION* population, int position) {
 		}
 	}
 	free(population->individuals[i]);
+	population->individuals[i] = NULL;
 	population->fitness[i] = -1;
 	population->size--;
 }
