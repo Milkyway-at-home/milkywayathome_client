@@ -29,6 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "../evaluation/search_manager.h"
 #include "../evaluation/boinc_search_manager.h"
 #include "../searches/asynchronous_newton_method.h"
+#include "../searches/asynchronous_particle_swarm.h"
 #include "../searches/search_parameters.h"
 #include "../util/settings.h"
 #include "../util/io_util.h"
@@ -90,6 +91,7 @@ int main(int argc, char** argv) {
 
 	printf("registering search\n");
 	register_search(get_asynchronous_newton_method());
+	register_search(get_asynchronous_particle_swarm());
 
 	astronomy_path = NULL;
 	astronomy_name = (char*)malloc(sizeof(char) * FILENAME_SIZE);

@@ -396,6 +396,8 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 			continue;
 		}
 
+		wu.canonical_resultid = result.id;
+
 		if (result.validate_state != VALIDATE_STATE_INIT) {
 			print_message(search_name, "RESULT ALREADY VALIDATED", "", wu.name, result.app_version_num, "?", "?", credit, result);
 			has_valid = true;
@@ -656,7 +658,7 @@ void start_search_manager() {
                          
 		num_assimilated = 0;
 		while (!wu.enumerate(buf)) {
-			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[%s] assimilating boinc WU %d; state=%d\n", wu.name, wu.id, wu.assimilate_state);
+//			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[%s] assimilating boinc WU %d; state=%d\n", wu.name, wu.id, wu.assimilate_state);
 
 			if (update_db) {
 				char buf[256];
