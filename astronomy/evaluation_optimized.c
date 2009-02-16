@@ -191,7 +191,7 @@ void set_probability_constants(ASTRONOMY_PARAMETERS *ap, double coords, double *
 
 void calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp3, double *integral_point, ASTRONOMY_PARAMETERS *ap, double *bg_prob, double *st_prob) {
 	double sinb, sinl, cosb, cosl, zp;
-	double rg, xyzs[3], dotted, xyz_norm;
+	double rg, rs, xyzs[3], dotted, xyz_norm;
 	int i, j;
 
         sinb = sin(integral_point[1] / deg);
@@ -204,14 +204,29 @@ void calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp
 		(*bg_prob) = -1;
 	} else {
 		(*bg_prob) = 0;
-		for (i = 0; i < ap->convolve; i++) {
-			xyz[i][2] = r_point[i] * sinb;
-			zp = r_point[i] * cosb;
-			xyz[i][0] = zp * cosl - lbr_r;
-			xyz[i][1] = zp * sinl;
+		if (alpha == delta == 1) {
+			for (i = 0; i < ap->convolve; i++) {
+				xyz[i][2] = r_point[i] * sinb;
+				zp = r_point[i] * cosb;
+				xyz[i][0] = zp * cosl - lbr_r;
+				xyz[i][1] = zp * sinl;
 
-			rg = sqrt(xyz[i][0]*xyz[i][0] + xyz[i][1]*xyz[i][1] + (xyz[i][2]*xyz[i][2])/(q*q));
-			(*bg_prob) += qw_r3_N[i] / (pow(rg, alpha) * pow(rg + r0, alpha_delta3));
+				rg = sqrt(xyz[i][0]*xyz[i][0] + xyz[i][1]*xyz[i][1] + (xyz[i][2]*xyz[i][2])/(q*q));
+				rs = rg + r0;
+
+				(*bg_prob) += qw_r3_N[i] / (rg * rs * rs * rs);
+			}
+		} else {
+			for (i = 0; i < ap->convolve; i++) {
+				xyz[i][2] = r_point[i] * sinb;
+				zp = r_point[i] * cosb;
+				xyz[i][0] = zp * cosl - lbr_r;
+				xyz[i][1] = zp * sinl;
+
+				rg = sqrt(xyz[i][0]*xyz[i][0] + xyz[i][1]*xyz[i][1] + (xyz[i][2]*xyz[i][2])/(q*q));
+
+				(*bg_prob) += qw_r3_N[i] / (pow(rg, alpha) * pow(rg + r0, alpha_delta3));
+			}
 		}
 		(*bg_prob) *= reff_xr_rp3;
 	}
