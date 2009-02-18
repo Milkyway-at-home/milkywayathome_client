@@ -30,6 +30,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 	*	Includes for FGDO
  ********/
 #include "../searches/asynchronous_newton_method.h"
+#include "../searches/bounds.h"
 #include "../searches/synchronous_gradient_descent.h"
 #include "../searches/synchronous_newton_method.h"
 #include "../searches/search_arguments.h"
@@ -84,6 +85,7 @@ int main(int number_arguments, char **arguments){
 		*	Start the search
 	 ********/
 	if (argument_exists("-asynch", number_arguments, arguments)) {
+		BOUNDS *bounds;
 		if (argument_exists("-nm", number_arguments, arguments))	register_search(get_asynchronous_newton_method());
 //		if (argument_exists("-gs", number_arguments, arguments))	register_search(get_asynchronous_genetic_search());
 //		if (argument_exists("-de", number_arguments, arguments))	register_search(get_asynchronous_differential_evolution());
@@ -93,7 +95,8 @@ int main(int number_arguments, char **arguments){
 			printf("Search not specified.\n");
 			return 0;
 		}
-		mpi_asynchronous_search(number_arguments, arguments, number_parameters, point, range, min_bound, max_bound);
+		new_bounds(&bounds, number_parameters, min_bound, max_bound, NULL);
+		mpi_asynchronous_search(number_arguments, arguments, number_parameters, point, range, bounds);
 	} else {
 		if (argument_exists("-nm", number_arguments, arguments))	synchronous_newton_method(number_arguments, arguments, number_parameters, point, range);
 		else if (argument_exists("-gd", number_arguments, arguments))	synchronous_gradient_descent(number_arguments, arguments, number_parameters, point, range);

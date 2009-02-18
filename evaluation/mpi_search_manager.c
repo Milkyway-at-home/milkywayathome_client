@@ -27,6 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "mpi_search_manager.h"
 #include "search_manager.h"
 #include "../searches/asynchronous_search.h"
+#include "../searches/bounds.h"
 #include "../searches/search_parameters.h"
 
 
@@ -64,7 +65,7 @@ void start_mpi_search_manager(int argc, char** argv, int number_parameters) {
 }
 
 
-void mpi_asynchronous_search(int number_arguments, char** arguments, int number_parameters, double *point, double *range, double *min_bound, double *max_bound) {
+void mpi_asynchronous_search(int number_arguments, char** arguments, int number_parameters, double *point, double *range, BOUNDS *bounds) {
 	int i, generate_result, insert_result, retval;
 	MANAGED_SEARCH *ms = NULL;
 	SEARCH_PARAMETERS *sp;
@@ -76,7 +77,7 @@ void mpi_asynchronous_search(int number_arguments, char** arguments, int number_
 			get_qualifier_from_name(arguments[i], &qualifier);
 			if (!search_exists(arguments[i])) {
 				ASYNCHRONOUS_SEARCH *as = get_registered_search(qualifier);
-				retval = as->create_search(arguments[i], number_arguments, arguments, number_parameters, point, range, min_bound, max_bound);
+				retval = as->create_search(arguments[i], number_arguments, arguments, number_parameters, point, range, bounds);
 				if (retval) {
 					printf("ERROR creating search: %s -- [%s]\n", arguments[i], AS_MSG);
                                         return;
