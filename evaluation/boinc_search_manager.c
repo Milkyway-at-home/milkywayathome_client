@@ -99,8 +99,11 @@ long checkpoint_time = 360;		//	1 hour
 
 void print_message(char *search_name, char *as_msg, const char *as_result, char *verify_msg, int v_num, char *version, char *host_os, double credit, RESULT& result) {
 	SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
+	int trip_time = result.received_time - result.sent_time;
+	if (trip_time < 0) trip_time = 0;
 
-	scope_messages.printf("[%-18s] [%-80s][%-20s][%-8s] v[%-40s][%-7s] c[%*.5lf], t[%*d/%*.2lf] h[%*d]\n", search_name, as_msg, as_result, verify_msg, version, host_os, 9, credit, 6, result.received_time-result.sent_time, 8, result.cpu_time, 6, result.hostid);
+	//scope_messages.printf("[%-13s] [%-87s][%-17s][%-8s] v[%-37s][%-7s] c[%*.5lf], t[%*d/%*.2lf] h[%*d]\n", search_name, as_msg, as_result, verify_msg, version, host_os, 9, credit, 6, trip_time, 8, result.cpu_time, 6, result.hostid);
+	scope_messages.printf("[%-13s] [%-87s][%-17s][%-8s] v[%-37s][%-7s] c[%*.3lf/%*.3lf], t[%*d/%*.2lf], h[%*d]\n", search_name, as_msg, as_result, verify_msg, version, host_os, 6, credit, 6, result.claimed_credit, 6, trip_time, 8, result.cpu_time, 6, result.hostid);
 }
 
 void update_workunit_info(int pos) {
@@ -271,8 +274,6 @@ double update_workunit(DB_VALIDATOR_ITEM_SET& validator, int valid_state, RESULT
 	vector<RESULT> results;
 	double credit = 0;
 	TRANSITION_TIME transition_time = NO_CHANGE;
-	long trip_time = result.received_time - result.sent_time;
-	double cpu_time = result.cpu_time;
 
 	switch (valid_state) {
 		case AS_VERIFY_VALID:
@@ -282,14 +283,24 @@ double update_workunit(DB_VALIDATOR_ITEM_SET& validator, int valid_state, RESULT
 
 			result.granted_credit = grant_claimed_credit ? result.claimed_credit : credit;
 			if (max_granted_credit && result.granted_credit > max_granted_credit) result.granted_credit = max_granted_credit;
+			//if (result.claimed_credit < credit) {
+			//	printf("claimed [%lf] < granted [%lf]!\n", result.claimed_credit, credit);
+			//	credit = result.claimed_credit;
+			//}
+			if (credit > 25) {
+				credit = 12;
+				result.granted_credit = 12;
+			}
 
-			if (cpu_time == trip_time) cpu_time = 0.01 * trip_time;
+//			if (cpu_time == trip_time) cpu_time = 0.01 * trip_time;
 //			else if (cpu_time > 0.35 * trip_time) cpu_time = 0.15 * trip_time;
 
-			if (max_credit_per_cpu_second && (result.granted_credit / cpu_time) > max_credit_per_cpu_second) result.granted_credit = cpu_time * max_credit_per_cpu_second;
-			if (cpu_time > 5 && cpu_time < 30) result.granted_credit *= 3.0;
+			//if (max_credit_per_cpu_second && (result.granted_credit / cpu_time) > max_credit_per_cpu_second) result.granted_credit = cpu_time * max_credit_per_cpu_second;
+			//if (cpu_time > 5 && cpu_time < 30) result.granted_credit *= 3.0;
 
 			credit = result.granted_credit;
+			wu.canonical_credit = credit;
+			wu.canonical_resultid = result.id;
 
 			result.validate_state = VALIDATE_STATE_VALID;
 			if (update_db) {
@@ -375,8 +386,9 @@ int generate_workunits() {
 int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM>& items) { 
 	SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
 	int retval = 0, valid_state;
-	double credit = 0;
+	double credit = 0, version = 0.0;
 	unsigned int i;
+	int j;
 	char search_name[64];
 	DB_HOST host;
 	bool has_valid = false;
@@ -384,7 +396,6 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 	WORKUNIT& wu = items[0].wu;
 
 	for (i = 0; i < items.size(); i++) {
-		WORKUNIT& wu = items[i].wu;
 		RESULT& result = items[i].res;
 		MANAGED_SEARCH *ms;
 		string output_file_name;
@@ -396,22 +407,11 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 			continue;
 		}
 
-		wu.canonical_resultid = result.id;
-
 		if (result.validate_state != VALIDATE_STATE_INIT) {
 			print_message(search_name, "RESULT ALREADY VALIDATED", "", wu.name, result.app_version_num, "?", "?", credit, result);
 			has_valid = true;
 			continue;
 		}
-
-		ms = get_search_from_wu_name(wu.name);
-		if (ms == NULL) {
-			credit = update_workunit(validator, AS_VERIFY_VALID, result, wu);
-			print_message(search_name, "completed search", "", "valid", result.app_version_num, "?", "?", credit, result);
-			has_valid = true;
-			continue;
-		}
-
 
 		/********
 			*	Read the result file
@@ -420,14 +420,10 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 		retval = boinc_read_search_parameters2(output_file_name.c_str(), insert_sp);
 		if (retval) {
 			credit = update_workunit(validator, AS_VERIFY_INVALID, result, wu);
-			print_message(ms->search_name, "error reading result", "", "invalid", result.app_version_num, insert_sp->app_version, "?", credit, result);
+			print_message(search_name, "error reading result", "", "invalid", result.app_version_num, insert_sp->app_version, "?", credit, result);
 			continue;
 		}
 
-		if (ms->search == NULL) printf("search == NULL\n");
-		if (ms->search_name == NULL) printf("search_name == NULL\n");
-		if (ms->search_data == NULL) printf("search_data == NULL\n");
-	
 		retval = host.lookup_id(result.hostid);
 		if (retval) {
 			log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[RESULT#%d] lookup of host %d failed %d\n", result.id, result.hostid, retval);
@@ -439,43 +435,70 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 		else if (host.os_name[0] == 'L') sprintf(insert_sp->host_os, "Linux");
 		else sprintf(insert_sp->host_os, "?");
 
-		if (insert_sp->app_version[0] != '?' && strcmp(insert_sp->app_version, "#IND00000000000") && !(insert_sp->app_version[0] == 't' && insert_sp->app_version[1] == 'i' && insert_sp->app_version[2] == 'm' && insert_sp->app_version[3] == 'e')) {
-			FILE *error_file;
+		if (insert_sp->app_version[0] == '?' || !strcmp(insert_sp->app_version, "#IND00000000000") || (insert_sp->app_version[0] == 't' && insert_sp->app_version[1] == 'i' && insert_sp->app_version[2] == 'm' && insert_sp->app_version[3] == 'e')) {
+			credit = update_workunit(validator, AS_VERIFY_INVALID, result, wu);
+			print_message(search_name, "invalid app_version", "", "invalid", result.app_version_num, insert_sp->app_version, "?", credit, result);
+			continue;
+		}
+		for (j = strlen(insert_sp->app_version) - 1; j >= 0; j--) {
+			if (insert_sp->app_version[j] == ':') break;
+		}
+		if ( !(j > 0 && sscanf(&(insert_sp->app_version[j]), ": %lf", &version)) ) {
+			version = 0.0;
+		}
 
-			retval = ms->search->insert_parameters(ms->search_name, ms->search_data, insert_sp);
+		if (version < 0.16) {
+			credit = update_workunit(validator, AS_VERIFY_INVALID, result, wu);
+			print_message(search_name, "invalid app_version number", "", "invalid", result.app_version_num, insert_sp->app_version, insert_sp->host_os, credit, result);
+			continue;
+		}
 
-			switch(retval) {
-				case AS_INSERT_SUCCESS:
-					valid_state = AS_VERIFY_IN_PROGRESS;
-				break;
-				case AS_INSERT_OVER:
-				case AS_INSERT_OUT_OF_RANGE:
-				case AS_INSERT_OUT_OF_ITERATION:
-				case AS_INSERT_BAD_METADATA:
-				case AS_INSERT_NOT_UNIQUE:
-					valid_state = AS_VERIFY_VALID;
-				break;
-				case AS_INSERT_FITNESS_INVALID:		// NEED TO MOVE THIS TO INVALID
-					//compare to previous iteration values
-					error_file = error_log_open(ms->search_name);
-					fprintf(error_file, "[%s] [%s] [invalid fitness]\n", insert_sp->app_version, AS_MSG);
-					fwrite_search_parameters(error_file, insert_sp);
-					fclose(error_file);
-					valid_state = AS_VERIFY_VALID;
-				break;
-				case AS_INSERT_FITNESS_NAN:
-				case AS_INSERT_PARAMETERS_NAN:
-				case AS_INSERT_OUT_OF_BOUNDS:
-				case AS_INSERT_ERROR:
-					valid_state = AS_VERIFY_INVALID;
-				break;
-				default:
-					valid_state = AS_VERIFY_VALID;
-				break;
-			}
-		} else {
-			sprintf(AS_MSG, "not inserted, invalid app_version");
-			valid_state = AS_VERIFY_INVALID;
+		ms = get_search_from_wu_name(wu.name);
+		if (ms == NULL) {
+			credit = update_workunit(validator, AS_VERIFY_VALID, result, wu);
+			print_message(search_name, "completed search", "", "valid", result.app_version_num, insert_sp->app_version, insert_sp->host_os, credit, result);
+			has_valid = true;
+			continue;
+		}
+
+		if (ms->search == NULL) printf("search == NULL\n");
+		if (ms->search_name == NULL) printf("search_name == NULL\n");
+		if (ms->search_data == NULL) printf("search_data == NULL\n");
+	
+
+		FILE *error_file;
+
+		retval = ms->search->insert_parameters(ms->search_name, ms->search_data, insert_sp);
+
+		switch(retval) {
+			case AS_INSERT_SUCCESS:
+				valid_state = AS_VERIFY_IN_PROGRESS;
+			break;
+			case AS_INSERT_OVER:
+			case AS_INSERT_OUT_OF_RANGE:
+			case AS_INSERT_OUT_OF_ITERATION:
+			case AS_INSERT_BAD_METADATA:
+			case AS_INSERT_NOT_UNIQUE:
+				valid_state = AS_VERIFY_VALID;
+			break;
+			case AS_INSERT_FITNESS_INVALID:		// NEED TO MOVE THIS TO INVALID
+				//compare to previous iteration values
+				error_file = error_log_open(ms->search_name);
+				fprintf(error_file, "[%s] [%s] [invalid fitness]\n", insert_sp->app_version, AS_MSG);
+				fwrite_search_parameters(error_file, insert_sp);
+				fclose(error_file);
+				valid_state = AS_VERIFY_VALID;
+			break;
+			case AS_INSERT_FITNESS_NAN:
+			case AS_INSERT_PARAMETERS_NAN:
+			case AS_INSERT_OUT_OF_BOUNDS:
+			case AS_INSERT_ERROR:
+			case AS_INSERT_OUTLIER:
+				valid_state = AS_VERIFY_INVALID;
+			break;
+			default:
+				valid_state = AS_VERIFY_VALID;
+			break;
 		}
 
 		if (valid_state == AS_VERIFY_IN_PROGRESS) {
@@ -489,6 +512,7 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 			has_valid = true;
 		} else {
 			sprintf(AS_VERIFY_MSG, "invalid");
+			has_valid = true;
 		}
 		credit = update_workunit(validator, valid_state, result, wu);
 		print_message(ms->search_name, AS_MSG, AS_INSERT_STR[retval], AS_VERIFY_MSG, result.app_version_num, insert_sp->app_version, insert_sp->host_os, credit, result);
@@ -501,8 +525,10 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 		 ********/
 		for (i = 0; i < items.size(); i++) {
 			RESULT& result = items[i].res;
-			if (result.server_state != RESULT_SERVER_STATE_UNSENT && result.outcome != RESULT_OUTCOME_NO_REPLY && result.outcome != RESULT_OUTCOME_DIDNT_NEED) continue;
-
+			if (result.server_state != RESULT_SERVER_STATE_UNSENT && result.outcome != RESULT_OUTCOME_NO_REPLY && result.outcome != RESULT_OUTCOME_DIDNT_NEED) {
+				wu.canonical_resultid = result.id;
+				continue;
+			}
 			result.server_state = RESULT_SERVER_STATE_OVER;
 			result.outcome = RESULT_OUTCOME_DIDNT_NEED;
 			retval = validator.update_result(result);
@@ -511,6 +537,8 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 			}
 		}
 		wu.need_validate = 0;
+		wu.assimilate_state = ASSIMILATE_DONE;
+		//wu.transition_time = (int)time(0);
 		retval = validator.update_workunit(wu);
 		if (retval) {            
 			log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[WU#%d %s] update_workunit() failed: %d; exiting\n", wu.id, wu.name, retval);

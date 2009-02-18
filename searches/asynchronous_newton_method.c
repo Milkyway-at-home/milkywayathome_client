@@ -6,6 +6,7 @@
 
 #include "asynchronous_search.h"
 #include "asynchronous_newton_method.h"
+#include "bounds.h"
 #include "regression.h"
 #include "newton_method.h"
 #include "outliers.h"
@@ -31,7 +32,7 @@ ASYNCHRONOUS_SEARCH* get_asynchronous_newton_method() {
 	return as;
 }
 
-int create_newton_method(char* search_name, int number_arguments, char** arguments, int number_parameters, double *point, double *range, double *min_bound, double *max_bound) {
+int create_newton_method(char* search_name, int number_arguments, char** arguments, int number_parameters, double *point, double *range, BOUNDS *bounds) {
 	int type, remove_outliers, maximum_iteration, evaluations_per_iteration, ls_iterations;
 	char search_directory[FILENAME_SIZE];
 	NEWTON_METHOD_SEARCH *nms;
@@ -94,14 +95,12 @@ int create_newton_method(char* search_name, int number_arguments, char** argumen
 	nms->current_point = (double*)malloc(sizeof(double) * nms->number_parameters);
 	nms->initial_range = (double*)malloc(sizeof(double) * nms->number_parameters);
 	nms->parameter_range = (double*)malloc(sizeof(double) * nms->number_parameters);
-	nms->min_bound = (double*)malloc(sizeof(double) * nms->number_parameters);
-	nms->max_bound = (double*)malloc(sizeof(double) * nms->number_parameters);
+
+	nms->bounds = bounds;
 
 	memcpy(nms->current_point, point, sizeof(double) * nms->number_parameters);
 	memcpy(nms->parameter_range, range, sizeof(double) * nms->number_parameters);
 	memcpy(nms->initial_range, range, sizeof(double) * nms->number_parameters);
-	memcpy(nms->min_bound, min_bound, sizeof(double) * nms->number_parameters);
-	memcpy(nms->max_bound, max_bound, sizeof(double) * nms->number_parameters);
 
 	for (i = 0; i < nms->number_parameters; i++) {
 		if (type == NEWTON_LINE_SEARCH) nms->line_search->direction[i] = 0;
@@ -129,8 +128,8 @@ int write_newton_method(char* search_name, void* search_data) {
 	print_double_array(search_file, "current_point", nms->number_parameters, nms->current_point);
 	print_double_array(search_file, "initial_range", nms->number_parameters, nms->parameter_range);
 	print_double_array(search_file, "parameter_range", nms->number_parameters, nms->parameter_range);
-	print_double_array(search_file, "min_bound", nms->number_parameters, nms->min_bound);
-	print_double_array(search_file, "max_bound", nms->number_parameters, nms->max_bound);
+
+	fwrite_bounds(search_file, nms->bounds);
 
 	fprintf(search_file, "current_iteration: %d, maximum_iteration: %d\n", nms->current_iteration, nms->maximum_iteration);
 	fprintf(search_file, "current_evaluation: %d, evaluations_per_iteration: %d\n", nms->current_evaluation, nms->evaluations_per_iteration);
@@ -161,11 +160,9 @@ int bound_newton_method(NEWTON_METHOD_SEARCH *nms) {
 	for (i = 0; i < nms->number_parameters; i++) {
 		if (isnan(nms->current_point[i]) || isnan(nms->parameter_range[i])) return 1;
 
-		if (nms->current_point[i] > nms->max_bound[i]) nms->current_point[i] = nms->max_bound[i];
-		if (nms->current_point[i] < nms->min_bound[i]) nms->current_point[i] = nms->min_bound[i];
-
 		if (nms->parameter_range[i] < 0) nms->parameter_range[i] *= -1.0;
 	}
+	bound_parameters(nms->current_point, nms->bounds);
 
 	if (nms->line_search != NULL && nms->mode == NMS_LINE_SEARCH) {
 		double min_bound, max_bound;
@@ -185,11 +182,11 @@ int bound_newton_method(NEWTON_METHOD_SEARCH *nms) {
 			if (isnan(nms->line_search->direction[i])) return 1;
 
 			if (nms->line_search->direction[i] > 0) {
-				temp_max = (nms->max_bound[i] - nms->current_point[i]) / nms->line_search->direction[i];
-				temp_min = (nms->min_bound[i] - nms->current_point[i]) / nms->line_search->direction[i];
+				temp_max = (nms->bounds->max_bound[i] - nms->current_point[i]) / nms->line_search->direction[i];
+				temp_min = (nms->bounds->min_bound[i] - nms->current_point[i]) / nms->line_search->direction[i];
 			} else if (nms->line_search->direction[i] < 0) {
-				temp_min = (nms->max_bound[i] - nms->current_point[i]) / nms->line_search->direction[i];
-				temp_max = (nms->min_bound[i] - nms->current_point[i]) / nms->line_search->direction[i];
+				temp_min = (nms->bounds->max_bound[i] - nms->current_point[i]) / nms->line_search->direction[i];
+				temp_max = (nms->bounds->min_bound[i] - nms->current_point[i]) / nms->line_search->direction[i];
 			}
 			if (temp_min > min_bound) min_bound = temp_min;
 			if (temp_max < max_bound) max_bound = temp_max;
@@ -221,8 +218,8 @@ int read_newton_method(char* search_name, void** search_data) {
 	(*nms)->number_parameters = read_double_array(search_file, "current_point", &((*nms)->current_point));
 	read_double_array(search_file, "initial_range", &((*nms)->initial_range));
 	read_double_array(search_file, "parameter_range", &((*nms)->parameter_range));
-	read_double_array(search_file, "min_bound", &((*nms)->min_bound));
-	read_double_array(search_file, "max_bound", &((*nms)->max_bound));
+
+	fread_bounds(search_file, &((*nms)->bounds));
 
 	fscanf(search_file, "current_iteration: %d, maximum_iteration: %d\n", &((*nms)->current_iteration), &((*nms)->maximum_iteration));
 	fscanf(search_file, "current_evaluation: %d, evaluations_per_iteration: %d\n", &((*nms)->current_evaluation), &((*nms)->evaluations_per_iteration));
@@ -303,7 +300,7 @@ int newton_generate_parameters(char* search_name, void* search_data, SEARCH_PARA
 		double point = random_linear_recombination(nms->number_parameters, nms->line_search->min_range, nms->line_search->max_range, nms->current_point, nms->line_search->direction, sp->parameters);
 		sprintf(sp->metadata, "ls, point: %.20lf, it: %d, ev: %d", point, nms->current_iteration, nms->current_evaluation);
 	}
-	if (newton_bound_parameters(sp->number_parameters, sp->parameters, nms->min_bound, nms->max_bound)) return AS_GEN_FAIL;
+	bound_parameters(sp->parameters, nms->bounds);
 
 	return AS_GEN_SUCCESS;
 }
@@ -319,7 +316,7 @@ int verify(NEWTON_METHOD_SEARCH *nms, SEARCH_PARAMETERS *sp) {
 
 	for (i = 0; i < nms->number_parameters; i++) {
 		if (isnan(sp->parameters[i])) return AS_INSERT_PARAMETERS_NAN;
-		if (sp->parameters[i] < nms->min_bound[i] || sp->parameters[i] > nms->max_bound[i]) return AS_INSERT_OUT_OF_BOUNDS;
+		if (sp->parameters[i] < nms->bounds->min_bound[i] || sp->parameters[i] > nms->bounds->max_bound[i]) return AS_INSERT_OUT_OF_BOUNDS;
 	}
 
 	if (nms->line_search != NULL && nms->mode == NMS_LINE_SEARCH) {

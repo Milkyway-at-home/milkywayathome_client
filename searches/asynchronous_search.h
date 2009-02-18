@@ -2,6 +2,7 @@
 #define FGDO_SEARCH_H
 
 #include "../searches/search_parameters.h"
+#include "../searches/bounds.h"
 
 /********
 	*	Generic search data.
@@ -45,7 +46,7 @@ extern const char *AS_CP_STR[];
 
 extern char AS_MSG[1024];
 
-typedef int (*create_search_type)(char*, int, char**, int, double*, double*, double*, double*);
+typedef int (*create_search_type)(char*, int, char**, int, double*, double*, BOUNDS*);
 typedef int (*read_search_type)(char*, void**);
 typedef int (*checkpoint_search_type)(char*, void*);
 typedef int (*generate_parameters_type)(char*, void*, SEARCH_PARAMETERS*);
@@ -61,8 +62,8 @@ typedef struct asynchronous_search {
 	insert_parameters_type		insert_parameters;
 } ASYNCHRONOUS_SEARCH;
 
-void asynchronous_search__init(int number_arguments, char** arguments, int number_parameters, double *point, double *range, double *min_bound, double *max_bound);
+void asynchronous_search__init(int number_arguments, char** arguments, int number_parameters, double *point, double *range, BOUNDS *bounds);
 
-void asynchronous_search(int number_arguments, char** arguments, int number_parameters, double *point, double *range, double *min_bound, double *max_bound);
+void asynchronous_search(int number_arguments, char** arguments, int number_parameters, double *point, double *range, BOUNDS *bounds);
 
 #endif

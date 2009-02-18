@@ -30,6 +30,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "../evaluation/boinc_search_manager.h"
 #include "../searches/asynchronous_newton_method.h"
 #include "../searches/asynchronous_particle_swarm.h"
+#include "../searches/bounds.h"
 #include "../searches/search_parameters.h"
 #include "../util/settings.h"
 #include "../util/io_util.h"
@@ -168,13 +169,24 @@ int main(int argc, char** argv) {
 		get_min_parameters(ap, &min_bound);
 		get_max_parameters(ap, &max_bound);
 
-		asynchronous_search__init(argc, argv, get_optimized_parameter_count(ap), point, step, min_bound, max_bound);
-
+		int number_parameters = get_optimized_parameter_count(ap);
+		BOUNDS *bounds;
+		int *in_radians = (int*)malloc(sizeof(int) * number_parameters);
+		for (i = 0; i < number_parameters; i++) {
+			in_radians[i] = 0;
+		}
+		for (i = 0; i < ap->number_streams; i++) {
+			in_radians[2 + (i * 6) + 3] = 1;
+			in_radians[2 + (i * 6) + 4] = 1;
+		}
+		new_bounds(&bounds, number_parameters, min_bound, max_bound, in_radians);
+		asynchronous_search__init(argc, argv, number_parameters, point, step, bounds);
 
 		/********
 			*	Move input files
 		 ********/
-		if (!config.download_path(astronomy_name, wu_astronomy_path)) {
+		config.download_path(astronomy_name, wu_astronomy_path);
+		if (fopen(wu_astronomy_path, "r") == NULL) {
 			/********
 				*	Astronomy parameters not moved to the download diretory yet, do this.
 			********/
@@ -194,7 +206,8 @@ int main(int argc, char** argv) {
 			fprintf(stderr, "[start search] could not open star file for read: %s\n", star_path);
 			exit(0);
 		}
-		if (!config.download_path(star_name, wu_star_path)) {
+		config.download_path(star_name, wu_star_path);
+		if (fopen(wu_star_path, "r") == NULL) {
 			/********   
 				*	Stars not moved to the download diretory yet, do this.
 			 ********/
@@ -213,13 +226,18 @@ int main(int argc, char** argv) {
 		 ********/
 		WORKUNIT_INFO *wu_info = (WORKUNIT_INFO*)malloc(sizeof(WORKUNIT_INFO));
 
-		double calc_prob_count = (double)sp->number_stars;
+		double calc_prob_count = 0;
 		for (i = 0; i < ap->number_integrals; i++) calc_prob_count += ap->integral[i]->r_steps * ap->integral[i]->mu_steps * ap->integral[i]->nu_steps;
-		double flops = calc_prob_count * (27.0 + (ap->convolve * 66.0) + (ap->number_streams * (7.0 + (ap->convolve * 33))));
-		double credit = flops / 35000000000.0;
+
+		double integral_flops = calc_prob_count * (4.0 + 2.0 * ap->number_streams + ap->convolve * (56 + 58 * ap->number_streams));
+		double likelihood_flops = sp->number_stars * (ap->convolve * (100.0 + ap->number_streams * 58.0) + 251.0 + ap->number_streams * 12.0 + 54.0);
+
+		double flops = integral_flops + likelihood_flops;
+		double credit = flops / 150000000000.0;
 
 		printf("awarded credit: %lf\n", credit);
-		wu_info->number_parameters = get_optimized_parameter_count(ap);
+
+		wu_info->number_parameters = number_parameters;
 		printf("number parameters: %d\n", wu_info->number_parameters);
 
 		wu_info->credit_str = (char*)malloc(sizeof(char) * 1024);

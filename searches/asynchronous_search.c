@@ -16,7 +16,7 @@ const char *AS_CP_STR[] = { "success", "search completed", "ERROR" };
 char AS_MSG[1024] = "";
 char AS_VERIFY_MSG[1024] = "";
 
-void asynchronous_search__init(int number_arguments, char **arguments, int number_parameters, double *point, double *range, double *min_bound, double *max_bound) {
+void asynchronous_search__init(int number_arguments, char **arguments, int number_parameters, double *point, double *range, BOUNDS* bounds) {
 	int i, retval;
 
 	for (i = 0; i < number_arguments; i++) {
@@ -25,7 +25,7 @@ void asynchronous_search__init(int number_arguments, char **arguments, int numbe
 			i++;
 			if (!search_exists(arguments[i])) {
 				get_qualifier_from_name(arguments[i], &qualifier);
-				retval = (get_registered_search(qualifier))->create_search(arguments[i], number_arguments, arguments, number_parameters, point, range, min_bound, max_bound);
+				retval = (get_registered_search(qualifier))->create_search(arguments[i], number_arguments, arguments, number_parameters, point, range, bounds);
 				if (retval) {
 					printf("ERROR creating search: %s -- [%s]\n", arguments[i], AS_MSG);
 					continue;
@@ -37,7 +37,7 @@ void asynchronous_search__init(int number_arguments, char **arguments, int numbe
 	}
 }
 
-void asynchronous_search(int number_arguments, char** arguments, int number_parameters, double *point, double *range, double *min_bound, double *max_bound) {
+void asynchronous_search(int number_arguments, char** arguments, int number_parameters, double *point, double *range, BOUNDS* bounds) {
         int i, generate_result, insert_result, retval;
         MANAGED_SEARCH *ms = NULL;
         SEARCH_PARAMETERS *sp;
@@ -51,7 +51,7 @@ void asynchronous_search(int number_arguments, char** arguments, int number_para
                         get_qualifier_from_name(arguments[i], &qualifier);
                         if (!search_exists(arguments[i])) {
                                 ASYNCHRONOUS_SEARCH *as = get_registered_search(qualifier);
-                                retval = as->create_search(arguments[i], number_arguments, arguments, number_parameters, point, range, min_bound, max_bound);
+                                retval = as->create_search(arguments[i], number_arguments, arguments, number_parameters, point, range, bounds);
                                 if (retval) {
                                         printf("ERROR creating search: %s -- [%s]\n", arguments[i], AS_MSG);
                                         return;

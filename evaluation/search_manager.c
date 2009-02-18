@@ -206,7 +206,7 @@ int manage_search(char* search_name) {
 	free(searches);
 	searches = temp;
 
-	printf("inserted search [%s] to position: %d\n", ms->search_name, search_pos);
+	//printf("inserted search [%s] to position: %d\n", ms->search_name, search_pos);
 	return search_pos;
 }
 

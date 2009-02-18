@@ -85,7 +85,7 @@ int population_contains(POPULATION *p, double fitness, double *point) {
 
 		count = 0;
 		for (j = 0; j < p->number_parameters; j++) {
-			if (fabs(point[j] - p->individuals[i][j]) > 10e-10) break;
+			if (fabs(point[j] - p->individuals[i][j]) > 10e-15) break;
 			count++;
 		}
 		if (count == p->number_parameters) return 1;

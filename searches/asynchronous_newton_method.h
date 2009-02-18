@@ -6,6 +6,7 @@
 #include "../evaluation/search_manager.h"
 #include "population.h"
 #include "asynchronous_search.h"
+#include "bounds.h"
 
 #define NEWTON_ERROR_RANGE 1
 #define NEWTON_UPDATE_RANGE 2
@@ -26,7 +27,8 @@ typedef struct newton_method_search {
 	double *current_point;
 	double *initial_range;
 	double *parameter_range;
-	double *min_bound, *max_bound;
+
+	BOUNDS *bounds;
 
 	int current_iteration, maximum_iteration;
 	int current_evaluation, evaluations_per_iteration;
@@ -38,7 +40,7 @@ typedef struct newton_method_search {
 
 ASYNCHRONOUS_SEARCH* get_asynchronous_newton_method();
 
-int create_newton_method(char* search_name, int number_arguments, char** arguments, int number_parameters, double *point, double *range, double *min_bound, double *max_bound);
+int create_newton_method(char* search_name, int number_arguments, char** arguments, int number_parameters, double *point, double *range, BOUNDS *bounds);
 int read_newton_method(char* search_name, void** search_data);
 int checkpoint_newton_method(char* search_name, void* search_data);
 int newton_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS *sp);

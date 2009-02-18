@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#include "../evaluation/search_manager.h"
+#include "bounds.h"
 #include "population.h"
 #include "asynchronous_search.h"
 
@@ -21,7 +21,7 @@ typedef struct particle_swarm_optimization {
 	double w, c1, c2;
 	long analyzed;
 
-	double *min_bound, *max_bound;
+	BOUNDS *bounds;
 
 	double global_best_fitness, *global_best;
 	POPULATION *particles;
@@ -31,7 +31,7 @@ typedef struct particle_swarm_optimization {
 
 ASYNCHRONOUS_SEARCH* get_asynchronous_particle_swarm();
 
-int create_particle_swarm(char* search_name, int number_arguments, char** arguments, int number_parameters, double *point, double *range, double *min_bound, double *max_bound);
+int create_particle_swarm(char* search_name, int number_arguments, char** arguments, int number_parameters, double *point, double *range, BOUNDS *bounds);
 int read_particle_swarm(char* search_name, void** search_data);
 int checkpoint_particle_swarm(char* search_name, void* search_data);
 int pso_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS *sp);
