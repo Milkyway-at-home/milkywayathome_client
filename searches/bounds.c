@@ -38,7 +38,7 @@ void free_bounds(BOUNDS **bounds) {
 
 void bound_parameters(double* parameters, BOUNDS *b) {
 	int i;
-	if (b->in_radians != NULL) {
+	if (b->in_radians == NULL) {
 		for (i = 0; i < b->number_parameters; i++) {
 			if (parameters[i] > b->max_bound[i]) parameters[i] = b->max_bound[i];
 			if (parameters[i] < b->min_bound[i]) parameters[i] = b->min_bound[i];
@@ -60,7 +60,7 @@ void bound_parameters(double* parameters, BOUNDS *b) {
 
 void bound_velocity(double *parameters, double *velocity, BOUNDS *b) {
 	int i;
-	if (b->in_radians != NULL) {
+	if (b->in_radians == NULL) {
 		for (i = 0; i < b->number_parameters; i++) {
 			if (parameters[i] + velocity[i] > b->max_bound[i]) velocity[i] = b->max_bound[i] - parameters[i];
 			if (parameters[i] + velocity[i] < b->min_bound[i]) velocity[i] = b->min_bound[i] - parameters[i];
@@ -69,7 +69,7 @@ void bound_velocity(double *parameters, double *velocity, BOUNDS *b) {
 		for (i = 0; i < b->number_parameters; i++) {
 			if (b->in_radians[i]) {
 				if (velocity[i] > M_PI) velocity[i] = M_PI;
-				if (velocity[i] < M_PI) velocity[i] = -M_PI;
+				if (velocity[i] < -M_PI) velocity[i] = -M_PI;
 			} else {
 				if (parameters[i] + velocity[i] > b->max_bound[i]) velocity[i] = b->max_bound[i] - parameters[i];
 				if (parameters[i] + velocity[i] < b->min_bound[i]) velocity[i] = b->min_bound[i] - parameters[i];
