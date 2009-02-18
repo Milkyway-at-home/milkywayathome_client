@@ -355,7 +355,12 @@ void get_newton_step(NEWTON_METHOD_SEARCH *nms, double *step, double *step_error
 
 	printf("modifying individuals\n");
 	for (j = 0; j < p->size; j++) {
-		for (k = 0; k < p->number_parameters; k++) p->individuals[j][k] -= nms->current_point[k];
+		printf("parameters[%d]:", j);
+		for (k = 0; k < p->number_parameters; k++) {
+			p->individuals[j][k] -= nms->current_point[k];
+			printf(" %lf", p->individuals[j][k]);
+		}
+		printf("\n");
 	}
 	printf("modified\n");
 
@@ -456,8 +461,6 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 				double *best_point, best_fitness, average_fitness, worst_fitness, standard_deviation;
 				best_point = (double*)malloc(sizeof(double) * nms->number_parameters);
 
-				write_newton_method(search_name, nms);
-
 				if (nms->line_search == NULL || nms->mode == NMS_HESSIAN) {
 					double *step, *step_error;
 					double scaling_factor = 0.4;
@@ -469,6 +472,8 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 					printf("removing outliers for: %s\n", search_name);
 					remove_outliers_incremental(p, 25.0);
 					printf("removed outliers.\n");
+
+					write_newton_method(search_name, nms);
 
 					get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
 					log_printf(search_name, "[after outliers ] best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);
@@ -529,6 +534,8 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 					log_printf(search_name, "[before outliers] best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);
 
 					remove_outliers_incremental(p, 25.0);
+
+					write_newton_method(search_name, nms);
 
 					get_population_statistics(p, best_point, &best_fitness, &average_fitness, &worst_fitness, &standard_deviation);
 					log_printf(search_name, "[after outliers ] best_fitness: %.20lf, average_fitness: %.20lf, worst_fitness: %.20lf, st_dev: %.20lf\n", best_fitness, average_fitness, worst_fitness, standard_deviation);

@@ -19,6 +19,7 @@ typedef struct particle_swarm_optimization {
 	int number_parameters;
 	int remove_outliers;
 	double w, c1, c2;
+	long analyzed;
 
 	double *min_bound, *max_bound;
 

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <float.h>
 
 #include "population.h"
 #include "regression.h"
@@ -42,12 +43,12 @@ void get_population_statistics(POPULATION *p, double *best_point, double *best_f
 	double best, avg, worst, st_dev;
 	int best_pos, i;
 
-	best = p->fitness[0];
-	avg = p->fitness[0];
-	worst = p->fitness[0];
+	best = -DBL_MAX;
+	avg = 0;
+	worst = DBL_MAX;
 	best_pos = 0;
-	printf("getting stats, size: %d, max_size: %d\n", p->size, p->max_size);
-	for (i = 1; i < p->max_size; i++) {
+	//printf("getting stats, size: %d, max_size: %d\n", p->size, p->max_size);
+	for (i = 0; i < p->max_size; i++) {
 		if (!individual_exists(p, i)) continue;
 		avg += p->fitness[i];
 		if (p->fitness[i] > best) {
@@ -68,6 +69,7 @@ void get_population_statistics(POPULATION *p, double *best_point, double *best_f
 	(*best_fitness) = best;
 	(*worst_fitness) = worst;
 	(*standard_deviation) = st_dev;
+	if (!individual_exists(p, best_pos)) return;
 	for (i = 0; i < p->number_parameters; i++) best_point[i] = p->individuals[best_pos][i];
 }
 
@@ -196,6 +198,7 @@ void insert_sorted_info(POPULATION* population, double* parameters, double fitne
 void remove_individual(POPULATION* population, int position) {
 	free(population->individuals[position]);
 	population->individuals[position] = NULL;
+	population->size--;
 }
 
 void remove_incremental(POPULATION* population, int position) {

@@ -107,12 +107,12 @@ void remove_outliers_helper(POPULATION *p, double range, int type) {
 		if (!individual_exists(p, i)) continue;
 		printf("errors[%d]: %.20lf, fitness: %.20lf", i, errors[current], p->fitness[i]);
 		if (errors[current] > range * average_error) {
-			printf("i -- REMOVED");
+			printf(" -- REMOVED");
 			if (type == REMOVE_OUTLIERS_INDIVIDUAL) {
-				printf(" -- INDIVIDUAL");
+				printf(" INDIVIDUAL");
 				remove_individual(p, i);
 			} else if (type == REMOVE_OUTLIERS_INCREMENTAL || type == REMOVE_OUTLIERS_SORTED) {
-				printf(" -- INCREMENTAL");
+				printf(" INCREMENTAL");
 				remove_incremental(p, i);
 				i--;
 			}
