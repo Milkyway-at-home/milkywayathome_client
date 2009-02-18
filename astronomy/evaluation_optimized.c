@@ -299,6 +299,7 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 	double bg_prob, *st_probs, V;
 	double log_r, r, next_r;
 	double *irv, *reff_xr_rp3, **qw_r3_N, **r_point, rPrime;
+	double *ids, *nus;
 	double integral_point[3];
 
 	irv		= (double*)malloc(sizeof(double) * ia->r_steps);
@@ -306,7 +307,6 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 	reff_xr_rp3	= (double*)malloc(sizeof(double) * ia->r_steps);
 	qw_r3_N		= (double**)malloc(sizeof(double*) * ia->r_steps);
 	r_point		= (double**)malloc(sizeof(double*) * ia->r_steps);
-	
 	for (i = 0; i < ia->r_steps; i++) {
 		log_r		=	ia->r_min + (i * ia->r_step_size);
 		r		=	pow(10.0, (log_r-14.2)/5.0);
@@ -320,39 +320,43 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 		set_probability_constants(ap, rPrime, r_point[i], qw_r3_N[i], &(reff_xr_rp3[i]));
 	}
 
+	ids		= (double*)malloc(sizeof(double) * ia->nu_steps);
+	nus		= (double*)malloc(sizeof(double) * ia->nu_steps);
+	for (i = 0; i < ia->nu_steps; i++) {
+		nus[i] = ia->nu_min + (i * ia->nu_step_size);
+		ids[i] = cos((90 - nus[i] - ia->nu_step_size)/deg) - cos((90 - nus[i])/deg);
+		nus[i] += 0.5 * ia->nu_step_size;
+	}
+
 	get_steps(ia, &mu_step_current, &nu_step_current, &r_step_current);
 	for (; mu_step_current < ia->mu_steps; mu_step_current++) {
 		double mu = ia->mu_min + (mu_step_current * ia->mu_step_size);
 
 		for (; nu_step_current < ia->nu_steps; nu_step_current++) {
-			double nu = ia->nu_min + (nu_step_current * ia->nu_step_size);
-			double id = cos((90 - nu - ia->nu_step_size)/deg) - cos((90 - nu)/deg);
-
 			#ifdef GMLE_BOINC
 				do_boinc_checkpoint(es);
 			#endif
 
 			if (ap->sgr_coordinates == 0) {
 				double ra, dec;
-				atGCToEq(mu + 0.5 * ia->mu_step_size, nu + 0.5 * ia->nu_step_size, &ra, &dec, get_node(), wedge_incl(ap->wedge));
+				atGCToEq(mu + 0.5 * ia->mu_step_size, nus[nu_step_current], &ra, &dec, get_node(), wedge_incl(ap->wedge));
 				atEqToGal(ra, dec, &integral_point[0], &integral_point[1]);
 			} else if (ap->sgr_coordinates == 1) {					
 				double lamda, beta;
-				gcToSgr(mu + 0.5 * ia->mu_step_size, nu + 0.5 * ia->nu_step_size, ap->wedge, &lamda, &beta);
+				gcToSgr(mu + 0.5 * ia->mu_step_size, nus[nu_step_current], ap->wedge, &lamda, &beta);
 				sgrToGal(lamda, beta, &integral_point[0], &integral_point[1]);
 			} else { 
 				printf("Error: ap->sgr_coordinates not valid");
 			}
 
 			for (; r_step_current < ia->r_steps; r_step_current++) {
-				V = irv[r_step_current] * id;
+				V = irv[r_step_current] * ids[nu_step_current];
 
 				calculate_probabilities(r_point[r_step_current], qw_r3_N[r_step_current], reff_xr_rp3[r_step_current], integral_point, ap, &bg_prob, st_probs);
 	
 				ia->background_integral += bg_prob * V;
-				for (i = 0; i < ap->number_streams; i++) {
-					ia->stream_integrals[i] += st_probs[i] * V;
-				}
+				for (i = 0; i < ap->number_streams; i++) ia->stream_integrals[i] += st_probs[i] * V;
+
 				ia->current_calculation++;
 				if (ia->current_calculation >= ia->max_calculation) break;
 			}
@@ -364,6 +368,8 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 	}
 	mu_step_current = 0;
 
+	free(nus);
+	free(ids);
 	free(irv);
 	free(st_probs);
 	free(reff_xr_rp3);
