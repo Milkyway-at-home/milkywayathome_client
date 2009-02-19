@@ -21,7 +21,8 @@ void fwrite_population_statistics(FILE* file, POPULATION* population);
 int new_population(int max_size, int number_parameters, POPULATION** population);
 void free_population(POPULATION* population);
 
-void get_population_statistics(POPULATION *p, double *best_point, double *best_fitness, double *average_fitness, double *worst_fitness, double *st_dev);
+double get_best_individual(POPULATION *p, double *best_individual);
+void get_population_statistics(POPULATION *p, double *best_fitness, double *average_fitness, double *median_fitness, double *worst_fitness, double *st_dev);
 
 int population_contains(POPULATION* population, double fitness, double *point);
 int individual_exists(POPULATION* population, int position);

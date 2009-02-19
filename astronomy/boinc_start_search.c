@@ -233,7 +233,9 @@ int main(int argc, char** argv) {
 		double likelihood_flops = sp->number_stars * (ap->convolve * (100.0 + ap->number_streams * 58.0) + 251.0 + ap->number_streams * 12.0 + 54.0);
 
 		double flops = integral_flops + likelihood_flops;
-		double credit = flops / 150000000000.0;
+		double credit = flops / 1000000000000.0;
+		double multipler = 6;
+		credit *= multiplier;
 
 		printf("awarded credit: %lf\n", credit);
 

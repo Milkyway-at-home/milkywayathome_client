@@ -39,38 +39,66 @@ void free_population(POPULATION* population) {
 	free(population->fitness);
 }
 
-void get_population_statistics(POPULATION *p, double *best_point, double *best_fitness, double *average_fitness, double *worst_fitness, double *standard_deviation) {
-	double best, avg, worst, st_dev;
-	int best_pos, i;
+int population_dbl_cmp(const void *p1, const void *p2) {
+	double value = *(const double*)p1 - *(const double*)p2;
+	if (value < 0) return -1;
+	else if (value > 0) return 1;
+	else return 0;
+}
 
-	best = -DBL_MAX;
+double get_best_individual(POPULATION *p, double *best) {
+	int i, best_pos;
+	double best_fitness;
+	best_pos = -1;
+	best_fitness = -DBL_MAX; 
+	for (i = 0; i < p->max_size; i++) {
+		if (!individual_exists(p, i)) continue;
+		if (p->fitness[i] > best_fitness) {
+			best_pos = i;
+			best_fitness = p->fitness[i];
+		}
+	}
+	if (best_pos >= 0) {
+		for (i = 0; i < p->number_parameters; i++) best[i] = p->individuals[best_pos][i];
+	}
+	return best_fitness;
+}
+
+void get_population_statistics(POPULATION *p, double *best_fitness, double *average_fitness, double *median_fitness, double *worst_fitness, double *standard_deviation) {
+	double avg, st_dev;
+	int i, current;
+	double *fitnesses;
+
+	current = 0;
 	avg = 0;
-	worst = DBL_MAX;
-	best_pos = 0;
+	fitnesses = (double*)malloc(sizeof(double) * p->size);
 	//printf("getting stats, size: %d, max_size: %d\n", p->size, p->max_size);
 	for (i = 0; i < p->max_size; i++) {
 		if (!individual_exists(p, i)) continue;
 		avg += p->fitness[i];
-		if (p->fitness[i] > best) {
-			best = p->fitness[i];
-			best_pos = i;
+		if (current < p->size) {
+			fitnesses[current] = p->fitness[i];
+			current++;
 		}
-		if (p->fitness[i] < worst) worst = p->fitness[i];
 	}
+	(*average_fitness) = avg/current;
+
+	if (current < p->size) fitnesses = (double*)realloc(fitnesses, sizeof(double) * current);
+	qsort(fitnesses, current, sizeof(double), population_dbl_cmp);
+	(*worst_fitness) = fitnesses[0];
+	(*best_fitness) = fitnesses[current-1];
+	(*median_fitness) = fitnesses[current/2];
+
 	st_dev = 0;
 	for (i = 0; i < p->size; i++) {
 		if (!individual_exists(p, i)) continue;
-		st_dev += (p->fitness[i] - best) * (p->fitness[i] - best);
+		st_dev += (p->fitness[i] - (*best_fitness)) * (p->fitness[i] - (*best_fitness));
 	}
-	st_dev /= p->size;
+	st_dev /= current;
 	st_dev = sqrt(st_dev);
-
-	(*average_fitness) = avg / p->size;
-	(*best_fitness) = best;
-	(*worst_fitness) = worst;
 	(*standard_deviation) = st_dev;
-	if (!individual_exists(p, best_pos)) return;
-	for (i = 0; i < p->number_parameters; i++) best_point[i] = p->individuals[best_pos][i];
+
+	free(fitnesses);
 }
 
 /********

@@ -1,10 +1,12 @@
 BOINC_DIR = /software/boinc-6.3.14-0/pkg
 BOINC_LIB_DIR = /projects/wcl/software/boinc
 MYSQL_DIR = /usr/local/include/mysql
+MT_DIR = ../../mersenne_twister
 
 CXX = g++
 CXXFLAGS = -g -O -I$(BOINC_DIR)/include/boinc -I$(MYSQL_DIR) -DGMLE_BOINC
 LDFLAGS = -g -L/usr/local/lib -L/usr/X11R6/lib
+MTFLAGS = -finline-functions -fomit-frame-pointer -fno-strict-aliasing --param max-inline-insns-single=1800 -DDSFMT_MEXP=19937
 
 LIBS = -lm -pthread -L$(BOINC_DIR)/lib/ -lsched -lboinc -lm
 MYSQL = -L/usr/local/lib/mysql -lmysqlclient
@@ -71,16 +73,17 @@ VALIDATOR_OBJS = \
 	$(SEARCH_DIR)/search_parameters.o \
 	$(UTIL_OBJS)
 
+MT_C = $(MT_DIR)/dSFMT.c
 
 PROGS = milkyway_assimilator milkyway_start_search milkyway_validator milkyway_purge
 
 all: assimilator start validator purge
 
 assimilator: $(ASSIMILATOR_OBJS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_av $(ASSIMILATOR_OBJS) $(MYSQL) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(MTFLAGS) -o milkyway_av $(ASSIMILATOR_OBJS) $(MYSQL) $(LIBS) $(MT_C)
 
 start: $(START_OBJS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_start_search $(START_OBJS) $(LIBS) $(MYSQL)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(MTFLAGS) -o milkyway_start_search $(START_OBJS) $(LIBS) $(MYSQL) $(MT_C)
 
 purge: $(PURGE_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_purge $(PURGE_OBJS) -lsched -lboinc $(MYSQL)

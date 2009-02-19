@@ -56,6 +56,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "../searches/search_parameters.h"
 #include "../util/settings.h"
 
+
 #define		LOCKFILE	"assimilator.out"
 #define		PIDFILE		"assimilator.pid"
 #define		SLEEP_INTERVAL	10
@@ -450,6 +451,12 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 		if (version < 0.16) {
 			credit = update_workunit(validator, AS_VERIFY_INVALID, result, wu);
 			print_message(search_name, "invalid app_version number", "", "invalid", result.app_version_num, insert_sp->app_version, insert_sp->host_os, credit, result);
+			continue;
+		}
+
+		if (version == 0.16 && strlen(insert_sp->app_version) >= 11 && !strncmp(insert_sp->app_version, "mindc_linux", 11)) {
+			credit = update_workunit(validator, AS_VERIFY_VALID, result, wu);
+			print_message(search_name, "invalid app_version: mindc_linux: 0.16", "", "valid", result.app_version_num, insert_sp->app_version, insert_sp->host_os, credit, result);
 			continue;
 		}
 

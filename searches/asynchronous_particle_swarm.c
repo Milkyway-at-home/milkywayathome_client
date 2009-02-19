@@ -19,6 +19,13 @@
 #include "../util/matrix.h"
 #include "../util/io_util.h"
 
+/********
+ * 	Mersenne Twister Includes
+ ********/
+#define DSFMT_MEXP 19937
+#define DSFMT_DO_NOT_USE_OLD_NAMES
+#include "../../mersenne_twister/dSFMT.h"
+
 ASYNCHRONOUS_SEARCH* get_asynchronous_particle_swarm() {
 	ASYNCHRONOUS_SEARCH *as = (ASYNCHRONOUS_SEARCH*)malloc(sizeof(ASYNCHRONOUS_SEARCH));
 	as->search_qualifier = (char*)malloc(sizeof(char) * SEARCH_QUALIFIER_SIZE);
@@ -142,6 +149,8 @@ int read_particle_swarm(char* search_name, void** search_data) {
 	pso->remove_outliers = 1;
 //	remove_outliers(pso->local_best, 0.15);
 
+	dsfmt_gv_init_gen_rand((int)time(NULL));
+
 	return AS_READ_SUCCESS;
 }
 
@@ -172,7 +181,7 @@ int pso_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMET
 
 		sprintf(sp->metadata, "p: %d, v:", pso->current_particle);
 		for (i = 0; i < pso->number_parameters; i++) {
-			velocity[i] = (pso->w * velocity[i]) + (pso->c1 * drand48() * (local_best[i] - particle[i])) + (pso->c2 * drand48() * (pso->global_best[i] - particle[i]));
+			velocity[i] = (pso->w * velocity[i]) + (pso->c1 * dsfmt_gv_genrand_close_open() * (local_best[i] - particle[i])) + (pso->c2 * dsfmt_gv_genrand_close_open() * (pso->global_best[i] - particle[i]));
 		}
 		bound_velocity(particle, velocity, pso->bounds);
 
@@ -237,9 +246,9 @@ int pso_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETER
 	/********
 		*	Insert the particle if there is no current local best, or if it's better than the local best.
 	 ********/
-	if (!individual_exists(pso->local_best, particle) || sp->fitness > pso->local_best->fitness[particle] || population_contains(pso->local_best, sp->fitness, sp->parameters)) {
+	if (!population_contains(pso->local_best, sp->fitness, sp->parameters) && (!individual_exists(pso->local_best, particle) || sp->fitness > pso->local_best->fitness[particle])) { 
 		double previous;
-		double *best_point, best, average, worst, deviation;
+		double best, average, median, worst, deviation;
 		/********
 			*	We don't insert the particle unless it's better than the local best, so check and see if it's an outlier here.
 		 ********/
@@ -265,19 +274,17 @@ int pso_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETER
 		insert_individual_info(pso->velocities, particle, velocity, sp->fitness, sp->host_os, sp->app_version);
 		insert_individual_info(pso->local_best, particle, sp->parameters, sp->fitness, sp->host_os, sp->app_version);
 
-		best_point = (double*)malloc(sizeof(double) * pso->number_parameters);
-		get_population_statistics(pso->local_best, best_point, &best, &average, &worst, &deviation);
+		get_population_statistics(pso->local_best, &best, &average, &median, &worst, &deviation);
 		if (sp->fitness > pso->global_best_fitness) {
 			pso->global_best_fitness = sp->fitness;
 			memcpy(pso->global_best, sp->parameters, sizeof(double) * pso->number_parameters);
 			sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, global best", particle, sp->fitness, previous, pso->global_best_fitness);
-			log_printf(search_name, "%ld -- b: %.15lf, a: %.15lf, w: %.15lf, d: %.15lf, global best\n", pso->analyzed, best, average, worst, deviation);
+			log_printf(search_name, "%ld -- b: %.15lf, a: %.15lf, m: %.15lf, w: %.15lf, d: %.15lf, global best\n", pso->analyzed, best, average, median, worst, deviation);
 		} else {
 			sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, local best", particle, sp->fitness, previous, pso->global_best_fitness);
-			log_printf(search_name, "%ld -- b: %.15lf, a: %.15lf, w: %.15lf, d: %.15lf, local best\n", pso->analyzed, best, average, worst, deviation);
+			log_printf(search_name, "%ld -- b: %.15lf, a: %.15lf, m: %.15lf, w: %.15lf, d: %.15lf, local best\n", pso->analyzed, best, average, median, worst, deviation);
 		}
 		write_particle_swarm(search_name, search_data);
-		free(best_point);
 	} else {
 		sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, not inserted", particle, sp->fitness, pso->local_best->fitness[particle], pso->global_best_fitness);
 	}
