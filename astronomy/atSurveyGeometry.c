@@ -263,15 +263,18 @@ void gcToSgr ( double mu, double nu, int wedge, double *lamda, double *beta )
 void sgrToGal ( double lamda, double beta, double *l, double *b)
 {
 	double radpdeg=3.141592653589793/180;
-	double rot11=0.964034802;
-	double rot12=-0.258052497;
-	double rot13=-0.063606679;
-	double rot21=0.120058803;
-	double rot22=0.209312983;
-	double rot23=0.970450390;
-	double rot31=-0.237113443;
-	double rot32=-0.943184491;
-	double rot33=0.232766474;
+	double phi=(180+3.75)*radpdeg;
+	double theta=(90-13.46)*radpdeg;
+	double psi=(180+14.111534)*radpdeg;
+	double rot11=-(cos(theta)*sin(phi)*sin(psi)-pow(cos(theta),2)*cos(phi)*cos(psi)-cos(psi)*pow(sin(theta),2)*cos(phi))/(pow(cos(psi),2)*pow(cos(phi),2)*pow(cos(theta),2)+pow(cos(psi),2)*pow(cos(phi),2)*pow(sin(theta),2)+pow(cos(theta),2)*pow(sin(psi),2)*pow(sin(phi),2)+pow(sin(psi),2)*pow(cos(phi),2)*pow(cos(theta),2)+pow(sin(psi),2)*pow(cos(phi),2)*pow(sin(theta),2)+pow(cos(theta),2)*pow(cos(psi),2)*pow(sin(phi),2)+pow(sin(theta),2)*pow(sin(phi),2)*pow(cos(psi),2)+pow(sin(theta),2)*pow(sin(phi),2)*pow(sin(psi),2));
+	double rot12=-(cos(theta)*sin(phi)*cos(psi)+pow(cos(theta),2)*cos(phi)*sin(psi)+sin(psi)*pow(sin(theta),2)*cos(phi))/(pow(cos(psi),2)*pow(cos(phi),2)*pow(cos(theta),2)+pow(cos(psi),2)*pow(cos(phi),2)*pow(sin(theta),2)+pow(cos(theta),2)*pow(sin(psi),2)*pow(sin(phi),2)+pow(sin(psi),2)*pow(cos(phi),2)*pow(cos(theta),2)+pow(sin(psi),2)*pow(cos(phi),2)*pow(sin(theta),2)+pow(cos(theta),2)*pow(cos(psi),2)*pow(sin(phi),2)+pow(sin(theta),2)*pow(sin(phi),2)*pow(cos(psi),2)+pow(sin(theta),2)*pow(sin(phi),2)*pow(sin(psi),2));
+	double rot13=(sin(theta)*sin(phi))/(pow(cos(theta),2)*pow(sin(phi),2)+pow(cos(phi),2)*pow(cos(theta),2)+pow(cos(phi),2)*pow(sin(theta),2)+pow(sin(theta),2)*pow(sin(phi),2));
+	double rot21=(cos(theta)*cos(phi)*sin(psi)+pow(cos(theta),2)*cos(psi)*sin(phi)+cos(psi)*pow(sin(theta),2)*sin(phi))/(pow(cos(psi),2)*pow(cos(phi),2)*pow(cos(theta),2)+pow(cos(psi),2)*pow(cos(phi),2)*pow(sin(theta),2)+pow(cos(theta),2)*pow(sin(psi),2)*pow(sin(phi),2)+pow(sin(psi),2)*pow(cos(phi),2)*pow(cos(theta),2)+pow(sin(psi),2)*pow(cos(phi),2)*pow(sin(theta),2)+pow(cos(theta),2)*pow(cos(psi),2)*pow(sin(phi),2)+pow(sin(theta),2)*pow(sin(phi),2)*pow(cos(psi),2)+pow(sin(theta),2)*pow(sin(phi),2)*pow(sin(psi),2));
+	double rot22=-(-cos(theta)*cos(phi)*cos(psi)+pow(cos(theta),2)*sin(psi)*sin(phi)+sin(psi)*pow(sin(theta),2)*sin(phi))/(pow(cos(psi),2)*pow(cos(phi),2)*pow(cos(theta),2)+pow(cos(psi),2)*pow(cos(phi),2)*pow(sin(theta),2)+pow(cos(theta),2)*pow(sin(psi),2)*pow(sin(phi),2)+pow(sin(psi),2)*pow(cos(phi),2)*pow(cos(theta),2)+pow(sin(psi),2)*pow(cos(phi),2)*pow(sin(theta),2)+pow(cos(theta),2)*pow(cos(psi),2)*pow(sin(phi),2)+pow(sin(theta),2)*pow(sin(phi),2)*pow(cos(psi),2)+pow(sin(theta),2)*pow(sin(phi),2)*pow(sin(psi),2));
+	double rot23=-(sin(theta)*cos(phi))/(pow(cos(theta),2)*pow(sin(phi),2)+pow(cos(phi),2)*pow(cos(theta),2)+pow(cos(phi),2)*pow(sin(theta),2)+pow(sin(theta),2)*pow(sin(phi),2));
+	double rot31=(sin(psi)*sin(theta))/(pow(cos(psi),2)*pow(cos(theta),2)+pow(sin(psi),2)*pow(sin(theta),2)+pow(cos(psi),2)*pow(sin(theta),2)+pow(sin(psi),2)*pow(cos(theta),2));
+	double rot32=(cos(psi)*sin(theta))/(pow(cos(psi),2)*pow(cos(theta),2)+pow(sin(psi),2)*pow(sin(theta),2)+pow(cos(psi),2)*pow(sin(theta),2)+pow(sin(psi),2)*pow(cos(theta),2));
+	double rot33=cos(theta)/(pow(cos(theta),2)+pow(sin(theta),2));
 	double x2 = 0.0, y2 = 0.0;
 	
 	//printf(" lamdai=%f, betai=%f", lamda, beta);
@@ -335,7 +338,7 @@ void sgrToGal ( double lamda, double beta, double *l, double *b)
 		lamda=lamda*radpdeg;
 		x2=0;
 		y2=-sin(beta);
-	
+
 	} else if (lamda<360) {
 		lamda=lamda*radpdeg;
 		x2=sqrt((1-cos(beta)*cos(beta))/(1+tan(lamda)*tan(lamda)));
