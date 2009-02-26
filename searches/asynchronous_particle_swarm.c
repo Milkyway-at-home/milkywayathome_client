@@ -229,6 +229,45 @@ int parse(PARTICLE_SWARM_OPTIMIZATION *pso, SEARCH_PARAMETERS *sp, int *particle
 	return 0;
 }
 
+int insert_particle(PARTICLE_SWARM_OPTIMIZATION *pso, int particle, double *velocity, SEARCH_PARAMETERS *sp) {
+	double previous;
+	double best, average, median, worst, deviation;
+
+	if (!individual_exists(pso->local_best, particle)) previous = 0;
+	else previous = pso->local_best->fitness[particle];
+	/********
+		*	Actually insert the particle.
+	 ********/
+	insert_individual_info(pso->particles, particle, sp->parameters, sp->fitness, sp->host_os, sp->app_version);
+	insert_individual_info(pso->velocities, particle, velocity, sp->fitness, sp->host_os, sp->app_version);
+	insert_individual_info(pso->local_best, particle, sp->parameters, sp->fitness, sp->host_os, sp->app_version);
+
+	get_population_statistics(pso->local_best, &best, &average, &median, &worst, &deviation);
+	if (sp->fitness > pso->global_best_fitness) {
+		pso->global_best_fitness = sp->fitness;
+		memcpy(pso->global_best, sp->parameters, sizeof(double) * pso->number_parameters);
+		sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, global best", particle, sp->fitness, previous, pso->global_best_fitness);
+		log_printf(search_name, "%ld -- b: %.15lf, a: %.15lf, m: %.15lf, w: %.15lf, d: %.15lf, global best\n", pso->analyzed, best, average, median, worst, deviation);
+	} else {
+		sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, local best", particle, sp->fitness, previous, pso->global_best_fitness);
+		log_printf(search_name, "%ld -- b: %.15lf, a: %.15lf, m: %.15lf, w: %.15lf, d: %.15lf, local best\n", pso->analyzed, best, average, median, worst, deviation);
+	}
+	write_particle_swarm(search_name, search_data);
+}
+
+int verify_particle(PARTICLE_SWARM_OPTIMIZATION *pso, int particle, double *velocity, SEARCH_PARAMETERS *sp) {
+	/**
+	 * See if this particle has any saved local best values
+	 * If this matches a local best value update the local best
+	 * 	remove the match from the queue
+	 * 	remove all queued matches with lower fitness
+	 * If this matches parameters but not fitness, remove the match from the queue
+	 *
+	 */
+
+
+}
+
 int pso_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
 	PARTICLE_SWARM_OPTIMIZATION *pso = (PARTICLE_SWARM_OPTIMIZATION*)search_data;
 	int result, particle;
@@ -243,52 +282,13 @@ int pso_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETER
 
 	pso->analyzed++;
 
-	/********
-		*	Insert the particle if there is no current local best, or if it's better than the local best.
-	 ********/
-	if (!population_contains(pso->local_best, sp->fitness, sp->parameters) && (!individual_exists(pso->local_best, particle) || sp->fitness > pso->local_best->fitness[particle])) { 
-		double previous;
-		double best, average, median, worst, deviation;
-		/********
-			*	We don't insert the particle unless it's better than the local best, so check and see if it's an outlier here.
-		 ********/
-		if (!individual_exists(pso->local_best, particle)) previous = 0;
-		else previous = pso->local_best->fitness[particle];
-
-		if (pso->remove_outliers && pso->local_best->size >= 40) {
-			double min_error, max_error, median_error, average_error, particle_error;
-
-			population_error_stats(pso->local_best, &min_error, &max_error, &median_error, &average_error);
-			particle_error = distance_error_from(pso->local_best, sp->fitness, sp->parameters); 
-
-			if (particle_error > average_error * 25.0) {
-				sprintf(AS_MSG, "p[%d]: %.15lf, OUTLIER: e: %.15lf > 25.0 * %.15lf", particle, sp->fitness, particle_error, average_error);
-				return AS_INSERT_OUTLIER;
-			}
-		}
-
-		/********
-			*	Actually insert the particle.
-		 ********/
-		insert_individual_info(pso->particles, particle, sp->parameters, sp->fitness, sp->host_os, sp->app_version);
-		insert_individual_info(pso->velocities, particle, velocity, sp->fitness, sp->host_os, sp->app_version);
-		insert_individual_info(pso->local_best, particle, sp->parameters, sp->fitness, sp->host_os, sp->app_version);
-
-		get_population_statistics(pso->local_best, &best, &average, &median, &worst, &deviation);
-		if (sp->fitness > pso->global_best_fitness) {
-			pso->global_best_fitness = sp->fitness;
-			memcpy(pso->global_best, sp->parameters, sizeof(double) * pso->number_parameters);
-			sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, global best", particle, sp->fitness, previous, pso->global_best_fitness);
-			log_printf(search_name, "%ld -- b: %.15lf, a: %.15lf, m: %.15lf, w: %.15lf, d: %.15lf, global best\n", pso->analyzed, best, average, median, worst, deviation);
+	if (!population_contains(pso->local_best, sp->fitness, sp->parameters)) {
+		if (!individual_exists(pso->local_best, particle) || (sp->fitness > pso->local_best->fitness[particle] && verify_particle(pso, particle, velocity, sp))) {
+			insert_particle(pso, particle, velocity, sp);
 		} else {
-			sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, local best", particle, sp->fitness, previous, pso->global_best_fitness);
-			log_printf(search_name, "%ld -- b: %.15lf, a: %.15lf, m: %.15lf, w: %.15lf, d: %.15lf, local best\n", pso->analyzed, best, average, median, worst, deviation);
+			sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, bad fitness", particle, sp->fitness, pso->local_best->fitness[particle], pso->global_best_fitness);
 		}
-		write_particle_swarm(search_name, search_data);
 	} else {
-		sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, not inserted", particle, sp->fitness, pso->local_best->fitness[particle], pso->global_best_fitness);
+		sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, duplicate", particle, sp->fitness, pso->local_best->fitness[particle], pso->global_best_fitness);
 	}
-
-	free(velocity);
-	return AS_INSERT_SUCCESS;
 }

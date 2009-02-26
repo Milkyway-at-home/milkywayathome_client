@@ -47,27 +47,24 @@ int line_search(double* point, double initial_fitness, double* direction, int nu
 	(*evaluations_done) = 1;
 	printf("\t\tloop 1, evaluations: %d, step: %.15lf, fitness: %.15lf\n", (*evaluations_done), step, f2);
 
-	eval_count = 0;
-	while (step > tol && (f1 > f2 || isnan(f2)) && eval_count < LOOP1_MAX) {
-		step /= 2.0;
-
-		// f2 = evaluate( point + (direction * step) );
-		f2 = evaluate_step(point, step, direction, number_parameters, current_point);
-		(*evaluations_done)++;
-		printf("\t\tloop 1, evaluations: %d, step: %.15lf, fitness: %.15lf\n", (*evaluations_done), step, f2);
-		eval_count++;
+	if (f1 > f2) {
+		double temp;
+		d1 = 1.0;
+		d2 = 0;
+		temp = f1;
+		f1 = f2;
+		f2 = temp;
+		d3 = -1.0;
+	} else {
+		d1 = 0.0;
+		d2 = 1.0;
+		d3 = 2.0;
 	}
-	if (isnan(f2)) return LS_LOOP1_NAN;
-	if (step < tol) return LS_LOOP1_TOL;
-	if (eval_count == LOOP2_MAX) return LS_LOOP1_MAX;
 
 	/********
 		*	Find f1 < f2 > f3
 	 ********/
 	jump = 2.0;
-	d1 = 0.0;
-	d2 = 1.0;
-	d3 = 2.0;
 	// f3 = evaluate( point + (d3 * step * direction) );
 	f3 = evaluate_step(point, d3 * step, direction, number_parameters, current_point);
 	(*evaluations_done)++;
