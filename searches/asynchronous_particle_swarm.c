@@ -173,23 +173,29 @@ int pso_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMET
 		random_recombination(pso->number_parameters, pso->bounds->min_bound, pso->bounds->max_bound, sp->parameters);
 		sprintf(sp->metadata, "p: %d, v:", pso->current_particle);
 		for (i = 0; i < pso->number_parameters; i++) sprintf(strchr(sp->metadata, 0), " %lf", 0.0);
+		pso->current_particle++;
 	} else {
 		double *local_best, *velocity, *particle;
-		local_best = pso->local_best->individuals[pso->current_particle];
-		velocity = pso->velocities->individuals[pso->current_particle];
-		particle = pso->particles->individuals[pso->current_particle];
+		if (pso->current_redundancy == NULL) {
+			local_best = pso->local_best->individuals[pso->current_particle];
+			velocity = pso->velocities->individuals[pso->current_particle];
+			particle = pso->particles->individuals[pso->current_particle];
 
-		sprintf(sp->metadata, "p: %d, v:", pso->current_particle);
-		for (i = 0; i < pso->number_parameters; i++) {
-			velocity[i] = (pso->w * velocity[i]) + (pso->c1 * dsfmt_gv_genrand_close_open() * (local_best[i] - particle[i])) + (pso->c2 * dsfmt_gv_genrand_close_open() * (pso->global_best[i] - particle[i]));
-		}
-		bound_velocity(particle, velocity, pso->bounds);
+			sprintf(sp->metadata, "p: %d, v:", pso->current_particle);
+			for (i = 0; i < pso->number_parameters; i++) {
+				velocity[i] = (pso->w * velocity[i]) + (pso->c1 * dsfmt_gv_genrand_close_open() * (local_best[i] - particle[i])) + (pso->c2 * dsfmt_gv_genrand_close_open() * (pso->global_best[i] - particle[i]));
+			}
+			bound_velocity(particle, velocity, pso->bounds);
 
-		for (i = 0; i < pso->number_parameters; i++) {
-			particle[i] = particle[i] + velocity[i];
-			if (isnan(particle[i])) return AS_GEN_FAIL;
+			for (i = 0; i < pso->number_parameters; i++) {
+				particle[i] = particle[i] + velocity[i];
+				if (isnan(particle[i])) return AS_GEN_FAIL;
+			}
+			bound_parameters(particle, pso->bounds);
+		} else {
+			particle = pso->current_redundancy->parameters;
+			velocity = pso->current_redundancy->velocity;
 		}
-		bound_parameters(particle, pso->bounds);
 
 		for (i = 0; i < pso->number_parameters; i++) {
 			sp->parameters[i] = particle[i];
@@ -197,7 +203,6 @@ int pso_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMET
 		}
 	}
 
-	pso->current_particle++;
 	if (pso->current_particle >= pso->particles->max_size) pso->current_particle = 0;
 
 	return AS_GEN_SUCCESS;
@@ -255,6 +260,19 @@ int insert_particle(PARTICLE_SWARM_OPTIMIZATION *pso, int particle, double *velo
 	write_particle_swarm(search_name, search_data);
 }
 
+#define MATCH_TOLERANCE 10e-15
+
+int fitness_match(double f1, double f2) {
+	return fabs(f1 - f2) < MATCH_TOLERANCE;
+}
+
+int parameters_match(int n, double *p1, double *p2) {
+	for (i = 0; i < n; i++) {
+		if (fabs(p1[i] - p2[i]) > MATCH_TOLERANCE) return 0;
+	}
+	return 1;
+}
+
 int verify_particle(PARTICLE_SWARM_OPTIMIZATION *pso, int particle, double *velocity, SEARCH_PARAMETERS *sp) {
 	/**
 	 * See if this particle has any saved local best values
@@ -265,7 +283,34 @@ int verify_particle(PARTICLE_SWARM_OPTIMIZATION *pso, int particle, double *velo
 	 *
 	 */
 
+	REDUNDANCY *r, *r_prev, *n, *n_prev;
+	int match;
+	r = pso->redundancies[particle];
+	r_prev = NULL;
+	while (r != NULL) {
+		if (parameters_match(pso->number_parameters, r->parameters, sp->parameters)) {
+			match = fitness_match(r->fitness, sp->fitness);
 
+			n_prev = NULL;
+			n = pso->redundancies[particle];
+			while (n != NULL) {
+				if (n->fitness <= sp->fitness) {
+					if (n_prev == NULL) pso->redundancies[particle] = n->next;
+					n_prev->next = n->next;
+					free_redundancy(n);
+					n = n_prev->next;
+				}
+				n_prev = n;
+				n = n->next;
+			}
+
+			return match;
+		}
+		r_prev = r;
+		r = r->next;
+	}
+	if (r_prev == NULL) new_redundancy(&(pso->redundancies[particle]), sp);
+	else new_redundancy(&(r_prev->next), sp);
 }
 
 int pso_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
