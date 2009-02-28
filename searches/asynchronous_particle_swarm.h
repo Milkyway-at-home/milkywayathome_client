@@ -3,9 +3,10 @@
 
 #include <stdio.h>
 
+#include "asynchronous_search.h"
 #include "bounds.h"
 #include "population.h"
-#include "asynchronous_search.h"
+#include "redundancy.h"
 
 #define NEWTON_ERROR_RANGE 1
 #define NEWTON_UPDATE_RANGE 2
@@ -27,6 +28,9 @@ typedef struct particle_swarm_optimization {
 	POPULATION *particles;
 	POPULATION *velocities;
 	POPULATION *local_best;
+
+	REDUNDANCY *current_redundancy;
+	REDUNDANCY **redundancies;
 } PARTICLE_SWARM_OPTIMIZATION;
 
 ASYNCHRONOUS_SEARCH* get_asynchronous_particle_swarm();

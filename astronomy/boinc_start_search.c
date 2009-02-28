@@ -234,7 +234,7 @@ int main(int argc, char** argv) {
 
 		double flops = integral_flops + likelihood_flops;
 		double credit = flops / 1000000000000.0;
-		double multipler = 6;
+		double multiplier = 7.0;
 		credit *= multiplier;
 
 		printf("awarded credit: %lf\n", credit);
