@@ -134,3 +134,67 @@ void remove_outliers_incremental(POPULATION *p, double range) {
 void remove_outliers_sorted(POPULATION *p, double range) {
 	remove_outliers_helper(p, range, REMOVE_OUTLIERS_SORTED);
 }
+
+double get_distance2(POPULATION *p, int position, double *parameters) {
+	double difference, distance, current_distance;
+	int i, j;
+
+	distance = 0;
+	for (i = 0; i < p->max_size; i++) {
+		if (!individual_exists(p, i) || i == position) continue;
+		current_distance = 0;
+		for (j = 0; j < p->number_parameters; j++) {
+			difference = parameters[j] - p->individuals[i][j];
+			current_distance += difference * difference;
+		}
+		distance += sqrt(current_distance);
+	}
+	return distance;
+}
+
+double get_error2(POPULATION *p, int position, double fitness) {
+	double error, difference;
+	int i;
+
+	error = 0;
+	for (i = 0; i < p->max_size; i++) {
+		if (!individual_exists(p, i) || i == position) continue;
+		difference = fitness - p->fitness[i];
+		error += difference * difference;
+	}
+	return sqrt(error);
+}
+
+#ifdef OUTLIERS_MAIN
+int main(int argc, char**argv) {
+	POPULATION *p;
+	double avg_distance, avg_error, distance, error;
+	int i, j, count;
+
+	read_population(argv[1], &p);
+
+	for (i = 0; i < p->max_size; i++) {
+		if (!individual_exists(p, i)) continue;
+
+		count = 0;
+		avg_distance = 0;
+		avg_error = 0;
+		for (j = 0; j < p->max_size; j++) {
+			if (!individual_exists(p, j) || j == i) continue;
+			distance = get_distance2(p, i, p->individuals[j]);
+			error = get_error2(p, i, p->fitness[j]);
+
+			avg_distance += distance;
+			avg_error += error;
+			count++;
+		}
+		avg_distance /= count;
+		avg_error /= count;
+
+		distance = get_distance2(p, i, p->individuals[i]);
+		error = get_error2(p, i, p->fitness[i]);
+
+		printf("distance: [%.15lf - %.15lf], error: [%.15lf - %.15lf], error/distance: [%.15lf - %.15lf], fitness: [%.15lf], - %.15lf\n", distance, avg_distance, error, avg_error, error/distance, avg_error/avg_distance, p->fitness[i], (error/distance)/(avg_error/avg_distance));
+	}
+}
+#endif
