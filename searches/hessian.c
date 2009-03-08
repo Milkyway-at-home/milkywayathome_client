@@ -8,42 +8,46 @@
 #include "../util/matrix.h"
 
 void get_hessian(int number_parameters, double *point, double *step, double **hessian) {
-	int j, k;
+	int i, j;
 	double e1, e2, e3, e4;
-	double pj, pk;
+	double pi, pj;
+	double slope_i1, slope_i2, slope_ij;
 
-	for (j = 0; j < number_parameters; j++) {
-		for (k = 0; k < number_parameters; k++) {
+	for (i = 0; i < number_parameters; i++) {
+		for (j = 0; j < number_parameters; j++) {
+			pi = point[i];
 			pj = point[j];
-			pk = point[k];
-			if (j == k) {
-				point[j] = pj + step[j] + step[j];
+			if (i == j) {
+				point[i] = pi + step[i] + step[i];
 				e1 = evaluate(point);
-				point[j] = pj;
-				e2 = evaluate(point);
-				e3 = e2;
-				point[j] = pj - step[j] - step[j];
+				point[i] = pi;
+				e2 = e3 = evaluate(point);
+				point[i] = pi - (step[i] + step[i]); 
 				e4 = evaluate(point);
 			} else {
+				point[i] = pi + step[i];
 				point[j] = pj + step[j];
-				point[k] = pk + step[k];
 				e1 = evaluate(point);
-				
-				point[k] = pk - step[k];
+
+				point[i] = pi - step[i];
 				e2 = evaluate(point);
 
-				point[j] = pj - step[j];
-				point[k] = pk + step[k];
+				point[i] = pi + step[i];
+				point[j] = pi - step[j];
 				e3 = evaluate(point);
 
-				point[k] = pk - step[k];
+				point[i] = pi - step[i];
 				e4 = evaluate(point);
 			}
+			point[i] = pi;
 			point[j] = pj;
-			point[k] = pk;
 
-			hessian[j][k] = ((e1 - e2) + (e3 - e4))/(4 * step[j] * step[k]);
-			printf("\t\thessian[%d][%d]: %.20lf, ((%.20lf - %.20lf) - (%.20lf - %.20lf) / (2 * %lf) / (2 * %lf)\n", j, k, hessian[j][k], e1, e2, e3, e4, step[k], step[j]);
+			slope_i1 = (e1 - e2) / (step[i] + step[i]);
+			slope_i2 = (e3 - e4) / (step[i] + step[i]);
+			slope_ij = (slope_i1 - slope_i2) / (step[j] + step[j]);
+
+			hessian[i][j] = slope_ij;
+			printf("\t\thessian[%d][%d]: %.20lf, slope_i1: %.20lf, slope_i2: %.20lf\n", i, j, hessian[i][j], slope_i1, slope_i2);
 		}
 	}
 }
