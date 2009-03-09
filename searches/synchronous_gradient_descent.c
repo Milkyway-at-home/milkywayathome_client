@@ -122,7 +122,7 @@ void synchronous_conjugate_gradient_descent(int number_arguments, char **argumen
 
 		print_double_array(stdout, "\tconjugate direction: ", number_parameters, direction);
 
-		retval = line_search(point, point_fitness, gradient, number_parameters, new_point, &point_fitness, &evaluations);
+		retval = line_search(point, point_fitness, direction, number_parameters, new_point, &point_fitness, &evaluations);
 		print_double_array(stdout, "\tnew point:", number_parameters, new_point);
 		printf("\tline search took: %d evaluations for new fitness: %.15lf, with result: [%s]\n", evaluations, point_fitness, LS_STR[retval]);
 

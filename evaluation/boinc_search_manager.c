@@ -288,10 +288,6 @@ double update_workunit(DB_VALIDATOR_ITEM_SET& validator, int valid_state, RESULT
 			//	printf("claimed [%lf] < granted [%lf]!\n", result.claimed_credit, credit);
 			//	credit = result.claimed_credit;
 			//}
-			if (credit > 25) {
-				credit = 12;
-				result.granted_credit = 12;
-			}
 
 //			if (cpu_time == trip_time) cpu_time = 0.01 * trip_time;
 //			else if (cpu_time > 0.35 * trip_time) cpu_time = 0.15 * trip_time;

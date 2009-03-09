@@ -165,6 +165,10 @@ double get_error2(POPULATION *p, int position, double fitness) {
 	return sqrt(error);
 }
 
+double distance_error2(POPULATION *p, int position, double fitness, double *parameters) {
+	return get_error2(p, position, fitness) / get_distance2(p, position, parameters);
+}
+
 #ifdef OUTLIERS_MAIN
 int main(int argc, char**argv) {
 	POPULATION *p;

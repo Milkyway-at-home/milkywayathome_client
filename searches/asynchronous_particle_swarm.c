@@ -224,7 +224,6 @@ int pso_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMET
 		double *local_best, *velocity, *particle;
 		sprintf(sp->metadata, "p: %d, v:", pso->current_particle);
 		if (pso->current_redundancy != NULL) {
-			printf("current redundancy not null\n");
 			/**
 			 * Generate parameters from this redundancy and move the current redundancy
 			 */
@@ -232,7 +231,6 @@ int pso_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMET
 			velocity = pso->current_redundancy->velocity;
 			pso->current_redundancy = pso->current_redundancy->next;
 		} else {
-			printf("current redundancy is null\n");
 			local_best = pso->local_best->individuals[pso->current_particle];
 			velocity = pso->velocities->individuals[pso->current_particle];
 			particle = pso->particles->individuals[pso->current_particle];
@@ -323,10 +321,8 @@ int check_particle(PARTICLE_SWARM_OPTIMIZATION *pso, int particle, double *veloc
 	r = pso->redundancies[particle];
 	r_prev = NULL;
 	while (r != NULL) {
-		printf("checking parameters\n");
 		if (parameters_match(pso->number_parameters, r->parameters, sp->parameters)) {
 			match = fitness_match(r->fitness, sp->fitness);
-			printf ("parameter match for fitness: %.20lf, fitness match %.20lf? %d\n", r->fitness, sp->fitness, match);
 
 			if (match) {
 				n_prev = NULL;
@@ -334,27 +330,20 @@ int check_particle(PARTICLE_SWARM_OPTIMIZATION *pso, int particle, double *veloc
 				while (n != NULL) {
 					if (n->fitness <= sp->fitness) {
 						REDUNDANCY *temp;
-						printf("removing redundancy with fitness: %.20lf\n", n->fitness);
 						temp = n->next;
 						if (n_prev == NULL) {
-							printf("n_prev is null!\n");
 							pso->redundancies[particle] = n->next;
 						} else {
-							printf("n_prev is not null!\n");
 							n_prev->next = n->next;
 						}
-						printf("freeing!\n");
 						free_redundancy(&n);
-						printf("updating n\n");
 						n = temp;
 					} else {
-						printf("not removing fitness: %.20lf\n", n->fitness);
 						n_prev = n;
 						n = n->next;
 					}
 				}
 			} else {
-				printf("removing redundancy with fitness: %.20lf\n", r->fitness);
 				if (r_prev == NULL) {
 					pso->redundancies[particle] = r->next;
 					free_redundancy(&r);
@@ -406,10 +395,13 @@ int pso_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETER
 
 		if (pso->local_best->size >= 40) {
 			double min_error, max_error, median_error, average_error;
-			double particle_error;
+			double particle_error, local_particle_error;
 			population_error_stats(pso->local_best, &min_error, &max_error, &median_error, &average_error);
-			particle_error = distance_error_from(pso->local_best, sp->fitness, sp->parameters);
-			if (particle_error > average_error * 30.0) {
+			particle_error = distance_error2(pso->local_best, -1, sp->fitness, sp->parameters);
+			//local_particle_error = distance_error2(pso->local_best, particle, pso->local_best->fitness[particle], pso->local_best->individuals[particle]);
+
+			if (particle_error > max_error * 300.0) {
+				printf("OUTLIER: particle_error: %.10lf, max_error: %.10lf, outlier by: %.10lf\n", particle_error, max_error, particle_error/max_error);
 				sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, outlier", particle, sp->fitness, pso->local_best->fitness[particle], pso->global_best_fitness);
 				return AS_INSERT_OUTLIER;
 			}
