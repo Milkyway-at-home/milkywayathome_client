@@ -101,7 +101,7 @@ void synchronous_conjugate_gradient_descent(int number_arguments, char **argumen
 			break;
 		}
 
-		if (i > 0 && reset == 0) {
+		if (i > 0 && reset != 0) {
 			// bet = g_pres' * (g_pres - g_prev) / (g_prev' * g_prev);
 			bet = 0;
 			betdiv = 0;
