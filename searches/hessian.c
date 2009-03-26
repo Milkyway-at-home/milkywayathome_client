@@ -99,9 +99,9 @@ void randomized_hessian(double** actual_points, double* center, double* fitness,
 		}
 	}
 
-        matrix_transpose(X, number_points, x_len, &X_transpose);
+        matrix_transpose__alloc(X, number_points, x_len, &X_transpose);
         matrix_multiply(X_transpose, x_len, number_points, X, number_points, x_len, &X2);
-	matrix_invert(X2, x_len, x_len, &X_inverse);
+	matrix_invert__alloc(X2, x_len, x_len, &X_inverse);
         matrix_multiply(X_inverse, x_len, x_len, X_transpose, x_len, number_points, &X3);
 	matrix_multiply(X3, x_len, number_points, Y, number_points, 1, &W);
 

@@ -135,3 +135,4 @@ void synchronous_conjugate_gradient_descent(int number_arguments, char **argumen
         free(new_point);
 	free(gradient);
 }
+

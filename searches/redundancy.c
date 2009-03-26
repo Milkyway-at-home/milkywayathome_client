@@ -85,3 +85,56 @@ int fwrite_redundancy(FILE *file, REDUNDANCY *r, int n, int particle) {
 	fprintf(file, "\n");
 	return 1;
 }
+
+int check_redundancy(REDUNDANCY *search_current, REDUNDANCY *r, int point, SEARCH_PARAMETERS *sp) {
+        /**
+	 ** See if this particle has any saved local best values
+	 ** If this matches a local best value update the local best
+	 **      remove the match from the queue
+	 **      remove all queued matches with lower fitness
+	 ** If this matches parameters but not fitness, remove the match from the queue
+	 **/
+        REDUNDANCY *r, *r_prev, *n, *n_prev;
+        int match;
+        r = sx->redundancies[point];
+        r_prev = NULL;
+        while (r != NULL) {
+                if (parameters_match(sx->number_parameters, r->parameters, sp->parameters)) {
+                        match = fitness_match(r->fitness, sp->fitness);
+
+                        if (match) {
+                                n_prev = NULL;
+                                n = sx->redundancies[point];
+				while (n != NULL) {
+					if (n->fitness <= sp->fitness) {
+						REDUNDANCY *temp;
+						temp = n->next;
+						if (n_prev == NULL) {
+							sx->redundancies[point] = n->next;
+						} else {
+							n_prev->next = n->next;
+						}
+						free_redundancy(&n);
+						n = temp;
+					} else {
+						n_prev = n;
+						n = n->next;
+					}
+				}
+			} else {
+				if (r_prev == NULL) {
+					sx->redundancies[point] = r->next;
+					free_redundancy(&r);
+				} else {
+					r_prev->next = r->next;
+					free_redundancy(&r);
+				}
+			}
+			sx->current_redundancy = NULL;
+			return match;
+		}
+		r_prev = r;
+		r = r->next;
+	}
+	return 0;
+}

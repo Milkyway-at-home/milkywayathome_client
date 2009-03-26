@@ -11,7 +11,7 @@ void newton_step_i(int number_parameters, double **hessian, double *gradient, do
 	double **inverse_hessian;
 	int i;
 
-	matrix_invert(hessian, number_parameters, number_parameters, &inverse_hessian);
+	matrix_invert__alloc(hessian, number_parameters, number_parameters, &inverse_hessian);
 	vector_matrix_multiply(gradient, number_parameters, inverse_hessian, number_parameters, number_parameters, step);
 
 	for (i = 0; i < number_parameters; i++) free(inverse_hessian[i]);
@@ -23,7 +23,7 @@ void newton_step(int number_parameters, double **hessian, double *gradient, doub
 	double *s;
 	int i;
 
-	matrix_invert(hessian, number_parameters, number_parameters, &inverse_hessian);
+	matrix_invert__alloc(hessian, number_parameters, number_parameters, &inverse_hessian);
 	vector_matrix_multiply(gradient, number_parameters, inverse_hessian, number_parameters, number_parameters, &s);
 
 	for (i = 0; i < number_parameters; i++) {
