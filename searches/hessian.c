@@ -11,7 +11,6 @@ void get_hessian(int number_parameters, double *point, double *step, double **he
 	int i, j;
 	double e1, e2, e3, e4;
 	double pi, pj;
-	double slope_i1, slope_i2, slope_ij;
 
 	for (i = 0; i < number_parameters; i++) {
 		for (j = 0; j < number_parameters; j++) {
@@ -42,12 +41,8 @@ void get_hessian(int number_parameters, double *point, double *step, double **he
 			point[i] = pi;
 			point[j] = pj;
 
-			slope_i1 = (e1 - e2) / (step[i] + step[i]);
-			slope_i2 = (e3 - e4) / (step[i] + step[i]);
-			slope_ij = (slope_i1 - slope_i2) / (step[j] + step[j]);
-
-			hessian[i][j] = slope_ij;
-			printf("\t\thessian[%d][%d]: %.20lf, slope_i1: %.20lf, slope_i2: %.20lf\n", i, j, hessian[i][j], slope_i1, slope_i2);
+			hessian[i][j] = (e1 - e3 - e2 + e4)/(4 * step[i] * step[j]);
+			printf("\t\thessian[%d][%d]: %.20lf\n", i, j, hessian[i][j]);
 		}
 	}
 }
