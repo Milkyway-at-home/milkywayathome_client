@@ -291,16 +291,63 @@ double streamConvolve(double g, int wedge, int sgr_coordinates) {
 }
 
 /*determines if star with prob p should be separrated into stream*/
-int prob_ok(double p) {
+int prob_ok(int n, double* p) {
 	int ok;
 	double r;
+	double step1, step2, step3;
 		
 	r = drand48();
 
-	if (p > r) {
-		ok = 1;
-	} else {
-		ok = 0;
+	switch (n) {
+		case 1:
+			if ( r > p[0] ) {
+				ok = 0;
+			} else {
+				ok = 1;
+			}
+			break;
+		case 2:
+			step1 = p[0]+p[1];
+			if ( r > step1 ) {
+				ok = 0;
+			} else if ( (r < p[0]) ) {
+                                ok = 1;
+                        } else if ( (r > p[0])&&(r <= step1) ) {
+                                ok = 2;
+                        }
+			break;
+		case 3:
+                        step1 = p[0]+p[1];
+                        step2 = p[0]+p[1]+p[2];
+                        if ( r > step2 ) {
+                                ok = 0;
+                        } else if ( (r < p[0]) ) {
+                                ok = 1;
+                        } else if ( (r > p[0])&&(r <= step1) ) {
+                                ok = 2;
+                        } else if ( (r > step1)&&(r <= step2) ) {
+				ok = 3;
+			}
+			break;
+		case 4:
+                        step1 = p[0]+p[1];
+                        step2 = p[0]+p[1]+p[2];
+                        step3 = p[0]+p[1]+p[2]+p[3];
+                        if ( r > step3 ) {
+                                ok = 0;
+                        } else if ( (r <= p[0]) ) {
+                                ok = 1;
+                        } else if ( (r > p[0])&&(r <= step1) ) {
+                                ok = 2;
+                        } else if ( (r > step1)&&(r <= step2) ) {
+                                ok = 3;
+                        } else if ( (r > step2)&&(r <= step3) ) {
+				ok = 4;
+			}
+			break;
+		default:
+			printf("ERROR:  Too many streams to separate using current code; please update the switch statement in probability.c->prob_ok to handle %d streams", n);
+			exit(0);	
 	}
 	return ok;
 }

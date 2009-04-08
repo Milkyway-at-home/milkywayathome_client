@@ -144,8 +144,8 @@ void separation(char* filename, double background_integral, double* stream_integ
 			set_probability_constants(ap, star_coords[2], r_point, qw_r3_N, &reff_xr_rp3);
 			calculate_probabilities(r_point, qw_r3_N, reff_xr_rp3, star_coords, ap, &prob_b, prob_s);
 		
-			//printf("prob_s: %lf\n", prob_s[0]);
-			//printf("prob_b: %lf\n", prob_b);
+		//printf("prob_s: %lf\n", prob_s[0]);
+		//printf("prob_b: %lf\n", prob_b);
 	
 			pbx = epsilon_b * prob_b / background_integral;
 			
@@ -153,8 +153,8 @@ void separation(char* filename, double background_integral, double* stream_integ
 				psg[j] = epsilon_s[j] * prob_s[j] / stream_integrals[j]; 
 			}
 
-			//printf("pbx: %g\n", pbx);
-			//printf("psg: %g\n", psg[0]);
+		//printf("pbx: %g\n", pbx);
+		//printf("psg: %g\n", psg[0]);
 				
 			double psgSum = 0;
 			for(j = 0; j < ap->number_streams; j++) {
@@ -169,6 +169,7 @@ void separation(char* filename, double background_integral, double* stream_integ
 			for(j = 0; j < ap->number_streams; j++) {
 				nstars[j] += sprob[j];
 			}
+			//printf("nstars: %g\n", nstars[0]);
 		} else {	
 			for(j = 0; j < ap->number_streams; j++) {
 				sprob[j] = 1.0;
@@ -178,13 +179,13 @@ void separation(char* filename, double background_integral, double* stream_integ
 
 
 		/*determine if star with sprob should be put into stream*/
-		for(j = 0; j < ap->number_streams; j++) {
-			s_ok = prob_ok(sprob[j]);
-			if (s_ok == 1) {	
-				s_ok += j;
-				break;
-			}
-		}
+		//for(j = 0; j < ap->number_streams; j++) {
+			s_ok = prob_ok(ap->number_streams, sprob);
+		//	if (s_ok == 1) {	
+		//		s_ok += j;
+		//		break;
+		//	}
+		//}
 
 		//printf("s_ok: %d\n", s_ok);
 

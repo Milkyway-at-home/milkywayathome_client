@@ -38,7 +38,7 @@ double stPsg( const double* coordpar, const double* spars, int wedge, int sgr_co
 double backgroundConvolve(double g, int wedge);
 double streamConvolve(double g, int wedge, int sgr_coordinates);
 
-int prob_ok (double p);
+int prob_ok (int n, double* p);
 void prob_ok_init ();
 
 #endif
