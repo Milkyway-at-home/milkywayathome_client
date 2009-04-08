@@ -37,10 +37,10 @@ void parabolic_2d_helper(int number_points, int x_length, double **x, double *y,
 
 	///B = (Xt * X)^-1 * Xt * Y
 	matrix_transpose__alloc(X, number_points, (*X_length), &Xt);
-	matrix_multiply(Xt, (*X_length), number_points, X, number_points, (*X_length), &Xn);
+	matrix_multiply__alloc(Xt, (*X_length), number_points, X, number_points, (*X_length), &Xn);
 	matrix_invert__alloc(Xn, (*X_length), (*X_length), Xni);
-	matrix_multiply((*Xni), (*X_length), (*X_length), Xt, (*X_length), number_points, &XniXt);
-	matrix_vector_multiply(XniXt, (*X_length), number_points, y, number_points, &B);
+	matrix_multiply__alloc((*Xni), (*X_length), (*X_length), Xt, (*X_length), number_points, &XniXt);
+	matrix_vector_multiply__alloc(XniXt, (*X_length), number_points, y, number_points, &B);
 	(*c) = B[0];
 
 	for (i = 0; i < x_length; i++) {
@@ -167,7 +167,7 @@ void parabolic_regression(int number_points, double *x, double *y, double *a, do
 	}
 
 	matrix_invert__alloc(X_norm, 3, 3, &X_norm_inverse);
-	matrix_vector_multiply(X_norm_inverse, 3, 3, rhs, 3, &B);
+	matrix_vector_multiply__alloc(X_norm_inverse, 3, 3, rhs, 3, &B);
 
 	printf("B: %.20lf, %.20lf, %.20lf\n", B[2], B[1], B[0]);
 

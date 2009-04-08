@@ -36,7 +36,7 @@ int line_search(double* point, double initial_fitness, double* direction, int nu
 	current_point = (double*)malloc(sizeof(double) * number_parameters);
 
 	printf("\tline search starting at fitness: %.15lf\n", initial_fitness);
-	print_double_array(stdout, "\tinitial point: ", number_parameters, point);
+	fwrite_double_array(stdout, "\tinitial point: ", number_parameters, point);
 	/********
 		*	Find f1 < f2
 	 ********/
@@ -150,9 +150,9 @@ void randomized_line_search(int number_parameters, double *point, double *step, 
 	double *current;
 	double min_step = -1;
 	double max_step = 2;
-	x = malloc(sizeof(double) * ls_evaluations);
-	y = malloc(sizeof(double) * ls_evaluations);
-	current = malloc(sizeof(double) * number_parameters);
+	x = (double*)malloc(sizeof(double) * ls_evaluations);
+	y = (double*)malloc(sizeof(double) * ls_evaluations);
+	current = (double*)malloc(sizeof(double) * number_parameters);
 
 	center = 0;
 	for (k = 0; k < number_parameters; k++) current[k] = point[k];
@@ -174,7 +174,7 @@ void randomized_line_search(int number_parameters, double *point, double *step, 
 		(*current_fitness) = evaluate(current);
 		printf("line search iteration [%d], fitness: %.20lf, min/center/max: [%.20lf/%.20lf/%.20lf]\n\n", i, (*current_fitness), min_step, center, max_step);
 	}
-	(*new_point) = malloc(sizeof(double) * number_parameters);
+	(*new_point) = (double*)malloc(sizeof(double) * number_parameters);
 	for (k = 0; k < number_parameters; k++) (*new_point)[k] = current[k];
 	free(current);
 	free(x);

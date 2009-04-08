@@ -17,9 +17,6 @@ EVALUATION_OBJS = \
 	$(EVALUATION_DIR)/search_manager.o
 
 SEARCH_OBJS = \
-	$(SEARCH_DIR)/asynchronous_newton_method.o \
-	$(SEARCH_DIR)/asynchronous_particle_swarm.o \
-	$(SEARCH_DIR)/asynchronous_search.o \
 	$(SEARCH_DIR)/gradient.o \
 	$(SEARCH_DIR)/hessian.o \
 	$(SEARCH_DIR)/line_search.o \

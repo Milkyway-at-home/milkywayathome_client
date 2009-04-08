@@ -7,30 +7,21 @@
 #include "../util/matrix.h"
 #include "../util/io_util.h"
 
-void newton_step_i(int number_parameters, double **hessian, double *gradient, double **step) {
+void newton_step__alloc(int number_parameters, double **hessian, double *gradient, double **step) {
 	double **inverse_hessian;
-	int i;
 
 	matrix_invert__alloc(hessian, number_parameters, number_parameters, &inverse_hessian);
-	vector_matrix_multiply(gradient, number_parameters, inverse_hessian, number_parameters, number_parameters, step);
+	matrix_vector_multiply__alloc(inverse_hessian, number_parameters, number_parameters, gradient, number_parameters, step);
 
-	for (i = 0; i < number_parameters; i++) free(inverse_hessian[i]);
-	free(inverse_hessian);
+	free_matrix(&inverse_hessian, number_parameters, number_parameters);
 }
 
 void newton_step(int number_parameters, double **hessian, double *gradient, double *step) {
 	double **inverse_hessian;
-	double *s;
-	int i;
 
 	matrix_invert__alloc(hessian, number_parameters, number_parameters, &inverse_hessian);
-	vector_matrix_multiply(gradient, number_parameters, inverse_hessian, number_parameters, number_parameters, &s);
+	matrix_vector_multiply(inverse_hessian, number_parameters, number_parameters, gradient, number_parameters, step);
 
-	for (i = 0; i < number_parameters; i++) {
-		step[i] = s[i];
-		free(inverse_hessian[i]);
-	}
-	free(s);
-	free(inverse_hessian);
+	free_matrix(&inverse_hessian, number_parameters, number_parameters);
 }
 

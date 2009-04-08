@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /****
 	*	Functions for printing parameters to files/output
 *****/
-void print_double_array(FILE *file, const char *array_name, int size, double *array_t) {
+void fwrite_double_array(FILE *file, const char *array_name, int size, double *array_t) {
 	int i;
 
 	fprintf(file, "%s[%d]: ", array_name, size);
@@ -38,7 +38,7 @@ void print_double_array(FILE *file, const char *array_name, int size, double *ar
 	fprintf(file, "\n");
 }
 
-void print_int_array(FILE *file, const char *array_name, int size, int *array_t) {
+void fwrite_int_array(FILE *file, const char *array_name, int size, int *array_t) {
 	int i;
 
 	fprintf(file, "%s[%d]: ", array_name, size);
@@ -52,7 +52,7 @@ void print_int_array(FILE *file, const char *array_name, int size, int *array_t)
 /****
 	*	Functions for reading parameters from files
 *****/
-int read_double_array(FILE *file, const char *array_name, double** array_t) {
+int fread_double_array(FILE *file, const char *array_name, double** array_t) {
 	int i, size;
 	fscanf(file, array_name);
 	fscanf(file, "[%d]: ", &size);
@@ -70,7 +70,28 @@ int read_double_array(FILE *file, const char *array_name, double** array_t) {
 	return size;
 }
 
-int read_int_array(FILE *file, const char *array_name, int **array_t) {
+int fread_double_array__no_alloc(FILE *file, const char *array_name, int size, double *array_t) {
+	int i, read_size;
+	fscanf(file, array_name);
+	fscanf(file, "[%d]: ", &read_size);
+
+	if (read_size != size) {
+		fprintf(stderr, "Error reading into %s, invalid length: %d, expected: %d\n", array_name, read_size, size);
+		return -1;
+	}
+
+	for (i = 0; i < size; i++) {
+		if (fscanf(file, "%lf", &(array_t[i])) != 1) {
+			fprintf(stderr, "Error reading into %s, invalid data\n", array_name);
+			return -1;
+		}
+		if (i < size-1) fscanf(file, ", ");
+	}
+	fscanf(file, "\n");
+	return size;
+}
+
+int fread_int_array(FILE *file, const char *array_name, int **array_t) {
 	int i, size;
 	fscanf(file, array_name);
 	fscanf(file, "[%d]: ", &size);
@@ -81,6 +102,27 @@ int read_int_array(FILE *file, const char *array_name, int **array_t) {
 		if (fscanf(file, "%d", &(*array_t)[i]) != 1) {
 			fprintf(stderr,"Error reading into %s\n",array_name);
 			exit(-1);
+		}
+		if (i < size-1) fscanf(file, ", ");
+	}
+	fscanf(file, "\n");
+	return size;
+}
+
+int fread_int_array__no_alloc(FILE *file, const char *array_name, int size, int *array_t) {
+	int i, read_size;
+	fscanf(file, array_name);
+	fscanf(file, "[%d]: ", &read_size);
+
+	if (read_size != size) {
+		fprintf(stderr, "Error reading into %s, invalid length: %d, expected: %d\n", array_name, read_size, size);
+		return -1;
+	}
+
+	for (i = 0; i < size; i++) {
+		if (fscanf(file, "%d", &(array_t[i])) != 1) {
+			fprintf(stderr, "Error reading into %s, invalid data\n", array_name);
+			return -1;
 		}
 		if (i < size-1) fscanf(file, ", ");
 	}

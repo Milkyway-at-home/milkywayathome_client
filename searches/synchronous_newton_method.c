@@ -53,10 +53,10 @@ void synchronous_newton_method(int number_arguments, char** arguments, int numbe
 		printf("\tcalculating direction.\n");
 		newton_step(number_parameters, hessian, gradient, step);
 		for (j = 0; j < number_parameters; j++) step[j] = -step[j];
-		print_double_array(stdout, "\tdirection:", number_parameters, step);
+		fwrite_double_array(stdout, "\tdirection:", number_parameters, step);
 
 		retval = line_search(point, current_fitness, step, number_parameters, new_point, &current_fitness, &evaluations);
-		print_double_array(stdout, "\tnew point:", number_parameters, new_point);
+		fwrite_double_array(stdout, "\tnew point:", number_parameters, new_point);
 		printf("\tline search took: %d evaluations for new fitness: %.15lf, with result: [%s]\n", evaluations, current_fitness, LS_STR[retval]);
 
 		if (retval != LS_SUCCESS) break;

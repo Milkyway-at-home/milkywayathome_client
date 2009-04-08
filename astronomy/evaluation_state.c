@@ -23,7 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
         *       BOINC includes
 *****/
 
-#ifdef GMLE_BOINC
+#ifdef BOINC_APPLICATION 
 	#ifdef _WIN32
 		#include "boinc_win.h"
 	#else
@@ -83,7 +83,7 @@ void fwrite_integral_area(FILE *file, INTEGRAL_AREA *ia) {
 	fprintf(file, " r[min,max,steps]: %.3lf, %.3lf, %d\n", ia->r_min, ia->r_max, ia->r_steps);
 	fprintf(file, "min_calculation: %ld, max_calculation: %ld, current_calculation: %ld\n", ia->min_calculation, ia->max_calculation, ia->current_calculation);
 	fprintf(file, "background_integral: %.20lf\n", ia->background_integral);
-	print_double_array(file, "stream_integrals", ia->number_streams, ia->stream_integrals);
+	fwrite_double_array(file, "stream_integrals", ia->number_streams, ia->stream_integrals);
 }
 
 void fread_integral_area(FILE *file, INTEGRAL_AREA *ia) {
@@ -200,7 +200,7 @@ void free_state(EVALUATION_STATE* es) {
 	free(es->integral);
 }
 
-#ifdef GMLE_BOINC
+#ifdef MWAH 
 	int write_checkpoint(EVALUATION_STATE* es) {
 		int i, retval;
 		char output_path[512];

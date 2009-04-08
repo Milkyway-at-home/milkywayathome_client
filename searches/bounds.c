@@ -82,17 +82,17 @@ void bound_step(double *parameters, double *direction, double step, BOUNDS *b) {
 }
 
 void fwrite_bounds(FILE *file, BOUNDS *b) {
-	print_double_array(file, "min_bound", b->number_parameters, b->min_bound);
-	print_double_array(file, "max_bound", b->number_parameters, b->max_bound);
-	print_int_array(file, "in_radians", b->number_parameters, b->in_radians);
+	fwrite_double_array(file, "min_bound", b->number_parameters, b->min_bound);
+	fwrite_double_array(file, "max_bound", b->number_parameters, b->max_bound);
+	fwrite_int_array(file, "in_radians", b->number_parameters, b->in_radians);
 }
 
 void fread_bounds(FILE *file, BOUNDS **bounds) {
 	(*bounds) = (BOUNDS*)malloc(sizeof(BOUNDS));
 	BOUNDS *b = (*bounds);
 
-	b->number_parameters = read_double_array(file, "min_bound", &(b->min_bound));
-	read_double_array(file, "max_bound", &(b->max_bound));
-	read_int_array(file, "in_radians", &(b->in_radians));
+	b->number_parameters = fread_double_array(file, "min_bound", &(b->min_bound));
+	fread_double_array(file, "max_bound", &(b->max_bound));
+	fread_int_array(file, "in_radians", &(b->in_radians));
 }
 

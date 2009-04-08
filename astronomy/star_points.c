@@ -29,7 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /****
          *     BOINC includes
 *****/
-#ifdef GMLE_BOINC
+#ifdef BOINC_APPLICATION 
 	#ifdef _WIN32
 		#include "boinc_win.h"
 	#else
@@ -139,7 +139,7 @@ void split_star_points(STAR_POINTS* sp, int rank, int max_rank) {
 //	printf("[worker: %d] using [%d/%d] stars\n", rank, sp->number_stars, total_stars);
 }
 
-#ifdef GMLE_BOINC
+#ifdef BOINC_APPLICATION
 	int boinc_read_star_points(const char* filename, STAR_POINTS* sp) {
 		char input_path[512];
 		int retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));

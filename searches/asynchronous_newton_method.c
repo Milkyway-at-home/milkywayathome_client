@@ -125,9 +125,9 @@ int write_newton_method(char* search_name, void* search_data) {
 	fprintf(search_file, "type: %d\n", nms->type);
 	fprintf(search_file, "mode: %d\n", nms->mode);
 
-	print_double_array(search_file, "current_point", nms->number_parameters, nms->current_point);
-	print_double_array(search_file, "initial_range", nms->number_parameters, nms->parameter_range);
-	print_double_array(search_file, "parameter_range", nms->number_parameters, nms->parameter_range);
+	fwrite_double_array(search_file, "current_point", nms->number_parameters, nms->current_point);
+	fwrite_double_array(search_file, "initial_range", nms->number_parameters, nms->parameter_range);
+	fwrite_double_array(search_file, "parameter_range", nms->number_parameters, nms->parameter_range);
 
 	fwrite_bounds(search_file, nms->bounds);
 
@@ -138,7 +138,7 @@ int write_newton_method(char* search_name, void* search_data) {
 	fprintf(search_file, "line_search: %d\n", (nms->line_search != NULL));
 	if (nms->line_search != NULL) {
 		fprintf(search_file, "center: %lf, min_range: %lf, max_range: %lf\n", nms->line_search->center, nms->line_search->min_range, nms->line_search->max_range);
-		print_double_array(search_file, "direction", nms->number_parameters, nms->line_search->direction);
+		fwrite_double_array(search_file, "direction", nms->number_parameters, nms->line_search->direction);
 	}
 	fclose(search_file);
 
@@ -215,9 +215,9 @@ int read_newton_method(char* search_name, void** search_data) {
 	fscanf(search_file, "type: %d\n", &((*nms)->type));
 	fscanf(search_file, "mode: %d\n", &((*nms)->mode));
 
-	(*nms)->number_parameters = read_double_array(search_file, "current_point", &((*nms)->current_point));
-	read_double_array(search_file, "initial_range", &((*nms)->initial_range));
-	read_double_array(search_file, "parameter_range", &((*nms)->parameter_range));
+	(*nms)->number_parameters = fread_double_array(search_file, "current_point", &((*nms)->current_point));
+	fread_double_array(search_file, "initial_range", &((*nms)->initial_range));
+	fread_double_array(search_file, "parameter_range", &((*nms)->parameter_range));
 
 	fread_bounds(search_file, &((*nms)->bounds));
 
@@ -234,7 +234,7 @@ int read_newton_method(char* search_name, void** search_data) {
 		(*nms)->line_search = (LINE_SEARCH*)malloc(sizeof(LINE_SEARCH));
 		ls = (*nms)->line_search;
 		fscanf(search_file, "center: %lf, min_range: %lf, max_range: %lf\n", &(ls->center), &(ls->min_range), &(ls->max_range));
-		read_double_array(search_file, "direction", &((*nms)->line_search->direction));
+		fread_double_array(search_file, "direction", &((*nms)->line_search->direction));
 	} else {
 		(*nms)->line_search = NULL;
 	}
@@ -361,8 +361,8 @@ void get_newton_step(NEWTON_METHOD_SEARCH *nms, double *step, double *step_error
 	}
 	printf("modified\n");
 
-	init_matrix(&hessian, nms->number_parameters, nms->number_parameters);
-	init_matrix(&hessian_error, nms->number_parameters, nms->number_parameters);
+	new_matrix(&hessian, nms->number_parameters, nms->number_parameters);
+	new_matrix(&hessian_error, nms->number_parameters, nms->number_parameters);
 	gradient = (double*)malloc(sizeof(double) * nms->number_parameters);
 	gradient_error = (double*)malloc(sizeof(double) * nms->number_parameters);
 
@@ -508,16 +508,16 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 						return AS_INSERT_OVER;
 					}
 
-					log_print_double_array(search_name, "current_point", nms->number_parameters, nms->current_point);
+					log_fwrite_double_array(search_name, "current_point", nms->number_parameters, nms->current_point);
 
 					free_population(nms->population);
 					free(nms->population);
 					if (nms->line_search == NULL) {
-						log_print_double_array(search_name, "parameter_range", nms->number_parameters, nms->parameter_range);
+						log_fwrite_double_array(search_name, "parameter_range", nms->number_parameters, nms->parameter_range);
 						nms->current_iteration++;
 						new_population(nms->evaluations_per_iteration, nms->number_parameters, &(nms->population));
 					} else {
-						log_print_double_array(search_name, "direction", nms->number_parameters, nms->line_search->direction);
+						log_fwrite_double_array(search_name, "direction", nms->number_parameters, nms->line_search->direction);
 						log_printf(search_name, "min_range: %.20lf, center: %.20lf, max_range: %.20lf\n", nms->line_search->min_range, nms->line_search->center, nms->line_search->max_range);
 						new_population(nms->evaluations_per_iteration, 1, &(nms->population));
 					}
@@ -545,8 +545,8 @@ int newton_insert_parameters(char* search_name, void* search_data, SEARCH_PARAME
 					}
 					free(best_point);
 
-					log_print_double_array(search_name, "current_point", nms->number_parameters, nms->current_point);
-					log_print_double_array(search_name, "parameter_range", nms->number_parameters, nms->parameter_range);
+					log_fwrite_double_array(search_name, "current_point", nms->number_parameters, nms->current_point);
+					log_fwrite_double_array(search_name, "parameter_range", nms->number_parameters, nms->parameter_range);
 
 					free_population(nms->population);
 					free(nms->population);

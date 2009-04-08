@@ -1,13 +1,15 @@
 APP_VERSION = 0.18
 APP_NAME = your_app_name
 
-BOINC_DIR = /Users/deselt/Research/software/boinc
+BOINC_DIR = /Users/deselt/software/boinc
 BOINC_API_DIR = $(BOINC_DIR)/api
 BOINC_LIB_DIR = $(BOINC_DIR)/lib
 BOINC_LIB_LINK_DIR = $(BOINC_DIR)/mac_build/build/Deployment
 FRAMEWORKS_DIR = /System/Library/Frameworks
 
-VARIANTFLAGS = -DGMLE_BOINC -DBOINC_APP_NAME='"$(APP_NAME)"' -DBOINC_APP_VERSION=$(APP_VERSION)
+VARIANTFLAGS = -DBOINC_APPLICATION -DBOINC_APP_NAME='"$(APP_NAME)"' -DBOINC_APP_VERSION=$(APP_VERSION)
+GPU_FLAGS = -DMWAH_GPU
+CPU_FLAGS = -DMWAH
 
 CXXFLAGS_ALL = $(VARIANTFLAGS) \
 	-g \
@@ -48,7 +50,7 @@ LDFLAGS_x86_64 = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.5.sdk,-arch,x86_64
 
 APP_DIR = ../astronomy
 FGDO_DIR = ..
-SCHED_DIR = $(FGDO_DIR)/evaluation
+EVAL_DIR = $(FGDO_DIR)/evaluation
 SEARCH_DIR = $(FGDO_DIR)/searches
 UTIL_DIR = $(FGDO_DIR)/util
 
@@ -70,25 +72,38 @@ SEARCH_OBJS = \
 UTIL_OBJS = \
 	$(UTIL_DIR)/io_util.o \
 	$(UTIL_DIR)/settings.o
+GPU_APP_OBJS = \
+	$(EVAL_DIR)/simple_evaluator.o \
+	$(SEARCH_DIR)/hessian.o \
+	$(SEARCH_DIR)/gradient.o \
+	$(SEARCH_DIR)/newton_method.o \
+	$(SEARCH_DIR)/line_search.o \
+	$(SEARCH_DIR)/regression.o \
+	$(UTIL_DIR)/matrix.o
 
 PROGS = milkyway_$(APP_VERSION)_powerpc-apple-darwin milkyway_$(APP_VERSION)_i686-apple-darwin milkyway_$(APP_VERSION)_x86_64-apple-darwin
 
 all: $(PROGS)
 
 app_ppc: OBJ_CXX = $(CXX_PPC)
-app_ppc: OBJ_CXXFLAGS = $(CXXFLAGS_PPC)
+app_ppc: OBJ_CXXFLAGS = $(CPU_FLAGS) $(CXXFLAGS_PPC)
 app_ppc: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(BOINC_LIB_LINK_DIR)/libboinc_api.a $(BOINC_LIB_LINK_DIR)/libboinc.a
 	$(CXX_PPC) $(LDFLAGS_PPC) $(CXXFLAGS_PPC) -o milkyway_$(APP_VERSION)_powerpc-apple-darwin $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lboinc -lboinc_api
 
 app_i686: OBJ_CXX = $(CXX_i686)
-app_i686: OBJ_CXXFLAGS = $(CXXFLAGS_i686)
+app_i686: OBJ_CXXFLAGS = $(CPU_FLAGS) $(CXXFLAGS_i686)
 app_i686: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(BOINC_LIB_LINK_DIR)/libboinc_api.a $(BOINC_LIB_LINK_DIR)/libboinc.a
 	$(CXX_i686) $(LDFLAGS_i686) $(CXXFLAGS_i686) -o milkyway_$(APP_VERSION)_i686-apple-darwin $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lboinc -lboinc_api
 
 app_x86_64: OBJ_CXX = $(CXX_x86_64)
-app_x86_64: OBJ_CXXFLAGS = $(CXXFLAGS_x86_64)
+app_x86_64: OBJ_CXXFLAGS = $(CPU_FLAGS) $(CXXFLAGS_x86_64)
 app_x86_64: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(BOINC_LIB_LINK_DIR)/libboinc_api.a $(BOINC_LIB_LINK_DIR)/libboinc.a
 	$(CXX_x86_64) $(LDFLAGS_x86_64) $(CXXFLAGS_x86_64) -o milkyway_$(APP_VERSION)_x86_64-apple-darwin $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lboinc -lboinc_api
+
+app_x86_64_gpu: OBJ_CXX = $(CXX_x86_64)
+app_x86_64_gpu: OBJ_CXXFLAGS = $(GPU_FLAGS) $(CXXFLAGS_x86_64)
+app_x86_64_gpu: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) $(BOINC_LIB_LINK_DIR)/libboinc_api.a $(BOINC_LIB_LINK_DIR)/libboinc.a
+	$(CXX_x86_64) $(LDFLAGS_x86_64) $(CXXFLAGS_x86_64) -o milkyway_$(APP_VERSION)_x86_64-apple-darwin $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc -lboinc_api
 
 .C.o:
 	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(INC) -Wall -c $< -o $@
@@ -97,7 +112,7 @@ app_x86_64: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(BOINC_LIB_LINK_DIR)/libboi
 
 
 clean:
-	rm -f $(SEARCH_OBJS) $(UTIL_OBJS) $(APP_OBJS)
+	rm -f $(SEARCH_OBJS) $(UTIL_OBJS) $(APP_OBJS) $(GPU_APP_OBJS)
 
 clean_all:
 	rm -f $(PROGS) $(SEARCH_OBJS) $(UTIL_OBJS) $(APP_OBJS)

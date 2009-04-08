@@ -24,22 +24,32 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 
-void init_matrix(double ***m, int r, int c);
+extern char MATRIX__ERROR_MSG[1024];
+
+#define MATRIX__MxM_INVALID_MATCH 1
+#define MATRIX__READ_ERROR 2
+
+void new_matrix(double ***m, int r, int c);
 void free_matrix(double ***m, int r, int c);
 
 void copy_matrix(double **m, int r, int c, double **result);
 void copy_matrix__alloc(double **m, int r, int c, double ***result);
 
-void fwrite_matrix(FILE* file, const char* name, double**m, int r, int c);
+int fwrite_matrix(FILE* file, const char* name, double **m, int r, int c);
+int fread_matrix(FILE* file, const char* name, double **m, int r, int c);
+int fread_matrix__alloc(FILE* file, char** name, double ***m, int *r, int *c);
 
 void matrix_transpose__alloc(double** m, int r, int c, double*** result);
 void matrix_transpose__inline(double** m, int r, int c);
 
-void matrix_multiply(double** m1, int r1, int c1, double** m2, int r2, int c2, double*** result);
-void matrix_vector_multiply(double** m2, int r2, int c2, double* m1, int c1, double** result);
-void vector_matrix_multiply(double* m1, int c1, double** m2, int c2, int r2, double** result);
+int matrix_multiply(double** m1, int r1, int c1, double** m2, int r2, int c2, double** result);
+int matrix_multiply__alloc(double** m1, int r1, int c1, double** m2, int r2, int c2, double*** result);
 
-void matrix_invert(double** initial, int rows, int cols, double** inverse);
-void matrix_invert__alloc(double** initial, int rows, int cols, double*** inverse);
+int matrix_vector_multiply(double **m, int r1, int c1, double *v, int r2, double *result);
+int matrix_vector_multiply__alloc(double **m, int r1, int c1, double *v, int r2, double **result);
+
+int matrix_invert(double** initial, int rows, int cols, double** inverse);
+int matrix_invert__alloc(double** initial, int rows, int cols, double*** inverse);
+int matrix_invert__inline(double** initial, int rows, int cols);
 
 #endif

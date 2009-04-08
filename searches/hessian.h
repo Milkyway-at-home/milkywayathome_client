@@ -3,6 +3,7 @@
 
 #include "stdio.h"
 
+void get_hessian__checkpointed(int number_parameters, double *point, double *step, double **hessian, char *checkpoint_file);
 void get_hessian(int number_parameters, double *point, double *step, double **hessian);
 void randomized_hessian(double** actual_points, double* center, double* fitness, int number_points, int number_parameters, double*** hessian, double** gradient);
 

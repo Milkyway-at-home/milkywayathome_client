@@ -25,10 +25,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 
-void print_double_array(FILE *file, const char *array_name, int size, double *array_t);
-void print_int_array(FILE *file, const char *array_name, int size, int *array_t);
+void fwrite_double_array(FILE *file, const char *array_name, int size, double *array_t);
+void fwrite_int_array(FILE *file, const char *array_name, int size, int *array_t);
 
-int read_double_array(FILE *file, const char *array_name, double** array_t);
-int read_int_array(FILE *file, const char *array_name, int **array_t);
+int fread_double_array(FILE *file, const char *array_name, double** array_t);
+int fread_double_array__no_alloc(FILE *file, const char *array_name, int number_parameters, double* array_t);
+int fread_int_array(FILE *file, const char *array_name, int **array_t);
+int fread_int_array__no_alloc(FILE *file, const char *array_name, int number_parameters, int *array_t);
 
 #endif

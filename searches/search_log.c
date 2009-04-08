@@ -10,13 +10,13 @@ FILE* log_open(char *search_name) {
 	return fopen(logfilename, "a");
 }
         
-void log_print_double_array(char *search_name, char* a_name, int a_length, double* a) {
+void log_fwrite_double_array(char *search_name, char* a_name, int a_length, double* a) {
 	FILE *logfile = log_open(search_name);
 	if (logfile == NULL) {
 		printf("ERROR, COULD NOT OPEN LOGFILE");
 		return;
 	}
-	print_double_array(logfile, a_name, a_length, a);
+	fwrite_double_array(logfile, a_name, a_length, a);
 	fclose(logfile);
 }
  

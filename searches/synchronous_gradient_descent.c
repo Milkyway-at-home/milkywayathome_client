@@ -37,12 +37,12 @@ void synchronous_gradient_descent(int number_arguments, char **arguments, int nu
 
 		if (gradient_below_threshold(number_parameters, gradient, min_gradient_threshold)) {
 			printf("Gradient dropped below threshold %.15lf\n", min_gradient_threshold);
-			print_double_array(stdout, "\tgradient:", number_parameters, gradient);
+			fwrite_double_array(stdout, "\tgradient:", number_parameters, gradient);
 			break;
 		}
 
 		retval = line_search(point, point_fitness, gradient, number_parameters, new_point, &point_fitness, &evaluations);
-		print_double_array(stdout, "\tnew point:", number_parameters, new_point);
+		fwrite_double_array(stdout, "\tnew point:", number_parameters, new_point);
 		printf("\tline search took: %d evaluations for new fitness: %.15lf, with result: [%s]\n", evaluations, point_fitness, LS_STR[retval]);
 
 		if (retval != LS_SUCCESS) break;
@@ -96,7 +96,7 @@ void synchronous_conjugate_gradient_descent(int number_arguments, char **argumen
                 get_gradient(number_parameters, point, step, gradient);
 		if (gradient_below_threshold(number_parameters, gradient, min_gradient_threshold)) {
 			printf("Gradient dropped below threshold %.15lf\n", min_gradient_threshold);
-			print_double_array(stdout, "\tgradient:", number_parameters, gradient);
+			fwrite_double_array(stdout, "\tgradient:", number_parameters, gradient);
 
 			break;
 		}
@@ -121,10 +121,10 @@ void synchronous_conjugate_gradient_descent(int number_arguments, char **argumen
 		memcpy(previous_direction, direction, sizeof(double) * number_parameters);
 		memcpy(previous_gradient, gradient, sizeof(double) * number_parameters);
 
-		print_double_array(stdout, "\tconjugate direction: ", number_parameters, direction);
+		fwrite_double_array(stdout, "\tconjugate direction: ", number_parameters, direction);
 
 		retval = line_search(point, point_fitness, direction, number_parameters, new_point, &point_fitness, &evaluations);
-		print_double_array(stdout, "\tnew point:", number_parameters, new_point);
+		fwrite_double_array(stdout, "\tnew point:", number_parameters, new_point);
 		printf("\tline search took: %d evaluations for new fitness: %.15lf, with result: [%s]\n", evaluations, point_fitness, LS_STR[retval]);
 
 		if ((retval != LS_SUCCESS || evaluations < 0) && reset == 0) break;

@@ -1,7 +1,7 @@
 #ifndef GEM_GRADIENT_H
 #define GEM_GRADIENT_H
 
-#include<stdio.h>
+#include <stdio.h>
 
 typedef struct gradient {
 	int iteration;
@@ -16,6 +16,7 @@ typedef struct gradient {
 } GRADIENT;
 
 
+void get_gradient__checkpointed(int number_parameters, double *point, double *step, double *gradient, char *checkpoint_file);
 void get_gradient(int number_parameters, double *point, double *step, double *gradient);
 int gradient_below_threshold(int number_parameters, double* gradient, double threshold);
 

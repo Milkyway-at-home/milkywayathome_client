@@ -6,6 +6,140 @@
 #include "../evaluation/evaluator.h"
 #include "../util/settings.h"
 #include "../util/matrix.h"
+#include "../util/io_util.h"
+
+#ifdef BOINC_APPLICATION
+        #ifdef _WIN32
+                #include "boinc_win.h"
+        #else
+                #include "config.h"
+        #endif
+
+        #ifndef _WIN32
+                #include <cstdio>
+                #include <cctype>
+                #include <cstring>
+                #include <cstdlib>
+                #include <csignal>
+        #endif
+
+        #ifdef BOINC_APP_GRAPHICS
+                #include "graphics_api.h"
+                #include "graphics_lib.h"
+        #endif
+
+        #include "diagnostics.h"
+        #include "util.h"
+        #include "filesys.h"
+        #include "boinc_api.h"
+        #include "mfile.h"
+#endif
+
+int checkpoint_hessian(char *checkpoint_file, int number_parameters, int i, int j, double **hessian) {
+	FILE *file;
+	#ifdef BOINC_APPLICATION 
+		char input_path[512];
+		int retval = boinc_resolve_filename(checkpoint_file, input_path, sizeof(input_path));
+		if (retval) {
+			fprintf(stderr, "APP: error resolving hessian checkpoint file (for write): %d\n", retval);
+			fprintf(stderr, "\tfilename: %s\n", checkpoint_file);
+			fprintf(stderr, "\tresolved input path: %s\n", input_path);
+			return retval;
+		}
+
+		file = boinc_fopen(input_path, "w");
+	#else
+		file = fopen(checkpoint_file, "w");
+	#endif
+	if (file == NULL) {
+		fprintf(stderr, "APP: error reading hessian checkpoint file (for write): data_file == NULL\n");
+		return 1;
+	}
+
+	fprintf(file, "n: %d, i: %d, j: %d\n", number_parameters, i, j);
+	fwrite_matrix(file, "hessian", hessian, number_parameters, number_parameters);
+	fclose(file);
+
+	return 0;
+}
+
+int read_hessian_checkpoint(char *checkpoint_file, int *number_parameters, int *i, int *j, double **hessian) {
+	FILE *file;
+	#ifdef BOINC_APPLICATION 
+		char input_path[512];
+		int retval = boinc_resolve_filename(checkpoint_file, input_path, sizeof(input_path));
+		if (retval) {
+			fprintf(stderr, "APP: error resolving hessian checkpoint file (for read): %d\n", retval);
+			fprintf(stderr, "\tfilename: %s\n", checkpoint_file);
+			fprintf(stderr, "\tresolved input path: %s\n", input_path);
+			return retval;
+		}
+
+		file = boinc_fopen(input_path, "r");
+	#else
+		file = fopen(checkpoint_file, "r");
+	#endif
+	if (file == NULL) {
+		fprintf(stderr, "APP: error reading hessian checkpoint file (for read): data_file == NULL\n");
+		return 1;
+	}
+
+	fscanf(file, "n: %d, i: %d, j: %d\n", number_parameters, i, j);
+	fread_matrix(file, "hessian", hessian, *number_parameters, *number_parameters);
+	fclose(file);
+
+	return 0;
+}
+
+void get_hessian__checkpointed(int number_parameters, double *point, double *step, double **hessian, char *checkpoint_file) {
+	int i, j, np;
+	double e1, e2, e3, e4;
+	double pi, pj;
+
+	read_hessian_checkpoint(checkpoint_file, &np, &i, &j, hessian);
+
+	for (i = 0; i < number_parameters; i++) {
+		for (j = 0; j < number_parameters; j++) {
+			pi = point[i];
+			pj = point[j];
+			if (i == j) {
+				point[i] = pi + step[i] + step[i];
+				e1 = evaluate(point);
+				point[i] = pi;
+				e2 = e3 = evaluate(point);
+				point[i] = pi - (step[i] + step[i]); 
+				e4 = evaluate(point);
+			} else {
+				point[i] = pi + step[i];
+				point[j] = pj + step[j];
+				e1 = evaluate(point);
+
+				point[i] = pi - step[i];
+				e2 = evaluate(point);
+
+				point[i] = pi + step[i];
+				point[j] = pj - step[j];
+				e3 = evaluate(point);
+
+				point[i] = pi - step[i];
+				e4 = evaluate(point);
+			}
+			point[i] = pi;
+			point[j] = pj;
+
+			hessian[i][j] = (e1 - e3 - e2 + e4)/(4 * step[i] * step[j]);
+			printf("\t\thessian[%d][%d]: %.20lf, (%.20lf - %.20lf - %.20lf + %.20lf)/(4 * %.20lf * %.20lf)\n", i, j, hessian[i][j], e1, e3, e2, e4, step[i], step[j]);
+
+			#ifdef BOINC_APPLICATION
+				if (boinc_time_to_checkpoint()) {
+					checkpoint_hessian(checkpoint_file, number_parameters, i, j, hessian);
+				}
+			#else
+				checkpoint_hessian(checkpoint_file, number_parameters, i, j, hessian);
+			#endif
+		}
+	}
+}
 
 void get_hessian(int number_parameters, double *point, double *step, double **hessian) {
 	int i, j;
@@ -32,7 +166,7 @@ void get_hessian(int number_parameters, double *point, double *step, double **he
 				e2 = evaluate(point);
 
 				point[i] = pi + step[i];
-				point[j] = pi - step[j];
+				point[j] = pj - step[j];
 				e3 = evaluate(point);
 
 				point[i] = pi - step[i];
@@ -95,10 +229,10 @@ void randomized_hessian(double** actual_points, double* center, double* fitness,
 	}
 
         matrix_transpose__alloc(X, number_points, x_len, &X_transpose);
-        matrix_multiply(X_transpose, x_len, number_points, X, number_points, x_len, &X2);
+        matrix_multiply__alloc(X_transpose, x_len, number_points, X, number_points, x_len, &X2);
 	matrix_invert__alloc(X2, x_len, x_len, &X_inverse);
-        matrix_multiply(X_inverse, x_len, x_len, X_transpose, x_len, number_points, &X3);
-	matrix_multiply(X3, x_len, number_points, Y, number_points, 1, &W);
+        matrix_multiply__alloc(X_inverse, x_len, x_len, X_transpose, x_len, number_points, &X3);
+	matrix_multiply__alloc(X3, x_len, number_points, Y, number_points, 1, &W);
 
 
 	(*gradient) = (double*)malloc(sizeof(double) * number_parameters);

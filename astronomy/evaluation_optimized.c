@@ -23,7 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
         *       BOINC includes
 *****/
 
-#ifdef GMLE_BOINC
+#ifdef BOINC_APPLICATION 
 	#ifdef _WIN32
 		#include "boinc_win.h"
 	#else
@@ -280,7 +280,7 @@ double calculate_progress(EVALUATION_STATE *s) {
 	return (double)current_calc_probs / (double)total_calc_probs;
 }
 
-#ifdef GMLE_BOINC
+#ifdef MWAH
 	void do_boinc_checkpoint(EVALUATION_STATE *es) {
 		if (boinc_time_to_checkpoint()) {
 			int retval = write_checkpoint(es);
@@ -333,7 +333,7 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 		double mu = ia->mu_min + (mu_step_current * ia->mu_step_size);
 
 		for (; nu_step_current < ia->nu_steps; nu_step_current++) {
-			#ifdef GMLE_BOINC
+			#ifdef MWAH
 				do_boinc_checkpoint(es);
 			#endif
 
@@ -386,7 +386,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 //	time_t start_time, finish_time;
 //	time(&start_time);
 
-	#ifdef GMLE_BOINC
+	#ifdef MWAH
 		read_checkpoint(es);
 	#endif
 
@@ -435,7 +435,7 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
 
 	for (; es->current_star_point < sp->number_stars; es->current_star_point++) {
 		double star_prob;
-		#ifdef GMLE_BOINC
+		#ifdef MWAH
 			do_boinc_checkpoint(es);
 		#endif
 

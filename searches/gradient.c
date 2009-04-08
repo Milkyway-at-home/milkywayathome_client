@@ -5,6 +5,115 @@
 #include "gradient.h"
 #include "../evaluation/evaluator.h"
 #include "../util/settings.h"
+#include "../util/io_util.h"
+
+#ifdef BOINC_APPLICATION
+        #ifdef _WIN32
+                #include "boinc_win.h"
+        #else
+                #include "config.h"
+        #endif
+
+        #ifndef _WIN32
+                #include <cstdio>
+                #include <cctype>
+                #include <cstring>
+                #include <cstdlib>
+                #include <csignal>
+        #endif
+
+        #ifdef BOINC_APP_GRAPHICS
+                #include "graphics_api.h"
+                #include "graphics_lib.h"
+        #endif
+
+        #include "diagnostics.h"
+        #include "util.h"
+        #include "filesys.h"
+        #include "boinc_api.h"
+        #include "mfile.h"
+#endif
+
+int checkpoint_gradient(char *checkpoint_file, int number_parameters, int j, double *gradient) {
+	FILE *file;
+	#ifdef BOINC_APPLICATION 
+		char input_path[512];
+		int retval = boinc_resolve_filename(checkpoint_file, input_path, sizeof(input_path));
+		if (retval) {
+			fprintf(stderr, "APP: error resolving hessian checkpoint file (for write): %d\n", retval);
+			fprintf(stderr, "\tfilename: %s\n", checkpoint_file);
+			fprintf(stderr, "\tresolved input path: %s\n", input_path);
+			return retval;
+		}
+
+		file = boinc_fopen(input_path, "w");
+	#else
+		file = fopen(checkpoint_file, "w");
+	#endif
+	if (file == NULL) {
+		fprintf(stderr, "APP: error reading hessian checkpoint file (for write): data_file == NULL\n");
+		return 1;
+	}
+
+	fprintf(file, "n: %d, j: %d\n", number_parameters, j);
+	fwrite_double_array(file, "gradient", number_parameters, gradient);
+	fclose(file);
+	return 0;
+}
+
+int read_gradient_checkpoint(char *checkpoint_file, int number_parameters, int *j, double *gradient) {
+	FILE *file;
+	#ifdef BOINC_APPLICATION 
+		char input_path[512];
+		int retval = boinc_resolve_filename(checkpoint_file, input_path, sizeof(input_path));
+		if (retval) {
+			fprintf(stderr, "APP: error resolving hessian checkpoint file (for write): %d\n", retval);
+			fprintf(stderr, "\tfilename: %s\n", checkpoint_file);
+			fprintf(stderr, "\tresolved input path: %s\n", input_path);
+			return retval;
+		}
+
+		file = boinc_fopen(input_path, "r");
+	#else
+		file = fopen(checkpoint_file, "r");
+	#endif
+	if (file == NULL) {
+		fprintf(stderr, "APP: error reading hessian checkpoint file (for write): data_file == NULL\n");
+		return 1;
+	}
+
+	fscanf(file, "n: %d, j: %d\n", &number_parameters, j);
+	fread_double_array__no_alloc(file, "gradient", number_parameters, gradient);
+	fclose(file);
+	return 0;
+}
+
+void get_gradient__checkpointed(int number_parameters, double *point, double *step, double *gradient, char *checkpoint_file) {
+	int j;
+	double e1, e2, pj;
+
+	read_gradient_checkpoint(checkpoint_file, number_parameters, &j, gradient);
+
+	for (j = 0; j < number_parameters; j++) {
+		pj = point[j];
+		point[j] = pj + step[j];
+		e1 = evaluate(point);
+		point[j] = pj - step[j];
+		e2 = evaluate(point);
+		point[j] = pj;
+
+		gradient[j] = (e1 - e2)/(step[j] + step[j]);
+		printf("\t\tgradient[%d]: %.20lf, (%.20lf - %.20lf)/(2 * %lf)\n", j, gradient[j], e1, e2, step[j]);
+		
+		#ifdef BOINC_APPLICATION
+			if (boinc_time_to_checkpoint()) {
+				checkpoint_gradient(checkpoint_file, number_parameters, j, gradient);
+			}
+		#else
+			checkpoint_gradient(checkpoint_file, number_parameters, j, gradient);
+		#endif
+	}
+}
 
 void get_gradient(int number_parameters, double *point, double *step, double *gradient) {
 	int j;
