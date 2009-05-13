@@ -1,0 +1,102 @@
+#include <math.h>
+#include <stdlib.h>
+
+#include "pi_constants.h"
+#include "gauss_legendre.h"
+#include "r_constants.h"
+
+#include "../astronomy/parameters.h"
+
+void cpu__reff_gPrime(int r_steps, double r_min, double r_step_size, double mu_step_size, double *cpu__gPrime, double *cpu__reff_xr_rp3_irv) {
+	int i;
+	double log_r, r, next_r, coords, gp, exp_result, reff_value, rPrime3, irv;
+
+	for (i = 0; i < r_steps; i++) {
+		log_r = r_min + (i * r_step_size);
+		r = pow(10.0, (log_r - 14.2)/5.0);
+		next_r = pow(10.0, (log_r - 14.2 + r_step_size)/5.0);
+		coords = (next_r + r)/2.0;
+		gp = 5.0 * (log10(coords * 1000) - 1.0) + d_absm;
+
+		irv = (((next_r * next_r * next_r) - (r * r * r))/3.0) * mu_step_size * D_DEG2RAD;
+
+		cpu__gPrime[i] = gp;
+
+		exp_result = exp(sigmoid_curve_1 * (gp - sigmoid_curve_2));
+		reff_value = sigmoid_curve_0 / (exp_result + 1);
+		rPrime3 = coords * coords * coords;
+		cpu__reff_xr_rp3_irv[i] = irv * reff_value * d_xr / rPrime3;
+	}
+}
+
+void cpu__r_qw(int r_steps, int n_convolve, double coeff, double *dx, double *qgaus_W, double *gPrime, double *r_point, double *qw_r3_N) {
+	int i, j, position;
+	double g, rp, r3, exponent, N;
+
+	for (i = 0; i < r_steps; i++) {
+		for (j = 0; j < n_convolve; j++) {
+			position = (i * n_convolve) + j;
+
+			g = gPrime[i] + dx[j];
+			rp = pow(10.0, (g - d_absm)/5.0 + 1.0) / 1000.0;
+
+			r_point[position] = rp;
+
+			r3 = rp * rp * rp;
+			exponent = (dx[j] * dx[j]) / (2 * d_stdev * d_stdev);
+			N = coeff * exp(-exponent);
+
+			qw_r3_N[position] = qgaus_W[j] * r3 * N;
+		}
+	}
+}
+
+void cpu__reff_V(int nu_steps, double nu_min, double nu_step_size, int r_steps, double *reff_xr_rp3_irv, double *V) {
+	int i, j;
+
+	double nu, ids;
+	for (i = 0; i < nu_steps; i++) {
+		nu = nu_min + (i * nu_step_size);
+		ids = cos((90 - nu - nu_step_size) * D_DEG2RAD) - cos((90 - nu) * D_DEG2RAD);
+
+		for (j = 0; j < r_steps; j++) {
+			V[(i * r_steps) + j] = reff_xr_rp3_irv[j] * ids;
+		}
+	}
+}
+
+void cpu__r_constants(int n_convolve, INTEGRAL *integral, double **cpu__V, double **cpu__r_point, double **cpu__qw_r3_N) {
+        int i;
+        double *cpu__gPrime, *cpu__reff_xr_rp3_irv;
+
+	cpu__reff_xr_rp3_irv = (double*)malloc(integral->r_steps * sizeof(double));
+	cpu__gPrime = (double*)malloc(integral->r_steps * sizeof(double));
+
+	cpu__reff_gPrime(integral->r_steps, integral->r_min, integral->r_step_size, integral->mu_step_size, cpu__gPrime, cpu__reff_xr_rp3_irv);
+
+	*cpu__V = (double*)malloc(integral->nu_steps * integral->r_steps * sizeof(double));
+	cpu__reff_V(integral->nu_steps, integral->nu_min, integral->nu_step_size, integral->r_steps, cpu__reff_xr_rp3_irv, *cpu__V);
+
+	*cpu__r_point = (double*)malloc(integral->r_steps * n_convolve * sizeof(double));
+	*cpu__qw_r3_N = (double*)malloc(integral->r_steps * n_convolve * sizeof(double));
+
+        double *host__qgaus_W = (double*)malloc(n_convolve * sizeof(double));
+        double *host__qgaus_X = (double*)malloc(n_convolve * sizeof(double));
+        double *host__dx = (double*)malloc(n_convolve * sizeof(double));
+
+        d_gauss_legendre(-1.0, 1.0, host__qgaus_X, host__qgaus_W, n_convolve);
+        for (i = 0; i < n_convolve; i++) {
+                host__dx[i] = 3 * d_stdev * host__qgaus_X[i];
+        }
+
+        double coeff = 1.0 / (d_stdev * sqrt(2.0 * D_PI));
+	cpu__r_qw(integral->r_steps, n_convolve, coeff, host__dx, host__qgaus_W, cpu__gPrime, *cpu__r_point, *cpu__qw_r3_N);
+
+	free(cpu__reff_xr_rp3_irv);
+        free(cpu__gPrime);
+        free(host__qgaus_W);
+        free(host__qgaus_X);
+        free(host__dx);
+}
+
+
