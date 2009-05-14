@@ -70,7 +70,7 @@ void errors(char* filename, double* point, double* step, int number_parameters, 
 	printf("\nErrors: q, r0, epsilon, mu, r, theta, phi, sigma\n");
 	fprintf(file,"\nErrors: q, r0, epsilon, mu, r, theta, phi, sigma\n");
 	for (i = 0; i < number_parameters; i++) {
-		stdDevs[i] = sqrt(sigma[i][i]);
+		stdDevs[i] = sqrt(fabs(sigma[i][i]));
 		printf(" %lf", stdDevs[i]);
                 fprintf(file, " %lf", stdDevs[i]);
 	}
