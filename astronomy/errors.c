@@ -44,7 +44,7 @@ void errors(char* filename, double* point, double* step, int number_parameters, 
         file = fopen(filename, "w");
 
         printf("Calculating hessian...\n");
-	init_matrix(&hessian, number_parameters, number_parameters);
+	new_matrix(&hessian, number_parameters, number_parameters);
 	get_hessian(number_parameters, point, step, hessian);
 
 	matrix_print(stdout, "hessian", hessian, number_parameters, number_parameters);
