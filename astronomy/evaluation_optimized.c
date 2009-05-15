@@ -125,10 +125,6 @@ void init_constants(ASTRONOMY_PARAMETERS *ap) {
 		stream_a[i][0] = sin(ap->stream_parameters[i][2]) * cos(ap->stream_parameters[i][3]);
 		stream_a[i][1] = sin(ap->stream_parameters[i][2]) * sin(ap->stream_parameters[i][3]);
 		stream_a[i][2] = cos(ap->stream_parameters[i][2]);
-
-		printf("stream_sigma_sq2: %.15lf\n", stream_sigma_sq2[i]);
-		printf("stream parameters[%d]: %.15lf %.15lf %.15lf %.15lf %.15lf\n", i, ap->stream_parameters[i][0], ap->stream_parameters[i][1], ap->stream_parameters[i][2], ap->stream_parameters[i][3], ap->stream_parameters[i][4]);
-		printf("stream_a[%d]: %.25lf %.25lf %.25lf, stream_c[%d]: %.25lf %.25lf %.25lf\n", i, stream_a[i][0], stream_a[i][1], stream_a[i][2], i, stream_c[i][0], stream_c[i][1], stream_c[i][2]);
 	}
 
 	xyz		= (double**)malloc(sizeof(double*) * ap->convolve);
@@ -374,12 +370,12 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 	}
 	mu_step_current = 0;
 
-	printf("bg_int: %.15lf ", ia->background_integral);
-	for (i = 0; i < ap->number_streams; i++) printf("st_int[%d]: %.15lf ", i, ia->stream_integrals[i]);
-	printf("\n");
+//	printf("bg_int: %.15lf ", ia->background_integral);
+//	for (i = 0; i < ap->number_streams; i++) printf("st_int[%d]: %.15lf ", i, ia->stream_integrals[i]);
+//	printf("\n");
 
 
-	if (1) exit(0);
+//	if (1) exit(0);
 	free(nus);
 	free(ids);
 	free(irv);
