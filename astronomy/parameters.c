@@ -90,11 +90,24 @@ void free_parameters(ASTRONOMY_PARAMETERS* ap) {
 }
 
 int read_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS *ap) {
+#ifdef BOINC_APPLICATION 
+	char input_path[512];
+	int retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
+
+	if (retval) {
+		fprintf(stderr, "APP: error resolving parameters file [%s], %d\n", filename, retval);
+		return retval;
+	}
+
+	FILE* data_file = boinc_fopen(input_path, "r");
+#else
 	FILE* data_file = fopen(filename, "r");
+#endif
 	if (!data_file) {
 		fprintf(stderr, "Couldn't find input file [%s] to read astronomy parameters.\n", filename);
 		return 1;
 	}
+
 	fread_astronomy_parameters(data_file, ap);
 	fclose(data_file);
 	return 0;
@@ -390,49 +403,6 @@ void split_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, int rank, int max_rank
 		printf("[worker: %d] [integral: %d] min_calculation: %ld / max_calculation: %ld, total_calculations: %ld\n", rank, i, ap->integral[i]->min_calculation, ap->integral[i]->max_calculation, total_calculations);
 	}	
 }
-
-#ifdef BOINC_APPLICATION 
-	int boinc_read_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS *ap) {
-		char input_path[512];
-		int retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
-
-		if (retval) {
-			fprintf(stderr, "APP: error resolving parameters file [%s], %d\n", filename, retval);
-			return retval;
-		}
-
-		FILE* data_file = boinc_fopen(input_path, "r");
-		if (!data_file) {
-			fprintf(stderr, "Couldn't find input file [%s] to read astronomy parameters.\n", filename);
-			return 1;
-		}
-
-		fread_astronomy_parameters(data_file, ap);
-		fclose(data_file);
-		return 0;
-	}
-
-	int boinc_write_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS *ap) {
-		char input_path[512];
-		int retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
-
-		if (retval) {
-			fprintf(stderr, "APP: error writing astronomy parameters [%s], %d\n", filename, retval);
-			return retval;
-		}
-
-		FILE* data_file = boinc_fopen(input_path, "w");
-		if (!data_file) {
-			fprintf(stderr, "Couldn't find output file [%s] to write astronomy parameters.\n", filename);
-			return 1;
-		}
-
-		fwrite_astronomy_parameters(data_file, ap);
-		fclose(data_file);
-		return 0;
-	}
-
-#endif
 
 
 #ifdef ASTRONOMY_PARAMETERS_MAIN

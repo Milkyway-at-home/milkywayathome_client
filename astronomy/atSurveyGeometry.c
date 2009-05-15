@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdio.h>
 #include <math.h>
 #include <string.h>
 #include "atSurveyGeometry.h"
@@ -50,13 +51,15 @@ void atGCToEq (
   y1 = y2*cos(ainc) - z2*sin(ainc);
   z1 = y2*sin(ainc) + z2*cos(ainc);
 
+//  printf("amu: %.15g, anu: %.15g, anode: %.15g, ainc: %.15g, x2: %.15g, y2: %.15g, z2: %.15g, y1: %.15g, z1: %.15g\n", amu, anu, anode, ainc, x2, y2, z2, y1, z1);
+
   *ra = atan2 (y1, x1)+anode;
   *dec = asin(z1);
   /* Convert back to degrees */
   *ra = *ra * at_rad2Deg;
   *dec = *dec * at_rad2Deg;
 
-//  printf("atGCToEq finish: ra: %g, dec: %g\n",*ra, *dec);
+//  printf("ra: %g, dec: %g\n", *ra, *dec);
 
   atBound2(dec, ra);
   return;

@@ -252,7 +252,7 @@ void free_state(EVALUATION_STATE* es) {
 	        }
 
 		if (1 > fscanf(file, "background_integral: %lf\n", &(es->background_integral))) return 1;
-		es->number_streams = read_double_array(file, "stream_integrals", &(es->stream_integrals));
+		es->number_streams = fread_double_array(file, "stream_integrals", &(es->stream_integrals));
 
 		fscanf(file, "prob_sum: %lf, num_zero: %d, bad_jacobians: %d\n", &(es->prob_sum), &(es->num_zero), &(es->bad_jacobians));
 		fscanf(file, "current_star_point: %d\n", &(es->current_star_point));

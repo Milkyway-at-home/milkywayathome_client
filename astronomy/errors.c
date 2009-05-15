@@ -47,13 +47,13 @@ void errors(char* filename, double* point, double* step, int number_parameters, 
 	new_matrix(&hessian, number_parameters, number_parameters);
 	get_hessian(number_parameters, point, step, hessian);
 
-	matrix_print(stdout, "hessian", hessian, number_parameters, number_parameters);
-	matrix_print(file, "hessian", hessian, number_parameters, number_parameters);
+	fwrite_matrix(stdout, "hessian", hessian, number_parameters, number_parameters);
+	fwrite_matrix(file, "hessian", hessian, number_parameters, number_parameters);
         fprintf(file, "\n");
 
         printf("\nInverting hessian to get SIGMA...\n");
 	printf("Number of stars: %d\n", number_stars);
-        matrix_invert(hessian, number_parameters, number_parameters, &sigma);
+        matrix_invert__alloc(hessian, number_parameters, number_parameters, &sigma);
         printf("SIGMA:\n");
 	fprintf(file, "SIGMA:\n");
         for (i = 0; i < number_parameters; i++) {

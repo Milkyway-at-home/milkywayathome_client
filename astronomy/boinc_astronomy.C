@@ -65,10 +65,14 @@ using std::string;
  ********/
 #include "parameters.h"
 #include "star_points.h"
-#include "evaluation_optimized.h"
+#include "evaluation_state.h"
 #include "../searches/search_parameters.h"
+#include "../searches/result.h"
 
 #ifdef MWAH_GPU
+//	#include "evaluation_gpu.h"
+	#include "evaluation_optimized.h"
+
 	#include "../evaluation/simple_evaluator.h"
 	#include "../searches/hessian.h"
 	#include "../searches/gradient.h"
@@ -79,6 +83,8 @@ using std::string;
 
 	#define hessian_checkpoint_file "hessian_checkpoint"
 	#define gradient_checkpoint_file "gradient_checkpoint"
+#else
+	#include "evaluation_optimized.h"
 #endif
 
 #ifdef _WIN32
@@ -124,18 +130,12 @@ double astronomy_evaluate(double *parameters) {
 	return es->prob_sum / (sp->number_stars - es->bad_jacobians);
 }
 
-#ifdef MWAH_GPU
-	void write_gpu_result(int number_parameters, double *parameters, double likelihood, double **hessian, double *gradient, double *minimum, double minimum_fitness, int evaluations_done, char *metadata) {
-
-	}
-#endif
-
 void worker() {
 	/********
 		*	READ THE ASTRONOMY PARAMETERS
 	 ********/
 	ap = (ASTRONOMY_PARAMETERS*)malloc(sizeof(ASTRONOMY_PARAMETERS));
-	int retval = boinc_read_astronomy_parameters(ASTRONOMY_PARAMETER_FILENAME, ap);
+	int retval = read_astronomy_parameters(ASTRONOMY_PARAMETER_FILENAME, ap);
 	if (retval) {
 		fprintf(stderr, "APP: error reading astronomy parameters: %d\n", retval);
 		boinc_finish(1);
@@ -146,7 +146,7 @@ void worker() {
 		*	READ THE STAR POINTS
 	 ********/
 	sp = (STAR_POINTS*)malloc(sizeof(STAR_POINTS));
-	retval = boinc_read_star_points(STAR_POINTS_FILENAME, sp);
+	retval = read_star_points(STAR_POINTS_FILENAME, sp);
 	if (retval) {
 		fprintf(stderr, "APP: error reading star points: %d\n", retval);
 		boinc_finish(1);
@@ -164,7 +164,7 @@ void worker() {
 		*	READ AND SET THE SEARCH PARAMETERS
 	 ********/
 	init_search_parameters(&s, get_optimized_parameter_count(ap));
-	retval = boinc_read_search_parameters(SEARCH_PARAMETER_FILENAME, s);
+	retval = read_search_parameters(SEARCH_PARAMETER_FILENAME, s);
 //	fwrite_search_parameters(stdout, s);
 	set_astronomy_parameters(ap, s->parameters);
 //	printf("read search parameters\n");
@@ -202,7 +202,7 @@ void worker() {
 	//hessian calculation
 	evaluations_done += 4 * (s->number_parameters * s->number_parameters) - s->number_parameters;
 
-	write_gpu_result(s->number_parameters, s->parameters, likelihood, hessian, gradient, minimum, minimum_fitness, evaluations_done, s->metadata);
+	write_gpu_result(OUTPUT_FILENAME, s->number_parameters, hessian, gradient, likelihood, s->parameters, minimum_fitness, minimum, evaluations_done, s->metadata);
 
 	free_matrix(&hessian, s->number_parameters, s->number_parameters);
 	free(gradient);
@@ -215,7 +215,7 @@ void worker() {
 	/********
 		*	RESOLVE THE OUTPUT FILE & WRITE THE RESULT
 	 ********/
-	boinc_write_search_parameters(OUTPUT_FILENAME, s, likelihood);
+	write_cpu_result(OUTPUT_FILENAME, s->number_parameters, s->parameters, likelihood, s->metadata);
 #endif
 
 	free_state(es);
@@ -262,4 +262,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.11 2009/04/08 19:14:33 deselt Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.12 2009/05/15 16:19:53 deselt Exp $";

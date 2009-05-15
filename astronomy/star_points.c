@@ -58,7 +58,18 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 int read_star_points(const char* filename, STAR_POINTS* sp) {
 	int retval;
+#ifdef BOINC_APPLICATION
+	char input_path[512];
+	retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
+		if (retval) {
+		fprintf(stderr, "APP: error resolving star points file %d\n", retval);
+		return retval;
+	}
+
+	FILE* data_file = boinc_fopen(input_path, "r");
+#else
 	FILE* data_file = fopen(filename, "r");
+#endif
 
 	if (!data_file) {
 		fprintf(stderr, "Couldn't find input file %s.\n", filename);
@@ -138,19 +149,3 @@ void split_star_points(STAR_POINTS* sp, int rank, int max_rank) {
 
 //	printf("[worker: %d] using [%d/%d] stars\n", rank, sp->number_stars, total_stars);
 }
-
-#ifdef BOINC_APPLICATION
-	int boinc_read_star_points(const char* filename, STAR_POINTS* sp) {
-		char input_path[512];
-		int retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
-			if (retval) {
-			fprintf(stderr, "APP: error resolving star points file %d\n", retval);
-			return retval;
-		}
-
-		FILE* data_file = boinc_fopen(input_path, "r");
-		retval = fread_star_points(data_file, sp);
-		fclose(data_file);
-		return retval;
-	}
-#endif
