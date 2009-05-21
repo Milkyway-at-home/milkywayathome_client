@@ -200,7 +200,7 @@ void free_state(EVALUATION_STATE* es) {
 	free(es->integral);
 }
 
-#ifdef MWAH 
+#ifdef MILKYWAY 
 	int write_checkpoint(EVALUATION_STATE* es) {
 		int i, retval;
 		char output_path[512];

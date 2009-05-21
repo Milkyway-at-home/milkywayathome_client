@@ -99,36 +99,42 @@ void get_hessian__checkpointed(int number_parameters, double *point, double *ste
 	read_hessian_checkpoint(checkpoint_file, &np, &i, &j, hessian);
 
 	for (i = 0; i < number_parameters; i++) {
-		for (j = 0; j < number_parameters; j++) {
+		pi = point[i];
+		pj = point[j];
+		point[i] = pi + step[i] + step[i];
+		e1 = evaluate(point);
+		point[i] = pi;
+		e2 = e3 = evaluate(point);
+		point[i] = pi - (step[i] + step[i]); 
+		e4 = evaluate(point);
+		point[i] = pi;
+		point[j] = pj;
+
+		hessian[i][i] = (e1 - e3 - e2 + e4)/(4 * step[i] * step[i]);
+		printf("\t\thessian[%d][%d] = %.20lf, (%.20lf - %.20lf - %.20lf + %.20lf)/(4 * %.20lf * %.20lf)\n", i, i, hessian[i][i], e1, e3, e2, e4, step[i], step[j]);
+
+		for (j = i+1; j < number_parameters; j++) {
 			pi = point[i];
 			pj = point[j];
-			if (i == j) {
-				point[i] = pi + step[i] + step[i];
-				e1 = evaluate(point);
-				point[i] = pi;
-				e2 = e3 = evaluate(point);
-				point[i] = pi - (step[i] + step[i]); 
-				e4 = evaluate(point);
-			} else {
-				point[i] = pi + step[i];
-				point[j] = pj + step[j];
-				e1 = evaluate(point);
+			point[i] = pi + step[i];
+			point[j] = pj + step[j];
+			e1 = evaluate(point);
 
-				point[i] = pi - step[i];
-				e2 = evaluate(point);
+			point[i] = pi - step[i];
+			e2 = evaluate(point);
 
-				point[i] = pi + step[i];
-				point[j] = pj - step[j];
-				e3 = evaluate(point);
+			point[i] = pi + step[i];
+			point[j] = pj - step[j];
+			e3 = evaluate(point);
 
-				point[i] = pi - step[i];
-				e4 = evaluate(point);
-			}
+			point[i] = pi - step[i];
+			e4 = evaluate(point);
 			point[i] = pi;
 			point[j] = pj;
 
 			hessian[i][j] = (e1 - e3 - e2 + e4)/(4 * step[i] * step[j]);
-			printf("\t\thessian[%d][%d]: %.20lf, (%.20lf - %.20lf - %.20lf + %.20lf)/(4 * %.20lf * %.20lf)\n", i, j, hessian[i][j], e1, e3, e2, e4, step[i], step[j]);
+			hessian[j][i] = hessian[i][j];
+			printf("\t\thessian[%d][%d] = hessian[%d][%d] = %.20lf, (%.20lf - %.20lf - %.20lf + %.20lf)/(4 * %.20lf * %.20lf)\n", i, j, j, i, hessian[i][j], e1, e3, e2, e4, step[i], step[j]);
 
 			#ifdef BOINC_APPLICATION
 				if (boinc_time_to_checkpoint()) {

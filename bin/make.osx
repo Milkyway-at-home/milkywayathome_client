@@ -8,8 +8,8 @@ BOINC_LIB_LINK_DIR = $(BOINC_DIR)/mac_build/build/Deployment
 FRAMEWORKS_DIR = /System/Library/Frameworks
 
 VARIANTFLAGS = -DBOINC_APPLICATION -DBOINC_APP_NAME='"$(APP_NAME)"' -DBOINC_APP_VERSION=$(APP_VERSION)
-GPU_FLAGS = -DMWAH_GPU
-CPU_FLAGS = -DMWAH
+GPU_FLAGS = -DMILKYWAY_GPU -DCOMPUTE_ON_GPU
+CPU_FLAGS = -DMILKYWAY -DCOMPUTE_ON_CPU
 
 CXXFLAGS_ALL = $(VARIANTFLAGS) \
 	-g \
@@ -68,11 +68,14 @@ APP_OBJS = \
 	$(APP_DIR)/evaluation_optimized.o \
 	$(APP_DIR)/evaluation_state.o
 SEARCH_OBJS = \
-	$(SEARCH_DIR)/search_parameters.o
+	$(SEARCH_DIR)/search_parameters.o \
+	$(SEARCH_DIR)/result.o
 UTIL_OBJS = \
+	$(UTIL_DIR)/matrix.o \
 	$(UTIL_DIR)/io_util.o \
 	$(UTIL_DIR)/settings.o
 GPU_APP_OBJS = \
+	$(GPU_DIR)/likelihood.cu \
 	$(EVAL_DIR)/simple_evaluator.o \
 	$(SEARCH_DIR)/hessian.o \
 	$(SEARCH_DIR)/gradient.o \

@@ -69,11 +69,16 @@ using std::string;
 #include "../searches/search_parameters.h"
 #include "../searches/result.h"
 
-#ifdef MWAH_GPU
-//	#include "evaluation_gpu.h"
-	#include "evaluation_optimized.h"
+#ifdef MILKYWAY_GPU
+	#ifdef COMPUTE_ON_GPU
+		#include "../astronomy_gpu/evaluation_gpu.h"
+	#endif
+	#ifdef COMPUTE_ON_CPU
+		#include "evaluation_optimized.h"
+	#endif
 
 	#include "../evaluation/simple_evaluator.h"
+	#include "../evaluation/evaluator.h"
 	#include "../searches/hessian.h"
 	#include "../searches/gradient.h"
 	#include "../searches/newton_method.h"
@@ -102,6 +107,7 @@ STAR_POINTS *sp;
 EVALUATION_STATE *es;
 SEARCH_PARAMETERS *s;
 
+#ifdef COMPUTE_ON_CPU
 double astronomy_evaluate(double *parameters) {
 	int retval;
 	/**
@@ -129,6 +135,8 @@ double astronomy_evaluate(double *parameters) {
 	}
 	return es->prob_sum / (sp->number_stars - es->bad_jacobians);
 }
+#endif
+
 
 void worker() {
 	/********
@@ -169,19 +177,25 @@ void worker() {
 	set_astronomy_parameters(ap, s->parameters);
 //	printf("read search parameters\n");
 
-#ifdef MWAH_GPU
+#ifdef MILKYWAY_GPU
 	double **hessian, *gradient, *direction, *step;
 	double minimum_fitness, *minimum;
 	double likelihood;
 	int result, evaluations_done;
 
-	init_simple_evaluator(astronomy_evaluate);
+	#ifdef COMPUTE_ON_CPU
+		init_simple_evaluator(astronomy_evaluate);
+	#endif
+	#ifdef COMPUTE_ON_GPU
+		gpu__initialize(ap, sp);
+		init_simple_evaluator(gpu__likelihood);
+	#endif
 	get_step(ap, &step);
 
 	fwrite_double_array(stdout, "step", s->number_parameters, step);
 	fwrite_double_array(stdout, "point", s->number_parameters, s->parameters);
 
-	likelihood = astronomy_evaluate(s->parameters);
+	likelihood = evaluate(s->parameters);
 	fprintf(stdout, "likelihood: %lf\n", likelihood);
 
 	new_matrix(&hessian, s->number_parameters, s->number_parameters);
@@ -203,6 +217,10 @@ void worker() {
 	evaluations_done += 4 * (s->number_parameters * s->number_parameters) - s->number_parameters;
 
 	write_gpu_result(OUTPUT_FILENAME, s->number_parameters, hessian, gradient, likelihood, s->parameters, minimum_fitness, minimum, evaluations_done, s->metadata);
+
+	#ifdef COMPUTE_ON_GPU
+		gpu__free_constants();
+	#endif
 
 	free_matrix(&hessian, s->number_parameters, s->number_parameters);
 	free(gradient);
@@ -262,4 +280,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.12 2009/05/15 16:19:53 deselt Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.13 2009/05/21 23:09:44 deselt Exp $";

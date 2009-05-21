@@ -155,7 +155,7 @@ void free_constants(ASTRONOMY_PARAMETERS *ap) {
 	free(qgaus_X);
 	free(qgaus_W);
 	free(dx);
-	for (i = 0; i < ap->number_streams; i++) {
+	for (i = 0; i < ap->convolve`; i++) {
 		free(xyz[i]);
 	}
 	free(xyz);
@@ -200,6 +200,8 @@ void calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp
         cosb = cos(integral_point[1] / deg);
         cosl = cos(integral_point[0] / deg);
 
+//	printf("sinb: %.15f sinl: %.15f cosb: %.15f cosl: %.15f\n", sinb, sinl, cosb, cosl);
+
 	/* if q is 0, there is no probability */
 	if (q == 0) {
 		(*bg_prob) = -1;
@@ -216,6 +218,8 @@ void calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp
 				rs = rg + r0;
 
 				(*bg_prob) += qw_r3_N[i] / (rg * rs * rs * rs);
+
+//				printf("reff_xr_rp3: %.15lf r_point: %.15lf rg: %.15lf rs: %.15lf qw_r3_N: %.15lf bg_int: %.15lf\n", reff_xr_rp3, r_point[i], rg, rs, qw_r3_N[i], (*bg_prob));
 			}
 		} else {
 			for (i = 0; i < ap->convolve; i++) {
@@ -229,7 +233,7 @@ void calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp
 				(*bg_prob) += qw_r3_N[i] / (pow(rg, alpha) * pow(rg + r0, alpha_delta3));
 			}
 		}
-//		(*bg_prob) *= reff_xr_rp3;
+		(*bg_prob) *= reff_xr_rp3;
 	}
 
 	for (i = 0; i < ap->number_streams; i++) {
@@ -249,8 +253,9 @@ void calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp
 			xyz_norm = xyzs[0] * xyzs[0] + xyzs[1] * xyzs[1] + xyzs[2] * xyzs[2];
 
 			st_prob[i] += qw_r3_N[j] * exp(-xyz_norm / stream_sigma_sq2[i]);
+//			printf("st_int[%d]: %.15lf sxyz0: %.15lf sxyz1: %.15lf sxyz2: %.15lf\n", i, st_prob[i], xyzs[0], xyzs[1], xyzs[2]);
 		}
-//		st_prob[i] *= reff_xr_rp3;
+		st_prob[i] *= reff_xr_rp3;
 	}
 }
 
@@ -281,7 +286,7 @@ double calculate_progress(EVALUATION_STATE *s) {
 	return (double)current_calc_probs / (double)total_calc_probs;
 }
 
-#ifdef MWAH
+#ifdef MILKYWAY 
 	void do_boinc_checkpoint(EVALUATION_STATE *es) {
 		if (boinc_time_to_checkpoint()) {
 			int retval = write_checkpoint(es);
@@ -334,7 +339,7 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 		double mu = ia->mu_min + (mu_step_current * ia->mu_step_size);
 
 		for (; nu_step_current < ia->nu_steps; nu_step_current++) {
-			#ifdef MWAH
+			#ifdef MILKYWAY 
 				do_boinc_checkpoint(es);
 			#endif
 
@@ -356,8 +361,8 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 
 				calculate_probabilities(r_point[r_step_current], qw_r3_N[r_step_current], reff_xr_rp3[r_step_current], integral_point, ap, &bg_prob, st_probs);
 	
-				ia->background_integral += bg_prob * (V * reff_xr_rp3[r_step_current]);
-				for (i = 0; i < ap->number_streams; i++) ia->stream_integrals[i] += st_probs[i] * (V * reff_xr_rp3[r_step_current]);
+				ia->background_integral += bg_prob * V;
+				for (i = 0; i < ap->number_streams; i++) ia->stream_integrals[i] += st_probs[i] * V;
 
 				ia->current_calculation++;
 				if (ia->current_calculation >= ia->max_calculation) break;
@@ -394,7 +399,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 //	time_t start_time, finish_time;
 //	time(&start_time);
 
-	#ifdef MWAH
+	#ifdef MILKWAY 
 		read_checkpoint(es);
 	#endif
 
@@ -443,18 +448,22 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
 
 	for (; es->current_star_point < sp->number_stars; es->current_star_point++) {
 		double star_prob;
-		#ifdef MWAH
+		#ifdef MILKWAY 
 			do_boinc_checkpoint(es);
 		#endif
 
 		set_probability_constants(ap, sp->stars[es->current_star_point][2], r_point, qw_r3_N, &reff_xr_rp3);
 		calculate_probabilities(r_point, qw_r3_N, reff_xr_rp3, sp->stars[es->current_star_point], ap, &bg_prob, st_prob);
 
+//		printf("bg_prob: %.15lf, st_prob[0]: %.15lf, st_prob[1]: %.15lf", bg_prob, st_prob[0], st_prob[1]);
+
 		star_prob = (bg_prob/es->background_integral) * exp_background_weight;
 		for (current_stream = 0; current_stream < ap->number_streams; current_stream++) {
 			star_prob += (st_prob[current_stream]/es->stream_integrals[current_stream]) * exp_stream_weights[current_stream];
 		}
 		star_prob /= sum_exp_weights;
+
+//		printf(", prob_sum: %.15lf\n", star_prob);
 
 		if (star_prob != 0.0) {
 			es->prob_sum += log(star_prob)/log(10.0);
@@ -463,6 +472,8 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
 			es->prob_sum -= 238.0;
 		}
 	}
+
+//	printf("prob_sum: %.15lf\n", es->prob_sum);
 
 	free(exp_stream_weights);
 	free(st_prob);

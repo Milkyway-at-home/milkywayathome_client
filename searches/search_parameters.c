@@ -84,8 +84,33 @@ void set_search_parameters(SEARCH_PARAMETERS *p, char *search_name, int number_p
 	memcpy(p->parameters, parameters, sizeof(double) * number_parameters);
 }
 
+int fread_metadata(FILE* file, char* metadata) {
+	int c, i;
+	fscanf(file, "metadata: ");
+	c = fgetc(file);
+	i = 0;
+	while (i < METADATA_SIZE && c != '\n' && c != '\0') {
+		if (c == 13) {
+			c = fgetc(file);
+			continue;
+		}
+		metadata[i] = c;
+		c = fgetc(file);
+		i++;
+	}
+	metadata[i] = '\0';
+	if (c == '\0' || i == METADATA_SIZE) return 1;
+	return 0;
+}
+
+int fread_metadata__alloc(FILE* file, char **metadata) {
+	(*metadata) = (char*)malloc(sizeof(char) * METADATA_SIZE);
+	return fread_metadata(file, (*metadata));
+}
+
+
 int fread_search_parameters(FILE* file, SEARCH_PARAMETERS *p) {
-	int i, c, number_parameters;
+	int i, number_parameters;
 	if (fscanf(file, "%s\n", p->search_name) != 1) return 1;
 	if (fscanf(file, "parameters [%d]:", &number_parameters) != 1) return 1;
 
@@ -97,22 +122,7 @@ int fread_search_parameters(FILE* file, SEARCH_PARAMETERS *p) {
 		if (fscanf(file, " %lf", &(p->parameters[i])) != 1) return 1;
 	}
 	if (fscanf(file, "\n") != 0) return 1;
-
-	fscanf(file, "metadata: ");
-	c = fgetc(file);
-	i = 0;
-	while (i < METADATA_SIZE && c != '\n' && c != '\0') {
-		if (c == 13) {
-			c = fgetc(file);
-			continue;
-		}
-		p->metadata[i] = c;
-		c = fgetc(file);
-		i++;
-	}
-	p->metadata[i] = '\0';
-	if (c == '\0' || i == METADATA_SIZE) return 1;
-	return 0;
+	return fread_metadata(file, p->metadata);
 }
 
 int fwrite_search_parameters(FILE* file, SEARCH_PARAMETERS *parameters) {
@@ -131,7 +141,21 @@ int fwrite_search_parameters(FILE* file, SEARCH_PARAMETERS *parameters) {
 
 int read_search_parameters(const char* filename, SEARCH_PARAMETERS *parameters) {
 	int retval;
+
+#ifdef BOINC_APPLICATION
+	char input_path[512];
+	retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
+	if (retval) {
+		fprintf(stderr, "APP: error resolving search parameters file (for read): %d\n", retval);
+		fprintf(stderr, "\tfilename: %s\n", filename);
+		fprintf(stderr, "\tresolved input path: %s\n", input_path);
+		return retval;
+	}
+
+	FILE* data_file = boinc_fopen(input_path, "r");
+#else
 	FILE* data_file = fopen(filename, "r");
+#endif
 
 	if (!data_file) {
 		fprintf(stderr, "Error reading search parameters: Couldn't find input file %s.\n", filename);
@@ -156,88 +180,3 @@ int write_search_parameters(const char* filename, SEARCH_PARAMETERS *parameters)
 	fclose(data_file);
 	return retval;
 }
-
-#ifdef BOINC_APPLICATION 
-	int boinc_read_search_parameters(const char* filename, SEARCH_PARAMETERS* parameters) {
-		char input_path[512];
-		int retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
-		if (retval) {
-			fprintf(stderr, "APP: error resolving search parameters file (for read): %d\n", retval);
-			fprintf(stderr, "\tfilename: %s\n", filename);
-			fprintf(stderr, "\tresolved input path: %s\n", input_path);
-			return retval;
-		}
-
-		FILE* data_file = boinc_fopen(input_path, "r");
-		if (data_file == NULL) {
-			fprintf(stderr, "APP: error reading search parameters file (for read): data_file == NULL\n");
-			return 1;
-		}
-		retval = fread_search_parameters(data_file, parameters);
-		fscanf(data_file, "fitness: %lf\n", &(parameters->fitness));
-
-		fclose(data_file);
-		return retval;
-	}
-	int boinc_read_search_parameters2(const char* filename, SEARCH_PARAMETERS* parameters) {
-		char input_path[512];
-		int i;
-		int retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
-		if (retval) {
-			fprintf(stderr, "APP: error resolving search parameters file (for read): %d\n", retval);
-			fprintf(stderr, "\tfilename: %s\n", filename);
-			fprintf(stderr, "\tresolved input path: %s\n", input_path);
-			return retval;
-		}
-
-		FILE* data_file = boinc_fopen(input_path, "r");
-		if (data_file == NULL) {
-			fprintf(stderr, "APP: error reading search parameters file (for read): data_file == NULL\n");
-			return 1;
-		}
-		retval = fread_search_parameters(data_file, parameters);
-		fscanf(data_file, "fitness: %lf\n", &(parameters->fitness));
-
-		memset(parameters->app_version, '\0', sizeof(char) * 128);
-		if (fgets(parameters->app_version, 128, data_file) == NULL || strlen(parameters->app_version) < 5) {
-			sprintf(parameters->app_version, "?");
-		} else {
-//			int count = 0;
-			for (i = strlen(parameters->app_version); i >= 0; i--) {
-				if (parameters->app_version[i] == '\0') {
-				} else if (parameters->app_version[i] == ' ' || parameters->app_version[i] == 10 || parameters->app_version[i] == 13) {
-					parameters->app_version[i] = '\0';
-//					count++;
-				} else {
-//					printf("breaked after count: %d\n", count);
-					break;
-				}
-			}
-		}
-
-		fclose(data_file);
-		return retval;
-	}
-
-	int boinc_write_search_parameters(const char* filename, SEARCH_PARAMETERS* parameters, double fitness) {
-		char output_path[512];
-		int retval = boinc_resolve_filename(filename, output_path, sizeof(output_path));
-		if (retval) {
-			fprintf(stderr, "APP: error resolving search parameters file (for write): %d\n", retval);
-			fprintf(stderr, "\tfilename: %s\n", filename);
-			fprintf(stderr, "\tresolved output path: %s\n", output_path);
-			return retval;
-		}
-
-		FILE* data_file = boinc_fopen(output_path, "w");
-		retval = fwrite_search_parameters(data_file, parameters);
-		fprintf(data_file, "fitness: %0.15lf\n", fitness);
-#ifdef BOINC_APP_NAME
-#ifdef BOINC_APP_VERSION
-		fprintf(data_file, "%s: %1.2lf\n", BOINC_APP_NAME, BOINC_APP_VERSION);
-#endif
-#endif
-		fclose(data_file);
-		return retval;
-	}
-#endif

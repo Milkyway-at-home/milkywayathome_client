@@ -1,4 +1,4 @@
-echo "creating files for milkyway app relase "$1
+echo "creating files for milkyway app release "$1
 
 mkdir milkyway
 cd milkyway
