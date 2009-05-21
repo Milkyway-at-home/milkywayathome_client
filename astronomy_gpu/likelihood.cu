@@ -1,16 +1,35 @@
+/*
+Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
+and Rensselaer Polytechnic Institute.
+
+This file is part of Milkway@Home.
+
+Milkyway@Home is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Milkyway@Home is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 extern "C" {
 #include "../astronomy/parameters.h"
+#include "../astronomy/star_points.h"
 
 #include "cpu_integrals.h"
 #include "cpu_coords.h"
 #include "cpu_r_constants.h"
 }
 
-#include <gpu_integrals.cu>
-#include <gpu_coords.cu>
-#include <gpu_r_constants.cu>
-
 #include <cuda.h>
+#include <evaluation_gpu.cu>
 
 void compare_arrays(const char *array_name, int length, float *gpu, double *cpu) {
 	int i;
@@ -46,41 +65,30 @@ void compare_arrays(const char *array_name, int length, float *gpu, double *cpu)
 
 
 int main (int argc, char **argv) {
-	int i, j;
 	ASTRONOMY_PARAMETERS *ap;
-	INTEGRAL *integral;
+	STAR_POINTS *sp;
+	double *parameters;
 
 	ap = (ASTRONOMY_PARAMETERS*)malloc(sizeof(ASTRONOMY_PARAMETERS));
 	read_astronomy_parameters(argv[1], ap);
-	integral = ap->integral[0];
 
-//	ap->convolve = 120;
-//	integral->r_steps = 350;
-//	integral->nu_steps = 160;
-//	integral->mu_steps = 200;
+	sp = (STAR_POINTS*)malloc(sizeof(STAR_POINTS));
+	read_star_points(argv[2], sp);
 
 	cudaSetDevice( 0 );
-
-	double *cpu__sinb, *cpu__sinl, *cpu__cosb, *cpu__cosl;
-	cpu__gc_to_gal(ap->wedge, integral, &cpu__sinb, &cpu__sinl, &cpu__cosb, &cpu__cosl);
-
-	double *cpu__V, *cpu__r_point, *cpu__qw_r3_N;
-	cpu__r_constants(ap->convolve, integral, &cpu__V, &cpu__r_point, &cpu__qw_r3_N);
-
-	printf("calculating integrals\n");
 
 	unsigned int free_memory;
 	unsigned int total_memory;
 	cuMemGetInfo(&free_memory, &total_memory);
 	printf("free memory: %d, total memory: %d (before initialize)\n", free_memory, total_memory);
 
-	gpu__initialize_constants(ap, integral, cpu__V, cpu__r_point, cpu__qw_r3_N, cpu__sinb, cpu__sinl, cpu__cosb, cpu__cosl);
+	gpu__initialize(ap, sp);
+	get_search_parameters(ap, &parameters);
 
 	cuMemGetInfo(&free_memory, &total_memory);
 	printf("free memory: %d, total memory: %d (after initialize)\n", free_memory, total_memory);
 
-	double gpu_bg_int, *gpu_st_int;
-	gpu__integrals(ap, integral, &gpu_bg_int, &gpu_st_int);
+	double likelihood = gpu__likelihood(parameters);
 
 	cuMemGetInfo(&free_memory, &total_memory);
 	printf("free memory: %d, total memory: %d (after integrals)\n", free_memory, total_memory);
@@ -90,27 +98,5 @@ int main (int argc, char **argv) {
 	printf("free memory: %d, total memory: %d (after free)\n", free_memory, total_memory);
 
 	printf("gpu completed\n");
-
-	double *background_integrals, *stream_integrals;
-
-	double bg_int = 0.0;
-	double *st_int = (double*)malloc(ap->number_streams * sizeof(double));
-
-	for (i = 0; i < ap->number_streams; i++) {
-		st_int[i] = 0.0;
-	}
-
-	for (i = 0; i < integral->r_steps * integral->mu_steps * integral->nu_steps; i++) {
-		bg_int += background_integrals[i];
-		for (j = 0; j < ap->number_streams; j++) {
-			st_int[j] += stream_integrals[(i * ap->number_streams) + j];
-//			printf("    st_int[%d]: %.15lf\n", (i * ap->number_streams) + j, stream_integrals[(i * ap->number_streams) + j]);
-		}
-	}
-	printf("     background_integral_sum: %.15lf\n", bg_int);
-	for (i = 0; i < ap->number_streams; i++) {
-		printf("     stream_integral_sum[%d]: %.15lf\n", i, st_int[i]);
-	}
 }
-
 

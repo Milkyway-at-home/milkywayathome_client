@@ -1,3 +1,24 @@
+/*
+ * Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+ * Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
+ * and Rensselaer Polytechnic Institute.
+ *
+ * This file is part of Milkway@Home.
+ *
+ * Milkyway@Home is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Milkyway@Home is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+ * */
+
 #include <math.h>
 #include <stdlib.h>
 
@@ -29,24 +50,24 @@ void cpu__reff_gPrime(int r_steps, double r_min, double r_step_size, double mu_s
 	}
 }
 
-void cpu__r_qw(int r_steps, int n_convolve, double coeff, double *dx, double *qgaus_W, double *gPrime, double *r_point, double *qw_r3_N) {
+void cpu__r_qw(int r_steps, int n_convolve, double coeff, double *dx, double *qgaus_W, double *gPrime, double *r_constants) {
 	int i, j, position;
 	double g, rp, r3, exponent, N;
 
 	for (i = 0; i < r_steps; i++) {
 		for (j = 0; j < n_convolve; j++) {
-			position = (i * n_convolve) + j;
+			position = ((i * n_convolve) + j) * 2;
 
 			g = gPrime[i] + dx[j];
 			rp = pow(10.0, (g - d_absm)/5.0 + 1.0) / 1000.0;
 
-			r_point[position] = rp;
+			r_constants[position] = rp;
 
 			r3 = rp * rp * rp;
 			exponent = (dx[j] * dx[j]) / (2 * d_stdev * d_stdev);
 			N = coeff * exp(-exponent);
 
-			qw_r3_N[position] = qgaus_W[j] * r3 * N;
+			r_constants[position + 1] = qgaus_W[j] * r3 * N;
 		}
 	}
 }
@@ -65,7 +86,7 @@ void cpu__reff_V(int nu_steps, double nu_min, double nu_step_size, int r_steps, 
 	}
 }
 
-void cpu__r_constants(int n_convolve, INTEGRAL *integral, double **cpu__V, double **cpu__r_point, double **cpu__qw_r3_N) {
+void cpu__r_constants(int n_convolve, INTEGRAL *integral, double **cpu__V, double **cpu__r_constants) {
         int i;
         double *cpu__gPrime, *cpu__reff_xr_rp3_irv;
 
@@ -77,8 +98,7 @@ void cpu__r_constants(int n_convolve, INTEGRAL *integral, double **cpu__V, doubl
 	*cpu__V = (double*)malloc(integral->nu_steps * integral->r_steps * sizeof(double));
 	cpu__reff_V(integral->nu_steps, integral->nu_min, integral->nu_step_size, integral->r_steps, cpu__reff_xr_rp3_irv, *cpu__V);
 
-	*cpu__r_point = (double*)malloc(integral->r_steps * n_convolve * sizeof(double));
-	*cpu__qw_r3_N = (double*)malloc(integral->r_steps * n_convolve * sizeof(double));
+	*cpu__r_constants = (double*)malloc(2 * integral->r_steps * n_convolve * sizeof(double));
 
         double *host__qgaus_W = (double*)malloc(n_convolve * sizeof(double));
         double *host__qgaus_X = (double*)malloc(n_convolve * sizeof(double));
@@ -90,7 +110,7 @@ void cpu__r_constants(int n_convolve, INTEGRAL *integral, double **cpu__V, doubl
         }
 
         double coeff = 1.0 / (d_stdev * sqrt(2.0 * D_PI));
-	cpu__r_qw(integral->r_steps, n_convolve, coeff, host__dx, host__qgaus_W, cpu__gPrime, *cpu__r_point, *cpu__qw_r3_N);
+	cpu__r_qw(integral->r_steps, n_convolve, coeff, host__dx, host__qgaus_W, cpu__gPrime, *cpu__r_constants);
 
 	free(cpu__reff_xr_rp3_irv);
         free(cpu__gPrime);
