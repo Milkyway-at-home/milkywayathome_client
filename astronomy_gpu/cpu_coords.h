@@ -27,5 +27,6 @@
 void gc_to_lb(int wedge, double amu_rad, double anu_rad, double *cpu__lb);
 void gc_to_gal(int wedge, double amu_rad, double anu_rad, double *glong, double *glat);
 void cpu__gc_to_lb(int wedge, INTEGRAL *integral, double **cpu__lb);
+void cpu__gc_to_lb(int wedge, int mu_steps, double mu_min, double mu_step_size, int nu_steps, double nu_min, double nu_step_size, double **cpu__lb);
 
 #endif

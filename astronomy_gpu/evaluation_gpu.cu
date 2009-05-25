@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-extern "C" {
+extern "C++" {
 #include "../astronomy/parameters.h"
 #include "../astronomy/star_points.h"
 #include "coords.h"
@@ -34,8 +34,6 @@ extern "C" {
 #include <cuda_runtime.h>
 #include <cutil_inline.h>
 
-#include "/Developer/CUDA/projects/reduction/reduction_kernel_sm10.cu"
-
 int	number_threads = 256;
 
 int	mu_increment = 1;
@@ -45,9 +43,6 @@ int	number_streams;
 int	number_integrals;
 
 int	*r_steps;
-//double	*r_min;
-//double	*r_step_size;
-
 int	*mu_steps;
 int	*nu_steps;
 
@@ -91,19 +86,18 @@ float	*host__reduce;
 //extern "C" void gpu__free_constants();
 
 
-void gpu__initialize(ASTRONOMY_PARAMETERS *ap, STAR_POINTS *sp) { 
+void gpu__initialize(	int ap_wedge, int ap_convolve, int ap_number_streams, int ap_number_integrals, 
+			int *in__r_steps, double *r_min, double *r_step_size,
+			int *in__mu_steps, double *mu_min, double *mu_step_size,
+			int *in__nu_steps, double *nu_min, double *nu_step_size,
+			int in__number_stars, double **stars) { 
 	int i, j, pos;
 
-	printf("astronomy parameters?\n");
-	fwrite_astronomy_parameters(stdout, ap);
-
+	wedge = ap_wedge;
+	convolve = ap_convolve;
+	number_streams = ap_number_streams;
+	number_integrals = ap_number_integrals;
 	printf("wedge: %d, convolve: %d, number_streams: %d, number_integrals: %d\n", wedge, convolve, number_streams, number_integrals);
-
-
-	wedge = ap->wedge;
-	convolve = ap->convolve;
-	number_streams = ap->number_streams;
-	number_integrals = ap->number_integrals;
 
 	sizeof_V = (int*)malloc(number_integrals * sizeof(int));
 	sizeof_r_constants = (int*)malloc(number_integrals * sizeof(int));
@@ -122,32 +116,21 @@ void gpu__initialize(ASTRONOMY_PARAMETERS *ap, STAR_POINTS *sp) {
 
 	printf("calculating integral constants\n");
 	r_steps = (int*)malloc(number_integrals * sizeof(int));
-//	r_min = (double*)malloc(number_integrals * sizeof(double));
-//	r_step_size = (double*)malloc(number_integrals * sizeof(double));
 
 	mu_steps = (int*)malloc(number_integrals * sizeof(int));
 	nu_steps = (int*)malloc(number_integrals * sizeof(int));
 	for (i = 0; i < number_integrals; i++) {
-		printf("first integral loop\n");
-		if (ap->integral == NULL) printf("INTEGRAL == NULL!\n");
-		printf("number integrals: %d\n", ap->number_integrals);
-		INTEGRAL *integral = ap->integral[i];
-		printf("got integral\n");
+		r_steps[i] = in__r_steps[i];
+		mu_steps[i] = in__mu_steps[i];
+		nu_steps[i] = in__nu_steps[i];
 
-
-		r_steps[i] = integral->r_steps;
-//		r_min[i] = integral->r_min;
-//		r_step_size[i] = integral->r_step_size;
-		mu_steps[i] = integral->mu_steps;
-		nu_steps[i] = integral->nu_steps;
-
-		sizeof_V[i] = integral->nu_steps * integral->r_steps;
-		sizeof_r_constants[i] = integral->r_steps * ap->convolve * 2;
-		sizeof_lb[i] = integral->mu_steps * integral->nu_steps * 4;
+		sizeof_V[i] = in__nu_steps[i] * in__r_steps[i];
+		sizeof_r_constants[i] = in__r_steps[i] * convolve * 2;
+		sizeof_lb[i] = in__mu_steps[i] * in__nu_steps[i] * 4;
 
 		double *cpu__V, *cpu__r_const, *cpu__lb;
-		cpu__gc_to_lb(ap->wedge, integral, &cpu__lb);
-		cpu__r_constants(ap->convolve, integral, &cpu__V, &cpu__r_const);
+		cpu__gc_to_lb(wedge, mu_steps[i], mu_min[i], mu_step_size[i], nu_steps[i], nu_min[i], nu_step_size[i], &cpu__lb);
+		cpu__r_constants(convolve, r_steps[i], r_min[i], r_step_size[i], mu_steps[i], mu_min[i], mu_step_size[i], nu_steps[i], nu_min[i], nu_step_size[i], &cpu__V, &cpu__r_const);
 
 		float *host__V			= (float*)malloc(sizeof_V[i] * sizeof(float));
 		float *host__r_constants	= (float*)malloc(sizeof_r_constants[i] * sizeof(float));
@@ -191,7 +174,7 @@ void gpu__initialize(ASTRONOMY_PARAMETERS *ap, STAR_POINTS *sp) {
 		free(host__r_constants);
 		free(host__lb);
 
-		integral_size[i] = integral->r_steps * integral->nu_steps * mu_increment;
+		integral_size[i] = in__r_steps[i] * in__nu_steps[i] * mu_increment;
 		printf("Allocating %d bytes for integral data on GPU\n", (number_streams + 1) * integral_size[i] * sizeof(float));
 
 		cutilSafeCall( cudaMalloc((void**) &device__background_integrals[i], integral_size[i] * sizeof(float)) );
@@ -203,17 +186,17 @@ void gpu__initialize(ASTRONOMY_PARAMETERS *ap, STAR_POINTS *sp) {
 	cutilSafeCall( cudaMalloc((void**) &device__reduce, 64 * sizeof(float)) );
 	host__reduce = (float*)malloc(64 * sizeof(float));
 
-	printf("initializing constants for %d stars\n", sp->number_stars);
+	printf("initializing constants for %d stars\n", number_stars);
 
-	number_stars = sp->number_stars;
+	number_stars = in__number_stars;
 	float *host__stars = (float*)malloc(number_stars * 5 * sizeof(float));
 	for (i = 0; i < number_stars; i++) {
 		pos = i * 5;
-		host__stars[pos] = (float)sin(sp->stars[i][1] * D_DEG2RAD);
-		host__stars[pos + 1] = (float)sin(sp->stars[i][0] * D_DEG2RAD);
-		host__stars[pos + 2] = (float)cos(sp->stars[i][1] * D_DEG2RAD);
-		host__stars[pos + 3] = (float)cos(sp->stars[i][0] * D_DEG2RAD);
-		host__stars[pos + 4] = (float)sp->stars[i][2];
+		host__stars[pos] = (float)sin(stars[i][1] * D_DEG2RAD);
+		host__stars[pos + 1] = (float)sin(stars[i][0] * D_DEG2RAD);
+		host__stars[pos + 2] = (float)cos(stars[i][1] * D_DEG2RAD);
+		host__stars[pos + 3] = (float)cos(stars[i][0] * D_DEG2RAD);
+		host__stars[pos + 4] = (float)stars[i][2];
 	}
 	printf("allocating %d bytes for device__stars\n", number_stars * 5 * sizeof(float));
 	cutilSafeCall( cudaMalloc((void**) &device__stars, number_stars * 5 * sizeof(float)) );
@@ -465,6 +448,7 @@ void cpu__sum_integrals(int iteration, double *background_integral, double *stre
 	}
 }
 
+/*
 void gpu__sum_integrals(int iteration, double *background_integral, double *stream_integrals) {
 	int i, j;
 	reduce_sm10<float>(integral_size[iteration], 128, 64, 6, device__background_integrals[iteration], device__reduce);
@@ -490,6 +474,7 @@ void gpu__sum_integrals(int iteration, double *background_integral, double *stre
 	}
 
 }
+*/
 
 /********
  *	Likelihood calculation
@@ -637,7 +622,7 @@ double gpu__likelihood(double *parameters) {
 		dim3 dimGrid(r_steps[i], mu_increment);
 
 		gpu__zero_integrals<2><<<dimGrid, nu_steps[i]>>>(device__background_integrals[i], device__stream_integrals[i]);
-		printf("zeroed integrals\n");
+//		printf("zeroed integrals\n");
 		for (j = 0; j < mu_steps[i]; j += mu_increment) {
 /*			gpu__integral_kernel2<2><<<dimGrid, nu_steps[i]>>>(	convolve, j, mu_steps[i],
 										r_min[i], r_step_size[i],
@@ -672,12 +657,12 @@ double gpu__likelihood(double *parameters) {
 					break;
 			}
 		}
-		printf("completed integral kernal evaluations\n");
+//		printf("completed integral kernal evaluations\n");
 		cpu__sum_integrals(i, &background_integral, stream_integrals);
-		printf("bg_integral[%d]   : %.15lf\n", i, background_integral);
-		printf("st_integral[%d][0]: %.15lf\n", i, stream_integrals[0]);
-		printf("st_integral[%d][1]: %.15lf\n", i, stream_integrals[1]);
-		printf("\n");
+//		printf("bg_integral[%d]   : %.15lf\n", i, background_integral);
+//		printf("st_integral[%d][0]: %.15lf\n", i, stream_integrals[0]);
+//		printf("st_integral[%d][1]: %.15lf\n", i, stream_integrals[1]);
+//		printf("\n");
 	}
 
 	int block_size;
@@ -735,6 +720,6 @@ double gpu__likelihood(double *parameters) {
 	}
 	cpu__sum_likelihood(number_threads, &likelihood);
 	likelihood /= number_stars;
-	printf("likelihood: %.15lf\n", likelihood);
+//	printf("likelihood: %.15lf\n", likelihood);
 	return likelihood;
 }

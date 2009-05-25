@@ -181,13 +181,49 @@ void worker() {
 	double **hessian, *gradient, *direction, *step;
 	double minimum_fitness, *minimum;
 	double likelihood;
-	int result, evaluations_done;
+	int result, evaluations_done, i;
 
 	#ifdef COMPUTE_ON_CPU
 		init_simple_evaluator(astronomy_evaluate);
 	#endif
 	#ifdef COMPUTE_ON_GPU
-		gpu__initialize(ap, sp);
+		printf("computing on gpu\n");
+		int *r_steps = (int*)malloc(ap->number_integrals * sizeof(int));
+		int *mu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
+		int *nu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
+		double *r_min = (double*)malloc(ap->number_integrals * sizeof(double));
+		double *mu_min = (double*)malloc(ap->number_integrals * sizeof(double));
+		double *nu_min = (double*)malloc(ap->number_integrals * sizeof(double));
+		double *r_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
+		double *mu_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
+		double *nu_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
+		for (i = 0; i < ap->number_integrals; i++) {
+			printf("looping %d of %d\n", i, ap->number_integrals);
+			printf("integral[%d] == NULL? %d\n", i, (ap->integral[i] == NULL));
+			r_steps[i] = ap->integral[i]->r_steps;
+			printf("r\n");
+			mu_steps[i] = ap->integral[i]->mu_steps;
+			printf("mu\n");
+			nu_steps[i] = ap->integral[i]->nu_steps;
+			printf("steps done\n");
+			r_min[i] = ap->integral[i]->r_min;
+			mu_min[i] = ap->integral[i]->mu_min;
+			nu_min[i] = ap->integral[i]->nu_min;
+			printf("mins done\n");
+			r_step_size[i] = ap->integral[i]->r_step_size;
+			mu_step_size[i] = ap->integral[i]->mu_step_size;
+			nu_step_size[i] = ap->integral[i]->nu_step_size;
+			printf("step sizes done\n");
+		}
+		printf("performing initialize\n");
+
+		gpu__initialize(ap->wedge, ap->convolve, ap->number_streams, ap->number_integrals,
+				r_steps, r_min, r_step_size,
+				mu_steps, mu_min, mu_step_size,
+				nu_steps, nu_min, nu_step_size,
+				sp->number_stars, sp->stars);
+		printf("initialized\n");
+
 		init_simple_evaluator(gpu__likelihood);
 	#endif
 	get_step(ap, &step);
@@ -214,7 +250,7 @@ void worker() {
 	//gradient calculation
 	evaluations_done += 2 * s->number_parameters;
 	//hessian calculation
-	evaluations_done += 4 * (s->number_parameters * s->number_parameters) - s->number_parameters;
+	evaluations_done += (3 * s->number_parameters) + 2 * ((s->number_parameters * s->number_parameters) - s->number_parameters);
 
 	write_gpu_result(OUTPUT_FILENAME, s->number_parameters, hessian, gradient, likelihood, s->parameters, minimum_fitness, minimum, evaluations_done, s->metadata);
 
@@ -280,4 +316,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.13 2009/05/21 23:09:44 deselt Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.14 2009/05/25 20:35:29 deselt Exp $";

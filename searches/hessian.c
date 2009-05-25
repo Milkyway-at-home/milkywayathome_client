@@ -141,6 +141,9 @@ void get_hessian__checkpointed(int number_parameters, double *point, double *ste
 			point[j] = pj + step[j];
 			e1 = evaluate(point);
 
+//fwrite_double_array(stdout, "step", number_parameters, step);
+//fwrite_double_array(stdout, "point", number_parameters, point);
+
 			point[i] = pi - step[i];
 			e2 = evaluate(point);
 

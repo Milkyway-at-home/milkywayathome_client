@@ -86,19 +86,23 @@ void cpu__reff_V(int nu_steps, double nu_min, double nu_step_size, int r_steps, 
 	}
 }
 
-void cpu__r_constants(int n_convolve, INTEGRAL *integral, double **cpu__V, double **cpu__r_constants) {
+void cpu__r_constants(	int n_convolve,
+			int r_steps, double r_min, double r_step_size,
+			int mu_steps, double mu_min, double mu_step_size,
+			int nu_steps, double nu_min, double nu_step_size,
+			double **cpu__V, double **cpu__r_consts) {
         int i;
         double *cpu__gPrime, *cpu__reff_xr_rp3_irv;
 
-	cpu__reff_xr_rp3_irv = (double*)malloc(integral->r_steps * sizeof(double));
-	cpu__gPrime = (double*)malloc(integral->r_steps * sizeof(double));
+	cpu__reff_xr_rp3_irv = (double*)malloc(r_steps * sizeof(double));
+	cpu__gPrime = (double*)malloc(r_steps * sizeof(double));
 
-	cpu__reff_gPrime(integral->r_steps, integral->r_min, integral->r_step_size, integral->mu_step_size, cpu__gPrime, cpu__reff_xr_rp3_irv);
+	cpu__reff_gPrime(r_steps, r_min, r_step_size, mu_step_size, cpu__gPrime, cpu__reff_xr_rp3_irv);
 
-	*cpu__V = (double*)malloc(integral->nu_steps * integral->r_steps * sizeof(double));
-	cpu__reff_V(integral->nu_steps, integral->nu_min, integral->nu_step_size, integral->r_steps, cpu__reff_xr_rp3_irv, *cpu__V);
+	*cpu__V = (double*)malloc(nu_steps * r_steps * sizeof(double));
+	cpu__reff_V(nu_steps, nu_min, nu_step_size, r_steps, cpu__reff_xr_rp3_irv, *cpu__V);
 
-	*cpu__r_constants = (double*)malloc(2 * integral->r_steps * n_convolve * sizeof(double));
+	*cpu__r_consts = (double*)malloc(2 * r_steps * n_convolve * sizeof(double));
 
         double *host__qgaus_W = (double*)malloc(n_convolve * sizeof(double));
         double *host__qgaus_X = (double*)malloc(n_convolve * sizeof(double));
@@ -110,7 +114,7 @@ void cpu__r_constants(int n_convolve, INTEGRAL *integral, double **cpu__V, doubl
         }
 
         double coeff = 1.0 / (d_stdev * sqrt(2.0 * D_PI));
-	cpu__r_qw(integral->r_steps, n_convolve, coeff, host__dx, host__qgaus_W, cpu__gPrime, *cpu__r_constants);
+	cpu__r_qw(r_steps, n_convolve, coeff, host__dx, host__qgaus_W, cpu__gPrime, *cpu__r_consts);
 
 	free(cpu__reff_xr_rp3_irv);
         free(cpu__gPrime);
@@ -120,3 +124,10 @@ void cpu__r_constants(int n_convolve, INTEGRAL *integral, double **cpu__V, doubl
 }
 
 
+void cpu__r_constants(int n_convolve, INTEGRAL *integral, double **cpu__V, double **cpu__r_consts) {
+	cpu__r_constants(	n_convolve,
+				integral->r_steps, integral->r_min, integral->r_step_size,
+				integral->mu_steps, integral->mu_min, integral->mu_step_size,
+				integral->nu_steps, integral->nu_min, integral->nu_step_size,
+				cpu__V, cpu__r_consts);
+}

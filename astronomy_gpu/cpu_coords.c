@@ -106,23 +106,30 @@ void gc_to_lb(int wedge, double amu_rad, double anu_rad, double *cpu__lb) {
 	cpu__lb[3] = cos(glong);
 }
 
-void cpu__gc_to_lb(int wedge, INTEGRAL *integral, double **cpu__lb) {
+void cpu__gc_to_lb(	int wedge,
+			int mu_steps, double mu_min, double mu_step_size,
+			int nu_steps, double nu_min, double nu_step_size,
+			double **cpu__lb) {
 	int i, j;
-        double mu_min_rad = integral->mu_min * D_DEG2RAD;
-        double mu_step_rad = integral->mu_step_size * D_DEG2RAD;
-        double nu_min_rad = integral->nu_min * D_DEG2RAD;
-        double nu_step_rad = integral->nu_step_size * D_DEG2RAD;
+        double mu_min_rad = mu_min * D_DEG2RAD;
+        double mu_step_rad = mu_step_size * D_DEG2RAD;
+        double nu_min_rad = nu_min * D_DEG2RAD;
+        double nu_step_rad = nu_step_size * D_DEG2RAD;
 
-	*cpu__lb = (double*)malloc(4 * integral->mu_steps * integral->nu_steps * sizeof(double));
+	*cpu__lb = (double*)malloc(4 * mu_steps * nu_steps * sizeof(double));
 
 	double anu, amu;
 	int pos;
-	for (i = 0; i < integral->mu_steps; i++) {
+	for (i = 0; i < mu_steps; i++) {
 		amu = mu_min_rad + ((i + 0.5) * mu_step_rad);
-		for (j = 0; j < integral->nu_steps; j++) {
+		for (j = 0; j < nu_steps; j++) {
 			anu = nu_min_rad + ((j + 0.5) * nu_step_rad);
-       			pos = ((i * integral->nu_steps) + j) * 4;
+       			pos = ((i * nu_steps) + j) * 4;
 			gc_to_lb(wedge, amu, anu, &( (*cpu__lb)[pos] ));
 		}
 	}
+}
+
+void cpu__gc_to_lb(int wedge, INTEGRAL *integral, double **cpu__lb) {
+	cpu__gc_to_lb(wedge, integral->mu_steps, integral->mu_min, integral->mu_step_size, integral->nu_steps, integral->nu_min, integral->nu_step_size, cpu__lb);
 }
