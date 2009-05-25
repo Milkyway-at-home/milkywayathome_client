@@ -64,16 +64,18 @@ int create_particle_swarm(char* search_name, int number_arguments, char** argume
 	char search_directory[FILENAME_SIZE];
 	PARTICLE_SWARM_OPTIMIZATION *pso;
 	int i, remove_outliers, size;
-	double w, c1, c2;
+	double w, c0, c1, c2;
 
 	remove_outliers = 1;
 	size = 400;
-	w = 0.95;
+	w = 0.5;
+	c0 = 0.5;
 	c1 = 2.0;
 	c2 = 2.0;
 	for (i = 0; i < number_arguments; i++) {
 		if (!strcmp(arguments[i], "-pso_size")) size = atoi(arguments[++i]);
 		else if (!strcmp(arguments[i], "-w")) w = atof(arguments[++i]);
+		else if (!strcmp(arguments[i], "-c0")) c0 = atof(arguments[++i]);
 		else if (!strcmp(arguments[i], "-c1")) c1 = atof(arguments[++i]);
 		else if (!strcmp(arguments[i], "-c2")) c2 = atof(arguments[++i]);
 		else if (!strcmp(arguments[i], "-remove_outliers")) remove_outliers = 1;
@@ -89,6 +91,7 @@ int create_particle_swarm(char* search_name, int number_arguments, char** argume
 	pso->size = size;
 	pso->number_parameters = number_parameters;
 	pso->w = w;
+	pso->c0 = c0;
 	pso->c1 = c1;
 	pso->c2 = c2;
 	pso->analyzed = 0;
@@ -122,12 +125,12 @@ int write_particle_swarm(char* search_name, void* search_data) {
 	if (search_file == NULL) return AS_CP_ERROR;
 
 	fprintf(search_file, "current_particle: %d, size: %d\n", pso->current_particle, pso->size);
-	fprintf(search_file, "w: %lf, c1: %lf, c2: %lf\n", pso->w, pso->c1, pso->c2);
+	fprintf(search_file, "w: %lf, c0: %lf, c1: %lf, c2: %lf\n", pso->w, pso->c0, pso->c1, pso->c2);
 	fprintf(search_file, "analyzed: %ld\n", pso->analyzed);
 	fprintf(search_file, "number_parameters: %d\n", pso->number_parameters); 
 	fwrite_bounds(search_file, pso->bounds);
 	fprintf(search_file, "global_best_fitness: %.20lf\n", pso->global_best_fitness);
-	print_double_array(search_file, "global_best", pso->number_parameters, pso->global_best);
+	fwrite_double_array(search_file, "global_best", pso->number_parameters, pso->global_best);
 
 	fprintf(search_file, "redundancies:\n");
 	for (i = 0; i < pso->size; i++) {
@@ -169,14 +172,14 @@ int read_particle_swarm(char* search_name, void** search_data) {
 	if (search_file == NULL) return AS_READ_ERROR;
 
 	fscanf(search_file, "current_particle: %d, size: %d\n", &(pso->current_particle), &(pso->size));
-	fscanf(search_file, "w: %lf, c1: %lf, c2: %lf\n", &(pso->w), &(pso->c1), &(pso->c2));
+	fscanf(search_file, "w: %lf, c0: %lf, c1: %lf, c2: %lf\n", &(pso->w), &(pso->c0), &(pso->c1), &(pso->c2));
 	fscanf(search_file, "analyzed: %ld\n", &(pso->analyzed));
 	fscanf(search_file, "number_parameters: %d\n", &(pso->number_parameters));
 
 	fread_bounds(search_file, &(pso->bounds));
 
 	fscanf(search_file, "global_best_fitness: %lf\n", &(pso->global_best_fitness));
-	read_double_array(search_file, "global_best", &(pso->global_best));
+	fread_double_array(search_file, "global_best", &(pso->global_best));
 
 	pso->redundancies = (REDUNDANCY**)malloc(sizeof(REDUNDANCY*) * pso->size);
 	for (i = 0; i < pso->size; i++) pso->redundancies[i] = NULL;
@@ -257,7 +260,7 @@ int pso_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMET
 			particle = pso->particles->individuals[pso->current_particle];
 
 			for (i = 0; i < pso->number_parameters; i++) {
-				velocity[i] = (pso->w * velocity[i]) + (pso->c1 * dsfmt_gv_genrand_close_open() * (local_best[i] - particle[i])) + (pso->c2 * dsfmt_gv_genrand_close_open() * (pso->global_best[i] - particle[i]));
+				velocity[i] = (pso->w * velocity[i]) + pso->c0 * ((pso->c1 * dsfmt_gv_genrand_close_open() * (local_best[i] - particle[i])) + (pso->c2 * dsfmt_gv_genrand_close_open() * (pso->global_best[i] - particle[i])));
 			}
 			bound_velocity(particle, velocity, pso->bounds);
 
@@ -286,6 +289,7 @@ int parse(PARTICLE_SWARM_OPTIMIZATION *pso, SEARCH_PARAMETERS *sp, int *particle
 	char *current_token;
 
 	if (isnan(sp->fitness)) return AS_INSERT_FITNESS_NAN;
+	if (sp->fitness > -2.6) return AS_INSERT_FITNESS_INVALID;
 
 	for (i = 0; i < pso->number_parameters; i++) {
 		if (isnan(sp->parameters[i])) return AS_INSERT_PARAMETERS_NAN;
@@ -416,7 +420,7 @@ int pso_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETER
 
 		if (pso->local_best->size >= 40) {
 			double min_error, max_error, median_error, average_error;
-			double particle_error, local_particle_error;
+			double particle_error;
 			population_error_stats(pso->local_best, &min_error, &max_error, &median_error, &average_error);
 			particle_error = distance_error2(pso->local_best, -1, sp->fitness, sp->parameters);
 			//local_particle_error = distance_error2(pso->local_best, particle, pso->local_best->fitness[particle], pso->local_best->individuals[particle]);

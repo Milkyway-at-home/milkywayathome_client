@@ -40,7 +40,7 @@ typedef struct particle_swarm_optimization {
 	int current_particle, size;
 	int number_parameters;
 	int remove_outliers;
-	double w, c1, c2;
+	double w, c0, c1, c2;
 	long analyzed;
 
 	BOUNDS *bounds;

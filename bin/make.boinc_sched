@@ -30,6 +30,7 @@ SEARCH_OBJS = \
 	$(SEARCH_DIR)/gradient.o \
 	$(SEARCH_DIR)/outliers.o \
 	$(SEARCH_DIR)/population.o \
+	$(SEARCH_DIR)/result.o \
 	$(SEARCH_DIR)/recombination.o \
 	$(SEARCH_DIR)/redundancy.o \
 	$(SEARCH_DIR)/regression.o \

@@ -156,13 +156,35 @@ int fread_cpu_result(FILE *file, int number_parameters, double *parameters, doub
 	return 0;
 }
 
-int read_cpu_result(char *filename, int number_parameters, double *parameters, double fitness, char *metadata) {
+int read_cpu_result(char *filename, int number_parameters, double *parameters, double *fitness, char *metadata) {
+	int retval;
 	FILE *data_file = fopen(filename, "r");
 	if (data_file == NULL) {
 		fprintf(stderr, "APP: error reading cpu result file: data_file == NULL\n");
 		return 1;
 	}
+	retval = fread_cpu_result(data_file, number_parameters, parameters, fitness, metadata);
+	fclose(data_file);
+	return retval;
+}
+
+int fread_cpu_result__realloc(FILE *file, int *number_parameters, double **parameters, double *fitness, char *metadata) {
+	fread_double_array__realloc(file, "parameters", number_parameters, parameters);
+	fscanf(file, "fitness: %lf\n", fitness);
+	fread_metadata(file, metadata);
 	return 0;
+}
+
+int read_cpu_result__realloc(const char *filename, int *number_parameters, double **parameters, double *fitness, char *metadata) {
+	int retval;
+	FILE *data_file = fopen(filename, "r");
+	if (data_file == NULL) {
+		fprintf(stderr, "APP: error reading cpu result file: data_file == NULL\n");
+		return 1;
+	}
+	retval = fread_cpu_result__realloc(data_file, number_parameters, parameters, fitness, metadata);
+	fclose(data_file);
+	return retval;
 }
 
 int fwrite_cpu_result(FILE *file, int number_parameters, double *parameters, double fitness, char *metadata) {

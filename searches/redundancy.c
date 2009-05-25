@@ -24,6 +24,7 @@
 #include "stdio.h"
 
 #include "redundancy.h"
+#include "search_parameters.h"
 
 #define FITNESS_MATCH_TOLERANCE 10e-10
 #define PARAMETERS_MATCH_TOLERANCE 10e-15
@@ -107,6 +108,7 @@ int fwrite_redundancy(FILE *file, REDUNDANCY *r, int n, int particle) {
 	return 1;
 }
 
+/*
 int check_redundancy(REDUNDANCY *search_current, REDUNDANCY *r, int point, SEARCH_PARAMETERS *sp) {
         /**
 	 ** See if this particle has any saved local best values
@@ -115,7 +117,7 @@ int check_redundancy(REDUNDANCY *search_current, REDUNDANCY *r, int point, SEARC
 	 **      remove all queued matches with lower fitness
 	 ** If this matches parameters but not fitness, remove the match from the queue
 	 **/
-        REDUNDANCY *r, *r_prev, *n, *n_prev;
+/*        REDUNDANCY *r, *r_prev, *n, *n_prev;
         int match;
         r = sx->redundancies[point];
         r_prev = NULL;
@@ -159,3 +161,4 @@ int check_redundancy(REDUNDANCY *search_current, REDUNDANCY *r, int point, SEARC
 	}
 	return 0;
 }
+*/

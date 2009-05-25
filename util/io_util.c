@@ -70,6 +70,31 @@ int fread_double_array(FILE *file, const char *array_name, double** array_t) {
 	return size;
 }
 
+int fread_double_array__realloc(FILE *file, const char *array_name, int *size, double **array_t) {
+	int i, read_size;
+	fscanf(file, array_name);
+	fscanf(file, "[%d]: ", &read_size);
+
+	if (read_size <= 0) {
+		fprintf(stderr, "Error reading %s, invalid size: %d\n", array_name, read_size);
+		return -1;
+	}	
+	if (read_size != *size) {
+		*size = read_size;
+		(*array_t) = (double*)realloc(*array_t, read_size * sizeof(double));
+	}
+
+	for (i = 0; i < read_size; i++) {
+		if (fscanf(file, "%lf", &((*array_t)[i])) != 1) {
+			fprintf(stderr, "Error reading into %s, invalid data\n", array_name);
+			return -1;
+		}
+		if (i < read_size-1) fscanf(file, ", ");
+	}
+	fscanf(file, "\n");
+	return read_size;
+}
+
 int fread_double_array__no_alloc(FILE *file, const char *array_name, int size, double *array_t) {
 	int i, read_size;
 	fscanf(file, array_name);

@@ -54,6 +54,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "../searches/asynchronous_search.h"
 #include "../searches/search_log.h"
 #include "../searches/search_parameters.h"
+#include "../searches/result.h"
 #include "../util/settings.h"
 
 
@@ -414,7 +415,8 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 			*	Read the result file
 		 ********/
 		get_output_file_path(result, output_file_name);
-		retval = boinc_read_search_parameters2(output_file_name.c_str(), insert_sp);
+		const char *output_string = output_file_name.c_str();
+		retval = read_cpu_result__realloc(output_string, &(insert_sp->number_parameters), &(insert_sp->parameters), &(insert_sp->fitness), insert_sp->metadata);
 		if (retval) {
 			credit = update_workunit(validator, AS_VERIFY_INVALID, result, wu);
 			print_message(search_name, "error reading result", "", "invalid", result.app_version_num, insert_sp->app_version, "?", credit, result);
