@@ -40,13 +40,6 @@ OSX_CXXFLAGS_x86_64 = -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.5.sdk -mma
 	-L$(OSX_BOINC_DIR)/mac_build/build/Deployment
 OSX_LDFLAGS_x86_64 = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.5.sdk,-arch,x86_64
 
-OSX_CC_x86_64 = /usr/bin/gcc-4.0
-OSX_CXX_x86_64 = /usr/bin/g++-4.0
-OSX_CXXFLAGS_x86_64 = -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -O3 -mfpmath=sse -march=nocona -msse3 -ftree-vectorize -funroll-loops $(CXXFLAGS_ALL) \
-	-I$(OSX_BOINC_DIR) -I$(OSX_BOINC_DIR)/api -I$(OSX_BOINC_DIR)/lib -I$(OSX_BOINC_DIR)/clientgui/mac/ \
-	-L$(OSX_BOINC_DIR)/mac_build/build/Deployment
-OSX_LDFLAGS_x86_64 = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.5.sdk,-arch,x86_64
-
 
 LINUX_CXX_i686 = g++
 LINUX_CXXFLAGS_i686 = -m32 -O2 -ftree-vectorize -funroll-loops $(CXXFLAGS_ALL) \
@@ -135,10 +128,20 @@ linux_i686: OBJ_CXXFLAGS = $(CPU_FLAGS) $(LINUX_CXXFLAGS_i686)
 linux_i686: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LINUX_LIBBOINC_DIR)/libboinc_api.a $(LINUX_LIBBOINC_DIR)/libboinc.a
 	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LINUX_LDFLAGS_i686) -Wl --export_dynamic -o milkyway_$(APP_VERSION)_i686-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lm -lboinc_api -lboinc -pthread
 
+linux_i686_gpu: OBJ_CXX = $(LINUX_CXX_i686)
+linux_i686_gpu: OBJ_CXXFLAGS = $(GPU_FLAGS) $(LINUX_CXXFLAGS_i686)
+linux_i686_gpu: $(GPU_APP_OBJS) $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LINUX_LIBBOINC_DIR)/libboinc_api.a $(LINUX_LIBBOINC_DIR)/libboinc.a
+	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LDFLAGS_x86_64) -o milkywayGPU_$(APP_VERSION)_i686-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc -lboinc_api -lcudart
+
 linux_x86_64: OBJ_CXX = $(LINUX_CXX_x86_64)
 linux_x86_64: OBJ_CXXFLAGS = $(CPU_FLAGS) $(LINUX_CXXFLAGS_x86_64)
 linux_x86_64: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LINUX_LIBBOINC_DIR)/libboinc_api.a $(LINUX_LIBBOINC_DIR)/libboinc.a
 	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LINUX_LDFLAGS_x86_64) -Wl -static -static-libgcc -o milkyway_$(APP_VERSION)_x86_64-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lm -lboinc_api -lboinc -pthread
+
+linux_x86_64_gpu: OBJ_CXX = $(LINUX_CXX_x86_64)
+linux_x86_64_gpu: OBJ_CXXFLAGS = $(GPU_FLAGS) $(LINUX_CXXFLAGS_x86_64)
+linux_x86_64_gpu: $(GPU_APP_OBJS) $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LINUX_LIBBOINC_DIR)/libboinc_api.a $(LINUX_LIBBOINC_DIR)/libboinc.a
+	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LDFLAGS_x86_64) -o milkywayGPU_$(APP_VERSION)_x86_64-pc-linux-gnu$(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc -lboinc_api -lcudart
 
 
 .C.o:
