@@ -34,6 +34,11 @@ extern "C++" {
 #include <cuda_runtime.h>
 #include <cutil_inline.h>
 
+
+#define MAX_CONVOLVE 120
+#define R_INCREMENT 20 
+
+
 int	number_threads = 256;
 
 int	mu_increment = 1;
@@ -50,7 +55,7 @@ int	*sizeof_V;
 float	**device__V;		//V				-- float[nu][r]
 
 int	*sizeof_r_constants;
-float	**device__r_constants;	//r_point, qw_r3_N		-- float[r][convolve][2]
+float	**host__r_constants;
 
 int	*sizeof_lb;
 float	**device__lb;		//sinb, sinl, cosb, cosl	-- float[nu][mu][4]
@@ -65,11 +70,13 @@ __device__ __constant__ float device__fstream_sigma_sq2[8];
 __device__ __constant__ float device__fstream_a[12];
 __device__ __constant__ float device__fstream_c[12];
 
-__device__ __constant__ float device__dx[120];
-__device__ __constant__ float device__qgaus_W[120];
+__device__ __constant__ float device__dx[MAX_CONVOLVE];
+__device__ __constant__ float device__qgaus_W[MAX_CONVOLVE];
 
 __device__ __constant__ float device__background_weight[1];
 __device__ __constant__ float device__stream_weight[4];
+
+__device__ __constant__ float device__r_constants[MAX_CONVOLVE * 2 * R_INCREMENT];
 
 int	number_stars;
 float	*device__stars;
@@ -112,11 +119,10 @@ void gpu__initialize(	int ap_wedge, int ap_convolve, int ap_number_streams, int 
 
 	device__V = (float**)malloc(number_integrals * sizeof(float*));
 	device__lb = (float**)malloc(number_integrals * sizeof(float*));
-	device__r_constants = (float**)malloc(number_integrals * sizeof(float*));
+	host__r_constants = (float**)malloc(number_integrals * sizeof(float*));
 
 //	printf("calculating integral constants\n");
 	r_steps = (int*)malloc(number_integrals * sizeof(int));
-
 	mu_steps = (int*)malloc(number_integrals * sizeof(int));
 	nu_steps = (int*)malloc(number_integrals * sizeof(int));
 	for (i = 0; i < number_integrals; i++) {
@@ -133,13 +139,17 @@ void gpu__initialize(	int ap_wedge, int ap_convolve, int ap_number_streams, int 
 		cpu__r_constants(convolve, r_steps[i], r_min[i], r_step_size[i], mu_steps[i], mu_min[i], mu_step_size[i], nu_steps[i], nu_min[i], nu_step_size[i], &cpu__V, &cpu__r_const);
 
 		float *host__V			= (float*)malloc(sizeof_V[i] * sizeof(float));
-		float *host__r_constants	= (float*)malloc(sizeof_r_constants[i] * sizeof(float));
 		float *host__lb			= (float*)malloc(sizeof_lb[i] * sizeof(float));
+		host__r_constants[i] = (float*)malloc(sizeof_r_constants[i] * sizeof(float));
 
 		long constants_size = 0;
 		constants_size += sizeof_V[i] * sizeof(float);
 		constants_size += sizeof_r_constants[i] * sizeof(float); 
 		constants_size += sizeof_lb[i] * sizeof(float);
+
+//		printf("sizeof_V[%d]: %d\n", i, sizeof_V[i] * sizeof(float));
+//		printf("sizeof_r_constants[%d]: %d\n", i, sizeof_r_constants[i] * sizeof(float));
+//		printf("sizeof_lb[%d]: %d\n", i, sizeof_lb[i] * sizeof(float));
 
 //		printf("Allocating %ld bytes for constants on GPU.\n", constants_size);
 
@@ -147,7 +157,7 @@ void gpu__initialize(	int ap_wedge, int ap_convolve, int ap_number_streams, int 
 			host__V[j] = (float)cpu__V[j];
 		}
 		for (j = 0; j < sizeof_r_constants[i]; j++) {
-			host__r_constants[j] = (float)cpu__r_const[j];
+			host__r_constants[i][j] = (float)cpu__r_const[j];
 		}
 		for (j = 0; j < sizeof_lb[i]; j++) {
 			host__lb[j] = (float)cpu__lb[j];
@@ -161,20 +171,17 @@ void gpu__initialize(	int ap_wedge, int ap_convolve, int ap_number_streams, int 
 //		printf("device malloc\n");
 
 		cutilSafeCall( cudaMalloc((void**) &(device__V[i]), sizeof_V[i] * sizeof(float)) );
-		cutilSafeCall( cudaMalloc((void**) &(device__r_constants[i]), sizeof_r_constants[i] * sizeof(float)) );
 		cutilSafeCall( cudaMalloc((void**) &(device__lb[i]), sizeof_lb[i] * sizeof(float)) );
 
 //		printf("device memcpy\n");
 
 		cutilSafeCall( cudaMemcpy(device__V[i], host__V, sizeof_V[i] * sizeof(float), cudaMemcpyHostToDevice) );
-		cutilSafeCall( cudaMemcpy(device__r_constants[i], host__r_constants, sizeof_r_constants[i] * sizeof(float), cudaMemcpyHostToDevice) );
 		cutilSafeCall( cudaMemcpy(device__lb[i], host__lb, sizeof_lb[i] * sizeof(float), cudaMemcpyHostToDevice) );
 
 		free(host__V);
-		free(host__r_constants);
 		free(host__lb);
 
-		integral_size[i] = in__r_steps[i] * in__nu_steps[i] * mu_increment;
+		integral_size[i] = R_INCREMENT * in__nu_steps[i] * in__mu_steps[i];
 //		printf("Allocating %d bytes for integral data on GPU\n", (number_streams + 1) * integral_size[i] * sizeof(float));
 
 		cutilSafeCall( cudaMalloc((void**) &device__background_integrals[i], integral_size[i] * sizeof(float)) );
@@ -239,12 +246,12 @@ void gpu__free_constants() {
 	int i;
 	for (i = 0; i < number_integrals; i++) {
 		cutilSafeCall( cudaFree(device__V[i]) );
-		cutilSafeCall( cudaFree(device__r_constants[i]) );
 		cutilSafeCall( cudaFree(device__lb[i]) );
 		cutilSafeCall( cudaFree(device__background_integrals[i]) );
 		cutilSafeCall( cudaFree(device__stream_integrals[i]) );
 		free(host__background_integrals[i]);
 		free(host__stream_integrals[i]);
+		free(host__r_constants[i]);
 	}
 
 	cutilSafeCall( cudaFree(device__stars) );
@@ -252,7 +259,7 @@ void gpu__free_constants() {
 	free(host__background_integrals);
 	free(host__stream_integrals);
 	free(device__V);
-	free(device__r_constants);
+	free(host__r_constants);
 	free(device__lb);
 	free(device__background_integrals);
 	free(device__stream_integrals);
@@ -281,14 +288,23 @@ __global__ void gpu__zero_integrals(float *background_integrals, float *stream_i
 	for (int i = 0; i < number_streams; i++) stream_integrals[(i * gridDim.y * gridDim.x * blockDim.x) + pos] = 0;
 }
 
+#define kernel3__mu_step	blockIdx.x
+#define kernel3__mu_steps	gridDim.x
+#define kernel3__r_step		(in_step + blockIdx.y)
+#define kernel3__r_steps	in_steps
+#define kernel3__nu_step	threadIdx.x
+#define kernel3__nu_steps	blockDim.x
+
 template <unsigned int number_streams> 
-__global__ void gpu__integral_kernel(	int convolve, int mu_step, int mu_steps,
+__global__ void gpu__integral_kernel3(	int convolve, int in_step, int in_steps,
 		float q, float r0,
-		float *device__lb, float *device__r_constants, float *device__V,
+		float *device__lb, float *device__V,
 		float *background_integrals, float *stream_integrals) {
 	int i, j;
-	int pos = ((threadIdx.x * mu_steps) + mu_step + blockIdx.y) * 4;
 
+	float V = device__V[kernel3__r_step + (kernel3__r_steps * kernel3__nu_step)];
+
+	int pos = ((kernel3__nu_step * kernel3__mu_steps) + kernel3__mu_step) * 4; 
 	float sinb = device__lb[pos];
 	float sinl = device__lb[pos + 1];
 	float cosb = device__lb[pos + 2];
@@ -300,11 +316,11 @@ __global__ void gpu__integral_kernel(	int convolve, int mu_step, int mu_steps,
 	float bg_int = 0.0;
 	float st_int[number_streams];
 	for (i = 0; i < number_streams; i++) st_int[i] = 0;
+
 	float r_point, qw_r3_N;
 	float zp, rs;
-
 	for (i = 0; i < convolve; i++) {
-		pos = 2 * (i + (blockIdx.x * convolve));
+		pos = (blockIdx.y * convolve * 2) + (i * 2);
 		r_point = device__r_constants[pos];
 		qw_r3_N = device__r_constants[pos + 1];
 
@@ -316,15 +332,6 @@ __global__ void gpu__integral_kernel(	int convolve, int mu_step, int mu_steps,
 		rg = sqrt(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2)/(q*q));
 		rs = rg + r0;
 		bg_int += qw_r3_N / (rg * rs * rs * rs);
-
-		/********
-			*	Not sure why this doesn't work.
-		 ********/
-		//		pow_rg = powf(rg, alpha);
-		//		pow_rg_r0 = powf(rg + r0, 3.0f - alpha + delta);
-		//		bg_int += pow_rg * pow_rg_r0;
-
-		//		bg_int += qw_r3_N[i] / (powf(rg, alpha) * powf(rg + r0, 3.0f - alpha + delta));
 
 		for (j = 0; j < number_streams; j++) {
 			pos = (j * 3);
@@ -341,89 +348,11 @@ __global__ void gpu__integral_kernel(	int convolve, int mu_step, int mu_steps,
 			st_int[j] += qw_r3_N * exp(-((sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2)) / device__fstream_sigma_sq2[j]);
 		}
 	}
-	float V = device__V[blockIdx.x + (gridDim.x * threadIdx.x)];
-
-	pos = threadIdx.x + (blockIdx.x * blockDim.x) + (blockIdx.y * blockDim.x * gridDim.x);
-
+	
+	pos = threadIdx.x + (blockIdx.x * blockDim.x) + (blockIdx.y * gridDim.x * blockDim.x);
 	background_integrals[pos] += bg_int * V;
-	for (i = 0; i < number_streams; i++) stream_integrals[(i * gridDim.y * gridDim.x * blockDim.x) + pos] += st_int[i] * V;
+	for (i = 0; i < number_streams; i++) stream_integrals[pos + (blockDim.x * gridDim.x * gridDim.y * i)] += st_int[i] * V;
 }
-
-/*
-template <unsigned int number_streams>
-__global__ void gpu__integral_kernel2(	int convolve, int mu_step, int mu_steps,
-					float r_min, float r_step_size,
-					float q, float r0,
-					float coeff, 
-					float *device__lb, float *device__V,
-					float *background_integrals, float *stream_integrals) {
-	int i;
-	int pos = ((threadIdx.x * mu_steps) + mu_step + blockIdx.y) * 4;
-	float sinb = device__lb[pos];
-	float sinl = device__lb[pos + 1];
-	float cosb = device__lb[pos + 2];
-	float cosl = device__lb[pos + 3];
-
-	float coords = r_min + (blockIdx.x * r_step_size);
-
-	float rg, xyz0, xyz1, xyz2;
-	float dotted, sxyz0, sxyz1, sxyz2;
-
-	float bg_int = 0.0;
-	float st_int[number_streams];
-	for (i = 0; i < number_streams; i++) st_int[i] = 0.0;
-
-	float gPrime = 5.0f * (log10(coords * 1000.0f) - 1.0f) + f_absm;
-	float exponent = exp(sigmoid_curve_1 * (gPrime - sigmoid_curve_2));
-	float reff_value = sigmoid_curve_0 / (exponent + 1);
-	float rPrime3 = coords * coords * coords;
-
-	float reff_xr_rp3 = reff_value * f_xr / rPrime3;
-
-	float r_point, qw_r3_N;
-	float zp, rs, g;
-
-	for (i = 0; i < convolve; i++) {
-		g = gPrime + device__dx[i];
-
-		r_point = pow(10.0f, (g - f_absm)/5.0f + 1.0f) / 1000.0f;
-		rPrime3 = r_point * r_point * r_point;
-
-		qw_r3_N = device__qgaus_W[i] * rPrime3 * coeff * exp( -((g - gPrime) * (g - gPrime) / (2 * f_stdev * f_stdev)) );
-
-		xyz2 = r_point * sinb;
-		zp = r_point * cosb;
-		xyz0 = zp * cosl - f_lbr_r;
-		xyz1 = zp * sinl;
-
-		rg = sqrt(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2)/(q*q));
-		rs = rg + r0;
-
-		bg_int += qw_r3_N / (rg * rs * rs * rs);
-
-		for (int j = 0; j < number_streams; j++) {
-			pos = (j * 3);
-			sxyz0 = xyz0 - device__fstream_c[pos];
-			sxyz1 = xyz1 - device__fstream_c[pos + 1];
-			sxyz2 = xyz2 - device__fstream_c[pos + 2];
-
-			dotted = device__fstream_a[pos] * sxyz0 + device__fstream_a[pos + 1] * sxyz1 + device__fstream_a[pos + 2] * sxyz2;
-
-			sxyz0 -= dotted * device__fstream_a[pos];
-			sxyz1 -= dotted * device__fstream_a[pos + 1];
-			sxyz2 -= dotted * device__fstream_a[pos + 2];
-
-			st_int[j] += qw_r3_N * exp(-((sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2)) / device__fstream_sigma_sq2[j]);
-		}
-	}
-	float V = device__V[blockIdx.x + (gridDim.x * threadIdx.x)];
-
-	pos = threadIdx.x + (blockIdx.x * blockDim.x) + (blockIdx.y * blockDim.x * gridDim.x);
-
-	background_integrals[pos] += bg_int * V * reff_xr_rp3;
-	for (i = 0; i < number_streams; i++) stream_integrals[(i * gridDim.y * gridDim.x * blockDim.x) + pos] += st_int[i] * V * reff_xr_rp3;
-}
-*/
 
 void cpu__sum_integrals(int iteration, double *background_integral, double *stream_integrals) {
 	int i, j;
@@ -433,6 +362,7 @@ void cpu__sum_integrals(int iteration, double *background_integral, double *stre
 	double sum = 0.0;
 	for (i = 0; i < integral_size[iteration]; i++) {
 		sum += (double)(host__background_integrals[iteration][i]);
+//		printf("background_integral[%d/%d]: %.15f\n", i, integral_size[iteration], host__background_integrals[iteration][i]);
 	}
 	if (iteration == 0) *background_integral = sum;
 	else *background_integral -= sum;
@@ -442,39 +372,12 @@ void cpu__sum_integrals(int iteration, double *background_integral, double *stre
 		sum = 0.0;
 		for (j = 0; j < integral_size[iteration]; j++) {
 			sum += (double)(host__stream_integrals[iteration][j + (i * integral_size[iteration])]);
+//			printf("stream_integral: %.15f\n", host__stream_integrals[iteration][j + (i * integral_size[iteration])]);
 		}
 		if (iteration == 0) stream_integrals[i] = sum;
 		else stream_integrals[i] -= sum;
 	}
 }
-
-/*
-void gpu__sum_integrals(int iteration, double *background_integral, double *stream_integrals) {
-	int i, j;
-	reduce_sm10<float>(integral_size[iteration], 128, 64, 6, device__background_integrals[iteration], device__reduce);
-	cutilSafeCall( cudaMemcpy(host__reduce, device__reduce, 64 * sizeof(float), cudaMemcpyDeviceToHost) );
-
-	double reduce_sum = 0.0;
-	for (i = 0; i < 64; i++) {
-		reduce_sum += (double)(host__reduce[i]);
-	}
-	if (iteration == 0) *background_integral = reduce_sum;
-	else *background_integral -= reduce_sum;
-
-	for (i = 0; i < number_streams; i++) {
-		reduce_sm10<float>(integral_size[iteration], 128, 64, 6, &(device__stream_integrals[iteration][i * integral_size[iteration]]), device__reduce);
-		cutilSafeCall( cudaMemcpy(host__reduce, device__reduce, 64 * sizeof(float), cudaMemcpyDeviceToHost) );
-
-		double reduce_sum = 0.0;
-		for (j = 0; j < 64; j++) {
-			reduce_sum += (double)(host__reduce[j]);
-		}
-		if (iteration == 0) stream_integrals[i] = reduce_sum;
-		else stream_integrals[i] -= reduce_sum;
-	}
-
-}
-*/
 
 /********
  *	Likelihood calculation
@@ -619,51 +522,43 @@ double gpu__likelihood(double *parameters) {
 	double coeff = 1.0 / (d_stdev * sqrt(2.0 * D_PI));
 
 	for (i = 0; i < number_integrals; i++) {
-		dim3 dimGrid(r_steps[i], mu_increment);
+		dim3 dimGrid(mu_steps[i], R_INCREMENT);
 
 		gpu__zero_integrals<2><<<dimGrid, nu_steps[i]>>>(device__background_integrals[i], device__stream_integrals[i]);
-//		printf("zeroed integrals\n");
-		for (j = 0; j < mu_steps[i]; j += mu_increment) {
-/*			gpu__integral_kernel2<2><<<dimGrid, nu_steps[i]>>>(	convolve, j, mu_steps[i],
-										r_min[i], r_step_size[i],
-										q, r0,
-										(float)coeff,
-										device__lb[i], device__V[i],
-										device__background_integrals[i], device__stream_integrals[i]);
-*/			switch(number_streams) {
-				case 1:	gpu__integral_kernel<1><<<dimGrid, nu_steps[i]>>>(	convolve, j, mu_steps[i], 
+		for (j = 0; j < r_steps[i]; j += R_INCREMENT) {
+			cutilSafeCall( cudaMemcpyToSymbol(device__r_constants, &(host__r_constants[i][j * convolve * 2]), R_INCREMENT * convolve * 2 * sizeof(float), 0, cudaMemcpyHostToDevice) );
+
+			switch(number_streams) {
+				case 1:	gpu__integral_kernel3<1><<<dimGrid, nu_steps[i]>>>(	convolve, j, r_steps[i], 
 							q, r0,
-							device__lb[i], device__r_constants[i], device__V[i], 
+							device__lb[i], device__V[i], 
 							device__background_integrals[i],
 							device__stream_integrals[i]);
 					break;
-				case 2:	gpu__integral_kernel<2><<<dimGrid, nu_steps[i]>>>(	convolve, j, mu_steps[i], 
+				case 2:	gpu__integral_kernel3<2><<<dimGrid, nu_steps[i]>>>(	convolve, j, r_steps[i], 
 							q, r0,
-							device__lb[i], device__r_constants[i], device__V[i], 
+							device__lb[i], device__V[i], 
 							device__background_integrals[i],
 							device__stream_integrals[i]);
 					break;
-				case 3:	gpu__integral_kernel<3><<<dimGrid, nu_steps[i]>>>(	convolve, j, mu_steps[i], 
+				case 3:	gpu__integral_kernel3<3><<<dimGrid, nu_steps[i]>>>(	convolve, j, r_steps[i], 
 							q, r0,
-							device__lb[i], device__r_constants[i], device__V[i], 
+							device__lb[i], device__V[i], 
 							device__background_integrals[i],
 							device__stream_integrals[i]);
 					break;
-				case 4:	gpu__integral_kernel<4><<<dimGrid, nu_steps[i]>>>(	convolve, j, mu_steps[i], 
+				case 4:	gpu__integral_kernel3<4><<<dimGrid, nu_steps[i]>>>(	convolve, j, r_steps[i], 
 							q, r0,
-							device__lb[i], device__r_constants[i], device__V[i], 
+							device__lb[i], device__V[i], 
 							device__background_integrals[i],
 							device__stream_integrals[i]);
 					break;
 			}
+//			cpu__sum_integrals(i, &background_integral, stream_integrals);
+//			printf("background_integral: %.15lf, stream_integral[0]: %.15lf, stream_integral[1]: %.15lf\n", background_integral, stream_integrals[0], stream_integrals[1]);
 		}
-//		printf("completed integral kernal evaluations\n");
 		cpu__sum_integrals(i, &background_integral, stream_integrals);
 //		printf("background_integral: %.15lf, stream_integral[0]: %.15lf, stream_integral[1]: %.15lf\n", background_integral, stream_integrals[0], stream_integrals[1]);
-//		printf("bg_integral[%d]   : %.15lf\n", i, background_integral);
-//		printf("st_integral[%d][0]: %.15lf\n", i, stream_integrals[0]);
-//		printf("st_integral[%d][1]: %.15lf\n", i, stream_integrals[1]);
-//		printf("\n");
 	}
 
 	int block_size;

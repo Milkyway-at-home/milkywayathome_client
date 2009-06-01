@@ -187,7 +187,6 @@ void worker() {
 		init_simple_evaluator(astronomy_evaluate);
 	#endif
 	#ifdef COMPUTE_ON_GPU
-		printf("computing on gpu\n");
 		int *r_steps = (int*)malloc(ap->number_integrals * sizeof(int));
 		int *mu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
 		int *nu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
@@ -198,41 +197,34 @@ void worker() {
 		double *mu_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
 		double *nu_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
 		for (i = 0; i < ap->number_integrals; i++) {
-			printf("looping %d of %d\n", i, ap->number_integrals);
-			printf("integral[%d] == NULL? %d\n", i, (ap->integral[i] == NULL));
 			r_steps[i] = ap->integral[i]->r_steps;
-			printf("r\n");
 			mu_steps[i] = ap->integral[i]->mu_steps;
-			printf("mu\n");
 			nu_steps[i] = ap->integral[i]->nu_steps;
-			printf("steps done\n");
 			r_min[i] = ap->integral[i]->r_min;
 			mu_min[i] = ap->integral[i]->mu_min;
 			nu_min[i] = ap->integral[i]->nu_min;
-			printf("mins done\n");
 			r_step_size[i] = ap->integral[i]->r_step_size;
 			mu_step_size[i] = ap->integral[i]->mu_step_size;
 			nu_step_size[i] = ap->integral[i]->nu_step_size;
-			printf("step sizes done\n");
 		}
-		printf("performing initialize\n");
 
 		gpu__initialize(ap->wedge, ap->convolve, ap->number_streams, ap->number_integrals,
 				r_steps, r_min, r_step_size,
 				mu_steps, mu_min, mu_step_size,
 				nu_steps, nu_min, nu_step_size,
 				sp->number_stars, sp->stars);
-		printf("initialized\n");
 
 		init_simple_evaluator(gpu__likelihood);
 	#endif
 	get_step(ap, &step);
 
-	fwrite_double_array(stdout, "step", s->number_parameters, step);
-	fwrite_double_array(stdout, "point", s->number_parameters, s->parameters);
-
 	likelihood = evaluate(s->parameters);
-	fprintf(stdout, "likelihood: %lf\n", likelihood);
+	fprintf(stdout, "initial likelihood: %.20lf\n\n", likelihood);
+
+	fwrite_double_array(stdout, "point", s->number_parameters, s->parameters);
+	fwrite_double_array(stdout, "step", s->number_parameters, step);
+
+	fprintf(stdout, "\n");
 
 	new_matrix(&hessian, s->number_parameters, s->number_parameters);
 	get_hessian__checkpointed(s->number_parameters, s->parameters, step, hessian, hessian_checkpoint_file);
@@ -316,4 +308,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.14 2009/05/25 20:35:29 deselt Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.15 2009/06/01 07:28:17 deselt Exp $";

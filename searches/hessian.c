@@ -120,12 +120,15 @@ void get_hessian__checkpointed(int number_parameters, double *point, double *ste
 	read_hessian_checkpoint(checkpoint_file, &np, &i, &j, hessian);
 
 	for (i = 0; i < number_parameters; i++) {
+		j = i;
 		pi = point[i];
 		pj = point[j];
 		point[i] = pi + step[i] + step[i];
 		e1 = evaluate(point);
+
 		point[i] = pi;
 		e2 = e3 = evaluate(point);
+
 		point[i] = pi - (step[i] + step[i]); 
 		e4 = evaluate(point);
 		point[i] = pi;

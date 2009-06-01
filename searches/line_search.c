@@ -33,7 +33,7 @@ const char *LS_STR[] = {"success", "nan fitness in loop 1", "nan fitness in loop
 
 #define LOOP1_MAX	30
 #define LOOP2_MAX	10
-#define NQUAD		3
+#define NQUAD		6
 /********
 	*	Stopping Conditions
  ********/

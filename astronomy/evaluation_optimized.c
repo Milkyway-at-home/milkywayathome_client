@@ -155,7 +155,7 @@ void free_constants(ASTRONOMY_PARAMETERS *ap) {
 	free(qgaus_X);
 	free(qgaus_W);
 	free(dx);
-	for (i = 0; i < ap->convolve`; i++) {
+	for (i = 0; i < ap->convolve; i++) {
 		free(xyz[i]);
 	}
 	free(xyz);
