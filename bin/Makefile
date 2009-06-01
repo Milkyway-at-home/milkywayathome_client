@@ -1,9 +1,12 @@
 APP_VERSION = 0.18
 APP_NAME = your_app_name
 
-BOINC_DIR = /Users/deselt/software/boinc
-LIBBOINC_DIR = /Users/deselt/software/boinc/mac_build/build/Deployment
-FRAMEWORKS_DIR = /System/Library/Frameworks
+OSX_BOINC_DIR = /Users/deselt/software/boinc
+OSX_LIBBOINC_DIR = /Users/deselt/software/boinc/mac_build/build/Deployment
+
+LINUX_BOINC_DIR = /software/boinc-6.3.14-0/pkg/include/boinc
+LINUX_LIBBOINC_DIR = /usr/local/lib
+#/software/boinc-6.3.14-0/pkg/lib
 
 CUDA_INC = -I/Developer/CUDA/common/inc -I/usr/local/cuda/include
 CUDA_LIB = -L/usr/local/cuda/lib
@@ -19,38 +22,40 @@ CXXFLAGS_ALL = $(VARIANTFLAGS) -g
 OSX_CC_PPC = /usr/bin/gcc-3.3
 OSX_CXX_PPC = /usr/bin/g++-3.3
 OSX_CXXFLAGS_PPC = -arch ppc -D_NONSTD_SOURCE -isystem /Developer/SDKs/MacOSX10.3.9.sdk -O2 -maltivec -mabi=altivec -mcpu=7400 -funroll-loops -DMAC_OS_X_VERSION_MIN_REQUIRED=1030 $(CXXFLAGS_ALL) \
-	-I$(BOINC_DIR) -I$(BOINC_DIR)/api -I$(BOINC_DIR)/lib -I$(BOINC_DIR)/clientgui/mac/ \
-	-L$(BOINC_DIR)/mac_build/build/Deployment
+	-I$(OSX_BOINC_DIR) -I$(OSX_BOINC_DIR)/api -I$(OSX_BOINC_DIR)/lib -I$(OSX_BOINC_DIR)/clientgui/mac/ \
+	-L$(OSX_BOINC_DIR)/mac_build/build/Deployment
 OSX_LDFLAGS_PPC = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.3.9.sdk,-arch,ppc
 
 OSX_CC_i686 = /usr/bin/gcc-4.0
 OSX_CXX_i686 = /usr/bin/g++-4.0
 OSX_CXXFLAGS_i686 = -arch i386 -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -O3 -msse3 -mfpmath=sse -mtune=prescott -ftree-vectorize -funroll-loops $(CXXFLAGS_ALL) \
-	-I$(BOINC_DIR) -I$(BOINC_DIR)/api -I$(BOINC_DIR)/lib -I$(BOINC_DIR)/clientgui/mac/ \
-	-L$(BOINC_DIR)/mac_build/build/Deployment
+	-I$(OSX_BOINC_DIR) -I$(OSX_BOINC_DIR)/api -I$(OSX_BOINC_DIR)/lib -I$(OSX_BOINC_DIR)/clientgui/mac/ \
+	-L$(OSX_BOINC_DIR)/mac_build/build/Deployment
 OSX_LDFLAGS_i686 = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk,-arch,i386
 
 OSX_CC_x86_64 = /usr/bin/gcc-4.0
 OSX_CXX_x86_64 = /usr/bin/g++-4.0
 OSX_CXXFLAGS_x86_64 = -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -O3 -mfpmath=sse -march=nocona -msse3 -ftree-vectorize -funroll-loops $(CXXFLAGS_ALL) \
-	-I$(BOINC_DIR) -I$(BOINC_DIR)/api -I$(BOINC_DIR)/lib -I$(BOINC_DIR)/clientgui/mac/ \
-	-L$(BOINC_DIR)/mac_build/build/Deployment
+	-I$(OSX_BOINC_DIR) -I$(OSX_BOINC_DIR)/api -I$(OSX_BOINC_DIR)/lib -I$(OSX_BOINC_DIR)/clientgui/mac/ \
+	-L$(OSX_BOINC_DIR)/mac_build/build/Deployment
 OSX_LDFLAGS_x86_64 = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.5.sdk,-arch,x86_64
 
 OSX_CC_x86_64 = /usr/bin/gcc-4.0
 OSX_CXX_x86_64 = /usr/bin/g++-4.0
 OSX_CXXFLAGS_x86_64 = -arch x86_64 -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -O3 -mfpmath=sse -march=nocona -msse3 -ftree-vectorize -funroll-loops $(CXXFLAGS_ALL) \
-	-I$(BOINC_DIR) -I$(BOINC_DIR)/api -I$(BOINC_DIR)/lib -I$(BOINC_DIR)/clientgui/mac/ \
-	-L$(BOINC_DIR)/mac_build/build/Deployment
+	-I$(OSX_BOINC_DIR) -I$(OSX_BOINC_DIR)/api -I$(OSX_BOINC_DIR)/lib -I$(OSX_BOINC_DIR)/clientgui/mac/ \
+	-L$(OSX_BOINC_DIR)/mac_build/build/Deployment
 OSX_LDFLAGS_x86_64 = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.5.sdk,-arch,x86_64
 
 
 LINUX_CXX_i686 = g++
-LINUX_CXXFLAGS_i686 = -m32 -O2 -ftree-vectorize -funroll-loops $(CXXFLAGS_ALL)
+LINUX_CXXFLAGS_i686 = -m32 -O2 -ftree-vectorize -funroll-loops $(CXXFLAGS_ALL) \
+	-I$(LINUX_BOINC_DIR) -L$(LINUX_LIBBOINC_DIR)
 LINUX_LDFLAGS_i686 = -L/usr/X11R6/lib -L/usr/local/lib
 
 LINUX_CXX_x86_64 = g++
-LINUX_CXXFLAGS_x86_64 = -O2 -msse2 -ftree-vectorize -funroll-loops $(CXXFLAGS_ALL)
+LINUX_CXXFLAGS_x86_64 = -O2 -msse2 -ftree-vectorize -funroll-loops $(CXXFLAGS_ALL) \
+	-I$(LINUX_BOINC_DIR) -L$(LINUX_LIBBOINC_DIR)
 LINUX_LDFLAGS_x86_64 = -L/usr/local/lib
 
 
@@ -106,39 +111,33 @@ $(GPU_DIR)/evaluation_gpu2.o:
 
 osx_ppc: OBJ_CXX = $(OSX_CXX_PPC)
 osx_ppc: OBJ_CXXFLAGS = $(CPU_FLAGS) $(OSX_CXXFLAGS_PPC)
-osx_ppc: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LIBBOINC_DIR)/libboinc_api.a $(LIBBOINC_DIR)/libboinc.a
+osx_ppc: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(OSX_LIBBOINC_DIR)/libboinc_api.a $(OSX_LIBBOINC_DIR)/libboinc.a
 	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(OSX_LDFLAGS_PPC) -o milkyway_$(APP_VERSION)_powerpc-apple-darwin $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lboinc -lboinc_api
 
 osx_i686: OBJ_CXX = $(OSX_CXX_i686)
 osx_i686: OBJ_CXXFLAGS = $(CPU_FLAGS) $(OSX_CXXFLAGS_i686)
-osx_i686: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LIBBOINC_DIR)/libboinc_api.a $(LIBBOINC_DIR)/libboinc.a
+osx_i686: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(OSX_LIBBOINC_DIR)/libboinc_api.a $(OSX_LIBBOINC_DIR)/libboinc.a
 	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(OSX_LDFLAGS_i686) -o milkyway_$(APP_VERSION)_i686-apple-darwin $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lboinc -lboinc_api
 
 osx_i686_gpu: OBJ_CXX = $(OSX_CXX_i686)
 osx_i686_gpu: OBJ_CXXFLAGS = $(GPU_FLAGS) $(OSX_CXXFLAGS_i686)
-osx_i686_gpu: $(GPU_APP_OBJS) $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LIBBOINC_DIR)/libboinc_api.a $(LIBBOINC_DIR)/libboinc.a
+osx_i686_gpu: $(GPU_APP_OBJS) $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(OSX_LIBBOINC_DIR)/libboinc_api.a $(OSX_LIBBOINC_DIR)/libboinc.a
 	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LDFLAGS_x86_64) -o milkywayGPU_$(APP_VERSION)_i686-apple-darwin $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc -lboinc_api -lcudart
 
 osx_x86_64: OBJ_CXX = $(OSX_CXX_x86_64)
 osx_x86_64: OBJ_CXXFLAGS = $(CPU_FLAGS) $(OSX_CXXFLAGS_x86_64)
-osx_x86_64: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LIBBOINC_DIR)/libboinc_api.a $(LIBBOINC_DIR)/libboinc.a
+osx_x86_64: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(OSX_LIBBOINC_DIR)/libboinc_api.a $(OSX_LIBBOINC_DIR)/libboinc.a
 	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(OSX_LDFLAGS_x86_64) -o milkyway_$(APP_VERSION)_x86_64-apple-darwin $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lboinc -lboinc_api
-
-#NO 64 BIT CUDA YET :(
-#osx_x86_64_gpu: OBJ_CXX = $(OSX_CXX_x86_64)
-#osx_x86_64_gpu: OBJ_CXXFLAGS = $(GPU_FLAGS) $(OSX_CXXFLAGS_x86_64)
-#osx_x86_64_gpu: $(GPU_APP_OBJS) $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LIBBOINC_DIR)/libboinc_api.a $(LIBBOINC_DIR)/libboinc.a
-#	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LDFLAGS_x86_64) -o milkyway_$(APP_VERSION)_x86_64-apple-darwin $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc -lboinc_api -lcudart
 
 
 linux_i686: OBJ_CXX = $(LINUX_CXX_i686)
 linux_i686: OBJ_CXXFLAGS = $(CPU_FLAGS) $(LINUX_CXXFLAGS_i686)
-linux_i686: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LIBBOINC_DIR)/libboinc_api.a $(LIBBOINC_DIR)/libboinc.a
+linux_i686: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LINUX_LIBBOINC_DIR)/libboinc_api.a $(LINUX_LIBBOINC_DIR)/libboinc.a
 	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LINUX_LDFLAGS_i686) -Wl --export_dynamic -o milkyway_$(APP_VERSION)_i686-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lm -lboinc_api -lboinc -pthread
 
-linux_x86_64: OBJ_CXX = $(LINUX_CXX_i686)
-linux_x86_64: OBJ_CXXFLAGS = $(CPU_FLAGS) $(LINUX_CXXFLAGS_i686)
-linux_x86_64: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LIBBOINC_DIR)/libboinc_api.a $(LIBBOINC_DIR)/libboinc.a
+linux_x86_64: OBJ_CXX = $(LINUX_CXX_x86_64)
+linux_x86_64: OBJ_CXXFLAGS = $(CPU_FLAGS) $(LINUX_CXXFLAGS_x86_64)
+linux_x86_64: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LINUX_LIBBOINC_DIR)/libboinc_api.a $(LINUX_LIBBOINC_DIR)/libboinc.a
 	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LINUX_LDFLAGS_x86_64) -Wl -static -static-libgcc -o milkyway_$(APP_VERSION)_x86_64-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lm -lboinc_api -lboinc -pthread
 
 
