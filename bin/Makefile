@@ -141,8 +141,6 @@ linux_x86_64: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LINUX_LIBBOINC_DIR)/libb
 	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LINUX_LDFLAGS_x86_64) -Wl -static -static-libgcc -o milkyway_$(APP_VERSION)_x86_64-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lm -lboinc_api -lboinc -pthread
 
 
-
-
 .C.o:
 	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(INC) -Wall -c $< -o $@
 .c.o:
