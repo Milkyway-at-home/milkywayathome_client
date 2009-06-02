@@ -289,7 +289,7 @@ int parse(PARTICLE_SWARM_OPTIMIZATION *pso, SEARCH_PARAMETERS *sp, int *particle
 	char *current_token;
 
 	if (isnan(sp->fitness)) return AS_INSERT_FITNESS_NAN;
-	if (sp->fitness > -2.6) return AS_INSERT_FITNESS_INVALID;
+	if (sp->fitness > -2.0) return AS_INSERT_FITNESS_INVALID;
 
 	for (i = 0; i < pso->number_parameters; i++) {
 		if (isnan(sp->parameters[i])) return AS_INSERT_PARAMETERS_NAN;

@@ -72,8 +72,14 @@ int fread_double_array(FILE *file, const char *array_name, double** array_t) {
 
 int fread_double_array__realloc(FILE *file, const char *array_name, int *size, double **array_t) {
 	int i, read_size;
+	int c;
 	fscanf(file, array_name);
-	fscanf(file, "[%d]: ", &read_size);
+	c = fgetc(file);
+	if (c == '[') {
+		fscanf(file, "%d]: ", &read_size);
+	} else {
+		fscanf(file, "[%d]: ", &read_size);
+	}
 
 	if (read_size <= 0) {
 		fprintf(stderr, "Error reading %s, invalid size: %d\n", array_name, read_size);

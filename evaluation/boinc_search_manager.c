@@ -416,7 +416,7 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 		 ********/
 		get_output_file_path(result, output_file_name);
 		const char *output_string = output_file_name.c_str();
-		retval = read_cpu_result__realloc(output_string, &(insert_sp->number_parameters), &(insert_sp->parameters), &(insert_sp->fitness), insert_sp->metadata);
+		retval = read_cpu_result__realloc(output_string, insert_sp->search_name, &(insert_sp->number_parameters), &(insert_sp->parameters), &(insert_sp->fitness), insert_sp->metadata, insert_sp->app_version);
 		if (retval) {
 			credit = update_workunit(validator, AS_VERIFY_INVALID, result, wu);
 			print_message(search_name, "error reading result", "", "invalid", result.app_version_num, insert_sp->app_version, "?", credit, result);

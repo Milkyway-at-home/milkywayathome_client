@@ -37,7 +37,7 @@ int write_cpu_result(char *filename, int number_parameters, double *parameters, 
 int fread_cpu_result(FILE *file, int number_parameters, double *parameters, double fitness, char *metadata);
 int read_cpu_result(char *filename, int number_parameters, double *parameters, double fitness, char *metadata);
 
-int fread_cpu_result__realloc(FILE *file, int *number_parameters, double **parameters, double *fitness, char *metadata);
-int read_cpu_result__realloc(const char *filename, int *number_parameters, double **parameters, double *fitness, char *metadata);
+int fread_cpu_result__realloc(FILE *file, char *search_name, int *number_parameters, double **parameters, double *fitness, char *metadata, char *app_version);
+int read_cpu_result__realloc(const char *filename, char *search_name, int *number_parameters, double **parameters, double *fitness, char *metadata, char *app_version);
 
 #endif

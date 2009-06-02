@@ -168,21 +168,42 @@ int read_cpu_result(char *filename, int number_parameters, double *parameters, d
 	return retval;
 }
 
-int fread_cpu_result__realloc(FILE *file, int *number_parameters, double **parameters, double *fitness, char *metadata) {
+int fread_cpu_result__realloc(FILE *file, char *search_name, int *number_parameters, double **parameters, double *fitness, char *metadata, char *app_version) {
+	int i, count;
+
+	fscanf(file, "%s\n", search_name);
 	fread_double_array__realloc(file, "parameters", number_parameters, parameters);
-	fscanf(file, "fitness: %lf\n", fitness);
 	fread_metadata(file, metadata);
+	fscanf(file, "fitness: %lf\n", fitness);
+
+	memset(app_version, '\0', sizeof(char) * 128);
+	if (fgets(app_version, 128, file) == NULL || strlen(app_version) < 5) {
+		sprintf(app_version, "?");
+	} else {
+		count = 0;
+		for (i = strlen(app_version); i >= 0; i--) {
+			if (app_version[i] == '\0') {
+			} else if (app_version[i] == ' ' || app_version[i] == 10 || app_version[i] == 13) {
+				app_version[i] = '\0';
+//				count++;
+			} else {
+//				printf("breaked after count: %d\n", count);
+				break;
+			}
+		}
+	}
+
 	return 0;
 }
 
-int read_cpu_result__realloc(const char *filename, int *number_parameters, double **parameters, double *fitness, char *metadata) {
+int read_cpu_result__realloc(const char *filename, char *search_name, int *number_parameters, double **parameters, double *fitness, char *metadata, char *app_version) {
 	int retval;
 	FILE *data_file = fopen(filename, "r");
 	if (data_file == NULL) {
 		fprintf(stderr, "APP: error reading cpu result file: data_file == NULL\n");
 		return 1;
 	}
-	retval = fread_cpu_result__realloc(data_file, number_parameters, parameters, fitness, metadata);
+	retval = fread_cpu_result__realloc(data_file, search_name, number_parameters, parameters, fitness, metadata, app_version);
 	fclose(data_file);
 	return retval;
 }
