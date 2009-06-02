@@ -13,6 +13,7 @@ CUDA_LIB = -L/usr/local/cuda/lib
 
 
 GPU_FLAGS = -DMILKYWAY_GPU -DCOMPUTE_ON_GPU $(CUDA_INC) $(CUDA_LIB)
+GPU_PRECISION = -DSINGLE_PRECISION
 CPU_FLAGS = -DMILKYWAY -DCOMPUTE_ON_CPU
 
 VARIANTFLAGS = -DBOINC_APPLICATION -DBOINC_APP_NAME='"$(APP_NAME)"' -DBOINC_APP_VERSION=$(APP_VERSION)
@@ -80,7 +81,7 @@ UTIL_OBJS = \
 	$(UTIL_DIR)/io_util.o \
 	$(UTIL_DIR)/settings.o
 GPU_APP_OBJS = \
-	$(GPU_DIR)/evaluation_gpu.o \
+	$(GPU_DIR)/evaluation_gpu2.o \
 	$(GPU_DIR)/coords.o \
 	$(GPU_DIR)/gauss_legendre.o \
 	$(GPU_DIR)/cpu_r_constants.o \
@@ -101,6 +102,8 @@ $(GPU_DIR)/evaluation_gpu.o:
 	nvcc -lcuda $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu.o $(GPU_DIR)/evaluation_gpu.cu
 $(GPU_DIR)/evaluation_gpu2.o:
 	nvcc -lcuda $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu2.o $(GPU_DIR)/evaluation_gpu2.cu
+$(GPU_DIR)/evaluation_gpu3.o:
+	nvcc -lcuda $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu3.o $(GPU_DIR)/evaluation_gpu3.cu
 
 osx_ppc: OBJ_CXX = $(OSX_CXX_PPC)
 osx_ppc: OBJ_CXXFLAGS = $(CPU_FLAGS) $(OSX_CXXFLAGS_PPC)
@@ -141,7 +144,7 @@ linux_x86_64: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LINUX_LIBBOINC_DIR)/libb
 linux_x86_64_gpu: OBJ_CXX = $(LINUX_CXX_x86_64)
 linux_x86_64_gpu: OBJ_CXXFLAGS = $(GPU_FLAGS) $(LINUX_CXXFLAGS_x86_64)
 linux_x86_64_gpu: $(GPU_APP_OBJS) $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LINUX_LIBBOINC_DIR)/libboinc_api.a $(LINUX_LIBBOINC_DIR)/libboinc.a
-	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LDFLAGS_x86_64) -o milkywayGPU_$(APP_VERSION)_x86_64-pc-linux-gnu$(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc -lboinc_api -lcudart
+	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LDFLAGS_x86_64) -o milkywayGPU_$(APP_VERSION)_x86_64-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc -lboinc_api -lcudart
 
 
 .C.o:
@@ -151,7 +154,7 @@ linux_x86_64_gpu: $(GPU_APP_OBJS) $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LINU
 
 
 clean:
-	rm -f $(SEARCH_OBJS) $(UTIL_OBJS) $(APP_OBJS) $(GPU_APP_OBJS)
+	rm -f $(SEARCH_OBJS) $(UTIL_OBJS) $(APP_OBJS) $(GPU_APP_OBJS) evaluation_gpu.linkinfo evaluation_gpu2.linkinfo evaluation_gpu3.linkinfo
 
 clean_all:
 	rm -f $(PROGS) $(SEARCH_OBJS) $(UTIL_OBJS) $(APP_OBJS)

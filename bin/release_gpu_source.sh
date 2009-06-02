@@ -43,6 +43,7 @@ cp ../../astronomy_gpu/*.sh ./astronomy_gpu/
 
 cp ../../evaluation/simple_evaluator.c ./evaluation/
 cp ../../evaluation/simple_evaluator.h ./evaluation/
+cp ../../evaluation/evaluator.h ./evaluation/
 
 cp ../../searches/hessian.c ./searches/
 cp ../../searches/hessian.h ./searches/
