@@ -20,6 +20,6 @@ convolve: 120
 sgr_coordinates: 1
 wedge: 8
 r[min,max,steps]: 16.0, 22.5, 700
-mu[min,max,steps]: 164, 210, 1000
+mu[min,max,steps]: 164, 210, 1600
 nu[min,max,steps]: -1.25, 1.25, 160
 number_cuts: 0
