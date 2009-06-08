@@ -67,6 +67,9 @@ void print_usage() {
 	exit(1);
 }
 
+//void get_filename(char *filepath, char *filename) {
+//}
+
 
 void get_filename(char *filepath, char *filename) {
 	int i, length;
@@ -175,10 +178,10 @@ int main(int argc, char** argv) {
 		for (i = 0; i < number_parameters; i++) {
 			in_radians[i] = 0;
 		}
-		for (i = 0; i < ap->number_streams; i++) {
-			in_radians[2 + (i * 6) + 3] = 1;
-			in_radians[2 + (i * 6) + 4] = 1;
-		}
+//		for (i = 0; i < ap->number_streams; i++) {
+//			in_radians[2 + (i * 6) + 3] = 1;
+//			in_radians[2 + (i * 6) + 4] = 1;
+//		}
 		new_bounds(&bounds, number_parameters, min_bound, max_bound, in_radians);
 		asynchronous_search__init(argc, argv, number_parameters, point, step, bounds);
 

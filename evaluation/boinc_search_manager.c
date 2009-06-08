@@ -105,7 +105,7 @@ void print_message(char *search_name, char *as_msg, const char *as_result, char 
 	if (trip_time < 0) trip_time = 0;
 
 	//scope_messages.printf("[%-13s] [%-87s][%-17s][%-8s] v[%-37s][%-7s] c[%*.5lf], t[%*d/%*.2lf] h[%*d]\n", search_name, as_msg, as_result, verify_msg, version, host_os, 9, credit, 6, trip_time, 8, result.cpu_time, 6, result.hostid);
-	scope_messages.printf("[%-13s] [%-87s][%-17s][%-8s] v[%-37s][%-7s] c[%*.3lf/%*.3lf], t[%*d/%*.2lf], h[%*d]\n", search_name, as_msg, as_result, verify_msg, version, host_os, 6, credit, 6, result.claimed_credit, 6, trip_time, 8, result.cpu_time, 6, result.hostid);
+	scope_messages.printf("[%-20s] [%-87s][%-17s][%-8s] v[%-37s][%-7s] c[%*.3lf/%*.3lf], t[%*d/%*.2lf], h[%*d]\n", search_name, as_msg, as_result, verify_msg, version, host_os, 6, credit, 6, result.claimed_credit, 6, trip_time, 8, result.cpu_time, 6, result.hostid);
 }
 
 void update_workunit_info(int pos) {

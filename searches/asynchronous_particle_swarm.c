@@ -417,7 +417,7 @@ int pso_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETER
 		/**
 		 * Verify the particle before comparing fitness for insert, so we can remove bad redundancies.
 		 */
-
+/*
 		if (pso->local_best->size >= 40) {
 			double min_error, max_error, median_error, average_error;
 			double particle_error;
@@ -431,7 +431,7 @@ int pso_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETER
 				return AS_INSERT_OUTLIER;
 			}
 		}
-
+*/
 		if (!individual_exists(pso->local_best, particle)) {
 			insert_particle(search_name, pso, particle, velocity, sp);
 		} else {
