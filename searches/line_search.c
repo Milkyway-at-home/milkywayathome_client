@@ -128,7 +128,8 @@ int line_search(double* point, double initial_fitness, double* direction, int nu
 		// fs = evaluate(point + (dstar * step * direction));
 		fs = evaluate_step(point, dstar * step, direction, number_parameters, current_point);
 		(*evaluations_done)++;
-		printf("\t\tloop 3, evaluations: %d, step: %.15lf, fitness: %.15lf\n", (*evaluations_done), (dstar * step), fs);
+		//commented out next line, fixed it and put it at the end of the "if" statement. - newbym2
+		//printf("\t\tloop 3, evaluations: %d, step: %.15lf, fitness: %.15lf\n", (*evaluations_done), (dstar * step), fs);
 		if (isnan(fs)) return LS_LOOP3_NAN;
 
 		if (dstar > d2 ) {
@@ -152,6 +153,9 @@ int line_search(double* point, double initial_fitness, double* direction, int nu
 				f2 = fs;
 			}
 		}
+	//Now prints out "f2" instead of "fs"; f2 is updated midpoint, fs was test midpoint. -newbym2 
+	printf("\t\tloop 3, evaluations: %d, step: %.15lf, fitness: %.15lf\n", (*evaluations_done), (dstar * step), f2);
+
 	}
 
 	memcpy(minimum, current_point, sizeof(double) * number_parameters);
