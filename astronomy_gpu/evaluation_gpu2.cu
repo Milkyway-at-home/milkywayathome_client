@@ -521,6 +521,10 @@ double gpu__likelihood(double *parameters) {
 
 	double coeff = 1.0 / (d_stdev * sqrt(2.0 * D_PI));
 
+	unsigned int timer;
+	cutCreateTimer(&timer);
+	cutResetTimer(timer);
+	cutStartTimer(timer);
 	for (i = 0; i < number_integrals; i++) {
 		dim3 dimGrid(mu_steps[i], R_INCREMENT);
 
@@ -560,7 +564,9 @@ double gpu__likelihood(double *parameters) {
 		cpu__sum_integrals(i, &background_integral, stream_integrals);
 //		printf("background_integral: %.15lf, stream_integral[0]: %.15lf, stream_integral[1]: %.15lf\n", background_integral, stream_integrals[0], stream_integrals[1]);
 	}
-
+	cutStopTimer(timer);
+	float time = cutGetTimerValue(timer);
+	printf("gpu__integral_kernel3 loop took %f ms\n", time);
 	int block_size;
 
 	double *stream_weight = (double*)malloc(number_streams * sizeof(double));
@@ -582,6 +588,9 @@ double gpu__likelihood(double *parameters) {
 
 	cutilSafeCall( cudaMemcpyToSymbol(device__background_weight, f_background_weight, 1 * sizeof(float), 0, cudaMemcpyHostToDevice) );
 	cutilSafeCall( cudaMemcpyToSymbol(device__stream_weight, f_stream_weight, number_streams * sizeof(float), 0, cudaMemcpyHostToDevice) );
+
+	cutResetTimer(timer);
+	cutStartTimer(timer);
 
 	double likelihood = 0.0;
 	gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability);
@@ -614,6 +623,9 @@ double gpu__likelihood(double *parameters) {
 			break;
 		}
 	}
+	cutStopTimer(timer);
+	time = cutGetTimerValue(timer);
+	printf("gpu__likelihood_kernel loop took %f ms\n", time);
 	cpu__sum_likelihood(number_threads, &likelihood);
 	likelihood /= number_stars;
 //	printf("likelihood: %.15lf\n", likelihood);
