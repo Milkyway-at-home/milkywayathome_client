@@ -31,8 +31,8 @@ int fread_gpu_result(FILE *file, int number_parameters, double **hessian, double
 int fread_gpu_result(char *filename, int number_parameters, double **hessian, double *gradient, double *initial_fitness, double *initial_parameters, double *result_fitness, double *result_parameters, int *number_evaluations, char *metadata);
 
 
-int fwrite_cpu_result(FILE *file, int number_parameters, double *parameters, double likelihood, char *metadata);
-int write_cpu_result(char *filename, int number_parameters, double *parameters, double likelihood, char *metadata);
+int fwrite_cpu_result(FILE *file, char *search_name, int number_parameters, double *parameters, double fitness, char *metadata, char *app_version, char *precision);
+int write_cpu_result(char *filename, char *search_name, int number_parameters, double *parameters, double fitness, char *metadata, char *app_version, char *precision);
 
 int fread_cpu_result(FILE *file, int number_parameters, double *parameters, double fitness, char *metadata);
 int read_cpu_result(char *filename, int number_parameters, double *parameters, double fitness, char *metadata);

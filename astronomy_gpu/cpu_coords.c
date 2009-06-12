@@ -26,9 +26,10 @@
 #include "coords.h"
 
 #include "../astronomy/parameters.h"
+#include "../astronomy/atSurveyGeometry.h"
 
 
-void gc_to_gal(int wedge, double amu_rad, double anu_rad, double *cpu__glong, double *cpu__glat) {
+void gc_eq_gal(int wedge, double amu_rad, double anu_rad, double *cpu__glong, double *cpu__glat) {
         double a_inc_rad = d_get_incl_rad(wedge);
 	double cos_ainc = cos(a_inc_rad);
 	double sin_ainc = sin(a_inc_rad);
@@ -65,7 +66,7 @@ void gc_to_gal(int wedge, double amu_rad, double anu_rad, double *cpu__glong, do
 }
 
 
-void gc_to_lb(int wedge, double amu_rad, double anu_rad, double *cpu__lb) {
+void gc_eq_gal_lb(int wedge, double amu_rad, double anu_rad, double *cpu__lb) {
         double a_inc_rad = d_get_incl_rad(wedge);
 	double cos_ainc = cos(a_inc_rad);
 	double sin_ainc = sin(a_inc_rad);
@@ -97,8 +98,8 @@ void gc_to_lb(int wedge, double amu_rad, double anu_rad, double *cpu__lb) {
 	/*
 	 *      Might need to check if r is 0, then glong and glat are both 0
 	**/
-	double glong = fmod(atan2(v1, v0), D_2PI);
-	double glat = fmod(atan2(v2, r), D_2PI);
+	double glong = dmod(atan2(v1, v0), D_2PI);
+	double glat = dmod(atan2(v2, r), D_2PI);
 
 	cpu__lb[0] = sin(glat);
 	cpu__lb[1] = sin(glong);
@@ -106,7 +107,7 @@ void gc_to_lb(int wedge, double amu_rad, double anu_rad, double *cpu__lb) {
 	cpu__lb[3] = cos(glong);
 }
 
-void cpu__gc_to_lb(	int wedge,
+void cpu__gc_eq_gal_lb(	int wedge,
 			int mu_steps, double mu_min, double mu_step_size,
 			int nu_steps, double nu_min, double nu_step_size,
 			double **cpu__lb) {
@@ -125,11 +126,67 @@ void cpu__gc_to_lb(	int wedge,
 		for (j = 0; j < nu_steps; j++) {
 			anu = nu_min_rad + ((j + 0.5) * nu_step_rad);
        			pos = ((i * nu_steps) + j) * 4;
-			gc_to_lb(wedge, amu, anu, &( (*cpu__lb)[pos] ));
+			gc_eq_gal_lb(wedge, amu, anu, &( (*cpu__lb)[pos] ));
+		}
+	}
+}
+
+
+void gc_sgr_gal(int wedge, double amu_rad, double anu_rad, double *cpu__glong, double *cpu__glat) {
+//	gcToSgr(ap->stream_parameters[i][0], 0, wedge, &lamda, &beta);
+	double lamda, beta;
+
+	double x = cos(amu_rad)*cos(anu_rad);
+	double y = -sin(anu_rad);
+	double z = sin(amu_rad)*cos(anu_rad);
+
+	lamda = atan2(y, x);
+	lamda = lamda * D_RAD2DEG; 
+	lamda = lamda + 2.5 * wedge;
+	if (lamda < 0) lamda = lamda + 360;
+
+	beta = asin(z);
+	beta *= D_RAD2DEG;
+
+	sgrToGal(lamda, beta, cpu__glong, cpu__glat); 
+	(*cpu__glong) *= D_DEG2RAD;
+	(*cpu__glat) *= D_DEG2RAD;
+}
+
+void gc_sgr_gal_lb(int wedge, double amu_rad, double anu_rad, double *cpu__lb) {
+	double glong, glat;
+	gc_sgr_gal(wedge, amu_rad, anu_rad, &glong, &glat); 
+
+	cpu__lb[0] = sin(glat);
+	cpu__lb[1] = sin(glong);
+	cpu__lb[2] = cos(glat);
+	cpu__lb[3] = cos(glong);
+}
+
+void cpu__gc_sgr_gal_lb(	int wedge,
+				int mu_steps, double mu_min, double mu_step_size,
+				int nu_steps, double nu_min, double nu_step_size,
+				double **cpu__lb) {
+	int i, j;
+        double mu_min_rad = mu_min * D_DEG2RAD;
+        double mu_step_rad = mu_step_size * D_DEG2RAD;
+        double nu_min_rad = nu_min * D_DEG2RAD;
+        double nu_step_rad = nu_step_size * D_DEG2RAD;
+
+	*cpu__lb = (double*)malloc(4 * mu_steps * nu_steps * sizeof(double));
+
+	double anu, amu;
+	int pos;
+	for (i = 0; i < mu_steps; i++) {
+		amu = mu_min_rad + ((i + 0.5) * mu_step_rad);
+		for (j = 0; j < nu_steps; j++) {
+			anu = nu_min_rad + ((j + 0.5) * nu_step_rad);
+       			pos = ((i * nu_steps) + j) * 4;
+			gc_sgr_gal_lb(wedge, amu, anu, &( (*cpu__lb)[pos] ));
 		}
 	}
 }
 
 void cpu__gc_to_lb(int wedge, INTEGRAL *integral, double **cpu__lb) {
-	cpu__gc_to_lb(wedge, integral->mu_steps, integral->mu_min, integral->mu_step_size, integral->nu_steps, integral->nu_min, integral->nu_step_size, cpu__lb);
+	cpu__gc_eq_gal_lb(wedge, integral->mu_steps, integral->mu_min, integral->mu_step_size, integral->nu_steps, integral->nu_min, integral->nu_step_size, cpu__lb);
 }

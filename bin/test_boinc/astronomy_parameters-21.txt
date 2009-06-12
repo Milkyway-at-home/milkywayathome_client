@@ -26,10 +26,10 @@ stream_step[5]: 0.00003, 0.00004, 0.00006, 0.00004, 0.000004
 stream_min[5]: 133.0, 2.40, 0.000000000000000, 0.000000000000000, 0.10
 stream_max[5]: 210.0, 45.6, 6.283185307179586, 6.283185307179586, 20.0
 optimize_parameter[5]: 1, 1, 1, 1, 1
-convolve: 60
+convolve: 120
 sgr_coordinates: 0
 wedge: 21
-r[min,max,steps]: 16.0, 22.5, 350
-mu[min,max,steps]: 133, 210, 800
-nu[min,max,steps]: -1.25, 1.25, 80
+r[min,max,steps]: 16.0, 22.5, 700
+mu[min,max,steps]: 133, 210, 1600
+nu[min,max,steps]: -1.25, 1.25, 160
 number_cuts: 0

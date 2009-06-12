@@ -105,7 +105,9 @@ int read_hessian_checkpoint(char *checkpoint_file, int *number_parameters, int *
 		return 1;
 	}
 
-	fscanf(file, "n: %d, i: %d, j: %d\n", number_parameters, i, j);
+	if (3 != fscanf(file, "n: %d, i: %d, j: %d\n", number_parameters, i, j)) {
+		return 1;
+	}
 	fread_matrix(file, "hessian", hessian, *number_parameters, *number_parameters);
 	fclose(file);
 
@@ -117,27 +119,32 @@ void get_hessian__checkpointed(int number_parameters, double *point, double *ste
 	double e1, e2, e3, e4;
 	double pi, pj;
 
-	read_hessian_checkpoint(checkpoint_file, &np, &i, &j, hessian);
+	if (read_hessian_checkpoint(checkpoint_file, &np, &i, &j, hessian)) {
+		i = 0;
+		j = 0;
+	}
 
-	for (i = 0; i < number_parameters; i++) {
-		j = i;
-		pi = point[i];
-		pj = point[j];
-		point[i] = pi + step[i] + step[i];
-		e1 = evaluate(point);
+	for (; i < number_parameters;) {
+		if (i == j) {
+			pi = point[i];
+			pj = point[j];
+			point[i] = pi + step[i] + step[i];
+			e1 = evaluate(point);
 
-		point[i] = pi;
-		e2 = e3 = evaluate(point);
+			point[i] = pi;
+			e2 = e3 = evaluate(point);
 
-		point[i] = pi - (step[i] + step[i]); 
-		e4 = evaluate(point);
-		point[i] = pi;
-		point[j] = pj;
+			point[i] = pi - (step[i] + step[i]); 
+			e4 = evaluate(point);
+			point[i] = pi;
+			point[j] = pj;
 
-		hessian[i][i] = (e1 - e3 - e2 + e4)/(4 * step[i] * step[i]);
-		printf("\t\thessian[%d][%d] = %.20lf, (%.20lf - %.20lf - %.20lf + %.20lf)/(4 * %.20lf * %.20lf)\n", i, i, hessian[i][i], e1, e3, e2, e4, step[i], step[j]);
+			hessian[i][i] = (e1 - e3 - e2 + e4)/(4 * step[i] * step[i]);
+			printf("\t\thessian[%d][%d] = %.20lf, (%.20lf - %.20lf - %.20lf + %.20lf)/(4 * %.20lf * %.20lf)\n", i, i, hessian[i][i], e1, e3, e2, e4, step[i], step[j]);
+			j = i + 1;
+		}
 
-		for (j = i+1; j < number_parameters; j++) {
+		for (; j < number_parameters;) {
 			pi = point[i];
 			pj = point[j];
 			point[i] = pi + step[i];
@@ -163,6 +170,8 @@ void get_hessian__checkpointed(int number_parameters, double *point, double *ste
 			hessian[j][i] = hessian[i][j];
 			printf("\t\thessian[%d][%d] = hessian[%d][%d] = %.20lf, (%.20lf - %.20lf - %.20lf + %.20lf)/(4 * %.20lf * %.20lf)\n", i, j, j, i, hessian[i][j], e1, e3, e2, e4, step[i], step[j]);
 
+			j++;
+			if (j == number_parameters) i++;
 			#ifdef BOINC_APPLICATION
 				if (boinc_time_to_checkpoint()) {
 					checkpoint_hessian(checkpoint_file, number_parameters, i, j, hessian);
@@ -171,6 +180,7 @@ void get_hessian__checkpointed(int number_parameters, double *point, double *ste
 				checkpoint_hessian(checkpoint_file, number_parameters, i, j, hessian);
 			#endif
 		}
+		j = i;
 	}
 }
 

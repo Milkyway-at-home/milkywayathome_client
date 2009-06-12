@@ -407,8 +407,8 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 
 	for (; es->current_integral < ap->number_integrals; es->current_integral++) {
 		calculate_integral(ap, es->integral[es->current_integral], es);
-//		printf("bg_int: %lf\n", es->integral[es->current_integral]->background_integral);
-//		for (i = 0; i < ap->number_streams; i++) printf("st_int[%d]: %lf\n", i, es->integral[es->current_integral]->stream_integrals[i]);
+		printf("bg_int: %.20lf\n", es->integral[es->current_integral]->background_integral);
+		for (i = 0; i < ap->number_streams; i++) printf("st_int[%d]: %.20lf\n", i, es->integral[es->current_integral]->stream_integrals[i]);
 	}
 
 	es->background_integral = es->integral[0]->background_integral;

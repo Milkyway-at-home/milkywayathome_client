@@ -104,7 +104,11 @@ void cpu__integrals(ASTRONOMY_PARAMETERS *ap, INTEGRAL *integral, double *V, dou
 		stream_a[(i * 3) + 1]	= sin(ap->stream_parameters[i][2]) * sin(ap->stream_parameters[i][3]);
 		stream_a[(i * 3) + 2]	= cos(ap->stream_parameters[i][2]);
 
-		gc_to_gal(ap->wedge, ap->stream_parameters[i][0] * D_DEG2RAD, 0 * D_DEG2RAD, &(lbr[0]), &(lbr[1]));
+		if (ap->sgr_coordinates == 0) {
+			gc_eq_gal(ap->wedge, ap->stream_parameters[i][0] * D_DEG2RAD, 0 * D_DEG2RAD, &(lbr[0]), &(lbr[1]));
+		} else {
+			gc_sgr_gal(ap->wedge, ap->stream_parameters[i][0] * D_DEG2RAD, 0 * D_DEG2RAD, &(lbr[0]), &(lbr[1]));
+		}
 		lbr[2] = ap->stream_parameters[i][1];
 		d_lbr2xyz(lbr, &(stream_c[(i * 3)]));
 	}

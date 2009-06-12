@@ -1,5 +1,5 @@
-APP_VERSION = 0.18
-APP_NAME = your_app_name
+APP_VERSION = 0.19
+APP_NAME = your_app_name-gpu-test
 
 OSX_BOINC_DIR = /Users/deselt/software/boinc
 OSX_LIBBOINC_DIR = /Users/deselt/software/boinc/mac_build/build/Deployment
@@ -13,6 +13,7 @@ CUDA_LIB = -L/usr/local/cuda/lib -L/opt/cuda/sdk/lib -L/opt/cuda/lib
 
 
 GPU_FLAGS = -DMILKYWAY_GPU -DCOMPUTE_ON_GPU $(CUDA_INC) $(CUDA_LIB)
+#GPU_PRECISION = -DDOUBLE_PRECISION
 GPU_PRECISION = -DSINGLE_PRECISION
 CPU_FLAGS = -DMILKYWAY -DCOMPUTE_ON_CPU
 
@@ -81,7 +82,7 @@ UTIL_OBJS = \
 	$(UTIL_DIR)/io_util.o \
 	$(UTIL_DIR)/settings.o
 GPU_APP_OBJS = \
-	$(GPU_DIR)/evaluation_gpu2.o \
+	$(GPU_DIR)/evaluation_gpu6.o \
 	$(GPU_DIR)/coords.o \
 	$(GPU_DIR)/gauss_legendre.o \
 	$(GPU_DIR)/cpu_r_constants.o \
@@ -104,6 +105,12 @@ $(GPU_DIR)/evaluation_gpu2.o: $(GPU_DIR)/evaluation_gpu2.cu
 	nvcc -lcuda $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu2.o $(GPU_DIR)/evaluation_gpu2.cu
 $(GPU_DIR)/evaluation_gpu3.o:
 	nvcc -lcuda $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu3.o $(GPU_DIR)/evaluation_gpu3.cu
+$(GPU_DIR)/evaluation_gpu4.o:
+	nvcc -lcuda $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu4.o $(GPU_DIR)/evaluation_gpu4.cu
+$(GPU_DIR)/evaluation_gpu5.o:
+	nvcc -lcuda $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu5.o $(GPU_DIR)/evaluation_gpu5.cu
+$(GPU_DIR)/evaluation_gpu6.o:
+	nvcc -lcuda $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu6.o $(GPU_DIR)/evaluation_gpu6.cu
 
 osx_ppc: OBJ_CXX = $(OSX_CXX_PPC)
 osx_ppc: OBJ_CXXFLAGS = $(CPU_FLAGS) $(OSX_CXXFLAGS_PPC)

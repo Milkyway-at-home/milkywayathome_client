@@ -208,14 +208,16 @@ int read_cpu_result__realloc(const char *filename, char *search_name, int *numbe
 	return retval;
 }
 
-int fwrite_cpu_result(FILE *file, int number_parameters, double *parameters, double fitness, char *metadata) {
+int fwrite_cpu_result(FILE *file, char *search_name, int number_parameters, double *parameters, double fitness, char *metadata, char *app_version, char *precision) {
+	fprintf(file, "%s\n", search_name);
 	fwrite_double_array(file, "parameters", number_parameters, parameters);
-	fprintf(file, "fitness: %.20lf\n", fitness);
 	fprintf(file, "metadata: %s\n", metadata);
+	fprintf(file, "fitness: %.20lf\n", fitness);
+	fprintf(file, "%s %s\n", app_version, precision);
 	return 0;
 }
 
-int write_cpu_result(char *filename, int number_parameters, double *parameters, double fitness, char *metadata) {
+int write_cpu_result(char *filename, char *search_name, int number_parameters, double *parameters, double fitness, char *metadata, char *app_version, char *precision) {
 #ifdef BOINC_APPLICATION
 	char output_path[512];
 	int retval = boinc_resolve_filename(filename, output_path, sizeof(output_path));
@@ -230,5 +232,5 @@ int write_cpu_result(char *filename, int number_parameters, double *parameters, 
 #else
 	FILE* data_file = fopen(filename, "w");
 #endif
-	return fwrite_cpu_result(data_file, number_parameters, parameters, fitness, metadata); 
+	return fwrite_cpu_result(data_file, search_name, number_parameters, parameters, fitness, metadata, app_version, precision); 
 }

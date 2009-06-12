@@ -103,7 +103,8 @@ int read_gradient_checkpoint(char *checkpoint_file, int number_parameters, int *
 		return 1;
 	}
 
-	fscanf(file, "n: %d, j: %d\n", &number_parameters, j);
+	if (2 != fscanf(file, "n: %d, j: %d\n", &number_parameters, j)) return 1;
+
 	fread_double_array__no_alloc(file, "gradient", number_parameters, gradient);
 	fclose(file);
 	return 0;
@@ -113,9 +114,11 @@ void get_gradient__checkpointed(int number_parameters, double *point, double *st
 	int j;
 	double e1, e2, pj;
 
-	read_gradient_checkpoint(checkpoint_file, number_parameters, &j, gradient);
+	if (read_gradient_checkpoint(checkpoint_file, number_parameters, &j, gradient)) {
+		j = 0;
+	}
 
-	for (j = 0; j < number_parameters; j++) {
+	for (; j < number_parameters;) {
 		pj = point[j];
 		point[j] = pj + step[j];
 		e1 = evaluate(point);
@@ -125,7 +128,8 @@ void get_gradient__checkpointed(int number_parameters, double *point, double *st
 
 		gradient[j] = (e1 - e2)/(step[j] + step[j]);
 		printf("\t\tgradient[%d]: %.20lf, (%.20lf - %.20lf)/(2 * %lf)\n", j, gradient[j], e1, e2, step[j]);
-		
+
+		j++;
 		#ifdef BOINC_APPLICATION
 			if (boinc_time_to_checkpoint()) {
 				checkpoint_gradient(checkpoint_file, number_parameters, j, gradient);

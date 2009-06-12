@@ -177,14 +177,9 @@ void worker() {
 	set_astronomy_parameters(ap, s->parameters);
 //	printf("read search parameters\n");
 
-#ifdef MILKYWAY_GPU
-	double **hessian, *gradient, *direction, *step;
-	double minimum_fitness, *minimum;
-	double likelihood;
-	int result, evaluations_done, i;
-
 	#ifdef COMPUTE_ON_CPU
 		init_simple_evaluator(astronomy_evaluate);
+		char *precision = "double";
 	#endif
 	#ifdef COMPUTE_ON_GPU
 		int *r_steps = (int*)malloc(ap->number_integrals * sizeof(int));
@@ -196,7 +191,7 @@ void worker() {
 		double *r_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
 		double *mu_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
 		double *nu_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
-		for (i = 0; i < ap->number_integrals; i++) {
+		for (int i = 0; i < ap->number_integrals; i++) {
 			r_steps[i] = ap->integral[i]->r_steps;
 			mu_steps[i] = ap->integral[i]->mu_steps;
 			nu_steps[i] = ap->integral[i]->nu_steps;
@@ -208,61 +203,32 @@ void worker() {
 			nu_step_size[i] = ap->integral[i]->nu_step_size;
 		}
 
-		gpu__initialize(ap->wedge, ap->convolve, ap->number_streams, ap->number_integrals,
+		gpu__initialize(ap->sgr_coordinates, ap->wedge, ap->convolve, ap->number_streams, ap->number_integrals,
 				r_steps, r_min, r_step_size,
 				mu_steps, mu_min, mu_step_size,
 				nu_steps, nu_min, nu_step_size,
 				sp->number_stars, sp->stars);
 
 		init_simple_evaluator(gpu__likelihood);
-	#endif
-	get_step(ap, &step);
 
-	likelihood = evaluate(s->parameters);
-	fprintf(stdout, "initial likelihood: %.20lf\n\n", likelihood);
-
-	fwrite_double_array(stdout, "point", s->number_parameters, s->parameters);
-	fwrite_double_array(stdout, "step", s->number_parameters, step);
-
-	fprintf(stdout, "\n");
-
-	new_matrix(&hessian, s->number_parameters, s->number_parameters);
-	get_hessian__checkpointed(s->number_parameters, s->parameters, step, hessian, hessian_checkpoint_file);
-
-	gradient = (double*)malloc(sizeof(double) * s->number_parameters);
-	get_gradient__checkpointed(s->number_parameters, s->parameters, step, gradient, gradient_checkpoint_file);
-
-	newton_step__alloc(s->number_parameters, hessian, gradient, &direction);
-
-	minimum = (double*)malloc(sizeof(double) * s->number_parameters);
-	result = line_search(s->parameters, likelihood, direction, s->number_parameters, minimum, &minimum_fitness, &evaluations_done);
-
-	//initial likelihood calculation
-	evaluations_done++;
-	//gradient calculation
-	evaluations_done += 2 * s->number_parameters;
-	//hessian calculation
-	evaluations_done += (3 * s->number_parameters) + 2 * ((s->number_parameters * s->number_parameters) - s->number_parameters);
-
-	write_gpu_result(OUTPUT_FILENAME, s->number_parameters, hessian, gradient, likelihood, s->parameters, minimum_fitness, minimum, evaluations_done, s->metadata);
-
-	#ifdef COMPUTE_ON_GPU
-		gpu__free_constants();
+		#ifdef DOUBLE_PRECISION
+			char *precision = "double";
+		#else
+			char *precision = "single";
+		#endif
 	#endif
 
-	free_matrix(&hessian, s->number_parameters, s->number_parameters);
-	free(gradient);
-	free(direction);
-	free(minimum);
-#else
-	double likelihood = astronomy_evaluate(s->parameters);
+	char app_version[256];
+	sprintf(app_version, "%s: %1.2lf", BOINC_APP_NAME, BOINC_APP_VERSION);
+       	
+
+	double likelihood = evaluate(s->parameters);
 //	printf("calculated likelihood: %lf\n", likelihood);
 
 	/********
 		*	RESOLVE THE OUTPUT FILE & WRITE THE RESULT
 	 ********/
-	write_cpu_result(OUTPUT_FILENAME, s->number_parameters, s->parameters, likelihood, s->metadata);
-#endif
+	write_cpu_result(OUTPUT_FILENAME, s->search_name, s->number_parameters, s->parameters, likelihood, s->metadata, app_version, precision);
 
 	free_state(es);
 	free(es);
@@ -270,6 +236,20 @@ void worker() {
 	free(ap);
 	free_star_points(sp);
 	free(sp);
+
+	#ifdef COMPUTE_ON_GPU
+		gpu__free_constants();
+
+		free(r_steps);
+		free(mu_steps);
+		free(nu_steps);
+		free(r_min);
+		free(mu_min);
+		free(nu_min);
+		free(r_step_size);
+		free(mu_step_size);
+		free(nu_step_size);
+	#endif
 
 #ifdef _WIN32
 	_set_printf_count_output( 1 );
@@ -308,4 +288,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.15 2009/06/01 07:28:17 deselt Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.16 2009/06/12 03:03:33 deselt Exp $";
