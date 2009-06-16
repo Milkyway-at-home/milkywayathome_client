@@ -99,7 +99,7 @@ PROGS = milkyway_$(APP_VERSION)_powerpc-apple-darwin milkyway_$(APP_VERSION)_i68
 
 all: $(PROGS)
 
-$(GPU_DIR)/evaluation_gpu.o:
+$(GPU_DIR)/evaluation_gpu.o: 
 	nvcc -lcuda $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu.o $(GPU_DIR)/evaluation_gpu.cu
 $(GPU_DIR)/evaluation_gpu2.o: $(GPU_DIR)/evaluation_gpu2.cu
 	nvcc -lcuda $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu2.o $(GPU_DIR)/evaluation_gpu2.cu
@@ -109,8 +109,8 @@ $(GPU_DIR)/evaluation_gpu4.o:
 	nvcc -lcuda $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu4.o $(GPU_DIR)/evaluation_gpu4.cu
 $(GPU_DIR)/evaluation_gpu5.o:
 	nvcc -lcuda $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu5.o $(GPU_DIR)/evaluation_gpu5.cu
-$(GPU_DIR)/evaluation_gpu6.o:
-	nvcc -lcuda $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu6.o $(GPU_DIR)/evaluation_gpu6.cu
+$(GPU_DIR)/evaluation_gpu6.o: $(GPU_DIR)/evaluation_gpu6.cu
+	nvcc -lcuda --ptxas-options=-v $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu6.o $(GPU_DIR)/evaluation_gpu6.cu
 
 osx_ppc: OBJ_CXX = $(OSX_CXX_PPC)
 osx_ppc: OBJ_CXXFLAGS = $(CPU_FLAGS) $(OSX_CXXFLAGS_PPC)
