@@ -378,6 +378,12 @@ __global__ void gpu__integral_kernel3(	int in_step, int in_steps,
 	GPU_PRECISION corrected_next_term, new_sum;
 #endif	  
 	GPU_PRECISION dotted, sxyz0, sxyz1, sxyz2;
+
+	pos = ((kernel3__nu_step * kernel3__mu_steps) + kernel3__mu_step) * 4; 
+	GPU_PRECISION sinb = device__lb[pos];
+	GPU_PRECISION sinl = device__lb[pos + 1];
+	GPU_PRECISION cosb = device__lb[pos + 2];
+	GPU_PRECISION cosl = device__lb[pos + 3];
 	
 	GPU_PRECISION zp, rs;
 	GPU_PRECISION xyz0, xyz1, xyz2;
@@ -385,12 +391,10 @@ __global__ void gpu__integral_kernel3(	int in_step, int in_steps,
 	GPU_PRECISION rg;
 	  
 	for (i = 0; i < convolve; i++) {
-		  pos = ((kernel3__nu_step * kernel3__mu_steps) + kernel3__mu_step) * 4; 
-		  xyz2 = shared__r_point[i] * device__lb[pos];
-		  
-		  zp = shared__r_point[i] * device__lb[pos + 2];
-		  xyz0 = zp * device__lb[pos + 3] - f_lbr_r;
-		  xyz1 = zp * device__lb[pos + 1];
+		  xyz2 = shared__r_point[i] * sinb;
+		  zp = shared__r_point[i] * cosb;
+		  xyz0 = zp * cosl - f_lbr_r;
+		  xyz1 = zp * sinl;
 		  
 #ifndef SINGLE_PRECISION
 		  rg = sqrtf(xyz0*xyz0 + xyz1*xyz1 + ((xyz2*xyz2) / (q*q)));
@@ -404,12 +408,12 @@ __global__ void gpu__integral_kernel3(	int in_step, int in_steps,
 #ifndef SINGLE_PRECISION
 		  bg_int += (shared__qw_r3_N[i] / (rg * rs * rs * rs));
 #else
-		  corrected_next_term = __fdividef((shared__qw_r3_N[i]), (rg * rs * rs * rs)) - bg_int_correction;
+		  corrected_next_term = shared__qw_r3_N[i] / (rg * rs * rs * rs) - bg_int_correction;
 		  new_sum = bg_int + corrected_next_term;
 		  bg_int_correction = (new_sum - bg_int) - corrected_next_term;
 		  bg_int = new_sum;
 #endif
-		for (j = 0; j < number_streams; j++) {
+		  for (j = 0; j < number_streams; j++) {
 			pos = (j * 3);
 			sxyz0 = xyz0 - constant__fstream_c[pos];
 			sxyz1 = xyz1 - constant__fstream_c[pos + 1];
@@ -422,14 +426,14 @@ __global__ void gpu__integral_kernel3(	int in_step, int in_steps,
 			sxyz2 -= dotted * constant__fstream_a[pos + 2];
 
 #ifndef SINGLE_PRECISION
-			st_int[j * blockDim.x  + threadIdx.x] += qw_r3_N * exp(-((sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2)) / constant__fstream_sigma_sq2[j]);
+			st_int[j * blockDim.x  + threadIdx.x] += qw_r3_N * exp(-((sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2)) /  constant__fstream_sigma_sq2[j]);
 #else
 			corrected_next_term = (shared__qw_r3_N[i] * exp(-((sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2)) / constant__fstream_sigma_sq2[j])) - st_int_correction[j * blockDim.x  + threadIdx.x];
 			new_sum = st_int[j * blockDim.x  + threadIdx.x] + corrected_next_term;
 			st_int_correction[j * blockDim.x  + threadIdx.x] = (new_sum - st_int[j * blockDim.x  + threadIdx.x]) - corrected_next_term;
-			st_int[j * blockDim.x  + threadIdx.x] = new_sum;
+			st_int[j * blockDim.x + threadIdx.x] = new_sum;
 #endif
-		}
+		  }
 	}
 	
 	//define V down here so that one to reduce the number of registers, because a register
