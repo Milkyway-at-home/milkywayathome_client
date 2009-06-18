@@ -109,8 +109,8 @@ $(GPU_DIR)/evaluation_gpu4.o:
 	nvcc -lcuda $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu4.o $(GPU_DIR)/evaluation_gpu4.cu
 $(GPU_DIR)/evaluation_gpu5.o:
 	nvcc -lcuda $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu5.o $(GPU_DIR)/evaluation_gpu5.cu
-$(GPU_DIR)/evaluation_gpu6.o: $(GPU_DIR)/evaluation_gpu6.cu
-	nvcc -lcuda --ptxas-options=-v $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu6.o $(GPU_DIR)/evaluation_gpu6.cu
+$(GPU_DIR)/evaluation_gpu6.o: $(GPU_DIR)/evaluation_gpu6.cu $(GPU_DIR)/evaluation_gpu6_float.cu
+	nvcc -lcuda -O3 --ptxas-options=-v -keep $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu6.o $(GPU_DIR)/evaluation_gpu6.cu
 
 osx_ppc: OBJ_CXX = $(OSX_CXX_PPC)
 osx_ppc: OBJ_CXXFLAGS = $(CPU_FLAGS) $(OSX_CXXFLAGS_PPC)
