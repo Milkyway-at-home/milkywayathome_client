@@ -157,6 +157,7 @@ void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int
 	mu_steps = (int*)malloc(number_integrals * sizeof(int));
 	nu_steps = (int*)malloc(number_integrals * sizeof(int));
 	printf("number_integrals:%u\n", number_integrals);
+	allocate_cu_arrays(number_integrals);
 	for (i = 0; i < number_integrals; i++) {
 		r_steps[i] = in__r_steps[i];
 		mu_steps[i] = in__mu_steps[i];
@@ -201,7 +202,7 @@ void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int
 
 		setup_texture(in__mu_steps[i],
 			      in__nu_steps[i],
-			      host__lb);
+			      i, host__lb);
 
 //		printf("freeing cpu constants\n");
 		free(cpu__V);
@@ -556,6 +557,7 @@ double gpu__likelihood(double *parameters) {
 		fstream_c[(i * 3) + 2] = (GPU_PRECISION)stream_c[2];
 	}
 
+	setup_constant_textures(fstream_a, fstream_c, fstream_sigma_sq2,  number_streams);
 	cutilSafeCall( cudaMemcpyToSymbol(constant__fstream_sigma_sq2, fstream_sigma_sq2, number_streams * sizeof(GPU_PRECISION), 0, cudaMemcpyHostToDevice) ); 
 	cutilSafeCall( cudaMemcpyToSymbol(constant__fstream_a, fstream_a, number_streams * 3 * sizeof(GPU_PRECISION), 0, cudaMemcpyHostToDevice) );
 	cutilSafeCall( cudaMemcpyToSymbol(constant__fstream_c, fstream_c, number_streams * 3 * sizeof(GPU_PRECISION), 0, cudaMemcpyHostToDevice) );
@@ -566,21 +568,43 @@ double gpu__likelihood(double *parameters) {
 
 	double coeff = 1.0 / (d_stdev * sqrt(2.0 * D_PI));
 
+	unsigned int work_amount = 0;
 	unsigned int timer = 0;
 	cutCreateTimer(&timer);
 	cutResetTimer(timer);
 	cutStartTimer(timer);
 	for (i = 0; i < number_integrals; i++) {
 		dim3 dimGrid(mu_steps[i], R_INCREMENT);
-		printf("mu_steps[i] is %u\n", mu_steps[i]);
+		bind_texture(i);
+		printf("mu_steps[i] is %u nu_steps[i] is %u rsteps[i] is %u convolve is %u number_streams is %u\n", 
+		       mu_steps[i], nu_steps[i], r_steps[i], convolve, number_streams);
+		work_amount += mu_steps[i] * number_streams;
 
-		gpu__zero_integrals<2><<<dimGrid, nu_steps[i]>>>(device__background_integrals[i], device__stream_integrals[i]);
+
+		switch(number_streams) {
+		case 1:gpu__zero_integrals<1><<<dimGrid, nu_steps[i]>>>(device__background_integrals[i], device__stream_integrals[i]);break;
+		case 2:gpu__zero_integrals<2><<<dimGrid, nu_steps[i]>>>(device__background_integrals[i], device__stream_integrals[i]);break;
+		case 3:gpu__zero_integrals<3><<<dimGrid, nu_steps[i]>>>(device__background_integrals[i], device__stream_integrals[i]);break;
+		case 4:gpu__zero_integrals<4><<<dimGrid, nu_steps[i]>>>(device__background_integrals[i], device__stream_integrals[i]);break;
+		};
 #ifdef SINGLE_PRECISION
-		gpu__zero_integrals<2><<<dimGrid, nu_steps[i]>>>(device__background_correction[i], device__stream_correction[i]);
+		switch(number_streams) {
+		case 1:gpu__zero_integrals<1><<<dimGrid, nu_steps[i]>>>(device__background_correction[i], device__stream_correction[i]);break;
+		case 2:gpu__zero_integrals<2><<<dimGrid, nu_steps[i]>>>(device__background_correction[i], device__stream_correction[i]);break;
+		case 3:gpu__zero_integrals<3><<<dimGrid, nu_steps[i]>>>(device__background_correction[i], device__stream_correction[i]);break;
+		case 4:gpu__zero_integrals<4><<<dimGrid, nu_steps[i]>>>(device__background_correction[i], device__stream_correction[i]);break;
+		};
 #endif
+		cudaError_t err;
+		err = cudaThreadSynchronize();
+		if(err != cudaSuccess)
+		  {
+		    printf("Error executing gpu__zero_integrals error message: %s\n", 
+			   cudaGetErrorString(err));
+		  }
+
 		unsigned int shared_mem_size = 2 * (MAX_CONVOLVE * sizeof(GPU_PRECISION)) +
-		  2 * (nu_steps[i] * sizeof(GPU_PRECISION) * number_streams) +
-		  (nu_steps[i] * sizeof(GPU_PRECISION) * 0);
+		  2 * (nu_steps[i] * sizeof(GPU_PRECISION) * number_streams);
 		printf("allocating %u bytes of shared memory\n", shared_mem_size);
 		for (j = 0; j < r_steps[i]; j += R_INCREMENT) {
 			cutilSafeCall( cudaMemcpyToSymbol(constant__r_constants, &(device__r_constants[i][j * convolve * 2]), R_INCREMENT * convolve * 2 * sizeof(GPU_PRECISION), 0, cudaMemcpyDeviceToDevice) );
@@ -592,7 +616,7 @@ double gpu__likelihood(double *parameters) {
 														device__background_integrals[i], device__stream_integrals[i]);
 					break;
 				case 2:	gpu__integral_kernel3<2, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(	j, r_steps[i], 
-														q, r0,
+																q, r0,
 														device__lb[i], device__V[i],
 														device__background_integrals[i], device__stream_integrals[i]);
 					break;
@@ -638,10 +662,12 @@ double gpu__likelihood(double *parameters) {
 		cpu__sum_integrals(i, &background_integral, stream_integrals);
 		printf("background_integral: %.15lf, stream_integral[0]: %.15lf, stream_integral[1]: %.15lf\n", background_integral, stream_integrals[0], stream_integrals[1]);
 	}
+	cudaThreadSynchronize();
 	cutStopTimer(timer);
 	float t = cutGetTimerValue(timer);
+	printf("work amount of %d\n", work_amount);
 	printf("gpu__integral_kernel3 took %f ms\n", t);
-
+	printf("%f ms per work\n", t / (float) work_amount);
 	int block_size;
 
 	double *stream_weight = (double*)malloc(number_streams * sizeof(double));
@@ -667,8 +693,20 @@ double gpu__likelihood(double *parameters) {
 	double likelihood = 0.0;
 	cutResetTimer(timer);
 	cutStartTimer(timer);
-	gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability);
-	gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability_correction);
+	switch(number_streams) {
+	case 1: gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability);break;
+	case 2:	gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability);break;
+	case 3:	gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability);break;
+	case 4:	gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability);break;
+	};
+#ifdef SINGLE_PRECISION
+	switch(number_streams) {
+	case 1: gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability_correction);break;
+	case 2: gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability_correction);break;
+	case 3: gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability_correction);break;
+	case 4: gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability_correction);break;
+	};
+#endif
 	for (i = 0; i < number_stars; i += number_threads) {
 		block_size = min(number_threads, number_stars - i);
 #ifndef SINGLE_PRECISION
