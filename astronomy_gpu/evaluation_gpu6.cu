@@ -184,8 +184,8 @@ void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int
 		constants_size += sizeof_r_constants[i] * sizeof(GPU_PRECISION); 
 		constants_size += sizeof_lb[i] * sizeof(GPU_PRECISION);
 
-//		printf("sizeof_V[%d]: %d\n", i, sizeof_V[i] * sizeof(GPU_PRECISION));
-//		printf("sizeof_r_constants[%d]: %d\n", i, sizeof_r_constants[i] * sizeof(GPU_PRECISION));
+		printf("sizeof_V[%d]: %d\n", i, sizeof_V[i] * sizeof(GPU_PRECISION));
+		printf("sizeof_r_constants[%d]: %d\n", i, sizeof_r_constants[i] * sizeof(GPU_PRECISION));
 		printf("sizeof_lb[%d]: %d\n", i, sizeof_lb[i] * sizeof(GPU_PRECISION));
 
 //		printf("Allocating %ld bytes for constants on GPU.\n", constants_size);
@@ -226,7 +226,7 @@ void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int
 		free(host__r_constants);
 
 		integral_size[i] = R_INCREMENT * in__nu_steps[i] * in__mu_steps[i];
-//		printf("Allocating %d bytes for integral data on GPU\n", (number_streams + 1) * integral_size[i] * sizeof(GPU_PRECISION));
+		printf("Allocating %d bytes for integral data on GPU\n", (number_streams + 1) * integral_size[i] * sizeof(GPU_PRECISION));
 
 		cutilSafeCall( cudaMalloc((void**) &device__background_integrals[i], integral_size[i] * sizeof(GPU_PRECISION)) );
 		cutilSafeCall( cudaMalloc((void**) &device__stream_integrals[i], number_streams * integral_size[i] * sizeof(GPU_PRECISION)) );
@@ -352,7 +352,7 @@ void cpu__sum_integrals(int iteration, double *background_integral, double *stre
 	double sum = 0.0;
 	for (i = 0; i < integral_size[iteration]; i++) {
 		sum += (double)(host__background_integrals[iteration][i]);
-//		printf("background_integral[%d/%d]: %.15f\n", i, integral_size[iteration], host__background_integrals[iteration][i]);
+		//printf("background_integral[%d/%d]: %.15f\n", i, integral_size[iteration], host__background_integrals[iteration][i]);
 	}
 	if (iteration == 0) *background_integral = sum;
 	else *background_integral -= sum;

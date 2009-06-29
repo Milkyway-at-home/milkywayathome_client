@@ -129,13 +129,17 @@ __global__ void gpu__integral_kernel3(	int in_step, int in_steps,
 	float *shared__r_point = shared_mem;
 	float *shared__qw_r3_N = &shared__r_point[convolve];
 
-	if (threadIdx.x < convolve) {
-		pos = (blockIdx.y * convolve * 2) + (threadIdx.x * 2);
+	//make it so thread 0 populates the shared memory
+	//the old way relied on blockDim.x >= convolve
+	//which is not always the case
+	if (threadIdx.x == 0) {
+	  for(unsigned int idx = 0;idx < convolve; ++idx) {
+	        pos = (blockIdx.y * convolve * 2) + (idx * 2);
 
-		shared__r_point[threadIdx.x] = constant__r_constants[pos];
-		shared__qw_r3_N[threadIdx.x] = constant__r_constants[pos + 1];
+		shared__r_point[idx] = constant__r_constants[pos];
+		shared__qw_r3_N[idx] = constant__r_constants[pos + 1];
+	  }
 	}
-
 
 	float bg_int, bg_int_correction;
 	bg_int = 0.0;
@@ -168,7 +172,7 @@ __global__ void gpu__integral_kernel3(	int in_step, int in_steps,
 	float rg;
 
 	for (i = 0; i < convolve; i++) {
-		  xyz2 = shared__r_point[i] * tex3D(tex_device_lb, 0,
+	          xyz2 = shared__r_point[i] * tex3D(tex_device_lb, 0,
 						    kernel3__mu_step, kernel3__nu_step);
 		  zp = shared__r_point[i] * tex3D(tex_device_lb, 2,
 						  kernel3__mu_step, kernel3__nu_step);
@@ -183,6 +187,7 @@ __global__ void gpu__integral_kernel3(	int in_step, int in_steps,
 		  rs = rg + r0;
 		  
 
+		  
 		  corrected_next_term = shared__qw_r3_N[i] / (rg * rs * rs * rs) - bg_int_correction;
 		  new_sum = bg_int + corrected_next_term;
 		  bg_int_correction = (new_sum - bg_int) - corrected_next_term;
@@ -215,7 +220,7 @@ __global__ void gpu__integral_kernel3(	int in_step, int in_steps,
 	pos = threadIdx.x + (blockIdx.x * blockDim.x) + (blockIdx.y * gridDim.x * blockDim.x);
 
 	corrected_next_term = (bg_int * V) - background_correction[pos];
-	new_sum = background_integrals[pos] + corrected_next_term;
+	new_sum = background_integrals[pos] + corrected_next_term;	
 	background_correction[pos] = (new_sum - background_integrals[pos]) - corrected_next_term;
 	background_integrals[pos] = new_sum;
 	for (i = 0; i < number_streams; i++) {
