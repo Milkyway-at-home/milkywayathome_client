@@ -477,16 +477,18 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
 
 		for (int j = 0; j < number_streams; j++) {
 			pos = (j * 3);
-			sxyz0 = xyz0 - constant__fstream_c[pos];
-			sxyz1 = xyz1 - constant__fstream_c[pos + 1];
-			sxyz2 = xyz2 - constant__fstream_c[pos + 2];
+ 			sxyz0 = xyz0 - constant__fstream_c[pos + 0];
+ 			sxyz1 = xyz1 - constant__fstream_c[pos + 1];
+ 			sxyz2 = xyz2 - constant__fstream_c[pos + 2];
 
-			dotted = constant__fstream_a[pos] * sxyz0 + constant__fstream_a[pos + 1] * sxyz1 + constant__fstream_a[pos + 2] * sxyz2;
-
-			sxyz0 -= dotted * constant__fstream_a[pos];
-			sxyz1 -= dotted * constant__fstream_a[pos + 1];
-			sxyz2 -= dotted * constant__fstream_a[pos + 2];
-
+ 			dotted = constant__fstream_a[pos + 0] * sxyz0 
+			  + constant__fstream_a[pos + 1] * sxyz1
+			  + constant__fstream_a[pos + 2] * sxyz2;
+			
+ 			sxyz0 -= dotted * constant__fstream_a[pos + 0];
+ 			sxyz1 -= dotted * constant__fstream_a[pos + 1];
+ 			sxyz2 -= dotted * constant__fstream_a[pos + 2];
+			
 #ifndef SINGLE_PRECISION
 			st_int[j] += qw_r3_N * exp(-((sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2)) / constant__fstream_sigma_sq2[j]);
 #else
@@ -557,7 +559,7 @@ double gpu__likelihood(double *parameters) {
 		fstream_c[(i * 3) + 2] = (GPU_PRECISION)stream_c[2];
 	}
 
-	setup_constant_textures(fstream_a, fstream_c, fstream_sigma_sq2,  number_streams);
+	//setup_constant_textures(fstream_a, fstream_c, fstream_sigma_sq2,  number_streams);
 	cutilSafeCall( cudaMemcpyToSymbol(constant__fstream_sigma_sq2, fstream_sigma_sq2, number_streams * sizeof(GPU_PRECISION), 0, cudaMemcpyHostToDevice) ); 
 	cutilSafeCall( cudaMemcpyToSymbol(constant__fstream_a, fstream_a, number_streams * 3 * sizeof(GPU_PRECISION), 0, cudaMemcpyHostToDevice) );
 	cutilSafeCall( cudaMemcpyToSymbol(constant__fstream_c, fstream_c, number_streams * 3 * sizeof(GPU_PRECISION), 0, cudaMemcpyHostToDevice) );
@@ -599,36 +601,40 @@ double gpu__likelihood(double *parameters) {
 		err = cudaThreadSynchronize();
 		if(err != cudaSuccess)
 		  {
-		    printf("Error executing gpu__zero_integrals error message: %s\n", 
-			   cudaGetErrorString(err));
+		    fprintf(stderr, "Error executing gpu__zero_integrals error message: %s\n", 
+			    cudaGetErrorString(err));
 		  }
 
 		unsigned int shared_mem_size = 2 * (MAX_CONVOLVE * sizeof(GPU_PRECISION)) +
-		  2 * (nu_steps[i] * sizeof(GPU_PRECISION) * number_streams);
+		  1 * (nu_steps[i] * sizeof(GPU_PRECISION) * number_streams);
 		printf("allocating %u bytes of shared memory\n", shared_mem_size);
+		printf("allocating %u bytes for constant__r_constants\n",
+		       R_INCREMENT * convolve * 2 * sizeof(GPU_PRECISION));
 		for (j = 0; j < r_steps[i]; j += R_INCREMENT) {
-			cutilSafeCall( cudaMemcpyToSymbol(constant__r_constants, &(device__r_constants[i][j * convolve * 2]), R_INCREMENT * convolve * 2 * sizeof(GPU_PRECISION), 0, cudaMemcpyDeviceToDevice) );
+		  cutilSafeCall( cudaMemcpyToSymbol(constant__r_constants, &(device__r_constants[i][j * convolve * 2]),
+						    R_INCREMENT * convolve * 2 * sizeof(GPU_PRECISION), 0,
+						    cudaMemcpyDeviceToDevice) );
 #ifndef SINGLE_PRECISION
 			switch(number_streams) {
-				case 1:	gpu__integral_kernel3<1, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(	j, r_steps[i], 
-														q, r0,
-														device__lb[i], device__V[i],
-														device__background_integrals[i], device__stream_integrals[i]);
+				case 1:	gpu__integral_kernel3<1, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(j, r_steps[i], 
+															  q, r0,
+															  device__lb[i], device__V[i],
+															  device__background_integrals[i], device__stream_integrals[i]);
 					break;
-				case 2:	gpu__integral_kernel3<2, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(	j, r_steps[i], 
-																q, r0,
-														device__lb[i], device__V[i],
-														device__background_integrals[i], device__stream_integrals[i]);
+				case 2:	gpu__integral_kernel3<2, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(j, r_steps[i], 
+															  q, r0,
+															  device__lb[i], device__V[i],
+															  device__background_integrals[i], device__stream_integrals[i]);
 					break;
-				case 3:	gpu__integral_kernel3<3, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(	j, r_steps[i], 
-														q, r0,
-														device__lb[i], device__V[i],
-														device__background_integrals[i], device__stream_integrals[i]);
+				case 3:	gpu__integral_kernel3<3, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(j, r_steps[i], 
+															  q, r0,
+															  device__lb[i], device__V[i],
+															  device__background_integrals[i], device__stream_integrals[i]);
 					break;
-				case 4:	gpu__integral_kernel3<4, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(	j, r_steps[i], 
-														q, r0,
-														device__lb[i], device__V[i],
-														device__background_integrals[i], device__stream_integrals[i]);
+				case 4:	gpu__integral_kernel3<4, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(j, r_steps[i], 
+															  q, r0,
+															  device__lb[i], device__V[i],
+															  device__background_integrals[i], device__stream_integrals[i]);
 					break;
 			}
 
@@ -656,6 +662,14 @@ double gpu__likelihood(double *parameters) {
 					break;
 			}
 #endif
+			cudaError_t err;
+			err = cudaThreadSynchronize();
+			if(err != cudaSuccess)
+			  {
+			    fprintf(stderr, "Error executing gpu__integral_kernel3 error message: %s\n", 
+				    cudaGetErrorString(err));
+			    exit(1);
+			  }
 //			cpu__sum_integrals(i, &background_integral, stream_integrals);
 //			printf("background_integral: %.15lf, stream_integral[0]: %.15lf, stream_integral[1]: %.15lf\n", background_integral, stream_integrals[0], stream_integrals[1]);
 		}
@@ -765,6 +779,14 @@ double gpu__likelihood(double *parameters) {
 			break;
 		}
 #endif
+			cudaError_t err;
+			err = cudaThreadSynchronize();
+			if(err != cudaSuccess)
+			  {
+			    fprintf(stderr, "Error executing gpu__likelihood_kernel error message: %s\n", 
+				    cudaGetErrorString(err));
+			    exit(1);
+			  }
 	}
 	cutStopTimer(timer);
 	t = cutGetTimerValue(timer);
