@@ -13,8 +13,8 @@ CUDA_LIB = -L/usr/local/cuda/lib -L/opt/cuda/sdk/lib -L/opt/cuda/lib
 
 
 GPU_FLAGS = -DMILKYWAY_GPU -DCOMPUTE_ON_GPU $(CUDA_INC) $(CUDA_LIB)
-#GPU_PRECISION = -DDOUBLE_PRECISION
-GPU_PRECISION = -DSINGLE_PRECISION
+GPU_PRECISION = -DDOUBLE_PRECISION -arch sm_13
+#GPU_PRECISION = -DSINGLE_PRECISION
 CPU_FLAGS = -DMILKYWAY -DCOMPUTE_ON_CPU
 
 VARIANTFLAGS = -DBOINC_APPLICATION -DBOINC_APP_NAME='"$(APP_NAME)"' -DBOINC_APP_VERSION=$(APP_VERSION)
@@ -109,8 +109,8 @@ $(GPU_DIR)/evaluation_gpu4.o:
 	nvcc -lcuda $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu4.o $(GPU_DIR)/evaluation_gpu4.cu
 $(GPU_DIR)/evaluation_gpu5.o:
 	nvcc -lcuda $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu5.o $(GPU_DIR)/evaluation_gpu5.cu
-$(GPU_DIR)/evaluation_gpu6.o: $(GPU_DIR)/evaluation_gpu6_float.cu $(GPU_DIR)/evaluation_gpu6.cu
-	nvcc -lcuda -O3 --ptxas-options=-v -keep $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu6.o $(GPU_DIR)/evaluation_gpu6.cu
+$(GPU_DIR)/evaluation_gpu6.o: $(GPU_DIR)/evaluation_gpu6_float.cu $(GPU_DIR)/evaluation_gpu6_double.cu $(GPU_DIR)/evaluation_gpu6.cu
+	nvcc -lcuda --ptxas-options=-v $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu6.o $(GPU_DIR)/evaluation_gpu6.cu
 
 osx_ppc: OBJ_CXX = $(OSX_CXX_PPC)
 osx_ppc: OBJ_CXXFLAGS = $(CPU_FLAGS) $(OSX_CXXFLAGS_PPC)
