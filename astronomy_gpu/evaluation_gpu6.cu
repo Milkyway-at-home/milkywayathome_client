@@ -121,6 +121,28 @@ extern __shared__ GPU_PRECISION shared_mem[];
 #include "evaluation_gpu6_double.cu"
 #endif
 
+bool boinc_setup_gpu(int device)
+{
+  //from BOINC
+  //http://boinc.berkeley.edu/trac/wiki/CudaApps
+  CUdevice  hcuDevice;
+  CUcontext hcuContext;
+  
+  CUresult status = cuInit(0);
+  if(status != CUDA_SUCCESS)
+    return false;
+  
+  status = cuDeviceGet( &hcuDevice, device);
+  if(status != CUDA_SUCCESS)
+    return false;
+  
+  status = cuCtxCreate( &hcuContext, 0x4, hcuDevice );
+  if(status != CUDA_SUCCESS)
+    return false;
+  
+  return true;
+}
+
 void choose_gpu() {
 #ifdef DOUBLE_PRECISION
   //check for and find a CUDA 1.3 (double precision)
@@ -147,7 +169,7 @@ void choose_gpu() {
 	{
 	  eligable_devices[eligable_device_idx++] = idx;
 	  printf("Device can be used it has CUDA 1.3 support\n");
-	  //check how many gflops it has
+	      //check how many gflops it has
 	  int gflops = deviceProp.multiProcessorCount * deviceProp.clockRate;
 	  if (gflops >= max_gflops)
 	    {
@@ -167,6 +189,10 @@ void choose_gpu() {
     }
   printf("Chose device %s\n", chosen_device);
   cutilSafeCall(cudaSetDevice(device));
+  if (!boinc_setup_gpu(device))
+    {
+      printf("Unable to setup cuda sync context (will waste CPU cycles)\n");
+    }
   free(eligable_devices);
   free(chosen_device);
 #endif
@@ -177,6 +203,10 @@ void choose_gpu() {
   cutilSafeCall(cudaGetDeviceProperties(&deviceProp, device));
   cutilSafeCall(cudaSetDevice(device));
   printf("Using %s\n", deviceProp.name);
+  if (!boinc_setup_gpu(device))
+    {
+      printf("Unable to setup cuda sync context (will waste CPU cycles)\n");
+    }
 #endif
 }
 
