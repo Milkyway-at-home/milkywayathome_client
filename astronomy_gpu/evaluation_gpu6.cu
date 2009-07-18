@@ -103,6 +103,7 @@ GPU_PRECISION	*host__reduce;
 
 #define kernel3__mu_step	blockIdx.x
 #define kernel3__mu_steps	gridDim.x
+//TODO check if blockIdx.y is correct
 #define kernel3__r_step		(in_step + blockIdx.y)
 #define kernel3__r_steps	in_steps
 #define kernel3__nu_step	threadIdx.x
@@ -119,6 +120,65 @@ extern __shared__ GPU_PRECISION shared_mem[];
 #else
 #include "evaluation_gpu6_double.cu"
 #endif
+
+void choose_gpu() {
+#ifdef DOUBLE_PRECISION
+  //check for and find a CUDA 1.3 (double precision)
+  //capable card
+  int device_count;
+  cutilSafeCall(cudaGetDeviceCount(&device_count));
+  printf("Found %d CUDA cards\n", device_count);
+  if (device_count < 1)
+    {
+      printf("No CUDA cards found, you cannot run the GPU version\n");
+      exit(1);
+    }
+  int *eligable_devices = (int*)malloc(sizeof(int) * device_count);
+  int eligable_device_idx = 0;
+  int max_gflops = 0;
+  int device;
+  char *chosen_device = 0;
+  for(int idx = 0;idx<device_count;++idx)
+    {
+      cudaDeviceProp deviceProp;
+      cutilSafeCall(cudaGetDeviceProperties(&deviceProp, idx));
+      printf("Found a %s\n", deviceProp.name);
+      if (deviceProp.major == 1 && deviceProp.minor == 3)
+	{
+	  eligable_devices[eligable_device_idx++] = idx;
+	  printf("Device can be used it has CUDA 1.3 support\n");
+	  //check how many gflops it has
+	  int gflops = deviceProp.multiProcessorCount * deviceProp.clockRate;
+	  if (gflops >= max_gflops)
+	    {
+	      max_gflops = gflops;
+	      device = idx;
+	      if (chosen_device)
+		free(chosen_device);
+	      chosen_device = (char*) malloc(sizeof(char) * strlen(deviceProp.name)+1);
+	      strncpy(chosen_device, deviceProp.name, strlen(deviceProp.name));
+	      chosen_device[strlen(deviceProp.name)] = '\0';
+	    }
+	}
+      else
+	{
+	  printf("Device cannot be used, it does not have CUDA 1.3 support\n");
+	}
+    }
+  printf("Chose device %s\n", chosen_device);
+  cutilSafeCall(cudaSetDevice(device));
+  free(eligable_devices);
+  free(chosen_device);
+#endif
+#ifdef SINGLE_PRECISION
+  //just choose the device with the most gflops
+  int device  = cutGetMaxGflopsDeviceId();
+  cudaDeviceProp deviceProp;
+  cutilSafeCall(cudaGetDeviceProperties(&deviceProp, device));
+  cutilSafeCall(cudaSetDevice(device));
+  printf("Using %s\n", deviceProp.name);
+#endif
+}
 
 void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int ap_number_streams, int ap_number_integrals, 
 			int *in__r_steps, double *r_min, double *r_step_size,
@@ -343,7 +403,6 @@ __global__ void gpu__zero_integrals(GPU_PRECISION *background_integrals, GPU_PRE
 	for (int i = 0; i < number_streams; i++) stream_integrals[(i * gridDim.y * gridDim.x * blockDim.x) + pos] = 0;
 }
 
-
 void cpu__sum_integrals(int iteration, double *background_integral, double *stream_integrals) {
 	int i, j;
 
@@ -352,7 +411,8 @@ void cpu__sum_integrals(int iteration, double *background_integral, double *stre
 	double sum = 0.0;
 	for (i = 0; i < integral_size[iteration]; i++) {
 		sum += (double)(host__background_integrals[iteration][i]);
-		//printf("background_integral[%d/%d]: %.15f\n", i, integral_size[iteration], host__background_integrals[iteration][i]);
+		//printf("background_integral[%d/%d]: %.15f\n", i, integral_size[iteration], host__background_integrals[iteration][i]);	  
+		//printf("(sum(background_integral[%d/%d]: %.15lf\n", i, integral_size[iteration], sum);
 	}
 	if (iteration == 0) *background_integral = sum;
 	else *background_integral -= sum;
@@ -417,12 +477,12 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
 	GPU_PRECISION rg, xyz0, xyz1, xyz2;
 	GPU_PRECISION dotted, sxyz0, sxyz1, sxyz2;
 
-	GPU_PRECISION gPrime = 5.0f * (log10(coords * 1000.0f) - 1.0f) + f_absm;
+	GPU_PRECISION gPrime = 5.0 * (log10(coords * 1000.0) - 1.0) + d_absm;
 	GPU_PRECISION exponent = exp(sigmoid_curve_1 * (gPrime - sigmoid_curve_2));
 	GPU_PRECISION reff_value = sigmoid_curve_0 / (exponent + 1);
 	GPU_PRECISION rPrime3 = coords * coords * coords;
 
-	GPU_PRECISION reff_xr_rp3 = reff_value * f_xr / rPrime3;
+	GPU_PRECISION reff_xr_rp3 = reff_value * d_xr / rPrime3;
 
 	GPU_PRECISION r_point, qw_r3_N;
 	GPU_PRECISION zp, rs, g;
@@ -430,7 +490,7 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
 #ifndef SINGLE_PRECISION
 	GPU_PRECISION bg_int = 0.0;
 	GPU_PRECISION st_int[number_streams];
-	for (i = 0; i < number_streams; i++) st_int[i] = 0;
+	for (i = 0; i < number_streams; i++) st_int[i] = 0.0;
 #else
 	GPU_PRECISION bg_int, bg_int_correction;
 	bg_int = 0.0;
@@ -501,6 +561,10 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
 	}
 	GPU_PRECISION probability_sum = 0.0;
 	probability_sum += bg_int * reff_xr_rp3 * constant__background_weight[0];
+	//pragma unroll 1 makes the loop not unroll,
+	//when it unrolls it causes a launch failure when trying
+	//to access constant__stream_weight[i], when i is 1
+#pragma unroll 1
 	for (i = 0; i < number_streams; i++) {
 		probability_sum += st_int[i] * reff_xr_rp3 * constant__stream_weight[i];
 	}
@@ -537,7 +601,9 @@ double gpu__likelihood(double *parameters) {
 	int i, j;
 
 	double stream_c[3], lbr[3];
-	GPU_PRECISION fstream_a[number_streams * 3], fstream_c[number_streams * 3], fstream_sigma_sq2[number_streams];
+	GPU_PRECISION *fstream_a = (GPU_PRECISION*) malloc(sizeof(GPU_PRECISION) * number_streams * 3);
+	GPU_PRECISION *fstream_c = (GPU_PRECISION*) malloc(sizeof(GPU_PRECISION) * number_streams * 3);
+	GPU_PRECISION *fstream_sigma_sq2 = (GPU_PRECISION*) malloc(sizeof(GPU_PRECISION) * number_streams);
 
 	for (i = 0; i < number_streams; i++) {
 		fstream_sigma_sq2[i] = (GPU_PRECISION)(2.0 * stream_parameters(i,4) * stream_parameters(i,4));
@@ -670,13 +736,10 @@ double gpu__likelihood(double *parameters) {
 				    cudaGetErrorString(err));
 			    exit(1);
 			  }
-//			cpu__sum_integrals(i, &background_integral, stream_integrals);
-//			printf("background_integral: %.15lf, stream_integral[0]: %.15lf, stream_integral[1]: %.15lf\n", background_integral, stream_integrals[0], stream_integrals[1]);
 		}
 		cpu__sum_integrals(i, &background_integral, stream_integrals);
 		printf("background_integral: %.15lf, stream_integral[0]: %.15lf, stream_integral[1]: %.15lf\n", background_integral, stream_integrals[0], stream_integrals[1]);
 	}
-	cudaThreadSynchronize();
 	cutStopTimer(timer);
 	float t = cutGetTimerValue(timer);
 	printf("work amount of %d\n", work_amount);
@@ -708,19 +771,29 @@ double gpu__likelihood(double *parameters) {
 	cutResetTimer(timer);
 	cutStartTimer(timer);
 	switch(number_streams) {
-	case 1: gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability);break;
+	case 1: gpu__zero_likelihood<1><<<1, number_threads>>>(number_threads, device__probability);break;
 	case 2:	gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability);break;
-	case 3:	gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability);break;
-	case 4:	gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability);break;
+	case 3:	gpu__zero_likelihood<3><<<1, number_threads>>>(number_threads, device__probability);break;
+	case 4:	gpu__zero_likelihood<4><<<1, number_threads>>>(number_threads, device__probability);break;
 	};
 #ifdef SINGLE_PRECISION
 	switch(number_streams) {
-	case 1: gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability_correction);break;
+	case 1: gpu__zero_likelihood<1><<<1, number_threads>>>(number_threads, device__probability_correction);break;
 	case 2: gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability_correction);break;
-	case 3: gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability_correction);break;
-	case 4: gpu__zero_likelihood<2><<<1, number_threads>>>(number_threads, device__probability_correction);break;
+	case 3: gpu__zero_likelihood<3><<<1, number_threads>>>(number_threads, device__probability_correction);break;
+	case 4: gpu__zero_likelihood<4><<<1, number_threads>>>(number_threads, device__probability_correction);break;
 	};
 #endif
+
+	cudaError_t err;
+	err = cudaThreadSynchronize();
+	if(err != cudaSuccess)
+	  {
+	    fprintf(stderr, "Error executing gpu__zero_likelihood error message: %s\n", 
+		    cudaGetErrorString(err));
+	    exit(1);
+	  }
+	printf("num streams:%u\n", number_streams);
 	for (i = 0; i < number_stars; i += number_threads) {
 		block_size = min(number_threads, number_stars - i);
 #ifndef SINGLE_PRECISION
@@ -779,14 +852,14 @@ double gpu__likelihood(double *parameters) {
 			break;
 		}
 #endif
-			cudaError_t err;
-			err = cudaThreadSynchronize();
-			if(err != cudaSuccess)
-			  {
-			    fprintf(stderr, "Error executing gpu__likelihood_kernel error message: %s\n", 
-				    cudaGetErrorString(err));
-			    exit(1);
-			  }
+		cudaError_t err;
+		err = cudaThreadSynchronize();
+		if(err != cudaSuccess)
+		  {
+		    fprintf(stderr, "Error executing gpu__likelihood_kernel error message: %s\n", 
+			    cudaGetErrorString(err));
+		    exit(1);
+		  }
 	}
 	cutStopTimer(timer);
 	t = cutGetTimerValue(timer);
@@ -794,5 +867,10 @@ double gpu__likelihood(double *parameters) {
 	cpu__sum_likelihood(number_threads, &likelihood);
 	likelihood /= number_stars;
 	printf("likelihood: %.15lf\n", likelihood);
+
+	free(fstream_a);
+	free(fstream_c);
+	free(fstream_sigma_sq2);
+
 	return likelihood;
 }

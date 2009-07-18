@@ -183,7 +183,7 @@ void worker() {
 	#endif
 	#ifdef COMPUTE_ON_GPU
 		int *r_steps = (int*)malloc(ap->number_integrals * sizeof(int));
-		int *mu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
+ 		int *mu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
 		int *nu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
 		double *r_min = (double*)malloc(ap->number_integrals * sizeof(double));
 		double *mu_min = (double*)malloc(ap->number_integrals * sizeof(double));
@@ -203,6 +203,7 @@ void worker() {
 			nu_step_size[i] = ap->integral[i]->nu_step_size;
 		}
 
+		choose_gpu();
 		gpu__initialize(ap->sgr_coordinates, ap->wedge, ap->convolve, ap->number_streams, ap->number_integrals,
 				r_steps, r_min, r_step_size,
 				mu_steps, mu_min, mu_step_size,
@@ -288,4 +289,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.16 2009/06/12 03:03:33 deselt Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.17 2009/07/18 01:00:19 watera2 Exp $";
