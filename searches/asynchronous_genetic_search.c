@@ -191,7 +191,7 @@ int gs_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETE
 	gs = (GENETIC_SEARCH*)(search_data);
 	p = gs->population;
 
-	printf("redundancy rate: %.25lf, mutation rate: %.25lf, random: %.25lf\n", gs->redundancy_rate, gs->mutation_rate, drand48());
+//	printf("redundancy rate: %.25lf, mutation rate: %.25lf, random: %.25lf\n", gs->redundancy_rate, gs->mutation_rate, drand48());
 
 	if (gs->redundancies->redundancy_list != NULL && drand48() < gs->redundancy_rate) {
 //		printf("generating redundancy\n");
