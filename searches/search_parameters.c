@@ -73,7 +73,7 @@ void init_search_parameters(SEARCH_PARAMETERS **p, int number_parameters) {
 	memset((*p)->app_version, '\0', 128);
 }
 
-void set_search_parameters(SEARCH_PARAMETERS *p, char *search_name, int number_parameters, double* parameters, char* metadata) {
+void set_search_parameters(SEARCH_PARAMETERS *p, char *search_name, int number_parameters, double* parameters, char* metadata, int hostid) {
 	strcpy(p->search_name, search_name);
 	strcpy(p->metadata, metadata);
 
@@ -82,6 +82,8 @@ void set_search_parameters(SEARCH_PARAMETERS *p, char *search_name, int number_p
 		p->parameters = (double*)realloc(p->parameters, sizeof(double) * number_parameters);
 	}
 	memcpy(p->parameters, parameters, sizeof(double) * number_parameters);
+
+	p->hostid = hostid;
 }
 
 int fread_metadata(FILE* file, char* metadata) {

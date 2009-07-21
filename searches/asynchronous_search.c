@@ -59,7 +59,7 @@ void asynchronous_search__init(int number_arguments, char **arguments, int numbe
 }
 
 void asynchronous_search(int number_arguments, char** arguments, int number_parameters, double *point, double *range, BOUNDS* bounds) {
-        int i, generate_result, insert_result, retval;
+        int i, generate_result, insert_result, retval, position;
         MANAGED_SEARCH *ms = NULL;
         SEARCH_PARAMETERS *sp;
 
@@ -78,7 +78,7 @@ void asynchronous_search(int number_arguments, char** arguments, int number_para
                                         return;
                                 }
                         }
-                        manage_search(arguments[i]);
+			position = manage_search(arguments[i]);
                         free(qualifier);
                         ms = get_search(arguments[i]);
                         break;
@@ -96,8 +96,9 @@ void asynchronous_search(int number_arguments, char** arguments, int number_para
         while (generate_result == AS_GEN_SUCCESS) {
                 generate_result = ms->search->generate_parameters(ms->search_name, ms->search_data, sp);
                 sp->fitness = evaluate(sp->parameters);
+		sp->hostid = (int)(10 * drand48());
                 insert_result = ms->search->insert_parameters(ms->search_name, ms->search_data, sp);
-                printf("[%d] %s, %s, %s\n", i, AS_MSG, AS_INSERT_STR[insert_result], sp->metadata);
+                printf("[%d] [%-150s] [%-20s] [%s] [%d]\n", i, AS_MSG, AS_INSERT_STR[insert_result], sp->metadata, sp->hostid);
                 i++;
                 if (i % 100 == 0) ms->search->checkpoint_search(ms->search_name, ms->search_data);
                 free(sp->parameters);

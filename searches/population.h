@@ -52,8 +52,8 @@ void insert_individual(POPULATION* population, int position, double* parameters,
 void insert_individual_info(POPULATION* population, int position, double* parameters, double fitness, char *os_name, char *app_version);
 void insert_incremental(POPULATION* population, double* parameters, double fitness);
 void insert_incremental_info(POPULATION* population, double* parameters, double fitness, char *os_name, char *app_version);
-void insert_sorted(POPULATION* population, double* parameters, double fitness);
-void insert_sorted_info(POPULATION* population, double* parameters, double fitness, char *os_name, char *app_version);
+int insert_sorted(POPULATION* population, double* parameters, double fitness);
+int insert_sorted_info(POPULATION* population, double* parameters, double fitness, char *os_name, char *app_version);
 
 void remove_individual(POPULATION* population, int position);
 void remove_incremental(POPULATION* population, int position);

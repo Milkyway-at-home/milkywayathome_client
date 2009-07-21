@@ -25,10 +25,8 @@
 
 #include "recombination.h"
 
-double* mutate(double* parent, double* min_parameters, double* max_parameters, int number_parameters) {
+void mutate(double* parent, double* min_parameters, double* max_parameters, int number_parameters, double *parameters) {
 	int i, target;
-	double *parameters;
-	parameters = (double*)malloc(sizeof(double) * number_parameters);
 
 	target = (int)(drand48() * number_parameters);
 	for (i = 0; i < number_parameters; i++) {
@@ -38,7 +36,6 @@ double* mutate(double* parent, double* min_parameters, double* max_parameters, i
 			parameters[i] = parent[i];
 		}
 	}
-	return parameters;
 }
 
 
@@ -148,46 +145,37 @@ double* exponential_recombination(double **parents, int number_parents, int numb
 	return parameters;
 }
 
-double* average_recombination(double** parents, int number_parents, int number_parameters) {
+void average_recombination(double** parents, int number_parents, int number_parameters, double* parameters) {
 	int i, j;
-	double *parameters;
-	parameters = (double*)malloc(sizeof(double) * number_parameters);
-
 	for (i = 0; i < number_parameters; i++) {
 		for (j = 0; j < number_parents; j++) {
 			parameters[i] = parents[j][i];
 		}
 		parameters[i] /= number_parents;
 	}
-	return parameters;
 }
 
-double* lower_recombination(double** parents, int number_parents, int number_parameters) {
+void lower_recombination(double** parents, int number_parents, int number_parameters, double* parameters) {
 	int i;
-	double *parameters;
-	parameters = average_recombination(parents, number_parents, number_parameters);
+	average_recombination(parents, number_parents, number_parameters, parameters);
 
 	for (i = 0; i < number_parents; i++) {
 		parameters[i] = 2.0 * parents[0][i] - parameters[i];
 	}
-	return parameters;
 }
 
-double* higher_recombination(double** parents, int number_parents, int number_parameters) {
+void higher_recombination(double** parents, int number_parents, int number_parameters, double* parameters) {
 	int i;
-	double *parameters;
-	parameters = average_recombination(parents, number_parents, number_parameters);
+	average_recombination(parents, number_parents, number_parameters, parameters);
 
 	for (i = 0; i < number_parents; i++) {
 		parameters[i] = 2.0 * parents[1][i] - parameters[i];
 	}
-	return parameters;
 }
 
 
-double* simplex_recombination(double** parents, double* fitness, int number_parents, int number_parameters, double l1, double l2) {
+double simplex_recombination(double** parents, double* fitness, int number_parents, int number_parameters, double l1, double l2, double* parameters) {
 	int i, j, worst_parent;
-	double *centroid;
 	double distance;
 
 	worst_parent = 0;
@@ -198,15 +186,14 @@ double* simplex_recombination(double** parents, double* fitness, int number_pare
 	/********
 		*	Calcualte the centroid.
 	 ********/
-	centroid = (double*)malloc(sizeof(double) * number_parameters);
 	for (i = 0; i < number_parents; i++) {
 		if (i == worst_parent) continue;
 		for (j = 0; j < number_parameters; j++) {
-			centroid[j] += parents[i][j];
+			parameters[j] += parents[i][j];
 		}
 	}
 	for (j = 0; j < number_parameters; j++) {
-		centroid[j] /= number_parents - 1;
+		parameters[j] /= number_parents - 1;
 	}
 
 	/********
@@ -219,7 +206,7 @@ double* simplex_recombination(double** parents, double* fitness, int number_pare
 	}
 	distance = l1 + drand48() * (l1 - l2);
 	for (j = 0; j < number_parameters; j++) {
-		centroid[j] = centroid[j] + distance * (parents[worst_parent][j] - centroid[j]);
+		parameters[j] = parameters[j] + distance * (parents[worst_parent][j] - parameters[j]);
 	}
-	return centroid;
+	return distance;
 }

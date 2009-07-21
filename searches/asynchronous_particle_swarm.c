@@ -25,6 +25,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <float.h>
+#include <time.h>
 
 #include "asynchronous_search.h"
 #include "asynchronous_particle_swarm.h"
@@ -32,7 +33,7 @@
 #include "outliers.h"
 #include "population.h"
 #include "recombination.h"
-#include "redundancy.h"
+#include "redundancies.h"
 #include "search_log.h"
 #include "search_parameters.h"
 
@@ -63,53 +64,44 @@ ASYNCHRONOUS_SEARCH* get_asynchronous_particle_swarm() {
 int create_particle_swarm(char* search_name, int number_arguments, char** arguments, int number_parameters, double* point, double *range, BOUNDS* bounds) {
 	char search_directory[FILENAME_SIZE];
 	PARTICLE_SWARM_OPTIMIZATION *pso;
-	int i, remove_outliers, size;
-	double w, c0, c1, c2;
+	int i;
 
-	remove_outliers = 1;
-	size = 400;
-	w = 0.5;
-	c0 = 0.5;
-	c1 = 2.0;
-	c2 = 2.0;
+	pso = (PARTICLE_SWARM_OPTIMIZATION*)malloc(sizeof(PARTICLE_SWARM_OPTIMIZATION));
+	pso->w = 0.5;
+	pso->c0 = 1.0;
+	pso->c1 = 2.0;
+	pso->c2 = 2.0;
+	pso->size = 50;
+
 	for (i = 0; i < number_arguments; i++) {
-		if (!strcmp(arguments[i], "-pso_size")) size = atoi(arguments[++i]);
-		else if (!strcmp(arguments[i], "-w")) w = atof(arguments[++i]);
-		else if (!strcmp(arguments[i], "-c0")) c0 = atof(arguments[++i]);
-		else if (!strcmp(arguments[i], "-c1")) c1 = atof(arguments[++i]);
-		else if (!strcmp(arguments[i], "-c2")) c2 = atof(arguments[++i]);
-		else if (!strcmp(arguments[i], "-remove_outliers")) remove_outliers = 1;
+		if (!strcmp(arguments[i], "-pso_size")) pso->size = atoi(arguments[++i]);
+		else if (!strcmp(arguments[i], "-w")) pso->w = atof(arguments[++i]);
+		else if (!strcmp(arguments[i], "-c0")) pso->c0 = atof(arguments[++i]);
+		else if (!strcmp(arguments[i], "-c1")) pso->c1 = atof(arguments[++i]);
+		else if (!strcmp(arguments[i], "-c2")) pso->c2 = atof(arguments[++i]);
+		else if (!strcmp(arguments[i], "-redundancy_rate")) pso->redundancy_rate = atof(arguments[++i]);
 	}
 
 	sprintf(search_directory, "%s/%s", get_working_directory(), search_name);
 	printf("making directory: %s\n", search_directory);
 	mkdir(search_directory, 0777);
 
-	pso = (PARTICLE_SWARM_OPTIMIZATION*)malloc(sizeof(PARTICLE_SWARM_OPTIMIZATION));
-	pso->remove_outliers = remove_outliers;
 	pso->current_particle = 0;
-	pso->size = size;
-	pso->number_parameters = number_parameters;
-	pso->w = w;
-	pso->c0 = c0;
-	pso->c1 = c1;
-	pso->c2 = c2;
 	pso->analyzed = 0;
+
+	pso->number_parameters = number_parameters;
+	pso->bounds = bounds;
 
 	pso->global_best_fitness = -DBL_MAX;
 	pso->global_best = (double*)malloc(sizeof(double) * pso->number_parameters);
 	for (i = 0; i < pso->size; i++) pso->global_best[i] = 0.0;
-
-	pso->bounds = bounds;
 
 	new_population(pso->size, pso->number_parameters, &(pso->local_best));
 	for (i = 0; i < pso->size; i++) pso->local_best->fitness[i] = 0;
 	new_population(pso->size, pso->number_parameters, &(pso->particles));
 	new_population(pso->size, pso->number_parameters, &(pso->velocities));
 
-	pso->redundancies = (REDUNDANCY**)malloc(sizeof(REDUNDANCY*) * pso->size);
-	for (i = 0; i < pso->size; i++) pso->redundancies[i] = NULL;
-	pso->current_redundancy = NULL;
+	initialize_redundancies(&(pso->redundancies));
 
 	return checkpoint_particle_swarm(search_name, pso);
 }
@@ -117,32 +109,26 @@ int create_particle_swarm(char* search_name, int number_arguments, char** argume
 int write_particle_swarm(char* search_name, void* search_data) {
 	char search_filename[FILENAME_SIZE], population_filename[FILENAME_SIZE];
 	FILE *search_file;
-	int i;
 	PARTICLE_SWARM_OPTIMIZATION *pso = (PARTICLE_SWARM_OPTIMIZATION*)search_data;
 
 	sprintf(search_filename, "%s/%s/search", get_working_directory(), search_name);
-	search_file = fopen(search_filename, "w+");
+	search_file = fopen(search_filename, "w");
 	if (search_file == NULL) return AS_CP_ERROR;
 
 	fprintf(search_file, "current_particle: %d, size: %d\n", pso->current_particle, pso->size);
 	fprintf(search_file, "w: %lf, c0: %lf, c1: %lf, c2: %lf\n", pso->w, pso->c0, pso->c1, pso->c2);
+	fprintf(search_file, "redundancy_rate: %lf\n", pso->redundancy_rate);
 	fprintf(search_file, "analyzed: %ld\n", pso->analyzed);
 	fprintf(search_file, "number_parameters: %d\n", pso->number_parameters); 
+
 	fwrite_bounds(search_file, pso->bounds);
+
 	fprintf(search_file, "global_best_fitness: %.20lf\n", pso->global_best_fitness);
 	fwrite_double_array(search_file, "global_best", pso->number_parameters, pso->global_best);
-
-	fprintf(search_file, "redundancies:\n");
-	for (i = 0; i < pso->size; i++) {
-		if (pso->redundancies[i] != NULL) {
-			REDUNDANCY *r = pso->redundancies[i];
-			while (r != NULL) {
-				fwrite_redundancy(search_file, r, pso->number_parameters, i);
-				r = r->next;
-			}
-		}
-	}
 	fclose(search_file);
+
+	sprintf(population_filename, "%s/%s/redundancies", get_working_directory(), search_name);
+	if (0 > write_redundancies(population_filename, pso->redundancies)) return AS_CP_ERROR;
 
 	sprintf(population_filename, "%s/%s/particles", get_working_directory(), search_name);
 	if (0 > write_population(population_filename, pso->particles)) return AS_CP_ERROR;
@@ -160,9 +146,6 @@ int read_particle_swarm(char* search_name, void** search_data) {
 	char search_filename[FILENAME_SIZE], population_filename[FILENAME_SIZE];
 	FILE *search_file;
 	PARTICLE_SWARM_OPTIMIZATION *pso;
-	int particle, current, i;
-	int count;
-	REDUNDANCY *r, *current_r;
 
 	(*search_data) = (PARTICLE_SWARM_OPTIMIZATION*)malloc(sizeof(PARTICLE_SWARM_OPTIMIZATION));
 	pso = (PARTICLE_SWARM_OPTIMIZATION*)(*search_data);
@@ -173,6 +156,7 @@ int read_particle_swarm(char* search_name, void** search_data) {
 
 	fscanf(search_file, "current_particle: %d, size: %d\n", &(pso->current_particle), &(pso->size));
 	fscanf(search_file, "w: %lf, c0: %lf, c1: %lf, c2: %lf\n", &(pso->w), &(pso->c0), &(pso->c1), &(pso->c2));
+	fscanf(search_file, "redundancy_rate: %lf\n", &(pso->redundancy_rate));
 	fscanf(search_file, "analyzed: %ld\n", &(pso->analyzed));
 	fscanf(search_file, "number_parameters: %d\n", &(pso->number_parameters));
 
@@ -180,30 +164,10 @@ int read_particle_swarm(char* search_name, void** search_data) {
 
 	fscanf(search_file, "global_best_fitness: %lf\n", &(pso->global_best_fitness));
 	fread_double_array(search_file, "global_best", &(pso->global_best));
-
-	pso->redundancies = (REDUNDANCY**)malloc(sizeof(REDUNDANCY*) * pso->size);
-	for (i = 0; i < pso->size; i++) pso->redundancies[i] = NULL;
-	fscanf(search_file, "redundancies:\n");
-	current = -1;
-	current_r = NULL;
-	count = 0;
-	while (fread_redundancy(search_file, &r, pso->number_parameters, &particle)) {
-		count++;
-		if (particle != current) {
-			current = particle;
-			current_r = pso->redundancies[current];
-		}
-
-		if (current_r == NULL) {
-			pso->redundancies[current] = r;
-			current_r = r;
-		} else {
-			current_r->next = r;
-			current_r = r;
-		}
-	}
 	fclose(search_file);
-	printf("read %d redundancies\n", count);
+
+	sprintf(population_filename, "%s/%s/redundancies", get_working_directory(), search_name);
+	if (0 > read_redundancies(population_filename, &(pso->redundancies)) ) return AS_READ_ERROR;
 
 	sprintf(population_filename, "%s/%s/particles", get_working_directory(), search_name);
 	if (0 > read_population(population_filename, &(pso->particles)) ) return AS_READ_ERROR;
@@ -213,10 +177,6 @@ int read_particle_swarm(char* search_name, void** search_data) {
 
 	sprintf(population_filename, "%s/%s/local_best", get_working_directory(), search_name);
 	if (0 > read_population(population_filename, &(pso->local_best)) ) return AS_READ_ERROR;
-
-	pso->remove_outliers = 1;
-	pso->current_redundancy = NULL;
-//	remove_outliers(pso->local_best, 0.15);
 
 	dsfmt_gv_init_gen_rand((int)time(NULL));
 
@@ -235,7 +195,10 @@ int pso_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMET
 	PARTICLE_SWARM_OPTIMIZATION *pso = (PARTICLE_SWARM_OPTIMIZATION*)search_data;
 	int i;
 
-	if (!individual_exists(pso->local_best, pso->current_particle)) {
+	if (pso->redundancies->redundancy_list != NULL && dsfmt_gv_genrand_close_open() < pso->redundancy_rate) {
+		generate_redundancy(pso->redundancies, sp->number_parameters, sp->parameters, sp->metadata);
+		sprintf(strchr(sp->metadata, 0), ", redundancy");
+	} else if (!individual_exists(pso->local_best, pso->current_particle)) {
 		/********
 			*	This particle hasn't yet been created.
 		 ********/
@@ -247,33 +210,24 @@ int pso_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMET
 	} else {
 		double *local_best, *velocity, *particle;
 		sprintf(sp->metadata, "p: %d, v:", pso->current_particle);
-		if (pso->current_redundancy != NULL) {
-			/**
-			 * Generate parameters from this redundancy and move the current redundancy
-			 */
-			particle = pso->current_redundancy->parameters;
-			velocity = pso->current_redundancy->velocity;
-			pso->current_redundancy = pso->current_redundancy->next;
-		} else {
-			local_best = pso->local_best->individuals[pso->current_particle];
-			velocity = pso->velocities->individuals[pso->current_particle];
-			particle = pso->particles->individuals[pso->current_particle];
 
-			for (i = 0; i < pso->number_parameters; i++) {
-				velocity[i] = (pso->w * velocity[i]) + pso->c0 * ((pso->c1 * dsfmt_gv_genrand_close_open() * (local_best[i] - particle[i])) + (pso->c2 * dsfmt_gv_genrand_close_open() * (pso->global_best[i] - particle[i])));
-			}
-			bound_velocity(particle, velocity, pso->bounds);
+		local_best = pso->local_best->individuals[pso->current_particle];
+		velocity = pso->velocities->individuals[pso->current_particle];
+		particle = pso->particles->individuals[pso->current_particle];
 
-			for (i = 0; i < pso->number_parameters; i++) {
-				particle[i] = particle[i] + velocity[i];
-				if (isnan(particle[i])) return AS_GEN_FAIL;
-			}
-			bound_parameters(particle, pso->bounds);
-			
-			pso->current_particle++;
-			if (pso->current_particle >= pso->size) pso->current_particle = 0;
-			pso->current_redundancy = pso->redundancies[pso->current_particle];
+		for (i = 0; i < pso->number_parameters; i++) {
+			velocity[i] = (pso->w * velocity[i]) + pso->c0 * ((pso->c1 * dsfmt_gv_genrand_close_open() * (local_best[i] - particle[i])) + (pso->c2 * dsfmt_gv_genrand_close_open() * (pso->global_best[i] - particle[i])));
 		}
+		bound_velocity(particle, velocity, pso->bounds);
+
+		for (i = 0; i < pso->number_parameters; i++) {
+			particle[i] = particle[i] + velocity[i];
+			if (isnan(particle[i])) return AS_GEN_FAIL;
+		}
+		bound_parameters(particle, pso->bounds);
+		
+		pso->current_particle++;
+		if (pso->current_particle >= pso->size) pso->current_particle = 0;
 
 		for (i = 0; i < pso->number_parameters; i++) {
 			sp->parameters[i] = particle[i];
@@ -287,22 +241,27 @@ int pso_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMET
 int parse(PARTICLE_SWARM_OPTIMIZATION *pso, SEARCH_PARAMETERS *sp, int *particle, double *velocity) {
 	int i;
 	char *current_token;
+	char *metadata;
+
+	metadata = (char*)malloc(sizeof(char) * METADATA_SIZE);
+	memcpy(metadata, sp->metadata, sizeof(char) * METADATA_SIZE);
 
 	if (isnan(sp->fitness)) return AS_INSERT_FITNESS_NAN;
-	if (sp->fitness > -2.0) return AS_INSERT_FITNESS_INVALID;
+//	if (sp->fitness > -2.0) return AS_INSERT_FITNESS_INVALID;
 
 	for (i = 0; i < pso->number_parameters; i++) {
 		if (isnan(sp->parameters[i])) return AS_INSERT_PARAMETERS_NAN;
 		if (sp->parameters[i] < pso->bounds->min_bound[i] || sp->parameters[i] > pso->bounds->max_bound[i]) return AS_INSERT_OUT_OF_BOUNDS;
 	}
 
-	if (1 != sscanf(sp->metadata, "p: %d, v:", particle)) return AS_INSERT_INVALID_METADATA;
-	current_token = strtok(strchr(sp->metadata, 'v'), ", :");
+	if (1 != sscanf(metadata, "p: %d, v:", particle)) return AS_INSERT_INVALID_METADATA;
+	current_token = strtok(strchr(metadata, 'v'), ", :");
 	for (i = 0; i < pso->number_parameters; i++) {
 		if (current_token == NULL) return AS_INSERT_INVALID_METADATA;
 		velocity[i] = atof(current_token);
 		current_token = strtok(NULL, " ");
 	}
+	free(metadata);
 
 	return 0;
 }
@@ -333,75 +292,9 @@ void insert_particle(char* search_name, PARTICLE_SWARM_OPTIMIZATION *pso, int pa
 	write_particle_swarm(search_name, pso);
 }
 
-int check_particle(PARTICLE_SWARM_OPTIMIZATION *pso, int particle, double *velocity, SEARCH_PARAMETERS *sp) {
-	/**
-	 * See if this particle has any saved local best values
-	 * If this matches a local best value update the local best
-	 * 	remove the match from the queue
-	 * 	remove all queued matches with lower fitness
-	 * If this matches parameters but not fitness, remove the match from the queue
-	 */
-	REDUNDANCY *r, *r_prev, *n, *n_prev;
-	int match;
-	r = pso->redundancies[particle];
-	r_prev = NULL;
-	while (r != NULL) {
-		if (parameters_match(pso->number_parameters, r->parameters, sp->parameters)) {
-			match = fitness_match(r->fitness, sp->fitness);
-
-			if (match) {
-				n_prev = NULL;
-				n = pso->redundancies[particle];
-				while (n != NULL) {
-					if (n->fitness <= sp->fitness) {
-						REDUNDANCY *temp;
-						temp = n->next;
-						if (n_prev == NULL) {
-							pso->redundancies[particle] = n->next;
-						} else {
-							n_prev->next = n->next;
-						}
-						free_redundancy(&n);
-						n = temp;
-					} else {
-						n_prev = n;
-						n = n->next;
-					}
-				}
-			} else {
-				if (r_prev == NULL) {
-					pso->redundancies[particle] = r->next;
-					free_redundancy(&r);
-				} else {
-					r_prev->next = r->next;
-					free_redundancy(&r);
-				}
-			}
-			pso->current_redundancy = NULL;
-
-			return match;
-		}
-		r_prev = r;
-		r = r->next;
-	}
-	return 0;
-}
-
-int verify_particle(PARTICLE_SWARM_OPTIMIZATION *pso, int particle, double *velocity, SEARCH_PARAMETERS *sp) {
-	REDUNDANCY *r;
-	r = pso->redundancies[particle];
-	if (r == NULL) {
-		new_redundancy(&(pso->redundancies[particle]), sp->fitness, pso->number_parameters, sp->parameters, velocity);
-	} else {
-		while (r->next != NULL) r = r->next;
-		new_redundancy(&(r->next), sp->fitness, pso->number_parameters, sp->parameters, velocity);
-	}
-	return 0;
-}
-
 int pso_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
 	PARTICLE_SWARM_OPTIMIZATION *pso = (PARTICLE_SWARM_OPTIMIZATION*)search_data;
-	int result, particle;
+	int result, particle, verify_result;
 	double *velocity = (double*)malloc(sizeof(double) * pso->number_parameters);
 
 	result = parse(pso, sp, &particle, velocity);
@@ -414,38 +307,16 @@ int pso_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETER
 	pso->analyzed++;
 
 	if (!population_contains(pso->local_best, sp->fitness, sp->parameters)) {
-		/**
-		 * Verify the particle before comparing fitness for insert, so we can remove bad redundancies.
-		 */
-/*
-		if (pso->local_best->size >= 40) {
-			double min_error, max_error, median_error, average_error;
-			double particle_error;
-			population_error_stats(pso->local_best, &min_error, &max_error, &median_error, &average_error);
-			particle_error = distance_error2(pso->local_best, -1, sp->fitness, sp->parameters);
-			//local_particle_error = distance_error2(pso->local_best, particle, pso->local_best->fitness[particle], pso->local_best->individuals[particle]);
-
-			if (particle_error > max_error * 300.0) {
-				printf("OUTLIER: particle_error: %.10lf, max_error: %.10lf, outlier by: %.10lf\n", particle_error, max_error, particle_error/max_error);
-				sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, outlier", particle, sp->fitness, pso->local_best->fitness[particle], pso->global_best_fitness);
-				return AS_INSERT_OUTLIER;
-			}
-		}
-*/
-		if (!individual_exists(pso->local_best, particle)) {
-			insert_particle(search_name, pso, particle, velocity, sp);
-		} else {
-			if (check_particle(pso, particle, velocity, sp)) {
+		if (!individual_exists(pso->local_best, particle) || sp->fitness > pso->local_best->fitness[particle]) {
+			verify_result = verify_with_insert(pso->redundancies, sp->number_parameters, sp->fitness, sp->parameters, sp->metadata, sp->hostid);
+			if (verify_result == VERIFY_VALID) {
 				insert_particle(search_name, pso, particle, velocity, sp);
 			} else {
-				if (sp->fitness > pso->local_best->fitness[particle]) {
-					verify_particle(pso, particle, velocity, sp);
-					sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, verifying", particle, sp->fitness, pso->local_best->fitness[particle], pso->global_best_fitness);
-				} else {
-					sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, low fitness", particle, sp->fitness, pso->local_best->fitness[particle], pso->global_best_fitness);
-				}
+				sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, verifying", particle, sp->fitness, pso->local_best->fitness[particle], pso->global_best_fitness);
 			}
-		}	
+		} else {
+			sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, low fitness", particle, sp->fitness, pso->local_best->fitness[particle], pso->global_best_fitness);
+		}
 	} else {
 		sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, duplicate", particle, sp->fitness, pso->local_best->fitness[particle], pso->global_best_fitness);
 	}

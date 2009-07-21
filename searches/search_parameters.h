@@ -33,13 +33,14 @@ typedef struct search_parameters {
 	char app_version[128];
 	char host_os[256];
 
+	int hostid;
 	int has_result;
 	double fitness;
 } SEARCH_PARAMETERS;
 
 void free_search_parameters(SEARCH_PARAMETERS *parameters);
 void init_search_parameters(SEARCH_PARAMETERS **p, int number_parameters);
-void set_search_parameters(SEARCH_PARAMETERS *p, char *search_name, int number_parameters, double* parameters, char* metadata);
+void set_search_parameters(SEARCH_PARAMETERS *p, char *search_name, int number_parameters, double* parameters, char* metadata, int hostid);
 
 int fread_metadata(FILE *file, char *metadata);
 int fread_metadata__alloc(FILE *file, char **metadata);
