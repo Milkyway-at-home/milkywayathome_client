@@ -41,7 +41,7 @@
 #define F_A_NODE_RAD	(float)1.65806281566619873046875
 
 #define D_A_NODE	95.0
-#define D_A_NODE_RAD	D_A_NODE * D_DEG2RAD
+#define D_A_NODE_RAD	(D_A_NODE * D_DEG2RAD)
 
 double d_get_incl(int wedge);
 double d_get_incl_rad(int wedge);

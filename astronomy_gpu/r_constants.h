@@ -32,8 +32,8 @@
 #define d_lbr_r 8.5
 #define d_absm 4.2
 
-#define sigmoid_curve_0 0.9402f
-#define sigmoid_curve_1 1.6171f
-#define sigmoid_curve_2 23.5877f
+#define sigmoid_curve_0 0.9402
+#define sigmoid_curve_1 1.6171
+#define sigmoid_curve_2 23.5877
 
 #endif

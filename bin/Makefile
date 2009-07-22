@@ -73,7 +73,7 @@ APP_OBJS = \
 	$(APP_DIR)/stVector.o \
 	$(APP_DIR)/star_points.o \
 	$(APP_DIR)/evaluation_optimized.o \
-	$(APP_DIR)/evaluation_state.o
+	$(APP_DIR)/evaluation_state.o 
 SEARCH_OBJS = \
 	$(SEARCH_DIR)/search_parameters.o \
 	$(SEARCH_DIR)/result.o
@@ -95,9 +95,19 @@ GPU_APP_OBJS = \
 	$(SEARCH_DIR)/line_search.o \
 	$(SEARCH_DIR)/regression.o
 
+#emulation mode
+ifeq ($(emu), 1)
+	NVCCFLAGS   += -deviceemu -DUNIX -O3
+	# consistency, makes developing easier
+	CXXFLAGS		+= -D__DEVICE_EMULATION__
+	CFLAGS			+= -D__DEVICE_EMULATION__
+endif
+
 PROGS = milkyway_$(APP_VERSION)_powerpc-apple-darwin milkyway_$(APP_VERSION)_i686-apple-darwin milkyway_$(APP_VERSION)_x86_64-apple-darwin
 
 all: $(PROGS)
+
+
 
 $(GPU_DIR)/evaluation_gpu.o: 
 	nvcc -lcuda $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu.o $(GPU_DIR)/evaluation_gpu.cu
@@ -110,7 +120,7 @@ $(GPU_DIR)/evaluation_gpu4.o:
 $(GPU_DIR)/evaluation_gpu5.o:
 	nvcc -lcuda $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu5.o $(GPU_DIR)/evaluation_gpu5.cu
 $(GPU_DIR)/evaluation_gpu6.o: $(GPU_DIR)/evaluation_gpu6_float.cu $(GPU_DIR)/evaluation_gpu6_double.cu $(GPU_DIR)/evaluation_gpu6.cu
-	nvcc -lcuda --ptxas-options=-v $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu6.o $(GPU_DIR)/evaluation_gpu6.cu
+	nvcc $(NVCCFLAGS) -lcuda --ptxas-options=-v $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu6.o $(GPU_DIR)/evaluation_gpu6.cu
 
 osx_ppc: OBJ_CXX = $(OSX_CXX_PPC)
 osx_ppc: OBJ_CXXFLAGS = $(CPU_FLAGS) $(OSX_CXXFLAGS_PPC)
@@ -125,7 +135,7 @@ osx_i686: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(OSX_LIBBOINC_DIR)/libboinc_a
 osx_i686_gpu: OBJ_CXX = $(OSX_CXX_i686)
 osx_i686_gpu: OBJ_CXXFLAGS = $(GPU_FLAGS) $(OSX_CXXFLAGS_i686)
 osx_i686_gpu: $(GPU_APP_OBJS) $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(OSX_LIBBOINC_DIR)/libboinc_api.a $(OSX_LIBBOINC_DIR)/libboinc.a
-	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LDFLAGS_x86_64) -o milkywayGPU_$(APP_VERSION)_i686-apple-darwin $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc -lboinc_api -lcudart -lcutil
+	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LDFLAGS_x86_64) -o milkywayGPU_$(APP_VERSION)_i686-apple-darwin $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc -lboinc_api -lcudart -lcutil -lcuda
 
 osx_x86_64: OBJ_CXX = $(OSX_CXX_x86_64)
 osx_x86_64: OBJ_CXXFLAGS = $(CPU_FLAGS) $(OSX_CXXFLAGS_x86_64)
@@ -141,7 +151,7 @@ linux_i686: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LINUX_LIBBOINC_DIR)/libboi
 linux_i686_gpu: OBJ_CXX = $(LINUX_CXX_i686)
 linux_i686_gpu: OBJ_CXXFLAGS = $(GPU_FLAGS) $(LINUX_CXXFLAGS_i686)
 linux_i686_gpu: $(GPU_APP_OBJS) $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LINUX_LIBBOINC_DIR)/libboinc_api.a $(LINUX_LIBBOINC_DIR)/libboinc.a
-	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LDFLAGS_x86_64) -o milkywayGPU_$(APP_VERSION)_i686-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc -lboinc_api -lcudart -lcutil
+	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LDFLAGS_x86_64) -o milkywayGPU_$(APP_VERSION)_i686-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc -lboinc_api -lcudart -lcutil -lcuda
 
 linux_x86_64: OBJ_CXX = $(LINUX_CXX_x86_64)
 linux_x86_64: OBJ_CXXFLAGS = $(CPU_FLAGS) $(LINUX_CXXFLAGS_x86_64)
@@ -151,7 +161,8 @@ linux_x86_64: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS)
 linux_x86_64_gpu: OBJ_CXX = $(LINUX_CXX_x86_64)
 linux_x86_64_gpu: OBJ_CXXFLAGS = $(GPU_FLAGS) $(LINUX_CXXFLAGS_x86_64)
 linux_x86_64_gpu: $(GPU_APP_OBJS) $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) 
-	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LDFLAGS_x86_64) -o milkywayGPU_$(APP_VERSION)_x86_64-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc_api -lboinc -lcudart -lcutil
+	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LDFLAGS_x86_64) -o milkywayGPU_$(APP_VERSION)_x86_64-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc_api -lboinc -lcudart -lcutil -lcuda
+
 
 
 .C.o:
