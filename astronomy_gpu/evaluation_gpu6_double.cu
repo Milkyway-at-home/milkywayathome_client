@@ -130,6 +130,8 @@ void setup_r_point_texture(int r_steps, int convolve, int current_integral, doub
   cutilSafeCall(cudaMallocArray(&cu_array, &channelDesc, convolve, r_steps)); 
   cutilSafeCall(cudaMemcpyToArray(cu_array, 0, 0, host_int2, r_steps * convolve * sizeof(int2), cudaMemcpyHostToDevice));
   cu_r_point_arrays[current_integral] = cu_array;
+  free(r_point_flat);
+  free(host_int2);
 }
 
 void setup_qw_r3_N_texture(int r_steps, int convolve, int current_integral, double **qw_r3_N)
@@ -150,6 +152,8 @@ void setup_qw_r3_N_texture(int r_steps, int convolve, int current_integral, doub
   cutilSafeCall(cudaMallocArray(&cu_array, &channelDesc, convolve, r_steps)); 
   cutilSafeCall(cudaMemcpyToArray(cu_array, 0, 0, host_int2, r_steps * convolve * sizeof(int2), cudaMemcpyHostToDevice));
   cu_qw_r3_N_arrays[current_integral] = cu_array;
+  free(qw_r3_N_flat);
+  free(host_int2);
 }
 
 /**
@@ -180,6 +184,7 @@ void setup_texture(int mu_steps, int nu_steps, int current_integral, double *hos
   copyParams.kind     = cudaMemcpyHostToDevice;
   cutilSafeCall( cudaMemcpy3D(&copyParams) );
   cu_arrays[current_integral] = cu_array;
+  free(host_int2);
 }
 
 /**
