@@ -28,7 +28,7 @@
 #include "../astronomy/star_points.h"
 #include "../astronomy/parameters.h"
 
-void choose_gpu();
+int choose_gpu(int argc, char **argv);
 void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int ap_number_streams, int ap_number_integrals, 
 			int *in__r_steps, double *r_min, double *r_step_size,
 			int *in__mu_steps, double *mu_min, double *mu_step_size,

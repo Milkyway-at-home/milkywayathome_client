@@ -28,11 +28,18 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 void	init_constants(ASTRONOMY_PARAMETERS *ap);
 void	free_constants(ASTRONOMY_PARAMETERS *ap);
-void	set_probability_constants(ASTRONOMY_PARAMETERS *ap, double coords, double *r_point, double *qw_r3_N, double *reff_xr_rp3);
+void	set_probability_constants(int n_convolve, double coords, double *r_point, double *qw_r3_N, double *reff_xr_rp3);
 void	calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp3, double *integral_point, ASTRONOMY_PARAMETERS *ap, double *bg_prob, double *st_prob);
 
 int	calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp);
 int	calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp);
+
+void cpu__r_constants(	int n_convolve,
+			int r_steps, double r_min, double r_step_size,
+			int mu_steps, double mu_min, double mu_step_size,
+			int nu_steps, double nu_min, double nu_step_size,
+			double *irv, double **r_point, double **qw_r3_N,
+			double *reff_xr_rp3, double *nus, double *ids);
 
 #endif
 

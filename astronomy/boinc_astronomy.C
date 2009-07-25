@@ -68,17 +68,18 @@ using std::string;
 #include "evaluation_state.h"
 #include "../searches/search_parameters.h"
 #include "../searches/result.h"
+#include "../evaluation/simple_evaluator.h"
+#include "../evaluation/evaluator.h"
 
 #ifdef MILKYWAY_GPU
 	#ifdef COMPUTE_ON_GPU
+void init_constants(ASTRONOMY_PARAMETERS *ap);
 		#include "../astronomy_gpu/evaluation_gpu.h"
 	#endif
 	#ifdef COMPUTE_ON_CPU
 		#include "evaluation_optimized.h"
 	#endif
 
-	#include "../evaluation/simple_evaluator.h"
-	#include "../evaluation/evaluator.h"
 	#include "../searches/hessian.h"
 	#include "../searches/gradient.h"
 	#include "../searches/newton_method.h"
@@ -202,8 +203,7 @@ void worker() {
 			mu_step_size[i] = ap->integral[i]->mu_step_size;
 			nu_step_size[i] = ap->integral[i]->nu_step_size;
 		}
-
-		choose_gpu();
+		init_constants(ap);
 		gpu__initialize(ap->sgr_coordinates, ap->wedge, ap->convolve, ap->number_streams, ap->number_integrals,
 				r_steps, r_min, r_step_size,
 				mu_steps, mu_min, mu_step_size,
@@ -274,6 +274,18 @@ int main(int argc, char **argv){
 
 	retval = boinc_init();
         if (retval) exit(retval);
+#ifdef COMPUTE_ON_GPU
+	//Choose the GPU to execute on, first look
+	//at the command line argument for a 
+	//--device 0..n string, then enumerate all CUDA
+	//devices on the system and choose the one
+	//with double precision support and the most
+	//GFLOPS
+	if (choose_gpu(argc, argv) == -1)
+	  {
+	    exit(1);
+	  }
+#endif
         worker();
 }
 
@@ -289,4 +301,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.17 2009/07/18 01:00:19 watera2 Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.18 2009/07/25 00:28:45 watera2 Exp $";

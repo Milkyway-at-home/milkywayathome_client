@@ -123,7 +123,7 @@ void cpu__gc_eq_gal_lb(	int wedge,
 	int pos;
 	for (i = 0; i < mu_steps; i++) {
 		amu = mu_min_rad + ((i + 0.5) * mu_step_rad);
-		for (j = 0; j < nu_steps; j++) {
+ 		for (j = 0; j < nu_steps; j++) {
 			anu = nu_min_rad + ((j + 0.5) * nu_step_rad);
        			pos = ((i * nu_steps) + j) * 4;
 			gc_eq_gal_lb(wedge, amu, anu, &( (*cpu__lb)[pos] ));
@@ -189,4 +189,40 @@ void cpu__gc_sgr_gal_lb(	int wedge,
 
 void cpu__gc_to_lb(int wedge, INTEGRAL *integral, double **cpu__lb) {
 	cpu__gc_eq_gal_lb(wedge, integral->mu_steps, integral->mu_min, integral->mu_step_size, integral->nu_steps, integral->nu_min, integral->nu_step_size, cpu__lb);
+}
+
+
+
+void populate_cpu__lb( int sgr_coordinates, int wedge,
+		       int mu_steps, double mu_min, double mu_step_size,
+		       int nu_steps, double nu_min, double nu_step_size,
+		       double **cpu__lb)
+{
+  	int i, j;
+	*cpu__lb = (double*)malloc(4 * mu_steps * nu_steps * sizeof(double));
+
+	int pos;
+	for (i = 0; i < mu_steps; i++) {
+	  double amu_deg = mu_min + ((i + 0.5) * mu_step_size);
+		for (j = 0; j < nu_steps; j++) {
+		  double anu_deg = (nu_min + (j + 0.5) * nu_step_size);
+			pos = ((i * nu_steps) + j) * 4;
+			//gc_eq_gal_lb(wedge, amu, anu, &( (*cpu__lb)[pos] ));
+			//use the same code as the CPU app to determine cpu__lb
+			double glong, glat;
+			if (sgr_coordinates == 0) {
+			  double ra, dec;
+			  atGCToEq(amu_deg, anu_deg, &ra, &dec, 95.0, d_get_incl(wedge));
+			  atEqToGal(ra, dec, &glong, &glat);
+			} else {
+			  double lamda, beta;
+			  gcToSgr(amu_deg, anu_deg, wedge, &lamda, &beta);
+			  sgrToGal(lamda, beta, &glong, &glat);
+			}
+			(&(*cpu__lb)[pos])[0] = sin(glat * D_DEG2RAD);
+			(&(*cpu__lb)[pos])[1] = sin(glong * D_DEG2RAD);
+			(&(*cpu__lb)[pos])[2] = cos(glat * D_DEG2RAD);
+			(&(*cpu__lb)[pos])[3] = cos(glong * D_DEG2RAD);
+		}
+	}
 }

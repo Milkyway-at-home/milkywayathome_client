@@ -49,7 +49,7 @@ LINUX_CXXFLAGS_i686 = -m32 -O2 -ftree-vectorize -funroll-loops $(CXXFLAGS_ALL) \
 LINUX_LDFLAGS_i686 = -L/usr/X11R6/lib -L/usr/local/lib
 
 LINUX_CXX_x86_64 = g++
-LINUX_CXXFLAGS_x86_64 = -O2 -msse2 -ftree-vectorize -funroll-loops $(CXXFLAGS_ALL) \
+LINUX_CXXFLAGS_x86_64 = -g $(CXXFLAGS_ALL) \
 	-I$(LINUX_BOINC_DIR) -L$(LINUX_LIBBOINC_DIR) -I/usr/include/boinc
 LINUX_LDFLAGS_x86_64 = -L/usr/local/lib -L/usr/lib64
 
@@ -73,6 +73,7 @@ APP_OBJS = \
 	$(APP_DIR)/stVector.o \
 	$(APP_DIR)/star_points.o \
 	$(APP_DIR)/evaluation_optimized.o \
+	$(EVAL_DIR)/simple_evaluator.o \
 	$(APP_DIR)/evaluation_state.o 
 SEARCH_OBJS = \
 	$(SEARCH_DIR)/search_parameters.o \
@@ -85,10 +86,8 @@ GPU_APP_OBJS = \
 	$(GPU_DIR)/evaluation_gpu6.o \
 	$(GPU_DIR)/coords.o \
 	$(GPU_DIR)/gauss_legendre.o \
-	$(GPU_DIR)/cpu_r_constants.o \
 	$(GPU_DIR)/cpu_coords.o \
 	$(GPU_DIR)/cpu_integrals.o \
-	$(EVAL_DIR)/simple_evaluator.o \
 	$(SEARCH_DIR)/hessian.o \
 	$(SEARCH_DIR)/gradient.o \
 	$(SEARCH_DIR)/newton_method.o \
@@ -96,6 +95,7 @@ GPU_APP_OBJS = \
 	$(SEARCH_DIR)/regression.o
 
 #emulation mode
+NVCCFLAGS := -g
 ifeq ($(emu), 1)
 	NVCCFLAGS   += -deviceemu -DUNIX -O3
 	# consistency, makes developing easier
