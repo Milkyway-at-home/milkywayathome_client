@@ -242,41 +242,21 @@ __global__ void gpu__integral_kernel3(	int in_step, int in_steps,
   for (i = 0; i < number_streams; i++) {
     st_int[i * blockDim.x + threadIdx.x] = 0.0;
   }
-  
-  
-  pos = ((kernel3__mu_step * kernel3__nu_steps) + kernel3__nu_step) * 4;
-  double sinb = device__lb[pos];
-  double sinl = device__lb[pos + 1];
-  double cosb = device__lb[pos + 2];
-  double cosl = device__lb[pos + 3];
-#ifdef __DEVICE_EMULATION__
-  //		printf("pos:%d\n", pos);
-  //		printf("sinb:%.20lf\n", sinb);
-  //		printf("sinl:%.20lf\n", sinl);
-  //		printf("cosb:%.20lf\n", cosb);
-  //		printf("cosl:%.20lf\n", cosl);
-#endif
+
+
   for (i = 0; i < convolve; i++) {
-    // 	  xyz2 = shared__r_point[i] * 
-    // 	    tex3D_double(tex_device_lb, 0,
-    // 			 kernel3__nu_step, kernel3__mu_step));
-    // 	  zp =shared__r_point[i] * 
-    // 	    tex3D_double(tex_device_lb, 2,
-    // 			 kernel3__nu_step, kernel3__mu_step));
+    xyz2 =  tex2D_double(tex_r_point,i,in_step) * 
+      tex3D_double(tex_device_lb, 0,
+		   kernel3__nu_step, kernel3__mu_step);
+    zp = tex2D_double(tex_r_point,i,in_step) * 
+      tex3D_double(tex_device_lb, 2,
+		   kernel3__nu_step, kernel3__mu_step);
     
-    // 	  xyz0 = zp * tex3D_double(tex_device_lb, 3,
-    // 				   kernel3__nu_step, kernel3__mu_step) - d_lbr_r;
+    xyz0 = zp * tex3D_double(tex_device_lb, 3,
+			     kernel3__nu_step, kernel3__mu_step) - d_lbr_r;
     
-    // 	  xyz1 = zp * tex3D_double(tex_device_lb, 1,
-    // 				   kernel3__nu_step, kernel3__mu_step);
-    
-#ifdef __DEVICE_EMULATION__
-    //	printf("r_point[i]:%.20lf\n", shared__r_point[i]);
-#endif
-    xyz2 = tex2D_double(tex_r_point,i,in_step)  * sinb;
-    zp = tex2D_double(tex_r_point,i,in_step) * cosb;
-    xyz0 = zp * cosl - d_lbr_r;
-    xyz1 = zp * sinl;		  
+    xyz1 = zp * tex3D_double(tex_device_lb, 1,
+ 			     kernel3__nu_step, kernel3__mu_step);
     
     rg = sqrt(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2)/(q*q));
     rs = rg + r0;
@@ -299,7 +279,7 @@ __global__ void gpu__integral_kernel3(	int in_step, int in_steps,
       
       pos = j * blockDim.x + threadIdx.x;
       double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-      
+
       st_int[pos] += (tex2D_double(tex_qw_r3_N,i,in_step) 
 		      * exp(-(xyz_norm) / constant__fstream_sigma_sq2[j]));
     }
@@ -309,17 +289,10 @@ __global__ void gpu__integral_kernel3(	int in_step, int in_steps,
   //will be reused
   double V = device__V[kernel3__r_step + (kernel3__r_steps * kernel3__nu_step)];
   pos = threadIdx.x + (blockIdx.x * blockDim.x) + (blockIdx.y * gridDim.x * blockDim.x);
-#ifdef __DEVICE_EMULATION__
-  //printf("%d V:%.30lf\n", pos, V);
-#endif
   background_integrals[pos] += (bg_int * V);
   for (i = 0; i < number_streams; i++) {
-    stream_integrals[pos] 
-      = (st_int[i * blockDim.x + threadIdx.x]);
-#ifdef __DEVICE_EMULATION__
-    //		printf("%d st_int: %.30lf\n", pos, 
-    //st_int[i * blockDim.x + threadIdx.x]);
-#endif
+    stream_integrals[pos] += 
+      st_int[i * blockDim.x + threadIdx.x] * V;
     pos += (blockDim.x * gridDim.x * gridDim.y);
   }
 }

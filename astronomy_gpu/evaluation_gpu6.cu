@@ -72,7 +72,7 @@ GPU_PRECISION	**device__lb;		//sinb, sinl, cosb, cosl	-- float[nu][mu][4]
 
 int	*integral_size;
 GPU_PRECISION	**host__background_integrals;
-GPU_PRECISION	***host__stream_integrals;
+GPU_PRECISION	**host__stream_integrals;
 GPU_PRECISION	**device__background_integrals;
 GPU_PRECISION	**device__stream_integrals;
 
@@ -279,7 +279,7 @@ void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int
 	device__background_integrals = (GPU_PRECISION**)malloc(number_integrals * sizeof(GPU_PRECISION*));
 	device__stream_integrals = (GPU_PRECISION**)malloc(number_integrals * sizeof(GPU_PRECISION*));
 	host__background_integrals = (GPU_PRECISION**)malloc(number_integrals * sizeof(GPU_PRECISION*));
-	host__stream_integrals = (GPU_PRECISION***)malloc(number_integrals * sizeof(GPU_PRECISION**));
+	host__stream_integrals = (GPU_PRECISION**)malloc(number_integrals * sizeof(GPU_PRECISION*));
 #ifdef SINGLE_PRECISION
 	device__background_correction = (GPU_PRECISION**)malloc(number_integrals * sizeof(GPU_PRECISION*));
 	device__stream_correction = (GPU_PRECISION**)malloc(number_integrals * sizeof(GPU_PRECISION*));
@@ -298,6 +298,8 @@ void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int
 	mu_step_size = (double*) malloc(number_integrals * sizeof(double));
 	r_min = (double*) malloc(number_integrals * sizeof(double));
 	r_step_size = (double*) malloc(number_integrals * sizeof(double));
+
+	printf("%d integrals %d streams\n", number_integrals, number_streams);
 
 	allocate_cu_arrays(number_integrals);
 	for (i = 0; i < number_integrals; i++) {
@@ -400,11 +402,7 @@ void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int
 		cutilSafeCall( cudaMalloc((void**) &device__stream_correction[i], number_streams * integral_size[i] * sizeof(GPU_PRECISION)) );
 #endif
 		host__background_integrals[i] = (GPU_PRECISION*)malloc(integral_size[i] * sizeof(GPU_PRECISION));
-		host__stream_integrals[i] = (GPU_PRECISION**)malloc(r_steps[i] * sizeof(GPU_PRECISION*));
-		for(unsigned int k = 0;k<r_steps[i];++k)
-		  {
-		    host__stream_integrals[i][k] = (GPU_PRECISION*)malloc(number_streams * integral_size[i] * sizeof(GPU_PRECISION));
-		  }
+		host__stream_integrals[i] = (GPU_PRECISION*)malloc(number_streams * integral_size[i] * sizeof(GPU_PRECISION));
 	}
 	
 
@@ -508,7 +506,7 @@ __global__ void gpu__zero_integrals(GPU_PRECISION *background_integrals, GPU_PRE
 }
 
 void cpu__sum_integrals(int iteration, double *background_integral, double *stream_integrals) {
-	int i;
+  int i, j;
 
 	cutilSafeCall( cudaMemcpy(host__background_integrals[iteration], device__background_integrals[iteration], integral_size[iteration] * sizeof(GPU_PRECISION), cudaMemcpyDeviceToHost) );
 
@@ -521,18 +519,18 @@ void cpu__sum_integrals(int iteration, double *background_integral, double *stre
 	if (iteration == 0) *background_integral = sum;
 	else *background_integral -= sum;
 
-//  	cutilSafeCall( cudaMemcpy(host__stream_integrals[iteration], device__stream_integrals[iteration], number_streams * integral_size[iteration] * sizeof(GPU_PRECISION), cudaMemcpyDeviceToHost) );
-// 	for (i = 0; i < number_streams; i++) {
-// 		sum = 0.0;
-// 		for (j = 0; j < integral_size[iteration]; j++) {
+ 	cutilSafeCall( cudaMemcpy(host__stream_integrals[iteration], device__stream_integrals[iteration], number_streams * integral_size[iteration] * sizeof(GPU_PRECISION), cudaMemcpyDeviceToHost) );
+	for (i = 0; i < number_streams; i++) {
+		sum = 0.0;
+		for (j = 0; j < integral_size[iteration]; j++) {
 
-// 		  sum += (double)(host__stream_integrals[iteration]
-// 				  [j + (i * integral_size[iteration])]);
-// 			//printf("stream_integral: %.15f\n", host__stream_integrals[iteration][j + (i * integral_size[iteration])]);
-// 		}
-// 		if (iteration == 0) stream_integrals[i] = sum;
-// 		else stream_integrals[i] -= sum;
-// 	}
+		  sum += (double)(host__stream_integrals[iteration]
+				  [j + (i * integral_size[iteration])]);
+			//printf("stream_integral: %.15f\n", host__stream_integrals[iteration][j + (i * integral_size[iteration])]);
+		}
+		if (iteration == 0) stream_integrals[i] = sum;
+		else stream_integrals[i] -= sum;
+	}
 }
 
 /********
@@ -847,63 +845,10 @@ double gpu__likelihood(double *parameters) {
 				    cudaGetErrorString(err));
 			    exit(1);
 			  }
-			cutilSafeCall( cudaMemcpy(host__stream_integrals[i][j], device__stream_integrals[i], number_streams * integral_size[i] * sizeof(GPU_PRECISION), cudaMemcpyDeviceToHost) );
 		  }
 		cpu__sum_integrals(i, &background_integral, stream_integrals);
-
-		double *irv, *reff_xr_rp3, **qw_r3_N, **r_point;
-		double *ids, *nus;
-		irv		= (double*)malloc(sizeof(double) * r_steps[i]);
-		reff_xr_rp3	= (double*)malloc(sizeof(double) * r_steps[i]);
-		qw_r3_N		= (double**)malloc(sizeof(double*) * r_steps[i]);
-		r_point		= (double**)malloc(sizeof(double*) * r_steps[i]);
-		ids		= (double*)malloc(sizeof(double) * nu_steps[i]);
-		nus		= (double*)malloc(sizeof(double) * nu_steps[i]);
-		printf("cpu__r_constants\n");
-		cpu__r_constants(convolve, r_steps[i], r_min[i], r_step_size[i], mu_steps[i], mu_min[i], mu_step_size[i], 
-				 nu_steps[i], nu_min[i], nu_step_size[i], irv, r_point, qw_r3_N, reff_xr_rp3, nus, ids);
-
-		//do this multiple on the CPU to gain a few more digits
-		//of precision at the expense of about 20s
-		int pos = 0;
-		for(int stream = 0; stream< number_streams;++stream){
-		  for (int m = 0; m< mu_steps[i];++m) {
-		    for (int k = 0; k < nu_steps[i]; k++) {
-		      for(int j = 0;j<r_steps[i];++j) {
-			double V = irv[j] * ids[k];
-			(host__stream_integrals[i][j][pos]) = 
-			  (host__stream_integrals[i][j][pos])
-			  * ( reff_xr_rp3[j]) * V;
-			if (i == 0)
-			  stream_integrals[stream] += (host__stream_integrals[i][j][pos]);
-			else
-			  stream_integrals[stream] -= (host__stream_integrals[i][j][pos]);
-			//printf("%d st_int:%.30lf\n",
-			//pos, stream_integrals[i]);
-		      }
-		      ++pos;
-		    }
-		  }
-		}
-		for(int k = 0;k<r_steps[i];++k)
-		  {
-		    free(host__stream_integrals[i][k]);
-		  }
-		free(host__stream_integrals[i]);
 		printf("background_integral: %.30lf, stream_integral[0]: %.30lf, stream_integral[1]: %.30lf\n", background_integral, stream_integrals[0], stream_integrals[1]);
-		free(irv);
-		free(reff_xr_rp3);
-		for(j = 0;j<r_steps[i];++j)
-		  {
-		    free(qw_r3_N[j]);
-		    free(r_point[j]);
-		  }
-		free(qw_r3_N);
-		free(r_point);
-		free(ids);
-		free(nus);
 	}
-	free(host__stream_integrals);
 	//background_integral = 0.00065193012761266761270761982416388491401448845863 - 0.00000262841406721711868334266995472781047737953486;
 	//stream_integrals[0] = 376.55382114181918495887657627463340759277343750000000 - 2.54355905485544742106185367447324097156524658203125;
 	//stream_integrals[1] = 0;
