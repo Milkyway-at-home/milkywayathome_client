@@ -374,7 +374,7 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 				ia->background_integral += bg_prob * V;
 				for (i = 0; i < ap->number_streams; i++) 
 				  {
-				    ia->stream_integrals[i] += st_probs[i] * V * reff_xr_rp3[r_step_current];
+				    ia->stream_integrals[i] += st_probs[i] * V;
 				  }
 
 				ia->current_calculation++;
