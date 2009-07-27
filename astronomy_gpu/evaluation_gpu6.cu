@@ -673,14 +673,14 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
 	//pragma unroll 1 makes the loop not unroll,
 	//when it unrolls it causes a launch failure when trying
 	//to access constant__stream_weight[i], when i is 1
-#pragma unroll 1
+	#pragma unroll 1
 	for (i = 0; i < number_streams; i++) {
 		probability_sum += st_int[i] * reff_xr_rp3 * constant__stream_weight[i];
 	}
 //	printf("bg_prob %.15f st_prob[0]: %.15f st_prob[1]: %.15f, prob_sum: %.15f\n", (bg_int * reff_xr_rp3), (st_int[0] * reff_xr_rp3), (st_int[1] * reff_xr_rp3), probability_sum);
 
 	if (probability_sum == 0.0) probability_sum = -238.0;
-	else probability_sum = log(probability_sum)/log(10.0);
+	else probability_sum = log10(probability_sum);
 
 #ifndef SINGLE_PRECISION
 	probability[threadIdx.x] += probability_sum;
@@ -849,9 +849,9 @@ double gpu__likelihood(double *parameters) {
 		cpu__sum_integrals(i, &background_integral, stream_integrals);
 		printf("background_integral: %.30lf, stream_integral[0]: %.30lf, stream_integral[1]: %.30lf\n", background_integral, stream_integrals[0], stream_integrals[1]);
 	}
-	//background_integral = 0.00065193012761266761270761982416388491401448845863 - 0.00000262841406721711868334266995472781047737953486;
-	//stream_integrals[0] = 376.55382114181918495887657627463340759277343750000000 - 2.54355905485544742106185367447324097156524658203125;
-	//stream_integrals[1] = 0;
+	//background_integral = 0.00022401069061469790753317321563287123353802599013;
+	//stream_integrals[0] = 9.54048934172210572057792887790128588676452636718750;
+	//	stream_integrals[1] = 458.82637245998415664871572516858577728271484375000000;
 	cutStopTimer(timer);
 	float t = cutGetTimerValue(timer);
 	printf("gpu__integral_kernel3 took %f ms\n", t);
@@ -906,7 +906,6 @@ double gpu__likelihood(double *parameters) {
 //	printf("num streams:%u\n", number_streams);
 	for (i = 0; i < number_stars; i += number_threads) {
 		block_size = min(number_threads, number_stars - i);
-		bind_texture(0);
 #ifndef SINGLE_PRECISION
 		switch (number_streams) {
 			case 1:	gpu__likelihood_kernel<1><<<1, block_size>>>(	i, convolve,
