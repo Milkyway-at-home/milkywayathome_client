@@ -423,6 +423,7 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 			continue;
 		}
 
+		insert_sp->hostid = result.hostid;
 		retval = host.lookup_id(result.hostid);
 		if (retval) {
 			log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[RESULT#%d] lookup of host %d failed %d\n", result.id, result.hostid, retval);

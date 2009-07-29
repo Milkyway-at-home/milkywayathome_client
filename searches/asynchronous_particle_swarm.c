@@ -72,6 +72,7 @@ int create_particle_swarm(char* search_name, int number_arguments, char** argume
 	pso->c1 = 2.0;
 	pso->c2 = 2.0;
 	pso->size = 50;
+	pso->redundancy_rate = 0.3;
 
 	for (i = 0; i < number_arguments; i++) {
 		if (!strcmp(arguments[i], "-pso_size")) pso->size = atoi(arguments[++i]);
@@ -247,7 +248,7 @@ int parse(PARTICLE_SWARM_OPTIMIZATION *pso, SEARCH_PARAMETERS *sp, int *particle
 	memcpy(metadata, sp->metadata, sizeof(char) * METADATA_SIZE);
 
 	if (isnan(sp->fitness)) return AS_INSERT_FITNESS_NAN;
-//	if (sp->fitness > -2.0) return AS_INSERT_FITNESS_INVALID;
+	if (sp->fitness > -2.0) return AS_INSERT_FITNESS_INVALID;
 
 	for (i = 0; i < pso->number_parameters; i++) {
 		if (isnan(sp->parameters[i])) return AS_INSERT_PARAMETERS_NAN;

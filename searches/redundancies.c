@@ -20,17 +20,26 @@ void free_redundancy_list(REDUNDANCY_LIST **redundancy_list) {
 	while (current_redundancy != NULL) {
 		temp = current_redundancy;
 		current_redundancy = current_redundancy->next;
+		temp->next = NULL;
 		free(temp);
 	}
+	(*redundancy_list)->next = NULL;
+	(*redundancy_list)->first = NULL;
 
-	free( (*redundancy_list)->parameters );
-	free( (*redundancy_list)->metadata );
+	if ( (*redundancy_list)->parameters != NULL) {
+		free( (*redundancy_list)->parameters );
+	}
+	if ( (*redundancy_list)->metadata != NULL) {
+		free( (*redundancy_list)->metadata );
+	}
 	free( (*redundancy_list) );
 }
 
 void new_redundancy_list(int number_parameters, double fitness, double *parameters, char *metadata, int hostid, REDUNDANCY_LIST **redundancy_list) {
 	int i;
 	(*redundancy_list) = (REDUNDANCY_LIST*)malloc(sizeof(REDUNDANCY_LIST));
+	(*redundancy_list)->first = NULL;
+	(*redundancy_list)->next = NULL;
 
 	(*redundancy_list)->number_parameters = number_parameters;
 	(*redundancy_list)->parameters = (double*)malloc(sizeof(double) * number_parameters);
@@ -39,7 +48,6 @@ void new_redundancy_list(int number_parameters, double fitness, double *paramete
 	(*redundancy_list)->metadata = (char*)malloc(sizeof(char) * METADATA_SIZE);
 	memcpy((*redundancy_list)->metadata, metadata, sizeof(char) * METADATA_SIZE);
 
-	(*redundancy_list)->next = NULL;
 
 	new_redundancy(fitness, hostid, &((*redundancy_list)->first));
 }
@@ -77,6 +85,7 @@ int fwrite_redundancies(FILE *file, REDUNDANCIES *redundancies) {
 
 int fread_redundancy(FILE *file, REDUNDANCY **redundancy) {
 	(*redundancy) = (REDUNDANCY*)malloc(sizeof(REDUNDANCY));
+	(*redundancy)->next = NULL;
 
 	if (2 == fscanf(file, "[%lf %d]", &((*redundancy)->fitness), &((*redundancy)->hostid))) {
 		return 1;
@@ -93,6 +102,10 @@ int fread_redundancy_list(FILE *file, REDUNDANCY_LIST **redundancy_list) {
 	REDUNDANCY *current_redundancy;
 
 	(*redundancy_list) = (REDUNDANCY_LIST*)malloc(sizeof(REDUNDANCY_LIST));
+	(*redundancy_list)->parameters = NULL;
+	(*redundancy_list)->metadata = NULL;
+	(*redundancy_list)->first = NULL;
+	(*redundancy_list)->next = NULL;
 
 	if (1 != fscanf(file, "[%d] [", &((*redundancy_list)->number_parameters))) {
 		free_redundancy_list(redundancy_list);
@@ -181,19 +194,29 @@ void generate_redundancy(REDUNDANCIES *redundancies, int number_parameters, doub
 
 void append_redundancy(REDUNDANCY_LIST *redundancy_list, double fitness, int hostid) {
 	REDUNDANCY *current;
+	int count;
 
 	if (redundancy_list->first == NULL) {
 		new_redundancy(fitness, hostid, &(redundancy_list->first));
 		return;
 	}
+
+	count = 0;
 	current = redundancy_list->first;
-	while (current->next != NULL) current = current->next;
+	while (current->next != NULL) {
+		count++;
+		if (count > 1000) {
+			printf("count > 1000 in append redundnacy\n");
+			exit(0);
+		}
+		current = current->next;
+	}
 	new_redundancy(fitness, hostid, &(current->next));
 }
 
 
 int redundancy_match(REDUNDANCY_LIST *current, int number_parameters, double fitness, double *parameters, int hostid) {
-	int i;
+	int i, count;
 	REDUNDANCY *current_redundancy;
 
 	if (number_parameters != current->number_parameters) return REDUNDANCY_NOT_EQUAL;
@@ -205,13 +228,21 @@ int redundancy_match(REDUNDANCY_LIST *current, int number_parameters, double fit
 		}
 	}
 
+	count = 0;
 	current_redundancy = current->first;
 	while (current_redundancy != NULL) {
+		count++;
+		if (count > 1000) {
+			printf("count > 1000 in redundancy_match\n");
+			exit(0);
+		}
+
 //		printf("comparing hostid: %d %d, fitness: %.20lf %.20lf\n", hostid, current_redundancy->hostid, fitness, current_redundancy->fitness);
 		if (hostid == current_redundancy->hostid) return REDUNDANCY_DUPLICATE;
 		else if (fabs(fitness - current_redundancy->fitness) < FITNESS_THRESHOLD) {
 			return REDUNDANCY_MATCH;
 		}
+		current_redundancy = current_redundancy->next;
 	}
 
 	return REDUNDANCY_MISMATCH;
@@ -222,6 +253,7 @@ int verify_with_insert(REDUNDANCIES *redundancies, int number_parameters, double
 	REDUNDANCY_LIST *current;
 	REDUNDANCY_LIST *previous;
 	REDUNDANCY_LIST *new_redundancy;
+	int count;
 
 	current = redundancies->redundancy_list;
 	if (current == NULL) {
@@ -232,7 +264,13 @@ int verify_with_insert(REDUNDANCIES *redundancies, int number_parameters, double
 
 	previous = NULL;
 
+	count = 0;
 	while (current != NULL) {
+		count++;
+		if (count > 5000) {
+			printf("OVER 1000 IN VERIFY WITH INSERT LOOP\n");
+			exit(0);
+		}
 		int match = redundancy_match(current, number_parameters, fitness, parameters, hostid);
 		if (match == REDUNDANCY_MATCH) {
 			/**
@@ -276,11 +314,18 @@ int verify_with_insert(REDUNDANCIES *redundancies, int number_parameters, double
 int verify_without_insert(REDUNDANCIES *redundancies, int number_parameters, double fitness, double *parameters, char *metadata, int hostid) {
 	REDUNDANCY_LIST *current;
 	REDUNDANCY_LIST *previous;
+	int count;
 	
 	previous = NULL;
 	current = redundancies->redundancy_list;
 
+	count = 0;
 	while (current != NULL) {
+		count++;
+		if (count > 5000) {
+			printf("OVER 1000 IN VERIFY WITHOUT INSERT LOOP\n");
+			exit(0);
+		}
 		int match = redundancy_match(current, number_parameters, fitness, parameters, hostid);
 		if (match == REDUNDANCY_MATCH) {
 			/**

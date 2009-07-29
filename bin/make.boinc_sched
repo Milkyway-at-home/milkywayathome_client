@@ -24,6 +24,7 @@ SEARCH_OBJS = \
 	$(SEARCH_DIR)/asynchronous_search.o \
 	$(SEARCH_DIR)/asynchronous_newton_method.o \
 	$(SEARCH_DIR)/asynchronous_particle_swarm.o \
+	$(SEARCH_DIR)/asynchronous_genetic_search.o \
 	$(SEARCH_DIR)/bounds.o \
 	$(SEARCH_DIR)/newton_method.o \
 	$(SEARCH_DIR)/hessian.o \
@@ -32,7 +33,7 @@ SEARCH_OBJS = \
 	$(SEARCH_DIR)/population.o \
 	$(SEARCH_DIR)/result.o \
 	$(SEARCH_DIR)/recombination.o \
-	$(SEARCH_DIR)/redundancy.o \
+	$(SEARCH_DIR)/redundancies.o \
 	$(SEARCH_DIR)/regression.o \
 	$(SEARCH_DIR)/search_log.o
 SCHED_OBJS = \

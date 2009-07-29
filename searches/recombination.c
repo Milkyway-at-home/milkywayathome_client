@@ -174,7 +174,7 @@ void higher_recombination(double** parents, int number_parents, int number_param
 }
 
 
-double simplex_recombination(double** parents, double* fitness, int number_parents, int number_parameters, double l1, double l2, double* parameters) {
+double simplex_recombination(double** parents, double* fitness, int number_parents, int number_parameters, double ls_center, double ls_outside, double* parameters) {
 	int i, j, worst_parent;
 	double distance;
 
@@ -199,14 +199,9 @@ double simplex_recombination(double** parents, double* fitness, int number_paren
 	/********
 		*	Generate points along the line from the worst parent to the centroid
 	 ********/
-	if (l1 < l2) {
-		double temp = l1;
-		l1 = l2;
-		l2 = temp;
-	}
-	distance = l1 + drand48() * (l1 - l2);
+	distance = ls_center + drand48() * (ls_outside - ls_center);
 	for (j = 0; j < number_parameters; j++) {
-		parameters[j] = parameters[j] + distance * (parents[worst_parent][j] - parameters[j]);
+		parameters[j] = parameters[j] + distance * (parameters[j] - parents[worst_parent][j]);
 	}
 	return distance;
 }

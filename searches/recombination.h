@@ -33,7 +33,7 @@ void average_recombination(double** parents, int number_parents, int number_para
 void higher_recombination(double** parents, int number_parents, int number_parameters, double *result);
 void lower_recombination(double** parents, int number_parents, int number_parameters, double *result);
 
-double simplex_recombination(double** parents, double* fitness, int number_parents, int number_parameters, double l1, double l2, double *result);
+double simplex_recombination(double** parents, double* fitness, int number_parents, int number_parameters, double ls_center, double ls_outside, double *result);
 
 double* binomial_recombination(double** parents, int number_parents, int number_parameters, double crossover_rate, double crossover_scale);
 double* exponential_recombination(double** parents, int number_parents, int number_parameters, double crossover_rate, double crossover_scale);

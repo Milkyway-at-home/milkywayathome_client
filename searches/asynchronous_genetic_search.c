@@ -70,8 +70,8 @@ int create_genetic_search(char* search_name, int number_arguments, char** argume
 	gs->mutation_rate = 0.3;
 	gs->redundancy_rate = 0.3;
 	gs->number_parents = 2;
-	gs->ls_min = -1.5;
-	gs->ls_max = 1.5;
+	gs->ls_center = -1.5;
+	gs->ls_outside = 1.5;
 	gs->bounds = bounds;
 
 	population_size = 100;
@@ -84,8 +84,8 @@ int create_genetic_search(char* search_name, int number_arguments, char** argume
 		} else if (!strcmp(arguments[i], "-gs_redundancy_rate")) {
 			gs->redundancy_rate = atof(arguments[++i]);
 		} else if (!strcmp(arguments[i], "-gs_ls_range")) {
-			gs->ls_min = atof(arguments[++i]);
-			gs->ls_max = atof(arguments[++i]);
+			gs->ls_center = atof(arguments[++i]);
+			gs->ls_outside = atof(arguments[++i]);
 		} else if (!strcmp(arguments[i], "-gs_type")) {
 			i++;
 			if (!strcmp(arguments[i], "average")) {
@@ -132,15 +132,21 @@ int read_genetic_search(char *search_name, void** search_data) {
 	fscanf(file, "current_evaluation: %d\n", &(gs->current_evaluation));
 	fscanf(file, "redundancy_rate: %lf\n", &(gs->redundancy_rate));
 	fscanf(file, "mutation_rate: %lf\n", &(gs->mutation_rate));
-	fscanf(file, "number_parents: %d, ls_min: %lf, ls_max: %lf\n", &(gs->number_parents), &(gs->ls_min), &(gs->ls_max));
+	fscanf(file, "number_parents: %d, ls_center: %lf, ls_outside: %lf\n", &(gs->number_parents), &(gs->ls_center), &(gs->ls_outside));
 	fread_bounds(file, &(gs->bounds));
 	fclose(file);
+
+	printf("read file\n");
 
 	sprintf(population_filename, "%s/%s/redundancies", get_working_directory(), search_name);
 	if (0 > read_redundancies(population_filename, &(gs->redundancies))) return AS_READ_ERROR;
 
+	printf("read redundancies\n");
+
 	sprintf(population_filename, "%s/%s/population", get_working_directory(), search_name);
 	if (0 > read_population(population_filename, &(gs->population))) return AS_READ_ERROR;
+
+	printf("read population\n");
 
 	gs->number_parameters = gs->population->number_parameters;
 
@@ -167,7 +173,7 @@ int checkpoint_genetic_search(char* search_name, void* search_data) {
 	fprintf(file, "current_evaluation: %d\n", gs->current_evaluation);
 	fprintf(file, "redundancy_rate: %.15lf\n", gs->redundancy_rate);
 	fprintf(file, "mutation_rate: %.15lf\n", gs->mutation_rate);
-	fprintf(file, "number_parents: %d, ls_min: %.15lf, ls_max: %.15lf\n", gs->number_parents, gs->ls_min, gs->ls_max);
+	fprintf(file, "number_parents: %d, ls_center: %.15lf, ls_outside: %.15lf\n", gs->number_parents, gs->ls_center, gs->ls_outside);
 	fwrite_bounds(file, gs->bounds);
 	fclose(file);
 
@@ -213,7 +219,7 @@ int gs_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETE
 			average_recombination(parents->individuals, gs->number_parents, gs->number_parameters, sp->parameters);
 			sprintf(sp->metadata, "ev: %d, average", gs->current_evaluation);
 		} else if (gs->type == GENETIC_SIMPLEX) {
-			double point = simplex_recombination(parents->individuals, parents->fitness, gs->number_parents, gs->number_parameters, gs->ls_min, gs->ls_max, sp->parameters);
+			double point = simplex_recombination(parents->individuals, parents->fitness, gs->number_parents, gs->number_parameters, gs->ls_center, gs->ls_outside, sp->parameters);
 			sprintf(sp->metadata, "ev: %d, simplex: %.20lf", gs->current_evaluation, point);
 		} else {
 			printf("UNKNOWN TYPE\n");
@@ -230,18 +236,29 @@ int gs_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETE
 
 
 int gs_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
+	double best, average, median, worst, deviation;
 	int verify_result;
 	GENETIC_SEARCH *gs = (GENETIC_SEARCH*)search_data;
 	gs->current_evaluation++;
 
-	if (!population_contains(gs->population, sp->fitness, sp->parameters)) {
+	if (sp->fitness > -2.0) {
+		sprintf(AS_MSG, "f: %.15lf, w: %.15lf, g: %.15lf, invalid", sp->fitness, gs->population->fitness[gs->population->size-1], gs->population->fitness[0]);
+		return AS_INSERT_FITNESS_INVALID;
+	} else if (!population_contains(gs->population, sp->fitness, sp->parameters)) {
 		if (gs->population->size < gs->population->max_size || sp->fitness > gs->population->fitness[gs->population->size-1]) {
 			verify_result = verify_with_insert(gs->redundancies, gs->number_parameters, sp->fitness, sp->parameters, sp->metadata, sp->hostid);
 			if (verify_result == VERIFY_VALID) {
 				int position = insert_sorted(gs->population, sp->parameters, sp->fitness);
-				sprintf(AS_MSG, "f: %.15lf, w: %.15lf, g: %.15lf, verified, inserted: %d", sp->fitness, gs->population->fitness[gs->population->size-1], gs->population->fitness[0], position);
+				sprintf(AS_MSG, "f: %.15lf, w: %.15lf, g: %.15lf, inserted: %d", sp->fitness, gs->population->fitness[gs->population->size-1], gs->population->fitness[0], position);
+
+				get_population_statistics(gs->population, &best, &average, &median, &worst, &deviation);
+				log_printf(search_name, "%ld -- b: %.15lf, a: %.15lf, m: %.15lf, w: %.15lf, d: %.15lf, insert at: %ld\n", gs->current_evaluation, best, average, median, worst, deviation, position);
 			} else {
-				sprintf(AS_MSG, "f: %.15lf, w: %.15lf, g: %.15lf, verifying", sp->fitness, gs->population->fitness[gs->population->size-1], gs->population->fitness[0]);
+				if (gs->population->size > 0) {
+					sprintf(AS_MSG, "f: %.15lf, w: %.15lf, g: %.15lf, verifying", sp->fitness, gs->population->fitness[gs->population->size-1], gs->population->fitness[0]);
+				} else {
+					sprintf(AS_MSG, "f: %.15lf, w: %.15lf, g: %.15lf, verifying", sp->fitness, 0.0, 0.0);
+				}
 			}
 		} else {
 			verify_without_insert(gs->redundancies, gs->number_parameters, sp->fitness, sp->parameters, sp->metadata, sp->hostid);

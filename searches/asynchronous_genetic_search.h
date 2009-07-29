@@ -41,7 +41,7 @@ typedef struct genetic_search {
 
 	int type;
 	int number_parents;
-	double ls_min, ls_max;
+	double ls_center, ls_outside;
 
 	BOUNDS *bounds;
 	POPULATION *population;

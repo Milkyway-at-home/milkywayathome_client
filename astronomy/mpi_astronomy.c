@@ -30,6 +30,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 	*	Includes for FGDO
  ********/
 #include "../searches/asynchronous_newton_method.h"
+#include "../searches/asynchronous_genetic_search.h"
+#include "../searches/asynchronous_particle_swarm.h"
 #include "../searches/bounds.h"
 #include "../searches/synchronous_gradient_descent.h"
 #include "../searches/synchronous_newton_method.h"
@@ -87,9 +89,9 @@ int main(int number_arguments, char **arguments){
 	if (argument_exists("-asynch", number_arguments, arguments)) {
 		BOUNDS *bounds;
 		if (argument_exists("-nm", number_arguments, arguments))	register_search(get_asynchronous_newton_method());
-//		if (argument_exists("-gs", number_arguments, arguments))	register_search(get_asynchronous_genetic_search());
+		else if (argument_exists("-gs", number_arguments, arguments))	register_search(get_asynchronous_genetic_search());
 //		if (argument_exists("-de", number_arguments, arguments))	register_search(get_asynchronous_differential_evolution());
-//		if (argument_exists("-ps", number_arguments, arguments))	register_search(get_asynchronous_particle_swarm());
+		else if (argument_exists("-ps", number_arguments, arguments))	register_search(get_asynchronous_particle_swarm());
 //		if (argument_exists("-sx", number_arguments, arguments))	register_search(get_asynchronous_simplex());
 		else {
 			printf("Search not specified.\n");
