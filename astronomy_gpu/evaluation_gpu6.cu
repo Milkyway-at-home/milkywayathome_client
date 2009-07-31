@@ -37,6 +37,7 @@ extern "C++" {
 
 #define MAX_CONVOLVE 120
 #define R_INCREMENT 1
+#define MU_STEP_SIZE 64
 
 #ifdef SINGLE_PRECISION
 #define GPU_PRECISION float
@@ -99,8 +100,8 @@ GPU_PRECISION	*device__probability;
 GPU_PRECISION	*device__probability_correction;
 GPU_PRECISION	*host__probability;
 
-#define kernel3__mu_step	blockIdx.x
-#define kernel3__mu_steps	gridDim.x
+#define kernel3__mu_step	(offset + blockIdx.x)
+#define kernel3__mu_steps	(mu_steps[i])
 //TODO check if blockIdx.y is correct
 #define kernel3__r_step		(in_step + blockIdx.y)
 #define kernel3__r_steps	in_steps
@@ -456,6 +457,10 @@ void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int
 	host__probability = (GPU_PRECISION*)malloc(probability_size * sizeof(GPU_PRECISION));
 	free(host__dx);
 	free(host__qgaus_W);
+
+	unsigned int total, free;
+	cuMemGetInfo(&free, &total);
+	printf("Used %d/%d memory, %d remaining\n", (total-free) / 1024, total/1024, free/1024);
 }
 
 void gpu__free_constants() {
@@ -498,11 +503,11 @@ void gpu__free_constants() {
 }
 
 template <unsigned int number_streams>
-__global__ void gpu__zero_integrals(GPU_PRECISION *background_integrals, GPU_PRECISION *stream_integrals) {
-	int pos = threadIdx.x + (blockIdx.x * blockDim.x) + (blockIdx.y * blockDim.x * gridDim.x);
+__global__ void gpu__zero_integrals(int offset, int mu_steps, GPU_PRECISION *background_integrals, GPU_PRECISION *stream_integrals) {
+  int pos = threadIdx.x + ((offset + blockIdx.x) * blockDim.x) + (blockIdx.y * blockDim.x * mu_steps);
 
 	background_integrals[pos] = 0;
-	for (int i = 0; i < number_streams; i++) stream_integrals[(i * gridDim.y * gridDim.x * blockDim.x) + pos] = 0;
+	for (int i = 0; i < number_streams; i++) stream_integrals[(i * gridDim.y * mu_steps * blockDim.x) + pos] = 0;
 }
 
 void cpu__sum_integrals(int iteration, double *background_integral, double *stream_integrals) {
@@ -751,27 +756,31 @@ double gpu__likelihood(double *parameters) {
 	cutResetTimer(timer);
 	cutStartTimer(timer);
 	for (i = 0; i < number_integrals; i++) {
-		dim3 dimGrid(mu_steps[i], R_INCREMENT);
 		bind_texture(i);
 //		printf("mu_steps[i] is %u nu_steps[i] is %u rsteps[i] is %u convolve is %u number_streams is %u\n", 
 //		       mu_steps[i], nu_steps[i], r_steps[i], convolve, number_streams);
 		work_amount += mu_steps[i] * number_streams;
 
-
-		switch(number_streams) {
-		case 1:gpu__zero_integrals<1><<<dimGrid, nu_steps[i]>>>(device__background_integrals[i], device__stream_integrals[i]);break;
-		case 2:gpu__zero_integrals<2><<<dimGrid, nu_steps[i]>>>(device__background_integrals[i], device__stream_integrals[i]);break;
-		case 3:gpu__zero_integrals<3><<<dimGrid, nu_steps[i]>>>(device__background_integrals[i], device__stream_integrals[i]);break;
-		case 4:gpu__zero_integrals<4><<<dimGrid, nu_steps[i]>>>(device__background_integrals[i], device__stream_integrals[i]);break;
-		};
+		
+		//split mu_steps in order to get a smaller grid size to 
+		//reduce the UI lag that occurs
+		for(int mu_step = 0; mu_step < mu_steps[i]; mu_step += MU_STEP_SIZE) {
+		  dim3 dimGrid(min(MU_STEP_SIZE, mu_steps[i] - mu_step), R_INCREMENT);
+		  switch(number_streams) {
+		  case 1:gpu__zero_integrals<1><<<dimGrid, nu_steps[i]>>>(mu_step, mu_steps[i], device__background_integrals[i], device__stream_integrals[i]);break;
+		  case 2:gpu__zero_integrals<2><<<dimGrid, nu_steps[i]>>>(mu_step, mu_steps[i], device__background_integrals[i], device__stream_integrals[i]);break;
+		  case 3:gpu__zero_integrals<3><<<dimGrid, nu_steps[i]>>>(mu_step, mu_steps[i], device__background_integrals[i], device__stream_integrals[i]);break;
+		  case 4:gpu__zero_integrals<4><<<dimGrid, nu_steps[i]>>>(mu_step, mu_steps[i], device__background_integrals[i], device__stream_integrals[i]);break;
+		  };
 #ifdef SINGLE_PRECISION
-		switch(number_streams) {
-		case 1:gpu__zero_integrals<1><<<dimGrid, nu_steps[i]>>>(device__background_correction[i], device__stream_correction[i]);break;
-		case 2:gpu__zero_integrals<2><<<dimGrid, nu_steps[i]>>>(device__background_correction[i], device__stream_correction[i]);break;
-		case 3:gpu__zero_integrals<3><<<dimGrid, nu_steps[i]>>>(device__background_correction[i], device__stream_correction[i]);break;
-		case 4:gpu__zero_integrals<4><<<dimGrid, nu_steps[i]>>>(device__background_correction[i], device__stream_correction[i]);break;
-		};
+		  switch(number_streams) {
+		  case 1:gpu__zero_integrals<1><<<dimGrid, nu_steps[i]>>>(mu_step, mu_steps[i], device__background_correction[i], device__stream_correction[i]);break;
+		  case 2:gpu__zero_integrals<2><<<dimGrid, nu_steps[i]>>>(mu_step, mu_steps[i], device__background_correction[i], device__stream_correction[i]);break;
+		  case 3:gpu__zero_integrals<3><<<dimGrid, nu_steps[i]>>>(mu_step, mu_steps[i], device__background_correction[i], device__stream_correction[i]);break;
+		  case 4:gpu__zero_integrals<4><<<dimGrid, nu_steps[i]>>>(mu_step, mu_steps[i], device__background_correction[i], device__stream_correction[i]);break;
+		  };
 #endif
+		}
 		cudaError_t err;
 		err = cudaThreadSynchronize();
 		if(err != cudaSuccess)
@@ -786,28 +795,31 @@ double gpu__likelihood(double *parameters) {
 #else
 		sh_mem_multiple = 1;
 #endif
-  
 		unsigned int shared_mem_size = sh_mem_multiple * (nu_steps[i] * sizeof(GPU_PRECISION) * number_streams);
+		printf("%d blocks %d threads\n", mu_steps[i], nu_steps[i]);
+		printf("Allocating %d bytes for shared memory\n", shared_mem_size);
 		for(j = 0;j<r_steps[i];j+= R_INCREMENT)
 		  {
+		    for(int mu_step = 0; mu_step < mu_steps[i]; mu_step += MU_STEP_SIZE) {
+		      dim3 dimGrid(min(MU_STEP_SIZE, mu_steps[i] - mu_step), R_INCREMENT);
 #ifndef SINGLE_PRECISION
 			switch(number_streams) {
-			case 1:	gpu__integral_kernel3<1, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(j, r_steps[i],
+			case 1:	gpu__integral_kernel3<1, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(mu_step, mu_steps[i], j, r_steps[i],
 															  q, r0,
 															  device__lb[i], device__V[i],
 															  device__background_integrals[i], device__stream_integrals[i]);
 					break;
-				case 2:	gpu__integral_kernel3<2, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(j, r_steps[i],
+				case 2:	gpu__integral_kernel3<2, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(mu_step,mu_steps[i],j, r_steps[i],
 															  q, r0,
 															  device__lb[i], device__V[i],
 															  device__background_integrals[i], device__stream_integrals[i]);
 					break;
-				case 3:	gpu__integral_kernel3<3, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(j, r_steps[i],
+				case 3:	gpu__integral_kernel3<3, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(mu_step,mu_steps[i],j, r_steps[i],
 															  q, r0,
 															  device__lb[i], device__V[i],
 															  device__background_integrals[i], device__stream_integrals[i]);
 					break;
-				case 4:	gpu__integral_kernel3<4, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(j, r_steps[i],
+				case 4:	gpu__integral_kernel3<4, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(mu_step,mu_steps[i],j, r_steps[i],
 															  q, r0,
 															  device__lb[i], device__V[i],
 															  device__background_integrals[i], device__stream_integrals[i]);
@@ -816,22 +828,22 @@ double gpu__likelihood(double *parameters) {
 
 #else
 			switch(number_streams) {
-				case 1:	gpu__integral_kernel3<1, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(	j, r_steps[i], 
+				case 1:	gpu__integral_kernel3<1, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(mu_step,mu_steps[i],j, r_steps[i], 
 														q, r0,
 														device__lb[i], device__V[i],
 														device__background_integrals[i], device__background_correction[i], device__stream_integrals[i], device__stream_correction[i]);
 					break;
-				case 2:	gpu__integral_kernel3<2, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(	j, r_steps[i], 
+				case 2:	gpu__integral_kernel3<2, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(mu_step,mu_steps[i],j, r_steps[i], 
 														q, r0,
 														device__lb[i], device__V[i],
 														device__background_integrals[i], device__background_correction[i], device__stream_integrals[i], device__stream_correction[i]);
 					break;
-				case 3:	gpu__integral_kernel3<3, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(	j, r_steps[i], 
+				case 3:	gpu__integral_kernel3<3, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(mu_step,mu_steps[i],j, r_steps[i], 
 														q, r0,
 														device__lb[i], device__V[i],
 														device__background_integrals[i], device__background_correction[i], device__stream_integrals[i], device__stream_correction[i]);
 					break;
-				case 4:	gpu__integral_kernel3<4, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(	j, r_steps[i], 
+				case 4:	gpu__integral_kernel3<4, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(mu_step,mu_steps[i],j, r_steps[i], 
 														q, r0,
 														device__lb[i], device__V[i],
 														device__background_integrals[i], device__background_correction[i], device__stream_integrals[i], device__stream_correction[i]);
@@ -845,6 +857,7 @@ double gpu__likelihood(double *parameters) {
 				    cudaGetErrorString(err));
 			    exit(1);
 			  }
+		    }
 		  }
 		cpu__sum_integrals(i, &background_integral, stream_integrals);
 		printf("background_integral: %.30lf, stream_integral[0]: %.30lf, stream_integral[1]: %.30lf\n", background_integral, stream_integrals[0], stream_integrals[1]);

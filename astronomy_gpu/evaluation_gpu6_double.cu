@@ -223,7 +223,8 @@ void bind_texture(int current_integral) {
 
 
 template <unsigned int number_streams, unsigned int convolve> 
-__global__ void gpu__integral_kernel3(	int in_step, int in_steps,
+__global__ void gpu__integral_kernel3(	int offset, int mu_steps,
+					int in_step, int in_steps,
 					double q, double r0,
 					double *device__lb, double *device__V,
 					double *background_integrals,
@@ -288,11 +289,11 @@ __global__ void gpu__integral_kernel3(	int in_step, int in_steps,
   //define V down here so that one to reduce the number of registers, because a register
   //will be reused
   double V = device__V[kernel3__r_step + (kernel3__r_steps * kernel3__nu_step)];
-  pos = threadIdx.x + (blockIdx.x * blockDim.x) + (blockIdx.y * gridDim.x * blockDim.x);
+  pos = threadIdx.x + ((offset + blockIdx.x) * blockDim.x) + (blockIdx.y * (mu_steps) * (offset + blockDim.x));
   background_integrals[pos] += (bg_int * V);
   for (i = 0; i < number_streams; i++) {
     stream_integrals[pos] += 
       st_int[i * blockDim.x + threadIdx.x] * V;
-    pos += (blockDim.x * gridDim.x * gridDim.y);
+    pos += (blockDim.x * (mu_steps) * gridDim.y);
   }
 }
