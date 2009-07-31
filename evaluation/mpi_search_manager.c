@@ -71,12 +71,17 @@ void mpi_asynchronous_search(int number_arguments, char** arguments, int number_
 	SEARCH_PARAMETERS *sp;
 
 	for (i = 0; i < number_arguments; i++) {
+		printf("checking argument: %s\n", arguments[i]);
+
 		if (!strcmp(arguments[i], "-s")) {
 			char *qualifier;
 			i++;
 			get_qualifier_from_name(arguments[i], &qualifier);
 			if (!search_exists(arguments[i])) {
-				ASYNCHRONOUS_SEARCH *as = get_registered_search(qualifier);
+				ASYNCHRONOUS_SEARCH *as;
+				printf("getting search from qualifier: %s\n", qualifier);
+				as = get_registered_search(qualifier);
+				printf("creating search\n");
 				retval = as->create_search(arguments[i], number_arguments, arguments, number_parameters, point, range, bounds);
 				if (retval) {
 					printf("ERROR creating search: %s -- [%s]\n", arguments[i], AS_MSG);

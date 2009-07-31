@@ -39,6 +39,7 @@
 typedef struct particle_swarm_optimization {
 	int current_particle, size;
 	int number_parameters;
+	int no_redundancy;
 	double w, c0, c1, c2;
 	double redundancy_rate;
 	long analyzed;

@@ -39,7 +39,13 @@ void new_bounds(BOUNDS **bounds, int number_parameters, double *min_bound, doubl
 
 	memcpy(b->min_bound, min_bound, sizeof(double) * number_parameters);
 	memcpy(b->max_bound, max_bound, sizeof(double) * number_parameters);
-	memcpy(b->in_radians, in_radians, sizeof(int) * number_parameters);
+
+	if (in_radians != NULL) {
+		memcpy(b->in_radians, in_radians, sizeof(int) * number_parameters);
+	} else {
+		for (i = 0; i < number_parameters; i++) b->in_radians[i] = 0;
+	}
+
 	for (i = 0; i < number_parameters; i++) {
 		if (b->in_radians[i]) {
 			b->min_bound[i] = -M_PI;

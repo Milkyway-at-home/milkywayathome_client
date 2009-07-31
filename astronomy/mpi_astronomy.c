@@ -98,6 +98,8 @@ int main(int number_arguments, char **arguments){
 			return 0;
 		}
 		new_bounds(&bounds, number_parameters, min_bound, max_bound, NULL);
+
+		printf("doing asynchronous search\n");
 		mpi_asynchronous_search(number_arguments, arguments, number_parameters, point, range, bounds);
 	} else {
 		if (argument_exists("-nm", number_arguments, arguments))	synchronous_newton_method(number_arguments, arguments, number_parameters, point, range);

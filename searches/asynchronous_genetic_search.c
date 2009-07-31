@@ -73,6 +73,7 @@ int create_genetic_search(char* search_name, int number_arguments, char** argume
 	gs->ls_center = -1.5;
 	gs->ls_outside = 1.5;
 	gs->bounds = bounds;
+	gs->no_redundancy = 0;
 
 	population_size = 100;
 
@@ -98,6 +99,8 @@ int create_genetic_search(char* search_name, int number_arguments, char** argume
 			}
 		} else if (!strcmp(arguments[i], "-gs_population_size")) {
 			population_size = atoi(arguments[++i]);
+		} else if (!strcmp(arguments[i], "-no_redundancy")) {
+			gs->no_redundancy = 1;
 		}
 	}
 
@@ -130,7 +133,7 @@ int read_genetic_search(char *search_name, void** search_data) {
 	printf("reading genetic search\n");
 	fscanf(file, "type: %d\n", &(gs->type));
 	fscanf(file, "current_evaluation: %d\n", &(gs->current_evaluation));
-	fscanf(file, "redundancy_rate: %lf\n", &(gs->redundancy_rate));
+	fscanf(file, "no_redundancy: %d, redundancy_rate: %lf\n", &(gs->no_redundancy), &(gs->redundancy_rate));
 	fscanf(file, "mutation_rate: %lf\n", &(gs->mutation_rate));
 	fscanf(file, "number_parents: %d, ls_center: %lf, ls_outside: %lf\n", &(gs->number_parents), &(gs->ls_center), &(gs->ls_outside));
 	fread_bounds(file, &(gs->bounds));
@@ -171,7 +174,7 @@ int checkpoint_genetic_search(char* search_name, void* search_data) {
 	
 	fprintf(file, "type: %d\n", gs->type);
 	fprintf(file, "current_evaluation: %d\n", gs->current_evaluation);
-	fprintf(file, "redundancy_rate: %.15lf\n", gs->redundancy_rate);
+	fprintf(file, "no_redundancy: %d, redundancy_rate: %.15lf\n", gs->no_redundancy, gs->redundancy_rate);
 	fprintf(file, "mutation_rate: %.15lf\n", gs->mutation_rate);
 	fprintf(file, "number_parents: %d, ls_center: %.15lf, ls_outside: %.15lf\n", gs->number_parents, gs->ls_center, gs->ls_outside);
 	fwrite_bounds(file, gs->bounds);
@@ -199,7 +202,7 @@ int gs_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETE
 
 //	printf("redundancy rate: %.25lf, mutation rate: %.25lf, random: %.25lf\n", gs->redundancy_rate, gs->mutation_rate, drand48());
 
-	if (gs->redundancies->redundancy_list != NULL && drand48() < gs->redundancy_rate) {
+	if (gs->no_redundancy == 0 && gs->redundancies->redundancy_list != NULL && drand48() < gs->redundancy_rate) {
 //		printf("generating redundancy\n");
 		generate_redundancy(gs->redundancies, gs->number_parameters, sp->parameters, sp->metadata);
 		strcat(sp->metadata, ", redundancy");
@@ -246,19 +249,27 @@ int gs_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS
 		return AS_INSERT_FITNESS_INVALID;
 	} else if (!population_contains(gs->population, sp->fitness, sp->parameters)) {
 		if (gs->population->size < gs->population->max_size || sp->fitness > gs->population->fitness[gs->population->size-1]) {
-			verify_result = verify_with_insert(gs->redundancies, gs->number_parameters, sp->fitness, sp->parameters, sp->metadata, sp->hostid);
-			if (verify_result == VERIFY_VALID) {
+			if (gs->no_redundancy == 0) {
+				verify_result = verify_with_insert(gs->redundancies, gs->number_parameters, sp->fitness, sp->parameters, sp->metadata, sp->hostid);
+				if (verify_result == VERIFY_VALID) {
+					int position = insert_sorted(gs->population, sp->parameters, sp->fitness);
+					sprintf(AS_MSG, "f: %.15lf, w: %.15lf, g: %.15lf, inserted: %d", sp->fitness, gs->population->fitness[gs->population->size-1], gs->population->fitness[0], position);
+
+					get_population_statistics(gs->population, &best, &average, &median, &worst, &deviation);
+					log_printf(search_name, "%ld -- b: %.15lf, a: %.15lf, m: %.15lf, w: %.15lf, d: %.15lf, insert at: %ld\n", gs->current_evaluation, best, average, median, worst, deviation, position);
+				} else {
+					if (gs->population->size > 0) {
+						sprintf(AS_MSG, "f: %.15lf, w: %.15lf, g: %.15lf, verifying", sp->fitness, gs->population->fitness[gs->population->size-1], gs->population->fitness[0]);
+					} else {
+						sprintf(AS_MSG, "f: %.15lf, w: %.15lf, g: %.15lf, verifying", sp->fitness, 0.0, 0.0);
+					}
+				}
+			} else {
 				int position = insert_sorted(gs->population, sp->parameters, sp->fitness);
 				sprintf(AS_MSG, "f: %.15lf, w: %.15lf, g: %.15lf, inserted: %d", sp->fitness, gs->population->fitness[gs->population->size-1], gs->population->fitness[0], position);
 
 				get_population_statistics(gs->population, &best, &average, &median, &worst, &deviation);
 				log_printf(search_name, "%ld -- b: %.15lf, a: %.15lf, m: %.15lf, w: %.15lf, d: %.15lf, insert at: %ld\n", gs->current_evaluation, best, average, median, worst, deviation, position);
-			} else {
-				if (gs->population->size > 0) {
-					sprintf(AS_MSG, "f: %.15lf, w: %.15lf, g: %.15lf, verifying", sp->fitness, gs->population->fitness[gs->population->size-1], gs->population->fitness[0]);
-				} else {
-					sprintf(AS_MSG, "f: %.15lf, w: %.15lf, g: %.15lf, verifying", sp->fitness, 0.0, 0.0);
-				}
 			}
 		} else {
 			verify_without_insert(gs->redundancies, gs->number_parameters, sp->fitness, sp->parameters, sp->metadata, sp->hostid);

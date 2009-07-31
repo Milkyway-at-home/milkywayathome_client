@@ -7,6 +7,8 @@ EVALUATION_DIR = $(FGDO_DIR)/evaluation
 SEARCH_DIR = $(FGDO_DIR)/searches
 UTIL_DIR = $(FGDO_DIR)/util
 
+MT_DIR = ../../mersenne_twister
+
 APP_DIR = ../astronomy
 
 MPI_ASTRONOMY = \
@@ -39,6 +41,8 @@ MANAGER_OBJS = \
 
 SEARCH_OBJS = \
 	$(SEARCH_DIR)/asynchronous_newton_method.o \
+	$(SEARCH_DIR)/asynchronous_genetic_search.o \
+	$(SEARCH_DIR)/asynchronous_particle_swarm.o \
 	$(SEARCH_DIR)/asynchronous_search.o \
 	$(SEARCH_DIR)/bounds.o \
 	$(SEARCH_DIR)/gradient.o \
@@ -49,6 +53,7 @@ SEARCH_OBJS = \
 	$(SEARCH_DIR)/population.o \
 	$(SEARCH_DIR)/recombination.o \
 	$(SEARCH_DIR)/regression.o \
+	$(SEARCH_DIR)/redundancies.o \
 	$(SEARCH_DIR)/search_arguments.o \
 	$(SEARCH_DIR)/search_log.o \
 	$(SEARCH_DIR)/search_parameters.o \
@@ -61,19 +66,20 @@ UTIL_OBJS = \
 ERROR_OBJS = \
 	$(SEARCH_DIR)/hessian.o
 
+MT_C = $(MT_DIR)/dSFMT.c
 
 PROGS = mpi_astronomy mpi_separation mpi_errors parameter_test
 
 all: $(PROGS)
 
 mpi_astronomy: $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(EVALUATION_OBJS) $(MANAGER_OBJS) $(UTIL_OBJS)
-	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_astronomy $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(EVALUATION_OBJS) $(MANAGER_OBJS) $(UTIL_OBJS)
+	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_astronomy $(MPI_ASTRONOMY) $(ASTRONOMY_OBJS) $(SEARCH_OBJS) $(EVALUATION_OBJS) $(MANAGER_OBJS) $(UTIL_OBJS) $(MT_C)
 
 separation: $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS)
-	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_separation $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS)
+	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_separation $(SEPARATION) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS) $(MT_C)
 
 errors: $(ERRORS) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS) $(ERROR_OBJS)
-	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_errors $(ERRORS) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS) $(ERROR_OBJS)
+	$(CXX) $(CXXFLAGS) -lm -Wall -o mpi_errors $(ERRORS) $(ASTRONOMY_OBJS) $(EVALUATION_OBJS) $(UTIL_OBJS) $(ERROR_OBJS) $(MT_C)
 
 .c.o:
 	$(CXX) $(CXXFLAGS) -Wall -x c -c $< -o $@
