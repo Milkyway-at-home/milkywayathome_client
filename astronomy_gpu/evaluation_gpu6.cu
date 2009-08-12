@@ -243,15 +243,15 @@ int choose_gpu(int argc, char **argv) {
   cudaDeviceProp deviceProp;
   if (device_arg == -1) {
     //just choose the device with the most gflops
-    int device  = cutGetMaxGflopsDeviceId();
-    cutilSafeCall(cudaGetDeviceProperties(&deviceProp, device));
-    cutilSafeCall(cudaSetDevice(device));
+    device_arg  = cutGetMaxGflopsDeviceId();
+    cutilSafeCall(cudaGetDeviceProperties(&deviceProp, device_arg));
+    cutilSafeCall(cudaSetDevice(device_arg));
   } else {
     cutilSafeCall(cudaGetDeviceProperties(&deviceProp, device_arg));
     cutilSafeCall(cudaSetDevice(device_arg));
   }
   printf("Using %s\n", deviceProp.name);
-  if (!boinc_setup_gpu(device))
+  if (!boinc_setup_gpu(device_arg))
     {
       printf("Unable to setup cuda sync context (will waste CPU cycles)\n");
     }
@@ -864,7 +864,7 @@ double gpu__likelihood(double *parameters) {
 	}
 	//background_integral = 0.00022401069061469790753317321563287123353802599013;
 	//stream_integrals[0] = 9.54048934172210572057792887790128588676452636718750;
-	//	stream_integrals[1] = 458.82637245998415664871572516858577728271484375000000;
+	//stream_integrals[1] = 458.82637245998415664871572516858577728271484375000000;
 	cutStopTimer(timer);
 	float t = cutGetTimerValue(timer);
 	printf("gpu__integral_kernel3 took %f ms\n", t);
