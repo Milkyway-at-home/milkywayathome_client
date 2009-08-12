@@ -305,11 +305,30 @@ void cpu__r_constants(	int n_convolve,
 			double *reff_xr_rp3, double *nus, double *ids) {
   int i;
   double log_r, r, next_r, rPrime;
-  for (i = 0; i < r_steps; i++) {
-    log_r		= r_min + (i * r_step_size);
-    r		=	pow(10.0, (log_r-14.2)/5.0);
-    next_r		=	pow(10.0, (log_r + r_step_size - 14.2)/5.0);
-    
+
+//vickej2 edits to make volumes even in kpc rather than g
+        double r_min_kpc, r_max_kpc, r_step_size_kpc, r_max;
+        
+        r_max = r_min + r_step_size * r_steps;
+
+        r_min_kpc = pow(10.0, ((r_min - 14.2)/5.0));
+        r_max_kpc = pow(10.0, ((r_max - 14.2)/5.0));
+	r_step_size_kpc = (r_max_kpc - r_min_kpc)/r_steps;
+
+
+	for (i = 0; i < r_steps; i++) {
+		//log_r		=	r_min + (i * r_step_size);
+		//r		=	pow(10.0, (log_r-14.2)/5.0);
+		//next_r		=	pow(10.0, (log_r + r_step_size - 14.2)/5.0);
+		
+		r               =       r_min_kpc + (i * r_step_size_kpc);
+		next_r          =       r + r_step_size_kpc;
+
+//vickej2 end edits
+
+
+
+
     irv[i]		=	(((next_r * next_r * next_r) - (r * r * r))/3.0) * mu_step_size / deg;
     rPrime		=	(next_r+r)/2.0;
     
@@ -349,7 +368,7 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 		double mu = ia->mu_min + (mu_step_current * ia->mu_step_size);
 
 		for (; nu_step_current < ia->nu_steps; nu_step_current++) {
-			#ifdef MILKYWAY 
+			#ifdef MILKYWAY
 				do_boinc_checkpoint(es);
 			#endif
 
@@ -420,8 +439,8 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 
 	for (; es->current_integral < ap->number_integrals; es->current_integral++) {
 		calculate_integral(ap, es->integral[es->current_integral], es);
-		printf("bg_int: %.20lf\n", es->integral[es->current_integral]->background_integral);
-		for (i = 0; i < ap->number_streams; i++) printf("st_int[%d]: %.20lf\n", i, es->integral[es->current_integral]->stream_integrals[i]);
+//vickej2 thinks this is clutter		printf("bg_int: %.20lf\n", es->integral[es->current_integral]->background_integral);
+//vickej2 thinks this is clutter		for (i = 0; i < ap->number_streams; i++) printf("st_int[%d]: %.20lf\n", i, es->integral[es->current_integral]->stream_integrals[i]);
 	}
 
 	es->background_integral = es->integral[0]->background_integral;
