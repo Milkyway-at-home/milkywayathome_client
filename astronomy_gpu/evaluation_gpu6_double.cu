@@ -88,7 +88,7 @@ void setup_constant_textures(double *fstream_a, double *fstream_c,
 
   cudaArray* cu_array_sq2;
   cutilSafeCall(cudaMallocArray(&cu_array_sq2, &channelDesc, 2, number_streams)); 
-  cutilSafeCall(cudaMemcpyToArray(cu_array_sq2, 0, 0, fstream_a, 2*number_streams  * sizeof(double), cudaMemcpyHostToDevice));
+  cutilSafeCall(cudaMemcpyToArray(cu_array_sq2, 0, 0, fstream_sigma_sq2, 2*number_streams  * sizeof(double), cudaMemcpyHostToDevice));
   
   // set texture parameters
   tex_fstream_a.addressMode[0] = cudaAddressModeClamp;
@@ -247,11 +247,9 @@ __global__ void gpu__integral_kernel3(	int offset, int mu_steps,
 
   for (i = 0; i < convolve; i++) {
     xyz2 =  tex2D_double(tex_r_point,i,in_step) * 
-      tex3D_double(tex_device_lb, 0,
-		   kernel3__nu_step, kernel3__mu_step);
+      tex3D_double(tex_device_lb, kernel3__nu_step, kernel3__mu_step);
     zp = tex2D_double(tex_r_point,i,in_step) * 
-      tex3D_double(tex_device_lb, 2,
-		   kernel3__nu_step, kernel3__mu_step);
+      tex3D_double(tex_device_lb, kernel3__nu_step, kernel3__mu_step);
     
     xyz0 = zp * tex3D_double(tex_device_lb, 3,
 			     kernel3__nu_step, kernel3__mu_step) - d_lbr_r;
