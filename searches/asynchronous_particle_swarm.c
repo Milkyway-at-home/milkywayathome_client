@@ -74,8 +74,12 @@ int create_particle_swarm(char* search_name, int number_arguments, char** argume
 	pso->size = 50;
 	pso->redundancy_rate = 0.3;
 	pso->no_redundancy = 0;
+	pso->number_parameters = number_parameters;
 
+	printf("number_arguments: %d\n", number_arguments);
 	for (i = 0; i < number_arguments; i++) {
+		printf("argument[%d]: %s\n", i, arguments[i]);
+
 		if (!strcmp(arguments[i], "-pso_size")) pso->size = atoi(arguments[++i]);
 		else if (!strcmp(arguments[i], "-w")) pso->w = atof(arguments[++i]);
 		else if (!strcmp(arguments[i], "-c0")) pso->c0 = atof(arguments[++i]);
@@ -84,21 +88,6 @@ int create_particle_swarm(char* search_name, int number_arguments, char** argume
 		else if (!strcmp(arguments[i], "-redundancy_rate")) pso->redundancy_rate = atof(arguments[++i]);
 		else if (!strcmp(arguments[i], "-no_redundancy")) pso->no_redundancy = 1;
 	}
-
-	sprintf(search_directory, "%s/%s", get_working_directory(), search_name);
-	printf("making directory: %s\n", search_directory);
-	mkdir(search_directory, 0777);
-
-	pso->current_particle = 0;
-	pso->analyzed = 0;
-
-	pso->number_parameters = number_parameters;
-	pso->bounds = bounds;
-
-	printf("setting global best\n");
-	pso->global_best_fitness = -DBL_MAX;
-	pso->global_best = (double*)malloc(sizeof(double) * pso->number_parameters);
-	for (i = 0; i < pso->size; i++) pso->global_best[i] = 0.0;
 
 	printf("setting local best, size: %d, np: %d\n", pso->size, pso->number_parameters);
 	new_population(pso->size, pso->number_parameters, &(pso->local_best));
@@ -111,8 +100,22 @@ int create_particle_swarm(char* search_name, int number_arguments, char** argume
 	printf("setting velocities\n");
 	new_population(pso->size, pso->number_parameters, &(pso->velocities));
 
+	printf("setting global best\n");
+	pso->global_best_fitness = -DBL_MAX;
+	pso->global_best = (double*)malloc(sizeof(double) * pso->number_parameters);
+	for (i = 0; i < pso->number_parameters; i++) pso->global_best[i] = 0.0;
+
+	pso->current_particle = 0;
+	pso->analyzed = 0;
+
+	pso->bounds = bounds;
+
 	printf("initializing redundancies\n");
 	initialize_redundancies(&(pso->redundancies));
+
+	sprintf(search_directory, "%s/%s", get_working_directory(), search_name);
+	printf("making directory: %s\n", search_directory);
+	mkdir(search_directory, 0777);
 
 	return checkpoint_particle_swarm(search_name, pso);
 }

@@ -63,6 +63,8 @@ void asynchronous_search(int number_arguments, char** arguments, int number_para
         MANAGED_SEARCH *ms = NULL;
         SEARCH_PARAMETERS *sp;
 
+	printf("number_parameters: %d\n", number_parameters);
+
 	init_search_manager(number_arguments, arguments);
         for (i = 0; i < number_arguments; i++) {
                 if (!strcmp(arguments[i], "-s")) {
@@ -87,14 +89,21 @@ void asynchronous_search(int number_arguments, char** arguments, int number_para
         if (ms == NULL) return;
 
         printf("Searching...\n");
+	printf("number parameters: %d\n", number_parameters);
 
         init_search_parameters(&sp, number_parameters);
+
+	printf("writing to sp->search_name\n");
         sprintf(sp->search_name, "%s", ms->search_name);
+
+	printf("starting search\n");
 
         i = 0;
         generate_result = AS_GEN_SUCCESS;
         while (generate_result == AS_GEN_SUCCESS) {
+		printf("generating parameters\n");
                 generate_result = ms->search->generate_parameters(ms->search_name, ms->search_data, sp);
+		printf("evaluating fitness\n");
                 sp->fitness = evaluate(sp->parameters);
 		sp->hostid = (int)(10 * drand48());
                 insert_result = ms->search->insert_parameters(ms->search_name, ms->search_data, sp);

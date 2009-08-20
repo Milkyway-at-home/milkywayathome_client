@@ -108,6 +108,7 @@ int create_genetic_search(char* search_name, int number_arguments, char** argume
 	printf("making directory: %s\n", search_directory);
 	mkdir(search_directory, 0777);
 
+	printf("population size: %d, number_parameters: %d\n", population_size, gs->number_parameters);
 	new_population(population_size, gs->number_parameters, &(gs->population));
 	initialize_redundancies(&(gs->redundancies));
 
@@ -200,28 +201,32 @@ int gs_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETE
 	gs = (GENETIC_SEARCH*)(search_data);
 	p = gs->population;
 
-//	printf("redundancy rate: %.25lf, mutation rate: %.25lf, random: %.25lf\n", gs->redundancy_rate, gs->mutation_rate, drand48());
+	printf("redundancy rate: %.25lf, mutation rate: %.25lf, random: %.25lf\n", gs->redundancy_rate, gs->mutation_rate, drand48());
+	printf("search parameters size: %d\n", sizeof(sp->parameters));
 
 	if (gs->no_redundancy == 0 && gs->redundancies->redundancy_list != NULL && drand48() < gs->redundancy_rate) {
-//		printf("generating redundancy\n");
+		printf("generating redundancy\n");
 		generate_redundancy(gs->redundancies, gs->number_parameters, sp->parameters, sp->metadata);
 		strcat(sp->metadata, ", redundancy");
 	} else if (p->size < p->max_size) {
-//		printf("generating random parameters\n");
+		printf("generating random parameters\n");
 		random_recombination(p->number_parameters, gs->bounds->min_bound, gs->bounds->max_bound, sp->parameters);
 		sprintf(sp->metadata, "ev: %d, random", gs->current_evaluation);
 	} else if (drand48() < gs->mutation_rate) {
-//		printf("generating mutation\n");
+		printf("generating mutation\n");
 		mutate(p->individuals[(int)(drand48() * p->size)], gs->bounds->min_bound, gs->bounds->max_bound, gs->number_parameters, sp->parameters);
 		sprintf(sp->metadata, "ev: %d, mutation", gs->current_evaluation);
 	} else {
-//		printf("generating recombination\n");
+		printf("generating recombination\n");
 		get_n_distinct(p, gs->number_parents, &parents);
+		printf("got n distinct: %d\n", gs->number_parents);
 
 		if (gs->type == GENETIC_AVERAGE) {
+			printf("average recombination\n");
 			average_recombination(parents->individuals, gs->number_parents, gs->number_parameters, sp->parameters);
 			sprintf(sp->metadata, "ev: %d, average", gs->current_evaluation);
 		} else if (gs->type == GENETIC_SIMPLEX) {
+			printf("simplex recombination\n");
 			double point = simplex_recombination(parents->individuals, parents->fitness, gs->number_parents, gs->number_parameters, gs->ls_center, gs->ls_outside, sp->parameters);
 			sprintf(sp->metadata, "ev: %d, simplex: %.20lf", gs->current_evaluation, point);
 		} else {

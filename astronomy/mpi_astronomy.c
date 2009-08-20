@@ -32,13 +32,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "../searches/asynchronous_newton_method.h"
 #include "../searches/asynchronous_genetic_search.h"
 #include "../searches/asynchronous_particle_swarm.h"
+#include "../searches/asynchronous_search.h"
 #include "../searches/bounds.h"
 #include "../searches/synchronous_gradient_descent.h"
 #include "../searches/synchronous_newton_method.h"
 #include "../searches/search_arguments.h"
 #include "../evaluation/evaluator.h"
 #include "../evaluation/mpi_evaluator.h"
-#include "../evaluation/mpi_search_manager.h"
 
 
 int main(int number_arguments, char **arguments){
@@ -68,6 +68,8 @@ int main(int number_arguments, char **arguments){
 	integral_results_length = 1 + ap->number_streams;
 	likelihood_parameter_length = 1 + ap->number_streams;
 	likelihood_results_length = 2;
+
+	printf("number_parameters: %d\n", number_parameters);
 
 	evaluator__init_integral(integral_f, integral_parameter_length, integral_compose, integral_results_length);
 	evaluator__init_likelihood(likelihood_f, likelihood_parameter_length, likelihood_compose, likelihood_results_length);
@@ -100,7 +102,7 @@ int main(int number_arguments, char **arguments){
 		new_bounds(&bounds, number_parameters, min_bound, max_bound, NULL);
 
 		printf("doing asynchronous search\n");
-		mpi_asynchronous_search(number_arguments, arguments, number_parameters, point, range, bounds);
+		asynchronous_search(number_arguments, arguments, number_parameters, point, range, bounds);
 	} else {
 		if (argument_exists("-nm", number_arguments, arguments))	synchronous_newton_method(number_arguments, arguments, number_parameters, point, range);
 		else if (argument_exists("-gd", number_arguments, arguments))	synchronous_gradient_descent(number_arguments, arguments, number_parameters, point, range);
