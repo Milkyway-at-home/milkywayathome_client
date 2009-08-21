@@ -154,6 +154,10 @@ int read_genetic_search(char *search_name, void** search_data) {
 
 	gs->number_parameters = gs->population->number_parameters;
 
+	printf("init mersenne twister\n");
+	dsfmt_gv_init_gen_rand((int)time(NULL));
+	printf("initialized\n");
+
 	return AS_READ_SUCCESS; 
 }
 
@@ -196,15 +200,15 @@ int checkpoint_genetic_search(char* search_name, void* search_data) {
 
 int gs_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
 	POPULATION *p, *parents;
-	GENETIC_SEARCH *gs = (GENETIC_SEARCH*)search_data;
+	GENETIC_SEARCH *gs;
 
 	gs = (GENETIC_SEARCH*)(search_data);
 	p = gs->population;
 
-	printf("redundancy rate: %.25lf, mutation rate: %.25lf, random: %.25lf\n", gs->redundancy_rate, gs->mutation_rate, drand48());
+	printf("redundancy rate: %.25lf, mutation rate: %.25lf, random: %.25lf\n", gs->redundancy_rate, gs->mutation_rate, dsfmt_gv_genrand_close_open());
 	printf("search parameters size: %d\n", sizeof(sp->parameters));
 
-	if (gs->no_redundancy == 0 && gs->redundancies->redundancy_list != NULL && drand48() < gs->redundancy_rate) {
+	if (gs->no_redundancy == 0 && gs->redundancies->redundancy_list != NULL && dsfmt_gv_genrand_close_open() < gs->redundancy_rate) {
 		printf("generating redundancy\n");
 		generate_redundancy(gs->redundancies, gs->number_parameters, sp->parameters, sp->metadata);
 		strcat(sp->metadata, ", redundancy");
@@ -212,9 +216,9 @@ int gs_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETE
 		printf("generating random parameters\n");
 		random_recombination(p->number_parameters, gs->bounds->min_bound, gs->bounds->max_bound, sp->parameters);
 		sprintf(sp->metadata, "ev: %d, random", gs->current_evaluation);
-	} else if (drand48() < gs->mutation_rate) {
+	} else if (dsfmt_gv_genrand_close_open() < gs->mutation_rate) {
 		printf("generating mutation\n");
-		mutate(p->individuals[(int)(drand48() * p->size)], gs->bounds->min_bound, gs->bounds->max_bound, gs->number_parameters, sp->parameters);
+		mutate(p->individuals[(int)(dsfmt_gv_genrand_close_open() * p->size)], gs->bounds->min_bound, gs->bounds->max_bound, gs->number_parameters, sp->parameters);
 		sprintf(sp->metadata, "ev: %d, mutation", gs->current_evaluation);
 	} else {
 		printf("generating recombination\n");
@@ -227,6 +231,9 @@ int gs_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETE
 			sprintf(sp->metadata, "ev: %d, average", gs->current_evaluation);
 		} else if (gs->type == GENETIC_SIMPLEX) {
 			printf("simplex recombination\n");
+			free(sp->parameters);
+			sp->parameters = (double*)malloc(sizeof(double) * gs->number_parameters);
+
 			double point = simplex_recombination(parents->individuals, parents->fitness, gs->number_parents, gs->number_parameters, gs->ls_center, gs->ls_outside, sp->parameters);
 			sprintf(sp->metadata, "ev: %d, simplex: %.20lf", gs->current_evaluation, point);
 		} else {

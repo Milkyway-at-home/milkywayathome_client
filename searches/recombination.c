@@ -196,16 +196,16 @@ double simplex_recombination(double** parents, double* fitness, int number_paren
 		if (i == worst_parent) continue;
 		printf("parameters:");
 		for (j = 0; j < number_parameters; j++) {
-			parameters[j] += parents[i][j];
+			parameters[j] += parents[i][j] / (number_parents - 1);
 			printf(" %.15lf", parameters[j]);
 		}
 		printf("\n");
 	}
 	printf("dividing [%d]:\n", number_parameters);
-	for (j = 0; j < number_parameters; j++) {
-		parameters[j] /= number_parents - 1;
-		printf(" %.15lf\n", parameters[j]);
-	}
+//	for (j = 0; j < number_parameters; j++) {
+//		parameters[j] /= number_parents - 1;
+//		printf(" %.15lf\n", parameters[j]);
+//	}
 
 	/********
 		*	Generate points along the line from the worst parent to the centroid
