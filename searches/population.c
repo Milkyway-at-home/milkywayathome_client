@@ -34,10 +34,9 @@
 
 int new_population(int max_size, int number_parameters, POPULATION** population) {
 	int i;
+
 	printf("mallocing population\n");
-
 	(*population) = (POPULATION*)malloc(sizeof(POPULATION));
-
 	printf("malloced population\n");
 
 	(*population)->size = 0;

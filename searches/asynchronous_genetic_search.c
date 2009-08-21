@@ -205,32 +205,31 @@ int gs_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETE
 	gs = (GENETIC_SEARCH*)(search_data);
 	p = gs->population;
 
-	printf("redundancy rate: %.25lf, mutation rate: %.25lf, random: %.25lf\n", gs->redundancy_rate, gs->mutation_rate, dsfmt_gv_genrand_close_open());
-	printf("search parameters size: %d\n", sizeof(sp->parameters));
+//	printf("redundancy rate: %.25lf, mutation rate: %.25lf, random: %.25lf\n", gs->redundancy_rate, gs->mutation_rate, dsfmt_gv_genrand_close_open());
 
 	if (gs->no_redundancy == 0 && gs->redundancies->redundancy_list != NULL && dsfmt_gv_genrand_close_open() < gs->redundancy_rate) {
-		printf("generating redundancy\n");
+//		printf("generating redundancy\n");
 		generate_redundancy(gs->redundancies, gs->number_parameters, sp->parameters, sp->metadata);
 		strcat(sp->metadata, ", redundancy");
 	} else if (p->size < p->max_size) {
-		printf("generating random parameters\n");
+//		printf("generating random parameters\n");
 		random_recombination(p->number_parameters, gs->bounds->min_bound, gs->bounds->max_bound, sp->parameters);
 		sprintf(sp->metadata, "ev: %d, random", gs->current_evaluation);
 	} else if (dsfmt_gv_genrand_close_open() < gs->mutation_rate) {
-		printf("generating mutation\n");
+//		printf("generating mutation\n");
 		mutate(p->individuals[(int)(dsfmt_gv_genrand_close_open() * p->size)], gs->bounds->min_bound, gs->bounds->max_bound, gs->number_parameters, sp->parameters);
 		sprintf(sp->metadata, "ev: %d, mutation", gs->current_evaluation);
 	} else {
-		printf("generating recombination\n");
+//		printf("generating recombination\n");
 		get_n_distinct(p, gs->number_parents, &parents);
-		printf("got n distinct: %d\n", gs->number_parents);
+//		printf("got n distinct: %d\n", gs->number_parents);
 
 		if (gs->type == GENETIC_AVERAGE) {
-			printf("average recombination\n");
+//			printf("average recombination\n");
 			average_recombination(parents->individuals, gs->number_parents, gs->number_parameters, sp->parameters);
 			sprintf(sp->metadata, "ev: %d, average", gs->current_evaluation);
 		} else if (gs->type == GENETIC_SIMPLEX) {
-			printf("simplex recombination\n");
+//			printf("simplex recombination\n");
 			free(sp->parameters);
 			sp->parameters = (double*)malloc(sizeof(double) * gs->number_parameters);
 

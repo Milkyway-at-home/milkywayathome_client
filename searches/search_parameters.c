@@ -63,20 +63,14 @@ void free_search_parameters(SEARCH_PARAMETERS *parameters) {
 }
 
 void init_search_parameters(SEARCH_PARAMETERS **p, int number_parameters) {
-	printf("number_parameters: %d\n", number_parameters);
-
 	(*p) = (SEARCH_PARAMETERS*)malloc(sizeof(SEARCH_PARAMETERS));
 	(*p)->search_name = (char*)malloc(sizeof(char) * 1024);
 	(*p)->metadata = (char*)malloc(sizeof(char) * METADATA_SIZE);
 	(*p)->number_parameters = number_parameters;
 	(*p)->parameters = (double*)malloc(sizeof(double) * number_parameters);
 
-	printf("sizeof (*p)->parameters: %d, sizeof(double): %d, number_parameters: %d\n", sizeof( (*p)->parameters ), sizeof(double), number_parameters);
-
 	memset((*p)->host_os, '\0', 256);
 	memset((*p)->app_version, '\0', 128);
-
-	printf("memset host_os and app_version\n");
 }
 
 void set_search_parameters(SEARCH_PARAMETERS *p, char *search_name, int number_parameters, double* parameters, char* metadata, int hostid) {

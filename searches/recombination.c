@@ -180,42 +180,27 @@ double simplex_recombination(double** parents, double* fitness, int number_paren
 	int i, j, worst_parent;
 	double distance;
 
-	printf("finding worst parent\n");
 	worst_parent = 0;
 	for (i = 1; i < number_parents; i++) {
 		if (fitness[i] > fitness[worst_parent]) worst_parent = i;
-		printf("\tworst parent: %d\n", worst_parent);
 	}
 
 	/********
 		*	Calcualte the centroid.
 	 ********/
-	printf("calculating centroid\n");
-	printf("sizeof parameters: %d\n", sizeof(parameters));
 	for (i = 0; i < number_parents; i++) {
 		if (i == worst_parent) continue;
-		printf("parameters:");
 		for (j = 0; j < number_parameters; j++) {
 			parameters[j] += parents[i][j] / (number_parents - 1);
-			printf(" %.15lf", parameters[j]);
 		}
-		printf("\n");
 	}
-	printf("dividing [%d]:\n", number_parameters);
-//	for (j = 0; j < number_parameters; j++) {
-//		parameters[j] /= number_parents - 1;
-//		printf(" %.15lf\n", parameters[j]);
-//	}
 
 	/********
 		*	Generate points along the line from the worst parent to the centroid
 	 ********/
-	printf("generating point\n");
 	distance = ls_center + dsfmt_gv_genrand_close_open() * (ls_outside - ls_center);
-	printf("calculating point from distance: %.15lf\n", distance);
 	for (j = 0; j < number_parameters; j++) {
 		parameters[j] = parameters[j] + distance * (parameters[j] - parents[worst_parent][j]);
 	}
-	printf("returning distance\n");
 	return distance;
 }
