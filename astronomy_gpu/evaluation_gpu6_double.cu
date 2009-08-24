@@ -247,9 +247,9 @@ __global__ void gpu__integral_kernel3(	int offset, int mu_steps,
 
   for (i = 0; i < convolve; i++) {
     xyz2 =  tex2D_double(tex_r_point,i,in_step) * 
-      tex3D_double(tex_device_lb, kernel3__nu_step, kernel3__mu_step);
+      tex3D_double(tex_device_lb, 0, kernel3__nu_step, kernel3__mu_step);
     zp = tex2D_double(tex_r_point,i,in_step) * 
-      tex3D_double(tex_device_lb, kernel3__nu_step, kernel3__mu_step);
+      tex3D_double(tex_device_lb, 2, kernel3__nu_step, kernel3__mu_step);
     
     xyz0 = zp * tex3D_double(tex_device_lb, 3,
 			     kernel3__nu_step, kernel3__mu_step) - d_lbr_r;
