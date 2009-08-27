@@ -210,7 +210,8 @@ int gs_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETE
 	if (gs->no_redundancy == 0 && gs->redundancies->redundancy_list != NULL && dsfmt_gv_genrand_close_open() < gs->redundancy_rate) {
 //		printf("generating redundancy\n");
 		generate_redundancy(gs->redundancies, gs->number_parameters, sp->parameters, sp->metadata);
-		strcat(sp->metadata, ", redundancy");
+//		printf("metadata is: %s\n", sp->metadata);
+		sprintf(strchr(sp->metadata, 0), ", redundancy");
 	} else if (p->size < p->max_size) {
 //		printf("generating random parameters\n");
 		random_recombination(p->number_parameters, gs->bounds->min_bound, gs->bounds->max_bound, sp->parameters);

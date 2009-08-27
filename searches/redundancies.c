@@ -1,6 +1,7 @@
 #include "redundancies.h"
 #include "../util/settings.h"
 
+#include "assert.h"
 #include "stdio.h"
 #include "stdlib.h"
 #include "math.h"
@@ -115,18 +116,20 @@ int fread_redundancy_list(FILE *file, REDUNDANCY_LIST **redundancy_list) {
 
 	(*redundancy_list)->parameters = (double*)malloc(sizeof(double) * (*redundancy_list)->number_parameters);
 	for (i = 0; i < (*redundancy_list)->number_parameters; i++) {
-		fscanf(file, "%lf", &((*redundancy_list)->parameters[i]));
+		assert(1 == fscanf(file, "%lf", &((*redundancy_list)->parameters[i])));
 		fgetc(file);
 	}
 	fscanf(file, " [");
 
 	(*redundancy_list)->metadata = (char*)malloc(sizeof(char) * METADATA_SIZE);
 	c = fgetc(file);
+	i = 0;
 	while (c != ']' && i < METADATA_SIZE) {
 		(*redundancy_list)->metadata[i] = c;
 		i++;
 		c = fgetc(file);
 	}
+	(*redundancy_list)->metadata[i] = '\0';
 	fgetc(file);
 
 	fread_redundancy(file, &current_redundancy);
@@ -151,11 +154,15 @@ int fread_redundancies(FILE *file, REDUNDANCIES **redundancies) {
 	(*redundancies)->redundancy_list = current_list;
 
 	while (current_list != NULL) {
+		(*redundancies)->last_list = current_list;
 		fread_redundancy_list(file, &(current_list->next));
 		current_list = current_list->next;
 	}
 
 	fscanf(file, "finished\n");
+
+	printf("read the redundancies:\n");
+	fwrite_redundancies(stdout, (*redundancies));
 
 	return 0;
 }
@@ -182,14 +189,15 @@ int write_redundancies(char *filename, REDUNDANCIES *redundancies) {
 void generate_redundancy(REDUNDANCIES *redundancies, int number_parameters, double *parameters, char *metadata) {
 	int i;
 	if (redundancies->redundancy_list == NULL) return;
+	assert(redundancies->last_list != NULL);
 
 	for (i = 0; i < number_parameters; i++) parameters[i] = redundancies->redundancy_list->parameters[i];
 	memcpy(metadata, redundancies->redundancy_list->metadata, sizeof(char) * METADATA_SIZE);
 
-	redundancies->last_list->next = redundancies->redundancy_list;
-	redundancies->redundancy_list = redundancies->redundancy_list->next;
-	redundancies->last_list = redundancies->last_list->next;
-	redundancies->last_list->next = NULL;
+	redundancies->last_list->next = redundancies->redundancy_list;			//set last->next to the first
+	redundancies->redundancy_list = redundancies->redundancy_list->next;		//set first to first->next
+	redundancies->last_list = redundancies->last_list->next;			//set last to last->next
+	redundancies->last_list->next = NULL;						//set last->next to null
 }
 
 void append_redundancy(REDUNDANCY_LIST *redundancy_list, double fitness, int hostid) {

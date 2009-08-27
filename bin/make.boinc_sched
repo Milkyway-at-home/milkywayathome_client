@@ -4,6 +4,7 @@ MT_DIR = ../../mersenne_twister
 
 CXX = CC
 CXXFLAGS = -g -O -I$(BOINC_DIR)/pkg/include/boinc -I$(BOINC_DIR)/pkg/share/boinc/src -I$(MYSQL_DIR) -DGMLE_BOINC -I/usr/local/include
+#CXXFLAGS = -g -I$(BOINC_DIR)/pkg/include/boinc -I$(BOINC_DIR)/pkg/share/boinc/src -I$(MYSQL_DIR) -DGMLE_BOINC -I/usr/local/include
 LDFLAGS = -g -L/usr/local/lib -L/usr/X11R6/lib
 MTFLAGS = -finline-functions -fomit-frame-pointer -fno-strict-aliasing --param max-inline-insns-single=1800 -DDSFMT_MEXP=19937
 

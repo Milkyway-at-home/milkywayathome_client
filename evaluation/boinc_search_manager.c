@@ -366,6 +366,9 @@ int generate_workunits() {
                 generated = (generation_rate - current) / ((number_searches - number_completed) - (i - count_completed));
 		initial = current;
                 for (j = 0; j < generated; j++) {
+			gen_sp[i]->parameters = (double*)realloc(gen_sp[i]->parameters, sizeof(double) * 30);
+			gen_sp[i]->metadata = (char*)realloc(gen_sp[i]->metadata, sizeof(char) * METADATA_SIZE);
+
 			result = searches[i]->search->generate_parameters(searches[i]->search_name, searches[i]->search_data, gen_sp[i]);
 			if (result != AS_GEN_SUCCESS) {
 				if (result == AS_GEN_OVER) searches[i]->completed = 1;
