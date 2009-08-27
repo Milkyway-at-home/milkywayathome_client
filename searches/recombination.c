@@ -63,88 +63,42 @@ double random_linear_recombination(int number_parameters, double min, double max
 }
 
 
-double* get_pair_sum(double **individuals, int number_individuals, int number_parameters, int number_pairs, double scale) {
-	int pair1, pair2;
-	double* parameters;
+
+void get_pair_sum(double pair_weight, double *parent, double **pairs, int number_pairs, int number_parameters, double *result) {
 	int i, j;
 
-	parameters = (double*)malloc(sizeof(double) * number_parameters);
-	for (i = 0; i < number_parameters; i++) parameters[i] = 0;
-	for (i = 0; i < number_pairs; i++) {
-		pair1 = (int)(drand48() * number_individuals);
-		pair2 = (int)(drand48() * (number_individuals - 1));
-		if (pair2 == pair1) pair2++;
-
-		for (j = 0; j < number_parameters; j++) {
-			parameters[j] += individuals[pair1] - individuals[pair2];
+	for (i = 0; i < number_parameters; i++) {
+		result[i] = 0;
+		for (j = 0; j < number_pairs; j++) {
+			result[i] += pairs[(j*2)][i] - pairs[(j*2)+1][i];
 		}
+		result[i] = parent[i] + pair_weight * result[i];
 	}
-	if (scale < 0) scale = drand48();
-	for (i = 0; i < number_parameters; i++) parameters[i] /= (scale/number_pairs);
-	return parameters;
 }
 
-double* get_dir_sum(double **individuals, double *fitness, int number_individuals, int number_parameters, int number_pairs, double scale) {
-	int pair1, pair2;
-	double* parameters;
-	int i, j, temp;
-
-	parameters = (double*)malloc(sizeof(double) * number_parameters);
-	for (i = 0; i < number_parameters; i++) parameters[i] = 0;
-	for (i = 0; i < number_pairs; i++) {
-		pair1 = (int)(drand48() * number_individuals);
-		pair2 = (int)(drand48() * (number_individuals - 1));
-		if (pair2 == pair1) pair2++;
-
-		if (fitness[pair1] > fitness[pair2]) {
-			temp = pair2;
-			pair2 = pair1;
-			pair1 = temp;
-		}
-
-		for (j = 0; j < number_parameters; j++) {
-			parameters[j] += individuals[pair1] - individuals[pair2];
-		}
-	}
-	if (scale < 0) scale = drand48();
-	for (i = 0; i < number_parameters; i++) parameters[i] /= (scale/number_pairs);
-	return parameters;
-}
-
-
-double* binomial_recombination(double **parents, int number_parents, int number_parameters, double crossover_rate, double crossover_scale) {
+void binomial_recombination(double crossover_rate, double *p1, double *p2, int number_parameters, double *result) {
 	int i, selected;
-	double *parameters;
-	parameters = (double*)malloc(sizeof(double) * number_parameters);
-
-	selected = (int)(drand48() * number_parameters);
-	if (crossover_scale < 0) crossover_scale = drand48();
+	selected = (int)(dsfmt_gv_genrand_close_open() * (double)number_parameters);
 
 	for (i = 0; i < number_parameters; i++) {
-		if (i == selected || drand48() < crossover_rate) {
-			parameters[i] = parents[0][i] + (parents[0][i] - parents[1][i]) * crossover_scale;
+		if (i == selected || dsfmt_gv_genrand_close_open() < crossover_rate) {
+			result[i] = p2[i];
 		} else {
-			parameters[i] = parents[0][i];
+			result[i] = p1[i];
 		}
 	}
-	return parameters;
 }
 
-double* exponential_recombination(double **parents, int number_parents, int number_parameters, double crossover_rate, double crossover_scale) {
+void exponential_recombination(double crossover_rate, double *p1, double *p2, int number_parameters, double *result) {
 	int i, selected;
-	double *parameters;
-	parameters = (double*)malloc(sizeof(double) * number_parameters);
+	selected = (int)(dsfmt_gv_genrand_close_open() * (double)number_parameters);
 
-	selected = (int)(drand48() * number_parameters);
-	if (crossover_scale < 0) crossover_scale = drand48();
-	for (i = 0; i < selected; i++) {
-		if (drand48() < crossover_rate) break;
-		parameters[i] = parents[0][i];
+	for (i = 0; i < number_parameters; i++) {
+		if (i == selected || dsfmt_gv_genrand_close_open() < crossover_rate) break;
+		result[i] = p1[i];
 	}
-	for (; i < number_parameters; i++) {
-		parameters[i] = parents[0][i] + (parents[0][i] - parents[0][i]) * crossover_scale;
-	}
-	return parameters;
+
+	for (; i < number_parameters; i++) result[i] = p2[i];
 }
 
 void average_recombination(double** parents, int number_parents, int number_parameters, double* parameters) {

@@ -1,11 +1,14 @@
 #include "redundancies.h"
 #include "../util/settings.h"
 
+#include "time.h"
 #include "assert.h"
 #include "stdio.h"
 #include "stdlib.h"
 #include "math.h"
 #include "string.h"
+
+#include "../../mersenne_twister/dSFMT.h"
 
 void new_redundancy(double fitness, int hostid, REDUNDANCY **redundancy) {
 	(*redundancy) = (REDUNDANCY*)malloc(sizeof(REDUNDANCY));
@@ -53,10 +56,17 @@ void new_redundancy_list(int number_parameters, double fitness, double *paramete
 	new_redundancy(fitness, hostid, &((*redundancy_list)->first));
 }
 
-void initialize_redundancies(REDUNDANCIES **redundancies) {
+void initialize_redundancies(int search_size, double redundancy_rate, REDUNDANCIES **redundancies) {
 	(*redundancies) = (REDUNDANCIES*)malloc(sizeof(REDUNDANCIES));
+
+	(*redundancies)->search_size = search_size;
+	(*redundancies)->redundancy_rate = redundancy_rate;
+	(*redundancies)->number_redundancies = 0 ;
+
 	(*redundancies)->redundancy_list = NULL;
 	(*redundancies)->last_list = NULL;
+
+	dsfmt_gv_init_gen_rand((int)time(NULL));
 }
 
 
@@ -66,6 +76,7 @@ int fwrite_redundancies(FILE *file, REDUNDANCIES *redundancies) {
 	REDUNDANCY *current_redundancy;
 
 	current_list = redundancies->redundancy_list;
+	fprintf(file, "search_size: %d, redundancy_rate: %.15lf, number_redundancies: %d\n", redundancies->search_size, redundancies->redundancy_rate, redundancies->number_redundancies);
 	fprintf(file, "redundancies:\n");
 	while (current_list != NULL) {
 		fprintf(file, "[%d] [%.20lf", current_list->number_parameters, current_list->parameters[0]);
@@ -145,8 +156,13 @@ int fread_redundancy_list(FILE *file, REDUNDANCY_LIST **redundancy_list) {
 
 int fread_redundancies(FILE *file, REDUNDANCIES **redundancies) {
 	REDUNDANCY_LIST *current_list;
+	int search_size, number_redundancies;
+	double redundancy_rate;
 
-	initialize_redundancies(redundancies);
+	fscanf(file, "search_size: %d, redundancy_rate: %lf, number_redundancies: %d\n", &search_size, &redundancy_rate, &number_redundancies);
+
+	initialize_redundancies(search_size, redundancy_rate, redundancies);
+	(*redundancies)->number_redundancies = number_redundancies;
 
 	fscanf(file, "redundancies:\n");
 
@@ -186,10 +202,14 @@ int write_redundancies(char *filename, REDUNDANCIES *redundancies) {
 }
 
 
-void generate_redundancy(REDUNDANCIES *redundancies, int number_parameters, double *parameters, char *metadata) {
+int generate_redundancy(REDUNDANCIES *redundancies, int number_parameters, double *parameters, char *metadata) {
 	int i;
-	if (redundancies->redundancy_list == NULL) return;
+	if (redundancies->redundancy_list == NULL) return 0;
 	assert(redundancies->last_list != NULL);
+
+	if (redundancies->redundancy_rate == 0) return 0;
+	else if (redundancies->redundancy_rate == 1 && dsfmt_gv_genrand_close_open() >= (((double)redundancies->search_size)/((double)redundancies->number_redundancies))) return 0;
+	else if (dsfmt_gv_genrand_close_open() >= redundancies->redundancy_rate) return 0;
 
 	for (i = 0; i < number_parameters; i++) parameters[i] = redundancies->redundancy_list->parameters[i];
 	memcpy(metadata, redundancies->redundancy_list->metadata, sizeof(char) * METADATA_SIZE);
@@ -198,6 +218,7 @@ void generate_redundancy(REDUNDANCIES *redundancies, int number_parameters, doub
 	redundancies->redundancy_list = redundancies->redundancy_list->next;		//set first to first->next
 	redundancies->last_list = redundancies->last_list->next;			//set last to last->next
 	redundancies->last_list->next = NULL;						//set last->next to null
+	return 1;
 }
 
 void append_redundancy(REDUNDANCY_LIST *redundancy_list, double fitness, int hostid) {
@@ -263,10 +284,13 @@ int verify_with_insert(REDUNDANCIES *redundancies, int number_parameters, double
 	REDUNDANCY_LIST *new_redundancy;
 	int count;
 
+	if (redundancies->redundancy_rate == 0) return VERIFY_VALID;
+
 	current = redundancies->redundancy_list;
 	if (current == NULL) {
 		new_redundancy_list(number_parameters, fitness, parameters, metadata, hostid, &(redundancies->redundancy_list));
 		redundancies->last_list = redundancies->redundancy_list;
+		redundancies->number_redundancies++;
 		return VERIFY_INSERT;
 	}
 
@@ -289,6 +313,8 @@ int verify_with_insert(REDUNDANCIES *redundancies, int number_parameters, double
 
 			if (current->next == NULL) redundancies->last_list = previous;
 			free_redundancy_list(&current);
+
+			redundancies->number_redundancies--;
 
 			return VERIFY_VALID;
 		} else if (match == REDUNDANCY_MISMATCH) {
@@ -315,6 +341,7 @@ int verify_with_insert(REDUNDANCIES *redundancies, int number_parameters, double
 	new_redundancy_list(number_parameters, fitness, parameters, metadata, hostid, &(new_redundancy));
 	previous->next = new_redundancy;
 	redundancies->last_list = new_redundancy;
+	redundancies->number_redundancies++;
 
 	return VERIFY_INSERT;
 }
@@ -323,7 +350,9 @@ int verify_without_insert(REDUNDANCIES *redundancies, int number_parameters, dou
 	REDUNDANCY_LIST *current;
 	REDUNDANCY_LIST *previous;
 	int count;
-	
+
+	if (redundancies->redundancy_rate == 0) return VERIFY_VALID;
+
 	previous = NULL;
 	current = redundancies->redundancy_list;
 
@@ -344,6 +373,8 @@ int verify_without_insert(REDUNDANCIES *redundancies, int number_parameters, dou
 
 			if (current->next == NULL) redundancies->last_list = previous;
 			free_redundancy_list(&current);
+
+			redundancies->number_redundancies--;
 
 			return VERIFY_VALID;
 		} else if (match == REDUNDANCY_MISMATCH) {

@@ -349,6 +349,30 @@ void get_n_distinct(POPULATION *population, int number_parents, POPULATION **n_d
 	}
 }
 
+void get_n_distinct_exclude(POPULATION *population, int number_parents, POPULATION **n_distinct, int exclude) {
+	int i, j, k, target;
+	int *parent_positions;
+
+	new_population(number_parents, population->number_parameters, n_distinct);
+
+	parent_positions = (int*)malloc(sizeof(int) * number_parents);
+	for (i = 0; i < number_parents; i++) {
+		target = (int)(drand48() * (population->max_size - i - 1));
+		if (target == exclude) target++;
+		for (j = 0; j < i; j++) {
+			for (k = 0; k < i; k++) {
+				if (target == parent_positions[k] || target == exclude) target++;
+			}
+		}
+		parent_positions[i] = target;
+	}
+
+	for (i = 0; i < number_parents; i++) {
+		insert_sorted((*n_distinct), population->individuals[parent_positions[i]], population->fitness[parent_positions[i]]);
+	}
+}
+
+
 /********
 	*	Functions for reading/writing populations
  ********/

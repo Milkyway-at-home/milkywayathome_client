@@ -25,13 +25,17 @@ typedef struct redundancy_list {
 } REDUNDANCY_LIST;
 
 typedef struct redundancies {
+	int search_size;
+	int number_redundancies;
+	double redundancy_rate;
+
 	REDUNDANCY_LIST *redundancy_list;
 	REDUNDANCY_LIST *last_list;
 } REDUNDANCIES;
 
 
 
-void initialize_redundancies(REDUNDANCIES **redundancies);
+void initialize_redundancies(int search_size, double redundancy_rate, REDUNDANCIES **redundancies);
 
 int fwrite_redundancies(FILE *file, REDUNDANCIES *redundancies);
 int write_redundancies(char *filename, REDUNDANCIES *redundancies);
@@ -39,7 +43,7 @@ int write_redundancies(char *filename, REDUNDANCIES *redundancies);
 int fread_redundancies(FILE *file, REDUNDANCIES **redundancies);
 int read_redundancies(char *filename, REDUNDANCIES **redundancies);
 
-void generate_redundancy(REDUNDANCIES *redundancies, int number_parameters, double *parameters, char *metadata);
+int generate_redundancy(REDUNDANCIES *redundancies, int number_parameters, double *parameters, char *metadata);
 
 
 #define REDUNDANCY_MATCH 0

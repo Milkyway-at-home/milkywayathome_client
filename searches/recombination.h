@@ -35,10 +35,12 @@ void lower_recombination(double** parents, int number_parents, int number_parame
 
 double simplex_recombination(double** parents, double* fitness, int number_parents, int number_parameters, double ls_center, double ls_outside, double *result);
 
-double* binomial_recombination(double** parents, int number_parents, int number_parameters, double crossover_rate, double crossover_scale);
-double* exponential_recombination(double** parents, int number_parents, int number_parameters, double crossover_rate, double crossover_scale);
 
-double* get_pair_sum(double **individuals, int number_individuals, int number_parameters, int number_pairs, double scale);
-double* get_dir_sum(double **individuals, double *fitness, int number_individuals, int number_parameters, int number_pairs, double scale);
+void binomial_recombination(double crossover_rate, double *p1, double *p2, int number_parameters, double* result);
+void exponential_recombination(double crossover_rate, double *p1, double *p2, int number_parameters, double* result);
+
+void get_pair_sum(double pair_weight, double *parent, double **pairs, int number_pairs, int number_parameters, double *result);
+
+void get_pair_sum(double pair_weight, double *parent, double **pairs, int number_pairs, int number_parameters, double *result);
 
 #endif

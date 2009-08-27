@@ -101,15 +101,12 @@ void asynchronous_search(int number_arguments, char** arguments, int number_para
         i = 0;
         generate_result = AS_GEN_SUCCESS;
         while (generate_result == AS_GEN_SUCCESS) {
-		printf("generating parameters\n");
                 generate_result = ms->search->generate_parameters(ms->search_name, ms->search_data, sp);
-		printf("evaluating fitness\n");
                 sp->fitness = evaluate(sp->parameters);
 		sp->hostid = (int)(10 * drand48());
                 insert_result = ms->search->insert_parameters(ms->search_name, ms->search_data, sp);
                 printf("[%d] [%-150s] [%-20s] [%s] [%d]\n", i, AS_MSG, AS_INSERT_STR[insert_result], sp->metadata, sp->hostid);
                 i++;
-                if (i % 100 == 0) ms->search->checkpoint_search(ms->search_name, ms->search_data);
                 free(sp->parameters);
                 sp->number_parameters = number_parameters;
                 sp->parameters = (double*)malloc(sizeof(double) * number_parameters);

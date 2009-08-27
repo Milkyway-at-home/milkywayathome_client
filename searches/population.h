@@ -60,6 +60,7 @@ void remove_incremental(POPULATION* population, int position);
 void remove_sorted(POPULATION* population, int position);
 
 void get_n_distinct(POPULATION *population, int number_parents, POPULATION **n_distinct);
+void get_n_distinct_exclude(POPULATION *population, int number_parents, POPULATION **n_distinct, int exclude);
 
 int fread_population(FILE* file, POPULATION** p);
 int read_population(char path[512], POPULATION** p);

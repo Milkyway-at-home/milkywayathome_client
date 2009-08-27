@@ -29,19 +29,10 @@
 #include "population.h"
 #include "redundancies.h"
 
-#define NEWTON_ERROR_RANGE 1
-#define NEWTON_UPDATE_RANGE 2
-#define NEWTON_LINE_SEARCH 3
-
-#define NMS_HESSIAN 1
-#define NMS_LINE_SEARCH 2
-
 typedef struct particle_swarm_optimization {
 	int current_particle, size;
 	int number_parameters;
-	int no_redundancy;
 	double w, c0, c1, c2;
-	double redundancy_rate;
 	long analyzed;
 
 	BOUNDS *bounds;
@@ -56,9 +47,9 @@ typedef struct particle_swarm_optimization {
 
 ASYNCHRONOUS_SEARCH* get_asynchronous_particle_swarm();
 
-int create_particle_swarm(char* search_name, int number_arguments, char** arguments, int number_parameters, double *point, double *range, BOUNDS *bounds);
-int read_particle_swarm(char* search_name, void** search_data);
-int checkpoint_particle_swarm(char* search_name, void* search_data);
-int pso_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS *sp);
-int pso_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS *sp);
+int create_particle_swarm(char *search_name, int number_arguments, char **arguments, int number_parameters, double *point, double *range, BOUNDS *bounds);
+int read_particle_swarm(char *search_name, void **search_data);
+int write_particle_swarm(char *search_name, void *search_data);
+int pso_insert_parameters(char *search_name, void *search_data, SEARCH_PARAMETERS *sp);
+int pso_generate_parameters(char *search_name, void *search_data, SEARCH_PARAMETERS *sp);
 #endif

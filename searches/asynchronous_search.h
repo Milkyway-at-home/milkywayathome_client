@@ -69,7 +69,6 @@ extern char AS_MSG[1024];
 
 typedef int (*create_search_type)(char*, int, char**, int, double*, double*, BOUNDS*);
 typedef int (*read_search_type)(char*, void**);
-typedef int (*checkpoint_search_type)(char*, void*);
 typedef int (*generate_parameters_type)(char*, void*, SEARCH_PARAMETERS*);
 typedef int (*insert_parameters_type)(char*, void*, SEARCH_PARAMETERS*);
 
@@ -78,7 +77,6 @@ typedef struct asynchronous_search {
 
 	create_search_type		create_search;
 	read_search_type		read_search;
-	checkpoint_search_type		checkpoint_search;
 	generate_parameters_type	generate_parameters;
 	insert_parameters_type		insert_parameters;
 } ASYNCHRONOUS_SEARCH;

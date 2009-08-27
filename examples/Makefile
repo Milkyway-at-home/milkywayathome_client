@@ -1,6 +1,6 @@
 CXX = gcc
 
-CXXFLAGS = -O3 -msse3 -ftree-vectorize -funroll-loops
+CXXFLAGS = -DDSFMT_MEXP=19937
 
 FGDO_DIR = ..
 EVALUATION_DIR = $(FGDO_DIR)/evaluation
@@ -34,6 +34,7 @@ SEARCH_OBJS = \
 	$(SEARCH_DIR)/synchronous_gradient_descent.o \
 	$(SEARCH_DIR)/synchronous_newton_method.o \
 	$(SEARCH_DIR)/asynchronous_search.o \
+	$(SEARCH_DIR)/asynchronous_differential_evolution.o \
 	$(SEARCH_DIR)/asynchronous_genetic_search.o \
 	$(SEARCH_DIR)/asynchronous_particle_swarm.o
 UTIL_OBJS = \

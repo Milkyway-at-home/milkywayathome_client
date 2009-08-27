@@ -35,10 +35,8 @@
 typedef struct genetic_search {
 	int current_evaluation;
 	int number_parameters;
-	int no_redundancy;
 
 	double mutation_rate;
-	double redundancy_rate;
 
 	int type;
 	int number_parents;
@@ -53,7 +51,7 @@ ASYNCHRONOUS_SEARCH* get_asynchronous_genetic_search();
 
 int create_genetic_search(char* search_name, int number_arguments, char** arguments, int number_parameters, double *point, double *range, BOUNDS *bounds);
 int read_genetic_search(char* search_name, void** search_data);
-int checkpoint_genetic_search(char* search_name, void* search_data);
+int write_genetic_search(char* search_name, void* search_data);
 int gs_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS *sp);
 int gs_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS *sp);
 #endif
