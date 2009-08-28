@@ -47,7 +47,6 @@ ASYNCHRONOUS_SEARCH* get_asynchronous_newton_method() {
 	strcpy(as->search_qualifier, "nm");
 	as->create_search = create_newton_method;
 	as->read_search = read_newton_method;
-	as->checkpoint_search = checkpoint_newton_method;
 	as->generate_parameters = newton_generate_parameters;
 	as->insert_parameters = newton_insert_parameters;
 	return as;

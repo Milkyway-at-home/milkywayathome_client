@@ -654,7 +654,7 @@ void start_search_manager() {
 	DB_WORKUNIT wu;
 	DB_RESULT result;
 	bool did_something = false;
-	int retval, num_generated, unsent_wus, num_validated, num_assimilated, i;
+	int retval, num_generated, unsent_wus, num_validated, num_assimilated;
 	time_t start_time, current_time, last_checkpoint;
 	double wus_per_second;
 
@@ -723,7 +723,7 @@ void start_search_manager() {
 			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Generated %d new workunits.\n", num_generated);
 		}
 
-		if (num_validated && (current_time - last_checkpoint) > checkpoint_time) {
+/*		if (num_validated && (current_time - last_checkpoint) > checkpoint_time) {
 			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Checkpointing %d searches after %ld seconds.\n", number_searches, (current_time - last_checkpoint));
 			{
 				SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
@@ -737,7 +737,7 @@ void start_search_manager() {
 			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "Checkpointing completed.\n");
 			last_checkpoint = current_time;
 		}
-		if (!one_pass) sleep(sleep_interval);
+*/		if (!one_pass) sleep(sleep_interval);
 	}
 }
 

@@ -214,7 +214,7 @@ int de_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETE
 			parent = de->population->individuals[de->current_individual];
 			get_n_distinct_exclude(de->population, 2 * de->recombination_pairs, &recombination_pairs, de->current_individual);
 		} else if (de->parent_type == DE_PARENT_RANDOM) {
-			int position = dsfmt_gv_genrand_close_open() * de->population_size;
+			int position = (int)(dsfmt_gv_genrand_close_open() * (double)de->population_size);
 			parent = de->population->individuals[position];
 			get_n_distinct_exclude(de->population, 2 * de->recombination_pairs, &recombination_pairs, position);
 		}

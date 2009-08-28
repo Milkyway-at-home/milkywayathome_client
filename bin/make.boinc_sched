@@ -23,6 +23,7 @@ SEARCH_OBJS = \
 	$(SEARCH_DIR)/search_parameters.o \
 	$(SEARCH_DIR)/asynchronous_search.o \
 	$(SEARCH_DIR)/asynchronous_newton_method.o \
+	$(SEARCH_DIR)/asynchronous_differential_evolution.o \
 	$(SEARCH_DIR)/asynchronous_particle_swarm.o \
 	$(SEARCH_DIR)/asynchronous_genetic_search.o \
 	$(SEARCH_DIR)/bounds.o \

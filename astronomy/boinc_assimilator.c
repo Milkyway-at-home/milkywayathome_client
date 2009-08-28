@@ -8,6 +8,7 @@
 #include "../evaluation/boinc_search_manager.h"
 #include "../evaluation/search_manager.h"
 #include "../searches/asynchronous_newton_method.h"
+#include "../searches/asynchronous_differential_evolution.h"
 #include "../searches/asynchronous_particle_swarm.h"
 #include "../searches/asynchronous_genetic_search.h"
 
@@ -20,6 +21,7 @@ void print_arguments() {
 
 int main(int argc, char** argv) {
 	register_search(get_asynchronous_newton_method());
+	register_search(get_asynchronous_differential_evolution());
 	register_search(get_asynchronous_particle_swarm());
 	register_search(get_asynchronous_genetic_search());
 
