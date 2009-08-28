@@ -239,6 +239,8 @@ int de_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETE
 		free(pair_sum);
 		free_population(recombination_pairs);
 		free(recombination_pairs);
+
+		bound_parameters(sp->parameters, de->bounds);
 	}
 
 	return AS_GEN_SUCCESS;
