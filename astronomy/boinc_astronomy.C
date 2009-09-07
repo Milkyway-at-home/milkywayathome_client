@@ -22,6 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /********
         *       Includes for BOINC
 ********/
+#include "util.h"
 #ifdef _WIN32
 	#include "boinc_win.h"
 	#include "str_util.h"
@@ -47,7 +48,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #include "diagnostics.h"
-#include "util.h"
 #include "filesys.h"
 #include "boinc_api.h"
 #include "mfile.h"
@@ -272,8 +272,18 @@ int main(int argc, char **argv){
                 if (retval) exit(retval);
 #endif
 
+#if defined(_WIN32) && defined(COMPUTE_ON_GPU)
+	//make the windows GPU app have a higher priority
+	BOINC_OPTIONS options; 
+	boinc_options_defaults(options); 
+	options.normal_thread_priority = 1; // higher priority (normal instead of idle) 
+	retval = boinc_init_options(&options); 
+	if (retval) exit(retval);
+#else
 	retval = boinc_init();
         if (retval) exit(retval);
+#endif
+
 #ifdef COMPUTE_ON_GPU
 	//Choose the GPU to execute on, first look
 	//at the command line argument for a 
@@ -301,4 +311,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.18 2009/07/25 00:28:45 watera2 Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.19 2009/09/07 02:01:37 watera2 Exp $";
