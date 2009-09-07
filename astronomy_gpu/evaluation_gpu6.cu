@@ -28,6 +28,7 @@ extern "C++" {
 #include "r_constants.h"
 #include "pi_constants.h"
 #include "gauss_legendre.h"
+#include "boinc_api.h"
 }
 
 #include <cuda.h>
@@ -127,18 +128,11 @@ bool boinc_setup_gpu(int device)
   CUdevice  hcuDevice;
   CUcontext hcuContext;
   
-  CUresult status = cuInit(0);
-  if(status != CUDA_SUCCESS)
-    return false;
-  
-  status = cuDeviceGet( &hcuDevice, device);
-  if(status != CUDA_SUCCESS)
-    return false;
-  
-  status = cuCtxCreate( &hcuContext, 0x4, hcuDevice );
-  if(status != CUDA_SUCCESS)
-    return false;
-  
+
+
+
+  CU_SAFE_CALL_NO_SYNC(cuDeviceGet( &hcuDevice, device));
+  CU_SAFE_CALL_NO_SYNC(cuCtxCreate( &hcuContext, 0x4, hcuDevice ));
   return true;
 }
 
@@ -148,10 +142,10 @@ int choose_cuda_13()
   //capable card
   int device_count;
   cutilSafeCall(cudaGetDeviceCount(&device_count));
-  printf("Found %d CUDA cards\n", device_count);
+  fprintf(stderr, "Found %d CUDA cards\n", device_count);
   if (device_count < 1)
     {
-      printf("No CUDA cards found, you cannot run the GPU version\n");
+      fprintf(stderr, "No CUDA cards found, you cannot run the GPU version\n");
       exit(1);
     }
   int *eligable_devices = (int*)malloc(sizeof(int) * device_count);
@@ -163,11 +157,11 @@ int choose_cuda_13()
     {
       cudaDeviceProp deviceProp;
       cutilSafeCall(cudaGetDeviceProperties(&deviceProp, idx));
-      printf("Found a %s\n", deviceProp.name);
+      fprintf(stderr, "Found a %s\n", deviceProp.name);
       if (deviceProp.major == 1 && deviceProp.minor == 3)
 	{
 	  eligable_devices[eligable_device_idx++] = idx;
-	  printf("Device can be used it has CUDA 1.3 support\n");
+	  fprintf(stderr, "Device can be used it has compute capability 1.3 support\n");
 	      //check how many gflops it has
 	  int gflops = deviceProp.multiProcessorCount * deviceProp.clockRate;
 	  if (gflops >= max_gflops)
@@ -183,16 +177,16 @@ int choose_cuda_13()
 	}
       else
 	{
-	  printf("Device cannot be used, it does not have CUDA 1.3 support\n");
+	  fprintf(stderr, "Device cannot be used, it does not have compute capability 1.3 support\n");
 	}
     }
   free(eligable_devices);
   if (eligable_device_idx < 1) {
-    fprintf(stderr, "No CUDA 1.3 cards have been found, exiting...\n");
+    fprintf(stderr, "No compute capability 1.3 cards have been found, exiting...\n");
     free(chosen_device);
     return -1;
   } else {
-    printf("Chose device %s\n", chosen_device);
+    fprintf(stderr, "Chose device %s\n", chosen_device);
     cutilSafeCall(cudaSetDevice(device));  
     free(chosen_device);
     return device;
@@ -200,6 +194,9 @@ int choose_cuda_13()
 }
 
 int choose_gpu(int argc, char **argv) {
+  CUresult status = cuInit(0);
+  if(status != CUDA_SUCCESS)
+    return -1;
   //check for the --device command line argument
   int device_arg = -1; //invalid device
   for(unsigned int idx = 1;idx < argc;++idx) {
@@ -212,17 +209,21 @@ int choose_gpu(int argc, char **argv) {
 	}
     }
   }
-  printf("Device from command line was %d\n", device_arg);
+  if (device_arg >= 0)
+    fprintf(stderr, "Device index specified on the command line was %d\n", device_arg);
+  else
+    fprintf(stderr, "No device was specified on the command line\n");
 #ifdef DOUBLE_PRECISION
+  fprintf(stderr, "Looking for a Double Precision capable NVIDIA GPU\n");
   //check if the device from the command line has CUDA 1.3 support
   if (device_arg != -1) {
     cudaDeviceProp deviceProp;
     cutilSafeCall(cudaGetDeviceProperties(&deviceProp, device_arg));
     if (deviceProp.major == 1 && deviceProp.minor == 3) {
       cutilSafeCall(cudaSetDevice(device_arg));
-      printf("Chose device %s specified on the command line\n", deviceProp.name);
+      fprintf(stderr, "The device %s specified on the command line can be used\n", deviceProp.name);
     } else {
-      printf("Device %s from the command line cannot be used because a device supporting CUDA 1.3 is required\n",
+      fprintf(stderr, "The device %s from the command line cannot be used because a device supporting compute capability 1.3 (Double Precision) is required\n",
 	     deviceProp.name);
       device_arg = choose_cuda_13();
     }
@@ -234,7 +235,7 @@ int choose_gpu(int argc, char **argv) {
   } else {
     if (!boinc_setup_gpu(device_arg))
       {
-	printf("Unable to setup cuda sync context (will waste CPU cycles)\n");
+	fprintf(stderr, "Unable to setup CUDA sync context (will waste CPU cycles)\n");
       }
   }
   return 0;
@@ -250,10 +251,10 @@ int choose_gpu(int argc, char **argv) {
     cutilSafeCall(cudaGetDeviceProperties(&deviceProp, device_arg));
     cutilSafeCall(cudaSetDevice(device_arg));
   }
-  printf("Using %s\n", deviceProp.name);
+  fprintf(stderr, "Using %s\n", deviceProp.name);
   if (!boinc_setup_gpu(device_arg))
     {
-      printf("Unable to setup cuda sync context (will waste CPU cycles)\n");
+      fprintf(stderr, "Unable to setup cuda sync context (will waste CPU cycles)\n");
     }
   return 0;
 #endif
@@ -755,6 +756,12 @@ double gpu__likelihood(double *parameters) {
 	cutCreateTimer(&timer);
 	cutResetTimer(timer);
 	cutStartTimer(timer);
+	unsigned int total_work = 0;
+	unsigned int current_work = 0;
+	for (i = 0; i < number_integrals; i++) {
+		total_work += r_steps[i];
+	}
+
 	for (i = 0; i < number_integrals; i++) {
 		bind_texture(i);
 //		printf("mu_steps[i] is %u nu_steps[i] is %u rsteps[i] is %u convolve is %u number_streams is %u\n", 
@@ -800,6 +807,7 @@ double gpu__likelihood(double *parameters) {
 		printf("Allocating %d bytes for shared memory\n", shared_mem_size);
 		for(j = 0;j<r_steps[i];j+= R_INCREMENT)
 		  {
+		    boinc_fraction_done(current_work / (double) total_work);
 		    for(int mu_step = 0; mu_step < mu_steps[i]; mu_step += MU_STEP_SIZE) {
 		      dim3 dimGrid(min(MU_STEP_SIZE, mu_steps[i] - mu_step), R_INCREMENT);
 #ifndef SINGLE_PRECISION
@@ -858,6 +866,7 @@ double gpu__likelihood(double *parameters) {
 			    exit(1);
 			  }
 		    }
+		    current_work += R_INCREMENT;
 		  }
 		cpu__sum_integrals(i, &background_integral, stream_integrals);
 		printf("background_integral: %.30lf, stream_integral[0]: %.30lf, stream_integral[1]: %.30lf\n", background_integral, stream_integrals[0], stream_integrals[1]);
