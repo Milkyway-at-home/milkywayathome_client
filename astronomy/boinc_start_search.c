@@ -234,14 +234,17 @@ int main(int argc, char** argv) {
 		WORKUNIT_INFO *wu_info = (WORKUNIT_INFO*)malloc(sizeof(WORKUNIT_INFO));
 
 		double calc_prob_count = 0;
-		for (i = 0; i < ap->number_integrals; i++) calc_prob_count += ap->integral[i]->r_steps * ap->integral[i]->mu_steps * ap->integral[i]->nu_steps;
-
+//		double integral_flops = 0;
+		for (i = 0; i < ap->number_integrals; i++) {
+			calc_prob_count += ap->integral[i]->r_steps * ap->integral[i]->mu_steps * ap->integral[i]->nu_steps;
+//			integral_flops += ap->integral[i]->mu_steps * ap->integral[i]->r_steps * (5.0 + ap->integral[i]->nu_steps * (7.0 + 5.0 * ap->number_streams + ap->convolve * (35.0 + 52.0 * ap->number_streams)));
+		}
 		double integral_flops = calc_prob_count * (4.0 + 2.0 * ap->number_streams + ap->convolve * (56 + 58 * ap->number_streams));
 		double likelihood_flops = sp->number_stars * (ap->convolve * (100.0 + ap->number_streams * 58.0) + 251.0 + ap->number_streams * 12.0 + 54.0);
 
 		double flops = integral_flops + likelihood_flops;
 		double credit = flops / 1000000000000.0;
-		double multiplier = 7.5;
+		double multiplier = 5.4;
 		credit *= multiplier;
 
 		printf("awarded credit: %lf\n", credit);

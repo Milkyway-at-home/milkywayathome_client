@@ -208,7 +208,7 @@ int generate_redundancy(REDUNDANCIES *redundancies, int number_parameters, doubl
 	assert(redundancies->last_list != NULL);
 
 	if (redundancies->redundancy_rate == 0) return 0;
-	else if (redundancies->redundancy_rate == 1 && dsfmt_gv_genrand_close_open() >= (((double)redundancies->search_size)/((double)redundancies->number_redundancies))) return 0;
+	else if (redundancies->redundancy_rate == 1 && dsfmt_gv_genrand_close_open() >= (((double)redundancies->number_redundancies)/((double)redundancies->number_redundancies + (double)redundancies->search_size))) return 0;
 	else if (dsfmt_gv_genrand_close_open() >= redundancies->redundancy_rate) return 0;
 
 	for (i = 0; i < number_parameters; i++) parameters[i] = redundancies->redundancy_list->parameters[i];
@@ -234,8 +234,8 @@ void append_redundancy(REDUNDANCY_LIST *redundancy_list, double fitness, int hos
 	current = redundancy_list->first;
 	while (current->next != NULL) {
 		count++;
-		if (count > 1000) {
-			printf("count > 1000 in append redundnacy\n");
+		if (count > 50000) {
+			printf("count > 50000 in append redundnacy\n");
 			exit(0);
 		}
 		current = current->next;
@@ -261,8 +261,8 @@ int redundancy_match(REDUNDANCY_LIST *current, int number_parameters, double fit
 	current_redundancy = current->first;
 	while (current_redundancy != NULL) {
 		count++;
-		if (count > 1000) {
-			printf("count > 1000 in redundancy_match\n");
+		if (count > 50000) {
+			printf("count > 50000 in redundancy_match\n");
 			exit(0);
 		}
 
@@ -299,8 +299,8 @@ int verify_with_insert(REDUNDANCIES *redundancies, int number_parameters, double
 	count = 0;
 	while (current != NULL) {
 		count++;
-		if (count > 5000) {
-			printf("OVER 1000 IN VERIFY WITH INSERT LOOP\n");
+		if (count > 50000) {
+			printf("OVER 50000 IN VERIFY WITH INSERT LOOP\n");
 			exit(0);
 		}
 		int match = redundancy_match(current, number_parameters, fitness, parameters, hostid);
@@ -359,8 +359,8 @@ int verify_without_insert(REDUNDANCIES *redundancies, int number_parameters, dou
 	count = 0;
 	while (current != NULL) {
 		count++;
-		if (count > 5000) {
-			printf("OVER 1000 IN VERIFY WITHOUT INSERT LOOP\n");
+		if (count > 50000) {
+			printf("OVER 50000 IN VERIFY WITHOUT INSERT LOOP\n");
 			exit(0);
 		}
 		int match = redundancy_match(current, number_parameters, fitness, parameters, hostid);

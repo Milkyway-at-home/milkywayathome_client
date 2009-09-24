@@ -105,7 +105,7 @@ void print_message(char *search_name, char *as_msg, const char *as_result, char 
 	if (trip_time < 0) trip_time = 0;
 
 	//scope_messages.printf("[%-13s] [%-87s][%-17s][%-8s] v[%-37s][%-7s] c[%*.5lf], t[%*d/%*.2lf] h[%*d]\n", search_name, as_msg, as_result, verify_msg, version, host_os, 9, credit, 6, trip_time, 8, result.cpu_time, 6, result.hostid);
-	scope_messages.printf("[%-20s] [%-87s][%-17s][%-8s] v[%-37s][%-7s] c[%*.3lf/%*.3lf], t[%*d/%*.2lf], h[%*d]\n", search_name, as_msg, as_result, verify_msg, version, host_os, 6, credit, 6, result.claimed_credit, 6, trip_time, 8, result.cpu_time, 6, result.hostid);
+	scope_messages.printf("[%-20s] [%-87s][%-17s][%-8s] v[%-37s][%-7s] c[%*.3lf/%*.3lf], t[%*d/%*.2lf], u[%*d], h[%*d]\n", search_name, as_msg, as_result, verify_msg, version, host_os, 6, credit, 6, result.claimed_credit, 6, trip_time, 8, result.cpu_time, 6, result.userid, 6, result.hostid);
 }
 
 void update_workunit_info(int pos) {
@@ -366,10 +366,12 @@ int generate_workunits() {
                 generated = (generation_rate - current) / ((number_searches - number_completed) - (i - count_completed));
 		initial = current;
                 for (j = 0; j < generated; j++) {
-			gen_sp[i]->parameters = (double*)realloc(gen_sp[i]->parameters, sizeof(double) * 30);
-			gen_sp[i]->metadata = (char*)realloc(gen_sp[i]->metadata, sizeof(char) * METADATA_SIZE);
-
 			result = searches[i]->search->generate_parameters(searches[i]->search_name, searches[i]->search_data, gen_sp[i]);
+
+//			for (k = 0; k < gen_sp[i]->number_parameters; k++) {
+//				if (isnan(gen_sp[i]
+//			}
+
 			if (result != AS_GEN_SUCCESS) {
 				if (result == AS_GEN_OVER) searches[i]->completed = 1;
 				scope_messages.printf("Not generating workunits: [%s]\n", AS_GEN_STR[result]);
@@ -426,6 +428,12 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 			continue;
 		}
 
+		if (isnan(insert_sp->fitness) || insert_sp->fitness > -2) {
+			credit = update_workunit(validator, AS_VERIFY_INVALID, result, wu);
+			print_message(search_name, "invalid fitness (nan or > -2)", "", "invalid", result.app_version_num, insert_sp->app_version, "?", credit, result);
+			continue;
+		}
+
 		insert_sp->hostid = result.hostid;
 		retval = host.lookup_id(result.hostid);
 		if (retval) {
@@ -460,6 +468,16 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 			credit = update_workunit(validator, AS_VERIFY_VALID, result, wu);
 			print_message(search_name, "invalid app_version: mindc_linux: 0.16", "", "valid", result.app_version_num, insert_sp->app_version, insert_sp->host_os, credit, result);
 			continue;
+		}
+
+		if ((NULL == strstr(insert_sp->app_version, "gpu") && NULL == strstr(insert_sp->app_version, "GPU")) && result.cpu_time < 900) {
+			credit = update_workunit(validator, AS_VERIFY_INVALID, result, wu);
+			print_message(search_name, "invalid CPU time", "", "invalid", result.app_version_num, insert_sp->app_version, "?", credit, result);
+			continue;
+//		} else if (result.cpu_time < 40) {
+//			credit = update_workunit(validator, AS_VERIFY_INVALID, result, wu);
+//			print_message(search_name, "invalid GPU time", "", "invalid", result.app_version_num, insert_sp->app_version, "?", credit, result);
+//			continue;
 		}
 
 		ms = get_search_from_wu_name(wu.name);
