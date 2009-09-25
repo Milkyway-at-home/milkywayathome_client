@@ -109,7 +109,6 @@ void mpi_asynchronous_search(int number_arguments, char** arguments, int number_
 		insert_result = ms->search->insert_parameters(ms->search_name, ms->search_data, sp);
 		printf("[%d] %s, %s, %s\n", i, AS_MSG, AS_INSERT_STR[insert_result], sp->metadata);
 		i++;
-		if (i % 100 == 0) ms->search->checkpoint_search(ms->search_name, ms->search_data);
 		free(sp->parameters);
 		sp->number_parameters = number_parameters;
 		sp->parameters = malloc(sizeof(double) * number_parameters);
