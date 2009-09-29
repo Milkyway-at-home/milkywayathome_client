@@ -177,93 +177,100 @@ void bind_texture(int current_integral) {
 
 
 template <unsigned int number_streams, unsigned int convolve> 
-__global__ void gpu__integral_kernel3(int offset, int mu_steps,	
+__global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,	
 				      int in_step, int in_steps,
-				      float q, float r0,
-				      float *device__lb, float *device__V,
-				      float *background_integrals, float *background_correction, 
-				      float *stream_integrals, float *stream_correction) {
-	int i, j, pos;
-
+				      int nu_steps,
+				      float q_squared_inverse, float r0,
+				      float *device__sinb,
+				      float *device__sinl,
+				      float *device__cosb,
+				      float *device__cosl,
+				      float *device__V,
+				      float *background_integrals, 
+				      float *background_correction, 
+				      float *stream_integrals, 
+				      float *stream_correction) {
 	float bg_int, bg_int_correction;
 	bg_int = 0.0f;
 	bg_int_correction = 0.0f; 
 
 	float *st_int = shared_mem;
 	float *st_int_correction = &st_int[blockDim.x * number_streams];
-	for (i = 0; i < number_streams; i++) {
+	for (int i = 0; i < number_streams; i++) {
 	  st_int[i * blockDim.x + threadIdx.x] = 0.0f;
 	  st_int_correction[i * blockDim.x + threadIdx.x] = 0.0f;
 	}
 
-	float corrected_next_term, new_sum;
-	float dotted, sxyz0, sxyz1, sxyz2;
+	float sinb = device__sinb[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
+	float sinl = device__sinl[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
+	float cosb = device__cosb[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
+	float cosl = device__cosl[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
 
-	float zp, rs;
-	float xyz0, xyz1, xyz2;
-	
-	float rg;
+	double cosb_x_cosl = cosb * cosl;
+	double cosb_x_sinl = cosb * sinl;
 
-	for (i = 0; i < convolve; i++) {
-	  xyz2 = tex2D(tex_r_point, i, in_step) * 
-	    tex3D(tex_device_lb, 0, kernel3__nu_step, kernel3__mu_step);
-	  zp = tex2D(tex_r_point, i, in_step) *
-	    tex3D(tex_device_lb, 2, kernel3__nu_step, kernel3__mu_step);
-	  xyz0 = zp * tex3D(tex_device_lb, 3,
-			    kernel3__nu_step, kernel3__mu_step) - f_lbr_r;
-	  xyz1 = zp * tex3D(tex_device_lb, 1,
-			    kernel3__nu_step, kernel3__mu_step);
+	for (int i = 0; i < convolve; i++) {
+	  float xyz0, xyz1, xyz2;
+	  float rs, rg;
+	  xyz2 = tex2D(tex_r_point, i, in_step) * sinb;
+	  xyz0 = tex2D(tex_r_point,i,in_step) * 
+	    cosb_x_cosl - f_lbr_r;
+	  xyz1 = tex2D(tex_r_point,i,in_step) * 
+	    cosb_x_sinl;
 		  
 	  //__fdividef providers faster fp division, with restrictions on
 	  // the fact that (q*q) < 2^126 (appendix b.2.1 in nvidia programming guide)
-	  rg = sqrtf(xyz0*xyz0 + xyz1*xyz1 + __fdividef((xyz2*xyz2),(q*q)));
+	  rg = sqrtf(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) * q_squared_inverse);
 	  rs = rg + r0;
 		  
-	  corrected_next_term = tex2D(tex_qw_r3_N, i, in_step) /
+	  float corrected_next_term = tex2D(tex_qw_r3_N, i, in_step) /
 	    (rg * rs * rs * rs) - bg_int_correction;
-	  new_sum = bg_int + corrected_next_term;
+	  float new_sum = bg_int + corrected_next_term;
 	  bg_int_correction = (new_sum - bg_int) - corrected_next_term;
 	  bg_int = new_sum;
 	  
-	  for (j = 0; j < number_streams; j++) {
-	    pos = (j * 3);
-	    sxyz0 = xyz0 - constant__fstream_c[pos];
-	    sxyz1 = xyz1 - constant__fstream_c[pos + 1];
-	    sxyz2 = xyz2 - constant__fstream_c[pos + 2];
+	  for (int j = 0; j < number_streams; j++) {
+	    float dotted, sxyz0, sxyz1, sxyz2;
+	    sxyz0 = xyz0 - constant__fstream_c[j*3 + 0];
+	    sxyz1 = xyz1 - constant__fstream_c[j*3 + 1];
+	    sxyz2 = xyz2 - constant__fstream_c[j*3 + 2];
 	    
-	    dotted = constant__fstream_a[pos] * sxyz0 + 
-	      constant__fstream_a[pos + 1] * sxyz1 + 
-	      constant__fstream_a[pos + 2] * sxyz2;
+	    dotted = constant__fstream_a[j*3 + 0] * sxyz0 
+	      + constant__fstream_a[j*3 + 1] * sxyz1
+	      + constant__fstream_a[j*3 + 2] * sxyz2;
 	    
-	    sxyz0 -= dotted * constant__fstream_a[pos];
-	    sxyz1 -= dotted * constant__fstream_a[pos + 1];
-	    sxyz2 -= dotted * constant__fstream_a[pos + 2];
-	    
-	    pos = j * blockDim.x + threadIdx.x;
-	    
-	    corrected_next_term = (tex2D(tex_qw_r3_N, i, in_step) * exp(-((sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2)) / constant__fstream_sigma_sq2[j])) - st_int_correction[pos];
-	    new_sum = st_int[pos] + corrected_next_term;
-	    st_int_correction[pos] = (new_sum - st_int[pos]) - corrected_next_term;
-	    st_int[pos] = new_sum;
+	    sxyz0 -= dotted * constant__fstream_a[j*3 + 0];
+	    sxyz1 -= dotted * constant__fstream_a[j*3 + 1];
+	    sxyz2 -= dotted * constant__fstream_a[j*3 + 2];
+      
+	    float xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
+	    float corrected_next_term = 
+	      (tex2D(tex_qw_r3_N,i,in_step) 
+	       * exp(-(xyz_norm) * 
+		     constant__inverse_fstream_sigma_sq2[j])) - st_int_correction[j * blockDim.x + threadIdx.x];
+	    float new_sum = st_int[j * blockDim.x + threadIdx.x] + corrected_next_term;
+	    st_int_correction[j * blockDim.x + threadIdx.x] = 
+	      (new_sum - st_int[j * blockDim.x + threadIdx.x]) - corrected_next_term;
+	    st_int[j * blockDim.x + threadIdx.x] = new_sum;
 	  }
 	}
 	
 	//define V down here so that one to reduce the number of registers, because a register
 	//will be reused
-	float V = device__V[kernel3__r_step + (kernel3__r_steps * kernel3__nu_step)];
-	pos = threadIdx.x + ((offset + blockIdx.x) * blockDim.x) + (blockIdx.y * mu_steps * (offset + blockDim.x));
+	int nu_step = (threadIdx.x + (blockDim.x * (blockIdx.x + mu_offset))) % nu_steps;
+	float V = device__V[nu_step + (in_step * nu_steps)];
+	int pos = threadIdx.x + (blockDim.x * (blockIdx.x + mu_offset));
 	
-	corrected_next_term = (bg_int * V) - background_correction[pos];
-	new_sum = background_integrals[pos] + corrected_next_term;	
+	float corrected_next_term = (bg_int * V) - background_correction[pos];
+	float new_sum = background_integrals[pos] + corrected_next_term;	
 	background_correction[pos] = (new_sum - background_integrals[pos]) - corrected_next_term;
 	background_integrals[pos] = new_sum;
 
-	for (i = 0; i < number_streams; i++) {
-		corrected_next_term = (st_int[i * blockDim.x + threadIdx.x] * V) - stream_correction[pos];
-		new_sum = stream_integrals[pos] + corrected_next_term;
-		stream_correction[pos] = (new_sum - stream_integrals[pos]) - corrected_next_term;
-		stream_integrals[pos] = new_sum;
-
-		pos += (blockDim.x * mu_steps * gridDim.y);
+	for (int i = 0; i < number_streams; i++) {
+	  corrected_next_term = (st_int[i * blockDim.x + threadIdx.x] * V) - stream_correction[pos];
+	  new_sum = stream_integrals[pos] + corrected_next_term;
+	  stream_correction[pos] = (new_sum - stream_integrals[pos]) - corrected_next_term;
+	  stream_integrals[pos] = new_sum;
+	  pos += (nu_steps * mu_steps);
 	}
 }
