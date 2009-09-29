@@ -223,75 +223,93 @@ void bind_texture(int current_integral) {
 
 
 template <unsigned int number_streams, unsigned int convolve> 
-__global__ void gpu__integral_kernel3(	int offset, int mu_steps,
+__global__ void gpu__integral_kernel3(	int mu_offset, int mu_steps,
 					int in_step, int in_steps,
-					double q, double r0,
-					double *device__lb, double *device__V,
+					int nu_steps,
+					double q_squared_inverse, double r0,
+					double *device__sinb,
+					double *device__sinl,
+					double *device__cosb,
+					double *device__cosl,
+					double *device__V,
 					double *background_integrals,
 					double *stream_integrals) {
   double *st_int = shared_mem;
-  int i, j, pos;
-  double dotted, sxyz0, sxyz1, sxyz2;	
-  
-  double zp, rs;
-  double xyz0, xyz1, xyz2;
-  
-  double rg;
   double bg_int = 0.0;
-
-  
-  for (i = 0; i < number_streams; i++) {
+  for (int i = 0; i < number_streams; i++) {
     st_int[i * blockDim.x + threadIdx.x] = 0.0;
   }
 
+  double sinb = device__sinb[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
+  double sinl = device__sinl[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
+  double cosb = device__cosb[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
+  double cosl = device__cosl[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
 
-  for (i = 0; i < convolve; i++) {
+  double cosb_x_cosl = cosb * cosl;
+  double cosb_x_sinl = cosb * sinl;
+  
+  for (int i = 0; i < convolve; i++) {
+    double xyz0, xyz1, xyz2;
+    double rs, rg;
     xyz2 =  tex2D_double(tex_r_point,i,in_step) * 
-      tex3D_double(tex_device_lb, 0, kernel3__nu_step, kernel3__mu_step);
-    zp = tex2D_double(tex_r_point,i,in_step) * 
-      tex3D_double(tex_device_lb, 2, kernel3__nu_step, kernel3__mu_step);
+      sinb;
+
+    xyz0 = tex2D_double(tex_r_point,i,in_step) * 
+      cosb_x_cosl - d_lbr_r;
+    xyz1 = tex2D_double(tex_r_point,i,in_step) * 
+      cosb_x_sinl;
     
-    xyz0 = zp * tex3D_double(tex_device_lb, 3,
-			     kernel3__nu_step, kernel3__mu_step) - d_lbr_r;
     
-    xyz1 = zp * tex3D_double(tex_device_lb, 1,
- 			     kernel3__nu_step, kernel3__mu_step);
+    //xyz0 = zp * cosl - d_lbr_r;
+    //xyz1 = zp * sinl;
     
-    rg = sqrt(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2)/(q*q));
+    // xyz1 = zp * tex3D_double(tex_device_lb, 1,
+    // 			     kernel3__nu_step, kernel3__mu_step);
+    // xyz2 =  tex2D_double(tex_r_point,i,in_step) * 
+    //   tex3D_double(tex_device_lb, 0, kernel3__nu_step, kernel3__mu_step);
+    // zp = tex2D_double(tex_r_point,i,in_step) * 
+    //   tex3D_double(tex_device_lb, 2, kernel3__nu_step, kernel3__mu_step);
+    
+    // xyz0 = zp * tex3D_double(tex_device_lb, 3,
+    // 			     kernel3__nu_step, kernel3__mu_step) - d_lbr_r;
+    
+    // xyz1 = zp * tex3D_double(tex_device_lb, 1,
+    // 			     kernel3__nu_step, kernel3__mu_step);
+    
+    rg = sqrt(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) * q_squared_inverse);
     rs = rg + r0;
     
     bg_int += (tex2D_double(tex_qw_r3_N,i,in_step) / (rg * rs * rs * rs));
     
-    for (j = 0; j < number_streams; j++) {
-      pos = (j * 3);
-      sxyz0 = xyz0 - constant__fstream_c[pos + 0];
-      sxyz1 = xyz1 - constant__fstream_c[pos + 1];
-      sxyz2 = xyz2 - constant__fstream_c[pos + 2];
+    for (int j = 0; j < number_streams; j++) {
+      double dotted, sxyz0, sxyz1, sxyz2;
+      sxyz0 = xyz0 - constant__fstream_c[j*3 + 0];
+      sxyz1 = xyz1 - constant__fstream_c[j*3 + 1];
+      sxyz2 = xyz2 - constant__fstream_c[j*3 + 2];
       
-      dotted = constant__fstream_a[pos + 0] * sxyz0 
-	+ constant__fstream_a[pos + 1] * sxyz1
-	+ constant__fstream_a[pos + 2] * sxyz2;
+      dotted = constant__fstream_a[j*3 + 0] * sxyz0 
+	+ constant__fstream_a[j*3 + 1] * sxyz1
+	+ constant__fstream_a[j*3 + 2] * sxyz2;
       
-      sxyz0 -= dotted * constant__fstream_a[pos + 0];
-      sxyz1 -= dotted * constant__fstream_a[pos + 1];
-      sxyz2 -= dotted * constant__fstream_a[pos + 2];
+      sxyz0 -= dotted * constant__fstream_a[j*3 + 0];
+      sxyz1 -= dotted * constant__fstream_a[j*3 + 1];
+      sxyz2 -= dotted * constant__fstream_a[j*3 + 2];
       
-      pos = j * blockDim.x + threadIdx.x;
       double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-
-      st_int[pos] += (tex2D_double(tex_qw_r3_N,i,in_step) 
-		      * exp(-(xyz_norm) / constant__fstream_sigma_sq2[j]));
+      double result = (tex2D_double(tex_qw_r3_N,i,in_step) 
+		       * exp(-(xyz_norm) * constant__inverse_fstream_sigma_sq2[j]));
+      st_int[j * blockDim.x + threadIdx.x] += result;
     }
   }
   
   //define V down here so that one to reduce the number of registers, because a register
   //will be reused
-  double V = device__V[kernel3__r_step + (kernel3__r_steps * kernel3__nu_step)];
-  pos = threadIdx.x + ((offset + blockIdx.x) * blockDim.x) + (blockIdx.y * (mu_steps) * (offset + blockDim.x));
+  int nu_step = (threadIdx.x + (blockDim.x * (blockIdx.x + mu_offset))) % nu_steps;
+  double V = device__V[nu_step + (in_step * nu_steps)];
+  int pos = threadIdx.x + (blockDim.x * (blockIdx.x + mu_offset));
   background_integrals[pos] += (bg_int * V);
-  for (i = 0; i < number_streams; i++) {
-    stream_integrals[pos] += 
-      st_int[i * blockDim.x + threadIdx.x] * V;
-    pos += (blockDim.x * (mu_steps) * gridDim.y);
+  for (int i = 0; i < number_streams; i++) {
+    stream_integrals[pos] += st_int[i * blockDim.x + threadIdx.x] * V;
+    pos += (nu_steps * mu_steps);
   }
 }
