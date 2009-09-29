@@ -38,7 +38,8 @@ extern "C++" {
 
 #define MAX_CONVOLVE 120
 #define R_INCREMENT 1
-#define MU_STEP_SIZE 64
+#define MU_STEP_SIZE 16000
+#define NU_STEP_SIZE 64
 
 #ifdef SINGLE_PRECISION
 #define GPU_PRECISION float
@@ -71,6 +72,10 @@ GPU_PRECISION	**device__V;		//V				-- float[nu][r]
 
 int	*sizeof_lb;
 GPU_PRECISION	**device__lb;		//sinb, sinl, cosb, cosl	-- float[nu][mu][4]
+GPU_PRECISION **device__sinb;
+GPU_PRECISION **device__sinl;
+GPU_PRECISION **device__cosb;
+GPU_PRECISION **device__cosl;
 
 int	*integral_size;
 GPU_PRECISION	**host__background_integrals;
@@ -83,7 +88,7 @@ GPU_PRECISION **device__background_correction;
 GPU_PRECISION **device__stream_correction;
 #endif
 
-__device__ __constant__ GPU_PRECISION constant__fstream_sigma_sq2[8];
+__device__ __constant__ GPU_PRECISION constant__inverse_fstream_sigma_sq2[8];
 __device__ __constant__ GPU_PRECISION constant__fstream_a[12];
 __device__ __constant__ GPU_PRECISION constant__fstream_c[12];
 
@@ -101,8 +106,8 @@ GPU_PRECISION	*device__probability;
 GPU_PRECISION	*device__probability_correction;
 GPU_PRECISION	*host__probability;
 
-#define kernel3__mu_step	(offset + blockIdx.x)
-#define kernel3__mu_steps	(mu_steps[i])
+#define kernel3__mu_step	(mu_offset + blockIdx.x)
+#define kernel3__mu_steps	(mu_steps)
 //TODO check if blockIdx.y is correct
 #define kernel3__r_step		(in_step + blockIdx.y)
 #define kernel3__r_steps	in_steps
@@ -265,7 +270,7 @@ void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int
 			int *in__mu_steps, double *in__mu_min, double *in__mu_step_size,
 			int *in__nu_steps, double *in__nu_min, double *in__nu_step_size,
 			int in__number_stars, double **stars) { 
-	int i, j, pos;
+  int i, j;
 
 	sgr_coordinates = ap_sgr_coordinates;
 	wedge = ap_wedge;
@@ -289,6 +294,10 @@ void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int
 
 	device__V = (GPU_PRECISION**)malloc(number_integrals * sizeof(GPU_PRECISION*));
 	device__lb = (GPU_PRECISION**)malloc(number_integrals * sizeof(GPU_PRECISION*));
+	device__sinb = (GPU_PRECISION**)malloc(number_integrals * sizeof(GPU_PRECISION*));
+	device__sinl = (GPU_PRECISION**)malloc(number_integrals * sizeof(GPU_PRECISION*));
+	device__cosb = (GPU_PRECISION**)malloc(number_integrals * sizeof(GPU_PRECISION*));
+	device__cosl = (GPU_PRECISION**)malloc(number_integrals * sizeof(GPU_PRECISION*));
 
 //	printf("calculating integral constants\n");
 	r_steps = (int*)malloc(number_integrals * sizeof(int));
@@ -337,6 +346,16 @@ void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int
 
 		GPU_PRECISION *host__V			= (GPU_PRECISION*)malloc(sizeof_V[i] * sizeof(GPU_PRECISION));
 		GPU_PRECISION *host__lb			= (GPU_PRECISION*)malloc(sizeof_lb[i] * sizeof(GPU_PRECISION));
+		unsigned int sizeof_quarter_lb = sizeof_lb[i] / 4 * sizeof(GPU_PRECISION);
+		printf("allocating %d for each lb\n", sizeof_quarter_lb);
+		GPU_PRECISION *host__sinb = (GPU_PRECISION*)malloc(sizeof_quarter_lb);
+		GPU_PRECISION *host__sinl = (GPU_PRECISION*)malloc(sizeof_quarter_lb);
+		GPU_PRECISION *host__cosb = (GPU_PRECISION*)malloc(sizeof_quarter_lb);
+		GPU_PRECISION *host__cosl = (GPU_PRECISION*)malloc(sizeof_quarter_lb);
+		cutilSafeCall( cudaMalloc((void**) &(device__sinb[i]), sizeof_quarter_lb ));
+		cutilSafeCall( cudaMalloc((void**) &(device__sinl[i]), sizeof_quarter_lb ));
+		cutilSafeCall( cudaMalloc((void**) &(device__cosb[i]), sizeof_quarter_lb ));
+		cutilSafeCall( cudaMalloc((void**) &(device__cosl[i]), sizeof_quarter_lb ));
 
 		long constants_size = 0;
 		constants_size += sizeof_V[i] * sizeof(GPU_PRECISION);
@@ -351,12 +370,17 @@ void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int
 		int k;
 		for (k = 0; k < nu_steps[i]; k++) {
 		  for (j = 0; j < r_steps[i]; j++) {
-		    host__V[(k * r_steps[i]) + j] = reff_xr_rp3[j] * irv[j] * ids[k];
+		    host__V[(j * nu_steps[i]) + k] = reff_xr_rp3[j] * irv[j] * ids[k];
 		  }
 		}
-
-		for (j = 0; j < sizeof_lb[i]; j++) {
-			host__lb[j] = (GPU_PRECISION)cpu__lb[j];
+			       int iteration = 0;
+		for (j = 0; j < sizeof_lb[i]; j+=4) {
+		  host__sinb[iteration] = cpu__lb[j];
+		  host__sinl[iteration] = cpu__lb[j+1];
+		  host__cosb[iteration] = cpu__lb[j+2];
+		  host__cosl[iteration] = cpu__lb[j+3];
+		  ++iteration;
+		  host__lb[j] = (GPU_PRECISION)cpu__lb[j];
 		}
 
 		setup_texture(in__mu_steps[i],
@@ -390,9 +414,17 @@ void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int
 
 		cutilSafeCall( cudaMemcpy(device__V[i], host__V, sizeof_V[i] * sizeof(GPU_PRECISION), cudaMemcpyHostToDevice) );
 		cutilSafeCall( cudaMemcpy(device__lb[i], host__lb, sizeof_lb[i] * sizeof(GPU_PRECISION), cudaMemcpyHostToDevice) );
+		cutilSafeCall( cudaMemcpy(device__sinb[i], host__sinb, sizeof_quarter_lb, cudaMemcpyHostToDevice) );
+		cutilSafeCall( cudaMemcpy(device__sinl[i], host__sinl, sizeof_quarter_lb, cudaMemcpyHostToDevice) );
+		cutilSafeCall( cudaMemcpy(device__cosb[i], host__cosb, sizeof_quarter_lb, cudaMemcpyHostToDevice) );
+		cutilSafeCall( cudaMemcpy(device__cosl[i], host__cosl, sizeof_quarter_lb, cudaMemcpyHostToDevice) );
 
 		free(host__lb);
 		free(host__V);
+		free(host__sinb);
+		free(host__sinl);
+		free(host__cosb);
+		free(host__cosl);
 
 		integral_size[i] = R_INCREMENT * in__nu_steps[i] * in__mu_steps[i];
 //		printf("Allocating %d bytes for integral data on GPU\n", (number_streams + 1) * integral_size[i] * sizeof(GPU_PRECISION));
@@ -413,12 +445,11 @@ void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int
 	number_stars = in__number_stars;
 	GPU_PRECISION *host__stars = (GPU_PRECISION*)malloc(number_stars * 5 * sizeof(GPU_PRECISION));
 	for (i = 0; i < number_stars; i++) {
-		pos = i * 5;
-		host__stars[pos] = (GPU_PRECISION)sin(stars[i][1] * D_DEG2RAD);
-		host__stars[pos + 1] = (GPU_PRECISION)sin(stars[i][0] * D_DEG2RAD);
-		host__stars[pos + 2] = (GPU_PRECISION)cos(stars[i][1] * D_DEG2RAD);
-		host__stars[pos + 3] = (GPU_PRECISION)cos(stars[i][0] * D_DEG2RAD);
-		host__stars[pos + 4] = (GPU_PRECISION)stars[i][2];
+		host__stars[i] = (GPU_PRECISION)sin(stars[i][1] * D_DEG2RAD);
+		host__stars[i + number_stars*1] = (GPU_PRECISION)sin(stars[i][0] * D_DEG2RAD);
+		host__stars[i + number_stars*2] = (GPU_PRECISION)cos(stars[i][1] * D_DEG2RAD);
+		host__stars[i + number_stars*3] = (GPU_PRECISION)cos(stars[i][0] * D_DEG2RAD);
+		host__stars[i + number_stars*4] = (GPU_PRECISION)stars[i][2];
 	}
 //	printf("allocating %d bytes for device__stars\n", number_stars * 5 * sizeof(GPU_PRECISION));
 	cutilSafeCall( cudaMalloc((void**) &device__stars, number_stars * 5 * sizeof(GPU_PRECISION)) );
@@ -532,7 +563,7 @@ void cpu__sum_integrals(int iteration, double *background_integral, double *stre
 
 		  sum += (double)(host__stream_integrals[iteration]
 				  [j + (i * integral_size[iteration])]);
-			//printf("stream_integral: %.15f\n", host__stream_integrals[iteration][j + (i * integral_size[iteration])]);
+		  //printf("stream_integral: %.15f\n", host__stream_integrals[iteration][j + (i * integral_size[iteration])]);
 		}
 		if (iteration == 0) stream_integrals[i] = sum;
 		else stream_integrals[i] -= sum;
@@ -564,25 +595,27 @@ void cpu__sum_likelihood(int block_size, double *probability) {
 #ifndef SINGLE_PRECISION
 template <unsigned int number_streams>
 __global__ void gpu__likelihood_kernel(	int offset, int convolve,
-		GPU_PRECISION q, GPU_PRECISION r0,
-		GPU_PRECISION coeff, 
-		GPU_PRECISION *device__stars,
-		GPU_PRECISION *probability) {
+					GPU_PRECISION q_squared_inverse, GPU_PRECISION r0,
+					GPU_PRECISION coeff, 
+					GPU_PRECISION *device__stars,
+					int number_stars,
+					GPU_PRECISION *probability) {
 #else
-template <unsigned int number_streams>
-__global__ void gpu__likelihood_kernel(	int offset, int convolve,
-		GPU_PRECISION q, GPU_PRECISION r0,
-		GPU_PRECISION coeff, 
-		GPU_PRECISION *device__stars,
-		GPU_PRECISION *probability, GPU_PRECISION *probability_correction) {
+  template <unsigned int number_streams>
+    __global__ void gpu__likelihood_kernel(int offset, int convolve,
+					   GPU_PRECISION q_squared_inverse, GPU_PRECISION r0,
+					   GPU_PRECISION coeff, 
+					   GPU_PRECISION *device__stars,
+					   int number_stars,
+					   GPU_PRECISION *probability, GPU_PRECISION *probability_correction) {
 #endif
 	int i;
-	int pos = (offset + threadIdx.x) * 5;
+	int pos = (offset + threadIdx.x);
 	GPU_PRECISION sinb = device__stars[pos];
-	GPU_PRECISION sinl = device__stars[pos + 1];
-	GPU_PRECISION cosb = device__stars[pos + 2];
-	GPU_PRECISION cosl = device__stars[pos + 3];
-	GPU_PRECISION coords = device__stars[pos + 4];
+	GPU_PRECISION sinl = device__stars[pos + number_stars];
+	GPU_PRECISION cosb = device__stars[pos + number_stars*2];
+	GPU_PRECISION cosl = device__stars[pos + number_stars*3];
+	GPU_PRECISION coords = device__stars[pos + number_stars*4];
 
 	GPU_PRECISION rg, xyz0, xyz1, xyz2;
 	GPU_PRECISION dotted, sxyz0, sxyz1, sxyz2;
@@ -626,7 +659,7 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
 #ifdef SINGLE_PRECISION
 		r_point = pow(10.0f, (g - f_absm)/5.0f + 1.0f) / 1000.0f;
 #else
-		r_point = pow(10.0, (g - d_absm)/5.0 + 1.0) / 1000.0;
+		r_point = pow(10.0, (g - d_absm) * .2 + 1.0) * .001;
 #endif
 		rPrime3 = r_point * r_point * r_point;
 
@@ -637,7 +670,7 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
 		xyz0 = zp * cosl - d_lbr_r;
 		xyz1 = zp * sinl;
 
-		rg = sqrt(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2)/(q*q));
+		rg = sqrt(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) * q_squared_inverse);
 		rs = rg + r0;
 
 
@@ -665,9 +698,9 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
  			sxyz2 -= dotted * constant__fstream_a[pos + 2];
 			
 #ifndef SINGLE_PRECISION
-			st_int[j] += qw_r3_N * exp(-((sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2)) / constant__fstream_sigma_sq2[j]);
+			st_int[j] += qw_r3_N * exp(-((sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2)) * constant__inverse_fstream_sigma_sq2[j]);
 #else
-			corrected_next_term = (qw_r3_N * exp(-((sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2)) / constant__fstream_sigma_sq2[j])) - st_int_correction[j];
+			corrected_next_term = (qw_r3_N * exp(-((sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2)) * constant__inverse_fstream_sigma_sq2[j])) - st_int_correction[j];
 			new_sum = st_int[j] + corrected_next_term;
 			st_int_correction[j] = (new_sum - st_int[j]) - corrected_next_term;
 			st_int[j] = new_sum;
@@ -675,14 +708,15 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
 		}
 	}
 	GPU_PRECISION probability_sum = 0.0;
-	probability_sum += bg_int * reff_xr_rp3 * constant__background_weight[0];
+	probability_sum += bg_int * constant__background_weight[0];
 	//pragma unroll 1 makes the loop not unroll,
 	//when it unrolls it causes a launch failure when trying
 	//to access constant__stream_weight[i], when i is 1
 	#pragma unroll 1
 	for (i = 0; i < number_streams; i++) {
-		probability_sum += st_int[i] * reff_xr_rp3 * constant__stream_weight[i];
+		probability_sum += st_int[i] * constant__stream_weight[i];
 	}
+	probability_sum *= reff_xr_rp3;
 //	printf("bg_prob %.15f st_prob[0]: %.15f st_prob[1]: %.15f, prob_sum: %.15f\n", (bg_int * reff_xr_rp3), (st_int[0] * reff_xr_rp3), (st_int[1] * reff_xr_rp3), probability_sum);
 
 	if (probability_sum == 0.0) probability_sum = -238.0;
@@ -706,10 +740,10 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
 #define stream_parameters(x, y) parameters[(x * 6) + y + 3]
 #define stream_weights(x) parameters[(x * 6) + 2]
 //#define background_weight parameters[0]
-#define background_weight 0.0
+#define background_weight (0.0)
 //#define alpha parameters[1]
-#define q parameters[0]
-#define r0 parameters[1]
+#define q (parameters[0])
+#define r0 (parameters[1])
 //#define delta parameters[4]
 
 double gpu__likelihood(double *parameters) {
@@ -721,7 +755,7 @@ double gpu__likelihood(double *parameters) {
 	GPU_PRECISION *fstream_sigma_sq2 = (GPU_PRECISION*) malloc(sizeof(GPU_PRECISION) * number_streams);
 
 	for (i = 0; i < number_streams; i++) {
-		fstream_sigma_sq2[i] = (GPU_PRECISION)(2.0 * stream_parameters(i,4) * stream_parameters(i,4));
+		fstream_sigma_sq2[i] = 1 / (GPU_PRECISION)(2.0 * stream_parameters(i,4) * stream_parameters(i,4));
 
 		fstream_a[(i * 3)] = (GPU_PRECISION)( sin(stream_parameters(i,2)) * cos(stream_parameters(i,3)) );
 		fstream_a[(i * 3) + 1] = (GPU_PRECISION)( sin(stream_parameters(i,2)) * sin(stream_parameters(i,3)) );
@@ -741,7 +775,7 @@ double gpu__likelihood(double *parameters) {
 	}
 
 	//setup_constant_textures(fstream_a, fstream_c, fstream_sigma_sq2,  number_streams);
-	cutilSafeCall( cudaMemcpyToSymbol(constant__fstream_sigma_sq2, fstream_sigma_sq2, number_streams * sizeof(GPU_PRECISION), 0, cudaMemcpyHostToDevice) ); 
+	cutilSafeCall( cudaMemcpyToSymbol(constant__inverse_fstream_sigma_sq2, fstream_sigma_sq2, number_streams * sizeof(GPU_PRECISION), 0, cudaMemcpyHostToDevice) ); 
 	cutilSafeCall( cudaMemcpyToSymbol(constant__fstream_a, fstream_a, number_streams * 3 * sizeof(GPU_PRECISION), 0, cudaMemcpyHostToDevice) );
 	cutilSafeCall( cudaMemcpyToSymbol(constant__fstream_c, fstream_c, number_streams * 3 * sizeof(GPU_PRECISION), 0, cudaMemcpyHostToDevice) );
 
@@ -762,6 +796,7 @@ double gpu__likelihood(double *parameters) {
 		total_work += r_steps[i];
 	}
 
+	double q_squared_inverse = 1 / (q * q);
 	for (i = 0; i < number_integrals; i++) {
 		bind_texture(i);
 //		printf("mu_steps[i] is %u nu_steps[i] is %u rsteps[i] is %u convolve is %u number_streams is %u\n", 
@@ -802,60 +837,146 @@ double gpu__likelihood(double *parameters) {
 #else
 		sh_mem_multiple = 1;
 #endif
-		unsigned int shared_mem_size = sh_mem_multiple * (nu_steps[i] * sizeof(GPU_PRECISION) * number_streams);
+		int num_blocks = (mu_steps[i] * nu_steps[i]) / NU_STEP_SIZE;
+		unsigned int shared_mem_size;
+		int nu_step_size = NU_STEP_SIZE;
+		if (num_blocks * NU_STEP_SIZE == mu_steps[i] * nu_steps[i])
+		  {
+		    //NU_STEP_SIZE divides the number of steps
+		  }
+		else
+		  {
+		    //NU_STEP_SIZE does not divide the number of steps
+		    //so default to the old behaviur
+		    num_blocks = mu_steps[i];
+		    nu_step_size = nu_steps[i];
+		  }
+		shared_mem_size = sh_mem_multiple * (nu_step_size * sizeof(GPU_PRECISION) * number_streams);
 		printf("%d blocks %d threads\n", mu_steps[i], nu_steps[i]);
 		printf("Allocating %d bytes for shared memory\n", shared_mem_size);
+		
+		dim3 dimBlock(nu_step_size);
+		printf("Using %d blocks and %d threads\n", num_blocks, nu_step_size);
+		//r_steps[i] = 1;
 		for(j = 0;j<r_steps[i];j+= R_INCREMENT)
 		  {
 		    boinc_fraction_done(current_work / (double) total_work);
-		    for(int mu_step = 0; mu_step < mu_steps[i]; mu_step += MU_STEP_SIZE) {
-		      dim3 dimGrid(min(MU_STEP_SIZE, mu_steps[i] - mu_step), R_INCREMENT);
+		    for(int mu_step = 0; mu_step < num_blocks; mu_step += MU_STEP_SIZE) {
+		      dim3 dimGrid(min(MU_STEP_SIZE, num_blocks - mu_step), R_INCREMENT);
 #ifndef SINGLE_PRECISION
 			switch(number_streams) {
-			case 1:	gpu__integral_kernel3<1, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(mu_step, mu_steps[i], j, r_steps[i],
-															  q, r0,
-															  device__lb[i], device__V[i],
-															  device__background_integrals[i], device__stream_integrals[i]);
-					break;
-				case 2:	gpu__integral_kernel3<2, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(mu_step,mu_steps[i],j, r_steps[i],
-															  q, r0,
-															  device__lb[i], device__V[i],
-															  device__background_integrals[i], device__stream_integrals[i]);
-					break;
-				case 3:	gpu__integral_kernel3<3, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(mu_step,mu_steps[i],j, r_steps[i],
-															  q, r0,
-															  device__lb[i], device__V[i],
-															  device__background_integrals[i], device__stream_integrals[i]);
-					break;
-				case 4:	gpu__integral_kernel3<4, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(mu_step,mu_steps[i],j, r_steps[i],
-															  q, r0,
-															  device__lb[i], device__V[i],
-															  device__background_integrals[i], device__stream_integrals[i]);
-					break;
+			case 1:	gpu__integral_kernel3<1, MAX_CONVOLVE><<<dimGrid, dimBlock, shared_mem_size>>>(mu_step, mu_steps[i],
+													       j, r_steps[i],
+													       nu_steps[i],
+													       q_squared_inverse, r0,
+													       device__sinb[i],
+													       device__sinl[i],
+													       device__cosb[i],
+													       device__cosl[i],
+													       device__V[i],
+													       device__background_integrals[i], device__stream_integrals[i]);
+			  break;
+			case 2:	gpu__integral_kernel3<2, MAX_CONVOLVE><<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+													       j, r_steps[i],
+													       nu_steps[i],
+													       q_squared_inverse, r0,
+													       device__sinb[i],
+													       device__sinl[i],
+													       device__cosb[i],
+													       device__cosl[i],
+													       device__V[i],
+													       device__background_integrals[i], device__stream_integrals[i]);
+			  break;
+			case 3:	gpu__integral_kernel3<3, MAX_CONVOLVE><<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+													       j, r_steps[i],
+													       nu_steps[i],
+													       q_squared_inverse, r0,
+													       device__sinb[i],
+													       device__sinl[i],
+													       device__cosb[i],
+													       device__cosl[i],
+													       device__V[i],
+													       device__background_integrals[i], device__stream_integrals[i]);
+			  break;
+			case 4:	gpu__integral_kernel3<4, MAX_CONVOLVE><<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+													       j, r_steps[i],
+													       nu_steps[i],
+													       q_squared_inverse, r0,
+													       device__sinb[i],
+													       device__sinl[i],
+													       device__cosb[i],
+													       device__cosl[i],
+													       device__V[i],
+													       device__background_integrals[i], device__stream_integrals[i]);
+			  break;
 			}
-
+			
 #else
 			switch(number_streams) {
-				case 1:	gpu__integral_kernel3<1, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(mu_step,mu_steps[i],j, r_steps[i], 
-														q, r0,
-														device__lb[i], device__V[i],
-														device__background_integrals[i], device__background_correction[i], device__stream_integrals[i], device__stream_correction[i]);
-					break;
-				case 2:	gpu__integral_kernel3<2, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(mu_step,mu_steps[i],j, r_steps[i], 
-														q, r0,
-														device__lb[i], device__V[i],
-														device__background_integrals[i], device__background_correction[i], device__stream_integrals[i], device__stream_correction[i]);
-					break;
-				case 3:	gpu__integral_kernel3<3, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(mu_step,mu_steps[i],j, r_steps[i], 
-														q, r0,
-														device__lb[i], device__V[i],
-														device__background_integrals[i], device__background_correction[i], device__stream_integrals[i], device__stream_correction[i]);
-					break;
-				case 4:	gpu__integral_kernel3<4, MAX_CONVOLVE><<<dimGrid, nu_steps[i], shared_mem_size>>>(mu_step,mu_steps[i],j, r_steps[i], 
-														q, r0,
-														device__lb[i], device__V[i],
-														device__background_integrals[i], device__background_correction[i], device__stream_integrals[i], device__stream_correction[i]);
-					break;
+			case 1:	
+			  gpu__integral_kernel3<1, MAX_CONVOLVE>
+			    <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								     j, r_steps[i], 
+								     nu_steps[i],
+								     q_squared_inverse, r0,
+								     device__sinb[i],
+								     device__sinl[i],
+								     device__cosb[i],
+								     device__cosl[i],
+								     device__V[i],
+								     device__background_integrals[i], 
+								     device__background_correction[i], 
+								     device__stream_integrals[i], 
+								     device__stream_correction[i]);
+			  break;
+			case 2:	
+			  gpu__integral_kernel3<2, MAX_CONVOLVE>
+			    <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								     j, r_steps[i], 
+								     nu_steps[i],
+								     q_squared_inverse, r0,
+								     device__sinb[i],
+								     device__sinl[i],
+								     device__cosb[i],
+								     device__cosl[i],
+								     device__V[i],
+								     device__background_integrals[i], 
+								     device__background_correction[i], 
+								     device__stream_integrals[i], 
+								     device__stream_correction[i]);
+			  break;
+			case 3:	
+			  gpu__integral_kernel3<3, MAX_CONVOLVE>
+			    <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								     j, r_steps[i], 
+								     nu_steps[i],
+								     q_squared_inverse, r0,
+								     device__sinb[i],
+								     device__sinl[i],
+								     device__cosb[i],
+								     device__cosl[i],
+								     device__V[i],
+								     device__background_integrals[i], 
+								     device__background_correction[i], 
+								     device__stream_integrals[i], 
+								     device__stream_correction[i]);
+			  break;
+			case 4:	
+			  gpu__integral_kernel3<4, MAX_CONVOLVE>
+			    <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								     j, r_steps[i], 
+								     nu_steps[i],
+								     q_squared_inverse, r0,
+								     device__sinb[i],
+								     device__sinl[i],
+								     device__cosb[i],
+								     device__cosl[i],
+								     device__V[i],
+								     device__background_integrals[i], 
+								     device__background_correction[i], 
+								     device__stream_integrals[i], 
+								     device__stream_correction[i]);			  
+			  break;
 			}
 #endif
 			cudaError err = cudaThreadSynchronize();
@@ -869,11 +990,12 @@ double gpu__likelihood(double *parameters) {
 		    current_work += R_INCREMENT;
 		  }
 		cpu__sum_integrals(i, &background_integral, stream_integrals);
+		cudaThreadSynchronize();
 		printf("background_integral: %.30lf, stream_integral[0]: %.30lf, stream_integral[1]: %.30lf\n", background_integral, stream_integrals[0], stream_integrals[1]);
 	}
-	//background_integral = 0.00022401069061469790753317321563287123353802599013;
-	//stream_integrals[0] = 9.54048934172210572057792887790128588676452636718750;
-	//stream_integrals[1] = 458.82637245998415664871572516858577728271484375000000;
+	//background_integral = 0.00047190245735466022957219078826085478794993832707;
+	//stream_integrals[0] = 10.71311528236298293847994500538334250450134277343750;
+	//stream_integrals[1] = 513.27062657288058744597947224974632263183593750000000;
 	cutStopTimer(timer);
 	float t = cutGetTimerValue(timer);
 	printf("gpu__integral_kernel3 took %f ms\n", t);
@@ -931,57 +1053,65 @@ double gpu__likelihood(double *parameters) {
 #ifndef SINGLE_PRECISION
 		switch (number_streams) {
 			case 1:	gpu__likelihood_kernel<1><<<1, block_size>>>(	i, convolve,
-										q, r0,
+										q_squared_inverse, r0,
 										(GPU_PRECISION)coeff,
 										device__stars,
+										number_stars,
 										device__probability);
 			break;
 			case 2:	gpu__likelihood_kernel<2><<<1, block_size>>>(	i, convolve,
-										q, r0,
+										q_squared_inverse, r0,
 										(GPU_PRECISION)coeff,
 										device__stars,
+										number_stars,
 										device__probability);
 			break;
 			case 3:	gpu__likelihood_kernel<3><<<1, block_size>>>(	i, convolve,
-										q, r0,
+										q_squared_inverse, r0,
 										(GPU_PRECISION)coeff,
 										device__stars,
+										number_stars,
 										device__probability);
 			break;
 			case 4:	gpu__likelihood_kernel<4><<<1, block_size>>>(	i, convolve,
-										q, r0,
+										q_squared_inverse, r0,
 										(GPU_PRECISION)coeff,
 										device__stars,
+										number_stars,
 										device__probability);
 			break;
 		}
 
 #else
 		switch (number_streams) {
-			case 1:	gpu__likelihood_kernel<1><<<1, block_size>>>(	i, convolve,
-										q, r0,
-										(GPU_PRECISION)coeff,
-										device__stars,
-										device__probability, device__probability_correction);
-			break;
-			case 2:	gpu__likelihood_kernel<2><<<1, block_size>>>(	i, convolve,
-										q, r0,
-										(GPU_PRECISION)coeff,
-										device__stars,
-										device__probability, device__probability_correction);
-			break;
-			case 3:	gpu__likelihood_kernel<3><<<1, block_size>>>(	i, convolve,
-										q, r0,
-										(GPU_PRECISION)coeff,
-										device__stars,
-										device__probability, device__probability_correction);
-			break;
-			case 4:	gpu__likelihood_kernel<4><<<1, block_size>>>(	i, convolve,
-										q, r0,
-										(GPU_PRECISION)coeff,
-										device__stars,
-										device__probability, device__probability_correction);
-			break;
+		case 1:	gpu__likelihood_kernel<1><<<1, block_size>>>(	i, convolve,
+									q_squared_inverse, r0,
+									(GPU_PRECISION)coeff,
+									device__stars,
+									number_stars,
+									device__probability, device__probability_correction);
+		  break;
+		case 2:	gpu__likelihood_kernel<2><<<1, block_size>>>(	i, convolve,
+									q_squared_inverse, r0,
+									(GPU_PRECISION)coeff,
+									device__stars,
+									number_stars,
+									device__probability, device__probability_correction);
+		  break;
+		case 3:	gpu__likelihood_kernel<3><<<1, block_size>>>(	i, convolve,
+									q_squared_inverse, r0,
+									(GPU_PRECISION)coeff,
+									device__stars,
+									number_stars,
+									device__probability, device__probability_correction);
+		  break;
+		case 4:	gpu__likelihood_kernel<4><<<1, block_size>>>(	i, convolve,
+									q_squared_inverse, r0,
+									(GPU_PRECISION)coeff,
+									device__stars,
+									number_stars,
+									device__probability, device__probability_correction);
+		  break;
 		}
 #endif
 		cudaError_t err;
@@ -1009,4 +1139,5 @@ double gpu__likelihood(double *parameters) {
 	cutDeleteTimer(timer);
 
 	return likelihood;
+
 }
