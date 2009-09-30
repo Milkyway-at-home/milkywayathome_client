@@ -25,6 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "math.h"
 
 #include "astronomy_worker.h"
+#include "evaluation_optimized.h"
 #include "parameters.h"
 #include "probability.h"
 #include "star_points.h"
@@ -131,21 +132,27 @@ void separation(char* filename, double background_integral, double* stream_integ
 	qw_r3_N = (double*)malloc(sizeof(double) * ap->convolve);
 	
 	init_constants(ap);
+
+	printf("initialized constants\n");
+
 	for (i = 0; i < sp->number_stars; i++) {
-		//printf("[%d/%d] setting star coords\n", i, sp->number_stars);
+//		printf("[%d/%d] setting star coords\n", i, sp->number_stars);
 		star_coords[0] = sp->stars[i][0];
 		star_coords[1] = sp->stars[i][1];
 		star_coords[2] = sp->stars[i][2];
-		//printf("star_coords: %g %g %g\n", star_coords[0], star_coords[1], star_coords[2]);
+//		printf("star_coords: %g %g %g\n", star_coords[0], star_coords[1], star_coords[2]);
 	
-		//printf("twoPanel: %d\n", twoPanel);
+//		printf("twoPanel: %d\n", twoPanel);
 
 		if (twoPanel == 1) {
-			set_probability_constants(ap, star_coords[2], r_point, qw_r3_N, &reff_xr_rp3);
+//			printf("setting probability constants\n");
+			set_probability_constants(ap->convolve, star_coords[2], r_point, qw_r3_N, &reff_xr_rp3);
+//			printf("calculating probabilities\n");
 			calculate_probabilities(r_point, qw_r3_N, reff_xr_rp3, star_coords, ap, &prob_b, prob_s);
+//			printf("calculated probabilities\n");
 		
-		//printf("prob_s: %lf\n", prob_s[0]);
-		//printf("prob_b: %lf\n", prob_b);
+//			printf("prob_s: %lf\n", prob_s[0]);
+//			printf("prob_b: %lf\n", prob_b);
 	
 			pbx = epsilon_b * prob_b / background_integral;
 			
@@ -153,8 +160,8 @@ void separation(char* filename, double background_integral, double* stream_integ
 				psg[j] = epsilon_s[j] * prob_s[j] / stream_integrals[j]; 
 			}
 
-		//printf("pbx: %g\n", pbx);
-		//printf("psg: %g\n", psg[0]);
+//			printf("pbx: %g\n", pbx);
+//			printf("psg: %g\n", psg[0]);
 				
 			double psgSum = 0;
 			for(j = 0; j < ap->number_streams; j++) {
@@ -164,12 +171,12 @@ void separation(char* filename, double background_integral, double* stream_integ
 				sprob[j] = psg[j] / (psgSum + pbx);
 			}
 
-			//printf("sprob: %g\n", sprob[0]);
+//			printf("sprob: %g\n", sprob[0]);
 
 			for(j = 0; j < ap->number_streams; j++) {
 				nstars[j] += sprob[j];
 			}
-			//printf("nstars: %g\n", nstars[0]);
+//			printf("nstars: %g\n", nstars[0]);
 		} else {	
 			for(j = 0; j < ap->number_streams; j++) {
 				sprob[j] = 1.0;
@@ -187,7 +194,7 @@ void separation(char* filename, double background_integral, double* stream_integ
 		//	}
 		//}
 
-		//printf("s_ok: %d\n", s_ok);
+//		printf("s_ok: %d\n", s_ok);
 
 		if (s_ok >= 1) {
 			q[s_ok-1]++;
