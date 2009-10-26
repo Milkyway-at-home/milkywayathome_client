@@ -82,11 +82,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
 double alpha, q, r0, delta, coeff, alpha_delta3;
-//vickej2_bg double  bg_a, bg_b, bg_c;
+double  bg_a, bg_b, bg_c; //vickej2_bg
 double *qgaus_X, *qgaus_W, **xyz, *dx;
 double **stream_a, **stream_c, *stream_sigma, *stream_sigma_sq2;
 
+
 void init_constants(ASTRONOMY_PARAMETERS *ap) {
+
 	int i;
 	stream_sigma		= (double*)malloc(sizeof(double) * ap->number_streams);
 	stream_sigma_sq2	= (double*)malloc(sizeof(double) * ap->number_streams);
@@ -97,9 +99,9 @@ void init_constants(ASTRONOMY_PARAMETERS *ap) {
 	q	= ap->background_parameters[1];
 	r0	= ap->background_parameters[2];
 	delta	= ap->background_parameters[3];
-//vickej2_bg	bg_a    = ap->background_parameters[4];
-//vickej2_bg    bg_b    = ap->background_parameters[5];
-//vickej2_bg    bg_c    = ap->background_parameters[6];
+	bg_a    = ap->background_parameters[4]; //vickej2_bg
+       	bg_b    = ap->background_parameters[5]; //vickej2_bg
+	bg_c    = ap->background_parameters[6]; //vickej2_bg
 	coeff	= 1 / (stdev * sqrt(2*pi));
 	alpha_delta3 = 3 - alpha + delta;
 
@@ -110,7 +112,7 @@ void init_constants(ASTRONOMY_PARAMETERS *ap) {
 		stream_c[i] = (double*)malloc(sizeof(double) * 3);
 		stream_sigma[i] = ap->stream_parameters[i][4];
 		stream_sigma_sq2[i] = 2.0 * stream_sigma[i] * stream_sigma[i];  
- 
+
 		if (ap->sgr_coordinates == 0) {
 			atGCToEq(ap->stream_parameters[i][0], 0, &ra, &dec, get_node(), wedge_incl(ap->wedge));
 			atEqToGal(ra, dec, &l, &b);
@@ -195,7 +197,7 @@ void set_probability_constants(int n_convolve, double coords, double *r_point, d
 void calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp3, double *integral_point, ASTRONOMY_PARAMETERS *ap, double *bg_prob, double *st_prob) {
 	double sinb, sinl, cosb, cosl, zp;
 	double rg, rs, xyzs[3], dotted, xyz_norm;
-//vickej2_bg	double r_in_mag, h_prob, aux_prob;
+	double r_in_mag, h_prob, aux_prob; //vickej2_bg
 	int i, j;
 
         sinb = sin(integral_point[1] / deg);
@@ -220,17 +222,18 @@ void calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp
 				rg = sqrt(xyz[i][0]*xyz[i][0] + xyz[i][1]*xyz[i][1] + (xyz[i][2]*xyz[i][2])/(q*q));
 				rs = rg + r0;
 				
-//vickej2 changing the hernquist profile to include a quadratic term in g
+//vickej2_bg changing the hernquist profile to include a quadratic term in g
 
-//vickej2_bg				r_in_mag = 4.2 + 5 * ( log10(1000 * r_point[i]) - 1);
+	if (ap->aux_bg_profile == 1) {
+		r_in_mag = 4.2 + 5 * ( log10(1000 * r_point[i]) - 1);
+                h_prob = qw_r3_N[i] / (rg * rs * rs * rs);
+                aux_prob = qw_r3_N[i] * ( bg_a * r_in_mag * r_in_mag + bg_b * r_in_mag + bg_c );
+		(*bg_prob) += h_prob + aux_prob;
+        } else {
+                (*bg_prob) += qw_r3_N[i] / (rg * rs * rs * rs);
+        }
 
-				(*bg_prob) += qw_r3_N[i] / (rg * rs * rs * rs);
-				
-
-//vickej2_bg                            h_prob = qw_r3_N[i] / (rg * rs * rs * rs);
-//vickej2_bg                            aux_prob = qw_r3_N[i] * ( bg_a * r_in_mag * r_in_mag + bg_b * r_in_mag + bg_c );
-//vickej2_bg 				(*bg_prob) += h_prob + aux_prob;
-//vickej2 end edits
+//vickej2_bg end edits
 
 //				printf("reff_xr_rp3: %.15lf r_point: %.15lf rg: %.15lf rs: %.15lf qw_r3_N: %.15lf bg_int: %.15lf\n", reff_xr_rp3, r_point[i], rg, rs, qw_r3_N[i], (*bg_prob));
 			}
@@ -320,7 +323,7 @@ void cpu__r_constants(	int n_convolve,
 			double *reff_xr_rp3, double *nus, double *ids) {
   int i;
 
-//vickej2 edits to make volumes even in kpc rather than g
+//vickej2_kpc edits to make volumes even in kpc rather than g
 //vickej2_kpc        double log_r, r, next_r, rPrime;
 
         double r, next_r, rPrime, r_min_kpc, r_max_kpc, r_step_size_kpc, r_max;
@@ -340,7 +343,7 @@ void cpu__r_constants(	int n_convolve,
 		r               =       r_min_kpc + (i * r_step_size_kpc);
 		next_r          =       r + r_step_size_kpc;
 
-//vickej2 end edits
+//vickej2_kpc end edits
 
 
 
