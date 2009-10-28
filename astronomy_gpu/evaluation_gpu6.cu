@@ -38,6 +38,7 @@ extern "C++" {
 
 #define MAX_CONVOLVE 120
 #define R_INCREMENT 1
+			  //#define MU_STEP_SIZE 1024
 #define MU_STEP_SIZE 16000
 #define NU_STEP_SIZE 64
 
@@ -383,9 +384,9 @@ void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int
 		  host__lb[j] = (GPU_PRECISION)cpu__lb[j];
 		}
 
-		setup_texture(in__mu_steps[i],
-			      in__nu_steps[i],
-			      i, host__lb);
+		//setup_texture(in__mu_steps[i],
+		//	      in__nu_steps[i],
+		//	      i, host__lb);
 		setup_r_point_texture(r_steps[i], convolve,
 				      i, r_point);
 		setup_qw_r3_N_texture(r_steps[i], convolve,
@@ -774,7 +775,7 @@ double gpu__likelihood(double *parameters) {
 		fstream_c[(i * 3) + 2] = (GPU_PRECISION)stream_c[2];
 	}
 
-	//setup_constant_textures(fstream_a, fstream_c, fstream_sigma_sq2,  number_streams);
+	setup_constant_textures(fstream_a, fstream_c, fstream_sigma_sq2,  number_streams);
 	cutilSafeCall( cudaMemcpyToSymbol(constant__inverse_fstream_sigma_sq2, fstream_sigma_sq2, number_streams * sizeof(GPU_PRECISION), 0, cudaMemcpyHostToDevice) ); 
 	cutilSafeCall( cudaMemcpyToSymbol(constant__fstream_a, fstream_a, number_streams * 3 * sizeof(GPU_PRECISION), 0, cudaMemcpyHostToDevice) );
 	cutilSafeCall( cudaMemcpyToSymbol(constant__fstream_c, fstream_c, number_streams * 3 * sizeof(GPU_PRECISION), 0, cudaMemcpyHostToDevice) );
@@ -852,6 +853,7 @@ double gpu__likelihood(double *parameters) {
 		    nu_step_size = nu_steps[i];
 		  }
 		shared_mem_size = sh_mem_multiple * (nu_step_size * sizeof(GPU_PRECISION) * number_streams);
+		shared_mem_size += 192;
 		printf("%d blocks %d threads\n", mu_steps[i], nu_steps[i]);
 		printf("Allocating %d bytes for shared memory\n", shared_mem_size);
 		
