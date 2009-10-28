@@ -853,7 +853,6 @@ double gpu__likelihood(double *parameters) {
 		    nu_step_size = nu_steps[i];
 		  }
 		shared_mem_size = sh_mem_multiple * (nu_step_size * sizeof(GPU_PRECISION) * number_streams);
-		shared_mem_size += 192;
 		printf("%d blocks %d threads\n", mu_steps[i], nu_steps[i]);
 		printf("Allocating %d bytes for shared memory\n", shared_mem_size);
 		

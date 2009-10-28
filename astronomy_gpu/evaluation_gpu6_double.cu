@@ -214,22 +214,6 @@ __global__ void gpu__integral_kernel3(	int mu_offset, int mu_steps,
   double cosb_x_cosl = cosb * cosl;
   double cosb_x_sinl = cosb * sinl;
 
-  double *fstream_c =  &st_int[number_streams * blockDim.x];
-  double *fstream_a =  &fstream_c[number_streams * 3];
-  if (threadIdx.x == 0)
-    {
-      for (int j = 0; j < number_streams; j++) {
-	fstream_c[j*3 + 0] = constant__fstream_c[j*3 + 0];
-	fstream_c[j*3 + 1] = constant__fstream_c[j*3 + 1];
-	fstream_c[j*3 + 2] = constant__fstream_c[j*3 + 2];
-
-	fstream_a[j*3 + 0] = constant__fstream_a[j*3 + 0];
-	fstream_a[j*3 + 1] = constant__fstream_a[j*3 + 1];
-	fstream_a[j*3 + 2] = constant__fstream_a[j*3 + 2];
-      }
-    }
-
-
   for (int i = 0; i < convolve; i++) {
     double xyz0, xyz1, xyz2;
     double rs, rg;
@@ -238,12 +222,8 @@ __global__ void gpu__integral_kernel3(	int mu_offset, int mu_steps,
     
     xyz0 = tex2D_double(tex_r_point,i,in_step) * 
       cosb_x_cosl - d_lbr_r;
-    //xyz0 = tex2D_double(tex_r_point,i,in_step) * 
-    //  cosb * cosl - d_lbr_r;
     xyz1 = tex2D_double(tex_r_point,i,in_step) * 
     cosb_x_sinl;
-    //xyz1 = tex2D_double(tex_r_point,i,in_step) * 
-    // cosb * sinl;
     
     rg = sqrt(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) * q_squared_inverse);
     rs = rg + r0;
