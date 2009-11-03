@@ -52,6 +52,7 @@ extern "C++" {
 int	number_threads = 256;
 
 int	sgr_coordinates;
+int     aux_bg_profile;
 int	mu_increment = 1;
 int	wedge;
 int	convolve;
@@ -266,7 +267,7 @@ int choose_gpu(int argc, char **argv) {
 #endif
 }
 
-void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int ap_number_streams, int ap_number_integrals, 
+void gpu__initialize(	int ap_sgr_coordinates, int ap_aux_bg_profile, int ap_wedge, int ap_convolve, int ap_number_streams, int ap_number_integrals, 
 			int *in__r_steps, double *in__r_min, double *in__r_step_size,
 			int *in__mu_steps, double *in__mu_min, double *in__mu_step_size,
 			int *in__nu_steps, double *in__nu_min, double *in__nu_step_size,
@@ -274,6 +275,7 @@ void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int
   int i, j;
 
 	sgr_coordinates = ap_sgr_coordinates;
+	aux_bg_profile = ap_aux_bg_profile;
 	wedge = ap_wedge;
 	convolve = ap_convolve;
 	number_streams = ap_number_streams;
@@ -745,6 +747,9 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
 //#define alpha parameters[1]
 #define q (parameters[0])
 #define r0 (parameters[1])
+#define BG_A (parameters[3])
+#define BG_B (parameters[4])
+#define BG_C (parameters[5])
 //#define delta parameters[4]
 
 double gpu__likelihood(double *parameters) {
@@ -864,122 +869,260 @@ double gpu__likelihood(double *parameters) {
 		    boinc_fraction_done(current_work / (double) total_work);
 		    for(int mu_step = 0; mu_step < num_blocks; mu_step += MU_STEP_SIZE) {
 		      dim3 dimGrid(min(MU_STEP_SIZE, num_blocks - mu_step), R_INCREMENT);
+		      if (aux_bg_profile == 1)
+			{
 #ifndef SINGLE_PRECISION
-			switch(number_streams) {
-			case 1:	gpu__integral_kernel3<1, MAX_CONVOLVE><<<dimGrid, dimBlock, shared_mem_size>>>(mu_step, mu_steps[i],
-													       j, r_steps[i],
-													       nu_steps[i],
-													       q_squared_inverse, r0,
-													       device__sinb[i],
-													       device__sinl[i],
-													       device__cosb[i],
-													       device__cosl[i],
-													       device__V[i],
-													       device__background_integrals[i], device__stream_integrals[i]);
-			  break;
-			case 2:	gpu__integral_kernel3<2, MAX_CONVOLVE><<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
-													       j, r_steps[i],
-													       nu_steps[i],
-													       q_squared_inverse, r0,
-													       device__sinb[i],
-													       device__sinl[i],
-													       device__cosb[i],
-													       device__cosl[i],
-													       device__V[i],
-													       device__background_integrals[i], device__stream_integrals[i]);
-			  break;
-			case 3:	gpu__integral_kernel3<3, MAX_CONVOLVE><<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
-													       j, r_steps[i],
-													       nu_steps[i],
-													       q_squared_inverse, r0,
-													       device__sinb[i],
-													       device__sinl[i],
-													       device__cosb[i],
-													       device__cosl[i],
-													       device__V[i],
-													       device__background_integrals[i], device__stream_integrals[i]);
-			  break;
-			case 4:	gpu__integral_kernel3<4, MAX_CONVOLVE><<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
-													       j, r_steps[i],
-													       nu_steps[i],
-													       q_squared_inverse, r0,
-													       device__sinb[i],
-													       device__sinl[i],
-													       device__cosb[i],
-													       device__cosl[i],
-													       device__V[i],
-													       device__background_integrals[i], device__stream_integrals[i]);
-			  break;
-			}
-			
+			  switch(number_streams) {
+			  case 1:	gpu__integral_kernel3_aux<1, MAX_CONVOLVE>
+			      <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step, mu_steps[i],
+								       j, r_steps[i],
+								       nu_steps[i],
+								       q_squared_inverse, r0,
+								       BG_A, BG_B, BG_C,
+								       device__sinb[i],
+								       device__sinl[i],
+								       device__cosb[i],
+								       device__cosl[i],
+								       device__V[i],
+								       device__background_integrals[i], device__stream_integrals[i]);
+			    break;
+			  case 2:	gpu__integral_kernel3_aux<2, MAX_CONVOLVE>
+			      <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								       j, r_steps[i],
+								       nu_steps[i],
+								       q_squared_inverse, r0,
+								       BG_A, BG_B, BG_C,
+								       device__sinb[i],
+								       device__sinl[i],
+								       device__cosb[i],
+								       device__cosl[i],
+								       device__V[i],
+								       device__background_integrals[i], device__stream_integrals[i]);
+			    break;
+			  case 3:	gpu__integral_kernel3_aux<3, MAX_CONVOLVE>
+			      <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								       j, r_steps[i],
+								       nu_steps[i],
+								       q_squared_inverse, r0,
+								       BG_A, BG_B, BG_C,
+								       device__sinb[i],
+								       device__sinl[i],
+								       device__cosb[i],
+								       device__cosl[i],
+								       device__V[i],
+								       device__background_integrals[i], device__stream_integrals[i]);
+			    break;
+			  case 4:	gpu__integral_kernel3_aux<4, MAX_CONVOLVE>
+			      <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								       j, r_steps[i],
+								       nu_steps[i],
+								       q_squared_inverse, r0,
+								       BG_A, BG_B, BG_C,
+								       device__sinb[i],
+								       device__sinl[i],
+								       device__cosb[i],
+								       device__cosl[i],
+								       device__V[i],
+								       device__background_integrals[i], device__stream_integrals[i]);
+			    break;
+			  }
+			  
 #else
-			switch(number_streams) {
-			case 1:	
-			  gpu__integral_kernel3<1, MAX_CONVOLVE>
-			    <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
-								     j, r_steps[i], 
-								     nu_steps[i],
-								     q_squared_inverse, r0,
-								     device__sinb[i],
-								     device__sinl[i],
-								     device__cosb[i],
-								     device__cosl[i],
-								     device__V[i],
-								     device__background_integrals[i], 
-								     device__background_correction[i], 
-								     device__stream_integrals[i], 
-								     device__stream_correction[i]);
-			  break;
-			case 2:	
-			  gpu__integral_kernel3<2, MAX_CONVOLVE>
-			    <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
-								     j, r_steps[i], 
-								     nu_steps[i],
-								     q_squared_inverse, r0,
-								     device__sinb[i],
-								     device__sinl[i],
-								     device__cosb[i],
-								     device__cosl[i],
-								     device__V[i],
-								     device__background_integrals[i], 
-								     device__background_correction[i], 
-								     device__stream_integrals[i], 
-								     device__stream_correction[i]);
-			  break;
-			case 3:	
-			  gpu__integral_kernel3<3, MAX_CONVOLVE>
-			    <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
-								     j, r_steps[i], 
-								     nu_steps[i],
-								     q_squared_inverse, r0,
-								     device__sinb[i],
-								     device__sinl[i],
-								     device__cosb[i],
-								     device__cosl[i],
-								     device__V[i],
-								     device__background_integrals[i], 
-								     device__background_correction[i], 
-								     device__stream_integrals[i], 
-								     device__stream_correction[i]);
-			  break;
-			case 4:	
-			  gpu__integral_kernel3<4, MAX_CONVOLVE>
-			    <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
-								     j, r_steps[i], 
-								     nu_steps[i],
-								     q_squared_inverse, r0,
-								     device__sinb[i],
-								     device__sinl[i],
-								     device__cosb[i],
-								     device__cosl[i],
-								     device__V[i],
-								     device__background_integrals[i], 
-								     device__background_correction[i], 
-								     device__stream_integrals[i], 
-								     device__stream_correction[i]);			  
-			  break;
-			}
+			  switch(number_streams) {
+			  case 1:	
+			    gpu__integral_kernel3_aux<1, MAX_CONVOLVE>
+			      <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								       j, r_steps[i], 
+								       nu_steps[i],
+								       q_squared_inverse, r0,
+								       BG_A, BG_B, BG_C,
+								       device__sinb[i],
+								       device__sinl[i],
+								       device__cosb[i],
+								       device__cosl[i],
+								       device__V[i],
+								       device__background_integrals[i], 
+								       device__background_correction[i], 
+								       device__stream_integrals[i], 
+								       device__stream_correction[i]);
+			    break;
+			  case 2:	
+			    gpu__integral_kernel3_aux<2, MAX_CONVOLVE>
+			      <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								       j, r_steps[i], 
+								       nu_steps[i],
+								       q_squared_inverse, r0,
+								       BG_A, BG_B, BG_C,
+								       device__sinb[i],
+								       device__sinl[i],
+								       device__cosb[i],
+								       device__cosl[i],
+								       device__V[i],
+								       device__background_integrals[i], 
+								       device__background_correction[i], 
+								       device__stream_integrals[i], 
+								       device__stream_correction[i]);
+			    break;
+			  case 3:	
+			    gpu__integral_kernel3_aux<3, MAX_CONVOLVE>
+			      <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								       j, r_steps[i], 
+								       nu_steps[i],
+								       q_squared_inverse, r0,
+								       BG_A, BG_B, BG_C,
+								       device__sinb[i],
+								       device__sinl[i],
+								       device__cosb[i],
+								       device__cosl[i],
+								       device__V[i],
+								       device__background_integrals[i], 
+								       device__background_correction[i], 
+								       device__stream_integrals[i], 
+								       device__stream_correction[i]);
+			    break;
+			  case 4:	
+			    gpu__integral_kernel3_aux<4, MAX_CONVOLVE>
+			      <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								       j, r_steps[i], 
+								       nu_steps[i],
+								       q_squared_inverse, r0,
+								       BG_A, BG_B, BG_C,
+								       device__sinb[i],
+								       device__sinl[i],
+								       device__cosb[i],
+								       device__cosl[i],
+								       device__V[i],
+								       device__background_integrals[i], 
+								       device__background_correction[i], 
+								       device__stream_integrals[i], 
+								       device__stream_correction[i]);			  
+			    break;
+			  }
 #endif
+			}
+		      else
+			{
+#ifndef SINGLE_PRECISION
+			  switch(number_streams) {
+			  case 1:	gpu__integral_kernel3<1, MAX_CONVOLVE>
+			      <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step, mu_steps[i],
+								       j, r_steps[i],
+								       nu_steps[i],
+								       q_squared_inverse, r0,
+								       device__sinb[i],
+								       device__sinl[i],
+								       device__cosb[i],
+								       device__cosl[i],
+								       device__V[i],
+								       device__background_integrals[i], device__stream_integrals[i]);
+			    break;
+			  case 2:	gpu__integral_kernel3<2, MAX_CONVOLVE>
+			      <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								       j, r_steps[i],
+								       nu_steps[i],
+								       q_squared_inverse, r0,
+								       device__sinb[i],
+								       device__sinl[i],
+								       device__cosb[i],
+								       device__cosl[i],
+								       device__V[i],
+								       device__background_integrals[i], device__stream_integrals[i]);
+			    break;
+			  case 3:	gpu__integral_kernel3<3, MAX_CONVOLVE>
+			      <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								       j, r_steps[i],
+								       nu_steps[i],
+								       q_squared_inverse, r0,
+								       device__sinb[i],
+								       device__sinl[i],
+								       device__cosb[i],
+								       device__cosl[i],
+								       device__V[i],
+								       device__background_integrals[i], device__stream_integrals[i]);
+			    break;
+			  case 4:	gpu__integral_kernel3<4, MAX_CONVOLVE>
+			      <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								       j, r_steps[i],
+								       nu_steps[i],
+								       q_squared_inverse, r0,
+								       device__sinb[i],
+								       device__sinl[i],
+								       device__cosb[i],
+								       device__cosl[i],
+								       device__V[i],
+								       device__background_integrals[i], device__stream_integrals[i]);
+			    break;
+			  }
+			  
+#else
+			  switch(number_streams) {
+			  case 1:	
+			    gpu__integral_kernel3<1, MAX_CONVOLVE>
+			      <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								       j, r_steps[i], 
+								       nu_steps[i],
+								       q_squared_inverse, r0,
+								       device__sinb[i],
+								       device__sinl[i],
+								       device__cosb[i],
+								       device__cosl[i],
+								       device__V[i],
+								       device__background_integrals[i], 
+								       device__background_correction[i], 
+								       device__stream_integrals[i], 
+								       device__stream_correction[i]);
+			    break;
+			  case 2:	
+			    gpu__integral_kernel3<2, MAX_CONVOLVE>
+			      <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								       j, r_steps[i], 
+								       nu_steps[i],
+								       q_squared_inverse, r0,
+								       device__sinb[i],
+								       device__sinl[i],
+								       device__cosb[i],
+								       device__cosl[i],
+								       device__V[i],
+								       device__background_integrals[i], 
+								       device__background_correction[i], 
+								       device__stream_integrals[i], 
+								       device__stream_correction[i]);
+			    break;
+			  case 3:	
+			    gpu__integral_kernel3<3, MAX_CONVOLVE>
+			      <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								       j, r_steps[i], 
+								       nu_steps[i],
+								       q_squared_inverse, r0,
+								       device__sinb[i],
+								       device__sinl[i],
+								       device__cosb[i],
+								       device__cosl[i],
+								       device__V[i],
+								       device__background_integrals[i], 
+								       device__background_correction[i], 
+								       device__stream_integrals[i], 
+								       device__stream_correction[i]);
+			    break;
+			  case 4:	
+			    gpu__integral_kernel3<4, MAX_CONVOLVE>
+			      <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps[i],
+								       j, r_steps[i], 
+								       nu_steps[i],
+								       q_squared_inverse, r0,
+								       device__sinb[i],
+								       device__sinl[i],
+								       device__cosb[i],
+								       device__cosl[i],
+								       device__V[i],
+								       device__background_integrals[i], 
+								       device__background_correction[i], 
+								       device__stream_integrals[i], 
+								       device__stream_correction[i]);			  
+			    break;
+			  }
+#endif
+			}
 			cudaError err = cudaThreadSynchronize();
 			if(err != cudaSuccess)
 			  {

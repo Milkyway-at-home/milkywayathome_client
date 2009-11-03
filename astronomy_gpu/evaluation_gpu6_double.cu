@@ -187,6 +187,32 @@ void bind_texture(int current_integral) {
   cutilSafeCall(cudaBindTextureToArray(tex_qw_r3_N, cu_qw_r3_N_arrays[current_integral], channelDesc));
 }
 
+// 11 DP ops (including 2 conversion) + 1 SP reciprocal, guess 10 DP flops would be an adequate count
+__device__ double divd(double a, double b)	// accurate to 1 ulp, i.e the last bit of the double precision number
+{	 // cuts some corners on the numbers range but is significantly faster, employs "faithful rounding"
+  double r;
+  double y;
+  double c;
+  y = (double)(1.0f/__double2float_rn(b));	// 22bit estimate of reciprocal, limits range to float range, but spares the exponent extraction
+  c = 1.0 - b*y;
+  y += y*c;	 // first Newton iteration => 44bit accurate
+  r = a*y;	 // second iteration works directly on a/b, so it is effectively
+  c = a - b*r;	 // a Newton-Markstein iteration without guaranteed round to nearest
+  return(r + y*c);// should be generally accurate to 1 ulp, i.e "faithful rounding" (or close to it, depending on definition)
+}// on a GT200 should be round to nearest most of the time, albeit not guaranteed
+// one would have to add a second Newton iteration before the Markstein rounding step,
+// but one looses the gained half bit of precision in the following additions, so the added effort doesn't make sense
+
+// 11 DP ops including 2 conversions + 1 SP rsqrt, a count of 10 flops may be adequate
+__device__ double fsqrtd(double y)	// accurate to 1 ulp, i.e the last bit of the double precision number
+{	// cuts some corners on the numbers range but is significantly faster, employs "faithful rounding"
+  double x, res;
+  x = (double)rsqrtf((float)y);	// 22bit estimate for reciprocal square root, limits range to float range, but spares the exponent extraction
+  x = x * (3.0 - y*(x*x));	// first Newton iteration (44bit accurate)
+  res = x * y;	// do final iteration directly on sqrt(y) and not on the inverse
+  return(res * (0.75 - 0.0625*(res*x)));
+}	// same precision as division (1 ulp)
+
 
 template <unsigned int number_streams, unsigned int convolve> 
 __global__ void gpu__integral_kernel3(	int mu_offset, int mu_steps,
@@ -223,12 +249,93 @@ __global__ void gpu__integral_kernel3(	int mu_offset, int mu_steps,
     xyz0 = tex2D_double(tex_r_point,i,in_step) * 
       cosb_x_cosl - d_lbr_r;
     xyz1 = tex2D_double(tex_r_point,i,in_step) * 
+      cosb_x_sinl;
+    
+    rg = fsqrtd(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) * q_squared_inverse);
+    rs = rg + r0;
+    
+    bg_int += divd(tex2D_double(tex_qw_r3_N,i,in_step) , (rg * rs * rs * rs));
+    
+    for (int j = 0; j < number_streams; j++) {
+      double dotted, sxyz0, sxyz1, sxyz2;
+      sxyz0 = xyz0 - tex2D_double(tex_fstream_c, 0, j);
+      sxyz1 = xyz1 - tex2D_double(tex_fstream_c, 1, j);
+      sxyz2 = xyz2 - tex2D_double(tex_fstream_c, 2, j);
+      
+      dotted = tex2D_double(tex_fstream_a, 0,j) * sxyz0 
+      	+ tex2D_double(tex_fstream_a, 1, j) * sxyz1
+      	+ tex2D_double(tex_fstream_a, 2, j) * sxyz2;
+      
+      sxyz0 -= dotted * tex2D_double(tex_fstream_a, 0, j);
+      sxyz1 -= dotted * tex2D_double(tex_fstream_a, 1, j);
+      sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, j);
+      
+      double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
+      double result = (tex2D_double(tex_qw_r3_N,i,in_step) 
+      	       * exp(-(xyz_norm) * constant__inverse_fstream_sigma_sq2[j]));
+      st_int[j * blockDim.x + threadIdx.x] += result;
+    }
+  }
+  
+  //define V down here so that one to reduce the number of registers, because a register
+  //will be reused
+  int nu_step = (threadIdx.x + (blockDim.x * (blockIdx.x + mu_offset))) % nu_steps;
+  double V = device__V[nu_step + (in_step * nu_steps)];
+  int pos = threadIdx.x + (blockDim.x * (blockIdx.x + mu_offset));
+  background_integrals[pos] += (bg_int * V);
+  for (int i = 0; i < number_streams; i++) {
+    stream_integrals[pos] += st_int[i * blockDim.x + threadIdx.x] * V;
+    pos += (nu_steps * mu_steps);
+  }
+    
+}
+
+template <unsigned int number_streams, unsigned int convolve> 
+__global__ void gpu__integral_kernel3_aux(int mu_offset, int mu_steps,
+					  int in_step, int in_steps,
+					  int nu_steps,
+					  double q_squared_inverse, double r0,
+					  double bg_a, double bg_b, double bg_c,
+					  double *device__sinb,
+					  double *device__sinl,
+					  double *device__cosb,
+					  double *device__cosl,
+					  double *device__V,
+					  double *background_integrals,
+					  double *stream_integrals) {
+  double *st_int = shared_mem;
+  double bg_int = 0.0;
+  for (int i = 0; i < number_streams; i++) {
+    st_int[i * blockDim.x + threadIdx.x] = 0.0;
+  }
+
+  double sinb = device__sinb[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
+  double sinl = device__sinl[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
+  double cosb = device__cosb[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
+  double cosl = device__cosl[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
+
+  double cosb_x_cosl = cosb * cosl;
+  double cosb_x_sinl = cosb * sinl;
+
+  for (int i = 0; i < convolve; i++) {
+    double xyz0, xyz1, xyz2;
+    double rs, rg;
+    xyz2 =  tex2D_double(tex_r_point,i,in_step) * 
+      sinb;
+    
+    xyz0 = tex2D_double(tex_r_point,i,in_step) * 
+      cosb_x_cosl - d_lbr_r;
+    xyz1 = tex2D_double(tex_r_point,i,in_step) * 
     cosb_x_sinl;
     
     rg = sqrt(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) * q_squared_inverse);
     rs = rg + r0;
     
-    bg_int += (tex2D_double(tex_qw_r3_N,i,in_step) / (rg * rs * rs * rs));
+    double r_in_mag = 4.2 + 5 * (log10(1000 * tex2D_double(tex_r_point,i,in_step)) - 1);
+    double h_prob = tex2D_double(tex_qw_r3_N,i,in_step) / (rg * rs * rs * rs);
+    double aux_prob = tex2D_double(tex_qw_r3_N,i,in_step) * 
+      (bg_a * r_in_mag * r_in_mag + bg_b * r_in_mag + bg_c);
+    bg_int += h_prob + aux_prob;
     
     for (int j = 0; j < number_streams; j++) {
       double dotted, sxyz0, sxyz1, sxyz2;
