@@ -204,7 +204,7 @@ void worker() {
 			nu_step_size[i] = ap->integral[i]->nu_step_size;
 		}
 		init_constants(ap);
-		gpu__initialize(ap->sgr_coordinates, ap->wedge, ap->convolve, ap->number_streams, ap->number_integrals,
+		gpu__initialize(ap->sgr_coordinates, ap->aux_bg_profile, ap->wedge, ap->convolve, ap->number_streams, ap->number_integrals,
 				r_steps, r_min, r_step_size,
 				mu_steps, mu_min, mu_step_size,
 				nu_steps, nu_min, nu_step_size,
@@ -311,4 +311,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.19 2009/09/07 02:01:37 watera2 Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.20 2009/11/03 15:15:34 watera2 Exp $";
