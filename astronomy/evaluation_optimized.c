@@ -229,8 +229,10 @@ void calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp
                 h_prob = qw_r3_N[i] / (rg * rs * rs * rs);
                 aux_prob = qw_r3_N[i] * ( bg_a * r_in_mag * r_in_mag + bg_b * r_in_mag + bg_c );
 		(*bg_prob) += h_prob + aux_prob;
-        } else {
+        } else if (ap->aux_bg_profile == 0) {
                 (*bg_prob) += qw_r3_N[i] / (rg * rs * rs * rs);
+        } else {
+                printf("Error: aux_bg_profile invalid");
         }
 
 //vickej2_bg end edits
