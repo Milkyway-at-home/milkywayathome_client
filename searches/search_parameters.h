@@ -40,6 +40,9 @@ typedef struct search_parameters {
 
 void free_search_parameters(SEARCH_PARAMETERS *parameters);
 void init_search_parameters(SEARCH_PARAMETERS **p, int number_parameters);
+
+void copy_search_parameters__alloc(SEARCH_PARAMETERS *source, SEARCH_PARAMETERS **destination);
+void copy_search_parameters__no_alloc(SEARCH_PARAMETERS *source, SEARCH_PARAMETERS *destination);
 void set_search_parameters(SEARCH_PARAMETERS *p, char *search_name, int number_parameters, double* parameters, char* metadata, int hostid);
 
 int fread_metadata(FILE *file, char *metadata);

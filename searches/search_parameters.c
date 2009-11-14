@@ -73,6 +73,17 @@ void init_search_parameters(SEARCH_PARAMETERS **p, int number_parameters) {
 	memset((*p)->app_version, '\0', 128);
 }
 
+void copy_search_parameters__alloc(SEARCH_PARAMETERS *source, SEARCH_PARAMETERS **destination) {
+	(*destination) = (SEARCH_PARAMETERS*)malloc(sizeof(SEARCH_PARAMETERS));
+	set_search_parameters((*destination), source->search_name, source->number_parameters, source->parameters, source->metadata, source->hostid);
+	(*destination)->fitness = source->fitness;
+}
+
+void copy_search_parameters__no_alloc(SEARCH_PARAMETERS *source, SEARCH_PARAMETERS *destination) {
+	set_search_parameters(destination, source->search_name, source->number_parameters, source->parameters, source->metadata, source->hostid);
+	destination->fitness = source->fitness;
+}
+
 void set_search_parameters(SEARCH_PARAMETERS *p, char *search_name, int number_parameters, double* parameters, char* metadata, int hostid) {
 	strcpy(p->search_name, search_name);
 	strcpy(p->metadata, metadata);

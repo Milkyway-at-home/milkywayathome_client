@@ -35,6 +35,7 @@
 typedef struct genetic_search {
 	int current_evaluation;
 	int number_parameters;
+	int validation;
 
 	double mutation_rate;
 

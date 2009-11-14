@@ -34,6 +34,7 @@ typedef struct particle_swarm_optimization {
 	int number_parameters;
 	double w, c0, c1, c2;
 	long analyzed;
+	int validation;
 
 	BOUNDS *bounds;
 

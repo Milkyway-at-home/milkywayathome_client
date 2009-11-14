@@ -33,10 +33,11 @@ SEARCH_OBJS = \
 	$(SEARCH_DIR)/search_parameters.o \
 	$(SEARCH_DIR)/synchronous_gradient_descent.o \
 	$(SEARCH_DIR)/synchronous_newton_method.o \
-	$(SEARCH_DIR)/asynchronous_search.o \
 	$(SEARCH_DIR)/asynchronous_differential_evolution.o \
 	$(SEARCH_DIR)/asynchronous_genetic_search.o \
-	$(SEARCH_DIR)/asynchronous_particle_swarm.o
+	$(SEARCH_DIR)/asynchronous_particle_swarm.o \
+	$(SEARCH_DIR)/simulated_search.o \
+	$(SEARCH_DIR)/simulation_heap.o
 UTIL_OBJS = \
 	$(UTIL_DIR)/io_util.o \
 	$(UTIL_DIR)/matrix.o \

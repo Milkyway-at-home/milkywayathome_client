@@ -75,12 +75,14 @@ int create_particle_swarm(char* search_name, int number_arguments, char** argume
 	pso->c2 = 2.0;
 	pso->size = 50;
 	pso->number_parameters = number_parameters;
+	pso->validation = 1;
 
 	printf("number_arguments: %d\n", number_arguments);
 	for (i = 0; i < number_arguments; i++) {
 		printf("argument[%d]: %s\n", i, arguments[i]);
 
 		if (!strcmp(arguments[i], "-pso_size")) pso->size = atoi(arguments[++i]);
+		else if (!strcmp(arguments[i], "-no_validation")) pso->validation = 0;
 		else if (!strcmp(arguments[i], "-w")) pso->w = atof(arguments[++i]);
 		else if (!strcmp(arguments[i], "-c0")) pso->c0 = atof(arguments[++i]);
 		else if (!strcmp(arguments[i], "-c1")) pso->c1 = atof(arguments[++i]);
@@ -109,8 +111,10 @@ int create_particle_swarm(char* search_name, int number_arguments, char** argume
 
 	pso->bounds = bounds;
 
-	printf("initializing redundancies\n");
-	initialize_redundancies(pso->size, redundancy_rate, &(pso->redundancies));
+	if (pso->validation) {
+		printf("initializing redundancies\n");
+		initialize_redundancies(pso->size, redundancy_rate, &(pso->redundancies));
+	}
 
 	sprintf(search_directory, "%s/%s", get_working_directory(), search_name);
 	printf("making directory: %s\n", search_directory);
@@ -132,6 +136,7 @@ int write_particle_swarm(char* search_name, void* search_data) {
 	fprintf(search_file, "w: %lf, c0: %lf, c1: %lf, c2: %lf\n", pso->w, pso->c0, pso->c1, pso->c2);
 	fprintf(search_file, "analyzed: %ld\n", pso->analyzed);
 	fprintf(search_file, "number_parameters: %d\n", pso->number_parameters); 
+	fprintf(search_file, "validation: %d\n", pso->validation);
 
 	fwrite_bounds(search_file, pso->bounds);
 
@@ -139,8 +144,10 @@ int write_particle_swarm(char* search_name, void* search_data) {
 	fwrite_double_array(search_file, "global_best", pso->number_parameters, pso->global_best);
 	fclose(search_file);
 
-	sprintf(population_filename, "%s/%s/redundancies", get_working_directory(), search_name);
-	if (0 > write_redundancies(population_filename, pso->redundancies)) return AS_CP_ERROR;
+	if (pso->validation) {
+		sprintf(population_filename, "%s/%s/redundancies", get_working_directory(), search_name);
+		if (0 > write_redundancies(population_filename, pso->redundancies)) return AS_CP_ERROR;
+	}
 
 	sprintf(population_filename, "%s/%s/particles", get_working_directory(), search_name);
 	if (0 > write_population(population_filename, pso->particles)) return AS_CP_ERROR;
@@ -170,6 +177,7 @@ int read_particle_swarm(char* search_name, void** search_data) {
 	fscanf(search_file, "w: %lf, c0: %lf, c1: %lf, c2: %lf\n", &(pso->w), &(pso->c0), &(pso->c1), &(pso->c2));
 	fscanf(search_file, "analyzed: %ld\n", &(pso->analyzed));
 	fscanf(search_file, "number_parameters: %d\n", &(pso->number_parameters));
+	fscanf(search_file, "validation: %d\n", &(pso->validation));
 
 	fread_bounds(search_file, &(pso->bounds));
 
@@ -177,8 +185,10 @@ int read_particle_swarm(char* search_name, void** search_data) {
 	fread_double_array(search_file, "global_best", &(pso->global_best));
 	fclose(search_file);
 
-	sprintf(population_filename, "%s/%s/redundancies", get_working_directory(), search_name);
-	if (0 > read_redundancies(population_filename, &(pso->redundancies)) ) return AS_READ_ERROR;
+	if (pso->validation) {
+		sprintf(population_filename, "%s/%s/redundancies", get_working_directory(), search_name);
+		if (0 > read_redundancies(population_filename, &(pso->redundancies)) ) return AS_READ_ERROR;
+	}
 
 	sprintf(population_filename, "%s/%s/particles", get_working_directory(), search_name);
 	if (0 > read_population(population_filename, &(pso->particles)) ) return AS_READ_ERROR;
@@ -198,7 +208,7 @@ int pso_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMET
 	PARTICLE_SWARM_OPTIMIZATION *pso = (PARTICLE_SWARM_OPTIMIZATION*)search_data;
 	int i;
 
-	if (generate_redundancy(pso->redundancies, sp->number_parameters, sp->parameters, sp->metadata)) {
+	if (pso->validation && generate_redundancy(pso->redundancies, sp->number_parameters, sp->parameters, sp->metadata)) {
 		sprintf(strchr(sp->metadata, 0), ", redundancy");
 	} else if (!individual_exists(pso->local_best, pso->current_particle)) {
 		/********
@@ -309,22 +319,28 @@ int pso_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETER
 
 	if (!population_contains(pso->local_best, sp->fitness, sp->parameters)) {
 		if (!individual_exists(pso->local_best, particle) || sp->fitness > pso->local_best->fitness[particle]) {
-			verify_result = verify_with_insert(pso->redundancies, sp->number_parameters, sp->fitness, sp->parameters, sp->metadata, sp->hostid);
-			if (verify_result == VERIFY_VALID) {
-				insert_particle(search_name, pso, particle, velocity, sp);
-			} else {
-				if (!individual_exists(pso->local_best, particle)) { 
-					if (pso->local_best->size == 0) {
-						sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, verifying", particle, sp->fitness, 0.0, 0.0);
-					} else {
-						sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, verifying", particle, sp->fitness, 0.0, pso->global_best_fitness);
-					}
+			if (pso->validation) {
+				verify_result = verify_with_insert(pso->redundancies, sp->number_parameters, sp->fitness, sp->parameters, sp->metadata, sp->hostid);
+				if (verify_result == VERIFY_VALID) {
+					insert_particle(search_name, pso, particle, velocity, sp);
 				} else {
-					sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, verifying", particle, sp->fitness, pso->local_best->fitness[particle], pso->global_best_fitness);
+					if (!individual_exists(pso->local_best, particle)) { 
+						if (pso->local_best->size == 0) {
+							sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, verifying", particle, sp->fitness, 0.0, 0.0);
+						} else {
+							sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, verifying", particle, sp->fitness, 0.0, pso->global_best_fitness);
+						}
+					} else {
+						sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, verifying", particle, sp->fitness, pso->local_best->fitness[particle], pso->global_best_fitness);
+					}
 				}
+			} else {
+				insert_particle(search_name, pso, particle, velocity, sp);
 			}
 		} else {
-			verify_without_insert(pso->redundancies, pso->number_parameters, sp->fitness, sp->parameters, sp->metadata, sp->hostid);
+			if (pso->validation) {
+				verify_without_insert(pso->redundancies, pso->number_parameters, sp->fitness, sp->parameters, sp->metadata, sp->hostid);
+			}
 			sprintf(AS_MSG, "p[%d]: %.15lf, l: %.15lf, g: %.15lf, low fitness", particle, sp->fitness, pso->local_best->fitness[particle], pso->global_best_fitness);
 		}
 	} else {

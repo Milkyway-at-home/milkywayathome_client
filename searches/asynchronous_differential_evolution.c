@@ -80,8 +80,11 @@ int create_differential_evolution(char* search_name, int number_arguments, char*
 	de->bounds = bounds;
 	de->number_parameters = number_parameters;
 
+	de->validation = 1;
+
 	for (i = 0; i < number_arguments; i++) {
 		if (!strcmp(arguments[i], "-population_size")) de->population_size = atoi(arguments[++i]);
+		else if (!strcmp(arguments[i], "-no_validation")) de->validation = 0;
 		else if (!strcmp(arguments[i], "-redundancy_rate")) redundancy_rate = atof(arguments[++i]);
 		else if (!strcmp(arguments[i], "-pair_weight")) de->pair_weight = atof(arguments[++i]);
 		else if (!strcmp(arguments[i], "-crossover_rate")) de->crossover_rate = atof(arguments[++i]);
@@ -116,8 +119,10 @@ int create_differential_evolution(char* search_name, int number_arguments, char*
 	new_population(de->population_size, de->number_parameters, &(de->population));
 	for (i = 0; i < de->population_size; i++) de->population->fitness[i] = 0;
 
-	printf("initializing redundancies, rate: %lf (1.0 == dynamic rate)\n", redundancy_rate);
-	initialize_redundancies(de->population_size, redundancy_rate, &(de->redundancies));
+	if (de->validation) {
+		printf("initializing redundancies, rate: %lf (1.0 == dynamic rate)\n", redundancy_rate);
+		initialize_redundancies(de->population_size, redundancy_rate, &(de->redundancies));
+	}
 
 	sprintf(search_directory, "%s/%s", get_working_directory(), search_name);
 	printf("making directory: %s\n", search_directory);
@@ -137,6 +142,7 @@ int write_differential_evolution(char* search_name, void* search_data) {
 
 	fprintf(search_file, "population_size: %d, number_parameters: %d\n", de->population_size, de->number_parameters);
 	fprintf(search_file, "analyzed: %d, current_individual: %d\n", de->analyzed, de->current_individual);
+	fprintf(search_file, "validation: %d\n", de->validation);
 	fprintf(search_file, "parent_type: %d\n", de->parent_type);
 	fprintf(search_file, "pair_weight: %.15lf, crossover_rate: %.15lf, recombination_pairs: %d, recombination_type: %d\n", de->pair_weight, de->crossover_rate, de->recombination_pairs, de->recombination_type);
 
@@ -147,8 +153,10 @@ int write_differential_evolution(char* search_name, void* search_data) {
 
 	fclose(search_file);
 
-	sprintf(population_filename, "%s/%s/redundancies", get_working_directory(), search_name);
-	if (0 > write_redundancies(population_filename, de->redundancies)) return AS_CP_ERROR;
+	if (de->validation) {
+		sprintf(population_filename, "%s/%s/redundancies", get_working_directory(), search_name);
+		if (0 > write_redundancies(population_filename, de->redundancies)) return AS_CP_ERROR;
+	}
 
 	sprintf(population_filename, "%s/%s/population", get_working_directory(), search_name);
 	if (0 > write_population(population_filename, de->population)) return AS_CP_ERROR;
@@ -170,6 +178,7 @@ int read_differential_evolution(char* search_name, void** search_data) {
 
 	fscanf(search_file, "population_size: %d, number_parameters: %d\n", &(de->population_size), &(de->number_parameters));
 	fscanf(search_file, "analyzed: %d, current_individual: %d\n", &(de->analyzed), &(de->current_individual));
+	fscanf(search_file, "validation: %d\n", &(de->validation));
 	fscanf(search_file, "parent_type: %d\n", &(de->parent_type));
 	fscanf(search_file, "pair_weight: %lf, crossover_rate: %lf, recombination_pairs: %d, recombination_type: %d\n", &(de->pair_weight), &(de->crossover_rate), &(de->recombination_pairs), &(de->recombination_type));
 
@@ -180,8 +189,10 @@ int read_differential_evolution(char* search_name, void** search_data) {
 
 	fclose(search_file);
 
-	sprintf(population_filename, "%s/%s/redundancies", get_working_directory(), search_name);
-	if (0 > read_redundancies(population_filename, &(de->redundancies)) ) return AS_READ_ERROR;
+	if (de->validation) {
+		sprintf(population_filename, "%s/%s/redundancies", get_working_directory(), search_name);
+		if (0 > read_redundancies(population_filename, &(de->redundancies)) ) return AS_READ_ERROR;
+	}
 
 	sprintf(population_filename, "%s/%s/population", get_working_directory(), search_name);
 	if (0 > read_population(population_filename, &(de->population)) ) return AS_READ_ERROR;
@@ -194,7 +205,7 @@ int read_differential_evolution(char* search_name, void** search_data) {
 int de_generate_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS* sp) {
 	DIFFERENTIAL_EVOLUTION *de = (DIFFERENTIAL_EVOLUTION*)search_data;
 
-	if (generate_redundancy(de->redundancies, sp->number_parameters, sp->parameters, sp->metadata)) {
+	if (de->validation && generate_redundancy(de->redundancies, sp->number_parameters, sp->parameters, sp->metadata)) {
 		sprintf(strchr(sp->metadata, 0), ", redundancy");
 	} else if (de->population->size < de->population_size) {
 		random_recombination(de->number_parameters, de->bounds->min_bound, de->bounds->max_bound, sp->parameters);
@@ -280,8 +291,40 @@ int de_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS
 
 	if (!population_contains(de->population, sp->fitness, sp->parameters)) {
 		if (!individual_exists(de->population, position) || sp->fitness > de->population->fitness[position]) {
-			verify_result = verify_with_insert(de->redundancies, sp->number_parameters, sp->fitness, sp->parameters, sp->metadata, sp->hostid);
-			if (verify_result == VERIFY_VALID) {
+			if (de->validation) {
+				verify_result = verify_with_insert(de->redundancies, sp->number_parameters, sp->fitness, sp->parameters, sp->metadata, sp->hostid);
+				if (verify_result == VERIFY_VALID) {
+				        double previous, best, average, median, worst, deviation;
+
+					if (!individual_exists(de->population, position)) previous = 0;
+					else previous = de->population->fitness[position];
+
+					insert_individual_info(de->population, position, sp->parameters, sp->fitness, sp->host_os, sp->app_version);
+
+					get_population_statistics(de->population, &best, &average, &median, &worst, &deviation);
+					if (sp->fitness > de->best_individual_fitness) {
+						de->best_individual_fitness = sp->fitness;
+						de->best_individual_position = position;
+						memcpy(de->best_individual, sp->parameters, sizeof(double) * de->number_parameters);
+						sprintf(AS_MSG, "i[%d]: %.15lf, l: %.15lf, g: %.15lf, global best", position, sp->fitness, previous, de->best_individual_fitness);
+						log_printf(search_name, "%ld -- b: %.15lf, a: %.15lf, m: %.15lf, w: %.15lf, d: %.15lf, global best\n", de->analyzed, best, average, median, worst, deviation);
+					} else {
+						sprintf(AS_MSG, "i[%d]: %.15lf, l: %.15lf, g: %.15lf, local best", position, sp->fitness, previous, de->best_individual_fitness);
+						log_printf(search_name, "%ld -- b: %.15lf, a: %.15lf, m: %.15lf, w: %.15lf, d: %.15lf, local best\n", de->analyzed, best, average, median, worst, deviation);
+					}
+					write_differential_evolution(search_name, de);
+				} else {
+					if (!individual_exists(de->population, position)) { 
+						if (de->population->size == 0) {
+							sprintf(AS_MSG, "i[%d]: %.15lf, l: %.15lf, g: %.15lf, verifying", position, sp->fitness, 0.0, 0.0);
+						} else {
+							sprintf(AS_MSG, "i[%d]: %.15lf, l: %.15lf, g: %.15lf, verifying", position, sp->fitness, 0.0, de->best_individual_fitness);
+						}
+					} else {
+						sprintf(AS_MSG, "i[%d]: %.15lf, l: %.15lf, g: %.15lf, verifying", position, sp->fitness, de->population->fitness[position], de->best_individual_fitness);
+					}
+				}
+			} else {
 			        double previous, best, average, median, worst, deviation;
 
 				if (!individual_exists(de->population, position)) previous = 0;
@@ -301,19 +344,11 @@ int de_insert_parameters(char* search_name, void* search_data, SEARCH_PARAMETERS
 					log_printf(search_name, "%ld -- b: %.15lf, a: %.15lf, m: %.15lf, w: %.15lf, d: %.15lf, local best\n", de->analyzed, best, average, median, worst, deviation);
 				}
 				write_differential_evolution(search_name, de);
-			} else {
-				if (!individual_exists(de->population, position)) { 
-					if (de->population->size == 0) {
-						sprintf(AS_MSG, "i[%d]: %.15lf, l: %.15lf, g: %.15lf, verifying", position, sp->fitness, 0.0, 0.0);
-					} else {
-						sprintf(AS_MSG, "i[%d]: %.15lf, l: %.15lf, g: %.15lf, verifying", position, sp->fitness, 0.0, de->best_individual_fitness);
-					}
-				} else {
-					sprintf(AS_MSG, "i[%d]: %.15lf, l: %.15lf, g: %.15lf, verifying", position, sp->fitness, de->population->fitness[position], de->best_individual_fitness);
-				}
 			}
 		} else {
-			verify_without_insert(de->redundancies, de->number_parameters, sp->fitness, sp->parameters, sp->metadata, sp->hostid);
+			if (de->validation) {
+				verify_without_insert(de->redundancies, de->number_parameters, sp->fitness, sp->parameters, sp->metadata, sp->hostid);
+			}
 			sprintf(AS_MSG, "i[%d]: %.15lf, l: %.15lf, g: %.15lf, low fitness", position, sp->fitness, de->population->fitness[position], de->best_individual_fitness);
 		}
 	} else {

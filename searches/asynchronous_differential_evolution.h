@@ -42,6 +42,7 @@ typedef struct differential_evolution {
 	int recombination_type, recombination_pairs;
 	int parent_type;
 
+	int validation;
 	int current_individual, analyzed;
 	int number_parameters;
 
