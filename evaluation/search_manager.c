@@ -63,8 +63,8 @@ ASYNCHRONOUS_SEARCH **registered_searches;
 
 void print_registered_searches() {
 	int i;
-	fprintf(stderr, "registered searches: \n");
-	for (i = 0; i < number_registered_searches; i++) fprintf(stderr, "\t%s\n", registered_searches[i]->search_qualifier);
+//	fprintf(stderr, "registered searches: \n");
+//	for (i = 0; i < number_registered_searches; i++) fprintf(stderr, "\t%s\n", registered_searches[i]->search_qualifier);
 }
 
 int get_registered_search_pos(char* search_qualifier) {
@@ -104,8 +104,8 @@ void register_search(ASYNCHRONOUS_SEARCH *as) {
 	} else {
 		fprintf(stderr, "ERROR registering search %s, already known.\n", as->search_qualifier);
 	}
-	fprintf(stderr, "registered searches: \n");
-	for (i = 0; i < number_registered_searches; i++) fprintf(stderr, "\t%s\n", registered_searches[i]->search_qualifier);
+//	fprintf(stderr, "registered searches: \n");
+//	for (i = 0; i < number_registered_searches; i++) fprintf(stderr, "\t%s\n", registered_searches[i]->search_qualifier);
 }
 
 

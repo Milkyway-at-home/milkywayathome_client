@@ -470,11 +470,11 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 			continue;
 		}
 
-		if ((NULL == strstr(insert_sp->app_version, "gpu") && NULL == strstr(insert_sp->app_version, "GPU")) && result.cpu_time < 900) {
+		if ((NULL == strstr(insert_sp->app_version, "gpu") && NULL == strstr(insert_sp->app_version, "GPU")) && result.cpu_time < 600) {
 			credit = update_workunit(validator, AS_VERIFY_INVALID, result, wu);
 			print_message(search_name, "invalid CPU time", "", "invalid", result.app_version_num, insert_sp->app_version, "?", credit, result);
 			continue;
-//		} else if (result.cpu_time < 40) {
+//		} else if (result.cpu_time < 10) {
 //			credit = update_workunit(validator, AS_VERIFY_INVALID, result, wu);
 //			print_message(search_name, "invalid GPU time", "", "invalid", result.app_version_num, insert_sp->app_version, "?", credit, result);
 //			continue;

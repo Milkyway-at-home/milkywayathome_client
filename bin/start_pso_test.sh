@@ -1,1 +1,1 @@
-sudo -u boinc ./milkyway_start_search -app milkyway -cwd /export/www/boinc/milkyway/results/milkyway -mw_stars $1 -mw_parameters $2 -s $3 -pso_size 50 -w 0.6 -c0 1.0 -c1 2.0 -c2 2.0 -redundancy_rate $4 -gen 100
+sudo -u boinc ./milkyway_start_search -app milkyway -cwd /export/www/boinc/milkyway/results/milkyway -mw_stars $1 -mw_parameters $2 -s $3 -population_size 200 -w 0.6 -c0 1.0 -c1 2.0 -c2 2.0 -redundancy_rate $4 -gen 100 -no_redundancy
