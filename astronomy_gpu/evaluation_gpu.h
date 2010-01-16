@@ -29,7 +29,7 @@
 #include "../astronomy/parameters.h"
 
 int choose_gpu(int argc, char **argv);
-void gpu__initialize(	int ap_sgr_coordinates, int ap_wedge, int ap_convolve, int ap_number_streams, int ap_number_integrals, 
+void gpu__initialize(	int ap_sgr_coordinates, int ap_aux_bg_profile, int ap_wedge, int ap_convolve, int ap_number_streams, int ap_number_integrals, 
 			int *in__r_steps, double *r_min, double *r_step_size,
 			int *in__mu_steps, double *mu_min, double *mu_step_size,
 			int *in__nu_steps, double *nu_min, double *nu_step_size,

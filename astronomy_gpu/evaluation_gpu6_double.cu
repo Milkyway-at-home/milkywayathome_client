@@ -1,3 +1,4 @@
+
 /*
 Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
 Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
@@ -84,11 +85,12 @@ void setup_constant_textures(double *fstream_a, double *fstream_c,
   cudaArray* cu_array_c;
   cutilSafeCall(cudaMallocArray(&cu_array_c, &channelDesc, 3, number_streams)); 
   int2 *fstream_c_data = convert(fstream_c, number_streams * 3);
-  cutilSafeCall(cudaMemcpyToArray(cu_array_c, 0, 0, fstream_c_data, 3*number_streams  * sizeof(double), cudaMemcpyHostToDevice));
+  cutilSafeCall(cudaMemcpyToArray(cu_array_c, 0, 0, fstream_c_data, 3*number_streams  * sizeof(int2), cudaMemcpyHostToDevice));
 
   cudaArray* cu_array_sq2;
-  cutilSafeCall(cudaMallocArray(&cu_array_sq2, &channelDesc, 2, number_streams)); 
-  cutilSafeCall(cudaMemcpyToArray(cu_array_sq2, 0, 0, fstream_sigma_sq2, 2*number_streams  * sizeof(double), cudaMemcpyHostToDevice));
+  cutilSafeCall(cudaMallocArray(&cu_array_sq2, &channelDesc, 1, number_streams)); 
+  int2 *fstream_sigma_sq2_data = convert(fstream_sigma_sq2, number_streams);
+  cutilSafeCall(cudaMemcpyToArray(cu_array_sq2, 0, 0, fstream_sigma_sq2_data, number_streams  * sizeof(int2), cudaMemcpyHostToDevice));
   
   // set texture parameters
   tex_fstream_a.addressMode[0] = cudaAddressModeClamp;
@@ -113,6 +115,7 @@ void setup_constant_textures(double *fstream_a, double *fstream_c,
 
   free(fstream_a_data);
   free(fstream_c_data);
+  free(fstream_sigma_sq2_data);
 }
 
 void setup_r_point_texture(int r_steps, int convolve, int current_integral, double **r_point)
@@ -214,6 +217,23 @@ __device__ double fsqrtd(double y)	// accurate to 1 ulp, i.e the last bit of the
 }	// same precision as division (1 ulp)
 
 
+double __device__ est_exp(double x)
+{
+  return 1 + (
+	      (x) +
+	      (x * x)/2 +
+	      (x * x * x)/6 +
+	      (x * x * x * x)/24 +
+	      (x * x * x * x * x)/120 +
+	      (x * x * x * x * x * x)/720 +
+	      (x * x * x * x * x * x * x)/5040 +
+	      (x * x * x * x * x * x * x * x)/40320 +
+	      (x * x * x * x * x * x * x * x * x)/362880 + 
+	      (x * x * x * x * x * x * x * x * x * x)/3628800 +
+	      (x * x * x * x * x * x * x * x * x * x * x)/39916800)
+    ;
+}
+
 template <unsigned int number_streams, unsigned int convolve> 
 __global__ void gpu__integral_kernel3(	int mu_offset, int mu_steps,
 					int in_step, int in_steps,
@@ -243,14 +263,10 @@ __global__ void gpu__integral_kernel3(	int mu_offset, int mu_steps,
   for (int i = 0; i < convolve; i++) {
     double xyz0, xyz1, xyz2;
     double rs, rg;
-    xyz2 =  tex2D_double(tex_r_point,i,in_step) * 
-      sinb;
-    
-    xyz0 = tex2D_double(tex_r_point,i,in_step) * 
-      cosb_x_cosl - d_lbr_r;
-    xyz1 = tex2D_double(tex_r_point,i,in_step) * 
-      cosb_x_sinl;
-    
+    xyz2 = tex2D_double(tex_r_point,i,in_step) * sinb;
+    xyz0 = tex2D_double(tex_r_point,i,in_step) * cosb_x_cosl - d_lbr_r;
+    xyz1 = tex2D_double(tex_r_point,i,in_step) * cosb_x_sinl;
+
     rg = fsqrtd(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) * q_squared_inverse);
     rs = rg + r0;
     
@@ -261,7 +277,7 @@ __global__ void gpu__integral_kernel3(	int mu_offset, int mu_steps,
       sxyz0 = xyz0 - tex2D_double(tex_fstream_c, 0, j);
       sxyz1 = xyz1 - tex2D_double(tex_fstream_c, 1, j);
       sxyz2 = xyz2 - tex2D_double(tex_fstream_c, 2, j);
-      
+
       dotted = tex2D_double(tex_fstream_a, 0,j) * sxyz0 
       	+ tex2D_double(tex_fstream_a, 1, j) * sxyz1
       	+ tex2D_double(tex_fstream_a, 2, j) * sxyz2;
@@ -269,10 +285,10 @@ __global__ void gpu__integral_kernel3(	int mu_offset, int mu_steps,
       sxyz0 -= dotted * tex2D_double(tex_fstream_a, 0, j);
       sxyz1 -= dotted * tex2D_double(tex_fstream_a, 1, j);
       sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, j);
-      
+
       double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
       double result = (tex2D_double(tex_qw_r3_N,i,in_step) 
-      	       * exp(-(xyz_norm) * constant__inverse_fstream_sigma_sq2[j]));
+		       * exp(-(xyz_norm) * constant__inverse_fstream_sigma_sq2[j]));      
       st_int[j * blockDim.x + threadIdx.x] += result;
     }
   }

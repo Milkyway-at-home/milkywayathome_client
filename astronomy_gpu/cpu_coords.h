@@ -24,10 +24,11 @@
 
 #include "../astronomy/parameters.h"
 
-void populate_cpu__lb( int sgr_coordinates, int wedge,
-		       int mu_steps, double mu_min, double mu_step_size,
-		       int nu_steps, double nu_min, double nu_step_size,
-		       double **cpu__lb);
+
+void populate_lb(int sgr_coordinates, int wedge,
+		 int mu_steps, double mu_min, double mu_step_size,
+		 int nu_steps, double nu_min, double nu_step_size,
+		 double *sinb, double *sinl, double *cosb, double *cosl);
 
 void gc_eq_gal_lb(int wedge, double amu_rad, double anu_rad, double *cpu__lb);
 void gc_eq_gal(int wedge, double amu_rad, double anu_rad, double *glong, double *glat);
