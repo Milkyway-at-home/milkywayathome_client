@@ -61,7 +61,7 @@ typedef struct astronomy_parameters {
 
 	int convolve;
 	int sgr_coordinates;
-        int aux_bg_profile; //vickej2_bg	
+//        int aux_bg_profile; //vickej2_bg	
 	int wedge;
 
 	int number_integrals;
