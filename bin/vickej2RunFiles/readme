@@ -1,0 +1,35 @@
+
+run this line with the 'commented' version:
+mpirun -np 64 -machinefile vickej2RunFiles/machinefile ./mpi_astronomy -synch -stars vickej2RunFiles/stars.txt -parameters vickej2RunFiles/paramsMaster.txt -cgd -gd_reset 8 -gd_min_threshold 0.00001 -gd_iterations 200
+
+you should get an initial fitness of:
+iteration 0: current_fitness: -3.05071458369322412452
+This will converge in 112 iterations if you let it run.
+
+~~~~~
+now uncomment the noted lines in the 3 noted files:
+file: evaluation_optimized.c
+line 85, line 103-113, line 237-242, line 244-246
+
+file: parameters.c
+line 169, line 231
+
+file parameters.h
+line 64
+
+And run this line (with the now 'coded' version):
+mpirun -np 64 -machinefile vickej2RunFiles/machinefile ./mpi_astronomy -synch -stars vickej2RunFiles/stars.txt -parameters vickej2RunFiles/paramsMaster2.txt -cgd -gd_reset 8 -gd_min_threshold 0.00001 -gd_iterations 200
+
+you should get an initial fitness of:
+iteration 0: current_fitness: -3.05071458369322412452
+(which matches, hooray)
+~~~~~
+
+now turn the aux_bg_profile flag to 1 and run the 'coded' version with:
+mpirun -np 64 -machinefile vickej2RunFiles/machinefile ./mpi_astronomy -synch -stars vickej2RunFiles/stars.txt -parameters vickej2RunFiles/paramsMaster2.txt -cgd -gd_reset 8 -gd_min_threshold 0.00001 -gd_iterations 200
+
+you should get an initial fitness of:
+iteration 0: current_fitness: -3.05071458369322412452
+(another match, hooray)
+
+However, if you let the program continue to run, in under 100 iterations, stream 2 will progress to a nevative radius. Any clue why?
