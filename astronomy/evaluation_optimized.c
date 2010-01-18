@@ -100,7 +100,10 @@ void init_constants(ASTRONOMY_PARAMETERS *ap) {
 	r0	= ap->background_parameters[2];
 	delta	= ap->background_parameters[3];
 
-	if (ap->aux_bg_profile == 0) {	
+	if (ap->aux_bg_profile == 0) {
+                bg_a    = 0; 
+                bg_b    = 0; 
+                bg_c    = 0; 
         } else if (ap->aux_bg_profile == 1) {
         	bg_a    = ap->background_parameters[4]; //vickej2_bg
         	bg_b    = ap->background_parameters[5]; //vickej2_bg
@@ -109,11 +112,6 @@ void init_constants(ASTRONOMY_PARAMETERS *ap) {
 	        printf("Error: aux_bg_profile invalid");
         }
 	
-	bg_a    = ap->background_parameters[4]; //vickej2_bg
-       	bg_b    = ap->background_parameters[5]; //vickej2_bg
-	bg_c    = ap->background_parameters[6]; //vickej2_bg
-
-
 	coeff	= 1 / (stdev * sqrt(2*pi));
 	alpha_delta3 = 3 - alpha + delta;
 
