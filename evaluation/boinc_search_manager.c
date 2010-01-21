@@ -428,9 +428,14 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 			continue;
 		}
 
-		if (isnan(insert_sp->fitness) || insert_sp->fitness > -2) {
+		if (isnan(insert_sp->fitness)) {
 			credit = update_workunit(validator, AS_VERIFY_INVALID, result, wu);
-			print_message(search_name, "invalid fitness (nan or > -2)", "", "invalid", result.app_version_num, insert_sp->app_version, "?", credit, result);
+			print_message(search_name, "invalid fitness (nan)", "", "invalid", result.app_version_num, insert_sp->app_version, "?", credit, result);
+			continue;
+		}
+		if (insert_sp->fitness > -2.5) {
+			credit = update_workunit(validator, AS_VERIFY_INVALID, result, wu);
+			print_message(search_name, "invalid fitness > -2.5", "", "invalid", result.app_version_num, insert_sp->app_version, "?", credit, result);
 			continue;
 		}
 

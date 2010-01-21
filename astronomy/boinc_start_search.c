@@ -30,7 +30,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "../evaluation/boinc_search_manager.h"
 #include "../searches/asynchronous_newton_method.h"
 #include "../searches/asynchronous_differential_evolution.h"
-#include "../searches/asynchronous_particle_swarm.h"
+//#include "../searches/asynchronous_particle_swarm.h"
 #include "../searches/asynchronous_genetic_search.h"
 #include "../searches/bounds.h"
 #include "../searches/search_parameters.h"
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
 	printf("registering search\n");
 	register_search(get_asynchronous_newton_method());
 	register_search(get_asynchronous_differential_evolution());
-	register_search(get_asynchronous_particle_swarm());
+//	register_search(get_asynchronous_particle_swarm());
 	register_search(get_asynchronous_genetic_search());
 
 	astronomy_path = NULL;
@@ -228,6 +228,7 @@ int main(int argc, char** argv) {
 			printf("[start search] [%s] already existed at [%s]\n", star_path, wu_star_path);
 		}
 
+		printf("[start search] caluclating credit\n");
 		/********
 			*	Create workunit info
 		 ********/
@@ -236,6 +237,7 @@ int main(int argc, char** argv) {
 		double calc_prob_count = 0;
 //		double integral_flops = 0;
 		for (i = 0; i < ap->number_integrals; i++) {
+			printf("looping over number intergras: %d\n", ap->number_integrals);
 			calc_prob_count += ap->integral[i]->r_steps * ap->integral[i]->mu_steps * ap->integral[i]->nu_steps;
 //			integral_flops += ap->integral[i]->mu_steps * ap->integral[i]->r_steps * (5.0 + ap->integral[i]->nu_steps * (7.0 + 5.0 * ap->number_streams + ap->convolve * (35.0 + 52.0 * ap->number_streams)));
 		}
@@ -247,10 +249,10 @@ int main(int argc, char** argv) {
 		double multiplier = 5.4;
 		credit *= multiplier;
 
-		printf("awarded credit: %lf\n", credit);
+		printf("[start search] calculated awarded credit: %lf\n", credit);
 
 		wu_info->number_parameters = number_parameters;
-		printf("number parameters: %d\n", wu_info->number_parameters);
+		printf("[start search] number parameters: %d\n", wu_info->number_parameters);
 
 		wu_info->credit_str = (char*)malloc(sizeof(char) * 1024);
 		wu_info->result_xml_path = (char*)malloc(sizeof(char) * 1024);
@@ -279,7 +281,7 @@ int main(int argc, char** argv) {
 		wu_info->rsc_fpops_bound = wu_info->rsc_fpops_est * 100;
 		wu_info->rsc_memory_bound = 5e8;
 		wu_info->rsc_disk_bound = 15e6;                      //15 MB
-		wu_info->delay_bound = 60 * 60 * 24 * 5;             //5 days
+		wu_info->delay_bound = 60 * 60 * 24 * 8;             //8 days
 		wu_info->min_quorum = 1;
 		wu_info->target_nresults = 1;
 		wu_info->max_error_results = 0;

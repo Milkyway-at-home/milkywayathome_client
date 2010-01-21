@@ -1,11 +1,11 @@
-BOINC_DIR = /software/boinc-6.10.0-0
+BOINC_DIR = /export/www/boinc/milkyway/src
 MYSQL_DIR = /usr/local/include/mysql
 MT_DIR = ../../mersenne_twister
 
 CXX = CC
-CXXFLAGS = -g -O -I$(BOINC_DIR)/pkg/include/boinc -I$(BOINC_DIR)/pkg/share/boinc/src -I$(MYSQL_DIR) -DGMLE_BOINC -I/usr/local/include
-#CXXFLAGS = -g -I$(BOINC_DIR)/pkg/include/boinc -I$(BOINC_DIR)/pkg/share/boinc/src -I$(MYSQL_DIR) -DGMLE_BOINC -I/usr/local/include
-LDFLAGS = -g -L/usr/local/lib -L/usr/X11R6/lib
+CXXFLAGS = -g -O -I$(BOINC_DIR) -I$(BOINC_DIR)/db -I$(BOINC_DIR)/api -I$(BOINC_DIR)/lib -I$(BOINC_DIR)/tools -I$(BOINC_DIR)/sched -I$(MYSQL_DIR) -DGMLE_BOINC -I/usr/local/include
+LDFLAGS = -g -L$(BOINC_DIR)/lib -L$(BOINC_DIR)/sched -L/usr/X11R6/lib
+#-L/usr/local/lib
 MTFLAGS = -finline-functions -fomit-frame-pointer -fno-strict-aliasing --param max-inline-insns-single=1800 -DDSFMT_MEXP=19937
 
 LIBS = -lm -pthread -lsched -lboinc -lm -lboinc_crypt
@@ -22,9 +22,9 @@ UTIL_DIR = $(FGDO_DIR)/util
 SEARCH_OBJS = \
 	$(SEARCH_DIR)/search_parameters.o \
 	$(SEARCH_DIR)/asynchronous_search.o \
+	$(SEARCH_DIR)/asynchronous_particle_swarm.o \
 	$(SEARCH_DIR)/asynchronous_newton_method.o \
 	$(SEARCH_DIR)/asynchronous_differential_evolution.o \
-	$(SEARCH_DIR)/asynchronous_particle_swarm.o \
 	$(SEARCH_DIR)/asynchronous_genetic_search.o \
 	$(SEARCH_DIR)/bounds.o \
 	$(SEARCH_DIR)/newton_method.o \
@@ -36,6 +36,7 @@ SEARCH_OBJS = \
 	$(SEARCH_DIR)/recombination.o \
 	$(SEARCH_DIR)/redundancies.o \
 	$(SEARCH_DIR)/regression.o \
+	$(SEARCH_DIR)/validation.o \
 	$(SEARCH_DIR)/search_log.o
 SCHED_OBJS = \
 	$(SCHED_DIR)/boinc_add_workunit.o \
@@ -90,7 +91,7 @@ start: $(START_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(MTFLAGS) -o milkyway_start_search $(START_OBJS) $(LIBS) $(MYSQL) $(MT_C)
 
 purge: $(PURGE_OBJS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_purge $(PURGE_OBJS) -lsched -lboinc $(MYSQL) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o milkyway_purge $(PURGE_OBJS) $(MYSQL) $(LIBS)
 
 .C.o:
 	$(CXX) $(CXXFLAGS) -Wall -x c++ -c $< -o $@
