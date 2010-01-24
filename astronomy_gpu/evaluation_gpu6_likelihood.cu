@@ -1,11 +1,11 @@
 #ifndef SINGLE_PRECISION
 template <unsigned int number_streams>
-__global__ void gpu__likelihood_kernel(	int offset, int convolve,
-					GPU_PRECISION q_squared_inverse, GPU_PRECISION r0,
-					GPU_PRECISION coeff, 
-					GPU_PRECISION *device__stars,
-					int number_stars,
-					GPU_PRECISION *probability) {
+__global__ void gpu__likelihood_kernel(int offset, int convolve,
+				       GPU_PRECISION q_squared_inverse, GPU_PRECISION r0,
+				       GPU_PRECISION coeff, 
+				       GPU_PRECISION *device__stars,
+				       int number_stars,
+				       GPU_PRECISION *probability) {
 #else
   template <unsigned int number_streams>
     __global__ void gpu__likelihood_kernel(int offset, int convolve,
@@ -13,10 +13,11 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
 					   GPU_PRECISION coeff, 
 					   GPU_PRECISION *device__stars,
 					   int number_stars,
-					   GPU_PRECISION *probability, GPU_PRECISION *probability_correction) {
+					   GPU_PRECISION *probability, 
+					   GPU_PRECISION *probability_correction) {
 #endif
     int i;
-    int pos = (offset + threadIdx.x);
+    int pos = (offset + threadIdx.x + (blockDim.x * blockIdx.x));
     GPU_PRECISION sinb = device__stars[pos];
     GPU_PRECISION sinl = device__stars[pos + number_stars];
     GPU_PRECISION cosb = device__stars[pos + number_stars*2];
@@ -56,7 +57,7 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
 #endif
 
     for (i = 0; i < convolve; i++) {
-      g = gPrime + constant__dx[i];
+      g = gPrime + constant_dx[i];
 #ifdef SINGLE_PRECISION
       r_point = pow(10.0f, (g - f_absm)/5.0f + 1.0f) / 1000.0f;
 #else
@@ -64,7 +65,7 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
 #endif
       rPrime3 = r_point * r_point * r_point;
 
-      qw_r3_N = constant__qgaus_W[i] * rPrime3 * coeff * exp( -((g - gPrime) * (g - gPrime) / (2 * d_stdev * d_stdev)) );
+      qw_r3_N = constant_qgaus_W[i] * rPrime3 * coeff * exp( -((g - gPrime) * (g - gPrime) / (2 * d_stdev * d_stdev)) );
 
       xyz2 = r_point * sinb;
       zp = r_point * cosb;
@@ -99,9 +100,9 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
 	sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, j);
 			
 #ifndef SINGLE_PRECISION
-	st_int[j] += qw_r3_N * exp(-((sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2)) * constant__inverse_fstream_sigma_sq2[j]);
+	st_int[j] += qw_r3_N * exp(-((sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2)) * constant_inverse_fstream_sigma_sq2[j]);
 #else
-	corrected_next_term = (qw_r3_N * exp(-((sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2)) * constant__inverse_fstream_sigma_sq2[j])) - st_int_correction[j];
+	corrected_next_term = (qw_r3_N * exp(-((sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2)) * constant_inverse_fstream_sigma_sq2[j])) - st_int_correction[j];
 	new_sum = st_int[j] + corrected_next_term;
 	st_int_correction[j] = (new_sum - st_int[j]) - corrected_next_term;
 	st_int[j] = new_sum;
@@ -109,13 +110,13 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
       }
     }
     GPU_PRECISION probability_sum = 0.0;
-    probability_sum += bg_int * constant__background_weight[0];
+    probability_sum += bg_int * constant_background_weight[0];
     //pragma unroll 1 makes the loop not unroll,
     //when it unrolls it causes a launch failure when trying
-    //to access constant__stream_weight[i], when i is 1
+    //to access constant_stream_weight[i], when i is 1
 #pragma unroll 1
     for (i = 0; i < number_streams; i++) {
-      probability_sum += st_int[i] * constant__stream_weight[i];
+      probability_sum += st_int[i] * constant_stream_weight[i];
     }
     probability_sum *= reff_xr_rp3;
     //	printf("bg_prob %.15f st_prob[0]: %.15f st_prob[1]: %.15f, prob_sum: %.15f\n", (bg_int * reff_xr_rp3), (st_int[0] * reff_xr_rp3), (st_int[1] * reff_xr_rp3), probability_sum);
@@ -125,14 +126,6 @@ __global__ void gpu__likelihood_kernel(	int offset, int convolve,
     else 
       probability_sum = log10(probability_sum);
 
-#ifndef SINGLE_PRECISION
-    //probability[threadIdx.x] += probability_sum;
-    probability[threadIdx.x] += probability_sum;
-#else
-    pos = threadIdx.x;
-    corrected_next_term = probability_sum - probability_correction[pos];
-    new_sum = probability[pos] + corrected_next_term;
-    probability_correction[pos] = (new_sum - probability[pos]) - corrected_next_term;
-    probability[pos] = new_sum;
-#endif
+    probability[(offset + threadIdx.x + (blockDim.x * blockIdx.x))] = 
+      probability_sum;
   }

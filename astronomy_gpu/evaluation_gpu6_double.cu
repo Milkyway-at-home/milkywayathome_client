@@ -235,22 +235,22 @@ double __device__ est_exp(double x)
 }
 
 template <unsigned int number_streams, unsigned int convolve> 
-__global__ void gpu__integral_kernel3(	int mu_offset, int mu_steps,
-					int in_step, int in_steps,
-					int nu_steps,
-					double q_squared_inverse, double r0,
-					double *device__sinb,
-					double *device__sinl,
-					double *device__cosb,
-					double *device__cosl,
-					double *device__V,
-					double *background_integrals,
-					double *stream_integrals) {
-  double *st_int = shared_mem;
+__global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
+				      int in_step, int in_steps,
+				      int nu_steps,
+				      double q_squared_inverse, double r0,
+				      double *device__sinb,
+				      double *device__sinl,
+				      double *device__cosb,
+				      double *device__cosl,
+				      double *device__V,
+				      double *background_integrals,
+				      double *stream_integrals) {
   double bg_int = 0.0;
-  for (int i = 0; i < number_streams; i++) {
-    st_int[i * blockDim.x + threadIdx.x] = 0.0;
-  }
+  double st_int0 = 0.0;
+  double st_int1 = 0.0;
+  double st_int2 = 0.0;
+  double st_int3 = 0.0;
 
   double sinb = device__sinb[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
   double sinl = device__sinl[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
@@ -261,49 +261,129 @@ __global__ void gpu__integral_kernel3(	int mu_offset, int mu_steps,
   double cosb_x_sinl = cosb * sinl;
 
   for (int i = 0; i < convolve; i++) {
-    double xyz0, xyz1, xyz2;
-    double rs, rg;
-    xyz2 = tex2D_double(tex_r_point,i,in_step) * sinb;
-    xyz0 = tex2D_double(tex_r_point,i,in_step) * cosb_x_cosl - d_lbr_r;
-    xyz1 = tex2D_double(tex_r_point,i,in_step) * cosb_x_sinl;
+    double xyz2 = tex2D_double(tex_r_point,i,in_step) * sinb;
+    double xyz0 = tex2D_double(tex_r_point,i,in_step) * cosb_x_cosl - d_lbr_r;
+    double xyz1 = tex2D_double(tex_r_point,i,in_step) * cosb_x_sinl;
 
-    rg = fsqrtd(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) * q_squared_inverse);
-    rs = rg + r0;
-    
-    bg_int += divd(tex2D_double(tex_qw_r3_N,i,in_step) , (rg * rs * rs * rs));
-    
-    for (int j = 0; j < number_streams; j++) {
-      double dotted, sxyz0, sxyz1, sxyz2;
-      sxyz0 = xyz0 - tex2D_double(tex_fstream_c, 0, j);
-      sxyz1 = xyz1 - tex2D_double(tex_fstream_c, 1, j);
-      sxyz2 = xyz2 - tex2D_double(tex_fstream_c, 2, j);
-
-      dotted = tex2D_double(tex_fstream_a, 0,j) * sxyz0 
-      	+ tex2D_double(tex_fstream_a, 1, j) * sxyz1
-      	+ tex2D_double(tex_fstream_a, 2, j) * sxyz2;
+    {
+      double rg = fsqrtd(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) 
+			 * q_squared_inverse);
+      double rs = rg + r0;
       
-      sxyz0 -= dotted * tex2D_double(tex_fstream_a, 0, j);
-      sxyz1 -= dotted * tex2D_double(tex_fstream_a, 1, j);
-      sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, j);
-
-      double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-      double result = (tex2D_double(tex_qw_r3_N,i,in_step) 
-		       * exp(-(xyz_norm) * constant__inverse_fstream_sigma_sq2[j]));      
-      st_int[j * blockDim.x + threadIdx.x] += result;
+      bg_int += divd(tex2D_double(tex_qw_r3_N,i,in_step) , (rg * rs * rs * rs));
     }
+    if (number_streams >= 1)
+      {
+	//stream 0
+	double sxyz0 = xyz0 - tex2D_double(tex_fstream_c, 0, 0);
+	double sxyz1 = xyz1 - tex2D_double(tex_fstream_c, 1, 0);
+	double sxyz2 = xyz2 - tex2D_double(tex_fstream_c, 2, 0);
+	
+	double dotted = tex2D_double(tex_fstream_a, 0,0) * sxyz0 
+	  + tex2D_double(tex_fstream_a, 1, 0) * sxyz1
+	  + tex2D_double(tex_fstream_a, 2, 0) * sxyz2;
+	
+	sxyz0 -= dotted * tex2D_double(tex_fstream_a, 0, 0);
+	sxyz1 -= dotted * tex2D_double(tex_fstream_a, 1, 0);
+	sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, 0);
+	
+	double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
+	double result = (tex2D_double(tex_qw_r3_N,i,in_step) 
+			 * exp(-(xyz_norm) * 
+			       constant_inverse_fstream_sigma_sq2[0]));   
+	st_int0 += result;
+      }
+    if (number_streams >= 2)
+      {
+	//stream 1
+	double sxyz0 = xyz0 - tex2D_double(tex_fstream_c, 0, 1);
+	double sxyz1 = xyz1 - tex2D_double(tex_fstream_c, 1, 1);
+	double sxyz2 = xyz2 - tex2D_double(tex_fstream_c, 2, 1);
+	
+	double dotted = tex2D_double(tex_fstream_a, 0,1) * sxyz0 
+	  + tex2D_double(tex_fstream_a, 1, 1) * sxyz1
+	  + tex2D_double(tex_fstream_a, 2, 1) * sxyz2;
+	  
+	sxyz0 -= dotted * tex2D_double(tex_fstream_a, 0, 1);
+	sxyz1 -= dotted * tex2D_double(tex_fstream_a, 1, 1);
+	sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, 1);
+	
+	double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
+	double result = (tex2D_double(tex_qw_r3_N,i,in_step) 
+			 * exp(-(xyz_norm) * 
+			       constant_inverse_fstream_sigma_sq2[1]));   
+	st_int1 += result;
+      }
+    if (number_streams >= 3)
+      {
+	//stream 2
+	double sxyz0 = xyz0 - tex2D_double(tex_fstream_c, 0, 2);
+	double sxyz1 = xyz1 - tex2D_double(tex_fstream_c, 1, 2);
+	double sxyz2 = xyz2 - tex2D_double(tex_fstream_c, 2, 2);
+	
+	double dotted = tex2D_double(tex_fstream_a, 0,2) * sxyz0 
+	  + tex2D_double(tex_fstream_a, 1, 2) * sxyz1
+	  + tex2D_double(tex_fstream_a, 2, 2) * sxyz2;
+	  
+	sxyz0 -= dotted * tex2D_double(tex_fstream_a, 0, 2);
+	sxyz1 -= dotted * tex2D_double(tex_fstream_a, 1, 2);
+	sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, 2);
+	
+	double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
+	double result = (tex2D_double(tex_qw_r3_N,i,in_step) 
+			 * exp(-(xyz_norm) * 
+			       constant_inverse_fstream_sigma_sq2[2]));   
+	st_int2 += result;
+      }
+    if (number_streams >= 4)
+      {
+	//stream 3
+	double sxyz0 = xyz0 - tex2D_double(tex_fstream_c, 0, 3);
+	double sxyz1 = xyz1 - tex2D_double(tex_fstream_c, 1, 3);
+	double sxyz2 = xyz2 - tex2D_double(tex_fstream_c, 2, 3);
+	
+	double dotted = tex2D_double(tex_fstream_a, 0,3) * sxyz0 
+	  + tex2D_double(tex_fstream_a, 1, 3) * sxyz1
+	  + tex2D_double(tex_fstream_a, 2, 3) * sxyz2;
+	  
+	sxyz0 -= dotted * tex2D_double(tex_fstream_a, 0, 3);
+	sxyz1 -= dotted * tex2D_double(tex_fstream_a, 1, 3);
+	sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, 3);
+	
+	double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
+	double result = (tex2D_double(tex_qw_r3_N,i,in_step) 
+			 * exp(-(xyz_norm) * 
+			       constant_inverse_fstream_sigma_sq2[3]));   
+	st_int3 += result;
+      }
   }
   
-  //define V down here so that one to reduce the number of registers, because a register
-  //will be reused
-  int nu_step = (threadIdx.x + (blockDim.x * (blockIdx.x + mu_offset))) % nu_steps;
+  //define V down here so that one to reduce the number of registers,
+  //because a register will be reused
+  int nu_step = (threadIdx.x + (blockDim.x * (blockIdx.x + mu_offset)))
+    % nu_steps;
   double V = device__V[nu_step + (in_step * nu_steps)];
   int pos = threadIdx.x + (blockDim.x * (blockIdx.x + mu_offset));
   background_integrals[pos] += (bg_int * V);
-  for (int i = 0; i < number_streams; i++) {
-    stream_integrals[pos] += st_int[i * blockDim.x + threadIdx.x] * V;
-    pos += (nu_steps * mu_steps);
-  }
-    
+  if (number_streams >= 1)
+    {
+      stream_integrals[pos] += st_int0 * V;
+      pos += (nu_steps * mu_steps);
+    }
+  if (number_streams >= 2)
+    {
+      stream_integrals[pos] += st_int1 * V;
+      pos += (nu_steps * mu_steps);
+    }
+  if (number_streams >= 3)
+    {
+      stream_integrals[pos] += st_int2 * V;
+      pos += (nu_steps * mu_steps);
+    }
+  if (number_streams >= 4)
+    {
+      stream_integrals[pos] += st_int3 * V;
+    }
 }
 
 template <unsigned int number_streams, unsigned int convolve> 
@@ -369,7 +449,7 @@ __global__ void gpu__integral_kernel3_aux(int mu_offset, int mu_steps,
       
       double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
       double result = (tex2D_double(tex_qw_r3_N,i,in_step) 
-      	       * exp(-(xyz_norm) * constant__inverse_fstream_sigma_sq2[j]));
+      	       * exp(-(xyz_norm) * constant_inverse_fstream_sigma_sq2[j]));
       st_int[j * blockDim.x + threadIdx.x] += result;
     }
   }
