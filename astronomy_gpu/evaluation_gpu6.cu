@@ -37,8 +37,6 @@ extern "C++" {
 
 #define MAX_CONVOLVE 120
 #define R_INCREMENT 1
-//#define NUM_BLOCKS 128
-#define NUM_BLOCKS 25000
 #define NUM_THREADS 64 //per block
 
 #ifdef SINGLE_PRECISION
@@ -82,6 +80,8 @@ GPU_PRECISION	*device_probability;
 GPU_PRECISION	*device_probability_correction;
 GPU_PRECISION	*host_probability;
 
+int max_blocks = 128;
+
 #define kernel3__mu_step	(mu_offset + blockIdx.x)
 #define kernel3__mu_steps	(mu_steps)
 //TODO check if blockIdx.y is correct
@@ -99,6 +99,29 @@ extern __shared__ GPU_PRECISION shared_mem[];
 #endif
 #include "evaluation_gpu6_likelihood.cu"
 #include "evaluation_gpu6_macros.cu"
+
+void parse_prefs(char *project_prefs)
+{
+  printf("project_prefs: %s\n", project_prefs);
+  if (project_prefs)
+    {
+      char *prefs_start = strstr(project_prefs, "<nvidia_block_amount>");
+      char *prefs_end = strstr(project_prefs, "</nvidia_block_amount>");
+      if (prefs_start && prefs_end)
+	{
+	  int pref_length = prefs_end - (prefs_start + 21);
+	  printf("pref_length:%d\n", pref_length);
+	  char *pref_num = new char[pref_length+1];
+	  strncpy(pref_num, prefs_start + 21, pref_length);
+	  pref_num[pref_length] = '\0';
+	  printf("pref_num:%s\n", pref_num);
+	  max_blocks = atoi(pref_num);
+	  if (max_blocks < 0 || max_blocks >50000)
+	    max_blocks = 128; //default
+	}
+    }
+  fprintf(stderr, "Using %d concurrent blocks\n", max_blocks);
+}
 
 bool boinc_setup_gpu(int device)
 {
@@ -657,11 +680,10 @@ double gpu__likelihood(double *parameters) {
       int total_blocks = total_threads / NUM_THREADS;
       dim3 dimBlock(NUM_THREADS);
       printf("total_blocks:%d\n", total_blocks);
-      for(int mu_step = 0; mu_step < total_blocks; mu_step += NUM_BLOCKS) 
+      for(int mu_step = 0; mu_step < total_blocks; mu_step += max_blocks) 
 	{
 	  int offset = mu_step * NUM_THREADS;
-	  dim3 dimGrid(min(NUM_BLOCKS, total_blocks - mu_step), R_INCREMENT);
-	  //printf("mu_step:%d offset:%d\n", mu_step, offset);
+	  dim3 dimGrid(min(max_blocks, total_blocks - mu_step), R_INCREMENT);
 	  EXECUTE_ZERO_INTEGRALS(device_bg_int[i],
 				 device_st_int[i]);
 #ifdef SINGLE_PRECISION
@@ -674,8 +696,8 @@ double gpu__likelihood(double *parameters) {
       for(int j = 0;j<r_steps;j+= R_INCREMENT)
 	{
 	  boinc_fraction_done(current_work / (double) total_work);
-	  for(int mu_step = 0; mu_step < total_blocks; mu_step += NUM_BLOCKS) {
-	    dim3 dimGrid(min(NUM_BLOCKS, total_blocks - mu_step), R_INCREMENT);
+	  for(int mu_step = 0; mu_step < total_blocks; mu_step += max_blocks) {
+	    dim3 dimGrid(min(max_blocks, total_blocks - mu_step), R_INCREMENT);
 	    if (aux_bg_profile == 1 && false)
 	      {
 		EXECUTE_AUX_INTEGRAL_KERNEL;
@@ -739,10 +761,10 @@ double gpu__likelihood(double *parameters) {
   int total_blocks = gpu_num_stars / NUM_THREADS;
   dim3 dimBlock(NUM_THREADS);
   //printf("total_blocks: %d\n", total_blocks);
-  for(int mu_step = 0; mu_step < total_blocks; mu_step += NUM_BLOCKS) 
+  for(int mu_step = 0; mu_step < total_blocks; mu_step += max_blocks) 
     {
       //printf("mu_step:%d\n", mu_step);
-      dim3 dimGrid(min(NUM_BLOCKS, total_blocks - mu_step), R_INCREMENT);
+      dim3 dimGrid(min(max_blocks, total_blocks - mu_step), R_INCREMENT);
       gpu__zero_likelihood<<<dimGrid, dimBlock>>>
 	(mu_step * NUM_THREADS, device_probability);
 #ifdef SINGLE_PRECISION
@@ -763,9 +785,9 @@ double gpu__likelihood(double *parameters) {
 
 
   //	printf("num streams:%u\n", number_streams);
-  for(int mu_step = 0; mu_step < total_blocks; mu_step += NUM_BLOCKS) 
+  for(int mu_step = 0; mu_step < total_blocks; mu_step += max_blocks) 
     {
-      dim3 dimGrid(min(NUM_BLOCKS, total_blocks - mu_step), R_INCREMENT);
+      dim3 dimGrid(min(max_blocks, total_blocks - mu_step), R_INCREMENT);
       int convolve = ap->convolve;
       int number_stars = get_total_threads(sp->number_stars);
       int offset = mu_step * NUM_THREADS;

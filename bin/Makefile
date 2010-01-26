@@ -1,5 +1,5 @@
-APP_VERSION = 0.19
-APP_NAME = your_app_name-gpu-test
+APP_VERSION = 0.25
+APP_NAME = stock
 
 OSX_BOINC_DIR = /Users/deselt/software/boinc
 OSX_LIBBOINC_DIR = /Users/deselt/software/boinc/mac_build/build/Deployment
@@ -8,9 +8,15 @@ LINUX_BOINC_DIR = /software/boinc-6.3.14-0/pkg/include/boinc
 LINUX_LIBBOINC_DIR = /usr/local/lib
 #/software/boinc-6.3.14-0/pkg/lib
 
-CUDA_INC = -I/Developer/CUDA/common/inc -I/usr/local/cuda/include -I /opt/cuda/sdk/common/inc
-CUDA_LIB = -L/usr/local/cuda/lib -L/opt/cuda/sdk/lib -L/opt/cuda/lib
+CUDA_INC = -I/Developer/CUDA/common/inc  -I/opt/cuda/include -I/opt/cuda/sdk/C/common/inc/ -I./boinc/
+CUDA_LIB =  -L/opt/cuda/lib64 -L/opt/cuda/sdk/C/lib
 
+#Includes and Libraries for OpenCL
+#OCL_INC = -I/opt/cuda3/sdk/OpenCL/common/inc
+#OCL_LIB = -L/opt/cuda3/lib64 
+OCL_INC = -I/opt/ati/include -I/opt/cuda3/sdk/OpenCL/common/inc
+OCL_LIB = -L/opt/ati/lib/x86_64/
+OCL_FLAGS = -DUSE_OCL
 
 GPU_FLAGS = -DMILKYWAY_GPU -DCOMPUTE_ON_GPU $(CUDA_INC) $(CUDA_LIB)
 GPU_PRECISION = -DDOUBLE_PRECISION -arch sm_13
@@ -18,7 +24,8 @@ GPU_PRECISION = -DDOUBLE_PRECISION -arch sm_13
 CPU_FLAGS = -DMILKYWAY -DCOMPUTE_ON_CPU
 
 VARIANTFLAGS = -DBOINC_APPLICATION -DBOINC_APP_NAME='"$(APP_NAME)"' -DBOINC_APP_VERSION=$(APP_VERSION)
-CXXFLAGS_ALL = $(VARIANTFLAGS) -g
+#CXXFLAGS_ALL = $(VARIANTFLAGS) -g -DSINGLE_PRECISION
+CXXFLAGS_ALL = $(VARIANTFLAGS)  -DDOUBLE_PRECISION
 
 
 OSX_CC_PPC = /usr/bin/gcc-3.3
@@ -45,18 +52,18 @@ OSX_LDFLAGS_x86_64 = -Wl,-syslibroot,/Developer/SDKs/MacOSX10.5.sdk,-arch,x86_64
 
 LINUX_CXX_i686 = g++
 LINUX_CXXFLAGS_i686 = -m32 -O2 -ftree-vectorize -funroll-loops $(CXXFLAGS_ALL) \
-	-I$(LINUX_BOINC_DIR) -L$(LINUX_LIBBOINC_DIR)
-LINUX_LDFLAGS_i686 = -L/usr/X11R6/lib -L/usr/local/lib
+	-I$(LINUX_BOINC_DIR) -L$(LINUX_LIBBOINC_DIR) -I./boinc/
+LINUX_LDFLAGS_i686 =  -m32 -L/usr/local/lib  -L./boinc/32bit -L/home/anthony/development/milkyway/cuda/lib/ -L/home/anthony/development/milkyway/cuda/C/lib
 
 LINUX_CXX_x86_64 = g++
-LINUX_CXXFLAGS_x86_64 = -g $(CXXFLAGS_ALL) \
-	-I$(LINUX_BOINC_DIR) -L$(LINUX_LIBBOINC_DIR) -I/usr/include/boinc
-LINUX_LDFLAGS_x86_64 = -L/usr/local/lib -L/usr/lib64
+LINUX_CXXFLAGS_x86_64 =  -pipe  $(CXXFLAGS_ALL) -I./boinc/ 
+LINUX_LDFLAGS_x86_64 = -L$(LINUX_LIBBOINC_DIR)
 
 
 FGDO_DIR = ..
 APP_DIR = $(FGDO_DIR)/astronomy
 GPU_DIR = $(FGDO_DIR)/astronomy_gpu
+OCL_DIR = $(FGDO_DIR)/astronomy_ocl
 EVAL_DIR = $(FGDO_DIR)/evaluation
 SEARCH_DIR = $(FGDO_DIR)/searches
 UTIL_DIR = $(FGDO_DIR)/util
@@ -93,11 +100,23 @@ GPU_APP_OBJS = \
 	$(SEARCH_DIR)/newton_method.o \
 	$(SEARCH_DIR)/line_search.o \
 	$(SEARCH_DIR)/regression.o
+OCL_APP_OBJS = \
+	$(OCL_DIR)/evaluation_ocl.o \
+	$(OCL_DIR)/evaluation_ocl_mem.o \
+	$(OCL_DIR)/evaluation_ocl_setup.o \
+	$(OCL_DIR)/evaluation_ocl_kernel.o \
+	$(GPU_DIR)/coords.o \
+	$(GPU_DIR)/gauss_legendre.o \
+	$(GPU_DIR)/cpu_coords.o 
+
+OCL_HEADERS = \
+	$(OCL_DIR)/evaluation_ocl.h
+
 
 #emulation mode
-NVCCFLAGS := -g
+#NVCCFLAGS := 
 ifeq ($(emu), 1)
-	NVCCFLAGS   += -deviceemu -DUNIX -O3
+	NVCCFLAGS   += -deviceemu -DUNIX -g
 	# consistency, makes developing easier
 	CXXFLAGS		+= -D__DEVICE_EMULATION__
 	CFLAGS			+= -D__DEVICE_EMULATION__
@@ -119,8 +138,8 @@ $(GPU_DIR)/evaluation_gpu4.o:
 	nvcc -lcuda $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu4.o $(GPU_DIR)/evaluation_gpu4.cu
 $(GPU_DIR)/evaluation_gpu5.o:
 	nvcc -lcuda $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu5.o $(GPU_DIR)/evaluation_gpu5.cu
-$(GPU_DIR)/evaluation_gpu6.o: $(GPU_DIR)/evaluation_gpu6_float.cu $(GPU_DIR)/evaluation_gpu6_double.cu $(GPU_DIR)/evaluation_gpu6.cu
-	nvcc $(NVCCFLAGS) -lcuda --ptxas-options=-v $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu6.o $(GPU_DIR)/evaluation_gpu6.cu
+$(GPU_DIR)/evaluation_gpu6.o: $(GPU_DIR)/evaluation_gpu6_float.cu $(GPU_DIR)/evaluation_gpu6_double.cu $(GPU_DIR)/evaluation_gpu6.cu $(GPU_DIR)/evaluation_gpu6_likelihood.cu $(GPU_DIR)/evaluation_gpu6_macros.cu
+	nvcc $(NVCCFLAGS) --maxrregcount 48 --ptxas-options=-v $(GPU_PRECISION) $(CUDA_INC) $(CUDA_LIB) -c -o $(GPU_DIR)/evaluation_gpu6.o $(GPU_DIR)/evaluation_gpu6.cu
 
 osx_ppc: OBJ_CXX = $(OSX_CXX_PPC)
 osx_ppc: OBJ_CXXFLAGS = $(CPU_FLAGS) $(OSX_CXXFLAGS_PPC)
@@ -150,29 +169,50 @@ linux_i686: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LINUX_LIBBOINC_DIR)/libboi
 
 linux_i686_gpu: OBJ_CXX = $(LINUX_CXX_i686)
 linux_i686_gpu: OBJ_CXXFLAGS = $(GPU_FLAGS) $(LINUX_CXXFLAGS_i686)
-linux_i686_gpu: $(GPU_APP_OBJS) $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(LINUX_LIBBOINC_DIR)/libboinc_api.a $(LINUX_LIBBOINC_DIR)/libboinc.a
-	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LDFLAGS_x86_64) -o milkywayGPU_$(APP_VERSION)_i686-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc -lboinc_api -lcudart -lcutil -lcuda
+linux_i686_gpu: $(GPU_APP_OBJS) $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS)
+	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LINUX_LDFLAGS_i686) -o milkywayGPU_$(APP_VERSION)_i686-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc_api -lboinc -lcudart -lcutil -lcuda
 
 linux_x86_64: OBJ_CXX = $(LINUX_CXX_x86_64)
 linux_x86_64: OBJ_CXXFLAGS = $(CPU_FLAGS) $(LINUX_CXXFLAGS_x86_64)
 linux_x86_64: $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) 
 	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LINUX_LDFLAGS_x86_64) -Wl -static -static-libgcc -o milkyway_$(APP_VERSION)_x86_64-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) -lm -lboinc_api -lboinc -pthread
 
+linux_x86_64_gpu: APP_NAME = stock_linux64_cuda
 linux_x86_64_gpu: OBJ_CXX = $(LINUX_CXX_x86_64)
 linux_x86_64_gpu: OBJ_CXXFLAGS = $(GPU_FLAGS) $(LINUX_CXXFLAGS_x86_64)
 linux_x86_64_gpu: $(GPU_APP_OBJS) $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) 
-	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LDFLAGS_x86_64) -o milkywayGPU_$(APP_VERSION)_x86_64-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc_api -lboinc -lcudart -lcutil -lcuda
+	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LINUX_LDFLAGS_x86_64) -o milkywayGPU_$(APP_VERSION)_x86_64-pc-linux-gnu $(APP_OBJS) $(SEARCH_OBJS) $(UTIL_OBJS) $(GPU_APP_OBJS) -lboinc_api -lboinc -lcudart -lcutil -lcuda
 
+linux_x86_64_ocl: OBJ_CXX = $(LINUX_CXX_x86_64) $(OCL_FLAGS)
+linux_x86_64_ocl: OBJ_CXXFLAGS =$(OCL_INC)  $(LINUX_CXXFLAGS_x86_64)
+linux_x86_64_ocl: $(OCL_APP_OBJS) $(APP_OBJS) $(UTIL_OBJS) $(SEARCH_OBJS) $(OCL_HEADERS)
+	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(LINUX_LDFLAGS_x86_64) -o milkywayOCL_$(APP_VERSION)_x86_64-pc-linux-gnu $(APP_OBJS) $(OCL_APP_OBJS) $(UTIL_OBJS) $(SEARCH_OBJS) -lboinc_api -lboinc -lOpenCL -lpthread
+#cross platform this
+	cp ../astronomy_ocl/nvidia_integral_kernel.cl ./test_boinc/
+	cp ../astronomy_ocl/nvidia_integral_kernel2.cl ./test_boinc/
+	cp ../astronomy_ocl/nvidia_likelihood_kernel.cl ./test_boinc/
+	cp ../astronomy_ocl/ati_integral_kernel.cl ./test_boinc/
+	cp ../astronomy_ocl/ati_integral_kernel2.cl ./test_boinc/
+	cp ../astronomy_ocl/ati_likelihood_kernel.cl ./test_boinc/
+	cp ../astronomy_ocl/zero_integral_kernel.cl ./test_boinc/
+	cp ../astronomy_ocl/zero_likelihood_kernel.cl ./test_boinc/
+	cp ../astronomy_ocl/exp.cl ./test_boinc/
+	cp ../astronomy_ocl/sqrt.cl ./test_boinc/
 
+$(OCL_APP_OBJS): $(OCL_HEADERS)
 
 .C.o:
 	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(INC) -Wall -c $< -o $@
 .c.o:
 	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(INC) -Wall -c $< -o $@
 
+.cpp.o:	
+	$(OBJ_CXX) $(OBJ_CXXFLAGS) $(INC) -Wall -c $< -o $@
+
 
 clean:
-	rm -f $(SEARCH_OBJS) $(UTIL_OBJS) $(APP_OBJS) $(GPU_APP_OBJS) evaluation_gpu.linkinfo evaluation_gpu2.linkinfo evaluation_gpu3.linkinfo
+	rm -f $(SEARCH_OBJS) $(UTIL_OBJS) $(APP_OBJS) $(GPU_APP_OBJS) $(OCL_APP_OBJS) 
 
 clean_all:
 	rm -f $(PROGS) $(SEARCH_OBJS) $(UTIL_OBJS) $(APP_OBJS)
+

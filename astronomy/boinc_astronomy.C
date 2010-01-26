@@ -93,6 +93,10 @@ void init_constants(ASTRONOMY_PARAMETERS *ap);
 	#include "evaluation_optimized.h"
 #endif
 
+#ifdef USE_OCL
+#include "../astronomy_ocl/evaluation_ocl.h"
+#endif
+
 #ifdef _WIN32
 	void AppInvalidParameterHandler(const wchar_t* expression, const wchar_t* function, const wchar_t* file, unsigned int line, uintptr_t pReserved ) {
 		fprintf(stderr, "Invalid parameter detected in function %s. File: %s Line: %d\n", function, file, line);
@@ -204,11 +208,7 @@ void worker() {
 			nu_step_size[i] = ap->integral[i]->nu_step_size;
 		}
 		init_constants(ap);
-		gpu__initialize(ap->sgr_coordinates, ap->aux_bg_profile, ap->wedge, ap->convolve, ap->number_streams, ap->number_integrals,
-				r_steps, r_min, r_step_size,
-				mu_steps, mu_min, mu_step_size,
-				nu_steps, nu_min, nu_step_size,
-				sp->number_stars, sp->stars);
+		gpu__initialize();
 
 		init_simple_evaluator(gpu__likelihood);
 
@@ -218,13 +218,26 @@ void worker() {
 			char *precision = "single";
 		#endif
 	#endif
-
+#ifdef USE_OCL
+			//use OpenCL
+			printf("Using OpenCL CodePath\n");
+			char precision[] = "single";
+			init_constants(ap);
+			ocl_mem_t *ocl_mem = setup_ocl(ap, sp);
+#endif
 	char app_version[256];
 	sprintf(app_version, "%s: %1.2lf", BOINC_APP_NAME, BOINC_APP_VERSION);
        	
-
+#ifdef USE_OCL
+	double likelihood = ocl_likelihood(s->parameters, 
+					   ap,
+					   sp,
+					   ocl_mem);
+	destruct_ocl(ocl_mem);
+#else
 	double likelihood = evaluate(s->parameters);
-//	printf("calculated likelihood: %lf\n", likelihood);
+#endif
+	printf("calculated likelihood: %.15f\n", likelihood);
 
 	/********
 		*	RESOLVE THE OUTPUT FILE & WRITE THE RESULT
@@ -291,10 +304,16 @@ int main(int argc, char **argv){
 	//devices on the system and choose the one
 	//with double precision support and the most
 	//GFLOPS
+	APP_INIT_DATA init_data;
+	boinc_get_init_data_p(&init_data);
+	char *project_prefs = init_data.project_preferences;
 	if (choose_gpu(argc, argv) == -1)
 	  {
+	    fprintf(stderr, "Unable to find a capable GPU\n");
 	    exit(1);
 	  }
+	printf("got here\n");
+	parse_prefs(project_prefs);
 #endif
         worker();
 }
@@ -311,4 +330,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.20 2009/11/03 15:15:34 watera2 Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.21 2010/01/26 14:33:13 watera2 Exp $";

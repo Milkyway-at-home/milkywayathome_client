@@ -9,6 +9,7 @@ mkdir searches
 mkdir util
 mkdir bin
 mkdir evaluation
+mkdir bin/boinc/
 mkdir bin/test_files/
 
 cp ../../license/GPL.txt ./license/
@@ -36,10 +37,22 @@ cp ../../astronomy/evaluation_optimized.h ./astronomy/
 cp ../../astronomy/evaluation_state.c ./astronomy/
 cp ../../astronomy/evaluation_state.h ./astronomy/
 
-cp ../../astronomy_gpu/*.cu ./astronomy_gpu/
-cp ../../astronomy_gpu/*.c ./astronomy_gpu/
-cp ../../astronomy_gpu/*.h ./astronomy_gpu/
-cp ../../astronomy_gpu/*.sh ./astronomy_gpu/
+cp ../../astronomy_gpu/evaluation_gpu6.cu ./astronomy_gpu/
+cp ../../astronomy_gpu/evaluation_gpu6_double.cu ./astronomy_gpu/
+cp ../../astronomy_gpu/evaluation_gpu6_float.cu ./astronomy_gpu/
+cp ../../astronomy_gpu/evaluation_gpu6_likelihood.cu ./astronomy_gpu/
+cp ../../astronomy_gpu/evaluation_gpu6_macros.cu ./astronomy_gpu/
+cp ../../astronomy_gpu/evaluation_gpu.h ./astronomy_gpu/
+cp ../../astronomy_gpu/coords.h ./astronomy_gpu/
+cp ../../astronomy_gpu/cpu_coords.h ./astronomy_gpu/
+cp ../../astronomy_gpu/r_constants.h ./astronomy_gpu/
+cp ../../astronomy_gpu/pi_constants.h ./astronomy_gpu/
+cp ../../astronomy_gpu/gauss_legendre.h ./astronomy_gpu/
+cp ../../astronomy_gpu/cpu_integrals.h ./astronomy_gpu/
+cp ../../astronomy_gpu/coords.c ./astronomy_gpu/
+cp ../../astronomy_gpu/gauss_legendre.c ./astronomy_gpu/
+cp ../../astronomy_gpu/cpu_coords.c ./astronomy_gpu/
+cp ../../astronomy_gpu/cpu_integrals.c ./astronomy_gpu/
 
 cp ../../evaluation/simple_evaluator.c ./evaluation/
 cp ../../evaluation/simple_evaluator.h ./evaluation/
@@ -68,7 +81,12 @@ cp ../../util/settings.c ./util/
 cp ../../util/settings.h ./util/
 
 cp ../Makefile ./bin/
+cp ../milkyway.vcproj ./bin/
+cp ../milkyway_vc90.sln ./bin/
+cp ../Cuda.Rules ./bin/
+cp ../Cuda2.3.Rules ./bin/
 cp ../test_boinc/set_parameters.sh ./bin/test_files/set_parameters.sh
+cp ../test_boinc/set_parameters.bat ./bin/test_files/set_parameters.bat
 cp ../test_boinc/search_parameters-20.txt ./bin/test_files/search_parameters-20.txt
 cp ../test_boinc/search_parameters-21.txt ./bin/test_files/search_parameters-21.txt
 cp ../test_boinc/search_parameters-79.txt ./bin/test_files/search_parameters-79.txt
@@ -85,7 +103,9 @@ cp ../test_boinc/stars-79.txt ./bin/test_files/stars-79.txt
 cp ../test_boinc/stars-82.txt ./bin/test_files/stars-82.txt
 cp ../test_boinc/stars-86.txt ./bin/test_files/stars-86.txt
 
+cp ../boinc/* ./bin/boinc/
+
 cd ..
-tar cvzf mw_gpu_v$1.tar milkyway
+tar cvzf mw_gpu_v$1.tar.gz milkyway
 zip -r mw_gpu_v$1.zip milkyway
-rm -r milkyway
+#rm -r milkyway

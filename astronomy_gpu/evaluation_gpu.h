@@ -28,6 +28,7 @@
 #include "../astronomy/star_points.h"
 #include "../astronomy/parameters.h"
 
+void parse_prefs(char *project_prefs);
 int choose_gpu(int argc, char **argv);
 void gpu__initialize();
 

@@ -348,16 +348,16 @@ void cpu__r_constants(	int n_convolve,
 
 
 	for (i = 0; i < r_steps; i++) {
-//vickej2_kpc		log_r		=	r_min + (i * r_step_size);
-//vickej2_kpc		r		=	pow(10.0, (log_r-14.2)/5.0);
-//vickej2_kpc		next_r		=	pow(10.0, (log_r + r_step_size - 14.2)/5.0);
+#ifdef USE_KPC
 		
 		r               =       r_min_kpc + (i * r_step_size_kpc);
 		next_r          =       r + r_step_size_kpc;
 
-//vickej2_kpc end edits
-
-
+#else
+		double log_r		=	r_min + (i * r_step_size);
+		r		=	pow(10.0, (log_r-14.2)/5.0);
+		next_r		=	pow(10.0, (log_r + r_step_size - 14.2)/5.0);
+#endif
 
 
     irv[i]		=	(((next_r * next_r * next_r) - (r * r * r))/3.0) * mu_step_size / deg;
@@ -470,8 +470,8 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 
 	for (; es->current_integral < ap->number_integrals; es->current_integral++) {
 		calculate_integral(ap, es->integral[es->current_integral], es);
-//vickej2 thinks this is clutter		printf("bg_int: %.20lf\n", es->integral[es->current_integral]->background_integral);
-//vickej2 thinks this is clutter		for (i = 0; i < ap->number_streams; i++) printf("st_int[%d]: %.20lf\n", i, es->integral[es->current_integral]->stream_integrals[i]);
+		printf("bg_int: %.20lf\n", es->integral[es->current_integral]->background_integral);
+		for (i = 0; i < ap->number_streams; i++) printf("st_int[%d]: %.20lf\n", i, es->integral[es->current_integral]->stream_integrals[i]);
 	}
 
 	es->background_integral = es->integral[0]->background_integral;
@@ -518,7 +518,7 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
 		set_probability_constants(ap->convolve, sp->stars[es->current_star_point][2], r_point, qw_r3_N, &reff_xr_rp3);
 		calculate_probabilities(r_point, qw_r3_N, reff_xr_rp3, sp->stars[es->current_star_point], ap, &bg_prob, st_prob);
 
-//		printf("bg_prob: %.15lf, st_prob[0]: %.15lf, st_prob[1]: %.15lf", bg_prob, st_prob[0], st_prob[1]);
+		//		printf("bg_prob: %.15lf, st_prob[0]: %.15lf, st_prob[1]: %.15lf", bg_prob, st_prob[0], st_prob[1]);
 
 		star_prob = (bg_prob/es->background_integral) * exp_background_weight;
 		for (current_stream = 0; current_stream < ap->number_streams; current_stream++) {
