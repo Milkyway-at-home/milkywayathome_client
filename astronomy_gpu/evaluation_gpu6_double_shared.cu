@@ -229,6 +229,20 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 				      double *device__V,
 				      double *background_integrals,
 				      double *stream_integrals) {
+  double *s_fstream_c = shared_mem;
+  double *s_fstream_a = &s_fstream_c[number_streams * 3];
+  double *s_inverse_fstream_sigma_sq2 = &s_fstream_a[number_streams * 3];
+  
+  if (threadIdx.x < number_streams * 3)
+    {
+      s_fstream_c[threadIdx.x] = tex2D_double(tex_fstream_c, 
+					      threadIdx.x % 3, threadIdx.x / 3);
+      s_fstream_a[threadIdx.x] = tex2D_double(tex_fstream_a, 
+					      threadIdx.x % 3, threadIdx.x / 3);
+    }
+  if (threadIdx.x < number_streams)
+    s_inverse_fstream_sigma_sq2[threadIdx.x] = constant_inverse_fstream_sigma_sq2[threadIdx.x];
+
   double bg_int = 0.0;
   double st_int0 = 0.0;
   double st_int1 = 0.0;
@@ -244,99 +258,101 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
   double cosb_x_sinl = cosb * sinl;
 
   for (int i = 0; i < convolve; i++) {
-    double xyz2 = tex2D_double(tex_r_point,i,in_step) * sinb;
-    double xyz0 = tex2D_double(tex_r_point,i,in_step) * cosb_x_cosl - d_lbr_r;
-    double xyz1 = tex2D_double(tex_r_point,i,in_step) * cosb_x_sinl;
+    double r_point = tex2D_double(tex_r_point,i,in_step);
+    double xyz2 = r_point * sinb;
+    double xyz0 = r_point * cosb_x_cosl - d_lbr_r;
+    double xyz1 = r_point * cosb_x_sinl;
 
+    double qw_r3_N = tex2D_double(tex_qw_r3_N,i,in_step);
     {
       double rg = fsqrtd(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) 
 			 * q_squared_inverse);
       double rs = rg + r0;
       
-      bg_int += divd(tex2D_double(tex_qw_r3_N,i,in_step) , (rg * rs * rs * rs));
+      bg_int += divd(qw_r3_N , (rg * rs * rs * rs));
     }
     if (number_streams >= 1)
       {
 	//stream 0
-	double sxyz0 = xyz0 - tex2D_double(tex_fstream_c, 0, 0);
-	double sxyz1 = xyz1 - tex2D_double(tex_fstream_c, 1, 0);
-	double sxyz2 = xyz2 - tex2D_double(tex_fstream_c, 2, 0);
-	
-	double dotted = tex2D_double(tex_fstream_a, 0,0) * sxyz0 
-	  + tex2D_double(tex_fstream_a, 1, 0) * sxyz1
-	  + tex2D_double(tex_fstream_a, 2, 0) * sxyz2; 
+	double sxyz0 = xyz0 - s_fstream_c[0];
+	double sxyz1 = xyz1 - s_fstream_c[1];
+	double sxyz2 = xyz2 - s_fstream_c[2];
 
-	sxyz0 -= dotted * tex2D_double(tex_fstream_a, 0, 0);
-	sxyz1 -= dotted * tex2D_double(tex_fstream_a, 1, 0);
-	sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, 0);
+	double dotted = s_fstream_a[0] * sxyz0 
+	  + s_fstream_a[1] * sxyz1
+	  + s_fstream_a[2] * sxyz2;
+	
+	sxyz0 -= dotted * s_fstream_a[0];
+	sxyz1 -= dotted * s_fstream_a[1];
+	sxyz2 -= dotted * s_fstream_a[2];
 	
 	double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-	double result = (tex2D_double(tex_qw_r3_N,i,in_step) 
+	double result = (qw_r3_N 
 			 * exp(-(xyz_norm) * 
-			       constant_inverse_fstream_sigma_sq2[0]));   
+			       s_inverse_fstream_sigma_sq2[0]));   
 	st_int0 += result;
       }
     if (number_streams >= 2)
       {
 	//stream 1
-	double sxyz0 = xyz0 - tex2D_double(tex_fstream_c, 0, 1);
-	double sxyz1 = xyz1 - tex2D_double(tex_fstream_c, 1, 1);
-	double sxyz2 = xyz2 - tex2D_double(tex_fstream_c, 2, 1);
+	double sxyz0 = xyz0 - s_fstream_c[3];
+	double sxyz1 = xyz1 - s_fstream_c[4];
+	double sxyz2 = xyz2 - s_fstream_c[5];
 	
-	double dotted = tex2D_double(tex_fstream_a, 0,1) * sxyz0 
-	  + tex2D_double(tex_fstream_a, 1, 1) * sxyz1
-	  + tex2D_double(tex_fstream_a, 2, 1) * sxyz2;
-
-	sxyz0 -= dotted * tex2D_double(tex_fstream_a, 0, 1);
-	sxyz1 -= dotted * tex2D_double(tex_fstream_a, 1, 1);
-	sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, 1);
+	double dotted = s_fstream_a[3] * sxyz0 
+	  + s_fstream_a[4] * sxyz1
+	  + s_fstream_a[5] * sxyz2;
+	
+	sxyz0 -= dotted * s_fstream_a[3];
+	sxyz1 -= dotted * s_fstream_a[4];
+	sxyz2 -= dotted * s_fstream_a[5];
 	  
 	double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-	double result = (tex2D_double(tex_qw_r3_N,i,in_step) 
+	double result = (qw_r3_N
 			 * exp(-(xyz_norm) * 
-			       constant_inverse_fstream_sigma_sq2[1]));   
+			       s_inverse_fstream_sigma_sq2[1]));   
 	st_int1 += result;
       }
     if (number_streams >= 3)
       {
 	//stream 2
-	double sxyz0 = xyz0 - tex2D_double(tex_fstream_c, 0, 2);
-	double sxyz1 = xyz1 - tex2D_double(tex_fstream_c, 1, 2);
-	double sxyz2 = xyz2 - tex2D_double(tex_fstream_c, 2, 2);
+	double sxyz0 = xyz0 - s_fstream_c[6];
+	double sxyz1 = xyz1 - s_fstream_c[7];
+	double sxyz2 = xyz2 - s_fstream_c[8];
 	
-	double dotted = tex2D_double(tex_fstream_a, 0,2) * sxyz0 
-	  + tex2D_double(tex_fstream_a, 1, 2) * sxyz1
-	  + tex2D_double(tex_fstream_a, 2, 2) * sxyz2;
-	  
-	sxyz0 -= dotted * tex2D_double(tex_fstream_a, 0, 2);
-	sxyz1 -= dotted * tex2D_double(tex_fstream_a, 1, 2);
-	sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, 2);
+	double dotted = s_fstream_a[6] * sxyz0 
+	  + s_fstream_a[7] * sxyz1
+	  + s_fstream_a[8] * sxyz2;
+	
+	sxyz0 -= dotted * s_fstream_a[6];
+	sxyz1 -= dotted * s_fstream_a[7];
+	sxyz2 -= dotted * s_fstream_a[8];
 	
 	double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-	double result = (tex2D_double(tex_qw_r3_N,i,in_step) 
+	double result = (qw_r3_N
 			 * exp(-(xyz_norm) * 
-			       constant_inverse_fstream_sigma_sq2[2]));   
+			       s_inverse_fstream_sigma_sq2[2]));   
 	st_int2 += result;
       }
     if (number_streams >= 4)
       {
 	//stream 3
-	double sxyz0 = xyz0 - tex2D_double(tex_fstream_c, 0, 3);
-	double sxyz1 = xyz1 - tex2D_double(tex_fstream_c, 1, 3);
-	double sxyz2 = xyz2 - tex2D_double(tex_fstream_c, 2, 3);
+	double sxyz0 = xyz0 - s_fstream_c[9];
+	double sxyz1 = xyz1 - s_fstream_c[10];
+	double sxyz2 = xyz2 - s_fstream_c[11];
 	
-	double dotted = tex2D_double(tex_fstream_a, 0,3) * sxyz0 
-	  + tex2D_double(tex_fstream_a, 1, 3) * sxyz1
-	  + tex2D_double(tex_fstream_a, 2, 3) * sxyz2;
-	  
-	sxyz0 -= dotted * tex2D_double(tex_fstream_a, 0, 3);
-	sxyz1 -= dotted * tex2D_double(tex_fstream_a, 1, 3);
-	sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, 3);
+	double dotted = s_fstream_a[9] * sxyz0 
+	  + s_fstream_a[10] * sxyz1
+	  + s_fstream_a[11] * sxyz2;
+	
+	sxyz0 -= dotted * s_fstream_a[9];
+	sxyz1 -= dotted * s_fstream_a[10];
+	sxyz2 -= dotted * s_fstream_a[11];
 	
 	double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-	double result = (tex2D_double(tex_qw_r3_N,i,in_step) 
+	double result = (qw_r3_N
 			 * exp(-(xyz_norm) * 
-			       constant_inverse_fstream_sigma_sq2[3]));   
+			       s_inverse_fstream_sigma_sq2[3]));   
 	st_int3 += result;
       }
   }

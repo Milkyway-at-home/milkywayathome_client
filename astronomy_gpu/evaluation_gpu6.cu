@@ -73,6 +73,17 @@ __device__ __constant__ GPU_PRECISION constant_qgaus_W[MAX_CONVOLVE];
 __device__ __constant__ GPU_PRECISION constant_background_weight[1];
 __device__ __constant__ GPU_PRECISION constant_stream_weight[4];
 
+#ifdef CONST_MEMORY
+#define MAX_STREAMS (4)
+__device__ __constant__ GPU_PRECISION constant_fstream_c[3*MAX_STREAMS];
+__device__ __constant__ GPU_PRECISION constant_fstream_a[3*MAX_STREAMS];
+#endif
+
+#ifdef GLOBAL_MEMORY
+GPU_PRECISION *device_fstream_c;
+GPU_PRECISION *device_fstream_a;
+#endif
+
 
 GPU_PRECISION	*device_stars;
 
@@ -80,7 +91,8 @@ GPU_PRECISION	*device_probability;
 GPU_PRECISION	*device_probability_correction;
 GPU_PRECISION	*host_probability;
 
-int max_blocks = 128;
+//int max_blocks = 128;
+int max_blocks = 50000;
 
 #define kernel3__mu_step	(mu_offset + blockIdx.x)
 #define kernel3__mu_steps	(mu_steps)
@@ -95,7 +107,19 @@ extern __shared__ GPU_PRECISION shared_mem[];
 #ifdef SINGLE_PRECISION
 #include "evaluation_gpu6_float.cu"
 #else
+#ifdef CONST_MEMORY
+#include "evaluation_gpu6_double_const.cu"
+#else
+#ifdef GLOBAL_MEMORY
+#include "evaluation_gpu6_double_global.cu"
+#else
+#ifdef SHARED_MEMORY
+#include "evaluation_gpu6_double_shared.cu"
+#else
 #include "evaluation_gpu6_double.cu"
+#endif
+#endif
+#endif
 #endif
 #include "evaluation_gpu6_likelihood.cu"
 #include "evaluation_gpu6_macros.cu"
@@ -301,10 +325,10 @@ void gpu__initialize()
 	ap->integral[i]->mu_steps;
       int gpu_int_size = get_total_threads(int_size);
 
-      GPU_PRECISION *host_sinb = new GPU_PRECISION[gpu_int_size];
-      GPU_PRECISION *host_sinl = new GPU_PRECISION[gpu_int_size];
-      GPU_PRECISION *host_cosb = new GPU_PRECISION[gpu_int_size];
-      GPU_PRECISION *host_cosl = new GPU_PRECISION[gpu_int_size];
+      double *sinb = new double[gpu_int_size];
+      double *sinl = new double[gpu_int_size];
+      double *cosb = new double[gpu_int_size];
+      double *cosl = new double[gpu_int_size];
 
       populate_lb(ap->sgr_coordinates, ap->wedge, 
 		  ap->integral[i]->mu_steps,
@@ -313,7 +337,20 @@ void gpu__initialize()
 		  ap->integral[i]->nu_steps,
 		  ap->integral[i]->nu_min,
 		  ap->integral[i]->nu_step_size,
-		  host_sinb, host_sinl, host_cosb, host_cosl);
+		  sinb, sinl, cosb, cosl);
+
+      GPU_PRECISION *host_sinb = new GPU_PRECISION[gpu_int_size];
+      GPU_PRECISION *host_sinl = new GPU_PRECISION[gpu_int_size];
+      GPU_PRECISION *host_cosb = new GPU_PRECISION[gpu_int_size];
+      GPU_PRECISION *host_cosl = new GPU_PRECISION[gpu_int_size];
+
+      for(int j = 0;j<gpu_int_size;++j)
+	{
+	  host_sinb[j] = (GPU_PRECISION) sinb[j];
+	  host_sinl[j] = (GPU_PRECISION) sinl[j];
+	  host_cosb[j] = (GPU_PRECISION) cosb[j];
+	  host_cosl[j] = (GPU_PRECISION) cosl[j];
+	}
 
       cutilSafeCall(cudaMalloc((void**) &(device_sinb[i]), 
 			       gpu_int_size * sizeof(GPU_PRECISION) ));
@@ -341,12 +378,12 @@ void gpu__initialize()
       delete [] host_cosb;
       delete [] host_cosl;
 
-      GPU_PRECISION *irv = new GPU_PRECISION[ap->integral[i]->r_steps];
-      GPU_PRECISION *reff_xr_rp3 = new GPU_PRECISION[ap->integral[i]->r_steps];
-      GPU_PRECISION **qw_r3_N = new GPU_PRECISION*[ap->integral[i]->r_steps];
-      GPU_PRECISION **r_point = new GPU_PRECISION*[ap->integral[i]->r_steps];
-      GPU_PRECISION *ids = new GPU_PRECISION[ap->integral[i]->nu_steps];
-      GPU_PRECISION *nus = new GPU_PRECISION[ap->integral[i]->nu_steps];
+      double *irv = new double[ap->integral[i]->r_steps];
+      double *reff_xr_rp3 = new double[ap->integral[i]->r_steps];
+      double **qw_r3_N = new double*[ap->integral[i]->r_steps];
+      double **r_point = new double*[ap->integral[i]->r_steps];
+      double *ids = new double[ap->integral[i]->nu_steps];
+      double *nus = new double[ap->integral[i]->nu_steps];
       GPU_PRECISION *host_V = new GPU_PRECISION[ap->integral[i]->nu_steps * 
 						ap->integral[i]->r_steps];
 
@@ -503,6 +540,7 @@ __global__ void
 gpu__zero_integrals(int mu_offset, 
 		    int mu_steps, 
 		    int nu_steps, 
+		    int total_threads,
 		    GPU_PRECISION *background_integrals, 
 		    GPU_PRECISION *stream_integrals) 
 {
@@ -511,7 +549,7 @@ gpu__zero_integrals(int mu_offset,
   for (int i = 0; i < number_streams; i++) 
     {
       stream_integrals[pos] = 0;
-      pos += (nu_steps * mu_steps);
+      pos += (total_threads);
     }
 }
 
@@ -644,6 +682,32 @@ double gpu__likelihood(double *parameters) {
   }
   setup_constant_textures(fstream_a, fstream_c, 
 			  fstream_sigma_sq2, ap->number_streams);
+#ifdef CONST_MEMORY
+  cutilSafeCall(cudaMemcpyToSymbol(constant_fstream_c, fstream_c, 3 *
+				   ap->number_streams * 
+				   sizeof(GPU_PRECISION), 0, 
+				   cudaMemcpyHostToDevice));
+  cutilSafeCall(cudaMemcpyToSymbol(constant_fstream_a, fstream_a, 3 *
+				   ap->number_streams * 
+				   sizeof(GPU_PRECISION), 0, 
+				   cudaMemcpyHostToDevice));
+#endif
+#ifdef GLOBAL_MEMORY
+  cutilSafeCall(cudaMalloc((void**) &device_fstream_c, 3 *
+			   ap->number_streams *
+			   sizeof(GPU_PRECISION)) );
+  cutilSafeCall(cudaMemcpy(device_fstream_c, fstream_c, 3 *
+				   ap->number_streams * 
+				   sizeof(GPU_PRECISION),  
+				   cudaMemcpyHostToDevice));
+  cutilSafeCall(cudaMalloc((void**) &device_fstream_a, 3 *
+			   ap->number_streams *
+			   sizeof(GPU_PRECISION)) );
+  cutilSafeCall(cudaMemcpy(device_fstream_a, fstream_a, 3 *
+				   ap->number_streams * 
+				   sizeof(GPU_PRECISION),  
+				   cudaMemcpyHostToDevice));
+#endif
   cutilSafeCall(cudaMemcpyToSymbol(constant_inverse_fstream_sigma_sq2,
 				   fstream_sigma_sq2, 
 				   ap->number_streams * sizeof(GPU_PRECISION),
@@ -677,6 +741,7 @@ double gpu__likelihood(double *parameters) {
       int int_size = ap->integral[i]->mu_steps * 
 	ap->integral[i]->nu_steps;
       int total_threads = get_total_threads(int_size);
+      printf("int_size:%d, total_threads:%d\n", int_size, total_threads);
       int total_blocks = total_threads / NUM_THREADS;
       dim3 dimBlock(NUM_THREADS);
       printf("total_blocks:%d\n", total_blocks);
@@ -691,8 +756,14 @@ double gpu__likelihood(double *parameters) {
 				 device_st_correction[i]);
 #endif
 	}
-      int aux_bg_profile = ap->aux_bg_profile;
+      int aux_bg_profile = 0;//ap->aux_bg_profile;
+#ifdef SHARED_MEMORY
+      int shared_mem_size = (ap->number_streams + ap->number_streams * 3 * 2) *
+	sizeof(GPU_PRECISION);
+#else
       int shared_mem_size = 0; //shared memory not used in unrolled loops
+#endif
+
       for(int j = 0;j<r_steps;j+= R_INCREMENT)
 	{
 	  boinc_fraction_done(current_work / (double) total_work);
@@ -717,7 +788,11 @@ double gpu__likelihood(double *parameters) {
 	  current_work += R_INCREMENT;
 	}
       cpu__sum_integrals(i, &background_integral, stream_integrals);
-      printf("background_integral: %.15lf, stream_integral[0]: %.15lf, stream_integral[1]: %.15lf\n", background_integral, stream_integrals[0], stream_integrals[1]);
+      printf("background_integral: %.15lf\n", background_integral);
+      for(int i = 0;i<ap->number_streams;++i)
+	{
+	  printf("stream_integral[%d]: %.15lf\n", i, stream_integrals[i]);
+	}
     }
   cutStopTimer(timer);
   float t = cutGetTimerValue(timer);
