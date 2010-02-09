@@ -419,32 +419,28 @@ switch(number_streams) {						\
 							 (GPU_PRECISION)coeff, \
 							 device_stars,	\
 							 number_stars,	\
-							 device_probability, \
-							 device_probability_correction); \
+							     device_probability); \
       break;								\
     case 2: gpu__likelihood_kernel<2><<<dimGrid, dimBlock>>>(offset, convolve, \
 							 q_squared_inverse, r0,	\
 							 (GPU_PRECISION)coeff, \
 							 device_stars,	\
 							 number_stars,	\
-							 device_probability, \
-							 device_probability_correction); \
+							     device_probability); \
       break;								\
     case 3: gpu__likelihood_kernel<3><<<dimGrid, dimBlock>>>(offset, convolve, \
 							 q_squared_inverse, r0,	\
 							 (GPU_PRECISION)coeff, \
 							 device_stars,	\
 							 number_stars,	\
-							 device_probability, \
-							 device_probability_correction); \
+							     device_probability); \
       break;								\
     case 4: gpu__likelihood_kernel<4><<<dimGrid, dimBlock>>>(offset, convolve, \
 							 q_squared_inverse, r0,	\
 							 (GPU_PRECISION)coeff, \
 							 device_stars,	\
 							 number_stars,	\
-							 device_probability, \
-							 device_probability_correction); \
+							     device_probability); \
       break;								\
     }									\
 

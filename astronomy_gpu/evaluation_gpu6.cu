@@ -73,12 +73,9 @@ __device__ __constant__ GPU_PRECISION constant_qgaus_W[MAX_CONVOLVE];
 __device__ __constant__ GPU_PRECISION constant_background_weight[1];
 __device__ __constant__ GPU_PRECISION constant_stream_weight[4];
 
-#ifdef CONST_MEMORY
 #define MAX_STREAMS (4)
 __device__ __constant__ GPU_PRECISION constant_fstream_c[3*MAX_STREAMS];
 __device__ __constant__ GPU_PRECISION constant_fstream_a[3*MAX_STREAMS];
-#endif
-
 #ifdef GLOBAL_MEMORY
 GPU_PRECISION *device_fstream_c;
 GPU_PRECISION *device_fstream_a;
@@ -682,7 +679,6 @@ double gpu__likelihood(double *parameters) {
   }
   setup_constant_textures(fstream_a, fstream_c, 
 			  fstream_sigma_sq2, ap->number_streams);
-#ifdef CONST_MEMORY
   cutilSafeCall(cudaMemcpyToSymbol(constant_fstream_c, fstream_c, 3 *
 				   ap->number_streams * 
 				   sizeof(GPU_PRECISION), 0, 
@@ -691,7 +687,6 @@ double gpu__likelihood(double *parameters) {
 				   ap->number_streams * 
 				   sizeof(GPU_PRECISION), 0, 
 				   cudaMemcpyHostToDevice));
-#endif
 #ifdef GLOBAL_MEMORY
   cutilSafeCall(cudaMalloc((void**) &device_fstream_c, 3 *
 			   ap->number_streams *

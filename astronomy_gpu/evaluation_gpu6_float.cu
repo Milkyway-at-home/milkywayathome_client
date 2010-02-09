@@ -306,45 +306,5 @@ __global__ void gpu__integral_kernel3_aux(int mu_offset, int mu_steps,
 					  float *background_correction, 
 					  float *stream_integrals, 
 					  float *stream_correction) {
-  float bg_int, bg_int_correction;
-  bg_int = 0.0f;
-  bg_int_correction = 0.0f; 
 
-  float *st_int = shared_mem;
-  float *st_int_correction = &st_int[blockDim.x * number_streams];
-  for (int i = 0; i < number_streams; i++) {
-    st_int[i * blockDim.x + threadIdx.x] = 0.0f;
-    st_int_correction[i * blockDim.x + threadIdx.x] = 0.0f;
-  }
-
-  float sinb = device__sinb[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
-  float sinl = device__sinl[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
-  float cosb = device__cosb[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
-  float cosl = device__cosl[threadIdx.x + ((mu_offset + blockIdx.x) * blockDim.x)];
-
-  float cosb_x_cosl = cosb * cosl;
-  float cosb_x_sinl = cosb * sinl;
-
-  for (int i = 0; i < convolve; i++) {
-
-  }
-	
-  //define V down here so that one to reduce the number of registers, because a register
-  //will be reused
-  int nu_step = (threadIdx.x + (blockDim.x * (blockIdx.x + mu_offset))) % nu_steps;
-  float V = device__V[nu_step + (in_step * nu_steps)];
-  int pos = threadIdx.x + (blockDim.x * (blockIdx.x + mu_offset));
-	
-  float corrected_next_term = (bg_int * V) - background_correction[pos];
-  float new_sum = background_integrals[pos] + corrected_next_term;	
-  background_correction[pos] = (new_sum - background_integrals[pos]) - corrected_next_term;
-  background_integrals[pos] = new_sum;
-
-  for (int i = 0; i < number_streams; i++) {
-    corrected_next_term = (st_int[i * blockDim.x + threadIdx.x] * V) - stream_correction[pos];
-    new_sum = stream_integrals[pos] + corrected_next_term;
-    stream_correction[pos] = (new_sum - stream_integrals[pos]) - corrected_next_term;
-    stream_integrals[pos] = new_sum;
-    pos += (nu_steps * mu_steps);
-  }
 }
