@@ -287,7 +287,7 @@ void calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp
 }
 
 double calculate_progress(EVALUATION_STATE *s) {
-	long total_calc_probs, current_calc_probs, current_probs;
+	double total_calc_probs, current_calc_probs, current_probs;
 	int i, mu_step_current, nu_step_current, r_step_current;
 	INTEGRAL_AREA *ia;
 
@@ -298,6 +298,9 @@ double calculate_progress(EVALUATION_STATE *s) {
 		ia = s->integral[i];
 
 		get_steps(ia, &mu_step_current, &nu_step_current, &r_step_current);
+
+//		printf("mu_step_current: %d, mu_steps: %d, nu_step_current: %d, nu_steps: %d, r_step_current: %d, r_steps: %d\n", mu_step_current, ia->mu_steps, nu_step_current, ia->nu_steps, r_step_current, ia->r_steps);
+
 		current_probs = ia->r_steps * ia->mu_steps * ia->nu_steps;
 		total_calc_probs += current_probs;
 		if (i < s->current_integral) {
@@ -305,16 +308,20 @@ double calculate_progress(EVALUATION_STATE *s) {
 		} else if (i == s->current_integral) {
 			current_calc_probs += r_step_current + (nu_step_current * ia->r_steps) + (mu_step_current * ia->nu_steps * ia->r_steps);
 		}
+//		printf("total_calc_probs: %.2f, current_calc_probs: %.2f\n", total_calc_probs, current_calc_probs);
 	}
 
 	total_calc_probs += s->total_stars;
 	current_calc_probs += s->current_star_point;
+//	printf("total_calc_probs: %.2f, current_calc_probs: %.2f, progress: %.10f\n", total_calc_probs, current_calc_probs, (current_calc_probs/total_calc_probs));
 
 	return (double)current_calc_probs / (double)total_calc_probs;
 }
 
 #ifdef MILKYWAY 
 	void do_boinc_checkpoint(EVALUATION_STATE *es) {
+		double progress;
+
 		if (boinc_time_to_checkpoint()) {
 			int retval = write_checkpoint(es);
 			if (retval) {
@@ -323,7 +330,10 @@ double calculate_progress(EVALUATION_STATE *s) {
 			}
 			boinc_checkpoint_completed();
 		}
-		boinc_fraction_done(calculate_progress(es));
+
+		progress = calculate_progress(es);
+//		printf("progress: %.10f\n", progress);
+		boinc_fraction_done(progress);
 	}
 #endif
 
@@ -470,8 +480,8 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 
 	for (; es->current_integral < ap->number_integrals; es->current_integral++) {
 		calculate_integral(ap, es->integral[es->current_integral], es);
-		printf("bg_int: %.20lf\n", es->integral[es->current_integral]->background_integral);
-		for (i = 0; i < ap->number_streams; i++) printf("st_int[%d]: %.20lf\n", i, es->integral[es->current_integral]->stream_integrals[i]);
+		fprintf(stderr, "<background_integral>%.25lf</background_integral>\n", es->integral[es->current_integral]->background_integral);
+		for (i = 0; i < ap->number_streams; i++) fprintf(stderr, "<stream_integral>%d %.25lf</stream_integral>\n", i, es->integral[es->current_integral]->stream_integrals[i]);
 	}
 
 	es->background_integral = es->integral[0]->background_integral;

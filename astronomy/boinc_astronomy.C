@@ -110,7 +110,6 @@ void init_constants(ASTRONOMY_PARAMETERS *ap);
 ASTRONOMY_PARAMETERS *ap;
 STAR_POINTS *sp;
 EVALUATION_STATE *es;
-SEARCH_PARAMETERS *s;
 
 #ifdef COMPUTE_ON_CPU
 double astronomy_evaluate(double *parameters) {
@@ -142,13 +141,45 @@ double astronomy_evaluate(double *parameters) {
 }
 #endif
 
+int get_number_parameters(int argc, char** argv) {
+	int i;
+	for (i = 0; i < argc; i++) {
+		if ( !strcmp(argv[i], "-np") ) {
+			return atoi(argv[++i]);
+		}
+	}
+	return -1;
+}
 
-void worker() {
+int get_parameters(int argc, char** argv, int number_parameters, double* parameters) {
+	int i, j;
+	for (i = 0; i < argc; i++) {
+//		fprintf(stderr, "np: %d, parsing parameter: %s\n", number_parameters, argv[i]);
+
+		if ( !strcmp(argv[i], "-p") ) {
+			for (j = 0; j < number_parameters; j++) {
+//				fprintf(stderr, "i: %d, j: %d, argc: %d, arg: %s\n", i, j, argc, argv[1 + i + j]);
+				if (1 + i + j >= argc) return 1;
+
+				parameters[j] = atof(argv[1 + i + j]);
+			}
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
+
+void worker(int argc, char** argv) {
+	int number_parameters, ap_number_parameters, retval;
+	double* parameters;
+
 	/********
 		*	READ THE ASTRONOMY PARAMETERS
 	 ********/
 	ap = (ASTRONOMY_PARAMETERS*)malloc(sizeof(ASTRONOMY_PARAMETERS));
-	int retval = read_astronomy_parameters(ASTRONOMY_PARAMETER_FILENAME, ap);
+	retval = read_astronomy_parameters(ASTRONOMY_PARAMETER_FILENAME, ap);
 	if (retval) {
 		fprintf(stderr, "APP: error reading astronomy parameters: %d\n", retval);
 		boinc_finish(1);
@@ -173,14 +204,51 @@ void worker() {
 	initialize_state(ap, sp, es);
 //	printf("read evaluation state\n");
 
-	/********
-		*	READ AND SET THE SEARCH PARAMETERS
-	 ********/
-	init_search_parameters(&s, get_optimized_parameter_count(ap));
-	retval = read_search_parameters(SEARCH_PARAMETER_FILENAME, s);
-//	fwrite_search_parameters(stdout, s);
-	set_astronomy_parameters(ap, s->parameters);
-//	printf("read search parameters\n");
+	number_parameters = get_number_parameters(argc, argv);
+	ap_number_parameters = get_optimized_parameter_count(ap);
+
+	if (number_parameters < 1 || number_parameters != ap_number_parameters) {
+		fprintf(stderr, "error reading parameters, number of parameters from the command line (%d) does not match the number of parameters to be optimized in astronomy_parameters.txt (%d)", number_parameters, ap_number_parameters);
+
+		free_state(es);
+		free(es);
+		free_parameters(ap);
+		free(ap);
+		free_star_points(sp);
+		free(sp);
+
+#ifdef _WIN32
+		_set_printf_count_output( 1 );
+		_get_printf_count_output();
+#endif
+
+		boinc_finish(0);
+		return;
+	}
+
+	parameters = (double*)malloc(sizeof(double) * number_parameters);
+	retval = get_parameters(argc, argv, number_parameters, parameters);
+
+	if (retval) {
+		fprintf(stderr, "could not parse parameters from the command line, retval: %d", retval);
+
+		free_state(es);
+		free(es);
+		free_parameters(ap);
+		free(ap);
+		free_star_points(sp);
+		free(sp);
+
+#ifdef _WIN32
+		_set_printf_count_output( 1 );
+		_get_printf_count_output();
+#endif
+
+		boinc_finish(0);
+		return;
+	}
+
+	set_astronomy_parameters(ap, parameters);
 
 	#ifdef COMPUTE_ON_CPU
 		init_simple_evaluator(astronomy_evaluate);
@@ -229,20 +297,19 @@ void worker() {
 	sprintf(app_version, "%s: %1.2lf", BOINC_APP_NAME, BOINC_APP_VERSION);
        	
 #ifdef USE_OCL
-	double likelihood = ocl_likelihood(s->parameters, 
+	double likelihood = ocl_likelihood(parameters, 
 					   ap,
 					   sp,
 					   ocl_mem);
 	destruct_ocl(ocl_mem);
 #else
-	double likelihood = evaluate(s->parameters);
+	double likelihood = evaluate(parameters);
 #endif
-	printf("calculated likelihood: %.15f\n", likelihood);
+	fprintf(stderr,"<search_likelihood>%0.25f</search_likelihood>\n", likelihood);
+	fprintf(stderr,"<search_application>%s %s</search_application>\n", app_version, precision);
 
-	/********
-		*	RESOLVE THE OUTPUT FILE & WRITE THE RESULT
-	 ********/
-	write_cpu_result(OUTPUT_FILENAME, s->search_name, s->number_parameters, s->parameters, likelihood, s->metadata, app_version, precision);
+
+	free(parameters);
 
 	free_state(es);
 	free(es);
@@ -315,7 +382,7 @@ int main(int argc, char **argv){
 	printf("got here\n");
 	parse_prefs(project_prefs);
 #endif
-        worker();
+        worker(argc, argv);
 }
 
 #ifdef _WIN32
@@ -330,4 +397,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.21 2010/01/26 14:33:13 watera2 Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.22 2010/04/06 02:12:39 deselt Exp $";
