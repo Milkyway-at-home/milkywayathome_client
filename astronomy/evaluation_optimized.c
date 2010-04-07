@@ -480,8 +480,8 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 
 	for (; es->current_integral < ap->number_integrals; es->current_integral++) {
 		calculate_integral(ap, es->integral[es->current_integral], es);
-		fprintf(stderr, "<background_integral>%.25lf</background_integral>\n", es->integral[es->current_integral]->background_integral);
-		for (i = 0; i < ap->number_streams; i++) fprintf(stderr, "<stream_integral>%d %.25lf</stream_integral>\n", i, es->integral[es->current_integral]->stream_integrals[i]);
+//		fprintf(stderr, "<background_integral>%.25lf</background_integral>\n", es->integral[es->current_integral]->background_integral);
+//		for (i = 0; i < ap->number_streams; i++) fprintf(stderr, "<stream_integral>%d %.25lf</stream_integral>\n", i, es->integral[es->current_integral]->stream_integrals[i]);
 	}
 
 	es->background_integral = es->integral[0]->background_integral;
@@ -493,8 +493,8 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 	}
 
 //	time(&finish_time);
-//	printf("background integral: %.20lf\n", es->background_integral);
-//	for (i = 0; i < ap->number_streams; i++) printf("stream integral[%d]: %.20lf\n", i, es->stream_integrals[i]);
+	fprintf(stderr, "<background_integral>%.25lf</background_integral>\n", es->background_integral);
+	for (i = 0; i < ap->number_streams; i++) fprintf(stderr, "<stream_integral>%d %.20lf</stream_integral>\n", i, es->stream_integrals[i]);
 //	printf("integrals calculated in: %lf\n", (double)finish_time - (double)start_time);
 	return 0;
 }

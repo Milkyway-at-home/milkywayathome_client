@@ -1,10 +1,10 @@
-Can't open init data file - running in standalone mode
-called boinc_finish
+20:30:38 (8188): Can't open init data file - running in standalone mode
+<background_integral>0.0004449968586906448138156</background_integral>
+<stream_integral>0 93.28291463972249175640</stream_integral>
+<stream_integral>1 693.31476977137049289013</stream_integral>
+<stream_integral>2 379.87099590291904860351</stream_integral>
+<search_likelihood>-3.2208300766762310018975768</search_likelihood>
+<search_application>stock_osx_x86_64: 0.02 double</search_application>
+20:31:04 (8188): called boinc_finish
 shmget in attach_shmem: Invalid argument
-Can't set up shared mem: -1
-Will run in standalone mode.
-called boinc_finish
-shmget in attach_shmem: Invalid argument
-Can't set up shared mem: -1
-Will run in standalone mode.
-called boinc_finish
+20:31:06 (8190): Can't set up shared mem: -1. Will run in standalone mode.

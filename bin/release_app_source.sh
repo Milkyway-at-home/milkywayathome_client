@@ -44,17 +44,16 @@ cp ../../util/settings.h ./util/
 
 cp ../make.osx ./bin/
 cp ../make.linux ./bin/
-cp ../test_boinc/set_parameters.sh ./bin/test_files/set_parameters.sh
-cp ../test_boinc/search_parameters-20.txt ./bin/test_files/search_parameters-20.txt
-cp ../test_boinc/search_parameters-21.txt ./bin/test_files/search_parameters-21.txt
-cp ../test_boinc/search_parameters-79.txt ./bin/test_files/search_parameters-79.txt
-cp ../test_boinc/search_parameters-82.txt ./bin/test_files/search_parameters-82.txt
-cp ../test_boinc/search_parameters-86.txt ./bin/test_files/search_parameters-86.txt
+cp ../test_boinc/set_parameters.sh ./bin/test_files/test_application.sh
+cp ../test_boinc/astronomy_parameters-11.txt ./bin/test_files/astronomy_parameters-11.txt
+cp ../test_boinc/astronomy_parameters-12.txt ./bin/test_files/astronomy_parameters-12.txt
 cp ../test_boinc/astronomy_parameters-20.txt ./bin/test_files/astronomy_parameters-20.txt
 cp ../test_boinc/astronomy_parameters-21.txt ./bin/test_files/astronomy_parameters-21.txt
 cp ../test_boinc/astronomy_parameters-79.txt ./bin/test_files/astronomy_parameters-79.txt
 cp ../test_boinc/astronomy_parameters-82.txt ./bin/test_files/astronomy_parameters-82.txt
 cp ../test_boinc/astronomy_parameters-86.txt ./bin/test_files/astronomy_parameters-86.txt
+cp ../test_boinc/stars-11.txt ./bin/test_files/stars-11.txt
+cp ../test_boinc/stars-12.txt ./bin/test_files/stars-12.txt
 cp ../test_boinc/stars-20.txt ./bin/test_files/stars-20.txt
 cp ../test_boinc/stars-21.txt ./bin/test_files/stars-21.txt
 cp ../test_boinc/stars-79.txt ./bin/test_files/stars-79.txt

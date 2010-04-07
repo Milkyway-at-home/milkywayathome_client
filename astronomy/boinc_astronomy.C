@@ -208,7 +208,7 @@ void worker(int argc, char** argv) {
 	ap_number_parameters = get_optimized_parameter_count(ap);
 
 	if (number_parameters < 1 || number_parameters != ap_number_parameters) {
-		fprintf(stderr, "error reading parameters, number of parameters from the command line (%d) does not match the number of parameters to be optimized in astronomy_parameters.txt (%d)", number_parameters, ap_number_parameters);
+		fprintf(stderr, "error reading parameters, number of parameters from the command line (%d) does not match the number of parameters to be optimized in astronomy_parameters.txt (%d)\n", number_parameters, ap_number_parameters);
 
 		free_state(es);
 		free(es);
@@ -230,7 +230,7 @@ void worker(int argc, char** argv) {
 	retval = get_parameters(argc, argv, number_parameters, parameters);
 
 	if (retval) {
-		fprintf(stderr, "could not parse parameters from the command line, retval: %d", retval);
+		fprintf(stderr, "could not parse parameters from the command line, retval: %d\n", retval);
 
 		free_state(es);
 		free(es);
@@ -397,4 +397,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.22 2010/04/06 02:12:39 deselt Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.23 2010/04/07 00:33:27 deselt Exp $";
