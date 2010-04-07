@@ -4,6 +4,7 @@ mkdir milkyway
 cd milkyway
 mkdir license
 mkdir astronomy
+mkdir evaluation
 mkdir searches
 mkdir util
 mkdir bin
@@ -36,27 +37,23 @@ cp ../../astronomy/evaluation_state.h ./astronomy/
 
 cp ../../searches/search_parameters.c ./searches/
 cp ../../searches/search_parameters.h ./searches/
+cp ../../searches/result.c ./searches/
+cp ../../searches/result.h ./searches/
 
+cp ../../evaluation/evaluator.h ./evaluation/
+cp ../../evaluation/simple_evaluator.c ./evaluation/
+cp ../../evaluation/simple_evaluator.h ./evaluation/
+
+cp ../../util/matrix.c ./util/
+cp ../../util/matrix.h ./util/
 cp ../../util/io_util.c ./util/
 cp ../../util/io_util.h ./util/
 cp ../../util/settings.c ./util/
 cp ../../util/settings.h ./util/
 
 cp ../Makefile ./bin/
-cp ../test_boinc/astronomy_parameters-11.txt ./bin/test_files/astronomy_parameters-11.txt
-cp ../test_boinc/astronomy_parameters-12.txt ./bin/test_files/astronomy_parameters-12.txt
-cp ../test_boinc/astronomy_parameters-20.txt ./bin/test_files/astronomy_parameters-20.txt
-cp ../test_boinc/astronomy_parameters-21.txt ./bin/test_files/astronomy_parameters-21.txt
-cp ../test_boinc/astronomy_parameters-79.txt ./bin/test_files/astronomy_parameters-79.txt
-cp ../test_boinc/astronomy_parameters-82.txt ./bin/test_files/astronomy_parameters-82.txt
-cp ../test_boinc/astronomy_parameters-86.txt ./bin/test_files/astronomy_parameters-86.txt
-cp ../test_boinc/stars-11.txt ./bin/test_files/stars-11.txt
-cp ../test_boinc/stars-12.txt ./bin/test_files/stars-12.txt
-cp ../test_boinc/stars-20.txt ./bin/test_files/stars-20.txt
-cp ../test_boinc/stars-21.txt ./bin/test_files/stars-21.txt
-cp ../test_boinc/stars-79.txt ./bin/test_files/stars-79.txt
-cp ../test_boinc/stars-82.txt ./bin/test_files/stars-82.txt
-cp ../test_boinc/stars-86.txt ./bin/test_files/stars-86.txt
+cp ../test_boinc/astronomy_parameters-*.txt ./bin/test_files/
+cp ../test_boinc/stars-*.txt ./bin/test_files/
 cp ../test_boinc/*.sh ./bin/test_files/
 
 cd ..

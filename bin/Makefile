@@ -1,8 +1,8 @@
 APP_VERSION = 0.02
 APP_NAME = stock
 
-OSX_BOINC_DIR = /Users/deselt/software/boinc_trunk
-OSX_LIBBOINC_DIR = /Users/deselt/software/boinc_trunk/mac_build/build/Deployment
+OSX_BOINC_DIR = /Users/deselt/software/boinc
+OSX_LIBBOINC_DIR = /Users/deselt/software/boinc/mac_build/build/Deployment
 
 LINUX_BOINC_DIR = /software/boinc-6.3.14-0/pkg/include/boinc
 LINUX_LIBBOINC_DIR = /usr/local/lib
