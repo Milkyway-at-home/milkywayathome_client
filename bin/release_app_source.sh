@@ -1,4 +1,4 @@
-echo "creating files for milkyway app release "$1
+echo "creating files for milkyway3 app release "$1
 
 mkdir milkyway
 cd milkyway
@@ -42,9 +42,7 @@ cp ../../util/io_util.h ./util/
 cp ../../util/settings.c ./util/
 cp ../../util/settings.h ./util/
 
-cp ../make.osx ./bin/
-cp ../make.linux ./bin/
-cp ../test_boinc/set_parameters.sh ./bin/test_files/test_application.sh
+cp ../Makefile ./bin/
 cp ../test_boinc/astronomy_parameters-11.txt ./bin/test_files/astronomy_parameters-11.txt
 cp ../test_boinc/astronomy_parameters-12.txt ./bin/test_files/astronomy_parameters-12.txt
 cp ../test_boinc/astronomy_parameters-20.txt ./bin/test_files/astronomy_parameters-20.txt
@@ -59,8 +57,9 @@ cp ../test_boinc/stars-21.txt ./bin/test_files/stars-21.txt
 cp ../test_boinc/stars-79.txt ./bin/test_files/stars-79.txt
 cp ../test_boinc/stars-82.txt ./bin/test_files/stars-82.txt
 cp ../test_boinc/stars-86.txt ./bin/test_files/stars-86.txt
+cp ../test_boinc/*.sh ./bin/test_files/
 
 cd ..
-tar cvzf mw_v$1.tar milkyway
-zip -r mw_v$1.zip milkyway
+tar cvzf mw3_v$1.tar milkyway
+zip -r mw3_v$1.zip milkyway
 rm -r milkyway
