@@ -82,7 +82,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
 double alpha, q, r0, delta, coeff, alpha_delta3;
-//double  bg_a, bg_b, bg_c; //vickej2_bg
+double  bg_a, bg_b, bg_c; //vickej2_bg
 double *qgaus_X, *qgaus_W, **xyz, *dx;
 double **stream_a, **stream_c, *stream_sigma, *stream_sigma_sq2;
 
@@ -100,17 +100,17 @@ void init_constants(ASTRONOMY_PARAMETERS *ap) {
 	r0	= ap->background_parameters[2];
 	delta	= ap->background_parameters[3];
 
-//	if (ap->aux_bg_profile == 0) {
-//                bg_a    = 0; 
-//                bg_b    = 0; 
-//                bg_c    = 0; 
-//        } else if (ap->aux_bg_profile == 1) {
-//        	bg_a    = ap->background_parameters[4]; //vickej2_bg
-//        	bg_b    = ap->background_parameters[5]; //vickej2_bg
-//        	bg_c    = ap->background_parameters[6]; //vickej2_bg 
-//        } else { 
-//	        printf("Error: aux_bg_profile invalid");
-//        }
+	if (ap->aux_bg_profile == 0) {
+                bg_a    = 0; 
+                bg_b    = 0; 
+                bg_c    = 0; 
+        } else if (ap->aux_bg_profile == 1) {
+        	bg_a    = ap->background_parameters[4]; //vickej2_bg
+        	bg_b    = ap->background_parameters[5]; //vickej2_bg
+        	bg_c    = ap->background_parameters[6]; //vickej2_bg 
+        } else { 
+	        printf("Error: aux_bg_profile invalid");
+        }
 	
 	coeff	= 1 / (stdev * sqrt(2*pi));
 	alpha_delta3 = 3 - alpha + delta;
@@ -234,16 +234,16 @@ void calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp
 				
 //vickej2_bg changing the hernquist profile to include a quadratic term in g
 
-//	if (ap->aux_bg_profile == 1) {
-//		r_in_mag = 4.2 + 5 * ( log10(1000 * r_point[i]) - 1);
-//                h_prob = qw_r3_N[i] / (rg * rs * rs * rs);
-//                aux_prob = qw_r3_N[i] * ( bg_a * r_in_mag * r_in_mag + bg_b * r_in_mag + bg_c );
-//		(*bg_prob) += h_prob + aux_prob;
-//       } else if (ap->aux_bg_profile == 0) {
+	if (ap->aux_bg_profile == 1) {
+		r_in_mag = 4.2 + 5 * ( log10(1000 * r_point[i]) - 1);
+                h_prob = qw_r3_N[i] / (rg * rs * rs * rs);
+                aux_prob = qw_r3_N[i] * ( bg_a * r_in_mag * r_in_mag + bg_b * r_in_mag + bg_c );
+		(*bg_prob) += h_prob + aux_prob;
+       } else if (ap->aux_bg_profile == 0) {
                 (*bg_prob) += qw_r3_N[i] / (rg * rs * rs * rs);
-//        } else {
-//                printf("Error: aux_bg_profile invalid");
-//        }
+        } else {
+                printf("Error: aux_bg_profile invalid");
+        }
 
 //vickej2_bg end edits
 
