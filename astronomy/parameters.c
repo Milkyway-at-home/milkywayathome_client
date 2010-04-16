@@ -166,7 +166,7 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 
 	fscanf(file, "convolve: %d\n", &ap->convolve);
 	fscanf(file, "sgr_coordinates: %d\n", &ap->sgr_coordinates);
-//	fscanf(file, "aux_bg_profile: %d\n", &ap->aux_bg_profile); //vickej2_bg 
+	fscanf(file, "aux_bg_profile: %d\n", &ap->aux_bg_profile); //vickej2_bg 
 	fscanf(file, "wedge: %d\n", &ap->wedge);
 
 	ap->integral = (INTEGRAL**)malloc(sizeof(INTEGRAL*));
@@ -228,7 +228,7 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 
         fprintf(file, "convolve: %d\n", ap->convolve);
 	fprintf(file, "sgr_coordinates: %d\n", ap->sgr_coordinates);
-//        fprintf(file, "aux_bg_profile: %d\n", ap->aux_bg_profile); //vickej2_bg 
+        fprintf(file, "aux_bg_profile: %d\n", ap->aux_bg_profile); //vickej2_bg 
 	fprintf(file, "wedge: %d\n", ap->wedge);
 
 	fprintf(file, "r[min,max,steps]: %lf, %lf, %d\n", ap->integral[0]->r_min, ap->integral[0]->r_max, ap->integral[0]->r_steps);
