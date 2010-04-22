@@ -11,10 +11,13 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
 	<ToolFiles>
 		<ToolFile
-			RelativePath=".\Cuda.Rules"
+			RelativePath=".\Cuda2.3.Rules"
 		/>
 	</ToolFiles>
 	<Configurations>
@@ -46,8 +49,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories="&quot;$(CUDA_INC_PATH)&quot;;bin\boinc;&quot;C:\Documents and Settings\All Users.WINDOWS\Application Data\NVIDIA Corporation\NVIDIA CUDA SDK\common\inc&quot;"
-				PreprocessorDefinitions="WIN32;_WIN32;_CONSOLE;BOINC_APP_VERSION(0.19);BOINC_APP_NAME(&quot;milkyway&quot;);COMPUTE_ON_GPU;MILKYWAY_GPU;_CRT_SECURE_NO_WARNINGS"
+				AdditionalIncludeDirectories="&quot;$(CUDA_INC_PATH)&quot;;&quot;$(ProjectDir)\boinc&quot;;&quot;$(NVSDKCOMPUTE_ROOT)\C\common\inc&quot;"
+				PreprocessorDefinitions="WIN32;_WIN32;_CONSOLE;DOUBLE_PRECISION;COMPUTE_ON_GPU;MILKYWAY_GPU;_CRT_SECURE_NO_WARNINGS;BOINC_APPLICATION;BOINC_APP_NAME=\&quot;stock_win32_gpu\&quot;;BOINC_APP_VERSION=0.20"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="0"
@@ -69,7 +72,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="cudart.lib cutil32.lib cuda.lib libboinc_staticcrt.lib libboincapi_staticcrt.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(CUDA_LIB_PATH)&quot;;&quot;C:\Documents and Settings\All Users.WINDOWS\Application Data\NVIDIA Corporation\NVIDIA CUDA SDK\common\lib&quot;;bin\boinc"
+				AdditionalLibraryDirectories="&quot;$(CUDA_LIB_PATH)\..\lib&quot;;&quot;$(CUDA_LIB_PATH)&quot;;&quot;$(NVSDKCOMPUTE_ROOT)\C\common\lib&quot;;&quot;$(ProjectDir)\boinc&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -116,11 +119,11 @@
 			/>
 			<Tool
 				Name="CUDA Build Rule"
-				Include="$(NVSDKCOMPUTE_ROOT)\C\common\inc;$(ProjectDir)\boinc"
+				Include="&quot;$(CUDA_INC_PATH)&quot;;&quot;$(ProjectDir)\boinc&quot;;&quot;$(NVSDKCOMPUTE_ROOT)\C\common\inc&quot;"
 				Arch="13"
-				MaxRegCount="64"
-				ExtraNvccOptions="-DDOUBLE_PRECISION -m32 "
-				Optimization="2"
+				MaxRegCount="48"
+				ExtraNvccOptions="-DDOUBLE_PRECISION -DGLOBAL_MEMORY -DSHARED_MEMORY"
+				Defines="DOUBLE_PRECISION;GLOBAL_MEMORY;SHARED_MEMORY"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -136,7 +139,259 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="&quot;$(CUDA_INC_PATH)&quot;;&quot;$(ProjectDir)\boinc&quot;;&quot;$(NVSDKCOMPUTE_ROOT)\C\common\inc&quot;"
+				PreprocessorDefinitions="WIN32;_WIN32;_CONSOLE;DOUBLE_PRECISION;GLOBAL_MEMORY;SHARED_MEMORY;COMPUTE_ON_GPU;MILKYWAY_GPU;_CRT_SECURE_NO_WARNINGS;BOINC_APPLICATION;BOINC_APP_NAME=\&quot;stock_win32_gpu\&quot;;BOINC_APP_VERSION=0.03"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="true"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+				CompileAs="2"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="cuda.lib cudart.lib cutil32.lib libboinc_staticcrt.lib libboincapi_staticcrt.lib cudpp32.lib"
+				OutputFile="$(OutDir)\$(ProjectName)$(PlatformName)_gpu.exe"
+				AdditionalLibraryDirectories="&quot;$(CUDA_LIB_PATH)\..\lib&quot;;&quot;$(CUDA_LIB_PATH)&quot;;&quot;$(NVSDKCOMPUTE_ROOT)\C\common\lib&quot;;&quot;$(ProjectDir)\boinc&quot;"
+				GenerateDebugInformation="true"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release CPU|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2"
+			WholeProgramOptimization="1"
+			ExcludeBuckets="3"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="CUDA Build Rule"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="&quot;$(CUDA_INC_PATH)&quot;;&quot;$(ProjectDir)\boinc&quot;;&quot;$(NVSDKCOMPUTE_ROOT)\C\common\inc&quot;"
+				PreprocessorDefinitions="WIN32;_WIN32;_CONSOLE;DOUBLE_PRECISION;GLOBAL_MEMORY;SHARED_MEMORY;COMPUTE_ON_CPU;MILKYWAY_CPU;_CRT_SECURE_NO_WARNINGS;BOINC_APPLICATION;BOINC_APP_NAME=\&quot;stock_win32_gpu\&quot;;BOINC_APP_VERSION=0.20"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="true"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+				CompileAs="2"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="cuda.lib cudart.lib cutil32.lib libboinc_staticcrt.lib libboincapi_staticcrt.lib cudpp32.lib"
+				OutputFile="$(OutDir)\$(ProjectName)$(PlatformName)_cpu.exe"
+				AdditionalLibraryDirectories="&quot;$(CUDA_LIB_PATH)\..\lib&quot;;&quot;$(CUDA_LIB_PATH)&quot;;&quot;$(NVSDKCOMPUTE_ROOT)\C\common\lib&quot;;&quot;$(ProjectDir)\boinc&quot;"
+				GenerateDebugInformation="true"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="CUDA Build Rule"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				AdditionalIncludeDirectories="&quot;$(CUDA_INC_PATH)&quot;;&quot;$(ProjectDir)\boinc&quot;;&quot;$(NVSDKCOMPUTE_ROOT)\C\common\inc&quot;"
 				PreprocessorDefinitions="WIN32;_WIN32;_CONSOLE;DOUBLE_PRECISION;COMPUTE_ON_GPU;MILKYWAY_GPU;_CRT_SECURE_NO_WARNINGS;BOINC_APPLICATION;BOINC_APP_NAME=\&quot;stock_win32_gpu\&quot;;BOINC_APP_VERSION=0.20"
+				MinimalRebuild="false"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
+				CompileAs="2"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="cudart.lib cutil32.lib cuda.lib libboinc_staticcrt.lib libboincapi_staticcrt.lib"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;$(CUDA_LIB_PATH)\..\lib&quot;;&quot;$(CUDA_LIB_PATH)&quot;;&quot;$(NVSDKCOMPUTE_ROOT)\C\common\lib&quot;;&quot;$(ProjectDir)\boinc&quot;"
+				GenerateDebugInformation="true"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="CUDA Build Rule"
+				AdditionalOptions="-ccbin &quot;D:\vs2008\VC\bin\amd64&quot;"
+				Include="&quot;$(CUDA_INC_PATH)&quot;;&quot;$(ProjectDir)\boinc&quot;;&quot;$(NVSDKCOMPUTE_ROOT)\C\common\inc&quot;"
+				Arch="13"
+				CompilerPath="0"
+				MaxRegCount="48"
+				ExtraNvccOptions="-DDOUBLE_PRECISION -DGLOBAL_MEMORY -DSHARED_MEMORY "
+				Defines="DOUBLE_PRECISION;GLOBAL_MEMORY;SHARED_MEMORY"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="&quot;$(CUDA_INC_PATH)&quot;;&quot;$(ProjectDir)\boinc&quot;;&quot;$(NVSDKCOMPUTE_ROOT)\C\common\inc&quot;"
+				PreprocessorDefinitions="WIN32;_WIN32;_CONSOLE;DOUBLE_PRECISION;GLOBAL_MEMORY;SHARED_MEMORY;COMPUTE_ON_GPU;MILKYWAY_GPU;_CRT_SECURE_NO_WARNINGS;BOINC_APPLICATION;BOINC_APP_NAME=\&quot;stock_win32_gpu\&quot;;BOINC_APP_VERSION=0.03"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
@@ -160,7 +415,87 @@
 				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				TargetMachine="1"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release CPU|x64"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="CUDA Build Rule"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="&quot;$(CUDA_INC_PATH)&quot;;&quot;$(ProjectDir)\boinc&quot;;&quot;$(NVSDKCOMPUTE_ROOT)\C\common\inc&quot;"
+				PreprocessorDefinitions="WIN32;_WIN32;_CONSOLE;DOUBLE_PRECISION;GLOBAL_MEMORY;SHARED_MEMORY;COMPUTE_ON_CPU;MILKYWAY_CPU;_CRT_SECURE_NO_WARNINGS;BOINC_APPLICATION;BOINC_APP_NAME=\&quot;stock_win32_gpu\&quot;;BOINC_APP_VERSION=0.20"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="true"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+				CompileAs="2"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="cuda.lib cudart.lib cutil32.lib libboinc_staticcrt.lib libboincapi_staticcrt.lib cudpp32.lib"
+				AdditionalLibraryDirectories="&quot;$(CUDA_LIB_PATH)\..\lib&quot;;&quot;$(CUDA_LIB_PATH)&quot;;&quot;$(NVSDKCOMPUTE_ROOT)\C\common\lib&quot;;&quot;$(ProjectDir)\boinc&quot;"
+				GenerateDebugInformation="true"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -207,6 +542,38 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							CompileAs="2"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release CPU|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							CompileAs="2"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|x64"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							CompileAs="2"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|x64"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							CompileAs="2"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release CPU|x64"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
@@ -293,6 +660,38 @@
 							CompileAs="2"
 						/>
 					</FileConfiguration>
+					<FileConfiguration
+						Name="Release CPU|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							CompileAs="2"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|x64"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							CompileAs="2"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|x64"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							CompileAs="2"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release CPU|x64"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							CompileAs="2"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\astronomy\stCoords.h"
@@ -317,6 +716,38 @@
 							CompileAs="2"
 						/>
 					</FileConfiguration>
+					<FileConfiguration
+						Name="Release CPU|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							CompileAs="2"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|x64"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							CompileAs="2"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|x64"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							CompileAs="2"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release CPU|x64"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							CompileAs="2"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\astronomy\stMath.h"
@@ -335,6 +766,38 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							CompileAs="2"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release CPU|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							CompileAs="2"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|x64"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							CompileAs="2"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|x64"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							CompileAs="2"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release CPU|x64"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
@@ -377,21 +840,6 @@
 				<File
 					RelativePath="..\astronomy_gpu\evaluation_gpu.h"
 					>
-				</File>
-				<File
-					RelativePath="..\astronomy_gpu\evaluation_gpu6.cu"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="CUDA Build Rule"
-							Include="C:\Documents and Settings\All Users.WINDOWS\Application Data\NVIDIA Corporation\NVIDIA CUDA SDK\common\inc;bin/boinc"
-							Arch="13"
-							MaxRegCount="64"
-							ExtraNvccOptions="-DDOUBLE_PRECISION -m32"
-						/>
-					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\astronomy_gpu\gauss_legendre.c"
