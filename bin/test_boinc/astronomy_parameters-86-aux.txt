@@ -19,7 +19,7 @@ stream_max[5]: 76.0000000000, 45.7000000000, 6.2831853072, 6.2831853072, 20.0000
 optimize_parameter[5]:  1, 1, 1, 1, 1
 convolve: 120
 sgr_coordinates: 0
-aux_bg_profile: 0
+aux_bg_profile: 1
 wedge: 86
 r[min,max,steps]: 16.000000, 22.500000, 1400
 mu[min,max,steps]: 310.000000, 420.000000, 1600

@@ -25,13 +25,13 @@ optimize_weight: 1
 stream_parameters[5]: 177.884238, 23.882892, 1.210639, 4.67121131, 8.534378
 stream_step[5]: 0.00003, 0.00004, 0.00006, 0.00004, 0.000004
 stream_min[5]: 133.0, 2.40, 0.000000000000000, 0.000000000000000, 0.10
-stream_max[5]: 210.0, 45.6, 6.283185307179586, 6.283185307179586, 20.0
+stream_max[5]: 249.0, 45.6, 6.283185307179586, 6.283185307179586, 20.0
 optimize_parameter[5]: 1, 1, 1, 1, 1
 convolve: 120
 sgr_coordinates: 0
-aux_bg_profile: 0
-wedge: 21
-r[min,max,steps]: 16.0, 22.5, 70
-mu[min,max,steps]: 133, 210, 160
-nu[min,max,steps]: -1.25, 1.25, 16
+aux_bg_profile: 1
+wedge: 20
+r[min,max,steps]: 16.0, 22.5, 1400
+mu[min,max,steps]: 133, 249, 1600
+nu[min,max,steps]: -1.25, 1.25, 640
 number_cuts: 0

@@ -1,3 +1,4 @@
+parameters_version: 0.04
 number_parameters: 4
 background_weight: 0.0
 background_parameters[4]: 1.0, 0.571713, 12.312119, 1.0
@@ -38,6 +39,7 @@ stream_max[5]: 229.0, 57.5, 6.283185307179586, 6.283185307179586, 20.0
 optimize_parameter[5]: 1, 1, 1, 1, 1
 convolve: 120 
 sgr_coordinates: 0
+aux_bg_profile: 0
 wedge: 11
 r[min,max,steps]: 16.0, 23.0, 1400
 mu[min,max,steps]: 150, 229, 1600
