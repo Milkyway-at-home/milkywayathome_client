@@ -166,99 +166,102 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
   float cosb_x_sinl = cosb * sinl;
 
   for (int i = 0; i < convolve; i++) {
-    float xyz2 = tex2D(tex_r_point,i,in_step) * sinb;
-    float xyz0 = tex2D(tex_r_point,i,in_step) * cosb_x_cosl - d_lbr_r;
-    float xyz1 = tex2D(tex_r_point,i,in_step) * cosb_x_sinl;
+    float r_point = tex2D(tex_r_point,i,in_step);
+    float xyz2 = r_point * sinb;
+    float xyz0 = r_point * cosb_x_cosl - d_lbr_r;
+    float xyz1 = r_point * cosb_x_sinl;
 
+    float qw_r3_N = tex2D(tex_qw_r3_N,i,in_step);
     {
       float rg = __fsqrt_rn(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) 
-			 * q_squared_inverse);
+			    * q_squared_inverse);
       float rs = rg + r0;
       
-      bg_int += (tex2D(tex_qw_r3_N,i,in_step) / (rg * rs * rs * rs));
+      bg_int += (qw_r3_N / (rg * rs * rs * rs));
     }
     if (number_streams >= 1)
       {
 	//stream 0
-	float sxyz0 = xyz0 - constant_fstream_c[0];
-	float sxyz1 = xyz1 - constant_fstream_c[1];
-	float sxyz2 = xyz2 - constant_fstream_c[2];
+	float sxyz0 = xyz0 - tex2D(tex_fstream_c, 0, 0);
+	float sxyz1 = xyz1 - tex2D(tex_fstream_c, 1, 0);
+	float sxyz2 = xyz2 - tex2D(tex_fstream_c, 2, 0);
 
-	float dotted = constant_fstream_a[0] * sxyz0 
-	  + constant_fstream_a[1] * sxyz1
-	  + constant_fstream_a[2] * sxyz2;
+	float dotted = tex2D(tex_fstream_a, 0, 0) * sxyz0 
+	  + tex2D(tex_fstream_a, 1, 0) * sxyz1
+	  + tex2D(tex_fstream_a, 2, 0) * sxyz2;
 	
-	sxyz0 -= dotted * constant_fstream_a[0];
-	sxyz1 -= dotted * constant_fstream_a[1];
-	sxyz2 -= dotted * constant_fstream_a[2];
+	sxyz0 -= dotted * tex2D(tex_fstream_a, 0, 0);
+	sxyz1 -= dotted * tex2D(tex_fstream_a, 1, 0);
+	sxyz2 -= dotted * tex2D(tex_fstream_a, 2, 0);
 	
 	float xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-	float result = (tex2D(tex_qw_r3_N,i,in_step) 
-			 * exp(-(xyz_norm) * 
-			       constant_inverse_fstream_sigma_sq2[0]));   
+	float result = (qw_r3_N 
+			* exp(-(xyz_norm) * 
+			      constant_inverse_fstream_sigma_sq2[0]));   
 	st_int0 += result;
       }
     if (number_streams >= 2)
       {
 	//stream 1
-	float sxyz0 = xyz0 - constant_fstream_c[3];
-	float sxyz1 = xyz1 - constant_fstream_c[4];
-	float sxyz2 = xyz2 - constant_fstream_c[5];
+	float sxyz0 = xyz0 - tex2D(tex_fstream_c, 0, 1);
+	float sxyz1 = xyz1 - tex2D(tex_fstream_c, 1, 1);
+	float sxyz2 = xyz2 - tex2D(tex_fstream_c, 2, 1);
+
+	float dotted = tex2D(tex_fstream_a, 0, 1) * sxyz0 
+	  + tex2D(tex_fstream_a, 1, 1) * sxyz1
+	  + tex2D(tex_fstream_a, 2, 1) * sxyz2;
 	
-	float dotted = constant_fstream_a[3] * sxyz0 
-	  + constant_fstream_a[4] * sxyz1
-	  + constant_fstream_a[5] * sxyz2;
+	sxyz0 -= dotted * tex2D(tex_fstream_a, 0, 1);
+	sxyz1 -= dotted * tex2D(tex_fstream_a, 1, 1);
+	sxyz2 -= dotted * tex2D(tex_fstream_a, 2, 1);
 	
-	sxyz0 -= dotted * constant_fstream_a[3];
-	sxyz1 -= dotted * constant_fstream_a[4];
-	sxyz2 -= dotted * constant_fstream_a[5];
-	  
 	float xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-	float result = (tex2D(tex_qw_r3_N,i,in_step) 
-			 * exp(-(xyz_norm) * 
-			       constant_inverse_fstream_sigma_sq2[1]));   
+	float result = (qw_r3_N 
+			* exp(-(xyz_norm) * 
+			      constant_inverse_fstream_sigma_sq2[1]));   
 	st_int1 += result;
-      }
+      } 
     if (number_streams >= 3)
       {
 	//stream 2
-	float sxyz0 = xyz0 - constant_fstream_c[6];
-	float sxyz1 = xyz1 - constant_fstream_c[7];
-	float sxyz2 = xyz2 - constant_fstream_c[8];
+	float sxyz0 = xyz0 - tex2D(tex_fstream_c, 0, 2);
+	float sxyz1 = xyz1 - tex2D(tex_fstream_c, 1, 2);
+	float sxyz2 = xyz2 - tex2D(tex_fstream_c, 2, 2);
+
+	float dotted = tex2D(tex_fstream_a, 0, 2) * sxyz0 
+	  + tex2D(tex_fstream_a, 1, 2) * sxyz1
+	  + tex2D(tex_fstream_a, 2, 2) * sxyz2;
 	
-	float dotted = constant_fstream_a[6] * sxyz0 
-	  + constant_fstream_a[7] * sxyz1
-	  + constant_fstream_a[8] * sxyz2;
-	
-	sxyz0 -= dotted * constant_fstream_a[6];
-	sxyz1 -= dotted * constant_fstream_a[7];
-	sxyz2 -= dotted * constant_fstream_a[8];
+	sxyz0 -= dotted * tex2D(tex_fstream_a, 0, 2);
+	sxyz1 -= dotted * tex2D(tex_fstream_a, 1, 2);
+	sxyz2 -= dotted * tex2D(tex_fstream_a, 2, 2);
 	
 	float xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-	float result = (tex2D(tex_qw_r3_N,i,in_step) 
-			 * exp(-(xyz_norm) * 
-			       constant_inverse_fstream_sigma_sq2[2]));   
+	float result = (qw_r3_N 
+			* exp(-(xyz_norm) * 
+			      constant_inverse_fstream_sigma_sq2[2]));   
 	st_int2 += result;
       }
+
     if (number_streams >= 4)
       {
 	//stream 3
-	float sxyz0 = xyz0 - constant_fstream_c[9];
-	float sxyz1 = xyz1 - constant_fstream_c[10];
-	float sxyz2 = xyz2 - constant_fstream_c[11];
+	float sxyz0 = xyz0 - tex2D(tex_fstream_c, 0, 3);
+	float sxyz1 = xyz1 - tex2D(tex_fstream_c, 1, 3);
+	float sxyz2 = xyz2 - tex2D(tex_fstream_c, 2, 3);
+
+	float dotted = tex2D(tex_fstream_a, 0, 3) * sxyz0 
+	  + tex2D(tex_fstream_a, 1, 3) * sxyz1
+	  + tex2D(tex_fstream_a, 2, 3) * sxyz2;
 	
-	float dotted = constant_fstream_a[9] * sxyz0 
-	  + constant_fstream_a[10] * sxyz1
-	  + constant_fstream_a[11] * sxyz2;
-	
-	sxyz0 -= dotted * constant_fstream_a[9];
-	sxyz1 -= dotted * constant_fstream_a[10];
-	sxyz2 -= dotted * constant_fstream_a[11];
+	sxyz0 -= dotted * tex2D(tex_fstream_a, 0, 3);
+	sxyz1 -= dotted * tex2D(tex_fstream_a, 1, 3);
+	sxyz2 -= dotted * tex2D(tex_fstream_a, 2, 3);
 	
 	float xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-	float result = (tex2D(tex_qw_r3_N,i,in_step) 
-			 * exp(-(xyz_norm) * 
-			       constant_inverse_fstream_sigma_sq2[3]));   
+	float result = (qw_r3_N 
+			* exp(-(xyz_norm) * 
+			      constant_inverse_fstream_sigma_sq2[3]));   
 	st_int3 += result;
       }
   }
@@ -289,22 +292,4 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
     {
       stream_integrals[pos] += st_int3 * V;
     }
-}
-
-template <unsigned int number_streams, unsigned int convolve> 
-__global__ void gpu__integral_kernel3_aux(int mu_offset, int mu_steps,	
-					  int in_step, int in_steps,
-					  int nu_steps, int total_threads,
-					  float q_squared_inverse, float r0,
-					  float bg_a, float bg_b, float bg_c,
-					  float *device__sinb,
-					  float *device__sinl,
-					  float *device__cosb,
-					  float *device__cosl,
-					  float *device__V,
-					  float *background_integrals, 
-					  float *background_correction, 
-					  float *stream_integrals, 
-					  float *stream_correction) {
-
 }

@@ -228,21 +228,20 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 				      double *device__cosl,
 				      double *device__V,
 				      double *background_integrals,
-				      double *stream_integrals) {
+				      double *stream_integrals,
+				      double *stream_integrals_c,
+				      double *fstream_c,
+				      double *fstream_a) 
+{
   double *s_fstream_c = shared_mem;
   double *s_fstream_a = &s_fstream_c[number_streams * 3];
-  double *s_inverse_fstream_sigma_sq2 = &s_fstream_a[number_streams * 3];
   
   if (threadIdx.x < number_streams * 3)
     {
-      s_fstream_c[threadIdx.x] = tex2D_double(tex_fstream_c, 
-					      threadIdx.x % 3, threadIdx.x / 3);
-      s_fstream_a[threadIdx.x] = tex2D_double(tex_fstream_a, 
-					      threadIdx.x % 3, threadIdx.x / 3);
+      s_fstream_a[threadIdx.x] = fstream_a[threadIdx.x];
+      s_fstream_c[threadIdx.x] = fstream_c[threadIdx.x];
     }
-  if (threadIdx.x < number_streams)
-    s_inverse_fstream_sigma_sq2[threadIdx.x] = constant_inverse_fstream_sigma_sq2[threadIdx.x];
-
+  
   double bg_int = 0.0;
   double st_int0 = 0.0;
   double st_int1 = 0.0;
@@ -289,7 +288,7 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 	double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
 	double result = (qw_r3_N 
 			 * exp(-(xyz_norm) * 
-			       s_inverse_fstream_sigma_sq2[0]));   
+			       constant_inverse_fstream_sigma_sq2[0]));   
 	st_int0 += result;
       }
     if (number_streams >= 2)
@@ -310,7 +309,7 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 	double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
 	double result = (qw_r3_N
 			 * exp(-(xyz_norm) * 
-			       s_inverse_fstream_sigma_sq2[1]));   
+			       constant_inverse_fstream_sigma_sq2[1]));   
 	st_int1 += result;
       }
     if (number_streams >= 3)
@@ -331,7 +330,7 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 	double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
 	double result = (qw_r3_N
 			 * exp(-(xyz_norm) * 
-			       s_inverse_fstream_sigma_sq2[2]));   
+			       constant_inverse_fstream_sigma_sq2[2]));   
 	st_int2 += result;
       }
     if (number_streams >= 4)
@@ -352,7 +351,7 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 	double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
 	double result = (qw_r3_N
 			 * exp(-(xyz_norm) * 
-			       s_inverse_fstream_sigma_sq2[3]));   
+			       constant_inverse_fstream_sigma_sq2[3]));   
 	st_int3 += result;
       }
   }
@@ -366,22 +365,34 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
   background_integrals[pos] += (bg_int * V);
   if (number_streams >= 1)
     {
-      stream_integrals[pos] += st_int0 * V;
+      st_int0 *= V;
+      double temp = stream_integrals[pos];
+      stream_integrals[pos] += st_int0;
+      stream_integrals_c[pos] += (st_int0 - (stream_integrals[pos] - temp));
       pos += total_threads;
     }
   if (number_streams >= 2)
     {
-      stream_integrals[pos] += st_int1 * V;
+      st_int1 *= V;
+      double temp = stream_integrals[pos];
+      stream_integrals[pos] += st_int1;
+      stream_integrals_c[pos] += (st_int1 - (stream_integrals[pos] - temp));
       pos += total_threads;
     }
   if (number_streams >= 3)
     {
-      stream_integrals[pos] += st_int2 * V;
+      st_int2 *= V;
+      double temp = stream_integrals[pos];
+      stream_integrals[pos] += st_int2;
+      stream_integrals_c[pos] += (st_int2 - (stream_integrals[pos] - temp));
       pos += total_threads;
     }
   if (number_streams >= 4)
     {
-      stream_integrals[pos] += st_int3 * V;
+      st_int3 *= V;
+      double temp = stream_integrals[pos];
+      stream_integrals[pos] += st_int3;
+      stream_integrals_c[pos] += (st_int3 - (stream_integrals[pos] - temp));
     }
 }
 
