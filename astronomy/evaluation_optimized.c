@@ -177,7 +177,7 @@ void free_constants(ASTRONOMY_PARAMETERS *ap) {
 	free(xyz);
 }
 
-void set_probability_constants(int n_convolve, double coords, double *r_point, double *qw_r3_N, double *reff_xr_rp3) {
+void set_probability_constants(int n_convolve, double coords, double *r_point, double *r_in_mag, double *r_in_mag2, double *qw_r3_N, double *reff_xr_rp3) {
 	double gPrime, exp_result, g, exponent, r3, N, reff_value, rPrime3;
 	int i;
 
@@ -195,6 +195,8 @@ void set_probability_constants(int n_convolve, double coords, double *r_point, d
 		g = gPrime + dx[i];
 
 		//MAG2R
+		r_in_mag[i] = g;
+		r_in_mag2[i] = g * g;
 		r_point[i] = pow(10.0, (g - absm)/5.0 + 1.0) / 1000.0;
 
 		r3 = r_point[i] * r_point[i] * r_point[i];
@@ -204,10 +206,10 @@ void set_probability_constants(int n_convolve, double coords, double *r_point, d
 	}
 }
 
-void calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp3, double *integral_point, ASTRONOMY_PARAMETERS *ap, double *bg_prob, double *st_prob) {
+void calculate_probabilities(double *r_point, double *r_in_mag, double *r_in_mag2, double *qw_r3_N, double reff_xr_rp3, double *integral_point, ASTRONOMY_PARAMETERS *ap, double *bg_prob, double *st_prob) {
 	double sinb, sinl, cosb, cosl, zp;
 	double rg, rs, xyzs[3], dotted, xyz_norm;
-	double r_in_mag, h_prob, aux_prob; //vickej2_bg
+	double h_prob, aux_prob; //vickej2_bg
 	int i, j;
 
         sinb = sin(integral_point[1] / deg);
@@ -222,7 +224,7 @@ void calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp
 		(*bg_prob) = -1;
 	} else {
 		(*bg_prob) = 0;
-		if (alpha == delta == 1) {
+		if (alpha == 1 && delta == 1) {
 			for (i = 0; i < ap->convolve; i++) {
 				xyz[i][2] = r_point[i] * sinb;
 				zp = r_point[i] * cosb;
@@ -234,16 +236,15 @@ void calculate_probabilities(double *r_point, double *qw_r3_N, double reff_xr_rp
 				
 //vickej2_bg changing the hernquist profile to include a quadratic term in g
 
-	if (ap->aux_bg_profile == 1) {
-		r_in_mag = 4.2 + 5 * ( log10(1000 * r_point[i]) - 1);
-                h_prob = qw_r3_N[i] / (rg * rs * rs * rs);
-                aux_prob = qw_r3_N[i] * ( bg_a * r_in_mag * r_in_mag + bg_b * r_in_mag + bg_c );
-		(*bg_prob) += h_prob + aux_prob;
-       } else if (ap->aux_bg_profile == 0) {
-                (*bg_prob) += qw_r3_N[i] / (rg * rs * rs * rs);
-        } else {
-                printf("Error: aux_bg_profile invalid");
-        }
+				if (ap->aux_bg_profile == 1) {
+					h_prob = qw_r3_N[i] / (rg * rs * rs * rs);
+					aux_prob = qw_r3_N[i] * ( bg_a * r_in_mag2[i] + bg_b * r_in_mag[i] + bg_c );
+					(*bg_prob) += h_prob + aux_prob;
+				} else if (ap->aux_bg_profile == 0) {
+					(*bg_prob) += qw_r3_N[i] / (rg * rs * rs * rs);
+				} else {
+					printf("Error: aux_bg_profile invalid");
+				}
 
 //vickej2_bg end edits
 
@@ -341,9 +342,9 @@ void cpu__r_constants(	int n_convolve,
 			int r_steps, double r_min, double r_step_size,
 			int mu_steps, double mu_min, double mu_step_size,
 			int nu_steps, double nu_min, double nu_step_size,
-			double *irv, double **r_point, double **qw_r3_N,
+			double *irv, double **r_point, double **r_in_mag, double **r_in_mag2, double **qw_r3_N,
 			double *reff_xr_rp3, double *nus, double *ids) {
-  int i;
+	int i;
 
 //vickej2_kpc edits to make volumes even in kpc rather than g
 //vickej2_kpc        double log_r, r, next_r, rPrime;
@@ -364,53 +365,77 @@ void cpu__r_constants(	int n_convolve,
 		next_r          =       r + r_step_size_kpc;
 
 #else
-		double log_r		=	r_min + (i * r_step_size);
+		double log_r	=	r_min + (i * r_step_size);
 		r		=	pow(10.0, (log_r-14.2)/5.0);
 		next_r		=	pow(10.0, (log_r + r_step_size - 14.2)/5.0);
 #endif
 
-
-    irv[i]		=	(((next_r * next_r * next_r) - (r * r * r))/3.0) * mu_step_size / deg;
-    rPrime		=	(next_r+r)/2.0;
+		irv[i]		=	(((next_r * next_r * next_r) - (r * r * r))/3.0) * mu_step_size / deg;
+		rPrime		=	(next_r+r)/2.0;
     
-    r_point[i] = (double*)malloc(sizeof(double) * n_convolve);
-    qw_r3_N[i] = (double*)malloc(sizeof(double) * n_convolve);
-    set_probability_constants(n_convolve, rPrime, r_point[i], qw_r3_N[i], &(reff_xr_rp3[i]));
-  }
+		r_point[i] = (double*)malloc(sizeof(double) * n_convolve);
+		r_in_mag[i] = (double*)malloc(sizeof(double) * n_convolve);
+		r_in_mag2[i] = (double*)malloc(sizeof(double) * n_convolve);
+		qw_r3_N[i] = (double*)malloc(sizeof(double) * n_convolve);
+		set_probability_constants(n_convolve, rPrime, r_point[i], r_in_mag[i], r_in_mag2[i], qw_r3_N[i], &(reff_xr_rp3[i]));
+	}
 
-  for (i = 0; i < nu_steps; i++) {
-    nus[i] = nu_min + (i * nu_step_size);
-    ids[i] = cos((90 - nus[i] - nu_step_size)/deg) - cos((90 - nus[i])/deg);
-    nus[i] += 0.5 * nu_step_size;
-  }
+	for (i = 0; i < nu_steps; i++) {
+		nus[i] = nu_min + (i * nu_step_size);
+		ids[i] = cos((90 - nus[i] - nu_step_size)/deg) - cos((90 - nus[i])/deg);
+		nus[i] += 0.5 * nu_step_size;
+	}
 }
 
 void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_STATE *es) {
 	int i, mu_step_current, nu_step_current, r_step_current;
 	double bg_prob, *st_probs, V;
-	double *irv, *reff_xr_rp3, **qw_r3_N, **r_point;
+	double *irv, *reff_xr_rp3, **qw_r3_N, **r_point, **r_in_mag, **r_in_mag2;
 	double *ids, *nus;
 	double integral_point[3];
 
+	double bg_prob_int, bg_prob_int_c, temp;		// for kahan summation
+	double *st_probs_int, *st_probs_int_c;			// for kahan summation
+
 	irv		= (double*)malloc(sizeof(double) * ia->r_steps);
 	st_probs	= (double*)malloc(sizeof(double) * ap->number_streams); 
+	st_probs_int	= (double*)malloc(sizeof(double) * ap->number_streams); 
+	st_probs_int_c	= (double*)malloc(sizeof(double) * ap->number_streams); 
 	reff_xr_rp3	= (double*)malloc(sizeof(double) * ia->r_steps);
 	qw_r3_N		= (double**)malloc(sizeof(double*) * ia->r_steps);
 	r_point		= (double**)malloc(sizeof(double*) * ia->r_steps);
+	r_in_mag	= (double**)malloc(sizeof(double*) * ia->r_steps);
+	r_in_mag2	= (double**)malloc(sizeof(double*) * ia->r_steps);
 	ids		= (double*)malloc(sizeof(double) * ia->nu_steps);
 	nus		= (double*)malloc(sizeof(double) * ia->nu_steps);
 	cpu__r_constants(ap->convolve, ia->r_steps, ia->r_min, ia->r_step_size,
 			 ia->mu_steps, ia->mu_min, ia->mu_step_size,
 			 ia->nu_steps, ia->nu_min, ia->nu_step_size,
-			 irv, r_point, qw_r3_N, reff_xr_rp3, nus, ids);
+			 irv, r_point, r_in_mag, r_in_mag2, qw_r3_N, reff_xr_rp3, nus, ids);
 
 	get_steps(ia, &mu_step_current, &nu_step_current, &r_step_current);
+
+	bg_prob_int = ia->background_integral;
+	bg_prob_int_c = 0.0;
+	for (i = 0; i < ap->number_streams; i++) {
+		st_probs_int[i] = ia->stream_integrals[i];
+		st_probs_int_c[i] = 0.0;
+	};
+
 	for (; mu_step_current < ia->mu_steps; mu_step_current++) {
 		double mu = ia->mu_min + (mu_step_current * ia->mu_step_size);
 
 		for (; nu_step_current < ia->nu_steps; nu_step_current++) {
 			#ifdef MILKYWAY
+				ia->background_integral = bg_prob_int + bg_prob_int_c;	// apply correction
+				for (i = 0; i < ap->number_streams; i++) {
+					ia->stream_integrals[i] = st_probs_int[i] + st_probs_int_c[i];	// apply correction
+				}
+
 				do_boinc_checkpoint(es);
+
+//				bg_prob_int_c = 0;
+//				for (i = 0; i < ap->number_streams; i++) st_probs_int_c[i] = 0;
 			#endif
 
 			if (ap->sgr_coordinates == 0) {
@@ -429,13 +454,23 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 			for (; r_step_current < ia->r_steps; r_step_current++) {
 				V = irv[r_step_current] * ids[nu_step_current];
 
-				calculate_probabilities(r_point[r_step_current], qw_r3_N[r_step_current], reff_xr_rp3[r_step_current], integral_point, ap, &bg_prob, st_probs);
+				calculate_probabilities(r_point[r_step_current], r_in_mag[r_step_current], r_in_mag2[r_step_current], qw_r3_N[r_step_current], reff_xr_rp3[r_step_current], integral_point, ap, &bg_prob, st_probs);
+				
+				bg_prob *= V;
 	
-				ia->background_integral += bg_prob * V;
-				for (i = 0; i < ap->number_streams; i++) 
-				  {
-				    ia->stream_integrals[i] += st_probs[i] * V;
-				  }
+				temp = bg_prob_int;
+				bg_prob_int += bg_prob;
+				bg_prob_int_c += bg_prob - (bg_prob_int - temp);
+
+//				ia->background_integral += bg_prob;
+				for (i = 0; i < ap->number_streams; i++) {
+					st_probs[i] *= V;
+					temp = st_probs_int[i];
+					st_probs_int[i] += st_probs[i];
+					st_probs_int_c[i] += st_probs[i] - (st_probs_int[i] - temp);
+				
+//					ia->stream_integrals[i] += st_probs[i] * V;
+				}
 
 				ia->current_calculation++;
 				if (ia->current_calculation >= ia->max_calculation) break;
@@ -448,6 +483,11 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 	}
 	mu_step_current = 0;
 
+	ia->background_integral = bg_prob_int + bg_prob_int_c;	// apply correction
+	for (i = 0; i < ap->number_streams; i++) {
+		ia->stream_integrals[i] = st_probs_int[i] + st_probs_int_c[i];	// apply correction
+	}
+
 //	printf("bg_int: %.15lf ", ia->background_integral);
 //	for (i = 0; i < ap->number_streams; i++) printf("st_int[%d]: %.15lf ", i, ia->stream_integrals[i]);
 //	printf("\n");
@@ -458,12 +498,18 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 	free(ids);
 	free(irv);
 	free(st_probs);
+	free(st_probs_int);
+	free(st_probs_int_c);
 	free(reff_xr_rp3);
 	for (i = 0; i < ia->r_steps; i++) {
 		free(r_point[i]);
+		free(r_in_mag[i]);
+		free(r_in_mag2[i]);
 		free(qw_r3_N[i]);
 	}
 	free(r_point);
+	free(r_in_mag);
+	free(r_in_mag2);
 	free(qw_r3_N);
 }
 
@@ -472,7 +518,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 //	time_t start_time, finish_time;
 //	time(&start_time);
 
-	#ifdef MILKWAY 
+	#ifdef MILKYWAY 
 		read_checkpoint(es);
 	#endif
 
@@ -492,9 +538,16 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 		for (j = 0; j < ap->number_streams; j++) es->stream_integrals[j] -= es->integral[i]->stream_integrals[j];
 	}
 
+	#ifdef MILKYWAY
+		fprintf(stderr, "<background_integral> %.20lf </background_integral>\n", es->background_integral);
+		fprintf(stderr, "<stream_integrals>");
+		for (i = 0; i < ap->number_streams; i++) {
+			fprintf(stderr, " %.20lf", es->stream_integrals[i]);
+		}
+		fprintf(stderr, " </stream_integrals>\n");
+	#endif
+
 //	time(&finish_time);
-	fprintf(stderr, "<background_integral>%.25lf</background_integral>\n", es->background_integral);
-	for (i = 0; i < ap->number_streams; i++) fprintf(stderr, "<stream_integral>%d %.20lf</stream_integral>\n", i, es->stream_integrals[i]);
 //	printf("integrals calculated in: %lf\n", (double)finish_time - (double)start_time);
 	return 0;
 }
@@ -502,15 +555,24 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp) {
 	int i, current_stream;
 	double bg_prob, *st_prob;
+	double prob_sum, prob_sum_c, temp;	// for Kahan summation
 	double exp_background_weight, sum_exp_weights, *exp_stream_weights;
-	double *r_point, *qw_r3_N, reff_xr_rp3;
+	double *r_point, *r_in_mag, *r_in_mag2, *qw_r3_N, reff_xr_rp3;
 //	time_t start_time, finish_time;
-//	time (&start_time);
+//	time (&start_time);e
+
+	double bg_only, bg_only_sum, bg_only_sum_c;
+	double st_only, *st_only_sum, *st_only_sum_c;
 
 	exp_stream_weights = (double*)malloc(sizeof(double) * ap->number_streams);
 	st_prob = (double*)malloc(sizeof(double) * ap->number_streams);
 	r_point = (double*)malloc(sizeof(double) * ap->convolve);
+	r_in_mag = (double*)malloc(sizeof(double) * ap->convolve);
+	r_in_mag2 = (double*)malloc(sizeof(double) * ap->convolve);
 	qw_r3_N = (double*)malloc(sizeof(double) * ap->convolve);
+
+	st_only_sum = (double*)malloc(sizeof(double) * ap->number_streams);
+	st_only_sum_c = (double*)malloc(sizeof(double) * ap->number_streams);
 
 	exp_background_weight = exp(ap->background_weight);
 	sum_exp_weights = exp_background_weight;
@@ -518,41 +580,96 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
 		exp_stream_weights[i] = exp(ap->stream_weights[i]);
 		sum_exp_weights += exp(ap->stream_weights[i]);
 	}
+	sum_exp_weights *= 0.001;
+
+	#ifdef MILKYWAY 
+		do_boinc_checkpoint(es);
+	#endif
+
+	prob_sum = 0;
+	prob_sum_c = 0;
+
+	bg_only_sum = 0;
+	bg_only_sum_c = 0;
+
+	for (i = 0; i < ap->number_streams; i++) {
+		st_only_sum[i] = 0;
+		st_only_sum_c[i] = 0;
+	}
+
 
 	for (; es->current_star_point < sp->number_stars; es->current_star_point++) {
 		double star_prob;
-		#ifdef MILKWAY 
-			do_boinc_checkpoint(es);
-		#endif
 
-		set_probability_constants(ap->convolve, sp->stars[es->current_star_point][2], r_point, qw_r3_N, &reff_xr_rp3);
-		calculate_probabilities(r_point, qw_r3_N, reff_xr_rp3, sp->stars[es->current_star_point], ap, &bg_prob, st_prob);
+		set_probability_constants(ap->convolve, sp->stars[es->current_star_point][2], r_point, r_in_mag, r_in_mag2, qw_r3_N, &reff_xr_rp3);
+		calculate_probabilities(r_point, r_in_mag, r_in_mag2, qw_r3_N, reff_xr_rp3, sp->stars[es->current_star_point], ap, &bg_prob, st_prob);
 
 		//		printf("bg_prob: %.15lf, st_prob[0]: %.15lf, st_prob[1]: %.15lf", bg_prob, st_prob[0], st_prob[1]);
 
-		star_prob = (bg_prob/es->background_integral) * exp_background_weight;
+		bg_only = (bg_prob/es->background_integral) * exp_background_weight;
+		star_prob = bg_only;
+
+		if (bg_only == 0.0) bg_only = -238;
+		else bg_only = log10(bg_only / sum_exp_weights);
+
+		temp = bg_only_sum;
+		bg_only_sum += bg_only;
+		bg_only_sum_c += bg_only - (bg_only_sum - temp);
+
+
 		for (current_stream = 0; current_stream < ap->number_streams; current_stream++) {
-			star_prob += (st_prob[current_stream]/es->stream_integrals[current_stream]) * exp_stream_weights[current_stream];
+			st_only = st_prob[current_stream] / es->stream_integrals[current_stream] * exp_stream_weights[current_stream];
+			star_prob += st_only;
+
+			if (st_only == 0.0) st_only = -238;
+			else st_only = log10(st_only / sum_exp_weights);
+
+			temp = st_only_sum[current_stream];
+			st_only_sum[current_stream] += st_only;
+			st_only_sum_c[current_stream] += st_only - (st_only_sum[current_stream] - temp);
 		}
 		star_prob /= sum_exp_weights;
 
 //		printf(", prob_sum: %.15lf\n", star_prob);
 
 		if (star_prob != 0.0) {
-			es->prob_sum += log(star_prob)/log(10.0);
+			star_prob = log10(star_prob);
+			temp = prob_sum;
+			prob_sum += star_prob;
+			prob_sum_c += star_prob - (prob_sum - temp);
 		} else {
 			es->num_zero++;
-			es->prob_sum -= 238.0;
+			prob_sum -= 238.0;
 		}
 	}
+	es->prob_sum = prob_sum + prob_sum_c;
+	bg_only_sum += bg_only_sum_c;
+	bg_only_sum /= sp->number_stars;
+
+	#ifdef MILKYWAY
+		fprintf(stderr, "<background_only_likelihood> %.20lf </background_only_likelihood>\n", bg_only_sum - 3.0);
+		fprintf(stderr, "<stream_only_likelihood>");
+		for (i = 0; i < ap->number_streams; i++) {
+			st_only_sum[i] += st_only_sum_c[i];
+			st_only_sum[i] /= sp->number_stars;
+
+			fprintf(stderr, " %.20lf", st_only_sum[i] - 3.0);
+		}
+		fprintf(stderr, " </stream_only_likelihood>\n");
+	#endif
 
 //	printf("prob_sum: %.15lf\n", es->prob_sum);
 
 	free(exp_stream_weights);
 	free(st_prob);
 	free(r_point);
+	free(r_in_mag);
+	free(r_in_mag2);
 	free(qw_r3_N);
 	free_constants(ap);
+
+	free(st_only_sum);
+	free(st_only_sum_c);
 
 //	time(&finish_time);
 //	printf("likelihood calculated in: %lf\n", (double)finish_time - (double)start_time);

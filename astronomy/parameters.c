@@ -109,6 +109,10 @@ int read_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS *ap) {
 	}
 
 	fread_astronomy_parameters(data_file, ap);
+	if (ap->parameters_version < 0) {
+		fprintf(stderr, "Input file [%s] did not specify parameter file version.\n", filename);
+		return 1;
+	}
 	fclose(data_file);
 	return 0;
 }
@@ -126,7 +130,14 @@ int write_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS *ap) {
 }
 
 void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
-	int i;
+	int i, retval;
+
+	retval = fscanf(file, "parameters_version: %lf\n", &ap->parameters_version);
+	if (retval < 1) {
+		ap->parameters_version = -1;
+		fprintf(stderr, "Error reading astronomy parameters file. Parameters version not specified\n");
+		return;
+	}
 
 	fscanf(file, "number_parameters: %d\n", &ap->number_background_parameters);
 	fscanf(file, "background_weight: %lf\n", &ap->background_weight);
@@ -202,6 +213,8 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 
 void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 	int i;
+
+	fprintf(file, "parameters_version: %lf\n", ap->parameters_version);
 
 	fprintf(file, "number_parameters: %d\n", ap->number_background_parameters);
 	fprintf(file, "background_weight: %lf\n", ap->background_weight);

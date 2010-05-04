@@ -303,10 +303,10 @@ void worker(int argc, char** argv) {
 					   ocl_mem);
 	destruct_ocl(ocl_mem);
 #else
-	double likelihood = evaluate(parameters);
+	double likelihood = evaluate(parameters) - 3.0;
 #endif
-	fprintf(stderr,"<search_likelihood>%0.25f</search_likelihood>\n", likelihood);
-	fprintf(stderr,"<search_application>%s %s</search_application>\n", app_version, precision);
+	fprintf(stderr,"<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
+	fprintf(stderr,"<search_application> %s %s </search_application>\n", app_version, precision);
 
 
 	free(parameters);
@@ -397,4 +397,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.23 2010/04/07 00:33:27 deselt Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.24 2010/05/04 04:21:24 deselt Exp $";

@@ -36,6 +36,8 @@ typedef struct integral {
 } INTEGRAL;
 
 typedef struct astronomy_parameters {
+	double parameters_version;
+
 	int number_background_parameters;
 	double background_weight;
 	double *background_parameters;
