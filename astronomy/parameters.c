@@ -134,9 +134,9 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 
 	retval = fscanf(file, "parameters_version: %lf\n", &ap->parameters_version);
 	if (retval < 1) {
-		ap->parameters_version = -1;
-		fprintf(stderr, "Error reading astronomy parameters file. Parameters version not specified\n");
-		return;
+		ap->parameters_version = 0.01;
+//		fprintf(stderr, "Error reading astronomy parameters file. Parameters version not specified\n");
+//		return;
 	}
 
 	fscanf(file, "number_parameters: %d\n", &ap->number_background_parameters);
@@ -177,7 +177,9 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 
 	fscanf(file, "convolve: %d\n", &ap->convolve);
 	fscanf(file, "sgr_coordinates: %d\n", &ap->sgr_coordinates);
-	fscanf(file, "aux_bg_profile: %d\n", &ap->aux_bg_profile); //vickej2_bg 
+	if (ap->parameters_version > 0.01) {
+		fscanf(file, "aux_bg_profile: %d\n", &ap->aux_bg_profile); //vickej2_bg 
+	}
 	fscanf(file, "wedge: %d\n", &ap->wedge);
 
 	ap->integral = (INTEGRAL**)malloc(sizeof(INTEGRAL*));

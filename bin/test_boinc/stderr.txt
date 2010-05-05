@@ -1,55 +1,10 @@
-18:42:47 (53038): Can't open init data file - running in standalone mode
-<background_integral> 44088.54727592115523293614 </background_integral>
-<stream_integrals> 34.16147717898657276692 667.21617282428064754640 336.15696917349282557552 </stream_integrals>
-<background_only_likelihood> -3.79067282204952960001 </background_only_likelihood>
-<stream_only_likelihood> -84.31094822427678536769 -4.18577891133855040096 -4.11980726666726493335 </stream_only_likelihood>
-<search_likelihood> -3.34559446990979125758 </search_likelihood>
+16:21:34 (3336): Can't open init data file - running in standalone mode
+<background_integral> 0.00034440467776670103 </background_integral>
+<stream_integrals> 1065.35849478944305701589 58.33516035981608638394 988.00389256886580824357 </stream_integrals>
+<background_only_likelihood> -4.08351386724583242938 </background_only_likelihood>
+<stream_only_likelihood> -4.04706205231590576687 -3.66895370805933174196 -3.71563621926306586474 </stream_only_likelihood>
+<search_likelihood> -3.11178846135141728979 </search_likelihood>
 <search_application> stock_osx_x86_64: 0.04 double </search_application>
-01:25:00 (53038): called boinc_finish
+16:21:59 (3336): called boinc_finish
 shmget in attach_shmem: Invalid argument
-01:25:02 (53682): Can't set up shared mem: -1. Will run in standalone mode.
-<background_integral> 44088.54727586168883135542 </background_integral>
-<stream_integrals> 34.16147717898657276692 667.20387277833833650220 336.15698581374567766034 </stream_integrals>
-<background_only_likelihood> -3.79111338227786998090 </background_only_likelihood>
-<stream_only_likelihood> -82.94347790242312612463 -4.26383380598012617924 -4.15583797813792088505 </stream_only_likelihood>
-<search_likelihood> -3.36281303752605520430 </search_likelihood>
-<search_application> stock_osx_x86_64: 0.04 double </search_application>
-01:26:29 (53682): called boinc_finish
-shmget in attach_shmem: Invalid argument
-01:26:33 (53687): Can't set up shared mem: -1. Will run in standalone mode.
-<background_integral> 44088.54727559418097371235 </background_integral>
-<stream_integrals> 34.16147717898657276692 667.12250499424987992825 </stream_integrals>
-<background_only_likelihood> -3.71494434530018668994 </background_only_likelihood>
-<stream_only_likelihood> -107.88449867831752726488 -4.25081198931945092312 </stream_only_likelihood>
-<search_likelihood> -3.54440711566958954748 </search_likelihood>
-<search_application> stock_osx_x86_64: 0.04 double </search_application>
-01:27:44 (53687): called boinc_finish
-shmget in attach_shmem: Invalid argument
-01:27:46 (53693): Can't set up shared mem: -1. Will run in standalone mode.
-<background_integral> 44088.54727558053855318576 </background_integral>
-<stream_integrals> 34.16147717898657276692 667.11476763771167952655 </stream_integrals>
-<background_only_likelihood> -3.71044780136280571980 </background_only_likelihood>
-<stream_only_likelihood> -43.17195633759281037101 -4.00082942092878734996 </stream_only_likelihood>
-<search_likelihood> -3.48432784596442202130 </search_likelihood>
-<search_application> stock_osx_x86_64: 0.04 double </search_application>
-01:28:56 (53693): called boinc_finish
-shmget in attach_shmem: Invalid argument
-01:28:59 (53697): Can't set up shared mem: -1. Will run in standalone mode.
-<background_integral> 44112.07044373153621563688 </background_integral>
-<stream_integrals> 34.16147717898657276692 </stream_integrals>
-<background_only_likelihood> -3.54939604546679987607 </background_only_likelihood>
-<stream_only_likelihood> -15.87442022274613862010 </stream_only_likelihood>
-<search_likelihood> -3.45353830104180126170 </search_likelihood>
-<search_application> stock_osx_x86_64: 0.04 double </search_application>
-01:29:36 (53697): called boinc_finish
-shmget in attach_shmem: Invalid argument
-01:29:38 (53702): Can't set up shared mem: -1. Will run in standalone mode.
-<background_integral> 44112.07044394175318302587 </background_integral>
-<stream_integrals> 34.16147717898657276692 </stream_integrals>
-<background_only_likelihood> -3.56382890466705148924 </background_only_likelihood>
-<stream_only_likelihood> -9.04826696784714812338 </stream_only_likelihood>
-<search_likelihood> -3.44173744969366079971 </search_likelihood>
-<search_application> stock_osx_x86_64: 0.04 double </search_application>
-01:30:10 (53702): called boinc_finish
-shmget in attach_shmem: Invalid argument
-01:30:13 (53709): Can't set up shared mem: -1. Will run in standalone mode.
+16:22:01 (3342): Can't set up shared mem: -1. Will run in standalone mode.
