@@ -1,4 +1,4 @@
-APP_VERSION = 0.05
+APP_VERSION = 0.29
 APP_NAME = stock
 APP_TYPE = 
 

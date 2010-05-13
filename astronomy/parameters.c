@@ -179,6 +179,8 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 	fscanf(file, "sgr_coordinates: %d\n", &ap->sgr_coordinates);
 	if (ap->parameters_version > 0.01) {
 		fscanf(file, "aux_bg_profile: %d\n", &ap->aux_bg_profile); //vickej2_bg 
+	} else {
+		ap->aux_bg_profile = 0;
 	}
 	fscanf(file, "wedge: %d\n", &ap->wedge);
 
