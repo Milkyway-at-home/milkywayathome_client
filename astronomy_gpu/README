@@ -1,0 +1,71 @@
+What this document attempts to describe
+
+1. How to setup a development environment to build the CUDA application
+2. How to build the CUDA application on GNU/Linux
+3. How to build the CUDA application on Windows
+4. Where to make changes if the Milkyway@Home algorithm changes
+5. Description of each file
+
+1. How to setup a development environment to build the CUDA application
+To modify CUDA source code (*.cu) a simple text editor is all that is required. If
+Windows is used there is a Visual Studio solution file that works good enough
+for my needs.  In order to actually build the application the CUDA 2.3 Toolkit and 
+CUDA 2.3 SDK are required, they are located here 
+http://developer.nvidia.com/object/cuda_archive.html
+
+2. How to build the CUDA application on GNU/Linux
+With the CUDA 2.3 Toolkit/SDK installed building is as simple as 
+a. Updating the Makefile to include the paths to the toolkit and SDK
+b. typing 'make linux_x86_64_gpu' for a 64 bit executable (requires 64 bit versions of 
+the toolkit and SDK)
+c. typing 'make linux_i686_gpu' for a 32 bit executable (requires 32 bit versions of
+the toolkit and SDK) [I never build 32 bit CUDA applications for GNU/Linux]
+
+3. How to build the CUDA application on Windows
+I just used Visual Studio to build the application.  Just set the correct
+configuration targets and Visual Studio should build it. The paths to the CUDA SDK
+and Toolkit might need to change based on what computer is being used to build.
+
+4. Where to make changes if the Milkyway@Home algorithm changes
+The files evaluation_gpu6_double_shared.cu and evaluation_gpu6_likelihood.cu contain 
+the majority of the algorithm.  The other file evaluation_gpu6.cu contains the setup
+code.
+
+5. Description of each file
+coords.c/coords.h
+  Calculates different coordinates
+cpu_coords.c/cpu_coords.h
+  Conversions for galactic coordinates and sgr 
+cpu_r_constants.c/cpu_r_constants.h
+  Used to determine precomputed contants for loading onto the GPU
+evaluation_gpu.h
+  Header file that contains the prototypes for the GPU functions
+evaluation_gpu6.cu
+  Main part of the CUDA code, it is responsible for doing the following
+  1. Precomputing constants for the GPU to use
+  2. Setting up all of the memory and transfering it to the GPU
+  3. Choosing the proper GPU to use
+  4. Calling each of the GPU kernels
+  5. Calculating the final likelihood
+  This file is very similar to the role evaluation_optimized.c plays in the CPU version
+evaluation_gpu6_double_shared.cu
+  Contains the shared memory optimized version of the integral kernel, this file
+  is similar to the function calculate_probabilities in evaluation_optimized.c
+evaluation_gpu6_double.cu/evaluation_gpu6_double_const.cu/evaluation_gpu6_double_global.cu
+  Old integral kernels that make use of different memory types
+evaluation_gpu6_float.cu
+  Old single precision version of the CUDA kernels
+evaluation_gpu6_likelihood.cu
+  Contains the likelihood kernel that takes in the values of the background and stream
+  integrals.  It is very similar to the integral kernel but each thread needs to compute
+  different constant values so the two could not be merged, like in the CPU version
+evaluation_gpu6_macros.cu
+  Macros that are used to call the GPU kernels, these make it so the code is easier to read
+  in evaluation_gpu6.cu
+gauss_legendre.c/gauss_legendre.h
+  Used precompute contants
+pi_constants.h
+  Header file
+r_constants.h
+  Header file
+
