@@ -1,3 +1,24 @@
+/*
+Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
+and Rensselaer Polytechnic Institute.
+
+This file is part of Milkway@Home.
+
+Milkyway@Home is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Milkyway@Home is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #pragma OPENCL EXTENSION cl_khr_fp64: enable
 
 #define LBR_R (8.5)
@@ -43,20 +64,20 @@ integral_kernel(const int convolve,
       s_inv_fstream_sigma_sq2[0] = (inv_fstream_sigma_sq2[0],
 				    inv_fstream_sigma_sq2[1]);
     }
-  
+
   double sinb = g_sinb[get_global_id(0)];
   double sinl = g_sinl[get_global_id(0)];
   double cosb = g_cosb[get_global_id(0)];
   double cosl = g_cosl[get_global_id(0)];
-  
+
 
   for(int i = 0;i<convolve;++i)
     {
       double xyz2 = r_point[(r_step * convolve) + i] * sinb;
-      double xyz0 = r_point[(r_step * convolve) + i] * cosb * 
+      double xyz0 = r_point[(r_step * convolve) + i] * cosb *
 	cosl - LBR_R;
       double xyz1 = r_point[(r_step * convolve) + i] * cosb * sinl;
-      
+
       //double rg = sqrt(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) * q_sq_inv);
       //fsqrtd
       double rg = xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) * q_sq_inv;
@@ -72,12 +93,12 @@ integral_kernel(const int convolve,
 	float mult = ldexp(1.0f, exponent - 1023 - 52);
 	int val1 = test.val[1] & 0x000FFFFF;
 	int val2 = test.val[0];
-	unsigned long long mantissa = 
+	unsigned long long mantissa =
 	  (((unsigned long long) val1) << 32) + val2 + 0x0010000000000000;
 	value = mult * mantissa;
 	if (sign)
 	  value = -value;
-	//	printf("rg: %.15f sign:%d exp:%d value:%.15f\n", 
+	//	printf("rg: %.15f sign:%d exp:%d value:%.15f\n",
 	//	       rg,sign, exponent, value);
 	//rsqrt(y) -> http://en.wikipedia.org/wiki/Fast_inverse_square_root
 	double x  = (double) rsqrt(value);
@@ -91,7 +112,7 @@ integral_kernel(const int convolve,
       double rs = rg + r0;
 
       bg_int += qw_r3_N[(r_step * convolve) + i] / (rg * rs * rs *rs);
-      
+
       double2 sxyz0 = xyz0 - s_fstream_c[0];
       double2 sxyz1 = xyz1 - s_fstream_c[1];
       double2 sxyz2 = xyz2 - s_fstream_c[2];
@@ -103,14 +124,14 @@ integral_kernel(const int convolve,
       sxyz0 -= dotted * s_fstream_a[0];
       sxyz1 -= dotted * s_fstream_a[1];
       sxyz2 -= dotted * s_fstream_a[2];
-	  
+
       double2 xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1)
 	+ (sxyz2 * sxyz2);
       //cephes dp library for exp
       double2 x = -(xyz_norm) * s_inv_fstream_sigma_sq2[0];
 
       int2 n = (int2)(x * 1.442695040888963407359924
-		      + 0.5) - 1;//log2e, estimated floor 
+		      + 0.5) - 1;//log2e, estimated floor
       double2 px = ((double) n.x, (double) n.y);
 
       x -= px * 6.93145751953125E-1; //C1
@@ -125,10 +146,10 @@ integral_kernel(const int convolve,
       		 2.00000000000000000009E0) - px); //polevl(xx,Q,3)
       x = 1.0 + 2.0 * x;
 
-      //printf("x:%.15f n:=%d\n", x, n);				       
+      //printf("x:%.15f n:=%d\n", x, n);
       //ldexp, x * 2^n
       //ldexp(x, n);
-				       	
+
       /* if (n < 0) */
       /* 	{ */
       /* 	  if (n < -60) */
@@ -161,3 +182,4 @@ integral_kernel(const int convolve,
   g_st_int[get_global_id(0)] += (st_int.x * v);
   g_st_int[get_global_id(0) + get_global_size(0)] += (st_int.y * v);
 }
+

@@ -1,3 +1,24 @@
+/*
+Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
+and Rensselaer Polytechnic Institute.
+
+This file is part of Milkway@Home.
+
+Milkyway@Home is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Milkyway@Home is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #pragma OPENCL EXTENSION cl_khr_fp64: enable
 
 #define LBR_R (8.5)
@@ -42,20 +63,20 @@ integral_kernel(const int convolve,
 	  s_fstream_a[(i * 3) + 2] = fstream_a[(i * 3) + 2];
 	}
     }
-  
+
   double sinb = g_sinb[get_global_id(0)];
   double sinl = g_sinl[get_global_id(0)];
   double cosb = g_cosb[get_global_id(0)];
   double cosl = g_cosl[get_global_id(0)];
-  
+
 
   for(int i = 0;i<convolve;++i)
     {
       double xyz2 = r_point[(r_step * convolve) + i] * sinb;
-      double xyz0 = r_point[(r_step * convolve) + i] * cosb * 
+      double xyz0 = r_point[(r_step * convolve) + i] * cosb *
 	cosl - LBR_R;
       double xyz1 = r_point[(r_step * convolve) + i] * cosb * sinl;
-      
+
       //double rg = sqrt(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) * q_sq_inv);
       //fsqrtd
       double rg = xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) * q_sq_inv;
@@ -69,7 +90,7 @@ integral_kernel(const int convolve,
       }
       //
       double rs = rg + r0;
-      
+
       //bg_int += qw_r3_N[(r_step * convolve) + i] / (rg * rs * rs *rs);
       //divd
       {
@@ -82,7 +103,7 @@ integral_kernel(const int convolve,
 	c = a - b * r;
 	bg_int += r + y * c;
       }
-      
+
       for(int j = 0;j < number_streams;++j)
 	{
 	  double sxyz0 = xyz0 - s_fstream_c[(j * 3) + 0];
@@ -96,7 +117,7 @@ integral_kernel(const int convolve,
 	  sxyz0 -= dotted * s_fstream_a[(j * 3) + 0];
 	  sxyz1 -= dotted * s_fstream_a[(j * 3) + 1];
 	  sxyz2 -= dotted * s_fstream_a[(j * 3) + 2];
-	  
+
 	  double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1)
 	    + (sxyz2 * sxyz2);
 	  double result = qw_r3_N[(r_step * convolve) + i] *
@@ -109,7 +130,8 @@ integral_kernel(const int convolve,
   g_bg_int[get_global_id(0)] += (bg_int * v);
   for(int i = 0;i<number_streams;++i)
     {
-      g_st_int[get_global_id(0) + (i * get_global_size(0))] 
+      g_st_int[get_global_id(0) + (i * get_global_size(0))]
 	+= (st_int[(i * get_local_size(0)) + get_local_id(0)] * v);
     }
 }
+

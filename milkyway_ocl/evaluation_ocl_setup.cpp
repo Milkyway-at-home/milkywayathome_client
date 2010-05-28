@@ -1,3 +1,24 @@
+/*
+Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
+and Rensselaer Polytechnic Institute.
+
+This file is part of Milkway@Home.
+
+Milkyway@Home is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Milkyway@Home is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "evaluation_ocl.h"
 
 char * get_platform_info(cl_platform_id platform,
@@ -26,28 +47,28 @@ cl_platform_id * get_platforms()
 				   platforms, 0));
       for(unsigned int i = 0;i<num_platforms;++i)
 	{
-	  char *profile = get_platform_info(platforms[i], 
+	  char *profile = get_platform_info(platforms[i],
 					    CL_PLATFORM_PROFILE);
 	  printf("Platform profile: %s\n", profile);
 	  delete [] profile;
-	  char *version = get_platform_info(platforms[i], 
+	  char *version = get_platform_info(platforms[i],
 					    CL_PLATFORM_VERSION);
 	  printf("Platform version: %s\n", version);
 	  delete [] version;
-	  char *name = get_platform_info(platforms[i], 
+	  char *name = get_platform_info(platforms[i],
 					 CL_PLATFORM_NAME);
 	  printf("Platform name: %s\n", name);
 	  delete [] name;
-	  char *vendor = get_platform_info(platforms[i], 
+	  char *vendor = get_platform_info(platforms[i],
 					   CL_PLATFORM_VENDOR);
 	  printf("Platform vendor: %s\n", vendor);
 	  delete [] vendor;
-	  char *extensions = get_platform_info(platforms[i], 
+	  char *extensions = get_platform_info(platforms[i],
 					       CL_PLATFORM_EXTENSIONS);
 	  printf("Platform extensions: %s\n", extensions);
 	  delete [] extensions;
 	}
-      return platforms;				   
+      return platforms;
     }
   else
     {
@@ -119,7 +140,7 @@ cl_device_id * get_devices(cl_platform_id platform)
 						   CL_DRIVER_VERSION);
 	    printf("Device[%d] driver version: %s\n", i, driver_version);
 	    delete [] driver_version;
-	    char *extensions = get_device_info(devices[i], 
+	    char *extensions = get_device_info(devices[i],
 					       CL_DEVICE_EXTENSIONS);
 	    printf("Device[%d] extensions: %s\n", i, extensions);
 	    delete [] extensions;

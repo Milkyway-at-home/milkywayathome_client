@@ -1,3 +1,24 @@
+/*
+Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
+and Rensselaer Polytechnic Institute.
+
+This file is part of Milkway@Home.
+
+Milkyway@Home is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Milkyway@Home is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include <cmath>
 
 #include "evaluation_ocl.h"
@@ -12,7 +33,7 @@ ocl_mem_t * setup_ocl(ASTRONOMY_PARAMETERS *ap,
 {
   ocl_mem_t *ocl_mem = new ocl_mem_t;
   cl_platform_id *platforms = get_platforms();
-  char *name = get_platform_info(platforms[0], 
+  char *name = get_platform_info(platforms[0],
 				 CL_PLATFORM_NAME);
   if (strcmp(name, "ATI Stream") == 0)
     ocl_mem->platform = ATI;
@@ -36,7 +57,7 @@ ocl_mem_t * setup_ocl(ASTRONOMY_PARAMETERS *ap,
   for(int i = 0;i<ap->number_integrals;++i)
     {
       //Setup sinb, sinl, cosb, cosl
-      int int_size = 
+      int int_size =
 	ap->integral[i]->nu_steps * ap->integral[i]->mu_steps;
       //pad it to 64 work items per work group
       int ocl_int_size = determine_work_size(LOCAL_WORK_SIZE,
@@ -45,10 +66,10 @@ ocl_mem_t * setup_ocl(ASTRONOMY_PARAMETERS *ap,
       double *sinl = new double[int_size];
       double *cosb = new double[int_size];
       double *cosl = new double[int_size];
-      populate_lb(ap->sgr_coordinates, ap->wedge, 
+      populate_lb(ap->sgr_coordinates, ap->wedge,
 		  ap->integral[i]->mu_steps,
 		  ap->integral[i]->mu_min,
-		  ap->integral[i]->mu_step_size, 
+		  ap->integral[i]->mu_step_size,
 		  ap->integral[i]->nu_steps,
 		  ap->integral[i]->nu_min,
 		  ap->integral[i]->nu_step_size,
@@ -110,17 +131,17 @@ ocl_mem_t * setup_ocl(ASTRONOMY_PARAMETERS *ap,
       double **r_point = new double*[ap->integral[i]->r_steps];
       double *ids = new double[ap->integral[i]->nu_steps];
       double *nus = new double[ap->integral[i]->nu_steps];
-      cpu__r_constants(ap->convolve, 
-		       ap->integral[i]->r_steps, 
-		       ap->integral[i]->r_min, 
-		       ap->integral[i]->r_step_size, 
-		       ap->integral[i]->mu_steps, 
-		       ap->integral[i]->mu_min, 
-		       ap->integral[i]->mu_step_size, 
-		       ap->integral[i]->nu_steps, 
-		       ap->integral[i]->nu_min, 
+      cpu__r_constants(ap->convolve,
+		       ap->integral[i]->r_steps,
+		       ap->integral[i]->r_min,
+		       ap->integral[i]->r_step_size,
+		       ap->integral[i]->mu_steps,
+		       ap->integral[i]->mu_min,
+		       ap->integral[i]->mu_step_size,
+		       ap->integral[i]->nu_steps,
+		       ap->integral[i]->nu_min,
 		       ap->integral[i]->nu_step_size,
-		       irv, r_point, qw_r3_N, 
+		       irv, r_point, qw_r3_N,
 		       reff_xr_rp3, nus, ids);
       double *fr_point = new double[ap->integral[i]->r_steps * ap->convolve];
       double *fqw_r3_N = new double[ap->integral[i]->r_steps * ap->convolve];
@@ -128,9 +149,9 @@ ocl_mem_t * setup_ocl(ASTRONOMY_PARAMETERS *ap,
 	{
 	  for(int k = 0;k<ap->convolve;++k)
 	    {
-	      fr_point[(j * ap->convolve) + k] = 
+	      fr_point[(j * ap->convolve) + k] =
 		r_point[j][k];
-	      fqw_r3_N[(j * ap->convolve) + k] = 
+	      fqw_r3_N[(j * ap->convolve) + k] =
 		qw_r3_N[j][k];
 	    }
 	}
@@ -180,13 +201,13 @@ ocl_mem_t * setup_ocl(ASTRONOMY_PARAMETERS *ap,
       //Setup device only memory
       ocl_mem->bg_int[i] = clCreateBuffer(ocl_mem->context,
 					  CL_MEM_READ_WRITE,
-					  ocl_int_size * 
+					  ocl_int_size *
 					  sizeof(cl_double),
 					  0, &err);
       ocl_mem->st_int[i] = clCreateBuffer(ocl_mem->context,
 					  CL_MEM_READ_WRITE,
-					  ap->number_streams * 
-					  ocl_int_size * 
+					  ap->number_streams *
+					  ocl_int_size *
 					  sizeof(cl_double),
 					  0, &err);
       check_error(err);
@@ -227,7 +248,7 @@ ocl_mem_t * setup_ocl(ASTRONOMY_PARAMETERS *ap,
   d_gauss_legendre(-1.0, 1.0, qgaus_X, qgaus_W, ap->convolve);
   double *dx = new double[ap->convolve];
   double *fqgaus_W = new double[ap->convolve];
-  for (int i = 0; i < ap->convolve; ++i) 
+  for (int i = 0; i < ap->convolve; ++i)
     {
       dx[i] = (3.0 * d_stdev * qgaus_X[i]);
       fqgaus_W[i] = (double) qgaus_W[i];
@@ -280,7 +301,7 @@ ocl_mem_t * setup_ocl(ASTRONOMY_PARAMETERS *ap,
   ocl_mem->A = clCreateBuffer(ocl_mem->context,
 			      CL_MEM_READ_ONLY |
 			      CL_MEM_COPY_HOST_PTR,
-			      17* 
+			      17*
 			      sizeof(cl_double),
 			      A, &err);
   check_error(err);
@@ -302,7 +323,7 @@ void setup_ocl(double *parameters, ocl_mem_t *ocl_mem,
 				    * STREAM_PARAMETERS(i,4));
     fstream_a[(i * 3) + 0] = sin(STREAM_PARAMETERS(i,2)) *
       cos(STREAM_PARAMETERS(i,3));
-    fstream_a[(i * 3) + 1] = sin(STREAM_PARAMETERS(i,2)) * 
+    fstream_a[(i * 3) + 1] = sin(STREAM_PARAMETERS(i,2)) *
       sin(STREAM_PARAMETERS(i,3));
     fstream_a[(i * 3) + 2] = cos(STREAM_PARAMETERS(i,2));
     if (sgr_coordinates == 0) {
@@ -315,7 +336,7 @@ void setup_ocl(double *parameters, ocl_mem_t *ocl_mem,
     lbr[2] = STREAM_PARAMETERS(i,1);
     d_lbr2xyz(lbr, stream_c);
 
-    fstream_c[(i * 3) + 0] = stream_c[0]; 
+    fstream_c[(i * 3) + 0] = stream_c[0];
     fstream_c[(i * 3) + 1] = stream_c[1];
     fstream_c[(i * 3) + 2] = stream_c[2];
 
@@ -364,7 +385,7 @@ void setup_weights(ocl_mem_t *ocl_mem,
 {
   double *stream_weight = new double[number_streams];
   double exp_weight = exp(BACKGROUND_WEIGHT);
-  double sum_exp_weights = exp_weight; 
+  double sum_exp_weights = exp_weight;
   double bg_weight = exp_weight/ *bg_int;
   for (int i = 0; i < number_streams; ++i)
     {
@@ -372,7 +393,7 @@ void setup_weights(ocl_mem_t *ocl_mem,
       sum_exp_weights += exp_weight;
       stream_weight[i] = exp_weight/st_int[i];
     }
-  
+
   bg_weight = bg_weight / sum_exp_weights;
   printf("bg_weight = %.15f\n", bg_weight);
   for (int i = 0; i < number_streams; ++i)
@@ -391,7 +412,7 @@ void setup_weights(ocl_mem_t *ocl_mem,
   ocl_mem->st_weight = clCreateBuffer(ocl_mem->context,
 				      CL_MEM_READ_ONLY |
 				      CL_MEM_COPY_HOST_PTR,
-				      number_streams * 
+				      number_streams *
 				      sizeof(cl_double),
 				      stream_weight,
 				      &err);
@@ -435,3 +456,4 @@ void destruct_ocl(ocl_mem_t *ocl_mem)
   check_error(clReleaseContext(ocl_mem->context));
   delete ocl_mem;
 }
+

@@ -1,3 +1,24 @@
+/*
+Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
+and Rensselaer Polytechnic Institute.
+
+This file is part of Milkway@Home.
+
+Milkyway@Home is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Milkyway@Home is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include <string>
 #include <fstream>
 #include "boinc_api.h"
@@ -52,7 +73,7 @@ void write_binaries(cl_program program,
 		   num_devices * sizeof(size_t), binary_size, 0);
   unsigned char **binaries = new unsigned char*[num_devices];
   size_t total_size;
-  for(unsigned int  i = 0;i<num_devices;++i) 
+  for(unsigned int  i = 0;i<num_devices;++i)
     {
       printf("Binary %d is %u bytes\n", i, (unsigned int) binary_size[i]);
       binaries[i] = new unsigned char[binary_size[i]];
@@ -60,10 +81,10 @@ void write_binaries(cl_program program,
     }
   clGetProgramInfo(program, CL_PROGRAM_BINARIES,
 		   total_size, binaries, 0);
-  for(unsigned int  i = 0;i<num_devices;++i) 
+  for(unsigned int  i = 0;i<num_devices;++i)
     {
       std::ofstream output(name);
-      if (output) 
+      if (output)
 	{
 	  output.write((const char*) binaries[i], binary_size[i]);
 	}
@@ -73,7 +94,7 @@ void write_binaries(cl_program program,
   delete [] binaries;
 }
 
-void build_kernel(cl_program program, 
+void build_kernel(cl_program program,
 		  cl_device_id *devices,
 		  const char *name)
 {
@@ -106,3 +127,4 @@ void build_kernel(cl_program program,
     exit(1);
   //write_binaries(program, name);
 }
+

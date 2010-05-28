@@ -1,3 +1,24 @@
+/*
+Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
+and Rensselaer Polytechnic Institute.
+
+This file is part of Milkway@Home.
+
+Milkyway@Home is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Milkyway@Home is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #pragma OPENCL EXTENSION cl_khr_fp64: enable
 
 #define ABSM (4.2)
@@ -85,7 +106,7 @@ likelihood_kernel(const int convolve,
 
   for(int i = 0;i<number_streams;++i)
     st_int[(i * get_local_size(0)) + get_local_id(0)] = 0.0;
-  
+
   for(int i = 0;i<convolve;++i)
     {
       double g = gPrime + dx[i];
@@ -97,11 +118,11 @@ likelihood_kernel(const int convolve,
       	int e = 4;
       	double x = 0.625;
       	int i = 10;
-	
+
       	x -= 6.48419777325504820276E-1; //A[i];
       	x -= 1.26912513974441574796E-17; //B[i/2];
       	x /= 6.48419777325504820276E-1; //A[i];
-	
+
       	z = x * x;
       	double w = x * (z * (((((4.97778295871696322025E-1 * x +
       				 3.73336776063286838734E0) * x) +
@@ -112,38 +133,38 @@ likelihood_kernel(const int convolve,
       			  3.35994905342304405431E1) * x +
       			 1.39995542032307539578E1));
       	w = w - z * 0.5;
-	
+
       	w = w + 0.44269504088896340736 * w; //log(2)ea
       	z = w + 0.44269504088896340736 * x;
       	z = z + x;
-	
+
       	w = -i;
       	w = w / 16.0;
       	w += e;
-	
+
       	double ya = y * 16;
       	ya = (double) (int) (ya);
       	ya = ya / 16.0;
       	double yb = y - ya;
-	
+
       	double W = z * y + w * yb;
       	double Wa = W * 16;
       	Wa = (double) (int) (Wa);
       	Wa = Wa / 16.0;
       	double Wb = W - Wa;
-	
+
       	W = Wa + w * ya;
       	Wa = W * 16;
       	Wa = (double) (int) (Wa);
       	Wa = Wa / 16.0;
       	double u = W - Wa;
-	
+
       	W = Wb + u;
       	Wb = W * 16;
       	Wb = (double) (int) (Wb);
       	Wb = Wb / 16.0;
       	w = (Wa + Wb) * 16.0;
-	
+
       	e = w;
       	Wb = W - Wb;
       	if (Wb > 0.0)
@@ -151,7 +172,7 @@ likelihood_kernel(const int convolve,
       	    e += 1;
       	    Wb -= 0.0625;
       	  }
-	
+
       	z = Wb * ((((((1.49664108433729301083E-5 * Wb +
       		       1.54010762792771901396E-4) * Wb +
       		      1.33335476964097721140E-3) * Wb +
@@ -159,7 +180,7 @@ likelihood_kernel(const int convolve,
       		    5.55041086645832347466E-2) * Wb +
       		   2.40226506959099779976E-1) * Wb +
       		  6.93147180559945308821E-1);
-	
+
       	if (e < 0)
       	  i = 0;
       	else
@@ -214,12 +235,12 @@ likelihood_kernel(const int convolve,
       }
       //
       double qw_r3_N = qgaus_W[i] * rPrime3 * coeff * qwx;
-      //exp(-((g - gPrime) * (g - gPrime) / (2 * STDEV * STDEV)));	
+      //exp(-((g - gPrime) * (g - gPrime) / (2 * STDEV * STDEV)));
 
       double xyz2 = r_point * sinb;
       double xyz0 = r_point * cosb * cosl - LBR_R;
       double xyz1 = r_point * cosb * sinl;
-      
+
       //double rg = sqrt(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) * q_sq_inv);
       double rg = (xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) * q_sq_inv);
       {
@@ -233,7 +254,7 @@ likelihood_kernel(const int convolve,
 	float mult = ldexp(1.0f, exponent - 1023 - 52);
 	int val1 = test.val[1] & 0x000FFFFF;
 	int val2 = test.val[0];
-	unsigned long long mantissa = 
+	unsigned long long mantissa =
 	  (((unsigned long long) val1) << 32) + val2 + 0x0010000000000000;
 	value = mult * mantissa;
 	if (sign)
@@ -251,7 +272,7 @@ likelihood_kernel(const int convolve,
       double rs = rg + r0;
 
       bg_int += qw_r3_N / (rg * rs * rs *rs);
-      
+
       for(int j = 0;j < number_streams;++j)
 	{
 	  double sxyz0 = xyz0 - fstream_c[(j * 3) + 0];
@@ -265,7 +286,7 @@ likelihood_kernel(const int convolve,
 	  sxyz0 -= dotted * fstream_a[(j * 3) + 0];
 	  sxyz1 -= dotted * fstream_a[(j * 3) + 1];
 	  sxyz2 -= dotted * fstream_a[(j * 3) + 2];
-	  
+
 	  double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1)
 	    + (sxyz2 * sxyz2);
 	  //cephes dp library for exp
@@ -307,7 +328,7 @@ likelihood_kernel(const int convolve,
 	  	x = x * (double) (2 << (n-1));
 	      }
 	  }
-	  //double result = qw_r3_N * 
+	  //double result = qw_r3_N *
 	  //exp(-(xyz_norm) * inv_fstream_sigma_sq2[j]);
 	  double result = qw_r3_N * x;
 	  st_int[(j * get_local_size(0)) + get_local_id(0)] += result;
@@ -316,7 +337,7 @@ likelihood_kernel(const int convolve,
   double probability = bg_int * *bg_weight;
   for(int i = 0;i<number_streams;++i)
     {
-      probability += 
+      probability +=
 	st_int[(i * get_local_size(0)) + get_local_id(0)] * st_weight[i];
     }
   probability *= reff_xr_rp3;
@@ -329,3 +350,4 @@ likelihood_kernel(const int convolve,
 
   g_probability[get_global_id(0)] = probability;
 }
+
