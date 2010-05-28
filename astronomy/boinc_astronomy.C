@@ -53,8 +53,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "mfile.h"
 #include "stdio.h"
 
-using std::string;
-
 #define OUTPUT_FILENAME "out"
 #define SEARCH_PARAMETER_FILENAME "search_parameters.txt"
 #define ASTRONOMY_PARAMETER_FILENAME "astronomy_parameters.txt"
@@ -303,9 +301,9 @@ void worker(int argc, char** argv) {
 #endif
 	char app_version[256];
 	sprintf(app_version, "%s: %1.2lf", BOINC_APP_NAME, BOINC_APP_VERSION);
-       	
+
 #ifdef USE_OCL
-	double likelihood = ocl_likelihood(parameters, 
+	double likelihood = ocl_likelihood(parameters,
 					   ap,
 					   sp,
 					   ocl_mem);
@@ -367,10 +365,10 @@ int main(int argc, char **argv){
 
 #if defined(_WIN32) && defined(COMPUTE_ON_GPU)
 	//make the windows GPU app have a higher priority
-	BOINC_OPTIONS options; 
-	boinc_options_defaults(options); 
-	options.normal_thread_priority = 1; // higher priority (normal instead of idle) 
-	retval = boinc_init_options(&options); 
+	BOINC_OPTIONS options;
+	boinc_options_defaults(options);
+	options.normal_thread_priority = 1; // higher priority (normal instead of idle)
+	retval = boinc_init_options(&options);
 	if (retval) exit(retval);
 #else
 	retval = boinc_init();
@@ -379,7 +377,7 @@ int main(int argc, char **argv){
 
 #ifdef COMPUTE_ON_GPU
 	//Choose the GPU to execute on, first look
-	//at the command line argument for a 
+	//at the command line argument for a
 	//--device 0..n string, then enumerate all CUDA
 	//devices on the system and choose the one
 	//with double precision support and the most
