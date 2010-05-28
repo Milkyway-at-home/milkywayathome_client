@@ -97,7 +97,7 @@ void separation(char* filename, double background_integral, double* stream_integ
 	dortho[1] = 0.0;
 	dortho[2] = 1.0;
 	get_transform(dnormal, dortho, cmatrix);
-	
+
 	printf("\nTransformation matrix:\n");
 	printf("\t%lf %lf %lf\n", cmatrix[0][0], cmatrix[0][1], cmatrix[0][2]);
 	printf("\t%lf %lf %lf\n", cmatrix[1][0], cmatrix[1][1], cmatrix[1][2]);
@@ -110,10 +110,10 @@ void separation(char* filename, double background_integral, double* stream_integ
 
 	printf("==============================================\n");
 	printf("bint: %lf", background_integral);
-	for(j = 0; j < ap->number_streams; j++) { 
+	for(j = 0; j < ap->number_streams; j++) {
 		printf(", ");
 		printf("sint[%d]: %lf", j, stream_integrals[j]);
-	} 
+	}
 	printf("\n");
 
 	/*get stream & background weight constants*/
@@ -127,10 +127,10 @@ void separation(char* filename, double background_integral, double* stream_integ
 	}
 	epsilon_b = 1.0 / denom;
 	printf("epsilon_b:    %lf\n", epsilon_b);
-	
+
 	r_point = (double*)malloc(sizeof(double) * ap->convolve);
 	qw_r3_N = (double*)malloc(sizeof(double) * ap->convolve);
-	
+
 	init_constants(ap);
 
 	printf("initialized constants\n");
@@ -141,7 +141,7 @@ void separation(char* filename, double background_integral, double* stream_integ
 		star_coords[1] = sp->stars[i][1];
 		star_coords[2] = sp->stars[i][2];
 //		printf("star_coords: %g %g %g\n", star_coords[0], star_coords[1], star_coords[2]);
-	
+
 //		printf("twoPanel: %d\n", twoPanel);
 
 		if (twoPanel == 1) {
@@ -150,19 +150,19 @@ void separation(char* filename, double background_integral, double* stream_integ
 //			printf("calculating probabilities\n");
 			calculate_probabilities(r_point, qw_r3_N, reff_xr_rp3, star_coords, ap, &prob_b, prob_s);
 //			printf("calculated probabilities\n");
-		
+
 //			printf("prob_s: %lf\n", prob_s[0]);
 //			printf("prob_b: %lf\n", prob_b);
-	
+
 			pbx = epsilon_b * prob_b / background_integral;
-			
+
 			for(j = 0; j < ap->number_streams; j++) {
-				psg[j] = epsilon_s[j] * prob_s[j] / stream_integrals[j]; 
+				psg[j] = epsilon_s[j] * prob_s[j] / stream_integrals[j];
 			}
 
 //			printf("pbx: %g\n", pbx);
 //			printf("psg: %g\n", psg[0]);
-				
+
 			double psgSum = 0;
 			for(j = 0; j < ap->number_streams; j++) {
 				psgSum += psg[j];
@@ -177,7 +177,7 @@ void separation(char* filename, double background_integral, double* stream_integ
 				nstars[j] += sprob[j];
 			}
 //			printf("nstars: %g\n", nstars[0]);
-		} else {	
+		} else {
 			for(j = 0; j < ap->number_streams; j++) {
 				sprob[j] = 1.0;
 				nstars[j] += 1.0;
@@ -188,7 +188,7 @@ void separation(char* filename, double background_integral, double* stream_integ
 		/*determine if star with sprob should be put into stream*/
 		//for(j = 0; j < ap->number_streams; j++) {
 			s_ok = prob_ok(ap->number_streams, sprob);
-		//	if (s_ok == 1) {	
+		//	if (s_ok == 1) {
 		//		s_ok += j;
 		//		break;
 		//	}
@@ -201,7 +201,7 @@ void separation(char* filename, double background_integral, double* stream_integ
 		}
 
 		lbr2xyz(star_coords, starxyz);
-		transform_point(starxyz, cmatrix, xsun, starxyzTransform);	
+		transform_point(starxyz, cmatrix, xsun, starxyzTransform);
 
 		fprintf(file, "%d %lf %lf %lf\n", s_ok, starxyzTransform[0], starxyzTransform[1], starxyzTransform[2]);
 		//free(starxyz);
@@ -211,8 +211,8 @@ void separation(char* filename, double background_integral, double* stream_integ
 
 		if( (total % 10000) == 0 ) printf("%d\n", total);
 	}
-		
-	printf("%d total stars\n", total); 
+
+	printf("%d total stars\n", total);
 	for(j=0; j<ap->number_streams;j++) {
 		printf("%lf in stream[%d] (%lf%%)\n", nstars[j], j, (nstars[j]/total*100));
 	}
@@ -262,7 +262,7 @@ int main(int number_arguments, char **arguments){
 	evaluator__init_integral(integral_f, integral_parameter_length, integral_compose, integral_results_length);
 	printf("init likelihood...\n");
 	evaluator__init_likelihood(likelihood_f, likelihood_parameter_length, likelihood_compose, likelihood_results_length);
-										
+
 	printf("starting...\n");
 	mpi_evaluator__start();
 

@@ -32,11 +32,11 @@ double** matalloc( int nrows, int ncols )
 {
     double** mat;
     int i;
-    
+
     mat = (double**)malloc( nrows * sizeof(double*) );
     for( i = 0; i < nrows; ++i )
         mat[i] = (double*)malloc( ncols * sizeof(double) );
-    
+
     return mat;
 }
 
@@ -45,11 +45,11 @@ double** matalloc( int nrows, int ncols )
 void matfree( double** mat, int nrows )
 {
     int i;
-    
+
     for( i = 0; i < nrows; ++i )
         free( mat[i] );
-    
-    free( mat );    
+
+    free( mat );
 }
 
 
@@ -66,7 +66,7 @@ double norm( const double* vec )
 void normalize( double* vec )
 {
     double vnorm = norm( vec );
-    
+
     vec[0] /= vnorm;
     vec[1] /= vnorm;
     vec[2] /= vnorm;
@@ -95,11 +95,11 @@ void crossp( const double* a, const double* b, double* prod )
 double vecangle( const double* a, const double* b )
 {
     double anorm, bnorm, dprod;
-    
+
     anorm = norm( a );
     bnorm = norm( b );
     dprod = dotp( a, b );
-    
+
     return acos( dprod / (anorm * bnorm) );
 }
 
@@ -112,26 +112,26 @@ void get_transform( const double* f, const double* t, double** mat )
     double angle, sin_a;
     double x, y, z, w;
     double axis[3];
-    
+
     crossp( f, t, axis );
     normalize( axis );
-    
+
     angle = vecangle( f, t );
     sin_a = sin( angle / 2 );
-    
+
     x = axis[0] * sin_a;
     y = axis[1] * sin_a;
     z = axis[2] * sin_a;
     w = cos( angle / 2 );
-    
+
     mat[0][0] = 1 - 2 * (y * y + z * z);
     mat[0][1] =     2 * (x * y - z * w);
     mat[0][2] =     2 * (x * z + y * w);
-    
+
     mat[1][0] =     2 * (x * y + z * w);
     mat[1][1] = 1 - 2 * (x * x + z * z);
     mat[1][2] =     2 * (y * z - x * w);
-    
+
     mat[2][0] =     2 * (x * z - y * w);
     mat[2][1] =     2 * (y * z + x * w);
     mat[2][2] = 1 - 2 * (x * x + y * y);
@@ -142,11 +142,11 @@ void get_transform( const double* f, const double* t, double** mat )
 void do_transform( double* v, double* const* mat )
 {
     double newv[3];
-    
+
     newv[0] = dotp( mat[0], v );
     newv[1] = dotp( mat[1], v );
     newv[2] = dotp( mat[2], v );
-    
+
     v[0] = newv[0];
     v[1] = newv[1];
     v[2] = newv[2];

@@ -37,6 +37,6 @@ void get_transform( const double* f, const double* t, double** mat );
 
 void do_transform( double* v, double* const* mat );
 
-void transform_point( double* point, double** cmat, double* xsun, double* logPoint ); 
+void transform_point( double* point, double** cmat, double* xsun, double* logPoint );
 
 #endif /* SPVECTOR_H */

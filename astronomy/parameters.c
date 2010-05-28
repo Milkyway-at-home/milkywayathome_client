@@ -22,7 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /****
          *      BOINC includes
 ****/
-#ifdef BOINC_APPLICATION 
+#ifdef BOINC_APPLICATION
 	#ifdef _WIN32
 		#include "boinc_win.h"
 	#else
@@ -90,7 +90,7 @@ void free_parameters(ASTRONOMY_PARAMETERS* ap) {
 }
 
 int read_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS *ap) {
-#ifdef BOINC_APPLICATION 
+#ifdef BOINC_APPLICATION
 	char input_path[512];
 	int retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
 
@@ -178,7 +178,7 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 	fscanf(file, "convolve: %d\n", &ap->convolve);
 	fscanf(file, "sgr_coordinates: %d\n", &ap->sgr_coordinates);
 	if (ap->parameters_version > 0.01) {
-		fscanf(file, "aux_bg_profile: %d\n", &ap->aux_bg_profile); //vickej2_bg 
+		fscanf(file, "aux_bg_profile: %d\n", &ap->aux_bg_profile); //vickej2_bg
 	} else {
 		ap->aux_bg_profile = 0;
 	}
@@ -227,7 +227,7 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 	fwrite_double_array(file, "background_min", ap->number_background_parameters, ap->background_min);
 	fwrite_double_array(file, "background_max", ap->number_background_parameters, ap->background_max);
 	fwrite_int_array(file, "optimize_parameter", ap->number_background_parameters, ap->background_optimize);
-	
+
 	fprintf(file, "number_streams: %d, %d\n", ap->number_streams, ap->number_stream_parameters);
 	for (i = 0; i < ap->number_streams; i++) {
 		fprintf(file, "stream_weight: %lf\n", ap->stream_weights[i]);
@@ -245,7 +245,7 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS *ap) {
 
         fprintf(file, "convolve: %d\n", ap->convolve);
 	fprintf(file, "sgr_coordinates: %d\n", ap->sgr_coordinates);
-        fprintf(file, "aux_bg_profile: %d\n", ap->aux_bg_profile); //vickej2_bg 
+        fprintf(file, "aux_bg_profile: %d\n", ap->aux_bg_profile); //vickej2_bg
 	fprintf(file, "wedge: %d\n", ap->wedge);
 
 	fprintf(file, "r[min,max,steps]: %lf, %lf, %d\n", ap->integral[0]->r_min, ap->integral[0]->r_max, ap->integral[0]->r_steps);
@@ -420,7 +420,7 @@ void split_astronomy_parameters(ASTRONOMY_PARAMETERS *ap, int rank, int max_rank
 		ap->integral[i]->max_calculation = (long) (total_calculations * ((double)(rank + 1) / (double)max_rank));
 
 		printf("[worker: %d] [integral: %d] min_calculation: %ld / max_calculation: %ld, total_calculations: %ld\n", rank, i, ap->integral[i]->min_calculation, ap->integral[i]->max_calculation, total_calculations);
-	}	
+	}
 }
 
 

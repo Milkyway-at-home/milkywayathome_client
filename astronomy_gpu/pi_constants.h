@@ -19,8 +19,8 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
-#ifndef PI_CONSTANTS 
-#define PI_CONSTANTS 
+#ifndef PI_CONSTANTS
+#define PI_CONSTANTS
 
 #define D_2PI           6.2831853071795864769252867665590057683943387987502
 #define D_PI            3.1415926535897932384626433832795028841971693993751

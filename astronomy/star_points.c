@@ -29,7 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /****
          *     BOINC includes
 *****/
-#ifdef BOINC_APPLICATION 
+#ifdef BOINC_APPLICATION
 	#ifdef _WIN32
 		#include "boinc_win.h"
 	#else

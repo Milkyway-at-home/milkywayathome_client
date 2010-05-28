@@ -295,7 +295,7 @@ int prob_ok(int n, double* p) {
 	int ok;
 	double r;
 	double step1, step2, step3;
-		
+
 	r = drand48();
 
 	switch (n) {
@@ -347,7 +347,7 @@ int prob_ok(int n, double* p) {
 			break;
 		default:
 			printf("ERROR:  Too many streams to separate using current code; please update the switch statement in probability.c->prob_ok to handle %d streams", n);
-			exit(0);	
+			exit(0);
 	}
 	return ok;
 }

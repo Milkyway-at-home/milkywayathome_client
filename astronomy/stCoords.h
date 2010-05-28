@@ -41,7 +41,7 @@ void stripe_normal ( int wedge, double *xyz);
 
 void lbToXyz ( double l, double b, double *xyz );
 
-void lbToXyz(double l, double b, double *xyz); 
+void lbToXyz(double l, double b, double *xyz);
 
 void xyz_mag(double* point, double offset, double* logPoint);
 

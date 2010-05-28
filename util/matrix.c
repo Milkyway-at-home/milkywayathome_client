@@ -201,7 +201,7 @@ int matrix_multiply__alloc(double **m1, int r1, int c1, double **m2, int r2, int
 }
 
 //a matrix times a vector is a vector (result is rows of first by columns of second
-//columns of the matrix must == rows of the vector 
+//columns of the matrix must == rows of the vector
 void matrix_vector_multiply__no_check(double **m, int r1, int c1, double *v, int r2, double *result) {
 	int j, k;
 	for (j = 0; j < r1; j++) {
@@ -484,7 +484,7 @@ int main(int argc, char **argv) {
 	LUP_solve(3, LU, p, b, result2);
 
 	printf("result: %lf %lf %lf\n", result2[0], result2[1], result2[2]);
-	
+
 	fwrite_matrix(stdout, "inverse", inverse, 3, 3);
 	matrix_multiply__alloc(matrix, 3, 3, inverse, 3, 3, &result);
 	fwrite_matrix(stdout, "result", result, 3, 3);

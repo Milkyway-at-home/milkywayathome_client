@@ -84,7 +84,7 @@ int fread_double_array__realloc(FILE *file, const char *array_name, int *size, d
 	if (read_size <= 0) {
 		fprintf(stderr, "Error reading %s, invalid size: %d\n", array_name, read_size);
 		return -1;
-	}	
+	}
 	if (read_size != *size) {
 		*size = read_size;
 		(*array_t) = (double*)realloc(*array_t, read_size * sizeof(double));

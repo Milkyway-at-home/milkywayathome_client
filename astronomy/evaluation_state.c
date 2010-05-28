@@ -23,7 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
         *       BOINC includes
 *****/
 
-#ifdef BOINC_APPLICATION 
+#ifdef BOINC_APPLICATION
 	#ifdef _WIN32
 		#include "boinc_win.h"
 	#else
@@ -200,7 +200,7 @@ void free_state(EVALUATION_STATE* es) {
 	free(es->integral);
 }
 
-#ifdef MILKYWAY 
+#ifdef MILKYWAY
 	int write_checkpoint(EVALUATION_STATE* es) {
 		int i, retval;
 		char output_path[512];

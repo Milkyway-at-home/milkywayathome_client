@@ -213,7 +213,7 @@ cnum CnumCbrt(cnum c1, int verb)
         err = sqrt(x*x + y*y);
         index = 3;
     }
-    
+
     roots[1].real = r * cos(theta/3.0 + 2.0*pi/3.0);
     roots[1].imagine = r * sin(theta/3.0 + 2.0*pi/3.0);
     root = CnumMult(CnumMult(roots[1],roots[1]),roots[1]);

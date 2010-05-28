@@ -87,7 +87,7 @@ long		validated_wus = 0;
 long		assimilated_wus = 0;
 int		unsent_wu_buffer = 600;
 double		max_credit_per_cpu_second = 0;
-double		max_granted_credit = 0;  
+double		max_granted_credit = 0;
 double		max_claimed_credit = 0;
 bool		grant_claimed_credit = false;
 bool		update_credited_job = false;
@@ -158,7 +158,7 @@ MANAGED_SEARCH* get_search_from_wu_name(const char* wu_name) {
 		ms = searches[pos];
 		update_workunit_info(pos);
 	}
-        return ms;        
+        return ms;
 }
 
 void update_error_rate(DB_HOST& host, bool valid) {
@@ -342,7 +342,7 @@ double update_workunit(DB_VALIDATOR_ITEM_SET& validator, int valid_state, RESULT
 		case NEVER:
 			wu.transition_time = INT_MAX;
 			break;
-		case NO_CHANGE:   
+		case NO_CHANGE:
 			break;
 	}
 	validator.update_workunit(wu);
@@ -376,7 +376,7 @@ int generate_workunits() {
 				if (result == AS_GEN_OVER) searches[i]->completed = 1;
 				scope_messages.printf("Not generating workunits: [%s]\n", AS_GEN_STR[result]);
 				break;
-			} 
+			}
 			current++;
 			add_workunit(gen_sp[i], workunit_info[i], bsm_app);
                 }
@@ -386,7 +386,7 @@ int generate_workunits() {
 }
 
 
-int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM>& items) { 
+int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM>& items) {
 	SCOPE_MSG_LOG scope_messages(log_messages, SCHED_MSG_LOG::MSG_NORMAL);
 	int retval = 0, valid_state;
 	double credit = 0, version = 0.0;
@@ -444,7 +444,7 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 		if (retval) {
 			log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[RESULT#%d] lookup of host %d failed %d\n", result.id, result.hostid, retval);
 			return retval;
-		}       
+		}
 
 		if (host.os_name[0] == 'M') sprintf(insert_sp->host_os, "Windows");
 		else if (host.os_name[0] == 'D') sprintf(insert_sp->host_os, "Darwin");
@@ -496,7 +496,7 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 		if (ms->search == NULL) printf("search == NULL\n");
 		if (ms->search_name == NULL) printf("search_name == NULL\n");
 		if (ms->search_data == NULL) printf("search_data == NULL\n");
-	
+
 
 		FILE *error_file;
 
@@ -572,7 +572,7 @@ int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM
 		wu.assimilate_state = ASSIMILATE_DONE;
 		//wu.transition_time = (int)time(0);
 		retval = validator.update_workunit(wu);
-		if (retval) {            
+		if (retval) {
 			log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[WU#%d %s] update_workunit() failed: %d; exiting\n", wu.id, wu.name, retval);
 			return retval;
 		}
@@ -689,7 +689,7 @@ void start_search_manager() {
 	while (!one_pass) {
 		char buf[256], mod_clause[256];
 		std::vector<VALIDATOR_ITEM> items;
-        
+
 		check_stop_daemons();
 
 		num_validated = 0;
@@ -715,7 +715,7 @@ void start_search_manager() {
                 if (wu_id_modulus)      sprintf(mod_clause, " and workunit.id %% %d = %d ", wu_id_modulus, wu_id_remainder);
                 else                    strcpy(mod_clause, "");
                 sprintf(buf, "where appid=%d and assimilate_state=%d %s limit %d", bsm_app.id, ASSIMILATE_READY, mod_clause, one_pass_N_WU ? one_pass_N_WU : 1000);
-                         
+
 		num_assimilated = 0;
 		while (!wu.enumerate(buf)) {
 //			log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[%s] assimilating boinc WU %d; state=%d\n", wu.name, wu.id, wu.assimilate_state);
@@ -724,7 +724,7 @@ void start_search_manager() {
 				char buf[256];
 				did_something = true;
 				sprintf(buf, "assimilate_state=%d, transition_time=%d", ASSIMILATE_DONE, (int)time(0));
-                                
+
 				retval = wu.update_field(buf);
 				if (retval) {
 					log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[%s] update failed: %d\n", wu.name, retval);

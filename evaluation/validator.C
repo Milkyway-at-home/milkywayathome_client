@@ -26,7 +26,7 @@
 //  [-max_credit_per_cpu_second X] // limit maximum credit per compute time
 //  [-max_granted_credit X] // limit maximum granted credit to X
 //  [-max_claimed_credit Y] // invalid if claims more than Y
-//  [-grant_claimed_credit] // just grant whatever is claimed 
+//  [-grant_claimed_credit] // just grant whatever is claimed
 //  [-update_credited_job]  // add userid/wuid pair to credited_job table
 //  [-credit_from_wu]       // get credit from WU XML
 //
@@ -198,7 +198,7 @@ int is_invalid(RESULT& result) {
 
 // Return zero iff we resolved the WU
 //
-int handle_wu(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM>& items) { 
+int handle_wu(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM>& items) {
 	int canonical_result_index = -1;
 	bool update_result, retry;
 	TRANSITION_TIME transition_time = NO_CHANGE;
@@ -279,7 +279,7 @@ int handle_wu(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM>& ite
 			}
 			if (update_result) {
 				log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL, "[RESULT#%d %s] granted_credit %f\n",  result.id, result.name, result.granted_credit);
-                
+
 				retval = validator.update_result(result);
 				if (retval) {
 					log_messages.printf(SCHED_MSG_LOG::MSG_CRITICAL, "[RESULT#%d %s] Can't update result: %d\n", result.id, result.name, retval);
@@ -503,7 +503,7 @@ int main(int argc, char** argv) {
     sleep(30);
 #endif
 
-    const char *usage = 
+    const char *usage =
       "\nUsage: %s -app <app-name> [OPTIONS]\n"
       "Start validator for application <app-name>\n\n"
       "Optional arguments:\n"
@@ -566,7 +566,7 @@ int main(int argc, char** argv) {
     if ( app_name[0] == 0 ) {
       fprintf (stderr, "\nERROR: use '-app' to specify the application to run the validator for.\n");
       printf (usage, argv[0] );
-      exit(1);      
+      exit(1);
     }
 
     retval = config.parse_file("..");

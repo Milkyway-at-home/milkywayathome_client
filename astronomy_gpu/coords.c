@@ -29,7 +29,7 @@ double d_get_incl(int wedge) {
 	double incl = (wedge * stripe_separation) - 57.5 + survey_center_dec;
 	if (wedge > 46) incl -= 180.0;
 	else incl -= 0.0;
-	return incl; 
+	return incl;
 }
 
 double d_get_incl_rad(int wedge) {

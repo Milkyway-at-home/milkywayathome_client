@@ -118,12 +118,12 @@ void atBound2(
 void slaDcc2s ( double v[3], double *a, double *b )
 {
    double x, y, z, r;
-                                                                                
+
    x = v[0];
    y = v[1];
    z = v[2];
    r = sqrt ( x * x + y * y );
-                                                                                
+
    *a = ( r != 0.0 ) ? atan2 ( y, x ) : 0.0;
    *b = ( z != 0.0 ) ? atan2 ( z, r ) : 0.0;
 }
@@ -132,7 +132,7 @@ void slaDcc2s ( double v[3], double *a, double *b )
 void slaDcs2c ( double a, double b, double v[3] )
 {
    double cosb;
-                                                                                
+
    cosb = cos ( b );
    v[0] = cos ( a ) * cosb;
    v[1] = sin ( a ) * cosb;
@@ -144,7 +144,7 @@ void slaDimxv ( double dm[3][3], double va[3], double vb[3] )
 {
   long i, j;
   double w, vw[3];
-                                                                                
+
 /* Inverse of matrix dm * vector va -> vector vw */
    for ( j = 0; j < 3; j++ ) {
       w = 0.0;
@@ -153,7 +153,7 @@ void slaDimxv ( double dm[3][3], double va[3], double vb[3] )
       }
       vw[j] = w;
    }
-                                                                                
+
 /* Vector vw -> vector vb */
    for ( j = 0; j < 3; j++ ) {
      vb[j] = vw[j];
@@ -165,7 +165,7 @@ void slaDmxv ( double dm[3][3], double va[3], double vb[3] )
 {
    int i, j;
    double w, vw[3];
-                                                                                
+
 /* Matrix dm * vector va -> vector vw */
    for ( j = 0; j < 3; j++ ) {
       w = 0.0;
@@ -174,7 +174,7 @@ void slaDmxv ( double dm[3][3], double va[3], double vb[3] )
       }
       vw[j] = w;
    }
-                                                                                
+
 /* Vector vw -> vector vb */
    for ( j = 0; j < 3; j++ ) {
       vb[j] = vw[j];
@@ -185,7 +185,7 @@ void slaDmxv ( double dm[3][3], double va[3], double vb[3] )
 double slaDrange ( double angle )
 {
   double w;
-                                                                                
+
   w = dmod ( angle, D2PI );
   return ( fabs ( w ) < DPI ) ? w : w - dsign ( D2PI, angle );
 }
@@ -194,7 +194,7 @@ double slaDrange ( double angle )
 double slaDranrm ( double angle )
 {
    double w;
-                                                                                
+
    w = dmod ( angle, D2PI );
    return ( w >= 0.0 ) ? w : w + D2PI;
 }
@@ -203,9 +203,9 @@ double slaDranrm ( double angle )
 void slaEqgal ( double dr, double dd, double *dl, double *db )
 {
    double v1[3], v2[3];
-                                                                                
+
    static double rmat[3][3];
-                                                                                
+
    rmat[0][0] = -0.054875539726;
    rmat[0][1] = -0.873437108010;
    rmat[0][2] = -0.483834985808;
@@ -215,16 +215,16 @@ void slaEqgal ( double dr, double dd, double *dl, double *db )
    rmat[2][0] = -0.867666135858;
    rmat[2][1] = -0.198076386122;
    rmat[2][2] =  0.455983795705;
-                                                                                
+
 /* Spherical to Cartesian */
    slaDcs2c ( dr, dd, v1 );
-                                                                                
+
 /* Equatorial to Galactic */
    slaDmxv ( rmat, v1, v2 );
-                                                                                
+
 /* Cartesian to spherical */
    slaDcc2s ( v2, dl, db );
-                                                                                
+
 /* Express in conventional ranges */
    *dl = slaDranrm ( *dl );
    *db = slaDrange ( *db );
@@ -255,7 +255,7 @@ void gcToSgr ( double mu, double nu, int wedge, double *lamda, double *beta )
 
 	*beta=asin(z);
 	*beta=*beta/radpdeg;
-	
+
 	//printf(" lamdao=%f, betao=%f", *lamda, *beta);
 
 	return;
@@ -279,7 +279,7 @@ void sgrToGal ( double lamda, double beta, double *l, double *b)
 	double rot32=(cos(psi)*sin(theta))/(pow(cos(psi),2)*pow(cos(theta),2)+pow(sin(psi),2)*pow(sin(theta),2)+pow(cos(psi),2)*pow(sin(theta),2)+pow(sin(psi),2)*pow(cos(theta),2));
 	double rot33=cos(theta)/(pow(cos(theta),2)+pow(sin(theta),2));
 	double x2 = 0.0, y2 = 0.0;
-	
+
 	//printf(" lamdai=%f, betai=%f", lamda, beta);
 
 	if (beta>90){
@@ -384,7 +384,7 @@ void atSurveyToEq (double slong, double slat, double *ra, double *dec) {
 
 	double surveyCenterRa = at_surveyCenterRa;
 	double surveyCenterDec = at_surveyCenterDec;
-	
+
 	/* Convert to radians */
 	slong = slong * at_deg2Rad;
 	slat = slat * at_deg2Rad;
@@ -401,7 +401,7 @@ void atSurveyToEq (double slong, double slat, double *ra, double *dec) {
 	*ra = *ra * at_rad2Deg;
 	*dec = *dec * at_rad2Deg;
 	atBound2(dec, ra);
-	
+
 	return;
 }
 
@@ -415,6 +415,6 @@ double atEtaFromStripeNumber(int wedge) {
 	} else {
 		eta = wedge * stripeSeparation - 57.5 - 180.0;
 	}
-	
+
 	return eta;
 }

@@ -114,7 +114,7 @@ void register_search(ASYNCHRONOUS_SEARCH *as) {
  ********/
 
 int number_searches = 0;
-MANAGED_SEARCH** searches;  
+MANAGED_SEARCH** searches;
 
 int get_search_pos(char* search_name) {
 	int cmp, i;

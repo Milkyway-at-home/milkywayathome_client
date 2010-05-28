@@ -58,14 +58,14 @@ void lbr2xyz(const double* lbr, double* xyz) {
 /* Convert galactic xyz into sun-centered lbr coordinates. */
 void xyz2lbr(const double* xyz, double* lbr) {
     double temp, xsun;
-    
+
     xsun = xyz[0] + 8.5;
     temp = xsun * xsun + xyz[1] * xyz[1];
-    
+
     lbr[0] = atan2( xyz[1], xsun ) * deg;
     lbr[1] = atan2( xyz[2], sqrt( temp ) ) * deg;
     lbr[2] = sqrt( temp + xyz[2] * xyz[2] );
-    
+
     if( lbr[0] < 0 ) lbr[0] += 360;
 }
 
@@ -84,7 +84,7 @@ int lbr2stream(const double* lbr, const double* spars, double* stream, int verb)
 
 
 /* Same as lbr2stream, but with input coordinates in galactic xyz. */
-int xyz2stream(const double* xyz, const double* spars, double* stream, int verb) {    
+int xyz2stream(const double* xyz, const double* spars, double* stream, int verb) {
     int i;
     const double* a;                    /* vectors that define the elliptic stream */
     const double* b;
@@ -98,38 +98,38 @@ int xyz2stream(const double* xyz, const double* spars, double* stream, int verb)
     int numroots, flag[4];              /* results from root4 */
     double sint, x, y;                  /* angle & distance of star from ellipse's ring */
     double tmp;
-    double tol = 0.5;                   
-    
+    double tol = 0.5;
+
     c = &spars[0];
     a = &spars[3];
     b = &spars[6];
-    
+
     for (i = 0; i < 3; ++i) cxyz[i] = xyz[i] - c[i];
-    
+
     /* finding e1 and e2 */
     crossp(a, b, axb);  /* finds vector normal to plane of ellipse (axb) */
-    
+
     for (i = 0; i < 3; ++i) e1[i] = axb[i];
-    
+
     normalize(e1);
 
     /* x is the projection of the vector to the star */
     /* onto the normal of the ellipse. This is the "height" from the ellipse. */
     x = dotp(cxyz, e1);
-    
+
     /* finding alpha first, find variables to find coeff for quartic */
     B = b[0]*b[0] + b[1]*b[1] + b[2]*b[2] - a[0]*a[0] - a[1]*a[1] - a[2]*a[2];
     C =  b[0] * (c[0] - xyz[0]) + b[1] * (c[1] - xyz[1]) + b[2] * (c[2] - xyz[2]);
     D = -a[0] * (c[0] - xyz[0]) - a[1] * (c[1] - xyz[1]) - a[2] * (c[2] - xyz[2]);
-    
+
     a3 = 2 * D / B;
     a2 = (C * C + D * D) / (B * B) - 1;
     a1 = -2 * D / B;
     a0 = -D * D / (B * B);
-    
+
     /* find roots, which are possible values of cos(alpha) */
     numroots = stRoot4(a3, a2, a1, a0, cost, flag, verb - 1);
-    
+
     if (numroots <= 0) {
 		tmp = 1;
         tmp = 0.9999 * tmp + a3;
@@ -138,10 +138,10 @@ int xyz2stream(const double* xyz, const double* spars, double* stream, int verb)
         tmp = 0.9999 * tmp + a0;
 
         numroots = stRoot4( a3, a2, a1, a0, cost, flag, 1 );
-        
+
         return -1;
     }
-    
+
     /* with cos(alpha), we find the coordinates of points on the ellipse that coincide
        there are two for each root, because sin(alpha) = +/- sqrt(1 - cos(alpha)^2) */
     sint = 0;
@@ -149,7 +149,7 @@ int xyz2stream(const double* xyz, const double* spars, double* stream, int verb)
         if (flag[i] && (fabs(cost[i]) <= (1 + tol))) {
             int j;
             double distv[3], newd;
-            
+
             /* if cost is close to 1, then sint must be 0 */
             if (fabs(cost[i]) > 1) {
                 cost[i] = cost[i] > 1 ? 1 : -1;
@@ -157,20 +157,20 @@ int xyz2stream(const double* xyz, const double* spars, double* stream, int verb)
             } else {
                 sint = sqrt(1 - cost[i] * cost[i]);
 	    }
-			
+
             for (j = 0; j < 3; ++j) distv[j] = a[j] * cost[i] + b[j] * sint - cxyz[j];
-            
+
             dist[i] = norm(distv);
 
             for (j = 0; j < 3; ++j) distv[j] = a[j] * cost[i] - b[j] * sint - cxyz[j];
-            
+
             newd = norm(distv);
-            
+
             if (dist[i] > newd) {
                 dist[i] = newd;
                 sint *= -1;
             }
-            
+
 #ifndef _WIN32
             if (isnan(dist[i])) {
                 flag[i] = 0;
@@ -187,26 +187,26 @@ int xyz2stream(const double* xyz, const double* spars, double* stream, int verb)
 			--numroots;
 		}
 	}
-    
+
     if (numroots == 0) {
         numroots = stRoot4( a3, a2, a1, a0, cost, flag, 1 );
         return -2;
     }
-    
+
     /* we get the min distance */
     i = min(dist, flag, 4, numroots);
 
     if (i < 0 || i > 3) return -3;
-    
+
     /* this equation sets y to be the distance from the star within the plane of the ellipse */
     tmp = dist[i] * dist[i] - x * x;
     y = fabs( tmp ) < 0.01 ? 0 : sqrt( tmp );
-    
+
     /* Set return values */
     stream[0] = sint;
     stream[1] = x;
     stream[2] = y;
-    
+
     return 0;
 }
 
@@ -227,11 +227,11 @@ void stream2xyz(const double* stream, const double* spars, double* xyz) {
     const double* c;
     double anorm, bnorm, cost, sint;
     double ex[3], ey[3];
-    
+
     c = &spars[0];
     a = &spars[3];
     b = &spars[6];
-    
+
     anorm = norm(a);
     bnorm = norm(b);
     cost = cos(stream[0]);
@@ -239,7 +239,7 @@ void stream2xyz(const double* stream, const double* spars, double* xyz) {
 
     /* Get x-axis and y-axis normal vectors. */
     for (i = 0; i < 3; ++i) ex[i] = bnorm/anorm * a[i] * cost + anorm/bnorm * b[i] * sint;
-    
+
     crossp(a, b, ey);
 
     normalize(ex);
@@ -272,7 +272,7 @@ double get_node() {
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
 void gc2lb( int wedge, double mu, double nu, double* l, double* b ) {
     double ra, dec;
-    
+
     atGCToEq( mu, nu, &ra, &dec, get_node(), wedge_incl( wedge ) );
     atEqToGal( ra, dec, l, b );
 }
@@ -280,7 +280,7 @@ void gc2lb( int wedge, double mu, double nu, double* l, double* b ) {
 /*Get normal vector of data slice from stripe number*/
 void stripe_normal( int wedge, double *xyz ) {
 	double eta, ra, dec, l, b;
-	
+
 	eta = atEtaFromStripeNumber(wedge);
 	atSurveyToEq(0, 90.0+eta, &ra, &dec);
 	atEqToGal(ra, dec, &l, &b);
@@ -330,6 +330,6 @@ void xyz_mag(double* point, double offset, double* logPoint) {
 void xyz2lbg(double* point, double offset, double* lbg) {
 	xyz2lbr(point, lbg);
 	double g = 5.0 * (log(100.0*lbg[2]) / log(10.0) ) + 4.2 - offset;
-	
+
 	lbg[2] = g;
 }

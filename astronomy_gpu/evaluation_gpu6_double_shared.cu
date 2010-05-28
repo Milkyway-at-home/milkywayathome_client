@@ -72,26 +72,26 @@ convert(double* data, int size)
    Similar to setup_texture except it deals with 2d textures
    that were previously in constant memory
  */
-void setup_constant_textures(double *fstream_a, double *fstream_c, 
+void setup_constant_textures(double *fstream_a, double *fstream_c,
 			     double *fstream_sigma_sq2, int number_streams)
 {
   // allocate array
   cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<int2>();
   cudaArray* cu_array_a;
-  cutilSafeCall(cudaMallocArray(&cu_array_a, &channelDesc, 3, number_streams)); 
+  cutilSafeCall(cudaMallocArray(&cu_array_a, &channelDesc, 3, number_streams));
   int2 *fstream_a_data = convert(fstream_a, number_streams * 3);
   cutilSafeCall(cudaMemcpyToArray(cu_array_a, 0, 0, fstream_a_data, 3*number_streams * sizeof(int2), cudaMemcpyHostToDevice));
 
   cudaArray* cu_array_c;
-  cutilSafeCall(cudaMallocArray(&cu_array_c, &channelDesc, 3, number_streams)); 
+  cutilSafeCall(cudaMallocArray(&cu_array_c, &channelDesc, 3, number_streams));
   int2 *fstream_c_data = convert(fstream_c, number_streams * 3);
   cutilSafeCall(cudaMemcpyToArray(cu_array_c, 0, 0, fstream_c_data, 3*number_streams  * sizeof(int2), cudaMemcpyHostToDevice));
 
   cudaArray* cu_array_sq2;
-  cutilSafeCall(cudaMallocArray(&cu_array_sq2, &channelDesc, 1, number_streams)); 
+  cutilSafeCall(cudaMallocArray(&cu_array_sq2, &channelDesc, 1, number_streams));
   int2 *fstream_sigma_sq2_data = convert(fstream_sigma_sq2, number_streams);
   cutilSafeCall(cudaMemcpyToArray(cu_array_sq2, 0, 0, fstream_sigma_sq2_data, number_streams  * sizeof(int2), cudaMemcpyHostToDevice));
-  
+
   // set texture parameters
   tex_fstream_a.addressMode[0] = cudaAddressModeClamp;
   tex_fstream_a.addressMode[1] = cudaAddressModeClamp;
@@ -107,7 +107,7 @@ void setup_constant_textures(double *fstream_a, double *fstream_c,
   tex_fstream_sigma_sq2.addressMode[1] = cudaAddressModeClamp;
   tex_fstream_sigma_sq2.filterMode = cudaFilterModePoint;
   tex_fstream_sigma_sq2.normalized = false;
-  
+
   // Bind the array to the texture
   cutilSafeCall(cudaBindTextureToArray(tex_fstream_a, cu_array_a, channelDesc));
   cutilSafeCall(cudaBindTextureToArray(tex_fstream_c, cu_array_c, channelDesc));
@@ -128,12 +128,12 @@ void setup_r_point_texture(int r_steps, int convolve, int current_integral, doub
     {
       for(j = 0;j<convolve;++j)
 	{
-	  r_point_flat[i * convolve + j] = 
+	  r_point_flat[i * convolve + j] =
 	    r_point[i][j];
 	}
     }
   int2 *host_int2 = convert(r_point_flat, r_steps * convolve);
-  cutilSafeCall(cudaMallocArray(&cu_array, &channelDesc, convolve, r_steps)); 
+  cutilSafeCall(cudaMallocArray(&cu_array, &channelDesc, convolve, r_steps));
   cutilSafeCall(cudaMemcpyToArray(cu_array, 0, 0, host_int2, r_steps * convolve * sizeof(int2), cudaMemcpyHostToDevice));
   cu_r_point_arrays[current_integral] = cu_array;
   free(r_point_flat);
@@ -150,12 +150,12 @@ void setup_qw_r3_N_texture(int r_steps, int convolve, int current_integral, doub
     {
       for(j = 0;j<convolve;++j)
 	{
-	  qw_r3_N_flat[i * convolve + j] = 
+	  qw_r3_N_flat[i * convolve + j] =
 	    qw_r3_N[i][j];
 	}
     }
   int2 *host_int2 = convert(qw_r3_N_flat, r_steps * convolve);
-  cutilSafeCall(cudaMallocArray(&cu_array, &channelDesc, convolve, r_steps)); 
+  cutilSafeCall(cudaMallocArray(&cu_array, &channelDesc, convolve, r_steps));
   cutilSafeCall(cudaMemcpyToArray(cu_array, 0, 0, host_int2, r_steps * convolve * sizeof(int2), cudaMemcpyHostToDevice));
   cu_qw_r3_N_arrays[current_integral] = cu_array;
   free(qw_r3_N_flat);
@@ -217,7 +217,7 @@ __device__ double fsqrtd(double y)	// accurate to 1 ulp, i.e the last bit of the
 }	// same precision as division (1 ulp)
 
 
-template <unsigned int number_streams, unsigned int convolve> 
+template <unsigned int number_streams, unsigned int convolve>
 __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 				      int in_step, int in_steps,
 				      int nu_steps, int total_threads,
@@ -231,17 +231,17 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 				      double *stream_integrals,
 				      double *stream_integrals_c,
 				      double *fstream_c,
-				      double *fstream_a) 
+				      double *fstream_a)
 {
   double *s_fstream_c = shared_mem;
   double *s_fstream_a = &s_fstream_c[number_streams * 3];
-  
+
   if (threadIdx.x < number_streams * 3)
     {
       s_fstream_a[threadIdx.x] = fstream_a[threadIdx.x];
       s_fstream_c[threadIdx.x] = fstream_c[threadIdx.x];
     }
-  
+
   double bg_int = 0.0;
   double st_int0 = 0.0;
   double st_int1 = 0.0;
@@ -264,10 +264,10 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 
     double qw_r3_N = tex2D_double(tex_qw_r3_N,i,in_step);
     {
-      double rg = fsqrtd(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) 
+      double rg = fsqrtd(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2)
 			 * q_squared_inverse);
       double rs = rg + r0;
-      
+
       bg_int += divd(qw_r3_N , (rg * rs * rs * rs));
     }
     if (number_streams >= 1)
@@ -277,18 +277,18 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 	double sxyz1 = xyz1 - s_fstream_c[1];
 	double sxyz2 = xyz2 - s_fstream_c[2];
 
-	double dotted = s_fstream_a[0] * sxyz0 
+	double dotted = s_fstream_a[0] * sxyz0
 	  + s_fstream_a[1] * sxyz1
 	  + s_fstream_a[2] * sxyz2;
-	
+
 	sxyz0 -= dotted * s_fstream_a[0];
 	sxyz1 -= dotted * s_fstream_a[1];
 	sxyz2 -= dotted * s_fstream_a[2];
-	
+
 	double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-	double result = (qw_r3_N 
-			 * exp(-(xyz_norm) * 
-			       constant_inverse_fstream_sigma_sq2[0]));   
+	double result = (qw_r3_N
+			 * exp(-(xyz_norm) *
+			       constant_inverse_fstream_sigma_sq2[0]));
 	st_int0 += result;
       }
     if (number_streams >= 2)
@@ -297,19 +297,19 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 	double sxyz0 = xyz0 - s_fstream_c[3];
 	double sxyz1 = xyz1 - s_fstream_c[4];
 	double sxyz2 = xyz2 - s_fstream_c[5];
-	
-	double dotted = s_fstream_a[3] * sxyz0 
+
+	double dotted = s_fstream_a[3] * sxyz0
 	  + s_fstream_a[4] * sxyz1
 	  + s_fstream_a[5] * sxyz2;
-	
+
 	sxyz0 -= dotted * s_fstream_a[3];
 	sxyz1 -= dotted * s_fstream_a[4];
 	sxyz2 -= dotted * s_fstream_a[5];
-	  
+
 	double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
 	double result = (qw_r3_N
-			 * exp(-(xyz_norm) * 
-			       constant_inverse_fstream_sigma_sq2[1]));   
+			 * exp(-(xyz_norm) *
+			       constant_inverse_fstream_sigma_sq2[1]));
 	st_int1 += result;
       }
     if (number_streams >= 3)
@@ -318,19 +318,19 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 	double sxyz0 = xyz0 - s_fstream_c[6];
 	double sxyz1 = xyz1 - s_fstream_c[7];
 	double sxyz2 = xyz2 - s_fstream_c[8];
-	
-	double dotted = s_fstream_a[6] * sxyz0 
+
+	double dotted = s_fstream_a[6] * sxyz0
 	  + s_fstream_a[7] * sxyz1
 	  + s_fstream_a[8] * sxyz2;
-	
+
 	sxyz0 -= dotted * s_fstream_a[6];
 	sxyz1 -= dotted * s_fstream_a[7];
 	sxyz2 -= dotted * s_fstream_a[8];
-	
+
 	double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
 	double result = (qw_r3_N
-			 * exp(-(xyz_norm) * 
-			       constant_inverse_fstream_sigma_sq2[2]));   
+			 * exp(-(xyz_norm) *
+			       constant_inverse_fstream_sigma_sq2[2]));
 	st_int2 += result;
       }
     if (number_streams >= 4)
@@ -339,19 +339,19 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 	double sxyz0 = xyz0 - s_fstream_c[9];
 	double sxyz1 = xyz1 - s_fstream_c[10];
 	double sxyz2 = xyz2 - s_fstream_c[11];
-	
-	double dotted = s_fstream_a[9] * sxyz0 
+
+	double dotted = s_fstream_a[9] * sxyz0
 	  + s_fstream_a[10] * sxyz1
 	  + s_fstream_a[11] * sxyz2;
-	
+
 	sxyz0 -= dotted * s_fstream_a[9];
 	sxyz1 -= dotted * s_fstream_a[10];
 	sxyz2 -= dotted * s_fstream_a[11];
-	
+
 	double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
 	double result = (qw_r3_N
-			 * exp(-(xyz_norm) * 
-			       constant_inverse_fstream_sigma_sq2[3]));   
+			 * exp(-(xyz_norm) *
+			       constant_inverse_fstream_sigma_sq2[3]));
 	st_int3 += result;
       }
   }
@@ -396,7 +396,7 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
     }
 }
 
-template <unsigned int number_streams, unsigned int convolve> 
+template <unsigned int number_streams, unsigned int convolve>
 __global__ void gpu__integral_kernel3_aux(int mu_offset, int mu_steps,
 					  int in_step, int in_steps,
 					  int nu_steps, int total_threads,
@@ -426,44 +426,44 @@ __global__ void gpu__integral_kernel3_aux(int mu_offset, int mu_steps,
   for (int i = 0; i < convolve; i++) {
     double xyz0, xyz1, xyz2;
     double rs, rg;
-    xyz2 =  tex2D_double(tex_r_point,i,in_step) * 
+    xyz2 =  tex2D_double(tex_r_point,i,in_step) *
       sinb;
-    
-    xyz0 = tex2D_double(tex_r_point,i,in_step) * 
+
+    xyz0 = tex2D_double(tex_r_point,i,in_step) *
       cosb_x_cosl - d_lbr_r;
-    xyz1 = tex2D_double(tex_r_point,i,in_step) * 
+    xyz1 = tex2D_double(tex_r_point,i,in_step) *
     cosb_x_sinl;
-    
+
     rg = sqrt(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) * q_squared_inverse);
     rs = rg + r0;
-    
+
     double r_in_mag = 4.2 + 5 * (log10(1000 * tex2D_double(tex_r_point,i,in_step)) - 1);
     double h_prob = tex2D_double(tex_qw_r3_N,i,in_step) / (rg * rs * rs * rs);
-    double aux_prob = tex2D_double(tex_qw_r3_N,i,in_step) * 
+    double aux_prob = tex2D_double(tex_qw_r3_N,i,in_step) *
       (bg_a * r_in_mag * r_in_mag + bg_b * r_in_mag + bg_c);
     bg_int += h_prob + aux_prob;
-    
+
     for (int j = 0; j < number_streams; j++) {
       double dotted, sxyz0, sxyz1, sxyz2;
       sxyz0 = xyz0 - tex2D_double(tex_fstream_c, 0, j);
       sxyz1 = xyz1 - tex2D_double(tex_fstream_c, 1, j);
       sxyz2 = xyz2 - tex2D_double(tex_fstream_c, 2, j);
-      
-      dotted = tex2D_double(tex_fstream_a, 0,j) * sxyz0 
+
+      dotted = tex2D_double(tex_fstream_a, 0,j) * sxyz0
       	+ tex2D_double(tex_fstream_a, 1, j) * sxyz1
       	+ tex2D_double(tex_fstream_a, 2, j) * sxyz2;
-      
+
       sxyz0 -= dotted * tex2D_double(tex_fstream_a, 0, j);
       sxyz1 -= dotted * tex2D_double(tex_fstream_a, 1, j);
       sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, j);
-      
+
       double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-      double result = (tex2D_double(tex_qw_r3_N,i,in_step) 
+      double result = (tex2D_double(tex_qw_r3_N,i,in_step)
       	       * exp(-(xyz_norm) * constant_inverse_fstream_sigma_sq2[j]));
       st_int[j * blockDim.x + threadIdx.x] += result;
     }
   }
-  
+
   //define V down here so that one to reduce the number of registers, because a register
   //will be reused
   int nu_step = (threadIdx.x + (blockDim.x * (blockIdx.x + mu_offset))) % nu_steps;

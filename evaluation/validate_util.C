@@ -209,7 +209,7 @@ double get_credit_from_wu(WORKUNIT& wu, vector<RESULT>&) {
 //     rate = granted_credit/cpu_time
 //     if (rate < 0) rate = 0
 //     if (rate > MAX_CREDIT_PER_CPU_SEC) rate = MAX_CREDIT_PER_CPU_SEC
-//  
+//
 //     credit_per_cpu_sec = e * rate + (1 - e) * credit_per_cpu_sec
 
 // Note 0: all quantities above should be treated as real numbers
@@ -256,11 +256,11 @@ int update_credit_per_cpu_sec(
     //
     const double credit_average_const = 500;
     const double max_credit_per_cpu_sec = 0.07;
-    
+
     double e = tanh(granted_credit/credit_average_const);
     if (e <= 0.0 || cpu_time == 0.0 || granted_credit == 0.0) return retval;
     if (e > 1.0 || credit_per_cpu_sec == 0.0) e = 1.0;
-    
+
     double rate =  granted_credit/cpu_time;
     if (rate < 0.0) rate = 0.0;
     if (rate > max_credit_per_cpu_sec) {

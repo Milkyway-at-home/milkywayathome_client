@@ -249,7 +249,7 @@
     break;								\
   }									\
 
-#else							
+#else
 
 #define EXECUTE_INTEGRAL_KERNEL						\
   switch(number_streams) {						\
@@ -319,10 +319,10 @@
     break;								\
   }									\
 
-#endif								
+#endif
 #endif
 
-#ifndef SINGLE_PRECISION						
+#ifndef SINGLE_PRECISION
 #define EXECUTE_LIKELIHOOD_KERNEL					\
 									\
     switch (ap->number_streams) {						\
@@ -355,8 +355,8 @@
 							 device_probability); \
       break;								\
     }									\
-									
-#else									
+
+#else
 #define EXECUTE_LIKELIHOOD_KERNEL					\
     switch (ap->number_streams) {						\
     case 1: gpu__likelihood_kernel<1><<<dimGrid, dimBlock>>>(offset, convolve, \
@@ -389,6 +389,6 @@
       break;								\
     }									\
 
-#endif						
+#endif
 
-  
+

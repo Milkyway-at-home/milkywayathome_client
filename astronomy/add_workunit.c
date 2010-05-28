@@ -1,10 +1,10 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole, 
-Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail 
+Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
 and Rensselaer Polytechnic Institute.
 
 This file is part of Milkway@Home.
-    
+
 Milkyway@Home is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or

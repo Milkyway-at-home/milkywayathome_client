@@ -37,7 +37,7 @@ void gaussLegendre__float(float x1, float x2, float x[], float w[], int n)
 	m = (n+1)/2;
 	xm = 0.5*(x2+x1);
 	xl = 0.5*(x2-x1);
-	
+
 	//fprintf(stderr, "m = %d: xm = %g: xl = %g\n", m, xm, xl);
 	for (i=1; i<=m; i++) {
 		//fprintf(stderr, "starting iteration %d of outer loop\n", i);
@@ -56,7 +56,7 @@ void gaussLegendre__float(float x1, float x2, float x[], float w[], int n)
 			z = z1 - p1/pp;
 			//fprintf(stderr, "z-z1 = %g\n", fabs(z-z1));
 		} while (fabs(z-z1) > EPS);
-		
+
 		x[i-1] = xm - xl *z;
 		x[n-i] = xm + xl *z;
 		w[i-1] = 2.0*xl/((1.0-z*z)*pp*pp);
@@ -72,7 +72,7 @@ void gaussLegendre(double x1, double x2, double x[], double w[], int n)
 	m = (n+1)/2;
 	xm = 0.5*(x2+x1);
 	xl = 0.5*(x2-x1);
-	
+
 	//fprintf(stderr, "m = %d: xm = %g: xl = %g\n", m, xm, xl);
 	for (i=1; i<=m; i++) {
 		//fprintf(stderr, "starting iteration %d of outer loop\n", i);
@@ -91,7 +91,7 @@ void gaussLegendre(double x1, double x2, double x[], double w[], int n)
 			z = z1 - p1/pp;
 			//fprintf(stderr, "z-z1 = %g\n", fabs(z-z1));
 		} while (fabs(z-z1) > EPS);
-		
+
 		x[i-1] = xm - xl *z;
 		x[n-i] = xm + xl *z;
 		w[i-1] = 2.0*xl/((1.0-z*z)*pp*pp);

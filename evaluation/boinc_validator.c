@@ -26,7 +26,7 @@
 //  [-max_credit_per_cpu_second X] // limit maximum credit per compute time
 //  [-max_granted_credit X] // limit maximum granted credit to X
 //  [-max_claimed_credit Y] // invalid if claims more than Y
-//  [-grant_claimed_credit] // just grant whatever is claimed 
+//  [-grant_claimed_credit] // just grant whatever is claimed
 //  [-update_credited_job]  // add userid/wuid pair to credited_job table
 //  [-credit_from_wu]       // get credit from WU XML
 //
@@ -250,7 +250,7 @@ int generate_workunits() {
 				if (result == AS_GEN_OVER) searches[i]->completed = 1;
 				scope_messages.printf("Not generating workunits: [%s]\n", AS_GEN_STR[result]);
 				break;
-			} 
+			}
 			current++;
 			add_workunit(gen_sp[i], workunit_info[i], bsm_app);
                 }
@@ -266,7 +266,7 @@ void generate_search_workunits(char *search_name) {
 }
 
 
-int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM>& items) { 
+int insert_workunit(DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM>& items) {
 	int canonical_result_index = -1;
 	bool update_result, retry;
 	TRANSITION_TIME transition_time = NO_CHANGE;
@@ -397,7 +397,7 @@ int main(int argc, char** argv) {
     sleep(30);
 #endif
 
-    const char *usage = 
+    const char *usage =
       "\nUsage: %s -app <app-name> [OPTIONS]\n"
       "Start validator for application <app-name>\n\n"
       "Optional arguments:\n"
@@ -460,7 +460,7 @@ int main(int argc, char** argv) {
     if ( app_name[0] == 0 ) {
       fprintf (stderr, "\nERROR: use '-app' to specify the application to run the validator for.\n");
       printf (usage, argv[0] );
-      exit(1);      
+      exit(1);
     }
 
     retval = config.parse_file("..");
@@ -590,7 +590,7 @@ void start_search_manager() {
 		std::vector<VALIDATOR_ITEM> items;
 		bool found=false;
 		int retval;
-        
+
 		/********
 			*       loop over entries that need to be checked
 		 ********/

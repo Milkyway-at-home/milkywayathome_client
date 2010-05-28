@@ -23,7 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
         *       BOINC includes
 *****/
 
-#ifdef BOINC_APPLICATION 
+#ifdef BOINC_APPLICATION
 	#ifdef _WIN32
 		#include "boinc_win.h"
 	#else
@@ -92,8 +92,8 @@ void init_constants(ASTRONOMY_PARAMETERS *ap) {
 	int i;
 	stream_sigma		= (double*)malloc(sizeof(double) * ap->number_streams);
 	stream_sigma_sq2	= (double*)malloc(sizeof(double) * ap->number_streams);
-	stream_a		= (double**)malloc(sizeof(double*) * ap->number_streams);	
-	stream_c		= (double**)malloc(sizeof(double*) * ap->number_streams);	
+	stream_a		= (double**)malloc(sizeof(double*) * ap->number_streams);
+	stream_c		= (double**)malloc(sizeof(double*) * ap->number_streams);
 
 	alpha	= ap->background_parameters[0];
 	q	= ap->background_parameters[1];
@@ -101,17 +101,17 @@ void init_constants(ASTRONOMY_PARAMETERS *ap) {
 	delta	= ap->background_parameters[3];
 
 	if (ap->aux_bg_profile == 0) {
-                bg_a    = 0; 
-                bg_b    = 0; 
-                bg_c    = 0; 
+                bg_a    = 0;
+                bg_b    = 0;
+                bg_c    = 0;
         } else if (ap->aux_bg_profile == 1) {
         	bg_a    = ap->background_parameters[4]; //vickej2_bg
         	bg_b    = ap->background_parameters[5]; //vickej2_bg
-        	bg_c    = ap->background_parameters[6]; //vickej2_bg 
-        } else { 
+        	bg_c    = ap->background_parameters[6]; //vickej2_bg
+        } else {
 	        printf("Error: aux_bg_profile invalid");
         }
-	
+
 	coeff	= 1 / (stdev * sqrt(2*pi));
 	alpha_delta3 = 3 - alpha + delta;
 
@@ -121,7 +121,7 @@ void init_constants(ASTRONOMY_PARAMETERS *ap) {
 		stream_a[i] = (double*)malloc(sizeof(double) * 3);
 		stream_c[i] = (double*)malloc(sizeof(double) * 3);
 		stream_sigma[i] = ap->stream_parameters[i][4];
-		stream_sigma_sq2[i] = 2.0 * stream_sigma[i] * stream_sigma[i];  
+		stream_sigma_sq2[i] = 2.0 * stream_sigma[i] * stream_sigma[i];
 
 		if (ap->sgr_coordinates == 0) {
 			atGCToEq(ap->stream_parameters[i][0], 0, &ra, &dec, get_node(), wedge_incl(ap->wedge));
@@ -137,7 +137,7 @@ void init_constants(ASTRONOMY_PARAMETERS *ap) {
 		lbr[1] = b;
 		lbr[2] = ap->stream_parameters[i][1];
 		lbr2xyz(lbr, stream_c[i]);
-    
+
 		stream_a[i][0] = sin(ap->stream_parameters[i][2]) * cos(ap->stream_parameters[i][3]);
 		stream_a[i][1] = sin(ap->stream_parameters[i][2]) * sin(ap->stream_parameters[i][3]);
 		stream_a[i][2] = cos(ap->stream_parameters[i][2]);
@@ -233,7 +233,7 @@ void calculate_probabilities(double *r_point, double *r_in_mag, double *r_in_mag
 
 				rg = sqrt(xyz[i][0]*xyz[i][0] + xyz[i][1]*xyz[i][1] + (xyz[i][2]*xyz[i][2])/(q*q));
 				rs = rg + r0;
-				
+
 //vickej2_bg changing the hernquist profile to include a quadratic term in g
 
 				if (ap->aux_bg_profile == 1) {
@@ -319,7 +319,7 @@ double calculate_progress(EVALUATION_STATE *s) {
 	return (double)current_calc_probs / (double)total_calc_probs;
 }
 
-#ifdef MILKYWAY 
+#ifdef MILKYWAY
 	void do_boinc_checkpoint(EVALUATION_STATE *es) {
 		double progress;
 
@@ -350,7 +350,7 @@ void cpu__r_constants(	int n_convolve,
 //vickej2_kpc        double log_r, r, next_r, rPrime;
 
         double r, next_r, rPrime, r_min_kpc, r_max_kpc, r_step_size_kpc, r_max;
-        
+
         r_max = r_min + r_step_size * r_steps;
 
         r_min_kpc = pow(10.0, ((r_min - 14.2)/5.0));
@@ -360,7 +360,7 @@ void cpu__r_constants(	int n_convolve,
 
 	for (i = 0; i < r_steps; i++) {
 #ifdef USE_KPC
-		
+
 		r               =       r_min_kpc + (i * r_step_size_kpc);
 		next_r          =       r + r_step_size_kpc;
 
@@ -372,7 +372,7 @@ void cpu__r_constants(	int n_convolve,
 
 		irv[i]		=	(((next_r * next_r * next_r) - (r * r * r))/3.0) * mu_step_size / deg;
 		rPrime		=	(next_r+r)/2.0;
-    
+
 		r_point[i] = (double*)malloc(sizeof(double) * n_convolve);
 		r_in_mag[i] = (double*)malloc(sizeof(double) * n_convolve);
 		r_in_mag2[i] = (double*)malloc(sizeof(double) * n_convolve);
@@ -398,9 +398,9 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 	double *st_probs_int, *st_probs_int_c;			// for kahan summation
 
 	irv		= (double*)malloc(sizeof(double) * ia->r_steps);
-	st_probs	= (double*)malloc(sizeof(double) * ap->number_streams); 
-	st_probs_int	= (double*)malloc(sizeof(double) * ap->number_streams); 
-	st_probs_int_c	= (double*)malloc(sizeof(double) * ap->number_streams); 
+	st_probs	= (double*)malloc(sizeof(double) * ap->number_streams);
+	st_probs_int	= (double*)malloc(sizeof(double) * ap->number_streams);
+	st_probs_int_c	= (double*)malloc(sizeof(double) * ap->number_streams);
 	reff_xr_rp3	= (double*)malloc(sizeof(double) * ia->r_steps);
 	qw_r3_N		= (double**)malloc(sizeof(double*) * ia->r_steps);
 	r_point		= (double**)malloc(sizeof(double*) * ia->r_steps);
@@ -442,11 +442,11 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 				double ra, dec;
 				atGCToEq(mu + 0.5 * ia->mu_step_size, nus[nu_step_current], &ra, &dec, get_node(), wedge_incl(ap->wedge));
 				atEqToGal(ra, dec, &integral_point[0], &integral_point[1]);
-			} else if (ap->sgr_coordinates == 1) {					
+			} else if (ap->sgr_coordinates == 1) {
 				double lamda, beta;
 				gcToSgr(mu + 0.5 * ia->mu_step_size, nus[nu_step_current], ap->wedge, &lamda, &beta);
 				sgrToGal(lamda, beta, &integral_point[0], &integral_point[1]);
-			} else { 
+			} else {
 				printf("Error: ap->sgr_coordinates not valid");
 			}
 //			printf("nu: %d, glong[%d][%d]: %.15lf, glat[%d][%d]: %.15lf\n", nu_step_current, mu_step_current, nu_step_current, integral_point[0], mu_step_current, nu_step_current, integral_point[1]);
@@ -455,9 +455,9 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 				V = irv[r_step_current] * ids[nu_step_current];
 
 				calculate_probabilities(r_point[r_step_current], r_in_mag[r_step_current], r_in_mag2[r_step_current], qw_r3_N[r_step_current], reff_xr_rp3[r_step_current], integral_point, ap, &bg_prob, st_probs);
-				
+
 				bg_prob *= V;
-	
+
 				temp = bg_prob_int;
 				bg_prob_int += bg_prob;
 				bg_prob_int_c += bg_prob - (bg_prob_int - temp);
@@ -468,7 +468,7 @@ void calculate_integral(ASTRONOMY_PARAMETERS *ap, INTEGRAL_AREA *ia, EVALUATION_
 					temp = st_probs_int[i];
 					st_probs_int[i] += st_probs[i];
 					st_probs_int_c[i] += st_probs[i] - (st_probs_int[i] - temp);
-				
+
 //					ia->stream_integrals[i] += st_probs[i] * V;
 				}
 
@@ -518,7 +518,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 //	time_t start_time, finish_time;
 //	time(&start_time);
 
-	#ifdef MILKYWAY 
+	#ifdef MILKYWAY
 		read_checkpoint(es);
 	#endif
 
@@ -582,7 +582,7 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
 	}
 	sum_exp_weights *= 0.001;
 
-	#ifdef MILKYWAY 
+	#ifdef MILKYWAY
 		do_boinc_checkpoint(es);
 	#endif
 

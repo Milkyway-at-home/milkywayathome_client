@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
 		print_usage();
 		exit(0);
 	}
-	
+
 	printf("sending arguments to boinc search manager\n");
 	init_boinc_search_manager(argc, argv);
 
@@ -215,7 +215,7 @@ int main(int argc, char** argv) {
 		}
 		config.download_path(star_name, wu_star_path);
 		if (fopen(wu_star_path, "r") == NULL) {
-			/********   
+			/********
 				*	Stars not moved to the download diretory yet, do this.
 			 ********/
 			retval = write_star_points(wu_star_path, sp);

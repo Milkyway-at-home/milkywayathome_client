@@ -141,21 +141,21 @@ void gc_sgr_gal(int wedge, double amu_rad, double anu_rad, double *cpu__glong, d
   double z = sin(amu_rad)*cos(anu_rad);
 
   lamda = atan2(y, x);
-  lamda = lamda * D_RAD2DEG; 
+  lamda = lamda * D_RAD2DEG;
   lamda = lamda + 2.5 * wedge;
   if (lamda < 0) lamda = lamda + 360;
 
   beta = asin(z);
   beta *= D_RAD2DEG;
 
-  sgrToGal(lamda, beta, cpu__glong, cpu__glat); 
+  sgrToGal(lamda, beta, cpu__glong, cpu__glat);
   (*cpu__glong) *= D_DEG2RAD;
   (*cpu__glat) *= D_DEG2RAD;
 }
 
 void gc_sgr_gal_lb(int wedge, double amu_rad, double anu_rad, double *cpu__lb) {
   double glong, glat;
-  gc_sgr_gal(wedge, amu_rad, anu_rad, &glong, &glat); 
+  gc_sgr_gal(wedge, amu_rad, anu_rad, &glong, &glat);
 
   cpu__lb[0] = sin(glat);
   cpu__lb[1] = sin(glong);
