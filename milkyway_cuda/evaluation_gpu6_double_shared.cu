@@ -22,12 +22,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 texture<int2, 2, cudaReadModeElementType> tex_r_point;
 texture<int2, 2, cudaReadModeElementType> tex_qw_r3_N;
+texture<int2, 2, cudaReadModeElementType> tex_r_in_mag;
+texture<int2, 2, cudaReadModeElementType> tex_r_in_mag2;
 texture<int2, 2, cudaReadModeElementType> tex_fstream_a;
 texture<int2, 2, cudaReadModeElementType> tex_fstream_c;
 texture<int2, 2, cudaReadModeElementType> tex_fstream_sigma_sq2;
 
 cudaArray **cu_r_point_arrays;
 cudaArray **cu_qw_r3_N_arrays;
+cudaArray **cu_r_in_mag_arrays;
+cudaArray **cu_r_in_mag2_arrays;
 
 static __inline__ __device__
 double tex3D_double(texture<int2, 3> tex, int x, int y, int z)
@@ -162,6 +166,39 @@ void setup_qw_r3_N_texture(int r_steps, int convolve, int current_integral, doub
   free(host_int2);
 }
 
+void setup_r_in_mag_texture2(int r_steps, int convolve, int current_integral,
+			     double **r_in_mag, double **r_in_mag2)
+{
+  cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<int2>();
+  cudaArray* cu_array;
+  cudaArray* cu_array2;
+  double *r_in_mag_flat = (double*) malloc(sizeof(double) * r_steps * convolve);
+  double *r_in_mag2_flat = (double*) malloc(sizeof(double) * r_steps * convolve);
+  int i,j;
+  for(i = 0;i<r_steps;++i)
+    {
+      for(j = 0;j<convolve;++j)
+	{
+	  r_in_mag_flat[i * convolve + j] =
+	    r_in_mag[i][j];
+	  r_in_mag2_flat[i * convolve + j] =
+	    r_in_mag2[i][j];
+	}
+    }
+  int2 *r_in_mag_int2 = convert(r_in_mag_flat, r_steps * convolve);
+  int2 *r_in_mag2_int2 = convert(r_in_mag2_flat, r_steps * convolve);
+  cutilSafeCall(cudaMallocArray(&cu_array, &channelDesc, convolve, r_steps));
+  cutilSafeCall(cudaMemcpyToArray(cu_array, 0, 0, r_in_mag_int2, r_steps * convolve * sizeof(int2), cudaMemcpyHostToDevice));
+  cu_r_in_mag_arrays[current_integral] = cu_array;
+  cutilSafeCall(cudaMallocArray(&cu_array2, &channelDesc, convolve, r_steps));
+  cutilSafeCall(cudaMemcpyToArray(cu_array2, 0, 0, r_in_mag2_int2, r_steps * convolve * sizeof(int2), cudaMemcpyHostToDevice));
+  cu_r_in_mag2_arrays[current_integral] = cu_array2;
+  free(r_in_mag_flat);
+  free(r_in_mag_int2);
+  free(r_in_mag2_flat);
+  free(r_in_mag2_int2);
+}
+
 /**
    Allocates cu arrays for the tex_device_lb texture and sets up
    parts of the texture
@@ -169,6 +206,8 @@ void setup_qw_r3_N_texture(int r_steps, int convolve, int current_integral, doub
 void allocate_cu_arrays(int number_integrals) {
   cu_r_point_arrays = (cudaArray**) malloc(sizeof(cudaArray*) * number_integrals);
   cu_qw_r3_N_arrays = (cudaArray**) malloc(sizeof(cudaArray*) * number_integrals);
+  cu_r_in_mag_arrays = (cudaArray**) malloc(sizeof(cudaArray*) * number_integrals);
+  cu_r_in_mag2_arrays = (cudaArray**) malloc(sizeof(cudaArray*) * number_integrals);
 
   tex_r_point.addressMode[0] = cudaAddressModeClamp;
   tex_r_point.addressMode[1] = cudaAddressModeClamp;
@@ -179,6 +218,16 @@ void allocate_cu_arrays(int number_integrals) {
   tex_qw_r3_N.addressMode[1] = cudaAddressModeClamp;
   tex_qw_r3_N.filterMode = cudaFilterModePoint;
   tex_qw_r3_N.normalized = false;
+
+  tex_r_in_mag.addressMode[0] = cudaAddressModeClamp;
+  tex_r_in_mag.addressMode[1] = cudaAddressModeClamp;
+  tex_r_in_mag.filterMode = cudaFilterModePoint;
+  tex_r_in_mag.normalized = false;
+
+  tex_r_in_mag2.addressMode[0] = cudaAddressModeClamp;
+  tex_r_in_mag2.addressMode[1] = cudaAddressModeClamp;
+  tex_r_in_mag2.filterMode = cudaFilterModePoint;
+  tex_r_in_mag2.normalized = false;
 }
 
 void bind_texture(int current_integral) {
@@ -188,6 +237,8 @@ void bind_texture(int current_integral) {
   //cutilSafeCall(cudaBindTextureToArray(tex_device_lb, cu_arrays[current_integral], channelDesc));
   cutilSafeCall(cudaBindTextureToArray(tex_r_point, cu_r_point_arrays[current_integral], channelDesc));
   cutilSafeCall(cudaBindTextureToArray(tex_qw_r3_N, cu_qw_r3_N_arrays[current_integral], channelDesc));
+  cutilSafeCall(cudaBindTextureToArray(tex_r_in_mag, cu_r_in_mag_arrays[current_integral], channelDesc));
+  cutilSafeCall(cudaBindTextureToArray(tex_r_in_mag2, cu_r_in_mag2_arrays[current_integral], channelDesc));
 }
 
 // 11 DP ops (including 2 conversion) + 1 SP reciprocal, guess 10 DP flops would be an adequate count
@@ -217,10 +268,12 @@ __device__ double fsqrtd(double y)	// accurate to 1 ulp, i.e the last bit of the
 }	// same precision as division (1 ulp)
 
 
-template <unsigned int number_streams, unsigned int convolve>
+template <unsigned int number_streams, unsigned int convolve,
+	  unsigned int aux_bg_profile>
 __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 				      int in_step, int in_steps,
 				      int nu_steps, int total_threads,
+				      double bg_a, double bg_b, double bg_c,
 				      double q_squared_inverse, double r0,
 				      double *device__sinb,
 				      double *device__sinl,
@@ -228,6 +281,7 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 				      double *device__cosl,
 				      double *device__V,
 				      double *background_integrals,
+				      double *background_integrals_c,
 				      double *stream_integrals,
 				      double *stream_integrals_c,
 				      double *fstream_c,
@@ -268,7 +322,18 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 			 * q_squared_inverse);
       double rs = rg + r0;
 
-      bg_int += divd(qw_r3_N , (rg * rs * rs * rs));
+      if (aux_bg_profile == 1)
+	{
+	  double r_in_mag = tex2D_double(tex_r_in_mag, i, in_step);
+	  double r_in_mag2 = tex2D_double(tex_r_in_mag2, i, in_step);
+	  double h_prob = divd(qw_r3_N , (rg * rs * rs * rs));
+	  double aux_prob = qw_r3_N * ( bg_a * r_in_mag2 + bg_b * r_in_mag + bg_c );
+	  bg_int += h_prob + aux_prob;
+	}
+      else
+	{
+	  bg_int += divd(qw_r3_N , (rg * rs * rs * rs));
+	}
     }
     if (number_streams >= 1)
       {
@@ -362,7 +427,11 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
     % nu_steps;
   double V = device__V[nu_step + (in_step * nu_steps)];
   int pos = threadIdx.x + (blockDim.x * (blockIdx.x + mu_offset));
-  background_integrals[pos] += (bg_int * V);
+  double temp = background_integrals[pos];
+  bg_int = bg_int * V;
+  background_integrals[pos] += (bg_int);
+  background_integrals_c[pos] += ((bg_int) -
+				  (background_integrals[pos] - temp));
   if (number_streams >= 1)
     {
       st_int0 *= V;

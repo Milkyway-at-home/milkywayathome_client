@@ -1,10 +1,14 @@
-template <unsigned int number_streams>
+template <unsigned int number_streams, unsigned int aux_bg_profile>
 __global__ void gpu__likelihood_kernel(int offset, int convolve,
+				       GPU_PRECISION bg_a, GPU_PRECISION bg_b,
+				       GPU_PRECISION bg_c,
 				       GPU_PRECISION q_squared_inverse,
 				       GPU_PRECISION r0,
 				       GPU_PRECISION coeff,
 				       GPU_PRECISION *device__stars,
 				       int number_stars,
+				       GPU_PRECISION *bg_only,
+				       GPU_PRECISION *st_only,
 				       GPU_PRECISION *probability)
 {
   int i;
@@ -49,7 +53,19 @@ __global__ void gpu__likelihood_kernel(int offset, int convolve,
     rg = sqrt(xyz0*xyz0 + xyz1*xyz1 + (xyz2*xyz2) * q_squared_inverse);
     rs = rg + r0;
 
-    bg_int += (qw_r3_N / (rg * rs * rs * rs));
+    if (aux_bg_profile == 1)
+      {
+	double r_in_mag = g;
+	double r_in_mag2 = g*g;
+	double h_prob = (qw_r3_N / (rg * rs * rs * rs));
+	double aux_prob = qw_r3_N * ( bg_a * r_in_mag2 + bg_b * r_in_mag + bg_c );
+	bg_int += h_prob + aux_prob;
+	bg_int = pos;
+      }
+    else
+      {
+	bg_int += (qw_r3_N / (rg * rs * rs * rs));
+      }
     for (int j = 0; j < number_streams; j++) {
       pos = (j * 3);
       sxyz0 = xyz0 - constant_fstream_c[0 + pos];
@@ -69,14 +85,24 @@ __global__ void gpu__likelihood_kernel(int offset, int convolve,
 	    constant_inverse_fstream_sigma_sq2[j]);
     }
   }
-  GPU_PRECISION probability_sum = 0.0;
-  probability_sum += bg_int * constant_background_weight[0];
+  pos = (offset + threadIdx.x + (blockDim.x * blockIdx.x));
+  GPU_PRECISION probability_sum = bg_int * constant_background_weight[0];
+  if (probability_sum * reff_xr_rp3 == 0.0)
+    bg_only[pos] = -238.0;
+  else
+    bg_only[pos] = log10(probability_sum * reff_xr_rp3);
   //pragma unroll 1 makes the loop not unroll,
   //when it unrolls it causes a launch failure when trying
   //to access constant_stream_weight[i], when i is 1
   #pragma unroll 1
   for (i = 0; i < number_streams; i++) {
-    probability_sum += st_int[i] * constant_stream_weight[i];
+    st_only[pos] = st_int[i] * constant_stream_weight[i];
+    probability_sum += st_only[pos];
+    if (st_only[pos] * reff_xr_rp3 == 0.0)
+      st_only[pos] = -238.0;
+    else
+      st_only[pos] = log10(st_only[pos] * reff_xr_rp3);
+    pos += number_stars;
   }
   probability_sum *= reff_xr_rp3;
 
@@ -84,7 +110,6 @@ __global__ void gpu__likelihood_kernel(int offset, int convolve,
     probability_sum = -238.0;
   else
     probability_sum = log10(probability_sum);
-
-  probability[(offset + threadIdx.x + (blockDim.x * blockIdx.x))] =
-    probability_sum;
+  pos = (offset + threadIdx.x + (blockDim.x * blockIdx.x));
+  probability[pos] = probability_sum;
 }

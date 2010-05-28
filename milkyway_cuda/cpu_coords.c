@@ -25,8 +25,8 @@
 #include "pi_constants.h"
 #include "coords.h"
 
-#include "../astronomy/parameters.h"
-#include "../astronomy/atSurveyGeometry.h"
+#include "../milkyway_separation/parameters.h"
+#include "../milkyway_separation/atSurveyGeometry.h"
 
 
 void gc_eq_gal(int wedge, double amu_rad, double anu_rad, double *cpu__glong, double *cpu__glat) {

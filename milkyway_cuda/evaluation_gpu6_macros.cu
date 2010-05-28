@@ -47,10 +47,11 @@
 #ifdef GLOBAL_MEMORY
 #define EXECUTE_INTEGRAL_KERNEL						\
   switch(number_streams) {						\
-  case 1: gpu__integral_kernel3<1, MAX_CONVOLVE>			\
+  case 1: gpu__integral_kernel3<1, MAX_CONVOLVE, aux_bg_profile>	\
       <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step, mu_steps,	\
 					       j, r_steps,		\
-					       nu_steps, total_threads,		\
+					       nu_steps, total_threads,	\
+					       bg_a, bg_b, bg_c,	\
 					       q_squared_inverse, r0,	\
 					       device_sinb[i],		\
 					       device_sinl[i],		\
@@ -58,15 +59,17 @@
 					       device_cosl[i],		\
 					       device_V[i],		\
 					       device_bg_int[i],	\
+					       device_bg_int_c[i],	\
 					       device_st_int[i],	\
 					       device_st_int_c[i],	\
 					       device_fstream_c,	\
 					       device_fstream_a);	\
     break;								\
-  case 2: gpu__integral_kernel3<2, MAX_CONVOLVE>			\
+  case 2: gpu__integral_kernel3<2, MAX_CONVOLVE, aux_bg_profile>	\
       <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps,	\
 					       j, r_steps,		\
-					       nu_steps, total_threads,		\
+					       nu_steps, total_threads,	\
+					       bg_a, bg_b, bg_c,	\
 					       q_squared_inverse, r0,	\
 					       device_sinb[i],		\
 					       device_sinl[i],		\
@@ -74,15 +77,17 @@
 					       device_cosl[i],		\
 					       device_V[i],		\
 					       device_bg_int[i],	\
+					       device_bg_int_c[i],	\
 					       device_st_int[i],	\
 					       device_st_int_c[i],	\
 					       device_fstream_c,	\
 					       device_fstream_a);	\
     break;								\
-  case 3: gpu__integral_kernel3<3, MAX_CONVOLVE>			\
+  case 3: gpu__integral_kernel3<3, MAX_CONVOLVE, aux_bg_profile>	\
       <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps,	\
 					       j, r_steps,		\
-					       nu_steps, total_threads,		\
+					       nu_steps, total_threads,	\
+					       bg_a, bg_b, bg_c,	\
 					       q_squared_inverse, r0,	\
 					       device_sinb[i],		\
 					       device_sinl[i],		\
@@ -90,36 +95,40 @@
 					       device_cosl[i],		\
 					       device_V[i],		\
 					       device_bg_int[i],	\
+					       device_bg_int_c[i],	\
 					       device_st_int[i],	\
 					       device_st_int_c[i],	\
 					       device_fstream_c,	\
 					       device_fstream_a);	\
     break;								\
-  case 4: gpu__integral_kernel3<4, MAX_CONVOLVE>			\
+  case 4: gpu__integral_kernel3<4, MAX_CONVOLVE, aux_bg_profile>	\
       <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps,	\
 					       j, r_steps,		\
-					       nu_steps, total_threads,		\
+					       nu_steps, total_threads,	\
+					       bg_a, bg_b, bg_c,	\
 					       q_squared_inverse, r0,	\
 					       device_sinb[i],		\
 					       device_sinl[i],		\
 					       device_cosb[i],		\
 					       device_cosl[i],		\
 					       device_V[i],		\
-					       device_bg_int[i], \
+					       device_bg_int[i],	\
+					       device_bg_int_c[i],	\
 					       device_st_int[i],	\
 					       device_st_int_c[i],	\
 					       device_fstream_c,	\
 					       device_fstream_a);	\
     break;								\
   }
-							\
+\
 #else
 #define EXECUTE_INTEGRAL_KERNEL						\
   switch(number_streams) {						\
-  case 1: gpu__integral_kernel3<1, MAX_CONVOLVE>			\
+  case 1: gpu__integral_kernel3<1, MAX_CONVOLVE, aux_bg_profile>	\
       <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step, mu_steps,	\
 					       j, r_steps,		\
-					       nu_steps, total_threads,		\
+					       nu_steps, total_threads,	\
+					       bg_a, bg_b, bg_c,	\
 					       q_squared_inverse, r0,	\
 					       device_sinb[i],		\
 					       device_sinl[i],		\
@@ -129,57 +138,61 @@
 					       device_bg_int[i],	\
 					       device_st_int[i]);	\
     break;								\
-  case 2: gpu__integral_kernel3<2, MAX_CONVOLVE>			\
+  case 2: gpu__integral_kernel3<2, MAX_CONVOLVE, aux_bg_profile>	\
       <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps,	\
 					       j, r_steps,		\
-					       nu_steps, total_threads,		\
+					       nu_steps, total_threads,	\
+					       bg_a, bg_b, bg_c,	\
 					       q_squared_inverse, r0,	\
 					       device_sinb[i],		\
 					       device_sinl[i],		\
 					       device_cosb[i],		\
 					       device_cosl[i],		\
 					       device_V[i],		\
-					       device_bg_int[i], \
+					       device_bg_int[i],	\
 					       device_st_int[i]);	\
     break;								\
-  case 3: gpu__integral_kernel3<3, MAX_CONVOLVE>			\
+  case 3: gpu__integral_kernel3<3, MAX_CONVOLVE, aux_bg_profile>	\
       <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps,	\
 					       j, r_steps,		\
-					       nu_steps, total_threads,		\
+					       nu_steps, total_threads,	\
+					       bg_a, bg_b, bg_c,	\
 					       q_squared_inverse, r0,	\
 					       device_sinb[i],		\
 					       device_sinl[i],		\
 					       device_cosb[i],		\
 					       device_cosl[i],		\
 					       device_V[i],		\
-					       device_bg_int[i], \
+					       device_bg_int[i],	\
 					       device_st_int[i]);	\
     break;								\
-  case 4: gpu__integral_kernel3<4, MAX_CONVOLVE>			\
+  case 4: gpu__integral_kernel3<4, MAX_CONVOLVE, aux_bg_profile>	\
       <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps,	\
 					       j, r_steps,		\
-					       nu_steps, total_threads,		\
+					       nu_steps, total_threads,	\
+					       bg_a, bg_b, bg_c,	\
 					       q_squared_inverse, r0,	\
 					       device_sinb[i],		\
 					       device_sinl[i],		\
 					       device_cosb[i],		\
 					       device_cosl[i],		\
 					       device_V[i],		\
-					       device_bg_int[i], \
+					       device_bg_int[i],	\
 					       device_st_int[i]);	\
     break;								\
   }
-							\
+\
 #endif
 #else	 //single precision
 #ifdef GLOBAL_MEMORY
 #define EXECUTE_INTEGRAL_KERNEL						\
   switch(number_streams) {						\
   case 1:								\
-    gpu__integral_kernel3<1, MAX_CONVOLVE>				\
+    gpu__integral_kernel3<1, MAX_CONVOLVE, aux_bg_profile>		\
       <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps,	\
 					       j, r_steps,		\
 					       nu_steps, total_threads,	\
+					       bg_a, bg_b, bg_c,	\
 					       q_squared_inverse, r0,	\
 					       device_sinb[i],		\
 					       device_sinl[i],		\
@@ -194,10 +207,11 @@
 					       device_fstream_a);	\
     break;								\
   case 2:								\
-    gpu__integral_kernel3<2, MAX_CONVOLVE>				\
+    gpu__integral_kernel3<2, MAX_CONVOLVE, aux_bg_profile>		\
       <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps,	\
 					       j, r_steps,		\
 					       nu_steps, total_threads,	\
+					       bg_a, bg_b, bg_c,	\
 					       q_squared_inverse, r0,	\
 					       device_sinb[i],		\
 					       device_sinl[i],		\
@@ -212,10 +226,11 @@
 					       device_fstream_a);	\
     break;								\
   case 3:								\
-    gpu__integral_kernel3<3, MAX_CONVOLVE>				\
+    gpu__integral_kernel3<3, MAX_CONVOLVE, aux_bg_profile>		\
       <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps,	\
 					       j, r_steps,		\
 					       nu_steps, total_threads,	\
+					       bg_a, bg_b, bg_c,	\
 					       q_squared_inverse, r0,	\
 					       device_sinb[i],		\
 					       device_sinl[i],		\
@@ -230,10 +245,11 @@
 					       device_fstream_a);	\
     break;								\
   case 4:								\
-    gpu__integral_kernel3<4, MAX_CONVOLVE>				\
+    gpu__integral_kernel3<4, MAX_CONVOLVE, aux_bg_profile>		\
       <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps,	\
 					       j, r_steps,		\
-					       nu_steps, total_threads,		\
+					       nu_steps, total_threads,	\
+					       bg_a, bg_b, bg_c,	\
 					       q_squared_inverse, r0,	\
 					       device_sinb[i],		\
 					       device_sinl[i],		\
@@ -254,67 +270,71 @@
 #define EXECUTE_INTEGRAL_KERNEL						\
   switch(number_streams) {						\
   case 1:								\
-    gpu__integral_kernel3<1, MAX_CONVOLVE>				\
+    gpu__integral_kernel3<1, MAX_CONVOLVE, aux_bg_profile>		\
       <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps,	\
 					       j, r_steps,		\
-					       nu_steps, total_threads,		\
+					       nu_steps, total_threads,	\
+					       bg_a, bg_b, bg_c,	\
 					       q_squared_inverse, r0,	\
 					       device_sinb[i],		\
 					       device_sinl[i],		\
 					       device_cosb[i],		\
 					       device_cosl[i],		\
 					       device_V[i],		\
-					       device_bg_int[i], \
+					       device_bg_int[i],	\
 					       device_bg_correction[i], \
-					       device_st_int[i], \
+					       device_st_int[i],	\
 					       device_st_correction[i]); \
     break;								\
   case 2:								\
-    gpu__integral_kernel3<2, MAX_CONVOLVE>				\
+    gpu__integral_kernel3<2, MAX_CONVOLVE, aux_bg_profile>		\
       <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps,	\
 					       j, r_steps,		\
-					       nu_steps, total_threads,		\
+					       nu_steps, total_threads,	\
+					       bg_a, bg_b, bg_c,	\
 					       q_squared_inverse, r0,	\
 					       device_sinb[i],		\
 					       device_sinl[i],		\
 					       device_cosb[i],		\
 					       device_cosl[i],		\
 					       device_V[i],		\
-					       device_bg_int[i], \
+					       device_bg_int[i],	\
 					       device_bg_correction[i], \
-					       device_st_int[i], \
+					       device_st_int[i],	\
 					       device_st_correction[i]); \
     break;								\
   case 3:								\
-    gpu__integral_kernel3<3, MAX_CONVOLVE>				\
+    gpu__integral_kernel3<3, MAX_CONVOLVE, aux_bg_profile>		\
       <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps,	\
 					       j, r_steps,		\
-					       nu_steps, total_threads,		\
+					       nu_steps, total_threads,	\
+					       bg_a, bg_b, bg_c,	\
 					       q_squared_inverse, r0,	\
 					       device_sinb[i],		\
 					       device_sinl[i],		\
 					       device_cosb[i],		\
 					       device_cosl[i],		\
 					       device_V[i],		\
-					       device_bg_int[i], \
+					       device_bg_int[i],	\
 					       device_bg_correction[i], \
-					       device_st_int[i], \
+					       device_st_int[i],	\
 					       device_st_correction[i]); \
     break;								\
   case 4:								\
-    gpu__integral_kernel3<4, MAX_CONVOLVE>				\
+    gpu__integral_kernel3<4, MAX_CONVOLVE, aux_bg_profile>		\
       <<<dimGrid, dimBlock, shared_mem_size>>>(mu_step,mu_steps,	\
 					       j, r_steps,		\
-					       nu_steps, total_threads,		\
+					       nu_steps, total_threads,	\
+					       bg_a, bg_b, bg_c,	\
 					       q_squared_inverse, r0,	\
 					       device_sinb[i],		\
 					       device_sinl[i],		\
 					       device_cosb[i],		\
 					       device_cosl[i],		\
 					       device_V[i],		\
-					       device_bg_int[i], \
+					       device_bg_int[i],	\
 					       device_bg_correction[i], \
-					       device_st_int[i], \
+					       device_st_int[i],	\
 					       device_st_correction[i]); \
     break;								\
   }									\
@@ -325,69 +345,93 @@
 #ifndef SINGLE_PRECISION
 #define EXECUTE_LIKELIHOOD_KERNEL					\
 									\
-    switch (ap->number_streams) {						\
-    case 1: gpu__likelihood_kernel<1><<<dimGrid, dimBlock>>>(offset, convolve, \
-							 q_squared_inverse, r0,	\
-							 (GPU_PRECISION)coeff, \
-							 device_stars,	\
-							 number_stars,	\
-							 device_probability); \
-      break;								\
-    case 2: gpu__likelihood_kernel<2><<<dimGrid, dimBlock>>>(offset, convolve, \
-							 q_squared_inverse, r0,	\
-							 (GPU_PRECISION)coeff, \
-							 device_stars,	\
-							 number_stars,	\
-							 device_probability); \
-      break;								\
-    case 3: gpu__likelihood_kernel<3><<<dimGrid, dimBlock>>>(offset, convolve, \
-							 q_squared_inverse, r0,	\
-							 (GPU_PRECISION)coeff, \
-							 device_stars,	\
-							 number_stars,	\
-							 device_probability); \
-      break;								\
-    case 4: gpu__likelihood_kernel<4><<<dimGrid, dimBlock>>>(offset, convolve, \
-							 q_squared_inverse, r0,	\
-							 (GPU_PRECISION)coeff, \
-							 device_stars,	\
-							 number_stars,	\
-							 device_probability); \
-      break;								\
-    }									\
+  switch (ap->number_streams) {						\
+  case 1: gpu__likelihood_kernel<1, aux_bg_profile><<<dimGrid, dimBlock>>> \
+      (offset, convolve,						\
+       bg_a, bg_b, bg_c,						\
+       q_squared_inverse, r0,						\
+       (GPU_PRECISION)coeff,						\
+       device_stars,							\
+       number_stars,							\
+       device_bg_only, device_st_only,					\
+       device_probability);						\
+    break;								\
+  case 2: gpu__likelihood_kernel<2, aux_bg_profile><<<dimGrid, dimBlock>>> \
+      (offset, convolve,						\
+       bg_a, bg_b, bg_c,						\
+       q_squared_inverse, r0,						\
+       (GPU_PRECISION)coeff,						\
+       device_stars,							\
+       number_stars,							\
+       device_bg_only, device_st_only,					\
+       device_probability);						\
+    break;								\
+  case 3: gpu__likelihood_kernel<3, aux_bg_profile><<<dimGrid, dimBlock>>> \
+      (offset, convolve,						\
+       bg_a, bg_b, bg_c,						\
+       q_squared_inverse, r0,						\
+       (GPU_PRECISION)coeff,						\
+       device_stars,							\
+       number_stars,							\
+       device_bg_only, device_st_only,					\
+       device_probability);						\
+    break;								\
+  case 4: gpu__likelihood_kernel<4, aux_bg_profile><<<dimGrid, dimBlock>>> \
+      (offset, convolve,						\
+       bg_a, bg_b, bg_c,						\
+       q_squared_inverse, r0,						\
+       (GPU_PRECISION)coeff,						\
+       device_stars,							\
+       number_stars,							\
+       device_bg_only, device_st_only,					\
+       device_probability);						\
+    break;								\
+  }									\
 
 #else
 #define EXECUTE_LIKELIHOOD_KERNEL					\
-    switch (ap->number_streams) {						\
-    case 1: gpu__likelihood_kernel<1><<<dimGrid, dimBlock>>>(offset, convolve, \
-							 q_squared_inverse, r0,	\
-							 (GPU_PRECISION)coeff, \
-							 device_stars,	\
-							 number_stars,	\
-							     device_probability); \
-      break;								\
-    case 2: gpu__likelihood_kernel<2><<<dimGrid, dimBlock>>>(offset, convolve, \
-							 q_squared_inverse, r0,	\
-							 (GPU_PRECISION)coeff, \
-							 device_stars,	\
-							 number_stars,	\
-							     device_probability); \
-      break;								\
-    case 3: gpu__likelihood_kernel<3><<<dimGrid, dimBlock>>>(offset, convolve, \
-							 q_squared_inverse, r0,	\
-							 (GPU_PRECISION)coeff, \
-							 device_stars,	\
-							 number_stars,	\
-							     device_probability); \
-      break;								\
-    case 4: gpu__likelihood_kernel<4><<<dimGrid, dimBlock>>>(offset, convolve, \
-							 q_squared_inverse, r0,	\
-							 (GPU_PRECISION)coeff, \
-							 device_stars,	\
-							 number_stars,	\
-							     device_probability); \
-      break;								\
-    }									\
+  switch (ap->number_streams) {						\
+  case 1: gpu__likelihood_kernel<1, aux_bg_profile><<<dimGrid, dimBlock>>> \
+      (offset, convolve,						\
+       bg_a, bg_b, bg_c,						\
+       q_squared_inverse, r0,						\
+       (GPU_PRECISION)coeff,						\
+       device_stars,							\
+       number_stars,							\
+       device_bg_only, device_st_only,					\
+       device_probability);						\
+    break;								\
+  case 2: gpu__likelihood_kernel<2, aux_bg_profile><<<dimGrid, dimBlock>>> \
+      (offset, convolve,						\
+       bg_a, bg_b, bg_c,						\
+       q_squared_inverse, r0,						\
+       (GPU_PRECISION)coeff,						\
+       device_stars,							\
+       number_stars,							\
+       device_bg_only, device_st_only,					\
+       device_probability);						\
+    break;								\
+  case 3: gpu__likelihood_kernel<3, aux_bg_profile><<<dimGrid, dimBlock>>> \
+      (offset, convolve,						\
+       bg_a, bg_b, bg_c,						\
+       q_squared_inverse, r0,						\
+       (GPU_PRECISION)coeff,						\
+       device_stars,							\
+       number_stars,							\
+       device_bg_only, device_st_only,					\
+       device_probability);						\
+    break;								\
+  case 4: gpu__likelihood_kernel<4, aux_bg_profile><<<dimGrid, dimBlock>>> \
+      (offset, convolve,						\
+       bg_a, bg_b, bg_c,						\
+       q_squared_inverse, r0,						\
+       (GPU_PRECISION)coeff,						\
+       device_stars,							\
+       number_stars,							\
+       device_bg_only, device_st_only,					\
+       device_probability);						\
+    break;								\
+  }									\
 
 #endif
 
