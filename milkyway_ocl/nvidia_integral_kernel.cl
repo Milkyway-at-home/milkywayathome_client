@@ -1,5 +1,5 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Copyright 2010 Anthony Waters, Travis Desell,
 Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
 and Rensselaer Polytechnic Institute.
 
@@ -134,4 +134,3 @@ integral_kernel(const int convolve,
 	+= (st_int[(i * get_local_size(0)) + get_local_id(0)] * v);
     }
 }
-

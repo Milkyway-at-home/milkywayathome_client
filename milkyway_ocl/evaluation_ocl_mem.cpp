@@ -1,5 +1,5 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Copyright 2010 Anthony Waters, Travis Desell,
 Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
 and Rensselaer Polytechnic Institute.
 
@@ -456,4 +456,3 @@ void destruct_ocl(ocl_mem_t *ocl_mem)
   check_error(clReleaseContext(ocl_mem->context));
   delete ocl_mem;
 }
-

@@ -1,5 +1,5 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Copyright 2010 Anthony Waters, Travis Desell,
 Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
 and Rensselaer Polytechnic Institute.
 
@@ -370,4 +370,3 @@ double ocl_likelihood(double *parameters,
 						global_work_size);
   return likelihood;
 }
-

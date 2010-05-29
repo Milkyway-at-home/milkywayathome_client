@@ -1,5 +1,5 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Copyright 2010 Anthony Waters, Travis Desell,
 Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
 and Rensselaer Polytechnic Institute.
 
@@ -26,4 +26,3 @@ zero_likelihood_kernel(__global double *g_probability)
 {
   g_probability[get_global_id(0)] = 0.0;
 }
-

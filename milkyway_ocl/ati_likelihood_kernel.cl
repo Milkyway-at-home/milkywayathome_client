@@ -1,5 +1,5 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Copyright 2010 Anthony Waters, Travis Desell,
 Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
 and Rensselaer Polytechnic Institute.
 
@@ -350,4 +350,3 @@ likelihood_kernel(const int convolve,
 
   g_probability[get_global_id(0)] = probability;
 }
-

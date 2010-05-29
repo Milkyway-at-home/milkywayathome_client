@@ -1,5 +1,5 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Copyright 2010 Anthony Waters, Travis Desell,
 Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
 and Rensselaer Polytechnic Institute.
 
@@ -18,6 +18,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 
 #pragma OPENCL EXTENSION cl_khr_fp64: enable
 
@@ -181,4 +182,3 @@ integral_kernel(const int convolve,
 	+= (st_int[(i * get_local_size(0)) + get_local_id(0)] * v);
     }
 }
-

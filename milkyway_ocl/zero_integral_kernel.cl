@@ -1,5 +1,5 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Copyright 2010 Anthony Waters, Travis Desell,
 Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
 and Rensselaer Polytechnic Institute.
 
@@ -30,4 +30,3 @@ zero_integral_kernel(const int number_streams,
   for(int i = 0;i<number_streams;++i)
     g_st_int[(i * get_global_size(0)) + get_global_id(0)] = 0.0;
 }
-

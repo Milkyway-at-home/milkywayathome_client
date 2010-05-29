@@ -1,5 +1,5 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Copyright 2010 Anthony Waters, Travis Desell,
 Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
 and Rensselaer Polytechnic Institute.
 
@@ -57,5 +57,3 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
     {									\
       x = x * (double) (2 << (n-1));					\
     }
-
-

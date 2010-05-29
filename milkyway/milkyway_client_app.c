@@ -64,24 +64,24 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "parameters.h"
 #include "star_points.h"
 #include "evaluation_state.h"
-#include "../searches/search_parameters.h"
-#include "../searches/result.h"
-#include "../evaluation/simple_evaluator.h"
-#include "../evaluation/evaluator.h"
+//#include "../searches/search_parameters.h"
+//#include "../searches/result.h"
+//#include "../evaluation/simple_evaluator.h"
+//#include "../evaluation/evaluator.h"
 
 #ifdef MILKYWAY_GPU
 	#ifdef COMPUTE_ON_GPU
 void init_constants(ASTRONOMY_PARAMETERS *ap);
-		#include "../astronomy_gpu/evaluation_gpu.h"
+		#include "../milkyway_separation_cuda/evaluation_gpu.h"
 	#endif
 	#ifdef COMPUTE_ON_CPU
 		#include "evaluation_optimized.h"
 	#endif
 
-	#include "../searches/hessian.h"
-	#include "../searches/gradient.h"
-	#include "../searches/newton_method.h"
-	#include "../searches/line_search.h"
+//#include "../searches/hessian.h"
+//	#include "../searches/gradient.h"
+//	#include "../searches/newton_method.h"
+//	#include "../searches/line_search.h"
 	#include "../util/matrix.h"
 	#include "../util/io_util.h"
 
@@ -108,7 +108,10 @@ void init_constants(ASTRONOMY_PARAMETERS *ap);
 ASTRONOMY_PARAMETERS *ap;
 STAR_POINTS *sp;
 EVALUATION_STATE *es;
-SEARCH_PARAMETERS *s;
+
+void init_simple_evaluator(double (*likelihood_function)(double*));
+extern double (*evaluate)(double*);
+
 
 #ifdef COMPUTE_ON_CPU
 double astronomy_evaluate(double *parameters) {
@@ -171,9 +174,8 @@ int get_parameters(int argc, char** argv, int number_parameters, double* paramet
 
 
 void worker(int argc, char** argv) {
-	int number_parameters;
-	int ap_number_parameters, retval;
-//	double* parameters;
+	int number_parameters, ap_number_parameters, retval;
+	double* parameters;
 
 	/********
 		*	READ THE ASTRONOMY PARAMETERS
@@ -204,12 +206,6 @@ void worker(int argc, char** argv) {
 	initialize_state(ap, sp, es);
 //	printf("read evaluation state\n");
 
-        init_search_parameters(&s, get_optimized_parameter_count(ap));
-        retval = read_search_parameters(SEARCH_PARAMETER_FILENAME, s);
-	//      fwrite_search_parameters(stdout, s);
-	set_astronomy_parameters(ap, s->parameters);
-	//
-
 	number_parameters = get_number_parameters(argc, argv);
 	ap_number_parameters = get_optimized_parameter_count(ap);
 
@@ -232,8 +228,8 @@ void worker(int argc, char** argv) {
 		return;
 	}
 
-//	parameters = (double*)malloc(sizeof(double) * number_parameters);
-//	retval = get_parameters(argc, argv, number_parameters, parameters);
+	parameters = (double*)malloc(sizeof(double) * number_parameters);
+	retval = get_parameters(argc, argv, number_parameters, parameters);
 
 	if (retval) {
 		fprintf(stderr, "could not parse parameters from the command line, retval: %d\n", retval);
@@ -254,7 +250,7 @@ void worker(int argc, char** argv) {
 		return;
 	}
 
-//	set_astronomy_parameters(ap, parameters);
+	set_astronomy_parameters(ap, parameters);
 
 	#ifdef COMPUTE_ON_CPU
 		init_simple_evaluator(astronomy_evaluate);
@@ -309,15 +305,13 @@ void worker(int argc, char** argv) {
 					   ocl_mem);
 	destruct_ocl(ocl_mem);
 #else
-	double likelihood = evaluate(s->parameters) - 3.0;
+	double likelihood = evaluate(parameters) - 3.0;
 #endif
 	fprintf(stderr,"<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
 	fprintf(stderr,"<search_application> %s %s </search_application>\n", app_version, precision);
 
-        write_cpu_result(OUTPUT_FILENAME, s->search_name, s->number_parameters, s->parameters, likelihood, s->metadata, app_version, precision);
 
-
-//	free(parameters);
+	free(parameters);
 
 	free_state(es);
 	free(es);
@@ -325,9 +319,6 @@ void worker(int argc, char** argv) {
 	free(ap);
 	free_star_points(sp);
 	free(sp);
-
-	free_search_parameters(s);
-	free(s);
 
 	#ifdef COMPUTE_ON_GPU
 		gpu__free_constants();
@@ -382,9 +373,9 @@ int main(int argc, char **argv){
 	//devices on the system and choose the one
 	//with double precision support and the most
 	//GFLOPS
-	APP_INIT_DATA init_data;
-	boinc_get_init_data_p(&init_data);
-	char *project_prefs = init_data.project_preferences;
+	//APP_INIT_DATA init_data;
+	//boinc_get_init_data_p(&init_data);
+	char *project_prefs = 0;//init_data.project_preferences;
 	if (choose_gpu(argc, argv) == -1)
 	  {
 	    fprintf(stderr, "Unable to find a capable GPU\n");
@@ -408,4 +399,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.25 2010/05/13 03:20:54 deselt Exp $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.24 2010/05/04 04:21:24 deselt Exp $";
