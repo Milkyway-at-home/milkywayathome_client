@@ -20,9 +20,9 @@
 */
 
 extern "C++" {
-#include "../milkyway_separation/parameters.h"
-#include "../milkyway_separation/star_points.h"
-#include "../milkyway_separation/evaluation_optimized.h"
+#include "../milkyway/parameters.h"
+#include "../milkyway/star_points.h"
+#include "../milkyway/evaluation_optimized.h"
 #include "coords.h"
 #include "cpu_coords.h"
 #include "r_constants.h"

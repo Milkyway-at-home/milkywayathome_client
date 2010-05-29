@@ -22,7 +22,7 @@
 #ifndef CPU_COORDS_H
 #define CPU_COORDS_H
 
-#include "../milkyway_separation/parameters.h"
+#include "../milkyway/parameters.h"
 
 
 void populate_lb(int sgr_coordinates, int wedge,

@@ -25,8 +25,8 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "../milkyway_separation/star_points.h"
-#include "../milkyway_separation/parameters.h"
+#include "../milkyway/star_points.h"
+#include "../milkyway/parameters.h"
 
 void parse_prefs(char *project_prefs);
 int choose_gpu(int argc, char **argv);

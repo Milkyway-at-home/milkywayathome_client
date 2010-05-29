@@ -72,7 +72,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef MILKYWAY_GPU
 	#ifdef COMPUTE_ON_GPU
 void init_constants(ASTRONOMY_PARAMETERS *ap);
-		#include "../milkyway_separation_cuda/evaluation_gpu.h"
+		#include "../milkyway_cuda/evaluation_gpu.h"
 	#endif
 	#ifdef COMPUTE_ON_CPU
 		#include "evaluation_optimized.h"
