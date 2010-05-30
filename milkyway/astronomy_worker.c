@@ -22,7 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /********
 	*	Includes for FGDO
  ********/
-#include "../evaluation/mpi_evaluator.h"
+//#include "../evaluation/mpi_evaluator.h"
 
 /********
 	*	Includes for astronomy

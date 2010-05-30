@@ -25,7 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef BOINC_APPLICATION
 	#ifdef _WIN32
-		#include "boinc_win.h"
+		#include <boinc_win.h>
 	#else
 		#include "config.h"
 	#endif
@@ -39,15 +39,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 	#endif
 
 	#ifdef BOINC_APP_GRAPHICS
-		#include "graphics_api.h"
-		#include "graphics_lib.h"
+		#include <graphics_api.h>
+		#include <graphics_lib.h>
 	#endif
 
-	#include "diagnostics.h"
-	#include "util.h"
-	#include "filesys.h"
-	#include "boinc_api.h"
-	#include "mfile.h"
+	#include <diagnostics.h>
+	#include <util.h>
+	#include <filesys.h>
+	#include <boinc_api.h>
+    #include <mfile.h>
 #endif
 
 #define CHECKPOINT_FILE "astronomy_checkpoint"

@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 ****/
 #ifdef BOINC_APPLICATION
 	#ifdef _WIN32
-		#include "boinc_win.h"
+		#include <boinc_win.h>
 	#else
 		#include "config.h"
 	#endif
@@ -39,11 +39,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 		#include <unistd.h>
 	#endif
 
-	#include "diagnostics.h"
-	#include "util.h"
-	#include "filesys.h"
-	#include "boinc_api.h"
-	#include "mfile.h"
+	#include <diagnostics.h>
+	#include <util.h>
+	#include <filesys.h>
+	#include <boinc_api.h>
+	#include <mfile.h>
 #endif
 
 #include <stdio.h>
@@ -484,3 +484,4 @@ int main(int argc, char **argv) {
 }
 
 #endif
+
