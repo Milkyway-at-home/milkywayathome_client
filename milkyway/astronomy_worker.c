@@ -48,7 +48,7 @@ void read_data(int rank, int max_rank) {
 	int retval = read_astronomy_parameters(astronomy_parameters_file, ap);
 	if (retval) {
 		fprintf(stderr, "APP: error reading astronomy parameters: %d\n", retval);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	split_astronomy_parameters(ap, rank, max_rank);
 
@@ -59,7 +59,7 @@ void read_data(int rank, int max_rank) {
 	retval = read_star_points(star_points_file, sp);
 	if (retval) {
 		fprintf(stderr, "APP: error reading star points: %d\n", retval);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	total_number_stars = sp->number_stars;
 	split_star_points(sp, rank, max_rank);

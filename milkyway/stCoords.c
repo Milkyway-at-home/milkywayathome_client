@@ -19,8 +19,6 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <math.h>
-#include <stdio.h>
 #ifdef _WIN32
 #include <float.h>
 #endif
@@ -30,12 +28,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "stVector.h"
 #include "stMath.h"
 
-#ifndef _WIN32
-#define pi M_PI
-#else
-#define pi 3.14159265358979323846
-#endif
-#define deg (180.0/pi)
 
 /* Convert sun-centered lbr into galactic xyz coordinates. */
 void lbr2xyz(const double* lbr, double* xyz) {
@@ -333,3 +325,4 @@ void xyz2lbg(double* point, double offset, double* lbg) {
 
 	lbg[2] = g;
 }
+

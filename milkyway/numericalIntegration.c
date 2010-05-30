@@ -19,12 +19,7 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-
-#define EPS 3.0e-11
-#define PI 3.1415926535897932384626433832795028841971693993751
+#include "milkyway.h"
 
 double *qgausX, *qgausW;
 
@@ -135,3 +130,4 @@ double qgaus_stream(double (*func)(double, int, int), double xm, double xr, int 
         }
         return s *= xr;
 }
+

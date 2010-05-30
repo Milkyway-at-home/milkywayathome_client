@@ -19,10 +19,7 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <time.h>
+#include "milkyway.h"
 
 #include "atSurveyGeometry.h"
 #include "stCoords.h"
@@ -33,7 +30,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define drand48() ((double) rand() / RAND_MAX)
 #endif
 
-#define PI 3.1415926535897932384626433832795028841971693993751
 #define stdev 0.6
 #define xr 3 * stdev
 

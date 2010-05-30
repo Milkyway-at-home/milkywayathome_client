@@ -37,8 +37,13 @@ include_directories(${PROJECT_INCLUDE_DIR})
 find_package(BOINC REQUIRED)
 find_package(CUDA)
 
-include_directories("${BOINC_INCLUDE_DIR}")
+# if(APPLE)
+#   find_library(OPENCL_LIBRARY OpenCL DOC "OpenCL lib for OS X")
+#   find_path(OPENCL_INCLUDE_DIR OpenCL/cl.h DOC "Include for OpenCL on OS X")
+# endif(APPLE)
 
+include_directories(${BOINC_INCLUDE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}) #FIXME: Move headers to include
 
 include(CheckC99)
 check_c99_support()

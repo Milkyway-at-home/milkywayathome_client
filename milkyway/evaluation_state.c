@@ -19,25 +19,9 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef BOINC_APPLICATION
-	#ifdef _WIN32
-		#include <boinc_win.h>
-	#endif
-
-	#ifdef BOINC_APP_GRAPHICS
-		#include <graphics_api.h>
-		#include <graphics_lib.h>
-	#endif
-
-	#include <boinc_api.h>
-#endif
-
 #define CHECKPOINT_FILE "astronomy_checkpoint"
 
-#include "config.h"
-
-#include <math.h>
-#include <stdio.h>
+#include "milkyway.h"
 
 #include "evaluation_optimized.h"
 #include "parameters.h"
@@ -47,15 +31,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "star_points.h"
 #include "numericalIntegration.h"
 #include "../util/io_util.h"
-
-#ifndef _WIN32
-	#define pi M_PI
-#else
-	#define pi 3.14159265358979323846
-#endif
-
-#define deg (180.0/pi)
-
 
 void fwrite_integral_area(FILE *file, INTEGRAL_AREA *ia) {
 	fprintf(file, "mu[min,max,steps]: %.3lf, %.3lf, %d\n", ia->mu_min, ia->mu_max, ia->mu_steps);

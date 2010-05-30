@@ -19,17 +19,7 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef BOINC_APPLICATION
-	#ifdef _WIN32
-		#include <boinc_win.h>
-	#endif
-	#include <boinc_api.h>
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-
+#include "milkyway.h"
 #include "parameters.h"
 #include "../util/io_util.h"
 

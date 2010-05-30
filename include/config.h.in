@@ -41,3 +41,4 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif /* DOUBLE_PRECISION */
 
 #endif /* CONFIG_H_ */
+

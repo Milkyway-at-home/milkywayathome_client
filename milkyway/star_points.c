@@ -19,16 +19,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include "milkyway.h"
 #include "star_points.h"
-
-#ifdef BOINC_APPLICATION
-	#ifdef _WIN32
-		#include <boinc_win.h>
-	#endif
-    #include <boinc_api.h>
-#endif
 
 
 int read_star_points(const char* filename, STAR_POINTS* sp) {

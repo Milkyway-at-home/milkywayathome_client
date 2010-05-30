@@ -22,8 +22,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef ATSURVEYGEOMETRY_H
 #define ATSURVEYGEOMETRY_H
 
-#define D2PI 6.2831853071795864769252867665590057683943387987502
-#define DPI 3.1415926535897932384626433832795028841971693993751
+#include "milkyway.h"
+
 #define dmod(A,B) ((B)!=0.0?((A)*(B)>0.0?(A)-(B)*floor((A)/(B))\
                                         :(A)+(B)*floor(-(A)/(B))):(A))
 #define dsign(A,B) ((B)<0.0?-(A):(A))
@@ -83,5 +83,5 @@ void atSurveyToEq ( double slong, double slat, double *ra, double *dec);
 
 double atEtaFromStripeNumber ( int wedge );
 
-#endif
+#endif /* ATSURVEYGEOMETRY_H */
 

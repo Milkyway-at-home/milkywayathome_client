@@ -19,32 +19,12 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/********
-        *       Includes for BOINC
-********/
-
-#ifdef _WIN32
-	#include <boinc_win.h>
-	#include <str_util.h>
-#else
-	#include <stdio.h>
-#endif
-
-#include <boinc_api.h>
-#include <string.h>
-
-#if BOINC_APP_GRAPHICS
-	#include <graphics_api.h>
-	#include <graphics_lib.h>
-#endif
-
-#include "config.h"
-
 #define OUTPUT_FILENAME "out"
 #define SEARCH_PARAMETER_FILENAME "search_parameters.txt"
 #define ASTRONOMY_PARAMETER_FILENAME "astronomy_parameters.txt"
 #define STAR_POINTS_FILENAME "stars.txt"
 
+#include "milkyway.h"
 #include "parameters.h"
 #include "star_points.h"
 #include "evaluation_state.h"

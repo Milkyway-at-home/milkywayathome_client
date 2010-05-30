@@ -19,19 +19,10 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "milkyway.h"
 
 #include "stCnum.h"
 //#include "values.h"
-
-#ifndef _WIN32
-#define pi M_PI
-#else
-#define pi 3.14159265358979323846
-#endif
-#define deg (180.0/pi)
 
 void PrintCnum(cnum* x, int n)
 {
@@ -242,6 +233,4 @@ cnum CnumCbrt(cnum c1, int verb)
 
     return roots[index];
 }
-
-/* EOF */
 
