@@ -31,8 +31,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #include <boinc_api.h>
-
-/* #define BOINC_APP_GRAPHICS */
+#include <string.h>
 
 #if BOINC_APP_GRAPHICS
 	#include <graphics_api.h>
@@ -46,9 +45,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define ASTRONOMY_PARAMETER_FILENAME "astronomy_parameters.txt"
 #define STAR_POINTS_FILENAME "stars.txt"
 
-/********
-	*	Includes for astronomy
- ********/
 #include "parameters.h"
 #include "star_points.h"
 #include "evaluation_state.h"

@@ -27,11 +27,29 @@ set(milkyway_client_VERSION_MAJOR 0)
 set(milkyway_client_VERSION_MINOR 1)
 set(milkyway_client_VERSION       0.1)
 
-# add the binary tree to the search path for include files
-# so that we will find config.h
-include_directories("${PROJECT_BINARY_DIR}")
+#if we aren't build from the root of the repo, these need to be set separately
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../cmake_modules)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../bin)
+set(PROJECT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
-include_directories(/usr/local/include/boinc)
+include_directories(${PROJECT_INCLUDE_DIR})
+
+find_package(BOINC REQUIRED)
+find_package(CUDA)
+
+include_directories("${BOINC_INCLUDE_DIR}")
+
+
+include(CheckC99)
+check_c99_support()
+
+#CHECKME: Is this portable?
+set(C99_FLAG -std=c99)
+
+if(HAVE_C99_SUPPORT)
+    set(CMAKE_C_FLAGS "${C99_FLAG} ${CMAKE_C_FLAGS}")
+endif()
+
 
 option(DOUBLE_PRECISION
        "Use double precision" ON)
@@ -72,11 +90,6 @@ option(BOINC_APP_GRAPHICS
        "BOINC app graphics" OFF)
 
 
-#Find the boinc libraries. Probably needs the more heavy duty finding
-#tools for other systems.
-find_library(BOINC_LIB boinc)
-find_library(BOINC_API_LIB boinc_api)
-set(BOINC_LIBRARIES ${BOINC_LIB} ${BOINC_API_LIB})
 
 #FIXME: Somehow test for and require the Apple gcc.  The macports gccs
 #seem to not work when you try to link against frameworks,
@@ -101,6 +114,9 @@ set(source_file_list evaluation_state.c
                      astronomy_worker.c
                      milkyway_client_app.c)
 
+set(extra_warnings "-Wshadow -Wpointer-arith -Wcast-align -common-Wwrite-strings -compare -fno-common")
+
+set(CMAKE_C_FLAGS "-Wall -Wextra -pedantic ${extra_warnings} ${CMAKE_C_FLAGS}")
 
 message("---------------------------------------------")
 message("   Building:          ${PROJECT_NAME}")
@@ -117,6 +133,7 @@ message("   Project src dir:   ${CMAKE_SOURCE_DIR}")
 message("   Project bin dir:   ${CMAKE_BINARY_DIR}")
 message("   ----")
 message("   BOINC Libraries    ${BOINC_LIBRARIES}")
+message("   CUDA  Libraries    ${CUDA_LIBRARIES}")
 message("   ----")
 message("   Build tool:        ${CMAKE_BUILD_TOOL}")
 message("   C Compiler:        ${CMAKE_C_COMPILER}")
@@ -132,8 +149,8 @@ message("---------------------------------------------")
 
 
 configure_file (
-  "${PROJECT_SOURCE_DIR}/config.h.in"
-  "${PROJECT_BINARY_DIR}/config.h"
+  "${PROJECT_INCLUDE_DIR}/config.h.in"
+  "${PROJECT_INCLUDE_DIR}/config.h"
   )
 
 

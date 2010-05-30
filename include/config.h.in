@@ -18,6 +18,9 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _CONFIG_H_
+#define _CONFIG_H_
+
 #define MILKYWAY_CLIENT_VERSION_MAJOR ${milkyway_client_VERSION_MAJOR}
 #define MILKYWAY_CLIENT_VERSION_MINOR ${milkyway_client_VERSION_MINOR}
 #define MILKYWAY_CLIENT_VERSION       ${milkyway_client_VERSION}
@@ -37,3 +40,4 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define PRECISION "double"
 #endif /* DOUBLE_PRECISION */
 
+#endif /* CONFIG_H_ */
