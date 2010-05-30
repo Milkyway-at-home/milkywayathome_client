@@ -167,3 +167,4 @@ void transform_point(double* point, double** cmat, double* xsun, double* logPoin
 
         do_transform(logPoint, cmat);
 }
+

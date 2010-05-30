@@ -24,7 +24,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 typedef struct integral {
 	double r_min, r_max, r_step_size;
@@ -87,3 +86,4 @@ void	get_max_parameters(ASTRONOMY_PARAMETERS* ap, double** parameters);
 void	get_step(ASTRONOMY_PARAMETERS* ap, double** step);
 
 #endif
+

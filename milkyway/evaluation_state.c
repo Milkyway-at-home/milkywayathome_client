@@ -19,23 +19,9 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/****
-        *       BOINC includes
-*****/
-
 #ifdef BOINC_APPLICATION
 	#ifdef _WIN32
 		#include <boinc_win.h>
-	#else
-		#include "config.h"
-	#endif
-
-	#ifndef _WIN32
-		#include <cstdio>
-		#include <cctype>
-		#include <cstring>
-		#include <cstdlib>
-		#include <csignal>
 	#endif
 
 	#ifdef BOINC_APP_GRAPHICS
@@ -43,20 +29,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 		#include <graphics_lib.h>
 	#endif
 
-	#include <diagnostics.h>
-	#include <util.h>
-	#include <filesys.h>
 	#include <boinc_api.h>
-	#include <mfile.h>
 #endif
 
 #define CHECKPOINT_FILE "astronomy_checkpoint"
 
-/****
-	*	Astronomy includes
-*****/
+#include "config.h"
+
 #include <math.h>
-#include <time.h>
 #include <stdio.h>
 
 #include "evaluation_optimized.h"
@@ -266,3 +246,4 @@ void free_state(EVALUATION_STATE* es) {
 	        return 0;
 	}
 #endif
+

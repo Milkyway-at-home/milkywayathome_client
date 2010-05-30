@@ -42,3 +42,4 @@ int prob_ok (int n, double* p);
 void prob_ok_init ();
 
 #endif
+

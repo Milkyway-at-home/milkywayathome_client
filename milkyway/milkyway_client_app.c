@@ -26,9 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef _WIN32
 	#include <boinc_win.h>
 	#include <str_util.h>
-#endif
-
-#ifndef _WIN32
+#else
 	#include <stdio.h>
 #endif
 

@@ -84,3 +84,4 @@ void atSurveyToEq ( double slong, double slat, double *ra, double *dec);
 double atEtaFromStripeNumber ( int wedge );
 
 #endif
+

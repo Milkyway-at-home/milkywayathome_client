@@ -19,10 +19,10 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "mpi.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "math.h"
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 
 #include "astronomy_worker.h"
 #include "evaluation_optimized.h"
@@ -277,3 +277,4 @@ int main(int number_arguments, char **arguments){
 
 	return 0;
 }
+

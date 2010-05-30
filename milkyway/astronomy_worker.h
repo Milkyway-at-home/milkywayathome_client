@@ -45,3 +45,4 @@ void likelihood_f(double* integrals, double* results);
 double likelihood_compose(double* results, int num_results);
 
 #endif
+
