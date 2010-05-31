@@ -29,8 +29,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "parameters.h"
 #include "probability.h"
 #include "star_points.h"
-#include "stCoords.h"
-#include "stVector.h"
 
 #include "../evaluation/evaluator.h"
 #include "../evaluation/mpi_evaluator.h"

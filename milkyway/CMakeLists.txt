@@ -109,7 +109,7 @@ set(source_file_list evaluation_state.c
                      ../util/io_util.c
                      stCoords.c
                      atSurveyGeometry.c
-                     stCnum.c
+                     milkyway_complex.c
                      numericalIntegration.c
                      stVector.c
                      stMath.c

@@ -26,7 +26,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "stVector.h"
 #include "stCoords.h"
 
-
 /* Allocate a 2-dimensional matrix of doubles. */
 double** matalloc( int nrows, int ncols )
 {
@@ -46,7 +45,7 @@ void matfree( double** mat, int nrows )
 {
     int i;
 
-    for( i = 0; i < nrows; ++i )
+    for ( i = 0; i < nrows; ++i )
         free( mat[i] );
 
     free( mat );

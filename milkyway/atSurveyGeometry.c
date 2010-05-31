@@ -21,7 +21,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway.h"
 #include "atSurveyGeometry.h"
-#include "stVector.h"
 
 void atGCToEq (
 	       double amu,	/* IN -- mu in degrees */

@@ -19,28 +19,18 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef BOINC_APPLICATION
-	#ifdef _WIN32
-		#include <boinc_win.h>
-	#endif
-
-	#ifdef BOINC_APP_GRAPHICS
-		#include <graphics_api.h>
-		#include <graphics_lib.h>
-	#endif
-	#include <boinc_api.h>
-#endif
-
 #define CHECKPOINT_FILE "astronomy_checkpoint"
 
 #include <math.h>
 
+
+#include "milkyway.h"
+
 #include "evaluation_optimized.h"
 #include "parameters.h"
 #include "probability.h"
-#include "stCoords.h"
 #include "atSurveyGeometry.h"
-#include "stVector.h"
+#include "stCoords.h"
 #include "star_points.h"
 #include "numericalIntegration.h"
 

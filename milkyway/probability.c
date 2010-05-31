@@ -22,10 +22,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway.h"
 
 #include "atSurveyGeometry.h"
-#include "stCoords.h"
 #include "probability.h"
-#include "stVector.h"
 #include "numericalIntegration.h"
+
 #ifdef _WIN32
 #define drand48() ((double) rand() / RAND_MAX)
 #endif

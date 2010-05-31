@@ -26,7 +26,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "evaluation_optimized.h"
 #include "parameters.h"
 #include "probability.h"
-#include "stCoords.h"
 #include "atSurveyGeometry.h"
 #include "star_points.h"
 #include "numericalIntegration.h"
@@ -156,69 +155,70 @@ void free_state(EVALUATION_STATE* es) {
 }
 
 #ifdef MILKYWAY
-	int write_checkpoint(EVALUATION_STATE* es) {
-		int i, retval;
-		char output_path[512];
-		FILE *file;
+int write_checkpoint(EVALUATION_STATE* es) {
+    int i, retval;
+    char output_path[512];
+    FILE *file;
 
-		boinc_resolve_filename(CHECKPOINT_FILE, output_path, sizeof(output_path));
+    boinc_resolve_filename(CHECKPOINT_FILE, output_path, sizeof(output_path));
 
-		file = boinc_fopen(output_path, "w+");
-		if (!file) {
-			fprintf(stderr, "APP: error writing checkpoint (opening checkpoint file)\n");
-			return 1;
-		}
+    file = boinc_fopen(output_path, "w+");
+    if (!file) {
+        fprintf(stderr, "APP: error writing checkpoint (opening checkpoint file)\n");
+        return 1;
+    }
 
-		fprintf(file, "background_integral: %.20lf\n", es->background_integral);
-		fprintf(file, "stream_integrals[%d]: ", es->number_streams);
-		for (i = 0; i < es->number_streams; i++) {
-			fprintf(file, "%.20lf", es->stream_integrals[i]);
-			if (i != (es->number_streams-1)) fprintf(file, ", ");
-		}
-		fprintf(file, "\n");
+    fprintf(file, "background_integral: %.20lf\n", es->background_integral);
+    fprintf(file, "stream_integrals[%d]: ", es->number_streams);
+    for (i = 0; i < es->number_streams; i++) {
+        fprintf(file, "%.20lf", es->stream_integrals[i]);
+        if (i != (es->number_streams-1)) fprintf(file, ", ");
+    }
+    fprintf(file, "\n");
 
-		fprintf(file, "prob_sum: %.20lf, num_zero: %d, bad_jacobians: %d\n", es->prob_sum, es->num_zero, es->bad_jacobians);
-		fprintf(file, "current_star_point: %d\n", es->current_star_point);
-		fprintf(file, "current_integral: %d\n", es->current_integral);
-		fprintf(file, "number_integrals: %d\n", es->number_integrals);
-		for (i = 0; i < es->number_integrals; i++) {
-			fwrite_integral_area(file, es->integral[i]);
-		}
+    fprintf(file, "prob_sum: %.20lf, num_zero: %d, bad_jacobians: %d\n", es->prob_sum, es->num_zero, es->bad_jacobians);
+    fprintf(file, "current_star_point: %d\n", es->current_star_point);
+    fprintf(file, "current_integral: %d\n", es->current_integral);
+    fprintf(file, "number_integrals: %d\n", es->number_integrals);
+    for (i = 0; i < es->number_integrals; i++) {
+        fwrite_integral_area(file, es->integral[i]);
+    }
 
-		if ((retval = fclose(file))) {
-	                fprintf(stderr, "APP: error writing checkpoint (closing checkpoint file) %d\n", retval);
-	                return retval;
-		}
+    if ((retval = fclose(file))) {
+        fprintf(stderr, "APP: error writing checkpoint (closing checkpoint file) %d\n", retval);
+        return retval;
+    }
 
-		return 0;
-	}
+    return 0;
+}
 
-	int read_checkpoint(EVALUATION_STATE* es) {
-		int i;
-		char input_path[512];
-		int retval = boinc_resolve_filename(CHECKPOINT_FILE, input_path, sizeof(input_path));
-		if (retval) {
-			return 0;
-		}
+int read_checkpoint(EVALUATION_STATE* es) {
+    int i;
+    char input_path[512];
+    int retval = boinc_resolve_filename(CHECKPOINT_FILE, input_path, sizeof(input_path));
+    if (retval) {
+        return 0;
+    }
 
-	        FILE* file = boinc_fopen(input_path, "r");
-	        if (file == NULL) {
-	                return 0;
-	        }
+    FILE* file = boinc_fopen(input_path, "r");
+    if (file == NULL) {
+        return 0;
+    }
 
-		if (1 > fscanf(file, "background_integral: %lf\n", &(es->background_integral))) return 1;
-		es->number_streams = fread_double_array(file, "stream_integrals", &(es->stream_integrals));
+    if (1 > fscanf(file, "background_integral: %lf\n", &(es->background_integral))) return 1;
+    es->number_streams = fread_double_array(file, "stream_integrals", &(es->stream_integrals));
 
-		fscanf(file, "prob_sum: %lf, num_zero: %d, bad_jacobians: %d\n", &(es->prob_sum), &(es->num_zero), &(es->bad_jacobians));
-		fscanf(file, "current_star_point: %d\n", &(es->current_star_point));
-		fscanf(file, "current_integral: %d\n", &(es->current_integral));
-		fscanf(file, "number_integrals: %d\n", &(es->number_integrals));
-		for (i = 0; i < es->number_integrals; i++) {
-			fread_integral_area(file, es->integral[i]);
-		}
+    fscanf(file, "prob_sum: %lf, num_zero: %d, bad_jacobians: %d\n", &(es->prob_sum), &(es->num_zero), &(es->bad_jacobians));
+    fscanf(file, "current_star_point: %d\n", &(es->current_star_point));
+    fscanf(file, "current_integral: %d\n", &(es->current_integral));
+    fscanf(file, "number_integrals: %d\n", &(es->number_integrals));
+    for (i = 0; i < es->number_integrals; i++) {
+        fread_integral_area(file, es->integral[i]);
+    }
 
-	        fclose(file);
-	        return 0;
-	}
-#endif
+    fclose(file);
+    return 0;
+}
+
+#endif /* MILKYWAY */
 

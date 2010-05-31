@@ -43,11 +43,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "evaluation_optimized.h"
 #include "parameters.h"
 #include "probability.h"
-#include "stCoords.h"
 #include "atSurveyGeometry.h"
 #include "star_points.h"
 #include "numericalIntegration.h"
 #include "../util/io_util.h"
+
+#ifndef M_PI
+	#define pi 3.1415926535897932384626433832795028841971693993751
+#else
+	#define pi M_PI
+#endif
 
 #ifndef M_PI
 	#define pi 3.1415926535897932384626433832795028841971693993751
@@ -61,6 +66,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define PI (double) 3.1415926535897932384626433832795028841971693993751
 #define D2PI (double) 6.2831853071795864769252867665590057683943387987502
 #define DPI (double) 3.1415926535897932384626433832795028841971693993751
+
+#define PI_4_3 4.18879020478639098461685784437267051226289253250014109463325945641042\
+1875048278664837379767122822757
+
+#define PI_2_3 2.09439510239319549230842892218633525613144626625007054731662972820521\
+0937524139332418689883561411379
 
 #endif /* _MILKYWAY_AT_HOME_ */
 
