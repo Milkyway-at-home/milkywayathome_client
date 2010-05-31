@@ -22,6 +22,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway.h"
 #include "milkyway_complex.h"
 
+#define CUBE(x) x * x * x
+
 double complex ccbrt(double complex z)
 {
     unsigned int idx;
@@ -33,33 +35,28 @@ double complex ccbrt(double complex z)
 
     r = cabs(z);
     r = pow(r, 1.0/3.0);
-    theta = carg(z);
+    theta = carg(z) / 3.0;
 
-    roots[0] =  r * (cos(theta/3.0) + sin(theta/3.0) * I);
-
-    root = roots[0] * roots[0] * roots[0];
+    roots[0] =  r * (cos(theta) + sin(theta) * I);
+    root = CUBE(roots[0]);
 
     err = cabs(root - z);
     idx = 0;
 
-    roots[1] = r * ((cos(theta/3.0 + PI_2_3)) + (sin(theta/3.0 + PI_2_3)) * I);
-
-    root = roots[1] * roots[1] * roots[1];
+    roots[1] = r * ((cos(theta + PI_2_3)) + (sin(theta + PI_2_3)) * I);
+    root = CUBE(roots[1]);
 
     errp = cabs(root - z);
-
     if (err > errp)
     {
         err = errp;
         idx = 1;
     }
 
-    roots[2] = r * ((cos(theta/3.0 + PI_4_3)) + (sin(theta/3.0 + PI_4_3)) * I);
-
-    root = roots[2] * roots[2] * roots[2];
+    roots[2] = r * ((cos(theta + PI_4_3)) + (sin(theta + PI_4_3)) * I);
+    root = CUBE(roots[2]);
 
     errp = cabs(root - z);
-
     if (err > errp)
     {
         err = errp;
@@ -68,8 +65,8 @@ double complex ccbrt(double complex z)
 
     r = -r;
 
-    roots[0] = r * (cos(theta/3.0) + sin(theta/3.0) * I);
-    root = roots[0] * roots[0] * roots[0];
+    roots[0] = r * (cos(theta) + sin(theta) * I);
+    root = CUBE(roots[0]);
 
     errp = cabs(root - z);
     if (err > errp)
@@ -78,8 +75,9 @@ double complex ccbrt(double complex z)
         idx = 3;
     }
 
-    roots[1] = r * (cos(theta/3.0 + PI_2_3) + sin(theta/3.0 + PI_2_3) * I);
-    root = roots[1] * roots[1] * roots[1];
+    roots[1] = r * (cos(theta + PI_2_3) + sin(theta + PI_2_3) * I);
+    root = CUBE(roots[1]);
+
     errp = cabs(root - z);
     if (err > errp)
     {
@@ -87,11 +85,10 @@ double complex ccbrt(double complex z)
         idx = 4;
     }
 
-    roots[2] = r * (cos(theta/3.0 + PI_4_3) + sin(theta/3.0 + PI_4_3) * I);
+    roots[2] = r * (cos(theta + PI_4_3) + sin(theta + PI_4_3) * I);
+    root = CUBE(roots[2]);
 
-    root = roots[2] * roots[2] * roots[2];
     errp = cabs(root - z);
-
     if (err > errp)
     {
         err = errp;

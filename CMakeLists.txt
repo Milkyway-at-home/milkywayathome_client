@@ -29,6 +29,11 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 set(PROJECT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${PROJECT_INCLUDE_DIR})
 
+#Some kind of workaround for a popular cmake bug where make test
+#doesn't behave as anyone would ever expect.
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
+
+
 add_subdirectory(milkyway)
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 

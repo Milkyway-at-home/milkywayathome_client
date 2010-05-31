@@ -30,8 +30,29 @@ set(small_test_args2 -np 8 -p 0.34217373320392042 25.9517910846623 -2.1709414738
 
 set(small_test_args3 -np 8 -p 0.40587961154742185 17.529961843393409 -1.8575145272144837 29.360893891378243 31.228263575178566 -1.551741065334 .064096152599308373 2.55428209912781)
 
-foreach(i RANGE 1 3)
-  add_test(small_test_${i} ${test_app} ${small_test_args${i}})
-endforeach()
+#foreach(i RANGE 1 3)
+#  add_test(small_test_${i} ${test_app} ${small_test_args${i}})
+#endforeach()
 
+
+# List of test to run.
+# Test sources should be named <testname>.c .
+set(test_list t_complex
+              t_cubic)
+
+#FIXME: Including other sources. move everything into library.
+#FIXME: reorganize to not duplicate this.
+find_package(BOINC REQUIRED)
+include_directories(${BOINC_INCLUDE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../milkyway)
+
+set(extra_test_sources ${CMAKE_CURRENT_SOURCE_DIR}/../milkyway/milkyway_complex.c
+                       ${CMAKE_CURRENT_SOURCE_DIR}/../milkyway/stMath.c)
+
+foreach(test ${test_list})
+	add_executable(${test} ${test}.c ${extra_test_sources})
+	add_test(${test} ${EXECUTABLE_OUTPUT_PATH}/${test})
+    add_dependencies(check ${test})
+endforeach()
 

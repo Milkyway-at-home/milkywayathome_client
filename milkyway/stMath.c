@@ -121,11 +121,7 @@ int CnumCubic( double complex a, double complex b, double complex c, double comp
     const double lim = 0.000001;
     const double lim2 = 0.0001;
 
-    if (      (fabs(creal(a)) < lim)     //FIXME: doesn't need to be this complicated
-           && (fabs(cimag(a)) < lim)
-           && (fabs(cimag(b)) < lim)
-           && (fabs(cimag(b)) < lim)
-        )
+    if ( (cabs(a) < lim) && (cabs(b) < lim) )
     {
         /* if a and b are zero, then we have x^3 + c = 0 */
         /* so our first root is the cube root of -c. */
@@ -164,7 +160,8 @@ int CnumCubic( double complex a, double complex b, double complex c, double comp
         if (verb)
             printf("z^(1/3) = %g + i * %g\n",creal(roots[0]), cimag(roots[0]));
 
-        roots[0] -= (p / (3.0 * roots[0])) + a/3.0;
+        //roots[0] -= (p / (3.0 * roots[0])) + a/3.0;
+        roots[0] = roots[0] - p / (3.0 * roots[0]) - a/3.0;
 
         if (verb)
         {
@@ -172,9 +169,9 @@ int CnumCubic( double complex a, double complex b, double complex c, double comp
             printf("Evaluated: %g\n",stCEval(a,b,c,roots[0]));
         }
 
-        if( stCEval(a,b,c,roots[0]) > lim2)
+        if (stCEval(a,b,c,roots[0]) > lim2)
         {
-            if(verb)
+            if (verb)
                 printf("Recalculating root0...\n");
 
             roots[0] = (-q - csqrt( q*q + (4.0 * p*p*p) / 27.0)) / 2.0;

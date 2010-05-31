@@ -163,4 +163,3 @@ configure_file (
 add_executable(milkyway_client ${source_file_list})
 target_link_libraries(milkyway_client ${BOINC_LIBRARIES} ${OS_SPECIFIC_LIBS})
 
-
