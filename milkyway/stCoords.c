@@ -28,22 +28,23 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "stVector.h"
 #include "stMath.h"
 
+static const double r0 = 8.5;
+
 
 /* Convert sun-centered lbr into galactic xyz coordinates. */
 void lbr2xyz(const double* lbr, double* xyz) {
-	double r0, sinb, sinl, cosb, cosl, zp, d;
+	double bsin, lsin, bcos, lcos, zp, d;
 
-	r0 = 8.5;
-	sinb = sin(lbr[1] / deg);
-	sinl = sin(lbr[0] / deg);
-	cosb = cos(lbr[1] / deg);
-	cosl = cos(lbr[0] / deg);
+	bsin = sin(lbr[1] / deg);
+	lsin = sin(lbr[0] / deg);
+	bcos = cos(lbr[1] / deg);
+	lcos = cos(lbr[0] / deg);
 
-	xyz[2] = lbr[2] * sinb;
-	zp = lbr[2] * cosb;
-	d = sqrt( r0 * r0 + zp * zp - 2 * r0 * zp * cosl);
+	xyz[2] = lbr[2] * bsin;
+	zp = lbr[2] * bcos;
+	d = sqrt( r0 * r0 + zp * zp - 2 * r0 * zp * lcos);
 	xyz[0] = (zp * zp - r0 * r0 - d * d) / (2 * r0);
-	xyz[1] = zp * sinl;
+	xyz[1] = zp * lsin;
 }
 
 
@@ -51,14 +52,15 @@ void lbr2xyz(const double* lbr, double* xyz) {
 void xyz2lbr(const double* xyz, double* lbr) {
     double temp, xsun;
 
-    xsun = xyz[0] + 8.5;
+    xsun = xyz[0] + r0;
     temp = xsun * xsun + xyz[1] * xyz[1];
 
     lbr[0] = atan2( xyz[1], xsun ) * deg;
     lbr[1] = atan2( xyz[2], sqrt( temp ) ) * deg;
     lbr[2] = sqrt( temp + xyz[2] * xyz[2] );
 
-    if( lbr[0] < 0 ) lbr[0] += 360;
+    if ( lbr[0] < 0 )
+        lbr[0] += 360;
 }
 
 

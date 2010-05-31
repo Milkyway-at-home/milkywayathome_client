@@ -34,12 +34,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "star_points.h"
 #include "numericalIntegration.h"
 
-#ifndef _WIN32
-	#define pi M_PI
-#else
-	#define pi 3.1415926535897932384626433832795028841971693993751
-#endif
-
 #define deg (180.0/pi)
 #define stdev 0.6
 #define xr 3 * stdev
@@ -174,17 +168,17 @@ void set_probability_constants(int n_convolve, double coords, double *r_point, d
 }
 
 void calculate_probabilities(double *r_point, double *r_in_mag, double *r_in_mag2, double *qw_r3_N, double reff_xr_rp3, double *integral_point, ASTRONOMY_PARAMETERS *ap, double *bg_prob, double *st_prob) {
-	double sinb, sinl, cosb, cosl, zp;
+	double bsin, lsin, bcos, lcos, zp;
 	double rg, rs, xyzs[3], dotted, xyz_norm;
 	double h_prob, aux_prob; //vickej2_bg
 	int i, j;
 
-        sinb = sin(integral_point[1] / deg);
-        sinl = sin(integral_point[0] / deg);
-        cosb = cos(integral_point[1] / deg);
-        cosl = cos(integral_point[0] / deg);
+        bsin = sin(integral_point[1] / deg);
+        lsin = sin(integral_point[0] / deg);
+        bcos = cos(integral_point[1] / deg);
+        lcos = cos(integral_point[0] / deg);
 
-//	printf("sinb: %.15f sinl: %.15f cosb: %.15f cosl: %.15f\n", sinb, sinl, cosb, cosl);
+//	printf("bsin: %.15f lsin: %.15f bcos: %.15f lcos: %.15f\n", bsin, lsin, bcos, lcos);
 
 	/* if q is 0, there is no probability */
 	if (q == 0) {
@@ -193,10 +187,10 @@ void calculate_probabilities(double *r_point, double *r_in_mag, double *r_in_mag
 		(*bg_prob) = 0;
 		if (alpha == 1 && delta == 1) {
 			for (i = 0; i < ap->convolve; i++) {
-				xyz[i][2] = r_point[i] * sinb;
-				zp = r_point[i] * cosb;
-				xyz[i][0] = zp * cosl - lbr_r;
-				xyz[i][1] = zp * sinl;
+				xyz[i][2] = r_point[i] * bsin;
+				zp = r_point[i] * bcos;
+				xyz[i][0] = zp * lcos - lbr_r;
+				xyz[i][1] = zp * lsin;
 
 				rg = sqrt(xyz[i][0]*xyz[i][0] + xyz[i][1]*xyz[i][1] + (xyz[i][2]*xyz[i][2])/(q*q));
 				rs = rg + r0;
@@ -219,10 +213,10 @@ void calculate_probabilities(double *r_point, double *r_in_mag, double *r_in_mag
 			}
 		} else {
 			for (i = 0; i < ap->convolve; i++) {
-				xyz[i][2] = r_point[i] * sinb;
-				zp = r_point[i] * cosb;
-				xyz[i][0] = zp * cosl - lbr_r;
-				xyz[i][1] = zp * sinl;
+				xyz[i][2] = r_point[i] * bsin;
+				zp = r_point[i] * bcos;
+				xyz[i][0] = zp * lcos - lbr_r;
+				xyz[i][1] = zp * lsin;
 
 				rg = sqrt(xyz[i][0]*xyz[i][0] + xyz[i][1]*xyz[i][1] + (xyz[i][2]*xyz[i][2])/(q*q));
 

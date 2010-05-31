@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 double complex ccbrt(double complex z)
 {
-    unsigned int index;
+    unsigned int idx;
     double r, err, errp, theta;
     double complex roots[3], root;
 
@@ -40,7 +40,7 @@ double complex ccbrt(double complex z)
     root = roots[0] * roots[0] * roots[0];
 
     err = cabs(root - z);
-    index = 0;
+    idx = 0;
 
     roots[1] = r * ((cos(theta/3.0 + PI_2_3)) + (sin(theta/3.0 + PI_2_3)) * I);
 
@@ -51,7 +51,7 @@ double complex ccbrt(double complex z)
     if (err > errp)
     {
         err = errp;
-        index = 1;
+        idx = 1;
     }
 
     roots[2] = r * ((cos(theta/3.0 + PI_4_3)) + (sin(theta/3.0 + PI_4_3)) * I);
@@ -63,7 +63,7 @@ double complex ccbrt(double complex z)
     if (err > errp)
     {
         err = errp;
-        index = 2;
+        idx = 2;
     }
 
     r = -r;
@@ -75,7 +75,7 @@ double complex ccbrt(double complex z)
     if (err > errp)
     {
         err = errp;
-        index = 3;
+        idx = 3;
     }
 
     roots[1] = r * (cos(theta/3.0 + PI_2_3) + sin(theta/3.0 + PI_2_3) * I);
@@ -84,7 +84,7 @@ double complex ccbrt(double complex z)
     if (err > errp)
     {
         err = errp;
-        index = 4;
+        idx = 4;
     }
 
     roots[2] = r * (cos(theta/3.0 + PI_4_3) + sin(theta/3.0 + PI_4_3) * I);
@@ -95,14 +95,12 @@ double complex ccbrt(double complex z)
     if (err > errp)
     {
         err = errp;
-        index = 5;
+        idx = 5;
     }
 
-    if (index > 2)
-        return roots[index-3];
+    if (idx > 2)
+        return roots[idx-3];
 
-    return -roots[index];
-
+    return -roots[idx];
 }
-
 
