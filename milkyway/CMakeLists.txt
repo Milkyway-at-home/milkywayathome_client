@@ -27,6 +27,13 @@ set(milkyway_client_VERSION_MAJOR 0)
 set(milkyway_client_VERSION_MINOR 1)
 set(milkyway_client_VERSION       0.1)
 
+#choose release build type by default
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+      "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
+      FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
+
 #if we aren't build from the root of the repo, these need to be set separately
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../cmake_modules)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../bin)
@@ -57,7 +64,7 @@ set(C99_FLAG -std=c99)
 
 if(HAVE_C99_SUPPORT)
     set(CMAKE_C_FLAGS "${C99_FLAG} ${CMAKE_C_FLAGS}")
-endif()
+endif(HAVE_C99_SUPPORT)
 
 
 option(DOUBLE_PRECISION
@@ -99,11 +106,26 @@ option(BOINC_APP_GRAPHICS
        "BOINC app graphics" OFF)
 
 
+include(CheckAppleGCC)
 
 #FIXME: Somehow test for and require the Apple gcc.  The macports gccs
 #seem to not work when you try to link against frameworks,
-#CoreFoundation etc.
+#CoreFoundation etc. There's probably a better way to check and handle
+#this.
 if(APPLE)
+  check_apple_gcc()
+  if(NOT HAVE_APPLE_GCC)
+    message(WARNING "Attempting to use a non-Apple GCC. Apple GCC is required.")
+    message(FATAL_ERROR "You should specify a compiler with -DCMAKE_C_COMPILER=/path/to/compiler")
+    # message(WARNING "Attempting to fall back to /usr/bin/gcc")
+    # set(CMAKE_C_COMPILER /usr/bin/gcc)
+    # message("LOLOLOL: ${CMAKE_C_COMPILER}")
+    # check_apple_gcc()
+    # if(NOT HAVE_APPLE_GCC)
+    #   message(FATAL_ERROR "Fallback failed. Install an Apple compiler or manually specify one.")
+    # endif()
+  endif()
+
    find_library(CORE_FOUNDATION_LIBRARY CoreFoundation)
    set(OS_SPECIFIC_LIBS ${CORE_FOUNDATION_LIBRARY})
 endif(APPLE)
@@ -123,13 +145,19 @@ set(source_file_list evaluation_state.c
                      astronomy_worker.c
                      milkyway_client_app.c)
 
-set(extra_warnings "-Wshadow -Wpointer-arith -Wcast-align -common-Wwrite-strings -compare -fno-common")
+set(gcc_extra_warnings "-Wshadow -Wpointer-arith -Wcast-align -common-Wwrite-strings -compare -fno-common")
 
-set(CMAKE_C_FLAGS "-Wall -Wextra -pedantic ${extra_warnings} ${CMAKE_C_FLAGS}")
+#TODO: Other compilers
+if(CMAKE_COMPILER_IS_GNUCC) # I think this could maybe be IS_UNIX
+  set(CMAKE_C_FLAGS "-Wall -Wextra ${CMAKE_C_FLAGS}")
+  set(CMAKE_C_FLAGS_DEBUG "-Wall -Wextra ${gcc_extra_warnings} -O0 -g ${CMAKE_C_FLAGS_DEBUG}")
+endif(CMAKE_COMPILER_IS_GNUCC)
+
 
 message("---------------------------------------------")
 message("   Building:          ${PROJECT_NAME}")
 message("   System:            ${CMAKE_SYSTEM}")
+message("   Build type:        ${CMAKE_BUILD_TYPE}")
 message("   Arch:              ${CMAKE_SYSTEM_PROCESSOR}")
 message("   Install path:      ${CMAKE_INSTALL_PREFIX}")
 message("   ----")
@@ -147,7 +175,8 @@ message("   POPT  Library      ${POPT_LIBRARY}")
 message("   ----")
 message("   Build tool:        ${CMAKE_BUILD_TOOL}")
 message("   C Compiler:        ${CMAKE_C_COMPILER}")
-message("   CFLAGS:            ${CMAKE_C_FLAGS}")
+#TODO:Report CFLAGS used based on build type
+#message("   CFLAGS:            ${CMAKE_C_FLAGS}")
 message("   ----")
 message("   Double precision:  ${DOUBLE_PRECISION}")
 message("   OpenCL enabled:    ${USE_OCL}")

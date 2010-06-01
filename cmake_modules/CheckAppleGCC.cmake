@@ -13,41 +13,26 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#
+
 # You should have received a copy of the GNU General Public License
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-cmake_minimum_required (VERSION 2.6)
-project(milkyway@home)
+function(check_apple_gcc)
 
-enable_testing()
+    message(STATUS "Checking if gcc is an Apple gcc")
 
-#set(CMAKE_BUILD_TYPE Release)
+    try_compile(APPLE_GCC_CHECK ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH}/apple_gcc_check.c)
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+    if(APPLE_GCC_CHECK)
+        set(HAVE_APPLE_GCC 1 CACHE STRING "Status of Apple gcc")
+        message(STATUS "Checking if gcc is Apple - yes")
+    else()
+        set(HAVE_APPLE_GCC 0 CACHE STRING "Status of Apple gcc")
+        message(STATUS "Checking if gcc is Apple - no")
+    endif()
 
-set(PROJECT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-include_directories(${PROJECT_INCLUDE_DIR})
+    mark_as_advanced(HAVE_APPLE_GCC)
 
-#Some kind of workaround for a popular cmake bug where make test
-#doesn't behave as anyone would ever expect.
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-
-option(SMALL_TESTS
-       "Run small tests" ON)
-
-option(LARGE_TESTS
-       "Run large tests" OFF)
-
-option(AUX_LARGE_TESTS
-       "Run large aux tests" OFF)
-
-option(AUX_SMALL_TESTS
-       "Run small aux tests" ON)
-
-
-add_subdirectory(milkyway)
-add_subdirectory(tests EXCLUDE_FROM_ALL)
+endfunction()
 
