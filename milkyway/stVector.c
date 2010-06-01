@@ -33,7 +33,7 @@ double** matalloc( int nrows, int ncols )
     int i;
 
     mat = (double**)malloc( nrows * sizeof(double*) );
-    for( i = 0; i < nrows; ++i )
+    for ( i = 0; i < nrows; ++i )
         mat[i] = (double*)malloc( ncols * sizeof(double) );
 
     return mat;
@@ -152,18 +152,19 @@ void do_transform( double* v, double* const* mat )
 }
 
 /* apply coordinate transformations to the given point */
-void transform_point(double* point, double** cmat, double* xsun, double* logPoint) {
-        double mcutoff = 11.0;
+void transform_point(double* point, double** cmat, double* xsun, double* logPoint)
+{
+    double mcutoff = 11.0;
 
-        xyz_mag(point, mcutoff, logPoint);
+    xyz_mag(point, mcutoff, logPoint);
 
-        double newx = logPoint[0] - xsun[0];
-        double newy = logPoint[1] - xsun[1];
-        double newz = logPoint[2] - xsun[2];
-        logPoint[0] = newx;
-        logPoint[1] = newy;
-        logPoint[2] = newz;
+    double newx = logPoint[0] - xsun[0];
+    double newy = logPoint[1] - xsun[1];
+    double newz = logPoint[2] - xsun[2];
+    logPoint[0] = newx;
+    logPoint[1] = newy;
+    logPoint[2] = newz;
 
-        do_transform(logPoint, cmat);
+    do_transform(logPoint, cmat);
 }
 

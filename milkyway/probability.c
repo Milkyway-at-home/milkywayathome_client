@@ -41,46 +41,50 @@ double gPrime;
 
 /* Convert r in parsecs into the apparent magnitude, given an absolute magnitude
    of 4.2. */
-double r2mag(double r) {
-	double absm, result;
+double r2mag(double r)
+{
+    double absm, result;
 
-	absm = 4.2;
-	result = 5 * (log10( r ) - 1) + absm;
+    absm = 4.2;
+    result = 5 * (log10( r ) - 1) + absm;
 
-	return result;
+    return result;
 }
 
 /* Convert apparent magnitude, given absolute an magnitude of 4.2, into r in parsecs */
-double mag2r(double g) {
-	double absm, result, exponent;
-	absm = 4.2;
-	exponent = (g - absm)/5 + 1;
-	result = pow(10, exponent);
-	return result;
+double mag2r(double g)
+{
+    double absm, result, exponent;
+    absm = 4.2;
+    exponent = (g - absm) / 5 + 1;
+    result = pow(10, exponent);
+    return result;
 }
 
 /* Get the detection efficiency at a distance of kr kiloparsecs. */
-double reff(double kr) {
+double reff(double kr)
+{
     double gstar, result, exp_result, pre_exp;
 
-	gstar = r2mag( kr * 1000 );
+    gstar = r2mag( kr * 1000 );
 
-	pre_exp = sigmoid_curve_parameters[1] * (gstar - sigmoid_curve_parameters[2]);
-	exp_result = exp(pre_exp);
-	result = sigmoid_curve_parameters[0] / (exp_result + 1);
+    pre_exp = sigmoid_curve_parameters[1] * (gstar - sigmoid_curve_parameters[2]);
+    exp_result = exp(pre_exp);
+    result = sigmoid_curve_parameters[0] / (exp_result + 1);
 
-	return result;
+    return result;
 }
 
 /* Calculate the Jacobian for a given stream coordinate */
-double Jacob(const double* a, const double* b, double sint, double xp, int verb) {
+double Jacob(const double* a, const double* b, double sint, double xp, int verb)
+{
     double aa, bb, abn, tmp, j;
 
     aa = dotp(a, a);
     bb = dotp(b, b);
     abn = norm(a) * norm(b);
 
-    tmp = aa * sint * sint + bb * ((1 - sint * sint)*(1 - sint * sint));
+    tmp = aa * sint * sint + bb * ((1 - sint * sint) * (1 - sint * sint));
     j = sqrt(tmp) + (abn * xp) / tmp;
 
     return fabs(j);
@@ -95,7 +99,8 @@ double Jacob(const double* a, const double* b, double sint, double xp, int verb)
    -1 - q is 0
    -2 - magnitude of star is NaN
 */
-double stPbxFunction(const double* coordpar, const double* bpars) {
+double stPbxFunction(const double* coordpar, const double* bpars)
+{
     double xg[3];
     double alpha, q, delta, P;
     double r0, rg;
@@ -115,7 +120,7 @@ double stPbxFunction(const double* coordpar, const double* bpars) {
     if (q == 0) return -1;
 
     /* background probability */
-    rg = sqrt(xg[0]*xg[0] + xg[1]*xg[1] + (xg[2]/q)*(xg[2]/q));
+    rg = sqrt(xg[0] * xg[0] + xg[1] * xg[1] + (xg[2] / q) * (xg[2] / q));
 
     P = 1 / (pow(rg, alpha) * pow(rg + r0, 3 - alpha + delta));
 
@@ -132,222 +137,261 @@ double stPbxFunction(const double* coordpar, const double* bpars) {
    -1 - a parameters is NaN
    -2 - an error occured in the call to lbr2stream
 */
-double stPsgFunction(const double* coordpar, const double* spars, int wedge, int sgr_coordinates) {
-	//update: allow for new coordinate transforms
-	double xyz[3], lbr[3], a[3], c[3];
-	double mu, r, theta, phi, sigma;
-	double dotted, xyz_norm, prob;
-	double ra, dec, lamda, beta, l, b; //vickej2
+double stPsgFunction(const double* coordpar, const double* spars, int wedge, int sgr_coordinates)
+{
+    //update: allow for new coordinate transforms
+    double xyz[3], lbr[3], a[3], c[3];
+    double mu, r, theta, phi, sigma;
+    double dotted, xyz_norm, prob;
+    double ra, dec, lamda, beta, l, b; //vickej2
 
-	mu = spars[0];
-	r = spars[1];
-	theta = spars[2];
-	phi = spars[3];
-	sigma = spars[4];
+    mu = spars[0];
+    r = spars[1];
+    theta = spars[2];
+    phi = spars[3];
+    sigma = spars[4];
 
-	//update: convert from mu, nu, r geometry to a and c geometry
-        if (sgr_coordinates == 0) {
-       		atGCToEq(mu, 0, &ra, &dec, get_node(), wedge_incl(wedge));
-	       	atEqToGal(ra, dec, &l, &b);
-        } else if (sgr_coordinates == 1) {
-	        gcToSgr(mu, 0, wedge, &lamda, &beta); //vickej2
-	        sgrToGal(lamda, beta, &l, &b); //vickej2
-		//vickej2 <<<make sure the conversion is correct (check with conversiontester.vb)>>>
-		//printf(" wedge=%i, mui=%f, nui=0, lamda=%f, beta=%f, l=%f, b=%f", wedge, mu, lamda, beta, l, b);  //vickej2
-		//vickej2 <<<end>>>
-        } else {
-                printf("Error: sgr_coordinates not valid");
-        }
+    //update: convert from mu, nu, r geometry to a and c geometry
+    if (sgr_coordinates == 0)
+    {
+        atGCToEq(mu, 0, &ra, &dec, get_node(), wedge_incl(wedge));
+        atEqToGal(ra, dec, &l, &b);
+    }
+    else if (sgr_coordinates == 1)
+    {
+        gcToSgr(mu, 0, wedge, &lamda, &beta); //vickej2
+        sgrToGal(lamda, beta, &l, &b); //vickej2
+        //vickej2 <<<make sure the conversion is correct (check with conversiontester.vb)>>>
+        //printf(" wedge=%i, mui=%f, nui=0, lamda=%f, beta=%f, l=%f, b=%f", wedge, mu, lamda, beta, l, b);  //vickej2
+        //vickej2 <<<end>>>
+    }
+    else
+    {
+        printf("Error: sgr_coordinates not valid");
+    }
 
-	lbr[0] = l;
-	lbr[1] = b;
-	lbr[2] = r;
-	lbr2xyz(lbr, c);
+    lbr[0] = l;
+    lbr[1] = b;
+    lbr[2] = r;
+    lbr2xyz(lbr, c);
 
-	a[0] = sin(theta) * cos(phi);
-	a[1] = sin(theta) * sin(phi);
-	a[2] = cos(theta);
+    a[0] = sin(theta) * cos(phi);
+    a[1] = sin(theta) * sin(phi);
+    a[2] = cos(theta);
 
-	//Sigma near 0 so star prob is 0.
-	if (sigma > -0.0001 && sigma < 0.0001) return 0;
+    //Sigma near 0 so star prob is 0.
+    if (sigma > -0.0001 && sigma < 0.0001) return 0;
 
-	lbr2xyz(coordpar, xyz);
-	xyz[0] = xyz[0] - c[0];
-	xyz[1] = xyz[1] - c[1];
-	xyz[2] = xyz[2] - c[2];
+    lbr2xyz(coordpar, xyz);
+    xyz[0] = xyz[0] - c[0];
+    xyz[1] = xyz[1] - c[1];
+    xyz[2] = xyz[2] - c[2];
 
-	dotted = dotp(a, xyz);
-	xyz[0] = xyz[0] - dotted*a[0];
-	xyz[1] = xyz[1] - dotted*a[1];
-	xyz[2] = xyz[2] - dotted*a[2];
+    dotted = dotp(a, xyz);
+    xyz[0] = xyz[0] - dotted * a[0];
+    xyz[1] = xyz[1] - dotted * a[1];
+    xyz[2] = xyz[2] - dotted * a[2];
 
-	xyz_norm = norm(xyz);
+    xyz_norm = norm(xyz);
 
-//	fprintf(stderr, "dotted: %lf, xyz_norm: %lf, sigma: %lf\n", dotted, xyz_norm, sigma);
-	prob = exp( -(xyz_norm*xyz_norm) / 2 / (sigma*sigma) );
+//  fprintf(stderr, "dotted: %lf, xyz_norm: %lf, sigma: %lf\n", dotted, xyz_norm, sigma);
+    prob = exp( -(xyz_norm * xyz_norm) / 2 / (sigma * sigma) );
 
-//	fprintf(stderr, "prob before ref: %lf\n", prob);
-	return prob;
+//  fprintf(stderr, "prob before ref: %lf\n", prob);
+    return prob;
 }
 
-double stPbxConvolved(const double* coordpar, const double* bpars, int wedge, int numpoints) {
-	int i;
-    	double pbx, reff_value, prob, rPrime, rPrime3;
+double stPbxConvolved(const double* coordpar, const double* bpars, int wedge, int numpoints)
+{
+    int i;
+    double pbx, reff_value, prob, rPrime, rPrime3;
 
-	rPrime = coordpar[2];
-	gPrime = r2mag(rPrime*1000);
-	rPrime3 = rPrime * rPrime * rPrime;
+    rPrime = coordpar[2];
+    gPrime = r2mag(rPrime * 1000);
+    rPrime3 = rPrime * rPrime * rPrime;
 
-	for (i = 0; i < 3; i++) coordparConvolved[i] = coordpar[i];
-	for (i = 0; i < 4; i++) bparsConvolved[i] = bpars[i];
+    for (i = 0; i < 3; i++) coordparConvolved[i] = coordpar[i];
+    for (i = 0; i < 4; i++) bparsConvolved[i] = bpars[i];
 
-	pbx = qgaus(backgroundConvolve, gPrime, xr, wedge, numpoints);
-	pbx *= 1/rPrime3;
+    pbx = qgaus(backgroundConvolve, gPrime, xr, wedge, numpoints);
+    pbx *= 1 / rPrime3;
 
-	reff_value = reff(coordpar[2]);
+    reff_value = reff(coordpar[2]);
 
-	prob = pbx*reff_value;
+    prob = pbx * reff_value;
 
-	return prob;
+    return prob;
 }
 
-double stPbx(const double* coordpar, const double* bpars) {
-        double pbx, reff_value, prob;
+double stPbx(const double* coordpar, const double* bpars)
+{
+    double pbx, reff_value, prob;
 
-	pbx = stPbxFunction(coordpar, bpars);
+    pbx = stPbxFunction(coordpar, bpars);
 
-        reff_value = reff(coordpar[2]);
-        prob = pbx*reff_value;
-        return prob;
+    reff_value = reff(coordpar[2]);
+    prob = pbx * reff_value;
+    return prob;
 }
 
-double stPsgConvolved(const double* coordpar, const double* spars, int wedge, int numpoints, int sgr_coordinates) {
-	int i;
-	double psg, reff_value, prob, rPrime, rPrime3;
+double stPsgConvolved(const double* coordpar, const double* spars, int wedge, int numpoints, int sgr_coordinates)
+{
+    int i;
+    double psg, reff_value, prob, rPrime, rPrime3;
 
-        rPrime = coordpar[2];
-        gPrime = r2mag(rPrime*1000);
-        rPrime3 =  rPrime * rPrime * rPrime;
+    rPrime = coordpar[2];
+    gPrime = r2mag(rPrime * 1000);
+    rPrime3 =  rPrime * rPrime * rPrime;
 
-        for (i = 0; i < 3; i++) coordparConvolved[i] = coordpar[i];
-        for (i = 0; i < 5; i++) sparsConvolved[i] = spars[i];
+    for (i = 0; i < 3; i++) coordparConvolved[i] = coordpar[i];
+    for (i = 0; i < 5; i++) sparsConvolved[i] = spars[i];
 
-        psg = qgaus_stream(streamConvolve, gPrime, xr, wedge, numpoints, sgr_coordinates);
-	psg *= 1/rPrime3;
+    psg = qgaus_stream(streamConvolve, gPrime, xr, wedge, numpoints, sgr_coordinates);
+    psg *= 1 / rPrime3;
 
-        reff_value = reff(coordpar[2]);
-        prob = psg * reff_value;
-	return prob;
+    reff_value = reff(coordpar[2]);
+    prob = psg * reff_value;
+    return prob;
 }
 
-double stPsg(const double* coordpar, const double* spars, int wedge, int sgr_coordinates) {
-        double psg, reff_value, prob;
+double stPsg(const double* coordpar, const double* spars, int wedge, int sgr_coordinates)
+{
+    double psg, reff_value, prob;
 
-	psg = stPsgFunction(coordpar, spars, wedge, sgr_coordinates);
+    psg = stPsgFunction(coordpar, spars, wedge, sgr_coordinates);
 
-        reff_value = reff(coordpar[2]);
-        prob = psg * reff_value;
-        return prob;
+    reff_value = reff(coordpar[2]);
+    prob = psg * reff_value;
+    return prob;
 }
 
 
 /* Convolution Functions for use with qgaus */
-double backgroundConvolve(double g, int wedge) {
-        double exponent, coeff, pbx, r3, N, r, prob;
+double backgroundConvolve(double g, int wedge)
+{
+    double exponent, coeff, pbx, r3, N, r, prob;
 
-        r = mag2r(g)/1000;      //r in kpc
-        r3 =  r * r * r;
-        coordparConvolved[2] = r;
+    r = mag2r(g) / 1000;    //r in kpc
+    r3 =  r * r * r;
+    coordparConvolved[2] = r;
 
-        exponent = (g-gPrime) * (g-gPrime) / (2*stdev*stdev);
-        coeff = 1 / (stdev * sqrt(2*PI));
-        N = coeff * exp(-exponent);     //value of gaussian convolution function
+    exponent = (g - gPrime) * (g - gPrime) / (2 * stdev * stdev);
+    coeff = 1 / (stdev * sqrt(2 * PI));
+    N = coeff * exp(-exponent);     //value of gaussian convolution function
 
-        pbx = stPbxFunction(coordparConvolved, bparsConvolved);         //prob of star in background given app mag, g
+    pbx = stPbxFunction(coordparConvolved, bparsConvolved);         //prob of star in background given app mag, g
 
-        prob = pbx * r3 * N;
-        return prob;
+    prob = pbx * r3 * N;
+    return prob;
 }
 
-double streamConvolve(double g, int wedge, int sgr_coordinates) {
-        double exponent, coeff, psg, r3, N, r, prob;
+double streamConvolve(double g, int wedge, int sgr_coordinates)
+{
+    double exponent, coeff, psg, r3, N, r, prob;
 
-        r = mag2r(g)/1000;      //r in kpc
-        r3 =  r * r * r;
-        coordparConvolved[2] = r;
+    r = mag2r(g) / 1000;    //r in kpc
+    r3 =  r * r * r;
+    coordparConvolved[2] = r;
 
-        exponent = (g-gPrime) * (g-gPrime) / (2*stdev*stdev);
-        coeff = 1 / (stdev * sqrt(2*PI));
-        N = coeff * exp(-exponent);     //value of gaussian convolution function
+    exponent = (g - gPrime) * (g - gPrime) / (2 * stdev * stdev);
+    coeff = 1 / (stdev * sqrt(2 * PI));
+    N = coeff * exp(-exponent);     //value of gaussian convolution function
 
-        psg = stPsgFunction(coordparConvolved, sparsConvolved, wedge, sgr_coordinates);         //prob of star in stream given app. mag. g
-        prob = psg * r3 * N;
-        return prob;
+    psg = stPsgFunction(coordparConvolved, sparsConvolved, wedge, sgr_coordinates);         //prob of star in stream given app. mag. g
+    prob = psg * r3 * N;
+    return prob;
 }
 
 /*determines if star with prob p should be separrated into stream*/
-int prob_ok(int n, double* p) {
-	int ok;
-	double r;
-	double step1, step2, step3;
+int prob_ok(int n, double* p)
+{
+    int ok;
+    double r;
+    double step1, step2, step3;
 
-	r = drand48();
+    r = drand48();
 
-	switch (n) {
-		case 1:
-			if ( r > p[0] ) {
-				ok = 0;
-			} else {
-				ok = 1;
-			}
-			break;
-		case 2:
-			step1 = p[0]+p[1];
-			if ( r > step1 ) {
-				ok = 0;
-			} else if ( (r < p[0]) ) {
-                                ok = 1;
-                        } else if ( (r > p[0])&&(r <= step1) ) {
-                                ok = 2;
-                        }
-			break;
-		case 3:
-                        step1 = p[0]+p[1];
-                        step2 = p[0]+p[1]+p[2];
-                        if ( r > step2 ) {
-                                ok = 0;
-                        } else if ( (r < p[0]) ) {
-                                ok = 1;
-                        } else if ( (r > p[0])&&(r <= step1) ) {
-                                ok = 2;
-                        } else if ( (r > step1)&&(r <= step2) ) {
-				ok = 3;
-			}
-			break;
-		case 4:
-                        step1 = p[0]+p[1];
-                        step2 = p[0]+p[1]+p[2];
-                        step3 = p[0]+p[1]+p[2]+p[3];
-                        if ( r > step3 ) {
-                                ok = 0;
-                        } else if ( (r <= p[0]) ) {
-                                ok = 1;
-                        } else if ( (r > p[0])&&(r <= step1) ) {
-                                ok = 2;
-                        } else if ( (r > step1)&&(r <= step2) ) {
-                                ok = 3;
-                        } else if ( (r > step2)&&(r <= step3) ) {
-				ok = 4;
-			}
-			break;
-		default:
-			printf("ERROR:  Too many streams to separate using current code; please update the switch statement in probability.c->prob_ok to handle %d streams", n);
-			exit(0);
-	}
-	return ok;
+    switch (n)
+    {
+    case 1:
+        if ( r > p[0] )
+        {
+            ok = 0;
+        }
+        else
+        {
+            ok = 1;
+        }
+        break;
+    case 2:
+        step1 = p[0] + p[1];
+        if ( r > step1 )
+        {
+            ok = 0;
+        }
+        else if ( (r < p[0]) )
+        {
+            ok = 1;
+        }
+        else if ( (r > p[0]) && (r <= step1) )
+        {
+            ok = 2;
+        }
+        break;
+    case 3:
+        step1 = p[0] + p[1];
+        step2 = p[0] + p[1] + p[2];
+        if ( r > step2 )
+        {
+            ok = 0;
+        }
+        else if ( (r < p[0]) )
+        {
+            ok = 1;
+        }
+        else if ( (r > p[0]) && (r <= step1) )
+        {
+            ok = 2;
+        }
+        else if ( (r > step1) && (r <= step2) )
+        {
+            ok = 3;
+        }
+        break;
+    case 4:
+        step1 = p[0] + p[1];
+        step2 = p[0] + p[1] + p[2];
+        step3 = p[0] + p[1] + p[2] + p[3];
+        if ( r > step3 )
+        {
+            ok = 0;
+        }
+        else if ( (r <= p[0]) )
+        {
+            ok = 1;
+        }
+        else if ( (r > p[0]) && (r <= step1) )
+        {
+            ok = 2;
+        }
+        else if ( (r > step1) && (r <= step2) )
+        {
+            ok = 3;
+        }
+        else if ( (r > step2) && (r <= step3) )
+        {
+            ok = 4;
+        }
+        break;
+    default:
+        printf("ERROR:  Too many streams to separate using current code; please update the switch statement in probability.c->prob_ok to handle %d streams", n);
+        exit(0);
+    }
+    return ok;
 }
 
 /*Initialize seed for prob_ok*/
-void prob_ok_init() {
-	srand48(time(NULL));
+void prob_ok_init()
+{
+    srand48(time(NULL));
 }

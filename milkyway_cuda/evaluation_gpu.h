@@ -28,11 +28,11 @@
 #include "../milkyway/star_points.h"
 #include "../milkyway/parameters.h"
 
-void parse_prefs(char *project_prefs);
-int choose_gpu(int argc, char **argv);
+void parse_prefs(char* project_prefs);
+int choose_gpu(int argc, char** argv);
 void gpu__initialize();
 
-double gpu__likelihood(double *parameters);
+double gpu__likelihood(double* parameters);
 void gpu__free_constants();
 
 #endif

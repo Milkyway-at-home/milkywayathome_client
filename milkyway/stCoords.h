@@ -37,17 +37,17 @@ double get_node();
 
 void gc2lb( int wedge, double mu, double nu, double* l, double* b );
 
-void stripe_normal ( int wedge, double *xyz);
+void stripe_normal ( int wedge, double* xyz);
 
-void lbToXyz ( double l, double b, double *xyz );
+void lbToXyz ( double l, double b, double* xyz );
 
-void lbToXyz(double l, double b, double *xyz);
+void lbToXyz(double l, double b, double* xyz);
 
 void xyz_mag(double* point, double offset, double* logPoint);
 
 void xyz2lbg(double* point, double offset, double* logPoint);
 
-void sgr_stripe_normal(int wedge, double *xyz);
+void sgr_stripe_normal(int wedge, double* xyz);
 
 #endif /* STCOORDS_H */
 

@@ -23,7 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define FGDO_MPI_WORKER_ASTRONOMY_H
 
 /********
-	*	Includes for astronomy
+    *   Includes for astronomy
  ********/
 #include "parameters.h"
 #include "star_points.h"
@@ -32,9 +32,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern char astronomy_parameters_file[1024];
 extern char star_points_file[1024];
 
-extern ASTRONOMY_PARAMETERS *ap;
-extern STAR_POINTS *sp;
-extern EVALUATION_STATE *es;
+extern ASTRONOMY_PARAMETERS* ap;
+extern STAR_POINTS* sp;
+extern EVALUATION_STATE* es;
 
 void read_data(int rank, int max_rank);
 

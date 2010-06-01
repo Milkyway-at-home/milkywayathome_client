@@ -63,7 +63,7 @@ double stQEval(double a, double b, double c, double d, double complex x)
 /* x^3 + a2*x^2 + a1*x + a0 = 0 */
 /* ans = max real root of the cubic */
 /* returns 1 on success and -1 on error */
-int stRoot3(double a2, double a1, double a0, double *ans, int verb)
+int stRoot3(double a2, double a1, double a0, double* ans, int verb)
 {
     double complex roots[3];
     int numroots, i, index;
@@ -99,7 +99,7 @@ int stRoot3(double a2, double a1, double a0, double *ans, int verb)
 
 /* This is a wrapper function. It calls CnumCubic to find the roots */
 /* of the cubic: x^3 + ax^2 + bx + c. Used when we only have real coeffs */
-int DCubic(double a, double b, double c, double complex *roots, int verb)
+int DCubic(double a, double b, double c, double complex* roots, int verb)
 {
     double complex A, B, C;
 
@@ -107,13 +107,13 @@ int DCubic(double a, double b, double c, double complex *roots, int verb)
     B = b + 0.0 * I;
     C = c + 0.0 * I;
 
-    return CnumCubic(A,B,C,roots,verb);
+    return CnumCubic(A, B, C, roots, verb);
 }
 
 
 /* Finds roots of the cubic: x^3 + ax^2 + bx + c */
 /* This version can handle complex coefficients */
-int CnumCubic( double complex a, double complex b, double complex c, double complex *roots, int verb)
+int CnumCubic( double complex a, double complex b, double complex c, double complex* roots, int verb)
 {
     double complex p, q, bq, cq;
     double complex temp;
@@ -131,20 +131,20 @@ int CnumCubic( double complex a, double complex b, double complex c, double comp
     {
         /* p = (3.0*b - a*a)/3.0; */
         /* q = (27.0*c - 9.0*a*b + 2.0*a*a*a)/27.0; */
-        p = b - (a*a / 3.0);
-        q = (27.0*c - 9.0*a*b + 2.0*a*a*a)/27.0;
+        p = b - (a * a / 3.0);
+        q = (27.0 * c - 9.0 * a * b + 2.0 * a * a * a) / 27.0;
 
         if (verb)
         {
-            printf("p = %g + i * %g\n",creal(p), cimag(p));
-            printf("q = %g + i * %g\n",creal(q),cimag(q));
+            printf("p = %g + i * %g\n", creal(p), cimag(p));
+            printf("q = %g + i * %g\n", creal(q), cimag(q));
         }
 
         /* roots[0] = (-q + sqrt(q*q+ 4.0*p*p*p/27.0))/2.0; */
         /* roots[0] = std::pow(roots[0],1.0/3.0); */
         /* roots[0] = roots[0] - p/(3.0*roots[0]) - a/3.0; */
 
-        temp = csqrt( q*q + (4.0 * p*p*p / 27.0))/2.0;
+        temp = csqrt( q * q + (4.0 * p * p * p / 27.0)) / 2.0;
 
         roots[0] = (-q + temp) / 2.0;
         roots[1] = (-q - temp) / 2.0;
@@ -158,23 +158,23 @@ int CnumCubic( double complex a, double complex b, double complex c, double comp
         roots[0] = ccbrt(roots[0]);
 
         if (verb)
-            printf("z^(1/3) = %g + i * %g\n",creal(roots[0]), cimag(roots[0]));
+            printf("z^(1/3) = %g + i * %g\n", creal(roots[0]), cimag(roots[0]));
 
         //roots[0] -= (p / (3.0 * roots[0])) + a/3.0;
-        roots[0] = roots[0] - p / (3.0 * roots[0]) - a/3.0;
+        roots[0] = roots[0] - p / (3.0 * roots[0]) - a / 3.0;
 
         if (verb)
         {
             printf("Final Root: %g + i * %g\n", creal(roots[0]), cimag(roots[0]));
-            printf("Evaluated: %g\n",stCEval(a,b,c,roots[0]));
+            printf("Evaluated: %g\n", stCEval(a, b, c, roots[0]));
         }
 
-        if (stCEval(a,b,c,roots[0]) > lim2)
+        if (stCEval(a, b, c, roots[0]) > lim2)
         {
             if (verb)
                 printf("Recalculating root0...\n");
 
-            roots[0] = (-q - csqrt( q*q + (4.0 * p*p*p) / 27.0)) / 2.0;
+            roots[0] = (-q - csqrt( q * q + (4.0 * p * p * p) / 27.0)) / 2.0;
 
             if (verb)
                 printf("z = %g + i * %g\n", creal(roots[0]), cimag(roots[0]));
@@ -182,12 +182,12 @@ int CnumCubic( double complex a, double complex b, double complex c, double comp
             roots[0] = ccbrt(roots[0]);
 
             if (verb)
-                printf("z^(1/3) = %g + i * %g\n",creal(roots[0]), cimag(roots[0]));
+                printf("z^(1/3) = %g + i * %g\n", creal(roots[0]), cimag(roots[0]));
 
             roots[0] += - (p / (3.0 * roots[0])) - (a / 3.0);
 
             if (verb)
-                printf("Final Root: %g + i * %g\n", creal(roots[0]),cimag(roots[0]));
+                printf("Final Root: %g + i * %g\n", creal(roots[0]), cimag(roots[0]));
         }
     }
 
@@ -200,7 +200,7 @@ int CnumCubic( double complex a, double complex b, double complex c, double comp
     /* roots[1] = (-bq + sqrt(bq*bq-4.0*cq))/2.0; */
     /* roots[2] = (-bq - sqrt(bq*bq-4.0*cq))/2.0; */
 
-    temp = csqrt(bq*bq - 4.0 * cq);
+    temp = csqrt(bq * bq - 4.0 * cq);
     roots[1] = (-bq + temp) / 2.0;
     roots[2] = (-bq - temp) / 2.0;
 
@@ -228,10 +228,10 @@ int stRoot4(double a, double b, double c, double d, double r[], int flag[], int 
     const double lim = 0.1;
 
     /* Comment this out to allow debugging messages  */
-       verb = 0;
+    verb = 0;
 
     numroots = 0;
-    quartic(a,b,c,d,u,flag,verb);
+    quartic(a, b, c, d, u, flag, verb);
 
     for (i = 0; i < 4; ++i)
     {
@@ -273,9 +273,9 @@ int quartic(double a, double b, double c, double d, double complex u[], int flag
         u[0] = COMPLEXZERO;
 
         /* the other roots are roots of the cubic: x^3 + ax^2 + bx + c */
-        if ( DCubic(a,b,c,z,verb) == -1)
+        if ( DCubic(a, b, c, z, verb) == -1)
         {
-            printf("The cubic: x^3 + %g*x^2 + %g*x + %g = 0\n",a,b,c);
+            printf("The cubic: x^3 + %g*x^2 + %g*x + %g = 0\n", a, b, c);
             printf("has no real roots\n");
             return 0;
         }
@@ -303,9 +303,9 @@ int quartic(double a, double b, double c, double d, double complex u[], int flag
     /* A = -3.0/8.0*a*a + b;
        B = a*a*a/8.0 - a*b/2.0 + c;
        C = -3.0*a*a*a*a/256.0 + a*a*b/16.0 - a*c/4.0 + d; */
-    A = (-3.0/8.0*a*a + b) + 0.0 * I;
-    B = (a*a*a/8.0 - a*b/2.0 + c) + 0.0 * I;
-    C = (-3.0*a*a*a*a/256.0 + a*a*b/16.0 - a*c/4.0 + d) + 0.0 * I;
+    A = (-3.0 / 8.0 * a * a + b) + 0.0 * I;
+    B = (a * a * a / 8.0 - a * b / 2.0 + c) + 0.0 * I;
+    C = (-3.0 * a * a * a * a / 256.0 + a * a * b / 16.0 - a * c / 4.0 + d) + 0.0 * I;
     Csqrt = csqrt(C);
 
     if (verb)
@@ -319,12 +319,12 @@ int quartic(double a, double b, double c, double d, double complex u[], int flag
     /* Ap = sqrt(C) * 3.0 - A/2.0; */
     /* Bp = 2.0*C - A * sqrt(C); */
     /* Cp = -B*B/8.0; */
-    Ap = csqrt(C) * 2.0 - A/2.0;
+    Ap = csqrt(C) * 2.0 - A / 2.0;
     Bp = 2.0 * C - A * csqrt(C);
-    Cp = (-B*B / 8.0) + 0.0 * I;
+    Cp = (-B * B / 8.0) + 0.0 * I;
 
     /* find real root of cubic */
-    if( CnumCubic(Ap,Bp,Cp,z,0) == -1)
+    if ( CnumCubic(Ap, Bp, Cp, z, 0) == -1)
     {
         printf("The cubic: x^3 + %g*x^2 + %g*x + %g = 0\n", creal(Ap), creal(Bp), creal(Cp));
         printf("has no real roots\n");
@@ -358,7 +358,7 @@ int quartic(double a, double b, double c, double d, double complex u[], int flag
                 D = Dp * (double)j;
                 E = Ep * (double)k;
 
-                temp = csqrt(D*D - 4.0 * (csqrt(C) + z[i] + E));
+                temp = csqrt(D * D - 4.0 * (csqrt(C) + z[i] + E));
                 F = (-D + temp) / 2.0;
                 G = (-D - temp) / 2.0;
 
@@ -366,13 +366,13 @@ int quartic(double a, double b, double c, double d, double complex u[], int flag
                 F -= a / 4.0;
                 G -= a / 4.0;
 
-                if(verb)
+                if (verb)
                 {
-                    printf("Cube root #%d   Sqrt D: %d  Sqrt E: %d\n",i,j,k);
+                    printf("Cube root #%d   Sqrt D: %d  Sqrt E: %d\n", i, j, k);
                     printf("F: %g + i %g\n", creal(F), cimag(F));
                     printf("G: %g + i %g\n", creal(G), cimag(G));
-                    printf("Eval(F): %g    Eval(G): %g\n", fabs(stQEval(a,b,c,d,F)),fabs(stQEval(a,b,c,d,G)));
-                    printf("Eval: %g\n", (fabs(stQEval(a,b,c,d,F)) + fabs(stQEval(a,b,c,d,G)))/1.0 );
+                    printf("Eval(F): %g    Eval(G): %g\n", fabs(stQEval(a, b, c, d, F)), fabs(stQEval(a, b, c, d, G)));
+                    printf("Eval: %g\n", (fabs(stQEval(a, b, c, d, F)) + fabs(stQEval(a, b, c, d, G))) / 1.0 );
                 }
 
                 /* we need to exclude F and G if F == G */
@@ -385,16 +385,16 @@ int quartic(double a, double b, double c, double d, double complex u[], int flag
                 /* there shouldn't be a root of x = 0 */
                 if ( fabs(creal(F)) < lim2 || fabs(creal(G)) < lim2 )
                 {
-                    if(verb) printf("x = 0, skipped\n");
+                    if (verb) printf("x = 0, skipped\n");
                     continue;
                 }
 
                 /* if it's the first loop, or we find values that fit better to the roots */
                 /* we take them */
-                if ( (teval == -1.0) || ( ( (fabs(stQEval(a,b,c,d,F)) + fabs(stQEval(a,b,c,d,G)))/1.0 ) < teval) )
+                if ( (teval == -1.0) || ( ( (fabs(stQEval(a, b, c, d, F)) + fabs(stQEval(a, b, c, d, G))) / 1.0 ) < teval) )
                 {
                     /* average their evals and set roots */
-                    teval = ( fabs(stQEval(a,b,c,d,F)) + fabs(stQEval(a,b,c,d,G)))/1.0;
+                    teval = ( fabs(stQEval(a, b, c, d, F)) + fabs(stQEval(a, b, c, d, G))) / 1.0;
                     roots[0] = F;
                     roots[1] = G;
                 }
@@ -405,7 +405,7 @@ int quartic(double a, double b, double c, double d, double complex u[], int flag
 
     /* using the relation of the quartic coeffs to the roots,  */
     /* we can derive a quadratic equation to find the last two roots */
-    if( (roots[0] == COMPLEXZERO) || (roots[1] == COMPLEXZERO) )
+    if ( (roots[0] == COMPLEXZERO) || (roots[1] == COMPLEXZERO) )
     {
         /* both roots are 0 */
         if (  (roots[0] == COMPLEXZERO) && (roots[1] == COMPLEXZERO) )
@@ -430,17 +430,17 @@ int quartic(double a, double b, double c, double d, double complex u[], int flag
         C = d / (roots[0] * roots[1]);
     }
 
-    temp = csqrt(B*B - 4.0 * C);
+    temp = csqrt(B * B - 4.0 * C);
     roots[2] = (-B + temp) / 2.0;
     roots[3] = (-B - temp) / 2.0;
 
     /* lets see if -0.9999 or 0.9999 works better, use them */
     temp = 0.9999 + 0.0 * I;
-    if ( fabs(stQEval(a,b,c,d,temp)) < fabs(stQEval(a,b,c,d,roots[2])))
+    if ( fabs(stQEval(a, b, c, d, temp)) < fabs(stQEval(a, b, c, d, roots[2])))
         roots[2] = 0.9999 + 0.0 * I;
 
     temp = (-0.9999) + cimag(temp);
-    if ( fabs(stQEval(a,b,c,d,temp)) < fabs(stQEval(a,b,c,d,roots[3])))
+    if ( fabs(stQEval(a, b, c, d, temp)) < fabs(stQEval(a, b, c, d, roots[3])))
         roots[3] = 0.9999 + 0.0 * I;
 
     numroots = 1;
@@ -448,7 +448,7 @@ int quartic(double a, double b, double c, double d, double complex u[], int flag
     {
         u[i] = roots[i];
         if (verb)
-            printf("Root #%d: %g + i %g\n", i,creal(roots[i]), cimag(roots[i]));
+            printf("Root #%d: %g + i %g\n", i, creal(roots[i]), cimag(roots[i]));
     }
 
     return numroots;
@@ -476,11 +476,11 @@ int min(double array[], int flag[], int size, int numgood)
 {
     int i, j, mini;
     double minimum;
-    int *newindex;
-    double *comp;
+    int* newindex;
+    double* comp;
 
-    newindex = (int*)malloc(sizeof(int)*numgood);
-    comp = (double*)malloc(sizeof(double)*numgood);
+    newindex = (int*)malloc(sizeof(int) * numgood);
+    comp = (double*)malloc(sizeof(double) * numgood);
     j = 0;
 
     for (i = 0; i < size; ++i)
@@ -497,16 +497,16 @@ int min(double array[], int flag[], int size, int numgood)
 
     minimum = comp[0];
     mini = 0;
-    for (i = 0; i<numgood; ++i)
+    for (i = 0; i < numgood; ++i)
     {
-        if (comp[i]<minimum)
+        if (comp[i] < minimum)
         {
             minimum = comp[i];
             mini = i;
         }
     }
 
-    mini=newindex[mini];
+    mini = newindex[mini];
 
     free(newindex);
     free(comp);
@@ -519,7 +519,7 @@ double fact(int d)
 {
     if (d == 0)
         return 1.0;
-    return (double)d*fact(d-1);
+    return (double)d * fact(d - 1);
 }
 
 
@@ -530,10 +530,11 @@ void MakePoints()
 
     FILE* ifile;
 
-    ifile=fopen ("xy-points.txt", "w");
-    for (x=-10; x<=10; x=x+0.5){
-        y=-x*x+6*x-5;
-        fprintf(ifile, "%g %g\n", x,y);
+    ifile = fopen ("xy-points.txt", "w");
+    for (x = -10; x <= 10; x = x + 0.5)
+    {
+        y = -x * x + 6 * x - 5;
+        fprintf(ifile, "%g %g\n", x, y);
     }
     fclose (ifile);
 }

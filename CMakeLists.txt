@@ -45,7 +45,7 @@ option(AUX_LARGE_TESTS
        "Run large aux tests" OFF)
 
 option(AUX_SMALL_TESTS
-       "Run small aux tests" ON)
+       "Run small aux tests" OFF)
 
 
 add_subdirectory(milkyway)

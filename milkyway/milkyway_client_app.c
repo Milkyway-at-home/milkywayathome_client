@@ -22,8 +22,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <popt.h>
 #include <errno.h>
 
-#define BREAKPOINT() (__asm__ __volatile__ ("int  $03"))
-
 #include "milkyway.h"
 #include "parameters.h"
 #include "star_points.h"
@@ -34,30 +32,31 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 //#include "../evaluation/evaluator.h"
 
 #if MILKYWAY_GPU
-	#if COMPUTE_ON_GPU
-        void init_constants(ASTRONOMY_PARAMETERS *ap);
-        #include "evaluation_gpu.h"
-    #endif
-	#if COMPUTE_ON_CPU
-		#include "evaluation_optimized.h"
-	#endif
+  #if COMPUTE_ON_GPU
+    void init_constants(ASTRONOMY_PARAMETERS* ap);
+    #include "evaluation_gpu.h"
+  #endif /* COMPUTE_ON_GPU*/
 
-//#include "../searches/hessian.h"
-//	#include "../searches/gradient.h"
-//	#include "../searches/newton_method.h"
-//	#include "../searches/line_search.h"
-	#include "../util/matrix.h"
-	#include "../util/io_util.h"
+  #if COMPUTE_ON_CPU
+    #include "evaluation_optimized.h"
+  #endif /* COMPUTE_ON_CPU */
 
-	#define hessian_checkpoint_file "hessian_checkpoint"
-	#define gradient_checkpoint_file "gradient_checkpoint"
+  //#include "../searches/hessian.h"
+  //  #include "../searches/gradient.h"
+  //  #include "../searches/newton_method.h"
+  //  #include "../searches/line_search.h"
+  #include "../util/matrix.h"
+  #include "../util/io_util.h"
+
+  #define hessian_checkpoint_file "hessian_checkpoint"
+  #define gradient_checkpoint_file "gradient_checkpoint"
 #else
-	#include "evaluation_optimized.h"
-#endif
+  #include "evaluation_optimized.h"
+#endif /* MILKYWAY_GPU */
 
 #if USE_OCL
-#include "evaluation_ocl.h"
-#endif
+  #include "evaluation_ocl.h"
+#endif /* USE_OCL */
 
 static char* boinc_graphics = NULL;
 static char* search_parameter_file = NULL;
@@ -67,50 +66,55 @@ static char* output_file = NULL;
 
 
 #ifdef _WIN32
-	void AppInvalidParameterHandler(const wchar_t* expression, const wchar_t* function, const wchar_t* file, unsigned int line, uintptr_t pReserved ) {
-		fprintf(stderr, "Invalid parameter detected in function %s. File: %s Line: %d\n", function, file, line);
-		fprintf(stderr, "Expression: %s\n", expression);
-		// Cause a Debug Breakpoint.
-		DebugBreak();
-	}
-#endif
+void AppInvalidParameterHandler(const wchar_t* expression, const wchar_t* function, const wchar_t* file, unsigned int line, uintptr_t pReserved )
+{
+    fprintf(stderr, "Invalid parameter detected in function %s. File: %s Line: %d\n", function, file, line);
+    fprintf(stderr, "Expression: %s\n", expression);
+    // Cause a Debug Breakpoint.
+    DebugBreak();
+}
+#endif /* _WIN32 */
 
 
-extern ASTRONOMY_PARAMETERS *ap;
-extern STAR_POINTS *sp;
-extern EVALUATION_STATE *es;
+
+extern ASTRONOMY_PARAMETERS* ap;
+extern STAR_POINTS* sp;
+extern EVALUATION_STATE* es;
 
 void init_simple_evaluator(double (*likelihood_function)(double*));
 extern double (*evaluate)(double*);
 
 
 #if COMPUTE_ON_CPU
-double astronomy_evaluate(double *parameters) {
-	int retval;
-	/**
-	 * 	Reset the evaluation state
-	 */
-	set_astronomy_parameters(ap, parameters);
-	reset_evaluation_state(es);
-	/********
-		*	CALCULATE THE INTEGRALS
-	 ********/
-	retval = calculate_integrals(ap, es, sp);
-	if (retval) {
-		fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
-		boinc_finish(retval);
-	}
-//	printf("calculated integrals: %lf, %lf\n", es->background_integral, es->stream_integrals[0]);
+double astronomy_evaluate(double* parameters)
+{
+    int retval;
+    /**
+     *  Reset the evaluation state
+     */
+    set_astronomy_parameters(ap, parameters);
+    reset_evaluation_state(es);
+    /********
+        *   CALCULATE THE INTEGRALS
+     ********/
+    retval = calculate_integrals(ap, es, sp);
+    if (retval)
+    {
+        fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
+        boinc_finish(retval);
+    }
+//  printf("calculated integrals: %lf, %lf\n", es->background_integral, es->stream_integrals[0]);
 
-	/********
-		*	CALCULATE THE LIKELIHOOD
-	 ********/
-	retval = calculate_likelihood(ap, es, sp);
-	if (retval) {
-		fprintf(stderr, "APP: error calculating likelihood: %d\n", retval);
-		boinc_finish(retval);
-	}
-	return es->prob_sum / (sp->number_stars - es->bad_jacobians);
+    /********
+        *   CALCULATE THE LIKELIHOOD
+     ********/
+    retval = calculate_likelihood(ap, es, sp);
+    if (retval)
+    {
+        fprintf(stderr, "APP: error calculating likelihood: %d\n", retval);
+        boinc_finish(retval);
+    }
+    return es->prob_sum / (sp->number_stars - es->bad_jacobians);
 }
 #endif /* COMPUTE_ON_CPU */
 
@@ -125,29 +129,34 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
 
     static const struct poptOption options[] =
     {
-        { "boinc-init-graphics", 'b',
-          POPT_ARG_STRING, &boinc_graphics,
-          'b', "Agrument to boinc_init_graphics", NULL
+        {
+            "boinc-init-graphics", 'b',
+            POPT_ARG_STRING, &boinc_graphics,
+            'b', "Agrument to boinc_init_graphics", NULL
         },
 
-        { "search-parameter-file", 's',
-          POPT_ARG_STRING, &search_parameter_file,
-          's', "Search parameter file name", NULL
+        {
+            "search-parameter-file", 's',
+            POPT_ARG_STRING, &search_parameter_file,
+            's', "Search parameter file name", NULL
         },
 
-        { "star-points-file", 'p',
-          POPT_ARG_STRING, &star_points_file,
-          'p', "Star points files", NULL
+        {
+            "star-points-file", 'p',
+            POPT_ARG_STRING, &star_points_file,
+            'p', "Star points files", NULL
         },
 
-        { "astronomy-parameter-file", 'a',
-          POPT_ARG_STRING, &astronomy_parameter_file,
-          'a', "Astronomy parameter file", NULL
+        {
+            "astronomy-parameter-file", 'a',
+            POPT_ARG_STRING, &astronomy_parameter_file,
+            'a', "Astronomy parameter file", NULL
         },
 
-        { "output", 'o',
-          POPT_ARG_STRING, &output_file,
-          'o', "Output file", NULL
+        {
+            "output", 'o',
+            POPT_ARG_STRING, &output_file,
+            'o', "Output file", NULL
         },
 
         POPT_AUTOHELP
@@ -213,8 +222,7 @@ static void fail_worker()
 #ifdef _WIN32
     _set_printf_count_output( 1 );
     _get_printf_count_output();
-#endif
-
+#endif /* _WIN32 */
 }
 
 static void worker(int argc, const char** argv)
@@ -269,8 +277,8 @@ static void worker(int argc, const char** argv)
     {
         fprintf(stderr,
                 "Error reading parameters: number of parameters from the "
-                 "command line (%d) does not match the number of parameters "
-                 "to be optimized in astronomy_parameters.txt (%d)\n",
+                "command line (%d) does not match the number of parameters "
+                "to be optimized in astronomy_parameters.txt (%d)\n",
                 number_parameters,
                 ap_number_parameters);
 
@@ -281,62 +289,62 @@ static void worker(int argc, const char** argv)
 
     set_astronomy_parameters(ap, parameters);
 
-    #if COMPUTE_ON_CPU
-        init_simple_evaluator(astronomy_evaluate);
-	#endif
+#if COMPUTE_ON_CPU
+    init_simple_evaluator(astronomy_evaluate);
+#endif
 
-	#if COMPUTE_ON_GPU
-		int *r_steps = (int*)malloc(ap->number_integrals * sizeof(int));
- 		int *mu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
-		int *nu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
-		double *r_min = (double*)malloc(ap->number_integrals * sizeof(double));
-		double *mu_min = (double*)malloc(ap->number_integrals * sizeof(double));
-		double *nu_min = (double*)malloc(ap->number_integrals * sizeof(double));
-		double *r_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
-		double *mu_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
-		double *nu_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
-		for (int i = 0; i < ap->number_integrals; ++i)
-        {
-			r_steps[i] = ap->integral[i]->r_steps;
-			mu_steps[i] = ap->integral[i]->mu_steps;
-			nu_steps[i] = ap->integral[i]->nu_steps;
-			r_min[i] = ap->integral[i]->r_min;
-			mu_min[i] = ap->integral[i]->mu_min;
-			nu_min[i] = ap->integral[i]->nu_min;
-			r_step_size[i] = ap->integral[i]->r_step_size;
-			mu_step_size[i] = ap->integral[i]->mu_step_size;
-			nu_step_size[i] = ap->integral[i]->nu_step_size;
-		}
-		init_constants(ap);
-		gpu__initialize();
+#if COMPUTE_ON_GPU
+    int* r_steps = (int*)malloc(ap->number_integrals * sizeof(int));
+    int* mu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
+    int* nu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
+    double* r_min = (double*)malloc(ap->number_integrals * sizeof(double));
+    double* mu_min = (double*)malloc(ap->number_integrals * sizeof(double));
+    double* nu_min = (double*)malloc(ap->number_integrals * sizeof(double));
+    double* r_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
+    double* mu_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
+    double* nu_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
+    for (int i = 0; i < ap->number_integrals; ++i)
+    {
+        r_steps[i] = ap->integral[i]->r_steps;
+        mu_steps[i] = ap->integral[i]->mu_steps;
+        nu_steps[i] = ap->integral[i]->nu_steps;
+        r_min[i] = ap->integral[i]->r_min;
+        mu_min[i] = ap->integral[i]->mu_min;
+        nu_min[i] = ap->integral[i]->nu_min;
+        r_step_size[i] = ap->integral[i]->r_step_size;
+        mu_step_size[i] = ap->integral[i]->mu_step_size;
+        nu_step_size[i] = ap->integral[i]->nu_step_size;
+    }
+    init_constants(ap);
+    gpu__initialize();
 
-		init_simple_evaluator(gpu__likelihood);
+    init_simple_evaluator(gpu__likelihood);
 
-    #endif /* COMPUTE_ON_GPU */
+#endif /* COMPUTE_ON_GPU */
 
 #if USE_OCL
     printf("Using OpenCL CodePath\n");
     init_constants(ap);
-    ocl_mem_t *ocl_mem = setup_ocl(ap, sp);
-	double likelihood = ocl_likelihood(parameters,
-					   ap,
-					   sp,
-					   ocl_mem);
-	destruct_ocl(ocl_mem);
+    ocl_mem_t* ocl_mem = setup_ocl(ap, sp);
+    double likelihood = ocl_likelihood(parameters,
+                                       ap,
+                                       sp,
+                                       ocl_mem);
+    destruct_ocl(ocl_mem);
 #else
-	double likelihood = evaluate(parameters) - 3.0;
+    double likelihood = evaluate(parameters) - 3.0;
 #endif /* USE_OCL */
 
-	fprintf(stderr,"<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
-	fprintf(stderr,"<search_application> %s %s </search_application>\n", BOINC_APP_VERSION, PRECISION);
+    fprintf(stderr, "<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
+    fprintf(stderr, "<search_application> %s %s </search_application>\n", BOINC_APP_VERSION, PRECISION);
 
-	free(parameters);
-	free_state(es);
-	free(es);
-	free_parameters(ap);
-	free(ap);
-	free_star_points(sp);
-	free(sp);
+    free(parameters);
+    free_state(es);
+    free(es);
+    free_parameters(ap);
+    free(ap);
+    free_star_points(sp);
+    free(sp);
 
 #if COMPUTE_ON_GPU
     gpu__free_constants();
@@ -353,57 +361,58 @@ static void worker(int argc, const char** argv)
 #endif /* COMPUTE_ON_GPU */
 
 #ifdef _WIN32
-	_set_printf_count_output( 1 );
-	_get_printf_count_output();
-#endif
+    _set_printf_count_output( 1 );
+    _get_printf_count_output();
+#endif /* _WIN32 */
 
-	boinc_finish(0);
+    boinc_finish(0);
 
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     int retval = 0;
 
 #if BOINC_APP_GRAPHICS
-#if defined(_WIN32) || defined(__APPLE__)
-    retval = boinc_init_graphics(worker);
-#else
-    retval = boinc_init_graphics_lib(worker, argv[0]);
-#endif
-    if (retval) exit(retval);
+  #if defined(_WIN32) || defined(__APPLE__)
+      retval = boinc_init_graphics(worker);
+  #else
+      retval = boinc_init_graphics_lib(worker, argv[0]);
+  #endif /*  defined(_WIN32) || defined(__APPLE__) */
+
+  if (retval) exit(retval);
 #endif /* BOINC_APP_GRAPHICS */
 
 #if defined(_WIN32) && COMPUTE_ON_GPU
-	//make the windows GPU app have a higher priority
-	BOINC_OPTIONS options;
-	boinc_options_defaults(options);
-	options.normal_thread_priority = 1; // higher priority (normal instead of idle)
-	retval = boinc_init_options(&options);
+    //make the windows GPU app have a higher priority
+    BOINC_OPTIONS options;
+    boinc_options_defaults(options);
+    options.normal_thread_priority = 1; // higher priority (normal instead of idle)
+    retval = boinc_init_options(&options);
 #else
-	retval = boinc_init();
-#endif
-	if (retval)
+    retval = boinc_init();
+#endif /* defined(_WIN32) && COMPUTE_ON_GPU */
+    if (retval)
         exit(retval);
 
 
 #if COMPUTE_ON_GPU
-	//Choose the GPU to execute on, first look
-	//at the command line argument for a
-	//--device 0..n string, then enumerate all CUDA
-	//devices on the system and choose the one
-	//with double precision support and the most
-	//GFLOPS
-	//APP_INIT_DATA init_data;
-	//boinc_get_init_data_p(&init_data);
-	char *project_prefs = NULL;  //init_data.project_preferences;
-	if (choose_gpu(argc, argv) == -1)
-	  {
-	    fprintf(stderr, "Unable to find a capable GPU\n");
-	    exit(EXIT_FAILURE);
-	  }
-	printf("got here\n");
-	parse_prefs(project_prefs);
+    //Choose the GPU to execute on, first look
+    //at the command line argument for a
+    //--device 0..n string, then enumerate all CUDA
+    //devices on the system and choose the one
+    //with double precision support and the most
+    //GFLOPS
+    //APP_INIT_DATA init_data;
+    //boinc_get_init_data_p(&init_data);
+    char* project_prefs = NULL;  //init_data.project_preferences;
+    if (choose_gpu(argc, argv) == -1)
+    {
+        fprintf(stderr, "Unable to find a capable GPU\n");
+        exit(EXIT_FAILURE);
+    }
+    printf("got here\n");
+    parse_prefs(project_prefs);
 #endif /* COMPUTE_ON_GPU */
 
     worker(argc, (const char**) argv);
@@ -412,16 +421,17 @@ int main(int argc, char **argv)
 }
 
 #ifdef _WIN32
-int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode){
-        LPSTR command_line;
-        char* argv[100];
-	int argc;
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode)
+{
+    LPSTR command_line;
+    char* argv[100];
+    int argc;
 
-	command_line = GetCommandLine();
-	argc = parse_command_line( command_line, argv );
-	return main(argc, argv);
+    command_line = GetCommandLine();
+    argc = parse_command_line( command_line, argv );
+    return main(argc, argv);
 }
-#endif
+#endif /* _WIN32 */
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.24 2010/05/04 04:21:24 deselt Exp $";
+const char* BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.24 2010/05/04 04:21:24 deselt Exp $";
 

@@ -22,7 +22,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 double (*evaluate)(double*);
 
-void init_simple_evaluator(double (*lf)(double*)) {
-	evaluate = lf;
+void init_simple_evaluator(double (*lf)(double*))
+{
+    evaluate = lf;
 }
 

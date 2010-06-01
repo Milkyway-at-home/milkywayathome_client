@@ -27,11 +27,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 double stCEval(double complex a, double complex b, double complex c, double complex x);
 double stQEval(double a, double b, double c, double d, double complex x);
-int DCubic(double a, double b, double c, double complex *roots, int verb);
-int CnumCubic( double complex a, double complex b, double complex c, double complex *roots, int verb);
+int DCubic(double a, double b, double c, double complex* roots, int verb);
+int CnumCubic( double complex a, double complex b, double complex c, double complex* roots, int verb);
 int quartic(double a, double b, double c, double d, double complex u[], int flag[], int verb);
 
-int stRoot3(double a2, double a1, double a0,double *ans, int verb);
+int stRoot3(double a2, double a1, double a0, double* ans, int verb);
 int stRoot4(double a3, double a2, double a1, double a0, double r[], int flag[], int verb);
 
 double sum(double array[], int size);

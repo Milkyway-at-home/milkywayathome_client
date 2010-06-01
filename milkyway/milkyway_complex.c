@@ -34,7 +34,7 @@ double complex ccbrt(double complex z)
         return COMPLEXZERO;
 
     r = cabs(z);
-    r = pow(r, 1.0/3.0);
+    r = pow(r, 1.0 / 3.0);
     theta = carg(z) / 3.0;
 
     roots[0] =  r * (cos(theta) + sin(theta) * I);
