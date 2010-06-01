@@ -90,5 +90,6 @@ foreach(test ${test_list})
 	add_executable(${test} ${test}.c ${extra_test_sources})
 	add_test(${test} ${EXECUTABLE_OUTPUT_PATH}/${test})
     add_dependencies(check ${test})
+    target_link_libraries(${test} m)
 endforeach()
 
