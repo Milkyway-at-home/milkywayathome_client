@@ -130,6 +130,10 @@ if(APPLE)
    set(OS_SPECIFIC_LIBS ${CORE_FOUNDATION_LIBRARY})
 endif(APPLE)
 
+if(UNIX AND NOT APPLE)  #Unix that isn't OS X
+    set(OS_SPECIFIC_LIBS pthread)
+endif(UNIX AND NOT APPLE)
+
 set(source_file_list evaluation_state.c
                      simple_evaluator.c
                      ../util/io_util.c
