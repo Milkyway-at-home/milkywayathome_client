@@ -33,6 +33,18 @@ include_directories(${PROJECT_INCLUDE_DIR})
 #doesn't behave as anyone would ever expect.
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
 
+option(SMALL_TESTS
+       "Run small tests" ON)
+
+option(LARGE_TESTS
+       "Run large tests" OFF)
+
+option(AUX_LARGE_TESTS
+       "Run large aux tests" OFF)
+
+option(AUX_SMALL_TESTS
+       "Run small aux tests" ON)
+
 
 add_subdirectory(milkyway)
 add_subdirectory(tests EXCLUDE_FROM_ALL)

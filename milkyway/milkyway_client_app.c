@@ -19,10 +19,10 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define OUTPUT_FILENAME "out"
-#define SEARCH_PARAMETER_FILENAME "search_parameters.txt"
-#define ASTRONOMY_PARAMETER_FILENAME "astronomy_parameters.txt"
-#define STAR_POINTS_FILENAME "stars.txt"
+#include <popt.h>
+#include <errno.h>
+
+#define BREAKPOINT() (__asm__ __volatile__ ("int  $03"))
 
 #include "milkyway.h"
 #include "parameters.h"
@@ -58,6 +58,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #if USE_OCL
 #include "evaluation_ocl.h"
 #endif
+
+static char* boinc_graphics = NULL;
+static char* search_parameter_file = NULL;
+static char* star_points_file = NULL;
+static char* astronomy_parameter_file = NULL;
+static char* output_file = NULL;
+
 
 #ifdef _WIN32
 	void AppInvalidParameterHandler(const wchar_t* expression, const wchar_t* function, const wchar_t* file, unsigned int line, uintptr_t pReserved ) {
@@ -107,109 +114,167 @@ double astronomy_evaluate(double *parameters) {
 }
 #endif /* COMPUTE_ON_CPU */
 
-int get_number_parameters(int argc, char** argv) {
-	int i;
-	for (i = 0; i < argc; i++) {
-		if ( !strcmp(argv[i], "-np") ) {
-			return atoi(argv[++i]);
-		}
-	}
-	return -1;
-}
 
-int get_parameters(int argc, char** argv, int number_parameters, double* parameters) {
-	int i, j;
-	for (i = 0; i < argc; i++) {
-//		fprintf(stderr, "np: %d, parsing parameter: %s\n", number_parameters, argv[i]);
+/* Returns the newly allocated array of parameters */
+static double* parse_parameters(int argc, const char** argv, int* paramnOut)
+{
+    poptContext context;
+    int i, o, paramn;
+    double* parameters = NULL;
+    static const char** rest;
 
-		if ( !strcmp(argv[i], "-p") ) {
-            for (j = 0; j < number_parameters; j++) {
-//              fprintf(stderr, "i: %d, j: %d, argc: %d, arg: %s\n", i, j, argc, argv[1 + i + j]);
-                if (1 + i + j >= argc) return 1;
+    static const struct poptOption options[] =
+    {
+        { "boinc-init-graphics", 'b',
+          POPT_ARG_STRING, &boinc_graphics,
+          'b', "Agrument to boinc_init_graphics", NULL
+        },
 
-                parameters[j] = atof(argv[1 + i + j]);
+        { "search-parameter-file", 's',
+          POPT_ARG_STRING, &search_parameter_file,
+          's', "Search parameter file name", NULL
+        },
+
+        { "star-points-file", 'p',
+          POPT_ARG_STRING, &star_points_file,
+          'p', "Star points files", NULL
+        },
+
+        { "astronomy-parameter-file", 'a',
+          POPT_ARG_STRING, &astronomy_parameter_file,
+          'a', "Astronomy parameter file", NULL
+        },
+
+        { "output", 'o',
+          POPT_ARG_STRING, &output_file,
+          'o', "Output file", NULL
+        },
+
+        POPT_AUTOHELP
+
+        { NULL, 0, 0, NULL, 0, NULL, NULL }
+    };
+
+    context = poptGetContext(argv[0],
+                             argc,
+                             (const char**) argv,
+                             options,
+                             POPT_CONTEXT_POSIXMEHARDER);
+
+    while ( ( o = poptGetNextOpt(context)) >= 0 );
+
+    if ( o < -1 )
+    {
+        poptPrintHelp(context, stderr, 0);
+        return NULL;
+    }
+
+    rest = poptGetArgs(context);
+    if (rest)
+    {
+        paramn = 0;
+        while (rest[++paramn]) ;
+
+        parameters = (double*) malloc(sizeof(double) * paramn);
+
+        errno = 0;
+        for ( i = 0; i < paramn; ++i )
+        {
+            parameters[i] = strtod(rest[i], NULL);
+
+            if (errno)
+            {
+                free(parameters);
+                perror("error parsing command line parameters");
+                return NULL;
             }
-            return 0;
         }
     }
 
-    return 1;
+    poptFreeContext(context);
+
+    *paramnOut = paramn;
+    return parameters;
 }
 
+static void cleanup_worker()
+{
+    free_state(es);
+    free(es);
+    free_parameters(ap);
+    free(ap);
+    free_star_points(sp);
+    free(sp);
+}
 
-void worker(int argc, char** argv) {
-    int number_parameters, ap_number_parameters, retval;
+static void fail_worker()
+{
+    cleanup_worker();
+#ifdef _WIN32
+    _set_printf_count_output( 1 );
+    _get_printf_count_output();
+#endif
+
+}
+
+static void worker(int argc, const char** argv)
+{
     double* parameters;
+    int ret1, ret2;
+    int number_parameters, ap_number_parameters;
 
-    /********
-        *   READ THE ASTRONOMY PARAMETERS
-     ********/
-    ap = (ASTRONOMY_PARAMETERS*)malloc(sizeof(ASTRONOMY_PARAMETERS));
-    retval = read_astronomy_parameters(ASTRONOMY_PARAMETER_FILENAME, ap);
-    if (retval) {
-        fprintf(stderr, "APP: error reading astronomy parameters: %d\n", retval);
-        boinc_finish(1);
-    }
-//  printf("read astronomy parameters\n");
+    parameters = parse_parameters(argc, argv, &number_parameters);
 
-    /********
-        *   READ THE STAR POINTS
-     ********/
-    sp = (STAR_POINTS*)malloc(sizeof(STAR_POINTS));
-    retval = read_star_points(STAR_POINTS_FILENAME, sp);
-    if (retval) {
-        fprintf(stderr, "APP: error reading star points: %d\n", retval);
-        boinc_finish(1);
-    }
-//  printf("read star points\n");
-
-    /********
-        *   INITIALIZE THE EVALUATION STATE
-     ********/
-    es = (EVALUATION_STATE*)malloc(sizeof(EVALUATION_STATE));
-    initialize_state(ap, sp, es);
-//  printf("read evaluation state\n");
-
-    number_parameters = get_number_parameters(argc, argv);
-    ap_number_parameters = get_optimized_parameter_count(ap);
-
-    if (number_parameters < 1 || number_parameters != ap_number_parameters) {
-        fprintf(stderr, "error reading parameters, number of parameters from the command line (%d) does not match the number of parameters to be optimized in astronomy_parameters.txt (%d)\n", number_parameters, ap_number_parameters);
-
-        free_state(es);
-        free(es);
-        free_parameters(ap);
-        free(ap);
-        free_star_points(sp);
-        free(sp);
-
-    #ifdef _WIN32
-        _set_printf_count_output( 1 );
-        _get_printf_count_output();
-     #endif
-
+    if (!parameters)
+    {
+        fprintf(stderr, "Could not parse parameters from the command line\n");
         boinc_finish(0);
         return;
     }
 
-    parameters = (double*)malloc(sizeof(double) * number_parameters);
-    retval = get_parameters(argc, argv, number_parameters, parameters);
+    ap = (ASTRONOMY_PARAMETERS*) malloc(sizeof(ASTRONOMY_PARAMETERS));
+    sp = (STAR_POINTS*) malloc(sizeof(STAR_POINTS));
+    es = (EVALUATION_STATE*) malloc(sizeof(EVALUATION_STATE));
 
-    if (retval) {
-        fprintf(stderr, "could not parse parameters from the command line, retval: %d\n", retval);
+    ret1 = read_astronomy_parameters(astronomy_parameter_file, ap);
+    ret2 = read_star_points(star_points_file, sp);
 
-        free_state(es);
-        free(es);
-        free_parameters(ap);
-        free(ap);
-        free_star_points(sp);
-        free(sp);
+    if (ret1)
+    {
+        fprintf(stderr,
+                "APP: error reading astronomy parameters from file %s: %d\n",
+                astronomy_parameter_file,
+                ret1);
+    }
 
-     #ifdef _WIN32
-        _set_printf_count_output( 1 );
-        _get_printf_count_output();
-     #endif
+    if (ret2)
+    {
+        fprintf(stderr,
+                "APP: error reading star points from file %s: %d\n",
+                star_points_file,
+                ret2);
+    }
 
+    if (ret1 | ret2)
+    {
+        fail_worker();
+        boinc_finish(1);
+    }
+
+    initialize_state(ap, sp, es);
+
+    ap_number_parameters = get_optimized_parameter_count(ap);
+
+    if (number_parameters < 1 || number_parameters != ap_number_parameters)
+    {
+        fprintf(stderr,
+                "Error reading parameters: number of parameters from the "
+                 "command line (%d) does not match the number of parameters "
+                 "to be optimized in astronomy_parameters.txt (%d)\n",
+                number_parameters,
+                ap_number_parameters);
+
+        fail_worker();
         boinc_finish(0);
         return;
     }
@@ -219,6 +284,7 @@ void worker(int argc, char** argv) {
     #if COMPUTE_ON_CPU
         init_simple_evaluator(astronomy_evaluate);
 	#endif
+
 	#if COMPUTE_ON_GPU
 		int *r_steps = (int*)malloc(ap->number_integrals * sizeof(int));
  		int *mu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
@@ -229,7 +295,8 @@ void worker(int argc, char** argv) {
 		double *r_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
 		double *mu_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
 		double *nu_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
-		for (int i = 0; i < ap->number_integrals; i++) {
+		for (int i = 0; i < ap->number_integrals; ++i)
+        {
 			r_steps[i] = ap->integral[i]->r_steps;
 			mu_steps[i] = ap->integral[i]->mu_steps;
 			nu_steps[i] = ap->integral[i]->nu_steps;
@@ -291,9 +358,11 @@ void worker(int argc, char** argv) {
 #endif
 
 	boinc_finish(0);
+
 }
 
-int main(int argc, char **argv){
+int main(int argc, char **argv)
+{
     int retval = 0;
 
 #if BOINC_APP_GRAPHICS
@@ -337,7 +406,7 @@ int main(int argc, char **argv){
 	parse_prefs(project_prefs);
 #endif /* COMPUTE_ON_GPU */
 
-    worker(argc, argv);
+    worker(argc, (const char**) argv);
 
     return retval;
 }

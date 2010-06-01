@@ -35,6 +35,7 @@ set(PROJECT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 include_directories(${PROJECT_INCLUDE_DIR})
 
 find_package(BOINC REQUIRED)
+find_package(Popt REQUIRED)
 find_package(CUDA)
 
 # if(APPLE)
@@ -43,10 +44,13 @@ find_package(CUDA)
 # endif(APPLE)
 
 include_directories(${BOINC_INCLUDE_DIR})
+include_directories(${POPT_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}) #FIXME: Move headers to include
 
 include(CheckC99)
 check_c99_support()
+
+
 
 #CHECKME: Is this portable?
 set(C99_FLAG -std=c99)
@@ -139,6 +143,7 @@ message("   Project bin dir:   ${CMAKE_BINARY_DIR}")
 message("   ----")
 message("   BOINC Libraries    ${BOINC_LIBRARIES}")
 message("   CUDA  Libraries    ${CUDA_LIBRARIES}")
+message("   POPT  Library      ${POPT_LIBRARY}")
 message("   ----")
 message("   Build tool:        ${CMAKE_BUILD_TOOL}")
 message("   C Compiler:        ${CMAKE_C_COMPILER}")
@@ -161,5 +166,5 @@ configure_file (
 
 # add the executable
 add_executable(milkyway_client ${source_file_list})
-target_link_libraries(milkyway_client ${BOINC_LIBRARIES} ${OS_SPECIFIC_LIBS})
+target_link_libraries(milkyway_client ${BOINC_LIBRARIES} ${POPT_LIBRARY} ${OS_SPECIFIC_LIBS})
 
