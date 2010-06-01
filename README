@@ -1,0 +1,30 @@
+
+Build instructions:
+
+basic build:
+    $ cmake path/to/source
+    $ make
+
+Tests can be run with:
+    $ make check
+
+Default build type is release. To enable debugging
+    $ cmake /path/to/source -DCMAKE_BUILD_TYPE=Debug
+
+Different tests can be selected. Options are SMLL_
+
+
+Currently supported options:
+  COMPUTE_ON_CPU
+  COMPUTE_ON_GPU
+  MILKYWAY_GPU
+  DOUBLE_PRECISION
+  USE_OCL
+
+Currently only tested using COMPUTE_ON_CPU and DOUBLE_PRECISION.
+Enable an option with
+    $ cmake path/to/source -DOPTION_NAME=Value
+
+
+
+
