@@ -26,5 +26,11 @@ Enable an option with
     $ cmake path/to/source -DOPTION_NAME=Value
 
 
+Notes:
 
+On OS X, Apple's gcc is required since macports gcc seems to not work
+when you try linking against frameworks. Note you need to delete
+CMakeCache.txt when you change compilers. I'm trying to take care of
+this automatically but it only sort of works. Specify the Apple gcc
+with -DCMAKE_C_COMPILER=/usr/bin/gcc, for it's usual location.
 
