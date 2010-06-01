@@ -23,19 +23,55 @@ cmake_minimum_required (VERSION 2.6)
 set(test_app ${PROJECT_BINARY_DIR}/bin/milkyway_client)
 
 
-#TODO: Fix milkyway_client to use filename argument instead of stupid preprocessor / hardcoded filename
-set(small_test_args1 -np 20 -p 0.571713 12.312119 -3.305187 148.010257 22.453902 0.42035 -0.468858 0.760579 -1.361644 177.884238 23.882892 1.210639 -1.611974 8.534378 -1.361644 177.884238 10.882892 1.210639 -1.611974 8.534378 )
 
-set(small_test_args2 -np 8 -p 0.34217373320392042 25.9517910846623 -2.1709414738826602 38.272511356953906 30.225190442596112 2.2149060013372885 0.32316169064291655 2.7740244716285285)
+#arguments shared by several of the tests
+set(param_set1 0.571713 12.312119 -3.305187 148.010257 22.453902 0.42035
+               -0.468858 0.760579 -1.361644 177.884238 23.882892 1.210639
+               -1.611974 8.534378 -1.361644 177.884238 10.882892 1.210639
+               -1.611974 8.534378)
 
-set(small_test_args3 -np 8 -p 0.40587961154742185 17.529961843393409 -1.8575145272144837 29.360893891378243 31.228263575178566 -1.551741065334 .064096152599308373 2.55428209912781)
+set(test_11_params ${param_set1})
+set(test_12_params ${param_set1})
+set(test_20_params ${param_set1})
+set(test_21_params ${param_set1})
 
-#foreach(i RANGE 1 3)
-#  add_test(small_test_${i} ${test_app} ${small_test_args${i}})
-#endforeach()
+set(test_79_params 0.34217373320392042 25.9517910846623 -2.1709414738826602 38.272511356953906
+                   30.225190442596112 2.2149060013372885 0.32316169064291655 2.7740244716285285)
+
+set(test_82_params 0.40587961154742185 17.529961843393409 -1.8575145272144837 29.360893891378243
+                   31.228263575178566 -1.551741065334 .064096152599308373 2.55428209912781)
+
+set(test_86_params 0.73317163557524425 14.657212876628332 -1.7054653473950408 16.911711745343633
+                   28.077212666463502 -1.2032908515814611 3.5273606439247287 2.2248214505875008)
+
+set(test_list 11 12 20 21 79 82 86)
+
+foreach(i ${test_list})
+  if(SMALL_TESTS)
+    set(small_test_${i}_args -p stars-${i}.txt -a astronomy_parameters-${i}-small.txt ${test_${i}_params})
+    add_test(small_test_${i} ${test_app} ${small_test_${i}_args})
+  endif()
+
+  if(LARGE_TESTS)
+    set(test_${i}_args -p stars-${i}.txt -a astronomy_parameters-${i}.txt ${test_${i}_params})
+    add_test(test_${i} ${test_app} ${test_${i}_args})
+  endif()
+
+  if(AUX_SMALL_TESTS)
+    set(small_test_${i}_args-aux -p stars-${i}.txt -a astronomy_parameters-${i}-small-aux.txt ${test_${i}_params})
+    add_test(small_test_${i}-aux ${test_app} ${small_test_${i}_args-aux})
+  endif()
+
+  if(AUX_LARGE_TESTS)
+    set(test_${i}_args-aux -p stars-${i}.txt -a astronomy_parameters-${i}-aux.txt ${test_${i}_params})
+    add_test(test_${i}-aux ${test_app} ${test_${i}_args-aux})
+  endif()
+
+endforeach()
 
 
-# List of test to run.
+
+# List of tests to run.
 # Test sources should be named <testname>.c .
 set(test_list t_complex
               t_cubic)
