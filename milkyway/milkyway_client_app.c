@@ -132,7 +132,7 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
         {
             "boinc-init-graphics", 'b',
             POPT_ARG_STRING, &boinc_graphics,
-            'b', "Agrument to boinc_init_graphics", NULL
+            'b', "Argument to boinc_init_graphics", NULL
         },
 
         {
@@ -175,7 +175,7 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
     if ( o < -1 )
     {
         poptPrintHelp(context, stderr, 0);
-        return NULL;
+        exit(EXIT_FAILURE);
     }
 
     rest = poptGetArgs(context);
@@ -193,9 +193,11 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
 
             if (errno)
             {
-                free(parameters);
                 perror("error parsing command line parameters");
-                return NULL;
+                poptPrintHelp(context, stderr, 0);
+                free(parameters);
+                poptFreeContext(context);
+                exit(EXIT_FAILURE);
             }
         }
     }
