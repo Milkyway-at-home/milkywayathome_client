@@ -30,7 +30,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define NUM_TESTS 20
 
 #define APPROXEQ(x, y) (cabs(x - y) < LIMIT)
-                                     /* input , expected result */
+
+/* For special edge cases that you might want tested. The property test is the main test. */
+                                                    /* input , expected result */
 static const double complex tests[NUM_TESTS][2] = { {0.0 + 0.0 * I, 0.0 + 0.0 * I},
                                                     {1.0 + 0.0 * I, 1.0 + 0.0 * I},
                                                     {0.0 + 1.0 * I, 0.866025 + 0.5 * I},
@@ -89,7 +91,11 @@ unsigned int run_tests()
     for ( i = 0; i < NUM_TESTS; ++i )
     {
         result = ccbrt(tests[i][0]);
-        if (!APPROXEQ(result, tests[i][1]))
+        if (   !APPROXEQ(result, tests[i][1])
+            && !APPROXEQ(cpow(result,3.0), tests[i][0])   /* check if it's ok if it's answer
+                                                             differs from the precalculated ones
+                                                             from external source*/
+           )
         {
             fprintf(stderr,
                     "ccbrt failed test %d: Expected (%g + %gI) got (%g + %gI). |difference| = %g\n",
@@ -127,7 +133,7 @@ int main()
     totalFails = failCount + propFails;
 
     if (totalFails == 0)
-        fprintf(stderr, "t_complex: All tests passed.\n");
+        printf("t_complex: All tests passed.\n");
     else
         fprintf(stderr, "t_complex: %u tests failed.\n", totalFails);
 
