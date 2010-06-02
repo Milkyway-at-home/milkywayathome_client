@@ -1,9 +1,9 @@
-/****************************************************************************/
-/* UTIL: various useful routines and functions.                             */
-/*                                                                          */
-/* Copyright (c) 1993 by Joshua E. Barnes, Honolulu, HI.                    */
-/* It's free because it's yours.                                            */
-/****************************************************************************/
+/* ************************************************************************** */
+/* UTIL: various useful routines and functions. */
+/* */
+/* Copyright (c) 1993 by Joshua E. Barnes, Honolulu, HI. */
+/* It's free because it's yours. */
+/* ************************************************************************** */
 
 #include "stdinc.h"
 #include "real.h"
@@ -20,12 +20,11 @@
 #  define HZ CLK_TCK
 #endif
 
-void error(string, ...);
+void error(char*, ...);
 
-extern double drand48(void);            /* should be in math.h      */
+extern double drand48(void);            /* should be in math.h */
 
-/*
- * XRANDOM: generate floating-point random number.
+/*  * XRANDOM: generate floating-point random number.
  */
 
 real xrandom(real xl, real xh)
@@ -33,8 +32,7 @@ real xrandom(real xl, real xh)
     return (xl + (xh - xl) * drand48());
 }
 
-/*
- * RSQR: compute x*x.
+/*  * RSQR: compute x*x.
  */
 
 real rsqr(real x)
@@ -42,8 +40,7 @@ real rsqr(real x)
     return (x * x);
 }
 
-/*
- * DISTV: subtract vectors and return distance between.
+/*  * DISTV: subtract vectors and return distance between.
  */
 
 real distv(vector v, vector u)
@@ -60,43 +57,32 @@ real distv(vector v, vector u)
     return (rsqrt(s));
 }
 
-/*
- * STREQ: test for equality of strings.
- */
-
-bool streq(string a, string b)
-{
-    return (strcmp(a, b) == 0);
-}
-
-/*
- * SCANOPT: scan string of the form "word1,word2,..." for match. Warning:
+/*  * SCANOPT: scan char* of the form "word1,word2,..." for match. Warning:
  * words must be separated by exactly one comma -- no spaces allowed!
  */
 
-bool scanopt(string opt, string key)
+bool scanopt(char* opt, char* key)
 {
     char* op, *kp;
 
-    op = (char*) opt;               /* start scan of options    */
-    while (*op != NULL)             /* loop over words in opt   */
+    op = (char*) opt;               /* start scan of options */
+    while (*op != NULL)             /* loop over words in opt */
     {
-        kp = (char*) key;           /*   start at front of key  */
-        while ((*op != ',' ? *op : NULL)    /*   loop while this word   */
-                == *kp)            /*   ...matches text of key */
+        kp = (char*) key;           /* start at front of key */
+        while ((*op != ',' ? *op : NULL)    /* loop while this word */
+                == *kp)            /* ...matches text of key */
         {
-            if (*kp++ == NULL)          /*     at end of key word?  */
-                return (TRUE);          /*       keyword found      */
-            op++;               /*     else advance ptrs    */
+            if (*kp++ == NULL)          /* at end of key word? */
+                return (TRUE);          /* keyword found */
+            op++;               /* else advance ptrs */
         }
-        while (*op != NULL && *op++ != ',') /*   loop till end of word, */
-            continue;               /*     passing "," at end   */
+        while (*op != NULL && *op++ != ',') /* loop till end of word, */
+            continue;               /* passing "," at end */
     }
-    return (FALSE);             /* keyword not found        */
+    return (FALSE);             /* keyword not found */
 }
 
-/*
- * CPUTIME: compute CPU time in minutes.
+/*  * CPUTIME: compute CPU time in minutes.
  */
 
 real cputime()
@@ -108,8 +94,7 @@ real cputime()
     return (buffer.tms_utime / (60.0 * HZ));
 }
 
-/*
- * ALLOCATE: memory allocation with error checking.
+/*  * ALLOCATE: memory allocation with error checking.
  */
 
 void* allocate(nb)
@@ -117,31 +102,29 @@ int nb;
 {
     void* mem;
 
-    mem = (void*) calloc(nb, 1);        /* calloc zeros memory      */
+    mem = (void*) calloc(nb, 1);        /* calloc zeros memory */
     if (mem == NULL)
         error("allocate: not enuf memory (%d bytes)\n", nb);
     return (mem);
 }
 
-/*
- * ERROR: print error message and exit.
+/*  * ERROR: print error message and exit.
  */
 
-void error(string msg, ...)
+void error(char* msg, ...)
 {
     va_list args;
 
     va_start(args, msg);
     vfprintf(stderr, msg, args);
     va_end(args);
-    exit(-1);                   /* quit with error status   */
+    exit(-1);                   /* quit with error status */
 }
 
-/*
- * EPRINTF: print error message, but don't exit.
+/*  * EPRINTF: print error message, but don't exit.
  */
 
-void eprintf(string msg, ...)
+void eprintf(char* msg, ...)
 {
     va_list args;
 
@@ -149,3 +132,4 @@ void eprintf(string msg, ...)
     vfprintf(stderr, msg, args);
     va_end(args);
 }
+

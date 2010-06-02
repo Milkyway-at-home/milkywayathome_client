@@ -1,9 +1,9 @@
-/****************************************************************************/
-/* VECTMATH.H: include file for vector/matrix operations.           */
-/*                                                                          */
-/* Copyright (c) 1993 by Joshua E. Barnes, Honolulu, HI.                    */
-/* It's free because it's yours.                                            */
-/****************************************************************************/
+/* ************************************************************************** */
+/* VECTMATH.H: include file for vector/matrix operations. */
+/* */
+/* Copyright (c) 1993 by Joshua E. Barnes, Honolulu, HI. */
+/* It's free because it's yours. */
+/* ************************************************************************** */
 
 #ifndef THREEDIM
 #  ifndef TWODIM
@@ -23,8 +23,7 @@
 
 typedef real vector[NDIM], matrix[NDIM][NDIM];
 
-/*
- * Vector operations.
+/*  * Vector operations.
  */
 
 #define CLRV(v)         /* CLeaR Vector */          \
@@ -196,8 +195,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
             (v)[_i] /= (s);                                                 \
     }
 
-/*
- * Matrix operations.
+/*  * Matrix operations.
  */
 
 #define CLRM(p)         /* CLeaR Matrix */          \
@@ -301,8 +299,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
             (s) += (p)[_i][_i];                     \
     }
 
-/*
- * Misc. impure operations.
+/*  * Misc. impure operations.
  */
 
 #define SETVS(v,s)      /* SET Vector to Scalar */      \

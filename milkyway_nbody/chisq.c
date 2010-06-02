@@ -1,4 +1,4 @@
-// A BOINC compatible fitness calculation routine for the Orphan stream density profile project
+// A BOINC compatible fitness calculation routine for the Orphan FILE* density profile project
 // B. Willett Feb. 25, 2010
 // Adapted for use with B&H treecode May 11, 2010
 
@@ -233,3 +233,4 @@ int compare (const void* a, const void* b)
 {
     return ( *(int*)a - *(int*)b );
 }
+

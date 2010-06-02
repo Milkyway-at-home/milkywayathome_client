@@ -1,10 +1,10 @@
-/****************************************************************************/
-/* GETPARAM.C: export version prompts user for values. Public routines:     */
-/* initparam(), getparam(), getiparam(), getbparam(), getrparam().          */
-/*                                                                          */
-/* Copyright (c) 1993 by Joshua E. Barnes, Honolulu, HI.                    */
-/* It's free because it's yours.                                            */
-/****************************************************************************/
+/* ************************************************************************** */
+/* GETPARAM.C: export version prompts user for values. Public routines: */
+/* initparam(), getparam(), getiparam(), getbparam(), getrparam(). */
+/* */
+/* Copyright (c) 1993 by Joshua E. Barnes, Honolulu, HI. */
+/* It's free because it's yours. */
+/* ************************************************************************** */
 
 #include "stdinc.h"
 #include "real.h"
@@ -12,66 +12,63 @@
 #include <stdlib.h>
 
 void* allocate(int);
-void error(string, ...);
+void error(char*, ...);
 
-local string* defaults = NULL;          /* "name=value" strings     */
+static char** defaults = NULL;          /* "name=value" char*s */
 
-/*
- * INITPARAM: ignore arg vector, remember defaults.
+/*  * INITPARAM: ignore arg vector, remember defaults.
  */
 
-void initparam(string* argv, string* defv)
+void initparam(char** argv, char** defv)
 {
     defaults = defv;
 }
 
-/*
- * GETPARAM: export version prompts user for value of name.
+/*  * GETPARAM: export version prompts user for value of name.
  */
 
-local int scanbind(string*, string);
-local string extrvalue(string);
+static int scanbind(char**, char*);
+static char* extrvalue(char*);
 
-string getparam(string name)
+char* getparam(char* name)
 {
     int i, len;
-    string def;
+    char* def;
     char buf[128];
 
-    if (defaults == NULL)           /* check initialization     */
+    if (defaults == NULL)           /* check initialization */
         error("getparam: called before initparam\n");
-    i = scanbind(defaults, name);       /* find name in defaults    */
+    i = scanbind(defaults, name);       /* find name in defaults */
     if (i < 0)
         error("getparam: %s unknown\n", name);
-    def = extrvalue(defaults[i]);       /* extract default value    */
+    def = extrvalue(defaults[i]);       /* extract default value */
     if (*def == NULL)
-        fprintf(stderr, "enter %s: ", name);    /* prompt user for value    */
+        fprintf(stderr, "enter %s: ", name);    /* prompt user for value */
     else
         fprintf(stderr, "enter %s [%s]: ", name, def);
-    gets(buf);                  /* read users response      */
+    gets(buf);                  /* read users response */
     len = strlen(buf);
-    if (len > 0)                /* if user gave a value...  */
-        return (strcpy((string) allocate(len + 1), buf));
-    else                    /* else return default      */
+    if (len > 0)                /* if user gave a value... */
+        return (strcpy((char*) allocate(len + 1), buf));
+    else                    /* else return default */
         return (def);
 }
 
-/*
- * GETIPARAM, ..., GETDPARAM: get int, long, bool, or double parameters.
+/*  * GETIPARAM, ..., GETDPARAM: get int, long, bool, or double parameters.
  */
 
-int getiparam(string name)
+int getiparam(char* name)
 {
-    string val;
+    char* val;
 
-    for (val = ""; *val == NULL; )      /* while nothing input      */
-        val = getparam(name);                   /*   obtain value from user */
-    return (atoi(val));                         /* convert to an integer    */
+    for (val = ""; *val == NULL; )      /* while nothing input */
+        val = getparam(name);                   /* obtain value from user */
+    return (atoi(val));                         /* convert to an integer */
 }
 
-bool getbparam(string name)
+bool getbparam(char* name)
 {
-    string val;
+    char* val;
 
     for (val = ""; *val == NULL; )
         val = getparam(name);
@@ -83,22 +80,21 @@ bool getbparam(string name)
     return (FALSE);
 }
 
-real getrparam(string name)
+real getrparam(char* name)
 {
-    string val;
+    char* val;
 
     for (val = ""; *val == NULL; )
         val = getparam(name);
-    return ((real) atof(val));          /* convert & return real    */
+    return ((real) atof(val));          /* convert & return real */
 }
 
-/*
- * SCANBIND: scan binding vector for name, return index.
+/*  * SCANBIND: scan binding vector for name, return index.
  */
 
-local bool matchname(string, string);
+static bool matchname(char*, char*);
 
-local int scanbind(string bvec[], string name)
+static int scanbind(char* bvec[], char* name)
 {
     int i;
 
@@ -108,11 +104,10 @@ local int scanbind(string bvec[], string name)
     return (-1);
 }
 
-/*
- * MATCHNAME: determine if "name=value" matches "name".
+/*  * MATCHNAME: determine if "name=value" matches "name".
  */
 
-local bool matchname(string bind, string name)
+static bool matchname(char* bind, char* name)
 {
     char* bp, *np;
 
@@ -126,17 +121,16 @@ local bool matchname(string bind, string name)
     return (*bp == '=' && *np == NULL);
 }
 
-/*
- * EXTRVALUE: extract value from name=value string.
+/*  * EXTRVALUE: extract value from name=value char*.
  */
 
-local string extrvalue(string arg)
+static char* extrvalue(char* arg)
 {
     char* ap;
 
     ap = (char*) arg;
     while (*ap != NULL)
         if (*ap++ == '=')
-            return ((string) ap);
+            return ((char*) ap);
     return (NULL);
 }
