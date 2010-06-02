@@ -11,16 +11,16 @@
 #include <string.h>
 #include <stdlib.h>
 
-void *allocate(int);
+void* allocate(int);
 void error(string, ...);
 
-local string *defaults = NULL;			/* "name=value" strings     */
+local string* defaults = NULL;          /* "name=value" strings     */
 
 /*
  * INITPARAM: ignore arg vector, remember defaults.
  */
 
-void initparam(string *argv, string *defv)
+void initparam(string* argv, string* defv)
 {
     defaults = defv;
 }
@@ -29,7 +29,7 @@ void initparam(string *argv, string *defv)
  * GETPARAM: export version prompts user for value of name.
  */
 
-local int scanbind(string *, string);
+local int scanbind(string*, string);
 local string extrvalue(string);
 
 string getparam(string name)
@@ -38,22 +38,22 @@ string getparam(string name)
     string def;
     char buf[128];
 
-    if (defaults == NULL)			/* check initialization     */
-	error("getparam: called before initparam\n");
-    i = scanbind(defaults, name);		/* find name in defaults    */
+    if (defaults == NULL)           /* check initialization     */
+        error("getparam: called before initparam\n");
+    i = scanbind(defaults, name);       /* find name in defaults    */
     if (i < 0)
-	error("getparam: %s unknown\n", name);
-    def = extrvalue(defaults[i]);		/* extract default value    */
+        error("getparam: %s unknown\n", name);
+    def = extrvalue(defaults[i]);       /* extract default value    */
     if (*def == NULL)
-	fprintf(stderr, "enter %s: ", name);	/* prompt user for value    */
+        fprintf(stderr, "enter %s: ", name);    /* prompt user for value    */
     else
-	fprintf(stderr, "enter %s [%s]: ", name, def);
-    gets(buf);					/* read users response      */
+        fprintf(stderr, "enter %s [%s]: ", name, def);
+    gets(buf);                  /* read users response      */
     len = strlen(buf);
-    if (len > 0)				/* if user gave a value...  */
-	return (strcpy((string) allocate(len+1), buf));
-    else					/* else return default      */
-	return (def);
+    if (len > 0)                /* if user gave a value...  */
+        return (strcpy((string) allocate(len + 1), buf));
+    else                    /* else return default      */
+        return (def);
 }
 
 /*
@@ -64,8 +64,8 @@ int getiparam(string name)
 {
     string val;
 
-    for (val = ""; *val == NULL; )		/* while nothing input      */
-	val = getparam(name);                   /*   obtain value from user */
+    for (val = ""; *val == NULL; )      /* while nothing input      */
+        val = getparam(name);                   /*   obtain value from user */
     return (atoi(val));                         /* convert to an integer    */
 }
 
@@ -74,10 +74,10 @@ bool getbparam(string name)
     string val;
 
     for (val = ""; *val == NULL; )
-	val = getparam(name);
-    if (strchr("tTyY1", *val) != NULL)		/* is value true? */
+        val = getparam(name);
+    if (strchr("tTyY1", *val) != NULL)      /* is value true? */
         return (TRUE);
-    if (strchr("fFnN0", *val) != NULL)		/* is value false? */
+    if (strchr("fFnN0", *val) != NULL)      /* is value false? */
         return (FALSE);
     error("getbparam: %s=%s not bool\n", name, val);
     return (FALSE);
@@ -88,8 +88,8 @@ real getrparam(string name)
     string val;
 
     for (val = ""; *val == NULL; )
-	val = getparam(name);
-    return ((real) atof(val));			/* convert & return real    */
+        val = getparam(name);
+    return ((real) atof(val));          /* convert & return real    */
 }
 
 /*
@@ -103,8 +103,8 @@ local int scanbind(string bvec[], string name)
     int i;
 
     for (i = 0; bvec[i] != NULL; i++)
-	if (matchname(bvec[i], name))
-	    return (i);
+        if (matchname(bvec[i], name))
+            return (i);
     return (-1);
 }
 
@@ -114,13 +114,14 @@ local int scanbind(string bvec[], string name)
 
 local bool matchname(string bind, string name)
 {
-    char *bp, *np;
+    char* bp, *np;
 
     bp = bind;
     np = name;
-    while (*bp == *np) {
-	bp++;
-	np++;
+    while (*bp == *np)
+    {
+        bp++;
+        np++;
     }
     return (*bp == '=' && *np == NULL);
 }
@@ -131,11 +132,11 @@ local bool matchname(string bind, string name)
 
 local string extrvalue(string arg)
 {
-    char *ap;
+    char* ap;
 
-    ap = (char *) arg;
+    ap = (char*) arg;
     while (*ap != NULL)
-	if (*ap++ == '=')
-	    return ((string) ap);
+        if (*ap++ == '=')
+            return ((string) ap);
     return (NULL);
 }

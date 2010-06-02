@@ -73,7 +73,7 @@ typedef real (*rproc)();
  * These functions are not part of the standard C libraries.
  */
 
-float fsqr(float);			/* square function		    */
+float fsqr(float);          /* square function          */
 
 #else
 
@@ -101,6 +101,6 @@ float fsqr(float);			/* square function		    */
  * These functions are not part of the standard C libraries.
  */
 
-double sqr(double);			/* square function		    */
+double sqr(double);         /* square function          */
 
 #endif

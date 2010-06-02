@@ -9,8 +9,8 @@
 #include "code.h"
 
 local void diagnostics(void);
-local void in_int(stream, int *);
-local void in_real(stream, real *);
+local void in_int(stream, int*);
+local void in_real(stream, real*);
 local void in_vector(stream, vector);
 local void out_int(stream, int);
 local void out_real(stream, real);
@@ -29,28 +29,28 @@ void inputdata(void)
     int ndim;
     bodyptr p;
 
-    instr = fopen(infile, "r");			/* open input stream        */
+    instr = fopen(infile, "r");         /* open input stream        */
     if (instr == NULL)
-	error("inputdata: cannot find file %s\n", infile);
+        error("inputdata: cannot find file %s\n", infile);
     sprintf(headbuf, "Hierarchical code: input file %s", infile);
     headline = headbuf;
     in_int(instr, &nbody);
     if (nbody < 1)
-	error("inputdata: nbody = %d is absurd\n", nbody);
+        error("inputdata: nbody = %d is absurd\n", nbody);
     in_int(instr, &ndim);
     if (ndim != NDIM)
-	error("inputdata: ndim = %d is absurd\n", ndim);
+        error("inputdata: ndim = %d is absurd\n", ndim);
     in_real(instr, &tnow);
     bodytab = (bodyptr) allocate(nbody * sizeof(body));
-    for (p = bodytab; p < bodytab+nbody; p++)	/* loop over new bodies     */
-	Type(p) = BODY;				/*   init body type         */
-    for (p = bodytab; p < bodytab+nbody; p++)
-	in_real(instr, &Mass(p));
-    for (p = bodytab; p < bodytab+nbody; p++)
-	in_vector(instr, Pos(p));
-    for (p = bodytab; p < bodytab+nbody; p++)
-	in_vector(instr, Vel(p));
-    fclose(instr);				/* close input stream       */
+    for (p = bodytab; p < bodytab + nbody; p++) /* loop over new bodies     */
+        Type(p) = BODY;             /*   init body type         */
+    for (p = bodytab; p < bodytab + nbody; p++)
+        in_real(instr, &Mass(p));
+    for (p = bodytab; p < bodytab + nbody; p++)
+        in_vector(instr, Pos(p));
+    for (p = bodytab; p < bodytab + nbody; p++)
+        in_vector(instr, Vel(p));
+    fclose(instr);              /* close input stream       */
 }
 
 /*
@@ -62,12 +62,14 @@ local stream outstr2;                  /* output stream pointer */
 
 void initoutput(void)
 {
-    if (*outfile != NULL) {                     /* output file specified?   */
+    if (*outfile != NULL)                       /* output file specified?   */
+    {
         outstr = fopen(outfile, "w");           /*   setup output stream    */
-	if (outstr == NULL)
-	    error("initoutput: cannot open file %s\n", outfile);
-    } else
-        outstr = NULL;				/*   turn off data output   */
+        if (outstr == NULL)
+            error("initoutput: cannot open file %s\n", outfile);
+    }
+    else
+        outstr = NULL;              /*   turn off data output   */
 
 }
 
@@ -87,10 +89,10 @@ void stopoutput(void)
 
 local real mtot;                /* total mass of N-body system */
 local real etot[3];             /* binding, kinetic, potential energy */
-local matrix keten;		/* kinetic energy tensor */
-local matrix peten;		/* potential energy tensor */
-local vector cmphase[2];	/* center of mass coordinates */
-local vector amvec;		/* angular momentum vector */
+local matrix keten;     /* kinetic energy tensor */
+local matrix peten;     /* potential energy tensor */
+local vector cmphase[2];    /* center of mass coordinates */
+local vector amvec;     /* angular momentum vector */
 
 /*
  * OUTPUT: compute diagnostics and output data.
@@ -100,23 +102,28 @@ void output(void)
 {
     bodyptr p;
     vector lbR;
-    diagnostics();				/* compute std diagnostics  */
-	//printf("tnow = %f\n", tnow);
-	if(tstop - tnow < 0.01/freq) {
-	printf("tnow = %f\n", tnow);
-		for (p = bodytab; p < bodytab+nbody; p++) {
-			(lbR)[2] = sqrt(Pos(p)[0]*Pos(p)[0] + Pos(p)[1]*Pos(p)[1] + Pos(p)[2]*Pos(p)[2]);
-			(lbR)[1] = (180.0/3.141592654)*atan2(Pos(p)[2], sqrt((Pos(p)[0])*(Pos(p)[0]) + Pos(p)[1]*Pos(p)[1]));
-			(lbR)[0] = (180.0/3.141592654)*atan2(Pos(p)[1],Pos(p)[0]);	
+    diagnostics();              /* compute std diagnostics  */
+    //printf("tnow = %f\n", tnow);
+    if (tstop - tnow < 0.01 / freq)
+    {
+        printf("tnow = %f\n", tnow);
+        for (p = bodytab; p < bodytab + nbody; p++)
+        {
+            (lbR)[2] = sqrt(Pos(p)[0] * Pos(p)[0] + Pos(p)[1] * Pos(p)[1] + Pos(p)[2] * Pos(p)[2]);
+            (lbR)[1] = (180.0 / 3.141592654) * atan2(Pos(p)[2], sqrt((Pos(p)[0]) * (Pos(p)[0]) + Pos(p)[1] * Pos(p)[1]));
+            (lbR)[0] = (180.0 / 3.141592654) * atan2(Pos(p)[1], Pos(p)[0]);
 
-			if((lbR)[0] < 0) { (lbR)[0] += 360.0;}
+            if ((lbR)[0] < 0)
+            {
+                (lbR)[0] += 360.0;
+            }
 
-	    		out_2vectors(outstr, lbR, Vel(p));
-		}	
-		printf("\tParticle data written to file %s\n\n", outfile);
-	fflush(outstr);				/*   drain output buffer    */
-	tout += 1 / freqout;			/*   schedule next data out */
-     }
+            out_2vectors(outstr, lbR, Vel(p));
+        }
+        printf("\tParticle data written to file %s\n\n", outfile);
+        fflush(outstr);             /*   drain output buffer    */
+        tout += 1 / freqout;            /*   schedule next data out */
+    }
 }
 
 /*
@@ -130,31 +137,32 @@ local void diagnostics(void)
     vector tmpv;
     matrix tmpt;
 
-    mtot = 0.0;					/* zero total mass          */
-    etot[1] = etot[2] = 0.0;			/* zero total KE and PE     */
-    CLRM(keten);				/* zero ke tensor           */
-    CLRM(peten);				/* zero pe tensor           */
-    CLRV(cmphase[0]);				/* zero c. of m. position   */
-    CLRV(cmphase[1]);				/* zero c. of m. velocity   */
-    CLRV(amvec);				/* zero am vector           */
-    for (p = bodytab; p < bodytab+nbody; p++) {	/* loop over all particles  */
-	mtot += Mass(p);                        /*   sum particle masses    */
-	DOTVP(velsq, Vel(p), Vel(p));		/*   square vel vector      */
-	etot[1] += 0.5 * Mass(p) * velsq;	/*   sum current KE         */
-	etot[2] += 0.5 * Mass(p) * Phi(p);	/*   and current PE         */
-	MULVS(tmpv, Vel(p), 0.5 * Mass(p));	/*   sum 0.5 m v_i v_j      */
-	OUTVP(tmpt, tmpv, Vel(p));
-	ADDM(keten, keten, tmpt);
-	MULVS(tmpv, Pos(p), Mass(p));		/*   sum m r_i a_j          */
-	OUTVP(tmpt, tmpv, Acc(p));
-	ADDM(peten, peten, tmpt);
-	MULVS(tmpv, Pos(p), Mass(p));		/*   sum cm position        */
-	ADDV(cmphase[0], cmphase[0], tmpv);
-	MULVS(tmpv, Vel(p), Mass(p));		/*   sum cm momentum        */
-	ADDV(cmphase[1], cmphase[1], tmpv);
-	CROSSVP(tmpv, Pos(p), Vel(p));		/*   sum angular momentum   */
-	MULVS(tmpv, tmpv, Mass(p));
-	ADDV(amvec, amvec, tmpv);
+    mtot = 0.0;                 /* zero total mass          */
+    etot[1] = etot[2] = 0.0;            /* zero total KE and PE     */
+    CLRM(keten);                /* zero ke tensor           */
+    CLRM(peten);                /* zero pe tensor           */
+    CLRV(cmphase[0]);               /* zero c. of m. position   */
+    CLRV(cmphase[1]);               /* zero c. of m. velocity   */
+    CLRV(amvec);                /* zero am vector           */
+    for (p = bodytab; p < bodytab + nbody; p++) /* loop over all particles  */
+    {
+        mtot += Mass(p);                        /*   sum particle masses    */
+        DOTVP(velsq, Vel(p), Vel(p));       /*   square vel vector      */
+        etot[1] += 0.5 * Mass(p) * velsq;   /*   sum current KE         */
+        etot[2] += 0.5 * Mass(p) * Phi(p);  /*   and current PE         */
+        MULVS(tmpv, Vel(p), 0.5 * Mass(p)); /*   sum 0.5 m v_i v_j      */
+        OUTVP(tmpt, tmpv, Vel(p));
+        ADDM(keten, keten, tmpt);
+        MULVS(tmpv, Pos(p), Mass(p));       /*   sum m r_i a_j          */
+        OUTVP(tmpt, tmpv, Acc(p));
+        ADDM(peten, peten, tmpt);
+        MULVS(tmpv, Pos(p), Mass(p));       /*   sum cm position        */
+        ADDV(cmphase[0], cmphase[0], tmpv);
+        MULVS(tmpv, Vel(p), Mass(p));       /*   sum cm momentum        */
+        ADDV(cmphase[1], cmphase[1], tmpv);
+        CROSSVP(tmpv, Pos(p), Vel(p));      /*   sum angular momentum   */
+        MULVS(tmpv, tmpv, Mass(p));
+        ADDV(amvec, amvec, tmpv);
     }
     etot[0] = etot[1] + etot[2];                /* sum KE and PE            */
     DIVVS(cmphase[0], cmphase[0], mtot);        /* normalize cm coords      */
@@ -165,18 +173,18 @@ local void diagnostics(void)
  * Low-level input and output operations.
  */
 
-local void in_int(stream str, int *iptr)
+local void in_int(stream str, int* iptr)
 {
     if (fscanf(str, "%d", iptr) != 1)
-	error("in_int: input conversion error\n");
+        error("in_int: input conversion error\n");
 }
 
-local void in_real(stream str, real *rptr)
+local void in_real(stream str, real* rptr)
 {
     double tmp;
 
     if (fscanf(str, "%lf", &tmp) != 1)
-	error("in_real: input conversion error\n");
+        error("in_real: input conversion error\n");
     *rptr = tmp;
 }
 
@@ -185,8 +193,10 @@ local void in_vector(stream str, vector vec)
     double tmpx, tmpy, tmpz;
 
     if (fscanf(str, "%lf%lf%lf", &tmpx, &tmpy, &tmpz) != 3)
-	error("in_vector: input conversion error\n");
-    vec[0] = tmpx;    vec[1] = tmpy;    vec[2] = tmpz;
+        error("in_vector: input conversion error\n");
+    vec[0] = tmpx;
+    vec[1] = tmpy;
+    vec[2] = tmpz;
 }
 
 local void out_int(stream str, int ival)
@@ -212,5 +222,5 @@ local void out_2vectors(stream str, vector vec1, vector vec2)
 local void printvec(string name, vector vec)
 {
     printf("          %10s%10.4f%10.4f%10.4f\n",
-	   name, vec[0], vec[1], vec[2]);
+           name, vec[0], vec[1], vec[2]);
 }

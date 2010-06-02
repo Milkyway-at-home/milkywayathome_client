@@ -17,7 +17,7 @@
  * STREAM: a tasteful replacement for FILE *.
  */
 
-typedef FILE *stream;
+typedef FILE* stream;
 
 /*
  * NULL: denotes a pointer to nothing.
@@ -54,7 +54,7 @@ typedef FILE *stream;
  */
 
 #ifndef TRUE
-   typedef short int bool;
+typedef short int bool;
 #  define FALSE 0
 #  define TRUE  1
 #endif
@@ -63,7 +63,7 @@ typedef FILE *stream;
  * STRING: for null-terminated character strings.
  */
 
-typedef char *string;
+typedef char* string;
 
 /*
  * PROC, IPROC: pointers to procedures and integer-valued functions.

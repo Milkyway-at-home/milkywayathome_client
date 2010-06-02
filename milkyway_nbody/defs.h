@@ -6,11 +6,11 @@
 /* Copyright (c) 1993 by Joshua E. Barnes, Honolulu, HI.                    */
 /* It's free because it's yours.                                            */
 /****************************************************************************/
- 
+
 #include "stdinc.h"
 #include "real.h"
 #include "vectmath.h"
- 
+
 /*
  * Body and cell data structures are used to represent the tree.  During
  * tree construction, descendent pointers are stored in the subp arrays:
@@ -41,7 +41,7 @@
  *          +---------------------------------------|-------+
  *                                                  |
  *     +--------------------------------------------+
- *     |                             
+ *     |
  *     |    +----------------------------------------+
  *     +--> | BODY: mass, pos, next:o, vel, acc, phi |
  *          +-----------------------|----------------+
@@ -53,18 +53,19 @@
  *          +---------------------------------------|-------+
  *                                                 etc
  */
- 
+
 /*
  * NODE: data common to BODY and CELL structures.
  */
- 
-typedef struct _node {
+
+typedef struct _node
+{
     short type;                 /* code for node type */
     real mass;                  /* total mass of node */
     vector pos;                 /* position of node */
-    struct _node *next;		/* link to next force-calc */   
+    struct _node* next;     /* link to next force-calc */
 } node, *nodeptr;
- 
+
 #define Type(x) (((nodeptr) (x))->type)
 #define Mass(x) (((nodeptr) (x))->mass)
 #define Pos(x)  (((nodeptr) (x))->pos)
@@ -73,18 +74,19 @@ typedef struct _node {
 /*
  * BODY: data structure used to represent particles.
  */
- 
+
 #define BODY 01                 /* type code for bodies */
- 
-typedef struct {
+
+typedef struct
+{
     node bodynode;              /* data common to all nodes */
     vector vel;                 /* velocity of body */
     vector acc;                 /* acceleration of body */
     real phi;                   /* potential at body */
 } body, *bodyptr;
- 
+
 #define Body    body
- 
+
 #define Vel(x)  (((bodyptr) (x))->vel)
 #define Acc(x)  (((bodyptr) (x))->acc)
 #define Phi(x)  (((bodyptr) (x))->phi)
@@ -92,21 +94,23 @@ typedef struct {
 /*
  * CELL: structure used to represent internal nodes of tree.
  */
- 
+
 #define CELL 02                 /* type code for cells */
- 
+
 #define NSUB (1 << NDIM)        /* subcells per cell */
- 
-typedef struct {
+
+typedef struct
+{
     node cellnode;              /* data common to all nodes */
     real rcrit2;                /* critical c-of-m radius^2 */
-    nodeptr more;		/* link to first descendent */   
-    union {			/* shared storage for... */
-	nodeptr subp[NSUB];     /* descendents of cell */
-	matrix quad;            /* quad. moment of cell */
+    nodeptr more;       /* link to first descendent */
+    union           /* shared storage for... */
+    {
+        nodeptr subp[NSUB];     /* descendents of cell */
+        matrix quad;            /* quad. moment of cell */
     } stuff;
 } cell, *cellptr;
- 
+
 #define Rcrit2(x) (((cellptr) (x))->rcrit2)
 #define More(x)   (((cellptr) (x))->more)
 #define Subp(x)   (((cellptr) (x))->stuff.subp)
@@ -115,29 +119,29 @@ typedef struct {
 /*
  * Variables used in tree construction.
  */
- 
-global cellptr root;                    /* pointer to root cell             */
- 
-global real rsize;                      /* side-length of root cell         */
- 
-global int cellused;			/* count of cells in tree           */
 
-global int maxlevel;			/* count of levels in tree          */
+global cellptr root;                    /* pointer to root cell             */
+
+global real rsize;                      /* side-length of root cell         */
+
+global int cellused;            /* count of cells in tree           */
+
+global int maxlevel;            /* count of levels in tree          */
 
 /*
  * Parameters and results for gravitational calculation.
  */
- 
+
 global string options;                  /* various option keywords          */
- 
+
 global real theta;                      /* accuracy parameter: 0.0 => exact */
- 
-global bool usequad;		        /* use quadrupole corrections       */
+
+global bool usequad;                /* use quadrupole corrections       */
 
 global real eps;                        /* potential softening parameter    */
- 
+
 global int n2bterm;                     /* number 2-body of terms evaluated */
- 
+
 global int nbcterm;                     /* num of body-cell terms evaluated */
 
 global real PluMass, r0, lstart, bstart, Rstart, XC, YC, ZC, VXC, VYC, VZC, Xinit, Yinit, Zinit, VXinit, VYinit, VZinit, orbittstop, dtorbit;
@@ -148,11 +152,11 @@ global real PluMass, r0, lstart, bstart, Rstart, XC, YC, ZC, VXC, VYC, VZC, Xini
  * util.c, which must be compiled with the same choice of precision.
  */
 
-bool scanopt(string, string);			/* find option in string    */
-real cputime(void);				/* return elapsed CPU time  */
-void *allocate(int);				/* allocate and zero memory */
-real distv(vector, vector);			/* distance between vectors */
-void error(string, ...);			/* report error and exit    */
-void eprintf(string, ...);			/* printf to error stream   */
-int compare (const void * a, const void * b);	/* comparison function used in chisq */
-float chisq(); 					/* likelihood calculator */
+bool scanopt(string, string);           /* find option in string    */
+real cputime(void);             /* return elapsed CPU time  */
+void* allocate(int);                /* allocate and zero memory */
+real distv(vector, vector);         /* distance between vectors */
+void error(string, ...);            /* report error and exit    */
+void eprintf(string, ...);          /* printf to error stream   */
+int compare (const void* a, const void* b);     /* comparison function used in chisq */
+float chisq();                  /* likelihood calculator */

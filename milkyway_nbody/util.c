@@ -22,7 +22,7 @@
 
 void error(string, ...);
 
-extern double drand48(void);			/* should be in math.h      */
+extern double drand48(void);            /* should be in math.h      */
 
 /*
  * XRANDOM: generate floating-point random number.
@@ -52,9 +52,10 @@ real distv(vector v, vector u)
     int n = NDIM;
 
     s = 0.0;
-    while (--n >= 0) {
-	d = (*v++) - (*u++);
-	s += d * d;
+    while (--n >= 0)
+    {
+        d = (*v++) - (*u++);
+        s += d * d;
     }
     return (rsqrt(s));
 }
@@ -75,21 +76,23 @@ bool streq(string a, string b)
 
 bool scanopt(string opt, string key)
 {
-    char *op, *kp;
+    char* op, *kp;
 
-    op = (char *) opt;				/* start scan of options    */
-    while (*op != NULL) {			/* loop over words in opt   */
-	kp = (char *) key;			/*   start at front of key  */
-	while ((*op != ',' ? *op : NULL)	/*   loop while this word   */
-	         == *kp) {			/*   ...matches text of key */
-	    if (*kp++ == NULL)			/*     at end of key word?  */
-		return (TRUE);			/*       keyword found      */
-	    op++;				/*     else advance ptrs    */
-	}
-	while (*op != NULL && *op++ != ',')	/*   loop till end of word, */
-	    continue;				/*     passing "," at end   */
+    op = (char*) opt;               /* start scan of options    */
+    while (*op != NULL)             /* loop over words in opt   */
+    {
+        kp = (char*) key;           /*   start at front of key  */
+        while ((*op != ',' ? *op : NULL)    /*   loop while this word   */
+                == *kp)            /*   ...matches text of key */
+        {
+            if (*kp++ == NULL)          /*     at end of key word?  */
+                return (TRUE);          /*       keyword found      */
+            op++;               /*     else advance ptrs    */
+        }
+        while (*op != NULL && *op++ != ',') /*   loop till end of word, */
+            continue;               /*     passing "," at end   */
     }
-    return (FALSE);				/* keyword not found        */
+    return (FALSE);             /* keyword not found        */
 }
 
 /*
@@ -101,7 +104,7 @@ real cputime()
     struct tms buffer;
 
     if (times(&buffer) == -1)
-	error("times() call failed\n");
+        error("times() call failed\n");
     return (buffer.tms_utime / (60.0 * HZ));
 }
 
@@ -109,14 +112,14 @@ real cputime()
  * ALLOCATE: memory allocation with error checking.
  */
 
-void *allocate(nb)
+void* allocate(nb)
 int nb;
 {
-    void *mem;
+    void* mem;
 
-    mem = (void *) calloc(nb, 1);		/* calloc zeros memory      */
+    mem = (void*) calloc(nb, 1);        /* calloc zeros memory      */
     if (mem == NULL)
-	error("allocate: not enuf memory (%d bytes)\n", nb);
+        error("allocate: not enuf memory (%d bytes)\n", nb);
     return (mem);
 }
 
@@ -131,7 +134,7 @@ void error(string msg, ...)
     va_start(args, msg);
     vfprintf(stderr, msg, args);
     va_end(args);
-    exit(-1);					/* quit with error status   */
+    exit(-1);                   /* quit with error status   */
 }
 
 /*
