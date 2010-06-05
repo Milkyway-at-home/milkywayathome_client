@@ -156,3 +156,4 @@ static void gravsub(nodeptr q)
         SUBV(acc0, acc0, quaddr);               /* acceleration */
     }
 }
+

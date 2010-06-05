@@ -37,6 +37,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 #if we aren't build from the root of the repo, these need to be set separately
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../cmake_modules)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../bin)
+set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../lib)
 set(PROJECT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
 include_directories(${PROJECT_INCLUDE_DIR})
@@ -134,20 +135,19 @@ if(UNIX AND NOT APPLE)  #Unix that isn't OS X
     set(OS_SPECIFIC_LIBS pthread)
 endif(UNIX AND NOT APPLE)
 
-set(source_file_list evaluation_state.c
-                     simple_evaluator.c
-                     ../util/io_util.c
-                     stCoords.c
-                     atSurveyGeometry.c
-                     milkyway_complex.c
-                     numericalIntegration.c
-                     stVector.c
-                     stMath.c
-                     evaluation_optimized.c
-                     parameters.c
-                     star_points.c
-                     astronomy_worker.c
-                     milkyway_client_app.c)
+set(lib_source_file_list evaluation_state.c
+                         simple_evaluator.c
+                         ../util/io_util.c
+                         stCoords.c
+                         atSurveyGeometry.c
+                         milkyway_complex.c
+                         numericalIntegration.c
+                         stVector.c
+                         stMath.c
+                         evaluation_optimized.c
+                         parameters.c
+                         star_points.c
+                         astronomy_worker.c)
 
 set(gcc_extra_warnings "-Wshadow -Wpointer-arith -Wcast-align -common-Wwrite-strings -compare -fno-common")
 
@@ -196,8 +196,14 @@ configure_file (
   "${PROJECT_INCLUDE_DIR}/config.h"
   )
 
+add_library(milkyway SHARED ${lib_source_file_list})
+target_link_libraries(milkyway ${BOINC_LIBRARIES} ${OS_SPECIFIC_LIBS})
 
-# add the executable
-add_executable(milkyway_client ${source_file_list})
-target_link_libraries(milkyway_client ${BOINC_LIBRARIES} ${POPT_LIBRARY} ${OS_SPECIFIC_LIBS})
+add_executable(milkyway_client milkyway_client_app.c)
+target_link_libraries(milkyway_client ${POPT_LIBRARY} milkyway)
+
+install(TARGETS milkyway DESTINATION lib)
+install(FILES ${PROJECT_INCLUDE_DIR}/milkyway.h DESTINATION include/milkyway)
+install(FILES ${PROJECT_INCLUDE_DIR}/config.h DESTINATION include/milkyway)
+install(TARGETS milkyway_client DESTINATION bin)
 
