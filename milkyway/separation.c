@@ -34,7 +34,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "../evaluation/mpi_evaluator.h"
 
 
-void separation(char* filename, double background_integral, double* stream_integrals)
+void separation(const char* filename, double background_integral, double* stream_integrals)
 {
     int q[ap->number_streams];
     double nstars[ap->number_streams];

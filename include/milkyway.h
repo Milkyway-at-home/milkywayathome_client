@@ -21,22 +21,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_AT_HOME_
 #define _MILKYWAY_AT_HOME_
 
-#ifdef _WIN32
-	#include <boinc_win.h>
-	#include <str_util.h>
-#else
-	#include <stdio.h>
-#endif
 
-#include <boinc_api.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-
-#if BOINC_APP_GRAPHICS
-	#include <graphics_api.h>
-	#include <graphics_lib.h>
-#endif
 
 #include "config.h"
 
@@ -46,13 +34,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "atSurveyGeometry.h"
 #include "star_points.h"
 #include "numericalIntegration.h"
+#include "simple_evaluator.h"
 #include "../util/io_util.h"
-
-#ifndef M_PI
-	#define pi 3.1415926535897932384626433832795028841971693993751
-#else
-	#define pi M_PI
-#endif
 
 #ifndef M_PI
 	#define pi 3.1415926535897932384626433832795028841971693993751

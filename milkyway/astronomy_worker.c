@@ -32,6 +32,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "star_points.h"
 #include "evaluation_optimized.h"
 
+#include <stdlib.h>
+
 char astronomy_parameters_file[1024];
 char star_points_file[1024];
 

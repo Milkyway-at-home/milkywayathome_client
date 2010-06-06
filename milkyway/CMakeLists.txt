@@ -42,9 +42,20 @@ set(PROJECT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
 include_directories(${PROJECT_INCLUDE_DIR})
 
-find_package(BOINC REQUIRED)
-find_package(Popt REQUIRED)
 find_package(CUDA)
+
+if(MINGW)
+  if(NOT TAKEOFFGW_ROOT)
+    set(TAKEOFFGW_ROOT "C:/takeoffgw/")
+  endif(NOT TAKEOFFGW_ROOT)
+
+  set(CMAKE_FIND_ROOT_PATH "${TAKEOFFGW_ROOT}/i686-pc-mingw32/sys-root/mingw")
+endif(MINGW)
+
+find_package(Popt REQUIRED)
+find_package(BOINC REQUIRED)
+
+
 
 # if(APPLE)
 #   find_library(OPENCL_LIBRARY OpenCL DOC "OpenCL lib for OS X")
@@ -66,6 +77,9 @@ set(C99_FLAG -std=c99)
 if(HAVE_C99_SUPPORT)
     set(CMAKE_C_FLAGS "${C99_FLAG} ${CMAKE_C_FLAGS}")
 endif(HAVE_C99_SUPPORT)
+
+option(BUILD_SHARED_LIBS
+       "Set to OFF to build static libraries" ON)
 
 
 option(DOUBLE_PRECISION
@@ -135,6 +149,10 @@ if(UNIX AND NOT APPLE)  #Unix that isn't OS X
     set(OS_SPECIFIC_LIBS pthread)
 endif(UNIX AND NOT APPLE)
 
+if(WIN32)
+  set(OS_SPECIFIC_LIBS msvcrt)
+endif(WIN32)
+
 set(lib_source_file_list evaluation_state.c
                          simple_evaluator.c
                          ../util/io_util.c
@@ -196,14 +214,28 @@ configure_file (
   "${PROJECT_INCLUDE_DIR}/config.h"
   )
 
-add_library(milkyway SHARED ${lib_source_file_list})
-target_link_libraries(milkyway ${BOINC_LIBRARIES} ${OS_SPECIFIC_LIBS})
+# Windows is a pain in the ass.
+if(WIN32)
+  add_library(milkyway STATIC ${lib_source_file_list})
+else(WIN32)
+  add_library(milkyway SHARED ${lib_source_file_list})
+endif(WIN32)
+
+target_link_libraries(milkyway ${BOINC_LIBRARIES} ${OS_SPECIFIC_LIBS} m)
 
 add_executable(milkyway_client milkyway_client_app.c)
-target_link_libraries(milkyway_client ${POPT_LIBRARY} milkyway)
+target_link_libraries(milkyway_client ${POPT_LIBRARY} ${BOINC_LIBRARIES} milkyway)
 
-install(TARGETS milkyway DESTINATION lib)
+install(TARGETS milkyway DESTINATION lib
+       PERMISSIONS           #Fix occasional issuse with people who change their umask
+       OWNER_READ OWNER_WRITE OWNER_EXECUTE
+       GROUP_READ GROUP_EXECUTE
+       WORLD_READ WORLD_EXECUTE)
 install(FILES ${PROJECT_INCLUDE_DIR}/milkyway.h DESTINATION include/milkyway)
 install(FILES ${PROJECT_INCLUDE_DIR}/config.h DESTINATION include/milkyway)
-install(TARGETS milkyway_client DESTINATION bin)
+install(TARGETS milkyway_client DESTINATION bin
+       PERMISSIONS
+       OWNER_READ OWNER_WRITE OWNER_EXECUTE
+       GROUP_READ GROUP_EXECUTE
+       WORLD_READ WORLD_EXECUTE)
 

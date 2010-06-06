@@ -21,16 +21,32 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <popt.h>
 #include <errno.h>
+#include <stdio.h>
+
+#include <boinc_api.h>
+
+#if BOINC_APP_GRAPHICS
+	#include <graphics_api.h>
+	#include <graphics_lib.h>
+#endif
+
+/* I'm not sure what the MSVC macro is.
+ This only needs the Windows API for the stuff to deal with the
+ truly awful Windows API / WinMain, which you only need to deal with
+ for visual studio and should be avoided as much as possible. */
+#if defined(_WIN32) && !defined(__MINGW32__)
+    #include <str_util.h>
+#endif
+
+
+#ifdef __cplusplus  /* Workaround for Windows / boinc issue */
+ extern "C" {
+#endif
 
 #include "milkyway.h"
 #include "parameters.h"
 #include "star_points.h"
 #include "evaluation_state.h"
-//#include "../searches/search_parameters.h"
-//#include "../searches/result.h"
-//#include "../evaluation/simple_evaluator.h"
-//#include "../evaluation/evaluator.h"
-
 #if MILKYWAY_GPU
   #if COMPUTE_ON_GPU
     void init_constants(ASTRONOMY_PARAMETERS* ap);
@@ -41,15 +57,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
     #include "evaluation_optimized.h"
   #endif /* COMPUTE_ON_CPU */
 
-  //#include "../searches/hessian.h"
-  //  #include "../searches/gradient.h"
-  //  #include "../searches/newton_method.h"
-  //  #include "../searches/line_search.h"
   #include "../util/matrix.h"
   #include "../util/io_util.h"
-
-  #define hessian_checkpoint_file "hessian_checkpoint"
-  #define gradient_checkpoint_file "gradient_checkpoint"
 #else
   #include "evaluation_optimized.h"
 #endif /* MILKYWAY_GPU */
@@ -57,6 +66,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #if USE_OCL
   #include "evaluation_ocl.h"
 #endif /* USE_OCL */
+
+#ifdef __cplusplus
+ }
+#endif
 
 static char* boinc_graphics = NULL;
 static char* search_parameter_file = NULL;
@@ -75,15 +88,9 @@ void AppInvalidParameterHandler(const wchar_t* expression, const wchar_t* functi
 }
 #endif /* _WIN32 */
 
-
-
 extern ASTRONOMY_PARAMETERS* ap;
 extern STAR_POINTS* sp;
 extern EVALUATION_STATE* es;
-
-void init_simple_evaluator(double (*likelihood_function)(double*));
-extern double (*evaluate)(double*);
-
 
 #if COMPUTE_ON_CPU
 double astronomy_evaluate(double* parameters)
@@ -181,8 +188,8 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
     rest = poptGetArgs(context);
     if (rest)
     {
-        paramn = 0;
-        while (rest[++paramn]) ;
+        paramn = 0;            /* Count number of parameters */
+        while (rest[++paramn]);
 
         parameters = (double*) malloc(sizeof(double) * paramn);
 
@@ -210,21 +217,17 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
 
 static void cleanup_worker()
 {
+	free(boinc_graphics);
+	free(search_parameter_file);
+	free(star_points_file);
+	free(astronomy_parameter_file);
+	free(output_file);
     free_state(es);
     free(es);
     free_parameters(ap);
     free(ap);
     free_star_points(sp);
     free(sp);
-}
-
-static void fail_worker()
-{
-    cleanup_worker();
-#ifdef _WIN32
-    _set_printf_count_output( 1 );
-    _get_printf_count_output();
-#endif /* _WIN32 */
 }
 
 static void worker(int argc, const char** argv)
@@ -238,7 +241,7 @@ static void worker(int argc, const char** argv)
     if (!parameters)
     {
         fprintf(stderr, "Could not parse parameters from the command line\n");
-        boinc_finish(0);
+        boinc_finish(1);
         return;
     }
 
@@ -267,8 +270,9 @@ static void worker(int argc, const char** argv)
 
     if (ret1 | ret2)
     {
-        fail_worker();
-        boinc_finish(1);
+        cleanup_worker();
+		boinc_finish(1);
+
     }
 
     initialize_state(ap, sp, es);
@@ -284,8 +288,8 @@ static void worker(int argc, const char** argv)
                 number_parameters,
                 ap_number_parameters);
 
-        fail_worker();
-        boinc_finish(0);
+        cleanup_worker();
+        boinc_finish(1);
         return;
     }
 
@@ -341,12 +345,7 @@ static void worker(int argc, const char** argv)
     fprintf(stderr, "<search_application> %s %s </search_application>\n", BOINC_APP_VERSION, PRECISION);
 
     free(parameters);
-    free_state(es);
-    free(es);
-    free_parameters(ap);
-    free(ap);
-    free_star_points(sp);
-    free(sp);
+	cleanup_worker();
 
 #if COMPUTE_ON_GPU
     gpu__free_constants();
@@ -361,11 +360,6 @@ static void worker(int argc, const char** argv)
     free(mu_step_size);
     free(nu_step_size);
 #endif /* COMPUTE_ON_GPU */
-
-#ifdef _WIN32
-    _set_printf_count_output( 1 );
-    _get_printf_count_output();
-#endif /* _WIN32 */
 
     boinc_finish(0);
 
@@ -422,7 +416,7 @@ int main(int argc, char** argv)
     return retval;
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode)
 {
     LPSTR command_line;
@@ -433,7 +427,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
     argc = parse_command_line( command_line, argv );
     return main(argc, argv);
 }
-#endif /* _WIN32 */
+#endif /* defined(_WIN32) && !defined(__MINGW__) */
 
-const char* BOINC_RCSID_33ac47a071 = "$Id: boinc_astronomy.C,v 1.24 2010/05/04 04:21:24 deselt Exp $";
+const char BOINC_RCSID_33ac47a071[] = "$Id: boinc_astronomy.C,v 1.24 2010/05/04 04:21:24 deselt Exp $";
 

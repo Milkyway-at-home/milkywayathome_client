@@ -23,9 +23,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define ASTRONOMY_PARAMETERS_H
 
 #include <stdio.h>
-#include <stdlib.h>
 
-typedef struct integral
+typedef struct
 {
     double r_min, r_max, r_step_size;
     double nu_min, nu_max, nu_step_size;
@@ -35,7 +34,7 @@ typedef struct integral
     long min_calculation, max_calculation;
 } INTEGRAL;
 
-typedef struct astronomy_parameters
+typedef struct
 {
     double parameters_version;
 
@@ -64,7 +63,7 @@ typedef struct astronomy_parameters
 
     int convolve;
     int sgr_coordinates;
-    int aux_bg_profile; //vickej2_bg
+    int aux_bg_profile;
     int wedge;
 
     int number_integrals;
@@ -74,18 +73,18 @@ typedef struct astronomy_parameters
 int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap);
 
 int read_astronomy_parameters(const char* file, ASTRONOMY_PARAMETERS* ap);
-void    fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap);
+void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap);
 int write_astronomy_parameters(const char* file, ASTRONOMY_PARAMETERS* ap);
-void    fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap);
-void    free_parameters(ASTRONOMY_PARAMETERS* ap);
+void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap);
+void free_parameters(ASTRONOMY_PARAMETERS* ap);
 
-void    split_astronomy_parameters(ASTRONOMY_PARAMETERS* ap, int rank, int max_rank);
+void split_astronomy_parameters(ASTRONOMY_PARAMETERS* ap, int rank, int max_rank);
 
-void    set_astronomy_parameters(ASTRONOMY_PARAMETERS* ap, double* parameters);
-void    get_search_parameters(ASTRONOMY_PARAMETERS* ap, double** parameters);
-void    get_min_parameters(ASTRONOMY_PARAMETERS* ap, double** parameters);
-void    get_max_parameters(ASTRONOMY_PARAMETERS* ap, double** parameters);
-void    get_step(ASTRONOMY_PARAMETERS* ap, double** step);
+void set_astronomy_parameters(ASTRONOMY_PARAMETERS* ap, double* parameters);
+void get_search_parameters(ASTRONOMY_PARAMETERS* ap, double** parameters);
+void get_min_parameters(ASTRONOMY_PARAMETERS* ap, double** parameters);
+void get_max_parameters(ASTRONOMY_PARAMETERS* ap, double** parameters);
+void get_step(ASTRONOMY_PARAMETERS* ap, double** step);
 
 #endif
 
