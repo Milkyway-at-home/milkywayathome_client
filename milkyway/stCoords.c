@@ -72,16 +72,16 @@ void xyz2lbr(const double* xyz, double* lbr)
            -2 - after root reduction, none were left
            -3 - min() returned improper index
 */
-int lbr2stream(const double* lbr, const double* spars, double* stream, int verb)
+int lbr2stream(const double* lbr, const double* spars, double* stream)
 {
     double xyz[3];
     lbr2xyz( lbr, xyz );
-    return xyz2stream( xyz, spars, stream, verb - 1);
+    return xyz2stream( xyz, spars, stream);
 }
 
 
 /* Same as lbr2stream, but with input coordinates in galactic xyz. */
-int xyz2stream(const double* xyz, const double* spars, double* stream, int verb)
+int xyz2stream(const double* xyz, const double* spars, double* stream)
 {
     int i;
     const double* a;                    /* vectors that define the elliptic stream */
@@ -126,7 +126,7 @@ int xyz2stream(const double* xyz, const double* spars, double* stream, int verb)
     a0 = -D * D / (B * B);
 
     /* find roots, which are possible values of cos(alpha) */
-    numroots = stRoot4(a3, a2, a1, a0, cost, flag, verb - 1);
+    numroots = stRoot4(a3, a2, a1, a0, cost, flag);
 
     if (numroots <= 0)
     {
@@ -136,7 +136,7 @@ int xyz2stream(const double* xyz, const double* spars, double* stream, int verb)
         tmp = 0.9999 * tmp - a1;
         tmp = 0.9999 * tmp + a0;
 
-        numroots = stRoot4( a3, a2, a1, a0, cost, flag, 1 );
+        numroots = stRoot4( a3, a2, a1, a0, cost, flag);
 
         return -1;
     }
@@ -162,11 +162,13 @@ int xyz2stream(const double* xyz, const double* spars, double* stream, int verb)
                 sint = sqrt(1 - cost[i] * cost[i]);
             }
 
-            for (j = 0; j < 3; ++j) distv[j] = a[j] * cost[i] + b[j] * sint - cxyz[j];
+            for (j = 0; j < 3; ++j)
+                distv[j] = a[j] * cost[i] + b[j] * sint - cxyz[j];
 
             dist[i] = norm(distv);
 
-            for (j = 0; j < 3; ++j) distv[j] = a[j] * cost[i] - b[j] * sint - cxyz[j];
+            for (j = 0; j < 3; ++j)
+                distv[j] = a[j] * cost[i] - b[j] * sint - cxyz[j];
 
             newd = norm(distv);
 
@@ -199,7 +201,7 @@ int xyz2stream(const double* xyz, const double* spars, double* stream, int verb)
 
     if (numroots == 0)
     {
-        numroots = stRoot4( a3, a2, a1, a0, cost, flag, 1 );
+        numroots = stRoot4( a3, a2, a1, a0, cost, flag);
         return -2;
     }
 
@@ -250,14 +252,16 @@ void stream2xyz(const double* stream, const double* spars, double* xyz)
     sint = sin(stream[0]);
 
     /* Get x-axis and y-axis normal vectors. */
-    for (i = 0; i < 3; ++i) ex[i] = bnorm / anorm * a[i] * cost + anorm / bnorm * b[i] * sint;
+    for (i = 0; i < 3; ++i)
+        ex[i] = bnorm / anorm * a[i] * cost + anorm / bnorm * b[i] * sint;
 
     crossp(a, b, ey);
 
     normalize(ex);
     normalize(ey);
 
-    for (i = 0; i < 3; ++i) xyz[i] = c[i] + a[i] * cost + b[i] * sint + ex[i] * stream[1] + ey[i] * stream[2];
+    for (i = 0; i < 3; ++i)
+        xyz[i] = c[i] + a[i] * cost + b[i] * sint + ex[i] * stream[1] + ey[i] * stream[2];
 }
 
 /* Get eta for the given wedge. */

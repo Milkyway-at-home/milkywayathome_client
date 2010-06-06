@@ -101,7 +101,7 @@ unsigned int prop_tests()
         a = RANDOM_COMPLEX;
         b = RANDOM_COMPLEX;
         c = RANDOM_COMPLEX;
-        ret = CnumCubic(a, b, c, roots, 0);
+        ret = CnumCubic(a, b, c, roots);
 
         for ( j = 0; j < 3; ++j )
         {
@@ -115,12 +115,12 @@ unsigned int prop_tests()
                 fprintf(stderr,
                         "CnumCubic failed property test:\n"
                         "  For a = (%g + %gI), b =  (%g + %gI), c = (%g + %gI)\n"
-                        "  Got invalid root (%g + %gI), eval = %g\n",
+                        "  Got invalid root (%g + %gI), eval = (%g + %g)\n",
                         creal(a), cimag(a),
                         creal(b), cimag(b),
                         creal(c), cimag(c),
                         creal(x), cimag(x),
-                        eval);
+                        creal(eval), cimag(eval));
                 fprintf(stderr, "LOLOLO: %d\n", ret);
                 ++failCount;
             }
@@ -138,7 +138,7 @@ unsigned int run_tests()
 
     for ( i = 0; i < NUM_TESTS; ++i )
     {
-        CnumCubic(tests[i][0], tests[i][1], tests[i][2], roots, 0);
+        CnumCubic(tests[i][0], tests[i][1], tests[i][2], roots);
 
         for ( j = 0; j < 3; ++j ) /* Look for each found root in expecteds */
         {

@@ -23,8 +23,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <math.h>
 
-
 #include "milkyway.h"
+#include "milkyway_priv.h"
 
 #include "evaluation_optimized.h"
 #include "parameters.h"
@@ -34,7 +34,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "star_points.h"
 #include "numericalIntegration.h"
 
-#define deg (180.0/pi)
 #define stdev 0.6
 #define xr 3 * stdev
 #define lbr_r 8.5
@@ -70,13 +69,13 @@ void init_constants(ASTRONOMY_PARAMETERS* ap)
     }
     else if (ap->aux_bg_profile == 1)
     {
-        bg_a    = ap->background_parameters[4]; //vickej2_bg
-        bg_b    = ap->background_parameters[5]; //vickej2_bg
-        bg_c    = ap->background_parameters[6]; //vickej2_bg
+        bg_a    = ap->background_parameters[4];
+        bg_b    = ap->background_parameters[5];
+        bg_c    = ap->background_parameters[6];
     }
     else
     {
-        printf("Error: aux_bg_profile invalid");
+        fprintf(stderr,"Error: aux_bg_profile invalid");
     }
 
     coeff   = 1 / (stdev * sqrt(2 * pi));
@@ -98,12 +97,12 @@ void init_constants(ASTRONOMY_PARAMETERS* ap)
         }
         else if (ap->sgr_coordinates == 1)
         {
-            gcToSgr(ap->stream_parameters[i][0], 0, ap->wedge, &lamda, &beta); //vickej2
-            sgrToGal(lamda, beta, &l, &b); //vickej2
+            gcToSgr(ap->stream_parameters[i][0], 0, ap->wedge, &lamda, &beta);
+            sgrToGal(lamda, beta, &l, &b);
         }
         else
         {
-            printf("Error: sgr_coordinates not valid");
+            fprintf(stderr, "Error: sgr_coordinates not valid");
         }
 
         lbr[0] = l;
@@ -116,10 +115,10 @@ void init_constants(ASTRONOMY_PARAMETERS* ap)
         stream_a[i][2] = cos(ap->stream_parameters[i][2]);
     }
 
-    xyz     = (double**)malloc(sizeof(double*) * ap->convolve);
-    qgaus_X     = (double*)malloc(sizeof(double) * ap->convolve);
-    qgaus_W     = (double*)malloc(sizeof(double) * ap->convolve);
-    dx      = (double*)malloc(sizeof(double) * ap->convolve);
+    xyz     = (double**) malloc(sizeof(double*) * ap->convolve);
+    qgaus_X = (double*) malloc(sizeof(double) * ap->convolve);
+    qgaus_W = (double*) malloc(sizeof(double) * ap->convolve);
+    dx      = (double*) malloc(sizeof(double) * ap->convolve);
 
     gaussLegendre(-1.0, 1.0, qgaus_X, qgaus_W, ap->convolve);
 
@@ -185,7 +184,15 @@ void set_probability_constants(int n_convolve, double coords, double* r_point, d
     }
 }
 
-void calculate_probabilities(double* r_point, double* r_in_mag, double* r_in_mag2, double* qw_r3_N, double reff_xr_rp3, double* integral_point, ASTRONOMY_PARAMETERS* ap, double* bg_prob, double* st_prob)
+void calculate_probabilities(double* r_point,
+                             double* r_in_mag,
+                             double* r_in_mag2,
+                             double* qw_r3_N,
+                             double reff_xr_rp3,
+                             double* integral_point,
+                             ASTRONOMY_PARAMETERS* ap,
+                             double* bg_prob,
+                             double* st_prob)
 {
     double bsin, lsin, bcos, lcos, zp;
     double rg, rs, xyzs[3], dotted, xyz_norm;
@@ -197,7 +204,7 @@ void calculate_probabilities(double* r_point, double* r_in_mag, double* r_in_mag
     bcos = cos(integral_point[1] / deg);
     lcos = cos(integral_point[0] / deg);
 
-//  printf("bsin: %.15f lsin: %.15f bcos: %.15f lcos: %.15f\n", bsin, lsin, bcos, lcos);
+    MW_DEBUG("bsin: %.15f lsin: %.15f bcos: %.15f lcos: %.15f\n", bsin, lsin, bcos, lcos);
 
     /* if q is 0, there is no probability */
     if (q == 0)
@@ -233,12 +240,17 @@ void calculate_probabilities(double* r_point, double* r_in_mag, double* r_in_mag
                 }
                 else
                 {
-                    printf("Error: aux_bg_profile invalid");
+                    fprintf(stderr, "Error: aux_bg_profile invalid");
                 }
 
-//vickej2_bg end edits
-
-//              printf("reff_xr_rp3: %.15lf r_point: %.15lf rg: %.15lf rs: %.15lf qw_r3_N: %.15lf bg_int: %.15lf\n", reff_xr_rp3, r_point[i], rg, rs, qw_r3_N[i], (*bg_prob));
+              MW_DEBUG("reff_xr_rp3: %.15lf r_point: %.15lf rg: %.15lf "
+                       "rs: %.15lf qw_r3_N: %.15lf bg_int: %.15lf\n",
+                       reff_xr_rp3,
+                       r_point[i],
+                       rg,
+                       rs,
+                       qw_r3_N[i],
+                       (*bg_prob));
             }
         }
         else
@@ -261,7 +273,8 @@ void calculate_probabilities(double* r_point, double* r_in_mag, double* r_in_mag
     for (i = 0; i < ap->number_streams; i++)
     {
         st_prob[i] = 0;
-        if (stream_sigma[i] > -0.0001 && stream_sigma[i] < 0.0001) continue;
+        if (stream_sigma[i] > -0.0001 && stream_sigma[i] < 0.0001)
+            continue;
         for (j = 0; j < ap->convolve; j++)
         {
             xyzs[0] = xyz[j][0] - stream_c[i][0];
@@ -276,7 +289,7 @@ void calculate_probabilities(double* r_point, double* r_in_mag, double* r_in_mag
 
             xyz_norm = xyzs[0] * xyzs[0] + xyzs[1] * xyzs[1] + xyzs[2] * xyzs[2];
             st_prob[i] += qw_r3_N[j] * exp(-xyz_norm / stream_sigma_sq2[i]);
-//          printf("st_int[%d]: %.15lf sxyz0: %.15lf sxyz1: %.15lf sxyz2: %.15lf\n", i, st_prob[i], xyzs[0], xyzs[1], xyzs[2]);
+            MW_DEBUG("st_int[%d]: %.15lf sxyz0: %.15lf sxyz1: %.15lf sxyz2: %.15lf\n", i, st_prob[i], xyzs[0], xyzs[1], xyzs[2]);
         }
         st_prob[i] *= reff_xr_rp3;
     }
@@ -536,8 +549,10 @@ void calculate_integral(ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, EVALUATION_
 int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp)
 {
     int i, j;
-//  time_t start_time, finish_time;
-//  time(&start_time);
+#if DEBUG
+  time_t start_time, finish_time;
+  time(&start_time);
+#endif
 
 #ifdef MILKYWAY
     read_checkpoint(es);
@@ -549,16 +564,19 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
     {
         calculate_integral(ap, es->integral[es->current_integral], es);
 //      fprintf(stderr, "<background_integral>%.25lf</background_integral>\n", es->integral[es->current_integral]->background_integral);
-//      for (i = 0; i < ap->number_streams; i++) fprintf(stderr, "<stream_integral>%d %.25lf</stream_integral>\n", i, es->integral[es->current_integral]->stream_integrals[i]);
+//      for (i = 0; i < ap->number_streams; i++)
+//        fprintf(stderr, "<stream_integral>%d %.25lf</stream_integral>\n", i, es->integral[es->current_integral]->stream_integrals[i]);
     }
 
     es->background_integral = es->integral[0]->background_integral;
-    for (i = 0; i < ap->number_streams; i++) es->stream_integrals[i] = es->integral[0]->stream_integrals[i];
+    for (i = 0; i < ap->number_streams; i++)
+        es->stream_integrals[i] = es->integral[0]->stream_integrals[i];
 
     for (i = 1; i < ap->number_integrals; i++)
     {
         es->background_integral -= es->integral[i]->background_integral;
-        for (j = 0; j < ap->number_streams; j++) es->stream_integrals[j] -= es->integral[i]->stream_integrals[j];
+        for (j = 0; j < ap->number_streams; j++)
+            es->stream_integrals[j] -= es->integral[i]->stream_integrals[j];
     }
 
 #ifdef MILKYWAY
@@ -571,8 +589,11 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
     fprintf(stderr, " </stream_integrals>\n");
 #endif
 
-//  time(&finish_time);
-//  printf("integrals calculated in: %lf\n", (double)finish_time - (double)start_time);
+    #if DEBUG
+    time(&finish_time);
+    MW_DEBUG("integrals calculated in: %lf\n", (double)finish_time - (double)start_time);
+    #endif
+
     return 0;
 }
 
@@ -583,11 +604,14 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
     double prob_sum, prob_sum_c, temp;  // for Kahan summation
     double exp_background_weight, sum_exp_weights, *exp_stream_weights;
     double* r_point, *r_in_mag, *r_in_mag2, *qw_r3_N, reff_xr_rp3;
-//  time_t start_time, finish_time;
-//  time (&start_time);e
 
     double bg_only, bg_only_sum, bg_only_sum_c;
     double st_only, *st_only_sum, *st_only_sum_c;
+
+#if DEBUG
+    time_t start_time, finish_time;
+    time (&start_time);
+#endif
 
     exp_stream_weights = (double*)malloc(sizeof(double) * ap->number_streams);
     st_prob = (double*)malloc(sizeof(double) * ap->number_streams);
@@ -637,8 +661,10 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
         bg_only = (bg_prob / es->background_integral) * exp_background_weight;
         star_prob = bg_only;
 
-        if (bg_only == 0.0) bg_only = -238;
-        else bg_only = log10(bg_only / sum_exp_weights);
+        if (bg_only == 0.0)
+            bg_only = -238;
+        else
+            bg_only = log10(bg_only / sum_exp_weights);
 
         temp = bg_only_sum;
         bg_only_sum += bg_only;
@@ -650,8 +676,10 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
             st_only = st_prob[current_stream] / es->stream_integrals[current_stream] * exp_stream_weights[current_stream];
             star_prob += st_only;
 
-            if (st_only == 0.0) st_only = -238;
-            else st_only = log10(st_only / sum_exp_weights);
+            if (st_only == 0.0)
+                st_only = -238;
+            else
+                st_only = log10(st_only / sum_exp_weights);
 
             temp = st_only_sum[current_stream];
             st_only_sum[current_stream] += st_only;
@@ -659,7 +687,7 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
         }
         star_prob /= sum_exp_weights;
 
-//      printf(", prob_sum: %.15lf\n", star_prob);
+        MW_DEBUG(", prob_sum: %.15lf\n", star_prob);
 
         if (star_prob != 0.0)
         {
@@ -691,7 +719,7 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
     fprintf(stderr, " </stream_only_likelihood>\n");
 #endif
 
-//  printf("prob_sum: %.15lf\n", es->prob_sum);
+    MW_DEBUG("prob_sum: %.15lf\n", es->prob_sum);
 
     free(exp_stream_weights);
     free(st_prob);
@@ -704,8 +732,10 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
     free(st_only_sum);
     free(st_only_sum_c);
 
-//  time(&finish_time);
-//  printf("likelihood calculated in: %lf\n", (double)finish_time - (double)start_time);
+#if DEBUG
+    time(&finish_time);
+    MW_DEBUG("likelihood calculated in: %lf\n", (double)finish_time - (double)start_time);
+#endif
 
     return 0;
 }

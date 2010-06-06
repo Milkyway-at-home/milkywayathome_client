@@ -1,5 +1,5 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Copyright 2010 Travis Desell, Dave Przybylo, Nathan Cole,
 Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
 and Rensselaer Polytechnic Institute.
 
@@ -19,25 +19,16 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SPVECTOR_H
-#define SPVECTOR_H 1
+#ifndef _SIMPLE_EVALUATOR_H_
+#define _SIMPLE_EVALUATOR_H_
 
-double** matalloc( int nrows, int ncols );
-void matfree( double** mat, int nrows );
+ /* :: [Double] -> Double */
+typedef double (*EvalFunc) (double*);
 
-double norm( const double* vec );
-void normalize( double* vec );
 
-double dotp( const double* a, const double* b );
-void crossp( const double* a, const double* b, double* prod );
+extern EvalFunc evaluate;
 
-double vecangle( const double* a, const double* b );
+void init_simple_evaluator(EvalFunc lf);
 
-void get_transform( const double* f, const double* t, double** mat );
-
-void do_transform( double* v, double* const* mat );
-
-void transform_point( double* point, double** cmat, double* xsun, double* logPoint );
-
-#endif /* SPVECTOR_H */
+#endif /* _SIMPLE_EVALUATOR_H_ */
 

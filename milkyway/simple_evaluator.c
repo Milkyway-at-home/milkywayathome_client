@@ -19,10 +19,12 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "milkyway.h"
+#include "simple_evaluator.h"
 
-double (*evaluate)(double*);
+EvalFunc evaluate = NULL;
 
-void init_simple_evaluator(double (*lf)(double*))
+void init_simple_evaluator(EvalFunc lf)
 {
     evaluate = lf;
 }

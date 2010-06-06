@@ -20,6 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "milkyway.h"
+#include "milkyway_priv.h"
 #include "atSurveyGeometry.h"
 
 void atGCToEq (
@@ -245,7 +246,7 @@ void slaEqgal ( double dr, double dd, double* dl, double* db )
 //in this manner an equatorial stripe of standard coordinate conventions is created.
 void gcToSgr ( double mu, double nu, int wedge, double* lamda, double* beta )
 {
-    //printf(" ***mui=%f, nui=%f", mu, nu);
+    MW_DEBUG(" ***mui=%f, nui=%f", mu, nu);
     double radpdeg = 3.141592653589793 / 180;
     mu = mu * radpdeg;
     nu = nu * radpdeg;
@@ -265,7 +266,7 @@ void gcToSgr ( double mu, double nu, int wedge, double* lamda, double* beta )
     *beta = asin(z);
     *beta = *beta / radpdeg;
 
-    //printf(" lamdao=%f, betao=%f", *lamda, *beta);
+    MW_DEBUG(" lamdao=%f, betao=%f", *lamda, *beta);
 
     return;
 }
@@ -289,7 +290,7 @@ void sgrToGal ( double lamda, double beta, double* l, double* b)
     double rot33 = cos(theta) / (pow(cos(theta), 2) + pow(sin(theta), 2));
     double x2 = 0.0, y2 = 0.0;
 
-    //printf(" lamdai=%f, betai=%f", lamda, beta);
+    MW_DEBUG(" lamdai=%f, betai=%f", lamda, beta);
 
     if (beta > 90)
     {
@@ -405,9 +406,7 @@ void sgrToGal ( double lamda, double beta, double* l, double* b)
         }
     }
 
-//vickej2 <<<compare this to plot of l&b on m31>>>
-    //printf(" l=%f, b=%f", *l, *b);
-//vickej2 <<<end>>>
+    MW_DEBUG(" l=%f, b=%f", *l, *b);
 
     return;
 }
@@ -458,3 +457,4 @@ double atEtaFromStripeNumber(int wedge)
 
     return eta;
 }
+

@@ -44,7 +44,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #include "milkyway.h"
-#include "parameters.h"
+#include "milkyway_priv.h"
 #include "star_points.h"
 #include "evaluation_state.h"
 #if MILKYWAY_GPU
@@ -79,7 +79,11 @@ static char* output_file = NULL;
 
 
 #ifdef _WIN32
-void AppInvalidParameterHandler(const wchar_t* expression, const wchar_t* function, const wchar_t* file, unsigned int line, uintptr_t pReserved )
+void AppInvalidParameterHandler(const wchar_t* expression,
+                                const wchar_t* function,
+                                const wchar_t* file,
+                                unsigned int line,
+                                uintptr_t pReserved )
 {
     fprintf(stderr, "Invalid parameter detected in function %s. File: %s Line: %d\n", function, file, line);
     fprintf(stderr, "Expression: %s\n", expression);
@@ -96,25 +100,19 @@ extern EVALUATION_STATE* es;
 double astronomy_evaluate(double* parameters)
 {
     int retval;
-    /**
-     *  Reset the evaluation state
-     */
+
     set_astronomy_parameters(ap, parameters);
     reset_evaluation_state(es);
-    /********
-        *   CALCULATE THE INTEGRALS
-     ********/
+
     retval = calculate_integrals(ap, es, sp);
     if (retval)
     {
         fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
         boinc_finish(retval);
     }
-//  printf("calculated integrals: %lf, %lf\n", es->background_integral, es->stream_integrals[0]);
 
-    /********
-        *   CALCULATE THE LIKELIHOOD
-     ********/
+    MW_DEBUG("calculated integrals: %lf, %lf\n", es->background_integral, es->stream_integrals[0]);
+
     retval = calculate_likelihood(ap, es, sp);
     if (retval)
     {
@@ -173,7 +171,7 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
 
     context = poptGetContext(argv[0],
                              argc,
-                             (const char**) argv,
+                             argv,
                              options,
                              POPT_CONTEXT_POSIXMEHARDER);
 
@@ -185,11 +183,25 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
         exit(EXIT_FAILURE);
     }
 
+    MW_DEBUG("Got arguments: "
+             "boinc_graphics = '%s' "
+             "search_parameter_file = '%s' "
+             "star_points_file = '%s' "
+             "astronomy_parameter_file = '%s' "
+             "output_file = '%s'\n",
+             boinc_graphics,
+             search_parameter_file,
+             star_points_file,
+             astronomy_parameter_file,
+             output_file);
+
     rest = poptGetArgs(context);
     if (rest)
     {
         paramn = 0;            /* Count number of parameters */
         while (rest[++paramn]);
+
+        MW_DEBUG("%u arguments leftover\n", paramn);
 
         parameters = (double*) malloc(sizeof(double) * paramn);
 
@@ -217,11 +229,11 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
 
 static void cleanup_worker()
 {
-	free(boinc_graphics);
-	free(search_parameter_file);
-	free(star_points_file);
-	free(astronomy_parameter_file);
-	free(output_file);
+//	free(boinc_graphics);
+//	free(search_parameter_file);
+//	free(star_points_file);
+//	free(astronomy_parameter_file);
+//	free(output_file);
     free_state(es);
     free(es);
     free_parameters(ap);
@@ -272,7 +284,6 @@ static void worker(int argc, const char** argv)
     {
         cleanup_worker();
 		boinc_finish(1);
-
     }
 
     initialize_state(ap, sp, es);
@@ -284,8 +295,9 @@ static void worker(int argc, const char** argv)
         fprintf(stderr,
                 "Error reading parameters: number of parameters from the "
                 "command line (%d) does not match the number of parameters "
-                "to be optimized in astronomy_parameters.txt (%d)\n",
+                "to be optimized in %s (%d)\n",
                 number_parameters,
+                astronomy_parameter_file,
                 ap_number_parameters);
 
         cleanup_worker();
@@ -300,16 +312,19 @@ static void worker(int argc, const char** argv)
 #endif
 
 #if COMPUTE_ON_GPU
+    int i;
+    size_t num_integral_block = ap->number_integrals * sizeof(double);
+
     int* r_steps = (int*)malloc(ap->number_integrals * sizeof(int));
     int* mu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
     int* nu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
-    double* r_min = (double*)malloc(ap->number_integrals * sizeof(double));
-    double* mu_min = (double*)malloc(ap->number_integrals * sizeof(double));
-    double* nu_min = (double*)malloc(ap->number_integrals * sizeof(double));
-    double* r_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
-    double* mu_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
-    double* nu_step_size = (double*)malloc(ap->number_integrals * sizeof(double));
-    for (int i = 0; i < ap->number_integrals; ++i)
+    double* r_min = (double*)malloc(num_integral_block);
+    double* mu_min = (double*)malloc(num_integral_block);
+    double* nu_min = (double*)malloc(num_integral_block);
+    double* r_step_size = (double*)malloc(num_integral_block);
+    double* mu_step_size = (double*)malloc(num_integral_block);
+    double* nu_step_size = (double*)malloc(num_integral_block);
+    for (i = 0; i < ap->number_integrals; ++i)
     {
         r_steps[i] = ap->integral[i]->r_steps;
         mu_steps[i] = ap->integral[i]->mu_steps;
@@ -344,8 +359,8 @@ static void worker(int argc, const char** argv)
     fprintf(stderr, "<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
     fprintf(stderr, "<search_application> %s %s </search_application>\n", BOINC_APP_VERSION, PRECISION);
 
-    free(parameters);
-	cleanup_worker();
+//    free(parameters);
+//	cleanup_worker();
 
 #if COMPUTE_ON_GPU
     gpu__free_constants();
@@ -376,7 +391,8 @@ int main(int argc, char** argv)
       retval = boinc_init_graphics_lib(worker, argv[0]);
   #endif /*  defined(_WIN32) || defined(__APPLE__) */
 
-  if (retval) exit(retval);
+  if (retval)
+      exit(retval);
 #endif /* BOINC_APP_GRAPHICS */
 
 #if defined(_WIN32) && COMPUTE_ON_GPU
@@ -407,7 +423,7 @@ int main(int argc, char** argv)
         fprintf(stderr, "Unable to find a capable GPU\n");
         exit(EXIT_FAILURE);
     }
-    printf("got here\n");
+    MW_DEBUG("got here\n");
     parse_prefs(project_prefs);
 #endif /* COMPUTE_ON_GPU */
 

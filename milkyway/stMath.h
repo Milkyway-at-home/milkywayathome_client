@@ -27,17 +27,17 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 double stCEval(double complex a, double complex b, double complex c, double complex x);
 double stQEval(double a, double b, double c, double d, double complex x);
-int DCubic(double a, double b, double c, double complex* roots, int verb);
-int CnumCubic( double complex a, double complex b, double complex c, double complex* roots, int verb);
-int quartic(double a, double b, double c, double d, double complex u[], int flag[], int verb);
+int DCubic(double a, double b, double c, double complex* roots);
+int CnumCubic( double complex a, double complex b, double complex c, double complex* roots);
+int quartic(double a, double b, double c, double d, double complex u[], int flag[]);
 
-int stRoot3(double a2, double a1, double a0, double* ans, int verb);
-int stRoot4(double a3, double a2, double a1, double a0, double r[], int flag[], int verb);
+int stRoot3(double a2, double a1, double a0, double* ans);
+int stRoot4(double a3, double a2, double a1, double a0, double r[], int flag[]);
 
-double sum(double array[], int size);
-int min(double array[], int flag[], int size, int numgood);
+double sum(double array[], size_t size);
+size_t min(double array[], int flag[], size_t size, unsigned int numgood);
 
-double fact(int d);
+double fact(unsigned int d);
 void Makepoints();
 
 #endif /* STMATH_H */

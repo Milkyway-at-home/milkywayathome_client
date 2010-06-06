@@ -20,9 +20,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
-#ifndef ASTRONOMY_EVALUATION_STATE_H
-#define ASTRONOMY_EVALUATION_STATE_H
+#ifndef _EVALUATION_STATE_H_
+#define _EVALUATION_STATE_H_
 
+#include <stdio.h>
 #include "parameters.h"
 #include "star_points.h"
 
@@ -41,33 +42,31 @@ typedef struct integral_area
 
 typedef struct evaluation_state
 {
-    /********
-        *   State for integral calculation.
-     ********/
+    /* State for integral calculation. */
+
     INTEGRAL_AREA** integral;
     int current_integral, number_streams, number_integrals;
 
     double background_integral;
     double* stream_integrals;
 
-    /********
-        *   State for likelihood calculation.
-     ********/
+    /* State for likelihood calculation. */
     int current_star_point, total_stars;
     int num_zero;
     int bad_jacobians;
     double prob_sum;
 } EVALUATION_STATE;
 
-void    get_steps(INTEGRAL_AREA* ia, int* mu_step_current, int* nu_step_current, int* r_step_current);
+void get_steps(INTEGRAL_AREA* ia, int* mu_step_current, int* nu_step_current, int* r_step_current);
 
-void    initialize_state(ASTRONOMY_PARAMETERS* ap, STAR_POINTS* sp, EVALUATION_STATE* es);
-void    free_state(EVALUATION_STATE* es);
-void    reset_evaluation_state(EVALUATION_STATE* es);
+void initialize_state(ASTRONOMY_PARAMETERS* ap, STAR_POINTS* sp, EVALUATION_STATE* es);
+void free_state(EVALUATION_STATE* es);
+void reset_evaluation_state(EVALUATION_STATE* es);
 
-void    fwrite_integral_area(FILE* file, INTEGRAL_AREA* ia);
+void fwrite_integral_area(FILE* file, INTEGRAL_AREA* ia);
 
 int write_checkpoint(EVALUATION_STATE* es);
 int read_checkpoint(EVALUATION_STATE* es);
 
-#endif
+#endif /* _EVALUATION_STATE_H_ */
+

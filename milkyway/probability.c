@@ -143,7 +143,7 @@ double stPsgFunction(const double* coordpar, const double* spars, int wedge, int
     double xyz[3], lbr[3], a[3], c[3];
     double mu, r, theta, phi, sigma;
     double dotted, xyz_norm, prob;
-    double ra, dec, lamda, beta, l, b; //vickej2
+    double ra, dec, lamda, beta, l, b;
 
     mu = spars[0];
     r = spars[1];
@@ -159,15 +159,14 @@ double stPsgFunction(const double* coordpar, const double* spars, int wedge, int
     }
     else if (sgr_coordinates == 1)
     {
-        gcToSgr(mu, 0, wedge, &lamda, &beta); //vickej2
-        sgrToGal(lamda, beta, &l, &b); //vickej2
-        //vickej2 <<<make sure the conversion is correct (check with conversiontester.vb)>>>
-        //printf(" wedge=%i, mui=%f, nui=0, lamda=%f, beta=%f, l=%f, b=%f", wedge, mu, lamda, beta, l, b);  //vickej2
-        //vickej2 <<<end>>>
+        gcToSgr(mu, 0, wedge, &lamda, &beta);
+        sgrToGal(lamda, beta, &l, &b);
+        // <<<make sure the conversion is correct (check with conversiontester.vb)>>>
+        MW_DEBUG(" wedge=%i, mui=%f, nui=0, lamda=%f, beta=%f, l=%f, b=%f", wedge, mu, lamda, beta, l, b);
     }
     else
     {
-        printf("Error: sgr_coordinates not valid");
+        fprintf(stderr, "Error: sgr_coordinates not valid");
     }
 
     lbr[0] = l;
@@ -194,10 +193,10 @@ double stPsgFunction(const double* coordpar, const double* spars, int wedge, int
 
     xyz_norm = norm(xyz);
 
-//  fprintf(stderr, "dotted: %lf, xyz_norm: %lf, sigma: %lf\n", dotted, xyz_norm, sigma);
+    MW_DEBUG("dotted: %lf, xyz_norm: %lf, sigma: %lf\n", dotted, xyz_norm, sigma);
     prob = exp( -(xyz_norm * xyz_norm) / 2 / (sigma * sigma) );
 
-//  fprintf(stderr, "prob before ref: %lf\n", prob);
+    MW_DEBUG("prob before ref: %lf\n", prob);
     return prob;
 }
 
@@ -210,8 +209,10 @@ double stPbxConvolved(const double* coordpar, const double* bpars, int wedge, in
     gPrime = r2mag(rPrime * 1000);
     rPrime3 = rPrime * rPrime * rPrime;
 
-    for (i = 0; i < 3; i++) coordparConvolved[i] = coordpar[i];
-    for (i = 0; i < 4; i++) bparsConvolved[i] = bpars[i];
+    for (i = 0; i < 3; i++)
+        coordparConvolved[i] = coordpar[i];
+    for (i = 0; i < 4; i++)
+        bparsConvolved[i] = bpars[i];
 
     pbx = qgaus(backgroundConvolve, gPrime, xr, wedge, numpoints);
     pbx *= 1 / rPrime3;
@@ -243,8 +244,11 @@ double stPsgConvolved(const double* coordpar, const double* spars, int wedge, in
     gPrime = r2mag(rPrime * 1000);
     rPrime3 =  rPrime * rPrime * rPrime;
 
-    for (i = 0; i < 3; i++) coordparConvolved[i] = coordpar[i];
-    for (i = 0; i < 5; i++) sparsConvolved[i] = spars[i];
+    for (i = 0; i < 3; i++)
+        coordparConvolved[i] = coordpar[i];
+
+    for (i = 0; i < 5; i++)
+        sparsConvolved[i] = spars[i];
 
     psg = qgaus_stream(streamConvolve, gPrime, xr, wedge, numpoints, sgr_coordinates);
     psg *= 1 / rPrime3;
@@ -384,14 +388,17 @@ int prob_ok(int n, double* p)
         }
         break;
     default:
-        printf("ERROR:  Too many streams to separate using current code; please update the switch statement in probability.c->prob_ok to handle %d streams", n);
-        exit(0);
+        fprintf(stderr,
+                "ERROR:  Too many streams to separate using current code; "
+                "please update the switch statement in probability.c->prob_ok to handle %d streams", n);
+        exit(EXIT_SUCCESS);
     }
     return ok;
 }
 
-/*Initialize seed for prob_ok*/
+/* Initialize seed for prob_ok */
 void prob_ok_init()
 {
     srand48(time(NULL));
 }
+

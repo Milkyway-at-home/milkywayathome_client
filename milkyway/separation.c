@@ -129,6 +129,7 @@ void separation(const char* filename, double background_integral, double* stream
     {
         denom += exp(ap->stream_weights[j]);
     }
+
     for (j = 0; j < ap->number_streams; j++)
     {
         epsilon_s[j] = exp(ap->stream_weights[j]) / denom;
@@ -146,24 +147,24 @@ void separation(const char* filename, double background_integral, double* stream
 
     for (i = 0; i < sp->number_stars; i++)
     {
-//      printf("[%d/%d] setting star coords\n", i, sp->number_stars);
+        MW_DEBUG("[%d/%d] setting star coords\n", i, sp->number_stars);
         star_coords[0] = sp->stars[i][0];
         star_coords[1] = sp->stars[i][1];
         star_coords[2] = sp->stars[i][2];
-//      printf("star_coords: %g %g %g\n", star_coords[0], star_coords[1], star_coords[2]);
+        MW_DEBUG("star_coords: %g %g %g\n", star_coords[0], star_coords[1], star_coords[2]);
 
-//      printf("twoPanel: %d\n", twoPanel);
+        MW_DEBUG("twoPanel: %d\n", twoPanel);
 
         if (twoPanel == 1)
         {
-//          printf("setting probability constants\n");
+            MW_DEBUG("setting probability constants\n");
             set_probability_constants(ap->convolve, star_coords[2], r_point, qw_r3_N, &reff_xr_rp3);
-//          printf("calculating probabilities\n");
+            MW_DEBUG("calculating probabilities\n");
             calculate_probabilities(r_point, qw_r3_N, reff_xr_rp3, star_coords, ap, &prob_b, prob_s);
-//          printf("calculated probabilities\n");
+            MW_DEBUG("calculated probabilities\n");
 
-//          printf("prob_s: %lf\n", prob_s[0]);
-//          printf("prob_b: %lf\n", prob_b);
+            MW_DEBUG("prob_s: %lf\n", prob_s[0]);
+            MW_DEBU("prob_b: %lf\n", prob_b);
 
             pbx = epsilon_b * prob_b / background_integral;
 
@@ -172,26 +173,28 @@ void separation(const char* filename, double background_integral, double* stream
                 psg[j] = epsilon_s[j] * prob_s[j] / stream_integrals[j];
             }
 
-//          printf("pbx: %g\n", pbx);
-//          printf("psg: %g\n", psg[0]);
+            MW_DEBUG("pbx: %g\n", pbx);
+            MW_DEBUG("psg: %g\n", psg[0]);
 
             double psgSum = 0;
             for (j = 0; j < ap->number_streams; j++)
             {
                 psgSum += psg[j];
             }
+
             for (j = 0; j < ap->number_streams; j++)
             {
                 sprob[j] = psg[j] / (psgSum + pbx);
             }
 
-//          printf("sprob: %g\n", sprob[0]);
+            MW_DEBUG("sprob: %g\n", sprob[0]);
 
             for (j = 0; j < ap->number_streams; j++)
             {
                 nstars[j] += sprob[j];
             }
-//          printf("nstars: %g\n", nstars[0]);
+
+            MW_DEBUG("nstars: %g\n", nstars[0]);
         }
         else
         {
@@ -212,7 +215,7 @@ void separation(const char* filename, double background_integral, double* stream
         //  }
         //}
 
-//      printf("s_ok: %d\n", s_ok);
+        MW_DEBUG("s_ok: %d\n", s_ok);
 
         if (s_ok >= 1)
         {
@@ -228,7 +231,8 @@ void separation(const char* filename, double background_integral, double* stream
 
         total += 1;
 
-        if ( (total % 10000) == 0 ) printf("%d\n", total);
+        if ( (total % 10000) == 0 )
+            printf("%d\n", total);
     }
 
     printf("%d total stars\n", total);
@@ -283,13 +287,23 @@ int main(int number_arguments, char** arguments)
     likelihood_parameter_length = 1 + ap->number_streams;
     likelihood_results_length = 2;
     printf("number_parameters: %d\n", number_parameters);
-    printf("integral_parameter_length: %d, integral_results_length: %d\n", integral_parameter_length, integral_results_length);
-    printf("likelihood_parameter_length: %d, likelihood_results_length: %d\n", likelihood_parameter_length, likelihood_results_length);
+    printf("integral_parameter_length: %d, integral_results_length: %d\n",
+           integral_parameter_length,
+           integral_results_length);
+    printf("likelihood_parameter_length: %d, likelihood_results_length: %d\n",
+           likelihood_parameter_length,
+           likelihood_results_length);
 
     printf("init integral...\n");
-    evaluator__init_integral(integral_f, integral_parameter_length, integral_compose, integral_results_length);
+    evaluator__init_integral(integral_f,
+                             integral_parameter_length,
+                             integral_compose,
+                             integral_results_length);
     printf("init likelihood...\n");
-    evaluator__init_likelihood(likelihood_f, likelihood_parameter_length, likelihood_compose, likelihood_results_length);
+    evaluator__init_likelihood(likelihood_f,
+                               likelihood_parameter_length,
+                               likelihood_compose,
+                               likelihood_results_length);
 
     printf("starting...\n");
     mpi_evaluator__start();

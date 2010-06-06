@@ -20,6 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "milkyway.h"
+#include "milkyway_priv.h"
 #include "parameters.h"
 #include "../util/io_util.h"
 
@@ -53,9 +54,7 @@ void free_parameters(ASTRONOMY_PARAMETERS* ap)
     free(ap->stream_optimize);
 
     for (i = 0; i < ap->number_integrals; i++)
-    {
         free(ap->integral[i]);
-    }
     free(ap->integral);
 }
 
@@ -107,7 +106,8 @@ int write_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS* ap)
 
 void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
 {
-    int i, retval;
+    int i, retval, num_streams, bg_max;
+    size_t streams_block_size;
 
     retval = fscanf(file, "parameters_version: %lf\n", &ap->parameters_version);
     if (retval < 1)
@@ -126,18 +126,20 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
     fread_double_array(file, "background_max", &ap->background_max);
     fread_int_array(file, "optimize_parameter", &ap->background_optimize);
 
-    fscanf(file, "number_streams: %d, %d\n", &ap->number_streams, &ap->number_stream_parameters);
-    ap->stream_weights              = (double*)malloc(sizeof(double) * ap->number_streams);
-    ap->stream_weight_step              = (double*)malloc(sizeof(double) * ap->number_streams);
-    ap->stream_weight_min               = (double*)malloc(sizeof(double) * ap->number_streams);
-    ap->stream_weight_max               = (double*)malloc(sizeof(double) * ap->number_streams);
-    ap->stream_weight_optimize          =   (int*)malloc(sizeof(int)   * ap->number_streams);
+    streams_block_size = ap->number_streams * sizeof(double);
 
-    ap->stream_parameters               = (double**)malloc(sizeof(double*) * ap->number_streams);
-    ap->stream_step                 = (double**)malloc(sizeof(double*) * ap->number_streams);
-    ap->stream_min                  = (double**)malloc(sizeof(double*) * ap->number_streams);
-    ap->stream_max                  = (double**)malloc(sizeof(double*) * ap->number_streams);
-    ap->stream_optimize             =   (int**)malloc(sizeof(int*)   * ap->number_streams);
+    fscanf(file, "number_streams: %d, %d\n", &ap->number_streams, &ap->number_stream_parameters);
+    ap->stream_weights         = (double*)malloc(streams_block_size);
+    ap->stream_weight_step     = (double*)malloc(streams_block_size);
+    ap->stream_weight_min      = (double*)malloc(streams_block_size);
+    ap->stream_weight_max      = (double*)malloc(streams_block_size);
+    ap->stream_weight_optimize = (int*)malloc(sizeof(int) * ap->number_streams);
+
+    ap->stream_parameters = (double**)malloc(streams_block_size);
+    ap->stream_step       = (double**)malloc(streams_block_size);
+    ap->stream_min        = (double**)malloc(streams_block_size);
+    ap->stream_max        = (double**)malloc(streams_block_size);
+    ap->stream_optimize   = (int**)malloc(sizeof(int*) * ap->number_streams);
 
     for (i = 0; i < ap->number_streams; i++)
     {
@@ -158,16 +160,31 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
     fscanf(file, "sgr_coordinates: %d\n", &ap->sgr_coordinates);
     if (ap->parameters_version > 0.01)
     {
-        fscanf(file, "aux_bg_profile: %d\n", &ap->aux_bg_profile); //vickej2_bg
+        fscanf(file, "aux_bg_profile: %d\n", &ap->aux_bg_profile);
     }
     fscanf(file, "wedge: %d\n", &ap->wedge);
 
     ap->integral = (INTEGRAL**)malloc(sizeof(INTEGRAL*));
     ap->integral[0] = (INTEGRAL*)malloc(sizeof(INTEGRAL));
 
-    fscanf(file, "r[min,max,steps]: %lf, %lf, %d\n", &ap->integral[0]->r_min, &ap->integral[0]->r_max, &ap->integral[0]->r_steps);
-    fscanf(file, "mu[min,max,steps]: %lf, %lf, %d\n", &ap->integral[0]->mu_min, &ap->integral[0]->mu_max, &ap->integral[0]->mu_steps);
-    fscanf(file, "nu[min,max,steps]: %lf, %lf, %d\n", &ap->integral[0]->nu_min, &ap->integral[0]->nu_max, &ap->integral[0]->nu_steps);
+    fscanf(file,
+           "r[min,max,steps]: %lf, %lf, %d\n",
+           &ap->integral[0]->r_min,
+           &ap->integral[0]->r_max,
+           &ap->integral[0]->r_steps);
+
+    fscanf(file,
+           "mu[min,max,steps]: %lf, %lf, %d\n",
+           &ap->integral[0]->mu_min,
+           &ap->integral[0]->mu_max,
+           &ap->integral[0]->mu_steps);
+
+    fscanf(file,
+           "nu[min,max,steps]: %lf, %lf, %d\n",
+           &ap->integral[0]->nu_min,
+           &ap->integral[0]->nu_max,
+           &ap->integral[0]->nu_steps);
+
     ap->integral[0]->r_step_size = (ap->integral[0]->r_max - ap->integral[0]->r_min) / (double)ap->integral[0]->r_steps;
     ap->integral[0]->mu_step_size = (ap->integral[0]->mu_max - ap->integral[0]->mu_min) / (double)ap->integral[0]->mu_steps;
     ap->integral[0]->nu_step_size = (ap->integral[0]->nu_max - ap->integral[0]->nu_min) / (double)ap->integral[0]->nu_steps;
@@ -175,6 +192,7 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
     ap->integral[0]->max_calculation = ap->integral[0]->r_steps * ap->integral[0]->mu_steps * ap->integral[0]->nu_steps;
 
     fscanf(file, "number_cuts: %d\n", &ap->number_integrals);
+
     ap->number_integrals++;
     if (ap->number_integrals > 1)
     {
@@ -183,9 +201,27 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
         {
             int temp;
             ap->integral[i] = (INTEGRAL*)malloc(sizeof(INTEGRAL));
-            fscanf(file, "r_cut[min,max,steps][%d]: %lf, %lf, %d\n", &temp, &ap->integral[i]->r_min, &ap->integral[i]->r_max, &ap->integral[i]->r_steps);
-            fscanf(file, "mu_cut[min,max,steps][%d]: %lf, %lf, %d\n", &temp, &ap->integral[i]->mu_min, &ap->integral[i]->mu_max, &ap->integral[i]->mu_steps);
-            fscanf(file, "nu_cut[min,max,steps][%d]: %lf, %lf, %d\n", &temp, &ap->integral[i]->nu_min, &ap->integral[i]->nu_max, &ap->integral[i]->nu_steps);
+            fscanf(file,
+                   "r_cut[min,max,steps][%d]: %lf, %lf, %d\n",
+                   &temp,
+                   &ap->integral[i]->r_min,
+                   &ap->integral[i]->r_max,
+                   &ap->integral[i]->r_steps);
+
+            fscanf(file,
+                   "mu_cut[min,max,steps][%d]: %lf, %lf, %d\n",
+                   &temp,
+                   &ap->integral[i]->mu_min,
+                   &ap->integral[i]->mu_max,
+                   &ap->integral[i]->mu_steps);
+
+            fscanf(file,
+                   "nu_cut[min,max,steps][%d]: %lf, %lf, %d\n",
+                   &temp,
+                   &ap->integral[i]->nu_min,
+                   &ap->integral[i]->nu_max,
+                   &ap->integral[i]->nu_steps);
+
             ap->integral[i]->r_step_size = (ap->integral[i]->r_max - ap->integral[i]->r_min) / (double)ap->integral[i]->r_steps;
             ap->integral[i]->mu_step_size = (ap->integral[i]->mu_max - ap->integral[i]->mu_min) / (double)ap->integral[i]->mu_steps;
             ap->integral[i]->nu_step_size = (ap->integral[i]->nu_max - ap->integral[i]->nu_min) / (double)ap->integral[i]->nu_steps;
@@ -230,16 +266,45 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
     fprintf(file, "aux_bg_profile: %d\n", ap->aux_bg_profile); //vickej2_bg
     fprintf(file, "wedge: %d\n", ap->wedge);
 
-    fprintf(file, "r[min,max,steps]: %lf, %lf, %d\n", ap->integral[0]->r_min, ap->integral[0]->r_max, ap->integral[0]->r_steps);
-    fprintf(file, "mu[min,max,steps]: %lf, %lf, %d\n", ap->integral[0]->mu_min, ap->integral[0]->mu_max, ap->integral[0]->mu_steps);
-    fprintf(file, "nu[min,max,steps]: %lf, %lf, %d\n", ap->integral[0]->nu_min, ap->integral[0]->nu_max, ap->integral[0]->nu_steps);
+    fprintf(file,
+            "r[min,max,steps]: %lf, %lf, %d\n",
+            ap->integral[0]->r_min,
+            ap->integral[0]->r_max,
+            ap->integral[0]->r_steps);
+
+    fprintf(file,
+            "mu[min,max,steps]: %lf, %lf, %d\n",
+            ap->integral[0]->mu_min,
+            ap->integral[0]->mu_max,
+            ap->integral[0]->mu_steps);
+
+    fprintf(file,
+            "nu[min,max,steps]: %lf, %lf, %d\n",
+            ap->integral[0]->nu_min,
+            ap->integral[0]->nu_max,
+            ap->integral[0]->nu_steps);
 
     fprintf(file, "number_cuts: %d\n", ap->number_integrals - 1);
+
     for (i = 1; i < ap->number_integrals; i++)
     {
-        fprintf(file, "r_cut[min,max,steps][3]: %lf, %lf, %d\n", ap->integral[i]->r_min, ap->integral[i]->r_max, ap->integral[i]->r_steps);
-        fprintf(file, "mu_cut[min,max,steps][3]: %lf, %lf, %d\n", ap->integral[i]->mu_min, ap->integral[i]->mu_max, ap->integral[i]->mu_steps);
-        fprintf(file, "nu_cut[min,max,steps][3]: %lf, %lf, %d\n", ap->integral[i]->nu_min, ap->integral[i]->nu_max, ap->integral[i]->nu_steps);
+        fprintf(file,
+                "r_cut[min,max,steps][3]: %lf, %lf, %d\n",
+                ap->integral[i]->r_min,
+                ap->integral[i]->r_max,
+                ap->integral[i]->r_steps);
+
+        fprintf(file,
+                "mu_cut[min,max,steps][3]: %lf, %lf, %d\n",
+                ap->integral[i]->mu_min,
+                ap->integral[i]->mu_max,
+                ap->integral[i]->mu_steps);
+
+        fprintf(file,
+                "nu_cut[min,max,steps][3]: %lf, %lf, %d\n",
+                ap->integral[i]->nu_min,
+                ap->integral[i]->nu_max,
+                ap->integral[i]->nu_steps);
     }
 }
 
@@ -247,26 +312,35 @@ int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap)
 {
     int i, j, count;
     count = 0;
+
     for (i = 0; i < ap->number_background_parameters; i++)
     {
-        if (ap->background_optimize[i]) count++;
+        if (ap->background_optimize[i])
+            ++count;
     }
+
     for (i = 0; i < ap->number_streams; i++)
     {
-        if (ap->stream_weight_optimize[i]) count++;
+        if (ap->stream_weight_optimize[i])
+            ++count;
+
         for (j = 0; j < ap->number_stream_parameters; j++)
         {
-            if (ap->stream_optimize[i][j]) count++;
+            if (ap->stream_optimize[i][j])
+                ++count;
         }
     }
+
+    MW_DEBUG("Got optimized parameter count = %d\n", count);
+
     return count;
 }
 
 void set_astronomy_parameters(ASTRONOMY_PARAMETERS* ap, double* parameters)
 {
     int i, j;
-    int current;
-    current = 0;
+    int current = 0;
+
     for (i = 0; i < ap->number_background_parameters; i++)
     {
         if (ap->background_optimize[i])
@@ -281,7 +355,7 @@ void set_astronomy_parameters(ASTRONOMY_PARAMETERS* ap, double* parameters)
         if (ap->stream_weight_optimize[i])
         {
             ap->stream_weights[i] = parameters[current];
-            current++;
+            ++current;
         }
 
         for (j = 0; j < ap->number_stream_parameters; j++)
@@ -289,7 +363,7 @@ void set_astronomy_parameters(ASTRONOMY_PARAMETERS* ap, double* parameters)
             if (ap->stream_optimize[i][j])
             {
                 ap->stream_parameters[i][j] = parameters[current];
-                current++;
+                ++current;
             }
         }
     }
@@ -306,7 +380,7 @@ void get_search_parameters(ASTRONOMY_PARAMETERS* ap, double** result)
         if (ap->background_optimize[i])
         {
             (*result)[current] = ap->background_parameters[i];
-            current++;
+            ++current;
         }
     }
 
@@ -440,10 +514,17 @@ void split_astronomy_parameters(ASTRONOMY_PARAMETERS* ap, int rank, int max_rank
     for (i = 0; i < ap->number_integrals; i++)
     {
         total_calculations = ap->integral[i]->r_steps * ap->integral[i]->nu_steps * ap->integral[i]->mu_steps;
+
         ap->integral[i]->min_calculation = (long) (total_calculations * ((double)rank / (double)max_rank));
         ap->integral[i]->max_calculation = (long) (total_calculations * ((double)(rank + 1) / (double)max_rank));
 
-        printf("[worker: %d] [integral: %d] min_calculation: %ld / max_calculation: %ld, total_calculations: %ld\n", rank, i, ap->integral[i]->min_calculation, ap->integral[i]->max_calculation, total_calculations);
+        printf("[worker: %d] [integral: %d] min_calculation: %ld "
+               "/ max_calculation: %ld, total_calculations: %ld\n",
+               rank,
+               i,
+               ap->integral[i]->min_calculation,
+               ap->integral[i]->max_calculation,
+               total_calculations);
     }
 }
 

@@ -19,12 +19,9 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef FGDO_MPI_WORKER_ASTRONOMY_H
-#define FGDO_MPI_WORKER_ASTRONOMY_H
+#ifndef _ASTRONOMY_WORKER_H_
+#define _ASTRONOMY_WORKER_H_
 
-/********
-    *   Includes for astronomy
- ********/
 #include "parameters.h"
 #include "star_points.h"
 #include "evaluation_optimized.h"
@@ -32,17 +29,24 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern char astronomy_parameters_file[1024];
 extern char star_points_file[1024];
 
-extern ASTRONOMY_PARAMETERS* ap;
-extern STAR_POINTS* sp;
-extern EVALUATION_STATE* es;
+void integral_f(double* parameters,
+                double* results,
+                ASTRONOMY_PARAMETERS* ap,
+                EVALUATION_STATE* es,
+                STAR_POINTS* sp);
 
-void read_data(int rank, int max_rank);
+void integral_compose(double* integral_results,
+                      int num_results,
+                      double* results,
+                      ASTRONOMY_PARAMETERS* ap);
 
-void integral_f(double* parameters, double* results);
-void integral_compose(double* integral_results, int num_results, double* results);
+void likelihood_f(double* integrals,
+                  double* results,
+                  ASTRONOMY_PARAMETERS* ap,
+                  EVALUATION_STATE* es,
+                  STAR_POINTS* sp);
 
-void likelihood_f(double* integrals, double* results);
-double likelihood_compose(double* results, int num_results);
+double likelihood_compose(double* results, size_t num_results);
 
-#endif
+#endif /* _ASTRONOMY_WORKER_H_ */
 
