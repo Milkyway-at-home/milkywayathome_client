@@ -29,41 +29,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 char astronomy_parameters_file[1024];
 char star_points_file[1024];
-
-ASTRONOMY_PARAMETERS* ap;
-STAR_POINTS* sp;
-EVALUATION_STATE* es;
 int total_number_stars;
 
-void read_data(int rank, int max_rank)
-{
-    int retval;
 
-    ap = (ASTRONOMY_PARAMETERS*)malloc(sizeof(ASTRONOMY_PARAMETERS));
-    retval = read_astronomy_parameters(astronomy_parameters_file, ap);
-    if (retval)
-    {
-        fprintf(stderr, "APP: error reading astronomy parameters: %d\n", retval);
-        exit(EXIT_FAILURE);
-    }
-
-    split_astronomy_parameters(ap, rank, max_rank);
-
-    sp = (STAR_POINTS*)malloc(sizeof(STAR_POINTS));
-    retval = read_star_points(star_points_file, sp);
-    if (retval)
-    {
-        fprintf(stderr, "APP: error reading star points: %d\n", retval);
-        exit(EXIT_FAILURE);
-    }
-    total_number_stars = sp->number_stars;
-    split_star_points(sp, rank, max_rank);
-
-    es = (EVALUATION_STATE*)malloc(sizeof(EVALUATION_STATE));
-    initialize_state(ap, sp, es);
-}
-
-void integral_f(double* parameters, double* results)
+void integral_f(double* parameters,
+                double* results,
+                ASTRONOMY_PARAMETERS* ap,
+                EVALUATION_STATE* es,
+                STAR_POINTS* sp)
 {
     int i, retval;
 
@@ -91,7 +64,10 @@ void integral_f(double* parameters, double* results)
     #endif /* DEBUG */
 }
 
-void integral_compose(double* integral_results, int num_results, double* results)
+void integral_compose(double* integral_results,
+                      int num_results,
+                      double* results,
+                      ASTRONOMY_PARAMETERS* ap)
 {
     int i, j, current;
     results[0] = 0.0;
@@ -122,7 +98,11 @@ void integral_compose(double* integral_results, int num_results, double* results
     #endif /* DEBUG */
 }
 
-void likelihood_f(double* integrals, double* results)
+void likelihood_f(double* integrals,
+                  double* results,
+                  ASTRONOMY_PARAMETERS* ap,
+                  EVALUATION_STATE* es,
+                  STAR_POINTS* sp)
 {
     int i, retval;
 

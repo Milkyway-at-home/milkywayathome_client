@@ -92,12 +92,12 @@ void AppInvalidParameterHandler(const wchar_t* expression,
 }
 #endif /* _WIN32 */
 
-extern ASTRONOMY_PARAMETERS* ap;
-extern STAR_POINTS* sp;
-extern EVALUATION_STATE* es;
 
 #if COMPUTE_ON_CPU
-double astronomy_evaluate(double* parameters)
+double astronomy_evaluate(double* parameters,
+                          ASTRONOMY_PARAMETERS* ap,
+                          EVALUATION_STATE* es,
+                          STAR_POINTS* sp)
 {
     int retval;
 
@@ -128,7 +128,8 @@ double astronomy_evaluate(double* parameters)
 static double* parse_parameters(int argc, const char** argv, int* paramnOut)
 {
     poptContext context;
-    int i, o, paramn;
+    int o;
+    unsigned int i, paramn = 0;
     double* parameters = NULL;
     static const char** rest;
 
@@ -180,7 +181,7 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
     if ( o < -1 )
     {
         poptPrintHelp(context, stderr, 0);
-        exit(EXIT_FAILURE);
+        boinc_finish(EXIT_FAILURE);
     }
 
     MW_DEBUG("Got arguments: "
@@ -198,8 +199,8 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
     rest = poptGetArgs(context);
     if (rest)
     {
-        paramn = 0;            /* Count number of parameters */
-        while (rest[++paramn]);
+        while (rest[++paramn]);  /* Count number of parameters */
+
 
         MW_DEBUG("%u arguments leftover\n", paramn);
 
@@ -216,7 +217,7 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
                 poptPrintHelp(context, stderr, 0);
                 free(parameters);
                 poptFreeContext(context);
-                exit(EXIT_FAILURE);
+                boinc_finish(EXIT_FAILURE);
             }
         }
     }
@@ -229,17 +230,11 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
 
 static void cleanup_worker()
 {
-//	free(boinc_graphics);
-//	free(search_parameter_file);
-//	free(star_points_file);
-//	free(astronomy_parameter_file);
-//	free(output_file);
-    free_state(es);
-    free(es);
-    free_parameters(ap);
-    free(ap);
-    free_star_points(sp);
-    free(sp);
+	free(boinc_graphics);
+	free(search_parameter_file);
+	free(star_points_file);
+	free(astronomy_parameter_file);
+	free(output_file);
 }
 
 static void worker(int argc, const char** argv)
@@ -247,6 +242,9 @@ static void worker(int argc, const char** argv)
     double* parameters;
     int ret1, ret2;
     int number_parameters, ap_number_parameters;
+    ASTRONOMY_PARAMETERS ap = { 0 };
+    STAR_POINTS sp = { 0 };
+    EVALUATION_STATE es = { 0 };
 
     parameters = parse_parameters(argc, argv, &number_parameters);
 
@@ -254,15 +252,12 @@ static void worker(int argc, const char** argv)
     {
         fprintf(stderr, "Could not parse parameters from the command line\n");
         boinc_finish(1);
-        return;
     }
 
-    ap = (ASTRONOMY_PARAMETERS*) malloc(sizeof(ASTRONOMY_PARAMETERS));
-    sp = (STAR_POINTS*) malloc(sizeof(STAR_POINTS));
-    es = (EVALUATION_STATE*) malloc(sizeof(EVALUATION_STATE));
+    ret1 = read_astronomy_parameters(astronomy_parameter_file, &ap);
+    ret2 = read_star_points(star_points_file, &sp);
 
-    ret1 = read_astronomy_parameters(astronomy_parameter_file, ap);
-    ret2 = read_star_points(star_points_file, sp);
+    MW_DEBUG("ap.number_stream_parameters = %d\n", ap.number_stream_parameters);
 
     if (ret1)
     {
@@ -282,13 +277,14 @@ static void worker(int argc, const char** argv)
 
     if (ret1 | ret2)
     {
+        free(parameters);
         cleanup_worker();
 		boinc_finish(1);
     }
 
-    initialize_state(ap, sp, es);
+    initialize_state(&ap, &sp, &es);
 
-    ap_number_parameters = get_optimized_parameter_count(ap);
+    ap_number_parameters = get_optimized_parameter_count(&ap);
 
     if (number_parameters < 1 || number_parameters != ap_number_parameters)
     {
@@ -300,12 +296,13 @@ static void worker(int argc, const char** argv)
                 astronomy_parameter_file,
                 ap_number_parameters);
 
+        free(parameters);
         cleanup_worker();
         boinc_finish(1);
         return;
     }
 
-    set_astronomy_parameters(ap, parameters);
+    set_astronomy_parameters(&ap, parameters);
 
 #if COMPUTE_ON_CPU
     init_simple_evaluator(astronomy_evaluate);
@@ -313,30 +310,30 @@ static void worker(int argc, const char** argv)
 
 #if COMPUTE_ON_GPU
     int i;
-    size_t num_integral_block = ap->number_integrals * sizeof(double);
+    size_t num_integral_block = ap.number_integrals * sizeof(double);
 
-    int* r_steps = (int*)malloc(ap->number_integrals * sizeof(int));
-    int* mu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
-    int* nu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
+    int* r_steps = (int*)malloc(ap.number_integrals * sizeof(int));
+    int* mu_steps = (int*)malloc(ap.number_integrals * sizeof(int));
+    int* nu_steps = (int*)malloc(ap.number_integrals * sizeof(int));
     double* r_min = (double*)malloc(num_integral_block);
     double* mu_min = (double*)malloc(num_integral_block);
     double* nu_min = (double*)malloc(num_integral_block);
     double* r_step_size = (double*)malloc(num_integral_block);
     double* mu_step_size = (double*)malloc(num_integral_block);
     double* nu_step_size = (double*)malloc(num_integral_block);
-    for (i = 0; i < ap->number_integrals; ++i)
+    for (i = 0; i < ap.number_integrals; ++i)
     {
-        r_steps[i] = ap->integral[i]->r_steps;
-        mu_steps[i] = ap->integral[i]->mu_steps;
-        nu_steps[i] = ap->integral[i]->nu_steps;
-        r_min[i] = ap->integral[i]->r_min;
-        mu_min[i] = ap->integral[i]->mu_min;
-        nu_min[i] = ap->integral[i]->nu_min;
-        r_step_size[i] = ap->integral[i]->r_step_size;
-        mu_step_size[i] = ap->integral[i]->mu_step_size;
-        nu_step_size[i] = ap->integral[i]->nu_step_size;
+        r_steps[i] = ap.integral[i]->r_steps;
+        mu_steps[i] = ap.integral[i]->mu_steps;
+        nu_steps[i] = ap.integral[i]->nu_steps;
+        r_min[i] = ap.integral[i]->r_min;
+        mu_min[i] = ap.integral[i]->mu_min;
+        nu_min[i] = ap.integral[i]->nu_min;
+        r_step_size[i] = ap.integral[i]->r_step_size;
+        mu_step_size[i] = ap.integral[i]->mu_step_size;
+        nu_step_size[i] = ap.integral[i]->nu_step_size;
     }
-    init_constants(ap);
+    init_constants(&ap);
     gpu__initialize();
 
     init_simple_evaluator(gpu__likelihood);
@@ -345,21 +342,21 @@ static void worker(int argc, const char** argv)
 
 #if USE_OCL
     printf("Using OpenCL CodePath\n");
-    init_constants(ap);
-    ocl_mem_t* ocl_mem = setup_ocl(ap, sp);
+    init_constants(&ap);
+    ocl_mem_t* ocl_mem = setup_ocl(&ap, &sp);
     double likelihood = ocl_likelihood(parameters,
-                                       ap,
-                                       sp,
+                                       &ap,
+                                       &sp,
                                        ocl_mem);
     destruct_ocl(ocl_mem);
 #else
-    double likelihood = evaluate(parameters) - 3.0;
+    double likelihood = evaluate(parameters, &ap, &es, &sp) - 3.0;
 #endif /* USE_OCL */
 
     fprintf(stderr, "<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
     fprintf(stderr, "<search_application> %s %s </search_application>\n", BOINC_APP_VERSION, PRECISION);
 
-//    free(parameters);
+    free(parameters);
 //	cleanup_worker();
 
 #if COMPUTE_ON_GPU
@@ -421,9 +418,9 @@ int main(int argc, char** argv)
     if (choose_gpu(argc, argv) == -1)
     {
         fprintf(stderr, "Unable to find a capable GPU\n");
-        exit(EXIT_FAILURE);
+        boinc_finish(EXIT_FAILURE);
     }
-    MW_DEBUG("got here\n");
+    MW_DEBUGMSG("got here\n");
     parse_prefs(project_prefs);
 #endif /* COMPUTE_ON_GPU */
 

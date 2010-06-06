@@ -106,8 +106,7 @@ int write_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS* ap)
 
 void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
 {
-    int i, retval, num_streams, bg_max;
-    size_t streams_block_size;
+    int i, retval;
 
     retval = fscanf(file, "parameters_version: %lf\n", &ap->parameters_version);
     if (retval < 1)
@@ -126,22 +125,20 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
     fread_double_array(file, "background_max", &ap->background_max);
     fread_int_array(file, "optimize_parameter", &ap->background_optimize);
 
-    streams_block_size = ap->number_streams * sizeof(double);
-
     fscanf(file, "number_streams: %d, %d\n", &ap->number_streams, &ap->number_stream_parameters);
-    ap->stream_weights         = (double*)malloc(streams_block_size);
-    ap->stream_weight_step     = (double*)malloc(streams_block_size);
-    ap->stream_weight_min      = (double*)malloc(streams_block_size);
-    ap->stream_weight_max      = (double*)malloc(streams_block_size);
-    ap->stream_weight_optimize = (int*)malloc(sizeof(int) * ap->number_streams);
+    ap->stream_weights         = (double*)malloc(sizeof(double) * ap->number_streams);
+    ap->stream_weight_step     = (double*)malloc(sizeof(double) * ap->number_streams);
+    ap->stream_weight_min      = (double*)malloc(sizeof(double) * ap->number_streams);
+    ap->stream_weight_max      = (double*)malloc(sizeof(double) * ap->number_streams);
+    ap->stream_weight_optimize = (int*)malloc(sizeof(int)   * ap->number_streams);
 
-    ap->stream_parameters = (double**)malloc(streams_block_size);
-    ap->stream_step       = (double**)malloc(streams_block_size);
-    ap->stream_min        = (double**)malloc(streams_block_size);
-    ap->stream_max        = (double**)malloc(streams_block_size);
-    ap->stream_optimize   = (int**)malloc(sizeof(int*) * ap->number_streams);
+    ap->stream_parameters = (double**)malloc(sizeof(double*) * ap->number_streams);
+    ap->stream_step       = (double**)malloc(sizeof(double*) * ap->number_streams);
+    ap->stream_min        = (double**)malloc(sizeof(double*) * ap->number_streams);
+    ap->stream_max        = (double**)malloc(sizeof(double*) * ap->number_streams);
+    ap->stream_optimize   = (int**)malloc(sizeof(int*)   * ap->number_streams);
 
-    for (i = 0; i < ap->number_streams; i++)
+    for (i = 0; i < ap->number_streams; ++i)
     {
         fscanf(file, "stream_weight: %lf\n", &ap->stream_weights[i]);
         fscanf(file, "stream_weight_step: %lf\n", &ap->stream_weight_step[i]);
@@ -192,7 +189,6 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
     ap->integral[0]->max_calculation = ap->integral[0]->r_steps * ap->integral[0]->mu_steps * ap->integral[0]->nu_steps;
 
     fscanf(file, "number_cuts: %d\n", &ap->number_integrals);
-
     ap->number_integrals++;
     if (ap->number_integrals > 1)
     {
@@ -310,8 +306,7 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
 
 int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap)
 {
-    int i, j, count;
-    count = 0;
+    int i, j, count = 0;
 
     for (i = 0; i < ap->number_background_parameters; i++)
     {
@@ -330,8 +325,6 @@ int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap)
                 ++count;
         }
     }
-
-    MW_DEBUG("Got optimized parameter count = %d\n", count);
 
     return count;
 }

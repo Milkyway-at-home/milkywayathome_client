@@ -156,10 +156,7 @@ void initialize_state(ASTRONOMY_PARAMETERS* ap, STAR_POINTS* sp, EVALUATION_STAT
 
     es->current_integral = 0;
     es->background_integral = 0;
-    es->stream_integrals = (double*)malloc(sizeof(double) * ap->number_streams);
-
-    for (i = 0; i < ap->number_streams; i++)
-        es->stream_integrals[i] = 0;
+    es->stream_integrals = (double*)calloc(ap->number_streams, sizeof(double));
 
     es->number_streams = ap->number_streams;
     es->total_stars = sp->number_stars;
@@ -184,7 +181,7 @@ void reset_evaluation_state(EVALUATION_STATE* es)
 
     es->current_integral = 0;
     es->background_integral = 0;
-    for (i = 0; i < es->number_streams; i++) es->stream_integrals[i] = 0;
+    memset(es->stream_integrals, 0, es->number_streams);
     es->current_star_point = 0;
     es->num_zero = 0;
     es->bad_jacobians = 0;
@@ -201,18 +198,14 @@ void reset_evaluation_state(EVALUATION_STATE* es)
     }
 }
 
-void free_integral_area(INTEGRAL_AREA* ia)
-{
-    free(ia->stream_integrals);
-}
-
 void free_state(EVALUATION_STATE* es)
 {
     int i;
     free(es->stream_integrals);
     for (i = 0; i < es->number_integrals; i++)
     {
-        free_integral_area(es->integral[i]);
+        /* free integral area */
+        free(es->integral[i]->stream_integrals);
     }
     free(es->integral);
 }
@@ -239,7 +232,8 @@ int write_checkpoint(EVALUATION_STATE* es)
     for (i = 0; i < es->number_streams; i++)
     {
         fprintf(file, "%.20lf", es->stream_integrals[i]);
-        if (i != (es->number_streams - 1)) fprintf(file, ", ");
+        if (i != (es->number_streams - 1))
+            fprintf(file, ", ");
     }
     fprintf(file, "\n");
 

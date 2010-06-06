@@ -22,6 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define CHECKPOINT_FILE "astronomy_checkpoint"
 
 #include <math.h>
+#include <time.h>
 
 #include "milkyway.h"
 #include "milkyway_priv.h"

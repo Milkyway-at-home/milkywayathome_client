@@ -19,8 +19,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ASTRONOMY_STAR_POINTS_H
-#define ASTRONOMY_STAR_POINTS_H
+#ifndef _STAR_POINTS_H_
+#define _STAR_POINTS_H_
 
 #include <stdio.h>
 
@@ -34,8 +34,9 @@ int read_star_points(const char* file, STAR_POINTS* sp);
 int fread_star_points(FILE* data_file, STAR_POINTS* sp);
 int write_star_points(const char* file, STAR_POINTS* sp);
 int fwrite_star_points(FILE* data_file, STAR_POINTS* sp);
-void    free_star_points(STAR_POINTS* sp);
+void free_star_points(STAR_POINTS* sp);
 
-void    split_star_points(STAR_POINTS* sp, int rank, int max_rank);
+void split_star_points(STAR_POINTS* sp, int rank, int max_rank);
 
-#endif
+#endif /* _STAR_POINTS_H_ */
+
