@@ -11,16 +11,14 @@ Tests can be run with:
 Default build type is release. To enable debugging
     $ cmake /path/to/source -DCMAKE_BUILD_TYPE=Debug
 
-Different tests can be selected. Options are SMLL_
-
-
-Currently supported options:
+Different tests can be selected. Options are
   COMPUTE_ON_CPU
   COMPUTE_ON_GPU
   MILKYWAY_GPU
-  DOUBLE_PRECISION
   USE_OCL
+  DOUBLE_PRECISION
 
+Note: Right now only the default setting of these is likely to work.
 Currently only tested using COMPUTE_ON_CPU and DOUBLE_PRECISION.
 Enable an option with
     $ cmake path/to/source -DOPTION_NAME=Value

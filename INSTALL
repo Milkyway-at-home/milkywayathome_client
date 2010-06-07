@@ -1,0 +1,301 @@
+
+Windows:
+
+Use MinGW.
+
+1. Install TakeoffGW:
+
+  Random Notes (Don't actually bother reading):
+
+        TakeoffGW is a new project to provide a manageable
+    installation of MinGW/MSYS. The installers mingw has are really
+    old, and don't really work. The site is confusing, and is mostly a
+    collection of old documentation which doesn't work, and some of it
+    tells you that. Their recommended "installation" process is to
+    individually download and extract pieces you need from
+    Sourceforge. It's a hopeless cause.
+
+        I spent several days battling to try to do this. Various
+    sources had scripts to try to get a basic install started. None of
+    them worked for various reasons. In particular, around when I
+    started working on getting this working, they decided to start
+    moving files around, breaking the links in everyone's scripts. I
+    fought for a while to fix them, and to generate a new one. I
+    discovered more and more layers of brokenness, and after wasting
+    several days fighting, I got about 95% of the way to a functioning
+    installation before I discovered TakeoffGW.
+
+        It's mostly a rebranded Cygwin installer with packages build
+    with MinGW/MSYS. The fundamental difference between MinGW/MSYS and
+    Cygwin is that Cygwin provides glibc on Windows, and links against
+    that. MinGW uses the Microsoft C library. The BOINC people say to
+    use it over Cygwin. Cygwin should work however for building it. I
+    have only sort of tried that.  There is a MinGW "cross compiler"
+    in Cygwin (using the msvcrt library), and should be the same but I
+    also have not actually tried this, so these instructions are for
+    what I actually got working.
+
+Actual instructions:
+
+1.1 Start by downloading the TakeoffGW installer from http://sourceforge.net/projects/takeoffgw/
+
+1.2 Run the installer.
+
+        It may recommend installing to a subdirectory of a Cygwin
+    install if you have one. This may work, but I didn't do it so I
+    suggest not doing that. Ideally this would be C:\takeoffgw, since
+    that's what I ended up with, and I think is the default. I don't
+    actually remember much of what happened here. My will to live had
+    already been taken.
+
+1.3 Select the necessary packages. I think this is the complete set of
+things you will need. Be careful, there are several similar sounding
+packages. In particular the multiple gcc and binutils packages.
+
+    Base group:
+	  msys-findutils
+	  msys-grep
+      msys-man
+      msys-gzip
+      msys-sed
+      msys-tar
+
+   Libs group:
+      binutils (make sure it says version 2.20)
+      binutils-devel
+
+    devel group:
+	  gcc (make sure all gcc packages are >= 4.4, otherwise you've found the wrong gcc)
+      gcc-c++
+      gcc-c++-dll
+      gcc-dll
+      popt
+      popt-devel
+      git-mingw
+
+    MingGW Group:
+	  autoconf
+      automake
+
+    MSYS Group:
+	  msys-bash
+      msys-core
+      msys-core-devel
+      msys-make
+      msys-openssh
+      msys-w32api
+      msys-vim
+
+    Text:
+      msys-less
+
+    Utils group:
+      msys-patch
+      msys-diffutils
+
+1.4 If it asks to install unmet dependencies or anything, agree to
+    whatever it wants.
+
+2. Configure TakeoffGW
+
+  2.1 Start the TakeoffGW shell.
+
+  2.2 It is necessary to configure the path to use the right gcc,
+  libraries and tools. Go to the root of your takeoffgw installation
+  (should be C:\takeoffgw, or from within the takeoffgw shell /).
+
+  2.3. Edit /etc/profile
+
+    Somewhere near the bottom add the line:
+
+    export PATH=/usr/local/bin:/mingw/bin:/i686-pc-mingw32/sys-root/mingw/bin:/bin:$PATH
+
+    Alternatively if for some reason that doesn't work, you can do what I did and
+    should always work.
+
+    Create a file somewhere within the takeoffgw
+    installation (e.g. /home/username/.bashrc) and then every time you
+    start the shell, run
+
+    $ source /home/username/.bashrc
+
+    Why you need to source your bashrc here I don't understand. Your
+    home directory seems to have changed from /home/username to your
+    actual Windows user directory the second time I installed it, so
+    I'm not sure what will happen now.
+
+  2.4 Caution: When trying to fix whatever caused any of this to not
+  work, note the following really stupid behaviour of MinGW:
+
+    /usr is the same as /. It's incredibly stupid and doesn't make sense
+    at all. e.g. if you try creating /usr/local/lib/libboinc, this will
+    be C:\takeoffgw\local\lib\libboinc. Note this when setting paths
+    and such.
+
+3. Install the BOINC libraries
+
+  3.1 If you installed subversion/svn from the TakeoffGW installer, you
+      should be able check it out with
+
+       $ svn co http://boinc.berkeley.edu/svn/trunk/boinc
+
+        Get it checked out somehow, and somewhere in your takeoffgw root,
+         preferably /home/username/whatever
+
+  3.2 Patch BOINC
+
+      To get the BOINC libraries to compile, you right now need a
+      patch that I wrote. Get it somehow, and apply it
+
+      $ patch -p1 < /path/to/the.patch
+      (if this fails, try replacing -p1 with -p0. I never get it right)
+
+
+  3.3 Compile the BOINC libraries
+
+      Go to the lib subdirectory of the your boinc source checkout.
+
+      $ cd boinc/lib
+
+      Compile them.
+
+      $ make -f Makefile.mingw
+
+      Assuming there were no errors, install them
+
+      $ make -f Makefile.mingw install
+
+      Now you should have the BOINC libraries installed.
+
+4. Compile the milkyway client
+
+  4.1 If you installed git from
+
+    Checking out from the read-only URL:
+
+    $ git clone git://github.com/arsenm/milkywayathome_client.git
+
+    Or if you have your SSH and github tokens etc. set up,
+
+    $ git clone git@github.com:arsenm/milkywayathome_client.git
+
+  4.2 Use cmake to generate makefiles
+
+      Navigate to the git checkout, and run
+
+      $ cmake . -G "MSYS Makefiles"
+
+  4.3 Compile
+
+     $ make
+
+  Note if you need to change the compiler, and some other settings in
+  cmake, you must delete CMakeCache.txt.
+
+  4.4 The client should now be build with an exe in bin/ and a
+      library in lib/
+
+
+--------------------------------------------------------------------------------
+
+Linux:
+
+1. Install dependencies
+
+   Ubuntu / Debian:
+
+    (Note: apt-get build-dep boinc-app-milkyway for Debian. I'm not sure it's actually helpful anyway)
+
+    # Make sure the necessary build tools are installed
+    $ apt-get build-essential
+    $ apt-get install libpopt-dev cmake autoconf automake libtool git-core subversion diffutils patch
+    $ apt-get build-dep boinc-app-milkyway boinc-client boinc-manager boinc-dev
+
+  Other Distributions: Install equivalent packages.
+
+  Arch: Most/all? dependencies can be installed by installing the
+        boinc package.
+
+     $ pacman -S boinc
+
+2. Checkout BOINC
+
+ $ svn co http://boinc.berkeley.edu/svn/trunk/boinc
+
+3. Build BOINC
+
+  I had a little bit trouble getting this to build, but it's easiest
+  to only compile the libraries which are all we need.
+
+  3.1 Run their silly wrapper script around autools which shouldn't
+  exist:
+
+    cd to the boinc checkout
+
+    $ ./_autosetup
+
+    If this fails complaining about a missing libtoolize, edit
+    _autosetup and remove/comment out the block checking for
+    libtoolize.
+
+  3.2 Run standard autoconf stuff, enabling only the libraries. The
+      enabling debugging is optional, but for this purpose recommended.
+
+    $ ./configure --disable-client --disable-server --enable-debug
+    $ make
+    $ sudo make install
+
+
+4. Compile the milkyway client
+ 4.1 Check it out
+
+   $ git clone git://github.com/arsenm/milkywayathome_client.git
+
+   Or if you have your SSH and github tokens etc. set up,
+
+   $ git clone git@github.com:arsenm/milkywayathome_client.git
+
+  4.2 Use cmake to generate makefiles
+
+      Navigate to the git checkout, and run
+
+      $ cmake .
+
+  4.3 Compile
+
+     $ make
+
+  Note if you need to change the compiler, and some other settings in
+  cmake, you must delete CMakeCache.txt.
+
+  4.4 The client should now be build with an executable in bin/ and a
+      library in lib/
+
+--------------------------------------------------------------------------------
+
+OS X:
+
+1. Install Xcode and the Apple developer tools. This may involve
+joining some sort of cult.
+
+2. Install macports
+
+3. Install dependencies by running:
+
+  $ port install cmake popt git-core autoconf automake
+
+4. Continue from step 3 of the Linux instructions. Note that the Apple
+   gcc is required. If you have a macports gcc installed in your path
+   before it, you will need to specify it manually on the cmake step
+   with one of
+
+     $ cmake . -DCMAKE_C_COMPILER
+
+     or
+
+     $ CC=/usr/bin/gcc cmake .
+
+    If you get this wrong originally, you will need to rm CMakeCache.txt
+
+
+
