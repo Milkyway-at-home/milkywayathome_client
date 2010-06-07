@@ -24,18 +24,18 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <assert.h>
 
-#ifndef DEBUG
+#include "config.h"
 
-/* convenient functions for printing debugging stuffs */
-#define MW_DEBUG(msg, ...) printf("%s():%d: ", __func__, __LINE__);\
-                           printf(msg, __VA_ARGS__);
-#define MW_DEBUGMSG(msg) puts(msg)
+#ifdef MW_ENABLE_DEBUG
+    /* convenient functions for printing debugging stuffs */
+    #define MW_DEBUG(msg, ...) printf("%s():%d: ", __func__, __LINE__);\
+                                 printf(msg, __VA_ARGS__);
+    #define MW_DEBUGMSG(msg) puts(msg)
+
 #else
-
-#define MW_DEBUG(msg, ...) ((void) 0)
-#define MW_DEBUGMSG(msg, ...) ((void) 0)
-
-#endif /* DEBUG */
+    #define MW_DEBUG(msg, ...) ((void) 0)
+    #define MW_DEBUGMSG(msg, ...) ((void) 0)
+#endif
 
 #endif /* _MILKYWAY_PRIV_H_ */
 

@@ -56,12 +56,12 @@ void integral_f(double* parameters,
         results[i+1] = es->stream_integrals[i];
     }
 
-    #if DEBUG
+    #ifdef MW_ENABLE_DEBUG
     MW_DEBUG("background integral: %lf, stream integrals:", results[0]);
     for (i = 0; i < ap->number_streams; i++)
         printf(" %lf", results[i+1]);
     printf("\n");
-    #endif /* DEBUG */
+    #endif /* MW_ENABLE_DEBUG */
 }
 
 void integral_compose(double* integral_results,
@@ -87,7 +87,7 @@ void integral_compose(double* integral_results,
         }
     }
 
-    #if DEBUG
+    #ifdef MW_ENABLE_DEBUG
 
     MW_DEBUG("background integral: %lf, stream integrals:", results[0]);
 
@@ -95,7 +95,7 @@ void integral_compose(double* integral_results,
         printf(" %lf", results[i+1]);
     printf("\n");
 
-    #endif /* DEBUG */
+    #endif /* MW_ENABLE_DEBUG */
 }
 
 void likelihood_f(double* integrals,

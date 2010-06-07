@@ -47,6 +47,9 @@ option(AUX_LARGE_TESTS
 option(AUX_SMALL_TESTS
        "Run small aux tests" OFF)
 
+option(MW_DEBUG_EXCESSIVE
+       "Excessive debugging output" OFF)
+
 
 add_subdirectory(milkyway)
 add_subdirectory(tests EXCLUDE_FROM_ALL)

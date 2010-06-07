@@ -550,7 +550,7 @@ void calculate_integral(ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, EVALUATION_
 int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp)
 {
     int i, j;
-#if DEBUG
+#ifdef MW_ENABLE_DEBUG
   time_t start_time, finish_time;
   time(&start_time);
 #endif
@@ -590,7 +590,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
     fprintf(stderr, " </stream_integrals>\n");
 #endif
 
-    #if DEBUG
+    #ifdef MW_ENABLE_DEBUG
     time(&finish_time);
     MW_DEBUG("integrals calculated in: %lf\n", (double)finish_time - (double)start_time);
     #endif
@@ -609,7 +609,7 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
     double bg_only, bg_only_sum, bg_only_sum_c;
     double st_only, *st_only_sum, *st_only_sum_c;
 
-#if DEBUG
+#ifdef MW_ENABLE_DEBUG
     time_t start_time, finish_time;
     time (&start_time);
 #endif
@@ -733,7 +733,7 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
     free(st_only_sum);
     free(st_only_sum_c);
 
-#if DEBUG
+#ifdef MW_ENABLE_DEBUG
     time(&finish_time);
     MW_DEBUG("likelihood calculated in: %lf\n", (double)finish_time - (double)start_time);
 #endif

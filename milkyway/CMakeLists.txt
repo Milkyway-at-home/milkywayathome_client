@@ -34,6 +34,10 @@ if(NOT CMAKE_BUILD_TYPE)
       FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(MW_ENABLE_DEBUG ON)
+endif()
+
 #if we aren't build from the root of the repo, these need to be set separately
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../cmake_modules)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../bin)
