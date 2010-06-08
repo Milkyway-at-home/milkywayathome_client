@@ -26,7 +26,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "atSurveyGeometry.h"
 #include "stCoords.h"
 #include "stVector.h"
-#include "stMath.h"
 
 static const double r0 = 8.5;
 
@@ -64,164 +63,6 @@ void xyz2lbr(const double* xyz, double* lbr)
     if ( lbr[0] < 0 )
         lbr[0] += 360;
 }
-
-
-/* Transform star coordinates lbr into stream coordinates.  Returns 0 on success
-   or < 0 if an error occurred.
-   Errors: -1 - stRoot4 had an error
-           -2 - after root reduction, none were left
-           -3 - min() returned improper index
-*/
-int lbr2stream(const double* lbr, const double* spars, double* stream)
-{
-    double xyz[3];
-    lbr2xyz( lbr, xyz );
-    return xyz2stream( xyz, spars, stream);
-}
-
-
-/* Same as lbr2stream, but with input coordinates in galactic xyz. */
-int xyz2stream(const double* xyz, const double* spars, double* stream)
-{
-    int i;
-    const double* a;                    /* vectors that define the elliptic stream */
-    const double* b;
-    const double* c;                    /* distance vector to center of stream */
-    double cxyz[3];                     /* coords w/respect to c and sun */
-    double axb[3], e1[3];               /* axb - normal vector of ellipse,
-                                           e1  - normalized version of axb */
-    double a0, a1, a2, a3;              /* quartic coefficients */
-    double B, C, D;                     /* variables for finding alpha */
-    double cost[4], dist[4];            /* used to find the appropriate alpha for our star */
-    int numroots, flag[4];              /* results from root4 */
-    double sint, x, y;                  /* angle & distance of star from ellipse's ring */
-    double tmp;
-    double tol = 0.5;
-
-    c = &spars[0];
-    a = &spars[3];
-    b = &spars[6];
-
-    for (i = 0; i < 3; ++i) cxyz[i] = xyz[i] - c[i];
-
-    /* finding e1 and e2 */
-    crossp(a, b, axb);  /* finds vector normal to plane of ellipse (axb) */
-
-    for (i = 0; i < 3; ++i) e1[i] = axb[i];
-
-    normalize(e1);
-
-    /* x is the projection of the vector to the star */
-    /* onto the normal of the ellipse. This is the "height" from the ellipse. */
-    x = dotp(cxyz, e1);
-
-    /* finding alpha first, find variables to find coeff for quartic */
-    B = b[0] * b[0] + b[1] * b[1] + b[2] * b[2] - a[0] * a[0] - a[1] * a[1] - a[2] * a[2];
-    C =  b[0] * (c[0] - xyz[0]) + b[1] * (c[1] - xyz[1]) + b[2] * (c[2] - xyz[2]);
-    D = -a[0] * (c[0] - xyz[0]) - a[1] * (c[1] - xyz[1]) - a[2] * (c[2] - xyz[2]);
-
-    a3 = 2 * D / B;
-    a2 = (C * C + D * D) / (B * B) - 1;
-    a1 = -2 * D / B;
-    a0 = -D * D / (B * B);
-
-    /* find roots, which are possible values of cos(alpha) */
-    numroots = stRoot4(a3, a2, a1, a0, cost, flag);
-
-    if (numroots <= 0)
-    {
-        tmp = 1;
-        tmp = 0.9999 * tmp + a3;
-        tmp = 0.9999 * tmp + a2;
-        tmp = 0.9999 * tmp - a1;
-        tmp = 0.9999 * tmp + a0;
-
-        numroots = stRoot4( a3, a2, a1, a0, cost, flag);
-
-        return -1;
-    }
-
-    /* with cos(alpha), we find the coordinates of points on the ellipse that coincide
-       there are two for each root, because sin(alpha) = +/- sqrt(1 - cos(alpha)^2) */
-    sint = 0;
-    for (i = 0; i < 4; ++i)
-    {
-        if (flag[i] && (fabs(cost[i]) <= (1 + tol)))
-        {
-            int j;
-            double distv[3], newd;
-
-            /* if cost is close to 1, then sint must be 0 */
-            if (fabs(cost[i]) > 1)
-            {
-                cost[i] = cost[i] > 1 ? 1 : -1;
-                sint = 0;
-            }
-            else
-            {
-                sint = sqrt(1 - cost[i] * cost[i]);
-            }
-
-            for (j = 0; j < 3; ++j)
-                distv[j] = a[j] * cost[i] + b[j] * sint - cxyz[j];
-
-            dist[i] = norm(distv);
-
-            for (j = 0; j < 3; ++j)
-                distv[j] = a[j] * cost[i] - b[j] * sint - cxyz[j];
-
-            newd = norm(distv);
-
-            if (dist[i] > newd)
-            {
-                dist[i] = newd;
-                sint *= -1;
-            }
-
-#ifndef _WIN32
-            if (isnan(dist[i]))
-            {
-                flag[i] = 0;
-                --numroots;
-            }
-#else
-            if (_isnan(dist[i]))
-            {
-                flag[i] = 0;
-                --numroots;
-            }
-#endif
-        }
-        else if (flag[i])
-        {
-            flag[i] = 0;
-            --numroots;
-        }
-    }
-
-    if (numroots == 0)
-    {
-        numroots = stRoot4( a3, a2, a1, a0, cost, flag);
-        return -2;
-    }
-
-    /* we get the min distance */
-    i = min(dist, flag, 4, numroots);
-
-    if (i < 0 || i > 3) return -3;
-
-    /* this equation sets y to be the distance from the star within the plane of the ellipse */
-    tmp = dist[i] * dist[i] - x * x;
-    y = fabs( tmp ) < 0.01 ? 0 : sqrt( tmp );
-
-    /* Set return values */
-    stream[0] = sint;
-    stream[1] = x;
-    stream[2] = y;
-
-    return 0;
-}
-
 
 /* Convert stream coordinates to lbr given the specified stream parameters. */
 void stream2lbr(const double* stream, const double* spars, double* lbr)
@@ -297,7 +138,7 @@ void gc2lb( int wedge, double mu, double nu, double* l, double* b )
     atEqToGal( ra, dec, l, b );
 }
 
-/*Get normal vector of data slice from stripe number*/
+/* Get normal vector of data slice from stripe number */
 void stripe_normal( int wedge, double* xyz )
 {
     double eta, ra, dec, l, b;

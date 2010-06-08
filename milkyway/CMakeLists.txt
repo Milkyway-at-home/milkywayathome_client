@@ -160,12 +160,10 @@ endif(WIN32)
 set(lib_source_file_list evaluation_state.c
                          simple_evaluator.c
                          ../util/io_util.c
-                         stCoords.c
                          atSurveyGeometry.c
-                         milkyway_complex.c
-                         numericalIntegration.c
+                         stCoords.c
                          stVector.c
-                         stMath.c
+                         numericalIntegration.c
                          evaluation_optimized.c
                          parameters.c
                          star_points.c

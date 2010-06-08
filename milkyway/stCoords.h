@@ -25,9 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 void lbr2xyz( const double* lbr, double* xyz );
 void xyz2lbr( const double* xyz, double* lbr );
 
-int lbr2stream( const double* lbr, const double* spars, double* stream );
-int xyz2stream( const double* xyz, const double* spars, double* stream );
-
 void stream2lbr( const double* stream, const double* spars, double* lbr );
 void stream2xyz( const double* stream, const double* spars, double* xyz );
 

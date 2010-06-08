@@ -73,8 +73,8 @@ endforeach()
 
 # List of tests to run.
 # Test sources should be named <testname>.c .
-set(test_list t_complex
-              t_cubic)
+set(test_list )
+
 
 #FIXME: Including other sources. move everything into library.
 #FIXME: reorganize to not duplicate this.
@@ -82,9 +82,6 @@ find_package(BOINC REQUIRED)
 include_directories(${BOINC_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../milkyway)
-
-set(extra_test_sources ${CMAKE_CURRENT_SOURCE_DIR}/../milkyway/milkyway_complex.c
-                       ${CMAKE_CURRENT_SOURCE_DIR}/../milkyway/stMath.c)
 
 foreach(test ${test_list})
 	add_executable(${test} ${test}.c ${extra_test_sources})

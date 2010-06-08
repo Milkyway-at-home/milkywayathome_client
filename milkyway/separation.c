@@ -98,7 +98,8 @@ void separation(const char* filename, double background_integral, double* stream
 
 
     cmatrix = (double**)malloc(sizeof(double*) * 3);
-    for (i = 0; i < 3; i++) cmatrix[i] = (double*)malloc(sizeof(double) * 3);
+    for (i = 0; i < 3; i++)
+        cmatrix[i] = (double*)malloc(sizeof(double) * 3);
     dortho[0] = 0.0;
     dortho[1] = 0.0;
     dortho[2] = 1.0;

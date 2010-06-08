@@ -299,7 +299,6 @@ static void worker(int argc, const char** argv)
         free(parameters);
         cleanup_worker();
         boinc_finish(1);
-        return;
     }
 
     set_astronomy_parameters(&ap, parameters);
