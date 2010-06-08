@@ -236,3 +236,4 @@ void populate_lb(int sgr_coordinates, int wedge,
         }
     }
 }
+

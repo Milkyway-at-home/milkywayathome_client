@@ -47,25 +47,18 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_priv.h"
 #include "star_points.h"
 #include "evaluation_state.h"
-#if MILKYWAY_GPU
-  #if COMPUTE_ON_GPU
+
+#if COMPUTE_ON_CPU
+    #include "evaluation_optimized.h"
+#elif USE_CUDA
     void init_constants(ASTRONOMY_PARAMETERS* ap);
     #include "evaluation_gpu.h"
-  #endif /* COMPUTE_ON_GPU*/
+    #include "../util/matrix.h"
+    #include "../util/io_util.h"
+#elif USE_OCL
+    #include "evaluation_ocl.h"
+#endif /* COMPUTE_ON_CPU */
 
-  #if COMPUTE_ON_CPU
-    #include "evaluation_optimized.h"
-  #endif /* COMPUTE_ON_CPU */
-
-  #include "../util/matrix.h"
-  #include "../util/io_util.h"
-#else
-  #include "evaluation_optimized.h"
-#endif /* MILKYWAY_GPU */
-
-#if USE_OCL
-  #include "evaluation_ocl.h"
-#endif /* USE_OCL */
 
 #ifdef __cplusplus
  }
@@ -303,74 +296,28 @@ static void worker(int argc, const char** argv)
 
     set_astronomy_parameters(&ap, parameters);
 
+    /* CHECKME: Why does init_constants not get used for CPU? */
 #if COMPUTE_ON_CPU
     init_simple_evaluator(astronomy_evaluate);
-#endif
-
-#if COMPUTE_ON_GPU
-    int i;
-    size_t num_integral_block = ap.number_integrals * sizeof(double);
-
-    int* r_steps = (int*)malloc(ap.number_integrals * sizeof(int));
-    int* mu_steps = (int*)malloc(ap.number_integrals * sizeof(int));
-    int* nu_steps = (int*)malloc(ap.number_integrals * sizeof(int));
-    double* r_min = (double*)malloc(num_integral_block);
-    double* mu_min = (double*)malloc(num_integral_block);
-    double* nu_min = (double*)malloc(num_integral_block);
-    double* r_step_size = (double*)malloc(num_integral_block);
-    double* mu_step_size = (double*)malloc(num_integral_block);
-    double* nu_step_size = (double*)malloc(num_integral_block);
-    for (i = 0; i < ap.number_integrals; ++i)
-    {
-        r_steps[i] = ap.integral[i]->r_steps;
-        mu_steps[i] = ap.integral[i]->mu_steps;
-        nu_steps[i] = ap.integral[i]->nu_steps;
-        r_min[i] = ap.integral[i]->r_min;
-        mu_min[i] = ap.integral[i]->mu_min;
-        nu_min[i] = ap.integral[i]->nu_min;
-        r_step_size[i] = ap.integral[i]->r_step_size;
-        mu_step_size[i] = ap.integral[i]->mu_step_size;
-        nu_step_size[i] = ap.integral[i]->nu_step_size;
-    }
+#elif USE_CUDA
     init_constants(&ap);
-    gpu__initialize();
-
-    init_simple_evaluator(gpu__likelihood);
-
-#endif /* COMPUTE_ON_GPU */
-
-#if USE_OCL
-    printf("Using OpenCL CodePath\n");
+    init_simple_evaluator(cuda_evaluator);
+#elif USE_OCL
     init_constants(&ap);
-    ocl_mem_t* ocl_mem = setup_ocl(&ap, &sp);
-    double likelihood = ocl_likelihood(parameters,
-                                       &ap,
-                                       &sp,
-                                       ocl_mem);
-    destruct_ocl(ocl_mem);
+    init_simple_evaluator(ocl_evaluator);
 #else
+    #error "Must choose CUDA, OpenCL or CPU"
+#endif /* COMPUTE_ON_CPU */
+
+    /* CHECKME: What is this magic 3.0, and why was it being
+     * subtracted from CPU and CUDA result, but not OpenCL? */
     double likelihood = evaluate(parameters, &ap, &es, &sp) - 3.0;
-#endif /* USE_OCL */
 
     fprintf(stderr, "<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
     fprintf(stderr, "<search_application> %s %s </search_application>\n", BOINC_APP_VERSION, PRECISION);
 
     free(parameters);
-//	cleanup_worker();
-
-#if COMPUTE_ON_GPU
-    gpu__free_constants();
-
-    free(r_steps);
-    free(mu_steps);
-    free(nu_steps);
-    free(r_min);
-    free(mu_min);
-    free(nu_min);
-    free(r_step_size);
-    free(mu_step_size);
-    free(nu_step_size);
-#endif /* COMPUTE_ON_GPU */
+	cleanup_worker();
 
     boinc_finish(0);
 

@@ -46,9 +46,6 @@ extern "C++" {
 #define GPU_PRECISION double
 #endif
 
-extern ASTRONOMY_PARAMETERS* ap;
-extern STAR_POINTS* sp;
-
 GPU_PRECISION** device_V;       //V -- float[nu][r]
 GPU_PRECISION** device_sinb;
 GPU_PRECISION** device_sinl;
@@ -350,7 +347,54 @@ int get_total_threads(int desired_size)
     }
 }
 
-void gpu__initialize()
+double cuda_evaluator(double*, ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp)
+{
+    int i;
+    double likelihood;
+
+    size_t num_integral_block = ap.number_integrals * sizeof(double);
+    int* r_steps = (int*)malloc(ap.number_integrals * sizeof(int));
+    int* mu_steps = (int*)malloc(ap.number_integrals * sizeof(int));
+    int* nu_steps = (int*)malloc(ap.number_integrals * sizeof(int));
+    double* r_min = (double*)malloc(num_integral_block);
+    double* mu_min = (double*)malloc(num_integral_block);
+    double* nu_min = (double*)malloc(num_integral_block);
+    double* r_step_size = (double*)malloc(num_integral_block);
+    double* mu_step_size = (double*)malloc(num_integral_block);
+    double* nu_step_size = (double*)malloc(num_integral_block);
+    for (i = 0; i < ap->number_integrals; ++i)
+    {
+        r_steps[i] = ap->integral[i]->r_steps;
+        mu_steps[i] = ap->integral[i]->mu_steps;
+        nu_steps[i] = ap->integral[i]->nu_steps;
+        r_min[i] = ap->integral[i]->r_min;
+        mu_min[i] = ap->integral[i]->mu_min;
+        nu_min[i] = ap->integral[i]->nu_min;
+        r_step_size[i] = ap->integral[i]->r_step_size;
+        mu_step_size[i] = ap->integral[i]->mu_step_size;
+        nu_step_size[i] = ap->integral[i]->nu_step_size;
+    }
+
+    gpu__initialize();
+
+    likelihood = gpu__likelihood(double* parameters);
+
+    gpu__free_constants(ap);
+
+    free(r_steps);
+    free(mu_steps);
+    free(nu_steps);
+    free(r_min);
+    free(mu_min);
+    free(nu_min);
+    free(r_step_size);
+    free(mu_step_size);
+    free(nu_step_size);
+
+    return likelihood;
+}
+
+void gpu__initialize(ASTRONOMY_PARAMETERS* ap)
 {
     device_bg_int = new GPU_PRECISION*[ap->number_integrals];
     device_st_int = new GPU_PRECISION*[ap->number_integrals];
@@ -565,7 +609,7 @@ void gpu__initialize()
             (total - free) / 1024, total / 1024, free / 1024);
 }
 
-void gpu__free_constants()
+void gpu__free_constants(ASTRONOMY_PARAMETERS* ap)
 {
     for (int i = 0; i < ap->number_integrals; i++)
     {

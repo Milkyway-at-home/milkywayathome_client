@@ -33,6 +33,8 @@ int choose_gpu(int argc, char** argv);
 void gpu__initialize();
 
 double gpu__likelihood(double* parameters);
+double cuda_evaluator(double*, ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp);
 void gpu__free_constants();
 
-#endif
+#endif /* EVALUATION_GPU_H */
+

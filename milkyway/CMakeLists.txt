@@ -70,56 +70,43 @@ include_directories(${BOINC_INCLUDE_DIR})
 include_directories(${POPT_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}) #FIXME: Move headers to include
 
-include(CheckC99)
-check_c99_support()
-
-
-
-#CHECKME: Is this portable?
-set(C99_FLAG -std=c99)
-
-if(HAVE_C99_SUPPORT)
-    set(CMAKE_C_FLAGS "${C99_FLAG} ${CMAKE_C_FLAGS}")
-endif(HAVE_C99_SUPPORT)
-
 option(BUILD_SHARED_LIBS
        "Set to OFF to build static libraries" ON)
-
 
 option(DOUBLE_PRECISION
        "Use double precision" ON)
 
-option(MILKYWAY_GPU
-       "Milkyway GPU" OFF)
-
-option(COMPUTE_ON_GPU
-       "Compute on GPU" OFF)
-
 option(COMPUTE_ON_CPU
        "Compute on CPU" ON)
+
+option(USE_CUDA
+       "Use Nvidia CUDA" OFF)
 
 option(USE_OCL
        "Use OpenCL" OFF)
 
+#temporary stupidity to make sure you only pick one of the three.
+#Build targets later.
+if(COMPUTE_ON_CPU)
+  list(APPEND appCount "CPU")
+endif()
+
+if(USE_CUDA)
+  list(APPEND appCount "CUDA")
+  include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../milkyway_cuda")
+  include_directories(${CUDA_INCLUDE_DIRS})
+endif()
+
 if(USE_OCL)
-  include_directories ("${PROJECT_SOURCE_DIR}/milkyway_ocl")
-endif(USE_OCL)
+  list(APPEND appCount "OCL")
+  include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../milkyway_ocl")
+endif()
 
-# Something about the preprocessor directives didn't seem right. It
-# looks like an attempt at logic that belongs more in the build
-# system. I think the intention was to turn on double precision by
-# default for the CPU only, and have it be an option if you use the
-# GPU so that's what I do. i.e. Double precision required for only
-# CPU, optional otherwise.
-if(COMPUTE_ON_CPU AND (NOT COMPUTE_ON_GPU))
-  set(DOUBLE_PRECISION ON)
-endif(COMPUTE_ON_CPU AND (NOT COMPUTE_ON_GPU))
-#Fall through to using whatever the user set.
+list(LENGTH appCount NUM_CHOICES)
 
-
-if(COMPUTE_ON_GPU)
-    include_directories ("${PROJECT_SOURCE_DIR}/milkyway_gpu")
-endif(COMPUTE_ON_GPU)
+if(NOT (NUM_CHOICES EQUAL 1))
+  message(FATAL_ERROR "Must choose one of CPU, OpenCL or CUDA.")
+endif()
 
 option(BOINC_APP_GRAPHICS
        "BOINC app graphics" OFF)
@@ -204,8 +191,7 @@ message("   C Compiler:        ${CMAKE_C_COMPILER}")
 message("   ----")
 message("   Double precision:  ${DOUBLE_PRECISION}")
 message("   OpenCL enabled:    ${USE_OCL}")
-message("   Milkyway GPU:      ${MILKYWAY_GPU}")
-message("   Compute on GPU:    ${COMPUTE_ON_GPU}")
+message("   CUDA enabled:      ${USE_CUDA}")
 message("   Compute on CPU:    ${COMPUTE_ON_CPU}")
 message("   BOINC graphics:    ${BOINC_APP_GRAPHICS}")
 message("---------------------------------------------")

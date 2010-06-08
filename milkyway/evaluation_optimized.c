@@ -43,43 +43,42 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
 double alpha, q, r0, delta, coeff, alpha_delta3;
-double  bg_a, bg_b, bg_c; //vickej2_bg
+double  bg_a, bg_b, bg_c;
 double* qgaus_X, *qgaus_W, **xyz, *dx;
 double** stream_a, **stream_c, *stream_sigma, *stream_sigma_sq2;
 
 
 void init_constants(ASTRONOMY_PARAMETERS* ap)
 {
-
     int i;
-    stream_sigma        = (double*)malloc(sizeof(double) * ap->number_streams);
-    stream_sigma_sq2    = (double*)malloc(sizeof(double) * ap->number_streams);
-    stream_a        = (double**)malloc(sizeof(double*) * ap->number_streams);
-    stream_c        = (double**)malloc(sizeof(double*) * ap->number_streams);
+    stream_sigma     = (double*)malloc(sizeof(double) * ap->number_streams);
+    stream_sigma_sq2 = (double*)malloc(sizeof(double) * ap->number_streams);
+    stream_a         = (double**)malloc(sizeof(double*) * ap->number_streams);
+    stream_c         = (double**)malloc(sizeof(double*) * ap->number_streams);
 
-    alpha   = ap->background_parameters[0];
-    q   = ap->background_parameters[1];
-    r0  = ap->background_parameters[2];
-    delta   = ap->background_parameters[3];
+    alpha = ap->background_parameters[0];
+    q     = ap->background_parameters[1];
+    r0    = ap->background_parameters[2];
+    delta = ap->background_parameters[3];
 
     if (ap->aux_bg_profile == 0)
     {
-        bg_a    = 0;
-        bg_b    = 0;
-        bg_c    = 0;
+        bg_a = 0;
+        bg_b = 0;
+        bg_c = 0;
     }
     else if (ap->aux_bg_profile == 1)
     {
-        bg_a    = ap->background_parameters[4];
-        bg_b    = ap->background_parameters[5];
-        bg_c    = ap->background_parameters[6];
+        bg_a = ap->background_parameters[4];
+        bg_b = ap->background_parameters[5];
+        bg_c = ap->background_parameters[6];
     }
     else
     {
         fprintf(stderr,"Error: aux_bg_profile invalid");
     }
 
-    coeff   = 1 / (stdev * sqrt(2 * pi));
+    coeff = 1 / (stdev * sqrt(2 * pi));
     alpha_delta3 = 3 - alpha + delta;
 
     for (i = 0; i < ap->number_streams; i++)

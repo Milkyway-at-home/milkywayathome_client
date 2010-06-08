@@ -335,6 +335,21 @@ double execute_likelihood_kernel(ocl_mem_t* ocl_mem,
     return likelihood;
 }
 
+double ocl_evaluator(double* parameters,
+                     ASTRONOMY_PARAMETERS* ap,
+                     EVALUATION_STATE* es,
+                     STAR_POINTS* sp)
+{
+    double likelihood;
+    ocl_mem_t* ocl_mem;
+
+    ocl_mem = setup_ocl(ap, sp);
+    likelihood = ocl_likelihood(parameters, ap, es, ocl_mem);
+    destruct_ocl(ocl_mem);
+
+    return likelihood;
+}
+
 double ocl_likelihood(double* parameters,
                       ASTRONOMY_PARAMETERS* ap,
                       STAR_POINTS* sp,
@@ -371,3 +386,4 @@ double ocl_likelihood(double* parameters,
                         global_work_size);
     return likelihood;
 }
+
