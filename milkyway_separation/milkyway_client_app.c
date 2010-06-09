@@ -105,6 +105,8 @@ double astronomy_evaluate(double* parameters,
     MW_DEBUG("calculated integrals: %lf, %lf\n", es->background_integral, es->stream_integrals[0]);
 
     retval = calculate_likelihood(ap, es, sp);
+    free_constants(ap);
+
     if (retval)
     {
         fprintf(stderr, "APP: error calculating likelihood: %d\n", retval);
@@ -294,8 +296,8 @@ static void worker(int argc, const char** argv)
 
     set_astronomy_parameters(&ap, parameters);
 
-    /* CHECKME: Why does init_constants not get used for CPU? */
 #if COMPUTE_ON_CPU
+    init_constants(&ap);
     init_simple_evaluator(astronomy_evaluate);
 #elif USE_CUDA
     init_constants(&ap);

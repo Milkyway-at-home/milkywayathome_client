@@ -42,12 +42,12 @@ void calculate_probabilities(double* r_point,
                              double* qw_r3_N,
                              double reff_xr_rp3,
                              double* integral_point,
-                             ASTRONOMY_PARAMETERS* ap,
+                             const ASTRONOMY_PARAMETERS* ap,
                              double* bg_prob,
                              double* st_prob);
 
-int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp);
-int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp);
+int calculate_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, const STAR_POINTS* sp);
+int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, const STAR_POINTS* sp);
 
 void cpu__r_constants(  int n_convolve,
                         int r_steps, double r_min, double r_step_size,

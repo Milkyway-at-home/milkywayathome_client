@@ -190,7 +190,7 @@ void calculate_probabilities(double* r_point,
                              double* qw_r3_N,
                              double reff_xr_rp3,
                              double* integral_point,
-                             ASTRONOMY_PARAMETERS* ap,
+                             const ASTRONOMY_PARAMETERS* ap,
                              double* bg_prob,
                              double* st_prob)
 {
@@ -406,7 +406,7 @@ void cpu__r_constants(  int n_convolve,
     }
 }
 
-void calculate_integral(ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, EVALUATION_STATE* es)
+void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, EVALUATION_STATE* es)
 {
     int i, mu_step_current, nu_step_current, r_step_current;
     double bg_prob, *st_probs, V;
@@ -546,7 +546,7 @@ void calculate_integral(ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, EVALUATION_
     free(qw_r3_N);
 }
 
-int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp)
+int calculate_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, const STAR_POINTS* sp)
 {
     int i, j;
 #ifdef MW_ENABLE_DEBUG
@@ -557,8 +557,6 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
 #ifdef MILKYWAY
     read_checkpoint(es);
 #endif
-
-    init_constants(ap);
 
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
     {
@@ -597,7 +595,7 @@ int calculate_integrals(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POI
     return 0;
 }
 
-int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp)
+int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, const STAR_POINTS* sp)
 {
     int i, current_stream;
     double bg_prob, *st_prob;
@@ -727,7 +725,6 @@ int calculate_likelihood(ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_PO
     free(r_in_mag);
     free(r_in_mag2);
     free(qw_r3_N);
-    free_constants(ap);
 
     free(st_only_sum);
     free(st_only_sum_c);
