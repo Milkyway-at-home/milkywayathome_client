@@ -12,7 +12,7 @@ static void treescan(nodeptr);           /* does force calculation */
 static bool subdivp(cellptr);            /* can cell be accepted? */
 static void gravsub(nodeptr);            /* compute grav interaction */
 
-/*  * HACKGRAV: evaluate gravitational field on body p; checks to be
+/* HACKGRAV: evaluate gravitational field on body p; checks to be
  * sure self-interaction was handled correctly if intree is true.
  */
 

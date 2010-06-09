@@ -39,10 +39,10 @@ const char* defv[] =
 
 char* headline = "Hierarchical N-body Code";   /* default id for run */
 
-static void startrun(void);          /* initialize system state */
-static void stepsystem(void);            /* advance by one time-step */
-static void testdata(void);          /* generate test data */
-static void pickshell(vector, real);     /* pick point on shell */
+static void startrun(void);           /* initialize system state */
+static void stepsystem(void);         /* advance by one time-step */
+static void testdata(void);           /* generate test data */
+static void pickshell(vector, real);  /* pick point on shell */
 
 /* MAIN: toplevel routine for hierarchical N-body code. */
 
@@ -111,8 +111,7 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-/*  * STARTRUN: startup hierarchical N-body code.
- */
+/* STARTRUN: startup hierarchical N-body code. */
 
 static void startrun(void)
 {

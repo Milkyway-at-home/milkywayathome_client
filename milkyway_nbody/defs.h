@@ -56,8 +56,7 @@
  *                                                 etc
  */
 
-/*  * NODE: data common to BODY and CELL structures.
- */
+/* NODE: data common to BODY and CELL structures. */
 
 typedef struct _node
 {
@@ -91,8 +90,7 @@ typedef struct
 #define Acc(x)  (((bodyptr) (x))->acc)
 #define Phi(x)  (((bodyptr) (x))->phi)
 
-/*  * CELL: structure used to represent internal nodes of tree.
- */
+/* CELL: structure used to represent internal nodes of tree. */
 
 #define CELL 02                 /* type code for cells */
 

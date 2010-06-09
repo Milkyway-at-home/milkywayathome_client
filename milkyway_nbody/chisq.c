@@ -11,9 +11,9 @@
 #include "code.h"
 
 #define r0 8.0
-#define phi 128.79*(3.141592654/180.0)
-#define theta 54.39*(3.141592654/180.0)
-#define psi 90.70*(3.141592654/180.0)
+#define phi d2r(128.79)
+#define theta d2r(54.39)
+#define psi d2r(90.70)
 #define beginning -50
 #define end 50
 #define binsize 3
@@ -60,7 +60,6 @@ float chisq()
         histodata2sort[i] = 0.0;
     }
 
-
     printf("done\n");
 
     printf("Importing simulation results...");
@@ -93,9 +92,9 @@ float chisq()
 
         // Convert to (lambda, beta) (involves a rotation using the Newberg et al (2009) rotation matricies)
 
-        beta[count-1] = (180.0 / 3.141592654) * asin( sin(theta) * sin(phi) * cos(b[count-1]) * cos(l[count-1]) - sin(theta) * cos(phi) * cos(b[count-1]) * sin(l[count-1]) + cos(theta) * sin(b[count-1]) );
+        beta[count-1] = r2d(asin( sin(theta) * sin(phi) * cos(b[count-1]) * cos(l[count-1]) - sin(theta) * cos(phi) * cos(b[count-1]) * sin(l[count-1]) + cos(theta) * sin(b[count-1]) ));
 
-        lambda[count-1] = (180.0 / 3.141592654) * atan2( (-sin(psi) * cos(phi) - cos(theta) * sin(phi) * cos(psi)) * cos(b[count-1]) * cos(l[count-1]) + (-sin(psi) * sin(phi) + cos(theta) * cos(phi) * cos(psi)) * cos(b[count-1]) * sin(l[count-1]) + cos(psi) * sin(theta) * sin(b[count-1]), (cos(psi) * cos(phi) - cos(theta) * sin(phi) * sin(psi)) * cos(b[count-1]) * cos(l[count-1]) + (cos(psi) * sin(phi) + cos(theta) * cos(phi) * sin(psi)) * cos(b[count-1]) * sin(l[count-1]) + sin(psi) * sin(theta) * sin(b[count-1]) );
+        lambda[count-1] = r2d(atan2( (-sin(psi) * cos(phi) - cos(theta) * sin(phi) * cos(psi)) * cos(b[count-1]) * cos(l[count-1]) + (-sin(psi) * sin(phi) + cos(theta) * cos(phi) * cos(psi)) * cos(b[count-1]) * sin(l[count-1]) + cos(psi) * sin(theta) * sin(b[count-1]), (cos(psi) * cos(phi) - cos(theta) * sin(phi) * sin(psi)) * cos(b[count-1]) * cos(l[count-1]) + (cos(psi) * sin(phi) + cos(theta) * cos(phi) * sin(psi)) * cos(b[count-1]) * sin(l[count-1]) + sin(psi) * sin(theta) * sin(b[count-1]) ));
 
         // Create the histogram
         if (lambda[count-1] > 0 && lambda[count-1] < end)

@@ -44,7 +44,7 @@ void maketree(bodyptr btab, int nbody)
     if (usequad)                /* including quad moments? */
         hackquad(root);                         /* assign Quad moments */
 }
-
+
 /*  * NEWTREE: reclaim cells in tree, prepare to build new one.
  */
 
@@ -95,8 +95,8 @@ static cellptr makecell(void)
     cellused++;                                 /* count one more cell */
     return (c);
 }
-
-/*  * EXPANDBOX: find range of coordinate values (with respect to root)
+
+/* EXPANDBOX: find range of coordinate values (with respect to root)
  * and expand root cell to fit.  The size is doubled at each step to
  * take advantage of exact representation of powers of two.
  */
@@ -118,8 +118,7 @@ static void expandbox(bodyptr btab, int nbody)
     }
 }
 
-/*  * LOADBODY: descend tree and insert body p in appropriate place.
- */
+/* LOADBODY: descend tree and insert body p in appropriate place. */
 
 static void loadbody(bodyptr p)
 {
@@ -151,7 +150,7 @@ static void loadbody(bodyptr p)
     Subp(q)[qind] = (nodeptr) p;                /* found place, store p */
     maxlevel = MAX(maxlevel, lev);      /* remember maximum level */
 }
-
+
 /*  * SUBINDEX: compute subcell index for body p in cell q.
  */
 
@@ -195,7 +194,7 @@ static void hackcofm(cellptr p, real psize)
     setrcrit(p, cmpos, psize);                  /* set critical radius */
     SETV(Pos(p), cmpos);            /* and center-of-mass pos */
 }
-
+
 /*  * SETRCRIT: assign critical radius for cell p, using center-of-mass
  * position cmpos and cell size psize.
  */
@@ -229,7 +228,7 @@ static void setrcrit(cellptr p, vector cmpos, real psize)
     Rcrit2(p) = rsqr(rc);           /* store square of radius */
 }
 
-/*  * THREADTREE: do a recursive treewalk starting from node p,
+/* THREADTREE: do a recursive treewalk starting from node p,
  * with next stop n, installing Next and More links.
  */
 
@@ -251,8 +250,8 @@ static void threadtree(nodeptr p, nodeptr n)
             threadtree(desc[i], desc[i+1]);     /* thread each w/ next */
     }
 }
-
-/*  * HACKQUAD: descend tree, evaluating quadrupole moments.  Note that this
+
+/* HACKQUAD: descend tree, evaluating quadrupole moments.  Note that this
  * routine is coded so that the Subp() and Quad() components of a cell can
  * share the same memory locations.
  */

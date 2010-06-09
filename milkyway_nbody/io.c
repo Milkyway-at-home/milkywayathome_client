@@ -105,8 +105,8 @@ void output(void)
         for (p = bodytab; p < bodytab + nbody; p++)
         {
             (lbR)[2] = sqrt(Pos(p)[0] * Pos(p)[0] + Pos(p)[1] * Pos(p)[1] + Pos(p)[2] * Pos(p)[2]);
-            (lbR)[1] = (180.0 / 3.141592654) * atan2(Pos(p)[2], sqrt((Pos(p)[0]) * (Pos(p)[0]) + Pos(p)[1] * Pos(p)[1]));
-            (lbR)[0] = (180.0 / 3.141592654) * atan2(Pos(p)[1], Pos(p)[0]);
+            (lbR)[1] = r2d(atan2(Pos(p)[2], sqrt((Pos(p)[0]) * (Pos(p)[0]) + Pos(p)[1] * Pos(p)[1])));
+            (lbR)[0] = r2d(atan2(Pos(p)[1], Pos(p)[0]));
 
             if ((lbR)[0] < 0)
             {

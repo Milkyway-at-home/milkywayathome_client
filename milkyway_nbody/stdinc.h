@@ -36,5 +36,7 @@ typedef int (*iproc)();
 /* degrees to radians */
 #define d2r(x) (x * (M_PI / 180.0))
 
+#define r2d(x) (x * (180.0 / M_PI))
+
 #endif /* _STDINC_H_ */
 
