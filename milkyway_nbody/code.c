@@ -5,9 +5,6 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#ifndef _CODE_H_
-#define _CODE_H_
-
 #define extern /* nada */
 
 #include "code.h"
@@ -71,8 +68,8 @@ int main(int argc, char* argv[])
     // Calculate starting galactic coordinates
     // The l,b,r and vx, vy, vz are hard coded for the Orphan project
     // In the future, these will change
-    lstart = 218.0;
-    bstart = 53.5;
+    lstart = d2r(218.0);
+    bstart = d2r(53.5);
 
     // From the vhalo = 73 model result from Newberg et al 2009
     Rstart = 28.6;
@@ -80,12 +77,12 @@ int main(int argc, char* argv[])
     VYinit = 79;
     VZinit = 107;
 
-    Xinit = Rstart * cos(lstart * 3.14159 / 180.0) * cos(bstart * 3.14159 / 180.0) - 8.0; // 8.0 is sun-gc distance (TODO: make par)
-    Yinit = Rstart * sin(lstart * 3.14159 / 180.0) * cos(bstart * 3.14159 / 180.0);
-    Zinit = Rstart * sin(bstart * 3.14159 / 180.0);
+    Xinit = Rstart * cos(lstart) * cos(bstart) - 8.0; // 8.0 is sun-gc distance (TODO: make par)
+    Yinit = Rstart * sin(lstart) * cos(bstart);
+    Zinit = Rstart * sin(bstart);
 
     eps = r0 / (10 * sqrt((real)nbody));
-    dtnbody = (1 / 10.0) * (1 / 10.0) * sqrt(((4 / 3) * 3.14159 * r0 * r0 * r0) / (PluMass));
+    dtnbody = (1 / 10.0) * (1 / 10.0) * sqrt(((4 / 3) * M_PI * r0 * r0 * r0) / (PluMass));
     //dtnbody = pow(2.718,log(0.5)*kmax);
     freq = 1.0 / dtnbody;
     freqout = freq;
@@ -268,6 +265,4 @@ static void stepsystem(void)
     tnow = tnow + dt;           /* finally, advance time */
     output();                   /* do major or minor output */
 }
-
-#endif _CODE_H_
 

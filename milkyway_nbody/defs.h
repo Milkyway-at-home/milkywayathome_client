@@ -14,7 +14,7 @@
 #include "real.h"
 #include "vectmath.h"
 
-/*  * Body and cell data structures are used to represent the tree.  During
+/* Body and cell data structures are used to represent the tree.  During
  * tree construction, descendent pointers are stored in the subp arrays:
  *
  *          +-------------------------------------------------------------+
@@ -55,15 +55,15 @@
  *          +---------------------------------------|-------+
  *                                                 etc
  */
-
+
 /*  * NODE: data common to BODY and CELL structures.
  */
 
 typedef struct _node
 {
-    short type;                 /* code for node type */
-    real mass;                  /* total mass of node */
-    vector pos;                 /* position of node */
+    short type;             /* code for node type */
+    real mass;              /* total mass of node */
+    vector pos;             /* position of node */
     struct _node* next;     /* link to next force-calc */
 } node, *nodeptr;
 
@@ -102,8 +102,8 @@ typedef struct
 {
     node cellnode;              /* data common to all nodes */
     real rcrit2;                /* critical c-of-m radius^2 */
-    nodeptr more;       /* link to first descendent */
-    union           /* shared storage for... */
+    nodeptr more;               /* link to first descendent */
+    union                       /* shared storage for... */
     {
         nodeptr subp[NSUB];     /* descendents of cell */
         matrix quad;            /* quad. moment of cell */
@@ -114,46 +114,37 @@ typedef struct
 #define More(x)   (((cellptr) (x))->more)
 #define Subp(x)   (((cellptr) (x))->stuff.subp)
 #define Quad(x)   (((cellptr) (x))->stuff.quad)
-
-/*  * Variables used in tree construction.
- */
 
-extern cellptr root;                    /* pointer to root cell */
+/* Variables used in tree construction. */
 
-extern real rsize;                      /* side-length of root cell */
+extern cellptr root;   /* pointer to root cell */
+extern real rsize;     /* side-length of root cell */
 
-extern int cellused;            /* count of cells in tree */
+extern int cellused;   /* count of cells in tree */
+extern int maxlevel;   /* count of levels in tree */
 
-extern int maxlevel;            /* count of levels in tree */
+/* Parameters and results for gravitational calculation. */
 
-/*  * Parameters and results for gravitational calculation.
- */
-
-extern char* options;                  /* various option keywords */
-
-extern real theta;                      /* accuracy parameter: 0.0 => exact */
-
-extern bool usequad;                /* use quadrupole corrections */
-
-extern real eps;                        /* potential softening parameter */
-
-extern int n2bterm;                     /* number 2-body of terms evaluated */
-
-extern int nbcterm;                     /* num of body-cell terms evaluated */
+extern char* options;  /* various option keywords */
+extern real theta;     /* accuracy parameter: 0.0 => exact */
+extern bool usequad;   /* use quadrupole corrections */
+extern real eps;       /* potential softening parameter */
+extern int n2bterm;    /* number 2-body of terms evaluated */
+extern int nbcterm;    /* num of body-cell terms evaluated */
 
 extern real PluMass, r0, lstart, bstart, Rstart, XC, YC, ZC, VXC, VYC, VZC, Xinit, Yinit, Zinit, VXinit, VYinit, VZinit, orbittstop, dtorbit;
 
 
-/*  * Utility routines used in load.c and grav.c.  These are defined in
+/* Utility routines used in load.c and grav.c.  These are defined in
  * util.c, which must be compiled with the same choice of precision.
  */
 
-bool scanopt(char*, char*);           /* find option in char* */
-real cputime(void);             /* return elapsed CPU time */
-void* allocate(int);                /* allocate and zero memory */
-real distv(vector, vector);         /* distance between vectors */
-void error(char*, ...);            /* report error and exit */
-void eprintf(char*, ...);          /* printf to error FILE* */
+bool scanopt(char*, char*);      /* find option in char* */
+real cputime(void);              /* return elapsed CPU time */
+void* allocate(int);             /* allocate and zero memory */
+real distv(vector, vector);      /* distance between vectors */
+void error(char*, ...);          /* report error and exit */
+void eprintf(char*, ...);        /* printf to error FILE* */
 int compare (const void* a, const void* b);     /* comparison function used in chisq */
 float chisq();                  /* likelihood calculator */
 

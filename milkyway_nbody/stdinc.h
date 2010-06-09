@@ -32,5 +32,9 @@ typedef int (*iproc)();
 #define   MAX(x,y)     (((x) > (y)) ? (x) : (y))
 #define   MIN(x,y)     (((x) < (y)) ? (x) : (y))
 
-#include /* _STDINC_H_ */
+
+/* degrees to radians */
+#define d2r(x) (x * (M_PI / 180.0))
+
+#endif /* _STDINC_H_ */
 

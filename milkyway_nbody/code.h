@@ -5,6 +5,9 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
+#ifndef _CODE_H_
+#define _CODE_H_
+
 #include "defs.h"
 
 extern char* infile;           /* file name for snapshot input */
@@ -41,3 +44,6 @@ char* getparam(char*);            /* get parameter as char* */
 int getiparam(char*);              /* get parameter as integer */
 bool getbparam(char*);             /* get parameter as bool */
 real getrparam(char*);             /* get parameter as real */
+
+#endif /* _CODE_H_ */
+
