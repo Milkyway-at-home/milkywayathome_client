@@ -68,5 +68,6 @@ void fwrite_integral_area(FILE* file, INTEGRAL_AREA* ia);
 int write_checkpoint(EVALUATION_STATE* es);
 int read_checkpoint(EVALUATION_STATE* es);
 
+
 #endif /* _EVALUATION_STATE_H_ */
 

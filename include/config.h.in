@@ -32,6 +32,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 USE_OCL
 #cmakedefine01 USE_CUDA
 #cmakedefine01 BOINC_APP_GRAPHICS
+#cmakedefine01 BOINC_APPLICATION
 
 #cmakedefine MW_ENABLE_DEBUG
 #cmakedefine01 MW_DEBUG_EXCESSIVE

@@ -102,10 +102,10 @@ void setup_weights(ocl_mem_t* ocl_mem,
 
 void destruct_ocl(ocl_mem_t* ocl_mem);
 
-double ocl_evaluator(double* parameters,
-                     ASTRONOMY_PARAMETERS* ap,
-                     EVALUATION_STATE* es,
-                     STAR_POINTS* sp);
+double ocl_evaluate(double* parameters,
+                    ASTRONOMY_PARAMETERS* ap,
+                    EVALUATION_STATE* es,
+                    STAR_POINTS* sp);
 
 
 double ocl_likelihood(double* parameters,

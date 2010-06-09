@@ -56,5 +56,10 @@ void cpu__r_constants(  int n_convolve,
                         double* irv, double** r_point, double** r_in_mag, double** r_in_mag2, double** qw_r3_N,
                         double* reff_xr_rp3, double* nus, double* ids);
 
+double cpu_evaluate(double* parameters,
+                    ASTRONOMY_PARAMETERS* ap,
+                    EVALUATION_STATE* es,
+                    STAR_POINTS* sp);
+
 #endif
 

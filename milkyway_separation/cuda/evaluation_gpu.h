@@ -31,10 +31,10 @@
 extern "C"{
 #endif
 
-double cuda_evaluator(double*,
-                      ASTRONOMY_PARAMETERS* ap,
-                      EVALUATION_STATE* es,
-                      STAR_POINTS* sp);
+double cuda_evaluate(double*,
+                     ASTRONOMY_PARAMETERS* ap,
+                     EVALUATION_STATE* es,
+                     STAR_POINTS* sp);
 
 #ifdef __CUDACC__
 }

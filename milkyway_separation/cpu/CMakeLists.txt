@@ -18,78 +18,13 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#No idea on the actual version, but I'll go with this for now.
-
-cmake_minimum_required (VERSION 2.6)
-project(milkyway_client)
-
-include_directories("${PROJECT_SOURCE_DIR}")
-
 option(BUILD_SHARED_LIBS
        "Set to OFF to build static libraries" ON)
 
 option(DOUBLE_PRECISION
        "Use double precision" ON)
 
-option(COMPUTE_ON_CPU
-       "Compute on CPU" ON)
-
-option(USE_CUDA
-       "Use Nvidia CUDA" OFF)
-
-option(USE_OCL
-       "Use OpenCL" OFF)
-
-#temporary stupidity to make sure you only pick one of the three.
-#Build targets later.
-if(COMPUTE_ON_CPU)
-  list(APPEND appCount "CPU")
-endif()
-
-if(USE_CUDA)
-  list(APPEND appCount "CUDA")
-  include_directories("${CMAKE_SOURCE_DIR}/milkyway_separation_cuda")
-  include_directories(${CUDA_INCLUDE_DIRS})
-endif()
-
-if(USE_OCL)
-  list(APPEND appCount "OCL")
-  include_directories("${CMAKE_SOURCE_DIR}/milkyway_separation_ocl")
-endif()
-
-list(LENGTH appCount NUM_CHOICES)
-
-if(NOT (NUM_CHOICES EQUAL 1))
-  message(FATAL_ERROR "Must choose one of CPU, OpenCL or CUDA.")
-endif()
-
-option(BOINC_APP_GRAPHICS
-       "BOINC app graphics" OFF)
-
-
-include(CheckAppleGCC)
-
-#FIXME: Somehow test for and require the Apple gcc.  The macports gccs
-#seem to not work when you try to link against frameworks,
-#CoreFoundation etc. There's probably a better way to check and handle
-#this.
-if(APPLE)
-  check_apple_gcc()
-  if(NOT HAVE_APPLE_GCC)
-    message(WARNING "Attempting to use a non-Apple GCC. Apple GCC is required.")
-    message(FATAL_ERROR "You should specify a compiler with -DCMAKE_C_COMPILER=/path/to/compiler")
-    # message(WARNING "Attempting to fall back to /usr/bin/gcc")
-    # set(CMAKE_C_COMPILER /usr/bin/gcc)
-    # message("LOLOLOL: ${CMAKE_C_COMPILER}")
-    # check_apple_gcc()
-    # if(NOT HAVE_APPLE_GCC)
-    #   message(FATAL_ERROR "Fallback failed. Install an Apple compiler or manually specify one.")
-    # endif()
-  endif()
-
-   find_library(CORE_FOUNDATION_LIBRARY CoreFoundation)
-   set(OS_SPECIFIC_LIBS ${CORE_FOUNDATION_LIBRARY})
-endif(APPLE)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 if(UNIX AND NOT APPLE)  #Unix that isn't OS X
     set(OS_SPECIFIC_LIBS pthread)
@@ -101,7 +36,7 @@ endif(WIN32)
 
 set(lib_source_file_list evaluation_state.c
                          simple_evaluator.c
-                         ../util/io_util.c
+                         ${CMAKE_SOURCE_DIR}/util/io_util.c
                          atSurveyGeometry.c
                          stCoords.c
                          stVector.c
@@ -151,26 +86,18 @@ configure_file (
 
 # Windows is a pain in the ass.
 if(WIN32)
-  add_library(milkyway STATIC ${lib_source_file_list})
+  add_library(milkyway_separation_cpu STATIC ${lib_source_file_list})
 else(WIN32)
-  add_library(milkyway SHARED ${lib_source_file_list})
+  add_library(milkyway_separation_cpu SHARED ${lib_source_file_list})
 endif(WIN32)
 
-target_link_libraries(milkyway ${BOINC_LIBRARIES} ${OS_SPECIFIC_LIBS} m)
+target_link_libraries(milkyway_separation_cpu ${BOINC_LIBRARIES} ${OS_SPECIFIC_LIBS} m)
 
-add_executable(milkyway_client milkyway_client_app.c)
-target_link_libraries(milkyway_client ${POPT_LIBRARY} ${BOINC_LIBRARIES} milkyway)
-
-install(TARGETS milkyway DESTINATION lib
+install(TARGETS milkyway_separation_cpu DESTINATION lib
        PERMISSIONS           #Fix occasional issuse with people who change their umask
        OWNER_READ OWNER_WRITE OWNER_EXECUTE
        GROUP_READ GROUP_EXECUTE
        WORLD_READ WORLD_EXECUTE)
 install(FILES ${PROJECT_INCLUDE_DIR}/milkyway.h DESTINATION include/milkyway)
 install(FILES ${PROJECT_INCLUDE_DIR}/config.h DESTINATION include/milkyway)
-install(TARGETS milkyway_client DESTINATION bin
-       PERMISSIONS
-       OWNER_READ OWNER_WRITE OWNER_EXECUTE
-       GROUP_READ GROUP_EXECUTE
-       WORLD_READ WORLD_EXECUTE)
 

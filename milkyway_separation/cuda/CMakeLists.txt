@@ -22,19 +22,6 @@
 cmake_minimum_required(VERSION 2.6)
 project(milkyway_cuda)
 
-#if we aren't build from the root of the repo, these need to be set separately
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../cmake_modules)
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../bin)
-set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../lib)
-set(PROJECT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
-
-include_directories(${PROJECT_INCLUDE_DIR})
-
-find_package(CUDA)
-
-find_package(BOINC REQUIRED)
-include_directories(${BOINC_INCLUDE_DIR})
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 option(BUILD_SHARED_LIBS

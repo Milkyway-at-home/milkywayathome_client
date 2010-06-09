@@ -37,5 +37,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
     #define MW_DEBUGMSG(msg, ...) ((void) 0)
 #endif
 
+#if BOINC_APPLICATION
+  #define mw_finish(x) boinc_finish(x)
+#else
+  #define mw_finish(x) exit(x)
+#endif /* BOINC_APPLICATION */
+
 #endif /* _MILKYWAY_PRIV_H_ */
 

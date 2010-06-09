@@ -1055,10 +1055,10 @@ double gpu__likelihood(double* parameters, ASTRONOMY_PARAMETERS* ap, STAR_POINTS
 }
 
 
-extern "C" double cuda_evaluator(double* parameters,
-                                 ASTRONOMY_PARAMETERS* ap,
-                                 EVALUATION_STATE* es,
-                                 STAR_POINTS* sp)
+extern "C" double cuda_evaluate(double* parameters,
+                                ASTRONOMY_PARAMETERS* ap,
+                                EVALUATION_STATE* es,
+                                STAR_POINTS* sp)
 {
     int i;
     double likelihood;

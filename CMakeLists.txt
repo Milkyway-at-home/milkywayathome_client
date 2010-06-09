@@ -45,6 +45,7 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/lib)
 set(PROJECT_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 
+
 include_directories(${PROJECT_INCLUDE_DIR})
 
 find_package(CUDA)
@@ -72,6 +73,33 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}) #FIXME: Move headers to include
 include_directories(${PROJECT_INCLUDE_DIR})
 
 
+
+include(CheckAppleGCC)
+
+#FIXME: Somehow test for and require the Apple gcc.  The macports gccs
+#seem to not work when you try to link against frameworks,
+#CoreFoundation etc. There's probably a better way to check and handle
+#this.
+if(APPLE)
+  check_apple_gcc()
+  if(NOT HAVE_APPLE_GCC)
+    message(WARNING "Attempting to use a non-Apple GCC. Apple GCC is required.")
+    message(FATAL_ERROR "You should specify a compiler with -DCMAKE_C_COMPILER=/path/to/compiler")
+    # message(WARNING "Attempting to fall back to /usr/bin/gcc")
+    # set(CMAKE_C_COMPILER /usr/bin/gcc)
+    # message("LOLOLOL: ${CMAKE_C_COMPILER}")
+    # check_apple_gcc()
+    # if(NOT HAVE_APPLE_GCC)
+    #   message(FATAL_ERROR "Fallback failed. Install an Apple compiler or manually specify one.")
+    # endif()
+  endif()
+
+   find_library(CORE_FOUNDATION_LIBRARY CoreFoundation)
+   set(OS_SPECIFIC_LIBS ${CORE_FOUNDATION_LIBRARY})
+endif(APPLE)
+
+
+
 #Some kind of workaround for a popular cmake bug where make test
 #doesn't behave as anyone would ever expect.
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
@@ -91,6 +119,9 @@ option(AUX_SMALL_TESTS
 option(MW_DEBUG_EXCESSIVE
        "Excessive debugging output" OFF)
 
+option(BOINC_APPLICATION
+       "Run as BOINC appliation or independently" ON)
+
 
 set(gcc_extra_warnings "-Wshadow -Wpointer-arith -Wcast-align -common-Wwrite-strings -compare -fno-common")
 
@@ -100,19 +131,12 @@ if(CMAKE_COMPILER_IS_GNUCC) # I think this could maybe be IS_UNIX
   set(CMAKE_C_FLAGS_DEBUG "-Wall -Wextra ${gcc_extra_warnings} -O0 -g ${CMAKE_C_FLAGS_DEBUG}")
 endif(CMAKE_COMPILER_IS_GNUCC)
 
-
-
-add_subdirectory(milkyway_separation)
+#Different client applications are libraries
 add_subdirectory(milkyway_nbody)
+add_subdirectory(milkyway_separation)
 
-#if(CUDA_FOUND)
-#  add_subdirectory(milkyway_separation_cuda)
-#endif()
-
-if(OCL_FOUND)
-  add_subdirectory(milkyway_separation_ocl)
-endif()
-
+# The main application
+add_subdirectory(src)
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 

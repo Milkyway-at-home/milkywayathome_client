@@ -60,7 +60,7 @@ void free_parameters(ASTRONOMY_PARAMETERS* ap)
 
 int read_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS* ap)
 {
-#ifdef BOINC_APPLICATION
+#if BOINC_APPLICATION
     char input_path[512];
     int retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
 

@@ -48,14 +48,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "star_points.h"
 #include "evaluation_state.h"
 
-#if COMPUTE_ON_CPU
-    #include "evaluation_optimized.h"
-#elif USE_CUDA
+#if USE_CUDA
     void init_constants(ASTRONOMY_PARAMETERS* ap);
     #include "evaluation_gpu.h"
 #elif USE_OCL
     #include "evaluation_ocl.h"
-#endif /* COMPUTE_ON_CPU */
+#endif
 
 
 #ifdef __cplusplus
@@ -82,39 +80,6 @@ void AppInvalidParameterHandler(const wchar_t* expression,
     DebugBreak();
 }
 #endif /* _WIN32 */
-
-
-#if COMPUTE_ON_CPU
-double astronomy_evaluate(double* parameters,
-                          ASTRONOMY_PARAMETERS* ap,
-                          EVALUATION_STATE* es,
-                          STAR_POINTS* sp)
-{
-    int retval;
-
-    set_astronomy_parameters(ap, parameters);
-    reset_evaluation_state(es);
-
-    retval = calculate_integrals(ap, es, sp);
-    if (retval)
-    {
-        fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
-        boinc_finish(retval);
-    }
-
-    MW_DEBUG("calculated integrals: %lf, %lf\n", es->background_integral, es->stream_integrals[0]);
-
-    retval = calculate_likelihood(ap, es, sp);
-    free_constants(ap);
-
-    if (retval)
-    {
-        fprintf(stderr, "APP: error calculating likelihood: %d\n", retval);
-        boinc_finish(retval);
-    }
-    return es->prob_sum / (sp->number_stars - es->bad_jacobians);
-}
-#endif /* COMPUTE_ON_CPU */
 
 
 /* Returns the newly allocated array of parameters */
@@ -174,7 +139,7 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
     if ( o < -1 )
     {
         poptPrintHelp(context, stderr, 0);
-        boinc_finish(EXIT_FAILURE);
+        mw_finish(EXIT_FAILURE);
     }
 
     MW_DEBUG("Got arguments: "
@@ -194,7 +159,6 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
     {
         while (rest[++paramn]);  /* Count number of parameters */
 
-
         MW_DEBUG("%u arguments leftover\n", paramn);
 
         parameters = (double*) malloc(sizeof(double) * paramn);
@@ -210,7 +174,7 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
                 poptPrintHelp(context, stderr, 0);
                 free(parameters);
                 poptFreeContext(context);
-                boinc_finish(EXIT_FAILURE);
+                mw_finish(EXIT_FAILURE);
             }
         }
     }
@@ -244,7 +208,7 @@ static void worker(int argc, const char** argv)
     if (!parameters)
     {
         fprintf(stderr, "Could not parse parameters from the command line\n");
-        boinc_finish(1);
+        mw_finish(EXIT_FAILURE);
     }
 
     ret1 = read_astronomy_parameters(astronomy_parameter_file, &ap);
@@ -272,7 +236,7 @@ static void worker(int argc, const char** argv)
     {
         free(parameters);
         cleanup_worker();
-		boinc_finish(1);
+		mw_finish(EXIT_FAILURE);
     }
 
     initialize_state(&ap, &sp, &es);
@@ -291,20 +255,20 @@ static void worker(int argc, const char** argv)
 
         free(parameters);
         cleanup_worker();
-        boinc_finish(1);
+        mw_finish(EXIT_FAILURE);
     }
 
     set_astronomy_parameters(&ap, parameters);
 
 #if COMPUTE_ON_CPU
     init_constants(&ap);
-    init_simple_evaluator(astronomy_evaluate);
+    init_simple_evaluator(cpu_evaluate);
 #elif USE_CUDA
     init_constants(&ap);
-    init_simple_evaluator(cuda_evaluator);
+    init_simple_evaluator(cuda_evaluate);
 #elif USE_OCL
     init_constants(&ap);
-    init_simple_evaluator(ocl_evaluator);
+    init_simple_evaluator(ocl_evaluate);
 #else
     #error "Must choose CUDA, OpenCL or CPU"
 #endif /* COMPUTE_ON_CPU */
@@ -319,7 +283,7 @@ static void worker(int argc, const char** argv)
     free(parameters);
 	cleanup_worker();
 
-    boinc_finish(0);
+    mw_finish(EXIT_SUCCESS);
 
 }
 
@@ -364,7 +328,7 @@ int main(int argc, char** argv)
     if (choose_gpu(argc, argv) == -1)
     {
         fprintf(stderr, "Unable to find a capable GPU\n");
-        boinc_finish(EXIT_FAILURE);
+        mw_finish(EXIT_FAILURE);
     }
     MW_DEBUGMSG("got here\n");
     parse_prefs(project_prefs);

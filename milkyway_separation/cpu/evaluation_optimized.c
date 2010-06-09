@@ -34,6 +34,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "stCoords.h"
 #include "star_points.h"
 #include "numericalIntegration.h"
+#include "evaluation_state.h"
+
+
 
 #define stdev 0.6
 #define xr 3 * stdev
@@ -736,4 +739,36 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, c
 
     return 0;
 }
+
+
+double cpu_evaluate(double* parameters,
+                    ASTRONOMY_PARAMETERS* ap,
+                    EVALUATION_STATE* es,
+                    STAR_POINTS* sp)
+{
+    int retval;
+
+    set_astronomy_parameters(ap, parameters);
+    reset_evaluation_state(es);
+
+    retval = calculate_integrals(ap, es, sp);
+    if (retval)
+    {
+        fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
+        mw_finish(retval);
+    }
+
+    MW_DEBUG("calculated integrals: %lf, %lf\n", es->background_integral, es->stream_integrals[0]);
+
+    retval = calculate_likelihood(ap, es, sp);
+    free_constants(ap);
+
+    if (retval)
+    {
+        fprintf(stderr, "APP: error calculating likelihood: %d\n", retval);
+        mw_finish(retval);
+    }
+    return es->prob_sum / (sp->number_stars - es->bad_jacobians);
+}
+
 

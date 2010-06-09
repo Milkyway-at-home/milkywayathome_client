@@ -37,6 +37,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "numericalIntegration.h"
 #include "../util/io_util.h"
 
+#if BOINC_APPLICATION
+  #include <boinc_api.h>
+  #include <filesys.h>
+#endif
+
+
 #ifndef M_PI
 	#define pi 3.1415926535897932384626433832795028841971693993751
 #else

@@ -335,10 +335,10 @@ double execute_likelihood_kernel(ocl_mem_t* ocl_mem,
     return likelihood;
 }
 
-double ocl_evaluator(double* parameters,
-                     ASTRONOMY_PARAMETERS* ap,
-                     EVALUATION_STATE* es,
-                     STAR_POINTS* sp)
+double ocl_evaluate(double* parameters,
+                    ASTRONOMY_PARAMETERS* ap,
+                    EVALUATION_STATE* es,
+                    STAR_POINTS* sp)
 {
     double likelihood;
     ocl_mem_t* ocl_mem;
