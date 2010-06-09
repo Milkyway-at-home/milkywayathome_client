@@ -5,14 +5,16 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
+#ifndef _CODE_H_
+#define _CODE_H_
+
 #define extern /* nada */
 
 #include "code.h"
 #include <time.h>
 #include <stdlib.h>
 
-/*  * Default values for input parameters.
- */
+/*  Default values for input parameters. */
 
 const char* defv[] =
 {
@@ -45,8 +47,7 @@ static void stepsystem(void);            /* advance by one time-step */
 static void testdata(void);          /* generate test data */
 static void pickshell(vector, real);     /* pick point on shell */
 
-/*  * MAIN: toplevel routine for hierarchical N-body code.
- */
+/* MAIN: toplevel routine for hierarchical N-body code. */
 
 int main(int argc, char* argv[])
 {
@@ -129,7 +130,7 @@ static void startrun(void)
     tout = tnow;                /* schedule first output */
 }
 
-/*  * TESTDATA: generate Plummer model initial conditions for test runs,
+/* TESTDATA: generate Plummer model initial conditions for test runs,
  * scaled to units such that M = -4E = G = 1 (Henon, Hegge, etc).
  * See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37, 183.
  */
@@ -151,7 +152,13 @@ static void testdata(void)
     (vshift)[1] = VYC;
     (vshift)[2] = VZC;
 
-    printf("Shifting plummer sphere to r = (%f, %f, %f) v = (%f, %f, %f)...\n", rshift[0], rshift[1], rshift[2], vshift[0], vshift[1], vshift[2]);
+    printf("Shifting plummer sphere to r = (%f, %f, %f) v = (%f, %f, %f)...\n",
+           rshift[0],
+           rshift[1],
+           rshift[2],
+           vshift[0],
+           vshift[1],
+           vshift[2]);
 
     bodyptr p;
 
@@ -194,9 +201,8 @@ static void testdata(void)
 
     printf("done\n");
 }
-
-/*  * PICKSHELL: pick a random point on a sphere of specified radius.
- */
+
+/* PICKSHELL: pick a random point on a sphere of specified radius. */
 
 static void pickshell(vector vec, real rad)
 {
@@ -214,8 +220,7 @@ static void pickshell(vector vec, real rad)
     MULVS(vec, vec, rsc);           /* rescale to radius given */
 }
 
-/*  * STEPSYSTEM: advance N-body system one time-step.
- */
+/* STEPSYSTEM: advance N-body system one time-step. */
 
 static void stepsystem(void)
 {
@@ -260,6 +265,9 @@ static void stepsystem(void)
         ADDV(Vel(p), Vel(p), dvel);             /* advance v by 1/2 step */
     }
     nstep++;                    /* count another time step */
-    tnow = tnow + dt;               /* finally, advance time */
+    tnow = tnow + dt;           /* finally, advance time */
     output();                   /* do major or minor output */
 }
+
+#endif _CODE_H_
+

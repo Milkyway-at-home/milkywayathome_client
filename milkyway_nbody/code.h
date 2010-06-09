@@ -8,35 +8,21 @@
 #include "defs.h"
 
 extern char* infile;           /* file name for snapshot input */
-
 extern char* outfile;          /* file name for snapshot output */
-
 extern real freq;           /* inverse of integration timestep */
-
 extern real freqout;            /* output frequency */
-
 extern real tstop;          /* time to stop calculation */
-
 extern char* headline;         /* message describing calculation */
-
 extern real tnow;           /* current value of time */
-
 extern real tout;           /* time of next output */
-
 extern int nstep;           /* number of time-steps */
-
 extern int nfcalc;          /* count force calculations */
-
 extern int n2bcalc;         /* count body-body interactions */
-
 extern int nbccalc;         /* count body-cell interactions */
-
 extern int nbody;           /* number of bodies in system */
-
 extern bodyptr bodytab;         /* points to array of bodies */
 
-/*  * Global function prototypes.
- */
+/* Global function prototypes. */
 
 void initoutput(void);              /* open files for output */
 void stopoutput(void);              /* close output files */

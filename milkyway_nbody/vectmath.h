@@ -5,6 +5,9 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
+#ifndef _VECTMATH_H_
+#define _VECTMATH_H_
+
 #ifndef THREEDIM
 #  ifndef TWODIM
 #    ifndef NDIM
@@ -323,3 +326,6 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
             for (_j = 0; _j < NDIM; _j++)                   \
                 (p)[_i][_j] = (s);                      \
     }
+
+#endif /* _VECTMATH_H_ */
+

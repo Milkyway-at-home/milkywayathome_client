@@ -15,6 +15,9 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
+#ifndef _REAL_H_
+#define _REAL_H_
+
 /*  * REAL, REALPTR: real-valued number, and pointer to same.
  */
 
@@ -98,4 +101,6 @@ float fsqr(float);          /* square function */
 double sqr(double);         /* square function */
 
 #endif
+
+#endif /* _REAL_H_ */
 

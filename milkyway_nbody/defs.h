@@ -7,6 +7,9 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
+#ifndef _DEFS_H_
+#define _DEFS_H_
+
 #include "stdinc.h"
 #include "real.h"
 #include "vectmath.h"
@@ -153,3 +156,6 @@ void error(char*, ...);            /* report error and exit */
 void eprintf(char*, ...);          /* printf to error FILE* */
 int compare (const void* a, const void* b);     /* comparison function used in chisq */
 float chisq();                  /* likelihood calculator */
+
+#endif /* _DEFS_H_ */
+
