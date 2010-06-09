@@ -111,14 +111,6 @@ set(lib_source_file_list evaluation_state.c
                          star_points.c
                          astronomy_worker.c)
 
-set(gcc_extra_warnings "-Wshadow -Wpointer-arith -Wcast-align -common-Wwrite-strings -compare -fno-common")
-
-#TODO: Other compilers
-if(CMAKE_COMPILER_IS_GNUCC) # I think this could maybe be IS_UNIX
-  set(CMAKE_C_FLAGS "-Wall -Wextra ${CMAKE_C_FLAGS}")
-  set(CMAKE_C_FLAGS_DEBUG "-Wall -Wextra ${gcc_extra_warnings} -O0 -g ${CMAKE_C_FLAGS_DEBUG}")
-endif(CMAKE_COMPILER_IS_GNUCC)
-
 
 message("---------------------------------------------")
 message("   Building:          ${PROJECT_NAME}")
