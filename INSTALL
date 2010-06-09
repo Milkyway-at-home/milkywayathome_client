@@ -271,6 +271,10 @@ Linux:
   4.4 The client should now be build with an executable in bin/ and a
       library in lib/
 
+Note: If you do try to build the client, and you have a recent
+GNOME/Gtk/Glib/GIO install, you need the latest development version of
+wxWidgets installed.
+
 --------------------------------------------------------------------------------
 
 OS X:
