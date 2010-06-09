@@ -22,8 +22,6 @@ cmake_minimum_required (VERSION 2.6)
 
 set(test_app ${PROJECT_BINARY_DIR}/bin/milkyway_client)
 
-
-
 #arguments shared by several of the tests
 set(param_set1 0.571713 12.312119 -3.305187 148.010257 22.453902 0.42035
                -0.468858 0.760579 -1.361644 177.884238 23.882892 1.210639
@@ -75,13 +73,6 @@ endforeach()
 # Test sources should be named <testname>.c .
 set(test_list )
 
-
-#FIXME: Including other sources. move everything into library.
-#FIXME: reorganize to not duplicate this.
-find_package(BOINC REQUIRED)
-include_directories(${BOINC_INCLUDE_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../milkyway)
 
 foreach(test ${test_list})
 	add_executable(${test} ${test}.c ${extra_test_sources})

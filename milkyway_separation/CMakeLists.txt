@@ -19,56 +19,11 @@
 #
 
 #No idea on the actual version, but I'll go with this for now.
+
 cmake_minimum_required (VERSION 2.6)
 project(milkyway_client)
 
-# The version number.
-set(milkyway_client_VERSION_MAJOR 0)
-set(milkyway_client_VERSION_MINOR 1)
-set(milkyway_client_VERSION       0.1)
-
-#choose release build type by default
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-      "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
-      FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
-
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set(MW_ENABLE_DEBUG ON)
-endif()
-
-#if we aren't build from the root of the repo, these need to be set separately
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../cmake_modules)
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../bin)
-set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../lib)
-set(PROJECT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../include)
-
-include_directories(${PROJECT_INCLUDE_DIR})
-
-find_package(CUDA)
-
-if(MINGW)
-  if(NOT TAKEOFFGW_ROOT)
-    set(TAKEOFFGW_ROOT "C:/takeoffgw/")
-  endif(NOT TAKEOFFGW_ROOT)
-
-  set(CMAKE_FIND_ROOT_PATH "${TAKEOFFGW_ROOT}/i686-pc-mingw32/sys-root/mingw")
-endif(MINGW)
-
-find_package(Popt REQUIRED)
-find_package(BOINC REQUIRED)
-
-
-
-# if(APPLE)
-#   find_library(OPENCL_LIBRARY OpenCL DOC "OpenCL lib for OS X")
-#   find_path(OPENCL_INCLUDE_DIR OpenCL/cl.h DOC "Include for OpenCL on OS X")
-# endif(APPLE)
-
-include_directories(${BOINC_INCLUDE_DIR})
-include_directories(${POPT_INCLUDE_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}) #FIXME: Move headers to include
+include_directories("${PROJECT_SOURCE_DIR}")
 
 option(BUILD_SHARED_LIBS
        "Set to OFF to build static libraries" ON)
@@ -93,13 +48,13 @@ endif()
 
 if(USE_CUDA)
   list(APPEND appCount "CUDA")
-  include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../milkyway_cuda")
+  include_directories("${CMAKE_SOURCE_DIR}/milkyway_separation_cuda")
   include_directories(${CUDA_INCLUDE_DIRS})
 endif()
 
 if(USE_OCL)
   list(APPEND appCount "OCL")
-  include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../milkyway_ocl")
+  include_directories("${CMAKE_SOURCE_DIR}/milkyway_separation_ocl")
 endif()
 
 list(LENGTH appCount NUM_CHOICES)
