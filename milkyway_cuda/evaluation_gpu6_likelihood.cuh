@@ -1,3 +1,4 @@
+
 template <unsigned int number_streams, unsigned int aux_bg_profile>
 __global__ void gpu__likelihood_kernel(int offset, int convolve,
                                        GPU_PRECISION bg_a, GPU_PRECISION bg_b,

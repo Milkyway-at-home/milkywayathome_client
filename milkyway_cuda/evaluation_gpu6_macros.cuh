@@ -1,3 +1,7 @@
+
+#ifndef _EVALUATION_GPU6_MACROS_H_
+#define _EVALUATION_GPU6_MACROS_H_
+
 #define EXECUTE_ZERO_INTEGRALS(bg_int, st_int)              \
     switch(number_streams) {                      \
     case 1:gpu__zero_integrals<1><<<dimGrid, dimBlock>>>          \
@@ -43,8 +47,8 @@
         }                                 \
     }
 
-#ifndef SINGLE_PRECISION
-#ifdef GLOBAL_MEMORY
+#if !SINGLE_PRECISION
+#if GLOBAL_MEMORY
 #define EXECUTE_INTEGRAL_KERNEL                     \
     switch(number_streams) {                      \
     case 1: gpu__integral_kernel3<1, MAX_CONVOLVE, aux_bg_profile>    \
@@ -184,7 +188,7 @@
 \
 #endif
 #else    //single precision
-#ifdef GLOBAL_MEMORY
+#if GLOBAL_MEMORY
 #define EXECUTE_INTEGRAL_KERNEL                     \
     switch(number_streams) {                      \
     case 1:                               \
@@ -264,9 +268,8 @@
                 device_fstream_a);   \
         break;                              \
     }                                 \
-     
+
 #else
-
 #define EXECUTE_INTEGRAL_KERNEL                     \
     switch(number_streams) {                      \
     case 1:                               \
@@ -338,11 +341,11 @@
                 device_st_correction[i]); \
         break;                              \
     }                                 \
-     
+
 #endif
 #endif
 
-#ifndef SINGLE_PRECISION
+#if !SINGLE_PRECISION
 #define EXECUTE_LIKELIHOOD_KERNEL                   \
     \
     switch (ap->number_streams) {                     \
@@ -387,7 +390,7 @@
          device_probability);                     \
         break;                              \
     }                                 \
-     
+
 #else
 #define EXECUTE_LIKELIHOOD_KERNEL                   \
     switch (ap->number_streams) {                     \
@@ -432,7 +435,9 @@
          device_probability);                     \
         break;                              \
     }                                 \
-     
+
 #endif
 
+
+#endif /* _EVALUATION_GPU6_MACROS_H_ */
 

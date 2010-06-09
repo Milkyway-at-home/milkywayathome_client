@@ -23,18 +23,35 @@
 #define EVALUATION_GPU_H
 
 #include <cuda.h>
+#include <cutil.h>
 #include <cuda_runtime.h>
 
-#include "../milkyway/star_points.h"
-#include "../milkyway/parameters.h"
 
+#ifdef __CUDACC__
+extern "C"{
+#endif
+
+double cuda_evaluator(double*,
+                      ASTRONOMY_PARAMETERS* ap,
+                      EVALUATION_STATE* es,
+                      STAR_POINTS* sp);
+
+#ifdef __CUDACC__
+}
+#endif
+
+
+/*
 void parse_prefs(char* project_prefs);
 int choose_gpu(int argc, char** argv);
 void gpu__initialize();
 
 double gpu__likelihood(double* parameters);
-double cuda_evaluator(double*, ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp);
+
 void gpu__free_constants();
+*/
+
+
 
 #endif /* EVALUATION_GPU_H */
 

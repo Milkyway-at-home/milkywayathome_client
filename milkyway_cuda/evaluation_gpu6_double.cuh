@@ -20,6 +20,10 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _EVALUATION_GPU6_DOUBLE_H_
+#define _EVALUATION_GPU6_DOUBLE_H_
+
+
 texture<int2, 2, cudaReadModeElementType> tex_r_point;
 texture<int2, 2, cudaReadModeElementType> tex_qw_r3_N;
 texture<int2, 2, cudaReadModeElementType> tex_fstream_a;
@@ -265,17 +269,17 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
         if (number_streams >= 1)
         {
             //stream 0
-            double sxyz0 = xyz0 - constant_fstream_c[0];
-            double sxyz1 = xyz1 - constant_fstream_c[1];
-            double sxyz2 = xyz2 - constant_fstream_c[2];
+            double sxyz0 = xyz0 - tex2D_double(tex_fstream_c, 0, 0);
+            double sxyz1 = xyz1 - tex2D_double(tex_fstream_c, 1, 0);
+            double sxyz2 = xyz2 - tex2D_double(tex_fstream_c, 2, 0);
 
-            double dotted = constant_fstream_a[0] * sxyz0
-                            + constant_fstream_a[1] * sxyz1
-                            + constant_fstream_a[2] * sxyz2;
+            double dotted = tex2D_double(tex_fstream_a, 0, 0) * sxyz0
+                            + tex2D_double(tex_fstream_a, 1, 0) * sxyz1
+                            + tex2D_double(tex_fstream_a, 2, 0) * sxyz2;
 
-            sxyz0 -= dotted * constant_fstream_a[0];
-            sxyz1 -= dotted * constant_fstream_a[1];
-            sxyz2 -= dotted * constant_fstream_a[2];
+            sxyz0 -= dotted * tex2D_double(tex_fstream_a, 0, 0);
+            sxyz1 -= dotted * tex2D_double(tex_fstream_a, 1, 0);
+            sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, 0);
 
             double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
             double result = (tex2D_double(tex_qw_r3_N, i, in_step)
@@ -286,17 +290,17 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
         if (number_streams >= 2)
         {
             //stream 1
-            double sxyz0 = xyz0 - constant_fstream_c[3];
-            double sxyz1 = xyz1 - constant_fstream_c[4];
-            double sxyz2 = xyz2 - constant_fstream_c[5];
+            double sxyz0 = xyz0 - tex2D_double(tex_fstream_c, 0, 1);
+            double sxyz1 = xyz1 - tex2D_double(tex_fstream_c, 1, 1);
+            double sxyz2 = xyz2 - tex2D_double(tex_fstream_c, 2, 1);
 
-            double dotted = constant_fstream_a[3] * sxyz0
-                            + constant_fstream_a[4] * sxyz1
-                            + constant_fstream_a[5] * sxyz2;
+            double dotted = tex2D_double(tex_fstream_a, 0, 1) * sxyz0
+                            + tex2D_double(tex_fstream_a, 1, 1) * sxyz1
+                            + tex2D_double(tex_fstream_a, 2, 1) * sxyz2;
 
-            sxyz0 -= dotted * constant_fstream_a[3];
-            sxyz1 -= dotted * constant_fstream_a[4];
-            sxyz2 -= dotted * constant_fstream_a[5];
+            sxyz0 -= dotted * tex2D_double(tex_fstream_a, 0, 1);
+            sxyz1 -= dotted * tex2D_double(tex_fstream_a, 1, 1);
+            sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, 1);
 
             double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
             double result = (tex2D_double(tex_qw_r3_N, i, in_step)
@@ -307,17 +311,17 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
         if (number_streams >= 3)
         {
             //stream 2
-            double sxyz0 = xyz0 - constant_fstream_c[6];
-            double sxyz1 = xyz1 - constant_fstream_c[7];
-            double sxyz2 = xyz2 - constant_fstream_c[8];
+            double sxyz0 = xyz0 - tex2D_double(tex_fstream_c, 0, 2);
+            double sxyz1 = xyz1 - tex2D_double(tex_fstream_c, 1, 2);
+            double sxyz2 = xyz2 - tex2D_double(tex_fstream_c, 2, 2);
 
-            double dotted = constant_fstream_a[6] * sxyz0
-                            + constant_fstream_a[7] * sxyz1
-                            + constant_fstream_a[8] * sxyz2;
+            double dotted = tex2D_double(tex_fstream_a, 0, 2) * sxyz0
+                            + tex2D_double(tex_fstream_a, 1, 2) * sxyz1
+                            + tex2D_double(tex_fstream_a, 2, 2) * sxyz2;
 
-            sxyz0 -= dotted * constant_fstream_a[6];
-            sxyz1 -= dotted * constant_fstream_a[7];
-            sxyz2 -= dotted * constant_fstream_a[8];
+            sxyz0 -= dotted * tex2D_double(tex_fstream_a, 0, 2);
+            sxyz1 -= dotted * tex2D_double(tex_fstream_a, 1, 2);
+            sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, 2);
 
             double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
             double result = (tex2D_double(tex_qw_r3_N, i, in_step)
@@ -328,17 +332,17 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
         if (number_streams >= 4)
         {
             //stream 3
-            double sxyz0 = xyz0 - constant_fstream_c[9];
-            double sxyz1 = xyz1 - constant_fstream_c[10];
-            double sxyz2 = xyz2 - constant_fstream_c[11];
+            double sxyz0 = xyz0 - tex2D_double(tex_fstream_c, 0, 3);
+            double sxyz1 = xyz1 - tex2D_double(tex_fstream_c, 1, 3);
+            double sxyz2 = xyz2 - tex2D_double(tex_fstream_c, 2, 3);
 
-            double dotted = constant_fstream_a[9] * sxyz0
-                            + constant_fstream_a[10] * sxyz1
-                            + constant_fstream_a[11] * sxyz2;
+            double dotted = tex2D_double(tex_fstream_a, 0, 3) * sxyz0
+                            + tex2D_double(tex_fstream_a, 1, 3) * sxyz1
+                            + tex2D_double(tex_fstream_a, 2, 3) * sxyz2;
 
-            sxyz0 -= dotted * constant_fstream_a[9];
-            sxyz1 -= dotted * constant_fstream_a[10];
-            sxyz2 -= dotted * constant_fstream_a[11];
+            sxyz0 -= dotted * tex2D_double(tex_fstream_a, 0, 3);
+            sxyz1 -= dotted * tex2D_double(tex_fstream_a, 1, 3);
+            sxyz2 -= dotted * tex2D_double(tex_fstream_a, 2, 3);
 
             double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
             double result = (tex2D_double(tex_qw_r3_N, i, in_step)
@@ -460,3 +464,6 @@ __global__ void gpu__integral_kernel3_aux(int mu_offset, int mu_steps,
         pos += (nu_steps * mu_steps);
     }
 }
+
+#endif /* _EVALUATION_GPU6_DOUBLE_H_ */
+

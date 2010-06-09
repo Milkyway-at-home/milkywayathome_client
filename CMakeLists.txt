@@ -35,6 +35,8 @@ include_directories(${PROJECT_INCLUDE_DIR})
 #doesn't behave as anyone would ever expect.
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
 
+#set(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda)
+
 option(SMALL_TESTS
        "Run small tests" ON)
 
@@ -52,5 +54,6 @@ option(MW_DEBUG_EXCESSIVE
 
 
 add_subdirectory(milkyway)
+add_subdirectory(milkyway_cuda)
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 

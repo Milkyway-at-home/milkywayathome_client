@@ -19,6 +19,9 @@
   along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _EVALUATION_GPU6_FLOAT_H_
+#define _EVALUATION_GPU6_FLOAT_H_
+
 texture<float, 2, cudaReadModeElementType> tex_r_point;
 texture<float, 2, cudaReadModeElementType> tex_qw_r3_N;
 texture<float, 2, cudaReadModeElementType> tex_fstream_a;
@@ -297,3 +300,6 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
         stream_integrals[pos] += st_int3 * V;
     }
 }
+
+#endif /* _EVALUATION_GPU6_FLOAT_H_ */
+

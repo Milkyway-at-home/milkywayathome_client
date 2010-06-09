@@ -20,7 +20,8 @@
 
 #FIXME: This isn't really good.
 if(UNIX)
-  set(BOINC_INCLUDE_SEARCH_PATH /usr/local/include/boinc )
+  set(BOINC_INCLUDE_SEARCH_PATH /usr/local/include/boinc
+                                /usr/include/boinc)
 endif(UNIX)
 
 if(MINGW)

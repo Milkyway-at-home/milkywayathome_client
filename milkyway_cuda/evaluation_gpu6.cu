@@ -32,19 +32,29 @@ extern "C++" {
 }
 
 #include <cuda.h>
-#include <cuda_runtime.h>
 #include <cutil_inline.h>
+#include <cutil.h>
+#include <cutil_math.h>
+#include <cuda_runtime.h>
+#include <cuda_runtime_api.h>
+
+#define DOUBLE_PRECISION 1
+#define SINGLE_PRECISION 0
+#define SHARED_MEMORY 1
+#define GLOBAL_MEMORY 1
+
+
+
+#if SINGLE_PRECISION
+  #define GPU_PRECISION float
+#elif DOUBLE_PRECISION
+  #define GPU_PRECISION double
+#endif
+
 
 #define MAX_CONVOLVE 120
 #define R_INCREMENT 1
 #define NUM_THREADS 64 //per block
-
-#ifdef SINGLE_PRECISION
-#define GPU_PRECISION float
-#endif
-#ifdef DOUBLE_PRECISION
-#define GPU_PRECISION double
-#endif
 
 GPU_PRECISION** device_V;       //V -- float[nu][r]
 GPU_PRECISION** device_sinb;
@@ -73,7 +83,7 @@ __device__ __constant__ GPU_PRECISION constant_stream_weight[4];
 #define MAX_STREAMS (4)
 __device__ __constant__ GPU_PRECISION constant_fstream_c[3*MAX_STREAMS];
 __device__ __constant__ GPU_PRECISION constant_fstream_a[3*MAX_STREAMS];
-#ifdef GLOBAL_MEMORY
+#if GLOBAL_MEMORY
 GPU_PRECISION* device_fstream_c;
 GPU_PRECISION* device_fstream_a;
 #endif
@@ -100,44 +110,47 @@ int max_blocks = 50000;
 
 extern __shared__ GPU_PRECISION shared_mem[];
 
-#ifdef SINGLE_PRECISION
+#if SINGLE_PRECISION
+  #if CONST_MEMORY
+    #include "evaluation_gpu6_float_const.cuh"
+  #else
 
-#ifdef CONST_MEMORY
-#include "evaluation_gpu6_float_const.cu"
-#else
-#ifdef GLOBAL_MEMORY
-#ifdef SHARED_MEMORY
-#include "evaluation_gpu6_float_shared.cu"
-#else
-#include "evaluation_gpu6_float_global.cu"
-#endif
-#else
-#include "evaluation_gpu6_float.cu"
-#endif
-#endif
+  #if GLOBAL_MEMORY
+    #if SHARED_MEMORY
+      #include "evaluation_gpu6_float_shared.cuh"
+    #else
+      #include "evaluation_gpu6_float_global.cuh"
+    #endif /* SHARED_MEMORY */
+
+  #else
+    #include "evaluation_gpu6_float.cuh"
+   #endif /* GLOBAL_MEMORY */
+#endif /* SINGLE_PRECISION */
 
 
-#else
-#ifdef CONST_MEMORY
-#include "evaluation_gpu6_double_const.cu"
-#else
-#ifdef GLOBAL_MEMORY
-#ifdef SHARED_MEMORY
-#include "evaluation_gpu6_double_shared.cu"
-#else
-#ifdef REGISTERS
-#include "evaluation_gpu6_double_registers.cu"
-#else
-#include "evaluation_gpu6_double_global.cu"
-#endif
-#endif
-#else
-#include "evaluation_gpu6_double.cu"
-#endif
-#endif
-#endif
-#include "evaluation_gpu6_likelihood.cu"
-#include "evaluation_gpu6_macros.cu"
+#else /* SINGLE_PRECISION */
+
+  #if CONST_MEMORY
+    #include "evaluation_gpu6_double_const.cuh"
+  #else
+    #if GLOBAL_MEMORY
+      #if SHARED_MEMORY
+        #include "evaluation_gpu6_double_shared.cuh"
+      #else
+        #if REGISTERS
+          #include "evaluation_gpu6_double_registers.cuh"
+        #else
+          #include "evaluation_gpu6_double_global.cuh"
+        #endif /* REGISTERS */
+      #endif /* SHARED_MEMORY */
+    #else /* GLOBAL_MEMORY */
+      #include "evaluation_gpu6_double.cuh"
+    #endif /* GLOBAL_MEMORY */
+  #endif /* CONST_MEMORY */
+#endif /* SINPLE_PRECISION */
+
+#include "evaluation_gpu6_likelihood.cuh"
+#include "evaluation_gpu6_macros.cuh"
 
 void parse_prefs(char* project_prefs)
 {
@@ -260,7 +273,7 @@ int choose_gpu(int argc, char** argv)
         fprintf(stderr, "Device index specified on the command line was %d\n", device_arg);
     else
         fprintf(stderr, "No device was specified on the command line\n");
-#ifdef DOUBLE_PRECISION
+#if DOUBLE_PRECISION
     fprintf(stderr, "Looking for a Double Precision capable NVIDIA GPU\n");
     //check if the device from the command line has CUDA 1.3 support
     if (device_arg != -1)
@@ -307,7 +320,7 @@ int choose_gpu(int argc, char** argv)
     }
     return 0;
 #endif
-#ifdef SINGLE_PRECISION
+#if SINGLE_PRECISION
     cudaDeviceProp deviceProp;
     if (device_arg == -1)
     {
@@ -347,54 +360,8 @@ int get_total_threads(int desired_size)
     }
 }
 
-double cuda_evaluator(double*, ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, STAR_POINTS* sp)
-{
-    int i;
-    double likelihood;
 
-    size_t num_integral_block = ap.number_integrals * sizeof(double);
-    int* r_steps = (int*)malloc(ap.number_integrals * sizeof(int));
-    int* mu_steps = (int*)malloc(ap.number_integrals * sizeof(int));
-    int* nu_steps = (int*)malloc(ap.number_integrals * sizeof(int));
-    double* r_min = (double*)malloc(num_integral_block);
-    double* mu_min = (double*)malloc(num_integral_block);
-    double* nu_min = (double*)malloc(num_integral_block);
-    double* r_step_size = (double*)malloc(num_integral_block);
-    double* mu_step_size = (double*)malloc(num_integral_block);
-    double* nu_step_size = (double*)malloc(num_integral_block);
-    for (i = 0; i < ap->number_integrals; ++i)
-    {
-        r_steps[i] = ap->integral[i]->r_steps;
-        mu_steps[i] = ap->integral[i]->mu_steps;
-        nu_steps[i] = ap->integral[i]->nu_steps;
-        r_min[i] = ap->integral[i]->r_min;
-        mu_min[i] = ap->integral[i]->mu_min;
-        nu_min[i] = ap->integral[i]->nu_min;
-        r_step_size[i] = ap->integral[i]->r_step_size;
-        mu_step_size[i] = ap->integral[i]->mu_step_size;
-        nu_step_size[i] = ap->integral[i]->nu_step_size;
-    }
-
-    gpu__initialize();
-
-    likelihood = gpu__likelihood(double* parameters);
-
-    gpu__free_constants(ap);
-
-    free(r_steps);
-    free(mu_steps);
-    free(nu_steps);
-    free(r_min);
-    free(mu_min);
-    free(nu_min);
-    free(r_step_size);
-    free(mu_step_size);
-    free(nu_step_size);
-
-    return likelihood;
-}
-
-void gpu__initialize(ASTRONOMY_PARAMETERS* ap)
+void gpu__initialize(ASTRONOMY_PARAMETERS* ap, STAR_POINTS* sp)
 {
     device_bg_int = new GPU_PRECISION*[ap->number_integrals];
     device_st_int = new GPU_PRECISION*[ap->number_integrals];
@@ -669,8 +636,10 @@ gpu__zero_integrals(int mu_offset,
     }
 }
 
-void cpu__sum_integrals(int iteration, double* background_integral,
-                        double* stream_integrals)
+void cpu__sum_integrals(int iteration,
+                        double* background_integral,
+                        double* stream_integrals,
+                        ASTRONOMY_PARAMETERS* ap)
 {
     int int_size = ap->integral[iteration]->nu_steps *
                    ap->integral[iteration]->mu_steps;
@@ -736,9 +705,12 @@ void cpu__sum_integrals(int iteration, double* background_integral,
 /********
  *  Likelihood calculation
  ********/
-void cpu__sum_likelihood(int num_streams, double* probability,
-                         double* bg_only, double* st_only,
-                         int gpu_num_stars)
+void cpu__sum_likelihood(int num_streams,
+                         double* probability,
+                         double* bg_only,
+                         double* st_only,
+                         int gpu_num_stars,
+                         STAR_POINTS* sp)
 {
     cutilSafeCall(cudaMemcpy(host_probability, device_probability,
                              gpu_num_stars * sizeof(GPU_PRECISION),
@@ -809,7 +781,7 @@ void cpu__sum_likelihood(int num_streams, double* probability,
 #define r0 (parameters[1])
 //#define delta parameters[4]
 
-double gpu__likelihood(double* parameters)
+double gpu__likelihood(double* parameters, ASTRONOMY_PARAMETERS* ap, STAR_POINTS* sp)
 {
     double stream_c[3], lbr[3];
     GPU_PRECISION* fstream_a = new GPU_PRECISION[MAX_STREAMS * 3];
@@ -871,7 +843,7 @@ double gpu__likelihood(double* parameters)
                                      cudaMemcpyHostToDevice));
     setup_constant_textures(fstream_a, fstream_c,
                             fstream_sigma_sq2, MAX_STREAMS);
-#ifdef GLOBAL_MEMORY
+#if GLOBAL_MEMORY
     cutilSafeCall(cudaMalloc((void**) &device_fstream_c, 3 *
                              ap->number_streams *
                              sizeof(GPU_PRECISION)) );
@@ -913,15 +885,15 @@ double gpu__likelihood(double* parameters)
     double bg_a, bg_b, bg_c;
     if (ap->aux_bg_profile == 0)
     {
-        bg_a    = 0;
-        bg_b    = 0;
-        bg_c    = 0;
+        bg_a = 0;
+        bg_b = 0;
+        bg_c = 0;
     }
     else if (ap->aux_bg_profile == 1)
     {
-        bg_a    = ap->background_parameters[4]; //vickej2_bg
-        bg_b    = ap->background_parameters[5]; //vickej2_bg
-        bg_c    = ap->background_parameters[6]; //vickej2_bg
+        bg_a = ap->background_parameters[4];
+        bg_b = ap->background_parameters[5];
+        bg_c = ap->background_parameters[6];
     }
     printf("bg_a:%f\n", bg_a);
     printf("bg_b:%f\n", bg_b);
@@ -949,7 +921,7 @@ double gpu__likelihood(double* parameters)
             EXECUTE_ZERO_INTEGRALS(device_bg_int_c[i],
                                    device_st_int_c[i]);
         }
-#ifdef SHARED_MEMORY
+#if SHARED_MEMORY
         int shared_mem_size = (ap->number_streams + ap->number_streams * 3 * 2) *
                               sizeof(GPU_PRECISION);
 #else
@@ -962,16 +934,10 @@ double gpu__likelihood(double* parameters)
             for (int mu_step = 0; mu_step < total_blocks; mu_step += max_blocks)
             {
                 dim3 dimGrid(min(max_blocks, total_blocks - mu_step), R_INCREMENT);
-                if (ap->aux_bg_profile == 1)
-                {
-                    const int aux_bg_profile = 1;
-                    EXECUTE_INTEGRAL_KERNEL;
-                }
-                else
-                {
-                    const int aux_bg_profile = 0;
-                    EXECUTE_INTEGRAL_KERNEL;
-                }
+
+                const int aux_bg_profile = (ap->aux_bg_profile == 1);
+                EXECUTE_INTEGRAL_KERNEL;
+
                 cudaError err = cudaThreadSynchronize();
                 if (err != cudaSuccess)
                 {
@@ -982,7 +948,7 @@ double gpu__likelihood(double* parameters)
             }
             current_work += R_INCREMENT;
         }
-        cpu__sum_integrals(i, &background_integral, stream_integrals);
+        cpu__sum_integrals(i, &background_integral, stream_integrals, ap);
     }
     fprintf(stderr, "<background_integral> %.20lf </background_integral>\n", background_integral);
     fprintf(stderr, "<stream_integrals>");
@@ -1065,7 +1031,7 @@ double gpu__likelihood(double* parameters)
     double bg_only;
     double* st_only = new double[ap->number_streams];
     cpu__sum_likelihood(ap->number_streams, &likelihood, &bg_only,
-                        st_only, number_stars);
+                        st_only, number_stars, sp);
     fprintf(stderr, "<background_only_likelihood> %.20lf </background_only_likelihood>\n",
             bg_only - 3.0);
     fprintf(stderr, "<stream_only_likelihood>");
@@ -1087,3 +1053,56 @@ double gpu__likelihood(double* parameters)
     return likelihood;
 
 }
+
+
+extern "C" double cuda_evaluator(double* parameters,
+                                 ASTRONOMY_PARAMETERS* ap,
+                                 EVALUATION_STATE* es,
+                                 STAR_POINTS* sp)
+{
+    int i;
+    double likelihood;
+
+    size_t num_integral_block = ap->number_integrals * sizeof(double);
+    int* r_steps = (int*)malloc(ap->number_integrals * sizeof(int));
+    int* mu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
+    int* nu_steps = (int*)malloc(ap->number_integrals * sizeof(int));
+    double* r_min = (double*)malloc(num_integral_block);
+    double* mu_min = (double*)malloc(num_integral_block);
+    double* nu_min = (double*)malloc(num_integral_block);
+    double* r_step_size = (double*)malloc(num_integral_block);
+    double* mu_step_size = (double*)malloc(num_integral_block);
+    double* nu_step_size = (double*)malloc(num_integral_block);
+    for (i = 0; i < ap->number_integrals; ++i)
+    {
+        r_steps[i] = ap->integral[i]->r_steps;
+        mu_steps[i] = ap->integral[i]->mu_steps;
+        nu_steps[i] = ap->integral[i]->nu_steps;
+        r_min[i] = ap->integral[i]->r_min;
+        mu_min[i] = ap->integral[i]->mu_min;
+        nu_min[i] = ap->integral[i]->nu_min;
+        r_step_size[i] = ap->integral[i]->r_step_size;
+        mu_step_size[i] = ap->integral[i]->mu_step_size;
+        nu_step_size[i] = ap->integral[i]->nu_step_size;
+    }
+
+    gpu__initialize(ap, sp);
+
+    likelihood = gpu__likelihood(parameters, ap, sp);
+
+    gpu__free_constants(ap);
+
+    free(r_steps);
+    free(mu_steps);
+    free(nu_steps);
+    free(r_min);
+    free(mu_min);
+    free(nu_min);
+    free(r_step_size);
+    free(mu_step_size);
+    free(nu_step_size);
+
+    return likelihood;
+}
+
+

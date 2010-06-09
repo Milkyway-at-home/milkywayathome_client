@@ -22,16 +22,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 texture<int2, 2, cudaReadModeElementType> tex_r_point;
 texture<int2, 2, cudaReadModeElementType> tex_qw_r3_N;
-texture<int2, 2, cudaReadModeElementType> tex_r_in_mag;
-texture<int2, 2, cudaReadModeElementType> tex_r_in_mag2;
 texture<int2, 2, cudaReadModeElementType> tex_fstream_a;
 texture<int2, 2, cudaReadModeElementType> tex_fstream_c;
 texture<int2, 2, cudaReadModeElementType> tex_fstream_sigma_sq2;
 
 cudaArray** cu_r_point_arrays;
 cudaArray** cu_qw_r3_N_arrays;
-cudaArray** cu_r_in_mag_arrays;
-cudaArray** cu_r_in_mag2_arrays;
 
 static __inline__ __device__
 double tex3D_double(texture<int2, 3> tex, int x, int y, int z)
@@ -46,6 +42,7 @@ double tex2D_double(texture<int2, 2> tex, int x, int y)
     int2 val = tex2D(tex, x, y);
     return __hiloint2double(val.x, val.y);
 }
+
 
 //used to get the hi/lo parts of a double
 //from NVIDIA CUDA SDK
@@ -167,39 +164,6 @@ void setup_qw_r3_N_texture(int r_steps, int convolve, int current_integral, doub
     free(host_int2);
 }
 
-void setup_r_in_mag_texture2(int r_steps, int convolve, int current_integral,
-                             double** r_in_mag, double** r_in_mag2)
-{
-    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<int2>();
-    cudaArray* cu_array;
-    cudaArray* cu_array2;
-    double* r_in_mag_flat = (double*) malloc(sizeof(double) * r_steps * convolve);
-    double* r_in_mag2_flat = (double*) malloc(sizeof(double) * r_steps * convolve);
-    int i, j;
-    for (i = 0; i < r_steps; ++i)
-    {
-        for (j = 0; j < convolve; ++j)
-        {
-            r_in_mag_flat[i* convolve + j] =
-                r_in_mag[i][j];
-            r_in_mag2_flat[i* convolve + j] =
-                r_in_mag2[i][j];
-        }
-    }
-    int2* r_in_mag_int2 = convert(r_in_mag_flat, r_steps * convolve);
-    int2* r_in_mag2_int2 = convert(r_in_mag2_flat, r_steps * convolve);
-    cutilSafeCall(cudaMallocArray(&cu_array, &channelDesc, convolve, r_steps));
-    cutilSafeCall(cudaMemcpyToArray(cu_array, 0, 0, r_in_mag_int2, r_steps * convolve * sizeof(int2), cudaMemcpyHostToDevice));
-    cu_r_in_mag_arrays[current_integral] = cu_array;
-    cutilSafeCall(cudaMallocArray(&cu_array2, &channelDesc, convolve, r_steps));
-    cutilSafeCall(cudaMemcpyToArray(cu_array2, 0, 0, r_in_mag2_int2, r_steps * convolve * sizeof(int2), cudaMemcpyHostToDevice));
-    cu_r_in_mag2_arrays[current_integral] = cu_array2;
-    free(r_in_mag_flat);
-    free(r_in_mag_int2);
-    free(r_in_mag2_flat);
-    free(r_in_mag2_int2);
-}
-
 /**
    Allocates cu arrays for the tex_device_lb texture and sets up
    parts of the texture
@@ -208,8 +172,6 @@ void allocate_cu_arrays(int number_integrals)
 {
     cu_r_point_arrays = (cudaArray**) malloc(sizeof(cudaArray*) * number_integrals);
     cu_qw_r3_N_arrays = (cudaArray**) malloc(sizeof(cudaArray*) * number_integrals);
-    cu_r_in_mag_arrays = (cudaArray**) malloc(sizeof(cudaArray*) * number_integrals);
-    cu_r_in_mag2_arrays = (cudaArray**) malloc(sizeof(cudaArray*) * number_integrals);
 
     tex_r_point.addressMode[0] = cudaAddressModeClamp;
     tex_r_point.addressMode[1] = cudaAddressModeClamp;
@@ -220,16 +182,6 @@ void allocate_cu_arrays(int number_integrals)
     tex_qw_r3_N.addressMode[1] = cudaAddressModeClamp;
     tex_qw_r3_N.filterMode = cudaFilterModePoint;
     tex_qw_r3_N.normalized = false;
-
-    tex_r_in_mag.addressMode[0] = cudaAddressModeClamp;
-    tex_r_in_mag.addressMode[1] = cudaAddressModeClamp;
-    tex_r_in_mag.filterMode = cudaFilterModePoint;
-    tex_r_in_mag.normalized = false;
-
-    tex_r_in_mag2.addressMode[0] = cudaAddressModeClamp;
-    tex_r_in_mag2.addressMode[1] = cudaAddressModeClamp;
-    tex_r_in_mag2.filterMode = cudaFilterModePoint;
-    tex_r_in_mag2.normalized = false;
 }
 
 void bind_texture(int current_integral)
@@ -240,8 +192,6 @@ void bind_texture(int current_integral)
     //cutilSafeCall(cudaBindTextureToArray(tex_device_lb, cu_arrays[current_integral], channelDesc));
     cutilSafeCall(cudaBindTextureToArray(tex_r_point, cu_r_point_arrays[current_integral], channelDesc));
     cutilSafeCall(cudaBindTextureToArray(tex_qw_r3_N, cu_qw_r3_N_arrays[current_integral], channelDesc));
-    cutilSafeCall(cudaBindTextureToArray(tex_r_in_mag, cu_r_in_mag_arrays[current_integral], channelDesc));
-    cutilSafeCall(cudaBindTextureToArray(tex_r_in_mag2, cu_r_in_mag2_arrays[current_integral], channelDesc));
 }
 
 // 11 DP ops (including 2 conversion) + 1 SP reciprocal, guess 10 DP flops would be an adequate count
@@ -273,12 +223,10 @@ __device__ double fsqrtd(double y)  // accurate to 1 ulp, i.e the last bit of th
 }   // same precision as division (1 ulp)
 
 
-template < unsigned int number_streams, unsigned int convolve,
-         unsigned int aux_bg_profile >
+template <unsigned int number_streams, unsigned int convolve>
 __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
                                       int in_step, int in_steps,
                                       int nu_steps, int total_threads,
-                                      double bg_a, double bg_b, double bg_c,
                                       double q_squared_inverse, double r0,
                                       double* device__sinb,
                                       double* device__sinl,
@@ -286,21 +234,10 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
                                       double* device__cosl,
                                       double* device__V,
                                       double* background_integrals,
-                                      double* background_integrals_c,
                                       double* stream_integrals,
-                                      double* stream_integrals_c,
                                       double* fstream_c,
                                       double* fstream_a)
 {
-    double* s_fstream_c = shared_mem;
-    double* s_fstream_a = &s_fstream_c[number_streams * 3];
-
-    if (threadIdx.x < number_streams * 3)
-    {
-        s_fstream_a[threadIdx.x] = fstream_a[threadIdx.x];
-        s_fstream_c[threadIdx.x] = fstream_c[threadIdx.x];
-    }
-
     double bg_int = 0.0;
     double st_int0 = 0.0;
     double st_int1 = 0.0;
@@ -317,47 +254,34 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
 
     for (int i = 0; i < convolve; i++)
     {
-        double r_point = tex2D_double(tex_r_point, i, in_step);
-        double xyz2 = r_point * sinb;
-        double xyz0 = r_point * cosb_x_cosl - d_lbr_r;
-        double xyz1 = r_point * cosb_x_sinl;
+        double xyz2 = tex2D_double(tex_r_point, i, in_step) * sinb;
+        double xyz0 = tex2D_double(tex_r_point, i, in_step) * cosb_x_cosl - d_lbr_r;
+        double xyz1 = tex2D_double(tex_r_point, i, in_step) * cosb_x_sinl;
 
-        double qw_r3_N = tex2D_double(tex_qw_r3_N, i, in_step);
         {
             double rg = fsqrtd(xyz0 * xyz0 + xyz1 * xyz1 + (xyz2 * xyz2)
                                * q_squared_inverse);
             double rs = rg + r0;
 
-            if (aux_bg_profile == 1)
-            {
-                double r_in_mag = tex2D_double(tex_r_in_mag, i, in_step);
-                double r_in_mag2 = tex2D_double(tex_r_in_mag2, i, in_step);
-                double h_prob = divd(qw_r3_N , (rg * rs * rs * rs));
-                double aux_prob = qw_r3_N * ( bg_a * r_in_mag2 + bg_b * r_in_mag + bg_c );
-                bg_int += h_prob + aux_prob;
-            }
-            else
-            {
-                bg_int += divd(qw_r3_N , (rg * rs * rs * rs));
-            }
+            bg_int += divd(tex2D_double(tex_qw_r3_N, i, in_step) , (rg * rs * rs * rs));
         }
         if (number_streams >= 1)
         {
             //stream 0
-            double sxyz0 = xyz0 - s_fstream_c[0];
-            double sxyz1 = xyz1 - s_fstream_c[1];
-            double sxyz2 = xyz2 - s_fstream_c[2];
+            double sxyz0 = xyz0 - fstream_c[0];
+            double sxyz1 = xyz1 - fstream_c[1];
+            double sxyz2 = xyz2 - fstream_c[2];
 
-            double dotted = s_fstream_a[0] * sxyz0
-                            + s_fstream_a[1] * sxyz1
-                            + s_fstream_a[2] * sxyz2;
+            double dotted = fstream_a[0] * sxyz0
+                            + fstream_a[1] * sxyz1
+                            + fstream_a[2] * sxyz2;
 
-            sxyz0 -= dotted * s_fstream_a[0];
-            sxyz1 -= dotted * s_fstream_a[1];
-            sxyz2 -= dotted * s_fstream_a[2];
+            sxyz0 -= dotted * fstream_a[0];
+            sxyz1 -= dotted * fstream_a[1];
+            sxyz2 -= dotted * fstream_a[2];
 
             double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-            double result = (qw_r3_N
+            double result = (tex2D_double(tex_qw_r3_N, i, in_step)
                              * exp(-(xyz_norm) *
                                    constant_inverse_fstream_sigma_sq2[0]));
             st_int0 += result;
@@ -365,20 +289,20 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
         if (number_streams >= 2)
         {
             //stream 1
-            double sxyz0 = xyz0 - s_fstream_c[3];
-            double sxyz1 = xyz1 - s_fstream_c[4];
-            double sxyz2 = xyz2 - s_fstream_c[5];
+            double sxyz0 = xyz0 - fstream_c[3];
+            double sxyz1 = xyz1 - fstream_c[4];
+            double sxyz2 = xyz2 - fstream_c[5];
 
-            double dotted = s_fstream_a[3] * sxyz0
-                            + s_fstream_a[4] * sxyz1
-                            + s_fstream_a[5] * sxyz2;
+            double dotted = fstream_a[3] * sxyz0
+                            + fstream_a[4] * sxyz1
+                            + fstream_a[5] * sxyz2;
 
-            sxyz0 -= dotted * s_fstream_a[3];
-            sxyz1 -= dotted * s_fstream_a[4];
-            sxyz2 -= dotted * s_fstream_a[5];
+            sxyz0 -= dotted * fstream_a[3];
+            sxyz1 -= dotted * fstream_a[4];
+            sxyz2 -= dotted * fstream_a[5];
 
             double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-            double result = (qw_r3_N
+            double result = (tex2D_double(tex_qw_r3_N, i, in_step)
                              * exp(-(xyz_norm) *
                                    constant_inverse_fstream_sigma_sq2[1]));
             st_int1 += result;
@@ -386,20 +310,20 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
         if (number_streams >= 3)
         {
             //stream 2
-            double sxyz0 = xyz0 - s_fstream_c[6];
-            double sxyz1 = xyz1 - s_fstream_c[7];
-            double sxyz2 = xyz2 - s_fstream_c[8];
+            double sxyz0 = xyz0 - fstream_c[6];
+            double sxyz1 = xyz1 - fstream_c[7];
+            double sxyz2 = xyz2 - fstream_c[8];
 
-            double dotted = s_fstream_a[6] * sxyz0
-                            + s_fstream_a[7] * sxyz1
-                            + s_fstream_a[8] * sxyz2;
+            double dotted = fstream_a[6] * sxyz0
+                            + fstream_a[7] * sxyz1
+                            + fstream_a[8] * sxyz2;
 
-            sxyz0 -= dotted * s_fstream_a[6];
-            sxyz1 -= dotted * s_fstream_a[7];
-            sxyz2 -= dotted * s_fstream_a[8];
+            sxyz0 -= dotted * fstream_a[6];
+            sxyz1 -= dotted * fstream_a[7];
+            sxyz2 -= dotted * fstream_a[8];
 
             double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-            double result = (qw_r3_N
+            double result = (tex2D_double(tex_qw_r3_N, i, in_step)
                              * exp(-(xyz_norm) *
                                    constant_inverse_fstream_sigma_sq2[2]));
             st_int2 += result;
@@ -407,20 +331,20 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
         if (number_streams >= 4)
         {
             //stream 3
-            double sxyz0 = xyz0 - s_fstream_c[9];
-            double sxyz1 = xyz1 - s_fstream_c[10];
-            double sxyz2 = xyz2 - s_fstream_c[11];
+            double sxyz0 = xyz0 - fstream_c[9];
+            double sxyz1 = xyz1 - fstream_c[10];
+            double sxyz2 = xyz2 - fstream_c[11];
 
-            double dotted = s_fstream_a[9] * sxyz0
-                            + s_fstream_a[10] * sxyz1
-                            + s_fstream_a[11] * sxyz2;
+            double dotted = fstream_a[9] * sxyz0
+                            + fstream_a[10] * sxyz1
+                            + fstream_a[11] * sxyz2;
 
-            sxyz0 -= dotted * s_fstream_a[9];
-            sxyz1 -= dotted * s_fstream_a[10];
-            sxyz2 -= dotted * s_fstream_a[11];
+            sxyz0 -= dotted * fstream_a[9];
+            sxyz1 -= dotted * fstream_a[10];
+            sxyz2 -= dotted * fstream_a[11];
 
             double xyz_norm = (sxyz0 * sxyz0) + (sxyz1 * sxyz1) + (sxyz2 * sxyz2);
-            double result = (qw_r3_N
+            double result = (tex2D_double(tex_qw_r3_N, i, in_step)
                              * exp(-(xyz_norm) *
                                    constant_inverse_fstream_sigma_sq2[3]));
             st_int3 += result;
@@ -433,41 +357,25 @@ __global__ void gpu__integral_kernel3(int mu_offset, int mu_steps,
                   % nu_steps;
     double V = device__V[nu_step + (in_step * nu_steps)];
     int pos = threadIdx.x + (blockDim.x * (blockIdx.x + mu_offset));
-    double temp = background_integrals[pos];
-    bg_int = bg_int * V;
-    background_integrals[pos] += (bg_int);
-    background_integrals_c[pos] += ((bg_int) -
-                                    (background_integrals[pos] - temp));
+    background_integrals[pos] += (bg_int * V);
     if (number_streams >= 1)
     {
-        st_int0 *= V;
-        double temp = stream_integrals[pos];
-        stream_integrals[pos] += st_int0;
-        stream_integrals_c[pos] += (st_int0 - (stream_integrals[pos] - temp));
+        stream_integrals[pos] += st_int0 * V;
         pos += total_threads;
     }
     if (number_streams >= 2)
     {
-        st_int1 *= V;
-        double temp = stream_integrals[pos];
-        stream_integrals[pos] += st_int1;
-        stream_integrals_c[pos] += (st_int1 - (stream_integrals[pos] - temp));
+        stream_integrals[pos] += st_int1 * V;
         pos += total_threads;
     }
     if (number_streams >= 3)
     {
-        st_int2 *= V;
-        double temp = stream_integrals[pos];
-        stream_integrals[pos] += st_int2;
-        stream_integrals_c[pos] += (st_int2 - (stream_integrals[pos] - temp));
+        stream_integrals[pos] += st_int2 * V;
         pos += total_threads;
     }
     if (number_streams >= 4)
     {
-        st_int3 *= V;
-        double temp = stream_integrals[pos];
-        stream_integrals[pos] += st_int3;
-        stream_integrals_c[pos] += (st_int3 - (stream_integrals[pos] - temp));
+        stream_integrals[pos] += st_int3 * V;
     }
 }
 
