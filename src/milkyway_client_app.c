@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 
 #include <boinc_api.h>
+#include <diagnostics.h>
 
 #if BOINC_APP_GRAPHICS
 	#include <graphics_api.h>
@@ -308,7 +309,11 @@ int main(int argc, char** argv)
     options.normal_thread_priority = 1; // higher priority (normal instead of idle)
     retval = boinc_init_options(&options);
 #else
-    retval = boinc_init();
+    /* TODO: for release build, use the boinc defaults*/
+    //retval = boinc_init();
+    retval = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
+                                    | BOINC_DIAG_HEAPCHECKENABLED
+                                    | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
 #endif /* defined(_WIN32) && COMPUTE_ON_GPU */
     if (retval)
         exit(retval);
