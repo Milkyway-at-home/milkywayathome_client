@@ -24,14 +24,9 @@ add_subdirectory(cpu)
 #  add_subdirectory(cuda)
 #endif()
 
-add_subdirectory(ocl)
-
-#if(OPENCL_FOUND)
-#  add_subdirectory(ocl)
-#endif()
-
-if(OCL_FOUND)
+if(OPENCL_FOUND)
   add_subdirectory(ocl)
 endif()
+
 
 

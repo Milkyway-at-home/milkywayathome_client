@@ -118,6 +118,7 @@ ocl_mem_t* setup_ocl_mem(ASTRONOMY_PARAMETERS* ap,
         delete [] fsinl;
         delete [] fcosb;
         delete [] fcosl;
+
         //Setup r constants
         double* irv = new double[ap->integral[i]->r_steps];
         double* reff_xr_rp3 = new double[ap->integral[i]->r_steps];
@@ -125,6 +126,11 @@ ocl_mem_t* setup_ocl_mem(ASTRONOMY_PARAMETERS* ap,
         double** r_point = new double*[ap->integral[i]->r_steps];
         double* ids = new double[ap->integral[i]->nu_steps];
         double* nus = new double[ap->integral[i]->nu_steps];
+
+
+        double** r_in_mag = new double*[ap->integral[i]->r_steps];
+        double** r_in_mag2 = new double*[ap->integral[i]->r_steps];
+
         cpu__r_constants(ap->convolve,
                          ap->integral[i]->r_steps,
                          ap->integral[i]->r_min,
@@ -138,8 +144,8 @@ ocl_mem_t* setup_ocl_mem(ASTRONOMY_PARAMETERS* ap,
                          irv,
                          r_point,
 
-                         NULL, //FIXME: this is to just get it to compile
-                         NULL,
+                         r_in_mag, //FIXME: did this just get it to compile
+                         r_in_mag2,
 
                          qw_r3_N,
                          reff_xr_rp3,
@@ -200,6 +206,9 @@ ocl_mem_t* setup_ocl_mem(ASTRONOMY_PARAMETERS* ap,
         delete [] r_point;
         delete [] ids;
         delete [] nus;
+        delete [] r_in_mag;
+        delete [] r_in_mag2;
+
         //Setup device only memory
         ocl_mem->bg_int[i] = clCreateBuffer(ocl_mem->context,
                                             CL_MEM_READ_WRITE,

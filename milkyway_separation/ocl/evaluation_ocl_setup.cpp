@@ -73,7 +73,7 @@ cl_platform_id* get_platforms()
     }
     else
     {
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -150,7 +150,7 @@ cl_device_id* get_devices(cl_platform_id platform)
     }
     else
     {
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -164,3 +164,4 @@ void setup_command_queue(ocl_mem_t* ocl_mem)
     check_error(err);
     ocl_mem->queue = queue;
 }
+

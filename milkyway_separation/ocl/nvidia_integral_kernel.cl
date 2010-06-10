@@ -22,8 +22,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #pragma OPENCL EXTENSION cl_khr_fp64: enable
 
 #define LBR_R (8.5)
-#include "exp.cl"
-#include "sqrt.cl"
 
 __kernel void
 integral_kernel(const int convolve,
@@ -134,3 +132,4 @@ integral_kernel(const int convolve,
         += (st_int[(i * get_local_size(0)) + get_local_id(0)] * v);
     }
 }
+

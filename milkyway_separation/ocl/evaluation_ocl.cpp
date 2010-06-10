@@ -162,10 +162,16 @@ void execute_integral_kernel(ocl_mem_t* ocl_mem,
                                            ap->number_streams, 0));
             }
             // execute kernel
-            check_error(clEnqueueNDRangeKernel(ocl_mem->queue, kernel, 1, 0,
+            check_error(clEnqueueNDRangeKernel(ocl_mem->queue,
+                                               kernel,
+                                               1,
+                                               NULL,
                                                global_work_size,
-                                               local_work_size,
-                                               0, 0, &event));
+                                               NULL,
+                                               //local_work_size,
+                                               0,
+                                               NULL,
+                                               &event));
             // block until the kernel completes
             check_error(clFinish(ocl_mem->queue));
             if (r_step == 0)
@@ -294,10 +300,15 @@ double execute_likelihood_kernel(ocl_mem_t* ocl_mem,
     unsigned long start_time = 0;
     size_t local_work_size[] = {LOCAL_WORK_SIZE};
     // execute kernel
-    check_error(clEnqueueNDRangeKernel(ocl_mem->queue, kernel, 1, 0,
+    check_error(clEnqueueNDRangeKernel(ocl_mem->queue, kernel,
+                                       1,
+                                       0,
                                        global_work_size,
-                                       local_work_size,
-                                       0, 0, &event));
+                                       NULL,
+                                       //local_work_size,
+                                       0,
+                                       0,
+                                       &event));
     // block until the kernel completes
     check_error(clFinish(ocl_mem->queue));
     check_error(clGetEventProfilingInfo(event,

@@ -357,12 +357,24 @@ void do_boinc_checkpoint(EVALUATION_STATE* es)
 }
 #endif
 
-void cpu__r_constants(  int n_convolve,
-                        int r_steps, double r_min, double r_step_size,
-                        int mu_steps, double mu_min, double mu_step_size,
-                        int nu_steps, double nu_min, double nu_step_size,
-                        double* irv, double** r_point, double** r_in_mag, double** r_in_mag2, double** qw_r3_N,
-                        double* reff_xr_rp3, double* nus, double* ids)
+void cpu__r_constants(int n_convolve,
+                      int r_steps,
+                      double r_min,
+                      double r_step_size,
+                      int mu_steps,
+                      double mu_min,
+                      double mu_step_size,
+                      int nu_steps,
+                      double nu_min,
+                      double nu_step_size,
+                      double* irv,
+                      double** r_point,
+                      double** r_in_mag,
+                      double** r_in_mag2,
+                      double** qw_r3_N,
+                      double* reff_xr_rp3,
+                      double* nus,
+                      double* ids)
 {
     int i;
 

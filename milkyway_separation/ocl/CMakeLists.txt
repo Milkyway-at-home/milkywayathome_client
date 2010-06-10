@@ -36,16 +36,15 @@ set(ocl_lib_src evaluation_ocl.cpp
                 evaluation_ocl_kernel.cpp
                 evaluation_ocl_mem.cpp
                 evaluation_ocl_setup.cpp
-                /Users/matt/src/milkywayathome_client/milkyway_separation/cuda/gauss_legendre.c
-                /Users/matt/src/milkywayathome_client/milkyway_separation/cuda/coords.c
-                /Users/matt/src/milkywayathome_client/milkyway_separation/cuda/cpu_coords.c
-                )
+                ../cuda/gauss_legendre.c
+                ../cuda/coords.c
+                ../cuda/cpu_coords.c)
 
 #FIXME
 include_directories(${OPENCL_INCLUDE_DIRS})
 include_directories(${OPENCL_INCLUDE_DIRS}/Headers)
-include_directories("/Users/matt/src/milkywayathome_client/milkyway_separation/cpu/")
-include_directories("/Users/matt/src/milkywayathome_client/milkyway_separation/cuda/")
+include_directories("../cpu/")
+include_directories("../cuda/")
 
 
 add_library(milkyway_separation_ocl STATIC ${ocl_lib_src})

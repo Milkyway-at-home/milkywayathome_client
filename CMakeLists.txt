@@ -74,9 +74,10 @@ include_directories(${POPT_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}) #FIXME: Move headers to include
 include_directories(${PROJECT_INCLUDE_DIR})
 
+#FIXME
 if(OPENCL_FOUND)
   include_directories(${OPENCL_INCLUDE_DIRS})
-  include_directories(${OPENCL_INCLUDE_DIRS}/Headers) #FIXME
+  include_directories(${OPENCL_INCLUDE_DIRS}/Headers)
   include_directories(${CMAKE_SOURCE_DIR}/milkyway_separation/ocl)
   include_directories(${CMAKE_SOURCE_DIR}/milkyway_separation/cpu)
   include_directories(${CMAKE_SOURCE_DIR}/milkyway_separation/cuda)
