@@ -29,15 +29,15 @@ float chisq()
 
     FILE* f;
 
-    float x[nbody];
-    float y[nbody];
-    float z[nbody];
+    float x[ctx.nbody];
+    float y[ctx.nbody];
+    float z[ctx.nbody];
 
-    float l[nbody];
-    float b[nbody];
+    float l[ctx.nbody];
+    float b[ctx.nbody];
 
-    float lambda[nbody];
-    float beta[nbody];
+    float lambda[ctx.nbody];
+    float beta[ctx.nbody];
 
     bodyptr p;
 
@@ -63,7 +63,7 @@ float chisq()
     printf("done\n");
 
     printf("Importing simulation results...");
-    for (p = bodytab; p < bodytab + nbody; p++)
+    for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++)
     {
 
         x[counttest-1] = Pos(p)[0];

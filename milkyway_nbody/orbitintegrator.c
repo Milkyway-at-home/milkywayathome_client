@@ -20,27 +20,27 @@ void integrate()
     int i;
 
     // Set the initial conditions
-    x[0] = Xinit;
-    x[1] = Yinit;
-    x[2] = Zinit;
-    v[0] = -VXinit;
-    v[1] = -VYinit;
-    v[2] = -VZinit;
+    x[0] = ps.Xinit;
+    x[1] = ps.Yinit;
+    x[2] = ps.Zinit;
+    v[0] = -ps.Xinit;
+    v[1] = -ps.Yinit;
+    v[2] = -ps.Zinit;
 
-    //printf("%f %f %f %f %f %f\n", Xinit, Yinit, Zinit, VXinit, VYinit, VZinit);
+    //printf("%f %f %f %f %f %f\n", ps.Xinit, ps.Yinit, ps.Zinit, ps.Xinit, ps.Yinit, ps.Zinit);
 
     // Get the initial acceleration
     acceleration(x, acc);
 
     // Loop through time
-    for (time = 0; time <= orbittstop; time += dtorbit)
+    for (time = 0; time <= ps.orbittstop; time += ps.dtorbit)
     {
 
         // Update the velocities and positions
         for (i = 0; i <= 2; i++)
         {
-            v[i] += acc[i] * dtorbit;
-            x[i] += v[i] * dtorbit;
+            v[i] += acc[i] * ps.dtorbit;
+            x[i] += v[i] * ps.dtorbit;
             //printf(" %f", x[i]);
         }
 
@@ -55,12 +55,12 @@ void integrate()
     }
 
     // Report the final values (don't forget to reverse the velocities)
-    XC = x[0];
-    YC = x[1];
-    ZC = x[2];
-    VXC = -v[0];
-    VYC = -v[1];
-    VZC = -v[2];
+    ps.XC = x[0];
+    ps.YC = x[1];
+    ps.ZC = x[2];
+    ps.XC = -v[0];
+    ps.YC = -v[1];
+    ps.ZC = -v[2];
 
 }
 

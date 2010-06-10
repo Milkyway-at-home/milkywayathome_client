@@ -65,7 +65,7 @@ bool scanopt(char* opt, char* key)
 {
     char* op, *kp;
 
-    op = (char*) opt;               /* start scan of options */
+    op = (char*) opt;               /* start scan of ps.options */
     while (*op != NULL)             /* loop over words in opt */
     {
         kp = (char*) key;           /* start at front of key */

@@ -30,12 +30,12 @@ void hackgrav(bodyptr p, bool intree)
     SETV(pos0, Pos(p));             /* set field point */
     phi0 = 0.0;                 /* init total potential */
     CLRV(acc0);                 /* and total acceleration */
-    n2bterm = nbcterm = 0;          /* count body & cell terms */
+    ps.n2bterm = ps.nbcterm = 0;          /* count body & cell terms */
     skipself = FALSE;               /* watch for tree-incest */
-    treescan((nodeptr) root);           /* scan tree from root */
+    treescan((nodeptr) t.root);           /* scan tree from t.root */
     if (intree && ! skipself)           /* did tree-incest occur? */
     {
-        if (! scanopt(options, "allow-incest")) /* treat as catastrophic? */
+        if (! scanopt(ps.options, "allow-incest")) /* treat as catastrophic? */
             error("hackgrav: tree-incest detected\n");
         if (! treeincest)           /* for the first time? */
             eprintf("\n[hackgrav: tree-incest detected]\n");
@@ -74,9 +74,9 @@ void hackgrav(bodyptr p, bool intree)
     Phi(p) = phi0;              /* store total potential */
     SETV(Acc(p), acc0);             /* and acceleration */
 }
-
+
 /*  * TREESCAN: iterative routine to do force calculation, starting
- * with node q, which is typically the root cell.
+ * with node q, which is typically the t.root cell.
  */
 
 static void treescan(nodeptr q)
@@ -94,9 +94,9 @@ static void treescan(nodeptr q)
             {
                 gravsub(q);                     /* so compute gravity */
                 if (Type(q) == BODY)
-                    n2bterm++;          /* count body-body */
+                    ps.n2bterm++;          /* count body-body */
                 else
-                    nbcterm++;          /* count body-cell */
+                    ps.nbcterm++;          /* count body-cell */
             }
             q = Next(q);            /* follow next link */
         }
@@ -118,7 +118,7 @@ static bool subdivp(cellptr q)
     qmem = q;                   /* remember we know them */
     return (drsq < Rcrit2(q));          /* apply standard rule */
 }
-
+
 /*  * GRAVSUB: compute contribution of node q to gravitational field at
  * point pos0, and add to running totals phi0 and acc0.
  */
@@ -134,7 +134,7 @@ static void gravsub(nodeptr q)
         SUBV(dr, Pos(q), pos0);                 /* then compute sep. */
         DOTVP(drsq, dr, dr);            /* and sep. squared */
     }
-    drsq += eps * eps;                          /* use standard softening */
+    drsq += ps.eps * ps.eps;                          /* use standard softening */
     drab = rsqrt(drsq);
     phii = Mass(q) / drab;
     mor3 = phii / drsq;
@@ -142,7 +142,7 @@ static void gravsub(nodeptr q)
     phi0 -= phii;                               /* add to total grav. pot. */
     ADDV(acc0, acc0, ai);                       /* ... and to total accel. */
 
-    if (usequad && Type(q) == CELL)             /* if cell, add quad term */
+    if (ps.usequad && Type(q) == CELL)             /* if cell, add quad term */
     {
         dr5inv = 1.0 / (drsq * drsq * drab);    /* form dr^-5 */
         MULMV(quaddr, Quad(q), dr);             /* form Q * dr */

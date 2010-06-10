@@ -115,23 +115,36 @@ typedef struct
 
 /* Variables used in tree construction. */
 
-extern cellptr root;   /* pointer to root cell */
-extern real rsize;     /* side-length of root cell */
+typedef struct
+{
+    cellptr root;   /* pointer to root cell */
+    real rsize;     /* side-length of root cell */
 
-extern int cellused;   /* count of cells in tree */
-extern int maxlevel;   /* count of levels in tree */
+    int cellused;   /* count of cells in tree */
+    int maxlevel;   /* count of levels in tree */
+} Tree;
 
 /* Parameters and results for gravitational calculation. */
 
-extern char* options;  /* various option keywords */
-extern real theta;     /* accuracy parameter: 0.0 => exact */
-extern bool usequad;   /* use quadrupole corrections */
-extern real eps;       /* potential softening parameter */
-extern int n2bterm;    /* number 2-body of terms evaluated */
-extern int nbcterm;    /* num of body-cell terms evaluated */
+typedef struct
+{
+    char* options;  /* various option keywords */
+    real theta;     /* accuracy parameter: 0.0 => exact */
+    bool usequad;   /* use quadrupole corrections */
+    real eps;       /* potential softening parameter */
+    int n2bterm;    /* number 2-body of terms evaluated */
+    int nbcterm;    /* num of body-cell terms evaluated */
+    real PluMass, r0;
+    real lstart, bstart, Rstart;
+    real XC, YC, ZC;
+    real VXC, VYC, VZC;
+    real Xinit, Yinit, Zinit;
+    real VXinit, VYinit, VZinit;
+    real orbittstop, dtorbit;
+} NBodyParams;
 
-extern real PluMass, r0, lstart, bstart, Rstart, XC, YC, ZC, VXC, VYC, VZC, Xinit, Yinit, Zinit, VXinit, VYinit, VZinit, orbittstop, dtorbit;
-
+extern NBodyParams ps;
+extern Tree t;
 
 /* Utility routines used in load.c and grav.c.  These are defined in
  * util.c, which must be compiled with the same choice of precision.

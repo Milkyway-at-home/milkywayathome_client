@@ -1,6 +1,6 @@
 /* ************************************************************************** */
 /* IO.C: I/O routines for export version of hierarchical N-body code. */
-/* Public routines: inputdata(), initoutput(), stopoutput(), output(). */
+/* Public routines: inputdata(), inictx.toutput(), stopoutput(), output(). */
 /* */
 /* Copyright (c) 1993 by Joshua E. Barnes, Honolulu, HI. */
 /* It's free because it's yours. */
@@ -28,26 +28,26 @@ void inputdata(void)
     int ndim;
     bodyptr p;
 
-    instr = fopen(infile, "r");         /* open input FILE* */
+    instr = fopen(ctx.infile, "r");         /* open input FILE* */
     if (instr == NULL)
-        error("inputdata: cannot find file %s\n", infile);
-    sprintf(headbuf, "Hierarchical code: input file %s", infile);
-    headline = headbuf;
-    in_int(instr, &nbody);
-    if (nbody < 1)
-        error("inputdata: nbody = %d is absurd\n", nbody);
+        error("inputdata: cannot find file %s\n", ctx.infile);
+    sprintf(headbuf, "Hierarchical code: input file %s", ctx.infile);
+    ctx.headline = headbuf;
+    in_int(instr, &ctx.nbody);
+    if (ctx.nbody < 1)
+        error("inputdata: ctx.nbody = %d is absurd\n", ctx.nbody);
     in_int(instr, &ndim);
     if (ndim != NDIM)
         error("inputdata: ndim = %d is absurd\n", ndim);
-    in_real(instr, &tnow);
-    bodytab = (bodyptr) allocate(nbody * sizeof(body));
-    for (p = bodytab; p < bodytab + nbody; p++) /* loop over new bodies */
+    in_real(instr, &ctx.tnow);
+    ctx.bodytab = (bodyptr) allocate(ctx.nbody * sizeof(body));
+    for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++) /* loop over new bodies */
         Type(p) = BODY;             /* init body type */
-    for (p = bodytab; p < bodytab + nbody; p++)
+    for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++)
         in_real(instr, &Mass(p));
-    for (p = bodytab; p < bodytab + nbody; p++)
+    for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++)
         in_vector(instr, Pos(p));
-    for (p = bodytab; p < bodytab + nbody; p++)
+    for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++)
         in_vector(instr, Vel(p));
     fclose(instr);              /* close input FILE* */
 }
@@ -60,11 +60,11 @@ static FILE* outstr2;                  /* output FILE* pointer */
 
 void initoutput(void)
 {
-    if (*outfile != NULL)                       /* output file specified? */
+    if (*ctx.outfile != NULL)                       /* output file specified? */
     {
-        outstr = fopen(outfile, "w");           /* setup output FILE* */
+        outstr = fopen(ctx.outfile, "w");           /* setup output FILE* */
         if (outstr == NULL)
-            error("initoutput: cannot open file %s\n", outfile);
+            error("inictx.toutput: cannot open file %s\n", ctx.outfile);
     }
     else
         outstr = NULL;              /* turn off data output */
@@ -98,11 +98,11 @@ void output(void)
     bodyptr p;
     vector lbR;
     diagnostics();              /* compute std diagnostics */
-    //printf("tnow = %f\n", tnow);
-    if (tstop - tnow < 0.01 / freq)
+    //printf("ctx.tnow = %f\n", ctx.tnow);
+    if (ctx.tstop - ctx.tnow < 0.01 / ctx.freq)
     {
-        printf("tnow = %f\n", tnow);
-        for (p = bodytab; p < bodytab + nbody; p++)
+        printf("ctx.tnow = %f\n", ctx.tnow);
+        for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++)
         {
             (lbR)[2] = sqrt(Pos(p)[0] * Pos(p)[0] + Pos(p)[1] * Pos(p)[1] + Pos(p)[2] * Pos(p)[2]);
             (lbR)[1] = r2d(atan2(Pos(p)[2], sqrt((Pos(p)[0]) * (Pos(p)[0]) + Pos(p)[1] * Pos(p)[1])));
@@ -115,9 +115,9 @@ void output(void)
 
             out_2vectors(outstr, lbR, Vel(p));
         }
-        printf("\tParticle data written to file %s\n\n", outfile);
+        printf("\tParticle data written to file %s\n\n", ctx.outfile);
         fflush(outstr);             /* drain output buffer */
-        tout += 1 / freqout;            /* schedule next data out */
+        ctx.tout += 1 / ctx.freqout;            /* schedule next data out */
     }
 }
 
@@ -138,7 +138,7 @@ static void diagnostics(void)
     CLRV(cmphase[0]);               /* zero c. of m. position */
     CLRV(cmphase[1]);               /* zero c. of m. velocity */
     CLRV(amvec);                /* zero am vector */
-    for (p = bodytab; p < bodytab + nbody; p++) /* loop over all particles */
+    for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++) /* loop over all particles */
     {
         mtot += Mass(p);                        /* sum particle masses */
         DOTVP(velsq, Vel(p), Vel(p));       /* square vel vector */
@@ -217,3 +217,4 @@ static void printvec(char* name, vector vec)
     printf("          %10s%10.4f%10.4f%10.4f\n",
            name, vec[0], vec[1], vec[2]);
 }
+

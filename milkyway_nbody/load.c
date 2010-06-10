@@ -9,7 +9,7 @@
 
 static void newtree(void);           /* flush existing tree */
 static cellptr makecell(void);           /* create an empty cell */
-static void expandbox(bodyptr, int);     /* set size of root cell */
+static void expandbox(bodyptr, int);     /* set size of t.root cell */
 static void loadbody(bodyptr);           /* load body into tree */
 static int subindex(bodyptr, cellptr);       /* compute subcell index */
 static void hackcofm(cellptr, real);     /* find centers of mass */
@@ -18,7 +18,7 @@ static void threadtree(nodeptr, nodeptr);    /* set next and more links */
 static void hackquad(cellptr);           /* compute quad moments */
 
 /*  * MAKETREE: initialize tree structure for hierarchical force calculation
- * from body array btab, which contains nbody bodies.
+ * from body array btab, which contains ctx.nbody bodies.
  */
 
 static bool bh86, sw93;              /* use alternate criteria */
@@ -28,21 +28,21 @@ void maketree(bodyptr btab, int nbody)
     bodyptr p;
 
     newtree();                                  /* flush existing tree, etc */
-    root = makecell();              /* allocate the root cell */
-    CLRV(Pos(root));                /* initialize the midpoint */
+    t.root = makecell();              /* allocate the t.root cell */
+    CLRV(Pos(t.root));                /* initialize the midpoint */
     expandbox(btab, nbody);                     /* and expand cell to fit */
-    maxlevel = 0;                               /* init count of levels */
+    t.maxlevel = 0;                               /* init count of levels */
     for (p = btab; p < btab + nbody; p++)       /* loop over bodies... */
         if (Mass(p) != 0.0)                     /* exclude test particles */
             loadbody(p);                        /* and insert into tree */
-    bh86 = scanopt(options, "bh86");        /* set flags for alternate */
-    sw93 = scanopt(options, "sw93");        /* ...cell opening criteria */
+    bh86 = scanopt(ps.options, "bh86");        /* set flags for alternate */
+    sw93 = scanopt(ps.options, "sw93");        /* ...cell opening criteria */
     if (bh86 && sw93)               /* can't have both at once */
-        error("maketree: options bh86 and sw93 are incompatible\n");
-    hackcofm(root, rsize);                  /* find c-of-m coordinates */
-    threadtree((nodeptr) root, NULL);           /* add Next and More links */
-    if (usequad)                /* including quad moments? */
-        hackquad(root);                         /* assign Quad moments */
+        error("maketree: ps.options bh86 and sw93 are incompatible\n");
+    hackcofm(t.root, t.rsize);                  /* find c-of-m coordinates */
+    threadtree((nodeptr) t.root, NULL);           /* add Next and More links */
+    if (ps.usequad)                /* including quad moments? */
+        hackquad(t.root);                         /* assign Quad moments */
 }
 
 /*  * NEWTREE: reclaim cells in tree, prepare to build new one.
@@ -57,7 +57,7 @@ static void newtree(void)
 
     if (! firstcall)                            /* tree data to reclaim? */
     {
-        p = (nodeptr) root;                     /* start with the root */
+        p = (nodeptr) t.root;                     /* start with the t.root */
         while (p != NULL)                       /* loop scanning tree */
             if (Type(p) == CELL)                /* found cell to free? */
             {
@@ -70,8 +70,8 @@ static void newtree(void)
     }
     else                                        /* first time through */
         firstcall = FALSE;                      /* so just note it */
-    root = NULL;                                /* flush existing tree */
-    cellused = 0;                               /* reset cell count */
+    t.root = NULL;                                /* flush existing tree */
+    t.cellused = 0;                               /* reset cell count */
 }
 
 /*  * MAKECELL: return pointer to free cell.
@@ -92,12 +92,12 @@ static cellptr makecell(void)
     Type(c) = CELL;                             /* initialize cell type */
     for (i = 0; i < NSUB; i++)                  /* loop over subcells */
         Subp(c)[i] = NULL;                      /* and empty each one */
-    cellused++;                                 /* count one more cell */
+    t.cellused++;                                 /* count one more cell */
     return (c);
 }
 
-/* EXPANDBOX: find range of coordinate values (with respect to root)
- * and expand root cell to fit.  The size is doubled at each step to
+/* EXPANDBOX: find range of coordinate values (with respect to t.root)
+ * and expand t.root cell to fit.  The size is doubled at each step to
  * take advantage of exact representation of powers of two.
  */
 
@@ -110,11 +110,11 @@ static void expandbox(bodyptr btab, int nbody)
     xyzmax = 0.0;
     for (p = btab; p < btab + nbody; p++)
         for (k = 0; k < NDIM; k++)
-            xyzmax = MAX(xyzmax, rabs(Pos(p)[k] - Pos(root)[k]));
+            xyzmax = MAX(xyzmax, rabs(Pos(p)[k] - Pos(t.root)[k]));
 
-    while (rsize < 2 * xyzmax)
+    while (t.rsize < 2 * xyzmax)
     {
-        rsize = 2 * rsize;
+        t.rsize = 2 * t.rsize;
     }
 }
 
@@ -126,9 +126,9 @@ static void loadbody(bodyptr p)
     int qind, lev, k;
     real qsize;
 
-    q = root;                                   /* start with tree root */
+    q = t.root;                                   /* start with tree t.root */
     qind = subindex(p, q);          /* get index of subcell */
-    qsize = rsize;                              /* keep track of cell size */
+    qsize = t.rsize;                              /* keep track of cell size */
     lev = 0;                                    /* count levels descended */
     while (Subp(q)[qind] != NULL)               /* loop descending tree */
     {
@@ -148,7 +148,7 @@ static void loadbody(bodyptr p)
         lev++;                                  /* count another level */
     }
     Subp(q)[qind] = (nodeptr) p;                /* found place, store p */
-    maxlevel = MAX(maxlevel, lev);      /* remember maximum level */
+    t.maxlevel = MAX(t.maxlevel, lev);      /* remember maximum level */
 }
 
 /*  * SUBINDEX: compute subcell index for body p in cell q.
@@ -204,10 +204,10 @@ static void setrcrit(cellptr p, vector cmpos, real psize)
     real rc, bmax2, dmin;
     int k;
 
-    if (theta == 0.0)               /* exact force calculation? */
-        rc = 2 * rsize;             /* always open cells */
+    if (ps.theta == 0.0)               /* exact force calculation? */
+        rc = 2 * t.rsize;             /* always open cells */
     else if (bh86)              /* use old BH criterion? */
-        rc = psize / theta;         /* using size of cell */
+        rc = psize / ps.theta;         /* using size of cell */
     else if (sw93)                  /* use S&W's criterion? */
     {
         bmax2 = 0.0;                /* compute max distance^2 */
@@ -218,11 +218,11 @@ static void setrcrit(cellptr p, vector cmpos, real psize)
             bmax2 += rsqr(MAX(dmin, psize - dmin));
             /* sum max distance^2 */
         }
-        rc = rsqrt(bmax2) / theta;      /* using max dist from cm */
+        rc = rsqrt(bmax2) / ps.theta;      /* using max dist from cm */
     }
     else                        /* use new criterion? */
     {
-        rc = psize / theta + distv(cmpos, Pos(p));
+        rc = psize / ps.theta + distv(cmpos, Pos(p));
         /* use size plus offset */
     }
     Rcrit2(p) = rsqr(rc);           /* store square of radius */
