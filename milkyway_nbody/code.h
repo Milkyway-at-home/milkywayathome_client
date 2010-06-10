@@ -28,6 +28,8 @@ typedef struct
     bodyptr bodytab;     /* points to array of bodies */
 } NBodyCtx;
 
+extern NBodyParams ps;
+extern Tree t;
 extern NBodyCtx ctx;
 
 /* Global function prototypes. */

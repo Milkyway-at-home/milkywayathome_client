@@ -143,8 +143,6 @@ typedef struct
     real orbittstop, dtorbit;
 } NBodyParams;
 
-extern NBodyParams ps;
-extern Tree t;
 
 /* Utility routines used in load.c and grav.c.  These are defined in
  * util.c, which must be compiled with the same choice of precision.

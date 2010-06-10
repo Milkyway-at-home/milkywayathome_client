@@ -6,6 +6,8 @@
 #include <math.h>
 #include <stdlib.h>
 #include "defs.h"
+#include "code.h"
+
 #define X 0
 #define Y 1
 #define Z 2

@@ -6,6 +6,7 @@
 /* ************************************************************************** */
 
 #include "defs.h"
+#include "code.h"
 #include <stdio.h>
 
 static void treescan(nodeptr);           /* does force calculation */

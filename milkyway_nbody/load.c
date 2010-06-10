@@ -6,6 +6,7 @@
 /* ************************************************************************** */
 
 #include "defs.h"
+#include "code.h"
 
 static void newtree(void);           /* flush existing tree */
 static cellptr makecell(void);           /* create an empty cell */

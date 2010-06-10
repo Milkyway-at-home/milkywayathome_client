@@ -5,11 +5,14 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#define extern /* nada */
-
 #include "code.h"
 #include <time.h>
 #include <stdlib.h>
+
+NBodyParams ps;
+Tree t;
+NBodyCtx ctx;
+
 
 /*  Default values for input parameters. */
 
