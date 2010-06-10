@@ -50,6 +50,8 @@ include_directories(${PROJECT_INCLUDE_DIR})
 
 find_package(CUDA)
 
+find_package(OpenCL)
+
 if(MINGW)
   if(NOT TAKEOFFGW_ROOT)
     set(TAKEOFFGW_ROOT "C:/takeoffgw/")
@@ -72,6 +74,13 @@ include_directories(${POPT_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}) #FIXME: Move headers to include
 include_directories(${PROJECT_INCLUDE_DIR})
 
+if(OPENCL_FOUND)
+  include_directories(${OPENCL_INCLUDE_DIRS})
+  include_directories(${OPENCL_INCLUDE_DIRS}/Headers) #FIXME
+  include_directories(${CMAKE_SOURCE_DIR}/milkyway_separation/ocl)
+  include_directories(${CMAKE_SOURCE_DIR}/milkyway_separation/cpu)
+  include_directories(${CMAKE_SOURCE_DIR}/milkyway_separation/cuda)
+endif()
 
 
 include(CheckAppleGCC)
@@ -130,6 +139,47 @@ if(CMAKE_COMPILER_IS_GNUCC) # I think this could maybe be IS_UNIX
   set(CMAKE_C_FLAGS "-Wall -Wextra ${CMAKE_C_FLAGS}")
   set(CMAKE_C_FLAGS_DEBUG "-Wall -Wextra ${gcc_extra_warnings} -O0 -g ${CMAKE_C_FLAGS_DEBUG}")
 endif(CMAKE_COMPILER_IS_GNUCC)
+
+
+
+message("---------------------------------------------")
+message("   Building:          ${PROJECT_NAME}")
+message("   System:            ${CMAKE_SYSTEM}")
+message("   Build type:        ${CMAKE_BUILD_TYPE}")
+message("   Arch:              ${CMAKE_SYSTEM_PROCESSOR}")
+message("   Install path:      ${CMAKE_INSTALL_PREFIX}")
+message("   ----")
+message("   CMAKE version:     ${CMAKE_VERSION}")
+message("   CMAKE binary:      ${CMAKE_COMMAND}")
+message("   CTEST binary:      ${CMAKE_CTEST_COMMAND}")
+message("   CMAKE generator:   ${CMAKE_GENERATOR}")
+message("   ----")
+message("   Project src dir:   ${CMAKE_SOURCE_DIR}")
+message("   Project bin dir:   ${CMAKE_BINARY_DIR}")
+message("   ----")
+message("   BOINC Libraries    ${BOINC_LIBRARIES}")
+message("   CUDA  Libraries    ${CUDA_LIBRARIES}")
+message("   OpenCL Libraries   ${OPENCL_LIBRARIES}")
+message("   POPT  Library      ${POPT_LIBRARY}")
+message("   ----")
+message("   Build tool:        ${CMAKE_BUILD_TOOL}")
+message("   C Compiler:        ${CMAKE_C_COMPILER}")
+#TODO:Report CFLAGS used based on build type
+#message("   CFLAGS:            ${CMAKE_C_FLAGS}")
+message("   ----")
+message("   Double precision:  ${DOUBLE_PRECISION}")
+message("   OpenCL enabled:    ${USE_OCL}")
+message("   CUDA enabled:      ${USE_CUDA}")
+message("   Compute on CPU:    ${COMPUTE_ON_CPU}")
+message("   BOINC graphics:    ${BOINC_APP_GRAPHICS}")
+message("---------------------------------------------")
+
+
+configure_file (
+  "${PROJECT_INCLUDE_DIR}/config.h.in"
+  "${PROJECT_INCLUDE_DIR}/config.h"
+  )
+
 
 #Different client applications are libraries
 add_subdirectory(milkyway_nbody)

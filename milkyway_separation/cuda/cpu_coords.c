@@ -25,8 +25,8 @@
 #include "pi_constants.h"
 #include "coords.h"
 
-#include "../milkyway/parameters.h"
-#include "../milkyway/atSurveyGeometry.h"
+#include "parameters.h"
+#include "atSurveyGeometry.h"
 
 
 void gc_eq_gal(int wedge, double amu_rad, double anu_rad, double* cpu__glong, double* cpu__glat)
@@ -199,7 +199,14 @@ void cpu__gc_sgr_gal_lb(    int wedge,
 
 void cpu__gc_to_lb(int wedge, INTEGRAL* integral, double** cpu__lb)
 {
-    cpu__gc_eq_gal_lb(wedge, integral->mu_steps, integral->mu_min, integral->mu_step_size, integral->nu_steps, integral->nu_min, integral->nu_step_size, cpu__lb);
+    cpu__gc_eq_gal_lb(wedge,
+                      integral->mu_steps,
+                      integral->mu_min,
+                      integral->mu_step_size,
+                      integral->nu_steps,
+                      integral->nu_min,
+                      integral->nu_step_size,
+                      cpu__lb);
 }
 
 
@@ -209,10 +216,12 @@ void populate_lb(int sgr_coordinates, int wedge,
                  int nu_steps, double nu_min, double nu_step_size,
                  double* sinb, double* sinl, double* cosb, double* cosl)
 {
-    for (int i = 0; i < mu_steps; i++)
+    int i, j;
+
+    for (i = 0; i < mu_steps; i++)
     {
         double amu_deg = mu_min + ((i + 0.5) * mu_step_size);
-        for (int j = 0; j < nu_steps; j++)
+        for (j = 0; j < nu_steps; j++)
         {
             double anu_deg = (nu_min + (j + 0.5) * nu_step_size);
             //use the same code as the CPU app to determine cpu__lb

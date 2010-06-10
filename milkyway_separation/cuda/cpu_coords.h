@@ -22,8 +22,11 @@
 #ifndef CPU_COORDS_H
 #define CPU_COORDS_H
 
-#include "../milkyway/parameters.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+#include "parameters.h"
 
 void populate_lb(int sgr_coordinates, int wedge,
                  int mu_steps, double mu_min, double mu_step_size,
@@ -38,4 +41,10 @@ void cpu__gc_to_lb(int wedge, INTEGRAL* integral, double** cpu__lb);
 void cpu__gc_eq_gal_lb(int wedge, int mu_steps, double mu_min, double mu_step_size, int nu_steps, double nu_min, double nu_step_size, double** cpu__lb);
 void cpu__gc_sgr_gal_lb(int wedge, int mu_steps, double mu_min, double mu_step_size, int nu_steps, double nu_min, double nu_step_size, double** cpu__lb);
 
+#ifdef __cplusplus
+}
 #endif
+
+
+#endif /* CPU_COORDS_H */
+

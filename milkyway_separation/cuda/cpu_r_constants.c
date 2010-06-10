@@ -26,9 +26,14 @@
 #include "gauss_legendre.h"
 #include "r_constants.h"
 
-#include "../astronomy/parameters.h"
+#include "parameters.h"
 
-void cpu__reff_gPrime(int r_steps, double r_min, double r_step_size, double mu_step_size, double* cpu__gPrime, double* cpu__reff_xr_rp3_irv)
+void cpu__reff_gPrime(int r_steps,
+                      double r_min,
+                      double r_step_size,
+                      double mu_step_size,
+                      double* cpu__gPrime,
+                      double* cpu__reff_xr_rp3_irv)
 {
     int i;
     double log_r, r, next_r, coords, gp, exp_result, reff_value, rPrime3, irv;

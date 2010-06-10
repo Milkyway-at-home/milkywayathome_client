@@ -19,9 +19,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <math.h>
-
 #include "evaluation_ocl.h"
+#include "evaluation_ocl_priv.h"
 
 int determine_work_size(int local_work_size, int desired_size)
 {
@@ -343,8 +342,8 @@ double ocl_evaluate(double* parameters,
     double likelihood;
     ocl_mem_t* ocl_mem;
 
-    ocl_mem = setup_ocl(ap, sp);
-    likelihood = ocl_likelihood(parameters, ap, es, ocl_mem);
+    ocl_mem = setup_ocl_mem(ap, sp);
+    likelihood = ocl_likelihood(parameters, ap, sp, ocl_mem);
     destruct_ocl(ocl_mem);
 
     return likelihood;

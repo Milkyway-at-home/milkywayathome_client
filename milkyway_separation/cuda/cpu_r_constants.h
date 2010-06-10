@@ -22,9 +22,21 @@
 #ifndef CPU_R_CONSTANTS_H
 #define CPU_R_CONSTANTS_H
 
-#include "../astronomy/parameters.h"
+#include "parameters.h"
 
 void cpu__r_constants(int n_convolve, INTEGRAL* integral, double** cpu__V, double** cpu__r_consts);
-void cpu__r_constants(int n_convolve, int r_steps, double r_min, double r_step_size, int mu_steps, double mu_min, double mu_step_size, int nu_steps, double nu_min, double nu_step_size, double** cpu__V, double** cpu__r_consts);
+void cpu__r_constants(int n_convolve,
+                      int r_steps,
+                      double r_min,
+                      double r_step_size,
+                      int mu_steps,
+                      double mu_min,
+                      double mu_step_size,
+                      int nu_steps,
+                      double nu_min,
+                      double nu_step_size,
+                      double** cpu__V,
+                      double** cpu__r_consts);
 
 #endif
+

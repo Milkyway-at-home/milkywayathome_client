@@ -46,44 +46,6 @@ set(lib_source_file_list evaluation_state.c
                          star_points.c
                          astronomy_worker.c)
 
-
-message("---------------------------------------------")
-message("   Building:          ${PROJECT_NAME}")
-message("   System:            ${CMAKE_SYSTEM}")
-message("   Build type:        ${CMAKE_BUILD_TYPE}")
-message("   Arch:              ${CMAKE_SYSTEM_PROCESSOR}")
-message("   Install path:      ${CMAKE_INSTALL_PREFIX}")
-message("   ----")
-message("   CMAKE version:     ${CMAKE_VERSION}")
-message("   CMAKE binary:      ${CMAKE_COMMAND}")
-message("   CTEST binary:      ${CMAKE_CTEST_COMMAND}")
-message("   CMAKE generator:   ${CMAKE_GENERATOR}")
-message("   ----")
-message("   Project src dir:   ${CMAKE_SOURCE_DIR}")
-message("   Project bin dir:   ${CMAKE_BINARY_DIR}")
-message("   ----")
-message("   BOINC Libraries    ${BOINC_LIBRARIES}")
-message("   CUDA  Libraries    ${CUDA_LIBRARIES}")
-message("   POPT  Library      ${POPT_LIBRARY}")
-message("   ----")
-message("   Build tool:        ${CMAKE_BUILD_TOOL}")
-message("   C Compiler:        ${CMAKE_C_COMPILER}")
-#TODO:Report CFLAGS used based on build type
-#message("   CFLAGS:            ${CMAKE_C_FLAGS}")
-message("   ----")
-message("   Double precision:  ${DOUBLE_PRECISION}")
-message("   OpenCL enabled:    ${USE_OCL}")
-message("   CUDA enabled:      ${USE_CUDA}")
-message("   Compute on CPU:    ${COMPUTE_ON_CPU}")
-message("   BOINC graphics:    ${BOINC_APP_GRAPHICS}")
-message("---------------------------------------------")
-
-
-configure_file (
-  "${PROJECT_INCLUDE_DIR}/config.h.in"
-  "${PROJECT_INCLUDE_DIR}/config.h"
-  )
-
 # Windows is a pain in the ass.
 if(WIN32)
   add_library(milkyway_separation_cpu STATIC ${lib_source_file_list})

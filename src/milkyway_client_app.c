@@ -49,7 +49,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "evaluation_state.h"
 
 #if USE_CUDA
-    void init_constants(ASTRONOMY_PARAMETERS* ap);
     #include "evaluation_gpu.h"
 #elif USE_OCL
     #include "evaluation_ocl.h"

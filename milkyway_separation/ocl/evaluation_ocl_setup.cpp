@@ -20,6 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "evaluation_ocl.h"
+#include "evaluation_ocl_priv.h"
 
 char* get_platform_info(cl_platform_id platform,
                         cl_platform_info info)

@@ -19,17 +19,11 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <cmath>
-
 #include "evaluation_ocl.h"
+#include "evaluation_ocl_priv.h"
 
-#include "../astronomy_gpu/cpu_coords.h"
-#include "../astronomy_gpu/coords.h"
-#include "../astronomy_gpu/gauss_legendre.h"
-#include "../astronomy/evaluation_optimized.h"
-
-ocl_mem_t* setup_ocl(ASTRONOMY_PARAMETERS* ap,
-                     STAR_POINTS* sp)
+ocl_mem_t* setup_ocl_mem(ASTRONOMY_PARAMETERS* ap,
+                         STAR_POINTS* sp)
 {
     ocl_mem_t* ocl_mem = new ocl_mem_t;
     cl_platform_id* platforms = get_platforms();
@@ -141,8 +135,16 @@ ocl_mem_t* setup_ocl(ASTRONOMY_PARAMETERS* ap,
                          ap->integral[i]->nu_steps,
                          ap->integral[i]->nu_min,
                          ap->integral[i]->nu_step_size,
-                         irv, r_point, qw_r3_N,
-                         reff_xr_rp3, nus, ids);
+                         irv,
+                         r_point,
+
+                         NULL, //FIXME: this is to just get it to compile
+                         NULL,
+
+                         qw_r3_N,
+                         reff_xr_rp3,
+                         nus,
+                         ids);
         double* fr_point = new double[ap->integral[i]->r_steps * ap->convolve];
         double* fqw_r3_N = new double[ap->integral[i]->r_steps * ap->convolve];
         for (int j = 0; j < ap->integral[i]->r_steps; ++j)
@@ -461,3 +463,4 @@ void destruct_ocl(ocl_mem_t* ocl_mem)
     check_error(clReleaseContext(ocl_mem->context));
     delete ocl_mem;
 }
+

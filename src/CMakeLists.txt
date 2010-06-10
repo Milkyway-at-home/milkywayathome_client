@@ -62,7 +62,17 @@ include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${CMAKE_SOURCE_DIR}/include")
 include_directories("${CMAKE_SOURCE_DIR}/milkyway_separation/cpu")
 
+
+set(USE_CPU_DEFINES "-DCOMPUTE_ON_CPU=1 -DUSE_CUDA=0 -D USE_OCL=0")
+
+
+# CPU Variant
 add_executable(milkyway_client milkyway_client_app.c)
+set_target_properties(milkyway_client
+                        PROPERTIES
+                          COMPILE_FLAGS "-DCOMPUTE_ON_CPU=1 -DUSE_CUDA=0 -D USE_OCL=0")
+
+
 target_link_libraries(milkyway_client ${POPT_LIBRARY} ${BOINC_LIBRARIES} milkyway_separation_cpu)
 
 install(TARGETS milkyway_client DESTINATION bin
@@ -72,4 +82,21 @@ install(TARGETS milkyway_client DESTINATION bin
        WORLD_READ WORLD_EXECUTE)
 
 
+# OpenCL variant
+add_executable(milkyway_client_ocl milkyway_client_app.c)
+target_link_libraries(milkyway_client_ocl ${POPT_LIBRARY}
+                                          ${BOINC_LIBRARIES}
+                                          milkyway_separation_ocl
+                                          milkyway_separation_cpu)
+set_target_properties(milkyway_client_ocl
+                        PROPERTIES
+                          COMPILE_FLAGS "-DCOMPUTE_ON_CPU=0 -DUSE_CUDA=0 -D USE_OCL=1")
+
+
+
+install(TARGETS milkyway_client_ocl DESTINATION bin
+       PERMISSIONS
+       OWNER_READ OWNER_WRITE OWNER_EXECUTE
+       GROUP_READ GROUP_EXECUTE
+       WORLD_READ WORLD_EXECUTE)
 

@@ -21,9 +21,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
 #include <fstream>
-#include "boinc_api.h"
 
 #include "evaluation_ocl.h"
+#include "evaluation_ocl_priv.h"
+
+#include <boinc_api.h>
 
 const char* read_kernel(const char* kernel_source)
 {

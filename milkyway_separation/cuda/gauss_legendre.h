@@ -19,10 +19,20 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
-#ifndef MILKWAY_GAUSS_LEGENDRE_H
-#define MILKWAY_GAUSS_LEGENDRE_H
+#ifndef _GAUSS_LEGENDRE_H_
+#define _GAUSS_LEGENDRE_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void d_gauss_legendre(double x1, double x2, double* x, double* w, int n);
 void f_gauss_legendre(float x1, float x2, float* x, float* w, int n);
 
+#ifdef __cplusplus
+}
 #endif
+
+
+#endif /* _GAUSS_LEGENDRE_H_ */
+

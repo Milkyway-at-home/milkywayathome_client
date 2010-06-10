@@ -19,8 +19,8 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  * */
 
-#ifndef COORDS_H
-#define COORDS_H
+#ifndef _COORDS_H_
+#define _COORDS_H_
 
 #define rmat00 -0.054875539726
 #define rmat01 -0.873437108010
@@ -43,6 +43,10 @@
 #define D_A_NODE    95.0
 #define D_A_NODE_RAD    (D_A_NODE * D_DEG2RAD)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 double d_get_incl(int wedge);
 double d_get_incl_rad(int wedge);
 
@@ -51,4 +55,10 @@ float f_get_incl_rad(int wedge);
 
 void d_lbr2xyz(const double* lbr, double* xyz);
 
+
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* _COORDS_H_ */
+
