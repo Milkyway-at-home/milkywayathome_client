@@ -264,8 +264,8 @@ static void initNBody(int argc, const char** argv)
 {
     poptContext context;
     int o;
-    static char* inputFile = NULL;
-    static char* inputStr = NULL;
+    static char* inputFile = NULL;  /* input JSON file */
+    static char* inputStr = NULL;   /* a string of JSON to use directly */
     static json_object* obj;
 
     static const struct poptOption options[] =
@@ -287,11 +287,20 @@ static void initNBody(int argc, const char** argv)
         { NULL, 0, 0, NULL, 0, NULL, NULL }
     };
 
+
     context = poptGetContext(argv[0],
                              argc,
                              argv,
                              options,
                              POPT_CONTEXT_POSIXMEHARDER);
+
+    if (argc < 2)
+    {
+        poptPrintUsage(context, stderr, 0);
+        poptFreeContext(context);
+        exit(EXIT_FAILURE);
+    }
+
 
     while ( ( o = poptGetNextOpt(context)) >= 0 );
 
