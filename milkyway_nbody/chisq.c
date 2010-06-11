@@ -19,6 +19,20 @@
 #define end 50
 #define binsize 3
 
+/* basic find max in array, O(n) */
+static size_t findmax(real* arr, size_t n)
+{
+    size_t i, maxIdx = 0;
+
+    for (i = 1; i < n; ++i)
+    {
+        if (arr[i] > arr[maxIdx])
+            maxIdx = i;
+    }
+
+    return maxIdx;
+}
+
 
 real chisq()
 {
@@ -45,17 +59,15 @@ real chisq()
 
     // Histogram prep
     int index1, index2;
+    int largestbin;
     int maxindex1 = (int)end / binsize;
     int maxindex2 = (int)abs(beginning) / binsize;
 
     real histodata1[maxindex1 + 1], histodata2[maxindex2 + 1];
-    real histodata1sort[maxindex1 + 1], histodata2sort[maxindex2 + 1];
 
     // Zero all of the histogram arrays
     memset(histodata1, 0, sizeof(real) * maxindex1);
-    memset(histodata1sort, 0, sizeof(real) * maxindex1);
     memset(histodata2, 0, sizeof(real) * maxindex2);
-    memset(histodata2sort, 0, sizeof(real) * maxindex2);
 
     printf("done\n");
 
@@ -98,28 +110,20 @@ real chisq()
         {
             index1 = (int)(lambda[count-1] / binsize);
             histodata1[index1]++;
-            histodata1sort[index1]++;
         }
         else if (lambda[count-1] > beginning)
         {
             index2 = abs((int)(lambda[count-1] / binsize));
             histodata2[abs(index2)]++;
-            histodata2sort[abs(index2)]++;
         }
     }
     printf("done\n");
 
     // Sort the two histogram arrays to find the largest entry (this is why I used 2 arrays, because qsort overwrites it)
 
-    qsort(histodata1sort, maxindex1, sizeof(int), compare);
-    qsort(histodata2sort, maxindex2, sizeof(int), compare);
-
     // Get the single largest bin so we can normalize over it
-    int largestbin;
-    int largestbin1 = histodata1sort[maxindex1+1];
-    int largestbin2 = histodata2sort[maxindex2+1];
-
-    largestbin = MAX(largestbin1,largestbin2);
+    //CHECKME: Why the +1's in the sizes of histodatas?
+    largestbin = MAX(findmax(histodata1, maxindex1), findmax(histodata2, maxindex2));
 
     printf("Largest bin: %i\n", largestbin);
 
@@ -152,7 +156,7 @@ real chisq()
 
     // Calculate the chisq value by reading a file called "histogram" (the real data histogram should already be normalized)
 
-    f = fopen("histogram3.txt", "r");
+    f = fopen("histogram.txt", "r");
 
     if (f == NULL)
     {
