@@ -68,15 +68,14 @@ void initoutput(NBodyCtx* ctx)
 
 }
 
-/* STOPOUTPUT: finish up after a run. */
-void stopoutput(void)
+/* destroyCtx finish up after a run. */
+void destroyCtx(NBodyCtx* ctx)
 {
-    if (ctx.outfile != NULL)
-    {
-        fclose(ctx.outfile);
-        free(ctx.outfilename);
-    }
+    if (ctx->outfile != NULL)
+        fclose(ctx->outfile);
 
+    free(ctx->outfilename);
+    free(ctx->headline);
 }
 
 /*  * Counters and accumulators for output routines.

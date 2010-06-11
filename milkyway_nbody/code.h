@@ -37,7 +37,7 @@ extern NBodyCtx ctx;
 /* Global function prototypes. */
 
 void initoutput(NBodyCtx*);     /* open files for output */
-void stopoutput(void);          /* close output files */
+void destroyCtx(NBodyCtx*);     /* close output files */
 void inputdata(void);           /* read initial data file */
 void maketree(bodyptr, int);    /* construct tree structure */
 void hackgrav(bodyptr, bool);   /* compute force on body */

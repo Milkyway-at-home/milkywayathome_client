@@ -119,14 +119,7 @@ real chisq()
     int largestbin1 = histodata1sort[maxindex1+1];
     int largestbin2 = histodata2sort[maxindex2+1];
 
-    if (largestbin1 >= largestbin2)
-    {
-        largestbin = largestbin1;
-    }
-    else
-    {
-        largestbin = largestbin2;
-    }
+    largestbin = MAX(largestbin1,largestbin2);
 
     printf("Largest bin: %i\n", largestbin);
 
@@ -144,17 +137,14 @@ real chisq()
 
     // Print out the histogram
     real foo;
-    i = 0;
-    for (foo = -binsize; foo >= beginning; foo -= binsize)
+    for (i = 0, foo = -binsize; foo >= beginning; foo -= binsize, ++i)
     {
         fprintf(f, "%f %f\n", foo + (binsize / 2.0) , histodata2[i] / ((real)largestbin));
-        i++;
     }
-    i = 0;
-    for (foo = 0; foo <= end; foo += binsize)
+
+    for (i = 0, foo = 0; foo <= end; foo += binsize, ++i)
     {
         fprintf(f, "%f %f\n", foo + (binsize / 2.0) , histodata1[i] / ((real)largestbin));
-        i++;
     }
     fclose(f);
 

@@ -372,9 +372,7 @@ int main(int argc, char* argv[])
     chisqans = chisq();
     printf("Run finished. chisq = %f\n", chisqans);
 
-    stopoutput();               /* finish up output */
-
-    free(ctx.headline);
+    destroyCtx(&ctx);               /* finish up output */
 
     return 0;
 }
@@ -426,7 +424,8 @@ static void testdata(void)
 
     bodyptr p;
 
-    ctx.headline = "Hierarchical code: Plummer model";
+    /* TODO: This doesn't belong here*/
+    ctx.headline = strdup("Hierarchical code: Plummer model");
     /* supply default ctx.headline */
     ctx.tnow = 0.0;                 /* reset elapsed model time */
     ctx.bodytab = (bodyptr) allocate(ctx.nbody * sizeof(body));
