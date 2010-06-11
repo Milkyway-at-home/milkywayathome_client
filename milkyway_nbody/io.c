@@ -72,7 +72,11 @@ void initoutput(NBodyCtx* ctx)
 void stopoutput(void)
 {
     if (ctx.outfile != NULL)
+    {
         fclose(ctx.outfile);
+        free(ctx.outfilename);
+    }
+
 }
 
 /*  * Counters and accumulators for output routines.

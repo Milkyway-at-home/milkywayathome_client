@@ -10,8 +10,6 @@
 
 #include "defs.h"
 
-#define OUTFILENAMELEN 1024
-
 typedef struct
 {
     char* headline;      /* message describing calculation */
@@ -25,9 +23,11 @@ typedef struct
     real tout;           /* time of next output */
     int nbody;           /* number of bodies in system */
     int nstep;           /* number of time-steps */
+    int seed;            /* random number seed */
+    real dtout;          /* Data output interval */
     bodyptr bodytab;     /* points to array of bodies */
-    FILE* outfile;                      /* file for snapshot output */
-    char outfilename[OUTFILENAMELEN];   /* filename for snapshot output */
+    FILE* outfile;       /* file for snapshot output */
+    char* outfilename;   /* filename for snapshot output */
 } NBodyCtx;
 
 extern NBodyParams ps;
@@ -43,7 +43,7 @@ void maketree(bodyptr, int);    /* construct tree structure */
 void hackgrav(bodyptr, bool);   /* compute force on body */
 void output(void);              /* perform output operation */
 
-/*  * Utility routines used in code.c and io.c.  These are defined in util.c
+/* Utility routines used in code.c and io.c.  These are defined in util.c
  * and getparam.c, which must be compiled with same choice of precision.
  */
 

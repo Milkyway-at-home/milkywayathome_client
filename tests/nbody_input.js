@@ -1,13 +1,13 @@
 {"nbody-parameters-file": {
+
+    /* params to control N-body integration */
     "nbody-parameters": {
         "PluMass": 10,      // mass
         "r0" : 10,          // radius
         "orbittstop" : 3,   // how far back the orbit goes
         "theta" : 1.0,      /* Cell subdivision tolerence */
         "eps" : 0.025,      /* Potential softening parameter */
-        "dtime" : 0.03125,  /* Integration time-step */
-        "tstop" : 2.0,      /* Time to stop integration */
-        "dtout" : 0.25      /* Data output interval */
+        "dtime" : 0.03125  /* In tegration time-step */
     },
 
     // Calculate starting galactic coordinates
@@ -27,7 +27,7 @@
     },
 
     "nbody-context": {
-        "outfile": "out",
+        "outfile": "out",         /* Output file of N-body frames */
         "headline" : "headline",
 
         "model" : "bh86",
@@ -38,9 +38,13 @@
         "freq" : 1.0,
         "freqout" : 1.0,
 
-        "seed" : 123,         /* Random number seed for test run */
-        "tstop" : 10,      //evolution time
-        "nbody" : 100      //number of bodies
+        "seed" : 123,       /* Random number seed for test run */
+        "tstop" : 10,       //evolution time
+        "nbody" : 100,      /* Number of particles for test run */
+
+        "tstop" : 2.0,      /* Time to stop integration */
+        "dtout" : 0.25      /* Data output interval */
+
     },
 
     "tree" :{

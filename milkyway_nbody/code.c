@@ -17,22 +17,50 @@ NBodyParams ps = { 0, };
 Tree t = { 0, } ;
 NBodyCtx ctx = { 0, };
 
+static void warn_extra_params(json_object* obj, const char* objName)
+{
+    json_object_object_foreach(obj,key,val)
+    {
+        fprintf(stderr,
+                "Warning: In group '%s': Unknown field '%s': '%s'\n",
+                objName,
+                key,
+                json_object_to_json_string(val));
+    }
+}
+
+static inline json_object* json_object_object_get_safe(json_object* obj, const char* key)
+{
+    json_object* tmp;
+
+    tmp = json_object_object_get(obj, key);
+    if (!tmp)
+    {
+        fprintf(stderr, "Failed to find expected key '%s'\n", key);
+        exit(EXIT_FAILURE);
+    }
+        return tmp;
+}
+
 /* Read named double with error checking from a json_object.
    We don't want to allow the automatic conversion to 0 for invalid objects.
    We also want to be accept integers as doubles.
+
+   Also explicitly delete the object. Reference counting is unhappy with what I want to do.
+   TODO: Maybe use the hash table directly to avoid a second lookup on the delete.
  */
-static inline double json_object_get_double_key(json_object* obj, const char* key)
+static inline double json_object_take_double(json_object* obj, const char* key)
 {
     double val;
     json_object* tmp;
 
-    tmp = json_object_object_get(obj, key);
+    tmp = json_object_object_get_safe(obj, key);
 
     if (   json_object_is_type(tmp, json_type_double)
         || json_object_is_type(tmp, json_type_int))  /* It's OK to forget the decimal */
     {
         val = json_object_get_double(tmp);
-        json_object_put(tmp);
+        json_object_object_del(obj, key);
         return val;
     }
 
@@ -40,23 +68,62 @@ static inline double json_object_get_double_key(json_object* obj, const char* ke
     exit(EXIT_FAILURE);
 }
 
-/* Similar to json_object_get_double_key wrapper, but less needed.
-   Note the returned string is owned by the json_object, and should
-   not be freed. */
-inline static char* json_object_get_string_key(json_object* obj, const char* key)
+/* Same as for json_object_take double.
+   The string is copied, and needs to be freed.
+ */
+inline static char* json_object_take_string(json_object* obj, const char* key)
 {
-    return json_object_get_string(json_object_object_get(obj, key));
+    json_object* tmp;
+    char* str;
+
+    tmp = json_object_object_get_safe(obj, key);
+    if (json_object_is_type(tmp, json_type_null))
+        str = NULL;
+    else if (json_object_is_type(tmp, json_type_string))
+    {
+        /* The json_object owns the string, so we need to copy it */
+        str = json_object_get_string(tmp);
+        if (str)
+            str = strdup(str);
+    }
+    else
+    {
+        fprintf(stderr, "Expected string or null for key '%s'\n", key);
+        exit(EXIT_FAILURE);
+    }
+
+    json_object_object_del(obj, key);
+
+    return str;
 }
 
-static inline bool json_object_get_bool_key(json_object* obj, const char* key)
+/* There is a pattern here. */
+static inline bool json_object_take_bool(json_object* obj, const char* key)
 {
     bool val;
     json_object* tmp;
 
-    tmp = json_object_object_get(obj, key);
+    tmp = json_object_object_get_safe(obj, key);
     val = json_object_get_boolean(tmp);
-    json_object_put(tmp);
+    json_object_object_del(obj, key);
 
+    return val;
+}
+
+static inline int json_object_take_int(json_object* obj, const char* key)
+{
+    int val;
+    json_object* tmp;
+
+    tmp = json_object_object_get_safe(obj, key);
+    if (!json_object_is_type(tmp, json_type_int))
+    {
+        fprintf(stderr, "Expected int for key '%s'\n", key);
+        exit(EXIT_FAILURE);
+    }
+
+    val = json_object_get_int(tmp);
+    json_object_object_del(obj, key);
     return val;
 }
 
@@ -64,7 +131,6 @@ static void get_params_from_json(json_object* obj)
 {
     bool useRad = FALSE;
     char* modelStr;
-    char* filename;
     static real dtnbody;
     static real kmax;
 
@@ -83,12 +149,11 @@ static void get_params_from_json(json_object* obj)
         exit(EXIT_FAILURE);
     }
 
-    nbPms     = json_object_object_get(hdr, "nbody-parameters");
-    iniCoords = json_object_object_get(hdr, "initial-coordinates");
-    nbodyCtx  = json_object_object_get(hdr, "nbody-context");
-    treePms   = json_object_object_get(hdr, "tree");
+    nbPms     = json_object_object_get_safe(hdr, "nbody-parameters");
+    iniCoords = json_object_object_get_safe(hdr, "initial-coordinates");
+    nbodyCtx  = json_object_object_get_safe(hdr, "nbody-context");
+    treePms   = json_object_object_get_safe(hdr, "tree");
 
-    //json_object_put(hdr);
 
     if (!(nbPms && iniCoords && nbodyCtx && treePms))
     {
@@ -98,18 +163,18 @@ static void get_params_from_json(json_object* obj)
 
 
     /* First group of parameters */
-    ps.PluMass    = json_object_get_double_key(nbPms, "PluMass");
-    ps.r0         = json_object_get_double_key(nbPms, "r0");
-    ps.orbittstop = json_object_get_double_key(nbPms, "orbittstop");
+    ps.PluMass    = json_object_take_double(nbPms, "PluMass");
+    ps.r0         = json_object_take_double(nbPms, "r0");
+    ps.orbittstop = json_object_take_double(nbPms, "orbittstop");
+    ps.eps        = json_object_take_double(nbPms, "eps");
+    ps.theta      = json_object_take_double(nbPms, "theta");
 
 
     /* Parameters related to initial coordinates */
-    tmp    = json_object_object_get(iniCoords, "angle-use-radians");
-    useRad = json_object_get_boolean(tmp);
-    json_object_put(tmp);
+    useRad = json_object_take_bool(iniCoords, "angle-use-radians");
 
-    ps.lstart = json_object_get_double_key(iniCoords, "lstart");
-    ps.bstart = json_object_get_double_key(iniCoords, "bstart");
+    ps.lstart = json_object_take_double(iniCoords, "lstart");
+    ps.bstart = json_object_take_double(iniCoords, "bstart");
 
     if (useRad)
     {
@@ -117,11 +182,11 @@ static void get_params_from_json(json_object* obj)
         ps.bstart = d2r(ps.bstart);
     }
 
-    ps.Rstart    = json_object_get_double_key(iniCoords, "Rstart");
-    ps.Xinit     = json_object_get_double_key(iniCoords, "Xinit");
-    ps.Yinit     = json_object_get_double_key(iniCoords, "Yinit");
-    ps.Zinit     = json_object_get_double_key(iniCoords, "Zinit");
-    ps.sunGCDist = json_object_get_double_key(iniCoords, "sunGCDist");
+    ps.Rstart    = json_object_take_double(iniCoords, "Rstart");
+    ps.Xinit     = json_object_take_double(iniCoords, "Xinit");
+    ps.Yinit     = json_object_take_double(iniCoords, "Yinit");
+    ps.Zinit     = json_object_take_double(iniCoords, "Zinit");
+    ps.sunGCDist = json_object_take_double(iniCoords, "sunGCDist");
 
     ps.Xinit = ps.Rstart * cos(ps.lstart) * cos(ps.bstart) - ps.sunGCDist;
     ps.Yinit = ps.Rstart * sin(ps.lstart) * cos(ps.bstart);
@@ -129,38 +194,34 @@ static void get_params_from_json(json_object* obj)
 
 
     /* Parameters related to the context */
-    //ctx.infile      = json_object_get_string_key(nbodyCtx, "infile");
 
-    filename = json_object_get_string_key(nbodyCtx, "outfile");
-
-    /* strncpy doesn't guarantee copying the null terminator */
-    (void)strncpy(ctx.outfilename, filename, sizeof(ctx.outfilename) - 1);
-    ctx.outfilename[sizeof(ctx.outfilename) - 1] = '\0';
+    ctx.outfilename = json_object_take_string(nbodyCtx, "outfile");
 
     /* The json object has ownership of the string, so we need to copy it */
     initoutput(&ctx);
 
+    ctx.headline    = json_object_take_string(nbodyCtx, "headline");
+    ctx.tstop       = json_object_take_double(nbodyCtx, "tstop");
+    ctx.nbody       = json_object_take_double(nbodyCtx, "nbody");
+    ctx.allowIncest = json_object_take_bool(nbodyCtx, "allow-incest");
+    ctx.usequad     = json_object_take_bool(nbodyCtx, "usequad");
+    ctx.seed        = json_object_take_int(nbodyCtx, "seed");
+    ctx.freq        = json_object_take_double(nbodyCtx, "freq");
+    ctx.dtout       = json_object_take_double(nbodyCtx, "dtout");
+    ctx.freqout     = json_object_take_double(nbodyCtx, "freqout");
 
+    modelStr = json_object_take_string(nbodyCtx, "model");
 
-
-
-    ctx.tstop       = json_object_get_double_key(nbodyCtx, "tstop");
-    ctx.nbody       = json_object_get_double_key(nbodyCtx, "nbody");
-    ctx.allowIncest = json_object_get_bool_key(nbodyCtx, "allow-incest");
-
-    modelStr = json_object_get_string_key(nbodyCtx, "model");
-
-    if (!strcmp(modelStr, "bh86"))
+    if (!strcasecmp(modelStr, "bh86"))
         ctx.model = BH86;
-    else if (!strcmp(modelStr, "SW93"))
+    else if (!strcasecmp(modelStr, "sw93"))
         ctx.model = SW93;
     else
     {
         fprintf(stderr, "Invalid model %s: Model options are either 'bh86' or 'sw93'\n", modelStr);
         exit(EXIT_FAILURE);
     }
-
-
+    free(modelStr);
 
     /* use dt = dtnbody/2 to make sure we get enough orbit precision,
        this puts the results in ps.XC, ps.YC, ps.ZC, ps.XC, ps.YC, ps.ZC,
@@ -176,7 +237,27 @@ static void get_params_from_json(json_object* obj)
 
 
     /* Tree related parameters */
-    t.rsize = json_object_get_double_key(treePms, "rsize");
+    t.rsize = json_object_take_double(treePms, "rsize");
+
+
+    /* Scan through for leftover / unknown keys and provide warnings if any exist */
+    warn_extra_params(nbodyCtx, "nbody-context");
+    json_object_object_del(hdr, "nbody-context");
+
+    warn_extra_params(nbPms, "nbody-parameters");
+    json_object_object_del(hdr, "nbody-parameters");
+
+    warn_extra_params(iniCoords, "initial-coordinates");
+    json_object_object_del(hdr, "initial-coordinates");
+
+    warn_extra_params(treePms, "tree");
+    json_object_object_del(hdr, "tree");
+
+    /* Now warn for entire groups on the header and whole file */
+    warn_extra_params(hdr, "nbody-parameters-file");
+
+    /* deref the top level object should take care of freeing whatever's left */
+    json_object_put(obj);
 }
 
 static void initNBody(int argc, const char** argv)
@@ -250,36 +331,8 @@ static void initNBody(int argc, const char** argv)
     }
 
     get_params_from_json(obj);
-
-    json_object_put(obj);
 }
 
-
-/*  Default values for input parameters. */
-
-const char* defv[] =
-{
-
-    /* file names for input/output */
-    "in=",          /* Input file with initial conditions */
-    "out=",         /* Output file of N-body frames */
-
-    /* params to control N-body integration */
-    "dtime=0.03125",       /* Integration time-step */
-    "ps.eps=0.025",        /* Potential softening parameter */
-    "ps.theta=1.0",        /* Cell subdivision tolerence */
-    "ctx.usequad=false",    /* If true, use quad moments */
-    "t.rsize=4.0",         /* Size of initial t.root cell */
-    "ps.options=",         /* Various control ps.options */
-    "ctx.tstop=2.0",       /* Time to stop integration */
-    "dtout=0.25",          /* Data output interval */
-
-    /* params used if no input specified to make a Plummer model */
-    "ctx.nbody=1024",      /* Number of particles for test run */
-    "seed=123",            /* Random number seed for test run */
-
-    NULL,
-};
 
 char* headline = "Hierarchical N-body Code";   /* default id for run */
 
@@ -312,6 +365,8 @@ int main(int argc, char* argv[])
     printf("Run finished. chisq = %f\n", chisqans);
 
     stopoutput();               /* finish up output */
+
+    free(ctx.headline);
 
     return 0;
 }

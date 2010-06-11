@@ -34,6 +34,8 @@ set(nbody_src chisq.c
               orbitintegrator.c
               util.c)
 
+set(CMAKE_C_FLAGS "-std=c99 ${CMAKE_C_FLAGS}")
+
 add_executable(milkyway_nbody ${nbody_src})
 target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${JSON_C_LIBRARY})
 
