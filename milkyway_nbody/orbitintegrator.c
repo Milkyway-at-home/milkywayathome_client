@@ -12,11 +12,12 @@
 #define Y 1
 #define Z 2
 
-void acceleration(float* posvec, float* accvec);
+void acceleration(real* posvec, real* accvec);
 
 void integrate()
 {
-    float acc[3], v[3], x[3], time;
+    vector acc, v, x;
+    real time;
     int i;
 
     // Set the initial conditions
@@ -35,9 +36,8 @@ void integrate()
     // Loop through time
     for (time = 0; time <= ps.orbittstop; time += ps.dtorbit)
     {
-
         // Update the velocities and positions
-        for (i = 0; i <= 2; i++)
+        for (i = 0; i < 3; ++i)
         {
             v[i] += acc[i] * ps.dtorbit;
             x[i] += v[i] * ps.dtorbit;
@@ -66,20 +66,21 @@ void integrate()
 
 }
 
-void acceleration(float* pos, float* acc)
+void acceleration(real* pos, real* acc)
 {
     // The external potential
 
-    float miya_ascal = 6.5;
-    float miya_bscal = 0.26;
-    float miya_mass = 4.45865888E5;
-    float plu_rc = 0.7;
-    float bulge_mass = 1.52954402E5;
-    float vhalo = 73;
-    float haloq = 1.0;
-    float halod = 12.0;
+    real miya_ascal = 6.5;
+    real miya_bscal = 0.26;
+    real miya_mass = 4.45865888E5;
+    real plu_rc = 0.7;
+    real bulge_mass = 1.52954402E5;
+    real vhalo = 73;
+    real haloq = 1.0;
+    real halod = 12.0;
 
-    float apar, qpar, spar, ppar, lpar, rpar, rcyl;
+    real apar, qpar, spar, ppar, lpar, rpar, rcyl;
+    real vhalosqr2, rppPar, spar15;
 
     rcyl = sqrt(pos[0] * pos[0] + pos[1] * pos[1]);
     qpar = sqrt(pos[2] * pos[2] + miya_bscal * miya_bscal);
@@ -89,8 +90,23 @@ void acceleration(float* pos, float* acc)
     rpar = ppar - plu_rc;
     lpar = (rcyl * rcyl) + ((pos[2] / haloq) * (pos[2] / haloq)) + (halod * halod);
 
+
+    vhalosqr2 = 2.0 * vhalo * vhalo;
+    rppPar = rpar * ppar * ppar;
+    spar15 = pow(spar, 1.5);
+
+
     /* This function returns the acceleration vector */
-    acc[0] = - ( ( (2.0 * vhalo * vhalo * pos[0]) / (lpar) ) + ((bulge_mass * pos[0]) / (rpar * ppar * ppar) ) + ((miya_mass * pos[0]) / (pow(spar, 1.5)) ) );
-    acc[1] = - ( ( (2.0 * vhalo * vhalo * pos[1]) / (lpar) ) + ((bulge_mass * pos[1]) / (rpar * ppar * ppar) ) + ((miya_mass * pos[1]) / (pow(spar, 1.5)) ) );
-    acc[2] = - ( ( (2.0 * vhalo * vhalo * pos[2]) / (haloq * haloq * lpar) ) + ((bulge_mass * pos[2]) / (rpar * ppar * ppar) ) + ( (miya_mass * pos[2] * apar) / (qpar * pow(spar, 1.5)) ) );
+    acc[0] = - ( ( (vhalosqr2 * pos[0]) / lpar )
+                 + ((bulge_mass * pos[0]) / rppPar )
+                 + ((miya_mass * pos[0]) / spar15 ) );
+
+    acc[1] = - ( ( (vhalosqr2 * pos[1]) / lpar )
+                 + ((bulge_mass * pos[1]) / rppPar )
+                 + ((miya_mass * pos[1]) / spar15 ) );
+
+    acc[2] = - ( ( (vhalosqr2 * pos[2]) / (haloq * haloq * lpar) )
+                 + ((bulge_mass * pos[2]) / rppPar)
+                 + ((miya_mass * pos[2] * apar) / (qpar * spar15) ) );
 }
+
