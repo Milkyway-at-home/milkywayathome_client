@@ -9,7 +9,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "code.h"
+#include "defs.h"
 
 #define r0 8.0
 #define phi d2r(128.79)
@@ -72,7 +74,7 @@ real chisq()
     printf("done\n");
 
     printf("Importing simulation results...");
-    for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++)
+    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++)
     {
 
         x[counttest-1] = Pos(p)[0];
@@ -119,8 +121,7 @@ real chisq()
     }
     printf("done\n");
 
-    // Sort the two histogram arrays to find the largest entry (this is why I used 2 arrays, because qsort overwrites it)
-
+    // Find the largest entry
     // Get the single largest bin so we can normalize over it
     //CHECKME: Why the +1's in the sizes of histodatas?
     largestbin = MAX(findmax(histodata1, maxindex1), findmax(histodata2, maxindex2));

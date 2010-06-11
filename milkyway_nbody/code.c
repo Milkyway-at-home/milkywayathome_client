@@ -6,6 +6,7 @@
 /* ************************************************************************** */
 
 #include "code.h"
+#include "defs.h"
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,6 +17,16 @@
 NBodyParams ps = { 0, };
 Tree t = { 0, } ;
 NBodyCtx ctx = { 0, };
+NBodyState st = { 0, };
+
+/* TODO: Ownership of bodytab */
+static void nbody_ctx_destroy(NBodyCtx* ctx)
+{
+    free(ctx->headline);
+    free(ctx->outfilename);
+    if (ctx->outfile)
+        fclose(ctx->outfile);
+}
 
 static void warn_extra_params(json_object* obj, const char* objName)
 {
@@ -149,11 +160,10 @@ static void get_params_from_json(json_object* obj)
         exit(EXIT_FAILURE);
     }
 
+    nbodyCtx  = json_object_object_get_safe(hdr, "nbody-context");
     nbPms     = json_object_object_get_safe(hdr, "nbody-parameters");
     iniCoords = json_object_object_get_safe(hdr, "initial-coordinates");
-    nbodyCtx  = json_object_object_get_safe(hdr, "nbody-context");
     treePms   = json_object_object_get_safe(hdr, "tree");
-
 
     if (!(nbPms && iniCoords && nbodyCtx && treePms))
     {
@@ -166,8 +176,6 @@ static void get_params_from_json(json_object* obj)
     ps.PluMass    = json_object_take_double(nbPms, "PluMass");
     ps.r0         = json_object_take_double(nbPms, "r0");
     ps.orbittstop = json_object_take_double(nbPms, "orbittstop");
-    ps.eps        = json_object_take_double(nbPms, "eps");
-    ps.theta      = json_object_take_double(nbPms, "theta");
 
 
     /* Parameters related to initial coordinates */
@@ -193,29 +201,29 @@ static void get_params_from_json(json_object* obj)
     ps.Zinit = ps.Rstart * sin(ps.bstart);
 
 
+    /* TODO: Maybe seed */
     /* Parameters related to the context */
 
-    ctx.outfilename = json_object_take_string(nbodyCtx, "outfile");
-
-    /* The json object has ownership of the string, so we need to copy it */
-    initoutput(&ctx);
-
     ctx.headline    = json_object_take_string(nbodyCtx, "headline");
-    ctx.tstop       = json_object_take_double(nbodyCtx, "tstop");
+    ctx.outfilename = json_object_take_string(nbodyCtx, "outfile");
     ctx.nbody       = json_object_take_double(nbodyCtx, "nbody");
-    ctx.allowIncest = json_object_take_bool(nbodyCtx, "allow-incest");
-    ctx.usequad     = json_object_take_bool(nbodyCtx, "usequad");
     ctx.seed        = json_object_take_int(nbodyCtx, "seed");
+    ctx.tstop       = json_object_take_double(nbodyCtx, "tstop");
+    ctx.allowIncest = json_object_take_bool(nbodyCtx, "allow-incest");
+    ctx.usequad     = json_object_take_bool(nbodyCtx, "use-quadruople-corrections");
     ctx.freq        = json_object_take_double(nbodyCtx, "freq");
     ctx.dtout       = json_object_take_double(nbodyCtx, "dtout");
     ctx.freqout     = json_object_take_double(nbodyCtx, "freqout");
+    ctx.theta       = json_object_take_double(nbodyCtx, "accuracy-parameter");
+    ctx.eps         = json_object_take_double(nbodyCtx, "potential-softening");
 
-    modelStr = json_object_take_string(nbodyCtx, "model");
-
+    /* The json object has ownership of the string, so we need to copy it */
+    initoutput(&ctx);
+    modelStr = json_object_take_string(nbodyCtx, "criterion");
     if (!strcasecmp(modelStr, "bh86"))
-        ctx.model = BH86;
+        ctx.criterion = BH86;
     else if (!strcasecmp(modelStr, "sw93"))
-        ctx.model = SW93;
+        ctx.criterion = SW93;
     else
     {
         fprintf(stderr, "Invalid model %s: Model options are either 'bh86' or 'sw93'\n", modelStr);
@@ -223,12 +231,18 @@ static void get_params_from_json(json_object* obj)
     }
     free(modelStr);
 
+    /* Scan through for leftover / unknown keys and provide warnings if any exist */
+    warn_extra_params(nbodyCtx, "nbody-context");
+    json_object_object_del(hdr, "nbody-context");
+
+
+
     /* use dt = dtnbody/2 to make sure we get enough orbit precision,
        this puts the results in ps.XC, ps.YC, ps.ZC, ps.XC, ps.YC, ps.ZC,
        which is then used by the testdata routine to do the shift.
        Be aware: changing the mass changes the orbit results, but this is OK */
 
-    ps.eps = ps.r0 / (10 * sqrt((real)ctx.nbody));
+    ctx.eps = ps.r0 / (10 * sqrt((real)ctx.nbody));
     dtnbody = (1 / 10.0) * (1 / 10.0) * sqrt(((4 / 3) * M_PI * ps.r0 * ps.r0 * ps.r0) / (ps.PluMass));
     //dtnbody = pow(2.718,log(0.5)*kmax);
     ctx.freq = 1.0 / dtnbody;
@@ -238,20 +252,15 @@ static void get_params_from_json(json_object* obj)
 
     /* Tree related parameters */
     t.rsize = json_object_take_double(treePms, "rsize");
+    warn_extra_params(treePms, "tree");
+    json_object_object_del(hdr, "tree");
 
-
-    /* Scan through for leftover / unknown keys and provide warnings if any exist */
-    warn_extra_params(nbodyCtx, "nbody-context");
-    json_object_object_del(hdr, "nbody-context");
 
     warn_extra_params(nbPms, "nbody-parameters");
     json_object_object_del(hdr, "nbody-parameters");
 
     warn_extra_params(iniCoords, "initial-coordinates");
     json_object_object_del(hdr, "initial-coordinates");
-
-    warn_extra_params(treePms, "tree");
-    json_object_object_del(hdr, "tree");
 
     /* Now warn for entire groups on the header and whole file */
     warn_extra_params(hdr, "nbody-parameters-file");
@@ -344,7 +353,7 @@ static void initNBody(int argc, const char** argv)
 
 char* headline = "Hierarchical N-body Code";   /* default id for run */
 
-static void startrun(NBodyCtx*);           /* initialize system state */
+static void startrun(NBodyCtx*, NBodyState*);           /* initialize system state */
 static void stepsystem(void);         /* advance by one time-step */
 static void testdata(void);           /* generate test data */
 static void pickshell(vector, real);  /* pick point on shell */
@@ -363,23 +372,23 @@ int main(int argc, char* argv[])
     printf("done\n");
 
     printf("Beginning run...\n");
-    startrun(&ctx);                 /* set params, input data */
+    startrun(&ctx, &st);                 /* set params, input data */
 
-    while (ctx.tnow < ctx.tstop - 1.0 / (1024 * ctx.freq)) /* while not past ctx.tstop */
+    while (st.tnow < ctx.tstop - 1.0 / (1024 * ctx.freq)) /* while not past ctx.tstop */
         stepsystem();               /* advance N-body system */
 
     // Get the likelihood
     chisqans = chisq();
     printf("Run finished. chisq = %f\n", chisqans);
 
-    destroyCtx(&ctx);               /* finish up output */
+    nbody_ctx_destroy(&ctx);               /* finish up output */
 
     return 0;
 }
 
 /* STARTRUN: startup hierarchical N-body code. */
 
-static void startrun(NBodyCtx* ctx)
+static void startrun(NBodyCtx* ctx, NBodyState* st)
 {
     if (ctx->nbody < 1)              /* check input value */
         error("startrun: ctx.nbody = %d is absurd\n", ctx->nbody);
@@ -388,8 +397,8 @@ static void startrun(NBodyCtx* ctx)
     srand48((long) 0.0);    /* set random generator */
     testdata();             /* make test model */
 
-    ctx->nstep = 0;                   /* start counting stps.eps */
-    ctx->tout = ctx->tnow;            /* schedule first output */
+    st->nstep = 0;                  /* start counting steps */
+    st->tout = st->tnow;            /* schedule first output */
 }
 
 /* TESTDATA: generate Plummer model initial conditions for test runs,
@@ -427,8 +436,8 @@ static void testdata(void)
     /* TODO: This doesn't belong here*/
     ctx.headline = strdup("Hierarchical code: Plummer model");
     /* supply default ctx.headline */
-    ctx.tnow = 0.0;                 /* reset elapsed model time */
-    ctx.bodytab = (bodyptr) allocate(ctx.nbody * sizeof(body));
+    st.tnow = 0.0;                 /* reset elapsed model time */
+    st.bodytab = (bodyptr) allocate(ctx.nbody * sizeof(body));
     /* alloc space for bodies */
     rsc = ps.r0;               /* set length scale factor */
     vsc = rsqrt(ps.PluMass / rsc);         /* and recip. speed scale */
@@ -439,7 +448,7 @@ static void testdata(void)
     MULVS(scaledrshift, rshift, rsc);   /* Multiply shift by scale factor */
     MULVS(scaledvshift, vshift, vsc);   /* Multiply shift by scale factor */
 
-    for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++) /* loop over particles */
+    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++) /* loop over particles */
     {
         Type(p) = BODY;             /* tag as a body */
         Mass(p) = ps.PluMass / (real)ctx.nbody;            /* set masses equal */
@@ -485,7 +494,7 @@ static void pickshell(vector vec, real rad)
 
 /* STEPSYSTEM: advance N-body system one time-step. */
 
-static void stepsystem(void)
+static void stepsystem()
 {
     bodyptr p;
     real dt;
@@ -495,23 +504,23 @@ static void stepsystem(void)
     int nbccalc;         /* count body-cell interactions */
 
 
-    if (ctx.nstep == 0)                 /* about to take 1st step? */
+    if (st.nstep == 0)                 /* about to take 1st step? */
     {
         printf("Building tree...Starting Nbody simulation...\n");
-        maketree(ctx.bodytab, ctx.nbody);       /* build tree structure */
+        maketree(st.bodytab, ctx.nbody);       /* build tree structure */
         nfcalc = n2bcalc = nbccalc = 0;     /* zero counters */
-        for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++)
+        for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++)
         {
             /* loop over all bodies */
             hackgrav(p, Mass(p) > 0.0);     /* get force on each */
             nfcalc++;               /* count force calcs */
-            n2bcalc += ps.n2bterm;         /* and 2-body terms */
-            nbccalc += ps.nbcterm;         /* and body-cell terms */
+            n2bcalc += st.n2bterm;         /* and 2-body terms */
+            nbccalc += st.nbcterm;         /* and body-cell terms */
         }
         output();               /* do initial output */
     }
     dt = 1.0 / ctx.freq;                /* set basic time-step */
-    for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++) /* loop over all bodies */
+    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++) /* loop over all bodies */
     {
         MULVS(dvel, Acc(p), 0.5 * dt);      /* get velocity increment */
         ADDV(Vel(p), Vel(p), dvel);     /* advance v by 1/2 step */
@@ -519,22 +528,22 @@ static void stepsystem(void)
         ADDV(Pos(p), Pos(p), dpos);     /* advance r by 1 step */
     }
 
-    maketree(ctx.bodytab, ctx.nbody);           /* build tree structure */
+    maketree(st.bodytab, ctx.nbody);           /* build tree structure */
     nfcalc = n2bcalc = nbccalc = 0;     /* zero counters */
-    for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++) /* loop over bodies */
+    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++) /* loop over bodies */
     {
         hackgrav(p, Mass(p) > 0.0);     /* get force on each */
         nfcalc++;               /* count force calcs */
-        n2bcalc += ps.n2bterm;         /* and 2-body terms */
-        nbccalc += ps.nbcterm;         /* and body-cell terms */
+        n2bcalc += st.n2bterm;         /* and 2-body terms */
+        nbccalc += st.nbcterm;         /* and body-cell terms */
     }
-    for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++) /* loop over all bodies */
+    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++) /* loop over all bodies */
     {
         MULVS(dvel, Acc(p), 0.5 * dt);          /* get velocity increment */
         ADDV(Vel(p), Vel(p), dvel);             /* advance v by 1/2 step */
     }
-    ctx.nstep++;                    /* count another time step */
-    ctx.tnow = ctx.tnow + dt;           /* finally, advance time */
+    st.nstep++;                 /* count another time step */
+    st.tnow = st.tnow + dt;     /* finally, advance time */
     output();                   /* do major or minor output */
 }
 

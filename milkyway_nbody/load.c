@@ -198,11 +198,11 @@ static void setrcrit(cellptr p, vector cmpos, real psize)
     real rc, bmax2, dmin;
     int k;
 
-    if (ps.theta == 0.0)               /* exact force calculation? */
+    if (ctx.theta == 0.0)               /* exact force calculation? */
         rc = 2 * t.rsize;              /* always open cells */
-    else if (ctx.model == BH86)        /* use old BH criterion? */
-        rc = psize / ps.theta;         /* using size of cell */
-    else if (ctx.model == SW93)        /* use S&W's criterion? */
+    else if (ctx.criterion == BH86)     /* use old BH criterion? */
+        rc = psize / ctx.theta;         /* using size of cell */
+    else if (ctx.criterion == SW93)     /* use S&W's criterion? */
     {
         bmax2 = 0.0;                   /* compute max distance^2 */
         for (k = 0; k < NDIM; k++)     /* loop over dimensions */
@@ -212,11 +212,11 @@ static void setrcrit(cellptr p, vector cmpos, real psize)
             bmax2 += rsqr(MAX(dmin, psize - dmin));
             /* sum max distance^2 */
         }
-        rc = rsqrt(bmax2) / ps.theta;      /* using max dist from cm */
+        rc = rsqrt(bmax2) / ctx.theta;      /* using max dist from cm */
     }
     else                        /* use new criterion? */
     {
-        rc = psize / ps.theta + distv(cmpos, Pos(p));
+        rc = psize / ctx.theta + distv(cmpos, Pos(p));
         /* use size plus offset */
     }
     Rcrit2(p) = rsqr(rc);           /* store square of radius */

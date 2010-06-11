@@ -10,29 +10,10 @@
 
 #include "defs.h"
 
-typedef struct
-{
-    char* headline;      /* message describing calculation */
-    model_t model;       /* bh86 or sw93 */
-    bool usequad;        /* use quadrupole corrections */
-    bool allowIncest;
-    real freq;           /* inverse of integration timestep */
-    real freqout;        /* output frequency */
-    real tstop;          /* time to stop calculation */
-    real tnow;           /* current value of time */
-    real tout;           /* time of next output */
-    int nbody;           /* number of bodies in system */
-    int nstep;           /* number of time-steps */
-    int seed;            /* random number seed */
-    real dtout;          /* Data output interval */
-    bodyptr bodytab;     /* points to array of bodies */
-    FILE* outfile;       /* file for snapshot output */
-    char* outfilename;   /* filename for snapshot output */
-} NBodyCtx;
-
-extern NBodyParams ps;
 extern Tree t;
 extern NBodyCtx ctx;
+extern NBodyState st;
+extern NBodyParams ps;
 
 /* Global function prototypes. */
 

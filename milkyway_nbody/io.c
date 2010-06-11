@@ -39,15 +39,15 @@ void inputdata(void)
     in_int(instr, &ndim);
     if (ndim != NDIM)
         error("inputdata: ndim = %d is absurd\n", ndim);
-    in_real(instr, &ctx.tnow);
-    ctx.bodytab = (bodyptr) allocate(ctx.nbody * sizeof(body));
-    for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++) /* loop over new bodies */
+    in_real(instr, &st.tnow);
+    st.bodytab = (bodyptr) allocate(ctx.nbody * sizeof(body));
+    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++) /* loop over new bodies */
         Type(p) = BODY;             /* init body type */
-    for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++)
+    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++)
         in_real(instr, &Mass(p));
-    for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++)
+    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++)
         in_vector(instr, Pos(p));
-    for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++)
+    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++)
         in_vector(instr, Vel(p));
     fclose(instr);              /* close input FILE* */
 }
@@ -68,16 +68,6 @@ void initoutput(NBodyCtx* ctx)
 
 }
 
-/* destroyCtx finish up after a run. */
-void destroyCtx(NBodyCtx* ctx)
-{
-    if (ctx->outfile != NULL)
-        fclose(ctx->outfile);
-
-    free(ctx->outfilename);
-    free(ctx->headline);
-}
-
 /*  * Counters and accumulators for output routines.
  */
 
@@ -96,11 +86,11 @@ void output(void)
     bodyptr p;
     vector lbR;
     diagnostics();              /* compute std diagnostics */
-    //printf("ctx.tnow = %f\n", ctx.tnow);
-    if (ctx.tstop - ctx.tnow < 0.01 / ctx.freq)
+    //printf("st.tnow = %f\n", st.tnow);
+    if (ctx.tstop - st.tnow < 0.01 / ctx.freq)
     {
-        printf("ctx.tnow = %f\n", ctx.tnow);
-        for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++)
+        printf("st.tnow = %f\n", st.tnow);
+        for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++)
         {
             (lbR)[2] = sqrt(Pos(p)[0] * Pos(p)[0] + Pos(p)[1] * Pos(p)[1] + Pos(p)[2] * Pos(p)[2]);
             (lbR)[1] = r2d(atan2(Pos(p)[2], sqrt((Pos(p)[0]) * (Pos(p)[0]) + Pos(p)[1] * Pos(p)[1])));
@@ -115,7 +105,7 @@ void output(void)
         }
         printf("\tParticle data written to file %s\n\n", ctx.outfilename);
         fflush(ctx.outfile);             /* drain output buffer */
-        ctx.tout += 1 / ctx.freqout;            /* schedule next data out */
+        st.tout += 1 / ctx.freqout;     /* schedule next data out */
     }
 }
 
@@ -136,7 +126,7 @@ static void diagnostics(void)
     CLRV(cmphase[0]);               /* zero c. of m. position */
     CLRV(cmphase[1]);               /* zero c. of m. velocity */
     CLRV(amvec);                /* zero am vector */
-    for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++) /* loop over all particles */
+    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++) /* loop over all particles */
     {
         mtot += Mass(p);                        /* sum particle masses */
         DOTVP(velsq, Vel(p), Vel(p));       /* square vel vector */

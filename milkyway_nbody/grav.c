@@ -27,11 +27,14 @@ static bool treeincest = FALSE;          /* tree-incest occured */
 void hackgrav(bodyptr p, bool intree)
 {
     vector externalacc;
+    int n2bterm;    /* number 2-body of terms evaluated */
+    int nbcterm;    /* num of body-cell terms evaluated */
+
     pskip = p;                  /* exclude p from f.c. */
     SETV(pos0, Pos(p));             /* set field point */
     phi0 = 0.0;                 /* init total potential */
     CLRV(acc0);                 /* and total acceleration */
-    ps.n2bterm = ps.nbcterm = 0;          /* count body & cell terms */
+    n2bterm = nbcterm = 0;          /* count body & cell terms */
     skipself = FALSE;               /* watch for tree-incest */
     treescan((nodeptr) t.root);           /* scan tree from t.root */
     if (intree && !skipself)            /* did tree-incest occur? */
@@ -95,9 +98,9 @@ static void treescan(nodeptr q)
             {
                 gravsub(q);                     /* so compute gravity */
                 if (Type(q) == BODY)
-                    ps.n2bterm++;          /* count body-body */
+                    st.n2bterm++;          /* count body-body */
                 else
-                    ps.nbcterm++;          /* count body-cell */
+                    st.nbcterm++;          /* count body-cell */
             }
             q = Next(q);            /* follow next link */
         }
@@ -135,7 +138,7 @@ static void gravsub(nodeptr q)
         SUBV(dr, Pos(q), pos0);                 /* then compute sep. */
         DOTVP(drsq, dr, dr);            /* and sep. squared */
     }
-    drsq += ps.eps * ps.eps;                          /* use standard softening */
+    drsq += ctx.eps * ctx.eps;          /* use standard softening */
     drab = rsqrt(drsq);
     phii = Mass(q) / drab;
     mor3 = phii / drsq;

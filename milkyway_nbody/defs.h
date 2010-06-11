@@ -113,7 +113,61 @@ typedef enum
 {
     BH86,
     SW93
-} model_t;
+} criterion_t;
+
+typedef enum
+{
+    SphericalPotential = 1 << 1
+} spherical_t;
+
+/* Spherical potential */
+typedef struct
+{
+    real mass;
+    real scale;
+} Spherical;
+
+/* Supported disk models */
+typedef enum
+{
+    MiaymotoNagaiDisk = 1 << 2,
+    ExponentialDisk   = 1 << 3
+} disk_t;
+
+typedef struct
+{
+    disk_t type;
+    real mass;          /* disk mass */
+    real scale_length;  /* "a" for M-N, "b" for exp disk */
+    real scale_height;  /* unused for exponential disk. "b" for Miyamoto-Nagai disk */
+} Disk;
+
+/* Supported halo models */
+typedef enum
+{
+    LogarithmicHalo = 1 << 4,
+    NFWHalo         = 1 << 5,
+    TriaxialHalo    = 1 << 6
+} halo_t;
+
+typedef struct
+{
+    halo_t type;
+    real vhalo;         /* common to all 3 halos */
+    real scale_length;  /* common to all 3 halos */
+    real flattenZ;      /* used by logarithmic and triaxial */
+    real flattenY;      /* used by triaxial */
+    real flattenX;      /* used by triaxial */
+    real triaxAngle;    /* used by triaxial */
+} Halo;
+
+typedef struct
+{
+    Spherical sphere[1];  /* 1 for now, flexibility can be added later */
+    Disk disk;
+    Halo halo;
+    void* rings;         /* reserved for future use */
+} Potential;
 
 
 #define Rcrit2(x) (((cellptr) (x))->rcrit2)
@@ -136,10 +190,6 @@ typedef struct
 
 typedef struct
 {
-    real theta;     /* accuracy parameter: 0.0 => exact */
-    real eps;       /* potential softening parameter */
-    int n2bterm;    /* number 2-body of terms evaluated */
-    int nbcterm;    /* num of body-cell terms evaluated */
     real PluMass, r0;
     real lstart, bstart, Rstart;
     real XC, YC, ZC;
@@ -149,6 +199,58 @@ typedef struct
     real orbittstop, dtorbit;
     real sunGCDist;
 } NBodyParams;
+
+/* TODO: yep */
+typedef struct
+{
+    int something;
+} InitialConditions;
+
+/* TODO: Dwarf model */
+
+
+/* The context tracks settings of the simulation.  It should be set
+   once at the beginning of a simulation based on settings, and then
+   stays constant for the actual simulation.
+ */
+typedef struct
+{
+    /* Actual parameters */
+    Potential pot;
+    int nbody;
+
+    /* TODO: these should go away */
+    real tstop;
+    real dtout;
+    real freq;
+    real freqout;
+
+    /* Simulation settings */
+    bool usequad;          /* use quadrupole corrections */
+    bool allowIncest;
+    criterion_t criterion;         /* bh86 or sw93 */
+    real theta;     /* accuracy parameter: 0.0 => exact */
+    real eps;       /* potential softening parameter */
+
+    /* Utilitarian type information */
+    int seed;             /* random number seed */
+    FILE* outfile;        /* file for snapshot output */
+    char* outfilename;    /* filename for snapshot output */
+    char* headline;       /* message describing calculation */
+} NBodyCtx;
+
+
+/* Mutable state used during an evaluation */
+typedef struct
+{
+    int n2bterm;    /* number 2-body of terms evaluated */
+    int nbcterm;    /* num of body-cell terms evaluated */
+    int nstep;      /* number of time-steps */
+
+    real tout;
+    real tnow;
+    bodyptr bodytab;      /* points to array of bodies */
+} NBodyState;
 
 
 /* Utility routines used in load.c and grav.c.  These are defined in
