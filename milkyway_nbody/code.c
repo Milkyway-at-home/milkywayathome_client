@@ -301,7 +301,6 @@ static void initNBody(int argc, const char** argv)
         exit(EXIT_FAILURE);
     }
 
-
     while ( ( o = poptGetNextOpt(context)) >= 0 );
 
     /* Check for invalid options, and must have one of input file or input string */

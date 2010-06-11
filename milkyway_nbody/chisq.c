@@ -2,6 +2,7 @@
 // B. Willett Feb. 25, 2010
 // Adapted for use with B&H treecode May 11, 2010
 
+
 // Takes a treecode position, converts it to (l,b), then to (lambda, beta), and then constructs a histogram of the density in lambda.
 
 // Then calculates the (model density - data density)/sigma and adds them all up over all bins
@@ -18,26 +19,27 @@
 #define end 50
 #define binsize 3
 
-float chisq()
+
+real chisq()
 {
 
     printf("Initializing likelihood calculator...");
-    float chisqval = 0.0;
+    real chisqval = 0.0;
     int i, j;
     int count = 0;
     int counttest = 1;
 
     FILE* f;
 
-    float x[ctx.nbody];
-    float y[ctx.nbody];
-    float z[ctx.nbody];
+    real x[ctx.nbody];
+    real y[ctx.nbody];
+    real z[ctx.nbody];
 
-    float l[ctx.nbody];
-    float b[ctx.nbody];
+    real l[ctx.nbody];
+    real b[ctx.nbody];
 
-    float lambda[ctx.nbody];
-    float beta[ctx.nbody];
+    real lambda[ctx.nbody];
+    real beta[ctx.nbody];
 
     bodyptr p;
 
@@ -46,19 +48,14 @@ float chisq()
     int maxindex1 = (int)end / binsize;
     int maxindex2 = (int)abs(beginning) / binsize;
 
-    float histodata1[maxindex1 + 1], histodata2[maxindex2 + 1], histodata1sort[maxindex1 + 1], histodata2sort[maxindex2 + 1];
+    real histodata1[maxindex1 + 1], histodata2[maxindex2 + 1];
+    real histodata1sort[maxindex1 + 1], histodata2sort[maxindex2 + 1];
 
     // Zero all of the histogram arrays
-    for (i = 0; i <= maxindex1; i++)
-    {
-        histodata1[i] = 0.0;
-        histodata1sort[i] = 0.0;
-    }
-    for (i = 0; i <= maxindex2; i++)
-    {
-        histodata2[i] = 0.0;
-        histodata2sort[i] = 0.0;
-    }
+    memset(histodata1, 0, sizeof(real) * maxindex1);
+    memset(histodata1sort, 0, sizeof(real) * maxindex1);
+    memset(histodata2, 0, sizeof(real) * maxindex2);
+    memset(histodata2sort, 0, sizeof(real) * maxindex2);
 
     printf("done\n");
 
@@ -75,22 +72,22 @@ float chisq()
     printf("done\n");
 
     printf("Transforming simulation results...");
-    for (i = 0; i <= counttest - 2; i++)
+    for (i = 0; i < counttest - 1; i++)
     {
         count++;
 
         // Convert to (l,b) (involves convert x to Sun-centered)
-        float r;
+        real r;
 
         x[count-1] += r0;
 
-        r = pow(x[count-1] * x[count-1] + y[count-1] * y[count-1] + z[count-1] * z[count-1], 0.5);
+        r = sqrt(x[count-1] * x[count-1] + y[count-1] * y[count-1] + z[count-1] * z[count-1]);
 
         // Leave in radians to make rotation easier
-        b[count-1] = atan2(z[count-1], pow(x[count-1] * x[count-1] + y[count-1] * y[count-1], 0.5));
+        b[count-1] = atan2(z[count-1], sqrt(x[count-1] * x[count-1] + y[count-1] * y[count-1]));
         l[count-1] = atan2(y[count-1], x[count-1]);
 
-        // Convert to (lambda, beta) (involves a rotation using the Newberg et al (2009) rotation matricies)
+        // Convert to (lambda, beta) (involves a rotation using the Newberg et al (2009) rotation matrices)
 
         beta[count-1] = r2d(asin( sin(theta) * sin(phi) * cos(b[count-1]) * cos(l[count-1]) - sin(theta) * cos(phi) * cos(b[count-1]) * sin(l[count-1]) + cos(theta) * sin(b[count-1]) ));
 
@@ -135,28 +132,28 @@ float chisq()
 
     printf("Outputting to disk...");
 
-    f = fopen("hist", "w");
+    f = fopen("histout", "w");
 
     if (f == NULL)
     {
         printf("There was an error writing to the file\n");
-        exit(0);
+        exit(EXIT_FAILURE);
     }
 
     printf("...file open...");
 
     // Print out the histogram
-    float foo;
+    real foo;
     i = 0;
     for (foo = -binsize; foo >= beginning; foo -= binsize)
     {
-        fprintf(f, "%f %f\n", foo + (binsize / 2.0) , histodata2[i] / ((float)largestbin));
+        fprintf(f, "%f %f\n", foo + (binsize / 2.0) , histodata2[i] / ((real)largestbin));
         i++;
     }
     i = 0;
     for (foo = 0; foo <= end; foo += binsize)
     {
-        fprintf(f, "%f %f\n", foo + (binsize / 2.0) , histodata1[i] / ((float)largestbin));
+        fprintf(f, "%f %f\n", foo + (binsize / 2.0) , histodata1[i] / ((real)largestbin));
         i++;
     }
     fclose(f);
@@ -165,54 +162,62 @@ float chisq()
 
     // Calculate the chisq value by reading a file called "histogram" (the real data histogram should already be normalized)
 
-    f = fopen("histogram", "r");
+    f = fopen("histogram3.txt", "r");
 
     if (f == NULL)
     {
         printf("histogram file not found...exiting\n");
-        exit(0);
+        exit(EXIT_FAILURE);
     }
 
-    float* fileLambda = NULL, *fileCount = NULL, *fileCountErr = NULL;
+    int pos, fsize;
+    real* fileLambda = NULL, *fileCount = NULL, *fileCountErr = NULL;
     int filecount = 0;
 
-    do
+    pos = fseek(f, 0L, SEEK_END);
+    fsize = ceil((double) (ftell(f) + 1) / 3);  /* Make sure it's big enough, avoid fun with integer division */
+    fseek(f, 0L, SEEK_SET);
+
+    fileLambda   = (real*) calloc(sizeof(real), fsize);
+    fileCount    = (real*) calloc(sizeof(real), fsize);
+    fileCountErr = (real*) calloc(sizeof(real), fsize);
+
+    while (fscanf(f,
+                  "%g %g %g\n",
+                  &fileLambda[filecount],
+                  &fileCount[filecount],
+                  &fileCountErr[filecount]) != EOF)
     {
-        filecount++;
-        fileLambda = (float*) realloc (fileLambda, filecount * sizeof(float));
-        fileCount = (float*) realloc (fileCount, filecount * sizeof(float));
-        fileCountErr = (float*) realloc (fileCountErr, filecount * sizeof(float));
+        ++filecount;
     }
-    while (fscanf(f, "%f %f %f", &fileLambda[filecount-1], &fileCount[filecount-1], &fileCountErr[filecount-1]) != EOF);
 
     fclose(f);
 
     // Calculate the chisq
-    i = 0;
-    for (foo = -binsize; foo >= beginning; foo -= binsize)
+    for (i = 0, foo = -binsize; foo >= beginning; foo -= binsize, ++i)
     {
-        for (j = 0; j <= filecount - 1; j++)
+        for (j = 0; j < filecount; ++j)
         {
             // Don't include bins with zero, or zero error, this means there were no counts in that bin to begin with
             if (fileLambda[j] == foo + (binsize / 2.0) && histodata2[i] != 0 && fileCountErr[j] != 0)
             {
-                chisqval += ((fileCount[j] - (histodata2[i] / largestbin)) / fileCountErr[j]) * ((fileCount[j] - (histodata2[i] / largestbin)) / fileCountErr[j]);
+                chisqval += ((fileCount[j] - (histodata2[i] / largestbin)) / fileCountErr[j])
+                              * ((fileCount[j] - (histodata2[i] / largestbin)) / fileCountErr[j]);
             }
         }
-        i++;
     }
-    i = 0;
-    for (foo = 0; foo <= end; foo += binsize)
+
+    for (i = 0, foo = 0.0; foo <= end; foo += binsize, ++i)
     {
-        for (j = 0; j <= filecount - 1; j++)
+        for (j = 0; j < filecount; ++j)
         {
             // Don't include bins with zero, or zero error, this means there were no counts in that bin to begin with
             if (fileLambda[j] == foo + (binsize / 2.0) && histodata1[i] != 0 && fileCountErr[j] != 0)
             {
-                chisqval += ((fileCount[j] - (histodata1[i] / largestbin)) / fileCountErr[j]) * ((fileCount[j] - (histodata1[i] / largestbin)) / fileCountErr[j]);
+                chisqval += ((fileCount[j] - (histodata1[i] / largestbin)) / fileCountErr[j])
+                             * ((fileCount[j] - (histodata1[i] / largestbin)) / fileCountErr[j]);
             }
         }
-        i++;
     }
 
     free(fileLambda);
@@ -223,7 +228,7 @@ float chisq()
 
 
     // MAXIMUM likelihood, multiply by -1
-    float likelihood = -1.0 * chisqval;
+    real likelihood = -chisqval;
     printf("likelihood = %f\n", likelihood);
     return likelihood;
 }
