@@ -32,6 +32,7 @@ set(nbody_src chisq.c
               io.c
               load.c
               orbitintegrator.c
+              json_params.c
               util.c)
 
 set(CMAKE_C_FLAGS "-std=c99 ${CMAKE_C_FLAGS}")

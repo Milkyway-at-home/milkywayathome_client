@@ -280,3 +280,12 @@ static void hackquad(cellptr p)
         }
 }
 
+/* TODO: Ownership of bodytab */
+void nbody_ctx_destroy(NBodyCtx* ctx)
+{
+    free(ctx->headline);
+    free(ctx->outfilename);
+    if (ctx->outfile)
+        fclose(ctx->outfile);
+}
+

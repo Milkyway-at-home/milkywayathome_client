@@ -17,9 +17,9 @@ extern NBodyParams ps;
 
 /* Global function prototypes. */
 
-void initoutput(NBodyCtx*);     /* open files for output */
-void destroyCtx(NBodyCtx*);     /* close output files */
-void inputdata(void);           /* read initial data file */
+void initoutput(NBodyCtx*);             /* open files for output */
+void nbody_ctx_destroy(NBodyCtx* ctx);  /* close output files */
+void inputdata(void);                   /* read initial data file */
 void maketree(bodyptr, int);    /* construct tree structure */
 void hackgrav(bodyptr, bool);   /* compute force on body */
 void output(void);              /* perform output operation */

@@ -8,10 +8,11 @@
 #ifndef _STDINC_H_
 #define _STDINC_H_
 
-#ifndef TRUE
 typedef short int bool;
-#  define FALSE 0
+
+#ifndef TRUE
 #  define TRUE  1
+#  define FALSE 0
 #endif
 
 #include <stdio.h>
