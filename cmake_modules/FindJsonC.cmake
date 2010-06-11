@@ -18,23 +18,21 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#No idea on the actual version, but I'll go with this for now.
 
-cmake_minimum_required (VERSION 2.6)
-project(milkyway_nbody)
+find_path(JSON_C_INCLUDE_DIR "json/json.h")
+find_library(JSON_C_LIBRARY json)
 
-include_directories("${PROJECT_SOURCE_DIR}")
+if(JSON_C_INCLUDE_DIR AND JSON_C_LIBRARY)
+   set(JSON_C_FOUND TRUE)
+endif()
 
-set(nbody_src chisq.c
-              code.c
-              getparam.c
-              grav.c
-              io.c
-              load.c
-              orbitintegrator.c
-              util.c)
-
-add_executable(milkyway_nbody ${nbody_src})
-target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${JSON_C_LIBRARY})
-
+if(JSON_C_FOUND)
+   if(NOT Json_c_FIND_QUIETLY)
+      message(STATUS "Found json-c Library: ${JSON_C_LIBRARY}")
+   endif(NOT Json_c_FIND_QUIETLY)
+else(JSON_C_FOUND)
+   if(Json_c_FIND_REQUIRED)
+      message(FATAL_ERROR "Could not find json-c Library")
+   endif(Json_c_FIND_REQUIRED)
+endif()
 

@@ -26,8 +26,7 @@
 
 typedef real vector[NDIM], matrix[NDIM][NDIM];
 
-/*  * Vector operations.
- */
+/* Vector operations. */
 
 #define CLRV(v)         /* CLeaR Vector */          \
     {                                   \
@@ -49,7 +48,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
         for (_i = 0; _i < NDIM; _i++)                   \
             (v)[_i] = (u)[_i];                      \
     }
-
+
 #ifdef THREEDIM
 
 #define ADDV(v,u,w)     /* ADD Vector */            \
@@ -100,7 +99,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
     }
 
 #endif
-
+
 #define DIVVS(v,u,s)        /* DIVide Vector by Scalar */       \
     {                                   \
         int _i;                             \
@@ -149,7 +148,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
             _tmp += ((u)[_i]-(v)[_i]) * ((u)[_i]-(v)[_i]);              \
         (s) = rsqrt(_tmp);                                                  \
     }
-
+
 #ifdef TWODIM
 
 #define CROSSVP(s,v,u)      /* CROSS Vector Product */      \
@@ -197,9 +196,8 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
         for (_i = 0; _i < NDIM; _i++)                                       \
             (v)[_i] /= (s);                                                 \
     }
-
-/*  * Matrix operations.
- */
+
+/* Matrix operations. */
 
 #define CLRM(p)         /* CLeaR Matrix */          \
     {                                   \
@@ -248,7 +246,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
             for (_j = 0; _j < NDIM; _j++)                   \
                 (p)[_i][_j] = (q)[_i][_j] - (r)[_i][_j];            \
     }
-
+
 #define MULM(p,q,r)     /* Multiply Matrix */           \
     {                                   \
         int _i, _j, _k;                         \
@@ -301,7 +299,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
         for (_i = 0.0; _i < NDIM; _i++)                 \
             (s) += (p)[_i][_i];                     \
     }
-
+
 /*  * Misc. impure operations.
  */
 

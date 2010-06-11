@@ -303,3 +303,19 @@ joining some sort of cult.
 
 
 
+--------------------------------------------------------------------------------
+
+Nbody code:
+
+You must install the json-c library and headers.
+
+Ubuntu: in apt as "libjson0" and "libjson0-dev"
+Fedora: in yum as json-c
+OS X: in macports as "json-c"
+Arch Linux: in the aur as "json-c"
+
+If it's not already packaged for your platform, you can downlaod and
+build it yourself from
+
+http://oss.metaparadigm.com/json-c/
+

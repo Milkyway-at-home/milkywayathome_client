@@ -13,9 +13,9 @@
 #include <popt.h>
 #include <json/json.h>
 
-NBodyParams ps = { 0 };
-Tree t = { 0 } ;
-NBodyCtx ctx = { 0 };
+NBodyParams ps = { 0, };
+Tree t = { 0, } ;
+NBodyCtx ctx = { 0, };
 
 /* Read named double with error checking from a json_object.
    We don't want to allow the automatic conversion to 0 for invalid objects.
@@ -43,7 +43,7 @@ static inline double json_object_get_double_key(json_object* obj, const char* ke
 /* Similar to json_object_get_double_key wrapper, but less needed.
    Note the returned string is owned by the json_object, and should
    not be freed. */
-static inline char* json_object_get_string_key(json_object* obj, const char* key)
+inline static char* json_object_get_string_key(json_object* obj, const char* key)
 {
     return json_object_get_string(json_object_object_get(obj, key));
 }

@@ -52,6 +52,8 @@ find_package(CUDA)
 
 find_package(OpenCL)
 
+find_package(JsonC)
+
 if(MINGW)
   if(NOT TAKEOFFGW_ROOT)
     set(TAKEOFFGW_ROOT "C:/takeoffgw/")
@@ -162,6 +164,7 @@ message("   BOINC Libraries    ${BOINC_LIBRARIES}")
 message("   CUDA  Libraries    ${CUDA_LIBRARIES}")
 message("   OpenCL Libraries   ${OPENCL_LIBRARIES}")
 message("   POPT  Library      ${POPT_LIBRARY}")
+message("   json-c Library     ${JSON_C_LIBRARY}")
 message("   ----")
 message("   Build tool:        ${CMAKE_BUILD_TOOL}")
 message("   C Compiler:        ${CMAKE_C_COMPILER}")
@@ -183,8 +186,14 @@ configure_file (
 
 
 #Different client applications are libraries
-add_subdirectory(milkyway_nbody)
+
+if(JSON_C_FOUND)
+  add_subdirectory(milkyway_nbody)
+endif()
+
+
 add_subdirectory(milkyway_separation)
+
 
 # The main application
 add_subdirectory(src)

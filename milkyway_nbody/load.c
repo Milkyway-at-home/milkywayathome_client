@@ -18,11 +18,9 @@ static void setrcrit(cellptr, vector, real); /* set cell's crit. radius */
 static void threadtree(nodeptr, nodeptr);    /* set next and more links */
 static void hackquad(cellptr);           /* compute quad moments */
 
-/*  * MAKETREE: initialize tree structure for hierarchical force calculation
+/* MAKETREE: initialize tree structure for hierarchical force calculation
  * from body array btab, which contains ctx.nbody bodies.
  */
-
-
 void maketree(bodyptr btab, int nbody)
 {
     bodyptr p;
@@ -281,3 +279,4 @@ static void hackquad(cellptr p)
             ADDM(Quad(p), Quad(p), tmpm);       /* add to qm of cell */
         }
 }
+
