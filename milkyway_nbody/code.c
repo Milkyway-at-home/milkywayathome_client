@@ -8,10 +8,251 @@
 #include "code.h"
 #include <time.h>
 #include <stdlib.h>
+#include <string.h>
 
-NBodyParams ps;
-Tree t;
-NBodyCtx ctx;
+#include <popt.h>
+#include <json/json.h>
+
+NBodyParams ps = { 0 };
+Tree t = { 0 } ;
+NBodyCtx ctx = { 0 };
+
+/* Read named double with error checking from a json_object.
+   We don't want to allow the automatic conversion to 0 for invalid objects.
+   We also want to be accept integers as doubles.
+ */
+static inline double json_object_get_double_key(json_object* obj, const char* key)
+{
+    double val;
+    json_object* tmp;
+
+    tmp = json_object_object_get(obj, key);
+
+    if (   json_object_is_type(tmp, json_type_double)
+        || json_object_is_type(tmp, json_type_int))  /* It's OK to forget the decimal */
+    {
+        val = json_object_get_double(tmp);
+        json_object_put(tmp);
+        return val;
+    }
+
+    fprintf(stderr, "Failed to read expected double for key '%s'\n", key);
+    exit(EXIT_FAILURE);
+}
+
+/* Similar to json_object_get_double_key wrapper, but less needed.
+   Note the returned string is owned by the json_object, and should
+   not be freed. */
+static inline char* json_object_get_string_key(json_object* obj, const char* key)
+{
+    return json_object_get_string(json_object_object_get(obj, key));
+}
+
+static inline bool json_object_get_bool_key(json_object* obj, const char* key)
+{
+    bool val;
+    json_object* tmp;
+
+    tmp = json_object_object_get(obj, key);
+    val = json_object_get_boolean(tmp);
+    json_object_put(tmp);
+
+    return val;
+}
+
+static void get_params_from_json(json_object* obj)
+{
+    bool useRad = FALSE;
+    char* modelStr;
+    char* filename;
+    static real dtnbody;
+    static real kmax;
+
+    json_object* tmp;
+    json_object* nbPms;
+    json_object* hdr;
+    json_object* iniCoords;
+    json_object* nbodyCtx;
+    json_object* treePms;
+
+    /* Check that this is actually one of our files */
+    if (   !json_object_is_type(obj, json_type_object)
+        || !(hdr = json_object_object_get(obj, "nbody-parameters-file")))
+    {
+        fprintf(stderr, "Parameters not in expected format.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    nbPms     = json_object_object_get(hdr, "nbody-parameters");
+    iniCoords = json_object_object_get(hdr, "initial-coordinates");
+    nbodyCtx  = json_object_object_get(hdr, "nbody-context");
+    treePms   = json_object_object_get(hdr, "tree");
+
+    //json_object_put(hdr);
+
+    if (!(nbPms && iniCoords && nbodyCtx && treePms))
+    {
+        fprintf(stderr, "Parameter group missing\n");
+        exit(EXIT_FAILURE);
+    }
+
+
+    /* First group of parameters */
+    ps.PluMass    = json_object_get_double_key(nbPms, "PluMass");
+    ps.r0         = json_object_get_double_key(nbPms, "r0");
+    ps.orbittstop = json_object_get_double_key(nbPms, "orbittstop");
+
+
+    /* Parameters related to initial coordinates */
+    tmp    = json_object_object_get(iniCoords, "angle-use-radians");
+    useRad = json_object_get_boolean(tmp);
+    json_object_put(tmp);
+
+    ps.lstart = json_object_get_double_key(iniCoords, "lstart");
+    ps.bstart = json_object_get_double_key(iniCoords, "bstart");
+
+    if (useRad)
+    {
+        ps.lstart = d2r(ps.lstart);
+        ps.bstart = d2r(ps.bstart);
+    }
+
+    ps.Rstart    = json_object_get_double_key(iniCoords, "Rstart");
+    ps.Xinit     = json_object_get_double_key(iniCoords, "Xinit");
+    ps.Yinit     = json_object_get_double_key(iniCoords, "Yinit");
+    ps.Zinit     = json_object_get_double_key(iniCoords, "Zinit");
+    ps.sunGCDist = json_object_get_double_key(iniCoords, "sunGCDist");
+
+    ps.Xinit = ps.Rstart * cos(ps.lstart) * cos(ps.bstart) - ps.sunGCDist;
+    ps.Yinit = ps.Rstart * sin(ps.lstart) * cos(ps.bstart);
+    ps.Zinit = ps.Rstart * sin(ps.bstart);
+
+
+    /* Parameters related to the context */
+    //ctx.infile      = json_object_get_string_key(nbodyCtx, "infile");
+
+    filename = json_object_get_string_key(nbodyCtx, "outfile");
+
+    /* strncpy doesn't guarantee copying the null terminator */
+    (void)strncpy(ctx.outfilename, filename, sizeof(ctx.outfilename) - 1);
+    ctx.outfilename[sizeof(ctx.outfilename) - 1] = '\0';
+
+    /* The json object has ownership of the string, so we need to copy it */
+    initoutput(&ctx);
+
+
+
+
+
+    ctx.tstop       = json_object_get_double_key(nbodyCtx, "tstop");
+    ctx.nbody       = json_object_get_double_key(nbodyCtx, "nbody");
+    ctx.allowIncest = json_object_get_bool_key(nbodyCtx, "allow-incest");
+
+    modelStr = json_object_get_string_key(nbodyCtx, "model");
+
+    if (!strcmp(modelStr, "bh86"))
+        ctx.model = BH86;
+    else if (!strcmp(modelStr, "SW93"))
+        ctx.model = SW93;
+    else
+    {
+        fprintf(stderr, "Invalid model %s: Model options are either 'bh86' or 'sw93'\n", modelStr);
+        exit(EXIT_FAILURE);
+    }
+
+
+
+    /* use dt = dtnbody/2 to make sure we get enough orbit precision,
+       this puts the results in ps.XC, ps.YC, ps.ZC, ps.XC, ps.YC, ps.ZC,
+       which is then used by the testdata routine to do the shift.
+       Be aware: changing the mass changes the orbit results, but this is OK */
+
+    ps.eps = ps.r0 / (10 * sqrt((real)ctx.nbody));
+    dtnbody = (1 / 10.0) * (1 / 10.0) * sqrt(((4 / 3) * M_PI * ps.r0 * ps.r0 * ps.r0) / (ps.PluMass));
+    //dtnbody = pow(2.718,log(0.5)*kmax);
+    ctx.freq = 1.0 / dtnbody;
+    ctx.freqout = ctx.freq;
+    ps.dtorbit = dtnbody / 2.0;
+
+
+    /* Tree related parameters */
+    t.rsize = json_object_get_double_key(treePms, "rsize");
+}
+
+static void initNBody(int argc, const char** argv)
+{
+    poptContext context;
+    int o;
+    static char* inputFile = NULL;
+    static char* inputStr = NULL;
+    static json_object* obj;
+
+    static const struct poptOption options[] =
+    {
+        {
+            "input-file", 'f',
+            POPT_ARG_STRING, &inputFile,
+            0, "Input file to read", NULL
+        },
+
+        {
+            "input-string", 's',
+            POPT_ARG_STRING, &inputStr,
+            0, "Input given as string", NULL
+        },
+
+        POPT_AUTOHELP
+
+        { NULL, 0, 0, NULL, 0, NULL, NULL }
+    };
+
+    context = poptGetContext(argv[0],
+                             argc,
+                             argv,
+                             options,
+                             POPT_CONTEXT_POSIXMEHARDER);
+
+    while ( ( o = poptGetNextOpt(context)) >= 0 );
+
+    /* Check for invalid options, and must have one of input file or input string */
+    if (     o < -1
+         ||  (inputFile && inputStr)
+         || !(inputFile || inputStr)
+        )
+    {
+        poptPrintHelp(context, stderr, 0);
+        exit(EXIT_FAILURE);
+    }
+
+    poptFreeContext(context);
+
+
+    if (inputFile)
+    {
+        obj = json_object_from_file(inputFile);
+        if (is_error(obj))
+        {
+            fprintf(stderr,
+                    "Failed to read file '%s'. Perhaps not found, or a parse error?\n",
+                    inputFile);
+            exit(EXIT_FAILURE);
+        }
+    }
+    else
+    {
+        obj = json_tokener_parse(inputStr);
+        if (is_error(obj))
+        {
+            fprintf(stderr, "Failed to parse given string\n");
+            exit(EXIT_FAILURE);
+        }
+
+    }
+
+    get_params_from_json(obj);
+
+    json_object_put(obj);
+}
 
 
 /*  Default values for input parameters. */
@@ -24,25 +265,25 @@ const char* defv[] =
     "out=",         /* Output file of N-body frames */
 
     /* params to control N-body integration */
-    "dtime=0.03125",        /* Integration time-step */
+    "dtime=0.03125",       /* Integration time-step */
     "ps.eps=0.025",        /* Potential softening parameter */
     "ps.theta=1.0",        /* Cell subdivision tolerence */
-    "ps.usequad=false",        /* If true, use quad moments */
-    "t.rsize=4.0",        /* Size of initial t.root cell */
+    "ctx.usequad=false",    /* If true, use quad moments */
+    "t.rsize=4.0",         /* Size of initial t.root cell */
     "ps.options=",         /* Various control ps.options */
-    "ctx.tstop=2.0",        /* Time to stop integration */
-    "dctx.tout=0.25",       /* Data output interval */
+    "ctx.tstop=2.0",       /* Time to stop integration */
+    "dtout=0.25",          /* Data output interval */
 
     /* params used if no input specified to make a Plummer model */
-    "ctx.nbody=1024",       /* Number of particles for test run */
-    "seed=123",         /* Random number seed for test run */
+    "ctx.nbody=1024",      /* Number of particles for test run */
+    "seed=123",            /* Random number seed for test run */
 
     NULL,
 };
 
 char* headline = "Hierarchical N-body Code";   /* default id for run */
 
-static void startrun(void);           /* initialize system state */
+static void startrun(NBodyCtx*);           /* initialize system state */
 static void stepsystem(void);         /* advance by one time-step */
 static void testdata(void);           /* generate test data */
 static void pickshell(vector, real);  /* pick point on shell */
@@ -51,57 +292,18 @@ static void pickshell(vector, real);  /* pick point on shell */
 
 int main(int argc, char* argv[])
 {
-
-    printf("Initializing parameters...");
-    static real dtnbody;
-    static real kmax;
     float chisqans = 0.0;
 
-    ps.PluMass = atof(argv[1]);    //mass
-    ps.r0 = atof(argv[2]);     //radius
-    ps.orbittstop = atof(argv[3]); //how far back the orbit goes
-    ctx.tstop = atof(argv[4]);      //evolution time
-    ctx.nbody = atoi(argv[5]);      //number of bodies
+    initNBody(argc, (const char**) argv);
 
-    // Constants
-    ps.options = "";
-    ctx.outfile = "out";
-    t.rsize = 4;
-
-    // Calculate starting galactic coordinates
-    // The l,b,r and vx, vy, vz are hard coded for the Orphan project
-    // In the future, these will change
-    ps.lstart = d2r(218.0);
-    ps.bstart = d2r(53.5);
-
-    // From the vhalo = 73 model result from Newberg et al 2009
-    ps.Rstart = 28.6;
-    ps.Xinit = -156;
-    ps.Yinit = 79;
-    ps.Zinit = 107;
-
-    ps.Xinit = ps.Rstart * cos(ps.lstart) * cos(ps.bstart) - 8.0; // 8.0 is sun-gc distance (TODO: make par)
-    ps.Yinit = ps.Rstart * sin(ps.lstart) * cos(ps.bstart);
-    ps.Zinit = ps.Rstart * sin(ps.bstart);
-
-    ps.eps = ps.r0 / (10 * sqrt((real)ctx.nbody));
-    dtnbody = (1 / 10.0) * (1 / 10.0) * sqrt(((4 / 3) * M_PI * ps.r0 * ps.r0 * ps.r0) / (ps.PluMass));
-    //dtnbody = pow(2.718,log(0.5)*kmax);
-    ctx.freq = 1.0 / dtnbody;
-    ctx.freqout = ctx.freq;
-
-    //printf("ps.eps = %f dtctx.nbody = %f\n", ps.eps, dtctx.nbody);
-    printf("done\n");
-
-    // Calculate the reverse orbit (use dt = dtctx.nbody/2 to make sure we get enough orbit precision, this puts the results in ps.XC, ps.YC, ps.ZC, ps.XC, ps.YC, ps.ZC, which is then used by the testdata routine to do the shift, be aware: changing the mass changes the orbit results, but this is OK)
+    // Calculate the reverse orbit
     printf("Calculating reverse orbit...");
-    ps.dtorbit = dtnbody / 2.0;
     integrate();
     printf("done\n");
 
     printf("Beginning run...\n");
-    startrun();                 /* set params, input data */
-    initoutput();               /* begin system output */
+    startrun(&ctx);                 /* set params, input data */
+
     while (ctx.tnow < ctx.tstop - 1.0 / (1024 * ctx.freq)) /* while not past ctx.tstop */
         stepsystem();               /* advance N-body system */
 
@@ -116,17 +318,17 @@ int main(int argc, char* argv[])
 
 /* STARTRUN: startup hierarchical N-body code. */
 
-static void startrun(void)
+static void startrun(NBodyCtx* ctx)
 {
-    if (ctx.nbody < 1)              /* check input value */
-        error("startrun: ctx.nbody = %d is absurd\n", ctx.nbody);
+    if (ctx->nbody < 1)              /* check input value */
+        error("startrun: ctx.nbody = %d is absurd\n", ctx->nbody);
 
     //srand48((long) time(NULL));   /* set random generator */
     srand48((long) 0.0);    /* set random generator */
     testdata();             /* make test model */
 
-    ctx.nstep = 0;                  /* start counting stps.eps */
-    ctx.tout = ctx.tnow;                /* schedule first output */
+    ctx->nstep = 0;                   /* start counting stps.eps */
+    ctx->tout = ctx->tnow;            /* schedule first output */
 }
 
 /* TESTDATA: generate Plummer model initial conditions for test runs,
@@ -226,18 +428,23 @@ static void stepsystem(void)
     bodyptr p;
     real dt;
     vector dvel, dpos;
+    int nfcalc;          /* count force calculations */
+    int n2bcalc;         /* count body-body interactions */
+    int nbccalc;         /* count body-cell interactions */
+
+
     if (ctx.nstep == 0)                 /* about to take 1st step? */
     {
         printf("Building tree...Starting Nbody simulation...\n");
         maketree(ctx.bodytab, ctx.nbody);       /* build tree structure */
-        ctx.nfcalc = ctx.n2bcalc = ctx.nbccalc = 0;     /* zero counters */
+        nfcalc = n2bcalc = nbccalc = 0;     /* zero counters */
         for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++)
         {
             /* loop over all bodies */
             hackgrav(p, Mass(p) > 0.0);     /* get force on each */
-            ctx.nfcalc++;               /* count force calcs */
-            ctx.n2bcalc += ps.n2bterm;         /* and 2-body terms */
-            ctx.nbccalc += ps.nbcterm;         /* and body-cell terms */
+            nfcalc++;               /* count force calcs */
+            n2bcalc += ps.n2bterm;         /* and 2-body terms */
+            nbccalc += ps.nbcterm;         /* and body-cell terms */
         }
         output();               /* do initial output */
     }
@@ -249,14 +456,15 @@ static void stepsystem(void)
         MULVS(dpos, Vel(p), dt);        /* get positon increment */
         ADDV(Pos(p), Pos(p), dpos);     /* advance r by 1 step */
     }
+
     maketree(ctx.bodytab, ctx.nbody);           /* build tree structure */
-    ctx.nfcalc = ctx.n2bcalc = ctx.nbccalc = 0;     /* zero counters */
+    nfcalc = n2bcalc = nbccalc = 0;     /* zero counters */
     for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++) /* loop over bodies */
     {
         hackgrav(p, Mass(p) > 0.0);     /* get force on each */
-        ctx.nfcalc++;               /* count force calcs */
-        ctx.n2bcalc += ps.n2bterm;         /* and 2-body terms */
-        ctx.nbccalc += ps.nbcterm;         /* and body-cell terms */
+        nfcalc++;               /* count force calcs */
+        n2bcalc += ps.n2bterm;         /* and 2-body terms */
+        nbccalc += ps.nbcterm;         /* and body-cell terms */
     }
     for (p = ctx.bodytab; p < ctx.bodytab + ctx.nbody; p++) /* loop over all bodies */
     {

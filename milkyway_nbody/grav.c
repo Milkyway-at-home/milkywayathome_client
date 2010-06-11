@@ -34,11 +34,11 @@ void hackgrav(bodyptr p, bool intree)
     ps.n2bterm = ps.nbcterm = 0;          /* count body & cell terms */
     skipself = FALSE;               /* watch for tree-incest */
     treescan((nodeptr) t.root);           /* scan tree from t.root */
-    if (intree && ! skipself)           /* did tree-incest occur? */
+    if (intree && !skipself)            /* did tree-incest occur? */
     {
-        if (! scanopt(ps.options, "allow-incest")) /* treat as catastrophic? */
+        if (!ctx.allowIncest) /* treat as catastrophic? */
             error("hackgrav: tree-incest detected\n");
-        if (! treeincest)           /* for the first time? */
+        if (!treeincest)           /* for the first time? */
             eprintf("\n[hackgrav: tree-incest detected]\n");
         treeincest = TRUE;          /* don't repeat warning */
     }
@@ -143,7 +143,7 @@ static void gravsub(nodeptr q)
     phi0 -= phii;                               /* add to total grav. pot. */
     ADDV(acc0, acc0, ai);                       /* ... and to total accel. */
 
-    if (ps.usequad && Type(q) == CELL)             /* if cell, add quad term */
+    if (ctx.usequad && Type(q) == CELL)             /* if cell, add quad term */
     {
         dr5inv = 1.0 / (drsq * drsq * drab);    /* form dr^-5 */
         MULMV(quaddr, Quad(q), dr);             /* form Q * dr */

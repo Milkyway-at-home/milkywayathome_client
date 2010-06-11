@@ -22,7 +22,6 @@ static void hackquad(cellptr);           /* compute quad moments */
  * from body array btab, which contains ctx.nbody bodies.
  */
 
-static bool bh86, sw93;              /* use alternate criteria */
 
 void maketree(bodyptr btab, int nbody)
 {
@@ -36,13 +35,9 @@ void maketree(bodyptr btab, int nbody)
     for (p = btab; p < btab + nbody; p++)       /* loop over bodies... */
         if (Mass(p) != 0.0)                     /* exclude test particles */
             loadbody(p);                        /* and insert into tree */
-    bh86 = scanopt(ps.options, "bh86");        /* set flags for alternate */
-    sw93 = scanopt(ps.options, "sw93");        /* ...cell opening criteria */
-    if (bh86 && sw93)               /* can't have both at once */
-        error("maketree: ps.options bh86 and sw93 are incompatible\n");
     hackcofm(t.root, t.rsize);                  /* find c-of-m coordinates */
     threadtree((nodeptr) t.root, NULL);           /* add Next and More links */
-    if (ps.usequad)                /* including quad moments? */
+    if (ctx.usequad)                /* including quad moments? */
         hackquad(t.root);                         /* assign Quad moments */
 }
 
@@ -206,13 +201,13 @@ static void setrcrit(cellptr p, vector cmpos, real psize)
     int k;
 
     if (ps.theta == 0.0)               /* exact force calculation? */
-        rc = 2 * t.rsize;             /* always open cells */
-    else if (bh86)              /* use old BH criterion? */
+        rc = 2 * t.rsize;              /* always open cells */
+    else if (ctx.model == BH86)        /* use old BH criterion? */
         rc = psize / ps.theta;         /* using size of cell */
-    else if (sw93)                  /* use S&W's criterion? */
+    else if (ctx.model == SW93)        /* use S&W's criterion? */
     {
-        bmax2 = 0.0;                /* compute max distance^2 */
-        for (k = 0; k < NDIM; k++)          /* loop over dimensions */
+        bmax2 = 0.0;                   /* compute max distance^2 */
+        for (k = 0; k < NDIM; k++)     /* loop over dimensions */
         {
             dmin = cmpos[k] - (Pos(p)[k] - psize / 2);
             /* dist from 1st corner */

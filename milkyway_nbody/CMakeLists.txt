@@ -35,6 +35,9 @@ set(nbody_src chisq.c
               util.c)
 
 
+find_library(JSON_C_LIBRARY json /opt/local/lib)
+
 add_executable(milkyway_nbody ${nbody_src})
+target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${JSON_C_LIBRARY})
 
 

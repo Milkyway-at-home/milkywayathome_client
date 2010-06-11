@@ -10,22 +10,24 @@
 
 #include "defs.h"
 
+#define OUTFILENAMELEN 1024
+
 typedef struct
 {
-    char* infile;        /* file name for snapshot input */
-    char* outfile;       /* file name for snapshot output */
+    char* headline;      /* message describing calculation */
+    model_t model;       /* bh86 or sw93 */
+    bool usequad;        /* use quadrupole corrections */
+    bool allowIncest;
     real freq;           /* inverse of integration timestep */
     real freqout;        /* output frequency */
     real tstop;          /* time to stop calculation */
-    char* headline;      /* message describing calculation */
     real tnow;           /* current value of time */
     real tout;           /* time of next output */
-    int nstep;           /* number of time-steps */
-    int nfcalc;          /* count force calculations */
-    int n2bcalc;         /* count body-body interactions */
-    int nbccalc;         /* count body-cell interactions */
     int nbody;           /* number of bodies in system */
+    int nstep;           /* number of time-steps */
     bodyptr bodytab;     /* points to array of bodies */
+    FILE* outfile;                      /* file for snapshot output */
+    char outfilename[OUTFILENAMELEN];   /* filename for snapshot output */
 } NBodyCtx;
 
 extern NBodyParams ps;
@@ -34,7 +36,7 @@ extern NBodyCtx ctx;
 
 /* Global function prototypes. */
 
-void initoutput(void);          /* open files for output */
+void initoutput(NBodyCtx*);     /* open files for output */
 void stopoutput(void);          /* close output files */
 void inputdata(void);           /* read initial data file */
 void maketree(bodyptr, int);    /* construct tree structure */

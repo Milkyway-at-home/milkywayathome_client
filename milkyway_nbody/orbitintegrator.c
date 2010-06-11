@@ -14,8 +14,6 @@
 
 void acceleration(float* posvec, float* accvec);
 
-void integrate();
-
 void integrate()
 {
     float acc[3], v[3], x[3], time;
@@ -46,10 +44,12 @@ void integrate()
             //printf(" %f", x[i]);
         }
 
+        /*
         for (i = 0; i <= 2; i++)
         {
             //printf(" %f", v[i]);
         }
+        */
         //printf("orbittime = %f\n", time);
 
         // Compute the new acceleration

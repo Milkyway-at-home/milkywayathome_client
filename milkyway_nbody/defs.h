@@ -108,6 +108,14 @@ typedef struct
     } stuff;
 } cell, *cellptr;
 
+/* use alternate criteria */
+typedef enum
+{
+    BH86,
+    SW93
+} model_t;
+
+
 #define Rcrit2(x) (((cellptr) (x))->rcrit2)
 #define More(x)   (((cellptr) (x))->more)
 #define Subp(x)   (((cellptr) (x))->stuff.subp)
@@ -128,9 +136,7 @@ typedef struct
 
 typedef struct
 {
-    char* options;  /* various option keywords */
     real theta;     /* accuracy parameter: 0.0 => exact */
-    bool usequad;   /* use quadrupole corrections */
     real eps;       /* potential softening parameter */
     int n2bterm;    /* number 2-body of terms evaluated */
     int nbcterm;    /* num of body-cell terms evaluated */
@@ -141,6 +147,7 @@ typedef struct
     real Xinit, Yinit, Zinit;
     real VXinit, VYinit, VZinit;
     real orbittstop, dtorbit;
+    real sunGCDist;
 } NBodyParams;
 
 
@@ -148,7 +155,6 @@ typedef struct
  * util.c, which must be compiled with the same choice of precision.
  */
 
-bool scanopt(char*, char*);      /* find option in char* */
 real cputime(void);              /* return elapsed CPU time */
 void* allocate(int);             /* allocate and zero memory */
 real distv(vector, vector);      /* distance between vectors */

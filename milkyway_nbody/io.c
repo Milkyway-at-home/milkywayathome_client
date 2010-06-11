@@ -18,9 +18,9 @@ static void out_vector(FILE*, vector);
 static void out_2vectors(FILE*, vector, vector);
 static void printvec(char*, vector);
 
-/*  * INPUTDATA: read initial conditions from input file.
- */
+/* INPUTDATA: read initial conditions from input file. */
 
+#if 0
 void inputdata(void)
 {
     FILE* instr;
@@ -51,33 +51,28 @@ void inputdata(void)
         in_vector(instr, Vel(p));
     fclose(instr);              /* close input FILE* */
 }
+#endif
 
-/*  * INITOUTPUT: initialize output routines.
- */
+/* INITOUTPUT: initialize output routines. */
 
-static FILE* outstr;                  /* output FILE* pointer */
-static FILE* outstr2;                  /* output FILE* pointer */
-
-void initoutput(void)
+void initoutput(NBodyCtx* ctx)
 {
-    if (*ctx.outfile != NULL)                       /* output file specified? */
+    if (ctx->outfilename)                       /* output file specified? */
     {
-        outstr = fopen(ctx.outfile, "w");           /* setup output FILE* */
-        if (outstr == NULL)
-            error("inictx.toutput: cannot open file %s\n", ctx.outfile);
+        ctx->outfile = fopen(ctx->outfilename, "w");           /* setup output FILE* */
+        if (ctx->outfile == NULL)
+            error("initoutput: cannot open file %s\n", ctx->outfilename);
     }
     else
-        outstr = NULL;              /* turn off data output */
+        ctx->outfile = NULL;              /* turn off data output */
 
 }
 
-/*  * STOPOUTPUT: finish up after a run.
- */
-
+/* STOPOUTPUT: finish up after a run. */
 void stopoutput(void)
 {
-    if (outstr != NULL)
-        fclose(outstr);
+    if (ctx.outfile != NULL)
+        fclose(ctx.outfile);
 }
 
 /*  * Counters and accumulators for output routines.
@@ -113,10 +108,10 @@ void output(void)
                 (lbR)[0] += 360.0;
             }
 
-            out_2vectors(outstr, lbR, Vel(p));
+            out_2vectors(ctx.outfile, lbR, Vel(p));
         }
-        printf("\tParticle data written to file %s\n\n", ctx.outfile);
-        fflush(outstr);             /* drain output buffer */
+        printf("\tParticle data written to file %s\n\n", ctx.outfilename);
+        fflush(ctx.outfile);             /* drain output buffer */
         ctx.tout += 1 / ctx.freqout;            /* schedule next data out */
     }
 }

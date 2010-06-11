@@ -57,30 +57,6 @@ real distv(vector v, vector u)
     return (rsqrt(s));
 }
 
-/*  * SCANOPT: scan char* of the form "word1,word2,..." for match. Warning:
- * words must be separated by exactly one comma -- no spaces allowed!
- */
-
-bool scanopt(char* opt, char* key)
-{
-    char* op, *kp;
-
-    op = (char*) opt;               /* start scan of ps.options */
-    while (*op != NULL)             /* loop over words in opt */
-    {
-        kp = (char*) key;           /* start at front of key */
-        while ((*op != ',' ? *op : NULL)    /* loop while this word */
-                == *kp)            /* ...matches text of key */
-        {
-            if (*kp++ == NULL)          /* at end of key word? */
-                return (TRUE);          /* keyword found */
-            op++;               /* else advance ptrs */
-        }
-        while (*op != NULL && *op++ != ',') /* loop till end of word, */
-            continue;               /* passing "," at end */
-    }
-    return (FALSE);             /* keyword not found */
-}
 
 /*  * CPUTIME: compute CPU time in minutes.
  */
