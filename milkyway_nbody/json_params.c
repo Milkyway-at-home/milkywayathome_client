@@ -18,250 +18,13 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "json_params.h"
+#include <string.h>
 #include "code.h"
-
-static void warn_extra_params(json_object* obj, const char* objName)
-{
-    json_object_object_foreach(obj,key,val)
-    {
-        fprintf(stderr,
-                "Warning: In group '%s': Unknown field '%s': '%s'\n",
-                objName,
-                key,
-                json_object_to_json_string(val));
-    }
-}
-
-static inline json_object* json_object_object_get_safe(json_object* obj, const char* key)
-{
-    json_object* tmp;
-
-    tmp = json_object_object_get(obj, key);
-    if (!tmp)
-    {
-        fprintf(stderr, "Failed to find expected key '%s'\n", key);
-        exit(EXIT_FAILURE);
-    }
-        return tmp;
-}
-
-/* Read named double with error checking from a json_object.
-   We don't want to allow the automatic conversion to 0 for invalid objects.
-   We also want to be accept integers as doubles.
-
-   Also explicitly delete the object. Reference counting is unhappy with what I want to do.
-   TODO: Maybe use the hash table directly to avoid a second lookup on the delete.
- */
-static inline double json_object_take_double(json_object* obj, const char* key)
-{
-    double val;
-    json_object* tmp;
-
-    tmp = json_object_object_get_safe(obj, key);
-
-    if (   json_object_is_type(tmp, json_type_double)
-        || json_object_is_type(tmp, json_type_int))  /* It's OK to forget the decimal */
-    {
-        val = json_object_get_double(tmp);
-        json_object_object_del(obj, key);
-        return val;
-    }
-
-    fprintf(stderr, "Failed to read expected double for key '%s'\n", key);
-    exit(EXIT_FAILURE);
-}
-
-/* Same as for json_object_take double.
-   The string is copied, and needs to be freed.
- */
-inline static char* json_object_take_string(json_object* obj, const char* key)
-{
-    json_object* tmp;
-    char* str;
-
-    tmp = json_object_object_get_safe(obj, key);
-    if (json_object_is_type(tmp, json_type_null))
-        str = NULL;
-    else if (json_object_is_type(tmp, json_type_string))
-    {
-        /* The json_object owns the string, so we need to copy it */
-        str = json_object_get_string(tmp);
-        if (str)
-            str = strdup(str);
-    }
-    else
-    {
-        fprintf(stderr, "Expected string or null for key '%s'\n", key);
-        exit(EXIT_FAILURE);
-    }
-
-    json_object_object_del(obj, key);
-
-    return str;
-}
-
-/* There is a pattern here. */
-static inline bool json_object_take_bool(json_object* obj, const char* key)
-{
-    bool val;
-    json_object* tmp;
-
-    tmp = json_object_object_get_safe(obj, key);
-    val = json_object_get_boolean(tmp);
-    json_object_object_del(obj, key);
-
-    return val;
-}
-
-static inline int json_object_take_int(json_object* obj, const char* key)
-{
-    int val;
-    json_object* tmp;
-
-    tmp = json_object_object_get_safe(obj, key);
-    if (!json_object_is_type(tmp, json_type_int))
-    {
-        fprintf(stderr, "Expected int for key '%s'\n", key);
-        exit(EXIT_FAILURE);
-    }
-
-    val = json_object_get_int(tmp);
-    json_object_object_del(obj, key);
-    return val;
-}
-
-static void get_params_from_json(json_object* obj)
-{
-    bool useRad = FALSE;
-    char* modelStr;
-    static real dtnbody;
-    static real kmax;
-
-    json_object* tmp;
-    json_object* nbPms;
-    json_object* hdr;
-    json_object* iniCoords;
-    json_object* nbodyCtx;
-    json_object* treePms;
-
-    /* Check that this is actually one of our files */
-    if (   !json_object_is_type(obj, json_type_object)
-        || !(hdr = json_object_object_get(obj, "nbody-parameters-file")))
-    {
-        fprintf(stderr, "Parameters not in expected format.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    nbodyCtx  = json_object_object_get_safe(hdr, "nbody-context");
-    nbPms     = json_object_object_get_safe(hdr, "nbody-parameters");
-    iniCoords = json_object_object_get_safe(hdr, "initial-coordinates");
-    treePms   = json_object_object_get_safe(hdr, "tree");
-
-    if (!(nbPms && iniCoords && nbodyCtx && treePms))
-    {
-        fprintf(stderr, "Parameter group missing\n");
-        exit(EXIT_FAILURE);
-    }
+#include "json_params.h"
+#include "defs.h"
 
 
-    /* First group of parameters */
-    ps.PluMass    = json_object_take_double(nbPms, "PluMass");
-    ps.r0         = json_object_take_double(nbPms, "r0");
-    ps.orbittstop = json_object_take_double(nbPms, "orbittstop");
-
-
-    /* Parameters related to initial coordinates */
-    useRad = json_object_take_bool(iniCoords, "angle-use-radians");
-
-    ps.lstart = json_object_take_double(iniCoords, "lstart");
-    ps.bstart = json_object_take_double(iniCoords, "bstart");
-
-    if (useRad)
-    {
-        ps.lstart = d2r(ps.lstart);
-        ps.bstart = d2r(ps.bstart);
-    }
-
-    ps.Rstart    = json_object_take_double(iniCoords, "Rstart");
-    ps.Xinit     = json_object_take_double(iniCoords, "Xinit");
-    ps.Yinit     = json_object_take_double(iniCoords, "Yinit");
-    ps.Zinit     = json_object_take_double(iniCoords, "Zinit");
-    ps.sunGCDist = json_object_take_double(iniCoords, "sunGCDist");
-
-    ps.Xinit = ps.Rstart * cos(ps.lstart) * cos(ps.bstart) - ps.sunGCDist;
-    ps.Yinit = ps.Rstart * sin(ps.lstart) * cos(ps.bstart);
-    ps.Zinit = ps.Rstart * sin(ps.bstart);
-
-
-    /* TODO: Maybe seed */
-    /* Parameters related to the context */
-
-    ctx.headline    = json_object_take_string(nbodyCtx, "headline");
-    ctx.outfilename = json_object_take_string(nbodyCtx, "outfile");
-    ctx.nbody       = json_object_take_double(nbodyCtx, "nbody");
-    ctx.seed        = json_object_take_int(nbodyCtx, "seed");
-    ctx.tstop       = json_object_take_double(nbodyCtx, "tstop");
-    ctx.allowIncest = json_object_take_bool(nbodyCtx, "allow-incest");
-    ctx.usequad     = json_object_take_bool(nbodyCtx, "use-quadruople-corrections");
-    ctx.freq        = json_object_take_double(nbodyCtx, "freq");
-    ctx.dtout       = json_object_take_double(nbodyCtx, "dtout");
-    ctx.freqout     = json_object_take_double(nbodyCtx, "freqout");
-    ctx.theta       = json_object_take_double(nbodyCtx, "accuracy-parameter");
-    ctx.eps         = json_object_take_double(nbodyCtx, "potential-softening");
-
-    /* The json object has ownership of the string, so we need to copy it */
-    initoutput(&ctx);
-    modelStr = json_object_take_string(nbodyCtx, "criterion");
-    if (!strcasecmp(modelStr, "bh86"))
-        ctx.criterion = BH86;
-    else if (!strcasecmp(modelStr, "sw93"))
-        ctx.criterion = SW93;
-    else
-    {
-        fprintf(stderr, "Invalid model %s: Model options are either 'bh86' or 'sw93'\n", modelStr);
-        exit(EXIT_FAILURE);
-    }
-    free(modelStr);
-
-    /* Scan through for leftover / unknown keys and provide warnings if any exist */
-    warn_extra_params(nbodyCtx, "nbody-context");
-    json_object_object_del(hdr, "nbody-context");
-
-
-
-    /* use dt = dtnbody/2 to make sure we get enough orbit precision,
-       this puts the results in ps.XC, ps.YC, ps.ZC, ps.XC, ps.YC, ps.ZC,
-       which is then used by the testdata routine to do the shift.
-       Be aware: changing the mass changes the orbit results, but this is OK */
-
-    ctx.eps = ps.r0 / (10 * sqrt((real)ctx.nbody));
-    dtnbody = (1 / 10.0) * (1 / 10.0) * sqrt(((4 / 3) * M_PI * ps.r0 * ps.r0 * ps.r0) / (ps.PluMass));
-    //dtnbody = pow(2.718,log(0.5)*kmax);
-    ctx.freq = 1.0 / dtnbody;
-    ctx.freqout = ctx.freq;
-    ps.dtorbit = dtnbody / 2.0;
-
-
-    /* Tree related parameters */
-    t.rsize = json_object_take_double(treePms, "rsize");
-    warn_extra_params(treePms, "tree");
-    json_object_object_del(hdr, "tree");
-
-
-    warn_extra_params(nbPms, "nbody-parameters");
-    json_object_object_del(hdr, "nbody-parameters");
-
-    warn_extra_params(iniCoords, "initial-coordinates");
-    json_object_object_del(hdr, "initial-coordinates");
-
-    /* Now warn for entire groups on the header and whole file */
-    warn_extra_params(hdr, "nbody-parameters-file");
-
-    /* deref the top level object should take care of freeing whatever's left */
-    json_object_put(obj);
-}
-
+/* Read command line arguments and initialize the context and state */
 void initNBody(int argc, const char** argv)
 {
     poptContext context;
@@ -270,6 +33,10 @@ void initNBody(int argc, const char** argv)
     static char* inputStr = NULL;   /* a string of JSON to use directly */
     static json_object* obj;
 
+    /* FIXME: There's a small leak of the inputFile from use of
+       poptGetNextOpt().  Some mailing list post suggestst that this
+       is some kind of semi-intended bug to work around something or
+       other while maintaining ABI compatability */
     static const struct poptOption options[] =
     {
         {
@@ -289,7 +56,6 @@ void initNBody(int argc, const char** argv)
         { NULL, 0, 0, NULL, 0, NULL, NULL }
     };
 
-
     context = poptGetContext(argv[0],
                              argc,
                              argv,
@@ -308,15 +74,16 @@ void initNBody(int argc, const char** argv)
     /* Check for invalid options, and must have one of input file or input string */
     if (     o < -1
          ||  (inputFile && inputStr)
-         || !(inputFile || inputStr)
-        )
+         || !(inputFile || inputStr))
     {
         poptPrintHelp(context, stderr, 0);
+        free(inputFile);
+        free(inputStr);
+        poptFreeContext(context);
         exit(EXIT_FAILURE);
     }
 
     poptFreeContext(context);
-
 
     if (inputFile)
     {
@@ -326,21 +93,252 @@ void initNBody(int argc, const char** argv)
             fprintf(stderr,
                     "Failed to read file '%s'. Perhaps not found, or a parse error?\n",
                     inputFile);
+            free(inputFile);
             exit(EXIT_FAILURE);
         }
+        free(inputFile);
     }
     else
     {
         obj = json_tokener_parse(inputStr);
+        free(inputStr);
         if (is_error(obj))
-        {
-            fprintf(stderr, "Failed to parse given string\n");
-            exit(EXIT_FAILURE);
-        }
-
+            fail("Failed to parse given string\n");
     }
 
     get_params_from_json(obj);
+
+}
+
+/* Reads a name of the criterion into the C value */
+static criterion_t readCriterion(const char* str)
+{
+    if (!strcasecmp(str, "bh86"))
+        return BH86;
+    else if (!strcasecmp(str, "sw93"))
+        return SW93;
+    else
+        fail("Invalid model %s: Model options are either 'bh86' or 'sw93'\n", str);
+}
+
+/* Iterate through remaining keys in obj to provide useful warnings of
+ * unknown parameters in the file */
+static void warn_extra_params(json_object* obj, const char* grpName)
+{
+    json_object_object_foreach(obj,key,val)
+    {
+        fprintf(stderr,
+                "Warning: In group '%s': Unknown field '%s': '%s'\n",
+                grpName,
+                key,
+                json_object_to_json_string(val));
+    }
+}
+
+/* Read a set of related parameters, e.g. the main NBodyCtx */
+inline static void readParameterGroup(const ParameterGroup* g, json_object* hdr)
+{
+    const Parameter* p;
+    bool defaultable, useDflt;
+    json_object* grp;
+    json_object* obj;
+
+    p = g->parameters;
+
+    grp = json_object_object_get(hdr, g->name);
+    if (!grp)
+        fail("Failed to find expected group '%s'\n", g->name);
+
+    /* set of associated parameters */
+    while (p->name)
+    {
+        useDflt = FALSE;
+        defaultable = (p->dflt != NULL);
+
+        obj = json_object_object_get(grp, p->name);
+        if (!obj)   /* not found */
+        {
+            if (defaultable)
+                useDflt = TRUE;
+            else
+            {
+                fail("Failed to find required key '%s' in group '%s'\n",
+                     p->name,
+                     g->name);
+            }
+        }
+        else   /* found the object */
+        {
+            if (json_object_is_type(obj, json_type_null))
+            {
+                if (defaultable)
+                    useDflt = TRUE;
+                else
+                {
+                    /* Found it, but trying to give null when a value is required */
+                    fail("Got null for required key '%s' in group '%s'\n",
+                         p->name,
+                         g->name);
+                }
+            }
+        }
+
+        /* TODO: Type checking in need of much improvement */
+        switch (p->type)
+        {
+            case json_type_int:
+                if (useDflt)
+                {
+                    *((int*) p->param) = *((int*) p->dflt);
+                    break;
+                }
+
+                /* If we expect an int, and we find a string, it's an enum */
+                if (p->conv)
+                {
+                    if (!json_object_is_type(obj, json_type_string))
+                        fail("Expected enum, did not get string "
+                             "for key '%s' in group '%s'\n",
+                             p->name,
+                             g->name);
+
+                    *((int*) p->param) = (int) p->conv(json_object_get_string(obj));
+                    break;
+                }
+
+                *((int*) p->param) = json_object_get_int(obj);
+                break;
+
+            case json_type_double:
+                /* Cast to real is important */
+                *((real*) p->param) = useDflt ? *((double*) p->dflt) : json_object_get_double(obj);
+                break;
+
+            case json_type_string:
+                /* json_object has ownership of string, so copy it */
+                *((char**) p->param) =
+                    useDflt ? *((char**) p->dflt) : strdup(json_object_get_string(obj));
+                break;
+
+            case json_type_boolean:
+                *((bool*) p->param) = useDflt ? *((bool*) p->dflt) : json_object_get_boolean(obj);
+                break;
+
+            default:
+                fail("Unhandled parameter type %d for key '%s' in group '%s'\n",
+                     p->type,
+                     p->name,
+                     g->name);
+        }
+
+        /* Explicitly delete this from the json_object so we can check
+         * for unknown/extra parameters. Deref is not enough here. */
+        json_object_object_del(grp, p->name);
+        ++p;
+    }
+
+    warn_extra_params(grp, g->name);
+
+}
+
+/* CHECKME: Assumption that all enums are the same size, size of an
+ * int, which I think is always true on all compilers, but I'm
+ * probably wrong. */
+
+/* TODO: Could use hash table more directly and avoid all the extra
+ * lookups, but it probably doesn't matter. */
+
+/* Read the parameters from the top level json object. It destroys the
+ * object in the process. */
+void get_params_from_json(json_object* fileObj)
+{
+    /* Constants used for defaulting. Each field only used if
+     * specified in the actual parameter tables. */
+    static const NBodyCtx defaultCtx =
+    {
+        .pot = { { 0 }, {0,0,0,0} , {0,0,0,0,0,0,0}, NULL },
+        .nbody = 1024,
+        .tstop = NAN,
+        .dtout = NAN,
+        .freq = NAN,
+        .freqout = NAN,
+        .usequad = TRUE,
+        .allowIncest = FALSE,
+        .criterion = BH86,
+        .theta = 0.0,
+        .eps = 0.0,
+        .seed = 0,
+        .outfile = NULL,
+        .outfilename = NULL,
+        .headline = NULL
+    };
+
+    static const Tree defaultTree =
+    {
+        .rsize = 4.0
+    };
+
+    /* Must be null terminated arrays */
+    static const Parameter nbodyCtxParams[] =
+        {
+            { "outfile", json_type_string, &ctx.outfilename, NULL, NULL },
+            { "headline", json_type_string, &ctx.headline, NULL, NULL },
+            { "accuracy-parameter", json_type_double, &ctx.theta, &defaultCtx.theta, NULL },
+            { "criterion", json_type_int, &ctx.criterion, NULL, readCriterion },
+            { "use-quadrupole-corrections", json_type_boolean, &ctx.usequad, NULL, NULL },
+            { "allow-incest", json_type_boolean, &ctx.allowIncest, NULL, NULL },
+
+            { "seed", json_type_int, &ctx.seed, NULL, NULL },
+            { "nbody", json_type_int, &ctx.nbody, NULL, NULL },
+            { NULL, json_type_null, NULL, NULL, NULL }
+        };
+
+    static const Parameter treeParams[] =
+    {
+        { "rsize", json_type_double, &t.rsize, &defaultTree.rsize, NULL }
+    };
+
+    static const ParameterGroup parameters[] =
+    {
+        { "nbody-context", nbodyCtxParams },
+        { "tree", treeParams },
+        // { "initial-conditions", { 0 } },
+        { NULL, { NULL, json_type_null, NULL, NULL, NULL } }
+    };
+
+    ParameterGroup* g;
+    json_object* hdr;
+
+    /* Check that this is actually one of our files */
+    if (   !json_object_is_type(fileObj, json_type_object)
+        || !(hdr = json_object_object_get(fileObj, "nbody-parameters-file")))
+    {
+        fprintf(stderr, "Parameters not in expected format.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* loop through table of accepted sets of parameters */
+    g = parameters;
+    while (g->name)
+    {
+        readParameterGroup(g, hdr);
+
+        /* Explicitly delete the group so we can check for extra stuff */
+        json_object_object_del(hdr, g->name);
+        ++g;
+    }
+
+    /* Warnings for unknown groups */
+    warn_extra_params(hdr, "nbody-parameters-file");
+
+    printf("End read parameters\n");
+    printContext(&ctx);
+
+    /* deref the top level object should take care of freeing whatever's left */
+    json_object_put(fileObj);
+
+    //json_object_object_del(fileObj, "nbody-parameters-file");
+
 }
 
 

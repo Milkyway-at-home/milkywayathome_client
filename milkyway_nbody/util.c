@@ -6,6 +6,7 @@
 /* ************************************************************************** */
 
 #include "stdinc.h"
+#include "defs.h"
 #include "real.h"
 #include "vectmath.h"
 #include <stdlib.h>
@@ -108,4 +109,5 @@ void eprintf(char* msg, ...)
     vfprintf(stderr, msg, args);
     va_end(args);
 }
+
 

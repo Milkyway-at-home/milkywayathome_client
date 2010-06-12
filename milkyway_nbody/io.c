@@ -206,3 +206,27 @@ static void printvec(char* name, vector vec)
            name, vec[0], vec[1], vec[2]);
 }
 
+void printContext(NBodyCtx* ctx)
+{
+
+    printf("ctx = { \n"
+           "  nbody              = %d\n"
+           "  outfilename        = %s\n"
+           "  headline           = %s\n"
+           "  criterion          = %d\n"
+           "  usequad            = %d\n"
+           "  allowIncest        = %d\n"
+           "  seed               = %d\n"
+           "  accuracy parameter = %g\n"
+           "};\n",
+           ctx->nbody,
+           ctx->outfilename,
+           ctx->headline,
+           ctx->criterion,
+           ctx->usequad,
+           ctx->allowIncest,
+           ctx->seed,
+           ctx->theta
+        );
+}
+

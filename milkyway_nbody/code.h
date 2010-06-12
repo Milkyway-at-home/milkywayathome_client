@@ -34,6 +34,7 @@ char* getparam(char*);            /* get parameter as char* */
 int getiparam(char*);             /* get parameter as integer */
 bool getbparam(char*);            /* get parameter as bool */
 real getrparam(char*);            /* get parameter as real */
+void printContext(NBodyCtx* ctx);
 
 #endif /* _CODE_H_ */
 

@@ -253,6 +253,12 @@ typedef struct
 } NBodyState;
 
 
+
+#define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \
+                         exit(EXIT_FAILURE); }
+
+
+
 /* Utility routines used in load.c and grav.c.  These are defined in
  * util.c, which must be compiled with the same choice of precision.
  */

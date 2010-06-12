@@ -24,7 +24,33 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <popt.h>
 #include <json/json.h>
 
+
+/* function read a named field into an enum */
+/* :: (Enum a) => String -> a */
+typedef int (*StrToEnum) (const char*);
+
+/* Same basic idea as a popt option table */
+typedef struct
+{
+    const char* name; /* Name of the parameter */
+    json_type type;   /* Type of the parameter. Use json_type_int for an enum */
+    void* param;      /* Depends on type. pointer to where the value should go */
+    StrToEnum conv;   /* function to read a name into an enum */
+
+    void* dflt;       /* Default value. Use NULL to require it. Note
+                         that for reading an enum from a string, use
+                         the enum value and not the string name. */
+} Parameter;
+
+typedef struct
+{
+    const char* name;
+    const Parameter* parameters;
+} ParameterGroup;
+
+
 void initNBody(int argc, const char** argv);
+void get_params_from_json(json_object* fileObj);
 
 #endif /* _JSON_PARAMS_H_ */
 

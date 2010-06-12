@@ -33,6 +33,9 @@ int main(int argc, char* argv[])
     float chisqans = 0.0;
 
     initNBody(argc, (const char**) argv);
+    printf("Reached end of init\n");
+    exit(EXIT_SUCCESS);
+
 
     // Calculate the reverse orbit
     printf("Calculating reverse orbit...");
