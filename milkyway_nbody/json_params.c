@@ -19,13 +19,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <string.h>
+#include <assert.h>
 #include "code.h"
 #include "json_params.h"
 #include "defs.h"
 
 
 /* Read command line arguments and initialize the context and state */
-void initNBody(int argc, const char** argv)
+void initNBody(const int argc, const char** argv)
 {
     poptContext context;
     int o;
@@ -106,11 +107,13 @@ void initNBody(int argc, const char** argv)
             fail("Failed to parse given string\n");
     }
 
-    get_params_from_json(obj);
+    get_params_from_json(&ctx, obj);
+
+    printContext(&ctx);
 
 }
 
-/* Reads a name of the criterion into the C value */
+/* Reads a name of the criterion into the C value, with name str */
 static criterion_t readCriterion(const char* str)
 {
     if (!strcasecmp(str, "bh86"))
@@ -121,125 +124,210 @@ static criterion_t readCriterion(const char* str)
         fail("Invalid model %s: Model options are either 'bh86' or 'sw93'\n", str);
 }
 
-/* Iterate through remaining keys in obj to provide useful warnings of
- * unknown parameters in the file */
-static void warn_extra_params(json_object* obj, const char* grpName)
+
+void printParameter(Parameter* p)
 {
+    if (p)
+    {
+        printf("parameter = {\n"
+               "  name  = %s\n"
+               "  type  = %d\n"
+               "  param = %p\n"
+               "  dflt  = %p\n"
+               "  conv  = %p\n"
+               "  uniq  = %d\n"
+               "  pms   = %p\n"
+               "};\n",
+               p->name, p->type, p->param, p->dflt, p->conv, p->unique, p->parameters);
+    }
+    else
+    {
+        printf("<NULL PARAMETER>\n");
+    }
+}
+
+
+/* Read a set of related parameters, e.g. the main NBodyCtx.
+   If the unique flag is set, it's only valid to have one of the items in the group.
+   Otherwise, it tries to use all of the parameters, and warns when extra elements are found.
+   Fails if it fails to find a parameter that isn't defaultable.
+ */
+static void readParameterGroup(const Parameter* g,      /* The set of parameters */
+                               json_object* hdr,        /* The object of the group */
+                               const Parameter* parent) /* non-null if within another group */
+{
+    const Parameter* p;
+    const Parameter* q;
+    bool defaultable, useDflt;
+    json_object* obj;
+    const char* pname;
+    bool unique;
+    bool found = FALSE, done = FALSE;
+    generic_enum_t* group_type;
+
+    if (parent)
+    {
+        pname = parent->name;     /* Name of the group we're in */
+        unique = parent->unique;  /* Expect one, or try to take all of them*/
+        group_type = (generic_enum_t*) parent->param;
+    }
+    else
+    {
+        pname = "<root>";       /* at the root of the configuration */
+        unique = FALSE;
+        group_type = NULL;
+    }
+
+    assert(g);
+    assert(hdr);
+
+    p = g;
+
+    /* CHECKME: Handling of defaultable, cases in unique? */
+    while (p->name && !done)
+    {
+        defaultable = (p->dflt != NULL);
+        useDflt = FALSE;
+        found = FALSE;
+
+        obj = json_object_object_get(hdr, p->name);
+        if (!obj)
+        {
+            if (unique)  /* We get another chance */
+            {
+                ++p;
+                continue;
+            }
+
+            if (defaultable)
+                useDflt = TRUE;
+            else
+            {
+                fprintf(stderr,
+                        "Failed to find or got 'null' for required key '%s' in '%s'\n",
+                        p->name,
+                        pname);
+                found = FALSE;
+                break;  /* abandon the loop and print useful debugging */
+            }
+        }
+        else
+        {
+            found = TRUE;
+            if (unique)
+                done = TRUE;
+        }
+       /* TODO: Better type checking might be nice. Mostly now relies
+        * on not screwing up the tables. */
+
+        switch (p->type)
+        {
+            case nbody_type_double:
+                *((real*) p->param) = useDflt ? *((real*) p->dflt) : (real) json_object_get_double(obj);
+                break;
+
+            case nbody_type_int:
+                *((int*) p->param) = useDflt ? *((int*) p->dflt) : json_object_get_int(obj);
+                break;
+
+            case nbody_type_boolean:  /* CHECKME: Size */
+                *((bool*) p->param) = useDflt ? *((int*) p->dflt) : json_object_get_boolean(obj);
+                break;
+
+            case nbody_type_string:
+                /* the json_object has ownership of the string so we need to copy it */
+                *((char**) p->param) =
+                    useDflt ? *((char**) p->dflt) : strdup(json_object_get_string(obj));
+                break;
+            case nbody_type_group_item:
+                if (p->dflt)
+                    *group_type = *((generic_enum_t*) p->dflt);
+                else
+                {
+                    fail("Expected nbody_type_group_item for "
+                         "'%s' in '%s', but no enum value set\n", p->name, pname);
+                }
+
+                /* fall through to nbody_type_object */
+            case nbody_type_group:
+            case nbody_type_object:
+                readParameterGroup(p->parameters, obj, p);
+                break;
+            case nbody_type_enum:
+                /* This is actually a json_type_string, which we read
+                 * into an enum, or take a default value */
+                if (useDflt)
+                {
+                    *((generic_enum_t*) p->param) = *((generic_enum_t*) p->dflt);
+                    break;
+                }
+
+                if (p->conv)
+                    *((generic_enum_t*) p->param) = p->conv(json_object_get_string(obj));
+                else
+                    fail("Error: read function not set for enum '%s'\n", p->name);
+
+                break;
+            default:
+                printf("Unhandled parameter type %d for key '%s' in '%s'\n",
+                       p->type,
+                       p->name,
+                       pname);
+                break;
+        }
+
+        /* Explicitly delete it so we can check for extra stuff */
+        json_object_object_del(hdr, p->name);
+        ++p;
+    }
+
+    warn_extra_params(hdr, pname);
+
+    /* Report what was expected in more detail */
+    if (!found)
+    {
+        fprintf(stderr, "Failed to find required item in group '%s'\n", pname);
+
+        if (unique)
+            fprintf(stderr, "\tExpected to find one of the following:\n");
+        else
+            fprintf(stderr, "\tFields are:\n");
+
+        q = g;
+        while (q->name)
+        {
+            fprintf(stderr, "\t\t%s", q->name);
+
+            if (q->dflt && !unique)
+                fprintf(stderr, "  (optional)");
+            fprintf(stderr, ",\n");
+            ++q;
+        }
+
+        exit(EXIT_FAILURE);
+    }
+}
+
+
+/* Iterate through remaining keys in obj to provide useful warnings of
+ * unknown parameters in the file. Returns true if any found. */
+static bool warn_extra_params(json_object* obj, const char* grpName)
+{
+    bool haveExtra = FALSE;
+
     json_object_object_foreach(obj,key,val)
     {
+        haveExtra = TRUE;
         fprintf(stderr,
                 "Warning: In group '%s': Unknown field '%s': '%s'\n",
                 grpName,
                 key,
                 json_object_to_json_string(val));
     }
+
+    return haveExtra;
 }
 
-/* Read a set of related parameters, e.g. the main NBodyCtx */
-inline static void readParameterGroup(const ParameterGroup* g, json_object* hdr)
-{
-    const Parameter* p;
-    bool defaultable, useDflt;
-    json_object* grp;
-    json_object* obj;
-
-    p = g->parameters;
-
-    grp = json_object_object_get(hdr, g->name);
-    if (!grp)
-        fail("Failed to find expected group '%s'\n", g->name);
-
-    /* set of associated parameters */
-    while (p->name)
-    {
-        useDflt = FALSE;
-        defaultable = (p->dflt != NULL);
-
-        obj = json_object_object_get(grp, p->name);
-        if (!obj)   /* not found */
-        {
-            if (defaultable)
-                useDflt = TRUE;
-            else
-            {
-                fail("Failed to find required key '%s' in group '%s'\n",
-                     p->name,
-                     g->name);
-            }
-        }
-        else   /* found the object */
-        {
-            if (json_object_is_type(obj, json_type_null))
-            {
-                if (defaultable)
-                    useDflt = TRUE;
-                else
-                {
-                    /* Found it, but trying to give null when a value is required */
-                    fail("Got null for required key '%s' in group '%s'\n",
-                         p->name,
-                         g->name);
-                }
-            }
-        }
-
-        /* TODO: Type checking in need of much improvement */
-        switch (p->type)
-        {
-            case json_type_int:
-                if (useDflt)
-                {
-                    *((int*) p->param) = *((int*) p->dflt);
-                    break;
-                }
-
-                /* If we expect an int, and we find a string, it's an enum */
-                if (p->conv)
-                {
-                    if (!json_object_is_type(obj, json_type_string))
-                        fail("Expected enum, did not get string "
-                             "for key '%s' in group '%s'\n",
-                             p->name,
-                             g->name);
-
-                    *((int*) p->param) = (int) p->conv(json_object_get_string(obj));
-                    break;
-                }
-
-                *((int*) p->param) = json_object_get_int(obj);
-                break;
-
-            case json_type_double:
-                /* Cast to real is important */
-                *((real*) p->param) = useDflt ? *((double*) p->dflt) : json_object_get_double(obj);
-                break;
-
-            case json_type_string:
-                /* json_object has ownership of string, so copy it */
-                *((char**) p->param) =
-                    useDflt ? *((char**) p->dflt) : strdup(json_object_get_string(obj));
-                break;
-
-            case json_type_boolean:
-                *((bool*) p->param) = useDflt ? *((bool*) p->dflt) : json_object_get_boolean(obj);
-                break;
-
-            default:
-                fail("Unhandled parameter type %d for key '%s' in group '%s'\n",
-                     p->type,
-                     p->name,
-                     g->name);
-        }
-
-        /* Explicitly delete this from the json_object so we can check
-         * for unknown/extra parameters. Deref is not enough here. */
-        json_object_object_del(grp, p->name);
-        ++p;
-    }
-
-    warn_extra_params(grp, g->name);
-
-}
 
 /* CHECKME: Assumption that all enums are the same size, size of an
  * int, which I think is always true on all compilers, but I'm
@@ -248,96 +336,186 @@ inline static void readParameterGroup(const ParameterGroup* g, json_object* hdr)
 /* TODO: Could use hash table more directly and avoid all the extra
  * lookups, but it probably doesn't matter. */
 
-/* Read the parameters from the top level json object. It destroys the
- * object in the process. */
-void get_params_from_json(json_object* fileObj)
+
+/* Read the parameters from the top level json object into ctx. It
+ * destroys the object in the process. */
+void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
 {
     /* Constants used for defaulting. Each field only used if
      * specified in the actual parameter tables. */
-    static const NBodyCtx defaultCtx =
-    {
-        .pot = { { 0 }, {0,0,0,0} , {0,0,0,0,0,0,0}, NULL },
-        .nbody = 1024,
-        .tstop = NAN,
-        .dtout = NAN,
-        .freq = NAN,
-        .freqout = NAN,
-        .usequad = TRUE,
-        .allowIncest = FALSE,
-        .criterion = BH86,
-        .theta = 0.0,
-        .eps = 0.0,
-        .seed = 0,
-        .outfile = NULL,
-        .outfilename = NULL,
-        .headline = NULL
-    };
-
-    static const Tree defaultTree =
-    {
-        .rsize = 4.0
-    };
-
-    /* Must be null terminated arrays */
-    static const Parameter nbodyCtxParams[] =
+    const NBodyCtx defaultCtx =
         {
-            { "outfile", json_type_string, &ctx.outfilename, NULL, NULL },
-            { "headline", json_type_string, &ctx.headline, NULL, NULL },
-            { "accuracy-parameter", json_type_double, &ctx.theta, &defaultCtx.theta, NULL },
-            { "criterion", json_type_int, &ctx.criterion, NULL, readCriterion },
-            { "use-quadrupole-corrections", json_type_boolean, &ctx.usequad, NULL, NULL },
-            { "allow-incest", json_type_boolean, &ctx.allowIncest, NULL, NULL },
-
-            { "seed", json_type_int, &ctx.seed, NULL, NULL },
-            { "nbody", json_type_int, &ctx.nbody, NULL, NULL },
-            { NULL, json_type_null, NULL, NULL, NULL }
+            .pot = EMPTY_POTENTIAL,
+            .nbody = 1024,
+            .tstop = NAN,
+            .dtout = NAN,
+            .freq = NAN,
+            .freqout = NAN,
+            .usequad = TRUE,
+            .allowIncest = FALSE,
+            .criterion = BH86,
+            .theta = 0.0,
+            .eps = 0.0,
+            .seed = 0,
+            .outfile = NULL,
+            .outfilename = NULL,
+            .headline = NULL
         };
 
-    static const Parameter treeParams[] =
-    {
-        { "rsize", json_type_double, &t.rsize, &defaultTree.rsize, NULL }
-    };
+    const Tree defaultTree =
+        {
+            .rsize = 4.0
+        };
 
-    static const ParameterGroup parameters[] =
-    {
-        { "nbody-context", nbodyCtxParams },
-        { "tree", treeParams },
-        // { "initial-conditions", { 0 } },
-        { NULL, { NULL, json_type_null, NULL, NULL, NULL } }
-    };
+    /* Spherical potential options */
+    const Parameter sphericalParams[] =
+        {
+            DBL_PARAM("mass",     &ctx->pot.sphere[0].mass),
+            DBL_PARAM("r0-scale", &ctx->pot.sphere[0].scale),
+            NULLPARAMETER
+        };
 
-    ParameterGroup* g;
+    /* TODO: Different spherical potentials, more spherical potentials */
+    /* This is maybe redundant and annoying, (spherical in spherical),
+     * but to be consistent with the others. Also part of the way to
+     * having multiple spherical potentials. */
+    const spherical_t sphT = SphericalPotential;
+    const Parameter sphericalOptions[] =
+        {
+            GROUP_PARAM_ITEM("sphere", &sphT,  sphericalParams),
+            NULLPARAMETER
+        };
+
+
+    /* Disk potential options */
+    const Parameter miaymotoParams[] =
+        {
+            DBL_PARAM("mass",         &ctx->pot.disk.mass),
+            DBL_PARAM("scale-length", &ctx->pot.disk.scale_length),
+            DBL_PARAM("scale-height", &ctx->pot.disk.scale_height),
+            NULLPARAMETER
+        };
+
+    const Parameter exponentialParams[] =
+        {
+            DBL_PARAM("mass",         &ctx->pot.disk.mass),
+            DBL_PARAM("scale-length", &ctx->pot.disk.scale_length),
+            NULLPARAMETER
+        };
+
+    const disk_t mnd = MiaymotoNagaiDisk, expd = ExponentialDisk;
+    /* Can't take the address of a literal. Also using pointers to
+     * guarantee a consistent size. */
+    const Parameter diskOptions[] =
+        {
+            GROUP_PARAM_ITEM("miyamoto-nagai", &mnd,  miaymotoParams),
+            GROUP_PARAM_ITEM("exponential",    &expd, exponentialParams),
+            NULLPARAMETER
+        };
+
+    /* Spherical potential options */
+    const Parameter plummerParams[] =
+        {
+            DBL_PARAM("mass",      NULL),
+            DBL_PARAM("r0-length", NULL),
+            NULLPARAMETER
+        };
+
+    const Parameter dwarfModels[] =
+        {
+            //GROUP_PARAM("plummer", something,
+           //{ "plummer", nbody_type_group, NULL, NULL, NULL, TRUE, plummerParams },
+            NULLPARAMETER
+        };
+
+    /* Halo options */
+    const Parameter nfwParams[] =
+        {
+            DBL_PARAM("scale-length", &ctx->pot.halo.scale_length),
+            DBL_PARAM("vhalo",        &ctx->pot.halo.vhalo),
+            NULLPARAMETER
+        };
+
+    const Parameter logarithmicParams[] =
+        {
+            DBL_PARAM("vhalo",        &ctx->pot.halo.vhalo),
+            DBL_PARAM("z-flattening", &ctx->pot.halo.flattenZ),
+            DBL_PARAM("scale-length", &ctx->pot.halo.scale_length),
+            NULLPARAMETER
+        };
+
+    const Parameter triaxialParams[] =
+        {
+            DBL_PARAM("vhalo",          &ctx->pot.halo.vhalo),
+            DBL_PARAM("scale-length",   &ctx->pot.halo.scale_length),
+            DBL_PARAM("x-flattening",   &ctx->pot.halo.flattenX),
+            DBL_PARAM("y-flattening",   &ctx->pot.halo.flattenY),
+            DBL_PARAM("z-flattening",   &ctx->pot.halo.flattenZ),
+            DBL_PARAM("triaxial angle", &ctx->pot.halo.triaxAngle),
+            NULLPARAMETER
+        };
+
+    const halo_t logHaloT = LogarithmicHalo, nfwHaloT = NFWHalo, triHaloT = TriaxialHalo;
+    const Parameter haloOptions[] =
+        {
+            GROUP_PARAM_ITEM("nfw",         &logHaloT, nfwParams),
+            GROUP_PARAM_ITEM("logarithmic", &nfwHaloT, logarithmicParams),
+            GROUP_PARAM_ITEM("triaxial",    &triHaloT, triaxialParams),
+            NULLPARAMETER
+        };
+
+    const Parameter potentialItems[] =
+        {
+            GROUP_PARAM("disk",      &ctx->pot.disk.type,      diskOptions),
+            GROUP_PARAM("halo",      &ctx->pot.halo.type,      haloOptions),
+            GROUP_PARAM("spherical", &ctx->pot.sphere[0].type, sphericalOptions),
+            NULLPARAMETER
+        };
+
+    /* Must be null terminated arrays */
+    const Parameter nbodyCtxParams[] =
+        {
+            STR_PARAM("outfile",                     &ctx->outfilename),
+            STR_PARAM("headline",                    &ctx->headline),
+            INT_PARAM("seed",                        &ctx->seed),
+            INT_PARAM("nbody",                       &ctx->nbody),
+            BOOL_PARAM("use-quadrupole-corrections", &ctx->usequad),
+
+            BOOL_PARAM_DFLT("allow-incest",          &ctx->allowIncest, &defaultCtx.allowIncest),
+            DBL_PARAM_DFLT("accuracy-parameter",     &ctx->theta, &defaultCtx.theta),
+            ENUM_PARAM("criterion",                  &ctx->criterion, (ReadEnum) readCriterion),
+            OBJ_PARAM("potential", potentialItems),
+            NULLPARAMETER
+        };
+
+    const Parameter treeParams[] =
+        {
+            DBL_PARAM_DFLT("rsize", &t.rsize, &defaultTree.rsize),
+            NULLPARAMETER
+        };
+
+    const Parameter parameters[] =
+        {
+            OBJ_PARAM("nbody-context", nbodyCtxParams),
+            OBJ_PARAM("tree",          treeParams),
+            // { "initial-conditions", { 0 } },
+            NULLPARAMETER
+        };
+
     json_object* hdr;
 
     /* Check that this is actually one of our files */
-    if (   !json_object_is_type(fileObj, json_type_object)
+    if (   !json_object_is_type(fileObj, nbody_type_object)
         || !(hdr = json_object_object_get(fileObj, "nbody-parameters-file")))
     {
-        fprintf(stderr, "Parameters not in expected format.\n");
-        exit(EXIT_FAILURE);
+        fail("Parameters not in expected format.\n");
     }
 
     /* loop through table of accepted sets of parameters */
-    g = parameters;
-    while (g->name)
-    {
-        readParameterGroup(g, hdr);
-
-        /* Explicitly delete the group so we can check for extra stuff */
-        json_object_object_del(hdr, g->name);
-        ++g;
-    }
-
-    /* Warnings for unknown groups */
-    warn_extra_params(hdr, "nbody-parameters-file");
-
-    printf("End read parameters\n");
-    printContext(&ctx);
+    readParameterGroup(parameters, hdr, NULL);
 
     /* deref the top level object should take care of freeing whatever's left */
     json_object_put(fileObj);
-
-    //json_object_object_del(fileObj, "nbody-parameters-file");
 
 }
 

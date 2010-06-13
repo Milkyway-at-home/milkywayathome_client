@@ -123,9 +123,11 @@ typedef enum
 /* Spherical potential */
 typedef struct
 {
+    spherical_t type;
     real mass;
     real scale;
 } Spherical;
+
 
 /* Supported disk models */
 typedef enum
@@ -239,6 +241,8 @@ typedef struct
     char* headline;       /* message describing calculation */
 } NBodyCtx;
 
+#define EMPTY_POTENTIAL { {{ 0, 0, 0 }}, { 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0 }, NULL }
+
 
 /* Mutable state used during an evaluation */
 typedef struct
@@ -252,11 +256,15 @@ typedef struct
     bodyptr bodytab;      /* points to array of bodies */
 } NBodyState;
 
+typedef int generic_enum_t;  /* A general enum type. */
+
+/* Note: 'type' should first field for all types. */
+#define SET_TYPE(x, y) (((Disk*)x)->type = y)
+#define NBODY_TYPEOF(x) (((Disk*)x)->type)
 
 
 #define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \
                          exit(EXIT_FAILURE); }
-
 
 
 /* Utility routines used in load.c and grav.c.  These are defined in
