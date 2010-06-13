@@ -24,6 +24,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "json_params.h"
 #include "defs.h"
 
+/* TODO: wuh wuh windows */
+#include <unistd.h>
+
 
 /* Read command line arguments and initialize the context and state */
 void initNBody(const int argc, const char** argv)
@@ -88,11 +91,24 @@ void initNBody(const int argc, const char** argv)
 
     if (inputFile)
     {
+        /* check if we can read the file, so we can fail saying that
+         * and not be left to guessing if it's that or a parse
+         * error */
+        if (access(inputFile, R_OK) < 0)
+        {
+            perror("Failed to read input file.");
+            free(inputFile);
+            exit(EXIT_FAILURE);
+        }
+
+        /* The lack of parse errors from json-c is unfortunate.
+           TODO: If we use the tokener directly, can get them.
+         */
         obj = json_object_from_file(inputFile);
         if (is_error(obj))
         {
             fprintf(stderr,
-                    "Failed to read file '%s'. Perhaps not found, or a parse error?\n",
+                    "Parse error in file '%s'\n",
                     inputFile);
             free(inputFile);
             exit(EXIT_FAILURE);
