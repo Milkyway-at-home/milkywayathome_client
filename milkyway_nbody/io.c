@@ -206,27 +206,164 @@ static void printvec(char* name, vector vec)
            name, vec[0], vec[1], vec[2]);
 }
 
+/* A bunch of boilerplate for debug printing */
+
+char* showSpherical(Spherical* s)
+{
+    char* buf;
+
+    if (0 > asprintf(&buf, "{\n"
+                           "      type  = %d\n"
+                           "      mass  = %g\n"
+                           "      scale = %g\n"
+                           "    };\n",
+                     s->type,
+                     s->mass,
+                     s->scale))
+    {
+        fail("asprintf() failed\n");
+    }
+
+    return buf;
+}
+
+char* showHalo(Halo* h)
+{
+    char* buf;
+
+    if (0 > asprintf(&buf, "{ \n"
+                           "      type         = %d\n"
+                           "      vhalo        = %g\n"
+                           "      scale_length = %g\n"
+                           "      flattenX     = %g\n"
+                           "      flattenY     = %g\n"
+                           "      flattenZ     = %g\n"
+                           "      triaxAngle   = %g\n"
+                           "    };\n",
+                     h->type,
+                     h->vhalo,
+                     h->scale_length,
+                     h->flattenX,
+                     h->flattenY,
+                     h->flattenZ,
+                     h->triaxAngle))
+    {
+        fail("asprintf() failed\n");
+    }
+
+    return buf;
+}
+
+char* showDisk(Disk* d)
+{
+    char* buf;
+
+    if (0 > asprintf(&buf, "{ \n"
+                           "      type         = %d\n"
+                           "      mass         = %g\n"
+                           "      scale_length = %g\n"
+                           "      scale_height = %g\n"
+                           "    };\n",
+                     d->type,
+                     d->mass,
+                     d->scale_length,
+                     d->scale_height))
+    {
+        fail("asprintf() failed\n");
+    }
+
+    return buf;
+}
+
+/* For debugging. Need to make this go away for release since it uses
+ * GNU extensions */
+char* showPotential(Potential* p)
+{
+    int rc;
+    char* buf;
+    char* sphBuf;
+    char* diskBuf;
+    char* haloBuf;
+
+    sphBuf  = showSpherical(&p->sphere[0]);
+    diskBuf = showDisk(&p->disk);
+    haloBuf = showHalo(&p->halo);
+
+    rc = asprintf(&buf, "{\n"
+                        "    sphere = %s\n"
+                        "    disk = %s\n"
+                        "    halo = %s\n"
+                        "    rings  = { unused pointer %p }\n"
+                        "  };\n",
+                  sphBuf,
+                  diskBuf,
+                  haloBuf,
+                  p->rings);
+
+    if (rc < 0)
+        fail("asprintf() failed\n");
+
+    free(sphBuf);
+    free(diskBuf);
+    free(haloBuf);
+
+    return buf;
+}
+
+
+char* showContext(NBodyCtx* ctx)
+{
+    char* buf;
+    char* potBuf;
+
+    potBuf = showPotential(&ctx->pot);
+
+    if (0 > asprintf(&buf, "ctx = { \n"
+                           "  pot = %s\n"
+                           "  nbody       = %d\n"
+                           "  headline    = %s\n"
+                           "  outfilename = %s\n"
+                           "  outfile     = %p\n"
+                           "  criterion   = %d\n"
+                           "  usequad     = %d\n"
+                           "  allowIncest = %d\n"
+                           "  seed        = %d\n"
+                           "  theta       = %g\n"
+                           "  eps         = %g\n"
+                           "  tstop       = %g\n"
+                           "  dtout       = %g\n"
+                           "  freq        = %g\n"
+                           "  freqout     = %g\n"
+                           "};\n",
+                     potBuf,
+                     ctx->nbody,
+                     ctx->headline,
+                     ctx->outfilename,
+                     ctx->outfile,
+                     ctx->criterion,
+                     ctx->usequad,
+                     ctx->allowIncest,
+                     ctx->seed,
+                     ctx->theta,
+                     ctx->eps,
+                     ctx->tstop,
+                     ctx->dtout,
+                     ctx->freq,
+                     ctx->freqout
+            ))
+    {
+        fail("asprintf() failed\n");
+    }
+
+    free(potBuf);
+
+    return buf;
+}
+
 void printContext(NBodyCtx* ctx)
 {
-
-    printf("ctx = { \n"
-           "  nbody              = %d\n"
-           "  outfilename        = %s\n"
-           "  headline           = %s\n"
-           "  criterion          = %d\n"
-           "  usequad            = %d\n"
-           "  allowIncest        = %d\n"
-           "  seed               = %d\n"
-           "  accuracy parameter = %g\n"
-           "};\n",
-           ctx->nbody,
-           ctx->outfilename,
-           ctx->headline,
-           ctx->criterion,
-           ctx->usequad,
-           ctx->allowIncest,
-           ctx->seed,
-           ctx->theta
-        );
+    char* buf = showContext(ctx);
+    puts(buf);
+    free(buf);
 }
 
