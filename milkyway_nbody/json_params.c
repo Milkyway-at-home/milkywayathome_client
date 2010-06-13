@@ -113,6 +113,36 @@ void initNBody(const int argc, const char** argv)
 
 }
 
+/* also works for json_object_type */
+static const char* showNBodyType(nbody_type t)
+{
+    switch (t)
+    {
+        case nbody_type_null:
+            return "null";
+        case nbody_type_boolean:
+            return "bool";
+        case nbody_type_double:
+            return "double";
+        case nbody_type_int:
+            return "int";
+        case nbody_type_object:
+            return "object";
+        case nbody_type_array:
+            return "array";
+        case nbody_type_string:
+            return "string";
+        case nbody_type_enum:
+            return "enum";
+        case nbody_type_group:
+            return "group";
+        case nbody_type_group_item:
+            return "group_item";
+        default:
+            fail("Trying to show unknown nbody_type %d\n", t);
+    }
+}
+
 /* Reads a name of the criterion into the C value, with name str */
 static criterion_t readCriterion(const char* str)
 {
@@ -123,7 +153,6 @@ static criterion_t readCriterion(const char* str)
     else
         fail("Invalid model %s: Model options are either 'bh86' or 'sw93'\n", str);
 }
-
 
 void printParameter(Parameter* p)
 {
@@ -138,14 +167,19 @@ void printParameter(Parameter* p)
                "  uniq  = %d\n"
                "  pms   = %p\n"
                "};\n",
-               p->name, p->type, p->param, p->dflt, p->conv, p->unique, p->parameters);
+               p->name,
+               p->type,
+               p->param,
+               p->dflt,
+               p->conv,
+               p->unique,
+               p->parameters);
     }
     else
     {
         printf("<NULL PARAMETER>\n");
     }
 }
-
 
 /* Read a set of related parameters, e.g. the main NBodyCtx.
    If the unique flag is set, it's only valid to have one of the items in the group.
@@ -162,7 +196,7 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
     json_object* obj;
     const char* pname;
     bool unique;
-    bool found = FALSE, done = FALSE;
+    bool found = FALSE, done = FALSE, readError = FALSE;
     generic_enum_t* group_type;
 
     if (parent)
@@ -184,7 +218,7 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
     p = g;
 
     /* CHECKME: Handling of defaultable, cases in unique? */
-    while (p->name && !done)
+    while (p->name && !done && !readError)
     {
         defaultable = (p->dflt != NULL);
         useDflt = FALSE;
@@ -207,27 +241,56 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
                         "Failed to find or got 'null' for required key '%s' in '%s'\n",
                         p->name,
                         pname);
-                found = FALSE;
+                readError = TRUE;
                 break;  /* abandon the loop and print useful debugging */
             }
         }
         else
         {
             found = TRUE;
-            if (unique)
+            if (unique)    /* Only want one parameter, everything else is extra and a warning */
                 done = TRUE;
         }
+
        /* TODO: Better type checking might be nice. Mostly now relies
         * on not screwing up the tables. */
 
         switch (p->type)
         {
             case nbody_type_double:
-                *((real*) p->param) = useDflt ? *((real*) p->dflt) : (real) json_object_get_double(obj);
+                /* json_type_int and double are OK for numbers. i.e. you can leave off the decimal.
+                   We don't want the other conversions, which just give you 0.0 for anything else.
+                 */
+                if (   json_object_is_type(obj, json_type_double)
+                    || json_object_is_type(obj, json_type_int))
+                {
+                    *((real*) p->param) =
+                        useDflt ? *((real*) p->dflt) : (real) json_object_get_double(obj);
+                }
+                else
+                {
+                    fprintf(stderr,
+                            "Error: expected number for '%s' in '%s', but got %s\n",
+                            p->name,
+                            pname,
+                            showNBodyType(p->type));
+                    readError = TRUE;
+                }
                 break;
 
             case nbody_type_int:
-                *((int*) p->param) = useDflt ? *((int*) p->dflt) : json_object_get_int(obj);
+                /* I don't think any of the conversions are acceptable */
+                if (json_object_is_type(obj, json_type_int))
+                    *((int*) p->param) = useDflt ? *((int*) p->dflt) : json_object_get_int(obj);
+                else
+                {
+                    fprintf(stderr,
+                            "Error: expected type int for '%s' in '%s', but got %s\n",
+                            p->name,
+                            pname,
+                            showNBodyType(json_object_get_type(obj)));
+                    readError = TRUE;
+                }
                 break;
 
             case nbody_type_boolean:  /* CHECKME: Size */
@@ -269,11 +332,10 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
 
                 break;
             default:
-                printf("Unhandled parameter type %d for key '%s' in '%s'\n",
-                       p->type,
-                       p->name,
-                       pname);
-                break;
+                fail("Unhandled parameter type %d for key '%s' in '%s'\n",
+                     p->type,
+                     p->name,
+                     pname);
         }
 
         /* Explicitly delete it so we can check for extra stuff */
@@ -281,12 +343,15 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
         ++p;
     }
 
-    warn_extra_params(hdr, pname);
+    /* Skip the extra parameter warning if there was an error, since
+     * abandoning the loop leaves lots of stuff in it */
+    if (!readError)
+        warn_extra_params(hdr, pname);
 
     /* Report what was expected in more detail */
-    if (!found)
+    if (!found || readError)
     {
-        fprintf(stderr, "Failed to find required item in group '%s'\n", pname);
+        fprintf(stderr, "Failed to find required item of correct type in group '%s'\n", pname);
 
         if (unique)
             fprintf(stderr, "\tExpected to find one of the following:\n");
@@ -296,7 +361,7 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
         q = g;
         while (q->name)
         {
-            fprintf(stderr, "\t\t%s", q->name);
+            fprintf(stderr, "\t\t%s (%s)", q->name, showNBodyType(q->type));
 
             if (q->dflt && !unique)
                 fprintf(stderr, "  (optional)");
