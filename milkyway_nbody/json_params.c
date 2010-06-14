@@ -116,8 +116,9 @@ void initNBody(NBodyCtx* ctx, InitialConditions* ic, const int argc, const char*
 {
     poptContext context;
     int o;
-    static char* inputFile = NULL;  /* input JSON file */
-    static char* inputStr = NULL;   /* a string of JSON to use directly */
+    static char* inputFile = NULL;        /* input JSON file */
+    static char* inputStr  = NULL;        /* a string of JSON to use directly */
+    static char* outFileName = NULL;   /* output file name */
     static json_object* obj;
 
     /* FIXME: There's a small leak of the inputFile from use of
@@ -130,6 +131,12 @@ void initNBody(NBodyCtx* ctx, InitialConditions* ic, const int argc, const char*
             "input-file", 'f',
             POPT_ARG_STRING, &inputFile,
             0, "Input file to read", NULL
+        },
+
+        {
+            "output-file", 'o',
+            POPT_ARG_STRING, &outFileName,
+            0, "Output file", NULL
         },
 
         {
@@ -205,6 +212,8 @@ void initNBody(NBodyCtx* ctx, InitialConditions* ic, const int argc, const char*
         if (is_error(obj))
             fail("Failed to parse given string\n");
     }
+
+    ctx->outfilename = outFileName;
 
     get_params_from_json(ctx, ic, obj);
 
@@ -543,7 +552,6 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
 {
     /* Constants used for defaulting. Each field only used if
      * specified in the actual parameter tables. */
-    /* FIXME: Missing initializers */
     const NBodyCtx defaultCtx =
         {
             .pot = EMPTY_POTENTIAL,
@@ -680,7 +688,6 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
     /* Must be null terminated arrays */
     const Parameter nbodyCtxParams[] =
         {
-            STR_PARAM("outfile",                     &ctx->outfilename),
             STR_PARAM("headline",                    &ctx->headline),
             INT_PARAM("seed",                        &ctx->seed),
             BOOL_PARAM("use-quadrupole-corrections", &ctx->usequad),
