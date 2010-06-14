@@ -24,6 +24,9 @@ void maketree(bodyptr, int);    /* construct tree structure */
 void hackgrav(bodyptr, bool);   /* compute force on body */
 void output(void);              /* perform output operation */
 
+void acceleration(real* posvec, real* accvec);
+void integrate();
+
 /* Utility routines used in code.c and io.c.  These are defined in util.c
  * and getparam.c, which must be compiled with same choice of precision.
  */
@@ -34,7 +37,23 @@ char* getparam(char*);            /* get parameter as char* */
 int getiparam(char*);             /* get parameter as integer */
 bool getbparam(char*);            /* get parameter as bool */
 real getrparam(char*);            /* get parameter as real */
-void printContext(NBodyCtx* ctx);
+
+/* Types -> String */
+const char* showBool(bool);
+const char* showCriterionT(criterion_t);
+const char* showSphericalT(spherical_t);
+const char* showDiskT(disk_t);
+const char* showHaloT(halo_t);
+const char* showDwarfModelT(dwarf_model_t);
+char* showSpherical(Spherical*);
+char* showHalo(Halo*);
+char* showDisk(Disk*);
+char* showPotential(Potential*);
+char* showDwarfModel(DwarfModel*);
+char* showInitialConditions(InitialConditions*);
+char* showContext(NBodyCtx*);
+void printContext(NBodyCtx*);
+void printInitialConditions(InitialConditions*);
 
 #endif /* _CODE_H_ */
 

@@ -12,8 +12,6 @@
 #define Y 1
 #define Z 2
 
-void acceleration(real* posvec, real* accvec);
-
 void integrate()
 {
     vector acc, v, x;

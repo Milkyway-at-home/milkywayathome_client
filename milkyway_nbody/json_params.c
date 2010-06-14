@@ -27,6 +27,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* TODO: wuh wuh windows */
 #include <unistd.h>
 
+static void get_params_from_json(NBodyCtx* ctx, json_object* fileObj);
+static bool warn_extra_params(json_object* obj, const char* grpName);
+static void readParameterGroup(const Parameter*, json_object*, const Parameter*);
+
 
 /* Read command line arguments and initialize the context and state */
 void initNBody(const int argc, const char** argv)
@@ -210,7 +214,7 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
 {
     const Parameter* p;
     const Parameter* q;
-    bool defaultable, useDflt;
+    bool useDflt, defaultable = FALSE;
     json_object* obj;
     const char* pname;
     bool unique;

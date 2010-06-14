@@ -6,6 +6,7 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
+#define _GNU_SOURCE
 #include "code.h"
 
 static void diagnostics(void);
@@ -422,8 +423,6 @@ char* showInitialConditions(InitialConditions* ic)
                            "  useGalC  = %d\n"
                            "  position = { %g, %g, %g }\n"
                            "  velocity = { %g, %g, %g }\n"
-                           "  b        = %g\n"
-                           "  r        = %g\n"
                            "};\n",
                      ic->useGalC,
                      ic->position[0],

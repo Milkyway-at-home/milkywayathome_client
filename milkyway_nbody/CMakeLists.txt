@@ -27,7 +27,6 @@ include_directories("${PROJECT_SOURCE_DIR}")
 
 set(nbody_src chisq.c
               code.c
-              getparam.c
               grav.c
               io.c
               load.c
@@ -35,9 +34,9 @@ set(nbody_src chisq.c
               json_params.c
               util.c)
 
-set(CMAKE_C_FLAGS "-std=c99 ${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
 
 add_executable(milkyway_nbody ${nbody_src})
-target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${JSON_C_LIBRARY})
+target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${JSON_C_LIBRARY} m)
 
 

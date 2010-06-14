@@ -93,13 +93,8 @@ typedef struct _Parameter
 /* A set of parameters where all of them are required. Mostly for organization */
 #define OBJ_PARAM(name, items) { name, nbody_type_object, NULL, NULL, NULL, FALSE, items }
 
-//typedef static const Parameter PTable;
-
 
 void initNBody(int argc, const char** argv);
-void get_params_from_json(NBodyCtx* ctx, json_object* fileObj);
-static bool warn_extra_params(json_object* obj, const char* grpName);
-static void readParameterGroup(const Parameter*, json_object*, const Parameter*);
 
 #endif /* _JSON_PARAMS_H_ */
 
