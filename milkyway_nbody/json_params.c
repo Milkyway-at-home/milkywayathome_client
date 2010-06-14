@@ -146,6 +146,8 @@ static const char* showNBodyType(nbody_type bt)
             return "object";
         case nbody_type_array:
             return "array";
+        case nbody_type_vector:
+            return "vector";
         case nbody_type_string:
             return "string";
         case nbody_type_enum:
@@ -214,6 +216,9 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
     bool unique;
     bool found = FALSE, done = FALSE, readError = FALSE;
     generic_enum_t* group_type;
+    array_list* arr;
+    json_object* tmp;
+    int i, arrLen;
 
     if (parent)
     {
@@ -316,6 +321,38 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
                     *((char**) p->param) =
                         useDflt ? *((char**) p->dflt) : strdup(json_object_get_string(obj));
                     break;
+
+                case nbody_type_vector:
+                    assert(json_object_is_type(obj, json_type_array));
+                    arr = json_object_get_array(obj);
+                    arrLen = json_object_array_length(obj);
+                    if (arrLen != 3)
+                    {
+                        fail("Got %d items for array '%s' in '%s', expected 3\n",
+                             arrLen,
+                             p->name,
+                             pname);
+                    }
+
+                    for ( i = 0; i < 3; ++i )
+                    {
+                        tmp = (json_object*) array_list_get_idx(arr, i);
+
+                        if (    !json_object_is_type(tmp, json_type_double)
+                             && !json_object_is_type(tmp, json_type_int))
+                        {
+                            fail("Got unexpected type '%s' in position %d "
+                                 "of key '%s' in '%s', expected number.\n",
+                                 showNBodyType(json_object_get_type(tmp)),
+                                 i,
+                                 p->name,
+                                 pname);
+                        }
+
+                        ((real*) p->param)[i] = json_object_get_double(tmp);
+                    }
+                    break;
+
                 case nbody_type_group_item:
                     if (p->dflt)
                         *group_type = *((generic_enum_t*) p->dflt);
@@ -423,6 +460,7 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
 {
     /* Constants used for defaulting. Each field only used if
      * specified in the actual parameter tables. */
+    /* FIXME: Missing initializers */
     const NBodyCtx defaultCtx =
         {
             .pot = EMPTY_POTENTIAL,
@@ -579,11 +617,22 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
             NULLPARAMETER
         };
 
+    InitialConditions deleteme = EMPTY_INITIAL_CONDITIONS;
+
+    const Parameter initialConditions[] =
+        {
+            BOOL_PARAM("useGalC", &deleteme.useGalC),
+            VEC_PARAM("position", &deleteme.velocity),
+            VEC_PARAM("velocity", &deleteme.position),
+            NULLPARAMETER
+        };
+
+
     const Parameter parameters[] =
         {
             OBJ_PARAM("nbody-context", nbodyCtxParams),
             OBJ_PARAM("tree",          treeParams),
-            // { "initial-conditions", { 0 } },
+            OBJ_PARAM("initial-conditions", initialConditions),
             NULLPARAMETER
         };
 
@@ -605,6 +654,9 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
 
     /* deref the top level object should take care of freeing whatever's left */
     json_object_put(fileObj);
+
+    printInitialConditions(&deleteme);
+
 
 }
 

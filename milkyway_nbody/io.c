@@ -415,6 +415,30 @@ char* showDwarfModel(DwarfModel* d)
     return buf;
 }
 
+char* showInitialConditions(InitialConditions* ic)
+{
+    char* buf;
+    if (0 > asprintf(&buf, "initial-conditions = { \n"
+                           "  useGalC  = %d\n"
+                           "  position = { %g, %g, %g }\n"
+                           "  velocity = { %g, %g, %g }\n"
+                           "  b        = %g\n"
+                           "  r        = %g\n"
+                           "};\n",
+                     ic->useGalC,
+                     ic->position[0],
+                     ic->position[1],
+                     ic->position[2],
+                     ic->velocity[0],
+                     ic->velocity[1],
+                     ic->velocity[2]))
+    {
+        fail("asprintf() failed\n");
+    }
+
+    return buf;
+}
+
 char* showContext(NBodyCtx* ctx)
 {
     char* buf;
@@ -472,6 +496,13 @@ char* showContext(NBodyCtx* ctx)
 void printContext(NBodyCtx* ctx)
 {
     char* buf = showContext(ctx);
+    puts(buf);
+    free(buf);
+}
+
+void printInitialConditions(InitialConditions* ic)
+{
+    char* buf = showInitialConditions(ic);
     puts(buf);
     free(buf);
 }

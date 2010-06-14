@@ -43,6 +43,7 @@ typedef enum
     nbody_type_string  = json_type_string,
 
     /* new stuff */
+    nbody_type_vector,  /* an array of length 3 */
     nbody_type_enum,   /* a string with an associated enum value */
     nbody_type_group,  /* a container */
     nbody_type_group_item /* an object with an associated type, in the container */
@@ -79,6 +80,8 @@ typedef struct _Parameter
 #define DBL_PARAM_DFLT(name, dest, dfl) { name, nbody_type_double, dest, dfl, NULL, FALSE, NULL }
 #define BOOL_PARAM_DFLT(name, dest, dfl) { name, nbody_type_boolean, dest, dfl, NULL, FALSE, NULL }
 #define ENUM_PARAM(name, dest, readf) { name, nbody_type_enum, dest, NULL, readf, FALSE, NULL }
+#define VEC_PARAM(name, dest) { name, nbody_type_vector, dest, NULL, NULL, FALSE, NULL }
+#define VEC_PARAM_DFLT(name, dest, dfl) { name, nbody_type_vector, dest, dfl, NULL, FALSE, NULL }
 
 /* A group where we want one of the options. dest is where the enum
  * identifier for the sub-item will go */

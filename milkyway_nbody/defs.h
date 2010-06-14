@@ -202,10 +202,11 @@ typedef struct
     real sunGCDist;
 } NBodyParams;
 
-/* TODO: yep */
 typedef struct
 {
-    int something;
+    bool useGalC;
+    vector position;     /* (x, y, z) if cartesian / useGalC, otherwise (r, l, b) */
+    vector velocity;
 } InitialConditions;
 
 typedef enum
@@ -292,7 +293,7 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 
 #define EMPTY_STATE { 0, 0, 0, NAN, NAN, NULL }
-
+#define EMPTY_INITIAL_CONDITIONS { FALSE, { NAN, NAN, NAN }, { NAN, NAN, NAN } }
 
 /* Utility routines used in load.c and grav.c.  These are defined in
  * util.c, which must be compiled with the same choice of precision.

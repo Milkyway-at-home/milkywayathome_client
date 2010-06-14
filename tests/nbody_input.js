@@ -67,25 +67,29 @@
         "XC" : 1.0,
         "YC" : 1.0,
         "ZC" : 1.0
-    }
+    },
 
 
-    /*
-      "initial-coordinates": {
+    "initial-conditions": {
+        "useGalC" : true,
+        "velocity" : [ 1.1, 2.2, 3.6],
+        "position" : [ 3, 5, 4]
+    },
+
+
       // From the vhalo = 73 model result from Newberg et al 2009
       // The l,b,r and vx, vy, vz are hard coded for the Orphan project
-      "angle-use-radians" : false,
-      "lstart" : 218.0,
-      "bstart" : 53.5,
-      "Rstart" : 28.6,
+          "angle-use-radians" : false,
+          "lstart" : 218.0,
+          "bstart" : 53.5,
+          "Rstart" : 28.6,
 
-      "Xinit" : -156,
-      "Yinit" : 79,
-      "Zinit" : 107,
+          "Xinit" : -156,
+          "Yinit" : 79,
+          "Zinit" : 107,
 
-      "sunGCDist" : 8.0
+          "sunGCDist" : 8.0
       }
-    */
 
 }}
 
