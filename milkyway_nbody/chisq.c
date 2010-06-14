@@ -47,15 +47,15 @@ real chisq()
 
     FILE* f;
 
-    real x[ctx.nbody];
-    real y[ctx.nbody];
-    real z[ctx.nbody];
+    real x[ctx.model.nbody];
+    real y[ctx.model.nbody];
+    real z[ctx.model.nbody];
 
-    real l[ctx.nbody];
-    real b[ctx.nbody];
+    real l[ctx.model.nbody];
+    real b[ctx.model.nbody];
 
-    real lambda[ctx.nbody];
-    real beta[ctx.nbody];
+    real lambda[ctx.model.nbody];
+    real beta[ctx.model.nbody];
 
     bodyptr p;
 
@@ -74,7 +74,7 @@ real chisq()
     printf("done\n");
 
     printf("Importing simulation results...");
-    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++)
+    for (p = st.bodytab; p < st.bodytab + ctx.model.nbody; p++)
     {
 
         x[counttest-1] = Pos(p)[0];

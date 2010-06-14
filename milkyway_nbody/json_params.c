@@ -32,6 +32,85 @@ static bool warn_extra_params(json_object* obj, const char* grpName);
 static void readParameterGroup(const Parameter*, json_object*, const Parameter*);
 
 
+static void processPotential(Potential* p)
+{
+
+
+}
+
+static void processHalo(Halo* h)
+{
+
+
+}
+
+static void processModel(DwarfModel* mod)
+{
+    const int r0 = mod->scale_radius;
+
+    if (isnan(mod->time_dwarf) && isnan(mod->time_orbit))
+        fail("At least one of the evolution times must be specified for the dwarf model\n");
+
+    switch (mod->type)
+    {
+        case DwarfModelPlummer:
+            /* If not set, and no default, it's calculated based on
+             * other parameters. */
+            if (isnan(mod->eps))
+                mod->eps = r0 / (10 * sqrt((real) mod->nbody));
+
+            if (isnan(mod->timestep))
+                mod->timestep = sqr(1/10.0) * sqrt(  (PI_4_3 * cube(r0)) / mod->mass);
+
+            break;
+
+        case DwarfModelKing:
+        case DwarfModelDehnen:
+        default:
+            fail("Unhandled model type: %d\n", mod->type);
+    }
+
+    if (isnan(mod->time_orbit))
+        mod->time_orbit = mod->timestep / 2.0;
+
+    /* if (isnan(mod->time_dwarf))
+           ?????;
+    */
+
+}
+
+static void processInitialConditions(InitialConditions* ic)
+{
+    real lrad, brad;
+    if (!ic->useGalC)
+    {
+        /* convert coordinates depending on system used */
+        lrad = d2r( L(ic) );
+        brad = d2r( B(ic) );
+
+        X(ic) = R(ic) * cos(lrad) * cos(brad) - ic->sunGCDist;
+        Y(ic) = R(ic) * sin(lrad) * cos(brad);
+        Z(ic) = R(ic) * sin(brad);
+    }
+
+}
+
+/* Calculate needed parameters from whatever we read in */
+/* TODO: I'm dissatisfied with having to throw these checks here at
+ * the end */
+static void postProcess(NBodyCtx* ctx)
+{
+    processPotential(&ctx->pot);
+    processModel(&ctx->model);
+
+
+    /* These other pieces are dependent on the others being set up
+     * first */
+    ctx->freqout = ctx->freq = inv(ctx->model.timestep);
+
+}
+
+
 /* Read command line arguments and initialize the context and state */
 void initNBody(const int argc, const char** argv)
 {
@@ -468,7 +547,6 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
     const NBodyCtx defaultCtx =
         {
             .pot = EMPTY_POTENTIAL,
-            .nbody = 1024,
             .tstop = NAN,
             .dtout = NAN,
             .freq = NAN,
@@ -477,7 +555,6 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
             .allowIncest = FALSE,
             .criterion = BH86,
             .theta = 0.0,
-            .eps = 0.0,
             .seed = 0,
             .outfile = NULL,
             .outfilename = NULL,
@@ -583,7 +660,9 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
     const Parameter dwarfModelParams[] =
         {
             DBL_PARAM("mass",         &ctx->model.mass),
+            INT_PARAM("nbody",        &ctx->model.nbody),
             DBL_PARAM("scale-radius", &ctx->model.scale_radius),
+            DBL_PARAM_DFLT("eps",     &ctx->model.eps, &nanN),
             DBL_PARAM_DFLT("time-dwarf",   &ctx->model.time_dwarf, &nanN),
             DBL_PARAM_DFLT("time-orbit",   &ctx->model.time_orbit, &nanN),
             NULLPARAMETER
@@ -604,7 +683,6 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
             STR_PARAM("outfile",                     &ctx->outfilename),
             STR_PARAM("headline",                    &ctx->headline),
             INT_PARAM("seed",                        &ctx->seed),
-            INT_PARAM("nbody",                       &ctx->nbody),
             BOOL_PARAM("use-quadrupole-corrections", &ctx->usequad),
 
             BOOL_PARAM_DFLT("allow-incest",          &ctx->allowIncest, &defaultCtx.allowIncest),
@@ -652,15 +730,16 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
     /* loop through table of accepted sets of parameters */
     readParameterGroup(parameters, hdr, NULL);
 
-    /* FIXME: I'm dissatisfied with having to throw this check here at the end */
-    if (isnan(ctx->model.time_dwarf) && isnan(ctx->model.time_orbit))
-        fail("At least one of the evolution times must be specified for the dwarf model\n");
-
     /* deref the top level object should take care of freeing whatever's left */
     json_object_put(fileObj);
 
     printInitialConditions(&deleteme);
 
+    printContext(ctx);
+    postProcess(ctx);
+    printf("\n\nPost processed:\n\n");
+    processInitialConditions(&deleteme);
+    printInitialConditions(&deleteme);
 
 }
 

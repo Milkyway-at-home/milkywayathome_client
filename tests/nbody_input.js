@@ -12,7 +12,6 @@
         "allow-incest" : false,
         "freq" : 1.0,
         "freqout" : 1.0,
-        "nbody" : 300,       // I'm an int
         "seed" : 123,       /* Random number seed for test run */
         "tstop" : 10,       //evolution time
         "nbody" : 100,      /* Number of particles for test run */
@@ -49,6 +48,7 @@
         "dwarf-model": {
             "plummer" : {
                 "mass" : 42,
+                "nbody" : 300,       // I'm an int
                 "scale-radius" : 9,
                 "time-orbit" : null, // I'm optional. I could also be omitted.
                 "time-dwarf" : 1.2e9,

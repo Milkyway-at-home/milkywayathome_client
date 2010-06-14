@@ -91,7 +91,7 @@ void output(void)
     if (ctx.tstop - st.tnow < 0.01 / ctx.freq)
     {
         printf("st.tnow = %f\n", st.tnow);
-        for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++)
+        for (p = st.bodytab; p < st.bodytab + ctx.model.nbody; p++)
         {
             (lbR)[2] = sqrt(Pos(p)[0] * Pos(p)[0] + Pos(p)[1] * Pos(p)[1] + Pos(p)[2] * Pos(p)[2]);
             (lbR)[1] = r2d(atan2(Pos(p)[2], sqrt((Pos(p)[0]) * (Pos(p)[0]) + Pos(p)[1] * Pos(p)[1])));
@@ -127,7 +127,7 @@ static void diagnostics(void)
     CLRV(cmphase[0]);               /* zero c. of m. position */
     CLRV(cmphase[1]);               /* zero c. of m. velocity */
     CLRV(amvec);                /* zero am vector */
-    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++) /* loop over all particles */
+    for (p = st.bodytab; p < st.bodytab + ctx.model.nbody; p++) /* loop over all particles */
     {
         mtot += Mass(p);                        /* sum particle masses */
         DOTVP(velsq, Vel(p), Vel(p));       /* square vel vector */
@@ -397,18 +397,22 @@ char* showDwarfModel(DwarfModel* d)
 
     if (0 > asprintf(&buf, "{ \n"
                            "      type         = %s\n"
+                           "      nbody        = %d\n"
                            "      mass         = %g\n"
                            "      scale_radius = %g\n"
                            "      time_dwarf   = %g\n"
                            "      time_orbit   = %g\n"
                            "      timestep     = %g\n"
+                           "      eps          = %g\n"
                            "    };\n",
                      showDwarfModelT(d->type),
+                     d->nbody,
                      d->mass,
                      d->scale_radius,
                      d->time_dwarf,
                      d->time_orbit,
-                     d->timestep))
+                     d->timestep,
+                     d->eps))
     {
         fail("asprintf() failed\n");
     }
@@ -420,11 +424,11 @@ char* showInitialConditions(InitialConditions* ic)
 {
     char* buf;
     if (0 > asprintf(&buf, "initial-conditions = { \n"
-                           "  useGalC  = %d\n"
+                           "  useGalC  = %s\n"
                            "  position = { %g, %g, %g }\n"
                            "  velocity = { %g, %g, %g }\n"
                            "};\n",
-                     ic->useGalC,
+                     showBool(ic->useGalC),
                      ic->position[0],
                      ic->position[1],
                      ic->position[2],
@@ -450,16 +454,14 @@ char* showContext(NBodyCtx* ctx)
     if (0 > asprintf(&buf, "ctx = { \n"
                            "  pot = %s\n"
                            "  model = %s\n"
-                           "  nbody       = %d\n"
                            "  headline    = %s\n"
                            "  outfilename = %s\n"
                            "  outfile     = %p\n"
                            "  criterion   = %d\n"
-                           "  usequad     = %d\n"
-                           "  allowIncest = %d\n"
+                           "  usequad     = %s\n"
+                           "  allowIncest = %s\n"
                            "  seed        = %d\n"
                            "  theta       = %g\n"
-                           "  eps         = %g\n"
                            "  tstop       = %g\n"
                            "  dtout       = %g\n"
                            "  freq        = %g\n"
@@ -467,16 +469,14 @@ char* showContext(NBodyCtx* ctx)
                            "};\n",
                      potBuf,
                      modelBuf,
-                     ctx->nbody,
                      ctx->headline,
                      ctx->outfilename,
                      ctx->outfile,
                      ctx->criterion,
-                     ctx->usequad,
-                     ctx->allowIncest,
+                     showBool(ctx->usequad),
+                     showBool(ctx->allowIncest),
                      ctx->seed,
                      ctx->theta,
-                     ctx->eps,
                      ctx->tstop,
                      ctx->dtout,
                      ctx->freq,

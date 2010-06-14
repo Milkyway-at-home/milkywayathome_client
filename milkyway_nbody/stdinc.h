@@ -37,7 +37,19 @@ typedef int (*iproc)();
 /* degrees to radians */
 #define d2r(x) (x * (M_PI / 180.0))
 
+/* radians to degrees */
 #define r2d(x) (x * (180.0 / M_PI))
+
+/* simple math macros */
+#define cube(x) (x * x * x)
+#define sqr(x)  (x * x)
+#define inv(x)  (1.0 / x)
+
+/* other useful nonstandard constants */
+
+/* (4 * pi) / 3 Should be enough for 128-bit long double should we choose to use
+ * that */
+#define PI_4_3 (4.1887902047863909846168578443727)
 
 #endif /* _STDINC_H_ */
 

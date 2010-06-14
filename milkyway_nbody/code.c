@@ -61,8 +61,8 @@ int main(int argc, char* argv[])
 
 static void startrun(NBodyCtx* ctx, NBodyState* st)
 {
-    if (ctx->nbody < 1)              /* check input value */
-        error("startrun: ctx.nbody = %d is absurd\n", ctx->nbody);
+    if (ctx->model.nbody < 1)              /* check input value */
+        error("startrun: ctx.model.nbody = %d is absurd\n", ctx->model.nbody);
 
     //srand48((long) time(NULL));   /* set random generator */
     srand48((long) 0.0);    /* set random generator */
@@ -108,7 +108,7 @@ static void testdata(void)
     ctx.headline = strdup("Hierarchical code: Plummer model");
     /* supply default ctx.headline */
     st.tnow = 0.0;                 /* reset elapsed model time */
-    st.bodytab = (bodyptr) allocate(ctx.nbody * sizeof(body));
+    st.bodytab = (bodyptr) allocate(ctx.model.nbody * sizeof(body));
     /* alloc space for bodies */
     rsc = ps.r0;               /* set length scale factor */
     vsc = rsqrt(ps.PluMass / rsc);         /* and recip. speed scale */
@@ -119,10 +119,10 @@ static void testdata(void)
     MULVS(scaledrshift, rshift, rsc);   /* Multiply shift by scale factor */
     MULVS(scaledvshift, vshift, vsc);   /* Multiply shift by scale factor */
 
-    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++) /* loop over particles */
+    for (p = st.bodytab; p < st.bodytab + ctx.model.nbody; p++) /* loop over particles */
     {
         Type(p) = BODY;             /* tag as a body */
-        Mass(p) = ps.PluMass / (real)ctx.nbody;            /* set masses equal */
+        Mass(p) = ps.PluMass / (real)ctx.model.nbody;            /* set masses equal */
         r = 1 / rsqrt(rpow(xrandom(0.0, MFRAC), /* pick r in struct units */
                            -2.0 / 3.0) - 1);
         pickshell(Pos(p), rsc * r);     /* pick scaled position */
@@ -139,8 +139,8 @@ static void testdata(void)
         ADDV(Vel(p), Vel(p), vshift);       /* move the velocity */
         ADDV(cmv, cmv, Vel(p));         /* add to running sum */
     }
-    DIVVS(cmr, cmr, (real) ctx.nbody);      /* normalize cm coords */
-    DIVVS(cmv, cmv, (real) ctx.nbody);
+    DIVVS(cmr, cmr, (real) ctx.model.nbody);      /* normalize cm coords */
+    DIVVS(cmv, cmv, (real) ctx.model.nbody);
 
     printf("done\n");
 }
@@ -178,9 +178,9 @@ static void stepsystem()
     if (st.nstep == 0)                 /* about to take 1st step? */
     {
         printf("Building tree...Starting Nbody simulation...\n");
-        maketree(st.bodytab, ctx.nbody);       /* build tree structure */
+        maketree(st.bodytab, ctx.model.nbody);       /* build tree structure */
         nfcalc = n2bcalc = nbccalc = 0;     /* zero counters */
-        for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++)
+        for (p = st.bodytab; p < st.bodytab + ctx.model.nbody; p++)
         {
             /* loop over all bodies */
             hackgrav(p, Mass(p) > 0.0);     /* get force on each */
@@ -191,7 +191,7 @@ static void stepsystem()
         output();               /* do initial output */
     }
     dt = 1.0 / ctx.freq;                /* set basic time-step */
-    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++) /* loop over all bodies */
+    for (p = st.bodytab; p < st.bodytab + ctx.model.nbody; p++) /* loop over all bodies */
     {
         MULVS(dvel, Acc(p), 0.5 * dt);      /* get velocity increment */
         ADDV(Vel(p), Vel(p), dvel);     /* advance v by 1/2 step */
@@ -199,16 +199,16 @@ static void stepsystem()
         ADDV(Pos(p), Pos(p), dpos);     /* advance r by 1 step */
     }
 
-    maketree(st.bodytab, ctx.nbody);           /* build tree structure */
+    maketree(st.bodytab, ctx.model.nbody);           /* build tree structure */
     nfcalc = n2bcalc = nbccalc = 0;     /* zero counters */
-    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++) /* loop over bodies */
+    for (p = st.bodytab; p < st.bodytab + ctx.model.nbody; p++) /* loop over bodies */
     {
         hackgrav(p, Mass(p) > 0.0);     /* get force on each */
         nfcalc++;               /* count force calcs */
         n2bcalc += st.n2bterm;         /* and 2-body terms */
         nbccalc += st.nbcterm;         /* and body-cell terms */
     }
-    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++) /* loop over all bodies */
+    for (p = st.bodytab; p < st.bodytab + ctx.model.nbody; p++) /* loop over all bodies */
     {
         MULVS(dvel, Acc(p), 0.5 * dt);          /* get velocity increment */
         ADDV(Vel(p), Vel(p), dvel);             /* advance v by 1/2 step */

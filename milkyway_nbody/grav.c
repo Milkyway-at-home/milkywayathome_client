@@ -138,7 +138,7 @@ static void gravsub(nodeptr q)
         SUBV(dr, Pos(q), pos0);                 /* then compute sep. */
         DOTVP(drsq, dr, dr);            /* and sep. squared */
     }
-    drsq += ctx.eps * ctx.eps;          /* use standard softening */
+    drsq += ctx.model.eps * ctx.model.eps;          /* use standard softening */
     drab = rsqrt(drsq);
     phii = Mass(q) / drab;
     mor3 = phii / drsq;

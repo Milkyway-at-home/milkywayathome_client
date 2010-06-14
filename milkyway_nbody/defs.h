@@ -205,9 +205,20 @@ typedef struct
 typedef struct
 {
     bool useGalC;
+    real sunGCDist;
     vector position;     /* (x, y, z) if cartesian / useGalC, otherwise (r, l, b) */
     vector velocity;
 } InitialConditions;
+
+/* TODO: Replace this */
+#define R(ic) (((InitialConditions*) ic)->position[0])
+#define L(ic) (((InitialConditions*) ic)->position[1])
+#define B(ic) (((InitialConditions*) ic)->position[2])
+
+#define X(ic) (((InitialConditions*) ic)->position[0])
+#define Y(ic) (((InitialConditions*) ic)->position[1])
+#define Z(ic) (((InitialConditions*) ic)->position[2])
+
 
 typedef enum
 {
@@ -219,7 +230,13 @@ typedef enum
 typedef struct
 {
     dwarf_model_t type;
-    real timestep;        /* calculated from other information */
+    int nbody;
+
+    /* calculated depending on model */
+    real timestep;
+    real eps;            /* potential softening parameter */
+
+    /* model parameters */
     real time_dwarf;
     real time_orbit;
     real mass;
@@ -236,7 +253,6 @@ typedef struct
     /* Actual parameters */
     Potential pot;
     DwarfModel model;   /* dwarf model */
-    int nbody;
 
     /* TODO: these should go away */
     real tstop;
@@ -249,7 +265,6 @@ typedef struct
     bool allowIncest;
     criterion_t criterion;         /* bh86 or sw93 */
     real theta;     /* accuracy parameter: 0.0 => exact */
-    real eps;       /* potential softening parameter */
 
     /* Utilitarian type information */
     int seed;             /* random number seed */
@@ -287,13 +302,13 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_DISK { 0, NAN, NAN, NAN }
 #define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
-#define EMPTY_MODEL { 0, NAN, NAN, NAN, NAN, NAN }
-#define EMPTY_CTX { EMPTY_POTENTIAL,  EMPTY_MODEL, 0, NAN, NAN, NAN, NAN, FALSE, FALSE, 0, NAN, NAN, 0, NULL, NULL, NULL }
+#define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN }
+#define EMPTY_CTX { EMPTY_POTENTIAL,  EMPTY_MODEL, NAN, NAN, NAN, NAN, FALSE, FALSE, 0, NAN, 0, NULL, NULL, NULL }
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 
 #define EMPTY_STATE { 0, 0, 0, NAN, NAN, NULL }
-#define EMPTY_INITIAL_CONDITIONS { FALSE, { NAN, NAN, NAN }, { NAN, NAN, NAN } }
+#define EMPTY_INITIAL_CONDITIONS { FALSE, NAN, { NAN, NAN, NAN }, { NAN, NAN, NAN } }
 
 /* Utility routines used in load.c and grav.c.  These are defined in
  * util.c, which must be compiled with the same choice of precision.
