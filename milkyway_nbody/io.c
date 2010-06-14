@@ -398,10 +398,16 @@ char* showDwarfModel(DwarfModel* d)
                            "      type         = %s\n"
                            "      mass         = %g\n"
                            "      scale_radius = %g\n"
+                           "      time_dwarf   = %g\n"
+                           "      time_orbit   = %g\n"
+                           "      timestep     = %g\n"
                            "    };\n",
                      showDwarfModelT(d->type),
                      d->mass,
-                     d->scale_radius))
+                     d->scale_radius,
+                     d->time_dwarf,
+                     d->time_orbit,
+                     d->timestep))
     {
         fail("asprintf() failed\n");
     }

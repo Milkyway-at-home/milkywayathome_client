@@ -130,9 +130,9 @@ void initNBody(const int argc, const char** argv)
 }
 
 /* also works for json_object_type */
-static const char* showNBodyType(nbody_type t)
+static const char* showNBodyType(nbody_type bt)
 {
-    switch (t)
+    switch (bt)
     {
         case nbody_type_null:
             return "null";
@@ -155,7 +155,7 @@ static const char* showNBodyType(nbody_type t)
         case nbody_type_group_item:
             return "group_item";
         default:
-            fail("Trying to show unknown nbody_type %d\n", t);
+            fail("Trying to show unknown nbody_type %d\n", bt);
     }
 }
 
@@ -266,96 +266,95 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
             found = TRUE;
             if (unique)    /* Only want one parameter, everything else is extra and a warning */
                 done = TRUE;
-        }
 
-       /* TODO: Better type checking might be nice. Mostly now relies
-        * on not screwing up the tables. */
-
-        switch (p->type)
-        {
-            case nbody_type_double:
-                /* json_type_int and double are OK for numbers. i.e. you can leave off the decimal.
-                   We don't want the other conversions, which just give you 0.0 for anything else.
-                 */
-                if (   json_object_is_type(obj, json_type_double)
-                    || json_object_is_type(obj, json_type_int))
-                {
-                    *((real*) p->param) =
-                        useDflt ? *((real*) p->dflt) : (real) json_object_get_double(obj);
-                }
-                else
-                {
-                    fprintf(stderr,
-                            "Error: expected number for '%s' in '%s', but got %s\n",
-                            p->name,
-                            pname,
-                            showNBodyType(p->type));
-                    readError = TRUE;
-                }
-                break;
-
-            case nbody_type_int:
-                /* I don't think any of the conversions are acceptable */
-                if (json_object_is_type(obj, json_type_int))
-                    *((int*) p->param) = useDflt ? *((int*) p->dflt) : json_object_get_int(obj);
-                else
-                {
-                    fprintf(stderr,
-                            "Error: expected type int for '%s' in '%s', but got %s\n",
-                            p->name,
-                            pname,
-                            showNBodyType(json_object_get_type(obj)));
-                    readError = TRUE;
-                }
-                break;
-
-            case nbody_type_boolean:  /* CHECKME: Size */
-                *((bool*) p->param) = useDflt ? *((int*) p->dflt) : json_object_get_boolean(obj);
-                break;
-
-            case nbody_type_string:
-                /* the json_object has ownership of the string so we need to copy it */
-                *((char**) p->param) =
-                    useDflt ? *((char**) p->dflt) : strdup(json_object_get_string(obj));
-                break;
-            case nbody_type_group_item:
-                if (p->dflt)
-                    *group_type = *((generic_enum_t*) p->dflt);
-                else
-                {
-                    fail("Expected nbody_type_group_item for "
-                         "'%s' in '%s', but no enum value set\n", p->name, pname);
-                }
-
-                /* fall through to nbody_type_object */
-            case nbody_type_group:
-            case nbody_type_object:
-                readParameterGroup(p->parameters, obj, p);
-                break;
-            case nbody_type_enum:
-                /* This is actually a json_type_string, which we read
-                 * into an enum, or take a default value */
-                if (useDflt)
-                {
-                    *((generic_enum_t*) p->param) = *((generic_enum_t*) p->dflt);
+            /* TODO: Better type checking might be nice. Mostly now relies
+             * on not screwing up the tables. */
+            switch (p->type)
+            {
+                case nbody_type_double:
+                    /* json_type_int and double are OK for numbers. i.e. you can leave off the decimal.
+                       We don't want the other conversions, which just give you 0.0 for anything else.
+                    */
+                    if (   json_object_is_type(obj, json_type_double)
+                           || json_object_is_type(obj, json_type_int))
+                    {
+                        *((real*) p->param) =
+                            useDflt ? *((real*) p->dflt) : (real) json_object_get_double(obj);
+                    }
+                    else
+                    {
+                        fprintf(stderr,
+                                "Error: expected number for '%s' in '%s', but got %s\n",
+                                p->name,
+                                pname,
+                                showNBodyType(p->type));
+                        readError = TRUE;
+                    }
                     break;
-                }
 
-                if (p->conv)
-                    *((generic_enum_t*) p->param) = p->conv(json_object_get_string(obj));
-                else
-                    fail("Error: read function not set for enum '%s'\n", p->name);
+                case nbody_type_int:
+                    /* I don't think any of the conversions are acceptable */
+                    if (json_object_is_type(obj, json_type_int))
+                        *((int*) p->param) = useDflt ? *((int*) p->dflt) : json_object_get_int(obj);
+                    else
+                    {
+                        fprintf(stderr,
+                                "Error: expected type int for '%s' in '%s', but got %s\n",
+                                p->name,
+                                pname,
+                                showNBodyType(json_object_get_type(obj)));
+                        readError = TRUE;
+                    }
+                            break;
 
-                break;
-            default:
-                fail("Unhandled parameter type %d for key '%s' in '%s'\n",
-                     p->type,
-                     p->name,
-                     pname);
+                case nbody_type_boolean:  /* CHECKME: Size */
+                    *((bool*) p->param) = useDflt ? *((int*) p->dflt) : json_object_get_boolean(obj);
+                    break;
+
+                case nbody_type_string:
+                    /* the json_object has ownership of the string so we need to copy it */
+                    *((char**) p->param) =
+                        useDflt ? *((char**) p->dflt) : strdup(json_object_get_string(obj));
+                    break;
+                case nbody_type_group_item:
+                    if (p->dflt)
+                        *group_type = *((generic_enum_t*) p->dflt);
+                    else
+                    {
+                        fail("Expected nbody_type_group_item for "
+                             "'%s' in '%s', but no enum value set\n", p->name, pname);
+                    }
+
+                    /* fall through to nbody_type_object */
+                case nbody_type_group:
+                case nbody_type_object:
+                    readParameterGroup(p->parameters, obj, p);
+                    break;
+                case nbody_type_enum:
+                    /* This is actually a json_type_string, which we read
+                     * into an enum, or take a default value */
+                    if (useDflt)
+                    {
+                        *((generic_enum_t*) p->param) = *((generic_enum_t*) p->dflt);
+                        break;
+                    }
+
+                    if (p->conv)
+                        *((generic_enum_t*) p->param) = p->conv(json_object_get_string(obj));
+                    else
+                        fail("Error: read function not set for enum '%s'\n", p->name);
+
+                    break;
+                default:
+                    fail("Unhandled parameter type %d for key '%s' in '%s'\n",
+                         p->type,
+                         p->name,
+                         pname);
+            }
+
+            /* Explicitly delete it so we can check for extra stuff */
+            json_object_object_del(hdr, p->name);
         }
-
-        /* Explicitly delete it so we can check for extra stuff */
-        json_object_object_del(hdr, p->name);
         ++p;
     }
 
@@ -365,7 +364,7 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
         warn_extra_params(hdr, pname);
 
     /* Report what was expected in more detail */
-    if (!found || readError)
+    if ((!found || readError) && !defaultable)
     {
         fprintf(stderr, "Failed to find required item of correct type in group '%s'\n", pname);
 
@@ -493,14 +492,6 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
             NULLPARAMETER
         };
 
-    /* Spherical potential options */
-    const Parameter plummerParams[] =
-        {
-            DBL_PARAM("mass",      NULL),
-            DBL_PARAM("r0-length", NULL),
-            NULLPARAMETER
-        };
-
     /* Halo options */
     const Parameter nfwParams[] =
         {
@@ -546,10 +537,13 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
         };
 
     /* The current different dwarf models all use the same parameters */
+    const real nanN = NAN;
     const Parameter dwarfModelParams[] =
         {
             DBL_PARAM("mass",         &ctx->model.mass),
             DBL_PARAM("scale-radius", &ctx->model.scale_radius),
+            DBL_PARAM_DFLT("time-dwarf",   &ctx->model.time_dwarf, &nanN),
+            DBL_PARAM_DFLT("time-orbit",   &ctx->model.time_orbit, &nanN),
             NULLPARAMETER
         };
 
@@ -557,11 +551,10 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
     const Parameter dwarfModelOptions[] =
         {
             GROUP_PARAM_ITEM("plummer", &plummerT, dwarfModelParams),
-            GROUP_PARAM_ITEM("king",    &kingT, dwarfModelParams),
-            GROUP_PARAM_ITEM("dehnen",  &dehnenT, dwarfModelParams),
+            GROUP_PARAM_ITEM("king",    &kingT,    dwarfModelParams),
+            GROUP_PARAM_ITEM("dehnen",  &dehnenT,  dwarfModelParams),
             NULLPARAMETER
         };
-
 
     /* Must be null terminated arrays */
     const Parameter nbodyCtxParams[] =
@@ -605,6 +598,10 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
 
     /* loop through table of accepted sets of parameters */
     readParameterGroup(parameters, hdr, NULL);
+
+    /* FIXME: I'm dissatisfied with having to throw this check here at the end */
+    if (isnan(ctx->model.time_dwarf) && isnan(ctx->model.time_orbit))
+        fail("At least one of the evolution times must be specified for the dwarf model\n");
 
     /* deref the top level object should take care of freeing whatever's left */
     json_object_put(fileObj);

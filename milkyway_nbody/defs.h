@@ -218,6 +218,9 @@ typedef enum
 typedef struct
 {
     dwarf_model_t type;
+    real timestep;        /* calculated from other information */
+    real time_dwarf;
+    real time_orbit;
     real mass;
     real scale_radius;
 } DwarfModel;
@@ -283,7 +286,7 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_DISK { 0, NAN, NAN, NAN }
 #define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
-#define EMPTY_MODEL { 0, NAN, NAN }
+#define EMPTY_MODEL { 0, NAN, NAN, NAN, NAN }
 #define EMPTY_CTX { EMPTY_POTENTIAL,  EMPTY_MODEL, 0, NAN, NAN, NAN, NAN, FALSE, FALSE, 0, NAN, NAN, 0, NULL, NULL, NULL }
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
