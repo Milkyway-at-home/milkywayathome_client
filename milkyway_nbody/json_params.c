@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* TODO: wuh wuh windows */
 #include <unistd.h>
 
-static void get_params_from_json(NBodyCtx* ctx, json_object* fileObj);
+static void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj);
 static bool warn_extra_params(json_object* obj, const char* grpName);
 static void readParameterGroup(const Parameter*, json_object*, const Parameter*);
 
@@ -112,7 +112,7 @@ static void postProcess(NBodyCtx* ctx)
 
 
 /* Read command line arguments and initialize the context and state */
-void initNBody(const int argc, const char** argv)
+void initNBody(NBodyCtx* ctx, InitialConditions* ic, const int argc, const char** argv)
 {
     poptContext context;
     int o;
@@ -206,9 +206,9 @@ void initNBody(const int argc, const char** argv)
             fail("Failed to parse given string\n");
     }
 
-    get_params_from_json(&ctx, obj);
+    get_params_from_json(ctx, ic, obj);
 
-    printContext(&ctx);
+    printContext(ctx);
 
 }
 
@@ -539,7 +539,7 @@ static bool warn_extra_params(json_object* obj, const char* grpName)
 
 /* Read the parameters from the top level json object into ctx. It
  * destroys the object in the process. */
-void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
+void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj)
 {
     /* Constants used for defaulting. Each field only used if
      * specified in the actual parameter tables. */
@@ -699,16 +699,13 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
             NULLPARAMETER
         };
 
-    InitialConditions deleteme = EMPTY_INITIAL_CONDITIONS;
-
     const Parameter initialConditions[] =
         {
-            BOOL_PARAM("useGalC", &deleteme.useGalC),
-            VEC_PARAM("position", &deleteme.velocity),
-            VEC_PARAM("velocity", &deleteme.position),
+            BOOL_PARAM("useGalC", &ic->useGalC),
+            VEC_PARAM("position", &ic->velocity),
+            VEC_PARAM("velocity", &ic->position),
             NULLPARAMETER
         };
-
 
     const Parameter parameters[] =
         {
@@ -733,13 +730,13 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
     /* deref the top level object should take care of freeing whatever's left */
     json_object_put(fileObj);
 
-    printInitialConditions(&deleteme);
+    printInitialConditions(ic);
 
     printContext(ctx);
     postProcess(ctx);
     printf("\n\nPost processed:\n\n");
-    processInitialConditions(&deleteme);
-    printInitialConditions(&deleteme);
+    processInitialConditions(ic);
+    printInitialConditions(ic);
 
 }
 

@@ -17,6 +17,7 @@ NBodyParams ps = { 0, };
 Tree t        = EMPTY_TREE;
 NBodyCtx ctx  = EMPTY_CTX;
 NBodyState st = EMPTY_STATE;
+InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
 
 
 char* headline = "Hierarchical N-body Code";   /* default id for run */
@@ -32,7 +33,7 @@ int main(int argc, char* argv[])
 {
     float chisqans = 0.0;
 
-    initNBody(argc, (const char**) argv);
+    initNBody(&ctx, &ic, argc, (const char**) argv);
     printf("Reached end of init\n");
     exit(EXIT_SUCCESS);
 

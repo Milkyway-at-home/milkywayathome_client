@@ -23,12 +23,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <popt.h>
 #include <json/json.h>
-
+#include "defs.h"
 
 /* function read a named field into an enum */
 /* :: (Enum a) => String -> a */
 typedef int (*ReadEnum) (const char*);
-
 
 /* We could use a little more than the basic json types, and maintain
  * compatability with json_type */
@@ -94,7 +93,7 @@ typedef struct _Parameter
 #define OBJ_PARAM(name, items) { name, nbody_type_object, NULL, NULL, NULL, FALSE, items }
 
 
-void initNBody(int argc, const char** argv);
+void initNBody(NBodyCtx* ctx, InitialConditions* ic, const int argc, const char** argv);
 
 #endif /* _JSON_PARAMS_H_ */
 
