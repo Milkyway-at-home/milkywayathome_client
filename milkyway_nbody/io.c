@@ -208,16 +208,96 @@ static void printvec(char* name, vector vec)
 
 /* A bunch of boilerplate for debug printing */
 
+const char* showBool(bool x)
+{
+    switch (x)
+    {
+        case FALSE:
+            return "false";
+        case TRUE:
+            return "true";
+        default:
+            return "invalid boolean (but true)";
+    }
+}
+
+const char* showCriterionT(criterion_t x)
+{
+    switch (x)
+    {
+        case BH86:
+            return "bh86";
+        case SW93:
+            return "sw93";
+        default:
+            return "invalid criterion_t";
+    }
+}
+
+const char* showSphericalT(spherical_t x)
+{
+    switch (x)
+    {
+        case SphericalPotential:
+            return "SphericalPotential";
+        default:
+            return "invalid spherical_t";
+    }
+}
+
+const char* showDiskT(disk_t x)
+{
+    switch (x)
+    {
+        case MiaymotoNagaiDisk:
+            return "MiaymotoNagaiDisk";
+        case ExponentialDisk:
+            return "ExponentialDisk";
+        default:
+            return "invalid disk_t";
+    }
+}
+
+const char* showHaloT(halo_t x)
+{
+    switch (x)
+    {
+        case LogarithmicHalo:
+            return "LogarithmicHalo";
+        case NFWHalo:
+            return "NFWHalo";
+        case TriaxialHalo:
+            return "TriaxialHalo";
+        default:
+            return "invalid halo_t";
+    }
+}
+
+const char* showDwarfModelT(dwarf_model_t x)
+{
+    switch (x)
+    {
+        case DwarfModelPlummer:
+            return "DwarfModelPlummer";
+        case DwarfModelKing:
+            return "DwarfModelKing";
+        case DwarfModelDehnen:
+            return "DwarfModelDehnen";
+        default:
+            return "invalid dwarf_model_t";
+    }
+}
+
 char* showSpherical(Spherical* s)
 {
     char* buf;
 
     if (0 > asprintf(&buf, "{\n"
-                           "      type  = %d\n"
+                           "      type  = %s\n"
                            "      mass  = %g\n"
                            "      scale = %g\n"
                            "    };\n",
-                     s->type,
+                     showSphericalT(s->type),
                      s->mass,
                      s->scale))
     {
@@ -232,7 +312,7 @@ char* showHalo(Halo* h)
     char* buf;
 
     if (0 > asprintf(&buf, "{ \n"
-                           "      type         = %d\n"
+                           "      type         = %s\n"
                            "      vhalo        = %g\n"
                            "      scale_length = %g\n"
                            "      flattenX     = %g\n"
@@ -240,7 +320,7 @@ char* showHalo(Halo* h)
                            "      flattenZ     = %g\n"
                            "      triaxAngle   = %g\n"
                            "    };\n",
-                     h->type,
+                     showHaloT(h->type),
                      h->vhalo,
                      h->scale_length,
                      h->flattenX,
@@ -259,12 +339,12 @@ char* showDisk(Disk* d)
     char* buf;
 
     if (0 > asprintf(&buf, "{ \n"
-                           "      type         = %d\n"
+                           "      type         = %s\n"
                            "      mass         = %g\n"
                            "      scale_length = %g\n"
                            "      scale_height = %g\n"
                            "    };\n",
-                     d->type,
+                     showDiskT(d->type),
                      d->mass,
                      d->scale_length,
                      d->scale_height))
@@ -310,16 +390,37 @@ char* showPotential(Potential* p)
     return buf;
 }
 
+char* showDwarfModel(DwarfModel* d)
+{
+    char* buf;
+
+    if (0 > asprintf(&buf, "{ \n"
+                           "      type         = %s\n"
+                           "      mass         = %g\n"
+                           "      scale_radius = %g\n"
+                           "    };\n",
+                     showDwarfModelT(d->type),
+                     d->mass,
+                     d->scale_radius))
+    {
+        fail("asprintf() failed\n");
+    }
+
+    return buf;
+}
 
 char* showContext(NBodyCtx* ctx)
 {
     char* buf;
     char* potBuf;
+    char* modelBuf;
 
-    potBuf = showPotential(&ctx->pot);
+    potBuf   = showPotential(&ctx->pot);
+    modelBuf = showDwarfModel(&ctx->model);
 
     if (0 > asprintf(&buf, "ctx = { \n"
                            "  pot = %s\n"
+                           "  model = %s\n"
                            "  nbody       = %d\n"
                            "  headline    = %s\n"
                            "  outfilename = %s\n"
@@ -336,6 +437,7 @@ char* showContext(NBodyCtx* ctx)
                            "  freqout     = %g\n"
                            "};\n",
                      potBuf,
+                     modelBuf,
                      ctx->nbody,
                      ctx->headline,
                      ctx->outfilename,
@@ -356,6 +458,7 @@ char* showContext(NBodyCtx* ctx)
     }
 
     free(potBuf);
+    free(modelBuf);
 
     return buf;
 }

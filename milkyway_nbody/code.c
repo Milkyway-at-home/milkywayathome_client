@@ -14,9 +14,9 @@
 #include "json_params.h"
 
 NBodyParams ps = { 0, };
-Tree t = { 0, } ;
-NBodyCtx ctx = { 0, };
-NBodyState st = { 0, };
+Tree t        = EMPTY_TREE;
+NBodyCtx ctx  = EMPTY_CTX;
+NBodyState st = EMPTY_STATE;
 
 
 char* headline = "Hierarchical N-body Code";   /* default id for run */

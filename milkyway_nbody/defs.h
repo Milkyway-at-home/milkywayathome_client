@@ -208,7 +208,19 @@ typedef struct
     int something;
 } InitialConditions;
 
-/* TODO: Dwarf model */
+typedef enum
+{
+    DwarfModelPlummer = 1 << 1,
+    DwarfModelKing    = 1 << 2,
+    DwarfModelDehnen  = 1 << 3
+} dwarf_model_t;
+
+typedef struct
+{
+    dwarf_model_t type;
+    real mass;
+    real scale_radius;
+} DwarfModel;
 
 
 /* The context tracks settings of the simulation.  It should be set
@@ -219,6 +231,7 @@ typedef struct
 {
     /* Actual parameters */
     Potential pot;
+    DwarfModel model;   /* dwarf model */
     int nbody;
 
     /* TODO: these should go away */
@@ -241,9 +254,6 @@ typedef struct
     char* headline;       /* message describing calculation */
 } NBodyCtx;
 
-#define EMPTY_POTENTIAL { {{ 0, 0, 0 }}, { 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0 }, NULL }
-
-
 /* Mutable state used during an evaluation */
 typedef struct
 {
@@ -265,6 +275,20 @@ typedef int generic_enum_t;  /* A general enum type. */
 
 #define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \
                          exit(EXIT_FAILURE); }
+
+
+
+/* Useful initializers */
+#define EMPTY_SPHERICAL { 0, NAN, NAN }
+#define EMPTY_DISK { 0, NAN, NAN, NAN }
+#define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN }
+#define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
+#define EMPTY_MODEL { 0, NAN, NAN }
+#define EMPTY_CTX { EMPTY_POTENTIAL,  EMPTY_MODEL, 0, NAN, NAN, NAN, NAN, FALSE, FALSE, 0, NAN, NAN, 0, NULL, NULL, NULL }
+
+#define EMPTY_TREE { NULL, NAN, 0, 0 }
+
+#define EMPTY_STATE { 0, 0, 0, NAN, NAN, NULL }
 
 
 /* Utility routines used in load.c and grav.c.  These are defined in

@@ -467,7 +467,6 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
             NULLPARAMETER
         };
 
-
     /* Disk potential options */
     const Parameter miaymotoParams[] =
         {
@@ -484,9 +483,9 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
             NULLPARAMETER
         };
 
-    const disk_t mnd = MiaymotoNagaiDisk, expd = ExponentialDisk;
     /* Can't take the address of a literal. Also using pointers to
      * guarantee a consistent size. */
+    const disk_t mnd = MiaymotoNagaiDisk, expd = ExponentialDisk;
     const Parameter diskOptions[] =
         {
             GROUP_PARAM_ITEM("miyamoto-nagai", &mnd,  miaymotoParams),
@@ -499,13 +498,6 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
         {
             DBL_PARAM("mass",      NULL),
             DBL_PARAM("r0-length", NULL),
-            NULLPARAMETER
-        };
-
-    const Parameter dwarfModels[] =
-        {
-            //GROUP_PARAM("plummer", something,
-           //{ "plummer", nbody_type_group, NULL, NULL, NULL, TRUE, plummerParams },
             NULLPARAMETER
         };
 
@@ -553,6 +545,24 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
             NULLPARAMETER
         };
 
+    /* The current different dwarf models all use the same parameters */
+    const Parameter dwarfModelParams[] =
+        {
+            DBL_PARAM("mass",         &ctx->model.mass),
+            DBL_PARAM("scale-radius", &ctx->model.scale_radius),
+            NULLPARAMETER
+        };
+
+    const dwarf_model_t plummerT = DwarfModelPlummer, kingT = DwarfModelKing, dehnenT = DwarfModelDehnen;
+    const Parameter dwarfModelOptions[] =
+        {
+            GROUP_PARAM_ITEM("plummer", &plummerT, dwarfModelParams),
+            GROUP_PARAM_ITEM("king",    &kingT, dwarfModelParams),
+            GROUP_PARAM_ITEM("dehnen",  &dehnenT, dwarfModelParams),
+            NULLPARAMETER
+        };
+
+
     /* Must be null terminated arrays */
     const Parameter nbodyCtxParams[] =
         {
@@ -566,6 +576,7 @@ void get_params_from_json(NBodyCtx* ctx, json_object* fileObj)
             DBL_PARAM_DFLT("accuracy-parameter",     &ctx->theta, &defaultCtx.theta),
             ENUM_PARAM("criterion",                  &ctx->criterion, (ReadEnum) readCriterion),
             OBJ_PARAM("potential", potentialItems),
+            GROUP_PARAM("dwarf-model",               &ctx->model.type, dwarfModelOptions),
             NULLPARAMETER
         };
 
