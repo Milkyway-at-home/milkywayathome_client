@@ -470,9 +470,9 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, EVALU
             {
                 ia->stream_integrals[i] = st_probs_int[i] + st_probs_int_c[i];  // apply correction
             }
-	    ia->mu_step = mu_step_current;
-	    ia->nu_step = nu_step_current;
-	    ia->r_step = r_step_current;
+            ia->mu_step = mu_step_current;
+            ia->nu_step = nu_step_current;
+            ia->r_step = r_step_current;
 
             do_boinc_checkpoint(es);
 

@@ -28,8 +28,8 @@ function(separation_test test_app)
 
   set(test_11_params ${param_set1})
   set(test_12_params ${param_set1})
-  set(test_20_params ${param_set1})
-  set(test_21_params ${param_set1})
+  set(test_20_params 0.571713 12.312119 -3.305187 148.010257 22.453902 0.42035 -0.468858 0.760520 -1.361644 177.884238 23.882892 1.210639 -1.611974 8.534378)
+  set(test_21_params 0.571713 12.312119 -3.305187 148.010257 22.453902 0.42035 -0.468858 0.760579 -1.361644 177.884238 23.882892 1.210639 -1.611974 8.534378)
 
   set(test_79_params 0.34217373320392042 25.9517910846623 -2.1709414738826602 38.272511356953906
     30.225190442596112 2.2149060013372885 0.32316169064291655 2.7740244716285285)
@@ -44,22 +44,22 @@ function(separation_test test_app)
 
   foreach(i ${test_list})
     if(SMALL_TESTS)
-      set(small_test_${i}_args -p stars-${i}.txt -a astronomy_parameters-${i}-small.txt ${test_${i}_params})
+      set(small_test_${i}_args -s stars-${i}.txt -a astronomy_parameters-${i}-small.txt ${test_${i}_params})
       add_test(small_test_${i} ${test_app} ${small_test_${i}_args})
     endif()
 
     if(LARGE_TESTS)
-      set(test_${i}_args -p stars-${i}.txt -a astronomy_parameters-${i}.txt ${test_${i}_params})
+      set(test_${i}_args -s stars-${i}.txt -a astronomy_parameters-${i}.txt ${test_${i}_params})
       add_test(test_${i} ${test_app} ${test_${i}_args})
     endif()
 
     if(AUX_SMALL_TESTS)
-      set(small_test_${i}_args-aux -p stars-${i}.txt -a astronomy_parameters-${i}-small-aux.txt ${test_${i}_params})
+      set(small_test_${i}_args-aux -s stars-${i}.txt -a astronomy_parameters-${i}-small-aux.txt ${test_${i}_params})
       add_test(small_test_${i}-aux ${test_app} ${small_test_${i}_args-aux})
     endif()
 
     if(AUX_LARGE_TESTS)
-      set(test_${i}_args-aux -p stars-${i}.txt -a astronomy_parameters-${i}-aux.txt ${test_${i}_params})
+      set(test_${i}_args-aux -s stars-${i}.txt -a astronomy_parameters-${i}-aux.txt ${test_${i}_params})
       add_test(test_${i}-aux ${test_app} ${test_${i}_args-aux})
     endif()
 

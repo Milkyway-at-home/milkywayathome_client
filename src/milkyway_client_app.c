@@ -61,7 +61,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 static char* boinc_graphics = NULL;
-static char* search_parameter_file = NULL;
 static char* star_points_file = NULL;
 static char* astronomy_parameter_file = NULL;
 static char* output_file = NULL;
@@ -100,15 +99,9 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
         },
 
         {
-            "search-parameter-file", 's',
-            POPT_ARG_STRING, &search_parameter_file,
-            's', "Search parameter file name", NULL
-        },
-
-        {
-            "star-points-file", 'p',
+            "star-points-file", 's',
             POPT_ARG_STRING, &star_points_file,
-            'p', "Star points files", NULL
+            's', "Star points files", NULL
         },
 
         {
@@ -144,12 +137,10 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
 
     MW_DEBUG("Got arguments: "
              "boinc_graphics = '%s' "
-             "search_parameter_file = '%s' "
              "star_points_file = '%s' "
              "astronomy_parameter_file = '%s' "
              "output_file = '%s'\n",
              boinc_graphics,
-             search_parameter_file,
              star_points_file,
              astronomy_parameter_file,
              output_file);
@@ -188,7 +179,6 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
 static void cleanup_worker()
 {
 	free(boinc_graphics);
-	free(search_parameter_file);
 	free(star_points_file);
 	free(astronomy_parameter_file);
 	free(output_file);

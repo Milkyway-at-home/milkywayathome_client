@@ -50,8 +50,8 @@ include_directories(${PROJECT_INCLUDE_DIR})
 
 find_package(Popt REQUIRED)
 find_package(CUDA)
-find_package(OpenCL)
-find_package(JsonC)
+#find_package(OpenCL)
+#find_package(JsonC)
 find_package(BOINC)
 
 if(MINGW)
