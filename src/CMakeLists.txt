@@ -50,7 +50,7 @@ endif()
 
 list(LENGTH appCount NUM_CHOICES)
 
-if(NOT (NUM_CHOICES EQUAL 1))
+if(NOT NUM_CHOICES EQUAL 1)
   message(FATAL_ERROR "Must choose one of CPU, OpenCL or CUDA.")
 endif()
 
