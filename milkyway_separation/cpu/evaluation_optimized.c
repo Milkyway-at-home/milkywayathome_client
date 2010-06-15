@@ -456,7 +456,7 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, EVALU
     {
         st_probs_int[i] = ia->stream_integrals[i];
         st_probs_int_c[i] = 0.0;
-    };
+    }
 
     for (; mu_step_current < ia->mu_steps; mu_step_current++)
     {
@@ -470,6 +470,9 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, EVALU
             {
                 ia->stream_integrals[i] = st_probs_int[i] + st_probs_int_c[i];  // apply correction
             }
+	    ia->mu_step = mu_step_current;
+	    ia->nu_step = nu_step_current;
+	    ia->r_step = r_step_current;
 
             do_boinc_checkpoint(es);
 
@@ -518,14 +521,20 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, EVALU
 //                  ia->stream_integrals[i] += st_probs[i] * V;
                 }
 
+#ifndef MILKYWAY
                 ia->current_calculation++;
                 if (ia->current_calculation >= ia->max_calculation) break;
+#endif
             }
+#ifndef MILKYWAY
             if (ia->current_calculation >= ia->max_calculation) break;
             r_step_current = 0;
+#endif
         }
+#ifndef MILKYWAY
         if (ia->current_calculation >= ia->max_calculation) break;
         nu_step_current = 0;
+#endif
     }
     mu_step_current = 0;
 

@@ -29,6 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef struct integral_area
 {
+    int mu_step, nu_step, r_step;
     int mu_steps, nu_steps, r_steps;
     double mu_min, nu_min, r_min;
     double mu_max, nu_max, r_max;
