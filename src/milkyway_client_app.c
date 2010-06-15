@@ -260,22 +260,18 @@ static void worker(int argc, const char** argv)
 
     set_astronomy_parameters(&ap, parameters);
 
-#if COMPUTE_ON_CPU
     init_constants(&ap);
+#if COMPUTE_ON_CPU
     init_simple_evaluator(cpu_evaluate);
 #elif USE_CUDA
-    init_constants(&ap);
     init_simple_evaluator(cuda_evaluate);
 #elif USE_OCL
-    init_constants(&ap);
     init_simple_evaluator(ocl_evaluate);
 #else
     #error "Must choose CUDA, OpenCL or CPU"
 #endif /* COMPUTE_ON_CPU */
 
-    /* CHECKME: What is this magic 3.0, and why was it being
-     * subtracted from CPU and CUDA result, but not OpenCL? */
-    double likelihood = evaluate(parameters, &ap, &es, &sp) - 3.0;
+    double likelihood = evaluate(parameters, &ap, &es, &sp);
 
     fprintf(stderr, "<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
     fprintf(stderr, "<search_application> %s %s </search_application>\n", BOINC_APP_VERSION, PRECISION);

@@ -1050,7 +1050,8 @@ double gpu__likelihood(double* parameters, ASTRONOMY_PARAMETERS* ap, STAR_POINTS
     delete [] stream_weight;
     cutDeleteTimer(timer);
 
-    return likelihood;
+   /* log10(x * 0.001) = log10(x) - 3.0 */
+   return likelihood - 3.0;
 
 }
 

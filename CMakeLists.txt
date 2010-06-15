@@ -192,8 +192,7 @@ endif()
 if(BOINC_FOUND)
   add_subdirectory(milkyway_separation)
   # The main application
-add_subdirectory(src)
-
+  add_subdirectory(src)
 endif(BOINC_FOUND)
 
 

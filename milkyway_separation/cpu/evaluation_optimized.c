@@ -780,7 +780,9 @@ double cpu_evaluate(double* parameters,
         fprintf(stderr, "APP: error calculating likelihood: %d\n", retval);
         mw_finish(retval);
     }
-    return es->prob_sum / (sp->number_stars - es->bad_jacobians);
+
+    /*  log10(x * 0.001) = log10(x) - 3.0 */
+    return (es->prob_sum / (sp->number_stars - es->bad_jacobians)) - 3.0;
 }
 
 
