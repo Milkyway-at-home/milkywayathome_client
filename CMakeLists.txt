@@ -48,11 +48,11 @@ set(PROJECT_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 
 include_directories(${PROJECT_INCLUDE_DIR})
 
+find_package(Popt REQUIRED)
 find_package(CUDA)
-
 find_package(OpenCL)
-
 find_package(JsonC)
+find_package(BOINC)
 
 if(MINGW)
   if(NOT TAKEOFFGW_ROOT)
@@ -62,19 +62,18 @@ if(MINGW)
   set(CMAKE_FIND_ROOT_PATH "${TAKEOFFGW_ROOT}/i686-pc-mingw32/sys-root/mingw")
 endif(MINGW)
 
-find_package(Popt REQUIRED)
-find_package(BOINC REQUIRED)
-
 
 # if(APPLE)
 #   find_library(OPENCL_LIBRARY OpenCL DOC "OpenCL lib for OS X")
 #   find_path(OPENCL_INCLUDE_DIR OpenCL/cl.h DOC "Include for OpenCL on OS X")
 # endif(APPLE)
 
-include_directories(${BOINC_INCLUDE_DIR})
 include_directories(${POPT_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}) #FIXME: Move headers to include
 include_directories(${PROJECT_INCLUDE_DIR})
+
+include_directories(${BOINC_INCLUDE_DIR})
+
 
 #FIXME
 if(OPENCL_FOUND)
@@ -83,7 +82,7 @@ if(OPENCL_FOUND)
   include_directories(${CMAKE_SOURCE_DIR}/milkyway_separation/ocl)
   include_directories(${CMAKE_SOURCE_DIR}/milkyway_separation/cpu)
   include_directories(${CMAKE_SOURCE_DIR}/milkyway_separation/cuda)
-endif()
+endif(OPENCL_FOUND)
 
 
 include(CheckAppleGCC)
@@ -185,18 +184,18 @@ configure_file (
   )
 
 
-#Different client applications are libraries
-
 if(JSON_C_FOUND)
   add_subdirectory(milkyway_nbody)
 endif()
 
 
-add_subdirectory(milkyway_separation)
-
-
-# The main application
+if(BOINC_FOUND)
+  add_subdirectory(milkyway_separation)
+  # The main application
 add_subdirectory(src)
+
+endif(BOINC_FOUND)
+
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 
