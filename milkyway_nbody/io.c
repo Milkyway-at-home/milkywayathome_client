@@ -151,7 +151,7 @@ static void diagnostics(void)
     DIVVS(cmphase[0], cmphase[0], mtot);        /* normalize cm coords */
     DIVVS(cmphase[1], cmphase[1], mtot);
 }
-
+
 /*  * Low-level input and output operations.
  */
 

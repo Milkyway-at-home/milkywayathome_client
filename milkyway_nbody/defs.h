@@ -112,7 +112,8 @@ typedef struct
 typedef enum
 {
     BH86,
-    SW93
+    SW93,
+    NEWCRITERION  /* FIXME: What is this exactly? Rename it. */
 } criterion_t;
 
 typedef enum

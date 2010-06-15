@@ -72,8 +72,8 @@
 
     "initial-conditions": {
         "useGalC" : true,
-        "velocity" : [ 1.1, 2.2, 3.6],
-        "position" : [ 3, 5, 4]
+        "velocity" : [ 1.1, 2.2, 3.6 ],
+        "position" : [ 3, 5, 4 ]
     },
 
 

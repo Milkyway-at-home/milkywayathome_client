@@ -214,10 +214,14 @@ static void setrcrit(cellptr p, vector cmpos, real psize)
         }
         rc = rsqrt(bmax2) / ctx.theta;      /* using max dist from cm */
     }
-    else                        /* use new criterion? */
+    else if (ctx.criterion == NEWCRITERION) /* use new criterion? */
     {
         rc = psize / ctx.theta + distv(cmpos, Pos(p));
         /* use size plus offset */
+    }
+    else
+    {
+        fail("Got unknown criterion: %d\n", ctx.criterion);
     }
     Rcrit2(p) = rsqr(rc);           /* store square of radius */
 }
