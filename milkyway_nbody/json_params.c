@@ -60,7 +60,7 @@ static void processModel(DwarfModel* mod)
                 mod->eps = r0 / (10 * sqrt((real) mod->nbody));
 
             if (isnan(mod->timestep))
-                mod->timestep = sqr(1/10.0) * sqrt(  (PI_4_3 * cube(r0)) / mod->mass);
+                mod->timestep = sqr(1/10.0) * sqrt( (PI_4_3 * cube(r0)) / mod->mass);
 
             break;
 
@@ -363,127 +363,155 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
             found = TRUE;
             if (unique)    /* Only want one parameter, everything else is extra and a warning */
                 done = TRUE;
+        }
 
-            /* TODO: Better type checking might be nice. Mostly now relies
-             * on not screwing up the tables. */
-            switch (p->type)
-            {
-                case nbody_type_double:
-                    /* json_type_int and double are OK for numbers. i.e. you can leave off the decimal.
-                       We don't want the other conversions, which just give you 0.0 for anything else.
-                    */
-                    if (   json_object_is_type(obj, json_type_double)
-                           || json_object_is_type(obj, json_type_int))
+        /* TODO: Better type checking might be nice. Mostly now relies
+         * on not screwing up the tables. */
+        switch (p->type)
+        {
+            case nbody_type_double:
+                /* json_type_int and double are OK for numbers. i.e. you can leave off the decimal.
+                   We don't want the other conversions, which just give you 0.0 for anything else.
+                */
+                if (useDflt)
+                    *((real*) p->param) = *((real*) p->dflt);
+                else if (   json_object_is_type(obj, json_type_double)
+                         || json_object_is_type(obj, json_type_int))
+                {
+                    *((real*) p->param) = (real) json_object_get_double(obj);
+                }
+                else
+                {
+                    fprintf(stderr,
+                            "Error: expected number for '%s' in '%s', but got %s\n",
+                            p->name,
+                            pname,
+                            showNBodyType(p->type));
+                    readError = TRUE;
+                }
+                break;
+
+            case nbody_type_int:
+                /* I don't think any of the conversions are acceptable */
+                if (useDflt)
+                    *((int*) p->param) = *((int*) p->dflt);
+                else if (json_object_is_type(obj, json_type_int))
+                    *((int*) p->param) = json_object_get_int(obj);
+                else
+                {
+                    fprintf(stderr,
+                            "Error: expected type int for '%s' in '%s', but got %s\n",
+                            p->name,
+                            pname,
+                            showNBodyType(json_object_get_type(obj)));
+                    readError = TRUE;
+                }
+                break;
+
+            case nbody_type_boolean:  /* CHECKME: Size */
+                if (useDflt)
+                    *((bool*) p->param) = *((int*) p->dflt);
+                else if (json_object_is_type(obj, json_type_boolean))
+                    *((bool*) p->param) = (bool) json_object_get_boolean(obj);
+                else
+                {
+                    fprintf(stderr,
+                            "Error: expected type boolean for '%s' in '%s', but got %s\n",
+                            p->name,
+                            pname,
+                            showNBodyType(json_object_get_type(obj)));
+                }
+                break;
+
+            case nbody_type_string:
+                /* The json_object has ownership of the string so we need to copy it. */
+                if (useDflt)
+                    *((char**) p->param) = strdup(*((char**) p->dflt));
+                else if (json_object_is_type(obj, json_type_string))
+                {
+                    *((char**) p->param) = strdup(json_object_get_string(obj));
+                }
+                else
+                {
+                    fprintf(stderr,
+                            "Error: expected type string for '%s' in '%s', but got %s\n",
+                            p->name,
+                            pname,
+                            showNBodyType(json_object_get_type(obj)));
+                }
+                break;
+
+            case nbody_type_vector:
+                /* FIXME: Right now assuming no default vectors, groups etc. will be used */
+                assert(json_object_is_type(obj, json_type_array));
+                arr = json_object_get_array(obj);
+                arrLen = json_object_array_length(obj);
+                if (arrLen != 3)
+                {
+                    fail("Got %d items for array '%s' in '%s', expected 3\n",
+                         arrLen,
+                         p->name,
+                         pname);
+                }
+
+                for ( i = 0; i < 3; ++i )
+                {
+                    tmp = (json_object*) array_list_get_idx(arr, i);
+
+                    if (    !json_object_is_type(tmp, json_type_double)
+                            && !json_object_is_type(tmp, json_type_int))
                     {
-                        *((real*) p->param) =
-                            useDflt ? *((real*) p->dflt) : (real) json_object_get_double(obj);
-                    }
-                    else
-                    {
-                        fprintf(stderr,
-                                "Error: expected number for '%s' in '%s', but got %s\n",
-                                p->name,
-                                pname,
-                                showNBodyType(p->type));
-                        readError = TRUE;
-                    }
-                    break;
-
-                case nbody_type_int:
-                    /* I don't think any of the conversions are acceptable */
-                    if (json_object_is_type(obj, json_type_int))
-                        *((int*) p->param) = useDflt ? *((int*) p->dflt) : json_object_get_int(obj);
-                    else
-                    {
-                        fprintf(stderr,
-                                "Error: expected type int for '%s' in '%s', but got %s\n",
-                                p->name,
-                                pname,
-                                showNBodyType(json_object_get_type(obj)));
-                        readError = TRUE;
-                    }
-                            break;
-
-                case nbody_type_boolean:  /* CHECKME: Size */
-                    *((bool*) p->param) = useDflt ? *((int*) p->dflt) : json_object_get_boolean(obj);
-                    break;
-
-                case nbody_type_string:
-                    /* the json_object has ownership of the string so we need to copy it */
-                    *((char**) p->param) =
-                        useDflt ? *((char**) p->dflt) : strdup(json_object_get_string(obj));
-                    break;
-
-                case nbody_type_vector:
-                    assert(json_object_is_type(obj, json_type_array));
-                    arr = json_object_get_array(obj);
-                    arrLen = json_object_array_length(obj);
-                    if (arrLen != 3)
-                    {
-                        fail("Got %d items for array '%s' in '%s', expected 3\n",
-                             arrLen,
+                        fail("Got unexpected type '%s' in position %d "
+                             "of key '%s' in '%s', expected number.\n",
+                             showNBodyType(json_object_get_type(tmp)),
+                             i,
                              p->name,
                              pname);
                     }
 
-                    for ( i = 0; i < 3; ++i )
-                    {
-                        tmp = (json_object*) array_list_get_idx(arr, i);
+                    ((real*) p->param)[i] = json_object_get_double(tmp);
+                }
+                break;
 
-                        if (    !json_object_is_type(tmp, json_type_double)
-                             && !json_object_is_type(tmp, json_type_int))
-                        {
-                            fail("Got unexpected type '%s' in position %d "
-                                 "of key '%s' in '%s', expected number.\n",
-                                 showNBodyType(json_object_get_type(tmp)),
-                                 i,
-                                 p->name,
-                                 pname);
-                        }
+            case nbody_type_group_item:
+                if (p->dflt)
+                    *group_type = *((generic_enum_t*) p->dflt);
+                else
+                {
+                    fail("Expected nbody_type_group_item for "
+                         "'%s' in '%s', but no enum value set\n", p->name, pname);
+                }
 
-                        ((real*) p->param)[i] = json_object_get_double(tmp);
-                    }
+                /* fall through to nbody_type_object */
+            case nbody_type_group:
+            case nbody_type_object:
+                readParameterGroup(p->parameters, obj, p);
+                break;
+            case nbody_type_enum:
+                /* This is actually a json_type_string, which we read
+                 * into an enum, or take a default value */
+                if (useDflt)
+                {
+                    *((generic_enum_t*) p->param) = *((generic_enum_t*) p->dflt);
                     break;
+                }
 
-                case nbody_type_group_item:
-                    if (p->dflt)
-                        *group_type = *((generic_enum_t*) p->dflt);
-                    else
-                    {
-                        fail("Expected nbody_type_group_item for "
-                             "'%s' in '%s', but no enum value set\n", p->name, pname);
-                    }
+                if (p->conv)
+                    *((generic_enum_t*) p->param) = p->conv(json_object_get_string(obj));
+                else
+                    fail("Error: read function not set for enum '%s'\n", p->name);
 
-                    /* fall through to nbody_type_object */
-                case nbody_type_group:
-                case nbody_type_object:
-                    readParameterGroup(p->parameters, obj, p);
-                    break;
-                case nbody_type_enum:
-                    /* This is actually a json_type_string, which we read
-                     * into an enum, or take a default value */
-                    if (useDflt)
-                    {
-                        *((generic_enum_t*) p->param) = *((generic_enum_t*) p->dflt);
-                        break;
-                    }
-
-                    if (p->conv)
-                        *((generic_enum_t*) p->param) = p->conv(json_object_get_string(obj));
-                    else
-                        fail("Error: read function not set for enum '%s'\n", p->name);
-
-                    break;
-                default:
-                    fail("Unhandled parameter type %d for key '%s' in '%s'\n",
-                         p->type,
-                         p->name,
-                         pname);
-            }
-
-            /* Explicitly delete it so we can check for extra stuff */
-            json_object_object_del(hdr, p->name);
+                break;
+            default:
+                fail("Unhandled parameter type %d for key '%s' in '%s'\n",
+                     p->type,
+                     p->name,
+                     pname);
         }
+
+        /* Explicitly delete it so we can check for extra stuff */
+        json_object_object_del(hdr, p->name);
+
         ++p;
     }
 
