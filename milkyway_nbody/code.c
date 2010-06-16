@@ -31,19 +31,12 @@ static void pickshell(vector, real);  /* pick point on shell */
 
 int main(int argc, char* argv[])
 {
-    int i;
     float chisqans = 0.0;
 
     initNBody(&ctx, &ic, argc, (const char**) argv);
+
+    printInitialConditions(&ic);
     printf("Reached end of init\n");
-
-    srand48((long) 0.0);    /* set random generator */
-
-    for (i = 0; i < 10; ++i)
-        printf("arst: %g\n", xrandom(0.0, 1.0));
-
-
-    exit(EXIT_SUCCESS);
 
 
     // Calculate the reverse orbit

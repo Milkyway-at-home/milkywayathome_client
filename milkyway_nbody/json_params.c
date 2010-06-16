@@ -569,6 +569,15 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
             .headline = NULL
         };
 
+    const InitialConditions defaultIC =
+        {
+            .useGalC    = FALSE,
+            .useRadians = FALSE,
+            .sunGCDist  = 8.0,
+            .position   = EMPTY_VECTOR,
+            .velocity   = EMPTY_VECTOR
+        };
+
     const Tree defaultTree =
         {
             .rsize = 4.0
@@ -709,6 +718,8 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
     const Parameter initialConditions[] =
         {
             BOOL_PARAM("useGalC", &ic->useGalC),
+            BOOL_PARAM_DFLT("angle-use-radians", &ic->useRadians, &defaultIC.useRadians),
+            DBL_PARAM_DFLT("sun-gc-dist", &ic->sunGCDist, &defaultIC.sunGCDist),
             VEC_PARAM("position", &ic->velocity),
             VEC_PARAM("velocity", &ic->position),
             NULLPARAMETER

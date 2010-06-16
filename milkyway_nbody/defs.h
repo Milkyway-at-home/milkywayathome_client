@@ -206,6 +206,7 @@ typedef struct
 typedef struct
 {
     bool useGalC;
+    bool useRadians;
     real sunGCDist;
     vector position;     /* (x, y, z) if cartesian / useGalC, otherwise (r, l, b) */
     vector velocity;
@@ -310,6 +311,8 @@ typedef int generic_enum_t;  /* A general enum type. */
 
 #define EMPTY_STATE { 0, 0, 0, NAN, NAN, NULL }
 #define EMPTY_INITIAL_CONDITIONS { FALSE, NAN, { NAN, NAN, NAN }, { NAN, NAN, NAN } }
+
+#define EMPTY_VECTOR { NAN, NAN, NAN }
 
 /* Utility routines used in load.c and grav.c.  These are defined in
  * util.c, which must be compiled with the same choice of precision.

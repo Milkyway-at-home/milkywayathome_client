@@ -39,21 +39,21 @@ bool getbparam(char*);            /* get parameter as bool */
 real getrparam(char*);            /* get parameter as real */
 
 /* Types -> String */
-const char* showBool(bool);
-const char* showCriterionT(criterion_t);
-const char* showSphericalT(spherical_t);
-const char* showDiskT(disk_t);
-const char* showHaloT(halo_t);
-const char* showDwarfModelT(dwarf_model_t);
-char* showSpherical(Spherical*);
-char* showHalo(Halo*);
-char* showDisk(Disk*);
-char* showPotential(Potential*);
-char* showDwarfModel(DwarfModel*);
-char* showInitialConditions(InitialConditions*);
-char* showContext(NBodyCtx*);
-void printContext(NBodyCtx*);
-void printInitialConditions(InitialConditions*);
+const char* showBool(const bool);
+const char* showCriterionT(const criterion_t);
+const char* showSphericalT(const spherical_t);
+const char* showDiskT(const disk_t);
+const char* showHaloT(const halo_t);
+const char* showDwarfModelT(const dwarf_model_t);
+char* showSpherical(const Spherical*);
+char* showHalo(const Halo*);
+char* showDisk(const Disk*);
+char* showPotential(const Potential*);
+char* showDwarfModel(const DwarfModel*);
+char* showInitialConditions(const InitialConditions*);
+char* showContext(const NBodyCtx*);
+void printContext(const NBodyCtx*);
+void printInitialConditions(const InitialConditions*);
 
 #endif /* _CODE_H_ */
 

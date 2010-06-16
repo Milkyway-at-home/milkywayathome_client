@@ -17,7 +17,7 @@ static void out_int(FILE*, int);
 static void out_real(FILE*, real);
 static void out_vector(FILE*, vector);
 static void out_2vectors(FILE*, vector, vector);
-static void printvec(char*, vector);
+static void printvec(const char*, const vector);
 
 /* INPUTDATA: read initial conditions from input file. */
 
@@ -201,7 +201,7 @@ static void out_2vectors(FILE* str, vector vec1, vector vec2)
     fprintf(str, " %21.14E %21.14E %21.14E %21.14E %21.14E %21.14E\n", vec1[0], vec1[1], vec1[2], vec2[0], vec2[1], vec2[2]);
 }
 
-static void printvec(char* name, vector vec)
+static void printvec(const char* name, const vector vec)
 {
     printf("          %10s%10.4f%10.4f%10.4f\n",
            name, vec[0], vec[1], vec[2]);
@@ -209,7 +209,7 @@ static void printvec(char* name, vector vec)
 
 /* A bunch of boilerplate for debug printing */
 
-const char* showBool(bool x)
+const char* showBool(const bool x)
 {
     switch (x)
     {
@@ -222,7 +222,7 @@ const char* showBool(bool x)
     }
 }
 
-const char* showCriterionT(criterion_t x)
+const char* showCriterionT(const criterion_t x)
 {
     switch (x)
     {
@@ -235,7 +235,7 @@ const char* showCriterionT(criterion_t x)
     }
 }
 
-const char* showSphericalT(spherical_t x)
+const char* showSphericalT(const spherical_t x)
 {
     switch (x)
     {
@@ -246,7 +246,7 @@ const char* showSphericalT(spherical_t x)
     }
 }
 
-const char* showDiskT(disk_t x)
+const char* showDiskT(const disk_t x)
 {
     switch (x)
     {
@@ -259,7 +259,7 @@ const char* showDiskT(disk_t x)
     }
 }
 
-const char* showHaloT(halo_t x)
+const char* showHaloT(const halo_t x)
 {
     switch (x)
     {
@@ -274,7 +274,7 @@ const char* showHaloT(halo_t x)
     }
 }
 
-const char* showDwarfModelT(dwarf_model_t x)
+const char* showDwarfModelT(const dwarf_model_t x)
 {
     switch (x)
     {
@@ -289,7 +289,7 @@ const char* showDwarfModelT(dwarf_model_t x)
     }
 }
 
-char* showSpherical(Spherical* s)
+char* showSpherical(const Spherical* s)
 {
     char* buf;
 
@@ -308,7 +308,7 @@ char* showSpherical(Spherical* s)
     return buf;
 }
 
-char* showHalo(Halo* h)
+char* showHalo(const Halo* h)
 {
     char* buf;
 
@@ -335,7 +335,7 @@ char* showHalo(Halo* h)
     return buf;
 }
 
-char* showDisk(Disk* d)
+char* showDisk(const Disk* d)
 {
     char* buf;
 
@@ -358,7 +358,7 @@ char* showDisk(Disk* d)
 
 /* For debugging. Need to make this go away for release since it uses
  * GNU extensions */
-char* showPotential(Potential* p)
+char* showPotential(const Potential* p)
 {
     int rc;
     char* buf;
@@ -391,7 +391,7 @@ char* showPotential(Potential* p)
     return buf;
 }
 
-char* showDwarfModel(DwarfModel* d)
+char* showDwarfModel(const DwarfModel* d)
 {
     char* buf;
 
@@ -420,15 +420,19 @@ char* showDwarfModel(DwarfModel* d)
     return buf;
 }
 
-char* showInitialConditions(InitialConditions* ic)
+char* showInitialConditions(const InitialConditions* ic)
 {
     char* buf;
     if (0 > asprintf(&buf, "initial-conditions = { \n"
-                           "  useGalC  = %s\n"
-                           "  position = { %g, %g, %g }\n"
-                           "  velocity = { %g, %g, %g }\n"
+                           "  useGalC    = %s\n"
+                           "  useRadians = %s\n"
+                           "  sunGCDist  = %g\n"
+                           "  position   = { %g, %g, %g }\n"
+                           "  velocity   = { %g, %g, %g }\n"
                            "};\n",
                      showBool(ic->useGalC),
+                     showBool(ic->useRadians),
+                     ic->sunGCDist,
                      ic->position[0],
                      ic->position[1],
                      ic->position[2],
@@ -442,7 +446,7 @@ char* showInitialConditions(InitialConditions* ic)
     return buf;
 }
 
-char* showContext(NBodyCtx* ctx)
+char* showContext(const NBodyCtx* ctx)
 {
     char* buf;
     char* potBuf;
@@ -492,14 +496,14 @@ char* showContext(NBodyCtx* ctx)
     return buf;
 }
 
-void printContext(NBodyCtx* ctx)
+void printContext(const NBodyCtx* ctx)
 {
     char* buf = showContext(ctx);
     puts(buf);
     free(buf);
 }
 
-void printInitialConditions(InitialConditions* ic)
+void printInitialConditions(const InitialConditions* ic)
 {
     char* buf = showInitialConditions(ic);
     puts(buf);
