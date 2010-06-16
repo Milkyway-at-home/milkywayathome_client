@@ -37,6 +37,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(MW_ENABLE_DEBUG ON)
+  set(USE_BOINC_DIAGNOSTICS ON)
 endif()
 
 
@@ -49,10 +50,17 @@ set(PROJECT_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 include_directories(${PROJECT_INCLUDE_DIR})
 
 find_package(Popt REQUIRED)
-find_package(CUDA)
-#find_package(OpenCL)
-#find_package(JsonC)
 find_package(BOINC)
+find_package(CUDA)
+find_package(OpenCL)
+find_package(JsonC)
+
+include_directories(${BOINC_INCLUDE_DIR}
+                    ${POPT_INCLUDE_DIR}
+                    ${PROJECT_INCLUDE_DIR}
+                    ${OPENCL_INCLUDE_DIRS}
+                    ${JSON_C_INCLUDE_DIR})
+
 
 if(MINGW)
   if(NOT TAKEOFFGW_ROOT)
@@ -63,53 +71,20 @@ if(MINGW)
 endif(MINGW)
 
 
-# if(APPLE)
-#   find_library(OPENCL_LIBRARY OpenCL DOC "OpenCL lib for OS X")
-#   find_path(OPENCL_INCLUDE_DIR OpenCL/cl.h DOC "Include for OpenCL on OS X")
-# endif(APPLE)
-
-include_directories(${POPT_INCLUDE_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}) #FIXME: Move headers to include
-include_directories(${PROJECT_INCLUDE_DIR})
-
-include_directories(${BOINC_INCLUDE_DIR})
-
-
-#FIXME
-if(OPENCL_FOUND)
-  include_directories(${OPENCL_INCLUDE_DIRS})
-  include_directories(${OPENCL_INCLUDE_DIRS}/Headers)
-  include_directories(${CMAKE_SOURCE_DIR}/milkyway_separation/ocl)
-  include_directories(${CMAKE_SOURCE_DIR}/milkyway_separation/cpu)
-  include_directories(${CMAKE_SOURCE_DIR}/milkyway_separation/cuda)
-endif(OPENCL_FOUND)
-
-
-include(CheckAppleGCC)
-
-#FIXME: Somehow test for and require the Apple gcc.  The macports gccs
+#FIXME: Somehow test for and require the Apple gcc. The macports gccs
 #seem to not work when you try to link against frameworks,
 #CoreFoundation etc. There's probably a better way to check and handle
 #this.
 if(APPLE)
+  include(CheckAppleGCC)
   check_apple_gcc()
   if(NOT HAVE_APPLE_GCC)
-    message(WARNING "Attempting to use a non-Apple GCC. Apple GCC is required.")
-    message(FATAL_ERROR "You should specify a compiler with -DCMAKE_C_COMPILER=/path/to/compiler")
-    # message(WARNING "Attempting to fall back to /usr/bin/gcc")
-    # set(CMAKE_C_COMPILER /usr/bin/gcc)
-    # message("LOLOLOL: ${CMAKE_C_COMPILER}")
-    # check_apple_gcc()
-    # if(NOT HAVE_APPLE_GCC)
-    #   message(FATAL_ERROR "Fallback failed. Install an Apple compiler or manually specify one.")
-    # endif()
+    message(WARNING "Attempting to use a non-Apple GCC. An Apple compiler is required on OS X.")
+    message(FATAL_ERROR
+             "You should specify a compiler by setting the CC environment variable or "
+             "with -DCMAKE_C_COMPILER=/path/to/compiler. This should be /usr/bin/gcc usually.")
   endif()
-
-   find_library(CORE_FOUNDATION_LIBRARY CoreFoundation)
-   set(OS_SPECIFIC_LIBS ${CORE_FOUNDATION_LIBRARY})
 endif(APPLE)
-
-
 
 #Some kind of workaround for a popular cmake bug where make test
 #doesn't behave as anyone would ever expect.
@@ -131,7 +106,48 @@ option(MW_DEBUG_EXCESSIVE
        "Excessive debugging output" OFF)
 
 option(BOINC_APPLICATION
-       "Run as BOINC appliation or independently" ON)
+       "Run as BOINC application or independently" ON)
+
+
+# If we found all the dependencies for something, by default try to
+# build it
+
+
+if(BOINC_FOUND AND POPT_FOUND)
+  set(SEPARATION_IS_BUILDABLE ON)
+
+  if(CUDA_FOUND)
+    set(CUDA_IS_BUILDABLE ON)
+  endif()
+
+  if(OPENCL_FOUND)
+    set(OPENCL_IS_BUILDABLE ON)
+  endif()
+endif()
+
+if(POPT_FOUND AND JSON_C_FOUND)
+  set(NBODY_IS_BUILDABLE ON)
+endif()
+
+
+#You can turn things off if you really want to
+option(CPU_SEPARATION
+       "Build the cpu separation" ${SEPARATION_IS_BUILDABLE})
+
+option(CUDA_SEPARATION
+        "Build the CUDA separation" OFF)  # ${CUDA_IS_BUILDABLE})
+
+option(OPENCL_SEPARATION
+        "Build the OpenCL separation" ${OPENCL_IS_BUILDABLE})
+
+option(NBODY
+    "Build the n-body code" ${NBODY_IS_BUILDABLE})
+
+option(DOUBLE_PRECISION
+         "Use double precision" ON)
+
+option(BOINC_APP_GRAPHICS
+       "BOINC app graphics" OFF)
 
 
 set(gcc_extra_warnings "-Wshadow -Wpointer-arith -Wcast-align -common-Wwrite-strings -compare -fno-common")
@@ -162,7 +178,7 @@ message("   ----")
 message("   BOINC Libraries    ${BOINC_LIBRARIES}")
 message("   CUDA  Libraries    ${CUDA_LIBRARIES}")
 message("   OpenCL Libraries   ${OPENCL_LIBRARIES}")
-message("   POPT  Library      ${POPT_LIBRARY}")
+message("   POPT Library       ${POPT_LIBRARY}")
 message("   json-c Library     ${JSON_C_LIBRARY}")
 message("   ----")
 message("   Build tool:        ${CMAKE_BUILD_TOOL}")
@@ -171,30 +187,32 @@ message("   C Compiler:        ${CMAKE_C_COMPILER}")
 #message("   CFLAGS:            ${CMAKE_C_FLAGS}")
 message("   ----")
 message("   Double precision:  ${DOUBLE_PRECISION}")
-message("   OpenCL enabled:    ${USE_OCL}")
-message("   CUDA enabled:      ${USE_CUDA}")
-message("   Compute on CPU:    ${COMPUTE_ON_CPU}")
+message("   OpenCL separation: ${OPENCL_SEPARATION}")
+message("   CUDA separation:   ${CUDA_SEPARATION}")
+message("   CPU separaton:     ${CPU_SEPARATION}")
+message("   N-Body:            ${NBODY}")
 message("   BOINC graphics:    ${BOINC_APP_GRAPHICS}")
 message("---------------------------------------------")
 
 
-configure_file (
-  "${PROJECT_INCLUDE_DIR}/config.h.in"
-  "${PROJECT_INCLUDE_DIR}/config.h"
-  )
-
-
-if(JSON_C_FOUND)
-  add_subdirectory(milkyway_nbody)
+if(NOT CPU_SEPARATION AND NOT CUDA_SEPARATION AND NOT OPENCL_SEPARATION AND NOT NBODY)
+  message(FATAL_ERROR "Nothing will be built!")
 endif()
 
+configure_file (
+  "${PROJECT_INCLUDE_DIR}/config.h.in"
+  "${PROJECT_INCLUDE_DIR}/config.h")
 
-if(BOINC_FOUND)
+
+if(SEPARATION_IS_BUILDABLE)
+  include_directories(include)
   add_subdirectory(milkyway_separation)
-  # The main application
   add_subdirectory(src)
-endif(BOINC_FOUND)
+endif()
 
+if(NBODY_IS_BUILDABLE)
+  add_subdirectory(milkyway_nbody)
+endif()
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 

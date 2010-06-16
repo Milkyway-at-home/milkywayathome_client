@@ -18,7 +18,11 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+#include_directories(${OPENCL_INCLUDE_DIRS})
+#include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+#include_directories("../cpu/")
+include_directories("../cuda/")
+
 
 set(ocl_lib_cl ati_integral_kernel.cl
                 ati_integral_kernel2.cl
@@ -31,7 +35,6 @@ set(ocl_lib_cl ati_integral_kernel.cl
                 zero_integral_kernel.cl
                 zero_likelihood_kernel.cl)
 
-
 set(ocl_lib_src evaluation_ocl.cpp
                 evaluation_ocl_kernel.cpp
                 evaluation_ocl_mem.cpp
@@ -39,13 +42,6 @@ set(ocl_lib_src evaluation_ocl.cpp
                 ../cuda/gauss_legendre.c
                 ../cuda/coords.c
                 ../cuda/cpu_coords.c)
-
-#FIXME
-include_directories(${OPENCL_INCLUDE_DIRS})
-include_directories(${OPENCL_INCLUDE_DIRS}/Headers)
-include_directories("../cpu/")
-include_directories("../cuda/")
-
 
 add_library(milkyway_separation_ocl STATIC ${ocl_lib_src})
 

@@ -18,7 +18,7 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-function(separation_test test_app)
+function(separation_test test_app suffix)
 
   #arguments shared by several of the tests
   set(param_set1 0.571713 12.312119 -3.305187 148.010257 22.453902 0.42035
@@ -45,22 +45,22 @@ function(separation_test test_app)
   foreach(i ${test_list})
     if(SMALL_TESTS)
       set(small_test_${i}_args -s stars-${i}.txt -a astronomy_parameters-${i}-small.txt ${test_${i}_params})
-      add_test(small_test_${i} ${test_app} ${small_test_${i}_args})
+      add_test(small_test_${i}-${suffix} COMMAND ${test_app} ${small_test_${i}_args})
     endif()
 
     if(LARGE_TESTS)
       set(test_${i}_args -s stars-${i}.txt -a astronomy_parameters-${i}.txt ${test_${i}_params})
-      add_test(test_${i} ${test_app} ${test_${i}_args})
+      add_test(test_${i}-${suffix} ${test_app} ${test_${i}_args})
     endif()
 
     if(AUX_SMALL_TESTS)
       set(small_test_${i}_args-aux -s stars-${i}.txt -a astronomy_parameters-${i}-small-aux.txt ${test_${i}_params})
-      add_test(small_test_${i}-aux ${test_app} ${small_test_${i}_args-aux})
+      add_test(small_test_${i}-aux-${suffix} ${test_app} ${small_test_${i}_args-aux})
     endif()
 
     if(AUX_LARGE_TESTS)
       set(test_${i}_args-aux -s stars-${i}.txt -a astronomy_parameters-${i}-aux.txt ${test_${i}_params})
-      add_test(test_${i}-aux ${test_app} ${test_${i}_args-aux})
+      add_test(test_${i}-aux-${suffix} ${test_app} ${test_${i}_args-aux})
     endif()
 
   endforeach()
@@ -79,10 +79,15 @@ foreach(test ${test_list})
     target_link_libraries(${test} m)
 endforeach()
 
+if(CPU_SEPARATION)
+  separation_test(${EXECUTABLE_OUTPUT_PATH}/milkyway_client "cpu")
+endif()
 
-separation_test(${PROJECT_BINARY_DIR}/bin/milkyway_client)
+if(OPENCL_SEPARATION)
+  separation_test(${EXECUTABLE_OUTPUT_PATH}/milkyway_client_ocl "ocl")
+endif()
 
-#if(OPENCL_FOUND)
-#  separation_test(${PROJECT_BINARY_DIR}/bin/milkyway_client_ocl)
-#endif()
+if(CUDA_SEPARATION)
+  separation_test(${EXECUTABLE_OUTPUT_PATH}/milkyway_client_cuda "cuda")
+endif()
 
