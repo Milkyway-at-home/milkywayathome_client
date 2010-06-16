@@ -18,14 +18,6 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-option(BUILD_SHARED_LIBS
-       "Set to OFF to build static libraries" ON)
-
-option(DOUBLE_PRECISION
-       "Use double precision" ON)
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
 if(UNIX AND NOT APPLE)  #Unix that isn't OS X
     set(OS_SPECIFIC_LIBS pthread)
 endif(UNIX AND NOT APPLE)
@@ -46,12 +38,7 @@ set(lib_source_file_list evaluation_state.c
                          star_points.c
                          astronomy_worker.c)
 
-# Windows is a pain in the ass.
-if(WIN32)
-  add_library(milkyway_separation_cpu STATIC ${lib_source_file_list})
-else(WIN32)
-  add_library(milkyway_separation_cpu SHARED ${lib_source_file_list})
-endif(WIN32)
+add_library(milkyway_separation_cpu STATIC ${lib_source_file_list})
 
 target_link_libraries(milkyway_separation_cpu ${BOINC_LIBRARIES} ${OS_SPECIFIC_LIBS} m)
 
@@ -60,6 +47,7 @@ install(TARGETS milkyway_separation_cpu DESTINATION lib
        OWNER_READ OWNER_WRITE OWNER_EXECUTE
        GROUP_READ GROUP_EXECUTE
        WORLD_READ WORLD_EXECUTE)
+
 install(FILES ${PROJECT_INCLUDE_DIR}/milkyway.h DESTINATION include/milkyway)
 install(FILES ${PROJECT_INCLUDE_DIR}/config.h DESTINATION include/milkyway)
 

@@ -18,14 +18,9 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#No idea on the actual version, but I'll go with this for now.
-cmake_minimum_required(VERSION 2.6)
 project(milkyway_cuda)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
-option(BUILD_SHARED_LIBS
-       "Set to OFF to build static libraries" ON)
 
 
 # set(cuda_lib_src evaluation_gpu6_double.cu

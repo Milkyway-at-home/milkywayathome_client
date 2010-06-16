@@ -18,15 +18,16 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-add_subdirectory(cpu)
-
-#if(CUDA_FOUND)
-#  add_subdirectory(cuda)
-#endif()
-
-if(OPENCL_FOUND)
-  add_subdirectory(ocl)
+if(CPU_SEPARATION)
+  add_subdirectory(cpu)
 endif()
 
+if(CUDA_SEPARATION)
+  add_subdirectory(cuda)
+endif()
+
+if(OPENCL_SEPARATION)
+  add_subdirectory(ocl)
+endif()
 
 

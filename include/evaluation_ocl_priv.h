@@ -19,11 +19,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-//#include <CL/cl.h>
-//#include <CL/cl_ext.h>
-
-#include <cl.h>
-#include <cl_ext.h>
+#include <OpenCL/cl.h>
+#include <OpenCL/cl_ext.h>
 
 #include <stdlib.h>
 #include <string.h>
