@@ -13,15 +13,15 @@ static cellptr makecell(void);           /* create an empty cell */
 static void expandbox(bodyptr, int);     /* set size of t.root cell */
 static void loadbody(bodyptr);           /* load body into tree */
 static int subindex(bodyptr, cellptr);       /* compute subcell index */
-static void hackcofm(cellptr, real);     /* find centers of mass */
-static void setrcrit(cellptr, vector, real); /* set cell's crit. radius */
+static void hackcofm(const NBodyCtx* ctx, cellptr, real);     /* find centers of mass */
+static void setrcrit(const NBodyCtx*, cellptr, vector, real); /* set cell's crit. radius */
 static void threadtree(nodeptr, nodeptr);    /* set next and more links */
 static void hackquad(cellptr);           /* compute quad moments */
 
-/* MAKETREE: initialize tree structure for hierarchical force calculation
+/* maketree: initialize tree structure for hierarchical force calculation
  * from body array btab, which contains ctx.nbody bodies.
  */
-void maketree(bodyptr btab, int nbody)
+void maketree(const NBodyCtx* ctx, bodyptr btab, int nbody)
 {
     bodyptr p;
 
@@ -33,15 +33,13 @@ void maketree(bodyptr btab, int nbody)
     for (p = btab; p < btab + nbody; p++)       /* loop over bodies... */
         if (Mass(p) != 0.0)                     /* exclude test particles */
             loadbody(p);                        /* and insert into tree */
-    hackcofm(t.root, t.rsize);                  /* find c-of-m coordinates */
+    hackcofm(ctx, t.root, t.rsize);                  /* find c-of-m coordinates */
     threadtree((nodeptr) t.root, NULL);           /* add Next and More links */
-    if (ctx.usequad)                /* including quad moments? */
+    if (ctx->usequad)                /* including quad moments? */
         hackquad(t.root);                         /* assign Quad moments */
 }
 
-/*  * NEWTREE: reclaim cells in tree, prepare to build new one.
- */
-
+/* newtree: reclaim cells in tree, prepare to build new one. */
 static nodeptr freecell = NULL;              /* list of free cells */
 
 static void newtree(void)
@@ -159,11 +157,11 @@ static int subindex(bodyptr p, cellptr q)
     return (ind);
 }
 
-/*  * HACKCOFM: descend tree finding center-of-mass coordinates and
+/* hackcofm: descend tree finding center-of-mass coordinates and
  * setting critical cell radii.
  */
 
-static void hackcofm(cellptr p, real psize)
+static void hackcofm(const NBodyCtx* ctx, cellptr p, real psize)
 {
     vector cmpos, tmpv;
     int i, k;
@@ -175,7 +173,7 @@ static void hackcofm(cellptr p, real psize)
         if ((q = Subp(p)[i]) != NULL)           /* does subnode exist? */
         {
             if (Type(q) == CELL)        /* and is it a cell? */
-                hackcofm((cellptr) q, psize / 2); /* find subcell cm */
+                hackcofm(ctx, (cellptr) q, psize / 2); /* find subcell cm */
             Mass(p) += Mass(q);                 /* sum total mass */
             MULVS(tmpv, Pos(q), Mass(q));       /* weight pos by mass */
             ADDV(cmpos, cmpos, tmpv);           /* sum c-of-m position */
@@ -185,48 +183,46 @@ static void hackcofm(cellptr p, real psize)
         if (cmpos[k] < Pos(p)[k] - psize / 2 || /* if out of bounds */
                 Pos(p)[k] + psize / 2 <= cmpos[k]) /* in either direction */
             error("hackcofm: tree structure error\n");
-    setrcrit(p, cmpos, psize);                  /* set critical radius */
+    setrcrit(ctx, p, cmpos, psize);                  /* set critical radius */
     SETV(Pos(p), cmpos);            /* and center-of-mass pos */
 }
 
-/*  * SETRCRIT: assign critical radius for cell p, using center-of-mass
- * position cmpos and cell size psize.
- */
-
-static void setrcrit(cellptr p, vector cmpos, real psize)
+/* setrcrit: assign critical radius for cell p, using center-of-mass
+ * position cmpos and cell size psize. */
+static void setrcrit(const NBodyCtx* ctx, cellptr p, vector cmpos, real psize)
 {
     real rc, bmax2, dmin;
     int k;
 
-    if (ctx.theta == 0.0)               /* exact force calculation? */
-        rc = 2 * t.rsize;              /* always open cells */
-    else if (ctx.criterion == BH86)     /* use old BH criterion? */
-        rc = psize / ctx.theta;         /* using size of cell */
-    else if (ctx.criterion == SW93)     /* use S&W's criterion? */
+    if (ctx->theta == 0.0)               /* exact force calculation? */
+        rc = 2 * t.rsize;                /* always open cells */
+    else if (ctx->criterion == BH86)     /* use old BH criterion? */
+        rc = psize / ctx->theta;         /* using size of cell */
+    else if (ctx->criterion == SW93)     /* use S&W's criterion? */
     {
-        bmax2 = 0.0;                   /* compute max distance^2 */
-        for (k = 0; k < NDIM; k++)     /* loop over dimensions */
+        bmax2 = 0.0;                     /* compute max distance^2 */
+        for (k = 0; k < NDIM; k++)       /* loop over dimensions */
         {
             dmin = cmpos[k] - (Pos(p)[k] - psize / 2);
             /* dist from 1st corner */
             bmax2 += rsqr(MAX(dmin, psize - dmin));
             /* sum max distance^2 */
         }
-        rc = rsqrt(bmax2) / ctx.theta;      /* using max dist from cm */
+        rc = rsqrt(bmax2) / ctx->theta;      /* using max dist from cm */
     }
-    else if (ctx.criterion == NEWCRITERION) /* use new criterion? */
+    else if (ctx->criterion == NEWCRITERION) /* use new criterion? */
     {
-        rc = psize / ctx.theta + distv(cmpos, Pos(p));
+        rc = psize / ctx->theta + distv(cmpos, Pos(p));
         /* use size plus offset */
     }
     else
     {
-        fail("Got unknown criterion: %d\n", ctx.criterion);
+        fail("Got unknown criterion: %d\n", ctx->criterion);
     }
     Rcrit2(p) = rsqr(rc);           /* store square of radius */
 }
 
-/* THREADTREE: do a recursive treewalk starting from node p,
+/* threadtree: do a recursive treewalk starting from node p,
  * with next stop n, installing Next and More links.
  */
 
@@ -249,7 +245,7 @@ static void threadtree(nodeptr p, nodeptr n)
     }
 }
 
-/* HACKQUAD: descend tree, evaluating quadrupole moments.  Note that this
+/* hackquad: descend tree, evaluating quadrupole moments.  Note that this
  * routine is coded so that the Subp() and Quad() components of a cell can
  * share the same memory locations.
  */

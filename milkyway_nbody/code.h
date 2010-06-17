@@ -20,7 +20,7 @@ extern NBodyParams ps;
 void initoutput(NBodyCtx*);             /* open files for output */
 void nbody_ctx_destroy(NBodyCtx* ctx);  /* close output files */
 void inputdata(void);                   /* read initial data file */
-void maketree(bodyptr, int);    /* construct tree structure */
+void maketree(const NBodyCtx*, bodyptr, int);    /* construct tree structure */
 void hackgrav(const NBodyCtx*, bodyptr, bool);   /* compute force on body */
 void output(const NBodyCtx* ctx, NBodyState* st);  /* perform output operation */
 void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st);

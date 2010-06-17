@@ -15,7 +15,7 @@
 
 NBodyParams ps = { 0, };
 Tree t        = EMPTY_TREE;
-NBodyCtx ctx  = EMPTY_CTX;
+NBodyCtx ctx   = EMPTY_CTX;
 NBodyState st = EMPTY_STATE;
 InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
 
@@ -131,7 +131,7 @@ static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
     if (st->nstep == 0)                 /* about to take 1st step? */
     {
         printf("Building tree...Starting Nbody simulation...\n");
-        maketree(bodytab, ctx->model.nbody);       /* build tree structure */
+        maketree(ctx, bodytab, ctx->model.nbody);       /* build tree structure */
         printf("Tree made\n");
         nfcalc = n2bcalc = nbccalc = 0;     /* zero counters */
         for (p = bodytab; p < endp; p++)
@@ -153,7 +153,7 @@ static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
         ADDV(Pos(p), Pos(p), dpos);     /* advance r by 1 step */
     }
 
-    maketree(bodytab, ctx->model.nbody);     /* build tree structure */
+    maketree(ctx, bodytab, ctx->model.nbody);     /* build tree structure */
     nfcalc = n2bcalc = nbccalc = 0;          /* zero counters */
     for (p = st->bodytab; p < endp; p++)     /* loop over bodies */
     {
