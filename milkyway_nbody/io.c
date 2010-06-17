@@ -19,41 +19,6 @@ static void out_vector(FILE*, vector);
 static void out_2vectors(FILE*, vector, vector);
 static void printvec(const char*, const vector);
 
-/* INPUTDATA: read initial conditions from input file. */
-
-#if 0
-void inputdata(void)
-{
-    FILE* instr;
-    static char headbuf[128];
-    int ndim;
-    bodyptr p;
-
-    instr = fopen(ctx.infile, "r");         /* open input FILE* */
-    if (instr == NULL)
-        error("inputdata: cannot find file %s\n", ctx.infile);
-    sprintf(headbuf, "Hierarchical code: input file %s", ctx.infile);
-    ctx.headline = headbuf;
-    in_int(instr, &ctx.nbody);
-    if (ctx.nbody < 1)
-        error("inputdata: ctx.nbody = %d is absurd\n", ctx.nbody);
-    in_int(instr, &ndim);
-    if (ndim != NDIM)
-        error("inputdata: ndim = %d is absurd\n", ndim);
-    in_real(instr, &st.tnow);
-    st.bodytab = (bodyptr) allocate(ctx.nbody * sizeof(body));
-    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++) /* loop over new bodies */
-        Type(p) = BODY;             /* init body type */
-    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++)
-        in_real(instr, &Mass(p));
-    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++)
-        in_vector(instr, Pos(p));
-    for (p = st.bodytab; p < st.bodytab + ctx.nbody; p++)
-        in_vector(instr, Vel(p));
-    fclose(instr);              /* close input FILE* */
-}
-#endif
-
 /* INITOUTPUT: initialize output routines. */
 
 void initoutput(NBodyCtx* ctx)
