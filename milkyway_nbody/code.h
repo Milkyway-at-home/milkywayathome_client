@@ -25,8 +25,7 @@ void hackgrav(bodyptr, bool);   /* compute force on body */
 void output(const NBodyCtx* ctx, NBodyState* st);  /* perform output operation */
 void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st);
 
-void acceleration(real* posvec, real* accvec);
-void integrate();
+void integrate(const NBodyCtx* ctx, InitialConditions* ic);
 
 /* Utility routines used in code.c and io.c.  These are defined in util.c
  * and getparam.c, which must be compiled with same choice of precision.

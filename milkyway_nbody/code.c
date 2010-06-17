@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
 
     // Calculate the reverse orbit
     printf("Calculating reverse orbit...");
-    integrate();
+    integrate(&ctx, &ic);
     printf("done\n");
 
     printf("Beginning run...\n");

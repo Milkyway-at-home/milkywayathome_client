@@ -8,69 +8,7 @@
 #include "defs.h"
 #include "code.h"
 
-//#define X 0
-//#define Y 1
-//#define Z 2
-
-void integrate()
-{
-    vector acc, v, x;
-    real time;
-    int i;
-
-    // Set the initial conditions
-    x[0] = ps.Xinit;
-    x[1] = ps.Yinit;
-    x[2] = ps.Zinit;
-    v[0] = -ps.VXinit;
-    v[1] = -ps.VYinit;
-    v[2] = -ps.VZinit;
-
-    //printf("%f %f %f %f %f %f\n", ps.Xinit, ps.Yinit, ps.Zinit, ps.Xinit, ps.Yinit, ps.Zinit);
-
-    // Get the initial acceleration
-    acceleration(x, acc);
-
-    printf("\nFinding time: time <= %g, += %g\n", ps.orbittstop, ps.dtorbit);
-
-
-    // Loop through time
-    for (time = 0; time <= ps.orbittstop; time += ps.dtorbit)
-    {
-        // Update the velocities and positions
-        for (i = 0; i < 3; ++i)
-        {
-            v[i] += acc[i] * ps.dtorbit;
-            x[i] += v[i] * ps.dtorbit;
-            //printf(" %f", x[i]);
-        }
-
-        /*
-        for (i = 0; i <= 2; i++)
-        {
-            //printf(" %f", v[i]);
-        }
-        */
-        //printf("orbittime = %f\n", time);
-
-        // Compute the new acceleration
-        acceleration(x, acc);
-    }
-
-    // Report the final values (don't forget to reverse the velocities)
-    ps.XC = x[0];
-    ps.YC = x[1];
-    ps.ZC = x[2];
-    ps.VXC = -v[0];
-    ps.VYC = -v[1];
-    ps.VZC = -v[2];
-
-    printf("End of integration: XC = (%g %g %g)\n", ps.XC, ps.YC, ps.ZC);
-    printf("End of integration: VXC = (%g %g %g)\n", ps.VXC, ps.VYC, ps.VZC);
-
-}
-
-void acceleration(real* pos, real* acc)
+inline static void acceleration(const NBodyCtx* ctx, real* pos, real* acc)
 {
     // The external potential
 
@@ -113,8 +51,67 @@ void acceleration(real* pos, real* acc)
                  + ((bulge_mass * pos[2]) / rppPar)
                  + ((miya_mass * pos[2] * apar) / (qpar * spar15) ) );
 
+}
 
-//    printf("End of acceleraton: { %g %g %g }\n", acc[0], acc[1], acc[2]);
+
+void integrate(const NBodyCtx* ctx, InitialConditions* ic)
+{
+    vector acc, v, x;
+    real time;
+    int i;
+
+    // Set the initial conditions
+
+    x[0] = ps.Xinit;
+    x[1] = ps.Yinit;
+    x[2] = ps.Zinit;
+    v[0] = -ps.VXinit;
+    v[1] = -ps.VYinit;
+    v[2] = -ps.VZinit;
+
+    /*
+    x[0] = ic->position[0];
+    x[1] = ic->position[1];
+    x[2] = ic->position[2];
+
+    v[0] = -ic->velocity[0];
+    v[1] = -ic->velocity[1];
+    v[2] = -ic->velocity[2]; */
+
+
+    // Get the initial acceleration
+    acceleration(ctx, x, acc);
+
+    // Loop through time
+    for (time = 0; time <= ps.orbittstop; time += ps.dtorbit)
+    {
+        // Update the velocities and positions
+        for (i = 0; i < 3; ++i)
+        {
+            v[i] += acc[i] * ps.dtorbit;
+            x[i] += v[i] * ps.dtorbit;
+        }
+        // Compute the new acceleration
+        acceleration(ctx, x, acc);
+    }
+
+    // Report the final values (don't forget to reverse the velocities)
+    ps.XC = x[0];
+    ps.YC = x[1];
+    ps.ZC = x[2];
+    ps.VXC = -v[0];
+    ps.VYC = -v[1];
+    ps.VZC = -v[2];
+
+    /*
+    ic->position[0] = x[0];
+    ic->position[1] = x[1];
+    ic->position[2] = x[2];
+
+    ic->velocity[0] = -v[0];
+    ic->velocity[1] = -v[1];
+    ic->velocity[2] = -v[2]; */
 
 }
+
 
