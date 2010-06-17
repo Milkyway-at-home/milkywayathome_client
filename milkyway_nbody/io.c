@@ -9,7 +9,7 @@
 #define _GNU_SOURCE
 #include "code.h"
 
-static void diagnostics(void);
+static void diagnostics(const NBodyCtx*, const NBodyState*);
 static void in_int(FILE*, int*);
 static void in_real(FILE*, real*);
 static void in_vector(FILE*, vector);
@@ -50,7 +50,7 @@ void output(const NBodyCtx* ctx, NBodyState* st)
     vector lbR;
     const bodyptr endp = st->bodytab + ctx->model.nbody;
 
-    diagnostics();              /* compute std diagnostics */
+    diagnostics(ctx, st);              /* compute std diagnostics */
     if (ctx->tstop - st->tnow < 0.01 / ctx->freq)
     {
         printf("st.tnow = %f\n", st->tnow);
@@ -75,12 +75,14 @@ void output(const NBodyCtx* ctx, NBodyState* st)
 
 /* DIAGNOSTICS: compute various dynamical diagnostics.  */
 
-static void diagnostics(void)
+static void diagnostics(const NBodyCtx* ctx, const NBodyState* st)
 {
     register bodyptr p;
     real velsq;
     vector tmpv;
     matrix tmpt;
+
+    const bodyptr endp = st->bodytab + ctx->model.nbody;
 
     mtot = 0.0;                 /* zero total mass */
     etot[1] = etot[2] = 0.0;            /* zero total KE and PE */
@@ -89,7 +91,7 @@ static void diagnostics(void)
     CLRV(cmphase[0]);               /* zero c. of m. position */
     CLRV(cmphase[1]);               /* zero c. of m. velocity */
     CLRV(amvec);                /* zero am vector */
-    for (p = st.bodytab; p < st.bodytab + ctx.model.nbody; p++) /* loop over all particles */
+    for (p = st->bodytab; p < endp; p++) /* loop over all particles */
     {
         mtot += Mass(p);                        /* sum particle masses */
         DOTVP(velsq, Vel(p), Vel(p));       /* square vel vector */
