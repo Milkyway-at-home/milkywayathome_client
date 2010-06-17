@@ -57,60 +57,45 @@ inline static void acceleration(const NBodyCtx* ctx, real* pos, real* acc)
 void integrate(const NBodyCtx* ctx, InitialConditions* ic)
 {
     vector acc, v, x;
-    real time;
+    real t;
     int i;
 
+    const real tstop = ctx->model.time_orbit;
+    const real dt    = ctx->model.orbit_timestep;
+
     // Set the initial conditions
-
-    x[0] = ps.Xinit;
-    x[1] = ps.Yinit;
-    x[2] = ps.Zinit;
-    v[0] = -ps.VXinit;
-    v[1] = -ps.VYinit;
-    v[2] = -ps.VZinit;
-
-    /*
     x[0] = ic->position[0];
     x[1] = ic->position[1];
     x[2] = ic->position[2];
 
     v[0] = -ic->velocity[0];
     v[1] = -ic->velocity[1];
-    v[2] = -ic->velocity[2]; */
-
+    v[2] = -ic->velocity[2];
 
     // Get the initial acceleration
     acceleration(ctx, x, acc);
 
     // Loop through time
-    for (time = 0; time <= ps.orbittstop; time += ps.dtorbit)
+    for (t = 0; t <= tstop; t += dt)
     {
         // Update the velocities and positions
         for (i = 0; i < 3; ++i)
         {
-            v[i] += acc[i] * ps.dtorbit;
-            x[i] += v[i] * ps.dtorbit;
+            v[i] += acc[i] * dt;
+            x[i] += v[i] * dt;
         }
         // Compute the new acceleration
         acceleration(ctx, x, acc);
     }
 
-    // Report the final values (don't forget to reverse the velocities)
-    ps.XC = x[0];
-    ps.YC = x[1];
-    ps.ZC = x[2];
-    ps.VXC = -v[0];
-    ps.VYC = -v[1];
-    ps.VZC = -v[2];
-
-    /*
+    /* Report the final values (don't forget to reverse the velocities) */
     ic->position[0] = x[0];
     ic->position[1] = x[1];
     ic->position[2] = x[2];
 
     ic->velocity[0] = -v[0];
     ic->velocity[1] = -v[1];
-    ic->velocity[2] = -v[2]; */
+    ic->velocity[2] = -v[2];
 
 }
 
