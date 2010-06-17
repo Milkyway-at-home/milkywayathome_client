@@ -188,20 +188,6 @@ typedef struct
     int maxlevel;   /* count of levels in tree */
 } Tree;
 
-/* Parameters and results for gravitational calculation. */
-
-typedef struct
-{
-    real PluMass, r0;
-    real lstart, bstart, Rstart;
-    real XC, YC, ZC;
-    real VXC, VYC, VZC;
-    real Xinit, Yinit, Zinit;
-    real VXinit, VYinit, VZinit;
-    real orbittstop, dtorbit;
-    real sunGCDist;
-} NBodyParams;
-
 typedef struct
 {
     bool useGalC;
@@ -257,7 +243,6 @@ typedef struct
     DwarfModel model;   /* dwarf model */
 
     /* TODO: these should go away */
-    real tstop;
     real freq;
     real freqout;
 
@@ -304,7 +289,7 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 #define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
-#define EMPTY_CTX { EMPTY_POTENTIAL,  EMPTY_MODEL, NAN, NAN, NAN, FALSE, FALSE, 0, NAN, 0, NULL, NULL, NULL }
+#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NAN, NAN, FALSE, FALSE, 0, NAN, 0, NULL, NULL, NULL }
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 

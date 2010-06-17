@@ -51,7 +51,7 @@ void output(const NBodyCtx* ctx, NBodyState* st)
     const bodyptr endp = st->bodytab + ctx->model.nbody;
 
     diagnostics(ctx, st);              /* compute std diagnostics */
-    if (ctx->tstop - st->tnow < 0.01 / ctx->freq)
+    if (ctx->model.time_dwarf - st->tnow < 0.01 / ctx->freq)
     {
         printf("st.tnow = %f\n", st->tnow);
         for (p = st->bodytab; p < endp; p++)
@@ -61,9 +61,7 @@ void output(const NBodyCtx* ctx, NBodyState* st)
             lbR[0] = r2d(atan2(Pos(p)[1], Pos(p)[0]));
 
             if (lbR[0] < 0)
-            {
                 lbR[0] += 360.0;
-            }
 
             out_2vectors(ctx->outfile, lbR, Vel(p));
         }
@@ -441,7 +439,6 @@ char* showContext(const NBodyCtx* ctx)
                      "  allowIncest = %s\n"
                      "  seed        = %d\n"
                      "  theta       = %g\n"
-                     "  tstop       = %g\n"
                      "  freq        = %g\n"
                      "  freqout     = %g\n"
                      "};\n",
@@ -455,7 +452,6 @@ char* showContext(const NBodyCtx* ctx)
                      showBool(ctx->allowIncest),
                      ctx->seed,
                      ctx->theta,
-                     ctx->tstop,
                      ctx->freq,
                      ctx->freqout))
     {

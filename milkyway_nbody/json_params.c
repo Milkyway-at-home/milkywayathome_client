@@ -269,12 +269,18 @@ static const char* showNBodyType(nbody_type bt)
 /* Reads a name of the criterion into the C value, with name str */
 static criterion_t readCriterion(const char* str)
 {
+    if (!strcasecmp(str, "new-criterion"))
+        return NEWCRITERION;
     if (!strcasecmp(str, "bh86"))
         return BH86;
     else if (!strcasecmp(str, "sw93"))
         return SW93;
     else
-        fail("Invalid model %s: Model options are either 'bh86' or 'sw93'\n", str);
+    {
+        fail("Invalid model %s: Model options are either 'bh86', "
+             "'sw93' or 'new-criterion' (default),\n",
+             str);
+    }
 }
 
 void printParameter(Parameter* p)
@@ -596,12 +602,11 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
     const NBodyCtx defaultCtx =
         {
             .pot = EMPTY_POTENTIAL,
-            .tstop = NAN,
             .freq = NAN,
             .freqout = NAN,
             .usequad = TRUE,
             .allowIncest = FALSE,
-            .criterion = BH86,
+            .criterion = NEWCRITERION,
             .theta = 0.0,
             .seed = 0,
             .outfile = NULL,
@@ -745,7 +750,7 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
 
             BOOL_PARAM_DFLT("allow-incest",          &ctx->allowIncest, &defaultCtx.allowIncest),
             DBL_PARAM_DFLT("accuracy-parameter",     &ctx->theta, &defaultCtx.theta),
-            ENUM_PARAM("criterion",                  &ctx->criterion, (ReadEnum) readCriterion),
+            ENUM_PARAM_DFLT("criterion",             &ctx->criterion, &defaultCtx.criterion, (ReadEnum) readCriterion),
             OBJ_PARAM("potential", potentialItems),
             GROUP_PARAM("dwarf-model",               &ctx->model.type, dwarfModelOptions),
             NULLPARAMETER

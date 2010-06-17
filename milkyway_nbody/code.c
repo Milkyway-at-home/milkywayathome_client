@@ -13,8 +13,7 @@
 
 #include "json_params.h"
 
-NBodyParams ps = { 0, };
-Tree t        = EMPTY_TREE;
+Tree t = EMPTY_TREE;
 
 char* headline = "Hierarchical N-body Code";   /* default id for run */
 
@@ -33,35 +32,13 @@ int main(int argc, char* argv[])
 
     initNBody(&ctx, &ic, argc, (const char**) argv);
 
-    printf("Reached end of init\n");
-
-    /* FIXME: This is wrong */
-    ps.PluMass    = ctx.model.mass;
-    ps.r0         = ctx.model.scale_radius;
-    ps.Xinit      = ic.position[0];
-    ps.Yinit      = ic.position[1];
-    ps.Zinit      = ic.position[2];
-    ps.sunGCDist  = ic.sunGCDist;
-    ps.VXinit     = ic.velocity[0];
-    ps.VYinit     = ic.velocity[1];
-    ps.VZinit     = ic.velocity[2];
-    ps.orbittstop = ctx.model.time_orbit;
-    ps.dtorbit    = ctx.model.timestep / 2.0;
-
-    ctx.tstop = ctx.model.time_dwarf;
-
-    ctx.criterion = NEWCRITERION;
-
+    /* FIXME */
     t.rsize = 4.0;
 
     initoutput(&ctx);
 
     printContext(&ctx);
     printInitialConditions(&ic);
-
-    printf("arstarstarst: %g %g %g\n", ps.Xinit, ps.Yinit, ps.Zinit);
-    printf("varst: %g %g %g\n", ps.VXinit, ps.VYinit, ps.VZinit);
-
 
     // Calculate the reverse orbit
     printf("Calculating reverse orbit...");
@@ -71,24 +48,9 @@ int main(int argc, char* argv[])
     printf("Beginning run...\n");
     startrun(&ctx, &ic, &st);                 /* set params, input data */
 
-    printf("st.tnow = %g, ctx.tstop = %g, ctx.freq = %g\n",
-           st.tnow, ctx.tstop, ctx.freq);
-
-	printf("eps = %f dtnbody = %f\n", ctx.model.eps, ctx.model.timestep);
-
-    printf("tnow init = %g, tstop = %g\n", st.tnow, ctx.tstop);
-
-    printf("tstop = %g, while < %g or %g\n", ctx.tstop,
-           ctx.tstop - 1.0 / (1024.0 * ctx.freq),
-           ctx.tstop - 1.0 / (1024 * ctx.freq));
-
-
-
-
-    while (st.tnow < ctx.tstop - 1.0 / (1024.0 * ctx.freq)) /* while not past ctx.tstop */
+    while (st.tnow < ctx.model.time_dwarf - 1.0 / (1024.0 * ctx.freq)) /* while not past ctx.tstop */
         stepsystem(&ctx, &st);               /* advance N-body system */
 
-    printf("nstep final = %d\n", st.nstep);
     printf("Step system done\n");
     // Get the likelihood
     //chisqans = chisq();
@@ -99,15 +61,14 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-/* STARTRUN: startup hierarchical N-body code. */
-
+/* startrun: startup hierarchical N-body code. */
 static void startrun(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     if (ctx->model.nbody < 1)              /* check input value */
         error("startrun: ctx.model.nbody = %d is absurd\n", ctx->model.nbody);
 
-    //srand48((long) time(NULL));   /* set random generator */
-    srand48((long) 0.0);    /* set random generator */
+    /* FIXME: Make seed be long anyway */
+    srand48((long) ctx->seed);    /* set random generator */
     generatePlummer(ctx, ic, st);             /* make test model */
 
     st->nstep = 0;                  /* start counting steps */

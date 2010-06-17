@@ -11,9 +11,6 @@
 #include "defs.h"
 
 extern Tree t;
-extern NBodyCtx ctx;
-extern NBodyState st;
-extern NBodyParams ps;
 
 /* Global function prototypes. */
 
