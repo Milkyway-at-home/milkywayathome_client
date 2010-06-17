@@ -68,11 +68,6 @@ typedef real (*rproc)();
 #  define rfloor floorf
 #  define rceil  ceilf
 
-/*  * These functions are not part of the standard C libraries.
- */
-
-float fsqr(float);          /* square function */
-
 #else
 
 #  define rsqrt  sqrt
@@ -94,11 +89,6 @@ float fsqr(float);          /* square function */
 #  define rabs   fabs
 #  define rfloor floor
 #  define rceil  ceil
-
-/*  * These functions are not part of the standard C libraries.
- */
-
-double sqr(double);         /* square function */
 
 #endif
 

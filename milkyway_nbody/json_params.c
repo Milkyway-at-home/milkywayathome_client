@@ -94,10 +94,8 @@ static void processInitialConditions(InitialConditions* ic)
         }
         else
         {
-            l = (3.14159 * L(ic) / 180.0);
-            b = (3.14159 * B(ic) / 180.0);
-            //l = d2r( L(ic) );
-            //b = d2r( B(ic) );
+            l = d2r( L(ic) );
+            b = d2r( B(ic) );
         }
 
         X(ic) = r * cos(l) * cos(b) - ic->sunGCDist;

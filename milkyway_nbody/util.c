@@ -33,14 +33,6 @@ real xrandom(real xl, real xh)
     return (xl + (xh - xl) * drand48());
 }
 
-/*  * RSQR: compute x*x.
- */
-
-real rsqr(real x)
-{
-    return (x * x);
-}
-
 /*  * DISTV: subtract vectors and return distance between.
  */
 
