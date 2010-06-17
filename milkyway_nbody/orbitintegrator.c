@@ -22,9 +22,9 @@ void integrate()
     x[0] = ps.Xinit;
     x[1] = ps.Yinit;
     x[2] = ps.Zinit;
-    v[0] = -ps.Xinit;
-    v[1] = -ps.Yinit;
-    v[2] = -ps.Zinit;
+    v[0] = -ps.VXinit;
+    v[1] = -ps.VYinit;
+    v[2] = -ps.VZinit;
 
     //printf("%f %f %f %f %f %f\n", ps.Xinit, ps.Yinit, ps.Zinit, ps.Xinit, ps.Yinit, ps.Zinit);
 
@@ -58,9 +58,9 @@ void integrate()
     ps.XC = x[0];
     ps.YC = x[1];
     ps.ZC = x[2];
-    ps.XC = -v[0];
-    ps.YC = -v[1];
-    ps.ZC = -v[2];
+    ps.VXC = -v[0];
+    ps.VYC = -v[1];
+    ps.VZC = -v[2];
 
 }
 

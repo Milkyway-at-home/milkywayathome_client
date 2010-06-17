@@ -89,12 +89,12 @@ static void testdata(void)
     vector rshift, vshift, scaledrshift, scaledvshift;
 
     // The coordinates to shift the plummer sphere by
-    (rshift)[0] = ps.XC;
-    (rshift)[1] = ps.YC;
-    (rshift)[2] = ps.ZC;
-    (vshift)[0] = ps.XC;
-    (vshift)[1] = ps.YC;
-    (vshift)[2] = ps.ZC;
+    rshift[0] = ps.XC;
+    rshift[1] = ps.YC;
+    rshift[2] = ps.ZC;
+    vshift[0] = ps.XC;
+    vshift[1] = ps.YC;
+    vshift[2] = ps.ZC;
 
     printf("Shifting plummer sphere to r = (%f, %f, %f) v = (%f, %f, %f)...\n",
            rshift[0],

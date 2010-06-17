@@ -71,8 +71,7 @@ typedef struct _node
 #define Pos(x)  (((nodeptr) (x))->pos)
 #define Next(x) (((nodeptr) (x))->next)
 
-/*  * BODY: data structure used to represent particles.
- */
+/* BODY: data structure used to represent particles. */
 
 #define BODY 01                 /* type code for bodies */
 
@@ -265,7 +264,7 @@ typedef struct
     /* Simulation settings */
     bool usequad;          /* use quadrupole corrections */
     bool allowIncest;
-    criterion_t criterion;         /* bh86 or sw93 */
+    criterion_t criterion;
     real theta;     /* accuracy parameter: 0.0 => exact */
 
     /* Utilitarian type information */
@@ -324,7 +323,7 @@ real distv(vector, vector);      /* distance between vectors */
 void error(char*, ...);          /* report error and exit */
 void eprintf(char*, ...);        /* printf to error FILE* */
 int compare (const void* a, const void* b);     /* comparison function used in chisq */
-float chisq();                  /* likelihood calculator */
+real chisq();                  /* likelihood calculator */
 
 #endif /* _DEFS_H_ */
 
