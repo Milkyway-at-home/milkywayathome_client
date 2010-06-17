@@ -6,21 +6,10 @@
 
 #include "code.h"
 #include "defs.h"
-//#include <stdlib.h>
-
 
 #define MFRAC  0.999                /* cut off 1-MFRAC of mass */
 
-void generatePlummer(void);           /* generate test data */
-
-/* generatePlummer: generate Plummer model initial conditions for test
- * runs, scaled to units such that M = -4E = G = 1 (Henon, Hegge,
- * etc).  See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
- * 183.
- */
-
-/* PICKSHELL: pick a random point on a sphere of specified radius. */
-
+/* pickshell: pick a random point on a sphere of specified radius. */
 static void pickshell(vector vec, real rad)
 {
     int k;
@@ -37,13 +26,19 @@ static void pickshell(vector vec, real rad)
     MULVS(vec, vec, rsc);           /* rescale to radius given */
 }
 
-
-void generatePlummer(void)
+/* generatePlummer: generate Plummer model initial conditions for test
+ * runs, scaled to units such that M = -4E = G = 1 (Henon, Hegge,
+ * etc).  See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
+ * 183.
+ */
+void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     printf("Initializing plummer model...");
     real rsc, vsc, r, v, x, y;
     vector cmr, cmv;
     vector rshift, vshift, scaledrshift, scaledvshift;
+
+    const real rnbody = (real) ctx->model.nbody;
 
     // The coordinates to shift the plummer sphere by
     rshift[0] = ps.XC;
@@ -52,6 +47,18 @@ void generatePlummer(void)
     vshift[0] = ps.VXC;
     vshift[1] = ps.VYC;
     vshift[2] = ps.VZC;
+
+    /*
+      Somehow, including this seems to make EVERYTHING 20% slower
+    rshift[0] = ic->position[0];
+    rshift[1] = ic->position[1];
+    rshift[2] = ic->position[2];
+
+    vshift[0] = ic->velocity[0];
+    vshift[1] = ic->velocity[1];
+    vshift[2] = ic->velocity[2]; */
+
+
 
     printf("Shifting plummer sphere to r = (%f, %f, %f) v = (%f, %f, %f)...\n",
            rshift[0],
@@ -63,11 +70,10 @@ void generatePlummer(void)
 
     bodyptr p;
 
-     st.tnow = 0.0;                 /* reset elapsed model time */
-    st.bodytab = (bodyptr) allocate(ctx.model.nbody * sizeof(body));
-    /* alloc space for bodies */
-    rsc = ps.r0;               /* set length scale factor */
-    vsc = rsqrt(ps.PluMass / rsc);         /* and recip. speed scale */
+    st->tnow = 0.0;                 /* reset elapsed model time */
+    st->bodytab = (bodyptr) allocate(ctx->model.nbody * sizeof(body));
+    rsc = ctx->model.scale_radius;               /* set length scale factor */
+    vsc = rsqrt(ctx->model.mass / rsc);         /* and recip. speed scale */
     CLRV(cmr);                  /* init cm pos, vel */
     CLRV(cmv);
     CLRV(scaledrshift);
@@ -75,10 +81,10 @@ void generatePlummer(void)
     MULVS(scaledrshift, rshift, rsc);   /* Multiply shift by scale factor */
     MULVS(scaledvshift, vshift, vsc);   /* Multiply shift by scale factor */
 
-    for (p = st.bodytab; p < st.bodytab + ctx.model.nbody; p++) /* loop over particles */
+    for (p = st->bodytab; p < st->bodytab + ctx->model.nbody; p++) /* loop over particles */
     {
         Type(p) = BODY;             /* tag as a body */
-        Mass(p) = ps.PluMass / (real)ctx.model.nbody;            /* set masses equal */
+        Mass(p) = ctx->model.mass / rnbody;            /* set masses equal */
         r = 1 / rsqrt(rpow(xrandom(0.0, MFRAC), /* pick r in struct units */
                            -2.0 / 3.0) - 1);
         pickshell(Pos(p), rsc * r);     /* pick scaled position */
@@ -95,8 +101,8 @@ void generatePlummer(void)
         ADDV(Vel(p), Vel(p), vshift);       /* move the velocity */
         ADDV(cmv, cmv, Vel(p));         /* add to running sum */
     }
-    DIVVS(cmr, cmr, (real) ctx.model.nbody);      /* normalize cm coords */
-    DIVVS(cmv, cmv, (real) ctx.model.nbody);
+    DIVVS(cmr, cmr, rnbody);      /* normalize cm coords */
+    DIVVS(cmv, cmv, rnbody);
 
     printf("done\n");
 }

@@ -22,7 +22,7 @@ InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
 
 char* headline = "Hierarchical N-body Code";   /* default id for run */
 
-static void startrun(NBodyCtx*, NBodyState*);           /* initialize system state */
+static void startrun(const NBodyCtx*, const InitialConditions*, NBodyState*);           /* initialize system state */
 static void stepsystem(void);         /* advance by one time-step */
 
 /* MAIN: toplevel routine for hierarchical N-body code. */
@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
     printf("done\n");
 
     printf("Beginning run...\n");
-    startrun(&ctx, &st);                 /* set params, input data */
+    startrun(&ctx, &ic, &st);                 /* set params, input data */
 
     printf("st.tnow = %g, ctx.tstop = %g, ctx.freq = %g\n",
            st.tnow, ctx.tstop, ctx.freq);
@@ -101,14 +101,14 @@ int main(int argc, char* argv[])
 
 /* STARTRUN: startup hierarchical N-body code. */
 
-static void startrun(NBodyCtx* ctx, NBodyState* st)
+static void startrun(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     if (ctx->model.nbody < 1)              /* check input value */
         error("startrun: ctx.model.nbody = %d is absurd\n", ctx->model.nbody);
 
     //srand48((long) time(NULL));   /* set random generator */
     srand48((long) 0.0);    /* set random generator */
-    generatePlummer();             /* make test model */
+    generatePlummer(ctx, ic, st);             /* make test model */
 
     st->nstep = 0;                  /* start counting steps */
     st->tout = st->tnow;            /* schedule first output */

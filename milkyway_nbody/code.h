@@ -23,7 +23,7 @@ void inputdata(void);                   /* read initial data file */
 void maketree(bodyptr, int);    /* construct tree structure */
 void hackgrav(bodyptr, bool);   /* compute force on body */
 void output(void);              /* perform output operation */
-void generatePlummer(void);
+void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st);
 
 void acceleration(real* posvec, real* accvec);
 void integrate();
