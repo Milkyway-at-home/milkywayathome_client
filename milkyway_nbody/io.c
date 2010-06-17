@@ -259,11 +259,12 @@ char* showSpherical(const Spherical* s)
 {
     char* buf;
 
-    if (0 > asprintf(&buf, "{\n"
-                           "      type  = %s\n"
-                           "      mass  = %g\n"
-                           "      scale = %g\n"
-                           "    };\n",
+    if (0 > asprintf(&buf,
+                     "{\n"
+                     "      type  = %s\n"
+                     "      mass  = %g\n"
+                     "      scale = %g\n"
+                     "    };\n",
                      showSphericalT(s->type),
                      s->mass,
                      s->scale))
@@ -278,15 +279,16 @@ char* showHalo(const Halo* h)
 {
     char* buf;
 
-    if (0 > asprintf(&buf, "{ \n"
-                           "      type         = %s\n"
-                           "      vhalo        = %g\n"
-                           "      scale_length = %g\n"
-                           "      flattenX     = %g\n"
-                           "      flattenY     = %g\n"
-                           "      flattenZ     = %g\n"
-                           "      triaxAngle   = %g\n"
-                           "    };\n",
+    if (0 > asprintf(&buf,
+                     "{ \n"
+                     "      type         = %s\n"
+                     "      vhalo        = %g\n"
+                     "      scale_length = %g\n"
+                     "      flattenX     = %g\n"
+                     "      flattenY     = %g\n"
+                     "      flattenZ     = %g\n"
+                     "      triaxAngle   = %g\n"
+                     "    };\n",
                      showHaloT(h->type),
                      h->vhalo,
                      h->scale_length,
@@ -305,12 +307,13 @@ char* showDisk(const Disk* d)
 {
     char* buf;
 
-    if (0 > asprintf(&buf, "{ \n"
-                           "      type         = %s\n"
-                           "      mass         = %g\n"
-                           "      scale_length = %g\n"
-                           "      scale_height = %g\n"
-                           "    };\n",
+    if (0 > asprintf(&buf,
+                     "{ \n"
+                     "      type         = %s\n"
+                     "      mass         = %g\n"
+                     "      scale_length = %g\n"
+                     "      scale_height = %g\n"
+                     "    };\n",
                      showDiskT(d->type),
                      d->mass,
                      d->scale_length,
@@ -336,12 +339,13 @@ char* showPotential(const Potential* p)
     diskBuf = showDisk(&p->disk);
     haloBuf = showHalo(&p->halo);
 
-    rc = asprintf(&buf, "{\n"
-                        "    sphere = %s\n"
-                        "    disk = %s\n"
-                        "    halo = %s\n"
-                        "    rings  = { unused pointer %p }\n"
-                        "  };\n",
+    rc = asprintf(&buf,
+                  "{\n"
+                  "    sphere = %s\n"
+                  "    disk = %s\n"
+                  "    halo = %s\n"
+                  "    rings  = { unused pointer %p }\n"
+                  "  };\n",
                   sphBuf,
                   diskBuf,
                   haloBuf,
@@ -361,21 +365,24 @@ char* showDwarfModel(const DwarfModel* d)
 {
     char* buf;
 
-    if (0 > asprintf(&buf, "{ \n"
-                           "      type         = %s\n"
-                           "      nbody        = %d\n"
-                           "      mass         = %g\n"
-                           "      scale_radius = %g\n"
-                           "      timestep     = %g\n"
-                           "      time_dwarf   = %g\n"
-                           "      time_orbit   = %g\n"
-                           "      eps          = %g\n"
-                           "    };\n",
+    if (0 > asprintf(&buf,
+                     "{ \n"
+                     "      type           = %s\n"
+                     "      nbody          = %d\n"
+                     "      mass           = %g\n"
+                     "      scale_radius   = %g\n"
+                     "      timestep       = %g\n"
+                     "      orbit_timestep = %g\n"
+                     "      time_dwarf     = %g\n"
+                     "      time_orbit     = %g\n"
+                     "      eps            = %g\n"
+                     "    };\n",
                      showDwarfModelT(d->type),
                      d->nbody,
                      d->mass,
                      d->scale_radius,
                      d->timestep,
+                     d->orbit_timestep,
                      d->time_orbit,
                      d->time_dwarf,
                      d->eps))
@@ -389,13 +396,14 @@ char* showDwarfModel(const DwarfModel* d)
 char* showInitialConditions(const InitialConditions* ic)
 {
     char* buf;
-    if (0 > asprintf(&buf, "initial-conditions = { \n"
-                           "  useGalC    = %s\n"
-                           "  useRadians = %s\n"
-                           "  sunGCDist  = %g\n"
-                           "  position   = { %g, %g, %g }\n"
-                           "  velocity   = { %g, %g, %g }\n"
-                           "};\n",
+    if (0 > asprintf(&buf,
+                     "initial-conditions = { \n"
+                     "  useGalC    = %s\n"
+                     "  useRadians = %s\n"
+                     "  sunGCDist  = %g\n"
+                     "  position   = { %g, %g, %g }\n"
+                     "  velocity   = { %g, %g, %g }\n"
+                     "};\n",
                      showBool(ic->useGalC),
                      showBool(ic->useRadians),
                      ic->sunGCDist,
