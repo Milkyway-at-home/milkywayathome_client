@@ -9,7 +9,7 @@
 #include "code.h"
 #include <stdio.h>
 
-static void treescan(nodeptr);           /* does force calculation */
+static bool treescan(nodeptr);           /* does force calculation */
 static bool subdivp(cellptr);            /* can cell be accepted? */
 static void gravsub(nodeptr);            /* compute grav interaction */
 
@@ -21,25 +21,26 @@ static bodyptr pskip;                /* skip in force evaluation */
 static vector pos0;              /* point to evaluate field */
 static real phi0;                /* resulting potential */
 static vector acc0;              /* resulting acceleration */
-static bool skipself;                /* self-interaction skipped */
-static bool treeincest = FALSE;          /* tree-incest occured */
 
-void hackgrav(bodyptr p, bool intree)
+
+void hackgrav(const NBodyCtx* ctx, bodyptr p, bool intree)
 {
     vector externalacc;
     int n2bterm;    /* number 2-body of terms evaluated */
     int nbcterm;    /* num of body-cell terms evaluated */
+    static bool treeincest = FALSE;     /* tree-incest occured */
+    bool skipself          = FALSE;     /* self-interaction skipped */
 
     pskip = p;                  /* exclude p from f.c. */
     SETV(pos0, Pos(p));             /* set field point */
     phi0 = 0.0;                 /* init total potential */
     CLRV(acc0);                 /* and total acceleration */
     n2bterm = nbcterm = 0;          /* count body & cell terms */
-    skipself = FALSE;               /* watch for tree-incest */
-    treescan((nodeptr) t.root);           /* scan tree from t.root */
+                  /* watch for tree-incest */
+    skipself = treescan((nodeptr) t.root);           /* scan tree from t.root */
     if (intree && !skipself)            /* did tree-incest occur? */
     {
-        if (!ctx.allowIncest) /* treat as catastrophic? */
+        if (!ctx->allowIncest) /* treat as catastrophic? */
             error("hackgrav: tree-incest detected\n");
         if (!treeincest)           /* for the first time? */
             eprintf("\n[hackgrav: tree-incest detected]\n");
@@ -79,12 +80,14 @@ void hackgrav(bodyptr p, bool intree)
     SETV(Acc(p), acc0);             /* and acceleration */
 }
 
-/*  * TREESCAN: iterative routine to do force calculation, starting
- * with node q, which is typically the t.root cell.
+/* treescan: iterative routine to do force calculation, starting with
+ * node q, which is typically the t.root cell. Watches for tree
+ * incest.
  */
-
-static void treescan(nodeptr q)
+static bool treescan(nodeptr q)
 {
+    bool skipself = FALSE;
+
     while (q != NULL)               /* while not at end of scan */
     {
         if (Type(q) == CELL &&          /* is node a cell and... */
@@ -105,6 +108,8 @@ static void treescan(nodeptr q)
             q = Next(q);            /* follow next link */
         }
     }
+
+    return skipself;
 }
 
 /*  * SUBDIVP: decide if cell q is too close to accept as a single

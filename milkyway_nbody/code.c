@@ -137,7 +137,7 @@ static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
         for (p = bodytab; p < endp; p++)
         {
             /* loop over all bodies */
-            hackgrav(p, Mass(p) > 0.0);     /* get force on each */
+            hackgrav(ctx, p, Mass(p) > 0.0);     /* get force on each */
             ++nfcalc;                       /* count force calcs */
             n2bcalc += st->n2bterm;          /* and 2-body terms */
             nbccalc += st->nbcterm;          /* and body-cell terms */
@@ -157,7 +157,7 @@ static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
     nfcalc = n2bcalc = nbccalc = 0;          /* zero counters */
     for (p = st->bodytab; p < endp; p++)     /* loop over bodies */
     {
-        hackgrav(p, Mass(p) > 0.0);   /* get force on each */
+        hackgrav(ctx, p, Mass(p) > 0.0);   /* get force on each */
         ++nfcalc;                     /* count force calcs */
         n2bcalc += st->n2bterm;           /* and 2-body terms */
         nbccalc += st->nbcterm;           /* and body-cell terms */
