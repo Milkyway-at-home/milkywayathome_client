@@ -62,6 +62,10 @@ static void processModel(DwarfModel* mod)
             if (isnan(mod->timestep))
                 mod->timestep = sqr(1/10.0) * sqrt((PI_4_3 * cube(r0)) / mod->mass);
 
+            /* for the orbit, use dt = dtnbody/2 to make sure we get enough orbit precision. */
+            if (isnan(mod->orbit_timestep))
+                mod->orbit_timestep = mod->timestep / 2.0;
+
             break;
 
         case DwarfModelKing:
@@ -715,10 +719,11 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
             DBL_PARAM("mass",         &ctx->model.mass),
             INT_PARAM("nbody",        &ctx->model.nbody),
             DBL_PARAM("scale-radius", &ctx->model.scale_radius),
-            DBL_PARAM_DFLT("eps",     &ctx->model.eps, &nanN),
-            DBL_PARAM_DFLT("timestep",     &ctx->model.eps, &nanN),
-            DBL_PARAM_DFLT("time-dwarf",   &ctx->model.time_dwarf, &nanN),
-            DBL_PARAM_DFLT("time-orbit",   &ctx->model.time_orbit, &nanN),
+            DBL_PARAM_DFLT("eps",            &ctx->model.eps,        &nanN),
+            DBL_PARAM_DFLT("timestep",       &ctx->model.eps,        &nanN),
+            DBL_PARAM_DFLT("orbit-timestep", &ctx->model.eps,        &nanN),
+            DBL_PARAM_DFLT("time-dwarf",     &ctx->model.time_dwarf, &nanN),
+            DBL_PARAM_DFLT("time-orbit",     &ctx->model.time_orbit, &nanN),
             NULLPARAMETER
         };
 

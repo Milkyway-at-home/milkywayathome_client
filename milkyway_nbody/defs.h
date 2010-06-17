@@ -237,6 +237,7 @@ typedef struct
 
     /* calculated depending on model */
     real timestep;
+    real orbit_timestep;
     real eps;            /* potential softening parameter */
 
     /* model parameters */
@@ -302,7 +303,7 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_DISK { 0, NAN, NAN, NAN }
 #define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
-#define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN }
+#define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_CTX { EMPTY_POTENTIAL,  EMPTY_MODEL, NAN, NAN, NAN, FALSE, FALSE, 0, NAN, 0, NULL, NULL, NULL }
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
