@@ -9,9 +9,9 @@
 #include "code.h"
 #include <stdio.h>
 
-static bool treescan(nodeptr);           /* does force calculation */
+static bool treescan(const NBodyCtx*, nodeptr);           /* does force calculation */
 static bool subdivp(cellptr);            /* can cell be accepted? */
-static void gravsub(nodeptr);            /* compute grav interaction */
+static void gravsub(const NBodyCtx*, nodeptr);            /* compute grav interaction */
 
 /* HACKGRAV: evaluate gravitational field on body p; checks to be
  * sure self-interaction was handled correctly if intree is true.
@@ -37,7 +37,7 @@ void hackgrav(const NBodyCtx* ctx, bodyptr p, bool intree)
     CLRV(acc0);                 /* and total acceleration */
     n2bterm = nbcterm = 0;          /* count body & cell terms */
                   /* watch for tree-incest */
-    skipself = treescan((nodeptr) t.root);           /* scan tree from t.root */
+    skipself = treescan(ctx, (nodeptr) t.root);           /* scan tree from t.root */
     if (intree && !skipself)            /* did tree-incest occur? */
     {
         if (!ctx->allowIncest) /* treat as catastrophic? */
@@ -84,7 +84,7 @@ void hackgrav(const NBodyCtx* ctx, bodyptr p, bool intree)
  * node q, which is typically the t.root cell. Watches for tree
  * incest.
  */
-static bool treescan(nodeptr q)
+static bool treescan(const NBodyCtx* ctx, nodeptr q)
 {
     bool skipself = FALSE;
 
@@ -99,7 +99,7 @@ static bool treescan(nodeptr q)
                 skipself = TRUE;        /* then just skip it */
             else                /* not self-interaction */
             {
-                gravsub(q);                     /* so compute gravity */
+                gravsub(ctx, q);                     /* so compute gravity */
                 if (Type(q) == BODY)
                     st.n2bterm++;          /* count body-body */
                 else
@@ -132,7 +132,7 @@ static bool subdivp(cellptr q)
  * point pos0, and add to running totals phi0 and acc0.
  */
 
-static void gravsub(nodeptr q)
+static void gravsub(const NBodyCtx* ctx, nodeptr q)
 {
     real drab, phii, mor3;
     vector ai, quaddr;
@@ -143,7 +143,7 @@ static void gravsub(nodeptr q)
         SUBV(dr, Pos(q), pos0);                 /* then compute sep. */
         DOTVP(drsq, dr, dr);            /* and sep. squared */
     }
-    drsq += ctx.model.eps * ctx.model.eps;          /* use standard softening */
+    drsq += ctx->model.eps * ctx->model.eps;          /* use standard softening */
     drab = rsqrt(drsq);
     phii = Mass(q) / drab;
     mor3 = phii / drsq;
@@ -151,7 +151,7 @@ static void gravsub(nodeptr q)
     phi0 -= phii;                               /* add to total grav. pot. */
     ADDV(acc0, acc0, ai);                       /* ... and to total accel. */
 
-    if (ctx.usequad && Type(q) == CELL)             /* if cell, add quad term */
+    if (ctx->usequad && Type(q) == CELL)             /* if cell, add quad term */
     {
         dr5inv = 1.0 / (drsq * drsq * drab);    /* form dr^-5 */
         MULMV(quaddr, Quad(q), dr);             /* form Q * dr */
