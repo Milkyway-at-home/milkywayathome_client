@@ -9,7 +9,7 @@
 #include "code.h"
 #include <stdio.h>
 
-static bool treescan(const NBodyCtx*, nodeptr);           /* does force calculation */
+static bool treescan(const NBodyCtx*, NBodyState*, nodeptr);           /* does force calculation */
 static bool subdivp(cellptr);            /* can cell be accepted? */
 static void gravsub(const NBodyCtx*, nodeptr);            /* compute grav interaction */
 
@@ -23,7 +23,7 @@ static real phi0;                /* resulting potential */
 static vector acc0;              /* resulting acceleration */
 
 
-void hackgrav(const NBodyCtx* ctx, bodyptr p, bool intree)
+void hackgrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
 {
     vector externalacc;
     int n2bterm;    /* number 2-body of terms evaluated */
@@ -37,7 +37,7 @@ void hackgrav(const NBodyCtx* ctx, bodyptr p, bool intree)
     CLRV(acc0);                 /* and total acceleration */
     n2bterm = nbcterm = 0;          /* count body & cell terms */
                   /* watch for tree-incest */
-    skipself = treescan(ctx, (nodeptr) t.root);           /* scan tree from t.root */
+    skipself = treescan(ctx, st, (nodeptr) t.root);           /* scan tree from t.root */
     if (intree && !skipself)            /* did tree-incest occur? */
     {
         if (!ctx->allowIncest) /* treat as catastrophic? */
@@ -84,7 +84,7 @@ void hackgrav(const NBodyCtx* ctx, bodyptr p, bool intree)
  * node q, which is typically the t.root cell. Watches for tree
  * incest.
  */
-static bool treescan(const NBodyCtx* ctx, nodeptr q)
+static bool treescan(const NBodyCtx* ctx, NBodyState* st, nodeptr q)
 {
     bool skipself = FALSE;
 
@@ -101,9 +101,9 @@ static bool treescan(const NBodyCtx* ctx, nodeptr q)
             {
                 gravsub(ctx, q);                     /* so compute gravity */
                 if (Type(q) == BODY)
-                    st.n2bterm++;          /* count body-body */
+                    st->n2bterm++;          /* count body-body */
                 else
-                    st.nbcterm++;          /* count body-cell */
+                    st->nbcterm++;          /* count body-cell */
             }
             q = Next(q);            /* follow next link */
         }

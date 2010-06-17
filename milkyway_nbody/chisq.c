@@ -36,7 +36,7 @@ static size_t findmax(real* arr, size_t n)
 }
 
 
-real chisq(const NBodyCtx* ctx)
+real chisq(const NBodyCtx* ctx, NBodyState* st)
 {
 
     printf("Initializing likelihood calculator...");
@@ -46,6 +46,7 @@ real chisq(const NBodyCtx* ctx)
     int counttest = 1;
 
     const int nbody = ctx->model.nbody;
+    const bodyptr endp = st->bodytab + nbody;
 
     FILE* f;
 
@@ -76,14 +77,13 @@ real chisq(const NBodyCtx* ctx)
     printf("done\n");
 
     printf("Importing simulation results...");
-    for (p = st.bodytab; p < st.bodytab + nbody; p++)
+    for (p = st->bodytab; p < endp; p++)
     {
-
         x[counttest-1] = Pos(p)[0];
         y[counttest-1] = Pos(p)[1];
         z[counttest-1] = Pos(p)[2];
 
-        counttest++;
+        ++counttest;
     }
     printf("done\n");
 

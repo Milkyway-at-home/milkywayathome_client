@@ -15,7 +15,6 @@
 
 NBodyParams ps = { 0, };
 Tree t        = EMPTY_TREE;
-NBodyState st = EMPTY_STATE;
 
 char* headline = "Hierarchical N-body Code";   /* default id for run */
 
@@ -28,6 +27,7 @@ int main(int argc, char* argv[])
 {
     NBodyCtx ctx         = EMPTY_CTX;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
+    NBodyState st        = EMPTY_STATE;
 
     float chisqans = 0.0;
 
@@ -137,7 +137,7 @@ static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
         for (p = bodytab; p < endp; p++)
         {
             /* loop over all bodies */
-            hackgrav(ctx, p, Mass(p) > 0.0);     /* get force on each */
+            hackgrav(ctx, st, p, Mass(p) > 0.0);     /* get force on each */
             ++nfcalc;                       /* count force calcs */
             n2bcalc += st->n2bterm;          /* and 2-body terms */
             nbccalc += st->nbcterm;          /* and body-cell terms */
@@ -157,7 +157,7 @@ static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
     nfcalc = n2bcalc = nbccalc = 0;          /* zero counters */
     for (p = st->bodytab; p < endp; p++)     /* loop over bodies */
     {
-        hackgrav(ctx, p, Mass(p) > 0.0);   /* get force on each */
+        hackgrav(ctx, st, p, Mass(p) > 0.0);   /* get force on each */
         ++nfcalc;                     /* count force calcs */
         n2bcalc += st->n2bterm;           /* and 2-body terms */
         nbccalc += st->nbcterm;           /* and body-cell terms */
