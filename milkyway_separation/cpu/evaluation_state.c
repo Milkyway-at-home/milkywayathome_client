@@ -149,6 +149,12 @@ void initialize_integral_area(INTEGRAL_AREA* ia, INTEGRAL* integral, int number_
 
 void get_steps(INTEGRAL_AREA* ia, int* mu_step, int* nu_step, int* r_step)
 {
+#ifdef MILKYWAY
+        (*mu_step) = ia->mu_step;
+        (*nu_step) = ia->nu_step;
+        (*r_step) = ia->r_step;
+#else
+
     *r_step = ia->current_calculation % ia->r_steps;
 
     MW_DEBUG("r_step = [current: %ld] mod [r_steps: %d] = %d\n",
@@ -169,6 +175,7 @@ void get_steps(INTEGRAL_AREA* ia, int* mu_step, int* nu_step, int* r_step)
              ia->current_calculation,
              ia->r_steps, ia->nu_steps,
              *mu_step);
+#endif
 }
 
 void initialize_state(ASTRONOMY_PARAMETERS* ap, STAR_POINTS* sp, EVALUATION_STATE* es)

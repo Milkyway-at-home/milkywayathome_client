@@ -528,13 +528,13 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, EVALU
             }
 #ifndef MILKYWAY
             if (ia->current_calculation >= ia->max_calculation) break;
-            r_step_current = 0;
 #endif
+            r_step_current = 0;
         }
 #ifndef MILKYWAY
         if (ia->current_calculation >= ia->max_calculation) break;
-        nu_step_current = 0;
 #endif
+        nu_step_current = 0;
     }
     mu_step_current = 0;
 
