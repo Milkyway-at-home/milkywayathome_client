@@ -142,7 +142,7 @@ static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
             n2bcalc += st->n2bterm;          /* and 2-body terms */
             nbccalc += st->nbcterm;          /* and body-cell terms */
         }
-        output();               /* do initial output */
+        output(ctx, st);               /* do initial output */
     }
 
     for (p = bodytab; p < endp; p++) /* loop over all bodies */
@@ -169,6 +169,6 @@ static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
     }
     st->nstep++;           /* count another time step */
     st->tnow += dt;        /* finally, advance time */
-    output();             /* do major or minor output */
+    output(ctx, st);             /* do major or minor output */
 }
 

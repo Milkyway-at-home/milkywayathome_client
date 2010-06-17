@@ -44,30 +44,32 @@ static vector cmphase[2];    /* center of mass coordinates */
 static vector amvec;     /* angular momentum vector */
 
 /* OUTPUT: compute diagnostics and output data. */
-void output(void)
+void output(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
     vector lbR;
-    diagnostics();              /* compute std diagnostics */
-    if (ctx.tstop - st.tnow < 0.01 / ctx.freq)
-    {
-        printf("st.tnow = %f\n", st.tnow);
-        for (p = st.bodytab; p < st.bodytab + ctx.model.nbody; p++)
-        {
-            (lbR)[2] = sqrt(Pos(p)[0] * Pos(p)[0] + Pos(p)[1] * Pos(p)[1] + Pos(p)[2] * Pos(p)[2]);
-            (lbR)[1] = r2d(atan2(Pos(p)[2], sqrt((Pos(p)[0]) * (Pos(p)[0]) + Pos(p)[1] * Pos(p)[1])));
-            (lbR)[0] = r2d(atan2(Pos(p)[1], Pos(p)[0]));
+    const bodyptr endp = st->bodytab + ctx->model.nbody;
 
-            if ((lbR)[0] < 0)
+    diagnostics();              /* compute std diagnostics */
+    if (ctx->tstop - st->tnow < 0.01 / ctx->freq)
+    {
+        printf("st.tnow = %f\n", st->tnow);
+        for (p = st->bodytab; p < endp; p++)
+        {
+            lbR[2] = sqrt(Pos(p)[0] * Pos(p)[0] + Pos(p)[1] * Pos(p)[1] + Pos(p)[2] * Pos(p)[2]);
+            lbR[1] = r2d(atan2(Pos(p)[2], sqrt((Pos(p)[0]) * (Pos(p)[0]) + Pos(p)[1] * Pos(p)[1])));
+            lbR[0] = r2d(atan2(Pos(p)[1], Pos(p)[0]));
+
+            if (lbR[0] < 0)
             {
-                (lbR)[0] += 360.0;
+                lbR[0] += 360.0;
             }
 
-            out_2vectors(ctx.outfile, lbR, Vel(p));
+            out_2vectors(ctx->outfile, lbR, Vel(p));
         }
-        printf("\tParticle data written to file %s\n\n", ctx.outfilename);
-        fflush(ctx.outfile);             /* drain output buffer */
-        st.tout += 1.0 / ctx.freqout;     /* schedule next data out */
+        printf("\tParticle data written to file %s\n\n", ctx->outfilename);
+        fflush(ctx->outfile);             /* drain output buffer */
+        st->tout += 1.0 / ctx->freqout;     /* schedule next data out */
     }
 }
 
