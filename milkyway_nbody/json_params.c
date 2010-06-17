@@ -46,7 +46,7 @@ static void processHalo(Halo* h)
 
 static void processModel(DwarfModel* mod)
 {
-    const int r0 = mod->scale_radius;
+    const real r0 = mod->scale_radius;
 
     if (isnan(mod->time_dwarf) && isnan(mod->time_orbit))
         fail("At least one of the evolution times must be specified for the dwarf model\n");
@@ -57,10 +57,10 @@ static void processModel(DwarfModel* mod)
             /* If not set, and no default, it's calculated based on
              * other parameters. */
             if (isnan(mod->eps))
-                mod->eps = r0 / (10 * sqrt((real) mod->nbody));
+                mod->eps = r0 / (10.0 * sqrt((real) mod->nbody));
 
             if (isnan(mod->timestep))
-                mod->timestep = sqr(1/10.0) * sqrt( (PI_4_3 * cube(r0)) / mod->mass);
+                mod->timestep = sqr(1/10.0) * sqrt((PI_4_3 * cube(r0)) / mod->mass);
 
             break;
 
@@ -81,16 +81,28 @@ static void processModel(DwarfModel* mod)
 
 static void processInitialConditions(InitialConditions* ic)
 {
-    real lrad, brad;
+    real r, l, b;
+
     if (!ic->useGalC)
     {
-        /* convert coordinates depending on system used */
-        lrad = d2r( L(ic) );
-        brad = d2r( B(ic) );
+        /* We aren't given galactic coordinates, so convert them */
+        r = R(ic);
+        if (ic->useRadians)
+        {
+            l = L(ic);
+            b = B(ic);
+        }
+        else
+        {
+            l = (3.14159 * L(ic) / 180.0);
+            b = (3.14159 * B(ic) / 180.0);
+            //l = d2r( L(ic) );
+            //b = d2r( B(ic) );
+        }
 
-        X(ic) = R(ic) * cos(lrad) * cos(brad) - ic->sunGCDist;
-        Y(ic) = R(ic) * sin(lrad) * cos(brad);
-        Z(ic) = R(ic) * sin(brad);
+        X(ic) = r * cos(l) * cos(b) - ic->sunGCDist;
+        Y(ic) = r * sin(l) * cos(b);
+        Z(ic) = r * sin(b);
     }
 
 }
@@ -708,6 +720,7 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
             INT_PARAM("nbody",        &ctx->model.nbody),
             DBL_PARAM("scale-radius", &ctx->model.scale_radius),
             DBL_PARAM_DFLT("eps",     &ctx->model.eps, &nanN),
+            DBL_PARAM_DFLT("timestep",     &ctx->model.eps, &nanN),
             DBL_PARAM_DFLT("time-dwarf",   &ctx->model.time_dwarf, &nanN),
             DBL_PARAM_DFLT("time-orbit",   &ctx->model.time_orbit, &nanN),
             NULLPARAMETER
@@ -748,8 +761,8 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
             BOOL_PARAM("useGalC", &ic->useGalC),
             BOOL_PARAM_DFLT("angle-use-radians", &ic->useRadians, &defaultIC.useRadians),
             DBL_PARAM_DFLT("sun-gc-dist", &ic->sunGCDist, &defaultIC.sunGCDist),
-            VEC_PARAM("position", &ic->velocity),
-            VEC_PARAM("velocity", &ic->position),
+            VEC_PARAM("position", &ic->position),
+            VEC_PARAM("velocity", &ic->velocity),
             NULLPARAMETER
         };
 
