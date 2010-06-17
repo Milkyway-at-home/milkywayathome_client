@@ -56,11 +56,23 @@
  *                                                 etc
  */
 
+/*
+typedef enum
+{
+    BODY,
+    CELL
+} body_t; */
+
+#define BODY 01
+#define CELL 02
+
+typedef short body_t;
+
 /* NODE: data common to BODY and CELL structures. */
 
 typedef struct _node
 {
-    short type;             /* code for node type */
+    body_t type;             /* code for node type */
     real mass;              /* total mass of node */
     vector pos;             /* position of node */
     struct _node* next;     /* link to next force-calc */
@@ -72,8 +84,6 @@ typedef struct _node
 #define Next(x) (((nodeptr) (x))->next)
 
 /* BODY: data structure used to represent particles. */
-
-#define BODY 01                 /* type code for bodies */
 
 typedef struct
 {
@@ -90,8 +100,6 @@ typedef struct
 #define Phi(x)  (((bodyptr) (x))->phi)
 
 /* CELL: structure used to represent internal nodes of tree. */
-
-#define CELL 02                 /* type code for cells */
 
 #define NSUB (1 << NDIM)        /* subcells per cell */
 
@@ -190,11 +198,11 @@ typedef struct
 
 typedef struct
 {
-    bool useGalC;
-    bool useRadians;
-    real sunGCDist;
     vector position;     /* (x, y, z) if cartesian / useGalC, otherwise (r, l, b) */
     vector velocity;
+    real sunGCDist;
+    bool useGalC;
+    bool useRadians;
 } InitialConditions;
 
 /* TODO: Replace this */
@@ -238,37 +246,29 @@ typedef struct
  */
 typedef struct
 {
-    /* Actual parameters */
     Potential pot;
-    DwarfModel model;   /* dwarf model */
-
-    /* TODO: these should go away */
+    DwarfModel model;      /* dwarf model */
+    char* outfilename;     /* filename for snapshot output */
+    char* headline;        /* message describing calculation */
+    FILE* outfile;         /* file for snapshot output */
     real freq;
     real freqout;
-
-    /* Simulation settings */
+    real theta;            /* accuracy parameter: 0.0 => exact */
+    criterion_t criterion;
+    int seed;              /* random number seed */
     bool usequad;          /* use quadrupole corrections */
     bool allowIncest;
-    criterion_t criterion;
-    real theta;     /* accuracy parameter: 0.0 => exact */
-
-    /* Utilitarian type information */
-    int seed;             /* random number seed */
-    FILE* outfile;        /* file for snapshot output */
-    char* outfilename;    /* filename for snapshot output */
-    char* headline;       /* message describing calculation */
 } NBodyCtx;
 
 /* Mutable state used during an evaluation */
 typedef struct
 {
-    int n2bterm;    /* number 2-body of terms evaluated */
-    int nbcterm;    /* num of body-cell terms evaluated */
-    int nstep;      /* number of time-steps */
-
+    bodyptr bodytab;    /* points to array of bodies */
+    int n2bterm;        /* number 2-body of terms evaluated */
+    int nbcterm;        /* num of body-cell terms evaluated */
+    int nstep;          /* number of time-steps */
     real tout;
     real tnow;
-    bodyptr bodytab;      /* points to array of bodies */
 } NBodyState;
 
 typedef int generic_enum_t;  /* A general enum type. */
@@ -289,12 +289,12 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 #define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
-#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NAN, NAN, FALSE, FALSE, 0, NAN, 0, NULL, NULL, NULL }
+#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, NAN, NAN, NAN, 0, 0, FALSE, FALSE }
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 
-#define EMPTY_STATE { 0, 0, 0, NAN, NAN, NULL }
-#define EMPTY_INITIAL_CONDITIONS { FALSE, FALSE, NAN, { NAN, NAN, NAN }, { NAN, NAN, NAN } }
+#define EMPTY_STATE { NULL, 0, 0, 0, NAN, NAN }
+#define EMPTY_INITIAL_CONDITIONS { { NAN, NAN, NAN }, { NAN, NAN, NAN }, NAN, FALSE, FALSE }
 
 #define EMPTY_VECTOR { NAN, NAN, NAN }
 
