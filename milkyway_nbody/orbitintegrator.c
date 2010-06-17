@@ -31,6 +31,9 @@ void integrate()
     // Get the initial acceleration
     acceleration(x, acc);
 
+    printf("\nFinding time: time <= %g, += %g\n", ps.orbittstop, ps.dtorbit);
+
+
     // Loop through time
     for (time = 0; time <= ps.orbittstop; time += ps.dtorbit)
     {
@@ -61,6 +64,9 @@ void integrate()
     ps.VXC = -v[0];
     ps.VYC = -v[1];
     ps.VZC = -v[2];
+
+    printf("End of integration: XC = (%g %g %g)\n", ps.XC, ps.YC, ps.ZC);
+    printf("End of integration: VXC = (%g %g %g)\n", ps.VXC, ps.VYC, ps.VZC);
 
 }
 
@@ -106,5 +112,9 @@ void acceleration(real* pos, real* acc)
     acc[2] = - ( ( (vhalosqr2 * pos[2]) / (haloq * haloq * lpar) )
                  + ((bulge_mass * pos[2]) / rppPar)
                  + ((miya_mass * pos[2] * apar) / (qpar * spar15) ) );
+
+
+//    printf("End of acceleraton: { %g %g %g }\n", acc[0], acc[1], acc[2]);
+
 }
 

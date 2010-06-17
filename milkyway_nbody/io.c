@@ -69,8 +69,7 @@ void initoutput(NBodyCtx* ctx)
 
 }
 
-/*  * Counters and accumulators for output routines.
- */
+/* Counters and accumulators for output routines. */
 
 static real mtot;                /* total mass of N-body system */
 static real etot[3];             /* binding, kinetic, potential energy */
@@ -79,15 +78,12 @@ static matrix peten;     /* potential energy tensor */
 static vector cmphase[2];    /* center of mass coordinates */
 static vector amvec;     /* angular momentum vector */
 
-/*  * OUTPUT: compute diagnostics and output data.
- */
-
+/* OUTPUT: compute diagnostics and output data. */
 void output(void)
 {
     bodyptr p;
     vector lbR;
     diagnostics();              /* compute std diagnostics */
-    //printf("st.tnow = %f\n", st.tnow);
     if (ctx.tstop - st.tnow < 0.01 / ctx.freq)
     {
         printf("st.tnow = %f\n", st.tnow);
@@ -106,12 +102,11 @@ void output(void)
         }
         printf("\tParticle data written to file %s\n\n", ctx.outfilename);
         fflush(ctx.outfile);             /* drain output buffer */
-        st.tout += 1 / ctx.freqout;     /* schedule next data out */
+        st.tout += 1.0 / ctx.freqout;     /* schedule next data out */
     }
 }
 
-/*  * DIAGNOSTICS: compute various dynamical diagnostics.
- */
+/* DIAGNOSTICS: compute various dynamical diagnostics.  */
 
 static void diagnostics(void)
 {
@@ -226,6 +221,8 @@ const char* showCriterionT(const criterion_t x)
 {
     switch (x)
     {
+        case NEWCRITERION:
+            return "new criterion";
         case BH86:
             return "bh86";
         case SW93:
@@ -400,18 +397,18 @@ char* showDwarfModel(const DwarfModel* d)
                            "      nbody        = %d\n"
                            "      mass         = %g\n"
                            "      scale_radius = %g\n"
+                           "      timestep     = %g\n"
                            "      time_dwarf   = %g\n"
                            "      time_orbit   = %g\n"
-                           "      timestep     = %g\n"
                            "      eps          = %g\n"
                            "    };\n",
                      showDwarfModelT(d->type),
                      d->nbody,
                      d->mass,
                      d->scale_radius,
-                     d->time_dwarf,
-                     d->time_orbit,
                      d->timestep,
+                     d->time_orbit,
+                     d->time_dwarf,
                      d->eps))
     {
         fail("asprintf() failed\n");
@@ -455,37 +452,35 @@ char* showContext(const NBodyCtx* ctx)
     potBuf   = showPotential(&ctx->pot);
     modelBuf = showDwarfModel(&ctx->model);
 
-    if (0 > asprintf(&buf, "ctx = { \n"
-                           "  pot = %s\n"
-                           "  model = %s\n"
-                           "  headline    = %s\n"
-                           "  outfilename = %s\n"
-                           "  outfile     = %p\n"
-                           "  criterion   = %d\n"
-                           "  usequad     = %s\n"
-                           "  allowIncest = %s\n"
-                           "  seed        = %d\n"
-                           "  theta       = %g\n"
-                           "  tstop       = %g\n"
-                           "  dtout       = %g\n"
-                           "  freq        = %g\n"
-                           "  freqout     = %g\n"
-                           "};\n",
+    if (0 > asprintf(&buf,
+                     "ctx = { \n"
+                     "  pot = %s\n"
+                     "  model = %s\n"
+                     "  headline    = %s\n"
+                     "  outfilename = %s\n"
+                     "  outfile     = %p\n"
+                     "  criterion   = %s\n"
+                     "  usequad     = %s\n"
+                     "  allowIncest = %s\n"
+                     "  seed        = %d\n"
+                     "  theta       = %g\n"
+                     "  tstop       = %g\n"
+                     "  freq        = %g\n"
+                     "  freqout     = %g\n"
+                     "};\n",
                      potBuf,
                      modelBuf,
                      ctx->headline,
                      ctx->outfilename,
                      ctx->outfile,
-                     ctx->criterion,
+                     showCriterionT(ctx->criterion),
                      showBool(ctx->usequad),
                      showBool(ctx->allowIncest),
                      ctx->seed,
                      ctx->theta,
                      ctx->tstop,
-                     ctx->dtout,
                      ctx->freq,
-                     ctx->freqout
-            ))
+                     ctx->freqout))
     {
         fail("asprintf() failed\n");
     }

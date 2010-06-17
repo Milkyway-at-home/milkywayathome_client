@@ -115,9 +115,10 @@ static void postProcess(NBodyCtx* ctx)
     processPotential(&ctx->pot);
     processModel(&ctx->model);
 
-
     /* These other pieces are dependent on the others being set up
      * first */
+
+    printf("arstarst: %g\n", ctx->model.timestep);
     ctx->freqout = ctx->freq = inv(ctx->model.timestep);
 
 }
@@ -228,8 +229,6 @@ void initNBody(NBodyCtx* ctx, InitialConditions* ic, const int argc, const char*
     ctx->outfilename = outFileName;
 
     get_params_from_json(ctx, ic, obj);
-
-    printContext(ctx);
 
 }
 
@@ -596,7 +595,6 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
         {
             .pot = EMPTY_POTENTIAL,
             .tstop = NAN,
-            .dtout = NAN,
             .freq = NAN,
             .freqout = NAN,
             .usequad = TRUE,
@@ -789,14 +787,8 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
     /* deref the top level object should take care of freeing whatever's left */
     json_object_put(fileObj);
 
-    printInitialConditions(ic);
-
-    printContext(ctx);
     postProcess(ctx);
-    printf("\n\nPost processed:\n\n");
     processInitialConditions(ic);
-    printInitialConditions(ic);
-
 }
 
 

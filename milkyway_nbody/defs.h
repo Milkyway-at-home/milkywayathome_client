@@ -110,9 +110,9 @@ typedef struct
 /* use alternate criteria */
 typedef enum
 {
+    NEWCRITERION,  /* FIXME: What is this exactly? Rename it. */
     BH86,
-    SW93,
-    NEWCRITERION  /* FIXME: What is this exactly? Rename it. */
+    SW93
 } criterion_t;
 
 typedef enum
@@ -232,14 +232,14 @@ typedef struct
 {
     dwarf_model_t type;
     int nbody;
+    real time_dwarf;
+    real time_orbit;
 
     /* calculated depending on model */
     real timestep;
     real eps;            /* potential softening parameter */
 
     /* model parameters */
-    real time_dwarf;
-    real time_orbit;
     real mass;
     real scale_radius;
 } DwarfModel;
@@ -257,7 +257,6 @@ typedef struct
 
     /* TODO: these should go away */
     real tstop;
-    real dtout;
     real freq;
     real freqout;
 
@@ -304,12 +303,12 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 #define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN }
-#define EMPTY_CTX { EMPTY_POTENTIAL,  EMPTY_MODEL, NAN, NAN, NAN, NAN, FALSE, FALSE, 0, NAN, 0, NULL, NULL, NULL }
+#define EMPTY_CTX { EMPTY_POTENTIAL,  EMPTY_MODEL, NAN, NAN, NAN, FALSE, FALSE, 0, NAN, 0, NULL, NULL, NULL }
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 
 #define EMPTY_STATE { 0, 0, 0, NAN, NAN, NULL }
-#define EMPTY_INITIAL_CONDITIONS { FALSE, NAN, { NAN, NAN, NAN }, { NAN, NAN, NAN } }
+#define EMPTY_INITIAL_CONDITIONS { FALSE, FALSE, NAN, { NAN, NAN, NAN }, { NAN, NAN, NAN } }
 
 #define EMPTY_VECTOR { NAN, NAN, NAN }
 
