@@ -214,8 +214,8 @@ const char* showDiskT(const disk_t x)
 {
     switch (x)
     {
-        case MiaymotoNagaiDisk:
-            return "MiaymotoNagaiDisk";
+        case MiyamotoNagaiDisk:
+            return "MiyamotoNagaiDisk";
         case ExponentialDisk:
             return "ExponentialDisk";
         default:

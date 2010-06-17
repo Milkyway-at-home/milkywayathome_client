@@ -648,7 +648,7 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
         };
 
     /* Disk potential options */
-    const Parameter miaymotoParams[] =
+    const Parameter miyamotoParams[] =
         {
             DBL_PARAM("mass",         &ctx->pot.disk.mass),
             DBL_PARAM("scale-length", &ctx->pot.disk.scale_length),
@@ -665,10 +665,10 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
 
     /* Can't take the address of a literal. Also using pointers to
      * guarantee a consistent size. */
-    const disk_t mnd = MiaymotoNagaiDisk, expd = ExponentialDisk;
+    const disk_t mnd = MiyamotoNagaiDisk, expd = ExponentialDisk;
     const Parameter diskOptions[] =
         {
-            GROUP_PARAM_ITEM("miyamoto-nagai", &mnd,  miaymotoParams),
+            GROUP_PARAM_ITEM("miyamoto-nagai", &mnd,  miyamotoParams),
             GROUP_PARAM_ITEM("exponential",    &expd, exponentialParams),
             NULLPARAMETER
         };

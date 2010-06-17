@@ -140,7 +140,7 @@ typedef struct
 /* Supported disk models */
 typedef enum
 {
-    MiaymotoNagaiDisk = 1 << 2,
+    MiyamotoNagaiDisk = 1 << 2,
     ExponentialDisk   = 1 << 3
 } disk_t;
 
