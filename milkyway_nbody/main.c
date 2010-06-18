@@ -8,8 +8,6 @@
 #include "nbody.h"
 #include "json_params.h"
 
-Tree t = EMPTY_TREE;
-
 /* main: toplevel routine for hierarchical N-body code. */
 int main(int argc, char* argv[])
 {
@@ -24,9 +22,6 @@ int main(int argc, char* argv[])
 
     printContext(&ctx);
     printInitialConditions(&ic);
-
-    /* FIXME */
-    t.rsize = 4.0;
 
     // Calculate the reverse orbit
     printf("Calculating reverse orbit...");

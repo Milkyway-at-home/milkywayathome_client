@@ -8,10 +8,10 @@
 #include "nbody.h"
 #include "util.h"
 
-static void newtree(void);           /* flush existing tree */
-static cellptr makecell(void);           /* create an empty cell */
-static void expandbox(bodyptr, int);     /* set size of t.root cell */
-static void loadbody(bodyptr);           /* load body into tree */
+static void newtree(Tree*);           /* flush existing tree */
+static cellptr makecell(Tree*);           /* create an empty cell */
+static void expandbox(Tree*, bodyptr, int);     /* set size of t.root cell */
+static void loadbody(Tree*, bodyptr);           /* load body into tree */
 static int subindex(bodyptr, cellptr);       /* compute subcell index */
 static void hackcofm(const NBodyCtx* ctx, cellptr, real);     /* find centers of mass */
 static void setrcrit(const NBodyCtx*, cellptr, vector, real); /* set cell's crit. radius */
@@ -21,36 +21,40 @@ static void hackquad(cellptr);           /* compute quad moments */
 /* maketree: initialize tree structure for hierarchical force calculation
  * from body array btab, which contains ctx.nbody bodies.
  */
-void maketree(const NBodyCtx* ctx, bodyptr btab, int nbody)
+void maketree(const NBodyCtx* ctx, NBodyState* st, bodyptr btab, int nbody)
 {
     bodyptr p;
+    Tree* t = &st->tree;
 
-    newtree();                                  /* flush existing tree, etc */
-    t.root = makecell();              /* allocate the t.root cell */
-    CLRV(Pos(t.root));                /* initialize the midpoint */
-    expandbox(btab, nbody);                     /* and expand cell to fit */
-    t.maxlevel = 0;                               /* init count of levels */
+    newtree(t);                                 /* flush existing tree, etc */
+    t->root = makecell(t);                      /* allocate the t.root cell */
+    CLRV(Pos(t->root));                         /* initialize the midpoint */
+    expandbox(t, btab, nbody);                  /* and expand cell to fit */
+    t->maxlevel = 0;                            /* init count of levels */
     for (p = btab; p < btab + nbody; p++)       /* loop over bodies... */
+    {
         if (Mass(p) != 0.0)                     /* exclude test particles */
-            loadbody(p);                        /* and insert into tree */
-    hackcofm(ctx, t.root, t.rsize);                  /* find c-of-m coordinates */
-    threadtree((nodeptr) t.root, NULL);           /* add Next and More links */
-    if (ctx->usequad)                /* including quad moments? */
-        hackquad(t.root);                         /* assign Quad moments */
+            loadbody(t, p);                     /* and insert into tree */
+    }
+    hackcofm(ctx, t->root, t->rsize);           /* find c-of-m coordinates */
+    threadtree((nodeptr) t->root, NULL);        /* add Next and More links */
+    if (ctx->usequad)                           /* including quad moments? */
+        hackquad(t->root);                      /* assign Quad moments */
 }
 
 /* newtree: reclaim cells in tree, prepare to build new one. */
 static nodeptr freecell = NULL;              /* list of free cells */
 
-static void newtree(void)
+static void newtree(Tree* t)
 {
     static bool firstcall = TRUE;
     nodeptr p;
 
     if (! firstcall)                            /* tree data to reclaim? */
     {
-        p = (nodeptr) t.root;                     /* start with the t.root */
+        p = (nodeptr) t->root;                  /* start with the t.root */
         while (p != NULL)                       /* loop scanning tree */
+        {
             if (Type(p) == CELL)                /* found cell to free? */
             {
                 Next(p) = freecell;             /* link to front of */
@@ -59,20 +63,19 @@ static void newtree(void)
             }
             else                                /* skip over bodies */
                 p = Next(p);                    /* go on to next */
+        }
     }
     else                                        /* first time through */
         firstcall = FALSE;                      /* so just note it */
-    t.root = NULL;                                /* flush existing tree */
-    t.cellused = 0;                               /* reset cell count */
+    t->root = NULL;                             /* flush existing tree */
+    t->cellused = 0;                            /* reset cell count */
 }
 
-/*  * MAKECELL: return pointer to free cell.
- */
-
-static cellptr makecell(void)
+/* makecell: return pointer to free cell. */
+static cellptr makecell(Tree* t)
 {
     cellptr c;
-    int i;
+    size_t i;
 
     if (freecell == NULL)                       /* no free cells left? */
         c = (cellptr) allocate(sizeof(cell));   /* allocate a new one */
@@ -84,8 +87,8 @@ static cellptr makecell(void)
     Type(c) = CELL;                             /* initialize cell type */
     for (i = 0; i < NSUB; i++)                  /* loop over subcells */
         Subp(c)[i] = NULL;                      /* and empty each one */
-    t.cellused++;                                 /* count one more cell */
-    return (c);
+    t->cellused++;                              /* count one more cell */
+    return c;
 }
 
 /* EXPANDBOX: find range of coordinate values (with respect to t.root)
@@ -93,54 +96,58 @@ static cellptr makecell(void)
  * take advantage of exact representation of powers of two.
  */
 
-static void expandbox(bodyptr btab, int nbody)
+static void expandbox(Tree* t, bodyptr btab, int nbody)
 {
     real xyzmax;
     bodyptr p;
-    int k;
+    size_t k;
+
+    const cellptr root = t->root;
 
     xyzmax = 0.0;
-    for (p = btab; p < btab + nbody; p++)
-        for (k = 0; k < NDIM; k++)
-            xyzmax = MAX(xyzmax, rabs(Pos(p)[k] - Pos(t.root)[k]));
-
-    while (t.rsize < 2 * xyzmax)
+    for (p = btab; p < btab + nbody; ++p)
     {
-        t.rsize = 2 * t.rsize;
+        for (k = 0; k < NDIM; ++k)
+            xyzmax = MAX(xyzmax, rabs(Pos(p)[k] - Pos(root)[k]));
+    }
+
+    while (t->rsize < 2 * xyzmax)
+    {
+        t->rsize *= 2;
     }
 }
 
-/* LOADBODY: descend tree and insert body p in appropriate place. */
+/* loadbody: descend tree and insert body p in appropriate place. */
 
-static void loadbody(bodyptr p)
+static void loadbody(Tree* t, bodyptr p)
 {
     cellptr q, c;
     int qind, lev, k;
     real qsize;
 
-    q = t.root;                                   /* start with tree t.root */
-    qind = subindex(p, q);          /* get index of subcell */
-    qsize = t.rsize;                              /* keep track of cell size */
+    q = t->root;                                /* start with tree t.root */
+    qind = subindex(p, q);                      /* get index of subcell */
+    qsize = t->rsize;                           /* keep track of cell size */
     lev = 0;                                    /* count levels descended */
     while (Subp(q)[qind] != NULL)               /* loop descending tree */
     {
         if (Type(Subp(q)[qind]) == BODY)        /* reached a "leaf"? */
         {
-            c = makecell();                     /* allocate new cell */
-            for (k = 0; k < NDIM; k++)      /* initialize midpoint */
-                Pos(c)[k] = Pos(q)[k] +     /* offset from parent */
+            c = makecell(t);                    /* allocate new cell */
+            for (k = 0; k < NDIM; k++)          /* initialize midpoint */
+                Pos(c)[k] = Pos(q)[k] +         /* offset from parent */
                             (Pos(p)[k] < Pos(q)[k] ? - qsize : qsize) / 4;
             Subp(c)[subindex((bodyptr) Subp(q)[qind], c)] = Subp(q)[qind];
             /* put body in cell */
             Subp(q)[qind] = (nodeptr) c;        /* link cell in tree */
         }
         q = (cellptr) Subp(q)[qind];        /* advance to next level */
-        qind = subindex(p, q);          /* get index to examine */
-        qsize = qsize / 2;                      /* shrink current cell */
-        lev++;                                  /* count another level */
+        qind = subindex(p, q);              /* get index to examine */
+        qsize = qsize / 2;                  /* shrink current cell */
+        lev++;                              /* count another level */
     }
-    Subp(q)[qind] = (nodeptr) p;                /* found place, store p */
-    t.maxlevel = MAX(t.maxlevel, lev);      /* remember maximum level */
+    Subp(q)[qind] = (nodeptr) p;            /* found place, store p */
+    t->maxlevel = MAX(t->maxlevel, lev);    /* remember maximum level */
 }
 
 /*  * SUBINDEX: compute subcell index for body p in cell q.
@@ -148,13 +155,15 @@ static void loadbody(bodyptr p)
 
 static int subindex(bodyptr p, cellptr q)
 {
-    int ind, k;
+    size_t k, ind = 0;
 
-    ind = 0;                    /* accumulate subcell index */
-    for (k = 0; k < NDIM; k++)          /* loop over dimensions */
+    /* accumulate subcell index */
+    for (k = 0; k < NDIM; ++k)          /* loop over dimensions */
+    {
         if (Pos(q)[k] <= Pos(p)[k])     /* if beyond midpoint */
             ind += NSUB >> (k + 1);             /* skip over subcells */
-    return (ind);
+    }
+    return ind;
 }
 
 /* hackcofm: descend tree finding center-of-mass coordinates and
@@ -195,7 +204,7 @@ static void setrcrit(const NBodyCtx* ctx, cellptr p, vector cmpos, real psize)
     int k;
 
     if (ctx->theta == 0.0)               /* exact force calculation? */
-        rc = 2 * t.rsize;                /* always open cells */
+        rc = 2 * ctx->tree_rsize;        /* always open cells */
     else if (ctx->criterion == BH86)     /* use old BH criterion? */
         rc = psize / ctx->theta;         /* using size of cell */
     else if (ctx->criterion == SW93)     /* use S&W's criterion? */

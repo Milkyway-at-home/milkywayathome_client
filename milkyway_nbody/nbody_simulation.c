@@ -20,6 +20,8 @@ inline static void startrun(const NBodyCtx* ctx, const InitialConditions* ic, NB
 
     st->nstep = 0;                  /* start counting steps */
     st->tout  = st->tnow;           /* schedule first output */
+    st->tree.rsize = ctx->tree_rsize;
+
 }
 
 /* stepsystem: advance N-body system one time-step. */
@@ -38,7 +40,7 @@ inline static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
     if (st->nstep == 0)                 /* about to take 1st step? */
     {
         printf("Building tree...Starting Nbody simulation...\n");
-        maketree(ctx, bodytab, ctx->model.nbody);       /* build tree structure */
+        maketree(ctx, st, bodytab, ctx->model.nbody);       /* build tree structure */
         printf("Tree made\n");
         nfcalc = n2bcalc = nbccalc = 0;     /* zero counters */
         for (p = bodytab; p < endp; p++)
@@ -60,7 +62,7 @@ inline static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
         ADDV(Pos(p), Pos(p), dpos);     /* advance r by 1 step */
     }
 
-    maketree(ctx, bodytab, ctx->model.nbody);     /* build tree structure */
+    maketree(ctx, st, bodytab, ctx->model.nbody);     /* build tree structure */
     nfcalc = n2bcalc = nbccalc = 0;          /* zero counters */
     for (p = st->bodytab; p < endp; p++)     /* loop over bodies */
     {

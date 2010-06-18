@@ -37,7 +37,7 @@ void hackgrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
     CLRV(acc0);                 /* and total acceleration */
     n2bterm = nbcterm = 0;          /* count body & cell terms */
                   /* watch for tree-incest */
-    skipself = treescan(ctx, st, (nodeptr) t.root);           /* scan tree from t.root */
+    skipself = treescan(ctx, st, (nodeptr) st->tree.root);           /* scan tree from t.root */
     if (intree && !skipself)            /* did tree-incest occur? */
     {
         if (!ctx->allowIncest) /* treat as catastrophic? */

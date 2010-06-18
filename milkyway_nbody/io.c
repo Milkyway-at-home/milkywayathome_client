@@ -439,6 +439,7 @@ char* showContext(const NBodyCtx* ctx)
                      "  usequad     = %s\n"
                      "  allowIncest = %s\n"
                      "  seed        = %d\n"
+                     "  tree_rsize  = %g\n"
                      "  theta       = %g\n"
                      "  freq        = %g\n"
                      "  freqout     = %g\n"
@@ -452,6 +453,7 @@ char* showContext(const NBodyCtx* ctx)
                      showBool(ctx->usequad),
                      showBool(ctx->allowIncest),
                      ctx->seed,
+                     ctx->tree_rsize,
                      ctx->theta,
                      ctx->freq,
                      ctx->freqout))

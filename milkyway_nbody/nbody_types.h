@@ -254,6 +254,7 @@ typedef struct
     real freq;
     real freqout;
     real theta;            /* accuracy parameter: 0.0 => exact */
+    real tree_rsize;
     criterion_t criterion;
     int seed;              /* random number seed */
     bool usequad;          /* use quadrupole corrections */
@@ -263,6 +264,7 @@ typedef struct
 /* Mutable state used during an evaluation */
 typedef struct
 {
+    Tree tree;
     bodyptr bodytab;    /* points to array of bodies */
     int n2bterm;        /* number 2-body of terms evaluated */
     int nbcterm;        /* num of body-cell terms evaluated */
@@ -285,9 +287,9 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 #define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
-#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, NAN, NAN, NAN, 0, 0, FALSE, FALSE }
+#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, NAN, NAN, NAN, NAN, 0, 0, FALSE, FALSE }
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
-#define EMPTY_STATE { NULL, 0, 0, 0, NAN, NAN }
+#define EMPTY_STATE { EMPTY_TREE, NULL, 0, 0, 0, NAN, NAN }
 #define EMPTY_INITIAL_CONDITIONS { { NAN, NAN, NAN }, { NAN, NAN, NAN }, NAN, FALSE, FALSE }
 #define EMPTY_VECTOR { NAN, NAN, NAN }
 

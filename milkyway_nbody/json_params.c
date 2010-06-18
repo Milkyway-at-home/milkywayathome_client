@@ -608,6 +608,7 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
             .criterion = NEWCRITERION,
             .theta = 0.0,
             .seed = 0,
+            .tree_rsize = 4.0,
             .outfile = NULL,
             .outfilename = NULL,
             .headline = NULL
@@ -620,11 +621,6 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
             .sunGCDist  = 8.0,
             .position   = EMPTY_VECTOR,
             .velocity   = EMPTY_VECTOR
-        };
-
-    const Tree defaultTree =
-        {
-            .rsize = 4.0
         };
 
     /* Spherical potential options */
@@ -752,12 +748,8 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
             ENUM_PARAM_DFLT("criterion",             &ctx->criterion, &defaultCtx.criterion, (ReadEnum) readCriterion),
             OBJ_PARAM("potential", potentialItems),
             GROUP_PARAM("dwarf-model",               &ctx->model.type, dwarfModelOptions),
-            NULLPARAMETER
-        };
+            DBL_PARAM_DFLT("tree_rsize", &ctx->tree_rsize, &defaultCtx.tree_rsize),
 
-    const Parameter treeParams[] =
-        {
-            DBL_PARAM_DFLT("rsize", &t.rsize, &defaultTree.rsize),
             NULLPARAMETER
         };
 
@@ -774,7 +766,6 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
     const Parameter parameters[] =
         {
             OBJ_PARAM("nbody-context", nbodyCtxParams),
-            OBJ_PARAM("tree",          treeParams),
             OBJ_PARAM("initial-conditions", initialConditions),
             NULLPARAMETER
         };
