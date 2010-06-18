@@ -696,15 +696,15 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
             DBL_PARAM("x-flattening",   &ctx->pot.halo.flattenX),
             DBL_PARAM("y-flattening",   &ctx->pot.halo.flattenY),
             DBL_PARAM("z-flattening",   &ctx->pot.halo.flattenZ),
-            DBL_PARAM("triaxial angle", &ctx->pot.halo.triaxAngle),
+            DBL_PARAM("triaxial-angle", &ctx->pot.halo.triaxAngle),
             NULLPARAMETER
         };
 
     const halo_t logHaloT = LogarithmicHalo, nfwHaloT = NFWHalo, triHaloT = TriaxialHalo;
     const Parameter haloOptions[] =
         {
-            GROUP_PARAM_ITEM("nfw",         &logHaloT, nfwParams),
-            GROUP_PARAM_ITEM("logarithmic", &nfwHaloT, logarithmicParams),
+            GROUP_PARAM_ITEM("nfw",         &nfwHaloT, nfwParams),
+            GROUP_PARAM_ITEM("logarithmic", &logHaloT, logarithmicParams),
             GROUP_PARAM_ITEM("triaxial",    &triHaloT, triaxialParams),
             NULLPARAMETER
         };
