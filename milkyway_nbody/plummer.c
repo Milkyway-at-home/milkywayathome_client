@@ -4,8 +4,8 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#include "code.h"
-#include "defs.h"
+#include "nbody.h"
+#include "util.h"
 
 #define MFRAC  0.999                /* cut off 1-MFRAC of mass */
 

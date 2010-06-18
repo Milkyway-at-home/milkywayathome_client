@@ -19,10 +19,10 @@ typedef short int bool;
 #include <math.h>
 #include <stdlib.h>
 
-/* PROC, IPROC: pointers to procedures and integer-valued functions. */
 
-typedef void (*proc)();
-typedef int (*iproc)();
+#define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \
+                         exit(EXIT_FAILURE); }
+
 
 /*  ABS: returns the absolute value of its argument
  *  MAX: returns the argument with the highest value

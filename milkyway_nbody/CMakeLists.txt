@@ -26,14 +26,15 @@ project(milkyway_nbody)
 include_directories("${PROJECT_SOURCE_DIR}")
 
 set(nbody_src chisq.c
-              code.c
               grav.c
               io.c
               load.c
               orbitintegrator.c
+              nbody_simulation.c
               json_params.c
               plummer.c
-              util.c)
+              util.c
+              main.c)
 
 set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
 

@@ -1,14 +1,15 @@
 /* ************************************************************************** */
-/* CODE.H: define various extern things for code.c and io.c. */
+/* code.H: define various extern things for main.c and io.c. */
 /* */
 /* Copyright (c) 1993 by Joshua E. Barnes, Honolulu, HI. */
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#ifndef _CODE_H_
-#define _CODE_H_
+#ifndef _NBODY_H_
+#define _NBODY_H_
 
-#include "defs.h"
+#include "types.h"
+#include "stdinc.h"
 
 extern Tree t;
 
@@ -21,6 +22,8 @@ void maketree(const NBodyCtx*, bodyptr, int);    /* construct tree structure */
 void hackgrav(const NBodyCtx*, NBodyState*, bodyptr, bool);   /* compute force on body */
 void output(const NBodyCtx* ctx, NBodyState* st);  /* perform output operation */
 void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st);
+
+void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st);
 
 void integrate(const NBodyCtx* ctx, InitialConditions* ic);
 
@@ -52,5 +55,5 @@ char* showContext(const NBodyCtx*);
 void printContext(const NBodyCtx*);
 void printInitialConditions(const InitialConditions*);
 
-#endif /* _CODE_H_ */
+#endif /* _NBODY_H_ */
 

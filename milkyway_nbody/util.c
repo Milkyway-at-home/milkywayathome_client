@@ -5,9 +5,8 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#include "stdinc.h"
-#include "defs.h"
 #include "real.h"
+#include "nbody.h"
 #include "vectmath.h"
 #include <stdlib.h>
 #include <stdarg.h>

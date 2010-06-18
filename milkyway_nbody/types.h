@@ -7,8 +7,8 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#ifndef _DEFS_H_
-#define _DEFS_H_
+#ifndef _TYPES_H_
+#define _TYPES_H_
 
 #include "stdinc.h"
 #include "real.h"
@@ -274,21 +274,9 @@ typedef struct
 typedef int generic_enum_t;  /* A general enum type. */
 
 
-typedef void (*SphericalAccel) (vector, const Spherical*, const vector);
-typedef void (*HaloAccel) (vector, const Halo*, const vector);
-typedef void (*DiskAccel) (vector, const Disk*, const vector);
-
-typedef void (*AccelFunc) (vector, const void*, const vector);
-
-
 /* Note: 'type' should first field for all types. */
 #define SET_TYPE(x, y) (((Disk*)x)->type = y)
 #define NBODY_TYPEOF(x) (((Disk*)x)->type)
-
-
-#define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \
-                         exit(EXIT_FAILURE); }
-
 
 
 /* Useful initializers */
@@ -298,25 +286,26 @@ typedef void (*AccelFunc) (vector, const void*, const vector);
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 #define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, NAN, NAN, NAN, 0, 0, FALSE, FALSE }
-
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
-
 #define EMPTY_STATE { NULL, 0, 0, 0, NAN, NAN }
 #define EMPTY_INITIAL_CONDITIONS { { NAN, NAN, NAN }, { NAN, NAN, NAN }, NAN, FALSE, FALSE }
-
 #define EMPTY_VECTOR { NAN, NAN, NAN }
 
-/* Utility routines used in load.c and grav.c.  These are defined in
- * util.c, which must be compiled with the same choice of precision.
- */
 
-real cputime(void);              /* return elapsed CPU time */
-void* allocate(int);             /* allocate and zero memory */
-real distv(vector, vector);      /* distance between vectors */
-void error(char*, ...);          /* report error and exit */
-void eprintf(char*, ...);        /* printf to error FILE* */
-int compare (const void* a, const void* b);     /* comparison function used in chisq */
-real chisq();                  /* likelihood calculator */
+/* Acceleration functions for a given potential */
+typedef void (*SphericalAccel) (vector, const Spherical*, const vector);
+typedef void (*HaloAccel) (vector, const Halo*, const vector);
+typedef void (*DiskAccel) (vector, const Disk*, const vector);
 
-#endif /* _DEFS_H_ */
+/* Generic potential function */
+typedef void (*AccelFunc) (vector, const void*, const vector);
+
+
+/* PROC, IPROC: pointers to procedures and integer-valued functions. */
+typedef void (*proc)();
+typedef int (*iproc)();
+
+
+
+#endif /* _TYPES_H_ */
 

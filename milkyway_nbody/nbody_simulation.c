@@ -1,85 +1,29 @@
 /* ************************************************************************** */
-/* CODE.C: hierarchical N-body code. */
-/* */
+/* nbody_simulation.c: hierarchical N-body code. */
 /* Copyright (c) 1993 by Joshua E. Barnes, Honolulu, HI. */
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#include "code.h"
-#include "defs.h"
-#include <time.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include "nbody.h"
+#include "util.h"
 #include "json_params.h"
 
-Tree t = EMPTY_TREE;
-
-char* headline = "Hierarchical N-body Code";   /* default id for run */
-
-static void startrun(const NBodyCtx*, const InitialConditions*, NBodyState*);           /* initialize system state */
-static void stepsystem(const NBodyCtx*, NBodyState*);         /* advance by one time-step */
-
-/* MAIN: toplevel routine for hierarchical N-body code. */
-
-int main(int argc, char* argv[])
-{
-    NBodyCtx ctx         = EMPTY_CTX;
-    InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
-    NBodyState st        = EMPTY_STATE;
-
-    float chisqans = 0.0;
-
-    initNBody(&ctx, &ic, argc, (const char**) argv);
-
-    /* FIXME */
-    t.rsize = 4.0;
-
-    initoutput(&ctx);
-
-    printContext(&ctx);
-    printInitialConditions(&ic);
-
-    // Calculate the reverse orbit
-    printf("Calculating reverse orbit...");
-    integrate(&ctx, &ic);
-    printf("done\n");
-
-    printInitialConditions(&ic);
-
-    printf("Beginning run...\n");
-    startrun(&ctx, &ic, &st);                 /* set params, input data */
-
-    while (st.tnow < ctx.model.time_dwarf - 1.0 / (1024.0 * ctx.freq)) /* while not past ctx.tstop */
-        stepsystem(&ctx, &st);               /* advance N-body system */
-
-    printf("Step system done\n");
-    // Get the likelihood
-    //chisqans = chisq();
-    //printf("Run finished. chisq = %f\n", chisqans);
-
-    nbody_ctx_destroy(&ctx);               /* finish up output */
-
-    return 0;
-}
-
 /* startrun: startup hierarchical N-body code. */
-static void startrun(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
+inline static void startrun(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     if (ctx->model.nbody < 1)              /* check input value */
         error("startrun: ctx.model.nbody = %d is absurd\n", ctx->model.nbody);
 
     /* FIXME: Make seed be long anyway */
-    srand48((long) ctx->seed);    /* set random generator */
-    generatePlummer(ctx, ic, st);             /* make test model */
+    srand48((long) ctx->seed);       /* set random generator */
+    generatePlummer(ctx, ic, st);    /* make test model */
 
     st->nstep = 0;                  /* start counting steps */
-    st->tout = st->tnow;            /* schedule first output */
+    st->tout  = st->tnow;           /* schedule first output */
 }
 
-
 /* stepsystem: advance N-body system one time-step. */
-static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
+inline static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
     vector dvel, dpos;
@@ -105,10 +49,10 @@ static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
             n2bcalc += st->n2bterm;          /* and 2-body terms */
             nbccalc += st->nbcterm;          /* and body-cell terms */
         }
-        output(ctx, st);               /* do initial output */
+        output(ctx, st);                /* do initial output */
     }
 
-    for (p = bodytab; p < endp; p++) /* loop over all bodies */
+    for (p = bodytab; p < endp; p++)    /* loop over all bodies */
     {
         MULVS(dvel, Acc(p), 0.5 * dt);  /* get velocity increment */
         ADDV(Vel(p), Vel(p), dvel);     /* advance v by 1/2 step */
@@ -125,13 +69,26 @@ static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
         n2bcalc += st->n2bterm;           /* and 2-body terms */
         nbccalc += st->nbcterm;           /* and body-cell terms */
     }
+
     for (p = bodytab; p < endp; p++) /* loop over all bodies */
     {
         MULVS(dvel, Acc(p), 0.5 * dt);          /* get velocity increment */
         ADDV(Vel(p), Vel(p), dvel);             /* advance v by 1/2 step */
     }
+
     st->nstep++;           /* count another time step */
     st->tnow += dt;        /* finally, advance time */
     output(ctx, st);             /* do major or minor output */
+}
+
+
+void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
+{
+    const real tstop = ctx->model.time_dwarf - 1.0 / (1024.0 * ctx->freq);
+
+    startrun(ctx, ic, st);
+
+    while (st->tnow < tstop)
+        stepsystem(ctx, st);               /* advance N-body system */
 }
 

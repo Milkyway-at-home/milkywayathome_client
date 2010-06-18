@@ -5,8 +5,8 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#include "defs.h"
-#include "code.h"
+#include "nbody.h"
+#include "util.h"
 
 static void newtree(void);           /* flush existing tree */
 static cellptr makecell(void);           /* create an empty cell */

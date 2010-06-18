@@ -6,8 +6,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "defs.h"
-#include "code.h"
+#include "nbody.h"
 
 /* CHECKME: order of operations and effect on precision, and where can
  * we share divisions and such */

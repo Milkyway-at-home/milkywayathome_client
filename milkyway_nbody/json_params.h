@@ -23,7 +23,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <popt.h>
 #include <json/json.h>
-#include "defs.h"
 
 /* function read a named field into an enum */
 /* :: (Enum a) => String -> a */

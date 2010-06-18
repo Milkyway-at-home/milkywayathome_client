@@ -5,8 +5,8 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#include "defs.h"
-#include "code.h"
+#include "nbody.h"
+#include "util.h"
 #include <stdio.h>
 
 static bool treescan(const NBodyCtx*, NBodyState*, nodeptr);           /* does force calculation */

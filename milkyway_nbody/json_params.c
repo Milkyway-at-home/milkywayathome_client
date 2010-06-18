@@ -20,9 +20,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string.h>
 #include <assert.h>
-#include "code.h"
+#include "nbody.h"
 #include "json_params.h"
-#include "defs.h"
 
 /* TODO: wuh wuh windows */
 #include <unistd.h>
@@ -126,7 +125,7 @@ static void postProcess(NBodyCtx* ctx)
 }
 
 
-/* Read command line arguments and initialize the context and state */
+/* Read command line arguments and initialize the context */
 void initNBody(NBodyCtx* ctx, InitialConditions* ic, const int argc, const char** argv)
 {
     poptContext context;

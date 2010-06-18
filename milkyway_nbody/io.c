@@ -7,7 +7,8 @@
 /* ************************************************************************** */
 
 #define _GNU_SOURCE
-#include "code.h"
+#include "nbody.h"
+#include "util.h"
 
 static void diagnostics(const NBodyCtx*, const NBodyState*);
 static void in_int(FILE*, int*);
