@@ -5,52 +5,67 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "defs.h"
 #include "code.h"
 
-inline static void acceleration(const NBodyCtx* ctx, real* pos, real* acc)
+/* CHECKME: order of operations and effect on precision, and where can
+ * we share divisions and such */
+
+/* gets negative of the acceleration vector of this disk component */
+static void miyamotoNagaiAccel(vector acc, const Disk* disk, const vector pos)
 {
-    // The external potential
+    const real a    = disk->scale_length;
+    const real b    = disk->scale_height;
+    const real zp   = sqrt( sqr(pos[2]) + sqr(b) );
+    const real azp  = a + zp;
+    const real rth  = pow( sqr(pos[0]) + sqr(pos[1]) + sqr(azp), 1.5);
 
-    real miya_ascal = 6.5;
-    real miya_bscal = 0.26;
-    real miya_mass = 4.45865888E5;
-    real plu_rc = 0.7;
-    real bulge_mass = 1.52954402E5;
-    real vhalo = 73;
-    real haloq = 1.0;
-    real halod = 12.0;
+    const real arst = disk->mass / rth;
 
-    real apar, qpar, spar, ppar, lpar, rpar, rcyl;
-    real vhalosqr2, rppPar, spar15;
+    acc[0] = disk->mass * pos[0] / rth;
+    acc[1] = disk->mass * pos[1] / rth;
+    acc[2] = disk->mass * pos[2] * azp / (zp * rth);
+}
 
-    rcyl = sqrt(pos[0] * pos[0] + pos[1] * pos[1]);
-    qpar = sqrt(pos[2] * pos[2] + miya_bscal * miya_bscal);
-    apar = miya_ascal + qpar;
-    spar = (pos[0] * pos[0]) + (pos[1] * pos[1]) + ((miya_ascal + qpar) * (miya_ascal + qpar));
-    ppar = sqrt ((pos[0] * pos[0]) + (pos[1] * pos[1]) + (pos[2] * pos[2])) + plu_rc;
-    rpar = ppar - plu_rc;
-    lpar = (rcyl * rcyl) + ((pos[2] / haloq) * (pos[2] / haloq)) + (halod * halod);
+static void logHaloAccel(vector acc, const Halo* halo, const vector pos)
+{
+    const real tvsqr = 2.0 * sqr(halo->vhalo);
+    const real qsqr  = sqr(halo->flattenZ);
+    const real d     = halo->scale_length;
+    const real zsqr  = sqr(pos[2]);
 
+    const real arst  = sqr(d) + sqr(pos[0]) + sqr(pos[1]);
+    const real denom = arst + zsqr / qsqr;
 
-    vhalosqr2 = 2.0 * vhalo * vhalo;
-    rppPar = rpar * ppar * ppar;
-    spar15 = pow(spar, 1.5);
+    acc[0] = tvsqr * pos[0] / denom;
+    acc[1] = tvsqr * pos[1] / denom;
+    acc[2] = tvsqr * pos[2] / (qsqr * arst + zsqr);
+}
 
+static void sphericalAccel(vector acc, const Spherical* sph, const vector pos)
+{
+    const real r     = sqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
+    const real denom = r * sqr(sph->scale + r);
 
-    /* This function returns the acceleration vector */
-    acc[0] = - ( ( (vhalosqr2 * pos[0]) / lpar )
-                 + ((bulge_mass * pos[0]) / rppPar )
-                 + ((miya_mass * pos[0]) / spar15 ) );
+    acc[0] = sph->mass * pos[0] / denom;
+    acc[1] = sph->mass * pos[1] / denom;
+    acc[2] = sph->mass * pos[2] / denom;
+}
 
-    acc[1] = - ( ( (vhalosqr2 * pos[1]) / lpar )
-                 + ((bulge_mass * pos[1]) / rppPar )
-                 + ((miya_mass * pos[1]) / spar15 ) );
+inline static void acceleration(const NBodyCtx* ctx, const real* pos, real* acc)
+{
+    vector acc1 = { 0.0, 0.0, 0.0 };
+    vector acc2 = { 0.0, 0.0, 0.0 };
+    vector acc3 = { 0.0, 0.0, 0.0 };
 
-    acc[2] = - ( ( (vhalosqr2 * pos[2]) / (haloq * haloq * lpar) )
-                 + ((bulge_mass * pos[2]) / rppPar)
-                 + ((miya_mass * pos[2] * apar) / (qpar * spar15) ) );
+    sphericalAccel(acc1, ctx->pot.sphere, pos);
+    miyamotoNagaiAccel(acc2, &ctx->pot.disk, pos);
+    logHaloAccel(acc3, &ctx->pot.halo, pos);
 
+    acc[0] = - (acc1[0] + acc2[0] + acc3[0]);
+    acc[1] = - (acc1[1] + acc2[1] + acc3[1]);
+    acc[2] = - (acc1[2] + acc2[2] + acc3[2]);
 }
 
 

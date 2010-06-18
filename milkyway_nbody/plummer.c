@@ -33,14 +33,14 @@ static void pickshell(vector vec, real rad)
  */
 void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
-    printf("Initializing plummer model...");
+    printf("Initializing plummer model...\n");
     real rsc, vsc, r, v, x, y;
     vector cmr, cmv;
     vector rshift, vshift, scaledrshift, scaledvshift;
 
     const real rnbody = (real) ctx->model.nbody;
-    const real mass = ctx->model.mass;
-    const real mpp = mass / rnbody;     /* mass per particle */
+    const real mass   = ctx->model.mass;
+    const real mpp    = mass / rnbody;     /* mass per particle */
     bodyptr p, endp;
 
     // The coordinates to shift the plummer sphere by

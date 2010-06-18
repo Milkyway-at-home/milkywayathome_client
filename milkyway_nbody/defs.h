@@ -273,6 +273,14 @@ typedef struct
 
 typedef int generic_enum_t;  /* A general enum type. */
 
+
+typedef void (*SphericalAccel) (vector, const Spherical*, const vector);
+typedef void (*HaloAccel) (vector, const Halo*, const vector);
+typedef void (*DiskAccel) (vector, const Disk*, const vector);
+
+typedef void (*AccelFunc) (vector, const void*, const vector);
+
+
 /* Note: 'type' should first field for all types. */
 #define SET_TYPE(x, y) (((Disk*)x)->type = y)
 #define NBODY_TYPEOF(x) (((Disk*)x)->type)

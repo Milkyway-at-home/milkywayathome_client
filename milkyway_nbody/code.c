@@ -45,6 +45,8 @@ int main(int argc, char* argv[])
     integrate(&ctx, &ic);
     printf("done\n");
 
+    printInitialConditions(&ic);
+
     printf("Beginning run...\n");
     startrun(&ctx, &ic, &st);                 /* set params, input data */
 
