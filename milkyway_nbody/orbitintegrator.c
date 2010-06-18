@@ -17,6 +17,36 @@ static void exponentialDiskAccel(vector acc, const Disk* disk, const vector pos)
     fail("Implement me!\n");
 }
 
+/* TODO: Sharing between potential and accel functiosn */
+
+/* Pure functions are the best ones */
+real logHaloPhi(const Halo* halo, const vector pos)
+{
+    const real tvsqr = 2.0 * sqr(halo->vhalo);
+    const real qsqr  = sqr(halo->flattenZ);
+    const real d     = halo->scale_length;
+    const real zsqr  = sqr(pos[2]);
+
+    return sqr(halo->vhalo) * log( sqr(pos[0]) + sqr(pos[1]) + (zsqr / qsqr) + sqr(d) );
+}
+
+real miyamotoNagaiPhi(const Disk* disk, const vector pos)
+{
+    const real a   = disk->scale_length;
+    const real b   = disk->scale_height;
+    const real zp  = sqrt( sqr(pos[2]) + sqr(b) );
+    const real azp = a + zp;
+    const real rp  = sqrt( sqr(pos[0]) + sqr(pos[1]) +  sqr(azp) );
+
+    return -disk->mass / rp;
+}
+
+real sphericalPhi(const Spherical* sph, const vector pos)
+{
+    const real r = sqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
+    return -sph->mass / (r + sph->scale);
+}
+
 /* gets negative of the acceleration vector of this disk component */
 static void miyamotoNagaiAccel(vector acc, const Disk* disk, const vector pos)
 {

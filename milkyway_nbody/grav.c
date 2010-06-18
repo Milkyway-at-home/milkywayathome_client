@@ -52,29 +52,11 @@ void hackgrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
 
     INCADDV(acc0, externalacc);
 
-    /* TODO: Potential */
+    /* TODO: Sharing */
 
-    static real miya_ascal = 6.5;
-    static real miya_bscal = 0.26;
-    static real miya_mass = 4.45865888E5;
-    static real plu_rc = 0.7;
-    static real plu_mass = 1.52954402E5;
-    static real vhalo = 73;
-    static real haloq = 1.0;
-    static real halod = 12.0;
-
-    static real apar, qpar, spar, ppar, lpar, rpar, rcyl;
-
-    rcyl = sqrt(Pos(p)[0] * Pos(p)[0] + Pos(p)[1] * Pos(p)[1]);
-    qpar = sqrt(Pos(p)[2] * Pos(p)[2] + miya_bscal * miya_bscal);
-    apar = miya_ascal + qpar;
-    spar = (Pos(p)[0] * Pos(p)[0]) + (Pos(p)[1] * Pos(p)[1]) + ((miya_ascal + qpar) * (miya_ascal + qpar));
-    ppar = sqrt ((Pos(p)[0] * Pos(p)[0]) + (Pos(p)[1] * Pos(p)[1]) + (Pos(p)[2] * Pos(p)[2])) + plu_rc;
-    rpar = ppar - plu_rc;
-    lpar = (rcyl * rcyl) + ((Pos(p)[2] / haloq) * (Pos(p)[2] / haloq)) + (halod * halod);
-
-    phi0 -= (-(miya_mass) / sqrt(spar)) + (-(plu_mass) / ppar) + (vhalo * vhalo * log(lpar));
-
+    phi0 -=   miyamotoNagaiPhi(&ctx->pot.disk, Pos(p))
+            + sphericalPhi(&ctx->pot.sphere[0], Pos(p))
+            + logHaloPhi(&ctx->pot.halo, Pos(p));
 
     Phi(p) = phi0;              /* store total potential */
     SETV(Acc(p), acc0);         /* and acceleration */
