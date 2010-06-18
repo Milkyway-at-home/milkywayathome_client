@@ -6,8 +6,6 @@
 /* ************************************************************************** */
 
 #include "nbody.h"
-#include "types.h"
-#include "stdinc.h"
 #include "json_params.h"
 
 Tree t = EMPTY_TREE;

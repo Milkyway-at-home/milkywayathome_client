@@ -8,7 +8,7 @@
 #ifndef _NBODY_H_
 #define _NBODY_H_
 
-#include "types.h"
+#include "nbody_types.h"
 #include "stdinc.h"
 
 extern Tree t;
