@@ -47,7 +47,12 @@ void hackgrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
         treeincest = TRUE;          /* don't repeat warning */
     }
 
-// Adding the external potential
+    /* Adding the external potential */
+    acceleration(ctx, Pos(p), externalacc);
+
+    INCADDV(acc0, externalacc);
+
+    /* TODO: Potential */
 
     static real miya_ascal = 6.5;
     static real miya_bscal = 0.26;
@@ -70,14 +75,9 @@ void hackgrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
 
     phi0 -= (-(miya_mass) / sqrt(spar)) + (-(plu_mass) / ppar) + (vhalo * vhalo * log(lpar));
 
-    externalacc[0] = - ( ( (2.0 * vhalo * vhalo * Pos(p)[0]) / (lpar) ) + ((plu_mass * Pos(p)[0]) / (rpar * ppar * ppar) ) + ((miya_mass * Pos(p)[0]) / (pow(spar, 1.5)) ) );
-    externalacc[1] = - ( ( (2.0 * vhalo * vhalo * Pos(p)[1]) / (lpar) ) + ((plu_mass * Pos(p)[1]) / (rpar * ppar * ppar) ) + ((miya_mass * Pos(p)[1]) / (pow(spar, 1.5)) ) );
-    externalacc[2] = - ( ( (2.0 * vhalo * vhalo * Pos(p)[2]) / (haloq * haloq * lpar) ) + ((plu_mass * Pos(p)[2]) / (rpar * ppar * ppar) ) + ( (miya_mass * Pos(p)[2] * apar) / (qpar * pow(spar, 1.5)) ) );
-
-    ADDV(acc0, acc0, externalacc);
 
     Phi(p) = phi0;              /* store total potential */
-    SETV(Acc(p), acc0);             /* and acceleration */
+    SETV(Acc(p), acc0);         /* and acceleration */
 }
 
 /* treescan: iterative routine to do force calculation, starting with

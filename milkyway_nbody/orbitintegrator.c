@@ -66,7 +66,7 @@ static void sphericalAccel(vector acc, const Spherical* sph, const vector pos)
     acc[2] = sph->mass * pos[2] / denom;
 }
 
-inline static void acceleration(const NBodyCtx* ctx, const real* pos, real* acc)
+inline void acceleration(const NBodyCtx* ctx, const real* pos, real* acc)
 {
     /* lookup table for functions for calculating accelerations */
     static const HaloAccel haloFuncs[] = { [LogarithmicHalo] = logHaloAccel,

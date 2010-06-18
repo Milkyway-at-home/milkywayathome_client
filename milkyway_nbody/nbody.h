@@ -25,6 +25,8 @@ void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 
 void integrate(const NBodyCtx* ctx, InitialConditions* ic);
 
+void acceleration(const NBodyCtx* ctx, const real* pos, real* acc);
+
 /* Utility routines used in code.c and io.c.  These are defined in util.c
  * and getparam.c, which must be compiled with same choice of precision.
  */
