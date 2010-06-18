@@ -12,20 +12,34 @@
 /* CHECKME: order of operations and effect on precision, and where can
  * we share divisions and such */
 
+
+static void exponentialDiskAccel(vector acc, const Disk* disk, const vector pos)
+{
+    fail("Implement me!\n");
+}
+
 /* gets negative of the acceleration vector of this disk component */
 static void miyamotoNagaiAccel(vector acc, const Disk* disk, const vector pos)
 {
-    const real a    = disk->scale_length;
-    const real b    = disk->scale_height;
-    const real zp   = sqrt( sqr(pos[2]) + sqr(b) );
-    const real azp  = a + zp;
-    const real rth  = pow( sqr(pos[0]) + sqr(pos[1]) + sqr(azp), 1.5);
-
-    const real arst = disk->mass / rth;
+    const real a   = disk->scale_length;
+    const real b   = disk->scale_height;
+    const real zp  = sqrt( sqr(pos[2]) + sqr(b) );
+    const real azp = a + zp;
+    const real rth = pow( sqr(pos[0]) + sqr(pos[1]) + sqr(azp), 1.5);
 
     acc[0] = disk->mass * pos[0] / rth;
     acc[1] = disk->mass * pos[1] / rth;
     acc[2] = disk->mass * pos[2] * azp / (zp * rth);
+}
+
+static void nfwHaloAccel(vector acc, const Halo* halo, const vector pos)
+{
+    fail("Implement me!\n");
+}
+
+static void triaxialHaloAccel(vector acc, const Halo* halo, const vector pos)
+{
+    fail("Implement me!\n");
 }
 
 static void logHaloAccel(vector acc, const Halo* halo, const vector pos)
@@ -55,17 +69,31 @@ static void sphericalAccel(vector acc, const Spherical* sph, const vector pos)
 
 inline static void acceleration(const NBodyCtx* ctx, const real* pos, real* acc)
 {
+    /* lookup table for functions for calculating accelerations */
+    static const HaloAccel haloFuncs[] = { [LogarithmicHalo] = logHaloAccel,
+                                           [NFWHalo]         = nfwHaloAccel,
+                                           [TriaxialHalo]    = triaxialHaloAccel };
+
+    static const DiskAccel diskFuncs[] = { [ExponentialDisk]   = exponentialDiskAccel,
+                                           [MiyamotoNagaiDisk] = miyamotoNagaiAccel    };
+
+    static const SphericalAccel sphFuncs[] = { [SphericalPotential] = sphericalAccel };
+
     vector acc1 = { 0.0, 0.0, 0.0 };
     vector acc2 = { 0.0, 0.0, 0.0 };
     vector acc3 = { 0.0, 0.0, 0.0 };
 
-    sphericalAccel(acc1, ctx->pot.sphere, pos);
-    miyamotoNagaiAccel(acc2, &ctx->pot.disk, pos);
-    logHaloAccel(acc3, &ctx->pot.halo, pos);
+    /* Use the type of potential to index into the table, and use the
+     * appropriate function */
+    diskFuncs[ctx->pot.disk.type](acc1, &ctx->pot.disk, pos);
+    haloFuncs[ctx->pot.halo.type](acc2, &ctx->pot.halo, pos);
+    sphFuncs[ctx->pot.sphere[0].type](acc3, &ctx->pot.sphere[0], pos);
 
-    acc[0] = - (acc1[0] + acc2[0] + acc3[0]);
-    acc[1] = - (acc1[1] + acc2[1] + acc3[1]);
-    acc[2] = - (acc1[2] + acc2[2] + acc3[2]);
+    /* add the resulting vectors, and - since we want the negative
+     * gradient of the potential */
+    acc[0] = -(acc1[0] + acc2[0] + acc3[0]);
+    acc[1] = -(acc1[1] + acc2[1] + acc3[1]);
+    acc[2] = -(acc1[2] + acc2[2] + acc3[2]);
 }
 
 

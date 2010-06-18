@@ -125,7 +125,7 @@ typedef enum
 
 typedef enum
 {
-    SphericalPotential = 1 << 1
+    SphericalPotential
 } spherical_t;
 
 /* Spherical potential */
@@ -140,8 +140,8 @@ typedef struct
 /* Supported disk models */
 typedef enum
 {
-    MiyamotoNagaiDisk = 1 << 2,
-    ExponentialDisk   = 1 << 3
+    MiyamotoNagaiDisk,
+    ExponentialDisk
 } disk_t;
 
 typedef struct
@@ -155,9 +155,9 @@ typedef struct
 /* Supported halo models */
 typedef enum
 {
-    LogarithmicHalo = 1 << 4,
-    NFWHalo         = 1 << 5,
-    TriaxialHalo    = 1 << 6
+    LogarithmicHalo,
+    NFWHalo,
+    TriaxialHalo
 } halo_t;
 
 typedef struct
