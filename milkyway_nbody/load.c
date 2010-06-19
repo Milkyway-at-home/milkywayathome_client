@@ -178,7 +178,8 @@ static void hackcofm(const NBodyCtx* ctx, cellptr p, real psize)
 
     Mass(p) = 0.0;                              /* init total mass... */
     CLRV(cmpos);                                /* and center of mass */
-    for (i = 0; i < NSUB; i++)                  /* loop over subnodes */
+    for (i = 0; i < NSUB; ++i)                  /* loop over subnodes */
+    {
         if ((q = Subp(p)[i]) != NULL)           /* does subnode exist? */
         {
             if (Type(q) == CELL)        /* and is it a cell? */
@@ -187,11 +188,15 @@ static void hackcofm(const NBodyCtx* ctx, cellptr p, real psize)
             MULVS(tmpv, Pos(q), Mass(q));       /* weight pos by mass */
             ADDV(cmpos, cmpos, tmpv);           /* sum c-of-m position */
         }
+    }
+
     DIVVS(cmpos, cmpos, Mass(p));               /* rescale cms position */
     for (k = 0; k < NDIM; k++)          /* check tree structure... */
+    {
         if (cmpos[k] < Pos(p)[k] - psize / 2 || /* if out of bounds */
                 Pos(p)[k] + psize / 2 <= cmpos[k]) /* in either direction */
             error("hackcofm: tree structure error\n");
+    }
     setrcrit(ctx, p, cmpos, psize);                  /* set critical radius */
     SETV(Pos(p), cmpos);            /* and center-of-mass pos */
 }
@@ -203,6 +208,7 @@ static void setrcrit(const NBodyCtx* ctx, cellptr p, vector cmpos, real psize)
     real rc, bmax2, dmin;
     int k;
 
+    /* CHECKME: Is tree_rsize here supposed to be changing? */
     if (ctx->theta == 0.0)               /* exact force calculation? */
         rc = 2 * ctx->tree_rsize;        /* always open cells */
     else if (ctx->criterion == BH86)     /* use old BH criterion? */
@@ -210,7 +216,7 @@ static void setrcrit(const NBodyCtx* ctx, cellptr p, vector cmpos, real psize)
     else if (ctx->criterion == SW93)     /* use S&W's criterion? */
     {
         bmax2 = 0.0;                     /* compute max distance^2 */
-        for (k = 0; k < NDIM; k++)       /* loop over dimensions */
+        for (k = 0; k < NDIM; ++k)       /* loop over dimensions */
         {
             dmin = cmpos[k] - (Pos(p)[k] - psize / 2);
             /* dist from 1st corner */

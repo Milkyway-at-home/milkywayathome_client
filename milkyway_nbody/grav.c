@@ -53,6 +53,8 @@ void hackgrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
     INCADDV(acc0, externalacc);
 
     /* TODO: Sharing */
+    /* CHECKME: Only the acceleration here seems to have an effect on
+     * the results */
 
     phi0 -=   miyamotoNagaiPhi(&ctx->pot.disk, Pos(p))
             + sphericalPhi(&ctx->pot.sphere[0], Pos(p))
@@ -60,6 +62,7 @@ void hackgrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
 
     Phi(p) = phi0;              /* store total potential */
     SETV(Acc(p), acc0);         /* and acceleration */
+
 }
 
 /* treescan: iterative routine to do force calculation, starting with
