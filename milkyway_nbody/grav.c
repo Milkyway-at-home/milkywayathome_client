@@ -134,7 +134,7 @@ static void gravsub(const NBodyCtx* ctx, nodeptr q)
     mor3 = phii / drsq;
     MULVS(ai, dr, mor3);
     phi0 -= phii;                               /* add to total grav. pot. */
-    ADDV(acc0, acc0, ai);                       /* ... and to total accel. */
+    INCADDV(acc0, ai);                          /* ... and to total accel. */
 
     if (ctx->usequad && Type(q) == CELL)             /* if cell, add quad term */
     {
@@ -142,12 +142,12 @@ static void gravsub(const NBodyCtx* ctx, nodeptr q)
         MULMV(quaddr, Quad(q), dr);             /* form Q * dr */
         DOTVP(drquaddr, dr, quaddr);            /* form dr * Q * dr */
         phiquad = -0.5 * dr5inv * drquaddr;     /* get quad. part of phi */
-        phi0 = phi0 + phiquad;                  /* increment potential */
+        phi0 += phiquad;                        /* increment potential */
         phiquad = 5.0 * phiquad / drsq;         /* save for acceleration */
         MULVS(ai, dr, phiquad);                 /* components of acc. */
-        SUBV(acc0, acc0, ai);                   /* increment */
-        MULVS(quaddr, quaddr, dr5inv);
-        SUBV(acc0, acc0, quaddr);               /* acceleration */
+        INCSUBV(acc0, ai);                      /* increment */
+        INCMULVS(quaddr, dr5inv);
+        INCSUBV(acc0, quaddr);                  /* acceleration */
     }
 }
 
