@@ -103,16 +103,16 @@ static void diagnostics(const NBodyCtx* ctx, const NBodyState* st)
         OUTVP(tmpt, tmpv, Acc(p));
         ADDM(peten, peten, tmpt);
         MULVS(tmpv, Pos(p), Mass(p));       /* sum cm position */
-        ADDV(cmphase[0], cmphase[0], tmpv);
+        INCADDV(cmphase[0], tmpv);
         MULVS(tmpv, Vel(p), Mass(p));       /* sum cm momentum */
-        ADDV(cmphase[1], cmphase[1], tmpv);
+        INCADDV(cmphase[1], tmpv);
         CROSSVP(tmpv, Pos(p), Vel(p));      /* sum angular momentum */
-        MULVS(tmpv, tmpv, Mass(p));
-        ADDV(amvec, amvec, tmpv);
+        INCMULVS(tmpv, Mass(p));
+        INCADDV(amvec, tmpv);
     }
     etot[0] = etot[1] + etot[2];                /* sum KE and PE */
-    DIVVS(cmphase[0], cmphase[0], mtot);        /* normalize cm coords */
-    DIVVS(cmphase[1], cmphase[1], mtot);
+    INCDIVVS(cmphase[0], mtot);                 /* normalize cm coords */
+    INCDIVVS(cmphase[1], mtot);
 }
 
 /*  * Low-level input and output operations.

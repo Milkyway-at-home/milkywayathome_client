@@ -183,15 +183,15 @@ static void hackcofm(const NBodyCtx* ctx, cellptr p, real psize)
     {
         if ((q = Subp(p)[i]) != NULL)           /* does subnode exist? */
         {
-            if (Type(q) == CELL)        /* and is it a cell? */
+            if (Type(q) == CELL)                /* and is it a cell? */
                 hackcofm(ctx, (cellptr) q, psize / 2); /* find subcell cm */
             Mass(p) += Mass(q);                 /* sum total mass */
             MULVS(tmpv, Pos(q), Mass(q));       /* weight pos by mass */
-            ADDV(cmpos, cmpos, tmpv);           /* sum c-of-m position */
+            INCADDV(cmpos, tmpv);               /* sum c-of-m position */
         }
     }
 
-    DIVVS(cmpos, cmpos, Mass(p));               /* rescale cms position */
+    INCDIVVS(cmpos, Mass(p));               /* rescale cms position */
     for (k = 0; k < NDIM; k++)          /* check tree structure... */
     {
         if (cmpos[k] < Pos(p)[k] - psize / 2 || /* if out of bounds */

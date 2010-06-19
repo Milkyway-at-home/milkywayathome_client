@@ -21,9 +21,10 @@ static void pickshell(vector vec, real rad)
             vec[k] = xrandom(-1.0, 1.0);        /* pick from unit cube */
         DOTVP(rsq, vec, vec);           /* compute radius squared */
     }
-    while (rsq > 1.0);                      /* reject if outside sphere */
+    while (rsq > 1.0);              /* reject if outside sphere */
+
     rsc = rad / rsqrt(rsq);         /* compute scaling factor */
-    MULVS(vec, vec, rsc);           /* rescale to radius given */
+    INCMULVS(vec, rsc);             /* rescale to radius given */
 }
 
 /* generatePlummer: generate Plummer model initial conditions for test
@@ -80,8 +81,8 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
         r = 1.0 / rsqrt(rpow(xrandom(0.0, MFRAC), /* pick r in struct units */
                            -2.0 / 3.0) - 1);
         pickshell(Pos(p), rsc * r);     /* pick scaled position */
-        ADDV(Pos(p), Pos(p), rshift);       /* move the position */
-        ADDV(cmr, cmr, Pos(p));         /* add to running sum */
+        INCADDV(Pos(p), rshift);        /* move the position */
+        INCADDV(cmr, Pos(p));           /* add to running sum */
         do                      /* select from fn g(x) */
         {
             x = xrandom(0.0, 1.0);      /* for x in range 0:1 */
@@ -90,11 +91,11 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
         while (y > x * x * rpow(1 - x * x, 3.5)); /* using von Neumann tech */
         v = rsqrt(2.0) * x / rpow(1 + r * r, 0.25); /* find v in struct units */
         pickshell(Vel(p), vsc * v);     /* pick scaled velocity */
-        ADDV(Vel(p), Vel(p), vshift);       /* move the velocity */
-        ADDV(cmv, cmv, Vel(p));         /* add to running sum */
+        INCADDV(Vel(p), vshift);       /* move the velocity */
+        INCADDV(cmv, Vel(p));         /* add to running sum */
     }
-    DIVVS(cmr, cmr, rnbody);      /* normalize cm coords */
-    DIVVS(cmv, cmv, rnbody);
+    INCDIVVS(cmr, rnbody);      /* normalize cm coords */
+    INCDIVVS(cmv, rnbody);
 
     printf("done\n");
 }
