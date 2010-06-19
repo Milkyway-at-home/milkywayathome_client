@@ -8,21 +8,7 @@
 #ifndef _VECTMATH_H_
 #define _VECTMATH_H_
 
-#ifndef THREEDIM
-#  ifndef TWODIM
-#    ifndef NDIM
-#      define THREEDIM
-#    endif
-#  endif
-#endif
-
-#ifdef TWODIM
-#  define NDIM 2
-#endif
-
-#ifdef THREEDIM
-#  define NDIM 3
-#endif
+#define NDIM 3
 
 typedef real vector[NDIM], matrix[NDIM][NDIM];
 
@@ -49,8 +35,6 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
             (v)[_i] = (u)[_i];                      \
     }
 
-#ifdef THREEDIM
-
 #define ADDV(v,u,w)     /* ADD Vector */            \
     {                                   \
         real *_vp = (v), *_up = (u), *_wp = (w);                \
@@ -75,39 +59,12 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
         *_vp   = (*_up  ) * (s);                        \
     }
 
-#else
-
-#define ADDV(v,u,w)     /* ADD Vector */            \
-    {                                   \
-        int _i;                             \
-        for (_i = 0; _i < NDIM; _i++)                   \
-            (v)[_i] = (u)[_i] + (w)[_i];                    \
-    }
-
-#define SUBV(v,u,w)     /* SUBtract Vector */           \
-    {                                   \
-        int _i;                             \
-        for (_i = 0; _i < NDIM; _i++)                   \
-            (v)[_i] = (u)[_i] - (w)[_i];                    \
-    }
-
-#define MULVS(v,u,s)        /* MULtiply Vector by Scalar */     \
-    {                                   \
-        int _i;                             \
-        for (_i = 0; _i < NDIM; _i++)                   \
-            (v)[_i] = (u)[_i] * (s);                    \
-    }
-
-#endif
-
 #define DIVVS(v,u,s)        /* DIVide Vector by Scalar */       \
     {                                   \
         int _i;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             (v)[_i] = (u)[_i] / (s);                    \
     }
-
-#ifdef THREEDIM
 
 #define DOTVP(s,v,u)        /* DOT Vector Product */        \
     {                                   \
@@ -116,18 +73,6 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
         (s) += (*_vp++) * (*_up++);                     \
         (s) += (*_vp  ) * (*_up  );                     \
     }
-
-#else
-
-#define DOTVP(s,v,u)        /* DOT Vector Product */        \
-    {                                   \
-        int _i;                             \
-        (s) = 0.0;                              \
-        for (_i = 0; _i < NDIM; _i++)                   \
-            (s) += (v)[_i] * (u)[_i];                   \
-    }
-
-#endif
 
 #define ABSV(s,v)       /* ABSolute value of a Vector */    \
     {                                   \
@@ -149,25 +94,12 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
         (s) = rsqrt(_tmp);                                                  \
     }
 
-#ifdef TWODIM
-
-#define CROSSVP(s,v,u)      /* CROSS Vector Product */      \
-    {                                   \
-        (s) = (v)[0]*(u)[1] - (v)[1]*(u)[0];                \
-    }
-
-#endif
-
-#ifdef THREEDIM
-
 #define CROSSVP(v,u,w)      /* CROSS Vector Product */      \
     {                                   \
         (v)[0] = (u)[1]*(w)[2] - (u)[2]*(w)[1];             \
         (v)[1] = (u)[2]*(w)[0] - (u)[0]*(w)[2];             \
         (v)[2] = (u)[0]*(w)[1] - (u)[1]*(w)[0];             \
     }
-
-#endif
 
 #define INCADDV(v,u)             /* INCrementally ADD Vector */         \
     {                                   \
