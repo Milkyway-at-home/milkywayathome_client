@@ -108,9 +108,9 @@ static real drsq;                /* squared distance to pos0 */
 static bool subdivp(cellptr q)
 {
     SUBV(dr, Pos(q), pos0);         /* compute displacement */
-    DOTVP(drsq, dr, dr);            /* and find dist squared */
-    qmem = q;                   /* remember we know them */
-    return (drsq < Rcrit2(q));          /* apply standard rule */
+    SQRV(drsq, dr);                 /* and find dist squared */
+    qmem = q;                       /* remember we know them */
+    return (drsq < Rcrit2(q));      /* apply standard rule */
 }
 
 /*  * GRAVSUB: compute contribution of node q to gravitational field at
@@ -126,7 +126,7 @@ static void gravsub(const NBodyCtx* ctx, nodeptr q)
     if (q != (nodeptr) qmem)                    /* cant use memorized data? */
     {
         SUBV(dr, Pos(q), pos0);                 /* then compute sep. */
-        DOTVP(drsq, dr, dr);            /* and sep. squared */
+        SQRV(drsq, dr);                         /* and sep. squared */
     }
     drsq += ctx->model.eps * ctx->model.eps;          /* use standard softening */
     drab = rsqrt(drsq);

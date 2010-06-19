@@ -92,8 +92,8 @@ static void diagnostics(const NBodyCtx* ctx, const NBodyState* st)
     CLRV(amvec);                /* zero am vector */
     for (p = st->bodytab; p < endp; p++) /* loop over all particles */
     {
-        mtot += Mass(p);                        /* sum particle masses */
-        DOTVP(velsq, Vel(p), Vel(p));       /* square vel vector */
+        mtot += Mass(p);                    /* sum particle masses */
+        SQRV(velsq, Vel(p));                /* square vel vector */
         etot[1] += 0.5 * Mass(p) * velsq;   /* sum current KE */
         etot[2] += 0.5 * Mass(p) * Phi(p);  /* and current PE */
         MULVS(tmpv, Vel(p), 0.5 * Mass(p)); /* sum 0.5 m v_i v_j */

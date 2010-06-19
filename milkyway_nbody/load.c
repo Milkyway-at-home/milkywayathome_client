@@ -36,6 +36,7 @@ void maketree(const NBodyCtx* ctx, NBodyState* st, bodyptr btab, int nbody)
         if (Mass(p) != 0.0)                     /* exclude test particles */
             loadbody(t, p);                     /* and insert into tree */
     }
+
     hackcofm(ctx, t->root, t->rsize);           /* find c-of-m coordinates */
     threadtree((nodeptr) t->root, NULL);        /* add Next and More links */
     if (ctx->usequad)                           /* including quad moments? */
@@ -277,13 +278,14 @@ static void hackquad(cellptr p)
         psub[i] = Subp(p)[i];           /* copy each to safety */
     CLRM(Quad(p));                              /* init quadrupole moment */
     for (i = 0; i < NSUB; i++)                  /* loop over subnodes */
+    {
         if ((q = psub[i]) != NULL)          /* does subnode exist? */
         {
             if (Type(q) == CELL)        /* and is it a call? */
                 hackquad((cellptr) q);      /* process it first */
             SUBV(dr, Pos(q), Pos(p));           /* displacement vect. */
             OUTVP(drdr, dr, dr);                /* outer prod. of dr */
-            DOTVP(drsq, dr, dr);                /* dot prod. dr * dr */
+            SQRV(drsq, dr);                     /* dot prod. dr * dr */
             SETMI(Idrsq);                       /* init unit matrix */
             MULMS(Idrsq, Idrsq, drsq);          /* scale by dr * dr */
             MULMS(tmpm, drdr, 3.0);             /* scale drdr by 3 */
@@ -293,6 +295,7 @@ static void hackquad(cellptr p)
                 ADDM(tmpm, tmpm, Quad(q));      /* add its moment */
             ADDM(Quad(p), Quad(p), tmpm);       /* add to qm of cell */
         }
+    }
 }
 
 /* TODO: Ownership of bodytab */

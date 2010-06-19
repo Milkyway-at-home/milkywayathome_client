@@ -16,21 +16,21 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 
 #define CLRV(v)         /* CLeaR Vector */          \
     {                                   \
-        int _i;                             \
+        size_t _i;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             (v)[_i] = 0.0;                          \
     }
 
 #define UNITV(v,j)      /* UNIT Vector */           \
     {                                   \
-        int _i;                             \
+        size_t _i;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             (v)[_i] = (_i == (j) ? 1.0 : 0.0);              \
     }
 
 #define SETV(v,u)       /* SET Vector */            \
     {                                   \
-        int _i;                                 \
+        size_t _i;                                 \
         for (_i = 0; _i < NDIM; _i++)                   \
             (v)[_i] = (u)[_i];                      \
     }
@@ -61,23 +61,33 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 
 #define DIVVS(v,u,s)        /* DIVide Vector by Scalar */       \
     {                                   \
-        int _i;                             \
+        size_t _i;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             (v)[_i] = (u)[_i] / (s);                    \
     }
 
-#define DOTVP(s,v,u)        /* DOT Vector Product */        \
-    {                                   \
+#define DOTVP(s,v,u)        /* DOT Vector Product */    \
+    {                                                   \
         real *_vp = (v), *_up = (u);                    \
         (s)  = (*_vp++) * (*_up++);                     \
         (s) += (*_vp++) * (*_up++);                     \
         (s) += (*_vp  ) * (*_up  );                     \
     }
 
+#define SQRV(s,v)      /* DOT Vector Product with itself */   \
+    {                                   \
+        real *_vp = (v);                \
+        (s)  = (*_vp) * (*_vp);         \
+        ++_vp;                          \
+        (s) += (*_vp) * (*_vp);         \
+        ++_vp;                          \
+        (s) += (*_vp) * (*_vp);         \
+    }
+
 #define ABSV(s,v)       /* ABSolute value of a Vector */    \
     {                                   \
         real _tmp;                                                      \
-        int _i;                             \
+        size_t _i;                             \
         _tmp = 0.0;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             _tmp += (v)[_i] * (v)[_i];                  \
@@ -87,7 +97,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 #define DISTV(s,u,v)        /* DISTance between Vectors */          \
     {                                   \
         real _tmp;                                                      \
-        int _i;                             \
+        size_t _i;                             \
         _tmp = 0.0;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             _tmp += ((u)[_i]-(v)[_i]) * ((u)[_i]-(v)[_i]);              \
@@ -103,28 +113,28 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 
 #define INCADDV(v,u)             /* INCrementally ADD Vector */         \
     {                                   \
-        int _i;                                                         \
+        size_t _i;                                                         \
         for (_i = 0; _i < NDIM; _i++)                                       \
             (v)[_i] += (u)[_i];                                             \
     }
 
 #define INCSUBV(v,u)             /* INCrementally SUBtract Vector */    \
     {                                   \
-        int _i;                                                         \
+        size_t _i;                                                         \
         for (_i = 0; _i < NDIM; _i++)                                       \
             (v)[_i] -= (u)[_i];                                             \
     }
 
 #define INCMULVS(v,s)   /* INCrementally MULtiply Vector by Scalar */   \
     {                                   \
-        int _i;                                                         \
+        size_t _i;                                                         \
         for (_i = 0; _i < NDIM; _i++)                                       \
             (v)[_i] *= (s);                                                 \
     }
 
 #define INCDIVVS(v,s)   /* INCrementally DIVide Vector by Scalar */ \
     {                                   \
-        int _i;                                                         \
+        size_t _i;                                                         \
         for (_i = 0; _i < NDIM; _i++)                                       \
             (v)[_i] /= (s);                                                 \
     }
@@ -133,7 +143,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 
 #define CLRM(p)         /* CLeaR Matrix */          \
     {                                   \
-        int _i, _j;                             \
+        size_t _i, _j;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             for (_j = 0; _j < NDIM; _j++)                   \
                 (p)[_i][_j] = 0.0;                      \
@@ -141,7 +151,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 
 #define SETMI(p)        /* SET Matrix to Identity */        \
     {                                   \
-        int _i, _j;                             \
+        size_t _i, _j;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             for (_j = 0; _j < NDIM; _j++)                   \
                 (p)[_i][_j] = (_i == _j ? 1.0 : 0.0);           \
@@ -149,7 +159,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 
 #define SETM(p,q)       /* SET Matrix */            \
     {                                   \
-        int _i, _j;                             \
+        size_t _i, _j;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             for (_j = 0; _j < NDIM; _j++)                   \
                 (p)[_i][_j] = (q)[_i][_j];                  \
@@ -157,7 +167,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 
 #define TRANM(p,q)      /* TRANspose Matrix */          \
     {                                   \
-        int _i, _j;                             \
+        size_t _i, _j;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             for (_j = 0; _j < NDIM; _j++)                   \
                 (p)[_i][_j] = (q)[_j][_i];                  \
@@ -165,7 +175,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 
 #define ADDM(p,q,r)     /* ADD Matrix */            \
     {                                   \
-        int _i, _j;                             \
+        size_t _i, _j;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             for (_j = 0; _j < NDIM; _j++)                   \
                 (p)[_i][_j] = (q)[_i][_j] + (r)[_i][_j];            \
@@ -173,7 +183,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 
 #define SUBM(p,q,r)     /* SUBtract Matrix */           \
     {                                   \
-        int _i, _j;                             \
+        size_t _i, _j;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             for (_j = 0; _j < NDIM; _j++)                   \
                 (p)[_i][_j] = (q)[_i][_j] - (r)[_i][_j];            \
@@ -181,7 +191,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 
 #define MULM(p,q,r)     /* Multiply Matrix */           \
     {                                   \
-        int _i, _j, _k;                         \
+        size_t _i, _j, _k;                         \
         for (_i = 0; _i < NDIM; _i++)                   \
             for (_j = 0; _j < NDIM; _j++) {                 \
                 (p)[_i][_j] = 0.0;                      \
@@ -192,7 +202,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 
 #define MULMS(p,q,s)        /* MULtiply Matrix by Scalar */     \
     {                                   \
-        int _i, _j;                             \
+        size_t _i, _j;                             \
         for (_i = 0; _i < NDIM; _i++)                       \
             for (_j = 0; _j < NDIM; _j++)                   \
                 (p)[_i][_j] = (q)[_i][_j] * (s);                \
@@ -200,7 +210,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 
 #define DIVMS(p,q,s)        /* DIVide Matrix by Scalar */       \
     {                                   \
-        int _i, _j;                             \
+        size_t _i, _j;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             for (_j = 0; _j < NDIM; _j++)                   \
                 (p)[_i][_j] = (q)[_i][_j] / (s);                \
@@ -208,7 +218,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 
 #define MULMV(v,p,u)        /* MULtiply Matrix by Vector */     \
     {                                   \
-        int _i, _j;                             \
+        size_t _i, _j;                             \
         for (_i = 0; _i < NDIM; _i++) {                 \
             (v)[_i] = 0.0;                          \
             for (_j = 0; _j < NDIM; _j++)                   \
@@ -218,7 +228,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 
 #define OUTVP(p,v,u)        /* OUTer Vector Product */      \
     {                                   \
-        int _i, _j;                             \
+        size_t _i, _j;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             for (_j = 0; _j < NDIM; _j++)                   \
                 (p)[_i][_j] = (v)[_i] * (u)[_j];                \
@@ -226,7 +236,7 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 
 #define TRACEM(s,p)     /* TRACE of Matrix */           \
     {                                   \
-        int _i;                             \
+        size_t _i;                             \
         (s) = 0.0;                              \
         for (_i = 0.0; _i < NDIM; _i++)                 \
             (s) += (p)[_i][_i];                     \
@@ -237,21 +247,21 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
 
 #define SETVS(v,s)      /* SET Vector to Scalar */      \
     {                                   \
-        int _i;                             \
+        size_t _i;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             (v)[_i] = (s);                          \
     }
 
 #define ADDVS(v,u,s)        /* ADD Vector and Scalar */     \
     {                                   \
-        int _i;                             \
+        size_t _i;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             (v)[_i] = (u)[_i] + (s);                    \
     }
 
 #define SETMS(p,s)      /* SET Matrix to Scalar */      \
     {                                   \
-        int _i, _j;                             \
+        size_t _i, _j;                             \
         for (_i = 0; _i < NDIM; _i++)                   \
             for (_j = 0; _j < NDIM; _j++)                   \
                 (p)[_i][_j] = (s);                      \
