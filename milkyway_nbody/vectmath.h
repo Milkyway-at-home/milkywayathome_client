@@ -12,6 +12,9 @@
 
 typedef real vector[NDIM], matrix[NDIM][NDIM];
 
+#define ZERO_VECTOR { 0.0, 0.0, 0.0 }
+#define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
+
 /* Vector operations. */
 
 #define CLRV(v)         /* CLeaR Vector */      \

@@ -173,12 +173,12 @@ static int subindex(bodyptr p, cellptr q)
 
 static void hackcofm(const NBodyCtx* ctx, cellptr p, real psize)
 {
-    vector cmpos, tmpv;
     int i, k;
     nodeptr q;
+    vector tmpv;
+    vector cmpos = ZERO_VECTOR;                 /* init center of mass */
 
     Mass(p) = 0.0;                              /* init total mass... */
-    CLRV(cmpos);                                /* and center of mass */
     for (i = 0; i < NSUB; ++i)                  /* loop over subnodes */
     {
         if ((q = Subp(p)[i]) != NULL)           /* does subnode exist? */

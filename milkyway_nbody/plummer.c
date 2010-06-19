@@ -35,23 +35,22 @@ static void pickshell(vector vec, real rad)
 void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     printf("Initializing plummer model...\n");
+
+    bodyptr p, endp;
     real rsc, vsc, r, v, x, y;
-    vector cmr, cmv;
-    vector rshift, vshift, scaledrshift, scaledvshift;
+    vector scaledrshift = ZERO_VECTOR;
+    vector scaledvshift = ZERO_VECTOR;
+    vector cmr          = ZERO_VECTOR;
+    vector cmv          = ZERO_VECTOR;
+
 
     const real rnbody = (real) ctx->model.nbody;
     const real mass   = ctx->model.mass;
     const real mpp    = mass / rnbody;     /* mass per particle */
-    bodyptr p, endp;
 
     // The coordinates to shift the plummer sphere by
-    rshift[0] = ic->position[0];
-    rshift[1] = ic->position[1];
-    rshift[2] = ic->position[2];
-
-    vshift[0] = ic->velocity[0];
-    vshift[1] = ic->velocity[1];
-    vshift[2] = ic->velocity[2];
+    vector rshift = { ic->position[0], ic->position[1], ic->position[2] };
+    vector vshift = { ic->velocity[0], ic->velocity[1], ic->velocity[2] };
 
     printf("Shifting plummer sphere to r = (%f, %f, %f) v = (%f, %f, %f)...\n",
            rshift[0],
@@ -63,13 +62,9 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
 
     st->tnow = 0.0;                 /* reset elapsed model time */
     st->bodytab = (bodyptr) allocate(ctx->model.nbody * sizeof(body));
-    rsc = ctx->model.scale_radius;               /* set length scale factor */
+    rsc = ctx->model.scale_radius;              /* set length scale factor */
     vsc = rsqrt(ctx->model.mass / rsc);         /* and recip. speed scale */
 
-    CLRV(cmr);                  /* init cm pos, vel */
-    CLRV(cmv);
-    CLRV(scaledrshift);
-    CLRV(scaledvshift);
     MULVS(scaledrshift, rshift, rsc);   /* Multiply shift by scale factor */
     MULVS(scaledvshift, vshift, vsc);   /* Multiply shift by scale factor */
 
@@ -83,6 +78,7 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
         pickshell(Pos(p), rsc * r);     /* pick scaled position */
         INCADDV(Pos(p), rshift);        /* move the position */
         INCADDV(cmr, Pos(p));           /* add to running sum */
+
         do                      /* select from fn g(x) */
         {
             x = xrandom(0.0, 1.0);      /* for x in range 0:1 */
@@ -94,6 +90,7 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
         INCADDV(Vel(p), vshift);       /* move the velocity */
         INCADDV(cmv, Vel(p));         /* add to running sum */
     }
+
     INCDIVVS(cmr, rnbody);      /* normalize cm coords */
     INCDIVVS(cmv, rnbody);
 
