@@ -48,7 +48,7 @@ real sphericalPhi(const Spherical* sph, const vector pos)
 }
 
 /* gets negative of the acceleration vector of this disk component */
-static void miyamotoNagaiAccel(vector acc, const Disk* disk, const vector pos)
+void miyamotoNagaiAccel(vector acc, const Disk* disk, const vector pos)
 {
     const real a   = disk->scale_length;
     const real b   = disk->scale_height;
@@ -61,17 +61,17 @@ static void miyamotoNagaiAccel(vector acc, const Disk* disk, const vector pos)
     acc[2] = disk->mass * pos[2] * azp / (zp * rth);
 }
 
-static void nfwHaloAccel(vector acc, const Halo* halo, const vector pos)
+void nfwHaloAccel(vector acc, const Halo* halo, const vector pos)
 {
     fail("Implement me!\n");
 }
 
-static void triaxialHaloAccel(vector acc, const Halo* halo, const vector pos)
+void triaxialHaloAccel(vector acc, const Halo* halo, const vector pos)
 {
     fail("Implement me!\n");
 }
 
-static void logHaloAccel(vector acc, const Halo* halo, const vector pos)
+void logHaloAccel(vector acc, const Halo* halo, const vector pos)
 {
     const real tvsqr = 2.0 * sqr(halo->vhalo);
     const real qsqr  = sqr(halo->flattenZ);
@@ -86,7 +86,7 @@ static void logHaloAccel(vector acc, const Halo* halo, const vector pos)
     acc[2] = tvsqr * pos[2] / (qsqr * arst + zsqr);
 }
 
-static void sphericalAccel(vector acc, const Spherical* sph, const vector pos)
+void sphericalAccel(vector acc, const Spherical* sph, const vector pos)
 {
     const real r     = sqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
     const real denom = r * sqr(sph->scale + r);

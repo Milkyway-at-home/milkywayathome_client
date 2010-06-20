@@ -23,7 +23,8 @@ include_directories("${PROJECT_SOURCE_DIR}")
 
 # List of tests to run.
 # Test sources should be named <testname>.c .
-set(test_list t_vectors)
+set(test_list t_vectors
+              t_spherical)
 
 set(nbody_main_src ../io.c
                    ../plummer.c
