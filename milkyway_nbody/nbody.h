@@ -56,6 +56,7 @@ char* showPotential(const Potential*);
 char* showDwarfModel(const DwarfModel*);
 char* showInitialConditions(const InitialConditions*);
 char* showContext(const NBodyCtx*);
+char* showVector(const vector v);
 void printContext(const NBodyCtx*);
 void printInitialConditions(const InitialConditions*);
 

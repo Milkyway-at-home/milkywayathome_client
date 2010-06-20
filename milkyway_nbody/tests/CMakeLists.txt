@@ -18,28 +18,27 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#No idea on the actual version, but I'll go with this for now.
-
-cmake_minimum_required (VERSION 2.6)
-project(milkyway_nbody)
 
 include_directories("${PROJECT_SOURCE_DIR}")
 
-set(nbody_src chisq.c
-              grav.c
-              io.c
-              load.c
-              orbitintegrator.c
-              nbody_simulation.c
-              json_params.c
-              plummer.c
-              util.c
-              main.c)
+# List of tests to run.
+# Test sources should be named <testname>.c .
+set(test_list t_vectors)
 
-set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
+set(nbody_main_src ../io.c
+                   ../plummer.c
+                   ../chisq.c
+                   ../nbody_simulation.c
+                   ../util.c
+                   ../grav.c
+                   ../load.c
+                   ../orbitintegrator.c
+                   ../vectmath.c)
 
-add_executable(milkyway_nbody ${nbody_src})
-target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${JSON_C_LIBRARY} m)
-
-add_subdirectory(tests EXCLUDE_FROM_ALL)
+foreach(test ${test_list})
+	add_executable(${test} ${test}.c ${nbody_main_src})
+	add_test(${test} ${EXECUTABLE_OUTPUT_PATH}/${test})
+    add_dependencies(check ${test})
+    target_link_libraries(${test} m)
+endforeach()
 

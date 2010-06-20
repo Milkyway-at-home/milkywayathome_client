@@ -481,3 +481,14 @@ void printInitialConditions(const InitialConditions* ic)
     free(buf);
 }
 
+char* showVector(const vector v)
+{
+    char* buf;
+
+    if (asprintf(&buf, "{ %g, %g, %g }", v[0], v[1], v[2]) < 0)
+        fail ("asprintf() failed\n");
+
+    return buf;
+
+}
+

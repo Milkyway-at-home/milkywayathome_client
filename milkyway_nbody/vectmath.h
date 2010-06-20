@@ -8,6 +8,8 @@
 #ifndef _VECTMATH_H_
 #define _VECTMATH_H_
 
+#include "real.h"
+
 #define NDIM 3
 
 typedef real vector[NDIM], matrix[NDIM][NDIM];
