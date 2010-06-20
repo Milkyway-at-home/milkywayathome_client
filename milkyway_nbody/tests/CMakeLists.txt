@@ -25,7 +25,9 @@ include_directories("${PROJECT_SOURCE_DIR}")
 # Test sources should be named <testname>.c .
 set(test_list t_vectors
               t_spherical
-              t_loghalo)
+              t_loghalo
+              t_miyamoto_nagai
+              )
 
 set(nbody_main_src ../io.c
                    ../plummer.c
