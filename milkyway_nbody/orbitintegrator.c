@@ -27,23 +27,23 @@ real logHaloPhi(const Halo* halo, const vector pos)
     const real d     = halo->scale_length;
     const real zsqr  = sqr(pos[2]);
 
-    return sqr(halo->vhalo) * log( sqr(pos[0]) + sqr(pos[1]) + (zsqr / qsqr) + sqr(d) );
+    return sqr(halo->vhalo) * rlog( sqr(pos[0]) + sqr(pos[1]) + (zsqr / qsqr) + sqr(d) );
 }
 
 real miyamotoNagaiPhi(const Disk* disk, const vector pos)
 {
     const real a   = disk->scale_length;
     const real b   = disk->scale_height;
-    const real zp  = sqrt( sqr(pos[2]) + sqr(b) );
+    const real zp  = rsqrt( sqr(pos[2]) + sqr(b) );
     const real azp = a + zp;
-    const real rp  = sqrt( sqr(pos[0]) + sqr(pos[1]) +  sqr(azp) );
+    const real rp  = rsqrt( sqr(pos[0]) + sqr(pos[1]) +  sqr(azp) );
 
     return -disk->mass / rp;
 }
 
 real sphericalPhi(const Spherical* sph, const vector pos)
 {
-    const real r = sqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
+    const real r = rsqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
     return -sph->mass / (r + sph->scale);
 }
 
@@ -52,9 +52,9 @@ void miyamotoNagaiAccel(vector acc, const Disk* disk, const vector pos)
 {
     const real a   = disk->scale_length;
     const real b   = disk->scale_height;
-    const real zp  = sqrt( sqr(pos[2]) + sqr(b) );
+    const real zp  = rsqrt( sqr(pos[2]) + sqr(b) );
     const real azp = a + zp;
-    const real rth = pow( sqr(pos[0]) + sqr(pos[1]) + sqr(azp), 1.5);
+    const real rth = rpow( sqr(pos[0]) + sqr(pos[1]) + sqr(azp), 1.5);
 
     acc[0] = disk->mass * pos[0] / rth;
     acc[1] = disk->mass * pos[1] / rth;
@@ -88,7 +88,7 @@ void logHaloAccel(vector acc, const Halo* halo, const vector pos)
 
 void sphericalAccel(vector acc, const Spherical* sph, const vector pos)
 {
-    const real r     = sqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
+    const real r     = rsqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
     const real denom = r * sqr(sph->scale + r);
 
     acc[0] = sph->mass * pos[0] / denom;
