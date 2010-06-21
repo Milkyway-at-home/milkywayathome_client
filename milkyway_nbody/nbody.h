@@ -25,7 +25,7 @@ void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 
 void integrate(const NBodyCtx* ctx, InitialConditions* ic);
 
-void acceleration(const NBodyCtx* ctx, const real* pos, real* acc);
+void acceleration(real* restrict acc, const NBodyCtx* ctx, const real* restrict pos);
 
 real logHaloPhi(const Halo* halo, const vector pos);
 real miyamotoNagaiPhi(const Disk* disk, const vector pos);

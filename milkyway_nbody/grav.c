@@ -135,7 +135,7 @@ void hackgrav(const NBodyCtx* restrict ctx, NBodyState* restrict st, bodyptr p, 
     }
 
     /* Adding the external potential */
-    acceleration(ctx, Pos(p), externalacc);
+    acceleration(externalacc, ctx, Pos(p));
 
     INCADDV(fest.acc0, externalacc);
 

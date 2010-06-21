@@ -104,7 +104,7 @@ void sphericalAccel(vector acc, const Spherical* sph, const vector pos)
     MULVS(acc, pos, sph->mass / denom);
 }
 
-inline void acceleration(const NBodyCtx* ctx, const real* pos, real* acc)
+inline void acceleration(real* restrict acc, const NBodyCtx* ctx, const real* restrict pos)
 {
     /* lookup table for functions for calculating accelerations */
     static const HaloAccel haloFuncs[] = { [LogarithmicHalo] = logHaloAccel,
@@ -116,21 +116,23 @@ inline void acceleration(const NBodyCtx* ctx, const real* pos, real* acc)
 
     static const SphericalAccel sphFuncs[] = { [SphericalPotential] = sphericalAccel };
 
-    vector acc1 = ZERO_VECTOR;
-    vector acc2 = ZERO_VECTOR;
-    vector acc3 = ZERO_VECTOR;
+    vector acctmp1 = ZERO_VECTOR;
+    vector acctmp2 = ZERO_VECTOR;
 
     /* Use the type of potential to index into the table, and use the
      * appropriate function */
-    diskFuncs[ctx->pot.disk.type](acc1, &ctx->pot.disk, pos);
-    haloFuncs[ctx->pot.halo.type](acc2, &ctx->pot.halo, pos);
-    sphFuncs[ctx->pot.sphere[0].type](acc3, &ctx->pot.sphere[0], pos);
+
+    diskFuncs[ctx->pot.disk.type](acctmp1, &ctx->pot.disk, pos);
+    haloFuncs[ctx->pot.halo.type](acctmp2, &ctx->pot.halo, pos);
+
+    ADDV(acc, acctmp1, acctmp2);
+
+    sphFuncs[ctx->pot.sphere[0].type](acctmp1, &ctx->pot.sphere[0], pos);
 
     /* add the resulting vectors, and - since we want the negative
      * gradient of the potential */
-    acc[0] = -(acc1[0] + acc2[0] + acc3[0]);
-    acc[1] = -(acc1[1] + acc2[1] + acc3[1]);
-    acc[2] = -(acc1[2] + acc2[2] + acc3[2]);
+    INCADDV(acc, acctmp1);
+    INCNEGV(acc);
 }
 
 
@@ -153,7 +155,7 @@ void integrate(const NBodyCtx* ctx, InitialConditions* ic)
     v[2] = -ic->velocity[2];
 
     // Get the initial acceleration
-    acceleration(ctx, x, acc);
+    acceleration(acc, ctx, x);
 
     // Loop through time
     for (t = 0; t <= tstop; t += dt)
@@ -165,7 +167,7 @@ void integrate(const NBodyCtx* ctx, InitialConditions* ic)
             x[i] += v[i] * dt;
         }
         // Compute the new acceleration
-        acceleration(ctx, x, acc);
+        acceleration(acc, ctx, x);
     }
 
     /* Report the final values (don't forget to reverse the velocities) */

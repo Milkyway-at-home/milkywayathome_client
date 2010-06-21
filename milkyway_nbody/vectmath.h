@@ -72,13 +72,20 @@ typedef real vector[NDIM], matrix[NDIM][NDIM];
     }
 
 /* Negate vector */
-#define NEGV(v,u,s)                                             \
+#define NEGV(v,u)                                               \
     {                                                           \
         real* restrict _vp = (v);                               \
         const real* restrict _up = (u);                         \
         *_vp++ = -(*_up++);                                     \
         *_vp++ = -(*_up++);                                     \
         *_vp   = -(*_up);                                       \
+    }
+
+#define INCNEGV(v)                              \
+    {                                           \
+        v[0] = -v[0];                           \
+        v[1] = -v[1];                           \
+        v[2] = -v[2];                           \
     }
 
 /* DIVide Vector by Scalar */
