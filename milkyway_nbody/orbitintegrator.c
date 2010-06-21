@@ -79,7 +79,42 @@ void nfwHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr rest
 
 void triaxialHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr restrict pos)
 {
-    fail("Implement me!\n");
+    /* TODO: Lots of things here can be cached, in particular the C1, C2... */
+    const real phi = halo->triaxAngle;
+
+    const real cp  = cos(phi);
+    const real cps = sqr(cp);
+    const real sp  = sin(phi);
+    const real sps = sqr(sp);
+
+    const real qxs = sqr(halo->flattenX);
+    const real qys = sqr(halo->flattenY);
+    const real qzs = sqr(halo->flattenY);
+
+    const real c1 = (cps / qxs) + (sps / qys);
+    const real c2 = (cps / qys) + (sps / qxs);
+
+    /* 2 * sin(x) * cos(x) == sin(2 * x) */
+    const real c3 = sin(2 * phi) * (1/qxs - 1/qys);
+
+    const real rhalosqr = sqr(halo->scale_length);
+
+    const real vsqr = sqr(halo->vhalo);
+
+    const real xsqr = sqr(pos[0]);
+    const real ysqr = sqr(pos[1]);
+    const real zsqr = sqr(pos[2]);
+
+    const real arst = rhalosqr + (c1 * xsqr) + (c3 * pos[0] * pos[1]) + (c2 * ysqr);
+
+    const real arst2 = arst + zsqr / qzs;
+
+    acc[0] = vsqr * ( 2 * c1 * pos[0] + c3 * pos[1] ) / arst2;
+
+    acc[1] = vsqr * ( 2 * c2 * pos[1] + c3 * pos[0] ) / arst2;
+
+    acc[2] = 2 * vsqr * pos[2] / (qzs * arst2 + zsqr);
+
 }
 
 void logHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr restrict pos)
