@@ -10,18 +10,6 @@
 #include "nbody.h"
 #include "util.h"
 
-static void diagnostics(const NBodyCtx*, const NBodyState*);
-static void in_int(FILE*, int*);
-static void in_real(FILE*, real*);
-static void in_vector(FILE*, vector);
-static void out_int(FILE*, int);
-static void out_real(FILE*, real);
-static void out_vector(FILE*, vector);
-static void out_2vectors(FILE*, vector, vector);
-static void printvec(const char*, const vector);
-
-/* INITOUTPUT: initialize output routines. */
-
 void initoutput(NBodyCtx* ctx)
 {
     if (ctx->outfilename)                       /* output file specified? */
@@ -32,39 +20,13 @@ void initoutput(NBodyCtx* ctx)
     }
     else
         ctx->outfile = stdout;
-
 }
 
-/* Counters and accumulators for output routines. */
+/* Low-level input and output operations. */
 
-/* OUTPUT: compute diagnostics and output data. */
-void output(const NBodyCtx* ctx, NBodyState* st)
+static void out_2vectors(FILE* str, vector vec1, vector vec2)
 {
-    bodyptr p;
-    vector lbR;
-    const bodyptr endp = st->bodytab + ctx->model.nbody;
-
-    diagnostics(ctx, st);              /* compute std diagnostics */
-    if (ctx->model.time_dwarf - st->tnow < 0.01 / ctx->freq)
-    {
-        printf("st.tnow = %f\n", st->tnow);
-        for (p = st->bodytab; p < endp; p++)
-        {
-            lbR[2] = sqrt(Pos(p)[0] * Pos(p)[0] + Pos(p)[1] * Pos(p)[1] + Pos(p)[2] * Pos(p)[2]);
-            lbR[1] = r2d(atan2(Pos(p)[2], sqrt((Pos(p)[0]) * (Pos(p)[0]) + Pos(p)[1] * Pos(p)[1])));
-            lbR[0] = r2d(atan2(Pos(p)[1], Pos(p)[0]));
-
-            if (lbR[0] < 0)
-                lbR[0] += 360.0;
-
-            out_2vectors(ctx->outfile, lbR, Vel(p));
-        }
-
-        if (ctx->outfile != stdout)
-            printf("\tParticle data written to file %s\n\n", ctx->outfilename);
-        fflush(ctx->outfile);             /* drain output buffer */
-        st->tout += 1.0 / ctx->freqout;     /* schedule next data out */
-    }
+    fprintf(str, " %21.14E %21.14E %21.14E %21.14E %21.14E %21.14E\n", vec1[0], vec1[1], vec1[2], vec2[0], vec2[1], vec2[2]);
 }
 
 /* DIAGNOSTICS: compute various dynamical diagnostics.  */
@@ -108,60 +70,36 @@ static void diagnostics(const NBodyCtx* ctx, const NBodyState* st)
     INCDIVVS(cmphase[1], mtot);
 }
 
-/*  * Low-level input and output operations.
- */
-
-static void in_int(FILE* str, int* iptr)
+/* OUTPUT: compute diagnostics and output data. */
+void output(const NBodyCtx* ctx, NBodyState* st)
 {
-    if (fscanf(str, "%d", iptr) != 1)
-        error("in_int: input conversion error\n");
+    bodyptr p;
+    vector lbR;
+    const bodyptr endp = st->bodytab + ctx->model.nbody;
+
+    diagnostics(ctx, st);              /* compute std diagnostics */
+    if (ctx->model.time_dwarf - st->tnow < 0.01 / ctx->freq)
+    {
+        printf("st.tnow = %f\n", st->tnow);
+        for (p = st->bodytab; p < endp; p++)
+        {
+            lbR[2] = sqrt(Pos(p)[0] * Pos(p)[0] + Pos(p)[1] * Pos(p)[1] + Pos(p)[2] * Pos(p)[2]);
+            lbR[1] = r2d(atan2(Pos(p)[2], sqrt((Pos(p)[0]) * (Pos(p)[0]) + Pos(p)[1] * Pos(p)[1])));
+            lbR[0] = r2d(atan2(Pos(p)[1], Pos(p)[0]));
+
+            if (lbR[0] < 0)
+                lbR[0] += 360.0;
+
+            out_2vectors(ctx->outfile, lbR, Vel(p));
+        }
+
+        if (ctx->outfile != stdout)
+            printf("\tParticle data written to file %s\n\n", ctx->outfilename);
+        fflush(ctx->outfile);             /* drain output buffer */
+        st->tout += 1.0 / ctx->freqout;     /* schedule next data out */
+    }
 }
 
-static void in_real(FILE* str, real* rptr)
-{
-    double tmp;
-
-    if (fscanf(str, "%lf", &tmp) != 1)
-        error("in_real: input conversion error\n");
-    *rptr = tmp;
-}
-
-static void in_vector(FILE* str, vector vec)
-{
-    double tmpx, tmpy, tmpz;
-
-    if (fscanf(str, "%lf%lf%lf", &tmpx, &tmpy, &tmpz) != 3)
-        error("in_vector: input conversion error\n");
-    vec[0] = tmpx;
-    vec[1] = tmpy;
-    vec[2] = tmpz;
-}
-
-static void out_int(FILE* str, int ival)
-{
-    fprintf(str, "  %d\n", ival);
-}
-
-static void out_real(FILE* str, real rval)
-{
-    fprintf(str, " %21.14E\n", rval);
-}
-
-static void out_vector(FILE* str, vector vec)
-{
-    fprintf(str, " %21.14E %21.14E %21.14E\n", vec[0], vec[1], vec[2]);
-}
-
-static void out_2vectors(FILE* str, vector vec1, vector vec2)
-{
-    fprintf(str, " %21.14E %21.14E %21.14E %21.14E %21.14E %21.14E\n", vec1[0], vec1[1], vec1[2], vec2[0], vec2[1], vec2[2]);
-}
-
-static void printvec(const char* name, const vector vec)
-{
-    printf("          %10s%10.4f%10.4f%10.4f\n",
-           name, vec[0], vec[1], vec[2]);
-}
 
 /* A bunch of boilerplate for debug printing */
 
