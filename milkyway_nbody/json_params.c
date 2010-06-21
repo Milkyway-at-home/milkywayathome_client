@@ -236,33 +236,27 @@ void initNBody(NBodyCtx* ctx, InitialConditions* ic, const int argc, const char*
 /* also works for json_object_type */
 static const char* showNBodyType(nbody_type bt)
 {
-    switch (bt)
+    static const char* table[] =
+        {
+            [nbody_type_null]       = "null",
+            [nbody_type_boolean]    = "bool",
+            [nbody_type_double]     = "double",
+            [nbody_type_int]        = "int",
+            [nbody_type_object]     = "object",
+            [nbody_type_array]      = "array",
+            [nbody_type_vector]     = "vector",
+            [nbody_type_string]     = "string",
+            [nbody_type_enum]       = "enum",
+            [nbody_type_group]      = "group",
+            [nbody_type_group_item] = "group_item"
+        };
+
+    if (bt > nbody_type_group_item)
     {
-        case nbody_type_null:
-            return "null";
-        case nbody_type_boolean:
-            return "bool";
-        case nbody_type_double:
-            return "double";
-        case nbody_type_int:
-            return "int";
-        case nbody_type_object:
-            return "object";
-        case nbody_type_array:
-            return "array";
-        case nbody_type_vector:
-            return "vector";
-        case nbody_type_string:
-            return "string";
-        case nbody_type_enum:
-            return "enum";
-        case nbody_type_group:
-            return "group";
-        case nbody_type_group_item:
-            return "group_item";
-        default:
-            fail("Trying to show unknown nbody_type %d\n", bt);
+        fail("Trying to show unknown nbody_type %d\n", bt);
     }
+    else
+        return table[bt];
 }
 
 /* Reads a name of the criterion into the C value, with name str */
