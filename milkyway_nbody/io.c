@@ -31,7 +31,7 @@ void initoutput(NBodyCtx* ctx)
             error("initoutput: cannot open file %s\n", ctx->outfilename);
     }
     else
-        ctx->outfile = NULL;              /* turn off data output */
+        ctx->outfile = stdout;
 
 }
 
@@ -59,7 +59,9 @@ void output(const NBodyCtx* ctx, NBodyState* st)
 
             out_2vectors(ctx->outfile, lbR, Vel(p));
         }
-        printf("\tParticle data written to file %s\n\n", ctx->outfilename);
+
+        if (ctx->outfile != stdout)
+            printf("\tParticle data written to file %s\n\n", ctx->outfilename);
         fflush(ctx->outfile);             /* drain output buffer */
         st->tout += 1.0 / ctx->freqout;     /* schedule next data out */
     }
