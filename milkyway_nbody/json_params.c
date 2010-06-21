@@ -23,14 +23,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody.h"
 #include "json_params.h"
 
-/* TODO: wuh wuh windows */
-#include <unistd.h>
-
-static void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj);
-static bool warn_extra_params(json_object* obj, const char* grpName);
-static void readParameterGroup(const Parameter*, json_object*, const Parameter*);
-
-
 static void processPotential(Potential* p)
 {
 
@@ -124,115 +116,6 @@ static void postProcess(NBodyCtx* ctx)
 
 }
 
-
-/* Read command line arguments and initialize the context */
-void initNBody(NBodyCtx* ctx, InitialConditions* ic, const int argc, const char** argv)
-{
-    poptContext context;
-    int o;
-    static char* inputFile = NULL;        /* input JSON file */
-    static char* inputStr  = NULL;        /* a string of JSON to use directly */
-    static char* outFileName = NULL;   /* output file name */
-    static json_object* obj;
-
-    /* FIXME: There's a small leak of the inputFile from use of
-       poptGetNextOpt().  Some mailing list post suggestst that this
-       is some kind of semi-intended bug to work around something or
-       other while maintaining ABI compatability */
-    static const struct poptOption options[] =
-    {
-        {
-            "input-file", 'f',
-            POPT_ARG_STRING, &inputFile,
-            0, "Input file to read", NULL
-        },
-
-        {
-            "output-file", 'o',
-            POPT_ARG_STRING, &outFileName,
-            0, "Output file", NULL
-        },
-
-        {
-            "input-string", 's',
-            POPT_ARG_STRING, &inputStr,
-            0, "Input given as string", NULL
-        },
-
-        POPT_AUTOHELP
-
-        { NULL, 0, 0, NULL, 0, NULL, NULL }
-    };
-
-    context = poptGetContext(argv[0],
-                             argc,
-                             argv,
-                             options,
-                             POPT_CONTEXT_POSIXMEHARDER);
-
-    if (argc < 2)
-    {
-        poptPrintUsage(context, stderr, 0);
-        poptFreeContext(context);
-        exit(EXIT_FAILURE);
-    }
-
-    while ( ( o = poptGetNextOpt(context)) >= 0 );
-
-    /* Check for invalid options, and must have one of input file or input string */
-    if (     o < -1
-         ||  (inputFile && inputStr)
-         || !(inputFile || inputStr))
-    {
-        poptPrintHelp(context, stderr, 0);
-        free(inputFile);
-        free(inputStr);
-        poptFreeContext(context);
-        exit(EXIT_FAILURE);
-    }
-
-    poptFreeContext(context);
-
-    if (inputFile)
-    {
-        /* check if we can read the file, so we can fail saying that
-         * and not be left to guessing if it's that or a parse
-         * error */
-        if (access(inputFile, R_OK) < 0)
-        {
-            perror("Failed to read input file.");
-            free(inputFile);
-            exit(EXIT_FAILURE);
-        }
-
-        /* The lack of parse errors from json-c is unfortunate.
-           TODO: If we use the tokener directly, can get them.
-         */
-        obj = json_object_from_file(inputFile);
-        if (is_error(obj))
-        {
-            fprintf(stderr,
-                    "Parse error in file '%s'\n",
-                    inputFile);
-            free(inputFile);
-            exit(EXIT_FAILURE);
-        }
-        free(inputFile);
-    }
-    else
-    {
-        obj = json_tokener_parse(inputStr);
-        free(inputStr);
-        if (is_error(obj))
-            fail("Failed to parse given string\n");
-    }
-
-    ctx->outfilename = outFileName;
-
-    get_params_from_json(ctx, ic, obj);
-
-}
-
 /* also works for json_object_type */
 static const char* showNBodyType(nbody_type bt)
 {
@@ -301,6 +184,26 @@ void printParameter(Parameter* p)
     {
         printf("<NULL PARAMETER>\n");
     }
+}
+
+
+/* Iterate through remaining keys in obj to provide useful warnings of
+ * unknown parameters in the file. Returns true if any found. */
+static bool warn_extra_params(json_object* obj, const char* grpName)
+{
+    bool haveExtra = FALSE;
+
+    json_object_object_foreach(obj,key,val)
+    {
+        haveExtra = TRUE;
+        fprintf(stderr,
+                "Warning: In group '%s': Unknown field '%s': '%s'\n",
+                grpName,
+                key,
+                json_object_to_json_string(val));
+    }
+
+    return haveExtra;
 }
 
 /* Read a set of related parameters, e.g. the main NBodyCtx.
@@ -555,26 +458,6 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
 
         exit(EXIT_FAILURE);
     }
-}
-
-
-/* Iterate through remaining keys in obj to provide useful warnings of
- * unknown parameters in the file. Returns true if any found. */
-static bool warn_extra_params(json_object* obj, const char* grpName)
-{
-    bool haveExtra = FALSE;
-
-    json_object_object_foreach(obj,key,val)
-    {
-        haveExtra = TRUE;
-        fprintf(stderr,
-                "Warning: In group '%s': Unknown field '%s': '%s'\n",
-                grpName,
-                key,
-                json_object_to_json_string(val));
-    }
-
-    return haveExtra;
 }
 
 

@@ -247,10 +247,10 @@ typedef struct
 typedef struct
 {
     Potential pot;
-    DwarfModel model;      /* dwarf model */
-    char* outfilename;     /* filename for snapshot output */
-    char* headline;        /* message describing calculation */
-    FILE* outfile;         /* file for snapshot output */
+    DwarfModel model;         /* dwarf model */
+    const char* outfilename;  /* filename for snapshot output */
+    char* headline;           /* message describing calculation */
+    FILE* outfile;            /* file for snapshot output */
     real freq;
     real freqout;
     real theta;            /* accuracy parameter: 0.0 => exact */

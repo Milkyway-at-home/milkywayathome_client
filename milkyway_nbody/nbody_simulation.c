@@ -84,7 +84,7 @@ inline static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
 }
 
 
-void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
+static void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     const real tstop = ctx->model.time_dwarf - 1.0 / (1024.0 * ctx->freq);
 
@@ -92,5 +92,40 @@ void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 
     while (st->tnow < tstop)
         stepsystem(ctx, st);               /* advance N-body system */
+}
+
+/* Takes parsed json and run the simulation, using outFileName for
+ * output */
+void runNBodySimulation(json_object* obj, const char* outFileName)
+{
+    NBodyCtx ctx         = EMPTY_CTX;
+    InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
+    NBodyState st        = EMPTY_STATE;
+
+    ctx.outfilename = outFileName;
+
+    get_params_from_json(&ctx, &ic, obj);
+    initoutput(&ctx);
+
+    printContext(&ctx);
+    printInitialConditions(&ic);
+
+    // Calculate the reverse orbit
+    printf("Calculating reverse orbit...");
+    integrate(&ctx, &ic);
+    printf("done\n");
+
+    printInitialConditions(&ic);
+
+    printf("Running nbody system\n");
+    runSystem(&ctx, &ic, &st);
+
+    printf("Running system done\n");
+    // Get the likelihood
+    //chisqans = chisq();
+    //printf("Run finished. chisq = %f\n", chisqans);
+
+    nbody_ctx_destroy(&ctx);               /* finish up output */
+
 }
 

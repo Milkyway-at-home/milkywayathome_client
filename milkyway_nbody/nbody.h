@@ -8,6 +8,8 @@
 #ifndef _NBODY_H_
 #define _NBODY_H_
 
+#include <json/json.h>
+
 #include "nbody_types.h"
 #include "stdinc.h"
 
@@ -21,7 +23,7 @@ void hackgrav(const NBodyCtx*, NBodyState*, bodyptr, bool);   /* compute force o
 void output(const NBodyCtx* ctx, NBodyState* st);  /* perform output operation */
 void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st);
 
-void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st);
+void runNBodySimulation(json_object* obj, const char* outFileName);
 
 void integrate(const NBodyCtx* ctx, InitialConditions* ic);
 

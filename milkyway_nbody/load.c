@@ -302,8 +302,7 @@ static void hackquad(cellptr p)
 void nbody_ctx_destroy(NBodyCtx* ctx)
 {
     free(ctx->headline);
-    free(ctx->outfilename);
-    if (ctx->outfile)
+    if (ctx->outfile && ctx->outfile != stdout)
         fclose(ctx->outfile);
 }
 

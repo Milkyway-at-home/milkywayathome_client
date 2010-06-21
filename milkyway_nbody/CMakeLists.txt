@@ -41,5 +41,5 @@ set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
 add_executable(milkyway_nbody ${nbody_src})
 target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${JSON_C_LIBRARY} m)
 
-add_subdirectory(tests EXCLUDE_FROM_ALL)
+#add_subdirectory(tests EXCLUDE_FROM_ALL)
 
