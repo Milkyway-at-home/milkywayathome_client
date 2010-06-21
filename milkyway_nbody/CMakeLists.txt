@@ -25,21 +25,22 @@ project(milkyway_nbody)
 
 include_directories("${PROJECT_SOURCE_DIR}")
 
-set(nbody_src chisq.c
-              grav.c
-              io.c
-              load.c
-              orbitintegrator.c
-              nbody_simulation.c
-              json_params.c
-              plummer.c
-              util.c
-              main.c)
+set(nbody_lib_src chisq.c
+                  grav.c
+                  io.c
+                  load.c
+                  orbitintegrator.c
+                  nbody_simulation.c
+                  json_params.c
+                  plummer.c
+                  util.c)
 
 set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
 
-add_executable(milkyway_nbody ${nbody_src})
-target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${JSON_C_LIBRARY} m)
+add_library(nbody_simulation STATIC ${nbody_lib_src})
+
+add_executable(milkyway_nbody main.c)
+target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${JSON_C_LIBRARY} m nbody_simulation)
 
 #add_subdirectory(tests EXCLUDE_FROM_ALL)
 

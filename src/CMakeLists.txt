@@ -52,10 +52,10 @@ endif()
 
 if(CUDA_SEPARATION)
   add_executable(milkyway_client_cuda milkyway_client_app.c)
-  target_link_libraries(milkyway_client_ocuda${POPT_LIBRARY}
-                                            ${BOINC_LIBRARIES}
-                                            milkyway_separation_cuda
-                                            milkyway_separation_cpu)
+  target_link_libraries(milkyway_client_cuda ${POPT_LIBRARY}
+                                             ${BOINC_LIBRARIES}
+                                             milkyway_separation_cuda
+                                             milkyway_separation_cpu)
   set_target_properties(milkyway_client_cuda
                         PROPERTIES
                         COMPILE_FLAGS "-DCOMPUTE_ON_CPU=0 -DUSE_CUDA=1 -D USE_OCL=0")
