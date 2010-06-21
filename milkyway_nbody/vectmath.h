@@ -14,6 +14,8 @@
 
 typedef real vector[NDIM], matrix[NDIM][NDIM];
 
+typedef real* vectorptr;
+
 #define ZERO_VECTOR { 0.0, 0.0, 0.0 }
 #define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
 

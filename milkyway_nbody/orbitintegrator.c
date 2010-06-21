@@ -12,7 +12,7 @@
  * we share divisions and such */
 
 
-static void exponentialDiskAccel(vector acc, const Disk* disk, const vector pos)
+static void exponentialDiskAccel(vectorptr restrict acc, const Disk* disk, const vectorptr restrict pos)
 {
     const real b = disk->scale_length;
     const real r = rsqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
@@ -26,7 +26,7 @@ static void exponentialDiskAccel(vector acc, const Disk* disk, const vector pos)
 /* TODO: Sharing between potential and accel functiosn */
 
 /* Pure functions are the best ones */
-real logHaloPhi(const Halo* halo, const vector pos)
+real logHaloPhi(const Halo* halo, const vectorptr restrict pos)
 {
     const real tvsqr = 2.0 * sqr(halo->vhalo);
     const real qsqr  = sqr(halo->flattenZ);
@@ -36,7 +36,7 @@ real logHaloPhi(const Halo* halo, const vector pos)
     return sqr(halo->vhalo) * rlog( sqr(pos[0]) + sqr(pos[1]) + (zsqr / qsqr) + sqr(d) );
 }
 
-real miyamotoNagaiPhi(const Disk* disk, const vector pos)
+real miyamotoNagaiPhi(const Disk* disk, const vectorptr restrict pos)
 {
     const real a   = disk->scale_length;
     const real b   = disk->scale_height;
@@ -47,14 +47,14 @@ real miyamotoNagaiPhi(const Disk* disk, const vector pos)
     return -disk->mass / rp;
 }
 
-real sphericalPhi(const Spherical* sph, const vector pos)
+real sphericalPhi(const Spherical* sph, const vectorptr restrict pos)
 {
     const real r = rsqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
     return -sph->mass / (r + sph->scale);
 }
 
 /* gets negative of the acceleration vector of this disk component */
-void miyamotoNagaiAccel(vector acc, const Disk* disk, const vector pos)
+void miyamotoNagaiAccel(vectorptr restrict acc, const Disk* disk, const vectorptr restrict pos)
 {
     const real a   = disk->scale_length;
     const real b   = disk->scale_height;
@@ -67,7 +67,7 @@ void miyamotoNagaiAccel(vector acc, const Disk* disk, const vector pos)
     acc[2] = disk->mass * pos[2] * azp / (zp * rth);
 }
 
-void nfwHaloAccel(vector acc, const Halo* halo, const vector pos)
+void nfwHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr restrict pos)
 {
     const real q = halo->scale_length;
     const real r  = rsqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
@@ -77,12 +77,12 @@ void nfwHaloAccel(vector acc, const Halo* halo, const vector pos)
     MULVS(acc, pos, c);
 }
 
-void triaxialHaloAccel(vector acc, const Halo* halo, const vector pos)
+void triaxialHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr restrict pos)
 {
     fail("Implement me!\n");
 }
 
-void logHaloAccel(vector acc, const Halo* halo, const vector pos)
+void logHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr restrict pos)
 {
     const real tvsqr = 2.0 * sqr(halo->vhalo);
     const real qsqr  = sqr(halo->flattenZ);
@@ -97,14 +97,14 @@ void logHaloAccel(vector acc, const Halo* halo, const vector pos)
     acc[2] = tvsqr * pos[2] / (qsqr * arst + zsqr);
 }
 
-void sphericalAccel(vector acc, const Spherical* sph, const vector pos)
+void sphericalAccel(vectorptr restrict acc, const Spherical* sph, const vectorptr restrict pos)
 {
     const real r     = rsqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
     const real denom = r * sqr(sph->scale + r);
     MULVS(acc, pos, sph->mass / denom);
 }
 
-inline void acceleration(real* restrict acc, const NBodyCtx* ctx, const real* restrict pos)
+inline void acceleration(vectorptr restrict acc, const NBodyCtx* ctx, const vectorptr restrict pos)
 {
     /* lookup table for functions for calculating accelerations */
     static const HaloAccel haloFuncs[] = { [LogarithmicHalo] = logHaloAccel,

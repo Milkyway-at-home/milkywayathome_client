@@ -25,7 +25,7 @@ typedef struct
 /* subdivp: decide if cell q is too close to accept as a single
  * term. Also sets qmem, dr, and drsq for use by gravsub.
  */
-inline static bool subdivp(ForceEvalState* restrict fest, cellptr q)
+inline static bool subdivp(ForceEvalState* fest, cellptr q)
 {
     SUBV(fest->dr, Pos(q), fest->pos0);   /* compute displacement */
     SQRV(fest->drsq, fest->dr);           /* and find dist squared */
@@ -36,7 +36,7 @@ inline static bool subdivp(ForceEvalState* restrict fest, cellptr q)
 /* gravsub: compute contribution of node q to gravitational field at
  * point pos0, and add to running totals phi0 and acc0.
  */
-inline static void gravsub(const NBodyCtx* ctx, ForceEvalState* restrict fest, nodeptr q)
+inline static void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, nodeptr q)
 {
     real drab, phii, mor3;
     vector ai, quaddr;
@@ -75,8 +75,8 @@ inline static void gravsub(const NBodyCtx* ctx, ForceEvalState* restrict fest, n
  * incest.
  */
 inline static bool treescan(const NBodyCtx* ctx,
-                            NBodyState* restrict st,
-                            ForceEvalState* restrict fest,
+                            NBodyState* st,
+                            ForceEvalState* fest,
                             nodeptr q)
 {
     bool skipself = FALSE;
@@ -108,7 +108,7 @@ inline static bool treescan(const NBodyCtx* ctx,
 /* hackgrav: evaluate gravitational field on body p; checks to be
  * sure self-interaction was handled correctly if intree is true.
  */
-void hackgrav(const NBodyCtx* restrict ctx, NBodyState* restrict st, bodyptr p, bool intree)
+void hackgrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
 {
     vector externalacc;
     int n2bterm;    /* number 2-body of terms evaluated */

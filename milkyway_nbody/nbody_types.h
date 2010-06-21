@@ -295,12 +295,12 @@ typedef int generic_enum_t;  /* A general enum type. */
 
 
 /* Acceleration functions for a given potential */
-typedef void (*SphericalAccel) (vector, const Spherical*, const vector);
-typedef void (*HaloAccel) (vector, const Halo*, const vector);
-typedef void (*DiskAccel) (vector, const Disk*, const vector);
+typedef void (*SphericalAccel) (vectorptr restrict, const Spherical*, const vectorptr restrict);
+typedef void (*HaloAccel) (vectorptr restrict, const Halo*, const vectorptr restrict);
+typedef void (*DiskAccel) (vectorptr restrict, const Disk*, const vectorptr restrict);
 
 /* Generic potential function */
-typedef void (*AccelFunc) (vector, const void*, const vector);
+typedef void (*AccelFunc) (vectorptr restrict, const void*, const vectorptr restrict);
 
 
 /* PROC, IPROC: pointers to procedures and integer-valued functions. */
