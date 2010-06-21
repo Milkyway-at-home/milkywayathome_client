@@ -608,6 +608,7 @@ int main(int argc, char** argv)
 
         /*
         fails += test_distv();
+        fails += test_negv();
         fails += test_crossvp();
         */
 

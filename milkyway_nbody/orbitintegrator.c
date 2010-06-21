@@ -14,7 +14,13 @@
 
 static void exponentialDiskAccel(vector acc, const Disk* disk, const vector pos)
 {
-    fail("Implement me!\n");
+    const real b = disk->scale_length;
+    const real r = rsqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
+
+    const real expPiece = rexp(-r/b) * (b+r) / b;
+    const real arst = disk->mass * (1 - expPiece) / cube(r);
+
+    MULVS(acc, pos, arst);
 }
 
 /* TODO: Sharing between potential and accel functiosn */
@@ -63,7 +69,12 @@ void miyamotoNagaiAccel(vector acc, const Disk* disk, const vector pos)
 
 void nfwHaloAccel(vector acc, const Halo* halo, const vector pos)
 {
-    fail("Implement me!\n");
+    const real q = halo->scale_length;
+    const real r  = rsqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
+    const real qr = q + r;
+    const real c  = q * sqr(halo->vhalo) * (qr * log(qr / q) - r) / (0.216 * cube(r) * qr);
+
+    MULVS(acc, pos, c);
 }
 
 void triaxialHaloAccel(vector acc, const Halo* halo, const vector pos)
@@ -90,10 +101,7 @@ void sphericalAccel(vector acc, const Spherical* sph, const vector pos)
 {
     const real r     = rsqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
     const real denom = r * sqr(sph->scale + r);
-
-    acc[0] = sph->mass * pos[0] / denom;
-    acc[1] = sph->mass * pos[1] / denom;
-    acc[2] = sph->mass * pos[2] / denom;
+    MULVS(acc, pos, sph->mass / denom);
 }
 
 inline void acceleration(const NBodyCtx* ctx, const real* pos, real* acc)
@@ -108,9 +116,9 @@ inline void acceleration(const NBodyCtx* ctx, const real* pos, real* acc)
 
     static const SphericalAccel sphFuncs[] = { [SphericalPotential] = sphericalAccel };
 
-    vector acc1 = { 0.0, 0.0, 0.0 };
-    vector acc2 = { 0.0, 0.0, 0.0 };
-    vector acc3 = { 0.0, 0.0, 0.0 };
+    vector acc1 = ZERO_VECTOR;
+    vector acc2 = ZERO_VECTOR;
+    vector acc3 = ZERO_VECTOR;
 
     /* Use the type of potential to index into the table, and use the
      * appropriate function */
