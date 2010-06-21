@@ -37,13 +37,6 @@ void initoutput(NBodyCtx* ctx)
 
 /* Counters and accumulators for output routines. */
 
-static real mtot;                /* total mass of N-body system */
-static real etot[3];             /* binding, kinetic, potential energy */
-static matrix keten;     /* kinetic energy tensor */
-static matrix peten;     /* potential energy tensor */
-static vector cmphase[2];    /* center of mass coordinates */
-static vector amvec;     /* angular momentum vector */
-
 /* OUTPUT: compute diagnostics and output data. */
 void output(const NBodyCtx* ctx, NBodyState* st)
 {
@@ -80,16 +73,14 @@ static void diagnostics(const NBodyCtx* ctx, const NBodyState* st)
     real velsq;
     vector tmpv;
     matrix tmpt;
+    real mtot = 0.0;                                     /* total mass of N-body system */
+    real etot[3] = { 0.0, 0.0, 0.0 };                    /* binding, kinetic, potential energy */
+    matrix keten = ZERO_MATRIX;                          /* kinetic energy tensor */
+    matrix peten = ZERO_MATRIX;                          /* potential energy tensor */
+    vector cmphase[2] = { ZERO_VECTOR, ZERO_VECTOR };    /* center of mass coordinates */
+    vector amvec = ZERO_VECTOR;                         /* angular momentum vector */
 
     const bodyptr endp = st->bodytab + ctx->model.nbody;
-
-    mtot = 0.0;                 /* zero total mass */
-    etot[1] = etot[2] = 0.0;            /* zero total KE and PE */
-    CLRM(keten);                /* zero ke tensor */
-    CLRM(peten);                /* zero pe tensor */
-    CLRV(cmphase[0]);               /* zero c. of m. position */
-    CLRV(cmphase[1]);               /* zero c. of m. velocity */
-    CLRV(amvec);                /* zero am vector */
     for (p = st->bodytab; p < endp; p++) /* loop over all particles */
     {
         mtot += Mass(p);                    /* sum particle masses */
