@@ -43,23 +43,24 @@ int spherical_falloff(Spherical* s)
     /* Find the acceleration there */
     sphericalAccel(a0, s, rv);
 
+    /* FIXME: More tests past as you make k larger */
     /* If you scale the radius by an arbitrary factor k */
-    real k = 10 * RANDOM_REAL;
+    real k = RANDOM_REAL;
     MULVS(rv1, rv, k);
 
     /* the new acceleration should be
 
-             ( r^(1/2) + r0 )^2
-          ----------------------- * (original acceleration)
-            (k * r^(1/2) + r0)^2
+             ( r + r0 )^2
+          ------------------ * (original acceleration)
+            (k * r + r0)^2
     */
 
     /* Find the acceleration at the scaled vector */
     sphericalAccel(a1, &s, rv1);
 
     /* Calculate the factor */
-    real numer = sqr( sqrt(r) + r0 );
-    real denom = sqr( k * sqrt(r) + r0 );
+    real numer  = sqr( r + r0 );
+    real denom  = sqr( k * r + r0 );
     real factor = numer / denom;
 
     /* Calculate the expected potential */
@@ -199,14 +200,14 @@ int spherical_r0_scaling(Spherical* s)
     sphericalAccel(a1, s, rv);
 
     /*
-                    (r^(1/2) + r0)^2
+                    ( r + r0 )^2
            a1 = ----------------------- * a0
-                  (r^(1/2) + k * r0)^2
+                  (r + k * r0)^2
      */
 
     /* Calculate the factor */
-    real numer = sqr( sqrt(r) + r0 );
-    real denom = sqr( sqrt(r) + k * r0 );
+    real numer = sqr( r + r0 );
+    real denom = sqr( r + k * r0 );
     real factor = numer / denom;
 
     /* Calculate the expected potential */
