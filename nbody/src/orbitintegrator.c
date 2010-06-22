@@ -68,10 +68,11 @@ void miyamotoNagaiAccel(vectorptr restrict acc, const Disk* disk, const vectorpt
 
 void nfwHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr restrict pos)
 {
-    const real q = halo->scale_length;
-    const real r  = rsqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
-    const real qr = q + r;
-    const real c  = q * sqr(halo->vhalo) * (qr * log(qr / q) - r) / (0.216 * cube(r) * qr);
+    real r;
+    ABSV(r, pos);
+    const real a  = halo->scale_length;
+    const real ar = a + r;
+    const real c  = a * sqr(halo->vhalo) * (ar * log(ar / a) - r) / (0.216 * cube(r) * ar);
 
     MULVS(acc, pos, c);
 }

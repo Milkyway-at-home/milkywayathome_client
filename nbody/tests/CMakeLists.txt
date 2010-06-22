@@ -22,8 +22,9 @@
 # Test sources should be named <testname>.c .
 set(test_list t_vectors
               t_spherical
-              t_loghalo
               t_miyamoto_nagai
+              t_loghalo
+              t_nfw_halo
               t_triaxial_halo)
 
 foreach(test ${test_list})
