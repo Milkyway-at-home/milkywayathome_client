@@ -53,7 +53,7 @@ int mn_disk_falloff(Disk* d)
           i = a + sqrt(b^2 + k^2 * z^2)
           w = x^2 + y^2 + h^2
 
-                  k * (x^ + y^2 + h^2)^(3/2)
+                        k * w^(3/2)
       a_1x = ----------------------------------- * a_0x
                (k^2 * (x^2 + y^2) + i^2)^(3/2)
 
@@ -71,7 +71,7 @@ int mn_disk_falloff(Disk* d)
 
     real h = a + sqrt( sqr(b) + sqr(rv[2]) );
     real i = a + sqrt( sqr(b) + sqr(k) * sqr(rv[2]) );
-    real w = sqr(rv[0]) + sqr(rv[1]) + h;
+    real w = sqr(rv[0]) + sqr(rv[1]) + sqr(h);
 
     real xynum = k * pow(sqr(rv[0]) + sqr(rv[1]) + sqr(h), 1.5);
     real xyden = pow( sqr(k) * (sqr(rv[0]) + sqr(rv[1])) + sqr(i), 1.5);

@@ -31,7 +31,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define APPROXEQ(x, y) (abs(x - y) < LIMIT)
 
-#define RANDOM_REAL (((real) rand()) / (((real) (RAND_MAX)) + (real) 1))
+#define RANDOM_REAL ((real) drand48())
 #define RANDOM_VECTOR { RANDOM_REAL, RANDOM_REAL, RANDOM_REAL }
 
 #define RANDOM_INT(low, high) (rand() % (high - low + 1) + low)

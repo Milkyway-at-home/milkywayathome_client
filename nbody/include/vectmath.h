@@ -126,7 +126,7 @@ typedef real* vectorptr;
         size_t _i;                              \
         real _tmp = 0.0;                        \
         for (_i = 0; _i < NDIM; ++_i)           \
-            _tmp += (v)[_i] * (v)[_i];          \
+            _tmp += sqr((v)[_i]);               \
         (s) = rsqrt(_tmp);                      \
     }
 

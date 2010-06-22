@@ -56,7 +56,7 @@ int spherical_falloff(Spherical* s)
     */
 
     /* Find the acceleration at the scaled vector */
-    sphericalAccel(a1, &s, rv1);
+    sphericalAccel(a1, s, rv1);
 
     /* Calculate the factor */
     real numer  = sqr( r + r0 );
@@ -82,18 +82,28 @@ int spherical_falloff(Spherical* s)
 
         fprintf(stderr,
                 "Spherical potential falloff: Result differs significantly from expected value:\n"
-                "\trv        = %s\n"
-                "\tr         = %g\n"
-                "\ta0        = %s\n"
-                "\tr0        = %g\n"
-                "\tk         = %g\n"
-                "\tfactor    = %g/%g = %g\n"
-                "\tExpected  = %s\n"
-                "\tGot       = %s\n"
-                "\tdiff      = %s\n"
-                "\t|diff|    = %g\n"
-                "\tTolerance = %g\n" ,
-                rvStr, r, a0Str, r0, k, numer, denom, factor, scaledStr, a1Str, diffStr, diffMag, LIMIT);
+                "\trv         = %s\n"
+                "\tr          = %g\n"
+                "\ta0         = %s\n"
+                "\tr0         = %g\n"
+                "\tmass       = %g\n"
+                "\tr + r0     = %g\n"
+                "\t(r+r0)^2   = %g\n"
+                "\tr*(r+r0)^2 = %g\n"
+                "\tk          = %g\n"
+                "\tfactor     = %g/%g = %g\n"
+                "\tExpected   = %s\n"
+                "\tGot        = %s\n"
+                "\tdiff       = %s\n"
+                "\t|diff|     = %g\n"
+                "\tTolerance  = %g\n" ,
+                rvStr, r, a0Str, r0, s->mass,
+                r + r0,
+                sqr(r+r0),
+                r * sqr(r+r0),
+                k,
+                numer, denom, factor,
+                scaledStr, a1Str, diffStr, diffMag, LIMIT);
 
         free(scaledStr);
         free(a1Str);

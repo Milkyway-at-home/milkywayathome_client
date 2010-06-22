@@ -112,7 +112,7 @@ void triaxialHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr
 
     acc[1] = vsqr * ( 2 * c2 * pos[1] + c3 * pos[0] ) / arst2;
 
-    acc[2] = 2 * vsqr * pos[2] / (qzs * arst2 + zsqr);
+    acc[2] = 2 * vsqr * pos[2] / (qzs * arst + zsqr);
 
 }
 
@@ -133,9 +133,9 @@ void logHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr rest
 
 void sphericalAccel(vectorptr restrict acc, const Spherical* sph, const vectorptr restrict pos)
 {
-    const real r     = rsqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
-    const real denom = r * sqr(sph->scale + r);
-    MULVS(acc, pos, sph->mass / denom);
+    real r;
+    ABSV(r, pos);
+    MULVS(acc, pos, sph->mass / (r * sqr(sph->scale + r)));
 }
 
 inline void acceleration(vectorptr restrict acc, const NBodyCtx* ctx, const vectorptr restrict pos)

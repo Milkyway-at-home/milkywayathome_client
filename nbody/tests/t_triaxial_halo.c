@@ -46,7 +46,7 @@ int triaxial_halo_falloff(Halo* h)
     /*
             let l = (c1 * x^2) + (c3 * x * y) + (c2 * y^2)
 
-                 k * ( qz^2 (rhalo^2 + l) + z^2 )
+                k * ( qz^2 * (rhalo^2 + l) + z^2 )
         a1 = ------------------------------------------ * a0
                qz^2 (rhalo^2 + k^2 * l) + (k^2 * z^2)
 
@@ -79,8 +79,8 @@ int triaxial_halo_falloff(Halo* h)
 
     const real l = (c1 * sqr(rv[0])) + (c3 * rv[0] * rv[1]) + (c2 * sqr(rv[1]));
 
-    const real numer = k * ( qzs * ( sqr(rhalo) + l ) + sqr(rv[2]) );
-    const real denom = qzs * (sqr(rhalo) + sqr(k) * l) + (sqr(k) * sqr(rv[2]));
+    const real numer  = k * ( qzs * ( sqr(rhalo) + l ) + sqr(rv[2]) );
+    const real denom  = qzs * (sqr(rhalo) + sqr(k) * l) + (sqr(k) * sqr(rv[2]));
     const real factor = numer / denom;
 
     MULVS(scaleda0, a0, factor);
@@ -109,6 +109,9 @@ int triaxial_halo_falloff(Halo* h)
                 "\tqz        = %g\n"
                 "\trhalo     = %g\n"
                 "\tvhalo     = %g\n"
+                "\tc1        = %g\n"
+                "\tc2        = %g\n"
+                "\tc3        = %g\n"
                 "\tk         = %g\n"
                 "\tfactor    = %g/%g = %g\n"
                 "\tExpected  = %s\n"
@@ -116,7 +119,7 @@ int triaxial_halo_falloff(Halo* h)
                 "\tdiff      = %s\n"
                 "\t|diff|    = %g\n"
                 "\tTolerance = %g\n" ,
-                rvStr, r, a0Str, qx, qy, qz, rhalo, vhalo, k, numer, denom, factor, scaledStr, a1Str, diffStr, diffMag, LIMIT);
+                rvStr, r, a0Str, qx, qy, qz, rhalo, vhalo, c1, c2, c3, k, numer, denom, factor, scaledStr, a1Str, diffStr, diffMag, LIMIT);
 
         free(scaledStr);
         free(a1Str);
