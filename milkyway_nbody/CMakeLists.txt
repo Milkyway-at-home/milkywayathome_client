@@ -108,5 +108,5 @@ endif()
 add_executable(milkyway_nbody main.c)
 target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${JSON_C_LIBRARY} m ${nbody_libs})
 
-#add_subdirectory(tests EXCLUDE_FROM_ALL)
+add_subdirectory(tests EXCLUDE_FROM_ALL)
 

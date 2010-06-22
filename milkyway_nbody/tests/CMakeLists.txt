@@ -29,20 +29,20 @@ set(test_list t_vectors
               t_miyamoto_nagai
               )
 
-set(nbody_main_src ../io.c
-                   ../plummer.c
-                   ../chisq.c
+set(nbody_main_src ../plummer.c
                    ../nbody_simulation.c
-                   ../util.c
                    ../grav.c
                    ../load.c
-                   ../orbitintegrator.c
-                   ../vectmath.c)
+                   ../util.c
+                   ../io.c
+                   ../json_params.c
+                   ../orbitintegrator.c)
+
 
 foreach(test ${test_list})
 	add_executable(${test} ${test}.c ${nbody_main_src})
 	add_test(${test} ${EXECUTABLE_OUTPUT_PATH}/${test})
     add_dependencies(check ${test})
-    target_link_libraries(${test} m)
+    target_link_libraries(${test} m ${JSON_C_LIBRARY})
 endforeach()
 

@@ -19,7 +19,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "nbody_tests.h"
-#include "nbody.h"
+#include "nbody_priv.h"
 
 #define RANDOM_MN_DISK { MiyamotoNagaiDisk, RANDOM_REAL, RANDOM_REAL, RANDOM_REAL }
 

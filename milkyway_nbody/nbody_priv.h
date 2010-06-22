@@ -13,7 +13,10 @@
 #include <json/json.h>
 
 #include "nbody_types.h"
+#include "json_params.h"
 #include "stdinc.h"
+#include "vectmath.h"
+#include "real.h"
 
 /* Global function prototypes. */
 

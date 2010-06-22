@@ -19,7 +19,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "nbody_tests.h"
-#include "nbody.h"
+#include "nbody_priv.h"
 
 /* When the result is supposed to be a vector */
 void vectorError(const char* testfunc, const char* op, vector reference, vector answer, vector a, vector b)

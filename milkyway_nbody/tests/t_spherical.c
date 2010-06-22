@@ -19,7 +19,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "nbody_tests.h"
-#include "nbody.h"
+#include "nbody_priv.h"
 
 /* These are supposed be the max enum value. These will change as new
  * potentials are added */
