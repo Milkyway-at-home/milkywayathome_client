@@ -5,7 +5,7 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#include "nbody.h"
+#include "nbody_priv.h"
 #include "util.h"
 
 typedef struct

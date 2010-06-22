@@ -20,7 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string.h>
 #include <assert.h>
-#include "nbody.h"
+#include "nbody_priv.h"
 #include "json_params.h"
 
 static void processPotential(Potential* p)
@@ -111,7 +111,6 @@ static void postProcess(NBodyCtx* ctx)
     /* These other pieces are dependent on the others being set up
      * first */
 
-    printf("arstarst: %g\n", ctx->model.timestep);
     ctx->freqout = ctx->freq = inv(ctx->model.timestep);
 
 }

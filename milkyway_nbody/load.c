@@ -5,7 +5,7 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#include "nbody.h"
+#include "nbody_priv.h"
 #include "util.h"
 
 static void newtree(Tree*);           /* flush existing tree */
@@ -221,7 +221,7 @@ static void setrcrit(const NBodyCtx* ctx, cellptr p, vector cmpos, real psize)
         {
             dmin = cmpos[k] - (Pos(p)[k] - psize / 2);
             /* dist from 1st corner */
-            bmax2 += rsqr(MAX(dmin, psize - dmin));
+            bmax2 += sqr(MAX(dmin, psize - dmin));
             /* sum max distance^2 */
         }
         rc = rsqrt(bmax2) / ctx->theta;      /* using max dist from cm */
@@ -235,7 +235,7 @@ static void setrcrit(const NBodyCtx* ctx, cellptr p, vector cmpos, real psize)
     {
         fail("Got unknown criterion: %d\n", ctx->criterion);
     }
-    Rcrit2(p) = rsqr(rc);           /* store square of radius */
+    Rcrit2(p) = sqr(rc);           /* store square of radius */
 }
 
 /* threadtree: do a recursive treewalk starting from node p,

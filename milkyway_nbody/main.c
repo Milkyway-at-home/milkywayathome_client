@@ -5,17 +5,21 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#include "nbody.h"
-#include "json_params.h"
-
-#include <popt.h>
-
 /* TODO: wuh wuh windows */
 #include <unistd.h>
 
+#include <stdlib.h>
+#include <popt.h>
+#include "nbody.h"
+
+
 /* Read the command line arguments, and do the inital parsing of the parameter file */
-static json_object* readParameters(const int argc, const char** argv, char** outFileName)
+static json_object* readParameters(const int argc, const char** argv, char** outFileName, int* useDouble)
 {
+  #if !defined(DYNAMIC_PRECISION)
+    #pragma unused(useDouble)
+  #endif
+
     poptContext context;
     int o;
     static char* inputFile = NULL;        /* input JSON file */
@@ -45,6 +49,14 @@ static json_object* readParameters(const int argc, const char** argv, char** out
             POPT_ARG_STRING, &inputStr,
             0, "Input given as string", NULL
         },
+
+#if DYNAMIC_PRECISION
+        {
+            "double", 'd',
+            POPT_ARG_NONE, useDouble,
+            0, "Use double precision", NULL
+        },
+#endif
 
         POPT_AUTOHELP
 
@@ -111,7 +123,10 @@ static json_object* readParameters(const int argc, const char** argv, char** out
         obj = json_tokener_parse(inputStr);
         free(inputStr);
         if (is_error(obj))
-            fail("Failed to parse given string\n");
+        {
+            fprintf(stderr, "Failed to parse given string\n");
+            exit(EXIT_FAILURE);
+        }
     }
 
     return obj;
@@ -122,10 +137,26 @@ int main(int argc, const char* argv[])
 {
     char* outFileName;
     json_object* obj;
+    int useDouble;
 
-    obj = readParameters(argc, argv, &outFileName);
+    obj = readParameters(argc, argv, &outFileName, &useDouble);
 
+#ifdef DYNAMIC_PRECISION
+    if (useDouble)
+    {
+        printf("Using double precision\n");
+        runNBodySimulation_double(obj, outFileName);
+        printf("Done with double\n");
+    }
+    else
+    {
+        printf("Using float precision\n");
+        runNBodySimulation_float(obj, outFileName);
+        printf("Done with float\n");
+    }
+#else
     runNBodySimulation(obj, outFileName);
+#endif /* DYNAMIC_PRECISION */
 
     free(outFileName);
 

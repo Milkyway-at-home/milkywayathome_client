@@ -18,8 +18,7 @@
 #ifndef _REAL_H_
 #define _REAL_H_
 
-/*  * REAL, REALPTR: real-valued number, and pointer to same.
- */
+/* real, realptr: real-valued number, and pointer to same. */
 
 #ifndef  DOUBLEPREC
 
@@ -31,7 +30,7 @@ typedef double real, *realptr;
 
 #endif
 
-/*  * RPROC: pointer to a real-valued function.  This prototype does
+/* rproc: pointer to a real-valued function.  This prototype does
  * not specify the types of any arguments.
  */
 
@@ -42,7 +41,7 @@ typedef real (*rproc)();
 
 #include <math.h>
 
-/*  * Real-valued library functions.  Most of these are actually supplied
+/* Real-valued library functions.  Most of these are actually supplied
  * by the standard C libraries.
  */
 

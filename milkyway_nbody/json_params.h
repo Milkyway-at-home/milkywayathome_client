@@ -21,8 +21,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _JSON_PARAMS_H_
 #define _JSON_PARAMS_H_
 
-#include <popt.h>
 #include <json/json.h>
+#include "nbody_priv.h"
 
 /* function read a named field into an enum */
 /* :: (Enum a) => String -> a */

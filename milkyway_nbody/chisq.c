@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "nbody.h"
+#include "nbody_priv.h"
 
 #define r0 8.0
 #define phi d2r(128.79)

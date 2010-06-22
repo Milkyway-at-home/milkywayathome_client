@@ -6,11 +6,10 @@
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "nbody.h"
+#include "nbody_priv.h"
 
 /* CHECKME: order of operations and effect on precision, and where can
  * we share divisions and such */
-
 
 static void exponentialDiskAccel(vectorptr restrict acc, const Disk* disk, const vectorptr restrict pos)
 {

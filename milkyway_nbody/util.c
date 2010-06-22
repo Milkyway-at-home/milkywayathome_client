@@ -9,6 +9,7 @@
 #include "nbody.h"
 #include "vectmath.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 #include <sys/types.h>

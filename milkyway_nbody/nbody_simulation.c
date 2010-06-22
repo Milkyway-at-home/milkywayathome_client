@@ -4,9 +4,10 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#include "nbody.h"
 #include "util.h"
 #include "json_params.h"
+#include "nbody_priv.h"
+#include "nbody.h"
 
 /* startrun: startup hierarchical N-body code. */
 inline static void startrun(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
@@ -96,7 +97,15 @@ static void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodySta
 
 /* Takes parsed json and run the simulation, using outFileName for
  * output */
-void runNBodySimulation(json_object* obj, const char* outFileName)
+#ifdef DYNAMIC_PRECISION
+  #ifdef DOUBLEPREC
+    void runNBodySimulation_double(json_object* obj, const char* outFileName)
+  #else
+    void runNBodySimulation_float(json_object* obj, const char* outFileName)
+  #endif /* DOUBLEPREC */
+#else
+  void runNBodySimulation(json_object* obj, const char* outFileName)
+#endif /* DYNAMIC_PRECISION */
 {
     NBodyCtx ctx         = EMPTY_CTX;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;

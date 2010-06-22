@@ -6,8 +6,7 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#define _GNU_SOURCE
-#include "nbody.h"
+#include "nbody_priv.h"
 #include "util.h"
 
 void initoutput(NBodyCtx* ctx)
