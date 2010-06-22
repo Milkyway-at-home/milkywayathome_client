@@ -88,7 +88,7 @@ void triaxialHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr
 
     const real qxs = sqr(halo->flattenX);
     const real qys = sqr(halo->flattenY);
-    const real qzs = sqr(halo->flattenY);
+    const real qzs = sqr(halo->flattenZ);
 
     const real c1 = (cps / qxs) + (sps / qys);
     const real c2 = (cps / qys) + (sps / qxs);

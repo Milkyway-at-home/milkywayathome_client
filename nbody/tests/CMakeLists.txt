@@ -23,7 +23,8 @@
 set(test_list t_vectors
               t_spherical
               t_loghalo
-              t_miyamoto_nagai)
+              t_miyamoto_nagai
+              t_triaxial_halo)
 
 foreach(test ${test_list})
 	add_executable(${test} ${test}.c ${nbody_lib_src})
