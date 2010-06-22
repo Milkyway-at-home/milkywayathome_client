@@ -5,7 +5,6 @@
 /* ************************************************************************** */
 
 #include "nbody_priv.h"
-#include "util.h"
 
 #define MFRAC  0.999                /* cut off 1-MFRAC of mass */
 

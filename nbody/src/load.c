@@ -6,7 +6,6 @@
 /* ************************************************************************** */
 
 #include "nbody_priv.h"
-#include "util.h"
 
 static void newtree(Tree*);           /* flush existing tree */
 static cellptr makecell(Tree*);           /* create an empty cell */

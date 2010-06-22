@@ -21,7 +21,13 @@
 cmake_minimum_required (VERSION 2.8)
 project(milkyway_nbody)
 
-include_directories("${PROJECT_SOURCE_DIR}")
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
+
+include_directories(${PROJECT_INCLUDE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 
 option(DYNAMIC_PRECISION
        "Use dynamic precision" ON)
@@ -31,17 +37,25 @@ option(DOUBLEPREC
        "Use double precision" ON)
 
 
-set(nbody_lib_src chisq.c
-                  grav.c
-                  io.c
-                  load.c
-                  orbitintegrator.c
-                  nbody_simulation.c
-                  json_params.c
-                  plummer.c
-                  util.c)
+set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
+                  ${PROJECT_SOURCE_DIR}/src/grav.c
+                  ${PROJECT_SOURCE_DIR}/src/io.c
+                  ${PROJECT_SOURCE_DIR}/src/load.c
+                  ${PROJECT_SOURCE_DIR}/src/orbitintegrator.c
+                  ${PROJECT_SOURCE_DIR}/src/nbody_simulation.c
+                  ${PROJECT_SOURCE_DIR}/src/json_params.c
+                  ${PROJECT_SOURCE_DIR}/src/plummer.c
+                  ${PROJECT_SOURCE_DIR}/src/nbody_util.c)
 
 set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
+
+
+
+message("---------------------------------------------")
+message("   Building:          ${PROJECT_NAME}")
+message("   Dynamic precision: ${DYNAMIC_PRECISION}")
+message("   Double precision:  ${DOUBLEPREC}")
+message("---------------------------------------------")
 
 
 
@@ -105,7 +119,7 @@ else()
 endif()
 
 
-add_executable(milkyway_nbody main.c)
+add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
 target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${JSON_C_LIBRARY} m ${nbody_libs})
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)

@@ -19,14 +19,12 @@
 #
 
 cmake_minimum_required (VERSION 2.8)
-project(milkyway@home)
+project(milkywayathome)
 
 enable_testing()
 
-set(milkyway_client_VERSION_MAJOR 0)
-set(milkyway_client_VERSION_MINOR 1)
-set(milkyway_client_VERSION       0.1)
-
+#set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules;${CMAKE_MODULE_PATH}")
+set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules")
 
 #choose release build type by default
 if(NOT CMAKE_BUILD_TYPE)
@@ -39,13 +37,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(MW_ENABLE_DEBUG ON)
   set(USE_BOINC_DIAGNOSTICS ON)
 endif()
-
-
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules)
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
-set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/lib)
-set(PROJECT_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
-
 
 include_directories(${PROJECT_INCLUDE_DIR})
 
@@ -199,21 +190,12 @@ if(NOT CPU_SEPARATION AND NOT CUDA_SEPARATION AND NOT OPENCL_SEPARATION AND NOT 
   message(FATAL_ERROR "Nothing will be built!")
 endif()
 
-configure_file (
-  "${PROJECT_INCLUDE_DIR}/config.h.in"
-  "${PROJECT_INCLUDE_DIR}/config.h")
-
-
 if(SEPARATION_IS_BUILDABLE)
-  include_directories(include)
-  add_subdirectory(milkyway_separation)
-  add_subdirectory(src)
+  add_subdirectory(separation)
 endif()
 
 if(NBODY_IS_BUILDABLE)
-  add_subdirectory(milkyway_nbody)
+  add_subdirectory(nbody)
 endif()
-
-add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 

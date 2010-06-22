@@ -7,7 +7,6 @@
 /* ************************************************************************** */
 
 #include "nbody_priv.h"
-#include "util.h"
 
 void initoutput(NBodyCtx* ctx)
 {

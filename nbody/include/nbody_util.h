@@ -7,8 +7,8 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#ifndef _UTIL_H_
-#define _UTIL_H_
+#ifndef _NBODY_UTIL_H_
+#define _NBODY_UTIL_H_
 
 #include "stdinc.h"
 #include "real.h"
@@ -26,5 +26,5 @@ void eprintf(char*, ...);        /* printf to error FILE* */
 int compare (const void* a, const void* b);     /* comparison function used in chisq */
 real chisq();                  /* likelihood calculator */
 
-#endif /* _UTIL_H_ */
+#endif /* _NBODY_UTIL_H_ */
 

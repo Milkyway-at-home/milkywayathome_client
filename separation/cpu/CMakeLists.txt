@@ -18,17 +18,9 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-if(UNIX AND NOT APPLE)  #Unix that isn't OS X
-    set(OS_SPECIFIC_LIBS pthread)
-endif(UNIX AND NOT APPLE)
-
-if(WIN32)
-  set(OS_SPECIFIC_LIBS msvcrt)
-endif(WIN32)
-
 set(lib_source_file_list evaluation_state.c
                          simple_evaluator.c
-                         ${CMAKE_SOURCE_DIR}/util/io_util.c
+                         ${PROJECT_SOURCE_DIR}/util/io_util.c
                          atSurveyGeometry.c
                          stCoords.c
                          stVector.c

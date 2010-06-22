@@ -7,6 +7,7 @@
 
 #include "real.h"
 #include "nbody.h"
+#include "nbody_util.h"
 #include "vectmath.h"
 #include <stdlib.h>
 #include <stdio.h>

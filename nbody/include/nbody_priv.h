@@ -17,6 +17,7 @@
 #include "stdinc.h"
 #include "vectmath.h"
 #include "real.h"
+#include "nbody_util.h"
 
 /* Global function prototypes. */
 

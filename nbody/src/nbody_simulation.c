@@ -4,7 +4,6 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#include "util.h"
 #include "json_params.h"
 #include "nbody_priv.h"
 #include "nbody.h"
