@@ -1,7 +1,7 @@
 {  //test results are using double
 "nbody-parameters-file": {
     "nbody-context": {
-        "headline" : "Test 1, uses double precision",
+        "headline" : "Test 1",
         "criterion" : "new-criterion",
         "use-quadrupole-corrections" : false,
         "accuracy-parameter" : 1.0,
