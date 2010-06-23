@@ -116,17 +116,19 @@ const char* showBool(const bool x)
 
 const char* showCriterionT(const criterion_t x)
 {
-    switch (x)
-    {
-        case NEWCRITERION:
-            return "new criterion";
-        case BH86:
-            return "bh86";
-        case SW93:
-            return "sw93";
-        default:
-            return "invalid criterion_t";
-    }
+    static const char* table[] =
+        {
+            [EXACT]        = "exact",
+            [NEWCRITERION] = "new criterion",
+            [BH86]         = "bh86",
+            [SW93]         = "sw93"
+        };
+
+    if (x > SW93)
+        return "invalid criterion_t";
+    else
+        return table[x];
+
 }
 
 const char* showSphericalT(const spherical_t x)

@@ -146,6 +146,8 @@ static criterion_t readCriterion(const char* str)
 {
     if (!strcasecmp(str, "new-criterion"))
         return NEWCRITERION;
+    if (!strcasecmp(str, "exact"))
+        return EXACT;
     if (!strcasecmp(str, "bh86"))
         return BH86;
     else if (!strcasecmp(str, "sw93"))
@@ -153,7 +155,7 @@ static criterion_t readCriterion(const char* str)
     else
     {
         fail("Invalid model %s: Model options are either 'bh86', "
-             "'sw93' or 'new-criterion' (default),\n",
+             "'sw93', 'exact' or 'new-criterion' (default),\n",
              str);
     }
 }

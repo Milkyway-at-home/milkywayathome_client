@@ -206,34 +206,36 @@ static void hackcofm(const NBodyCtx* ctx, cellptr p, real psize)
 static void setrcrit(const NBodyCtx* ctx, cellptr p, vector cmpos, real psize)
 {
     real rc, bmax2, dmin;
-    int k;
+    size_t k;
 
-    /* CHECKME: Is tree_rsize here supposed to be changing? */
-    if (ctx->theta == 0.0)               /* exact force calculation? */
-        rc = 2 * ctx->tree_rsize;        /* always open cells */
-    else if (ctx->criterion == BH86)     /* use old BH criterion? */
-        rc = psize / ctx->theta;         /* using size of cell */
-    else if (ctx->criterion == SW93)     /* use S&W's criterion? */
+    switch (ctx->criterion)
     {
-        bmax2 = 0.0;                     /* compute max distance^2 */
-        for (k = 0; k < NDIM; ++k)       /* loop over dimensions */
-        {
-            dmin = cmpos[k] - (Pos(p)[k] - psize / 2);
-            /* dist from 1st corner */
-            bmax2 += sqr(MAX(dmin, psize - dmin));
-            /* sum max distance^2 */
-        }
-        rc = rsqrt(bmax2) / ctx->theta;      /* using max dist from cm */
+        case NEWCRITERION:
+            rc = psize / ctx->theta + distv(cmpos, Pos(p));
+            /* use size plus offset */
+            break;
+        case EXACT:                          /* exact force calculation? */
+            /* CHECKME: Is tree_rsize here supposed to be changing? */
+            rc = 2 * ctx->tree_rsize;        /* always open cells */
+            break;
+        case BH86:                          /* use old BH criterion? */
+            rc = psize / ctx->theta;        /* using size of cell */
+            break;
+        case SW93:                           /* use S&W's criterion? */
+            bmax2 = 0.0;                     /* compute max distance^2 */
+            for (k = 0; k < NDIM; ++k)       /* loop over dimensions */
+            {
+                dmin = cmpos[k] - (Pos(p)[k] - psize / 2);
+                /* dist from 1st corner */
+                bmax2 += sqr(MAX(dmin, psize - dmin));
+                /* sum max distance^2 */
+            }
+            rc = rsqrt(bmax2) / ctx->theta;      /* using max dist from cm */
+            break;
+        default:
+            fail("Got unknown criterion: %d\n", ctx->criterion);
     }
-    else if (ctx->criterion == NEWCRITERION) /* use new criterion? */
-    {
-        rc = psize / ctx->theta + distv(cmpos, Pos(p));
-        /* use size plus offset */
-    }
-    else
-    {
-        fail("Got unknown criterion: %d\n", ctx->criterion);
-    }
+
     Rcrit2(p) = sqr(rc);           /* store square of radius */
 }
 
