@@ -22,9 +22,9 @@
 # Test sources should be named <testname>.c .
 set(test_list t_vectors
               t_spherical
-              t_miyamoto_nagai
+              t_miyamoto_nagai_disk
               t_exponential_disk
-              t_loghalo
+              t_log_halo
               t_nfw_halo
               t_triaxial_halo)
 
