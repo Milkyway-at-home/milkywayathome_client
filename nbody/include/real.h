@@ -59,6 +59,7 @@ typedef real (*rproc)();
 #  define rlog   logf
 #  define rlog1p log1pf
 #  define rexp   expf
+#  define rexpm1 expm1f
 #  define rlog10 log10f
 #  define rsinh  sinhf
 #  define rcosh  coshf
@@ -82,6 +83,7 @@ typedef real (*rproc)();
 #  define rlog   log
 #  define rlog1p log1p
 #  define rexp   exp
+#  define rexpm1 expm1
 #  define rlog10 log10
 #  define rsinh  sinh
 #  define rcosh  cosh

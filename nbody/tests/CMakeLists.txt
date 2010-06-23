@@ -23,6 +23,7 @@
 set(test_list t_vectors
               t_spherical
               t_miyamoto_nagai
+              t_exponential_disk
               t_loghalo
               t_nfw_halo
               t_triaxial_halo)

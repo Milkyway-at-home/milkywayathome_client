@@ -11,15 +11,15 @@
 /* CHECKME: order of operations and effect on precision, and where can
  * we share divisions and such */
 
-static void exponentialDiskAccel(vectorptr restrict acc, const Disk* disk, const vectorptr restrict pos)
+void exponentialDiskAccel(vectorptr restrict acc, const Disk* disk, const vectorptr restrict pos)
 {
     const real b = disk->scale_length;
-    const real r = rsqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
+    real r;
+    ABSV(r, pos);
 
-    const real expPiece = rexp(-r/b) * (b+r) / b;
-    const real arst = disk->mass * (1 - expPiece) / cube(r);
-
-    MULVS(acc, pos, arst);
+    const real expPiece = rexp(-r / b) * (r + b) / b;
+    const real factor   = disk->mass * (1 - expPiece) / cube(r);
+    MULVS(acc, pos, factor);
 }
 
 /* TODO: Sharing between potential and accel functiosn */
