@@ -12,7 +12,7 @@
 inline static void startrun(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     if (ctx->model.nbody < 1)              /* check input value */
-        error("startrun: ctx.model.nbody = %d is absurd\n", ctx->model.nbody);
+        error("startrun: nbody = %d is absurd\n", ctx->model.nbody);
 
     /* FIXME: Make seed be long anyway */
     srand48((long) ctx->seed);       /* set random generator */

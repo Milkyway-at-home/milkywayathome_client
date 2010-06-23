@@ -12,8 +12,8 @@ static cellptr makecell(Tree*);           /* create an empty cell */
 static void expandbox(Tree*, bodyptr, int);     /* set size of t.root cell */
 static void loadbody(Tree*, bodyptr);           /* load body into tree */
 static int subindex(bodyptr, cellptr);       /* compute subcell index */
-static void hackcofm(const NBodyCtx* ctx, cellptr, real);     /* find centers of mass */
-static void setrcrit(const NBodyCtx*, cellptr, vector, real); /* set cell's crit. radius */
+static void hackcofm(const NBodyCtx* ctx, NBodyState* st, cellptr, real);     /* find centers of mass */
+static void setrcrit(const NBodyCtx*, NBodyState* st, cellptr, vector, real); /* set cell's crit. radius */
 static void threadtree(nodeptr, nodeptr);    /* set next and more links */
 static void hackquad(cellptr);           /* compute quad moments */
 
@@ -36,7 +36,7 @@ void maketree(const NBodyCtx* ctx, NBodyState* st, bodyptr btab, int nbody)
             loadbody(t, p);                     /* and insert into tree */
     }
 
-    hackcofm(ctx, t->root, t->rsize);           /* find c-of-m coordinates */
+    hackcofm(ctx, st, t->root, t->rsize);       /* find c-of-m coordinates */
     threadtree((nodeptr) t->root, NULL);        /* add Next and More links */
     if (ctx->usequad)                           /* including quad moments? */
         hackquad(t->root);                      /* assign Quad moments */
@@ -170,7 +170,7 @@ static int subindex(bodyptr p, cellptr q)
  * setting critical cell radii.
  */
 
-static void hackcofm(const NBodyCtx* ctx, cellptr p, real psize)
+static void hackcofm(const NBodyCtx* ctx, NBodyState* st, cellptr p, real psize)
 {
     int i, k;
     nodeptr q;
@@ -183,7 +183,7 @@ static void hackcofm(const NBodyCtx* ctx, cellptr p, real psize)
         if ((q = Subp(p)[i]) != NULL)           /* does subnode exist? */
         {
             if (Type(q) == CELL)                /* and is it a cell? */
-                hackcofm(ctx, (cellptr) q, psize / 2); /* find subcell cm */
+                hackcofm(ctx, st, (cellptr) q, psize / 2); /* find subcell cm */
             Mass(p) += Mass(q);                 /* sum total mass */
             MULVS(tmpv, Pos(q), Mass(q));       /* weight pos by mass */
             INCADDV(cmpos, tmpv);               /* sum c-of-m position */
@@ -197,13 +197,13 @@ static void hackcofm(const NBodyCtx* ctx, cellptr p, real psize)
                 Pos(p)[k] + psize / 2 <= cmpos[k]) /* in either direction */
             error("hackcofm: tree structure error\n");
     }
-    setrcrit(ctx, p, cmpos, psize);                  /* set critical radius */
+    setrcrit(ctx, st, p, cmpos, psize);            /* set critical radius */
     SETV(Pos(p), cmpos);            /* and center-of-mass pos */
 }
 
 /* setrcrit: assign critical radius for cell p, using center-of-mass
  * position cmpos and cell size psize. */
-static void setrcrit(const NBodyCtx* ctx, cellptr p, vector cmpos, real psize)
+static void setrcrit(const NBodyCtx* ctx, NBodyState* st, cellptr p, vector cmpos, real psize)
 {
     real rc, bmax2, dmin;
     size_t k;
@@ -215,8 +215,7 @@ static void setrcrit(const NBodyCtx* ctx, cellptr p, vector cmpos, real psize)
             /* use size plus offset */
             break;
         case EXACT:                          /* exact force calculation? */
-            /* CHECKME: Is tree_rsize here supposed to be changing? */
-            rc = 2 * ctx->tree_rsize;        /* always open cells */
+            rc = 2 * st->tree.rsize;        /* always open cells */
             break;
         case BH86:                          /* use old BH criterion? */
             rc = psize / ctx->theta;        /* using size of cell */

@@ -254,11 +254,11 @@ typedef struct
     FILE* outfile;            /* file for snapshot output */
     real freq;
     real freqout;
-    real theta;            /* accuracy parameter: 0.0 => exact */
+    real theta;               /* accuracy parameter: 0.0 */
     real tree_rsize;
     criterion_t criterion;
-    int seed;              /* random number seed */
-    bool usequad;          /* use quadrupole corrections */
+    int seed;                 /* random number seed */
+    bool usequad;             /* use quadrupole corrections */
     bool allowIncest;
 } NBodyCtx;
 
