@@ -7,8 +7,8 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#ifndef _TYPES_H_
-#define _TYPES_H_
+#ifndef _NBODY_TYPES_H_
+#define _NBODY_TYPES_H_
 
 #include "stdinc.h"
 #include "real.h"
@@ -257,7 +257,7 @@ typedef struct
     real theta;               /* accuracy parameter: 0.0 */
     real tree_rsize;
     criterion_t criterion;
-    int seed;                 /* random number seed */
+    long seed;                /* random number seed */
     bool usequad;             /* use quadrupole corrections */
     bool allowIncest;
 } NBodyCtx;
@@ -310,5 +310,5 @@ typedef int (*iproc)();
 
 
 
-#endif /* _TYPES_H_ */
+#endif /* _NBODY_TYPES_H_ */
 

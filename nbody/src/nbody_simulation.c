@@ -11,17 +11,12 @@
 /* startrun: startup hierarchical N-body code. */
 inline static void startrun(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
-    if (ctx->model.nbody < 1)              /* check input value */
-        error("startrun: nbody = %d is absurd\n", ctx->model.nbody);
-
-    /* FIXME: Make seed be long anyway */
-    srand48((long) ctx->seed);       /* set random generator */
+    srand48(ctx->seed);              /* set random generator */
     generatePlummer(ctx, ic, st);    /* make test model */
 
-    st->nstep = 0;                  /* start counting steps */
-    st->tout  = st->tnow;           /* schedule first output */
+    st->nstep = 0;                   /* start counting steps */
+    st->tout  = st->tnow;            /* schedule first output */
     st->tree.rsize = ctx->tree_rsize;
-
 }
 
 /* stepsystem: advance N-body system one time-step. */

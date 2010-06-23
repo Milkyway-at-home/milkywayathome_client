@@ -113,6 +113,9 @@ static void postProcess(NBodyCtx* ctx)
 
     ctx->freqout = ctx->freq = inv(ctx->model.timestep);
 
+    if (ctx->model.nbody < 1)
+        fail("nbody = %d is absurd\n", ctx->model.nbody);
+
 }
 
 /* also works for json_object_type */
