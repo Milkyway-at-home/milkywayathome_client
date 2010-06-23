@@ -218,9 +218,9 @@ typedef struct
 
 typedef enum
 {
-    DwarfModelPlummer = 1 << 1,
-    DwarfModelKing    = 1 << 2,
-    DwarfModelDehnen  = 1 << 3
+    DwarfModelPlummer,
+    DwarfModelKing,
+    DwarfModelDehnen
 } dwarf_model_t;
 
 typedef struct

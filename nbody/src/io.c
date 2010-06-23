@@ -133,56 +133,59 @@ const char* showCriterionT(const criterion_t x)
 
 const char* showSphericalT(const spherical_t x)
 {
-    switch (x)
-    {
-        case SphericalPotential:
-            return "SphericalPotential";
-        default:
-            return "invalid spherical_t";
-    }
+    static const char* table[] =
+        {
+            [SphericalPotential]        = "SphericalPotential",
+        };
+
+    if (x > SphericalPotential)
+        return "invalid spherical_t";
+    else
+        return table[x];
 }
 
 const char* showDiskT(const disk_t x)
 {
-    switch (x)
-    {
-        case MiyamotoNagaiDisk:
-            return "MiyamotoNagaiDisk";
-        case ExponentialDisk:
-            return "ExponentialDisk";
-        default:
-            return "invalid disk_t";
-    }
+    static const char* table[] =
+        {
+            [MiyamotoNagaiDisk] = "MiyamotoNagaiDisk",
+            [ExponentialDisk]   = "ExponentialDisk"
+        };
+
+    if (x > ExponentialDisk)
+        return "invalid disk_t";
+    else
+        return table[x];
 }
 
 const char* showHaloT(const halo_t x)
 {
-    switch (x)
-    {
-        case LogarithmicHalo:
-            return "LogarithmicHalo";
-        case NFWHalo:
-            return "NFWHalo";
-        case TriaxialHalo:
-            return "TriaxialHalo";
-        default:
-            return "invalid halo_t";
-    }
+    static const char* table[] =
+        {
+            [LogarithmicHalo] = "LogarithmicHalo",
+            [NFWHalo]         = "NFWHalo",
+            [TriaxialHalo]    = "TriaxialHalo"
+        };
+
+    if (x > TriaxialHalo)
+        return "invalid halo_t";
+    else
+        return table[x];
 }
 
 const char* showDwarfModelT(const dwarf_model_t x)
 {
-    switch (x)
-    {
-        case DwarfModelPlummer:
-            return "DwarfModelPlummer";
-        case DwarfModelKing:
-            return "DwarfModelKing";
-        case DwarfModelDehnen:
-            return "DwarfModelDehnen";
-        default:
-            return "invalid dwarf_model_t";
-    }
+    static const char* table[] =
+        {
+            [DwarfModelPlummer] = "DwarfModelPlummer",
+            [DwarfModelKing]    = "DwarfModelKing",
+            [DwarfModelDehnen]  = "DwarfModelDehnen"
+        };
+
+    if (x > DwarfModelDehnen)
+        return "invalid dwarf_model_t";
+    else
+        return table[x];
 }
 
 char* showSpherical(const Spherical* s)
