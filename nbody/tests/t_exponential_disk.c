@@ -111,6 +111,75 @@ int exponential_disk_falloff(Disk* d)
     return 0;
 }
 
+
+/* The acceleration should scale linearly with the mass */
+int exponential_disk_mass_scaling(Disk* d)
+{
+    vector a0, a1, a0Scaled;
+    int failed = 0;
+    const real m  = d->mass;
+
+    /* Take a random position */
+    real r;
+    vector rv = RANDOM_VECTOR;
+    ABSV(r, rv);
+
+    /* Find the acceleration there */
+    exponentialDiskAccel(a0, d, rv);
+
+    /* Take an arbitrary factor, and scale the mass of the disk */
+    real k = RANDOM_REAL;
+    d->mass *= k;
+
+    /* Find the new acceleration */
+    exponentialDiskAccel(a1, d, rv);
+
+
+    /* The new acceleration should be the original scaled by k */
+    MULVS(a0Scaled, a0, k);
+
+    if (!VECAPPROXEQ(a0Scaled, a1))
+    {
+        char* scaledStr = showVector(a0Scaled);
+        char* a1Str     = showVector(a1);
+        char* rvStr     = showVector(rv);
+
+        vector diff;
+        real diffMag;
+        SUBV(diff, a0Scaled, a1);
+        ABSV(diffMag, diff);
+
+        char* diffStr = showVector(diff);
+
+        fprintf(stderr,
+                "Spherical mass scaling: Result differs significantly from expected value:\n"
+                "\trv        = %s\n"
+                "\tr         = %g\n"
+                "\tm         = %g\n"
+                "\tk         = %g\n"
+                "\tExpected  = %s\n"
+                "\tGot       = %s\n"
+                "\tdiff      = %s\n"
+                "\t|diff|    = %g\n"
+                "\tTolerance = %g\n" ,
+                rvStr, r, m, k, scaledStr, a1Str, diffStr, diffMag, LIMIT);
+
+        free(scaledStr);
+        free(a1Str);
+        free(rvStr);
+        free(diffStr);
+
+        failed = 1;
+    }
+
+    /* Restore the mass for future tests on this sample to use
+     * unmodified */
+    d->mass = m;
+
+    return failed;
+}
+
+
 /* One argument as number of tests to run */
 int main(int argc, char** argv)
 {
@@ -128,9 +197,10 @@ int main(int argc, char** argv)
     {
         Disk d = RANDOM_EXPONENTIAL_DISK;
         fails += exponential_disk_falloff(&d);
+        fails += exponential_disk_mass_scaling(&d);
     }
 
-    totalTests = numTests;
+    totalTests = 2 * numTests;
 
     if (fails)
     {

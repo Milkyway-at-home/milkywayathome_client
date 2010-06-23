@@ -126,6 +126,73 @@ int log_halo_falloff(Halo* h)
     return 0;
 }
 
+int log_halo_v_scaling(Halo* h)
+{
+    vector a0, a1, a0Scaled;
+    int failed = 0;
+    const real vhalo = h->vhalo;
+
+    /* Take a random position */
+    real r;
+    vector rv = RANDOM_VECTOR;
+    ABSV(r, rv);
+
+    /* Find the acceleration there */
+    logHaloAccel(a0, h, rv);
+
+
+    /* Take an arbitrary factor, and scale the mass of the bulge */
+    real k = RANDOM_REAL;
+    h->vhalo *= k;
+
+    /* Find the new acceleration */
+    logHaloAccel(a1, h, rv);
+
+
+    /* The new acceleration should be the original scaled by k^2 */
+    MULVS(a0Scaled, a0, sqr(k));
+
+    if (!VECAPPROXEQ(a0Scaled, a1))
+    {
+        char* scaledStr = showVector(a0Scaled);
+        char* a1Str     = showVector(a1);
+        char* rvStr     = showVector(rv);
+
+        vector diff;
+        real diffMag;
+        SUBV(diff, a0Scaled, a1);
+        ABSV(diffMag, diff);
+
+        char* diffStr = showVector(diff);
+
+        fprintf(stderr,
+                "Log halo v scaling: Result differs significantly from expected value:\n"
+                "\trv        = %s\n"
+                "\tr         = %g\n"
+                "\tvhalo     = %g\n"
+                "\tk         = %g\n"
+                "\tExpected  = %s\n"
+                "\tGot       = %s\n"
+                "\tdiff      = %s\n"
+                "\t|diff|    = %g\n"
+                "\tTolerance = %g\n" ,
+                rvStr, r, vhalo, k, scaledStr, a1Str, diffStr, diffMag, LIMIT);
+
+        free(scaledStr);
+        free(a1Str);
+        free(rvStr);
+        free(diffStr);
+
+        failed = 1;
+    }
+
+    /* Restore the mass for future tests on this sample to use
+     * unmodified */
+    h->vhalo = vhalo;
+
+    return failed;
+}
+
 /* One argument as number of tests to run */
 int main(int argc, char** argv)
 {
@@ -143,9 +210,10 @@ int main(int argc, char** argv)
     {
         Halo h = RANDOM_LOG_HALO;
         fails += log_halo_falloff(&h);
+        fails += log_halo_v_scaling(&h);
     }
 
-    totalTests = numTests;
+    totalTests = 2 * numTests;
 
     if (fails)
     {
