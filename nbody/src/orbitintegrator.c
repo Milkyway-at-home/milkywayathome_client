@@ -83,9 +83,9 @@ void triaxialHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr
     /* TODO: Lots of things here can be cached, in particular the C1, C2... */
     const real phi = halo->triaxAngle;
 
-    const real cp  = cos(phi);
+    const real cp  = rcos(phi);
     const real cps = sqr(cp);
-    const real sp  = sin(phi);
+    const real sp  = rsin(phi);
     const real sps = sqr(sp);
 
     const real qxs = sqr(halo->flattenX);
@@ -95,8 +95,8 @@ void triaxialHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr
     const real c1 = (cps / qxs) + (sps / qys);
     const real c2 = (cps / qys) + (sps / qxs);
 
-    /* 2 * sin(x) * cos(x) == sin(2 * x) */
-    const real c3 = sin(2 * phi) * (1/qxs - 1/qys);
+    /* 2 * sin(x) * rcos(x) == sin(2 * x) */
+    const real c3 = rsin(2 * phi) * (1/qxs - 1/qys);
 
     const real rhalosqr = sqr(halo->scale_length);
 

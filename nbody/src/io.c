@@ -81,9 +81,9 @@ void output(const NBodyCtx* ctx, NBodyState* st)
         printf("st.tnow = %f\n", st->tnow);
         for (p = st->bodytab; p < endp; p++)
         {
-            lbR[2] = sqrt(Pos(p)[0] * Pos(p)[0] + Pos(p)[1] * Pos(p)[1] + Pos(p)[2] * Pos(p)[2]);
-            lbR[1] = r2d(atan2(Pos(p)[2], sqrt((Pos(p)[0]) * (Pos(p)[0]) + Pos(p)[1] * Pos(p)[1])));
-            lbR[0] = r2d(atan2(Pos(p)[1], Pos(p)[0]));
+            lbR[2] = rsqrt(Pos(p)[0] * Pos(p)[0] + Pos(p)[1] * Pos(p)[1] + Pos(p)[2] * Pos(p)[2]);
+            lbR[1] = r2d(ratan2(Pos(p)[2], rsqrt((Pos(p)[0]) * (Pos(p)[0]) + Pos(p)[1] * Pos(p)[1])));
+            lbR[0] = r2d(ratan2(Pos(p)[1], Pos(p)[0]));
 
             if (lbR[0] < 0)
                 lbR[0] += 360.0;

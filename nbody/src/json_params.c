@@ -48,10 +48,10 @@ static void processModel(DwarfModel* mod)
             /* If not set, and no default, it's calculated based on
              * other parameters. */
             if (isnan(mod->eps))
-                mod->eps = r0 / (10.0 * sqrt((real) mod->nbody));
+                mod->eps = r0 / (10.0 * rsqrt((real) mod->nbody));
 
             if (isnan(mod->timestep))
-                mod->timestep = sqr(1/10.0) * sqrt((PI_4_3 * cube(r0)) / mod->mass);
+                mod->timestep = sqr(1/10.0) * rsqrt((PI_4_3 * cube(r0)) / mod->mass);
 
             /* for the orbit, use dt = dtnbody/2 to make sure we get enough orbit precision. */
             if (isnan(mod->orbit_timestep))
@@ -93,9 +93,9 @@ static void processInitialConditions(InitialConditions* ic)
             b = d2r( B(ic) );
         }
 
-        X(ic) = r * cos(l) * cos(b) - ic->sunGCDist;
-        Y(ic) = r * sin(l) * cos(b);
-        Z(ic) = r * sin(b);
+        X(ic) = r * rcos(l) * rcos(b) - ic->sunGCDist;
+        Y(ic) = r * rsin(l) * rcos(b);
+        Z(ic) = r * rsin(b);
     }
 
 }

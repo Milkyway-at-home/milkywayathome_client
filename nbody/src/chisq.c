@@ -96,17 +96,17 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
         x[count-1] += r0;
 
-        r = sqrt(x[count-1] * x[count-1] + y[count-1] * y[count-1] + z[count-1] * z[count-1]);
+        r = rsqrt(x[count-1] * x[count-1] + y[count-1] * y[count-1] + z[count-1] * z[count-1]);
 
         // Leave in radians to make rotation easier
-        b[count-1] = atan2(z[count-1], sqrt(x[count-1] * x[count-1] + y[count-1] * y[count-1]));
-        l[count-1] = atan2(y[count-1], x[count-1]);
+        b[count-1] = ratan2(z[count-1], rsqrt(x[count-1] * x[count-1] + y[count-1] * y[count-1]));
+        l[count-1] = ratan2(y[count-1], x[count-1]);
 
         // Convert to (lambda, beta) (involves a rotation using the Newberg et al (2009) rotation matrices)
 
-        beta[count-1] = r2d(asin( sin(theta) * sin(phi) * cos(b[count-1]) * cos(l[count-1]) - sin(theta) * cos(phi) * cos(b[count-1]) * sin(l[count-1]) + cos(theta) * sin(b[count-1]) ));
+        beta[count-1] = r2d(rasin( rsin(theta) * rsin(phi) * rcos(b[count-1]) * rcos(l[count-1]) - rsin(theta) * rcos(phi) * rcos(b[count-1]) * rsin(l[count-1]) + rcos(theta) * rsin(b[count-1]) ));
 
-        lambda[count-1] = r2d(atan2( (-sin(psi) * cos(phi) - cos(theta) * sin(phi) * cos(psi)) * cos(b[count-1]) * cos(l[count-1]) + (-sin(psi) * sin(phi) + cos(theta) * cos(phi) * cos(psi)) * cos(b[count-1]) * sin(l[count-1]) + cos(psi) * sin(theta) * sin(b[count-1]), (cos(psi) * cos(phi) - cos(theta) * sin(phi) * sin(psi)) * cos(b[count-1]) * cos(l[count-1]) + (cos(psi) * sin(phi) + cos(theta) * cos(phi) * sin(psi)) * cos(b[count-1]) * sin(l[count-1]) + sin(psi) * sin(theta) * sin(b[count-1]) ));
+        lambda[count-1] = r2d(atan2( (-rsin(psi) * rcos(phi) - rcos(theta) * rsin(phi) * rcos(psi)) * rcos(b[count-1]) * rcos(l[count-1]) + (-rsin(psi) * rsin(phi) + rcos(theta) * rcos(phi) * rcos(psi)) * rcos(b[count-1]) * rsin(l[count-1]) + rcos(psi) * rsin(theta) * rsin(b[count-1]), (rcos(psi) * rcos(phi) - rcos(theta) * rsin(phi) * rsin(psi)) * rcos(b[count-1]) * rcos(l[count-1]) + (rcos(psi) * rsin(phi) + rcos(theta) * rcos(phi) * rsin(psi)) * rcos(b[count-1]) * rsin(l[count-1]) + rsin(psi) * rsin(theta) * rsin(b[count-1]) ));
 
         // Create the histogram
         if (lambda[count-1] > 0 && lambda[count-1] < end)
