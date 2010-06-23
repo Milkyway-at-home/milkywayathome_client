@@ -551,6 +551,7 @@ inline int test_absv()
     return failed;
 }
 
+
 inline int test_unitv()
 {
     vector a = RANDOM_VECTOR;
@@ -574,6 +575,86 @@ inline int test_unitv()
 
     return 0;
 }
+
+inline int test_incnegv()
+{
+    char* origStr;
+    char* aStr;
+    char* refStr;
+
+    vector reference, aOrig;
+    vector a = RANDOM_VECTOR;
+
+
+    COPYVECTOR(aOrig, a);
+    COPYVECTOR(reference, a);
+
+    reference[0] = -reference[0];
+    reference[1] = -reference[1];
+    reference[2] = -reference[2];
+
+    INCNEGV(a);
+
+
+    if (!VECEQ(a, reference))
+    {
+        aStr    = showVector(a);
+        origStr = showVector(aOrig);
+        refStr  = showVector(reference);
+        fprintf(stderr,
+                "Failed test_incnegv:\n"
+                "\tvector = %s\n"
+                "\tgot %s, expected %s\n",
+                origStr,
+                aStr,
+                refStr);
+        free(aStr);
+        free(origStr);
+        free(refStr);
+        return 1;
+    }
+
+    return 0;
+}
+
+inline int test_negv()
+{
+    char* origStr;
+    char* aStr;
+    char* refStr;
+
+    vector answer;
+    vector reference;
+    vector a = RANDOM_VECTOR;
+
+
+    reference[0] = -a[0];
+    reference[1] = -a[1];
+    reference[2] = -a[2];
+
+    NEGV(answer, a);
+
+    if (!VECEQ(answer, reference))
+    {
+        aStr    = showVector(answer);
+        origStr = showVector(a);
+        refStr  = showVector(reference);
+        fprintf(stderr,
+                "Failed test_negvv:\n"
+                "\tvector = %s\n"
+                "\tgot %s, expected %s\n",
+                origStr,
+                aStr,
+                refStr);
+        free(aStr);
+        free(origStr);
+        free(refStr);
+        return 1;
+    }
+
+    return 0;
+}
+
 
 /* One argument as number of tests to run */
 int main(int argc, char** argv)
@@ -606,9 +687,12 @@ int main(int argc, char** argv)
         fails += test_incdivvs();
         fails += test_addvs();
 
+        fails += test_negv();
+        fails += test_incnegv();
+
+
         /*
         fails += test_distv();
-        fails += test_negv();
         fails += test_crossvp();
         */
 
@@ -632,7 +716,7 @@ int main(int argc, char** argv)
     }
 
     if (fails)
-        fprintf(stderr, "Vector tests: %u out of %u tests failed\n", fails, 15 * numTests);
+        fprintf(stderr, "Vector tests: %u out of %u tests failed\n", fails, 17 * numTests);
 
     return fails;
 }
