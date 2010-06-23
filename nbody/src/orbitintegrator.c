@@ -72,11 +72,12 @@ void nfwHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr rest
     ABSV(r, pos);
     const real a  = halo->scale_length;
     const real ar = a + r;
-    const real c  = a * sqr(halo->vhalo) * (ar * log(ar / a) - r) / (0.216 * cube(r) * ar);
+    const real c  = a * sqr(halo->vhalo) * (ar * rlog1p(r / a) - r) / (0.216 * cube(r) * ar);
 
     MULVS(acc, pos, c);
 }
 
+/* CHECKME: Seems to have precision related issues for a small number of cases for very small qy */
 void triaxialHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr restrict pos)
 {
     /* TODO: Lots of things here can be cached, in particular the C1, C2... */

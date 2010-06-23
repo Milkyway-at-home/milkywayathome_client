@@ -57,6 +57,7 @@ typedef real (*rproc)();
 #  define ratan  atanf
 #  define ratan2 atan2f
 #  define rlog   logf
+#  define rlog1p log1pf
 #  define rexp   expf
 #  define rlog10 log10f
 #  define rsinh  sinhf
@@ -79,6 +80,7 @@ typedef real (*rproc)();
 #  define ratan  atan
 #  define ratan2 atan2
 #  define rlog   log
+#  define rlog1p log1p
 #  define rexp   exp
 #  define rlog10 log10
 #  define rsinh  sinh
