@@ -11,17 +11,6 @@
 /* CHECKME: order of operations and effect on precision, and where can
  * we share divisions and such */
 
-void exponentialDiskAccel(vectorptr restrict acc, const Disk* disk, const vectorptr restrict pos)
-{
-    const real b = disk->scale_length;
-    real r;
-    ABSV(r, pos);
-
-    const real expPiece = rexp(-r / b) * (r + b) / b;
-    const real factor   = disk->mass * (1 - expPiece) / cube(r);
-    MULVS(acc, pos, factor);
-}
-
 /* TODO: Sharing between potential and accel functiosn */
 
 /* Pure functions are the best ones */
@@ -52,6 +41,14 @@ real sphericalPhi(const Spherical* sph, const vectorptr restrict pos)
     return -sph->mass / (r + sph->scale);
 }
 
+
+void sphericalAccel(vectorptr restrict acc, const Spherical* sph, const vectorptr restrict pos)
+{
+    real r;
+    ABSV(r, pos);
+    MULVS(acc, pos, -sph->mass / (r * sqr(sph->scale + r)));
+}
+
 /* gets negative of the acceleration vector of this disk component */
 void miyamotoNagaiAccel(vectorptr restrict acc, const Disk* disk, const vectorptr restrict pos)
 {
@@ -61,9 +58,35 @@ void miyamotoNagaiAccel(vectorptr restrict acc, const Disk* disk, const vectorpt
     const real azp = a + zp;
     const real rth = rpow( sqr(pos[0]) + sqr(pos[1]) + sqr(azp), 1.5);
 
-    acc[0] = disk->mass * pos[0] / rth;
-    acc[1] = disk->mass * pos[1] / rth;
-    acc[2] = disk->mass * pos[2] * azp / (zp * rth);
+    acc[0] = -disk->mass * pos[0] / rth;
+    acc[1] = -disk->mass * pos[1] / rth;
+    acc[2] = -disk->mass * pos[2] * azp / (zp * rth);
+}
+
+void exponentialDiskAccel(vectorptr restrict acc, const Disk* disk, const vectorptr restrict pos)
+{
+    const real b = disk->scale_length;
+    real r;
+    ABSV(r, pos);
+
+    const real expPiece = rexp(-r / b) * (r + b) / b;
+    const real factor   = disk->mass * (expPiece - 1) / cube(r);
+    MULVS(acc, pos, factor);
+}
+
+void logHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr restrict pos)
+{
+    const real tvsqr = -2.0 * sqr(halo->vhalo);
+    const real qsqr  = sqr(halo->flattenZ);
+    const real d     = halo->scale_length;
+    const real zsqr  = sqr(pos[2]);
+
+    const real arst  = sqr(d) + sqr(pos[0]) + sqr(pos[1]);
+    const real denom = arst + zsqr / qsqr;
+
+    acc[0] = tvsqr * pos[0] / denom;
+    acc[1] = tvsqr * pos[1] / denom;
+    acc[2] = tvsqr * pos[2] / (qsqr * arst + zsqr);
 }
 
 void nfwHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr restrict pos)
@@ -72,7 +95,7 @@ void nfwHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr rest
     ABSV(r, pos);
     const real a  = halo->scale_length;
     const real ar = a + r;
-    const real c  = a * sqr(halo->vhalo) * (ar * rlog1p(r / a) - r) / (0.216 * cube(r) * ar);
+    const real c  = a * sqr(halo->vhalo) * (r - ar * rlog1p(r / a)) / (0.216 * cube(r) * ar);
 
     MULVS(acc, pos, c);
 }
@@ -100,7 +123,7 @@ void triaxialHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr
 
     const real rhalosqr = sqr(halo->scale_length);
 
-    const real vsqr = sqr(halo->vhalo);
+    const real vsqr = -sqr(halo->vhalo);
 
     const real xsqr = sqr(pos[0]);
     const real ysqr = sqr(pos[1]);
@@ -116,28 +139,6 @@ void triaxialHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr
 
     acc[2] = 2 * vsqr * pos[2] / (qzs * arst + zsqr);
 
-}
-
-void logHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr restrict pos)
-{
-    const real tvsqr = 2.0 * sqr(halo->vhalo);
-    const real qsqr  = sqr(halo->flattenZ);
-    const real d     = halo->scale_length;
-    const real zsqr  = sqr(pos[2]);
-
-    const real arst  = sqr(d) + sqr(pos[0]) + sqr(pos[1]);
-    const real denom = arst + zsqr / qsqr;
-
-    acc[0] = tvsqr * pos[0] / denom;
-    acc[1] = tvsqr * pos[1] / denom;
-    acc[2] = tvsqr * pos[2] / (qsqr * arst + zsqr);
-}
-
-void sphericalAccel(vectorptr restrict acc, const Spherical* sph, const vectorptr restrict pos)
-{
-    real r;
-    ABSV(r, pos);
-    MULVS(acc, pos, sph->mass / (r * sqr(sph->scale + r)));
 }
 
 inline void acceleration(vectorptr restrict acc, const NBodyCtx* ctx, const vectorptr restrict pos)
@@ -165,10 +166,8 @@ inline void acceleration(vectorptr restrict acc, const NBodyCtx* ctx, const vect
 
     sphFuncs[ctx->pot.sphere[0].type](acctmp1, &ctx->pot.sphere[0], pos);
 
-    /* add the resulting vectors, and - since we want the negative
-     * gradient of the potential */
+    /* add the resulting vectors */
     INCADDV(acc, acctmp1);
-    INCNEGV(acc);
 }
 
 
