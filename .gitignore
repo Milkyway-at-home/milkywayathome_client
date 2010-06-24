@@ -16,4 +16,6 @@ tests/stars.txt
 tests/stderr.txt
 tests/astronomy_parameters.txt
 Testing/
+tools/GenerateTests
+tools/GenerateTests.hi
 

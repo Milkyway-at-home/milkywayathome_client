@@ -63,5 +63,5 @@ generateTests template testDir bin = do
   mapM_ (makeRunTest testDir bin ts) allTests
 
 
-main = generateTests "test_set1_template.js" "test_set1" "../bin/milkyway_nbody"
+main = generateTests "test_set2_template.js" "test_set2" "../nbody/bin/milkyway_nbody"
 
