@@ -81,6 +81,7 @@ void output(const NBodyCtx* ctx, NBodyState* st)
         printf("st.tnow = %f\n", st->tnow);
         for (p = st->bodytab; p < endp; p++)
         {
+            #ifndef OUTPUT_CARTESIAN
             lbR[2] = rsqrt(Pos(p)[0] * Pos(p)[0] + Pos(p)[1] * Pos(p)[1] + Pos(p)[2] * Pos(p)[2]);
             lbR[1] = r2d(ratan2(Pos(p)[2], rsqrt((Pos(p)[0]) * (Pos(p)[0]) + Pos(p)[1] * Pos(p)[1])));
             lbR[0] = r2d(ratan2(Pos(p)[1], Pos(p)[0]));
@@ -89,6 +90,10 @@ void output(const NBodyCtx* ctx, NBodyState* st)
                 lbR[0] += 360.0;
 
             out_2vectors(ctx->outfile, lbR, Vel(p));
+            #else
+            out_2vectors(ctx->outfile, Pos(p), Vel(p));
+            #endif /* OUTPUT_CARTESIAN */
+
         }
 
         if (ctx->outfile != stdout)
