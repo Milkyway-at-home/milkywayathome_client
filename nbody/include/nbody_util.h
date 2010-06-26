@@ -20,8 +20,6 @@
 
 real cputime(void);              /* return elapsed CPU time */
 void* allocate(int);             /* allocate and zero memory */
-real distv(vector, vector);      /* distance between vectors */
-void error(char*, ...);          /* report error and exit */
 void eprintf(char*, ...);        /* printf to error FILE* */
 int compare (const void* a, const void* b);     /* comparison function used in chisq */
 real chisq();                  /* likelihood calculator */

@@ -20,6 +20,7 @@ typedef short int bool;
 #include <stdlib.h>
 
 
+#define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)
 #define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \
                          exit(EXIT_FAILURE); }
 

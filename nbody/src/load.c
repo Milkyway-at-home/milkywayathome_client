@@ -195,7 +195,7 @@ static void hackcofm(const NBodyCtx* ctx, NBodyState* st, cellptr p, real psize)
     {
         if (cmpos[k] < Pos(p)[k] - psize / 2 || /* if out of bounds */
                 Pos(p)[k] + psize / 2 <= cmpos[k]) /* in either direction */
-            error("hackcofm: tree structure error\n");
+            fail("hackcofm: tree structure error\n");
     }
     setrcrit(ctx, st, p, cmpos, psize);            /* set critical radius */
     SETV(Pos(p), cmpos);            /* and center-of-mass pos */
@@ -205,13 +205,14 @@ static void hackcofm(const NBodyCtx* ctx, NBodyState* st, cellptr p, real psize)
  * position cmpos and cell size psize. */
 static void setrcrit(const NBodyCtx* ctx, NBodyState* st, cellptr p, vector cmpos, real psize)
 {
-    real rc, bmax2, dmin;
+    real rc, bmax2, dmin, tmp;
     size_t k;
 
     switch (ctx->criterion)
     {
         case NEWCRITERION:
-            rc = psize / ctx->theta + distv(cmpos, Pos(p));
+            DISTV(tmp, cmpos, Pos(p));
+            rc = psize / ctx->theta + tmp;
             /* use size plus offset */
             break;
         case EXACT:                          /* exact force calculation? */

@@ -14,7 +14,7 @@ void initoutput(NBodyCtx* ctx)
     {
         ctx->outfile = fopen(ctx->outfilename, "w");           /* setup output FILE* */
         if (ctx->outfile == NULL)
-            error("initoutput: cannot open file %s\n", ctx->outfilename);
+            fail("initoutput: cannot open file %s\n", ctx->outfilename);
     }
     else
         ctx->outfile = stdout;

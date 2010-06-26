@@ -114,7 +114,6 @@ void hackgrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
 
     ForceEvalState fest = EMPTY_FORCE_EVAL_STATE;
 
-
     fest.pskip = p;                /* exclude p from f.c. */
     SETV(fest.pos0, Pos(p));       /* set field point */
 
@@ -124,9 +123,9 @@ void hackgrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
     if (intree && !skipself)            /* did tree-incest occur? */
     {
         if (!ctx->allowIncest) /* treat as catastrophic? */
-            error("hackgrav: tree-incest detected\n");
+            fail("hackgrav: tree-incest detected\n");
         if (!treeincest)           /* for the first time? */
-            eprintf("\n[hackgrav: tree-incest detected]\n");
+            warn("\n[hackgrav: tree-incest detected]\n");
         treeincest = TRUE;          /* don't repeat warning */
     }
 
