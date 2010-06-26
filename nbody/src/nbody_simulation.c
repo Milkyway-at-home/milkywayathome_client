@@ -30,7 +30,7 @@ inline static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
 
     const bodyptr bodytab = st->bodytab;
     const bodyptr endp    = bodytab + ctx->model.nbody;
-    const real dt         = 1.0 / ctx->freq;         /* set basic time-step */
+    const real dt         = inv(ctx->freq);         /* set basic time-step */
 
     if (st->nstep == 0)                 /* about to take 1st step? */
     {
@@ -52,9 +52,9 @@ inline static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
     for (p = bodytab; p < endp; p++)    /* loop over all bodies */
     {
         MULVS(dvel, Acc(p), 0.5 * dt);  /* get velocity increment */
-        ADDV(Vel(p), Vel(p), dvel);     /* advance v by 1/2 step */
+        INCADDV(Vel(p), dvel);          /* advance v by 1/2 step */
         MULVS(dpos, Vel(p), dt);        /* get positon increment */
-        ADDV(Pos(p), Pos(p), dpos);     /* advance r by 1 step */
+        INCADDV(Pos(p), dpos);          /* advance r by 1 step */
     }
 
     maketree(ctx, st, bodytab, ctx->model.nbody);     /* build tree structure */
@@ -69,8 +69,8 @@ inline static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
 
     for (p = bodytab; p < endp; p++) /* loop over all bodies */
     {
-        MULVS(dvel, Acc(p), 0.5 * dt);          /* get velocity increment */
-        ADDV(Vel(p), Vel(p), dvel);             /* advance v by 1/2 step */
+        MULVS(dvel, Acc(p), 0.5 * dt);        /* get velocity increment */
+        INCADDV(Vel(p), dvel);                /* advance v by 1/2 step */
     }
 
     st->nstep++;           /* count another time step */
