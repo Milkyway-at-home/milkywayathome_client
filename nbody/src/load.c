@@ -20,17 +20,18 @@ static void hackquad(cellptr);           /* compute quad moments */
 /* maketree: initialize tree structure for hierarchical force calculation
  * from body array btab, which contains ctx.nbody bodies.
  */
-void maketree(const NBodyCtx* ctx, NBodyState* st, bodyptr btab, int nbody)
+void maketree(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
+    const bodyptr endp = st->bodytab + ctx->model.nbody;
     Tree* t = &st->tree;
 
-    newtree(t);                                 /* flush existing tree, etc */
-    t->root = makecell(t);                      /* allocate the t.root cell */
-    CLRV(Pos(t->root));                         /* initialize the midpoint */
-    expandbox(t, btab, nbody);                  /* and expand cell to fit */
-    t->maxlevel = 0;                            /* init count of levels */
-    for (p = btab; p < btab + nbody; p++)       /* loop over bodies... */
+    newtree(t);                                      /* flush existing tree, etc */
+    t->root = makecell(t);                           /* allocate the t.root cell */
+    CLRV(Pos(t->root));                              /* initialize the midpoint */
+    expandbox(t, st->bodytab, ctx->model.nbody);    /* and expand cell to fit */
+    t->maxlevel = 0;                                 /* init count of levels */
+    for (p = st->bodytab; p < endp; p++)             /* loop over bodies... */
     {
         if (Mass(p) != 0.0)                     /* exclude test particles */
             loadbody(t, p);                     /* and insert into tree */

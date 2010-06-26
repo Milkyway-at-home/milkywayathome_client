@@ -16,7 +16,7 @@ inline static void gravmap(const NBodyCtx* ctx, NBodyState* st)
     unsigned int n2bcalc = 0;         /* count body-body interactions */
     unsigned int nbccalc = 0;         /* count body-cell interactions */
 
-    maketree(ctx, st, st->bodytab, ctx->model.nbody);       /* build tree structure */
+    maketree(ctx, st);                /* build tree structure */
 
     for (p = st->bodytab; p < endp; p++)
     {
