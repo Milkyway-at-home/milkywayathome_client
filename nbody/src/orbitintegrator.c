@@ -50,7 +50,7 @@ void sphericalAccel(vectorptr restrict acc, const Spherical* sph, const vectorpt
 }
 
 /* gets negative of the acceleration vector of this disk component */
-void miyamotoNagaiAccel(vectorptr restrict acc, const Disk* disk, const vectorptr restrict pos)
+void miyamotoNagaiDiskAccel(vectorptr restrict acc, const Disk* disk, const vectorptr restrict pos)
 {
     const real a   = disk->scale_length;
     const real b   = disk->scale_height;
@@ -149,7 +149,7 @@ inline void acceleration(vectorptr restrict acc, const NBodyCtx* ctx, const vect
                                            [TriaxialHalo]    = triaxialHaloAccel };
 
     static const DiskAccel diskFuncs[] = { [ExponentialDisk]   = exponentialDiskAccel,
-                                           [MiyamotoNagaiDisk] = miyamotoNagaiAccel    };
+                                           [MiyamotoNagaiDisk] = miyamotoNagaiDiskAccel };
 
     static const SphericalAccel sphFuncs[] = { [SphericalPotential] = sphericalAccel };
 

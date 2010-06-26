@@ -38,13 +38,13 @@ int mn_disk_falloff(Disk* d)
     ABSV(r, rv);
 
     /* Find the acceleration there */
-    miyamotoNagaiAccel(a0, d, rv);
+    miyamotoNagaiDiskAccel(a0, d, rv);
 
     /* If you scale the radius by an arbitrary factor k */
     real k = RANDOM_REAL;
     MULVS(rv1, rv, k);
 
-    miyamotoNagaiAccel(a1, d, rv1);
+    miyamotoNagaiDiskAccel(a1, d, rv1);
 
     /* Each component is scaled differently */
 
