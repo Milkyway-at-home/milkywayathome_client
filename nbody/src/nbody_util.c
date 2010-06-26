@@ -39,7 +39,6 @@ real cputime()
 }
 
 /* allocate: memory allocation with error checking. */
-
 void* allocate(int nb)
 {
     void* mem;
