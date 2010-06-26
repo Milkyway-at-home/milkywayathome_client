@@ -33,10 +33,6 @@ void integrate(const NBodyCtx* ctx, InitialConditions* ic);
 
 void acceleration(vectorptr restrict acc, const NBodyCtx* ctx, const vectorptr restrict pos);
 
-real logHaloPhi(const Halo* halo, const vectorptr restrict pos);
-real miyamotoNagaiPhi(const Disk* disk, const vectorptr restrict pos);
-real sphericalPhi(const Spherical* sph, const vectorptr restrict pos);
-
 /* Utility routines used in code.c and io.c.  These are defined in util.c
  * and getparam.c, which must be compiled with same choice of precision.
  */

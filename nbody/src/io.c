@@ -27,47 +27,6 @@ static void out_2vectors(FILE* str, vector vec1, vector vec2)
     fprintf(str, " %21.14E %21.14E %21.14E %21.14E %21.14E %21.14E\n", vec1[0], vec1[1], vec1[2], vec2[0], vec2[1], vec2[2]);
 }
 
-/* DIAGNOSTICS: compute various dynamical diagnostics.  */
-
-static void diagnostics(const NBodyCtx* ctx, const NBodyState* st)
-{
-    register bodyptr p;
-    real velsq;
-    vector tmpv;
-    matrix tmpt;
-    real mtot = 0.0;                                     /* total mass of N-body system */
-    real etot[3] = { 0.0, 0.0, 0.0 };                    /* binding, kinetic, potential energy */
-    matrix keten = ZERO_MATRIX;                          /* kinetic energy tensor */
-    matrix peten = ZERO_MATRIX;                          /* potential energy tensor */
-    vector cmphase[2] = { ZERO_VECTOR, ZERO_VECTOR };    /* center of mass coordinates */
-    vector amvec = ZERO_VECTOR;                         /* angular momentum vector */
-
-    const bodyptr endp = st->bodytab + ctx->model.nbody;
-    for (p = st->bodytab; p < endp; p++) /* loop over all particles */
-    {
-        mtot += Mass(p);                    /* sum particle masses */
-        SQRV(velsq, Vel(p));                /* square vel vector */
-        etot[1] += 0.5 * Mass(p) * velsq;   /* sum current KE */
-        etot[2] += 0.5 * Mass(p) * Phi(p);  /* and current PE */
-        MULVS(tmpv, Vel(p), 0.5 * Mass(p)); /* sum 0.5 m v_i v_j */
-        OUTVP(tmpt, tmpv, Vel(p));
-        ADDM(keten, keten, tmpt);
-        MULVS(tmpv, Pos(p), Mass(p));       /* sum m r_i a_j */
-        OUTVP(tmpt, tmpv, Acc(p));
-        ADDM(peten, peten, tmpt);
-        MULVS(tmpv, Pos(p), Mass(p));       /* sum cm position */
-        INCADDV(cmphase[0], tmpv);
-        MULVS(tmpv, Vel(p), Mass(p));       /* sum cm momentum */
-        INCADDV(cmphase[1], tmpv);
-        CROSSVP(tmpv, Pos(p), Vel(p));      /* sum angular momentum */
-        INCMULVS(tmpv, Mass(p));
-        INCADDV(amvec, tmpv);
-    }
-    etot[0] = etot[1] + etot[2];                /* sum KE and PE */
-    INCDIVVS(cmphase[0], mtot);                 /* normalize cm coords */
-    INCDIVVS(cmphase[1], mtot);
-}
-
 /* OUTPUT: compute diagnostics and output data. */
 void output(const NBodyCtx* ctx, NBodyState* st)
 {
@@ -75,7 +34,6 @@ void output(const NBodyCtx* ctx, NBodyState* st)
     vector lbR;
     const bodyptr endp = st->bodytab + ctx->model.nbody;
 
-    diagnostics(ctx, st);              /* compute std diagnostics */
     if (ctx->model.time_dwarf - st->tnow < 0.01 / ctx->freq)
     {
         printf("st.tnow = %f\n", st->tnow);

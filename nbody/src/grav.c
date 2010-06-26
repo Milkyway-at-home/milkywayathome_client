@@ -12,13 +12,12 @@ typedef struct
     vector pos0;      /* point to evaluate field */
     vector acc0;      /* resulting acceleration */
     bodyptr pskip;    /* skip in force evaluation */
-    real phi0;        /* resulting potential */
     cellptr qmem;     /* data shared with gravsub */
     vector dr;        /* vector from q to pos0 */
     real drsq;        /* squared distance to pos0 */
 } ForceEvalState;
 
-#define EMPTY_FORCE_EVAL_STATE { ZERO_VECTOR, ZERO_VECTOR, NULL, 0.0, NULL, ZERO_VECTOR, 0.0 }
+#define EMPTY_FORCE_EVAL_STATE { ZERO_VECTOR, ZERO_VECTOR, NULL, NULL, ZERO_VECTOR, 0.0 }
 
 
 /* subdivp: decide if cell q is too close to accept as a single
@@ -51,7 +50,6 @@ inline static void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, nodeptr q)
     phii = Mass(q) / drab;
     mor3 = phii / fest->drsq;
     MULVS(ai, fest->dr, mor3);
-    fest->phi0 -= phii;                         /* add to total grav. pot. */
     INCADDV(fest->acc0, ai);                   /* ... and to total accel. */
 
     if (ctx->usequad && Type(q) == CELL)             /* if cell, add quad term */
@@ -60,7 +58,6 @@ inline static void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, nodeptr q)
         MULMV(quaddr, Quad(q), fest->dr);        /* form Q * dr */
         DOTVP(drquaddr, fest->dr, quaddr);       /* form dr * Q * dr */
         phiquad = -0.5 * dr5inv * drquaddr;      /* get quad. part of phi */
-        fest->phi0 += phiquad;                   /* increment potential */
         phiquad = 5.0 * phiquad / fest->drsq;    /* save for acceleration */
         MULVS(ai, fest->dr, phiquad);            /* components of acc. */
         INCSUBV(fest->acc0, ai);                 /* increment */
@@ -139,14 +136,6 @@ void hackgrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
     INCADDV(fest.acc0, externalacc);
 
     /* TODO: Sharing */
-    /* CHECKME: Only the acceleration here seems to have an effect on
-     * the results */
-
-    fest.phi0 -=   miyamotoNagaiPhi(&ctx->pot.disk, Pos(p))
-                 + sphericalPhi(&ctx->pot.sphere[0], Pos(p))
-                 + logHaloPhi(&ctx->pot.halo, Pos(p));
-
-    Phi(p) = fest.phi0;              /* store total potential */
     SETV(Acc(p), fest.acc0);         /* and acceleration */
 
 }

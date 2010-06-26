@@ -11,36 +11,8 @@
 /* CHECKME: order of operations and effect on precision, and where can
  * we share divisions and such */
 
-/* TODO: Sharing between potential and accel functiosn */
 
 /* Pure functions are the best ones */
-real logHaloPhi(const Halo* halo, const vectorptr restrict pos)
-{
-    const real tvsqr = 2.0 * sqr(halo->vhalo);
-    const real qsqr  = sqr(halo->flattenZ);
-    const real d     = halo->scale_length;
-    const real zsqr  = sqr(pos[2]);
-
-    return sqr(halo->vhalo) * rlog( sqr(pos[0]) + sqr(pos[1]) + (zsqr / qsqr) + sqr(d) );
-}
-
-real miyamotoNagaiPhi(const Disk* disk, const vectorptr restrict pos)
-{
-    const real a   = disk->scale_length;
-    const real b   = disk->scale_height;
-    const real zp  = rsqrt( sqr(pos[2]) + sqr(b) );
-    const real azp = a + zp;
-    const real rp  = rsqrt( sqr(pos[0]) + sqr(pos[1]) +  sqr(azp) );
-
-    return -disk->mass / rp;
-}
-
-real sphericalPhi(const Spherical* sph, const vectorptr restrict pos)
-{
-    const real r = rsqrt( sqr(pos[0]) + sqr(pos[1]) + sqr(pos[2]) );
-    return -sph->mass / (r + sph->scale);
-}
-
 
 void sphericalAccel(vectorptr restrict acc, const Spherical* sph, const vectorptr restrict pos)
 {
