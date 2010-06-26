@@ -12,21 +12,11 @@ inline static void gravmap(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
     const bodyptr endp = st->bodytab + ctx->model.nbody;
-    unsigned int nfcalc  = 0;         /* count force calculations */
-    unsigned int n2bcalc = 0;         /* count body-body interactions */
-    unsigned int nbccalc = 0;         /* count body-cell interactions */
 
     maketree(ctx, st);                /* build tree structure */
 
-    for (p = st->bodytab; p < endp; p++)
-    {
-        /* loop over all bodies */
+    for (p = st->bodytab; p < endp; p++)        /* loop over all bodies */
         hackgrav(ctx, st, p, Mass(p) > 0.0);     /* get force on each */
-        ++nfcalc;                                /* count force calcs */
-        n2bcalc += st->n2bterm;                  /* and 2-body terms */
-        nbccalc += st->nbcterm;                  /* and body-cell terms */
-    }
-
 }
 
 /* startrun: startup hierarchical N-body code. */
