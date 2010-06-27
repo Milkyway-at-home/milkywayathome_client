@@ -116,6 +116,7 @@ static void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodySta
     //printf("Run finished. chisq = %f\n", chisqans);
 
     nbody_ctx_destroy(&ctx);               /* finish up output */
+    nbody_state_destroy(&st);
 
 }
 

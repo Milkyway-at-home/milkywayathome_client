@@ -23,6 +23,7 @@
 
 void initoutput(NBodyCtx*);             /* open files for output */
 void nbody_ctx_destroy(NBodyCtx* ctx);  /* close output files */
+void nbody_state_destroy(NBodyState* st);
 void inputdata(void);                   /* read initial data file */
 void maketree(const NBodyCtx*, NBodyState*);    /* construct tree structure */
 void hackgrav(const NBodyCtx*, NBodyState*, bodyptr, bool);   /* compute force on body */

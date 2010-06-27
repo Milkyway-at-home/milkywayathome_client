@@ -72,6 +72,28 @@ static void newtree(Tree* t)
     t->cellused = 0;                            /* reset cell count */
 }
 
+static void freetree(Tree* t)
+{
+    nodeptr p, tmp;
+
+    p = (nodeptr) t->root;
+    while (p != NULL)
+    {
+        if (Type(p) == CELL)
+        {
+            tmp = More(p);
+            free(p);
+            p = tmp;
+        }
+        else                        /* skip over bodies */
+            p = Next(p);
+    }
+
+    t->root = NULL;
+    t->cellused = 0;
+}
+
+
 /* makecell: return pointer to free cell. */
 static cellptr makecell(Tree* t)
 {
@@ -307,4 +329,11 @@ void nbody_ctx_destroy(NBodyCtx* ctx)
     if (ctx->outfile && ctx->outfile != stdout)
         fclose(ctx->outfile);
 }
+
+void nbody_state_destroy(NBodyState* st)
+{
+    freetree(&st->tree);
+    free(st->bodytab);
+}
+
 
