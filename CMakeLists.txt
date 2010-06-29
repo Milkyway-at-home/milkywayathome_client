@@ -46,13 +46,6 @@ find_package(CUDA)
 find_package(OpenCL)
 find_package(JsonC)
 
-include_directories(${BOINC_INCLUDE_DIR}
-                    ${POPT_INCLUDE_DIR}
-                    ${PROJECT_INCLUDE_DIR}
-                    ${OPENCL_INCLUDE_DIRS}
-                    ${JSON_C_INCLUDE_DIR})
-
-
 if(MINGW)
   if(NOT TAKEOFFGW_ROOT)
     set(TAKEOFFGW_ROOT "C:/takeoffgw/")
@@ -106,6 +99,8 @@ option(BOINC_APPLICATION
 
 if(BOINC_FOUND AND POPT_FOUND)
   set(SEPARATION_IS_BUILDABLE ON)
+  include_directories(${BOINC_INCLUDE_DIR})
+  include_directories(${POPT_INCLUDE_DIR})
 
   if(CUDA_FOUND)
     set(CUDA_IS_BUILDABLE ON)
@@ -113,11 +108,13 @@ if(BOINC_FOUND AND POPT_FOUND)
 
   if(OPENCL_FOUND)
     set(OPENCL_IS_BUILDABLE ON)
+    include_directories(${OPENCL_INCLUDE_DIRS})
   endif()
 endif()
 
 if(POPT_FOUND AND JSON_C_FOUND)
   set(NBODY_IS_BUILDABLE ON)
+  include_directories(${JSON_C_INCLUDE_DIR})
 endif()
 
 
