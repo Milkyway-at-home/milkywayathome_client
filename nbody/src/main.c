@@ -135,9 +135,9 @@ static json_object* readParameters(const int argc, const char** argv, char** out
 /* main: toplevel routine for hierarchical N-body code. */
 int main(int argc, const char* argv[])
 {
-    char* outFileName;
-    json_object* obj;
-    int useDouble;
+    char* outFileName = NULL;
+    json_object* obj = NULL;
+    int useDouble = FALSE;
 
     obj = readParameters(argc, argv, &outFileName, &useDouble);
 
