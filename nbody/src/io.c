@@ -335,7 +335,7 @@ char* showContext(const NBodyCtx* ctx)
                      "  criterion   = %s\n"
                      "  usequad     = %s\n"
                      "  allowIncest = %s\n"
-                     "  seed        = %d\n"
+                     "  seed        = %ld\n"
                      "  tree_rsize  = %g\n"
                      "  theta       = %g\n"
                      "  freq        = %g\n"
