@@ -24,10 +24,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <json/json.h>
 
 #ifndef DYNAMIC_PRECISION
-  void runNBodySimulation(json_object* obj, const char* outFileName);
+  __attribute__ ((visibility("default"))) void runNBodySimulation(json_object* obj, const char* outFileName);
 #else
-  void runNBodySimulation_float(json_object* obj, const char* outFileName);
-  void runNBodySimulation_double(json_object* obj, const char* outFileName);
+  __attribute__ ((visibility("default"))) void runNBodySimulation_float(json_object* obj, const char* outFileName);
+  __attribute__ ((visibility("default"))) void runNBodySimulation_double(json_object* obj, const char* outFileName);
 #endif
 
 #endif /* _NBODY_FLOAT_H_ */

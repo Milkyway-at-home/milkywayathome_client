@@ -29,8 +29,14 @@ include_directories(${PROJECT_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 
+if(CMAKE_COMPILER_IS_GNUCC)
+  set(DEFAULT_USE_DYNAMIC_PRECISION ON)
+else()
+  set(DEFAULT_USE_DYNAMIC_PRECISION OFF)
+endif()
+
 option(DYNAMIC_PRECISION
-       "Use dynamic precision" ON)
+       "Use dynamic precision" ${DEFAULT_USE_DYNAMIC_PRECISION})
 
 #Used if not using dynamic precision
 option(DOUBLEPREC
@@ -54,7 +60,7 @@ set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
                   ${PROJECT_SOURCE_DIR}/src/plummer.c
                   ${PROJECT_SOURCE_DIR}/src/nbody_util.c)
 
-set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS "-std=gnu99 -fvisibility=hidden ${CMAKE_C_FLAGS}")
 
 
 

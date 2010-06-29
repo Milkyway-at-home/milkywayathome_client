@@ -138,7 +138,7 @@ option(BOINC_APP_GRAPHICS
        "BOINC app graphics" OFF)
 
 
-set(gcc_extra_warnings "-Wshadow -Wpointer-arith -Wcast-align -common-Wwrite-strings -compare -fno-common -Wstrict-aliasing -Wstrict-aliasing=3 -Wswitch-enum -Wswitch-default")
+set(gcc_extra_warnings "-Wshadow -Wpointer-arith -Wcast-align -common-Wwrite-strings -compare -fno-common -Wstrict-aliasing -Wstrict-aliasing=3 -Wswitch-enum -Wswitch-default -Wmissing-declarations")
 
 #TODO: Other compilers
 if(CMAKE_COMPILER_IS_GNUCC) # I think this could maybe be IS_UNIX
