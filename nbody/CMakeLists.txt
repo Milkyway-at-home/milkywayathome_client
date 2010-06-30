@@ -181,5 +181,5 @@ set_target_properties(milkyway_nbody
                         PROPERTIES
                         COMPILE_DEFINITIONS "${BOINC_DEFS}")
 
-add_subdirectory(tests EXCLUDE_FROM_ALL)
+#add_subdirectory(tests EXCLUDE_FROM_ALL)
 

@@ -6,6 +6,13 @@
 /* ************************************************************************** */
 
 #include <sys/stat.h>
+#include <sys/mman.h>
+#include <unistd.h>
+
+#if BOINC_APPLICATION
+  #include <boinc_api.h>
+#endif /* BOINC_APPLICATION */
+
 
 #include "nbody_priv.h"
 

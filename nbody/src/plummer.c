@@ -33,15 +33,12 @@ static void pickshell(vector vec, real rad)
  */
 void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
-    printf("Initializing plummer model...\n");
-
     bodyptr p, endp;
     real rsc, vsc, r, v, x, y;
     vector scaledrshift = ZERO_VECTOR;
     vector scaledvshift = ZERO_VECTOR;
     vector cmr          = ZERO_VECTOR;
     vector cmv          = ZERO_VECTOR;
-
 
     const real rnbody = (real) ctx->model.nbody;
     const real mass   = ctx->model.mass;
@@ -59,8 +56,6 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
            vshift[1],
            vshift[2]);
 
-    st->tnow = 0.0;                 /* reset elapsed model time */
-    st->bodytab = (bodyptr) allocate(ctx->model.nbody * sizeof(body));
     rsc = ctx->model.scale_radius;              /* set length scale factor */
     vsc = rsqrt(ctx->model.mass / rsc);         /* and recip. speed scale */
 
@@ -92,8 +87,6 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
 
     INCDIVVS(cmr, rnbody);      /* normalize cm coords */
     INCDIVVS(cmv, rnbody);
-
-    printf("done\n");
 }
 
 

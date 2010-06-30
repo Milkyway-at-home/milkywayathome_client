@@ -23,10 +23,13 @@ inline static void gravmap(const NBodyCtx* ctx, NBodyState* st)
 inline static void startrun(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     srand48(ctx->seed);              /* set random generator */
-    generatePlummer(ctx, ic, st);    /* make test model */
-
-    st->tout       = st->tnow;            /* schedule first output */
+    st->tout       = st->tnow;       /* schedule first output */
     st->tree.rsize = ctx->tree_rsize;
+
+    st->tnow = 0.0;                 /* reset elapsed model time */
+    st->bodytab = (bodyptr) allocate(ctx->model.nbody * sizeof(body));
+
+    generatePlummer(ctx, ic, st);    /* make test model */
 
     /* CHECKME: Why does maketree get used twice for the first step? */
     gravmap(ctx, st);               /* Take 1st step */
@@ -61,7 +64,6 @@ inline static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
     st->tnow += dt;        /* finally, advance time */
 }
 
-
 static void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     const real tstop = ctx->model.time_dwarf - 1.0 / (1024.0 * ctx->freq);
@@ -77,8 +79,12 @@ static void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodySta
           /* TODO: organize use of this output better since it only
            * half makes sense now with boinc */
 
+          printf("Why am I happening?\n");
+
           if (ctx->model.time_dwarf - st->tnow < 0.01 / ctx->freq)
+          {
               output(ctx, st);
+          }
 
           st->tout += 1.0 / ctx->freqout;     /* schedule next data out */
         #endif
@@ -114,13 +120,15 @@ static void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodySta
     integrate(&ctx, &ic);
     printf("done\n");
 
+    printf("sizeof bool = %zd\n", sizeof(bool));
+
     printInitialConditions(&ic);
 
     printf("Running nbody system\n");
     runSystem(&ctx, &ic, &st);
 
+    printf("Making final output\n");
     /* Make final output */
-
     output(&ctx, &st);
 
     printf("Running system done\n");

@@ -96,7 +96,6 @@ typedef struct
 
 #define Vel(x)  (((bodyptr) (x))->vel)
 #define Acc(x)  (((bodyptr) (x))->acc)
-#define Phi(x)  (((bodyptr) (x))->phi)
 
 /* CELL: structure used to represent internal nodes of tree. */
 

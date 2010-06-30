@@ -25,6 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* TODO: Naming, and sharing with separation */
 #if BOINC_APPLICATION
+  #include <boinc_api.h>
   #define nbody_finish(x) boinc_finish(x)
   #define nbody_fopen(x,y) boinc_fopen((x),(y))
 #else

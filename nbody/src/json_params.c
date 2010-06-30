@@ -137,11 +137,9 @@ static const char* showNBodyType(nbody_type bt)
         };
 
     if (bt > nbody_type_group_item)
-    {
         fail("Trying to show unknown nbody_type %d\n", bt);
-    }
-    else
-        return table[bt];
+
+    return table[bt];
 }
 
 /* Reads a name of the criterion into the C value, with name str */

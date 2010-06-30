@@ -11,6 +11,7 @@
 
 #if BOINC_APPLICATION
   #include <boinc_api.h>
+  #include <filesys.h>
 #endif
 
 #include <unistd.h>
@@ -103,7 +104,7 @@ static void out_2vectors(FILE* str, vector vec1, vector vec2)
 }
 
 /* Should be given the same context as the dump */
-void thawState(const NBodyCtx* ctx, NBodyState* st)
+static void thawState(const NBodyCtx* ctx, NBodyState* st)
 {
     const size_t bodySize = ctx->model.nbody * sizeof(body);
 
@@ -186,8 +187,7 @@ inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
 
 void nbody_boinc_output(const NBodyCtx* ctx, NBodyState* st)
 {
-    //if (boinc_time_to_checkpoint())
-    if (TRUE)
+    if (boinc_time_to_checkpoint())
     {
         freezeState(ctx, st);
         boinc_checkpoint_completed();

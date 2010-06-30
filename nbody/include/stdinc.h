@@ -8,7 +8,10 @@
 #ifndef _STDINC_H_
 #define _STDINC_H_
 
+/* FIXME: Make this bool go away */
+#ifndef bool
 typedef short int bool;
+#endif
 
 #ifndef TRUE
 #  define TRUE  1
