@@ -265,12 +265,12 @@ typedef struct
 typedef struct
 {
     Tree tree;
-    bodyptr bodytab;    /* points to array of bodies */
     int n2bterm;        /* number 2-body of terms evaluated */
     int nbcterm;        /* num of body-cell terms evaluated */
     int nstep;          /* number of time-steps */
     real tout;
     real tnow;
+    bodyptr bodytab;    /* points to array of bodies */
 } NBodyState;
 
 typedef int generic_enum_t;  /* A general enum type. */
@@ -289,7 +289,7 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, NAN, NAN, NAN, NAN, 0, 0, FALSE, FALSE }
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
-#define EMPTY_STATE { EMPTY_TREE, NULL, 0, 0, 0, NAN, NAN }
+#define EMPTY_STATE { EMPTY_TREE, 0, 0, 0, NAN, NAN, NULL}
 #define EMPTY_INITIAL_CONDITIONS { { NAN, NAN, NAN }, { NAN, NAN, NAN }, NAN, FALSE, FALSE }
 #define EMPTY_VECTOR { NAN, NAN, NAN }
 
