@@ -293,8 +293,8 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, -1, NULL, NULL, NAN, NAN, NAN, NAN, NAN, 0, 0, FALSE, FALSE }
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 #define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL}
-#define EMPTY_INITIAL_CONDITIONS { { NAN, NAN, NAN }, { NAN, NAN, NAN }, FALSE, FALSE }
 #define EMPTY_VECTOR { NAN, NAN, NAN }
+#define EMPTY_INITIAL_CONDITIONS { EMPTY_VECTOR, EMPTY_VECTOR, FALSE, FALSE }
 
 
 /* Acceleration functions for a given potential */

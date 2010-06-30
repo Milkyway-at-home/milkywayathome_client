@@ -103,7 +103,7 @@ static void out_2vectors(FILE* str, vector vec1, vector vec2)
 }
 
 /* Should be given the same context as the dump */
-void readCheckpoint(const NBodyCtx* ctx, NBodyState* st)
+void thawState(const NBodyCtx* ctx, NBodyState* st)
 {
     const size_t bodySize = ctx->model.nbody * sizeof(body);
 
@@ -148,7 +148,14 @@ void readCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 
 }
 
-inline static void dumpBodies(const NBodyCtx* ctx, const NBodyState* st)
+void readCheckpoint(NBodyCtx* ctx, NBodyState* st, const char* checkpointFile)
+{
+    ctx->cpFile = checkpointFile;
+    initoutput(ctx);
+    thawState(ctx, st);
+}
+
+inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
 {
     const size_t bodySize = sizeof(body) * ctx->model.nbody;
     char* p = ctx->cpPtr;
@@ -182,7 +189,7 @@ void nbody_boinc_output(const NBodyCtx* ctx, NBodyState* st)
     //if (boinc_time_to_checkpoint())
     if (TRUE)
     {
-        dumpBodies(ctx, st);
+        freezeState(ctx, st);
         boinc_checkpoint_completed();
     }
 
