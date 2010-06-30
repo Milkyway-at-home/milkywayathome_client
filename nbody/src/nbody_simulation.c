@@ -30,7 +30,6 @@ inline static void startrun(const NBodyCtx* ctx, const InitialConditions* ic, NB
 
     /* CHECKME: Why does maketree get used twice for the first step? */
     gravmap(ctx, st);               /* Take 1st step */
-    st->nstep = 1;                  /* start counting steps */
 }
 
 /* stepsystem: advance N-body system one time-step. */
@@ -59,7 +58,6 @@ inline static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
         INCADDV(Vel(p), dvel);                /* advance v by 1/2 step */
     }
 
-    st->nstep++;           /* count another time step */
     st->tnow += dt;        /* finally, advance time */
 }
 

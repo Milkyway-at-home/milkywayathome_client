@@ -87,13 +87,7 @@ inline static bool treescan(const NBodyCtx* ctx,
             if (q == (nodeptr) fest->pskip)    /* self-interaction? */
                 skipself = TRUE;               /* then just skip it */
             else                               /* not self-interaction */
-            {
                 gravsub(ctx, fest, q);         /* so compute gravity */
-                if (Type(q) == BODY)
-                    st->n2bterm++;          /* count body-body */
-                else
-                    st->nbcterm++;          /* count body-cell */
-            }
             q = Next(q);            /* follow next link */
         }
     }
@@ -107,8 +101,6 @@ inline static bool treescan(const NBodyCtx* ctx,
 void hackgrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
 {
     vector externalacc;
-    int n2bterm;    /* number 2-body of terms evaluated */
-    int nbcterm;    /* num of body-cell terms evaluated */
     static bool treeincest = FALSE;     /* tree-incest occured */
     bool skipself          = FALSE;     /* self-interaction skipped */
 
@@ -117,7 +109,6 @@ void hackgrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
     fest.pskip = p;                /* exclude p from f.c. */
     SETV(fest.pos0, Pos(p));       /* set field point */
 
-    n2bterm = nbcterm = 0;          /* count body & cell terms */
                   /* watch for tree-incest */
     skipself = treescan(ctx, st, &fest, (nodeptr) st->tree.root);         /* scan tree from t.root */
     if (intree && !skipself)            /* did tree-incest occur? */
