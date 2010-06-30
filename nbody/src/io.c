@@ -35,6 +35,7 @@ const size_t hdrSize =   sizeof(size_t)                                  /* size
 #define DUMP_INT(p, x) { *((int*) (p)) = (x); (p) += sizeof(int); }
 #define DUMP_SIZE_T(p, x) { *((size_t*) (p)) = (x); (p) += sizeof(size_t); }
 #define DUMP_STR(p, x, size) { memcpy((p), (x), (size)); (p) += (size); }
+#define SET_LOCK(lock, x) { *((int*) (lock)) = (x); msync((lock), sizeof(int), MS_SYNC);}
 
 #define READ_REAL(x, p) { (x) = *((real*) (p)); (p) += sizeof(real); }
 #define READ_INT(x, p) { (x) = *((int*) (p)); (p) += sizeof(int); }
@@ -113,8 +114,10 @@ static void thawState(const NBodyCtx* ctx, NBodyState* st)
     char buf[sizeof(hdr)];
     char tailBuf[sizeof(tail)];
     char* p = ctx->cpPtr;
+    int valid;
 
     READ_STR(buf, p, sizeof(hdr) - 1);
+    READ_INT(valid, p);
 
     READ_INT(nbody, p);
     READ_SIZE_T(realSize, p);
@@ -137,6 +140,9 @@ static void thawState(const NBodyCtx* ctx, NBodyState* st)
              realSize);
     }
 
+    if (!valid)
+        fail("Trying to read interrupted checkpoint file\n");
+
     /* Read the bodies */
     st->bodytab = allocate(bodySize);
     memcpy(st->bodytab, p, bodySize);
@@ -156,10 +162,31 @@ void readCheckpoint(NBodyCtx* ctx, NBodyState* st, const char* checkpointFile)
     thawState(ctx, st);
 }
 
+
+/* Checkpoint file: Very simple binary "format"
+   Name     Type    Values     Notes
+-------------------------------------------------------
+   header  string   "mwnbody"  No null terminator
+   lock    int      0 or 1     If 0, the checkpoint file is in the middle of a write and cannot be used.
+   nbody   int      anything   Number of bodies expected in the file. Error if doesn't match nbody in reading context.
+   tout    real     anything   Saved parts of the program state
+   tnow    real     anything
+   bodytab bodyptr  anything   Array of bodies
+   ending  string   "end"      No null terminator
+ */
+
+/* Use a very simple flag to mark when writing the checkpoint file
+ * begins and ends. I think this should always be good enough, unless
+ * something really weird happens. If the read is interrupted, the
+ * checkpoint file is garbage and we lose everything. Uses the boinc
+ * critical sections, so it hopefully won't be interrupted. I'm not
+ * entirely sure this is the proper use of the boinc critical
+ * sections. */
 inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
 {
     const size_t bodySize = sizeof(body) * ctx->model.nbody;
     char* p = ctx->cpPtr;
+    char* lock;
 
     /* TODO: Better error checking */
 
@@ -167,6 +194,15 @@ inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
         annoying since the strcmps use it, but memcpy doesn't. We
         don't need it anyway  */
     DUMP_STR(p, hdr, sizeof(hdr) - 1);  /* Simple marker for a checkpoint file */
+
+    lock = p;        /* We keep the lock here */
+    p += sizeof(int);
+
+    boinc_begin_critical_section();
+
+    SET_LOCK(lock, 0);    /* Mark the file as being in the middle of writing */
+
+
     DUMP_INT(p, ctx->model.nbody);  /* Make sure we get the right number of bodies */
     DUMP_SIZE_T(p, sizeof(real));   /* Make sure we don't confuse double and float checkpoints */
 
@@ -183,6 +219,10 @@ inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
     DUMP_STR(p, tail, sizeof(tail) - 1);
 
     msync(ctx->cpPtr, hdrSize + bodySize, MS_SYNC);
+
+    SET_LOCK(lock, 1);   /* Done writing, flag file as valid  */
+
+    boinc_end_critical_section();
 }
 
 void nbody_boinc_output(const NBodyCtx* ctx, NBodyState* st)
