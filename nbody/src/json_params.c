@@ -74,7 +74,7 @@ static void processModel(DwarfModel* mod)
 
 }
 
-static void processInitialConditions(InitialConditions* ic)
+static void processInitialConditions(const NBodyCtx* ctx, InitialConditions* ic)
 {
     real r, l, b;
 
@@ -93,7 +93,7 @@ static void processInitialConditions(InitialConditions* ic)
             b = d2r( B(ic) );
         }
 
-        X(ic) = r * rcos(l) * rcos(b) - ic->sunGCDist;
+        X(ic) = r * rcos(l) * rcos(b) - ctx->sunGCDist;
         Y(ic) = r * rsin(l) * rcos(b);
         Z(ic) = r * rsin(b);
     }
@@ -485,6 +485,7 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
             .freq = NAN,
             .freqout = NAN,
             .usequad = TRUE,
+            .sunGCDist  = 8.0,
             .allowIncest = FALSE,
             .criterion = NEWCRITERION,
             .theta = 0.0,
@@ -499,7 +500,6 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
         {
             .useGalC    = FALSE,
             .useRadians = FALSE,
-            .sunGCDist  = 8.0,
             .position   = EMPTY_VECTOR,
             .velocity   = EMPTY_VECTOR
         };
@@ -629,6 +629,7 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
             ENUM_PARAM_DFLT("criterion",             &ctx->criterion, &defaultCtx.criterion, (ReadEnum) readCriterion),
             OBJ_PARAM("potential", potentialItems),
             GROUP_PARAM("dwarf-model",               &ctx->model.type, dwarfModelOptions),
+            DBL_PARAM_DFLT("sun-gc-dist", &ctx->sunGCDist, &defaultCtx.sunGCDist),
             DBL_PARAM_DFLT("tree_rsize", &ctx->tree_rsize, &defaultCtx.tree_rsize),
 
             NULLPARAMETER
@@ -638,7 +639,6 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
         {
             BOOL_PARAM("useGalC", &ic->useGalC),
             BOOL_PARAM_DFLT("angle-use-radians", &ic->useRadians, &defaultIC.useRadians),
-            DBL_PARAM_DFLT("sun-gc-dist", &ic->sunGCDist, &defaultIC.sunGCDist),
             VEC_PARAM("position", &ic->position),
             VEC_PARAM("velocity", &ic->velocity),
             NULLPARAMETER
@@ -667,7 +667,7 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
     json_object_put(fileObj);
 
     postProcess(ctx);
-    processInitialConditions(ic);
+    processInitialConditions(ctx, ic);
 }
 
 

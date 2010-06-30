@@ -189,11 +189,11 @@ void nbody_boinc_output(const NBodyCtx* ctx, NBodyState* st)
     boinc_fraction_done(st->tnow / ctx->model.time_dwarf);
 }
 
-inline static void cartesianToLbr(vectorptr restrict lbR, const vectorptr restrict r)
+inline static void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r)
 {
     lbR[0] = r2d(ratan2(r[1], r[0]));
-    lbR[1] = r2d(ratan2(r[2], rsqrt((r[0]) * (r[0]) + r[1] * r[1])));
-    lbR[2] = rsqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+    lbR[1] = r2d(ratan2(r[2], rsqrt(sqr(r[0]) + sqr(r[1]))));
+    ABSV(lbr[2], r);
 
     if (lbR[0] < 0)
         lbR[0] += 360.0;
@@ -209,7 +209,7 @@ void output(const NBodyCtx* ctx, const NBodyState* st)
     for (p = st->bodytab; p < endp; p++)
     {
       #ifndef OUTPUT_CARTESIAN
-        cartesianToLbr(lbR, Pos(p));
+        cartesianToLbr(ctx, lbR, Pos(p));
         out_2vectors(ctx->outfile, lbR, Vel(p));
       #else
         /* Probably useful for making movies and such */
@@ -455,13 +455,11 @@ char* showInitialConditions(const InitialConditions* ic)
                      "initial-conditions = { \n"
                      "  useGalC    = %s\n"
                      "  useRadians = %s\n"
-                     "  sunGCDist  = %g\n"
                      "  position   = { %g, %g, %g }\n"
                      "  velocity   = { %g, %g, %g }\n"
                      "};\n",
                      showBool(ic->useGalC),
                      showBool(ic->useRadians),
-                     ic->sunGCDist,
                      ic->position[0],
                      ic->position[1],
                      ic->position[2],
@@ -491,6 +489,7 @@ char* showContext(const NBodyCtx* ctx)
                      "  headline    = %s\n"
                      "  outfilename = %s\n"
                      "  outfile     = %p\n"
+                     "  sunGCDist   = %g\n"
                      "  criterion   = %s\n"
                      "  usequad     = %s\n"
                      "  allowIncest = %s\n"
@@ -505,6 +504,7 @@ char* showContext(const NBodyCtx* ctx)
                      ctx->headline,
                      ctx->outfilename,
                      ctx->outfile,
+                     ctx->sunGCDist,
                      showCriterionT(ctx->criterion),
                      showBool(ctx->usequad),
                      showBool(ctx->allowIncest),
