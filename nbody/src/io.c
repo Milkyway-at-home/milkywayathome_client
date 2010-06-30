@@ -40,81 +40,108 @@ static void out_2vectors(FILE* str, vector vec1, vector vec2)
     fprintf(str, " %21.14E %21.14E %21.14E %21.14E %21.14E %21.14E\n", vec1[0], vec1[1], vec1[2], vec2[0], vec2[1], vec2[2]);
 }
 
+/* Macros to read / write the buffer and advance the pointer the correct size */
+#define DUMP_REAL(p, x) { *((real*) (p)) = (x); (p) += sizeof(real); }
+#define DUMP_INT(p, x) { *((int*) (p)) = (x); (p) += sizeof(int); }
+#define DUMP_SIZE_T(p, x) { *((size_t*) (p)) = (x); (p) += sizeof(size_t); }
+#define DUMP_STR(p, x, size) { memcpy((p), (x), (size)); (p) += (size); }
+
+
+#define READ_REAL(x, p) { (x) = *((real*) (p)); (p) += sizeof(real); }
+#define READ_INT(x, p) { (x) = *((int*) (p)); (p) += sizeof(int); }
+#define READ_SIZE_T(x, p) { (x) = *((size_t*) (p)); (p) += sizeof(size_t); }
+#define READ_STR(x, p, size) { memcpy((x), (p), (size)); (p) += (size); }
 
 static const char hdr[] = "mwnbody";
+static const char tail[] = "end";
+
+/* Everything except the size of all the bodies */
+const size_t hdrSize = sizeof(tail) + sizeof(hdr) + sizeof(int) + 2 * sizeof(real);
 
 /* Should be given the same context as the dump */
 inline static void readDump(const NBodyCtx* ctx, NBodyState* st, char* p)
 {
     int nbody;
-
+    size_t realSize;
     char buf[sizeof(hdr)];
+    char tailBuf[sizeof(tail)];
 
-    memcpy(buf, p, sizeof(hdr));
+    const size_t bodySize = ctx->model.nbody * sizeof(body);
 
-    p += sizeof(hdr);
+    READ_STR(buf, p, sizeof(hdr));
 
-    nbody = *((int*) p);
-    p += sizeof(int);
+    READ_INT(nbody, p);
+    READ_SIZE_T(realSize, p);
 
-    const size_t arst = sizeof(Tree) + 2 * sizeof(int);
-    const size_t wow = sizeof(int) + 2 * sizeof(real);
-
-    memcpy(st + arst, p, wow);
-
-    p += wow;
+    READ_REAL(st->tout, p);
+    READ_REAL(st->tnow, p);
 
     /* TODO: Better checking of things */
-
-    printf("read header = %s\n", hdr);
-    printf("read nbody = %d\n", nbody);
-
-    if (strcmp(hdr, buf))
+    if (strncmp(hdr, buf, sizeof(hdr)))
         fail("Didn't find header for checkpoint file.\n");
 
     if (ctx->model.nbody != nbody)
         fail("Number of bodies in checkpoint file does not match number expected by context.\n");
 
-    st->bodytab = allocate(ctx->model.nbody * sizeof(body));
+    if (realSize != sizeof(real))
+    {
+        fail("Got checkpoint file for wrong type. "
+             "Expected sizeof(real) = %zd, got %zd\n",
+             sizeof(real),
+             realSize);
+    }
 
-    memcpy(st->bodytab, p, ctx->model.nbody * sizeof(body));
+    /* Read the bodies */
+    st->bodytab = allocate(bodySize);
+    memcpy(st->bodytab, p, bodySize);
+    p += bodySize;
+
+    READ_STR(tailBuf, p, sizeof(tailBuf));
+
+    if (strncmp(tail, tailBuf, sizeof(tailBuf)))
+        fail("Failed to find end marker in checkpoint file.\n");
+
 }
 
 inline static void dumpBodies(const NBodyCtx* ctx, const NBodyState* st, char* p)
 {
+    const size_t bodySize = sizeof(body) * ctx->model.nbody;
+
     /* TODO: Error checking */
-    /* TODO: Forget memcpy, just use the damn mmap'd file for the everything */
-    /* TODO: I think the other things are unnecessary and can go away */
 
-    memcpy(p, hdr, sizeof(hdr));
-    p += sizeof(hdr);
-
-    *p = ctx->model.nbody;
-    p += sizeof(int);
+    DUMP_STR(p, hdr, sizeof(hdr));  /* Simple marker for a checkpoint file */
+    DUMP_INT(p, ctx->model.nbody);  /* Make sure we get the right number of bodies */
+    DUMP_SIZE_T(p, sizeof(real));   /* Make sure we don't confuse double and float checkpoints */
 
     /* Now that we have some basic check stuff written, dump the state */
 
-    const size_t arst = sizeof(int) + 2 * sizeof(real);
+    /* Little state pieces */
+    DUMP_REAL(p, st->tout);
+    DUMP_REAL(p, st->tnow);
 
-    memcpy(p, st + sizeof(Tree) + 2 * sizeof(int), arst);
-    p += arst;
-    memcpy(p, st->bodytab, sizeof(body) * ctx->model.nbody);
+    /* The main piece of state*/
+    memcpy(p, st->bodytab, bodySize);
+    p += bodySize;
+
+    DUMP_STR(p, tail, sizeof(tail));
 }
 
 void nbody_boinc_output(const NBodyCtx* ctx, NBodyState* st)
 {
     struct stat sb;
-
     char* p;
     int fd;
 
     /* TODO: Check for failure on write */
-    if (boinc_time_to_checkpoint())
+    //if (boinc_time_to_checkpoint())
+    if (TRUE)
     {
+        const size_t checkpointFileSize = hdrSize + ctx->model.nbody * sizeof(body);
+
         /* TODO: Wuh wuh windows:
             http://msdn.microsoft.com/en-us/library/aa366556(VS.85).aspx
          */
-        fd = open("nbody_checkpoint", O_WRONLY | O_CREAT);
+        fd = open("nbody_checkpoint", O_RDWR | O_CREAT);
         if (fd == -1)
         {
             perror("open checkpoint");
@@ -122,7 +149,7 @@ void nbody_boinc_output(const NBodyCtx* ctx, NBodyState* st)
         }
 
         /* TODO: Figure out size properly */
-        ftruncate(fd, sizeof(body) * 1000 + 500);
+        ftruncate(fd, checkpointFileSize);
 
         if (fstat (fd, &sb) == -1)
         {
@@ -139,12 +166,9 @@ void nbody_boinc_output(const NBodyCtx* ctx, NBodyState* st)
         p = mmap(0, sb.st_size, PROT_WRITE, MAP_SHARED, fd, 0);
         if (p == MAP_FAILED)
         {
-            perror ("mmap: Failed to open checkpoint file for reading");
+            perror ("mmap: Failed to open checkpoint file for writing");
             boinc_finish(EXIT_FAILURE);
         }
-
-        if (!p)
-            fail("Failed to open checkpoint file for reading\n");
 
         dumpBodies(ctx, st, p);
 
