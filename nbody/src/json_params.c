@@ -23,16 +23,33 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 #include "json_params.h"
 
-static void processPotential(Potential* p)
-{
-
-
-}
 
 static void processHalo(Halo* h)
 {
+    if (h->type == TriaxialHalo)
+    {
+        const real phi = h->triaxAngle;
+        const real cp  = rcos(phi);
+        const real cps = sqr(cp);
+        const real sp  = rsin(phi);
+        const real sps = sqr(sp);
 
+        const real qxs = sqr(h->flattenX);
+        const real qys = sqr(h->flattenY);
 
+        h->c1 = (cps / qxs) + (sps / qys);
+        h->c2 = (cps / qys) + (sps / qxs);
+
+    /* 2 * sin(x) * rcos(x) == sin(2 * x) */
+        h->c3 = rsin(2 * phi) * (1/qxs - 1/qys);
+
+    }
+
+}
+
+static void processPotential(Potential* p)
+{
+    processHalo(&p->halo);
 }
 
 static void processModel(DwarfModel* mod)
@@ -71,7 +88,6 @@ static void processModel(DwarfModel* mod)
     /* if (isnan(mod->time_dwarf))
            ?????;
     */
-
 }
 
 static void processInitialConditions(const NBodyCtx* ctx, InitialConditions* ic)
@@ -154,11 +170,11 @@ static criterion_t readCriterion(const char* str)
     else if (!strcasecmp(str, "sw93"))
         return SW93;
     else
-    {
         fail("Invalid model %s: Model options are either 'bh86', "
              "'sw93', 'exact' or 'new-criterion' (default),\n",
              str);
-    }
+
+    return -1;  /* Stop warning. Never reached. */
 }
 
 void printParameter(Parameter* p)

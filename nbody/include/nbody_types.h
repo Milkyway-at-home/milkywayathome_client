@@ -168,6 +168,10 @@ typedef struct
     real flattenY;      /* used by triaxial */
     real flattenX;      /* used by triaxial */
     real triaxAngle;    /* used by triaxial */
+
+    real c1;           /* Constants calculated for triaxial from other params */
+    real c2;        /* TODO: Lots more stuff could be cached, but should be done less stupidly */
+    real c3;
 } Halo;
 
 typedef struct
@@ -286,7 +290,7 @@ typedef int generic_enum_t;  /* A general enum type. */
 /* Useful initializers */
 #define EMPTY_SPHERICAL { 0, NAN, NAN }
 #define EMPTY_DISK { 0, NAN, NAN, NAN }
-#define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN }
+#define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 #define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, -1, NULL, NULL, NAN, NAN, NAN, NAN, NAN, 0, 0, FALSE, FALSE }

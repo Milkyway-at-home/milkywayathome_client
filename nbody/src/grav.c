@@ -71,7 +71,6 @@ inline static void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, nodeptr q)
  * incest.
  */
 inline static bool treescan(const NBodyCtx* ctx,
-                            NBodyState* st,
                             ForceEvalState* fest,
                             nodeptr q)
 {
@@ -110,7 +109,7 @@ void hackgrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
     SETV(fest.pos0, Pos(p));       /* set field point */
 
                   /* watch for tree-incest */
-    skipself = treescan(ctx, st, &fest, (nodeptr) st->tree.root);         /* scan tree from t.root */
+    skipself = treescan(ctx, &fest, (nodeptr) st->tree.root);         /* scan tree from t.root */
     if (intree && !skipself)            /* did tree-incest occur? */
     {
         if (!ctx->allowIncest) /* treat as catastrophic? */
