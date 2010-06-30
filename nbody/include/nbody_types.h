@@ -90,8 +90,7 @@ typedef struct
     node bodynode;              /* data common to all nodes */
     vector vel;                 /* velocity of body */
     vector acc;                 /* acceleration of body */
-    real phi;                   /* potential at body */
-} body, *bodyptr;
+ } body, *bodyptr;
 
 #define Body    body
 
