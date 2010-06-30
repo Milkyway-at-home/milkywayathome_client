@@ -20,6 +20,66 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+static const char hdr[] = "mwnbody";
+static const char tail[] = "end";
+
+/* Everything except the size of all the bodies */
+const size_t hdrSize =   sizeof(size_t)                                  /* size of real */
+                       + sizeof(char) * (sizeof(tail) + sizeof(hdr) - 2) /* error checking tags */
+                       + sizeof(int)                                     /* nbody count */
+                       + 2 * sizeof(real);                               /* tout and tnow */
+
+/* Macros to rea d/ write the buffer and advance the pointer the correct size */
+#define DUMP_REAL(p, x) { *((real*) (p)) = (x); (p) += sizeof(real); }
+#define DUMP_INT(p, x) { *((int*) (p)) = (x); (p) += sizeof(int); }
+#define DUMP_SIZE_T(p, x) { *((size_t*) (p)) = (x); (p) += sizeof(size_t); }
+#define DUMP_STR(p, x, size) { memcpy((p), (x), (size)); (p) += (size); }
+
+#define READ_REAL(x, p) { (x) = *((real*) (p)); (p) += sizeof(real); }
+#define READ_INT(x, p) { (x) = *((int*) (p)); (p) += sizeof(int); }
+#define READ_SIZE_T(x, p) { (x) = *((size_t*) (p)); (p) += sizeof(size_t); }
+#define READ_STR(x, p, size) { memcpy((x), (p), (size)); (p) += (size); }
+
+
+void openCheckpoint(NBodyCtx* ctx)
+{
+    struct stat sb;
+    const size_t checkpointFileSize = hdrSize + ctx->model.nbody * sizeof(body);
+
+    /* TODO: Wuh wuh windows:
+       http://msdn.microsoft.com/en-us/library/aa366556(VS.85).aspx
+    */
+
+    ctx->cpFd = open("nbody_checkpoint", O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
+    if (ctx->cpFd == -1)
+    {
+        perror("open checkpoint");
+        nbody_finish(EXIT_FAILURE);
+    }
+
+    /* Make the file the right size */
+    ftruncate(ctx->cpFd, checkpointFileSize);
+
+    if (fstat(ctx->cpFd, &sb) == -1)
+    {
+        perror("fstat");
+        nbody_finish(EXIT_FAILURE);
+    }
+
+    if (!S_ISREG(sb.st_mode))
+    {
+        fprintf(stderr, "checkpoint file is not a file\n");
+        nbody_finish(EXIT_FAILURE);
+    }
+
+    ctx->cpPtr = mmap(0, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, ctx->cpFd, 0);
+    if (ctx->cpPtr == MAP_FAILED)
+    {
+        perror("mmap: Failed to open checkpoint file for writing");
+        nbody_finish(EXIT_FAILURE);
+    }
+
+}
 
 void initoutput(NBodyCtx* ctx)
 {
@@ -31,6 +91,8 @@ void initoutput(NBodyCtx* ctx)
     }
     else
         ctx->outfile = stdout;
+
+    openCheckpoint(ctx);
 }
 
 /* Low-level input and output operations. */
@@ -40,35 +102,18 @@ static void out_2vectors(FILE* str, vector vec1, vector vec2)
     fprintf(str, " %21.14E %21.14E %21.14E %21.14E %21.14E %21.14E\n", vec1[0], vec1[1], vec1[2], vec2[0], vec2[1], vec2[2]);
 }
 
-/* Macros to read / write the buffer and advance the pointer the correct size */
-#define DUMP_REAL(p, x) { *((real*) (p)) = (x); (p) += sizeof(real); }
-#define DUMP_INT(p, x) { *((int*) (p)) = (x); (p) += sizeof(int); }
-#define DUMP_SIZE_T(p, x) { *((size_t*) (p)) = (x); (p) += sizeof(size_t); }
-#define DUMP_STR(p, x, size) { memcpy((p), (x), (size)); (p) += (size); }
-
-
-#define READ_REAL(x, p) { (x) = *((real*) (p)); (p) += sizeof(real); }
-#define READ_INT(x, p) { (x) = *((int*) (p)); (p) += sizeof(int); }
-#define READ_SIZE_T(x, p) { (x) = *((size_t*) (p)); (p) += sizeof(size_t); }
-#define READ_STR(x, p, size) { memcpy((x), (p), (size)); (p) += (size); }
-
-static const char hdr[] = "mwnbody";
-static const char tail[] = "end";
-
-/* Everything except the size of all the bodies */
-const size_t hdrSize = sizeof(tail) + sizeof(hdr) + sizeof(int) + 2 * sizeof(real);
-
 /* Should be given the same context as the dump */
-inline static void readDump(const NBodyCtx* ctx, NBodyState* st, char* p)
+void readCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 {
+    const size_t bodySize = ctx->model.nbody * sizeof(body);
+
     int nbody;
     size_t realSize;
     char buf[sizeof(hdr)];
     char tailBuf[sizeof(tail)];
+    char* p = ctx->cpPtr;
 
-    const size_t bodySize = ctx->model.nbody * sizeof(body);
-
-    READ_STR(buf, p, sizeof(hdr));
+    READ_STR(buf, p, sizeof(hdr) - 1);
 
     READ_INT(nbody, p);
     READ_SIZE_T(realSize, p);
@@ -77,7 +122,7 @@ inline static void readDump(const NBodyCtx* ctx, NBodyState* st, char* p)
     READ_REAL(st->tnow, p);
 
     /* TODO: Better checking of things */
-    if (strncmp(hdr, buf, sizeof(hdr)))
+    if (strncmp(hdr, buf, sizeof(hdr) - 1))
         fail("Didn't find header for checkpoint file.\n");
 
     if (ctx->model.nbody != nbody)
@@ -96,20 +141,24 @@ inline static void readDump(const NBodyCtx* ctx, NBodyState* st, char* p)
     memcpy(st->bodytab, p, bodySize);
     p += bodySize;
 
-    READ_STR(tailBuf, p, sizeof(tailBuf));
+    READ_STR(tailBuf, p, sizeof(tailBuf) - 1);
 
-    if (strncmp(tail, tailBuf, sizeof(tailBuf)))
+    if (strncmp(tail, tailBuf, sizeof(tailBuf) - 1))
         fail("Failed to find end marker in checkpoint file.\n");
 
 }
 
-inline static void dumpBodies(const NBodyCtx* ctx, const NBodyState* st, char* p)
+inline static void dumpBodies(const NBodyCtx* ctx, const NBodyState* st)
 {
     const size_t bodySize = sizeof(body) * ctx->model.nbody;
+    char* p = ctx->cpPtr;
 
-    /* TODO: Error checking */
+    /* TODO: Better error checking */
 
-    DUMP_STR(p, hdr, sizeof(hdr));  /* Simple marker for a checkpoint file */
+    /* -1 so we don't bother with the null terminator. It's slightly
+        annoying since the strcmps use it, but memcpy doesn't. We
+        don't need it anyway  */
+    DUMP_STR(p, hdr, sizeof(hdr) - 1);  /* Simple marker for a checkpoint file */
     DUMP_INT(p, ctx->model.nbody);  /* Make sure we get the right number of bodies */
     DUMP_SIZE_T(p, sizeof(real));   /* Make sure we don't confuse double and float checkpoints */
 
@@ -123,120 +172,21 @@ inline static void dumpBodies(const NBodyCtx* ctx, const NBodyState* st, char* p
     memcpy(p, st->bodytab, bodySize);
     p += bodySize;
 
-    DUMP_STR(p, tail, sizeof(tail));
+    DUMP_STR(p, tail, sizeof(tail) - 1);
+
+    msync(ctx->cpPtr, hdrSize + bodySize, MS_SYNC);
 }
 
 void nbody_boinc_output(const NBodyCtx* ctx, NBodyState* st)
 {
-    struct stat sb;
-    char* p;
-    int fd;
-
-    /* TODO: Check for failure on write */
     //if (boinc_time_to_checkpoint())
     if (TRUE)
     {
-        const size_t checkpointFileSize = hdrSize + ctx->model.nbody * sizeof(body);
-
-        /* TODO: Wuh wuh windows:
-            http://msdn.microsoft.com/en-us/library/aa366556(VS.85).aspx
-         */
-        fd = open("nbody_checkpoint", O_RDWR | O_CREAT);
-        if (fd == -1)
-        {
-            perror("open checkpoint");
-            boinc_finish(EXIT_FAILURE);
-        }
-
-        /* TODO: Figure out size properly */
-        ftruncate(fd, checkpointFileSize);
-
-        if (fstat (fd, &sb) == -1)
-        {
-            perror ("fstat");
-            boinc_finish(EXIT_FAILURE);
-        }
-
-        if (!S_ISREG (sb.st_mode))
-        {
-            fprintf (stderr, "checkpoint file is not a file\n");
-            boinc_finish(EXIT_FAILURE);
-        }
-
-        p = mmap(0, sb.st_size, PROT_WRITE, MAP_SHARED, fd, 0);
-        if (p == MAP_FAILED)
-        {
-            perror ("mmap: Failed to open checkpoint file for writing");
-            boinc_finish(EXIT_FAILURE);
-        }
-
-        dumpBodies(ctx, st, p);
-
-        if (close(fd) == -1)
-        {
-            perror ("close");
-            boinc_finish(EXIT_FAILURE);
-        }
-
-        if (munmap(p, sb.st_size) == -1)
-        {
-            perror ("munmap");
-            boinc_finish(EXIT_FAILURE);
-        }
-
+        dumpBodies(ctx, st);
         boinc_checkpoint_completed();
     }
 
     boinc_fraction_done(st->tnow / ctx->model.time_dwarf);
-}
-
-void nbody_boinc_read_checkpoint(const NBodyCtx* ctx, NBodyState* st)
-{
-    struct stat sb;
-    char* p;
-    int fd;
-
-    /* TODO: Make sure file is right size etc. */
-
-    fd = open("nbody_checkpoint", O_RDONLY);
-    if (fd == -1)
-    {
-        perror("open checkpoint");
-        boinc_finish(EXIT_FAILURE);
-    }
-
-    if (fstat (fd, &sb) == -1)
-    {
-        perror ("fstat");
-        boinc_finish(EXIT_FAILURE);
-    }
-
-    if (!S_ISREG(sb.st_mode))
-    {
-        fprintf (stderr, "checkpoint file is not a file\n");
-        boinc_finish(EXIT_FAILURE);
-    }
-
-    p = mmap(0, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
-    if (p == MAP_FAILED)
-    {
-        perror ("mmap: Failed to open checkpoint file for reading");
-        boinc_finish(EXIT_FAILURE);
-    }
-
-    readDump(ctx, st, p);
-
-    if (close(fd) == -1)
-    {
-        perror ("close checkpoint file");
-        boinc_finish(EXIT_FAILURE);
-    }
-
-    if (munmap(p, sb.st_size) == -1)
-    {
-        perror ("munmap checkpoint file");
-        boinc_finish(EXIT_FAILURE);
-    }
 }
 
 inline static void cartesianToLbr(vectorptr restrict lbR, const vectorptr restrict r)
