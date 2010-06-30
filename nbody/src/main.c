@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <popt.h>
 #include "nbody.h"
-
+#include "nbody_priv.h"
 
 /* Read the command line arguments, and do the inital parsing of the parameter file */
 static json_object* readParameters(const int argc, const char** argv, char** outFileName, int* useDouble)
@@ -73,7 +73,7 @@ static json_object* readParameters(const int argc, const char** argv, char** out
     {
         poptPrintUsage(context, stderr, 0);
         poptFreeContext(context);
-        exit(EXIT_FAILURE);
+        nbody_finish(EXIT_FAILURE);
     }
 
     while ( ( o = poptGetNextOpt(context)) >= 0 );
@@ -87,7 +87,7 @@ static json_object* readParameters(const int argc, const char** argv, char** out
         free(inputFile);
         free(inputStr);
         poptFreeContext(context);
-        exit(EXIT_FAILURE);
+        nbody_finish(EXIT_FAILURE);
     }
 
     poptFreeContext(context);
@@ -101,7 +101,7 @@ static json_object* readParameters(const int argc, const char** argv, char** out
         {
             perror("Failed to read input file");
             free(inputFile);
-            exit(EXIT_FAILURE);
+            nbody_finish(EXIT_FAILURE);
         }
 
         /* The lack of parse errors from json-c is unfortunate.
@@ -114,7 +114,7 @@ static json_object* readParameters(const int argc, const char** argv, char** out
                     "Parse error in file '%s'\n",
                     inputFile);
             free(inputFile);
-            exit(EXIT_FAILURE);
+            nbody_finish(EXIT_FAILURE);
         }
         free(inputFile);
     }
@@ -125,7 +125,7 @@ static json_object* readParameters(const int argc, const char** argv, char** out
         if (is_error(obj))
         {
             fprintf(stderr, "Failed to parse given string\n");
-            exit(EXIT_FAILURE);
+            nbody_finish(EXIT_FAILURE);
         }
     }
 
@@ -138,6 +138,24 @@ int main(int argc, const char* argv[])
     char* outFileName = NULL;
     json_object* obj = NULL;
     int useDouble = FALSE;
+
+#if BOINC_APPLICATION
+    int boincInitStatus = 0;
+  #if !BOINC_DEBUG
+    boincInitStatus = boinc_init();
+  #else
+    boincInitStatus = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
+                                             | BOINC_DIAG_HEAPCHECKENABLED
+                                             | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
+  #endif /* !BOINC_DEBUG */
+
+    if (boincInitStatus)
+    {
+        fprintf(stderr, "boinc_init failed: %d\n", boincInitStatus);
+        exit(EXIT_FAILURE);
+    }
+#endif
+
 
     obj = readParameters(argc, argv, &outFileName, &useDouble);
 
@@ -160,6 +178,6 @@ int main(int argc, const char* argv[])
 
     free(outFileName);
 
-    return 0;
+    nbody_finish(EXIT_SUCCESS);
 }
 

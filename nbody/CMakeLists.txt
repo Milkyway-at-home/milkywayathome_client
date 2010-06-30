@@ -38,6 +38,12 @@ endif()
 option(DYNAMIC_PRECISION
        "Use dynamic precision" ${DEFAULT_USE_DYNAMIC_PRECISION})
 
+option(BOINC_APPLICATION
+  "Build as a BOINC Application" ON)
+
+option(BOINC_DEBUG
+  "Avoid annoying things BOINC does for debugging" ON)
+
 #Used if not using dynamic precision
 option(DOUBLEPREC
        "Use double precision" ON)
@@ -47,6 +53,20 @@ option(OUTPUT_CARTESIAN
 
 if(OUTPUT_CARTESIAN)
   add_definitions("-DOUTPUT_CARTESIAN")
+endif()
+
+set(BOINC_DEFS "")
+
+if(BOINC_APPLICATION)
+  list(APPEND BOINC_DEFS "BOINC_APPLICATION=1")
+else()
+  list(APPEND BOINC_DEFS "BOINC_APPLICATION=0")
+endif()
+
+if(BOINC_DEBUG)
+  list(APPEND BOINC_DEFS "BOINC_DEBUG=1")
+else()
+  list(APPEND BOINC_DEFS "BOINC_DEBUG=0")
 endif()
 
 
@@ -70,7 +90,15 @@ message("   Dynamic precision: ${DYNAMIC_PRECISION}")
 message("   Double precision:  ${DOUBLEPREC}")
 message("---------------------------------------------")
 
+if(UNIX AND NOT APPLE)  #Unix that isn't OS X
+    set(OS_SPECIFIC_LIBS pthread)
+endif()
 
+set(nbody_link_libs ${JSON_C_LIBRARY} m ${OS_SPECIFIC_LIBS})
+
+if(BOINC_APPLICATION)
+  list(APPEND nbody_link_libs ${BOINC_LIBRARIES})
+endif()
 
 # This dynamic precision is kind of sketchy. We compile the library
 # twice, once with float and once with double precision. Anything
@@ -112,13 +140,19 @@ if(DYNAMIC_PRECISION)
   add_definitions("-DDYNAMIC_PRECISION=1")
 
   add_library(nbody_simulation_double SHARED ${nbody_lib_src})
-  target_link_libraries(nbody_simulation_double ${JSON_C_LIBRARY} m)
+  target_link_libraries(nbody_simulation_double ${nbody_link_libs})
   set_target_properties(nbody_simulation_double
                           PROPERTIES
-                            COMPILE_DEFINITIONS "DOUBLEPREC")
+                            COMPILE_DEFINITIONS "DOUBLEPREC;${BOINC_DEFS}")
+
 
   add_library(nbody_simulation_float SHARED ${nbody_lib_src})
-  target_link_libraries(nbody_simulation_float ${JSON_C_LIBRARY} m)
+  target_link_libraries(nbody_simulation_float ${nbody_link_libs})
+
+  set_target_properties(nbody_simulation_float
+                          PROPERTIES
+                            COMPILE_DEFINITIONS "${BOINC_DEFS}")
+
 
   set(nbody_libs nbody_simulation_float nbody_simulation_double)
 else()
@@ -128,12 +162,24 @@ else()
 
   add_library(nbody_simulation STATIC ${nbody_lib_src})
 
+  set_target_properties(nbody_simulation
+                          PROPERTIES
+                          COMPILE_DEFINITIONS "${BOINC_DEFS}")
+
+
   set(nbody_libs nbody_simulation)
 endif()
 
+list(APPEND nbody_link_libs ${nbody_libs})
+
+
 
 add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
-target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${JSON_C_LIBRARY} m ${nbody_libs})
+target_link_libraries(milkyway_nbody ${nbody_link_libs} ${POPT_LIBRARY})
+
+set_target_properties(milkyway_nbody
+                        PROPERTIES
+                        COMPILE_DEFINITIONS "${BOINC_DEFS}")
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 

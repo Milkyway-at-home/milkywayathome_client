@@ -1,18 +1,23 @@
 /* ************************************************************************** */
 /* IO.C: I/O routines for export version of hierarchical N-body code. */
-/* Public routines: inputdata(), inictx.toutput(), stopoutput(), output(). */
+/* Public routines: inputdata(), initoutput(), stopoutput(), output(). */
 /* */
 /* Copyright (c) 1993 by Joshua E. Barnes, Honolulu, HI. */
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
+#include <string.h>
 #include "nbody_priv.h"
+
+#if BOINC_APPLICATION
+  #include <boinc_api.h>
+#endif
 
 void initoutput(NBodyCtx* ctx)
 {
     if (ctx->outfilename)                       /* output file specified? */
     {
-        ctx->outfile = fopen(ctx->outfilename, "w");           /* setup output FILE* */
+        ctx->outfile = nbody_fopen(ctx->outfilename, "w");           /* setup output FILE* */
         if (ctx->outfile == NULL)
             fail("initoutput: cannot open file %s\n", ctx->outfilename);
     }
@@ -27,38 +32,109 @@ static void out_2vectors(FILE* str, vector vec1, vector vec2)
     fprintf(str, " %21.14E %21.14E %21.14E %21.14E %21.14E %21.14E\n", vec1[0], vec1[1], vec1[2], vec2[0], vec2[1], vec2[2]);
 }
 
+
+static const char hdr[] = "mwnbody";
+
+/* Should be given the same context as the dump */
+inline static void readDump(const NBodyCtx* ctx, NBodyState* st, FILE* f)
+{
+    int nbody;
+
+    char buf[sizeof(hdr)];
+
+    fread(buf, sizeof(char), sizeof(hdr), f);
+    fread(&nbody, sizeof(int), 1, f);
+
+    /* TODO: Better checking of things */
+
+    printf("read header = %s\n", hdr);
+    printf("read nbody = %d\n", nbody);
+
+    if (strcmp(hdr, buf))
+        fail("Didn't find header for checkpoint file.\n");
+
+    if (ctx->model.nbody != nbody)
+        fail("Number of bodies in checkpoint file does not match number expected by context.\n");
+
+    st->bodytab = allocate(ctx->model.nbody * sizeof(body));
+    fread(&st->tout, sizeof(real), 1, f);
+    fread(&st->tnow, sizeof(real), 1, f);
+    fread(&st->nstep, sizeof(real), 1, f);
+    fread(st->bodytab, sizeof(body), nbody, f);
+}
+
+inline static void dumpBodies(const NBodyCtx* ctx, const NBodyState* st, FILE* f)
+{
+    /* TODO: Error checking */
+    /* TODO: I think the other things are unnecessary and can go away */
+    fwrite(hdr, 1, sizeof(hdr), f);
+    fwrite(&ctx->model.nbody, sizeof(int), 1, f);
+    fwrite(&st->tout, sizeof(real), 1, f);
+    fwrite(&st->tnow, sizeof(real), 1, f);
+    fwrite(&st->nstep, sizeof(st->nstep), 1, f);
+    fwrite((const void*) st->bodytab, sizeof(body), ctx->model.nbody, f);
+}
+
+void nbody_boinc_output(const NBodyCtx* ctx, NBodyState* st)
+{
+    FILE* f;
+    /* TODO: Check for failure on write */
+    if (boinc_time_to_checkpoint())
+    {
+        f = nbody_fopen("nbody_checkpoint", "wb");
+        if (!f)
+            fail("Failed to open checkpoint file for reading\n");
+
+        dumpBodies(ctx, st, f);
+        boinc_checkpoint_completed();
+        fclose(f);
+    }
+
+    boinc_fraction_done(st->tnow / ctx->model.time_dwarf);
+}
+
+void nbody_boinc_read_checkpoint(const NBodyCtx* ctx, NBodyState* st)
+{
+    FILE* f;
+    /* TODO: Check for failure on write */
+    //if (boinc_time_to_checkpoint())
+    f = nbody_fopen("nbody_checkpoint", "rb");
+    if (!f)
+        fail("Failed to open checkpoint file for reading\n");
+
+    readDump(ctx, st, f);
+    fclose(f);
+}
+
+inline static void cartesianToLbr(vectorptr restrict lbR, const vectorptr restrict r)
+{
+    lbR[0] = r2d(ratan2(r[1], r[0]));
+    lbR[1] = r2d(ratan2(r[2], rsqrt((r[0]) * (r[0]) + r[1] * r[1])));
+    lbR[2] = rsqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+
+    if (lbR[0] < 0)
+        lbR[0] += 360.0;
+}
+
 /* OUTPUT: compute diagnostics and output data. */
-void output(const NBodyCtx* ctx, NBodyState* st)
+void output(const NBodyCtx* ctx, const NBodyState* st)
 {
     bodyptr p;
     vector lbR;
     const bodyptr endp = st->bodytab + ctx->model.nbody;
 
-    if (ctx->model.time_dwarf - st->tnow < 0.01 / ctx->freq)
+    for (p = st->bodytab; p < endp; p++)
     {
-        printf("st.tnow = %f\n", st->tnow);
-        for (p = st->bodytab; p < endp; p++)
-        {
-            #ifndef OUTPUT_CARTESIAN
-            lbR[2] = rsqrt(Pos(p)[0] * Pos(p)[0] + Pos(p)[1] * Pos(p)[1] + Pos(p)[2] * Pos(p)[2]);
-            lbR[1] = r2d(ratan2(Pos(p)[2], rsqrt((Pos(p)[0]) * (Pos(p)[0]) + Pos(p)[1] * Pos(p)[1])));
-            lbR[0] = r2d(ratan2(Pos(p)[1], Pos(p)[0]));
-
-            if (lbR[0] < 0)
-                lbR[0] += 360.0;
-
-            out_2vectors(ctx->outfile, lbR, Vel(p));
-            #else
-            out_2vectors(ctx->outfile, Pos(p), Vel(p));
-            #endif /* OUTPUT_CARTESIAN */
-
-        }
-
-        if (ctx->outfile != stdout)
-            printf("\tParticle data written to file %s\n\n", ctx->outfilename);
-        fflush(ctx->outfile);             /* drain output buffer */
-        st->tout += 1.0 / ctx->freqout;     /* schedule next data out */
+      #ifndef OUTPUT_CARTESIAN
+        cartesianToLbr(lbR, Pos(p));
+        out_2vectors(ctx->outfile, lbR, Vel(p));
+      #else
+        /* Probably useful for making movies and such */
+        out_2vectors(ctx->outfile, Pos(p), Vel(p));
+      #endif /* OUTPUT_CARTESIAN */
     }
+
+    fflush(ctx->outfile);             /* drain output buffer */
 }
 
 

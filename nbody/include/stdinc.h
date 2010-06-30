@@ -18,11 +18,12 @@ typedef short int bool;
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include "nbody.h"
 
 
 #define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)
 #define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \
-                         exit(EXIT_FAILURE); }
+                         nbody_finish(EXIT_FAILURE); }
 
 
 /*  ABS: returns the absolute value of its argument

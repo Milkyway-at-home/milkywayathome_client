@@ -19,6 +19,13 @@
 #include "real.h"
 #include "nbody_util.h"
 
+#if BOINC_APPLICATION
+  #include <boinc_api.h>
+  #if BOINC_DEBUG
+    #include <diagnostics.h>
+  #endif /* BOINC_DEBUG */
+#endif /* BOINC_APPLICATION */
+
 /* Global function prototypes. */
 
 void initoutput(NBodyCtx*);             /* open files for output */
@@ -27,7 +34,7 @@ void nbody_state_destroy(NBodyState* st);
 void inputdata(void);                   /* read initial data file */
 void maketree(const NBodyCtx*, NBodyState*);    /* construct tree structure */
 void hackgrav(const NBodyCtx*, NBodyState*, bodyptr, bool);   /* compute force on body */
-void output(const NBodyCtx* ctx, NBodyState* st);  /* perform output operation */
+void output(const NBodyCtx* ctx, const NBodyState* st);  /* perform output operation */
 void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st);
 
 void integrate(const NBodyCtx* ctx, InitialConditions* ic);

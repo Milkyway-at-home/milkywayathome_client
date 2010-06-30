@@ -23,6 +23,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <json/json.h>
 
+/* TODO: Naming, and sharing with separation */
+#if BOINC_APPLICATION
+  #define nbody_finish(x) boinc_finish(x)
+  #define nbody_fopen(x,y) boinc_fopen((x),(y))
+#else
+  #define nbody_finish(x) exit(x)
+  #define nbody_fopen(x,y) fopen((x),(y))
+#endif /* BOINC_APPLICATION */
+
+
 #ifndef DYNAMIC_PRECISION
   __attribute__ ((visibility("default"))) void runNBodySimulation(json_object* obj, const char* outFileName);
 #else

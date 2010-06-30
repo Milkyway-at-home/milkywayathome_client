@@ -30,7 +30,6 @@ inline static void startrun(const NBodyCtx* ctx, const InitialConditions* ic, NB
 
     /* CHECKME: Why does maketree get used twice for the first step? */
     gravmap(ctx, st);               /* Take 1st step */
-    output(ctx, st);                /* do initial output */
     st->nstep = 1;                  /* start counting steps */
 }
 
@@ -62,7 +61,6 @@ inline static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
 
     st->nstep++;           /* count another time step */
     st->tnow += dt;        /* finally, advance time */
-    output(ctx, st);       /* do major or minor output */
 }
 
 
@@ -73,7 +71,20 @@ static void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodySta
     startrun(ctx, ic, st);
 
     while (st->tnow < tstop)
-        stepsystem(ctx, st);               /* advance N-body system */
+    {
+        stepsystem(ctx, st);   /* advance N-body system */
+        #if BOINC_APPLICATION
+          nbody_boinc_output(ctx, st);
+        #else
+          /* TODO: organize use of this output better since it only
+           * half makes sense now with boinc */
+
+          if (ctx->model.time_dwarf - st->tnow < 0.01 / ctx->freq)
+              output(ctx, st);
+
+          st->tout += 1.0 / ctx->freqout;     /* schedule next data out */
+        #endif
+    }
 }
 
 /* Takes parsed json and run the simulation, using outFileName for
@@ -110,6 +121,10 @@ static void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodySta
     printf("Running nbody system\n");
     runSystem(&ctx, &ic, &st);
 
+    /* Make final output */
+
+    output(&ctx, &st);
+
     printf("Running system done\n");
     // Get the likelihood
     //chisqans = chisq();
@@ -119,4 +134,5 @@ static void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodySta
     nbody_state_destroy(&st);
 
 }
+
 
