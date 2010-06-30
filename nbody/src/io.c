@@ -191,9 +191,10 @@ void nbody_boinc_output(const NBodyCtx* ctx, NBodyState* st)
 
 inline static void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r)
 {
-    lbR[0] = r2d(ratan2(r[1], r[0]));
-    lbR[1] = r2d(ratan2(r[2], rsqrt(sqr(r[0]) + sqr(r[1]))));
-    ABSV(lbr[2], r);
+    const real r0p = r[0] + ctx->sunGCDist;
+    lbR[0] = r2d(ratan2(r[1], r0p));
+    lbR[1] = r2d(ratan2(r[2], rsqrt(sqr(r0p) + sqr(r[1]))));
+    lbR[2] = rsqrt(sqr(r0p) + sqr(r[1]) + sqr(r[2]));
 
     if (lbR[0] < 0)
         lbR[0] += 360.0;
