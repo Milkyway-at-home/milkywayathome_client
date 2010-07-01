@@ -22,7 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 
 /* When the result is supposed to be a vector */
-void vectorError(const char* testfunc, const char* op, vector reference, vector answer, vector a, vector b)
+static void vectorError(const char* testfunc, const char* op, vector reference, vector answer, vector a, vector b)
 {
     char* buf1;
     char* buf2;
@@ -64,7 +64,7 @@ void vectorError(const char* testfunc, const char* op, vector reference, vector 
 }
 
 
-void vectorIncError(const char* testfunc, const char* op, vector reference, vector answer, vector aOrig, vector b)
+static void vectorIncError(const char* testfunc, const char* op, vector reference, vector answer, vector aOrig, vector b)
 {
     char* buf1;
     char* buf2;
@@ -105,9 +105,7 @@ void vectorIncError(const char* testfunc, const char* op, vector reference, vect
     free(buf5);
 }
 
-
-
-void vectorErrorOne(const char* testfunc, const char* op, vector reference, vector answer, vector a)
+static void vectorErrorOne(const char* testfunc, const char* op, vector reference, vector answer, vector a)
 {
     char* buf1;
     char* buf2;
@@ -142,7 +140,7 @@ void vectorErrorOne(const char* testfunc, const char* op, vector reference, vect
 }
 
 /* When the result is supposed to be a scalar */
-void scalarError(const char* testfunc, const char* op, real reference, real answer, vector a, vector b)
+static void scalarError(const char* testfunc, const char* op, real reference, real answer, vector a, vector b)
 {
     char* buf1;
     char* buf2;
@@ -166,7 +164,7 @@ void scalarError(const char* testfunc, const char* op, real reference, real answ
     free(buf2);
 }
 
-void scalarIncError(const char* testfunc, const char* op, vector reference, vector answer, vector aOrig, real b)
+static void scalarIncError(const char* testfunc, const char* op, vector reference, vector answer, vector aOrig, real b)
 {
     char* buf1;
     char* buf2;
@@ -206,7 +204,7 @@ void scalarIncError(const char* testfunc, const char* op, vector reference, vect
 
 
 /* for :: Vector -> Scalar -> Vector ones */
-void vectorScalarError(const char* testfunc, const char* op, vector reference, vector answer, vector a, real b)
+static void vectorScalarError(const char* testfunc, const char* op, vector reference, vector answer, vector a, real b)
 {
     char* buf1;
     char* buf2;
@@ -244,7 +242,7 @@ void vectorScalarError(const char* testfunc, const char* op, vector reference, v
 }
 
 
-void scalarErrorOne(const char* testfunc, const char* op, real reference, real answer, vector a)
+static void scalarErrorOne(const char* testfunc, const char* op, real reference, real answer, vector a)
 {
     char* buf1;
 
@@ -267,7 +265,7 @@ void scalarErrorOne(const char* testfunc, const char* op, real reference, real a
 /*****************************************************************************/
 
 /* Test the dot product function against a simple reference */
-inline int test_dotvp()
+inline static int test_dotvp()
 {
     int failed = 0;
 
@@ -289,7 +287,7 @@ inline int test_dotvp()
     return failed;
 }
 
-inline int test_sqrv()
+inline static int test_sqrv()
 {
     int failed = 0;
     vector a = RANDOM_VECTOR;
@@ -307,7 +305,7 @@ inline int test_sqrv()
     return failed;
 }
 
-inline int test_subv()
+inline static int test_subv()
 {
     int failed = 0;
     vector answer;
@@ -326,7 +324,7 @@ inline int test_subv()
     return failed;
 }
 
-inline int test_mulvs()
+inline static int test_mulvs()
 {
     int failed = 0;
     vector answer;
@@ -345,7 +343,7 @@ inline int test_mulvs()
     return failed;
 }
 
-inline int test_divvs()
+inline static int test_divvs()
 {
     int failed = 0;
     vector answer;
@@ -364,7 +362,7 @@ inline int test_divvs()
     return failed;
 }
 
-inline int test_addvs()
+inline static int test_addvs()
 {
     int failed = 0;
     vector answer;
@@ -384,7 +382,7 @@ inline int test_addvs()
 }
 
 
-inline int test_setv()
+inline static int test_setv()
 {
     int failed = 0;
     vector answer;
@@ -409,7 +407,7 @@ inline int test_setv()
     return failed;
 }
 
-inline int test_addv()
+inline static int test_addv()
 {
     int failed = 0;
     vector answer;
@@ -428,7 +426,7 @@ inline int test_addv()
     return failed;
 }
 
-inline int test_clrv()
+inline static int test_clrv()
 {
     int failed = 0;
     vector a = RANDOM_VECTOR;
@@ -448,7 +446,7 @@ inline int test_clrv()
     return failed;
 }
 
-inline int test_incaddv()
+inline static int test_incaddv()
 {
     int failed = 0;
     vector a = RANDOM_VECTOR;
@@ -470,7 +468,7 @@ inline int test_incaddv()
 }
 
 
-inline int test_incmulvs()
+inline static int test_incmulvs()
 {
     int failed = 0;
     vector a = RANDOM_VECTOR;
@@ -491,7 +489,7 @@ inline int test_incmulvs()
     return failed;
 }
 
-inline int test_incdivvs()
+inline static int test_incdivvs()
 {
     int failed = 0;
     vector a = RANDOM_VECTOR;
@@ -512,7 +510,7 @@ inline int test_incdivvs()
     return failed;
 }
 
-inline int test_incsubv()
+inline static int test_incsubv()
 {
     int failed = 0;
     vector a = RANDOM_VECTOR;
@@ -533,7 +531,7 @@ inline int test_incsubv()
     return failed;
 }
 
-inline int test_absv()
+inline static int test_absv()
 {
     int failed = 0;
     real answer;
@@ -552,7 +550,7 @@ inline int test_absv()
 }
 
 
-inline int test_unitv()
+inline static int test_unitv()
 {
     vector a = RANDOM_VECTOR;
     real absval;
@@ -576,7 +574,7 @@ inline int test_unitv()
     return 0;
 }
 
-inline int test_incnegv()
+inline static int test_incnegv()
 {
     char* origStr;
     char* aStr;
@@ -617,7 +615,7 @@ inline int test_incnegv()
     return 0;
 }
 
-inline int test_negv()
+inline static int test_negv()
 {
     char* origStr;
     char* aStr;
