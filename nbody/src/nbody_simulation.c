@@ -113,18 +113,19 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
  * output */
 #ifdef DYNAMIC_PRECISION
   #ifdef DOUBLEPREC
-    void runNBodySimulation_double(json_object* obj, const char* outFileName, const char* checkpointFileName)
+    void runNBodySimulation_double(json_object* obj, const char* outFileName, const char* checkpointFileName, const int outputCartesian)
   #else
-    void runNBodySimulation_float(json_object* obj, const char* outFileName, const char* checkpointFileName)
+    void runNBodySimulation_float(json_object* obj, const char* outFileName, const char* checkpointFileName, const int outputCartesian)
   #endif /* DOUBLEPREC */
 #else
-    void runNBodySimulation(json_object* obj, const char* outFileName, const char* checkpointFileName)
+   void runNBodySimulation(json_object* obj, const char* outFileName, const char* checkpointFileName, const int outputCartesian)
 #endif /* DYNAMIC_PRECISION */
 {
     NBodyCtx ctx         = EMPTY_CTX;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
     NBodyState st        = EMPTY_STATE;
 
+    ctx.outputCartesian = outputCartesian;
     ctx.outfilename = outFileName;
     ctx.cpFile = checkpointFileName;
 

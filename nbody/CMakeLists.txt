@@ -52,13 +52,6 @@ option(BOINC_DEBUG
 option(DOUBLEPREC
        "Use double precision" ON)
 
-option(OUTPUT_CARTESIAN
-       "Output galactic Cartesian coordinates instead of lbr" OFF)
-
-if(OUTPUT_CARTESIAN)
-  add_definitions("-DOUTPUT_CARTESIAN")
-endif()
-
 set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
                   ${PROJECT_SOURCE_DIR}/src/grav.c
                   ${PROJECT_SOURCE_DIR}/src/io.c
@@ -70,7 +63,6 @@ set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
                   ${PROJECT_SOURCE_DIR}/src/nbody_util.c)
 
 set(CMAKE_C_FLAGS "-std=gnu99 -fvisibility=hidden ${CMAKE_C_FLAGS}")
-
 
 
 message("---------------------------------------------")

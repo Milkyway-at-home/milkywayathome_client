@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include <stdlib.h>
+#include <string.h>
 #include <popt.h>
 #include "nbody.h"
 #include "nbody_priv.h"
@@ -22,7 +23,8 @@ static json_object* readParameters(const int argc,
                                    int* useDouble,
                                    char** resume,
                                    char** checkpointFileName,
-                                   int* ignoreCheckpoint)
+                                   int* ignoreCheckpoint,
+                                   int* outputCartesian)
 {
   #if !defined(DYNAMIC_PRECISION)
     #pragma unused(useDouble)
@@ -64,6 +66,14 @@ static json_object* readParameters(const int argc,
             POPT_ARG_STRING, &inputStr,
             0, "Input given as string", NULL
         },
+
+
+        {
+            "output-cartesian", 'x',
+            POPT_ARG_NONE, outputCartesian,
+            0, "Output Cartesian coordinates instead of lbR", NULL
+        },
+
 
       #if BOINC_APPLICATION
         {
@@ -169,25 +179,25 @@ static json_object* readParameters(const int argc,
     return obj;
 }
 
-void runFresh(json_object* obj, const char* outFileName, const char* checkpointFileName, const int useDouble)
+void runFresh(json_object* obj, const char* outFileName, const char* checkpointFileName, const int useDouble, const int outputCartesian)
 {
   #ifdef DYNAMIC_PRECISION
     if (useDouble)
     {
         printf("Using double precision\n");
-        runNBodySimulation_double(obj, outFileName, checkpointFileName);
+        runNBodySimulation_double(obj, outFileName, checkpointFileName, outputCartesian);
         printf("Done with double\n");
     }
     else
     {
         printf("Using float precision\n");
-        runNBodySimulation_float(obj, outFileName, checkpointFileName);
+        runNBodySimulation_float(obj, outFileName, checkpointFileName, outputCartesian);
         printf("Done with float\n");
     }
   #else
     #pragma unused(useDouble)
 
-    runNBodySimulation(obj, outFileName, checkpointFileName);
+    runNBodySimulation(obj, outFileName, checkpointFileName, outputCartesian);
   #endif /* DYNAMIC_PRECISION */
 }
 
@@ -200,6 +210,7 @@ int main(int argc, const char* argv[])
     char* outFileName = NULL;
     json_object* obj = NULL;
     int useDouble = FALSE;
+    int outputCartesian = FALSE;
     int ignoreCheckpoint = FALSE;
     char* resume = NULL;
     char* checkpointFileName = NULL;
@@ -227,10 +238,11 @@ int main(int argc, const char* argv[])
                          &useDouble,
                          &resume,
                          &checkpointFileName,
-                         &ignoreCheckpoint);
+                         &ignoreCheckpoint,
+                         &outputCartesian);
 
     /* Use default if checkpoint file not specified */
-    checkpointFileName = checkpointFileName ? checkpointFileName : DEFAULT_CHECKPOINT_FILE;
+    checkpointFileName = checkpointFileName ? checkpointFileName : strdup(DEFAULT_CHECKPOINT_FILE);
 
   #if BOINC_APPLICATION
     if (resume)  /* resume from a specific checkpointed state, useful for testing */
@@ -249,10 +261,10 @@ int main(int argc, const char* argv[])
             resumeCheckpoint(obj, outFileName, checkpointFileName);
         }
         else   /* Do a fresh start */
-            runFresh(obj, outFileName, checkpointFileName, useDouble);
+            runFresh(obj, outFileName, checkpointFileName, useDouble, outputCartesian);
     }
   #else
-    runFresh(obj, outFileName, checkpointFileName, useDouble);
+    runFresh(obj, outFileName, checkpointFileName, useDouble, outputCartesian);
   #endif /* BOINC_APPLICATION*/
 
     free(outFileName);

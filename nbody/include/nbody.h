@@ -42,15 +42,18 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef DYNAMIC_PRECISION
   __attribute__ ((visibility("default"))) void runNBodySimulation(json_object* obj,
                                                                   const char* outFileName,
-                                                                  const char* checkpointFileName);
+                                                                  const char* checkpointFileName,
+                                                                  const int outputCartesian);
 #else
   __attribute__ ((visibility("default"))) void runNBodySimulation_float(json_object* obj,
                                                                         const char* outFileName,
-                                                                        const char* checkpointFileName);
+                                                                        const char* checkpointFileName,
+                                                                        const int outputCartesian);
 
   __attribute__ ((visibility("default"))) void runNBodySimulation_double(json_object* obj,
                                                                          const char* outFileName,
-                                                                         const char* checkpointFileName);
+                                                                         const char* checkpointFileName,
+                                                                         const int outputCartesian);
 #endif
 
 #if BOINC_APPLICATION

@@ -287,13 +287,14 @@ void output(const NBodyCtx* ctx, const NBodyState* st)
 
     for (p = st->bodytab; p < endp; p++)
     {
-      #ifndef OUTPUT_CARTESIAN
-        cartesianToLbr(ctx, lbR, Pos(p));
-        out_2vectors(ctx->outfile, lbR, Vel(p));
-      #else
-        /* Probably useful for making movies and such */
+        if (ctx->outputCartesian)
+        {
+            /* Probably useful for making movies and such */
+            cartesianToLbr(ctx, lbR, Pos(p));
+            out_2vectors(ctx->outfile, lbR, Vel(p));
+        }
+        else
         out_2vectors(ctx->outfile, Pos(p), Vel(p));
-      #endif /* OUTPUT_CARTESIAN */
     }
 
     fflush(ctx->outfile);             /* drain output buffer */
@@ -563,20 +564,21 @@ char* showContext(const NBodyCtx* ctx)
 
     if (0 > asprintf(&buf,
                      "ctx = { \n"
-                     "  pot = %s\n"
-                     "  model = %s\n"
-                     "  headline    = %s\n"
-                     "  outfilename = %s\n"
-                     "  outfile     = %p\n"
-                     "  sunGCDist   = %g\n"
-                     "  criterion   = %s\n"
-                     "  usequad     = %s\n"
-                     "  allowIncest = %s\n"
-                     "  seed        = %ld\n"
-                     "  tree_rsize  = %g\n"
-                     "  theta       = %g\n"
-                     "  freq        = %g\n"
-                     "  freqout     = %g\n"
+                     "  pot             = %s\n"
+                     "  model           = %s\n"
+                     "  headline        = %s\n"
+                     "  outfilename     = %s\n"
+                     "  outfile         = %p\n"
+                     "  sunGCDist       = %g\n"
+                     "  criterion       = %s\n"
+                     "  usequad         = %s\n"
+                     "  allowIncest     = %s\n"
+                     "  outputCartesian = %s\n"
+                     "  seed            = %ld\n"
+                     "  tree_rsize      = %g\n"
+                     "  theta           = %g\n"
+                     "  freq            = %g\n"
+                     "  freqout         = %g\n"
                      "};\n",
                      potBuf,
                      modelBuf,
@@ -587,6 +589,7 @@ char* showContext(const NBodyCtx* ctx)
                      showCriterionT(ctx->criterion),
                      showBool(ctx->usequad),
                      showBool(ctx->allowIncest),
+                     showBool(ctx->outputCartesian),
                      ctx->seed,
                      ctx->tree_rsize,
                      ctx->theta,

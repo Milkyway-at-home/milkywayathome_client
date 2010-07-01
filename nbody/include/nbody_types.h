@@ -268,6 +268,7 @@ typedef struct
     long seed;                /* random number seed */
     bool usequad;             /* use quadrupole corrections */
     bool allowIncest;
+    bool outputCartesian;     /* print (x,y,z) instead of (l, b, r) */
 } NBodyCtx;
 
 /* Mutable state used during an evaluation */
@@ -293,7 +294,7 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 #define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
-#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, -1, NULL, NULL, NAN, NAN, NAN, NAN, NAN, 0, 0, FALSE, FALSE }
+#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, -1, NULL, NULL, NAN, NAN, NAN, NAN, NAN, 0, 0, FALSE, FALSE, FALSE }
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 #define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL}
 #define EMPTY_VECTOR { NAN, NAN, NAN }
