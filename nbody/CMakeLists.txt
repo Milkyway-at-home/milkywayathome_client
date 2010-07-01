@@ -165,5 +165,5 @@ list(APPEND nbody_link_libs ${nbody_libs})
 add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
 target_link_libraries(milkyway_nbody ${nbody_link_libs} ${POPT_LIBRARY})
 
-#add_subdirectory(tests EXCLUDE_FROM_ALL)
+add_subdirectory(tests EXCLUDE_FROM_ALL)
 
