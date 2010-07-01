@@ -97,7 +97,7 @@ int runResume(const char* binPath, const char* config, const char* outfile, cons
     return 0;
 }
 
-int runInterrupt(const char* binPath, const char* config, const char* outfile, const char* checkpoint)
+int runInterrupt(const char* binPath, const char* config, const char* outfile, const char* checkpoint, unsigned int stime)
 {
     pid_t pid;
 
@@ -125,8 +125,8 @@ int runInterrupt(const char* binPath, const char* config, const char* outfile, c
          * be the same as the uninterrupted one. Also assumes the
          * boinc checkpoint interval is set lower */
 
-        printf("Sleeping\n");
-        sleep(8);         /* TODO: Random number */
+        printf("Sleeping for %u\n", stime);
+        sleep(stime);
         printf("Awake\n");
 
         if ( kill(pid, SIGQUIT) < 0 )
@@ -142,24 +142,32 @@ int runInterrupt(const char* binPath, const char* config, const char* outfile, c
 int main(int argc, char** argv)
 {
     int rc;
+    unsigned int n, numInt = 2;
 
-    const char* binPath  = "bin/milkyway_nbody";
-    const char* check    = "test_check";
-    const char* testFile = "long_test.js";
+    const char* binPath       = "bin/milkyway_nbody";
+    const char* check         = "test_check";
+    const char* testFile      = "medium_test.js";
+    const char* testOutNormal = "test_out_normal";
+    const char* testOutInt    = "test_out_interrupted";
+
+    remove(check);
 
     printf("Running normally\n");
-    runUninterrupted(binPath, testFile, "test_out_normal", check);
+    runUninterrupted(binPath, testFile, testOutNormal, check);
     printf("Uninterrupted run complete\n");
 
-    runInterrupt(binPath, testFile, "uselessfile", check);
-    printf("Interrupted run complete\n");
+    for ( n = 0; n < numInt; ++n )
+    {
+        printf("Beginning interrupted run %u\n", n);
+        runInterrupt(binPath, testFile, testOutInt, check, 10);
+        printf("Interrupted run %u complete\n", n);
+    }
 
-
-    runResume(binPath, testFile, "test_out_interrupted", check);
+    printf("Begin resume run\n");
+    runResume(binPath, testFile, testOutInt, check);
     printf("Resumed run complete\n");
 
     /* Check if result files differ */
-
     if ((rc = system("diff test_out_normal test_out_interrupted")) < 0)
     {
         perror("system");

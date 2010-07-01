@@ -244,7 +244,10 @@ int main(int argc, const char* argv[])
     {
         /* Test if the checkpoint exists, resume from it */
         if (boinc_file_exists(checkpointFileName))
+        {
+            printf("Checkpoint exists. Resuming it.\n");
             resumeCheckpoint(obj, outFileName, checkpointFileName);
+        }
         else   /* Do a fresh start */
             runFresh(obj, outFileName, checkpointFileName, useDouble);
     }
