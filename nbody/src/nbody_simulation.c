@@ -8,8 +8,6 @@
 #include "nbody_priv.h"
 #include "nbody.h"
 
-#define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
-
 inline static void gravmap(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
@@ -89,7 +87,7 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
     }
 }
 
-void endRun(NBodyCtx* ctx, NBodyState* st)
+static void endRun(NBodyCtx* ctx, NBodyState* st)
 {
     /* Make final output */
 
@@ -107,7 +105,7 @@ void endRun(NBodyCtx* ctx, NBodyState* st)
     nbody_state_destroy(st);
 
     /* We finished so kill the checkpoint */
-    nbody_remove("nbody_checkpoint");
+    nbody_remove(ctx->cpFile);
 
 }
 
@@ -128,7 +126,7 @@ void endRun(NBodyCtx* ctx, NBodyState* st)
     NBodyState st        = EMPTY_STATE;
 
     ctx.outfilename = outFileName;
-    ctx.cpFile = checkpointFileName ? checkpointFileName : DEFAULT_CHECKPOINT_FILE;
+    ctx.cpFile = checkpointFileName;
 
     get_params_from_json(&ctx, &ic, obj);
     initoutput(&ctx);

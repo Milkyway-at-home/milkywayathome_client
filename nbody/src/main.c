@@ -13,12 +13,14 @@
 #include "nbody.h"
 #include "nbody_priv.h"
 
+#define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
+
 /* Read the command line arguments, and do the inital parsing of the parameter file */
 static json_object* readParameters(const int argc,
                                    const char** argv,
                                    char** outFileName,
                                    int* useDouble,
-                                   int* resume,
+                                   char** resume,
                                    char** checkpointFileName,
                                    int* ignoreCheckpoint)
 {
@@ -30,6 +32,7 @@ static json_object* readParameters(const int argc,
     #pragma unused(resume)
     #pragma unused(checkpointFileName)
     #pragma unused(ignoreCheckpoint)
+    #pragma unused(resume)
   #endif
 
     poptContext context;
@@ -66,7 +69,7 @@ static json_object* readParameters(const int argc,
         {
             "checkpoint", 'c',
             POPT_ARG_STRING, checkpointFileName,
-            0, "Checkpoint file to resume from", NULL
+            0, "Checkpoint file to use", NULL
         },
 
         {
@@ -100,6 +103,7 @@ static json_object* readParameters(const int argc,
                              argc,
                              argv,
                              options,
+
                              POPT_CONTEXT_POSIXMEHARDER);
 
     if (argc < 2)
@@ -165,6 +169,28 @@ static json_object* readParameters(const int argc,
     return obj;
 }
 
+void runFresh(json_object* obj, const char* outFileName, const char* checkpointFileName, const int useDouble)
+{
+  #ifdef DYNAMIC_PRECISION
+    if (useDouble)
+    {
+        printf("Using double precision\n");
+        runNBodySimulation_double(obj, outFileName, checkpointFileName);
+        printf("Done with double\n");
+    }
+    else
+    {
+        printf("Using float precision\n");
+        runNBodySimulation_float(obj, outFileName, checkpointFileName);
+        printf("Done with float\n");
+    }
+  #else
+    #pragma unused(useDouble)
+
+    runNBodySimulation(obj, outFileName, checkpointFileName);
+  #endif /* DYNAMIC_PRECISION */
+}
+
 /* FIXME: Clean up the separation between boinc and nonboinc. Right
  * now it's absolutely disgusting. */
 
@@ -175,7 +201,7 @@ int main(int argc, const char* argv[])
     json_object* obj = NULL;
     int useDouble = FALSE;
     int ignoreCheckpoint = FALSE;
-    int resume = FALSE;
+    char* resume = NULL;
     char* checkpointFileName = NULL;
 
 #if BOINC_APPLICATION
@@ -203,35 +229,32 @@ int main(int argc, const char* argv[])
                          &checkpointFileName,
                          &ignoreCheckpoint);
 
-    if (resume && !ignoreCheckpoint) /* Always false if not boinc application */
+    /* Use default if checkpoint file not specified */
+    checkpointFileName = checkpointFileName ? checkpointFileName : DEFAULT_CHECKPOINT_FILE;
+
+  #if BOINC_APPLICATION
+    if (resume)  /* resume from a specific checkpointed state, useful for testing */
     {
-        /* resume from a checkpointed state */
-        #if BOINC_APPLICATION
-        resumeCheckpoint(obj, outFileName, checkpointFileName);
-        #endif
+        if (!boinc_file_exists(resume))
+            fail("Specified resume file '%s' not found\n", resume);
+
+        resumeCheckpoint(obj, outFileName, resume);
     }
-    else   /* Do a fresh start */
+    else
     {
-      #ifdef DYNAMIC_PRECISION
-        if (useDouble)
-        {
-            printf("Using double precision\n");
-            runNBodySimulation_double(obj, outFileName, checkpointFileName);
-            printf("Done with double\n");
-        }
-        else
-        {
-            printf("Using float precision\n");
-            runNBodySimulation_float(obj, outFileName, checkpointFileName);
-            printf("Done with float\n");
-        }
-      #else
-        runNBodySimulation(obj, outFileName);
-      #endif /* DYNAMIC_PRECISION */
+        /* Test if the checkpoint exists, resume from it */
+        if (boinc_file_exists(checkpointFileName))
+            resumeCheckpoint(obj, outFileName, checkpointFileName);
+        else   /* Do a fresh start */
+            runFresh(obj, outFileName, checkpointFileName, useDouble);
     }
+  #else
+    runFresh(obj, outFileName, checkpointFileName, useDouble);
+  #endif /* BOINC_APPLICATION*/
 
     free(outFileName);
     free(checkpointFileName);
+    free(resume);
 
     nbody_finish(EXIT_SUCCESS);
 }
