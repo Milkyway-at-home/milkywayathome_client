@@ -18,10 +18,9 @@ static json_object* readParameters(const int argc,
                                    const char** argv,
                                    char** outFileName,
                                    int* useDouble,
+                                   int* resume,
                                    char** checkpointFileName,
-                                   int* ignoreCheckpoint
-
-    )
+                                   int* ignoreCheckpoint)
 {
   #if !defined(DYNAMIC_PRECISION)
     #pragma unused(useDouble)
@@ -34,7 +33,7 @@ static json_object* readParameters(const int argc,
     json_object* obj;
 
     /* FIXME: There's a small leak of the inputFile from use of
-       poptGetNextOpt().  Some mailing list post suggestst that this
+       poptGetNextOpt(). Some mailing list post suggestst that this
        is some kind of semi-intended bug to work around something or
        other while maintaining ABI compatability */
     const struct poptOption options[] =
@@ -61,6 +60,12 @@ static json_object* readParameters(const int argc,
             "checkpoint", 'c',
             POPT_ARG_STRING, checkpointFileName,
             0, "Checkpoint file to resume from", NULL
+        },
+
+        {
+            "resume", 'r',
+            POPT_ARG_STRING, resume,
+            0, "Resume from specified checkpoint file", NULL
         },
 
         {
@@ -160,6 +165,7 @@ int main(int argc, const char* argv[])
     json_object* obj = NULL;
     int useDouble = FALSE;
     int ignoreCheckpoint = FALSE;
+    int resume = FALSE;
     char* checkpointFileName = NULL;
 
 #if BOINC_APPLICATION
@@ -179,9 +185,15 @@ int main(int argc, const char* argv[])
     }
 #endif /* BOINC_APPLICATION */
 
-    obj = readParameters(argc, argv, &outFileName, &useDouble, &checkpointFileName, &ignoreCheckpoint);
+    obj = readParameters(argc,
+                         argv,
+                         &outFileName,
+                         &useDouble,
+                         &resume,
+                         &checkpointFileName,
+                         &ignoreCheckpoint);
 
-    if (checkpointFileName && !ignoreCheckpoint)
+    if (resume && !ignoreCheckpoint)
     {
         /* resume from a checkpointed state */
         resumeCheckpoint(obj, outFileName, checkpointFileName);
@@ -192,13 +204,13 @@ int main(int argc, const char* argv[])
         if (useDouble)
         {
             printf("Using double precision\n");
-            runNBodySimulation_double(obj, outFileName);
+            runNBodySimulation_double(obj, outFileName, checkpointFileName);
             printf("Done with double\n");
         }
         else
         {
             printf("Using float precision\n");
-            runNBodySimulation_float(obj, outFileName);
+            runNBodySimulation_float(obj, outFileName, checkpointFileName);
             printf("Done with float\n");
         }
       #else

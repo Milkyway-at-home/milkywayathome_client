@@ -8,6 +8,8 @@
 #include "nbody_priv.h"
 #include "nbody.h"
 
+#define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
+
 inline static void gravmap(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
@@ -106,17 +108,16 @@ void endRun(NBodyCtx* ctx, NBodyState* st)
 
 }
 
-
 /* Takes parsed json and run the simulation, using outFileName for
  * output */
 #ifdef DYNAMIC_PRECISION
   #ifdef DOUBLEPREC
-    void runNBodySimulation_double(json_object* obj, const char* outFileName)
+    void runNBodySimulation_double(json_object* obj, const char* outFileName, const char* checkpointFileName)
   #else
-    void runNBodySimulation_float(json_object* obj, const char* outFileName)
+    void runNBodySimulation_float(json_object* obj, const char* outFileName, const char* checkpointFileName)
   #endif /* DOUBLEPREC */
 #else
-  void runNBodySimulation(json_object* obj, const char* outFileName)
+    void runNBodySimulation(json_object* obj, const char* outFileName, const char* checkpointFileName)
 #endif /* DYNAMIC_PRECISION */
 {
     NBodyCtx ctx         = EMPTY_CTX;
@@ -124,6 +125,7 @@ void endRun(NBodyCtx* ctx, NBodyState* st)
     NBodyState st        = EMPTY_STATE;
 
     ctx.outfilename = outFileName;
+    ctx.cpFile = checkpointFileName ? checkpointFileName : DEFAULT_CHECKPOINT_FILE;
 
     get_params_from_json(&ctx, &ic, obj);
     initoutput(&ctx);
@@ -132,14 +134,13 @@ void endRun(NBodyCtx* ctx, NBodyState* st)
     printInitialConditions(&ic);
 
     // Calculate the reverse orbit
-    printf("Calculating reverse orbit...");
+    printf("Calculating reverse orbit...\n");
     integrate(&ctx, &ic);
     printf("done\n");
 
     printInitialConditions(&ic);
 
     printf("Running nbody system\n");
-
 
     startRun(&ctx, &ic, &st);
     runSystem(&ctx, &st);

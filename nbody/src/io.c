@@ -42,7 +42,6 @@ const size_t hdrSize =   sizeof(size_t)                                  /* size
 #define READ_SIZE_T(x, p) { (x) = *((size_t*) (p)); (p) += sizeof(size_t); }
 #define READ_STR(x, p, size) { memcpy((x), (p), (size)); (p) += (size); }
 
-
 void openCheckpoint(NBodyCtx* ctx)
 {
     struct stat sb;
@@ -52,7 +51,7 @@ void openCheckpoint(NBodyCtx* ctx)
        http://msdn.microsoft.com/en-us/library/aa366556(VS.85).aspx
     */
 
-    ctx->cpFd = open("nbody_checkpoint", O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
+    ctx->cpFd = open(ctx->cpFile, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
     if (ctx->cpFd == -1)
     {
         perror("open checkpoint");
