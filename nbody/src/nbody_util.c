@@ -22,12 +22,6 @@
 #  define HZ CLK_TCK
 #endif
 
-/* xrandom: generate floating-point random number. */
-real xrandom(real xl, real xh)
-{
-    return xl + (xh - xl) * drand48();
-}
-
 /* cputime: compute CPU time in minutes. */
 real cputime()
 {

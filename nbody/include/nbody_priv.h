@@ -58,7 +58,6 @@ void nfwHaloAccel(vectorptr restrict acc, const Halo* h, const vectorptr restric
  * and getparam.c, which must be compiled with same choice of precision.
  */
 
-real xrandom(real, real);         /* generate a random number */
 void initparam(char**, char**);   /* initialize parameter pkg */
 char* getparam(char*);            /* get parameter as char* */
 int getiparam(char*);             /* get parameter as integer */
