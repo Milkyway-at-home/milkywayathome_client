@@ -27,7 +27,7 @@ static const char tail[] = "end";
 /* Everything except the size of all the bodies */
 const size_t hdrSize =   sizeof(size_t)                                  /* size of real */
                        + sizeof(char) * (sizeof(tail) + sizeof(hdr) - 2) /* error checking tags */
-                       + sizeof(int)                                     /* nbody count */
+                       + 2 * sizeof(int)                                 /* nbody count + valid flag */
                        + 2 * sizeof(real);                               /* tout and tnow */
 
 /* Macros to rea d/ write the buffer and advance the pointer the correct size */
@@ -105,7 +105,7 @@ static void out_2vectors(FILE* str, vector vec1, vector vec2)
 }
 
 /* Should be given the same context as the dump */
-static void thawState(const NBodyCtx* ctx, NBodyState* st)
+void thawState(const NBodyCtx* ctx, NBodyState* st)
 {
     const size_t bodySize = ctx->model.nbody * sizeof(body);
 
@@ -145,6 +145,7 @@ static void thawState(const NBodyCtx* ctx, NBodyState* st)
 
     /* Read the bodies */
     st->bodytab = allocate(bodySize);
+
     memcpy(st->bodytab, p, bodySize);
     p += bodySize;
 
@@ -155,13 +156,10 @@ static void thawState(const NBodyCtx* ctx, NBodyState* st)
 
 }
 
-void readCheckpoint(NBodyCtx* ctx, NBodyState* st, const char* checkpointFile)
+void boincOutput(const NBodyCtx* ctx, const NBodyState* st)
 {
-    ctx->cpFile = checkpointFile;
-    initoutput(ctx);
-    thawState(ctx, st);
+  /* print some xml */
 }
-
 
 /* Checkpoint file: Very simple binary "format"
    Name     Type    Values     Notes
@@ -188,6 +186,8 @@ inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
     char* p = ctx->cpPtr;
     char* lock;
 
+    printf("System freezing. tnow = %g\n", st->tnow);
+
     /* TODO: Better error checking */
 
     /* -1 so we don't bother with the null terminator. It's slightly
@@ -200,8 +200,7 @@ inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
 
     boinc_begin_critical_section();
 
-    SET_LOCK(lock, 0);    /* Mark the file as being in the middle of writing */
-
+    SET_LOCK(lock, 0);    /* Mark the file as in the middle of writing */
 
     DUMP_INT(p, ctx->model.nbody);  /* Make sure we get the right number of bodies */
     DUMP_SIZE_T(p, sizeof(real));   /* Make sure we don't confuse double and float checkpoints */
@@ -225,7 +224,7 @@ inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
     boinc_end_critical_section();
 }
 
-void nbody_boinc_output(const NBodyCtx* ctx, NBodyState* st)
+void nbody_boinc_output(const NBodyCtx* ctx, const NBodyState* st)
 {
     if (boinc_time_to_checkpoint())
     {

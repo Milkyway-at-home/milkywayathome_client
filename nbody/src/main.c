@@ -14,7 +14,14 @@
 #include "nbody_priv.h"
 
 /* Read the command line arguments, and do the inital parsing of the parameter file */
-static json_object* readParameters(const int argc, const char** argv, char** outFileName, int* useDouble)
+static json_object* readParameters(const int argc,
+                                   const char** argv,
+                                   char** outFileName,
+                                   int* useDouble,
+                                   char** checkpointFileName,
+                                   int* ignoreCheckpoint
+
+    )
 {
   #if !defined(DYNAMIC_PRECISION)
     #pragma unused(useDouble)
@@ -49,6 +56,20 @@ static json_object* readParameters(const int argc, const char** argv, char** out
             POPT_ARG_STRING, &inputStr,
             0, "Input given as string", NULL
         },
+
+        {
+            "checkpoint", 'c',
+            POPT_ARG_STRING, checkpointFileName,
+            0, "Checkpoint file to resume from", NULL
+        },
+
+        {
+            "ignore-checkpoint", 'i',
+            POPT_ARG_NONE, ignoreCheckpoint,
+            0, "Ignore the checkpoint file", NULL
+        },
+
+
 
 #if DYNAMIC_PRECISION
         {
@@ -138,6 +159,8 @@ int main(int argc, const char* argv[])
     char* outFileName = NULL;
     json_object* obj = NULL;
     int useDouble = FALSE;
+    int ignoreCheckpoint = FALSE;
+    char* checkpointFileName = NULL;
 
 #if BOINC_APPLICATION
     int boincInitStatus = 0;
@@ -154,29 +177,37 @@ int main(int argc, const char* argv[])
         fprintf(stderr, "boinc_init failed: %d\n", boincInitStatus);
         exit(EXIT_FAILURE);
     }
-#endif
+#endif /* BOINC_APPLICATION */
 
+    obj = readParameters(argc, argv, &outFileName, &useDouble, &checkpointFileName, &ignoreCheckpoint);
 
-    obj = readParameters(argc, argv, &outFileName, &useDouble);
-
-#ifdef DYNAMIC_PRECISION
-    if (useDouble)
+    if (checkpointFileName && !ignoreCheckpoint)
     {
-        printf("Using double precision\n");
-        runNBodySimulation_double(obj, outFileName);
-        printf("Done with double\n");
+        /* resume from a checkpointed state */
+        resumeCheckpoint(obj, outFileName, checkpointFileName);
     }
-    else
+    else   /* Do a fresh start */
     {
-        printf("Using float precision\n");
-        runNBodySimulation_float(obj, outFileName);
-        printf("Done with float\n");
+      #ifdef DYNAMIC_PRECISION
+        if (useDouble)
+        {
+            printf("Using double precision\n");
+            runNBodySimulation_double(obj, outFileName);
+            printf("Done with double\n");
+        }
+        else
+        {
+            printf("Using float precision\n");
+            runNBodySimulation_float(obj, outFileName);
+            printf("Done with float\n");
+        }
+      #else
+        runNBodySimulation(obj, outFileName);
+      #endif /* DYNAMIC_PRECISION */
     }
-#else
-    runNBodySimulation(obj, outFileName);
-#endif /* DYNAMIC_PRECISION */
 
     free(outFileName);
+    free(checkpointFileName);
 
     nbody_finish(EXIT_SUCCESS);
 }

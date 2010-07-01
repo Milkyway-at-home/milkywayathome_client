@@ -28,10 +28,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <boinc_api.h>
   #define nbody_finish(x) boinc_finish(x)
   #define nbody_fopen(x,y) boinc_fopen((x),(y))
+  #define nbody_remove(x) boinc_delete_file((x))
 #else
   #define nbody_finish(x) exit(x)
   #define nbody_fopen(x,y) fopen((x),(y))
+  #define nbody_remove(x) remove((x))
 #endif /* BOINC_APPLICATION */
+
 
 
 #ifndef DYNAMIC_PRECISION
@@ -41,5 +44,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   __attribute__ ((visibility("default"))) void runNBodySimulation_double(json_object* obj, const char* outFileName);
 #endif
 
-#endif /* _NBODY_FLOAT_H_ */
+  __attribute__ ((visibility("default"))) void resumeCheckpoint(json_object* obj,
+                                                                const char* outFileName,
+                                                                const char* checkpointFile);
+
+#endif /* _NBODY_H_ */
 

@@ -19,8 +19,8 @@ inline static void gravmap(const NBodyCtx* ctx, NBodyState* st)
         hackgrav(ctx, st, p, Mass(p) > 0.0);     /* get force on each */
 }
 
-/* startrun: startup hierarchical N-body code. */
-inline static void startrun(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
+/* startRun: startup hierarchical N-body code. */
+inline static void startRun(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     srand48(ctx->seed);              /* set random generator */
     st->tout       = st->tnow;       /* schedule first output */
@@ -64,11 +64,9 @@ inline static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
     st->tnow += dt;        /* finally, advance time */
 }
 
-static void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
+static void runSystem(const NBodyCtx* ctx, NBodyState* st)
 {
     const real tstop = ctx->model.time_dwarf - 1.0 / (1024.0 * ctx->freq);
-
-    startrun(ctx, ic, st);
 
     while (st->tnow < tstop)
     {
@@ -90,6 +88,24 @@ static void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodySta
         #endif
     }
 }
+
+void endRun(NBodyCtx* ctx, NBodyState* st)
+{
+    /* Make final output */
+    output(ctx, st);
+
+    // Get the likelihood
+    //chisqans = chisq();
+    //printf("Run finished. chisq = %f\n", chisqans);
+
+    nbody_ctx_destroy(ctx);               /* finish up output */
+    nbody_state_destroy(st);
+
+    /* We finished so kill the checkpoint */
+    nbody_remove("nbody_checkpoint");
+
+}
+
 
 /* Takes parsed json and run the simulation, using outFileName for
  * output */
@@ -120,25 +136,39 @@ static void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodySta
     integrate(&ctx, &ic);
     printf("done\n");
 
-    printf("sizeof bool = %zd\n", sizeof(bool));
-
     printInitialConditions(&ic);
 
     printf("Running nbody system\n");
-    runSystem(&ctx, &ic, &st);
 
-    printf("Making final output\n");
-    /* Make final output */
-    output(&ctx, &st);
 
-    printf("Running system done\n");
-    // Get the likelihood
-    //chisqans = chisq();
-    //printf("Run finished. chisq = %f\n", chisqans);
-
-    nbody_ctx_destroy(&ctx);               /* finish up output */
-    nbody_state_destroy(&st);
-
+    startRun(&ctx, &ic, &st);
+    runSystem(&ctx, &st);
+    endRun(&ctx, &st);
 }
 
+/* Similar to runNBodySimulation, but resume from a checkpointed state
+ * and don't integrate the orbit, etc. */
+void resumeCheckpoint(json_object* obj, const char* outFileName, const char* checkpointFile)
+{
+    NBodyCtx ctx         = EMPTY_CTX;
+    InitialConditions ic = EMPTY_INITIAL_CONDITIONS;  /* Don't actually use these now since not at start */
+    NBodyState st        = EMPTY_STATE;
+
+    ctx.outfilename = outFileName;
+    ctx.cpFile      = checkpointFile;
+
+    get_params_from_json(&ctx, &ic, obj);
+    initoutput(&ctx);
+
+    printf("Resuming nbody system\n");
+
+    thawState(&ctx, &st);
+    st.tree.rsize = ctx.tree_rsize;
+
+    printf("System thawed. tnow = %g\n", st.tnow);
+    runSystem(&ctx, &st);
+
+    printf("Ran thawed system\n");
+    endRun(&ctx, &st);
+}
 
