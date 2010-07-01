@@ -165,7 +165,10 @@ void resumeCheckpoint(json_object* obj, const char* outFileName, const char* che
 
     printf("Resuming nbody system\n");
 
-    thawState(&ctx, &st);
+    /* TODO: Start a fresh run in event of failure */
+    if (thawState(&ctx, &st))
+        fail("Failed to resume from checkpoint.\n");
+
     st.tree.rsize = ctx.tree_rsize;
 
     printf("System thawed. tnow = %g\n", st.tnow);

@@ -20,8 +20,7 @@
 
 real cputime(void);              /* return elapsed CPU time */
 void* allocate(int);             /* allocate and zero memory */
-void eprintf(char*, ...);        /* printf to error FILE* */
-int compare (const void* a, const void* b);     /* comparison function used in chisq */
+int compare(const void* a, const void* b);     /* comparison function used in chisq */
 real chisq();                  /* likelihood calculator */
 
 #endif /* _NBODY_UTIL_H_ */

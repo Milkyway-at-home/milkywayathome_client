@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include "nbody_priv.h"
+#include "nbody_util.h"
 
 #if BOINC_APPLICATION
   #include <boinc_api.h>
@@ -111,10 +112,12 @@ static void out_2vectors(FILE* str, vector vec1, vector vec2)
 }
 
 #if BOINC_APPLICATION
-/* Should be given the same context as the dump */
-void thawState(const NBodyCtx* ctx, NBodyState* st)
+/* Should be given the same context as the dump. Returns nonzero if the state failed to be thawed */
+int thawState(const NBodyCtx* ctx, NBodyState* st)
 {
     const size_t bodySize = ctx->model.nbody * sizeof(body);
+
+    int failed = FALSE;
 
     int nbody;
     size_t realSize;
@@ -134,21 +137,28 @@ void thawState(const NBodyCtx* ctx, NBodyState* st)
 
     /* TODO: Better checking of things */
     if (strncmp(hdr, buf, sizeof(hdr) - 1))
-        fail("Didn't find header for checkpoint file.\n");
+    {
+        warn("Didn't find header for checkpoint file.\n");
+        failed = TRUE;
+    }
 
     if (ctx->model.nbody != nbody)
-        fail("Number of bodies in checkpoint file does not match number expected by context.\n");
+        warn("Number of bodies in checkpoint file does not match number expected by context.\n");
 
     if (realSize != sizeof(real))
     {
-        fail("Got checkpoint file for wrong type. "
-             "Expected sizeof(real) = %zd, got %zd\n",
-             sizeof(real),
-             realSize);
+        warn("Got checkpoint file for wrong type. "
+                "Expected sizeof(real) = %zd, got %zd\n",
+                sizeof(real),
+                realSize);
+        failed = TRUE;
     }
 
     if (!valid)
-        fail("Trying to read interrupted checkpoint file\n");
+    {
+        warn("Trying to read interrupted checkpoint file\n");
+        failed = TRUE;
+    }
 
     /* Read the bodies */
     st->bodytab = allocate(bodySize);
@@ -159,8 +169,12 @@ void thawState(const NBodyCtx* ctx, NBodyState* st)
     READ_STR(tailBuf, p, sizeof(tailBuf) - 1);
 
     if (strncmp(tail, tailBuf, sizeof(tailBuf) - 1))
-        fail("Failed to find end marker in checkpoint file.\n");
+    {
+        warn("Failed to find end marker in checkpoint file.\n");
+        failed = TRUE;
+    }
 
+    return failed;
 }
 
 /* Checkpoint file: Very simple binary "format"
