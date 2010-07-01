@@ -177,7 +177,7 @@ static criterion_t readCriterion(const char* str)
     return -1;  /* Stop warning. Never reached. */
 }
 
-void printParameter(Parameter* p)
+static void printParameter(Parameter* p)
 {
     if (p)
     {
@@ -501,6 +501,7 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
             .usequad = TRUE,
             .sunGCDist  = 8.0,
             .allowIncest = FALSE,
+            .outputCartesian = FALSE,
             .criterion = NEWCRITERION,
             .theta = 0.0,
             .seed = 0,

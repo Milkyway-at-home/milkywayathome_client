@@ -29,7 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 /* Test the falloff property of the spherical potential */
-int spherical_falloff(Spherical* s)
+static int spherical_falloff(Spherical* s)
 {
     vector a0, a1, scaleda0, rv1;
 
@@ -119,7 +119,7 @@ int spherical_falloff(Spherical* s)
 
 
 /* The acceleration should scale linearly with the mass */
-int spherical_mass_scaling(Spherical* s)
+static int spherical_mass_scaling(Spherical* s)
 {
     vector a0, a1, a0Scaled;
     int failed = 0;
@@ -188,7 +188,7 @@ int spherical_mass_scaling(Spherical* s)
 }
 
 
-int spherical_r0_scaling(Spherical* s)
+static int spherical_r0_scaling(Spherical* s)
 {
     vector a0, a1, a0Scaled;
     int failed = 0;

@@ -22,9 +22,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody.h"
 #include "nbody_priv.h"
 
-#define RANDOM_NFW_HALO { NFWHalo, RANDOM_REAL, RANDOM_REAL, NAN, NAN, NAN, NAN }
+#define RANDOM_NFW_HALO { NFWHalo, RANDOM_REAL, RANDOM_REAL, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 
-int nfw_halo_falloff(Halo* h)
+static int nfw_halo_falloff(Halo* h)
 {
     vector a0, a1, scaleda0, rv1;
 

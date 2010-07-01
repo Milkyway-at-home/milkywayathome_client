@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define RANDOM_EXPONENTIAL_DISK { ExponentialDisk, RANDOM_REAL, RANDOM_REAL, RANDOM_REAL }
 
 
-int exponential_disk_falloff(Disk* d)
+static int exponential_disk_falloff(Disk* d)
 {
     vector a0, a1, scaleda0, rv1;
 
@@ -113,7 +113,7 @@ int exponential_disk_falloff(Disk* d)
 
 
 /* The acceleration should scale linearly with the mass */
-int exponential_disk_mass_scaling(Disk* d)
+static int exponential_disk_mass_scaling(Disk* d)
 {
     vector a0, a1, a0Scaled;
     int failed = 0;

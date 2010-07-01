@@ -30,7 +30,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/types.h>
 #include <sys/wait.h>
 
-int runUninterrupted(const char* binPath, const char* config, const char* outfile, const char* checkpoint)
+static int runUninterrupted(const char* binPath, const char* config, const char* outfile, const char* checkpoint)
 {
     pid_t pid;
     int status;
@@ -63,7 +63,7 @@ int runUninterrupted(const char* binPath, const char* config, const char* outfil
     return 0;
 }
 
-int runResume(const char* binPath, const char* config, const char* outfile, const char* checkpoint)
+static int runResume(const char* binPath, const char* config, const char* outfile, const char* checkpoint)
 {
     pid_t pid;
     int status;
@@ -97,7 +97,7 @@ int runResume(const char* binPath, const char* config, const char* outfile, cons
     return 0;
 }
 
-int runInterrupt(const char* binPath, const char* config, const char* outfile, const char* checkpoint, unsigned int stime)
+static int runInterrupt(const char* binPath, const char* config, const char* outfile, const char* checkpoint, unsigned int stime)
 {
     pid_t pid;
 
