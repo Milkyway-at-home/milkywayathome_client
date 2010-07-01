@@ -24,7 +24,7 @@
 include_directories("../cuda/")
 
 
-set(ocl_lib_cl ati_integral_kernel.cl
+set(kernel_list ati_integral_kernel.cl
                 ati_integral_kernel2.cl
                 ati_likelihood_kernel.cl
                 exp.cl
@@ -43,9 +43,46 @@ set(ocl_lib_src evaluation_ocl.cpp
                 ../cuda/coords.c
                 ../cuda/cpu_coords.c)
 
+#add_executable(kernel_inliner ${PROJECT_TOOL_DIR}/InlineKernel.c)
+
+
+#file(READ zero_integral_kernel.cl zero_integral_kernel_str)
+#file(READ zero_likelihood_kernel.cl zero_likelihood_kernel_str)
+
+#file(READ nvidia_likelihood_kernel.cl nvidia_likelihood_kernel_str)
+
+#message("HELLO: ${nvidia_likelihood_kernel_str}")
+
+#"(/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/)|(//.*)"
+
+#perl
+#/\*(?:.|[\r\n])*?\*/
+
+#string(REGEX REPLACE "(/\\*([^*]|[\r\n]|(\\*+([^*/]|[\r\n])))*\\*+/)|(//[^\r\n]*)" "" nvidia_likelihood_kernel_str_stripped ${nvidia_likelihood_kernel_str})
+
+#file(WRITE "/tmp/lol.cl" ${nvidia_likelihood_kernel_str_stripped})
+
+#string(REGEX REPLACE "(/\\*([^*]|[\r\n]|(\\*+([^*/]|[\r\n])))*\\*+/)|(//.*)" "" nvidia_likelihood_kernel_str_stripped ${nvidia_likelihood_kernel_str})
+
+#string(REGEX REPLACE "(/\\*([^*]|[\r\n]|(\\*+([^*/]|[\r\n])))*\\*+/)|(//.*)" "" nvidia_likelihood_kernel_str_stripped ${nvidia_likelihood_kernel_str})
+
+#message("HELLO: ${nvidia_likelihood_kernel_str_stripped}")
+#message("-------------")
+
 add_library(milkyway_separation_ocl STATIC ${ocl_lib_src})
 
 target_link_libraries(milkyway_separation_ocl ${OPENCL_LIBRARIES})
 
+# function(inline_kernel kernel_name)
+#   add_custom_command(TARGET milkyway_separation_ocl
+#                      PRE_BUILD
+#                      ${kernel_inliner} "${kernel_name}.cl"
+#                                        "${kernel_name}"
+#                                        "${kernel_name}")
+# endfunction()
+
+# foreach(i ${kernel_list})
+#   inline_kernel(${i})
+# endforeach()
 
 
