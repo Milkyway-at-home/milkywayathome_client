@@ -21,6 +21,10 @@
 cmake_minimum_required (VERSION 2.8)
 project(milkyway_nbody)
 
+set(milkyway_nbody_MAJOR_VERSION 0)
+set(milkyway_nbody_MINOR_VERSION 1)
+set(milkyway_nbody_VERSION "${milkyway_nbody_MAJOR_VERSION}.${milkyway_nbody_MINOR_VERSION}")
+
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
@@ -55,21 +59,6 @@ if(OUTPUT_CARTESIAN)
   add_definitions("-DOUTPUT_CARTESIAN")
 endif()
 
-set(BOINC_DEFS "")
-
-if(BOINC_APPLICATION)
-  list(APPEND BOINC_DEFS "BOINC_APPLICATION=1")
-else()
-  list(APPEND BOINC_DEFS "BOINC_APPLICATION=0")
-endif()
-
-if(BOINC_DEBUG)
-  list(APPEND BOINC_DEFS "BOINC_DEBUG=1")
-else()
-  list(APPEND BOINC_DEFS "BOINC_DEBUG=0")
-endif()
-
-
 set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
                   ${PROJECT_SOURCE_DIR}/src/grav.c
                   ${PROJECT_SOURCE_DIR}/src/io.c
@@ -91,6 +80,11 @@ message("   BOINC Debug:       ${BOINC_DEBUG}")
 message("   Dynamic precision: ${DYNAMIC_PRECISION}")
 message("   Double precision:  ${DOUBLEPREC}")
 message("---------------------------------------------")
+
+
+configure_file (
+  "${PROJECT_INCLUDE_DIR}/nbody_config.h.in"
+  "${PROJECT_INCLUDE_DIR}/nbody_config.h")
 
 if(UNIX AND NOT APPLE)  #Unix that isn't OS X
     set(OS_SPECIFIC_LIBS pthread)
@@ -139,34 +133,28 @@ endif()
 #things, and we won't bother with it for releases. It approximately
 #doubles the binary size anyway.
 if(DYNAMIC_PRECISION)
-  add_definitions("-DDYNAMIC_PRECISION=1")
-
   add_library(nbody_simulation_double SHARED ${nbody_lib_src})
   target_link_libraries(nbody_simulation_double ${nbody_link_libs})
   set_target_properties(nbody_simulation_double
                           PROPERTIES
-                            COMPILE_DEFINITIONS "DOUBLEPREC;${BOINC_DEFS}")
-
+                            COMPILE_DEFINITIONS "DOUBLEPREC")
 
   add_library(nbody_simulation_float SHARED ${nbody_lib_src})
   target_link_libraries(nbody_simulation_float ${nbody_link_libs})
 
-  set_target_properties(nbody_simulation_float
+  set_target_properties(nbody_simulation_double
                           PROPERTIES
-                            COMPILE_DEFINITIONS "${BOINC_DEFS}")
+                            COMPILE_DEFINITIONS "DOUBLEPREC;")
 
 
   set(nbody_libs nbody_simulation_float nbody_simulation_double)
 else()
+  add_library(nbody_simulation STATIC ${nbody_lib_src})
+
   if(DOUBLEPREC)
     add_definitions("-DDOUBLEPREC")
   endif()
 
-  add_library(nbody_simulation STATIC ${nbody_lib_src})
-
-  set_target_properties(nbody_simulation
-                          PROPERTIES
-                          COMPILE_DEFINITIONS "${BOINC_DEFS}")
 
 
   set(nbody_libs nbody_simulation)
@@ -174,14 +162,8 @@ endif()
 
 list(APPEND nbody_link_libs ${nbody_libs})
 
-
-
 add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
 target_link_libraries(milkyway_nbody ${nbody_link_libs} ${POPT_LIBRARY})
-
-set_target_properties(milkyway_nbody
-                        PROPERTIES
-                        COMPILE_DEFINITIONS "${BOINC_DEFS}")
 
 #add_subdirectory(tests EXCLUDE_FROM_ALL)
 

@@ -249,12 +249,19 @@ inline static void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, c
         lbR[0] += 360.0;
 }
 
+#if DOUBLEPREC
+  #define PRECSTRING "double"
+#else
+  #define PRECSTRING "float"
+#endif
+
 /* Output with the silly xml stuff that BOINC uses */
 void boincOutput(const NBodyCtx* ctx, const NBodyState* st)
 {
-    fprintf(ctx->outfile, "<something>");
+    fprintf(ctx->outfile, "<something>\n");
     output(ctx, st);
-    fprintf(ctx->outfile, "</something>");
+    fprintf(ctx->outfile, "</something>\n");
+    fprintf(ctx->outfile, "<nbody_version>%s %s</nbody_version>\n", BOINC_NBODY_APP_VERSION, PRECSTRING);
 }
 
 /* OUTPUT: compute diagnostics and output data. */
@@ -600,7 +607,7 @@ char* showVector(const vector v)
     char* buf;
 
     if (asprintf(&buf, "{ %g, %g, %g }", v[0], v[1], v[2]) < 0)
-        fail ("asprintf() failed\n");
+        fail("asprintf() failed\n");
 
     return buf;
 

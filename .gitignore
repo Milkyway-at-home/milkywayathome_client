@@ -19,3 +19,6 @@ Testing/
 tools/GenerateTests
 tools/GenerateTests.hi
 
+nbody/include/nbody_config.h
+stderr.txt
+

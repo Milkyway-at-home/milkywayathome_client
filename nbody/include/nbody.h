@@ -21,6 +21,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _NBODY_FLOAT_H_
 #define _NBODY_FLOAT_H_
 
+#include "nbody_config.h"
 #include <json/json.h>
 
 /* TODO: Naming, and sharing with separation */

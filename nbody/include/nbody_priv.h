@@ -12,6 +12,7 @@
 
 #include <json/json.h>
 
+#include "nbody_config.h"
 #include "nbody_types.h"
 #include "json_params.h"
 #include "stdinc.h"
