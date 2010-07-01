@@ -112,8 +112,8 @@ static void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodySta
 
     printf("Running system done\n");
     // Get the likelihood
-    //chisqans = chisq();
-    //printf("Run finished. chisq = %f\n", chisqans);
+    float chisqans = chisq(&ctx, &st);
+    printf("Run finished. chisq = %f\n", chisqans);
 
     nbody_ctx_destroy(&ctx);               /* finish up output */
     nbody_state_destroy(&st);

@@ -40,6 +40,7 @@ void output(const NBodyCtx* ctx, NBodyState* st)
         for (p = st->bodytab; p < endp; p++)
         {
             #ifndef OUTPUT_CARTESIAN
+            Pos(p)[0] += 8.0; /* Convert to Sun-centered coordinates */
             lbR[2] = rsqrt(Pos(p)[0] * Pos(p)[0] + Pos(p)[1] * Pos(p)[1] + Pos(p)[2] * Pos(p)[2]);
             lbR[1] = r2d(ratan2(Pos(p)[2], rsqrt((Pos(p)[0]) * (Pos(p)[0]) + Pos(p)[1] * Pos(p)[1])));
             lbR[0] = r2d(ratan2(Pos(p)[1], Pos(p)[0]));
