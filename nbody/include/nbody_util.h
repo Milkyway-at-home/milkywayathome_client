@@ -21,10 +21,10 @@
 /* xrandom: generate floating-point random number. */
 #define xrandom(xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * drand48())
 
-real cputime(void);              /* return elapsed CPU time */
 void* allocate(int);             /* allocate and zero memory */
 int compare(const void* a, const void* b);     /* comparison function used in chisq */
 real chisq();                  /* likelihood calculator */
+__attribute__ ((visibility("default"))) double get_time();
 
 #endif /* _NBODY_UTIL_H_ */
 

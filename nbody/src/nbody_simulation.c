@@ -113,17 +113,19 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
  * output */
 #ifdef DYNAMIC_PRECISION
   #ifdef DOUBLEPREC
-    void runNBodySimulation_double(json_object* obj, const char* outFileName, const char* checkpointFileName, const int outputCartesian)
+    void runNBodySimulation_double(json_object* obj, const char* outFileName, const char* checkpointFileName, const int outputCartesian, const int printTiming)
   #else
-    void runNBodySimulation_float(json_object* obj, const char* outFileName, const char* checkpointFileName, const int outputCartesian)
+    void runNBodySimulation_float(json_object* obj, const char* outFileName, const char* checkpointFileName, const int outputCartesian, const int printTiming)
   #endif /* DOUBLEPREC */
 #else
-   void runNBodySimulation(json_object* obj, const char* outFileName, const char* checkpointFileName, const int outputCartesian)
+    void runNBodySimulation(json_object* obj, const char* outFileName, const char* checkpointFileName, const int outputCartesian, const int printTiming)
 #endif /* DYNAMIC_PRECISION */
 {
     NBodyCtx ctx         = EMPTY_CTX;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
     NBodyState st        = EMPTY_STATE;
+
+    double ts = 0.0, te = 0.0;
 
     ctx.outputCartesian = outputCartesian;
     ctx.outfilename = outFileName;
@@ -144,19 +146,30 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
 
     printf("Running nbody system\n");
 
+    if (printTiming)
+        ts = get_time();
+
     startRun(&ctx, &ic, &st);
     runSystem(&ctx, &st);
     endRun(&ctx, &st);
+
+    if (printTiming)
+    {
+        te = get_time();
+        printf("Elapsed time for run = %g\n", te - ts);
+    }
+
 }
 
 #if BOINC_APPLICATION
 /* Similar to runNBodySimulation, but resume from a checkpointed state
  * and don't integrate the orbit, etc. */
-void resumeCheckpoint(json_object* obj, const char* outFileName, const char* checkpointFile)
+void resumeCheckpoint(json_object* obj, const char* outFileName, const char* checkpointFile, const int printTiming)
 {
     NBodyCtx ctx         = EMPTY_CTX;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;  /* Don't actually use these now since not at start */
     NBodyState st        = EMPTY_STATE;
+    double ts = 0.0, te = 0.0;
 
     ctx.outfilename = outFileName;
     ctx.cpFile      = checkpointFile;
@@ -173,7 +186,17 @@ void resumeCheckpoint(json_object* obj, const char* outFileName, const char* che
     st.tree.rsize = ctx.tree_rsize;
 
     printf("System thawed. tnow = %g\n", st.tnow);
+
+    if (printTiming)
+        ts = get_time();
+
     runSystem(&ctx, &st);
+
+    if (printTiming)
+    {
+        te = get_time();
+        printf("Elapsed time for run = %g\n", te - ts);
+    }
 
     printf("Ran thawed system\n");
     endRun(&ctx, &st);

@@ -43,23 +43,27 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   __attribute__ ((visibility("default"))) void runNBodySimulation(json_object* obj,
                                                                   const char* outFileName,
                                                                   const char* checkpointFileName,
-                                                                  const int outputCartesian);
+                                                                  const int outputCartesian,
+                                                                  const int printTiming);
 #else
   __attribute__ ((visibility("default"))) void runNBodySimulation_float(json_object* obj,
                                                                         const char* outFileName,
                                                                         const char* checkpointFileName,
-                                                                        const int outputCartesian);
+                                                                        const int outputCartesian,
+                                                                        const int printTiming);
 
   __attribute__ ((visibility("default"))) void runNBodySimulation_double(json_object* obj,
                                                                          const char* outFileName,
                                                                          const char* checkpointFileName,
-                                                                         const int outputCartesian);
+                                                                         const int outputCartesian,
+                                                                         const int printTiming);
 #endif
 
 #if BOINC_APPLICATION
   __attribute__ ((visibility("default"))) void resumeCheckpoint(json_object* obj,
                                                                 const char* outFileName,
-                                                                const char* checkpointFile);
+                                                                const char* checkpointFile,
+                                                                const int printTiming);
 #endif /* BOINC_APPLICATION */
 
 #endif /* _NBODY_H_ */

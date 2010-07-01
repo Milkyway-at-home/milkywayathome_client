@@ -9,28 +9,14 @@
 #include "nbody.h"
 #include "nbody_util.h"
 #include "vectmath.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/times.h>
-#include <sys/param.h>
 
-#ifndef HZ
-#  include <time.h>
-#  define HZ CLK_TCK
+#ifdef _WIN32
+  #include <windows.h>
+#else
+  #include <sys/time.h>
+  #include <sys/resource.h>
 #endif
 
-/* cputime: compute CPU time in minutes. */
-real cputime()
-{
-    struct tms buffer;
-
-    if (times(&buffer) == -1)
-        fail("times() call failed\n");
-    return buffer.tms_utime / (60.0 * HZ);
-}
 
 /* allocate: memory allocation with error checking. */
 void* allocate(int nb)
@@ -43,4 +29,27 @@ void* allocate(int nb)
     return mem;
 }
 
+
+/* Found on SO. No idea if the Windows atually works */
+#ifdef _WIN32
+
+double get_time()
+{
+    LARGE_INTEGER t, f;
+    QueryPerformanceCounter(&t);
+    QueryPerformanceFrequency(&f);
+    return double(t.QuadPart)/double(f.QuadPart);
+}
+
+#else
+
+double get_time()
+{
+    struct timeval t;
+    struct timezone tzp;
+    gettimeofday(&t, &tzp);
+    return t.tv_sec + t.tv_usec*1e-6;
+}
+
+#endif
 

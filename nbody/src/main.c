@@ -24,7 +24,8 @@ static json_object* readParameters(const int argc,
                                    char** resume,
                                    char** checkpointFileName,
                                    int* ignoreCheckpoint,
-                                   int* outputCartesian)
+                                   int* outputCartesian,
+                                   int* printTiming)
 {
   #if !defined(DYNAMIC_PRECISION)
     #pragma unused(useDouble)
@@ -72,6 +73,12 @@ static json_object* readParameters(const int argc,
             "output-cartesian", 'x',
             POPT_ARG_NONE, outputCartesian,
             0, "Output Cartesian coordinates instead of lbR", NULL
+        },
+
+        {
+            "timing", 't',
+            POPT_ARG_NONE, printTiming,
+            0, "Print timing of actual run", NULL
         },
 
 
@@ -179,25 +186,25 @@ static json_object* readParameters(const int argc,
     return obj;
 }
 
-void runFresh(json_object* obj, const char* outFileName, const char* checkpointFileName, const int useDouble, const int outputCartesian)
+static void runFresh(json_object* obj, const char* outFileName, const char* checkpointFileName, const int useDouble, const int outputCartesian, const int printTiming)
 {
   #ifdef DYNAMIC_PRECISION
     if (useDouble)
     {
         printf("Using double precision\n");
-        runNBodySimulation_double(obj, outFileName, checkpointFileName, outputCartesian);
+        runNBodySimulation_double(obj, outFileName, checkpointFileName, outputCartesian, printTiming);
         printf("Done with double\n");
     }
     else
     {
         printf("Using float precision\n");
-        runNBodySimulation_float(obj, outFileName, checkpointFileName, outputCartesian);
+        runNBodySimulation_float(obj, outFileName, checkpointFileName, outputCartesian, printTiming);
         printf("Done with float\n");
     }
   #else
     #pragma unused(useDouble)
 
-    runNBodySimulation(obj, outFileName, checkpointFileName, outputCartesian);
+    runNBodySimulation(obj, outFileName, checkpointFileName, outputCartesian, printTiming);
   #endif /* DYNAMIC_PRECISION */
 }
 
@@ -212,6 +219,7 @@ int main(int argc, const char* argv[])
     int useDouble = FALSE;
     int outputCartesian = FALSE;
     int ignoreCheckpoint = FALSE;
+    int printTiming = FALSE;
     char* resume = NULL;
     char* checkpointFileName = NULL;
 
@@ -239,7 +247,8 @@ int main(int argc, const char* argv[])
                          &resume,
                          &checkpointFileName,
                          &ignoreCheckpoint,
-                         &outputCartesian);
+                         &outputCartesian,
+                         &printTiming);
 
     /* Use default if checkpoint file not specified */
     checkpointFileName = checkpointFileName ? checkpointFileName : strdup(DEFAULT_CHECKPOINT_FILE);
@@ -250,7 +259,7 @@ int main(int argc, const char* argv[])
         if (!boinc_file_exists(resume))
             fail("Specified resume file '%s' not found\n", resume);
 
-        resumeCheckpoint(obj, outFileName, resume);
+        resumeCheckpoint(obj, outFileName, resume, printTiming);
     }
     else
     {
@@ -258,13 +267,13 @@ int main(int argc, const char* argv[])
         if (boinc_file_exists(checkpointFileName))
         {
             printf("Checkpoint exists. Resuming it.\n");
-            resumeCheckpoint(obj, outFileName, checkpointFileName);
+            resumeCheckpoint(obj, outFileName, checkpointFileName, printTiming);
         }
         else   /* Do a fresh start */
-            runFresh(obj, outFileName, checkpointFileName, useDouble, outputCartesian);
+            runFresh(obj, outFileName, checkpointFileName, useDouble, outputCartesian, printTiming);
     }
   #else
-    runFresh(obj, outFileName, checkpointFileName, useDouble, outputCartesian);
+    runFresh(obj, outFileName, checkpointFileName, useDouble, outputCartesian, printTiming);
   #endif /* BOINC_APPLICATION*/
 
     free(outFileName);
