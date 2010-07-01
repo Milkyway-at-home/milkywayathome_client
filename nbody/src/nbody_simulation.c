@@ -146,6 +146,10 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
 
     printf("Running nbody system\n");
 
+    startRun(&ctx, &ic, &st);
+    runSystem(&ctx, &st);
+    endRun(&ctx, &st);
+
     printf("Running system done\n");
     // Get the likelihood
     float chisqans = chisq(&ctx, &st);
@@ -154,9 +158,6 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
     if (printTiming)
         ts = get_time();
 
-    startRun(&ctx, &ic, &st);
-    runSystem(&ctx, &st);
-    endRun(&ctx, &st);
 
     if (printTiming)
     {
