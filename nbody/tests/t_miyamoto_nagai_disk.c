@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define RANDOM_MN_DISK { MiyamotoNagaiDisk, RANDOM_REAL, RANDOM_REAL, RANDOM_REAL }
 
 
-int mn_disk_falloff(Disk* d)
+static int mn_disk_falloff(Disk* d)
 {
     vector a0, a1, scaleda0, rv1;
 

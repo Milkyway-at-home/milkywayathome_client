@@ -73,41 +73,24 @@ void nfwHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr rest
 }
 
 /* CHECKME: Seems to have precision related issues for a small number of cases for very small qy */
-void triaxialHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr restrict pos)
+void triaxialHaloAccel(vectorptr restrict acc, const Halo* h, const vectorptr restrict pos)
 {
-    /* TODO: Lots of things here can be cached, in particular the C1, C2... */
-    const real phi = halo->triaxAngle;
-
-    const real cp  = rcos(phi);
-    const real cps = sqr(cp);
-    const real sp  = rsin(phi);
-    const real sps = sqr(sp);
-
-    const real qxs = sqr(halo->flattenX);
-    const real qys = sqr(halo->flattenY);
-    const real qzs = sqr(halo->flattenZ);
-
-    const real c1 = (cps / qxs) + (sps / qys);
-    const real c2 = (cps / qys) + (sps / qxs);
-
-    /* 2 * sin(x) * rcos(x) == sin(2 * x) */
-    const real c3 = rsin(2 * phi) * (1/qxs - 1/qys);
-
-    const real rhalosqr = sqr(halo->scale_length);
-
-    const real vsqr = -sqr(halo->vhalo);
+    /* TODO: More things here can be cached */
+    const real qzs = sqr(h->flattenZ);
+    const real rhalosqr = sqr(h->scale_length);
+    const real vsqr = -sqr(h->vhalo);
 
     const real xsqr = sqr(pos[0]);
     const real ysqr = sqr(pos[1]);
     const real zsqr = sqr(pos[2]);
 
-    const real arst = rhalosqr + (c1 * xsqr) + (c3 * pos[0] * pos[1]) + (c2 * ysqr);
+    const real arst = rhalosqr + (h->c1 * xsqr) + (h->c3 * pos[0] * pos[1]) + (h->c2 * ysqr);
 
     const real arst2 = arst + zsqr / qzs;
 
-    acc[0] = vsqr * ( 2 * c1 * pos[0] + c3 * pos[1] ) / arst2;
+    acc[0] = vsqr * ( 2 * h->c1 * pos[0] + h->c3 * pos[1] ) / arst2;
 
-    acc[1] = vsqr * ( 2 * c2 * pos[1] + c3 * pos[0] ) / arst2;
+    acc[1] = vsqr * ( 2 * h->c2 * pos[1] + h->c3 * pos[0] ) / arst2;
 
     acc[2] = 2 * vsqr * pos[2] / (qzs * arst + zsqr);
 

@@ -9,15 +9,33 @@
 #include <unistd.h>
 
 #include <stdlib.h>
+#include <string.h>
 #include <popt.h>
 #include "nbody.h"
+#include "nbody_priv.h"
 
+#define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
 
 /* Read the command line arguments, and do the inital parsing of the parameter file */
-static json_object* readParameters(const int argc, const char** argv, char** outFileName, int* useDouble)
+static json_object* readParameters(const int argc,
+                                   const char** argv,
+                                   char** outFileName,
+                                   int* useDouble,
+                                   char** resume,
+                                   char** checkpointFileName,
+                                   int* ignoreCheckpoint,
+                                   int* outputCartesian,
+                                   int* printTiming)
 {
   #if !defined(DYNAMIC_PRECISION)
     #pragma unused(useDouble)
+  #endif
+
+  #if !BOINC_APPLICATION
+    #pragma unused(resume)
+    #pragma unused(checkpointFileName)
+    #pragma unused(ignoreCheckpoint)
+    #pragma unused(resume)
   #endif
 
     poptContext context;
@@ -27,7 +45,7 @@ static json_object* readParameters(const int argc, const char** argv, char** out
     json_object* obj;
 
     /* FIXME: There's a small leak of the inputFile from use of
-       poptGetNextOpt().  Some mailing list post suggestst that this
+       poptGetNextOpt(). Some mailing list post suggestst that this
        is some kind of semi-intended bug to work around something or
        other while maintaining ABI compatability */
     const struct poptOption options[] =
@@ -50,6 +68,41 @@ static json_object* readParameters(const int argc, const char** argv, char** out
             0, "Input given as string", NULL
         },
 
+
+        {
+            "output-cartesian", 'x',
+            POPT_ARG_NONE, outputCartesian,
+            0, "Output Cartesian coordinates instead of lbR", NULL
+        },
+
+        {
+            "timing", 't',
+            POPT_ARG_NONE, printTiming,
+            0, "Print timing of actual run", NULL
+        },
+
+
+      #if BOINC_APPLICATION
+        {
+            "checkpoint", 'c',
+            POPT_ARG_STRING, checkpointFileName,
+            0, "Checkpoint file to use", NULL
+        },
+
+        {
+            "resume", 'r',
+            POPT_ARG_STRING, resume,
+            0, "Resume from specified checkpoint file", NULL
+        },
+
+        {
+            "ignore-checkpoint", 'i',
+            POPT_ARG_NONE, ignoreCheckpoint,
+            0, "Ignore the checkpoint file", NULL
+        },
+      #endif /* BOINC_APPLICATION */
+
+
 #if DYNAMIC_PRECISION
         {
             "double", 'd',
@@ -67,13 +120,14 @@ static json_object* readParameters(const int argc, const char** argv, char** out
                              argc,
                              argv,
                              options,
+
                              POPT_CONTEXT_POSIXMEHARDER);
 
     if (argc < 2)
     {
         poptPrintUsage(context, stderr, 0);
         poptFreeContext(context);
-        exit(EXIT_FAILURE);
+        nbody_finish(EXIT_FAILURE);
     }
 
     while ( ( o = poptGetNextOpt(context)) >= 0 );
@@ -87,7 +141,7 @@ static json_object* readParameters(const int argc, const char** argv, char** out
         free(inputFile);
         free(inputStr);
         poptFreeContext(context);
-        exit(EXIT_FAILURE);
+        nbody_finish(EXIT_FAILURE);
     }
 
     poptFreeContext(context);
@@ -101,7 +155,7 @@ static json_object* readParameters(const int argc, const char** argv, char** out
         {
             perror("Failed to read input file");
             free(inputFile);
-            exit(EXIT_FAILURE);
+            nbody_finish(EXIT_FAILURE);
         }
 
         /* The lack of parse errors from json-c is unfortunate.
@@ -114,7 +168,7 @@ static json_object* readParameters(const int argc, const char** argv, char** out
                     "Parse error in file '%s'\n",
                     inputFile);
             free(inputFile);
-            exit(EXIT_FAILURE);
+            nbody_finish(EXIT_FAILURE);
         }
         free(inputFile);
     }
@@ -125,12 +179,37 @@ static json_object* readParameters(const int argc, const char** argv, char** out
         if (is_error(obj))
         {
             fprintf(stderr, "Failed to parse given string\n");
-            exit(EXIT_FAILURE);
+            nbody_finish(EXIT_FAILURE);
         }
     }
 
     return obj;
 }
+
+static void runFresh(json_object* obj, const char* outFileName, const char* checkpointFileName, const int useDouble, const int outputCartesian, const int printTiming)
+{
+  #ifdef DYNAMIC_PRECISION
+    if (useDouble)
+    {
+        printf("Using double precision\n");
+        runNBodySimulation_double(obj, outFileName, checkpointFileName, outputCartesian, printTiming);
+        printf("Done with double\n");
+    }
+    else
+    {
+        printf("Using float precision\n");
+        runNBodySimulation_float(obj, outFileName, checkpointFileName, outputCartesian, printTiming);
+        printf("Done with float\n");
+    }
+  #else
+    #pragma unused(useDouble)
+
+    runNBodySimulation(obj, outFileName, checkpointFileName, outputCartesian, printTiming);
+  #endif /* DYNAMIC_PRECISION */
+}
+
+/* FIXME: Clean up the separation between boinc and nonboinc. Right
+ * now it's absolutely disgusting. */
 
 /* main: toplevel routine for hierarchical N-body code. */
 int main(int argc, const char* argv[])
@@ -138,28 +217,69 @@ int main(int argc, const char* argv[])
     char* outFileName = NULL;
     json_object* obj = NULL;
     int useDouble = FALSE;
+    int outputCartesian = FALSE;
+    int ignoreCheckpoint = FALSE;
+    int printTiming = FALSE;
+    char* resume = NULL;
+    char* checkpointFileName = NULL;
 
-    obj = readParameters(argc, argv, &outFileName, &useDouble);
+#if BOINC_APPLICATION
+    int boincInitStatus = 0;
+  #if !BOINC_DEBUG
+    boincInitStatus = boinc_init();
+  #else
+    boincInitStatus = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
+                                             | BOINC_DIAG_HEAPCHECKENABLED
+                                             | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
+  #endif /* !BOINC_DEBUG */
 
-#ifdef DYNAMIC_PRECISION
-    if (useDouble)
+    if (boincInitStatus)
     {
-        printf("Using double precision\n");
-        runNBodySimulation_double(obj, outFileName);
-        printf("Done with double\n");
+        fprintf(stderr, "boinc_init failed: %d\n", boincInitStatus);
+        exit(EXIT_FAILURE);
+    }
+#endif /* BOINC_APPLICATION */
+
+    obj = readParameters(argc,
+                         argv,
+                         &outFileName,
+                         &useDouble,
+                         &resume,
+                         &checkpointFileName,
+                         &ignoreCheckpoint,
+                         &outputCartesian,
+                         &printTiming);
+
+    /* Use default if checkpoint file not specified */
+    checkpointFileName = checkpointFileName ? checkpointFileName : strdup(DEFAULT_CHECKPOINT_FILE);
+
+  #if BOINC_APPLICATION
+    if (resume)  /* resume from a specific checkpointed state, useful for testing */
+    {
+        if (!boinc_file_exists(resume))
+            fail("Specified resume file '%s' not found\n", resume);
+
+        resumeCheckpoint(obj, outFileName, resume, printTiming);
     }
     else
     {
-        printf("Using float precision\n");
-        runNBodySimulation_float(obj, outFileName);
-        printf("Done with float\n");
+        /* Test if the checkpoint exists, resume from it */
+        if (boinc_file_exists(checkpointFileName))
+        {
+            printf("Checkpoint exists. Resuming it.\n");
+            resumeCheckpoint(obj, outFileName, checkpointFileName, printTiming);
+        }
+        else   /* Do a fresh start */
+            runFresh(obj, outFileName, checkpointFileName, useDouble, outputCartesian, printTiming);
     }
-#else
-    runNBodySimulation(obj, outFileName);
-#endif /* DYNAMIC_PRECISION */
+  #else
+    runFresh(obj, outFileName, checkpointFileName, useDouble, outputCartesian, printTiming);
+  #endif /* BOINC_APPLICATION*/
 
     free(outFileName);
+    free(checkpointFileName);
+    free(resume);
 
-    return 0;
+    nbody_finish(EXIT_SUCCESS);
 }
 

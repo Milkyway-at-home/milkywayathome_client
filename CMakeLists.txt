@@ -68,6 +68,10 @@ if(APPLE)
              "You should specify a compiler by setting the CC environment variable or "
              "with -DCMAKE_C_COMPILER=/path/to/compiler. This should be /usr/bin/gcc usually.")
   endif()
+
+  find_library(COREFOUNDATION_LIBRARY CoreFoundation )
+
+  list(APPEND OS_SPECIFIC_LIBS ${COREFOUNDATION_LIBRARY})
 endif(APPLE)
 
 #Some kind of workaround for a popular cmake bug where make test

@@ -21,11 +21,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_tests.h"
 #include "nbody_priv.h"
 
-#define RANDOM_TRIAXIAL_HALO { TriaxialHalo, RANDOM_REAL, RANDOM_REAL, RANDOM_REAL, RANDOM_REAL, RANDOM_REAL, RANDOM_REAL }
+#define RANDOM_TRIAXIAL_HALO { TriaxialHalo, RANDOM_REAL, RANDOM_REAL, RANDOM_REAL, RANDOM_REAL, RANDOM_REAL, RANDOM_REAL, RANDOM_REAL, RANDOM_REAL, RANDOM_REAL }
 
 
 /* Test the falloff property of the log halo potential */
-int triaxial_halo_falloff(Halo* h)
+static int triaxial_halo_falloff(Halo* h)
 {
     vector a0, a1, scaleda0, rv1;
 

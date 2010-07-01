@@ -21,6 +21,10 @@
 cmake_minimum_required (VERSION 2.8)
 project(milkyway_nbody)
 
+set(milkyway_nbody_MAJOR_VERSION 0)
+set(milkyway_nbody_MINOR_VERSION 1)
+set(milkyway_nbody_VERSION "${milkyway_nbody_MAJOR_VERSION}.${milkyway_nbody_MINOR_VERSION}")
+
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
@@ -38,17 +42,15 @@ endif()
 option(DYNAMIC_PRECISION
        "Use dynamic precision" ${DEFAULT_USE_DYNAMIC_PRECISION})
 
+option(BOINC_APPLICATION
+  "Build as a BOINC Application" ON)
+
+option(BOINC_DEBUG
+  "Avoid annoying things BOINC does for debugging" ON)
+
 #Used if not using dynamic precision
 option(DOUBLEPREC
        "Use double precision" ON)
-
-option(OUTPUT_CARTESIAN
-       "Output galactic Cartesian coordinates instead of lbr" OFF)
-
-if(OUTPUT_CARTESIAN)
-  add_definitions("-DOUTPUT_CARTESIAN")
-endif()
-
 
 set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
                   ${PROJECT_SOURCE_DIR}/src/grav.c
@@ -63,14 +65,28 @@ set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
 set(CMAKE_C_FLAGS "-std=gnu99 -fvisibility=hidden ${CMAKE_C_FLAGS}")
 
 
-
 message("---------------------------------------------")
 message("   Building:          ${PROJECT_NAME}")
+message("   BOINC Application: ${BOINC_APPLICATION}")
+message("   BOINC Debug:       ${BOINC_DEBUG}")
 message("   Dynamic precision: ${DYNAMIC_PRECISION}")
 message("   Double precision:  ${DOUBLEPREC}")
 message("---------------------------------------------")
 
 
+configure_file (
+  "${PROJECT_INCLUDE_DIR}/nbody_config.h.in"
+  "${PROJECT_INCLUDE_DIR}/nbody_config.h")
+
+if(UNIX AND NOT APPLE)  #Unix that isn't OS X
+    list(APPEND OS_SPECIFIC_LIBS pthread)
+endif()
+
+set(nbody_link_libs ${JSON_C_LIBRARY} m ${OS_SPECIFIC_LIBS})
+
+if(BOINC_APPLICATION)
+  list(APPEND nbody_link_libs ${BOINC_LIBRARIES})
+endif()
 
 # This dynamic precision is kind of sketchy. We compile the library
 # twice, once with float and once with double precision. Anything
@@ -109,31 +125,37 @@ message("---------------------------------------------")
 #things, and we won't bother with it for releases. It approximately
 #doubles the binary size anyway.
 if(DYNAMIC_PRECISION)
-  add_definitions("-DDYNAMIC_PRECISION=1")
-
   add_library(nbody_simulation_double SHARED ${nbody_lib_src})
-  target_link_libraries(nbody_simulation_double ${JSON_C_LIBRARY} m)
+  target_link_libraries(nbody_simulation_double ${nbody_link_libs})
   set_target_properties(nbody_simulation_double
                           PROPERTIES
                             COMPILE_DEFINITIONS "DOUBLEPREC")
 
   add_library(nbody_simulation_float SHARED ${nbody_lib_src})
-  target_link_libraries(nbody_simulation_float ${JSON_C_LIBRARY} m)
+  target_link_libraries(nbody_simulation_float ${nbody_link_libs})
+
+  set_target_properties(nbody_simulation_double
+                          PROPERTIES
+                            COMPILE_DEFINITIONS "DOUBLEPREC;")
+
 
   set(nbody_libs nbody_simulation_float nbody_simulation_double)
 else()
+  add_library(nbody_simulation STATIC ${nbody_lib_src})
+
   if(DOUBLEPREC)
     add_definitions("-DDOUBLEPREC")
   endif()
 
-  add_library(nbody_simulation STATIC ${nbody_lib_src})
+
 
   set(nbody_libs nbody_simulation)
 endif()
 
+list(APPEND nbody_link_libs ${nbody_libs})
 
 add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
-target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${JSON_C_LIBRARY} m ${nbody_libs})
+target_link_libraries(milkyway_nbody ${nbody_link_libs} ${POPT_LIBRARY})
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 

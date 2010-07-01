@@ -18,11 +18,13 @@
  * util.c, which must be compiled with the same choice of precision.
  */
 
-real cputime(void);              /* return elapsed CPU time */
+/* xrandom: generate floating-point random number. */
+#define xrandom(xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * drand48())
+
 void* allocate(int);             /* allocate and zero memory */
-void eprintf(char*, ...);        /* printf to error FILE* */
-int compare (const void* a, const void* b);     /* comparison function used in chisq */
+int compare(const void* a, const void* b);     /* comparison function used in chisq */
 real chisq();                  /* likelihood calculator */
+__attribute__ ((visibility("default"))) double get_time();
 
 #endif /* _NBODY_UTIL_H_ */
 

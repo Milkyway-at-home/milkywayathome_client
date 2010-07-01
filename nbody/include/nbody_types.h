@@ -90,14 +90,12 @@ typedef struct
     node bodynode;              /* data common to all nodes */
     vector vel;                 /* velocity of body */
     vector acc;                 /* acceleration of body */
-    real phi;                   /* potential at body */
-} body, *bodyptr;
+ } body, *bodyptr;
 
 #define Body    body
 
 #define Vel(x)  (((bodyptr) (x))->vel)
 #define Acc(x)  (((bodyptr) (x))->acc)
-#define Phi(x)  (((bodyptr) (x))->phi)
 
 /* CELL: structure used to represent internal nodes of tree. */
 
@@ -170,6 +168,10 @@ typedef struct
     real flattenY;      /* used by triaxial */
     real flattenX;      /* used by triaxial */
     real triaxAngle;    /* used by triaxial */
+
+    real c1;           /* Constants calculated for triaxial from other params */
+    real c2;        /* TODO: Lots more stuff could be cached, but should be done less stupidly */
+    real c3;
 } Halo;
 
 typedef struct
@@ -201,7 +203,6 @@ typedef struct
 {
     vector position;     /* (x, y, z) if cartesian / useGalC, otherwise (r, l, b) */
     vector velocity;
-    real sunGCDist;
     bool useGalC;
     bool useRadians;
 } InitialConditions;
@@ -249,29 +250,34 @@ typedef struct
 {
     Potential pot;
     DwarfModel model;         /* dwarf model */
-    const char* outfilename;  /* filename for snapshot output */
     char* headline;           /* message describing calculation */
+
+    const char* outfilename;  /* filename for snapshot output */
     FILE* outfile;            /* file for snapshot output */
+
+    int cpFd;           /* File descriptor for checkpoint file */
+    char* cpPtr;        /* mmap'd pointer for checkpoint file */
+    const char* cpFile;
+
     real freq;
     real freqout;
     real theta;               /* accuracy parameter: 0.0 */
     real tree_rsize;
+    real sunGCDist;
     criterion_t criterion;
     long seed;                /* random number seed */
     bool usequad;             /* use quadrupole corrections */
     bool allowIncest;
+    bool outputCartesian;     /* print (x,y,z) instead of (l, b, r) */
 } NBodyCtx;
 
 /* Mutable state used during an evaluation */
 typedef struct
 {
     Tree tree;
-    bodyptr bodytab;    /* points to array of bodies */
-    int n2bterm;        /* number 2-body of terms evaluated */
-    int nbcterm;        /* num of body-cell terms evaluated */
-    int nstep;          /* number of time-steps */
     real tout;
     real tnow;
+    bodyptr bodytab;    /* points to array of bodies */
 } NBodyState;
 
 typedef int generic_enum_t;  /* A general enum type. */
@@ -285,14 +291,14 @@ typedef int generic_enum_t;  /* A general enum type. */
 /* Useful initializers */
 #define EMPTY_SPHERICAL { 0, NAN, NAN }
 #define EMPTY_DISK { 0, NAN, NAN, NAN }
-#define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN }
+#define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 #define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
-#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, NAN, NAN, NAN, NAN, 0, 0, FALSE, FALSE }
+#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, -1, NULL, NULL, NAN, NAN, NAN, NAN, NAN, 0, 0, FALSE, FALSE, FALSE }
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
-#define EMPTY_STATE { EMPTY_TREE, NULL, 0, 0, 0, NAN, NAN }
-#define EMPTY_INITIAL_CONDITIONS { { NAN, NAN, NAN }, { NAN, NAN, NAN }, NAN, FALSE, FALSE }
+#define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL}
 #define EMPTY_VECTOR { NAN, NAN, NAN }
+#define EMPTY_INITIAL_CONDITIONS { EMPTY_VECTOR, EMPTY_VECTOR, FALSE, FALSE }
 
 
 /* Acceleration functions for a given potential */

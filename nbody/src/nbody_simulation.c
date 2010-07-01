@@ -19,19 +19,20 @@ inline static void gravmap(const NBodyCtx* ctx, NBodyState* st)
         hackgrav(ctx, st, p, Mass(p) > 0.0);     /* get force on each */
 }
 
-/* startrun: startup hierarchical N-body code. */
-inline static void startrun(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
+/* startRun: startup hierarchical N-body code. */
+inline static void startRun(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     srand48(ctx->seed);              /* set random generator */
-    generatePlummer(ctx, ic, st);    /* make test model */
-
-    st->tout       = st->tnow;            /* schedule first output */
+    st->tout       = st->tnow;       /* schedule first output */
     st->tree.rsize = ctx->tree_rsize;
+
+    st->tnow = 0.0;                 /* reset elapsed model time */
+    st->bodytab = (bodyptr) allocate(ctx->model.nbody * sizeof(body));
+
+    generatePlummer(ctx, ic, st);    /* make test model */
 
     /* CHECKME: Why does maketree get used twice for the first step? */
     gravmap(ctx, st);               /* Take 1st step */
-    output(ctx, st);                /* do initial output */
-    st->nstep = 1;                  /* start counting steps */
 }
 
 /* stepsystem: advance N-body system one time-step. */
@@ -60,39 +61,75 @@ inline static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
         INCADDV(Vel(p), dvel);                /* advance v by 1/2 step */
     }
 
-    st->nstep++;           /* count another time step */
     st->tnow += dt;        /* finally, advance time */
-    output(ctx, st);       /* do major or minor output */
 }
 
-
-static void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
+static void runSystem(const NBodyCtx* ctx, NBodyState* st)
 {
     const real tstop = ctx->model.time_dwarf - 1.0 / (1024.0 * ctx->freq);
 
-    startrun(ctx, ic, st);
-
     while (st->tnow < tstop)
-        stepsystem(ctx, st);               /* advance N-body system */
+    {
+        stepsystem(ctx, st);   /* advance N-body system */
+        #if BOINC_APPLICATION
+          nbody_boinc_output(ctx, st);
+        #else
+          /* TODO: organize use of this output better since it only
+           * half makes sense now with boinc */
+
+          if (ctx->model.time_dwarf - st->tnow < 0.01 / ctx->freq)
+          {
+              output(ctx, st);
+          }
+
+          st->tout += 1.0 / ctx->freqout;     /* schedule next data out */
+        #endif
+    }
+}
+
+static void endRun(NBodyCtx* ctx, NBodyState* st)
+{
+    /* Make final output */
+
+  #if BOINC_APPLICATION && !BOINC_DEBUG
+    boincOutput(ctx, st);
+  #else
+    output(ctx, st);
+  #endif /* BOINC_APPLICATION && !BOINC_DEBUG */
+
+    // Get the likelihood
+    //chisqans = chisq();
+    //printf("Run finished. chisq = %f\n", chisqans);
+
+    nbody_ctx_destroy(ctx);               /* finish up output */
+    nbody_state_destroy(st);
+
+    /* We finished so kill the checkpoint */
+    nbody_remove(ctx->cpFile);
+
 }
 
 /* Takes parsed json and run the simulation, using outFileName for
  * output */
 #ifdef DYNAMIC_PRECISION
   #ifdef DOUBLEPREC
-    void runNBodySimulation_double(json_object* obj, const char* outFileName)
+    void runNBodySimulation_double(json_object* obj, const char* outFileName, const char* checkpointFileName, const int outputCartesian, const int printTiming)
   #else
-    void runNBodySimulation_float(json_object* obj, const char* outFileName)
+    void runNBodySimulation_float(json_object* obj, const char* outFileName, const char* checkpointFileName, const int outputCartesian, const int printTiming)
   #endif /* DOUBLEPREC */
 #else
-  void runNBodySimulation(json_object* obj, const char* outFileName)
+    void runNBodySimulation(json_object* obj, const char* outFileName, const char* checkpointFileName, const int outputCartesian, const int printTiming)
 #endif /* DYNAMIC_PRECISION */
 {
     NBodyCtx ctx         = EMPTY_CTX;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
     NBodyState st        = EMPTY_STATE;
 
+    double ts = 0.0, te = 0.0;
+
+    ctx.outputCartesian = outputCartesian;
     ctx.outfilename = outFileName;
+    ctx.cpFile = checkpointFileName;
 
     get_params_from_json(&ctx, &ic, obj);
     initoutput(&ctx);
@@ -101,22 +138,74 @@ static void runSystem(const NBodyCtx* ctx, const InitialConditions* ic, NBodySta
     printInitialConditions(&ic);
 
     // Calculate the reverse orbit
-    printf("Calculating reverse orbit...");
+    printf("Calculating reverse orbit...\n");
     integrate(&ctx, &ic);
     printf("done\n");
 
     printInitialConditions(&ic);
 
     printf("Running nbody system\n");
-    runSystem(&ctx, &ic, &st);
 
     printf("Running system done\n");
     // Get the likelihood
     float chisqans = chisq(&ctx, &st);
     printf("Run finished. chisq = %f\n", chisqans);
 
-    nbody_ctx_destroy(&ctx);               /* finish up output */
-    nbody_state_destroy(&st);
+    if (printTiming)
+        ts = get_time();
+
+    startRun(&ctx, &ic, &st);
+    runSystem(&ctx, &st);
+    endRun(&ctx, &st);
+
+    if (printTiming)
+    {
+        te = get_time();
+        printf("Elapsed time for run = %g\n", te - ts);
+    }
 
 }
+
+#if BOINC_APPLICATION
+/* Similar to runNBodySimulation, but resume from a checkpointed state
+ * and don't integrate the orbit, etc. */
+void resumeCheckpoint(json_object* obj, const char* outFileName, const char* checkpointFile, const int printTiming)
+{
+    NBodyCtx ctx         = EMPTY_CTX;
+    InitialConditions ic = EMPTY_INITIAL_CONDITIONS;  /* Don't actually use these now since not at start */
+    NBodyState st        = EMPTY_STATE;
+    double ts = 0.0, te = 0.0;
+
+    ctx.outfilename = outFileName;
+    ctx.cpFile      = checkpointFile;
+
+    get_params_from_json(&ctx, &ic, obj);
+    initoutput(&ctx);
+
+    printf("Resuming nbody system\n");
+
+    /* TODO: Start a fresh run in event of failure */
+    if (thawState(&ctx, &st))
+        fail("Failed to resume from checkpoint.\n");
+
+    st.tree.rsize = ctx.tree_rsize;
+
+    printf("System thawed. tnow = %g\n", st.tnow);
+
+    if (printTiming)
+        ts = get_time();
+
+    runSystem(&ctx, &st);
+
+    if (printTiming)
+    {
+        te = get_time();
+        printf("Elapsed time for run = %g\n", te - ts);
+    }
+
+    printf("Ran thawed system\n");
+    endRun(&ctx, &st);
+}
+#endif /* BOINC_APPLICATION */
+
 

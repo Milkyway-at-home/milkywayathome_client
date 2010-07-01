@@ -21,14 +21,50 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _NBODY_FLOAT_H_
 #define _NBODY_FLOAT_H_
 
+#include "nbody_config.h"
 #include <json/json.h>
 
-#ifndef DYNAMIC_PRECISION
-  __attribute__ ((visibility("default"))) void runNBodySimulation(json_object* obj, const char* outFileName);
+/* TODO: Naming, and sharing with separation */
+#if BOINC_APPLICATION
+  #include <boinc_api.h>
+  #include <filesys.h>
+  #define nbody_finish(x) boinc_finish(x)
+  #define nbody_fopen(x,y) boinc_fopen((x),(y))
+  #define nbody_remove(x) boinc_delete_file((x))
 #else
-  __attribute__ ((visibility("default"))) void runNBodySimulation_float(json_object* obj, const char* outFileName);
-  __attribute__ ((visibility("default"))) void runNBodySimulation_double(json_object* obj, const char* outFileName);
+  #define nbody_finish(x) exit(x)
+  #define nbody_fopen(x,y) fopen((x),(y))
+  #define nbody_remove(x) remove((x))
+#endif /* BOINC_APPLICATION */
+
+
+
+#ifndef DYNAMIC_PRECISION
+  __attribute__ ((visibility("default"))) void runNBodySimulation(json_object* obj,
+                                                                  const char* outFileName,
+                                                                  const char* checkpointFileName,
+                                                                  const int outputCartesian,
+                                                                  const int printTiming);
+#else
+  __attribute__ ((visibility("default"))) void runNBodySimulation_float(json_object* obj,
+                                                                        const char* outFileName,
+                                                                        const char* checkpointFileName,
+                                                                        const int outputCartesian,
+                                                                        const int printTiming);
+
+  __attribute__ ((visibility("default"))) void runNBodySimulation_double(json_object* obj,
+                                                                         const char* outFileName,
+                                                                         const char* checkpointFileName,
+                                                                         const int outputCartesian,
+                                                                         const int printTiming);
 #endif
 
-#endif /* _NBODY_FLOAT_H_ */
+#if BOINC_APPLICATION
+  __attribute__ ((visibility("default"))) void resumeCheckpoint(json_object* obj,
+                                                                const char* outFileName,
+                                                                const char* checkpointFile,
+                                                                const int printTiming);
+#endif /* BOINC_APPLICATION */
+
+#endif /* _NBODY_H_ */
 

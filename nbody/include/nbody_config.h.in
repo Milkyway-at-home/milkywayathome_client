@@ -18,33 +18,18 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_TESTS_H_
-#define _NBODY_TESTS_H_
+#ifndef _NBODY_CONFIG_H_
+#define _NBODY_CONFIG_H_
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
+#define MILKYWAY_NBODY_CLIENT_VERSION_MAJOR ${milkyway_nbody_VERSION_MAJOR}
+#define MILKYWAY_NBODY_CLIENT_VERSION_MINOR ${milkyway_nbody_VERSION_MINOR}
+#define MILKYWAY_NBODY_CLIENT_VERSION       ${milkyway_nbody_VERSION}
 
-#define LIMIT 0.00001         /* arbitrary */
+#define BOINC_NBODY_APP_VERSION ("${CMAKE_PROJECT_NAME} nbody ${milkyway_nbody_VERSION}")
 
-#define APPROXEQ(x, y) (abs(x - y) < LIMIT)
+#cmakedefine01 BOINC_APPLICATION
+#cmakedefine01 BOINC_DEBUG
+#cmakedefine01 DYNAMIC_PRECISION
 
-#define RANDOM_REAL (xrandom(0.0, 1.0))
-#define RANDOM_VECTOR { RANDOM_REAL, RANDOM_REAL, RANDOM_REAL }
-
-#define RANDOM_INT(low, high) (rand() % (high - low + 1) + low)
-
-#define REL_ERROR(expected, answer) (100 * ((answer) - (expected)) / (expected))
-
-#define VECEQ(a,b) ((a)[0] == (b)[0] && (a)[1] == (b)[1] && (a)[2] == (b)[2])
-
-#define VECAPPROXEQ(a,b) (APPROXEQ((a)[0], (b)[0]) && APPROXEQ((a)[1], (b)[1]) && APPROXEQ((a)[2], (b)[2]))
-
-/* copy b to a */
-#define COPYVECTOR(a,b) { (a)[0] = (b)[0]; (a)[1] = (b)[1]; (a)[2] = (b)[2]; }
-
-
-#endif /* _NBODY_TESTS_H_ */
+#endif /* NBODY_CONFIG_H_ */
 

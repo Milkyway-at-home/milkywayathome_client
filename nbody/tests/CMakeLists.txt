@@ -26,13 +26,14 @@ set(test_list t_vectors
               t_exponential_disk
               t_log_halo
               t_nfw_halo
-              t_triaxial_halo)
+              t_triaxial_halo
+              t_checkpoint)
 
 foreach(test ${test_list})
 	add_executable(${test} ${test}.c ${nbody_lib_src})
 	add_test(${test} ${EXECUTABLE_OUTPUT_PATH}/${test})
     add_dependencies(check ${test})
-    target_link_libraries(${test} m ${JSON_C_LIBRARY})
+    target_link_libraries(${test} ${nbody_link_libs})
 endforeach()
 
 

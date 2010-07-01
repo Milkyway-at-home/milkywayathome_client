@@ -5,6 +5,15 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <unistd.h>
+
+#if BOINC_APPLICATION
+  #include <boinc_api.h>
+#endif /* BOINC_APPLICATION */
+
+
 #include "nbody_priv.h"
 
 static void newtree(Tree*);           /* flush existing tree */
@@ -173,8 +182,7 @@ static void loadbody(Tree* t, bodyptr p)
     t->maxlevel = MAX(t->maxlevel, lev);    /* remember maximum level */
 }
 
-/*  * SUBINDEX: compute subcell index for body p in cell q.
- */
+/* subindex: compute subcell index for body p in cell q. */
 
 static int subindex(bodyptr p, cellptr q)
 {
@@ -325,9 +333,35 @@ static void hackquad(cellptr p)
 /* TODO: Ownership of bodytab */
 void nbody_ctx_destroy(NBodyCtx* ctx)
 {
+    struct stat sb;
+
     free(ctx->headline);
     if (ctx->outfile && ctx->outfile != stdout)
         fclose(ctx->outfile);
+
+    /* Clean up the checkpointing */
+    if (ctx->cpFd != -1)
+    {
+
+        if (fstat(ctx->cpFd, &sb) == -1)
+        {
+            perror("fstat on closing checkpoint");
+            nbody_finish(EXIT_FAILURE);
+        }
+
+        if (close(ctx->cpFd) == -1)
+        {
+            perror("closing checkpoint file");
+            nbody_finish(EXIT_FAILURE);
+        }
+
+        if (munmap(ctx->cpPtr, sb.st_size) == -1)
+        {
+            perror("munmap");
+            nbody_finish(EXIT_FAILURE);
+        }
+    }
+
 }
 
 void nbody_state_destroy(NBodyState* st)

@@ -23,16 +23,33 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 #include "json_params.h"
 
-static void processPotential(Potential* p)
-{
-
-
-}
 
 static void processHalo(Halo* h)
 {
+    if (h->type == TriaxialHalo)
+    {
+        const real phi = h->triaxAngle;
+        const real cp  = rcos(phi);
+        const real cps = sqr(cp);
+        const real sp  = rsin(phi);
+        const real sps = sqr(sp);
 
+        const real qxs = sqr(h->flattenX);
+        const real qys = sqr(h->flattenY);
 
+        h->c1 = (cps / qxs) + (sps / qys);
+        h->c2 = (cps / qys) + (sps / qxs);
+
+    /* 2 * sin(x) * rcos(x) == sin(2 * x) */
+        h->c3 = rsin(2 * phi) * (1/qxs - 1/qys);
+
+    }
+
+}
+
+static void processPotential(Potential* p)
+{
+    processHalo(&p->halo);
 }
 
 static void processModel(DwarfModel* mod)
@@ -71,10 +88,9 @@ static void processModel(DwarfModel* mod)
     /* if (isnan(mod->time_dwarf))
            ?????;
     */
-
 }
 
-static void processInitialConditions(InitialConditions* ic)
+static void processInitialConditions(const NBodyCtx* ctx, InitialConditions* ic)
 {
     real r, l, b;
 
@@ -93,7 +109,7 @@ static void processInitialConditions(InitialConditions* ic)
             b = d2r( B(ic) );
         }
 
-        X(ic) = r * rcos(l) * rcos(b) - ic->sunGCDist;
+        X(ic) = r * rcos(l) * rcos(b) - ctx->sunGCDist;
         Y(ic) = r * rsin(l) * rcos(b);
         Z(ic) = r * rsin(b);
     }
@@ -137,11 +153,9 @@ static const char* showNBodyType(nbody_type bt)
         };
 
     if (bt > nbody_type_group_item)
-    {
         fail("Trying to show unknown nbody_type %d\n", bt);
-    }
-    else
-        return table[bt];
+
+    return table[bt];
 }
 
 /* Reads a name of the criterion into the C value, with name str */
@@ -156,14 +170,14 @@ static criterion_t readCriterion(const char* str)
     else if (!strcasecmp(str, "sw93"))
         return SW93;
     else
-    {
         fail("Invalid model %s: Model options are either 'bh86', "
              "'sw93', 'exact' or 'new-criterion' (default),\n",
              str);
-    }
+
+    return -1;  /* Stop warning. Never reached. */
 }
 
-void printParameter(Parameter* p)
+static void printParameter(Parameter* p)
 {
     if (p)
     {
@@ -485,7 +499,9 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
             .freq = NAN,
             .freqout = NAN,
             .usequad = TRUE,
+            .sunGCDist  = 8.0,
             .allowIncest = FALSE,
+            .outputCartesian = FALSE,
             .criterion = NEWCRITERION,
             .theta = 0.0,
             .seed = 0,
@@ -499,7 +515,6 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
         {
             .useGalC    = FALSE,
             .useRadians = FALSE,
-            .sunGCDist  = 8.0,
             .position   = EMPTY_VECTOR,
             .velocity   = EMPTY_VECTOR
         };
@@ -629,6 +644,7 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
             ENUM_PARAM_DFLT("criterion",             &ctx->criterion, &defaultCtx.criterion, (ReadEnum) readCriterion),
             OBJ_PARAM("potential", potentialItems),
             GROUP_PARAM("dwarf-model",               &ctx->model.type, dwarfModelOptions),
+            DBL_PARAM_DFLT("sun-gc-dist", &ctx->sunGCDist, &defaultCtx.sunGCDist),
             DBL_PARAM_DFLT("tree_rsize", &ctx->tree_rsize, &defaultCtx.tree_rsize),
 
             NULLPARAMETER
@@ -638,7 +654,6 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
         {
             BOOL_PARAM("useGalC", &ic->useGalC),
             BOOL_PARAM_DFLT("angle-use-radians", &ic->useRadians, &defaultIC.useRadians),
-            DBL_PARAM_DFLT("sun-gc-dist", &ic->sunGCDist, &defaultIC.sunGCDist),
             VEC_PARAM("position", &ic->position),
             VEC_PARAM("velocity", &ic->velocity),
             NULLPARAMETER
@@ -667,7 +682,7 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
     json_object_put(fileObj);
 
     postProcess(ctx);
-    processInitialConditions(ic);
+    processInitialConditions(ctx, ic);
 }
 
 

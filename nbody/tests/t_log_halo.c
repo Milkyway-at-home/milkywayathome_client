@@ -22,11 +22,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody.h"
 #include "nbody_priv.h"
 
-#define RANDOM_LOG_HALO { LogarithmicHalo, RANDOM_REAL, RANDOM_REAL, RANDOM_REAL, NAN, NAN, NAN }
+#define RANDOM_LOG_HALO { LogarithmicHalo, RANDOM_REAL, RANDOM_REAL, RANDOM_REAL, NAN, NAN, NAN, NAN, NAN, NAN }
 
 
 /* Test the falloff property of the log halo potential */
-int log_halo_falloff(Halo* h)
+static int log_halo_falloff(Halo* h)
 {
     vector a0, a1, scaleda0, rv1;
 
@@ -126,7 +126,7 @@ int log_halo_falloff(Halo* h)
     return 0;
 }
 
-int log_halo_v_scaling(Halo* h)
+static int log_halo_v_scaling(Halo* h)
 {
     vector a0, a1, a0Scaled;
     int failed = 0;
