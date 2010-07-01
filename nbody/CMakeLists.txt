@@ -87,7 +87,7 @@ configure_file (
   "${PROJECT_INCLUDE_DIR}/nbody_config.h")
 
 if(UNIX AND NOT APPLE)  #Unix that isn't OS X
-    set(OS_SPECIFIC_LIBS pthread)
+    list(APPEND OS_SPECIFIC_LIBS pthread)
 endif()
 
 set(nbody_link_libs ${JSON_C_LIBRARY} m ${OS_SPECIFIC_LIBS})

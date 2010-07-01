@@ -68,8 +68,7 @@ int runResume(const char* binPath, const char* config, const char* outfile, cons
     pid_t pid;
     int status;
 
-    const char* args[] = { binPath, "-f", config, "-o", outfile, "-c",
-                           checkpoint, "-r", checkpoint, NULL };
+    const char* args[] = { binPath, "-f", config, "-o", outfile, "-c", checkpoint, NULL };
 
     pid = fork();
 
@@ -152,7 +151,7 @@ int main(int argc, char** argv)
     runUninterrupted(binPath, testFile, "test_out_normal", check);
     printf("Uninterrupted run complete\n");
 
-    runInterrupt(binPath, testFile, "uselessfile", "new_test_check");
+    runInterrupt(binPath, testFile, "uselessfile", check);
     printf("Interrupted run complete\n");
 
 
