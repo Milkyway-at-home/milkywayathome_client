@@ -26,6 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* TODO: Naming, and sharing with separation */
 #if BOINC_APPLICATION
   #include <boinc_api.h>
+  #include <filesys.h>
   #define nbody_finish(x) boinc_finish(x)
   #define nbody_fopen(x,y) boinc_fopen((x),(y))
   #define nbody_remove(x) boinc_delete_file((x))
@@ -51,9 +52,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
                                                                          const char* checkpointFileName);
 #endif
 
+#if BOINC_APPLICATION
   __attribute__ ((visibility("default"))) void resumeCheckpoint(json_object* obj,
                                                                 const char* outFileName,
                                                                 const char* checkpointFile);
+#endif /* BOINC_APPLICATION */
 
 #endif /* _NBODY_H_ */
 

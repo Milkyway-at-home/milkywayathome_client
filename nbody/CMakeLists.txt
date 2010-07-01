@@ -86,6 +86,8 @@ set(CMAKE_C_FLAGS "-std=gnu99 -fvisibility=hidden ${CMAKE_C_FLAGS}")
 
 message("---------------------------------------------")
 message("   Building:          ${PROJECT_NAME}")
+message("   BOINC Application: ${BOINC_APPLICATION}")
+message("   BOINC Debug:       ${BOINC_DEBUG}")
 message("   Dynamic precision: ${DYNAMIC_PRECISION}")
 message("   Double precision:  ${DOUBLEPREC}")
 message("---------------------------------------------")

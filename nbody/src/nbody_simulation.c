@@ -79,8 +79,6 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
           /* TODO: organize use of this output better since it only
            * half makes sense now with boinc */
 
-          printf("Why am I happening?\n");
-
           if (ctx->model.time_dwarf - st->tnow < 0.01 / ctx->freq)
           {
               output(ctx, st);
@@ -94,7 +92,12 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
 void endRun(NBodyCtx* ctx, NBodyState* st)
 {
     /* Make final output */
+
+  #if BOINC_APPLICATION && !BOINC_DEBUG
+    boincOutput(ctx, st);
+  #else
     output(ctx, st);
+  #endif /* BOINC_APPLICATION && !BOINC_DEBUG */
 
     // Get the likelihood
     //chisqans = chisq();
@@ -147,6 +150,7 @@ void endRun(NBodyCtx* ctx, NBodyState* st)
     endRun(&ctx, &st);
 }
 
+#if BOINC_APPLICATION
 /* Similar to runNBodySimulation, but resume from a checkpointed state
  * and don't integrate the orbit, etc. */
 void resumeCheckpoint(json_object* obj, const char* outFileName, const char* checkpointFile)
@@ -172,4 +176,6 @@ void resumeCheckpoint(json_object* obj, const char* outFileName, const char* che
     printf("Ran thawed system\n");
     endRun(&ctx, &st);
 }
+#endif /* BOINC_APPLICATION */
+
 

@@ -346,19 +346,19 @@ void nbody_ctx_destroy(NBodyCtx* ctx)
         if (fstat(ctx->cpFd, &sb) == -1)
         {
             perror("fstat on closing checkpoint");
-            boinc_finish(EXIT_FAILURE);
+            nbody_finish(EXIT_FAILURE);
         }
 
         if (close(ctx->cpFd) == -1)
         {
             perror("closing checkpoint file");
-            boinc_finish(EXIT_FAILURE);
+            nbody_finish(EXIT_FAILURE);
         }
 
         if (munmap(ctx->cpPtr, sb.st_size) == -1)
         {
             perror("munmap");
-            boinc_finish(EXIT_FAILURE);
+            nbody_finish(EXIT_FAILURE);
         }
     }
 

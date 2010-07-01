@@ -91,8 +91,15 @@ void initoutput(NBodyCtx* ctx)
             fail("initoutput: cannot open file %s\n", ctx->outfilename);
     }
     else
+    {
+        /* Using stderr annoys me, so only do this if we have to BOINC */
+      #if BOINC_APPLICATION && !BOINC_DEBUG
+        ctx->outfile = stderr;
+      #else
         ctx->outfile = stdout;
+      #endif /* BOINC_APPLICATION */
 
+    }
     openCheckpoint(ctx);
 }
 
@@ -103,6 +110,7 @@ static void out_2vectors(FILE* str, vector vec1, vector vec2)
     fprintf(str, " %21.14E %21.14E %21.14E %21.14E %21.14E %21.14E\n", vec1[0], vec1[1], vec1[2], vec2[0], vec2[1], vec2[2]);
 }
 
+#if BOINC_APPLICATION
 /* Should be given the same context as the dump */
 void thawState(const NBodyCtx* ctx, NBodyState* st)
 {
@@ -153,11 +161,6 @@ void thawState(const NBodyCtx* ctx, NBodyState* st)
     if (strncmp(tail, tailBuf, sizeof(tailBuf) - 1))
         fail("Failed to find end marker in checkpoint file.\n");
 
-}
-
-void boincOutput(const NBodyCtx* ctx, const NBodyState* st)
-{
-  /* print some xml */
 }
 
 /* Checkpoint file: Very simple binary "format"
@@ -233,6 +236,7 @@ void nbody_boinc_output(const NBodyCtx* ctx, const NBodyState* st)
 
     boinc_fraction_done(st->tnow / ctx->model.time_dwarf);
 }
+#endif
 
 inline static void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r)
 {
@@ -243,6 +247,14 @@ inline static void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, c
 
     if (lbR[0] < 0)
         lbR[0] += 360.0;
+}
+
+/* Output with the silly xml stuff that BOINC uses */
+void boincOutput(const NBodyCtx* ctx, const NBodyState* st)
+{
+    fprintf(ctx->outfile, "<something>");
+    output(ctx, st);
+    fprintf(ctx->outfile, "</something>");
 }
 
 /* OUTPUT: compute diagnostics and output data. */

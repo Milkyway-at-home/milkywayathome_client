@@ -26,6 +26,12 @@ static json_object* readParameters(const int argc,
     #pragma unused(useDouble)
   #endif
 
+  #if !BOINC_APPLICATION
+    #pragma unused(resume)
+    #pragma unused(checkpointFileName)
+    #pragma unused(ignoreCheckpoint)
+  #endif
+
     poptContext context;
     int o;
     static char* inputFile = NULL;        /* input JSON file */
@@ -56,6 +62,7 @@ static json_object* readParameters(const int argc,
             0, "Input given as string", NULL
         },
 
+      #if BOINC_APPLICATION
         {
             "checkpoint", 'c',
             POPT_ARG_STRING, checkpointFileName,
@@ -73,7 +80,7 @@ static json_object* readParameters(const int argc,
             POPT_ARG_NONE, ignoreCheckpoint,
             0, "Ignore the checkpoint file", NULL
         },
-
+      #endif /* BOINC_APPLICATION */
 
 
 #if DYNAMIC_PRECISION
@@ -158,6 +165,9 @@ static json_object* readParameters(const int argc,
     return obj;
 }
 
+/* FIXME: Clean up the separation between boinc and nonboinc. Right
+ * now it's absolutely disgusting. */
+
 /* main: toplevel routine for hierarchical N-body code. */
 int main(int argc, const char* argv[])
 {
@@ -193,10 +203,12 @@ int main(int argc, const char* argv[])
                          &checkpointFileName,
                          &ignoreCheckpoint);
 
-    if (resume && !ignoreCheckpoint)
+    if (resume && !ignoreCheckpoint) /* Always false if not boinc application */
     {
         /* resume from a checkpointed state */
+        #if BOINC_APPLICATION
         resumeCheckpoint(obj, outFileName, checkpointFileName);
+        #endif
     }
     else   /* Do a fresh start */
     {
