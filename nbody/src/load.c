@@ -123,11 +123,10 @@ static cellptr makecell(Tree* t)
     return c;
 }
 
-/* EXPANDBOX: find range of coordinate values (with respect to t.root)
+/* expandbox: find range of coordinate values (with respect to t.root)
  * and expand t.root cell to fit.  The size is doubled at each step to
  * take advantage of exact representation of powers of two.
  */
-
 static void expandbox(Tree* t, bodyptr btab, int nbody)
 {
     real xyzmax;

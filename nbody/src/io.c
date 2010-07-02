@@ -189,6 +189,7 @@ int thawState(const NBodyCtx* ctx, NBodyState* st)
 
     READ_REAL(st->tout, p);
     READ_REAL(st->tnow, p);
+    READ_REAL(st->tree.rsize, p);
 
     /* TODO: Better checking of things */
     if (strncmp(hdr, buf, sizeof(hdr) - 1))
@@ -243,6 +244,7 @@ int thawState(const NBodyCtx* ctx, NBodyState* st)
    nbody   int      anything   Number of bodies expected in the file. Error if doesn't match nbody in reading context.
    tout    real     anything   Saved parts of the program state
    tnow    real     anything
+   rsize   real     anything
    bodytab bodyptr  anything   Array of bodies
    ending  string   "end"      No null terminator
  */
@@ -284,6 +286,7 @@ inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
     /* Little state pieces */
     DUMP_REAL(p, st->tout);
     DUMP_REAL(p, st->tnow);
+    DUMP_REAL(p, st->tree.rsize);
 
     /* The main piece of state*/
     memcpy(p, st->bodytab, bodySize);

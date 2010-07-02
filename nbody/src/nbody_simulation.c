@@ -8,29 +8,6 @@
 #include "nbody_priv.h"
 #include "nbody.h"
 
-#if BOINC_APPLICATION
-/* TODO: This wrapper should not be necessary */
-/* Return nonzero if the resume failed. */
-static int resumeCheckpoint(const NBodyCtx* ctx, NBodyState* st)
-{
-    printf("Resuming nbody system\n");
-
-    if (thawState(ctx, st))
-    {
-        warn("Failed to resume from checkpoint.\n");
-        /* Cleanup from this failure */
-        return 1;
-    }
-
-    /* FIXME: How did I manage this */
-    st->tree.rsize = ctx->tree_rsize;
-
-    printf("System thawed. tnow = %g\n", st->tnow);
-
-    return 0;
-}
-#endif /* BOINC_APPLICATION */
-
 inline static void gravmap(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
@@ -174,8 +151,9 @@ void RUN_NBODY_SIMULATION(json_object* obj,
         openCheckpoint(&ctx);
 
         /* When the resume fails, start a fresh run */
-        if (resumeCheckpoint(&ctx, &st))
+        if (thawState(&ctx, &st))
         {
+            fprintf(stderr, "Failed to resume checkpoint\n");
             closeCheckpoint(&ctx);     /* Something is wrong with this file */
             openCheckpoint(&ctx);      /* Make a new one */
             startRun(&ctx, &ic, &st);
