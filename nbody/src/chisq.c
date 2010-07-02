@@ -12,7 +12,7 @@
 #include <string.h>
 #include "nbody_priv.h"
 
-#define r0 8.0
+/* FIXME: Magic numbers */
 #define phi d2r(128.79)
 #define theta d2r(54.39)
 #define psi d2r(90.70)
@@ -39,17 +39,14 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 {
     real chisqval = 0.0;
     int i, j;
-    int count = 0;
-    int counttest = 1;
     int stillzero = TRUE;  /* For diagnosing zero chisq */
 
     const int nbody = ctx->model.nbody;
     const bodyptr endp = st->bodytab + nbody;
+    vector lbr;
+    real lambda;
     bodyptr p;
     FILE* f;
-
-    vector* pos = malloc(sizeof(vector) * nbody);
-    vector* vp;
 
     // Histogram prep
     int index1, index2;
@@ -61,26 +58,12 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     real* histodata1 = calloc(sizeof(real), maxindex1 + 1);
     real* histodata2 = calloc(sizeof(real), maxindex2 + 1);
 
-    printf("Importing simulation results...");
-    /* CHECKME: If we could avoid yet another copy of the bodies in
-     * memory, that would be fantastic. Probably don't actually need this */
-    for (p = st->bodytab, vp = pos; p < endp; ++p, ++vp)
-    {
-        SETV(*vp, Pos(p));
-        ++counttest; /* CHECKME: What is this? */
-    }
-    printf("done\n");
-
     printf("Transforming simulation results...");
-    for (i = 0; i < counttest - 1; i++)
+    for (p = st->bodytab; p < endp; ++p)
     {
-        vector lbr;
-        real lambda;
-        count++;
-
         // Convert to (l,b) (involves convert x to Sun-centered)
         // Leave in radians to make rotation easier
-        cartesianToLbr_rad(ctx, lbr, pos[count-1]);
+        cartesianToLbr_rad(ctx, lbr, Pos(p));
 
         // Convert to (lambda, beta) (involves a rotation using the Newberg et al (2009) rotation matrices)
 
@@ -106,6 +89,7 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
             if ((int)histodata2[abs(index2)] > largestbin2)
                 largestbin2 = (int)histodata2[abs(index2)];
         }
+        /* CHECKME: else? */
     }
     printf("done\n");
 
