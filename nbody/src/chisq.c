@@ -18,7 +18,7 @@
 #define psi d2r(90.70)
 #define beginning -50
 #define end 50
-#define binsize 3 
+#define binsize 3
 
 /* basic find max in array, O(n) */
 static size_t findmax(real* arr, size_t n)
@@ -37,13 +37,11 @@ static size_t findmax(real* arr, size_t n)
 
 real chisq(const NBodyCtx* ctx, NBodyState* st)
 {
-
-    printf("Initializing likelihood calculator...");
     real chisqval = 0.0;
     int i, j;
     int count = 0;
     int counttest = 1;
-    int stillzero = 1;  /* For diagnosing zero chisq */
+    int stillzero = TRUE;  /* For diagnosing zero chisq */
 
     const int nbody = ctx->model.nbody;
     const bodyptr endp = st->bodytab + nbody;
@@ -65,17 +63,12 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     // Histogram prep
     int index1, index2;
     int largestbin1 = 0, largestbin2 = 0;
-    int largestbin=0;
+    int largestbin = 0;
     int maxindex1 = (int)end / binsize;
     int maxindex2 = (int)abs(beginning) / binsize;
 
-    real histodata1[maxindex1 + 1], histodata2[maxindex2 + 1];
-
-    // Zero all of the histogram arrays
-    memset(histodata1, 0, sizeof(real) * maxindex1);
-    memset(histodata2, 0, sizeof(real) * maxindex2);
-
-    printf("done\n");
+    real* histodata1 = calloc(sizeof(real), maxindex1 + 1);
+    real* histodata2 = calloc(sizeof(real), maxindex2 + 1);
 
     printf("Importing simulation results...");
     for (p = st->bodytab; p < endp; p++)
@@ -116,14 +109,16 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
             index1 = (int)(lambda[count-1] / binsize);
             histodata1[index1]++;
 
-            if((int)histodata1[index1] > largestbin1) { largestbin1 = (int)histodata1[index1]; }
+            if ((int)histodata1[index1] > largestbin1)
+                largestbin1 = (int)histodata1[index1];
         }
         else if (lambda[count-1] > beginning && lambda[count-1] < 0)
         {
             index2 = abs((int)(lambda[count-1] / binsize));
             histodata2[abs(index2)]++;
 
-            if((int)histodata2[abs(index2)] > largestbin2) { largestbin2 = (int)histodata2[abs(index2)]; }
+            if ((int)histodata2[abs(index2)] > largestbin2)
+                largestbin2 = (int)histodata2[abs(index2)];
         }
     }
     printf("done\n");
@@ -132,24 +127,17 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     // Get the single largest bin so we can normalize over it
     //CHECKME: Why the +1's in the sizes of histodatas?
 
-    //largestbin1 = findmax(histodata1, maxindex1);
-    //largestbin2 = findmax(histodata2, maxindex2);
-
     printf("Largestbin1: %i Largestbin2: %i\n", largestbin1, largestbin2);
 
-    //largestbin = MAX(findmax(histodata1, maxindex1), findmax(histodata2, maxindex2));
     largestbin = MAX(largestbin1, largestbin2);
 
     printf("Largest bin: %i\n", largestbin);
 
-    printf("Outputting to disk...");
-
     f = fopen("histout", "w");
-
     if (f == NULL)
     {
-        printf("There was an error writing to the file\n");
-        exit(EXIT_FAILURE);
+        perror("Writing histout");
+        nbody_finish(EXIT_FAILURE);
     }
 
     printf("...file open...");
@@ -172,11 +160,10 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     // Calculate the chisq value by reading a file called "histogram" (the real data histogram should already be normalized)
 
     f = fopen("histogram", "r");
-
     if (f == NULL)
     {
-        printf("histogram file not found...exiting\n");
-        exit(EXIT_FAILURE);
+        perror("histogram");
+        nbody_finish(EXIT_FAILURE);
     }
 
     int pos, fsize;
@@ -215,7 +202,8 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
                 /* In principle, a zero chisq is the absolute best. But there's 2 ways that can happen: 1) all the bins perfectly lining up, or 2) the chisq having no contributions to it at all */
 		/* We need to check if the chisq is still zero after this addition */
-		if(chisqval != 0.0) { stillzero = 0; }; 
+                if (chisqval != 0.0)
+                    stillzero = FALSE;
 
             }
         }
@@ -232,7 +220,7 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
                              * ((fileCount[j] - (histodata1[i] / largestbin)) / fileCountErr[j]);
                 /* In principle, a zero chisq is the absolute best. But there's 2 ways that can happen: 1) all the bins perfectly lining up, or 2) the chisq having no contributions to it at all */
 		/* We need to check if the chisq is still zero after this addition */
-		if(chisqval != 0.0) { stillzero = 0; }; 
+		if(chisqval != 0.0) { stillzero = 0; };
             }
         }
     }
@@ -241,21 +229,20 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     free(fileCount);
     free(fileCountErr);
 
-    /* If stillzero = 1, then no contributions were ever added to the chisq, so there's actually no data in the range */
+    free(histodata1);
+    free(histodata2);
+
+    /* If stillzero, then no contributions were ever added to the
+     * chisq, so there's actually no data in the range */
     /* Set it to a bad chisq */
-    if(stillzero == 1) { chisqval = 9999.99;}
+    if (stillzero)
+        chisqval = 9999.99;
 
     printf("CHISQ = %f\n", chisqval);
-
 
     // MAXIMUM likelihood, multiply by -1
     real likelihood = -chisqval;
     printf("likelihood = %f\n", likelihood);
     return likelihood;
-}
-
-int compare (const void* a, const void* b)
-{
-    return ( *(int*)a - *(int*)b );
 }
 

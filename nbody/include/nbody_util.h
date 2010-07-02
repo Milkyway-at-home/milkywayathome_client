@@ -22,8 +22,6 @@
 #define xrandom(xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * drand48())
 
 void* allocate(int);             /* allocate and zero memory */
-int compare(const void* a, const void* b);     /* comparison function used in chisq */
-real chisq();                  /* likelihood calculator */
 __attribute__ ((visibility("default"))) double get_time();
 
 #endif /* _NBODY_UTIL_H_ */
