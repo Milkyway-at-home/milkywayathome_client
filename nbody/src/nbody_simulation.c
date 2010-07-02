@@ -181,7 +181,7 @@ void resumeCheckpoint(json_object* obj, const char* outFileName, const char* che
     ctx.cp.file     = checkpointFile;
 
     get_params_from_json(&ctx, &ic, obj);
-    initoutput(&ctx);
+    initoutput(&ctx); /* This opens the checkpoint */
 
     printf("Resuming nbody system\n");
 

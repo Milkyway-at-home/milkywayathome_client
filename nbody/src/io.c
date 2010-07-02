@@ -61,7 +61,7 @@ void openCheckpoint(NBodyCtx* ctx)
         nbody_finish(EXIT_FAILURE);
     }
 
-    /* Make the file the right size */
+    /* Make the file the right size in case it's a new file */
     ftruncate(ctx->cp.fd, checkpointFileSize);
 
     if (fstat(ctx->cp.fd, &sb) == -1)
@@ -89,8 +89,52 @@ void openCheckpoint(NBodyCtx* ctx)
 
 void openCheckpoint(NBodyCtx* ctx)
 {
-    CreateFile();
-    CreateFileMapping();
+    const size_t checkpointFileSize = hdrSize + ctx->model.nbody * sizeof(body);
+
+    HANDLE h;
+    HANDLE map;
+
+    /* Try to create a new file */
+    ctx->cp.fd = CreateFile(ctx->cp.file,
+                            GENERIC_READ | GENERIC_WRITE,
+                            0,     /* Other processes can't touch this */
+                            NULL,
+                            CREATE_NEW,
+                            FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_SEQUENTIAL_SCAN,
+                            NULL);
+
+    /* If the checkpoint already exists, open it */
+    if ( GetLastError() == ERROR_FILE_EXISTS )
+    {
+        ctx->cp.fd = CreateFile(ctx->cp.file,
+                                GENERIC_READ | GENERIC_WRITE,
+                                0,     /* Other processes can't touch this */
+                                NULL,
+                                OPEN_EXISTING,
+                                FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_SEQUENTIAL_SCAN,
+                                NULL);
+    }
+
+    /* TODO: More filetype checking and stuff */
+
+    if ( h == INVALID_HANDLE_VALUE )
+    {
+        fprintf(stderr, "Failed to open checkpoint file: %d\n", GetLastError());
+        nbody_finish(EXIT_FAILURE);
+    }
+
+    ctx->cp.mptr = CreateFileMapping(h,
+                                     NULL,
+                                     PAGE_READWRITE,
+                                     checkpointFileSize,
+                                     checkpointFileSize,
+                                     "checkpoint file");
+
+    if ( ctx->cp.mptr == NULL )
+    {
+        fprintf(stderr, "Failed to creating mapping for checkpoint file: %d\n", GetLastError());
+        nbody_finish(EXIT_FAILURE);
+    }
 }
 
 #endif /* _WIN32 */

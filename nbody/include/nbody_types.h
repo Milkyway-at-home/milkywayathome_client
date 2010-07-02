@@ -241,6 +241,8 @@ typedef struct
     real scale_radius;
 } DwarfModel;
 
+#ifndef _WIN32
+
 typedef struct
 {
     int fd;            /* File descriptor for checkpoint file */
@@ -248,7 +250,21 @@ typedef struct
     const char* file;
 } CheckpointHandle;
 
+
 #define EMPTY_CHECKPOINT_HANDLE { -1, NULL, NULL }
+
+#else
+
+typedef struct
+{
+    HANDLE fd;          /* File descriptor for checkpoint file */
+    HANDLE mptr;        /* mmap'd pointer for checkpoint file */
+    const char* file;
+} CheckpointHandle;
+
+#define EMPTY_CHECKPOINT_HANDLE { /* FIXME: something */ , NULL, NULL }
+
+#endif /* _WIN32 */
 
 
 /* The context tracks settings of the simulation.  It should be set
