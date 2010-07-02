@@ -25,6 +25,7 @@ enable_testing()
 
 #set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules;${CMAKE_MODULE_PATH}")
 set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules")
+set(PROJECT_TOOL_DIR "${milkywayathome_SOURCE_DIR}/tools")
 
 #choose release build type by default
 if(NOT CMAKE_BUILD_TYPE)

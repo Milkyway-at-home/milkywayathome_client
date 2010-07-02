@@ -252,15 +252,22 @@ void nbody_boinc_output(const NBodyCtx* ctx, const NBodyState* st)
 }
 #endif
 
-inline static void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r)
+void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r)
 {
     const real r0p = r[0] + ctx->sunGCDist;
-    lbR[0] = r2d(ratan2(r[1], r0p));
-    lbR[1] = r2d(ratan2(r[2], rsqrt(sqr(r0p) + sqr(r[1]))));
+    lbR[0] = ratan2(r[1], r0p);
+    lbR[1] = ratan2(r[2], rsqrt(sqr(r0p) + sqr(r[1])));
     lbR[2] = rsqrt(sqr(r0p) + sqr(r[1]) + sqr(r[2]));
 
     if (lbR[0] < 0)
-        lbR[0] += 360.0;
+        lbR[0] += 2 * M_PI;
+}
+
+void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r)
+{
+    cartesianToLbr_rad(ctx, lbR, r);
+    L(lbR) = r2d(L(lbR));
+    B(lbR) = r2d(B(lbR));
 }
 
 #if DOUBLEPREC
@@ -287,14 +294,13 @@ void output(const NBodyCtx* ctx, const NBodyState* st)
 
     for (p = st->bodytab; p < endp; p++)
     {
-        if (ctx->outputCartesian)
+        if (ctx->outputCartesian)     /* Probably useful for making movies and such */
+            out_2vectors(ctx->outfile, Pos(p), Vel(p));
+        else
         {
-            /* Probably useful for making movies and such */
             cartesianToLbr(ctx, lbR, Pos(p));
             out_2vectors(ctx->outfile, lbR, Vel(p));
         }
-        else
-        out_2vectors(ctx->outfile, Pos(p), Vel(p));
     }
 
     fflush(ctx->outfile);             /* drain output buffer */
