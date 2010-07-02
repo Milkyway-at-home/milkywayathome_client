@@ -58,6 +58,14 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     real* histodata1 = calloc(sizeof(real), maxindex1 + 1);
     real* histodata2 = calloc(sizeof(real), maxindex2 + 1);
 
+    real bcos, bsin, lsin, lcos;
+    const real cosphi = rcos(phi);
+    const real sinphi = rsin(phi);
+    const real sinpsi = rsin(psi);
+    const real cospsi = rcos(psi);
+    const real costh  = rcos(theta);
+    const real sinth  = rsin(theta);
+
     printf("Transforming simulation results...");
     for (p = st->bodytab; p < endp; ++p)
     {
@@ -67,10 +75,22 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
         // Convert to (lambda, beta) (involves a rotation using the Newberg et al (2009) rotation matrices)
 
-        //CHECKME: beta never actually used?
-        //beta = r2d(rasin( rsin(theta) * rsin(phi) * rcos(B(lbr)) * rcos(L(lbr)) - rsin(theta) * rcos(phi) * rcos(B(lbr)) * rsin(L(lbr)) + rcos(theta) * rsin(B(lbr)) ));
+        bcos = rcos(B(lbr));
+        bsin = rsin(B(lbr));
+        lsin = rsin(L(lbr));
+        lcos = rcos(L(lbr));
 
-        lambda = r2d(atan2( (-rsin(psi) * rcos(phi) - rcos(theta) * rsin(phi) * rcos(psi)) * rcos(B(lbr)) * rcos(L(lbr)) + (-rsin(psi) * rsin(phi) + rcos(theta) * rcos(phi) * rcos(psi)) * rcos(B(lbr)) * rsin(L(lbr)) + rcos(psi) * rsin(theta) * rsin(B(lbr)), (rcos(psi) * rcos(phi) - rcos(theta) * rsin(phi) * rsin(psi)) * rcos(B(lbr)) * rcos(L(lbr)) + (rcos(psi) * rsin(phi) + rcos(theta) * rcos(phi) * rsin(psi)) * rcos(B(lbr)) * rsin(L(lbr)) + rsin(psi) * rsin(theta) * rsin(B(lbr)) ));
+        //CHECKME: beta never actually used?
+        //beta = r2d(rasin( sinth * sinphi * bcos * lcos - sinth * cosphi * bcos * lsin + costh * bsin ));
+
+        lambda = r2d(atan2(
+                           (-sinpsi * cosphi - costh * sinphi * cospsi) * bcos * lcos
+                         + (-sinpsi * sinphi + costh * cosphi * cospsi) * bcos * lsin
+                         + cospsi * sinth * bsin,
+
+                           (cospsi * cosphi - costh * sinphi * sinpsi) * bcos * lcos
+                         + (cospsi * sinphi + costh * cosphi * sinpsi) * bcos * lsin
+                         + sinpsi * sinth * bsin ));
 
         // Create the histogram
         if (lambda >= 0 && lambda < end)
