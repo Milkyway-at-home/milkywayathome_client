@@ -50,15 +50,15 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
     FILE* f;
 
-    real x[nbody];
-    real y[nbody];
-    real z[nbody];
+    real x[nbody+1];
+    real y[nbody+1];
+    real z[nbody+1];
 
-    real l[nbody];
-    real b[nbody];
+    real l[nbody+1];
+    real b[nbody+1];
 
-    real lambda[nbody];
-    real beta[nbody];
+    real lambda[nbody+1];
+    real beta[nbody+1];
 
     bodyptr p;
 
@@ -156,12 +156,12 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
     // Print out the histogram
     real foo;
-    for (i = 0, foo = -binsize; foo >= beginning; foo -= binsize, ++i)
+    for (i = 0, foo = -binsize; foo > beginning; foo -= binsize, ++i)
     {
         fprintf(f, "%f %f\n", foo + (binsize / 2.0) , histodata2[i] / ((real)largestbin));
     }
 
-    for (i = 0, foo = 0; foo <= end; foo += binsize, ++i)
+    for (i = 0, foo = 0; foo < end; foo += binsize, ++i)
     {
         fprintf(f, "%f %f\n", foo + (binsize / 2.0) , histodata1[i] / ((real)largestbin));
     }
@@ -213,11 +213,11 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
                 chisqval += ((fileCount[j] - (histodata2[i] / largestbin)) / fileCountErr[j])
                               * ((fileCount[j] - (histodata2[i] / largestbin)) / fileCountErr[j]);
 
-                /* In principle, a zero chisq is the absolute best. But there's 2 ways that can happen: 1) all the bins perfectly lining up, or 2) the chisq having no contributions to it at all */
-		/* We need to check if the chisq is still zero after this addition */
-		if(chisqval != 0.0) { stillzero = 0; }; 
-
             }
+
+            /* In principle, a zero chisq is the absolute best. But there's 2 ways that can happen: 1) all the bins perfectly lining up, or 2) the chisq having no contributions to it at all */
+	    /* We need to check if the chisq is still zero after this addition AND the histogram data is also zero */
+	    if(chisqval == 0.0 && histodata2[i] == 0.0) { stillzero = 1; } else { stillzero = 0; }
         }
     }
 
@@ -230,10 +230,11 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
             {
                 chisqval += ((fileCount[j] - (histodata1[i] / largestbin)) / fileCountErr[j])
                              * ((fileCount[j] - (histodata1[i] / largestbin)) / fileCountErr[j]);
-                /* In principle, a zero chisq is the absolute best. But there's 2 ways that can happen: 1) all the bins perfectly lining up, or 2) the chisq having no contributions to it at all */
-		/* We need to check if the chisq is still zero after this addition */
-		if(chisqval != 0.0) { stillzero = 0; }; 
             }
+
+            /* In principle, a zero chisq is the absolute best. But there's 2 ways that can happen: 1) all the bins perfectly lining up, or 2) the chisq having no contributions to it at all */
+	    /* We need to check if the chisq is still zero after this addition AND the histogram data is also zero */
+	    if(chisqval == 0.0 && histodata1[i] == 0.0) { stillzero = 1; } else { stillzero = 0; }
         }
     }
 
@@ -243,7 +244,11 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
     /* If stillzero = 1, then no contributions were ever added to the chisq, so there's actually no data in the range */
     /* Set it to a bad chisq */
-    if(stillzero == 1) { chisqval = 9999.99;}
+    if(stillzero == 1) { chisqval = 998.00;}
+
+    /* If the largest bin is zero, then this whole process breaks down and chisq blows up */
+    /* Make a very bad chisq */ 
+    if(largestbin == 0) { chisqval = 999.00;}
 
     printf("CHISQ = %f\n", chisqval);
 

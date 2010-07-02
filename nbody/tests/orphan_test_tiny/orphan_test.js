@@ -6,7 +6,6 @@
         "use-quadrupole-corrections" : true,
         "accuracy-parameter" : 1.0,
         "seed" : 0,
-	"outputCartesian" : true,
 
         "potential" : {
             "disk" : {
