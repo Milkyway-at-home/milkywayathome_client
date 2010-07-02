@@ -340,22 +340,22 @@ void nbody_ctx_destroy(NBodyCtx* ctx)
         fclose(ctx->outfile);
 
     /* Clean up the checkpointing */
-    if (ctx->cpFd != -1)
+    if (ctx->cp.fd != -1)
     {
 
-        if (fstat(ctx->cpFd, &sb) == -1)
+        if (fstat(ctx->cp.fd, &sb) == -1)
         {
             perror("fstat on closing checkpoint");
             nbody_finish(EXIT_FAILURE);
         }
 
-        if (close(ctx->cpFd) == -1)
+        if (close(ctx->cp.fd) == -1)
         {
             perror("closing checkpoint file");
             nbody_finish(EXIT_FAILURE);
         }
 
-        if (munmap(ctx->cpPtr, sb.st_size) == -1)
+        if (munmap(ctx->cp.mptr, sb.st_size) == -1)
         {
             perror("munmap");
             nbody_finish(EXIT_FAILURE);

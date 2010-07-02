@@ -43,6 +43,8 @@ const size_t hdrSize =   sizeof(size_t)                                  /* size
 #define READ_SIZE_T(x, p) { (x) = *((size_t*) (p)); (p) += sizeof(size_t); }
 #define READ_STR(x, p, size) { memcpy((x), (p), (size)); (p) += (size); }
 
+#ifndef _WIN32
+
 void openCheckpoint(NBodyCtx* ctx)
 {
     struct stat sb;
@@ -52,17 +54,17 @@ void openCheckpoint(NBodyCtx* ctx)
        http://msdn.microsoft.com/en-us/library/aa366556(VS.85).aspx
     */
 
-    ctx->cpFd = open(ctx->cpFile, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
-    if (ctx->cpFd == -1)
+    ctx->cp.fd = open(ctx->cp.file, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
+    if (ctx->cp.fd == -1)
     {
         perror("open checkpoint");
         nbody_finish(EXIT_FAILURE);
     }
 
     /* Make the file the right size */
-    ftruncate(ctx->cpFd, checkpointFileSize);
+    ftruncate(ctx->cp.fd, checkpointFileSize);
 
-    if (fstat(ctx->cpFd, &sb) == -1)
+    if (fstat(ctx->cp.fd, &sb) == -1)
     {
         perror("fstat");
         nbody_finish(EXIT_FAILURE);
@@ -74,14 +76,24 @@ void openCheckpoint(NBodyCtx* ctx)
         nbody_finish(EXIT_FAILURE);
     }
 
-    ctx->cpPtr = mmap(0, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, ctx->cpFd, 0);
-    if (ctx->cpPtr == MAP_FAILED)
+    ctx->cp.mptr = mmap(0, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, ctx->cp.fd, 0);
+    if (ctx->cp.mptr == MAP_FAILED)
     {
         perror("mmap: Failed to open checkpoint file for writing");
         nbody_finish(EXIT_FAILURE);
     }
 
 }
+
+#else
+
+void openCheckpoint(NBodyCtx* ctx)
+{
+    CreateFile();
+    CreateFileMapping();
+}
+
+#endif /* _WIN32 */
 
 void initoutput(NBodyCtx* ctx)
 {
@@ -123,7 +135,7 @@ int thawState(const NBodyCtx* ctx, NBodyState* st)
     size_t realSize;
     char buf[sizeof(hdr)];
     char tailBuf[sizeof(tail)];
-    char* p = ctx->cpPtr;
+    char* p = ctx->cp.mptr;
     int valid;
 
     READ_STR(buf, p, sizeof(hdr) - 1);
@@ -199,7 +211,7 @@ int thawState(const NBodyCtx* ctx, NBodyState* st)
 inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
 {
     const size_t bodySize = sizeof(body) * ctx->model.nbody;
-    char* p = ctx->cpPtr;
+    char* p = ctx->cp.mptr;
     char* lock;
 
     printf("System freezing. tnow = %g\n", st->tnow);
@@ -233,7 +245,7 @@ inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
 
     DUMP_STR(p, tail, sizeof(tail) - 1);
 
-    msync(ctx->cpPtr, hdrSize + bodySize, MS_SYNC);
+    msync(ctx->cp.mptr, hdrSize + bodySize, MS_SYNC);
 
     SET_LOCK(lock, 1);   /* Done writing, flag file as valid  */
 

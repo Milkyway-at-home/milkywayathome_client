@@ -105,7 +105,7 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
     nbody_state_destroy(st);
 
     /* We finished so kill the checkpoint */
-    nbody_remove(ctx->cpFile);
+    nbody_remove(ctx->cp.file);
 
 }
 
@@ -129,7 +129,7 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
 
     ctx.outputCartesian = outputCartesian;
     ctx.outfilename = outFileName;
-    ctx.cpFile = checkpointFileName;
+    ctx.cp.file = checkpointFileName;
 
     get_params_from_json(&ctx, &ic, obj);
     initoutput(&ctx);
@@ -178,7 +178,7 @@ void resumeCheckpoint(json_object* obj, const char* outFileName, const char* che
     double ts = 0.0, te = 0.0;
 
     ctx.outfilename = outFileName;
-    ctx.cpFile      = checkpointFile;
+    ctx.cp.file     = checkpointFile;
 
     get_params_from_json(&ctx, &ic, obj);
     initoutput(&ctx);

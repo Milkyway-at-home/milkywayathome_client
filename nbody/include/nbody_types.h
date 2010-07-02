@@ -241,6 +241,15 @@ typedef struct
     real scale_radius;
 } DwarfModel;
 
+typedef struct
+{
+    int fd;            /* File descriptor for checkpoint file */
+    char* mptr;        /* mmap'd pointer for checkpoint file */
+    const char* file;
+} CheckpointHandle;
+
+#define EMPTY_CHECKPOINT_HANDLE { -1, NULL, NULL }
+
 
 /* The context tracks settings of the simulation.  It should be set
    once at the beginning of a simulation based on settings, and then
@@ -254,10 +263,7 @@ typedef struct
 
     const char* outfilename;  /* filename for snapshot output */
     FILE* outfile;            /* file for snapshot output */
-
-    int cpFd;           /* File descriptor for checkpoint file */
-    char* cpPtr;        /* mmap'd pointer for checkpoint file */
-    const char* cpFile;
+    CheckpointHandle cp;
 
     real freq;
     real freqout;
@@ -294,7 +300,7 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 #define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
-#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, -1, NULL, NULL, NAN, NAN, NAN, NAN, NAN, 0, 0, FALSE, FALSE, FALSE }
+#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, EMPTY_CHECKPOINT_HANDLE, NAN, NAN, NAN, NAN, NAN, 0, 0, FALSE, FALSE, FALSE }
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 #define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL}
 #define EMPTY_VECTOR { NAN, NAN, NAN }
