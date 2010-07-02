@@ -136,11 +136,11 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
         nbody_finish(EXIT_FAILURE);
     }
 
-    int fpos, fsize;
+    int fsize;
     real* fileLambda = NULL, *fileCount = NULL, *fileCountErr = NULL;
     int filecount = 0;
 
-    fpos = fseek(f, 0L, SEEK_END);
+    fseek(f, 0L, SEEK_END);
     fsize = ceil((double) (ftell(f) + 1) / 3);  /* Make sure it's big enough, avoid fun with integer division */
     fseek(f, 0L, SEEK_SET);
 
@@ -148,8 +148,13 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     fileCount    = (real*) calloc(sizeof(real), fsize);
     fileCountErr = (real*) calloc(sizeof(real), fsize);
 
+    /* FIXME: Proper reading. Avoid CPP annoying */
     while (fscanf(f,
-                  "%g %g %g\n",
+                  #ifdef DOUBLEPREC  /* Temporary work around */
+                    "%lf %lf %lf\n",
+                  #else
+                  "%f %f %f\n",
+                  #endif
                   &fileLambda[filecount],
                   &fileCount[filecount],
                   &fileCountErr[filecount]) != EOF)
