@@ -16,9 +16,9 @@
 #define phi d2r(128.79)
 #define theta d2r(54.39)
 #define psi d2r(90.70)
-#define beginning -50
-#define end 50
-#define binsize 3
+#define beginning ((real) -50.0)
+#define end ((real) 50.0)
+#define binsize ((real) 3.0)
 
 /* basic find max in array, O(n) */
 static size_t findmax(real* arr, size_t n)
@@ -43,8 +43,6 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
     const int nbody = ctx->model.nbody;
     const bodyptr endp = st->bodytab + nbody;
-    vector lbr;
-    real lambda;
     bodyptr p;
     FILE* f;
 
@@ -52,13 +50,15 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     int index1, index2;
     int largestbin1 = 0, largestbin2 = 0;
     int largestbin = 0;
-    int maxindex1 = (int)end / binsize;
-    int maxindex2 = (int)abs(beginning) / binsize;
+    int maxindex1 = (int) rfloor(end / binsize);
+    int maxindex2 = (int) rabs(rfloor(beginning / binsize));
 
     real* histodata1 = calloc(sizeof(real), maxindex1 + 1);
     real* histodata2 = calloc(sizeof(real), maxindex2 + 1);
 
     real bcos, bsin, lsin, lcos;
+    vector lbr;
+    real lambda;
     const real cosphi = rcos(phi);
     const real sinphi = rsin(phi);
     const real sinpsi = rsin(psi);
@@ -93,21 +93,21 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
                          + sinpsi * sinth * bsin ));
 
         // Create the histogram
-        if (lambda >= 0 && lambda < end)
+        if (lambda >= -0.0 && lambda < end)
         {
-            index1 = (int)(lambda / binsize);
+            index1 = (int)rfloor(lambda / binsize);  // floor?
             histodata1[index1]++;
 
-            if ((int)histodata1[index1] > largestbin1)
-                largestbin1 = (int)histodata1[index1];
+            if (histodata1[index1] > largestbin1)
+                largestbin1 = histodata1[index1];
         }
-        else if (lambda > beginning && lambda < 0)
+        else if (lambda > beginning && lambda < 0)  // only > ?
         {
-            index2 = abs((int)(lambda / binsize));
-            histodata2[abs(index2)]++;
+            index2 = abs((int) rfloor(lambda / binsize));
+            histodata2[index2]++;
 
-            if ((int)histodata2[abs(index2)] > largestbin2)
-                largestbin2 = (int)histodata2[abs(index2)];
+            if (histodata2[index2] > largestbin2)
+                largestbin2 = histodata2[index2];
         }
         /* CHECKME: else? */
     }
