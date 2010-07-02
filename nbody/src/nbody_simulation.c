@@ -146,23 +146,30 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
 
     printf("Running nbody system\n");
 
-    startRun(&ctx, &ic, &st);
-    runSystem(&ctx, &st);
-    endRun(&ctx, &st);
-
-    printf("Running system done\n");
-    // Get the likelihood
-    float chisqans = chisq(&ctx, &st);
-    printf("Run finished. chisq = %f\n", chisqans);
-
     if (printTiming)
         ts = get_time();
 
+    startRun(&ctx, &ic, &st);
+    runSystem(&ctx, &st);
+    endRun(&ctx, &st);
 
     if (printTiming)
     {
         te = get_time();
         printf("Elapsed time for run = %g\n", te - ts);
+    }
+
+
+    // Get the likelihood
+    if (printTiming)
+        ts = get_time();
+
+    real chisqans = chisq(&ctx, &st);
+    printf("Run finished. chisq = %f\n", chisqans);
+    if (printTiming)
+    {
+        te = get_time();
+        printf("Elapsed time for chisq = %g\n", te - ts);
     }
 
 }
