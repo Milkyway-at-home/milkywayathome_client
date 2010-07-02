@@ -333,16 +333,18 @@ static void hackquad(cellptr p)
 /* TODO: Ownership of bodytab */
 void nbody_ctx_destroy(NBodyCtx* ctx)
 {
-    struct stat sb;
-
     free(ctx->headline);
     if (ctx->outfile && ctx->outfile != stdout)
         fclose(ctx->outfile);
+}
+
+void closeCheckpoint(NBodyCtx* ctx)
+{
+    struct stat sb;
 
     /* Clean up the checkpointing */
     if (ctx->cp.fd != -1)
     {
-
         if (fstat(ctx->cp.fd, &sb) == -1)
         {
             perror("fstat on closing checkpoint");
@@ -362,6 +364,8 @@ void nbody_ctx_destroy(NBodyCtx* ctx)
         }
     }
 
+    printf("Removing checkpoint file '%s'\n", ctx->cp.file);
+    nbody_remove(ctx->cp.file);
 }
 
 void nbody_state_destroy(NBodyState* st)

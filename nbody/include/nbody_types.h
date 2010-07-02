@@ -250,7 +250,6 @@ typedef struct
     const char* file;
 } CheckpointHandle;
 
-
 #define EMPTY_CHECKPOINT_HANDLE { -1, NULL, NULL }
 
 #else

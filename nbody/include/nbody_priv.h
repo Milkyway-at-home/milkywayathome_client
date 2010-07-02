@@ -31,6 +31,7 @@
 
 void initoutput(NBodyCtx*);             /* open files for output */
 void openCheckpoint(NBodyCtx* ctx);
+void closeCheckpoint(NBodyCtx* ctx);
 int thawState(const NBodyCtx* ctx, NBodyState* st);
 void nbody_ctx_destroy(NBodyCtx* ctx);  /* close output files */
 void nbody_state_destroy(NBodyState* st);

@@ -127,7 +127,7 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     if (f == NULL)
     {
         perror("Writing histout");
-        nbody_finish(EXIT_FAILURE);
+        return NAN;
     }
 
     printf("...file open...");
@@ -153,7 +153,7 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     if (f == NULL)
     {
         perror("histogram");
-        nbody_finish(EXIT_FAILURE);
+        return NAN;
     }
 
     int fsize;

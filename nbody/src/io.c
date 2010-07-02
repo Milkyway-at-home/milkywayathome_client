@@ -157,7 +157,6 @@ void initoutput(NBodyCtx* ctx)
       #endif /* BOINC_APPLICATION */
 
     }
-    openCheckpoint(ctx);
 }
 
 /* Low-level input and output operations. */
@@ -199,7 +198,10 @@ int thawState(const NBodyCtx* ctx, NBodyState* st)
     }
 
     if (ctx->model.nbody != nbody)
+    {
         warn("Number of bodies in checkpoint file does not match number expected by context.\n");
+        failed = TRUE;
+    }
 
     if (realSize != sizeof(real))
     {

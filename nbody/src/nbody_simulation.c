@@ -8,6 +8,29 @@
 #include "nbody_priv.h"
 #include "nbody.h"
 
+#if BOINC_APPLICATION
+/* TODO: This wrapper should not be necessary */
+/* Return nonzero if the resume failed. */
+static int resumeCheckpoint(const NBodyCtx* ctx, NBodyState* st)
+{
+    printf("Resuming nbody system\n");
+
+    if (thawState(ctx, st))
+    {
+        warn("Failed to resume from checkpoint.\n");
+        /* Cleanup from this failure */
+        return 1;
+    }
+
+    /* FIXME: How did I manage this */
+    st->tree.rsize = ctx->tree_rsize;
+
+    printf("System thawed. tnow = %g\n", st->tnow);
+
+    return 0;
+}
+#endif /* BOINC_APPLICATION */
+
 inline static void gravmap(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
@@ -19,9 +42,10 @@ inline static void gravmap(const NBodyCtx* ctx, NBodyState* st)
         hackgrav(ctx, st, p, Mass(p) > 0.0);     /* get force on each */
 }
 
-/* startRun: startup hierarchical N-body code. */
-inline static void startRun(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
+inline static void initState(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
+    printf("Starting nbody system\n");
+
     srand48(ctx->seed);              /* set random generator */
     st->tout       = st->tnow;       /* schedule first output */
     st->tree.rsize = ctx->tree_rsize;
@@ -33,6 +57,14 @@ inline static void startRun(const NBodyCtx* ctx, const InitialConditions* ic, NB
 
     /* CHECKME: Why does maketree get used twice for the first step? */
     gravmap(ctx, st);               /* Take 1st step */
+}
+
+static void startRun(const NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
+{
+    printf("Starting fresh nbody run\n");
+    initState(ctx, ic, st);
+    // Calculate the reverse orbit
+    integrate(ctx, ic);
 }
 
 /* stepsystem: advance N-body system one time-step. */
@@ -89,37 +121,37 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
 
 static void endRun(NBodyCtx* ctx, NBodyState* st)
 {
-    /* Make final output */
-
+  /* Make final output */
   #if BOINC_APPLICATION && !BOINC_DEBUG
     boincOutput(ctx, st);
   #else
     output(ctx, st);
   #endif /* BOINC_APPLICATION && !BOINC_DEBUG */
 
-    // Get the likelihood
-    //chisqans = chisq();
-    //printf("Run finished. chisq = %f\n", chisqans);
-
-    nbody_ctx_destroy(ctx);               /* finish up output */
+    closeCheckpoint(ctx);       /* We finished so kill the checkpoint */
+    nbody_ctx_destroy(ctx);     /* finish up output */
     nbody_state_destroy(st);
-
-    /* We finished so kill the checkpoint */
-    nbody_remove(ctx->cp.file);
-
 }
 
 /* Takes parsed json and run the simulation, using outFileName for
- * output */
+ * output. The mess with the different names is for the hacky way we
+ * can switch precision easily */
 #ifdef DYNAMIC_PRECISION
   #ifdef DOUBLEPREC
-    void runNBodySimulation_double(json_object* obj, const char* outFileName, const char* checkpointFileName, const int outputCartesian, const int printTiming)
+    #define RUN_NBODY_SIMULATION runNBodySimulation_double
   #else
-    void runNBodySimulation_float(json_object* obj, const char* outFileName, const char* checkpointFileName, const int outputCartesian, const int printTiming)
+    #define RUN_NBODY_SIMULATION runNBodySimulation_float
   #endif /* DOUBLEPREC */
 #else
-    void runNBodySimulation(json_object* obj, const char* outFileName, const char* checkpointFileName, const int outputCartesian, const int printTiming)
+  #define RUN_NBODY_SIMULATION runNBodySimulation
 #endif /* DYNAMIC_PRECISION */
+
+
+void RUN_NBODY_SIMULATION(json_object* obj,
+                          const char* outFileName,
+                          const char* checkpointFileName,
+                          const int outputCartesian,
+                          const int printTiming)
 {
     NBodyCtx ctx         = EMPTY_CTX;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
@@ -127,93 +159,66 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
 
     double ts = 0.0, te = 0.0;
 
-    ctx.outputCartesian = outputCartesian;
-    ctx.outfilename = outFileName;
-    ctx.cp.file = checkpointFileName;
-
     get_params_from_json(&ctx, &ic, obj);
+    ctx.outputCartesian = outputCartesian;
+    ctx.outfilename     = outFileName;
+    ctx.cp.file         = checkpointFileName;
+
     initoutput(&ctx);
 
-    printContext(&ctx);
-    printInitialConditions(&ic);
+  #if BOINC_APPLICATION
+    /* If the checkpoint exists, try to use it */
+    if (boinc_file_exists(ctx.cp.file))
+    {
+        printf("Checkpoint exists. Attempting to resume from it.\n");
+        openCheckpoint(&ctx);
 
-    // Calculate the reverse orbit
-    printf("Calculating reverse orbit...\n");
-    integrate(&ctx, &ic);
-    printf("done\n");
+        /* When the resume fails, start a fresh run */
+        if (resumeCheckpoint(&ctx, &st))
+        {
+            closeCheckpoint(&ctx);     /* Something is wrong with this file */
+            openCheckpoint(&ctx);      /* Make a new one */
+            startRun(&ctx, &ic, &st);
+        }
+    }
+    else   /* Otherwise, just start a fresh run */
+    {
+        openCheckpoint(&ctx);
+        startRun(&ctx, &ic, &st);
+    }
+  #else
+    openCheckpoint(&ctx);
+    startRun(&ctx, &ic, &st);
+  #endif /* BOINC_APPLICATION */
 
-    printInitialConditions(&ic);
-
-    printf("Running nbody system\n");
-
-    if (printTiming)
+    if (printTiming)     /* Time the body of the calculation */
         ts = get_time();
 
-    startRun(&ctx, &ic, &st);
     runSystem(&ctx, &st);
-    endRun(&ctx, &st);
 
     if (printTiming)
     {
         te = get_time();
         printf("Elapsed time for run = %g\n", te - ts);
     }
-
 
     // Get the likelihood
     if (printTiming)
         ts = get_time();
 
     real chisqans = chisq(&ctx, &st);
-    printf("Run finished. chisq = %f\n", chisqans);
+
+    if (!isnan(chisqans))
+        printf("Run finished. chisq = %f\n", chisqans);
+    else
+        warn("Failed to calculate chisq\n");
+
     if (printTiming)
     {
         te = get_time();
         printf("Elapsed time for chisq = %g\n", te - ts);
     }
 
-}
-
-#if BOINC_APPLICATION
-/* Similar to runNBodySimulation, but resume from a checkpointed state
- * and don't integrate the orbit, etc. */
-void resumeCheckpoint(json_object* obj, const char* outFileName, const char* checkpointFile, const int printTiming)
-{
-    NBodyCtx ctx         = EMPTY_CTX;
-    InitialConditions ic = EMPTY_INITIAL_CONDITIONS;  /* Don't actually use these now since not at start */
-    NBodyState st        = EMPTY_STATE;
-    double ts = 0.0, te = 0.0;
-
-    ctx.outfilename = outFileName;
-    ctx.cp.file     = checkpointFile;
-
-    get_params_from_json(&ctx, &ic, obj);
-    initoutput(&ctx); /* This opens the checkpoint */
-
-    printf("Resuming nbody system\n");
-
-    /* TODO: Start a fresh run in event of failure */
-    if (thawState(&ctx, &st))
-        fail("Failed to resume from checkpoint.\n");
-
-    st.tree.rsize = ctx.tree_rsize;
-
-    printf("System thawed. tnow = %g\n", st.tnow);
-
-    if (printTiming)
-        ts = get_time();
-
-    runSystem(&ctx, &st);
-
-    if (printTiming)
-    {
-        te = get_time();
-        printf("Elapsed time for run = %g\n", te - ts);
-    }
-
-    printf("Ran thawed system\n");
     endRun(&ctx, &st);
 }
-#endif /* BOINC_APPLICATION */
-
 

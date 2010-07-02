@@ -21,7 +21,6 @@ static json_object* readParameters(const int argc,
                                    const char** argv,
                                    char** outFileName,
                                    int* useDouble,
-                                   char** resume,
                                    char** checkpointFileName,
                                    int* ignoreCheckpoint,
                                    int* outputCartesian,
@@ -32,10 +31,8 @@ static json_object* readParameters(const int argc,
   #endif
 
   #if !BOINC_APPLICATION
-    #pragma unused(resume)
     #pragma unused(checkpointFileName)
     #pragma unused(ignoreCheckpoint)
-    #pragma unused(resume)
   #endif
 
     poptContext context;
@@ -90,12 +87,6 @@ static json_object* readParameters(const int argc,
         },
 
         {
-            "resume", 'r',
-            POPT_ARG_STRING, resume,
-            0, "Resume from specified checkpoint file", NULL
-        },
-
-        {
             "ignore-checkpoint", 'i',
             POPT_ARG_NONE, ignoreCheckpoint,
             0, "Ignore the checkpoint file", NULL
@@ -103,13 +94,13 @@ static json_object* readParameters(const int argc,
       #endif /* BOINC_APPLICATION */
 
 
-#if DYNAMIC_PRECISION
+      #if DYNAMIC_PRECISION
         {
             "double", 'd',
             POPT_ARG_NONE, useDouble,
             0, "Use double precision", NULL
         },
-#endif
+      #endif
 
         POPT_AUTOHELP
 
@@ -186,7 +177,13 @@ static json_object* readParameters(const int argc,
     return obj;
 }
 
-static void runFresh(json_object* obj, const char* outFileName, const char* checkpointFileName, const int useDouble, const int outputCartesian, const int printTiming)
+/* Run with double, float, or whatever we have */
+static void runSimulationWrapper(json_object* obj,
+                                 const char* outFileName,
+                                 const char* checkpointFileName,
+                                 const int useDouble,
+                                 const int outputCartesian,
+                                 const int printTiming)
 {
   #ifdef DYNAMIC_PRECISION
     if (useDouble)
@@ -220,7 +217,6 @@ int main(int argc, const char* argv[])
     int outputCartesian = FALSE;
     int ignoreCheckpoint = FALSE;
     int printTiming = FALSE;
-    char* resume = NULL;
     char* checkpointFileName = NULL;
 
 #if BOINC_APPLICATION
@@ -244,7 +240,6 @@ int main(int argc, const char* argv[])
                          argv,
                          &outFileName,
                          &useDouble,
-                         &resume,
                          &checkpointFileName,
                          &ignoreCheckpoint,
                          &outputCartesian,
@@ -253,32 +248,15 @@ int main(int argc, const char* argv[])
     /* Use default if checkpoint file not specified */
     checkpointFileName = checkpointFileName ? checkpointFileName : strdup(DEFAULT_CHECKPOINT_FILE);
 
-  #if BOINC_APPLICATION
-    if (resume)  /* resume from a specific checkpointed state, useful for testing */
-    {
-        if (!boinc_file_exists(resume))
-            fail("Specified resume file '%s' not found\n", resume);
-
-        resumeCheckpoint(obj, outFileName, resume, printTiming);
-    }
-    else
-    {
-        /* Test if the checkpoint exists, resume from it */
-        if (boinc_file_exists(checkpointFileName))
-        {
-            printf("Checkpoint exists. Resuming it.\n");
-            resumeCheckpoint(obj, outFileName, checkpointFileName, printTiming);
-        }
-        else   /* Do a fresh start */
-            runFresh(obj, outFileName, checkpointFileName, useDouble, outputCartesian, printTiming);
-    }
-  #else
-    runFresh(obj, outFileName, checkpointFileName, useDouble, outputCartesian, printTiming);
-  #endif /* BOINC_APPLICATION*/
+    runSimulationWrapper(obj,
+                         outFileName,
+                         checkpointFileName,
+                         useDouble,
+                         outputCartesian,
+                         printTiming);
 
     free(outFileName);
     free(checkpointFileName);
-    free(resume);
 
     nbody_finish(EXIT_SUCCESS);
 }
