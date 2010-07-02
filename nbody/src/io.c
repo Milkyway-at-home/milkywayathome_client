@@ -287,14 +287,13 @@ void output(const NBodyCtx* ctx, const NBodyState* st)
 
     for (p = st->bodytab; p < endp; p++)
     {
-        if (ctx->outputCartesian)
+        if (ctx->outputCartesian)     /* Probably useful for making movies and such */
+            out_2vectors(ctx->outfile, Pos(p), Vel(p));
+        else
         {
-            /* Probably useful for making movies and such */
             cartesianToLbr(ctx, lbR, Pos(p));
             out_2vectors(ctx->outfile, lbR, Vel(p));
         }
-        else
-        out_2vectors(ctx->outfile, Pos(p), Vel(p));
     }
 
     fflush(ctx->outfile);             /* drain output buffer */
