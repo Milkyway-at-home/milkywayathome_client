@@ -35,6 +35,9 @@ int thawState(const NBodyCtx* ctx, NBodyState* st);
 void nbody_ctx_destroy(NBodyCtx* ctx);  /* close output files */
 void nbody_state_destroy(NBodyState* st);
 
+void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r);
+void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r);
+
 void inputdata(void);                   /* read initial data file */
 void maketree(const NBodyCtx*, NBodyState*);    /* construct tree structure */
 void hackgrav(const NBodyCtx*, NBodyState*, bodyptr, bool);   /* compute force on body */
@@ -43,8 +46,9 @@ void boincOutput(const NBodyCtx* ctx, const NBodyState* st);
 void nbody_boinc_output(const NBodyCtx* ctx, const NBodyState* st);
 void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st);
 
-void integrate(const NBodyCtx* ctx, InitialConditions* ic);
+real chisq(const NBodyCtx* ctx, NBodyState* st);
 
+void integrate(const NBodyCtx* ctx, InitialConditions* ic);
 void acceleration(vectorptr restrict acc, const NBodyCtx* ctx, const vectorptr restrict pos);
 
 void sphericalAccel(vectorptr restrict acc, const Spherical* sph, const vectorptr restrict pos);

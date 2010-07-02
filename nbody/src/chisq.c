@@ -45,20 +45,11 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
     const int nbody = ctx->model.nbody;
     const bodyptr endp = st->bodytab + nbody;
-
+    bodyptr p;
     FILE* f;
 
-    real x[nbody];
-    real y[nbody];
-    real z[nbody];
-
-    real l[nbody];
-    real b[nbody];
-
-    real lambda[nbody];
-    real beta[nbody];
-
-    bodyptr p;
+    vector* pos = malloc(sizeof(vector) * nbody);
+    vector* vp;
 
     // Histogram prep
     int index1, index2;
@@ -71,50 +62,45 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     real* histodata2 = calloc(sizeof(real), maxindex2 + 1);
 
     printf("Importing simulation results...");
-    for (p = st->bodytab; p < endp; p++)
+    /* CHECKME: If we could avoid yet another copy of the bodies in
+     * memory, that would be fantastic. Probably don't actually need this */
+    for (p = st->bodytab, vp = pos; p < endp; ++p, ++vp)
     {
-        x[counttest-1] = Pos(p)[0];
-        y[counttest-1] = Pos(p)[1];
-        z[counttest-1] = Pos(p)[2];
-
-        ++counttest;
+        SETV(*vp, Pos(p));
+        ++counttest; /* CHECKME: What is this? */
     }
     printf("done\n");
 
     printf("Transforming simulation results...");
     for (i = 0; i < counttest - 1; i++)
     {
+        vector lbr;
+        real lambda;
         count++;
 
         // Convert to (l,b) (involves convert x to Sun-centered)
-        real r;
-
-        x[count-1] += r0;
-
-        r = rsqrt(x[count-1] * x[count-1] + y[count-1] * y[count-1] + z[count-1] * z[count-1]);
-
         // Leave in radians to make rotation easier
-        b[count-1] = ratan2(z[count-1], rsqrt(x[count-1] * x[count-1] + y[count-1] * y[count-1]));
-        l[count-1] = ratan2(y[count-1], x[count-1]);
+        cartesianToLbr_rad(ctx, lbr, pos[count-1]);
 
         // Convert to (lambda, beta) (involves a rotation using the Newberg et al (2009) rotation matrices)
 
-        beta[count-1] = r2d(rasin( rsin(theta) * rsin(phi) * rcos(b[count-1]) * rcos(l[count-1]) - rsin(theta) * rcos(phi) * rcos(b[count-1]) * rsin(l[count-1]) + rcos(theta) * rsin(b[count-1]) ));
+        //CHECKME: beta never actually used?
+        //beta = r2d(rasin( rsin(theta) * rsin(phi) * rcos(B(lbr)) * rcos(L(lbr)) - rsin(theta) * rcos(phi) * rcos(B(lbr)) * rsin(L(lbr)) + rcos(theta) * rsin(B(lbr)) ));
 
-        lambda[count-1] = r2d(atan2( (-rsin(psi) * rcos(phi) - rcos(theta) * rsin(phi) * rcos(psi)) * rcos(b[count-1]) * rcos(l[count-1]) + (-rsin(psi) * rsin(phi) + rcos(theta) * rcos(phi) * rcos(psi)) * rcos(b[count-1]) * rsin(l[count-1]) + rcos(psi) * rsin(theta) * rsin(b[count-1]), (rcos(psi) * rcos(phi) - rcos(theta) * rsin(phi) * rsin(psi)) * rcos(b[count-1]) * rcos(l[count-1]) + (rcos(psi) * rsin(phi) + rcos(theta) * rcos(phi) * rsin(psi)) * rcos(b[count-1]) * rsin(l[count-1]) + rsin(psi) * rsin(theta) * rsin(b[count-1]) ));
+        lambda = r2d(atan2( (-rsin(psi) * rcos(phi) - rcos(theta) * rsin(phi) * rcos(psi)) * rcos(B(lbr)) * rcos(L(lbr)) + (-rsin(psi) * rsin(phi) + rcos(theta) * rcos(phi) * rcos(psi)) * rcos(B(lbr)) * rsin(L(lbr)) + rcos(psi) * rsin(theta) * rsin(B(lbr)), (rcos(psi) * rcos(phi) - rcos(theta) * rsin(phi) * rsin(psi)) * rcos(B(lbr)) * rcos(L(lbr)) + (rcos(psi) * rsin(phi) + rcos(theta) * rcos(phi) * rsin(psi)) * rcos(B(lbr)) * rsin(L(lbr)) + rsin(psi) * rsin(theta) * rsin(B(lbr)) ));
 
         // Create the histogram
-        if (lambda[count-1] >= 0 && lambda[count-1] < end)
+        if (lambda >= 0 && lambda < end)
         {
-            index1 = (int)(lambda[count-1] / binsize);
+            index1 = (int)(lambda / binsize);
             histodata1[index1]++;
 
             if ((int)histodata1[index1] > largestbin1)
                 largestbin1 = (int)histodata1[index1];
         }
-        else if (lambda[count-1] > beginning && lambda[count-1] < 0)
+        else if (lambda > beginning && lambda < 0)
         {
-            index2 = abs((int)(lambda[count-1] / binsize));
+            index2 = abs((int)(lambda / binsize));
             histodata2[abs(index2)]++;
 
             if ((int)histodata2[abs(index2)] > largestbin2)
@@ -166,11 +152,11 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
         nbody_finish(EXIT_FAILURE);
     }
 
-    int pos, fsize;
+    int fpos, fsize;
     real* fileLambda = NULL, *fileCount = NULL, *fileCountErr = NULL;
     int filecount = 0;
 
-    pos = fseek(f, 0L, SEEK_END);
+    fpos = fseek(f, 0L, SEEK_END);
     fsize = ceil((double) (ftell(f) + 1) / 3);  /* Make sure it's big enough, avoid fun with integer division */
     fseek(f, 0L, SEEK_SET);
 
