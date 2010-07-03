@@ -29,12 +29,12 @@
 
 /* Global function prototypes. */
 
-void initoutput(NBodyCtx*);             /* open files for output */
+void initOutput(NBodyCtx*);             /* open files for output */
 void openCheckpoint(NBodyCtx* ctx);
 void closeCheckpoint(NBodyCtx* ctx);
 int thawState(const NBodyCtx* ctx, NBodyState* st);
-void nbody_ctx_destroy(NBodyCtx* ctx);  /* close output files */
-void nbody_state_destroy(NBodyState* st);
+void nbodyCtxDestroy(NBodyCtx* ctx);  /* close output files */
+void nbodyStateDestroy(NBodyState* st);
 
 void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r);
 void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r);
@@ -44,7 +44,7 @@ void maketree(const NBodyCtx*, NBodyState*);    /* construct tree structure */
 void hackgrav(const NBodyCtx*, NBodyState*, bodyptr, bool);   /* compute force on body */
 void output(const NBodyCtx* ctx, const NBodyState* st);  /* perform output operation */
 void boincOutput(const NBodyCtx* ctx, const NBodyState* st);
-void nbody_boinc_output(const NBodyCtx* ctx, const NBodyState* st);
+void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st);
 void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st);
 
 real chisq(const NBodyCtx* ctx, NBodyState* st);

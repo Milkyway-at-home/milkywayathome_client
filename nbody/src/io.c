@@ -139,13 +139,13 @@ void openCheckpoint(NBodyCtx* ctx)
 
 #endif /* _WIN32 */
 
-void initoutput(NBodyCtx* ctx)
+void initOutput(NBodyCtx* ctx)
 {
     if (ctx->outfilename)                       /* output file specified? */
     {
         ctx->outfile = nbody_fopen(ctx->outfilename, "w");           /* setup output FILE* */
         if (ctx->outfile == NULL)
-            fail("initoutput: cannot open file %s\n", ctx->outfilename);
+            fail("initOutput: cannot open file %s\n", ctx->outfilename);
     }
     else
     {
@@ -301,7 +301,7 @@ inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
     boinc_end_critical_section();
 }
 
-void nbody_boinc_output(const NBodyCtx* ctx, const NBodyState* st)
+void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
 {
     if (boinc_time_to_checkpoint())
     {

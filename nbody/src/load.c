@@ -329,8 +329,7 @@ static void hackquad(cellptr p)
     }
 }
 
-/* TODO: Ownership of bodytab */
-void nbody_ctx_destroy(NBodyCtx* ctx)
+void nbodyCtxDestroy(NBodyCtx* ctx)
 {
     free(ctx->headline);
     if (ctx->outfile && ctx->outfile != stdout)
@@ -367,7 +366,7 @@ void closeCheckpoint(NBodyCtx* ctx)
     nbody_remove(ctx->cp.file);
 }
 
-void nbody_state_destroy(NBodyState* st)
+void nbodyStateDestroy(NBodyState* st)
 {
     freetree(&st->tree);
     free(st->bodytab);
