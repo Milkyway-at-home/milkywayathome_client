@@ -165,7 +165,6 @@ void RUN_NBODY_SIMULATION(json_object* obj,
         startRun(&ctx, &ic, &st);
     }
   #else
-    openCheckpoint(&ctx);
     startRun(&ctx, &ic, &st);
   #endif /* BOINC_APPLICATION */
 
