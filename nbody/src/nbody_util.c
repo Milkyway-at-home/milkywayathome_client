@@ -17,6 +17,24 @@
   #include <sys/resource.h>
 #endif
 
+void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r)
+{
+    const real r0p = r[0] + ctx->sunGCDist;
+    lbR[0] = ratan2(r[1], r0p);
+    lbR[1] = ratan2(r[2], rsqrt(sqr(r0p) + sqr(r[1])));
+    lbR[2] = rsqrt(sqr(r0p) + sqr(r[1]) + sqr(r[2]));
+
+    if (lbR[0] < 0)
+        lbR[0] += 2 * M_PI;
+}
+
+void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r)
+{
+    cartesianToLbr_rad(ctx, lbR, r);
+    L(lbR) = r2d(L(lbR));
+    B(lbR) = r2d(B(lbR));
+}
+
 void* callocSafe(size_t count, size_t size)
 {
     void* mem = (void*) calloc(count, size);

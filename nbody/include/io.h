@@ -39,9 +39,5 @@ int thawState(const NBodyCtx* ctx, NBodyState* st);
 void nbodyCtxDestroy(NBodyCtx* ctx);
 void nbodyStateDestroy(NBodyState* st);
 
-/* Coordinate conversion */
-void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r);
-void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r);
-
 #endif /* _IO_H_ */
 
