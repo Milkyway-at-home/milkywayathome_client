@@ -39,9 +39,10 @@ inline static void initState(const NBodyCtx* ctx, const InitialConditions* ic, N
 static void startRun(const NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
 {
     printf("Starting fresh nbody run\n");
-    initState(ctx, ic, st);
+
     // Calculate the reverse orbit
     integrate(ctx, ic);
+    initState(ctx, ic, st);
 }
 
 /* stepsystem: advance N-body system one time-step. */
