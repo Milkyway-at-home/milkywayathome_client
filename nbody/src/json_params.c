@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "json_params.h"
 
 
-static void processHalo(Halo* h)
+static int processHalo(Halo* h)
 {
     if (h->type == TriaxialHalo)
     {
@@ -45,19 +45,23 @@ static void processHalo(Halo* h)
 
     }
 
+    return 0;
 }
 
-static void processPotential(Potential* p)
+static int processPotential(Potential* p)
 {
-    processHalo(&p->halo);
+    return processHalo(&p->halo);
 }
 
-static void processModel(DwarfModel* mod)
+static int processModel(DwarfModel* mod)
 {
     const real r0 = mod->scale_radius;
 
     if (isnan(mod->time_dwarf) && isnan(mod->time_orbit))
-        fail("At least one of the evolution times must be specified for the dwarf model\n");
+    {
+        warn("At least one of the evolution times must be specified for the dwarf model\n");
+        return 1;
+    }
 
     switch (mod->type)
     {
@@ -79,7 +83,8 @@ static void processModel(DwarfModel* mod)
         case DwarfModelKing:
         case DwarfModelDehnen:
         default:
-            fail("Unhandled model type: %d\n", mod->type);
+            warn("Unhandled model type: %d\n", mod->type);
+            return 1;
     }
 
     if (isnan(mod->time_orbit))
@@ -88,9 +93,10 @@ static void processModel(DwarfModel* mod)
     /* if (isnan(mod->time_dwarf))
            ?????;
     */
+    return 0;
 }
 
-static void processInitialConditions(const NBodyCtx* ctx, InitialConditions* ic)
+static int processInitialConditions(const NBodyCtx* ctx, InitialConditions* ic)
 {
     if (!ic->useGalC)
     {
@@ -102,15 +108,18 @@ static void processInitialConditions(const NBodyCtx* ctx, InitialConditions* ic)
         ic->useGalC = TRUE;
     }
 
+    return 0;
 }
 
 /* Calculate needed parameters from whatever we read in */
 /* TODO: I'm dissatisfied with having to throw these checks here at
  * the end */
-static void postProcess(NBodyCtx* ctx)
+static int postProcess(NBodyCtx* ctx)
 {
-    processPotential(&ctx->pot);
-    processModel(&ctx->model);
+    int rc;
+
+    rc = processPotential(&ctx->pot);
+    rc |= processModel(&ctx->model);
 
     /* These other pieces are dependent on the others being set up
      * first */
@@ -118,8 +127,12 @@ static void postProcess(NBodyCtx* ctx)
     ctx->freqout = inv(ctx->model.timestep);
 
     if (ctx->model.nbody < 1)
-        fail("nbody = %d is absurd\n", ctx->model.nbody);
+    {
+        warn("nbody = %d is absurd\n", ctx->model.nbody);
+        rc |= 1;
+    }
 
+    return rc;
 }
 
 /* also works for json_object_type */
@@ -141,7 +154,10 @@ static const char* showNBodyType(nbody_type bt)
         };
 
     if (bt > nbody_type_group_item)
-        fail("Trying to show unknown nbody_type %d\n", bt);
+    {
+        warn("Trying to show unknown nbody_type %d\n", bt);
+        return NULL;
+    }
 
     return table[bt];
 }
@@ -158,11 +174,11 @@ static criterion_t readCriterion(const char* str)
     else if (!strcasecmp(str, "sw93"))
         return SW93;
     else
-        fail("Invalid model %s: Model options are either 'bh86', "
+        warn("Invalid model %s: Model options are either 'bh86', "
              "'sw93', 'exact' or 'new-criterion' (default),\n",
              str);
 
-    return -1;  /* Stop warning. Never reached. */
+    return -1;
 }
 
 static void printParameter(Parameter* p)
@@ -215,11 +231,11 @@ static bool warn_extra_params(json_object* obj, const char* grpName)
 /* Read a set of related parameters, e.g. the main NBodyCtx.
    If the unique flag is set, it's only valid to have one of the items in the group.
    Otherwise, it tries to use all of the parameters, and warns when extra elements are found.
-   Fails if it fails to find a parameter that isn't defaultable.
+   Fails if it fails to find a parameter that isn't defaultable (returns nonzero).
  */
-static void readParameterGroup(const Parameter* g,      /* The set of parameters */
-                               json_object* hdr,        /* The object of the group */
-                               const Parameter* parent) /* non-null if within another group */
+static int readParameterGroup(const Parameter* g,      /* The set of parameters */
+                              json_object* hdr,        /* The object of the group */
+                              const Parameter* parent) /* non-null if within another group */
 {
     const Parameter* p;
     const Parameter* q;
@@ -232,6 +248,7 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
     array_list* arr;
     json_object* tmp;
     int i, arrLen;
+    int subRc;
 
     if (parent)
     {
@@ -271,10 +288,9 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
                 useDflt = TRUE;
             else
             {
-                fprintf(stderr,
-                        "Failed to find or got 'null' for required key '%s' in '%s'\n",
-                        p->name,
-                        pname);
+                warn("Failed to find or got 'null' for required key '%s' in '%s'\n",
+                     p->name,
+                     pname);
                 readError = TRUE;
                 break;  /* abandon the loop and print useful debugging */
             }
@@ -303,11 +319,10 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
                 }
                 else
                 {
-                    fprintf(stderr,
-                            "Error: expected number for '%s' in '%s', but got %s\n",
-                            p->name,
-                            pname,
-                            showNBodyType(p->type));
+                    warn("Error: expected number for '%s' in '%s', but got %s\n",
+                         p->name,
+                         pname,
+                         showNBodyType(p->type));
                     readError = TRUE;
                 }
                 break;
@@ -320,11 +335,10 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
                     *((int*) p->param) = json_object_get_int(obj);
                 else
                 {
-                    fprintf(stderr,
-                            "Error: expected type int for '%s' in '%s', but got %s\n",
-                            p->name,
-                            pname,
-                            showNBodyType(json_object_get_type(obj)));
+                    warn("Error: expected type int for '%s' in '%s', but got %s\n",
+                         p->name,
+                         pname,
+                         showNBodyType(json_object_get_type(obj)));
                     readError = TRUE;
                 }
                 break;
@@ -336,11 +350,11 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
                     *((bool*) p->param) = (bool) json_object_get_boolean(obj);
                 else
                 {
-                    fprintf(stderr,
-                            "Error: expected type boolean for '%s' in '%s', but got %s\n",
-                            p->name,
-                            pname,
-                            showNBodyType(json_object_get_type(obj)));
+                    warn("Error: expected type boolean for '%s' in '%s', but got %s\n",
+                         p->name,
+                         pname,
+                         showNBodyType(json_object_get_type(obj)));
+                    readError = TRUE;
                 }
                 break;
 
@@ -354,11 +368,11 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
                 }
                 else
                 {
-                    fprintf(stderr,
-                            "Error: expected type string for '%s' in '%s', but got %s\n",
-                            p->name,
-                            pname,
-                            showNBodyType(json_object_get_type(obj)));
+                    warn("Error: expected type string for '%s' in '%s', but got %s\n",
+                         p->name,
+                         pname,
+                         showNBodyType(json_object_get_type(obj)));
+                    readError = TRUE;
                 }
                 break;
 
@@ -369,10 +383,11 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
                 arrLen = json_object_array_length(obj);
                 if (arrLen != 3)
                 {
-                    fail("Got %d items for array '%s' in '%s', expected 3\n",
+                    warn("Got %d items for vector '%s' in '%s', expected 3\n",
                          arrLen,
                          p->name,
                          pname);
+                    readError = TRUE;
                 }
 
                 for ( i = 0; i < 3; ++i )
@@ -382,12 +397,13 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
                     if (    !json_object_is_type(tmp, json_type_double)
                             && !json_object_is_type(tmp, json_type_int))
                     {
-                        fail("Got unexpected type '%s' in position %d "
+                        warn("Got unexpected type '%s' in position %d "
                              "of key '%s' in '%s', expected number.\n",
                              showNBodyType(json_object_get_type(tmp)),
                              i,
                              p->name,
                              pname);
+                        readError = TRUE;
                     }
 
                     ((real*) p->param)[i] = json_object_get_double(tmp);
@@ -399,14 +415,16 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
                     *group_type = *((generic_enum_t*) p->dflt);
                 else
                 {
-                    fail("Expected nbody_type_group_item for "
+                    warn("Expected nbody_type_group_item for "
                          "'%s' in '%s', but no enum value set\n", p->name, pname);
+                    readError = TRUE;
                 }
 
                 /* fall through to nbody_type_object */
             case nbody_type_group:
             case nbody_type_object:
-                readParameterGroup(p->parameters, obj, p);
+                if ((subRc = readParameterGroup(p->parameters, obj, p)))
+                    return subRc;
                 break;
             case nbody_type_enum:
                 /* This is actually a json_type_string, which we read
@@ -418,16 +436,26 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
                 }
 
                 if (p->conv)
-                    *((generic_enum_t*) p->param) = p->conv(json_object_get_string(obj));
+                {
+                    generic_enum_t conv = p->conv(json_object_get_string(obj));
+                    if (conv == -1)
+                        return 1;
+                    else
+                        *((generic_enum_t*) p->param) = conv;
+                }
                 else
-                    fail("Error: read function not set for enum '%s'\n", p->name);
+                {
+                    warn("Error: read function not set for enum '%s'\n", p->name);
+                    return 1;
+                }
 
                 break;
             default:
-                fail("Unhandled parameter type %d for key '%s' in '%s'\n",
+                warn("Unhandled parameter type %d for key '%s' in '%s'\n",
                      p->type,
                      p->name,
                      pname);
+                return 1;
         }
 
         /* Explicitly delete it so we can check for extra stuff */
@@ -462,8 +490,10 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
             ++q;
         }
 
-        exit(EXIT_FAILURE);
+        return 1;
     }
+
+    return 0;
 }
 
 
@@ -477,7 +507,7 @@ static void readParameterGroup(const Parameter* g,      /* The set of parameters
 
 /* Read the parameters from the top level json object into ctx. It
  * destroys the object in the process. */
-void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj)
+int get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj)
 {
     /* Constants used for defaulting. Each field only used if
      * specified in the actual parameter tables. */
@@ -654,22 +684,29 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
         };
 
     json_object* hdr;
+    int rc = 0;
 
     /* Check that this is actually one of our files */
     if (   !json_object_is_type(fileObj, nbody_type_object)
         || !(hdr = json_object_object_get(fileObj, "nbody-parameters-file")))
     {
-        fail("Parameters not in expected format.\n");
+        warn("Parameters not in expected format.\n");
+        return 1;
     }
 
     /* loop through table of accepted sets of parameters */
-    readParameterGroup(parameters, hdr, NULL);
+    rc |= readParameterGroup(parameters, hdr, NULL);
 
     /* deref the top level object should take care of freeing whatever's left */
     json_object_put(fileObj);
 
-    postProcess(ctx);
-    processInitialConditions(ctx, ic);
+    if (rc)  /* We don't want to try processing things if we didn't read successfully */
+        return rc;
+
+    rc |= postProcess(ctx);
+    rc |= processInitialConditions(ctx, ic);
+
+    return rc;
 }
 
 

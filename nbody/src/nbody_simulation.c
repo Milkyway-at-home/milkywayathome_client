@@ -122,7 +122,9 @@ void RUN_NBODY_SIMULATION(json_object* obj,
 
     double ts = 0.0, te = 0.0;
 
-    get_params_from_json(&ctx, &ic, obj);
+    if (get_params_from_json(&ctx, &ic, obj))
+        fail("Failed to read input parameters\n");
+
     ctx.outputCartesian = outputCartesian;
     ctx.outfilename     = outFileName;
     ctx.cp.file         = checkpointFileName;
