@@ -13,8 +13,8 @@
   #include <boinc_api.h>
 #endif /* BOINC_APPLICATION */
 
-
 #include "nbody_priv.h"
+#include "load.h"
 
 static void newtree(Tree*);           /* flush existing tree */
 static cellptr makecell(Tree*);           /* create an empty cell */

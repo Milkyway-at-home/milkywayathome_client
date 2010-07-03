@@ -18,34 +18,30 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_PRIV_H_
-#define _NBODY_PRIV_H_
+#ifndef _IO_H_
+#define _IO_H_
 
-#define _GNU_SOURCE
-
-#include <json/json.h>
-
-#include "nbody_config.h"
 #include "nbody_types.h"
-#include "json_params.h"
-#include "stdinc.h"
 #include "vectmath.h"
-#include "real.h"
-#include "nbody_util.h"
-#include "show.h"
-#include "io.h"
-#include "grav.h"
-#include "chisq.h"
-#include "load.h"
-#include "orbitintegrator.h"
-#include "plummer.h"
 
-#if BOINC_APPLICATION
-  #include <boinc_api.h>
-  #if BOINC_DEBUG
-    #include <diagnostics.h>
-  #endif /* BOINC_DEBUG */
-#endif /* BOINC_APPLICATION */
+/* Basic IO and initialization */
+void initOutput(NBodyCtx*);             /* open files for output */
+void output(const NBodyCtx* ctx, const NBodyState* st);
+void boincOutput(const NBodyCtx* ctx, const NBodyState* st); /* Output with xml tags */
 
-#endif /* _NBODY_PRIV_H_ */
+/* Checkpointing */
+void openCheckpoint(NBodyCtx* ctx);
+void closeCheckpoint(NBodyCtx* ctx);
+void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st);
+int thawState(const NBodyCtx* ctx, NBodyState* st);
+
+/* Close output and free things */
+void nbodyCtxDestroy(NBodyCtx* ctx);
+void nbodyStateDestroy(NBodyState* st);
+
+/* Coordinate conversion */
+void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r);
+void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r);
+
+#endif /* _IO_H_ */
 

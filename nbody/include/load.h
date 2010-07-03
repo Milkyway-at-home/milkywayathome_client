@@ -18,34 +18,13 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_PRIV_H_
-#define _NBODY_PRIV_H_
+#ifndef _LOAD_H_
+#define _LOAD_H_
 
-#define _GNU_SOURCE
-
-#include <json/json.h>
-
-#include "nbody_config.h"
 #include "nbody_types.h"
-#include "json_params.h"
-#include "stdinc.h"
-#include "vectmath.h"
-#include "real.h"
-#include "nbody_util.h"
-#include "show.h"
-#include "io.h"
-#include "grav.h"
-#include "chisq.h"
 #include "load.h"
-#include "orbitintegrator.h"
-#include "plummer.h"
 
-#if BOINC_APPLICATION
-  #include <boinc_api.h>
-  #if BOINC_DEBUG
-    #include <diagnostics.h>
-  #endif /* BOINC_DEBUG */
-#endif /* BOINC_APPLICATION */
+void maketree(const NBodyCtx*, NBodyState*);    /* construct tree structure */
 
-#endif /* _NBODY_PRIV_H_ */
+#endif /* _LOAD_H_ */
 

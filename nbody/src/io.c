@@ -9,6 +9,7 @@
 #include <string.h>
 #include "nbody_priv.h"
 #include "nbody_util.h"
+#include "io.h"
 
 #if BOINC_APPLICATION
   #include <boinc_api.h>

@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "nbody_priv.h"
+#include "orbitintegrator.h"
 
 /* CHECKME: order of operations and effect on precision, and where can
  * we share divisions and such */
