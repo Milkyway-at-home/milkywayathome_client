@@ -45,8 +45,8 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
     const real mpp    = mass / rnbody;     /* mass per particle */
 
     // The coordinates to shift the plummer sphere by
-    vector rshift = { ic->position[0], ic->position[1], ic->position[2] };
-    vector vshift = { ic->velocity[0], ic->velocity[1], ic->velocity[2] };
+    vector rshift = { X(ic->position), Y(ic->position), Z(ic->position) };
+    vector vshift = { X(ic->velocity), Y(ic->velocity), Z(ic->velocity) };
 
     printf("Shifting plummer sphere to r = (%f, %f, %f) v = (%f, %f, %f)...\n",
            rshift[0],

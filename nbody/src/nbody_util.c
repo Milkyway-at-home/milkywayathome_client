@@ -19,13 +19,17 @@
 
 void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r)
 {
-    const real r0p = r[0] + ctx->sunGCDist;
-    lbR[0] = ratan2(r[1], r0p);
-    lbR[1] = ratan2(r[2], rsqrt(sqr(r0p) + sqr(r[1])));
-    lbR[2] = rsqrt(sqr(r0p) + sqr(r[1]) + sqr(r[2]));
+    const real r0p = X(r) + ctx->sunGCDist;
+    L(lbR) = ratan2(Y(r), r0p);
+    B(lbR) = ratan2( Z(r), rsqrt( sqr(r0p) + sqr(Y(r)) ) );
+    R(lbR) = rsqrt(sqr(r0p) + sqr(Y(r)) + sqr(Z(r)));
 
-    if (lbR[0] < 0)
-        lbR[0] += 2 * M_PI;
+    if (L(lbR) < 0.0)
+        L(lbR) += 2 * M_PI;
+
+    if (B(lbR) < 0.0)
+        B(lbR) += 2 * M_PI;
+
 }
 
 void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r)
@@ -37,19 +41,19 @@ void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr
 
 inline static void _lbrToCartesian(vectorptr cart, const real l, const real b, const real r, const real sun)
 {
-    cart[0] = r * rcos(l) * rcos(b) - sun;
-    cart[1] = r * rsin(l) * rcos(b);
-    cart[2] = r * rsin(b);
+    X(cart) = r * rcos(l) * rcos(b) - sun;
+    Y(cart) = r * rsin(l) * rcos(b);
+    Z(cart) = r * rsin(b);
 }
 
 void lbrToCartesian_rad(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr)
 {
-    _lbrToCartesian(cart, lbr[1], lbr[2], lbr[0], ctx->sunGCDist);
+    _lbrToCartesian(cart, L(lbr), B(lbr), R(lbr), ctx->sunGCDist);
 }
 
 void lbrToCartesian(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr)
 {
-    _lbrToCartesian(cart, d2r(lbr[1]), d2r(lbr[2]), lbr[0], ctx->sunGCDist);
+    _lbrToCartesian(cart, d2r(L(lbr)), d2r(B(lbr)), R(lbr), ctx->sunGCDist);
 }
 
 void* callocSafe(size_t count, size_t size)

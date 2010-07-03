@@ -207,15 +207,15 @@ typedef struct
     bool useRadians;
 } InitialConditions;
 
-/* TODO: Replace this */
-#define R(ic) (((InitialConditions*) ic)->position[0])
-#define L(ic) (((InitialConditions*) ic)->position[1])
-#define B(ic) (((InitialConditions*) ic)->position[2])
 
-#define X(ic) (((InitialConditions*) ic)->position[0])
-#define Y(ic) (((InitialConditions*) ic)->position[1])
-#define Z(ic) (((InitialConditions*) ic)->position[2])
+/* TODO: Order of rlb? lbr? */
+#define R(x) (((vectorptr) (x))[0])
+#define L(x) (((vectorptr) (x))[1])
+#define B(x) (((vectorptr) (x))[2])
 
+#define X(x) (((vectorptr) (x))[0])
+#define Y(x) (((vectorptr) (x))[1])
+#define Z(x) (((vectorptr) (x))[2])
 
 typedef enum
 {
