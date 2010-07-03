@@ -19,16 +19,14 @@
 
 void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r)
 {
-    const real r0p = X(r) + ctx->sunGCDist;
-    L(lbR) = ratan2(Y(r), r0p);
-    B(lbR) = ratan2( Z(r), rsqrt( sqr(r0p) + sqr(Y(r)) ) );
-    R(lbR) = rsqrt(sqr(r0p) + sqr(Y(r)) + sqr(Z(r)));
+    const real xp = X(r) + ctx->sunGCDist;
+
+    L(lbR) = ratan2(Y(r), xp);
+    B(lbR) = ratan2( Z(r), rsqrt( sqr(xp) + sqr(Y(r)) ) );
+    R(lbR) = rsqrt(sqr(xp) + sqr(Y(r)) + sqr(Z(r)));
 
     if (L(lbR) < 0.0)
         L(lbR) += 2 * M_PI;
-
-    if (B(lbR) < 0.0)
-        B(lbR) += 2 * M_PI;
 
 }
 

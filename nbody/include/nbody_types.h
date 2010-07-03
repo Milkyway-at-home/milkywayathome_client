@@ -201,17 +201,15 @@ typedef struct
 
 typedef struct
 {
-    vector position;     /* (x, y, z) if cartesian / useGalC, otherwise (r, l, b) */
+    vector position;     /* (x, y, z) if cartesian / useGalC, otherwise (l, b, r) */
     vector velocity;
     bool useGalC;
     bool useRadians;
 } InitialConditions;
 
-
-/* TODO: Order of rlb? lbr? */
-#define R(x) (((vectorptr) (x))[0])
-#define L(x) (((vectorptr) (x))[1])
-#define B(x) (((vectorptr) (x))[2])
+#define L(x) (((vectorptr) (x))[0])
+#define B(x) (((vectorptr) (x))[1])
+#define R(x) (((vectorptr) (x))[2])
 
 #define X(x) (((vectorptr) (x))[0])
 #define Y(x) (((vectorptr) (x))[1])
