@@ -126,7 +126,7 @@ inline void acceleration(vectorptr restrict acc, const NBodyCtx* ctx, const vect
 }
 
 
-void integrate(const NBodyCtx* ctx, InitialConditions* ic)
+void reverseOrbit(InitialConditions* fc, const NBodyCtx* ctx, InitialConditions* ic)
 {
     vector acc, v, x;
     real t;
@@ -161,13 +161,16 @@ void integrate(const NBodyCtx* ctx, InitialConditions* ic)
     }
 
     /* Report the final values (don't forget to reverse the velocities) */
-    ic->position[0] = x[0];
-    ic->position[1] = x[1];
-    ic->position[2] = x[2];
+    fc->position[0] = x[0];
+    fc->position[1] = x[1];
+    fc->position[2] = x[2];
 
-    ic->velocity[0] = -v[0];
-    ic->velocity[1] = -v[1];
-    ic->velocity[2] = -v[2];
+    fc->velocity[0] = -v[0];
+    fc->velocity[1] = -v[1];
+    fc->velocity[2] = -v[2];
+
+    fc->useGalC = ic->useGalC;  /* Not actually necessary */
+    fc->useRadians = ic->useRadians;
 
 }
 

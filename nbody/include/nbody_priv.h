@@ -49,7 +49,7 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
 
 real chisq(const NBodyCtx* ctx, NBodyState* st);
 
-void integrate(const NBodyCtx* ctx, InitialConditions* ic);
+void reverseOrbit(InitialConditions* fc, const NBodyCtx* ctx, InitialConditions* ic);
 void acceleration(vectorptr restrict acc, const NBodyCtx* ctx, const vectorptr restrict pos);
 
 void sphericalAccel(vectorptr restrict acc, const Spherical* sph, const vectorptr restrict pos);

@@ -107,11 +107,15 @@ static void processInitialConditions(const NBodyCtx* ctx, InitialConditions* ic)
         {
             l = d2r( L(ic) );
             b = d2r( B(ic) );
+            ic->useRadians = TRUE;
         }
 
         X(ic) = r * rcos(l) * rcos(b) - ctx->sunGCDist;
         Y(ic) = r * rsin(l) * rcos(b);
         Z(ic) = r * rsin(b);
+
+        ic->useGalC = TRUE;  /* We don't actually need this again, but
+                              * just to avoid possible confusion */
     }
 
 }
