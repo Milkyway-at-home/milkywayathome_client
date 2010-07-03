@@ -154,6 +154,7 @@ void RUN_NBODY_SIMULATION(json_object* obj,
             fprintf(stderr, "Failed to resume checkpoint\n");
             closeCheckpoint(&ctx);     /* Something is wrong with this file */
             openCheckpoint(&ctx);      /* Make a new one */
+            nbody_state_destroy(&st);
             startRun(&ctx, &ic, &st);
         }
     }
