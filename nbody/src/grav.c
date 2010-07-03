@@ -135,7 +135,7 @@ void gravMap(const NBodyCtx* ctx, NBodyState* st)
     bodyptr p;
     const bodyptr endp = st->bodytab + ctx->model.nbody;
 
-    maketree(ctx, st);                /* build tree structure */
+    makeTree(ctx, st);                /* build tree structure */
 
     for (p = st->bodytab; p < endp; p++)        /* loop over all bodies */
         hackGrav(ctx, st, p, Mass(p) > 0.0);    /* get force on each */

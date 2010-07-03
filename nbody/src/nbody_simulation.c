@@ -21,7 +21,7 @@ inline static void initState(const NBodyCtx* ctx, const InitialConditions* ic, N
 
     generatePlummer(ctx, ic, st);    /* make test model */
 
-    /* CHECKME: Why does maketree get used twice for the first step? */
+    /* CHECKME: Why does makeTree get used twice for the first step? */
     gravMap(ctx, st);               /* Take 1st step */
 }
 
