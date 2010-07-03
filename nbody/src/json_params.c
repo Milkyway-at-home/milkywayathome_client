@@ -127,7 +127,7 @@ static void postProcess(NBodyCtx* ctx)
     /* These other pieces are dependent on the others being set up
      * first */
 
-    ctx->freqout = ctx->freq = inv(ctx->model.timestep);
+    ctx->freqout = inv(ctx->model.timestep);
 
     if (ctx->model.nbody < 1)
         fail("nbody = %d is absurd\n", ctx->model.nbody);
@@ -496,7 +496,6 @@ void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fil
     const NBodyCtx defaultCtx =
         {
             .pot = EMPTY_POTENTIAL,
-            .freq = NAN,
             .freqout = NAN,
             .usequad = TRUE,
             .sunGCDist  = 8.0,

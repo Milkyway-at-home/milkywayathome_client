@@ -280,7 +280,6 @@ typedef struct
     FILE* outfile;            /* file for snapshot output */
     CheckpointHandle cp;
 
-    real freq;
     real freqout;
     real theta;               /* accuracy parameter: 0.0 */
     real tree_rsize;
@@ -315,7 +314,7 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 #define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
-#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, EMPTY_CHECKPOINT_HANDLE, NAN, NAN, NAN, NAN, NAN, 0, 0, FALSE, FALSE, FALSE }
+#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, EMPTY_CHECKPOINT_HANDLE, NAN, NAN, NAN, NAN, 0, 0, FALSE, FALSE, FALSE }
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 #define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL}
 #define EMPTY_VECTOR { NAN, NAN, NAN }

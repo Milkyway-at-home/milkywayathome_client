@@ -644,7 +644,6 @@ char* showContext(const NBodyCtx* ctx)
                      "  seed            = %ld\n"
                      "  tree_rsize      = %g\n"
                      "  theta           = %g\n"
-                     "  freq            = %g\n"
                      "  freqout         = %g\n"
                      "};\n",
                      potBuf,
@@ -660,7 +659,6 @@ char* showContext(const NBodyCtx* ctx)
                      ctx->seed,
                      ctx->tree_rsize,
                      ctx->theta,
-                     ctx->freq,
                      ctx->freqout))
     {
         fail("asprintf() failed\n");

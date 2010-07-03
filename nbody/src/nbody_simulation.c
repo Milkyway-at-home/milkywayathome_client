@@ -49,12 +49,10 @@ inline static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
     vector dvel, dpos;
+    const bodyptr endp = st->bodytab + ctx->model.nbody;
+    const real dt = ctx->model.timestep;
 
-    const bodyptr bodytab = st->bodytab;
-    const bodyptr endp    = bodytab + ctx->model.nbody;
-    const real dt         = inv(ctx->freq);         /* set basic time-step */
-
-    for (p = bodytab; p < endp; p++)    /* loop over all bodies */
+    for (p = st->bodytab; p < endp; p++)    /* loop over all bodies */
     {
         MULVS(dvel, Acc(p), 0.5 * dt);  /* get velocity increment */
         INCADDV(Vel(p), dvel);          /* advance v by 1/2 step */
@@ -64,18 +62,18 @@ inline static void stepsystem(const NBodyCtx* ctx, NBodyState* st)
 
     gravmap(ctx, st);
 
-    for (p = bodytab; p < endp; p++)          /* loop over all bodies */
+    for (p = st->bodytab; p < endp; p++)      /* loop over all bodies */
     {
         MULVS(dvel, Acc(p), 0.5 * dt);        /* get velocity increment */
         INCADDV(Vel(p), dvel);                /* advance v by 1/2 step */
     }
 
-    st->tnow += dt;        /* finally, advance time */
+    st->tnow += dt;                           /* finally, advance time */
 }
 
 static void runSystem(const NBodyCtx* ctx, NBodyState* st)
 {
-    const real tstop = ctx->model.time_dwarf - 1.0 / (1024.0 * ctx->freq);
+    const real tstop = ctx->model.time_dwarf - ctx->model.timestep / 1024.0;
 
     while (st->tnow < tstop)
     {
