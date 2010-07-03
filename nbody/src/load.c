@@ -109,9 +109,9 @@ static cellptr makecell(Tree* t)
     cellptr c;
     size_t i;
 
-    if (freecell == NULL)                       /* no free cells left? */
-        c = (cellptr) allocate(sizeof(cell));   /* allocate a new one */
-    else                                        /* use existing free cell */
+    if (freecell == NULL)                        /* no free cells left? */
+        c = (cellptr) mallocSafe(sizeof(cell));  /* allocate a new one */
+    else                                         /* use existing free cell */
     {
         c = (cellptr) freecell;                 /* take one on front */
         freecell = Next(c);                     /* go on to next one */

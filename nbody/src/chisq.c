@@ -165,9 +165,9 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     fsize = ceil((double) (ftell(f) + 1) / 3);  /* Make sure it's big enough, avoid fun with integer division */
     fseek(f, 0L, SEEK_SET);
 
-    fileLambda   = (real*) calloc(sizeof(real), fsize);
-    fileCount    = (real*) calloc(sizeof(real), fsize);
-    fileCountErr = (real*) calloc(sizeof(real), fsize);
+    fileLambda   = (real*) callocSafe(sizeof(real), fsize);
+    fileCount    = (real*) callocSafe(sizeof(real), fsize);
+    fileCountErr = (real*) callocSafe(sizeof(real), fsize);
 
     /* FIXME: Proper reading. Avoid CPP annoying */
     while (fscanf(f,

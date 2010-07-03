@@ -17,7 +17,7 @@ inline static void initState(const NBodyCtx* ctx, const InitialConditions* ic, N
     st->tree.rsize = ctx->tree_rsize;
 
     st->tnow = 0.0;                 /* reset elapsed model time */
-    st->bodytab = (bodyptr) allocate(ctx->model.nbody * sizeof(body));
+    st->bodytab = (bodyptr) mallocSafe(ctx->model.nbody * sizeof(body));
 
     generatePlummer(ctx, ic, st);    /* make test model */
 

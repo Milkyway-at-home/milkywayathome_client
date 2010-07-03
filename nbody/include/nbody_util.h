@@ -21,7 +21,9 @@
 /* xrandom: generate floating-point random number. */
 #define xrandom(xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * drand48())
 
-void* allocate(int);             /* allocate and zero memory */
+void* callocSafe(size_t count, size_t size);
+void* mallocSafe(size_t size);
+
 __attribute__ ((visibility("default"))) double get_time();
 
 #endif /* _NBODY_UTIL_H_ */

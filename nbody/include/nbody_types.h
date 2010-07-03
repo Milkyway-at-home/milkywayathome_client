@@ -334,7 +334,5 @@ typedef void (*AccelFunc) (vectorptr restrict, const void*, const vectorptr rest
 typedef void (*proc)();
 typedef int (*iproc)();
 
-
-
 #endif /* _NBODY_TYPES_H_ */
 

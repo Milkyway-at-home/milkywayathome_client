@@ -221,7 +221,7 @@ int thawState(const NBodyCtx* ctx, NBodyState* st)
     }
 
     /* Read the bodies */
-    st->bodytab = allocate(bodySize);
+    st->bodytab = mallocSafe(bodySize);
 
     memcpy(st->bodytab, p, bodySize);
     p += bodySize;

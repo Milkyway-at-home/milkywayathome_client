@@ -17,15 +17,19 @@
   #include <sys/resource.h>
 #endif
 
-
-/* allocate: memory allocation with error checking. */
-void* allocate(int nb)
+void* callocSafe(size_t count, size_t size)
 {
-    void* mem;
-
-    mem = (void*) calloc(nb, 1);        /* calloc zeros memory */
+    void* mem = (void*) calloc(count, size);
     if (mem == NULL)
-        fail("allocate: not enough memory (%d bytes)\n", nb);
+        fail("calloc failed: %zd bytes\n", count * size);
+    return mem;
+}
+
+void* mallocSafe(size_t size)
+{
+    void* mem = (void*) malloc(size);
+    if (mem == NULL)
+        fail("malloc failed: %zd bytes\n", size);
     return mem;
 }
 
