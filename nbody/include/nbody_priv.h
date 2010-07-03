@@ -19,6 +19,7 @@
 #include "vectmath.h"
 #include "real.h"
 #include "nbody_util.h"
+#include "show.h"
 
 #if BOINC_APPLICATION
   #include <boinc_api.h>
@@ -68,24 +69,6 @@ char* getparam(char*);            /* get parameter as char* */
 int getiparam(char*);             /* get parameter as integer */
 bool getbparam(char*);            /* get parameter as bool */
 real getrparam(char*);            /* get parameter as real */
-
-/* Types -> String */
-const char* showBool(const bool);
-const char* showCriterionT(const criterion_t);
-const char* showSphericalT(const spherical_t);
-const char* showDiskT(const disk_t);
-const char* showHaloT(const halo_t);
-const char* showDwarfModelT(const dwarf_model_t);
-char* showSpherical(const Spherical*);
-char* showHalo(const Halo*);
-char* showDisk(const Disk*);
-char* showPotential(const Potential*);
-char* showDwarfModel(const DwarfModel*);
-char* showInitialConditions(const InitialConditions*);
-char* showContext(const NBodyCtx*);
-char* showVector(const vector v);
-void printContext(const NBodyCtx*);
-void printInitialConditions(const InitialConditions*);
 
 #endif /* _NBODY_PRIV_H_ */
 

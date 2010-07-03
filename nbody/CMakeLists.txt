@@ -59,6 +59,7 @@ set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
                   ${PROJECT_SOURCE_DIR}/src/orbitintegrator.c
                   ${PROJECT_SOURCE_DIR}/src/nbody_simulation.c
                   ${PROJECT_SOURCE_DIR}/src/json_params.c
+                  ${PROJECT_SOURCE_DIR}/src/show.c
                   ${PROJECT_SOURCE_DIR}/src/plummer.c
                   ${PROJECT_SOURCE_DIR}/src/nbody_util.c)
 
