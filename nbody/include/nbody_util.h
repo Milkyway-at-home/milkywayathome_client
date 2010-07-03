@@ -29,6 +29,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* Coordinate conversion */
 void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r);
 void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r);
+void lbrToCartesian(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr);
+void lbrToCartesian_rad(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr);
 
 /* xrandom: generate floating-point random number. */
 #define xrandom(xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * drand48())

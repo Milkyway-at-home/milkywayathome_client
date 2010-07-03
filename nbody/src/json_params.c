@@ -92,30 +92,14 @@ static void processModel(DwarfModel* mod)
 
 static void processInitialConditions(const NBodyCtx* ctx, InitialConditions* ic)
 {
-    real r, l, b;
-
     if (!ic->useGalC)
     {
         /* We aren't given galactic coordinates, so convert them */
-        r = R(ic);
         if (ic->useRadians)
-        {
-            l = L(ic);
-            b = B(ic);
-        }
+            lbrToCartesian_rad(ctx, ic->position, ic->position);
         else
-        {
-            l = d2r( L(ic) );
-            b = d2r( B(ic) );
-            ic->useRadians = TRUE;
-        }
-
-        X(ic) = r * rcos(l) * rcos(b) - ctx->sunGCDist;
-        Y(ic) = r * rsin(l) * rcos(b);
-        Z(ic) = r * rsin(b);
-
-        ic->useGalC = TRUE;  /* We don't actually need this again, but
-                              * just to avoid possible confusion */
+            lbrToCartesian(ctx, ic->position, ic->position);
+        ic->useGalC = TRUE;
     }
 
 }

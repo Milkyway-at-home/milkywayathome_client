@@ -35,6 +35,23 @@ void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr
     B(lbR) = r2d(B(lbR));
 }
 
+inline static void _lbrToCartesian(vectorptr cart, const real l, const real b, const real r, const real sun)
+{
+    cart[0] = r * rcos(l) * rcos(b) - sun;
+    cart[1] = r * rsin(l) * rcos(b);
+    cart[2] = r * rsin(b);
+}
+
+void lbrToCartesian_rad(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr)
+{
+    _lbrToCartesian(cart, lbr[1], lbr[2], lbr[0], ctx->sunGCDist);
+}
+
+void lbrToCartesian(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr)
+{
+    _lbrToCartesian(cart, d2r(lbr[1]), d2r(lbr[2]), lbr[0], ctx->sunGCDist);
+}
+
 void* callocSafe(size_t count, size_t size)
 {
     void* mem = (void*) calloc(count, size);
