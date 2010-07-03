@@ -8,17 +8,6 @@
 #include "nbody_priv.h"
 #include "nbody.h"
 
-inline static void gravMap(const NBodyCtx* ctx, NBodyState* st)
-{
-    bodyptr p;
-    const bodyptr endp = st->bodytab + ctx->model.nbody;
-
-    maketree(ctx, st);                /* build tree structure */
-
-    for (p = st->bodytab; p < endp; p++)        /* loop over all bodies */
-        hackgrav(ctx, st, p, Mass(p) > 0.0);     /* get force on each */
-}
-
 inline static void initState(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     printf("Starting nbody system\n");

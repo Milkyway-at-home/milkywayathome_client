@@ -24,8 +24,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include "stdinc.h"
 
-/* compute force on body */
-void hackgrav(const NBodyCtx*, NBodyState*, bodyptr, bool);
+/* compute force on all the bodies */
+void gravMap(const NBodyCtx* ctx, NBodyState* st);
 
 #endif /* _GRAV_H_ */
 

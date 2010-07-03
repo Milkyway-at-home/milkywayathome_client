@@ -6,6 +6,7 @@
 /* ************************************************************************** */
 
 #include "nbody_priv.h"
+#include "grav.h"
 
 typedef struct
 {
@@ -94,10 +95,10 @@ inline static bool treescan(const NBodyCtx* ctx,
     return skipself;
 }
 
-/* hackgrav: evaluate gravitational field on body p; checks to be
+/* hackGrav: evaluate gravitational field on body p; checks to be
  * sure self-interaction was handled correctly if intree is true.
  */
-void hackgrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
+inline static void hackGrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
 {
     vector externalacc;
     static bool treeincest = FALSE;     /* tree-incest occured */
@@ -127,5 +128,16 @@ void hackgrav(const NBodyCtx* ctx, NBodyState* st, bodyptr p, bool intree)
     /* TODO: Sharing */
     SETV(Acc(p), fest.acc0);         /* and acceleration */
 
+}
+
+void gravMap(const NBodyCtx* ctx, NBodyState* st)
+{
+    bodyptr p;
+    const bodyptr endp = st->bodytab + ctx->model.nbody;
+
+    maketree(ctx, st);                /* build tree structure */
+
+    for (p = st->bodytab; p < endp; p++)        /* loop over all bodies */
+        hackGrav(ctx, st, p, Mass(p) > 0.0);    /* get force on each */
 }
 
