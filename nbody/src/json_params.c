@@ -211,7 +211,7 @@ static void printParameter(Parameter* p)
 
 /* Iterate through remaining keys in obj to provide useful warnings of
  * unknown parameters in the file. Returns true if any found. */
-static bool warn_extra_params(json_object* obj, const char* grpName)
+static bool warnExtraParams(json_object* obj, const char* grpName)
 {
     bool haveExtra = FALSE;
 
@@ -395,7 +395,7 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
                     tmp = (json_object*) array_list_get_idx(arr, i);
 
                     if (    !json_object_is_type(tmp, json_type_double)
-                            && !json_object_is_type(tmp, json_type_int))
+                         && !json_object_is_type(tmp, json_type_int))
                     {
                         warn("Got unexpected type '%s' in position %d "
                              "of key '%s' in '%s', expected number.\n",
@@ -423,6 +423,7 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
                 /* fall through to nbody_type_object */
             case nbody_type_group:
             case nbody_type_object:
+                /* Fail now if sub group fails */
                 if ((subRc = readParameterGroup(p->parameters, obj, p)))
                     return subRc;
                 break;
@@ -467,7 +468,7 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
     /* Skip the extra parameter warning if there was an error, since
      * abandoning the loop leaves lots of stuff in it */
     if (!readError)
-        warn_extra_params(hdr, pname);
+        warnExtraParams(hdr, pname);
 
     /* FIXME: This condition is confusing and probably could be better */
     /* Report what was expected in more detail */
@@ -509,7 +510,7 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
 
 /* Read the parameters from the top level json object into ctx. It
  * destroys the object in the process. */
-int get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj)
+int getParamsFromJSON(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj)
 {
     /* Constants used for defaulting. Each field only used if
      * specified in the actual parameter tables. */

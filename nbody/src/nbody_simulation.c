@@ -124,7 +124,7 @@ void RUN_NBODY_SIMULATION(json_object* obj,
     double ts = 0.0, te = 0.0;
     int rc;
 
-    rc = get_params_from_json(&ctx, &ic, obj);
+    rc = getParamsFromJSON(&ctx, &ic, obj);
     if (verifyOnly)
     {
         if (rc)
