@@ -469,24 +469,26 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
     if (!readError)
         warn_extra_params(hdr, pname);
 
+    /* FIXME: This condition is confusing and probably could be better */
     /* Report what was expected in more detail */
-    if ((!found || readError) && !defaultable)
+    if (   ((!found || readError) && !defaultable)
+        || (!found && unique) )
     {
         fprintf(stderr, "Failed to find required item of correct type in group '%s'\n", pname);
 
         if (unique)
-            fprintf(stderr, "\tExpected to find one of the following:\n");
+            warn("\tExpected to find one of the following:\n");
         else
-            fprintf(stderr, "\tFields are:\n");
+            warn("\tFields are:\n");
 
         q = g;
         while (q->name)
         {
-            fprintf(stderr, "\t\t%s (%s)", q->name, showNBodyType(q->type));
+            warn("\t\t%s (%s)", q->name, showNBodyType(q->type));
 
             if (q->dflt && !unique)
-                fprintf(stderr, "  (optional)");
-            fprintf(stderr, ",\n");
+                warn("  (optional)");
+            warn(",\n");
             ++q;
         }
 
@@ -705,6 +707,23 @@ int get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* file
 
     rc |= postProcess(ctx);
     rc |= processInitialConditions(ctx, ic);
+
+    /* A quick, and nonexhaustive debugging check */
+    assert(   !isnan(ic->position[0])
+           && !isnan(ic->position[1])
+           && !isnan(ic->position[2])
+           && !isnan(ic->velocity[0])
+           && !isnan(ic->velocity[1])
+           && !isnan(ic->velocity[2])
+           && !isnan(ctx->model.timestep)
+           && !isnan(ctx->model.orbit_timestep)
+           && !isnan(ctx->model.nbody)
+           && !isnan(ctx->model.mass)
+           && !isnan(ctx->pot.disk.mass)
+           && !isnan(ctx->pot.halo.vhalo)
+           && !isnan(ctx->pot.halo.scale_length)
+           && !isnan(ctx->pot.sphere[0].mass)
+           && !isnan(ctx->pot.sphere[0].scale));
 
     return rc;
 }
