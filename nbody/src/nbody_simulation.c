@@ -114,16 +114,28 @@ void RUN_NBODY_SIMULATION(json_object* obj,
                           const char* outFileName,
                           const char* checkpointFileName,
                           const int outputCartesian,
-                          const int printTiming)
+                          const int printTiming,
+                          const int verifyOnly)
 {
     NBodyCtx ctx         = EMPTY_CTX;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
     NBodyState st        = EMPTY_STATE;
 
     double ts = 0.0, te = 0.0;
+    int rc;
 
-    if (get_params_from_json(&ctx, &ic, obj))
-        fail("Failed to read input parameters\n");
+    rc = get_params_from_json(&ctx, &ic, obj);
+    if (verifyOnly)
+    {
+        if (rc)
+            printf("File failed\n");
+        else
+            printf("File is OK\n");
+        return rc;
+    }
+
+    if (rc)
+        fail("Failed to read input parameters file\n");
 
     ctx.outputCartesian = outputCartesian;
     ctx.outfilename     = outFileName;
@@ -141,7 +153,7 @@ void RUN_NBODY_SIMULATION(json_object* obj,
         /* When the resume fails, start a fresh run */
         if (thawState(&ctx, &st))
         {
-            fprintf(stderr, "Failed to resume checkpoint\n");
+            warn("Failed to resume checkpoint\n");
             closeCheckpoint(&ctx);     /* Something is wrong with this file */
             openCheckpoint(&ctx);      /* Make a new one */
             nbodyStateDestroy(&st);

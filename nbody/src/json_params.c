@@ -474,7 +474,7 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
     if (   ((!found || readError) && !defaultable)
         || (!found && unique) )
     {
-        fprintf(stderr, "Failed to find required item of correct type in group '%s'\n", pname);
+        warn("Failed to find required item of correct type in group '%s'\n", pname);
 
         if (unique)
             warn("\tExpected to find one of the following:\n");
