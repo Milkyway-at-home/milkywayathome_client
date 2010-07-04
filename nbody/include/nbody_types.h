@@ -245,7 +245,7 @@ typedef struct
 {
     int fd;            /* File descriptor for checkpoint file */
     char* mptr;        /* mmap'd pointer for checkpoint file */
-    const char* file;
+    const char* filename;
 } CheckpointHandle;
 
 #define EMPTY_CHECKPOINT_HANDLE { -1, NULL, NULL }
@@ -254,12 +254,13 @@ typedef struct
 
 typedef struct
 {
-    HANDLE fd;          /* File descriptor for checkpoint file */
-    HANDLE mptr;        /* mmap'd pointer for checkpoint file */
-    const char* file;
+    HANDLE file;
+    HANDLE mapFile;
+    char* mptr;
+    const char* filename;
 } CheckpointHandle;
 
-#define EMPTY_CHECKPOINT_HANDLE { /* FIXME: something */ , NULL, NULL }
+#define EMPTY_CHECKPOINT_HANDLE { INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE, NULL, NULL }
 
 #endif /* _WIN32 */
 

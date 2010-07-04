@@ -131,7 +131,7 @@ void RUN_NBODY_SIMULATION(json_object* obj,
             printf("File failed\n");
         else
             printf("File is OK\n");
-        return rc;
+        nbody_finish(rc);
     }
 
     if (rc)
@@ -139,13 +139,13 @@ void RUN_NBODY_SIMULATION(json_object* obj,
 
     ctx.outputCartesian = outputCartesian;
     ctx.outfilename     = outFileName;
-    ctx.cp.file         = checkpointFileName;
+    ctx.cp.filename     = checkpointFileName;
 
     initOutput(&ctx);
 
   #if BOINC_APPLICATION
     /* If the checkpoint exists, try to use it */
-    if (boinc_file_exists(ctx.cp.file))
+    if (boinc_file_exists(ctx.cp.filename))
     {
         printf("Checkpoint exists. Attempting to resume from it.\n");
         openCheckpoint(&ctx);
