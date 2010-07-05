@@ -256,9 +256,23 @@ static void hackCofM(const NBodyCtx* ctx, NBodyState* st, cellptr p, real psize)
     INCDIVVS(cmpos, Mass(p));               /* rescale cms position */
     for (k = 0; k < NDIM; k++)          /* check tree structure... */
     {
-        if (cmpos[k] < Pos(p)[k] - psize / 2 || /* if out of bounds */
-                Pos(p)[k] + psize / 2 <= cmpos[k]) /* in either direction */
-            fail("hackcofm: tree structure error\n");
+        /* CHECKME: Precision: This gets angry as N gets big, and the divisions get small */
+        if (cmpos[k] < Pos(p)[k] - psize / 2 ||    /* if out of bounds */
+                Pos(p)[k] + psize / 2 < cmpos[k])  /* in either direction */
+        {
+            fail("hackCofM: tree structure error.\n"
+                 "\tcmpos out of bounds\n"
+                 "\tPos(p)[%d]           = %e\n"
+                 "\tpsize               = %e\n"
+                 "\tPos(p)[%d] + psize/2 = %e\n"
+                 "\tcmpos[%d]            = %e\n"
+                 "\tPos(p)[%d] - psize/2 = %e\n",
+                 k, Pos(p)[k],
+                 psize,
+                 k, Pos(p)[k] + psize / 2,
+                 k, cmpos[k],
+                 k, Pos(p)[k] - psize / 2);
+        }
     }
     setRCrit(ctx, st, p, cmpos, psize);            /* set critical radius */
     SETV(Pos(p), cmpos);            /* and center-of-mass pos */
