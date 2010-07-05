@@ -74,7 +74,7 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
           /* TODO: organize use of this output better since it only
            * half makes sense now with boinc */
 
-          if (ctx->model.time_dwarf - st->tnow < 0.01 / ctx->freq)
+          if (ctx->model.time_dwarf - st->tnow < 0.01 * ctx->model.timestep)
               output(ctx, st);
 
           st->tout += 1.0 / ctx->freqout;     /* schedule next data out */
