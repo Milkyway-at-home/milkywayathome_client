@@ -57,7 +57,7 @@ void lbrToCartesian_rad(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr
   #define xrandom(xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * drand48())
   #define SET_SEED(x) (srand48((x)))
 #else
-  #define xrandom(xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * rand())
+  #define xrandom(xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * ((double) rand() / (((double) RAND_MAX) + 1.0)))
   #define SET_SEED(x) ((void) 0)
 #endif /* _WIN32 */
 
