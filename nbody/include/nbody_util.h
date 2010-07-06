@@ -51,8 +51,15 @@ void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr restrict lbR, const vecto
 void lbrToCartesian(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr);
 void lbrToCartesian_rad(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr);
 
+/* FIXME: New random source. drand48() doesn't work on Windows. */
 /* xrandom: generate floating-point random number. */
-#define xrandom(xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * drand48())
+#ifndef _WIN32
+  #define xrandom(xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * drand48())
+  #define SET_SEED(x) (srand48((x)))
+#else
+  #define xrandom(xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * rand())
+  #define SET_SEED(x) ((void) 0)
+#endif /* _WIN32 */
 
 void* callocSafe(size_t count, size_t size);
 void* mallocSafe(size_t size);

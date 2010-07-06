@@ -14,7 +14,7 @@ inline static void initState(const NBodyCtx* ctx, const InitialConditions* ic, N
 {
     printf("Starting nbody system\n");
 
-    srand48(ctx->seed);              /* set random generator */
+    SET_SEED(ctx->seed);             /* set random generator */
     st->tout       = st->tnow;       /* schedule first output */
     st->tree.rsize = ctx->tree_rsize;
 

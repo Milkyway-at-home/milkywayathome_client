@@ -26,8 +26,11 @@ set(test_list t_vectors
               t_exponential_disk
               t_log_halo
               t_nfw_halo
-              t_triaxial_halo
-              t_checkpoint)
+              t_triaxial_halo)
+
+if(!WIN32)
+  list(APPEND test_list t_checkpoint)
+endif()
 
 foreach(test ${test_list})
 	add_executable(${test} ${test}.c ${nbody_lib_src})
