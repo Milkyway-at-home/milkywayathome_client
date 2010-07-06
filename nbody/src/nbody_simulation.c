@@ -93,7 +93,10 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
     output(ctx, st);
   #endif /* BOINC_APPLICATION && !BOINC_DEBUG */
 
+  #if BOINC_APPLICATION
     closeCheckpoint(ctx);       /* We finished so kill the checkpoint */
+  #endif
+
     nbodyCtxDestroy(ctx);     /* finish up output */
     nbodyStateDestroy(st);
 }

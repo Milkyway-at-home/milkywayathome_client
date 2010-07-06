@@ -209,22 +209,25 @@ void openCheckpoint(NBodyCtx* ctx)
 
 void closeCheckpoint(NBodyCtx* ctx)
 {
-    if (!UnmapViewOfFile((LPVOID) ctx->cp.mptr))
+    if ( ctx->cp.file != INVALID_HANDLE_VALUE )
     {
-        fail("Error %ld occurred unmapping the checkpoint view object!\n",
-               GetLastError());
-    }
+        if (!UnmapViewOfFile((LPVOID) ctx->cp.mptr))
+        {
+            fail("Error %ld occurred unmapping the checkpoint view object!\n",
+                 GetLastError());
+        }
 
-    if (!CloseHandle(ctx->cp.mapFile))
-    {
-        fail("Error %ld occurred closing the checkpoint mapping!\n",
-               GetLastError());
-    }
+        if (!CloseHandle(ctx->cp.mapFile))
+        {
+            fail("Error %ld occurred closing the checkpoint mapping!\n",
+                 GetLastError());
+        }
 
-    if (!CloseHandle(ctx->cp.file))
-    {
-        fail("Error %ld occurred closing the checkpoint file '%s'\n",
-               GetLastError(), ctx->cp.filename);
+        if (!CloseHandle(ctx->cp.file))
+        {
+            fail("Error %ld occurred closing the checkpoint file '%s'\n",
+                 GetLastError(), ctx->cp.filename);
+        }
     }
 }
 
