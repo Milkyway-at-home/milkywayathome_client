@@ -18,8 +18,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_FLOAT_H_
-#define _NBODY_FLOAT_H_
+#ifndef _NBODY_H_
+#define _NBODY_H_
 
 #ifdef _cplusplus
 extern "C" {

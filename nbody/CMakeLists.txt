@@ -87,7 +87,7 @@ if(UNIX AND NOT APPLE)  #Unix that isn't OS X
 endif()
 
 if(WIN32)
-  list(APPEND OS_SPECIFIC_LIBS "stdc++" "msvcrt" "asprintf")
+  list(APPEND OS_SPECIFIC_LIBS "msvcrt" "asprintf" "stdc++")
 endif()
 
 set(nbody_link_libs ${JSON_C_LIBRARY} ${OS_SPECIFIC_LIBS} m)
@@ -142,19 +142,14 @@ if(DYNAMIC_PRECISION)
   add_library(nbody_simulation_float SHARED ${nbody_lib_src})
   target_link_libraries(nbody_simulation_float ${nbody_link_libs})
 
-  set_target_properties(nbody_simulation_double
-                          PROPERTIES
-                            COMPILE_DEFINITIONS "DOUBLEPREC;")
-
-
   set(nbody_libs nbody_simulation_float nbody_simulation_double)
 else()
-  add_library(nbody_simulation STATIC ${nbody_lib_src})
+   add_library(nbody_simulation STATIC ${nbody_lib_src})
 
- # add_library(nbody_simulation SHARED ${nbody_lib_src})
- # message("LIBRARIES: ${nbody_link_libs}")
- # target_link_libraries(nbody_simulation ${nbody_link_libs})
-#  set_target_properties(nbody_simulation PROPERTIES LINKER_LANGUAGE CXX)
+   #add_library(nbody_simulation SHARED ${nbody_lib_src})
+   #message("LIBRARIES: ${nbody_link_libs}")
+   #target_link_libraries(nbody_simulation ${nbody_link_libs})
+   #set_target_properties(nbody_simulation PROPERTIES LINKER_LANGUAGE C)
 
   if(DOUBLEPREC)
     add_definitions("-DDOUBLEPREC")
@@ -163,10 +158,14 @@ else()
   set(nbody_libs nbody_simulation)
 endif()
 
-
+message("LINK LIBS = ${nbody_link_libs}")
 add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
-target_link_libraries(milkyway_nbody ${nbody_link_libs} ${POPT_LIBRARY} ${nbody_libs})
-#set_target_properties(milkyway_nbody PROPERTIES LINKER_LANGUAGE CXX)
+target_link_libraries(milkyway_nbody ${nbody_link_libs} ${POPT_LIBRARY} ${nbody_libs} "stdc++")
+
+if(WIN32)
+  #For some reason I can't wrestle out the C++ on Windows.
+  set_target_properties(milkyway_nbody PROPERTIES LINKER_LANGUAGE CXX)
+endif()
 
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)

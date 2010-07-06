@@ -13,10 +13,6 @@
   #include <windows.h>
 #endif /* _WIN32 */
 
-#if BOINC_APPLICATION
-  #include <boinc_api.h>
-#endif /* BOINC_APPLICATION */
-
 #include "nbody_priv.h"
 #include "load.h"
 

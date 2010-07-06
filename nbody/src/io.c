@@ -10,11 +10,7 @@
 #include "nbody_priv.h"
 #include "nbody_util.h"
 #include "io.h"
-
-#if BOINC_APPLICATION
-  #include <boinc_api.h>
-  #include <filesys.h>
-#endif
+#include "nbody_boinc.h"
 
 #ifndef _WIN32
   #include <unistd.h>
@@ -302,7 +298,7 @@ int thawState(const NBodyCtx* ctx, NBodyState* st)
     if (realSize != sizeof(real))
     {
         warn("Got checkpoint file for wrong type. "
-                "Expected sizeof(real) = %zd, got %zd\n",
+                "Expected sizeof(real) = %lu, got %lu\n",
                 sizeof(real),
                 realSize);
         failed = TRUE;

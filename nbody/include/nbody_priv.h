@@ -27,6 +27,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
+#include <stdlib.h>
+
 #include "nbody_config.h"
 #include "nbody_types.h"
 #include "stdinc.h"
@@ -41,17 +43,9 @@ extern "C" {
 #include "orbitintegrator.h"
 #include "plummer.h"
 
-#if BOINC_APPLICATION
-  #include <boinc_api.h>
-  #if BOINC_DEBUG
-    #include <diagnostics.h>
-  #endif /* BOINC_DEBUG */
-#endif /* BOINC_APPLICATION */
-
-#endif /* _NBODY_PRIV_H_ */
-
-#include <stdlib.h>
 
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _NBODY_PRIV_H_ */

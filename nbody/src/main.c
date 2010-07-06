@@ -5,10 +5,6 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* TODO: wuh wuh windows */
 #include <unistd.h>
 #include <fcntl.h>
@@ -20,11 +16,6 @@ extern "C" {
 #include "nbody_priv.h"
 
 #define R_OK 2 /* FIXME: Windows */
-
-#ifdef __cplusplus
-}
-#endif
-
 
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
 

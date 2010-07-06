@@ -21,6 +21,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _JSON_PARAMS_H_
 #define _JSON_PARAMS_H_
 
+#ifdef __cplusplus
+extern "C"
+#endif
+
 #include <json/json.h>
 
 #include "nbody_types.h"
@@ -95,6 +99,10 @@ typedef struct _Parameter
 
 /* The only thing that should be used outside of here */
 int getParamsFromJSON(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _JSON_PARAMS_H_ */
 

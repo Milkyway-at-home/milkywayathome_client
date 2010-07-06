@@ -21,6 +21,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _NBODY_UTIL_H_
 #define _NBODY_UTIL_H_
 
+#include "nbody_boinc.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,19 +33,6 @@ extern "C" {
 #include "real.h"
 #include "vectmath.h"
 #include "nbody_types.h"
-
-/* TODO: Naming, and sharing with separation */
-#if BOINC_APPLICATION
-  #include <boinc_api.h>
-  #include <filesys.h>
-  #define nbody_finish(x) boinc_finish(x)
-  #define nbody_fopen(x,y) boinc_fopen((x),(y))
-  #define nbody_remove(x) boinc_delete_file((x))
-#else
-  #define nbody_finish(x) exit(x)
-  #define nbody_fopen(x,y) fopen((x),(y))
-  #define nbody_remove(x) remove((x))
-#endif /* BOINC_APPLICATION */
 
 /* Coordinate conversion */
 void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r);
