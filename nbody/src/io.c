@@ -198,7 +198,7 @@ void openCheckpoint(NBodyCtx* ctx)
              ctx->cp.filename, GetLastError());
     }
 
-    ctx->cp.mptr = (char*) MapViewOfFile(ctx->cp.mapFile
+    ctx->cp.mptr = (char*) MapViewOfFile(ctx->cp.mapFile,
                                          FILE_MAP_ALL_ACCESS,
                                          0,
                                          fileMapStart,

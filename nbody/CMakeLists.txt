@@ -83,7 +83,12 @@ if(UNIX AND NOT APPLE)  #Unix that isn't OS X
     list(APPEND OS_SPECIFIC_LIBS pthread)
 endif()
 
-set(nbody_link_libs ${JSON_C_LIBRARY} m ${OS_SPECIFIC_LIBS})
+if(WIN32)
+  message("WUH WUH WINDOWS")
+  list(APPEND OS_SPECIFIC_LIBS "stdc++" "msvcrt")
+endif()
+
+set(nbody_link_libs ${OS_SPECIFIC_LIBS} ${JSON_C_LIBRARY} m)
 
 if(BOINC_APPLICATION)
   list(APPEND nbody_link_libs ${BOINC_LIBRARIES})
@@ -147,8 +152,6 @@ else()
   if(DOUBLEPREC)
     add_definitions("-DDOUBLEPREC")
   endif()
-
-
 
   set(nbody_libs nbody_simulation)
 endif()

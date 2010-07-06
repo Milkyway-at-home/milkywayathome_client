@@ -7,12 +7,15 @@
 
 /* TODO: wuh wuh windows */
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <stdlib.h>
 #include <string.h>
 #include <popt.h>
 #include "nbody.h"
 #include "nbody_priv.h"
+
+#define R_OK 2 /* FIXME: Windows */
 
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
 
@@ -191,7 +194,7 @@ static void runSimulationWrapper(json_object* obj,
                                  const int printTiming,
                                  const int verifyOnly)
 {
-  #ifdef DYNAMIC_PRECISION
+  #if DYNAMIC_PRECISION
     if (useDouble)
     {
         printf("Using double precision\n");

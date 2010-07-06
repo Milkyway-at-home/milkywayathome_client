@@ -23,11 +23,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define _GNU_SOURCE
 
-#include <json/json.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "nbody_config.h"
 #include "nbody_types.h"
-#include "json_params.h"
 #include "stdinc.h"
 #include "vectmath.h"
 #include "real.h"
@@ -49,3 +50,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #endif /* _NBODY_PRIV_H_ */
 
+#include <stdlib.h>
+
+#ifdef __cplusplus
+}
+#endif

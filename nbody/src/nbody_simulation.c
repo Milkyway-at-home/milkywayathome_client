@@ -4,9 +4,11 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
+#include <stdlib.h>
+
+#include "nbody.h"
 #include "json_params.h"
 #include "nbody_priv.h"
-#include "nbody.h"
 
 inline static void initState(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
@@ -99,7 +101,7 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
 /* Takes parsed json and run the simulation, using outFileName for
  * output. The mess with the different names is for the hacky way we
  * can switch precision easily */
-#ifdef DYNAMIC_PRECISION
+#if DYNAMIC_PRECISION
   #ifdef DOUBLEPREC
     #define RUN_NBODY_SIMULATION runNBodySimulation_double
   #else

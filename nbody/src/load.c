@@ -5,9 +5,13 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <unistd.h>
+#ifndef _WIN32
+  #include <sys/stat.h>
+  #include <sys/mman.h>
+  #include <unistd.h>
+#else
+  #include <windows.h>
+#endif /* _WIN32 */
 
 #if BOINC_APPLICATION
   #include <boinc_api.h>
@@ -260,7 +264,7 @@ static void hackCofM(const NBodyCtx* ctx, NBodyState* st, cellptr p, real psize)
         if (cmpos[k] < Pos(p)[k] - psize / 2 ||    /* if out of bounds */
                 Pos(p)[k] + psize / 2 < cmpos[k])  /* in either direction */
         {
-            fail("hackCofM: tree structure error.\n"
+            warn("hackCofM: tree structure error.\n"
                  "\tcmpos out of bounds\n"
                  "\tPos(p)[%d]           = %e\n"
                  "\tpsize               = %e\n"
@@ -290,7 +294,7 @@ void makeTree(const NBodyCtx* ctx, NBodyState* st)
     newTree(t);                                      /* flush existing tree, etc */
     t->root = makeCell(t);                           /* allocate the t.root cell */
     CLRV(Pos(t->root));                              /* initialize the midpoint */
-    expandBox(t, st->bodytab, ctx->model.nbody);    /* and expand cell to fit */
+    expandBox(t, st->bodytab, ctx->model.nbody);     /* and expand cell to fit */
     t->maxlevel = 0;                                 /* init count of levels */
     for (p = st->bodytab; p < endp; p++)             /* loop over bodies... */
     {

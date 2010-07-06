@@ -14,6 +14,11 @@
 #include "real.h"
 #include "vectmath.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif /* _WIN32 */
+
+
 /* Body and cell data structures are used to represent the tree.  During
  * tree construction, descendent pointers are stored in the subp arrays:
  *

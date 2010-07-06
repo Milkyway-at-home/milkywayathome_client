@@ -21,7 +21,6 @@ typedef short int bool;
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include "nbody.h"
 
 
 #define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)

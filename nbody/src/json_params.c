@@ -20,7 +20,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string.h>
 #include <assert.h>
-#include "nbody_priv.h"
+#include "nbody_types.h"
+#include "nbody_util.h"
 #include "json_params.h"
 
 

@@ -79,7 +79,7 @@ double get_time()
     LARGE_INTEGER t, f;
     QueryPerformanceCounter(&t);
     QueryPerformanceFrequency(&f);
-    return double(t.QuadPart)/double(f.QuadPart);
+    return (double)t.QuadPart/(double)f.QuadPart;
 }
 
 #else
