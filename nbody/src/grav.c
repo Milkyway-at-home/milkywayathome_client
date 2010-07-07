@@ -5,7 +5,10 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#include "nbody_priv.h"
+#include "nbody_types.h"
+#include "nbody_boinc.h"
+#include "load.h"
+#include "orbitintegrator.h"
 #include "grav.h"
 
 typedef struct

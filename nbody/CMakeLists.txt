@@ -32,6 +32,7 @@ set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+include(CLKernelInline)
 
 if(CMAKE_COMPILER_IS_GNUCC)
   set(DEFAULT_USE_DYNAMIC_PRECISION ON)
@@ -48,6 +49,12 @@ option(BOINC_APPLICATION
 option(BOINC_DEBUG
   "Avoid annoying things BOINC does for debugging" ON)
 
+#option(NBODY_OPENCL
+#  "Use OpenCL" ${OPENCL_FOUND})
+
+option(NBODY_OPENCL
+  "Use OpenCL" OFF)
+
 #Used if not using dynamic precision
 option(DOUBLEPREC
        "Use double precision" ON)
@@ -62,6 +69,7 @@ set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
                   ${PROJECT_SOURCE_DIR}/src/show.c
                   ${PROJECT_SOURCE_DIR}/src/plummer.c
                   ${PROJECT_SOURCE_DIR}/src/nbody_util.c)
+
 
 set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
 
@@ -94,6 +102,25 @@ set(nbody_link_libs ${JSON_C_LIBRARY} ${OS_SPECIFIC_LIBS} m)
 
 if(BOINC_APPLICATION)
   list(APPEND nbody_link_libs ${BOINC_LIBRARIES})
+endif()
+
+if(NBODY_OPENCL)
+  set(c_kernel_dir "${CMAKE_CURRENT_SOURCE_DIR}/ckernels")
+  list(APPEND nbody_lib_src "${PROJECT_SOURCE_DIR}/src/setup_opencl.c")
+  set(kernel_list "${CMAKE_CURRENT_SOURCE_DIR}/kernels/gravmap.cl")
+  #TODO: Bother only if the file has changed, and make sure it happens
+  #on every 'make'
+  foreach(kernel ${kernel_list})
+    get_filename_component(basename "${kernel}" NAME_WE)
+    inline_kernel("${basename}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/${kernel}"
+      "${c_kernel_dir}")
+    list(APPEND nbody_lib_src "${c_kernel_dir}/${basename}.c")
+  endforeach()
+
+  include_directories(${c_kernel_dir})
+
+  list(APPEND nbody_link_libs ${OPENCL_LIBRARIES})
 endif()
 
 # This dynamic precision is kind of sketchy. We compile the library
@@ -160,7 +187,7 @@ endif()
 
 message("LINK LIBS = ${nbody_link_libs}")
 add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
-target_link_libraries(milkyway_nbody ${nbody_link_libs} ${POPT_LIBRARY} ${nbody_libs} "stdc++")
+target_link_libraries(milkyway_nbody ${nbody_link_libs} ${POPT_LIBRARY} ${nbody_libs})
 
 if(WIN32)
   #For some reason I can't wrestle out the C++ on Windows.
