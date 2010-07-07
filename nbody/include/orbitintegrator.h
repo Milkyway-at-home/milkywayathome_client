@@ -22,17 +22,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _ORBITINTEGRATOR_H_
 
 #include "nbody_types.h"
-#include "vectmath.h"
 
 void reverseOrbit(InitialConditions* fc, const NBodyCtx* ctx, InitialConditions* ic);
 void acceleration(vectorptr restrict acc, const NBodyCtx* ctx, const vectorptr restrict pos);
-
-void sphericalAccel(vectorptr restrict acc, const Spherical* sph, const vectorptr restrict pos);
-void miyamotoNagaiDiskAccel(vectorptr restrict acc, const Disk* d, const vectorptr restrict pos);
-void exponentialDiskAccel(vectorptr restrict acc, const Disk* d, const vectorptr restrict pos);
-void triaxialHaloAccel(vectorptr restrict acc, const Halo* h, const vectorptr restrict pos);
-void logHaloAccel(vectorptr restrict acc, const Halo* h, const vectorptr restrict pos);
-void nfwHaloAccel(vectorptr restrict acc, const Halo* h, const vectorptr restrict pos);
 
 #endif /* _ORBITINTEGRATOR_H_ */
 

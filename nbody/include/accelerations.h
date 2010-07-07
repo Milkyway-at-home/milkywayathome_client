@@ -18,31 +18,17 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_PRIV_H_
-#define _NBODY_PRIV_H_
+#ifndef _ACCELERATIONS_H_
+#define _ACCELERATIONS_H_
 
-#define _GNU_SOURCE
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "nbody_config.h"
 #include "nbody_types.h"
-#include "vectmath.h"
-#include "real.h"
-#include "nbody_util.h"
-#include "show.h"
-#include "io.h"
-#include "grav.h"
-#include "chisq.h"
-#include "load.h"
-#include "orbitintegrator.h"
-#include "accelerations.h"
-#include "plummer.h"
 
-#ifdef __cplusplus
-}
-#endif
+void sphericalAccel(vectorptr restrict acc, const Spherical* sph, const vectorptr restrict pos);
+void miyamotoNagaiDiskAccel(vectorptr restrict acc, const Disk* d, const vectorptr restrict pos);
+void exponentialDiskAccel(vectorptr restrict acc, const Disk* d, const vectorptr restrict pos);
+void triaxialHaloAccel(vectorptr restrict acc, const Halo* h, const vectorptr restrict pos);
+void logHaloAccel(vectorptr restrict acc, const Halo* h, const vectorptr restrict pos);
+void nfwHaloAccel(vectorptr restrict acc, const Halo* h, const vectorptr restrict pos);
 
-#endif /* _NBODY_PRIV_H_ */
+#endif /* _ACCELERATIONS_H_ */
+

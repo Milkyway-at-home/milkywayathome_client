@@ -12,6 +12,7 @@
 #include "grav.h"
 #include "real.h"
 #include "nbody_util.h"
+#include "vectmath.h"
 
 typedef struct
 {
