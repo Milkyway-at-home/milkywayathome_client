@@ -105,11 +105,12 @@ inline static bool treescan(const NBodyCtx* ctx,
 /* hackGrav: evaluate gravitational field on body p; checks to be
  * sure self-interaction was handled correctly if intree is true.
  */
-inline static void hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p, vectorptr restrict acc, bool intree)
+inline static void hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p, vectorptr restrict acc)
 {
     vector externalacc;
     static bool treeincest = FALSE;     /* tree-incest occured */
     bool skipself          = FALSE;     /* self-interaction skipped */
+    bool intree = Mass(p) > 0.0;
 
     ForceEvalState fest = EMPTY_FORCE_EVAL_STATE;
 
@@ -152,7 +153,7 @@ void gravMap(const NBodyCtx* ctx, NBodyState* st)
     //double ts = get_time();
 
     for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)      /* get force on each body */
-        hackGrav(ctx, (nodeptr) st->tree.root, p, (vectorptr) a, Mass(p) > 0.0);
+        hackGrav(ctx, (nodeptr) st->tree.root, p, (vectorptr) a);
 
     //double te = get_time();
 
