@@ -10,14 +10,6 @@
 #ifndef _NBODY_TYPES_H_
 #define _NBODY_TYPES_H_
 
-#ifdef _WIN32
-#include <windows.h>
-#endif /* _WIN32 */
-
-#include <stdio.h>
-#include <OpenCL/cl.h>
-#include <OpenCL/cl_platform.h>
-
 /* Body and cell data structures are used to represent the tree.  During
  * tree construction, descendent pointers are stored in the subp arrays:
  *
@@ -60,6 +52,19 @@
  *                                                 etc
  */
 
+#include "nbody_config.h"
+#include <stdio.h>
+
+#ifdef _WIN32
+  #include <windows.h>
+#endif /* _WIN32 */
+
+#if NBODY_OPENCL
+  #include <OpenCL/cl.h>
+  #include <OpenCL/cl_platform.h>
+#endif /* NBODY_OPENCL */
+
+
 #ifndef  DOUBLEPREC
   typedef float real, *realptr;
 #else
@@ -91,7 +96,6 @@
   typedef real4 matrix[NDIM];
   #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
 #else
-
   #ifndef bool
     typedef short int bool;
   #endif

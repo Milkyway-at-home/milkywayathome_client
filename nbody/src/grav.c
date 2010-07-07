@@ -84,9 +84,11 @@ inline static bool treescan(const NBodyCtx* ctx,
 
     while (q != NULL)               /* while not at end of scan */
     {
-        if (Type(q) == CELL &&                /* is node a cell and... */
-            subdivp(fest, (cellptr) q))       /* too close to accept? */
+        if (   Type(q) == CELL                   /* is node a cell and... */
+            && subdivp(fest, (cellptr) q))       /* too close to accept? */
+        {
             q = More(q);            /* follow to next level */
+        }
         else                    /* else accept this term */
         {
             if (q == (nodeptr) fest->pskip)    /* self-interaction? */

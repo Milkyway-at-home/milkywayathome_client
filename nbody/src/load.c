@@ -79,8 +79,10 @@ static void threadTree(nodeptr p, nodeptr n)
     {
         ndesc = 0;                              /* count extant children */
         for (i = 0; i < NSUB; i++)              /* loop over subnodes */
+        {
             if (Subp(p)[i] != NULL)             /* found a live one? */
                 desc[ndesc++] = Subp(p)[i];     /* store in table */
+        }
         More(p) = desc[0];                      /* link to first child */
         desc[ndesc] = n;                        /* end table with next */
         for (i = 0; i < ndesc; i++)             /* loop over children */
@@ -119,7 +121,7 @@ static void newTree(Tree* t)
     static bool firstcall = TRUE;
     nodeptr p;
 
-    if (! firstcall)                            /* tree data to reclaim? */
+    if (!firstcall)                             /* tree data to reclaim? */
     {
         p = (nodeptr) t->root;                  /* start with the t.root */
         while (p != NULL)                       /* loop scanning tree */
