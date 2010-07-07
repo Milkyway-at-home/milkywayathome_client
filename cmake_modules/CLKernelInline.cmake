@@ -21,6 +21,8 @@
 function(inline_kernel name file c_kernel_dir)
   file(READ "${dir}/${file}" str)
 
+  set(name "cl_${name}")
+
   #Remove the comments. Otherwise, C++ comments will comment out the
   #rest of the program unless we do more work.
   string(REGEX REPLACE

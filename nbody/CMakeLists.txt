@@ -107,18 +107,24 @@ endif()
 if(NBODY_OPENCL)
   set(c_kernel_dir "${CMAKE_CURRENT_SOURCE_DIR}/ckernels")
   list(APPEND nbody_lib_src "${PROJECT_SOURCE_DIR}/src/setup_opencl.c")
-  set(kernel_list "${CMAKE_CURRENT_SOURCE_DIR}/kernels/gravmap.cl")
-  #TODO: Bother only if the file has changed, and make sure it happens
-  #on every 'make'
-  foreach(kernel ${kernel_list})
-    get_filename_component(basename "${kernel}" NAME_WE)
-    inline_kernel("${basename}"
-      "${CMAKE_CURRENT_SOURCE_DIR}/${kernel}"
-      "${c_kernel_dir}")
-    list(APPEND nbody_lib_src "${c_kernel_dir}/${basename}.c")
-  endforeach()
+  inline_kernel("gravmap"
+                "${CMAKE_CURRENT_SOURCE_DIR}/kernels/gravmap.cl"
+                "${c_kernel_dir}")
 
-  include_directories(${c_kernel_dir})
+  list(APPEND nbody_lib_src "${c_kernel_dir}/cl_gravmap.c")
+
+  #set(kernel_list "gravmap.cl")
+  # #TODO: Bother only if the file has changed, and make sure it happens
+  # #on every 'make'
+  # foreach(kernel ${kernel_list})
+  #   get_filename_component(basename "${kernel}" NAME_WE)
+  #   inline_kernel("${basename}"
+  #                 "${CMAKE_CURRENT_SOURCE_DIR}/kernels/${kernel}"
+  #                 "${c_kernel_dir}")
+  #   list(APPEND nbody_lib_src "${c_kernel_dir}/${basename}.c")
+  # endforeach()
+
+  #include_directories(${c_kernel_dir})
 
   list(APPEND nbody_link_libs ${OPENCL_LIBRARIES})
 endif()

@@ -12,21 +12,37 @@
 
 /* Vector operations. */
 
-#define CLRV(v)         /* CLeaR Vector */      \
+/* I think the extra 4th component is only an issue for clearing. The
+ * rest of the time it's ignored. */
+/* CLeaR Vector */
+#if NBODY_OPENCL || defined(__OPENCL_VERSION__)
+  #define CLRV(v)                               \
     {                                           \
-        size_t _i;                              \
-        for (_i = 0; _i < NDIM; ++_i)           \
-            (v)[_i] = 0.0;                      \
+        (v)[0] = 0.0;                           \
+        (v)[1] = 0.0;                           \
+        (v)[2] = 0.0;                           \
+        (v)[2] = 0.0;                           \
     }
 
-#define UNITV(v,j)      /* UNIT Vector */       \
+#else
+  #define CLRV(v)                               \
+    {                                           \
+        (v)[0] = 0.0;                           \
+        (v)[1] = 0.0;                           \
+        (v)[2] = 0.0;                           \
+    }
+#endif NBODY_OPENCL || defined(__OPENCL_VERSION__)
+
+/* UNIT Vector */
+#define UNITV(v,j)                              \
     {                                           \
         (v)[0] = (0 == (j)) ? 1.0 : 0.0;        \
         (v)[1] = (1 == (j)) ? 1.0 : 0.0;        \
         (v)[2] = (2 == (j)) ? 1.0 : 0.0;        \
     }
 
-#define SETV(v,u)       /* SET Vector */        \
+/* SET Vector */
+#define SETV(v,u)                               \
     {                                           \
         (v)[0] = (u)[0];                        \
         (v)[1] = (u)[1];                        \
@@ -45,33 +61,35 @@
         *_vp   = (*_up) + (*_wp);                   \
     }
 
-#define SUBV(v,u,w)     /* SUBtract Vector */                   \
-    {                                                           \
-        real* restrict _vp = (v);                               \
-        const real* restrict _up = (u);                         \
-        const real* restrict _wp = (w);                         \
-        *_vp++ = (*_up++) - (*_wp++);                           \
-        *_vp++ = (*_up++) - (*_wp++);                           \
-        *_vp   = (*_up) - (*_wp);                               \
+/* SUBtract Vector */
+#define SUBV(v,u,w)                             \
+    {                                           \
+        real* restrict _vp = (v);               \
+        const real* restrict _up = (u);         \
+        const real* restrict _wp = (w);         \
+        *_vp++ = (*_up++) - (*_wp++);           \
+        *_vp++ = (*_up++) - (*_wp++);           \
+        *_vp   = (*_up) - (*_wp);               \
     }
 
-#define MULVS(v,u,s)        /* MULtiply Vector by Scalar */     \
-    {                                                           \
-        real* restrict _vp = (v);                               \
-        const real* restrict _up = (u);                         \
-        *_vp++ = (*_up++) * (s);                                \
-        *_vp++ = (*_up++) * (s);                                \
-        *_vp   = (*_up) * (s);                                  \
+/* MULtiply Vector by Scalar */
+#define MULVS(v,u,s)                            \
+    {                                           \
+        real* restrict _vp = (v);               \
+        const real* restrict _up = (u);         \
+        *_vp++ = (*_up++) * (s);                \
+        *_vp++ = (*_up++) * (s);                \
+        *_vp   = (*_up) * (s);                  \
     }
 
 /* Negate vector */
-#define NEGV(v,u)                                               \
-    {                                                           \
-        real* restrict _vp = (v);                               \
-        const real* restrict _up = (u);                         \
-        *_vp++ = -(*_up++);                                     \
-        *_vp++ = -(*_up++);                                     \
-        *_vp   = -(*_up);                                       \
+#define NEGV(v,u)                               \
+    {                                           \
+        real* restrict _vp = (v);               \
+        const real* restrict _up = (u);         \
+        *_vp++ = -(*_up++);                     \
+        *_vp++ = -(*_up++);                     \
+        *_vp   = -(*_up);                       \
     }
 
 #define INCNEGV(v)                              \

@@ -15,6 +15,8 @@
 #endif /* _WIN32 */
 
 #include <stdio.h>
+#include <OpenCL/cl.h>
+#include <OpenCL/cl_platform.h>
 
 /* Body and cell data structures are used to represent the tree.  During
  * tree construction, descendent pointers are stored in the subp arrays:
@@ -58,50 +60,62 @@
  *                                                 etc
  */
 
+#ifndef  DOUBLEPREC
+  typedef float real, *realptr;
+#else
+  typedef double real, *realptr;
+#endif /* DOUBLEPREC */
+
+#define NDIM 3
+
+#if NBODY_OPENCL || defined(__OPENCL_VERSION__) /* Also included by the kernels */
+  #ifndef bool
+    typedef int bool;
+  #endif
+
+  #ifndef  DOUBLEPREC
+    typedef cl_float4 real4, *real4ptr;
+  #else
+    typedef cl_double4 real4, *real4ptr;
+  #endif /* DOUBLEPREC */
+
+  typedef real4 vector;
+  typedef real* vectorptr;
+
+  typedef real4 matrix[NDIM];
+  #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
+#else
+
+  #ifndef bool
+    typedef short int bool;
+  #endif
+
+  typedef real vector[NDIM], matrix[NDIM][NDIM];
+  typedef real* vectorptr;
+
+  #define ZERO_VECTOR { 0.0, 0.0, 0.0 }
+#endif /* NBODY_OPENCL */
+
+#define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
+
+#ifndef TRUE
+  #define TRUE  1
+  #define FALSE 0
+#endif
+
+
 /*
 typedef enum
 {
     BODY,
     CELL
 } body_t; */
-
-
-/* real, realptr: real-valued number, and pointer to same. */
-
-#ifndef  DOUBLEPREC
-typedef float real, *realptr;
-#else
-typedef double real, *realptr;
-#endif
-
-typedef real (*rproc)();
-
-
-#define NDIM 3
-typedef real vector[NDIM], matrix[NDIM][NDIM];
-
-typedef real* vectorptr;
-
-#define ZERO_VECTOR { 0.0, 0.0, 0.0 }
-#define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
-
-
 #define BODY 01
 #define CELL 02
 
 typedef short body_t;
 
-#ifndef bool
-typedef short int bool;
-#endif
-
-#ifndef TRUE
-#  define TRUE  1
-#  define FALSE 0
-#endif
-
-/* NODE: data common to BODY and CELL structures. */
-
+/* node: data common to BODY and CELL structures. */
 typedef struct _node
 {
     body_t type;            /* code for node type */
@@ -359,11 +373,6 @@ typedef void (*DiskAccel) (vectorptr restrict, const Disk*, const vectorptr rest
 
 /* Generic potential function */
 typedef void (*AccelFunc) (vectorptr restrict, const void*, const vectorptr restrict);
-
-
-/* PROC, IPROC: pointers to procedures and integer-valued functions. */
-typedef void (*proc)();
-typedef int (*iproc)();
 
 #endif /* _NBODY_TYPES_H_ */
 
