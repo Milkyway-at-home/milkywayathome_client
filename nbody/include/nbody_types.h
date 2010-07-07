@@ -68,6 +68,27 @@ typedef enum
     CELL
 } body_t; */
 
+
+/* real, realptr: real-valued number, and pointer to same. */
+
+#ifndef  DOUBLEPREC
+typedef float real, *realptr;
+#else
+typedef double real, *realptr;
+#endif
+
+typedef real (*rproc)();
+
+
+#define NDIM 3
+typedef real vector[NDIM], matrix[NDIM][NDIM];
+
+typedef real* vectorptr;
+
+#define ZERO_VECTOR { 0.0, 0.0, 0.0 }
+#define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
+
+
 #define BODY 01
 #define CELL 02
 

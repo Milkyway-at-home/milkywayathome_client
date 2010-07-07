@@ -8,16 +8,7 @@
 #ifndef _VECTMATH_H_
 #define _VECTMATH_H_
 
-#include "real.h"
-
-#define NDIM 3
-
-typedef real vector[NDIM], matrix[NDIM][NDIM];
-
-typedef real* vectorptr;
-
-#define ZERO_VECTOR { 0.0, 0.0, 0.0 }
-#define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
+#include "nbody_types.h"
 
 /* Vector operations. */
 
