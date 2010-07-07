@@ -21,16 +21,16 @@
 
 #define UNITV(v,j)      /* UNIT Vector */       \
     {                                           \
-        size_t _i;                              \
-        for (_i = 0; _i < NDIM; ++_i)           \
-            (v)[_i] = (_i == (j)) ? 1.0 : 0.0;  \
+        (v)[0] = (0 == (j)) ? 1.0 : 0.0;        \
+        (v)[1] = (1 == (j)) ? 1.0 : 0.0;        \
+        (v)[2] = (2 == (j)) ? 1.0 : 0.0;        \
     }
 
 #define SETV(v,u)       /* SET Vector */        \
     {                                           \
-        size_t _i;                              \
-        for (_i = 0; _i < NDIM; ++_i)           \
-            (v)[_i] = (u)[_i];                  \
+        (v)[0] = (u)[0];                        \
+        (v)[1] = (u)[1];                        \
+        (v)[2] = (u)[2];                        \
     }
 
 /* Warning: Don't add a vector to itself, and don't increment with
@@ -84,9 +84,9 @@
 /* DIVide Vector by Scalar */
 #define DIVVS(v,u,s)                            \
     {                                           \
-        size_t _i;                              \
-        for (_i = 0; _i < NDIM; ++_i)           \
-            (v)[_i] = (u)[_i] / (s);            \
+        (v)[0] = (u)[0] / (s);                  \
+        (v)[1] = (u)[1] / (s);                  \
+        (v)[2] = (u)[2] / (s);                  \
     }
 
 /* DOT Vector Product */
@@ -114,21 +114,21 @@
 /* ABSolute value of a Vector */
 #define ABSV(s,v)                               \
     {                                           \
-        size_t _i;                              \
-        real _tmp = 0.0;                        \
-        for (_i = 0; _i < NDIM; ++_i)           \
-            _tmp += sqr((v)[_i]);               \
+        real _tmp;                              \
+        _tmp = sqr((v)[0]);                     \
+        _tmp += sqr((v)[1]);                    \
+        _tmp += sqr((v)[2]);                    \
         (s) = rsqrt(_tmp);                      \
     }
 
 /* DISTance between Vectors */
-#define DISTV(s,u,v)                                        \
-    {                                                       \
-        size_t _i;                                          \
-        real _tmp = 0.0;                                    \
-        for (_i = 0; _i < NDIM; ++_i)                       \
-            _tmp += ((u)[_i]-(v)[_i]) * ((u)[_i]-(v)[_i]);  \
-        (s) = rsqrt(_tmp);                                  \
+#define DISTV(s,u,v)                            \
+    {                                           \
+        real _tmp;                              \
+        _tmp = sqr((u)[0]-(v)[0]);              \
+        _tmp += sqr((u)[1]-(v)[1]);             \
+        _tmp += sqr((u)[2]-(v)[2]);             \
+        (s) = rsqrt(_tmp);                      \
     }
 
 /* CROSS Vector Product */
@@ -142,30 +142,33 @@
 /* INCrementally ADD Vector */
 #define INCADDV(v,u)                            \
     {                                           \
-        size_t _i;                              \
-        for (_i = 0; _i < NDIM; ++_i)           \
-            (v)[_i] += (u)[_i];                 \
+        (v)[0] += (u)[0];                       \
+        (v)[1] += (u)[1];                       \
+        (v)[2] += (u)[2];                       \
     }
 
-#define INCSUBV(v,u)             /* INCrementally SUBtract Vector */    \
-    {                                                                   \
-        size_t _i;                                                      \
-        for (_i = 0; _i < NDIM; ++_i)                                   \
-            (v)[_i] -= (u)[_i];                                         \
+/* INCrementally SUBtract Vector */
+#define INCSUBV(v,u)                            \
+    {                                           \
+        (v)[0] -= (u)[0];                       \
+        (v)[1] -= (u)[1];                       \
+        (v)[2] -= (u)[2];                       \
     }
 
-#define INCMULVS(v,s)   /* INCrementally MULtiply Vector by Scalar */   \
-    {                                                                   \
-        size_t _i;                                                      \
-        for (_i = 0; _i < NDIM; ++_i)                                   \
-            (v)[_i] *= (s);                                             \
+/* INCrementally MULtiply Vector by Scalar */
+#define INCMULVS(v,s)                           \
+    {                                           \
+        (v)[0] *= (s);                          \
+        (v)[1] *= (s);                          \
+        (v)[2] *= (s);                          \
     }
 
-#define INCDIVVS(v,s)   /* INCrementally DIVide Vector by Scalar */ \
-    {                                                               \
-        size_t _i;                                                  \
-        for (_i = 0; _i < NDIM; ++_i)                               \
-            (v)[_i] /= (s);                                         \
+/* INCrementally DIVide Vector by Scalar */
+#define INCDIVVS(v,s)                           \
+    {                                           \
+        (v)[0] /= (s);                          \
+        (v)[1] /= (s);                          \
+        (v)[2] /= (s);                          \
     }
 
 /* Matrix operations. */
@@ -255,15 +258,17 @@
         }                                                   \
     }
 
-#define OUTVP(p,v,u)        /* OUTer Vector Product */  \
-    {                                                   \
-        size_t _i, _j;                                  \
-        for (_i = 0; _i < NDIM; ++_i)                   \
-            for (_j = 0; _j < NDIM; ++_j)               \
-                (p)[_i][_j] = (v)[_i] * (u)[_j];        \
+/* OUTer Vector Product */
+#define OUTVP(p,v,u)                                \
+    {                                               \
+        size_t _i, _j;                              \
+        for (_i = 0; _i < NDIM; ++_i)               \
+            for (_j = 0; _j < NDIM; ++_j)           \
+                (p)[_i][_j] = (v)[_i] * (u)[_j];    \
     }
 
-#define TRACEM(s,p)     /* TRACE of Matrix */   \
+/* TRACE of Matrix */
+#define TRACEM(s,p)                             \
     {                                           \
         size_t _i;                              \
         (s) = 0.0;                              \
@@ -271,29 +276,31 @@
             (s) += (p)[_i][_i];                 \
     }
 
-/*  * Misc. impure operations.
- */
+/* Misc. impure operations. */
 
-#define SETVS(v,s)      /* SET Vector to Scalar */  \
-    {                                               \
-        size_t _i;                                  \
-        for (_i = 0; _i < NDIM; ++_i)               \
-            (v)[_i] = (s);                          \
+/* SET Vector to Scalar */
+#define SETVS(v,s)                              \
+    {                                           \
+        (v)[0] = (s);                           \
+        (v)[1] = (s);                           \
+        (v)[2] = (s);                           \
     }
 
-#define ADDVS(v,u,s)        /* ADD Vector and Scalar */     \
-    {                                                       \
-        size_t _i;                                          \
-        for (_i = 0; _i < NDIM; ++_i)                       \
-            (v)[_i] = (u)[_i] + (s);                        \
+/* ADD Vector and Scalar */
+#define ADDVS(v,u,s)                            \
+    {                                           \
+        (v)[0] = (u)[0] + (s);                  \
+        (v)[1] = (u)[1] + (s);                  \
+        (v)[2] = (u)[2] + (s);                  \
     }
 
-#define SETMS(p,s)      /* SET Matrix to Scalar */  \
-    {                                               \
-        size_t _i, _j;                              \
-        for (_i = 0; _i < NDIM; ++_i)               \
-            for (_j = 0; _j < NDIM; ++_j)           \
-                (p)[_i][_j] = (s);                  \
+/* SET Matrix to Scalar */
+#define SETMS(p,s)                              \
+    {                                           \
+        size_t _i, _j;                          \
+        for (_i = 0; _i < NDIM; ++_i)           \
+            for (_j = 0; _j < NDIM; ++_j)       \
+                (p)[_i][_j] = (s);              \
     }
 
 #endif /* _VECTMATH_H_ */
