@@ -68,6 +68,12 @@
 
 #define NDIM 3
 
+/* Note: vectorptr is NOT the same as vector*.  By using real* as
+   vectorptr, we can do nice things to avoid pointer aliasing and
+   copying in various places. Use vector* only for mapping over an
+   array of vectors.
+ */
+
 #if NBODY_OPENCL || defined(__OPENCL_VERSION__) /* Also included by the kernels */
   #ifndef bool
     typedef int bool;
@@ -342,7 +348,7 @@ typedef struct
     real tout;
     real tnow;
     bodyptr bodytab;    /* points to array of bodies */
-    vectorptr acctab;   /* Corresponding accelerations of bodies */
+    vector* acctab;     /* Corresponding accelerations of bodies */
 } NBodyState;
 
 typedef int generic_enum_t;  /* A general enum type. */

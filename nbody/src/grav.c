@@ -137,7 +137,7 @@ inline static void hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p, vector
 void gravMap(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
-    vectorptr a;
+    vector* a;
     const bodyptr endp = st->bodytab + ctx->model.nbody;
 
     //double tstree = get_time();
@@ -149,8 +149,8 @@ void gravMap(const NBodyCtx* ctx, NBodyState* st)
 
     //double ts = get_time();
 
-    for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)           /* loop over all bodies */
-        hackGrav(ctx, (nodeptr) st->tree.root, p, a, Mass(p) > 0.0);    /* get force on each */
+    for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)      /* get force on each body */
+        hackGrav(ctx, (nodeptr) st->tree.root, p, (vectorptr) a, Mass(p) > 0.0);
 
     //double te = get_time();
 
