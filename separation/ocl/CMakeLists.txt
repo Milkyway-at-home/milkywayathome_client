@@ -18,6 +18,7 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+include(CLKernelInline)
 #include_directories(${OPENCL_INCLUDE_DIRS})
 #include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 #include_directories("../cpu/")
@@ -43,55 +44,15 @@ set(ocl_lib_src evaluation_ocl.cpp
                 ../cuda/coords.c
                 ../cuda/cpu_coords.c)
 
-set(c_kernel_dir "ckernels")
-
-function(inline_kernel name file)
-  file(READ "${file}" str)
-
-  #Remove the comments. Otherwise, C++ comments will comment out the
-  #rest of the program unless we do more work.
-  string(REGEX REPLACE
-             "(/\\*([^*]|[\r\n]|(\\*+([^*/]|[\r\n])))*\\*+/)|(//[^\r\n]*)"
-             "" # No comment
-             str_stripped
-
-             #Quote this to prevent ;'s being interpreted as list separators
-             "${str}")
-
-  #Escape special characters
-  #TODO: Other things that need escaping
-  string(REGEX REPLACE
-             "(\n)|(\r\n)"
-             "\\\\n"
-             str_escaped
-             "${str_stripped}")
-
-  string(REGEX REPLACE
-             "(\")"
-             "\\\\\""
-             str_escaped
-             "${str_escaped}")
-
-  set(cfile "\n#include \"${name}.h\"\n
-           \nconst char* ${name}_src = \"${str_escaped}\";
-           \n\n")
-
-  string(TOUPPER "${name}" upname)
-  set(hfile "\n#ifndef _${upname}_H_\n#define _${upname}_H_
-            \n#ifdef __cplusplus\nextern \"C\" {\n#endif
-            \nextern const char* ${name}_src;
-            \n#ifdef __cplusplus\n} \n#endif
-            \n#endif /* _${upname}_H_ */\n\n")
-
-  file(WRITE "${c_kernel_dir}/${name}.c" "${cfile}")
-  file(WRITE "${c_kernel_dir}/${name}.h" "${hfile}")
-endfunction()
+set(c_kernel_dir "${CMAKE_CURRENT_SOURCE_DIR}/ckernels")
 
 #TODO: Bother only if the file has changed, and make sure it happens
 #on every 'make'
 foreach(kernel ${kernel_list})
   get_filename_component(basename "${kernel}" NAME_WE)
-  inline_kernel("${basename}" "kernels/${kernel}")
+  inline_kernel("${basename}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/kernels/${kernel}"
+                "${c_kernel_dir}")
   list(APPEND ocl_lib_src "${c_kernel_dir}/${basename}.c")
 endforeach()
 
