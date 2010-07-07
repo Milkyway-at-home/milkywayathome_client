@@ -32,8 +32,6 @@ set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-include(CLKernelInline)
-
 if(CMAKE_COMPILER_IS_GNUCC)
   set(DEFAULT_USE_DYNAMIC_PRECISION ON)
 else()
@@ -107,27 +105,14 @@ endif()
 if(NBODY_OPENCL)
   set(c_kernel_dir "${CMAKE_CURRENT_SOURCE_DIR}/ckernels")
   list(APPEND nbody_lib_src "${PROJECT_SOURCE_DIR}/src/setup_opencl.c")
-  inline_kernel("gravmap"
-                "${CMAKE_CURRENT_SOURCE_DIR}/kernels/gravmap.cl"
-                "${c_kernel_dir}")
 
   list(APPEND nbody_lib_src "${c_kernel_dir}/cl_gravmap.c")
-
-  #set(kernel_list "gravmap.cl")
-  # #TODO: Bother only if the file has changed, and make sure it happens
-  # #on every 'make'
-  # foreach(kernel ${kernel_list})
-  #   get_filename_component(basename "${kernel}" NAME_WE)
-  #   inline_kernel("${basename}"
-  #                 "${CMAKE_CURRENT_SOURCE_DIR}/kernels/${kernel}"
-  #                 "${c_kernel_dir}")
-  #   list(APPEND nbody_lib_src "${c_kernel_dir}/${basename}.c")
-  # endforeach()
-
-  #include_directories(${c_kernel_dir})
+  set_source_files_properties("${c_kernel_dir}/cl_gravmap.c"
+                              PROPERTIES GENERATED TRUE)
 
   list(APPEND nbody_link_libs ${OPENCL_LIBRARIES})
 endif()
+
 
 # This dynamic precision is kind of sketchy. We compile the library
 # twice, once with float and once with double precision. Anything
@@ -179,6 +164,7 @@ if(DYNAMIC_PRECISION)
 else()
    add_library(nbody_simulation STATIC ${nbody_lib_src})
 
+
    #add_library(nbody_simulation SHARED ${nbody_lib_src})
    #message("LIBRARIES: ${nbody_link_libs}")
    #target_link_libraries(nbody_simulation ${nbody_link_libs})
@@ -191,6 +177,28 @@ else()
   set(nbody_libs nbody_simulation)
 endif()
 
+#Inline the CL kernels if they have changed, and make the library
+#depend on them
+if(NBODY_OPENCL)
+  add_custom_command(OUTPUT "${c_kernel_dir}/cl_gravmap.c" "${c_kernel_dir}/cl_gravmap.h"
+                     COMMAND ${CMAKE_COMMAND}
+                               "-DCMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}"
+                               "-DKERNEL_NAME=gravmap"
+                               "-DKERNEL_FILE=${CMAKE_CURRENT_SOURCE_DIR}/kernels/gravmap.cl"
+                               "-DC_KERNEL_DIR=${CMAKE_CURRENT_SOURCE_DIR}/ckernels"
+                               -P "${CMAKE_MODULE_PATH}/InlineNBody.cmake"
+                      COMMENT "Inlining gravmap kernel")
+
+  # I have no idea why you need to do this extra target. I'm probably
+  # doing it wrong.
+  add_custom_target(gravmap_kernel DEPENDS "${c_kernel_dir}/cl_gravmap.c")
+
+  foreach(n ${nbody_libs})
+    add_dependencies(${n} gravmap_kernel)
+  endforeach()
+endif()
+
+
 message("LINK LIBS = ${nbody_link_libs}")
 add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
 target_link_libraries(milkyway_nbody ${nbody_link_libs} ${POPT_LIBRARY} ${nbody_libs})
@@ -202,4 +210,5 @@ endif()
 
 
 #add_subdirectory(tests EXCLUDE_FROM_ALL)
+
 

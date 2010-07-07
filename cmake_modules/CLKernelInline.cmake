@@ -18,9 +18,11 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+#meant to be called at build time using cmake -P, setting variables
+#with -D
+
 function(inline_kernel name file c_kernel_dir)
   file(READ "${dir}/${file}" str)
-
   set(name "cl_${name}")
 
   #Remove the comments. Otherwise, C++ comments will comment out the
@@ -61,4 +63,9 @@ function(inline_kernel name file c_kernel_dir)
   file(WRITE "${c_kernel_dir}/${name}.c" "${cfile}")
   file(WRITE "${c_kernel_dir}/${name}.h" "${hfile}")
 endfunction()
+
+inline_kernel("${KERNEL_NAME}"
+              "${KERNEL_FILE}"
+              "${C_KERNEL_DIR}")
+
 
