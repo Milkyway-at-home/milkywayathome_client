@@ -101,7 +101,7 @@ inline static bool treescan(const NBodyCtx* ctx,
 /* hackGrav: evaluate gravitational field on body p; checks to be
  * sure self-interaction was handled correctly if intree is true.
  */
-inline static void hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p, bool intree)
+inline static void hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p, vectorptr restrict acc, bool intree)
 {
     vector externalacc;
     static bool treeincest = FALSE;     /* tree-incest occured */
@@ -129,29 +129,29 @@ inline static void hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p, bool i
     INCADDV(fest.acc0, externalacc);
 
     /* TODO: Sharing */
-    SETV(Acc(p), fest.acc0);         /* and acceleration */
-
+    SETV(acc, fest.acc0);         /* and acceleration */
 }
 
 void gravMap(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
+    vectorptr a;
     const bodyptr endp = st->bodytab + ctx->model.nbody;
 
-    double tstree = get_time();
+    //double tstree = get_time();
 
     makeTree(ctx, st);                /* build tree structure */
 
-    double tetree = get_time();
-    printf("Time for makeTree = %gs\n", tetree - tstree);
+    //double tetree = get_time();
+    //printf("Time for makeTree = %gs\n", tetree - tstree);
 
-    double ts = get_time();
+    //double ts = get_time();
 
-    for (p = st->bodytab; p < endp; p++)        /* loop over all bodies */
-        hackGrav(ctx, (nodeptr) st->tree.root, p, Mass(p) > 0.0);    /* get force on each */
+    for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)           /* loop over all bodies */
+        hackGrav(ctx, (nodeptr) st->tree.root, p, a, Mass(p) > 0.0);    /* get force on each */
 
-    double te = get_time();
+    //double te = get_time();
 
-    printf("Time for map = %gs\n", te - ts);
+    //printf("Time for map = %gs\n", te - ts);
 }
 

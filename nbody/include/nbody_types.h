@@ -100,7 +100,6 @@ typedef struct
 #define Body    body
 
 #define Vel(x)  (((bodyptr) (x))->vel)
-#define Acc(x)  (((bodyptr) (x))->acc)
 
 /* CELL: structure used to represent internal nodes of tree. */
 
@@ -302,6 +301,7 @@ typedef struct
     real tout;
     real tnow;
     bodyptr bodytab;    /* points to array of bodies */
+    vectorptr acctab;   /* Corresponding accelerations of bodies */
 } NBodyState;
 
 typedef int generic_enum_t;  /* A general enum type. */
@@ -320,7 +320,7 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, EMPTY_CHECKPOINT_HANDLE, NAN, NAN, NAN, NAN, 0, 0, FALSE, FALSE, FALSE }
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
-#define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL}
+#define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL, NULL }
 #define EMPTY_VECTOR { NAN, NAN, NAN }
 #define EMPTY_INITIAL_CONDITIONS { EMPTY_VECTOR, EMPTY_VECTOR, FALSE, FALSE }
 

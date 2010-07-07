@@ -475,6 +475,7 @@ void nbodyStateDestroy(NBodyState* st)
 {
     freeTree(&st->tree);
     free(st->bodytab);
+    free(st->acctab);
 }
 
 

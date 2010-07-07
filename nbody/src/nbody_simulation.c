@@ -20,6 +20,7 @@ inline static void initState(const NBodyCtx* ctx, const InitialConditions* ic, N
 
     st->tnow = 0.0;                 /* reset elapsed model time */
     st->bodytab = (bodyptr) mallocSafe(ctx->model.nbody * sizeof(body));
+    st->acctab  = (vectorptr) mallocSafe(ctx->model.nbody * sizeof(vector));
 
     generatePlummer(ctx, ic, st);    /* make test model */
 
@@ -40,13 +41,14 @@ static void startRun(const NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
 inline static void stepSystem(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
+    vectorptr a;
     vector dvel, dpos;
     const bodyptr endp = st->bodytab + ctx->model.nbody;
     const real dt = ctx->model.timestep;
 
-    for (p = st->bodytab; p < endp; p++)    /* loop over all bodies */
+    for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)    /* loop over all bodies */
     {
-        MULVS(dvel, Acc(p), 0.5 * dt);  /* get velocity increment */
+        MULVS(dvel, a, 0.5 * dt);  /* get velocity increment */
         INCADDV(Vel(p), dvel);          /* advance v by 1/2 step */
         MULVS(dpos, Vel(p), dt);        /* get positon increment */
         INCADDV(Pos(p), dpos);          /* advance r by 1 step */
@@ -54,9 +56,9 @@ inline static void stepSystem(const NBodyCtx* ctx, NBodyState* st)
 
     gravMap(ctx, st);
 
-    for (p = st->bodytab; p < endp; p++)      /* loop over all bodies */
+    for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)      /* loop over all bodies */
     {
-        MULVS(dvel, Acc(p), 0.5 * dt);        /* get velocity increment */
+        MULVS(dvel, a, 0.5 * dt);        /* get velocity increment */
         INCADDV(Vel(p), dvel);                /* advance v by 1/2 step */
     }
 
