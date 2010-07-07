@@ -10,14 +10,11 @@
 #ifndef _NBODY_TYPES_H_
 #define _NBODY_TYPES_H_
 
-#include "stdinc.h"
-#include "real.h"
-#include "vectmath.h"
-
 #ifdef _WIN32
 #include <windows.h>
 #endif /* _WIN32 */
 
+#include <stdio.h>
 
 /* Body and cell data structures are used to represent the tree.  During
  * tree construction, descendent pointers are stored in the subp arrays:
@@ -94,11 +91,20 @@ typedef real* vectorptr;
 
 typedef short body_t;
 
+#ifndef bool
+typedef short int bool;
+#endif
+
+#ifndef TRUE
+#  define TRUE  1
+#  define FALSE 0
+#endif
+
 /* NODE: data common to BODY and CELL structures. */
 
 typedef struct _node
 {
-    body_t type;             /* code for node type */
+    body_t type;            /* code for node type */
     real mass;              /* total mass of node */
     vector pos;             /* position of node */
     struct _node* next;     /* link to next force-calc */

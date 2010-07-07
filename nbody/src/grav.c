@@ -10,6 +10,8 @@
 #include "load.h"
 #include "orbitintegrator.h"
 #include "grav.h"
+#include "real.h"
+#include "nbody_util.h"
 
 typedef struct
 {

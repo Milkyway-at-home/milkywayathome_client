@@ -31,7 +31,6 @@ extern "C" {
 
 #include "nbody_config.h"
 #include "nbody_types.h"
-#include "stdinc.h"
 #include "vectmath.h"
 #include "real.h"
 #include "nbody_util.h"

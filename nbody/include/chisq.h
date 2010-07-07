@@ -22,7 +22,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _CHISQ_H_
 
 #include "nbody_types.h"
-#include "stdinc.h"
 #include "vectmath.h"
 #include "real.h"
 

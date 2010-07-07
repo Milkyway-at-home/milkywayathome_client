@@ -22,7 +22,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _GRAV_H_
 
 #include "nbody_types.h"
-#include "stdinc.h"
 
 /* compute force on all the bodies */
 void gravMap(const NBodyCtx* ctx, NBodyState* st);
