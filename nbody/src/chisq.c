@@ -5,7 +5,8 @@
 
 // Takes a treecode position, converts it to (l,b), then to (lambda, beta), and then constructs a histogram of the density in lambda.
 
-// Then calculates the (model density - data density)/sigma and adds them all up over all bins
+// Then calculates the cross correlation between the model histogram and the data histogram 
+// A maximum correlation means the best fit
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,8 +40,8 @@ static size_t findmax(real* arr, size_t n)
 real chisq(const NBodyCtx* ctx, NBodyState* st)
 {
     real chisqval = 0.0;
+    real totalnum = 0.0;
     int i, j;
-    int stillzero = TRUE;  /* For diagnosing zero chisq */
 
     const int nbody = ctx->model.nbody;
     const bodyptr endp = st->bodytab + nbody;
@@ -49,8 +50,6 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
     // Histogram prep
     int index1, index2;
-    int largestbin1 = 0, largestbin2 = 0;
-    int largestbin = 0;
     int maxindex1 = (int) rfloor(end / binsize);
     int maxindex2 = (int) rabs(rfloor(beginning / binsize));
 
@@ -59,7 +58,7 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
     real bcos, bsin, lsin, lcos;
     vector lbr;
-    real lambda;
+    real lambda, beta;
     const real cosphi = rcos(phi);
     const real sinphi = rsin(phi);
     const real sinpsi = rsin(psi);
@@ -82,7 +81,7 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
         lcos = rcos(L(lbr));
 
         //CHECKME: beta never actually used?
-        //beta = r2d(rasin( sinth * sinphi * bcos * lcos - sinth * cosphi * bcos * lsin + costh * bsin ));
+        beta = r2d(rasin( sinth * sinphi * bcos * lcos - sinth * cosphi * bcos * lsin + costh * bsin ));
 
         lambda = r2d(atan2(
                            (-sinpsi * cosphi - costh * sinphi * cospsi) * bcos * lcos
@@ -92,37 +91,29 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
                            (cospsi * cosphi - costh * sinphi * sinpsi) * bcos * lcos
                          + (cospsi * sinphi + costh * cosphi * sinpsi) * bcos * lsin
                          + sinpsi * sinth * bsin ));
-
+	
         // Create the histogram
-        if (lambda >= -0.0 && lambda < end)
+        if (lambda > 0.0 && lambda < end)
         {
             index1 = (int)rfloor(lambda / binsize);  // floor?
             histodata1[index1]++;
-
-            if (histodata1[index1] > largestbin1)
-                largestbin1 = histodata1[index1];
+            totalnum = totalnum + 1.0;
         }
-        else if (lambda > beginning && lambda < 0)  // only > ?
+        else if (lambda > beginning && lambda < 0.0)  // only > ?
         {
-            index2 = abs((int) rfloor(lambda / binsize));
+            index2 = abs(((int) rfloor(lambda / binsize) + 1));
             histodata2[index2]++;
+            totalnum = totalnum + 1.0;
 
-            if (histodata2[index2] > largestbin2)
-                largestbin2 = histodata2[index2];
         }
         /* CHECKME: else? */
     }
     printf("done\n");
+    printf("Total num in range: %f\n", totalnum);
 
     // Find the largest entry
     // Get the single largest bin so we can normalize over it
     //CHECKME: Why the +1's in the sizes of histodatas?
-
-    printf("Largestbin1: %i Largestbin2: %i\n", largestbin1, largestbin2);
-
-    largestbin = MAX(largestbin1, largestbin2);
-
-    printf("Largest bin: %i\n", largestbin);
 
     f = fopen("histout", "w");
     if (f == NULL)
@@ -135,14 +126,15 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
     // Print out the histogram
     real foo;
-    for (i = 0, foo = -binsize; foo > beginning; foo -= binsize, ++i)
+
+    for (i = 0, foo = -binsize; foo > beginning; foo -= binsize, ++i) // foo = -binsize or foo = 0?
     {
-        fprintf(f, "%f %f\n", foo + (binsize / 2.0) , histodata2[i] / ((real)largestbin));
+        fprintf(f, "%f %f\n", foo + (binsize / 2.0) , histodata2[i]/totalnum);
     }
 
     for (i = 0, foo = 0; foo < end; foo += binsize, ++i)
     {
-        fprintf(f, "%f %f\n", foo + (binsize / 2.0) , histodata1[i] / ((real)largestbin));
+        fprintf(f, "%f %f\n", foo + (binsize / 2.0) , histodata1[i]/totalnum);
     }
     fclose(f);
 
@@ -190,22 +182,11 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     {
         for (j = 0; j < filecount; ++j)
         {
-            // Don't include bins with zero, or zero error, this means there were no counts in that bin to begin with
-            if (fileLambda[j] == foo + (binsize / 2.0) && histodata2[i] != 0 && fileCountErr[j] != 0)
+            if (fileLambda[j] == foo + (binsize / 2.0))
             {
-                chisqval += ((fileCount[j] - (histodata2[i] / largestbin)) / fileCountErr[j])
-                              * ((fileCount[j] - (histodata2[i] / largestbin)) / fileCountErr[j]);
-
-                /* In principle, a zero chisq is the absolute best. But there's 2 ways that can happen: 1) all the bins perfectly lining up, or 2) the chisq having no contributions to it at all */
-		/* We need to check if the chisq is still zero after this addition */
-                if (chisqval != 0.0)
-                    stillzero = FALSE;
-
+                chisqval += ((fileCount[j] - (histodata2[i] / totalnum)) / fileCountErr[j])
+                              * ((fileCount[j] - (histodata2[i] / totalnum)) / fileCountErr[j]);
             }
-
-            /* In principle, a zero chisq is the absolute best. But there's 2 ways that can happen: 1) all the bins perfectly lining up, or 2) the chisq having no contributions to it at all */
-	    /* We need to check if the chisq is still zero after this addition AND the histogram data is also zero */
-	    if(chisqval == 0.0 && histodata2[i] == 0.0) { stillzero = 1; } else { stillzero = 0; }
         }
     }
 
@@ -213,19 +194,12 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     {
         for (j = 0; j < filecount; ++j)
         {
-            // Don't include bins with zero, or zero error, this means there were no counts in that bin to begin with
-            if (fileLambda[j] == foo + (binsize / 2.0) && histodata1[i] != 0 && fileCountErr[j] != 0)
+            if (fileLambda[j] == foo + (binsize / 2.0))
             {
-                chisqval += ((fileCount[j] - (histodata1[i] / largestbin)) / fileCountErr[j])
-                             * ((fileCount[j] - (histodata1[i] / largestbin)) / fileCountErr[j]);
-                /* In principle, a zero chisq is the absolute best. But there's 2 ways that can happen: 1) all the bins perfectly lining up, or 2) the chisq having no contributions to it at all */
-		/* We need to check if the chisq is still zero after this addition */
-		if(chisqval != 0.0) { stillzero = 0; };
+                chisqval += ((fileCount[j] - (histodata1[i] / totalnum)) / fileCountErr[j])
+                              * ((fileCount[j] - (histodata1[i] / totalnum)) / fileCountErr[j]);
             }
 
-            /* In principle, a zero chisq is the absolute best. But there's 2 ways that can happen: 1) all the bins perfectly lining up, or 2) the chisq having no contributions to it at all */
-	    /* We need to check if the chisq is still zero after this addition AND the histogram data is also zero */
-	    if(chisqval == 0.0 && histodata1[i] == 0.0) { stillzero = 1; } else { stillzero = 0; }
         }
     }
 
@@ -235,12 +209,6 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
     free(histodata1);
     free(histodata2);
-
-    /* If stillzero, then no contributions were ever added to the
-     * chisq, so there's actually no data in the range */
-    /* Set it to a bad chisq */
-    if (stillzero)
-        chisqval = 9999.99;
 
     printf("CHISQ = %f\n", chisqval);
 
