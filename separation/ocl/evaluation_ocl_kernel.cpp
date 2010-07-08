@@ -27,43 +27,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <boinc_api.h>
 
-const char* read_kernel(const char* kernel_source)
-{
-#ifdef BOINC_APPLICATION
-    std::string real_path;
-    int ret = boinc_resolve_filename_s(kernel_source, real_path);
-    if (ret)
-    {
-        fprintf(stderr, "Unable to resolve the path of %s\n",
-                kernel_source);
-        return 0;
-    }
-    else
-#else
-    std::string real_path = kernel_source;
-#endif
-    {
-        FILE* fp = fopen(real_path.c_str(), "rb");
-        if (fp)
-        {
-            fseek(fp, 0, SEEK_END);
-            unsigned int size = ftell(fp);
-            rewind(fp);
-            char* buffer = new char[size+1];
-            fread((void*)buffer, size, size, fp);
-            fclose(fp);
-            buffer[size] = '\0';
-            return buffer;
-        }
-        else
-        {
-            fprintf(stderr, "Error opening OpenCL kernel %s\n",
-                    real_path.c_str());
-            return 0;
-        }
-    }
-}
-
 void write_binaries(cl_program program,
                     const char* name)
 {

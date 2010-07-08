@@ -7,12 +7,15 @@
 
 /* TODO: wuh wuh windows */
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <stdlib.h>
 #include <string.h>
 #include <popt.h>
 #include "nbody.h"
 #include "nbody_priv.h"
+
+#define R_OK 2 /* FIXME: Windows */
 
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
 
@@ -24,7 +27,8 @@ static json_object* readParameters(const int argc,
                                    char** checkpointFileName,
                                    int* ignoreCheckpoint,
                                    int* outputCartesian,
-                                   int* printTiming)
+                                   int* printTiming,
+                                   int* verifyOnly)
 {
   #if !defined(DYNAMIC_PRECISION)
     #pragma unused(useDouble)
@@ -65,7 +69,6 @@ static json_object* readParameters(const int argc,
             0, "Input given as string", NULL
         },
 
-
         {
             "output-cartesian", 'x',
             POPT_ARG_NONE, outputCartesian,
@@ -78,6 +81,11 @@ static json_object* readParameters(const int argc,
             0, "Print timing of actual run", NULL
         },
 
+        {
+            "check-file", 'g',
+            POPT_ARG_NONE, verifyOnly,
+            0, "Check that the input file is valid only; perform no calculation.", NULL
+        },
 
       #if BOINC_APPLICATION
         {
@@ -183,25 +191,26 @@ static void runSimulationWrapper(json_object* obj,
                                  const char* checkpointFileName,
                                  const int useDouble,
                                  const int outputCartesian,
-                                 const int printTiming)
+                                 const int printTiming,
+                                 const int verifyOnly)
 {
-  #ifdef DYNAMIC_PRECISION
+  #if DYNAMIC_PRECISION
     if (useDouble)
     {
         printf("Using double precision\n");
-        runNBodySimulation_double(obj, outFileName, checkpointFileName, outputCartesian, printTiming);
+        runNBodySimulation_double(obj, outFileName, checkpointFileName, outputCartesian, printTiming, verifyOnly);
         printf("Done with double\n");
     }
     else
     {
         printf("Using float precision\n");
-        runNBodySimulation_float(obj, outFileName, checkpointFileName, outputCartesian, printTiming);
+        runNBodySimulation_float(obj, outFileName, checkpointFileName, outputCartesian, printTiming, verifyOnly);
         printf("Done with float\n");
     }
   #else
     #pragma unused(useDouble)
 
-    runNBodySimulation(obj, outFileName, checkpointFileName, outputCartesian, printTiming);
+    runNBodySimulation(obj, outFileName, checkpointFileName, outputCartesian, printTiming, verifyOnly);
   #endif /* DYNAMIC_PRECISION */
 }
 
@@ -217,6 +226,7 @@ int main(int argc, const char* argv[])
     int outputCartesian = FALSE;
     int ignoreCheckpoint = FALSE;
     int printTiming = FALSE;
+    int verifyOnly = FALSE;
     char* checkpointFileName = NULL;
 
 #if BOINC_APPLICATION
@@ -243,7 +253,8 @@ int main(int argc, const char* argv[])
                          &checkpointFileName,
                          &ignoreCheckpoint,
                          &outputCartesian,
-                         &printTiming);
+                         &printTiming,
+                         &verifyOnly);
 
     /* Use default if checkpoint file not specified */
     checkpointFileName = checkpointFileName ? checkpointFileName : strdup(DEFAULT_CHECKPOINT_FILE);
@@ -253,7 +264,8 @@ int main(int argc, const char* argv[])
                          checkpointFileName,
                          useDouble,
                          outputCartesian,
-                         printTiming);
+                         printTiming,
+                         verifyOnly);
 
     free(outFileName);
     free(checkpointFileName);

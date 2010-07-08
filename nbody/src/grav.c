@@ -135,9 +135,20 @@ void gravMap(const NBodyCtx* ctx, NBodyState* st)
     bodyptr p;
     const bodyptr endp = st->bodytab + ctx->model.nbody;
 
+    double tstree = get_time();
+
     makeTree(ctx, st);                /* build tree structure */
+
+    double tetree = get_time();
+    printf("Time for makeTree = %gs\n", tetree - tstree);
+
+    double ts = get_time();
 
     for (p = st->bodytab; p < endp; p++)        /* loop over all bodies */
         hackGrav(ctx, st, p, Mass(p) > 0.0);    /* get force on each */
+
+    double te = get_time();
+
+    printf("Time for map = %gs\n", te - ts);
 }
 

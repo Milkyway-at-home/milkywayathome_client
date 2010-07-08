@@ -4,15 +4,17 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
+#include <stdlib.h>
+
+#include "nbody.h"
 #include "json_params.h"
 #include "nbody_priv.h"
-#include "nbody.h"
 
 inline static void initState(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     printf("Starting nbody system\n");
 
-    srand48(ctx->seed);              /* set random generator */
+    SET_SEED(ctx->seed);             /* set random generator */
     st->tout       = st->tnow;       /* schedule first output */
     st->tree.rsize = ctx->tree_rsize;
 
@@ -74,7 +76,7 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
           /* TODO: organize use of this output better since it only
            * half makes sense now with boinc */
 
-          if (ctx->model.time_dwarf - st->tnow < 0.01 / ctx->freq)
+          if (ctx->model.time_dwarf - st->tnow < 0.01 * ctx->model.timestep)
               output(ctx, st);
 
           st->tout += 1.0 / ctx->freqout;     /* schedule next data out */
@@ -91,7 +93,10 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
     output(ctx, st);
   #endif /* BOINC_APPLICATION && !BOINC_DEBUG */
 
+  #if BOINC_APPLICATION
     closeCheckpoint(ctx);       /* We finished so kill the checkpoint */
+  #endif
+
     nbodyCtxDestroy(ctx);     /* finish up output */
     nbodyStateDestroy(st);
 }
@@ -99,7 +104,7 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
 /* Takes parsed json and run the simulation, using outFileName for
  * output. The mess with the different names is for the hacky way we
  * can switch precision easily */
-#ifdef DYNAMIC_PRECISION
+#if DYNAMIC_PRECISION
   #ifdef DOUBLEPREC
     #define RUN_NBODY_SIMULATION runNBodySimulation_double
   #else
@@ -114,24 +119,38 @@ void RUN_NBODY_SIMULATION(json_object* obj,
                           const char* outFileName,
                           const char* checkpointFileName,
                           const int outputCartesian,
-                          const int printTiming)
+                          const int printTiming,
+                          const int verifyOnly)
 {
     NBodyCtx ctx         = EMPTY_CTX;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
     NBodyState st        = EMPTY_STATE;
 
     double ts = 0.0, te = 0.0;
+    int rc;
 
-    get_params_from_json(&ctx, &ic, obj);
+    rc = getParamsFromJSON(&ctx, &ic, obj);
+    if (verifyOnly)
+    {
+        if (rc)
+            printf("File failed\n");
+        else
+            printf("File is OK\n");
+        nbody_finish(rc);
+    }
+
+    if (rc)
+        fail("Failed to read input parameters file\n");
+
     ctx.outputCartesian = outputCartesian;
     ctx.outfilename     = outFileName;
-    ctx.cp.file         = checkpointFileName;
+    ctx.cp.filename     = checkpointFileName;
 
     initOutput(&ctx);
 
   #if BOINC_APPLICATION
     /* If the checkpoint exists, try to use it */
-    if (boinc_file_exists(ctx.cp.file))
+    if (boinc_file_exists(ctx.cp.filename))
     {
         printf("Checkpoint exists. Attempting to resume from it.\n");
         openCheckpoint(&ctx);
@@ -139,7 +158,7 @@ void RUN_NBODY_SIMULATION(json_object* obj,
         /* When the resume fails, start a fresh run */
         if (thawState(&ctx, &st))
         {
-            fprintf(stderr, "Failed to resume checkpoint\n");
+            warn("Failed to resume checkpoint\n");
             closeCheckpoint(&ctx);     /* Something is wrong with this file */
             openCheckpoint(&ctx);      /* Make a new one */
             nbodyStateDestroy(&st);

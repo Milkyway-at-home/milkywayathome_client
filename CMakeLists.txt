@@ -41,12 +41,6 @@ endif()
 
 include_directories(${PROJECT_INCLUDE_DIR})
 
-find_package(Popt REQUIRED)
-find_package(BOINC)
-find_package(CUDA)
-find_package(OpenCL)
-find_package(JsonC)
-
 if(MINGW)
   if(NOT TAKEOFFGW_ROOT)
     set(TAKEOFFGW_ROOT "C:/takeoffgw/")
@@ -54,6 +48,13 @@ if(MINGW)
 
   set(CMAKE_FIND_ROOT_PATH "${TAKEOFFGW_ROOT}/i686-pc-mingw32/sys-root/mingw")
 endif(MINGW)
+
+
+find_package(Popt REQUIRED)
+find_package(BOINC)
+find_package(CUDA)
+find_package(OpenCL)
+find_package(JsonC)
 
 
 #FIXME: Somehow test for and require the Apple gcc. The macports gccs

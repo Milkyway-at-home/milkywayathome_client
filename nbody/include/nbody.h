@@ -18,45 +18,43 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_FLOAT_H_
-#define _NBODY_FLOAT_H_
+#ifndef _NBODY_H_
+#define _NBODY_H_
 
-#include "nbody_config.h"
+#ifdef _cplusplus
+extern "C" {
+#endif
+
 #include <json/json.h>
-
-/* TODO: Naming, and sharing with separation */
-#if BOINC_APPLICATION
-  #include <boinc_api.h>
-  #include <filesys.h>
-  #define nbody_finish(x) boinc_finish(x)
-  #define nbody_fopen(x,y) boinc_fopen((x),(y))
-  #define nbody_remove(x) boinc_delete_file((x))
-#else
-  #define nbody_finish(x) exit(x)
-  #define nbody_fopen(x,y) fopen((x),(y))
-  #define nbody_remove(x) remove((x))
-#endif /* BOINC_APPLICATION */
+#include "nbody_config.h"
+#include "nbody_util.h"
 
 
-
-#ifndef DYNAMIC_PRECISION
+#if !DYNAMIC_PRECISION
   __attribute__ ((visibility("default"))) void runNBodySimulation(json_object* obj,
                                                                   const char* outFileName,
                                                                   const char* checkpointFileName,
                                                                   const int outputCartesian,
-                                                                  const int printTiming);
+                                                                  const int printTiming,
+                                                                  const int verifyOnly);
 #else
   __attribute__ ((visibility("default"))) void runNBodySimulation_float(json_object* obj,
                                                                         const char* outFileName,
                                                                         const char* checkpointFileName,
                                                                         const int outputCartesian,
-                                                                        const int printTiming);
+                                                                        const int printTiming,
+                                                                        const int verifyOnly);
 
   __attribute__ ((visibility("default"))) void runNBodySimulation_double(json_object* obj,
                                                                          const char* outFileName,
                                                                          const char* checkpointFileName,
                                                                          const int outputCartesian,
-                                                                         const int printTiming);
+                                                                         const int printTiming,
+                                                                         const int verifyOnly);
+#endif /* DYNAMIC_PRECISION */
+
+#ifdef _cplusplus
+}
 #endif
 
 #endif /* _NBODY_H_ */

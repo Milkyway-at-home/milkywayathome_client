@@ -40,7 +40,7 @@ void execute_zero_integral_kernel(ocl_mem_t* ocl_mem,
                                   size_t* global_work_size)
 {
     cl_int err;
-    const char* program_source = read_kernel(ZERO_INTEGRAL_KERNEL);
+    const char* program_source = zero_integral_kernel_src;
     cl_program program = clCreateProgramWithSource(ocl_mem->context, 1,
                          &program_source, 0, &err);
     check_error(err);
@@ -60,8 +60,6 @@ void execute_zero_integral_kernel(ocl_mem_t* ocl_mem,
                                        0, 0, 0, 0));
     check_error(clReleaseKernel(kernel));
     check_error(clReleaseProgram(program));
-    delete [] program_source;
-
 }
 
 void execute_integral_kernel(ocl_mem_t* ocl_mem,
@@ -73,11 +71,11 @@ void execute_integral_kernel(ocl_mem_t* ocl_mem,
     cl_int err;
     const char* program_source;
     if (ap->number_streams == 2)
-        program_source = read_kernel(NVIDIA_INTEGRAL_KERNEL2);
+        program_source = nvidia_integral_kernel2_src;
     else
-        program_source = read_kernel(NVIDIA_INTEGRAL_KERNEL);
+        program_source = nvidia_integral_kernel_src;
     if (ocl_mem->platform == ATI)
-        program_source = read_kernel(ATI_INTEGRAL_KERNEL);
+        program_source = ati_integral_kernel_src;
     cl_program program = clCreateProgramWithSource(ocl_mem->context, 1,
                          &program_source, 0, &err);
     check_error(err);
@@ -220,7 +218,7 @@ void execute_zero_likelihood_kernel(ocl_mem_t* ocl_mem,
                                     size_t* global_work_size)
 {
     cl_int err;
-    const char* program_source = read_kernel(ZERO_LIKELIHOOD_KERNEL);
+    const char* program_source = zero_likelihood_kernel_src;
     cl_program program = clCreateProgramWithSource(ocl_mem->context, 1,
                          &program_source, 0, &err);
     check_error(err);
@@ -236,7 +234,6 @@ void execute_zero_likelihood_kernel(ocl_mem_t* ocl_mem,
                                        0, 0, 0, 0));
     check_error(clReleaseKernel(kernel));
     check_error(clReleaseProgram(program));
-    delete [] program_source;
 }
 
 double execute_likelihood_kernel(ocl_mem_t* ocl_mem,
@@ -248,9 +245,9 @@ double execute_likelihood_kernel(ocl_mem_t* ocl_mem,
     cl_int err;
     const char* program_source;
     if (ocl_mem->platform == ATI)
-        program_source = read_kernel(ATI_LIKELIHOOD_KERNEL);
+        program_source = ati_likelihood_kernel_src;
     else
-        program_source = read_kernel(NVIDIA_LIKELIHOOD_KERNEL);
+        program_source = nvidia_likelihood_kernel_src;
     cl_program program = clCreateProgramWithSource(ocl_mem->context, 1,
                          &program_source, 0, &err);
     check_error(err);

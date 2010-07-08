@@ -49,21 +49,21 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define LOCAL_WORK_SIZE 64
 
-#define NVIDIA_INTEGRAL_KERNEL "/Users/matt/src/milkywayathome_client/milkyway_separation/ocl/nvidia_integral_kernel.cl"
+#include "ati_integral_kernel.h"
+#include "nvidia_integral_kernel2.h"
+#include "ati_integral_kernel2.h"
+#include "nvidia_likelihood_kernel.h"
+#include "ati_likelihood_kernel.h"
+//#include "sqrt.h"
+//#include "exp.h"
+#include "zero_integral_kernel.h"
+#include "nvidia_integral_kernel.h"
+#include "zero_likelihood_kernel.h"
 
-#define NVIDIA_INTEGRAL_KERNEL2 "/Users/matt/src/milkywayathome_client/milkyway_separation/ocl/nvidia_integral_kernel2.cl"
-#define ATI_INTEGRAL_KERNEL "ati_integral_kernel2.cl"
 #define INTEGRAL_KERNEL_NAME "integral_kernel"
-
-#define NVIDIA_LIKELIHOOD_KERNEL "/Users/matt/src/milkywayathome_client/milkyway_separation/ocl/nvidia_likelihood_kernel.cl"
-#define ATI_LIKELIHOOD_KERNEL "ati_likelihood_kernel.cl"
 #define LIKELIHOOD_KERNEL_NAME "likelihood_kernel"
-
-#define ZERO_INTEGRAL_KERNEL "/Users/matt/src/milkywayathome_client/milkyway_separation/ocl/zero_integral_kernel.cl"
-#define ZERO_INTEGRAL_KERNEL_NAME "zero_integral_kernel"
-
-#define ZERO_LIKELIHOOD_KERNEL "/Users/matt/src/milkywayathome_client/milkyway_separation/ocl/zero_likelihood_kernel.cl"
 #define ZERO_LIKELIHOOD_KERNEL_NAME "zero_likelihood_kernel"
+#define ZERO_INTEGRAL_KERNEL_NAME "zero_integral_kernel"
 
 typedef enum
 {

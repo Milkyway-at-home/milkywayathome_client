@@ -21,8 +21,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _JSON_PARAMS_H_
 #define _JSON_PARAMS_H_
 
+#ifdef __cplusplus
+extern "C"
+#endif
+
 #include <json/json.h>
-#include "nbody_priv.h"
+
+#include "nbody_types.h"
 
 /* function read a named field into an enum */
 /* :: (Enum a) => String -> a */
@@ -60,7 +65,7 @@ typedef struct _Parameter
                                that for reading an enum from a string, use
                                the enum value and not the string name. */
 
-    const ReadEnum conv;    /* function to read a name into an enum */
+    const ReadEnum conv;    /* function to read a name into an enum. Should return -1 for failure. */
     const bool unique;      /* If this is an object, whether the parameters are supposed to be unique.
                                i.e. there's a set of options to choose from.
                             */
@@ -93,7 +98,11 @@ typedef struct _Parameter
 #define OBJ_PARAM(name, items) { name, nbody_type_object, NULL, NULL, NULL, FALSE, items }
 
 /* The only thing that should be used outside of here */
-void get_params_from_json(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj);
+int getParamsFromJSON(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _JSON_PARAMS_H_ */
 

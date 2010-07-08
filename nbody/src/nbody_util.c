@@ -58,7 +58,7 @@ void* callocSafe(size_t count, size_t size)
 {
     void* mem = (void*) calloc(count, size);
     if (mem == NULL)
-        fail("calloc failed: %zd bytes\n", count * size);
+        fail("calloc failed: %zu bytes\n", count * size);
     return mem;
 }
 
@@ -66,7 +66,7 @@ void* mallocSafe(size_t size)
 {
     void* mem = (void*) malloc(size);
     if (mem == NULL)
-        fail("malloc failed: %zd bytes\n", size);
+        fail("malloc failed: %zu bytes\n", size);
     return mem;
 }
 
@@ -79,7 +79,7 @@ double get_time()
     LARGE_INTEGER t, f;
     QueryPerformanceCounter(&t);
     QueryPerformanceFrequency(&f);
-    return double(t.QuadPart)/double(f.QuadPart);
+    return (double)t.QuadPart/(double)f.QuadPart;
 }
 
 #else

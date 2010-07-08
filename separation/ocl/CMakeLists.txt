@@ -43,46 +43,63 @@ set(ocl_lib_src evaluation_ocl.cpp
                 ../cuda/coords.c
                 ../cuda/cpu_coords.c)
 
-#add_executable(kernel_inliner ${PROJECT_TOOL_DIR}/InlineKernel.c)
+set(c_kernel_dir "ckernels")
 
+function(inline_kernel name file)
+  file(READ "${file}" str)
 
-#file(READ zero_integral_kernel.cl zero_integral_kernel_str)
-#file(READ zero_likelihood_kernel.cl zero_likelihood_kernel_str)
+  #Remove the comments. Otherwise, C++ comments will comment out the
+  #rest of the program unless we do more work.
+  string(REGEX REPLACE
+             "(/\\*([^*]|[\r\n]|(\\*+([^*/]|[\r\n])))*\\*+/)|(//[^\r\n]*)"
+             "" # No comment
+             str_stripped
 
-#file(READ nvidia_likelihood_kernel.cl nvidia_likelihood_kernel_str)
+             #Quote this to prevent ;'s being interpreted as list separators
+             "${str}")
 
-#message("HELLO: ${nvidia_likelihood_kernel_str}")
+  #Escape special characters
+  #TODO: Other things that need escaping
+  string(REGEX REPLACE
+             "(\n)|(\r\n)"
+             "\\\\n"
+             str_escaped
+             "${str_stripped}")
 
-#"(/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/)|(//.*)"
+  string(REGEX REPLACE
+             "(\")"
+             "\\\\\""
+             str_escaped
+             "${str_escaped}")
 
-#perl
-#/\*(?:.|[\r\n])*?\*/
+  set(cfile "\n#include \"${name}.h\"\n
+           \nconst char* ${name}_src = \"${str_escaped}\";
+           \n\n")
 
-#string(REGEX REPLACE "(/\\*([^*]|[\r\n]|(\\*+([^*/]|[\r\n])))*\\*+/)|(//[^\r\n]*)" "" nvidia_likelihood_kernel_str_stripped ${nvidia_likelihood_kernel_str})
+  string(TOUPPER "${name}" upname)
+  set(hfile "\n#ifndef _${upname}_H_\n#define _${upname}_H_
+            \n#ifdef __cplusplus\nextern \"C\" {\n#endif
+            \nextern const char* ${name}_src;
+            \n#ifdef __cplusplus\n} \n#endif
+            \n#endif /* _${upname}_H_ */\n\n")
 
-#file(WRITE "/tmp/lol.cl" ${nvidia_likelihood_kernel_str_stripped})
+  file(WRITE "${c_kernel_dir}/${name}.c" "${cfile}")
+  file(WRITE "${c_kernel_dir}/${name}.h" "${hfile}")
+endfunction()
 
-#string(REGEX REPLACE "(/\\*([^*]|[\r\n]|(\\*+([^*/]|[\r\n])))*\\*+/)|(//.*)" "" nvidia_likelihood_kernel_str_stripped ${nvidia_likelihood_kernel_str})
+#TODO: Bother only if the file has changed, and make sure it happens
+#on every 'make'
+foreach(kernel ${kernel_list})
+  get_filename_component(basename "${kernel}" NAME_WE)
+  inline_kernel("${basename}" "kernels/${kernel}")
+  list(APPEND ocl_lib_src "${c_kernel_dir}/${basename}.c")
+endforeach()
 
-#string(REGEX REPLACE "(/\\*([^*]|[\r\n]|(\\*+([^*/]|[\r\n])))*\\*+/)|(//.*)" "" nvidia_likelihood_kernel_str_stripped ${nvidia_likelihood_kernel_str})
-
-#message("HELLO: ${nvidia_likelihood_kernel_str_stripped}")
-#message("-------------")
+include_directories(${c_kernel_dir})
 
 add_library(milkyway_separation_ocl STATIC ${ocl_lib_src})
 
 target_link_libraries(milkyway_separation_ocl ${OPENCL_LIBRARIES})
 
-# function(inline_kernel kernel_name)
-#   add_custom_command(TARGET milkyway_separation_ocl
-#                      PRE_BUILD
-#                      ${kernel_inliner} "${kernel_name}.cl"
-#                                        "${kernel_name}"
-#                                        "${kernel_name}")
-# endfunction()
-
-# foreach(i ${kernel_list})
-#   inline_kernel(${i})
-# endforeach()
 
 

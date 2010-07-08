@@ -21,6 +21,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _NBODY_UTIL_H_
 #define _NBODY_UTIL_H_
 
+#include "nbody_boinc.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <stdlib.h>
+
 #include "stdinc.h"
 #include "real.h"
 #include "vectmath.h"
@@ -32,13 +40,24 @@ void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr restrict lbR, const vecto
 void lbrToCartesian(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr);
 void lbrToCartesian_rad(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr);
 
+/* FIXME: New random source. drand48() doesn't work on Windows. */
 /* xrandom: generate floating-point random number. */
-#define xrandom(xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * drand48())
+#ifndef _WIN32
+  #define xrandom(xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * drand48())
+  #define SET_SEED(x) (srand48((x)))
+#else
+  #define xrandom(xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * ((double) rand() / (((double) RAND_MAX) + 1.0)))
+  #define SET_SEED(x) ((void) 0)
+#endif /* _WIN32 */
 
 void* callocSafe(size_t count, size_t size);
 void* mallocSafe(size_t size);
 
 __attribute__ ((visibility("default"))) double get_time();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _NBODY_UTIL_H_ */
 

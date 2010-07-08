@@ -14,6 +14,11 @@
 #include "real.h"
 #include "vectmath.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif /* _WIN32 */
+
+
 /* Body and cell data structures are used to represent the tree.  During
  * tree construction, descendent pointers are stored in the subp arrays:
  *
@@ -245,7 +250,7 @@ typedef struct
 {
     int fd;            /* File descriptor for checkpoint file */
     char* mptr;        /* mmap'd pointer for checkpoint file */
-    const char* file;
+    const char* filename;
 } CheckpointHandle;
 
 #define EMPTY_CHECKPOINT_HANDLE { -1, NULL, NULL }
@@ -254,12 +259,13 @@ typedef struct
 
 typedef struct
 {
-    HANDLE fd;          /* File descriptor for checkpoint file */
-    HANDLE mptr;        /* mmap'd pointer for checkpoint file */
-    const char* file;
+    HANDLE file;
+    HANDLE mapFile;
+    char* mptr;
+    const char* filename;
 } CheckpointHandle;
 
-#define EMPTY_CHECKPOINT_HANDLE { /* FIXME: something */ , NULL, NULL }
+#define EMPTY_CHECKPOINT_HANDLE { INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE, NULL, NULL }
 
 #endif /* _WIN32 */
 
