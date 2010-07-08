@@ -24,8 +24,19 @@ inline static void initState(const NBodyCtx* ctx, const InitialConditions* ic, N
 
     generatePlummer(ctx, ic, st);    /* make test model */
 
+  #if NBODY_OPENCL
+    setupNBodyCL(ctx, st);
+  #endif /* NBODY_OPENCL */
+
     /* CHECKME: Why does makeTree get used twice for the first step? */
-    gravMap(ctx, st);               /* Take 1st step */
+    /* Take 1st step */
+
+  #if !NBODY_OPENCL
+    gravMap(ctx, st);
+  #else
+    gravMapCL(ctx, st);
+  #endif /* !NBODY_OPENCL */
+
 }
 
 static void startRun(const NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
@@ -54,7 +65,11 @@ inline static void stepSystem(const NBodyCtx* ctx, NBodyState* st)
         INCADDV(Pos(p), dpos);                     /* advance r by 1 step */
     }
 
+  #if !NBODY_OPENCL
     gravMap(ctx, st);
+  #else
+    gravMapCL(ctx, st);
+  #endif /* !NBODY_OPENCL */
 
     for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)      /* loop over all bodies */
     {
@@ -205,5 +220,6 @@ void RUN_NBODY_SIMULATION(json_object* obj,
     }
 
     endRun(&ctx, &st);
+
 }
 

@@ -55,9 +55,9 @@ if(CUDA_SEPARATION)
   add_subdirectory(cuda)
 endif()
 
-if(OPENCL_SEPARATION)
-  add_subdirectory(ocl)
-endif()
+#if(OPENCL_SEPARATION)
+#  add_subdirectory(ocl)
+#endif()
 
 add_subdirectory(src)
 add_subdirectory(tests EXCLUDE_FROM_ALL)

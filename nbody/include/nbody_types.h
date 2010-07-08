@@ -53,17 +53,26 @@
  */
 
 #include "nbody_config.h"
-#include <stdio.h>
 
-#ifdef _WIN32
-  #include <windows.h>
-#endif /* _WIN32 */
 
-#if NBODY_OPENCL
-  #include <OpenCL/cl.h>
-  #include <OpenCL/cl_platform.h>
-#endif /* NBODY_OPENCL */
+#ifndef __OPENCL_VERSION__   /* Not compiling CL kernel */
+  #if NBODY_OPENCL
+    #include <OpenCL/cl.h>
+    #include <OpenCL/cl_platform.h>
+  #endif /* NBODY_OPENCL */
 
+  #include <stdio.h>
+  #ifdef _WIN32
+    #include <windows.h>
+  #endif /* _WIN32 */
+
+#else
+  /* FIXME: Remove IO from context?
+  These aren't allowed in the kernels, so make these go away with same size type.
+  CHECKME: type of HANDLE on windows = ? */
+  #define FILE void
+  #define HANDLE void*
+#endif
 
 #ifndef  DOUBLEPREC
   typedef float real, *realptr;
@@ -79,16 +88,25 @@
    array of vectors.
  */
 
-#if NBODY_OPENCL || defined(__OPENCL_VERSION__) /* Also included by the kernels */
-  #ifndef bool
-    typedef int bool;
-  #endif
-
-  #ifndef  DOUBLEPREC
-    typedef cl_float4 real4, *real4ptr;
+#if NBODY_OPENCL || defined(__OPENCL_VERSION__)
+  #ifdef __OPENCL_VERSION__ /* In the kernel */
+    #ifndef  DOUBLEPREC
+      typedef float4 real4, *real4ptr;
+    #else
+      typedef double4 real4, *real4ptr;
+    #endif /* DOUBLEPREC */
   #else
-    typedef cl_double4 real4, *real4ptr;
-  #endif /* DOUBLEPREC */
+    #ifndef bool
+      typedef int bool;
+    #endif
+
+    #ifndef  DOUBLEPREC
+      typedef cl_float4 real4, *real4ptr;
+    #else
+      typedef cl_double4 real4, *real4ptr;
+    #endif /* DOUBLEPREC */
+  #endif /* __OPENCL_VERSION__ */
+
 
   typedef real4 vector;
   typedef real* vectorptr;
@@ -112,7 +130,6 @@
   #define TRUE  1
   #define FALSE 0
 #endif
-
 
 /*
 typedef enum
@@ -177,9 +194,11 @@ typedef enum
     SW93
 } criterion_t;
 
+#define _SPHERICAL 0
+
 typedef enum
 {
-    SphericalPotential
+    SphericalPotential = _SPHERICAL
 } spherical_t;
 
 /* Spherical potential */
@@ -191,11 +210,16 @@ typedef struct
 } Spherical;
 
 
+/* Can't get the enum value in preprocessor, so do this */
+#define _MN_DISK 0
+#define _EXP_DISK 1
+
+
 /* Supported disk models */
 typedef enum
 {
-    MiyamotoNagaiDisk,
-    ExponentialDisk
+    MiyamotoNagaiDisk = _MN_DISK,
+    ExponentialDisk   = _EXP_DISK
 } disk_t;
 
 typedef struct
@@ -207,11 +231,16 @@ typedef struct
 } Disk;
 
 /* Supported halo models */
+
+/* Can't get the enum value in preprocessor, so do this */
+#define _LOG_HALO 0
+#define _NFW_HALO 1
+#define _TRIAXIAL_HALO 2
 typedef enum
 {
-    LogarithmicHalo,
-    NFWHalo,
-    TriaxialHalo
+    LogarithmicHalo = _LOG_HALO,
+    NFWHalo         = _NFW_HALO,
+    TriaxialHalo    = _TRIAXIAL_HALO
 } halo_t;
 
 typedef struct
@@ -319,6 +348,59 @@ typedef struct
 
 #endif /* _WIN32 */
 
+#if NBODY_OPENCL && !defined(__OPENCL_VERSION__)
+
+/* Host OpenCL stuff */
+typedef struct
+{
+    cl_device_id dev;
+    cl_device_type devType;
+    unsigned int devCount;
+    cl_context clctx;
+    cl_command_queue queue;
+    cl_program prog;
+    cl_kernel kern;
+} NBodyCLInfo;
+
+#define EMPTY_NBODY_CL_INFO { -1, -1, 0, NULL, NULL, NULL, NULL }
+
+typedef struct
+{
+    cl_mem acc;
+    cl_mem bodies;
+    cl_mem nbctx;
+    cl_mem root;
+} NBodyCLMem;
+
+#define EMPTY_NBODY_CL_MEM { NULL, NULL, NULL, NULL }
+
+#endif /* NBODY_OPENCL && !defined(__OPENCL_VERSION__)) */
+
+
+#ifndef __OPENCL_VERSION__
+
+/* Mutable state used during an evaluation */
+typedef struct
+{
+    Tree tree;
+    real tout;
+    real tnow;
+    bodyptr bodytab;    /* points to array of bodies */
+    vector* acctab;     /* Corresponding accelerations of bodies */
+
+  #if NBODY_OPENCL
+    NBodyCLInfo ci;
+    NBodyCLMem cm;
+  #endif /* NBODY_OPENCL */
+} NBodyState;
+
+#if NBODY_OPENCL
+  #define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL, NULL, EMPTY_NBODY_CL_INFO, EMPTY_NBODY_CL_MEM }
+#else
+  #define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL, NULL }
+#endif /* NBODY_OPENCL */
+
+#endif /* __OPENCL_VERSION__ */
 
 /* The context tracks settings of the simulation.  It should be set
    once at the beginning of a simulation based on settings, and then
@@ -345,16 +427,6 @@ typedef struct
     bool outputCartesian;     /* print (x,y,z) instead of (l, b, r) */
 } NBodyCtx;
 
-/* Mutable state used during an evaluation */
-typedef struct
-{
-    Tree tree;
-    real tout;
-    real tnow;
-    bodyptr bodytab;    /* points to array of bodies */
-    vector* acctab;     /* Corresponding accelerations of bodies */
-} NBodyState;
-
 typedef int generic_enum_t;  /* A general enum type. */
 
 
@@ -369,13 +441,14 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 #define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
-#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, EMPTY_CHECKPOINT_HANDLE, NAN, NAN, NAN, NAN, 0, 0, FALSE, FALSE, FALSE }
+
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
-#define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL, NULL }
 #define EMPTY_VECTOR { NAN, NAN, NAN }
 #define EMPTY_INITIAL_CONDITIONS { EMPTY_VECTOR, EMPTY_VECTOR, FALSE, FALSE }
+#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, \
+                     EMPTY_CHECKPOINT_HANDLE, NAN, NAN, NAN, NAN, 0, 0, FALSE, FALSE, FALSE }
 
-
+#ifndef __OPENCL_VERSION__  /* No function pointers allowed in kernels */
 /* Acceleration functions for a given potential */
 typedef void (*SphericalAccel) (vectorptr restrict, const Spherical*, const vectorptr restrict);
 typedef void (*HaloAccel) (vectorptr restrict, const Halo*, const vectorptr restrict);
@@ -383,6 +456,8 @@ typedef void (*DiskAccel) (vectorptr restrict, const Disk*, const vectorptr rest
 
 /* Generic potential function */
 typedef void (*AccelFunc) (vectorptr restrict, const void*, const vectorptr restrict);
+
+#endif /* __OPENCL_VERSION__ */
 
 #endif /* _NBODY_TYPES_H_ */
 

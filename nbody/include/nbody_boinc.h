@@ -18,36 +18,28 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_PRIV_H_
-#define _NBODY_PRIV_H_
-
-#define _GNU_SOURCE
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef _NBODY_BOINC_H_
+#define _NBODY_BOINC_H_
 
 #include "nbody_config.h"
-#include "nbody_types.h"
-#include "vectmath.h"
-#include "real.h"
-#include "nbody_util.h"
-#include "show.h"
-#include "io.h"
-#include "grav.h"
-#include "chisq.h"
-#include "load.h"
-#include "orbitintegrator.h"
-#include "accelerations.h"
-#include "plummer.h"
 
-#if NBODY_OPENCL
-  #include "gravmap_opencl.h"
-#endif /* NBODY_OPENCL */
+/* TODO: Naming, and sharing with separation */
+#if BOINC_APPLICATION
+  #include <boinc_api.h>
+  #include <filesys.h>
 
+  #if BOINC_DEBUG
+    #include <diagnostics.h>
+  #endif /* BOINC_DEBUG */
 
-#ifdef __cplusplus
-}
-#endif
+  #define nbody_finish(x) boinc_finish(x)
+  #define nbody_fopen(x,y) boinc_fopen((x),(y))
+  #define nbody_remove(x) boinc_delete_file((x))
+#else
+  #define nbody_finish(x) exit(x)
+  #define nbody_fopen(x,y) fopen((x),(y))
+  #define nbody_remove(x) remove((x))
+#endif /* BOINC_APPLICATION */
 
-#endif /* _NBODY_PRIV_H_ */
+#endif /* _NBODY_BOINC_H_ */
+

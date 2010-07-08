@@ -105,7 +105,7 @@ endif()
 
 if(NBODY_OPENCL)
   set(c_kernel_dir "${CMAKE_CURRENT_SOURCE_DIR}/ckernels")
-  list(APPEND nbody_lib_src "${PROJECT_SOURCE_DIR}/src/setup_opencl.c")
+  list(APPEND nbody_lib_src "${PROJECT_SOURCE_DIR}/src/gravmap_opencl.c")
 
   list(APPEND nbody_lib_src "${c_kernel_dir}/cl_gravmap.c")
   set_source_files_properties("${c_kernel_dir}/cl_gravmap.c"

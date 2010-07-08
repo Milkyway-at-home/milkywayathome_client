@@ -18,36 +18,15 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_PRIV_H_
-#define _NBODY_PRIV_H_
+#ifndef _GRAVMAP_OPENCL_H_
+#define _GRAVMAP_OPENCL_H_
 
-#define _GNU_SOURCE
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "nbody_config.h"
 #include "nbody_types.h"
-#include "vectmath.h"
-#include "real.h"
-#include "nbody_util.h"
-#include "show.h"
-#include "io.h"
-#include "grav.h"
-#include "chisq.h"
-#include "load.h"
-#include "orbitintegrator.h"
-#include "accelerations.h"
-#include "plummer.h"
 
-#if NBODY_OPENCL
-  #include "gravmap_opencl.h"
-#endif /* NBODY_OPENCL */
+void cleanupNBodyCL(NBodyState* st);
+int setupNBodyCL(NBodyCtx* ctx, NBodyState* st);
 
+void gravMapCL(const NBodyCtx* ctx, NBodyState* st);
 
-#ifdef __cplusplus
-}
-#endif
+#endif /* _GRAVMAP_OPENCL_H_ */
 
-#endif /* _NBODY_PRIV_H_ */

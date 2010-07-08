@@ -31,7 +31,7 @@
         (v)[1] = 0.0;                           \
         (v)[2] = 0.0;                           \
     }
-#endif NBODY_OPENCL || defined(__OPENCL_VERSION__)
+#endif /* NBODY_OPENCL || defined(__OPENCL_VERSION__) */
 
 /* UNIT Vector */
 #define UNITV(v,j)                              \

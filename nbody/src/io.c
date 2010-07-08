@@ -476,6 +476,10 @@ void nbodyStateDestroy(NBodyState* st)
     freeTree(&st->tree);
     free(st->bodytab);
     free(st->acctab);
+
+  #if NBODY_OPENCL
+    cleanupNBodyCL(st);
+  #endif /* NBODY_OPENCL */
 }
 
 
