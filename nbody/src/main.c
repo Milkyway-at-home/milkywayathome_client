@@ -12,10 +12,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <popt.h>
+#include <errno.h>
 #include "nbody.h"
 #include "nbody_priv.h"
 
-#define R_OK 2 /* FIXME: Windows */
+#ifdef _WIN32
+  #define R_OK 2 /* FIXME: Windows */
+#endif
 
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
 

@@ -85,13 +85,14 @@ message("   Double precision:  ${DOUBLEPREC}")
 message("---------------------------------------------")
 
 
-
+set(dsfmt_mexp "19937") #Value it assumes if you don't specify it; stops warning
 set(dsfmtVer "2.1")
 set(randSrcMD5 "b3a38dac7fd8996a70d02edc4432dd75")
 
 set(dsfmtTar "dSFMT-src-${dsfmtVer}.tar.gz")
 
 set(randSrc "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/${dsfmtTar}")
+add_definitions("-DDSFMT_MEXP=${dsfmt_mexp}")
 
 if(NOT EXISTS ${randSrc})
   message(STATUS "Downloading dSFMT")
