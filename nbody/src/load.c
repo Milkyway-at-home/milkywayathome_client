@@ -71,7 +71,7 @@ inline static void hackQuad(cellptr p)
 }
 
 
-/* threadtree: do a recursive treewalk starting from node p,
+/* threadTree: do a recursive treewalk starting from node p,
  * with next stop n, installing Next and More links.
  */
 static void threadTree(nodeptr p, nodeptr n)
@@ -171,7 +171,8 @@ static cellptr makeCell(Tree* t)
 static void loadBody(Tree* t, bodyptr p)
 {
     cellptr q, c;
-    int qind, lev, k;
+    size_t qind, k;
+    unsigned int lev;
     real qsize;
 
     q = t->root;                                /* start with tree t.root */
@@ -184,16 +185,18 @@ static void loadBody(Tree* t, bodyptr p)
         {
             c = makeCell(t);                    /* allocate new cell */
             for (k = 0; k < NDIM; k++)          /* initialize midpoint */
+            {
                 Pos(c)[k] = Pos(q)[k] +         /* offset from parent */
                             (Pos(p)[k] < Pos(q)[k] ? - qsize : qsize) / 4;
+            }
             Subp(c)[subIndex((bodyptr) Subp(q)[qind], c)] = Subp(q)[qind];
             /* put body in cell */
             Subp(q)[qind] = (nodeptr) c;        /* link cell in tree */
         }
         q = (cellptr) Subp(q)[qind];        /* advance to next level */
         qind = subIndex(p, q);              /* get index to examine */
-        qsize = qsize / 2;                  /* shrink current cell */
-        lev++;                              /* count another level */
+        qsize /= 2;                         /* shrink current cell */
+        ++lev;                              /* count another level */
     }
     Subp(q)[qind] = (nodeptr) p;            /* found place, store p */
     t->maxlevel = MAX(t->maxlevel, lev);    /* remember maximum level */
@@ -260,7 +263,16 @@ static void hackCofM(const NBodyCtx* ctx, NBodyState* st, cellptr p, real psize)
         }
     }
 
-    INCDIVVS(cmpos, Mass(p));               /* rescale cms position */
+    if (Mass(p) > 0.0)                          /* usually, cell has mass   */
+    {
+        INCDIVVS(cmpos, Mass(p));               /* so find c-of-m position  */
+    }
+    else                                        /* but if no mass inside    */
+    {
+        warn("Found massless cell\n"); /* Debugging */
+        SETV(cmpos, Pos(p));                    /* use geo. center for now  */
+    }
+
     for (k = 0; k < NDIM; k++)          /* check tree structure... */
     {
         /* CHECKME: Precision: This gets angry as N gets big, and the divisions get small */
@@ -309,5 +321,7 @@ void makeTree(const NBodyCtx* ctx, NBodyState* st)
     threadTree((nodeptr) t->root, NULL);        /* add Next and More links */
     if (ctx->usequad)                           /* including quad moments? */
         hackQuad(t->root);                      /* assign Quad moments */
+
+    //printf("Cells used: %d, max height = %d, rsize = %g\n", t->cellused, t->maxlevel, t->rsize);
 }
 

@@ -279,8 +279,8 @@ typedef struct
     cellptr root;   /* pointer to root cell */
     real rsize;     /* side-length of root cell */
 
-    int cellused;   /* count of cells in tree */
-    int maxlevel;   /* count of levels in tree */
+    unsigned int cellused;   /* count of cells in tree */
+    unsigned int maxlevel;   /* count of levels in tree */
 } Tree;
 
 typedef struct

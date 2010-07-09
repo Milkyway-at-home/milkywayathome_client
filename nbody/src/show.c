@@ -19,8 +19,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <string.h>
-#include "nbody_priv.h"
 #include "nbody_util.h"
+#include "nbody_types.h"
+#include "show.h"
 
 /* A bunch of boilerplate for debug printing */
 
@@ -348,4 +349,12 @@ char* showVector(const vector v)
     return buf;
 
 }
+
+void printVector(const vector v)
+{
+    char* buf = showVector(v);
+    puts(buf);
+    free(buf);
+}
+
 

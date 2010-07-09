@@ -13,6 +13,7 @@
 #include <string.h>
 #include <popt.h>
 #include <errno.h>
+#include <assert.h>
 #include "nbody.h"
 #include "nbody_priv.h"
 

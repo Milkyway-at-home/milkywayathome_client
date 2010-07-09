@@ -43,6 +43,7 @@ char* showContext(const NBodyCtx*);
 char* showVector(const vector v);
 void printContext(const NBodyCtx*);
 void printInitialConditions(const InitialConditions*);
+void printVector(const vector v);
 
 #endif /* _SHOW_H_ */
 
