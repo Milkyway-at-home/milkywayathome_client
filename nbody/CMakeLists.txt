@@ -85,6 +85,44 @@ message("   Double precision:  ${DOUBLEPREC}")
 message("---------------------------------------------")
 
 
+
+set(dsfmtVer "2.1")
+set(randSrcMD5 "b3a38dac7fd8996a70d02edc4432dd75")
+
+set(dsfmtTar "dSFMT-src-${dsfmtVer}.tar.gz")
+
+set(randSrc "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/${dsfmtTar}")
+
+if(NOT EXISTS ${randSrc})
+  message(STATUS "Downloading dSFMT")
+  file(DOWNLOAD "http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/${dsfmtTar}"
+                ${randSrc}
+       TIMEOUT 60
+       COMMENT "Downloading dSFMT")
+else()
+  message(STATUS "Already have dSFMT")
+endif()
+
+execute_process(
+  COMMAND "${CMAKE_COMMAND}" -E md5sum ${randSrc}
+  OUTPUT_VARIABLE dl_md5_name)
+
+#I can't figure out a less stupid way of getting just the md5sum
+string(SUBSTRING ${dl_md5_name} 0 32 dl_md5)
+
+if(NOT ${dl_md5} STREQUAL ${randSrcMD5})
+  message(FATAL_ERROR "Downloaded dSFMT MD5 check failed")
+endif()
+
+message(STATUS "Extracting dSFMT source")
+execute_process(
+  COMMAND "${CMAKE_COMMAND}" -E tar xzf ${randSrc} "dSFMT"
+  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/")
+
+#Find the headers for dSFMT
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/dSFMT-src-${dsfmtVer}/")
+add_subdirectory(thirdparty)
+
 configure_file (
   "${PROJECT_INCLUDE_DIR}/nbody_config.h.in"
   "${PROJECT_INCLUDE_DIR}/nbody_config.h")
@@ -97,7 +135,7 @@ if(WIN32)
   list(APPEND OS_SPECIFIC_LIBS "msvcrt" "asprintf" "stdc++")
 endif()
 
-set(nbody_link_libs ${JSON_C_LIBRARY} ${OS_SPECIFIC_LIBS} m)
+set(nbody_link_libs ${JSON_C_LIBRARY} dsmft ${OS_SPECIFIC_LIBS} m)
 
 if(BOINC_APPLICATION)
   list(APPEND nbody_link_libs ${BOINC_LIBRARIES})
