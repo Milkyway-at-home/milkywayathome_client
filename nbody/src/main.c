@@ -44,6 +44,9 @@ static json_object* readParameters(const int argc,
     static char* inputFile = NULL;        /* input JSON file */
     static char* inputStr  = NULL;        /* a string of JSON to use directly */
     json_object* obj;
+    static const char** rest;
+
+    unsigned int numParams = 0, params = 0, paramCount = 0;
 
     /* FIXME: There's a small leak of the inputFile from use of
        poptGetNextOpt(). Some mailing list post suggestst that this
@@ -110,6 +113,18 @@ static json_object* readParameters(const int argc,
         },
       #endif
 
+        {
+            "p", 'p',
+            POPT_ARG_NONE, &params,
+            0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
+        },
+
+        {
+            "np", '\0',
+            POPT_ARG_INT | POPT_ARGFLAG_ONEDASH, &numParams,
+            0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
+        },
+
         POPT_AUTOHELP
 
         { NULL, 0, 0, NULL, 0, NULL, NULL }
@@ -119,7 +134,6 @@ static json_object* readParameters(const int argc,
                              argc,
                              argv,
                              options,
-
                              POPT_CONTEXT_POSIXMEHARDER);
 
     if (argc < 2)
@@ -143,6 +157,39 @@ static json_object* readParameters(const int argc,
         nbody_finish(EXIT_FAILURE);
     }
 
+    if (params) /* Using primitive server arguments */
+    {
+        unsigned int i;
+        real* parameters = NULL;
+
+        rest = poptGetArgs(context);
+        if (rest)
+        {
+            while (rest[++paramCount]);  /* Count number of parameters */
+
+            assert(numParams == paramCount);
+
+            parameters = (real*) mallocSafe(sizeof(real) * numParams);
+
+            errno = 0;
+            for ( i = 0; i < numParams; ++i )
+            {
+                parameters[i] = (real) strtod(rest[i], NULL);
+                if (errno)
+                {
+                    perror("Error parsing command line parameters");
+                    poptPrintHelp(context, stderr, 0);
+                    free(parameters);
+                    poptFreeContext(context);
+                    nbody_finish(EXIT_FAILURE);
+                }
+            }
+        }
+
+        /* TODO: Stuff with parameters */
+        free(parameters);
+    }
+
     poptFreeContext(context);
 
     if (inputFile)
@@ -163,9 +210,7 @@ static json_object* readParameters(const int argc,
         obj = json_object_from_file(inputFile);
         if (is_error(obj))
         {
-            fprintf(stderr,
-                    "Parse error in file '%s'\n",
-                    inputFile);
+            warn("Parse error in file '%s'\n", inputFile);
             free(inputFile);
             nbody_finish(EXIT_FAILURE);
         }
@@ -176,10 +221,7 @@ static json_object* readParameters(const int argc,
         obj = json_tokener_parse(inputStr);
         free(inputStr);
         if (is_error(obj))
-        {
-            fprintf(stderr, "Failed to parse given string\n");
-            nbody_finish(EXIT_FAILURE);
-        }
+            fail("Failed to parse given string\n");
     }
 
     return obj;
