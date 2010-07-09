@@ -5,8 +5,7 @@
 /* ************************************************************************** */
 
 #include "nbody_priv.h"
-
-#define MFRAC  0.999                /* cut off 1-MFRAC of mass */
+#include "dSFMT.h"
 
 /* pickshell: pick a random point on a sphere of specified radius. */
 static void pickshell(vector vec, real rad)
@@ -40,6 +39,9 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
     vector cmr          = ZERO_VECTOR;
     vector cmv          = ZERO_VECTOR;
 
+    dsfmt_t dsfmtState;
+    real rnd;
+
     const real rnbody = (real) ctx->model.nbody;
     const real mass   = ctx->model.mass;
     const real mpp    = mass / rnbody;     /* mass per particle */
@@ -47,6 +49,8 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
     // The coordinates to shift the plummer sphere by
     vector rshift = { X(ic->position), Y(ic->position), Z(ic->position) };
     vector vshift = { X(ic->velocity), Y(ic->velocity), Z(ic->velocity) };
+
+    dsfmt_init_gen_rand(&dsfmtState, ctx->seed);
 
     printf("Shifting plummer sphere to r = (%f, %f, %f) v = (%f, %f, %f)...\n",
            rshift[0],
@@ -67,8 +71,12 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
     {
         Type(p) = BODY;    /* tag as a body */
         Mass(p) = mpp;     /* set masses equal */
-        r = 1.0 / rsqrt(rpow(xrandom(0.0, MFRAC), /* pick r in struct units */
-                           -2.0 / 3.0) - 1);
+
+        /* returns [0, 1) */
+        rnd = (real) dsfmt_genrand_close_open(&dsfmtState);
+
+        /* pick r in struct units */
+        r = 1.0 / rsqrt(rpow(rnd, -2.0 / 3.0) - 1);
         pickshell(Pos(p), rsc * r);     /* pick scaled position */
         INCADDV(Pos(p), rshift);        /* move the position */
         INCADDV(cmr, Pos(p));           /* add to running sum */

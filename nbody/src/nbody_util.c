@@ -70,7 +70,6 @@ void* mallocSafe(size_t size)
     return mem;
 }
 
-
 /* Found on SO. No idea if the Windows atually works */
 #ifdef _WIN32
 
