@@ -88,7 +88,9 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
         stepSystem(ctx, st);   /* advance N-body system */
         #if BOINC_APPLICATION
           nbodyCheckpoint(ctx, st);
-        #else
+        #endif
+
+        #if 0 /* TODO: Some day this will allow printing at intervals, for making movies etc. */
           /* TODO: organize use of this output better since it only
            * half makes sense now with boinc */
 
