@@ -8,16 +8,16 @@
 #include "dSFMT.h"
 
 /* pickshell: pick a random point on a sphere of specified radius. */
-static void pickshell(vector vec, real rad)
+inline static void pickshell(dsfmt_t* dsfmtState, vector vec, real rad)
 {
-    int k;
+    unsigned int k;
     real rsq, rsc;
 
     do                      /* pick point in NDIM-space */
     {
         for (k = 0; k < NDIM; k++)      /* loop over dimensions */
-            vec[k] = xrandom(-1.0, 1.0);        /* pick from unit cube */
-        DOTVP(rsq, vec, vec);           /* compute radius squared */
+            vec[k] = xrandom(dsfmtState, -1.0, 1.0);        /* pick from unit cube */
+        SQRV(rsq, vec);            /* compute radius squared */
     }
     while (rsq > 1.0);              /* reject if outside sphere */
 
@@ -77,18 +77,18 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
 
         /* pick r in struct units */
         r = 1.0 / rsqrt(rpow(rnd, -2.0 / 3.0) - 1);
-        pickshell(Pos(p), rsc * r);     /* pick scaled position */
+        pickshell(&dsfmtState, Pos(p), rsc * r);     /* pick scaled position */
         INCADDV(Pos(p), rshift);        /* move the position */
         INCADDV(cmr, Pos(p));           /* add to running sum */
 
         do                      /* select from fn g(x) */
         {
-            x = xrandom(0.0, 1.0);      /* for x in range 0:1 */
-            y = xrandom(0.0, 0.1);      /* max of g(x) is 0.092 */
+            x = xrandom(&dsfmtState, 0.0, 1.0);      /* for x in range 0:1 */
+            y = xrandom(&dsfmtState, 0.0, 0.1);      /* max of g(x) is 0.092 */
         }
         while (y > x * x * rpow(1 - x * x, 3.5)); /* using von Neumann tech */
         v = rsqrt(2.0) * x / rpow(1 + r * r, 0.25); /* find v in struct units */
-        pickshell(Vel(p), vsc * v);     /* pick scaled velocity */
+        pickshell(&dsfmtState, Vel(p), vsc * v);     /* pick scaled velocity */
         INCADDV(Vel(p), vshift);       /* move the velocity */
         INCADDV(cmv, Vel(p));         /* add to running sum */
     }
