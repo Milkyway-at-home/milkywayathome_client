@@ -34,37 +34,42 @@ static int subIndex(bodyptr p, cellptr q)
  * routine is coded so that the Subp() and Quad() components of a cell can
  * share the same memory locations.
  */
-static void hackQuad(cellptr p)
+
+/* TODO: Incremental matrix operations */
+inline static void hackQuad(cellptr p)
 {
-    int i;
-    nodeptr psub[NSUB], q;
+    unsigned int ndesc, i;
+    nodeptr desc[NSUB], q;
     vector dr;
     real drsq;
     matrix drdr, Idrsq, tmpm;
 
-    for (i = 0; i < NSUB; i++)                  /* loop over subnodes */
-        psub[i] = Subp(p)[i];                   /* copy each to safety */
-    CLRM(Quad(p));                              /* init quadrupole moment */
-    for (i = 0; i < NSUB; i++)                  /* loop over subnodes */
+    ndesc = 0;                                  /* count occupied subnodes  */
+    for (i = 0; i < NSUB; ++i)                  /* loop over all subnodes   */
     {
-        if ((q = psub[i]) != NULL)              /* does subnode exist? */
-        {
-            if (Type(q) == CELL)                /* and is it a call? */
-                hackQuad((cellptr) q);          /* process it first */
-            SUBV(dr, Pos(q), Pos(p));           /* displacement vect. */
-            OUTVP(drdr, dr, dr);                /* outer prod. of dr */
-            SQRV(drsq, dr);                     /* dot prod. dr * dr */
-            SETMI(Idrsq);                       /* init unit matrix */
-            MULMS(Idrsq, Idrsq, drsq);          /* scale by dr * dr */
-            MULMS(tmpm, drdr, 3.0);             /* scale drdr by 3 */
-            SUBM(tmpm, tmpm, Idrsq);            /* form quad. moment */
-            MULMS(tmpm, tmpm, Mass(q));         /* from cm of subnode */
-            if (Type(q) == CELL)                /* if subnode is cell */
-                ADDM(tmpm, tmpm, Quad(q));      /* add its moment */
-            ADDM(Quad(p), Quad(p), tmpm);       /* add to qm of cell */
-        }
+        if (Subp(p)[i] != NULL)                 /* if this one's occupied   */
+            desc[ndesc++] = Subp(p)[i];         /* copy it to safety        */
+    }
+    CLRM(Quad(p));                              /* init quadrupole moment   */
+    for (i = 0; i < ndesc; ++i)                 /* loop over real subnodes  */
+    {
+        q = desc[i];                            /* access ech one in turn   */
+        if (Type(q) == CELL)                    /* if it's also a cell      */
+            hackQuad((cellptr) q);              /* then process it first    */
+        SUBV(dr, Pos(q), Pos(p));               /* find displacement vect.  */
+        OUTVP(drdr, dr, dr);                    /* form outer prod. of dr   */
+        SQRV(drsq, dr);                         /* and dot prod. dr * dr    */
+        SETMI(Idrsq);                           /* init unit matrix         */
+        MULMS(Idrsq, Idrsq, drsq);              /* and scale by dr * dr     */
+        MULMS(tmpm, drdr, 3.0);                 /* scale drdr by 3          */
+        SUBM(tmpm, tmpm, Idrsq);                /* now form quad. moment    */
+        MULMS(tmpm, tmpm, Mass(q));             /* from cm of subnode       */
+        if (Type(q) == CELL)                    /* if subnode is cell       */
+            ADDM(tmpm, tmpm, Quad(q));          /* then include its moment  */
+        ADDM(Quad(p), Quad(p), tmpm);           /* increment moment of cell */
     }
 }
+
 
 /* threadtree: do a recursive treewalk starting from node p,
  * with next stop n, installing Next and More links.
