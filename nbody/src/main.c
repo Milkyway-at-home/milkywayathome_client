@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <fenv.h>
 #include <stdlib.h>
 #include <string.h>
 #include <popt.h>
@@ -22,6 +23,7 @@
 #endif
 
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
+#define DEFAULT_HISTOGRAM_FILE "histogram"
 
 /* Read the command line arguments, and do the inital parsing of the parameter file */
 static json_object* readParameters(const int argc,
@@ -29,6 +31,7 @@ static json_object* readParameters(const int argc,
                                    char** outFileName,
                                    int* useDouble,
                                    char** checkpointFileName,
+                                   char** histogramFileName,
                                    int* ignoreCheckpoint,
                                    int* outputCartesian,
                                    int* printTiming,
@@ -62,6 +65,12 @@ static json_object* readParameters(const int argc,
             "input-file", 'f',
             POPT_ARG_STRING, &inputFile,
             0, "Input file to read", NULL
+        },
+
+        {
+            "histogram-file", 'h',
+            POPT_ARG_STRING, histogramFileName,
+            0, "Histogram file", NULL
         },
 
         {
@@ -235,6 +244,7 @@ static json_object* readParameters(const int argc,
 static void runSimulationWrapper(json_object* obj,
                                  const char* outFileName,
                                  const char* checkpointFileName,
+                                 const char* histogramFileName,
                                  const int useDouble,
                                  const int outputCartesian,
                                  const int printTiming,
@@ -244,19 +254,25 @@ static void runSimulationWrapper(json_object* obj,
     if (useDouble)
     {
         printf("Using double precision\n");
-        runNBodySimulation_double(obj, outFileName, checkpointFileName, outputCartesian, printTiming, verifyOnly);
+        runNBodySimulation_double(obj,
+                                  outFileName, checkpointFileName, histogramFileName,
+                                  outputCartesian, printTiming, verifyOnly);
         printf("Done with double\n");
     }
     else
     {
         printf("Using float precision\n");
-        runNBodySimulation_float(obj, outFileName, checkpointFileName, outputCartesian, printTiming, verifyOnly);
+        runNBodySimulation_float(obj,
+                                 outFileName, checkpointFileName, histogramFileName,
+                                 outputCartesian, printTiming, verifyOnly);
         printf("Done with float\n");
     }
   #else
     #pragma unused(useDouble)
 
-    runNBodySimulation(obj, outFileName, checkpointFileName, outputCartesian, printTiming, verifyOnly);
+    runNBodySimulation(obj,
+                       outFileName, checkpointFileName, histogramFileName,
+                       outputCartesian, printTiming, verifyOnly);
   #endif /* DYNAMIC_PRECISION */
 }
 
@@ -274,6 +290,7 @@ int main(int argc, const char* argv[])
     int printTiming = FALSE;
     int verifyOnly = FALSE;
     char* checkpointFileName = NULL;
+    char* histogramFileName = NULL;
 
 #if BOINC_APPLICATION
     int boincInitStatus = 0;
@@ -297,6 +314,7 @@ int main(int argc, const char* argv[])
                          &outFileName,
                          &useDouble,
                          &checkpointFileName,
+                         &histogramFileName,
                          &ignoreCheckpoint,
                          &outputCartesian,
                          &printTiming,
@@ -304,10 +322,12 @@ int main(int argc, const char* argv[])
 
     /* Use default if checkpoint file not specified */
     checkpointFileName = checkpointFileName ? checkpointFileName : strdup(DEFAULT_CHECKPOINT_FILE);
+    histogramFileName  = histogramFileName  ? histogramFileName  : strdup(DEFAULT_HISTOGRAM_FILE);
 
     runSimulationWrapper(obj,
                          outFileName,
                          checkpointFileName,
+                         histogramFileName,
                          useDouble,
                          outputCartesian,
                          printTiming,
@@ -315,6 +335,7 @@ int main(int argc, const char* argv[])
 
     free(outFileName);
     free(checkpointFileName);
+    free(histogramFileName);
 
     nbody_finish(EXIT_SUCCESS);
 }

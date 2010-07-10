@@ -5,7 +5,7 @@
 
 // Takes a treecode position, converts it to (l,b), then to (lambda, beta), and then constructs a histogram of the density in lambda.
 
-// Then calculates the cross correlation between the model histogram and the data histogram 
+// Then calculates the cross correlation between the model histogram and the data histogram
 // A maximum correlation means the best fit
 
 #include <stdio.h>
@@ -91,7 +91,7 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
                            (cospsi * cosphi - costh * sinphi * sinpsi) * bcos * lcos
                          + (cospsi * sinphi + costh * cosphi * sinpsi) * bcos * lsin
                          + sinpsi * sinth * bsin ));
-	
+
         // Create the histogram
         if (lambda > 0.0 && lambda < end)
         {
@@ -142,10 +142,10 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
     // Calculate the chisq value by reading a file called "histogram" (the real data histogram should already be normalized)
 
-    f = fopen("histogram", "r");
+    f = fopen(ctx->histogram, "r");
     if (f == NULL)
     {
-        perror("histogram");
+        perror("Opening histogram");
         return NAN;
     }
 

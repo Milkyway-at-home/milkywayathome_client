@@ -136,6 +136,7 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
 void RUN_NBODY_SIMULATION(json_object* obj,
                           const char* outFileName,
                           const char* checkpointFileName,
+                          const char* histogramFileName,
                           const int outputCartesian,
                           const int printTiming,
                           const int verifyOnly)
@@ -162,6 +163,7 @@ void RUN_NBODY_SIMULATION(json_object* obj,
 
     ctx.outputCartesian = outputCartesian;
     ctx.outfilename     = outFileName;
+    ctx.histogram       = histogramFileName;
     ctx.cp.filename     = checkpointFileName;
 
     initOutput(&ctx);

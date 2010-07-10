@@ -290,6 +290,7 @@ char* showContext(const NBodyCtx* ctx)
                      "  model           = %s\n"
                      "  headline        = %s\n"
                      "  outfilename     = %s\n"
+                     "  histogram       = %s\n"
                      "  outfile         = %p\n"
                      "  sunGCDist       = %g\n"
                      "  criterion       = %s\n"

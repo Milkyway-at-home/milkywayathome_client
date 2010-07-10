@@ -34,6 +34,7 @@ extern "C" {
   __attribute__ ((visibility("default"))) void runNBodySimulation(json_object* obj,
                                                                   const char* outFileName,
                                                                   const char* checkpointFileName,
+                                                                  const char* histogramFileName,
                                                                   const int outputCartesian,
                                                                   const int printTiming,
                                                                   const int verifyOnly);
@@ -41,6 +42,7 @@ extern "C" {
   __attribute__ ((visibility("default"))) void runNBodySimulation_float(json_object* obj,
                                                                         const char* outFileName,
                                                                         const char* checkpointFileName,
+                                                                        const char* histogramFileName,
                                                                         const int outputCartesian,
                                                                         const int printTiming,
                                                                         const int verifyOnly);
@@ -48,6 +50,7 @@ extern "C" {
   __attribute__ ((visibility("default"))) void runNBodySimulation_double(json_object* obj,
                                                                          const char* outFileName,
                                                                          const char* checkpointFileName,
+                                                                         const char* histogramFileName,
                                                                          const int outputCartesian,
                                                                          const int printTiming,
                                                                          const int verifyOnly);
