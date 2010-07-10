@@ -412,7 +412,15 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
 
             case nbody_type_group_item:
                 if (p->dflt)
-                    *group_type = *((generic_enum_t*) p->dflt);
+                {
+                    if (!group_type)
+                    {
+                        warn("Group does not have a type (Trying to read the root?)\n");
+                        readError = TRUE;
+                    }
+                    else
+                        *group_type = *((generic_enum_t*) p->dflt);
+                }
                 else
                 {
                     warn("Expected nbody_type_group_item for "

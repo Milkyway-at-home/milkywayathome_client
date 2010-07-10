@@ -307,6 +307,7 @@ char* showContext(const NBodyCtx* ctx)
                      ctx->headline,
                      ctx->outfilename,
                      ctx->outfile,
+                     ctx->histogram,
                      ctx->sunGCDist,
                      showCriterionT(ctx->criterion),
                      showBool(ctx->usequad),
