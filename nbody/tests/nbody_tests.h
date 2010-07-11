@@ -29,9 +29,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define LIMIT 0.00001         /* arbitrary */
 
+#define test_xrandom(xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * drand48())
+
 #define APPROXEQ(x, y) (abs(x - y) < LIMIT)
 
-#define RANDOM_REAL (xrandom(0.0, 1.0))
+#define RANDOM_REAL (test_xrandom(0.0, 1.0))
 #define RANDOM_VECTOR { RANDOM_REAL, RANDOM_REAL, RANDOM_REAL }
 
 #define RANDOM_INT(low, high) (rand() % (high - low + 1) + low)

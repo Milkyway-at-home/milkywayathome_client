@@ -90,6 +90,6 @@ endfunction()
 file(GLOB test_set1 "test_set1/*.js")
 file(GLOB test_set2 "test_set2/*.js")
 
-nbody_sample_test("${test_set1}" "test_set1")
-nbody_sample_test("${test_set2}" "test_set2")
+#nbody_sample_test("${test_set1}" "test_set1")
+#nbody_sample_test("${test_set2}" "test_set2")
 
