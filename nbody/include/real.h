@@ -48,6 +48,10 @@
 #  define rabs   fabsf
 #  define rfloor floorf
 #  define rceil  ceilf
+#  define rmax   fmaxf
+#  define rmin   fminf
+#  define rfma   fmaf
+#  define rdim   fdimf
 
 #else
 
@@ -72,6 +76,10 @@
 #  define rabs   fabs
 #  define rfloor floor
 #  define rceil  ceil
+#  define rmax   fmax
+#  define rmin   fmin
+#  define rfma   fma
+#  define rdim   fdim
 
 #endif
 

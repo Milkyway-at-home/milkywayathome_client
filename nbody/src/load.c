@@ -111,7 +111,7 @@ static void expandBox(Tree* t, bodyptr btab, int nbody)
     for (p = btab; p < btab + nbody; ++p)
     {
         for (k = 0; k < NDIM; ++k)
-            xyzmax = MAX(xyzmax, rabs(Pos(p)[k] - Pos(root)[k]));
+            xyzmax = rmax(xyzmax, rabs(Pos(p)[k] - Pos(root)[k]));
     }
 
     while (t->rsize < 2 * xyzmax)
@@ -213,7 +213,7 @@ static void setRCrit(const NBodyCtx* ctx, NBodyState* st, cellptr p, vector cmpo
     {
         case NEWCRITERION:
             DISTV(tmp, cmpos, Pos(p));
-            rc = psize / ctx->theta + tmp;
+            rc = rfma(psize, inv(ctx->theta), tmp);
             /* use size plus offset */
             break;
         case EXACT:                         /* exact force calculation? */
@@ -226,9 +226,10 @@ static void setRCrit(const NBodyCtx* ctx, NBodyState* st, cellptr p, vector cmpo
             bmax2 = 0.0;                     /* compute max distance^2 */
             for (k = 0; k < NDIM; ++k)       /* loop over dimensions */
             {
+                /* CHECKME: use rdim here? */
                 dmin = cmpos[k] - (Pos(p)[k] - psize / 2);
                 /* dist from 1st corner */
-                bmax2 += sqr(MAX(dmin, psize - dmin));
+                bmax2 += sqr(rmax(dmin, psize - dmin));
                 /* sum max distance^2 */
             }
             rc = rsqrt(bmax2) / ctx->theta;      /* using max dist from cm */

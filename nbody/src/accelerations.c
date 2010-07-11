@@ -70,11 +70,11 @@ void logHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr rest
     const real zsqr  = sqr(Z(pos));
 
     const real arst  = sqr(d) + sqr(X(pos)) + sqr(Y(pos));
-    const real denom = arst + zsqr / qsqr;
+    const real denom = rfma( zsqr, inv(qsqr), arst );
 
     X(acc) = tvsqr * X(pos) / denom;
     Y(acc) = tvsqr * Y(pos) / denom;
-    Z(acc) = tvsqr * Z(pos) / (qsqr * arst + zsqr);
+    Z(acc) = tvsqr * Z(pos) / rfma(qsqr, arst, zsqr);
 }
 
 void nfwHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr restrict pos)
@@ -83,7 +83,7 @@ void nfwHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr rest
     ABSV(r, pos);
     const real a  = halo->scale_length;
     const real ar = a + r;
-    const real c  = a * sqr(halo->vhalo) * (r - ar * rlog1p(r / a)) / (0.216 * cube(r) * ar);
+    const real c  = a * sqr(halo->vhalo) * rfma(-ar, rlog1p(r / a), r) / (0.216 * cube(r) * ar);
 
     MULVS(acc, pos, c);
 }
@@ -92,23 +92,23 @@ void nfwHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr rest
 void triaxialHaloAccel(vectorptr restrict acc, const Halo* h, const vectorptr restrict pos)
 {
     /* TODO: More things here can be cached */
-    const real qzs = sqr(h->flattenZ);
+    const real qzs      = sqr(h->flattenZ);
     const real rhalosqr = sqr(h->scale_length);
-    const real vsqr = -sqr(h->vhalo);
+    const real vsqr     = -sqr(h->vhalo);
 
     const real xsqr = sqr(X(pos));
     const real ysqr = sqr(Y(pos));
     const real zsqr = sqr(Z(pos));
 
-    const real arst = rhalosqr + (h->c1 * xsqr) + (h->c3 * X(pos) * Y(pos)) + (h->c2 * ysqr);
+    const real arst = rhalosqr + (h->c1 * xsqr) + rfma(h->c3, X(pos) * Y(pos), h->c2 * ysqr);
 
-    const real arst2 = arst + zsqr / qzs;
+    const real arst2 = rfma( zsqr, inv(qzs), arst);
 
-    X(acc) = vsqr * ( 2 * h->c1 * X(pos) + h->c3 * Y(pos) ) / arst2;
+    X(acc) = vsqr * rfma( 2 * h->c1, X(pos), h->c3 * Y(pos) ) / arst2;
 
-    Y(acc) = vsqr * ( 2 * h->c2 * Y(pos) + h->c3 * X(pos) ) / arst2;
+    Y(acc) = vsqr * rfma( 2 * h->c2, Y(pos), h->c3 * X(pos) ) / arst2;
 
-    Z(acc) = 2 * vsqr * Z(pos) / (qzs * arst + zsqr);
+    Z(acc) = 2 * vsqr * Z(pos) / rfma(qzs, arst, zsqr);
 
 }
 

@@ -22,21 +22,6 @@
 #define end ((real) 50.0)
 #define binsize ((real) 3.0)
 
-/* basic find max in array, O(n) */
-static size_t findmax(real* arr, size_t n)
-{
-    size_t i, maxIdx = 0;
-
-    for (i = 1; i < n; ++i)
-    {
-        if (arr[i] > arr[maxIdx])
-            maxIdx = i;
-    }
-
-    return maxIdx;
-}
-
-
 real chisq(const NBodyCtx* ctx, NBodyState* st)
 {
     real chisqval = 0.0;
@@ -58,7 +43,7 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
     real bcos, bsin, lsin, lcos;
     vector lbr;
-    real lambda, beta;
+    real lambda;
     const real cosphi = rcos(phi);
     const real sinphi = rsin(phi);
     const real sinpsi = rsin(psi);
@@ -80,11 +65,9 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
         lsin = rsin(L(lbr));
         lcos = rcos(L(lbr));
 
-        //CHECKME: beta never actually used?
-        beta = r2d(rasin( sinth * sinphi * bcos * lcos - sinth * cosphi * bcos * lsin + costh * bsin ));
-
+        /* CHECKME: Do we need fma here? */
         lambda = r2d(atan2(
-                           (-sinpsi * cosphi - costh * sinphi * cospsi) * bcos * lcos
+                         - (sinpsi * cosphi + costh * sinphi * cospsi) * bcos * lcos
                          + (-sinpsi * sinphi + costh * cosphi * cospsi) * bcos * lsin
                          + cospsi * sinth * bsin,
 
@@ -129,12 +112,12 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
     for (i = 0, foo = -binsize; foo > beginning; foo -= binsize, ++i) // foo = -binsize or foo = 0?
     {
-        fprintf(f, "%f %f\n", foo + (binsize / 2.0) , histodata2[i]/totalnum);
+        fprintf(f, "%f %f\n", rfma(0.5, binsize, foo), histodata2[i] / totalnum);
     }
 
     for (i = 0, foo = 0; foo < end; foo += binsize, ++i)
     {
-        fprintf(f, "%f %f\n", foo + (binsize / 2.0) , histodata1[i]/totalnum);
+        fprintf(f, "%f %f\n", rfma(0.5, binsize, foo) , histodata1[i] / totalnum);
     }
     fclose(f);
 
@@ -182,10 +165,9 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     {
         for (j = 0; j < filecount; ++j)
         {
-            if (fileLambda[j] == foo + (binsize / 2.0))
+            if ( fileLambda[j] == rfma( 0.5, binsize, foo ) )
             {
-                chisqval += ((fileCount[j] - (histodata2[i] / totalnum)) / fileCountErr[j])
-                              * ((fileCount[j] - (histodata2[i] / totalnum)) / fileCountErr[j]);
+                chisqval += sqr((fileCount[j] - (histodata2[i] / totalnum)) / fileCountErr[j]);
             }
         }
     }
@@ -194,7 +176,7 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     {
         for (j = 0; j < filecount; ++j)
         {
-            if (fileLambda[j] == foo + (binsize / 2.0))
+            if ( fileLambda[j] == rfma(0.5, binsize,  foo) )
             {
                 chisqval += ((fileCount[j] - (histodata1[i] / totalnum)) / fileCountErr[j])
                               * ((fileCount[j] - (histodata1[i] / totalnum)) / fileCountErr[j]);
