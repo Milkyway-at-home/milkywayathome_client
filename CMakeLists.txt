@@ -144,12 +144,12 @@ option(BOINC_APP_GRAPHICS
        "BOINC app graphics" OFF)
 
 
-set(gcc_extra_warnings "-Wshadow -Wpointer-arith -Wcast-align -common-Wwrite-strings -compare -fno-common -Wstrict-aliasing -Wstrict-aliasing=3 -Wswitch-enum -Wswitch-default -Wmissing-declarations")
+set(gcc_extra_warnings "-Wshadow -Wpointer-arith -Wcast-align -common-Wwrite-strings -compare -fno-common -Wstrict-aliasing -Wstrict-aliasing=3 -Wswitch-enum -Wswitch-default -Wmissing-declarations -Wfloat-equal -Wcomment")
 
 #TODO: Other compilers
 if(CMAKE_COMPILER_IS_GNUCC) # I think this could maybe be IS_UNIX
 
-  set(CMAKE_C_FLAGS "-Wall -Wextra ${CMAKE_C_FLAGS} -funroll-loops -maccumulate-outgoing-args")
+  set(CMAKE_C_FLAGS "-Wall -Wextra ${CMAKE_C_FLAGS} -funroll-loops -maccumulate-outgoing-args -ffinite-math-only")
 
   set(CMAKE_C_FLAGS_DEBUG "-Wall -Wextra ${gcc_extra_warnings} -O0 -g ${CMAKE_C_FLAGS_DEBUG}")
 endif(CMAKE_COMPILER_IS_GNUCC)

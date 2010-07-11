@@ -80,16 +80,18 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
         {
             index1 = (int)rfloor(lambda / binsize);  // floor?
             histodata1[index1]++;
-            totalnum = totalnum + 1.0;
+            totalnum += 1.0;
         }
-        else if (lambda > beginning && lambda < 0.0)  // only > ?
+        else if (lambda > beginning && lambda < 0.0)
         {
             index2 = abs(((int) rfloor(lambda / binsize) + 1));
             histodata2[index2]++;
-            totalnum = totalnum + 1.0;
-
+            totalnum += 1.0;
         }
-        /* CHECKME: else? */
+        else
+        {
+            printf("I happen.\n");
+        }
     }
     printf("done\n");
     printf("Total num in range: %f\n", totalnum);
@@ -155,6 +157,10 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
                   &fileCount[filecount],
                   &fileCountErr[filecount]) != EOF)
     {
+        printf("%g %g %g\n",
+               fileLambda[filecount],
+               fileCount[filecount],
+               fileCountErr[filecount]);
         ++filecount;
     }
 
@@ -163,9 +169,10 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     // Calculate the chisq
     for (i = 0, foo = -binsize; foo >= beginning; foo -= binsize, ++i)
     {
+        real limit = rfma( 0.5, binsize, foo );
         for (j = 0; j < filecount; ++j)
         {
-            if ( fileLambda[j] == rfma( 0.5, binsize, foo ) )
+            if ( REQ(fileLambda[j], limit) )
             {
                 chisqval += sqr((fileCount[j] - (histodata2[i] / totalnum)) / fileCountErr[j]);
             }
@@ -174,14 +181,13 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
     for (i = 0, foo = 0.0; foo <= end; foo += binsize, ++i)
     {
+        real limit = rfma(0.5, binsize,  foo);
         for (j = 0; j < filecount; ++j)
         {
-            if ( fileLambda[j] == rfma(0.5, binsize,  foo) )
+            if ( REQ(fileLambda[j], limit) )
             {
-                chisqval += ((fileCount[j] - (histodata1[i] / totalnum)) / fileCountErr[j])
-                              * ((fileCount[j] - (histodata1[i] / totalnum)) / fileCountErr[j]);
+                chisqval += sqr((fileCount[j] - (histodata1[i] / totalnum)) / fileCountErr[j]);
             }
-
         }
     }
 

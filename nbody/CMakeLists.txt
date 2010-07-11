@@ -57,6 +57,10 @@ option(NBODY_OPENCL
 option(DOUBLEPREC
        "Use double precision" ON)
 
+set(dsfmt_mexp "19937") #Value it assumes if you don't specify it; stops warning
+set(dsfmtVer "2.1")
+set(randSrcMD5 "b3a38dac7fd8996a70d02edc4432dd75")
+
 set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
                   ${PROJECT_SOURCE_DIR}/src/grav.c
                   ${PROJECT_SOURCE_DIR}/src/io.c
@@ -68,6 +72,7 @@ set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
                   ${PROJECT_SOURCE_DIR}/src/show.c
                   ${PROJECT_SOURCE_DIR}/src/plummer.c
                   ${PROJECT_SOURCE_DIR}/src/nbody_util.c)
+
 
 
 set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
@@ -85,9 +90,6 @@ message("   Double precision:  ${DOUBLEPREC}")
 message("---------------------------------------------")
 
 
-set(dsfmt_mexp "19937") #Value it assumes if you don't specify it; stops warning
-set(dsfmtVer "2.1")
-set(randSrcMD5 "b3a38dac7fd8996a70d02edc4432dd75")
 
 set(dsfmtTar "dSFMT-src-${dsfmtVer}.tar.gz")
 
@@ -238,8 +240,6 @@ if(NBODY_OPENCL)
   endforeach()
 endif()
 
-
-message("LINK LIBS = ${nbody_link_libs}")
 add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
 target_link_libraries(milkyway_nbody ${nbody_link_libs} ${POPT_LIBRARY} ${nbody_libs})
 

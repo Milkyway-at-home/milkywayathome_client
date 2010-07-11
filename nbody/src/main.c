@@ -16,15 +16,18 @@
 #include <errno.h>
 #include <assert.h>
 #include "nbody.h"
-#include "nbody_priv.h"
 
 #ifdef _WIN32
   #define R_OK 2 /* FIXME: Windows */
 #endif
 
+
+#ifdef linux
+  #include <fpu_control.h>
+#endif
+
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
 #define DEFAULT_HISTOGRAM_FILE "histogram"
-
 
 typedef int fp_round_mode_t;
 
@@ -59,7 +62,7 @@ static fp_round_mode_t readRoundMode(const char* str)
     else if (!strcasecmp(str, "up"))
         return FE_UPWARD;
     else
-        fail("Invalid round mode %s: Model options are either 'up', "
+        fail("Invalid round mode %s: options are either 'up', "
              "'down', 'zero' or 'nearest' (default),\n", str);
 
     return -1; /* Not reached, prevent warning */
@@ -340,7 +343,7 @@ int main(int argc, const char* argv[])
     int verifyOnly = FALSE;
     char* checkpointFileName = NULL;
     char* histogramFileName  = NULL;
-    char* roundModeStr    = NULL;
+    char* roundModeStr       = NULL;
     fp_round_mode_t roundMode;
 
 
@@ -349,7 +352,7 @@ int main(int argc, const char* argv[])
   #if !BOINC_DEBUG
     boincInitStatus = boinc_init();
   #else
-    boincInitStatus = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
+    boincInitStatus = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENabled
                                              | BOINC_DIAG_HEAPCHECKENABLED
                                              | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
   #endif /* !BOINC_DEBUG */
@@ -377,7 +380,7 @@ int main(int argc, const char* argv[])
     checkpointFileName = checkpointFileName ? checkpointFileName : strdup(DEFAULT_CHECKPOINT_FILE);
     histogramFileName  = histogramFileName  ? histogramFileName  : strdup(DEFAULT_HISTOGRAM_FILE);
 
-    /* Set the floating point rounding to use based on name */
+    /* Set the floating point rounding to use based on names */
     roundMode = readRoundMode(roundModeStr);
     free(roundModeStr);
 
@@ -385,7 +388,6 @@ int main(int argc, const char* argv[])
         warn("Failed to set round mode: Using mode %s\n", showRoundMode(fegetround()));
     else
         printf("Using rounding mode %s\n", showRoundMode(fegetround()));
-
 
     runSimulationWrapper(obj,
                          outFileName,

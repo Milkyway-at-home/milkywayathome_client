@@ -314,7 +314,7 @@ void makeTree(const NBodyCtx* ctx, NBodyState* st)
     t->maxlevel = 0;                                 /* init count of levels */
     for (p = st->bodytab; p < endp; p++)             /* loop over bodies... */
     {
-        if (Mass(p) != 0.0)                     /* exclude test particles */
+        if (isnormal(Mass(p)))                  /* exclude test particles */
             loadBody(t, p);                     /* and insert into tree */
     }
 

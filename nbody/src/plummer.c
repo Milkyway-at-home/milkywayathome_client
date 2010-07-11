@@ -5,6 +5,7 @@
 /* ************************************************************************** */
 
 #include "nbody_priv.h"
+#include "nbody_util.h"
 #include "dSFMT.h"
 
 /* pickshell: pick a random point on a sphere of specified radius. */

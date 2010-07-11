@@ -30,6 +30,9 @@ extern "C" {
 #include <stdlib.h>
 #include "nbody_types.h"
 
+/* FIXME: This is just an arbitrary threshold I made up. What should it be? */
+#define REQ(a, b) (rabs((a) - (b)) < 0.00001)
+
 /* Coordinate conversion */
 void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r);
 void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r);
