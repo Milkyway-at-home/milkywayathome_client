@@ -75,7 +75,7 @@ set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
 
 
 
-set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS "-std=gnu99 -mfpmath=sse ${CMAKE_C_FLAGS}")
 
 if (!WIN32)
   list(APPEND CMAKE_C_FLAGS "-fvisibility=hidden")
