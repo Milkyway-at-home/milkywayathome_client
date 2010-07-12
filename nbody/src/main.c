@@ -27,7 +27,10 @@
 #endif
 
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
-#define DEFAULT_HISTOGRAM_FILE "histogram"
+#define DEFAULT_HISTOGRAM_FILE  "histogram"
+#define DEFAULT_HISTOUT_FILE    "histout"
+
+#define stringDefault(s, d) ((s) = (s) ? (s) : strdup((d)))
 
 typedef int fp_round_mode_t;
 
@@ -78,6 +81,7 @@ static json_object* readParameters(const int argc,
                                    int* useDouble,
                                    char** checkpointFileName,
                                    char** histogramFileName,
+                                   char** histoutFileName,
                                    int* ignoreCheckpoint,
                                    int* outputCartesian,
                                    int* printTiming,
@@ -111,6 +115,12 @@ static json_object* readParameters(const int argc,
             "input-file", 'f',
             POPT_ARG_STRING, &inputFile,
             0, "Input file to read", NULL
+        },
+
+        {
+            "histoout-file", 'z',
+            POPT_ARG_STRING, histoutFileName,
+            0, "Output histogram file", NULL
         },
 
         {
@@ -297,6 +307,7 @@ static void runSimulationWrapper(json_object* obj,
                                  const char* outFileName,
                                  const char* checkpointFileName,
                                  const char* histogramFileName,
+                                 const char* histoutFileName,
                                  const int useDouble,
                                  const int outputCartesian,
                                  const int printTiming,
@@ -307,7 +318,7 @@ static void runSimulationWrapper(json_object* obj,
     {
         printf("Using double precision\n");
         runNBodySimulation_double(obj,
-                                  outFileName, checkpointFileName, histogramFileName,
+                                  outFileName, checkpointFileName, histogramFileName, histoutFileName,
                                   outputCartesian, printTiming, verifyOnly);
         printf("Done with double\n");
     }
@@ -315,7 +326,7 @@ static void runSimulationWrapper(json_object* obj,
     {
         printf("Using float precision\n");
         runNBodySimulation_float(obj,
-                                 outFileName, checkpointFileName, histogramFileName,
+                                 outFileName, checkpointFileName, histogramFileName, histoutFileName,
                                  outputCartesian, printTiming, verifyOnly);
         printf("Done with float\n");
     }
@@ -323,7 +334,7 @@ static void runSimulationWrapper(json_object* obj,
     #pragma unused(useDouble)
 
     runNBodySimulation(obj,
-                       outFileName, checkpointFileName, histogramFileName,
+                       outFileName, checkpointFileName, histogramFileName, histoutFileName,
                        outputCartesian, printTiming, verifyOnly);
   #endif /* DYNAMIC_PRECISION */
 }
@@ -343,6 +354,7 @@ int main(int argc, const char* argv[])
     int verifyOnly = FALSE;
     char* checkpointFileName = NULL;
     char* histogramFileName  = NULL;
+    char* histoutFileName    = NULL;
     char* roundModeStr       = NULL;
     fp_round_mode_t roundMode;
 
@@ -371,14 +383,16 @@ int main(int argc, const char* argv[])
                          &useDouble,
                          &checkpointFileName,
                          &histogramFileName,
+                         &histoutFileName,
                          &ignoreCheckpoint,
                          &outputCartesian,
                          &printTiming,
                          &verifyOnly);
 
     /* Use default if checkpoint file not specified */
-    checkpointFileName = checkpointFileName ? checkpointFileName : strdup(DEFAULT_CHECKPOINT_FILE);
-    histogramFileName  = histogramFileName  ? histogramFileName  : strdup(DEFAULT_HISTOGRAM_FILE);
+    stringDefault(checkpointFileName, DEFAULT_CHECKPOINT_FILE);
+    stringDefault(histogramFileName,  DEFAULT_HISTOGRAM_FILE);
+    stringDefault(histoutFileName,    DEFAULT_HISTOUT_FILE);
 
     /* Set the floating point rounding to use based on names */
     roundMode = readRoundMode(roundModeStr);
@@ -393,6 +407,7 @@ int main(int argc, const char* argv[])
                          outFileName,
                          checkpointFileName,
                          histogramFileName,
+                         histoutFileName,
                          useDouble,
                          outputCartesian,
                          printTiming,
@@ -401,6 +416,7 @@ int main(int argc, const char* argv[])
     free(outFileName);
     free(checkpointFileName);
     free(histogramFileName);
+    free(histoutFileName);
 
     nbody_finish(EXIT_SUCCESS);
 }

@@ -35,6 +35,7 @@ extern "C" {
                                                                   const char* outFileName,
                                                                   const char* checkpointFileName,
                                                                   const char* histogramFileName,
+                                                                  const char* histoutFileName,
                                                                   const int outputCartesian,
                                                                   const int printTiming,
                                                                   const int verifyOnly);
@@ -43,6 +44,7 @@ extern "C" {
                                                                         const char* outFileName,
                                                                         const char* checkpointFileName,
                                                                         const char* histogramFileName,
+                                                                        const char* histoutFileName,
                                                                         const int outputCartesian,
                                                                         const int printTiming,
                                                                         const int verifyOnly);
@@ -51,6 +53,7 @@ extern "C" {
                                                                          const char* outFileName,
                                                                          const char* checkpointFileName,
                                                                          const char* histogramFileName,
+                                                                         const char* histoutFileName,
                                                                          const int outputCartesian,
                                                                          const int printTiming,
                                                                          const int verifyOnly);

@@ -414,6 +414,7 @@ typedef struct
 
     const char* outfilename;  /* output */
     const char* histogram;
+    const char* histout;
     FILE* outfile;            /* file for snapshot output */
     CheckpointHandle cp;
 
@@ -446,7 +447,7 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 #define EMPTY_VECTOR { NAN, NAN, NAN }
 #define EMPTY_INITIAL_CONDITIONS { EMPTY_VECTOR, EMPTY_VECTOR, FALSE, FALSE }
-#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, NULL,  \
+#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, NULL, NULL, \
                      EMPTY_CHECKPOINT_HANDLE, NAN, NAN, NAN, NAN, 0, 0, FALSE, FALSE, FALSE }
 
 #ifndef __OPENCL_VERSION__  /* No function pointers allowed in kernels */

@@ -291,6 +291,7 @@ char* showContext(const NBodyCtx* ctx)
                      "  headline        = %s\n"
                      "  outfilename     = %s\n"
                      "  histogram       = %s\n"
+                     "  histout         = %s\n"
                      "  outfile         = %p\n"
                      "  sunGCDist       = %g\n"
                      "  criterion       = %s\n"
@@ -307,6 +308,7 @@ char* showContext(const NBodyCtx* ctx)
                      ctx->headline,
                      ctx->outfilename,
                      ctx->histogram,
+                     ctx->histout,
                      ctx->outfile,
                      ctx->sunGCDist,
                      showCriterionT(ctx->criterion),

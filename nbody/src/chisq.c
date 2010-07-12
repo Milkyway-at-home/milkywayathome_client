@@ -100,14 +100,12 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     // Get the single largest bin so we can normalize over it
     //CHECKME: Why the +1's in the sizes of histodatas?
 
-    f = fopen("histout", "w");
+    f = ctx->histout ? nbody_fopen(ctx->histout, "w") : stdout;
     if (f == NULL)
     {
         perror("Writing histout");
         return NAN;
     }
-
-    printf("...file open...");
 
     // Print out the histogram
     real foo;
@@ -117,7 +115,7 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
         fprintf(f, "%f %f\n", rfma(0.5, binsize, foo), histodata2[i] / totalnum);
     }
 
-    for (i = 0, foo = 0; foo < end; foo += binsize, ++i)
+    for (i = 0, foo = 0.0; foo < end; foo += binsize, ++i)
     {
         fprintf(f, "%f %f\n", rfma(0.5, binsize, foo) , histodata1[i] / totalnum);
     }
@@ -127,7 +125,7 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
 
     // Calculate the chisq value by reading a file called "histogram" (the real data histogram should already be normalized)
 
-    f = fopen(ctx->histogram, "r");
+    f = nbody_fopen(ctx->histogram, "r");
     if (f == NULL)
     {
         perror("Opening histogram");
@@ -157,10 +155,6 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
                   &fileCount[filecount],
                   &fileCountErr[filecount]) != EOF)
     {
-        printf("%g %g %g\n",
-               fileLambda[filecount],
-               fileCount[filecount],
-               fileCountErr[filecount]);
         ++filecount;
     }
 
