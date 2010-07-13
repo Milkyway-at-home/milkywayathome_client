@@ -115,7 +115,7 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
         fprintf(f, "%2.10f %2.10f %2.10f\n",  /* Report center of the bins */
                 fma(((real) i  + 0.5), binsize, start),
                 ((real) histogram[i]) / totalNumf,
-                histogram[i] == 0 ? inv((real) histogram[i]) : sqrt(histogram[i]) / totalNumf);
+                histogram[i] == 0 ? inv(totalNumf) : sqrt(histogram[i]) / totalNumf);
     }
 
     if (f != stdout)
