@@ -52,6 +52,7 @@
 #  define rmin   fminf
 #  define rfma   fmaf
 #  define rdim   fdimf
+#  define rrint  rintf
 
 #else
 
@@ -80,6 +81,7 @@
 #  define rmin   fmin
 #  define rfma   fma
 #  define rdim   fdim
+#  define rrint  rint
 
 #endif
 

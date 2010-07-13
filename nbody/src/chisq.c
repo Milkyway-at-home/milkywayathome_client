@@ -18,32 +18,45 @@
 #define phi d2r(128.79)
 #define theta d2r(54.39)
 #define psi d2r(90.70)
-#define beginning ((real) -50.0)
-#define end ((real) 50.0)
+#define startRaw ((real) -50.0)
+#define endRaw ((real) 50.0)
 #define binsize ((real) 3.0)
+#define center ((real) 0.0)
+
+typedef struct
+{
+    real lambda;
+    real err;
+    real count;
+} HistData;
 
 real chisq(const NBodyCtx* ctx, NBodyState* st)
 {
     real chisqval = 0.0;
-    real totalnum = 0.0;
-    int i, j;
+    unsigned int totalNum = 0;
+    unsigned int i, idx;
 
     const int nbody = ctx->model.nbody;
     const bodyptr endp = st->bodytab + nbody;
     bodyptr p;
     FILE* f;
 
-    // Histogram prep
-    int index1, index2;
-    int maxindex1 = (int) rfloor(end / binsize);
-    int maxindex2 = (int) rabs(rfloor(beginning / binsize));
+    const real rawCount = (endRaw - startRaw) / binsize;
 
-    real* histodata1 = calloc(sizeof(real), maxindex1 + 1);
-    real* histodata2 = calloc(sizeof(real), maxindex2 + 1);
+    const unsigned int maxIdx = (unsigned int) ceil(rawCount);
+    const real maxIdxf = (real) maxIdx;
+
+    const real start = rceil(center - binsize * maxIdxf / 2.0);
+    const real end   = rfloor(center + binsize * maxIdxf / 2.0);
+
+    printf("start = %g  end = %g\n", start, end);
+
+    unsigned int* histogram = callocSafe(maxIdx, sizeof(unsigned int));
 
     real bcos, bsin, lsin, lcos;
     vector lbr;
     real lambda;
+    real tmp;
     const real cosphi = rcos(phi);
     const real sinphi = rsin(phi);
     const real sinpsi = rsin(psi);
@@ -51,14 +64,15 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     const real costh  = rcos(theta);
     const real sinth  = rsin(theta);
 
-    printf("Transforming simulation results...");
+    printf("Binning simulation results.\n");
     for (p = st->bodytab; p < endp; ++p)
     {
         // Convert to (l,b) (involves convert x to Sun-centered)
         // Leave in radians to make rotation easier
         cartesianToLbr_rad(ctx, lbr, Pos(p));
 
-        // Convert to (lambda, beta) (involves a rotation using the Newberg et al (2009) rotation matrices)
+        // Convert to (lambda, beta) (involves a rotation using the
+        // Newberg et al (2009) rotation matrices)
 
         bcos = rcos(B(lbr));
         bsin = rsin(B(lbr));
@@ -75,30 +89,17 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
                          + (cospsi * sinphi + costh * cosphi * sinpsi) * bcos * lsin
                          + sinpsi * sinth * bsin ));
 
-        // Create the histogram
-        if (lambda > 0.0 && lambda < end)
+        //printf("L = %g\n", lambda);
+
+        idx = (unsigned int) rfloor((lambda - start) / binsize);
+        if (idx < maxIdx)
         {
-            index1 = (int)rfloor(lambda / binsize);  // floor?
-            histodata1[index1]++;
-            totalnum += 1.0;
-        }
-        else if (lambda > beginning && lambda < 0.0)
-        {
-            index2 = abs(((int) rfloor(lambda / binsize) + 1));
-            histodata2[index2]++;
-            totalnum += 1.0;
-        }
-        else
-        {
-            printf("I happen.\n");
+            ++histogram[idx];
+            ++totalNum;
         }
     }
-    printf("done\n");
-    printf("Total num in range: %f\n", totalnum);
 
-    // Find the largest entry
-    // Get the single largest bin so we can normalize over it
-    //CHECKME: Why the +1's in the sizes of histodatas?
+    printf("Total num in range: %u\n", totalNum);
 
     f = ctx->histout ? nbody_fopen(ctx->histout, "w") : stdout;
     if (f == NULL)
@@ -107,24 +108,22 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
         return NAN;
     }
 
+    const real totalNumf = (real) totalNum;
     // Print out the histogram
-    real foo;
-
-    for (i = 0, foo = -binsize; foo > beginning; foo -= binsize, ++i) // foo = -binsize or foo = 0?
+    for (i = 0; i < maxIdx; ++i)
     {
-        fprintf(f, "%f %f\n", rfma(0.5, binsize, foo), histodata2[i] / totalnum);
+        fprintf(f, "%2.10f %2.10f %2.10f\n",  /* Report center of the bins */
+                fma(((real) i  + 0.5), binsize, start),
+                ((real) histogram[i]) / totalNumf,
+                sqrt( histogram[i] / totalNumf )
+            );
     }
 
-    for (i = 0, foo = 0.0; foo < end; foo += binsize, ++i)
-    {
-        fprintf(f, "%f %f\n", rfma(0.5, binsize, foo) , histodata1[i] / totalnum);
-    }
-    fclose(f);
+    if (f != stdout)
+        fclose(f);
 
-    printf("done\n");
-
-    // Calculate the chisq value by reading a file called "histogram" (the real data histogram should already be normalized)
-
+    /* Calculate the chisq value by reading a file.
+       (the real data histogram should already be normalized) */
     f = nbody_fopen(ctx->histogram, "r");
     if (f == NULL)
     {
@@ -132,71 +131,55 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
         return NAN;
     }
 
-    int fsize;
-    real* fileLambda = NULL, *fileCount = NULL, *fileCountErr = NULL;
-    int filecount = 0;
+    size_t fsize;
+    unsigned int filecount = 0;
 
     fseek(f, 0L, SEEK_END);
-    fsize = ceil((double) (ftell(f) + 1) / 3);  /* Make sure it's big enough, avoid fun with integer division */
+    fsize = ceil((real) (ftell(f) + 1) / 3);  /* Make sure it's big enough, avoid fun with integer division */
     fseek(f, 0L, SEEK_SET);
 
-    fileLambda   = (real*) callocSafe(sizeof(real), fsize);
-    fileCount    = (real*) callocSafe(sizeof(real), fsize);
-    fileCountErr = (real*) callocSafe(sizeof(real), fsize);
+    HistData* histData = callocSafe(sizeof(HistData), fsize);
 
-    /* FIXME: Proper reading. Avoid CPP annoying */
-    while (fscanf(f,
-                  #ifdef DOUBLEPREC  /* Temporary work around */
-                    "%lf %lf %lf\n",
-                  #else
-                  "%f %f %f\n",
-                  #endif
-                  &fileLambda[filecount],
-                  &fileCount[filecount],
-                  &fileCountErr[filecount]) != EOF)
+    int rc = 0;
+    while ( (rc = fscanf(f,
+                         #ifdef DOUBLEPREC
+                           "%lf %lf %lf\n",
+                         #else
+                         "%f %f %f\n",
+                         #endif
+                         &histData[filecount].lambda,
+                         &histData[filecount].count,
+                         &histData[filecount].err))
+            && rc != EOF)
     {
         ++filecount;
     }
 
-    fclose(f);
+    if (f != stdout)
+        fclose(f);
+
+    if (filecount != maxIdx)
+    {
+        warn("Number of bins does not match those in histogram file. "
+             "Expected %u, got %u\n",
+             maxIdx,
+             filecount);
+        free(histData);
+        free(histogram);
+        return NAN;
+    }
 
     // Calculate the chisq
-    for (i = 0, foo = -binsize; foo >= beginning; foo -= binsize, ++i)
+    for (i = 0; i < maxIdx; ++i)
     {
-        real limit = rfma( 0.5, binsize, foo );
-        for (j = 0; j < filecount; ++j)
-        {
-            if ( REQ(fileLambda[j], limit) )
-            {
-                chisqval += sqr((fileCount[j] - (histodata2[i] / totalnum)) / fileCountErr[j]);
-            }
-        }
+        tmp = (histData[i].count - ((real) histogram[i] / totalNumf)) / histData[i].err;
+        chisqval += sqr(tmp);
     }
 
-    for (i = 0, foo = 0.0; foo <= end; foo += binsize, ++i)
-    {
-        real limit = rfma(0.5, binsize,  foo);
-        for (j = 0; j < filecount; ++j)
-        {
-            if ( REQ(fileLambda[j], limit) )
-            {
-                chisqval += sqr((fileCount[j] - (histodata1[i] / totalnum)) / fileCountErr[j]);
-            }
-        }
-    }
-
-    free(fileLambda);
-    free(fileCount);
-    free(fileCountErr);
-
-    free(histodata1);
-    free(histodata2);
-
-    printf("CHISQ = %f\n", chisqval);
+    free(histData);
+    free(histogram);
 
     // MAXIMUM likelihood, multiply by -1
-    real likelihood = -chisqval;
-    printf("likelihood = %f\n", likelihood);
-    return likelihood;
+    return -chisqval;
 }
 
