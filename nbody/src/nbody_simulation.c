@@ -212,7 +212,7 @@ void RUN_NBODY_SIMULATION(json_object* obj,
     if (printTiming)
         ts = get_time();
 
-    real chisqans = chisq(&ctx, &st);
+    real chisqans = nbodyChisq(&ctx, &st);
 
     if (!isnan(chisqans))
         printf("Run finished. chisq = %f\n", chisqans);

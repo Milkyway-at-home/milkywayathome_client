@@ -204,7 +204,8 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
     return histData;
 }
 
-real chisq(const NBodyCtx* ctx, NBodyState* st)
+/* Calculate the likelihood from the final state of the simulation */
+real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st)
 {
     real chisqval;
     unsigned int totalNum = 0;
@@ -218,7 +219,6 @@ real chisq(const NBodyCtx* ctx, NBodyState* st)
     const unsigned int maxIdx = (unsigned int) ceil(rawCount);
 
     const real start = rceil(center - binsize * (real) maxIdx / 2.0);
-    const real end   = rfloor(center + binsize * (real) maxIdx / 2.0);
 
     histogram = createHistogram(ctx, st, maxIdx, start, &totalNum);
     histData  = readHistData(ctx->histogram, maxIdx);

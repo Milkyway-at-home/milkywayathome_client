@@ -25,7 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "vectmath.h"
 #include "real.h"
 
-real chisq(const NBodyCtx* ctx, NBodyState* st);
+real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st);
 
 #endif /* _CHISQ_H_ */
 
