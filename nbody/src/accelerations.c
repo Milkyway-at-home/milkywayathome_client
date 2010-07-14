@@ -44,7 +44,9 @@ void miyamotoNagaiDiskAccel(vectorptr restrict acc, const Disk* disk, const vect
     const real b   = disk->scale_height;
     const real zp  = rsqrt( sqr(Z(pos)) + sqr(b) );
     const real azp = a + zp;
-    const real rth = rpow( sqr(X(pos)) + sqr(Y(pos)) + sqr(azp), 1.5);
+
+    const real rp  = sqr(X(pos)) + sqr(Y(pos)) + sqr(azp);
+    const real rth = rsqrt(cube(rp));  /* rp ^ (3/2) */
 
     X(acc) = -disk->mass * X(pos) / rth;
     Y(acc) = -disk->mass * Y(pos) / rth;
@@ -58,7 +60,7 @@ void exponentialDiskAccel(vectorptr restrict acc, const Disk* disk, const vector
     ABSV(r, pos);
 
     const real expPiece = rexp(-r / b) * (r + b) / b;
-    const real factor   = disk->mass * (expPiece - 1) / cube(r);
+    const real factor   = disk->mass * (expPiece - 1.0) / cube(r);
     MULVS(acc, pos, factor);
 }
 
