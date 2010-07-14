@@ -77,7 +77,7 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
         rnd = (real) dsfmt_genrand_close_open(&dsfmtState);
 
         /* pick r in struct units */
-        r = 1.0 / rsqrt(rpow(rnd, -2.0 / 3.0) - 1);
+        r = 1.0 / rsqrt(rpow(rnd, -2.0 / 3.0) - 1.0);
         pickshell(&dsfmtState, Pos(p), rsc * r);     /* pick scaled position */
         INCADDV(Pos(p), rshift);        /* move the position */
         INCADDV(cmr, Pos(p));           /* add to running sum */
@@ -87,9 +87,9 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
             x = xrandom(&dsfmtState, 0.0, 1.0);      /* for x in range 0:1 */
             y = xrandom(&dsfmtState, 0.0, 0.1);      /* max of g(x) is 0.092 */
         }
-        while (y > x * x * rpow(1 - x * x, 3.5)); /* using von Neumann tech */
-        v = rsqrt(2.0) * x / rpow(1 + r * r, 0.25); /* find v in struct units */
-        pickshell(&dsfmtState, Vel(p), vsc * v);     /* pick scaled velocity */
+        while (y > sqr(x) * rpow(1.0 - sqr(x), 3.5)); /* using von Neumann tech */
+        v = M_SQRT2 * x / rpow(1.0 + sqr(r), 0.25);   /* find v in struct units */
+        pickshell(&dsfmtState, Vel(p), vsc * v);      /* pick scaled velocity */
         INCADDV(Vel(p), vshift);       /* move the velocity */
         INCADDV(cmv, Vel(p));         /* add to running sum */
     }
