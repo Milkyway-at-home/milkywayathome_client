@@ -171,8 +171,6 @@ void RUN_NBODY_SIMULATION(json_object* obj,
 
     initOutput(&ctx);
 
-    printContext(&ctx);
-
   #if BOINC_APPLICATION
     /* If the checkpoint exists, try to use it */
     if (boinc_file_exists(ctx.cp.filename))
