@@ -1,0 +1,7 @@
+#!/bin/bash
+
+./smake lightsim
+./smake mwdemo
+
+gcc -o text2bin text2bin.c
+

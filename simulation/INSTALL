@@ -1,0 +1,61 @@
+In addition to the system-specific instructions below, a copy of the
+SimpleDirectMedia Library (SDL) is needed to compile any of the code.
+
+This may be obtained here:
+    http://www.libsdl.org/
+
+Windows:
+
+    MinGW:
+
+        install msysgit:
+                https://git.wiki.kernel.org/index.php/MSysGit:InstallMSysGit
+
+        to get libraries such as editors refer to the MSYS and MinGW
+            repository:
+                http://www.mingw.org/
+
+        Alternative GUI-based C/C++ editor - Notepad++
+            -has tab-size control
+            -allows changing indentation on highlighted blocks of text (shift
+                tab reduces indent while tab increases)
+            -able to translate unix-style and windows-style carriage returns
+            -allows auto-indenting of entire file of code by clicking: TextFX
+                ->TextFX Edit->Reindent C++ Code
+            -many other popular features
+
+            Notepad++ suggested configuration:
+
+                Make sure indentation matches the code in MilkyWay@Home (auto
+                    indent can be reconfigured to match any standard, but to
+                    keep things simple it can be turned off):
+
+                    settings->preferences
+                        misc->auto-indent - uncheck
+                        language menu/tab settings->tab settings->c - uncheck
+                            'use default value', 'tab size' should be 4, check
+                            'replace by space'
+                        new document/default directory->format - select 'unix'
+
+                Make sure trailing whitespace is removed on saving to avoid
+                    merging problems with git:
+
+                    settings->shortcut mapper->
+                        main menu->save (right click)->modify - uncheck all
+                            and change to 'none'
+                        macros->trim trailing and save (right click)->modify
+                            - uncheck all but ctrl, 's' should be selected
+
+        Build instructions:
+
+            ./smakeall
+
+        Note: a formal make file will replace the above shell script in upcoming revisions.
+
+Mac:
+
+    Build needs testing and a make file, however all libraries should be compatible.
+
+Linux:
+
+    Build needs testing, however all libraries and make files should be compatible.
