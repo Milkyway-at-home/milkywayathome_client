@@ -387,8 +387,9 @@ static ResultSet* runTestsCL(cl_device_type type,
 #endif /* TEST_OPENCL */
 
 #if !TEST_OPENCL
-#define cl_device_type int
-#define CL_DEVICE_CPU 0
+  #define cl_device_type int
+  #define CL_DEVICE_TYPE_CPU 0
+  #define CL_DEVICE_TYPE_GPU 1
 #endif
 
 void runPrecisionTest(cl_device_type device, const long seed, const unsigned int n)
