@@ -140,27 +140,39 @@ void printResult(FILE* f, ResultSet* r)
 {
     fprintf(f,
             "\n--------------------\n"
-            "rnd1  = %g\n"
-            "rnd2  = %g\n"
-            "sqrt  = %g\n"
-            "expm1 = %g\n"
-            "exp   = %g\n"
-            "log   = %g\n"
-            "sin   = %g\n"
-            "cos   = %g\n"
-            "pow   = %g\n"
-            "sqr   = %g\n"
+            "rnd1  = %.20g\n"
+            "rnd2  = %.20g\n"
+            "sqrt  = %.20g\n"
+            "cbrt  = %.20g\n"
+            "expm1 = %.20g\n"
+            "exp   = %.20g\n"
+            "log   = %.20g\n"
+            "log1p = %.20g\n"
+            "sin   = %.20g\n"
+            "cos   = %.20g\n"
+            "tan   = %.20g\n"
+            "pow   = %.20g\n"
+            "sqr   = %.20g\n"
+            "invr  = %.20g\n"
+            "fmar  = %.20g\n"
             "\n--------------------\n" ,
             r->rnd1,
             r->rnd2,
             r->sqrtr,
+            r->cbrtr,
             r->expm1r,
             r->expr,
             r->logr,
+            r->log1pr,
             r->sinr,
             r->cosr,
+            r->tanr,
             r->powr,
-            r->sqrr);
+            r->sqrr,
+            r->invr,
+            r->fmar
+
+        );
 }
 
 float* fillRandoms(unsigned int n)
@@ -425,13 +437,18 @@ void runPrecisionTest(cl_device_type device, const long seed, const unsigned int
 int main(int argc, char** argv)
 {
     unsigned int n = 10000;
-    cl_device_type device = CL_DEVICE_TYPE_CPU;
+    cl_device_type device = CL_DEVICE_TYPE_GPU;
     long seed = 0;
+
+    if (argc >= 2)
+        n = strtod(argv[1], NULL);
 
     if (argc >= 3)
     {
-        n = strtod(argv[1], NULL);
-        device = (cl_device_type) strtol(argv[2], NULL, 10);
+        if ( strtol(argv[2], NULL, 10) == 0)
+            device = CL_DEVICE_TYPE_CPU;
+        else
+            device = CL_DEVICE_TYPE_GPU;
     }
 
     if (argc >= 4)
