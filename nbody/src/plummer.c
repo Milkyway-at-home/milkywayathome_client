@@ -86,10 +86,11 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
         {
             x = xrandom(&dsfmtState, 0.0, 1.0);      /* for x in range 0:1 */
             y = xrandom(&dsfmtState, 0.0, 0.1);      /* max of g(x) is 0.092 */
-        }
-        while (y > sqr(x) * rpow(1.0 - sqr(x), 3.5)); /* using von Neumann tech */
-        v = M_SQRT2 * x / rpow(1.0 + sqr(r), 0.25);   /* find v in struct units */
-        pickshell(&dsfmtState, Vel(p), vsc * v);      /* pick scaled velocity */
+        }   /* using von Neumann tech */
+        while (y > -cube(x - 1.0) * sqr(x) * cube(x + 1.0) * rsqrt(1.0 - sqr(x)));
+
+        v = M_SQRT2 * x / rsqrt(rsqrt(1.0 + sqr(r)));   /* find v in struct units */
+        pickshell(&dsfmtState, Vel(p), vsc * v);        /* pick scaled velocity */
         INCADDV(Vel(p), vshift);       /* move the velocity */
         INCADDV(cmv, Vel(p));         /* add to running sum */
     }
