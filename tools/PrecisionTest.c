@@ -39,6 +39,7 @@ typedef struct
     float rnd2;
 
     float sqrtr;
+    float cbrtr;
     float log1pr;
     float expm1r;
     float logr;
@@ -61,6 +62,7 @@ const char* structSrc =
 "    float rnd2;\n"
 "\n"
 "    float sqrtr;\n"
+"    float cbrtr;\n"
 "    float log1pr;\n"
 "    float expm1r;\n"
 "    float logr;\n"
@@ -90,6 +92,7 @@ const char* precisionTestSrc =
 "    res->rnd1   = rnd1;\n"
 "    res->rnd2   = rnd2;\n"
 "    res->sqrtr  = sqrt(rnd1);\n"
+"    res->cbrtr  = cbrt(rnd1);\n"
 "    res->log1pr = log1p(rnd1);\n"
 "    res->expm1r = expm1(rnd1);\n"
 "    res->expr   = exp(rnd1);\n"
@@ -119,6 +122,7 @@ void precisionTest(ResultSet* results,
     res->rnd1   = rnd1;
     res->rnd2   = rnd2;
     res->sqrtr  = sqrtf(rnd1);
+    res->cbrtr  = cbrtf(rnd1);
     res->log1pr = log1pf(rnd1);
     res->expm1r = expm1f(rnd1);
     res->expr   = expf(rnd1);
@@ -382,10 +386,13 @@ static ResultSet* runTestsCL(cl_device_type type,
 
 #endif /* TEST_OPENCL */
 
-void runPrecisionTest()
+#if !TEST_OPENCL
+#define cl_device_type int
+#define CL_DEVICE_CPU 0
+#endif
+
+void runPrecisionTest(cl_device_type device, const long seed, const unsigned int n)
 {
-    const unsigned int n = 10000;
-    const long seed = 0;
     float* randoms;
     ResultSet* results;
 
@@ -395,7 +402,7 @@ void runPrecisionTest()
 
   #if TEST_OPENCL
     printf("Running OpenCL test\n");
-    results = runTestsCL(CL_DEVICE_TYPE_CPU, randoms, n);
+    results = runTestsCL(device, randoms, n);
   #else
     printf("Running normal test\n");
     results = runTests(randoms, n);
@@ -414,9 +421,23 @@ void runPrecisionTest()
     free(results);
 }
 
-int main()
+int main(int argc, char** argv)
 {
-    runPrecisionTest();
+    unsigned int n = 10000;
+    cl_device_type device = CL_DEVICE_TYPE_CPU;
+    long seed = 0;
+
+    if (argc >= 3)
+    {
+        n = strtod(argv[1], NULL);
+        device = (cl_device_type) strtol(argv[2], NULL, 10);
+    }
+
+    if (argc >= 4)
+        seed = (long) strtol(argv[3], NULL, 10);
+
+    runPrecisionTest(device, seed, n);
+
     return 0;
 }
 
