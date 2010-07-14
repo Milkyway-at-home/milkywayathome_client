@@ -12,9 +12,9 @@
 #include <fenv.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <popt.h>
 #include <errno.h>
-#include <assert.h>
 #include "nbody.h"
 
 #ifdef _WIN32
@@ -76,6 +76,7 @@ static fp_round_mode_t readRoundMode(const char* str)
 /* Read the command line arguments, and do the inital parsing of the parameter file */
 static json_object* readParameters(const int argc,
                                    const char** argv,
+                                   FitParams* fitParams,
                                    char** roundModeStr,
                                    char** outFileName,
                                    int* useDouble,
@@ -237,32 +238,56 @@ static json_object* readParameters(const int argc,
         unsigned int i;
         real* parameters = NULL;
 
+        fitParams->useFitParams = TRUE;
+
+        /* Read through all the server arguments, and make sure we can
+         * read everything and have the right number before trying to
+         * do anything with them */
         rest = poptGetArgs(context);
-        if (rest)
+        if (!rest)
         {
-            while (rest[++paramCount]);  /* Count number of parameters */
+            poptFreeContext(context);
+            fail("Expected arguments to follow, got 0\n");
+        }
 
-            assert(numParams == paramCount);
+        while (rest[++paramCount]);  /* Count number of parameters */
 
-            parameters = (real*) mallocSafe(sizeof(real) * numParams);
+        if (numParams == 0)
+        {
+            poptFreeContext(context);
+            fail("numParams = 0 makes no sense\n");
+        }
 
-            errno = 0;
-            for ( i = 0; i < numParams; ++i )
+        if (numParams != paramCount)
+        {
+            poptFreeContext(context);
+            fail("Parameter count mismatch: Expected %u, got %u\n", numParams, paramCount);
+        }
+
+        parameters = (real*) mallocSafe(sizeof(real) * numParams);
+
+        errno = 0;
+        for ( i = 0; i < numParams; ++i )
+        {
+            parameters[i] = (real) strtod(rest[i], NULL);
+            if (errno)
             {
-                parameters[i] = (real) strtod(rest[i], NULL);
-                if (errno)
-                {
-                    perror("Error parsing command line parameters");
-                    poptPrintHelp(context, stderr, 0);
-                    free(parameters);
-                    poptFreeContext(context);
-                    nbody_finish(EXIT_FAILURE);
-                }
+                perror("Error parsing command line fit parameters");
+                poptPrintHelp(context, stderr, 0);
+                free(parameters);
+                poptFreeContext(context);
+                nbody_finish(EXIT_FAILURE);
             }
         }
 
-        /* TODO: Stuff with parameters */
+
+        fitParams->modelMass        = parameters[0];
+        fitParams->modelRadius      = parameters[1];
+        fitParams->reverseOrbitTime = parameters[2];
+        fitParams->simulationTime   = parameters[3];
+
         free(parameters);
+
     }
 
     poptFreeContext(context);
@@ -304,6 +329,7 @@ static json_object* readParameters(const int argc,
 
 /* Run with double, float, or whatever we have */
 static void runSimulationWrapper(json_object* obj,
+                                 FitParams* fitParams,
                                  const char* outFileName,
                                  const char* checkpointFileName,
                                  const char* histogramFileName,
@@ -317,7 +343,7 @@ static void runSimulationWrapper(json_object* obj,
     if (useDouble)
     {
         printf("Using double precision\n");
-        runNBodySimulation_double(obj,
+        runNBodySimulation_double(obj, fitParams,
                                   outFileName, checkpointFileName, histogramFileName, histoutFileName,
                                   outputCartesian, printTiming, verifyOnly);
         printf("Done with double\n");
@@ -325,7 +351,7 @@ static void runSimulationWrapper(json_object* obj,
     else
     {
         printf("Using float precision\n");
-        runNBodySimulation_float(obj,
+        runNBodySimulation_float(obj, fitParams,
                                  outFileName, checkpointFileName, histogramFileName, histoutFileName,
                                  outputCartesian, printTiming, verifyOnly);
         printf("Done with float\n");
@@ -333,7 +359,7 @@ static void runSimulationWrapper(json_object* obj,
   #else
     #pragma unused(useDouble)
 
-    runNBodySimulation(obj,
+    runNBodySimulation(obj, fitParams,
                        outFileName, checkpointFileName, histogramFileName, histoutFileName,
                        outputCartesian, printTiming, verifyOnly);
   #endif /* DYNAMIC_PRECISION */
@@ -357,6 +383,7 @@ int main(int argc, const char* argv[])
     char* histoutFileName    = NULL;
     char* roundModeStr       = NULL;
     fp_round_mode_t roundMode;
+    FitParams fitParams = EMPTY_FIT_PARAMS;
 
 
 #if BOINC_APPLICATION
@@ -364,7 +391,7 @@ int main(int argc, const char* argv[])
   #if !BOINC_DEBUG
     boincInitStatus = boinc_init();
   #else
-    boincInitStatus = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENabled
+    boincInitStatus = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
                                              | BOINC_DIAG_HEAPCHECKENABLED
                                              | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
   #endif /* !BOINC_DEBUG */
@@ -378,6 +405,7 @@ int main(int argc, const char* argv[])
 
     obj = readParameters(argc,
                          argv,
+                         &fitParams,
                          &roundModeStr,
                          &outFileName,
                          &useDouble,
@@ -404,6 +432,7 @@ int main(int argc, const char* argv[])
         printf("Using rounding mode %s\n", showRoundMode(fegetround()));
 
     runSimulationWrapper(obj,
+                         &fitParams,
                          outFileName,
                          checkpointFileName,
                          histogramFileName,

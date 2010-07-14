@@ -32,6 +32,7 @@ extern "C" {
 
 #if !DYNAMIC_PRECISION
   __attribute__ ((visibility("default"))) void runNBodySimulation(json_object* obj,
+                                                                  const FitParams* fitParams,
                                                                   const char* outFileName,
                                                                   const char* checkpointFileName,
                                                                   const char* histogramFileName,
@@ -41,6 +42,7 @@ extern "C" {
                                                                   const int verifyOnly);
 #else
   __attribute__ ((visibility("default"))) void runNBodySimulation_float(json_object* obj,
+                                                                        const FitParams* fitParams,
                                                                         const char* outFileName,
                                                                         const char* checkpointFileName,
                                                                         const char* histogramFileName,
@@ -50,6 +52,7 @@ extern "C" {
                                                                         const int verifyOnly);
 
   __attribute__ ((visibility("default"))) void runNBodySimulation_double(json_object* obj,
+                                                                         const FitParams* fitParams,
                                                                          const char* outFileName,
                                                                          const char* checkpointFileName,
                                                                          const char* histogramFileName,

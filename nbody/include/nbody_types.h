@@ -291,6 +291,18 @@ typedef struct
     bool useRadians;
 } InitialConditions;
 
+
+typedef struct
+{
+    bool useFitParams;
+    real modelMass;
+    real modelRadius;
+    real reverseOrbitTime;
+    real simulationTime;
+} FitParams;
+
+#define EMPTY_FIT_PARAMS { FALSE, NAN, NAN, NAN, NAN }
+
 #define L(x) (((vectorptr) (x))[0])
 #define B(x) (((vectorptr) (x))[1])
 #define R(x) (((vectorptr) (x))[2])

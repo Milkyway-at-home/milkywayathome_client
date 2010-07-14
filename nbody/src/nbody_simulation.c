@@ -134,6 +134,7 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
 
 
 void RUN_NBODY_SIMULATION(json_object* obj,
+                          const FitParams* fitParams,
                           const char* outFileName,
                           const char* checkpointFileName,
                           const char* histogramFileName,
@@ -149,7 +150,7 @@ void RUN_NBODY_SIMULATION(json_object* obj,
     double ts = 0.0, te = 0.0;
     int rc;
 
-    rc = getParamsFromJSON(&ctx, &ic, obj);
+    rc = getParamsFromJSON(&ctx, &ic, obj, fitParams);
     if (verifyOnly)
     {
         if (rc)
@@ -169,6 +170,8 @@ void RUN_NBODY_SIMULATION(json_object* obj,
     ctx.cp.filename     = checkpointFileName;
 
     initOutput(&ctx);
+
+    printContext(&ctx);
 
   #if BOINC_APPLICATION
     /* If the checkpoint exists, try to use it */

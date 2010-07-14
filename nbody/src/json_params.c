@@ -517,7 +517,10 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
 
 /* Read the parameters from the top level json object into ctx. It
  * destroys the object in the process. */
-int getParamsFromJSON(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj)
+int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
+                      InitialConditions* ic,       /* Initial conditions to fill */
+                      json_object* fileObj,        /* Parsed JSON file */
+                      const FitParams* fitParams)  /* Hacked in overrides for using server's args */
 {
     /* Constants used for defaulting. Each field only used if
      * specified in the actual parameter tables. */
@@ -639,14 +642,18 @@ int getParamsFromJSON(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj
     const real nanN = NAN;
     const Parameter dwarfModelParams[] =
         {
-            DBL_PARAM("mass",         &ctx->model.mass),
-            INT_PARAM("nbody",        &ctx->model.nbody),
-            DBL_PARAM("scale-radius", &ctx->model.scale_radius),
-            DBL_PARAM_DFLT("eps",            &ctx->model.eps,        &nanN),
-            DBL_PARAM_DFLT("timestep",       &ctx->model.eps,        &nanN),
-            DBL_PARAM_DFLT("orbit-timestep", &ctx->model.eps,        &nanN),
-            DBL_PARAM_DFLT("time-dwarf",     &ctx->model.time_dwarf, &nanN),
-            DBL_PARAM_DFLT("time-orbit",     &ctx->model.time_orbit, &nanN),
+            /* FIXME: Hack: Defaulting on NAN's so we can ignore them
+             * in the file, to be filled in by the server sent
+             * FitParams. This will probably result in unfortunate
+             * things when using the file. */
+            INT_PARAM("nbody", &ctx->model.nbody),
+            DBL_PARAM_DFLT("mass",           &ctx->model.mass,           &nanN),
+            DBL_PARAM_DFLT("scale-radius",   &ctx->model.scale_radius,   &nanN),
+            DBL_PARAM_DFLT("eps",            &ctx->model.eps,            &nanN),
+            DBL_PARAM_DFLT("timestep",       &ctx->model.timestep,       &nanN),
+            DBL_PARAM_DFLT("orbit-timestep", &ctx->model.orbit_timestep, &nanN),
+            DBL_PARAM_DFLT("time-dwarf",     &ctx->model.time_dwarf,     &nanN),
+            DBL_PARAM_DFLT("time-orbit",     &ctx->model.time_orbit,     &nanN),
             NULLPARAMETER
         };
 
@@ -712,6 +719,16 @@ int getParamsFromJSON(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj
 
     if (rc)  /* We don't want to try processing things if we didn't read successfully */
         return rc;
+
+    /* Hack: Ignore these parameters in the file if using the command
+     * line arguments. */
+    if (fitParams->useFitParams)
+    {
+        ctx->model.mass         = fitParams->modelMass;
+        ctx->model.scale_radius = fitParams->modelRadius;
+        ctx->model.time_dwarf   = fitParams->simulationTime;
+        ctx->model.time_orbit   = fitParams->reverseOrbitTime;
+    }
 
     rc |= postProcess(ctx);
     rc |= processInitialConditions(ctx, ic);
