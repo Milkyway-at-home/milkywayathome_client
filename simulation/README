@@ -1,27 +1,13 @@
-LModL - Light Modeling Library
-A 3D graphics engine and modeling library for rendering point-light.
-
-See COPYING for license information.
-See INSTALL for information on compiling.
+See 'COPYING' for license information.
 
 Library overview:
 
-    3dproj.hpp          3D projection library
     astroconv.h         astronomy conversions
-    binfile.hpp         binary file io
-    draw8.hpp           8-bit drawing
-    drawstar.hpp        star rendering
-    sdlwrap.hpp         SDL wrapper functions
-    trigtbl.hpp         trigonometric lookup tables
+    demofile.hpp        demo file i/o
 
 Application overview:
 
-    cubetest.cpp        visual rendering test
-    gfxinfo.cpp         graphics resource description
     lightsim.cpp        light simulation animator
-    text2bin.c          converts integer/float text files to binary
-    fpstest.cpp         test frames-per-second of graphics engine
-    trigtblm.cpp        generate table portion of trigtbl.hpp
     mwdemo.cpp          MilkyWay@Home demo app
 
 Note: run application without arguments to for parameter information
@@ -32,7 +18,7 @@ Known bugs:
     ***Camera angles still being worked on
     Screen resolution is hard-coded in 'drawstar.h' - the resolution can be changed at compile time.
 
-Associated projects:
+Project information:
 
     MilkyWay@Home
 
@@ -43,13 +29,3 @@ Associated projects:
         Affiliation:
             Rensselaer Polytechnic Institute (RPI)
 
-More information on the LModL project:
-
-    Project page:
-        coming soon
-    Source page:
-        http://github.com/lunardivide/LModL
-    Project Author:
-        Shane Reilly <reills2@cs.rpi.edu>
-    Affiliation:
-        Rensselaer Polytechnic Institute (RPI)
