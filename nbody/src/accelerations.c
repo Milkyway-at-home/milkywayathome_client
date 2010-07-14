@@ -97,21 +97,19 @@ void triaxialHaloAccel(vectorptr restrict acc, const Halo* h, const vectorptr re
     /* TODO: More things here can be cached */
     const real qzs      = sqr(h->flattenZ);
     const real rhalosqr = sqr(h->scale_length);
-    const real vsqr     = -sqr(h->vhalo);
+    const real mvsqr    = -sqr(h->vhalo);
 
     const real xsqr = sqr(X(pos));
     const real ysqr = sqr(Y(pos));
     const real zsqr = sqr(Z(pos));
 
-    const real arst = rhalosqr + (h->c1 * xsqr) + (h->c3 * (X(pos) * Y(pos)) + (h->c2 * ysqr));
-
+    const real arst  = rhalosqr + (h->c1 * xsqr) + (h->c3 * X(pos) * Y(pos)) + (h->c2 * ysqr);
     const real arst2 = (zsqr / qzs) + arst;
 
-    X(acc) = vsqr * ((2.0 * h->c1) * X(pos) + (h->c3 * Y(pos)) ) / arst2;
+    X(acc) = mvsqr * (((2.0 * h->c1) * X(pos)) + (h->c3 * Y(pos)) ) / arst2;
 
-    Y(acc) = vsqr * ((2.0 * h->c2) * Y(pos) + (h->c3 * X(pos)) ) / arst2;
+    Y(acc) = mvsqr * (((2.0 * h->c2) * Y(pos)) + (h->c3 * X(pos)) ) / arst2;
 
-    Z(acc) = 2 * vsqr * Z(pos) / ((qzs * arst) + zsqr);
-
+    Z(acc) = (2.0 * mvsqr * Z(pos)) / ((qzs * arst) + zsqr);
 }
 

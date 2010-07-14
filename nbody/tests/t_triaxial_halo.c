@@ -73,14 +73,18 @@ static int triaxial_halo_falloff(Halo* h)
 
     const real c1 = (cps / qxs) + (sps / qys);
     const real c2 = (cps / qys) + (sps / qxs);
+    const real c3 = 2 * sin(phi) * cos(phi) * (1.0/qxs - 1.0/qys);
 
-    const real c3 = 2 * sin(phi) * cos(phi) * (1/qxs - 1/qys);
+    const real xsqr     = sqr(X(rv));
+    const real ysqr     = sqr(Y(rv));
+    const real zsqr     = sqr(Z(rv));
+    const real ksqr     = sqr(k);
+    const real rhalosqr = sqr(rhalo);
 
+    const real l = (c1 * xsqr) + (c3 * X(rv) * Y(rv)) + (c2 * ysqr);
 
-    const real l = (c1 * sqr(rv[0])) + (c3 * rv[0] * rv[1]) + (c2 * sqr(rv[1]));
-
-    const real numer  = k * ( qzs * ( sqr(rhalo) + l ) + sqr(rv[2]) );
-    const real denom  = qzs * (sqr(rhalo) + sqr(k) * l) + (sqr(k) * sqr(rv[2]));
+    const real numer  = k * (qzs * ( rhalosqr + l ) + zsqr);
+    const real denom  = qzs * (rhalosqr + (ksqr * l)) + (ksqr * zsqr);
     const real factor = numer / denom;
 
     MULVS(scaleda0, a0, factor);
@@ -104,6 +108,7 @@ static int triaxial_halo_falloff(Halo* h)
                 "\trv        = %s\n"
                 "\tr         = %g\n"
                 "\ta0        = %s\n"
+                "\tphi       = %g\n"
                 "\tqx        = %g\n"
                 "\tqy        = %g\n"
                 "\tqz        = %g\n"
@@ -119,7 +124,7 @@ static int triaxial_halo_falloff(Halo* h)
                 "\tdiff      = %s\n"
                 "\t|diff|    = %g\n"
                 "\tTolerance = %g\n" ,
-                rvStr, r, a0Str, qx, qy, qz, rhalo, vhalo, c1, c2, c3, k, numer, denom, factor, scaledStr, a1Str, diffStr, diffMag, LIMIT);
+                rvStr, r, a0Str, phi, qx, qy, qz, rhalo, vhalo, c1, c2, c3, k, numer, denom, factor, scaledStr, a1Str, diffStr, diffMag, LIMIT);
 
         free(scaledStr);
         free(a1Str);

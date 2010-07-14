@@ -40,9 +40,8 @@ static int processHalo(Halo* h)
         h->c1 = (cps / qxs) + (sps / qys);
         h->c2 = (cps / qys) + (sps / qxs);
 
-    /* 2 * sin(x) * rcos(x) == sin(2 * x) */
-        h->c3 = rsin(2 * phi) * (1/qxs - 1/qys);
-
+        /* 2 * sin(x) * rcos(x) == sin(2 * x) */
+        h->c3 = rsin(2 * phi) * ((qys - qxs) / (qxs * qys));
     }
 
     return 0;
