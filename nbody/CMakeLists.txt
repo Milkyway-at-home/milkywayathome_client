@@ -57,9 +57,37 @@ option(NBODY_OPENCL
 option(DOUBLEPREC
        "Use double precision" ON)
 
+
+
 set(dsfmt_mexp "19937") #Value it assumes if you don't specify it; stops warning
 set(dsfmtVer "2.1")
 set(randSrcMD5 "b3a38dac7fd8996a70d02edc4432dd75")
+
+
+set(dsfmtTar "dSFMT-src-${dsfmtVer}.tar.gz")
+
+set(randSrc "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/${dsfmtTar}")
+add_definitions("-DDSFMT_MEXP=${dsfmt_mexp}")
+
+if(NOT EXISTS ${randSrc})
+  message(STATUS "Downloading dSFMT")
+  file(DOWNLOAD "http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/${dsfmtTar}"
+                ${randSrc}
+       TIMEOUT 60
+       COMMENT "Downloading dSFMT")
+else()
+  message(STATUS "Already have dSFMT")
+endif()
+
+
+set(dsmft_flags "-O3 -fPIC -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99")
+
+#Find the headers for dSFMT
+
+set(nbody_thirdparty "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty")
+include_directories("${nbody_thirdparty}/dSFMT-src-${dsfmtVer}/")
+
+set(dsmft_src "${nbody_thirdparty}/dSFMT-src-${dsfmtVer}/dSFMT.c")
 
 set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
                   ${PROJECT_SOURCE_DIR}/src/grav.c
@@ -71,7 +99,16 @@ set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
                   ${PROJECT_SOURCE_DIR}/src/json_params.c
                   ${PROJECT_SOURCE_DIR}/src/show.c
                   ${PROJECT_SOURCE_DIR}/src/plummer.c
-                  ${PROJECT_SOURCE_DIR}/src/nbody_util.c)
+                  ${PROJECT_SOURCE_DIR}/src/nbody_util.c
+                  ${dsmft_src})
+
+set_property(SOURCE ${dsmft_src}
+               PROPERTY COMPILE_DEFINITIONS "DSFMT_MEXP=19937")
+
+set_property(SOURCE ${dsmft_src}
+               PROPERTY COMPILE_FLAGS "${dsmft_flags}")
+
+#TODO: The tests dSFMT has
 
 
 
@@ -91,21 +128,6 @@ message("---------------------------------------------")
 
 
 
-set(dsfmtTar "dSFMT-src-${dsfmtVer}.tar.gz")
-
-set(randSrc "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/${dsfmtTar}")
-add_definitions("-DDSFMT_MEXP=${dsfmt_mexp}")
-
-if(NOT EXISTS ${randSrc})
-  message(STATUS "Downloading dSFMT")
-  file(DOWNLOAD "http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/${dsfmtTar}"
-                ${randSrc}
-       TIMEOUT 60
-       COMMENT "Downloading dSFMT")
-else()
-  message(STATUS "Already have dSFMT")
-endif()
-
 execute_process(
   COMMAND "${CMAKE_COMMAND}" -E md5sum ${randSrc}
   OUTPUT_VARIABLE dl_md5_name)
@@ -122,9 +144,6 @@ execute_process(
   COMMAND "${CMAKE_COMMAND}" -E tar xzf ${randSrc} "dSFMT"
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/")
 
-#Find the headers for dSFMT
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/dSFMT-src-${dsfmtVer}/")
-add_subdirectory(thirdparty)
 
 configure_file (
   "${PROJECT_INCLUDE_DIR}/nbody_config.h.in"
@@ -138,7 +157,7 @@ if(WIN32)
   list(APPEND OS_SPECIFIC_LIBS "msvcrt" "asprintf" "stdc++")
 endif()
 
-set(nbody_link_libs ${JSON_C_LIBRARY} dsmft ${OS_SPECIFIC_LIBS} m)
+set(nbody_link_libs ${JSON_C_LIBRARY} ${OS_SPECIFIC_LIBS} m)
 
 if(BOINC_APPLICATION)
   list(APPEND nbody_link_libs ${BOINC_LIBRARIES})

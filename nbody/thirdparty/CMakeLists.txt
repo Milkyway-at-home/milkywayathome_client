@@ -18,19 +18,5 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-message("arst: ${CMAKE_CURRENT_SOURCE_DIR}/dSFMT-src-${dsfmtVer}/dSFMT.c")
-
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/dSFMT-src-${dsfmtVer}")
-
-add_library(dsmft STATIC "${CMAKE_CURRENT_SOURCE_DIR}/dSFMT-src-${dsfmtVer}/dSFMT.c")
-
-set(dsmft_flags "-O3 -fPIC -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99")
-
-set_target_properties(dsmft PROPERTIES
-                            COMPILE_DEFINITIONS "DSFMT_MEXP=19937"
-                            COMPILE_FLAGS "${dsmft_flags} ${CMAKE_C_FLAGS}")
-
-#TODO: The tests dSFMT has
-
 
 
