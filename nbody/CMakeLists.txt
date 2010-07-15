@@ -80,7 +80,7 @@ else()
 endif()
 
 
-set(dsmft_flags "-O3 -fPIC -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99")
+set(dsmft_flags "-O3 -fPIC -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99 -mfpmath=sse -msse -msse2")
 
 #Find the headers for dSFMT
 
@@ -112,7 +112,30 @@ set_property(SOURCE ${dsmft_src}
 
 
 
-set(CMAKE_C_FLAGS "-std=gnu99 -mfpmath=sse ${CMAKE_C_FLAGS}")
+# Require SSE and SSE2 (needed for doubles) This avoids a host of
+# issues with x87, ranging from different intermediate precisions on
+# different places, and removes many of the places where different
+# compiler optimizations can change the precision.
+#
+# Some of these issues are summarized here: There are others to be
+# aware of.
+# http://www.yosefk.com/blog/consistency-how-to-defeat-the-purpose-of-ieee-floating-point.html
+#
+# Also as a nice advantage, SSE for a quick benchmark I ran is ~20%
+# faster than using the antique x87 junk. There is also a later
+# opportunity to do hand vectorization for an even bigger improvement.
+#
+# The GPU floating point stuff is
+# "similar" to SSE, but not SSE.  OpenCL demands a stricter
+# conformance to standards for doubles, so hopefully when we start
+# using GPUs the results will be the same as using SSE/SSE2 and
+# doubles. No promises however.
+#
+# Summary: we abandon old, old processors for the sake of convenience
+# and consistency, and a nice speed boost on modern x86/x86_64
+# hardware.
+#
+set(CMAKE_C_FLAGS "-std=gnu99 -mfpmath=sse -msse -msse2 ${CMAKE_C_FLAGS}")
 
 if (!WIN32)
   list(APPEND CMAKE_C_FLAGS "-fvisibility=hidden")
