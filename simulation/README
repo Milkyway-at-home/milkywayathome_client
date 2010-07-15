@@ -14,9 +14,7 @@ Note: run application without arguments to for parameter information
 
 Known bugs:
 
-    ***Not all applications are completely up-to-date with their associated libraries
-    ***Camera angles still being worked on
-    Screen resolution is hard-coded in 'drawstar.h' - the resolution can be changed at compile time.
+    Seems to reset movement far too high after changing light value the first time
 
 Project information:
 

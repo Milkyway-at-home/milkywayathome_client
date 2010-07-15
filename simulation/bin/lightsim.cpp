@@ -272,24 +272,6 @@ public:
 
 };
 
-starField* starCube( SDL_Surface* surface, camera* cv, stellarClass* starType )
-{
-
-    // Create cube
-    float a = -100000.;
-    float b = a*5.;
-    float l = 0.;
-    int starTotal = 1000;
-    starField* cube = new starField(*surface, *cv, starTotal);
-    for( int k = 0; k<10; k++)
-        for( int j = 0; j<10; j++)
-            for( int i = 0; i<10; i++)
-                cube->add(a*k-b, a*j-b, a*i-b, l, *starType);
-
-    return cube;
-
-}
-
 int main( int args, char **argv )
 {
 
