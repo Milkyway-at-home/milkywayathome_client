@@ -39,10 +39,10 @@ else()
 endif()
 
 option(DYNAMIC_PRECISION
-       "Use dynamic precision" ${DEFAULT_USE_DYNAMIC_PRECISION})
+       "Use dynamic precision" OFF)
 
 option(BOINC_APPLICATION
-  "Build as a BOINC Application" ON)
+  "Build as a BOINC Application" OFF)
 
 option(BOINC_DEBUG
   "Avoid annoying things BOINC does for debugging" ON)
