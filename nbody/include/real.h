@@ -66,10 +66,17 @@
 
 #if ENSURE_SSE2_SQRT
 
+/* Temporary workaround for change in inline standard conformance */
+#if !defined(__APPLE_CC__) && __GNUC__ <= 4 && __GNUC_MINOR__ < 3
+  #define OLD_GCC_EXTERNINLINE extern
+#else
+  #define OLD_GCC_EXTERNINLINE
+#endif
+
 /* Use SSE2 to do double precision square root, ensuring the
     instruction is always used.  TODO: We can SSE2 by hand just about
     everywhere for speed. */
-__attribute__ ((always_inline)) inline double rsqrt(double x)
+__attribute__ ((always_inline)) OLD_GCC_EXTERNINLINE inline double rsqrt(double x)
 {
     double r;
     __m128d xv = _mm_load_sd(&x);

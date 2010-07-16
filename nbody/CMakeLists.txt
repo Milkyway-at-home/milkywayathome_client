@@ -191,6 +191,8 @@ message("   BOINC Application: ${BOINC_APPLICATION}")
 message("   BOINC Debug:       ${BOINC_DEBUG}")
 message("   Dynamic precision: ${DYNAMIC_PRECISION}")
 message("   Double precision:  ${DOUBLEPREC}")
+message("   Enable crlibm:     ${ENABLE_CRLIBM}")
+message("   Ensure SSE2 sqrt:  ${ENSURE_SSE2_SQRT}")
 message("---------------------------------------------")
 
 
