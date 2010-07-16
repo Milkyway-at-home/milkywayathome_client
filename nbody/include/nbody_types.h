@@ -107,6 +107,7 @@
     #endif /* DOUBLEPREC */
   #endif /* __OPENCL_VERSION__ */
 
+  /* typedef real vector[NDIM] __attribute__ ((vector (sizeof(real) * 4))) */
 
   typedef real4 vector;
   typedef real* vectorptr;

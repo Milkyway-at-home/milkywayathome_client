@@ -57,6 +57,11 @@ option(NBODY_OPENCL
 option(DOUBLEPREC
        "Use double precision" ON)
 
+option(ENSURE_SSE2_SQRT
+       "Use a wrapper around sse2's sqrtsd
+       instruction. Slightly slower if your compiler is smart
+       enough to do this without this" ON)
+
 
 
 set(dsfmt_mexp "19937") #Value it assumes if you don't specify it; stops warning

@@ -132,7 +132,6 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
   #define RUN_NBODY_SIMULATION runNBodySimulation
 #endif /* DYNAMIC_PRECISION */
 
-
 void RUN_NBODY_SIMULATION(json_object* obj,
                           const FitParams* fitParams,
                           const char* outFileName,

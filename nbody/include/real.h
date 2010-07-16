@@ -18,8 +18,12 @@
 #ifndef _REAL_H_
 #define _REAL_H_
 
+#include <xmmintrin.h>
+#include <emmintrin.h>
+
 #include <math.h>
 #include "nbody_types.h"
+#include "nbody_config.h"
 
 /* Real-valued library functions.  Most of these are actually supplied
  * by the standard C libraries.
@@ -56,7 +60,25 @@
 
 #else
 
-#  define rsqrt  sqrt
+#if ENSURE_SSE2_SQRT
+
+/* Use SSE2 to do double precision square root, ensuring the
+    instruction is always used.  TODO: We can SSE2 by hand just about
+    everywhere for speed. */
+__attribute__ ((always_inline)) inline double rsqrt(double x)
+{
+    double r;
+    __m128d xv = _mm_load_sd(&x);
+    _mm_store_sd(&r, _mm_sqrt_sd(xv, xv));
+    return r;
+}
+
+#else
+
+#define rsqrt  sqrt
+
+#endif
+
 #  define rsqr   sqr
 #  define rsin   sin
 #  define rcos   cos
