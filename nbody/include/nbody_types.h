@@ -107,8 +107,6 @@
     #endif /* DOUBLEPREC */
   #endif /* __OPENCL_VERSION__ */
 
-  /* typedef real vector[NDIM] __attribute__ ((vector (sizeof(real) * 4))) */
-
   typedef real4 vector;
   typedef real* vectorptr;
 
@@ -119,13 +117,46 @@
     typedef short int bool;
   #endif
 
-  typedef real vector[NDIM], matrix[NDIM][NDIM];
+  typedef real _vector_new __attribute__ ((vector_size (sizeof(real) * 4)));
+
+  typedef union
+  {
+    _vector_new _v;
+    real v[4];
+  } vector_new;
+
+  typedef real vector[NDIM];
+
+  typedef real matrix[NDIM][NDIM];
   typedef real* vectorptr;
 
-  #define ZERO_VECTOR { 0.0, 0.0, 0.0 }
+//#define ZERO_VECTOR { { 0.0, 0.0, 0.0, 0.0 } }
 #endif /* NBODY_OPENCL */
 
 #define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
+#define ZERO_VECTOR { 0.0, 0.0, 0.0 }
+/*
+#define L(x) ((((vector)x).v)[0])
+#define B(x) ((((vector)x).v)[1])
+#define R(x) ((((vector)x).v)[2])
+*/
+
+#define XP(x) ((((vector_new)(x)).v)[0])
+#define YP(x) ((((vector_new)(x)).v)[1])
+#define ZP(x) ((((vector_new)(x)).v)[2])
+#define VP(x) ((vector_new)(x)._v)
+
+
+
+#define L(x) (((vectorptr) (x))[0])
+#define B(x) (((vectorptr) (x))[1])
+#define R(x) (((vectorptr) (x))[2])
+
+#define X(x) (((vectorptr) (x))[0])
+#define Y(x) (((vectorptr) (x))[1])
+#define Z(x) (((vectorptr) (x))[2])
+
+
 
 #ifndef TRUE
   #define TRUE  1
@@ -303,14 +334,6 @@ typedef struct
 } FitParams;
 
 #define EMPTY_FIT_PARAMS { FALSE, NAN, NAN, NAN, NAN }
-
-#define L(x) (((vectorptr) (x))[0])
-#define B(x) (((vectorptr) (x))[1])
-#define R(x) (((vectorptr) (x))[2])
-
-#define X(x) (((vectorptr) (x))[0])
-#define Y(x) (((vectorptr) (x))[1])
-#define Z(x) (((vectorptr) (x))[2])
 
 typedef enum
 {

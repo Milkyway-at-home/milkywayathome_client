@@ -29,6 +29,9 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 
+include(MaybeDlCheck)
+
+
 include_directories(${PROJECT_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -62,37 +65,74 @@ option(ENSURE_SSE2_SQRT
        instruction. Slightly slower if your compiler is smart
        enough to do this without this" ON)
 
+option(ENABLE_CRLIBM
+       "Use crlibm double" ON)
+
+
+set(nbody_thirdparty "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty")
+
+# Handle downloading, extracting and building dSFMT
+
+set(dsfmtVer "2.1")
+set(randSrcMD5 "b3a38dac7fd8996a70d02edc4432dd75")
+set(randSrcPath "${nbody_thirdparty}")
+set(dsfmtTar "dSFMT-src-${dsfmtVer}.tar.gz")
+maybe_dl_check("dSFMT"
+               "${dsfmtVer}"
+               "${randSrcMD5}"
+               "http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/${dsfmtTar}"
+               "${randSrcPath}"
+               "${dsfmtTar}")
 
 
 set(dsfmt_mexp "19937") #Value it assumes if you don't specify it; stops warning
-set(dsfmtVer "2.1")
-set(randSrcMD5 "b3a38dac7fd8996a70d02edc4432dd75")
-
-
-set(dsfmtTar "dSFMT-src-${dsfmtVer}.tar.gz")
-
-set(randSrc "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/${dsfmtTar}")
-add_definitions("-DDSFMT_MEXP=${dsfmt_mexp}")
-
-if(NOT EXISTS ${randSrc})
-  message(STATUS "Downloading dSFMT")
-  file(DOWNLOAD "http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/${dsfmtTar}"
-                ${randSrc}
-       TIMEOUT 60
-       COMMENT "Downloading dSFMT")
-else()
-  message(STATUS "Already have dSFMT")
-endif()
-
-
 set(dsmft_flags "-O3 -fPIC -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99 -mfpmath=sse -msse -msse2")
 
 #Find the headers for dSFMT
 
-set(nbody_thirdparty "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty")
+
 include_directories("${nbody_thirdparty}/dSFMT-src-${dsfmtVer}/")
 
 set(dsmft_src "${nbody_thirdparty}/dSFMT-src-${dsfmtVer}/dSFMT.c")
+add_definitions("-DDSFMT_MEXP=${dsfmt_mexp}")
+
+
+# Take care of crlibm
+
+set(crlibmVer "1.0beta4")
+set(crlibmMD5 "8ecabd55d4a2d08030eb770ae2a5670a")
+set(crlibmTar "crlibm-${crlibmVer}.tar.gz")
+set(crlibmSrcPath "${nbody_thirdparty}")
+
+maybe_dl_check("crlibm"
+               "${crlibmVer}"
+               "${crlibmMD5}"
+               "http://lipforge.ens-lyon.fr/frs/download.php/162/${crlibmTar}"
+               "${nbody_thirdparty}"
+               "${crlibmTar}")
+#dd_custom_target(crlibm ALL)
+
+#TODO: Set march, mtune etc. from user flags, but avoid some others
+set(crlibm_flags "-std=c99 -O3 -mfpmath=sse -msse -msse2")
+
+add_custom_target(crlibm ALL
+  COMMAND "${crlibmSrcPath}/crlibm-${crlibmVer}/configure"
+                                                  "--enable-sse2"
+                                                  "CC=${CMAKE_C_COMPILER}"
+                                                  "MAKE=${CMAKE_BUILD_TOOL}"
+                                                  "CFLAGS=${crlibm_flags}"
+  COMMAND "${CMAKE_BUILD_TOOL}"
+  WORKING_DIRECTORY "${crlibmSrcPath}/crlibm-${crlibmVer}"
+  COMMENT "Building crlibm")
+
+find_library(CRLIBM_LIBRARY "crlibm" "${crlibmSrcPath}/crlibm-${crlibmVer}"
+                  NO_DEFAULT_PATH
+                  NO_CMAKE_PATH)
+find_path(CRLIBM_INCLUDE_DIR "crlibm.h" "${crlibmSrcPath}/crlibm-${crlibmVer}"
+                    NO_DEFAULT_PATH
+                    NO_CMAKE_PATH)
+
+include_directories(${CRLIBM_INCLUDE_DIR})
 
 set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
                   ${PROJECT_SOURCE_DIR}/src/grav.c
@@ -155,24 +195,6 @@ message("   Double precision:  ${DOUBLEPREC}")
 message("---------------------------------------------")
 
 
-
-execute_process(
-  COMMAND "${CMAKE_COMMAND}" -E md5sum ${randSrc}
-  OUTPUT_VARIABLE dl_md5_name)
-
-#I can't figure out a less stupid way of getting just the md5sum
-string(SUBSTRING ${dl_md5_name} 0 32 dl_md5)
-
-if(NOT ${dl_md5} STREQUAL ${randSrcMD5})
-  message(FATAL_ERROR "Downloaded dSFMT MD5 check failed")
-endif()
-
-message(STATUS "Extracting dSFMT source")
-execute_process(
-  COMMAND "${CMAKE_COMMAND}" -E tar xzf ${randSrc} "dSFMT"
-  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/")
-
-
 configure_file (
   "${PROJECT_INCLUDE_DIR}/nbody_config.h.in"
   "${PROJECT_INCLUDE_DIR}/nbody_config.h")
@@ -185,7 +207,7 @@ if(WIN32)
   list(APPEND OS_SPECIFIC_LIBS "msvcrt" "asprintf" "stdc++")
 endif()
 
-set(nbody_link_libs ${JSON_C_LIBRARY} ${OS_SPECIFIC_LIBS} m)
+set(nbody_link_libs ${CRLIBM_LIBRARY} ${JSON_C_LIBRARY} ${OS_SPECIFIC_LIBS} m)
 
 if(BOINC_APPLICATION)
   list(APPEND nbody_link_libs ${BOINC_LIBRARIES})
@@ -283,12 +305,16 @@ if(NBODY_OPENCL)
   add_custom_target(gravmap_kernel DEPENDS "${c_kernel_dir}/cl_gravmap.c")
 
   foreach(n ${nbody_libs})
-    add_dependencies(${n} gravmap_kernel)
+    add_dependencies(${n} gravmap_kernel crlibm)
   endforeach()
 endif()
 
+foreach(n ${nbody_libs})
+  add_dependencies(${n} crlibm)
+endforeach()
+
 add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
-target_link_libraries(milkyway_nbody ${nbody_link_libs} ${POPT_LIBRARY} ${nbody_libs})
+target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${nbody_libs} ${nbody_link_libs})
 
 if(WIN32)
   #For some reason I can't wrestle out the C++ on Windows.
@@ -296,6 +322,6 @@ if(WIN32)
 endif()
 
 
-add_subdirectory(tests EXCLUDE_FROM_ALL)
+#add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 

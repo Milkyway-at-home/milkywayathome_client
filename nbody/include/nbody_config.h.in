@@ -32,6 +32,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 DYNAMIC_PRECISION
 #cmakedefine01 NBODY_OPENCL
 #cmakedefine01 ENSURE_SSE2_SQRT
+#cmakedefine01 ENABLE_CRLIBM
 
 #endif /* NBODY_CONFIG_H_ */
 

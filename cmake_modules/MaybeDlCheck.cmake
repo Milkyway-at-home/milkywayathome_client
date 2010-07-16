@@ -18,5 +18,22 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+function(maybe_dl_check name version md5Hash url srcPath srcTar)
+  if(NOT EXISTS "${srcPath}/${srcTar}")
+    message(STATUS "Downloading ${name}")
+    file(DOWNLOAD ${url} "${srcPath}/${srcTar}"
+         TIMEOUT 60
+         EXPECTED_MD5 ${md5Hash}
+         LOG "Downloading ${name}"
+         SHOW_PROGRESS)
+  else()
+    message(STATUS "Already have ${name}")
+  endif()
+
+  message(STATUS "Extracting ${name} source")
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E tar xzf "${srcPath}/${srcTar}" "${name}"
+    WORKING_DIRECTORY "${srcPath}")
+endfunction()
 
 
