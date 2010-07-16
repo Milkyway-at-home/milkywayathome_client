@@ -27,12 +27,15 @@ set(milkyway_nbody_VERSION "${milkyway_nbody_MAJOR_VERSION}.${milkyway_nbody_MIN
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+
+
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 
 include(MaybeDlCheck)
 
 include_directories(${PROJECT_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+link_directories(${LIBRARY_OUTPUT_PATH})
 
 if(CMAKE_COMPILER_IS_GNUCC)
   set(DEFAULT_USE_DYNAMIC_PRECISION ON)
