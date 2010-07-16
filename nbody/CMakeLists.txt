@@ -31,7 +31,6 @@ set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 
 include(MaybeDlCheck)
 
-
 include_directories(${PROJECT_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -115,24 +114,21 @@ maybe_dl_check("crlibm"
 #TODO: Set march, mtune etc. from user flags, but avoid some others
 set(crlibm_flags "-std=c99 -O3 -mfpmath=sse -msse -msse2")
 
-add_custom_target(crlibm ALL
+#Install crlibm to the build directory
+add_custom_target(crlibm_build
   COMMAND "${crlibmSrcPath}/crlibm-${crlibmVer}/configure"
                                                   "--enable-sse2"
+                                                  "--prefix=${CMAKE_CURRENT_SOURCE_DIR}"
                                                   "CC=${CMAKE_C_COMPILER}"
                                                   "MAKE=${CMAKE_BUILD_TOOL}"
                                                   "CFLAGS=${crlibm_flags}"
   COMMAND "${CMAKE_BUILD_TOOL}"
+  COMMAND "${CMAKE_BUILD_TOOL}" "install"
   WORKING_DIRECTORY "${crlibmSrcPath}/crlibm-${crlibmVer}"
   COMMENT "Building crlibm")
 
-find_library(CRLIBM_LIBRARY "crlibm" "${crlibmSrcPath}/crlibm-${crlibmVer}"
-                  NO_DEFAULT_PATH
-                  NO_CMAKE_PATH)
-find_path(CRLIBM_INCLUDE_DIR "crlibm.h" "${crlibmSrcPath}/crlibm-${crlibmVer}"
-                    NO_DEFAULT_PATH
-                    NO_CMAKE_PATH)
+set(CRLIBM_LIBRARY crlibm)
 
-include_directories(${CRLIBM_INCLUDE_DIR})
 
 set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
                   ${PROJECT_SOURCE_DIR}/src/grav.c
@@ -305,12 +301,12 @@ if(NBODY_OPENCL)
   add_custom_target(gravmap_kernel DEPENDS "${c_kernel_dir}/cl_gravmap.c")
 
   foreach(n ${nbody_libs})
-    add_dependencies(${n} gravmap_kernel crlibm)
+    add_dependencies(${n} gravmap_kernel)
   endforeach()
 endif()
 
 foreach(n ${nbody_libs})
-  add_dependencies(${n} crlibm)
+  add_dependencies(${n} crlibm_build)
 endforeach()
 
 add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)

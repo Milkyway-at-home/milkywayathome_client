@@ -22,4 +22,8 @@ tools/GenerateTests.hi
 nbody/include/nbody_config.h
 stderr.txt
 nbody/thirdparty/dSFMT*
+nbody/include/crlibm.h
+nbody/include/crlibm_config.h
+nbody/include/scs.h
+nbody/thirdparty/
 
