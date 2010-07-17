@@ -9,11 +9,17 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <math.h>
-
 #include <stdlib.h>
 #include <string.h>
 #include <popt.h>
 #include <errno.h>
+
+#include "nbody_config.h"
+
+#if ENABLE_CRLIBM
+  #include <crlibm.h>
+#endif /* ENABLE_CRLIBM */
+
 #include "nbody.h"
 
 #ifdef _WIN32
@@ -330,6 +336,13 @@ int main(int argc, const char* argv[])
     char* histogramFileName  = NULL;
     char* histoutFileName    = NULL;
     FitParams fitParams = EMPTY_FIT_PARAMS;
+
+  #if !defined(__SSE2__) && ENABLE_CRLIBM
+    /* Try to handle inconsistencies with x87. We shouldn't use
+     * this. This helps, but there can still be some problems for some
+     * values. Sticking with SSE2 is the way to go. */
+    crlibm_init();
+  #endif
 
 
 #if BOINC_APPLICATION
