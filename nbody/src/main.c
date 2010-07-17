@@ -10,7 +10,6 @@
 #include <fcntl.h>
 #include <math.h>
 
-#include <fenv.h>
 #include <stdlib.h>
 #include <string.h>
 #include <popt.h>
@@ -22,62 +21,17 @@
 #endif
 
 
-#ifdef linux
-  #include <fpu_control.h>
-#endif
-
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
 #define DEFAULT_HISTOGRAM_FILE  "histogram"
 #define DEFAULT_HISTOUT_FILE    "histout"
 
 #define stringDefault(s, d) ((s) = (s) ? (s) : strdup((d)))
 
-typedef int fp_round_mode_t;
-
-static const char* showRoundMode(fp_round_mode_t mode)
-{
-    switch (mode)
-    {
-        case FE_TONEAREST:
-            return "FE_TONEAREST";
-        case FE_DOWNWARD:
-            return "FE_DOWNWARD";
-        case FE_TOWARDZERO:
-            return "FE_TOWARDZERO";
-        case FE_UPWARD:
-            return "FE_UPWARD";
-        default:
-            warn("Trying to show unknown round mode: %d\n", mode);
-            return "";
-    }
-}
-
-static fp_round_mode_t readRoundMode(const char* str)
-{
-    if (str == NULL || !strcasecmp(str, ""))  /* Default if not specified */
-        return FE_TONEAREST;
-    if (!strcasecmp(str, "near"))
-        return FE_TONEAREST;
-    if (!strcasecmp(str, "down"))
-        return FE_DOWNWARD;
-    if (!strcasecmp(str, "zero"))
-        return FE_TOWARDZERO;
-    else if (!strcasecmp(str, "up"))
-        return FE_UPWARD;
-    else
-        fail("Invalid round mode %s: options are either 'up', "
-             "'down', 'zero' or 'nearest' (default),\n", str);
-
-    return -1; /* Not reached, prevent warning */
-}
-
-
 
 /* Read the command line arguments, and do the inital parsing of the parameter file */
 static json_object* readParameters(const int argc,
                                    const char** argv,
                                    FitParams* fitParams,
-                                   char** roundModeStr,
                                    char** outFileName,
                                    int* useDouble,
                                    char** checkpointFileName,
@@ -152,12 +106,6 @@ static json_object* readParameters(const int argc,
             "timing", 't',
             POPT_ARG_NONE, printTiming,
             0, "Print timing of actual run", NULL
-        },
-
-        {
-            "round-mode", 'r',
-            POPT_ARG_STRING, roundModeStr,
-            0, "IEEE-754 Rounding mode. Options are: near (default), zero, up, down", NULL
         },
 
         {
@@ -381,8 +329,6 @@ int main(int argc, const char* argv[])
     char* checkpointFileName = NULL;
     char* histogramFileName  = NULL;
     char* histoutFileName    = NULL;
-    char* roundModeStr       = NULL;
-    fp_round_mode_t roundMode;
     FitParams fitParams = EMPTY_FIT_PARAMS;
 
 
@@ -406,7 +352,6 @@ int main(int argc, const char* argv[])
     obj = readParameters(argc,
                          argv,
                          &fitParams,
-                         &roundModeStr,
                          &outFileName,
                          &useDouble,
                          &checkpointFileName,
@@ -421,15 +366,6 @@ int main(int argc, const char* argv[])
     stringDefault(checkpointFileName, DEFAULT_CHECKPOINT_FILE);
     stringDefault(histogramFileName,  DEFAULT_HISTOGRAM_FILE);
     stringDefault(histoutFileName,    DEFAULT_HISTOUT_FILE);
-
-    /* Set the floating point rounding to use based on names */
-    roundMode = readRoundMode(roundModeStr);
-    free(roundModeStr);
-
-    if (fesetround(roundMode))
-        warn("Failed to set round mode: Using mode %s\n", showRoundMode(fegetround()));
-    else
-        printf("Using rounding mode %s\n", showRoundMode(fegetround()));
 
     runSimulationWrapper(obj,
                          &fitParams,
