@@ -94,9 +94,7 @@ add_definitions("-DDSFMT_MEXP=${dsfmt_mexp}")
 
 
 # Take care of crlibm
-
 if(ENABLE_CRLIBM)
-
   set(crlibmVer "1.0beta4")
   set(crlibmMD5 "8ecabd55d4a2d08030eb770ae2a5670a")
   set(crlibmTar "crlibm-${crlibmVer}.tar.gz")
@@ -113,18 +111,24 @@ if(ENABLE_CRLIBM)
   #TODO: Set march, mtune etc. from user flags, but avoid some others
   set(crlibm_flags "-std=c99 -O3 -mfpmath=sse -msse -msse2")
 
-  #Install crlibm to the build directory
-  add_custom_target(crlibm_build
-    COMMAND "${crlibmSrcPath}/crlibm-${crlibmVer}/configure"
+  set(crlibm_file "${LIBRARY_OUTPUT_PATH}/libcrlibm${CMAKE_STATIC_LIBRARY_SUFFIX}")
+  set(scs_file "${LIBRARY_OUTPUT_PATH}/libscs{CMAKE_STATIC_LIBRARY_SUFFIX}")
+
+
+  add_custom_command(
+        OUTPUT "${crlibm_file}"
+        COMMAND "${crlibmSrcPath}/crlibm-${crlibmVer}/configure"
                                                  "--enable-sse2"
                                                  "--prefix=${CMAKE_CURRENT_SOURCE_DIR}"
                                                  "CC=${CMAKE_C_COMPILER}"
                                                  "MAKE=${CMAKE_BUILD_TOOL}"
                                                  "CFLAGS=${crlibm_flags}"
-    COMMAND "${CMAKE_BUILD_TOOL}"
-    COMMAND "${CMAKE_BUILD_TOOL}" "install"
-    WORKING_DIRECTORY "${crlibmSrcPath}/crlibm-${crlibmVer}"
-    COMMENT "Building crlibm")
+        COMMAND "${CMAKE_BUILD_TOOL}"
+        COMMAND "${CMAKE_BUILD_TOOL}" "install"
+        WORKING_DIRECTORY "${crlibmSrcPath}/crlibm-${crlibmVer}"
+        COMMENT "Building crlibm")
+
+  add_custom_target(crlibm_build DEPENDS "${crlibm_file}")
 
   set(nbody_link_libs crlibm)
 endif()
@@ -315,9 +319,11 @@ if(NBODY_OPENCL)
   endforeach()
 endif()
 
-foreach(n ${nbody_libs})
-  add_dependencies(${n} crlibm_build)
-endforeach()
+if (ENABLE_CRLIBM)
+  foreach(n ${nbody_libs})
+    add_dependencies(${n} crlibm_build)
+  endforeach()
+endif()
 
 add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
 target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${nbody_libs} ${nbody_link_libs})
