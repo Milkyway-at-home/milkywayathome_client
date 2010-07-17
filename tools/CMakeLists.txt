@@ -19,6 +19,7 @@ set_target_properties(precision_test_ocl
 
 
 include_directories("../nbody/thirdparty/fdlibm53/")
+include_directories("../nbody/include/")
 link_directories("../nbody/lib/")
 
 #CHECKME: Why do we need to link to libm? Fails with undefined
@@ -29,4 +30,10 @@ target_link_libraries(precision_test_fdlibm fdlibm m)
 set_target_properties(precision_test_fdlibm
                          PROPERTIES
                          COMPILE_DEFINITIONS "USE_FDLIBM=1")
+
+
+
+add_executable(math_bench MathBench.c)
+target_link_libraries(math_bench fdlibm crlibm)
+
 
