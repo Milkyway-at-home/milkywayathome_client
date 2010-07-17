@@ -39,7 +39,6 @@ static json_object* readParameters(const int argc,
                                    const char** argv,
                                    FitParams* fitParams,
                                    char** outFileName,
-                                   int* useDouble,
                                    char** checkpointFileName,
                                    char** histogramFileName,
                                    char** histoutFileName,
@@ -48,10 +47,6 @@ static json_object* readParameters(const int argc,
                                    int* printTiming,
                                    int* verifyOnly)
 {
-  #if !defined(DYNAMIC_PRECISION)
-    #pragma unused(useDouble)
-  #endif
-
   #if !BOINC_APPLICATION
     #pragma unused(checkpointFileName)
     #pragma unused(ignoreCheckpoint)
@@ -132,16 +127,7 @@ static json_object* readParameters(const int argc,
             POPT_ARG_NONE, ignoreCheckpoint,
             0, "Ignore the checkpoint file", NULL
         },
-      #endif /* BOINC_APPLICATION */
 
-
-      #if DYNAMIC_PRECISION
-        {
-            "double", 'd',
-            POPT_ARG_NONE, useDouble,
-            0, "Use double precision", NULL
-        },
-      #endif
 
         {
             "p", 'p',
@@ -154,6 +140,8 @@ static json_object* readParameters(const int argc,
             POPT_ARG_INT | POPT_ARGFLAG_ONEDASH, &numParams,
             0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
         },
+
+      #endif /* BOINC_APPLICATION */
 
         POPT_AUTOHELP
 
@@ -281,44 +269,6 @@ static json_object* readParameters(const int argc,
     return obj;
 }
 
-/* Run with double, float, or whatever we have */
-static void runSimulationWrapper(json_object* obj,
-                                 FitParams* fitParams,
-                                 const char* outFileName,
-                                 const char* checkpointFileName,
-                                 const char* histogramFileName,
-                                 const char* histoutFileName,
-                                 const int useDouble,
-                                 const int outputCartesian,
-                                 const int printTiming,
-                                 const int verifyOnly)
-{
-  #if DYNAMIC_PRECISION
-    if (useDouble)
-    {
-        printf("Using double precision\n");
-        runNBodySimulation_double(obj, fitParams,
-                                  outFileName, checkpointFileName, histogramFileName, histoutFileName,
-                                  outputCartesian, printTiming, verifyOnly);
-        printf("Done with double\n");
-    }
-    else
-    {
-        printf("Using float precision\n");
-        runNBodySimulation_float(obj, fitParams,
-                                 outFileName, checkpointFileName, histogramFileName, histoutFileName,
-                                 outputCartesian, printTiming, verifyOnly);
-        printf("Done with float\n");
-    }
-  #else
-    #pragma unused(useDouble)
-
-    runNBodySimulation(obj, fitParams,
-                       outFileName, checkpointFileName, histogramFileName, histoutFileName,
-                       outputCartesian, printTiming, verifyOnly);
-  #endif /* DYNAMIC_PRECISION */
-}
-
 /* FIXME: Clean up the separation between boinc and nonboinc. Right
  * now it's absolutely disgusting. */
 
@@ -327,7 +277,6 @@ int main(int argc, const char* argv[])
 {
     char* outFileName = NULL;
     json_object* obj = NULL;
-    int useDouble = FALSE;
     int outputCartesian = FALSE;
     int ignoreCheckpoint = FALSE;
     int printTiming = FALSE;
@@ -374,7 +323,6 @@ int main(int argc, const char* argv[])
                          argv,
                          &fitParams,
                          &outFileName,
-                         &useDouble,
                          &checkpointFileName,
                          &histogramFileName,
                          &histoutFileName,
@@ -388,16 +336,10 @@ int main(int argc, const char* argv[])
     stringDefault(histogramFileName,  DEFAULT_HISTOGRAM_FILE);
     stringDefault(histoutFileName,    DEFAULT_HISTOUT_FILE);
 
-    runSimulationWrapper(obj,
-                         &fitParams,
-                         outFileName,
-                         checkpointFileName,
-                         histogramFileName,
-                         histoutFileName,
-                         useDouble,
-                         outputCartesian,
-                         printTiming,
-                         verifyOnly);
+
+    runNBodySimulation(obj, &fitParams,
+                       outFileName, checkpointFileName, histogramFileName, histoutFileName,
+                       outputCartesian, printTiming, verifyOnly);
 
     free(outFileName);
     free(checkpointFileName);

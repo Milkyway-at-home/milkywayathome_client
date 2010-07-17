@@ -121,27 +121,16 @@ static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
 }
 
 /* Takes parsed json and run the simulation, using outFileName for
- * output. The mess with the different names is for the hacky way we
- * can switch precision easily */
-#if DYNAMIC_PRECISION
-  #ifdef DOUBLEPREC
-    #define RUN_NBODY_SIMULATION runNBodySimulation_double
-  #else
-    #define RUN_NBODY_SIMULATION runNBodySimulation_float
-  #endif /* DOUBLEPREC */
-#else
-  #define RUN_NBODY_SIMULATION runNBodySimulation
-#endif /* DYNAMIC_PRECISION */
-
-void RUN_NBODY_SIMULATION(json_object* obj,
-                          const FitParams* fitParams,
-                          const char* outFileName,
-                          const char* checkpointFileName,
-                          const char* histogramFileName,
-                          const char* histoutFileName,
-                          const int outputCartesian,
-                          const int printTiming,
-                          const int verifyOnly)
+ * output. */
+void runNBodySimulation(json_object* obj,
+                        const FitParams* fitParams,
+                        const char* outFileName,
+                        const char* checkpointFileName,
+                        const char* histogramFileName,
+                        const char* histoutFileName,
+                        const int outputCartesian,
+                        const int printTiming,
+                        const int verifyOnly)
 {
     NBodyCtx ctx         = EMPTY_CTX;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
