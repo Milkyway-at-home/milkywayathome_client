@@ -86,7 +86,7 @@ void nfwHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr rest
     ABSV(r, pos);
     const real a  = halo->scale_length;
     const real ar = a + r;
-    const real c  = a * sqr(halo->vhalo) * ((-ar * rlog1p(r / a)) + r) / (0.216 * cube(r) * ar);
+    const real c  = a * sqr(halo->vhalo) * ((-ar * rlog1p(r / a)) + r) / (0.2162165954 * cube(r) * ar);
 
     MULVS(acc, pos, c);
 }
