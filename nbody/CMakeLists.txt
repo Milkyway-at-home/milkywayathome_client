@@ -60,13 +60,8 @@ option(NBODY_OPENCL
 option(DOUBLEPREC
        "Use double precision" ON)
 
-option(ENSURE_SSE2_SQRT
-       "Use a wrapper around sse2's sqrtsd
-       instruction. Slightly slower if your compiler is smart
-       enough to do this without this" ON)
-
 option(ENABLE_CRLIBM
-       "Use crlibm double" OFF)
+       "Use crlibm double" ON)
 mark_as_advanced(ENABLE_CRLIBM)
 
 
@@ -203,7 +198,6 @@ message("   BOINC Debug:       ${BOINC_DEBUG}")
 message("   Dynamic precision: ${DYNAMIC_PRECISION}")
 message("   Double precision:  ${DOUBLEPREC}")
 message("   Enable crlibm:     ${ENABLE_CRLIBM}")
-message("   Ensure SSE2 sqrt:  ${ENSURE_SSE2_SQRT}")
 message("---------------------------------------------")
 
 

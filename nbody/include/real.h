@@ -27,11 +27,6 @@
   #include <crlibm.h>
 #endif /* ENABLE_CRLIBM */
 
-#if ENSURE_SSE2_SQRT
-  #include <xmmintrin.h>
-  #include <emmintrin.h>
-#endif /* ENSURE_SSE2_SQRT */
-
 
 /* Real-valued library functions.  Most of these are actually supplied
  * by the standard C libraries.
@@ -68,32 +63,7 @@
 
 #else /* Use doubles */
 
-#if ENSURE_SSE2_SQRT
-
-/* Temporary workaround for change in inline standard conformance */
-#if !defined(__APPLE_CC__) && __GNUC__ <= 4 && __GNUC_MINOR__ < 3
-  #define OLD_GCC_EXTERNINLINE extern
-#else
-  #define OLD_GCC_EXTERNINLINE
-#endif
-
-/* Use SSE2 to do double precision square root, ensuring the
-    instruction is always used.  TODO: We can SSE2 by hand just about
-    everywhere for speed. */
-__attribute__ ((always_inline)) OLD_GCC_EXTERNINLINE inline double rsqrt(double x)
-{
-    double r;
-    __m128d xv = _mm_load_sd(&x);
-    _mm_store_sd(&r, _mm_sqrt_sd(xv, xv));
-    return r;
-}
-
-#else
-
 #define rsqrt  sqrt
-
-#endif /* ENSURE_SSE2_SQRT */
-
 
 /* Same for crlibm or not */
 #define rsqr   sqr
