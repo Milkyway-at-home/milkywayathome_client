@@ -24,7 +24,17 @@ Cambridge, MA 02139, USA.  */
 
 /* IEEE Not A Number.  */
 
-#include <endian.h>
+/* This is just sort of hacked together from various sources to get a
+ * NAN constant since fdlibm is missing it among other things.
+ */
+#ifndef __APPLE__
+  #include <endian.h>
+#else
+  #include <machine/endian.h>
+  #define __BYTE_ORDER BYTE_ORDER
+  #define __BIG_ENDIAN __DARWIN_BIG_ENDIAN
+  #define __LITTLE_ENDIAN __DARWIN_LITTLE_ENDIAN
+#endif
 
 #if	__BYTE_ORDER == __BIG_ENDIAN
 #define	__nan_bytes		{ 0x7f, 0xf8, 0, 0, 0, 0, 0, 0 }
