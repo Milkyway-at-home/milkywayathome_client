@@ -344,6 +344,14 @@ int main(int argc, const char* argv[])
     crlibm_init();
   #endif
 
+  #ifdef _WIN32
+    /* Make windows printing be more consistent. For some reason it
+     * defaults to printing 3 digits in the exponent. There are still
+     * issues where the rounding of the last digit by printf on
+     * windows in a small number of cases. */
+    _set_output_format(_TWO_DIGIT_EXPONENT);
+  #endif /* _WIN32 */
+
 
 #if BOINC_APPLICATION
     int boincInitStatus = 0;
