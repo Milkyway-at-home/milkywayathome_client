@@ -95,17 +95,6 @@ void* mallocSafe(size_t size);
 # define M_SQRT1_2	0.70710678118654752440	/* 1/sqrt(2) */
 #endif /* M_PI */
 
-/* When we aren't using math.h (using fdlibm), the various constants
- * and NAN aren't defined, so just take this definition. */
-#ifndef NAN
-  #include "nan.h"
-#endif /* NAN */
-
-#ifndef isnan
-  /* f != f only true for NaNs*/
-  #define isnan(x) ( (x) != (x) )
-#endif
-
 __attribute__ ((visibility("default"))) double get_time();
 
 #ifdef __cplusplus

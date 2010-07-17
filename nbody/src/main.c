@@ -8,7 +8,7 @@
 /* TODO: wuh wuh windows */
 #include <unistd.h>
 #include <fcntl.h>
-//#include <math.h>
+#include <math.h>
 
 #include <fenv.h>
 #include <stdlib.h>

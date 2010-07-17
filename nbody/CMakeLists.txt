@@ -67,14 +67,7 @@ option(ENSURE_SSE2_SQRT
 
 option(ENABLE_CRLIBM
        "Use crlibm double" OFF)
-
-option(ENABLE_FDLIBM
-       "Use fdlibm double" ON)
-
-
-if(ENABLE_CRLIB AND ENABLE_FDLIBM)
-  message(FATAL_ERROR "crlibm and fdlibm are mutually exclusive")
-endif()
+mark_as_advanced(ENABLE_CRLIBM)
 
 
 set(nbody_thirdparty "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty")
@@ -138,14 +131,7 @@ if(ENABLE_CRLIBM)
     WORKING_DIRECTORY "${crlibmSrcPath}/crlibm-${crlibmVer}"
     COMMENT "Building crlibm")
 
-  set(nbody_link_flags crlibm)
-
-elseif(ENABLE_FDLIBM)
-  message("Using fdlibm")
-  add_subdirectory("${nbody_thirdparty}/fdlibm53/")
-  include_directories("${nbody_thirdparty}/fdlibm53/")
-
-  set(nbody_link_flags fdlibm)
+  set(nbody_link_libs crlibm)
 endif()
 
 
@@ -217,7 +203,6 @@ message("   BOINC Debug:       ${BOINC_DEBUG}")
 message("   Dynamic precision: ${DYNAMIC_PRECISION}")
 message("   Double precision:  ${DOUBLEPREC}")
 message("   Enable crlibm:     ${ENABLE_CRLIBM}")
-message("   Enable fdlibm:     ${ENABLE_FDLIBM}")
 message("   Ensure SSE2 sqrt:  ${ENSURE_SSE2_SQRT}")
 message("---------------------------------------------")
 
