@@ -21,9 +21,19 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* Quick test for comparing basic math library function output on
  * different platforms */
 
-#include <math.h>
+
 #include <stdio.h>
 #include <stdlib.h>
+
+/* Windows doesn't have drand48, so do stupid things */
+#define RANDOM_DOUBLE (rand() / RAND_MAX)
+
+
+#if USE_FDLIBM
+  #include <fdlibm.h>
+#else
+  #include <math.h>
+#endif
 
 #if TEST_OPENCL
   #ifdef __APPLE__
@@ -35,22 +45,22 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef struct
 {
-    float rnd1;
-    float rnd2;
+    double rnd1;
+    double rnd2;
 
-    float sqrtr;
-    float cbrtr;
-    float log1pr;
-    float expm1r;
-    float logr;
-    float sinr;
-    float cosr;
-    float tanr;
-    float powr;
-    float sqrr;
-    float expr;
-    float invr;
-    float fmar;
+    double sqrtr;
+    double cbrtr;
+    double log1pr;
+    double expm1r;
+    double logr;
+    double sinr;
+    double cosr;
+    double tanr;
+    double powr;
+    double sqrr;
+    double expr;
+    double invr;
+    /* double fmar; */
 } ResultSet;
 
 #define BUFSIZE 10240
@@ -58,32 +68,31 @@ typedef struct
 const char* structSrc =
 "typedef struct\n"
 "{\n"
-"    float rnd1;\n"
-"    float rnd2;\n"
+"    double rnd1;\n"
+"    double rnd2;\n"
 "\n"
-"    float sqrtr;\n"
-"    float cbrtr;\n"
-"    float log1pr;\n"
-"    float expm1r;\n"
-"    float logr;\n"
-"    float sinr;\n"
-"    float cosr;\n"
-"    float tanr;\n"
-"    float powr;\n"
-"    float sqrr;\n"
-"    float expr;\n"
-"    float invr;\n"
-"    float fmar;\n"
+"    double sqrtr;\n"
+"    double cbrtr;\n"
+"    double log1pr;\n"
+"    double expm1r;\n"
+"    double logr;\n"
+"    double sinr;\n"
+"    double cosr;\n"
+"    double tanr;\n"
+"    double powr;\n"
+"    double sqrr;\n"
+"    double expr;\n"
+"    double invr;\n"
     "} ResultSet;\n";
 
 
 const char* precisionTestSrc =
 "__kernel\n"
 "void precisionTest(__global ResultSet* results,\n"
-"                   __global float* randoms,\n"
+"                   __global double* randoms,\n"
 "                   unsigned int idx)\n"
 "{\n"
-"    float rnd1, rnd2;\n"
+"    double rnd1, rnd2;\n"
 "    __global ResultSet* res;\n"
 "    const size_t id = get_global_id(0);\n"
 "    rnd2 = randoms[id];\n"
@@ -100,19 +109,18 @@ const char* precisionTestSrc =
 "    res->sinr   = sin(rnd1);\n"
 "    res->cosr   = cos(rnd1);\n"
 "    res->tanr   = tan(rnd1);\n"
-"    res->powr   = pow(rnd1, (float)1.5);\n"
+"    res->powr   = pow(rnd1, (double)1.5);\n"
 "    res->sqrr   = rnd1 * rnd1;\n"
 "    res->invr   = 1.0 / rnd1;\n"
-"    res->fmar   = fma((float)rnd1, (float)rnd1, (float)rnd1);\n"
 "}\n"
 "";
 
 
 void precisionTest(ResultSet* results,
-                   float* randoms,
+                   double* randoms,
                    unsigned int idx)
 {
-    float rnd1, rnd2;
+    double rnd1, rnd2;
     ResultSet* res;
 
     rnd2 = randoms[idx];
@@ -121,40 +129,40 @@ void precisionTest(ResultSet* results,
     rnd1 = rnd2;
     res->rnd1   = rnd1;
     res->rnd2   = rnd2;
-    res->sqrtr  = sqrtf(rnd1);
-    res->cbrtr  = cbrtf(rnd1);
-    res->log1pr = log1pf(rnd1);
-    res->expm1r = expm1f(rnd1);
-    res->expr   = expf(rnd1);
-    res->logr   = logf(rnd1);
-    res->sinr   = sinf(rnd1);
-    res->cosr   = cosf(rnd1);
-    res->tanr   = tanf(rnd1);
-    res->powr   = powf(rnd1, 1.5);
+    res->sqrtr  = sqrt(rnd1);
+    res->cbrtr  = cbrt(rnd1);
+    res->log1pr = log1p(rnd1);
+    res->expm1r = expm1(rnd1);
+    res->expr   = exp(rnd1);
+    res->logr   = log(rnd1);
+    res->sinr   = sin(rnd1);
+    res->cosr   = cos(rnd1);
+    res->tanr   = tan(rnd1);
+    res->powr   = pow(rnd1, 1.5);
     res->sqrr   = rnd1 * rnd1;
     res->invr   = 1.0 / rnd1;
-    res->fmar   = fma(rnd1, rnd1, rnd1);
+    /* res->fmar   = fma(rnd1, rnd1, rnd1); */
 }
 
 void printResult(FILE* f, ResultSet* r)
 {
     fprintf(f,
             "\n--------------------\n"
-            "rnd1  = %.20g\n"
-            "rnd2  = %.20g\n"
-            "sqrt  = %.20g\n"
-            "cbrt  = %.20g\n"
-            "expm1 = %.20g\n"
-            "exp   = %.20g\n"
-            "log   = %.20g\n"
-            "log1p = %.20g\n"
-            "sin   = %.20g\n"
-            "cos   = %.20g\n"
-            "tan   = %.20g\n"
-            "pow   = %.20g\n"
-            "sqr   = %.20g\n"
-            "invr  = %.20g\n"
-            "fmar  = %.20g\n"
+            "rnd1  = %.30g\n"
+            "rnd2  = %.30g\n"
+            "sqrt  = %.30g\n"
+            "cbrt  = %.30g\n"
+            "expm1 = %.30g\n"
+            "exp   = %.30g\n"
+            "log   = %.30g\n"
+            "log1p = %.30g\n"
+            "sin   = %.30g\n"
+            "cos   = %.30g\n"
+            "tan   = %.30g\n"
+            "pow   = %.30g\n"
+            "sqr   = %.30g\n"
+            "invr  = %.30g\n"
+            /* "fmar  = %.30g\n" */
             "\n--------------------\n" ,
             r->rnd1,
             r->rnd2,
@@ -169,24 +177,25 @@ void printResult(FILE* f, ResultSet* r)
             r->tanr,
             r->powr,
             r->sqrr,
-            r->invr,
-            r->fmar
+            r->invr
+            /* r->fmar */
 
         );
 }
 
-float* fillRandoms(unsigned int n)
+double* fillRandoms(unsigned int n)
 {
     unsigned int i;
-    float* arr = malloc(sizeof(float) * n);
+    double* arr = malloc(sizeof(double) * n);
 
     for (i = 0; i < n; ++i)
-        arr[i] = drand48();
+        arr[i] = RANDOM_DOUBLE;
+    /* arr[i] = drand48(); */
 
     return arr;
 }
 
-ResultSet* runTests(float* randoms, unsigned int n)
+ResultSet* runTests(double* randoms, unsigned int n)
 {
     unsigned int i;
     ResultSet* results = malloc(sizeof(ResultSet) * n);
@@ -206,7 +215,7 @@ void printResults(FILE* f, ResultSet* res, unsigned int n)
 #if TEST_OPENCL
 
 static ResultSet* runTestsCL(cl_device_type type,
-                             float* randoms,
+                             double* randoms,
                              unsigned int n)
 {
     cl_uint maxComputeUnits, clockFreq;
@@ -326,7 +335,7 @@ static ResultSet* runTestsCL(cl_device_type type,
 
     randBuf = clCreateBuffer(ctx,
                              CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                             sizeof(float) * n,
+                             sizeof(double) * n,
                              randoms,
                              &err);
     if (err != CL_SUCCESS)
@@ -406,10 +415,11 @@ static ResultSet* runTestsCL(cl_device_type type,
 
 void runPrecisionTest(cl_device_type device, const long seed, const unsigned int n)
 {
-    float* randoms;
+    double* randoms;
     ResultSet* results;
 
-    srand48(seed);
+    /* srand48(seed); */
+    srand(seed);
 
     randoms = fillRandoms(n);
 
