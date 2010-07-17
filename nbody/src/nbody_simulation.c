@@ -102,12 +102,13 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
     }
 }
 
-static void endRun(NBodyCtx* ctx, NBodyState* st)
+static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
 {
   /* Make final output */
   #if BOINC_APPLICATION && !BOINC_DEBUG
-    boincOutput(ctx, st);
+    boincOutput(ctx, st, chisq);
   #else
+    printf("chisq = %.20g\n", chisq);
     output(ctx, st);
   #endif /* BOINC_APPLICATION && !BOINC_DEBUG */
 
@@ -146,6 +147,7 @@ void RUN_NBODY_SIMULATION(json_object* obj,
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
     NBodyState st        = EMPTY_STATE;
 
+    real chisq;
     double ts = 0.0, te = 0.0;
     int rc;
 
@@ -208,23 +210,11 @@ void RUN_NBODY_SIMULATION(json_object* obj,
     }
 
     // Get the likelihood
-    if (printTiming)
-        ts = get_time();
-
-    real chisqans = nbodyChisq(&ctx, &st);
-
-    if (!isnan(chisqans))
-        printf("Run finished. chisq = %f\n", chisqans);
-    else
+    chisq = nbodyChisq(&ctx, &st);
+    if (isnan(chisq))
         warn("Failed to calculate chisq\n");
 
-    if (printTiming)
-    {
-        te = get_time();
-        printf("Elapsed time for chisq = %g\n", te - ts);
-    }
-
-    endRun(&ctx, &st);
+    endRun(&ctx, &st, chisq);
 
 }
 
