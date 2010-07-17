@@ -18,9 +18,21 @@
 #ifndef _REAL_H_
 #define _REAL_H_
 
-#include <math.h>
-#include "nbody_types.h"
 #include "nbody_config.h"
+
+/* fdlibm provides a math.h replacement, with drop in replacements for
+ * most of the functions. It's missing the constants and some other
+ * things. crlibm provides a small subset of functions, all of which
+ * are suffixed in 4 different ways for the different rounding
+ * modes. It's supplemented by the standard math.h */
+#if ENABLE_FDLIBM
+  #undef __P     /* FIXME: Workaround for conflict in fdlibm.h with
+                  * something else standard. This isn't the right
+                  * solution. */
+  #include <fdlibm.h>
+#else
+  #include <math.h>
+#endif /* ENABLE_FDLIBM */
 
 #if ENABLE_CRLIBM
   #include <crlibm.h>

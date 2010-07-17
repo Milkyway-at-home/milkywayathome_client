@@ -8,11 +8,11 @@
 /* TODO: wuh wuh windows */
 #include <unistd.h>
 #include <fcntl.h>
+//#include <math.h>
 
 #include <fenv.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <popt.h>
 #include <errno.h>
 #include "nbody.h"

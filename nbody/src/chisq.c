@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "nbody_priv.h"
+#include "nbody_util.h"
 #include "chisq.h"
 
 /* FIXME: Magic numbers */

@@ -27,8 +27,6 @@ set(milkyway_nbody_VERSION "${milkyway_nbody_MAJOR_VERSION}.${milkyway_nbody_MIN
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-
-
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 
 include(MaybeDlCheck)
@@ -68,7 +66,15 @@ option(ENSURE_SSE2_SQRT
        enough to do this without this" ON)
 
 option(ENABLE_CRLIBM
-       "Use crlibm double" ON)
+       "Use crlibm double" OFF)
+
+option(ENABLE_FDLIBM
+       "Use fdlibm double" ON)
+
+
+if(ENABLE_CRLIB AND ENABLE_FDLIBM)
+  message(FATAL_ERROR "crlibm and fdlibm are mutually exclusive")
+endif()
 
 
 set(nbody_thirdparty "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty")
@@ -101,36 +107,55 @@ add_definitions("-DDSFMT_MEXP=${dsfmt_mexp}")
 
 # Take care of crlibm
 
-set(crlibmVer "1.0beta4")
-set(crlibmMD5 "8ecabd55d4a2d08030eb770ae2a5670a")
-set(crlibmTar "crlibm-${crlibmVer}.tar.gz")
-set(crlibmSrcPath "${nbody_thirdparty}")
+if(ENABLE_CRLIBM)
 
-maybe_dl_check("crlibm"
-               "${crlibmVer}"
-               "${crlibmMD5}"
-               "http://lipforge.ens-lyon.fr/frs/download.php/162/${crlibmTar}"
-               "${nbody_thirdparty}"
-               "${crlibmTar}")
-#dd_custom_target(crlibm ALL)
+  set(crlibmVer "1.0beta4")
+  set(crlibmMD5 "8ecabd55d4a2d08030eb770ae2a5670a")
+  set(crlibmTar "crlibm-${crlibmVer}.tar.gz")
+  set(crlibmSrcPath "${nbody_thirdparty}")
 
-#TODO: Set march, mtune etc. from user flags, but avoid some others
-set(crlibm_flags "-std=c99 -O3 -mfpmath=sse -msse -msse2")
+  maybe_dl_check("crlibm"
+                 "${crlibmVer}"
+                 "${crlibmMD5}"
+                 "http://lipforge.ens-lyon.fr/frs/download.php/162/${crlibmTar}"
+                 "${nbody_thirdparty}"
+                 "${crlibmTar}")
+  #add_custom_target(crlibm ALL)
 
-#Install crlibm to the build directory
-add_custom_target(crlibm_build
-  COMMAND "${crlibmSrcPath}/crlibm-${crlibmVer}/configure"
-                                                  "--enable-sse2"
-                                                  "--prefix=${CMAKE_CURRENT_SOURCE_DIR}"
-                                                  "CC=${CMAKE_C_COMPILER}"
-                                                  "MAKE=${CMAKE_BUILD_TOOL}"
-                                                  "CFLAGS=${crlibm_flags}"
-  COMMAND "${CMAKE_BUILD_TOOL}"
-  COMMAND "${CMAKE_BUILD_TOOL}" "install"
-  WORKING_DIRECTORY "${crlibmSrcPath}/crlibm-${crlibmVer}"
-  COMMENT "Building crlibm")
+  #TODO: Set march, mtune etc. from user flags, but avoid some others
+  set(crlibm_flags "-std=c99 -O3 -mfpmath=sse -msse -msse2")
 
-set(CRLIBM_LIBRARY crlibm)
+  #Install crlibm to the build directory
+  add_custom_target(crlibm_build
+    COMMAND "${crlibmSrcPath}/crlibm-${crlibmVer}/configure"
+                                                 "--enable-sse2"
+                                                 "--prefix=${CMAKE_CURRENT_SOURCE_DIR}"
+                                                 "CC=${CMAKE_C_COMPILER}"
+                                                 "MAKE=${CMAKE_BUILD_TOOL}"
+                                                 "CFLAGS=${crlibm_flags}"
+    COMMAND "${CMAKE_BUILD_TOOL}"
+    COMMAND "${CMAKE_BUILD_TOOL}" "install"
+    WORKING_DIRECTORY "${crlibmSrcPath}/crlibm-${crlibmVer}"
+    COMMENT "Building crlibm")
+
+  set(nbody_link_flags crlibm)
+
+elseif(ENABLE_FDLIBM)
+  message("Using fdlibm")
+  add_subdirectory("${nbody_thirdparty}/fdlibm53/")
+  include_directories("${nbody_thirdparty}/fdlibm53/")
+
+  set(nbody_link_flags fdlibm)
+endif()
+
+
+#CHECKME: Seems to only be problematic when we define our own NAN, at
+#least for GCC, since we don't actually need special number math
+#except for assignment in a couple places. Not sure how useful this is
+#anyway.
+#if(NOT ENABLE_FDLIBM)
+#  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffinite-math-only")
+#endif()
 
 
 set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
@@ -192,6 +217,7 @@ message("   BOINC Debug:       ${BOINC_DEBUG}")
 message("   Dynamic precision: ${DYNAMIC_PRECISION}")
 message("   Double precision:  ${DOUBLEPREC}")
 message("   Enable crlibm:     ${ENABLE_CRLIBM}")
+message("   Enable fdlibm:     ${ENABLE_FDLIBM}")
 message("   Ensure SSE2 sqrt:  ${ENSURE_SSE2_SQRT}")
 message("---------------------------------------------")
 
@@ -208,7 +234,7 @@ if(WIN32)
   list(APPEND OS_SPECIFIC_LIBS "msvcrt" "asprintf" "stdc++")
 endif()
 
-set(nbody_link_libs ${CRLIBM_LIBRARY} ${JSON_C_LIBRARY} ${OS_SPECIFIC_LIBS} m)
+list(APPEND nbody_link_libs ${JSON_C_LIBRARY} ${OS_SPECIFIC_LIBS} m)
 
 if(BOINC_APPLICATION)
   list(APPEND nbody_link_libs ${BOINC_LIBRARIES})

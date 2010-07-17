@@ -213,7 +213,7 @@ static void setRCrit(const NBodyCtx* ctx, NBodyState* st, cellptr p, vector cmpo
     {
         case NEWCRITERION:
             DISTV(tmp, cmpos, Pos(p));
-            rc = rfma(psize, inv(ctx->theta), tmp);
+            rc = psize / ctx->theta + tmp;
             /* use size plus offset */
             break;
         case EXACT:                         /* exact force calculation? */
@@ -314,8 +314,8 @@ void makeTree(const NBodyCtx* ctx, NBodyState* st)
     t->maxlevel = 0;                                 /* init count of levels */
     for (p = st->bodytab; p < endp; p++)             /* loop over bodies... */
     {
-        if (isnormal(Mass(p)))                  /* exclude test particles */
-            loadBody(t, p);                     /* and insert into tree */
+        if (Mass(p) != 0.0)                  /* exclude test particles */
+            loadBody(t, p);                  /* and insert into tree */
     }
 
     hackCofM(ctx, st, t->root, t->rsize);       /* find c-of-m coordinates */

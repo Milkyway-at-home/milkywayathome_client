@@ -33,6 +33,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 NBODY_OPENCL
 #cmakedefine01 ENSURE_SSE2_SQRT
 #cmakedefine01 ENABLE_CRLIBM
+#cmakedefine01 ENABLE_FDLIBM
 
 #endif /* NBODY_CONFIG_H_ */
 
