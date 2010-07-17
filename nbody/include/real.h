@@ -18,9 +18,6 @@
 #ifndef _REAL_H_
 #define _REAL_H_
 
-#include <xmmintrin.h>
-#include <emmintrin.h>
-
 #include <math.h>
 #include "nbody_types.h"
 #include "nbody_config.h"
@@ -28,6 +25,12 @@
 #if ENABLE_CRLIBM
   #include <crlibm.h>
 #endif /* ENABLE_CRLIBM */
+
+#if ENSURE_SSE2_SQRT
+  #include <xmmintrin.h>
+  #include <emmintrin.h>
+#endif /* ENSURE_SSE2_SQRT */
+
 
 /* Real-valued library functions.  Most of these are actually supplied
  * by the standard C libraries.
