@@ -29,7 +29,6 @@ inline static void initState(const NBodyCtx* ctx, const InitialConditions* ic, N
 
     /* CHECKME: Why does makeTree get used twice for the first step? */
     /* Take 1st step */
-
   #if !NBODY_OPENCL
     gravMap(ctx, st);
   #else

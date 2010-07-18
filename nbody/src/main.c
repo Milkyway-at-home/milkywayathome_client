@@ -31,10 +31,65 @@
 #define DEFAULT_HISTOGRAM_FILE  "histogram"
 #define DEFAULT_HISTOUT_FILE    "histout"
 
+/* If one of these options is null, use the default. */
 #define stringDefault(s, d) ((s) = (s) ? (s) : strdup((d)))
 
 
-/* Read the command line arguments, and do the inital parsing of the parameter file */
+#if !BOINC_APPLICATION
+static void nbodyBoincInit() { }
+#else
+
+#if BOINC_DEBUG
+/* Use BOINC, but prevent it from redirecting stderr to a file, which
+ * is really annoying for debugging */
+static void nbodyBoincInit()
+{
+    int rc =  boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
+                                     | BOINC_DIAG_HEAPCHECKENABLED
+                                     | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
+    if (rc)
+    {
+        warn("boinc_init failed: %d\n", rc);
+        exit(EXIT_FAILURE);
+    }
+}
+
+#else
+/* For BOINC releases */
+static void nbodyBoincInit()
+{
+    int rc = boinc_init();
+    if (rc)
+    {
+        warn("boinc_init failed: %d\n", rc);
+        exit(EXIT_FAILURE);
+    }
+}
+#endif /* BOINC_DEBUG */
+#endif /* !BOINC_APPLICATION */
+
+
+/* Maybe set up some platform specific issues */
+static void specialSetup()
+{
+  #if !defined(__SSE2__) && ENABLE_CRLIBM
+    /* Try to handle inconsistencies with x87. We shouldn't use
+     * this. This helps, but there can still be some problems for some
+     * values. Sticking with SSE2 is the way to go. */
+    crlibm_init();
+  #endif
+
+  #ifdef _WIN32
+    /* Make windows printing be more consistent. For some reason it
+     * defaults to printing 3 digits in the exponent. There are still
+     * issues where the rounding of the last digit by printf on
+     * windows in a small number of cases. */
+    _set_output_format(_TWO_DIGIT_EXPONENT);
+  #endif /* _WIN32 */
+}
+
+
+/* Read the command line arguments, and do the inital parsing of the parameter file. */
 static json_object* readParameters(const int argc,
                                    const char** argv,
                                    FitParams* fitParams,
@@ -54,10 +109,10 @@ static json_object* readParameters(const int argc,
 
     poptContext context;
     int o;
-    static char* inputFile = NULL;        /* input JSON file */
-    static char* inputStr  = NULL;        /* a string of JSON to use directly */
+    static char* inputFile = NULL;    /* input JSON file */
+    static char* inputStr  = NULL;    /* a string of JSON to use directly */
     json_object* obj;
-    static const char** rest;
+    static const char** rest;         /* Leftover arguments */
 
     unsigned int numParams = 0, params = 0, paramCount = 0;
 
@@ -200,6 +255,8 @@ static json_object* readParameters(const int argc,
             fail("numParams = 0 makes no sense\n");
         }
 
+        /* Make sure the number of extra parameters matches the number
+         * we were told to expect. */
         if (numParams != paramCount)
         {
             poptFreeContext(context);
@@ -222,21 +279,19 @@ static json_object* readParameters(const int argc,
             }
         }
 
-
         fitParams->modelMass        = parameters[0];
         fitParams->modelRadius      = parameters[1];
         fitParams->reverseOrbitTime = parameters[2];
         fitParams->simulationTime   = parameters[3];
 
         free(parameters);
-
     }
 
     poptFreeContext(context);
 
     if (inputFile)
     {
-        /* check if we can read the file, so we can fail saying that
+        /* Check if we can read the file, so we can fail saying that
          * and not be left to guessing if it's that or a parse
          * error */
         if (access(inputFile, R_OK) < 0)
@@ -269,82 +324,48 @@ static json_object* readParameters(const int argc,
     return obj;
 }
 
-/* FIXME: Clean up the separation between boinc and nonboinc. Right
- * now it's absolutely disgusting. */
-
 /* main: toplevel routine for hierarchical N-body code. */
 int main(int argc, const char* argv[])
 {
-    char* outFileName = NULL;
-    json_object* obj = NULL;
-    int outputCartesian = FALSE;
+    char* outFile        = NULL;
+    json_object* obj     = NULL;
+    int outputCartesian  = FALSE;
     int ignoreCheckpoint = FALSE;
-    int printTiming = FALSE;
-    int verifyOnly = FALSE;
-    char* checkpointFileName = NULL;
-    char* histogramFileName  = NULL;
-    char* histoutFileName    = NULL;
-    FitParams fitParams = EMPTY_FIT_PARAMS;
+    int printTiming      = FALSE;
+    int verifyOnly       = FALSE;
+    char* checkpointFile = NULL;
+    char* histogramFile  = NULL;
+    char* histoutFile    = NULL;
+    FitParams fitParams  = EMPTY_FIT_PARAMS;
 
-  #if !defined(__SSE2__) && ENABLE_CRLIBM
-    /* Try to handle inconsistencies with x87. We shouldn't use
-     * this. This helps, but there can still be some problems for some
-     * values. Sticking with SSE2 is the way to go. */
-    crlibm_init();
-  #endif
-
-  #ifdef _WIN32
-    /* Make windows printing be more consistent. For some reason it
-     * defaults to printing 3 digits in the exponent. There are still
-     * issues where the rounding of the last digit by printf on
-     * windows in a small number of cases. */
-    _set_output_format(_TWO_DIGIT_EXPONENT);
-  #endif /* _WIN32 */
-
-
-#if BOINC_APPLICATION
-    int boincInitStatus = 0;
-  #if !BOINC_DEBUG
-    boincInitStatus = boinc_init();
-  #else
-    boincInitStatus = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
-                                             | BOINC_DIAG_HEAPCHECKENABLED
-                                             | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
-  #endif /* !BOINC_DEBUG */
-
-    if (boincInitStatus)
-    {
-        fprintf(stderr, "boinc_init failed: %d\n", boincInitStatus);
-        exit(EXIT_FAILURE);
-    }
-#endif /* BOINC_APPLICATION */
+    specialSetup();
+    nbodyBoincInit();
 
     obj = readParameters(argc,
                          argv,
                          &fitParams,
-                         &outFileName,
-                         &checkpointFileName,
-                         &histogramFileName,
-                         &histoutFileName,
+                         &outFile,
+                         &checkpointFile,
+                         &histogramFile,
+                         &histoutFile,
                          &ignoreCheckpoint,
                          &outputCartesian,
                          &printTiming,
                          &verifyOnly);
 
     /* Use default if checkpoint file not specified */
-    stringDefault(checkpointFileName, DEFAULT_CHECKPOINT_FILE);
-    stringDefault(histogramFileName,  DEFAULT_HISTOGRAM_FILE);
-    stringDefault(histoutFileName,    DEFAULT_HISTOUT_FILE);
-
+    stringDefault(checkpointFile, DEFAULT_CHECKPOINT_FILE);
+    stringDefault(histogramFile,  DEFAULT_HISTOGRAM_FILE);
+    stringDefault(histoutFile,    DEFAULT_HISTOUT_FILE);
 
     runNBodySimulation(obj, &fitParams,
-                       outFileName, checkpointFileName, histogramFileName, histoutFileName,
+                       outFile, checkpointFile, histogramFile, histoutFile,
                        outputCartesian, printTiming, verifyOnly);
 
-    free(outFileName);
-    free(checkpointFileName);
-    free(histogramFileName);
-    free(histoutFileName);
+    free(outFile);
+    free(checkpointFile);
+    free(histogramFile);
+    free(histoutFile);
 
     nbody_finish(EXIT_SUCCESS);
 }
