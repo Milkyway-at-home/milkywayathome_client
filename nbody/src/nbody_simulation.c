@@ -119,11 +119,52 @@ static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
     nbodyStateDestroy(st);
 }
 
+
+#if BOINC_APPLICATION
+
+/* Setup the run, taking care of checkpointing things when using BOINC */
+static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
+{
+    /* If the checkpoint exists, try to use it */
+    if (boinc_file_exists(ctx->cp.filename))
+    {
+        printf("Checkpoint exists. Attempting to resume from it.\n");
+        openCheckpoint(ctx);
+
+        /* When the resume fails, start a fresh run */
+        if (thawState(ctx, st))
+        {
+            warn("Failed to resume checkpoint\n");
+            closeCheckpoint(ctx);     /* Something is wrong with this file */
+            openCheckpoint(ctx);      /* Make a new one */
+            nbodyStateDestroy(st);
+            startRun(ctx, ic, st);
+        }
+    }
+    else   /* Otherwise, just start a fresh run */
+    {
+        openCheckpoint(ctx);
+        startRun(ctx, ic, st);
+    }
+}
+
+#else
+
+/* When not using BOINC, we don't need to deal with the checkpointing */
+static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
+{
+    startRun(ctx, ic, st);
+}
+
+#endif /* BOINC_APPLICATION */
+
+
+
 /* Takes parsed json and run the simulation, using outFileName for
  * output. */
-void runNBodySimulation(json_object* obj,
-                        const FitParams* fitParams,
-                        const char* outFileName,
+void runNBodySimulation(json_object* obj,                 /* The main configuration */
+                        const FitParams* fitParams,       /* For server's arguments */
+                        const char* outFileName,          /* Misc. parameters to control output */
                         const char* checkpointFileName,
                         const char* histogramFileName,
                         const char* histoutFileName,
@@ -159,32 +200,7 @@ void runNBodySimulation(json_object* obj,
     ctx.cp.filename     = checkpointFileName;
 
     initOutput(&ctx);
-
-  #if BOINC_APPLICATION
-    /* If the checkpoint exists, try to use it */
-    if (boinc_file_exists(ctx.cp.filename))
-    {
-        printf("Checkpoint exists. Attempting to resume from it.\n");
-        openCheckpoint(&ctx);
-
-        /* When the resume fails, start a fresh run */
-        if (thawState(&ctx, &st))
-        {
-            warn("Failed to resume checkpoint\n");
-            closeCheckpoint(&ctx);     /* Something is wrong with this file */
-            openCheckpoint(&ctx);      /* Make a new one */
-            nbodyStateDestroy(&st);
-            startRun(&ctx, &ic, &st);
-        }
-    }
-    else   /* Otherwise, just start a fresh run */
-    {
-        openCheckpoint(&ctx);
-        startRun(&ctx, &ic, &st);
-    }
-  #else
-    startRun(&ctx, &ic, &st);
-  #endif /* BOINC_APPLICATION */
+    setupRun(&ctx, &ic, &st);
 
     if (printTiming)     /* Time the body of the calculation */
         ts = get_time();
@@ -197,7 +213,7 @@ void runNBodySimulation(json_object* obj,
         printf("Elapsed time for run = %g\n", te - ts);
     }
 
-    // Get the likelihood
+    /* Get the likelihood */
     chisq = nbodyChisq(&ctx, &st);
     if (isnan(chisq))
         warn("Failed to calculate chisq\n");
