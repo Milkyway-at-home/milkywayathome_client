@@ -31,6 +31,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 BOINC_DEBUG
 #cmakedefine01 NBODY_OPENCL
 #cmakedefine01 ENABLE_CRLIBM
+#cmakedefine01 DOUBLEPREC
 
 #endif /* NBODY_CONFIG_H_ */
 

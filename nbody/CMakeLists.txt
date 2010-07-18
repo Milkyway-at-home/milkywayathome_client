@@ -231,10 +231,6 @@ add_library(nbody_simulation STATIC ${nbody_lib_src})
 #target_link_libraries(nbody_simulation ${nbody_link_libs})
 #set_target_properties(nbody_simulation PROPERTIES LINKER_LANGUAGE C)
 
-if(DOUBLEPREC)
-  add_definitions("-DDOUBLEPREC")
-endif()
-
 set(nbody_libs nbody_simulation)
 
 
