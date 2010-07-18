@@ -57,6 +57,62 @@ mark_as_advanced(ENABLE_CRLIBM)
 
 set(nbody_thirdparty "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty")
 
+#This is really only intended for windows, since it's a pain in the
+#ass. Everywhere else has much more convenient ways of installing.
+if(WIN32)
+  set(default_use_system_json_c OFF)
+else()
+  set(default_use_system_json_c ON)
+endif()
+
+option(USE_SYSTEM_JSON_C
+       "Use system json-c" ${default_use_system_json_c})
+
+if(NOT USE_SYSTEM_JSON_C)
+
+  find_path(JSON_C_INCLUDE_DIR "json/json.h" "${PROJECT_INCLUDE_DIR}")
+  find_library(JSON_C_LIBRARY json "${LIBRARY_OUTPUT_PATH}")
+
+  # set(jsoncVer "0.9")
+  # set(jsoncMD5 "3a13d264528dcbaf3931b0cede24abae")
+  # set(jsoncSrcPath "${nbody_thirdparty}")
+  # set(jsoncTar "json-c-${jsoncVer}.tar.gz")
+  # maybe_dl_check("json-c"
+  #                "${jsoncVer}"
+  #                "${jsoncMD5}"
+  #                "http://oss.metaparadigm.com/json-c/${jsoncTar}"
+  #                "${jsoncSrcPath}"
+  #                "${jsoncTar}")
+
+  # set(jsonc_file "${LIBRARY_OUTPUT_PATH}/libjson${CMAKE_STATIC_LIBRARY_SUFFIX}")
+
+  # if(WIN32)
+  #   file(RENAME "${jsoncSrcPath}/json-c-${crlibmVer}/config.h.win32"
+  #               "${jsoncSrcPath}/json-c-${crlibmVer}/config.h")
+  # endif()
+
+  # add_custom_command(
+  #   OUTPUT "${jsonc_file}"
+  #   COMMAND "${jsoncSrcPath}/json-c-${jsoncVer}/configure"
+  #                        "--prefix=${CMAKE_CURRENT_SOURCE_DIR}"
+  #                        "--disable-werror"
+  #                        "CC=${CMAKE_C_COMPILER}"
+  #                        "MAKE=${CMAKE_BUILD_TOOL}"
+  #                        "CFLAGS=${CMAKE_C_FLAGS}"
+  #   COMMAND "${CMAKE_BUILD_TOOL}"
+  #   COMMAND "${CMAKE_BUILD_TOOL}" "install"
+  #   WORKING_DIRECTORY "${jsoncSrcPath}/json-c-${jsoncVer}/"
+  #   COMMENT "Building json-c")
+
+  # set(JSON_C_LIBRARY ${jsonc_file})
+
+  # add_custom_target(jsonc_build DEPENDS "${jsonc_file}")
+else()
+  find_package(JsonC)
+  include_directories(${JSON_C_INCLUDE_DIR})
+endif()
+
+
 # Handle downloading, extracting and building dSFMT
 
 set(dsfmtVer "2.1")
@@ -132,7 +188,6 @@ endif()
 #  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffinite-math-only")
 #endif()
 
-
 set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
                   ${PROJECT_SOURCE_DIR}/src/grav.c
                   ${PROJECT_SOURCE_DIR}/src/io.c
@@ -191,6 +246,8 @@ message("   BOINC Application: ${BOINC_APPLICATION}")
 message("   BOINC Debug:       ${BOINC_DEBUG}")
 message("   Double precision:  ${DOUBLEPREC}")
 message("   Enable crlibm:     ${ENABLE_CRLIBM}")
+message("   json-c Library     ${JSON_C_LIBRARY}")
+message("   Use system json-c  ${USE_SYSTEM_JSON_C}")
 message("---------------------------------------------")
 
 
@@ -255,6 +312,10 @@ endif()
 
 if (ENABLE_CRLIBM)
   add_dependencies(nbody_simulation crlibm_build)
+endif()
+
+if(NOT USE_SYSTEM_JSON_C)
+  add_dependencies(nbody_simulation jsonc_build)
 endif()
 
 add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)

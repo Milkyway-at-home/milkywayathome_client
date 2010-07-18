@@ -54,7 +54,6 @@ find_package(Popt REQUIRED)
 find_package(BOINC)
 find_package(CUDA)
 find_package(OpenCL)
-find_package(JsonC)
 
 
 #FIXME: Somehow test for and require the Apple gcc. The macports gccs
@@ -118,9 +117,8 @@ if(BOINC_FOUND AND POPT_FOUND)
   endif()
 endif()
 
-if(POPT_FOUND AND JSON_C_FOUND)
+if(POPT_FOUND)
   set(NBODY_IS_BUILDABLE ON)
-  include_directories(${JSON_C_INCLUDE_DIR})
 endif()
 
 
@@ -174,7 +172,6 @@ message("   BOINC Libraries    ${BOINC_LIBRARIES}")
 message("   CUDA  Libraries    ${CUDA_LIBRARIES}")
 message("   OpenCL Libraries   ${OPENCL_LIBRARIES}")
 message("   POPT Library       ${POPT_LIBRARY}")
-message("   json-c Library     ${JSON_C_LIBRARY}")
 message("   ----")
 message("   Build tool:        ${CMAKE_BUILD_TOOL}")
 message("   C Compiler:        ${CMAKE_C_COMPILER}")
