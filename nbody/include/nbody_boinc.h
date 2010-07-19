@@ -25,8 +25,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* TODO: Naming, and sharing with separation */
 #if BOINC_APPLICATION
-  #include <boinc_api.h>
+  #include <stdio.h>
   #include <filesys.h>
+  #include <boinc_api.h>
 
   #if BOINC_DEBUG
     #include <diagnostics.h>
