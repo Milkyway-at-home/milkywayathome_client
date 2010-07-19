@@ -35,15 +35,6 @@ include_directories(${PROJECT_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 link_directories(${LIBRARY_OUTPUT_PATH})
 
-if(CMAKE_COMPILER_IS_GNUCC)
-  set(DEFAULT_USE_DYNAMIC_PRECISION ON)
-else()
-  set(DEFAULT_USE_DYNAMIC_PRECISION OFF)
-endif()
-
-option(DYNAMIC_PRECISION
-       "Use dynamic precision" OFF)
-
 option(BOINC_APPLICATION
   "Build as a BOINC Application" OFF)
 
@@ -56,21 +47,71 @@ option(BOINC_DEBUG
 option(NBODY_OPENCL
   "Use OpenCL" OFF)
 
-#Used if not using dynamic precision
 option(DOUBLEPREC
        "Use double precision" ON)
 
-option(ENSURE_SSE2_SQRT
-       "Use a wrapper around sse2's sqrtsd
-       instruction. Slightly slower if your compiler is smart
-       enough to do this without this" ON)
-
 option(ENABLE_CRLIBM
-       "Use crlibm double" OFF)
+       "Use crlibm double" ON)
 mark_as_advanced(ENABLE_CRLIBM)
 
 
 set(nbody_thirdparty "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty")
+
+#This is really only intended for windows, since it's a pain in the
+#ass. Everywhere else has much more convenient ways of installing.
+if(WIN32)
+  set(default_use_system_json_c OFF)
+else()
+  set(default_use_system_json_c ON)
+endif()
+
+option(USE_SYSTEM_JSON_C
+       "Use system json-c" ${default_use_system_json_c})
+
+if(NOT USE_SYSTEM_JSON_C)
+
+  find_path(JSON_C_INCLUDE_DIR "json/json.h" "${PROJECT_INCLUDE_DIR}")
+  find_library(JSON_C_LIBRARY json "${LIBRARY_OUTPUT_PATH}")
+
+  # set(jsoncVer "0.9")
+  # set(jsoncMD5 "3a13d264528dcbaf3931b0cede24abae")
+  # set(jsoncSrcPath "${nbody_thirdparty}")
+  # set(jsoncTar "json-c-${jsoncVer}.tar.gz")
+  # maybe_dl_check("json-c"
+  #                "${jsoncVer}"
+  #                "${jsoncMD5}"
+  #                "http://oss.metaparadigm.com/json-c/${jsoncTar}"
+  #                "${jsoncSrcPath}"
+  #                "${jsoncTar}")
+
+  # set(jsonc_file "${LIBRARY_OUTPUT_PATH}/libjson${CMAKE_STATIC_LIBRARY_SUFFIX}")
+
+  # if(WIN32)
+  #   file(RENAME "${jsoncSrcPath}/json-c-${crlibmVer}/config.h.win32"
+  #               "${jsoncSrcPath}/json-c-${crlibmVer}/config.h")
+  # endif()
+
+  # add_custom_command(
+  #   OUTPUT "${jsonc_file}"
+  #   COMMAND "${jsoncSrcPath}/json-c-${jsoncVer}/configure"
+  #                        "--prefix=${CMAKE_CURRENT_SOURCE_DIR}"
+  #                        "--disable-werror"
+  #                        "CC=${CMAKE_C_COMPILER}"
+  #                        "MAKE=${CMAKE_BUILD_TOOL}"
+  #                        "CFLAGS=${CMAKE_C_FLAGS}"
+  #   COMMAND "${CMAKE_BUILD_TOOL}"
+  #   COMMAND "${CMAKE_BUILD_TOOL}" "install"
+  #   WORKING_DIRECTORY "${jsoncSrcPath}/json-c-${jsoncVer}/"
+  #   COMMENT "Building json-c")
+
+  # set(JSON_C_LIBRARY ${jsonc_file})
+
+  # add_custom_target(jsonc_build DEPENDS "${jsonc_file}")
+else()
+  find_package(JsonC)
+  include_directories(${JSON_C_INCLUDE_DIR})
+endif()
+
 
 # Handle downloading, extracting and building dSFMT
 
@@ -99,9 +140,7 @@ add_definitions("-DDSFMT_MEXP=${dsfmt_mexp}")
 
 
 # Take care of crlibm
-
 if(ENABLE_CRLIBM)
-
   set(crlibmVer "1.0beta4")
   set(crlibmMD5 "8ecabd55d4a2d08030eb770ae2a5670a")
   set(crlibmTar "crlibm-${crlibmVer}.tar.gz")
@@ -118,18 +157,24 @@ if(ENABLE_CRLIBM)
   #TODO: Set march, mtune etc. from user flags, but avoid some others
   set(crlibm_flags "-std=c99 -O3 -mfpmath=sse -msse -msse2")
 
-  #Install crlibm to the build directory
-  add_custom_target(crlibm_build
-    COMMAND "${crlibmSrcPath}/crlibm-${crlibmVer}/configure"
+  set(crlibm_file "${LIBRARY_OUTPUT_PATH}/libcrlibm${CMAKE_STATIC_LIBRARY_SUFFIX}")
+  set(scs_file "${LIBRARY_OUTPUT_PATH}/libscs{CMAKE_STATIC_LIBRARY_SUFFIX}")
+
+
+  add_custom_command(
+        OUTPUT "${crlibm_file}"
+        COMMAND "${crlibmSrcPath}/crlibm-${crlibmVer}/configure"
                                                  "--enable-sse2"
                                                  "--prefix=${CMAKE_CURRENT_SOURCE_DIR}"
                                                  "CC=${CMAKE_C_COMPILER}"
                                                  "MAKE=${CMAKE_BUILD_TOOL}"
                                                  "CFLAGS=${crlibm_flags}"
-    COMMAND "${CMAKE_BUILD_TOOL}"
-    COMMAND "${CMAKE_BUILD_TOOL}" "install"
-    WORKING_DIRECTORY "${crlibmSrcPath}/crlibm-${crlibmVer}"
-    COMMENT "Building crlibm")
+        COMMAND "${CMAKE_BUILD_TOOL}"
+        COMMAND "${CMAKE_BUILD_TOOL}" "install"
+        WORKING_DIRECTORY "${crlibmSrcPath}/crlibm-${crlibmVer}"
+        COMMENT "Building crlibm")
+
+  add_custom_target(crlibm_build DEPENDS "${crlibm_file}")
 
   set(nbody_link_libs crlibm)
 endif()
@@ -142,7 +187,6 @@ endif()
 #if(NOT ENABLE_FDLIBM)
 #  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffinite-math-only")
 #endif()
-
 
 set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
                   ${PROJECT_SOURCE_DIR}/src/grav.c
@@ -200,10 +244,10 @@ message("---------------------------------------------")
 message("   Building:          ${PROJECT_NAME}")
 message("   BOINC Application: ${BOINC_APPLICATION}")
 message("   BOINC Debug:       ${BOINC_DEBUG}")
-message("   Dynamic precision: ${DYNAMIC_PRECISION}")
 message("   Double precision:  ${DOUBLEPREC}")
 message("   Enable crlibm:     ${ENABLE_CRLIBM}")
-message("   Ensure SSE2 sqrt:  ${ENSURE_SSE2_SQRT}")
+message("   json-c Library     ${JSON_C_LIBRARY}")
+message("   Use system json-c  ${USE_SYSTEM_JSON_C}")
 message("---------------------------------------------")
 
 
@@ -237,68 +281,15 @@ if(NBODY_OPENCL)
 endif()
 
 
-# This dynamic precision is kind of sketchy. We compile the library
-# twice, once with float and once with double precision. Anything
-# using real shouldn't be exposed to the main application. The only
-# symbol which (ideally) would be visible from the libraries would be
-# the runNBodySimulation_* functions. All the other function names are
-# the same, since this is actually the same library. This mostly works
-# fine with a shared library, since symbols are resolved within the
-# library when you build it, and functions within the library will
-# link to the other functions internal to the right version of the
-# library when it's compiled.
+add_library(nbody_simulation STATIC ${nbody_lib_src})
 
-# It turns out static libraries are dumber than I thought, and don't
-# do any sort of linking within themselves when you build them for
-# lack of a better term. This means that when you try to link with the
-# 2 static libraries, the first one you use resolves all the symbols
-# in the first library. For the next one, since all the same symobls
-# have been found in the first version, the only symbol left is the
-# specific type runNBodySimulation_whatever. Then the second library
-# will try to use the functions from the first which we would like to
-# be private, and not the ones expecting the same type within the
-# library. The end result is a different type of failure depending on
-# whether you try linking the float or double version first. If you
-# try using the double version first, the double will work. When you
-# try to use single precision, due to the wrong functions being used
-# with the smaller size, you end up with corruption in everything. If
-# you specify them in the other order (the float library first, then
-# the double), you get segfaults from trying to use structs that are
-# bigger than the functions the linker found are expecting.
+#add_library(nbody_simulation SHARED ${nbody_lib_src})
+#message("LIBRARIES: ${nbody_link_libs}")
+#target_link_libraries(nbody_simulation ${nbody_link_libs})
+#set_target_properties(nbody_simulation PROPERTIES LINKER_LANGUAGE C)
 
-#TLDR: to use static libraries, need to figure out how to use some
-#kind of symbol visibility trickery to expose only the necessary
-#runNBodySimulation* symbols, as a shared library does for you.
-#something involving -fvisibility=hidden and different sets of .o
-#files. Dynamic precision will likely only be useful for testing
-#things, and we won't bother with it for releases. It approximately
-#doubles the binary size anyway.
-if(DYNAMIC_PRECISION)
-  add_library(nbody_simulation_double SHARED ${nbody_lib_src})
-  target_link_libraries(nbody_simulation_double ${nbody_link_libs})
-  set_target_properties(nbody_simulation_double
-                          PROPERTIES
-                            COMPILE_DEFINITIONS "DOUBLEPREC")
+set(nbody_libs nbody_simulation)
 
-  add_library(nbody_simulation_float SHARED ${nbody_lib_src})
-  target_link_libraries(nbody_simulation_float ${nbody_link_libs})
-
-  set(nbody_libs nbody_simulation_float nbody_simulation_double)
-else()
-   add_library(nbody_simulation STATIC ${nbody_lib_src})
-
-
-   #add_library(nbody_simulation SHARED ${nbody_lib_src})
-   #message("LIBRARIES: ${nbody_link_libs}")
-   #target_link_libraries(nbody_simulation ${nbody_link_libs})
-   #set_target_properties(nbody_simulation PROPERTIES LINKER_LANGUAGE C)
-
-  if(DOUBLEPREC)
-    add_definitions("-DDOUBLEPREC")
-  endif()
-
-  set(nbody_libs nbody_simulation)
-endif()
 
 #Inline the CL kernels if they have changed, and make the library
 #depend on them
@@ -316,14 +307,16 @@ if(NBODY_OPENCL)
   # doing it wrong.
   add_custom_target(gravmap_kernel DEPENDS "${c_kernel_dir}/cl_gravmap.c")
 
-  foreach(n ${nbody_libs})
-    add_dependencies(${n} gravmap_kernel)
-  endforeach()
+  add_dependencies(nbody_simulation gravmap_kernel)
 endif()
 
-foreach(n ${nbody_libs})
-  add_dependencies(${n} crlibm_build)
-endforeach()
+if (ENABLE_CRLIBM)
+  add_dependencies(nbody_simulation crlibm_build)
+endif()
+
+if(NOT USE_SYSTEM_JSON_C)
+  add_dependencies(nbody_simulation jsonc_build)
+endif()
 
 add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
 target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${nbody_libs} ${nbody_link_libs})

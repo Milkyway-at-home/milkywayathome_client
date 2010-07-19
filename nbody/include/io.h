@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* Basic IO and initialization */
 void initOutput(NBodyCtx*);             /* open files for output */
 void output(const NBodyCtx* ctx, const NBodyState* st);
-void boincOutput(const NBodyCtx* ctx, const NBodyState* st); /* Output with xml tags */
+void boincOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq); /* Output with xml tags */
 
 /* Checkpointing */
 void openCheckpoint(NBodyCtx* ctx);

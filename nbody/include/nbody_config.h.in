@@ -29,10 +29,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #cmakedefine01 BOINC_APPLICATION
 #cmakedefine01 BOINC_DEBUG
-#cmakedefine01 DYNAMIC_PRECISION
 #cmakedefine01 NBODY_OPENCL
-#cmakedefine01 ENSURE_SSE2_SQRT
 #cmakedefine01 ENABLE_CRLIBM
+#cmakedefine01 DOUBLEPREC
 
 #endif /* NBODY_CONFIG_H_ */
 

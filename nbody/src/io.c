@@ -414,11 +414,12 @@ void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
 #endif
 
 /* Output with the silly xml stuff that BOINC uses */
-void boincOutput(const NBodyCtx* ctx, const NBodyState* st)
+void boincOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq)
 {
-    fprintf(ctx->outfile, "<something>\n");
+    fprintf(ctx->outfile, "<bodies>\n");
     output(ctx, st);
-    fprintf(ctx->outfile, "</something>\n");
+    fprintf(ctx->outfile, "</bodies>\n");
+    fprintf(ctx->outfile, "<likelihood>%.20g</likelihood>", chisq);
     fprintf(ctx->outfile, "<nbody_version>%s %s</nbody_version>\n", BOINC_NBODY_APP_VERSION, PRECSTRING);
 }
 
