@@ -316,11 +316,20 @@ if(NOT USE_SYSTEM_JSON_C)
 endif()
 
 add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
-target_link_libraries(milkyway_nbody ${POPT_LIBRARY}      # Popt
-                                     ${LIBICONV_LIBRARY}  # Popt dependencies for static linking
-                                     ${LIBINTL_LIBRARY}
-                                     ${nbody_libs}
-                                     ${nbody_link_libs})
+
+set(exe_link_libs ${POPT_LIBRARY}
+                  ${nbody_libs}
+                  ${nbody_link_libs})
+
+if(BOINC_RELEASE)
+  #Some systems have old popt without iconv/intl stuff, or something like that. (i.e. fornax/Centos)
+  #We just won't make releases on those systems, since they're really old anyway.
+  list(APPEND exe_link_libs ${LIBICONV_LIBRARY}  # Popt dependencies for static linking
+                            ${LIBINTL_LIBRARY})
+endif()
+
+
+target_link_libraries(milkyway_nbody ${exe_link_libs})
 
 if(WIN32)
   #For some reason I can't wrestle out the C++ on Windows.

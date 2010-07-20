@@ -49,15 +49,20 @@ if(MINGW)
   set(CMAKE_FIND_ROOT_PATH "${TAKEOFFGW_ROOT}/i686-pc-mingw32/sys-root/mingw")
 endif(MINGW)
 
-set(POPT_USE_STATIC 1)
-set(JSON_C_USE_STATIC 1)
-set(LIBINTL_USE_STATIC 1)
-set(LIBICONV_USE_STATIC 1)
-set(BOINC_USE_STATIC 0)
+if(BOINC_RELEASE)
+  set(POPT_USE_STATIC 1)
+  set(JSON_C_USE_STATIC 1)
+  set(LIBINTL_USE_STATIC 1)
+  set(LIBICONV_USE_STATIC 1)
+  set(BOINC_USE_STATIC 0)
+
+  #These are only dependencies of popt needed for static linking
+  find_package(Libintl REQUIRED)
+  find_package(Libiconv REQUIRED)
+
+endif()
 
 find_package(Popt REQUIRED)
-find_package(Libintl REQUIRED)
-find_package(Libiconv REQUIRED)
 find_package(BOINC)
 find_package(CUDA)
 find_package(OpenCL)
