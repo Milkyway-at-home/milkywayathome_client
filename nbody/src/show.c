@@ -387,7 +387,6 @@ char* showFitParams(const FitParams* fp)
 
 void printFitParams(const FitParams* fp)
 {
-    printf("Size here is %zu\n", sizeof(FitParams));
     char* buf = showFitParams(fp);
     puts(buf);
     free(buf);

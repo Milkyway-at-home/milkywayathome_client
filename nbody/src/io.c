@@ -332,7 +332,6 @@ int thawState(const NBodyCtx* ctx, NBodyState* st)
         failed = TRUE;
     }
 
-    warn("End of thaw: %d\n", failed);
     return failed;
 }
 
