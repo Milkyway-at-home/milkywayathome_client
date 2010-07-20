@@ -109,10 +109,10 @@ static json_object* readParameters(const int argc,
 
     poptContext context;
     int o;
-    static char* inputFile = NULL;    /* input JSON file */
-    static char* inputStr  = NULL;    /* a string of JSON to use directly */
-    json_object* obj;
-    static const char** rest;         /* Leftover arguments */
+    static char* inputFile   = NULL;   /* input JSON file */
+    static char* inputStr    = NULL;   /* a string of JSON to use directly */
+    json_object* obj         = NULL;
+    static const char** rest = NULL;   /* Leftover arguments */
 
     unsigned int numParams = 0, params = 0, paramCount = 0;
 
@@ -183,7 +183,6 @@ static json_object* readParameters(const int argc,
             0, "Ignore the checkpoint file", NULL
         },
 
-
         {
             "p", 'p',
             POPT_ARG_NONE, &params,
@@ -195,7 +194,6 @@ static json_object* readParameters(const int argc,
             POPT_ARG_INT | POPT_ARGFLAG_ONEDASH, &numParams,
             0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
         },
-
       #endif /* BOINC_APPLICATION */
 
         POPT_AUTOHELP

@@ -158,7 +158,6 @@
 #define Z(x) (((vectorptr) (x))[2])
 
 
-
 #ifndef TRUE
   #define TRUE  1
   #define FALSE 0
@@ -327,7 +326,7 @@ typedef struct
 
 typedef struct
 {
-    bool useFitParams;
+    int useFitParams;
     real modelMass;
     real modelRadius;
     real reverseOrbitTime;
@@ -335,6 +334,7 @@ typedef struct
 } FitParams;
 
 #define EMPTY_FIT_PARAMS { FALSE, NAN, NAN, NAN, NAN }
+
 
 typedef enum
 {
