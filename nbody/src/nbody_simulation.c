@@ -128,7 +128,7 @@ static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
     /* If the checkpoint exists, try to use it */
     if (boinc_file_exists(ctx->cp.filename))
     {
-        printf("Checkpoint exists. Attempting to resume from it.\n");
+        warn("Checkpoint exists. Attempting to resume from it.\n");
         openCheckpoint(ctx);
 
         /* When the resume fails, start a fresh run */
@@ -139,6 +139,13 @@ static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
             openCheckpoint(ctx);      /* Make a new one */
             nbodyStateDestroy(st);
             startRun(ctx, ic, st);
+        }
+        else
+        {
+            /* We restored the useful state. Now still need to create
+             * the workspace where new accelerations are
+             * calculated. */
+            st->acctab  = (vector*) mallocSafe(ctx->model.nbody * sizeof(vector));
         }
     }
     else   /* Otherwise, just start a fresh run */
