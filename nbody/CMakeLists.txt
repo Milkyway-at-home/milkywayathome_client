@@ -261,6 +261,9 @@ endif()
 
 if(WIN32)
   list(APPEND OS_SPECIFIC_LIBS "msvcrt" "asprintf" "stdc++")
+  add_definitions(-D_WIN32_IE=0x0501)
+  add_definitions(-D_WINDOWS)
+  add_definitions(-D_WIN32_WINDOWS=0x0501)
 endif()
 
 list(APPEND nbody_link_libs ${JSON_C_LIBRARY} ${OS_SPECIFIC_LIBS} m)
@@ -282,11 +285,6 @@ endif()
 
 
 add_library(nbody_simulation STATIC ${nbody_lib_src})
-
-#add_library(nbody_simulation SHARED ${nbody_lib_src})
-#message("LIBRARIES: ${nbody_link_libs}")
-#target_link_libraries(nbody_simulation ${nbody_link_libs})
-#set_target_properties(nbody_simulation PROPERTIES LINKER_LANGUAGE C)
 
 set(nbody_libs nbody_simulation)
 

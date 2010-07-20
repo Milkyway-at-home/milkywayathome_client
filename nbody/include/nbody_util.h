@@ -21,14 +21,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _NBODY_UTIL_H_
 #define _NBODY_UTIL_H_
 
-#include "nbody_boinc.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <stdlib.h>
 #include "nbody_types.h"
+#include "nbody_boinc.h"
+
 
 /* FIXME: This is just an arbitrary threshold I made up. What should it be? */
 #define REQ(a, b) (rabs((a) - (b)) < 0.00001)

@@ -25,13 +25,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* TODO: Naming, and sharing with separation */
 #if BOINC_APPLICATION
-  #include <stdio.h>
-  #include <filesys.h>
-  #include <boinc_api.h>
-
+  #define WIN32_LEAN_AND_MEAN
+  #define VC_EXTRALEAN
   #if BOINC_DEBUG
     #include <diagnostics.h>
   #endif /* BOINC_DEBUG */
+
+  #include <stdio.h>
+  #include <filesys.h>
+  #include <boinc_api.h>
 
   #define nbody_finish(x) boinc_finish(x)
   #define nbody_fopen(x,y) boinc_fopen((x),(y))
