@@ -54,13 +54,18 @@ if(BOINC_RELEASE)
   set(JSON_C_USE_STATIC 1)
   set(LIBINTL_USE_STATIC 1)
   set(LIBICONV_USE_STATIC 1)
-  set(BOINC_USE_STATIC 0)
+  set(BOINC_USE_STATIC 1)
+endif()
 
-  #These are only dependencies of popt needed for static linking
+option(HAVE_OLD_POPT "Option that shouldn't be here, but it is because I'm too lazy to bother checking myself" OFF)
+
+#FIXME: relies on manually setting
+if(NOT HAVE_OLD_POPT)
+    #These are only dependencies of popt needed for static linking
   find_package(Libintl REQUIRED)
   find_package(Libiconv REQUIRED)
-
 endif()
+
 
 find_package(Popt REQUIRED)
 find_package(BOINC)

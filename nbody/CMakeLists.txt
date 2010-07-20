@@ -321,11 +321,13 @@ set(exe_link_libs ${POPT_LIBRARY}
                   ${nbody_libs}
                   ${nbody_link_libs})
 
+
 if(BOINC_RELEASE)
   #Some systems have old popt without iconv/intl stuff, or something like that. (i.e. fornax/Centos)
   #We just won't make releases on those systems, since they're really old anyway.
   list(APPEND exe_link_libs ${LIBICONV_LIBRARY}  # Popt dependencies for static linking
-                            ${LIBINTL_LIBRARY})
+                            ${LIBINTL_LIBRARY}
+                            stdc++)
 endif()
 
 
