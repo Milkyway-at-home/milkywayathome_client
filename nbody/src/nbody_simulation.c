@@ -5,14 +5,13 @@
 /* ************************************************************************** */
 
 #include <stdlib.h>
-
 #include "nbody.h"
 #include "json_params.h"
 #include "nbody_priv.h"
 
 inline static void initState(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
-    printf("Starting nbody system\n");
+    warn("Starting nbody system\n");
 
     st->tout       = st->tnow;       /* schedule first output */
     st->tree.rsize = ctx->tree_rsize;
@@ -85,9 +84,9 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
     while (st->tnow < tstop)
     {
         stepSystem(ctx, st);   /* advance N-body system */
-        #if BOINC_APPLICATION
-          nbodyCheckpoint(ctx, st);
-        #endif
+      #if BOINC_APPLICATION
+        nbodyCheckpoint(ctx, st);
+      #endif
 
         #if 0 /* TODO: Some day this will allow printing at intervals, for making movies etc. */
           /* TODO: organize use of this output better since it only
@@ -146,6 +145,11 @@ static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
              * the workspace where new accelerations are
              * calculated. */
             st->acctab  = (vector*) mallocSafe(ctx->model.nbody * sizeof(vector));
+          #if !NBODY_OPENCL
+            gravMap(ctx, st);
+          #else
+            gravMapCL(ctx, st);
+          #endif /* !NBODY_OPENCL */
         }
     }
     else   /* Otherwise, just start a fresh run */

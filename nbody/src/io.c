@@ -109,7 +109,7 @@ void closeCheckpoint(NBodyCtx* ctx)
         }
     }
 
-    printf("Removing checkpoint file '%s'\n", ctx->cp.filename);
+    warn("Removing checkpoint file '%s'\n", ctx->cp.filename);
     nbody_remove(ctx->cp.filename);
 }
 
@@ -229,6 +229,9 @@ void closeCheckpoint(NBodyCtx* ctx)
                  GetLastError(), ctx->cp.filename);
         }
     }
+
+    warn("Removing checkpoint file '%s'\n", ctx->cp.filename);
+    nbody_remove(ctx->cp.filename);
 }
 
 #endif /* _WIN32 */
@@ -274,6 +277,8 @@ int thawState(const NBodyCtx* ctx, NBodyState* st)
     char tailBuf[sizeof(tail)];
     char* p = ctx->cp.mptr;
     int valid;
+
+    warn("Thawing state\n");
 
     READ_STR(buf, p, sizeof(hdr) - 1);
     READ_INT(valid, p);
@@ -327,6 +332,7 @@ int thawState(const NBodyCtx* ctx, NBodyState* st)
         failed = TRUE;
     }
 
+    warn("End of thaw: %d\n", failed);
     return failed;
 }
 
@@ -356,7 +362,7 @@ inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
     char* p = ctx->cp.mptr;
     char* lock;
 
-    printf("System freezing. tnow = %g\n", st->tnow);
+    warn("System freezing. tnow = %g\n", st->tnow);
 
     /* TODO: Better error checking */
 
