@@ -18,31 +18,30 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-if(JSON_C_USE_STATIC)
+
+find_path(LIBINTL_INCLUDE_DIR libintl.h)
+
+if(LIBINTL_USE_STATIC)
   set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
   set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
 endif()
 
-find_path(JSON_C_INCLUDE_DIR "json/json.h")
-find_library(JSON_C_LIBRARY json)
-
-if(JSON_C_USE_STATIC)
-  set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
+find_library(LIBINTL_LIBRARY intl)
+if(LIBINTL_USE_STATIC)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${__old_cmake_find_lib_suffixes})
 endif()
 
+if(LIBINTL_INCLUDE_DIR AND LIBINTL_LIBRARY)
+   set(LIBINTL_FOUND TRUE)
+endif(LIBINTL_INCLUDE_DIR AND LIBINTL_LIBRARY)
 
-if(JSON_C_INCLUDE_DIR AND JSON_C_LIBRARY)
-   set(JSON_C_FOUND TRUE)
-endif()
-
-if(JSON_C_FOUND)
-   if(NOT Json_c_FIND_QUIETLY)
-      message(STATUS "Found json-c Library: ${JSON_C_LIBRARY}")
-   endif(NOT Json_c_FIND_QUIETLY)
-else(JSON_C_FOUND)
-   if(Json_c_FIND_REQUIRED)
-      message(FATAL_ERROR "Could not find json-c Library")
-   endif(Json_c_FIND_REQUIRED)
-endif()
+if(LIBINTL_FOUND)
+   if(NOT Libintl_FIND_QUIETLY)
+      message(STATUS "Found LIBINTL Library: ${LIBINTL_LIBRARY}")
+   endif(NOT Libintl_FIND_QUIETLY)
+else(LIBINTL_FOUND)
+   if(Libintl_FIND_REQUIRED)
+      message(FATAL_ERROR "Could not find LIBINTL Library")
+   endif(Libintl_FIND_REQUIRED)
+endif(LIBINTL_FOUND)
 

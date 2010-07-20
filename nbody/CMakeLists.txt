@@ -288,7 +288,6 @@ add_library(nbody_simulation STATIC ${nbody_lib_src})
 
 set(nbody_libs nbody_simulation)
 
-
 #Inline the CL kernels if they have changed, and make the library
 #depend on them
 if(NBODY_OPENCL)
@@ -317,7 +316,11 @@ if(NOT USE_SYSTEM_JSON_C)
 endif()
 
 add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
-target_link_libraries(milkyway_nbody ${POPT_LIBRARY} ${nbody_libs} ${nbody_link_libs})
+target_link_libraries(milkyway_nbody ${POPT_LIBRARY}      # Popt
+                                     ${LIBICONV_LIBRARY}  # Popt dependencies for static linking
+                                     ${LIBINTL_LIBRARY}
+                                     ${nbody_libs}
+                                     ${nbody_link_libs})
 
 if(WIN32)
   #For some reason I can't wrestle out the C++ on Windows.

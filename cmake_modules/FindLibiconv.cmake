@@ -18,31 +18,30 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-if(JSON_C_USE_STATIC)
+
+find_path(LIBINTL_INCLUDE_DIR iconv.h)
+
+if(LIBICONV_USE_STATIC)
   set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
   set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
 endif()
 
-find_path(JSON_C_INCLUDE_DIR "json/json.h")
-find_library(JSON_C_LIBRARY json)
-
-if(JSON_C_USE_STATIC)
-  set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
+find_library(LIBICONV_LIBRARY iconv)
+if(LIBICONV_USE_STATIC)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${__old_cmake_find_lib_suffixes})
 endif()
 
+if(LIBICONV_INCLUDE_DIR AND LIBICONV_LIBRARY)
+   set(LIBICONV_FOUND TRUE)
+endif(LIBICONV_INCLUDE_DIR AND LIBICONV_LIBRARY)
 
-if(JSON_C_INCLUDE_DIR AND JSON_C_LIBRARY)
-   set(JSON_C_FOUND TRUE)
-endif()
-
-if(JSON_C_FOUND)
-   if(NOT Json_c_FIND_QUIETLY)
-      message(STATUS "Found json-c Library: ${JSON_C_LIBRARY}")
-   endif(NOT Json_c_FIND_QUIETLY)
-else(JSON_C_FOUND)
-   if(Json_c_FIND_REQUIRED)
-      message(FATAL_ERROR "Could not find json-c Library")
-   endif(Json_c_FIND_REQUIRED)
-endif()
+if(LIBICONV_FOUND)
+   if(NOT Iconv_FIND_QUIETLY)
+      message(STATUS "Found LIBICONV Library: ${LIBICONV_LIBRARY}")
+   endif(NOT Iconv_FIND_QUIETLY)
+else(LIBICONV_FOUND)
+   if(Iconv_FIND_REQUIRED)
+      message(FATAL_ERROR "Could not find LIBICONV Library")
+   endif(Iconv_FIND_REQUIRED)
+endif(LIBICONV_FOUND)
 

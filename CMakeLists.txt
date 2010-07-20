@@ -49,8 +49,15 @@ if(MINGW)
   set(CMAKE_FIND_ROOT_PATH "${TAKEOFFGW_ROOT}/i686-pc-mingw32/sys-root/mingw")
 endif(MINGW)
 
+set(POPT_USE_STATIC 1)
+set(JSON_C_USE_STATIC 1)
+set(LIBINTL_USE_STATIC 1)
+set(LIBICONV_USE_STATIC 1)
+set(BOINC_USE_STATIC 0)
 
 find_package(Popt REQUIRED)
+find_package(Libintl REQUIRED)
+find_package(Libiconv REQUIRED)
 find_package(BOINC)
 find_package(CUDA)
 find_package(OpenCL)
@@ -73,6 +80,12 @@ if(APPLE)
   find_library(COREFOUNDATION_LIBRARY CoreFoundation )
 
   list(APPEND OS_SPECIFIC_LIBS ${COREFOUNDATION_LIBRARY})
+
+  if(BOINC_RELEASE)
+    # We don't want to bother compiling twice until we need the universal binary for releases
+    #set(CMAKE_OSX_ARCHITECTURES i386;x86_64)
+    set(CMAKE_OSX_ARCHITECTURES x86_64)
+  endif()
 endif(APPLE)
 
 #Some kind of workaround for a popular cmake bug where make test
@@ -96,6 +109,9 @@ option(MW_DEBUG_EXCESSIVE
 
 option(BOINC_APPLICATION
        "Run as BOINC application or independently" ON)
+
+option(BOINC_RELEASE
+       "Build with all options for making an actual release" OFF)
 
 
 # If we found all the dependencies for something, by default try to
