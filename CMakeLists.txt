@@ -23,6 +23,30 @@ project(milkywayathome)
 
 enable_testing()
 
+
+option(SMALL_TESTS
+       "Run small tests" ON)
+
+option(LARGE_TESTS
+       "Run large tests" OFF)
+
+option(AUX_LARGE_TESTS
+       "Run large aux tests" OFF)
+
+option(AUX_SMALL_TESTS
+       "Run small aux tests" OFF)
+
+option(MW_DEBUG_EXCESSIVE
+       "Excessive debugging output" OFF)
+
+option(BOINC_APPLICATION
+       "Run as BOINC application or independently" ON)
+
+option(BOINC_RELEASE
+       "Build with all options for making an actual release" ON)
+
+
+
 #set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules;${CMAKE_MODULE_PATH}")
 set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules")
 set(PROJECT_TOOL_DIR "${milkywayathome_SOURCE_DIR}/tools")
@@ -57,10 +81,14 @@ if(BOINC_RELEASE)
   set(BOINC_USE_STATIC 1)
 endif()
 
-option(HAVE_OLD_POPT "Option that shouldn't be here, but it is because I'm too lazy to bother checking myself" OFF)
+if(UNIX AND NOT APPLE)
+  set(NEED_POPT_DEPS 0)
+else()
+  set(NEED_POPT_DEPS 1)
+endif()
 
 #FIXME: relies on manually setting
-if(NOT HAVE_OLD_POPT)
+if(NEED_POPT_DEPS)
     #These are only dependencies of popt needed for static linking
   find_package(Libintl REQUIRED)
   find_package(Libiconv REQUIRED)
@@ -101,28 +129,6 @@ endif(APPLE)
 #Some kind of workaround for a popular cmake bug where make test
 #doesn't behave as anyone would ever expect.
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-
-option(SMALL_TESTS
-       "Run small tests" ON)
-
-option(LARGE_TESTS
-       "Run large tests" OFF)
-
-option(AUX_LARGE_TESTS
-       "Run large aux tests" OFF)
-
-option(AUX_SMALL_TESTS
-       "Run small aux tests" OFF)
-
-option(MW_DEBUG_EXCESSIVE
-       "Excessive debugging output" OFF)
-
-option(BOINC_APPLICATION
-       "Run as BOINC application or independently" ON)
-
-option(BOINC_RELEASE
-       "Build with all options for making an actual release" OFF)
-
 
 # If we found all the dependencies for something, by default try to
 # build it

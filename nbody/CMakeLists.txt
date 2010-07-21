@@ -39,7 +39,7 @@ option(BOINC_APPLICATION
   "Build as a BOINC Application" OFF)
 
 option(BOINC_DEBUG
-  "Avoid annoying things BOINC does for debugging" ON)
+  "Avoid annoying things BOINC does for debugging" OFF)
 
 #option(NBODY_OPENCL
 #  "Use OpenCL" ${OPENCL_FOUND})
@@ -156,20 +156,15 @@ if(ENABLE_CRLIBM)
 
   #TODO: Set march, mtune etc. from user flags, but avoid some others
   set(crlibm_flags "-std=c99 -O3 -mfpmath=sse -msse -msse2")
-#FIXME: Is there a less ghetto way of getting universal binaries?
-
- if(APPLE)
-   set(apple_configure_option "--target=x86_64-apple-darwin10")
- endif()
 
   set(crlibm_file "${LIBRARY_OUTPUT_PATH}/libcrlibm${CMAKE_STATIC_LIBRARY_SUFFIX}")
+  set(crlibm_header "${PROJECT_INCLUDE_DIR}/crlibm.h")
   set(scs_file "${LIBRARY_OUTPUT_PATH}/libscs{CMAKE_STATIC_LIBRARY_SUFFIX}")
   add_custom_command(
-        OUTPUT "${crlibm_file}"
+        OUTPUT "${crlibm_file}" "${crlibm_header}"
         COMMAND "${crlibmSrcPath}/crlibm-${crlibmVer}/configure"
                                                  "--enable-sse2"
                                                  "--prefix=${CMAKE_CURRENT_SOURCE_DIR}"
-                                                 "${apple_configure_option}"
                                                  "CC=${CMAKE_C_COMPILER}"
                                                  "MAKE=${CMAKE_BUILD_TOOL}"
                                                  "CFLAGS=${crlibm_flags}"
@@ -178,6 +173,7 @@ if(ENABLE_CRLIBM)
         WORKING_DIRECTORY "${crlibmSrcPath}/crlibm-${crlibmVer}"
         COMMENT "Building crlibm")
 
+  add_custom_target(crlibm_build DEPENDS "${crlibm_file}")
   set(nbody_link_libs crlibm)
 endif()
 
@@ -328,21 +324,19 @@ set(exe_link_libs ${POPT_LIBRARY}
                   ${nbody_libs}
                   ${nbody_link_libs})
 
-
-if(BOINC_RELEASE)
-  #Some systems have old popt without iconv/intl stuff, or something like that. (i.e. fornax/Centos)
-  #We just won't make releases on those systems, since they're really old anyway.
-  list(APPEND exe_link_libs ${LIBICONV_LIBRARY}  # Popt dependencies for static linking
-                            ${LIBINTL_LIBRARY}
-                            stdc++)
+if(HAVE_POPT_DEPS)
+  # Popt dependencies for static linking For some reason, on OS X /
+  # windows you need these dependencies but not Linux.
+  list(APPEND exe_link_libs ${LIBICONV_LIBRARY}
+                            ${LIBINTL_LIBRARY})
 endif()
 
 
-target_link_libraries(milkyway_nbody ${exe_link_libs})
+target_link_libraries(milkyway_nbody ${exe_link_libs} stdc++ ${BOINC_LIBRARIES})
 
-if(NOT APPLE)
-  set(CMAKE_EXE_LINKER_FLAGS -static)
-endif()
+#if(NOT APPLE)
+#  set(CMAKE_EXE_LINKER_FLAGS -static)
+#endif()
 
 if(WIN32)
   #For some reason I can't wrestle out the C++ on Windows.
