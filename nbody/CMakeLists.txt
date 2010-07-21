@@ -28,6 +28,8 @@ set(milkyway_nbody_VERSION "${milkyway_nbody_MAJOR_VERSION}.${milkyway_nbody_MIN
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
+set(CMAKE_SKIP_BUILD_RPATH TRUE)
+
 
 include(MaybeDlCheck)
 
@@ -128,7 +130,7 @@ maybe_dl_check("dSFMT"
 
 
 set(dsfmt_mexp "19937") #Value it assumes if you don't specify it; stops warning
-set(dsmft_flags "-O3 -fPIC -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99 -mfpmath=sse -msse -msse2")
+set(dsmft_flags "-O3 -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99 -mfpmath=sse -msse -msse2")
 
 #Find the headers for dSFMT
 
@@ -258,10 +260,6 @@ configure_file (
   "${PROJECT_INCLUDE_DIR}/nbody_config.h.in"
   "${PROJECT_INCLUDE_DIR}/nbody_config.h")
 
-if(UNIX AND NOT APPLE)  #Unix that isn't OS X
-    list(APPEND OS_SPECIFIC_LIBS pthread)
-endif()
-
 if(WIN32)
   list(APPEND OS_SPECIFIC_LIBS "msvcrt" "stdc++")
   add_definitions(-D_WIN32_IE=0x0501)
@@ -332,11 +330,23 @@ if(HAVE_POPT_DEPS)
 endif()
 
 
-target_link_libraries(milkyway_nbody ${exe_link_libs} stdc++ ${BOINC_LIBRARIES})
+set(nbody_static_link_flags "-static -static-libgcc -static-libstdc++")
+if(UNIX AND NOT APPLE)
+  #We need to do this to statically link pthreads. Otherwise really
+  #bizarre things happen.
+  set(nbody_static_link_flags "-pthread ${nbody_static_link_flags}")
+endif()
 
-#if(NOT APPLE)
-#  set(CMAKE_EXE_LINKER_FLAGS -static)
-#endif()
+
+set_target_properties(milkyway_nbody
+                        PROPERTIES
+                         LINKER_LANGUAGE CXX
+                         LINK_SEARCH_END_STATIC ON
+                         LINK_FLAGS ${nbody_static_link_flags})
+
+target_link_libraries(milkyway_nbody ${exe_link_libs} ${BOINC_LIBRARIES})
+
+
 
 if(WIN32)
   #For some reason I can't wrestle out the C++ on Windows.
