@@ -156,16 +156,20 @@ if(ENABLE_CRLIBM)
 
   #TODO: Set march, mtune etc. from user flags, but avoid some others
   set(crlibm_flags "-std=c99 -O3 -mfpmath=sse -msse -msse2")
+#FIXME: Is there a less ghetto way of getting universal binaries?
+
+ if(APPLE)
+   set(apple_configure_option "--target=x86_64-apple-darwin10")
+ endif()
 
   set(crlibm_file "${LIBRARY_OUTPUT_PATH}/libcrlibm${CMAKE_STATIC_LIBRARY_SUFFIX}")
   set(scs_file "${LIBRARY_OUTPUT_PATH}/libscs{CMAKE_STATIC_LIBRARY_SUFFIX}")
-
-
   add_custom_command(
         OUTPUT "${crlibm_file}"
         COMMAND "${crlibmSrcPath}/crlibm-${crlibmVer}/configure"
                                                  "--enable-sse2"
                                                  "--prefix=${CMAKE_CURRENT_SOURCE_DIR}"
+                                                 "${apple_configure_option}"
                                                  "CC=${CMAKE_C_COMPILER}"
                                                  "MAKE=${CMAKE_BUILD_TOOL}"
                                                  "CFLAGS=${crlibm_flags}"
@@ -173,8 +177,6 @@ if(ENABLE_CRLIBM)
         COMMAND "${CMAKE_BUILD_TOOL}" "install"
         WORKING_DIRECTORY "${crlibmSrcPath}/crlibm-${crlibmVer}"
         COMMENT "Building crlibm")
-
-  add_custom_target(crlibm_build DEPENDS "${crlibm_file}")
 
   set(nbody_link_libs crlibm)
 endif()
@@ -247,8 +249,13 @@ message("   BOINC Debug:       ${BOINC_DEBUG}")
 message("   Double precision:  ${DOUBLEPREC}")
 message("   Enable crlibm:     ${ENABLE_CRLIBM}")
 message("   json-c Library     ${JSON_C_LIBRARY}")
-message("   Use system json-c  ${USE_SYSTEM_JSON_C}")
+message("   BOINC Libraries    ${BOINC_LIBRARIES}")
+message("   Popt Library       ${POPT_LIBRARY}")
 message("---------------------------------------------")
+
+if(BOINC_APPLICATION AND NOT BOINC_LIBRARIES)
+  message(FATAL_ERROR "Trying to build as a BOINC application, but the BOINC library wasn't found")
+endif()
 
 
 configure_file (

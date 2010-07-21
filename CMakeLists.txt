@@ -66,12 +66,12 @@ if(NOT HAVE_OLD_POPT)
   find_package(Libiconv REQUIRED)
 endif()
 
-
+list(APPEND CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/nbody/lib")
+list(APPEND CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/nbody/include")
 find_package(Popt REQUIRED)
 find_package(BOINC)
 find_package(CUDA)
 find_package(OpenCL)
-
 
 #FIXME: Somehow test for and require the Apple gcc. The macports gccs
 #seem to not work when you try to link against frameworks,
@@ -194,7 +194,7 @@ message("   ----")
 message("   Project src dir:   ${CMAKE_SOURCE_DIR}")
 message("   Project bin dir:   ${CMAKE_BINARY_DIR}")
 message("   ----")
-message("   BOINC Libraries    ${BOINC_LIBRARIES}")
+message("   BOINC Library:     ${BOINC_LIBRARY}")
 message("   CUDA  Libraries    ${CUDA_LIBRARIES}")
 message("   OpenCL Libraries   ${OPENCL_LIBRARIES}")
 message("   POPT Library       ${POPT_LIBRARY}")
@@ -202,7 +202,7 @@ message("   ----")
 message("   Build tool:        ${CMAKE_BUILD_TOOL}")
 message("   C Compiler:        ${CMAKE_C_COMPILER}")
 #TODO:Report CFLAGS used based on build type
-#message("   CFLAGS:            ${CMAKE_C_FLAGS}")
+#message("   CFLAGS:           ${CMAKE_C_FLAGS}")
 message("   ----")
 message("   Double precision:  ${DOUBLE_PRECISION}")
 message("   OpenCL separation: ${OPENCL_SEPARATION}")

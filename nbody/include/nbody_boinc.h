@@ -28,12 +28,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define WIN32_LEAN_AND_MEAN
   #define VC_EXTRALEAN
   #if BOINC_DEBUG
-    #include <diagnostics.h>
+    #include <boinc/diagnostics.h>
   #endif /* BOINC_DEBUG */
 
   #include <stdio.h>
-  #include <filesys.h>
-  #include <boinc_api.h>
+  #include <boinc/filesys.h>
+  #include <boinc/boinc_api.h>
 
   #define nbody_finish(x) boinc_finish(x)
   #define nbody_fopen(x,y) boinc_fopen((x),(y))
