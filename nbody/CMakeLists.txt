@@ -267,7 +267,7 @@ if(UNIX AND NOT APPLE)  #Unix that isn't OS X
 endif()
 
 if(WIN32)
-  list(APPEND OS_SPECIFIC_LIBS "msvcrt" "asprintf" "stdc++")
+  list(APPEND OS_SPECIFIC_LIBS "msvcrt" "stdc++")
   add_definitions(-D_WIN32_IE=0x0501)
   add_definitions(-D_WINDOWS)
   add_definitions(-D_WIN32_WINDOWS=0x0501)
@@ -339,6 +339,10 @@ endif()
 
 
 target_link_libraries(milkyway_nbody ${exe_link_libs})
+
+if(NOT APPLE)
+  set(CMAKE_EXE_LINKER_FLAGS -static)
+endif()
 
 if(WIN32)
   #For some reason I can't wrestle out the C++ on Windows.
