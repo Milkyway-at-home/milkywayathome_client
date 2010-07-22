@@ -87,15 +87,16 @@ else()
   set(NEED_POPT_DEPS 1)
 endif()
 
-#FIXME: relies on manually setting
+
+list(APPEND CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/nbody/lib")
+list(APPEND CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/nbody/include")
+
 if(NEED_POPT_DEPS)
     #These are only dependencies of popt needed for static linking
   find_package(Libintl REQUIRED)
   find_package(Libiconv REQUIRED)
 endif()
 
-list(APPEND CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/nbody/lib")
-list(APPEND CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/nbody/include")
 find_package(Popt REQUIRED)
 find_package(BOINC)
 find_package(CUDA)
