@@ -322,31 +322,37 @@ set(exe_link_libs ${POPT_LIBRARY}
                   ${nbody_libs}
                   ${nbody_link_libs})
 
-if(HAVE_POPT_DEPS)
+if(NEED_POPT_DEPS)
   # Popt dependencies for static linking For some reason, on OS X /
   # windows you need these dependencies but not Linux.
   list(APPEND exe_link_libs ${LIBICONV_LIBRARY}
                             ${LIBINTL_LIBRARY})
 endif()
 
+if(NOT APPLE)
+  #CHECKME: What about Windows?
+  set(nbody_static_link_flags "-static -static-libgcc -static-libstdc++")
 
-set(nbody_static_link_flags "-static -static-libgcc -static-libstdc++")
-if(UNIX AND NOT APPLE)
-  #We need to do this to statically link pthreads. Otherwise really
-  #bizarre things happen.
-  set(nbody_static_link_flags "-pthread ${nbody_static_link_flags}")
+  if(UNIX)
+    #We need to do this to statically link pthreads. Otherwise really
+    #bizarre things happen.
+    set(nbody_static_link_flags "-pthread ${nbody_static_link_flags}")
+  endif()
+
+  set_target_properties(milkyway_nbody
+    PROPERTIES
+    LINKER_LANGUAGE CXX
+    LINK_SEARCH_END_STATIC ON
+    LINK_FLAGS ${nbody_static_link_flags})
+else()
+  set_target_properties(milkyway_nbody
+    PROPERTIES
+    LINKER_LANGUAGE CXX
+    LINK_SEARCH_END_STATIC ON)
+
 endif()
 
-
-set_target_properties(milkyway_nbody
-                        PROPERTIES
-                         LINKER_LANGUAGE CXX
-                         LINK_SEARCH_END_STATIC ON
-                         LINK_FLAGS ${nbody_static_link_flags})
-
 target_link_libraries(milkyway_nbody ${exe_link_libs} ${BOINC_LIBRARIES})
-
-
 
 if(WIN32)
   #For some reason I can't wrestle out the C++ on Windows.
