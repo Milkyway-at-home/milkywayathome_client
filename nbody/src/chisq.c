@@ -80,11 +80,15 @@ static void writeHistogram(const char* histout,           /* Filename to write h
     {
         f = nbody_fopen(histout, "w");
         if (f == NULL)
-            perror("Writing histout. Using stdout instead");
+            perror("Writing histout. Using stderr instead");
     }
 
     if (f == NULL)
-        f = stdout;
+        f = stderr;
+
+  #if BOINC_APPLICATION
+    fprintf(f, "<histogram>");
+  #endif
 
     for (i = 0; i < maxIdx; ++i)
     {
@@ -94,6 +98,10 @@ static void writeHistogram(const char* histout,           /* Filename to write h
                 ((real) histogram[i]) / totalNum,
                 histogram[i] == 0 ? inv(totalNum) : sqrt(histogram[i]) / totalNum);
     }
+
+  #if BOINC_APPLICATION
+    fprintf(f, "</histogram>");
+  #endif
 
     if (f != stdout)
         fclose(f);
