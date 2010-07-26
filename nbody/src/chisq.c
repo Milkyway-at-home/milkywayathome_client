@@ -202,7 +202,7 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
     histData = callocSafe(sizeof(HistData), fsize);
 
     while ( (rc = fscanf(f,
-                       #ifdef DOUBLEPREC
+                       #if DOUBLEPREC
                          "%d %lf %lf %lf\n",
                        #else
                          "%d %f %f %f\n",

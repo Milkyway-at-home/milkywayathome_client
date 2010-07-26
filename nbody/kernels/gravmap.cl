@@ -22,6 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* FIXME: I don't belong here */
 #define sqr(x) ((x) * (x))
+#define cube(x) ((x) * (x) * (x))
 #define ZVEC ((vector) 0.0)
 
 #ifndef NULL
@@ -49,7 +50,9 @@ inline vector diskAccel(const Disk* disk, const vector pos)
     const real b   = disk->scale_height;
     const real zp  = rsqrt( sqr(pos.z) + sqr(b) );
     const real azp = a + zp;
-    const real rth = pow( sqr(pos.x) + sqr(pos.y) + sqr(azp), (real) 1.5);
+    const real tmp = sqr(pos.x) + sqr(pos.y) + sqr(azp);
+    const real rth = sqrt(cube(tmp));
+
     vector acc = ZVEC;
 
     acc.x = pos.x / rth;

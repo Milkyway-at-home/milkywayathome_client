@@ -32,7 +32,7 @@
  * by the standard C libraries.
  */
 
-#ifndef  DOUBLEPREC
+#if !DOUBLEPREC
 
 #  define rsqrt  sqrtf
 #  define rsqr   fsqr
