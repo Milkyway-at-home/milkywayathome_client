@@ -195,7 +195,6 @@ typedef struct
 {
     node bodynode;              /* data common to all nodes */
     vector vel;                 /* velocity of body */
-    vector acc;                 /* acceleration of body */
  } body, *bodyptr;
 
 #define Body    body
