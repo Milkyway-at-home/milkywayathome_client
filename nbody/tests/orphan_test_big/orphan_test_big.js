@@ -34,11 +34,11 @@
 
         "dwarf-model": {
             "plummer" : {
-                "mass" : 11.25,
-                "nbody" : 50000,
-                "scale-radius" : 0.2,
-                "time-orbit" : 4,
-                "time-dwarf" : 3.945 
+            "mass" : 16,
+            "nbody" : 100000, 
+            "scale-radius" : 0.2, 
+            "time-orbit" : 4, 
+            "time-dwarf" : 3.945 
             }
         }
     },
@@ -47,7 +47,7 @@
         "useGalC" : false,
         "angle-use-radians" : false,
         "velocity" : [ -156, 79, 107 ],
-        "position" : [ 28.6, 218, 53.5 ]
+        "position" : [ 218, 53.5, 28.6 ]
     },
 
 

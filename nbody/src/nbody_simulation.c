@@ -5,14 +5,13 @@
 /* ************************************************************************** */
 
 #include <stdlib.h>
-
 #include "nbody.h"
 #include "json_params.h"
 #include "nbody_priv.h"
 
 inline static void initState(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
-    printf("Starting nbody system\n");
+    warn("Starting nbody system\n");
 
     st->tout       = st->tnow;       /* schedule first output */
     st->tree.rsize = ctx->tree_rsize;
@@ -29,7 +28,6 @@ inline static void initState(const NBodyCtx* ctx, const InitialConditions* ic, N
 
     /* CHECKME: Why does makeTree get used twice for the first step? */
     /* Take 1st step */
-
   #if !NBODY_OPENCL
     gravMap(ctx, st);
   #else
@@ -86,9 +84,9 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
     while (st->tnow < tstop)
     {
         stepSystem(ctx, st);   /* advance N-body system */
-        #if BOINC_APPLICATION
-          nbodyCheckpoint(ctx, st);
-        #endif
+      #if BOINC_APPLICATION
+        nbodyCheckpoint(ctx, st);
+      #endif
 
         #if 0 /* TODO: Some day this will allow printing at intervals, for making movies etc. */
           /* TODO: organize use of this output better since it only
@@ -102,12 +100,13 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
     }
 }
 
-static void endRun(NBodyCtx* ctx, NBodyState* st)
+static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
 {
   /* Make final output */
   #if BOINC_APPLICATION && !BOINC_DEBUG
-    boincOutput(ctx, st);
+    boincOutput(ctx, st, chisq);
   #else
+    printf("chisq = %.20g\n", chisq);
     output(ctx, st);
   #endif /* BOINC_APPLICATION && !BOINC_DEBUG */
 
@@ -119,34 +118,76 @@ static void endRun(NBodyCtx* ctx, NBodyState* st)
     nbodyStateDestroy(st);
 }
 
-/* Takes parsed json and run the simulation, using outFileName for
- * output. The mess with the different names is for the hacky way we
- * can switch precision easily */
-#if DYNAMIC_PRECISION
-  #ifdef DOUBLEPREC
-    #define RUN_NBODY_SIMULATION runNBodySimulation_double
-  #else
-    #define RUN_NBODY_SIMULATION runNBodySimulation_float
-  #endif /* DOUBLEPREC */
+
+#if BOINC_APPLICATION
+
+/* Setup the run, taking care of checkpointing things when using BOINC */
+static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
+{
+    /* If the checkpoint exists, try to use it */
+    if (boinc_file_exists(ctx->cp.filename))
+    {
+        warn("Checkpoint exists. Attempting to resume from it.\n");
+        openCheckpoint(ctx);
+
+        /* When the resume fails, start a fresh run */
+        if (thawState(ctx, st))
+        {
+            warn("Failed to resume checkpoint\n");
+            closeCheckpoint(ctx);     /* Something is wrong with this file */
+            openCheckpoint(ctx);      /* Make a new one */
+            nbodyStateDestroy(st);
+            startRun(ctx, ic, st);
+        }
+        else
+        {
+            /* We restored the useful state. Now still need to create
+             * the workspace where new accelerations are
+             * calculated. */
+            st->acctab  = (vector*) mallocSafe(ctx->model.nbody * sizeof(vector));
+          #if !NBODY_OPENCL
+            gravMap(ctx, st);
+          #else
+            gravMapCL(ctx, st);
+          #endif /* !NBODY_OPENCL */
+        }
+    }
+    else   /* Otherwise, just start a fresh run */
+    {
+        openCheckpoint(ctx);
+        startRun(ctx, ic, st);
+    }
+}
+
 #else
-  #define RUN_NBODY_SIMULATION runNBodySimulation
-#endif /* DYNAMIC_PRECISION */
+
+/* When not using BOINC, we don't need to deal with the checkpointing */
+static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
+{
+    startRun(ctx, ic, st);
+}
+
+#endif /* BOINC_APPLICATION */
 
 
-void RUN_NBODY_SIMULATION(json_object* obj,
-                          const FitParams* fitParams,
-                          const char* outFileName,
-                          const char* checkpointFileName,
-                          const char* histogramFileName,
-                          const char* histoutFileName,
-                          const int outputCartesian,
-                          const int printTiming,
-                          const int verifyOnly)
+
+/* Takes parsed json and run the simulation, using outFileName for
+ * output. */
+void runNBodySimulation(json_object* obj,                 /* The main configuration */
+                        const FitParams* fitParams,       /* For server's arguments */
+                        const char* outFileName,          /* Misc. parameters to control output */
+                        const char* checkpointFileName,
+                        const char* histogramFileName,
+                        const char* histoutFileName,
+                        const int outputCartesian,
+                        const int printTiming,
+                        const int verifyOnly)
 {
     NBodyCtx ctx         = EMPTY_CTX;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
     NBodyState st        = EMPTY_STATE;
 
+    real chisq;
     double ts = 0.0, te = 0.0;
     int rc;
 
@@ -170,32 +211,7 @@ void RUN_NBODY_SIMULATION(json_object* obj,
     ctx.cp.filename     = checkpointFileName;
 
     initOutput(&ctx);
-
-  #if BOINC_APPLICATION
-    /* If the checkpoint exists, try to use it */
-    if (boinc_file_exists(ctx.cp.filename))
-    {
-        printf("Checkpoint exists. Attempting to resume from it.\n");
-        openCheckpoint(&ctx);
-
-        /* When the resume fails, start a fresh run */
-        if (thawState(&ctx, &st))
-        {
-            warn("Failed to resume checkpoint\n");
-            closeCheckpoint(&ctx);     /* Something is wrong with this file */
-            openCheckpoint(&ctx);      /* Make a new one */
-            nbodyStateDestroy(&st);
-            startRun(&ctx, &ic, &st);
-        }
-    }
-    else   /* Otherwise, just start a fresh run */
-    {
-        openCheckpoint(&ctx);
-        startRun(&ctx, &ic, &st);
-    }
-  #else
-    startRun(&ctx, &ic, &st);
-  #endif /* BOINC_APPLICATION */
+    setupRun(&ctx, &ic, &st);
 
     if (printTiming)     /* Time the body of the calculation */
         ts = get_time();
@@ -208,24 +224,12 @@ void RUN_NBODY_SIMULATION(json_object* obj,
         printf("Elapsed time for run = %g\n", te - ts);
     }
 
-    // Get the likelihood
-    if (printTiming)
-        ts = get_time();
-
-    real chisqans = nbodyChisq(&ctx, &st);
-
-    if (!isnan(chisqans))
-        printf("Run finished. chisq = %f\n", chisqans);
-    else
+    /* Get the likelihood */
+    chisq = nbodyChisq(&ctx, &st);
+    if (isnan(chisq))
         warn("Failed to calculate chisq\n");
 
-    if (printTiming)
-    {
-        te = get_time();
-        printf("Elapsed time for chisq = %g\n", te - ts);
-    }
-
-    endRun(&ctx, &st);
+    endRun(&ctx, &st, chisq);
 
 }
 

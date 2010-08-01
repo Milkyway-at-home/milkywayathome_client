@@ -19,7 +19,7 @@
             "spherical" : {
                 "sphere" : {
                     "mass" : 1.52954402E5,
-                    "r0-scale" : 0.7 
+                    "r0-scale" : 0.7
                 }
             },
 
@@ -35,10 +35,10 @@
         "dwarf-model": {
             "plummer" : {
             "mass" : 16,
-            "nbody" : 1024, 
-            "scale-radius" : 0.2, 
-            "time-orbit" : 4, 
-            "time-dwarf" : 3.945 
+            "nbody" : 1024,
+            "scale-radius" : 0.2,
+            "time-orbit" : 4,
+            "time-dwarf" : 3.945
             }
         }
     },

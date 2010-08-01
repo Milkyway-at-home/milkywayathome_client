@@ -1,20 +1,31 @@
-// A BOINC compatible fitness calculation routine for the Orphan FILE* density profile project
-// B. Willett Feb. 25, 2010
-// Adapted for use with B&H treecode May 11, 2010
+/* Copyright 2010 Ben Willett, Matthew Arsenault, Boleslaw Szymanski,
+Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and Rensselaer
+Polytechnic Institute.
 
+This file is part of Milkway@Home.
 
-// Takes a treecode position, converts it to (l,b), then to (lambda, beta), and then constructs a histogram of the density in lambda.
+Milkyway@Home is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-// Then calculates the cross correlation between the model histogram and the data histogram
-// A maximum correlation means the best fit
+Milkyway@Home is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "nbody_priv.h"
+#include "nbody_util.h"
 #include "chisq.h"
 
-/* FIXME: Magic numbers */
+/* FIXME: sort of magic numbers */
 #define phi d2r(128.79)
 #define theta d2r(54.39)
 #define psi d2r(90.70)
@@ -30,6 +41,7 @@ typedef struct
     real err;
     real count;
 } HistData;
+
 
 /* Calculate chisq from data read from histData and the histogram
  * generated from the simulation, histogram, with maxIdx bins. */
@@ -68,11 +80,15 @@ static void writeHistogram(const char* histout,           /* Filename to write h
     {
         f = nbody_fopen(histout, "w");
         if (f == NULL)
-            perror("Writing histout. Using stdout instead");
+            perror("Writing histout. Using stderr instead");
     }
 
     if (f == NULL)
-        f = stdout;
+        f = stderr;
+
+  #if BOINC_APPLICATION
+    fprintf(f, "<histogram>");
+  #endif
 
     for (i = 0; i < maxIdx; ++i)
     {
@@ -83,9 +99,20 @@ static void writeHistogram(const char* histout,           /* Filename to write h
                 histogram[i] == 0 ? inv(totalNum) : sqrt(histogram[i]) / totalNum);
     }
 
+  #if BOINC_APPLICATION
+    fprintf(f, "</histogram>");
+  #endif
+
     if (f != stdout)
         fclose(f);
 }
+
+/*
+Takes a treecode position, converts it to (l,b), then to (lambda,
+beta), and then constructs a histogram of the density in lambda.
+
+Then calculates the cross correlation between the model histogram and
+the data histogram A maximum correlation means the best fit */
 
 /* Bin the bodies from the simulation into maxIdx bins.
    Returns null on failure
@@ -175,7 +202,7 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
     histData = callocSafe(sizeof(HistData), fsize);
 
     while ( (rc = fscanf(f,
-                       #ifdef DOUBLEPREC
+                       #if DOUBLEPREC
                          "%d %lf %lf %lf\n",
                        #else
                          "%d %f %f %f\n",

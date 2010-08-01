@@ -18,11 +18,11 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <math.h>
 #include <stdlib.h>
 #include "nbody_priv.h"
 #include "accelerations.h"
 #include "vectmath.h"
+#include "real.h"
 
 /* CHECKME: order of operations and effect on precision, and where can
  * we share divisions and such */
@@ -86,7 +86,7 @@ void nfwHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr rest
     ABSV(r, pos);
     const real a  = halo->scale_length;
     const real ar = a + r;
-    const real c  = a * sqr(halo->vhalo) * ((-ar * rlog1p(r / a)) + r) / (0.216 * cube(r) * ar);
+    const real c  = a * sqr(halo->vhalo) * ((-ar * rlog1p(r / a)) + r) / (0.2162165954 * cube(r) * ar);
 
     MULVS(acc, pos, c);
 }

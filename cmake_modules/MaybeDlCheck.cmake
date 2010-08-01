@@ -18,31 +18,22 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-if(JSON_C_USE_STATIC)
-  set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
-endif()
+function(maybe_dl_check name version md5Hash url srcPath srcTar)
+  if(NOT EXISTS "${srcPath}/${srcTar}")
+    message(STATUS "Downloading ${name}")
+    file(DOWNLOAD ${url} "${srcPath}/${srcTar}"
+         TIMEOUT 60
+         EXPECTED_MD5 ${md5Hash}
+         LOG "Downloading ${name}"
+         SHOW_PROGRESS)
+  else()
+    message(STATUS "Already have ${name}")
+  endif()
 
-find_path(JSON_C_INCLUDE_DIR "json/json.h")
-find_library(JSON_C_LIBRARY json)
+  message(STATUS "Extracting ${name} source")
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E tar xzf "${srcPath}/${srcTar}" "${name}"
+    WORKING_DIRECTORY "${srcPath}")
+endfunction()
 
-if(JSON_C_USE_STATIC)
-  set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
-endif()
-
-
-if(JSON_C_INCLUDE_DIR AND JSON_C_LIBRARY)
-   set(JSON_C_FOUND TRUE)
-endif()
-
-if(JSON_C_FOUND)
-   if(NOT Json_c_FIND_QUIETLY)
-      message(STATUS "Found json-c Library: ${JSON_C_LIBRARY}")
-   endif(NOT Json_c_FIND_QUIETLY)
-else(JSON_C_FOUND)
-   if(Json_c_FIND_REQUIRED)
-      message(FATAL_ERROR "Could not find json-c Library")
-   endif(Json_c_FIND_REQUIRED)
-endif()
 

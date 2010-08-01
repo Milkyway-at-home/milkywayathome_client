@@ -19,4 +19,29 @@
 #
 
 
+find_path(LIBINTL_INCLUDE_DIR libintl.h)
+
+if(LIBINTL_USE_STATIC)
+  set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
+endif()
+
+find_library(LIBINTL_LIBRARY intl)
+if(LIBINTL_USE_STATIC)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${__old_cmake_find_lib_suffixes})
+endif()
+
+if(LIBINTL_INCLUDE_DIR AND LIBINTL_LIBRARY)
+   set(LIBINTL_FOUND TRUE)
+endif(LIBINTL_INCLUDE_DIR AND LIBINTL_LIBRARY)
+
+if(LIBINTL_FOUND)
+   if(NOT Libintl_FIND_QUIETLY)
+      message(STATUS "Found LIBINTL Library: ${LIBINTL_LIBRARY}")
+   endif(NOT Libintl_FIND_QUIETLY)
+else(LIBINTL_FOUND)
+   if(Libintl_FIND_REQUIRED)
+      message(FATAL_ERROR "Could not find LIBINTL Library")
+   endif(Libintl_FIND_REQUIRED)
+endif(LIBINTL_FOUND)
 

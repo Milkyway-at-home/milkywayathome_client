@@ -8,13 +8,18 @@
 /* TODO: wuh wuh windows */
 #include <unistd.h>
 #include <fcntl.h>
-
-#include <fenv.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <popt.h>
 #include <errno.h>
+
+#include "nbody_config.h"
+
+#if ENABLE_CRLIBM
+  #include <crlibm.h>
+#endif /* ENABLE_CRLIBM */
+
 #include "nbody.h"
 
 #ifdef _WIN32
@@ -22,64 +27,73 @@
 #endif
 
 
-#ifdef linux
-  #include <fpu_control.h>
-#endif
-
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
 #define DEFAULT_HISTOGRAM_FILE  "histogram"
 #define DEFAULT_HISTOUT_FILE    "histout"
 
+/* If one of these options is null, use the default. */
 #define stringDefault(s, d) ((s) = (s) ? (s) : strdup((d)))
 
-typedef int fp_round_mode_t;
 
-static const char* showRoundMode(fp_round_mode_t mode)
+#if !BOINC_APPLICATION
+static void nbodyBoincInit() { }
+#else
+
+#if BOINC_DEBUG
+/* Use BOINC, but prevent it from redirecting stderr to a file, which
+ * is really annoying for debugging */
+static void nbodyBoincInit()
 {
-    switch (mode)
+    int rc =  boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
+                                     | BOINC_DIAG_HEAPCHECKENABLED
+                                     | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
+    if (rc)
     {
-        case FE_TONEAREST:
-            return "FE_TONEAREST";
-        case FE_DOWNWARD:
-            return "FE_DOWNWARD";
-        case FE_TOWARDZERO:
-            return "FE_TOWARDZERO";
-        case FE_UPWARD:
-            return "FE_UPWARD";
-        default:
-            warn("Trying to show unknown round mode: %d\n", mode);
-            return "";
+        warn("boinc_init failed: %d\n", rc);
+        exit(EXIT_FAILURE);
     }
 }
 
-static fp_round_mode_t readRoundMode(const char* str)
+#else
+/* For BOINC releases */
+static void nbodyBoincInit()
 {
-    if (str == NULL || !strcasecmp(str, ""))  /* Default if not specified */
-        return FE_TONEAREST;
-    if (!strcasecmp(str, "near"))
-        return FE_TONEAREST;
-    if (!strcasecmp(str, "down"))
-        return FE_DOWNWARD;
-    if (!strcasecmp(str, "zero"))
-        return FE_TOWARDZERO;
-    else if (!strcasecmp(str, "up"))
-        return FE_UPWARD;
-    else
-        fail("Invalid round mode %s: options are either 'up', "
-             "'down', 'zero' or 'nearest' (default),\n", str);
+    int rc = boinc_init();
+    if (rc)
+    {
+        warn("boinc_init failed: %d\n", rc);
+        exit(EXIT_FAILURE);
+    }
+}
+#endif /* BOINC_DEBUG */
+#endif /* !BOINC_APPLICATION */
 
-    return -1; /* Not reached, prevent warning */
+
+/* Maybe set up some platform specific issues */
+static void specialSetup()
+{
+  #if !defined(__SSE2__) && ENABLE_CRLIBM
+    /* Try to handle inconsistencies with x87. We shouldn't use
+     * this. This helps, but there can still be some problems for some
+     * values. Sticking with SSE2 is the way to go. */
+    crlibm_init();
+  #endif
+
+  #ifdef _WIN32
+    /* Make windows printing be more consistent. For some reason it
+     * defaults to printing 3 digits in the exponent. There are still
+     * issues where the rounding of the last digit by printf on
+     * windows in a small number of cases. */
+    _set_output_format(_TWO_DIGIT_EXPONENT);
+  #endif /* _WIN32 */
 }
 
 
-
-/* Read the command line arguments, and do the inital parsing of the parameter file */
+/* Read the command line arguments, and do the inital parsing of the parameter file. */
 static json_object* readParameters(const int argc,
                                    const char** argv,
                                    FitParams* fitParams,
-                                   char** roundModeStr,
                                    char** outFileName,
-                                   int* useDouble,
                                    char** checkpointFileName,
                                    char** histogramFileName,
                                    char** histoutFileName,
@@ -88,10 +102,6 @@ static json_object* readParameters(const int argc,
                                    int* printTiming,
                                    int* verifyOnly)
 {
-  #if !defined(DYNAMIC_PRECISION)
-    #pragma unused(useDouble)
-  #endif
-
   #if !BOINC_APPLICATION
     #pragma unused(checkpointFileName)
     #pragma unused(ignoreCheckpoint)
@@ -99,10 +109,10 @@ static json_object* readParameters(const int argc,
 
     poptContext context;
     int o;
-    static char* inputFile = NULL;        /* input JSON file */
-    static char* inputStr  = NULL;        /* a string of JSON to use directly */
-    json_object* obj;
-    static const char** rest;
+    static char* inputFile   = NULL;   /* input JSON file */
+    static char* inputStr    = NULL;   /* a string of JSON to use directly */
+    json_object* obj         = NULL;
+    static const char** rest = NULL;   /* Leftover arguments */
 
     unsigned int numParams = 0, params = 0, paramCount = 0;
 
@@ -155,12 +165,6 @@ static json_object* readParameters(const int argc,
         },
 
         {
-            "round-mode", 'r',
-            POPT_ARG_STRING, roundModeStr,
-            0, "IEEE-754 Rounding mode. Options are: near (default), zero, up, down", NULL
-        },
-
-        {
             "check-file", 'g',
             POPT_ARG_NONE, verifyOnly,
             0, "Check that the input file is valid only; perform no calculation.", NULL
@@ -178,16 +182,6 @@ static json_object* readParameters(const int argc,
             POPT_ARG_NONE, ignoreCheckpoint,
             0, "Ignore the checkpoint file", NULL
         },
-      #endif /* BOINC_APPLICATION */
-
-
-      #if DYNAMIC_PRECISION
-        {
-            "double", 'd',
-            POPT_ARG_NONE, useDouble,
-            0, "Use double precision", NULL
-        },
-      #endif
 
         {
             "p", 'p',
@@ -200,6 +194,7 @@ static json_object* readParameters(const int argc,
             POPT_ARG_INT | POPT_ARGFLAG_ONEDASH, &numParams,
             0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
         },
+      #endif /* BOINC_APPLICATION */
 
         POPT_AUTOHELP
 
@@ -258,6 +253,8 @@ static json_object* readParameters(const int argc,
             fail("numParams = 0 makes no sense\n");
         }
 
+        /* Make sure the number of extra parameters matches the number
+         * we were told to expect. */
         if (numParams != paramCount)
         {
             poptFreeContext(context);
@@ -280,21 +277,19 @@ static json_object* readParameters(const int argc,
             }
         }
 
-
         fitParams->modelMass        = parameters[0];
         fitParams->modelRadius      = parameters[1];
         fitParams->reverseOrbitTime = parameters[2];
         fitParams->simulationTime   = parameters[3];
 
         free(parameters);
-
     }
 
     poptFreeContext(context);
 
     if (inputFile)
     {
-        /* check if we can read the file, so we can fail saying that
+        /* Check if we can read the file, so we can fail saying that
          * and not be left to guessing if it's that or a parse
          * error */
         if (access(inputFile, R_OK) < 0)
@@ -327,125 +322,48 @@ static json_object* readParameters(const int argc,
     return obj;
 }
 
-/* Run with double, float, or whatever we have */
-static void runSimulationWrapper(json_object* obj,
-                                 FitParams* fitParams,
-                                 const char* outFileName,
-                                 const char* checkpointFileName,
-                                 const char* histogramFileName,
-                                 const char* histoutFileName,
-                                 const int useDouble,
-                                 const int outputCartesian,
-                                 const int printTiming,
-                                 const int verifyOnly)
-{
-  #if DYNAMIC_PRECISION
-    if (useDouble)
-    {
-        printf("Using double precision\n");
-        runNBodySimulation_double(obj, fitParams,
-                                  outFileName, checkpointFileName, histogramFileName, histoutFileName,
-                                  outputCartesian, printTiming, verifyOnly);
-        printf("Done with double\n");
-    }
-    else
-    {
-        printf("Using float precision\n");
-        runNBodySimulation_float(obj, fitParams,
-                                 outFileName, checkpointFileName, histogramFileName, histoutFileName,
-                                 outputCartesian, printTiming, verifyOnly);
-        printf("Done with float\n");
-    }
-  #else
-    #pragma unused(useDouble)
-
-    runNBodySimulation(obj, fitParams,
-                       outFileName, checkpointFileName, histogramFileName, histoutFileName,
-                       outputCartesian, printTiming, verifyOnly);
-  #endif /* DYNAMIC_PRECISION */
-}
-
-/* FIXME: Clean up the separation between boinc and nonboinc. Right
- * now it's absolutely disgusting. */
-
 /* main: toplevel routine for hierarchical N-body code. */
 int main(int argc, const char* argv[])
 {
-    char* outFileName = NULL;
-    json_object* obj = NULL;
-    int useDouble = FALSE;
-    int outputCartesian = FALSE;
+    char* outFile        = NULL;
+    json_object* obj     = NULL;
+    int outputCartesian  = FALSE;
     int ignoreCheckpoint = FALSE;
-    int printTiming = FALSE;
-    int verifyOnly = FALSE;
-    char* checkpointFileName = NULL;
-    char* histogramFileName  = NULL;
-    char* histoutFileName    = NULL;
-    char* roundModeStr       = NULL;
-    fp_round_mode_t roundMode;
-    FitParams fitParams = EMPTY_FIT_PARAMS;
+    int printTiming      = FALSE;
+    int verifyOnly       = FALSE;
+    char* checkpointFile = NULL;
+    char* histogramFile  = NULL;
+    char* histoutFile    = NULL;
+    FitParams fitParams  = EMPTY_FIT_PARAMS;
 
-
-#if BOINC_APPLICATION
-    int boincInitStatus = 0;
-  #if !BOINC_DEBUG
-    boincInitStatus = boinc_init();
-  #else
-    boincInitStatus = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
-                                             | BOINC_DIAG_HEAPCHECKENABLED
-                                             | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
-  #endif /* !BOINC_DEBUG */
-
-    if (boincInitStatus)
-    {
-        fprintf(stderr, "boinc_init failed: %d\n", boincInitStatus);
-        exit(EXIT_FAILURE);
-    }
-#endif /* BOINC_APPLICATION */
+    specialSetup();
+    nbodyBoincInit();
 
     obj = readParameters(argc,
                          argv,
                          &fitParams,
-                         &roundModeStr,
-                         &outFileName,
-                         &useDouble,
-                         &checkpointFileName,
-                         &histogramFileName,
-                         &histoutFileName,
+                         &outFile,
+                         &checkpointFile,
+                         &histogramFile,
+                         &histoutFile,
                          &ignoreCheckpoint,
                          &outputCartesian,
                          &printTiming,
                          &verifyOnly);
 
     /* Use default if checkpoint file not specified */
-    stringDefault(checkpointFileName, DEFAULT_CHECKPOINT_FILE);
-    stringDefault(histogramFileName,  DEFAULT_HISTOGRAM_FILE);
-    stringDefault(histoutFileName,    DEFAULT_HISTOUT_FILE);
+    stringDefault(checkpointFile, DEFAULT_CHECKPOINT_FILE);
+    stringDefault(histogramFile,  DEFAULT_HISTOGRAM_FILE);
+    stringDefault(histoutFile,    DEFAULT_HISTOUT_FILE);
 
-    /* Set the floating point rounding to use based on names */
-    roundMode = readRoundMode(roundModeStr);
-    free(roundModeStr);
+    runNBodySimulation(obj, &fitParams,
+                       outFile, checkpointFile, histogramFile, histoutFile,
+                       outputCartesian, printTiming, verifyOnly);
 
-    if (fesetround(roundMode))
-        warn("Failed to set round mode: Using mode %s\n", showRoundMode(fegetround()));
-    else
-        printf("Using rounding mode %s\n", showRoundMode(fegetround()));
-
-    runSimulationWrapper(obj,
-                         &fitParams,
-                         outFileName,
-                         checkpointFileName,
-                         histogramFileName,
-                         histoutFileName,
-                         useDouble,
-                         outputCartesian,
-                         printTiming,
-                         verifyOnly);
-
-    free(outFileName);
-    free(checkpointFileName);
-    free(histogramFileName);
-    free(histoutFileName);
+    free(outFile);
+    free(checkpointFile);
+    free(histogramFile);
+    free(histoutFile);
 
     nbody_finish(EXIT_SUCCESS);
 }

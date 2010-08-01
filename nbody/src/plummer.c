@@ -77,7 +77,9 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
         rnd = (real) dsfmt_genrand_close_open(&dsfmtState);
 
         /* pick r in struct units */
+
         r = 1.0 / rsqrt(rpow(rnd, -2.0 / 3.0) - 1.0);
+
         pickshell(&dsfmtState, Pos(p), rsc * r);     /* pick scaled position */
         INCADDV(Pos(p), rshift);        /* move the position */
         INCADDV(cmr, Pos(p));           /* add to running sum */

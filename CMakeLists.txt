@@ -23,6 +23,30 @@ project(milkywayathome)
 
 enable_testing()
 
+
+option(SMALL_TESTS
+       "Run small tests" ON)
+
+option(LARGE_TESTS
+       "Run large tests" OFF)
+
+option(AUX_LARGE_TESTS
+       "Run large aux tests" OFF)
+
+option(AUX_SMALL_TESTS
+       "Run small aux tests" OFF)
+
+option(MW_DEBUG_EXCESSIVE
+       "Excessive debugging output" OFF)
+
+option(BOINC_APPLICATION
+       "Run as BOINC application or independently" ON)
+
+option(BOINC_RELEASE
+       "Build with all options for making an actual release" ON)
+
+
+
 #set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules;${CMAKE_MODULE_PATH}")
 set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules")
 set(PROJECT_TOOL_DIR "${milkywayathome_SOURCE_DIR}/tools")
@@ -49,13 +73,34 @@ if(MINGW)
   set(CMAKE_FIND_ROOT_PATH "${TAKEOFFGW_ROOT}/i686-pc-mingw32/sys-root/mingw")
 endif(MINGW)
 
+if(BOINC_RELEASE)
+  set(POPT_USE_STATIC 1)
+  set(JSON_C_USE_STATIC 1)
+  set(LIBINTL_USE_STATIC 1)
+  set(LIBICONV_USE_STATIC 1)
+  set(BOINC_USE_STATIC 1)
+endif()
+
+if(UNIX AND NOT APPLE)
+  set(NEED_POPT_DEPS 0)
+else()
+  set(NEED_POPT_DEPS 1)
+endif()
+
+
+list(APPEND CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/nbody/lib")
+list(APPEND CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/nbody/include")
+
+if(NEED_POPT_DEPS)
+    #These are only dependencies of popt needed for static linking
+  find_package(Libintl REQUIRED)
+  find_package(Libiconv REQUIRED)
+endif()
 
 find_package(Popt REQUIRED)
 find_package(BOINC)
 find_package(CUDA)
 find_package(OpenCL)
-find_package(JsonC)
-
 
 #FIXME: Somehow test for and require the Apple gcc. The macports gccs
 #seem to not work when you try to link against frameworks,
@@ -74,30 +119,17 @@ if(APPLE)
   find_library(COREFOUNDATION_LIBRARY CoreFoundation )
 
   list(APPEND OS_SPECIFIC_LIBS ${COREFOUNDATION_LIBRARY})
+
+  if(BOINC_RELEASE)
+    # We don't want to bother compiling twice until we need the universal binary for releases
+    #set(CMAKE_OSX_ARCHITECTURES i386;x86_64)
+    set(CMAKE_OSX_ARCHITECTURES x86_64)
+  endif()
 endif(APPLE)
 
 #Some kind of workaround for a popular cmake bug where make test
 #doesn't behave as anyone would ever expect.
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-
-option(SMALL_TESTS
-       "Run small tests" ON)
-
-option(LARGE_TESTS
-       "Run large tests" OFF)
-
-option(AUX_LARGE_TESTS
-       "Run large aux tests" OFF)
-
-option(AUX_SMALL_TESTS
-       "Run small aux tests" OFF)
-
-option(MW_DEBUG_EXCESSIVE
-       "Excessive debugging output" OFF)
-
-option(BOINC_APPLICATION
-       "Run as BOINC application or independently" ON)
-
 
 # If we found all the dependencies for something, by default try to
 # build it
@@ -118,9 +150,8 @@ if(BOINC_FOUND AND POPT_FOUND)
   endif()
 endif()
 
-if(POPT_FOUND AND JSON_C_FOUND)
+if(POPT_FOUND)
   set(NBODY_IS_BUILDABLE ON)
-  include_directories(${JSON_C_INCLUDE_DIR})
 endif()
 
 
@@ -148,8 +179,7 @@ set(gcc_extra_warnings "-Wshadow -Wpointer-arith -Wcast-align -common-Wwrite-str
 
 #TODO: Other compilers
 if(CMAKE_COMPILER_IS_GNUCC) # I think this could maybe be IS_UNIX
-
-  set(CMAKE_C_FLAGS "-Wall -Wextra ${CMAKE_C_FLAGS} -funroll-loops -maccumulate-outgoing-args -ffinite-math-only")
+  set(CMAKE_C_FLAGS "-Wall -Wextra ${CMAKE_C_FLAGS} -funroll-loops -maccumulate-outgoing-args")
 
   set(CMAKE_C_FLAGS_DEBUG "-Wall -Wextra ${gcc_extra_warnings} -O0 -g ${CMAKE_C_FLAGS_DEBUG}")
 endif(CMAKE_COMPILER_IS_GNUCC)
@@ -171,16 +201,15 @@ message("   ----")
 message("   Project src dir:   ${CMAKE_SOURCE_DIR}")
 message("   Project bin dir:   ${CMAKE_BINARY_DIR}")
 message("   ----")
-message("   BOINC Libraries    ${BOINC_LIBRARIES}")
+message("   BOINC Library:     ${BOINC_LIBRARY}")
 message("   CUDA  Libraries    ${CUDA_LIBRARIES}")
 message("   OpenCL Libraries   ${OPENCL_LIBRARIES}")
 message("   POPT Library       ${POPT_LIBRARY}")
-message("   json-c Library     ${JSON_C_LIBRARY}")
 message("   ----")
 message("   Build tool:        ${CMAKE_BUILD_TOOL}")
 message("   C Compiler:        ${CMAKE_C_COMPILER}")
 #TODO:Report CFLAGS used based on build type
-#message("   CFLAGS:            ${CMAKE_C_FLAGS}")
+#message("   CFLAGS:           ${CMAKE_C_FLAGS}")
 message("   ----")
 message("   Double precision:  ${DOUBLE_PRECISION}")
 message("   OpenCL separation: ${OPENCL_SEPARATION}")

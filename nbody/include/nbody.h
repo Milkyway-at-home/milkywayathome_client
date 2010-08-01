@@ -25,42 +25,20 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
+#define WIN32_LEAN_AND_MEAN
 #include <json/json.h>
 #include "nbody_config.h"
 #include "nbody_util.h"
 
-
-#if !DYNAMIC_PRECISION
-  __attribute__ ((visibility("default"))) void runNBodySimulation(json_object* obj,
-                                                                  const FitParams* fitParams,
-                                                                  const char* outFileName,
-                                                                  const char* checkpointFileName,
-                                                                  const char* histogramFileName,
-                                                                  const char* histoutFileName,
-                                                                  const int outputCartesian,
-                                                                  const int printTiming,
-                                                                  const int verifyOnly);
-#else
-  __attribute__ ((visibility("default"))) void runNBodySimulation_float(json_object* obj,
-                                                                        const FitParams* fitParams,
-                                                                        const char* outFileName,
-                                                                        const char* checkpointFileName,
-                                                                        const char* histogramFileName,
-                                                                        const char* histoutFileName,
-                                                                        const int outputCartesian,
-                                                                        const int printTiming,
-                                                                        const int verifyOnly);
-
-  __attribute__ ((visibility("default"))) void runNBodySimulation_double(json_object* obj,
-                                                                         const FitParams* fitParams,
-                                                                         const char* outFileName,
-                                                                         const char* checkpointFileName,
-                                                                         const char* histogramFileName,
-                                                                         const char* histoutFileName,
-                                                                         const int outputCartesian,
-                                                                         const int printTiming,
-                                                                         const int verifyOnly);
-#endif /* DYNAMIC_PRECISION */
+__attribute__ ((visibility("default"))) void runNBodySimulation(json_object* obj,
+                                                                const FitParams* fitParams,
+                                                                const char* outFileName,
+                                                                const char* checkpointFileName,
+                                                                const char* histogramFileName,
+                                                                const char* histoutFileName,
+                                                                const int outputCartesian,
+                                                                const int printTiming,
+                                                                const int verifyOnly);
 
 #ifdef _cplusplus
 }

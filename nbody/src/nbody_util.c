@@ -11,6 +11,7 @@
 #include "vectmath.h"
 
 #ifdef _WIN32
+  #define WIN32_LEAN_AND_MEAN
   #include <windows.h>
 #else
   #include <sys/time.h>
@@ -58,7 +59,7 @@ void* callocSafe(size_t count, size_t size)
 {
     void* mem = (void*) calloc(count, size);
     if (mem == NULL)
-        fail("calloc failed: %zu bytes\n", count * size);
+        fail("calloc failed: %lu bytes\n", (unsigned long) count * size);
     return mem;
 }
 
@@ -66,7 +67,7 @@ void* mallocSafe(size_t size)
 {
     void* mem = (void*) malloc(size);
     if (mem == NULL)
-        fail("malloc failed: %zu bytes\n", size);
+        fail("malloc failed: %lu bytes\n", (unsigned long) size);
     return mem;
 }
 

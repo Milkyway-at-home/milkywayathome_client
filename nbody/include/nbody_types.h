@@ -54,7 +54,6 @@
 
 #include "nbody_config.h"
 
-
 #ifndef __OPENCL_VERSION__   /* Not compiling CL kernel */
   #if NBODY_OPENCL
     #include <OpenCL/cl.h>
@@ -63,6 +62,8 @@
 
   #include <stdio.h>
   #ifdef _WIN32
+    #define WIN32_LEAN_AND_MEAN
+	#define VC_EXTRALEAN
     #include <windows.h>
   #endif /* _WIN32 */
 
@@ -74,10 +75,10 @@
   #define HANDLE void*
 #endif
 
-#ifndef  DOUBLEPREC
-  typedef float real, *realptr;
-#else
+#if DOUBLEPREC
   typedef double real, *realptr;
+#else
+  typedef float real, *realptr;
 #endif /* DOUBLEPREC */
 
 #define NDIM 3
@@ -90,41 +91,51 @@
 
 #if NBODY_OPENCL || defined(__OPENCL_VERSION__)
   #ifdef __OPENCL_VERSION__ /* In the kernel */
-    #ifndef  DOUBLEPREC
-      typedef float4 real4, *real4ptr;
-    #else
+    #if DOUBLEPREC
       typedef double4 real4, *real4ptr;
+    #else
+      typedef float4 real4, *real4ptr;
     #endif /* DOUBLEPREC */
   #else
     #ifndef bool
       typedef int bool;
     #endif
 
-    #ifndef  DOUBLEPREC
-      typedef cl_float4 real4, *real4ptr;
-    #else
+    #if DOUBLEPREC
       typedef cl_double4 real4, *real4ptr;
+    #else
+      typedef cl_float4 real4, *real4ptr;
     #endif /* DOUBLEPREC */
   #endif /* __OPENCL_VERSION__ */
-
 
   typedef real4 vector;
   typedef real* vectorptr;
 
   typedef real4 matrix[NDIM];
   #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
+  #define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
 #else
   #ifndef bool
     typedef short int bool;
   #endif
 
-  typedef real vector[NDIM], matrix[NDIM][NDIM];
+  typedef real vector[NDIM];
+
+  typedef real matrix[NDIM][NDIM];
   typedef real* vectorptr;
 
   #define ZERO_VECTOR { 0.0, 0.0, 0.0 }
+  #define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
 #endif /* NBODY_OPENCL */
 
-#define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
+#define L(x) (((vectorptr) (x))[0])
+#define B(x) (((vectorptr) (x))[1])
+#define R(x) (((vectorptr) (x))[2])
+
+#define X(x) (((vectorptr) (x))[0])
+#define Y(x) (((vectorptr) (x))[1])
+#define Z(x) (((vectorptr) (x))[2])
+
 
 #ifndef TRUE
   #define TRUE  1
@@ -162,7 +173,6 @@ typedef struct
 {
     node bodynode;              /* data common to all nodes */
     vector vel;                 /* velocity of body */
-    vector acc;                 /* acceleration of body */
  } body, *bodyptr;
 
 #define Body    body
@@ -294,7 +304,7 @@ typedef struct
 
 typedef struct
 {
-    bool useFitParams;
+    int useFitParams;
     real modelMass;
     real modelRadius;
     real reverseOrbitTime;
@@ -303,13 +313,6 @@ typedef struct
 
 #define EMPTY_FIT_PARAMS { FALSE, NAN, NAN, NAN, NAN }
 
-#define L(x) (((vectorptr) (x))[0])
-#define B(x) (((vectorptr) (x))[1])
-#define R(x) (((vectorptr) (x))[2])
-
-#define X(x) (((vectorptr) (x))[0])
-#define Y(x) (((vectorptr) (x))[1])
-#define Z(x) (((vectorptr) (x))[2])
 
 typedef enum
 {

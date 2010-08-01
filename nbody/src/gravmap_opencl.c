@@ -330,6 +330,7 @@ static int getCLInfo(NBodyCLInfo* ci, NBodyCtx* ctx, cl_device_type type)
     asprintf(&compileDefinitions,
              "-I/Users/matt/src/milkywayathome_client/nbody/include "
              "-DNBODY_OPENCL=1 "
+             "-DDOUBLEPREC=0 "
              "-DSPHERICALTYPE=%d -DDISKTYPE=%d -DHALOTYPE=%d ",
              ctx->pot.sphere[0].type,
              ctx->pot.disk.type,

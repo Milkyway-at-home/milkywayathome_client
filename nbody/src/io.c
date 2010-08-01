@@ -109,7 +109,7 @@ void closeCheckpoint(NBodyCtx* ctx)
         }
     }
 
-    printf("Removing checkpoint file '%s'\n", ctx->cp.filename);
+    warn("Removing checkpoint file '%s'\n", ctx->cp.filename);
     nbody_remove(ctx->cp.filename);
 }
 
@@ -229,6 +229,9 @@ void closeCheckpoint(NBodyCtx* ctx)
                  GetLastError(), ctx->cp.filename);
         }
     }
+
+    warn("Removing checkpoint file '%s'\n", ctx->cp.filename);
+    nbody_remove(ctx->cp.filename);
 }
 
 #endif /* _WIN32 */
@@ -274,6 +277,8 @@ int thawState(const NBodyCtx* ctx, NBodyState* st)
     char tailBuf[sizeof(tail)];
     char* p = ctx->cp.mptr;
     int valid;
+
+    warn("Thawing state\n");
 
     READ_STR(buf, p, sizeof(hdr) - 1);
     READ_INT(valid, p);
@@ -356,7 +361,7 @@ inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
     char* p = ctx->cp.mptr;
     char* lock;
 
-    printf("System freezing. tnow = %g\n", st->tnow);
+    warn("System freezing. tnow = %g\n", st->tnow);
 
     /* TODO: Better error checking */
 
@@ -414,11 +419,12 @@ void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
 #endif
 
 /* Output with the silly xml stuff that BOINC uses */
-void boincOutput(const NBodyCtx* ctx, const NBodyState* st)
+void boincOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq)
 {
-    fprintf(ctx->outfile, "<something>\n");
+    fprintf(ctx->outfile, "<bodies>\n");
     output(ctx, st);
-    fprintf(ctx->outfile, "</something>\n");
+    fprintf(ctx->outfile, "</bodies>\n");
+    fprintf(ctx->outfile, "<likelihood>%.20g</likelihood>", chisq);
     fprintf(ctx->outfile, "<nbody_version>%s %s</nbody_version>\n", BOINC_NBODY_APP_VERSION, PRECSTRING);
 }
 
