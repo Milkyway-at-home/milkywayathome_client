@@ -62,7 +62,6 @@ double absMagToLum( double absMagnitude )
     return pow(10., 2.-.4*absMagnitude);
 }
 
-
 #ifdef __cplusplus
 }
 #endif

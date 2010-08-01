@@ -29,7 +29,8 @@
 
 #include "binfile.hpp"
 
-class nBodyFile
+
+class NBodyFile
 {
 
 private:
@@ -38,7 +39,6 @@ private:
     string fileName;
     int starTotal;
     bool done, binFlag;
-    stellarClass* starType;
 
 public:
 
@@ -57,9 +57,8 @@ public:
         done = false;
     }
 
-    nBodyFile( string fileName, stellarClass &starType, bool binFlag = true )
+    NBodyFile( string fileName, bool binFlag = true )
     {
-        this->starType = &starType;
         this->binFlag = binFlag;
         this->fileName = fileName;
         reset();
@@ -67,7 +66,7 @@ public:
 
     int getStarTotal() { return starTotal; }
 
-    bool readStars( starField& stream )
+    bool readStars( HaloField& stream, double lum = .1 )
 
         // Reads next step in 'fstrm' into stream data
         // Returns true if another step exists, false if this is the last step in the file
@@ -112,7 +111,7 @@ public:
                 fileGetFloatArrayBin(fstrm, 3, lineArg);
             else
                 fileGetFloatArray(fstrm, 3, lineArg);
-            stream.add(lineArg[0], lineArg[1], lineArg[2], 100., *starType);
+            stream.add(lineArg[0], lineArg[1], lineArg[2], lum);
 
         }
 
@@ -150,7 +149,8 @@ public:
 
 };
 
-class wedgeFile
+
+class WedgeFile
 {
 
 private:
@@ -159,7 +159,6 @@ private:
     string fileName;
     int starTotal;
     bool binFlag;
-    stellarClass* starType;
 
 public:
 
@@ -168,9 +167,8 @@ public:
         starTotal = 0;
     }
 
-    wedgeFile( stellarClass &starType, bool binFlag = false )
+    WedgeFile( bool binFlag = false )
     {
-        this->starType = &starType;
         this->binFlag = binFlag;
         reset();
     }
@@ -196,7 +194,7 @@ public:
 
     }
 
-    void readStars( string fileName, starField& field )
+    void readStars( string fileName, HaloField& field, double lum = .1 )
 
         // Reads next step in 'fstrm' into stream data
         // Returns true if another step exists, false if this is the last step in the file
@@ -236,7 +234,7 @@ public:
             // Offset x to align with galactic center
             x -= 8.;
 
-            field.add(x, y, z, 100., *starType);
+            field.add(x, y, z, lum);
 
             if( fstrm.eof() ) {
                 fstrm.close();
@@ -261,5 +259,6 @@ public:
     }
 
 };
+
 
 #endif /* _DEMOFILE_HPP_ */
