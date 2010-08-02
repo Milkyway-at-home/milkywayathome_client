@@ -26,6 +26,8 @@
 
 #include <cstdlib>
 
+#define TEST_MODE
+
 #include "drawhalo.hpp"
 #include "demofile.hpp"
 
@@ -54,6 +56,16 @@ void setOStarPalette( SDL_Surface* surface )
     SDL_SetColors(surface, getOStarPalette(pal), 0, 0x80);
 }
 
+HaloField* getLastFrameNBody()
+{
+    NBodyFile nb("../sim/nbody/plummer1.bin");
+    HaloField* stream = new HaloField(10000);
+    nb.readStars(*stream);
+    return stream;
+}
+
+
+
 int main( int args, char **argv )
 {
 
@@ -64,6 +76,7 @@ int main( int args, char **argv )
 
     double diameter = 7.;
     double fps = 30.;
+    int bpp = 32;
 
     string fileName = argv[1];
 
@@ -75,9 +88,11 @@ int main( int args, char **argv )
     wf.readStars(fileName, wedge, .01);
 
     // Create wedge display
-    FieldAnimation sim(&wedge, diameter, fps);
-    simulation.showCamera();
+    FieldAnimation sim(bpp, fps);
+    sim.add(&wedge, diameter);
+    sim.add(getLastFrameNBody(), diameter*2);
 
+    sim.showCamera();
 //    sim.cv->moveToPoint(Vector3d(-8, 0, 0), 0.);
 //    cam->setFocusPoint(Vector3d(-8, 0, 0));
 
@@ -107,15 +122,13 @@ setFocusAngle(topDist, cEvRot90, 1.);   /// TODO /// Buffered
 setFocusAngle(RandomAngle);   /// TODO /// Buffered with fade-in
 
 */
-    while( simulation.pollDemo() ) ;
 
-
-
+/////////    while( sim.pollDemo() ) ;
 
     while( true )
     {
 
-        if( simulation.pollEvent() ) {
+        if( sim.pollEvent() ) {
             ;
         }
 
