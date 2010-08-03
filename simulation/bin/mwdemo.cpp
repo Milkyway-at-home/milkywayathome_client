@@ -1,6 +1,6 @@
 /*****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010 Shane Reilly, Ben Willet, Matthew Newberg, Heidi      *
+ *  Copyright (C) 2010 Shane Reilly, Ben Willet, Matthew Newby, Heidi        *
  *  Newberg, Malik Magdon-Ismail, Carlos Varela, Boleslaw Szymanski, and     *
  *  Rensselaer Polytechnic Institute                                         *
  *                                                                           *
@@ -30,6 +30,7 @@
 
 #include "drawhalo.hpp"
 #include "demofile.hpp"
+#include "imgplot.hpp"
 
 using namespace std;
 
@@ -84,13 +85,24 @@ int main( int args, char **argv )
     WedgeFile wf;
     int totalStars = wf.getStarTotal(fileName);
     HaloField wedge(totalStars);
-
     wf.readStars(fileName, wedge, .01);
 
-    // Create wedge display
+/*    // Read in wedge 2
+    WedgeFile wf2;
+    totalStars = wf2.getStarTotal("stars_21.txt");
+    HaloField wedge2(totalStars);
+    wf2.readStars("stars_21.txt", wedge2, .01);
+*/
+    // Create display
     FieldAnimation sim(bpp, fps);
+
+    // Read in galaxy
+    ImagePlot imagePlot("eso32.bmp", 10000, 30.*1.18, .3*1.18);
+
     sim.add(&wedge, diameter);
+//    sim.add(&wedge2, diameter);
     sim.add(getLastFrameNBody(), diameter*2);
+    sim.add(imagePlot.getField(), 20.);
 
     sim.showCamera();
 //    sim.cv->moveToPoint(Vector3d(-8, 0, 0), 0.);

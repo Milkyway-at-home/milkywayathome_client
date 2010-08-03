@@ -1,6 +1,6 @@
 /*****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010 Shane Reilly, Ben Willet, Matthew Newberg, Heidi      *
+ *  Copyright (C) 2010 Shane Reilly, Ben Willet, Matthew Newby, Heidi        *
  *  Newberg, Malik Magdon-Ismail, Carlos Varela, Boleslaw Szymanski, and     *
  *  Rensselaer Polytechnic Institute                                         *
  *                                                                           *
@@ -55,6 +55,8 @@ public:
             starTotal = fileGetInt(fstrm);
         }
         done = false;
+
+cout << starTotal << "*********" << endl;
     }
 
     NBodyFile( string fileName, bool binFlag = true )
@@ -76,6 +78,8 @@ public:
         if( done )
             return false;
 
+        stream.clearField();
+
 //cerr << "DEBUG: Location " << (unsigned long long) fstrm.tellg() << endl;
 
         // Confirm number of dimensions (must be 3)
@@ -84,7 +88,6 @@ public:
             dimensions = fileGetIntBin(fstrm);
         else
             dimensions = fileGetInt(fstrm);
-
         if( dimensions!=3 ) {
             cerr << "Location " << fstrm.tellg() << ": ";
             cerr << "Error reading file - dimensions must be 3 (was " << dimensions << ").\n" ;
@@ -106,12 +109,11 @@ public:
         // Get star positions and velocity vectors at current step
         float lineArg[3];
         for( int i = 0; i<starTotal; i++ ) {
-
             if( binFlag )
                 fileGetFloatArrayBin(fstrm, 3, lineArg);
             else
                 fileGetFloatArray(fstrm, 3, lineArg);
-            stream.add(lineArg[0], lineArg[1], lineArg[2], lum);
+            stream.add(lineArg[0], lineArg[1], lineArg[2], lum, 120, 151);
 
         }
 
@@ -234,7 +236,7 @@ public:
             // Offset x to align with galactic center
             x -= 8.;
 
-            field.add(x, y, z, lum);
+            field.add(x, y, z, lum, 64, 45);
 
             if( fstrm.eof() ) {
                 fstrm.close();
