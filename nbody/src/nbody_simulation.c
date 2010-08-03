@@ -179,6 +179,7 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
                         const char* checkpointFileName,
                         const char* histogramFileName,
                         const char* histoutFileName,
+                        const long setSeed,
                         const int outputCartesian,
                         const int printTiming,
                         const int verifyOnly)
@@ -191,7 +192,9 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
     double ts = 0.0, te = 0.0;
     int rc;
 
-    rc = getParamsFromJSON(&ctx, &ic, obj, fitParams);
+    printf("Set seed = %d\n", setSeed);
+
+    rc = getParamsFromJSON(&ctx, &ic, obj, fitParams, setSeed);
     if (verifyOnly)
     {
         if (rc)

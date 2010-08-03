@@ -36,6 +36,7 @@ __attribute__ ((visibility("default"))) void runNBodySimulation(json_object* obj
                                                                 const char* checkpointFileName,
                                                                 const char* histogramFileName,
                                                                 const char* histoutFileName,
+                                                                const long setSeed,
                                                                 const int outputCartesian,
                                                                 const int printTiming,
                                                                 const int verifyOnly);

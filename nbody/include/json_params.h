@@ -78,6 +78,7 @@ typedef struct _Parameter
 #define BASIC_PARAM(name, type, dest) { name, type, dest, NULL, NULL, FALSE, NULL }
 #define DBL_PARAM(name, dest) { name, nbody_type_double, dest, NULL, NULL, FALSE, NULL }
 #define INT_PARAM(name, dest) { name, nbody_type_int, dest, NULL, NULL, FALSE, NULL }
+#define INT_PARAM_DFLT(name, dest, dfl) { name, nbody_type_int, dest, dfl, NULL, FALSE, NULL }
 #define STR_PARAM(name, dest) { name, nbody_type_string, dest, NULL, NULL, FALSE, NULL }
 #define BOOL_PARAM(name, dest) { name, nbody_type_boolean, dest, NULL, NULL, FALSE, NULL }
 #define DBL_PARAM_DFLT(name, dest, dfl) { name, nbody_type_double, dest, dfl, NULL, FALSE, NULL }
@@ -98,7 +99,7 @@ typedef struct _Parameter
 #define OBJ_PARAM(name, items) { name, nbody_type_object, NULL, NULL, NULL, FALSE, items }
 
 /* The only thing that should be used outside of here */
-int getParamsFromJSON(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj, const FitParams* fitParams);
+int getParamsFromJSON(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj, const FitParams* fitParams, const long setSeed);
 
 #ifdef __cplusplus
 }

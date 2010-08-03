@@ -520,7 +520,8 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
 int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
                       InitialConditions* ic,       /* Initial conditions to fill */
                       json_object* fileObj,        /* Parsed JSON file */
-                      const FitParams* fitParams)  /* Hacked in overrides for using server's args */
+                      const FitParams* fitParams,  /* Hacked in overrides for using server's args */
+                      const long setSeed)
 {
     /* Constants used for defaulting. Each field only used if
      * specified in the actual parameter tables. */
@@ -670,7 +671,7 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
     const Parameter nbodyCtxParams[] =
         {
             STR_PARAM("headline",                    &ctx->headline),
-            INT_PARAM("seed",                        &ctx->seed),
+            INT_PARAM_DFLT("seed",                   &ctx->seed, &defaultCtx.seed),
             BOOL_PARAM("use-quadrupole-corrections", &ctx->usequad),
 
             BOOL_PARAM_DFLT("allow-incest",          &ctx->allowIncest, &defaultCtx.allowIncest),
@@ -728,6 +729,7 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
         ctx->model.scale_radius = fitParams->modelRadius;
         ctx->model.time_dwarf   = fitParams->simulationTime;
         ctx->model.time_orbit   = fitParams->reverseOrbitTime;
+        ctx->seed               = setSeed;
     }
 
     rc |= postProcess(ctx);

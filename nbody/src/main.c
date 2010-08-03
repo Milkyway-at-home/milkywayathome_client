@@ -97,6 +97,7 @@ static json_object* readParameters(const int argc,
                                    char** checkpointFileName,
                                    char** histogramFileName,
                                    char** histoutFileName,
+                                   long* setSeed,
                                    int* ignoreCheckpoint,
                                    int* outputCartesian,
                                    int* printTiming,
@@ -194,6 +195,13 @@ static json_object* readParameters(const int argc,
             POPT_ARG_INT | POPT_ARGFLAG_ONEDASH, &numParams,
             0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
         },
+
+        {  /* FIXME: Only used when using the server arguments. */
+            "seed", 'e',
+            POPT_ARG_INT, setSeed,
+            0, "seed for PRNG", NULL
+        },
+
       #endif /* BOINC_APPLICATION */
 
         POPT_AUTOHELP
@@ -335,6 +343,7 @@ int main(int argc, const char* argv[])
     char* histogramFile  = NULL;
     char* histoutFile    = NULL;
     FitParams fitParams  = EMPTY_FIT_PARAMS;
+    long setSeed;
 
     specialSetup();
     nbodyBoincInit();
@@ -346,6 +355,7 @@ int main(int argc, const char* argv[])
                          &checkpointFile,
                          &histogramFile,
                          &histoutFile,
+                         &setSeed,
                          &ignoreCheckpoint,
                          &outputCartesian,
                          &printTiming,
@@ -357,7 +367,7 @@ int main(int argc, const char* argv[])
     stringDefault(histoutFile,    DEFAULT_HISTOUT_FILE);
 
     runNBodySimulation(obj, &fitParams,
-                       outFile, checkpointFile, histogramFile, histoutFile,
+                       outFile, checkpointFile, histogramFile, histoutFile, setSeed,
                        outputCartesian, printTiming, verifyOnly);
 
     free(outFile);
