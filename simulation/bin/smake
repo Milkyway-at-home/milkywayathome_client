@@ -1,1 +1,0 @@
-g++ -o $1 $1.cpp -I../include -I../LModL/include -I../../../SDL-1.2.14/include/SDL -L../../../SDL-1.2.14/lib -lmingw32 -lSDLmain -lSDL -mwindows -O3 -Wall

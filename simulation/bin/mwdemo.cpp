@@ -26,8 +26,6 @@
 
 #include <cstdlib>
 
-#define TEST_MODE
-
 #include "drawhalo.hpp"
 #include "demofile.hpp"
 #include "imgplot.hpp"
@@ -97,12 +95,12 @@ int main( int args, char **argv )
     FieldAnimation sim(bpp, fps);
 
     // Read in galaxy
-    ImagePlot imagePlot("eso32.bmp", 10000, 30.*1.18, .3*1.18);
+    ImagePlot imagePlot("eso32.bmp", 50000, 30.*1.18, .3);
 
     sim.add(&wedge, diameter);
 //    sim.add(&wedge2, diameter);
     sim.add(getLastFrameNBody(), diameter*2);
-    sim.add(imagePlot.getField(), 20.);
+    sim.add(imagePlot.getField(), 10.);
 
     sim.showCamera();
 //    sim.cv->moveToPoint(Vector3d(-8, 0, 0), 0.);
