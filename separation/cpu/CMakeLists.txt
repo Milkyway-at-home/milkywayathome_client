@@ -27,8 +27,7 @@ set(lib_source_file_list evaluation_state.c
                          numericalIntegration.c
                          evaluation_optimized.c
                          parameters.c
-                         star_points.c
-                         astronomy_worker.c)
+                         star_points.c)
 
 add_library(milkyway_separation_cpu STATIC ${lib_source_file_list})
 

@@ -80,14 +80,6 @@ foreach(test ${test_list})
 endforeach()
 
 if(CPU_SEPARATION)
-  separation_test(${EXECUTABLE_OUTPUT_PATH}/milkyway_client "cpu")
-endif()
-
-if(OPENCL_SEPARATION)
-  separation_test(${EXECUTABLE_OUTPUT_PATH}/milkyway_client_ocl "ocl")
-endif()
-
-if(CUDA_SEPARATION)
-  separation_test(${EXECUTABLE_OUTPUT_PATH}/milkyway_client_cuda "cuda")
+  separation_test(${EXECUTABLE_OUTPUT_PATH}/milkyway_separation_client "cpu")
 endif()
 
