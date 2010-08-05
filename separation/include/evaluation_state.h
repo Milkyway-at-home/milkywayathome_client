@@ -27,32 +27,37 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "parameters.h"
 #include "star_points.h"
 
-typedef struct integral_area
+typedef struct
 {
-    int mu_step, nu_step, r_step;
-    int mu_steps, nu_steps, r_steps;
+    unsigned int mu_step, nu_step, r_step;
+    unsigned int mu_steps, nu_steps, r_steps;
     double mu_min, nu_min, r_min;
     double mu_max, nu_max, r_max;
     double mu_step_size, nu_step_size, r_step_size;
 
-    long min_calculation, max_calculation, current_calculation;
+    long min_calculation;
+    long max_calculation;
+    long current_calculation;
 
-    int number_streams;
-    double background_integral, *stream_integrals;
+    unsigned int number_streams;
+    double background_integral;
+    double* stream_integrals;
 } INTEGRAL_AREA;
 
-typedef struct evaluation_state
+typedef struct
 {
     /* State for integral calculation. */
-
-    INTEGRAL_AREA** integral;
-    int current_integral, number_streams, number_integrals;
+    INTEGRAL_AREA* integrals;
+    unsigned int number_integrals;
+    unsigned int current_integral;
+    unsigned int number_streams;
 
     double background_integral;
     double* stream_integrals;
 
     /* State for likelihood calculation. */
-    int current_star_point, total_stars;
+    unsigned int current_star_point;
+    unsigned int total_stars;
     int num_zero;
     int bad_jacobians;
     double prob_sum;
@@ -62,7 +67,7 @@ typedef struct evaluation_state
                                  0, 0, 0, \
                                  0.0, NULL, 0, 0, 0, 0, 0.0 }
 
-void get_steps(INTEGRAL_AREA* ia, int* mu_step_current, int* nu_step_current, int* r_step_current);
+void get_steps(INTEGRAL_AREA* ia, unsigned int* mu_step_current, unsigned int* nu_step_current, unsigned int* r_step_current);
 
 void initialize_state(ASTRONOMY_PARAMETERS* ap, STAR_POINTS* sp, EVALUATION_STATE* es);
 void free_state(EVALUATION_STATE* es);

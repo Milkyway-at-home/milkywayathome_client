@@ -31,7 +31,7 @@ void fwrite_double_array(FILE *file, const char *array_name, double* array_t, si
 {
 	size_t i;
 
-	fprintf(file, "%s[%d]: ", array_name, size);
+	fprintf(file, "%s[%u]: ", array_name, size);
 	for (i = 0; i < size; i++)
     {
 		fprintf(file, "%.20lf", array_t[i]);
@@ -44,7 +44,7 @@ void fwrite_double_array(FILE *file, const char *array_name, double* array_t, si
 void fwrite_int_array(FILE* file, const char* array_name, int* array_t, size_t size)
 {
 	size_t i;
-	fprintf(file, "%s[%d]: ", array_name, size);
+	fprintf(file, "%s[%u]: ", array_name, size);
 	for (i = 0; i < size; i++)
     {
 		if (i == 0)
@@ -60,7 +60,7 @@ void fwrite_int_array(FILE* file, const char* array_name, int* array_t, size_t s
 *****/
 double* fread_double_array(FILE* file, const char* array_name)
 {
-	size_t i, size;
+    unsigned int i, size;
     double* arr;
 
 	fscanf(file, array_name);
@@ -84,7 +84,7 @@ double* fread_double_array(FILE* file, const char* array_name)
 
 int* fread_int_array(FILE *file, const char *array_name)
 {
-	size_t i, size;
+	unsigned int i, size;
 	fscanf(file, array_name);
 	fscanf(file, "[%u]: ", &size);
     int* arr;
@@ -99,7 +99,7 @@ int* fread_int_array(FILE *file, const char *array_name)
 			exit(-1);
 		}
 
-		if (i < size-1)
+		if (i < size - 1)
             fscanf(file, ", ");
 	}
 	fscanf(file, "\n");

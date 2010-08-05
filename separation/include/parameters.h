@@ -29,7 +29,7 @@ typedef struct
     double r_min, r_max, r_step_size;
     double nu_min, nu_max, nu_step_size;
     double mu_min, mu_max, mu_step_size;
-    int r_steps, nu_steps, mu_steps;
+    unsigned int r_steps, nu_steps, mu_steps;
 
     long min_calculation, max_calculation;
 } INTEGRAL;
@@ -63,7 +63,7 @@ typedef struct
 {
     double parameters_version;
 
-    int number_background_parameters;
+    unsigned int number_background_parameters;
     double background_weight;
     double* background_parameters;
     double* background_step;
@@ -77,12 +77,12 @@ typedef struct
     STREAM* stream;
     STREAM_PARAMETERS* parameters;
 
-    int convolve;
-    int sgr_coordinates;
+    unsigned int convolve;
+    unsigned int sgr_coordinates;
     int aux_bg_profile;
     int wedge;
 
-    int number_integrals;
+    unsigned int number_integrals;
     INTEGRAL** integral;
 } ASTRONOMY_PARAMETERS;
 

@@ -53,7 +53,7 @@ double** stream_a, **stream_c, *stream_sigma, *stream_sigma_sq2;
 
 void init_constants(ASTRONOMY_PARAMETERS* ap)
 {
-    int i;
+    unsigned int i;
     stream_sigma     = (double*)malloc(sizeof(double) * ap->number_streams);
     stream_sigma_sq2 = (double*)malloc(sizeof(double) * ap->number_streams);
     stream_a         = (double**)malloc(sizeof(double*) * ap->number_streams);
@@ -81,8 +81,8 @@ void init_constants(ASTRONOMY_PARAMETERS* ap)
         fprintf(stderr,"Error: aux_bg_profile invalid");
     }
 
-    coeff = 1.0 / (stdev * sqrt(2 * pi));
-    alpha_delta3 = 3 - alpha + delta;
+    coeff = 1.0 / (stdev * sqrt(2.0 * pi));
+    alpha_delta3 = 3.0 - alpha + delta;
 
     for (i = 0; i < ap->number_streams; i++)
     {
@@ -160,7 +160,7 @@ void free_constants(ASTRONOMY_PARAMETERS* ap)
     free(xyz);
 }
 
-void set_probability_constants(int n_convolve,
+void set_probability_constants(unsigned int n_convolve,
                                double coords,
                                double* r_point,
                                double* r_in_mag,
@@ -169,7 +169,7 @@ void set_probability_constants(int n_convolve,
                                double* reff_xr_rp3)
 {
     double gPrime, exp_result, g, exponent, r3, N, reff_value, rPrime3;
-    int i;
+    unsigned int i;
 
     //R2MAG
     gPrime = 5.0 * (log10(coords * 1000.0) - 1.0) + absm;
@@ -210,7 +210,7 @@ void calculate_probabilities(double* r_point,
     double bsin, lsin, bcos, lcos, zp;
     double rg, rs, xyzs[3], dotted, xyz_norm;
     double h_prob, aux_prob; //vickej2_bg
-    int i, j;
+    unsigned int i, j;
 
     bsin = sin(integral_point[1] / deg);
     lsin = sin(integral_point[0] / deg);
@@ -296,39 +296,36 @@ void calculate_probabilities(double* r_point,
     }
 }
 
-double calculate_progress(EVALUATION_STATE* s)
+double calculate_progress(EVALUATION_STATE* es)
 {
     double total_calc_probs, current_calc_probs, current_probs;
-    int i, mu_step_current, nu_step_current, r_step_current;
+    unsigned int i, mu_step_current, nu_step_current, r_step_current;
     INTEGRAL_AREA* ia;
 
     total_calc_probs = 0;
     current_calc_probs = 0;
 
-    for (i = 0; i < s->number_integrals; i++)
+    for (i = 0; i < es->number_integrals; i++)
     {
-        ia = s->integral[i];
+        ia = &es->integrals[i];
 
         get_steps(ia, &mu_step_current, &nu_step_current, &r_step_current);
 
-//      printf("mu_step_current: %d, mu_steps: %d, nu_step_current: %d, nu_steps: %d, r_step_current: %d, r_steps: %d\n", mu_step_current, ia->mu_steps, nu_step_current, ia->nu_steps, r_step_current, ia->r_steps);
-
         current_probs = ia->r_steps * ia->mu_steps * ia->nu_steps;
         total_calc_probs += current_probs;
-        if (i < s->current_integral)
+        if (i < es->current_integral)
         {
             current_calc_probs += current_probs;
         }
-        else if (i == s->current_integral)
+        else if (i == es->current_integral)
         {
             current_calc_probs += r_step_current + (nu_step_current * ia->r_steps) + (mu_step_current * ia->nu_steps * ia->r_steps);
         }
-//      printf("total_calc_probs: %.2f, current_calc_probs: %.2f\n", total_calc_probs, current_calc_probs);
+
     }
 
-    total_calc_probs += s->total_stars;
-    current_calc_probs += s->current_star_point;
-//  printf("total_calc_probs: %.2f, current_calc_probs: %.2f, progress: %.10f\n", total_calc_probs, current_calc_probs, (current_calc_probs/total_calc_probs));
+    total_calc_probs += es->total_stars;
+    current_calc_probs += es->current_star_point;
 
     return (double)current_calc_probs / (double)total_calc_probs;
 }
@@ -355,14 +352,12 @@ void do_boinc_checkpoint(EVALUATION_STATE* es)
 }
 #endif
 
-void cpu__r_constants(int n_convolve,
-                      int r_steps,
+void cpu__r_constants(unsigned int n_convolve,
+                      unsigned int r_steps,
                       double r_min,
                       double r_step_size,
-                      int mu_steps,
-                      double mu_min,
                       double mu_step_size,
-                      int nu_steps,
+                      unsigned int nu_steps,
                       double nu_min,
                       double nu_step_size,
                       double* irv,
@@ -374,7 +369,7 @@ void cpu__r_constants(int n_convolve,
                       double* nus,
                       double* ids)
 {
-    int i;
+    unsigned int i;
 
 //vickej2_kpc edits to make volumes even in kpc rather than g
 //vickej2_kpc        double log_r, r, next_r, rPrime;
@@ -396,13 +391,13 @@ void cpu__r_constants(int n_convolve,
         next_r          =       r + r_step_size_kpc;
 
 #else
-        double log_r    =   r_min + (i * r_step_size);
-        r       =   pow(10.0, (log_r - 14.2) / 5.0);
-        next_r      =   pow(10.0, (log_r + r_step_size - 14.2) / 5.0);
+        double log_r = r_min + (i * r_step_size);
+        r = pow(10.0, (log_r - 14.2) / 5.0);
+        next_r = pow(10.0, (log_r + r_step_size - 14.2) / 5.0);
 #endif
 
-        irv[i]      =   (((next_r * next_r * next_r) - (r * r * r)) / 3.0) * mu_step_size / deg;
-        rPrime      =   (next_r + r) / 2.0;
+        irv[i] = (((next_r * next_r * next_r) - (r * r * r)) / 3.0) * mu_step_size / deg;
+        rPrime = (next_r + r) / 2.0;
 
         r_point[i] = (double*)malloc(sizeof(double) * n_convolve);
         r_in_mag[i] = (double*)malloc(sizeof(double) * n_convolve);
@@ -414,14 +409,14 @@ void cpu__r_constants(int n_convolve,
     for (i = 0; i < nu_steps; i++)
     {
         nus[i] = nu_min + (i * nu_step_size);
-        ids[i] = cos((90 - nus[i] - nu_step_size) / deg) - cos((90 - nus[i]) / deg);
+        ids[i] = cos((90.0 - nus[i] - nu_step_size) / deg) - cos((90.0 - nus[i]) / deg);
         nus[i] += 0.5 * nu_step_size;
     }
 }
 
-void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, EVALUATION_STATE* es)
+void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia)
 {
-    int i, mu_step_current, nu_step_current, r_step_current;
+    unsigned int i, mu_step_current, nu_step_current, r_step_current;
     double bg_prob, *st_probs, V;
     double* irv, *reff_xr_rp3, **qw_r3_N, **r_point, **r_in_mag, **r_in_mag2;
     double* ids, *nus;
@@ -442,7 +437,7 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, EVALU
     ids     = (double*)malloc(sizeof(double) * ia->nu_steps);
     nus     = (double*)malloc(sizeof(double) * ia->nu_steps);
     cpu__r_constants(ap->convolve, ia->r_steps, ia->r_min, ia->r_step_size,
-                     ia->mu_steps, ia->mu_min, ia->mu_step_size,
+                     ia->mu_step_size,
                      ia->nu_steps, ia->nu_min, ia->nu_step_size,
                      irv, r_point, r_in_mag, r_in_mag2, qw_r3_N, reff_xr_rp3, nus, ids);
 
@@ -494,7 +489,6 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, EVALU
             {
                 printf("Error: ap->sgr_coordinates not valid");
             }
-//          printf("nu: %d, glong[%d][%d]: %.15lf, glat[%d][%d]: %.15lf\n", nu_step_current, mu_step_current, nu_step_current, integral_point[0], mu_step_current, nu_step_current, integral_point[1]);
 
             for (; r_step_current < ia->r_steps; r_step_current++)
             {
@@ -547,7 +541,6 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, EVALU
 //  printf("\n");
 
 
-//  if (1) exit(0);
     free(nus);
     free(ids);
     free(irv);
@@ -568,9 +561,9 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, EVALU
     free(qw_r3_N);
 }
 
-int calculate_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, const STAR_POINTS* sp)
+int calculate_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
 {
-    int i, j;
+    unsigned int i, j;
 #ifdef MW_ENABLE_DEBUG
   time_t start_time, finish_time;
   time(&start_time);
@@ -581,17 +574,17 @@ int calculate_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, co
 #endif
 
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
-        calculate_integral(ap, es->integral[es->current_integral], es);
+        calculate_integral(ap, &es->integrals[es->current_integral]);
 
-    es->background_integral = es->integral[0]->background_integral;
+    es->background_integral = es->integrals[0].background_integral;
     for (i = 0; i < ap->number_streams; i++)
-        es->stream_integrals[i] = es->integral[0]->stream_integrals[i];
+        es->stream_integrals[i] = es->integrals[0].stream_integrals[i];
 
     for (i = 1; i < ap->number_integrals; i++)
     {
-        es->background_integral -= es->integral[i]->background_integral;
+        es->background_integral -= es->integrals[i].background_integral;
         for (j = 0; j < ap->number_streams; j++)
-            es->stream_integrals[j] -= es->integral[i]->stream_integrals[j];
+            es->stream_integrals[j] -= es->integrals[i].stream_integrals[j];
     }
 
 #ifdef MILKYWAY
@@ -613,7 +606,7 @@ int calculate_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, co
 
 int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, const STAR_POINTS* sp)
 {
-    int i, current_stream;
+    unsigned int i, current_stream;
     double bg_prob, *st_prob;
     double prob_sum, prob_sum_c, temp;  // for Kahan summation
     double exp_background_weight, sum_exp_weights, *exp_stream_weights;
@@ -773,7 +766,7 @@ double cpu_evaluate(double* parameters,
     set_astronomy_parameters(ap, parameters);
     reset_evaluation_state(es);
 
-    retval = calculate_integrals(ap, es, sp);
+    retval = calculate_integrals(ap, es);
     if (retval)
     {
         fprintf(stderr, "APP: error calculating integrals: %d\n", retval);

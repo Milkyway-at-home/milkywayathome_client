@@ -28,7 +28,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 void init_constants(ASTRONOMY_PARAMETERS* ap);
 void free_constants(ASTRONOMY_PARAMETERS* ap);
-void set_probability_constants(int n_convolve,
+
+void set_probability_constants(unsigned int n_convolve,
                                double coords,
                                double* r_point,
                                double* r_in_mag,
@@ -46,15 +47,15 @@ void calculate_probabilities(double* r_point,
                              double* bg_prob,
                              double* st_prob);
 
-int calculate_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, const STAR_POINTS* sp);
+int calculate_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es);
 int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, const STAR_POINTS* sp);
 
-void cpu__r_constants(  int n_convolve,
-                        int r_steps, double r_min, double r_step_size,
-                        int mu_steps, double mu_min, double mu_step_size,
-                        int nu_steps, double nu_min, double nu_step_size,
-                        double* irv, double** r_point, double** r_in_mag, double** r_in_mag2, double** qw_r3_N,
-                        double* reff_xr_rp3, double* nus, double* ids);
+void cpu__r_constants(unsigned int n_convolve,
+                      unsigned int r_steps, double r_min, double r_step_size,
+                      double mu_step_size,
+                      unsigned int nu_steps, double nu_min, double nu_step_size,
+                      double* irv, double** r_point, double** r_in_mag, double** r_in_mag2, double** qw_r3_N,
+                      double* reff_xr_rp3, double* nus, double* ids);
 
 double cpu_evaluate(double* parameters,
                     ASTRONOMY_PARAMETERS* ap,

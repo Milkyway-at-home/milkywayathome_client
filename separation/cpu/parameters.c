@@ -89,7 +89,8 @@ int write_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS* ap)
 
 void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
 {
-    int i, retval;
+    unsigned int i;
+    int retval;
 
     retval = fscanf(file, "parameters_version: %lf\n", &ap->parameters_version);
     if (retval < 1)
@@ -204,7 +205,7 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
 
 void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
 {
-    int i;
+    unsigned int i;
 
     fprintf(file, "parameters_version: %lf\n", ap->parameters_version);
 
@@ -311,8 +312,8 @@ unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap)
 
 void set_astronomy_parameters(ASTRONOMY_PARAMETERS* ap, double* parameters)
 {
-    int i, j;
-    int current = 0;
+    unsigned int i, j;
+    unsigned int current = 0;
 
     for (i = 0; i < ap->number_background_parameters; i++)
     {
