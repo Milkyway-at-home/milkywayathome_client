@@ -42,7 +42,7 @@ void lbr2xyz(const double* lbr, double* xyz)
 
     xyz[2] = lbr[2] * bsin;
     zp = lbr[2] * bcos;
-    d = sqrt( r0 * r0 + zp * zp - 2 * r0 * zp * lcos);
+    d = sqrt( r0 * r0 + zp * zp - 2.0 * r0 * zp * lcos);
     xyz[0] = (zp * zp - r0 * r0 - d * d) / (2 * r0);
     xyz[1] = zp * lsin;
 }
@@ -61,7 +61,7 @@ void xyz2lbr(const double* xyz, double* lbr)
     lbr[2] = sqrt( temp + xyz[2] * xyz[2] );
 
     if ( lbr[0] < 0 )
-        lbr[0] += 360;
+        lbr[0] += 360.0;
 }
 
 /* Convert stream coordinates to lbr given the specified stream parameters. */
@@ -156,16 +156,14 @@ void sgr_stripe_normal(int wedge, double* xyz)
     lamda1 = wedge * 2.5;
     lamda2 = wedge * 2.5;
 
-    beta1 = 0;
-    beta2 = 90;
+    beta1 = 0.0;
+    beta2 = 90.0;
 
     sgrToGal(lamda1, beta1, &l1, &b1);
     sgrToGal(lamda2, beta2, &l2, &b2);
 
     lbToXyz(l1, b1, xyz1);
     lbToXyz(l2, b2, xyz2);
-
-    //printf("lamda=%f, beta=%f, l=%f, b=%f, x=%f, y=%f, z=%f", lamda1, beta1, l1, b1, xyz1[0], xyz1[1], xyz1[2]);
 
 //crossmultiplication of the 2 vectors
     xyz[0] = xyz1[1] * xyz2[2] - xyz1[2] * xyz2[1];

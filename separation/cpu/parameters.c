@@ -284,9 +284,9 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
     }
 }
 
-int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap)
+unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap)
 {
-    int i, j, count = 0;
+    unsigned int i, j, count = 0;
 
     for (i = 0; i < ap->number_background_parameters; i++)
     {
@@ -337,40 +337,6 @@ void set_astronomy_parameters(ASTRONOMY_PARAMETERS* ap, double* parameters)
             {
                 STREAM_PARAM_N(ap, i).stream_parameters[j] = parameters[current];
                 ++current;
-            }
-        }
-    }
-}
-
-void get_step(ASTRONOMY_PARAMETERS* ap, double** result)
-{
-    int i, j, current;
-    current = 0;
-    (*result) = (double*)malloc(sizeof(double) * get_optimized_parameter_count(ap));
-
-    for (i = 0; i < ap->number_background_parameters; i++)
-    {
-        if (ap->background_optimize[i])
-        {
-            (*result)[current] = ap->background_step[i];
-            current++;
-        }
-    }
-
-    for (i = 0; i < ap->number_streams; i++)
-    {
-        if (STREAM_N(ap, i).weight_optimize)
-        {
-            (*result)[current] = STREAM_N(ap, i).weight_step;
-            current++;
-        }
-
-        for (j = 0; j < ap->number_stream_parameters; j++)
-        {
-            if (STREAM_PARAM_N(ap, i).stream_optimize[j])
-            {
-                (*result)[current] = STREAM_PARAM_N(ap, i).stream_step[j];
-                current++;
             }
         }
     }
