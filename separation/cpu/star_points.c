@@ -19,15 +19,17 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "milkyway_priv.h"
 #include "milkyway.h"
 #include "star_points.h"
-
 
 int read_star_points(const char* filename, STAR_POINTS* sp)
 {
     int retval;
-#ifdef BOINC_APPLICATION
+    FILE* data_file;
+#if BOINC_APPLICATION
     char input_path[512];
+    printf("BOINC READING\n");
     retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
     if (retval)
     {
@@ -35,9 +37,9 @@ int read_star_points(const char* filename, STAR_POINTS* sp)
         return retval;
     }
 
-    FILE* data_file = boinc_fopen(input_path, "r");
+    data_file = boinc_fopen(input_path, "r");
 #else
-    FILE* data_file = fopen(filename, "r");
+    data_file = fopen(filename, "r");
 #endif
 
     if (!data_file)
@@ -68,8 +70,12 @@ int write_star_points(const char* filename, STAR_POINTS* sp)
 
 int fread_star_points(FILE* data_file, STAR_POINTS* sp)
 {
-    int i;
-    fscanf(data_file, "%d\n", &sp->number_stars);
+    unsigned int i;
+    if (!fscanf(data_file, "%u\n", &sp->number_stars))
+    {
+        fprintf(stderr, "Failed to read star points file\n");
+        mw_finish(EXIT_FAILURE);
+    }
 
     sp->stars = (double**)malloc(sizeof(double*) * sp->number_stars);
     for (i = 0; i < sp->number_stars; i++)
@@ -77,13 +83,14 @@ int fread_star_points(FILE* data_file, STAR_POINTS* sp)
         sp->stars[i] = (double*)malloc(sizeof(double) * 3);
         fscanf(data_file, "%lf %lf %lf\n", &sp->stars[i][0], &sp->stars[i][1], &sp->stars[i][2]);
     }
+
     return 0;
 }
 
 int fwrite_star_points(FILE* data_file, STAR_POINTS* sp)
 {
     int i;
-    fprintf(data_file, "%d\n", sp->number_stars);
+    fprintf(data_file, "%u\n", sp->number_stars);
 
     for (i = 0; i < sp->number_stars; i++)
     {

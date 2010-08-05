@@ -26,9 +26,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef struct star_points
 {
-    int number_stars;
+    unsigned int number_stars;
     double** stars;
 } STAR_POINTS;
+
+#define EMPTY_STAR_POINTS { 0, NULL }
 
 int read_star_points(const char* file, STAR_POINTS* sp);
 int fread_star_points(FILE* data_file, STAR_POINTS* sp);

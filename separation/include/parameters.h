@@ -70,6 +70,11 @@ typedef struct
     INTEGRAL** integral;
 } ASTRONOMY_PARAMETERS;
 
+#define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0, 0.0, NULL, NULL, NULL, NULL, NULL, \
+                                     0, 0, NULL, NULL, NULL, NULL, NULL, \
+                                     NULL, NULL, NULL, NULL, NULL, \
+                                     0, 0, 0, 0, 0, NULL}
+
 int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap);
 
 int read_astronomy_parameters(const char* file, ASTRONOMY_PARAMETERS* ap);

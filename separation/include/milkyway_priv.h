@@ -21,10 +21,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_PRIV_H_
 #define _MILKYWAY_PRIV_H_
 
+#include "config.h"
+
 #include <stdio.h>
 #include <assert.h>
 
-#include "config.h"
+#if BOINC_APPLICATION
+  #include <boinc_api.h>
+  #include <filesys.h>
+#endif /* BOINC_APPLICATION */
 
 #ifdef MW_ENABLE_DEBUG
     /* convenient functions for printing debugging stuffs */

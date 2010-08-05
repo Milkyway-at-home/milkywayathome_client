@@ -189,9 +189,9 @@ static void worker(int argc, const char** argv)
     double* parameters;
     int ret1, ret2;
     int number_parameters, ap_number_parameters;
-    ASTRONOMY_PARAMETERS ap = { 0 };
-    STAR_POINTS sp = { 0 };
-    EVALUATION_STATE es = { 0 };
+    ASTRONOMY_PARAMETERS ap = EMPTY_ASTRONOMY_PARAMETERS;
+    STAR_POINTS sp = EMPTY_STAR_POINTS;
+    EVALUATION_STATE es = EMPTY_EVALUATION_STATE;
 
     parameters = parse_parameters(argc, argv, &number_parameters);
 

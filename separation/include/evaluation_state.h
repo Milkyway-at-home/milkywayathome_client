@@ -58,6 +58,8 @@ typedef struct evaluation_state
     double prob_sum;
 } EVALUATION_STATE;
 
+#define EMPTY_EVALUATION_STATE { NULL, 0, 0, 0, 0.0, NULL, 0, 0, 0, 0.0 }
+
 void get_steps(INTEGRAL_AREA* ia, int* mu_step_current, int* nu_step_current, int* r_step_current);
 
 void initialize_state(ASTRONOMY_PARAMETERS* ap, STAR_POINTS* sp, EVALUATION_STATE* es);
