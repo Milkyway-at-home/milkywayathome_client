@@ -81,7 +81,7 @@ void init_constants(ASTRONOMY_PARAMETERS* ap)
         fprintf(stderr,"Error: aux_bg_profile invalid");
     }
 
-    coeff = 1 / (stdev * sqrt(2 * pi));
+    coeff = 1.0 / (stdev * sqrt(2 * pi));
     alpha_delta3 = 3 - alpha + delta;
 
     for (i = 0; i < ap->number_streams; i++)
@@ -90,17 +90,18 @@ void init_constants(ASTRONOMY_PARAMETERS* ap)
 
         stream_a[i] = (double*)malloc(sizeof(double) * 3);
         stream_c[i] = (double*)malloc(sizeof(double) * 3);
-        stream_sigma[i] = ap->stream_parameters[i][4];
+        stream_sigma[i] = STREAM_PARAM_N(ap, i).stream_parameters[4];
         stream_sigma_sq2[i] = 2.0 * stream_sigma[i] * stream_sigma[i];
 
         if (ap->sgr_coordinates == 0)
         {
-            atGCToEq(ap->stream_parameters[i][0], 0, &ra, &dec, get_node(), wedge_incl(ap->wedge));
+            atGCToEq(STREAM_PARAM_N(ap, i).stream_parameters[0],
+                     0, &ra, &dec, get_node(), wedge_incl(ap->wedge));
             atEqToGal(ra, dec, &l, &b);
         }
         else if (ap->sgr_coordinates == 1)
         {
-            gcToSgr(ap->stream_parameters[i][0], 0, ap->wedge, &lamda, &beta);
+            gcToSgr(STREAM_PARAM_N(ap, i).stream_parameters[0], 0, ap->wedge, &lamda, &beta);
             sgrToGal(lamda, beta, &l, &b);
         }
         else
@@ -110,12 +111,16 @@ void init_constants(ASTRONOMY_PARAMETERS* ap)
 
         lbr[0] = l;
         lbr[1] = b;
-        lbr[2] = ap->stream_parameters[i][1];
+        lbr[2] = STREAM_PARAM_N(ap, i).stream_parameters[1];
         lbr2xyz(lbr, stream_c[i]);
 
-        stream_a[i][0] = sin(ap->stream_parameters[i][2]) * cos(ap->stream_parameters[i][3]);
-        stream_a[i][1] = sin(ap->stream_parameters[i][2]) * sin(ap->stream_parameters[i][3]);
-        stream_a[i][2] = cos(ap->stream_parameters[i][2]);
+        stream_a[i][0] =   sin(STREAM_PARAM_N(ap, i).stream_parameters[2])
+                         * cos(STREAM_PARAM_N(ap, i).stream_parameters[3]);
+
+        stream_a[i][1] =   sin(STREAM_PARAM_N(ap, i).stream_parameters[2])
+                         * sin(STREAM_PARAM_N(ap, i).stream_parameters[3]);
+
+        stream_a[i][2] = cos(STREAM_PARAM_N(ap, i).stream_parameters[2]);
     }
 
     xyz     = (double**) malloc(sizeof(double*) * ap->convolve);
@@ -134,7 +139,7 @@ void init_constants(ASTRONOMY_PARAMETERS* ap)
 
 void free_constants(ASTRONOMY_PARAMETERS* ap)
 {
-    int i;
+    unsigned int i;
 
     free(stream_sigma);
     free(stream_sigma_sq2);
@@ -150,26 +155,31 @@ void free_constants(ASTRONOMY_PARAMETERS* ap)
     free(qgaus_W);
     free(dx);
     for (i = 0; i < ap->convolve; i++)
-    {
         free(xyz[i]);
-    }
+
     free(xyz);
 }
 
-void set_probability_constants(int n_convolve, double coords, double* r_point, double* r_in_mag, double* r_in_mag2, double* qw_r3_N, double* reff_xr_rp3)
+void set_probability_constants(int n_convolve,
+                               double coords,
+                               double* r_point,
+                               double* r_in_mag,
+                               double* r_in_mag2,
+                               double* qw_r3_N,
+                               double* reff_xr_rp3)
 {
     double gPrime, exp_result, g, exponent, r3, N, reff_value, rPrime3;
     int i;
 
     //R2MAG
-    gPrime = 5.0 * (log10(coords * 1000) - 1.0) + absm;
+    gPrime = 5.0 * (log10(coords * 1000.0) - 1.0) + absm;
 
     //REFF
     exp_result = exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));
     reff_value = sigmoid_curve_params[0] / (exp_result + 1);
     rPrime3 = coords * coords * coords;
 
-    (*reff_xr_rp3) = reff_value * xr / rPrime3;
+    *reff_xr_rp3 = reff_value * xr / rPrime3;
 
     for (i = 0; i < n_convolve; i++)
     {
@@ -256,10 +266,10 @@ void calculate_probabilities(double* r_point,
 
                 rg = sqrt(xyz[i][0] * xyz[i][0] + xyz[i][1] * xyz[i][1] + (xyz[i][2] * xyz[i][2]) / (q * q));
 
-                (*bg_prob) += qw_r3_N[i] / (pow(rg, alpha) * pow(rg + r0, alpha_delta3));
+                *bg_prob += qw_r3_N[i] / (pow(rg, alpha) * pow(rg + r0, alpha_delta3));
             }
         }
-        (*bg_prob) *= reff_xr_rp3;
+        *bg_prob *= reff_xr_rp3;
     }
 
     for (i = 0; i < ap->number_streams; i++)
@@ -631,8 +641,8 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, c
     sum_exp_weights = exp_background_weight;
     for (i = 0; i < ap->number_streams; i++)
     {
-        exp_stream_weights[i] = exp(ap->stream_weights[i]);
-        sum_exp_weights += exp(ap->stream_weights[i]);
+        exp_stream_weights[i] = exp(STREAM_N(ap, i).weights);
+        sum_exp_weights += exp(STREAM_N(ap, i).weights);
     }
     sum_exp_weights *= 0.001;
 

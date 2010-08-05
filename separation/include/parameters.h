@@ -36,6 +36,31 @@ typedef struct
 
 typedef struct
 {
+    double weights;
+    double weight_step;
+    double weight_min;
+    double weight_max;
+    int weight_optimize;
+} STREAM;
+
+#define EMPTY_STREAM { 0.0, 0.0, 0.0, 0.0, 0 }
+
+typedef struct
+{
+    double* stream_parameters;
+    double* stream_step;
+    double* stream_min;
+    double* stream_max;
+    int* stream_optimize;
+} STREAM_PARAMETERS;
+
+#define EMPTY_STREAM_PARAMETERS { NULL, NULL, NULL, NULL, NULL }
+
+#define STREAM_N(ap, n) ((ap)->stream[(n)])
+#define STREAM_PARAM_N(ap, n) ((ap)->parameters[(n)])
+
+typedef struct
+{
     double parameters_version;
 
     int number_background_parameters;
@@ -46,20 +71,11 @@ typedef struct
     double* background_max;
     int* background_optimize;
 
-    int number_streams;
-    int number_stream_parameters;
+    unsigned int number_streams;
+    unsigned int number_stream_parameters;
 
-    double* stream_weights;
-    double* stream_weight_step;
-    double* stream_weight_min;
-    double* stream_weight_max;
-    int* stream_weight_optimize;
-
-    double** stream_parameters;
-    double** stream_step;
-    double** stream_min;
-    double** stream_max;
-    int** stream_optimize;
+    STREAM* stream;
+    STREAM_PARAMETERS* parameters;
 
     int convolve;
     int sgr_coordinates;
@@ -71,9 +87,9 @@ typedef struct
 } ASTRONOMY_PARAMETERS;
 
 #define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0, 0.0, NULL, NULL, NULL, NULL, NULL, \
-                                     0, 0, NULL, NULL, NULL, NULL, NULL, \
-                                     NULL, NULL, NULL, NULL, NULL, \
-                                     0, 0, 0, 0, 0, NULL}
+                                     0, 0, NULL, NULL, \
+                                     0, 0, 0, 0, 0, NULL }
+
 
 int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap);
 
@@ -83,12 +99,7 @@ int write_astronomy_parameters(const char* file, ASTRONOMY_PARAMETERS* ap);
 void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap);
 void free_parameters(ASTRONOMY_PARAMETERS* ap);
 
-void split_astronomy_parameters(ASTRONOMY_PARAMETERS* ap, int rank, int max_rank);
-
 void set_astronomy_parameters(ASTRONOMY_PARAMETERS* ap, double* parameters);
-void get_search_parameters(ASTRONOMY_PARAMETERS* ap, double** parameters);
-void get_min_parameters(ASTRONOMY_PARAMETERS* ap, double** parameters);
-void get_max_parameters(ASTRONOMY_PARAMETERS* ap, double** parameters);
 void get_step(ASTRONOMY_PARAMETERS* ap, double** step);
 
 #endif
