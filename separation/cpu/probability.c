@@ -162,7 +162,6 @@ double stPsgFunction(const double* coordpar, const double* spars, int wedge, int
         gcToSgr(mu, 0, wedge, &lamda, &beta);
         sgrToGal(lamda, beta, &l, &b);
         // <<<make sure the conversion is correct (check with conversiontester.vb)>>>
-        MW_DEBUG(" wedge=%i, mui=%f, nui=0, lamda=%f, beta=%f, l=%f, b=%f", wedge, mu, lamda, beta, l, b);
     }
     else
     {
@@ -193,10 +192,8 @@ double stPsgFunction(const double* coordpar, const double* spars, int wedge, int
 
     xyz_norm = norm(xyz);
 
-    MW_DEBUG("dotted: %lf, xyz_norm: %lf, sigma: %lf\n", dotted, xyz_norm, sigma);
     prob = exp( -(xyz_norm * xyz_norm) / 2 / (sigma * sigma) );
 
-    MW_DEBUG("prob before ref: %lf\n", prob);
     return prob;
 }
 
@@ -280,7 +277,7 @@ double backgroundConvolve(double g, int wedge)
     coordparConvolved[2] = r;
 
     exponent = (g - gPrime) * (g - gPrime) / (2 * stdev * stdev);
-    coeff = 1 / (stdev * sqrt(2 * PI));
+    coeff = 1.0 / (stdev * sqrt(2 * PI));
     N = coeff * exp(-exponent);     //value of gaussian convolution function
 
     pbx = stPbxFunction(coordparConvolved, bparsConvolved);         //prob of star in background given app mag, g
@@ -333,7 +330,7 @@ int prob_ok(int n, double* p)
         {
             ok = 0;
         }
-        else if ( (r < p[0]) )
+        else if (r < p[0])
         {
             ok = 1;
         }
@@ -349,7 +346,7 @@ int prob_ok(int n, double* p)
         {
             ok = 0;
         }
-        else if ( (r < p[0]) )
+        else if (r < p[0])
         {
             ok = 1;
         }
@@ -370,7 +367,7 @@ int prob_ok(int n, double* p)
         {
             ok = 0;
         }
-        else if ( (r <= p[0]) )
+        else if (r <= p[0])
         {
             ok = 1;
         }
@@ -391,7 +388,7 @@ int prob_ok(int n, double* p)
         fprintf(stderr,
                 "ERROR:  Too many streams to separate using current code; "
                 "please update the switch statement in probability.c->prob_ok to handle %d streams", n);
-        exit(EXIT_SUCCESS);
+        mw_finish(EXIT_FAILURE);
     }
     return ok;
 }

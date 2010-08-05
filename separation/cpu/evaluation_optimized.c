@@ -207,8 +207,6 @@ void calculate_probabilities(double* r_point,
     bcos = cos(integral_point[1] / deg);
     lcos = cos(integral_point[0] / deg);
 
-    MW_DEBUG("bsin: %.15f lsin: %.15f bcos: %.15f lcos: %.15f\n", bsin, lsin, bcos, lcos);
-
     /* if q is 0, there is no probability */
     if (q == 0)
     {
@@ -245,15 +243,6 @@ void calculate_probabilities(double* r_point,
                 {
                     fprintf(stderr, "Error: aux_bg_profile invalid");
                 }
-
-              MW_DEBUG("reff_xr_rp3: %.15lf r_point: %.15lf rg: %.15lf "
-                       "rs: %.15lf qw_r3_N: %.15lf bg_int: %.15lf\n",
-                       reff_xr_rp3,
-                       r_point[i],
-                       rg,
-                       rs,
-                       qw_r3_N[i],
-                       (*bg_prob));
             }
         }
         else
@@ -292,7 +281,6 @@ void calculate_probabilities(double* r_point,
 
             xyz_norm = xyzs[0] * xyzs[0] + xyzs[1] * xyzs[1] + xyzs[2] * xyzs[2];
             st_prob[i] += qw_r3_N[j] * exp(-xyz_norm / stream_sigma_sq2[i]);
-            MW_DEBUG("st_int[%d]: %.15lf sxyz0: %.15lf sxyz1: %.15lf sxyz2: %.15lf\n", i, st_prob[i], xyzs[0], xyzs[1], xyzs[2]);
         }
         st_prob[i] *= reff_xr_rp3;
     }
@@ -608,7 +596,6 @@ int calculate_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, co
 
     #ifdef MW_ENABLE_DEBUG
     time(&finish_time);
-    MW_DEBUG("integrals calculated in: %lf\n", (double)finish_time - (double)start_time);
     #endif
 
     return 0;
@@ -704,8 +691,6 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, c
         }
         star_prob /= sum_exp_weights;
 
-        MW_DEBUG(", prob_sum: %.15lf\n", star_prob);
-
         if (star_prob != 0.0)
         {
             star_prob = log10(star_prob);
@@ -735,8 +720,6 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, c
     }
     fprintf(stderr, " </stream_only_likelihood>\n");
 #endif
-
-    MW_DEBUG("prob_sum: %.15lf\n", es->prob_sum);
 
     free(exp_stream_weights);
     free(st_prob);
@@ -773,8 +756,6 @@ double cpu_evaluate(double* parameters,
         fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
         mw_finish(retval);
     }
-
-    MW_DEBUG("calculated integrals: %lf, %lf\n", es->background_integral, es->stream_integrals[0]);
 
     retval = calculate_likelihood(ap, es, sp);
     free_constants(ap);

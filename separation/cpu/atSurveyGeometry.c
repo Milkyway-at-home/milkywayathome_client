@@ -246,7 +246,6 @@ void slaEqgal ( double dr, double dd, double* dl, double* db )
 //in this manner an equatorial stripe of standard coordinate conventions is created.
 void gcToSgr ( double mu, double nu, int wedge, double* lamda, double* beta )
 {
-    MW_DEBUG(" ***mui=%f, nui=%f", mu, nu);
     double radpdeg = 3.141592653589793 / 180;
     mu = mu * radpdeg;
     nu = nu * radpdeg;
@@ -265,8 +264,6 @@ void gcToSgr ( double mu, double nu, int wedge, double* lamda, double* beta )
 
     *beta = asin(z);
     *beta = *beta / radpdeg;
-
-    MW_DEBUG(" lamdao=%f, betao=%f", *lamda, *beta);
 
     return;
 }
@@ -289,8 +286,6 @@ void sgrToGal ( double lamda, double beta, double* l, double* b)
     double rot32 = (cos(psi) * sin(theta)) / (pow(cos(psi), 2) * pow(cos(theta), 2) + pow(sin(psi), 2) * pow(sin(theta), 2) + pow(cos(psi), 2) * pow(sin(theta), 2) + pow(sin(psi), 2) * pow(cos(theta), 2));
     double rot33 = cos(theta) / (pow(cos(theta), 2) + pow(sin(theta), 2));
     double x2 = 0.0, y2 = 0.0;
-
-    MW_DEBUG(" lamdai=%f, betai=%f", lamda, beta);
 
     if (beta > 90)
     {
@@ -405,8 +400,6 @@ void sgrToGal ( double lamda, double beta, double* l, double* b)
             *l = *l + 360;
         }
     }
-
-    MW_DEBUG(" l=%f, b=%f", *l, *b);
 
     return;
 }

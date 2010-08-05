@@ -157,24 +157,10 @@ void get_steps(INTEGRAL_AREA* ia, int* mu_step, int* nu_step, int* r_step)
 
     *r_step = ia->current_calculation % ia->r_steps;
 
-    MW_DEBUG("r_step = [current: %ld] mod [r_steps: %d] = %d\n",
-             ia->current_calculation, ia->r_steps,
-             *r_step);
-
     *nu_step = (ia->current_calculation / ia->r_steps) % ia->nu_steps;
 
-    MW_DEBUG("nu_step = [current: %ld] / [r_steps: %d] mod [nu_steps: %d] = %d\n",
-             ia->current_calculation,
-             ia->r_steps,
-             ia->nu_steps,
-             *nu_step);
+    *mu_step = ia->current_calculation / (ia->r_steps * ia->nu_steps);
 
-    (*mu_step) = ia->current_calculation / (ia->r_steps * ia->nu_steps);
-
-    MW_DEBUG("mu_step = [current: %ld] / [r_steps: %d * nu_steps: %d] = %d\n",
-             ia->current_calculation,
-             ia->r_steps, ia->nu_steps,
-             *mu_step);
 #endif
 }
 
