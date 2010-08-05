@@ -657,16 +657,29 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, c
     {
         double star_prob;
 
-        set_probability_constants(ap->convolve, sp->stars[es->current_star_point][2], r_point, r_in_mag, r_in_mag2, qw_r3_N, &reff_xr_rp3);
-        calculate_probabilities(r_point, r_in_mag, r_in_mag2, qw_r3_N, reff_xr_rp3, sp->stars[es->current_star_point], ap, &bg_prob, st_prob);
+        set_probability_constants(ap->convolve,
+                                  ZN(sp, es->current_star_point),
+                                  r_point,
+                                  r_in_mag,
+                                  r_in_mag2,
+                                  qw_r3_N,
+                                  &reff_xr_rp3);
 
-        //      printf("bg_prob: %.15lf, st_prob[0]: %.15lf, st_prob[1]: %.15lf", bg_prob, st_prob[0], st_prob[1]);
+        calculate_probabilities(r_point,
+                                r_in_mag,
+                                r_in_mag2,
+                                qw_r3_N,
+                                reff_xr_rp3,
+                                &VN(sp, es->current_star_point),
+                                ap,
+                                &bg_prob,
+                                st_prob);
 
         bg_only = (bg_prob / es->background_integral) * exp_background_weight;
         star_prob = bg_only;
 
         if (bg_only == 0.0)
-            bg_only = -238;
+            bg_only = -238.0;
         else
             bg_only = log10(bg_only / sum_exp_weights);
 
@@ -681,7 +694,7 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, c
             star_prob += st_only;
 
             if (st_only == 0.0)
-                st_only = -238;
+                st_only = -238.0;
             else
                 st_only = log10(st_only / sum_exp_weights);
 

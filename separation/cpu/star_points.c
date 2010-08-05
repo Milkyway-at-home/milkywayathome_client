@@ -77,63 +77,26 @@ int fread_star_points(FILE* data_file, STAR_POINTS* sp)
         mw_finish(EXIT_FAILURE);
     }
 
-    sp->stars = (double**)malloc(sizeof(double*) * sp->number_stars);
+    sp->stars = (double*) malloc(sizeof(double) * VECTOR_SIZE * sp->number_stars);
     for (i = 0; i < sp->number_stars; i++)
-    {
-        sp->stars[i] = (double*)malloc(sizeof(double) * 3);
-        fscanf(data_file, "%lf %lf %lf\n", &sp->stars[i][0], &sp->stars[i][1], &sp->stars[i][2]);
-    }
+        fscanf(data_file, "%lf %lf %lf\n", &XN(sp, i), &YN(sp, i), &ZN(sp, i));
 
     return 0;
 }
 
 int fwrite_star_points(FILE* data_file, STAR_POINTS* sp)
 {
-    int i;
+    unsigned int i;
     fprintf(data_file, "%u\n", sp->number_stars);
 
     for (i = 0; i < sp->number_stars; i++)
-    {
-        fprintf(data_file, "%lf %lf %lf\n", sp->stars[i][0], sp->stars[i][1], sp->stars[i][2]);
-    }
+        fprintf(data_file, "%lf %lf %lf\n", XN(sp, i), YN(sp, i), ZN(sp, i));
+
     return 0;
 }
 
 void free_star_points(STAR_POINTS* sp)
 {
-    int i;
-    for (i = 0; i < sp->number_stars; i++)
-    {
-        free(sp->stars[i]);
-    }
     free(sp->stars);
-}
-
-void split_star_points(STAR_POINTS* sp, int rank, int max_rank)
-{
-    int first_star, last_star, num_stars;
-    int i, total_stars;
-    double** new_stars;
-
-    if (rank == 0 && max_rank == 0) return;
-
-    first_star = (int) (((double)sp->number_stars) * (((double)rank) / ((double)max_rank)));
-    last_star = (int) (((double)sp->number_stars) * (((double)rank + 1.0) / ((double)max_rank)));
-    num_stars = last_star - first_star;
-    new_stars = (double**)malloc(sizeof(double*) * num_stars);
-    total_stars = sp->number_stars;
-
-    for (i = 0; i < num_stars; i++)
-    {
-        new_stars[i] = (double*)malloc(sizeof(double) * 3);
-        new_stars[i][0] = sp->stars[i+first_star][0];
-        new_stars[i][1] = sp->stars[i+first_star][1];
-        new_stars[i][2] = sp->stars[i+first_star][2];
-    }
-    free_star_points(sp);
-    sp->stars = new_stars;
-    sp->number_stars = num_stars;
-
-//  printf("[worker: %d] using [%d/%d] stars\n", rank, sp->number_stars, total_stars);
 }
 

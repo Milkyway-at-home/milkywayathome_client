@@ -24,10 +24,18 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 
+#define VECTOR_SIZE 3
+
+/* Get the xth component of the nth item in STAR_POINTS */
+#define VN(sp, n) ((sp->stars)[VECTOR_SIZE * (n)])
+#define XN(sp, n) VN(sp,n)
+#define YN(sp, n) ((sp->stars)[VECTOR_SIZE * (n) + 1])
+#define ZN(sp, n) ((sp->stars)[VECTOR_SIZE * (n) + 2])
+
 typedef struct star_points
 {
     unsigned int number_stars;
-    double** stars;
+    double* stars;
 } STAR_POINTS;
 
 #define EMPTY_STAR_POINTS { 0, NULL }
