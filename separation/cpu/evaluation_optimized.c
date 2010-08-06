@@ -782,22 +782,23 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, c
 }
 
 
-double cpu_evaluate(ASTRONOMY_PARAMETERS* ap,
-                    EVALUATION_STATE* es,
-                    STAR_POINTS* sp)
+double cpu_evaluate(ASTRONOMY_PARAMETERS* ap, STAR_POINTS* sp)
 {
     int retval;
+    EVALUATION_STATE es = EMPTY_EVALUATION_STATE;
 
-    reset_evaluation_state(es);
+    initialize_state(ap, sp, &es);
 
-    retval = calculate_integrals(ap, es);
+    reset_evaluation_state(&es);
+
+    retval = calculate_integrals(ap, &es);
     if (retval)
     {
         fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
         mw_finish(retval);
     }
 
-    retval = calculate_likelihood(ap, es, sp);
+    retval = calculate_likelihood(ap, &es, sp);
     if (retval)
     {
         fprintf(stderr, "APP: error calculating likelihood: %d\n", retval);
@@ -805,7 +806,7 @@ double cpu_evaluate(ASTRONOMY_PARAMETERS* ap,
     }
 
     /*  log10(x * 0.001) = log10(x) - 3.0 */
-    return (es->prob_sum / (sp->number_stars - es->bad_jacobians)) - 3.0;
+    return (es.prob_sum / (sp->number_stars - es.bad_jacobians)) - 3.0;
 }
 
 

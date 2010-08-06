@@ -191,7 +191,6 @@ static void worker(int argc, const char** argv)
     int number_parameters, ap_number_parameters;
     ASTRONOMY_PARAMETERS ap = EMPTY_ASTRONOMY_PARAMETERS;
     STAR_POINTS sp = EMPTY_STAR_POINTS;
-    EVALUATION_STATE es = EMPTY_EVALUATION_STATE;
 
     parameters = parse_parameters(argc, argv, &number_parameters);
 
@@ -229,8 +228,6 @@ static void worker(int argc, const char** argv)
 		mw_finish(EXIT_FAILURE);
     }
 
-    initialize_state(&ap, &sp, &es);
-
     ap_number_parameters = get_optimized_parameter_count(&ap);
 
     if (number_parameters < 1 || number_parameters != ap_number_parameters)
@@ -261,7 +258,7 @@ static void worker(int argc, const char** argv)
     #error "Must choose CUDA, OpenCL or CPU"
 #endif /* COMPUTE_ON_CPU */
 
-    double likelihood = evaluate(&ap, &es, &sp);
+    double likelihood = evaluate(&ap, &sp);
 
     fprintf(stderr, "<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
     fprintf(stderr, "<search_application> %s </search_application>\n", BOINC_APP_VERSION);
