@@ -192,8 +192,6 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
     double ts = 0.0, te = 0.0;
     int rc;
 
-    printf("Set seed = %d\n", setSeed);
-
     rc = getParamsFromJSON(&ctx, &ic, obj, fitParams, setSeed);
     if (verifyOnly)
     {
