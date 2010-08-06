@@ -28,6 +28,7 @@
 #define _DEMOFILE_HPP_
 
 #include "binfile.hpp"
+#include "astroconv.h"
 
 
 class NBodyFile
@@ -55,8 +56,6 @@ public:
             starTotal = fileGetInt(fstrm);
         }
         done = false;
-
-cout << starTotal << "*********" << endl;
     }
 
     NBodyFile( string fileName, bool binFlag = true )
@@ -151,6 +150,19 @@ cout << starTotal << "*********" << endl;
 
 };
 
+struct WedgeInfo
+{
+    bool initialized;
+
+    double lCenter;
+    double center;
+    double rCenter;
+    double maxDistance;
+
+    Vector3d crossVector;
+    Vector3d depthVector;
+
+};
 
 class WedgeFile
 {
@@ -161,12 +173,14 @@ private:
     string fileName;
     int starTotal;
     bool binFlag;
+    WedgeInfo wedgeInfo;
 
 public:
 
     void reset()
     {
         starTotal = 0;
+        wedgeInfo.initialized = false;
     }
 
     WedgeFile( bool binFlag = false )
@@ -258,6 +272,22 @@ public:
 
         fstrm.close();
 
+    }
+
+    const WedgeInfo getWedgeInfo()
+    {
+
+        wedgeInfo.lCenter = 0.;
+        wedgeInfo.center = 0.;
+        wedgeInfo.rCenter = 0.;
+        wedgeInfo.maxDistance = 0.;
+
+        wedgeInfo.crossVector = Vector3d(0., 0., 0.);
+        wedgeInfo.depthVector = Vector3d(0., 0., 0.);
+
+//        wedgeInfo.depthVector =
+        wedgeInfo.initialized = true;
+        return (const WedgeInfo) wedgeInfo;
     }
 
 };

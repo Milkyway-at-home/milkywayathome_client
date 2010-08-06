@@ -33,7 +33,7 @@ extern "C" {
 
 #include <math.h>
 
-void raDecRadToCart(ra, dec, r, &x, &y, &z)
+void raDecRadToCart( double ra, double dec, double r, double &x, double &y, double &z )
 {
 
     // RA/Dec to cartesian conversion
@@ -50,9 +50,9 @@ void raDecRadToCart(ra, dec, r, &x, &y, &z)
     double c1 = t0*mm[1][0] + t1*mm[1][1] + t2*mm[1][2];
     double c2 = t0*mm[2][0] + t1*mm[2][1] + t2*mm[2][2];
 
-    double x = r*c0;
-    double y = r*c1;
-    double z = r*c2;
+    x = r*c0;
+    y = r*c1;
+    z = r*c2;
 
 }
 

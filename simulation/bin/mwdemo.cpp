@@ -85,27 +85,18 @@ int main( int args, char **argv )
     HaloField wedge(totalStars);
     wf.readStars(fileName, wedge, .01);
 
-/*    // Read in wedge 2
-    WedgeFile wf2;
-    totalStars = wf2.getStarTotal("stars_21.txt");
-    HaloField wedge2(totalStars);
-    wf2.readStars("stars_21.txt", wedge2, .01);
-*/
     // Create display
     FieldAnimation sim(bpp, fps);
 
     // Read in galaxy
-    ImagePlot imagePlot("eso32.bmp", 50000, 30.*1.18, .3);
+    ImagePlot imagePlot("eso32.bmp", 25000, 30.*1.18, .3);
 
     sim.add(&wedge, diameter);
-//    sim.add(&wedge2, diameter);
     sim.add(getLastFrameNBody(), diameter*2);
     sim.add(imagePlot.getField(), 10.);
 
     sim.showCamera();
-//    sim.cv->moveToPoint(Vector3d(-8, 0, 0), 0.);
-//    cam->setFocusPoint(Vector3d(-8, 0, 0));
-
+    sim.cv->setFocusPoint(sim.cv->getFocusPoint(100., 45., 30.), 0.);
 
 //setFocusPoint(Vector3d{-8, 0, 0});
 //moveTo(Vector3d{-8, 0, 0}, 0.);
