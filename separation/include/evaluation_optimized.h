@@ -26,8 +26,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "parameters.h"
 #include "star_points.h"
 
-void init_constants(ASTRONOMY_PARAMETERS* ap);
-void free_constants(ASTRONOMY_PARAMETERS* ap);
+typedef struct
+{
+    vector stream_a;
+    vector stream_c;
+    double stream_sigma;
+    double stream_sigma_sq2;
+} STREAM_CONSTANTS;
+
+STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap);
+void free_constants(ASTRONOMY_PARAMETERS* ap, STREAM_CONSTANTS* sc);
 
 void set_probability_constants(unsigned int n_convolve,
                                double coords,
@@ -44,11 +52,18 @@ void calculate_probabilities(double* r_point,
                              double reff_xr_rp3,
                              double* integral_point,
                              const ASTRONOMY_PARAMETERS* ap,
+                             const STREAM_CONSTANTS* sc,
                              double* bg_prob,
                              double* st_prob);
 
-int calculate_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es);
-int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, const STAR_POINTS* sp);
+int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
+                        const STREAM_CONSTANTS* sc,
+                        EVALUATION_STATE* es);
+
+int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
+                         const STREAM_CONSTANTS* sc,
+                         EVALUATION_STATE* es,
+                         const STAR_POINTS* sp);
 
 void cpu__r_constants(unsigned int n_convolve,
                       unsigned int r_steps, double r_min, double r_step_size,
@@ -57,7 +72,7 @@ void cpu__r_constants(unsigned int n_convolve,
                       double* irv, double** r_point, double** r_in_mag, double** r_in_mag2, double** qw_r3_N,
                       double* reff_xr_rp3, double* nus, double* ids);
 
-double cpu_evaluate(ASTRONOMY_PARAMETERS* ap, STAR_POINTS* sp);
+double cpu_evaluate(ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, const STREAM_CONSTANTS* sc);
 
 #endif
 

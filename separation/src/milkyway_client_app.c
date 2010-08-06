@@ -247,7 +247,7 @@ static void worker(int argc, const char** argv)
 
     set_astronomy_parameters(&ap, parameters);
 
-    init_constants(&ap);
+    STREAM_CONSTANTS* cs = init_constants(&ap);
 #if COMPUTE_ON_CPU
     init_simple_evaluator(cpu_evaluate);
 #elif USE_CUDA
@@ -258,12 +258,12 @@ static void worker(int argc, const char** argv)
     #error "Must choose CUDA, OpenCL or CPU"
 #endif /* COMPUTE_ON_CPU */
 
-    double likelihood = evaluate(&ap, &sp);
+    double likelihood = evaluate(&ap, &sp, cs);
 
     fprintf(stderr, "<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
     fprintf(stderr, "<search_application> %s </search_application>\n", BOINC_APP_VERSION);
 
-    free_constants(&ap);
+    free_constants(&ap, cs);
     free(parameters);
 	cleanup_worker();
 

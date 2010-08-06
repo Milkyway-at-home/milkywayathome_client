@@ -162,7 +162,7 @@ void initialize_integral_area(INTEGRAL_AREA* ia, INTEGRAL* integral, unsigned in
         ia->stream_integrals[i] = 0;
 }
 
-void initialize_state(ASTRONOMY_PARAMETERS* ap, STAR_POINTS* sp, EVALUATION_STATE* es)
+void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVALUATION_STATE* es)
 {
     unsigned int i;
 

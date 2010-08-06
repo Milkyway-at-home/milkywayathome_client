@@ -69,7 +69,7 @@ typedef struct
 
 void get_steps(INTEGRAL_AREA* ia, unsigned int* mu_step_current, unsigned int* nu_step_current, unsigned int* r_step_current);
 
-void initialize_state(ASTRONOMY_PARAMETERS* ap, STAR_POINTS* sp, EVALUATION_STATE* es);
+void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVALUATION_STATE* es);
 void free_state(EVALUATION_STATE* es);
 void reset_evaluation_state(EVALUATION_STATE* es);
 

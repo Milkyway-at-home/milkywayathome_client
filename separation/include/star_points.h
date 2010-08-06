@@ -26,6 +26,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define VECTOR_SIZE 3
 
+typedef double vector[VECTOR_SIZE];
+
+#define X(v) ((v)[0])
+#define Y(v) ((v)[1])
+#define Z(v) ((v)[2])
+
+#define L(v) ((v)[0])
+#define B(v) ((v)[1])
+#define R(v) ((v)[2])
+
 /* Get the xth component of the nth item in STAR_POINTS */
 #define VN(sp, n) (((sp)->stars)[VECTOR_SIZE * (n)])
 #define XN(sp, n) VN(sp, n)
