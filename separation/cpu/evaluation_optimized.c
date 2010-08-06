@@ -782,14 +782,12 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, c
 }
 
 
-double cpu_evaluate(double* parameters,
-                    ASTRONOMY_PARAMETERS* ap,
+double cpu_evaluate(ASTRONOMY_PARAMETERS* ap,
                     EVALUATION_STATE* es,
                     STAR_POINTS* sp)
 {
     int retval;
 
-    set_astronomy_parameters(ap, parameters);
     reset_evaluation_state(es);
 
     retval = calculate_integrals(ap, es);
@@ -800,8 +798,6 @@ double cpu_evaluate(double* parameters,
     }
 
     retval = calculate_likelihood(ap, es, sp);
-    free_constants(ap);
-
     if (retval)
     {
         fprintf(stderr, "APP: error calculating likelihood: %d\n", retval);

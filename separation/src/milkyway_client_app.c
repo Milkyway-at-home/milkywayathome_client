@@ -261,11 +261,12 @@ static void worker(int argc, const char** argv)
     #error "Must choose CUDA, OpenCL or CPU"
 #endif /* COMPUTE_ON_CPU */
 
-    double likelihood = evaluate(parameters, &ap, &es, &sp);
+    double likelihood = evaluate(&ap, &es, &sp);
 
     fprintf(stderr, "<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
     fprintf(stderr, "<search_application> %s </search_application>\n", BOINC_APP_VERSION);
 
+    free_constants(&ap);
     free(parameters);
 	cleanup_worker();
 
