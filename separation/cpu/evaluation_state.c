@@ -21,6 +21,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define CHECKPOINT_FILE "astronomy_checkpoint"
 
+#include "milkyway.h"
 #include "milkyway_priv.h"
 #include "evaluation_optimized.h"
 #include "parameters.h"
@@ -260,7 +261,7 @@ int write_checkpoint(EVALUATION_STATE* es)
 
     for (i = 0; i < es->number_integrals; i++)
     {
-        fwrite_integral_area(file, es->integral[i]);
+        fwrite_integral_area(file, &es->integrals[i]);
     }
 
     if ((retval = fclose(file)))
@@ -284,18 +285,19 @@ int read_checkpoint(EVALUATION_STATE* es)
     if (file == NULL)
         return 0;
 
-    if (1 > fscanf(file, "background_integral: %lf\n", &(es->background_integral)))
+    if (1 > fscanf(file, "background_integral: %lf\n", &es->background_integral))
         return 1;
 
-    es->number_streams = fread_double_array(file, "stream_integrals", &es->stream_integrals);
+    es->stream_integrals = fread_double_array(file, "stream_integrals", &es->number_streams);
 
-    fscanf(file, "prob_sum: %lf, num_zero: %d, bad_jacobians: %d\n", &es->prob_sum, &es->num_zero, &es->bad_jacobians);
+    fscanf(file, "prob_sum: %lf, num_zero: %d, bad_jacobians: %d\n",
+           &es->prob_sum, &es->num_zero, &es->bad_jacobians);
     fscanf(file, "current_star_point: %d\n", &es->current_star_point);
     fscanf(file, "current_integral: %d\n", &es->current_integral);
     fscanf(file, "number_integrals: %d\n", &es->number_integrals);
 
     for (i = 0; i < es->number_integrals; i++)
-        fread_integral_area(file, es->integrals[i]);
+        fread_integral_area(file, &es->integrals[i]);
 
     fclose(file);
     return 0;

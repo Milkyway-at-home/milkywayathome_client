@@ -32,6 +32,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 
 include_directories(${PROJECT_INCLUDE_DIR})
+add_definitions("-DMILKYWAY")
 
 configure_file (
   "${PROJECT_INCLUDE_DIR}/config.h.in"

@@ -58,7 +58,7 @@ void fwrite_int_array(FILE* file, const char* array_name, int* array_t, size_t s
 /****
 	*	Functions for reading parameters from files
 *****/
-double* fread_double_array(FILE* file, const char* array_name)
+double* fread_double_array(FILE* file, const char* array_name, unsigned int* sizeOut)
 {
     unsigned int i, size;
     double* arr;
@@ -79,10 +79,14 @@ double* fread_double_array(FILE* file, const char* array_name)
             fscanf(file, ", ");
 	}
 	fscanf(file, "\n");
+
+    if (sizeOut)
+        *sizeOut = size;
+
 	return arr;
 }
 
-int* fread_int_array(FILE *file, const char *array_name)
+int* fread_int_array(FILE *file, const char *array_name, unsigned int* sizeOut)
 {
 	unsigned int i, size;
 	fscanf(file, array_name);
@@ -103,6 +107,10 @@ int* fread_int_array(FILE *file, const char *array_name)
             fscanf(file, ", ");
 	}
 	fscanf(file, "\n");
+
+    if (sizeOut)
+        *sizeOut = size;
+
 	return arr;
 }
 

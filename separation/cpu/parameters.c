@@ -103,11 +103,11 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
     fscanf(file, "number_parameters: %d\n", &ap->number_background_parameters);
     fscanf(file, "background_weight: %lf\n", &ap->background_weight);
 
-    ap->background_parameters = fread_double_array(file, "background_parameters");
-    ap->background_step       = fread_double_array(file, "background_step");
-    ap->background_min        = fread_double_array(file, "background_min");
-    ap->background_max        = fread_double_array(file, "background_max");
-    ap->background_optimize   = fread_int_array(file, "optimize_parameter");
+    ap->background_parameters = fread_double_array(file, "background_parameters", NULL);
+    ap->background_step       = fread_double_array(file, "background_step", NULL);
+    ap->background_min        = fread_double_array(file, "background_min", NULL);
+    ap->background_max        = fread_double_array(file, "background_max", NULL);
+    ap->background_optimize   = fread_int_array(file, "optimize_parameter", NULL);
 
     fscanf(file, "number_streams: %d, %d\n", &ap->number_streams, &ap->number_stream_parameters);
 
@@ -122,11 +122,11 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
         fscanf(file, "stream_weight_max: %lf\n", &STREAM_N(ap, i).weight_max);
         fscanf(file, "optimize_weight: %d\n", &STREAM_N(ap, i).weight_optimize);
 
-        STREAM_PARAM_N(ap, i).stream_parameters = fread_double_array(file, "stream_parameters");
-        STREAM_PARAM_N(ap, i).stream_step       = fread_double_array(file, "stream_step");
-        STREAM_PARAM_N(ap, i).stream_min        = fread_double_array(file, "stream_min");
-        STREAM_PARAM_N(ap, i).stream_max        = fread_double_array(file, "stream_max");
-        STREAM_PARAM_N(ap, i).stream_optimize   = fread_int_array(file, "optimize_parameter");
+        STREAM_PARAM_N(ap, i).stream_parameters = fread_double_array(file, "stream_parameters", NULL);
+        STREAM_PARAM_N(ap, i).stream_step       = fread_double_array(file, "stream_step", NULL);
+        STREAM_PARAM_N(ap, i).stream_min        = fread_double_array(file, "stream_min", NULL);
+        STREAM_PARAM_N(ap, i).stream_max        = fread_double_array(file, "stream_max", NULL);
+        STREAM_PARAM_N(ap, i).stream_optimize   = fread_int_array(file, "optimize_parameter", NULL);
     }
 
     fscanf(file, "convolve: %d\n", &ap->convolve);

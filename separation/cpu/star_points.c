@@ -29,7 +29,7 @@ int read_star_points(const char* filename, STAR_POINTS* sp)
     FILE* data_file;
 #if BOINC_APPLICATION
     char input_path[512];
-    printf("BOINC READING\n");
+
     retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
     if (retval)
     {

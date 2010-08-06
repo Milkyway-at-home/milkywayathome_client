@@ -469,7 +469,7 @@ void free_integral_state(INTEGRAL_AREA* ia, INTEGRAL_STATE* st)
     free(st->qw_r3_N);
 }
 
-void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, INTEGRAL_STATE* st)
+void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, EVALUATION_STATE* es, INTEGRAL_STATE* st)
 {
     unsigned int i, mu_step_current, nu_step_current, r_step_current;
     double integral_point[3];
@@ -492,10 +492,10 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, INTEG
         for (; nu_step_current < ia->nu_steps; nu_step_current++)
         {
 #ifdef MILKYWAY
-            ia->background_integral = bg_prob_int + bg_prob_int_c;  // apply correction
+            ia->background_integral = st->bg_prob_int + st->bg_prob_int_c;  // apply correction
             for (i = 0; i < ap->number_streams; i++)
             {
-                ia->stream_integrals[i] = st_probs_int[i] + st_probs_int_c[i];  // apply correction
+                ia->stream_integrals[i] = st->st_probs_int[i] + st->st_probs_int_c[i];  // apply correction
             }
             ia->mu_step = mu_step_current;
             ia->nu_step = nu_step_current;
@@ -602,10 +602,9 @@ int calculate_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
     prepare_integral_state(ap, &es->integrals[0], &st);
 
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
-        calculate_integral(ap, &es->integrals[es->current_integral], &st);
+        calculate_integral(ap, &es->integrals[es->current_integral], es, &st);
 
     free_integral_state(&es->integrals[0], &st);
-    printf("Soup\n");
 
     es->background_integral = es->integrals[0].background_integral;
     for (i = 0; i < ap->number_streams; i++)

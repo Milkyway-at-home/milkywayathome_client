@@ -27,8 +27,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 void fwrite_double_array(FILE* file, const char* array_name, double* array_t, size_t size);
 void fwrite_int_array(FILE* file, const char* array_name, int* array_t, size_t size);
 
-double* fread_double_array(FILE* file, const char* array_name);
-int* fread_int_array(FILE* file, const char* array_name);
+double* fread_double_array(FILE* file, const char* array_name, unsigned int* sizeOut);
+int* fread_int_array(FILE* file, const char* array_name, unsigned int* sizeOut);
 
 #endif
 
