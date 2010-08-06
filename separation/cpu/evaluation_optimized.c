@@ -387,8 +387,8 @@ void cpu__r_constants(unsigned int n_convolve,
     {
 #ifdef USE_KPC
 
-        r               =       r_min_kpc + (i * r_step_size_kpc);
-        next_r          =       r + r_step_size_kpc;
+        r = r_min_kpc + (i * r_step_size_kpc);
+        next_r = r + r_step_size_kpc;
 
 #else
         double log_r = r_min + (i * r_step_size);
@@ -414,41 +414,75 @@ void cpu__r_constants(unsigned int n_convolve,
     }
 }
 
-void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia)
+/* Scratch space used by each integral */
+typedef struct
 {
-    unsigned int i, mu_step_current, nu_step_current, r_step_current;
     double bg_prob, *st_probs, V;
     double* irv, *reff_xr_rp3, **qw_r3_N, **r_point, **r_in_mag, **r_in_mag2;
     double* ids, *nus;
-    double integral_point[3];
-
-    double bg_prob_int, bg_prob_int_c, temp;        // for kahan summation
+    double bg_prob_int, bg_prob_int_c;              // for kahan summation
     double* st_probs_int, *st_probs_int_c;          // for kahan summation
+} INTEGRAL_STATE;
 
-    irv     = (double*)malloc(sizeof(double) * ia->r_steps);
-    st_probs    = (double*)malloc(sizeof(double) * ap->number_streams);
-    st_probs_int    = (double*)malloc(sizeof(double) * ap->number_streams);
-    st_probs_int_c  = (double*)malloc(sizeof(double) * ap->number_streams);
-    reff_xr_rp3 = (double*)malloc(sizeof(double) * ia->r_steps);
-    qw_r3_N     = (double**)malloc(sizeof(double*) * ia->r_steps);
-    r_point     = (double**)malloc(sizeof(double*) * ia->r_steps);
-    r_in_mag    = (double**)malloc(sizeof(double*) * ia->r_steps);
-    r_in_mag2   = (double**)malloc(sizeof(double*) * ia->r_steps);
-    ids     = (double*)malloc(sizeof(double) * ia->nu_steps);
-    nus     = (double*)malloc(sizeof(double) * ia->nu_steps);
+void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, INTEGRAL_STATE* st)
+{
+    st->irv     = (double*)malloc(sizeof(double) * ia->r_steps);
+    st->st_probs    = (double*)malloc(sizeof(double) * ap->number_streams);
+    st->st_probs_int    = (double*)malloc(sizeof(double) * ap->number_streams);
+    st->st_probs_int_c  = (double*)malloc(sizeof(double) * ap->number_streams);
+    st->reff_xr_rp3 = (double*)malloc(sizeof(double) * ia->r_steps);
+    st->qw_r3_N     = (double**)malloc(sizeof(double*) * ia->r_steps);
+    st->r_point     = (double**)malloc(sizeof(double*) * ia->r_steps);
+    st->r_in_mag    = (double**)malloc(sizeof(double*) * ia->r_steps);
+    st->r_in_mag2   = (double**)malloc(sizeof(double*) * ia->r_steps);
+    st->ids     = (double*)malloc(sizeof(double) * ia->nu_steps);
+    st->nus     = (double*)malloc(sizeof(double) * ia->nu_steps);
     cpu__r_constants(ap->convolve, ia->r_steps, ia->r_min, ia->r_step_size,
                      ia->mu_step_size,
                      ia->nu_steps, ia->nu_min, ia->nu_step_size,
-                     irv, r_point, r_in_mag, r_in_mag2, qw_r3_N, reff_xr_rp3, nus, ids);
+                     st->irv, st->r_point, st->r_in_mag, st->r_in_mag2,
+                     st->qw_r3_N, st->reff_xr_rp3, st->nus, st->ids);
+
+}
+
+void free_integral_state(INTEGRAL_AREA* ia, INTEGRAL_STATE* st)
+{
+    unsigned int i;
+
+    free(st->nus);
+    free(st->ids);
+    free(st->irv);
+    free(st->st_probs);
+    free(st->st_probs_int);
+    free(st->st_probs_int_c);
+    free(st->reff_xr_rp3);
+    for (i = 0; i < ia->r_steps; i++)
+    {
+        free(st->r_point[i]);
+        free(st->r_in_mag[i]);
+        free(st->r_in_mag2[i]);
+        free(st->qw_r3_N[i]);
+    }
+    free(st->r_point);
+    free(st->r_in_mag);
+    free(st->r_in_mag2);
+    free(st->qw_r3_N);
+}
+
+void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia, INTEGRAL_STATE* st)
+{
+    unsigned int i, mu_step_current, nu_step_current, r_step_current;
+    double integral_point[3];
+    double temp;
 
     get_steps(ia, &mu_step_current, &nu_step_current, &r_step_current);
 
-    bg_prob_int = ia->background_integral;
-    bg_prob_int_c = 0.0;
+    st->bg_prob_int = ia->background_integral;
+    st->bg_prob_int_c = 0.0;
     for (i = 0; i < ap->number_streams; i++)
     {
-        st_probs_int[i] = ia->stream_integrals[i];
-        st_probs_int_c[i] = 0.0;
+        st->st_probs_int[i] = ia->stream_integrals[i];
+        st->st_probs_int_c[i] = 0.0;
     }
 
     for (; mu_step_current < ia->mu_steps; mu_step_current++)
@@ -476,13 +510,13 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia)
             if (ap->sgr_coordinates == 0)
             {
                 double ra, dec;
-                atGCToEq(mu + 0.5 * ia->mu_step_size, nus[nu_step_current], &ra, &dec, get_node(), wedge_incl(ap->wedge));
+                atGCToEq(mu + 0.5 * ia->mu_step_size, st->nus[nu_step_current], &ra, &dec, get_node(), wedge_incl(ap->wedge));
                 atEqToGal(ra, dec, &integral_point[0], &integral_point[1]);
             }
             else if (ap->sgr_coordinates == 1)
             {
                 double lamda, beta;
-                gcToSgr(mu + 0.5 * ia->mu_step_size, nus[nu_step_current], ap->wedge, &lamda, &beta);
+                gcToSgr(mu + 0.5 * ia->mu_step_size, st->nus[nu_step_current], ap->wedge, &lamda, &beta);
                 sgrToGal(lamda, beta, &integral_point[0], &integral_point[1]);
             }
             else
@@ -492,89 +526,86 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap, INTEGRAL_AREA* ia)
 
             for (; r_step_current < ia->r_steps; r_step_current++)
             {
-                V = irv[r_step_current] * ids[nu_step_current];
+                st->V = st->irv[r_step_current] * st->ids[nu_step_current];
 
-                calculate_probabilities(r_point[r_step_current], r_in_mag[r_step_current], r_in_mag2[r_step_current], qw_r3_N[r_step_current], reff_xr_rp3[r_step_current], integral_point, ap, &bg_prob, st_probs);
+                calculate_probabilities(st->r_point[r_step_current],
+                                        st->r_in_mag[r_step_current],
+                                        st->r_in_mag2[r_step_current],
+                                        st->qw_r3_N[r_step_current],
+                                        st->reff_xr_rp3[r_step_current],
+                                        integral_point,
+                                        ap,
+                                        &st->bg_prob,
+                                        st->st_probs);
 
-                bg_prob *= V;
+                st->bg_prob *= st->V;
 
-                temp = bg_prob_int;
-                bg_prob_int += bg_prob;
-                bg_prob_int_c += bg_prob - (bg_prob_int - temp);
+                temp = st->bg_prob_int;
+                st->bg_prob_int += st->bg_prob;
+                st->bg_prob_int_c += st->bg_prob - (st->bg_prob_int - temp);
 
 //              ia->background_integral += bg_prob;
                 for (i = 0; i < ap->number_streams; i++)
                 {
-                    st_probs[i] *= V;
-                    temp = st_probs_int[i];
-                    st_probs_int[i] += st_probs[i];
-                    st_probs_int_c[i] += st_probs[i] - (st_probs_int[i] - temp);
+                    st->st_probs[i] *= st->V;
+                    temp = st->st_probs_int[i];
+                    st->st_probs_int[i] += st->st_probs[i];
+                    st->st_probs_int_c[i] += st->st_probs[i] - (st->st_probs_int[i] - temp);
 
 //                  ia->stream_integrals[i] += st_probs[i] * V;
                 }
 
 #ifndef MILKYWAY
                 ia->current_calculation++;
-                if (ia->current_calculation >= ia->max_calculation) break;
+                if (ia->current_calculation >= ia->max_calculation)
+                    break;
 #endif
             }
 #ifndef MILKYWAY
-            if (ia->current_calculation >= ia->max_calculation) break;
+            if (ia->current_calculation >= ia->max_calculation)
+                break;
 #endif
             r_step_current = 0;
         }
 #ifndef MILKYWAY
-        if (ia->current_calculation >= ia->max_calculation) break;
+        if (ia->current_calculation >= ia->max_calculation)
+            break;
 #endif
         nu_step_current = 0;
     }
     mu_step_current = 0;
 
-    ia->background_integral = bg_prob_int + bg_prob_int_c;  // apply correction
+    ia->background_integral = st->bg_prob_int + st->bg_prob_int_c;  // apply correction
     for (i = 0; i < ap->number_streams; i++)
     {
-        ia->stream_integrals[i] = st_probs_int[i] + st_probs_int_c[i];  // apply correction
+        ia->stream_integrals[i] = st->st_probs_int[i] + st->st_probs_int_c[i];  // apply correction
     }
 
 //  printf("bg_int: %.15lf ", ia->background_integral);
 //  for (i = 0; i < ap->number_streams; i++) printf("st_int[%d]: %.15lf ", i, ia->stream_integrals[i]);
 //  printf("\n");
 
-
-    free(nus);
-    free(ids);
-    free(irv);
-    free(st_probs);
-    free(st_probs_int);
-    free(st_probs_int_c);
-    free(reff_xr_rp3);
-    for (i = 0; i < ia->r_steps; i++)
-    {
-        free(r_point[i]);
-        free(r_in_mag[i]);
-        free(r_in_mag2[i]);
-        free(qw_r3_N[i]);
-    }
-    free(r_point);
-    free(r_in_mag);
-    free(r_in_mag2);
-    free(qw_r3_N);
 }
 
 int calculate_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
 {
     unsigned int i, j;
-#ifdef MW_ENABLE_DEBUG
-  time_t start_time, finish_time;
-  time(&start_time);
-#endif
 
 #ifdef MILKYWAY
     read_checkpoint(es);
 #endif
 
+    INTEGRAL_STATE st;
+    /* FIXME: the integral area not actually needed here, for some
+     * reason they all carry the same information which never
+     * changes. */
+    prepare_integral_state(ap, &es->integrals[0], &st);
+
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
-        calculate_integral(ap, &es->integrals[es->current_integral]);
+        calculate_integral(ap, &es->integrals[es->current_integral], &st);
+
+    free_integral_state(&es->integrals[0], &st);
+    printf("Soup\n");
 
     es->background_integral = es->integrals[0].background_integral;
     for (i = 0; i < ap->number_streams; i++)
@@ -596,10 +627,6 @@ int calculate_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
     }
     fprintf(stderr, " </stream_integrals>\n");
 #endif
-
-    #ifdef MW_ENABLE_DEBUG
-    time(&finish_time);
-    #endif
 
     return 0;
 }
