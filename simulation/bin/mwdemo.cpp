@@ -67,17 +67,19 @@ HaloField* getLastFrameNBody()
 
 int main( int args, char **argv )
 {
-
+/*
     if( args<2 ){
         printf("Usage: ./mwdemo wedge_file_name\n");
         return 1;
     }
-
+*/
     double diameter = 7.;
     double fps = 30.;
     int bpp = 32;
 
-    string fileName = argv[1];
+    string fileName = "stars_82.txt";
+    if( args>1 )
+        fileName = argv[1];
 
     // Read in wedge
     WedgeFile wf;

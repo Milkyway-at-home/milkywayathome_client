@@ -210,7 +210,7 @@ public:
 
     }
 
-    void readStars( string fileName, HaloField& field, double lum = .1 )
+    void readStars( string fileName, HaloField& field, double lum = .5 )
 
         // Reads next step in 'fstrm' into stream data
         // Returns true if another step exists, false if this is the last step in the file
