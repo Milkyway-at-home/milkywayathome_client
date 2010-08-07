@@ -57,15 +57,20 @@ typedef struct
     double qw_r3_N;
 } R_STEP_STATE;
 
+typedef struct
+{
+    double nus;
+    double ids;
+} NU_STATE;
+
 /* Scratch space used by each integral */
 typedef struct
 {
     double* irv;
     double* reff_xr_rp3;
-    double* ids;
-    double* nus;
     ST_PROBS* probs;
     R_STEP_STATE* rss;
+    NU_STATE* nu_st;
 } INTEGRAL_STATE;
 
 
@@ -108,7 +113,8 @@ void cpu__r_constants(const STREAM_NUMS* sn,
                       unsigned int nu_steps, double nu_min, double nu_step_size,
                       double* irv,
                       R_STEP_STATE* rss,
-                      double* reff_xr_rp3, double* nus, double* ids);
+                      double* reff_xr_rp3,
+                      NU_STATE* nu_st);
 
 double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
                     const STAR_POINTS* sp,

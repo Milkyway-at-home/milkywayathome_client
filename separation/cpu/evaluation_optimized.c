@@ -228,8 +228,7 @@ void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
                          );
                 rs = rg + sn->r0;
 
-//vickej2_bg changing the hernquist profile to include a quadratic term in g
-
+                //the hernquist profile includes a quadratic term in g
                 if (ap->aux_bg_profile == 1)
                 {
                     h_prob = rss[idx].qw_r3_N / (rg * rs * rs * rs);
@@ -363,8 +362,7 @@ void cpu__r_constants(const STREAM_NUMS* sn,
                       double* irv,
                       R_STEP_STATE* rss,
                       double* reff_xr_rp3,
-                      double* nus,
-                      double* ids)
+                      NU_STATE* nu_st)
 {
     unsigned int i;
 
@@ -406,9 +404,9 @@ void cpu__r_constants(const STREAM_NUMS* sn,
 
     for (i = 0; i < nu_steps; i++)
     {
-        nus[i] = nu_min + (i * nu_step_size);
-        ids[i] = cos((90.0 - nus[i] - nu_step_size) / deg) - cos((90.0 - nus[i]) / deg);
-        nus[i] += 0.5 * nu_step_size;
+        nu_st[i].nus = nu_min + (i * nu_step_size);
+        nu_st[i].ids = cos((90.0 - nu_st[i].nus - nu_step_size) / deg) - cos((90.0 - nu_st[i].nus) / deg);
+        nu_st[i].nus += 0.5 * nu_step_size;
     }
 }
 
@@ -425,27 +423,25 @@ void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
 
 
     /* 2D block, ia->r_steps = rows, ap->convolve = columns */
-    st->rss = (R_STEP_STATE*) malloc(sizeof(R_STEP_STATE) * ia->r_steps * ap->convolve);
+    st->rss = malloc(sizeof(R_STEP_STATE) * ia->r_steps * ap->convolve);
+    st->nu_st = malloc(sizeof(NU_STATE) * ia->nu_steps);
 
-    st->ids     = (double*)malloc(sizeof(double) * ia->nu_steps);
-    st->nus     = (double*)malloc(sizeof(double) * ia->nu_steps);
     cpu__r_constants(sn,
                      ap->convolve, ia->r_steps, ia->r_min, ia->r_step_size,
                      ia->mu_step_size,
                      ia->nu_steps, ia->nu_min, ia->nu_step_size,
                      st->irv,
-                     st->rss, st->reff_xr_rp3, st->nus, st->ids);
+                     st->rss, st->reff_xr_rp3, st->nu_st);
 
 }
 
-void free_integral_state(INTEGRAL_AREA* ia, INTEGRAL_STATE* st)
+void free_integral_state(INTEGRAL_STATE* st)
 {
-    free(st->nus);
-    free(st->ids);
     free(st->irv);
     free(st->probs);
     free(st->reff_xr_rp3);
     free(st->rss);
+    free(st->nu_st);
 }
 
 void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
@@ -498,13 +494,18 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
             if (ap->sgr_coordinates == 0)
             {
                 double ra, dec;
-                atGCToEq(mu + 0.5 * ia->mu_step_size, st->nus[nu_step_current], &ra, &dec, get_node(), wedge_incl(ap->wedge));
+                atGCToEq(mu + 0.5 * ia->mu_step_size,
+                         st->nu_st[nu_step_current].nus,
+                         &ra, &dec, get_node(), wedge_incl(ap->wedge));
+
                 atEqToGal(ra, dec, &integral_point[0], &integral_point[1]);
             }
             else if (ap->sgr_coordinates == 1)
             {
                 double lamda, beta;
-                gcToSgr(mu + 0.5 * ia->mu_step_size, st->nus[nu_step_current], ap->wedge, &lamda, &beta);
+                gcToSgr(mu + 0.5 * ia->mu_step_size,
+                        st->nu_st[nu_step_current].nus,
+                        ap->wedge, &lamda, &beta);
                 sgrToGal(lamda, beta, &integral_point[0], &integral_point[1]);
             }
             else
@@ -514,7 +515,7 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
 
             for (; r_step_current < ia->r_steps; r_step_current++)
             {
-                V = st->irv[r_step_current] * st->ids[nu_step_current];
+                V = st->irv[r_step_current] * st->nu_st[nu_step_current].ids;
 
                 calculate_probabilities(ap,
                                         sc,
@@ -606,7 +607,7 @@ int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
         calculate_integral(ap, sc, sn, &es->integrals[es->current_integral], es, &st);
 
-    free_integral_state(&es->integrals[0], &st);
+    free_integral_state(&st);
 
     es->background_integral = es->integrals[0].background_integral;
     for (i = 0; i < ap->number_streams; i++)
