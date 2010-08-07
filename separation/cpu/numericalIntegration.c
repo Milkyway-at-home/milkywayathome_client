@@ -22,8 +22,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway.h"
 #include "milkyway_priv.h"
 
-double* qgausX, *qgausW;
-
 /* Gauss-Legendre quadrature taken from Numerical Recipes in C */
 void gaussLegendre(double x1, double x2, double x[], double w[], int n)
 {
@@ -58,46 +56,5 @@ void gaussLegendre(double x1, double x2, double x[], double w[], int n)
         w[i-1] = 2.0 * xl / ((1.0 - z * z) * pp * pp);
         w[n-i] = w[i-1];
     }
-}
-
-void setWeights(int numpoints)
-{
-    qgausX = (double*)malloc(sizeof(double) * numpoints);
-    qgausW = (double*)malloc(sizeof(double) * numpoints);
-    gaussLegendre(-1.0, 1.0, qgausX, qgausW, numpoints);
-}
-
-void freeWeights()
-{
-    free(qgausX);
-    free(qgausW);
-}
-
-double qgaus(double (*func)(double, int), double xm, double xr, int wedge, int numpoints)
-{
-    int j;
-    double dx, s;
-
-    s = 0;
-    for (j = 0; j < numpoints; j++)
-    {
-        dx = xr * qgausX[j];
-        s += qgausW[j] * ((*func)(xm + dx, wedge));
-    }
-    return s *= xr;
-}
-
-double qgaus_stream(double (*func)(double, int, int), double xm, double xr, int wedge, int numpoints, int sgr_coordinates)
-{
-    int j;
-    double dx, s;
-
-    s = 0;
-    for (j = 0; j < numpoints; j++)
-    {
-        dx = xr * qgausX[j];
-        s += qgausW[j] * ((*func)(xm + dx, wedge, sgr_coordinates));
-    }
-    return s *= xr;
 }
 
