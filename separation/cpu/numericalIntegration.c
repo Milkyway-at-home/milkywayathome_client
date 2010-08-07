@@ -23,7 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_priv.h"
 
 /* Gauss-Legendre quadrature taken from Numerical Recipes in C */
-void gaussLegendre(double x1, double x2, double x[], double w[], int n)
+void gaussLegendre(double x1, double x2, double* restrict x, double* restrict w, int n)
 {
     int m, j, i;
     double z1, z, xm, xl, pp, p3, p2, p1;

@@ -22,6 +22,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef NUMERICALINTEGRATION_H
 #define NUMERICALINTEGRATION_H
 
-void gaussLegendre(double x1, double x2, double x[], double w[], int n);
+void gaussLegendre(double x1, double x2, double* x, double* restrict w, int n);
 
 #endif

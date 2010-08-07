@@ -34,6 +34,8 @@ set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_INCLUDE_DIR})
 add_definitions("-DMILKYWAY")
 
+set(CMAKE_C_FLAGS "-std=c99 ${CMAKE_C_FLAGS}")
+
 configure_file (
   "${PROJECT_INCLUDE_DIR}/config.h.in"
   "${PROJECT_INCLUDE_DIR}/config.h")
