@@ -54,15 +54,15 @@ void set_probability_constants(const STREAM_NUMS* sn,
                                double* qw_r3_N,
                                double* reff_xr_rp3);
 
-void calculate_probabilities(double* r_point,
+void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
+                             const STREAM_CONSTANTS* sc,
+                             const STREAM_NUMS* sn,
+                             double* r_point,
                              double* r_in_mag,
                              double* r_in_mag2,
                              double* qw_r3_N,
                              double reff_xr_rp3,
                              double* integral_point,
-                             const ASTRONOMY_PARAMETERS* ap,
-                             const STREAM_CONSTANTS* sc,
-                             const STREAM_NUMS* sn,
                              double* bg_prob,
                              double* st_prob);
 
@@ -85,7 +85,7 @@ void cpu__r_constants(const STREAM_NUMS* sn,
                       double* irv, double** r_point, double** r_in_mag, double** r_in_mag2, double** qw_r3_N,
                       double* reff_xr_rp3, double* nus, double* ids);
 
-double cpu_evaluate(ASTRONOMY_PARAMETERS* ap,
+double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
                     const STAR_POINTS* sp,
                     const STREAM_CONSTANTS* sc,
                     const STREAM_NUMS* sn);

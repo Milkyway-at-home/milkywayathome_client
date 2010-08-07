@@ -23,10 +23,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _SIMPLE_EVALUATOR_H_
 
  /* :: ASTRONOMY_PARAMETERS -> STAR_POINTS -> STREAM_CONSTANTS -> STREAM_NUMS -> Double */
-typedef double (*EvalFunc) (ASTRONOMY_PARAMETERS*,
+typedef double (*EvalFunc) (const ASTRONOMY_PARAMETERS*,
                             const STAR_POINTS*,
-                            const STREAM_CONSTANTS* sc,
-                            const STREAM_NUMS* sn);
+                            const STREAM_CONSTANTS*,
+                            const STREAM_NUMS*);
 
 
 extern EvalFunc evaluate;

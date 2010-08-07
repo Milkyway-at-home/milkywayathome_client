@@ -180,15 +180,15 @@ void set_probability_constants(const STREAM_NUMS* sn,
     }
 }
 
-void calculate_probabilities(double* r_point,
+void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
+                             const STREAM_CONSTANTS* cs,
+                             const STREAM_NUMS* sn,
+                             double* r_point,
                              double* r_in_mag,
                              double* r_in_mag2,
                              double* qw_r3_N,
                              double reff_xr_rp3,
                              double* integral_point,
-                             const ASTRONOMY_PARAMETERS* ap,
-                             const STREAM_CONSTANTS* cs,
-                             const STREAM_NUMS* sn,
                              double* bg_prob,
                              double* st_prob)
 {
@@ -539,15 +539,15 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
             {
                 st->V = st->irv[r_step_current] * st->ids[nu_step_current];
 
-                calculate_probabilities(st->r_point[r_step_current],
+                calculate_probabilities(ap,
+                                        sc,
+                                        sn,
+                                        st->r_point[r_step_current],
                                         st->r_in_mag[r_step_current],
                                         st->r_in_mag2[r_step_current],
                                         st->qw_r3_N[r_step_current],
                                         st->reff_xr_rp3[r_step_current],
                                         integral_point,
-                                        ap,
-                                        sc,
-                                        sn,
                                         &st->bg_prob,
                                         st->st_probs);
 
@@ -719,15 +719,15 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
                                   qw_r3_N,
                                   &reff_xr_rp3);
 
-        calculate_probabilities(r_point,
+        calculate_probabilities(ap,
+                                sc,
+                                sn,
+                                r_point,
                                 r_in_mag,
                                 r_in_mag2,
                                 qw_r3_N,
                                 reff_xr_rp3,
                                 &VN(sp, es->current_star_point),
-                                ap,
-                                sc,
-                                sn,
                                 &bg_prob,
                                 st_prob);
 
@@ -809,7 +809,7 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
 }
 
 
-double cpu_evaluate(ASTRONOMY_PARAMETERS* ap,
+double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
                     const STAR_POINTS* sp,
                     const STREAM_CONSTANTS* sc,
                     const STREAM_NUMS* sn)
