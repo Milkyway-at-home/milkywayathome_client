@@ -59,6 +59,12 @@ typedef struct
 
 typedef struct
 {
+    double irv;
+    double reff_xr_rp3;
+} R_STEP_CONSTANTS;
+
+typedef struct
+{
     double nus;
     double ids;
 } NU_STATE;
@@ -66,8 +72,7 @@ typedef struct
 /* Scratch space used by each integral */
 typedef struct
 {
-    double* irv;
-    double* reff_xr_rp3;
+    R_STEP_CONSTANTS* r_step_consts;
     ST_PROBS* probs;
     R_STEP_STATE* rss;
     NU_STATE* nu_st;

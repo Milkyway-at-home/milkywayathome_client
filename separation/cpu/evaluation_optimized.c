@@ -355,9 +355,8 @@ static void cpu__r_constants(const STREAM_NUMS* sn,
                              unsigned int nu_steps,
                              double nu_min,
                              double nu_step_size,
-                             double* irv,
                              R_STEP_STATE* rss,
-                             double* reff_xr_rp3,
+                             R_STEP_CONSTANTS* r_step_consts,
                              NU_STATE* nu_st)
 {
     unsigned int i;
@@ -387,7 +386,7 @@ static void cpu__r_constants(const STREAM_NUMS* sn,
         next_r = pow(10.0, (log_r + r_step_size - 14.2) / 5.0);
 #endif
 
-        irv[i] = (((next_r * next_r * next_r) - (r * r * r)) / 3.0) * mu_step_size / deg;
+        r_step_consts[i].irv = (((next_r * next_r * next_r) - (r * r * r)) / 3.0) * mu_step_size / deg;
         rPrime = (next_r + r) / 2.0;
 
         set_probability_constants(sn,
@@ -396,7 +395,7 @@ static void cpu__r_constants(const STREAM_NUMS* sn,
                                   rPrime,
                                   rss,
                                   i,
-                                  &reff_xr_rp3[i]);
+                                  &r_step_consts[i].reff_xr_rp3);
     }
 
     for (i = 0; i < nu_steps; i++)
@@ -415,9 +414,7 @@ static void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
 {
 
     st->probs = (ST_PROBS*) malloc(sizeof(ST_PROBS) * ap->number_streams);
-
-    st->irv         = (double*)malloc(sizeof(double) * ia->r_steps);
-    st->reff_xr_rp3 = (double*)malloc(sizeof(double) * ia->r_steps);
+    st->r_step_consts = (R_STEP_CONSTANTS*) malloc(sizeof(R_STEP_CONSTANTS) * ia->r_steps);
 
 
     /* 2D block, ia->r_steps = rows, ap->convolve = columns */
@@ -428,16 +425,14 @@ static void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
                      ap->convolve, ia->r_steps, ia->r_min, ia->r_step_size,
                      ia->mu_step_size,
                      ia->nu_steps, ia->nu_min, ia->nu_step_size,
-                     st->irv,
-                     st->rss, st->reff_xr_rp3, st->nu_st);
+                     st->rss, st->r_step_consts, st->nu_st);
 
 }
 
 static void free_integral_state(INTEGRAL_STATE* st)
 {
-    free(st->irv);
+    free(st->r_step_consts);
     free(st->probs);
-    free(st->reff_xr_rp3);
     free(st->rss);
     free(st->nu_st);
 }
@@ -514,7 +509,7 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
 
             for (; r_step_current < ia->r_steps; r_step_current++)
             {
-                V = st->irv[r_step_current] * st->nu_st[nu_step_current].ids;
+                V = st->r_step_consts[r_step_current].irv * st->nu_st[nu_step_current].ids;
 
                 calculate_probabilities(ap,
                                         sc,
@@ -523,7 +518,7 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
                                         xyz,
                                         r_step_current,
                                         ia->r_steps,
-                                        st->reff_xr_rp3[r_step_current],
+                                        st->r_step_consts[r_step_current].reff_xr_rp3,
                                         integral_point,
                                         &bg_prob,
                                         st->probs);
