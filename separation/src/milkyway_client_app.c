@@ -264,7 +264,8 @@ static void worker(int argc, const char** argv)
     fprintf(stderr, "<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
     fprintf(stderr, "<search_application> %s </search_application>\n", BOINC_APP_VERSION);
 
-    free_constants(&ap, sc);
+    free(sc);
+    free_constants(&ap);
     free(parameters);
 	cleanup_worker();
 

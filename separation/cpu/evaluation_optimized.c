@@ -42,7 +42,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define lbr_r 8.5
 #define absm 4.2
 
-double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
+static const double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
 STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn)
 {
@@ -115,7 +115,7 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn)
     return sc;
 }
 
-void get_stream_gauss(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn, STREAM_GAUSS* sg)
+static void get_stream_gauss(const ASTRONOMY_PARAMETERS* ap, STREAM_GAUSS* sg)
 {
     unsigned int i;
     double* qgaus_X = malloc(sizeof(double) * ap->convolve);
@@ -131,22 +131,17 @@ void get_stream_gauss(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn, STREAM_GAUSS* s
     free(qgaus_X);
 }
 
-void free_constants(ASTRONOMY_PARAMETERS* ap, STREAM_CONSTANTS* sc)
+void free_constants(ASTRONOMY_PARAMETERS* ap)
 {
-    //free(qgaus_X);
-    //free(qgaus_W);
-    //free(dx);
-    //free(xyz);
-    //free(sc);
 }
 
-void set_probability_constants(const STREAM_NUMS* sn,
-                               const STREAM_GAUSS* sg,
-                               unsigned int n_convolve,
-                               double coords,
-                               R_STEP_STATE* rss,
-                               unsigned int r_step,
-                               double* reff_xr_rp3)
+static void set_probability_constants(const STREAM_NUMS* sn,
+                                      const STREAM_GAUSS* sg,
+                                      unsigned int n_convolve,
+                                      double coords,
+                                      R_STEP_STATE* rss,
+                                      unsigned int r_step,
+                                      double* reff_xr_rp3)
 {
     double gPrime, exp_result, g, exponent, r3, N, reff_value, rPrime3;
     unsigned int i, idx;
@@ -179,17 +174,17 @@ void set_probability_constants(const STREAM_NUMS* sn,
     }
 }
 
-void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
-                             const STREAM_CONSTANTS* cs,
-                             const STREAM_NUMS* sn,
-                             R_STEP_STATE* rss,
-                             vector* xyz,
-                             unsigned int r_step_current,
-                             unsigned int r_steps,
-                             double reff_xr_rp3,
-                             double* integral_point,
-                             double* bg_prob,
-                             ST_PROBS* probs)
+static void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
+                                    const STREAM_CONSTANTS* cs,
+                                    const STREAM_NUMS* sn,
+                                    R_STEP_STATE* rss,
+                                    vector* xyz,
+                                    unsigned int r_step_current,
+                                    unsigned int r_steps,
+                                    double reff_xr_rp3,
+                                    double* integral_point,
+                                    double* bg_prob,
+                                    ST_PROBS* probs)
 {
     double bsin, lsin, bcos, lcos, zp;
     double rg, rs, xyzs[3], dotted, xyz_norm;
@@ -294,7 +289,7 @@ void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
     }
 }
 
-double calculate_progress(EVALUATION_STATE* es)
+static double calculate_progress(EVALUATION_STATE* es)
 {
     double total_calc_probs, current_calc_probs, current_probs;
     unsigned int i, mu_step_current, nu_step_current, r_step_current;
@@ -329,7 +324,7 @@ double calculate_progress(EVALUATION_STATE* es)
 }
 
 #ifdef MILKYWAY
-void do_boinc_checkpoint(EVALUATION_STATE* es)
+static void do_boinc_checkpoint(EVALUATION_STATE* es)
 {
     double progress;
 
@@ -350,20 +345,20 @@ void do_boinc_checkpoint(EVALUATION_STATE* es)
 }
 #endif
 
-void cpu__r_constants(const STREAM_NUMS* sn,
-                      STREAM_GAUSS* sg,
-                      unsigned int n_convolve,
-                      unsigned int r_steps,
-                      double r_min,
-                      double r_step_size,
-                      double mu_step_size,
-                      unsigned int nu_steps,
-                      double nu_min,
-                      double nu_step_size,
-                      double* irv,
-                      R_STEP_STATE* rss,
-                      double* reff_xr_rp3,
-                      NU_STATE* nu_st)
+static void cpu__r_constants(const STREAM_NUMS* sn,
+                             STREAM_GAUSS* sg,
+                             unsigned int n_convolve,
+                             unsigned int r_steps,
+                             double r_min,
+                             double r_step_size,
+                             double mu_step_size,
+                             unsigned int nu_steps,
+                             double nu_min,
+                             double nu_step_size,
+                             double* irv,
+                             R_STEP_STATE* rss,
+                             double* reff_xr_rp3,
+                             NU_STATE* nu_st)
 {
     unsigned int i;
 
@@ -412,11 +407,11 @@ void cpu__r_constants(const STREAM_NUMS* sn,
     }
 }
 
-void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
-                            const STREAM_NUMS* sn,
-                            STREAM_GAUSS* sg,
-                            INTEGRAL_AREA* ia,
-                            INTEGRAL_STATE* st)
+static void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
+                                   const STREAM_NUMS* sn,
+                                   STREAM_GAUSS* sg,
+                                   INTEGRAL_AREA* ia,
+                                   INTEGRAL_STATE* st)
 {
 
     st->probs = (ST_PROBS*) malloc(sizeof(ST_PROBS) * ap->number_streams);
@@ -438,7 +433,7 @@ void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
 
 }
 
-void free_integral_state(INTEGRAL_STATE* st)
+static void free_integral_state(INTEGRAL_STATE* st)
 {
     free(st->irv);
     free(st->probs);
@@ -447,13 +442,13 @@ void free_integral_state(INTEGRAL_STATE* st)
     free(st->nu_st);
 }
 
-void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
-                        const STREAM_CONSTANTS* sc,
-                        const STREAM_NUMS* sn,
-                        double* xyz,
-                        INTEGRAL_AREA* ia,
-                        EVALUATION_STATE* es,
-                        INTEGRAL_STATE* st)
+static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
+                               const STREAM_CONSTANTS* sc,
+                               const STREAM_NUMS* sn,
+                               vector* xyz,
+                               INTEGRAL_AREA* ia,
+                               EVALUATION_STATE* es,
+                               INTEGRAL_STATE* st)
 {
     unsigned int i, mu_step_current, nu_step_current, r_step_current;
     double integral_point[3];
@@ -592,12 +587,12 @@ static void print_stream_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_ST
     fprintf(stderr, " </stream_integrals>\n");
 }
 
-int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
-                        const STREAM_CONSTANTS* sc,
-                        const STREAM_NUMS* sn,
-                        EVALUATION_STATE* es,
-                        STREAM_GAUSS* sg,
-                        double* xyz)
+static int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
+                               const STREAM_CONSTANTS* sc,
+                               const STREAM_NUMS* sn,
+                               EVALUATION_STATE* es,
+                               STREAM_GAUSS* sg,
+                               vector* xyz)
 {
     unsigned int i, j;
 
@@ -634,13 +629,13 @@ int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
     return 0;
 }
 
-int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
-                         const STREAM_CONSTANTS* sc,
-                         const STREAM_NUMS* sn,
-                         EVALUATION_STATE* es,
-                         STREAM_GAUSS* sg,
-                         vector* xyz,
-                         const STAR_POINTS* sp)
+static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
+                                const STREAM_CONSTANTS* sc,
+                                const STREAM_NUMS* sn,
+                                EVALUATION_STATE* es,
+                                STREAM_GAUSS* sg,
+                                vector* xyz,
+                                const STAR_POINTS* sp)
 {
     unsigned int i, current_stream;
     double bg_prob;
@@ -801,12 +796,11 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
     STREAM_GAUSS sg;
 
     initialize_state(ap, sp, &es);
-    get_stream_gauss(ap, sn, &sg);
+    get_stream_gauss(ap, &sg);
 
     reset_evaluation_state(&es);
 
     vector* xyz = malloc(sizeof(vector) * ap->convolve);
-
 
     retval = calculate_integrals(ap, sc, sn, &es, &sg, xyz);
     if (retval)
