@@ -41,6 +41,27 @@ typedef struct
     double bg_a, bg_b, bg_c;
 } STREAM_NUMS;
 
+typedef struct
+{
+    double st_prob;
+    double st_prob_int;    /* for kahan summation */
+    double st_prob_int_c;
+} ST_PROBS;
+
+/* Scratch space used by each integral */
+typedef struct
+{
+    double* irv;
+    double* reff_xr_rp3;
+    double** qw_r3_N;
+    double** r_point;
+    double** r_in_mag;
+    double** r_in_mag2;
+    double* ids;
+    double* nus;
+    ST_PROBS* probs;
+} INTEGRAL_STATE;
+
 
 STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn);
 void free_constants(ASTRONOMY_PARAMETERS* ap, STREAM_CONSTANTS* sc);
@@ -64,7 +85,7 @@ void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
                              double reff_xr_rp3,
                              double* integral_point,
                              double* bg_prob,
-                             double* st_prob);
+                             ST_PROBS* probs);
 
 int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                         const STREAM_CONSTANTS* sc,

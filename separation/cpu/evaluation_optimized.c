@@ -190,7 +190,7 @@ void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
                              double reff_xr_rp3,
                              double* integral_point,
                              double* bg_prob,
-                             double* st_prob)
+                             ST_PROBS* probs)
 {
     double bsin, lsin, bcos, lcos, zp;
     double rg, rs, xyzs[3], dotted, xyz_norm;
@@ -263,7 +263,7 @@ void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < ap->number_streams; i++)
     {
-        st_prob[i] = 0;
+        probs[i].st_prob = 0.0;
         if (cs[i].stream_sigma > -0.0001 && cs[i].stream_sigma < 0.0001)
             continue;
         for (j = 0; j < ap->convolve; j++)
@@ -284,9 +284,9 @@ void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
                      + Y(xyzs) * Y(xyzs)
                      + Z(xyzs) * Z(xyzs);
 
-            st_prob[i] += qw_r3_N[j] * exp(-xyz_norm / cs[i].stream_sigma_sq2);
+            probs[i].st_prob += qw_r3_N[j] * exp(-xyz_norm / cs[i].stream_sigma_sq2);
         }
-        st_prob[i] *= reff_xr_rp3;
+        probs[i].st_prob *= reff_xr_rp3;
     }
 }
 
@@ -416,26 +416,15 @@ void cpu__r_constants(const STREAM_NUMS* sn,
     }
 }
 
-/* Scratch space used by each integral */
-typedef struct
-{
-    double* st_probs;
-    double* irv, *reff_xr_rp3;
-    double **qw_r3_N, **r_point, **r_in_mag, **r_in_mag2;
-    double* ids, *nus;
-    double* st_probs_int, *st_probs_int_c;          // for kahan summation
-} INTEGRAL_STATE;
-
 void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
                             const STREAM_NUMS* sn,
                             INTEGRAL_AREA* ia,
                             INTEGRAL_STATE* st)
 {
-    st->st_probs    = (double*)malloc(sizeof(double) * ap->number_streams);
-    st->st_probs_int    = (double*)malloc(sizeof(double) * ap->number_streams);
-    st->st_probs_int_c  = (double*)malloc(sizeof(double) * ap->number_streams);
 
-    st->irv     = (double*)malloc(sizeof(double) * ia->r_steps);
+    st->probs = (ST_PROBS*) malloc(sizeof(ST_PROBS) * ap->number_streams);
+
+    st->irv         = (double*)malloc(sizeof(double) * ia->r_steps);
     st->reff_xr_rp3 = (double*)malloc(sizeof(double) * ia->r_steps);
     st->qw_r3_N     = (double**)malloc(sizeof(double*) * ia->r_steps);
     st->r_point     = (double**)malloc(sizeof(double*) * ia->r_steps);
@@ -460,9 +449,7 @@ void free_integral_state(INTEGRAL_AREA* ia, INTEGRAL_STATE* st)
     free(st->nus);
     free(st->ids);
     free(st->irv);
-    free(st->st_probs);
-    free(st->st_probs_int);
-    free(st->st_probs_int_c);
+    free(st->probs);
     free(st->reff_xr_rp3);
     for (i = 0; i < ia->r_steps; i++)
     {
@@ -498,8 +485,8 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
     bg_prob_int_c = 0.0;
     for (i = 0; i < ap->number_streams; i++)
     {
-        st->st_probs_int[i] = ia->stream_integrals[i];
-        st->st_probs_int_c[i] = 0.0;
+        st->probs[i].st_prob_int = ia->stream_integrals[i];
+        st->probs[i].st_prob_int_c = 0.0;
     }
 
     for (; mu_step_current < ia->mu_steps; mu_step_current++)
@@ -512,7 +499,7 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
             ia->background_integral = bg_prob_int + bg_prob_int_c;  // apply correction
             for (i = 0; i < ap->number_streams; i++)
             {
-                ia->stream_integrals[i] = st->st_probs_int[i] + st->st_probs_int_c[i];  // apply correction
+                ia->stream_integrals[i] = st->probs[i].st_prob_int + st->probs[i].st_prob_int_c;  // apply correction
             }
             ia->mu_step = mu_step_current;
             ia->nu_step = nu_step_current;
@@ -555,7 +542,7 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
                                         st->reff_xr_rp3[r_step_current],
                                         integral_point,
                                         &bg_prob,
-                                        st->st_probs);
+                                        st->probs);
 
                 bg_prob *= V;
 
@@ -566,10 +553,10 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
 //              ia->background_integral += bg_prob;
                 for (i = 0; i < ap->number_streams; i++)
                 {
-                    st->st_probs[i] *= V;
-                    temp = st->st_probs_int[i];
-                    st->st_probs_int[i] += st->st_probs[i];
-                    st->st_probs_int_c[i] += st->st_probs[i] - (st->st_probs_int[i] - temp);
+                    st->probs[i].st_prob *= V;
+                    temp = st->probs[i].st_prob_int;
+                    st->probs[i].st_prob_int += st->probs[i].st_prob;
+                    st->probs[i].st_prob_int_c += st->probs[i].st_prob - (st->probs[i].st_prob_int - temp);
 
 //                  ia->stream_integrals[i] += st_probs[i] * V;
                 }
@@ -597,7 +584,7 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
     ia->background_integral = bg_prob_int + bg_prob_int_c;  // apply correction
     for (i = 0; i < ap->number_streams; i++)
     {
-        ia->stream_integrals[i] = st->st_probs_int[i] + st->st_probs_int_c[i];  // apply correction
+        ia->stream_integrals[i] = st->probs[i].st_prob_int + st->probs[i].st_prob_int_c;  // apply correction
     }
 
 //  printf("bg_int: %.15lf ", ia->background_integral);
@@ -663,7 +650,7 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
                          const STAR_POINTS* sp)
 {
     unsigned int i, current_stream;
-    double bg_prob, *st_prob;
+    double bg_prob;
     double prob_sum, prob_sum_c, temp;  // for Kahan summation
     double exp_background_weight, sum_exp_weights, *exp_stream_weights;
     double* r_point, *r_in_mag, *r_in_mag2, *qw_r3_N, reff_xr_rp3;
@@ -676,8 +663,10 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
     time (&start_time);
 #endif
 
+    /* The correction terms aren't used here since this isn't the sum? */
+    ST_PROBS* st_prob = (ST_PROBS*) malloc(sizeof(ST_PROBS) * ap->number_streams);
+
     exp_stream_weights = (double*)malloc(sizeof(double) * ap->number_streams);
-    st_prob = (double*)malloc(sizeof(double) * ap->number_streams);
     r_point = (double*)malloc(sizeof(double) * ap->convolve);
     r_in_mag = (double*)malloc(sizeof(double) * ap->convolve);
     r_in_mag2 = (double*)malloc(sizeof(double) * ap->convolve);
@@ -752,7 +741,7 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
 
         for (current_stream = 0; current_stream < ap->number_streams; current_stream++)
         {
-            st_only = st_prob[current_stream] / es->stream_integrals[current_stream] * exp_stream_weights[current_stream];
+            st_only = st_prob[current_stream].st_prob / es->stream_integrals[current_stream] * exp_stream_weights[current_stream];
             star_prob += st_only;
 
             if (st_only == 0.0)
