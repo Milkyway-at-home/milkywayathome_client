@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 double* qgausX, *qgausW;
 
-/*Gauss-Legendre quadrature taken from Numerical Recipes in C*/
+/* Gauss-Legendre quadrature taken from Numerical Recipes in C */
 void gaussLegendre(double x1, double x2, double x[], double w[], int n)
 {
     int m, j, i;

@@ -44,14 +44,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
-double* dx;
-vector* xyz;
-double* qgaus_W;
-
 STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn)
 {
     unsigned int i;
-    double* qgaus_X;
     STREAM_CONSTANTS* sc = malloc(sizeof(STREAM_CONSTANTS) * ap->number_streams);
 
     sn->alpha = ap->background_parameters[0];
@@ -117,32 +112,36 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn)
         Z(sc[i].stream_a) = cos(STREAM_PARAM_N(ap, i).stream_parameters[2]);
     }
 
-    qgaus_X = (double*) malloc(sizeof(double) * ap->convolve);
+    return sc;
+}
 
-    xyz     = (vector*) malloc(sizeof(vector) * ap->convolve);
-    qgaus_W = (double*) malloc(sizeof(double) * ap->convolve);
-    dx      = (double*) malloc(sizeof(double) * ap->convolve);
+void get_stream_gauss(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn, STREAM_GAUSS* sg)
+{
+    unsigned int i;
+    double* qgaus_X = malloc(sizeof(double) * ap->convolve);
 
-    gaussLegendre(-1.0, 1.0, qgaus_X, qgaus_W, ap->convolve);
+    sg->qgaus_W = (double*) malloc(sizeof(double) * ap->convolve);
+    sg->dx      = (double*) malloc(sizeof(double) * ap->convolve);
+
+    gaussLegendre(-1.0, 1.0, qgaus_X, sg->qgaus_W, ap->convolve);
 
     for (i = 0; i < ap->convolve; i++)
-        dx[i] = 3.0 * stdev * qgaus_X[i];
+        sg->dx[i] = 3.0 * stdev * qgaus_X[i];
 
     free(qgaus_X);
-
-    return sc;
 }
 
 void free_constants(ASTRONOMY_PARAMETERS* ap, STREAM_CONSTANTS* sc)
 {
     //free(qgaus_X);
     //free(qgaus_W);
-    free(dx);
-    free(xyz);
-    free(sc);
+    //free(dx);
+    //free(xyz);
+    //free(sc);
 }
 
 void set_probability_constants(const STREAM_NUMS* sn,
+                               const STREAM_GAUSS* sg,
                                unsigned int n_convolve,
                                double coords,
                                R_STEP_STATE* rss,
@@ -166,7 +165,7 @@ void set_probability_constants(const STREAM_NUMS* sn,
     for (i = 0; i < n_convolve; i++)
     {
         idx = row_base + i;
-        g = gPrime + dx[i];
+        g = gPrime + sg->dx[i];
 
         //MAG2R
         rss[idx].r_in_mag = g;
@@ -176,7 +175,7 @@ void set_probability_constants(const STREAM_NUMS* sn,
         r3 = rss[idx].r_point * rss[idx].r_point * rss[idx].r_point;
         exponent = (g - gPrime) * (g - gPrime) / (2.0 * stdev * stdev);
         N = sn->coeff * exp(-exponent);
-        rss[idx].qw_r3_N = qgaus_W[i] * r3 * N;
+        rss[idx].qw_r3_N = sg->qgaus_W[i] * r3 * N;
     }
 }
 
@@ -184,6 +183,7 @@ void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
                              const STREAM_CONSTANTS* cs,
                              const STREAM_NUMS* sn,
                              R_STEP_STATE* rss,
+                             vector* xyz,
                              unsigned int r_step_current,
                              unsigned int r_steps,
                              double reff_xr_rp3,
@@ -351,6 +351,7 @@ void do_boinc_checkpoint(EVALUATION_STATE* es)
 #endif
 
 void cpu__r_constants(const STREAM_NUMS* sn,
+                      STREAM_GAUSS* sg,
                       unsigned int n_convolve,
                       unsigned int r_steps,
                       double r_min,
@@ -395,6 +396,7 @@ void cpu__r_constants(const STREAM_NUMS* sn,
         rPrime = (next_r + r) / 2.0;
 
         set_probability_constants(sn,
+                                  sg,
                                   n_convolve,
                                   rPrime,
                                   rss,
@@ -412,6 +414,7 @@ void cpu__r_constants(const STREAM_NUMS* sn,
 
 void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
                             const STREAM_NUMS* sn,
+                            STREAM_GAUSS* sg,
                             INTEGRAL_AREA* ia,
                             INTEGRAL_STATE* st)
 {
@@ -426,7 +429,7 @@ void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
     st->rss = malloc(sizeof(R_STEP_STATE) * ia->r_steps * ap->convolve);
     st->nu_st = malloc(sizeof(NU_STATE) * ia->nu_steps);
 
-    cpu__r_constants(sn,
+    cpu__r_constants(sn, sg,
                      ap->convolve, ia->r_steps, ia->r_min, ia->r_step_size,
                      ia->mu_step_size,
                      ia->nu_steps, ia->nu_min, ia->nu_step_size,
@@ -447,6 +450,7 @@ void free_integral_state(INTEGRAL_STATE* st)
 void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
                         const STREAM_CONSTANTS* sc,
                         const STREAM_NUMS* sn,
+                        double* xyz,
                         INTEGRAL_AREA* ia,
                         EVALUATION_STATE* es,
                         INTEGRAL_STATE* st)
@@ -521,6 +525,7 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
                                         sc,
                                         sn,
                                         st->rss,
+                                        xyz,
                                         r_step_current,
                                         ia->r_steps,
                                         st->reff_xr_rp3[r_step_current],
@@ -590,7 +595,9 @@ static void print_stream_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_ST
 int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                         const STREAM_CONSTANTS* sc,
                         const STREAM_NUMS* sn,
-                        EVALUATION_STATE* es)
+                        EVALUATION_STATE* es,
+                        STREAM_GAUSS* sg,
+                        double* xyz)
 {
     unsigned int i, j;
 
@@ -602,10 +609,10 @@ int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
     /* FIXME: the integral area not actually needed here, for some
      * reason they all carry the same information which never
      * changes. */
-    prepare_integral_state(ap, sn, &es->integrals[0], &st);
+    prepare_integral_state(ap, sn, sg, &es->integrals[0], &st);
 
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
-        calculate_integral(ap, sc, sn, &es->integrals[es->current_integral], es, &st);
+        calculate_integral(ap, sc, sn, xyz, &es->integrals[es->current_integral], es, &st);
 
     free_integral_state(&st);
 
@@ -631,6 +638,8 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
                          const STREAM_CONSTANTS* sc,
                          const STREAM_NUMS* sn,
                          EVALUATION_STATE* es,
+                         STREAM_GAUSS* sg,
+                         vector* xyz,
                          const STAR_POINTS* sp)
 {
     unsigned int i, current_stream;
@@ -688,6 +697,7 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
         double star_prob;
 
         set_probability_constants(sn,
+                                  sg,
                                   ap->convolve,
                                   ZN(sp, es->current_star_point),
                                   rss,
@@ -698,6 +708,7 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
                                 sc,
                                 sn,
                                 rss,
+                                xyz,
                                 0,   /* Would be for indexing the 2D block used by the integration */
                                 0,
                                 reff_xr_rp3,
@@ -787,24 +798,33 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
 {
     int retval;
     EVALUATION_STATE es = EMPTY_EVALUATION_STATE;
+    STREAM_GAUSS sg;
 
     initialize_state(ap, sp, &es);
+    get_stream_gauss(ap, sn, &sg);
 
     reset_evaluation_state(&es);
 
-    retval = calculate_integrals(ap, sc, sn, &es);
+    vector* xyz = malloc(sizeof(vector) * ap->convolve);
+
+
+    retval = calculate_integrals(ap, sc, sn, &es, &sg, xyz);
     if (retval)
     {
         fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
         mw_finish(retval);
     }
 
-    retval = calculate_likelihood(ap, sc, sn, &es, sp);
+    retval = calculate_likelihood(ap, sc, sn, &es, &sg, xyz, sp);
     if (retval)
     {
         fprintf(stderr, "APP: error calculating likelihood: %d\n", retval);
         mw_finish(retval);
     }
+
+    free(xyz);
+    free(sg.dx);
+    free(sg.qgaus_W);
 
     /*  log10(x * 0.001) = log10(x) - 3.0 */
     return (es.prob_sum / (sp->number_stars - es.bad_jacobians)) - 3.0;

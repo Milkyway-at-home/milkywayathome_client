@@ -73,11 +73,20 @@ typedef struct
     NU_STATE* nu_st;
 } INTEGRAL_STATE;
 
+typedef struct
+{
+    double* dx;
+    double* qgaus_W;
+} STREAM_GAUSS;
+
 
 STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn);
+void arst(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn);
+
 void free_constants(ASTRONOMY_PARAMETERS* ap, STREAM_CONSTANTS* sc);
 
 void set_probability_constants(const STREAM_NUMS* sn,
+                               const STREAM_GAUSS* sg,
                                unsigned int n_convolve,
                                double coords,
                                R_STEP_STATE* rss,
@@ -88,6 +97,7 @@ void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
                              const STREAM_CONSTANTS* sc,
                              const STREAM_NUMS* sn,
                              R_STEP_STATE* rss,
+                             vector* xyz,
                              unsigned int r_step_current,
                              unsigned int r_steps,
                              double reff_xr_rp3,
@@ -98,15 +108,20 @@ void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
 int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                         const STREAM_CONSTANTS* sc,
                         const STREAM_NUMS* sn,
-                        EVALUATION_STATE* es);
+                        EVALUATION_STATE* es,
+                        STREAM_GAUSS* sg,
+                        double* xyz);
 
 int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
                          const STREAM_CONSTANTS* sc,
                          const STREAM_NUMS* sn,
                          EVALUATION_STATE* es,
+                         STREAM_GAUSS* sg,
+                         vector* xyz,
                          const STAR_POINTS* sp);
 
 void cpu__r_constants(const STREAM_NUMS* sn,
+                      STREAM_GAUSS* sg,
                       unsigned int n_convolve,
                       unsigned int r_steps, double r_min, double r_step_size,
                       double mu_step_size,
