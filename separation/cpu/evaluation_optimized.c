@@ -145,14 +145,13 @@ void free_constants(ASTRONOMY_PARAMETERS* ap, STREAM_CONSTANTS* sc)
 void set_probability_constants(const STREAM_NUMS* sn,
                                unsigned int n_convolve,
                                double coords,
-                               double* r_point,
-                               double* r_in_mag,
-                               double* r_in_mag2,
-                               double* qw_r3_N,
+                               R_STEP_STATE* rss,
+                               unsigned int r_step,
                                double* reff_xr_rp3)
 {
     double gPrime, exp_result, g, exponent, r3, N, reff_value, rPrime3;
-    unsigned int i;
+    unsigned int i, idx;
+    const unsigned int row_base = n_convolve * r_step;
 
     //R2MAG
     gPrime = 5.0 * (log10(coords * 1000.0) - 1.0) + absm;
@@ -166,27 +165,27 @@ void set_probability_constants(const STREAM_NUMS* sn,
 
     for (i = 0; i < n_convolve; i++)
     {
+        idx = row_base + i;
         g = gPrime + dx[i];
 
         //MAG2R
-        r_in_mag[i] = g;
-        r_in_mag2[i] = g * g;
-        r_point[i] = pow(10.0, (g - absm) / 5.0 + 1.0) / 1000.0;
+        rss[idx].r_in_mag = g;
+        rss[idx].r_in_mag2 = g * g;
+        rss[idx].r_point = pow(10.0, (g - absm) / 5.0 + 1.0) / 1000.0;
 
-        r3 = r_point[i] * r_point[i] * r_point[i];
+        r3 = rss[idx].r_point * rss[idx].r_point * rss[idx].r_point;
         exponent = (g - gPrime) * (g - gPrime) / (2.0 * stdev * stdev);
         N = sn->coeff * exp(-exponent);
-        qw_r3_N[i] = qgaus_W[i] * r3 * N;
+        rss[idx].qw_r3_N = qgaus_W[i] * r3 * N;
     }
 }
 
 void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
                              const STREAM_CONSTANTS* cs,
                              const STREAM_NUMS* sn,
-                             double* r_point,
-                             double* r_in_mag,
-                             double* r_in_mag2,
-                             double* qw_r3_N,
+                             R_STEP_STATE* rss,
+                             unsigned int r_step_current,
+                             unsigned int r_steps,
                              double reff_xr_rp3,
                              double* integral_point,
                              double* bg_prob,
@@ -194,8 +193,9 @@ void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
 {
     double bsin, lsin, bcos, lcos, zp;
     double rg, rs, xyzs[3], dotted, xyz_norm;
-    double h_prob, aux_prob; //vickej2_bg
-    unsigned int i, j;
+    double h_prob, aux_prob;
+    unsigned int i, j, idx;
+    const unsigned int row_base = r_step_current * ap->convolve;
 
     bsin = sin(integral_point[1] / deg);
     lsin = sin(integral_point[0] / deg);
@@ -214,8 +214,11 @@ void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
         {
             for (i = 0; i < ap->convolve; i++)
             {
-                xyz[i][2] = r_point[i] * bsin;
-                zp = r_point[i] * bcos;
+                /* Index into 2d array */
+                idx = row_base + i;
+
+                xyz[i][2] = rss[idx].r_point * bsin;
+                zp = rss[idx].r_point * bcos;
                 xyz[i][0] = zp * lcos - lbr_r;
                 xyz[i][1] = zp * lsin;
 
@@ -229,13 +232,13 @@ void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
 
                 if (ap->aux_bg_profile == 1)
                 {
-                    h_prob = qw_r3_N[i] / (rg * rs * rs * rs);
-                    aux_prob = qw_r3_N[i] * ( sn->bg_a * r_in_mag2[i] + sn->bg_b * r_in_mag[i] + sn->bg_c );
+                    h_prob = rss[idx].qw_r3_N / (rg * rs * rs * rs);
+                    aux_prob = rss[idx].qw_r3_N * (sn->bg_a * rss[idx].r_in_mag2 + sn->bg_b * rss[idx].r_in_mag + sn->bg_c );
                     *bg_prob += h_prob + aux_prob;
                 }
                 else if (ap->aux_bg_profile == 0)
                 {
-                    *bg_prob += qw_r3_N[i] / (rg * rs * rs * rs);
+                    *bg_prob += rss[idx].qw_r3_N / (rg * rs * rs * rs);
                 }
                 else
                 {
@@ -247,15 +250,16 @@ void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
         {
             for (i = 0; i < ap->convolve; i++)
             {
-                xyz[i][2] = r_point[i] * bsin;
-                zp = r_point[i] * bcos;
+                idx = row_base + i;
+                xyz[i][2] = rss[idx].r_point * bsin;
+                zp = rss[idx].r_point * bcos;
                 xyz[i][0] = zp * lcos - lbr_r;
                 xyz[i][1] = zp * lsin;
 
                 rg = sqrt(xyz[i][0] * xyz[i][0] + xyz[i][1] * xyz[i][1] + (xyz[i][2] * xyz[i][2])
                           / (sn->q * sn->q));
 
-                *bg_prob += qw_r3_N[i] / (pow(rg, sn->alpha) * pow(rg + sn->r0, sn->alpha_delta3));
+                *bg_prob += rss[idx].qw_r3_N / (pow(rg, sn->alpha) * pow(rg + sn->r0, sn->alpha_delta3));
             }
         }
         *bg_prob *= reff_xr_rp3;
@@ -284,7 +288,8 @@ void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
                      + Y(xyzs) * Y(xyzs)
                      + Z(xyzs) * Z(xyzs);
 
-            probs[i].st_prob += qw_r3_N[j] * exp(-xyz_norm / cs[i].stream_sigma_sq2);
+            idx = row_base + j;
+            probs[i].st_prob += rss[idx].qw_r3_N * exp(-xyz_norm / cs[i].stream_sigma_sq2);
         }
         probs[i].st_prob *= reff_xr_rp3;
     }
@@ -356,10 +361,7 @@ void cpu__r_constants(const STREAM_NUMS* sn,
                       double nu_min,
                       double nu_step_size,
                       double* irv,
-                      double** r_point,
-                      double** r_in_mag,
-                      double** r_in_mag2,
-                      double** qw_r3_N,
+                      R_STEP_STATE* rss,
                       double* reff_xr_rp3,
                       double* nus,
                       double* ids)
@@ -394,17 +396,11 @@ void cpu__r_constants(const STREAM_NUMS* sn,
         irv[i] = (((next_r * next_r * next_r) - (r * r * r)) / 3.0) * mu_step_size / deg;
         rPrime = (next_r + r) / 2.0;
 
-        r_point[i] = (double*)malloc(sizeof(double) * n_convolve);
-        r_in_mag[i] = (double*)malloc(sizeof(double) * n_convolve);
-        r_in_mag2[i] = (double*)malloc(sizeof(double) * n_convolve);
-        qw_r3_N[i] = (double*)malloc(sizeof(double) * n_convolve);
         set_probability_constants(sn,
                                   n_convolve,
                                   rPrime,
-                                  r_point[i],
-                                  r_in_mag[i],
-                                  r_in_mag2[i],
-                                  qw_r3_N[i],
+                                  rss,
+                                  i,
                                   &reff_xr_rp3[i]);
     }
 
@@ -426,10 +422,10 @@ void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
 
     st->irv         = (double*)malloc(sizeof(double) * ia->r_steps);
     st->reff_xr_rp3 = (double*)malloc(sizeof(double) * ia->r_steps);
-    st->qw_r3_N     = (double**)malloc(sizeof(double*) * ia->r_steps);
-    st->r_point     = (double**)malloc(sizeof(double*) * ia->r_steps);
-    st->r_in_mag    = (double**)malloc(sizeof(double*) * ia->r_steps);
-    st->r_in_mag2   = (double**)malloc(sizeof(double*) * ia->r_steps);
+
+
+    /* 2D block, ia->r_steps = rows, ap->convolve = columns */
+    st->rss = (R_STEP_STATE*) malloc(sizeof(R_STEP_STATE) * ia->r_steps * ap->convolve);
 
     st->ids     = (double*)malloc(sizeof(double) * ia->nu_steps);
     st->nus     = (double*)malloc(sizeof(double) * ia->nu_steps);
@@ -437,31 +433,19 @@ void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
                      ap->convolve, ia->r_steps, ia->r_min, ia->r_step_size,
                      ia->mu_step_size,
                      ia->nu_steps, ia->nu_min, ia->nu_step_size,
-                     st->irv, st->r_point, st->r_in_mag, st->r_in_mag2,
-                     st->qw_r3_N, st->reff_xr_rp3, st->nus, st->ids);
+                     st->irv,
+                     st->rss, st->reff_xr_rp3, st->nus, st->ids);
 
 }
 
 void free_integral_state(INTEGRAL_AREA* ia, INTEGRAL_STATE* st)
 {
-    unsigned int i;
-
     free(st->nus);
     free(st->ids);
     free(st->irv);
     free(st->probs);
     free(st->reff_xr_rp3);
-    for (i = 0; i < ia->r_steps; i++)
-    {
-        free(st->r_point[i]);
-        free(st->r_in_mag[i]);
-        free(st->r_in_mag2[i]);
-        free(st->qw_r3_N[i]);
-    }
-    free(st->r_point);
-    free(st->r_in_mag);
-    free(st->r_in_mag2);
-    free(st->qw_r3_N);
+    free(st->rss);
 }
 
 void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
@@ -535,10 +519,9 @@ void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
                 calculate_probabilities(ap,
                                         sc,
                                         sn,
-                                        st->r_point[r_step_current],
-                                        st->r_in_mag[r_step_current],
-                                        st->r_in_mag2[r_step_current],
-                                        st->qw_r3_N[r_step_current],
+                                        st->rss,
+                                        r_step_current,
+                                        ia->r_steps,
                                         st->reff_xr_rp3[r_step_current],
                                         integral_point,
                                         &bg_prob,
@@ -653,7 +636,7 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
     double bg_prob;
     double prob_sum, prob_sum_c, temp;  // for Kahan summation
     double exp_background_weight, sum_exp_weights, *exp_stream_weights;
-    double* r_point, *r_in_mag, *r_in_mag2, *qw_r3_N, reff_xr_rp3;
+    double reff_xr_rp3;
 
     double bg_only, bg_only_sum, bg_only_sum_c;
     double st_only, *st_only_sum, *st_only_sum_c;
@@ -667,10 +650,8 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
     ST_PROBS* st_prob = (ST_PROBS*) malloc(sizeof(ST_PROBS) * ap->number_streams);
 
     exp_stream_weights = (double*)malloc(sizeof(double) * ap->number_streams);
-    r_point = (double*)malloc(sizeof(double) * ap->convolve);
-    r_in_mag = (double*)malloc(sizeof(double) * ap->convolve);
-    r_in_mag2 = (double*)malloc(sizeof(double) * ap->convolve);
-    qw_r3_N = (double*)malloc(sizeof(double) * ap->convolve);
+
+    R_STEP_STATE* rss = malloc(sizeof(R_STEP_STATE) * ap->convolve);
 
     st_only_sum = (double*)malloc(sizeof(double) * ap->number_streams);
     st_only_sum_c = (double*)malloc(sizeof(double) * ap->number_streams);
@@ -708,19 +689,16 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
         set_probability_constants(sn,
                                   ap->convolve,
                                   ZN(sp, es->current_star_point),
-                                  r_point,
-                                  r_in_mag,
-                                  r_in_mag2,
-                                  qw_r3_N,
+                                  rss,
+                                  0,
                                   &reff_xr_rp3);
 
         calculate_probabilities(ap,
                                 sc,
                                 sn,
-                                r_point,
-                                r_in_mag,
-                                r_in_mag2,
-                                qw_r3_N,
+                                rss,
+                                0,   /* Would be for indexing the 2D block used by the integration */
+                                0,
                                 reff_xr_rp3,
                                 &VN(sp, es->current_star_point),
                                 &bg_prob,
@@ -787,10 +765,7 @@ int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
 
     free(exp_stream_weights);
     free(st_prob);
-    free(r_point);
-    free(r_in_mag);
-    free(r_in_mag2);
-    free(qw_r3_N);
+    free(rss);
 
     free(st_only_sum);
     free(st_only_sum_c);

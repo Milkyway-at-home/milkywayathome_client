@@ -205,11 +205,14 @@ void reset_evaluation_state(EVALUATION_STATE* es)
         }
         es->integrals[i].current_calculation = es->integrals[i].min_calculation;
 #ifdef MILKYWAY
-	es->integrals[i].mu_step = 0;
-	es->integrals[i].nu_step = 0;
-	es->integrals[i].r_step = 0;
+        es->integrals[i].mu_step = 0;
+        es->integrals[i].nu_step = 0;
+        es->integrals[i].r_step = 0;
 #else
-	get_steps(&es->integrals[i], &es->integrals[i].mu_step, &es->integrals[i].nu_step, &es->integrals[i].r_step);
+        get_steps(&es->integrals[i],
+                  &es->integrals[i].mu_step,
+                  &es->integrals[i].nu_step,
+                  &es->integrals[i].r_step);
 #endif
     }
 }
