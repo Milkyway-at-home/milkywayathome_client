@@ -124,10 +124,11 @@ void get_steps(INTEGRAL_AREA* ia, unsigned int* mu_step, unsigned int* nu_step, 
 
 #endif
 }
-void initialize_integral_area(INTEGRAL_AREA* ia, INTEGRAL* integral, unsigned int number_streams)
+void initialize_integral_area(INTEGRAL_AREA* ia,
+                              double* ia_stream_integrals,
+                              INTEGRAL* integral,
+                              unsigned int number_streams)
 {
-    unsigned int i;
-
     ia->mu_min   = integral->mu_min;
     ia->mu_max   = integral->mu_max;
     ia->mu_steps = integral->mu_steps;
@@ -156,10 +157,7 @@ void initialize_integral_area(INTEGRAL_AREA* ia, INTEGRAL* integral, unsigned in
 
     ia->number_streams = number_streams;
     ia->background_integral = 0;
-    ia->stream_integrals    = (double*)malloc(sizeof(double) * number_streams);
-
-    for (i = 0; i < number_streams; i++)
-        ia->stream_integrals[i] = 0;
+    ia->stream_integrals = ia_stream_integrals;
 }
 
 void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVALUATION_STATE* es)
@@ -179,9 +177,15 @@ void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVA
 
     es->number_integrals = ap->number_integrals;
     es->integrals = malloc(sizeof(INTEGRAL_AREA) * ap->number_integrals);
+    es->ia_stream_integrals = calloc(sizeof(double), ap->number_integrals * ap->number_streams);
 
     for (i = 0; i < ap->number_integrals; i++)
-        initialize_integral_area(&es->integrals[i], &ap->integral[i], ap->number_streams);
+    {
+        initialize_integral_area(&es->integrals[i],
+                                 &es->ia_stream_integrals[i * ap->number_streams],
+                                 &ap->integral[i],
+                                 ap->number_streams);
+    }
 }
 
 void reset_evaluation_state(EVALUATION_STATE* es)
@@ -219,13 +223,8 @@ void reset_evaluation_state(EVALUATION_STATE* es)
 
 void free_state(EVALUATION_STATE* es)
 {
-    unsigned int i;
     free(es->stream_integrals);
-    for (i = 0; i < es->number_integrals; i++)
-    {
-        /* free integral area */
-        free(es->integrals[i].stream_integrals);
-    }
+    free(es->ia_stream_integrals);          /* free integral areas */
     free(es->integrals);
 }
 

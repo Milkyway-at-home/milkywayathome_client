@@ -48,6 +48,7 @@ typedef struct
 {
     /* State for integral calculation. */
     INTEGRAL_AREA* integrals;
+    double* ia_stream_integrals;  /* all of the stream_integrals used by INTEGRAL_AREAS */
     unsigned int number_integrals;
     unsigned int current_integral;
     unsigned int number_streams;
@@ -63,7 +64,7 @@ typedef struct
     double prob_sum;
 } EVALUATION_STATE;
 
-#define EMPTY_EVALUATION_STATE { NULL, \
+#define EMPTY_EVALUATION_STATE { NULL, NULL,    \
                                  0, 0, 0, \
                                  0.0, NULL, 0, 0, 0, 0, 0.0 }
 
