@@ -345,6 +345,21 @@ static void do_boinc_checkpoint(EVALUATION_STATE* es)
 }
 #endif
 
+static void prepare_nu_constants(NU_STATE* nu_st,
+                                 unsigned int nu_steps,
+                                 double nu_step_size,
+                                 double nu_min)
+{
+    unsigned int i;
+
+    for (i = 0; i < nu_steps; i++)
+    {
+        nu_st[i].nus = nu_min + (i * nu_step_size);
+        nu_st[i].ids = cos((90.0 - nu_st[i].nus - nu_step_size) / deg) - cos((90.0 - nu_st[i].nus) / deg);
+        nu_st[i].nus += 0.5 * nu_step_size;
+    }
+}
+
 static void cpu__r_constants(const STREAM_NUMS* sn,
                              STREAM_GAUSS* sg,
                              unsigned int n_convolve,
@@ -352,12 +367,8 @@ static void cpu__r_constants(const STREAM_NUMS* sn,
                              double r_min,
                              double r_step_size,
                              double mu_step_size,
-                             unsigned int nu_steps,
-                             double nu_min,
-                             double nu_step_size,
                              R_STEP_STATE* rss,
-                             R_STEP_CONSTANTS* r_step_consts,
-                             NU_STATE* nu_st)
+                             R_STEP_CONSTANTS* r_step_consts)
 {
     unsigned int i;
 
@@ -397,13 +408,6 @@ static void cpu__r_constants(const STREAM_NUMS* sn,
                                   i,
                                   &r_step_consts[i].reff_xr_rp3);
     }
-
-    for (i = 0; i < nu_steps; i++)
-    {
-        nu_st[i].nus = nu_min + (i * nu_step_size);
-        nu_st[i].ids = cos((90.0 - nu_st[i].nus - nu_step_size) / deg) - cos((90.0 - nu_st[i].nus) / deg);
-        nu_st[i].nus += 0.5 * nu_step_size;
-    }
 }
 
 static void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
@@ -419,13 +423,19 @@ static void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
 
     /* 2D block, ia->r_steps = rows, ap->convolve = columns */
     st->rss = malloc(sizeof(R_STEP_STATE) * ia->r_steps * ap->convolve);
-    st->nu_st = malloc(sizeof(NU_STATE) * ia->nu_steps);
-
-    cpu__r_constants(sn, sg,
-                     ap->convolve, ia->r_steps, ia->r_min, ia->r_step_size,
+    cpu__r_constants(sn,
+                     sg,
+                     ap->convolve,
+                     ia->r_steps,
+                     ia->r_min,
+                     ia->r_step_size,
                      ia->mu_step_size,
-                     ia->nu_steps, ia->nu_min, ia->nu_step_size,
-                     st->rss, st->r_step_consts, st->nu_st);
+                     st->rss,
+                     st->r_step_consts);
+
+    st->nu_st = malloc(sizeof(NU_STATE) * ia->nu_steps);
+    prepare_nu_constants(st->nu_st, ia->nu_steps, ia->nu_step_size, ia->nu_min);
+
 
 }
 
