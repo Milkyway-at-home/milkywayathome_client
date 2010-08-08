@@ -462,6 +462,85 @@ static void free_integral_state(INTEGRAL_STATE* st)
     free(st->nu_st);
 }
 
+
+inline static void r_sum(const ASTRONOMY_PARAMETERS* ap,
+                         const STREAM_CONSTANTS* sc,
+                         const STREAM_NUMS* sn,
+                         INTEGRAL_AREA* ia,
+                         INTEGRAL_STATE* st,
+                         vector* xyz,
+                         const vector integral_point,
+                         const unsigned int nu_step_current,
+                         unsigned int r_step_current,
+                         double* bg_prob_int_out,
+                         double* bg_prob_int_c_out)
+{
+    unsigned int i;
+    double V, temp;
+    double bg_prob;
+    double bg_prob_int = *bg_prob_int_out;
+    double bg_prob_int_c = *bg_prob_int_c_out; /* for Kahan summation */
+
+    for (; r_step_current < ia->r_steps; r_step_current++)
+    {
+        V = st->r_step_consts[r_step_current].irv * st->nu_st[nu_step_current].ids;
+
+        bg_prob = calculate_bg_probability(ap,
+                                           sn,
+                                           st->rss,
+                                           r_step_current,
+                                           st->r_step_consts[r_step_current].reff_xr_rp3,
+                                           integral_point,
+                                           xyz);
+
+        calculate_probabilities(ap,
+                                sc,
+                                st->rss,
+                                r_step_current,
+                                st->r_step_consts[r_step_current].reff_xr_rp3,
+                                xyz,
+                                st->probs);
+
+        bg_prob *= V;
+
+        temp = bg_prob_int;
+        bg_prob_int += bg_prob;
+        bg_prob_int_c += bg_prob - (bg_prob_int - temp);
+
+      //ia->background_integral += bg_prob;
+        for (i = 0; i < ap->number_streams; i++)
+        {
+            st->probs[i].st_prob *= V;
+            temp = st->probs[i].st_prob_int;
+            st->probs[i].st_prob_int += st->probs[i].st_prob;
+            st->probs[i].st_prob_int_c += st->probs[i].st_prob - (st->probs[i].st_prob_int - temp);
+
+          //ia->stream_integrals[i] += st_probs[i] * V;
+        }
+
+#ifndef MILKYWAY
+        ia->current_calculation++;
+        if (ia->current_calculation >= ia->max_calculation)
+            break;
+#endif
+    }
+
+    *bg_prob_int_out = bg_prob_int;
+    *bg_prob_int_c_out = bg_prob_int_c;
+}
+
+inline static void apply_correction(const unsigned int number_streams,
+                                    INTEGRAL_AREA* ia,
+                                    INTEGRAL_STATE* st,
+                                    double bg_prob_int,
+                                    double bg_prob_int_c)
+{
+    unsigned int i;
+    ia->background_integral = bg_prob_int + bg_prob_int_c;
+    for (i = 0; i < number_streams; i++)
+        ia->stream_integrals[i] = st->probs[i].st_prob_int + st->probs[i].st_prob_int_c;
+}
+
 static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
                                const STREAM_CONSTANTS* sc,
                                const STREAM_NUMS* sn,
@@ -470,12 +549,8 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
                                INTEGRAL_STATE* st)
 {
     unsigned int i, mu_step_current, nu_step_current, r_step_current;
-    double integral_point[3];
-    double temp;
-    double V;
-    double bg_prob;
-    double bg_prob_int, bg_prob_int_c; /* for kahan summation */
-
+    vector integral_point;
+    double bg_prob_int, bg_prob_int_c;  /* for Kahan summation */
     INTEGRAL_AREA* ia = &es->integrals[es->current_integral];
 
 
@@ -496,11 +571,7 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
         for (; nu_step_current < ia->nu_steps; nu_step_current++)
         {
 #ifdef MILKYWAY
-            ia->background_integral = bg_prob_int + bg_prob_int_c;  // apply correction
-            for (i = 0; i < ap->number_streams; i++)
-            {
-                ia->stream_integrals[i] = st->probs[i].st_prob_int + st->probs[i].st_prob_int_c;  // apply correction
-            }
+            apply_correction(ap->number_streams, ia, st, bg_prob_int, bg_prob_int_c);
             ia->mu_step = mu_step_current;
             ia->nu_step = nu_step_current;
             ia->r_step = r_step_current;
@@ -533,49 +604,18 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
                 fprintf(stderr, "Error: ap->sgr_coordinates not valid");
             }
 
-            for (; r_step_current < ia->r_steps; r_step_current++)
-            {
-                V = st->r_step_consts[r_step_current].irv * st->nu_st[nu_step_current].ids;
+            r_sum(ap,
+                  sc,
+                  sn,
+                  ia,
+                  st,
+                  xyz,
+                  integral_point,
+                  nu_step_current,
+                  r_step_current,
+                  &bg_prob_int,
+                  &bg_prob_int_c);
 
-                bg_prob = calculate_bg_probability(ap,
-                                                   sn,
-                                                   st->rss,
-                                                   r_step_current,
-                                                   st->r_step_consts[r_step_current].reff_xr_rp3,
-                                                   integral_point,
-                                                   xyz);
-
-                calculate_probabilities(ap,
-                                        sc,
-                                        st->rss,
-                                        r_step_current,
-                                        st->r_step_consts[r_step_current].reff_xr_rp3,
-                                        xyz,
-                                        st->probs);
-
-                bg_prob *= V;
-
-                temp = bg_prob_int;
-                bg_prob_int += bg_prob;
-                bg_prob_int_c += bg_prob - (bg_prob_int - temp);
-
-//              ia->background_integral += bg_prob;
-                for (i = 0; i < ap->number_streams; i++)
-                {
-                    st->probs[i].st_prob *= V;
-                    temp = st->probs[i].st_prob_int;
-                    st->probs[i].st_prob_int += st->probs[i].st_prob;
-                    st->probs[i].st_prob_int_c += st->probs[i].st_prob - (st->probs[i].st_prob_int - temp);
-
-//                  ia->stream_integrals[i] += st_probs[i] * V;
-                }
-
-#ifndef MILKYWAY
-                ia->current_calculation++;
-                if (ia->current_calculation >= ia->max_calculation)
-                    break;
-#endif
-            }
 #ifndef MILKYWAY
             if (ia->current_calculation >= ia->max_calculation)
                 break;
