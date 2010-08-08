@@ -80,7 +80,7 @@ typedef struct
     int wedge;
 
     unsigned int number_integrals;
-    INTEGRAL** integral;
+    INTEGRAL* integral;
 } ASTRONOMY_PARAMETERS;
 
 #define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0, 0.0, NULL, NULL, NULL, NULL, NULL, \

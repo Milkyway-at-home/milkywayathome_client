@@ -181,7 +181,7 @@ void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVA
     es->integrals = malloc(sizeof(INTEGRAL_AREA) * ap->number_integrals);
 
     for (i = 0; i < ap->number_integrals; i++)
-        initialize_integral_area(&es->integrals[i], ap->integral[i], ap->number_streams);
+        initialize_integral_area(&es->integrals[i], &ap->integral[i], ap->number_streams);
 }
 
 void reset_evaluation_state(EVALUATION_STATE* es)

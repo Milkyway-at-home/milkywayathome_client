@@ -26,7 +26,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 void free_parameters(ASTRONOMY_PARAMETERS* ap)
 {
-    unsigned int i;
     free(ap->background_parameters);
     free(ap->background_step);
     free(ap->background_min);
@@ -36,8 +35,6 @@ void free_parameters(ASTRONOMY_PARAMETERS* ap)
     free(ap->stream);
     free(ap->parameters);
 
-    for (i = 0; i < ap->number_integrals; i++)
-        free(ap->integral[i]);
     free(ap->integral);
 }
 
@@ -87,9 +84,18 @@ int write_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS* ap)
     return 0;
 }
 
+static void calc_integral_step_sizes(INTEGRAL* i)
+{
+    i->r_step_size = (i->r_max - i->r_min) / (double)i->r_steps;
+    i->mu_step_size = (i->mu_max - i->mu_min) / (double)i->mu_steps;
+    i->nu_step_size = (i->nu_max - i->nu_min) / (double)i->nu_steps;
+    i->min_calculation = 0;
+    i->max_calculation = i->r_steps * i->mu_steps * i->nu_steps;
+}
+
 void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
 {
-    unsigned int i;
+    unsigned int i, temp;
     int retval;
 
     retval = fscanf(file, "parameters_version: %lf\n", &ap->parameters_version);
@@ -100,7 +106,7 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
 //      return;
     }
 
-    fscanf(file, "number_parameters: %d\n", &ap->number_background_parameters);
+    fscanf(file, "number_parameters: %u\n", &ap->number_background_parameters);
     fscanf(file, "background_weight: %lf\n", &ap->background_weight);
 
     ap->background_parameters = fread_double_array(file, "background_parameters", NULL);
@@ -109,7 +115,7 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
     ap->background_max        = fread_double_array(file, "background_max", NULL);
     ap->background_optimize   = fread_int_array(file, "optimize_parameter", NULL);
 
-    fscanf(file, "number_streams: %d, %d\n", &ap->number_streams, &ap->number_stream_parameters);
+    fscanf(file, "number_streams: %u, %u\n", &ap->number_streams, &ap->number_stream_parameters);
 
     ap->stream = (STREAM*) malloc(sizeof(STREAM) * ap->number_streams);
     ap->parameters = (STREAM_PARAMETERS*) malloc(sizeof(STREAM_PARAMETERS) * ap->number_streams);
@@ -120,7 +126,7 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
         fscanf(file, "stream_weight_step: %lf\n", &ap->stream[i].weight_step);
         fscanf(file, "stream_weight_min: %lf\n", &ap->stream[i].weight_min);
         fscanf(file, "stream_weight_max: %lf\n", &ap->stream[i].weight_max);
-        fscanf(file, "optimize_weight: %d\n", &ap->stream[i].weight_optimize);
+        fscanf(file, "optimize_weight: %u\n", &ap->stream[i].weight_optimize);
 
         ap->parameters[i].stream_parameters = fread_double_array(file, "stream_parameters", NULL);
         ap->parameters[i].stream_step       = fread_double_array(file, "stream_step", NULL);
@@ -129,76 +135,71 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
         ap->parameters[i].stream_optimize   = fread_int_array(file, "optimize_parameter", NULL);
     }
 
-    fscanf(file, "convolve: %d\n", &ap->convolve);
-    fscanf(file, "sgr_coordinates: %d\n", &ap->sgr_coordinates);
+    fscanf(file, "convolve: %u\n", &ap->convolve);
+    fscanf(file, "sgr_coordinates: %u\n", &ap->sgr_coordinates);
     if (ap->parameters_version > 0.01)
     {
-        fscanf(file, "aux_bg_profile: %d\n", &ap->aux_bg_profile);
+        fscanf(file, "aux_bg_profile: %u\n", &ap->aux_bg_profile);
     }
-    fscanf(file, "wedge: %d\n", &ap->wedge);
+    fscanf(file, "wedge: %u\n", &ap->wedge);
 
-    ap->integral = (INTEGRAL**)malloc(sizeof(INTEGRAL*));
-    ap->integral[0] = (INTEGRAL*)malloc(sizeof(INTEGRAL));
-
-    fscanf(file,
-           "r[min,max,steps]: %lf, %lf, %d\n",
-           &ap->integral[0]->r_min,
-           &ap->integral[0]->r_max,
-           &ap->integral[0]->r_steps);
+    ap->integral = (INTEGRAL*) malloc(sizeof(INTEGRAL));
 
     fscanf(file,
-           "mu[min,max,steps]: %lf, %lf, %d\n",
-           &ap->integral[0]->mu_min,
-           &ap->integral[0]->mu_max,
-           &ap->integral[0]->mu_steps);
+           "r[min,max,steps]: %lf, %lf, %u\n",
+           &ap->integral[0].r_min,
+           &ap->integral[0].r_max,
+           &ap->integral[0].r_steps);
 
     fscanf(file,
-           "nu[min,max,steps]: %lf, %lf, %d\n",
-           &ap->integral[0]->nu_min,
-           &ap->integral[0]->nu_max,
-           &ap->integral[0]->nu_steps);
+           "mu[min,max,steps]: %lf, %lf, %u\n",
+           &ap->integral[0].mu_min,
+           &ap->integral[0].mu_max,
+           &ap->integral[0].mu_steps);
 
-    ap->integral[0]->r_step_size = (ap->integral[0]->r_max - ap->integral[0]->r_min) / (double)ap->integral[0]->r_steps;
-    ap->integral[0]->mu_step_size = (ap->integral[0]->mu_max - ap->integral[0]->mu_min) / (double)ap->integral[0]->mu_steps;
-    ap->integral[0]->nu_step_size = (ap->integral[0]->nu_max - ap->integral[0]->nu_min) / (double)ap->integral[0]->nu_steps;
-    ap->integral[0]->min_calculation = 0;
-    ap->integral[0]->max_calculation = ap->integral[0]->r_steps * ap->integral[0]->mu_steps * ap->integral[0]->nu_steps;
+    fscanf(file,
+           "nu[min,max,steps]: %lf, %lf, %u\n",
+           &ap->integral[0].nu_min,
+           &ap->integral[0].nu_max,
+           &ap->integral[0].nu_steps);
 
-    fscanf(file, "number_cuts: %d\n", &ap->number_integrals);
+    calc_integral_step_sizes(&ap->integral[0]);
+
+    fscanf(file, "number_cuts: %u\n", &ap->number_integrals);
     ap->number_integrals++;
     if (ap->number_integrals > 1)
     {
-        ap->integral = (INTEGRAL**)realloc(ap->integral, sizeof(INTEGRAL*) * ap->number_integrals);
+        ap->integral = (INTEGRAL*) realloc(ap->integral, sizeof(INTEGRAL) * ap->number_integrals);
+        if (!ap->integral)
+        {
+            fprintf(stderr, "realloc failed\n");
+            mw_finish(EXIT_FAILURE);
+        }
+
         for (i = 1; i < ap->number_integrals; i++)
         {
-            int temp;
-            ap->integral[i] = (INTEGRAL*)malloc(sizeof(INTEGRAL));
             fscanf(file,
-                   "r_cut[min,max,steps][%d]: %lf, %lf, %d\n",
+                   "r_cut[min,max,steps][%u]: %lf, %lf, %u\n",
                    &temp,
-                   &ap->integral[i]->r_min,
-                   &ap->integral[i]->r_max,
-                   &ap->integral[i]->r_steps);
+                   &ap->integral[i].r_min,
+                   &ap->integral[i].r_max,
+                   &ap->integral[i].r_steps);
 
             fscanf(file,
-                   "mu_cut[min,max,steps][%d]: %lf, %lf, %d\n",
+                   "mu_cut[min,max,steps][%u]: %lf, %lf, %u\n",
                    &temp,
-                   &ap->integral[i]->mu_min,
-                   &ap->integral[i]->mu_max,
-                   &ap->integral[i]->mu_steps);
+                   &ap->integral[i].mu_min,
+                   &ap->integral[i].mu_max,
+                   &ap->integral[i].mu_steps);
 
             fscanf(file,
-                   "nu_cut[min,max,steps][%d]: %lf, %lf, %d\n",
+                   "nu_cut[min,max,steps][%u]: %lf, %lf, %u\n",
                    &temp,
-                   &ap->integral[i]->nu_min,
-                   &ap->integral[i]->nu_max,
-                   &ap->integral[i]->nu_steps);
+                   &ap->integral[i].nu_min,
+                   &ap->integral[i].nu_max,
+                   &ap->integral[i].nu_steps);
 
-            ap->integral[i]->r_step_size = (ap->integral[i]->r_max - ap->integral[i]->r_min) / (double)ap->integral[i]->r_steps;
-            ap->integral[i]->mu_step_size = (ap->integral[i]->mu_max - ap->integral[i]->mu_min) / (double)ap->integral[i]->mu_steps;
-            ap->integral[i]->nu_step_size = (ap->integral[i]->nu_max - ap->integral[i]->nu_min) / (double)ap->integral[i]->nu_steps;
-            ap->integral[i]->min_calculation = 0;
-            ap->integral[i]->max_calculation = ap->integral[i]->r_steps * ap->integral[i]->mu_steps * ap->integral[i]->nu_steps;
+            calc_integral_step_sizes(&ap->integral[i]);
         }
     }
 }
@@ -209,7 +210,7 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
 
     fprintf(file, "parameters_version: %lf\n", ap->parameters_version);
 
-    fprintf(file, "number_parameters: %d\n", ap->number_background_parameters);
+    fprintf(file, "number_parameters: %u\n", ap->number_background_parameters);
     fprintf(file, "background_weight: %lf\n", ap->background_weight);
     fwrite_double_array(file, "background_parameters", ap->background_parameters, ap->number_background_parameters);
     fwrite_double_array(file, "background_step", ap->background_step, ap->number_background_parameters);
@@ -217,7 +218,7 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
     fwrite_double_array(file, "background_max", ap->background_max, ap->number_background_parameters);
     fwrite_int_array(file, "optimize_parameter", ap->background_optimize, ap->number_background_parameters);
 
-    fprintf(file, "number_streams: %d, %d\n", ap->number_streams, ap->number_stream_parameters);
+    fprintf(file, "number_streams: %u, %u\n", ap->number_streams, ap->number_stream_parameters);
     for (i = 0; i < ap->number_streams; i++)
     {
         fprintf(file, "stream_weight: %lf\n", ap->stream[i].weights);
@@ -244,44 +245,44 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
     fprintf(file, "wedge: %d\n", ap->wedge);
 
     fprintf(file,
-            "r[min,max,steps]: %lf, %lf, %d\n",
-            ap->integral[0]->r_min,
-            ap->integral[0]->r_max,
-            ap->integral[0]->r_steps);
+            "r[min,max,steps]: %lf, %lf, %u\n",
+            ap->integral[0].r_min,
+            ap->integral[0].r_max,
+            ap->integral[0].r_steps);
 
     fprintf(file,
-            "mu[min,max,steps]: %lf, %lf, %d\n",
-            ap->integral[0]->mu_min,
-            ap->integral[0]->mu_max,
-            ap->integral[0]->mu_steps);
+            "mu[min,max,steps]: %lf, %lf, %u\n",
+            ap->integral[0].mu_min,
+            ap->integral[0].mu_max,
+            ap->integral[0].mu_steps);
 
     fprintf(file,
-            "nu[min,max,steps]: %lf, %lf, %d\n",
-            ap->integral[0]->nu_min,
-            ap->integral[0]->nu_max,
-            ap->integral[0]->nu_steps);
+            "nu[min,max,steps]: %lf, %lf, %u\n",
+            ap->integral[0].nu_min,
+            ap->integral[0].nu_max,
+            ap->integral[0].nu_steps);
 
-    fprintf(file, "number_cuts: %d\n", ap->number_integrals - 1);
+    fprintf(file, "number_cuts: %u\n", ap->number_integrals - 1);
 
     for (i = 1; i < ap->number_integrals; i++)
     {
         fprintf(file,
-                "r_cut[min,max,steps][3]: %lf, %lf, %d\n",
-                ap->integral[i]->r_min,
-                ap->integral[i]->r_max,
-                ap->integral[i]->r_steps);
+                "r_cut[min,max,steps][3]: %lf, %lf, %u\n",
+                ap->integral[i].r_min,
+                ap->integral[i].r_max,
+                ap->integral[i].r_steps);
 
         fprintf(file,
-                "mu_cut[min,max,steps][3]: %lf, %lf, %d\n",
-                ap->integral[i]->mu_min,
-                ap->integral[i]->mu_max,
-                ap->integral[i]->mu_steps);
+                "mu_cut[min,max,steps][3]: %lf, %lf, %u\n",
+                ap->integral[i].mu_min,
+                ap->integral[i].mu_max,
+                ap->integral[i].mu_steps);
 
         fprintf(file,
-                "nu_cut[min,max,steps][3]: %lf, %lf, %d\n",
-                ap->integral[i]->nu_min,
-                ap->integral[i]->nu_max,
-                ap->integral[i]->nu_steps);
+                "nu_cut[min,max,steps][3]: %lf, %lf, %u\n",
+                ap->integral[i].nu_min,
+                ap->integral[i].nu_max,
+                ap->integral[i].nu_steps);
     }
 }
 
