@@ -137,16 +137,15 @@ void free_constants(ASTRONOMY_PARAMETERS* ap)
 
 static double set_probability_constants(const STREAM_NUMS* sn,
                                         const STREAM_GAUSS* sg,
-                                        unsigned int n_convolve,
+                                        const unsigned int n_convolve,
                                         double coords,
                                         R_STEP_STATE* rss,
                                         unsigned int r_step)
 {
     double gPrime, exp_result, g, exponent, r3, N, reff_value, rPrime3;
+    double reff_xr_rp3;
     unsigned int i, idx;
     const unsigned int row_base = n_convolve * r_step;
-
-    double reff_xr_rp3;
 
     //R2MAG
     gPrime = 5.0 * (log10(coords * 1000.0) - 1.0) + absm;
@@ -183,7 +182,6 @@ static double calculate_bg_probability(const ASTRONOMY_PARAMETERS* ap,
                                        const double reff_xr_rp3,
                                        const vector integral_point,
                                        vector* xyz)
-
 {
     double zp;
     double rg, rs;
@@ -268,7 +266,7 @@ static void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
                                     const R_STEP_STATE* rss,
                                     const unsigned int r_step_current,
                                     const double reff_xr_rp3,
-                                    vector* xyz,
+                                    vector* const xyz,
                                     ST_PROBS* probs)
 {
     unsigned int i, j, idx;
@@ -306,7 +304,9 @@ static void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
     }
 }
 
-static double calculate_progress(EVALUATION_STATE* es)
+#ifdef MILKYWAY
+
+inline static double calculate_progress(const EVALUATION_STATE* es)
 {
     double total_calc_probs, current_calc_probs, current_probs;
     unsigned int i, mu_step_current, nu_step_current, r_step_current;
@@ -340,7 +340,7 @@ static double calculate_progress(EVALUATION_STATE* es)
     return (double)current_calc_probs / (double)total_calc_probs;
 }
 
-#ifdef MILKYWAY
+
 static void do_boinc_checkpoint(EVALUATION_STATE* es)
 {
     double progress;
@@ -614,8 +614,8 @@ static void print_stream_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_ST
 static int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                                const STREAM_CONSTANTS* sc,
                                const STREAM_NUMS* sn,
+                               const STREAM_GAUSS* sg,
                                EVALUATION_STATE* es,
-                               STREAM_GAUSS* sg,
                                vector* xyz)
 {
     unsigned int i, j;
@@ -823,7 +823,7 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
 
     vector* xyz = malloc(sizeof(vector) * ap->convolve);
 
-    retval = calculate_integrals(ap, sc, sn, &es, &sg, xyz);
+    retval = calculate_integrals(ap, sc, sn, &sg, &es, xyz);
     if (retval)
     {
         fprintf(stderr, "APP: error calculating integrals: %d\n", retval);

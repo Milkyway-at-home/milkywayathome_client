@@ -27,6 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define VECTOR_SIZE 3
 
 typedef double vector[VECTOR_SIZE];
+typedef double* vectorptr;
 
 #define X(v) ((v)[0])
 #define Y(v) ((v)[1])
