@@ -466,7 +466,6 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
                                const STREAM_CONSTANTS* sc,
                                const STREAM_NUMS* sn,
                                vector* xyz,
-                               INTEGRAL_AREA* ia,
                                EVALUATION_STATE* es,
                                INTEGRAL_STATE* st)
 {
@@ -476,6 +475,8 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
     double V;
     double bg_prob;
     double bg_prob_int, bg_prob_int_c; /* for kahan summation */
+
+    INTEGRAL_AREA* ia = &es->integrals[es->current_integral];
 
 
     get_steps(ia, &mu_step_current, &nu_step_current, &r_step_current);
@@ -631,7 +632,7 @@ static int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
     prepare_integral_state(ap, sn, sg, &es->integrals[0], &st);
 
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
-        calculate_integral(ap, sc, sn, xyz, &es->integrals[es->current_integral], es, &st);
+        calculate_integral(ap, sc, sn, xyz, es, &st);
 
     free_integral_state(&st);
 
