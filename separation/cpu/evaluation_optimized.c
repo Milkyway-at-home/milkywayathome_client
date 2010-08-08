@@ -653,6 +653,12 @@ static int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
     return 0;
 }
 
+typedef struct
+{
+    double st_only_sum;
+    double st_only_sum_c;
+} ST_SUM;
+
 static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
                                 const STREAM_CONSTANTS* sc,
                                 const STREAM_NUMS* sn,
@@ -664,11 +670,11 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
     unsigned int i, current_stream;
     double bg_prob;
     double prob_sum, prob_sum_c, temp;  // for Kahan summation
-    double exp_background_weight, sum_exp_weights, *exp_stream_weights;
+    double exp_background_weight, sum_exp_weights;
     double reff_xr_rp3;
 
     double bg_only, bg_only_sum, bg_only_sum_c;
-    double st_only, *st_only_sum, *st_only_sum_c;
+    double st_only;
 
 #ifdef MW_ENABLE_DEBUG
     time_t start_time, finish_time;
@@ -677,13 +683,9 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
 
     /* The correction terms aren't used here since this isn't the sum? */
     ST_PROBS* st_prob = (ST_PROBS*) malloc(sizeof(ST_PROBS) * ap->number_streams);
-
-    exp_stream_weights = (double*)malloc(sizeof(double) * ap->number_streams);
-
+    double* exp_stream_weights = malloc(sizeof(double) * ap->number_streams);
     R_STEP_STATE* rss = malloc(sizeof(R_STEP_STATE) * ap->convolve);
-
-    st_only_sum = (double*)malloc(sizeof(double) * ap->number_streams);
-    st_only_sum_c = (double*)malloc(sizeof(double) * ap->number_streams);
+    ST_SUM* st_sum = calloc(sizeof(ST_SUM), ap->number_streams);
 
     exp_background_weight = exp(ap->background_weight);
     sum_exp_weights = exp_background_weight;
@@ -698,18 +700,11 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
     do_boinc_checkpoint(es);
 #endif
 
-    prob_sum = 0;
-    prob_sum_c = 0;
+    prob_sum = 0.0;
+    prob_sum_c = 0.0;
 
-    bg_only_sum = 0;
-    bg_only_sum_c = 0;
-
-    for (i = 0; i < ap->number_streams; i++)
-    {
-        st_only_sum[i] = 0;
-        st_only_sum_c[i] = 0;
-    }
-
+    bg_only_sum = 0.0;
+    bg_only_sum_c = 0.0;
 
     for (; es->current_star_point < sp->number_stars; es->current_star_point++)
     {
@@ -761,9 +756,9 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
             else
                 st_only = log10(st_only / sum_exp_weights);
 
-            temp = st_only_sum[current_stream];
-            st_only_sum[current_stream] += st_only;
-            st_only_sum_c[current_stream] += st_only - (st_only_sum[current_stream] - temp);
+            temp = st_sum[current_stream].st_only_sum;
+            st_sum[current_stream].st_only_sum += st_only;
+            st_sum[current_stream].st_only_sum_c += st_only - (st_sum[current_stream].st_only_sum - temp);
         }
         star_prob /= sum_exp_weights;
 
@@ -789,10 +784,10 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
     fprintf(stderr, "<stream_only_likelihood>");
     for (i = 0; i < ap->number_streams; i++)
     {
-        st_only_sum[i] += st_only_sum_c[i];
-        st_only_sum[i] /= sp->number_stars;
+        st_sum[i].st_only_sum += st_sum[i].st_only_sum_c;
+        st_sum[i].st_only_sum /= sp->number_stars;
 
-        fprintf(stderr, " %.20lf", st_only_sum[i] - 3.0);
+        fprintf(stderr, " %.20lf", st_sum[i].st_only_sum - 3.0);
     }
     fprintf(stderr, " </stream_only_likelihood>\n");
 #endif
@@ -801,8 +796,7 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
     free(st_prob);
     free(rss);
 
-    free(st_only_sum);
-    free(st_only_sum_c);
+    free(st_sum);
 
 #ifdef MW_ENABLE_DEBUG
     time(&finish_time);
