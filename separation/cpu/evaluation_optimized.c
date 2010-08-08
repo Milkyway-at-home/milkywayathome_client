@@ -79,18 +79,18 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn)
         double ra, dec, lamda, beta, l, b;
         vector lbr;
 
-        sc[i].stream_sigma = STREAM_PARAM_N(ap, i).stream_parameters[4];
+        sc[i].stream_sigma = ap->parameters[i].stream_parameters[4];
         sc[i].stream_sigma_sq2 = 2.0 * sc[i].stream_sigma * sc[i].stream_sigma;
 
         if (ap->sgr_coordinates == 0)
         {
-            atGCToEq(STREAM_PARAM_N(ap, i).stream_parameters[0],
+            atGCToEq(ap->parameters[i].stream_parameters[0],
                      0, &ra, &dec, get_node(), wedge_incl(ap->wedge));
             atEqToGal(ra, dec, &l, &b);
         }
         else if (ap->sgr_coordinates == 1)
         {
-            gcToSgr(STREAM_PARAM_N(ap, i).stream_parameters[0], 0, ap->wedge, &lamda, &beta);
+            gcToSgr(ap->parameters[i].stream_parameters[0], 0, ap->wedge, &lamda, &beta);
             sgrToGal(lamda, beta, &l, &b);
         }
         else
@@ -100,16 +100,16 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn)
 
         L(lbr) = l;
         B(lbr) = b;
-        R(lbr) = STREAM_PARAM_N(ap, i).stream_parameters[1];
+        R(lbr) = ap->parameters[i].stream_parameters[1];
         lbr2xyz(lbr, sc[i].stream_c);
 
-        X(sc[i].stream_a) =   sin(STREAM_PARAM_N(ap, i).stream_parameters[2])
-                            * cos(STREAM_PARAM_N(ap, i).stream_parameters[3]);
+        X(sc[i].stream_a) =   sin(ap->parameters[i].stream_parameters[2])
+                            * cos(ap->parameters[i].stream_parameters[3]);
 
-        Y(sc[i].stream_a) =   sin(STREAM_PARAM_N(ap, i).stream_parameters[2])
-                            * sin(STREAM_PARAM_N(ap, i).stream_parameters[3]);
+        Y(sc[i].stream_a) =   sin(ap->parameters[i].stream_parameters[2])
+                            * sin(ap->parameters[i].stream_parameters[3]);
 
-        Z(sc[i].stream_a) = cos(STREAM_PARAM_N(ap, i).stream_parameters[2]);
+        Z(sc[i].stream_a) = cos(ap->parameters[i].stream_parameters[2]);
     }
 
     return sc;
@@ -691,8 +691,8 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
     sum_exp_weights = exp_background_weight;
     for (i = 0; i < ap->number_streams; i++)
     {
-        exp_stream_weights[i] = exp(STREAM_N(ap, i).weights);
-        sum_exp_weights += exp(STREAM_N(ap, i).weights);
+        exp_stream_weights[i] = exp(ap->stream[i].weights);
+        sum_exp_weights += exp(ap->stream[i].weights);
     }
     sum_exp_weights *= 0.001;
 

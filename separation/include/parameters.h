@@ -56,9 +56,6 @@ typedef struct
 
 #define EMPTY_STREAM_PARAMETERS { NULL, NULL, NULL, NULL, NULL }
 
-#define STREAM_N(ap, n) ((ap)->stream[(n)])
-#define STREAM_PARAM_N(ap, n) ((ap)->parameters[(n)])
-
 typedef struct
 {
     double parameters_version;
