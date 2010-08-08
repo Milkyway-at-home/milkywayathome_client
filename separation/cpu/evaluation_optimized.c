@@ -182,7 +182,6 @@ static double calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
                                       R_STEP_STATE* rss,
                                       vector* xyz,
                                       unsigned int r_step_current,
-                                      unsigned int r_steps,
                                       double reff_xr_rp3,
                                       vector integral_point,
                                       ST_PROBS* probs)
@@ -364,18 +363,19 @@ static void prepare_nu_constants(NU_STATE* nu_st,
     }
 }
 
-static void prepare_r_constants(const STREAM_NUMS* sn,
-                                const STREAM_GAUSS* sg,
-                                const unsigned int n_convolve,
-                                const unsigned int r_steps,
-                                const double r_min,
-                                const double r_step_size,
-                                const double mu_step_size,
-                                R_STEP_STATE* rss,
-                                R_STEP_CONSTANTS* r_step_consts)
+static R_STEP_CONSTANTS* prepare_r_constants(const STREAM_NUMS* sn,
+                                             const STREAM_GAUSS* sg,
+                                             const unsigned int n_convolve,
+                                             const unsigned int r_steps,
+                                             const double r_min,
+                                             const double r_step_size,
+                                             const double mu_step_size,
+                                             R_STEP_STATE* rss)
 {
     unsigned int i;
     double r, next_r, rPrime;
+    R_STEP_CONSTANTS* r_step_consts = malloc(sizeof(R_STEP_CONSTANTS) * r_steps);
+
 
 //vickej2_kpc edits to make volumes even in kpc rather than g
 //vickej2_kpc        double log_r, r, next_r, rPrime;
@@ -408,6 +408,8 @@ static void prepare_r_constants(const STREAM_NUMS* sn,
                                                                  rss,
                                                                  i);
     }
+
+    return r_step_consts;
 }
 
 static void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
@@ -418,20 +420,19 @@ static void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
 {
 
     st->probs = (ST_PROBS*) malloc(sizeof(ST_PROBS) * ap->number_streams);
-    st->r_step_consts = (R_STEP_CONSTANTS*) malloc(sizeof(R_STEP_CONSTANTS) * ia->r_steps);
 
 
     /* 2D block, ia->r_steps = rows, ap->convolve = columns */
     st->rss = malloc(sizeof(R_STEP_STATE) * ia->r_steps * ap->convolve);
-    prepare_r_constants(sn,
-                        sg,
-                        ap->convolve,
-                        ia->r_steps,
-                        ia->r_min,
-                        ia->r_step_size,
-                        ia->mu_step_size,
-                        st->rss,
-                        st->r_step_consts);
+    st->r_step_consts = prepare_r_constants(sn,
+                                            sg,
+                                            ap->convolve,
+                                            ia->r_steps,
+                                            ia->r_min,
+                                            ia->r_step_size,
+                                            ia->mu_step_size,
+                                            st->rss);
+
 
     st->nu_st = malloc(sizeof(NU_STATE) * ia->nu_steps);
     prepare_nu_constants(st->nu_st, ia->nu_steps, ia->nu_step_size, ia->nu_min);
@@ -527,7 +528,6 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
                                                   st->rss,
                                                   xyz,
                                                   r_step_current,
-                                                  ia->r_steps,
                                                   st->r_step_consts[r_step_current].reff_xr_rp3,
                                                   integral_point,
                                                   st->probs);
@@ -708,7 +708,6 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
                                           rss,
                                           xyz,
                                           0, /* Would be indexing the 2D block used by integration */
-                                          0,
                                           reff_xr_rp3,
                                           &VN(sp, es->current_star_point),
                                           st_prob);
