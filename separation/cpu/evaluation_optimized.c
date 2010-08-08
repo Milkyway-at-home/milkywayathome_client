@@ -176,27 +176,27 @@ static double set_probability_constants(const STREAM_NUMS* sn,
     return reff_xr_rp3;
 }
 
-static double calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
-                                      const STREAM_CONSTANTS* cs,
-                                      const STREAM_NUMS* sn,
-                                      R_STEP_STATE* rss,
-                                      vector* xyz,
-                                      unsigned int r_step_current,
-                                      double reff_xr_rp3,
-                                      vector integral_point,
-                                      ST_PROBS* probs)
+static double calculate_bg_probability(const ASTRONOMY_PARAMETERS* ap,
+                                       const STREAM_NUMS* sn,
+                                       const R_STEP_STATE* rss,
+                                       const unsigned int r_step_current,
+                                       const double reff_xr_rp3,
+                                       const vector integral_point,
+                                       vector* xyz)
+
 {
-    double bsin, lsin, bcos, lcos, zp;
-    double rg, rs, xyzs[3], dotted, xyz_norm;
+    double zp;
+    double rg, rs;
     double h_prob, aux_prob;
     double bg_prob;
-    unsigned int i, j, idx;
+    unsigned int i, idx;
+
     const unsigned int row_base = r_step_current * ap->convolve;
 
-    bsin = sin(integral_point[1] / deg);
-    lsin = sin(integral_point[0] / deg);
-    bcos = cos(integral_point[1] / deg);
-    lcos = cos(integral_point[0] / deg);
+    const double bsin = sin(integral_point[1] / deg);
+    const double lsin = sin(integral_point[0] / deg);
+    const double bcos = cos(integral_point[1] / deg);
+    const double lcos = cos(integral_point[0] / deg);
 
     /* if q is 0, there is no probability */
     if (sn->q == 0)
@@ -205,7 +205,7 @@ static double calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
     }
     else
     {
-        bg_prob = 0;
+        bg_prob = 0.0;
         if (sn->alpha == 1 && sn->delta == 1)
         {
             for (i = 0; i < ap->convolve; i++)
@@ -260,36 +260,50 @@ static double calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
         bg_prob *= reff_xr_rp3;
     }
 
+    return bg_prob;
+}
+
+static void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
+                                    const STREAM_CONSTANTS* sc,
+                                    const R_STEP_STATE* rss,
+                                    const unsigned int r_step_current,
+                                    const double reff_xr_rp3,
+                                    vector* xyz,
+                                    ST_PROBS* probs)
+{
+    unsigned int i, j, idx;
+    double dotted, xyz_norm;
+    vector xyzs;
+    const unsigned int row_base = r_step_current * ap->convolve;
+
     for (i = 0; i < ap->number_streams; i++)
     {
         probs[i].st_prob = 0.0;
-        if (cs[i].stream_sigma > -0.0001 && cs[i].stream_sigma < 0.0001)
+        if (sc[i].stream_sigma > -0.0001 && sc[i].stream_sigma < 0.0001)
             continue;
         for (j = 0; j < ap->convolve; j++)
         {
-            X(xyzs) = X(xyz[j]) - X(cs[i].stream_c);
-            Y(xyzs) = Y(xyz[j]) - Y(cs[i].stream_c);
-            Z(xyzs) = Z(xyz[j]) - Z(cs[i].stream_c);
+            X(xyzs) = X(xyz[j]) - X(sc[i].stream_c);
+            Y(xyzs) = Y(xyz[j]) - Y(sc[i].stream_c);
+            Z(xyzs) = Z(xyz[j]) - Z(sc[i].stream_c);
 
-            dotted = X(cs[i].stream_a) * X(xyzs)
-                   + Y(cs[i].stream_a) * Y(xyzs)
-                   + Z(cs[i].stream_a) * Z(xyzs);
+            dotted = X(sc[i].stream_a) * X(xyzs)
+                   + Y(sc[i].stream_a) * Y(xyzs)
+                   + Z(sc[i].stream_a) * Z(xyzs);
 
-            X(xyzs) = X(xyzs) - dotted * X(cs[i].stream_a);
-            Y(xyzs) = Y(xyzs) - dotted * Y(cs[i].stream_a);
-            Z(xyzs) = Z(xyzs) - dotted * Z(cs[i].stream_a);
+            X(xyzs) = X(xyzs) - dotted * X(sc[i].stream_a);
+            Y(xyzs) = Y(xyzs) - dotted * Y(sc[i].stream_a);
+            Z(xyzs) = Z(xyzs) - dotted * Z(sc[i].stream_a);
 
             xyz_norm = X(xyzs) * X(xyzs)
                      + Y(xyzs) * Y(xyzs)
                      + Z(xyzs) * Z(xyzs);
 
             idx = row_base + j;
-            probs[i].st_prob += rss[idx].qw_r3_N * exp(-xyz_norm / cs[i].stream_sigma_sq2);
+            probs[i].st_prob += rss[idx].qw_r3_N * exp(-xyz_norm / sc[i].stream_sigma_sq2);
         }
         probs[i].st_prob *= reff_xr_rp3;
     }
-
-    return bg_prob;
 }
 
 static double calculate_progress(EVALUATION_STATE* es)
@@ -515,22 +529,28 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
             }
             else
             {
-                printf("Error: ap->sgr_coordinates not valid");
+                fprintf(stderr, "Error: ap->sgr_coordinates not valid");
             }
 
             for (; r_step_current < ia->r_steps; r_step_current++)
             {
                 V = st->r_step_consts[r_step_current].irv * st->nu_st[nu_step_current].ids;
 
-                bg_prob = calculate_probabilities(ap,
-                                                  sc,
-                                                  sn,
-                                                  st->rss,
-                                                  xyz,
-                                                  r_step_current,
-                                                  st->r_step_consts[r_step_current].reff_xr_rp3,
-                                                  integral_point,
-                                                  st->probs);
+                bg_prob = calculate_bg_probability(ap,
+                                                   sn,
+                                                   st->rss,
+                                                   r_step_current,
+                                                   st->r_step_consts[r_step_current].reff_xr_rp3,
+                                                   integral_point,
+                                                   xyz);
+
+                calculate_probabilities(ap,
+                                        sc,
+                                        st->rss,
+                                        r_step_current,
+                                        st->r_step_consts[r_step_current].reff_xr_rp3,
+                                        xyz,
+                                        st->probs);
 
                 bg_prob *= V;
 
@@ -702,15 +722,21 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
                                                 rss,
                                                 0);
 
-        bg_prob = calculate_probabilities(ap,
-                                          sc,
-                                          sn,
-                                          rss,
-                                          xyz,
-                                          0, /* Would be indexing the 2D block used by integration */
-                                          reff_xr_rp3,
-                                          &VN(sp, es->current_star_point),
-                                          st_prob);
+        bg_prob = calculate_bg_probability(ap,
+                                           sn,
+                                           rss,
+                                           0, /* Would be indexing the 2D block used by integration */
+                                           reff_xr_rp3,
+                                           &VN(sp, es->current_star_point),
+                                           xyz);
+
+        calculate_probabilities(ap,
+                                sc,
+                                rss,
+                                0, /* Would be indexing the 2D block used by integration */
+                                reff_xr_rp3,
+                                xyz,
+                                st_prob);
 
         bg_only = (bg_prob / es->background_integral) * exp_background_weight;
         star_prob = bg_only;
