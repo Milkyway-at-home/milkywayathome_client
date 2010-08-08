@@ -660,21 +660,18 @@ static int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                                vector* xyz)
 {
     unsigned int i, j;
+    INTEGRAL_STATE st;
 
 #ifdef MILKYWAY
     read_checkpoint(es);
 #endif
 
-    INTEGRAL_STATE st;
-    /* FIXME: the integral area not actually needed here, for some
-     * reason they all carry the same information which never
-     * changes. */
-    prepare_integral_state(ap, sn, sg, &es->integrals[0], &st);
-
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
+    {
+        prepare_integral_state(ap, sn, sg, &es->integrals[es->current_integral], &st);
         calculate_integral(ap, sc, sn, xyz, es, &st);
-
-    free_integral_state(&st);
+        free_integral_state(&st);
+    }
 
     es->background_integral = es->integrals[0].background_integral;
     for (i = 0; i < ap->number_streams; i++)
