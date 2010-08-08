@@ -80,6 +80,12 @@ typedef struct
 
 typedef struct
 {
+    double bg_int;
+    double correction;   /* Correction for Kahan summation */
+} BG_PROB;
+
+typedef struct
+{
     double* dx;
     double* qgaus_W;
 } STREAM_GAUSS;

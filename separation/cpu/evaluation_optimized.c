@@ -462,24 +462,21 @@ static void free_integral_state(INTEGRAL_STATE* st)
     free(st->nu_st);
 }
 
-
-inline static void r_sum(const ASTRONOMY_PARAMETERS* ap,
-                         const STREAM_CONSTANTS* sc,
-                         const STREAM_NUMS* sn,
-                         INTEGRAL_AREA* ia,
-                         INTEGRAL_STATE* st,
-                         vector* xyz,
-                         const vector integral_point,
-                         const unsigned int nu_step_current,
-                         unsigned int r_step_current,
-                         double* bg_prob_int_out,
-                         double* bg_prob_int_c_out)
+/* Sum over r steps using Kahan summation */
+inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
+                            const STREAM_CONSTANTS* sc,
+                            const STREAM_NUMS* sn,
+                            INTEGRAL_AREA* ia,
+                            INTEGRAL_STATE* st,
+                            vector* xyz,
+                            const vector integral_point,
+                            const unsigned int nu_step_current,
+                            unsigned int r_step_current)
 {
     unsigned int i;
     double V, temp;
     double bg_prob;
-    double bg_prob_int = *bg_prob_int_out;
-    double bg_prob_int_c = *bg_prob_int_c_out; /* for Kahan summation */
+    BG_PROB bg_prob_int = { 0.0, 0.0 }; /* for Kahan summation */
 
     for (; r_step_current < ia->r_steps; r_step_current++)
     {
@@ -503,9 +500,9 @@ inline static void r_sum(const ASTRONOMY_PARAMETERS* ap,
 
         bg_prob *= V;
 
-        temp = bg_prob_int;
-        bg_prob_int += bg_prob;
-        bg_prob_int_c += bg_prob - (bg_prob_int - temp);
+        temp = bg_prob_int.bg_int;
+        bg_prob_int.bg_int += bg_prob;
+        bg_prob_int.correction += bg_prob - (bg_prob_int.bg_int - temp);
 
       //ia->background_integral += bg_prob;
         for (i = 0; i < ap->number_streams; i++)
@@ -525,45 +522,41 @@ inline static void r_sum(const ASTRONOMY_PARAMETERS* ap,
 #endif
     }
 
-    *bg_prob_int_out = bg_prob_int;
-    *bg_prob_int_c_out = bg_prob_int_c;
+    return bg_prob_int;
 }
 
 inline static void apply_correction(const unsigned int number_streams,
                                     INTEGRAL_AREA* ia,
                                     INTEGRAL_STATE* st,
-                                    double bg_prob_int,
-                                    double bg_prob_int_c)
+                                    BG_PROB bg_prob_int)
 {
     unsigned int i;
-    ia->background_integral = bg_prob_int + bg_prob_int_c;
+    ia->background_integral = bg_prob_int.bg_int + bg_prob_int.correction;
     for (i = 0; i < number_streams; i++)
         ia->stream_integrals[i] = st->probs[i].st_prob_int + st->probs[i].st_prob_int_c;
 }
 
-inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
-                          const STREAM_CONSTANTS* sc,
-                          const STREAM_NUMS* sn,
-                          INTEGRAL_AREA* ia,
-                          EVALUATION_STATE* es,
-                          INTEGRAL_STATE* st,
-                          vector* xyz,
-                          const vector integral_point,
-                          unsigned int mu_step_current,
-                          unsigned int nu_step_current,
-                          unsigned int r_step_current,
-                          double* bg_prob_int_out,
-                          double* bg_prob_int_c_out)
+inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
+                             const STREAM_CONSTANTS* sc,
+                             const STREAM_NUMS* sn,
+                             INTEGRAL_AREA* ia,
+                             EVALUATION_STATE* es,
+                             INTEGRAL_STATE* st,
+                             vector* xyz,
+                             const vector integral_point,
+                             unsigned int mu_step_current,
+                             unsigned int nu_step_current,
+                             unsigned int r_step_current)
 {
-    double bg_prob_int = *bg_prob_int_out;
-    double bg_prob_int_c = *bg_prob_int_c_out;
+    BG_PROB bg_prob_int = { 0.0, 0.0 };
+    BG_PROB r_result;
 
     double mu = ia->mu_min + (mu_step_current * ia->mu_step_size);
 
     for (; nu_step_current < ia->nu_steps; nu_step_current++)
     {
 #ifdef MILKYWAY
-        apply_correction(ap->number_streams, ia, st, bg_prob_int, bg_prob_int_c);
+        apply_correction(ap->number_streams, ia, st, bg_prob_int);
         ia->mu_step = mu_step_current;
         ia->nu_step = nu_step_current;
         ia->r_step = r_step_current;
@@ -596,17 +589,18 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
             fprintf(stderr, "Error: ap->sgr_coordinates not valid");
         }
 
-        r_sum(ap,
-              sc,
-              sn,
-              ia,
-              st,
-              xyz,
-              integral_point,
-              nu_step_current,
-              r_step_current,
-              &bg_prob_int,
-              &bg_prob_int_c);
+        r_result = r_sum(ap,
+                         sc,
+                         sn,
+                         ia,
+                         st,
+                         xyz,
+                         integral_point,
+                         nu_step_current,
+                         r_step_current);
+
+        bg_prob_int.bg_int += r_result.bg_int;
+        bg_prob_int.correction += r_result.correction;
 
 #ifndef MILKYWAY
         if (ia->current_calculation >= ia->max_calculation)
@@ -615,8 +609,7 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
         r_step_current = 0;
     }
 
-    *bg_prob_int_out = bg_prob_int;
-    *bg_prob_int_c_out = bg_prob_int_c;
+    return bg_prob_int;
 }
 
 static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
@@ -628,14 +621,15 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
 {
     unsigned int i, mu_step_current, nu_step_current, r_step_current;
     vector integral_point;
-    double bg_prob_int, bg_prob_int_c;  /* for Kahan summation */
+    BG_PROB bg_prob_int;    /* for Kahan summation */
+    BG_PROB nu_result;
     INTEGRAL_AREA* ia = &es->integrals[es->current_integral];
 
 
     get_steps(ia, &mu_step_current, &nu_step_current, &r_step_current);
 
-    bg_prob_int = ia->background_integral;
-    bg_prob_int_c = 0.0;
+    bg_prob_int.bg_int = ia->background_integral;
+    bg_prob_int.correction = 0.0;
     for (i = 0; i < ap->number_streams; i++)
     {
         st->probs[i].st_prob_int = ia->stream_integrals[i];
@@ -644,19 +638,20 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
 
     for (; mu_step_current < ia->mu_steps; mu_step_current++)
     {
-        nu_sum(ap,
-               sc,
-               sn,
-               ia,
-               es,
-               st,
-               xyz,
-               integral_point,
-               mu_step_current,
-               nu_step_current,
-               r_step_current,
-               &bg_prob_int,
-               &bg_prob_int_c);
+        nu_result = nu_sum(ap,
+                           sc,
+                           sn,
+                           ia,
+                           es,
+                           st,
+                           xyz,
+                           integral_point,
+                           mu_step_current,
+                           nu_step_current,
+                           r_step_current);
+
+        bg_prob_int.bg_int += nu_result.bg_int;
+        bg_prob_int.correction += nu_result.correction;
 
 #ifndef MILKYWAY
         if (ia->current_calculation >= ia->max_calculation)
@@ -666,7 +661,7 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
     }
     mu_step_current = 0;
 
-    apply_correction(ap->number_streams, ia, st, bg_prob_int, bg_prob_int_c);
+    apply_correction(ap->number_streams, ia, st, bg_prob_int);
 
 //  printf("bg_int: %.15lf ", ia->background_integral);
 //  for (i = 0; i < ap->number_streams; i++) printf("st_int[%d]: %.15lf ", i, ia->stream_integrals[i]);
