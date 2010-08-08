@@ -111,9 +111,9 @@ void fread_integral_area(FILE* file, INTEGRAL_AREA* ia)
 void get_steps(INTEGRAL_AREA* ia, unsigned int* mu_step, unsigned int* nu_step, unsigned int* r_step)
 {
 #ifdef MILKYWAY
-        *mu_step = ia->mu_step;
-        *nu_step = ia->nu_step;
-        *r_step  = ia->r_step;
+    *mu_step = ia->mu_step;
+    *nu_step = ia->nu_step;
+    *r_step  = ia->r_step;
 #else
 
     *r_step = ia->current_calculation % ia->r_steps;
@@ -124,6 +124,7 @@ void get_steps(INTEGRAL_AREA* ia, unsigned int* mu_step, unsigned int* nu_step, 
 
 #endif
 }
+
 void initialize_integral_area(INTEGRAL_AREA* ia,
                               double* ia_stream_integrals,
                               INTEGRAL* integral,

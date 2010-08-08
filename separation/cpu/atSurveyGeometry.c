@@ -35,8 +35,6 @@ void atGCToEq (
     double x1, y1, z1, x2, y2, z2;
     /* Convert to radians */
 
-//  printf("atGCToEq: amu: %g, anu: %g, anode: %g, ainc: %g\n", amu, anu, anode, ainc);
-
     amu = amu * at_deg2Rad;
     anu = anu * at_deg2Rad;
     anode = anode * at_deg2Rad;
@@ -49,7 +47,6 @@ void atGCToEq (
     y1 = y2 * cos(ainc) - z2 * sin(ainc);
     z1 = y2 * sin(ainc) + z2 * cos(ainc);
 
-//  printf("amu: %.15g, anu: %.15g, anode: %.15g, ainc: %.15g, x2: %.15g, y2: %.15g, z2: %.15g, y1: %.15g, z1: %.15g\n", amu, anu, anode, ainc, x2, y2, z2, y1, z1);
 
     *ra = atan2 (y1, x1) + anode;
     *dec = asin(z1);
@@ -132,7 +129,7 @@ void slaDcc2s ( double v[3], double* a, double* b )
 }
 
 
-void slaDcs2c ( double a, double b, double v[3] )
+void slaDcs2c ( double a, double b, vector v )
 {
     double cosb;
 
@@ -143,34 +140,11 @@ void slaDcs2c ( double a, double b, double v[3] )
 }
 
 
-void slaDimxv ( double dm[3][3], double va[3], double vb[3] )
-{
-    long i, j;
-    double w, vw[3];
-
-    /* Inverse of matrix dm * vector va -> vector vw */
-    for ( j = 0; j < 3; j++ )
-    {
-        w = 0.0;
-        for ( i = 0; i < 3; i++ )
-        {
-            w += dm[i][j] * va[i];
-        }
-        vw[j] = w;
-    }
-
-    /* Vector vw -> vector vb */
-    for ( j = 0; j < 3; j++ )
-    {
-        vb[j] = vw[j];
-    }
-}
-
-
-void slaDmxv ( double dm[3][3], double va[3], double vb[3] )
+void slaDmxv ( double dm[3][3], vector va, vector vb )
 {
     int i, j;
-    double w, vw[3];
+    double w;
+    vector vw;
 
     /* Matrix dm * vector va -> vector vw */
     for ( j = 0; j < 3; j++ )
@@ -211,7 +185,8 @@ double slaDranrm ( double angle )
 
 void slaEqgal ( double dr, double dd, double* dl, double* db )
 {
-    double v1[3], v2[3];
+    vector v1;
+    vector v2;
 
     static double rmat[3][3];
 

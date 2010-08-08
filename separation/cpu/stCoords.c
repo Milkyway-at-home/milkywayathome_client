@@ -25,7 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "atSurveyGeometry.h"
 #include "stCoords.h"
-#include "stVector.h"
 
 static const double r0 = 8.5;
 
@@ -64,47 +63,6 @@ void xyz2lbr(const double* xyz, double* lbr)
         lbr[0] += 360.0;
 }
 
-/* Convert stream coordinates to lbr given the specified stream parameters. */
-void stream2lbr(const double* stream, const double* spars, double* lbr)
-{
-    double xyz[3];
-    stream2xyz( stream, spars, xyz );
-    xyz2lbr( xyz, lbr );
-}
-
-
-/* Same as stream2lbr, but with output in galactic-centered xyz. */
-void stream2xyz(const double* stream, const double* spars, double* xyz)
-{
-    int i;
-    const double* a;
-    const double* b;
-    const double* c;
-    double anorm, bnorm, cost, sint;
-    double ex[3], ey[3];
-
-    c = &spars[0];
-    a = &spars[3];
-    b = &spars[6];
-
-    anorm = norm(a);
-    bnorm = norm(b);
-    cost = cos(stream[0]);
-    sint = sin(stream[0]);
-
-    /* Get x-axis and y-axis normal vectors. */
-    for (i = 0; i < 3; ++i)
-        ex[i] = bnorm / anorm * a[i] * cost + anorm / bnorm * b[i] * sint;
-
-    crossp(a, b, ey);
-
-    normalize(ex);
-    normalize(ey);
-
-    for (i = 0; i < 3; ++i)
-        xyz[i] = c[i] + a[i] * cost + b[i] * sint + ex[i] * stream[1] + ey[i] * stream[2];
-}
-
 /* Get eta for the given wedge. */
 double wedge_eta(int wedge)
 {
@@ -138,57 +96,14 @@ void gc2lb( int wedge, double mu, double nu, double* l, double* b )
     atEqToGal( ra, dec, l, b );
 }
 
-/* Get normal vector of data slice from stripe number */
-void stripe_normal( int wedge, double* xyz )
-{
-    double eta, ra, dec, l, b;
-
-    eta = atEtaFromStripeNumber(wedge);
-    atSurveyToEq(0, 90.0 + eta, &ra, &dec);
-    atEqToGal(ra, dec, &l, &b);
-    lbToXyz(l, b, xyz);
-}
-
-//vickej2 change made to account for sgr_Stripes, calculates normal vector by crossmultiplication
-void sgr_stripe_normal(int wedge, double* xyz)
-{
-    double lamda1, beta1, lamda2, beta2, l1, b1, l2, b2, xyz1[3], xyz2[3];
-    lamda1 = wedge * 2.5;
-    lamda2 = wedge * 2.5;
-
-    beta1 = 0.0;
-    beta2 = 90.0;
-
-    sgrToGal(lamda1, beta1, &l1, &b1);
-    sgrToGal(lamda2, beta2, &l2, &b2);
-
-    lbToXyz(l1, b1, xyz1);
-    lbToXyz(l2, b2, xyz2);
-
-//crossmultiplication of the 2 vectors
-    xyz[0] = xyz1[1] * xyz2[2] - xyz1[2] * xyz2[1];
-    xyz[1] = xyz1[2] * xyz2[0] - xyz1[0] * xyz2[2];
-    xyz[2] = xyz1[0] * xyz2[1] - xyz1[1] * xyz2[0];
-}
-
-/*convert galactic coordinates l,b into cartesian x,y,z*/
-void lbToXyz(double l, double b, double* xyz)
-{
-    l = l / deg;
-    b = b / deg;
-
-    xyz[0] = cos(l) * cos(b);
-    xyz[1] = sin(l) * cos(b);
-    xyz[2] = sin(b);
-}
-
-/*wrapper that converts a point into magnitude-space pseudo-xyz*/
+/* wrapper that converts a point into magnitude-space pseudo-xyz */
 void xyz_mag(double* point, double offset, double* logPoint)
 {
     double lbg[3];
     xyz2lbg(point, offset, lbg);
     lbr2xyz(lbg, logPoint);
 }
+
 
 void xyz2lbg(double* point, double offset, double* lbg)
 {
@@ -197,4 +112,5 @@ void xyz2lbg(double* point, double offset, double* lbg)
 
     lbg[2] = g;
 }
+
 

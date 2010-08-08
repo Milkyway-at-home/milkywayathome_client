@@ -23,7 +23,6 @@ set(lib_source_file_list evaluation_state.c
                          ${PROJECT_SOURCE_DIR}/util/io_util.c
                          atSurveyGeometry.c
                          stCoords.c
-                         stVector.c
                          numericalIntegration.c
                          evaluation_optimized.c
                          parameters.c
