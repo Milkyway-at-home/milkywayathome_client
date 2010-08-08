@@ -541,6 +541,84 @@ inline static void apply_correction(const unsigned int number_streams,
         ia->stream_integrals[i] = st->probs[i].st_prob_int + st->probs[i].st_prob_int_c;
 }
 
+inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
+                          const STREAM_CONSTANTS* sc,
+                          const STREAM_NUMS* sn,
+                          INTEGRAL_AREA* ia,
+                          EVALUATION_STATE* es,
+                          INTEGRAL_STATE* st,
+                          vector* xyz,
+                          const vector integral_point,
+                          unsigned int mu_step_current,
+                          unsigned int nu_step_current,
+                          unsigned int r_step_current,
+                          double* bg_prob_int_out,
+                          double* bg_prob_int_c_out)
+{
+    double bg_prob_int = *bg_prob_int_out;
+    double bg_prob_int_c = *bg_prob_int_c_out;
+
+    double mu = ia->mu_min + (mu_step_current * ia->mu_step_size);
+
+    for (; nu_step_current < ia->nu_steps; nu_step_current++)
+    {
+#ifdef MILKYWAY
+        apply_correction(ap->number_streams, ia, st, bg_prob_int, bg_prob_int_c);
+        ia->mu_step = mu_step_current;
+        ia->nu_step = nu_step_current;
+        ia->r_step = r_step_current;
+
+        do_boinc_checkpoint(es);
+
+//              bg_prob_int_c = 0;
+//              for (i = 0; i < ap->number_streams; i++) st_probs_int_c[i] = 0;
+#endif
+
+        if (ap->sgr_coordinates == 0)
+        {
+            double ra, dec;
+            atGCToEq(mu + 0.5 * ia->mu_step_size,
+                     st->nu_st[nu_step_current].nus,
+                     &ra, &dec, get_node(), wedge_incl(ap->wedge));
+
+            atEqToGal(ra, dec, &integral_point[0], &integral_point[1]);
+        }
+        else if (ap->sgr_coordinates == 1)
+        {
+            double lamda, beta;
+            gcToSgr(mu + 0.5 * ia->mu_step_size,
+                    st->nu_st[nu_step_current].nus,
+                    ap->wedge, &lamda, &beta);
+            sgrToGal(lamda, beta, &integral_point[0], &integral_point[1]);
+        }
+        else
+        {
+            fprintf(stderr, "Error: ap->sgr_coordinates not valid");
+        }
+
+        r_sum(ap,
+              sc,
+              sn,
+              ia,
+              st,
+              xyz,
+              integral_point,
+              nu_step_current,
+              r_step_current,
+              &bg_prob_int,
+              &bg_prob_int_c);
+
+#ifndef MILKYWAY
+        if (ia->current_calculation >= ia->max_calculation)
+            break;
+#endif
+        r_step_current = 0;
+    }
+
+    *bg_prob_int_out = bg_prob_int;
+    *bg_prob_int_c_out = bg_prob_int_c;
+}
+
 static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
                                const STREAM_CONSTANTS* sc,
                                const STREAM_NUMS* sn,
@@ -566,62 +644,20 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
 
     for (; mu_step_current < ia->mu_steps; mu_step_current++)
     {
-        double mu = ia->mu_min + (mu_step_current * ia->mu_step_size);
+        nu_sum(ap,
+               sc,
+               sn,
+               ia,
+               es,
+               st,
+               xyz,
+               integral_point,
+               mu_step_current,
+               nu_step_current,
+               r_step_current,
+               &bg_prob_int,
+               &bg_prob_int_c);
 
-        for (; nu_step_current < ia->nu_steps; nu_step_current++)
-        {
-#ifdef MILKYWAY
-            apply_correction(ap->number_streams, ia, st, bg_prob_int, bg_prob_int_c);
-            ia->mu_step = mu_step_current;
-            ia->nu_step = nu_step_current;
-            ia->r_step = r_step_current;
-
-            do_boinc_checkpoint(es);
-
-//              bg_prob_int_c = 0;
-//              for (i = 0; i < ap->number_streams; i++) st_probs_int_c[i] = 0;
-#endif
-
-            if (ap->sgr_coordinates == 0)
-            {
-                double ra, dec;
-                atGCToEq(mu + 0.5 * ia->mu_step_size,
-                         st->nu_st[nu_step_current].nus,
-                         &ra, &dec, get_node(), wedge_incl(ap->wedge));
-
-                atEqToGal(ra, dec, &integral_point[0], &integral_point[1]);
-            }
-            else if (ap->sgr_coordinates == 1)
-            {
-                double lamda, beta;
-                gcToSgr(mu + 0.5 * ia->mu_step_size,
-                        st->nu_st[nu_step_current].nus,
-                        ap->wedge, &lamda, &beta);
-                sgrToGal(lamda, beta, &integral_point[0], &integral_point[1]);
-            }
-            else
-            {
-                fprintf(stderr, "Error: ap->sgr_coordinates not valid");
-            }
-
-            r_sum(ap,
-                  sc,
-                  sn,
-                  ia,
-                  st,
-                  xyz,
-                  integral_point,
-                  nu_step_current,
-                  r_step_current,
-                  &bg_prob_int,
-                  &bg_prob_int_c);
-
-#ifndef MILKYWAY
-            if (ia->current_calculation >= ia->max_calculation)
-                break;
-#endif
-            r_step_current = 0;
-        }
 #ifndef MILKYWAY
         if (ia->current_calculation >= ia->max_calculation)
             break;
@@ -630,11 +666,7 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
     }
     mu_step_current = 0;
 
-    ia->background_integral = bg_prob_int + bg_prob_int_c;  // apply correction
-    for (i = 0; i < ap->number_streams; i++)
-    {
-        ia->stream_integrals[i] = st->probs[i].st_prob_int + st->probs[i].st_prob_int_c;  // apply correction
-    }
+    apply_correction(ap->number_streams, ia, st, bg_prob_int, bg_prob_int_c);
 
 //  printf("bg_int: %.15lf ", ia->background_integral);
 //  for (i = 0; i < ap->number_streams; i++) printf("st_int[%d]: %.15lf ", i, ia->stream_integrals[i]);
