@@ -108,23 +108,6 @@ void fread_integral_area(FILE* file, INTEGRAL_AREA* ia)
     }
 }
 
-void get_steps(INTEGRAL_AREA* ia, unsigned int* mu_step, unsigned int* nu_step, unsigned int* r_step)
-{
-#ifdef MILKYWAY
-    *mu_step = ia->mu_step;
-    *nu_step = ia->nu_step;
-    *r_step  = ia->r_step;
-#else
-
-    *r_step = ia->current_calculation % ia->r_steps;
-
-    *nu_step = (ia->current_calculation / ia->r_steps) % ia->nu_steps;
-
-    *mu_step = ia->current_calculation / (ia->r_steps * ia->nu_steps);
-
-#endif
-}
-
 void initialize_integral_area(INTEGRAL_AREA* ia,
                               double* ia_stream_integrals,
                               INTEGRAL* integral,
@@ -148,13 +131,9 @@ void initialize_integral_area(INTEGRAL_AREA* ia,
     ia->nu_step_size = (ia->nu_max - ia->nu_min) / ia->nu_steps;
     ia->r_step_size = (ia->r_max - ia->r_min) / ia->r_steps;
 
-#ifdef MILKYWAY
     ia->mu_step = 0;
     ia->nu_step = 0;
     ia->r_step = 0;
-#else
-    get_steps(ia, &ia->mu_step, &ia->nu_step, &ia->r_step);
-#endif
 
     ia->number_streams = number_streams;
     ia->background_integral = 0;
@@ -209,16 +188,10 @@ void reset_evaluation_state(EVALUATION_STATE* es)
             es->integrals[i].stream_integrals[j] = 0;
         }
         es->integrals[i].current_calculation = es->integrals[i].min_calculation;
-#ifdef MILKYWAY
+
         es->integrals[i].mu_step = 0;
         es->integrals[i].nu_step = 0;
         es->integrals[i].r_step = 0;
-#else
-        get_steps(&es->integrals[i],
-                  &es->integrals[i].mu_step,
-                  &es->integrals[i].nu_step,
-                  &es->integrals[i].r_step);
-#endif
     }
 }
 

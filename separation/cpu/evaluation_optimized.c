@@ -305,22 +305,18 @@ static void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
     }
 }
 
-#ifdef MILKYWAY
-
 inline static double calculate_progress(const EVALUATION_STATE* es)
 {
-    double total_calc_probs, current_calc_probs, current_probs;
-    unsigned int i, mu_step_current, nu_step_current, r_step_current;
-    INTEGRAL_AREA* ia;
+    unsigned int i;
+    const INTEGRAL_AREA* ia;
 
-    total_calc_probs = 0;
-    current_calc_probs = 0;
+    unsigned int current_probs;
+    unsigned int total_calc_probs = 0;
+    unsigned int current_calc_probs = 0;
 
     for (i = 0; i < es->number_integrals; i++)
     {
         ia = &es->integrals[i];
-
-        get_steps(ia, &mu_step_current, &nu_step_current, &r_step_current);
 
         current_probs = ia->r_steps * ia->mu_steps * ia->nu_steps;
         total_calc_probs += current_probs;
@@ -330,7 +326,7 @@ inline static double calculate_progress(const EVALUATION_STATE* es)
         }
         else if (i == es->current_integral)
         {
-            current_calc_probs += r_step_current + (nu_step_current * ia->r_steps) + (mu_step_current * ia->nu_steps * ia->r_steps);
+            current_calc_probs += ia->r_step + (ia->nu_step * ia->r_steps) + (ia->mu_step * ia->nu_steps * ia->r_steps);
         }
 
     }
@@ -342,7 +338,7 @@ inline static double calculate_progress(const EVALUATION_STATE* es)
 }
 
 
-static void do_boinc_checkpoint(EVALUATION_STATE* es)
+inline static void do_boinc_checkpoint(EVALUATION_STATE* es)
 {
     double progress;
 
@@ -358,10 +354,10 @@ static void do_boinc_checkpoint(EVALUATION_STATE* es)
     }
 
     progress = calculate_progress(es);
-//      printf("progress: %.10f\n", progress);
+    //printf("progress: %.10f\n", progress);
     boinc_fraction_done(progress);
 }
-#endif
+
 
 static void prepare_nu_constants(NU_STATE* nu_st,
                                  unsigned int nu_steps,
@@ -555,17 +551,12 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
 
     for (; nu_step_current < ia->nu_steps; nu_step_current++)
     {
-#ifdef MILKYWAY
         apply_correction(ap->number_streams, ia, st, bg_prob_int);
         ia->mu_step = mu_step_current;
         ia->nu_step = nu_step_current;
         ia->r_step = r_step_current;
 
         do_boinc_checkpoint(es);
-
-//              bg_prob_int_c = 0;
-//              for (i = 0; i < ap->number_streams; i++) st_probs_int_c[i] = 0;
-#endif
 
         if (ap->sgr_coordinates == 0)
         {
@@ -624,8 +615,9 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
     BG_PROB nu_result;
     INTEGRAL_AREA* ia = &es->integrals[es->current_integral];
 
-
-    get_steps(ia, &mu_step_current, &nu_step_current, &r_step_current);
+    mu_step_current = ia->mu_step;
+    nu_step_current = ia->nu_step;
+    r_step_current = ia->r_step;
 
     bg_prob_int.bg_int = ia->background_integral;
     bg_prob_int.correction = 0.0;
