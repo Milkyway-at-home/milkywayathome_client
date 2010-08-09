@@ -436,6 +436,20 @@ static void free_integral_state(INTEGRAL_STATE* st)
     free(st->nu_st);
 }
 
+inline static void update_probs(ST_PROBS* probs, const unsigned int n_streams, const double V)
+{
+    unsigned int i;
+    double tmp;
+
+    for (i = 0; i < n_streams; ++i)
+    {
+        probs[i].st_prob *= V;
+        tmp = probs[i].st_prob_int;
+        probs[i].st_prob_int += probs[i].st_prob;
+        probs[i].st_prob_int_c += probs[i].st_prob - (probs[i].st_prob_int - tmp);
+    }
+}
+
 /* Sum over r steps using Kahan summation */
 inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
                             const STREAM_CONSTANTS* sc,
@@ -447,10 +461,12 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
                             const unsigned int nu_step_current)
 
 {
-    unsigned int i, r_step_current;
-    double V, temp;
+    unsigned int r_step_current;
+    double V, tmp;
     double bg_prob;
     BG_PROB bg_prob_int = { 0.0, 0.0 }; /* for Kahan summation */
+
+    const unsigned int n_streams = ap->number_streams;
 
     for (r_step_current = 0; r_step_current < r_steps; ++r_step_current)
     {
@@ -472,17 +488,11 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
 
         bg_prob *= V;
 
-        temp = bg_prob_int.bg_int;
+        tmp = bg_prob_int.bg_int;
         bg_prob_int.bg_int += bg_prob;
-        bg_prob_int.correction += bg_prob - (bg_prob_int.bg_int - temp);
+        bg_prob_int.correction += bg_prob - (bg_prob_int.bg_int - tmp);
 
-        for (i = 0; i < ap->number_streams; i++)
-        {
-            st->probs[i].st_prob *= V;
-            temp = st->probs[i].st_prob_int;
-            st->probs[i].st_prob_int += st->probs[i].st_prob;
-            st->probs[i].st_prob_int_c += st->probs[i].st_prob - (st->probs[i].st_prob_int - temp);
-        }
+        update_probs(st->probs, n_streams, V);
     }
 
     return bg_prob_int;
@@ -545,6 +555,19 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
     return bg_prob_int;
 }
 
+inline static void init_st_probs(ST_PROBS* probs,
+                                 const double* stream_integrals,
+                                 const unsigned int n_streams)
+{
+    unsigned int i;
+    for (i = 0; i < n_streams; i++)
+    {
+        probs[i].st_prob = 0.0;
+        probs[i].st_prob_int = stream_integrals[i];
+        probs[i].st_prob_int_c = 0.0;
+    }
+}
+
 static void integrate(const ASTRONOMY_PARAMETERS* ap,
                       const STREAM_CONSTANTS* sc,
                       const STREAM_NUMS* sn,
@@ -552,17 +575,13 @@ static void integrate(const ASTRONOMY_PARAMETERS* ap,
                       EVALUATION_STATE* es,
                       INTEGRAL_STATE* st)
 {
-    unsigned int i, mu_step_current;
+    unsigned int mu_step_current;
     BG_PROB nu_result;
 
     INTEGRAL_AREA* ia = &es->integrals[es->current_integral];
     BG_PROB bg_prob_int = { ia->background_integral, 0.0 };
 
-    for (i = 0; i < ap->number_streams; i++)
-    {
-        st->probs[i].st_prob_int = ia->stream_integrals[i];
-        st->probs[i].st_prob_int_c = 0.0;
-    }
+    init_st_probs(st->probs, ia->stream_integrals, ap->number_streams);
 
     const unsigned int mu_steps = ia->mu_steps;
 
@@ -572,7 +591,6 @@ static void integrate(const ASTRONOMY_PARAMETERS* ap,
 
         bg_prob_int.bg_int += nu_result.bg_int;
         bg_prob_int.correction += nu_result.correction;
-
     }
 
     apply_correction(ap->number_streams, ia, st, bg_prob_int);
