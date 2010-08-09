@@ -30,7 +30,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "evaluation_optimized.h"
 #include "parameters.h"
 #include "probability.h"
-#include "atSurveyGeometry.h"
 #include "stCoords.h"
 #include "star_points.h"
 #include "numericalIntegration.h"
