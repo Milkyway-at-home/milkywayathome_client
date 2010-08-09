@@ -140,13 +140,11 @@ static double set_probability_constants(const STREAM_NUMS* sn,
                                         const STREAM_GAUSS* sg,
                                         const unsigned int n_convolve,
                                         double coords,
-                                        R_STEP_STATE* rss,
-                                        unsigned int r_step)
+                                        R_STEP_STATE* rss)
 {
     double gPrime, exp_result, g, exponent, r3, N, reff_value, rPrime3;
     double reff_xr_rp3;
-    unsigned int i, idx;
-    const unsigned int row_base = n_convolve * r_step;
+    unsigned int i;
 
     //R2MAG
     gPrime = 5.0 * (log10(coords * 1000.0) - 1.0) + absm;
@@ -158,18 +156,17 @@ static double set_probability_constants(const STREAM_NUMS* sn,
 
     for (i = 0; i < n_convolve; i++)
     {
-        idx = row_base + i;
         g = gPrime + sg->dx[i];
 
         //MAG2R
-        rss[idx].r_in_mag = g;
-        rss[idx].r_in_mag2 = g * g;
-        rss[idx].r_point = pow(10.0, (g - absm) / 5.0 + 1.0) / 1000.0;
+        rss[i].r_in_mag = g;
+        rss[i].r_in_mag2 = g * g;
+        rss[i].r_point = pow(10.0, (g - absm) / 5.0 + 1.0) / 1000.0;
 
-        r3 = rss[idx].r_point * rss[idx].r_point * rss[idx].r_point;
+        r3 = rss[i].r_point * rss[i].r_point * rss[i].r_point;
         exponent = (g - gPrime) * (g - gPrime) / (2.0 * stdev * stdev);
         N = sn->coeff * exp(-exponent);
-        rss[idx].qw_r3_N = sg->qgaus_W[i] * r3 * N;
+        rss[i].qw_r3_N = sg->qgaus_W[i] * r3 * N;
     }
 
     reff_xr_rp3 = reff_value * xr / rPrime3;
@@ -179,7 +176,6 @@ static double set_probability_constants(const STREAM_NUMS* sn,
 static double calculate_bg_probability(const ASTRONOMY_PARAMETERS* ap,
                                        const STREAM_NUMS* sn,
                                        const R_STEP_STATE* rss,
-                                       const unsigned int r_step_current,
                                        const double reff_xr_rp3,
                                        const vector integral_point,
                                        vector* xyz)
@@ -188,9 +184,7 @@ static double calculate_bg_probability(const ASTRONOMY_PARAMETERS* ap,
     double rg, rs;
     double h_prob, aux_prob;
     double bg_prob;
-    unsigned int i, idx;
-
-    const unsigned int row_base = r_step_current * ap->convolve;
+    unsigned int i;
 
     const double bsin = sin(integral_point[1] / deg);
     const double lsin = sin(integral_point[0] / deg);
@@ -209,11 +203,8 @@ static double calculate_bg_probability(const ASTRONOMY_PARAMETERS* ap,
         {
             for (i = 0; i < ap->convolve; i++)
             {
-                /* Index into 2d array */
-                idx = row_base + i;
-
-                xyz[i][2] = rss[idx].r_point * bsin;
-                zp = rss[idx].r_point * bcos;
+                xyz[i][2] = rss[i].r_point * bsin;
+                zp = rss[i].r_point * bcos;
                 xyz[i][0] = zp * lcos - lbr_r;
                 xyz[i][1] = zp * lsin;
 
@@ -226,13 +217,13 @@ static double calculate_bg_probability(const ASTRONOMY_PARAMETERS* ap,
                 //the hernquist profile includes a quadratic term in g
                 if (ap->aux_bg_profile == 1)
                 {
-                    h_prob = rss[idx].qw_r3_N / (rg * rs * rs * rs);
-                    aux_prob = rss[idx].qw_r3_N * (sn->bg_a * rss[idx].r_in_mag2 + sn->bg_b * rss[idx].r_in_mag + sn->bg_c );
+                    h_prob = rss[i].qw_r3_N / (rg * rs * rs * rs);
+                    aux_prob = rss[i].qw_r3_N * (sn->bg_a * rss[i].r_in_mag2 + sn->bg_b * rss[i].r_in_mag + sn->bg_c );
                     bg_prob += h_prob + aux_prob;
                 }
                 else if (ap->aux_bg_profile == 0)
                 {
-                    bg_prob += rss[idx].qw_r3_N / (rg * rs * rs * rs);
+                    bg_prob += rss[i].qw_r3_N / (rg * rs * rs * rs);
                 }
                 else
                 {
@@ -244,16 +235,15 @@ static double calculate_bg_probability(const ASTRONOMY_PARAMETERS* ap,
         {
             for (i = 0; i < ap->convolve; i++)
             {
-                idx = row_base + i;
-                xyz[i][2] = rss[idx].r_point * bsin;
-                zp = rss[idx].r_point * bcos;
+                xyz[i][2] = rss[i].r_point * bsin;
+                zp = rss[i].r_point * bcos;
                 xyz[i][0] = zp * lcos - lbr_r;
                 xyz[i][1] = zp * lsin;
 
                 rg = sqrt(xyz[i][0] * xyz[i][0] + xyz[i][1] * xyz[i][1] + (xyz[i][2] * xyz[i][2])
                           / (sn->q * sn->q));
 
-                bg_prob += rss[idx].qw_r3_N / (pow(rg, sn->alpha) * pow(rg + sn->r0, sn->alpha_delta3));
+                bg_prob += rss[i].qw_r3_N / (pow(rg, sn->alpha) * pow(rg + sn->r0, sn->alpha_delta3));
             }
         }
         bg_prob *= reff_xr_rp3;
@@ -265,15 +255,13 @@ static double calculate_bg_probability(const ASTRONOMY_PARAMETERS* ap,
 static void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
                                     const STREAM_CONSTANTS* sc,
                                     const R_STEP_STATE* rss,
-                                    const unsigned int r_step_current,
                                     const double reff_xr_rp3,
                                     vector* const xyz,
                                     ST_PROBS* probs)
 {
-    unsigned int i, j, idx;
+    unsigned int i, j;
     double dotted, xyz_norm;
     vector xyzs;
-    const unsigned int row_base = r_step_current * ap->convolve;
 
     for (i = 0; i < ap->number_streams; i++)
     {
@@ -298,8 +286,7 @@ static void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
                      + Y(xyzs) * Y(xyzs)
                      + Z(xyzs) * Z(xyzs);
 
-            idx = row_base + j;
-            probs[i].st_prob += rss[idx].qw_r3_N * exp(-xyz_norm / sc[i].stream_sigma_sq2);
+            probs[i].st_prob += rss[j].qw_r3_N * exp(-xyz_norm / sc[i].stream_sigma_sq2);
         }
         probs[i].st_prob *= reff_xr_rp3;
     }
@@ -425,8 +412,8 @@ static R_STEP_CONSTANTS* prepare_r_constants(const STREAM_NUMS* sn,
                                                                  sg,
                                                                  n_convolve,
                                                                  rPrime,
-                                                                 rss,
-                                                                 i);
+                                                                 &rss[i * n_convolve]);
+
     }
 
     return r_step_consts;
@@ -489,16 +476,14 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
 
         bg_prob = calculate_bg_probability(ap,
                                            sn,
-                                           st->rss,
-                                           r_step_current,
+                                           &st->rss[r_step_current * ap->convolve],
                                            st->r_step_consts[r_step_current].reff_xr_rp3,
                                            integral_point,
                                            xyz);
 
         calculate_probabilities(ap,
                                 sc,
-                                st->rss,
-                                r_step_current,
+                                &st->rss[r_step_current * ap->convolve],
                                 st->r_step_consts[r_step_current].reff_xr_rp3,
                                 xyz,
                                 st->probs);
@@ -744,16 +729,14 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
         double star_prob;
 
         reff_xr_rp3 = set_probability_constants(sn,
-                                                sg,
+                                                &sg[0],
                                                 ap->convolve,
                                                 ZN(sp, es->current_star_point),
-                                                rss,
-                                                0);
+                                                rss);
 
         bg_prob = calculate_bg_probability(ap,
                                            sn,
                                            rss,
-                                           0, /* Would be indexing the 2D block used by integration */
                                            reff_xr_rp3,
                                            &VN(sp, es->current_star_point),
                                            xyz);
@@ -761,7 +744,6 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
         calculate_probabilities(ap,
                                 sc,
                                 rss,
-                                0, /* Would be indexing the 2D block used by integration */
                                 reff_xr_rp3,
                                 xyz,
                                 st_prob);
