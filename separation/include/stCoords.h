@@ -22,37 +22,38 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _STCOORDS_H_
 #define _STCOORDS_H_
 
-#include "atSurveyGeometry.h"
+#include "milkyway.h"
+#include "milkyway_priv.h"
 
 
+#define dmod(A,B) ((B)!=0.0?((A)*(B)>0.0?(A)-(B)*floor((A)/(B))\
+                             :(A)+(B)*floor(-(A)/(B))):(A))
+#define dsign(A,B) ((B)<0.0?-(A):(A))
+
+#define at_stripeSeparation  (2.5)
+#define at_surveyCenterRa (185.0)
+#define at_surveyCenterDec (32.5)
+#define at_deg2Rad (DPI/180.0)
+#define at_rad2Deg (180.0/DPI)
+
+/* The node of the GC coordinates used in the survey. */
+#define NODE_GC_COORDS (at_surveyCenterRa - 90.0)
 #define sun_r0 8.5
+
+typedef struct
+{
+    double ra;
+    double dec;
+} RA_DEC;
 
 /* wedge, mu, nu, l, b. gc2lb or gc2sgr  */
 typedef void (*SGRConversion)(int, double, double, double*, double*);
 
-void lbr2xyz( const double* lbr, double* xyz );
-void xyz2lbr( const double* xyz, double* lbr );
-
-void stream2lbr( const double* stream, const double* spars, double* lbr );
-void stream2xyz( const double* stream, const double* spars, double* xyz );
-
-double wedge_eta ( int wedge );
-double wedge_incl( int wedge );
-
 void gc2lb( int wedge, double mu, double nu, double* l, double* b );
 void gc2sgr( int wedge, double mu, double nu, double* l, double* b );
 
-void stripe_normal ( int wedge, double* xyz);
+void lbr2xyz( const double* lbr, double* xyz );
 
-void lbToXyz ( double l, double b, double* xyz );
-
-void lbToXyz(double l, double b, double* xyz);
-
-void xyz_mag(double* point, double offset, double* logPoint);
-
-void xyz2lbg(double* point, double offset, double* logPoint);
-
-void sgr_stripe_normal(int wedge, double* xyz);
 
 #endif /* _STCOORDS_H_ */
 
