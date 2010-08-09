@@ -23,6 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define ASTRONOMY_PARAMETERS_H
 
 #include <stdio.h>
+#include "stCoords.h"
 
 typedef struct
 {
@@ -75,7 +76,10 @@ typedef struct
     STREAM_PARAMETERS* parameters;
 
     unsigned int convolve;
+
     unsigned int sgr_coordinates;
+    SGRConversion sgr_conversion;
+
     int aux_bg_profile;
     int wedge;
 
@@ -84,8 +88,9 @@ typedef struct
 } ASTRONOMY_PARAMETERS;
 
 #define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0, 0.0, NULL, NULL, NULL, NULL, NULL, \
-                                     0, 0, NULL, NULL, \
-                                     0, 0, 0, 0, 0, NULL }
+                                     0, 0, \
+                                     NULL, NULL,\
+                                     0, 0, NULL,0, 0, 0, NULL }
 
 
 unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap);

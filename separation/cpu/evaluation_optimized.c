@@ -46,6 +46,8 @@ static const double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn)
 {
     unsigned int i;
+    vector lbr;
+
     STREAM_CONSTANTS* sc = malloc(sizeof(STREAM_CONSTANTS) * ap->number_streams);
 
     sn->alpha = ap->background_parameters[0];
@@ -75,31 +77,25 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn)
 
     for (i = 0; i < ap->number_streams; i++)
     {
-        RA_DEC radec;
-        double lamda, beta, l, b;
-        vector lbr;
-
         sc[i].stream_sigma = ap->parameters[i].stream_parameters[4];
         sc[i].stream_sigma_sq2 = 2.0 * sc[i].stream_sigma * sc[i].stream_sigma;
 
         if (ap->sgr_coordinates == 0)
-        {
-            radec = atGCToEq(ap->parameters[i].stream_parameters[0],
-                             0, wedge_incl(ap->wedge));
-            atEqToGal(radec.ra, radec.dec, &l, &b);
-        }
+            ap->sgr_conversion = (SGRConversion) gc2lb;
         else if (ap->sgr_coordinates == 1)
-        {
-            gcToSgr(ap->parameters[i].stream_parameters[0], 0, ap->wedge, &lamda, &beta);
-            sgrToGal(lamda, beta, &l, &b);
-        }
+            ap->sgr_conversion = (SGRConversion) gc2sgr;
         else
         {
             fprintf(stderr, "Error: sgr_coordinates not valid");
+            mw_finish(EXIT_FAILURE);
         }
 
-        L(lbr) = l;
-        B(lbr) = b;
+        ap->sgr_conversion(ap->wedge,
+                           ap->parameters[i].stream_parameters[0],
+                           0,
+                           &L(lbr),
+                           &B(lbr));
+
         R(lbr) = ap->parameters[i].stream_parameters[1];
         lbr2xyz(lbr, sc[i].stream_c);
 
@@ -541,26 +537,11 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
 
         do_boinc_checkpoint(es, mu_step_current, nu_step_current);
 
-        if (ap->sgr_coordinates == 0)
-        {
-            gc2lb(ap->wedge,
-                  mu + 0.5 * ia->mu_step_size,
-                  st->nu_st[nu_step_current].nus,
-                  &L(integral_point),
-                  &B(integral_point));
-        }
-        else if (ap->sgr_coordinates == 1)
-        {
-            gc2sgr(ap->wedge,
-                   mu + 0.5 * ia->mu_step_size,
-                   st->nu_st[nu_step_current].nus,
-                   &L(integral_point),
-                   &B(integral_point));
-        }
-        else
-        {
-            fprintf(stderr, "Error: ap->sgr_coordinates not valid");
-        }
+        ap->sgr_conversion(ap->wedge,
+                           mu + 0.5 * ia->mu_step_size,
+                           st->nu_st[nu_step_current].nus,
+                           &L(integral_point),
+                           &B(integral_point));
 
         r_result = r_sum(ap,
                          sc,

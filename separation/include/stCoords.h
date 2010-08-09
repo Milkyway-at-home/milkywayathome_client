@@ -24,6 +24,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "atSurveyGeometry.h"
 
+/* wedge, mu, nu, l, b. gc2lb or gc2sgr  */
+typedef void (*SGRConversion)(int, double, double, double*, double*);
+
 void lbr2xyz( const double* lbr, double* xyz );
 void xyz2lbr( const double* xyz, double* lbr );
 
