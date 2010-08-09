@@ -36,7 +36,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "numericalIntegration.h"
 #include "evaluation_state.h"
 
-
 #define stdev 0.6
 #define xr 3.0 * stdev
 #define lbr_r 8.5
@@ -186,10 +185,11 @@ static double calculate_bg_probability(const ASTRONOMY_PARAMETERS* ap,
     double bg_prob;
     unsigned int i;
 
-    const double bsin = sin(integral_point[1] / deg);
-    const double lsin = sin(integral_point[0] / deg);
-    const double bcos = cos(integral_point[1] / deg);
-    const double lcos = cos(integral_point[0] / deg);
+    const double lsin = sin(L(integral_point) / deg);
+    const double lcos = cos(L(integral_point) / deg);
+    const double bsin = sin(B(integral_point) / deg);
+    const double bcos = cos(B(integral_point) / deg);
+
 
     /* if q is 0, there is no probability */
     if (sn->q == 0)
@@ -524,14 +524,14 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
                              EVALUATION_STATE* es,
                              INTEGRAL_STATE* st,
                              vector* xyz,
-                             vector integral_point,
                              const unsigned int mu_step_current)
 {
     BG_PROB bg_prob_int = { 0.0, 0.0 };
     BG_PROB r_result;
     unsigned int nu_step_current;
+    vector integral_point;
 
-    double mu = ia->mu_min + (mu_step_current * ia->mu_step_size);
+    const double mu = ia->mu_min + (mu_step_current * ia->mu_step_size);
 
     const unsigned int nu_steps = ia->nu_steps;
 
@@ -571,7 +571,6 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
                          integral_point,
                          nu_step_current);
 
-
         bg_prob_int.bg_int += r_result.bg_int;
         bg_prob_int.correction += r_result.correction;
     }
@@ -587,13 +586,11 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
                                INTEGRAL_STATE* st)
 {
     unsigned int i, mu_step_current;
-    vector integral_point;
-    BG_PROB bg_prob_int;    /* for Kahan summation */
     BG_PROB nu_result;
-    INTEGRAL_AREA* ia = &es->integrals[es->current_integral];
 
-    bg_prob_int.bg_int = ia->background_integral;
-    bg_prob_int.correction = 0.0;
+    INTEGRAL_AREA* ia = &es->integrals[es->current_integral];
+    BG_PROB bg_prob_int = { ia->background_integral, 0.0 };
+
     for (i = 0; i < ap->number_streams; i++)
     {
         st->probs[i].st_prob_int = ia->stream_integrals[i];
@@ -604,6 +601,7 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
 
     for (mu_step_current = 0; mu_step_current < mu_steps; mu_step_current++)
     {
+
         nu_result = nu_sum(ap,
                            sc,
                            sn,
@@ -611,15 +609,12 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
                            es,
                            st,
                            xyz,
-                           integral_point,
                            mu_step_current);
 
         bg_prob_int.bg_int += nu_result.bg_int;
         bg_prob_int.correction += nu_result.correction;
 
     }
-
-    ia->mu_step = 0;
 
     apply_correction(ap->number_streams, ia, st, bg_prob_int);
 }
@@ -644,9 +639,7 @@ static int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
     unsigned int i, j;
     INTEGRAL_STATE st;
 
-#ifdef MILKYWAY
     read_checkpoint(es);
-#endif
 
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
     {
@@ -666,9 +659,7 @@ static int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
             es->stream_integrals[j] -= es->integrals[i].stream_integrals[j];
     }
 
-#ifdef MILKYWAY
     print_stream_integrals(ap, es);
-#endif
 
     return 0;
 }
@@ -695,11 +686,6 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
 
     double bg_only, bg_only_sum, bg_only_sum_c;
     double st_only;
-
-#ifdef MW_ENABLE_DEBUG
-    time_t start_time, finish_time;
-    time (&start_time);
-#endif
 
     /* The correction terms aren't used here since this isn't the sum? */
     ST_PROBS* st_prob = (ST_PROBS*) malloc(sizeof(ST_PROBS) * ap->number_streams);
@@ -794,7 +780,6 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
     bg_only_sum += bg_only_sum_c;
     bg_only_sum /= sp->number_stars;
 
-#ifdef MILKYWAY
     fprintf(stderr, "<background_only_likelihood> %.20lf </background_only_likelihood>\n", bg_only_sum - 3.0);
     fprintf(stderr, "<stream_only_likelihood>");
     for (i = 0; i < ap->number_streams; i++)
@@ -805,7 +790,6 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
         fprintf(stderr, " %.20lf", st_sum[i].st_only_sum - 3.0);
     }
     fprintf(stderr, " </stream_only_likelihood>\n");
-#endif
 
     free(exp_stream_weights);
     free(st_prob);
@@ -813,14 +797,14 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
 
     free(st_sum);
 
-#ifdef MW_ENABLE_DEBUG
-    time(&finish_time);
-    MW_DEBUG("likelihood calculated in: %lf\n", (double)finish_time - (double)start_time);
-#endif
-
     return 0;
 }
 
+static void free_stream_gauss(STREAM_GAUSS* sg)
+{
+    free(sg->dx);
+    free(sg->qgaus_W);
+}
 
 double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
                     const STAR_POINTS* sp,
@@ -853,8 +837,7 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
     }
 
     free(xyz);
-    free(sg.dx);
-    free(sg.qgaus_W);
+    free_stream_gauss(&sg);
 
     /*  log10(x * 0.001) = log10(x) - 3.0 */
     return (es.prob_sum / (sp->number_stars - es.bad_jacobians)) - 3.0;
