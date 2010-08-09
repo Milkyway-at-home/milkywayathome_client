@@ -118,11 +118,11 @@ void free_constants(ASTRONOMY_PARAMETERS* ap)
 {
 }
 
-static double set_probability_constants(const STREAM_NUMS* sn,
-                                        const STREAM_GAUSS* sg,
-                                        const unsigned int n_convolve,
-                                        double coords,
-                                        R_STEP_STATE* rss)
+static double set_prob_consts(const STREAM_NUMS* sn,
+                              const STREAM_GAUSS* sg,
+                              const unsigned int n_convolve,
+                              double coords,
+                              R_STEP_STATE* rss)
 {
     double gPrime, exp_result, g, exponent, r3, N, reff_value, rPrime3;
     double reff_xr_rp3;
@@ -157,12 +157,12 @@ static double set_probability_constants(const STREAM_NUMS* sn,
 
 
 
-static double calculate_bg_probability(const ASTRONOMY_PARAMETERS* ap,
-                                       const STREAM_NUMS* sn,
-                                       const R_STEP_STATE* rss,
-                                       const double reff_xr_rp3,
-                                       const vector integral_point,
-                                       vector* xyz)
+static double bg_probability(const ASTRONOMY_PARAMETERS* ap,
+                             const STREAM_NUMS* sn,
+                             const R_STEP_STATE* rss,
+                             const double reff_xr_rp3,
+                             const vector integral_point,
+                             vector* xyz)
 {
     double zp;
     double rg, rs;
@@ -237,12 +237,12 @@ static double calculate_bg_probability(const ASTRONOMY_PARAMETERS* ap,
     return bg_prob;
 }
 
-static void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
-                                    const STREAM_CONSTANTS* sc,
-                                    const R_STEP_STATE* rss,
-                                    const double reff_xr_rp3,
-                                    vector* const xyz,
-                                    ST_PROBS* probs)
+static void probabilities(const ASTRONOMY_PARAMETERS* ap,
+                          const STREAM_CONSTANTS* sc,
+                          const R_STEP_STATE* rss,
+                          const double reff_xr_rp3,
+                          vector* const xyz,
+                          ST_PROBS* probs)
 {
     unsigned int i, j;
     double dotted, xyz_norm;
@@ -277,9 +277,9 @@ static void calculate_probabilities(const ASTRONOMY_PARAMETERS* ap,
     }
 }
 
-inline static double calculate_progress(const EVALUATION_STATE* es,
-                                        unsigned int mu_step_current,
-                                        unsigned int nu_step_current)
+inline static double progress(const EVALUATION_STATE* es,
+                              unsigned int mu_step_current,
+                              unsigned int nu_step_current)
 {
     unsigned int i;
     const INTEGRAL_AREA* ia;
@@ -317,7 +317,7 @@ inline static void do_boinc_checkpoint(EVALUATION_STATE* es,
                                        unsigned int mu_step_current,
                                        unsigned int nu_step_current)
 {
-    double progress;
+    double frac;
 
     if (boinc_time_to_checkpoint())
     {
@@ -334,9 +334,9 @@ inline static void do_boinc_checkpoint(EVALUATION_STATE* es,
         boinc_checkpoint_completed();
     }
 
-    progress = calculate_progress(es, mu_step_current, nu_step_current);
-    //printf("progress: %.10f\n", progress);
-    boinc_fraction_done(progress);
+    frac = progress(es, mu_step_current, nu_step_current);
+    //printf("progress: %.10f\n", frac);
+    boinc_fraction_done(frac);
 }
 
 
@@ -350,13 +350,13 @@ static void prepare_nu_constants(NU_STATE* nu_st,
 
     for (i = 0; i < nu_steps; i++)
     {
-        nu_st[i].nus = nu_min + (i * nu_step_size);
+        nu_st[i].nu = nu_min + (i * nu_step_size);
 
-        tmp1 = d2r(90.0 - nu_st[i].nus - nu_step_size);
-        tmp2 = d2r(90.0 - nu_st[i].nus);
+        tmp1 = d2r(90.0 - nu_st[i].nu - nu_step_size);
+        tmp2 = d2r(90.0 - nu_st[i].nu);
 
-        nu_st[i].ids = cos(tmp1) - cos(tmp2);
-        nu_st[i].nus += 0.5 * nu_step_size;
+        nu_st[i].id = cos(tmp1) - cos(tmp2);
+        nu_st[i].nu += 0.5 * nu_step_size;
     }
 }
 
@@ -398,11 +398,7 @@ static R_STEP_CONSTANTS* prepare_r_constants(const STREAM_NUMS* sn,
         r_step_consts[i].irv = d2r((((next_r * next_r * next_r) - (r * r * r)) / 3.0) * mu_step_size);
         rPrime = (next_r + r) / 2.0;
 
-        r_step_consts[i].reff_xr_rp3 = set_probability_constants(sn,
-                                                                 sg,
-                                                                 n_convolve,
-                                                                 rPrime,
-                                                                 &rss[i * n_convolve]);
+        r_step_consts[i].reff_xr_rp3 = set_prob_consts(sn, sg, n_convolve, rPrime, &rss[i * n_convolve]);
     }
 
     return r_step_consts;
@@ -458,21 +454,21 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
 
     for (r_step_current = 0; r_step_current < r_steps; ++r_step_current)
     {
-        V = st->r_step_consts[r_step_current].irv * st->nu_st[nu_step_current].ids;
+        V = st->r_step_consts[r_step_current].irv * st->nu_st[nu_step_current].id;
 
-        bg_prob = calculate_bg_probability(ap,
-                                           sn,
-                                           &st->rss[r_step_current * ap->convolve],
-                                           st->r_step_consts[r_step_current].reff_xr_rp3,
-                                           integral_point,
-                                           xyz);
+        bg_prob = bg_probability(ap,
+                                 sn,
+                                 &st->rss[r_step_current * ap->convolve],
+                                 st->r_step_consts[r_step_current].reff_xr_rp3,
+                                 integral_point,
+                                 xyz);
 
-        calculate_probabilities(ap,
-                                sc,
-                                &st->rss[r_step_current * ap->convolve],
-                                st->r_step_consts[r_step_current].reff_xr_rp3,
-                                xyz,
-                                st->probs);
+        probabilities(ap,
+                      sc,
+                      &st->rss[r_step_current * ap->convolve],
+                      st->r_step_consts[r_step_current].reff_xr_rp3,
+                      xyz,
+                      st->probs);
 
         bg_prob *= V;
 
@@ -512,14 +508,14 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
                              vector* xyz,
                              const unsigned int mu_step_current)
 {
-    BG_PROB bg_prob_int = { 0.0, 0.0 };
-    BG_PROB r_result;
     unsigned int nu_step_current;
     vector integral_point;
+    BG_PROB r_result;
+    BG_PROB bg_prob_int = { 0.0, 0.0 };
 
     const double mu = ia->mu_min + (mu_step_current * ia->mu_step_size);
-
     const unsigned int nu_steps = ia->nu_steps;
+    const unsigned int r_steps = ia->r_steps;
 
     for (nu_step_current = 0; nu_step_current < nu_steps; ++nu_step_current)
     {
@@ -529,14 +525,14 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
 
         ap->sgr_conversion(ap->wedge,
                            mu + 0.5 * ia->mu_step_size,
-                           st->nu_st[nu_step_current].nus,
+                           st->nu_st[nu_step_current].nu,
                            &L(integral_point),
                            &B(integral_point));
 
         r_result = r_sum(ap,
                          sc,
                          sn,
-                         ia->r_steps,
+                         r_steps,
                          st,
                          xyz,
                          integral_point,
@@ -549,12 +545,12 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
     return bg_prob_int;
 }
 
-static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
-                               const STREAM_CONSTANTS* sc,
-                               const STREAM_NUMS* sn,
-                               vector* xyz,
-                               EVALUATION_STATE* es,
-                               INTEGRAL_STATE* st)
+static void integrate(const ASTRONOMY_PARAMETERS* ap,
+                      const STREAM_CONSTANTS* sc,
+                      const STREAM_NUMS* sn,
+                      vector* xyz,
+                      EVALUATION_STATE* es,
+                      INTEGRAL_STATE* st)
 {
     unsigned int i, mu_step_current;
     BG_PROB nu_result;
@@ -572,15 +568,7 @@ static void calculate_integral(const ASTRONOMY_PARAMETERS* ap,
 
     for (mu_step_current = 0; mu_step_current < mu_steps; mu_step_current++)
     {
-
-        nu_result = nu_sum(ap,
-                           sc,
-                           sn,
-                           ia,
-                           es,
-                           st,
-                           xyz,
-                           mu_step_current);
+        nu_result = nu_sum(ap, sc, sn, ia, es, st, xyz, mu_step_current);
 
         bg_prob_int.bg_int += nu_result.bg_int;
         bg_prob_int.correction += nu_result.correction;
@@ -615,7 +603,7 @@ static int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
     {
         prepare_integral_state(ap, sn, sg, &es->integrals[es->current_integral], &st);
-        calculate_integral(ap, sc, sn, xyz, es, &st);
+        integrate(ap, sc, sn, xyz, es, &st);
         free_integral_state(&st);
     }
 
@@ -641,13 +629,13 @@ typedef struct
     double st_only_sum_c;
 } ST_SUM;
 
-static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
-                                const STREAM_CONSTANTS* sc,
-                                const STREAM_NUMS* sn,
-                                EVALUATION_STATE* es,
-                                STREAM_GAUSS* sg,
-                                vector* xyz,
-                                const STAR_POINTS* sp)
+static int likelihood(const ASTRONOMY_PARAMETERS* ap,
+                      const STREAM_CONSTANTS* sc,
+                      const STREAM_NUMS* sn,
+                      EVALUATION_STATE* es,
+                      STREAM_GAUSS* sg,
+                      vector* xyz,
+                      const STAR_POINTS* sp)
 {
     unsigned int i, current_stream;
     double bg_prob;
@@ -685,25 +673,12 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
     {
         double star_prob;
 
-        reff_xr_rp3 = set_probability_constants(sn,
-                                                &sg[0],
-                                                ap->convolve,
-                                                ZN(sp, es->current_star_point),
-                                                rss);
+        reff_xr_rp3 = set_prob_consts(sn, &sg[0], ap->convolve, ZN(sp, es->current_star_point), rss);
 
-        bg_prob = calculate_bg_probability(ap,
-                                           sn,
-                                           rss,
-                                           reff_xr_rp3,
-                                           &VN(sp, es->current_star_point),
-                                           xyz);
+        bg_prob = bg_probability(ap, sn, rss,
+                                 reff_xr_rp3, &VN(sp, es->current_star_point), xyz);
 
-        calculate_probabilities(ap,
-                                sc,
-                                rss,
-                                reff_xr_rp3,
-                                xyz,
-                                st_prob);
+        probabilities(ap, sc, rss, reff_xr_rp3, xyz, st_prob);
 
         bg_only = (bg_prob / es->background_integral) * exp_background_weight;
         star_prob = bg_only;
@@ -765,7 +740,6 @@ static int calculate_likelihood(const ASTRONOMY_PARAMETERS* ap,
     free(exp_stream_weights);
     free(st_prob);
     free(rss);
-
     free(st_sum);
 
     return 0;
@@ -800,7 +774,7 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
         mw_finish(retval);
     }
 
-    retval = calculate_likelihood(ap, sc, sn, &es, &sg, xyz, sp);
+    retval = likelihood(ap, sc, sn, &es, &sg, xyz, sp);
     if (retval)
     {
         fprintf(stderr, "APP: error calculating likelihood: %d\n", retval);

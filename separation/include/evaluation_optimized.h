@@ -65,8 +65,8 @@ typedef struct
 
 typedef struct
 {
-    double nus;
-    double ids;
+    double nu;
+    double id;
 } NU_STATE;
 
 /* Scratch space used by each integral */
