@@ -243,24 +243,130 @@ void gcToSgr ( double mu, double nu, int wedge, double* lamda, double* beta )
     return;
 }
 
-//vickej2 for sgr stripes
-//mathematic reversal of majewski's defined rotations for lbr->sgr conversion
-void sgrToGal ( double lamda, double beta, double* l, double* b)
+#define sqr(x) ((x) * (x))
+
+typedef struct
 {
-    double radpdeg = 3.141592653589793 / 180;
-    double phi = (180 + 3.75) * radpdeg;
-    double theta = (90 - 13.46) * radpdeg;
-    double psi = (180 + 14.111534) * radpdeg;
-    double rot11 = -(cos(theta) * sin(phi) * sin(psi) - pow(cos(theta), 2) * cos(phi) * cos(psi) - cos(psi) * pow(sin(theta), 2) * cos(phi)) / (pow(cos(psi), 2) * pow(cos(phi), 2) * pow(cos(theta), 2) + pow(cos(psi), 2) * pow(cos(phi), 2) * pow(sin(theta), 2) + pow(cos(theta), 2) * pow(sin(psi), 2) * pow(sin(phi), 2) + pow(sin(psi), 2) * pow(cos(phi), 2) * pow(cos(theta), 2) + pow(sin(psi), 2) * pow(cos(phi), 2) * pow(sin(theta), 2) + pow(cos(theta), 2) * pow(cos(psi), 2) * pow(sin(phi), 2) + pow(sin(theta), 2) * pow(sin(phi), 2) * pow(cos(psi), 2) + pow(sin(theta), 2) * pow(sin(phi), 2) * pow(sin(psi), 2));
-    double rot12 = -(cos(theta) * sin(phi) * cos(psi) + pow(cos(theta), 2) * cos(phi) * sin(psi) + sin(psi) * pow(sin(theta), 2) * cos(phi)) / (pow(cos(psi), 2) * pow(cos(phi), 2) * pow(cos(theta), 2) + pow(cos(psi), 2) * pow(cos(phi), 2) * pow(sin(theta), 2) + pow(cos(theta), 2) * pow(sin(psi), 2) * pow(sin(phi), 2) + pow(sin(psi), 2) * pow(cos(phi), 2) * pow(cos(theta), 2) + pow(sin(psi), 2) * pow(cos(phi), 2) * pow(sin(theta), 2) + pow(cos(theta), 2) * pow(cos(psi), 2) * pow(sin(phi), 2) + pow(sin(theta), 2) * pow(sin(phi), 2) * pow(cos(psi), 2) + pow(sin(theta), 2) * pow(sin(phi), 2) * pow(sin(psi), 2));
-    double rot13 = (sin(theta) * sin(phi)) / (pow(cos(theta), 2) * pow(sin(phi), 2) + pow(cos(phi), 2) * pow(cos(theta), 2) + pow(cos(phi), 2) * pow(sin(theta), 2) + pow(sin(theta), 2) * pow(sin(phi), 2));
-    double rot21 = (cos(theta) * cos(phi) * sin(psi) + pow(cos(theta), 2) * cos(psi) * sin(phi) + cos(psi) * pow(sin(theta), 2) * sin(phi)) / (pow(cos(psi), 2) * pow(cos(phi), 2) * pow(cos(theta), 2) + pow(cos(psi), 2) * pow(cos(phi), 2) * pow(sin(theta), 2) + pow(cos(theta), 2) * pow(sin(psi), 2) * pow(sin(phi), 2) + pow(sin(psi), 2) * pow(cos(phi), 2) * pow(cos(theta), 2) + pow(sin(psi), 2) * pow(cos(phi), 2) * pow(sin(theta), 2) + pow(cos(theta), 2) * pow(cos(psi), 2) * pow(sin(phi), 2) + pow(sin(theta), 2) * pow(sin(phi), 2) * pow(cos(psi), 2) + pow(sin(theta), 2) * pow(sin(phi), 2) * pow(sin(psi), 2));
-    double rot22 = -(-cos(theta) * cos(phi) * cos(psi) + pow(cos(theta), 2) * sin(psi) * sin(phi) + sin(psi) * pow(sin(theta), 2) * sin(phi)) / (pow(cos(psi), 2) * pow(cos(phi), 2) * pow(cos(theta), 2) + pow(cos(psi), 2) * pow(cos(phi), 2) * pow(sin(theta), 2) + pow(cos(theta), 2) * pow(sin(psi), 2) * pow(sin(phi), 2) + pow(sin(psi), 2) * pow(cos(phi), 2) * pow(cos(theta), 2) + pow(sin(psi), 2) * pow(cos(phi), 2) * pow(sin(theta), 2) + pow(cos(theta), 2) * pow(cos(psi), 2) * pow(sin(phi), 2) + pow(sin(theta), 2) * pow(sin(phi), 2) * pow(cos(psi), 2) + pow(sin(theta), 2) * pow(sin(phi), 2) * pow(sin(psi), 2));
-    double rot23 = -(sin(theta) * cos(phi)) / (pow(cos(theta), 2) * pow(sin(phi), 2) + pow(cos(phi), 2) * pow(cos(theta), 2) + pow(cos(phi), 2) * pow(sin(theta), 2) + pow(sin(theta), 2) * pow(sin(phi), 2));
-    double rot31 = (sin(psi) * sin(theta)) / (pow(cos(psi), 2) * pow(cos(theta), 2) + pow(sin(psi), 2) * pow(sin(theta), 2) + pow(cos(psi), 2) * pow(sin(theta), 2) + pow(sin(psi), 2) * pow(cos(theta), 2));
-    double rot32 = (cos(psi) * sin(theta)) / (pow(cos(psi), 2) * pow(cos(theta), 2) + pow(sin(psi), 2) * pow(sin(theta), 2) + pow(cos(psi), 2) * pow(sin(theta), 2) + pow(sin(psi), 2) * pow(cos(theta), 2));
-    double rot33 = cos(theta) / (pow(cos(theta), 2) + pow(sin(theta), 2));
+    double rot11, rot12, rot13;
+    double rot21, rot22, rot23;
+    double rot31, rot32, rot33;
+} SGR_TO_GAL_CONSTANTS;
+
+/* CHECKME: This mess needs testing, but I don't think it's actually used. */
+void init_sgr_to_gal_constants(SGR_TO_GAL_CONSTANTS* sgc)
+{
+    const double radpdeg = M_PI / 180.0;
+    const double phi = (180.0 + 3.75) * radpdeg;
+    const double theta = (90.0 - 13.46) * radpdeg;
+    const double psi = (180.0 + 14.111534) * radpdeg;
+
+    const double sintsq = sqr(sin(theta));  /* sin^2(theta), cos^2(theta) */
+    const double costsq = sqr(cos(theta));
+
+    const double cosphisq = sqr(cos(phi));  /* sin(phi), cos(phi) */
+    const double sinphisq = sqr(sin(phi));
+
+    const double cospsisq = sqr(cos(psi));  /* sin^2(psi), cos^2(psi) */
+    const double sinpsisq = sqr(sin(psi));
+
+    const double sint = sin(theta);  /* sin(theta), cos(theta) */
+    const double cost = cos(theta);
+
+    const double sinphi = sin(phi);  /* sin(phi), cos(phi) */
+    const double cosphi = cos(phi);
+
+    const double sinpsi = sin(psi);  /* sin(psi), cos(psi) */
+    const double cospsi = cos(psi);
+
+    sgc->rot11 = -(  cost * sinphi * sinpsi
+                   - costsq * cosphi * cospsi
+                   - cospsi * sintsq * cosphi)
+                            /
+                  (  cospsisq * cosphisq * costsq
+                   + cospsisq * cosphisq * sintsq
+                   + costsq * sinpsisq * sinphisq
+                   + sinpsisq * cosphisq * costsq
+                   + sinpsisq * cosphisq * sintsq
+                   + costsq * cospsisq * sinphisq
+                   + sintsq * sinphisq * cospsisq
+                   + sintsq * sinphisq * sinpsisq);
+
+    sgc->rot12 = -(  cost * sinphi * cospsi
+                   + costsq * cosphi * sinpsi
+                   + sinpsi * sintsq * cosphi)
+                           /
+                 (  cospsisq * cosphisq * costsq
+                   + cospsisq * cosphisq * sintsq
+                   + costsq * sinpsisq * sinphisq
+                   + sinpsisq * cosphisq * costsq
+                   + sinpsisq * cosphisq * sintsq
+                   + costsq * cospsisq * sinphisq
+                   + sintsq * sinphisq * cospsisq
+                   + sintsq * sinphisq * sinpsisq);
+
+    sgc->rot13 = (sint * sinphi)
+                      /
+        (costsq * sinphisq + cosphisq * costsq + cosphisq * sintsq + sintsq * sinphisq);
+
+    sgc->rot21 = (  cost * cosphi * sinpsi
+                  + costsq * cospsi * sinphi
+                  + cospsi * sintsq * sinphi)
+                         /
+                (  cospsisq * cosphisq * costsq
+                  + cospsisq * cosphisq * sintsq
+                  + costsq * sinpsisq * sinphisq
+                  + sinpsisq * cosphisq * costsq
+                  + sinpsisq * cosphisq * sintsq
+                  + costsq * cospsisq * sinphisq
+                  + sintsq * sinphisq * cospsisq
+                  + sintsq * sinphisq * sinpsisq);
+
+    sgc->rot22 = -(  -cost * cosphi * cospsi
+                   + costsq * sinpsi * sinphi
+                   + sinpsi * sintsq * sinphi)
+                             /
+                  (  cospsisq * cosphisq * costsq
+                   + cospsisq * cosphisq * sintsq
+                   + costsq * sinpsisq * sinphisq
+                   + sinpsisq * cosphisq * costsq
+                   + sinpsisq * cosphisq * sintsq
+                   + costsq * cospsisq * sinphisq
+                   + sintsq * sinphisq * cospsisq
+                   + sintsq * sinphisq * sinpsisq);
+
+    sgc->rot23 = -(sint * cosphi)
+                        /
+                  (  costsq * sinphisq
+                   + cosphisq * costsq
+                   + cosphisq * sintsq
+                   + sintsq * sinphisq);
+
+    sgc->rot31 = (sinpsi * sint)
+                        /
+                 (  cospsisq * costsq
+                  + sinpsisq * sintsq
+                  + cospsisq * sintsq
+                  + sinpsisq * costsq);
+
+    sgc->rot32 = (cospsi * sint)
+                        /
+                 (  cospsisq * costsq
+                  + sinpsisq * sintsq
+                  + cospsisq * sintsq
+                  + sinpsisq * costsq);
+
+    sgc->rot33 = cost / (costsq + sintsq);
+}
+
+//mathematic reversal of majewski's defined rotations for lbr->sgr conversion
+void sgrToGal(double lamda, double beta, double* l, double* b)
+{
+    static const double radpdeg = M_PI / 180.0;
     double x2 = 0.0, y2 = 0.0;
+
+    SGR_TO_GAL_CONSTANTS _sgc;  /* FIXME: Shouldn't be done each call */
+    init_sgr_to_gal_constants(&_sgc);
+    SGR_TO_GAL_CONSTANTS* sgc = &_sgc;
 
     if (beta > 90)
     {
@@ -344,7 +450,7 @@ void sgrToGal ( double lamda, double beta, double* l, double* b)
     else if (lamda < 360)
     {
         lamda = lamda * radpdeg;
-        x2 = sqrt((1 - cos(beta) * cos(beta)) / (1 + tan(lamda) * tan(lamda)));
+        x2 = sqrt((1.0 - cos(beta) * cos(beta)) / (1 + tan(lamda) * tan(lamda)));
         y2 = x2 * tan(lamda);
 
     }
@@ -355,9 +461,9 @@ void sgrToGal ( double lamda, double beta, double* l, double* b)
         y2 = 0;
     }
 
-    double x1 = rot11 * x2 + rot12 * y2 + rot13 * z2;
-    double y1 = rot21 * x2 + rot22 * y2 + rot23 * z2;
-    double z1 = rot31 * x2 + rot32 * y2 + rot33 * z2;
+    double x1 = sgc->rot11 * x2 + sgc->rot12 * y2 + sgc->rot13 * z2;
+    double y1 = sgc->rot21 * x2 + sgc->rot22 * y2 + sgc->rot23 * z2;
+    double z1 = sgc->rot31 * x2 + sgc->rot32 * y2 + sgc->rot33 * z2;
 
     if (z1 > 1)
     {
@@ -372,7 +478,7 @@ void sgrToGal ( double lamda, double beta, double* l, double* b)
         *l = *l / radpdeg;
         if (*l < 0)
         {
-            *l = *l + 360;
+            *l = *l + 360.0;
         }
     }
 
