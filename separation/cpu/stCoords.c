@@ -30,87 +30,45 @@ static const double r0 = 8.5;
 
 
 /* Convert sun-centered lbr into galactic xyz coordinates. */
-void lbr2xyz(const double* lbr, double* xyz)
+void lbr2xyz(const double* lbr, vector xyz)
 {
-    double bsin, lsin, bcos, lcos, zp, d;
+    double zp, d;
 
-    bsin = sin(lbr[1] / deg);
-    lsin = sin(lbr[0] / deg);
-    bcos = cos(lbr[1] / deg);
-    lcos = cos(lbr[0] / deg);
+    const double bsin = sin(B(lbr) / deg);
+    const double lsin = sin(L(lbr) / deg);
+    const double bcos = cos(B(lbr) / deg);
+    const double lcos = cos(L(lbr) / deg);
 
-    xyz[2] = lbr[2] * bsin;
-    zp = lbr[2] * bcos;
+    Z(xyz) = R(lbr) * bsin;
+    zp = R(lbr) * bcos;
     d = sqrt( r0 * r0 + zp * zp - 2.0 * r0 * zp * lcos);
-    xyz[0] = (zp * zp - r0 * r0 - d * d) / (2 * r0);
-    xyz[1] = zp * lsin;
-}
-
-
-/* Convert galactic xyz into sun-centered lbr coordinates. */
-void xyz2lbr(const double* xyz, double* lbr)
-{
-    double temp, xsun;
-
-    xsun = xyz[0] + r0;
-    temp = xsun * xsun + xyz[1] * xyz[1];
-
-    lbr[0] = atan2( xyz[1], xsun ) * deg;
-    lbr[1] = atan2( xyz[2], sqrt( temp ) ) * deg;
-    lbr[2] = sqrt( temp + xyz[2] * xyz[2] );
-
-    if ( lbr[0] < 0 )
-        lbr[0] += 360.0;
+    X(xyz) = (zp * zp - r0 * r0 - d * d) / (2 * r0);
+    Y(xyz) = zp * lsin;
 }
 
 /* Get eta for the given wedge. */
 double wedge_eta(int wedge)
 {
-    double d;
-    d = at_stripeSeparation;
-    return wedge * d - 57.5 - (wedge > 46 ? 180.0 : 0.0);
+    return wedge * at_stripeSeparation - 57.5 - (wedge > 46 ? 180.0 : 0.0);
 }
 
 /* Get inclination for the given wedge. */
 double wedge_incl(int wedge)
 {
-    double d;
-    d = at_surveyCenterDec;
-    return wedge_eta(wedge) + d;
-}
-
-/* Get the node of the GC coordinates used in the survey. */
-double get_node()
-{
-    double d;
-    d = at_surveyCenterRa;
-    return d - 90.0;
+    return wedge_eta(wedge) + at_surveyCenterDec;
 }
 
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
 void gc2lb( int wedge, double mu, double nu, double* l, double* b )
 {
-    double ra, dec;
-
-    atGCToEq( mu, nu, &ra, &dec, get_node(), wedge_incl( wedge ) );
-    atEqToGal( ra, dec, l, b );
+    RA_DEC radec = atGCToEq( mu, nu, wedge_incl( wedge ) );
+    atEqToGal( radec.ra, radec.dec, l, b );
 }
 
-/* wrapper that converts a point into magnitude-space pseudo-xyz */
-void xyz_mag(double* point, double offset, double* logPoint)
+void gc2sgr( int wedge, double mu, double nu, double* l, double* b )
 {
-    double lbg[3];
-    xyz2lbg(point, offset, lbg);
-    lbr2xyz(lbg, logPoint);
+    double lamda, beta;
+    gcToSgr(wedge, mu, nu, &lamda, &beta);
+    sgrToGal(lamda, beta, l, b);
 }
-
-
-void xyz2lbg(double* point, double offset, double* lbg)
-{
-    xyz2lbr(point, lbg);
-    double g = 5.0 * (log(100.0 * lbg[2]) / log(10.0) ) + 4.2 - offset;
-
-    lbg[2] = g;
-}
-
 

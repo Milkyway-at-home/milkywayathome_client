@@ -23,85 +23,22 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_priv.h"
 #include "atSurveyGeometry.h"
 
-void atGCToEq (
-    double amu,  /* IN -- mu in degrees */
-    double anu,  /* IN -- nu in degrees */
-    double* ra,  /* OUT -- ra in degrees */
-    double* dec, /* OUT -- dec in degrees */
-    double anode,    /* IN -- node in degrees */
-    double ainc  /* IN -- inclination in degrees */
-)
-{
-    double x1, y1, z1, x2, y2, z2;
-    /* Convert to radians */
 
-    amu = amu * at_deg2Rad;
-    anu = anu * at_deg2Rad;
-    anode = anode * at_deg2Rad;
-    ainc = ainc * at_deg2Rad;
-    /* Rotation */
-    x2 = cos(amu - anode) * cos(anu);
-    y2 = sin(amu - anode) * cos(anu);
-    z2 = sin(anu);
-    x1 = x2;
-    y1 = y2 * cos(ainc) - z2 * sin(ainc);
-    z1 = y2 * sin(ainc) + z2 * cos(ainc);
-
-
-    *ra = atan2 (y1, x1) + anode;
-    *dec = asin(z1);
-    /* Convert back to degrees */
-    *ra = *ra * at_rad2Deg;
-    *dec = *dec * at_rad2Deg;
-
-//  printf("ra: %g, dec: %g\n", *ra, *dec);
-
-    atBound2(dec, ra);
-    return;
-}
-
-void atEqToGal (
-    double ra,  /* IN -- ra in degrees */
-    double dec, /* IN -- dec in degrees */
-    double* glong,  /* OUT -- Galactic longitude in degrees */
-    double* glat    /* OUT -- Galactic latitude in degrees */
-)
-{
-    /* Convert to radians */
-    ra = ra * at_deg2Rad;
-    dec = dec * at_deg2Rad;
-    /* Use SLALIB to do the actual conversion */
-    slaEqgal(ra, dec, glong, glat);
-    /* Convert back to degrees */
-    *glong = *glong * at_rad2Deg;
-    *glat = *glat * at_rad2Deg;
-    atBound2(glat, glong);
-    return;
-}
-
-
-
-void atBound (
-    double* angle,    /* MODIFIED -- the angle to bound in degrees*/
-    double min,   /* IN -- inclusive minimum value */
-    double max    /* IN -- exclusive maximum value */
-)
+inline static void atBound(double* angle, /* MODIFIED -- the angle to bound in degrees*/
+                           double min,    /* IN -- inclusive minimum value */
+                           double max     /* IN -- exclusive maximum value */
+                          )
 {
     while (*angle < min)
-    {
         *angle += 360.0;
-    }
+
     while (*angle >= max)
-    {
         *angle -= 360.0;
-    }
-    return;
 }
 
-void atBound2(
-    double* theta,    /* MODIFIED -- the -90 to 90 angle */
-    double* phi   /* MODIFIED -- the 0 to 360 angle */
-)
+inline static void atBound2(double* theta, /* MODIFIED -- the -90 to 90 angle */
+                            double* phi    /* MODIFIED -- the 0 to 360 angle */
+                            )
 {
     atBound(theta, -180.0, 180.0);
     if (fabs(*theta) > 90.0)
@@ -111,38 +48,43 @@ void atBound2(
     }
     atBound(theta, -180.0, 180.0);
     atBound(phi, 0.0, 360.0);
-    if (fabs(*theta) == 90.0) *phi = 0.;
+    if (fabs(*theta) == 90.0)
+        *phi = 0.;
     return;
 }
 
-void slaDcc2s ( double v[3], double* a, double* b )
+inline static double slaDrange(double angle)
 {
-    double x, y, z, r;
+    double w = dmod ( angle, D2PI );
+    return ( fabs ( w ) < DPI ) ? w : w - dsign ( D2PI, angle );
+}
 
-    x = v[0];
-    y = v[1];
-    z = v[2];
-    r = sqrt ( x * x + y * y );
+inline static double slaDranrm(double angle)
+{
+    double w = dmod( angle, D2PI );
+    return ( w >= 0.0 ) ? w : w + D2PI;
+}
 
-    *a = ( r != 0.0 ) ? atan2 ( y, x ) : 0.0;
-    *b = ( z != 0.0 ) ? atan2 ( z, r ) : 0.0;
+inline static void slaDcc2s(vector v, double* a, double* b)
+{
+    double r = sqrt( X(v) * X(v) + Y(v) * Y(v) );
+
+    *a = ( r != 0.0 ) ? atan2 ( Y(v), X(v) ) : 0.0;
+    *b = ( Z(v) != 0.0 ) ? atan2 ( Z(v), r ) : 0.0;
 }
 
 
-void slaDcs2c ( double a, double b, vector v )
+inline static void slaDcs2c(vector v, double a, double b)
 {
-    double cosb;
-
-    cosb = cos ( b );
-    v[0] = cos ( a ) * cosb;
-    v[1] = sin ( a ) * cosb;
-    v[2] = sin ( b );
+    const double cosb = cos(b);
+    X(v) = cos(a) * cosb;
+    Y(v) = sin(a) * cosb;
+    Z(v) = sin(b);
 }
 
-
-void slaDmxv ( double dm[3][3], vector va, vector vb )
+inline static void slaDmxv(const double dm[3][3], vector va, vector vb)
 {
-    int i, j;
+    unsigned int i, j;
     double w;
     vector vw;
 
@@ -159,60 +101,56 @@ void slaDmxv ( double dm[3][3], vector va, vector vb )
 
     /* Vector vw -> vector vb */
     for ( j = 0; j < 3; j++ )
-    {
         vb[j] = vw[j];
-    }
 }
 
-
-double slaDrange ( double angle )
-{
-    double w;
-
-    w = dmod ( angle, D2PI );
-    return ( fabs ( w ) < DPI ) ? w : w - dsign ( D2PI, angle );
-}
-
-
-double slaDranrm ( double angle )
-{
-    double w;
-
-    w = dmod ( angle, D2PI );
-    return ( w >= 0.0 ) ? w : w + D2PI;
-}
-
-
-void slaEqgal ( double dr, double dd, double* dl, double* db )
+inline static void slaEqgal( double dr, double dd, double* dl, double* db )
 {
     vector v1;
     vector v2;
 
-    static double rmat[3][3];
+    static const double rmat[3][3] =
+        {
+            { -0.054875539726, -0.873437108010, -0.483834985808 },
+            {  0.494109453312, -0.444829589425,  0.746982251810 },
+            { -0.867666135858, -0.198076386122,  0.455983795705 }
+        };
 
-    rmat[0][0] = -0.054875539726;
-    rmat[0][1] = -0.873437108010;
-    rmat[0][2] = -0.483834985808;
-    rmat[1][0] =  0.494109453312;
-    rmat[1][1] = -0.444829589425;
-    rmat[1][2] =  0.746982251810;
-    rmat[2][0] = -0.867666135858;
-    rmat[2][1] = -0.198076386122;
-    rmat[2][2] =  0.455983795705;
 
     /* Spherical to Cartesian */
-    slaDcs2c ( dr, dd, v1 );
+    slaDcs2c(v1, dr, dd);
 
     /* Equatorial to Galactic */
-    slaDmxv ( rmat, v1, v2 );
+    slaDmxv(rmat, v1, v2);
 
     /* Cartesian to spherical */
-    slaDcc2s ( v2, dl, db );
+    slaDcc2s(v2, dl, db);
 
     /* Express in conventional ranges */
-    *dl = slaDranrm ( *dl );
-    *db = slaDrange ( *db );
+    *dl = slaDranrm(*dl);
+    *db = slaDrange(*db);
 }
+
+void atEqToGal (
+    double ra,  /* IN -- ra in degrees */
+    double dec, /* IN -- dec in degrees */
+    double* glong,  /* OUT -- Galactic longitude in degrees */
+    double* glat    /* OUT -- Galactic latitude in degrees */
+)
+{
+    /* Convert to radians */
+    ra *= at_deg2Rad;
+    dec *= at_deg2Rad;
+    /* Use SLALIB to do the actual conversion */
+    slaEqgal(ra, dec, glong, glat);
+    /* Convert back to degrees */
+    *glong *= at_rad2Deg;
+    *glat *= at_rad2Deg;
+    atBound2(glat, glong);
+    return;
+}
+
+
 
 //vickej2 for sgr stripes, the great circles are defined thus:
 //sgr stripes run parallel to sgr longitude lines, centered on lamda=2.5*wedge number
@@ -221,7 +159,7 @@ void slaEqgal ( double dr, double dd, double* dl, double* db )
 //in this manner an equatorial stripe of standard coordinate conventions is created.
 void gcToSgr ( double mu, double nu, int wedge, double* lamda, double* beta )
 {
-    double radpdeg = 3.141592653589793 / 180;
+    double radpdeg = M_PI / 180.0;
     mu = mu * radpdeg;
     nu = nu * radpdeg;
 
@@ -485,50 +423,40 @@ void sgrToGal(double lamda, double beta, double* l, double* b)
     return;
 }
 
-/* Return ra & dec from survey longitude and latitude */
-void atSurveyToEq (double slong, double slat, double* ra, double* dec)
+/* (ra, dec) in degrees */
+RA_DEC atGCToEq(
+    double amu,  /* IN -- mu in degrees */
+    double anu,  /* IN -- nu in degrees */
+    double ainc  /* IN -- inclination in degrees */
+    )
 {
-    double anode, etaPole;
-    double x1, y1, z1;
-
-    double surveyCenterRa = at_surveyCenterRa;
-    double surveyCenterDec = at_surveyCenterDec;
+    RA_DEC radec;
+    double anode = NODE_GC_COORDS;
 
     /* Convert to radians */
-    slong = slong * at_deg2Rad;
-    slat = slat * at_deg2Rad;
-    anode = surveyCenterRa - 90.0;
-    anode = anode * at_deg2Rad;
-    etaPole = surveyCenterDec * at_deg2Rad;
+    amu *= at_deg2Rad;
+    anu *= at_deg2Rad;
+    anode *= at_deg2Rad;
+    ainc *= at_deg2Rad;
 
     /* Rotation */
-    x1 = -sin(slong);
-    y1 = cos(slat + etaPole) * cos(slong);
-    z1 = sin(slat + etaPole) * cos(slong);
-    *ra = atan2(y1, x1) + anode;
-    *dec = asin(z1);
-    *ra = *ra * at_rad2Deg;
-    *dec = *dec * at_rad2Deg;
-    atBound2(dec, ra);
+    const double x2 = cos(amu - anode) * cos(anu);
+    const double y2 = sin(amu - anode) * cos(anu);
+    const double z2 = sin(anu);
+    const double x1 = x2;
+    const double y1 = y2 * cos(ainc) - z2 * sin(ainc);
+    const double z1 = y2 * sin(ainc) + z2 * cos(ainc);
 
-    return;
-}
 
-/* Return eta from stripe number */
-double atEtaFromStripeNumber(int wedge)
-{
-    double eta;
-    double stripeSeparation = at_stripeSeparation;
+    radec.ra = atan2 (y1, x1) + anode;
+    radec.dec = asin(z1);
+    /* Convert back to degrees */
+    radec.ra *= at_rad2Deg;
+    radec.dec *= at_rad2Deg;
 
-    if (wedge <= 46)
-    {
-        eta = wedge * stripeSeparation - 57.5;
-    }
-    else
-    {
-        eta = wedge * stripeSeparation - 57.5 - 180.0;
-    }
+//  printf("ra: %g, dec: %g\n", *ra, *dec);
 
-    return eta;
+    atBound2(&radec.dec, &radec.ra);
+    return radec;
 }
 

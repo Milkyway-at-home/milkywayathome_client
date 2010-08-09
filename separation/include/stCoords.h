@@ -19,8 +19,10 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef STCOORDS_H
-#define STCOORDS_H 1
+#ifndef _STCOORDS_H_
+#define _STCOORDS_H_
+
+#include "atSurveyGeometry.h"
 
 void lbr2xyz( const double* lbr, double* xyz );
 void xyz2lbr( const double* xyz, double* lbr );
@@ -30,9 +32,9 @@ void stream2xyz( const double* stream, const double* spars, double* xyz );
 
 double wedge_eta ( int wedge );
 double wedge_incl( int wedge );
-double get_node();
 
 void gc2lb( int wedge, double mu, double nu, double* l, double* b );
+void gc2sgr( int wedge, double mu, double nu, double* l, double* b );
 
 void stripe_normal ( int wedge, double* xyz);
 
@@ -46,5 +48,5 @@ void xyz2lbg(double* point, double offset, double* logPoint);
 
 void sgr_stripe_normal(int wedge, double* xyz);
 
-#endif /* STCOORDS_H */
+#endif /* _STCOORDS_H_ */
 

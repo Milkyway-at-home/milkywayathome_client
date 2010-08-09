@@ -76,7 +76,8 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn)
 
     for (i = 0; i < ap->number_streams; i++)
     {
-        double ra, dec, lamda, beta, l, b;
+        RA_DEC radec;
+        double lamda, beta, l, b;
         vector lbr;
 
         sc[i].stream_sigma = ap->parameters[i].stream_parameters[4];
@@ -84,9 +85,9 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn)
 
         if (ap->sgr_coordinates == 0)
         {
-            atGCToEq(ap->parameters[i].stream_parameters[0],
-                     0, &ra, &dec, get_node(), wedge_incl(ap->wedge));
-            atEqToGal(ra, dec, &l, &b);
+            radec = atGCToEq(ap->parameters[i].stream_parameters[0],
+                             0, wedge_incl(ap->wedge));
+            atEqToGal(radec.ra, radec.dec, &l, &b);
         }
         else if (ap->sgr_coordinates == 1)
         {
@@ -435,7 +436,6 @@ static void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
 
     st->probs = (ST_PROBS*) malloc(sizeof(ST_PROBS) * ap->number_streams);
 
-
     /* 2D block, ia->r_steps = rows, ap->convolve = columns */
     st->rss = malloc(sizeof(R_STEP_STATE) * ia->r_steps * ap->convolve);
     st->r_step_consts = prepare_r_constants(sn,
@@ -543,7 +543,7 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
                              EVALUATION_STATE* es,
                              INTEGRAL_STATE* st,
                              vector* xyz,
-                             const vector integral_point,
+                             vector integral_point,
                              unsigned int mu_step_current,
                              unsigned int nu_step_current,
                              unsigned int r_step_current)
@@ -569,20 +569,19 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
 
         if (ap->sgr_coordinates == 0)
         {
-            double ra, dec;
-            atGCToEq(mu + 0.5 * ia->mu_step_size,
-                     st->nu_st[nu_step_current].nus,
-                     &ra, &dec, get_node(), wedge_incl(ap->wedge));
-
-            atEqToGal(ra, dec, &integral_point[0], &integral_point[1]);
+            gc2lb(ap->wedge,
+                  mu + 0.5 * ia->mu_step_size,
+                  st->nu_st[nu_step_current].nus,
+                  &L(integral_point),
+                  &B(integral_point));
         }
         else if (ap->sgr_coordinates == 1)
         {
-            double lamda, beta;
-            gcToSgr(mu + 0.5 * ia->mu_step_size,
-                    st->nu_st[nu_step_current].nus,
-                    ap->wedge, &lamda, &beta);
-            sgrToGal(lamda, beta, &integral_point[0], &integral_point[1]);
+            gc2sgr(ap->wedge,
+                   mu + 0.5 * ia->mu_step_size,
+                   st->nu_st[nu_step_current].nus,
+                   &L(integral_point),
+                   &B(integral_point));
         }
         else
         {
