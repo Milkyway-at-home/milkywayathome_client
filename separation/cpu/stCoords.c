@@ -26,9 +26,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "atSurveyGeometry.h"
 #include "stCoords.h"
 
-static const double r0 = 8.5;
-
-
 /* Convert sun-centered lbr into galactic xyz coordinates. */
 void lbr2xyz(const double* lbr, vector xyz)
 {
@@ -41,8 +38,8 @@ void lbr2xyz(const double* lbr, vector xyz)
 
     Z(xyz) = R(lbr) * bsin;
     zp = R(lbr) * bcos;
-    d = sqrt( r0 * r0 + zp * zp - 2.0 * r0 * zp * lcos);
-    X(xyz) = (zp * zp - r0 * r0 - d * d) / (2 * r0);
+    d = sqrt( sun_r0 * sun_r0 + zp * zp - 2.0 * sun_r0 * zp * lcos);
+    X(xyz) = (zp * zp - sun_r0 * sun_r0 - d * d) / (2.0 * sun_r0);
     Y(xyz) = zp * lsin;
 }
 

@@ -36,8 +36,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define at_rad2Deg (180.0/DPI)
 
 /* The node of the GC coordinates used in the survey. */
-//#define NODE_GC_COORDS (at_surveyCenterRa - 90.0)
-#define NODE_GC_COORDS (185.0 - 90.0)
+#define NODE_GC_COORDS (at_surveyCenterRa - 90.0)
 
 typedef struct
 {

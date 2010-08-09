@@ -37,8 +37,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "evaluation_state.h"
 
 #define stdev 0.6
-#define xr 3.0 * stdev
-#define lbr_r 8.5
+#define xr (3.0 * stdev)
 #define absm 4.2
 
 static const double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
@@ -168,6 +167,8 @@ static double set_probability_constants(const STREAM_NUMS* sn,
     return reff_xr_rp3;
 }
 
+
+
 static double calculate_bg_probability(const ASTRONOMY_PARAMETERS* ap,
                                        const STREAM_NUMS* sn,
                                        const R_STEP_STATE* rss,
@@ -201,7 +202,7 @@ static double calculate_bg_probability(const ASTRONOMY_PARAMETERS* ap,
             {
                 xyz[i][2] = rss[i].r_point * bsin;
                 zp = rss[i].r_point * bcos;
-                xyz[i][0] = zp * lcos - lbr_r;
+                xyz[i][0] = zp * lcos - sun_r0;
                 xyz[i][1] = zp * lsin;
 
                 rg = sqrt( xyz[i][0] * xyz[i][0] + xyz[i][1] * xyz[i][1] + (xyz[i][2] * xyz[i][2])
@@ -233,7 +234,7 @@ static double calculate_bg_probability(const ASTRONOMY_PARAMETERS* ap,
             {
                 xyz[i][2] = rss[i].r_point * bsin;
                 zp = rss[i].r_point * bcos;
-                xyz[i][0] = zp * lcos - lbr_r;
+                xyz[i][0] = zp * lcos - sun_r0;
                 xyz[i][1] = zp * lsin;
 
                 rg = sqrt(xyz[i][0] * xyz[i][0] + xyz[i][1] * xyz[i][1] + (xyz[i][2] * xyz[i][2])
