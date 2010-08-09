@@ -170,10 +170,10 @@ static double calculate_bg_probability(const ASTRONOMY_PARAMETERS* ap,
     double bg_prob;
     unsigned int i;
 
-    const double lsin = sin(L(integral_point) / deg);
-    const double lcos = cos(L(integral_point) / deg);
-    const double bsin = sin(B(integral_point) / deg);
-    const double bcos = cos(B(integral_point) / deg);
+    const double lsin = sin(d2r(L(integral_point)));
+    const double lcos = cos(d2r(L(integral_point)));
+    const double bsin = sin(d2r(B(integral_point)));
+    const double bcos = cos(d2r(B(integral_point)));
 
 
     /* if q is 0, there is no probability */
@@ -341,16 +341,21 @@ inline static void do_boinc_checkpoint(EVALUATION_STATE* es,
 
 
 static void prepare_nu_constants(NU_STATE* nu_st,
-                                 unsigned int nu_steps,
+                                 const unsigned int nu_steps,
                                  double nu_step_size,
                                  double nu_min)
 {
     unsigned int i;
+    double tmp1, tmp2;
 
     for (i = 0; i < nu_steps; i++)
     {
         nu_st[i].nus = nu_min + (i * nu_step_size);
-        nu_st[i].ids = cos((90.0 - nu_st[i].nus - nu_step_size) / deg) - cos((90.0 - nu_st[i].nus) / deg);
+
+        tmp1 = d2r(90.0 - nu_st[i].nus - nu_step_size);
+        tmp2 = d2r(90.0 - nu_st[i].nus);
+
+        nu_st[i].ids = cos(tmp1) - cos(tmp2);
         nu_st[i].nus += 0.5 * nu_step_size;
     }
 }
@@ -390,7 +395,7 @@ static R_STEP_CONSTANTS* prepare_r_constants(const STREAM_NUMS* sn,
         next_r = pow(10.0, (log_r + r_step_size - 14.2) / 5.0);
       #endif
 
-        r_step_consts[i].irv = (((next_r * next_r * next_r) - (r * r * r)) / 3.0) * mu_step_size / deg;
+        r_step_consts[i].irv = d2r((((next_r * next_r * next_r) - (r * r * r)) / 3.0) * mu_step_size);
         rPrime = (next_r + r) / 2.0;
 
         r_step_consts[i].reff_xr_rp3 = set_probability_constants(sn,
@@ -398,7 +403,6 @@ static R_STEP_CONSTANTS* prepare_r_constants(const STREAM_NUMS* sn,
                                                                  n_convolve,
                                                                  rPrime,
                                                                  &rss[i * n_convolve]);
-
     }
 
     return r_step_consts;
@@ -424,11 +428,8 @@ static void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
                                             ia->mu_step_size,
                                             st->rss);
 
-
     st->nu_st = malloc(sizeof(NU_STATE) * ia->nu_steps);
     prepare_nu_constants(st->nu_st, ia->nu_steps, ia->nu_step_size, ia->nu_min);
-
-
 }
 
 static void free_integral_state(INTEGRAL_STATE* st)

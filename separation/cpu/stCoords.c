@@ -26,9 +26,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway.h"
 #include "milkyway_priv.h"
 
-#define sqr(x) ((x) * (x))
-
-
 inline static void atBound(double* angle, /* MODIFIED -- the angle to bound in degrees*/
                            double min,    /* IN -- inclusive minimum value */
                            double max     /* IN -- exclusive maximum value */
@@ -49,7 +46,7 @@ inline static void atBound2(double* theta, /* MODIFIED -- the -90 to 90 angle */
     if (fabs(*theta) > 90.0)
     {
         *theta = 180.0 - *theta;
-        *phi += 180;
+        *phi += 180.0;
     }
     atBound(theta, -180.0, 180.0);
     atBound(phi, 0.0, 360.0);
@@ -74,8 +71,8 @@ inline static void slaDcc2s(vector v, double* a, double* b)
 {
     double r = sqrt( sqr(X(v)) + sqr(Y(v)));
 
-    *a = ( r != 0.0 ) ? atan2 ( Y(v), X(v) ) : 0.0;
-    *b = ( Z(v) != 0.0 ) ? atan2 ( Z(v), r ) : 0.0;
+    *a = ( r != 0.0 ) ? atan2( Y(v), X(v) ) : 0.0;
+    *b = ( Z(v) != 0.0 ) ? atan2( Z(v), r ) : 0.0;
 }
 
 //vickej2 for sgr stripes, the great circles are defined thus:
@@ -441,15 +438,15 @@ void lbr2xyz(const double* lbr, vector xyz)
 {
     double zp, d;
 
-    const double bsin = sin(B(lbr) / deg);
-    const double lsin = sin(L(lbr) / deg);
-    const double bcos = cos(B(lbr) / deg);
-    const double lcos = cos(L(lbr) / deg);
+    const double bsin = sin(d2r(B(lbr)));
+    const double lsin = sin(d2r(L(lbr)));
+    const double bcos = cos(d2r(B(lbr)));
+    const double lcos = cos(d2r(L(lbr)));
 
     Z(xyz) = R(lbr) * bsin;
     zp = R(lbr) * bcos;
-    d = sqrt( sun_r0 * sun_r0 + zp * zp - 2.0 * sun_r0 * zp * lcos);
-    X(xyz) = (zp * zp - sun_r0 * sun_r0 - d * d) / (2.0 * sun_r0);
+    d = sqrt( sqr(sun_r0) + sqr(zp) - 2.0 * sun_r0 * zp * lcos);
+    X(xyz) = (sqr(zp) - sqr(sun_r0) - sqr(d)) / (2.0 * sun_r0);
     Y(xyz) = zp * lsin;
 }
 
@@ -487,7 +484,7 @@ inline static double wedge_incl(int wedge)
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
 void gc2lb( int wedge, double mu, double nu, double* l, double* b )
 {
-    RA_DEC radec = atGCToEq( mu, nu, wedge_incl(wedge) );
+    RA_DEC radec = atGCToEq(mu, nu, wedge_incl(wedge));
     atEqToGal(radec.ra, radec.dec, l, b);
 }
 

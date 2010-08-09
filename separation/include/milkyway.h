@@ -48,7 +48,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 	#define pi M_PI
 #endif
 
-#define deg (180.0/pi)
 
 #define EPS 3.0e-11
 #define PI (double) 3.1415926535897932384626433832795028841971693993751
