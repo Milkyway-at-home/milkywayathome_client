@@ -25,7 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway.h"
 #include "milkyway_priv.h"
-#include "stCoords.h"
 
 #define sqr(x) ((x) * (x))
 
@@ -61,8 +60,8 @@ inline static void atBound2(double* theta, /* MODIFIED -- the -90 to 90 angle */
 
 inline static double slaDrange(double angle)
 {
-    double w = dmod ( angle, D2PI );
-    return ( fabs ( w ) < DPI ) ? w : w - dsign ( D2PI, angle );
+    double w = dmod(angle, D2PI);
+    return ( fabs(w) < DPI ) ? w : w - dsign(D2PI, angle);
 }
 
 inline static double slaDranrm(double angle)
@@ -73,7 +72,7 @@ inline static double slaDranrm(double angle)
 
 inline static void slaDcc2s(vector v, double* a, double* b)
 {
-    double r = sqrt( X(v) * X(v) + Y(v) * Y(v) );
+    double r = sqrt( sqr(X(v)) + sqr(Y(v)));
 
     *a = ( r != 0.0 ) ? atan2 ( Y(v), X(v) ) : 0.0;
     *b = ( Z(v) != 0.0 ) ? atan2 ( Z(v), r ) : 0.0;
@@ -86,24 +85,21 @@ inline static void slaDcc2s(vector v, double* a, double* b)
 //in this manner an equatorial stripe of standard coordinate conventions is created.
 inline static void gcToSgr( double mu, double nu, int wedge, double* lamda, double* beta )
 {
-    double radpdeg = M_PI / 180.0;
-    mu = mu * radpdeg;
-    nu = nu * radpdeg;
+    mu = d2r(mu);
+    nu = d2r(nu);
 
     double x = cos(mu) * cos(nu);
     double y = -sin(nu);
     double z = sin(mu) * cos(nu);
 
     *lamda = atan2(y, x);
-    *lamda = *lamda / radpdeg;
-    *lamda = *lamda + 2.5 * wedge;
+    *lamda = r2d(*lamda);
+    *lamda += 2.5 * wedge;
     if (*lamda < 0)
-    {
-        *lamda = *lamda + 360;
-    }
+        *lamda += 360.0;
 
     *beta = asin(z);
-    *beta = *beta / radpdeg;
+    *beta = r2d(*beta);
 
     return;
 }
@@ -284,7 +280,6 @@ static void init_sgr_to_gal_constants(SGR_TO_GAL_CONSTANTS* sgc)
 //mathematic reversal of majewski's defined rotations for lbr->sgr conversion
 inline static void sgrToGal(double lamda, double beta, double* l, double* b)
 {
-    static const double radpdeg = M_PI / 180.0;
     double x2 = 0.0, y2 = 0.0;
 
     SGR_TO_GAL_CONSTANTS _sgc;  /* FIXME: Shouldn't be done each call */
@@ -294,10 +289,10 @@ inline static void sgrToGal(double lamda, double beta, double* l, double* b)
     if (beta > 90)
     {
         beta = 90 - (beta - 90);
-        lamda = lamda + 180;
+        lamda += 180.0;
         if (lamda > 360)
         {
-            lamda = lamda - 360;
+            lamda -= 360.0;
         }
     }
     if (beta < -90)
@@ -314,49 +309,47 @@ inline static void sgrToGal(double lamda, double beta, double* l, double* b)
         lamda = lamda + 360;
     }
 
-    beta = beta + 90;
+    beta += 90.0;
 
-    beta = beta * radpdeg;
+    beta = d2r(beta);
     double z2 = cos(beta);
 
     if (lamda == 0)
     {
-        lamda = lamda * radpdeg;
+        lamda = d2r(lamda);
         x2 = sin(beta);
         y2 = 0;
 
     }
-    else if (lamda < 90)
+    else if (lamda < 90.0)
     {
-        lamda = lamda * radpdeg;
-        x2 = sqrt((1 - cos(beta) * cos(beta)) / (1 + tan(lamda) * tan(lamda)));
+        lamda = d2r(lamda);
+        x2 = sqrt((1.0 - cos(beta) * cos(beta)) / (1.0 + tan(lamda) * tan(lamda)));
         y2 = x2 * tan(lamda);
-
     }
     else if (lamda == 90)
     {
-        lamda = lamda * radpdeg;
-        x2 = 0;
+        lamda = d2r(lamda);
+        x2 = 0.0;
         y2 = sin(beta);
 
     }
-    else  if (lamda < 180)
+    else if (lamda < 180)
     {
-        lamda = lamda * radpdeg;
+        lamda = d2r(lamda);
         y2 = sqrt((1 - cos(beta) * cos(beta)) / (1 / (tan(lamda) * tan(lamda)) + 1));
         x2 = y2 / tan(lamda);
 
     }
     else if (lamda == 180)
     {
-        lamda = lamda * radpdeg;
+        lamda = d2r(lamda);
         x2 = -sin(beta);
         y2 = 0;
-
     }
     else if (lamda < 270)
     {
-        lamda = lamda * radpdeg;
+        lamda = d2r(lamda);
         x2 = sqrt((1 - cos(beta) * cos(beta)) / (1 + tan(lamda) * tan(lamda)));
         y2 = x2 * tan(lamda);
         x2 = -x2;
@@ -365,21 +358,21 @@ inline static void sgrToGal(double lamda, double beta, double* l, double* b)
     }
     else if (lamda == 270)
     {
-        lamda = lamda * radpdeg;
+        lamda = d2r(lamda);
         x2 = 0;
         y2 = -sin(beta);
 
     }
     else if (lamda < 360)
     {
-        lamda = lamda * radpdeg;
+        lamda = d2r(lamda);
         x2 = sqrt((1.0 - cos(beta) * cos(beta)) / (1 + tan(lamda) * tan(lamda)));
         y2 = x2 * tan(lamda);
 
     }
     else if (lamda == 360)
     {
-        lamda = lamda * radpdeg;
+        lamda = d2r(lamda);
         x2 = sin(beta);
         y2 = 0;
     }
@@ -396,13 +389,11 @@ inline static void sgrToGal(double lamda, double beta, double* l, double* b)
     else
     {
         *b = asin(z1);
-        *b = *b / radpdeg;
+        *b = r2d(*b);
         *l = atan2(y1, x1);
-        *l = *l / radpdeg;
+        *l = r2d(*l);
         if (*l < 0)
-        {
-            *l = *l + 360.0;
-        }
+            *l += 360.0;
     }
 
     return;
@@ -419,10 +410,10 @@ inline static RA_DEC atGCToEq(
     double anode = NODE_GC_COORDS;
 
     /* Convert to radians */
-    amu *= at_deg2Rad;
-    anu *= at_deg2Rad;
-    anode *= at_deg2Rad;
-    ainc *= at_deg2Rad;
+    amu = d2r(amu);
+    anu = d2r(anu);
+    anode = d2r(anode);
+    ainc = d2r(ainc);
 
     /* Rotation */
     const double x2 = cos(amu - anode) * cos(anu);
@@ -436,8 +427,8 @@ inline static RA_DEC atGCToEq(
     radec.ra = atan2 (y1, x1) + anode;
     radec.dec = asin(z1);
     /* Convert back to degrees */
-    radec.ra *= at_rad2Deg;
-    radec.dec *= at_rad2Deg;
+    radec.ra = r2d(radec.ra);
+    radec.dec = r2d(radec.dec);
 
 //  printf("ra: %g, dec: %g\n", *ra, *dec);
 
@@ -470,35 +461,34 @@ inline static void atEqToGal (
 )
 {
     /* Convert to radians */
-    ra *= at_deg2Rad;
-    dec *= at_deg2Rad;
+    ra = d2r(ra);
+    dec = d2r(dec);
     /* Use SLALIB to do the actual conversion */
     slaEqgal(ra, dec, glong, glat);
     /* Convert back to degrees */
-    *glong *= at_rad2Deg;
-    *glat *= at_rad2Deg;
+    *glong = r2d(*glong);
+    *glat = r2d(*glat);
     atBound2(glat, glong);
     return;
 }
 
-
 /* Get eta for the given wedge. */
 inline static double wedge_eta(int wedge)
 {
-    return wedge * at_stripeSeparation - 57.5 - (wedge > 46 ? 180.0 : 0.0);
+    return wedge * stripeSeparation - 57.5 - (wedge > 46 ? 180.0 : 0.0);
 }
 
 /* Get inclination for the given wedge. */
 inline static double wedge_incl(int wedge)
 {
-    return wedge_eta(wedge) + at_surveyCenterDec;
+    return wedge_eta(wedge) + surveyCenterDec;
 }
 
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
 void gc2lb( int wedge, double mu, double nu, double* l, double* b )
 {
-    RA_DEC radec = atGCToEq( mu, nu, wedge_incl( wedge ) );
-    atEqToGal( radec.ra, radec.dec, l, b );
+    RA_DEC radec = atGCToEq( mu, nu, wedge_incl(wedge) );
+    atEqToGal(radec.ra, radec.dec, l, b);
 }
 
 void gc2sgr( int wedge, double mu, double nu, double* l, double* b )

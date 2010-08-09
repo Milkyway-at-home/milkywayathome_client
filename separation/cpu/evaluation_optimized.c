@@ -21,19 +21,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define CHECKPOINT_FILE "astronomy_checkpoint"
 
-#include <math.h>
-#include <time.h>
-
 #include "milkyway.h"
 #include "milkyway_priv.h"
-
-#include "evaluation_optimized.h"
-#include "parameters.h"
-#include "probability.h"
-#include "stCoords.h"
-#include "star_points.h"
-#include "numericalIntegration.h"
-#include "evaluation_state.h"
 
 #define stdev 0.6
 #define xr (3.0 * stdev)

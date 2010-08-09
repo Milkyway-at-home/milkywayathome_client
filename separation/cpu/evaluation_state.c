@@ -23,12 +23,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway.h"
 #include "milkyway_priv.h"
-#include "evaluation_optimized.h"
-#include "parameters.h"
-#include "probability.h"
-#include "star_points.h"
-#include "numericalIntegration.h"
-#include "../util/io_util.h"
 
 void fwrite_integral_area(FILE* file, INTEGRAL_AREA* ia)
 {

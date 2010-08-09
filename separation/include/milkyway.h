@@ -61,5 +61,32 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define PI_2_3 2.09439510239319549230842892218633525613144626625007054731662972820521\
 0937524139332418689883561411379
 
+
+
+#define dmod(A,B) ((B)!=0.0?((A)*(B)>0.0?(A)-(B)*floor((A)/(B))\
+                             :(A)+(B)*floor(-(A)/(B))):(A))
+#define dsign(A,B) ((B)<0.0?-(A):(A))
+
+/* degrees to radians */
+#define d2r(x) ((x) * (M_PI / 180.0))
+
+
+/* radians to degrees */
+#define r2d(x) ((x) * (180.0 / M_PI))
+
+/* simple math macros */
+#define cube(x) ((x) * (x) * (x))
+#define sqr(x)  ((x) * (x))
+#define inv(x)  (1.0 / (x))
+
+#define stripeSeparation  (2.5)
+#define surveyCenterRa (185.0)
+#define surveyCenterDec (32.5)
+
+/* The node of the GC coordinates used in the survey. */
+#define NODE_GC_COORDS (surveyCenterRa - 90.0)
+#define sun_r0 8.5
+
+
 #endif /* _MILKYWAY_AT_HOME_ */
 

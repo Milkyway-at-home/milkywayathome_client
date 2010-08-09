@@ -22,7 +22,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway.h"
 #include "milkyway_priv.h"
 #include "parameters.h"
-#include "../util/io_util.h"
 
 void free_parameters(ASTRONOMY_PARAMETERS* ap)
 {
