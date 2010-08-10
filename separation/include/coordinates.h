@@ -19,9 +19,26 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef NUMERICALINTEGRATION_H
-#define NUMERICALINTEGRATION_H
+#ifndef _COORDINATES_H_
+#define _COORDINATES_H_
 
-void gaussLegendre(double x1, double x2, double* x, double* restrict w, int n);
+#include "milkyway.h"
+#include "milkyway_priv.h"
 
-#endif
+typedef struct
+{
+    double ra;
+    double dec;
+} RA_DEC;
+
+/* wedge, mu, nu, l, b. gc2lb or gc2sgr  */
+typedef void (*SGRConversion)(int, double, double, double*, double*);
+
+void gc2lb( int wedge, double mu, double nu, double* l, double* b );
+void gc2sgr( int wedge, double mu, double nu, double* l, double* b );
+
+void lbr2xyz( const double* lbr, double* xyz );
+
+
+#endif /* _COORDINATES_H_ */
+

@@ -20,8 +20,8 @@
 
 set(lib_source_file_list evaluation_state.c
                          ${PROJECT_SOURCE_DIR}/util/io_util.c
-                         stCoords.c
-                         numericalIntegration.c
+                         coordinates.c
+                         numerical_integration.c
                          evaluation_optimized.c
                          parameters.c
                          star_points.c)

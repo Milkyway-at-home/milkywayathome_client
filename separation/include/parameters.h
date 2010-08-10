@@ -23,7 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define ASTRONOMY_PARAMETERS_H
 
 #include <stdio.h>
-#include "stCoords.h"
+#include "coordinates.h"
 
 typedef struct
 {

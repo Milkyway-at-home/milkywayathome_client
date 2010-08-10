@@ -32,8 +32,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "parameters.h"
 #include "probability.h"
 #include "star_points.h"
-#include "numericalIntegration.h"
+#include "numerical_integration.h"
 #include "../util/io_util.h"
+#include "coordinates.h"
 
 #if BOINC_APPLICATION
   #include <boinc_api.h>

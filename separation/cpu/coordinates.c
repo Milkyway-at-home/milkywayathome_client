@@ -25,6 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway.h"
 #include "milkyway_priv.h"
+#include "coordinates.h"
 
 inline static void atBound(double* angle, /* MODIFIED -- the angle to bound in radians */
                            double min,    /* IN -- inclusive minimum value */
