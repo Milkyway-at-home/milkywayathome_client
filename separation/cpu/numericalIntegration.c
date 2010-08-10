@@ -34,7 +34,7 @@ void gaussLegendre(double x1, double x2, double* restrict x, double* restrict w,
 
     for (i = 1; i <= m; i++)
     {
-        z = cos(PI * (i - 0.25) / (n + 0.5));
+        z = cos(M_PI * (i - 0.25) / (n + 0.5));
         do
         {
             p1 = 1.0;

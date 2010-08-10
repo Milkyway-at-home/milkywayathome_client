@@ -70,7 +70,11 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn)
         if (ap->sgr_coordinates == 0)
             ap->sgr_conversion = (SGRConversion) gc2lb;
         else if (ap->sgr_coordinates == 1)
+        {
+            fprintf(stderr, "gc2sgr probably broken right now, so refusing to run\n");
             ap->sgr_conversion = (SGRConversion) gc2sgr;
+            mw_finish(EXIT_FAILURE);
+        }
         else
         {
             fprintf(stderr, "Error: sgr_coordinates not valid");
