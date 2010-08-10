@@ -88,8 +88,9 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
     int o;
     unsigned int i, paramn = 0;
     double* parameters = NULL;
+    static unsigned int numParams;
+    static int server_params = 0;
     static const char** rest;
-
     static const struct poptOption options[] =
     {
         {
@@ -114,6 +115,18 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
             "output", 'o',
             POPT_ARG_STRING, &output_file,
             'o', "Output file", NULL
+        },
+
+        {
+            "p", 'p',
+            POPT_ARG_NONE, &server_params,
+            0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
+        },
+
+        {
+            "np", '\0',
+            POPT_ARG_INT | POPT_ARGFLAG_ONEDASH, &numParams,
+            0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
         },
 
         POPT_AUTOHELP
@@ -151,6 +164,13 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
         while (rest[++paramn]);  /* Count number of parameters */
 
         MW_DEBUG("%u arguments leftover\n", paramn);
+
+        if (server_params && (paramn != numParams))
+        {
+            poptFreeContext(context);
+            fprintf(stderr, "Parameter count mismatch: Expected %u, got %u\n", numParams, paramn);
+            mw_finish(EXIT_FAILURE);
+        }
 
         parameters = (double*) malloc(sizeof(double) * paramn);
 
