@@ -159,6 +159,90 @@ static double set_prob_consts(const STREAM_NUMS* sn,
     return reff_xr_rp3;
 }
 
+/* FIXME: I don't know what these do enough to name it properly */
+inline static double sub_bg_probability1(const STREAM_NUMS* sn,
+                                         const R_STEP_STATE* rss,
+                                         const unsigned int convolve,
+                                         const int aux_bg_profile,
+                                         const vector integral_point,
+                                         vector* const xyz)
+{
+    unsigned int i;
+    double h_prob, aux_prob;
+    double rg, rs;
+    double zp;
+    double bg_prob = 0.0;
+
+    const double lsin = sin(d2r(L(integral_point)));
+    const double lcos = cos(d2r(L(integral_point)));
+    const double bsin = sin(d2r(B(integral_point)));
+    const double bcos = cos(d2r(B(integral_point)));
+
+    for (i = 0; i < convolve; ++i)
+    {
+        xyz[i][2] = rss[i].r_point * bsin;
+        zp = rss[i].r_point * bcos;
+        xyz[i][0] = zp * lcos - sun_r0;
+        xyz[i][1] = zp * lsin;
+
+        rg = sqrt( xyz[i][0] * xyz[i][0] + xyz[i][1] * xyz[i][1] + (xyz[i][2] * xyz[i][2])
+                   /
+                   (sn->q * sn->q)
+            );
+        rs = rg + sn->r0;
+
+        //the hernquist profile includes a quadratic term in g
+        if (aux_bg_profile == 1)
+        {
+            h_prob = rss[i].qw_r3_N / (rg * cube(rs));
+            aux_prob = rss[i].qw_r3_N * (sn->bg_a * rss[i].r_in_mag2 + sn->bg_b * rss[i].r_in_mag + sn->bg_c );
+            bg_prob += h_prob + aux_prob;
+        }
+        else if (aux_bg_profile == 0)
+        {
+            bg_prob += rss[i].qw_r3_N / (rg * cube(rs));
+        }
+        else
+        {
+            fprintf(stderr, "Error: aux_bg_profile invalid");
+        }
+    }
+
+    return bg_prob;
+}
+
+inline static double sub_bg_probability2(const STREAM_NUMS* sn,
+                                         const R_STEP_STATE* rss,
+                                         const unsigned int convolve,
+                                         const vector integral_point,
+                                         vector* const xyz)
+{
+    unsigned int i;
+    double bg_prob = 0.0;
+    double rg;
+    double zp;
+
+    const double lsin = sin(d2r(L(integral_point)));
+    const double lcos = cos(d2r(L(integral_point)));
+    const double bsin = sin(d2r(B(integral_point)));
+    const double bcos = cos(d2r(B(integral_point)));
+
+    for (i = 0; i < convolve; ++i)
+    {
+        xyz[i][2] = rss[i].r_point * bsin;
+        zp = rss[i].r_point * bcos;
+        xyz[i][0] = zp * lcos - sun_r0;
+        xyz[i][1] = zp * lsin;
+
+        rg = sqrt(xyz[i][0] * xyz[i][0] + xyz[i][1] * xyz[i][1] + (xyz[i][2] * xyz[i][2])
+                  / (sn->q * sn->q));
+
+        bg_prob += rss[i].qw_r3_N / (pow(rg, sn->alpha) * pow(rg + sn->r0, sn->alpha_delta3));
+    }
+
+    return bg_prob;
+}
+
 static double bg_probability(const ASTRONOMY_PARAMETERS* ap,
                              const STREAM_NUMS* sn,
                              const R_STEP_STATE* rss,
@@ -166,73 +250,18 @@ static double bg_probability(const ASTRONOMY_PARAMETERS* ap,
                              const vector integral_point,
                              vector* xyz)
 {
-    double zp;
-    double rg, rs;
-    double h_prob, aux_prob;
     double bg_prob;
-    unsigned int i;
-
-    const double lsin = sin(d2r(L(integral_point)));
-    const double lcos = cos(d2r(L(integral_point)));
-    const double bsin = sin(d2r(B(integral_point)));
-    const double bcos = cos(d2r(B(integral_point)));
-
 
     /* if q is 0, there is no probability */
     if (sn->q == 0)
-    {
         bg_prob = -1.0;
-    }
     else
     {
-        bg_prob = 0.0;
         if (sn->alpha == 1 && sn->delta == 1)
-        {
-            for (i = 0; i < ap->convolve; i++)
-            {
-                xyz[i][2] = rss[i].r_point * bsin;
-                zp = rss[i].r_point * bcos;
-                xyz[i][0] = zp * lcos - sun_r0;
-                xyz[i][1] = zp * lsin;
-
-                rg = sqrt( xyz[i][0] * xyz[i][0] + xyz[i][1] * xyz[i][1] + (xyz[i][2] * xyz[i][2])
-                                   /
-                            (sn->q * sn->q)
-                         );
-                rs = rg + sn->r0;
-
-                //the hernquist profile includes a quadratic term in g
-                if (ap->aux_bg_profile == 1)
-                {
-                    h_prob = rss[i].qw_r3_N / (rg * cube(rs));
-                    aux_prob = rss[i].qw_r3_N * (sn->bg_a * rss[i].r_in_mag2 + sn->bg_b * rss[i].r_in_mag + sn->bg_c );
-                    bg_prob += h_prob + aux_prob;
-                }
-                else if (ap->aux_bg_profile == 0)
-                {
-                    bg_prob += rss[i].qw_r3_N / (rg * cube(rs));
-                }
-                else
-                {
-                    fprintf(stderr, "Error: aux_bg_profile invalid");
-                }
-            }
-        }
+            bg_prob = sub_bg_probability1(sn, rss, ap->convolve, ap->aux_bg_profile, integral_point, xyz);
         else
-        {
-            for (i = 0; i < ap->convolve; i++)
-            {
-                xyz[i][2] = rss[i].r_point * bsin;
-                zp = rss[i].r_point * bcos;
-                xyz[i][0] = zp * lcos - sun_r0;
-                xyz[i][1] = zp * lsin;
+            bg_prob = sub_bg_probability2(sn, rss, ap->convolve, integral_point, xyz);
 
-                rg = sqrt(xyz[i][0] * xyz[i][0] + xyz[i][1] * xyz[i][1] + (xyz[i][2] * xyz[i][2])
-                          / (sn->q * sn->q));
-
-                bg_prob += rss[i].qw_r3_N / (pow(rg, sn->alpha) * pow(rg + sn->r0, sn->alpha_delta3));
-            }
-        }
         bg_prob *= reff_xr_rp3;
     }
 
