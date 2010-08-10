@@ -125,20 +125,20 @@ void free_constants(ASTRONOMY_PARAMETERS* ap)
 static double set_prob_consts(const STREAM_NUMS* sn,
                               const STREAM_GAUSS* sg,
                               const unsigned int n_convolve,
-                              double coords,
+                              const double coords,
                               R_STEP_STATE* rss)
 {
-    double gPrime, exp_result, g, exponent, r3, N, reff_value, rPrime3;
+    double g, exponent, r3, N;
     double reff_xr_rp3;
     unsigned int i;
 
     //R2MAG
-    gPrime = 5.0 * (log10(coords * 1000.0) - 1.0) + absm;
+    const double gPrime = 5.0 * (log10(coords * 1000.0) - 1.0) + absm;
 
     //REFF
-    exp_result = exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));
-    reff_value = sigmoid_curve_params[0] / (exp_result + 1);
-    rPrime3 = coords * coords * coords;
+    const double exp_result = exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));
+    const double reff_value = sigmoid_curve_params[0] / (exp_result + 1.0);
+    const double rPrime3 = cube(coords);
 
     for (i = 0; i < n_convolve; i++)
     {
@@ -150,7 +150,7 @@ static double set_prob_consts(const STREAM_NUMS* sn,
         rss[i].r_point = pow(10.0, (g - absm) / 5.0 + 1.0) / 1000.0;
 
         r3 = rss[i].r_point * rss[i].r_point * rss[i].r_point;
-        exponent = (g - gPrime) * (g - gPrime) / (2.0 * stdev * stdev);
+        exponent = sqr(g - gPrime) / (2.0 * sqr(stdev));
         N = sn->coeff * exp(-exponent);
         rss[i].qw_r3_N = sg->qgaus_W[i] * r3 * N;
     }
@@ -158,8 +158,6 @@ static double set_prob_consts(const STREAM_NUMS* sn,
     reff_xr_rp3 = reff_value * xr / rPrime3;
     return reff_xr_rp3;
 }
-
-
 
 static double bg_probability(const ASTRONOMY_PARAMETERS* ap,
                              const STREAM_NUMS* sn,
@@ -206,13 +204,13 @@ static double bg_probability(const ASTRONOMY_PARAMETERS* ap,
                 //the hernquist profile includes a quadratic term in g
                 if (ap->aux_bg_profile == 1)
                 {
-                    h_prob = rss[i].qw_r3_N / (rg * rs * rs * rs);
+                    h_prob = rss[i].qw_r3_N / (rg * cube(rs));
                     aux_prob = rss[i].qw_r3_N * (sn->bg_a * rss[i].r_in_mag2 + sn->bg_b * rss[i].r_in_mag + sn->bg_c );
                     bg_prob += h_prob + aux_prob;
                 }
                 else if (ap->aux_bg_profile == 0)
                 {
-                    bg_prob += rss[i].qw_r3_N / (rg * rs * rs * rs);
+                    bg_prob += rss[i].qw_r3_N / (rg * cube(rs));
                 }
                 else
                 {
@@ -399,7 +397,7 @@ static R_STEP_CONSTANTS* prepare_r_constants(const STREAM_NUMS* sn,
         next_r = pow(10.0, (log_r + r_step_size - 14.2) / 5.0);
       #endif
 
-        r_step_consts[i].irv = d2r((((next_r * next_r * next_r) - (r * r * r)) / 3.0) * mu_step_size);
+        r_step_consts[i].irv = d2r(((cube(next_r) - cube(r)) / 3.0) * mu_step_size);
         rPrime = (next_r + r) / 2.0;
 
         r_step_consts[i].reff_xr_rp3 = set_prob_consts(sn, sg, n_convolve, rPrime, &rss[i * n_convolve]);
