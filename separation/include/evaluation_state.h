@@ -69,7 +69,7 @@ typedef struct
                                  0.0, NULL, 0, 0, 0, 0, 0.0 }
 
 void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVALUATION_STATE* es);
-void free_state(EVALUATION_STATE* es);
+void free_evaluation_state(EVALUATION_STATE* es);
 void reset_evaluation_state(EVALUATION_STATE* es);
 
 void fwrite_integral_area(FILE* file, INTEGRAL_AREA* ia);

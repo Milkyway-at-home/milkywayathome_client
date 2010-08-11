@@ -842,6 +842,7 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
     }
 
     free(xyz);
+    free_evaluation_state(&es);
     free_stream_gauss(&sg);
 
     /*  log10(x * 0.001) = log10(x) - 3.0 */

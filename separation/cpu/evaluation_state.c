@@ -188,7 +188,7 @@ void reset_evaluation_state(EVALUATION_STATE* es)
     }
 }
 
-void free_state(EVALUATION_STATE* es)
+void free_evaluation_state(EVALUATION_STATE* es)
 {
     free(es->stream_integrals);
     free(es->ia_stream_integrals);          /* free integral areas */

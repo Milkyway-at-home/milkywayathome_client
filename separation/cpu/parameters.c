@@ -32,11 +32,24 @@ void free_background_parameters(BACKGROUND_PARAMETERS* bgp)
     free(bgp->optimize);
 }
 
+void free_stream_parameters(STREAM_PARAMETERS* p)
+{
+    free(p->stream_parameters);
+    free(p->stream_step);
+    free(p->stream_min);
+    free(p->stream_max);
+    free(p->stream_optimize);
+}
+
 void free_astronomy_parameters(ASTRONOMY_PARAMETERS* ap)
 {
-    free(ap->stream);
+    unsigned int i;
+
+    for (i = 0; i < ap->number_streams; ++i)
+        free_stream_parameters(&ap->parameters[i]);
     free(ap->parameters);
     free(ap->integral);
+    free(ap->stream);
 }
 
 int read_parameters(const char* filename, ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETERS* bgp)
