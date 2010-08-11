@@ -29,19 +29,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef struct
 {
-    unsigned int mu_step, nu_step, r_step;
-    unsigned int mu_steps, nu_steps, r_steps;
-    double mu_min, nu_min, r_min;
-    double mu_max, nu_max, r_max;
-    double mu_step_size, nu_step_size, r_step_size;
-
-    unsigned int number_streams;
-    double background_integral;
-    double* stream_integrals;
-} INTEGRAL_AREA;
-
-typedef struct
-{
     /* State for integral calculation. */
     INTEGRAL_AREA* integrals;
     double* ia_stream_integrals;  /* all of the stream_integrals used by INTEGRAL_AREAS */

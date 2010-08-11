@@ -543,13 +543,13 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
 
 inline static void apply_correction(const unsigned int number_streams,
                                     INTEGRAL_AREA* ia,
-                                    INTEGRAL_STATE* st,
+                                    ST_PROBS* probs,
                                     BG_PROB bg_prob_int)
 {
     unsigned int i;
     ia->background_integral = bg_prob_int.bg_int + bg_prob_int.correction;
     for (i = 0; i < number_streams; i++)
-        ia->stream_integrals[i] = st->probs[i].st_prob_int + st->probs[i].st_prob_int_c;
+        ia->stream_integrals[i] = probs[i].st_prob_int + probs[i].st_prob_int_c;
 }
 
 inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
@@ -572,7 +572,7 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
 
     for (nu_step_current = 0; nu_step_current < nu_steps; ++nu_step_current)
     {
-        apply_correction(ap->number_streams, ia, st, bg_prob_int);
+        apply_correction(ap->number_streams, ia, st->probs, bg_prob_int);
 
         do_boinc_checkpoint(es, mu_step_current, nu_step_current);
 
@@ -636,7 +636,7 @@ static void integrate(const ASTRONOMY_PARAMETERS* ap,
         bg_prob_int.correction += nu_result.correction;
     }
 
-    apply_correction(ap->number_streams, ia, st, bg_prob_int);
+    apply_correction(ap->number_streams, ia, st->probs, bg_prob_int);
 }
 
 static void print_stream_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
