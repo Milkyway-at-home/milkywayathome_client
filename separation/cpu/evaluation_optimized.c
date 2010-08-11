@@ -30,12 +30,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 static const double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
-STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS* bgp, STREAM_NUMS* sn)
+STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
+                                 const BACKGROUND_PARAMETERS* bgp,
+                                 const STREAMS* streams,
+                                 STREAM_NUMS* sn)
 {
     unsigned int i;
     vector lbr;
 
-    STREAM_CONSTANTS* sc = malloc(sizeof(STREAM_CONSTANTS) * ap->number_streams);
+    STREAM_CONSTANTS* sc = malloc(sizeof(STREAM_CONSTANTS) * streams->number_streams);
 
     sn->alpha = bgp->parameters[0];
     sn->q     = bgp->parameters[1];
@@ -62,10 +65,10 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARA
     sn->coeff = 1.0 / (stdev * sqrt(2.0 * pi));
     sn->alpha_delta3 = 3.0 - sn->alpha + sn->delta;
 
-    for (i = 0; i < ap->number_streams; i++)
+    for (i = 0; i < streams->number_streams; i++)
     {
-        sc[i].stream_sigma = ap->parameters[i].stream_parameters[4];
-        sc[i].stream_sigma_sq2 = 2.0 * sc[i].stream_sigma * sc[i].stream_sigma;
+        sc[i].stream_sigma = streams->parameters[i].stream_parameters[4];
+        sc[i].stream_sigma_sq2 = 2.0 * sqr(sc[i].stream_sigma);
 
         if (ap->sgr_coordinates == 0)
             ap->sgr_conversion = (SGRConversion) gc2lb;
@@ -82,37 +85,37 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARA
         }
 
         ap->sgr_conversion(ap->wedge,
-                           ap->parameters[i].stream_parameters[0],
+                           streams->parameters[i].stream_parameters[0],
                            0,
                            &L(lbr),
                            &B(lbr));
 
-        R(lbr) = ap->parameters[i].stream_parameters[1];
+        R(lbr) = streams->parameters[i].stream_parameters[1];
         lbr2xyz(lbr, sc[i].stream_c);
 
-        X(sc[i].stream_a) =   sin(ap->parameters[i].stream_parameters[2])
-                            * cos(ap->parameters[i].stream_parameters[3]);
+        X(sc[i].stream_a) =   sin(streams->parameters[i].stream_parameters[2])
+                            * cos(streams->parameters[i].stream_parameters[3]);
 
-        Y(sc[i].stream_a) =   sin(ap->parameters[i].stream_parameters[2])
-                            * sin(ap->parameters[i].stream_parameters[3]);
+        Y(sc[i].stream_a) =   sin(streams->parameters[i].stream_parameters[2])
+                            * sin(streams->parameters[i].stream_parameters[3]);
 
-        Z(sc[i].stream_a) = cos(ap->parameters[i].stream_parameters[2]);
+        Z(sc[i].stream_a) = cos(streams->parameters[i].stream_parameters[2]);
     }
 
     return sc;
 }
 
-static void get_stream_gauss(const ASTRONOMY_PARAMETERS* ap, STREAM_GAUSS* sg)
+static void get_stream_gauss(const unsigned int convolve, STREAM_GAUSS* sg)
 {
     unsigned int i;
-    double* qgaus_X = malloc(sizeof(double) * ap->convolve);
+    double* qgaus_X = malloc(sizeof(double) * convolve);
 
-    sg->qgaus_W = (double*) malloc(sizeof(double) * ap->convolve);
-    sg->dx      = (double*) malloc(sizeof(double) * ap->convolve);
+    sg->qgaus_W = (double*) malloc(sizeof(double) * convolve);
+    sg->dx      = (double*) malloc(sizeof(double) * convolve);
 
-    gaussLegendre(-1.0, 1.0, qgaus_X, sg->qgaus_W, ap->convolve);
+    gaussLegendre(-1.0, 1.0, qgaus_X, sg->qgaus_W, convolve);
 
-    for (i = 0; i < ap->convolve; i++)
+    for (i = 0; i < convolve; i++)
         sg->dx[i] = 3.0 * stdev * qgaus_X[i];
 
     free(qgaus_X);
@@ -692,6 +695,7 @@ typedef struct
 static int likelihood(const ASTRONOMY_PARAMETERS* ap,
                       const STREAM_CONSTANTS* sc,
                       const STREAM_NUMS* sn,
+                      const STREAMS* streams,
                       EVALUATION_STATE* es,
                       STREAM_GAUSS* sg,
                       vector* xyz,
@@ -707,17 +711,17 @@ static int likelihood(const ASTRONOMY_PARAMETERS* ap,
     double st_only;
 
     /* The correction terms aren't used here since this isn't the sum? */
-    ST_PROBS* st_prob = (ST_PROBS*) malloc(sizeof(ST_PROBS) * ap->number_streams);
-    double* exp_stream_weights = malloc(sizeof(double) * ap->number_streams);
+    ST_PROBS* st_prob = (ST_PROBS*) malloc(sizeof(ST_PROBS) * streams->number_streams);
+    double* exp_stream_weights = malloc(sizeof(double) * streams->number_streams);
     R_STEP_STATE* rss = malloc(sizeof(R_STEP_STATE) * ap->convolve);
-    ST_SUM* st_sum = calloc(sizeof(ST_SUM), ap->number_streams);
+    ST_SUM* st_sum = calloc(sizeof(ST_SUM), streams->number_streams);
 
     exp_background_weight = exp(ap->background_weight);
     sum_exp_weights = exp_background_weight;
-    for (i = 0; i < ap->number_streams; i++)
+    for (i = 0; i < streams->number_streams; i++)
     {
-        exp_stream_weights[i] = exp(ap->stream_weight[i].weight);
-        sum_exp_weights += exp(ap->stream_weight[i].weight);
+        exp_stream_weights[i] = exp(streams->stream_weight[i].weight);
+        sum_exp_weights += exp_stream_weights[i];
     }
     sum_exp_weights *= 0.001;
 
@@ -753,7 +757,7 @@ static int likelihood(const ASTRONOMY_PARAMETERS* ap,
         bg_only_sum_c += bg_only - (bg_only_sum - temp);
 
 
-        for (current_stream = 0; current_stream < ap->number_streams; current_stream++)
+        for (current_stream = 0; current_stream < streams->number_streams; current_stream++)
         {
             st_only = st_prob[current_stream].st_prob / es->stream_integrals[current_stream] * exp_stream_weights[current_stream];
             star_prob += st_only;
@@ -788,7 +792,7 @@ static int likelihood(const ASTRONOMY_PARAMETERS* ap,
 
     fprintf(stderr, "<background_only_likelihood> %.20lf </background_only_likelihood>\n", bg_only_sum - 3.0);
     fprintf(stderr, "<stream_only_likelihood>");
-    for (i = 0; i < ap->number_streams; i++)
+    for (i = 0; i < streams->number_streams; i++)
     {
         st_sum[i].st_only_sum += st_sum[i].st_only_sum_c;
         st_sum[i].st_only_sum /= sp->number_stars;
@@ -813,6 +817,7 @@ static void free_stream_gauss(STREAM_GAUSS* sg)
 
 double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
                     const STAR_POINTS* sp,
+                    const STREAMS* streams,
                     const STREAM_CONSTANTS* sc,
                     const STREAM_NUMS* sn)
 {
@@ -821,7 +826,7 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
     STREAM_GAUSS sg;
 
     initialize_state(ap, sp, &es);
-    get_stream_gauss(ap, &sg);
+    get_stream_gauss(ap->convolve, &sg);
 
     reset_evaluation_state(&es);
 
@@ -834,7 +839,7 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
         mw_finish(retval);
     }
 
-    retval = likelihood(ap, sc, sn, &es, &sg, xyz, sp);
+    retval = likelihood(ap, sc, sn, streams, &es, &sg, xyz, sp);
     if (retval)
     {
         fprintf(stderr, "APP: error calculating likelihood: %d\n", retval);
