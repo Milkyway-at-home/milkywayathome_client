@@ -355,7 +355,7 @@ inline static double progress(const EVALUATION_STATE* es,
     return (double)current_calc_probs / (double)total_calc_probs;
 }
 
-
+#if BOINC_APPLICATION
 inline static void do_boinc_checkpoint(EVALUATION_STATE* es,
                                        unsigned int mu_step_current,
                                        unsigned int nu_step_current)
@@ -381,6 +381,16 @@ inline static void do_boinc_checkpoint(EVALUATION_STATE* es,
     //printf("progress: %.10f\n", frac);
     boinc_fraction_done(frac);
 }
+
+#else
+
+inline static void do_boinc_checkpoint(EVALUATION_STATE* es,
+                                       unsigned int mu_step_current,
+                                       unsigned int nu_step_current)
+{
+}
+
+#endif /* BOINC_APPLICATION */
 
 
 static void prepare_nu_constants(NU_STATE* nu_st,
@@ -659,7 +669,9 @@ static int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
     unsigned int i, j;
     INTEGRAL_STATE st;
 
+  #if BOINC_APPLICATION
     read_checkpoint(es);
+  #endif
 
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
     {
