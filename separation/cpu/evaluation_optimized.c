@@ -692,6 +692,72 @@ typedef struct
     double st_only_sum_c;
 } ST_SUM;
 
+/* Used in likelihood calculation */
+inline static double stream_sum(const unsigned int number_streams,
+                                EVALUATION_STATE* es,
+                                ST_PROBS* st_prob,
+                                ST_SUM* st_sum,
+                                const double* exp_stream_weights,
+                                const double sum_exp_weights,
+                                double bg_only)
+{
+    unsigned int current_stream;
+    double st_only, tmp;
+    double star_prob = bg_only;
+
+    for (current_stream = 0; current_stream < number_streams; current_stream++)
+    {
+        st_only = st_prob[current_stream].st_prob / es->stream_integrals[current_stream] * exp_stream_weights[current_stream];
+        star_prob += st_only;
+
+        if (st_only == 0.0)
+            st_only = -238.0;
+        else
+            st_only = log10(st_only / sum_exp_weights);
+
+        tmp = st_sum[current_stream].st_only_sum;
+        st_sum[current_stream].st_only_sum += st_only;
+        st_sum[current_stream].st_only_sum_c += st_only - (st_sum[current_stream].st_only_sum - tmp);
+    }
+    star_prob /= sum_exp_weights;
+
+    return star_prob;
+}
+
+/* Populates exp_stream_weights, and returns the sum */
+inline static double get_exp_stream_weights(double* exp_stream_weights,
+                                            const STREAMS* streams,
+                                            double exp_background_weight)
+{
+    unsigned int i;
+    double sum_exp_weights = exp_background_weight;
+    for (i = 0; i < streams->number_streams; i++)
+    {
+        exp_stream_weights[i] = exp(streams->stream_weight[i].weight);
+        sum_exp_weights += exp_stream_weights[i];
+    }
+
+    sum_exp_weights *= 0.001;
+
+    return sum_exp_weights;
+}
+
+inline static void get_stream_only_likelihood(ST_SUM* st_sum,
+                                              const unsigned int number_stars,
+                                              const unsigned int number_streams)
+{
+    unsigned int i;
+    fprintf(stderr, "<stream_only_likelihood>");
+    for (i = 0; i < number_streams; i++)
+    {
+        st_sum[i].st_only_sum += st_sum[i].st_only_sum_c;
+        st_sum[i].st_only_sum /= number_stars;
+
+        fprintf(stderr, " %.20lf", st_sum[i].st_only_sum - 3.0);
+    }
+    fprintf(stderr, " </stream_only_likelihood>\n");
+}
+
 static int likelihood(const ASTRONOMY_PARAMETERS* ap,
                       const STREAM_CONSTANTS* sc,
                       const STREAM_NUMS* sn,
@@ -701,29 +767,21 @@ static int likelihood(const ASTRONOMY_PARAMETERS* ap,
                       vector* xyz,
                       const STAR_POINTS* sp)
 {
-    unsigned int i, current_stream;
     double bg_prob;
     double prob_sum, prob_sum_c, temp;  // for Kahan summation
     double exp_background_weight, sum_exp_weights;
     double reff_xr_rp3;
 
     double bg_only, bg_only_sum, bg_only_sum_c;
-    double st_only;
 
     /* The correction terms aren't used here since this isn't the sum? */
     ST_PROBS* st_prob = (ST_PROBS*) malloc(sizeof(ST_PROBS) * streams->number_streams);
-    double* exp_stream_weights = malloc(sizeof(double) * streams->number_streams);
     R_STEP_STATE* rss = malloc(sizeof(R_STEP_STATE) * ap->convolve);
     ST_SUM* st_sum = calloc(sizeof(ST_SUM), streams->number_streams);
 
+    double* exp_stream_weights = malloc(sizeof(double) * streams->number_streams);
     exp_background_weight = exp(ap->background_weight);
-    sum_exp_weights = exp_background_weight;
-    for (i = 0; i < streams->number_streams; i++)
-    {
-        exp_stream_weights[i] = exp(streams->stream_weight[i].weight);
-        sum_exp_weights += exp_stream_weights[i];
-    }
-    sum_exp_weights *= 0.001;
+    sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);
 
     do_boinc_checkpoint(es, 0, 0); /* CHECKME: Steps? */
 
@@ -742,36 +800,17 @@ static int likelihood(const ASTRONOMY_PARAMETERS* ap,
         bg_prob = bg_probability(ap, sn, rss,
                                  reff_xr_rp3, &VN(sp, es->current_star_point), xyz);
 
+        bg_only = (bg_prob / es->background_integral) * exp_background_weight;
+
         probabilities(ap, sc, rss, reff_xr_rp3, xyz, st_prob);
 
-        bg_only = (bg_prob / es->background_integral) * exp_background_weight;
-        star_prob = bg_only;
-
-        if (bg_only == 0.0)
-            bg_only = -238.0;
-        else
-            bg_only = log10(bg_only / sum_exp_weights);
-
-        temp = bg_only_sum;
-        bg_only_sum += bg_only;
-        bg_only_sum_c += bg_only - (bg_only_sum - temp);
-
-
-        for (current_stream = 0; current_stream < streams->number_streams; current_stream++)
-        {
-            st_only = st_prob[current_stream].st_prob / es->stream_integrals[current_stream] * exp_stream_weights[current_stream];
-            star_prob += st_only;
-
-            if (st_only == 0.0)
-                st_only = -238.0;
-            else
-                st_only = log10(st_only / sum_exp_weights);
-
-            temp = st_sum[current_stream].st_only_sum;
-            st_sum[current_stream].st_only_sum += st_only;
-            st_sum[current_stream].st_only_sum_c += st_only - (st_sum[current_stream].st_only_sum - temp);
-        }
-        star_prob /= sum_exp_weights;
+        star_prob = stream_sum(streams->number_streams,
+                               es,
+                               st_prob,
+                               st_sum,
+                               exp_stream_weights,
+                               sum_exp_weights,
+                               bg_only);
 
         if (star_prob != 0.0)
         {
@@ -785,21 +824,23 @@ static int likelihood(const ASTRONOMY_PARAMETERS* ap,
             es->num_zero++;
             prob_sum -= 238.0;
         }
+
+        if (bg_only == 0.0)
+            bg_only = -238.0;
+        else
+            bg_only = log10(bg_only / sum_exp_weights);
+
+        temp = bg_only_sum;
+        bg_only_sum += bg_only;
+        bg_only_sum_c += bg_only - (bg_only_sum - temp);
     }
     es->prob_sum = prob_sum + prob_sum_c;
     bg_only_sum += bg_only_sum_c;
     bg_only_sum /= sp->number_stars;
 
     fprintf(stderr, "<background_only_likelihood> %.20lf </background_only_likelihood>\n", bg_only_sum - 3.0);
-    fprintf(stderr, "<stream_only_likelihood>");
-    for (i = 0; i < streams->number_streams; i++)
-    {
-        st_sum[i].st_only_sum += st_sum[i].st_only_sum_c;
-        st_sum[i].st_only_sum /= sp->number_stars;
 
-        fprintf(stderr, " %.20lf", st_sum[i].st_only_sum - 3.0);
-    }
-    fprintf(stderr, " </stream_only_likelihood>\n");
+    get_stream_only_likelihood(st_sum, sp->number_stars, streams->number_streams);
 
     free(exp_stream_weights);
     free(st_prob);
