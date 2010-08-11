@@ -49,7 +49,7 @@ void free_astronomy_parameters(ASTRONOMY_PARAMETERS* ap)
         free_stream_parameters(&ap->parameters[i]);
     free(ap->parameters);
     free(ap->integral);
-    free(ap->stream);
+    free(ap->stream_weight);
 }
 
 int read_parameters(const char* filename, ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETERS* bgp)
@@ -131,16 +131,16 @@ void fread_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETER
 
     fscanf(file, "number_streams: %u, %u\n", &ap->number_streams, &ap->number_stream_parameters);
 
-    ap->stream = (STREAM*) malloc(sizeof(STREAM) * ap->number_streams);
+    ap->stream_weight = (STREAM_WEIGHT*) malloc(sizeof(STREAM_WEIGHT) * ap->number_streams);
     ap->parameters = (STREAM_PARAMETERS*) malloc(sizeof(STREAM_PARAMETERS) * ap->number_streams);
 
     for (i = 0; i < ap->number_streams; ++i)
     {
-        fscanf(file, "stream_weight: %lf\n", &ap->stream[i].weights);
-        fscanf(file, "stream_weight_step: %lf\n", &ap->stream[i].weight_step);
-        fscanf(file, "stream_weight_min: %lf\n", &ap->stream[i].weight_min);
-        fscanf(file, "stream_weight_max: %lf\n", &ap->stream[i].weight_max);
-        fscanf(file, "optimize_weight: %u\n", &ap->stream[i].weight_optimize);
+        fscanf(file, "stream_weight: %lf\n", &ap->stream_weight[i].weight);
+        fscanf(file, "stream_weight_step: %lf\n", &ap->stream_weight[i].step);
+        fscanf(file, "stream_weight_min: %lf\n", &ap->stream_weight[i].min);
+        fscanf(file, "stream_weight_max: %lf\n", &ap->stream_weight[i].max);
+        fscanf(file, "optimize_weight: %d\n", &ap->stream_weight[i].optimize);
 
         ap->parameters[i].stream_parameters = fread_double_array(file, "stream_parameters", NULL);
         ap->parameters[i].stream_step       = fread_double_array(file, "stream_step", NULL);
@@ -235,11 +235,11 @@ void fwrite_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETE
     fprintf(file, "number_streams: %u, %u\n", ap->number_streams, ap->number_stream_parameters);
     for (i = 0; i < ap->number_streams; i++)
     {
-        fprintf(file, "stream_weight: %lf\n", ap->stream[i].weights);
-        fprintf(file, "stream_weight_step: %lf\n", ap->stream[i].weight_step);
-        fprintf(file, "stream_weight_min: %lf\n", ap->stream[i].weight_min);
-        fprintf(file, "stream_weight_max: %lf\n", ap->stream[i].weight_max);
-        fprintf(file, "optimize_weight: %d\n", ap->stream[i].weight_optimize);
+        fprintf(file, "stream_weight: %lf\n", ap->stream_weight[i].weight);
+        fprintf(file, "stream_weight_step: %lf\n", ap->stream_weight[i].step);
+        fprintf(file, "stream_weight_min: %lf\n", ap->stream_weight[i].min);
+        fprintf(file, "stream_weight_max: %lf\n", ap->stream_weight[i].max);
+        fprintf(file, "optimize_weight: %d\n", ap->stream_weight[i].optimize);
 
         fwrite_double_array(file, "stream_parameters",
                             ap->parameters[i].stream_parameters, ap->number_stream_parameters);
@@ -312,7 +312,7 @@ unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap, BACKGROUND_
 
     for (i = 0; i < ap->number_streams; i++)
     {
-        if (ap->stream[i].weight_optimize)
+        if (ap->stream_weight[i].optimize)
             ++count;
 
         for (j = 0; j < ap->number_stream_parameters; j++)
@@ -341,9 +341,9 @@ void set_parameters(ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETERS* bgp, double
 
     for (i = 0; i < ap->number_streams; i++)
     {
-        if (ap->stream[i].weight_optimize)
+        if (ap->stream_weight[i].optimize)
         {
-            ap->stream[i].weights = parameters[current];
+            ap->stream_weight[i].weight = parameters[current];
             ++current;
         }
 

@@ -716,8 +716,8 @@ static int likelihood(const ASTRONOMY_PARAMETERS* ap,
     sum_exp_weights = exp_background_weight;
     for (i = 0; i < ap->number_streams; i++)
     {
-        exp_stream_weights[i] = exp(ap->stream[i].weights);
-        sum_exp_weights += exp(ap->stream[i].weights);
+        exp_stream_weights[i] = exp(ap->stream_weight[i].weight);
+        sum_exp_weights += exp(ap->stream_weight[i].weight);
     }
     sum_exp_weights *= 0.001;
 

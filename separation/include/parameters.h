@@ -37,14 +37,14 @@ typedef struct
 
 typedef struct
 {
-    double weights;
-    double weight_step;
-    double weight_min;
-    double weight_max;
-    int weight_optimize;
-} STREAM;
+    double weight;
+    double step;
+    double min;
+    double max;
+    int optimize;
+} STREAM_WEIGHT;
 
-#define EMPTY_STREAM { 0.0, 0.0, 0.0, 0.0, 0 }
+#define EMPTY_STREAM_WEIGHT { 0.0, 0.0, 0.0, 0.0, 0 }
 
 typedef struct
 {
@@ -78,7 +78,7 @@ typedef struct
     unsigned int number_streams;
     unsigned int number_stream_parameters;
 
-    STREAM* stream;
+    STREAM_WEIGHT* stream_weight;
     STREAM_PARAMETERS* parameters;
 
     unsigned int convolve;
