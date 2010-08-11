@@ -35,10 +35,6 @@ typedef struct
     double mu_max, nu_max, r_max;
     double mu_step_size, nu_step_size, r_step_size;
 
-    long min_calculation;
-    long max_calculation;
-    long current_calculation;
-
     unsigned int number_streams;
     double background_integral;
     double* stream_integrals;

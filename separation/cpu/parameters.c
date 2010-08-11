@@ -113,8 +113,6 @@ static void calc_integral_step_sizes(INTEGRAL* i)
     i->r_step_size = (i->r_max - i->r_min) / (double)i->r_steps;
     i->mu_step_size = (i->mu_max - i->mu_min) / (double)i->mu_steps;
     i->nu_step_size = (i->nu_max - i->nu_min) / (double)i->nu_steps;
-    i->min_calculation = 0;
-    i->max_calculation = i->r_steps * i->mu_steps * i->nu_steps;
 }
 
 void fread_parameters(FILE* file,

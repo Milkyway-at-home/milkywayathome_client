@@ -44,19 +44,11 @@ void fwrite_integral_area(FILE* file, INTEGRAL_AREA* ia)
             ia->r_max,
             ia->r_steps);
 
-#ifdef MILKYWAY
     fprintf(file,
             "mu_step: %d, nu_step: %d, r_step: %d\n",
 	    ia->mu_step,
 	    ia->nu_step,
 	    ia->r_step);
-#else
-    fprintf(file,
-            "min_calculation: %ld, max_calculation: %ld, current_calculation: %ld\n",
-            ia->min_calculation,
-            ia->max_calculation,
-            ia->current_calculation);
-#endif
 
     fprintf(file,
             "background_integral: %.20lf\n",
@@ -80,15 +72,8 @@ void fread_integral_area(FILE* file, INTEGRAL_AREA* ia)
     ia->nu_step_size = (ia->nu_max - ia->nu_min) / ia->nu_steps;
     ia->r_step_size = (ia->r_max - ia->r_min) / ia->r_steps;
 
-#ifdef MILKYWAY
+
     fscanf(file, "mu_step: %d, nu_step: %d, r_step: %d\n", &(ia->mu_step), &(ia->nu_step), &(ia->r_step));
-#else
-    fscanf(file,
-           "min_calculation: %ld, max_calculation: %ld, current_calculation: %ld\n",
-           &ia->min_calculation,
-           &ia->max_calculation,
-           &ia->current_calculation);
-#endif
 
     fscanf(file, "background_integral: %lf\n", &ia->background_integral);
     fscanf(file, "stream_integrals[%d]: ", &ia->number_streams);
@@ -115,10 +100,6 @@ void initialize_integral_area(INTEGRAL_AREA* ia,
     ia->r_min    = integral->r_min;
     ia->r_max    = integral->r_max;
     ia->r_steps  = integral->r_steps;
-
-    ia->min_calculation = integral->min_calculation;
-    ia->max_calculation = integral->max_calculation;
-    ia->current_calculation = integral->min_calculation;
 
     ia->mu_step_size = (ia->mu_max - ia->mu_min) / ia->mu_steps;
     ia->nu_step_size = (ia->nu_max - ia->nu_min) / ia->nu_steps;
@@ -177,10 +158,7 @@ void reset_evaluation_state(EVALUATION_STATE* es)
     {
         es->integrals[i].background_integral = 0;
         for (j = 0; j < es->integrals[i].number_streams; j++)
-        {
             es->integrals[i].stream_integrals[j] = 0;
-        }
-        es->integrals[i].current_calculation = es->integrals[i].min_calculation;
 
         es->integrals[i].mu_step = 0;
         es->integrals[i].nu_step = 0;

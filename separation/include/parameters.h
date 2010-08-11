@@ -19,8 +19,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ASTRONOMY_PARAMETERS_H
-#define ASTRONOMY_PARAMETERS_H
+#ifndef _PARAMETERS_H_
+#define _PARAMETERS_H_
 
 #include <stdio.h>
 #include "coordinates.h"
@@ -31,8 +31,6 @@ typedef struct
     double nu_min, nu_max, nu_step_size;
     double mu_min, mu_max, mu_step_size;
     unsigned int r_steps, nu_steps, mu_steps;
-
-    long min_calculation, max_calculation;
 } INTEGRAL;
 
 typedef struct
@@ -141,5 +139,5 @@ void set_parameters(ASTRONOMY_PARAMETERS* ap,
                     double* parameters);
 
 
-#endif
+#endif /* _PARAMETERS_H_ */
 
