@@ -19,8 +19,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ASTRONOMY_EVALUATION_H
-#define ASTRONOMY_EVALUATION_H
+#ifndef _EVALUATION_H_
+#define _EVALUATION_H_
 
 #include "evaluation_state.h"
 #include "parameters.h"
@@ -103,5 +103,5 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
 
 void free_constants(ASTRONOMY_PARAMETERS* ap);
 
-#endif
+#endif /* _EVALUATION_H_ */
 

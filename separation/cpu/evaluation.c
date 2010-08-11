@@ -242,12 +242,12 @@ inline static double sub_bg_probability2(const STREAM_NUMS* sn,
     return bg_prob;
 }
 
-static double bg_probability(const ASTRONOMY_PARAMETERS* ap,
-                             const STREAM_NUMS* sn,
-                             const R_STEP_STATE* rss,
-                             const double reff_xr_rp3,
-                             const vector integral_point,
-                             vector* xyz)
+inline static double bg_probability(const ASTRONOMY_PARAMETERS* ap,
+                                    const STREAM_NUMS* sn,
+                                    const R_STEP_STATE* rss,
+                                    const double reff_xr_rp3,
+                                    const vector integral_point,
+                                    vector* xyz)
 {
     double bg_prob;
 
@@ -293,9 +293,7 @@ inline static void probabilities_convolve(const STREAM_CONSTANTS* sc,
         Y(xyzs) = Y(xyzs) - dotted * Y(sc->stream_a);
         Z(xyzs) = Z(xyzs) - dotted * Z(sc->stream_a);
 
-        xyz_norm = X(xyzs) * X(xyzs)
-                 + Y(xyzs) * Y(xyzs)
-                 + Z(xyzs) * Z(xyzs);
+        xyz_norm =  sqr(X(xyzs)) + sqr(Y(xyzs)) + sqr(Z(xyzs));
 
         probs->st_prob += rss[i].qw_r3_N * exp(-xyz_norm / sc->stream_sigma_sq2);
     }

@@ -28,7 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "config.h"
 
-#include "evaluation_optimized.h"
+#include "evaluation.h"
 #include "parameters.h"
 #include "probability.h"
 #include "star_points.h"
