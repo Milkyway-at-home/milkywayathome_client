@@ -55,6 +55,17 @@ typedef struct
     int* stream_optimize;
 } STREAM_PARAMETERS;
 
+typedef struct
+{
+    double* parameters;
+    double* step;
+    double* min;
+    double* max;
+    int* optimize;
+} BACKGROUND_PARAMETERS;
+
+#define EMPTY_BACKGROUND_PARAMETERS { NULL, NULL, NULL, NULL, NULL }
+
 #define EMPTY_STREAM_PARAMETERS { NULL, NULL, NULL, NULL, NULL }
 
 typedef struct
@@ -63,11 +74,6 @@ typedef struct
 
     unsigned int number_background_parameters;
     double background_weight;
-    double* background_parameters;
-    double* background_step;
-    double* background_min;
-    double* background_max;
-    int* background_optimize;
 
     unsigned int number_streams;
     unsigned int number_stream_parameters;
@@ -87,22 +93,24 @@ typedef struct
     INTEGRAL* integral;
 } ASTRONOMY_PARAMETERS;
 
-#define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0, 0.0, NULL, NULL, NULL, NULL, NULL, \
+
+#define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0, 0.0, \
                                      0, 0, \
                                      NULL, NULL,\
                                      0, 0, NULL,0, 0, 0, NULL }
 
+void free_astronomy_parameters(ASTRONOMY_PARAMETERS* ap);
+void free_background_parameters(BACKGROUND_PARAMETERS* bgp);
 
-unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap);
+unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETERS* bgp);
 
-int read_astronomy_parameters(const char* file, ASTRONOMY_PARAMETERS* ap);
-void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap);
-int write_astronomy_parameters(const char* file, ASTRONOMY_PARAMETERS* ap);
-void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap);
-void free_parameters(ASTRONOMY_PARAMETERS* ap);
+int read_parameters(const char* file, ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETERS* bgp);
+void fread_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETERS* bgp);
+int write_parameters(const char* file, ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETERS* bgp);
+void fwrite_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETERS* bgp);
 
-void set_astronomy_parameters(ASTRONOMY_PARAMETERS* ap, double* parameters);
-void get_step(ASTRONOMY_PARAMETERS* ap, double** step);
+void set_parameters(ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETERS* bgp, double* parameters);
+
 
 #endif
 

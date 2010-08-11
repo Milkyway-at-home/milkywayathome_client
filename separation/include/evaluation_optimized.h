@@ -95,7 +95,7 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
                     const STREAM_CONSTANTS* sc,
                     const STREAM_NUMS* sn);
 
-STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn);
+STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS* bgp, STREAM_NUMS* sn);
 void free_constants(ASTRONOMY_PARAMETERS* ap);
 
 #endif

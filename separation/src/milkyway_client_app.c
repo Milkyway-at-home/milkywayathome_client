@@ -210,6 +210,7 @@ static void worker(int argc, const char** argv)
     int ret1, ret2;
     int number_parameters, ap_number_parameters;
     ASTRONOMY_PARAMETERS ap = EMPTY_ASTRONOMY_PARAMETERS;
+    BACKGROUND_PARAMETERS bgp = EMPTY_BACKGROUND_PARAMETERS;
     STAR_POINTS sp = EMPTY_STAR_POINTS;
 
     parameters = parse_parameters(argc, argv, &number_parameters);
@@ -220,7 +221,7 @@ static void worker(int argc, const char** argv)
         mw_finish(EXIT_FAILURE);
     }
 
-    ret1 = read_astronomy_parameters(astronomy_parameter_file, &ap);
+    ret1 = read_parameters(astronomy_parameter_file, &ap, &bgp);
     ret2 = read_star_points(star_points_file, &sp);
 
     MW_DEBUG("ap.number_stream_parameters = %d\n", ap.number_stream_parameters);
@@ -248,7 +249,7 @@ static void worker(int argc, const char** argv)
 		mw_finish(EXIT_FAILURE);
     }
 
-    ap_number_parameters = get_optimized_parameter_count(&ap);
+    ap_number_parameters = get_optimized_parameter_count(&ap, &bgp);
 
     if (number_parameters < 1 || number_parameters != ap_number_parameters)
     {
@@ -265,11 +266,14 @@ static void worker(int argc, const char** argv)
         mw_finish(EXIT_FAILURE);
     }
 
-    set_astronomy_parameters(&ap, parameters);
+    set_parameters(&ap, &bgp, parameters);
+    free(parameters);
 
     double likelihood;
     STREAM_NUMS sn;
-    STREAM_CONSTANTS* sc = init_constants(&ap, &sn);
+    STREAM_CONSTANTS* sc = init_constants(&ap, &bgp, &sn);
+    free_background_parameters(&bgp);
+
 #if COMPUTE_ON_CPU
     likelihood = cpu_evaluate(&ap, &sp, sc, &sn);
 #elif USE_CUDA
@@ -284,8 +288,8 @@ static void worker(int argc, const char** argv)
     fprintf(stderr, "<search_application> %s </search_application>\n", BOINC_APP_VERSION);
 
     free(sc);
-    free_constants(&ap);
-    free(parameters);
+    free_astronomy_parameters(&ap);
+
 	cleanup_worker();
 
     mw_finish(EXIT_SUCCESS);

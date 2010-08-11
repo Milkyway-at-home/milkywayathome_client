@@ -30,17 +30,17 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 static const double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
-STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn)
+STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS* bgp, STREAM_NUMS* sn)
 {
     unsigned int i;
     vector lbr;
 
     STREAM_CONSTANTS* sc = malloc(sizeof(STREAM_CONSTANTS) * ap->number_streams);
 
-    sn->alpha = ap->background_parameters[0];
-    sn->q     = ap->background_parameters[1];
-    sn->r0    = ap->background_parameters[2];
-    sn->delta = ap->background_parameters[3];
+    sn->alpha = bgp->parameters[0];
+    sn->q     = bgp->parameters[1];
+    sn->r0    = bgp->parameters[2];
+    sn->delta = bgp->parameters[3];
 
     if (ap->aux_bg_profile == 0)
     {
@@ -50,9 +50,9 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap, STREAM_NUMS* sn)
     }
     else if (ap->aux_bg_profile == 1)
     {
-        sn->bg_a = ap->background_parameters[4];
-        sn->bg_b = ap->background_parameters[5];
-        sn->bg_c = ap->background_parameters[6];
+        sn->bg_a = bgp->parameters[4];
+        sn->bg_b = bgp->parameters[5];
+        sn->bg_c = bgp->parameters[6];
     }
     else
     {
@@ -116,10 +116,6 @@ static void get_stream_gauss(const ASTRONOMY_PARAMETERS* ap, STREAM_GAUSS* sg)
         sg->dx[i] = 3.0 * stdev * qgaus_X[i];
 
     free(qgaus_X);
-}
-
-void free_constants(ASTRONOMY_PARAMETERS* ap)
-{
 }
 
 static double set_prob_consts(const STREAM_NUMS* sn,
@@ -348,7 +344,7 @@ inline static double progress(const EVALUATION_STATE* es,
         {
             /* When checkpointing is done, ia->r_step would always be 0 */
             current_calc_probs +=   (mu_step_current * ia->nu_steps * ia->r_steps)
-                                  + (nu_step_current * ia->r_steps); /* + ia->r_step*/
+                                  + (nu_step_current * ia->r_steps); /* + ia->r_step */
         }
     }
 

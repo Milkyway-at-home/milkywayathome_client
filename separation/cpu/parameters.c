@@ -23,21 +23,23 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_priv.h"
 #include "parameters.h"
 
-void free_parameters(ASTRONOMY_PARAMETERS* ap)
+void free_background_parameters(BACKGROUND_PARAMETERS* bgp)
 {
-    free(ap->background_parameters);
-    free(ap->background_step);
-    free(ap->background_min);
-    free(ap->background_max);
-    free(ap->background_optimize);
+    free(bgp->parameters);
+    free(bgp->step);
+    free(bgp->min);
+    free(bgp->max);
+    free(bgp->optimize);
+}
 
+void free_astronomy_parameters(ASTRONOMY_PARAMETERS* ap)
+{
     free(ap->stream);
     free(ap->parameters);
-
     free(ap->integral);
 }
 
-int read_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS* ap)
+int read_parameters(const char* filename, ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETERS* bgp)
 {
 #if BOINC_APPLICATION
     char input_path[512];
@@ -59,7 +61,7 @@ int read_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS* ap)
         return 1;
     }
 
-    fread_astronomy_parameters(data_file, ap);
+    fread_parameters(data_file, ap, bgp);
     if (ap->parameters_version < 0)
     {
         fprintf(stderr, "Input file [%s] did not specify parameter file version.\n", filename);
@@ -69,7 +71,7 @@ int read_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS* ap)
     return 0;
 }
 
-int write_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS* ap)
+int write_parameters(const char* filename, ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETERS* bgp)
 {
     FILE* data_file = fopen(filename, "w");
     if (!data_file)
@@ -78,7 +80,7 @@ int write_astronomy_parameters(const char* filename, ASTRONOMY_PARAMETERS* ap)
         return 1;
     }
 
-    fwrite_astronomy_parameters(data_file, ap);
+    fwrite_parameters(data_file, ap, bgp);
     fclose(data_file);
     return 0;
 }
@@ -92,7 +94,7 @@ static void calc_integral_step_sizes(INTEGRAL* i)
     i->max_calculation = i->r_steps * i->mu_steps * i->nu_steps;
 }
 
-void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
+void fread_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETERS* bgp)
 {
     unsigned int i, temp;
     int retval;
@@ -108,11 +110,11 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
     fscanf(file, "number_parameters: %u\n", &ap->number_background_parameters);
     fscanf(file, "background_weight: %lf\n", &ap->background_weight);
 
-    ap->background_parameters = fread_double_array(file, "background_parameters", NULL);
-    ap->background_step       = fread_double_array(file, "background_step", NULL);
-    ap->background_min        = fread_double_array(file, "background_min", NULL);
-    ap->background_max        = fread_double_array(file, "background_max", NULL);
-    ap->background_optimize   = fread_int_array(file, "optimize_parameter", NULL);
+    bgp->parameters = fread_double_array(file, "background_parameters", NULL);
+    bgp->step       = fread_double_array(file, "background_step", NULL);
+    bgp->min        = fread_double_array(file, "background_min", NULL);
+    bgp->max        = fread_double_array(file, "background_max", NULL);
+    bgp->optimize   = fread_int_array(file, "optimize_parameter", NULL);
 
     fscanf(file, "number_streams: %u, %u\n", &ap->number_streams, &ap->number_stream_parameters);
 
@@ -203,7 +205,7 @@ void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
     }
 }
 
-void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
+void fwrite_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETERS* bgp)
 {
     unsigned int i;
 
@@ -211,11 +213,11 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
 
     fprintf(file, "number_parameters: %u\n", ap->number_background_parameters);
     fprintf(file, "background_weight: %lf\n", ap->background_weight);
-    fwrite_double_array(file, "background_parameters", ap->background_parameters, ap->number_background_parameters);
-    fwrite_double_array(file, "background_step", ap->background_step, ap->number_background_parameters);
-    fwrite_double_array(file, "background_min", ap->background_min, ap->number_background_parameters);
-    fwrite_double_array(file, "background_max", ap->background_max, ap->number_background_parameters);
-    fwrite_int_array(file, "optimize_parameter", ap->background_optimize, ap->number_background_parameters);
+    fwrite_double_array(file, "background_parameters", bgp->parameters, ap->number_background_parameters);
+    fwrite_double_array(file, "background_step", bgp->step, ap->number_background_parameters);
+    fwrite_double_array(file, "background_min", bgp->min, ap->number_background_parameters);
+    fwrite_double_array(file, "background_max", bgp->max, ap->number_background_parameters);
+    fwrite_int_array(file, "optimize_parameter", bgp->optimize, ap->number_background_parameters);
 
     fprintf(file, "number_streams: %u, %u\n", ap->number_streams, ap->number_stream_parameters);
     for (i = 0; i < ap->number_streams; i++)
@@ -285,13 +287,13 @@ void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap)
     }
 }
 
-unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap)
+unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETERS* bgp)
 {
     unsigned int i, j, count = 0;
 
     for (i = 0; i < ap->number_background_parameters; i++)
     {
-        if (ap->background_optimize[i])
+        if (bgp->optimize[i])
             ++count;
     }
 
@@ -310,16 +312,16 @@ unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap)
     return count;
 }
 
-void set_astronomy_parameters(ASTRONOMY_PARAMETERS* ap, double* parameters)
+void set_parameters(ASTRONOMY_PARAMETERS* ap, BACKGROUND_PARAMETERS* bgp, double* parameters)
 {
     unsigned int i, j;
     unsigned int current = 0;
 
     for (i = 0; i < ap->number_background_parameters; i++)
     {
-        if (ap->background_optimize[i])
+        if (bgp->optimize[i])
         {
-            ap->background_parameters[i] = parameters[current];
+            bgp->parameters[i] = parameters[current];
             current++;
         }
     }
