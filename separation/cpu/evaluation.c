@@ -761,13 +761,13 @@ inline static void get_stream_only_likelihood(ST_SUM* st_sum,
     fprintf(stderr, " </stream_only_likelihood>\n");
 }
 
-static int likelihood(const ASTRONOMY_PARAMETERS* ap,
-                      const STREAM_CONSTANTS* sc,
-                      const STREAMS* streams,
-                      EVALUATION_STATE* es,
-                      STREAM_GAUSS* sg,
-                      vector* xyz,
-                      const STAR_POINTS* sp)
+static double likelihood(const ASTRONOMY_PARAMETERS* ap,
+                         const STREAM_CONSTANTS* sc,
+                         const STREAMS* streams,
+                         EVALUATION_STATE* es,
+                         STREAM_GAUSS* sg,
+                         vector* xyz,
+                         const STAR_POINTS* sp)
 {
     double bg_prob;
     double prob_sum, prob_sum_c, temp;  // for Kahan summation
@@ -849,7 +849,8 @@ static int likelihood(const ASTRONOMY_PARAMETERS* ap,
     free(rss);
     free(st_sum);
 
-    return 0;
+    /*  log10(x * 0.001) = log10(x) - 3.0 */
+    return (es->prob_sum / (sp->number_stars - es->bad_jacobians)) - 3.0;
 }
 
 static void free_stream_gauss(STREAM_GAUSS* sg)
@@ -881,19 +882,13 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
         mw_finish(retval);
     }
 
-    retval = likelihood(ap, sc, streams, &es, &sg, xyz, sp);
-    if (retval)
-    {
-        fprintf(stderr, "APP: error calculating likelihood: %d\n", retval);
-        mw_finish(retval);
-    }
+    double likelihood_val = likelihood(ap, sc, streams, &es, &sg, xyz, sp);
 
     free(xyz);
     free_evaluation_state(&es);
     free_stream_gauss(&sg);
 
-    /*  log10(x * 0.001) = log10(x) - 3.0 */
-    return (es.prob_sum / (sp->number_stars - es.bad_jacobians)) - 3.0;
+    return likelihood_val;
 }
 
 
