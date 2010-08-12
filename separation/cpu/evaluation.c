@@ -653,11 +653,11 @@ static void print_stream_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_ST
     fprintf(stderr, " </stream_integrals>\n");
 }
 
-static int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
-                               const STREAM_CONSTANTS* sc,
-                               const STREAM_GAUSS* sg,
-                               EVALUATION_STATE* es,
-                               vector* xyz)
+static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
+                                const STREAM_CONSTANTS* sc,
+                                const STREAM_GAUSS* sg,
+                                EVALUATION_STATE* es,
+                                vector* xyz)
 {
     unsigned int i, j;
     INTEGRAL_STATE st;
@@ -685,8 +685,6 @@ static int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
     }
 
     print_stream_integrals(ap, es);
-
-    return 0;
 }
 
 typedef struct
@@ -864,7 +862,7 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
                     const STREAMS* streams,
                     const STREAM_CONSTANTS* sc)
 {
-    int retval;
+    double likelihood_val;
     EVALUATION_STATE es = EMPTY_EVALUATION_STATE;
     STREAM_GAUSS sg;
 
@@ -875,14 +873,9 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
 
     vector* xyz = malloc(sizeof(vector) * ap->convolve);
 
-    retval = calculate_integrals(ap, sc, &sg, &es, xyz);
-    if (retval)
-    {
-        fprintf(stderr, "APP: error calculating integrals: %d\n", retval);
-        mw_finish(retval);
-    }
+    calculate_integrals(ap, sc, &sg, &es, xyz);
 
-    double likelihood_val = likelihood(ap, sc, streams, &es, &sg, xyz, sp);
+    likelihood_val = likelihood(ap, sc, streams, &es, &sg, xyz, sp);
 
     free(xyz);
     free_evaluation_state(&es);
