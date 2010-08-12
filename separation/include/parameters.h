@@ -36,7 +36,7 @@ typedef struct
     unsigned int number_streams;
     double background_integral;
     double* stream_integrals;
-} INTEGRAL_AREA;
+} INTEGRAL;
 
 typedef struct
 {
@@ -44,7 +44,7 @@ typedef struct
     double nu_min, nu_max, nu_step_size;
     double mu_min, mu_max, mu_step_size;
     unsigned int r_steps, nu_steps, mu_steps;
-} INTEGRAL;
+} INTEGRAL_AREA;
 
 typedef struct
 {
@@ -109,7 +109,7 @@ typedef struct
     int wedge;
 
     unsigned int number_integrals;
-    INTEGRAL* integral;
+    INTEGRAL_AREA* integral;
 
     /* Constants determined by other parameters */
     double alpha, q, sn, r0, delta, coeff, alpha_delta3;

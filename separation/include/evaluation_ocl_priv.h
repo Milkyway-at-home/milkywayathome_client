@@ -60,10 +60,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nvidia_integral_kernel.h"
 #include "zero_likelihood_kernel.h"
 
-#define INTEGRAL_KERNEL_NAME "integral_kernel"
+#define INTEGRAL_AREA_KERNEL_NAME "integral_kernel"
 #define LIKELIHOOD_KERNEL_NAME "likelihood_kernel"
 #define ZERO_LIKELIHOOD_KERNEL_NAME "zero_likelihood_kernel"
-#define ZERO_INTEGRAL_KERNEL_NAME "zero_integral_kernel"
+#define ZERO_INTEGRAL_AREA_KERNEL_NAME "zero_integral_kernel"
 
 typedef enum
 {

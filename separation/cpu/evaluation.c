@@ -319,7 +319,7 @@ inline static double progress(const EVALUATION_STATE* es,
                               unsigned int nu_step_current)
 {
     unsigned int i;
-    const INTEGRAL_AREA* ia;
+    const INTEGRAL* ia;
 
     unsigned int current_probs;
     unsigned int total_calc_probs = 0;
@@ -453,7 +453,7 @@ static R_STEP_CONSTANTS* prepare_r_constants(const ASTRONOMY_PARAMETERS* ap,
 
 static void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
                                    const STREAM_GAUSS* sg,
-                                   INTEGRAL_AREA* ia,
+                                   INTEGRAL* ia,
                                    INTEGRAL_STATE* st)
 {
 
@@ -543,7 +543,7 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
 }
 
 inline static void apply_correction(const unsigned int number_streams,
-                                    INTEGRAL_AREA* ia,
+                                    INTEGRAL* ia,
                                     ST_PROBS* probs,
                                     BG_PROB bg_prob_int)
 {
@@ -555,7 +555,7 @@ inline static void apply_correction(const unsigned int number_streams,
 
 inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
                              const STREAM_CONSTANTS* sc,
-                             INTEGRAL_AREA* ia,
+                             INTEGRAL* ia,
                              EVALUATION_STATE* es,
                              INTEGRAL_STATE* st,
                              vector* xyz,
@@ -619,7 +619,7 @@ static void integrate(const ASTRONOMY_PARAMETERS* ap,
     unsigned int mu_step_current;
     BG_PROB nu_result;
 
-    INTEGRAL_AREA* ia = &es->integrals[es->current_integral];
+    INTEGRAL* ia = &es->integrals[es->current_integral];
     BG_PROB bg_prob_int = { ia->background_integral, 0.0 };
 
     init_st_probs(st->probs, ia->stream_integrals, ap->number_streams);

@@ -30,8 +30,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 typedef struct
 {
     /* State for integral calculation. */
-    INTEGRAL_AREA* integrals;
-    double* ia_stream_integrals;  /* all of the stream_integrals used by INTEGRAL_AREAS */
+    INTEGRAL* integrals;
+    double* ia_stream_integrals;  /* all of the stream_integrals used by INTEGRALS */
     unsigned int number_integrals;
     unsigned int current_integral;
     unsigned int number_streams;

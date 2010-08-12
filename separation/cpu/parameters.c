@@ -108,7 +108,7 @@ int write_parameters(const char* filename,
     return 0;
 }
 
-static void calc_integral_step_sizes(INTEGRAL* i)
+static void calc_integral_step_sizes(INTEGRAL_AREA* i)
 {
     i->r_step_size = (i->r_max - i->r_min) / (double)i->r_steps;
     i->mu_step_size = (i->mu_max - i->mu_min) / (double)i->mu_steps;
@@ -170,7 +170,7 @@ void fread_parameters(FILE* file,
     }
     fscanf(file, "wedge: %u\n", &ap->wedge);
 
-    ap->integral = (INTEGRAL*) malloc(sizeof(INTEGRAL));
+    ap->integral = (INTEGRAL_AREA*) malloc(sizeof(INTEGRAL_AREA));
 
     fscanf(file,
            "r[min,max,steps]: %lf, %lf, %u\n",
@@ -196,7 +196,7 @@ void fread_parameters(FILE* file,
     ap->number_integrals++;
     if (ap->number_integrals > 1)
     {
-        ap->integral = (INTEGRAL*) realloc(ap->integral, sizeof(INTEGRAL) * ap->number_integrals);
+        ap->integral = (INTEGRAL_AREA*) realloc(ap->integral, sizeof(INTEGRAL_AREA) * ap->number_integrals);
         if (!ap->integral)
         {
             fprintf(stderr, "realloc failed\n");

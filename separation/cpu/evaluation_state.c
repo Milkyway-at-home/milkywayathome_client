@@ -25,9 +25,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_priv.h"
 
 
-void initialize_integral_area(INTEGRAL_AREA* ia,
+void initialize_integral_area(INTEGRAL* ia,
                               double* ia_stream_integrals,
-                              INTEGRAL* integral,
+                              INTEGRAL_AREA* integral,
                               unsigned int number_streams)
 {
     ia->mu_min   = integral->mu_min;
@@ -69,7 +69,7 @@ void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVA
     es->prob_sum = 0;
 
     es->number_integrals = ap->number_integrals;
-    es->integrals = malloc(sizeof(INTEGRAL_AREA) * ap->number_integrals);
+    es->integrals = malloc(sizeof(INTEGRAL) * ap->number_integrals);
     es->ia_stream_integrals = calloc(sizeof(double), ap->number_integrals * ap->number_streams);
 
     for (i = 0; i < ap->number_integrals; i++)
@@ -113,7 +113,7 @@ void free_evaluation_state(EVALUATION_STATE* es)
 }
 
 #if BOINC_APPLICATION
-static void fwrite_integral_area(FILE* file, INTEGRAL_AREA* ia)
+static void fwrite_integral_area(FILE* file, INTEGRAL* ia)
 {
     fprintf(file,
             "mu[min,max,steps]: %.3lf, %.3lf, %d\n",
@@ -149,7 +149,7 @@ static void fwrite_integral_area(FILE* file, INTEGRAL_AREA* ia)
                         ia->number_streams);
 }
 
-static void fread_integral_area(FILE* file, INTEGRAL_AREA* ia)
+static void fread_integral_area(FILE* file, INTEGRAL* ia)
 {
     unsigned int i;
 
