@@ -834,7 +834,8 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
         bg_only_sum += bg_only;
         bg_only_sum_c += bg_only - (bg_only_sum - temp);
     }
-    es->prob_sum = prob_sum + prob_sum_c;
+
+    prob_sum += prob_sum_c;
     bg_only_sum += bg_only_sum_c;
     bg_only_sum /= sp->number_stars;
 
@@ -848,7 +849,7 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
     free(st_sum);
 
     /*  log10(x * 0.001) = log10(x) - 3.0 */
-    return (es->prob_sum / (sp->number_stars - es->bad_jacobians)) - 3.0;
+    return (prob_sum / (sp->number_stars - es->bad_jacobians)) - 3.0;
 }
 
 static void free_stream_gauss(STREAM_GAUSS* sg)

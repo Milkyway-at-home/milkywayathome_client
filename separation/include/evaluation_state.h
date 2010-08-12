@@ -43,12 +43,11 @@ typedef struct
     unsigned int total_stars;
     int num_zero;
     int bad_jacobians;
-    double prob_sum;
 } EVALUATION_STATE;
 
 #define EMPTY_EVALUATION_STATE { NULL,  \
                                  0, 0, 0, \
-                                 0.0, NULL, 0, 0, 0, 0, 0.0 }
+                                 0.0, NULL, 0, 0, 0, 0 }
 
 void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVALUATION_STATE* es);
 void free_evaluation_state(EVALUATION_STATE* es);

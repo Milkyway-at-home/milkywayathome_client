@@ -49,7 +49,6 @@ void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVA
     es->current_star_point = 0;
     es->num_zero = 0;
     es->bad_jacobians = 0;
-    es->prob_sum = 0;
 
     es->number_integrals = ap->number_integrals;
     es->integrals = malloc(sizeof(INTEGRAL) * ap->number_integrals);
@@ -68,7 +67,6 @@ void reset_evaluation_state(EVALUATION_STATE* es)
     es->current_star_point = 0;
     es->num_zero = 0;
     es->bad_jacobians = 0;
-    es->prob_sum = 0;
 
     for (i = 0; i < es->number_integrals; i++)
     {
