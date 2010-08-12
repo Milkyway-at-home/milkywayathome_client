@@ -25,9 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_priv.h"
 
 
-void initialize_integral(INTEGRAL* integral,
-                         double* ia_stream_integrals,
-                         unsigned int number_streams)
+void initialize_integral(INTEGRAL* integral, unsigned int number_streams)
 {
     integral->mu_step = 0;
     integral->nu_step = 0;
@@ -35,7 +33,7 @@ void initialize_integral(INTEGRAL* integral,
 
     integral->number_streams = number_streams;
     integral->background_integral = 0;
-    integral->stream_integrals = ia_stream_integrals;
+    integral->stream_integrals = calloc(number_streams, sizeof(double));
 }
 
 void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVALUATION_STATE* es)
@@ -55,14 +53,9 @@ void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVA
 
     es->number_integrals = ap->number_integrals;
     es->integrals = malloc(sizeof(INTEGRAL) * ap->number_integrals);
-    es->ia_stream_integrals = calloc(sizeof(double), ap->number_integrals * ap->number_streams);
 
     for (i = 0; i < ap->number_integrals; i++)
-    {
-        initialize_integral(&es->integrals[i],
-                            &es->ia_stream_integrals[i * ap->number_streams],
-                            ap->number_streams);
-    }
+        initialize_integral(&es->integrals[i], ap->number_streams);
 }
 
 void reset_evaluation_state(EVALUATION_STATE* es)
@@ -71,7 +64,7 @@ void reset_evaluation_state(EVALUATION_STATE* es)
 
     es->current_integral = 0;
     es->background_integral = 0;
-    memset(es->stream_integrals, 0, es->number_streams);
+    memset(es->stream_integrals, 0, sizeof(double) * es->number_streams);
     es->current_star_point = 0;
     es->num_zero = 0;
     es->bad_jacobians = 0;
@@ -89,10 +82,19 @@ void reset_evaluation_state(EVALUATION_STATE* es)
     }
 }
 
+void free_integral(INTEGRAL* i)
+{
+    free(i->stream_integrals);
+}
+
 void free_evaluation_state(EVALUATION_STATE* es)
 {
+    unsigned int i;
+
     free(es->stream_integrals);
-    free(es->ia_stream_integrals);          /* free integral areas */
+
+    for (i = 0; i < es->number_integrals; ++i)
+        free_integral(&es->integrals[i]);
     free(es->integrals);
 }
 
