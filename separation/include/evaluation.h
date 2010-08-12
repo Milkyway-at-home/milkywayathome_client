@@ -60,7 +60,7 @@ typedef struct
 {
     double nu;
     double id;
-} NU_STATE;
+} NU_CONSTANTS;
 
 /* Scratch space used by each integral */
 typedef struct
@@ -68,7 +68,7 @@ typedef struct
     R_STEP_CONSTANTS* r_step_consts;
     ST_PROBS* probs;
     R_STEP_STATE* rss;
-    NU_STATE* nu_st;
+    NU_CONSTANTS* nu_st;
 } INTEGRAL_STATE;
 
 typedef struct
@@ -76,6 +76,13 @@ typedef struct
     double bg_int;
     double correction;   /* Correction for Kahan summation */
 } BG_PROB;
+
+typedef struct
+{
+    double st_only_sum;
+    double st_only_sum_c;
+} ST_SUM;
+
 
 typedef struct
 {

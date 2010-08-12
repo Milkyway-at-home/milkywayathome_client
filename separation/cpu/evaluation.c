@@ -144,10 +144,10 @@ static double set_prob_consts(const ASTRONOMY_PARAMETERS* ap,
 
         //MAG2R
         rss[i].r_in_mag = g;
-        rss[i].r_in_mag2 = g * g;
+        rss[i].r_in_mag2 = sqr(g);
         rss[i].r_point = pow(10.0, (g - absm) / 5.0 + 1.0) / 1000.0;
 
-        r3 = rss[i].r_point * rss[i].r_point * rss[i].r_point;
+        r3 = cube(rss[i].r_point);
         exponent = sqr(g - gPrime) / (2.0 * sqr(stdev));
         N = ap->coeff * exp(-exponent);
         rss[i].qw_r3_N = sg->qgaus_W[i] * r3 * N;
@@ -183,7 +183,7 @@ inline static double sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
         xyz[i][0] = zp * lcos - sun_r0;
         xyz[i][1] = zp * lsin;
 
-        rg = sqrt( sqr(xyz[i][0]) + sqr(xyz[i][1]) + sqr(xyz[i][2]) / sqr(ap->q));
+        rg = sqrt( sqr(X(xyz[i])) + sqr(Y(xyz[i])) + sqr(Z(xyz[i])) / sqr(ap->q));
         rs = rg + ap->r0;
 
         //the hernquist profile includes a quadratic term in g
@@ -283,9 +283,9 @@ inline static void probabilities_convolve(const STREAM_CONSTANTS* sc,
                + Y(sc->stream_a) * Y(xyzs)
                + Z(sc->stream_a) * Z(xyzs);
 
-        X(xyzs) = X(xyzs) - dotted * X(sc->stream_a);
-        Y(xyzs) = Y(xyzs) - dotted * Y(sc->stream_a);
-        Z(xyzs) = Z(xyzs) - dotted * Z(sc->stream_a);
+        X(xyzs) -= dotted * X(sc->stream_a);
+        Y(xyzs) -= dotted * Y(sc->stream_a);
+        Z(xyzs) -= dotted * Z(sc->stream_a);
 
         xyz_norm =  sqr(X(xyzs)) + sqr(Y(xyzs)) + sqr(Z(xyzs));
 
@@ -390,7 +390,7 @@ inline static void do_boinc_checkpoint(const ASTRONOMY_PARAMETERS* ap,
 #endif /* BOINC_APPLICATION */
 
 
-static void prepare_nu_constants(NU_STATE* nu_st,
+static void prepare_nu_constants(NU_CONSTANTS* nu_st,
                                  const unsigned int nu_steps,
                                  double nu_step_size,
                                  double nu_min)
@@ -473,7 +473,7 @@ static void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
                                             ia->mu_step_size,
                                             st->rss);
 
-    st->nu_st = malloc(sizeof(NU_STATE) * ia->nu_steps);
+    st->nu_st = malloc(sizeof(NU_CONSTANTS) * ia->nu_steps);
     prepare_nu_constants(st->nu_st, ia->nu_steps, ia->nu_step_size, ia->nu_min);
 }
 
@@ -646,14 +646,33 @@ static void integrate(const ASTRONOMY_PARAMETERS* ap,
     integral->background_integral = bg_prob_int.bg_int + bg_prob_int.correction;
 }
 
-static void print_stream_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
+static void print_stream_integrals(EVALUATION_STATE* es, const unsigned int number_streams)
 {
     unsigned int i;
     fprintf(stderr, "<background_integral> %.20lf </background_integral>\n", es->background_integral);
     fprintf(stderr, "<stream_integrals>");
-    for (i = 0; i < ap->number_streams; i++)
+    for (i = 0; i < number_streams; i++)
         fprintf(stderr, " %.20lf", es->stream_integrals[i]);
     fprintf(stderr, " </stream_integrals>\n");
+}
+
+static void final_stream_integrals(EVALUATION_STATE* es,
+                                   const unsigned int number_streams,
+                                   const unsigned int number_integrals)
+{
+    unsigned int i, j;
+
+    es->background_integral = es->integrals[0].background_integral;
+    for (i = 0; i < number_streams; ++i)
+        es->stream_integrals[i] = es->integrals[0].stream_integrals[i];
+
+    for (i = 1; i < number_integrals; ++i)
+    {
+        es->background_integral -= es->integrals[i].background_integral;
+        for (j = 0; j < number_streams; j++)
+            es->stream_integrals[j] -= es->integrals[i].stream_integrals[j];
+    }
+
 }
 
 static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
@@ -662,7 +681,6 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                                 EVALUATION_STATE* es,
                                 vector* xyz)
 {
-    unsigned int i, j;
     INTEGRAL_STATE st;
 
   #if BOINC_APPLICATION
@@ -676,25 +694,9 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         free_integral_state(&st);
     }
 
-    es->background_integral = es->integrals[0].background_integral;
-    for (i = 0; i < ap->number_streams; i++)
-        es->stream_integrals[i] = es->integrals[0].stream_integrals[i];
-
-    for (i = 1; i < ap->number_integrals; i++)
-    {
-        es->background_integral -= es->integrals[i].background_integral;
-        for (j = 0; j < ap->number_streams; j++)
-            es->stream_integrals[j] -= es->integrals[i].stream_integrals[j];
-    }
-
-    print_stream_integrals(ap, es);
+    final_stream_integrals(es, ap->number_streams, ap->number_integrals);
+    print_stream_integrals(es, ap->number_streams);
 }
-
-typedef struct
-{
-    double st_only_sum;
-    double st_only_sum_c;
-} ST_SUM;
 
 /* Used in likelihood calculation */
 inline static double stream_sum(const unsigned int number_streams,
@@ -786,8 +788,6 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
     exp_background_weight = exp(ap->background_weight);
     sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);
 
-    do_boinc_checkpoint(ap, es, 0, 0); /* CHECKME: Steps? */
-
     prob_sum = 0.0;
     prob_sum_c = 0.0;
 
@@ -878,6 +878,9 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
     vector* xyz = malloc(sizeof(vector) * ap->convolve);
 
     calculate_integrals(ap, sc, &sg, &es, xyz);
+
+    /* Final checkpoint */
+    do_boinc_checkpoint(ap, &es, 0, 0);
 
     likelihood_val = likelihood(ap, sc, streams, &es, &sg, xyz, sp);
 
