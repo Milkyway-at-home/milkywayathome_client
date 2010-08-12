@@ -314,12 +314,13 @@ static void probabilities(const ASTRONOMY_PARAMETERS* ap,
     }
 }
 
-inline static double progress(const EVALUATION_STATE* es,
+inline static double progress(const ASTRONOMY_PARAMETERS* ap,
+                              const EVALUATION_STATE* es,
                               unsigned int mu_step_current,
                               unsigned int nu_step_current)
 {
     unsigned int i;
-    const INTEGRAL* ia;
+    const INTEGRAL_AREA* ia;
 
     unsigned int current_probs;
     unsigned int total_calc_probs = 0;
@@ -327,7 +328,7 @@ inline static double progress(const EVALUATION_STATE* es,
 
     for (i = 0; i < es->number_integrals; i++)
     {
-        ia = &es->integrals[i];
+        ia = &ap->integral[i];
 
         current_probs = ia->r_steps * ia->mu_steps * ia->nu_steps;
         total_calc_probs += current_probs;
@@ -350,7 +351,8 @@ inline static double progress(const EVALUATION_STATE* es,
 }
 
 #if BOINC_APPLICATION
-inline static void do_boinc_checkpoint(EVALUATION_STATE* es,
+inline static void do_boinc_checkpoint(const ASTRONOMY_PARAMETERS* ap,
+                                       EVALUATION_STATE* es,
                                        unsigned int mu_step_current,
                                        unsigned int nu_step_current)
 {
@@ -371,14 +373,15 @@ inline static void do_boinc_checkpoint(EVALUATION_STATE* es,
         boinc_checkpoint_completed();
     }
 
-    frac = progress(es, mu_step_current, nu_step_current);
+    frac = progress(ap, es, mu_step_current, nu_step_current);
     //printf("progress: %.10f\n", frac);
     boinc_fraction_done(frac);
 }
 
 #else
 
-inline static void do_boinc_checkpoint(EVALUATION_STATE* es,
+inline static void do_boinc_checkpoint(const ASTRONOMY_PARAMETERS* ap,
+                                       EVALUATION_STATE* es,
                                        unsigned int mu_step_current,
                                        unsigned int nu_step_current)
 {
@@ -453,7 +456,7 @@ static R_STEP_CONSTANTS* prepare_r_constants(const ASTRONOMY_PARAMETERS* ap,
 
 static void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
                                    const STREAM_GAUSS* sg,
-                                   INTEGRAL* ia,
+                                   INTEGRAL_AREA* ia,
                                    INTEGRAL_STATE* st)
 {
 
@@ -543,19 +546,19 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
 }
 
 inline static void apply_correction(const unsigned int number_streams,
-                                    INTEGRAL* ia,
+                                    INTEGRAL* integral,
                                     ST_PROBS* probs,
                                     BG_PROB bg_prob_int)
 {
     unsigned int i;
-    ia->background_integral = bg_prob_int.bg_int + bg_prob_int.correction;
+    integral->background_integral = bg_prob_int.bg_int + bg_prob_int.correction;
     for (i = 0; i < number_streams; i++)
-        ia->stream_integrals[i] = probs[i].st_prob_int + probs[i].st_prob_int_c;
+        integral->stream_integrals[i] = probs[i].st_prob_int + probs[i].st_prob_int_c;
 }
 
 inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
                              const STREAM_CONSTANTS* sc,
-                             INTEGRAL* ia,
+                             INTEGRAL_AREA* ia,
                              EVALUATION_STATE* es,
                              INTEGRAL_STATE* st,
                              vector* xyz,
@@ -566,15 +569,17 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
     BG_PROB r_result;
     BG_PROB bg_prob_int = { 0.0, 0.0 };
 
+    INTEGRAL* integral = &es->integrals[es->current_integral];
+
     const double mu = ia->mu_min + (mu_step_current * ia->mu_step_size);
     const unsigned int nu_steps = ia->nu_steps;
     const unsigned int r_steps = ia->r_steps;
 
     for (nu_step_current = 0; nu_step_current < nu_steps; ++nu_step_current)
     {
-        apply_correction(ap->number_streams, ia, st->probs, bg_prob_int);
+        apply_correction(ap->number_streams, integral, st->probs, bg_prob_int);
 
-        do_boinc_checkpoint(es, mu_step_current, nu_step_current);
+        do_boinc_checkpoint(ap, es, mu_step_current, nu_step_current);
 
         ap->sgr_conversion(ap->wedge,
                            mu + 0.5 * ia->mu_step_size,
@@ -619,10 +624,11 @@ static void integrate(const ASTRONOMY_PARAMETERS* ap,
     unsigned int mu_step_current;
     BG_PROB nu_result;
 
-    INTEGRAL* ia = &es->integrals[es->current_integral];
-    BG_PROB bg_prob_int = { ia->background_integral, 0.0 };
+    INTEGRAL_AREA* ia = &ap->integral[es->current_integral];
+    INTEGRAL* integral = &es->integrals[es->current_integral];
+    BG_PROB bg_prob_int = { integral->background_integral, 0.0 };
 
-    init_st_probs(st->probs, ia->stream_integrals, ap->number_streams);
+    init_st_probs(st->probs, integral->stream_integrals, ap->number_streams);
 
     const unsigned int mu_steps = ia->mu_steps;
 
@@ -634,7 +640,7 @@ static void integrate(const ASTRONOMY_PARAMETERS* ap,
         bg_prob_int.correction += nu_result.correction;
     }
 
-    apply_correction(ap->number_streams, ia, st->probs, bg_prob_int);
+    apply_correction(ap->number_streams, integral, st->probs, bg_prob_int);
 }
 
 static void print_stream_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
@@ -662,7 +668,7 @@ static int calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
 
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
     {
-        prepare_integral_state(ap, sg, &es->integrals[es->current_integral], &st);
+        prepare_integral_state(ap, sg, &ap->integral[es->current_integral], &st);
         integrate(ap, sc, xyz, es, &st);
         free_integral_state(&st);
     }
@@ -779,7 +785,7 @@ static int likelihood(const ASTRONOMY_PARAMETERS* ap,
     exp_background_weight = exp(ap->background_weight);
     sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);
 
-    do_boinc_checkpoint(es, 0, 0); /* CHECKME: Steps? */
+    do_boinc_checkpoint(ap, es, 0, 0); /* CHECKME: Steps? */
 
     prob_sum = 0.0;
     prob_sum_c = 0.0;

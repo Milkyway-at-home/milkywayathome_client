@@ -25,32 +25,17 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_priv.h"
 
 
-void initialize_integral_area(INTEGRAL* ia,
-                              double* ia_stream_integrals,
-                              INTEGRAL_AREA* integral,
-                              unsigned int number_streams)
+void initialize_integral(INTEGRAL* integral,
+                         double* ia_stream_integrals,
+                         unsigned int number_streams)
 {
-    ia->mu_min   = integral->mu_min;
-    ia->mu_max   = integral->mu_max;
-    ia->mu_steps = integral->mu_steps;
-    ia->nu_min   = integral->nu_min;
-    ia->nu_max   = integral->nu_max;
-    ia->nu_steps = integral->nu_steps;
-    ia->r_min    = integral->r_min;
-    ia->r_max    = integral->r_max;
-    ia->r_steps  = integral->r_steps;
+    integral->mu_step = 0;
+    integral->nu_step = 0;
+    integral->r_step = 0;
 
-    ia->mu_step_size = (ia->mu_max - ia->mu_min) / ia->mu_steps;
-    ia->nu_step_size = (ia->nu_max - ia->nu_min) / ia->nu_steps;
-    ia->r_step_size = (ia->r_max - ia->r_min) / ia->r_steps;
-
-    ia->mu_step = 0;
-    ia->nu_step = 0;
-    ia->r_step = 0;
-
-    ia->number_streams = number_streams;
-    ia->background_integral = 0;
-    ia->stream_integrals = ia_stream_integrals;
+    integral->number_streams = number_streams;
+    integral->background_integral = 0;
+    integral->stream_integrals = ia_stream_integrals;
 }
 
 void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVALUATION_STATE* es)
@@ -74,10 +59,9 @@ void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVA
 
     for (i = 0; i < ap->number_integrals; i++)
     {
-        initialize_integral_area(&es->integrals[i],
-                                 &es->ia_stream_integrals[i * ap->number_streams],
-                                 &ap->integral[i],
-                                 ap->number_streams);
+        initialize_integral(&es->integrals[i],
+                            &es->ia_stream_integrals[i * ap->number_streams],
+                            ap->number_streams);
     }
 }
 

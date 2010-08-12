@@ -28,11 +28,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 typedef struct
 {
     unsigned int mu_step, nu_step, r_step;
-    unsigned int mu_steps, nu_steps, r_steps;
-    double mu_min, mu_max, mu_step_size;
-    double nu_min, nu_max, nu_step_size;
-    double r_min, r_max, r_step_size;
-
     unsigned int number_streams;
     double background_integral;
     double* stream_integrals;
