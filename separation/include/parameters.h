@@ -110,13 +110,20 @@ typedef struct
 
     unsigned int number_integrals;
     INTEGRAL* integral;
+
+    /* Constants determined by other parameters */
+    double alpha, q, sn, r0, delta, coeff, alpha_delta3;
+    double bg_a, bg_b, bg_c;
+
 } ASTRONOMY_PARAMETERS;
 
 
 #define EMPTY_ASTRONOMY_PARAMETERS { 0.0,     \
                                      0, 0.0,  \
                                      0, 0,    \
-                                     0, NULL, 0, 0, 0, NULL}
+                                     0, NULL, 0, 0, 0, NULL, \
+                                     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
+                                     0.0, 0.0, 0.0}
 
 void free_astronomy_parameters(ASTRONOMY_PARAMETERS* ap);
 void free_background_parameters(BACKGROUND_PARAMETERS* bgp);

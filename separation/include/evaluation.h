@@ -34,13 +34,6 @@ typedef struct
     double stream_sigma_sq2;
 } STREAM_CONSTANTS;
 
-/* FIXME: Better name */
-typedef struct
-{
-    double alpha, q, r0, delta, coeff, alpha_delta3;
-    double bg_a, bg_b, bg_c;
-} STREAM_NUMS;
-
 typedef struct
 {
     double st_prob;
@@ -93,13 +86,11 @@ typedef struct
 double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
                     const STAR_POINTS* sp,
                     const STREAMS* streams,
-                    const STREAM_CONSTANTS* sc,
-                    const STREAM_NUMS* sn);
+                    const STREAM_CONSTANTS* sc);
 
 STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
                                  const BACKGROUND_PARAMETERS* bgp,
-                                 const STREAMS* streams,
-                                 STREAM_NUMS* sn);
+                                 const STREAMS* streams);
 
 void free_constants(ASTRONOMY_PARAMETERS* ap);
 

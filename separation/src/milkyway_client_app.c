@@ -225,8 +225,6 @@ static void worker(int argc, const char** argv)
     ret1 = read_parameters(astronomy_parameter_file, &ap, &bgp, &streams);
     ret2 = read_star_points(star_points_file, &sp);
 
-    MW_DEBUG("ap.number_stream_parameters = %d\n", ap.number_stream_parameters);
-
     if (ret1)
     {
         fprintf(stderr,
@@ -271,16 +269,15 @@ static void worker(int argc, const char** argv)
     free(parameters);
 
     double likelihood;
-    STREAM_NUMS sn;
-    STREAM_CONSTANTS* sc = init_constants(&ap, &bgp, &streams, &sn);
+    STREAM_CONSTANTS* sc = init_constants(&ap, &bgp, &streams);
     free_background_parameters(&bgp);
 
 #if COMPUTE_ON_CPU
-    likelihood = cpu_evaluate(&ap, &sp, &streams, sc, &sn);
+    likelihood = cpu_evaluate(&ap, &sp, &streams, sc);
 #elif USE_CUDA
-    likelihood = cuda_evaluate(&ap, &sp, sc, &sn);
+    likelihood = cuda_evaluate(&ap, &sp, sc);
 #elif USE_OCL
-    likelihood = ocl_evaluate(&ap, &sp, sc, &sn);
+    likelihood = ocl_evaluate(&ap, &sp, sc);
 #else
     #error "Must choose CUDA, OpenCL or CPU"
 #endif /* COMPUTE_ON_CPU */
