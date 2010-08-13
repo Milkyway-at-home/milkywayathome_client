@@ -344,8 +344,8 @@ inline static double progress(const ASTRONOMY_PARAMETERS* ap,
         }
     }
 
-    total_calc_probs += es->total_stars;
-    current_calc_probs += es->current_star_point;
+    //total_calc_probs += es->total_stars;
+    //current_calc_probs += es->current_star_point;
 
     return (double)current_calc_probs / (double)total_calc_probs;
 }
@@ -374,7 +374,6 @@ inline static void do_boinc_checkpoint(const ASTRONOMY_PARAMETERS* ap,
     }
 
     frac = progress(ap, es, mu_step_current, nu_step_current);
-    //printf("progress: %.10f\n", frac);
     boinc_fraction_done(frac);
 }
 
@@ -573,6 +572,7 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
     {
         /* CHECKME: background_probability save for checkpointing? */
         do_boinc_checkpoint(ap, es, mu_step_current, nu_step_current);
+        printf("progress: %.10f\n", progress(ap, es, mu_step_current, nu_step_current));
 
         ap->sgr_conversion(ap->wedge,
                            mu + 0.5 * ia->mu_step_size,
@@ -780,6 +780,7 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
     double reff_xr_rp3;
 
     double bg_only, bg_only_sum, bg_only_sum_c;
+    unsigned int current_star_point;
 
     /* The correction terms aren't used here since this isn't the sum? */
     ST_PROBS* st_prob = (ST_PROBS*) malloc(sizeof(ST_PROBS) * streams->number_streams);
@@ -796,14 +797,14 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
     bg_only_sum = 0.0;
     bg_only_sum_c = 0.0;
 
-    for (; es->current_star_point < sp->number_stars; es->current_star_point++)
+    for (current_star_point = 0; current_star_point < sp->number_stars; ++current_star_point)
     {
         double star_prob;
 
-        reff_xr_rp3 = set_prob_consts(ap, &sg[0], ap->convolve, ZN(sp, es->current_star_point), rss);
+        reff_xr_rp3 = set_prob_consts(ap, &sg[0], ap->convolve, ZN(sp, current_star_point), rss);
 
         bg_prob = bg_probability(ap, rss,
-                                 reff_xr_rp3, &VN(sp, es->current_star_point), xyz);
+                                 reff_xr_rp3, &VN(sp, current_star_point), xyz);
 
         bg_only = (bg_prob / es->background_integral) * exp_background_weight;
 

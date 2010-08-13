@@ -45,8 +45,6 @@ void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVA
     es->stream_integrals = calloc(ap->number_streams, sizeof(double));
 
     es->number_streams = ap->number_streams;
-    es->total_stars = sp->number_stars;
-    es->current_star_point = 0;
     es->num_zero = 0;
     es->bad_jacobians = 0;
 
@@ -64,7 +62,6 @@ void reset_evaluation_state(EVALUATION_STATE* es)
     es->current_integral = 0;
     es->background_integral = 0;
     memset(es->stream_integrals, 0, sizeof(double) * es->number_streams);
-    es->current_star_point = 0;
     es->num_zero = 0;
     es->bad_jacobians = 0;
 
