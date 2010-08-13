@@ -292,12 +292,12 @@ inline static double probabilities_convolve(const STREAM_CONSTANTS* sc,
     return st_prob;
 }
 
-static void probabilities(const ASTRONOMY_PARAMETERS* ap,
-                          const STREAM_CONSTANTS* sc,
-                          const R_POINTS* rss,
-                          const double reff_xr_rp3,
-                          vector* const xyz,
-                          ST_PROBS* probs)
+inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
+                                 const STREAM_CONSTANTS* sc,
+                                 const R_POINTS* rss,
+                                 const double reff_xr_rp3,
+                                 vector* const xyz,
+                                 ST_PROBS* probs)
 {
     unsigned int i;
 
@@ -411,18 +411,17 @@ static void prepare_nu_constants(NU_CONSTANTS* nu_st,
 }
 
 static R_CONSTANTS* prepare_r_constants(const ASTRONOMY_PARAMETERS* ap,
-                                             const STREAM_GAUSS* sg,
-                                             const unsigned int n_convolve,
-                                             const unsigned int r_steps,
-                                             const double r_min,
-                                             const double r_step_size,
-                                             const double mu_step_size,
-                                             R_POINTS* rss)
+                                        const STREAM_GAUSS* sg,
+                                        const unsigned int n_convolve,
+                                        const unsigned int r_steps,
+                                        const double r_min,
+                                        const double r_step_size,
+                                        const double mu_step_size,
+                                        R_POINTS* rss)
 {
     unsigned int i;
     double r, next_r, rPrime;
     R_CONSTANTS* r_step_consts = malloc(sizeof(R_CONSTANTS) * r_steps);
-
 
 //vickej2_kpc edits to make volumes even in kpc rather than g
 //vickej2_kpc        double log_r, r, next_r, rPrime;
@@ -454,32 +453,32 @@ static R_CONSTANTS* prepare_r_constants(const ASTRONOMY_PARAMETERS* ap,
     return r_step_consts;
 }
 
-static void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
-                                   const STREAM_GAUSS* sg,
-                                   INTEGRAL_AREA* ia,
-                                   INTEGRAL_STATE* st)
+static void prepare_integral_constants(const ASTRONOMY_PARAMETERS* ap,
+                                       const STREAM_GAUSS* sg,
+                                       const INTEGRAL_AREA* ia,
+                                       INTEGRAL_CONSTANTS* ic)
 {
 
     /* 2D block, ia->r_steps = rows, ap->convolve = columns */
-    st->rss = malloc(sizeof(R_POINTS) * ia->r_steps * ap->convolve);
-    st->r_step_consts = prepare_r_constants(ap,
+    ic->rss = malloc(sizeof(R_POINTS) * ia->r_steps * ap->convolve);
+    ic->r_step_consts = prepare_r_constants(ap,
                                             sg,
                                             ap->convolve,
                                             ia->r_steps,
                                             ia->r_min,
                                             ia->r_step_size,
                                             ia->mu_step_size,
-                                            st->rss);
+                                            ic->rss);
 
-    st->nu_st = malloc(sizeof(NU_CONSTANTS) * ia->nu_steps);
-    prepare_nu_constants(st->nu_st, ia->nu_steps, ia->nu_step_size, ia->nu_min);
+    ic->nu_st = malloc(sizeof(NU_CONSTANTS) * ia->nu_steps);
+    prepare_nu_constants(ic->nu_st, ia->nu_steps, ia->nu_step_size, ia->nu_min);
 }
 
-static void free_integral_state(INTEGRAL_STATE* st)
+static void free_integral_constants(INTEGRAL_CONSTANTS* ic)
 {
-    free(st->r_step_consts);
-    free(st->rss);
-    free(st->nu_st);
+    free(ic->r_step_consts);
+    free(ic->rss);
+    free(ic->nu_st);
 }
 
 inline static void update_probs(ST_PROBS* probs, const unsigned int n_streams, const double V)
@@ -500,7 +499,7 @@ inline static void update_probs(ST_PROBS* probs, const unsigned int n_streams, c
 inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
                             const STREAM_CONSTANTS* sc,
                             const unsigned int r_steps,
-                            const INTEGRAL_STATE* st,
+                            const INTEGRAL_CONSTANTS* ic,
                             vector* xyz,
                             ST_PROBS* probs,
                             const vector integral_point,
@@ -516,18 +515,18 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
 
     for (r_step_current = 0; r_step_current < r_steps; ++r_step_current)
     {
-        V = st->r_step_consts[r_step_current].irv * st->nu_st[nu_step_current].id;
+        V = ic->r_step_consts[r_step_current].irv * ic->nu_st[nu_step_current].id;
 
         bg_prob = bg_probability(ap,
-                                 &st->rss[r_step_current * ap->convolve],
-                                 st->r_step_consts[r_step_current].reff_xr_rp3,
+                                 &ic->rss[r_step_current * ap->convolve],
+                                 ic->r_step_consts[r_step_current].reff_xr_rp3,
                                  integral_point,
                                  xyz);
 
         probabilities(ap,
                       sc,
-                      &st->rss[r_step_current * ap->convolve],
-                      st->r_step_consts[r_step_current].reff_xr_rp3,
+                      &ic->rss[r_step_current * ap->convolve],
+                      ic->r_step_consts[r_step_current].reff_xr_rp3,
                       xyz,
                       probs);
 
@@ -546,7 +545,7 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
 /* Returns background probability */
 inline static void apply_correction(const unsigned int number_streams,
                                     double* stream_integrals,
-                                    ST_PROBS* probs)
+                                    const ST_PROBS* probs)
 {
     unsigned int i;
     for (i = 0; i < number_streams; i++)
@@ -557,7 +556,7 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
                              const STREAM_CONSTANTS* sc,
                              const INTEGRAL_AREA* ia,
                              EVALUATION_STATE* es,
-                             const INTEGRAL_STATE* st,
+                             const INTEGRAL_CONSTANTS* ic,
                              vector* xyz,
                              ST_PROBS* probs,
                              const unsigned int mu_step_current)
@@ -582,14 +581,14 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
 
         ap->sgr_conversion(ap->wedge,
                            mu + 0.5 * ia->mu_step_size,
-                           st->nu_st[nu_step_current].nu,
+                           ic->nu_st[nu_step_current].nu,
                            &L(integral_point),
                            &B(integral_point));
 
         r_result = r_sum(ap,
                          sc,
                          r_steps,
-                         st,
+                         ic,
                          xyz,
                          probs,
                          integral_point,
@@ -617,9 +616,9 @@ inline static void init_st_probs(ST_PROBS* probs,
 
 static void integrate(const ASTRONOMY_PARAMETERS* ap,
                       const STREAM_CONSTANTS* sc,
+                      const INTEGRAL_CONSTANTS* ic,
                       vector* xyz,
                       EVALUATION_STATE* es,
-                      INTEGRAL_STATE* st,
                       ST_PROBS* probs)
 {
     unsigned int mu_step_current;
@@ -636,7 +635,7 @@ static void integrate(const ASTRONOMY_PARAMETERS* ap,
 
     for (mu_step_current = 0; mu_step_current < mu_steps; mu_step_current++)
     {
-        nu_result = nu_sum(ap, sc, ia, es, st, xyz, probs, mu_step_current);
+        nu_result = nu_sum(ap, sc, ia, es, ic, xyz, probs, mu_step_current);
 
         bg_prob_int.bg_int += nu_result.bg_int;
         bg_prob_int.correction += nu_result.correction;
@@ -683,7 +682,7 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                                 ST_PROBS* probs,
                                 vector* xyz)
 {
-    INTEGRAL_STATE st;
+    INTEGRAL_CONSTANTS ic;
 
   #if BOINC_APPLICATION
     read_checkpoint(es);
@@ -691,9 +690,9 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
 
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
     {
-        prepare_integral_state(ap, sg, &ap->integral[es->current_integral], &st);
-        integrate(ap, sc, xyz, es, &st, probs);
-        free_integral_state(&st);
+        prepare_integral_constants(ap, sg, &ap->integral[es->current_integral], &ic);
+        integrate(ap, sc, &ic, xyz, es, probs);
+        free_integral_constants(&ic);
     }
 
     final_stream_integrals(es, ap->number_streams, ap->number_integrals);

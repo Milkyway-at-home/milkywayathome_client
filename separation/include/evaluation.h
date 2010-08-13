@@ -68,7 +68,7 @@ typedef struct
     R_CONSTANTS* r_step_consts;
     R_POINTS* rss;
     NU_CONSTANTS* nu_st;
-} INTEGRAL_STATE;
+} INTEGRAL_CONSTANTS;
 
 typedef struct
 {
