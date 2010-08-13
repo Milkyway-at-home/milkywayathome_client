@@ -693,6 +693,9 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         free_integral_constants(&ic);
     }
 
+    /* Final checkpoint */
+    do_boinc_checkpoint(ap, es, 0, 0);
+
     final_stream_integrals(es, ap->number_streams, ap->number_integrals);
     print_stream_integrals(es, ap->number_streams);
 }
@@ -878,9 +881,6 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
     ST_PROBS* probs = (ST_PROBS*) malloc(sizeof(ST_PROBS) * ap->number_streams);
 
     calculate_integrals(ap, sc, &sg, &es, probs, xyz);
-
-    /* Final checkpoint */
-    do_boinc_checkpoint(ap, &es, 0, 0);
 
     likelihood_val = likelihood(ap, sc, streams, &es, &sg, xyz, sp);
 
