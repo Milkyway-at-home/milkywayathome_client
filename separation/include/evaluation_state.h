@@ -31,23 +31,17 @@ typedef struct
 {
     /* State for integral calculation. */
     INTEGRAL* integrals;
+    double* stream_integrals;
     unsigned int number_integrals;
     unsigned int current_integral;
     unsigned int number_streams;
 
     double background_integral;
-    double* stream_integrals;
-
-    /* State for likelihood calculation. */
-    int num_zero;
-    int bad_jacobians;
 } EVALUATION_STATE;
 
-#define EMPTY_EVALUATION_STATE { NULL,  \
-                                 0, 0, 0, \
-                                 0.0, NULL, 0, 0 }
+#define EMPTY_EVALUATION_STATE { NULL, NULL, 0, 0, 0, 0.0 }
 
-void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVALUATION_STATE* es);
+void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es);
 void free_evaluation_state(EVALUATION_STATE* es);
 void reset_evaluation_state(EVALUATION_STATE* es);
 

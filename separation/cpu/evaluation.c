@@ -344,9 +344,6 @@ inline static double progress(const ASTRONOMY_PARAMETERS* ap,
         }
     }
 
-    //total_calc_probs += es->total_stars;
-    //current_calc_probs += es->current_star_point;
-
     return (double)current_calc_probs / (double)total_calc_probs;
 }
 
@@ -572,7 +569,6 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
     {
         /* CHECKME: background_probability save for checkpointing? */
         do_boinc_checkpoint(ap, es, mu_step_current, nu_step_current);
-        printf("progress: %.10f\n", progress(ap, es, mu_step_current, nu_step_current));
 
         ap->sgr_conversion(ap->wedge,
                            mu + 0.5 * ia->mu_step_size,
@@ -781,6 +777,8 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
 
     double bg_only, bg_only_sum, bg_only_sum_c;
     unsigned int current_star_point;
+    unsigned int num_zero = 0;
+    unsigned int bad_jacobians = 0;
 
     /* The correction terms aren't used here since this isn't the sum? */
     ST_PROBS* st_prob = (ST_PROBS*) malloc(sizeof(ST_PROBS) * streams->number_streams);
@@ -827,7 +825,7 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
         }
         else
         {
-            es->num_zero++;
+            ++num_zero;
             prob_sum -= 238.0;
         }
 
@@ -855,7 +853,7 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
     free(st_sum);
 
     /*  log10(x * 0.001) = log10(x) - 3.0 */
-    return (prob_sum / (sp->number_stars - es->bad_jacobians)) - 3.0;
+    return (prob_sum / (sp->number_stars - bad_jacobians)) - 3.0;
 }
 
 static void free_stream_gauss(STREAM_GAUSS* sg)
@@ -873,7 +871,7 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
     EVALUATION_STATE es = EMPTY_EVALUATION_STATE;
     STREAM_GAUSS sg;
 
-    initialize_state(ap, sp, &es);
+    initialize_state(ap, &es);
     get_stream_gauss(ap->convolve, &sg);
 
     reset_evaluation_state(&es);

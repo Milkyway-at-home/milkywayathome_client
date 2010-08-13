@@ -36,7 +36,7 @@ void initialize_integral(INTEGRAL* integral, unsigned int number_streams)
     integral->stream_integrals = calloc(number_streams, sizeof(double));
 }
 
-void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVALUATION_STATE* es)
+void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
 {
     unsigned int i;
 
@@ -45,8 +45,6 @@ void initialize_state(const ASTRONOMY_PARAMETERS* ap, const STAR_POINTS* sp, EVA
     es->stream_integrals = calloc(ap->number_streams, sizeof(double));
 
     es->number_streams = ap->number_streams;
-    es->num_zero = 0;
-    es->bad_jacobians = 0;
 
     es->number_integrals = ap->number_integrals;
     es->integrals = malloc(sizeof(INTEGRAL) * ap->number_integrals);
@@ -62,8 +60,6 @@ void reset_evaluation_state(EVALUATION_STATE* es)
     es->current_integral = 0;
     es->background_integral = 0;
     memset(es->stream_integrals, 0, sizeof(double) * es->number_streams);
-    es->num_zero = 0;
-    es->bad_jacobians = 0;
 
     for (i = 0; i < es->number_integrals; i++)
     {
