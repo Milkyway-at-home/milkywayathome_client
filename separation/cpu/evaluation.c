@@ -609,22 +609,18 @@ inline static void init_st_probs(ST_PROBS* probs,
     }
 }
 
-static void integrate(const ASTRONOMY_PARAMETERS* ap,
-                      const STREAM_CONSTANTS* sc,
-                      const INTEGRAL_CONSTANTS* ic,
-                      vector* xyz,
-                      EVALUATION_STATE* es,
-                      ST_PROBS* probs)
+/* returns background integral */
+static double integrate(const ASTRONOMY_PARAMETERS* ap,
+                        const STREAM_CONSTANTS* sc,
+                        const INTEGRAL_CONSTANTS* ic,
+                        const INTEGRAL_AREA* ia,
+                        vector* xyz,
+                        EVALUATION_STATE* es,
+                        ST_PROBS* probs)
 {
     unsigned int mu_step_current;
     BG_PROB nu_result;
-
-    INTEGRAL_AREA* ia = &ap->integral[es->current_integral];
-    INTEGRAL* integral = &es->integrals[es->current_integral];
-
     BG_PROB bg_prob_int = { 0.0, 0.0 };
-
-    init_st_probs(probs, integral->stream_integrals, ap->number_streams);
 
     const unsigned int mu_steps = ia->mu_steps;
 
@@ -636,8 +632,7 @@ static void integrate(const ASTRONOMY_PARAMETERS* ap,
         bg_prob_int.correction += nu_result.correction;
     }
 
-    calculate_stream_integrals(probs, integral->stream_integrals, ap->number_streams);
-    integral->background_integral = bg_prob_int.bg_int + bg_prob_int.correction;
+    return bg_prob_int.bg_int + bg_prob_int.correction;
 }
 
 static void print_stream_integrals(EVALUATION_STATE* es, const unsigned int number_streams)
@@ -677,6 +672,8 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                                 vector* xyz)
 {
     INTEGRAL_CONSTANTS ic;
+    INTEGRAL* integral;
+    INTEGRAL_AREA* ia;
 
   #if BOINC_APPLICATION
     read_checkpoint(es);
@@ -684,8 +681,15 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
 
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
     {
-        prepare_integral_constants(ap, sg, &ap->integral[es->current_integral], &ic);
-        integrate(ap, sc, &ic, xyz, es, probs);
+        integral = &es->integrals[es->current_integral];
+        ia = &ap->integral[es->current_integral];
+
+        prepare_integral_constants(ap, sg, ia, &ic);
+        init_st_probs(probs, integral->stream_integrals, ap->number_streams);
+
+        integral->background_integral = integrate(ap, sc, &ic, ia, xyz, es, probs);
+        calculate_stream_integrals(probs, integral->stream_integrals, ap->number_streams);
+
         free_integral_constants(&ic);
     }
 
