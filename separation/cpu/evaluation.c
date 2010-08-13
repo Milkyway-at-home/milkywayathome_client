@@ -124,7 +124,7 @@ static double set_prob_consts(const ASTRONOMY_PARAMETERS* ap,
                               const STREAM_GAUSS* sg,
                               const unsigned int n_convolve,
                               const double coords,
-                              R_STEP_STATE* rss)
+                              R_POINTS* rss)
 {
     double g, exponent, r3, N;
     double reff_xr_rp3;
@@ -159,7 +159,7 @@ static double set_prob_consts(const ASTRONOMY_PARAMETERS* ap,
 
 /* FIXME: I don't know what these do enough to name it properly */
 inline static double sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
-                                         const R_STEP_STATE* rss,
+                                         const R_POINTS* rss,
                                          const unsigned int convolve,
                                          const int aux_bg_profile,
                                          const vector integral_point,
@@ -204,7 +204,7 @@ inline static double sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
 }
 
 inline static double sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
-                                         const R_STEP_STATE* rss,
+                                         const R_POINTS* rss,
                                          const unsigned int convolve,
                                          const vector integral_point,
                                          vector* const xyz)
@@ -235,7 +235,7 @@ inline static double sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
 }
 
 inline static double bg_probability(const ASTRONOMY_PARAMETERS* ap,
-                                    const R_STEP_STATE* rss,
+                                    const R_POINTS* rss,
                                     const double reff_xr_rp3,
                                     const vector integral_point,
                                     vector* xyz)
@@ -260,7 +260,7 @@ inline static double bg_probability(const ASTRONOMY_PARAMETERS* ap,
 
 /* FIXME: Better name? */
 inline static double probabilities_convolve(const STREAM_CONSTANTS* sc,
-                                            const R_STEP_STATE* rss,
+                                            const R_POINTS* rss,
                                             const unsigned int convolve,
                                             vector* const xyz)
 {
@@ -294,7 +294,7 @@ inline static double probabilities_convolve(const STREAM_CONSTANTS* sc,
 
 static void probabilities(const ASTRONOMY_PARAMETERS* ap,
                           const STREAM_CONSTANTS* sc,
-                          const R_STEP_STATE* rss,
+                          const R_POINTS* rss,
                           const double reff_xr_rp3,
                           vector* const xyz,
                           ST_PROBS* probs)
@@ -410,18 +410,18 @@ static void prepare_nu_constants(NU_CONSTANTS* nu_st,
     }
 }
 
-static R_STEP_CONSTANTS* prepare_r_constants(const ASTRONOMY_PARAMETERS* ap,
+static R_CONSTANTS* prepare_r_constants(const ASTRONOMY_PARAMETERS* ap,
                                              const STREAM_GAUSS* sg,
                                              const unsigned int n_convolve,
                                              const unsigned int r_steps,
                                              const double r_min,
                                              const double r_step_size,
                                              const double mu_step_size,
-                                             R_STEP_STATE* rss)
+                                             R_POINTS* rss)
 {
     unsigned int i;
     double r, next_r, rPrime;
-    R_STEP_CONSTANTS* r_step_consts = malloc(sizeof(R_STEP_CONSTANTS) * r_steps);
+    R_CONSTANTS* r_step_consts = malloc(sizeof(R_CONSTANTS) * r_steps);
 
 
 //vickej2_kpc edits to make volumes even in kpc rather than g
@@ -463,7 +463,7 @@ static void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
     st->probs = (ST_PROBS*) malloc(sizeof(ST_PROBS) * ap->number_streams);
 
     /* 2D block, ia->r_steps = rows, ap->convolve = columns */
-    st->rss = malloc(sizeof(R_STEP_STATE) * ia->r_steps * ap->convolve);
+    st->rss = malloc(sizeof(R_POINTS) * ia->r_steps * ap->convolve);
     st->r_step_consts = prepare_r_constants(ap,
                                             sg,
                                             ap->convolve,
@@ -781,7 +781,7 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
 
     /* The correction terms aren't used here since this isn't the sum? */
     ST_PROBS* st_prob = (ST_PROBS*) malloc(sizeof(ST_PROBS) * streams->number_streams);
-    R_STEP_STATE* rss = malloc(sizeof(R_STEP_STATE) * ap->convolve);
+    R_POINTS* rss = malloc(sizeof(R_POINTS) * ap->convolve);
     ST_SUM* st_sum = calloc(sizeof(ST_SUM), streams->number_streams);
 
     double* exp_stream_weights = malloc(sizeof(double) * streams->number_streams);

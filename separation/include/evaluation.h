@@ -48,13 +48,13 @@ typedef struct
     double r_in_mag;
     double r_in_mag2;
     double qw_r3_N;
-} R_STEP_STATE;
+} R_POINTS;
 
 typedef struct
 {
     double irv;
     double reff_xr_rp3;
-} R_STEP_CONSTANTS;
+} R_CONSTANTS;
 
 typedef struct
 {
@@ -65,9 +65,9 @@ typedef struct
 /* Scratch space used by each integral */
 typedef struct
 {
-    R_STEP_CONSTANTS* r_step_consts;
+    R_CONSTANTS* r_step_consts;
     ST_PROBS* probs;
-    R_STEP_STATE* rss;
+    R_POINTS* rss;
     NU_CONSTANTS* nu_st;
 } INTEGRAL_STATE;
 
