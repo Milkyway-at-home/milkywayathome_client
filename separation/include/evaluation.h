@@ -66,7 +66,6 @@ typedef struct
 typedef struct
 {
     R_CONSTANTS* r_step_consts;
-    ST_PROBS* probs;
     R_POINTS* rss;
     NU_CONSTANTS* nu_st;
 } INTEGRAL_STATE;

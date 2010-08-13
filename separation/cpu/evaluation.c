@@ -460,8 +460,6 @@ static void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
                                    INTEGRAL_STATE* st)
 {
 
-    st->probs = (ST_PROBS*) malloc(sizeof(ST_PROBS) * ap->number_streams);
-
     /* 2D block, ia->r_steps = rows, ap->convolve = columns */
     st->rss = malloc(sizeof(R_POINTS) * ia->r_steps * ap->convolve);
     st->r_step_consts = prepare_r_constants(ap,
@@ -480,7 +478,6 @@ static void prepare_integral_state(const ASTRONOMY_PARAMETERS* ap,
 static void free_integral_state(INTEGRAL_STATE* st)
 {
     free(st->r_step_consts);
-    free(st->probs);
     free(st->rss);
     free(st->nu_st);
 }
@@ -505,6 +502,7 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
                             const unsigned int r_steps,
                             const INTEGRAL_STATE* st,
                             vector* xyz,
+                            ST_PROBS* probs,
                             const vector integral_point,
                             const unsigned int nu_step_current)
 
@@ -531,7 +529,7 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
                       &st->rss[r_step_current * ap->convolve],
                       st->r_step_consts[r_step_current].reff_xr_rp3,
                       xyz,
-                      st->probs);
+                      probs);
 
         bg_prob *= V;
 
@@ -539,7 +537,7 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
         bg_prob_int.bg_int += bg_prob;
         bg_prob_int.correction += bg_prob - (bg_prob_int.bg_int - tmp);
 
-        update_probs(st->probs, n_streams, V);
+        update_probs(probs, n_streams, V);
     }
 
     return bg_prob_int;
@@ -561,6 +559,7 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
                              EVALUATION_STATE* es,
                              const INTEGRAL_STATE* st,
                              vector* xyz,
+                             ST_PROBS* probs,
                              const unsigned int mu_step_current)
 {
     unsigned int nu_step_current;
@@ -576,7 +575,7 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
 
     for (nu_step_current = 0; nu_step_current < nu_steps; ++nu_step_current)
     {
-        apply_correction(ap->number_streams, integral->stream_integrals, st->probs);
+        apply_correction(ap->number_streams, integral->stream_integrals, probs);
 
         /* CHECKME: background_probability save for checkpointing? */
         do_boinc_checkpoint(ap, es, mu_step_current, nu_step_current);
@@ -592,6 +591,7 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
                          r_steps,
                          st,
                          xyz,
+                         probs,
                          integral_point,
                          nu_step_current);
 
@@ -619,7 +619,8 @@ static void integrate(const ASTRONOMY_PARAMETERS* ap,
                       const STREAM_CONSTANTS* sc,
                       vector* xyz,
                       EVALUATION_STATE* es,
-                      INTEGRAL_STATE* st)
+                      INTEGRAL_STATE* st,
+                      ST_PROBS* probs)
 {
     unsigned int mu_step_current;
     BG_PROB nu_result;
@@ -629,19 +630,19 @@ static void integrate(const ASTRONOMY_PARAMETERS* ap,
 
     BG_PROB bg_prob_int = { 0.0, 0.0 };
 
-    init_st_probs(st->probs, integral->stream_integrals, ap->number_streams);
+    init_st_probs(probs, integral->stream_integrals, ap->number_streams);
 
     const unsigned int mu_steps = ia->mu_steps;
 
     for (mu_step_current = 0; mu_step_current < mu_steps; mu_step_current++)
     {
-        nu_result = nu_sum(ap, sc, ia, es, st, xyz, mu_step_current);
+        nu_result = nu_sum(ap, sc, ia, es, st, xyz, probs, mu_step_current);
 
         bg_prob_int.bg_int += nu_result.bg_int;
         bg_prob_int.correction += nu_result.correction;
     }
 
-    apply_correction(ap->number_streams, integral->stream_integrals, st->probs);
+    apply_correction(ap->number_streams, integral->stream_integrals, probs);
 
     integral->background_integral = bg_prob_int.bg_int + bg_prob_int.correction;
 }
@@ -679,6 +680,7 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                                 const STREAM_CONSTANTS* sc,
                                 const STREAM_GAUSS* sg,
                                 EVALUATION_STATE* es,
+                                ST_PROBS* probs,
                                 vector* xyz)
 {
     INTEGRAL_STATE st;
@@ -690,7 +692,7 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
     {
         prepare_integral_state(ap, sg, &ap->integral[es->current_integral], &st);
-        integrate(ap, sc, xyz, es, &st);
+        integrate(ap, sc, xyz, es, &st, probs);
         free_integral_state(&st);
     }
 
@@ -876,8 +878,9 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
     reset_evaluation_state(&es);
 
     vector* xyz = malloc(sizeof(vector) * ap->convolve);
+    ST_PROBS* probs = (ST_PROBS*) malloc(sizeof(ST_PROBS) * ap->number_streams);
 
-    calculate_integrals(ap, sc, &sg, &es, xyz);
+    calculate_integrals(ap, sc, &sg, &es, probs, xyz);
 
     /* Final checkpoint */
     do_boinc_checkpoint(ap, &es, 0, 0);
@@ -885,6 +888,7 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
     likelihood_val = likelihood(ap, sc, streams, &es, &sg, xyz, sp);
 
     free(xyz);
+    free(probs);
     free_evaluation_state(&es);
     free_stream_gauss(&sg);
 
