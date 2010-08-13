@@ -259,16 +259,16 @@ inline static double bg_probability(const ASTRONOMY_PARAMETERS* ap,
 }
 
 /* FIXME: Better name? */
-inline static void probabilities_convolve(const STREAM_CONSTANTS* sc,
-                                          const R_STEP_STATE* rss,
-                                          ST_PROBS* probs,
-                                          const unsigned int convolve,
-                                          const double reff_xr_rp3,
-                                          vector* const xyz)
+inline static double probabilities_convolve(const STREAM_CONSTANTS* sc,
+                                            const R_STEP_STATE* rss,
+                                            const unsigned int convolve,
+                                            vector* const xyz)
 {
     unsigned int i;
     double dotted, xyz_norm;
     vector xyzs;
+
+    double st_prob = 0.0;
 
     for (i = 0; i < convolve; i++)
     {
@@ -284,12 +284,12 @@ inline static void probabilities_convolve(const STREAM_CONSTANTS* sc,
         Y(xyzs) -= dotted * Y(sc->stream_a);
         Z(xyzs) -= dotted * Z(sc->stream_a);
 
-        xyz_norm =  sqr(X(xyzs)) + sqr(Y(xyzs)) + sqr(Z(xyzs));
+        xyz_norm = sqr(X(xyzs)) + sqr(Y(xyzs)) + sqr(Z(xyzs));
 
-        probs->st_prob += rss[i].qw_r3_N * exp(-xyz_norm / sc->stream_sigma_sq2);
+        st_prob += rss[i].qw_r3_N * exp(-xyz_norm / sc->stream_sigma_sq2);
     }
 
-    probs->st_prob *= reff_xr_rp3;
+    return st_prob;
 }
 
 static void probabilities(const ASTRONOMY_PARAMETERS* ap,
@@ -303,11 +303,14 @@ static void probabilities(const ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < ap->number_streams; i++)
     {
-        probs[i].st_prob = 0.0;
         if (sc[i].stream_sigma > -0.0001 && sc[i].stream_sigma < 0.0001)
+        {
+            probs[i].st_prob = 0.0;
             continue;
+        }
 
-        probabilities_convolve(&sc[i], rss, &probs[i], ap->convolve, reff_xr_rp3, xyz);
+        probs[i].st_prob = probabilities_convolve(&sc[i], rss, ap->convolve, xyz);
+        probs[i].st_prob *= reff_xr_rp3;
     }
 }
 
@@ -500,7 +503,7 @@ inline static void update_probs(ST_PROBS* probs, const unsigned int n_streams, c
 inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
                             const STREAM_CONSTANTS* sc,
                             const unsigned int r_steps,
-                            INTEGRAL_STATE* st,
+                            const INTEGRAL_STATE* st,
                             vector* xyz,
                             const vector integral_point,
                             const unsigned int nu_step_current)
@@ -556,7 +559,7 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
                              const STREAM_CONSTANTS* sc,
                              const INTEGRAL_AREA* ia,
                              EVALUATION_STATE* es,
-                             INTEGRAL_STATE* st,
+                             const INTEGRAL_STATE* st,
                              vector* xyz,
                              const unsigned int mu_step_current)
 {
@@ -575,7 +578,7 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
     {
         apply_correction(ap->number_streams, integral->stream_integrals, st->probs);
 
-        /* TODO: background_probability save for checkpointing */
+        /* CHECKME: background_probability save for checkpointing? */
         do_boinc_checkpoint(ap, es, mu_step_current, nu_step_current);
 
         ap->sgr_conversion(ap->wedge,
