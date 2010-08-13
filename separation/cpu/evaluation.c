@@ -178,29 +178,26 @@ inline static double sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < convolve; ++i)
     {
-        xyz[i][2] = rss[i].r_point * bsin;
+        Z(xyz[i]) = rss[i].r_point * bsin;
         zp = rss[i].r_point * bcos;
-        xyz[i][0] = zp * lcos - sun_r0;
-        xyz[i][1] = zp * lsin;
+        X(xyz[i]) = zp * lcos - sun_r0;
+        Y(xyz[i]) = zp * lsin;
 
-        rg = sqrt( sqr(X(xyz[i])) + sqr(Y(xyz[i])) + sqr(Z(xyz[i])) / sqr(ap->q));
+        rg = sqrt(sqr(X(xyz[i])) + sqr(Y(xyz[i])) + sqr(Z(xyz[i])) / sqr(ap->q));
         rs = rg + ap->r0;
 
+        h_prob = rss[i].qw_r3_N / (rg * cube(rs));
+
         //the hernquist profile includes a quadratic term in g
-        if (aux_bg_profile == 1)
+        if (aux_bg_profile)
         {
-            h_prob = rss[i].qw_r3_N / (rg * cube(rs));
-            aux_prob = rss[i].qw_r3_N * (ap->bg_a * rss[i].r_in_mag2 + ap->bg_b * rss[i].r_in_mag + ap->bg_c );
-            bg_prob += h_prob + aux_prob;
+            aux_prob = rss[i].qw_r3_N * (  ap->bg_a * rss[i].r_in_mag2
+                                         + ap->bg_b * rss[i].r_in_mag
+                                         + ap->bg_c );
+            h_prob += aux_prob;
         }
-        else if (aux_bg_profile == 0)
-        {
-            bg_prob += rss[i].qw_r3_N / (rg * cube(rs));
-        }
-        else
-        {
-            fprintf(stderr, "Error: aux_bg_profile invalid");
-        }
+
+        bg_prob += h_prob;
     }
 
     return bg_prob;
@@ -224,12 +221,12 @@ inline static double sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < convolve; ++i)
     {
-        xyz[i][2] = rss[i].r_point * bsin;
+        Z(xyz[i]) = rss[i].r_point * bsin;
         zp = rss[i].r_point * bcos;
-        xyz[i][0] = zp * lcos - sun_r0;
-        xyz[i][1] = zp * lsin;
+        X(xyz[i]) = zp * lcos - sun_r0;
+        Y(xyz[i]) = zp * lsin;
 
-        rg = sqrt( sqr(xyz[i][0]) + sqr(xyz[i][1]) + sqr(xyz[i][2]) / sqr(ap->q));
+        rg = sqrt(sqr(X(xyz[i])) + sqr(Y(xyz[i])) + sqr(Z(xyz[i])) / sqr(ap->q));
 
         bg_prob += rss[i].qw_r3_N / (pow(rg, ap->alpha) * pow(rg + ap->r0, ap->alpha_delta3));
     }
