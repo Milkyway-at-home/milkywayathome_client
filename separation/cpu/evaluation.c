@@ -498,8 +498,8 @@ inline static void update_probs(ST_PROBS* probs, const unsigned int n_streams, c
 /* Sum over r steps using Kahan summation */
 inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
                             const STREAM_CONSTANTS* sc,
-                            const unsigned int r_steps,
                             const INTEGRAL_CONSTANTS* ic,
+                            const unsigned int r_steps,
                             vector* xyz,
                             ST_PROBS* probs,
                             const vector integral_point,
@@ -543,9 +543,9 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
 }
 
 /* Returns background probability */
-inline static void apply_correction(const unsigned int number_streams,
+inline static void apply_correction(const ST_PROBS* probs,
                                     double* stream_integrals,
-                                    const ST_PROBS* probs)
+                                    const unsigned int number_streams)
 {
     unsigned int i;
     for (i = 0; i < number_streams; i++)
@@ -555,8 +555,8 @@ inline static void apply_correction(const unsigned int number_streams,
 inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
                              const STREAM_CONSTANTS* sc,
                              const INTEGRAL_AREA* ia,
-                             EVALUATION_STATE* es,
                              const INTEGRAL_CONSTANTS* ic,
+                             EVALUATION_STATE* es,
                              vector* xyz,
                              ST_PROBS* probs,
                              const unsigned int mu_step_current)
@@ -574,7 +574,7 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
 
     for (nu_step_current = 0; nu_step_current < nu_steps; ++nu_step_current)
     {
-        apply_correction(ap->number_streams, integral->stream_integrals, probs);
+        apply_correction(probs, integral->stream_integrals, ap->number_streams);
 
         /* CHECKME: background_probability save for checkpointing? */
         do_boinc_checkpoint(ap, es, mu_step_current, nu_step_current);
@@ -587,8 +587,8 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
 
         r_result = r_sum(ap,
                          sc,
-                         r_steps,
                          ic,
+                         r_steps,
                          xyz,
                          probs,
                          integral_point,
@@ -635,13 +635,13 @@ static void integrate(const ASTRONOMY_PARAMETERS* ap,
 
     for (mu_step_current = 0; mu_step_current < mu_steps; mu_step_current++)
     {
-        nu_result = nu_sum(ap, sc, ia, es, ic, xyz, probs, mu_step_current);
+        nu_result = nu_sum(ap, sc, ia, ic, es, xyz, probs, mu_step_current);
 
         bg_prob_int.bg_int += nu_result.bg_int;
         bg_prob_int.correction += nu_result.correction;
     }
 
-    apply_correction(ap->number_streams, integral->stream_integrals, probs);
+    apply_correction(probs, integral->stream_integrals, ap->number_streams);
 
     integral->background_integral = bg_prob_int.bg_int + bg_prob_int.correction;
 }
