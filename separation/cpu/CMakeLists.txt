@@ -26,11 +26,11 @@ set(lib_source_file_list evaluation_state.c
                          parameters.c
                          star_points.c)
 
-add_library(milkyway_separation_cpu STATIC ${lib_source_file_list})
+add_library(separation_cpu STATIC ${lib_source_file_list})
 
-target_link_libraries(milkyway_separation_cpu ${BOINC_LIBRARIES} ${OS_SPECIFIC_LIBS} m)
+target_link_libraries(separation_cpu ${BOINC_LIBRARIES} ${OS_SPECIFIC_LIBS} m)
 
-install(TARGETS milkyway_separation_cpu DESTINATION lib
+install(TARGETS separation_cpu DESTINATION lib
        PERMISSIONS           #Fix occasional issuse with people who change their umask
        OWNER_READ OWNER_WRITE OWNER_EXECUTE
        GROUP_READ GROUP_EXECUTE
