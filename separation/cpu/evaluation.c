@@ -387,6 +387,8 @@ inline static void do_boinc_checkpoint(const ASTRONOMY_PARAMETERS* ap, EVALUATIO
 
 inline static void do_boinc_checkpoint(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
 {
+  #pragma unused(ap)
+  #pragma unused(es)
 }
 
 #endif /* BOINC_APPLICATION */
@@ -851,8 +853,9 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
     free_evaluation_state(&es);
     free_stream_gauss(&sg);
 
-    printf("Removing checkpoint\n");
+  #if BOINC_APPLICATION
     boinc_delete_file(CHECKPOINT_FILE);
+  #endif
 
     return likelihood_val;
 }
