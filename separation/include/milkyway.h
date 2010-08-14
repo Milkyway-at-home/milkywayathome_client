@@ -18,8 +18,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _MILKYWAY_AT_HOME_
-#define _MILKYWAY_AT_HOME_
+#ifndef _MILKYWAY_H_
+#define _MILKYWAY_H_
 
 
 #include <math.h>
@@ -85,6 +85,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define NODE_GC_COORDS (surveyCenterRa - 90.0)
 #define sun_r0 8.5
 
+#define CHECKPOINT_FILE "astronomy_checkpoint"
 
-#endif /* _MILKYWAY_AT_HOME_ */
+#endif /* _MILKYWAY_H_ */
 

@@ -22,7 +22,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _EVALUATION_H_
 #define _EVALUATION_H_
 
-#include "evaluation_state.h"
 #include "parameters.h"
 #include "star_points.h"
 
@@ -75,6 +74,13 @@ typedef struct
     double bg_int;
     double correction;   /* Correction for Kahan summation */
 } BG_PROB;
+
+#define CLEAR_BG_PROB(bgp) { (bgp).bg_int = 0.0; (bgp).correction = 0.0; }
+
+/* Add b to a */
+#define INCADD_BG_PROB(a, b) { (a).bg_int += (b).bg_int; (a).correction += (b).correction; }
+
+#define ZERO_BG_PROB { 0.0, 0.0 }
 
 typedef struct
 {

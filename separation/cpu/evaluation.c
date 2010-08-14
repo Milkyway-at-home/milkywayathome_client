@@ -24,6 +24,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway.h"
 #include "milkyway_priv.h"
 
+#include "evaluation.h"
+#include "evaluation_state.h"
+
 #define stdev 0.6
 #define xr (3.0 * stdev)
 #define absm 4.2
@@ -314,10 +317,7 @@ inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
     }
 }
 
-inline static double progress(const ASTRONOMY_PARAMETERS* ap,
-                              const EVALUATION_STATE* es,
-                              unsigned int mu_step_current,
-                              unsigned int nu_step_current)
+inline static double progress(const ASTRONOMY_PARAMETERS* ap, const EVALUATION_STATE* es)
 {
     unsigned int i;
     unsigned int current_calc_probs = 0;
@@ -333,45 +333,43 @@ inline static double progress(const ASTRONOMY_PARAMETERS* ap,
     ia = &ap->integral[es->current_integral];
 
     /* When checkpointing is done, ia->r_step would always be 0 */
-    current_calc_probs +=   (mu_step_current * ia->nu_steps * ia->r_steps)
-                          + (nu_step_current * ia->r_steps); /* + ia->r_step */
+    current_calc_probs +=   (es->mu_step * ia->nu_steps * ia->r_steps)
+                          + (es->nu_step * ia->r_steps); /* + es->r_step */
 
     return (double)current_calc_probs / ap->total_calc_probs;
 }
 
+static unsigned int checks = 0;
+
 #if BOINC_APPLICATION
-inline static void do_boinc_checkpoint(const ASTRONOMY_PARAMETERS* ap,
-                                       EVALUATION_STATE* es,
-                                       unsigned int mu_step_current,
-                                       unsigned int nu_step_current)
+inline static void do_boinc_checkpoint(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
 {
     double frac;
 
-    if (boinc_time_to_checkpoint())
-    {
-        /* FIXME: Make checkpointing make more sense, then we won't need this */
-        es->integrals[es->current_integral].mu_step = mu_step_current;
-        es->integrals[es->current_integral].nu_step = nu_step_current;
+    static unsigned int i = 0;
 
-        int retval = write_checkpoint(es);
-        if (retval)
+
+    i = (i + 1) % 1000;
+
+    //if (boinc_time_to_checkpoint())
+    if ( i == 100 )
+    {
+        ++checks;
+        if (write_checkpoint(es))
         {
-            fprintf(stderr, "APP: astronomy checkpoint failed %d\n", retval);
+            fprintf(stderr, "APP: write checkpoint failed\n");
             return;
         }
         boinc_checkpoint_completed();
     }
 
-    frac = progress(ap, es, mu_step_current, nu_step_current);
+    frac = progress(ap, es);
     boinc_fraction_done(frac);
 }
 
 #else
 
-inline static void do_boinc_checkpoint(const ASTRONOMY_PARAMETERS* ap,
-                                       EVALUATION_STATE* es,
-                                       unsigned int mu_step_current,
-                                       unsigned int nu_step_current)
+inline static void do_boinc_checkpoint(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
 {
 }
 
@@ -497,7 +495,7 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
     unsigned int r_step_current;
     double V, tmp;
     double bg_prob;
-    BG_PROB bg_prob_int = { 0.0, 0.0 }; /* for Kahan summation */
+    BG_PROB bg_prob_int = ZERO_BG_PROB; /* for Kahan summation */
 
     const unsigned int n_streams = ap->number_streams;
 
@@ -530,41 +528,29 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
     return bg_prob_int;
 }
 
-inline static void calculate_stream_integrals(const ST_PROBS* probs,
-                                              double* stream_integrals,
-                                              const unsigned int number_streams)
+inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
+                          const STREAM_CONSTANTS* sc,
+                          const INTEGRAL_AREA* ia,
+                          const INTEGRAL_CONSTANTS* ic,
+                          EVALUATION_STATE* es,
+                          vector* xyz,
+                          ST_PROBS* probs,
+                          const unsigned int mu_step_current)
 {
-    unsigned int i;
-    for (i = 0; i < number_streams; i++)
-        stream_integrals[i] = probs[i].st_prob_int + probs[i].st_prob_int_c;
-}
-
-inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
-                             const STREAM_CONSTANTS* sc,
-                             const INTEGRAL_AREA* ia,
-                             const INTEGRAL_CONSTANTS* ic,
-                             EVALUATION_STATE* es,
-                             vector* xyz,
-                             ST_PROBS* probs,
-                             const unsigned int mu_step_current)
-{
-    unsigned int nu_step_current;
     vector integral_point;
     BG_PROB r_result;
-    BG_PROB bg_prob_int = { 0.0, 0.0 };
 
     const double mu = ia->mu_min + (mu_step_current * ia->mu_step_size);
     const unsigned int nu_steps = ia->nu_steps;
     const unsigned int r_steps = ia->r_steps;
 
-    for (nu_step_current = 0; nu_step_current < nu_steps; ++nu_step_current)
+    for ( ; es->nu_step < nu_steps; es->nu_step++)
     {
-        /* CHECKME: background_probability save for checkpointing? */
-        do_boinc_checkpoint(ap, es, mu_step_current, nu_step_current);
+        do_boinc_checkpoint(ap, es);
 
         ap->sgr_conversion(ap->wedge,
                            mu + 0.5 * ia->mu_step_size,
-                           ic->nu_st[nu_step_current].nu,
+                           ic->nu_st[es->nu_step].nu,
                            &L(integral_point),
                            &B(integral_point));
 
@@ -575,13 +561,12 @@ inline static BG_PROB nu_sum(const ASTRONOMY_PARAMETERS* ap,
                          xyz,
                          probs,
                          integral_point,
-                         nu_step_current);
+                         es->nu_step);
 
-        bg_prob_int.bg_int += r_result.bg_int;
-        bg_prob_int.correction += r_result.correction;
+        INCADD_BG_PROB(es->nu_acc, r_result);
     }
 
-    return bg_prob_int;
+    es->nu_step = 0;
 }
 
 inline static void init_st_probs(ST_PROBS* probs,
@@ -606,21 +591,18 @@ static double integrate(const ASTRONOMY_PARAMETERS* ap,
                         EVALUATION_STATE* es,
                         ST_PROBS* probs)
 {
-    unsigned int mu_step_current;
-    BG_PROB nu_result;
-    BG_PROB bg_prob_int = { 0.0, 0.0 };
-
     const unsigned int mu_steps = ia->mu_steps;
 
-    for (mu_step_current = 0; mu_step_current < mu_steps; mu_step_current++)
+    for ( ; es->mu_step < mu_steps; es->mu_step++)
     {
-        nu_result = nu_sum(ap, sc, ia, ic, es, xyz, probs, mu_step_current);
-
-        bg_prob_int.bg_int += nu_result.bg_int;
-        bg_prob_int.correction += nu_result.correction;
+        nu_sum(ap, sc, ia, ic, es, xyz, probs, es->mu_step);
+        INCADD_BG_PROB(es->mu_acc, es->nu_acc);
+        CLEAR_BG_PROB(es->nu_acc)
     }
 
-    return bg_prob_int.bg_int + bg_prob_int.correction;
+    es->mu_step = 0;
+
+    return es->mu_acc.bg_int + es->mu_acc.correction;
 }
 
 static void print_stream_integrals(EVALUATION_STATE* es, const unsigned int number_streams)
@@ -652,6 +634,16 @@ static void final_stream_integrals(EVALUATION_STATE* es,
 
 }
 
+inline static void calculate_stream_integrals(const ST_PROBS* probs,
+                                              double* stream_integrals,
+                                              const unsigned int number_streams)
+{
+    unsigned int i;
+
+    for (i = 0; i < number_streams; ++i)
+        stream_integrals[i] = probs[i].st_prob_int + probs[i].st_prob_int_c;
+}
+
 static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                                 const STREAM_CONSTANTS* sc,
                                 const STREAM_GAUSS* sg,
@@ -662,10 +654,6 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
     INTEGRAL_CONSTANTS ic;
     INTEGRAL* integral;
     INTEGRAL_AREA* ia;
-
-  #if BOINC_APPLICATION
-    read_checkpoint(es);
-  #endif
 
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
     {
@@ -679,13 +667,8 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         calculate_stream_integrals(probs, integral->stream_integrals, ap->number_streams);
 
         free_integral_constants(&ic);
+        CLEAR_BG_PROB(es->mu_acc);
     }
-
-    /* Final checkpoint */
-    do_boinc_checkpoint(ap, es, 0, 0);
-
-    final_stream_integrals(es, ap->number_streams, ap->number_integrals);
-    print_stream_integrals(es, ap->number_streams);
 }
 
 /* Used in likelihood calculation */
@@ -866,10 +849,33 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
     initialize_state(ap, &es);
     get_stream_gauss(ap->convolve, &sg);
 
+#if BOINC_APPLICATION
+    if (boinc_file_exists(CHECKPOINT_FILE))
+    {
+        fprintf(stderr, "Checkpoint exists. Attempting to resume from it\n");
+
+        if (read_checkpoint(&es))
+        {
+            fprintf(stderr, "Reading checkpoint failed\n");
+            boinc_delete_file(CHECKPOINT_FILE);
+            mw_finish(EXIT_FAILURE);
+        }
+    }
+#endif
+
     vector* xyz = malloc(sizeof(vector) * ap->convolve);
     ST_PROBS* probs = (ST_PROBS*) malloc(sizeof(ST_PROBS) * ap->number_streams);
 
     calculate_integrals(ap, sc, &sg, &es, probs, xyz);
+
+    /* FIXME: Force a checkpoint, don't wait for time. */
+    /* Final checkpoint */
+    do_boinc_checkpoint(ap, &es);
+
+    printf("CHECKS: %u\n", checks);
+
+    final_stream_integrals(&es, ap->number_streams, ap->number_integrals);
+    print_stream_integrals(&es, ap->number_streams);
 
     likelihood_val = likelihood(ap, sc, streams, &es, &sg, xyz, sp);
 
@@ -877,6 +883,9 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
     free(probs);
     free_evaluation_state(&es);
     free_stream_gauss(&sg);
+
+    printf("Removing checkpoint\n");
+    boinc_delete_file(CHECKPOINT_FILE);
 
     return likelihood_val;
 }

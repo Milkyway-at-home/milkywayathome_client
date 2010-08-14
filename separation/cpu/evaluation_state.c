@@ -19,20 +19,14 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define CHECKPOINT_FILE "astronomy_checkpoint"
-
 #include "milkyway.h"
 #include "milkyway_priv.h"
 
+#include "evaluation_state.h"
 
 void initialize_integral(INTEGRAL* integral, unsigned int number_streams)
 {
-    integral->mu_step = 0;
-    integral->nu_step = 0;
-    integral->r_step = 0;
-
-    integral->number_streams = number_streams;
-    integral->background_integral = 0;
+    integral->background_integral = 0.0;
     integral->stream_integrals = calloc(number_streams, sizeof(double));
 }
 
@@ -70,140 +64,124 @@ void free_evaluation_state(EVALUATION_STATE* es)
 }
 
 #if BOINC_APPLICATION
-static void fwrite_integral_area(FILE* file, INTEGRAL* ia)
+
+void print_evaluation_state(const EVALUATION_STATE* es)
 {
-    fprintf(file,
-            "mu[min,max,steps]: %.3lf, %.3lf, %d\n",
-            ia->mu_min,
-            ia->mu_max,
-            ia->mu_steps);
+    INTEGRAL* i;
+    unsigned int j;
 
-    fprintf(file,
-            "nu[min,max,steps]: %.3lf, %.3lf, %d\n",
-            ia->nu_min,
-            ia->nu_max,
-            ia->nu_steps);
+    printf("evaluation-state {\n"
+           "  mu_step          = %u\n"
+           "  nu_step          = %u\n"
+           "  current_integral = %u\n"
+           "  mu_acc           = { %.20g, %.20g }\n"
+           "  nu_acc           = { %.20g, %.20g }\n",
+           es->mu_step,
+           es->nu_step,
+           es->current_integral,
+           es->mu_acc.bg_int,
+           es->mu_acc.correction,
+           es->nu_acc.bg_int,
+           es->nu_acc.correction);
 
-    fprintf(file,
-            " r[min,max,steps]: %.3lf, %.3lf, %d\n",
-            ia->r_min,
-            ia->r_max,
-            ia->r_steps);
-
-    fprintf(file,
-            "mu_step: %d, nu_step: %d, r_step: %d\n",
-	    ia->mu_step,
-	    ia->nu_step,
-	    ia->r_step);
-
-    fprintf(file,
-            "background_integral: %.20lf\n",
-            ia->background_integral);
-
-    fwrite_double_array(file,
-                        "stream_integrals",
-                        ia->stream_integrals,
-                        ia->number_streams);
-}
-
-static void fread_integral_area(FILE* file, INTEGRAL* ia)
-{
-    unsigned int i;
-
-    fscanf(file, "mu[min,max,steps]: %lf, %lf, %d\n", &ia->mu_min, &ia->mu_max, &ia->mu_steps);
-    fscanf(file, "nu[min,max,steps]: %lf, %lf, %d\n", &ia->nu_min, &ia->nu_max, &ia->nu_steps);
-    fscanf(file, " r[min,max,steps]: %lf, %lf, %d\n", &ia->r_min, &ia->r_max, &ia->r_steps);
-
-    ia->mu_step_size = (ia->mu_max - ia->mu_min) / ia->mu_steps;
-    ia->nu_step_size = (ia->nu_max - ia->nu_min) / ia->nu_steps;
-    ia->r_step_size = (ia->r_max - ia->r_min) / ia->r_steps;
-
-
-    fscanf(file, "mu_step: %d, nu_step: %d, r_step: %d\n", &(ia->mu_step), &(ia->nu_step), &(ia->r_step));
-
-    fscanf(file, "background_integral: %lf\n", &ia->background_integral);
-    fscanf(file, "stream_integrals[%d]: ", &ia->number_streams);
-
-    for (i = 0; i < ia->number_streams; i++)
+    for (i = es->integrals; i < es->integrals + es->number_integrals; ++i)
     {
-        fscanf(file, "%lf", &ia->stream_integrals[i]);
-        if (i != ia->number_streams - 1)
-            fscanf(file, ", ");
+        printf("integral: background_integral = %g\n", i->background_integral);
+        for (j = 0; j < es->number_streams; ++j)
+        {
+            printf("  %g, ", i->stream_integrals[j]);
+        }
+        printf("\n");
     }
+    printf("\n");
 }
+
+static const char checkpoint_header[] = "separation_checkpoint";
+static const char checkpoint_tail[] = "end_checkpoint";
 
 int read_checkpoint(EVALUATION_STATE* es)
 {
-    unsigned int i;
+    INTEGRAL* i;
     char input_path[512];
-    int retval = boinc_resolve_filename(CHECKPOINT_FILE, input_path, sizeof(input_path));
-    if (retval)
-        return 0;
+    char str_buf[sizeof(checkpoint_tail)];
 
-    FILE* file = boinc_fopen(input_path, "r");
-    if (file == NULL)
-        return 0;
-
-    if (1 > fscanf(file, "background_integral: %lf\n", &es->background_integral))
+    if (boinc_resolve_filename(CHECKPOINT_FILE, input_path, sizeof(input_path)))
         return 1;
 
-    es->stream_integrals = fread_double_array(file, "stream_integrals", &es->number_streams);
+    FILE* f = boinc_fopen(input_path, "r");
+    if (!f)
+        return 1;
 
-    fscanf(file, "prob_sum: %lf, num_zero: %d, bad_jacobians: %d\n",
-           &es->prob_sum, &es->num_zero, &es->bad_jacobians);
-    fscanf(file, "current_star_point: %d\n", &es->current_star_point);
-    fscanf(file, "current_integral: %d\n", &es->current_integral);
-    fscanf(file, "number_integrals: %d\n", &es->number_integrals);
+    fread(str_buf, sizeof(checkpoint_header), 1, f);
+    if (strcmp(str_buf, checkpoint_header))
+    {
+        fprintf(stderr, "Failed to find header in checkpoint file\n");
+        return 1;
+    }
 
-    for (i = 0; i < es->number_integrals; i++)
-        fread_integral_area(file, &es->integrals[i]);
+    fread(&es->current_integral, sizeof(es->current_integral), 1, f);
+    fread(&es->mu_step, sizeof(es->mu_step), 1, f);
+    fread(&es->nu_step, sizeof(es->nu_step), 1, f);
+    fread(&es->mu_acc, sizeof(es->mu_acc), 1, f);
+    fread(&es->nu_acc, sizeof(es->nu_acc), 1, f);
 
-    fclose(file);
+    for (i = es->integrals; i < es->integrals + es->number_integrals; ++i)
+    {
+        fread(&i->background_integral, sizeof(i->background_integral), 1, f);
+        fread(i->stream_integrals, sizeof(double), es->number_streams, f);
+    }
+
+    fread(str_buf, sizeof(checkpoint_tail), 1, f);
+    if (strcmp(str_buf, checkpoint_tail))
+    {
+        fprintf(stderr, "Failed to find tail in checkpoint file\n");
+        return 1;
+    }
+
+
+    fclose(f);
+
+    printf("Read evaluation state:\n");
+    print_evaluation_state(es);
+
     return 0;
 }
 
-int write_checkpoint(EVALUATION_STATE* es)
+int write_checkpoint(const EVALUATION_STATE* es)
 {
-    int retval;
-    unsigned int i;
+    INTEGRAL* i;
     char output_path[512];
-    FILE* file;
+    FILE* f;
+
+    printf("Writing checkpoint\n");
+    print_evaluation_state(es);
 
     boinc_resolve_filename(CHECKPOINT_FILE, output_path, sizeof(output_path));
 
-    file = boinc_fopen(output_path, "w+");
-    if (!file)
+    f = boinc_fopen(output_path, "wb");
+    if (!f)
     {
         fprintf(stderr, "APP: error writing checkpoint (opening checkpoint file)\n");
         return 1;
     }
 
-    fprintf(file, "background_integral: %.20lf\n", es->background_integral);
-    fprintf(file, "stream_integrals[%d]: ", es->number_streams);
+    fwrite(checkpoint_header, sizeof(checkpoint_header), 1, f);
 
-    for (i = 0; i < es->number_streams; i++)
+    fwrite(&es->current_integral, sizeof(es->current_integral), 1, f);
+    fwrite(&es->mu_step, sizeof(es->mu_step), 1, f);
+    fwrite(&es->nu_step, sizeof(es->nu_step), 1, f);
+    fwrite(&es->mu_acc, sizeof(es->mu_acc), 1, f);
+    fwrite(&es->nu_acc, sizeof(es->nu_acc), 1, f);
+
+    for (i = es->integrals; i < es->integrals + es->number_integrals; ++i)
     {
-        fprintf(file, "%.20lf", es->stream_integrals[i]);
-        if (i != (es->number_streams - 1))
-            fprintf(file, ", ");
-    }
-    fprintf(file, "\n");
-
-    fprintf(file, "prob_sum: %.20lf, num_zero: %d, bad_jacobians: %d\n", es->prob_sum, es->num_zero, es->bad_jacobians);
-    fprintf(file, "current_star_point: %d\n", es->current_star_point);
-    fprintf(file, "current_integral: %d\n", es->current_integral);
-    fprintf(file, "number_integrals: %d\n", es->number_integrals);
-
-    for (i = 0; i < es->number_integrals; i++)
-    {
-        fwrite_integral_area(file, &es->integrals[i]);
+        fwrite(&i->background_integral, sizeof(i->background_integral), 1, f);
+        fwrite(i->stream_integrals, sizeof(double), es->number_streams, f);
     }
 
-    if ((retval = fclose(file)))
-    {
-        fprintf(stderr, "APP: error writing checkpoint (closing checkpoint file) %d\n", retval);
-        return retval;
-    }
+    fwrite(checkpoint_tail, sizeof(checkpoint_tail), 1, f);
+
+    fclose(f);
 
     return 0;
 }

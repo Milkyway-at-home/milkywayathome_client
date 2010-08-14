@@ -36,7 +36,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
     #define MW_DEBUG(msg, ...) printf("%s():%d: ", __func__, __LINE__);\
                                  printf(msg, __VA_ARGS__);
     #define MW_DEBUGMSG(msg) puts(msg)
-
 #else
     #define MW_DEBUG(msg, ...) ((void) 0)
     #define MW_DEBUGMSG(msg, ...) ((void) 0)

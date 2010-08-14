@@ -25,10 +25,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include "coordinates.h"
 
+/* Completed integral state */
 typedef struct
 {
-    unsigned int mu_step, nu_step, r_step;
-    unsigned int number_streams;
     double background_integral;
     double* stream_integrals;
 } INTEGRAL;
