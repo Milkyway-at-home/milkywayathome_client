@@ -90,6 +90,7 @@ typedef struct
 typedef struct
 {
     double parameters_version;
+    double total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
 
     unsigned int number_background_parameters;
     double background_weight;
@@ -109,13 +110,12 @@ typedef struct
     /* Constants determined by other parameters */
     double alpha, q, sn, r0, delta, coeff, alpha_delta3;
     double bg_a, bg_b, bg_c;
-
 } ASTRONOMY_PARAMETERS;
 
 
-#define EMPTY_ASTRONOMY_PARAMETERS { 0.0,     \
-                                     0, 0.0,  \
-                                     0, 0,    \
+#define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0.0, \
+                                     0, 0.0,   \
+                                     0, 0,     \
                                      0, NULL, 0, 0, 0, NULL, \
                                      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
                                      0.0, 0.0, 0.0}

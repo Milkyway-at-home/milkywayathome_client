@@ -320,31 +320,23 @@ inline static double progress(const ASTRONOMY_PARAMETERS* ap,
                               unsigned int nu_step_current)
 {
     unsigned int i;
+    unsigned int current_calc_probs = 0;
     const INTEGRAL_AREA* ia;
 
-    unsigned int current_probs;
-    unsigned int total_calc_probs = 0;
-    unsigned int current_calc_probs = 0;
-
-    for (i = 0; i < es->number_integrals; i++)
+    /* Add up completed integrals */
+    for (i = 0; i < es->current_integral; i++)
     {
         ia = &ap->integral[i];
-
-        current_probs = ia->r_steps * ia->mu_steps * ia->nu_steps;
-        total_calc_probs += current_probs;
-        if (i < es->current_integral)
-        {
-            current_calc_probs += current_probs;
-        }
-        else if (i == es->current_integral)
-        {
-            /* When checkpointing is done, ia->r_step would always be 0 */
-            current_calc_probs +=   (mu_step_current * ia->nu_steps * ia->r_steps)
-                                  + (nu_step_current * ia->r_steps); /* + ia->r_step */
-        }
+        current_calc_probs += ia->r_steps * ia->mu_steps * ia->nu_steps;
     }
 
-    return (double)current_calc_probs / (double)total_calc_probs;
+    ia = &ap->integral[es->current_integral];
+
+    /* When checkpointing is done, ia->r_step would always be 0 */
+    current_calc_probs +=   (mu_step_current * ia->nu_steps * ia->r_steps)
+                          + (nu_step_current * ia->r_steps); /* + ia->r_step */
+
+    return (double)current_calc_probs / ap->total_calc_probs;
 }
 
 #if BOINC_APPLICATION

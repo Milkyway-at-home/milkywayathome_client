@@ -229,6 +229,17 @@ void fread_parameters(FILE* file,
             calc_integral_step_sizes(&ap->integral[i]);
         }
     }
+
+    /* Calculate total probability calculations for checkpointing */
+
+    unsigned int total_calc_probs = 0;
+    for (i = 0; i < ap->number_integrals; ++i)
+    {
+        const INTEGRAL_AREA* ia = &ap->integral[i];
+        total_calc_probs += ia->mu_steps * ia->nu_steps * ia->r_steps;
+    }
+
+    ap->total_calc_probs = (double) total_calc_probs;
 }
 
 void fwrite_parameters(FILE* file,
