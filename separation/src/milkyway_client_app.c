@@ -272,7 +272,7 @@ static void worker(int argc, const char** argv)
     free_background_parameters(&bgp);
 
 #if COMPUTE_ON_CPU
-    likelihood = cpu_evaluate(&ap, &sp, &streams, sc);
+    likelihood = evaluate(&ap, &sp, &streams, sc);
 #elif USE_CUDA
     likelihood = cuda_evaluate(&ap, &sp, sc);
 #elif USE_OCL

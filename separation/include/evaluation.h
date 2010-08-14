@@ -68,10 +68,10 @@ typedef struct
         correction +=  item - (sum - _tmp);                             \
     }
 
-double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
-                    const STAR_POINTS* sp,
-                    const STREAMS* streams,
-                    const STREAM_CONSTANTS* sc);
+double evaluate(const ASTRONOMY_PARAMETERS* ap,
+                const STAR_POINTS* sp,
+                const STREAMS* streams,
+                const STREAM_CONSTANTS* sc);
 
 #endif /* _EVALUATION_H_ */
 

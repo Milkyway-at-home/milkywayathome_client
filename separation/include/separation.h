@@ -36,6 +36,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "numerical_integration.h"
 #include "../util/io_util.h"
 #include "coordinates.h"
+#include "integrals_likelihood.h"
 
 
 #if BOINC_APPLICATION

@@ -25,11 +25,15 @@ set(lib_source_file_list evaluation_state.c
                          evaluation.c
                          parameters.c
                          star_points.c
+                         integrals_likelihood.c
                          integral_constants.c)
 
 add_library(separation_cpu STATIC ${lib_source_file_list})
 
-target_link_libraries(separation_cpu ${BOINC_LIBRARIES} ${OS_SPECIFIC_LIBS} m)
+include_directories(${OPENCL_INCLUDE_DIRS})
+
+
+target_link_libraries(separation_cpu ${BOINC_LIBRARIES} ${OS_SPECIFIC_LIBS} m ${OPENCL_LIBRARIES})
 
 install(TARGETS separation_cpu DESTINATION lib
        PERMISSIONS           #Fix occasional issuse with people who change their umask
