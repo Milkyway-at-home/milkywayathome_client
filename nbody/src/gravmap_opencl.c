@@ -32,6 +32,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "show_cl_types.h"
 //#include "ckernels/cl_nbody_types.h"
 
+#define BUFSIZE 4096
+
 inline static void destroyNBodyCLInfo(NBodyCLInfo* ci)
 {
     cl_int err = CL_SUCCESS;
@@ -125,6 +127,75 @@ static int createBuffers(NBodyCLInfo* ci,
     return 0;
 }
 
+static cl_int buildProgram(const NBodyCtx* ctx, NBodyCLInfo* ci)
+{
+    cl_int err;
+    char* compileDefinitions;
+    char buildLog[BUFSIZE] = "";
+    cl_int infoErr;
+    cl_build_status stat;
+    size_t failSize;
+
+    asprintf(&compileDefinitions,
+             "-I/Users/matt/src/milkywayathome_client/nbody/include "
+             "-DNBODY_OPENCL=1 "
+             "-DDOUBLEPREC=0 "
+             "-DSPHERICALTYPE=%d -DDISKTYPE=%d -DHALOTYPE=%d ",
+             ctx->pot.sphere[0].type,
+             ctx->pot.disk.type,
+             ctx->pot.halo.type);
+
+    err = clBuildProgram(ci->prog,
+                         1,
+                         &ci->dev,
+                         compileDefinitions,
+                         NULL,
+                         NULL);
+
+    free(compileDefinitions);
+
+    if (err == CL_SUCCESS)
+        return CL_SUCCESS;
+
+    infoErr = clGetProgramBuildInfo(ci->prog,
+                                    ci->dev,
+                                    CL_PROGRAM_BUILD_STATUS,
+                                    sizeof(stat),
+                                    &stat,
+                                    NULL);
+
+    if (infoErr != CL_SUCCESS)
+        warn("Get build status failed: %s\n", showCLInt(infoErr));
+    else
+        printf("Build status: %s\n", showCLBuildStatus(stat));
+
+    clGetProgramBuildInfo(ci->prog,
+                          ci->dev,
+                          CL_PROGRAM_BUILD_LOG,
+                          sizeof(buildLog),
+                          buildLog,
+                          &failSize);
+
+    if (failSize > BUFSIZE)
+    {
+        char* bigBuf = callocSafe(sizeof(char), failSize + 1);
+
+        clGetProgramBuildInfo(ci->prog,
+                              ci->dev,
+                              CL_PROGRAM_BUILD_LOG,
+                              failSize,
+                              bigBuf,
+                              NULL);
+
+        printf("Large build message: \n%s\n", bigBuf);
+        free(bigBuf);
+    }
+
+    warn("Build failure: %s: log = %s\n", showCLInt(err), buildLog);
+
+    return err;
+}
+
 /* Query one device specified by type, create a context, command
  * queue, and compile the kernel for it
  * Returns: non-zero on failure
@@ -136,7 +207,6 @@ static int getCLInfo(NBodyCLInfo* ci, NBodyCtx* ctx, cl_device_type type)
     cl_int err;
     cl_uint maxComputeUnits, clockFreq;
     cl_ulong memSize;
-    char* compileDefinitions;
 
     err = clGetDeviceIDs(NULL, type, 1, &ci->dev, &ci->devCount);
     if (err != CL_SUCCESS)
@@ -182,64 +252,10 @@ static int getCLInfo(NBodyCLInfo* ci, NBodyCtx* ctx, cl_device_type type)
         return 1;
     }
 
-    asprintf(&compileDefinitions,
-             "-I/Users/matt/src/milkywayathome_client/nbody/include "
-             "-DNBODY_OPENCL=1 "
-             "-DDOUBLEPREC=0 "
-             "-DSPHERICALTYPE=%d -DDISKTYPE=%d -DHALOTYPE=%d ",
-             ctx->pot.sphere[0].type,
-             ctx->pot.disk.type,
-             ctx->pot.halo.type);
-
-    err = clBuildProgram(ci->prog,
-                         1,
-                         &ci->dev,
-                         compileDefinitions,
-                         NULL,
-                         NULL);
-    free(compileDefinitions);
+    err = buildProgram(ctx, ci);
     if (err != CL_SUCCESS)
     {
-        char buildLog[BUFSIZE] = "";
-        cl_int infoErr;
-        cl_build_status stat;
-        size_t failSize;
-
-        infoErr = clGetProgramBuildInfo(ci->prog,
-                                        ci->dev,
-                                        CL_PROGRAM_BUILD_STATUS,
-                                        sizeof(stat),
-                                        &stat,
-                                        NULL);
-
-        if (infoErr != CL_SUCCESS)
-            warn("Get build status failed: %s\n", showCLInt(infoErr));
-        else
-            printf("Build status: %s\n", showCLBuildStatus(stat));
-
-        clGetProgramBuildInfo(ci->prog,
-                              ci->dev,
-                              CL_PROGRAM_BUILD_LOG,
-                              sizeof(buildLog),
-                              buildLog,
-                              &failSize);
-
-        if (failSize > BUFSIZE)
-        {
-            char* bigBuf = callocSafe(sizeof(char), failSize + 1);
-
-            clGetProgramBuildInfo(ci->prog,
-                                  ci->dev,
-                                  CL_PROGRAM_BUILD_LOG,
-                                  failSize,
-                                  bigBuf,
-                                  NULL);
-
-            printf("Large build message: \n%s\n", bigBuf);
-            free(bigBuf);
-        }
-
-        warn("Build failure: %s: log = %s\n", showCLInt(err), buildLog);
+        warn("Error creating kernel: %s\n", showCLInt(err));
         return 1;
     }
 
