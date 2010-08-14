@@ -328,7 +328,7 @@ inline static void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
                                             const R_POINTS* rss,
                                             const double reff_xr_rp3,
                                             vector* const xyz,
-                                            ST_PROBS* probs)
+                                            double* probs)
 {
     unsigned int i;
 
@@ -336,11 +336,11 @@ inline static void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
     {
         if (sc[i].stream_sigma > -0.0001 && sc[i].stream_sigma < 0.0001)
         {
-            probs[i].st_prob = 0.0;
+            probs[i] = 0.0;
             continue;
         }
 
-        probs[i].st_prob = reff_xr_rp3 * probabilities_convolve(&sc[i], rss, ap->convolve, xyz);
+        probs[i] = reff_xr_rp3 * probabilities_convolve(&sc[i], rss, ap->convolve, xyz);
     }
 }
 
@@ -683,7 +683,7 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
 /* Used in likelihood calculation */
 inline static double stream_sum(const unsigned int number_streams,
                                 EVALUATION_STATE* es,
-                                ST_PROBS* st_prob,
+                                double* st_prob,
                                 ST_SUM* st_sum,
                                 const double* exp_stream_weights,
                                 const double sum_exp_weights,
@@ -695,7 +695,7 @@ inline static double stream_sum(const unsigned int number_streams,
 
     for (current_stream = 0; current_stream < number_streams; current_stream++)
     {
-        st_only = st_prob[current_stream].st_prob / es->stream_integrals[current_stream] * exp_stream_weights[current_stream];
+        st_only = st_prob[current_stream] / es->stream_integrals[current_stream] * exp_stream_weights[current_stream];
         star_prob += st_only;
 
         if (st_only == 0.0)
@@ -764,8 +764,8 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
     unsigned int num_zero = 0;
     unsigned int bad_jacobians = 0;
 
-    /* The correction terms aren't used here since this isn't the sum? */
-    ST_PROBS* st_prob = (ST_PROBS*) malloc(sizeof(ST_PROBS) * streams->number_streams);
+    double* st_prob = malloc(sizeof(double) * streams->number_streams);
+
     R_POINTS* rss = malloc(sizeof(R_POINTS) * ap->convolve);
     ST_SUM* st_sum = calloc(sizeof(ST_SUM), streams->number_streams);
 
