@@ -35,7 +35,6 @@ typedef struct
 
 typedef struct
 {
-    double st_prob;
     double st_prob_int;    /* for kahan summation */
     double st_prob_int_c;
 } ST_PROBS;

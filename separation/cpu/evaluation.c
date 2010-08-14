@@ -304,22 +304,21 @@ inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
                                  ST_PROBS* probs)
 {
     unsigned int i;
-    double tmp;
+    double tmp, st_prob;
 
-    for (i = 0; i < ap->number_streams; i++)
+    for (i = 0; i < ap->number_streams; ++i)
     {
         if (sc[i].stream_sigma > -0.0001 && sc[i].stream_sigma < 0.0001)
         {
-            probs[i].st_prob = 0.0;
+            st_prob = 0.0;
             continue;
         }
 
-        probs[i].st_prob = reff_xr_rp3 * probabilities_convolve(&sc[i], rss, ap->convolve, xyz);
+        st_prob = V * reff_xr_rp3 * probabilities_convolve(&sc[i], rss, ap->convolve, xyz);
 
-        probs[i].st_prob *= V;
         tmp = probs[i].st_prob_int;
-        probs[i].st_prob_int += probs[i].st_prob;
-        probs[i].st_prob_int_c += probs[i].st_prob - (probs[i].st_prob_int - tmp);
+        probs[i].st_prob_int += st_prob;
+        probs[i].st_prob_int_c += st_prob - (probs[i].st_prob_int - tmp);
     }
 }
 
@@ -585,7 +584,6 @@ inline static void init_st_probs(ST_PROBS* probs,
     unsigned int i;
     for (i = 0; i < n_streams; i++)
     {
-        probs[i].st_prob = 0.0;
         probs[i].st_prob_int = stream_integrals[i];
         probs[i].st_prob_int_c = 0.0;
     }
