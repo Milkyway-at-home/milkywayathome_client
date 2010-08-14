@@ -28,6 +28,7 @@ void initialize_integral(INTEGRAL* integral, unsigned int number_streams)
 {
     integral->background_integral = 0.0;
     integral->stream_integrals = calloc(number_streams, sizeof(double));
+    integral->probs = calloc(number_streams, sizeof(ST_PROBS));
 }
 
 void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
@@ -50,6 +51,7 @@ void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
 void free_integral(INTEGRAL* i)
 {
     free(i->stream_integrals);
+    free(i->probs);
 }
 
 void free_evaluation_state(EVALUATION_STATE* es)
@@ -87,10 +89,12 @@ void print_evaluation_state(const EVALUATION_STATE* es)
     for (i = es->integrals; i < es->integrals + es->number_integrals; ++i)
     {
         printf("integral: background_integral = %g\n", i->background_integral);
+        printf("Stream integrals = ");
         for (j = 0; j < es->number_streams; ++j)
-        {
             printf("  %g, ", i->stream_integrals[j]);
-        }
+        printf("Probs = ");
+        for (j = 0; j < es->number_streams; ++j)
+            printf(" { %g, %g },", i->probs[j].st_prob_int, i->probs[j].st_prob_int_c);
         printf("\n");
     }
     printf("\n");
@@ -129,6 +133,7 @@ int read_checkpoint(EVALUATION_STATE* es)
     {
         fread(&i->background_integral, sizeof(i->background_integral), 1, f);
         fread(i->stream_integrals, sizeof(double), es->number_streams, f);
+        fread(i->probs, sizeof(ST_PROBS), es->number_streams, f);
     }
 
     fread(str_buf, sizeof(checkpoint_tail), 1, f);
@@ -141,9 +146,6 @@ int read_checkpoint(EVALUATION_STATE* es)
 
     fclose(f);
 
-    printf("Read evaluation state:\n");
-    print_evaluation_state(es);
-
     return 0;
 }
 
@@ -152,9 +154,7 @@ int write_checkpoint(const EVALUATION_STATE* es)
     INTEGRAL* i;
     char output_path[512];
     FILE* f;
-
-    printf("Writing checkpoint\n");
-    print_evaluation_state(es);
+    const INTEGRAL* endi = es->integrals + es->number_integrals;
 
     boinc_resolve_filename(CHECKPOINT_FILE, output_path, sizeof(output_path));
 
@@ -173,10 +173,11 @@ int write_checkpoint(const EVALUATION_STATE* es)
     fwrite(&es->mu_acc, sizeof(es->mu_acc), 1, f);
     fwrite(&es->nu_acc, sizeof(es->nu_acc), 1, f);
 
-    for (i = es->integrals; i < es->integrals + es->number_integrals; ++i)
+    for (i = es->integrals; i < endi; ++i)
     {
         fwrite(&i->background_integral, sizeof(i->background_integral), 1, f);
         fwrite(i->stream_integrals, sizeof(double), es->number_streams, f);
+        fwrite(i->probs, sizeof(ST_PROBS), es->number_streams, f);
     }
 
     fwrite(checkpoint_tail, sizeof(checkpoint_tail), 1, f);

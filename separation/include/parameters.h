@@ -25,13 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include "coordinates.h"
 
-/* Completed integral state */
-typedef struct
-{
-    double background_integral;
-    double* stream_integrals;
-} INTEGRAL;
-
 typedef struct
 {
     double r_min, r_max, r_step_size;

@@ -28,6 +28,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "star_points.h"
 #include "evaluation.h"
 
+/* Completed integral state */
+typedef struct
+{
+    double background_integral;
+    double* stream_integrals;
+    ST_PROBS* probs;
+} INTEGRAL;
+
 typedef struct
 {
     /* State for integral calculation. */
