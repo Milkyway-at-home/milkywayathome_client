@@ -295,6 +295,8 @@ inline static double probabilities_convolve(const STREAM_CONSTANTS* sc,
     return st_prob;
 }
 
+#define SIGMA_LIMIT 0.0001
+
 inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
                                  const STREAM_CONSTANTS* sc,
                                  const R_POINTS* rss,
@@ -309,7 +311,7 @@ inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
     for (i = 0; i < ap->number_streams; ++i)
     {
         /* CHECKME: Is it faster to use fabs here? */
-        if (sc[i].stream_sigma > 0.0001 || sc[i].stream_sigma < -0.0001)
+        if (sc[i].stream_sigma > SIGMA_LIMIT || sc[i].stream_sigma < -SIGMA_LIMIT)
             st_prob = V * reff_xr_rp3 * probabilities_convolve(&sc[i], rss, ap->convolve, xyz);
         else
             st_prob = 0.0;
@@ -329,9 +331,9 @@ inline static void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
 {
     unsigned int i;
 
-    for (i = 0; i < ap->number_streams; i++)
+    for (i = 0; i < ap->number_streams; ++i)
     {
-        if (sc[i].stream_sigma > 0.0001 || sc[i].stream_sigma < -0.0001)
+        if (sc[i].stream_sigma > SIGMA_LIMIT || sc[i].stream_sigma < -SIGMA_LIMIT)
             probs[i] = reff_xr_rp3 * probabilities_convolve(&sc[i], rss, ap->convolve, xyz);
         else
             probs[i] = 0.0;
