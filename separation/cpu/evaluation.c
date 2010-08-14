@@ -312,8 +312,7 @@ inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
             continue;
         }
 
-        probs[i].st_prob = probabilities_convolve(&sc[i], rss, ap->convolve, xyz);
-        probs[i].st_prob *= reff_xr_rp3;
+        probs[i].st_prob = reff_xr_rp3 * probabilities_convolve(&sc[i], rss, ap->convolve, xyz);
     }
 }
 
@@ -501,13 +500,18 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
 
     for (r_step_current = 0; r_step_current < r_steps; ++r_step_current)
     {
-        V = ic->r_step_consts[r_step_current].irv * ic->nu_st[nu_step_current].id;
-
         bg_prob = bg_probability(ap,
                                  &ic->rss[r_step_current * ap->convolve],
                                  ic->r_step_consts[r_step_current].reff_xr_rp3,
                                  integral_point,
                                  xyz);
+
+        V = ic->r_step_consts[r_step_current].irv * ic->nu_st[nu_step_current].id;
+        bg_prob *= V;
+
+        tmp = bg_prob_int.bg_int;
+        bg_prob_int.bg_int += bg_prob;
+        bg_prob_int.correction += bg_prob - (bg_prob_int.bg_int - tmp);
 
         probabilities(ap,
                       sc,
@@ -515,12 +519,6 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
                       ic->r_step_consts[r_step_current].reff_xr_rp3,
                       xyz,
                       probs);
-
-        bg_prob *= V;
-
-        tmp = bg_prob_int.bg_int;
-        bg_prob_int.bg_int += bg_prob;
-        bg_prob_int.correction += bg_prob - (bg_prob_int.bg_int - tmp);
 
         update_probs(probs, n_streams, V);
     }
