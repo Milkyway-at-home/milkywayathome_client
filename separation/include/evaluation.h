@@ -24,49 +24,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "parameters.h"
 #include "star_points.h"
-
-typedef struct
-{
-    vector a;
-    vector c;
-    double sigma_sq2;
-    int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
-} STREAM_CONSTANTS;
+#include "integral_constants.h"
 
 typedef struct
 {
     double st_prob_int;    /* for Kahan summation */
     double st_prob_int_c;
 } ST_PROBS;
-
-/* Replacement for mess of double** used before */
-typedef struct
-{
-    double r_point;
-    double r_in_mag;
-    double r_in_mag2;
-    double qw_r3_N;
-} R_POINTS;
-
-typedef struct
-{
-    double irv;
-    double reff_xr_rp3;
-} R_CONSTANTS;
-
-typedef struct
-{
-    double nu;
-    double id;
-} NU_CONSTANTS;
-
-/* Scratch space used by each integral */
-typedef struct
-{
-    R_CONSTANTS* r_step_consts;
-    R_POINTS* rss;
-    NU_CONSTANTS* nu_st;
-} INTEGRAL_CONSTANTS;
 
 typedef struct
 {
@@ -97,13 +61,6 @@ typedef struct
     double st_only_sum_c;
 } ST_SUM;
 
-
-typedef struct
-{
-    double* dx;
-    double* qgaus_W;
-} STREAM_GAUSS;
-
 #define KAHAN_ADD(sum, item, correction)                                \
     {                                                                   \
         double _tmp = sum;                                              \
@@ -115,12 +72,6 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
                     const STAR_POINTS* sp,
                     const STREAMS* streams,
                     const STREAM_CONSTANTS* sc);
-
-STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
-                                 const BACKGROUND_PARAMETERS* bgp,
-                                 const STREAMS* streams);
-
-void free_constants(ASTRONOMY_PARAMETERS* ap);
 
 #endif /* _EVALUATION_H_ */
 

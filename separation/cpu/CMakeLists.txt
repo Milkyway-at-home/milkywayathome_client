@@ -24,7 +24,8 @@ set(lib_source_file_list evaluation_state.c
                          numerical_integration.c
                          evaluation.c
                          parameters.c
-                         star_points.c)
+                         star_points.c
+                         integral_constants.c)
 
 add_library(separation_cpu STATIC ${lib_source_file_list})
 
