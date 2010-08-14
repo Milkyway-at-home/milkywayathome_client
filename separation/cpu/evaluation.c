@@ -306,7 +306,7 @@ inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
                                  ST_PROBS* probs)
 {
     unsigned int i;
-    double tmp, st_prob;
+    double st_prob;
 
     for (i = 0; i < ap->number_streams; ++i)
     {
@@ -315,9 +315,7 @@ inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
         else
             st_prob = 0.0;
 
-        tmp = probs[i].st_prob_int;
-        probs[i].st_prob_int += st_prob;
-        probs[i].st_prob_int_c += st_prob - (probs[i].st_prob_int - tmp);
+        KAHAN_ADD(probs[i].st_prob_int, st_prob, probs[i].st_prob_int_c);
     }
 }
 
@@ -497,7 +495,7 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
 
 {
     unsigned int r_step_current;
-    double V, tmp;
+    double V;
     double bg_prob;
     BG_PROB bg_prob_int = ZERO_BG_PROB; /* for Kahan summation */
 
@@ -512,9 +510,7 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
         V = ic->r_step_consts[r_step_current].irv * ic->nu_st[nu_step_current].id;
         bg_prob *= V;
 
-        tmp = bg_prob_int.bg_int;
-        bg_prob_int.bg_int += bg_prob;
-        bg_prob_int.correction += bg_prob - (bg_prob_int.bg_int - tmp);
+        KAHAN_ADD(bg_prob_int.bg_int, bg_prob, bg_prob_int.correction);
 
         probabilities(ap,
                       sc,
@@ -666,7 +662,7 @@ inline static double stream_sum(const unsigned int number_streams,
                                 double bg_only)
 {
     unsigned int current_stream;
-    double st_only, tmp;
+    double st_only;
     double star_prob = bg_only;
 
     for (current_stream = 0; current_stream < number_streams; current_stream++)
@@ -679,9 +675,7 @@ inline static double stream_sum(const unsigned int number_streams,
         else
             st_only = log10(st_only / sum_exp_weights);
 
-        tmp = st_sum[current_stream].st_only_sum;
-        st_sum[current_stream].st_only_sum += st_only;
-        st_sum[current_stream].st_only_sum_c += st_only - (st_sum[current_stream].st_only_sum - tmp);
+        KAHAN_ADD(st_sum[current_stream].st_only_sum, st_only, st_sum[current_stream].st_only_sum_c);
     }
     star_prob /= sum_exp_weights;
 
@@ -730,7 +724,7 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
                          vector* xyz,
                          const STAR_POINTS* sp)
 {
-    double tmp, star_prob;
+    double star_prob;
     double bg_prob, bg, reff_xr_rp3;
     double exp_background_weight, sum_exp_weights;
 
@@ -773,9 +767,7 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
         if (star_prob != 0.0)
         {
             star_prob = log10(star_prob);
-            tmp = prob.sum;
-            prob.sum += star_prob;
-            prob.correction += star_prob - (prob.sum - tmp);
+            KAHAN_ADD(prob.sum, star_prob, prob.correction);
         }
         else
         {
@@ -788,9 +780,7 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
         else
             bg = log10(bg / sum_exp_weights);
 
-        tmp = bg_only.sum;
-        bg_only.sum += bg;
-        bg_only.correction += bg - (bg_only.sum - tmp);
+        KAHAN_ADD(bg_only.sum, bg, bg_only.correction);
     }
 
     prob.sum += prob.correction;

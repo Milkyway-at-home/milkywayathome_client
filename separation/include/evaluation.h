@@ -104,6 +104,13 @@ typedef struct
     double* qgaus_W;
 } STREAM_GAUSS;
 
+#define KAHAN_ADD(sum, item, correction)                                \
+    {                                                                   \
+        double _tmp = sum;                                              \
+        sum += item;                                                    \
+        correction +=  item - (sum - _tmp);                             \
+    }
+
 double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
                     const STAR_POINTS* sp,
                     const STREAMS* streams,
