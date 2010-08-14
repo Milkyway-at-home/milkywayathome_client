@@ -66,7 +66,7 @@ double evaluate(const ASTRONOMY_PARAMETERS* ap,
     initialize_state(ap, &es);
     get_stream_gauss(ap->convolve, &sg);
 
-#if BOINC_APPLICATION
+  #if BOINC_APPLICATION
     if (boinc_file_exists(CHECKPOINT_FILE))
     {
         fprintf(stderr, "Checkpoint exists. Attempting to resume from it\n");
@@ -78,14 +78,16 @@ double evaluate(const ASTRONOMY_PARAMETERS* ap,
             mw_finish(EXIT_FAILURE);
         }
     }
-#endif
+  #endif
 
     vector* xyz = malloc(sizeof(vector) * ap->convolve);
 
     calculate_integrals(ap, sc, &sg, &es, xyz);
 
+  #if BOINC_APPLICATION
     /* Final checkpoint. */
     write_checkpoint(&es);
+  #endif
 
     final_stream_integrals(&es, ap->number_streams, ap->number_integrals);
     print_stream_integrals(&es, ap->number_streams);
