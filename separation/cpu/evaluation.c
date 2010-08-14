@@ -72,7 +72,7 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
     {
         double stream_sigma = streams->parameters[i].stream_parameters[4];
         sc[i].large_sigma = (stream_sigma > SIGMA_LIMIT || stream_sigma < -SIGMA_LIMIT);
-        sc[i].stream_sigma_sq2 = 2.0 * sqr(stream_sigma);
+        sc[i].sigma_sq2 = 2.0 * sqr(stream_sigma);
 
         if (ap->sgr_coordinates == 0)
             ap->sgr_conversion = (SGRConversion) gc2lb;
@@ -95,15 +95,15 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
                            &B(lbr));
 
         R(lbr) = streams->parameters[i].stream_parameters[1];
-        lbr2xyz(lbr, sc[i].stream_c);
+        lbr2xyz(lbr, sc[i].c);
 
-        X(sc[i].stream_a) =   sin(streams->parameters[i].stream_parameters[2])
+        X(sc[i].a) =   sin(streams->parameters[i].stream_parameters[2])
                             * cos(streams->parameters[i].stream_parameters[3]);
 
-        Y(sc[i].stream_a) =   sin(streams->parameters[i].stream_parameters[2])
+        Y(sc[i].a) =   sin(streams->parameters[i].stream_parameters[2])
                             * sin(streams->parameters[i].stream_parameters[3]);
 
-        Z(sc[i].stream_a) = cos(streams->parameters[i].stream_parameters[2]);
+        Z(sc[i].a) = cos(streams->parameters[i].stream_parameters[2]);
     }
 
     return sc;
@@ -277,21 +277,21 @@ inline static double probabilities_convolve(const STREAM_CONSTANTS* sc,
 
     for (i = 0; i < convolve; i++)
     {
-        X(xyzs) = X(xyz[i]) - X(sc->stream_c);
-        Y(xyzs) = Y(xyz[i]) - Y(sc->stream_c);
-        Z(xyzs) = Z(xyz[i]) - Z(sc->stream_c);
+        X(xyzs) = X(xyz[i]) - X(sc->c);
+        Y(xyzs) = Y(xyz[i]) - Y(sc->c);
+        Z(xyzs) = Z(xyz[i]) - Z(sc->c);
 
-        dotted = X(sc->stream_a) * X(xyzs)
-               + Y(sc->stream_a) * Y(xyzs)
-               + Z(sc->stream_a) * Z(xyzs);
+        dotted = X(sc->a) * X(xyzs)
+               + Y(sc->a) * Y(xyzs)
+               + Z(sc->a) * Z(xyzs);
 
-        X(xyzs) -= dotted * X(sc->stream_a);
-        Y(xyzs) -= dotted * Y(sc->stream_a);
-        Z(xyzs) -= dotted * Z(sc->stream_a);
+        X(xyzs) -= dotted * X(sc->a);
+        Y(xyzs) -= dotted * Y(sc->a);
+        Z(xyzs) -= dotted * Z(sc->a);
 
         xyz_norm = sqr(X(xyzs)) + sqr(Y(xyzs)) + sqr(Z(xyzs));
 
-        st_prob += rss[i].qw_r3_N * exp(-xyz_norm / sc->stream_sigma_sq2);
+        st_prob += rss[i].qw_r3_N * exp(-xyz_norm / sc->sigma_sq2);
     }
 
     return st_prob;

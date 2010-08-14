@@ -27,15 +27,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef struct
 {
-    vector stream_a;
-    vector stream_c;
-    double stream_sigma_sq2;
+    vector a;
+    vector c;
+    double sigma_sq2;
     int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
 } STREAM_CONSTANTS;
 
 typedef struct
 {
-    double st_prob_int;    /* for kahan summation */
+    double st_prob_int;    /* for Kahan summation */
     double st_prob_int_c;
 } ST_PROBS;
 
