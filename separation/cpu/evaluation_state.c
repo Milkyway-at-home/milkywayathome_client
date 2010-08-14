@@ -156,7 +156,8 @@ int write_checkpoint(const EVALUATION_STATE* es)
     FILE* f;
     const INTEGRAL* endi = es->integrals + es->number_integrals;
 
-    boinc_resolve_filename(CHECKPOINT_FILE, output_path, sizeof(output_path));
+    /* Avoid corrupting the checkpoint file by writing to a temporary file, and moving that */
+    boinc_resolve_filename(CHECKPOINT_FILE_TMP, output_path, sizeof(output_path));
 
     f = boinc_fopen(output_path, "wb");
     if (!f)
@@ -183,6 +184,13 @@ int write_checkpoint(const EVALUATION_STATE* es)
     fwrite(checkpoint_tail, sizeof(checkpoint_tail), 1, f);
 
     fclose(f);
+
+    if (boinc_rename(CHECKPOINT_FILE_TMP, CHECKPOINT_FILE))
+    {
+        fprintf(stderr, "Failed to update checkpoint file\n");
+        mw_finish(EXIT_FAILURE);
+    }
+
 
     return 0;
 }

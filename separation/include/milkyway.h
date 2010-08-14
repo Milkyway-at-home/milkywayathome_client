@@ -85,7 +85,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define NODE_GC_COORDS (surveyCenterRa - 90.0)
 #define sun_r0 8.5
 
-#define CHECKPOINT_FILE "astronomy_checkpoint"
+#define CHECKPOINT_FILE "separation_checkpoint"
+#define CHECKPOINT_FILE_TMP "separation_checkpoint_tmp"
 
 #endif /* _MILKYWAY_H_ */
 
