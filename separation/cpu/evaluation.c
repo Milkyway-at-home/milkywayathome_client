@@ -308,13 +308,11 @@ inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < ap->number_streams; ++i)
     {
-        if (sc[i].stream_sigma > -0.0001 && sc[i].stream_sigma < 0.0001)
-        {
+        /* CHECKME: Is it faster to use fabs here? */
+        if (sc[i].stream_sigma > 0.0001 || sc[i].stream_sigma < -0.0001)
+            st_prob = V * reff_xr_rp3 * probabilities_convolve(&sc[i], rss, ap->convolve, xyz);
+        else
             st_prob = 0.0;
-            continue;
-        }
-
-        st_prob = V * reff_xr_rp3 * probabilities_convolve(&sc[i], rss, ap->convolve, xyz);
 
         tmp = probs[i].st_prob_int;
         probs[i].st_prob_int += st_prob;
@@ -333,13 +331,10 @@ inline static void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < ap->number_streams; i++)
     {
-        if (sc[i].stream_sigma > -0.0001 && sc[i].stream_sigma < 0.0001)
-        {
+        if (sc[i].stream_sigma > 0.0001 || sc[i].stream_sigma < -0.0001)
+            probs[i] = reff_xr_rp3 * probabilities_convolve(&sc[i], rss, ap->convolve, xyz);
+        else
             probs[i] = 0.0;
-            continue;
-        }
-
-        probs[i] = reff_xr_rp3 * probabilities_convolve(&sc[i], rss, ap->convolve, xyz);
     }
 }
 
