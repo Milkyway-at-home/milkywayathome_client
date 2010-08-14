@@ -866,8 +866,6 @@ double cpu_evaluate(const ASTRONOMY_PARAMETERS* ap,
     initialize_state(ap, &es);
     get_stream_gauss(ap->convolve, &sg);
 
-    reset_evaluation_state(&es);
-
     vector* xyz = malloc(sizeof(vector) * ap->convolve);
     ST_PROBS* probs = (ST_PROBS*) malloc(sizeof(ST_PROBS) * ap->number_streams);
 

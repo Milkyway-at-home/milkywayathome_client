@@ -43,7 +43,6 @@ typedef struct
 
 void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es);
 void free_evaluation_state(EVALUATION_STATE* es);
-void reset_evaluation_state(EVALUATION_STATE* es);
 
 int write_checkpoint(EVALUATION_STATE* es);
 int read_checkpoint(EVALUATION_STATE* es);

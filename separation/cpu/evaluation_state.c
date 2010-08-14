@@ -53,26 +53,6 @@ void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
         initialize_integral(&es->integrals[i], ap->number_streams);
 }
 
-void reset_evaluation_state(EVALUATION_STATE* es)
-{
-    unsigned int i, j;
-
-    es->current_integral = 0;
-    es->background_integral = 0;
-    memset(es->stream_integrals, 0, sizeof(double) * es->number_streams);
-
-    for (i = 0; i < es->number_integrals; i++)
-    {
-        es->integrals[i].background_integral = 0;
-        for (j = 0; j < es->integrals[i].number_streams; j++)
-            es->integrals[i].stream_integrals[j] = 0;
-
-        es->integrals[i].mu_step = 0;
-        es->integrals[i].nu_step = 0;
-        es->integrals[i].r_step = 0;
-    }
-}
-
 void free_integral(INTEGRAL* i)
 {
     free(i->stream_integrals);
