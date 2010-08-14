@@ -30,6 +30,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define stdev 0.6
 #define xr (3.0 * stdev)
 #define absm 4.2
+#define SIGMA_LIMIT 0.0001
 
 static const double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
@@ -69,8 +70,9 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < streams->number_streams; i++)
     {
-        sc[i].stream_sigma = streams->parameters[i].stream_parameters[4];
-        sc[i].stream_sigma_sq2 = 2.0 * sqr(sc[i].stream_sigma);
+        double stream_sigma = streams->parameters[i].stream_parameters[4];
+        sc[i].large_sigma = (stream_sigma > SIGMA_LIMIT || stream_sigma < -SIGMA_LIMIT);
+        sc[i].stream_sigma_sq2 = 2.0 * sqr(stream_sigma);
 
         if (ap->sgr_coordinates == 0)
             ap->sgr_conversion = (SGRConversion) gc2lb;
@@ -295,8 +297,6 @@ inline static double probabilities_convolve(const STREAM_CONSTANTS* sc,
     return st_prob;
 }
 
-#define SIGMA_LIMIT 0.0001
-
 inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
                                  const STREAM_CONSTANTS* sc,
                                  const R_POINTS* rss,
@@ -310,8 +310,7 @@ inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < ap->number_streams; ++i)
     {
-        /* CHECKME: Is it faster to use fabs here? */
-        if (sc[i].stream_sigma > SIGMA_LIMIT || sc[i].stream_sigma < -SIGMA_LIMIT)
+        if (sc[i].large_sigma)
             st_prob = V * reff_xr_rp3 * probabilities_convolve(&sc[i], rss, ap->convolve, xyz);
         else
             st_prob = 0.0;
@@ -333,7 +332,7 @@ inline static void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < ap->number_streams; ++i)
     {
-        if (sc[i].stream_sigma > SIGMA_LIMIT || sc[i].stream_sigma < -SIGMA_LIMIT)
+        if (sc[i].large_sigma)
             probs[i] = reff_xr_rp3 * probabilities_convolve(&sc[i], rss, ap->convolve, xyz);
         else
             probs[i] = 0.0;
