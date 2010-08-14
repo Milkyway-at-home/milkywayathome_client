@@ -19,7 +19,6 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "separation_priv.h"
 #include "separation.h"
 #include "star_points.h"
 

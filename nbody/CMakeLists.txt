@@ -352,7 +352,7 @@ else()
 
 endif()
 
-target_link_libraries(milkyway_nbody ${exe_link_libs} ${BOINC_LIBRARIES})
+target_link_libraries(milkyway_nbody ${exe_link_libs} ${BOINC_LIBRARIES} milkyway)
 
 if(WIN32)
   #For some reason I can't wrestle out the C++ on Windows.

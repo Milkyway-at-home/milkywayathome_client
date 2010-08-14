@@ -20,8 +20,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "separation.h"
-#include "separation_priv.h"
-
 #include "evaluation_state.h"
 
 void initialize_integral(INTEGRAL* integral, unsigned int number_streams)

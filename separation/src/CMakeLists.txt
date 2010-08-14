@@ -26,7 +26,7 @@ if(CPU_SEPARATION)
   set_target_properties(${client_bin_name}
                           PROPERTIES
                             COMPILE_FLAGS "-DCOMPUTE_ON_CPU=1 -DUSE_CUDA=0 -D USE_OCL=0")
-  target_link_libraries(${client_bin_name} ${POPT_LIBRARY} ${BOINC_LIBRARIES} milkyway_separation_cpu)
+  target_link_libraries(${client_bin_name} ${POPT_LIBRARY} ${BOINC_LIBRARIES} milkyway_separation_cpu milkyway)
   install(TARGETS ${client_bin_name} DESTINATION bin
           PERMISSIONS
             OWNER_READ OWNER_WRITE OWNER_EXECUTE

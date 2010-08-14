@@ -22,7 +22,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <string.h>
 #include "nbody_priv.h"
-#include "nbody_util.h"
 #include "chisq.h"
 
 /* FIXME: sort of magic numbers */

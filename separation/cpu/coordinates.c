@@ -24,7 +24,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #include "separation.h"
-#include "separation_priv.h"
 #include "coordinates.h"
 
 inline static void atBound(double* angle, /* MODIFIED -- the angle to bound in radians */

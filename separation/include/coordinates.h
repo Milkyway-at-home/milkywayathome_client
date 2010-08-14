@@ -23,7 +23,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _COORDINATES_H_
 
 #include "separation.h"
-#include "separation_priv.h"
 
 typedef struct
 {

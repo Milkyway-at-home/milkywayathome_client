@@ -45,7 +45,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #include "separation.h"
-#include "separation_priv.h"
 #include "star_points.h"
 #include "evaluation_state.h"
 

@@ -219,10 +219,13 @@ message("   N-Body:            ${NBODY}")
 message("   BOINC graphics:    ${BOINC_APP_GRAPHICS}")
 message("---------------------------------------------")
 
-
 if(NOT CPU_SEPARATION AND NOT CUDA_SEPARATION AND NOT OPENCL_SEPARATION AND NOT NBODY)
   message(FATAL_ERROR "Nothing will be built!")
 endif()
+
+add_subdirectory(milkyway)
+include_directories(milkyway/include)
+#link_directories(milkyway/lib)
 
 if(SEPARATION_IS_BUILDABLE)
   add_subdirectory(separation)

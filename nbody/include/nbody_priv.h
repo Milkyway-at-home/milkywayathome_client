@@ -40,6 +40,7 @@ extern "C" {
 #include "orbitintegrator.h"
 #include "accelerations.h"
 #include "plummer.h"
+#include "milkyway_util.h"
 
 #if NBODY_OPENCL
   #include "gravmap_opencl.h"

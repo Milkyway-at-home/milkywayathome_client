@@ -15,6 +15,7 @@
 #include <errno.h>
 
 #include "nbody_config.h"
+#include "milkyway_util.h"
 
 #if ENABLE_CRLIBM
   #include <crlibm.h>

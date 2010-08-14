@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 
 #include "config.h"
-
+#include "milkyway_util.h"
 #include "evaluation.h"
 #include "parameters.h"
 #include "probability.h"
@@ -52,30 +52,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define EPS 3.0e-11
 #define D2PI (6.2831853071795864769252867665590057683943387987502)
 
-#define PI_4_3 4.18879020478639098461685784437267051226289253250014109463325945641042\
-1875048278664837379767122822757
-
-#define PI_2_3 2.09439510239319549230842892218633525613144626625007054731662972820521\
-0937524139332418689883561411379
-
-#define PI_3_2 (4.712388980384689857693965074919254326295754099062658731462416888)
 
 
 #define dmod(A,B) ((B)!=0.0?((A)*(B)>0.0?(A)-(B)*floor((A)/(B))\
                              :(A)+(B)*floor(-(A)/(B))):(A))
 #define dsign(A,B) ((B)<0.0?-(A):(A))
-
-/* degrees to radians */
-#define d2r(x) ((x) * (M_PI / 180.0))
-
-
-/* radians to degrees */
-#define r2d(x) ((x) * (180.0 / M_PI))
-
-/* simple math macros */
-#define cube(x) ((x) * (x) * (x))
-#define sqr(x)  ((x) * (x))
-#define inv(x)  (1.0 / (x))
 
 #define stripeSeparation  (2.5)
 #define surveyCenterRa (185.0)
