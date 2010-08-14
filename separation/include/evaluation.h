@@ -74,6 +74,16 @@ typedef struct
     double correction;   /* Correction for Kahan summation */
 } BG_PROB;
 
+/* TODO: All these tuples of doubles really serve the same
+ * purpose. Fix having all of them. */
+typedef struct
+{
+    double sum;
+    double correction;
+} PROB_SUM;
+
+#define ZERO_PROB_SUM { 0.0, 0.0 }
+
 #define CLEAR_BG_PROB(bgp) { (bgp).bg_int = 0.0; (bgp).correction = 0.0; }
 
 /* Add b to a */

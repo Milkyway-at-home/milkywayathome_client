@@ -752,12 +752,13 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
                          vector* xyz,
                          const STAR_POINTS* sp)
 {
-    double bg_prob;
-    double prob_sum, prob_sum_c, temp;  // for Kahan summation
+    double tmp, star_prob;
+    double bg_prob, bg, reff_xr_rp3;
     double exp_background_weight, sum_exp_weights;
-    double reff_xr_rp3;
 
-    double bg_only, bg_only_sum, bg_only_sum_c;
+    PROB_SUM prob = ZERO_PROB_SUM;
+    PROB_SUM bg_only = ZERO_PROB_SUM;
+
     unsigned int current_star_point;
     unsigned int num_zero = 0;
     unsigned int bad_jacobians = 0;
@@ -771,22 +772,15 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
     exp_background_weight = exp(ap->background_weight);
     sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);
 
-    prob_sum = 0.0;
-    prob_sum_c = 0.0;
-
-    bg_only_sum = 0.0;
-    bg_only_sum_c = 0.0;
 
     for (current_star_point = 0; current_star_point < sp->number_stars; ++current_star_point)
     {
-        double star_prob;
-
         reff_xr_rp3 = set_prob_consts(ap, &sg[0], ap->convolve, ZN(sp, current_star_point), rss);
 
         bg_prob = bg_probability(ap, rss,
                                  reff_xr_rp3, &VN(sp, current_star_point), xyz);
 
-        bg_only = (bg_prob / es->background_integral) * exp_background_weight;
+        bg = (bg_prob / es->background_integral) * exp_background_weight;
 
         likelihood_probabilities(ap, sc, rss, reff_xr_rp3, xyz, st_prob);
 
@@ -796,36 +790,38 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
                                st_sum,
                                exp_stream_weights,
                                sum_exp_weights,
-                               bg_only);
+                               bg);
 
         if (star_prob != 0.0)
         {
             star_prob = log10(star_prob);
-            temp = prob_sum;
-            prob_sum += star_prob;
-            prob_sum_c += star_prob - (prob_sum - temp);
+            tmp = prob.sum;
+            prob.sum += star_prob;
+            prob.correction += star_prob - (prob.sum - tmp);
         }
         else
         {
             ++num_zero;
-            prob_sum -= 238.0;
+            prob.sum -= 238.0;
         }
 
-        if (bg_only == 0.0)
-            bg_only = -238.0;
+        if (bg == 0.0)
+            bg = -238.0;
         else
-            bg_only = log10(bg_only / sum_exp_weights);
+            bg = log10(bg / sum_exp_weights);
 
-        temp = bg_only_sum;
-        bg_only_sum += bg_only;
-        bg_only_sum_c += bg_only - (bg_only_sum - temp);
+        tmp = bg_only.sum;
+        bg_only.sum += bg;
+        bg_only.correction += bg - (bg_only.sum - tmp);
     }
 
-    prob_sum += prob_sum_c;
-    bg_only_sum += bg_only_sum_c;
-    bg_only_sum /= sp->number_stars;
+    prob.sum += prob.correction;
+    bg_only.sum += bg_only.correction;
+    bg_only.sum /= sp->number_stars;
 
-    fprintf(stderr, "<background_only_likelihood> %.20lf </background_only_likelihood>\n", bg_only_sum - 3.0);
+    bg_only.sum -= 3.0;
+
+    fprintf(stderr, "<background_only_likelihood> %.20lf </background_only_likelihood>\n", bg_only.sum);
 
     get_stream_only_likelihood(st_sum, sp->number_stars, streams->number_streams);
 
@@ -835,7 +831,7 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
     free(st_sum);
 
     /*  log10(x * 0.001) = log10(x) - 3.0 */
-    return (prob_sum / (sp->number_stars - bad_jacobians)) - 3.0;
+    return (prob.sum / (sp->number_stars - bad_jacobians)) - 3.0;
 }
 
 static void free_stream_gauss(STREAM_GAUSS* sg)
