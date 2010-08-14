@@ -142,7 +142,6 @@ inline static void slaEqgal( double dr, double dd, double* dl, double* db )
             { -0.867666135858, -0.198076386122,  0.455983795705 }
         };
 
-
     /* Spherical to Cartesian */
     slaDcs2c(v1, dr, dd);
 
@@ -151,10 +150,6 @@ inline static void slaEqgal( double dr, double dd, double* dl, double* db )
 
     /* Cartesian to spherical */
     slaDcc2s(v2, dl, db);
-
-    /* Express in conventional ranges */
-    *dl = slaDranrm(*dl);
-    *db = slaDrange(*db);
 }
 
 
@@ -404,7 +399,6 @@ inline static RA_DEC atGCToEq(
     radec.ra = atan2(y1, x1) + anode;
     radec.dec = asin(z1);
 
-    atBound2(&radec.dec, &radec.ra);
     return radec;
 }
 
@@ -432,19 +426,6 @@ void lbr2xyz(const double* lbr, vector xyz)
     Y(xyz) = zp * lsin;
 }
 
-inline static void atEqToGal (
-    double ra,      /* IN -- ra in radians */
-    double dec,     /* IN -- dec in radians */
-    double* glong,  /* OUT -- Galactic longitude in radians */
-    double* glat    /* OUT -- Galactic latitude in radians */
-)
-{
-    /* Use SLALIB to do the actual conversion */
-    slaEqgal(ra, dec, glong, glat);
-    atBound2(glat, glong);
-    return;
-}
-
 /* Get eta for the given wedge. */
 inline static double wedge_eta(int wedge)
 {
@@ -461,7 +442,10 @@ inline static double wedge_incl(int wedge)
 void gc2lb( int wedge, double mu, double nu, double* l, double* b )
 {
     RA_DEC radec = atGCToEq(d2r(mu), d2r(nu), wedge_incl(wedge));
-    atEqToGal(radec.ra, radec.dec, l, b);
+
+    /* Use SLALIB to do the actual conversion */
+    slaEqgal(radec.ra, radec.dec, l, b);
+
     *l = r2d(*l);
     *b = r2d(*b);
 }
