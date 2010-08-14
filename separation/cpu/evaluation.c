@@ -299,8 +299,36 @@ inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
                                  const STREAM_CONSTANTS* sc,
                                  const R_POINTS* rss,
                                  const double reff_xr_rp3,
+                                 const double V,
                                  vector* const xyz,
                                  ST_PROBS* probs)
+{
+    unsigned int i;
+    double tmp;
+
+    for (i = 0; i < ap->number_streams; i++)
+    {
+        if (sc[i].stream_sigma > -0.0001 && sc[i].stream_sigma < 0.0001)
+        {
+            probs[i].st_prob = 0.0;
+            continue;
+        }
+
+        probs[i].st_prob = reff_xr_rp3 * probabilities_convolve(&sc[i], rss, ap->convolve, xyz);
+
+        probs[i].st_prob *= V;
+        tmp = probs[i].st_prob_int;
+        probs[i].st_prob_int += probs[i].st_prob;
+        probs[i].st_prob_int_c += probs[i].st_prob - (probs[i].st_prob_int - tmp);
+    }
+}
+
+inline static void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
+                                            const STREAM_CONSTANTS* sc,
+                                            const R_POINTS* rss,
+                                            const double reff_xr_rp3,
+                                            vector* const xyz,
+                                            ST_PROBS* probs)
 {
     unsigned int i;
 
@@ -466,20 +494,6 @@ static void free_integral_constants(INTEGRAL_CONSTANTS* ic)
     free(ic->nu_st);
 }
 
-inline static void update_probs(ST_PROBS* probs, const unsigned int n_streams, const double V)
-{
-    unsigned int i;
-    double tmp;
-
-    for (i = 0; i < n_streams; ++i)
-    {
-        probs[i].st_prob *= V;
-        tmp = probs[i].st_prob_int;
-        probs[i].st_prob_int += probs[i].st_prob;
-        probs[i].st_prob_int_c += probs[i].st_prob - (probs[i].st_prob_int - tmp);
-    }
-}
-
 /* Sum over r steps using Kahan summation */
 inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
                             const STREAM_CONSTANTS* sc,
@@ -495,8 +509,6 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
     double V, tmp;
     double bg_prob;
     BG_PROB bg_prob_int = ZERO_BG_PROB; /* for Kahan summation */
-
-    const unsigned int n_streams = ap->number_streams;
 
     for (r_step_current = 0; r_step_current < r_steps; ++r_step_current)
     {
@@ -517,10 +529,9 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
                       sc,
                       &ic->rss[r_step_current * ap->convolve],
                       ic->r_step_consts[r_step_current].reff_xr_rp3,
+                      V,
                       xyz,
                       probs);
-
-        update_probs(probs, n_streams, V);
     }
 
     return bg_prob_int;
@@ -779,7 +790,7 @@ static double likelihood(const ASTRONOMY_PARAMETERS* ap,
 
         bg_only = (bg_prob / es->background_integral) * exp_background_weight;
 
-        probabilities(ap, sc, rss, reff_xr_rp3, xyz, st_prob);
+        likelihood_probabilities(ap, sc, rss, reff_xr_rp3, xyz, st_prob);
 
         star_prob = stream_sum(streams->number_streams,
                                es,
