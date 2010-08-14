@@ -22,8 +22,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _COORDINATES_H_
 #define _COORDINATES_H_
 
-#include "milkyway.h"
-#include "milkyway_priv.h"
+#include "separation.h"
+#include "separation_priv.h"
 
 typedef struct
 {

@@ -44,8 +44,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  extern "C" {
 #endif
 
-#include "milkyway.h"
-#include "milkyway_priv.h"
+#include "separation.h"
+#include "separation_priv.h"
 #include "star_points.h"
 #include "evaluation_state.h"
 

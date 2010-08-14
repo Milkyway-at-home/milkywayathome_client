@@ -36,6 +36,6 @@ install(TARGETS milkyway_separation_cpu DESTINATION lib
        GROUP_READ GROUP_EXECUTE
        WORLD_READ WORLD_EXECUTE)
 
-install(FILES ${PROJECT_INCLUDE_DIR}/milkyway.h DESTINATION include/milkyway)
+install(FILES ${PROJECT_INCLUDE_DIR}/separation.h DESTINATION include/milkyway)
 install(FILES ${PROJECT_INCLUDE_DIR}/config.h DESTINATION include/milkyway)
 

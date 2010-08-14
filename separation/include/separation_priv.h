@@ -18,8 +18,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _MILKYWAY_PRIV_H_
-#define _MILKYWAY_PRIV_H_
+#ifndef _SEPARATION_PRIV_H_
+#define _SEPARATION_PRIV_H_
 
 #include "config.h"
 
@@ -47,5 +47,5 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define mw_finish(x) exit(x)
 #endif /* BOINC_APPLICATION */
 
-#endif /* _MILKYWAY_PRIV_H_ */
+#endif /* _SEPARATION_PRIV_H_ */
 

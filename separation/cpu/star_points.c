@@ -19,8 +19,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "milkyway_priv.h"
-#include "milkyway.h"
+#include "separation_priv.h"
+#include "separation.h"
 #include "star_points.h"
 
 int read_star_points(const char* filename, STAR_POINTS* sp)
