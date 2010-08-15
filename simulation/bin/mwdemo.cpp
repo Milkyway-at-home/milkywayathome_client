@@ -1,6 +1,6 @@
 /*****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010 Shane Reilly, Ben Willet, Matthew Newberg, Heidi      *
+ *  Copyright (C) 2010 Shane Reilly, Ben Willet, Matthew Newby, Heidi        *
  *  Newberg, Malik Magdon-Ismail, Carlos Varela, Boleslaw Szymanski, and     *
  *  Rensselaer Polytechnic Institute                                         *
  *                                                                           *
@@ -26,10 +26,9 @@
 
 #include <cstdlib>
 
-#define TEST_MODE
-
 #include "drawhalo.hpp"
 #include "demofile.hpp"
+#include "imgplot.hpp"
 
 using namespace std;
 
@@ -68,34 +67,38 @@ HaloField* getLastFrameNBody()
 
 int main( int args, char **argv )
 {
-
+/*
     if( args<2 ){
         printf("Usage: ./mwdemo wedge_file_name\n");
         return 1;
     }
-
+*/
     double diameter = 7.;
     double fps = 30.;
     int bpp = 32;
 
-    string fileName = argv[1];
+    string fileName = "stars_82.txt";
+    if( args>1 )
+        fileName = argv[1];
 
     // Read in wedge
     WedgeFile wf;
     int totalStars = wf.getStarTotal(fileName);
     HaloField wedge(totalStars);
-
     wf.readStars(fileName, wedge, .01);
 
-    // Create wedge display
+    // Create display
     FieldAnimation sim(bpp, fps);
+
+    // Read in galaxy
+    ImagePlot imagePlot("eso32.bmp", 25000, 30.*1.18, .3);
+
     sim.add(&wedge, diameter);
     sim.add(getLastFrameNBody(), diameter*2);
+    sim.add(imagePlot.getField(), 10.);
 
     sim.showCamera();
-//    sim.cv->moveToPoint(Vector3d(-8, 0, 0), 0.);
-//    cam->setFocusPoint(Vector3d(-8, 0, 0));
-
+    sim.cv->setFocusPoint(sim.cv->getFocusPoint(100., 45., 30.), 0.);
 
 //setFocusPoint(Vector3d{-8, 0, 0});
 //moveTo(Vector3d{-8, 0, 0}, 0.);

@@ -73,18 +73,18 @@ static void writeHistogram(const char* histout,           /* Filename to write h
                            const real start,              /* Calculated low point of bin range */
                            const real totalNum)           /* Total number in range */
 {
-    FILE* f = stdout;
+    FILE* f = stderr;
     unsigned int i;
 
     if (histout || !strcmp(histout, "")) /* If file specified, try to open it */
     {
-        f = nbody_fopen(histout, "w");
+        f = nbodyOpenResolved(histout, "w");
         if (f == NULL)
+        {
             perror("Writing histout. Using stderr instead");
+            f = stderr;
+        }
     }
-
-    if (f == NULL)
-        f = stderr;
 
   #if BOINC_APPLICATION
     fprintf(f, "<histogram>");
@@ -187,7 +187,7 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
     HistData* histData;
     unsigned int fileCount = 0;
 
-    f = nbody_fopen(histogram, "r");
+    f = nbodyOpenResolved(histogram, "r");
     if (f == NULL)
     {
         perror("Opening histogram");

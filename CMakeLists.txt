@@ -163,7 +163,7 @@ option(CUDA_SEPARATION
         "Build the CUDA separation" OFF)  # ${CUDA_IS_BUILDABLE})
 
 option(OPENCL_SEPARATION
-        "Build the OpenCL separation" ${OPENCL_IS_BUILDABLE})
+        "Build the OpenCL separation" OFF)
 
 option(NBODY
     "Build the n-body code" ${NBODY_IS_BUILDABLE})

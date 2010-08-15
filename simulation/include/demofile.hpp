@@ -1,6 +1,6 @@
 /*****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010 Shane Reilly, Ben Willet, Matthew Newberg, Heidi      *
+ *  Copyright (C) 2010 Shane Reilly, Ben Willet, Matthew Newby, Heidi        *
  *  Newberg, Malik Magdon-Ismail, Carlos Varela, Boleslaw Szymanski, and     *
  *  Rensselaer Polytechnic Institute                                         *
  *                                                                           *
@@ -28,6 +28,7 @@
 #define _DEMOFILE_HPP_
 
 #include "binfile.hpp"
+#include "astroconv.h"
 
 
 class NBodyFile
@@ -76,6 +77,8 @@ public:
         if( done )
             return false;
 
+        stream.clearField();
+
 //cerr << "DEBUG: Location " << (unsigned long long) fstrm.tellg() << endl;
 
         // Confirm number of dimensions (must be 3)
@@ -84,7 +87,6 @@ public:
             dimensions = fileGetIntBin(fstrm);
         else
             dimensions = fileGetInt(fstrm);
-
         if( dimensions!=3 ) {
             cerr << "Location " << fstrm.tellg() << ": ";
             cerr << "Error reading file - dimensions must be 3 (was " << dimensions << ").\n" ;
@@ -106,12 +108,11 @@ public:
         // Get star positions and velocity vectors at current step
         float lineArg[3];
         for( int i = 0; i<starTotal; i++ ) {
-
             if( binFlag )
                 fileGetFloatArrayBin(fstrm, 3, lineArg);
             else
                 fileGetFloatArray(fstrm, 3, lineArg);
-            stream.add(lineArg[0], lineArg[1], lineArg[2], lum);
+            stream.add(lineArg[0], lineArg[1], lineArg[2], lum, 120, 151);
 
         }
 
@@ -149,6 +150,19 @@ public:
 
 };
 
+struct WedgeInfo
+{
+    bool initialized;
+
+    double lCenter;
+    double center;
+    double rCenter;
+    double maxDistance;
+
+    Vector3d crossVector;
+    Vector3d depthVector;
+
+};
 
 class WedgeFile
 {
@@ -159,12 +173,14 @@ private:
     string fileName;
     int starTotal;
     bool binFlag;
+    WedgeInfo wedgeInfo;
 
 public:
 
     void reset()
     {
         starTotal = 0;
+        wedgeInfo.initialized = false;
     }
 
     WedgeFile( bool binFlag = false )
@@ -194,7 +210,7 @@ public:
 
     }
 
-    void readStars( string fileName, HaloField& field, double lum = .1 )
+    void readStars( string fileName, HaloField& field, double lum = .5 )
 
         // Reads next step in 'fstrm' into stream data
         // Returns true if another step exists, false if this is the last step in the file
@@ -234,7 +250,7 @@ public:
             // Offset x to align with galactic center
             x -= 8.;
 
-            field.add(x, y, z, lum);
+            field.add(x, y, z, lum, 64, 45);
 
             if( fstrm.eof() ) {
                 fstrm.close();
@@ -256,6 +272,22 @@ public:
 
         fstrm.close();
 
+    }
+
+    const WedgeInfo getWedgeInfo()
+    {
+
+        wedgeInfo.lCenter = 0.;
+        wedgeInfo.center = 0.;
+        wedgeInfo.rCenter = 0.;
+        wedgeInfo.maxDistance = 0.;
+
+        wedgeInfo.crossVector = Vector3d(0., 0., 0.);
+        wedgeInfo.depthVector = Vector3d(0., 0., 0.);
+
+//        wedgeInfo.depthVector =
+        wedgeInfo.initialized = true;
+        return (const WedgeInfo) wedgeInfo;
     }
 
 };

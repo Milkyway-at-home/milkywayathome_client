@@ -32,8 +32,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #endif /* BOINC_DEBUG */
 
   #include <stdio.h>
-  #include <boinc/filesys.h>
-  #include <boinc/boinc_api.h>
+  #include <filesys.h>
+  #include <boinc_api.h>
 
   #define nbody_finish(x) boinc_finish(x)
   #define nbody_fopen(x,y) boinc_fopen((x),(y))

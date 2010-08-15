@@ -583,12 +583,7 @@ int calculate_integrals(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es, co
 #endif
 
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
-    {
         calculate_integral(ap, es->integral[es->current_integral], es);
-//      fprintf(stderr, "<background_integral>%.25lf</background_integral>\n", es->integral[es->current_integral]->background_integral);
-//      for (i = 0; i < ap->number_streams; i++)
-//        fprintf(stderr, "<stream_integral>%d %.25lf</stream_integral>\n", i, es->integral[es->current_integral]->stream_integrals[i]);
-    }
 
     es->background_integral = es->integral[0]->background_integral;
     for (i = 0; i < ap->number_streams; i++)

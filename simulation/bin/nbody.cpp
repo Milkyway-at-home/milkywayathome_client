@@ -1,6 +1,6 @@
 /*****************************************************************************
  *                                                                           *
- *  Copyright (C) 2010 Shane Reilly, Ben Willet, Matthew Newberg, Heidi      *
+ *  Copyright (C) 2010 Shane Reilly, Ben Willet, Matthew Newby, Heidi        *
  *  Newberg, Malik Magdon-Ismail, Carlos Varela, Boleslaw Szymanski, and     *
  *  Rensselaer Polytechnic Institute                                         *
  *                                                                           *
