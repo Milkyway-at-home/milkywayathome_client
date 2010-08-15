@@ -25,7 +25,7 @@
 #include "nbody.h"
 
 #ifdef _WIN32
-  #define R_OK 2 /* FIXME: Windows */
+  #define R_OK 4 /* FIXME: Windows */
 #endif
 
 

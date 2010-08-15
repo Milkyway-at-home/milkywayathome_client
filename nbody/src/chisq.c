@@ -154,7 +154,6 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
         lsin = rsin(L(lbr));
         lcos = rcos(L(lbr));
 
-        /* CHECKME: Do we need fma here? */
         lambda = r2d(atan2(
                          - (sinpsi * cosphi + costh * sinphi * cospsi) * bcos * lcos
                          + (-sinpsi * sinphi + costh * cosphi * cospsi) * bcos * lsin
