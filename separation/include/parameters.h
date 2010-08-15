@@ -110,7 +110,7 @@ typedef struct
                                      0, 0,     \
                                      0, NULL, 0, 0, 0, NULL, \
                                      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
-                                     0.0, 0.0, 0.0}
+                                     0.0, 0.0, 0.0 }
 
 void free_astronomy_parameters(ASTRONOMY_PARAMETERS* ap);
 void free_background_parameters(BACKGROUND_PARAMETERS* bgp);

@@ -248,12 +248,13 @@ inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
 /* Sum over r steps using Kahan summation */
 inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
                             const STREAM_CONSTANTS* sc,
-                            const INTEGRAL_CONSTANTS* ic,
+                            const R_POINTS* rss,
+                            const R_CONSTANTS* r_consts,
+                            const double nu_st_id,
                             const unsigned int r_steps,
                             vector* xyz,
                             ST_PROBS* probs,
-                            const vector integral_point,
-                            const unsigned int nu_step_current)
+                            const vector integral_point)
 {
     unsigned int r_step_current;
     double V;
@@ -263,20 +264,20 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
     for (r_step_current = 0; r_step_current < r_steps; ++r_step_current)
     {
         bg_prob = bg_probability(ap,
-                                 &ic->rss[r_step_current * ap->convolve],
-                                 ic->r_step_consts[r_step_current].reff_xr_rp3,
+                                 &rss[r_step_current * ap->convolve],
+                                 r_consts[r_step_current].reff_xr_rp3,
                                  integral_point,
                                  xyz);
 
-        V = ic->r_step_consts[r_step_current].irv * ic->nu_st[nu_step_current].id;
+        V = r_consts[r_step_current].irv * nu_st_id;
         bg_prob *= V;
 
         KAHAN_ADD(bg_prob_int.bg_int, bg_prob, bg_prob_int.correction);
 
         probabilities(ap,
                       sc,
-                      &ic->rss[r_step_current * ap->convolve],
-                      ic->r_step_consts[r_step_current].reff_xr_rp3,
+                      &rss[r_step_current * ap->convolve],
+                      r_consts[r_step_current].reff_xr_rp3,
                       V,
                       xyz,
                       probs);
@@ -313,12 +314,13 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
 
         r_result = r_sum(ap,
                          sc,
-                         ic,
+                         ic->rss,
+                         ic->r_step_consts,
+                         ic->nu_st[es->nu_step].id,
                          r_steps,
                          xyz,
                          probs,
-                         integral_point,
-                         es->nu_step);
+                         integral_point);
 
         INCADD_BG_PROB(es->nu_acc, r_result);
     }
