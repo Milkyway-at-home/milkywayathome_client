@@ -424,8 +424,8 @@ void boincOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq)
     fprintf(ctx->outfile, "<bodies>\n");
     output(ctx, st);
     fprintf(ctx->outfile, "</bodies>\n");
-    fprintf(ctx->outfile, "<likelihood>%.20g</likelihood>\n", chisq);
-    fprintf(ctx->outfile, "<nbody_version>%s %s</nbody_version>\n", BOINC_NBODY_APP_VERSION, PRECSTRING);
+    fprintf(ctx->outfile, "<search_likelihood>%.20g</search_likelihood>\n", chisq);
+    fprintf(ctx->outfile, "<search_application>%s %s</search_application>\n", BOINC_NBODY_APP_VERSION, PRECSTRING);
 }
 
 /* output: compute diagnostics and output data. */
