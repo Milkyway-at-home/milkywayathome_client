@@ -252,8 +252,8 @@ inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
                             const R_CONSTANTS* r_consts,
                             const double nu_st_id,
                             const unsigned int r_steps,
-                            vector* xyz,
                             ST_PROBS* probs,
+                            vector* xyz,
                             const vector integral_point)
 {
     unsigned int r_step_current;
@@ -293,9 +293,9 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
                           const R_POINTS* rss,
                           const NU_CONSTANTS* nu_st,
                           const double mu,
-                          EVALUATION_STATE* es,
+                          ST_PROBS* probs,
                           vector* xyz,
-                          ST_PROBS* probs)
+                          EVALUATION_STATE* es)
 {
     vector integral_point;
     BG_PROB r_result;
@@ -319,8 +319,8 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
                          r_consts,
                          nu_st[es->nu_step].id,
                          r_steps,
-                         xyz,
                          probs,
+                         xyz,
                          integral_point);
 
         INCADD_BG_PROB(es->nu_acc, r_result);
@@ -336,9 +336,9 @@ static double integrate(const ASTRONOMY_PARAMETERS* ap,
                         const R_POINTS* rss,
                         const NU_CONSTANTS* nu_st,
                         const INTEGRAL_AREA* ia,
+                        ST_PROBS* probs,
                         vector* xyz,
-                        EVALUATION_STATE* es,
-                        ST_PROBS* probs)
+                        EVALUATION_STATE* es)
 {
     double mu;
     const unsigned int mu_steps = ia->mu_steps;
@@ -347,9 +347,9 @@ static double integrate(const ASTRONOMY_PARAMETERS* ap,
     {
         mu = ia->mu_min + (es->mu_step * ia->mu_step_size);
 
-        nu_sum(ap, sc, ia, r_consts, rss, nu_st, mu, es, xyz, probs);
+        nu_sum(ap, sc, ia, r_consts, rss, nu_st, mu, probs, xyz, es);
         INCADD_BG_PROB(es->mu_acc, es->nu_acc);
-        CLEAR_BG_PROB(es->nu_acc)
+        CLEAR_BG_PROB(es->nu_acc);
     }
 
     es->mu_step = 0;
@@ -386,7 +386,7 @@ void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
 
         integral->background_integral = integrate(ap, sc,
                                                   ic.r_step_consts, ic.rss, ic.nu_st,
-                                                  ia, xyz, es, integral->probs);
+                                                  ia, integral->probs, xyz, es);
 
         calculate_stream_integrals(integral->probs, integral->stream_integrals, ap->number_streams);
 
