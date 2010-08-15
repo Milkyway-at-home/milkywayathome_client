@@ -424,7 +424,7 @@ void boincOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq)
     fprintf(ctx->outfile, "<bodies>\n");
     output(ctx, st);
     fprintf(ctx->outfile, "</bodies>\n");
-    fprintf(ctx->outfile, "<likelihood>%.20g</likelihood>", chisq);
+    fprintf(ctx->outfile, "<likelihood>%.20g</likelihood>\n", chisq);
     fprintf(ctx->outfile, "<nbody_version>%s %s</nbody_version>\n", BOINC_NBODY_APP_VERSION, PRECSTRING);
 }
 
