@@ -61,7 +61,7 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
         fprintf(stderr, "Error: aux_bg_profile invalid");
     }
 
-    ap->coeff = 1.0 / (stdev * sqrt(2.0 * pi));
+    ap->coeff = 1.0 / (stdev * sqrt(M_2PI));
     ap->alpha_delta3 = 3.0 - ap->alpha + ap->delta;
 
     for (i = 0; i < streams->number_streams; i++)

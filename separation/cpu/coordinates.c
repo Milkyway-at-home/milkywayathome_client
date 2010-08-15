@@ -32,14 +32,14 @@ inline static void atBound(double* angle, /* MODIFIED -- the angle to bound in r
                           )
 {
     while (*angle < min)
-        *angle += D2PI;
+        *angle += M_2PI;
 
     while (*angle >= max)
-        *angle -= D2PI;
+        *angle -= M_2PI;
 }
 
 inline static void atBound2(double* theta, /* MODIFIED -- the -M_PI_2 to M_PI_2 angle */
-                            double* phi    /* MODIFIED -- the 0 to D2PI angle */
+                            double* phi    /* MODIFIED -- the 0 to M_2PI angle */
                             )
 {
     atBound(theta, -M_PI, M_PI);
@@ -49,7 +49,7 @@ inline static void atBound2(double* theta, /* MODIFIED -- the -M_PI_2 to M_PI_2 
         *phi += M_PI;
     }
     atBound(theta, -M_PI, M_PI);
-    atBound(phi, 0.0, D2PI);
+    atBound(phi, 0.0, M_2PI);
     if (fabs(*theta) == M_PI_2)
         *phi = 0.0;
     return;
@@ -57,14 +57,14 @@ inline static void atBound2(double* theta, /* MODIFIED -- the -M_PI_2 to M_PI_2 
 
 inline static double slaDrange(double angle)
 {
-    double w = dmod(angle, D2PI);
-    return ( fabs(w) < M_PI ) ? w : w - dsign(D2PI, angle);
+    double w = dmod(angle, M_2PI);
+    return ( fabs(w) < M_PI ) ? w : w - dsign(M_2PI, angle);
 }
 
 inline static double slaDranrm(double angle)
 {
-    double w = dmod(angle, D2PI);
-    return (w >= 0.0) ? w : w + D2PI;
+    double w = dmod(angle, M_2PI);
+    return (w >= 0.0) ? w : w + M_2PI;
 }
 
 inline static void slaDcc2s(vector v, double* a, double* b)
@@ -279,23 +279,23 @@ inline static void sgrToGal(double lamda, double beta, double* l, double* b)
     {
         beta = M_PI_2 - (beta - M_PI_2);
         lamda += M_PI;
-        if (lamda > D2PI)
+        if (lamda > M_2PI)
         {
-            lamda -= D2PI;
+            lamda -= M_2PI;
         }
     }
     if (beta < -M_PI_2)
     {
         beta = -M_PI_2 - (beta + M_PI_2);
         lamda += M_PI;
-        if (lamda > D2PI)
+        if (lamda > M_2PI)
         {
-            lamda -= D2PI;
+            lamda -= M_2PI;
         }
     }
     if (lamda < 0)
     {
-        lamda += D2PI;
+        lamda += M_2PI;
     }
 
     beta += M_PI_2;
@@ -324,7 +324,7 @@ inline static void sgrToGal(double lamda, double beta, double* l, double* b)
         x2 = y2 / tan(lamda);
 
     }
-    else if (lamda == D2PI)
+    else if (lamda == M_2PI)
     {
         x2 = -sin(beta);
         y2 = 0;
@@ -343,13 +343,13 @@ inline static void sgrToGal(double lamda, double beta, double* l, double* b)
         y2 = -sin(beta);
 
     }
-    else if (lamda < D2PI)
+    else if (lamda < M_2PI)
     {
         x2 = sqrt((1.0 - cos(beta) * cos(beta)) / (1.0 + tan(lamda) * tan(lamda)));
         y2 = x2 * tan(lamda);
 
     }
-    else if (lamda == D2PI)
+    else if (lamda == M_2PI)
     {
         lamda = d2r(lamda);
         x2 = sin(beta);
@@ -370,7 +370,7 @@ inline static void sgrToGal(double lamda, double beta, double* l, double* b)
         *b = asin(z1);
         *l = atan2(y1, x1);
         if (*l < 0.0)
-            *l += D2PI;
+            *l += M_2PI;
     }
 
     return;

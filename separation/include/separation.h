@@ -44,22 +44,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <filesys.h>
 #endif
 
-
-#ifndef M_PI
-	#define pi 3.1415926535897932384626433832795028841971693993751
-#else
-	#define pi M_PI
-#endif
-
-
 #define EPS 3.0e-11
-#define D2PI (6.2831853071795864769252867665590057683943387987502)
 
-
-
-#define dmod(A,B) ((B)!=0.0?((A)*(B)>0.0?(A)-(B)*floor((A)/(B))\
-                             :(A)+(B)*floor(-(A)/(B))):(A))
-#define dsign(A,B) ((B)<0.0?-(A):(A))
+#define dmod(A,B) ((B) != 0.0 ? ((A)*(B) > 0.0 ? (A) - (B) * floor((A)/(B))\
+                             :(A) + (B)*floor(-(A)/(B))):(A))
+#define dsign(A,B) ((B) < 0.0 ? -(A) : (A))
 
 #define stripeSeparation  (2.5)
 #define surveyCenterRa (185.0)
