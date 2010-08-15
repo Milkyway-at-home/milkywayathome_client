@@ -78,7 +78,7 @@ static void writeHistogram(const char* histout,           /* Filename to write h
 
     if (histout || !strcmp(histout, "")) /* If file specified, try to open it */
     {
-        f = nbody_fopen(histout, "w");
+        f = nbodyOpenResolved(histout, "w");
         if (f == NULL)
             perror("Writing histout. Using stderr instead");
     }
@@ -187,7 +187,7 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
     HistData* histData;
     unsigned int fileCount = 0;
 
-    f = nbody_fopen(histogram, "r");
+    f = nbodyOpenResolved(histogram, "r");
     if (f == NULL)
     {
         perror("Opening histogram");

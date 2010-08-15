@@ -88,6 +88,29 @@ static void specialSetup()
   #endif /* _WIN32 */
 }
 
+#if BOINC_APPLICATION
+
+static json_object* nbodyJSONObjectFromFile(char* inputFile)
+{
+    char resolvedPath[1024];
+    int ret;
+    FILE* f;
+
+    ret = boinc_resolve_filename(inputFile, resolvedPath, sizeof(resolvedPath));
+    if (ret)
+        fail("Error resolving file '%s': %d\n", inputFile, ret);
+
+    return json_object_from_file(resolvedPath);
+}
+
+#else
+
+static json_object* nbodyJSONObjectFromFile(char* inputFile)
+{
+    return json_object_from_file(inputFile);
+}
+
+#endif /* BOINC_APPLICATION */
 
 /* Read the command line arguments, and do the inital parsing of the parameter file. */
 static json_object* readParameters(const int argc,
@@ -310,7 +333,8 @@ static json_object* readParameters(const int argc,
         /* The lack of parse errors from json-c is unfortunate.
            TODO: If we use the tokener directly, can get them.
          */
-        obj = json_object_from_file(inputFile);
+
+        obj = nbodyJSONObjectFromFile(inputFile);
         if (is_error(obj))
         {
             warn("Parse error in file '%s'\n", inputFile);

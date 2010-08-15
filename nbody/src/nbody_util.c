@@ -71,6 +71,30 @@ void* mallocSafe(size_t size)
     return mem;
 }
 
+#if BOINC_APPLICATION
+
+FILE* nbodyOpenResolved(const char* filename, const char* mode)
+{
+    int ret;
+    FILE* f;
+    char resolvedPath[1024];
+
+    ret = boinc_resolve_filename(filename, resolvedPath, sizeof(resolvedPath));
+    if (ret)
+        fail("Error resolving file '%s': %d\n", filename, ret);
+
+    return nbody_fopen(resolvedPath, mode);
+}
+
+#else
+
+FILE* nbodyOpenResolved(const char* filename, const char* mode)
+{
+    return nbody_fopen(filename, mode);
+}
+
+#endif /* BOINC_APPLICATION */
+
 /* Found on SO. No idea if the Windows atually works */
 #ifdef _WIN32
 

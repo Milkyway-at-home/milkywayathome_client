@@ -29,6 +29,7 @@ extern "C" {
 #include "nbody_types.h"
 #include "nbody_boinc.h"
 
+FILE* nbodyOpenResolved(const char* filename, const char* mode);
 
 /* FIXME: This is just an arbitrary threshold I made up. What should it be? */
 #define REQ(a, b) (rabs((a) - (b)) < 0.00001)
