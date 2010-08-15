@@ -755,4 +755,3 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
     return rc;
 }
 
-

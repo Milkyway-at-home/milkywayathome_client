@@ -14,6 +14,8 @@
 #include <popt.h>
 #include <errno.h>
 
+#include <json/json.h>
+
 #include "nbody_config.h"
 
 #if ENABLE_CRLIBM
@@ -90,17 +92,24 @@ static void specialSetup()
 
 #if BOINC_APPLICATION
 
+/* Read JSON from a file using BOINC file functions */
 static json_object* nbodyJSONObjectFromFile(char* inputFile)
 {
     char resolvedPath[1024];
     int ret;
     FILE* f;
+    char* buf;
+    json_object* obj;
 
     ret = boinc_resolve_filename(inputFile, resolvedPath, sizeof(resolvedPath));
     if (ret)
         fail("Error resolving file '%s': %d\n", inputFile, ret);
 
-    return json_object_from_file(resolvedPath);
+    buf = nbodyReadFile(resolvedPath);
+    obj = json_tokener_parse(buf);
+    free(buf);
+
+    return obj;
 }
 
 #else

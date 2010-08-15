@@ -95,6 +95,42 @@ FILE* nbodyOpenResolved(const char* filename, const char* mode)
 
 #endif /* BOINC_APPLICATION */
 
+char* nbodyReadFile(const char* filename)
+{
+    FILE* f;
+    long fsize;
+    size_t readSize;
+    char* buf;
+
+    f = nbody_fopen(filename, "r");
+    if (!f)
+    {
+        warn("Failed to open file '%s' for reading\n", filename);
+        return NULL;
+    }
+
+    fseek(f, 0, SEEK_END);  /* Find size of file */
+    fsize = ftell(f);
+
+    fseek(f, 0, SEEK_SET);
+
+    buf = callocSafe(fsize + 1, sizeof(char));
+
+    readSize = fread(buf, sizeof(char), fsize, f);
+
+    if (readSize != fsize)
+    {
+        free(buf);
+        warn("Failed to read file '%s': Expected to read %ld, but got %u\n",
+             filename,
+             fsize,
+             (unsigned int) readSize);
+        return NULL;
+    }
+
+    return buf;
+}
+
 /* Found on SO. No idea if the Windows atually works */
 #ifdef _WIN32
 
