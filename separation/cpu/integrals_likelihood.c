@@ -24,6 +24,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "evaluation_state.h"
 #include "integral_constants.h"
 
+#include "setup_cl.h"
+
 #define stdev 0.6
 #define xr (3.0 * stdev)
 #define absm 4.2
@@ -383,6 +385,11 @@ void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         ia = &ap->integral[es->current_integral];
 
         prepare_integral_constants(ap, sg, ia, &ic);
+
+
+        setupSeparationCL(ap, sc, ic.r_step_consts, ic.rss, ic.nu_st, ia);
+        printf("arstarstarst\n");
+        mw_finish(EXIT_SUCCESS);
 
         integral->background_integral = integrate(ap, sc,
                                                   ic.r_step_consts, ic.rss, ic.nu_st,

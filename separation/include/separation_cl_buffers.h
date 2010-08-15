@@ -18,8 +18,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _SHOW_CL_TYPES_H_
-#define _SHOW_CL_TYPES_H_
+#ifndef _SEPARATION_CL_BUFFERS_H_
+#define _SEPARATION_CL_BUFFERS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,13 +28,21 @@ extern "C" {
 #include <OpenCL/cl.h>
 #include <OpenCL/cl_ext.h>
 
-const char* showCLDeviceType(const cl_device_type x);
-const char* showCLBuildStatus(const cl_build_status x);
-const char* showCLInt(const cl_int x);
+#include "separation.h"
+#include "setup_cl.h"
+
+cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
+                               const STREAM_CONSTANTS* sc,
+                               const R_CONSTANTS* r_consts,
+                               const R_POINTS* r_points,
+                               const NU_CONSTANTS* nu_st,
+                               const INTEGRAL_AREA* ia,
+                               SeparationCLInfo* ci,
+                               SeparationCLMem* cm);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _SHOW_CL_TYPES_H_ */
+#endif /* _SEPARATION_CL_BUFFERS_H_ */
 
