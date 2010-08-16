@@ -387,6 +387,7 @@ void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         prepare_integral_constants(ap, sg, ia, &ic);
 
         setupSeparationCL(ap, sc, ic.r_step_consts, ic.r_pts, ic.nu_consts, ia);
+
         printf("CL Setup\n");
         mw_finish(EXIT_SUCCESS);
 

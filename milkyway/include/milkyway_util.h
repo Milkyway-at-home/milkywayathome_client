@@ -46,8 +46,13 @@ extern "C" {
 
 #if BOINC_APPLICATION
   #define mw_finish(x) boinc_finish(x)
+  #define mw_fopen(x,y) boinc_fopen((x),(y))
+  #define mw_remove(x) boinc_delete_file((x))
+
 #else
   #define mw_finish(x) exit(x)
+  #define mw_fopen(x,y) fopen((x),(y))
+  #define mw_remove(x) remove((x))
 #endif /* BOINC_APPLICATION */
 
 
@@ -103,6 +108,8 @@ void* mallocSafe(size_t size);
 # define M_SQRT2	1.41421356237309504880	/* sqrt(2) */
 # define M_SQRT1_2	0.70710678118654752440	/* 1/sqrt(2) */
 #endif /* M_PI */
+
+char* mwReadFile(const char* filename);
 
 double get_time();
 
