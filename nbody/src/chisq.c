@@ -252,7 +252,11 @@ real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st)
     if (histogram && histData)
     {
         writeHistogram(ctx->histout, histData, histogram, maxIdx, start, (real) totalNum);
-        chisqval = calcChisq(histData, histogram, maxIdx, (real) totalNum);
+
+        if (totalNum != 0)
+            chisqval = calcChisq(histData, histogram, maxIdx, (real) totalNum);
+        else
+            chisqval = -INFINITY;
     }
     else
         chisqval = NAN;
