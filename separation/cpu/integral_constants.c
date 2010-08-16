@@ -37,7 +37,7 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
     unsigned int i;
     vector lbr;
 
-    STREAM_CONSTANTS* sc = malloc(sizeof(STREAM_CONSTANTS) * streams->number_streams);
+    STREAM_CONSTANTS* sc = mallocSafe(sizeof(STREAM_CONSTANTS) * streams->number_streams);
 
     ap->alpha = bgp->parameters[0];
     ap->q     = bgp->parameters[1];
@@ -108,10 +108,10 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
 void get_stream_gauss(STREAM_GAUSS* sg, const unsigned int convolve)
 {
     unsigned int i;
-    double* qgaus_X = malloc(sizeof(double) * convolve);
+    double* qgaus_X = mallocSafe(sizeof(double) * convolve);
 
-    sg->qgaus_W = (double*) malloc(sizeof(double) * convolve);
-    sg->dx      = (double*) malloc(sizeof(double) * convolve);
+    sg->qgaus_W = (double*) mallocSafe(sizeof(double) * convolve);
+    sg->dx      = (double*) mallocSafe(sizeof(double) * convolve);
 
     gaussLegendre(-1.0, 1.0, qgaus_X, sg->qgaus_W, convolve);
 
@@ -189,7 +189,7 @@ R_CONSTANTS* prepare_r_constants(const ASTRONOMY_PARAMETERS* ap,
 {
     unsigned int i;
     double r, next_r, rPrime;
-    R_CONSTANTS* r_step_consts = malloc(sizeof(R_CONSTANTS) * r_steps);
+    R_CONSTANTS* r_step_consts = mallocSafe(sizeof(R_CONSTANTS) * r_steps);
 
 //vickej2_kpc edits to make volumes even in kpc rather than g
 //vickej2_kpc        double log_r, r, next_r, rPrime;
@@ -228,7 +228,7 @@ void prepare_integral_constants(const ASTRONOMY_PARAMETERS* ap,
 {
 
     /* 2D block, ia->r_steps = rows, ap->convolve = columns */
-    ic->r_pts = malloc(sizeof(R_POINTS) * ia->r_steps * ap->convolve);
+    ic->r_pts = mallocSafe(sizeof(R_POINTS) * ia->r_steps * ap->convolve);
     ic->r_step_consts = prepare_r_constants(ap,
                                             sg,
                                             ap->convolve,
@@ -238,7 +238,7 @@ void prepare_integral_constants(const ASTRONOMY_PARAMETERS* ap,
                                             ia->mu_step_size,
                                             ic->r_pts);
 
-    ic->nu_consts = malloc(sizeof(NU_CONSTANTS) * ia->nu_steps);
+    ic->nu_consts = mallocSafe(sizeof(NU_CONSTANTS) * ia->nu_steps);
     prepare_nu_constants(ic->nu_consts, ia->nu_steps, ia->nu_step_size, ia->nu_min);
 }
 

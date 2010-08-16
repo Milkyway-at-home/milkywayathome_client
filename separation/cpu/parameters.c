@@ -143,8 +143,8 @@ void fread_parameters(FILE* file,
 
     ap->number_streams = streams->number_streams;
 
-    streams->stream_weight = (STREAM_WEIGHT*) malloc(sizeof(STREAM_WEIGHT) * streams->number_streams);
-    streams->parameters = (STREAM_PARAMETERS*) malloc(sizeof(STREAM_PARAMETERS) * streams->number_streams);
+    streams->stream_weight = (STREAM_WEIGHT*) mallocSafe(sizeof(STREAM_WEIGHT) * streams->number_streams);
+    streams->parameters = (STREAM_PARAMETERS*) mallocSafe(sizeof(STREAM_PARAMETERS) * streams->number_streams);
 
     for (i = 0; i < streams->number_streams; ++i)
     {
@@ -169,7 +169,7 @@ void fread_parameters(FILE* file,
     }
     fscanf(file, "wedge: %u\n", &ap->wedge);
 
-    ap->integral = (INTEGRAL_AREA*) malloc(sizeof(INTEGRAL_AREA));
+    ap->integral = (INTEGRAL_AREA*) mallocSafe(sizeof(INTEGRAL_AREA));
 
     fscanf(file,
            "r[min,max,steps]: %lf, %lf, %u\n",

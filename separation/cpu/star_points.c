@@ -76,7 +76,7 @@ int fread_star_points(FILE* data_file, STAR_POINTS* sp)
         mw_finish(EXIT_FAILURE);
     }
 
-    sp->stars = (double*) malloc(sizeof(double) * VECTOR_SIZE * sp->number_stars);
+    sp->stars = (double*) mallocSafe(sizeof(double) * VECTOR_SIZE * sp->number_stars);
     for (i = 0; i < sp->number_stars; i++)
         fscanf(data_file, "%lf %lf %lf\n", &XN(sp, i), &YN(sp, i), &ZN(sp, i));
 

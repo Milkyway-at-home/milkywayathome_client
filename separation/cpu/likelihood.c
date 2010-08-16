@@ -192,11 +192,11 @@ double likelihood(const ASTRONOMY_PARAMETERS* ap,
                   STREAM_GAUSS* sg)
 
 {
-    double* st_prob = malloc(sizeof(double) * streams->number_streams);
-    R_POINTS* r_pts = malloc(sizeof(R_POINTS) * ap->convolve);
-    ST_SUM* st_sum = calloc(sizeof(ST_SUM), streams->number_streams);
-    double* exp_stream_weights = malloc(sizeof(double) * streams->number_streams);
-    vector* xyzs = malloc(sizeof(vector) * ap->convolve);
+    double* st_prob = mallocSafe(sizeof(double) * streams->number_streams);
+    R_POINTS* r_pts = mallocSafe(sizeof(R_POINTS) * ap->convolve);
+    ST_SUM* st_sum = callocSafe(sizeof(ST_SUM), streams->number_streams);
+    double* exp_stream_weights = mallocSafe(sizeof(double) * streams->number_streams);
+    vector* xyzs = mallocSafe(sizeof(vector) * ap->convolve);
 
     const double exp_background_weight = exp(ap->background_weight);
     double sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);

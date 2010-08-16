@@ -23,6 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 
 #include "io_util.h"
+#include "milkyway_util.h"
 
 /****
 	*	Functions for printing parameters to files/output
@@ -66,7 +67,7 @@ double* fread_double_array(FILE* file, const char* array_name, unsigned int* siz
 	fscanf(file, array_name);
 	fscanf(file, "[%u]: ", &size);
 
-    arr = malloc(sizeof(double) * size);
+    arr = mallocSafe(sizeof(double) * size);
 
 	for (i = 0; i < size; i++)
     {
@@ -93,7 +94,7 @@ int* fread_int_array(FILE *file, const char *array_name, unsigned int* sizeOut)
 	fscanf(file, "[%u]: ", &size);
     int* arr;
 
-	arr = malloc(sizeof(int) * size);
+	arr = mallocSafe(sizeof(int) * size);
 
 	for (i = 0; i < size; i++)
     {

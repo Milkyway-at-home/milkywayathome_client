@@ -241,7 +241,7 @@ void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
     INTEGRAL* integral;
     INTEGRAL_AREA* ia;
 
-    vector* xyzs = malloc(sizeof(vector) * ap->convolve);
+    vector* xyzs = mallocSafe(sizeof(vector) * ap->convolve);
 
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
     {

@@ -45,8 +45,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #include "separation.h"
-#include "star_points.h"
-#include "evaluation_state.h"
+#include "milkyway_util.h"
 
 #if USE_CUDA
     #include "evaluation_gpu.h"
@@ -171,7 +170,7 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
             mw_finish(EXIT_FAILURE);
         }
 
-        parameters = (double*) malloc(sizeof(double) * paramn);
+        parameters = (double*) mallocSafe(sizeof(double) * paramn);
 
         errno = 0;
         for ( i = 0; i < paramn; ++i )

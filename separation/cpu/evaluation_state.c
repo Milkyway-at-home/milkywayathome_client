@@ -25,8 +25,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 void initialize_integral(INTEGRAL* integral, unsigned int number_streams)
 {
     integral->background_integral = 0.0;
-    integral->stream_integrals = calloc(number_streams, sizeof(double));
-    integral->probs = calloc(number_streams, sizeof(ST_PROBS));
+    integral->stream_integrals = callocSafe(number_streams, sizeof(double));
+    integral->probs = callocSafe(number_streams, sizeof(ST_PROBS));
 }
 
 void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
@@ -37,7 +37,7 @@ void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
     es->number_streams = ap->number_streams;
 
     es->number_integrals = ap->number_integrals;
-    es->integrals = malloc(sizeof(INTEGRAL) * ap->number_integrals);
+    es->integrals = mallocSafe(sizeof(INTEGRAL) * ap->number_integrals);
 
     for (i = 0; i < ap->number_integrals; i++)
         initialize_integral(&es->integrals[i], ap->number_streams);
