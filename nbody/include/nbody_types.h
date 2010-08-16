@@ -54,7 +54,7 @@
 
 #include "nbody_config.h"
 #include "real.h"
-#include "vectmath.h"
+#include "milkyway_vectors.h"
 
 #ifndef __OPENCL_VERSION__   /* Not compiling CL kernel */
   #if NBODY_OPENCL

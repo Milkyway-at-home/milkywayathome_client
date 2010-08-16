@@ -29,7 +29,7 @@ extern "C" {
 
 #include "nbody_config.h" /* Must be included first */
 
-#include "vectmath.h"
+#include "milkyway_vectors.h"
 #include "real.h"
 #include "milkyway_util.h"
 

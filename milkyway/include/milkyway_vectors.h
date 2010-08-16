@@ -1,12 +1,15 @@
 /* ************************************************************************** */
-/* VECTMATH.H: include file for vector/matrix operations. */
+/* MILKYWAY_VECTORS.H: include file for vector/matrix operations. */
 /* */
 /* Copyright (c) 1993 by Joshua E. Barnes, Honolulu, HI. */
+/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
+   Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
+   Rensselaer Polytechnic Institute. */
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#ifndef _VECTMATH_H_
-#define _VECTMATH_H_
+#ifndef _MILKYWAY_VECTORS_H_
+#define _MILKYWAY_VECTORS_H_
 
 #include "real.h"
 
@@ -372,5 +375,5 @@
                 (p)[_i][_j] = (s);              \
     }
 
-#endif /* _VECTMATH_H_ */
+#endif /* _MILKYWAY_VECTORS_H_ */
 
