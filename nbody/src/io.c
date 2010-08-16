@@ -418,12 +418,6 @@ void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
 }
 #endif
 
-#if DOUBLEPREC
-  #define PRECSTRING "double"
-#else
-  #define PRECSTRING "float"
-#endif
-
 /* Output with the silly xml stuff that BOINC uses */
 void boincOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq)
 {
@@ -434,7 +428,7 @@ void boincOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq)
 //    fprintf(ctx->outfile, "</bodies>\n");
 
     fprintf(ctx->outfile, "<search_likelihood>%.20g</search_likelihood>\n", chisq);
-    fprintf(ctx->outfile, "<search_application>" BOINC_NBODY_APP_VERSION " " PRECSTRING "</search_application>\n");
+    fprintf(ctx->outfile, "<search_application>" BOINC_NBODY_APP_VERSION "</search_application>\n");
 }
 
 /* output: compute diagnostics and output data. */

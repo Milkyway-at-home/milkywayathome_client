@@ -30,7 +30,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
-
 include(MaybeDlCheck)
 
 include_directories(${PROJECT_INCLUDE_DIR})

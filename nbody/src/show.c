@@ -298,7 +298,7 @@ char* showContext(const NBodyCtx* ctx)
                      "  usequad         = %s\n"
                      "  allowIncest     = %s\n"
                      "  outputCartesian = %s\n"
-                     "  seed            = %d\n"
+                     "  seed            = %ld\n"
                      "  tree_rsize      = %g\n"
                      "  theta           = %g\n"
                      "  freqout         = %g\n"
