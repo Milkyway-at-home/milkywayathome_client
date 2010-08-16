@@ -82,7 +82,7 @@ double evaluate(const ASTRONOMY_PARAMETERS* ap,
 
     vector* xyz = malloc(sizeof(vector) * ap->convolve);
 
-    calculate_integrals(ap, sc, &sg, &es, xyz);
+    calculate_integrals(ap, sc, &sg, xyz, &es);
 
   #if BOINC_APPLICATION
     /* Final checkpoint. */
@@ -92,7 +92,7 @@ double evaluate(const ASTRONOMY_PARAMETERS* ap,
     final_stream_integrals(&es, ap->number_streams, ap->number_integrals);
     print_stream_integrals(&es, ap->number_streams);
 
-    likelihood_val = likelihood(ap, sc, streams, &es, &sg, xyz, sp);
+    likelihood_val = likelihood(ap, sc, streams, sp, &sg, xyz, &es);
 
     free(xyz);
     free_evaluation_state(&es);

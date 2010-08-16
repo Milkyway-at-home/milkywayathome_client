@@ -193,8 +193,8 @@ inline static double bg_probability(const ASTRONOMY_PARAMETERS* ap,
 /* FIXME: Better name? */
 inline static double probabilities_convolve(const STREAM_CONSTANTS* sc,
                                             const R_POINTS* r_pts,
-                                            const unsigned int convolve,
-                                            vector* const xyz)
+                                            vector* const xyz,
+                                            const unsigned int convolve)
 {
     unsigned int i;
     double dotted, xyz_norm;
@@ -238,7 +238,7 @@ inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
     for (i = 0; i < ap->number_streams; ++i)
     {
         if (sc[i].large_sigma)
-            st_prob = V * reff_xr_rp3 * probabilities_convolve(&sc[i], r_pts, ap->convolve, xyz);
+            st_prob = V * reff_xr_rp3 * probabilities_convolve(&sc[i], r_pts, xyz, ap->convolve);
         else
             st_prob = 0.0;
 
@@ -372,8 +372,8 @@ inline static void calculate_stream_integrals(const ST_PROBS* probs,
 void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                          const STREAM_CONSTANTS* sc,
                          const STREAM_GAUSS* sg,
-                         EVALUATION_STATE* es,
-                         vector* xyz)
+                         vector* xyz,
+                         EVALUATION_STATE* es)
 {
     INTEGRAL_CONSTANTS ic;
     INTEGRAL* integral;
@@ -414,7 +414,7 @@ inline static void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
     for (i = 0; i < ap->number_streams; ++i)
     {
         if (sc[i].large_sigma)
-            probs[i] = reff_xr_rp3 * probabilities_convolve(&sc[i], r_pts, ap->convolve, xyz);
+            probs[i] = reff_xr_rp3 * probabilities_convolve(&sc[i], r_pts, xyz, ap->convolve);
         else
             probs[i] = 0.0;
     }
@@ -562,10 +562,10 @@ static double likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
 double likelihood(const ASTRONOMY_PARAMETERS* ap,
                   const STREAM_CONSTANTS* sc,
                   const STREAMS* streams,
-                  EVALUATION_STATE* es,
+                  const STAR_POINTS* sp,
                   STREAM_GAUSS* sg,
                   vector* xyz,
-                  const STAR_POINTS* sp)
+                  EVALUATION_STATE* es)
 {
     double* st_prob = malloc(sizeof(double) * streams->number_streams);
     R_POINTS* r_pts = malloc(sizeof(R_POINTS) * ap->convolve);

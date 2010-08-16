@@ -34,16 +34,16 @@ extern "C" {
 void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                          const STREAM_CONSTANTS* sc,
                          const STREAM_GAUSS* sg,
-                         EVALUATION_STATE* es,
-                         vector* xyz);
+                         vector* xyz,
+                         EVALUATION_STATE* es);
 
 double likelihood(const ASTRONOMY_PARAMETERS* ap,
                   const STREAM_CONSTANTS* sc,
                   const STREAMS* streams,
-                  EVALUATION_STATE* es,
+                  const STAR_POINTS* sp,
                   STREAM_GAUSS* sg,
                   vector* xyz,
-                  const STAR_POINTS* sp);
+                  EVALUATION_STATE* es);
 
 #ifdef __cplusplus
 }
