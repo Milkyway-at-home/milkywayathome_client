@@ -60,8 +60,6 @@ static cl_int buildProgram(CLInfo* ci, const char* compileDefs, const char** src
                          NULL,
                          NULL);
 
-    free(compileDefs);
-
     if (err == CL_SUCCESS)
         return CL_SUCCESS;
 

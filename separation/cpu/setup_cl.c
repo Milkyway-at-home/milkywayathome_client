@@ -74,31 +74,43 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
     return CL_SUCCESS;
 }
 
+const char* src = "\n" \
+"__kernel void sampleKernel(                                            \n" \
+"   __global float* input,                                              \n" \
+"   __global float* output,                                             \n" \
+"   const unsigned int count)                                           \n" \
+"{                                                                      \n" \
+"   int i = get_global_id(0);                                           \n" \
+"   if(i < count)                                                       \n" \
+"       output[i] = input[i] * input[i];                                \n" \
+"}                                                                      \n" \
+"\n";
 
 int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                       const STREAM_CONSTANTS* sc,
                       const R_CONSTANTS* r_consts,
                       const R_POINTS* r_points,
-                      const NU_CONSTANTS* nu_st,
+                      const NU_CONSTANTS* nu_consts,
                       const INTEGRAL_AREA* ia)
 {
-    SeparationCLMem cm;
     CLInfo ci;
-
+    SeparationCLMem cm;
     char* compileDefs;
-    const char* src = "I AM A KERNEL";
 
     asprintf(&compileDefs,
              "-I/Users/matt/src/milkywayathome_client/separation/include "
              "-DDOUBLEPREC=0 ");
 
-
-    if (getCLInfo(&ci, CL_DEVICE_TYPE_CPU, "I don't exist yet", &src, compileDefs))
+    if (getCLInfo(&ci, CL_DEVICE_TYPE_CPU, "sampleKernel", &src, compileDefs))
         fail("Failed to setup OpenCL device\n");
 
     free(compileDefs);
 
-    if (createSeparationBuffers(ap, sc, r_consts, r_points, nu_st, ia, &ci, &cm) != CL_SUCCESS)
+    printf("arstarstarst\n");
+    mw_finish(EXIT_SUCCESS);
+
+
+    if (createSeparationBuffers(ap, sc, r_consts, r_points, nu_consts, ia, &ci, &cm) != CL_SUCCESS)
         fail("Failed to create CL buffers\n");
 
     return 0;
