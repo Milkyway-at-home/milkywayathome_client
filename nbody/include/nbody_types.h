@@ -58,6 +58,7 @@
   #if NBODY_OPENCL
     #include <OpenCL/cl.h>
     #include <OpenCL/cl_platform.h>
+    #include "build_cl.h"
   #endif /* NBODY_OPENCL */
 
   #include <stdio.h>
@@ -365,20 +366,6 @@ typedef struct
 
 #if NBODY_OPENCL && !defined(__OPENCL_VERSION__)
 
-/* Host OpenCL stuff */
-typedef struct
-{
-    cl_device_id dev;
-    cl_device_type devType;
-    unsigned int devCount;
-    cl_context clctx;
-    cl_command_queue queue;
-    cl_program prog;
-    cl_kernel kern;
-} NBodyCLInfo;
-
-#define EMPTY_NBODY_CL_INFO { -1, -1, 0, NULL, NULL, NULL, NULL }
-
 typedef struct
 {
     cl_mem acc;
@@ -404,13 +391,13 @@ typedef struct
     vector* acctab;     /* Corresponding accelerations of bodies */
 
   #if NBODY_OPENCL
-    NBodyCLInfo ci;
+    CLInfo ci;
     NBodyCLMem cm;
   #endif /* NBODY_OPENCL */
 } NBodyState;
 
 #if NBODY_OPENCL
-  #define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL, NULL, EMPTY_NBODY_CL_INFO, EMPTY_NBODY_CL_MEM }
+  #define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
 #else
   #define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL, NULL }
 #endif /* NBODY_OPENCL */

@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_cl_buffers.h"
 
 inline static cl_int createOutNuBuffer(const unsigned int nu_steps,
-                                       SeparationCLInfo* ci,
+                                       CLInfo* ci,
                                        SeparationCLMem* cm)
 {
     cl_int err;
@@ -44,7 +44,7 @@ inline static cl_int createOutNuBuffer(const unsigned int nu_steps,
 
 
 inline static cl_int createAPBuffer(const ASTRONOMY_PARAMETERS* ap,
-                                    SeparationCLInfo* ci,
+                                    CLInfo* ci,
                                     SeparationCLMem* cm)
 {
     cl_int err;
@@ -64,7 +64,7 @@ inline static cl_int createAPBuffer(const ASTRONOMY_PARAMETERS* ap,
 
 inline static cl_int createSCBuffer(const STREAM_CONSTANTS* sc,
                                     const unsigned int number_streams,
-                                    SeparationCLInfo* ci,
+                                    CLInfo* ci,
                                     SeparationCLMem* cm)
 {
     cl_int err;
@@ -84,7 +84,7 @@ inline static cl_int createSCBuffer(const STREAM_CONSTANTS* sc,
 
 inline static cl_int createRConstsBuffer(const R_CONSTANTS* r_consts,
                                          const unsigned int r_steps,
-                                         SeparationCLInfo* ci,
+                                         CLInfo* ci,
                                          SeparationCLMem* cm)
 {
     cl_int err;
@@ -105,7 +105,7 @@ inline static cl_int createRConstsBuffer(const R_CONSTANTS* r_consts,
 inline static cl_int createRPointsBuffer(const R_POINTS* r_points,
                                          const unsigned int r_steps,
                                          const unsigned int convolve,
-                                         SeparationCLInfo* ci,
+                                         CLInfo* ci,
                                          SeparationCLMem* cm)
 {
     cl_int err;
@@ -125,7 +125,7 @@ inline static cl_int createRPointsBuffer(const R_POINTS* r_points,
 
 inline static cl_int createNuConstsBuffer(const NU_CONSTANTS* nu_consts,
                                          const unsigned int nu_steps,
-                                         SeparationCLInfo* ci,
+                                         CLInfo* ci,
                                          SeparationCLMem* cm)
 {
     cl_int err;
@@ -144,7 +144,7 @@ inline static cl_int createNuConstsBuffer(const NU_CONSTANTS* nu_consts,
 }
 
 inline static cl_int createIABuffer(const INTEGRAL_AREA* ia,
-                                    SeparationCLInfo* ci,
+                                    CLInfo* ci,
                                     SeparationCLMem* cm)
 {
     cl_int err;
@@ -168,7 +168,7 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
                                const R_POINTS* r_points,
                                const NU_CONSTANTS* nu_st,
                                const INTEGRAL_AREA* ia,
-                               SeparationCLInfo* ci,
+                               CLInfo* ci,
                                SeparationCLMem* cm)
 {
     cl_int err = CL_SUCCESS;

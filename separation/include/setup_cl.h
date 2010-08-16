@@ -26,23 +26,10 @@ extern "C" {
 #endif
 
 #include "separation.h"
+#include "build_cl.h"
 #include <OpenCL/cl.h>
 #include <OpenCL/cl_ext.h>
 
-
-    /* Host OpenCL stuff */
-typedef struct
-{
-    cl_device_id dev;
-    cl_device_type devType;
-    unsigned int devCount;
-    cl_context clctx;
-    cl_command_queue queue;
-    cl_program prog;
-    cl_kernel kern;
-} SeparationCLInfo;
-
-#define EMPTY_SEPARATION_CL_INFO { -1, -1, 0, NULL, NULL, NULL, NULL }
 
 /* The various buffers needed by the integrate function. */
 typedef struct

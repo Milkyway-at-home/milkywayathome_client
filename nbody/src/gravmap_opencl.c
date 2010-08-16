@@ -30,22 +30,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "gravmap_opencl.h"
 #include "ckernels/cl_gravmap.h"
 #include "show_cl_types.h"
+#include "build_cl.h"
 //#include "ckernels/cl_nbody_types.h"
 
 #define BUFSIZE 4096
-
-inline static void destroyNBodyCLInfo(NBodyCLInfo* ci)
-{
-    cl_int err = CL_SUCCESS;
-    err |= clReleaseCommandQueue(ci->queue);
-    err |= clReleaseProgram(ci->prog);
-    err |= clReleaseKernel(ci->kern);
-    err |= clReleaseContext(ci->clctx);
-
-    /* TODO: or'ing the err and showing = useless */
-    if (err)
-        warn("Error cleaning up NBodyCLInfo: %s\n", showCLInt(err));
-}
 
 inline static void releaseNBodyCLMem(NBodyCLMem* cm)
 {
@@ -55,7 +43,7 @@ inline static void releaseNBodyCLMem(NBodyCLMem* cm)
     clReleaseMemObject(cm->nbctx);
 }
 
-inline static int nbodySetKernelArgs(const NBodyCLInfo* ci, NBodyCLMem* cm, const size_t nbody)
+inline static int nbodySetKernelArgs(const CLInfo* ci, NBodyCLMem* cm, const size_t nbody)
 {
     cl_int err = CL_SUCCESS;
     err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->nbctx);
@@ -72,7 +60,7 @@ inline static int nbodySetKernelArgs(const NBodyCLInfo* ci, NBodyCLMem* cm, cons
     return 0;
 }
 
-static int createBuffers(NBodyCLInfo* ci,
+static int createBuffers(CLInfo* ci,
                          NBodyCLMem* cm,
                          NBodyCtx* ctx,
                          NBodyState* st)
@@ -127,151 +115,7 @@ static int createBuffers(NBodyCLInfo* ci,
     return 0;
 }
 
-static cl_int buildProgram(const NBodyCtx* ctx, NBodyCLInfo* ci)
-{
-    cl_int err;
-    char* compileDefinitions;
-    char buildLog[BUFSIZE] = "";
-    cl_int infoErr;
-    cl_build_status stat;
-    size_t failSize;
-
-    asprintf(&compileDefinitions,
-             "-I/Users/matt/src/milkywayathome_client/nbody/include "
-             "-DNBODY_OPENCL=1 "
-             "-DDOUBLEPREC=0 "
-             "-DSPHERICALTYPE=%d -DDISKTYPE=%d -DHALOTYPE=%d ",
-             ctx->pot.sphere[0].type,
-             ctx->pot.disk.type,
-             ctx->pot.halo.type);
-
-    err = clBuildProgram(ci->prog,
-                         1,
-                         &ci->dev,
-                         compileDefinitions,
-                         NULL,
-                         NULL);
-
-    free(compileDefinitions);
-
-    if (err == CL_SUCCESS)
-        return CL_SUCCESS;
-
-    infoErr = clGetProgramBuildInfo(ci->prog,
-                                    ci->dev,
-                                    CL_PROGRAM_BUILD_STATUS,
-                                    sizeof(stat),
-                                    &stat,
-                                    NULL);
-
-    if (infoErr != CL_SUCCESS)
-        warn("Get build status failed: %s\n", showCLInt(infoErr));
-    else
-        printf("Build status: %s\n", showCLBuildStatus(stat));
-
-    clGetProgramBuildInfo(ci->prog,
-                          ci->dev,
-                          CL_PROGRAM_BUILD_LOG,
-                          sizeof(buildLog),
-                          buildLog,
-                          &failSize);
-
-    if (failSize > BUFSIZE)
-    {
-        char* bigBuf = callocSafe(sizeof(char), failSize + 1);
-
-        clGetProgramBuildInfo(ci->prog,
-                              ci->dev,
-                              CL_PROGRAM_BUILD_LOG,
-                              failSize,
-                              bigBuf,
-                              NULL);
-
-        printf("Large build message: \n%s\n", bigBuf);
-        free(bigBuf);
-    }
-
-    warn("Build failure: %s: log = %s\n", showCLInt(err), buildLog);
-
-    return err;
-}
-
-/* Query one device specified by type, create a context, command
- * queue, and compile the kernel for it
- * Returns: non-zero on failure
- *  TODO: Multiple device support
- *  TODO: Caching of compiled binaries
- */
-static int getCLInfo(NBodyCLInfo* ci, NBodyCtx* ctx, cl_device_type type)
-{
-    cl_int err;
-    cl_uint maxComputeUnits, clockFreq;
-    cl_ulong memSize;
-
-    err = clGetDeviceIDs(NULL, type, 1, &ci->dev, &ci->devCount);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error getting device: %s\n", showCLInt(err));
-        return 1;
-    }
-
-    if (ci->devCount == 0)
-    {
-        warn("Didn't find any %s devices\n", showCLDeviceType(type));
-        return 1;
-    }
-
-    ci->devType = type;
-
-    ci->clctx = clCreateContext(NULL, 1, &ci->dev, clLogMessagesToStdoutAPPLE, NULL, &err);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating context: %s\n", showCLInt(err));
-        return 1;
-    }
-
-    ci->queue = clCreateCommandQueue(ci->clctx, ci->dev, 0, &err);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating command Queue: %s\n", showCLInt(err));
-        return 1;
-    }
-
-    /* Print some device information */
-    clGetDeviceInfo(ci->dev, CL_DEVICE_MAX_COMPUTE_UNITS,   sizeof(cl_uint),  &maxComputeUnits, NULL);
-    clGetDeviceInfo(ci->dev, CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(cl_uint),  &clockFreq, NULL);
-    clGetDeviceInfo(ci->dev, CL_DEVICE_GLOBAL_MEM_SIZE,     sizeof(cl_ulong), &memSize, NULL);
-
-    printf("arst device %s: %u %u %lu\n",
-           showCLDeviceType(type), maxComputeUnits, clockFreq, (unsigned long) memSize);
-
-    ci->prog = clCreateProgramWithSource(ci->clctx, 1, &cl_gravmap_src, NULL, &err);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating program: %s\n", showCLInt(err));
-        return 1;
-    }
-
-    err = buildProgram(ctx, ci);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating kernel: %s\n", showCLInt(err));
-        return 1;
-    }
-
-    ci->kern = clCreateKernel(ci->prog, "gravMap", &err);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating kernel: %s\n", showCLInt(err));
-        return 1;
-    }
-
-    clUnloadCompiler();
-
-    return 0;
-}
-
-inline static int enqueueGravMap(NBodyCLInfo* ci, const size_t nbody)
+inline static int enqueueGravMap(CLInfo* ci, const size_t nbody)
 {
     const size_t global[] = { nbody };
     cl_int err;
@@ -302,7 +146,7 @@ static void printResults(vector* vs, const char* name, const size_t n)
     }
 }
 
-inline static int prepareExec(NBodyCLInfo* ci, NBodyCLMem* cm, const NBodyCtx* ctx, NBodyState* st)
+inline static int prepareExec(CLInfo* ci, NBodyCLMem* cm, const NBodyCtx* ctx, NBodyState* st)
 {
     int rc = 0;
     rc |= createBuffers(ci, cm, ctx, st);
@@ -340,8 +184,21 @@ static inline void readAccels(NBodyState* st, const size_t accSize)
 
 int setupNBodyCL(NBodyCtx* ctx, NBodyState* st)
 {
-    if (getCLInfo(&st->ci, ctx, CL_DEVICE_TYPE_CPU))
+    char* compileDefs;
+
+    asprintf(&compileDefs,
+             "-I/Users/matt/src/milkywayathome_client/nbody/include "
+             "-DNBODY_OPENCL=1 "
+             "-DDOUBLEPREC=0 "
+             "-DSPHERICALTYPE=%d -DDISKTYPE=%d -DHALOTYPE=%d ",
+             ctx->pot.sphere[0].type,
+             ctx->pot.disk.type,
+             ctx->pot.halo.type);
+
+    if (getCLInfo(&st->ci, CL_DEVICE_TYPE_CPU, "gravMap", &cl_gravmap_src, compileDefs))
         fail("Failed to setup OpenCL device\n");
+
+    free(compileDefs);
 
     /* Kernel arguments only need to be set once */
     if (prepareExec(&st->ci, &st->cm, ctx, st))
@@ -352,7 +209,7 @@ int setupNBodyCL(NBodyCtx* ctx, NBodyState* st)
 
 void cleanupNBodyCL(NBodyState* st)
 {
-    destroyNBodyCLInfo(&st->ci);
+    destroyCLInfo(&st->ci);
     releaseNBodyCLMem(&st->cm);
 }
 
