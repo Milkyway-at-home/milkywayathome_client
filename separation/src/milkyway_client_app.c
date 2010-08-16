@@ -285,6 +285,7 @@ static void worker(int argc, const char** argv)
 
     free(sc);
     free_astronomy_parameters(&ap);
+    free_star_points(&sp);
     free_streams(&streams);
 
 	cleanup_worker();
