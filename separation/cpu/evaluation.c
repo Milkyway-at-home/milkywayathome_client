@@ -65,14 +65,15 @@ static void free_final_stream_integrals(FINAL_STREAM_INTEGRALS* fsi)
 }
 
 double evaluate(const ASTRONOMY_PARAMETERS* ap,
-                const STAR_POINTS* sp,
                 const STREAMS* streams,
-                const STREAM_CONSTANTS* sc)
+                const STREAM_CONSTANTS* sc,
+                const char* star_points_file)
 {
     double likelihood_val;
     EVALUATION_STATE es = EMPTY_EVALUATION_STATE;
     STREAM_GAUSS sg;
     FINAL_STREAM_INTEGRALS fsi;
+    STAR_POINTS sp = EMPTY_STAR_POINTS;
 
     initialize_state(ap, &es);
     get_stream_gauss(&sg, ap->convolve);
@@ -100,10 +101,13 @@ double evaluate(const ASTRONOMY_PARAMETERS* ap,
 
     final_stream_integrals(&fsi, &es, ap->number_streams, ap->number_integrals);
     print_stream_integrals(&fsi, ap->number_streams);
-
-    likelihood_val = likelihood(ap, sp, sc, streams, &fsi, &sg);
-
     free_evaluation_state(&es);
+
+    read_star_points(&sp, star_points_file);
+
+    likelihood_val = likelihood(ap, &sp, sc, streams, &fsi, &sg);
+
+    free_star_points(&sp);
     free_final_stream_integrals(&fsi);
     free_stream_gauss(&sg);
 

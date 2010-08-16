@@ -27,9 +27,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "integral_constants.h"
 
 double evaluate(const ASTRONOMY_PARAMETERS* ap,
-                const STAR_POINTS* sp,
                 const STREAMS* streams,
-                const STREAM_CONSTANTS* sc);
+                const STREAM_CONSTANTS* sc,
+                const char* star_points_file);
 
 #endif /* _EVALUATION_H_ */
 

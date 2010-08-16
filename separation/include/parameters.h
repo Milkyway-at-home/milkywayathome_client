@@ -27,6 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 void free_astronomy_parameters(ASTRONOMY_PARAMETERS* ap);
 void free_background_parameters(BACKGROUND_PARAMETERS* bgp);
 void free_streams(STREAMS* streams);
+void free_stream_parameters(STREAM_PARAMETERS* p);
 
 unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap,
                                            BACKGROUND_PARAMETERS* bgp,

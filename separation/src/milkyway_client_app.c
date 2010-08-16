@@ -205,11 +205,9 @@ static void cleanup_worker()
 static void worker(int argc, const char** argv)
 {
     double* parameters;
-    int ret1, ret2;
     int number_parameters, ap_number_parameters;
     ASTRONOMY_PARAMETERS ap = EMPTY_ASTRONOMY_PARAMETERS;
     BACKGROUND_PARAMETERS bgp = EMPTY_BACKGROUND_PARAMETERS;
-    STAR_POINTS sp = EMPTY_STAR_POINTS;
     STREAMS streams = EMPTY_STREAMS;
 
     parameters = parse_parameters(argc, argv, &number_parameters);
@@ -220,27 +218,11 @@ static void worker(int argc, const char** argv)
         mw_finish(EXIT_FAILURE);
     }
 
-    ret1 = read_parameters(astronomy_parameter_file, &ap, &bgp, &streams);
-    ret2 = read_star_points(star_points_file, &sp);
-
-    if (ret1)
+    if (read_parameters(astronomy_parameter_file, &ap, &bgp, &streams))
     {
         fprintf(stderr,
-                "APP: error reading astronomy parameters from file %s: %d\n",
-                astronomy_parameter_file,
-                ret1);
-    }
-
-    if (ret2)
-    {
-        fprintf(stderr,
-                "APP: error reading star points from file %s: %d\n",
-                star_points_file,
-                ret2);
-    }
-
-    if (ret1 | ret2)
-    {
+                "Error reading astronomy parameters from file '%s'\n",
+                astronomy_parameter_file);
         free(parameters);
         cleanup_worker();
 		mw_finish(EXIT_FAILURE);
@@ -271,7 +253,7 @@ static void worker(int argc, const char** argv)
     free_background_parameters(&bgp);
 
 #if COMPUTE_ON_CPU
-    likelihood = evaluate(&ap, &sp, &streams, sc);
+    likelihood = evaluate(&ap, &streams, sc, star_points_file);
 #elif USE_CUDA
     likelihood = cuda_evaluate(&ap, &sp, sc);
 #elif USE_OCL
@@ -285,7 +267,6 @@ static void worker(int argc, const char** argv)
 
     free(sc);
     free_astronomy_parameters(&ap);
-    free_star_points(&sp);
     free_streams(&streams);
 
 	cleanup_worker();

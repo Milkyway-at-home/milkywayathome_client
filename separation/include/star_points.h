@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 
-int read_star_points(const char* file, STAR_POINTS* sp);
+int read_star_points(STAR_POINTS* sp, const char* file);
 int fread_star_points(FILE* data_file, STAR_POINTS* sp);
 int write_star_points(const char* file, STAR_POINTS* sp);
 int fwrite_star_points(FILE* data_file, STAR_POINTS* sp);
