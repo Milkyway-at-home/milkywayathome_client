@@ -25,49 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include "parameters.h"
-
-typedef struct
-{
-    vector a;
-    vector c;
-    double sigma_sq2;
-    int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
-} STREAM_CONSTANTS;
-
-typedef struct
-{
-    double* dx;
-    double* qgaus_W;
-} STREAM_GAUSS;
-
-typedef struct
-{
-    double r_point;
-    double r_in_mag;
-    double r_in_mag2;
-    double qw_r3_N;
-} R_POINTS;
-
-typedef struct
-{
-    double irv;
-    double reff_xr_rp3;
-} R_CONSTANTS;
-
-typedef struct
-{
-    double nu;
-    double id;
-} NU_CONSTANTS;
-
-typedef struct
-{
-    R_CONSTANTS* r_step_consts;
-    R_POINTS* r_pts;
-    NU_CONSTANTS* nu_consts;
-} INTEGRAL_CONSTANTS;
-
+#include "separation_types.h"
 
 STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
                                  const BACKGROUND_PARAMETERS* bgp,

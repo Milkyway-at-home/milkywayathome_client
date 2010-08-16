@@ -8,14 +8,14 @@
 #ifndef _VECTMATH_H_
 #define _VECTMATH_H_
 
-#include "nbody_types.h"
+#include "real.h"
 
 /* Vector operations. */
 
 /* I think the extra 4th component is only an issue for clearing. The
  * rest of the time it's ignored. */
 /* CLeaR Vector */
-#if NBODY_OPENCL || defined(__OPENCL_VERSION__)
+#if NBODY_OPENCL || SEPARATION_OPENCL || defined(__OPENCL_VERSION__)
   #define CLRV(v)                               \
     {                                           \
         (v)[0] = 0.0;                           \

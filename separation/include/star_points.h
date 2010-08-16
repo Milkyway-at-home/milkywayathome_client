@@ -24,33 +24,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 
-#define VECTOR_SIZE 3
-
-typedef double vector[VECTOR_SIZE];
-typedef double* vectorptr;
-
-#define X(v) ((v)[0])
-#define Y(v) ((v)[1])
-#define Z(v) ((v)[2])
-
-#define L(v) ((v)[0])
-#define B(v) ((v)[1])
-#define R(v) ((v)[2])
-
-/* Get the xth component of the nth item in STAR_POINTS */
-#define VN(sp, n) (((sp)->stars)[VECTOR_SIZE * (n)])
-#define XN(sp, n) VN(sp, n)
-#define YN(sp, n) (((sp)->stars)[VECTOR_SIZE * (n) + 1])
-#define ZN(sp, n) (((sp)->stars)[VECTOR_SIZE * (n) + 2])
-
-typedef struct star_points
-{
-    unsigned int number_stars;
-    double* stars;
-} STAR_POINTS;
-
-#define EMPTY_STAR_POINTS { 0, NULL }
-
 int read_star_points(const char* file, STAR_POINTS* sp);
 int fread_star_points(FILE* data_file, STAR_POINTS* sp);
 int write_star_points(const char* file, STAR_POINTS* sp);

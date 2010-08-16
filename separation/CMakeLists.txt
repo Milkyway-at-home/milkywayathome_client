@@ -32,7 +32,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 
 include_directories(${PROJECT_INCLUDE_DIR})
-add_definitions("-DMILKYWAY")
+add_definitions("-DMILKYWAY -DDOUBLEPREC")
 
 set(CMAKE_C_FLAGS "-std=c99 ${CMAKE_C_FLAGS}")
 
@@ -48,6 +48,8 @@ endif()
 if(WIN32)
   set(OS_SPECIFIC_LIBS msvcrt)
 endif()
+
+#SEPARATION_OPENCL
 
 
 if(CPU_SEPARATION)

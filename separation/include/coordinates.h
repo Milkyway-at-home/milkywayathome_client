@@ -30,9 +30,6 @@ typedef struct
     double dec;
 } RA_DEC;
 
-/* wedge, mu, nu, l, b. gc2lb or gc2sgr  */
-typedef void (*SGRConversion)(int, double, double, double*, double*);
-
 void gc2lb( int wedge, double mu, double nu, double* l, double* b );
 void gc2sgr( int wedge, double mu, double nu, double* l, double* b );
 

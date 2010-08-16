@@ -26,6 +26,16 @@ extern "C" {
 #endif
 
 #include "separation_constants.h"
+#include "separation_types.h"
+
+#define KAHAN_ADD(sum, item, correction)        \
+    {                                           \
+        double _tmp = sum;                      \
+        sum += item;                            \
+        correction +=  item - (sum - _tmp);     \
+    }
+
+
 
 /* Used in innermost loops of integrals and likelihood calculation,
  * and we want it inlined. C99 inlining is annoying and sort of forces

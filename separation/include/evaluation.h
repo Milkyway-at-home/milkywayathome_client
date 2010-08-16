@@ -26,48 +26,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "star_points.h"
 #include "integral_constants.h"
 
-typedef struct
-{
-    double st_prob_int;    /* for Kahan summation */
-    double st_prob_int_c;
-} ST_PROBS;
-
-typedef struct
-{
-    double bg_int;
-    double correction;   /* Correction for Kahan summation */
-} BG_PROB;
-
-/* TODO: All these tuples of doubles really serve the same
- * purpose. Fix having all of them. */
-typedef struct
-{
-    double sum;
-    double correction;
-} PROB_SUM;
-
-#define ZERO_PROB_SUM { 0.0, 0.0 }
-
-#define CLEAR_BG_PROB(bgp) { (bgp).bg_int = 0.0; (bgp).correction = 0.0; }
-
-/* Add b to a */
-#define INCADD_BG_PROB(a, b) { (a).bg_int += (b).bg_int; (a).correction += (b).correction; }
-
-#define ZERO_BG_PROB { 0.0, 0.0 }
-
-typedef struct
-{
-    double st_only_sum;
-    double st_only_sum_c;
-} ST_SUM;
-
-#define KAHAN_ADD(sum, item, correction)                                \
-    {                                                                   \
-        double _tmp = sum;                                              \
-        sum += item;                                                    \
-        correction +=  item - (sum - _tmp);                             \
-    }
-
 double evaluate(const ASTRONOMY_PARAMETERS* ap,
                 const STAR_POINTS* sp,
                 const STREAMS* streams,
