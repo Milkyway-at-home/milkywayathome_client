@@ -97,7 +97,6 @@ static json_object* nbodyJSONObjectFromFile(char* inputFile)
 {
     char resolvedPath[1024];
     int ret;
-    FILE* f;
     char* buf;
     json_object* obj;
 

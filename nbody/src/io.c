@@ -52,10 +52,16 @@ const size_t hdrSize =   sizeof(size_t)                                  /* size
 
 void openCheckpoint(NBodyCtx* ctx)
 {
+    int rc;
+    char resolvedPath[1024];
     struct stat sb;
     const size_t checkpointFileSize = hdrSize + ctx->model.nbody * sizeof(body);
 
-    ctx->cp.fd = open(ctx->cp.filename, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
+    rc = boinc_resolve_filename(ctx->cp.filename, resolvedPath, sizeof(resolvedPath));
+    if (rc)
+        fail("Error resolving checkpoint file '%s': %d\n", ctx->cp.filename, rc);
+
+    ctx->cp.fd = open(resolvedPath, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
     if (ctx->cp.fd == -1)
     {
         perror("open checkpoint");
