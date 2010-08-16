@@ -129,7 +129,7 @@ static json_object* readParameters(const int argc,
                                    char** checkpointFileName,
                                    char** histogramFileName,
                                    char** histoutFileName,
-                                   long* setSeed,
+                                   int* setSeed,
                                    int* ignoreCheckpoint,
                                    int* outputCartesian,
                                    int* printTiming,
@@ -376,7 +376,7 @@ int main(int argc, const char* argv[])
     char* histogramFile  = NULL;
     char* histoutFile    = NULL;
     FitParams fitParams  = EMPTY_FIT_PARAMS;
-    long setSeed;
+    int setSeed;
 
     specialSetup();
     nbodyBoincInit();
@@ -399,8 +399,9 @@ int main(int argc, const char* argv[])
     stringDefault(histogramFile,  DEFAULT_HISTOGRAM_FILE);
     stringDefault(histoutFile,    DEFAULT_HISTOUT_FILE);
 
+    /* the PRNG uses a long for a seed, but int is more portable. */
     runNBodySimulation(obj, &fitParams,
-                       outFile, checkpointFile, histogramFile, histoutFile, setSeed,
+                       outFile, checkpointFile, histogramFile, histoutFile, (long) setSeed,
                        outputCartesian, printTiming, verifyOnly);
 
     free(outFile);
