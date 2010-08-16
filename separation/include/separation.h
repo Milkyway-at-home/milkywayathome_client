@@ -36,29 +36,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "numerical_integration.h"
 #include "../util/io_util.h"
 #include "coordinates.h"
+#include "separation_constants.h"
 
 
 #if BOINC_APPLICATION
   #include <boinc_api.h>
   #include <filesys.h>
 #endif
-
-#define EPS 3.0e-11
-
-#define dmod(A,B) ((B) != 0.0 ? ((A)*(B) > 0.0 ? (A) - (B) * floor((A)/(B))\
-                             :(A) + (B)*floor(-(A)/(B))):(A))
-#define dsign(A,B) ((B) < 0.0 ? -(A) : (A))
-
-#define stripeSeparation  (2.5)
-#define surveyCenterRa (185.0)
-#define surveyCenterDec (32.5)
-
-/* The node of the GC coordinates used in the survey. */
-#define NODE_GC_COORDS (surveyCenterRa - 90.0)
-#define sun_r0 8.5
-
-#define CHECKPOINT_FILE "separation_checkpoint"
-#define CHECKPOINT_FILE_TMP "separation_checkpoint_tmp"
 
 #endif /* _SEPARATION_H_ */
 

@@ -83,6 +83,10 @@ void* mallocSafe(size_t size);
 #define sqr(x)  ((x) * (x))
 #define inv(x)  (1.0 / (x))
 
+#define dmod(A,B) ((B) != 0.0 ? ((A)*(B) > 0.0 ? (A) - (B) * floor((A)/(B)) \
+                             : (A) + (B) * floor(-(A)/(B))):(A))
+#define dsign(A,B) ((B) < 0.0 ? -(A) : (A))
+
 /* other useful nonstandard constants */
 
 /* (4 * pi) / 3 */

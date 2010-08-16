@@ -25,13 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include "separation.h"
-
-#define stdev 0.6
-#define xr (3.0 * stdev)
-#define absm 4.2
-#define SIGMA_LIMIT 0.0001
-
+#include "separation_constants.h"
 
 /* Used in innermost loops of integrals and likelihood calculation,
  * and we want it inlined. C99 inlining is annoying and sort of forces
@@ -42,7 +36,7 @@ __attribute__ ((always_inline)) inline double probabilities_convolve(const STREA
                                                                      const R_POINTS* r_pts,
                                                                      vector* const xyz,
                                                                      const unsigned int convolve)
-    {
+{
     unsigned int i;
     double dotted, xyz_norm;
     vector xyzs;
