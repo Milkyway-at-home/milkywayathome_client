@@ -23,7 +23,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "evaluation.h"
 #include "evaluation_state.h"
 #include "integral_constants.h"
-#include "integrals_likelihood.c"
+#include "integrals_likelihood.h"
+#include "integrals.h"
+#include "likelihood.h"
 
 static void print_stream_integrals(EVALUATION_STATE* es, const unsigned int number_streams)
 {

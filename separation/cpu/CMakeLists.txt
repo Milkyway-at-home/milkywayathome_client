@@ -25,7 +25,8 @@ set(lib_source_file_list evaluation_state.c
                          evaluation.c
                          parameters.c
                          star_points.c
-                         integrals_likelihood.c
+                         integrals.c
+                         likelihood.c
                          integral_constants.c
                          separation_cl_buffers.c
                          setup_cl.c
