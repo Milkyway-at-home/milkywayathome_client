@@ -235,13 +235,13 @@ inline static double completed_integral_progress(const ASTRONOMY_PARAMETERS* ap,
 void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                          const STREAM_CONSTANTS* sc,
                          const STREAM_GAUSS* sg,
-                         vector* xyz,
                          EVALUATION_STATE* es)
 {
-    unsigned int i;
     INTEGRAL_CONSTANTS ic;
     INTEGRAL* integral;
     INTEGRAL_AREA* ia;
+
+    vector* xyzs = malloc(sizeof(vector) * ap->convolve);
 
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
     {
@@ -259,12 +259,14 @@ void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
 
         integral->background_integral = integrate(ap, sc,
                                                   ic.r_step_consts, ic.r_pts, ic.nu_consts,
-                                                  ia, integral->probs, xyz, es);
+                                                  ia, integral->probs, xyzs, es);
 
         calculate_stream_integrals(integral->probs, integral->stream_integrals, ap->number_streams);
 
         free_integral_constants(&ic);
         CLEAR_BG_PROB(es->mu_acc);
     }
+
+    free(xyzs);
 }
 

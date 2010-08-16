@@ -47,7 +47,7 @@ inline static void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
 }
 
 inline static double stream_sum(const unsigned int number_streams,
-                                EVALUATION_STATE* es,
+                                const FINAL_STREAM_INTEGRALS* fsi,
                                 double* st_prob,
                                 ST_SUM* st_sum,
                                 const double* exp_stream_weights,
@@ -60,7 +60,7 @@ inline static double stream_sum(const unsigned int number_streams,
 
     for (current_stream = 0; current_stream < number_streams; current_stream++)
     {
-        st_only = st_prob[current_stream] / es->stream_integrals[current_stream] * exp_stream_weights[current_stream];
+        st_only = st_prob[current_stream] / fsi->stream_integrals[current_stream] * exp_stream_weights[current_stream];
         star_prob += st_only;
 
         if (st_only == 0.0)
@@ -111,11 +111,11 @@ inline static void get_stream_only_likelihood(ST_SUM* st_sum,
 
 
 static double likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
-                             const STREAM_CONSTANTS* sc,
                              const STAR_POINTS* sp,
+                             const STREAM_CONSTANTS* sc,
                              const STREAMS* streams,
+                             const FINAL_STREAM_INTEGRALS* fsi,
                              R_POINTS* r_pts,
-                             EVALUATION_STATE* es,
                              STREAM_GAUSS* sg,
                              ST_SUM* st_sum,
                              vector* xyz,
@@ -141,12 +141,12 @@ static double likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
         bg_prob = bg_probability(ap, r_pts,
                                  reff_xr_rp3, &VN(sp, current_star_point), xyz);
 
-        bg = (bg_prob / es->background_integral) * exp_background_weight;
+        bg = (bg_prob / fsi->background_integral) * exp_background_weight;
 
         likelihood_probabilities(ap, sc, r_pts, reff_xr_rp3, xyz, st_prob);
 
         star_prob = stream_sum(streams->number_streams,
-                               es,
+                               fsi,
                                st_prob,
                                st_sum,
                                exp_stream_weights,
@@ -185,32 +185,36 @@ static double likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
 
 
 double likelihood(const ASTRONOMY_PARAMETERS* ap,
+                  const STAR_POINTS* sp,
                   const STREAM_CONSTANTS* sc,
                   const STREAMS* streams,
-                  const STAR_POINTS* sp,
-                  STREAM_GAUSS* sg,
-                  vector* xyz,
-                  EVALUATION_STATE* es)
+                  const FINAL_STREAM_INTEGRALS* fsi,
+                  STREAM_GAUSS* sg)
+
 {
     double* st_prob = malloc(sizeof(double) * streams->number_streams);
     R_POINTS* r_pts = malloc(sizeof(R_POINTS) * ap->convolve);
     ST_SUM* st_sum = calloc(sizeof(ST_SUM), streams->number_streams);
     double* exp_stream_weights = malloc(sizeof(double) * streams->number_streams);
+    vector* xyzs = malloc(sizeof(vector) * ap->convolve);
 
     const double exp_background_weight = exp(ap->background_weight);
     double sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);
 
-    double likelihood_val = likelihood_sum(ap, sc, sp, streams,
-                                           r_pts, es, sg,
-                                           st_sum, xyz, st_prob,
-                                           exp_stream_weights, sum_exp_weights, exp_background_weight);
+    double likelihood_val = likelihood_sum(ap, sp, sc, streams, fsi,
+                                           r_pts, sg,
+                                           st_sum, xyzs, st_prob,
+                                           exp_stream_weights,
+                                           sum_exp_weights,
+                                           exp_background_weight);
 
     get_stream_only_likelihood(st_sum, sp->number_stars, streams->number_streams);
 
-    free(exp_stream_weights);
     free(st_prob);
     free(r_pts);
     free(st_sum);
+    free(exp_stream_weights);
+    free(xyzs);
 
     return likelihood_val;
 }

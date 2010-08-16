@@ -33,7 +33,6 @@ extern "C" {
 void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                          const STREAM_CONSTANTS* sc,
                          const STREAM_GAUSS* sg,
-                         vector* xyz,
                          EVALUATION_STATE* es);
 #ifdef __cplusplus
 }

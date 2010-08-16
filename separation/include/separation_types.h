@@ -140,6 +140,17 @@ typedef struct
 
 #define EMPTY_BACKGROUND_PARAMETERS { NULL, NULL, NULL, NULL, NULL }
 
+
+typedef struct
+{
+    double background_integral;
+    double* stream_integrals;
+} FINAL_STREAM_INTEGRALS;
+
+#define EMPTY_FINAL_STREAM_INTEGRALS { 0.0, NULL }
+
+
+
 #ifndef __OPENCL_VERSION__
 /* No function pointers allowed in kernels, but we don't need it. */
 /* wedge, mu, nu, l, b. gc2lb or gc2sgr  */

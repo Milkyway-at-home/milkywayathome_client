@@ -27,33 +27,41 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "integrals.h"
 #include "likelihood.h"
 
-static void print_stream_integrals(EVALUATION_STATE* es, const unsigned int number_streams)
+static void print_stream_integrals(const FINAL_STREAM_INTEGRALS* fsi, const unsigned int number_streams)
 {
     unsigned int i;
-    fprintf(stderr, "<background_integral> %.20lf </background_integral>\n", es->background_integral);
+    fprintf(stderr, "<background_integral> %.20lf </background_integral>\n", fsi->background_integral);
     fprintf(stderr, "<stream_integrals>");
     for (i = 0; i < number_streams; i++)
-        fprintf(stderr, " %.20lf", es->stream_integrals[i]);
+        fprintf(stderr, " %.20lf", fsi->stream_integrals[i]);
     fprintf(stderr, " </stream_integrals>\n");
 }
 
-static void final_stream_integrals(EVALUATION_STATE* es,
+static void final_stream_integrals(FINAL_STREAM_INTEGRALS* fsi,
+                                   const EVALUATION_STATE* es,
                                    const unsigned int number_streams,
                                    const unsigned int number_integrals)
 {
     unsigned int i, j;
 
-    es->background_integral = es->integrals[0].background_integral;
+    fsi->stream_integrals = calloc(number_streams, sizeof(double));
+
+    fsi->background_integral = es->integrals[0].background_integral;
     for (i = 0; i < number_streams; ++i)
-        es->stream_integrals[i] = es->integrals[0].stream_integrals[i];
+        fsi->stream_integrals[i] = es->integrals[0].stream_integrals[i];
 
     for (i = 1; i < number_integrals; ++i)
     {
-        es->background_integral -= es->integrals[i].background_integral;
+        fsi->background_integral -= es->integrals[i].background_integral;
         for (j = 0; j < number_streams; j++)
-            es->stream_integrals[j] -= es->integrals[i].stream_integrals[j];
+            fsi->stream_integrals[j] -= es->integrals[i].stream_integrals[j];
     }
 
+}
+
+static void free_final_stream_integrals(FINAL_STREAM_INTEGRALS* fsi)
+{
+    free(fsi->stream_integrals);
 }
 
 double evaluate(const ASTRONOMY_PARAMETERS* ap,
@@ -64,6 +72,7 @@ double evaluate(const ASTRONOMY_PARAMETERS* ap,
     double likelihood_val;
     EVALUATION_STATE es = EMPTY_EVALUATION_STATE;
     STREAM_GAUSS sg;
+    FINAL_STREAM_INTEGRALS fsi;
 
     initialize_state(ap, &es);
     get_stream_gauss(&sg, ap->convolve);
@@ -82,22 +91,20 @@ double evaluate(const ASTRONOMY_PARAMETERS* ap,
     }
   #endif
 
-    vector* xyz = malloc(sizeof(vector) * ap->convolve);
-
-    calculate_integrals(ap, sc, &sg, xyz, &es);
+    calculate_integrals(ap, sc, &sg, &es);
 
   #if BOINC_APPLICATION
     /* Final checkpoint. */
     write_checkpoint(&es);
   #endif
 
-    final_stream_integrals(&es, ap->number_streams, ap->number_integrals);
-    print_stream_integrals(&es, ap->number_streams);
+    final_stream_integrals(&fsi, &es, ap->number_streams, ap->number_integrals);
+    print_stream_integrals(&fsi, ap->number_streams);
 
-    likelihood_val = likelihood(ap, sc, streams, sp, &sg, xyz, &es);
+    likelihood_val = likelihood(ap, sp, sc, streams, &fsi, &sg);
 
-    free(xyz);
     free_evaluation_state(&es);
+    free_final_stream_integrals(&fsi);
     free_stream_gauss(&sg);
 
   #if BOINC_APPLICATION && !SEPARATION_OPENCL

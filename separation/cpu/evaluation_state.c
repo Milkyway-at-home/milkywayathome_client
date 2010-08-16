@@ -34,9 +34,6 @@ void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
     unsigned int i;
 
     es->current_integral = 0;
-    es->background_integral = 0;
-    es->stream_integrals = calloc(ap->number_streams, sizeof(double));
-
     es->number_streams = ap->number_streams;
 
     es->number_integrals = ap->number_integrals;
@@ -55,8 +52,6 @@ void free_integral(INTEGRAL* i)
 void free_evaluation_state(EVALUATION_STATE* es)
 {
     unsigned int i;
-
-    free(es->stream_integrals);
 
     for (i = 0; i < es->number_integrals; ++i)
         free_integral(&es->integrals[i]);

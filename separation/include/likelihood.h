@@ -31,12 +31,11 @@ extern "C" {
 #include "integral_constants.h"
 
 double likelihood(const ASTRONOMY_PARAMETERS* ap,
+                  const STAR_POINTS* sp,
                   const STREAM_CONSTANTS* sc,
                   const STREAMS* streams,
-                  const STAR_POINTS* sp,
-                  STREAM_GAUSS* sg,
-                  vector* xyz,
-                  EVALUATION_STATE* es);
+                  const FINAL_STREAM_INTEGRALS* fsi,
+                  STREAM_GAUSS* sg);
 
 #ifdef __cplusplus
 }
