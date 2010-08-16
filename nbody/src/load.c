@@ -218,7 +218,7 @@ static void setRCrit(const NBodyCtx* ctx, NBodyState* st, cellptr p, vector cmpo
             /* use size plus offset */
             break;
         case EXACT:                         /* exact force calculation? */
-            rc = 2 * st->tree.rsize;        /* always open cells */
+            rc = 2.0 * st->tree.rsize;      /* always open cells */
             break;
         case BH86:                          /* use old BH criterion? */
             rc = psize / ctx->theta;        /* using size of cell */
@@ -236,6 +236,7 @@ static void setRCrit(const NBodyCtx* ctx, NBodyState* st, cellptr p, vector cmpo
             rc = rsqrt(bmax2) / ctx->theta;      /* using max dist from cm */
             break;
         default:
+            rc = 0.0; /* Stop clang static analysis warning */
             fail("Got unknown criterion: %d\n", ctx->criterion);
     }
 

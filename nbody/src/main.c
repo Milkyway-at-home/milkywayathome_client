@@ -253,7 +253,7 @@ static json_object* readParameters(const int argc,
         nbody_finish(EXIT_FAILURE);
     }
 
-    while ( ( o = poptGetNextOpt(context)) >= 0 );
+    while ( (o = poptGetNextOpt(context)) >= 0 );
 
     /* Check for invalid options, and must have one of input file or input string */
     if (     o < -1
@@ -264,7 +264,7 @@ static json_object* readParameters(const int argc,
         free(inputFile);
         free(inputStr);
         poptFreeContext(context);
-        nbody_finish(EXIT_FAILURE);
+        return NULL;
     }
 
     if (params) /* Using primitive server arguments */
@@ -281,7 +281,8 @@ static json_object* readParameters(const int argc,
         if (!rest)
         {
             poptFreeContext(context);
-            fail("Expected arguments to follow, got 0\n");
+            warn("Expected arguments to follow, got 0\n");
+            return NULL;
         }
 
         while (rest[++paramCount]);  /* Count number of parameters */
@@ -289,7 +290,8 @@ static json_object* readParameters(const int argc,
         if (numParams == 0)
         {
             poptFreeContext(context);
-            fail("numParams = 0 makes no sense\n");
+            warn("numParams = 0 makes no sense\n");
+            return NULL;
         }
 
         /* Make sure the number of extra parameters matches the number
@@ -297,7 +299,8 @@ static json_object* readParameters(const int argc,
         if (numParams != paramCount)
         {
             poptFreeContext(context);
-            fail("Parameter count mismatch: Expected %u, got %u\n", numParams, paramCount);
+            warn("Parameter count mismatch: Expected %u, got %u\n", numParams, paramCount);
+            return NULL;
         }
 
         parameters = (real*) mallocSafe(sizeof(real) * numParams);
@@ -312,7 +315,7 @@ static json_object* readParameters(const int argc,
                 poptPrintHelp(context, stderr, 0);
                 free(parameters);
                 poptFreeContext(context);
-                nbody_finish(EXIT_FAILURE);
+                return NULL;
             }
         }
 
@@ -343,11 +346,11 @@ static json_object* readParameters(const int argc,
          */
 
         obj = nbodyJSONObjectFromFile(inputFile);
-        if (is_error(obj))
+        if (is_error(obj) || obj == NULL)
         {
             warn("Parse error in file '%s'\n", inputFile);
             free(inputFile);
-            nbody_finish(EXIT_FAILURE);
+            return NULL;
         }
         free(inputFile);
     }
@@ -356,7 +359,10 @@ static json_object* readParameters(const int argc,
         obj = json_tokener_parse(inputStr);
         free(inputStr);
         if (is_error(obj))
-            fail("Failed to parse given string\n");
+        {
+            warn("Failed to parse given string\n");
+            return NULL;
+        }
     }
 
     return obj;
@@ -375,7 +381,7 @@ int main(int argc, const char* argv[])
     char* histogramFile  = NULL;
     char* histoutFile    = NULL;
     FitParams fitParams  = EMPTY_FIT_PARAMS;
-    int setSeed;
+    int setSeed;         /* the PRNG uses a long for a seed, but int is more portable. */
 
     specialSetup();
     nbodyBoincInit();
@@ -398,10 +404,17 @@ int main(int argc, const char* argv[])
     stringDefault(histogramFile,  DEFAULT_HISTOGRAM_FILE);
     stringDefault(histoutFile,    DEFAULT_HISTOUT_FILE);
 
-    /* the PRNG uses a long for a seed, but int is more portable. */
-    runNBodySimulation(obj, &fitParams,
-                       outFile, checkpointFile, histogramFile, histoutFile, (long) setSeed,
-                       outputCartesian, printTiming, verifyOnly);
+    if (obj)
+    {
+        runNBodySimulation(obj, &fitParams,
+                           outFile, checkpointFile, histogramFile, histoutFile, (long) setSeed,
+                           outputCartesian, printTiming, verifyOnly);
+    }
+    else
+    {
+        warn("Failed to read parameters\n");
+        nbody_finish(EXIT_FAILURE);
+    }
 
     free(outFile);
     free(checkpointFile);
