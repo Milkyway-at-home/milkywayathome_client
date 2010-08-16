@@ -30,10 +30,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation.h"
 #include "setup_cl.h"
 #include "separation_cl_buffers.h"
+#include "separation_cl_defs.h"
 
 #define BUFSIZE 4096
-
-static const char* cl_integrate_src = "I am not actually a kernel.";
 
 inline static void releaseSeparationCLMem(SeparationCLMem* cm)
 {
@@ -97,21 +96,21 @@ int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
     SeparationCLMem cm;
     char* compileDefs;
 
-    asprintf(&compileDefs,
-             "-I/Users/matt/src/milkywayathome_client/separation/include "
-             "-DDOUBLEPREC=0 ");
+    compileDefs = separationCLDefs(ap,
+                                   "-I/Users/matt/src/milkywayathome_client/separation/include "
+                                   "-DDOUBLEPREC=0 ");
 
     if (getCLInfo(&ci, CL_DEVICE_TYPE_CPU, "sampleKernel", &src, compileDefs))
         fail("Failed to setup OpenCL device\n");
 
     free(compileDefs);
 
-    printf("arstarstarst\n");
-    mw_finish(EXIT_SUCCESS);
-
 
     if (createSeparationBuffers(ap, sc, r_consts, r_points, nu_consts, ia, &ci, &cm) != CL_SUCCESS)
         fail("Failed to create CL buffers\n");
+
+    printf("arstarstarst\n");
+    mw_finish(EXIT_SUCCESS);
 
     return 0;
 }

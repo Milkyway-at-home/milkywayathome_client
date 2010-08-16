@@ -141,7 +141,6 @@ int read_checkpoint(EVALUATION_STATE* es)
         return 1;
     }
 
-
     fclose(f);
 
     return 0;

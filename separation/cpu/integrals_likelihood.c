@@ -567,15 +567,13 @@ double likelihood(const ASTRONOMY_PARAMETERS* ap,
                   vector* xyz,
                   const STAR_POINTS* sp)
 {
-    double sum_exp_weights;
-
     double* st_prob = malloc(sizeof(double) * streams->number_streams);
     R_POINTS* r_pts = malloc(sizeof(R_POINTS) * ap->convolve);
     ST_SUM* st_sum = calloc(sizeof(ST_SUM), streams->number_streams);
     double* exp_stream_weights = malloc(sizeof(double) * streams->number_streams);
 
     const double exp_background_weight = exp(ap->background_weight);
-    sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);
+    double sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);
 
     double likelihood_val = likelihood_sum(ap, sc, sp, streams,
                                            r_pts, es, sg,

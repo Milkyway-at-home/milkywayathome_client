@@ -28,7 +28,8 @@ set(lib_source_file_list evaluation_state.c
                          integrals_likelihood.c
                          integral_constants.c
                          separation_cl_buffers.c
-                         setup_cl.c)
+                         setup_cl.c
+                         separation_cl_defs.c)
 
 add_library(separation_cpu STATIC ${lib_source_file_list})
 

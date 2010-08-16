@@ -69,8 +69,6 @@ typedef struct
 } INTEGRAL_CONSTANTS;
 
 
-
-
 STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
                                  const BACKGROUND_PARAMETERS* bgp,
                                  const STREAMS* streams);
