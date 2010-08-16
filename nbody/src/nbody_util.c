@@ -76,7 +76,6 @@ void* mallocSafe(size_t size)
 FILE* nbodyOpenResolved(const char* filename, const char* mode)
 {
     int ret;
-    FILE* f;
     char resolvedPath[1024];
 
     ret = boinc_resolve_filename(filename, resolvedPath, sizeof(resolvedPath));

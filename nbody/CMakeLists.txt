@@ -236,6 +236,10 @@ set_property(SOURCE ${dsmft_src}
 #
 set(CMAKE_C_FLAGS "-std=gnu99 -mfpmath=sse -msse -msse2 ${CMAKE_C_FLAGS}")
 
+if(APPLE)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=10.5")
+endif()
+
 if (!WIN32)
   list(APPEND CMAKE_C_FLAGS "-fvisibility=hidden")
 endif()
@@ -349,7 +353,6 @@ else()
     PROPERTIES
     LINKER_LANGUAGE CXX
     LINK_SEARCH_END_STATIC ON)
-
 endif()
 
 target_link_libraries(milkyway_nbody ${exe_link_libs} ${BOINC_LIBRARIES})
