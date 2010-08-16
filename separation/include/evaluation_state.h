@@ -45,6 +45,8 @@ typedef struct
     BG_PROB nu_acc;                 /* Accumulated during the nu_sum */
     BG_PROB mu_acc;                 /* Accumulated during the mu sum */
 
+    unsigned int current_calc_probs; /* progress of completed integrals */
+
     unsigned int current_integral;
 
     unsigned int number_integrals;
@@ -52,7 +54,7 @@ typedef struct
     double background_integral;
 } EVALUATION_STATE;
 
-#define EMPTY_EVALUATION_STATE { NULL, NULL, 0, 0, ZERO_BG_PROB, ZERO_BG_PROB, 0, 0, 0, 0.0 }
+#define EMPTY_EVALUATION_STATE { NULL, NULL, 0, 0, ZERO_BG_PROB, ZERO_BG_PROB, 0, 0, 0, 0, 0.0 }
 
 void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es);
 void free_evaluation_state(EVALUATION_STATE* es);

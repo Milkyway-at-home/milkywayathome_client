@@ -68,7 +68,7 @@ double evaluate(const ASTRONOMY_PARAMETERS* ap,
     initialize_state(ap, &es);
     get_stream_gauss(&sg, ap->convolve);
 
-  #if BOINC_APPLICATION
+  #if BOINC_APPLICATION && !SEPARATION_OPENCL
     if (boinc_file_exists(CHECKPOINT_FILE))
     {
         fprintf(stderr, "Checkpoint exists. Attempting to resume from it\n");
@@ -100,7 +100,7 @@ double evaluate(const ASTRONOMY_PARAMETERS* ap,
     free_evaluation_state(&es);
     free_stream_gauss(&sg);
 
-  #if BOINC_APPLICATION
+  #if BOINC_APPLICATION && !SEPARATION_OPENCL
     boinc_delete_file(CHECKPOINT_FILE);
   #endif
 

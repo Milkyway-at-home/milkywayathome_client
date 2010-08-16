@@ -27,39 +27,24 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "integrals.h"
 #include "setup_cl.h"
 
-inline static double progress(const ASTRONOMY_PARAMETERS* ap, const EVALUATION_STATE* es)
+inline static double progress(const EVALUATION_STATE* es,
+                              const INTEGRAL_AREA* ia,
+                              unsigned int total_calc_probs)
 {
-    unsigned int i;
-    unsigned int current_calc_probs = 0;
-    const INTEGRAL_AREA* ia;
-
-    /* Add up completed integrals */
-    for (i = 0; i < es->current_integral; i++)
-    {
-        ia = &ap->integral[i];
-        current_calc_probs += ia->r_steps * ia->mu_steps * ia->nu_steps;
-    }
-
-    ia = &ap->integral[es->current_integral];
-
+    /* This integral's progress */
     /* When checkpointing is done, ia->r_step would always be 0 */
-    current_calc_probs +=   (es->mu_step * ia->nu_steps * ia->r_steps)
-                          + (es->nu_step * ia->r_steps); /* + es->r_step */
+    unsigned int i_prog =  (es->mu_step * ia->nu_steps * ia->r_steps)
+                              + (es->nu_step * ia->r_steps); /* + es->r_step */
 
-    return (double)current_calc_probs / ap->total_calc_probs;
+    return (double)(i_prog + es->current_calc_probs) / total_calc_probs;
 }
 
 #if BOINC_APPLICATION
-inline static void do_boinc_checkpoint(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
+inline static void do_boinc_checkpoint(const EVALUATION_STATE* es,
+                                       const INTEGRAL_AREA* ia,
+                                       unsigned int total_calc_probs)
 {
-    double frac;
-
-    static unsigned int i = 0;
-
-    i = (i + 1) % 1000;
-
-    //if (boinc_time_to_checkpoint())
-    if ( i == 100 )
+    if (boinc_time_to_checkpoint())
     {
         if (write_checkpoint(es))
         {
@@ -69,16 +54,18 @@ inline static void do_boinc_checkpoint(const ASTRONOMY_PARAMETERS* ap, EVALUATIO
         boinc_checkpoint_completed();
     }
 
-    frac = progress(ap, es);
-    boinc_fraction_done(frac);
+    boinc_fraction_done(progress(es, ia, total_calc_probs));
 }
 
 #else
 
-inline static void do_boinc_checkpoint(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
+inline static void do_boinc_checkpoint(const EVALUATION_STATE* es,
+                                       const INTEGRAL_AREA* ia,
+                                       unsigned int total_calc_probs)
 {
-  #pragma unused(ap)
+  #pragma unused(ia)
   #pragma unused(es)
+  #pragma unused(total_calc_probs)
 }
 
 #endif /* BOINC_APPLICATION */
@@ -167,7 +154,7 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
 
     for ( ; es->nu_step < nu_steps; es->nu_step++)
     {
-        do_boinc_checkpoint(ap, es);
+        do_boinc_checkpoint(es, ia, ap->total_calc_probs);
 
         ap->sgr_conversion(ap->wedge,
                            mu + 0.5 * ia->mu_step_size,
@@ -229,12 +216,29 @@ inline static void calculate_stream_integrals(const ST_PROBS* probs,
         stream_integrals[i] = probs[i].st_prob_int + probs[i].st_prob_int_c;
 }
 
+/* Add up completed integrals for progress reporting */
+inline static double completed_integral_progress(const ASTRONOMY_PARAMETERS* ap,
+                                                 const EVALUATION_STATE* es)
+{
+    INTEGRAL_AREA* ia;
+    unsigned int i, current_calc_probs = 0;
+
+    for (i = 0; i < es->current_integral; ++i)
+    {
+        ia = &ap->integral[i];
+        current_calc_probs += ia->r_steps * ia->mu_steps * ia->nu_steps;
+    }
+
+    return current_calc_probs;
+}
+
 void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                          const STREAM_CONSTANTS* sc,
                          const STREAM_GAUSS* sg,
                          vector* xyz,
                          EVALUATION_STATE* es)
 {
+    unsigned int i;
     INTEGRAL_CONSTANTS ic;
     INTEGRAL* integral;
     INTEGRAL_AREA* ia;
@@ -243,13 +247,15 @@ void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
     {
         integral = &es->integrals[es->current_integral];
         ia = &ap->integral[es->current_integral];
+        es->current_calc_probs = completed_integral_progress(ap, es);
 
         prepare_integral_constants(ap, sg, ia, &ic);
 
-        setupSeparationCL(ap, sc, ic.r_step_consts, ic.r_pts, ic.nu_consts, ia);
+        /* FIXME: This will only work for 1 integral for now */
+        //setupSeparationCL(ap, sc, ic.r_step_consts, ic.r_pts, ic.nu_consts, ia);
 
-        printf("CL Setup\n");
-        mw_finish(EXIT_SUCCESS);
+        //printf("CL Setup\n");
+        //mw_finish(EXIT_SUCCESS);
 
         integral->background_integral = integrate(ap, sc,
                                                   ic.r_step_consts, ic.r_pts, ic.nu_consts,
