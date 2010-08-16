@@ -105,7 +105,7 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
     return sc;
 }
 
-void get_stream_gauss(const unsigned int convolve, STREAM_GAUSS* sg)
+void get_stream_gauss(STREAM_GAUSS* sg, const unsigned int convolve)
 {
     unsigned int i;
     double* qgaus_X = malloc(sizeof(double) * convolve);
@@ -125,7 +125,7 @@ double set_prob_consts(const ASTRONOMY_PARAMETERS* ap,
                        const STREAM_GAUSS* sg,
                        const unsigned int n_convolve,
                        const double coords,
-                       R_POINTS* rss)
+                       R_POINTS* r_pts)
 {
     double g, exponent, r3, N;
     double reff_xr_rp3;
@@ -144,21 +144,21 @@ double set_prob_consts(const ASTRONOMY_PARAMETERS* ap,
         g = gPrime + sg->dx[i];
 
         //MAG2R
-        rss[i].r_in_mag = g;
-        rss[i].r_in_mag2 = sqr(g);
-        rss[i].r_point = pow(10.0, (g - absm) / 5.0 + 1.0) / 1000.0;
+        r_pts[i].r_in_mag = g;
+        r_pts[i].r_in_mag2 = sqr(g);
+        r_pts[i].r_point = pow(10.0, (g - absm) / 5.0 + 1.0) / 1000.0;
 
-        r3 = cube(rss[i].r_point);
+        r3 = cube(r_pts[i].r_point);
         exponent = sqr(g - gPrime) / (2.0 * sqr(stdev));
         N = ap->coeff * exp(-exponent);
-        rss[i].qw_r3_N = sg->qgaus_W[i] * r3 * N;
+        r_pts[i].qw_r3_N = sg->qgaus_W[i] * r3 * N;
     }
 
     reff_xr_rp3 = reff_value * xr / rPrime3;
     return reff_xr_rp3;
 }
 
-void prepare_nu_constants(NU_CONSTANTS* nu_st,
+void prepare_nu_constants(NU_CONSTANTS* nu_consts,
                           const unsigned int nu_steps,
                           double nu_step_size,
                           double nu_min)
@@ -168,13 +168,13 @@ void prepare_nu_constants(NU_CONSTANTS* nu_st,
 
     for (i = 0; i < nu_steps; i++)
     {
-        nu_st[i].nu = nu_min + (i * nu_step_size);
+        nu_consts[i].nu = nu_min + (i * nu_step_size);
 
-        tmp1 = d2r(90.0 - nu_st[i].nu - nu_step_size);
-        tmp2 = d2r(90.0 - nu_st[i].nu);
+        tmp1 = d2r(90.0 - nu_consts[i].nu - nu_step_size);
+        tmp2 = d2r(90.0 - nu_consts[i].nu);
 
-        nu_st[i].id = cos(tmp1) - cos(tmp2);
-        nu_st[i].nu += 0.5 * nu_step_size;
+        nu_consts[i].id = cos(tmp1) - cos(tmp2);
+        nu_consts[i].nu += 0.5 * nu_step_size;
     }
 }
 
@@ -185,7 +185,7 @@ R_CONSTANTS* prepare_r_constants(const ASTRONOMY_PARAMETERS* ap,
                                  const double r_min,
                                  const double r_step_size,
                                  const double mu_step_size,
-                                 R_POINTS* rss)
+                                 R_POINTS* r_pts)
 {
     unsigned int i;
     double r, next_r, rPrime;
@@ -215,7 +215,7 @@ R_CONSTANTS* prepare_r_constants(const ASTRONOMY_PARAMETERS* ap,
         r_step_consts[i].irv = d2r(((cube(next_r) - cube(r)) / 3.0) * mu_step_size);
         rPrime = (next_r + r) / 2.0;
 
-        r_step_consts[i].reff_xr_rp3 = set_prob_consts(ap, sg, n_convolve, rPrime, &rss[i * n_convolve]);
+        r_step_consts[i].reff_xr_rp3 = set_prob_consts(ap, sg, n_convolve, rPrime, &r_pts[i * n_convolve]);
     }
 
     return r_step_consts;
@@ -228,7 +228,7 @@ void prepare_integral_constants(const ASTRONOMY_PARAMETERS* ap,
 {
 
     /* 2D block, ia->r_steps = rows, ap->convolve = columns */
-    ic->rss = malloc(sizeof(R_POINTS) * ia->r_steps * ap->convolve);
+    ic->r_pts = malloc(sizeof(R_POINTS) * ia->r_steps * ap->convolve);
     ic->r_step_consts = prepare_r_constants(ap,
                                             sg,
                                             ap->convolve,
@@ -236,17 +236,17 @@ void prepare_integral_constants(const ASTRONOMY_PARAMETERS* ap,
                                             ia->r_min,
                                             ia->r_step_size,
                                             ia->mu_step_size,
-                                            ic->rss);
+                                            ic->r_pts);
 
-    ic->nu_st = malloc(sizeof(NU_CONSTANTS) * ia->nu_steps);
-    prepare_nu_constants(ic->nu_st, ia->nu_steps, ia->nu_step_size, ia->nu_min);
+    ic->nu_consts = malloc(sizeof(NU_CONSTANTS) * ia->nu_steps);
+    prepare_nu_constants(ic->nu_consts, ia->nu_steps, ia->nu_step_size, ia->nu_min);
 }
 
 void free_integral_constants(INTEGRAL_CONSTANTS* ic)
 {
     free(ic->r_step_consts);
-    free(ic->rss);
-    free(ic->nu_st);
+    free(ic->r_pts);
+    free(ic->nu_consts);
 }
 
 void free_stream_gauss(STREAM_GAUSS* sg)

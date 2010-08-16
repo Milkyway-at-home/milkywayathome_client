@@ -64,8 +64,8 @@ typedef struct
 typedef struct
 {
     R_CONSTANTS* r_step_consts;
-    R_POINTS* rss;
-    NU_CONSTANTS* nu_st;
+    R_POINTS* r_pts;
+    NU_CONSTANTS* nu_consts;
 } INTEGRAL_CONSTANTS;
 
 
@@ -75,15 +75,15 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
                                  const BACKGROUND_PARAMETERS* bgp,
                                  const STREAMS* streams);
 
-void get_stream_gauss(const unsigned int convolve, STREAM_GAUSS* sg);
+void get_stream_gauss(STREAM_GAUSS* sg, const unsigned int convolve);
 
 double set_prob_consts(const ASTRONOMY_PARAMETERS* ap,
                        const STREAM_GAUSS* sg,
                        const unsigned int n_convolve,
                        const double coords,
-                       R_POINTS* rss);
+                       R_POINTS* r_pts);
 
-void prepare_nu_constants(NU_CONSTANTS* nu_st,
+void prepare_nu_constants(NU_CONSTANTS* nu_consts,
                           const unsigned int nu_steps,
                           double nu_step_size,
                           double nu_min);
@@ -95,7 +95,7 @@ R_CONSTANTS* prepare_r_constants(const ASTRONOMY_PARAMETERS* ap,
                                  const double r_min,
                                  const double r_step_size,
                                  const double mu_step_size,
-                                 R_POINTS* rss);
+                                 R_POINTS* r_pts);
 
 void prepare_integral_constants(const ASTRONOMY_PARAMETERS* ap,
                                 const STREAM_GAUSS* sg,

@@ -64,7 +64,7 @@ double evaluate(const ASTRONOMY_PARAMETERS* ap,
     STREAM_GAUSS sg;
 
     initialize_state(ap, &es);
-    get_stream_gauss(ap->convolve, &sg);
+    get_stream_gauss(&sg, ap->convolve);
 
   #if BOINC_APPLICATION
     if (boinc_file_exists(CHECKPOINT_FILE))
