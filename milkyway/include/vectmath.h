@@ -10,6 +10,57 @@
 
 #include "real.h"
 
+#define NDIM 3
+
+#if NBODY_OPENCL || SEPARATION_OPENCL || defined(__OPENCL_VERSION__)
+  #define VECTOR_SIZE 4
+
+  #ifdef __OPENCL_VERSION__ /* In the kernel */
+    #if DOUBLEPREC
+      typedef double4 real4, *real4ptr;
+    #else
+      typedef float4 real4, *real4ptr;
+    #endif /* DOUBLEPREC */
+  #else
+    #if DOUBLEPREC
+      typedef cl_double4 real4, *real4ptr;
+    #else
+      typedef cl_float4 real4, *real4ptr;
+    #endif /* DOUBLEPREC */
+  #endif /* __OPENCL_VERSION__ */
+
+  typedef real4 vector;
+  typedef real* vectorptr;
+
+  typedef real4 matrix[NDIM];
+  #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
+  #define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
+#else
+  #define VECTOR_SIZE 3
+  typedef real vector[NDIM];
+
+  typedef real matrix[NDIM][NDIM];
+  typedef real* vectorptr;
+
+/* Note: vectorptr is NOT the same as vector*.  By using real* as
+   vectorptr, we can do nice things to avoid pointer aliasing and
+   copying in various places. Use vector* only for mapping over an
+   array of vectors.
+ */
+
+  #define ZERO_VECTOR { 0.0, 0.0, 0.0 }
+  #define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
+#endif /* NBODY_OPENCL */
+
+#define L(x) (((vectorptr) (x))[0])
+#define B(x) (((vectorptr) (x))[1])
+#define R(x) (((vectorptr) (x))[2])
+
+#define X(x) (((vectorptr) (x))[0])
+#define Y(x) (((vectorptr) (x))[1])
+#define Z(x) (((vectorptr) (x))[2])
+
+
 /* Vector operations. */
 
 /* I think the extra 4th component is only an issue for clearing. The

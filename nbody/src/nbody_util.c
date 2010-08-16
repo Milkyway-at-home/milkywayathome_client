@@ -18,9 +18,7 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "real.h"
-#include "vectmath.h"
-#include "nbody_util.h"
+#include "nbody_priv.h"
 #include "milkyway_util.h"
 
 

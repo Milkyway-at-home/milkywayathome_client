@@ -53,6 +53,8 @@
  */
 
 #include "nbody_config.h"
+#include "real.h"
+#include "vectmath.h"
 
 #ifndef __OPENCL_VERSION__   /* Not compiling CL kernel */
   #if NBODY_OPENCL
@@ -76,67 +78,11 @@
   #define HANDLE void*
 #endif
 
-#if DOUBLEPREC
-  typedef double real, *realptr;
-#else
-  typedef float real, *realptr;
-#endif /* DOUBLEPREC */
-
-#define NDIM 3
-
-/* Note: vectorptr is NOT the same as vector*.  By using real* as
-   vectorptr, we can do nice things to avoid pointer aliasing and
-   copying in various places. Use vector* only for mapping over an
-   array of vectors.
- */
-
-#if NBODY_OPENCL || defined(__OPENCL_VERSION__)
-  #ifdef __OPENCL_VERSION__ /* In the kernel */
-    #if DOUBLEPREC
-      typedef double4 real4, *real4ptr;
-    #else
-      typedef float4 real4, *real4ptr;
-    #endif /* DOUBLEPREC */
-  #else
-    #ifndef bool
-      typedef int bool;
-    #endif
-
-    #if DOUBLEPREC
-      typedef cl_double4 real4, *real4ptr;
-    #else
-      typedef cl_float4 real4, *real4ptr;
-    #endif /* DOUBLEPREC */
-  #endif /* __OPENCL_VERSION__ */
-
-  typedef real4 vector;
-  typedef real* vectorptr;
-
-  typedef real4 matrix[NDIM];
-  #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
-  #define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
-#else
-  #ifndef bool
+#if NBODY_OPENCL && !defined(bool)
+    typedef int bool;
+#elif !defined(bool)
     typedef short int bool;
-  #endif
-
-  typedef real vector[NDIM];
-
-  typedef real matrix[NDIM][NDIM];
-  typedef real* vectorptr;
-
-  #define ZERO_VECTOR { 0.0, 0.0, 0.0 }
-  #define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
-#endif /* NBODY_OPENCL */
-
-#define L(x) (((vectorptr) (x))[0])
-#define B(x) (((vectorptr) (x))[1])
-#define R(x) (((vectorptr) (x))[2])
-
-#define X(x) (((vectorptr) (x))[0])
-#define Y(x) (((vectorptr) (x))[1])
-#define Z(x) (((vectorptr) (x))[2])
-
+#endif /* NBODY_OPENCL && !defined(bool) */
 
 #ifndef TRUE
   #define TRUE  1

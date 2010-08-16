@@ -24,7 +24,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _GNU_SOURCE
 
 #include "nbody_types.h"
-#include "vectmath.h"
 
 /* Types -> String */
 const char* showBool(const bool);

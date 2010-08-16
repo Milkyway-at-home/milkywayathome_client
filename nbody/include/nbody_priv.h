@@ -27,10 +27,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include "nbody_config.h"
-#include "nbody_types.h"
+#include "nbody_config.h" /* Must be included first */
+
 #include "vectmath.h"
 #include "real.h"
+#include "milkyway_util.h"
+
+#include "nbody_types.h"
 #include "nbody_util.h"
 #include "show.h"
 #include "io.h"
@@ -40,7 +43,6 @@ extern "C" {
 #include "orbitintegrator.h"
 #include "accelerations.h"
 #include "plummer.h"
-#include "milkyway_util.h"
 
 #if NBODY_OPENCL
   #include "gravmap_opencl.h"

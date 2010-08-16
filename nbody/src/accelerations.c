@@ -21,8 +21,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include "nbody_priv.h"
 #include "accelerations.h"
-#include "vectmath.h"
-#include "real.h"
 
 /* CHECKME: order of operations and effect on precision, and where can
  * we share divisions and such */

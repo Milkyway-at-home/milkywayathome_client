@@ -7,8 +7,6 @@
 #include <assert.h>
 #include "nbody_priv.h"
 #include "orbitintegrator.h"
-#include "accelerations.h"
-#include "real.h"
 
 inline void acceleration(vectorptr restrict acc, const NBodyCtx* ctx, const vectorptr restrict pos)
 {

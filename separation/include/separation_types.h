@@ -25,18 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#define VECTOR_SIZE 3
-
-typedef double vector[VECTOR_SIZE];
-typedef double* vectorptr;
-
-#define X(v) ((v)[0])
-#define Y(v) ((v)[1])
-#define Z(v) ((v)[2])
-
-#define L(v) ((v)[0])
-#define B(v) ((v)[1])
-#define R(v) ((v)[2])
+#include "vectmath.h"
 
 /* Get the xth component of the nth item in STAR_POINTS */
 #define VN(sp, n) (((sp)->stars)[VECTOR_SIZE * (n)])

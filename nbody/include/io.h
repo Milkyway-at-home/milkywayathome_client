@@ -22,7 +22,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _IO_H_
 
 #include "nbody_types.h"
-#include "vectmath.h"
 
 /* Basic IO and initialization */
 void initOutput(NBodyCtx*);             /* open files for output */

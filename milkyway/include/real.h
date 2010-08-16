@@ -18,15 +18,17 @@
 #ifndef _REAL_H_
 #define _REAL_H_
 
-#include "nbody_config.h"
-
 #include <math.h>
-
 
 #if ENABLE_CRLIBM
   #include <crlibm.h>
 #endif /* ENABLE_CRLIBM */
 
+#if DOUBLEPREC
+  typedef double real, *realptr;
+#else
+  typedef float real, *realptr;
+#endif /* DOUBLEPREC */
 
 /* Real-valued library functions.  Most of these are actually supplied
  * by the standard C libraries.
