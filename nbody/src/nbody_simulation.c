@@ -40,7 +40,7 @@ static void startRun(const NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
 {
     InitialConditions fc;
 
-    printf("Starting fresh nbody run\n");
+    warn("Starting fresh nbody run\n");
     reverseOrbit(&fc, ctx, ic);
     initState(ctx, &fc, st);
 }
@@ -106,7 +106,6 @@ static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
   #if BOINC_APPLICATION && !BOINC_DEBUG
     boincOutput(ctx, st, chisq);
   #else
-    printf("chisq = %.20g\n", chisq);
     output(ctx, st);
   #endif /* BOINC_APPLICATION && !BOINC_DEBUG */
 
@@ -198,9 +197,9 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
     if (verifyOnly)
     {
         if (rc)
-            printf("File failed\n");
+            warn("File failed\n");
         else
-            printf("File is OK\n");
+            warn("File is OK\n");
         nbody_finish(rc);
     }
 
@@ -222,6 +221,7 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
         ts = get_time();
 
     runSystem(&ctx, &st);
+    warn("Simulation complete\n");
 
     if (printTiming)
     {

@@ -279,21 +279,21 @@ static void hackCofM(const NBodyCtx* ctx, NBodyState* st, cellptr p, real psize)
     for (k = 0; k < NDIM; k++)          /* check tree structure... */
     {
         /* CHECKME: Precision: This gets angry as N gets big, and the divisions get small */
-        if (cmpos[k] < Pos(p)[k] - psize / 2 ||    /* if out of bounds */
-                Pos(p)[k] + psize / 2 < cmpos[k])  /* in either direction */
+        if (cmpos[k] < Pos(p)[k] - psize / 2.0 ||    /* if out of bounds */
+                Pos(p)[k] + psize / 2.0 < cmpos[k])  /* in either direction */
         {
             warn("hackCofM: tree structure error.\n"
                  "\tcmpos out of bounds\n"
                  "\tPos(p)[%d]           = %e\n"
-                 "\tpsize               = %e\n"
+                 "\tpsize                = %e\n"
                  "\tPos(p)[%d] + psize/2 = %e\n"
                  "\tcmpos[%d]            = %e\n"
                  "\tPos(p)[%d] - psize/2 = %e\n",
                  k, Pos(p)[k],
                  psize,
-                 k, Pos(p)[k] + psize / 2,
+                 k, Pos(p)[k] + psize / 2.0,
                  k, cmpos[k],
-                 k, Pos(p)[k] - psize / 2);
+                 k, Pos(p)[k] - psize / 2.0);
         }
     }
     setRCrit(ctx, st, p, cmpos, psize);            /* set critical radius */
@@ -325,6 +325,5 @@ void makeTree(const NBodyCtx* ctx, NBodyState* st)
     if (ctx->usequad)                           /* including quad moments? */
         hackQuad(t->root);                      /* assign Quad moments */
 
-    //printf("Cells used: %d, max height = %d, rsize = %g\n", t->cellused, t->maxlevel, t->rsize);
 }
 

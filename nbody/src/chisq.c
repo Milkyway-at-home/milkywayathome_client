@@ -160,7 +160,6 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
 
         // Convert to (lambda, beta) (involves a rotation using the
         // Newberg et al (2009) rotation matrices)
-
         bcos = rcos(B(lbr));
         bsin = rsin(B(lbr));
         lsin = rsin(L(lbr));
