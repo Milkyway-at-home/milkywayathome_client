@@ -18,38 +18,21 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_PRIV_H_
-#define _NBODY_PRIV_H_
+#ifndef _CHECKPOINT_H_
+#define _CHECKPOINT_H_
 
-#define _GNU_SOURCE
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "nbody_config.h"
 #include "nbody_types.h"
-#include "vectmath.h"
-#include "real.h"
-#include "grav.h"
-#include "chisq.h"
-#include "load.h"
-#include "orbitintegrator.h"
-#include "accelerations.h"
-#include "plummer.h"
-#include "nbody_util.h"
-#include "show.h"
-#include "io.h"
-#include "checkpoint.h"
+
+#if BOINC_APPLICATION
+
+void openCheckpoint(NBodyCtx* ctx);
+void closeCheckpoint(NBodyCtx* ctx);
+
+void freezeState(const NBodyCtx* ctx, const NBodyState* st);
+int thawState(const NBodyCtx* ctx, NBodyState* st);
+
+#endif /* BOINC_APPLICATION */
 
 
-#if NBODY_OPENCL
-  #include "gravmap_opencl.h"
-#endif /* NBODY_OPENCL */
+#endif /* _CHECKPOINT_H_ */
 
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _NBODY_PRIV_H_ */

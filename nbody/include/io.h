@@ -22,18 +22,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _IO_H_
 
 #include "nbody_types.h"
-#include "vectmath.h"
 
 /* Basic IO and initialization */
-void initOutput(NBodyCtx*);             /* open files for output */
+void initOutput(NBodyCtx*);
 void output(const NBodyCtx* ctx, const NBodyState* st);
 void boincOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq); /* Output with xml tags */
-
-/* Checkpointing */
-void openCheckpoint(NBodyCtx* ctx);
-void closeCheckpoint(NBodyCtx* ctx);
-void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st);
-int thawState(const NBodyCtx* ctx, NBodyState* st);
 
 /* Close output and free things */
 void nbodyCtxDestroy(NBodyCtx* ctx);

@@ -77,6 +77,19 @@ inline static void stepSystem(const NBodyCtx* ctx, NBodyState* st)
     st->tnow += dt;                           /* finally, advance time */
 }
 
+#if BOINC_APPLICATION
+inline static void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
+{
+    if (boinc_time_to_checkpoint())
+    {
+        freezeState(ctx, st);
+        boinc_checkpoint_completed();
+    }
+
+    boinc_fraction_done(st->tnow / ctx->model.time_dwarf);
+}
+#endif /* BOINC_APPLICATION */
+
 static void runSystem(const NBodyCtx* ctx, NBodyState* st)
 {
     const real tstop = ctx->model.time_dwarf - ctx->model.timestep / 1024.0;

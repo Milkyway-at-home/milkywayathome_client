@@ -37,7 +37,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 link_directories(${LIBRARY_OUTPUT_PATH})
 
 option(BOINC_APPLICATION
-  "Build as a BOINC Application" OFF)
+  "Build as a BOINC Application" ON)
 
 option(BOINC_DEBUG
   "Avoid annoying things BOINC does for debugging" OFF)
@@ -200,6 +200,10 @@ set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
                   ${PROJECT_SOURCE_DIR}/src/nbody_util.c
                   ${dsmft_src})
 
+if(BOINC_APPLICATION)
+  list(APPEND nbody_lib_src ${PROJECT_SOURCE_DIR}/src/checkpoint.c)
+endif()
+
 set_property(SOURCE ${dsmft_src}
                PROPERTY COMPILE_DEFINITIONS "DSFMT_MEXP=19937")
 
@@ -354,7 +358,11 @@ else()
     LINK_SEARCH_END_STATIC ON)
 endif()
 
-target_link_libraries(milkyway_nbody ${exe_link_libs} ${BOINC_LIBRARIES})
+if(BOINC_APPLICATION)
+  list(APPEND exe_link_libs ${BOINC_LIBRARIES})
+endif()
+
+target_link_libraries(milkyway_nbody ${exe_link_libs})
 
 if(WIN32)
   #For some reason I can't wrestle out the C++ on Windows.
