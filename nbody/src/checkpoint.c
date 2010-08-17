@@ -350,13 +350,6 @@ void freezeState(const NBodyCtx* ctx, const NBodyState* st)
     char* p = ctx->cp.mptr;
     char* lock;
 
-    static double lastTime = 0.0;
-    double tmp;
-    tmp = get_time();
-    printf("System freezing. tnow = %g. Last time = %g, now = %g, d = %g\n", st->tnow, lastTime, tmp, tmp - lastTime);
-    lastTime = tmp;
-
-
     /* TODO: Better error checking */
 
     /* -1 so we don't bother with the null terminator. It's slightly

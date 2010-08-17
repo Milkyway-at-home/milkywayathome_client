@@ -82,6 +82,11 @@ inline static void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
 {
     if (boinc_time_to_checkpoint())
     {
+        static double lastTime = 0.0;
+        double tmp = get_time();
+        warn("Checkpoint: tnow = %g. time since last = %gs\n", st->tnow, tmp - lastTime);
+        lastTime = tmp;
+
         freezeState(ctx, st);
         boinc_checkpoint_completed();
     }
