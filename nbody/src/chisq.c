@@ -66,28 +66,17 @@ static real calcChisq(const HistData* histData,
     return -chisqval;
 }
 
-static void writeHistogram(const char* histout,           /* Filename to write histogram to */
-                           const HistData* histData,      /* Read histogram data */
-                           const unsigned int* histogram, /* Binned simulation data */
-                           const unsigned int maxIdx,     /* number of bins */
-                           const real start,              /* Calculated low point of bin range */
-                           const real totalNum)           /* Total number in range */
+inline static void printHistogram(FILE* f,
+                                  const HistData* histData,
+                                  const unsigned int* histogram,
+                                  const unsigned int maxIdx,
+                                  const real start,
+                                  const real totalNum)
 {
-    FILE* f = stderr;
     unsigned int i;
 
-    if (histout || !strcmp(histout, "")) /* If file specified, try to open it */
-    {
-        f = nbodyOpenResolved(histout, "w");
-        if (f == NULL)
-        {
-            perror("Writing histout. Using stderr instead");
-            f = stderr;
-        }
-    }
-
   #if BOINC_APPLICATION
-    fprintf(f, "<histogram>");
+    fprintf(f, "<histogram>\n");
   #endif
 
     for (i = 0; i < maxIdx; ++i)
@@ -100,10 +89,33 @@ static void writeHistogram(const char* histout,           /* Filename to write h
     }
 
   #if BOINC_APPLICATION
-    fprintf(f, "</histogram>");
+    fprintf(f, "</histogram>\n");
   #endif
 
-    if (f != stdout)
+}
+
+static void writeHistogram(const char* histout,           /* Filename to write histogram to */
+                           const HistData* histData,      /* Read histogram data */
+                           const unsigned int* histogram, /* Binned simulation data */
+                           const unsigned int maxIdx,     /* number of bins */
+                           const real start,              /* Calculated low point of bin range */
+                           const real totalNum)           /* Total number in range */
+{
+    FILE* f = DEFAULT_OUTPUT_FILE;
+
+    if (histout && strcmp(histout, ""))  /* If file specified, try to open it */
+    {
+        f = nbodyOpenResolved(histout, "w");
+        if (f == NULL)
+        {
+            perror("Writing histout. Using stderr instead");
+            f = DEFAULT_OUTPUT_FILE;
+        }
+    }
+
+    printHistogram(f, histData, histogram, maxIdx, start, totalNum);
+
+    if (f != DEFAULT_OUTPUT_FILE)
         fclose(f);
 }
 
@@ -251,7 +263,8 @@ real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st)
 
     if (histogram && histData)
     {
-        writeHistogram(ctx->histout, histData, histogram, maxIdx, start, (real) totalNum);
+        if (ctx->outputHistogram)
+            writeHistogram(ctx->histout, histData, histogram, maxIdx, start, (real) totalNum);
 
         if (totalNum != 0)
             chisqval = calcChisq(histData, histogram, maxIdx, (real) totalNum);

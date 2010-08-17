@@ -182,7 +182,9 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
                         const long setSeed,
                         const int outputCartesian,
                         const int printTiming,
-                        const int verifyOnly)
+                        const int verifyOnly,
+                        const int outputBodies,
+                        const int outputHistogram)
 {
     NBodyCtx ctx         = EMPTY_CTX;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
@@ -206,6 +208,8 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
         fail("Failed to read input parameters file\n");
 
     ctx.outputCartesian = outputCartesian;
+    ctx.outputBodies    = outputBodies;
+    ctx.outputHistogram = outputHistogram;
     ctx.outfilename     = outFileName;
     ctx.histogram       = histogramFileName;
     ctx.histout         = histoutFileName;

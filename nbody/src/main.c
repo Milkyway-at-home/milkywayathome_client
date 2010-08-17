@@ -31,7 +31,7 @@
 
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
 #define DEFAULT_HISTOGRAM_FILE  "histogram"
-#define DEFAULT_HISTOUT_FILE    "histout"
+
 
 /* If one of these options is null, use the default. */
 #define stringDefault(s, d) ((s) = (s) ? (s) : strdup((d)))
@@ -132,7 +132,9 @@ static json_object* readParameters(const int argc,
                                    int* ignoreCheckpoint,
                                    int* outputCartesian,
                                    int* printTiming,
-                                   int* verifyOnly)
+                                   int* verifyOnly,
+                                   int* outputBodies,
+                                   int* outputHistogram)
 {
   #if !BOINC_APPLICATION
     #pragma unused(checkpointFileName)
@@ -213,6 +215,18 @@ static json_object* readParameters(const int argc,
             "ignore-checkpoint", 'i',
             POPT_ARG_NONE, ignoreCheckpoint,
             0, "Ignore the checkpoint file", NULL
+        },
+
+        {
+            "print-bodies", 'b',
+            POPT_ARG_NONE, outputBodies,
+            0, "Print bodies", NULL
+        },
+
+        {
+            "print-histogram", 'm',
+            POPT_ARG_NONE, outputHistogram,
+            0, "Print histogram", NULL
         },
 
         {
@@ -377,6 +391,8 @@ int main(int argc, const char* argv[])
     int ignoreCheckpoint = FALSE;
     int printTiming      = FALSE;
     int verifyOnly       = FALSE;
+    int outputBodies     = FALSE;
+    int outputHistogram  = FALSE;
     char* checkpointFile = NULL;
     char* histogramFile  = NULL;
     char* histoutFile    = NULL;
@@ -397,18 +413,24 @@ int main(int argc, const char* argv[])
                          &ignoreCheckpoint,
                          &outputCartesian,
                          &printTiming,
-                         &verifyOnly);
+                         &verifyOnly,
+                         &outputBodies,
+                         &outputHistogram);
 
     /* Use default if checkpoint file not specified */
     stringDefault(checkpointFile, DEFAULT_CHECKPOINT_FILE);
     stringDefault(histogramFile,  DEFAULT_HISTOGRAM_FILE);
-    stringDefault(histoutFile,    DEFAULT_HISTOUT_FILE);
+
+    if (outFile)
+        outputBodies = TRUE;
+    if (histoutFile)    /* Specifying output files implies using them */
+        outputHistogram = TRUE;
 
     if (obj)
     {
         runNBodySimulation(obj, &fitParams,
                            outFile, checkpointFile, histogramFile, histoutFile, (long) setSeed,
-                           outputCartesian, printTiming, verifyOnly);
+                           outputCartesian, printTiming, verifyOnly, outputBodies, outputHistogram);
     }
     else
     {

@@ -39,7 +39,10 @@ __attribute__ ((visibility("default"))) void runNBodySimulation(json_object* obj
                                                                 const long setSeed,
                                                                 const int outputCartesian,
                                                                 const int printTiming,
-                                                                const int verifyOnly);
+                                                                const int verifyOnly,
+                                                                const int printBodies,
+                                                                const int printHistogram);
+
 
 #ifdef _cplusplus
 }

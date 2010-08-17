@@ -244,22 +244,9 @@ void closeCheckpoint(NBodyCtx* ctx)
 
 void initOutput(NBodyCtx* ctx)
 {
-    if (ctx->outfilename)                       /* output file specified? */
-    {
-        ctx->outfile = nbody_fopen(ctx->outfilename, "w");           /* setup output FILE* */
-        if (ctx->outfile == NULL)
-            fail("initOutput: cannot open file %s\n", ctx->outfilename);
-    }
-    else
-    {
-        /* Using stderr annoys me, so only do this if we have to BOINC */
-      #if BOINC_APPLICATION && !BOINC_DEBUG
-        ctx->outfile = stderr;
-      #else
-        ctx->outfile = stdout;
-      #endif /* BOINC_APPLICATION */
-
-    }
+    ctx->outfile = ctx->outfilename ? nbodyOpenResolved(ctx->outfilename, "w") : DEFAULT_OUTPUT_FILE;
+    if (ctx->outfile == NULL)
+        fail("initOutput: cannot open output file %s\n", ctx->outfilename);
 }
 
 /* Low-level input and output operations. */
@@ -421,11 +408,14 @@ void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
 /* Output with the silly xml stuff that BOINC uses */
 void boincOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq)
 {
-//    not printing out the bodies because it will food the server.
-//
-//    fprintf(ctx->outfile, "<bodies>\n");
-//    output(ctx, st);
-//    fprintf(ctx->outfile, "</bodies>\n");
+    //not printing out the bodies because it will food the server.
+
+    if (ctx->outputBodies)
+    {
+        fprintf(ctx->outfile, "<bodies>\n");
+        output(ctx, st);
+        fprintf(ctx->outfile, "</bodies>\n");
+    }
 
     fprintf(ctx->outfile, "<search_likelihood>%.20g</search_likelihood>\n", chisq);
     fprintf(ctx->outfile, "<search_application>" BOINC_NBODY_APP_VERSION "</search_application>\n");
