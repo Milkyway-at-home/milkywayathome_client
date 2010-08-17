@@ -365,12 +365,12 @@ static json_object* readParameters(const int argc,
          */
 
         obj = nbodyJSONObjectFromFile(inputFile);
-        if (is_error(obj) || obj == NULL)
+        if (is_error(obj))
         {
             warn("Parse error in file '%s'\n", inputFile);
-            free(inputFile);
-            return NULL;
+            obj = NULL;
         }
+
         free(inputFile);
     }
     else

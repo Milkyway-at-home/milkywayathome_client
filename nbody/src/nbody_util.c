@@ -120,6 +120,7 @@ char* nbodyReadFile(const char* filename)
     if (readSize != fsize)
     {
         free(buf);
+        fclose(f);
         warn("Failed to read file '%s': Expected to read %ld, but got %u\n",
              filename,
              fsize,
