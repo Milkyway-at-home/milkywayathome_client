@@ -101,24 +101,40 @@ char* nbodyReadFile(const char* filename)
     size_t readSize;
     char* buf;
 
-    f = nbody_fopen(filename, "r");
+    f = nbody_fopen(filename, "rb");
     if (!f)
     {
+        perror("nbodyReadFile nbody_fopen:");
         warn("Failed to open file '%s' for reading\n", filename);
         return NULL;
     }
 
-    fseek(f, 0, SEEK_END);  /* Find size of file */
-    fsize = ftell(f);
+    /* Find size of file */
+    if (fseek(f, 0, SEEK_END) < 0)
+    {
+        perror("nbodyReadFile fseek end:");
+        return NULL;
+    }
 
-    fseek(f, 0, SEEK_SET);
+    fsize = ftell(f);
+    if (fsize == -1)
+    {
+        perror("nbodyReadFile ftell:");
+        return NULL;
+    }
+
+    if (fseek(f, 0, SEEK_SET) < 0)
+    {
+        perror("nbodyReadFile fseek beginning:");
+        return NULL;
+    }
 
     buf = callocSafe(fsize + 1, sizeof(char));
 
     readSize = fread(buf, sizeof(char), fsize, f);
-
-    if (readSize != fsize)
+    if (readSize != (unsigned long) fsize)
     {
+        perror("nbodyReadFile fread:");
         free(buf);
         fclose(f);
         warn("Failed to read file '%s': Expected to read %ld, but got %u\n",
