@@ -20,18 +20,51 @@
 
 set(client_bin_name milkyway_separation)
 
+if(NEED_POPT_DEPS)
+  # Popt dependencies for static linking For some reason, on OS X /
+  # windows you need these dependencies but not Linux.
+  list(APPEND exe_link_libs ${LIBICONV_LIBRARY}
+                            ${LIBINTL_LIBRARY})
+endif()
+
 
 if(CPU_SEPARATION)
   add_executable(${client_bin_name} milkyway_client_app.c)
   set_target_properties(${client_bin_name}
                           PROPERTIES
                             COMPILE_FLAGS "-DCOMPUTE_ON_CPU=1 -DUSE_CUDA=0 -D USE_OCL=0")
-  target_link_libraries(${client_bin_name} ${POPT_LIBRARY} ${BOINC_LIBRARIES} separation_cpu milkyway)
+  target_link_libraries(${client_bin_name} ${POPT_LIBRARY} ${BOINC_LIBRARIES} separation_cpu milkyway
+                           ${exe_link_libs})
+
   install(TARGETS ${client_bin_name} DESTINATION bin
           PERMISSIONS
             OWNER_READ OWNER_WRITE OWNER_EXECUTE
             GROUP_READ GROUP_EXECUTE
             WORLD_READ WORLD_EXECUTE)
+
+
+  if(NOT APPLE)
+    #CHECKME: What about Windows?
+    set(separation_static_link_flags "-static -static-libgcc -static-libstdc++")
+
+    if(UNIX)
+      #We need to do this to statically link pthreads. Otherwise really
+      #bizarre things happen.
+      set(separation_static_link_flags "-pthread ${nbody_static_link_flags}")
+    endif()
+
+    set_target_properties(${client_bin_name}
+      PROPERTIES
+      LINKER_LANGUAGE CXX
+      LINK_SEARCH_END_STATIC ON
+      LINK_FLAGS ${separation_static_link_flags})
+  else()
+    set_target_properties(${client_bin_name}
+      PROPERTIES
+      LINKER_LANGUAGE CXX
+      LINK_SEARCH_END_STATIC ON)
+  endif()
+
 endif()
 
 

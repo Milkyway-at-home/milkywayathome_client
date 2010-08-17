@@ -298,10 +298,12 @@ int main(int argc, char** argv)
     retval = boinc_init_options(&options);
 #else
     /* TODO: for release build, use the boinc defaults*/
-    //retval = boinc_init();
+    retval = boinc_init();
+    /*
     retval = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
                                     | BOINC_DIAG_HEAPCHECKENABLED
                                     | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
+    */
 #endif /* defined(_WIN32) && COMPUTE_ON_GPU */
     if (retval)
         exit(retval);
