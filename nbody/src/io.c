@@ -345,9 +345,8 @@ int thawState(const NBodyCtx* ctx, NBodyState* st)
  * begins and ends. I think this should always be good enough, unless
  * something really weird happens. If the read is interrupted, the
  * checkpoint file is garbage and we lose everything. Uses the boinc
- * critical sections, so it hopefully won't be interrupted. I'm not
- * entirely sure this is the proper use of the boinc critical
- * sections. */
+ * critical sections, so it hopefully won't be interrupted.
+ */
 inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
 {
     const size_t bodySize = sizeof(body) * ctx->model.nbody;
@@ -365,8 +364,6 @@ inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
 
     lock = p;        /* We keep the lock here */
     p += sizeof(int);
-
-    boinc_begin_critical_section();
 
     SET_LOCK(lock, 0, ctx);         /* Mark the file as in the middle of writing */
 
@@ -389,8 +386,6 @@ inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st)
     SYNC_WRITE(ctx, hdrSize + bodySize);
 
     SET_LOCK(lock, 1, ctx);   /* Done writing, flag file as valid  */
-
-    boinc_end_critical_section();
 }
 
 void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
