@@ -96,18 +96,23 @@ static void specialSetup()
 static json_object* nbodyJSONObjectFromFile(char* inputFile)
 {
     char resolvedPath[1024];
-    int ret;
+    int rc;
     char* buf;
     json_object* obj;
 
-    ret = boinc_resolve_filename(inputFile, resolvedPath, sizeof(resolvedPath));
-    if (ret)
-        fail("Error resolving file '%s': %d\n", inputFile, ret);
+    rc = boinc_resolve_filename(inputFile, resolvedPath, sizeof(resolvedPath));
+    if (rc)
+        fail("Error resolving file '%s': %d\n", inputFile, rc);
 
     buf = nbodyReadFile(resolvedPath);
+    if (!buf)
+    {
+        warn("Failed to read resolved path '%s'\n", resolvedPath);
+        return NULL;
+    }
+
     obj = json_tokener_parse(buf);
     free(buf);
-
     return obj;
 }
 
