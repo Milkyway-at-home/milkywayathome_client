@@ -21,7 +21,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_types.h"
 #include "separation_constants.h"
-#include "milkyway_util.h"
+#include "milkyway_math.h"
 
 static const double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 

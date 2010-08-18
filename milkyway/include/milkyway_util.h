@@ -18,8 +18,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _UTIL_H_
-#define _UTIL_H_
+#ifndef _MILKYWAY_UTIL_H_
+#define _MILKYWAY_UTIL_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,69 +63,6 @@ void* mallocSafe(size_t size);
 #define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \
                          mw_finish(EXIT_FAILURE); }
 
-
-
-/* TODO: Using real sincos() would be nice in coordinate conversions
-   for speed, but it's a glibc extension. It is in opencl though.  We
-   could take it from glibc, but it's in assembly and would be kind of
-   annoying to add, but probably worth it.
-
-   TODO: Define HAVE_SINCOS somewhere
- */
-#if !HAVE_SINCOS
-  #define sincos(x, s, c) { *(s) = sin((x)); *(c) = cos((x)); }
-#endif
-
-
-/*  ABS: returns the absolute value of its argument
- *  MAX: returns the argument with the highest value
- *  MIN: returns the argument with the lowest value
- */
-#define   ABS(x)       (((x) < 0) ? -(x) : (x))
-#define   MAX(x,y)     (((x) > (y)) ? (x) : (y))
-#define   MIN(x,y)     (((x) < (y)) ? (x) : (y))
-
-/* degrees to radians */
-#define d2r(x) ((x) * M_PI / 180.0)
-
-/* radians to degrees */
-#define r2d(x) ((x) * 180.0 / M_PI)
-
-/* simple math macros */
-#define cube(x) ((x) * (x) * (x))
-#define sqr(x)  ((x) * (x))
-#define inv(x)  (1.0 / (x))
-
-#define dmod(A,B) ((B) != 0.0 ? ((A)*(B) > 0.0 ? (A) - (B) * floor((A)/(B)) \
-                             : (A) + (B) * floor(-(A)/(B))):(A))
-#define dsign(A,B) ((B) < 0.0 ? -(A) : (A))
-
-/* other useful nonstandard constants */
-
-/* (4 * pi) / 3 */
-#define PI_4_3 (4.188790204786390984616857844372670512262892532500141)
-#define PI_2_3 (2.094395102393195492308428922186335256131446266250071)
-#define PI_3_2 (4.712388980384689857693965074919254326295754099062659)
-#define M_2PI (6.2831853071795864769252867665590057683943387987502)
-
-
-/* Taken from glibc */
-#ifndef M_PI
-# define M_E		2.7182818284590452354	/* e */
-# define M_LOG2E	1.4426950408889634074	/* log_2 e */
-# define M_LOG10E	0.43429448190325182765	/* log_10 e */
-# define M_LN2		0.69314718055994530942	/* log_e 2 */
-# define M_LN10		2.30258509299404568402	/* log_e 10 */
-# define M_PI		3.14159265358979323846	/* pi */
-# define M_PI_2		1.57079632679489661923	/* pi/2 */
-# define M_PI_4		0.78539816339744830962	/* pi/4 */
-# define M_1_PI		0.31830988618379067154	/* 1/pi */
-# define M_2_PI		0.63661977236758134308	/* 2/pi */
-# define M_2_SQRTPI	1.12837916709551257390	/* 2/sqrt(pi) */
-# define M_SQRT2	1.41421356237309504880	/* sqrt(2) */
-# define M_SQRT1_2	0.70710678118654752440	/* 1/sqrt(2) */
-#endif /* M_PI */
-
 char* mwReadFile(const char* filename);
 
 double get_time();
@@ -134,5 +71,5 @@ double get_time();
 }
 #endif
 
-#endif /* _UTIL_H_ */
+#endif /* _MILKYWAY_UTIL_H_ */
 

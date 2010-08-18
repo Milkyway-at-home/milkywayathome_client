@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_constants.h"
 #include "milkyway_vectors.h"
-#include "milkyway_util.h"
+#include "milkyway_math.h"
 
 //vickej2 for sgr stripes, the great circles are defined thus:
 //sgr stripes run parallel to sgr longitude lines, centered on lamda=2.5*wedge number

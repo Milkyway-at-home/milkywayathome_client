@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "likelihood.h"
 #include "integrals_likelihood.h"
 #include "r_points.h"
+#include "milkyway_util.h"
 
 inline static void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
                                             const STREAM_CONSTANTS* sc,

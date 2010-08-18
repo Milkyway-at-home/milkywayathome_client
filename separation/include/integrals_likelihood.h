@@ -27,7 +27,7 @@ extern "C" {
 
 #include "separation_constants.h"
 #include "separation_types.h"
-#include "milkyway_util.h"
+#include "milkyway_math.h"
 
 #define KAHAN_ADD(sum, item, correction)        \
     {                                           \
