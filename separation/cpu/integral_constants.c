@@ -88,20 +88,31 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
     return sc;
 }
 
-void get_stream_gauss(STREAM_GAUSS* sg, const unsigned int convolve)
+STREAM_GAUSS* get_stream_gauss(const unsigned int convolve)
 {
     unsigned int i;
+    STREAM_GAUSS* sg;
+
     double* qgaus_X = mallocSafe(sizeof(double) * convolve);
+    double* qgaus_W = mallocSafe(sizeof(double) * convolve);
 
-    sg->qgaus_W = (double*) mallocSafe(sizeof(double) * convolve);
-    sg->dx      = (double*) mallocSafe(sizeof(double) * convolve);
+    gaussLegendre(-1.0, 1.0, qgaus_X, qgaus_W, convolve);
 
-    gaussLegendre(-1.0, 1.0, qgaus_X, sg->qgaus_W, convolve);
+    sg = mallocSafe(sizeof(STREAM_GAUSS) * convolve);
 
-    for (i = 0; i < convolve; i++)
-        sg->dx[i] = 3.0 * stdev * qgaus_X[i];
+    /* Use separate buffers at first since that's what the gaussLegendre takes,
+       but then pack them into a more coherent struct */
+    for (i = 0; i < convolve; ++i)
+    {
+        sg[i].dx = 3.0 * stdev * qgaus_X[i];
+        sg[i].qgaus_W = qgaus_W[i];
+    }
 
     free(qgaus_X);
+    free(qgaus_W);
+
+    return sg;
+
 }
 
 double set_prob_consts(const ASTRONOMY_PARAMETERS* ap,
@@ -124,7 +135,7 @@ double set_prob_consts(const ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < n_convolve; ++i)
     {
-        g = gPrime + sg->dx[i];
+        g = gPrime + sg[i].dx;
 
         //MAG2R
         r_pts[i].r_in_mag = g;
@@ -134,7 +145,7 @@ double set_prob_consts(const ASTRONOMY_PARAMETERS* ap,
         r3 = cube(r_pts[i].r_point);
         exponent = sqr(g - gPrime) / (2.0 * sqr(stdev));
         N = ap->coeff * exp(-exponent);
-        r_pts[i].qw_r3_N = sg->qgaus_W[i] * r3 * N;
+        r_pts[i].qw_r3_N = sg[i].qgaus_W * r3 * N;
     }
 
     reff_xr_rp3 = reff_value * xr / rPrime3;
@@ -162,11 +173,5 @@ NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
     }
 
     return nu_consts;
-}
-
-void free_stream_gauss(STREAM_GAUSS* sg)
-{
-    free(sg->dx);
-    free(sg->qgaus_W);
 }
 

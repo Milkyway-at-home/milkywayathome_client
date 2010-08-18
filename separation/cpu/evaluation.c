@@ -71,12 +71,12 @@ double evaluate(const ASTRONOMY_PARAMETERS* ap,
 {
     double likelihood_val;
     EVALUATION_STATE es = EMPTY_EVALUATION_STATE;
-    STREAM_GAUSS sg;
+    STREAM_GAUSS* sg;
     FINAL_STREAM_INTEGRALS fsi;
     STAR_POINTS sp = EMPTY_STAR_POINTS;
 
     initialize_state(ap, &es);
-    get_stream_gauss(&sg, ap->convolve);
+    sg = get_stream_gauss(ap->convolve);
 
   #if BOINC_APPLICATION && !SEPARATION_OPENCL
     if (boinc_file_exists(CHECKPOINT_FILE))
@@ -92,7 +92,7 @@ double evaluate(const ASTRONOMY_PARAMETERS* ap,
     }
   #endif
 
-    calculate_integrals(ap, sc, &sg, &es);
+    calculate_integrals(ap, sc, sg, &es);
 
   #if BOINC_APPLICATION
     /* Final checkpoint. */
@@ -105,11 +105,11 @@ double evaluate(const ASTRONOMY_PARAMETERS* ap,
 
     read_star_points(&sp, star_points_file);
 
-    likelihood_val = likelihood(ap, &sp, sc, streams, &fsi, &sg);
+    likelihood_val = likelihood(ap, &sp, sc, streams, &fsi, sg);
 
     free_star_points(&sp);
     free_final_stream_integrals(&fsi);
-    free_stream_gauss(&sg);
+    free(sg);
 
   #if BOINC_APPLICATION && !SEPARATION_OPENCL
     boinc_delete_file(CHECKPOINT_FILE);

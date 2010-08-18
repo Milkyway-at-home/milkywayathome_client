@@ -178,8 +178,8 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
 
 /* returns background integral */
 static double integrate(const ASTRONOMY_PARAMETERS* ap,
-                        const STREAM_CONSTANTS* sc,
                         const INTEGRAL_AREA* ia,
+                        const STREAM_CONSTANTS* sc,
                         const STREAM_GAUSS* sg,
                         ST_PROBS* probs,
                         EVALUATION_STATE* es)
@@ -274,10 +274,10 @@ void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         ia = &ap->integral[es->current_integral];
         es->current_calc_probs = completed_integral_progress(ap, es);
 
-        separationCL(ap, ia, sc);
+        //separationCL(ap, ia, sc, sg);
 
         t1 = get_time();
-        integral->background_integral = integrate(ap, sc, ia, sg, integral->probs, es);
+        integral->background_integral = integrate(ap, ia, sc, sg, integral->probs, es);
         t2 = get_time();
 
         printf("Time = %.20g\n", t2 - t1);

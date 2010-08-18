@@ -66,8 +66,8 @@ typedef struct
 
 typedef struct
 {
-    double* dx;
-    double* qgaus_W;
+    double dx;
+    double qgaus_W;
 } STREAM_GAUSS;
 
 
