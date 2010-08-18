@@ -19,10 +19,10 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NUMERICAL_INTEGRATION_H_
-#define _NUMERICAL_INTEGRATION_H_
+#ifndef _GAUSS_LEGENDRE_H_
+#define _GAUSS_LEGENDRE_H_
 
 void gaussLegendre(double x1, double x2, double* x, double* restrict w, int n);
 
-#endif /* _NUMERICAL_INTEGRATION_H_ */
+#endif /* _GAUSS_LEGENDRE_H_ */
 

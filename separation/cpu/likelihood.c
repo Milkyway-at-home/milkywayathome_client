@@ -1,7 +1,7 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
-Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
-and Rensselaer Polytechnic Institute.
+Copyright 2008-2010 Travis Desell, Dave Przybylo, Nathan Cole, Matthew
+Arsenault, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
+Magdon-Ismail and Rensselaer Polytechnic Institute.
 
 This file is part of Milkway@Home.
 
@@ -19,14 +19,11 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "separation.h"
-#include "evaluation.h"
-#include "evaluation_state.h"
-#include "integral_constants.h"
-#include "integrals_likelihood.h"
-#include "likelihood.h"
+#include <stdio.h>
 
-#include "setup_cl.h"
+#include "likelihood.h"
+#include "integrals_likelihood.h"
+#include "r_points.h"
 
 inline static void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
                                             const STREAM_CONSTANTS* sc,

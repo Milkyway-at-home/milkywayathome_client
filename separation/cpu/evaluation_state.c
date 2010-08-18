@@ -1,7 +1,7 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
-Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
-and Rensselaer Polytechnic Institute.
+Copyright 2008-2010 Travis Desell, Matthew Arsenault, Dave Przybylo,
+Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
+Magdon-Ismail and Rensselaer Polytechnic Institute.
 
 This file is part of Milkway@Home.
 
@@ -19,8 +19,9 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "separation.h"
+#include "separation_types.h"
 #include "evaluation_state.h"
+#include "milkyway_util.h"
 
 void initialize_integral(INTEGRAL* integral, unsigned int number_streams)
 {

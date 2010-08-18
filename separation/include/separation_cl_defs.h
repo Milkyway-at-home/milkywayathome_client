@@ -25,7 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include "separation.h"
+#include "separation_types.h"
 
 char* separationCLDefs(const ASTRONOMY_PARAMETERS* ap, const char* extra);
 

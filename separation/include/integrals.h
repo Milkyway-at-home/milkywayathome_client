@@ -25,17 +25,20 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include "separation.h"
-#include "parameters.h"
+#include "separation_types.h"
 #include "evaluation_state.h"
-#include "integral_constants.h"
 
-double integrate(const ASTRONOMY_PARAMETERS* ap,
-                 const INTEGRAL_AREA* ia,
-                 const STREAM_CONSTANTS* sc,
-                 const STREAM_GAUSS* sg,
-                 ST_PROBS* probs,
-                 EVALUATION_STATE* es);
+
+double r_sum(const ASTRONOMY_PARAMETERS* ap,
+             const STREAM_CONSTANTS* sc,
+             const INTEGRAL_AREA* ia,
+             const STREAM_GAUSS* sg,
+             const NU_CONSTANTS* nu_consts,
+             R_POINTS* r_pts,
+             ST_PROBS* probs,
+             vector* xyz,
+             EVALUATION_STATE* es);
+
 
 #ifdef __cplusplus
 }

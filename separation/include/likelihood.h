@@ -25,10 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include "separation.h"
-#include "parameters.h"
-#include "evaluation_state.h"
-#include "integral_constants.h"
+#include "separation_types.h"
 
 double likelihood(const ASTRONOMY_PARAMETERS* ap,
                   const STAR_POINTS* sp,

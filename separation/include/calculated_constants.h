@@ -18,46 +18,29 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _SETUP_CL_H_
-#define _SETUP_CL_H_
+#ifndef _CALCULATED_CONSTANTS_H_
+#define _CALCULATED_CONSTANTS_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <OpenCL/cl.h>
-#include <OpenCL/cl_ext.h>
-
 #include "separation_types.h"
-#include "build_cl.h"
 
+STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
+                                 const BACKGROUND_PARAMETERS* bgp,
+                                 const STREAMS* streams);
 
-/* The various buffers needed by the integrate function. */
-typedef struct
-{
-    /* Write only buffers */
-    cl_mem outNu;     /* Output from each nu_sum done in parallel */
+STREAM_GAUSS* get_stream_gauss(const unsigned int convolve);
 
-    /* constant, read only buffers */
-    cl_mem sg;        /* Stream Gauss */
-    cl_mem sc;        /* Stream Constants */
-    cl_mem nuConsts;  /* nu step constants */
-} SeparationCLMem;
+NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
+                                   const double nu_step_size,
+                                   const double nu_min);
 
-#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL }
-
-
-cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
-                         const INTEGRAL_AREA* ia,
-                         const STREAM_CONSTANTS* sc,
-                         const STREAM_GAUSS* sg,
-                         const NU_CONSTANTS* nu_consts,
-                         CLInfo* ci,
-                         SeparationCLMem* cm);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _SETUP_CL_H_ */
+#endif /* _CALCULATED_CONSTANTS_H_ */
 

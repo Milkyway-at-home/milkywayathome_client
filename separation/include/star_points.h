@@ -23,6 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _STAR_POINTS_H_
 
 #include <stdio.h>
+#include "separation_types.h"
 
 int read_star_points(STAR_POINTS* sp, const char* file);
 int fread_star_points(FILE* data_file, STAR_POINTS* sp);

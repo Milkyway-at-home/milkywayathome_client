@@ -28,7 +28,7 @@ extern "C" {
 #include <OpenCL/cl.h>
 #include <OpenCL/cl_ext.h>
 
-#include "separation.h"
+#include "separation_types.h"
 #include "setup_cl.h"
 #include "build_cl.h"
 

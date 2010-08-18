@@ -1,7 +1,7 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
-Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
-and Rensselaer Polytechnic Institute.
+Copyright 2008-2010 Travis Desell, Matthew Arsenault, Dave Przybylo,
+Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
+Magdon-Ismail and Rensselaer Polytechnic Institute.
 
 This file is part of Milkway@Home.
 
@@ -24,6 +24,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_constants.h"
 #include "milkyway_vectors.h"
+#include "milkyway_util.h"
+
 
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
 __attribute__ ((always_inline))

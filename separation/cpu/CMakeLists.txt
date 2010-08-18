@@ -19,15 +19,16 @@
 #
 
 set(lib_source_file_list evaluation_state.c
-                         ${PROJECT_SOURCE_DIR}/util/io_util.c
+                         io_util.c
                          coordinates.c
-                         numerical_integration.c
+                         gauss_legendre.c
                          evaluation.c
                          parameters.c
                          star_points.c
                          integrals.c
                          likelihood.c
-                         integral_constants.c
+                         calculated_constants.c
+                         r_points.c
                          separation_cl_buffers.c
                          setup_cl.c
                          run_cl.c

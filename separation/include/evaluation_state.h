@@ -23,10 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _EVALUATION_STATE_H_
 #define _EVALUATION_STATE_H_
 
-#include <stdio.h>
-#include "parameters.h"
-#include "star_points.h"
-#include "evaluation.h"
+#include "separation_types.h"
 
 /* Completed integral state */
 typedef struct

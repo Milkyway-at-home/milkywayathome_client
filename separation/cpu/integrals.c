@@ -1,7 +1,7 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
-Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
-and Rensselaer Polytechnic Institute.
+Copyright 2008-2010 Travis Desell, Dave Przybylo, Nathan Cole, Matthew
+Arsenault, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
+Magdon-Ismail and Rensselaer Polytechnic Institute.
 
 This file is part of Milkway@Home.
 
@@ -19,13 +19,11 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "separation.h"
-#include "evaluation.h"
 #include "evaluation_state.h"
-#include "integral_constants.h"
-#include "integrals_likelihood.h"
 #include "integrals.h"
-#include "run_cl.h"
+#include "integrals_likelihood.h"
+#include "coordinates.h"
+#include "r_points.h"
 
 
 #if BOINC_APPLICATION
@@ -172,15 +170,15 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
     es->nu_step = 0;
 }
 
-inline static double r_sum(const ASTRONOMY_PARAMETERS* ap,
-                           const STREAM_CONSTANTS* sc,
-                           const INTEGRAL_AREA* ia,
-                           const STREAM_GAUSS* sg,
-                           const NU_CONSTANTS* nu_consts,
-                           R_POINTS* r_pts,
-                           ST_PROBS* probs,
-                           vector* xyz,
-                           EVALUATION_STATE* es)
+double r_sum(const ASTRONOMY_PARAMETERS* ap,
+             const STREAM_CONSTANTS* sc,
+             const INTEGRAL_AREA* ia,
+             const STREAM_GAUSS* sg,
+             const NU_CONSTANTS* nu_consts,
+             R_POINTS* r_pts,
+             ST_PROBS* probs,
+             vector* xyz,
+             EVALUATION_STATE* es)
 {
     double r, next_r, rPrime;
     double irv, reff_xr_rp3;
@@ -217,29 +215,5 @@ inline static double r_sum(const ASTRONOMY_PARAMETERS* ap,
     }
 
     return es->r_acc.bg_int + es->r_acc.correction;
-}
-
-/* returns background integral */
-double integrate(const ASTRONOMY_PARAMETERS* ap,
-                 const INTEGRAL_AREA* ia,
-                 const STREAM_CONSTANTS* sc,
-                 const STREAM_GAUSS* sg,
-                 ST_PROBS* probs,
-                 EVALUATION_STATE* es)
-{
-    double result;
-
-    NU_CONSTANTS* nu_consts = prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
-    R_POINTS* r_pts = mallocSafe(sizeof(R_POINTS) * ap->convolve);
-    vector* xyz = mallocSafe(sizeof(vector) * ap->convolve);
-
-    result = r_sum(ap, sc, ia, sg, nu_consts, r_pts, probs, xyz, es);
-    es->r_step = 0;
-
-    free(nu_consts);
-    free(r_pts);
-    free(xyz);
-
-    return result;
 }
 

@@ -1,5 +1,5 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Copyright 2008-2010 Travis Desell, Dave Przybylo, Nathan Cole, Matthew Arsenault,
 Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
 and Rensselaer Polytechnic Institute.
 
@@ -19,11 +19,12 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "separation.h"
-#include "evaluation.h"
-#include "evaluation_state.h"
-
-static const double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
+#include "separation_types.h"
+#include "separation_constants.h"
+#include "calculated_constants.h"
+#include "milkyway_util.h"
+#include "coordinates.h"
+#include "gauss_legendre.h"
 
 STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
                                  const BACKGROUND_PARAMETERS* bgp,
@@ -113,43 +114,6 @@ STREAM_GAUSS* get_stream_gauss(const unsigned int convolve)
 
     return sg;
 
-}
-
-double set_r_points(const ASTRONOMY_PARAMETERS* ap,
-                    const STREAM_GAUSS* sg,
-                    const unsigned int n_convolve,
-                    const double coords,
-                    R_POINTS* r_pts)
-{
-    double g, exponent, r3, N;
-    double reff_xr_rp3;
-    unsigned int i;
-
-    //R2MAG
-    const double gPrime = 5.0 * (log10(coords * 1000.0) - 1.0) + absm;
-
-    //REFF
-    const double exp_result = exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));
-    const double reff_value = sigmoid_curve_params[0] / (exp_result + 1.0);
-    const double rPrime3 = cube(coords);
-
-    for (i = 0; i < n_convolve; ++i)
-    {
-        g = gPrime + sg[i].dx;
-
-        //MAG2R
-        r_pts[i].r_in_mag = g;
-        r_pts[i].r_in_mag2 = sqr(g);
-        r_pts[i].r_point = pow(10.0, (g - absm) / 5.0 + 1.0) / 1000.0;
-
-        r3 = cube(r_pts[i].r_point);
-        exponent = sqr(g - gPrime) / (2.0 * sqr(stdev));
-        N = ap->coeff * exp(-exponent);
-        r_pts[i].qw_r3_N = sg[i].qgaus_W * r3 * N;
-    }
-
-    reff_xr_rp3 = reff_value * xr / rPrime3;
-    return reff_xr_rp3;
 }
 
 NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,

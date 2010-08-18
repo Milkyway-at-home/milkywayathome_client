@@ -22,9 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _EVALUATION_H_
 #define _EVALUATION_H_
 
-#include "parameters.h"
-#include "star_points.h"
-#include "integral_constants.h"
+#include "separation_types.h"
 
 double evaluate(const ASTRONOMY_PARAMETERS* ap,
                 const STREAMS* streams,

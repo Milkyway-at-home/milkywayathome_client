@@ -19,8 +19,10 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "separation.h"
-#include "numerical_integration.h"
+#include <math.h>
+
+#include "separation_constants.h"
+#include "gauss_legendre.h"
 
 /* Gauss-Legendre quadrature taken from Numerical Recipes in C */
 void gaussLegendre(double x1, double x2, double* restrict x, double* restrict w, int n)

@@ -21,17 +21,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <assert.h>
 #include <OpenCL/cl.h>
 #include <OpenCL/cl_ext.h>
 
 #include "milkyway_util.h"
 #include "show_cl_types.h"
-#include "separation.h"
 #include "setup_cl.h"
 #include "separation_cl_buffers.h"
 #include "separation_cl_defs.h"
 #include "run_cl.h"
+#include "calculated_constants.h"
 
 static cl_int readIntegralResults(CLInfo* ci,
                                   SeparationCLMem* cm,

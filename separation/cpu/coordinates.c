@@ -23,8 +23,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <float.h>
 #endif
 
-#include "separation.h"
 #include "coordinates.h"
+#include "milkyway_util.h"
 
 /* Convert sun-centered lbr (degrees) into galactic xyz coordinates. */
 void lbr2xyz(const double* lbr, vector xyz)

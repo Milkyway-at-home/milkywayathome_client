@@ -1,7 +1,7 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
-Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
-and Rensselaer Polytechnic Institute.
+Copyright 2008-2010 Travis Desell, Dave Przybylo, Nathan Cole, Matthew
+Arsenault, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
+Magdon-Ismail and Rensselaer Polytechnic Institute.
 
 This file is part of Milkway@Home.
 
@@ -19,13 +19,16 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "separation.h"
-#include "evaluation.h"
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "separation_types.h"
 #include "evaluation_state.h"
-#include "integral_constants.h"
-#include "integrals_likelihood.h"
+#include "milkyway_util.h"
+#include "calculated_constants.h"
 #include "integrals.h"
 #include "likelihood.h"
+#include "star_points.h"
 
 static void final_stream_integrals(FINAL_STREAM_INTEGRALS* fsi,
                                    const EVALUATION_STATE* es,
@@ -34,7 +37,7 @@ static void final_stream_integrals(FINAL_STREAM_INTEGRALS* fsi,
 {
     unsigned int i, j;
 
-    fsi->stream_integrals = calloc(number_streams, sizeof(double));
+    fsi->stream_integrals = callocSafe(number_streams, sizeof(double));
 
     fsi->background_integral = es->integrals[0].background_integral;
     for (i = 0; i < number_streams; ++i)
@@ -88,6 +91,30 @@ inline static double completed_integral_progress(const ASTRONOMY_PARAMETERS* ap,
     }
 
     return current_calc_probs;
+}
+
+/* returns background integral */
+static double integrate(const ASTRONOMY_PARAMETERS* ap,
+                        const INTEGRAL_AREA* ia,
+                        const STREAM_CONSTANTS* sc,
+                        const STREAM_GAUSS* sg,
+                        ST_PROBS* probs,
+                        EVALUATION_STATE* es)
+{
+    double result;
+
+    NU_CONSTANTS* nu_consts = prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
+    R_POINTS* r_pts = mallocSafe(sizeof(R_POINTS) * ap->convolve);
+    vector* xyz = mallocSafe(sizeof(vector) * ap->convolve);
+
+    result = r_sum(ap, sc, ia, sg, nu_consts, r_pts, probs, xyz, es);
+    es->r_step = 0;
+
+    free(nu_consts);
+    free(r_pts);
+    free(xyz);
+
+    return result;
 }
 
 static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
