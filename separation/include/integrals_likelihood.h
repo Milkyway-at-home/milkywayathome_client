@@ -43,10 +43,11 @@ extern "C" {
  * you to have functions in headers which is unfortunate. */
 
 /* FIXME: Better name? */
-__attribute__ ((always_inline)) inline double probabilities_convolve(const STREAM_CONSTANTS* sc,
-                                                                     const R_POINTS* r_pts,
-                                                                     vector* const xyz,
-                                                                     const unsigned int convolve)
+    __attribute__ ((always_inline, pure, hot))
+inline double probabilities_convolve(const STREAM_CONSTANTS* sc,
+                                     const R_POINTS* r_pts,
+                                     vector* const xyz,
+                                     const unsigned int convolve)
 {
     unsigned int i;
     double dotted, xyz_norm;
@@ -76,13 +77,14 @@ __attribute__ ((always_inline)) inline double probabilities_convolve(const STREA
     return st_prob;
 }
 
-    /* FIXME: I don't know what these do enough to name it properly */
-__attribute__ ((always_inline)) inline double sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
-                                                                  const R_POINTS* r_pts,
-                                                                  const unsigned int convolve,
-                                                                  const int aux_bg_profile,
-                                                                  const vector integral_point,
-                                                                  vector* const xyz)
+/* FIXME: I don't know what these do enough to name it properly */
+__attribute__ ((always_inline, hot))
+inline double sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
+                                  const R_POINTS* r_pts,
+                                  const unsigned int convolve,
+                                  const int aux_bg_profile,
+                                  const vector integral_point,
+                                  vector* const xyz)
 {
     unsigned int i;
     double h_prob, aux_prob;
@@ -121,11 +123,12 @@ __attribute__ ((always_inline)) inline double sub_bg_probability1(const ASTRONOM
     return bg_prob;
 }
 
-__attribute__ ((always_inline)) inline double sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
-                                                                  const R_POINTS* r_pts,
-                                                                  const unsigned int convolve,
-                                                                  const vector integral_point,
-                                                                  vector* const xyz)
+__attribute__ ((always_inline))
+inline double sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
+                                  const R_POINTS* r_pts,
+                                  const unsigned int convolve,
+                                  const vector integral_point,
+                                  vector* const xyz)
 {
     unsigned int i;
     double rg, zp;
@@ -151,11 +154,12 @@ __attribute__ ((always_inline)) inline double sub_bg_probability2(const ASTRONOM
     return bg_prob;
 }
 
-__attribute__ ((always_inline)) inline double bg_probability(const ASTRONOMY_PARAMETERS* ap,
-                                                             const R_POINTS* r_pts,
-                                                             const double reff_xr_rp3,
-                                                             const vector integral_point,
-                                                             vector* const xyz)
+__attribute__ ((always_inline, hot))
+inline double bg_probability(const ASTRONOMY_PARAMETERS* ap,
+                             const R_POINTS* r_pts,
+                             const double reff_xr_rp3,
+                             const vector integral_point,
+                             vector* const xyz)
 {
     double bg_prob;
 

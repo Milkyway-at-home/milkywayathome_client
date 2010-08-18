@@ -89,7 +89,7 @@ inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
 }
 
 /* Sum over mu steps using Kahan summation */
-__attribute__ ((always_inline))
+__attribute__ ((always_inline, hot))
 inline static BG_PROB mu_sum(const ASTRONOMY_PARAMETERS* ap,
                              const STREAM_CONSTANTS* sc,
                              const R_POINTS* r_pts,

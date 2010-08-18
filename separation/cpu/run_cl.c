@@ -104,6 +104,8 @@ static double runIntegral(CLInfo* ci,
     return bg_result;
 }
 
+/* FIXME: This can only work right now for 1 integral */
+
 void separationCL(const ASTRONOMY_PARAMETERS* ap,
                   const INTEGRAL_AREA* ia,
                   const STREAM_CONSTANTS* sc,
@@ -124,8 +126,6 @@ void separationCL(const ASTRONOMY_PARAMETERS* ap,
 
 
     printf("Result = %g\n", result);
-
-    mw_finish(EXIT_SUCCESS);
 }
 
 

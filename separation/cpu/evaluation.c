@@ -133,9 +133,8 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         ia = &ap->integral[es->current_integral];
         es->current_calc_probs = completed_integral_progress(ap, es);
 
-        //separationCL(ap, ia, sc, sg);
-
         t1 = get_time();
+        //separationCL(ap, ia, sc, sg);
         integral->background_integral = integrate(ap, ia, sc, sg, integral->probs, es);
         t2 = get_time();
 
@@ -165,11 +164,11 @@ double evaluate(const ASTRONOMY_PARAMETERS* ap,
   #if BOINC_APPLICATION && !SEPARATION_OPENCL
     if (boinc_file_exists(CHECKPOINT_FILE))
     {
-        fprintf(stderr, "Checkpoint exists. Attempting to resume from it\n");
+        warn("Checkpoint exists. Attempting to resume from it\n");
 
         if (read_checkpoint(&es))
         {
-            fprintf(stderr, "Reading checkpoint failed\n");
+            warn("Reading checkpoint failed\n");
             boinc_delete_file(CHECKPOINT_FILE);
             mw_finish(EXIT_FAILURE);
         }
@@ -178,7 +177,7 @@ double evaluate(const ASTRONOMY_PARAMETERS* ap,
 
     calculate_integrals(ap, sc, sg, &es);
 
-  #if BOINC_APPLICATION
+  #if BOINC_APPLICATION && !SEPARATION_OPENCL
     /* Final checkpoint. */
     write_checkpoint(&es);
   #endif

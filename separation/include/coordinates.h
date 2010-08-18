@@ -28,7 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
-__attribute__ ((always_inline))
+__attribute__ ((always_inline, hot))
 inline void gc2lb(const int wedge, double mu, double nu, double* restrict l, double* restrict b)
 {
     mu = d2r(mu);
