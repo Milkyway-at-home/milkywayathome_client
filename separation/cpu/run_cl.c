@@ -116,7 +116,7 @@ void separationCL(const ASTRONOMY_PARAMETERS* ap,
     double result;
 
     nu_consts = prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
-    setupSeparationCL(ap, ia, sc, nu_consts, &ci, &cm);
+    setupSeparationCL(ap, ia, sc, sg, nu_consts, &ci, &cm);
     free(nu_consts);
 
     result = runIntegral(&ci, &cm, ia->r_steps);

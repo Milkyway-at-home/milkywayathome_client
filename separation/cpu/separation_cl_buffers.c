@@ -63,6 +63,27 @@ inline static cl_int createSCBuffer(const STREAM_CONSTANTS* sc,
     return CL_SUCCESS;
 }
 
+inline static cl_int createSGBuffer(const STREAM_GAUSS* sg,
+                                    const unsigned int nconvolve,
+                                    CLInfo* ci,
+                                    SeparationCLMem* cm)
+{
+    cl_int err;
+    size_t size = sizeof(STREAM_GAUSS) * nconvolve;
+    cm->sg = clCreateBuffer(ci->clctx,
+                            CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                            size,
+                            sg,
+                            &err);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error creating stream gauss buffer of size %zu: %s\n", size, showCLInt(err));
+        return err;
+    }
+
+    return CL_SUCCESS;
+}
+
 inline static cl_int createNuConstsBuffer(const NU_CONSTANTS* nu_consts,
                                           const unsigned int nu_steps,
                                           CLInfo* ci,
@@ -87,6 +108,7 @@ inline static cl_int createNuConstsBuffer(const NU_CONSTANTS* nu_consts,
 cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
                                const INTEGRAL_AREA* ia,
                                const STREAM_CONSTANTS* sc,
+                               const STREAM_GAUSS* sg,
                                const NU_CONSTANTS* nu_st,
                                CLInfo* ci,
                                SeparationCLMem* cm)
@@ -95,6 +117,7 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
 
     err |= createOutNuBuffer(ia->r_steps, ci, cm);
     err |= createSCBuffer(sc, ap->number_streams, ci, cm);
+    err |= createSGBuffer(sg, ap->number_streams, ci, cm);
     err |= createNuConstsBuffer(nu_st, ia->nu_steps, ci, cm);
 
     return err;
@@ -104,6 +127,7 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
 {
     clReleaseMemObject(cm->outNu);
     clReleaseMemObject(cm->sc);
+    clReleaseMemObject(cm->sg);
     clReleaseMemObject(cm->nuConsts);
 }
 

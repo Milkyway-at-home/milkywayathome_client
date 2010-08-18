@@ -274,7 +274,7 @@ void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         ia = &ap->integral[es->current_integral];
         es->current_calc_probs = completed_integral_progress(ap, es);
 
-        //separationCL(ap, ia, sc, sg);
+        separationCL(ap, ia, sc, sg);
 
         t1 = get_time();
         integral->background_integral = integrate(ap, ia, sc, sg, integral->probs, es);
