@@ -139,7 +139,7 @@ typedef struct
 #ifndef __OPENCL_VERSION__
 /* No function pointers allowed in kernels, but we don't need it. */
 /* wedge, mu, nu, l, b. gc2lb or gc2sgr  */
-typedef void (*SGRConversion)(int, double, double, double*, double*);
+typedef void (*SGRConversion)(int, double, double, double* restrict, double* restrict);
 
 #else
 

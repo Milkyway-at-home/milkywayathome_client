@@ -63,14 +63,6 @@ inline static double slaDranrm(double angle)
     return (w >= 0.0) ? w : w + M_2PI;
 }
 
-inline static void slaDcc2s(vector v, double* a, double* b)
-{
-    double r = sqrt(sqr(X(v)) + sqr(Y(v)));
-
-    *a = ( r != 0.0 ) ? atan2( Y(v), X(v) ) : 0.0;
-    *b = ( Z(v) != 0.0 ) ? atan2( Z(v), r ) : 0.0;
-}
-
 //vickej2 for sgr stripes, the great circles are defined thus:
 //sgr stripes run parallel to sgr longitude lines, centered on lamda=2.5*wedge number
 //with mu=0 at the sgr equator and increasing in the +z direction (increasing from the equator with beta)
@@ -95,57 +87,6 @@ inline static void gcToSgr( double mu, double nu, int wedge, double* lamda, doub
 }
 
 
-inline static void slaDcs2c(vector v, double a, double b)
-{
-    const double cosb = cos(b);
-    X(v) = cos(a) * cosb;
-    Y(v) = sin(a) * cosb;
-    Z(v) = sin(b);
-}
-
-inline static void slaDmxv(const double dm[3][3], vector va, vector vb)
-{
-    unsigned int i, j;
-    double w;
-    vector vw;
-
-    /* Matrix dm * vector va -> vector vw */
-    for ( j = 0; j < 3; j++ )
-    {
-        w = 0.0;
-        for ( i = 0; i < 3; i++ )
-        {
-            w += dm[j][i] * va[i];
-        }
-        vw[j] = w;
-    }
-
-    /* Vector vw -> vector vb */
-    for ( j = 0; j < 3; j++ )
-        vb[j] = vw[j];
-}
-
-inline static void slaEqgal( double dr, double dd, double* dl, double* db )
-{
-    vector v1;
-    vector v2;
-
-    static const double rmat[3][3] =
-        {
-            { -0.054875539726, -0.873437108010, -0.483834985808 },
-            {  0.494109453312, -0.444829589425,  0.746982251810 },
-            { -0.867666135858, -0.198076386122,  0.455983795705 }
-        };
-
-    /* Spherical to Cartesian */
-    slaDcs2c(v1, dr, dd);
-
-    /* Equatorial to Galactic */
-    slaDmxv(rmat, v1, v2);
-
-    /* Cartesian to spherical */
-    slaDcc2s(v2, dl, db);
-}
 
 typedef struct
 {
@@ -384,30 +325,6 @@ void gc2sgr( int wedge, double mu, double nu, double* l, double* b )
 }
 
 /* (ra, dec) in degrees */
-inline static RA_DEC atGCToEq(
-    double amu,  /* IN -- mu in radians */
-    double anu,  /* IN -- nu in radians */
-    double ainc  /* IN -- inclination in radians */
-    )
-{
-    RA_DEC radec;
-    double anode = d2r(NODE_GC_COORDS);
-
-    /* Rotation */
-    const double x2 = cos(amu - anode) * cos(anu);
-    const double y2 = sin(amu - anode) * cos(anu);
-    const double z2 = sin(anu);
-    const double x1 = x2;
-    const double y1 = y2 * cos(ainc) - z2 * sin(ainc);
-    const double z1 = y2 * sin(ainc) + z2 * cos(ainc);
-
-
-    radec.ra = atan2(y1, x1) + anode;
-    radec.dec = asin(z1);
-
-    return radec;
-}
-
 /* Get eta for the given wedge. */
 inline static double wedge_eta(int wedge)
 {
@@ -420,13 +337,71 @@ inline static double wedge_incl(int wedge)
     return wedge_eta(wedge) + d2r(surveyCenterDec);
 }
 
+#define anode d2r(NODE_GC_COORDS)
+
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
-void gc2lb( int wedge, double mu, double nu, double* l, double* b )
+void gc2lb(int wedge, double mu, double nu, double* restrict l, double* restrict b)
 {
-    RA_DEC radec = atGCToEq(d2r(mu), d2r(nu), wedge_incl(wedge));
+
+    mu = d2r(mu);
+    nu = d2r(nu);
+
+    /* Rotation */
+    const double cosnu = cos(nu);
+    const double munode = mu - anode;
+    const double x12 = cos(munode) * cosnu;  /* x1 = x2 */
+    const double y2 = sin(munode) * cosnu;
+    const double z2 = sin(nu);
+
+    const double inc = wedge_incl(wedge);
+    const double cosinc = cos(inc);
+    const double sininc = sin(inc);
+
+    const double y1 = y2 * cosinc - z2 * sininc;
+    const double z1 = y2 * sininc + z2 * cosinc;
+
+    const double ra = atan2(y1, x12) + anode;
+    const double dec = asin(z1);
+
 
     /* Use SLALIB to do the actual conversion */
-    slaEqgal(radec.ra, radec.dec, l, b);
+    vector v2;
+
+    {
+        unsigned int i, j;
+
+        static const double rmat[3][3] =
+            {
+                { -0.054875539726, -0.873437108010, -0.483834985808 },
+                {  0.494109453312, -0.444829589425,  0.746982251810 },
+                { -0.867666135858, -0.198076386122,  0.455983795705 }
+            };
+
+        /* Spherical to Cartesian */
+        const double cosb = cos(dec);
+        const vector v1 = { cos(ra) * cosb, sin(ra) * cosb, sin(dec) };
+
+        /* Equatorial to Galactic */
+
+        /* Matrix rmat * vector v1 -> vector vb */
+        for ( i = 0; i < 3; ++i )
+        {
+            v2[i] = 0.0;
+            for ( j = 0; j < 3; ++j )
+            {
+                v2[i] += rmat[i][j] * v1[j];
+            }
+        }
+    }
+
+    /* Cartesian to spherical */
+    {
+        double r = sqrt(sqr(X(v2)) + sqr(Y(v2)));
+
+        *l = ( r != 0.0 ) ? atan2( Y(v2), X(v2) ) : 0.0;
+        *b = ( Z(v2) != 0.0 ) ? atan2( Z(v2), r ) : 0.0;
+    }
+
 
     *l = r2d(*l);
     *b = r2d(*b);
