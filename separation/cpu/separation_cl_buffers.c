@@ -100,3 +100,10 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
     return err;
 }
 
+void releaseSeparationBuffers(SeparationCLMem* cm)
+{
+    clReleaseMemObject(cm->outNu);
+    clReleaseMemObject(cm->sc);
+    clReleaseMemObject(cm->nuConsts);
+}
+

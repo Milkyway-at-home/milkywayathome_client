@@ -34,13 +34,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define BUFSIZE 4096
 
-inline static void releaseSeparationCLMem(SeparationCLMem* cm)
-{
-    clReleaseMemObject(cm->outNu);
-    clReleaseMemObject(cm->sc);
-    clReleaseMemObject(cm->nuConsts);
-}
-
 inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
                                              const INTEGRAL_AREA* ia,
                                              const CLInfo* ci,
@@ -57,7 +50,6 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
     err |= clSetKernelArg(ci->kern, 3, sizeof(cl_mem), &cm->sc);
     err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->nuConsts);
 
-
     /* Local workspaces */
     err |= clSetKernelArg(ci->kern, 5, sizeof(ST_PROBS) * ap->number_streams, NULL); /* st_probs */
     err |= clSetKernelArg(ci->kern, 6, sizeof(vector) * ap->convolve, NULL);         /* xyz */
@@ -72,66 +64,14 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
     return CL_SUCCESS;
 }
 
-static cl_int readIntegralResults(CLInfo* ci,
-                                  SeparationCLMem* cm,
-                                  BG_PROB* nu_results,
-                                  const unsigned int r_steps)
+cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
+                         const INTEGRAL_AREA* ia,
+                         const STREAM_CONSTANTS* sc,
+                         const NU_CONSTANTS* nu_consts,
+                         CLInfo* ci,
+                         SeparationCLMem* cm)
 {
     cl_int err;
-    err = clEnqueueReadBuffer(ci->queue,
-                              cm->outNu,
-                              CL_TRUE,
-                              0, sizeof(BG_PROB) * r_steps, nu_results,
-                              0, NULL, NULL);
-
-    if (err != CL_SUCCESS)
-    {
-        warn("Error reading integral result buffer: %s\n", showCLInt(err));
-        return err;
-    }
-
-    return CL_SUCCESS;
-}
-
-
-static cl_int enqueueIntegralKernel(CLInfo* ci, SeparationCLMem* cm, const unsigned int r_steps)
-{
-    cl_int err;
-    const size_t global[] = { r_steps };
-
-    err = clEnqueueNDRangeKernel(ci->queue,
-                                 ci->kern,
-                                 1,
-                                 NULL, global, NULL,
-                                 0, NULL, NULL);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error enqueueing integral kernel execution: %s\n", showCLInt(err));
-        return err;
-    }
-
-    return CL_SUCCESS;
-}
-
-/* The nu steps were done in parallel. After that we need to sum the results */
-inline static BG_PROB sumNuResults(BG_PROB* nu_results, const unsigned int r_steps)
-{
-    unsigned int i;
-    BG_PROB bg_prob = ZERO_BG_PROB;
-
-    for (i = 0; i < r_steps; ++i)
-        INCADD_BG_PROB(bg_prob, nu_results[i]);
-
-    return bg_prob;
-}
-
-int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
-                      const INTEGRAL_AREA* ia,
-                      const STREAM_CONSTANTS* sc,
-                      const NU_CONSTANTS* nu_consts)
-{
-    CLInfo ci;
-    SeparationCLMem cm;
     char* compileDefs;
     char* testSrc;
 
@@ -142,30 +82,31 @@ int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                                    "-I/Users/matt/src/milkywayathome_client/milkyway/include "
                                    "-DDOUBLEPREC=1 ");
 
-    if (getCLInfo(&ci, CL_DEVICE_TYPE_CPU, "testKernel", &testSrc, compileDefs))
-        fail("Failed to setup OpenCL device\n");
+    err = getCLInfo(ci, CL_DEVICE_TYPE_CPU, "testKernel", &testSrc, compileDefs);
 
     free(testSrc);
     free(compileDefs);
 
-    if (createSeparationBuffers(ap, ia, sc, nu_consts, &ci, &cm) != CL_SUCCESS)
-        fail("Failed to create CL buffers\n");
+    if (err != CL_SUCCESS)
+    {
+        fail("Failed to setup OpenCL device: %s\n", showCLInt(err));
+        return err;
+    }
 
-    separationSetKernelArgs(ap, ia, &ci, &cm);
-    enqueueIntegralKernel(&ci, &cm, ia->r_steps);
+    err = createSeparationBuffers(ap, ia, sc, nu_consts, ci, cm);
+    if (err != CL_SUCCESS)
+    {
+        fail("Failed to create CL buffers: %s\n", showCLInt(err));
+        return err;
+    }
 
-    BG_PROB* nu_results = mallocSafe(sizeof(BG_PROB) * ia->r_steps);
+    err = separationSetKernelArgs(ap, ia, ci, cm);
+    if (err != CL_SUCCESS)
+    {
+        fail("Failed to set integral kernel arguments: %s\n", showCLInt(err));
+        return err;
+    }
 
-    readIntegralResults(&ci, &cm, nu_results, ia->r_steps);
-
-    printf("arstarstarst\n");
-
-    BG_PROB result = sumNuResults(nu_results, ia->r_steps);
-    printf("Result = %g, %g\n", result.bg_int, result.correction);
-
-
-    mw_finish(EXIT_SUCCESS);
-
-    return 0;
+    return CL_SUCCESS;
 }
 

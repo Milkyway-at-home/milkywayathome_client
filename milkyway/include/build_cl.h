@@ -42,11 +42,11 @@ typedef struct
 #define EMPTY_CL_INFO { -1, -1, 0, NULL, NULL, NULL, NULL }
 
 
-int getCLInfo(CLInfo* ci,
-              cl_device_type type,
-              const char* kernName,
-              const char** src,
-              const char* compileDefs);
+cl_int getCLInfo(CLInfo* ci,
+                 cl_device_type type,
+                 const char* kernName,
+                 const char** src,
+                 const char* compileDefs);
 
 void destroyCLInfo(CLInfo* ci);
 

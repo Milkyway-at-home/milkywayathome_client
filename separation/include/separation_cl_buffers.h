@@ -39,6 +39,9 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
                                CLInfo* ci,
                                SeparationCLMem* cm);
 
+void releaseSeparationBuffers(SeparationCLMem* cm);
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -109,11 +109,11 @@ static cl_int buildProgram(CLInfo* ci, const char* compileDefs, const char** src
  *  TODO: Multiple device support
  *  TODO: Caching of compiled binaries
  */
-int getCLInfo(CLInfo* ci,
-              cl_device_type type,
-              const char* kernName,
-              const char** src,
-              const char* compileDefs)
+cl_int getCLInfo(CLInfo* ci,
+                 cl_device_type type,
+                 const char* kernName,
+                 const char** src,
+                 const char* compileDefs)
 {
     cl_int err;
     cl_uint maxComputeUnits, clockFreq;
@@ -123,13 +123,13 @@ int getCLInfo(CLInfo* ci,
     if (err != CL_SUCCESS)
     {
         warn("Error getting device: %s\n", showCLInt(err));
-        return 1;
+        return err;
     }
 
     if (ci->devCount == 0)
     {
         warn("Didn't find any %s devices\n", showCLDeviceType(type));
-        return 1;
+        return -1; /* FIXME: Meaningful error? */
     }
 
     ci->devType = type;
@@ -138,14 +138,14 @@ int getCLInfo(CLInfo* ci,
     if (err != CL_SUCCESS)
     {
         warn("Error creating context: %s\n", showCLInt(err));
-        return 1;
+        return err;
     }
 
     ci->queue = clCreateCommandQueue(ci->clctx, ci->dev, 0, &err);
     if (err != CL_SUCCESS)
     {
         warn("Error creating command Queue: %s\n", showCLInt(err));
-        return 1;
+        return err;
     }
 
     /* Print some device information */
@@ -160,7 +160,7 @@ int getCLInfo(CLInfo* ci,
     if (err != CL_SUCCESS)
     {
         warn("Error creating program: %s\n", showCLInt(err));
-        return 1;
+        return err;
     }
 
     buildProgram(ci, compileDefs, src);
@@ -169,11 +169,11 @@ int getCLInfo(CLInfo* ci,
     if (err != CL_SUCCESS)
     {
         warn("Error creating kernel '%s': %s\n", kernName, showCLInt(err));
-        return 1;
+        return err;
     }
 
     clUnloadCompiler();
 
-    return 0;
+    return CL_SUCCESS;
 }
 

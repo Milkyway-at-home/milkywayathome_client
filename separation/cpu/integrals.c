@@ -25,7 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "integral_constants.h"
 #include "integrals_likelihood.h"
 #include "integrals.h"
-#include "setup_cl.h"
+#include "run_cl.h"
 
 
 inline static double progress(const EVALUATION_STATE* es,
@@ -200,12 +200,6 @@ static double integrate(const ASTRONOMY_PARAMETERS* ap,
     const double r_step_size_kpc = (r_max_kpc - r_min_kpc) / r_steps;
   #endif
 
-    /* FIXME: This will only work for 1 integral for now */
-    setupSeparationCL(ap, ia, sc, nu_consts);
-
-    printf("CL Setup\n");
-    mw_finish(EXIT_SUCCESS);
-
     for ( ; es->r_step < r_steps; es->r_step++)
     {
       #ifdef USE_KPC
@@ -279,6 +273,8 @@ void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         integral = &es->integrals[es->current_integral];
         ia = &ap->integral[es->current_integral];
         es->current_calc_probs = completed_integral_progress(ap, es);
+
+        separationCL(ap, ia, sc);
 
         t1 = get_time();
         integral->background_integral = integrate(ap, sc, ia, sg, integral->probs, es);

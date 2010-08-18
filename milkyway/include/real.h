@@ -25,7 +25,6 @@
 #endif /* DOUBLEPREC */
 
 #ifndef __OPENCL_VERSION__
-#warning "NOT OPENCL?"
 
 #include <math.h>
 
