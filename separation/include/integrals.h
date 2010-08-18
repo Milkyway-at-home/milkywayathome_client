@@ -30,8 +30,8 @@ extern "C" {
 
 
 double r_sum(const ASTRONOMY_PARAMETERS* ap,
-             const STREAM_CONSTANTS* sc,
              const INTEGRAL_AREA* ia,
+             const STREAM_CONSTANTS* sc,
              const STREAM_GAUSS* sg,
              const NU_CONSTANTS* nu_consts,
              R_POINTS* r_pts,

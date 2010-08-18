@@ -108,7 +108,7 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
                                const INTEGRAL_AREA* ia,
                                const STREAM_CONSTANTS* sc,
                                const STREAM_GAUSS* sg,
-                               const NU_CONSTANTS* nu_st,
+                               const NU_CONSTANTS* nu_consts,
                                CLInfo* ci,
                                SeparationCLMem* cm)
 {
@@ -117,7 +117,7 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
     err |= createOutNuBuffer(ia->r_steps, ci, cm);
     err |= createSCBuffer(sc, ap->number_streams, ci, cm);
     err |= createSGBuffer(sg, ap->number_streams, ci, cm);
-    err |= createNuConstsBuffer(nu_st, ia->nu_steps, ci, cm);
+    err |= createNuConstsBuffer(nu_consts, ia->nu_steps, ci, cm);
 
     return err;
 }

@@ -50,7 +50,7 @@ inline static void do_boinc_checkpoint(const EVALUATION_STATE* es,
     {
         if (write_checkpoint(es))
         {
-            fprintf(stderr, "APP: write checkpoint failed\n");
+            warn("Write checkpoint failed\n");
             return;
         }
         boinc_checkpoint_completed();
@@ -171,8 +171,8 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
 }
 
 double r_sum(const ASTRONOMY_PARAMETERS* ap,
-             const STREAM_CONSTANTS* sc,
              const INTEGRAL_AREA* ia,
+             const STREAM_CONSTANTS* sc,
              const STREAM_GAUSS* sg,
              const NU_CONSTANTS* nu_consts,
              R_POINTS* r_pts,

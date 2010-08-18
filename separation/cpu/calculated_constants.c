@@ -125,7 +125,7 @@ NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
 
     NU_CONSTANTS* nu_consts = mallocSafe(sizeof(NU_CONSTANTS) * nu_steps);
 
-    for (i = 0; i < nu_steps; i++)
+    for (i = 0; i < nu_steps; ++i)
     {
         nu_consts[i].nu = nu_min + (i * nu_step_size);
 

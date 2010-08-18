@@ -29,6 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "integrals.h"
 #include "likelihood.h"
 #include "star_points.h"
+#include "run_cl.h"
 
 static void final_stream_integrals(FINAL_STREAM_INTEGRALS* fsi,
                                    const EVALUATION_STATE* es,
@@ -107,7 +108,7 @@ static double integrate(const ASTRONOMY_PARAMETERS* ap,
     R_POINTS* r_pts = mallocSafe(sizeof(R_POINTS) * ap->convolve);
     vector* xyz = mallocSafe(sizeof(vector) * ap->convolve);
 
-    result = r_sum(ap, sc, ia, sg, nu_consts, r_pts, probs, xyz, es);
+    result = r_sum(ap, ia, sc, sg, nu_consts, r_pts, probs, xyz, es);
     es->r_step = 0;
 
     free(nu_consts);
@@ -134,8 +135,8 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         es->current_calc_probs = completed_integral_progress(ap, es);
 
         t1 = get_time();
-        //separationCL(ap, ia, sc, sg);
-        integral->background_integral = integrate(ap, ia, sc, sg, integral->probs, es);
+        //integral->background_integral = integrate(ap, ia, sc, sg, integral->probs, es);
+        integral->background_integral = integrateCL(ap, ia, sc, sg);
         t2 = get_time();
 
         printf("Time = %.20g\n", t2 - t1);

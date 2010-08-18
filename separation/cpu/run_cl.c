@@ -29,8 +29,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "setup_cl.h"
 #include "separation_cl_buffers.h"
 #include "separation_cl_defs.h"
-#include "run_cl.h"
 #include "calculated_constants.h"
+#include "run_cl.h"
 
 static cl_int readIntegralResults(CLInfo* ci,
                                   SeparationCLMem* cm,
@@ -105,27 +105,27 @@ static double runIntegral(CLInfo* ci,
 }
 
 /* FIXME: This can only work right now for 1 integral */
-
-void separationCL(const ASTRONOMY_PARAMETERS* ap,
-                  const INTEGRAL_AREA* ia,
-                  const STREAM_CONSTANTS* sc,
-                  const STREAM_GAUSS* sg)
+/* FIXME: Stream integrals, etc. */
+double integrateCL(const ASTRONOMY_PARAMETERS* ap,
+                   const INTEGRAL_AREA* ia,
+                   const STREAM_CONSTANTS* sc,
+                   const STREAM_GAUSS* sg)
 {
+    double result;
     CLInfo ci;
     SeparationCLMem cm;
     NU_CONSTANTS* nu_consts;
-    double result;
 
     nu_consts = prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
+
     setupSeparationCL(ap, ia, sc, sg, nu_consts, &ci, &cm);
     free(nu_consts);
 
     result = runIntegral(&ci, &cm, ia->r_steps);
+
     releaseSeparationBuffers(&cm);
     destroyCLInfo(&ci);
 
-
-    printf("Result = %g\n", result);
+    return result;
 }
-
 
