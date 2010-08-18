@@ -24,14 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation.h"
 
-typedef struct
-{
-    double ra;
-    double dec;
-} RA_DEC;
-
 void gc2lb( int wedge, double mu, double nu, double* restrict l, double* restrict b );
-void gc2sgr( int wedge, double mu, double nu, double* restrict l, double* restrict b );
 
 void lbr2xyz( const double* lbr, double* xyz );
 

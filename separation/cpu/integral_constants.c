@@ -23,11 +23,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "evaluation.h"
 #include "evaluation_state.h"
 
-#define stdev 0.6
-#define xr (3.0 * stdev)
-#define absm 4.2
-#define SIGMA_LIMIT 0.0001
-
 static const double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
 STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
@@ -70,25 +65,13 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
         sc[i].large_sigma = (stream_sigma > SIGMA_LIMIT || stream_sigma < -SIGMA_LIMIT);
         sc[i].sigma_sq2 = 2.0 * sqr(stream_sigma);
 
-        if (ap->sgr_coordinates == 0)
-            ap->sgr_conversion = (SGRConversion) gc2lb;
-        else if (ap->sgr_coordinates == 1)
+        if (ap->sgr_coordinates)
         {
             fprintf(stderr, "gc2sgr probably broken right now, so refusing to run\n");
-            ap->sgr_conversion = (SGRConversion) gc2sgr;
-            mw_finish(EXIT_FAILURE);
-        }
-        else
-        {
-            fprintf(stderr, "Error: sgr_coordinates not valid");
             mw_finish(EXIT_FAILURE);
         }
 
-        ap->sgr_conversion(ap->wedge,
-                           streams->parameters[i].stream_parameters[0],
-                           0,
-                           &L(lbr),
-                           &B(lbr));
+        gc2lb(ap->wedge, streams->parameters[i].stream_parameters[0], 0, &L(lbr), &B(lbr));
 
         R(lbr) = streams->parameters[i].stream_parameters[1];
         lbr2xyz(lbr, sc[i].c);

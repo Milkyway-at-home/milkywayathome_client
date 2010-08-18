@@ -135,19 +135,6 @@ typedef struct
 #define EMPTY_FINAL_STREAM_INTEGRALS { 0.0, NULL }
 
 
-
-#ifndef __OPENCL_VERSION__
-/* No function pointers allowed in kernels, but we don't need it. */
-/* wedge, mu, nu, l, b. gc2lb or gc2sgr  */
-typedef void (*SGRConversion)(int, double, double, double* restrict, double* restrict);
-
-#else
-
-typedef void* SGRConversion;
-
-#endif
-
-
 typedef struct
 {
     double parameters_version;
@@ -160,7 +147,6 @@ typedef struct
     unsigned int convolve;
 
     unsigned int sgr_coordinates;
-    SGRConversion sgr_conversion;
 
     int aux_bg_profile;
     int wedge;
@@ -177,7 +163,7 @@ typedef struct
 #define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0.0, \
                                      0, 0.0,   \
                                      0, 0,     \
-                                     0, NULL, 0, 0, 0, NULL, \
+                                     0, 0, 0, 0, NULL, \
                                      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
                                      0.0, 0.0, 0.0 }
 
