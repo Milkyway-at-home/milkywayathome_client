@@ -18,17 +18,21 @@
 #ifndef _REAL_H_
 #define _REAL_H_
 
+#if DOUBLEPREC
+  typedef double real, *realptr;
+#else
+  typedef float real, *realptr;
+#endif /* DOUBLEPREC */
+
+#ifndef __OPENCL_VERSION__
+#warning "NOT OPENCL?"
+
 #include <math.h>
 
 #if ENABLE_CRLIBM
   #include <crlibm.h>
 #endif /* ENABLE_CRLIBM */
 
-#if DOUBLEPREC
-  typedef double real, *realptr;
-#else
-  typedef float real, *realptr;
-#endif /* DOUBLEPREC */
 
 /* Real-valued library functions.  Most of these are actually supplied
  * by the standard C libraries.
@@ -116,6 +120,8 @@
 #endif /* ENABLE_CRLIBM */
 
 #endif /* DOUBLEPREC */
+
+#endif /* __OPENCL_VERSION__ */
 
 #endif /* _REAL_H_ */
 

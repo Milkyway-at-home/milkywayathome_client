@@ -23,39 +23,19 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "show_cl_types.h"
 #include "separation_cl_buffers.h"
 
-inline static cl_int createOutNuBuffer(const unsigned int nu_steps,
+inline static cl_int createOutNuBuffer(const unsigned int r_steps,
                                        CLInfo* ci,
                                        SeparationCLMem* cm)
 {
     cl_int err;
-    cm->ia = clCreateBuffer(ci->clctx,
-                            CL_MEM_WRITE_ONLY,
-                            sizeof(BG_PROB) * nu_steps,
-                            NULL,
-                            &err);
+    cm->outNu = clCreateBuffer(ci->clctx,
+                               CL_MEM_WRITE_ONLY,
+                               sizeof(BG_PROB) * r_steps,
+                               NULL,
+                               &err);
     if (err != CL_SUCCESS)
     {
         warn("Error creating out nu buffer: %s\n", showCLInt(err));
-        return err;
-    }
-
-    return CL_SUCCESS;
-}
-
-
-inline static cl_int createAPBuffer(const ASTRONOMY_PARAMETERS* ap,
-                                    CLInfo* ci,
-                                    SeparationCLMem* cm)
-{
-    cl_int err;
-    cm->ap = clCreateBuffer(ci->clctx,
-                            CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                            sizeof(ASTRONOMY_PARAMETERS),
-                            ap,
-                            &err);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating astronomy parameters buffer: %s\n", showCLInt(err));
         return err;
     }
 
@@ -104,25 +84,6 @@ inline static cl_int createNuConstsBuffer(const NU_CONSTANTS* nu_consts,
     return CL_SUCCESS;
 }
 
-inline static cl_int createIABuffer(const INTEGRAL_AREA* ia,
-                                    CLInfo* ci,
-                                    SeparationCLMem* cm)
-{
-    cl_int err;
-    cm->ia = clCreateBuffer(ci->clctx,
-                            CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                            sizeof(INTEGRAL_AREA),
-                            ia,
-                            &err);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating integral area buffer: %s\n", showCLInt(err));
-        return err;
-    }
-
-    return CL_SUCCESS;
-}
-
 cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
                                const INTEGRAL_AREA* ia,
                                const STREAM_CONSTANTS* sc,
@@ -132,11 +93,9 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
 {
     cl_int err = CL_SUCCESS;
 
-    err |= createOutNuBuffer(ia->nu_steps, ci, cm);
-    err |= createAPBuffer(ap, ci, cm);
+    err |= createOutNuBuffer(ia->r_steps, ci, cm);
     err |= createSCBuffer(sc, ap->number_streams, ci, cm);
     err |= createNuConstsBuffer(nu_st, ia->nu_steps, ci, cm);
-    err |= createIABuffer(ia, ci, cm);
 
     return err;
 }

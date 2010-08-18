@@ -38,13 +38,11 @@ typedef struct
     cl_mem outNu;     /* Output from each nu_sum done in parallel */
 
     /* constant, read only buffers */
-    cl_mem ap;        /* Astronomy parameters */
     cl_mem sc;        /* Stream Constants */
     cl_mem nuConsts;  /* nu step constants */
-    cl_mem ia;        /* Integral areas */
 } SeparationCLMem;
 
-#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL }
 
 int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                       const INTEGRAL_AREA* ia,

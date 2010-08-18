@@ -37,13 +37,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 inline static void releaseSeparationCLMem(SeparationCLMem* cm)
 {
     clReleaseMemObject(cm->outNu);
-    clReleaseMemObject(cm->ap);
     clReleaseMemObject(cm->sc);
     clReleaseMemObject(cm->nuConsts);
-    clReleaseMemObject(cm->ia);
 }
 
 inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
+                                             const INTEGRAL_AREA* ia,
                                              const CLInfo* ci,
                                              SeparationCLMem* cm)
 {
@@ -53,10 +52,11 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
     err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outNu);
 
     /* The constant arguments */
-    err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->ap);
-    err |= clSetKernelArg(ci->kern, 2, sizeof(cl_mem), &cm->sc);
-    err |= clSetKernelArg(ci->kern, 3, sizeof(cl_mem), &cm->nuConsts);
-    err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->ia);
+    err |= clSetKernelArg(ci->kern, 1, sizeof(ASTRONOMY_PARAMETERS), ap);
+    err |= clSetKernelArg(ci->kern, 2, sizeof(INTEGRAL_AREA), ia);
+    err |= clSetKernelArg(ci->kern, 3, sizeof(cl_mem), &cm->sc);
+    err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->nuConsts);
+
 
     /* Local workspaces */
     err |= clSetKernelArg(ci->kern, 5, sizeof(ST_PROBS) * ap->number_streams, NULL); /* st_probs */
@@ -72,17 +72,58 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
     return CL_SUCCESS;
 }
 
-const char* src = "\n" \
-"__kernel void sampleKernel(                                            \n" \
-"   __global float* input,                                              \n" \
-"   __global float* output,                                             \n" \
-"   const unsigned int count)                                           \n" \
-"{                                                                      \n" \
-"   int i = get_global_id(0);                                           \n" \
-"   if(i < count)                                                       \n" \
-"       output[i] = input[i] * input[i];                                \n" \
-"}                                                                      \n" \
-"\n";
+static cl_int readIntegralResults(CLInfo* ci,
+                                  SeparationCLMem* cm,
+                                  BG_PROB* nu_results,
+                                  const unsigned int r_steps)
+{
+    cl_int err;
+    err = clEnqueueReadBuffer(ci->queue,
+                              cm->outNu,
+                              CL_TRUE,
+                              0, sizeof(BG_PROB) * r_steps, nu_results,
+                              0, NULL, NULL);
+
+    if (err != CL_SUCCESS)
+    {
+        warn("Error reading integral result buffer: %s\n", showCLInt(err));
+        return err;
+    }
+
+    return CL_SUCCESS;
+}
+
+
+static cl_int enqueueIntegralKernel(CLInfo* ci, SeparationCLMem* cm, const unsigned int r_steps)
+{
+    cl_int err;
+    const size_t global[] = { r_steps };
+
+    err = clEnqueueNDRangeKernel(ci->queue,
+                                 ci->kern,
+                                 1,
+                                 NULL, global, NULL,
+                                 0, NULL, NULL);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error enqueueing integral kernel execution: %s\n", showCLInt(err));
+        return err;
+    }
+
+    return CL_SUCCESS;
+}
+
+/* The nu steps were done in parallel. After that we need to sum the results */
+inline static BG_PROB sumNuResults(BG_PROB* nu_results, const unsigned int r_steps)
+{
+    unsigned int i;
+    BG_PROB bg_prob = ZERO_BG_PROB;
+
+    for (i = 0; i < r_steps; ++i)
+        INCADD_BG_PROB(bg_prob, nu_results[i]);
+
+    return bg_prob;
+}
 
 int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                       const INTEGRAL_AREA* ia,
@@ -92,20 +133,37 @@ int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
     CLInfo ci;
     SeparationCLMem cm;
     char* compileDefs;
+    char* testSrc;
+
+    testSrc = mwReadFile("/Users/matt/src/milkywayathome_client/separation/kernels/test_kernel.cl");
 
     compileDefs = separationCLDefs(ap,
                                    "-I/Users/matt/src/milkywayathome_client/separation/include "
-                                   "-DDOUBLEPREC=0 ");
+                                   "-I/Users/matt/src/milkywayathome_client/milkyway/include "
+                                   "-DDOUBLEPREC=1 ");
 
-    if (getCLInfo(&ci, CL_DEVICE_TYPE_CPU, "sampleKernel", &src, compileDefs))
+    if (getCLInfo(&ci, CL_DEVICE_TYPE_CPU, "testKernel", &testSrc, compileDefs))
         fail("Failed to setup OpenCL device\n");
 
+    free(testSrc);
     free(compileDefs);
 
     if (createSeparationBuffers(ap, ia, sc, nu_consts, &ci, &cm) != CL_SUCCESS)
         fail("Failed to create CL buffers\n");
 
+    separationSetKernelArgs(ap, ia, &ci, &cm);
+    enqueueIntegralKernel(&ci, &cm, ia->r_steps);
+
+    BG_PROB* nu_results = mallocSafe(sizeof(BG_PROB) * ia->r_steps);
+
+    readIntegralResults(&ci, &cm, nu_results, ia->r_steps);
+
     printf("arstarstarst\n");
+
+    BG_PROB result = sumNuResults(nu_results, ia->r_steps);
+    printf("Result = %g, %g\n", result.bg_int, result.correction);
+
+
     mw_finish(EXIT_SUCCESS);
 
     return 0;
