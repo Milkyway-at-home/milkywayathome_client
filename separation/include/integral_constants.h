@@ -33,11 +33,11 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
 
 STREAM_GAUSS* get_stream_gauss(const unsigned int convolve);
 
-double set_prob_consts(const ASTRONOMY_PARAMETERS* ap,
-                       const STREAM_GAUSS* sg,
-                       const unsigned int n_convolve,
-                       const double coords,
-                       R_POINTS* r_pts);
+double set_r_points(const ASTRONOMY_PARAMETERS* ap,
+                    const STREAM_GAUSS* sg,
+                    const unsigned int n_convolve,
+                    const double coords,
+                    R_POINTS* r_pts);
 
 NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
                                    const double nu_step_size,

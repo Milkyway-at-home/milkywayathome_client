@@ -214,7 +214,7 @@ static double integrate(const ASTRONOMY_PARAMETERS* ap,
         irv = d2r(((cube(next_r) - cube(r)) / 3.0) * ia->mu_step_size);
         rPrime = (next_r + r) / 2.0;
 
-        reff_xr_rp3 = set_prob_consts(ap, sg, ap->convolve, rPrime, r_pts);
+        reff_xr_rp3 = set_r_points(ap, sg, ap->convolve, rPrime, r_pts);
 
         nu_sum(ap, sc, ia, irv, reff_xr_rp3, r_pts, nu_consts, probs, xyz, es);
 

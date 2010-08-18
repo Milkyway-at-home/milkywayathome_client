@@ -115,11 +115,11 @@ STREAM_GAUSS* get_stream_gauss(const unsigned int convolve)
 
 }
 
-double set_prob_consts(const ASTRONOMY_PARAMETERS* ap,
-                       const STREAM_GAUSS* sg,
-                       const unsigned int n_convolve,
-                       const double coords,
-                       R_POINTS* r_pts)
+double set_r_points(const ASTRONOMY_PARAMETERS* ap,
+                    const STREAM_GAUSS* sg,
+                    const unsigned int n_convolve,
+                    const double coords,
+                    R_POINTS* r_pts)
 {
     double g, exponent, r3, N;
     double reff_xr_rp3;
