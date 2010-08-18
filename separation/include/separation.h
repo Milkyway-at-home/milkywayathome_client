@@ -30,7 +30,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "evaluation.h"
 #include "parameters.h"
-#include "probability.h"
 #include "star_points.h"
 #include "integral_constants.h"
 #include "numerical_integration.h"
