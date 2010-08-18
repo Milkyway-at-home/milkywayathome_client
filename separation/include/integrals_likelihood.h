@@ -85,14 +85,13 @@ __attribute__ ((always_inline)) inline double sub_bg_probability1(const ASTRONOM
 {
     unsigned int i;
     double h_prob, aux_prob;
-    double rg, rs;
-    double zp;
+    double rg, rs, zp;
+    double lsin, lcos;
+    double bsin, bcos;
     double bg_prob = 0.0;
 
-    const double lsin = sin(d2r(L(integral_point)));
-    const double lcos = cos(d2r(L(integral_point)));
-    const double bsin = sin(d2r(B(integral_point)));
-    const double bcos = cos(d2r(B(integral_point)));
+    sincos(d2r(L(integral_point)), &lsin, &lcos);
+    sincos(d2r(B(integral_point)), &bsin, &bcos);
 
     for (i = 0; i < convolve; ++i)
     {
@@ -128,14 +127,13 @@ __attribute__ ((always_inline)) inline double sub_bg_probability2(const ASTRONOM
                                                                   vector* const xyz)
 {
     unsigned int i;
+    double rg, zp;
+    double lsin, lcos;
+    double bsin, bcos;
     double bg_prob = 0.0;
-    double rg;
-    double zp;
 
-    const double lsin = sin(d2r(L(integral_point)));
-    const double lcos = cos(d2r(L(integral_point)));
-    const double bsin = sin(d2r(B(integral_point)));
-    const double bcos = cos(d2r(B(integral_point)));
+    sincos(d2r(L(integral_point)), &lsin, &lcos);
+    sincos(d2r(B(integral_point)), &bsin, &bcos);
 
     for (i = 0; i < convolve; ++i)
     {

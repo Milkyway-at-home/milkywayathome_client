@@ -64,6 +64,19 @@ void* mallocSafe(size_t size);
                          mw_finish(EXIT_FAILURE); }
 
 
+
+/* TODO: Using real sincos() would be nice in coordinate conversions
+   for speed, but it's a glibc extension. It is in opencl though.  We
+   could take it from glibc, but it's in assembly and would be kind of
+   annoying to add, but probably worth it.
+
+   TODO: Define HAVE_SINCOS somewhere
+ */
+#if !HAVE_SINCOS
+  #define sincos(x, s, c) { *(s) = sin((x)); *(c) = cos((x)); }
+#endif
+
+
 /*  ABS: returns the absolute value of its argument
  *  MAX: returns the argument with the highest value
  *  MIN: returns the argument with the lowest value

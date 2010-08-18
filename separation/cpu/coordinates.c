@@ -26,7 +26,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation.h"
 #include "coordinates.h"
 
-
 /* Convert sun-centered lbr (degrees) into galactic xyz coordinates. */
 void lbr2xyz(const double* lbr, vector xyz)
 {
@@ -39,10 +38,11 @@ void lbr2xyz(const double* lbr, vector xyz)
     const double lcos = cos(L(lbr));
 */
 
-    const double bsin = sin(d2r(B(lbr)));
-    const double lsin = sin(d2r(L(lbr)));
-    const double bcos = cos(d2r(B(lbr)));
-    const double lcos = cos(d2r(L(lbr)));
+    double lsin, lcos;
+    double bsin, bcos;
+
+    sincos(d2r(B(lbr)), &bsin, &bcos);
+    sincos(d2r(L(lbr)), &lsin, &lcos);
 
     Z(xyz) = R(lbr) * bsin;
     zp = R(lbr) * bcos;
@@ -347,22 +347,25 @@ void gc2lb(int wedge, double mu, double nu, double* restrict l, double* restrict
     nu = d2r(nu);
 
     /* Rotation */
-    const double cosnu = cos(nu);
-    const double munode = mu - anode;
-    const double x12 = cos(munode) * cosnu;  /* x1 = x2 */
-    const double y2 = sin(munode) * cosnu;
-    const double z2 = sin(nu);
+    double sinnu, cosnu;
+    sincos(nu, &sinnu, &cosnu);
 
-    const double inc = wedge_incl(wedge);
-    const double cosinc = cos(inc);
-    const double sininc = sin(inc);
+    double sinmunode, cosmunode;
+    double munode = mu - anode;
+    sincos(munode, &sinmunode, &cosmunode);
 
-    const double y1 = y2 * cosinc - z2 * sininc;
-    const double z1 = y2 * sininc + z2 * cosinc;
+    const double x12 = cosmunode * cosnu;  /* x1 = x2 */
+    const double y2 = sinmunode * cosnu;
+    /* z2 = sin(nu) */
+
+    double sininc, cosinc;
+    sincos(wedge_incl(wedge), &sininc, &cosinc);
+
+    const double y1 = y2 * cosinc - sinnu * sininc;
+    const double z1 = y2 * sininc + sinnu * cosinc;
 
     const double ra = atan2(y1, x12) + anode;
     const double dec = asin(z1);
-
 
     /* Use SLALIB to do the actual conversion */
     vector v2;
@@ -378,8 +381,15 @@ void gc2lb(int wedge, double mu, double nu, double* restrict l, double* restrict
             };
 
         /* Spherical to Cartesian */
-        const double cosb = cos(dec);
-        const vector v1 = { cos(ra) * cosb, sin(ra) * cosb, sin(dec) };
+        double sinra, cosra;
+        sincos(ra, &sinra, &cosra);
+
+        const double cosdec = cos(dec);
+
+        const vector v1 = { cosra * cosdec,
+                            sinra * cosdec,
+                            z1               /* sin(asin(z1)) = z1 */
+                          };
 
         /* Equatorial to Galactic */
 
