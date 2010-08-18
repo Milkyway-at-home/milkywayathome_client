@@ -176,20 +176,16 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
     es->nu_step = 0;
 }
 
-/* returns background integral */
-static double integrate(const ASTRONOMY_PARAMETERS* ap,
-                        const INTEGRAL_AREA* ia,
-                        const STREAM_CONSTANTS* sc,
-                        const STREAM_GAUSS* sg,
-                        ST_PROBS* probs,
-                        EVALUATION_STATE* es)
+inline static double r_sum(const ASTRONOMY_PARAMETERS* ap,
+                           const STREAM_CONSTANTS* sc,
+                           const INTEGRAL_AREA* ia,
+                           const STREAM_GAUSS* sg,
+                           const NU_CONSTANTS* nu_consts,
+                           R_POINTS* r_pts,
+                           ST_PROBS* probs,
+                           vector* xyz,
+                           EVALUATION_STATE* es)
 {
-    const unsigned int r_steps = ia->r_steps;
-
-    NU_CONSTANTS* nu_consts = prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
-    R_POINTS* r_pts = mallocSafe(sizeof(R_POINTS) * ap->convolve);
-    vector* xyz = mallocSafe(sizeof(vector) * ap->convolve);
-
     double r, next_r, rPrime;
     double irv, reff_xr_rp3;
 
@@ -199,6 +195,8 @@ static double integrate(const ASTRONOMY_PARAMETERS* ap,
     const double r_max_kpc       = pow(10.0, ((ia->r_max - 14.2) / 5.0));
     const double r_step_size_kpc = (r_max_kpc - r_min_kpc) / r_steps;
   #endif
+
+    const unsigned int r_steps = ia->r_steps;
 
     for ( ; es->r_step < r_steps; es->r_step++)
     {
@@ -222,13 +220,32 @@ static double integrate(const ASTRONOMY_PARAMETERS* ap,
         CLEAR_BG_PROB(es->nu_acc);
     }
 
+    return es->r_acc.bg_int + es->r_acc.correction;
+}
+
+
+/* returns background integral */
+static double integrate(const ASTRONOMY_PARAMETERS* ap,
+                        const INTEGRAL_AREA* ia,
+                        const STREAM_CONSTANTS* sc,
+                        const STREAM_GAUSS* sg,
+                        ST_PROBS* probs,
+                        EVALUATION_STATE* es)
+{
+    double result;
+
+    NU_CONSTANTS* nu_consts = prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
+    R_POINTS* r_pts = mallocSafe(sizeof(R_POINTS) * ap->convolve);
+    vector* xyz = mallocSafe(sizeof(vector) * ap->convolve);
+
+    result = r_sum(ap, sc, ia, sg, nu_consts, r_pts, probs, xyz, es);
     es->r_step = 0;
 
-    free(r_pts);
     free(nu_consts);
+    free(r_pts);
     free(xyz);
 
-    return es->r_acc.bg_int + es->r_acc.correction;
+    return result;
 }
 
 
@@ -274,7 +291,7 @@ void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         ia = &ap->integral[es->current_integral];
         es->current_calc_probs = completed_integral_progress(ap, es);
 
-        separationCL(ap, ia, sc, sg);
+        //separationCL(ap, ia, sc, sg);
 
         t1 = get_time();
         integral->background_integral = integrate(ap, ia, sc, sg, integral->probs, es);
