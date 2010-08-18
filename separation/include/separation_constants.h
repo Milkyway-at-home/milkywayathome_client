@@ -34,6 +34,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* The node of the GC coordinates used in the survey. */
 #define NODE_GC_COORDS (surveyCenterRa - 90.0)
+#define NODE_GC_COORDS_RAD d2r(NODE_GC_COORDS)
+
 #define sun_r0 (8.5)
 
 #define CHECKPOINT_FILE "separation_checkpoint"

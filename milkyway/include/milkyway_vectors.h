@@ -38,12 +38,16 @@
   typedef real4 matrix[NDIM];
   #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
   #define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
+
+  #define VECTOR(x, y, z) { (x), (y), (z), 0.0 }
 #else
   #define VECTOR_SIZE 3
   typedef real vector[NDIM];
 
   typedef real matrix[NDIM][NDIM];
   typedef real* vectorptr;
+
+  #define VECTOR(x, y, z) { (x), (y), (z) }
 
 /* Note: vectorptr is NOT the same as vector*.  By using real* as
    vectorptr, we can do nice things to avoid pointer aliasing and
