@@ -94,10 +94,10 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
         lbr2xyz(lbr, sc[i].c);
 
         X(sc[i].a) =   sin(streams->parameters[i].stream_parameters[2])
-                            * cos(streams->parameters[i].stream_parameters[3]);
+                     * cos(streams->parameters[i].stream_parameters[3]);
 
         Y(sc[i].a) =   sin(streams->parameters[i].stream_parameters[2])
-                            * sin(streams->parameters[i].stream_parameters[3]);
+                     * sin(streams->parameters[i].stream_parameters[3]);
 
         Z(sc[i].a) = cos(streams->parameters[i].stream_parameters[2]);
     }
@@ -139,7 +139,7 @@ double set_prob_consts(const ASTRONOMY_PARAMETERS* ap,
     const double reff_value = sigmoid_curve_params[0] / (exp_result + 1.0);
     const double rPrime3 = cube(coords);
 
-    for (i = 0; i < n_convolve; i++)
+    for (i = 0; i < n_convolve; ++i)
     {
         g = gPrime + sg->dx[i];
 
@@ -158,13 +158,14 @@ double set_prob_consts(const ASTRONOMY_PARAMETERS* ap,
     return reff_xr_rp3;
 }
 
-void prepare_nu_constants(NU_CONSTANTS* nu_consts,
-                          const unsigned int nu_steps,
-                          double nu_step_size,
-                          double nu_min)
+NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
+                                   const double nu_step_size,
+                                   const double nu_min)
 {
     unsigned int i;
     double tmp1, tmp2;
+
+    NU_CONSTANTS* nu_consts = mallocSafe(sizeof(NU_CONSTANTS) * nu_steps);
 
     for (i = 0; i < nu_steps; i++)
     {
@@ -176,77 +177,8 @@ void prepare_nu_constants(NU_CONSTANTS* nu_consts,
         nu_consts[i].id = cos(tmp1) - cos(tmp2);
         nu_consts[i].nu += 0.5 * nu_step_size;
     }
-}
 
-R_CONSTANTS* prepare_r_constants(const ASTRONOMY_PARAMETERS* ap,
-                                 const STREAM_GAUSS* sg,
-                                 const unsigned int n_convolve,
-                                 const unsigned int r_steps,
-                                 const double r_min,
-                                 const double r_step_size,
-                                 const double mu_step_size,
-                                 R_POINTS* r_pts)
-{
-    unsigned int i;
-    double r, next_r, rPrime;
-    R_CONSTANTS* r_step_consts = mallocSafe(sizeof(R_CONSTANTS) * r_steps);
-
-//vickej2_kpc edits to make volumes even in kpc rather than g
-//vickej2_kpc        double log_r, r, next_r, rPrime;
-
-  #ifdef USE_KPC
-    const double r_max           = r_min + r_step_size * r_steps;
-    const double r_min_kpc       = pow(10.0, ((r_min - 14.2) / 5.0));
-    const double r_max_kpc       = pow(10.0, ((r_max - 14.2) / 5.0));
-    const double r_step_size_kpc = (r_max_kpc - r_min_kpc) / r_steps;
-  #endif
-
-    for (i = 0; i < r_steps; i++)
-    {
-      #ifdef USE_KPC
-        r = r_min_kpc + (i * r_step_size_kpc);
-        next_r = r + r_step_size_kpc;
-      #else
-        double log_r = r_min + (i * r_step_size);
-        r = pow(10.0, (log_r - 14.2) / 5.0);
-        next_r = pow(10.0, (log_r + r_step_size - 14.2) / 5.0);
-      #endif
-
-        r_step_consts[i].irv = d2r(((cube(next_r) - cube(r)) / 3.0) * mu_step_size);
-        rPrime = (next_r + r) / 2.0;
-
-        r_step_consts[i].reff_xr_rp3 = set_prob_consts(ap, sg, n_convolve, rPrime, &r_pts[i * n_convolve]);
-    }
-
-    return r_step_consts;
-}
-
-void prepare_integral_constants(const ASTRONOMY_PARAMETERS* ap,
-                                const STREAM_GAUSS* sg,
-                                const INTEGRAL_AREA* ia,
-                                INTEGRAL_CONSTANTS* ic)
-{
-
-    /* 2D block, ia->r_steps = rows, ap->convolve = columns */
-    ic->r_pts = mallocSafe(sizeof(R_POINTS) * ia->r_steps * ap->convolve);
-    ic->r_step_consts = prepare_r_constants(ap,
-                                            sg,
-                                            ap->convolve,
-                                            ia->r_steps,
-                                            ia->r_min,
-                                            ia->r_step_size,
-                                            ia->mu_step_size,
-                                            ic->r_pts);
-
-    ic->nu_consts = mallocSafe(sizeof(NU_CONSTANTS) * ia->nu_steps);
-    prepare_nu_constants(ic->nu_consts, ia->nu_steps, ia->nu_step_size, ia->nu_min);
-}
-
-void free_integral_constants(INTEGRAL_CONSTANTS* ic)
-{
-    free(ic->r_step_consts);
-    free(ic->r_pts);
-    free(ic->nu_consts);
+    return nu_consts;
 }
 
 void free_stream_gauss(STREAM_GAUSS* sg)

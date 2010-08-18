@@ -52,12 +52,6 @@ typedef struct
 
 typedef struct
 {
-    double irv;
-    double reff_xr_rp3;
-} R_CONSTANTS;
-
-typedef struct
-{
     double r_point;
     double r_in_mag;
     double r_in_mag2;
@@ -69,14 +63,6 @@ typedef struct
     double nu;
     double id;
 } NU_CONSTANTS;
-
-typedef struct
-{
-    R_CONSTANTS* r_step_consts;
-    R_POINTS* r_pts;
-    NU_CONSTANTS* nu_consts;
-} INTEGRAL_CONSTANTS;
-
 
 typedef struct
 {
@@ -116,7 +102,6 @@ typedef struct
 } STREAM_PARAMETERS;
 
 #define EMPTY_STREAM_PARAMETERS { NULL, NULL, NULL, NULL, NULL }
-
 
 typedef struct
 {

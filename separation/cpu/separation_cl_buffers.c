@@ -68,55 +68,15 @@ inline static cl_int createSCBuffer(const STREAM_CONSTANTS* sc,
                                     SeparationCLMem* cm)
 {
     cl_int err;
+    size_t size = sizeof(STREAM_CONSTANTS) * number_streams;
     cm->sc = clCreateBuffer(ci->clctx,
                             CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                            sizeof(STREAM_CONSTANTS) * number_streams,
+                            size,
                             sc,
                             &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating stream constants buffer: %s\n", showCLInt(err));
-        return err;
-    }
-
-    return CL_SUCCESS;
-}
-
-inline static cl_int createRConstsBuffer(const R_CONSTANTS* r_consts,
-                                         const unsigned int r_steps,
-                                         CLInfo* ci,
-                                         SeparationCLMem* cm)
-{
-    cl_int err;
-    cm->rConsts = clCreateBuffer(ci->clctx,
-                                 CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                                 sizeof(R_CONSTANTS) * r_steps,
-                                 r_consts,
-                                 &err);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating r constants buffer: %s\n", showCLInt(err));
-        return err;
-    }
-
-    return CL_SUCCESS;
-}
-
-inline static cl_int createRPointsBuffer(const R_POINTS* r_points,
-                                         const unsigned int r_steps,
-                                         const unsigned int convolve,
-                                         CLInfo* ci,
-                                         SeparationCLMem* cm)
-{
-    cl_int err;
-    cm->rPoints = clCreateBuffer(ci->clctx,
-                                 CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                                 sizeof(R_POINTS) * r_steps * convolve,
-                                 r_points,
-                                 &err);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating r points buffer: %s\n", showCLInt(err));
+        warn("Error creating stream constants buffer of size %zu: %s\n", size, showCLInt(err));
         return err;
     }
 
@@ -124,19 +84,20 @@ inline static cl_int createRPointsBuffer(const R_POINTS* r_points,
 }
 
 inline static cl_int createNuConstsBuffer(const NU_CONSTANTS* nu_consts,
-                                         const unsigned int nu_steps,
-                                         CLInfo* ci,
-                                         SeparationCLMem* cm)
+                                          const unsigned int nu_steps,
+                                          CLInfo* ci,
+                                          SeparationCLMem* cm)
 {
     cl_int err;
-    cm->rConsts = clCreateBuffer(ci->clctx,
-                                 CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                                 sizeof(NU_CONSTANTS) * nu_steps,
-                                 nu_consts,
-                                 &err);
+    size_t size = sizeof(NU_CONSTANTS) * nu_steps;
+    cm->nuConsts = clCreateBuffer(ci->clctx,
+                                  CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                                  size,
+                                  nu_consts,
+                                  &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating nu constants buffer: %s\n", showCLInt(err));
+        warn("Error creating nu constants buffer of size %zu: %s\n", size, showCLInt(err));
         return err;
     }
 
@@ -163,11 +124,9 @@ inline static cl_int createIABuffer(const INTEGRAL_AREA* ia,
 }
 
 cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
-                               const STREAM_CONSTANTS* sc,
-                               const R_CONSTANTS* r_consts,
-                               const R_POINTS* r_points,
-                               const NU_CONSTANTS* nu_st,
                                const INTEGRAL_AREA* ia,
+                               const STREAM_CONSTANTS* sc,
+                               const NU_CONSTANTS* nu_st,
                                CLInfo* ci,
                                SeparationCLMem* cm)
 {
@@ -176,8 +135,6 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
     err |= createOutNuBuffer(ia->nu_steps, ci, cm);
     err |= createAPBuffer(ap, ci, cm);
     err |= createSCBuffer(sc, ap->number_streams, ci, cm);
-    err |= createRConstsBuffer(r_consts, ia->r_steps, ci, cm);
-    err |= createRPointsBuffer(r_points, ia->r_steps, ap->convolve, ci, cm);
     err |= createNuConstsBuffer(nu_st, ia->nu_steps, ci, cm);
     err |= createIABuffer(ia, ci, cm);
 

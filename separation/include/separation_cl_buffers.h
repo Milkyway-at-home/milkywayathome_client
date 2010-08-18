@@ -33,11 +33,9 @@ extern "C" {
 #include "build_cl.h"
 
 cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
-                               const STREAM_CONSTANTS* sc,
-                               const R_CONSTANTS* r_consts,
-                               const R_POINTS* r_points,
-                               const NU_CONSTANTS* nu_st,
                                const INTEGRAL_AREA* ia,
+                               const STREAM_CONSTANTS* sc,
+                               const NU_CONSTANTS* nu_st,
                                CLInfo* ci,
                                SeparationCLMem* cm);
 

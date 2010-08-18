@@ -27,14 +27,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "integrals.h"
 #include "setup_cl.h"
 
+
 inline static double progress(const EVALUATION_STATE* es,
                               const INTEGRAL_AREA* ia,
                               unsigned int total_calc_probs)
 {
     /* This integral's progress */
-    /* When checkpointing is done, ia->r_step would always be 0 */
-    unsigned int i_prog =  (es->mu_step * ia->nu_steps * ia->r_steps)
-                              + (es->nu_step * ia->r_steps); /* + es->r_step */
+    /* When checkpointing is done, ia->mu_step would always be 0 */
+    unsigned int i_prog =  (es->r_step * ia->nu_steps * ia->mu_steps)
+                              + (es->nu_step * ia->mu_steps); /* + es->mu_step */
 
     return (double)(i_prog + es->current_calc_probs) / total_calc_probs;
 }
@@ -70,7 +71,7 @@ inline static void do_boinc_checkpoint(const EVALUATION_STATE* es,
 
 #endif /* BOINC_APPLICATION */
 
-
+__attribute__ ((always_inline))
 inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
                                  const STREAM_CONSTANTS* sc,
                                  const R_POINTS* r_pts,
@@ -93,86 +94,87 @@ inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
     }
 }
 
-
-/* Sum over r steps using Kahan summation */
-inline static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
-                            const STREAM_CONSTANTS* sc,
-                            const R_POINTS* r_pts,
-                            const R_CONSTANTS* r_consts,
-                            const double nu_consts_id,
-                            const unsigned int r_steps,
-                            ST_PROBS* probs,
-                            vector* xyz,
-                            const vector integral_point)
+/* Sum over mu steps using Kahan summation */
+__attribute__ ((always_inline))
+inline static BG_PROB mu_sum(const ASTRONOMY_PARAMETERS* ap,
+                             const STREAM_CONSTANTS* sc,
+                             const R_POINTS* r_pts,
+                             const double irv,             /* r constants */
+                             const double reff_xr_rp3,
+                             const double nu_consts_id,    /* nu constants */
+                             const double nu_consts_nu,
+                             const unsigned int mu_steps,
+                             const double mu_step_size,
+                             const double mu_min,
+                             ST_PROBS* probs,
+                             vector* xyz)
 {
-    unsigned int r_step_current;
-    double V;
+    unsigned int mu_step_current;
+    double mu, V;
     double bg_prob;
+    vector integral_point;
     BG_PROB bg_prob_int = ZERO_BG_PROB; /* for Kahan summation */
 
-    for (r_step_current = 0; r_step_current < r_steps; ++r_step_current)
+    for (mu_step_current = 0; mu_step_current < mu_steps; ++mu_step_current)
     {
-        bg_prob = bg_probability(ap,
-                                 &r_pts[r_step_current * ap->convolve],
-                                 r_consts[r_step_current].reff_xr_rp3,
-                                 integral_point,
-                                 xyz);
+        mu = mu_min + (mu_step_current * mu_step_size);
 
-        V = r_consts[r_step_current].irv * nu_consts_id;
+        ap->sgr_conversion(ap->wedge,
+                           mu + 0.5 * mu_step_size,
+                           nu_consts_nu,
+                           &L(integral_point),
+                           &B(integral_point));
+
+        bg_prob = bg_probability(ap, r_pts, reff_xr_rp3, integral_point, xyz);
+
+        V = irv * nu_consts_id;
         bg_prob *= V;
 
         KAHAN_ADD(bg_prob_int.bg_int, bg_prob, bg_prob_int.correction);
 
-        probabilities(ap,
-                      sc,
-                      &r_pts[r_step_current * ap->convolve],
-                      r_consts[r_step_current].reff_xr_rp3,
-                      V,
-                      xyz,
-                      probs);
+        probabilities(ap, sc, r_pts, reff_xr_rp3, V, xyz, probs);
     }
 
     return bg_prob_int;
 }
 
+__attribute__ ((always_inline))
 inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
                           const STREAM_CONSTANTS* sc,
                           const INTEGRAL_AREA* ia,
-                          const R_CONSTANTS* r_consts,
+                          const double irv,
+                          const double reff_xr_rp3,
                           const R_POINTS* r_pts,
                           const NU_CONSTANTS* nu_consts,
-                          const double mu,
                           ST_PROBS* probs,
                           vector* xyz,
                           EVALUATION_STATE* es)
 {
-    vector integral_point;
-    BG_PROB r_result;
+    BG_PROB mu_result;
 
     const unsigned int nu_steps = ia->nu_steps;
-    const unsigned int r_steps = ia->r_steps;
+    const unsigned int mu_steps = ia->mu_steps;
+    const double mu_min = ia->mu_min;
+    const double mu_step_size = ia->mu_step_size;
 
     for ( ; es->nu_step < nu_steps; es->nu_step++)
     {
         do_boinc_checkpoint(es, ia, ap->total_calc_probs);
 
-        ap->sgr_conversion(ap->wedge,
-                           mu + 0.5 * ia->mu_step_size,
+        mu_result = mu_sum(ap,
+                           sc,
+                           r_pts,
+                           irv,
+                           reff_xr_rp3,
+                           nu_consts[es->nu_step].id,
                            nu_consts[es->nu_step].nu,
-                           &L(integral_point),
-                           &B(integral_point));
+                           mu_steps,
+                           mu_step_size,
+                           mu_min,
+                           probs,
+                           xyz);
 
-        r_result = r_sum(ap,
-                         sc,
-                         r_pts,
-                         r_consts,
-                         nu_consts[es->nu_step].id,
-                         r_steps,
-                         probs,
-                         xyz,
-                         integral_point);
-
-        INCADD_BG_PROB(es->nu_acc, r_result);
+        INCADD_BG_PROB(es->nu_acc, mu_result);
     }
 
     es->nu_step = 0;
@@ -181,30 +183,58 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
 /* returns background integral */
 static double integrate(const ASTRONOMY_PARAMETERS* ap,
                         const STREAM_CONSTANTS* sc,
-                        const R_CONSTANTS* r_consts,
-                        const R_POINTS* r_pts,
-                        const NU_CONSTANTS* nu_consts,
                         const INTEGRAL_AREA* ia,
+                        const STREAM_GAUSS* sg,
                         ST_PROBS* probs,
-                        vector* xyz,
                         EVALUATION_STATE* es)
 {
-    double mu;
-    const unsigned int mu_steps = ia->mu_steps;
+    const unsigned int r_steps = ia->r_steps;
 
-    for ( ; es->mu_step < mu_steps; es->mu_step++)
+    NU_CONSTANTS* nu_consts = prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
+    R_POINTS* r_pts = mallocSafe(sizeof(R_POINTS) * ap->convolve);
+    vector* xyz = mallocSafe(sizeof(vector) * ap->convolve);
+
+    double r, next_r, rPrime;
+    double irv, reff_xr_rp3;
+
+  #ifdef USE_KPC
+    const double r_max           = ia->r_min + ia->r_step_size * r_steps;
+    const double r_min_kpc       = pow(10.0, ((ia->r_min - 14.2) / 5.0));
+    const double r_max_kpc       = pow(10.0, ((ia->r_max - 14.2) / 5.0));
+    const double r_step_size_kpc = (r_max_kpc - r_min_kpc) / r_steps;
+  #endif
+
+    for ( ; es->r_step < r_steps; es->r_step++)
     {
-        mu = ia->mu_min + (es->mu_step * ia->mu_step_size);
+      #ifdef USE_KPC
+        r = r_min_kpc + (es->r_step * r_step_size_kpc);
+        next_r = r + r_step_size_kpc;
+      #else
+        double log_r = ia->r_min + (es->r_step * ia->r_step_size);
+        r = pow(10.0, (log_r - 14.2) / 5.0);
+        next_r = pow(10.0, (log_r + ia->r_step_size - 14.2) / 5.0);
+      #endif
 
-        nu_sum(ap, sc, ia, r_consts, r_pts, nu_consts, mu, probs, xyz, es);
-        INCADD_BG_PROB(es->mu_acc, es->nu_acc);
+        irv = d2r(((cube(next_r) - cube(r)) / 3.0) * ia->mu_step_size);
+        rPrime = (next_r + r) / 2.0;
+
+        reff_xr_rp3 = set_prob_consts(ap, sg, ap->convolve, rPrime, r_pts);
+
+        nu_sum(ap, sc, ia, irv, reff_xr_rp3, r_pts, nu_consts, probs, xyz, es);
+
+        INCADD_BG_PROB(es->r_acc, es->nu_acc);
         CLEAR_BG_PROB(es->nu_acc);
     }
 
-    es->mu_step = 0;
+    es->r_step = 0;
 
-    return es->mu_acc.bg_int + es->mu_acc.correction;
+    free(r_pts);
+    free(nu_consts);
+    free(xyz);
+
+    return es->r_acc.bg_int + es->r_acc.correction;
 }
+
 
 inline static void calculate_stream_integrals(const ST_PROBS* probs,
                                               double* stream_integrals,
@@ -237,11 +267,10 @@ void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                          const STREAM_GAUSS* sg,
                          EVALUATION_STATE* es)
 {
-    INTEGRAL_CONSTANTS ic;
     INTEGRAL* integral;
     INTEGRAL_AREA* ia;
 
-    vector* xyzs = mallocSafe(sizeof(vector) * ap->convolve);
+    double t1, t2;
 
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
     {
@@ -249,24 +278,22 @@ void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         ia = &ap->integral[es->current_integral];
         es->current_calc_probs = completed_integral_progress(ap, es);
 
-        prepare_integral_constants(ap, sg, ia, &ic);
-
         /* FIXME: This will only work for 1 integral for now */
-        //setupSeparationCL(ap, sc, ic.r_step_consts, ic.r_pts, ic.nu_consts, ia);
+        //setupSeparationCL(ap, ia, sc, nu_consts);
 
         //printf("CL Setup\n");
         //mw_finish(EXIT_SUCCESS);
 
-        integral->background_integral = integrate(ap, sc,
-                                                  ic.r_step_consts, ic.r_pts, ic.nu_consts,
-                                                  ia, integral->probs, xyzs, es);
+        t1 = get_time();
+        integral->background_integral = integrate(ap, sc, ia, sg, integral->probs, es);
+        t2 = get_time();
+
+        printf("Time = %.20g\n", t2 - t1);
 
         calculate_stream_integrals(integral->probs, integral->stream_integrals, ap->number_streams);
 
-        free_integral_constants(&ic);
-        CLEAR_BG_PROB(es->mu_acc);
+        CLEAR_BG_PROB(es->r_acc);
     }
 
-    free(xyzs);
 }
 

@@ -39,26 +39,10 @@ double set_prob_consts(const ASTRONOMY_PARAMETERS* ap,
                        const double coords,
                        R_POINTS* r_pts);
 
-void prepare_nu_constants(NU_CONSTANTS* nu_consts,
-                          const unsigned int nu_steps,
-                          double nu_step_size,
-                          double nu_min);
+NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
+                                   const double nu_step_size,
+                                   const double nu_min);
 
-R_CONSTANTS* prepare_r_constants(const ASTRONOMY_PARAMETERS* ap,
-                                 const STREAM_GAUSS* sg,
-                                 const unsigned int n_convolve,
-                                 const unsigned int r_steps,
-                                 const double r_min,
-                                 const double r_step_size,
-                                 const double mu_step_size,
-                                 R_POINTS* r_pts);
-
-void prepare_integral_constants(const ASTRONOMY_PARAMETERS* ap,
-                                const STREAM_GAUSS* sg,
-                                const INTEGRAL_AREA* ia,
-                                INTEGRAL_CONSTANTS* ic);
-
-void free_integral_constants(INTEGRAL_CONSTANTS* ic);
 void free_stream_gauss(STREAM_GAUSS* sg);
 
 

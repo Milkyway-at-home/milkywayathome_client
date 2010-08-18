@@ -39,8 +39,6 @@ inline static void releaseSeparationCLMem(SeparationCLMem* cm)
     clReleaseMemObject(cm->outNu);
     clReleaseMemObject(cm->ap);
     clReleaseMemObject(cm->sc);
-    clReleaseMemObject(cm->rConsts);
-    clReleaseMemObject(cm->rPoints);
     clReleaseMemObject(cm->nuConsts);
     clReleaseMemObject(cm->ia);
 }
@@ -51,18 +49,19 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
 {
     cl_int err = CL_SUCCESS;
 
-    /* The constant buffers */
+    /* Output buffer */
     err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outNu);
+
+    /* The constant arguments */
     err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->ap);
     err |= clSetKernelArg(ci->kern, 2, sizeof(cl_mem), &cm->sc);
-    err |= clSetKernelArg(ci->kern, 3, sizeof(cl_mem), &cm->rConsts);
-    err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->rPoints);
-    err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->nuConsts);
-    err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->ia);
+    err |= clSetKernelArg(ci->kern, 3, sizeof(cl_mem), &cm->nuConsts);
+    err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->ia);
 
-    /* Local workspace used by nu_sum and r_sum */
-    err |= clSetKernelArg(ci->kern, 7, sizeof(ST_PROBS) * ap->number_streams, NULL); /* st_probs */
-    err |= clSetKernelArg(ci->kern, 8, sizeof(vector) * ap->convolve, NULL);         /* xyz */
+    /* Local workspaces */
+    err |= clSetKernelArg(ci->kern, 5, sizeof(ST_PROBS) * ap->number_streams, NULL); /* st_probs */
+    err |= clSetKernelArg(ci->kern, 6, sizeof(vector) * ap->convolve, NULL);         /* xyz */
+    err |= clSetKernelArg(ci->kern, 7, sizeof(R_POINTS) * ap->convolve, NULL);       /* r_pts */
 
     if (err != CL_SUCCESS)
     {
@@ -86,11 +85,9 @@ const char* src = "\n" \
 "\n";
 
 int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
+                      const INTEGRAL_AREA* ia,
                       const STREAM_CONSTANTS* sc,
-                      const R_CONSTANTS* r_consts,
-                      const R_POINTS* r_points,
-                      const NU_CONSTANTS* nu_consts,
-                      const INTEGRAL_AREA* ia)
+                      const NU_CONSTANTS* nu_consts)
 {
     CLInfo ci;
     SeparationCLMem cm;
@@ -105,8 +102,7 @@ int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
 
     free(compileDefs);
 
-
-    if (createSeparationBuffers(ap, sc, r_consts, r_points, nu_consts, ia, &ci, &cm) != CL_SUCCESS)
+    if (createSeparationBuffers(ap, ia, sc, nu_consts, &ci, &cm) != CL_SUCCESS)
         fail("Failed to create CL buffers\n");
 
     printf("arstarstarst\n");

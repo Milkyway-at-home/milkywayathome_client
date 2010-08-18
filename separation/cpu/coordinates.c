@@ -26,33 +26,29 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation.h"
 #include "coordinates.h"
 
-inline static void atBound(double* angle, /* MODIFIED -- the angle to bound in radians */
-                           double min,    /* IN -- inclusive minimum value */
-                           double max     /* IN -- exclusive maximum value */
-                          )
-{
-    while (*angle < min)
-        *angle += M_2PI;
 
-    while (*angle >= max)
-        *angle -= M_2PI;
-}
-
-inline static void atBound2(double* theta, /* MODIFIED -- the -M_PI_2 to M_PI_2 angle */
-                            double* phi    /* MODIFIED -- the 0 to M_2PI angle */
-                            )
+/* Convert sun-centered lbr (degrees) into galactic xyz coordinates. */
+void lbr2xyz(const double* lbr, vector xyz)
 {
-    atBound(theta, -M_PI, M_PI);
-    if (fabs(*theta) > M_PI_2)
-    {
-        *theta = M_PI - *theta;
-        *phi += M_PI;
-    }
-    atBound(theta, -M_PI, M_PI);
-    atBound(phi, 0.0, M_2PI);
-    if (fabs(*theta) == M_PI_2)
-        *phi = 0.0;
-    return;
+    double zp, d;
+/*
+    TODO: Use radians to begin with
+    const double bsin = sin(B(lbr));
+    const double lsin = sin(L(lbr));
+    const double bcos = cos(B(lbr));
+    const double lcos = cos(L(lbr));
+*/
+
+    const double bsin = sin(d2r(B(lbr)));
+    const double lsin = sin(d2r(L(lbr)));
+    const double bcos = cos(d2r(B(lbr)));
+    const double lcos = cos(d2r(L(lbr)));
+
+    Z(xyz) = R(lbr) * bsin;
+    zp = R(lbr) * bcos;
+    d = sqrt( sqr(sun_r0) + sqr(zp) - 2.0 * sun_r0 * zp * lcos);
+    X(xyz) = (sqr(zp) - sqr(sun_r0) - sqr(d)) / (2.0 * sun_r0);
+    Y(xyz) = zp * lsin;
 }
 
 inline static double slaDrange(double angle)
@@ -150,8 +146,6 @@ inline static void slaEqgal( double dr, double dd, double* dl, double* db )
     /* Cartesian to spherical */
     slaDcc2s(v2, dl, db);
 }
-
-
 
 typedef struct
 {
@@ -376,6 +370,19 @@ inline static void sgrToGal(double lamda, double beta, double* l, double* b)
     return;
 }
 
+/* FIXME: This is almost certainly broken, but I don't think it's used  */
+void gc2sgr( int wedge, double mu, double nu, double* l, double* b )
+{
+    fprintf(stderr, "Don't use me\n");
+    mw_finish(EXIT_FAILURE);
+
+    double lamda, beta;
+    gcToSgr(wedge, d2r(mu), d2r(nu), &lamda, &beta);
+    sgrToGal(lamda, beta, l, b);
+    *l = r2d(*l);
+    *b = r2d(*b);
+}
+
 /* (ra, dec) in degrees */
 inline static RA_DEC atGCToEq(
     double amu,  /* IN -- mu in radians */
@@ -401,30 +408,6 @@ inline static RA_DEC atGCToEq(
     return radec;
 }
 
-/* Convert sun-centered lbr (degrees) into galactic xyz coordinates. */
-void lbr2xyz(const double* lbr, vector xyz)
-{
-    double zp, d;
-/*
-    TODO: Use radians to begin with
-    const double bsin = sin(B(lbr));
-    const double lsin = sin(L(lbr));
-    const double bcos = cos(B(lbr));
-    const double lcos = cos(L(lbr));
-*/
-
-    const double bsin = sin(d2r(B(lbr)));
-    const double lsin = sin(d2r(L(lbr)));
-    const double bcos = cos(d2r(B(lbr)));
-    const double lcos = cos(d2r(L(lbr)));
-
-    Z(xyz) = R(lbr) * bsin;
-    zp = R(lbr) * bcos;
-    d = sqrt( sqr(sun_r0) + sqr(zp) - 2.0 * sun_r0 * zp * lcos);
-    X(xyz) = (sqr(zp) - sqr(sun_r0) - sqr(d)) / (2.0 * sun_r0);
-    Y(xyz) = zp * lsin;
-}
-
 /* Get eta for the given wedge. */
 inline static double wedge_eta(int wedge)
 {
@@ -445,19 +428,6 @@ void gc2lb( int wedge, double mu, double nu, double* l, double* b )
     /* Use SLALIB to do the actual conversion */
     slaEqgal(radec.ra, radec.dec, l, b);
 
-    *l = r2d(*l);
-    *b = r2d(*b);
-}
-
-/* FIXME: This is almost certainly broken, but I don't think it's used  */
-void gc2sgr( int wedge, double mu, double nu, double* l, double* b )
-{
-    fprintf(stderr, "Don't use me\n");
-    mw_finish(EXIT_FAILURE);
-
-    double lamda, beta;
-    gcToSgr(wedge, d2r(mu), d2r(nu), &lamda, &beta);
-    sgrToGal(lamda, beta, l, b);
     *l = r2d(*l);
     *b = r2d(*b);
 }
