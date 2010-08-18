@@ -30,10 +30,13 @@ extern "C" {
 #include "evaluation_state.h"
 #include "integral_constants.h"
 
-void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
-                         const STREAM_CONSTANTS* sc,
-                         const STREAM_GAUSS* sg,
-                         EVALUATION_STATE* es);
+double integrate(const ASTRONOMY_PARAMETERS* ap,
+                 const INTEGRAL_AREA* ia,
+                 const STREAM_CONSTANTS* sc,
+                 const STREAM_GAUSS* sg,
+                 ST_PROBS* probs,
+                 EVALUATION_STATE* es);
+
 #ifdef __cplusplus
 }
 #endif

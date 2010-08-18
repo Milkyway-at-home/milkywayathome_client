@@ -28,6 +28,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "run_cl.h"
 
 
+#if BOINC_APPLICATION
+
+__attribute ((always_inline))
 inline static double progress(const EVALUATION_STATE* es,
                               const INTEGRAL_AREA* ia,
                               unsigned int total_calc_probs)
@@ -35,12 +38,12 @@ inline static double progress(const EVALUATION_STATE* es,
     /* This integral's progress */
     /* When checkpointing is done, ia->mu_step would always be 0 */
     unsigned int i_prog =  (es->r_step * ia->nu_steps * ia->mu_steps)
-                              + (es->nu_step * ia->mu_steps); /* + es->mu_step */
+                         + (es->nu_step * ia->mu_steps); /* + es->mu_step */
 
     return (double)(i_prog + es->current_calc_probs) / total_calc_probs;
 }
 
-#if BOINC_APPLICATION
+__attribute ((always_inline))
 inline static void do_boinc_checkpoint(const EVALUATION_STATE* es,
                                        const INTEGRAL_AREA* ia,
                                        unsigned int total_calc_probs)
@@ -60,14 +63,7 @@ inline static void do_boinc_checkpoint(const EVALUATION_STATE* es,
 
 #else
 
-inline static void do_boinc_checkpoint(const EVALUATION_STATE* es,
-                                       const INTEGRAL_AREA* ia,
-                                       unsigned int total_calc_probs)
-{
-  #pragma unused(ia)
-  #pragma unused(es)
-  #pragma unused(total_calc_probs)
-}
+#define do_boinc_checkpoint(es, ia, total_calc_probs)
 
 #endif /* BOINC_APPLICATION */
 
@@ -223,14 +219,13 @@ inline static double r_sum(const ASTRONOMY_PARAMETERS* ap,
     return es->r_acc.bg_int + es->r_acc.correction;
 }
 
-
 /* returns background integral */
-static double integrate(const ASTRONOMY_PARAMETERS* ap,
-                        const INTEGRAL_AREA* ia,
-                        const STREAM_CONSTANTS* sc,
-                        const STREAM_GAUSS* sg,
-                        ST_PROBS* probs,
-                        EVALUATION_STATE* es)
+double integrate(const ASTRONOMY_PARAMETERS* ap,
+                 const INTEGRAL_AREA* ia,
+                 const STREAM_CONSTANTS* sc,
+                 const STREAM_GAUSS* sg,
+                 ST_PROBS* probs,
+                 EVALUATION_STATE* es)
 {
     double result;
 
@@ -246,63 +241,5 @@ static double integrate(const ASTRONOMY_PARAMETERS* ap,
     free(xyz);
 
     return result;
-}
-
-
-inline static void calculate_stream_integrals(const ST_PROBS* probs,
-                                              double* stream_integrals,
-                                              const unsigned int number_streams)
-{
-    unsigned int i;
-
-    for (i = 0; i < number_streams; ++i)
-        stream_integrals[i] = probs[i].st_prob_int + probs[i].st_prob_int_c;
-}
-
-/* Add up completed integrals for progress reporting */
-inline static double completed_integral_progress(const ASTRONOMY_PARAMETERS* ap,
-                                                 const EVALUATION_STATE* es)
-{
-    INTEGRAL_AREA* ia;
-    unsigned int i, current_calc_probs = 0;
-
-    for (i = 0; i < es->current_integral; ++i)
-    {
-        ia = &ap->integral[i];
-        current_calc_probs += ia->r_steps * ia->mu_steps * ia->nu_steps;
-    }
-
-    return current_calc_probs;
-}
-
-void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
-                         const STREAM_CONSTANTS* sc,
-                         const STREAM_GAUSS* sg,
-                         EVALUATION_STATE* es)
-{
-    INTEGRAL* integral;
-    INTEGRAL_AREA* ia;
-
-    double t1, t2;
-
-    for (; es->current_integral < ap->number_integrals; es->current_integral++)
-    {
-        integral = &es->integrals[es->current_integral];
-        ia = &ap->integral[es->current_integral];
-        es->current_calc_probs = completed_integral_progress(ap, es);
-
-        //separationCL(ap, ia, sc, sg);
-
-        t1 = get_time();
-        integral->background_integral = integrate(ap, ia, sc, sg, integral->probs, es);
-        t2 = get_time();
-
-        printf("Time = %.20g\n", t2 - t1);
-
-        calculate_stream_integrals(integral->probs, integral->stream_integrals, ap->number_streams);
-
-        CLEAR_BG_PROB(es->r_acc);
-    }
-
 }
 
