@@ -20,7 +20,6 @@
 
 set(lib_source_file_list evaluation_state.c
                          io_util.c
-                         coordinates.c
                          gauss_legendre.c
                          evaluation.c
                          parameters.c

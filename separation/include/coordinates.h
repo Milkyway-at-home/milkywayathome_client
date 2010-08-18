@@ -26,6 +26,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_vectors.h"
 #include "milkyway_util.h"
 
+//vickej2 for sgr stripes, the great circles are defined thus:
+//sgr stripes run parallel to sgr longitude lines, centered on lamda=2.5*wedge number
+//with mu=0 at the sgr equator and increasing in the +z direction (increasing from the equator with beta)
+//and nu=0 at the center and increasing in the -y direction (inversely to lamda)
+//in this manner an equatorial stripe of standard coordinate conventions is created.
+
 
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
 __attribute__ ((always_inline, hot))
@@ -109,10 +115,6 @@ inline void gc2lb(const int wedge, double mu, double nu, double* restrict l, dou
     *l = r2d(*l);
     *b = r2d(*b);
 }
-
-
-void lbr2xyz( const double* lbr, double* xyz );
-
 
 #endif /* _COORDINATES_H_ */
 
