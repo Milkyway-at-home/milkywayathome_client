@@ -27,7 +27,6 @@ extern "C" {
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <assert.h>
 
 #if BOINC_APPLICATION
   #include <boinc_api.h>
