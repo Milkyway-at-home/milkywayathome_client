@@ -33,6 +33,21 @@ extern "C" {
 #define YN(sp, n) (((sp)->stars)[VECTOR_SIZE * (n) + 1])
 #define ZN(sp, n) (((sp)->stars)[VECTOR_SIZE * (n) + 2])
 
+#define LN(sp, n) XN(sp, n)
+#define BN(sp, n) YN(sp, n)
+#define RN(sp, n) RN(sp, n)
+
+typedef struct
+{
+    double l;
+    double b;
+} LB;
+
+#define LB_L(x) ((x).l)
+#define LB_B(x) ((x).b)
+
+
+
 typedef struct
 {
     unsigned int number_stars;

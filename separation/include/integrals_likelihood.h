@@ -75,7 +75,7 @@ inline double sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
                                   const R_POINTS* r_pts,
                                   const unsigned int convolve,
                                   const int aux_bg_profile,
-                                  const vector integral_point,
+                                  const LB integral_point,
                                   vector* const xyz)
 {
     unsigned int i;
@@ -85,8 +85,8 @@ inline double sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
     double bsin, bcos;
     double bg_prob = 0.0;
 
-    mw_sincos(d2r(L(integral_point)), &lsin, &lcos);
-    mw_sincos(d2r(B(integral_point)), &bsin, &bcos);
+    mw_sincos(d2r(LB_L(integral_point)), &lsin, &lcos);
+    mw_sincos(d2r(LB_B(integral_point)), &bsin, &bcos);
 
     for (i = 0; i < convolve; ++i)
     {
@@ -119,7 +119,7 @@ __attribute__ ((always_inline))
 inline double sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
                                   const R_POINTS* r_pts,
                                   const unsigned int convolve,
-                                  const vector integral_point,
+                                  const LB integral_point,
                                   vector* const xyz)
 {
     unsigned int i;
@@ -128,8 +128,8 @@ inline double sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
     double bsin, bcos;
     double bg_prob = 0.0;
 
-    mw_sincos(d2r(L(integral_point)), &lsin, &lcos);
-    mw_sincos(d2r(B(integral_point)), &bsin, &bcos);
+    mw_sincos(d2r(LB_L(integral_point)), &lsin, &lcos);
+    mw_sincos(d2r(LB_B(integral_point)), &bsin, &bcos);
 
     for (i = 0; i < convolve; ++i)
     {
@@ -150,7 +150,7 @@ __attribute__ ((always_inline, hot))
 inline double bg_probability(const ASTRONOMY_PARAMETERS* ap,
                              const R_POINTS* r_pts,
                              const double reff_xr_rp3,
-                             const vector integral_point,
+                             const LB integral_point,
                              vector* const xyz)
 {
     double bg_prob;

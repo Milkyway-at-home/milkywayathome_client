@@ -32,21 +32,19 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 //and nu=0 at the center and increasing in the -y direction (inversely to lamda)
 //in this manner an equatorial stripe of standard coordinate conventions is created.
 
-
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
-__attribute__ ((always_inline, hot))
-inline void gc2lb(const int wedge, double mu, double nu, vectorptr lbr)
+__attribute__ ((always_inline, hot, const))
+inline LB gc2lb(const int wedge, const double mu, const double nu)
 {
-    mu = d2r(mu);
-    nu = d2r(nu);
+    LB lb;
 
     /* Rotation */
     double sinnu, cosnu;
-    mw_sincos(nu, &sinnu, &cosnu);
+    mw_sincos( d2r(nu), &sinnu, &cosnu);
 
     double sinmunode, cosmunode;
-    double munode = mu - NODE_GC_COORDS_RAD;
-    mw_sincos(munode, &sinmunode, &cosmunode);
+    double munode = mu - NODE_GC_COORDS;
+    mw_sincos(d2r(munode), &sinmunode, &cosmunode);
 
     const double x12 = cosmunode * cosnu;  /* x1 = x2 */
     const double y2 = sinmunode * cosnu;
@@ -106,12 +104,14 @@ inline void gc2lb(const int wedge, double mu, double nu, vectorptr lbr)
     {
         double r = sqrt(sqr(X(v2)) + sqr(Y(v2)));
 
-        L(lbr) = ( r != 0.0 ) ? atan2( Y(v2), X(v2) ) : 0.0;
-        B(lbr) = ( Z(v2) != 0.0 ) ? atan2( Z(v2), r ) : 0.0;
+        LB_L(lb) = ( r != 0.0 ) ? atan2( Y(v2), X(v2) ) : 0.0;
+        LB_B(lb) = ( Z(v2) != 0.0 ) ? atan2( Z(v2), r ) : 0.0;
     }
 
-    L(lbr) = r2d(L(lbr));
-    B(lbr) = r2d(B(lbr));
+    LB_L(lb) = r2d(LB_L(lb));
+    LB_B(lb) = r2d(LB_B(lb));
+
+    return lb;
 }
 
 #endif /* _COORDINATES_H_ */

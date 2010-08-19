@@ -128,16 +128,21 @@ static double likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
     unsigned int current_star_point;
     double star_prob;
     double bg_prob, bg, reff_xr_rp3;
+    LB lb;
 
     unsigned int num_zero = 0;
     unsigned int bad_jacobians = 0;
+
+
 
     for (current_star_point = 0; current_star_point < sp->number_stars; ++current_star_point)
     {
         reff_xr_rp3 = set_r_points(ap, sg, ap->convolve, ZN(sp, current_star_point), r_pts);
 
-        bg_prob = bg_probability(ap, r_pts,
-                                 reff_xr_rp3, &VN(sp, current_star_point), xyz);
+        LB_L(lb) = LN(sp, current_star_point);
+        LB_B(lb) = BN(sp, current_star_point);
+
+        bg_prob = bg_probability(ap, r_pts, reff_xr_rp3, lb, xyz);
 
         bg = (bg_prob / fsi->background_integral) * exp_background_weight;
 

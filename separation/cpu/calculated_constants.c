@@ -57,6 +57,7 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
                                  const STREAMS* streams)
 {
     unsigned int i;
+    LB lb;
     vector lbr;
 
     STREAM_CONSTANTS* sc = mallocSafe(sizeof(STREAM_CONSTANTS) * streams->number_streams);
@@ -98,8 +99,10 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
             mw_finish(EXIT_FAILURE);
         }
 
-        gc2lb(ap->wedge, streams->parameters[i].stream_parameters[0], 0, lbr);
+        lb = gc2lb(ap->wedge, streams->parameters[i].stream_parameters[0], 0.0);
 
+        L(lbr) = LB_L(lb);
+        B(lbr) = LB_B(lb);
         R(lbr) = streams->parameters[i].stream_parameters[1];
         lbr2xyz(lbr, sc[i].c);
 

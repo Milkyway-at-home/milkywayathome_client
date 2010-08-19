@@ -106,16 +106,16 @@ inline static BG_PROB mu_sum(const ASTRONOMY_PARAMETERS* ap,
     unsigned int mu_step_current;
     double mu, V;
     double bg_prob;
-    vector integral_point;
     BG_PROB bg_prob_int = ZERO_BG_PROB; /* for Kahan summation */
+    LB lb;
 
     for (mu_step_current = 0; mu_step_current < mu_steps; ++mu_step_current)
     {
         mu = mu_min + (mu_step_current * mu_step_size);
 
-        gc2lb(ap->wedge, mu + 0.5 * mu_step_size, nu_consts_nu, integral_point);
+        lb = gc2lb(ap->wedge, mu + 0.5 * mu_step_size, nu_consts_nu);
 
-        bg_prob = bg_probability(ap, r_pts, reff_xr_rp3, integral_point, xyz);
+        bg_prob = bg_probability(ap, r_pts, reff_xr_rp3, lb, xyz);
 
         V = irv * nu_consts_id;
         bg_prob *= V;
