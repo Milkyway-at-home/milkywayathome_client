@@ -36,60 +36,49 @@
 /* UNIT Vector */
 #define UNITV(v,j)                              \
     {                                           \
-        (v)[0] = (0 == (j)) ? 1.0 : 0.0;        \
-        (v)[1] = (1 == (j)) ? 1.0 : 0.0;        \
-        (v)[2] = (2 == (j)) ? 1.0 : 0.0;        \
+        X(v) = (0 == (j)) ? 1.0 : 0.0;          \
+        Y(v) = (1 == (j)) ? 1.0 : 0.0;          \
+        Z(v) = (2 == (j)) ? 1.0 : 0.0;          \
     }
 
 /* SET Vector */
 #define SETV(v,u)                               \
     {                                           \
-        (v)[0] = (u)[0];                        \
-        (v)[1] = (u)[1];                        \
-        (v)[2] = (u)[2];                        \
+        X(v) = X(u);                            \
+        Y(v) = Y(u);                            \
+        Z(v) = Z(u);                            \
     }
 
-/* Warning: Don't add a vector to itself, and don't increment with
- * this */
-#define ADDV(v,u,w)     /* ADD Vector */            \
-    {                                               \
-        real* restrict _vp = (v);                   \
-        const real* restrict _up = (u);             \
-        const real* restrict _wp = (w);             \
-        *_vp++ = (*_up++) + (*_wp++);               \
-        *_vp++ = (*_up++) + (*_wp++);               \
-        *_vp   = (*_up) + (*_wp);                   \
+/* ADD Vector */
+#define ADDV(v,u,w)                             \
+    {                                           \
+        X(v) = X(u) + X(w);                     \
+        Y(v) = Y(u) + Y(w);                     \
+        Z(v) = Z(u) + Z(w);                     \
     }
 
 /* SUBtract Vector */
 #define SUBV(v,u,w)                             \
     {                                           \
-        real* restrict _vp = (v);               \
-        const real* restrict _up = (u);         \
-        const real* restrict _wp = (w);         \
-        *_vp++ = (*_up++) - (*_wp++);           \
-        *_vp++ = (*_up++) - (*_wp++);           \
-        *_vp   = (*_up) - (*_wp);               \
+        X(v) = X(u) - X(w);                     \
+        Y(v) = Y(u) - Y(w);                     \
+        Z(v) = Z(u) - Z(w);                     \
     }
 
 /* MULtiply Vector by Scalar */
 #define MULVS(v,u,s)                            \
     {                                           \
-        real* restrict _vp = (v);               \
-        const real* restrict _up = (u);         \
-        *_vp++ = (*_up++) * (s);                \
-        *_vp++ = (*_up++) * (s);                \
-        *_vp   = (*_up) * (s);                  \
+        X(v) = (s) * X(u);                      \
+        Y(v) = (s) * Y(u);                      \
+        Z(v) = (s) * Z(u);                      \
     }
 
 /* Negate vector */
 #define NEGV(v,u)                               \
     {                                           \
-        real* restrict _vp = (v);               \
-        const real* restrict _up = (u);         \
-        *_vp++ = -(*_up++);                     \
-        *_vp++ = -(*_up++);                     \
-        *_vp   = -(*_up);                       \
+        X(v) = -X(u);                           \
+        Y(v) = -Y(u);                           \
+        Z(v) = -Z(u);                           \
     }
 
 #define INCNEGV(v)                              \
@@ -102,40 +91,30 @@
 /* DIVide Vector by Scalar */
 #define DIVVS(v,u,s)                            \
     {                                           \
-        (v)[0] = (u)[0] / (s);                  \
-        (v)[1] = (u)[1] / (s);                  \
-        (v)[2] = (u)[2] / (s);                  \
+        X(v) = X(u) / (s);                  \
+        Y(v) = Y(u) / (s);                  \
+        Z(v) = Z(u) / (s);                  \
     }
 
 /* DOT Vector Product */
-/* Warning: Don't dot a vector with itself. Use SQRV */
-#define DOTVP(s,v,u)                            \
-    {                                           \
-        real* restrict _vp = (v);               \
-        const real* restrict _up = (u);         \
-        (s)  = (*_vp++) * (*_up++);             \
-        (s) += (*_vp++) * (*_up++);             \
-        (s) += (*_vp)   * (*_up);               \
+#define DOTVP(s,v,u)                                    \
+    {                                                   \
+        (s) = X(v) * X(u) + Y(v) * Y(u) + Z(v) * Z(u);  \
     }
 
 /* DOT Vector Product with itself */
-#define SQRV(s,v)                               \
-    {                                           \
-        const real* restrict _vp = (v);         \
-        (s)  = (*_vp) * (*_vp);                 \
-        ++_vp;                                  \
-        (s) += (*_vp) * (*_vp);                 \
-        ++_vp;                                  \
-        (s) += (*_vp) * (*_vp);                 \
+#define SQRV(s,v)                                   \
+    {                                               \
+        (s) = sqr(X(v)) + sqr(Y(v)) + sqr(Z(v));    \
     }
 
 /* ABSolute value of a Vector */
 #define ABSV(s,v)                               \
     {                                           \
         real _tmp;                              \
-        _tmp = sqr((v)[0]);                     \
-        _tmp += sqr((v)[1]);                    \
-        _tmp += sqr((v)[2]);                    \
+        _tmp = sqr(X(v));                       \
+        _tmp += sqr(Y(v));                      \
+        _tmp += sqr(Z(v));                      \
         (s) = rsqrt(_tmp);                      \
     }
 
@@ -143,50 +122,50 @@
 #define DISTV(s,u,v)                            \
     {                                           \
         real _tmp;                              \
-        _tmp = sqr((u)[0]-(v)[0]);              \
-        _tmp += sqr((u)[1]-(v)[1]);             \
-        _tmp += sqr((u)[2]-(v)[2]);             \
+        _tmp = sqr(X(u)-X(v));                  \
+        _tmp += sqr(Y(u)-Y(v));                 \
+        _tmp += sqr(Z(u)-Z(v));                 \
         (s) = rsqrt(_tmp);                      \
     }
 
 /* CROSS Vector Product */
 #define CROSSVP(v,u,w)                          \
     {                                           \
-        (v)[0] = (u)[1]*(w)[2] - (u)[2]*(w)[1]; \
-        (v)[1] = (u)[2]*(w)[0] - (u)[0]*(w)[2]; \
-        (v)[2] = (u)[0]*(w)[1] - (u)[1]*(w)[0]; \
+        X(v) = Y(u)*Z(w) - Z(u)*Y(w);           \
+        Y(v) = Z(u)*X(w) - X(u)*Z(w);           \
+        Z(v) = X(u)*Y(w) - Y(u)*X(w);           \
     }
 
 /* INCrementally ADD Vector */
 #define INCADDV(v,u)                            \
     {                                           \
-        (v)[0] += (u)[0];                       \
-        (v)[1] += (u)[1];                       \
-        (v)[2] += (u)[2];                       \
+        X(v) += X(u);                           \
+        Y(v) += Y(u);                           \
+        Z(v) += Z(u);                           \
     }
 
 /* INCrementally SUBtract Vector */
 #define INCSUBV(v,u)                            \
     {                                           \
-        (v)[0] -= (u)[0];                       \
-        (v)[1] -= (u)[1];                       \
-        (v)[2] -= (u)[2];                       \
+        X(v) -= X(u);                           \
+        Y(v) -= Y(u);                           \
+        Z(v) -= Z(u);                           \
     }
 
 /* INCrementally MULtiply Vector by Scalar */
 #define INCMULVS(v,s)                           \
     {                                           \
-        (v)[0] *= (s);                          \
-        (v)[1] *= (s);                          \
-        (v)[2] *= (s);                          \
+        X(v) *= (s);                            \
+        Y(v) *= (s);                            \
+        Z(v) *= (s);                            \
     }
 
 /* INCrementally DIVide Vector by Scalar */
 #define INCDIVVS(v,s)                           \
     {                                           \
-        (v)[0] /= (s);                          \
-        (v)[1] /= (s);                          \
-        (v)[2] /= (s);                          \
+        X(v) /= (s);                            \
+        Y(v) /= (s);                            \
+        Z(v) /= (s);                            \
     }
 
 /* Matrix operations. */
@@ -199,7 +178,8 @@
                 (p)[_i][_j] = 0.0;              \
     }
 
-#define SETMI(p)        /* SET Matrix to Identity */    \
+/* SET Matrix to Identity */
+#define SETMI(p)                                        \
     {                                                   \
         size_t _i, _j;                                  \
         for (_i = 0; _i < NDIM; ++_i)                   \
@@ -207,7 +187,8 @@
                 (p)[_i][_j] = (_i == _j) ? 1.0 : 0.0;   \
     }
 
-#define SETM(p,q)       /* SET Matrix */        \
+/* SET Matrix */
+#define SETM(p,q)                               \
     {                                           \
         size_t _i, _j;                          \
         for (_i = 0; _i < NDIM; ++_i)           \
@@ -215,7 +196,8 @@
                 (p)[_i][_j] = (q)[_i][_j];      \
     }
 
-#define TRANM(p,q)      /* TRANspose Matrix */  \
+/* TRANspose Matrix */
+#define TRANM(p,q)                              \
     {                                           \
         size_t _i, _j;                          \
         for (_i = 0; _i < NDIM; ++_i)           \
@@ -223,7 +205,8 @@
                 (p)[_i][_j] = (q)[_j][_i];      \
     }
 
-#define ADDM(p,q,r)     /* ADD Matrix */                    \
+/* ADD Matrix */
+#define ADDM(p,q,r)                                         \
     {                                                       \
         size_t _i, _j;                                      \
         for (_i = 0; _i < NDIM; ++_i)                       \
@@ -231,7 +214,8 @@
                 (p)[_i][_j] = (q)[_i][_j] + (r)[_i][_j];    \
     }
 
-#define SUBM(p,q,r)     /* SUBtract Matrix */               \
+/* SUBtract Matrix */
+#define SUBM(p,q,r)                                         \
     {                                                       \
         size_t _i, _j;                                      \
         for (_i = 0; _i < NDIM; ++_i)                       \
@@ -239,7 +223,8 @@
                 (p)[_i][_j] = (q)[_i][_j] - (r)[_i][_j];    \
     }
 
-#define MULM(p,q,r)     /* Multiply Matrix */                   \
+/* Multiply Matrix */
+#define MULM(p,q,r)                                             \
     {                                                           \
         size_t _i, _j, _k;                                      \
         for (_i = 0; _i < NDIM; ++_i)                           \
@@ -250,30 +235,33 @@
             }                                                   \
     }
 
-#define MULMS(p,q,s)        /* MULtiply Matrix by Scalar */ \
-    {                                                       \
-        size_t _i, _j;                                      \
-        for (_i = 0; _i < NDIM; ++_i)                       \
-            for (_j = 0; _j < NDIM; ++_j)                   \
-                (p)[_i][_j] = (q)[_i][_j] * (s);            \
+/* MULtiply Matrix by Scalar */
+#define MULMS(p,q,s)                                \
+    {                                               \
+        size_t _i, _j;                              \
+        for (_i = 0; _i < NDIM; ++_i)               \
+            for (_j = 0; _j < NDIM; ++_j)           \
+                (p)[_i][_j] = (q)[_i][_j] * (s);    \
     }
 
-#define DIVMS(p,q,s)        /* DIVide Matrix by Scalar */   \
-    {                                                       \
-        size_t _i, _j;                                      \
-        for (_i = 0; _i < NDIM; ++_i)                       \
-            for (_j = 0; _j < NDIM; ++_j)                   \
-                (p)[_i][_j] = (q)[_i][_j] / (s);            \
+/* DIVide Matrix by Scalar */
+#define DIVMS(p,q,s)                                \
+    {                                               \
+        size_t _i, _j;                              \
+        for (_i = 0; _i < NDIM; ++_i)               \
+            for (_j = 0; _j < NDIM; ++_j)           \
+                (p)[_i][_j] = (q)[_i][_j] / (s);    \
     }
 
-#define MULMV(v,p,u)        /* MULtiply Matrix by Vector */ \
-    {                                                       \
-        size_t _i, _j;                                      \
-        for (_i = 0; _i < NDIM; ++_i) {                     \
-            (v)[_i] = 0.0;                                  \
-            for (_j = 0; _j < NDIM; ++_j)                   \
-                (v)[_i] += (p)[_i][_j] * (u)[_j];           \
-        }                                                   \
+/* MULtiply Matrix by Vector */
+#define MULMV(v,p,u)                                \
+    {                                               \
+        size_t _i, _j;                              \
+        for (_i = 0; _i < NDIM; ++_i) {             \
+            (v)[_i] = 0.0;                          \
+            for (_j = 0; _j < NDIM; ++_j)           \
+                (v)[_i] += (p)[_i][_j] * (u)[_j];   \
+        }                                           \
     }
 
 /* OUTer Vector Product */
@@ -299,17 +287,17 @@
 /* SET Vector to Scalar */
 #define SETVS(v,s)                              \
     {                                           \
-        (v)[0] = (s);                           \
-        (v)[1] = (s);                           \
-        (v)[2] = (s);                           \
+        X(v) = (s);                             \
+        Y(v) = (s);                             \
+        Z(v) = (s);                             \
     }
 
 /* ADD Vector and Scalar */
 #define ADDVS(v,u,s)                            \
     {                                           \
-        (v)[0] = (u)[0] + (s);                  \
-        (v)[1] = (u)[1] + (s);                  \
-        (v)[2] = (u)[2] + (s);                  \
+        X(v) = X(u) + (s);                      \
+        Y(v) = Y(u) + (s);                      \
+        Z(v) = Z(u) + (s);                      \
     }
 
 /* SET Matrix to Scalar */

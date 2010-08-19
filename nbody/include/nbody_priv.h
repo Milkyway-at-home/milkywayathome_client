@@ -27,7 +27,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include "nbody_config.h"
+#include "nbody_config.h" /* Must be included first */
+
+#include "real.h"
 #include "nbody_types.h"
 #include "vectmath.h"
 #include "real.h"
