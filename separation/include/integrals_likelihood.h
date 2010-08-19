@@ -57,19 +57,10 @@ inline double probabilities_convolve(const STREAM_CONSTANTS* sc,
 
     for (i = 0; i < convolve; i++)
     {
-        X(xyzs) = X(xyz[i]) - X(sc->c);
-        Y(xyzs) = Y(xyz[i]) - Y(sc->c);
-        Z(xyzs) = Z(xyz[i]) - Z(sc->c);
-
-        dotted = X(sc->a) * X(xyzs)
-               + Y(sc->a) * Y(xyzs)
-               + Z(sc->a) * Z(xyzs);
-
-        X(xyzs) -= dotted * X(sc->a);
-        Y(xyzs) -= dotted * Y(sc->a);
-        Z(xyzs) -= dotted * Z(sc->a);
-
-        xyz_norm = sqr(X(xyzs)) + sqr(Y(xyzs)) + sqr(Z(xyzs));
+        SUBV(xyzs, xyz[i], sc->c);
+        DOTVP(dotted, sc->a, xyzs);
+        INCSUBVMS(xyzs, dotted, sc->a);
+        SQRV(xyz_norm, xyzs);
 
         st_prob += r_pts[i].qw_r3_N * exp(-xyz_norm / sc->sigma_sq2);
     }

@@ -47,6 +47,17 @@
         Z(v) = Z(u) - Z(w);                     \
     }
 
+/* INCSUBtract Vector  from vector multiplied scalar,
+   v -= s * w;
+*/
+#define INCSUBVMS(v,s,u)                        \
+    {                                           \
+        X(v) -= (s) * X(u);                     \
+        Y(v) -= (s) * Y(u);                     \
+        Z(v) -= (s) * Z(u);                     \
+    }
+
+
 /* MULtiply Vector by Scalar */
 #define MULVS(v,u,s)                            \
     {                                           \
