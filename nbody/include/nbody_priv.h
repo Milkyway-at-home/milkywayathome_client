@@ -32,6 +32,8 @@ extern "C" {
 #include "milkyway_vectors.h"
 #include "real.h"
 #include "milkyway_util.h"
+#include "milkyway_math.h"
+
 
 #include "nbody_types.h"
 #include "nbody_util.h"
