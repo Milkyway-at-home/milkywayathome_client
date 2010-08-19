@@ -29,6 +29,7 @@ extern "C" {
 #include "separation_types.h"
 #include "milkyway_math.h"
 #include "milkyway_vectors.h"
+#include "separation_cl.h"
 
 #define KAHAN_ADD(sum, item, correction)        \
     {                                           \
@@ -44,10 +45,10 @@ extern "C" {
  * you to have functions in headers which is unfortunate. */
 
 /* FIXME: Better name? */
-    __attribute__ ((always_inline, pure, hot))
-inline double probabilities_convolve(const STREAM_CONSTANTS* sc,
-                                     const R_POINTS* r_pts,
-                                     vector* const xyz,
+__attribute__ ((always_inline, pure, hot))
+inline double probabilities_convolve(__MW_CONSTANT const STREAM_CONSTANTS* sc,
+                                     __MW_LOCAL const R_POINTS* r_pts,
+                                     __MW_LOCAL vector* const xyz,
                                      const unsigned int convolve)
 {
     unsigned int i;
@@ -71,12 +72,12 @@ inline double probabilities_convolve(const STREAM_CONSTANTS* sc,
 
 /* FIXME: I don't know what these do enough to name it properly */
 __attribute__ ((always_inline, hot))
-inline double sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
-                                  const R_POINTS* r_pts,
-                                  const unsigned int convolve,
-                                  const int aux_bg_profile,
+inline double sub_bg_probability1(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
+                                  __MW_LOCAL const R_POINTS* r_pts,
+                                  __MW_LOCAL vector* const xyz,
                                   const LB integral_point,
-                                  vector* const xyz)
+                                  const int aux_bg_profile,
+                                  const unsigned int convolve)
 {
     unsigned int i;
     double h_prob, aux_prob;
@@ -116,11 +117,11 @@ inline double sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
 }
 
 __attribute__ ((always_inline))
-inline double sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
-                                  const R_POINTS* r_pts,
-                                  const unsigned int convolve,
+inline double sub_bg_probability2(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
+                                  __MW_LOCAL const R_POINTS* r_pts,
+                                  __MW_LOCAL vector* const xyz,
                                   const LB integral_point,
-                                  vector* const xyz)
+                                  const unsigned int convolve)
 {
     unsigned int i;
     double rg, zp;
@@ -147,11 +148,11 @@ inline double sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
 }
 
 __attribute__ ((always_inline, hot))
-inline double bg_probability(const ASTRONOMY_PARAMETERS* ap,
-                             const R_POINTS* r_pts,
-                             const double reff_xr_rp3,
+inline double bg_probability(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
+                             __MW_LOCAL const R_POINTS* r_pts,
+                             __MW_LOCAL vector* const xyz,
                              const LB integral_point,
-                             vector* const xyz)
+                             const double reff_xr_rp3)
 {
     double bg_prob;
 
@@ -161,9 +162,9 @@ inline double bg_probability(const ASTRONOMY_PARAMETERS* ap,
     else
     {
         if (ap->alpha == 1 && ap->delta == 1)
-            bg_prob = sub_bg_probability1(ap, r_pts, ap->convolve, ap->aux_bg_profile, integral_point, xyz);
+            bg_prob = sub_bg_probability1(ap, r_pts, xyz, integral_point, ap->aux_bg_profile, ap->convolve);
         else
-            bg_prob = sub_bg_probability2(ap, r_pts, ap->convolve, integral_point, xyz);
+            bg_prob = sub_bg_probability2(ap, r_pts, xyz, integral_point, ap->convolve);
 
         bg_prob *= reff_xr_rp3;
     }

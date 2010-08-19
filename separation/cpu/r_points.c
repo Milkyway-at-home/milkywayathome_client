@@ -22,14 +22,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_types.h"
 #include "separation_constants.h"
 #include "milkyway_math.h"
+#include "r_points.h"
 
 static const double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
-double set_r_points(const ASTRONOMY_PARAMETERS* ap,
-                    const STREAM_GAUSS* sg,
+double set_r_points(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
+                    __MW_CONSTANT const STREAM_GAUSS* sg,
                     const unsigned int n_convolve,
                     const double coords,
-                    R_POINTS* r_pts)
+                    __MW_LOCAL R_POINTS* r_pts)
 {
     double g, exponent, r3, N;
     double reff_xr_rp3;

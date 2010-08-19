@@ -18,25 +18,29 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _R_POINTS_H_
-#define _R_POINTS_H_
+#ifndef _SEPARATION_CL_H_
+#define _SEPARATION_CL_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "separation_types.h"
-#include "separation_cl.h"
-
-double set_r_points(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
-                    __MW_CONSTANT const STREAM_GAUSS* sg,
-                    const unsigned int n_convolve,
-                    const double coords,
-                    __MW_LOCAL R_POINTS* r_pts);
+#ifdef __OPENCL_VERSION__
+  #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+  #define __MW_LOCAL __local
+  #define __MW_PRIVATE __private
+  #define __MW_GLOBAL __global
+  #define __MW_CONSTANT __constant
+#else
+  #define __MW_LOCAL
+  #define __MW_PRIVATE
+  #define __MW_GLOBAL
+  #define __MW_CONSTANT
+#endif /* __OPENCL_VERSION__ */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _INTEGRAL_CONSTANTS_H_ */
+#endif /* _SEPARATION_CL_H_ */
 

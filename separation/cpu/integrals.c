@@ -69,9 +69,9 @@ __attribute__ ((always_inline))
 inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
                                  const STREAM_CONSTANTS* sc,
                                  const R_POINTS* r_pts,
-                                 const double reff_xr_rp3,
-                                 const double V,
                                  vector* const xyz,
+                                 const double V,
+                                 const double reff_xr_rp3,
                                  ST_PROBS* probs)
 {
     unsigned int i;
@@ -115,14 +115,14 @@ inline static BG_PROB mu_sum(const ASTRONOMY_PARAMETERS* ap,
 
         lb = gc2lb(ap->wedge, mu, nu_consts_nu);
 
-        bg_prob = bg_probability(ap, r_pts, reff_xr_rp3, lb, xyz);
+        bg_prob = bg_probability(ap, r_pts, xyz, lb, reff_xr_rp3);
 
         V = irv * nu_consts_id;
         bg_prob *= V;
 
         KAHAN_ADD(bg_prob_int.bg_int, bg_prob, bg_prob_int.correction);
 
-        probabilities(ap, sc, r_pts, reff_xr_rp3, V, xyz, probs);
+        probabilities(ap, sc, r_pts, xyz, V, reff_xr_rp3, probs);
     }
 
     return bg_prob_int;

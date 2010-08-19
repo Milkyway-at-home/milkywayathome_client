@@ -142,7 +142,7 @@ static double likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
         LB_L(lb) = LN(sp, current_star_point);
         LB_B(lb) = BN(sp, current_star_point);
 
-        bg_prob = bg_probability(ap, r_pts, reff_xr_rp3, lb, xyz);
+        bg_prob = bg_probability(ap, r_pts, xyz, lb, reff_xr_rp3);
 
         bg = (bg_prob / fsi->background_integral) * exp_background_weight;
 
