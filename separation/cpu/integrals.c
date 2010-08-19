@@ -113,7 +113,7 @@ inline static BG_PROB mu_sum(const ASTRONOMY_PARAMETERS* ap,
     {
         mu = mu_min + (mu_step_current * mu_step_size);
 
-        gc2lb(ap->wedge, mu + 0.5 * mu_step_size, nu_consts_nu, &L(integral_point), &B(integral_point));
+        gc2lb(ap->wedge, mu + 0.5 * mu_step_size, nu_consts_nu, integral_point);
 
         bg_prob = bg_probability(ap, r_pts, reff_xr_rp3, integral_point, xyz);
 

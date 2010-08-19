@@ -98,7 +98,7 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
             mw_finish(EXIT_FAILURE);
         }
 
-        gc2lb(ap->wedge, streams->parameters[i].stream_parameters[0], 0, &L(lbr), &B(lbr));
+        gc2lb(ap->wedge, streams->parameters[i].stream_parameters[0], 0, lbr);
 
         R(lbr) = streams->parameters[i].stream_parameters[1];
         lbr2xyz(lbr, sc[i].c);

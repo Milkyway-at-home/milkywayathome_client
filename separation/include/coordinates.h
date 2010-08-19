@@ -35,7 +35,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
 __attribute__ ((always_inline, hot))
-inline void gc2lb(const int wedge, double mu, double nu, double* restrict l, double* restrict b)
+inline void gc2lb(const int wedge, double mu, double nu, vectorptr lbr)
 {
     mu = d2r(mu);
     nu = d2r(nu);
@@ -106,13 +106,12 @@ inline void gc2lb(const int wedge, double mu, double nu, double* restrict l, dou
     {
         double r = sqrt(sqr(X(v2)) + sqr(Y(v2)));
 
-        *l = ( r != 0.0 ) ? atan2( Y(v2), X(v2) ) : 0.0;
-        *b = ( Z(v2) != 0.0 ) ? atan2( Z(v2), r ) : 0.0;
+        L(lbr) = ( r != 0.0 ) ? atan2( Y(v2), X(v2) ) : 0.0;
+        B(lbr) = ( Z(v2) != 0.0 ) ? atan2( Z(v2), r ) : 0.0;
     }
 
-
-    *l = r2d(*l);
-    *b = r2d(*b);
+    L(lbr) = r2d(L(lbr));
+    B(lbr) = r2d(B(lbr));
 }
 
 #endif /* _COORDINATES_H_ */
