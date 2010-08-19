@@ -42,8 +42,8 @@ static void lbr2xyz(const double* lbr, vector xyz)
     double lsin, lcos;
     double bsin, bcos;
 
-    sincos(d2r(B(lbr)), &bsin, &bcos);
-    sincos(d2r(L(lbr)), &lsin, &lcos);
+    mw_sincos(d2r(B(lbr)), &bsin, &bcos);
+    mw_sincos(d2r(L(lbr)), &lsin, &lcos);
 
     Z(xyz) = R(lbr) * bsin;
     zp = R(lbr) * bcos;

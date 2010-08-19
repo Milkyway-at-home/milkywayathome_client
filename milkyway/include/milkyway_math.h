@@ -31,10 +31,22 @@ extern "C" {
    annoying to add, but probably worth it.
 
    TODO: Define HAVE_SINCOS somewhere
+
+   This is OpenCL style sincos, where sinx = sincos(x, &cosx);
+   Other one is like in glibc, sin(x,  &sinx, &cosx)
  */
 #if !HAVE_SINCOS
-  #define sincos(x, s, c) { *(s) = sin((x)); *(c) = cos((x)); }
-#endif
+  /*Fake it */
+  #define mw_sincos(x, s, c) { *(s) = sin((x)); *(c) = cos((x)); }
+#else
+  #ifdef __OPENCL_VERSION__
+    /* use the opencl one */
+    #define mw_sincos(x, s, c) (*(s) = sincos((x), (c)))
+  #else
+    /* glibc style */
+    #define mw_sincos(x, s, c) (sincos(x, s, c))
+  #endif /* __OPENCL_VERSION__ */
+#endif /* !HAVE_SINCOS*/
 
 
 /*  ABS: returns the absolute value of its argument

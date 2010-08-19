@@ -25,15 +25,15 @@
   #endif /* DOUBLEPREC */
 
   #define ZERO_VECTOR (0.0, 0.0, 0.0, 0.0)
-  #define VECTOR(x, y, z) ( (x), (y), (z), 0.0 )
+  #define VECTOR(x, y, z) ((vector) ( (x), (y), (z), 0.0 ))
 
-  #define L(x) ((x).x)
-  #define B(x) ((x).y)
-  #define R(x) ((x).z)
+  #define L(v) ((v).x)
+  #define B(v) ((v).y)
+  #define R(v) ((v).z)
 
-  #define X(x) ((x).x)
-  #define Y(x) ((x).y)
-  #define Z(x) ((x).z)
+  #define X(v) ((v).x)
+  #define Y(v) ((v).y)
+  #define Z(v) ((v).z)
 
 #else  /* Host */
 
@@ -46,13 +46,13 @@
   #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
   #define VECTOR(x, y, z) { (x), (y), (z), 0.0 }
 
-  #define L(x) ((x)[0])
-  #define B(x) ((x)[1])
-  #define R(x) ((x)[2])
+  #define L(v) ((v)[0])
+  #define B(v) ((v)[1])
+  #define R(v) ((v)[2])
 
-  #define X(x) ((x)[0])
-  #define Y(x) ((x)[1])
-  #define Z(x) ((x)[2])
+  #define X(v) ((v)[0])
+  #define Y(v) ((v)[1])
+  #define Z(v) ((v)[2])
 
 #endif /* __OPENCL_VERSION__ */
 

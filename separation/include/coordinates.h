@@ -42,11 +42,11 @@ inline void gc2lb(const int wedge, double mu, double nu, double* restrict l, dou
 
     /* Rotation */
     double sinnu, cosnu;
-    sincos(nu, &sinnu, &cosnu);
+    mw_sincos(nu, &sinnu, &cosnu);
 
     double sinmunode, cosmunode;
     double munode = mu - NODE_GC_COORDS_RAD;
-    sincos(munode, &sinmunode, &cosmunode);
+    mw_sincos(munode, &sinmunode, &cosmunode);
 
     const double x12 = cosmunode * cosnu;  /* x1 = x2 */
     const double y2 = sinmunode * cosnu;
@@ -58,7 +58,7 @@ inline void gc2lb(const int wedge, double mu, double nu, double* restrict l, dou
     const double wedge_incl = wedge_eta + d2r(surveyCenterDec);
 
     double sininc, cosinc;
-    sincos(wedge_incl, &sininc, &cosinc);
+    mw_sincos(wedge_incl, &sininc, &cosinc);
 
     const double y1 = y2 * cosinc - sinnu * sininc;
     const double z1 = y2 * sininc + sinnu * cosinc;
@@ -81,10 +81,9 @@ inline void gc2lb(const int wedge, double mu, double nu, double* restrict l, dou
 
         /* Spherical to Cartesian */
         double sinra, cosra;
-        sincos(ra, &sinra, &cosra);
+        mw_sincos(ra, &sinra, &cosra);
 
         const double cosdec = cos(dec);
-
         const vector v1 = VECTOR( cosra * cosdec,
                                   sinra * cosdec,
                                   z1         /* sin(asin(z1)) == z1 */

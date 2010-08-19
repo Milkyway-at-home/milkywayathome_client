@@ -28,6 +28,7 @@ extern "C" {
 #include "separation_constants.h"
 #include "separation_types.h"
 #include "milkyway_math.h"
+#include "milkyway_vectors.h"
 
 #define KAHAN_ADD(sum, item, correction)        \
     {                                           \
@@ -84,8 +85,8 @@ inline double sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
     double bsin, bcos;
     double bg_prob = 0.0;
 
-    sincos(d2r(L(integral_point)), &lsin, &lcos);
-    sincos(d2r(B(integral_point)), &bsin, &bcos);
+    mw_sincos(d2r(L(integral_point)), &lsin, &lcos);
+    mw_sincos(d2r(B(integral_point)), &bsin, &bcos);
 
     for (i = 0; i < convolve; ++i)
     {
@@ -127,8 +128,8 @@ inline double sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
     double bsin, bcos;
     double bg_prob = 0.0;
 
-    sincos(d2r(L(integral_point)), &lsin, &lcos);
-    sincos(d2r(B(integral_point)), &bsin, &bcos);
+    mw_sincos(d2r(L(integral_point)), &lsin, &lcos);
+    mw_sincos(d2r(B(integral_point)), &bsin, &bcos);
 
     for (i = 0; i < convolve; ++i)
     {
