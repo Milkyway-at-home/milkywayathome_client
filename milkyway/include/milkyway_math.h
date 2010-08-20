@@ -21,33 +21,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_MATH_H_
 #define _MILKYWAY_MATH_H_
 
+#define _MILKYWAY_MATH_H_INSIDE_
+
+#include "milkyway_math_functions.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* TODO: Using real sincos() would be nice in coordinate conversions
-   for speed, but it's a glibc extension. It is in opencl though.  We
-   could take it from glibc, but it's in assembly and would be kind of
-   annoying to add, but probably worth it.
-
-   TODO: Define HAVE_SINCOS somewhere
-
-   This is OpenCL style sincos, where sinx = sincos(x, &cosx);
-   Other one is like in glibc, sin(x,  &sinx, &cosx)
- */
-#if !HAVE_SINCOS
-  /*Fake it */
-  #define mw_sincos(x, s, c) { *(s) = sin((x)); *(c) = cos((x)); }
-#else
-  #ifdef __OPENCL_VERSION__
-    /* use the opencl one */
-    #define mw_sincos(x, s, c) (*(s) = sincos((x), (c)))
-  #else
-    /* glibc style */
-    #define mw_sincos(x, s, c) (sincos(x, s, c))
-  #endif /* __OPENCL_VERSION__ */
-#endif /* !HAVE_SINCOS*/
-
 
 /*  ABS: returns the absolute value of its argument
  *  MAX: returns the argument with the highest value
@@ -101,6 +81,8 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+#undef _MILKYWAY_MATH_H_INSIDE_
 
 #endif /* _MILKYWAY_MATH_H_ */
 

@@ -38,5 +38,7 @@ set(mw_lib_src src/milkyway_util.c
 
 add_library(milkyway STATIC ${mw_lib_src})
 
+set_target_properties(milkyway PROPERTIES
+                      COMPILE_DEFINITIONS "MILKYWAY_MATH_COMPILATION")
 
 
