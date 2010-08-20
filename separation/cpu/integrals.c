@@ -22,6 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "evaluation_state.h"
 #include "integrals.h"
 #include "integrals_likelihood.h"
+#include "integrals_common.h"
 #include "coordinates.h"
 #include "r_points.h"
 
@@ -66,69 +67,6 @@ inline static void do_boinc_checkpoint(const EVALUATION_STATE* es,
 #endif /* BOINC_APPLICATION */
 
 __attribute__ ((always_inline))
-inline static void probabilities(const ASTRONOMY_PARAMETERS* ap,
-                                 const STREAM_CONSTANTS* sc,
-                                 const R_POINTS* r_pts,
-                                 vector* const xyz,
-                                 const double V,
-                                 const double reff_xr_rp3,
-                                 ST_PROBS* probs)
-{
-    unsigned int i;
-    double st_prob;
-
-    for (i = 0; i < ap->number_streams; ++i)
-    {
-        if (sc[i].large_sigma)
-            st_prob = V * reff_xr_rp3 * probabilities_convolve(&sc[i], r_pts, xyz, ap->convolve);
-        else
-            st_prob = 0.0;
-
-        KAHAN_ADD(probs[i].st_prob_int, st_prob, probs[i].st_prob_int_c);
-    }
-}
-
-/* Sum over mu steps using Kahan summation */
-__attribute__ ((always_inline, hot))
-inline static BG_PROB mu_sum(const ASTRONOMY_PARAMETERS* ap,
-                             const STREAM_CONSTANTS* sc,
-                             const R_POINTS* r_pts,
-                             const double irv,             /* r constants */
-                             const double reff_xr_rp3,
-                             const double nu_consts_id,    /* nu constants */
-                             const double nu_consts_nu,
-                             const unsigned int mu_steps,
-                             const double mu_step_size,
-                             const double mu_min,
-                             ST_PROBS* probs,
-                             vector* xyz)
-{
-    unsigned int mu_step_current;
-    double mu, V;
-    double bg_prob;
-    BG_PROB bg_prob_int = ZERO_BG_PROB; /* for Kahan summation */
-    LB lb;
-
-    for (mu_step_current = 0; mu_step_current < mu_steps; ++mu_step_current)
-    {
-        mu = mu_min + (((double) mu_step_current + 0.5) * mu_step_size);
-
-        lb = gc2lb(ap->wedge, mu, nu_consts_nu);
-
-        bg_prob = bg_probability(ap, r_pts, xyz, lb, reff_xr_rp3);
-
-        V = irv * nu_consts_id;
-        bg_prob *= V;
-
-        KAHAN_ADD(bg_prob_int.bg_int, bg_prob, bg_prob_int.correction);
-
-        probabilities(ap, sc, r_pts, xyz, V, reff_xr_rp3, probs);
-    }
-
-    return bg_prob_int;
-}
-
-__attribute__ ((always_inline))
 inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
                           const STREAM_CONSTANTS* sc,
                           const INTEGRAL_AREA* ia,
@@ -168,12 +106,6 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
     }
 
     es->nu_step = 0;
-}
-
-__attribute__ ((always_inline, const))
-inline static double distance_magnitude(const double m)
-{
-    return mw_powr(10.0, (m - 14.2) / 5.0);
 }
 
 double r_sum(const ASTRONOMY_PARAMETERS* ap,
