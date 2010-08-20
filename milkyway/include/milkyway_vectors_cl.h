@@ -11,6 +11,9 @@
 #ifndef _MILKYWAY_VECTORS_CL_H_
 #define _MILKYWAY_VECTORS_CL_H_
 
+#include <OpenCL/cl.h>
+#include <OpenCL/cl_ext.h>
+
 #include "real.h"
 
 #define NDIM 3

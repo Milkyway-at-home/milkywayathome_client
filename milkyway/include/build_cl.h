@@ -49,6 +49,7 @@ cl_int getCLInfo(CLInfo* ci,
                  const char* compileDefs);
 
 void destroyCLInfo(CLInfo* ci);
+cl_int printCLExtensions(cl_device_id dev);
 
 #ifdef __cplusplus
 }

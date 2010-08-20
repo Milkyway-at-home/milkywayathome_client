@@ -78,11 +78,14 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
 
     kernelSrc = mwReadFile("/Users/matt/src/milkywayathome_client/separation/kernels/integrals.cl");
 
+
     compileDefs = separationCLDefs(ap,
+                                   "-DDOUBLEPREC=1 "
+                                   "-DHAVE_SINCOS=1 "
+                                   "-I/Users/matt/src/milkywayathome_client/separation/cpu "
                                    "-I/Users/matt/src/milkywayathome_client/separation/include "
                                    "-I/Users/matt/src/milkywayathome_client/milkyway/include "
-                                   "-DDOUBLEPREC=1 "
-                                   "-DHAVE_SINCOS=1 ");
+                                   );
 
     err = getCLInfo(ci, CL_DEVICE_TYPE_CPU, "r_sum_kernel", &kernelSrc, compileDefs);
 

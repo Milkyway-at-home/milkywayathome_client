@@ -28,7 +28,6 @@ extern "C" {
 #include "separation_types.h"
 #include "evaluation_state.h"
 
-
 double r_sum(const ASTRONOMY_PARAMETERS* ap,
              const INTEGRAL_AREA* ia,
              const STREAM_CONSTANTS* sc,

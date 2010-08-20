@@ -49,7 +49,7 @@ if(WIN32)
   set(OS_SPECIFIC_LIBS msvcrt)
 endif()
 
-#SEPARATION_OPENCL
+add_definitions("-DSEPARATION_OPENCL=1")
 
 
 if(CPU_SEPARATION)

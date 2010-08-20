@@ -31,6 +31,24 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define BUFSIZE 4096
 
+cl_int printCLExtensions(cl_device_id dev)
+{
+    cl_int err;
+    char exts[1024];
+
+    err = clGetDeviceInfo(dev, CL_DEVICE_EXTENSIONS, sizeof(exts), exts, NULL);
+
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to print CL extensions for device: %s", exts);
+        return err;
+    }
+    else
+        printf("Extensions: %s\n", exts);
+
+    return CL_SUCCESS;
+}
+
 void destroyCLInfo(CLInfo* ci)
 {
     cl_int err = CL_SUCCESS;
@@ -155,6 +173,7 @@ cl_int getCLInfo(CLInfo* ci,
 
     printf("arst device %s: %u %u %lu\n",
            showCLDeviceType(type), maxComputeUnits, clockFreq, (unsigned long) memSize);
+    printCLExtensions(ci->dev);
 
     ci->prog = clCreateProgramWithSource(ci->clctx, 1, src, NULL, &err);
     if (err != CL_SUCCESS)

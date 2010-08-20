@@ -31,7 +31,6 @@ extern "C" {
 #include "separation_types.h"
 #include "build_cl.h"
 
-
 /* The various buffers needed by the integrate function. */
 typedef struct
 {
