@@ -31,13 +31,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 static void lbr2xyz(const double* lbr, vector xyz)
 {
     double zp, d;
-/*
-    TODO: Use radians to begin with
-    const double bsin = sin(B(lbr));
-    const double lsin = sin(L(lbr));
-    const double bcos = cos(B(lbr));
-    const double lcos = cos(L(lbr));
-*/
+/* TODO: Use radians to begin with */
 
     double lsin, lcos;
     double bsin, bcos;
@@ -47,7 +41,7 @@ static void lbr2xyz(const double* lbr, vector xyz)
 
     Z(xyz) = R(lbr) * bsin;
     zp = R(lbr) * bcos;
-    d = sqrt( sqr(sun_r0) + sqr(zp) - 2.0 * sun_r0 * zp * lcos);
+    d = mw_sqrt(sqr(sun_r0) + sqr(zp) - 2.0 * sun_r0 * zp * lcos);
     X(xyz) = (sqr(zp) - sqr(sun_r0) - sqr(d)) / (2.0 * sun_r0);
     Y(xyz) = zp * lsin;
 }
@@ -84,7 +78,7 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
         fprintf(stderr, "Error: aux_bg_profile invalid");
     }
 
-    ap->coeff = 1.0 / (stdev * sqrt(M_2PI));
+    ap->coeff = 1.0 / (stdev * SQRT_2PI);
     ap->alpha_delta3 = 3.0 - ap->alpha + ap->delta;
 
     for (i = 0; i < streams->number_streams; i++)
@@ -106,13 +100,13 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
         R(lbr) = streams->parameters[i].stream_parameters[1];
         lbr2xyz(lbr, sc[i].c);
 
-        X(sc[i].a) =   sin(streams->parameters[i].stream_parameters[2])
-                     * cos(streams->parameters[i].stream_parameters[3]);
+        X(sc[i].a) =   mw_sin(streams->parameters[i].stream_parameters[2])
+                     * mw_cos(streams->parameters[i].stream_parameters[3]);
 
-        Y(sc[i].a) =   sin(streams->parameters[i].stream_parameters[2])
-                     * sin(streams->parameters[i].stream_parameters[3]);
+        Y(sc[i].a) =   mw_sin(streams->parameters[i].stream_parameters[2])
+                     * mw_sin(streams->parameters[i].stream_parameters[3]);
 
-        Z(sc[i].a) = cos(streams->parameters[i].stream_parameters[2]);
+        Z(sc[i].a) = mw_cos(streams->parameters[i].stream_parameters[2]);
     }
 
     return sc;
@@ -161,7 +155,7 @@ NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
         tmp1 = d2r(90.0 - nu_consts[i].nu - nu_step_size);
         tmp2 = d2r(90.0 - nu_consts[i].nu);
 
-        nu_consts[i].id = cos(tmp1) - cos(tmp2);
+        nu_consts[i].id = mw_cos(tmp1) - mw_cos(tmp2);
         nu_consts[i].nu += 0.5 * nu_step_size;
     }
 

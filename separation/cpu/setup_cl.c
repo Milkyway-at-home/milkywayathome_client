@@ -79,7 +79,6 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
 
     kernelSrc = mwReadFile("/Users/matt/src/milkywayathome_client/separation/kernels/integrals.cl");
 
-
     compileDefs = separationCLDefs(ap,
                                    "-DDOUBLEPREC=1 "
                                    "-I/Users/matt/src/milkywayathome_client/separation/cpu "

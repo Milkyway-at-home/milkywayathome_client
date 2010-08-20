@@ -41,7 +41,7 @@ inline LB gc2lb(const int wedge, const double mu, const double nu)
 
     /* Rotation */
     double sinnu, cosnu;
-    mw_sincos( d2r(nu), &sinnu, &cosnu);
+    mw_sincos(d2r(nu), &sinnu, &cosnu);
 
     double sinmunode, cosmunode;
     double munode = mu - NODE_GC_COORDS;
@@ -62,8 +62,8 @@ inline LB gc2lb(const int wedge, const double mu, const double nu)
     const double y1 = y2 * cosinc - sinnu * sininc;
     const double z1 = y2 * sininc + sinnu * cosinc;
 
-    const double ra = atan2(y1, x12) + NODE_GC_COORDS_RAD;
-    const double dec = asin(z1);
+    const double ra = mw_atan2(y1, x12) + NODE_GC_COORDS_RAD;
+    const double dec = mw_asin(z1);
 
     /* Use SLALIB to do the actual conversion */
     vector v2;
@@ -82,10 +82,10 @@ inline LB gc2lb(const int wedge, const double mu, const double nu)
         double sinra, cosra;
         mw_sincos(ra, &sinra, &cosra);
 
-        const double cosdec = cos(dec);
+        const double cosdec = mw_cos(dec);
         const vector v1 = VECTOR( cosra * cosdec,
                                   sinra * cosdec,
-                                  z1         /* sin(asin(z1)) == z1 */
+                                  z1         /* mw_sin(asin(z1)) == z1 */
                                 );
 
         /* Equatorial to Galactic */
@@ -103,10 +103,10 @@ inline LB gc2lb(const int wedge, const double mu, const double nu)
 
     /* Cartesian to spherical */
     {
-        double r = sqrt(sqr(X(v2)) + sqr(Y(v2)));
+        double r = mw_hypot(X(v2), Y(v2));
 
-        LB_L(lb) = ( r != 0.0 ) ? atan2( Y(v2), X(v2) ) : 0.0;
-        LB_B(lb) = ( Z(v2) != 0.0 ) ? atan2( Z(v2), r ) : 0.0;
+        LB_L(lb) = ( r != 0.0 ) ? mw_atan2( Y(v2), X(v2) ) : 0.0;
+        LB_B(lb) = ( Z(v2) != 0.0 ) ? mw_atan2( Z(v2), r ) : 0.0;
     }
 
     LB_L(lb) = r2d(LB_L(lb));

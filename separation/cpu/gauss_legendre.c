@@ -19,10 +19,9 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <math.h>
-
 #include "separation_constants.h"
 #include "gauss_legendre.h"
+#include "milkyway_math.h"
 
 /* Gauss-Legendre quadrature taken from Numerical Recipes in C */
 void gaussLegendre(double x1, double x2, double* restrict x, double* restrict w, int n)
@@ -36,7 +35,7 @@ void gaussLegendre(double x1, double x2, double* restrict x, double* restrict w,
 
     for (i = 1; i <= m; i++)
     {
-        z = cos(M_PI * (i - 0.25) / (n + 0.5));
+        z = mw_cos(M_PI * (i - 0.25) / (n + 0.5));
         do
         {
             p1 = 1.0;
@@ -51,7 +50,7 @@ void gaussLegendre(double x1, double x2, double* restrict x, double* restrict w,
             z1 = z;
             z = z1 - p1 / pp;
         }
-        while (fabs(z - z1) > EPS);
+        while (mw_fabs(z - z1) > EPS);
 
         x[i-1] = xm - xl * z;
         x[n-i] = xm + xl * z;

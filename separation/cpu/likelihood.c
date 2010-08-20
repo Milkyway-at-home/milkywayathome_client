@@ -25,6 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "integrals_likelihood.h"
 #include "r_points.h"
 #include "milkyway_util.h"
+#include "milkyway_math.h"
 
 inline static void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
                                             const STREAM_CONSTANTS* sc,
@@ -64,7 +65,7 @@ inline static double stream_sum(const unsigned int number_streams,
         if (st_only == 0.0)
             st_only = -238.0;
         else
-            st_only = log10(st_only / sum_exp_weights);
+            st_only = mw_log10(st_only / sum_exp_weights);
 
         KAHAN_ADD(st_sum[current_stream].st_only_sum, st_only, st_sum[current_stream].st_only_sum_c);
     }
@@ -82,7 +83,7 @@ inline static double get_exp_stream_weights(double* exp_stream_weights,
     double sum_exp_weights = exp_background_weight;
     for (i = 0; i < streams->number_streams; i++)
     {
-        exp_stream_weights[i] = exp(streams->stream_weight[i].weight);
+        exp_stream_weights[i] = mw_exp(streams->stream_weight[i].weight);
         sum_exp_weights += exp_stream_weights[i];
     }
 
@@ -133,8 +134,6 @@ static double likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
     unsigned int num_zero = 0;
     unsigned int bad_jacobians = 0;
 
-
-
     for (current_star_point = 0; current_star_point < sp->number_stars; ++current_star_point)
     {
         reff_xr_rp3 = set_r_points(ap, sg, ap->convolve, ZN(sp, current_star_point), r_pts);
@@ -158,7 +157,7 @@ static double likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
 
         if (star_prob != 0.0)
         {
-            star_prob = log10(star_prob);
+            star_prob = mw_log10(star_prob);
             KAHAN_ADD(prob.sum, star_prob, prob.correction);
         }
         else
@@ -170,7 +169,7 @@ static double likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
         if (bg == 0.0)
             bg = -238.0;
         else
-            bg = log10(bg / sum_exp_weights);
+            bg = mw_log10(bg / sum_exp_weights);
 
         KAHAN_ADD(bg_only.sum, bg, bg_only.correction);
     }
@@ -201,7 +200,7 @@ double likelihood(const ASTRONOMY_PARAMETERS* ap,
     double* exp_stream_weights = mallocSafe(sizeof(double) * streams->number_streams);
     vector* xyzs = mallocSafe(sizeof(vector) * ap->convolve);
 
-    const double exp_background_weight = exp(ap->background_weight);
+    const double exp_background_weight = mw_exp(ap->background_weight);
     double sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);
 
     double likelihood_val = likelihood_sum(ap, sp, sc, streams, fsi,

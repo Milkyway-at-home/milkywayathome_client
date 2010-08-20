@@ -37,10 +37,10 @@ double set_r_points(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
     unsigned int i;
 
     /* R2MAG */
-    const double gPrime = 5.0 * (log10(coords * 1000.0) - 1.0) + absm;
+    const double gPrime = 5.0 * (mw_log10(coords * 1000.0) - 1.0) + absm;
 
     /* REFF */
-    const double exp_result = exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));
+    const double exp_result = mw_exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));
     const double reff_value = sigmoid_curve_params[0] / (exp_result + 1.0);
     const double rPrime3 = cube(coords);
 
@@ -51,11 +51,11 @@ double set_r_points(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
         /* MAG2R */
         r_pts[i].r_in_mag = g;
         r_pts[i].r_in_mag2 = sqr(g);
-        r_pts[i].r_point = pow(10.0, (g - absm) / 5.0 + 1.0) / 1000.0;
+        r_pts[i].r_point = mw_powr(10.0, (g - absm) / 5.0 + 1.0) / 1000.0;
 
         r3 = cube(r_pts[i].r_point);
         exponent = sqr(g - gPrime) / (2.0 * sqr(stdev));
-        N = ap->coeff * exp(-exponent);
+        N = ap->coeff * mw_exp(-exponent);
         r_pts[i].qw_r3_N = sg[i].qgaus_W * r3 * N;
     }
 

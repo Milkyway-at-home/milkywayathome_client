@@ -170,6 +170,12 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
     es->nu_step = 0;
 }
 
+__attribute__ ((always_inline, const))
+inline static double distance_magnitude(const double m)
+{
+    return mw_powr(10.0, (m - 14.2) / 5.0);
+}
+
 double r_sum(const ASTRONOMY_PARAMETERS* ap,
              const INTEGRAL_AREA* ia,
              const STREAM_CONSTANTS* sc,
@@ -185,8 +191,8 @@ double r_sum(const ASTRONOMY_PARAMETERS* ap,
 
   #ifdef USE_KPC
     const double r_max           = ia->r_min + ia->r_step_size * r_steps;
-    const double r_min_kpc       = pow(10.0, ((ia->r_min - 14.2) / 5.0));
-    const double r_max_kpc       = pow(10.0, ((ia->r_max - 14.2) / 5.0));
+    const double r_min_kpc       = distance_magnitude(ia->r_min);
+    const double r_max_kpc       = distance_magnitude(ia->r_max);
     const double r_step_size_kpc = (r_max_kpc - r_min_kpc) / r_steps;
   #endif
 
@@ -199,8 +205,8 @@ double r_sum(const ASTRONOMY_PARAMETERS* ap,
         next_r = r + r_step_size_kpc;
       #else
         double log_r = ia->r_min + (es->r_step * ia->r_step_size);
-        r = pow(10.0, (log_r - 14.2) / 5.0);
-        next_r = pow(10.0, (log_r + ia->r_step_size - 14.2) / 5.0);
+        r = distance_magnitude(log_r);
+        next_r = distance_magnitude(log_r + ia->r_step_size);
       #endif
 
         irv = d2r(((cube(next_r) - cube(r)) / 3.0) * ia->mu_step_size);

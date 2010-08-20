@@ -63,8 +63,8 @@ extern "C" {
 #define mw_fmod fmod
 #define mw_fract fract
 #define mw_frexp frexp
-#define mw_hypot mw_hypot
-#define mw_ilogb mw_ilogb
+#define mw_hypot hypot
+#define mw_ilogb ilogb
 #define mw_ldexp ldexp
 #define mw_lgamma lgamma
 #define mw_lgamma_r lgamma_r

@@ -55,7 +55,7 @@ inline double probabilities_convolve(__MW_CONSTANT const STREAM_CONSTANTS* sc,
         INCSUBVMS(xyzs, dotted, sc->a);
         SQRV(xyz_norm, xyzs);
 
-        st_prob += r_pts[i].qw_r3_N * exp(-xyz_norm / sc->sigma_sq2);
+        st_prob += r_pts[i].qw_r3_N * mw_exp(-xyz_norm / sc->sigma_sq2);
     }
 
     return st_prob;
@@ -87,7 +87,7 @@ inline double sub_bg_probability1(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
         X(xyz[i]) = zp * lcos - sun_r0;
         Y(xyz[i]) = zp * lsin;
 
-        rg = sqrt(sqr(X(xyz[i])) + sqr(Y(xyz[i])) + sqr(Z(xyz[i])) / sqr(ap->q));
+        rg = mw_sqrt(sqr(X(xyz[i])) + sqr(Y(xyz[i])) + sqr(Z(xyz[i])) / sqr(ap->q));
         rs = rg + ap->r0;
 
         h_prob = r_pts[i].qw_r3_N / (rg * cube(rs));
@@ -130,9 +130,9 @@ inline double sub_bg_probability2(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
         X(xyz[i]) = zp * lcos - sun_r0;
         Y(xyz[i]) = zp * lsin;
 
-        rg = sqrt(sqr(X(xyz[i])) + sqr(Y(xyz[i])) + sqr(Z(xyz[i])) / sqr(ap->q));
+        rg = mw_sqrt(sqr(X(xyz[i])) + sqr(Y(xyz[i])) + sqr(Z(xyz[i])) / sqr(ap->q));
 
-        bg_prob += r_pts[i].qw_r3_N / (pow(rg, ap->alpha) * pow(rg + ap->r0, ap->alpha_delta3));
+        bg_prob += r_pts[i].qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rg + ap->r0, ap->alpha_delta3));
     }
 
     return bg_prob;
