@@ -136,7 +136,7 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
 
         t1 = get_time();
         //integral->background_integral = integrate(ap, ia, sc, sg, integral->probs, es);
-        integral->background_integral = integrateCL(ap, ia, sc, sg);
+        integral->background_integral = integrateCL(ap, ia, sc, sg, integral->probs);
         t2 = get_time();
 
         printf("Time = %.20g\n", t2 - t1);

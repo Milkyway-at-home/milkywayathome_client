@@ -41,15 +41,36 @@ inline static cl_int createOutNuBuffer(const unsigned int r_steps,
     return CL_SUCCESS;
 }
 
+inline static cl_int createOutProbsBuffer(const unsigned int r_steps,
+                                          const unsigned int number_streams,
+                                          CLInfo* ci,
+                                          SeparationCLMem* cm)
+{
+    cl_int err;
+    cm->outProbs = clCreateBuffer(ci->clctx,
+                                  CL_MEM_WRITE_ONLY,
+                                  sizeof(ST_PROBS) * r_steps * number_streams,
+                                  NULL,
+                                  &err);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error creating out probs buffer: %s\n", showCLInt(err));
+        return err;
+    }
+
+    return CL_SUCCESS;
+}
+
 inline static cl_int createSCBuffer(const STREAM_CONSTANTS* sc,
                                     const unsigned int number_streams,
                                     CLInfo* ci,
-                                    SeparationCLMem* cm)
+                                    SeparationCLMem* cm,
+                                    const cl_mem_flags constBufFlags)
 {
     cl_int err;
     size_t size = sizeof(STREAM_CONSTANTS) * number_streams;
     cm->sc = clCreateBuffer(ci->clctx,
-                            CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                            constBufFlags,
                             size,
                             sc,
                             &err);
@@ -65,12 +86,13 @@ inline static cl_int createSCBuffer(const STREAM_CONSTANTS* sc,
 inline static cl_int createSGBuffer(const STREAM_GAUSS* sg,
                                     const unsigned int nconvolve,
                                     CLInfo* ci,
-                                    SeparationCLMem* cm)
+                                    SeparationCLMem* cm,
+                                    const cl_mem_flags constBufFlags)
 {
     cl_int err;
     size_t size = sizeof(STREAM_GAUSS) * nconvolve;
     cm->sg = clCreateBuffer(ci->clctx,
-                            CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                            constBufFlags,
                             size,
                             sg,
                             &err);
@@ -86,12 +108,13 @@ inline static cl_int createSGBuffer(const STREAM_GAUSS* sg,
 inline static cl_int createNuConstsBuffer(const NU_CONSTANTS* nu_consts,
                                           const unsigned int nu_steps,
                                           CLInfo* ci,
-                                          SeparationCLMem* cm)
+                                          SeparationCLMem* cm,
+                                          const cl_mem_flags constBufFlags)
 {
     cl_int err;
     size_t size = sizeof(NU_CONSTANTS) * nu_steps;
     cm->nuConsts = clCreateBuffer(ci->clctx,
-                                  CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                                  constBufFlags,
                                   size,
                                   nu_consts,
                                   &err);
@@ -113,17 +136,25 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
                                SeparationCLMem* cm)
 {
     cl_int err = CL_SUCCESS;
+    cl_mem_flags constBufFlags;
+
+    if (ci->devType == CL_DEVICE_TYPE_CPU)
+        constBufFlags = CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR;
+    else
+        constBufFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
 
     err |= createOutNuBuffer(ia->r_steps, ci, cm);
-    err |= createSCBuffer(sc, ap->number_streams, ci, cm);
-    err |= createSGBuffer(sg, ap->number_streams, ci, cm);
-    err |= createNuConstsBuffer(nu_consts, ia->nu_steps, ci, cm);
+    err |= createOutProbsBuffer(ia->r_steps, ap->number_streams, ci, cm);
+    err |= createSCBuffer(sc, ap->number_streams, ci, cm, constBufFlags);
+    err |= createSGBuffer(sg, ap->convolve, ci, cm, constBufFlags);
+    err |= createNuConstsBuffer(nu_consts, ia->nu_steps, ci, cm, constBufFlags);
 
     return err;
 }
 
 void releaseSeparationBuffers(SeparationCLMem* cm)
 {
+    clReleaseMemObject(cm->outProbs);
     clReleaseMemObject(cm->outNu);
     clReleaseMemObject(cm->sc);
     clReleaseMemObject(cm->sg);

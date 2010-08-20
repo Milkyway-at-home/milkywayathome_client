@@ -28,9 +28,11 @@ extern "C" {
 #include <OpenCL/cl.h>
 #include <OpenCL/cl_ext.h>
 
-const char* showCLDeviceType(const cl_device_type x);
-const char* showCLBuildStatus(const cl_build_status x);
-const char* showCLInt(const cl_int x);
+/* TODO: clint and memflags are usually or'd, so most of the time these won't work right */
+const char* showCLDeviceType(const cl_device_type x) __attribute__ ((const));
+const char* showCLBuildStatus(const cl_build_status x) __attribute__ ((const));
+const char* showCLInt(const cl_int x) __attribute__ ((const));
+const char* showCLMemFlags(const cl_mem_flags x) __attribute__ ((const));
 
 #ifdef __cplusplus
 }

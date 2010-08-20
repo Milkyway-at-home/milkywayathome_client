@@ -52,6 +52,14 @@ extern "C" {
                              : (A) + (B) * floor(-(A)/(B))):(A))
 #define dsign(A,B) ((B) < 0.0 ? -(A) : (A))
 
+#define KAHAN_ADD(sum, item, correction)        \
+    {                                           \
+        double _tmp = sum;                      \
+        sum += item;                            \
+        correction +=  item - (sum - _tmp);     \
+    }
+
+
 /* other useful nonstandard constants */
 
 /* (4 * pi) / 3 */

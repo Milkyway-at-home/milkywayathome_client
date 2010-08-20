@@ -36,6 +36,7 @@ typedef struct
 {
     /* Write only buffers */
     cl_mem outNu;     /* Output from each nu_sum done in parallel */
+    cl_mem outProbs;
 
     /* constant, read only buffers */
     cl_mem sg;        /* Stream Gauss */

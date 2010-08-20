@@ -167,3 +167,23 @@ const char* showCLInt(const cl_int x)
     }
 }
 
+const char* showCLMemFlags(const cl_mem_flags x)
+{
+    switch (x)
+    {
+        case CL_MEM_READ_WRITE:
+            return "CL_MEM_READ_WRITE";
+        case CL_MEM_WRITE_ONLY:
+            return "CL_MEM_WRITE_ONLY";
+        case CL_MEM_READ_ONLY:
+            return "CL_MEM_READ_ONLY";
+        case CL_MEM_USE_HOST_PTR:
+            return "CL_MEM_USE_HOST_PTR";
+        case CL_MEM_ALLOC_HOST_PTR:
+            return "CL_ALLOC_USE_HOST_PTR";
+        default:
+            warn("Trying to show unknown cl_mem_flags %d\n", (int) x);
+            return "Unhandled cl_mem_flags";
+    }
+}
+

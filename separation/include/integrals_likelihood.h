@@ -31,15 +31,6 @@ extern "C" {
 #include "milkyway_vectors.h"
 #include "separation_cl.h"
 
-#define KAHAN_ADD(sum, item, correction)        \
-    {                                           \
-        double _tmp = sum;                      \
-        sum += item;                            \
-        correction +=  item - (sum - _tmp);     \
-    }
-
-
-
 /* Used in innermost loops of integrals and likelihood calculation,
  * and we want it inlined. C99 inlining is annoying and sort of forces
  * you to have functions in headers which is unfortunate. */

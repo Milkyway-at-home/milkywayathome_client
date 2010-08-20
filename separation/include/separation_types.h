@@ -190,6 +190,8 @@ typedef struct
     double st_prob_int_c;
 } ST_PROBS;
 
+#define ZERO_ST_PROBS = { 0.0, 0.0 }
+
 typedef struct
 {
     double bg_int;

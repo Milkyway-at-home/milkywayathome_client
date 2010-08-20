@@ -42,18 +42,19 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
 
     /* Output buffer */
     err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outNu);
+    err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->outProbs);
 
     /* The constant arguments */
-    err |= clSetKernelArg(ci->kern, 1, sizeof(ASTRONOMY_PARAMETERS), ap);
-    err |= clSetKernelArg(ci->kern, 2, sizeof(INTEGRAL_AREA), ia);
-    err |= clSetKernelArg(ci->kern, 3, sizeof(cl_mem), &cm->sc);
-    err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->sg);
-    err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->nuConsts);
+    err |= clSetKernelArg(ci->kern, 2, sizeof(ASTRONOMY_PARAMETERS), ap);
+    err |= clSetKernelArg(ci->kern, 3, sizeof(INTEGRAL_AREA), ia);
+    err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->sc);
+    err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->sg);
+    err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->nuConsts);
 
     /* Local workspaces */
-    err |= clSetKernelArg(ci->kern, 6, sizeof(ST_PROBS) * ap->number_streams, NULL); /* st_probs */
-    err |= clSetKernelArg(ci->kern, 7, sizeof(vector) * ap->convolve, NULL);         /* xyz */
-    err |= clSetKernelArg(ci->kern, 8, sizeof(R_POINTS) * ap->convolve, NULL);       /* r_pts */
+    err |= clSetKernelArg(ci->kern, 7, sizeof(ST_PROBS) * ap->number_streams, NULL); /* st_probs */
+    err |= clSetKernelArg(ci->kern, 8, sizeof(vector) * ap->convolve, NULL);         /* xyz */
+    err |= clSetKernelArg(ci->kern, 9, sizeof(R_POINTS) * ap->convolve, NULL);       /* r_pts */
 
     if (err != CL_SUCCESS)
     {
@@ -81,11 +82,12 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
 
     compileDefs = separationCLDefs(ap,
                                    "-DDOUBLEPREC=1 "
-                                   "-DHAVE_SINCOS=1 "
                                    "-I/Users/matt/src/milkywayathome_client/separation/cpu "
                                    "-I/Users/matt/src/milkywayathome_client/separation/include "
                                    "-I/Users/matt/src/milkywayathome_client/milkyway/include "
                                    );
+
+    printf("\n\nDEFS = '%s'\n\n", compileDefs);
 
     err = getCLInfo(ci, CL_DEVICE_TYPE_CPU, "r_sum_kernel", &kernelSrc, compileDefs);
 

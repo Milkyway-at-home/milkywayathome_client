@@ -25,6 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <OpenCL/cl_ext.h>
 
 #include "milkyway_util.h"
+#include "milkyway_math.h"
 #include "show_cl_types.h"
 #include "setup_cl.h"
 #include "separation_cl_buffers.h"
@@ -53,6 +54,49 @@ static cl_int readIntegralResults(CLInfo* ci,
     return CL_SUCCESS;
 }
 
+inline static void sumProbsResults(ST_PROBS* probs_results,
+                                   ST_PROBS* probs_r,
+                                   const unsigned int r_steps,
+                                   const unsigned int number_streams)
+{
+    unsigned int i, j, idx;
+
+    for (i = 0; i < r_steps; ++i)
+    {
+        for (j = 0; j < number_streams; ++j)
+        {
+            idx = i * number_streams + j;
+            KAHAN_ADD(probs_results[j].st_prob_int, probs_r[idx].st_prob_int, probs_r[idx].st_prob_int_c);
+        }
+    }
+}
+
+static cl_int readProbsResults(CLInfo* ci,
+                               SeparationCLMem* cm,
+                               ST_PROBS* probs_results,
+                               const unsigned int r_steps,
+                               const unsigned int number_streams)
+{
+    ST_PROBS* probs_tmp;
+    cl_int err = CL_SUCCESS;
+
+    size_t size = sizeof(ST_PROBS) * r_steps * number_streams;
+    probs_tmp = mallocSafe(size);
+
+    err = clEnqueueReadBuffer(ci->queue,
+                              cm->outProbs,
+                              CL_TRUE,
+                              0, size, probs_tmp,
+                              0, NULL, NULL);
+
+    if (err != CL_SUCCESS)
+        warn("Error reading probs result buffer for stream: %s\n", showCLInt(err));
+    else
+        sumProbsResults(probs_results, probs_tmp, r_steps, number_streams);
+
+    free(probs_tmp);
+    return err;
+}
 
 static cl_int enqueueIntegralKernel(CLInfo* ci, const unsigned int r_steps)
 {
@@ -88,18 +132,21 @@ inline static double sumNuResults(BG_PROB* nu_results, const unsigned int r_step
 
 static double runIntegral(CLInfo* ci,
                           SeparationCLMem* cm,
-                          const unsigned int r_steps)
+                          ST_PROBS* probs_results,
+                          const unsigned int r_steps,
+                          const unsigned int number_streams)
 {
     BG_PROB* nu_results;
     double bg_result;
 
-    nu_results = mallocSafe(sizeof(BG_PROB) * r_steps);
-
     enqueueIntegralKernel(ci, r_steps);
+
+    nu_results = mallocSafe(sizeof(BG_PROB) * r_steps);
     readIntegralResults(ci, cm, nu_results, r_steps);
     bg_result = sumNuResults(nu_results, r_steps);
-
     free(nu_results);
+
+    readProbsResults(ci, cm, probs_results, r_steps, number_streams);
 
     return bg_result;
 }
@@ -109,7 +156,8 @@ static double runIntegral(CLInfo* ci,
 double integrateCL(const ASTRONOMY_PARAMETERS* ap,
                    const INTEGRAL_AREA* ia,
                    const STREAM_CONSTANTS* sc,
-                   const STREAM_GAUSS* sg)
+                   const STREAM_GAUSS* sg,
+                   ST_PROBS* probs_results)
 {
     double result;
     CLInfo ci;
@@ -121,7 +169,7 @@ double integrateCL(const ASTRONOMY_PARAMETERS* ap,
     setupSeparationCL(ap, ia, sc, sg, nu_consts, &ci, &cm);
     free(nu_consts);
 
-    result = runIntegral(&ci, &cm, ia->r_steps);
+    result = runIntegral(&ci, &cm, probs_results, ia->r_steps, ap->number_streams);
 
     releaseSeparationBuffers(&cm);
     destroyCLInfo(&ci);
