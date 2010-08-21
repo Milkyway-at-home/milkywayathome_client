@@ -22,11 +22,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#include <OpenCL/cl.h>
-#include <OpenCL/cl_ext.h>
 
 #include "milkyway_util.h"
 #include "show_cl_types.h"
+#include "milkyway_cl.h"
 #include "setup_cl.h"
 #include "separation_cl_buffers.h"
 #include "separation_cl_defs.h"
@@ -65,6 +64,12 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
     return CL_SUCCESS;
 }
 
+#if DOUBLEPREC
+  #define DOUBLEPREC_DEF_STRING "-D DOUBLEPREC=1"
+#else
+  #define DOUBLEPREC_DEF_STRING "-D DOUBLEPREC=0 -cl-single-precision-constant "
+#endif /* DOUBLEPREC */
+
 cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                          const INTEGRAL_AREA* ia,
                          const STREAM_CONSTANTS* sc,
@@ -74,24 +79,34 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                          SeparationCLMem* cm)
 {
     cl_int err;
-    char* compileDefs;
+    //char* compileDefs;
     char* kernelSrc;
+    char* rPointsSrc;
 
-    kernelSrc = mwReadFile("/Users/matt/src/milkywayathome_client/separation/kernels/integrals.cl");
-
-    compileDefs = separationCLDefs(ap,
-                                   "-DDOUBLEPREC=1 "
+    static const char* extraDefs = DOUBLEPREC_DEF_STRING
+                                   "-cl-strict-aliasing "
+                                   "-cl-finite-math-only "
                                    "-I/Users/matt/src/milkywayathome_client/separation/cpu "
                                    "-I/Users/matt/src/milkywayathome_client/separation/include "
-                                   "-I/Users/matt/src/milkywayathome_client/milkyway/include "
-                                   );
+                                   "-I/Users/matt/src/milkywayathome_client/milkyway/include ";
 
-    printf("\n\nDEFS = '%s'\n\n", compileDefs);
+    kernelSrc = mwReadFile("/Users/matt/src/milkywayathome_client/separation/kernels/integrals.cl");
+    if (!kernelSrc)
+    {
+        warn("Failed to read kernel file\n");
+        return -1;
+    }
 
-    err = getCLInfo(ci, CL_DEVICE_TYPE_CPU, "r_sum_kernel", &kernelSrc, compileDefs);
+    rPointsSrc = mwReadFile("/Users/matt/src/milkywayathome_client/separation/cpu/r_points.c");
+
+    char* allSrc[] = { rPointsSrc, kernelSrc };
+
+    //compileDefs = separationCLDefs(ap, extraDefs);
+    err = getCLInfo(ci, CL_DEVICE_TYPE_GPU, "r_sum_kernel", allSrc, 2, extraDefs);
 
     free(kernelSrc);
-    free(compileDefs);
+    free(rPointsSrc);
+    //free(compileDefs);
 
     if (err != CL_SUCCESS)
     {

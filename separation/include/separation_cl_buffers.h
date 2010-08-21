@@ -25,9 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include <OpenCL/cl.h>
-#include <OpenCL/cl_ext.h>
-
+#include "milkyway_cl.h"
 #include "separation_types.h"
 #include "setup_cl.h"
 #include "build_cl.h"

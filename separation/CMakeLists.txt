@@ -48,7 +48,7 @@ if(WIN32)
 endif()
 
 add_definitions("-DSEPARATION_OPENCL=1")
-add_definitions("-DDOUBLEPREC=1")
+add_definitions("-DDOUBLEPREC=0")
 
 
 if(CPU_SEPARATION)

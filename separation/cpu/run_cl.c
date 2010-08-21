@@ -21,13 +21,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <OpenCL/cl.h>
-#include <OpenCL/cl_ext.h>
 
 #include "milkyway_util.h"
 #include "milkyway_math.h"
 #include "show_cl_types.h"
 #include "setup_cl.h"
+#include "milkyway_cl.h"
 #include "separation_cl_buffers.h"
 #include "separation_cl_defs.h"
 #include "calculated_constants.h"
@@ -139,14 +138,11 @@ static real runIntegral(CLInfo* ci,
     BG_PROB* nu_results;
     real bg_result;
 
-    printf("Enqueue kernel\n");
     enqueueIntegralKernel(ci, r_steps);
 
     nu_results = mallocSafe(sizeof(BG_PROB) * r_steps);
-    printf("Read nu results\n");
     readIntegralResults(ci, cm, nu_results, r_steps);
     bg_result = sumNuResults(nu_results, r_steps);
-    printf("Free nu results\n");
     free(nu_results);
 
     readProbsResults(ci, cm, probs_results, r_steps, number_streams);

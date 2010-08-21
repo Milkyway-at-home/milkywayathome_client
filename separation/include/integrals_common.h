@@ -25,7 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include "separation_cl.h"
+#include "milkyway_cl.h"
 #include "separation_types.h"
 #include "milkyway_math.h"
 #include "coordinates.h"

@@ -11,8 +11,10 @@
 #ifndef _MILKYWAY_VECTORS_CL_H_
 #define _MILKYWAY_VECTORS_CL_H_
 
-#include <OpenCL/cl.h>
-#include <OpenCL/cl_ext.h>
+#ifndef __OPENCL_VERSION__
+  #include <OpenCL/cl.h>
+  #include <OpenCL/cl_ext.h>
+#endif /* __OPENCL_VERSION__ */
 
 #include "real.h"
 
@@ -39,7 +41,6 @@
   #define Z(v) ((v).z)
 
 #else  /* Host */
-
   #if DOUBLEPREC
     typedef cl_double4 real4, *real4ptr;
   #else

@@ -25,8 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include <OpenCL/cl.h>
-#include <OpenCL/cl_ext.h>
+#include "milkyway_cl.h"
 
 /* TODO: clint and memflags are usually or'd, so most of the time these won't work right */
 const char* showCLDeviceType(const cl_device_type x) __attribute__ ((const));

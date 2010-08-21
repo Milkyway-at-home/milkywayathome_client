@@ -106,24 +106,48 @@ void milkywayBuildCB(cl_program prog, void* user_data)
         printf("Large build message: \n%s\n", bigBuf);
         free(bigBuf);
     }
+}
 
-    warn("Build failure: %s: log = %s\n", showCLInt(err), buildLog);
+static cl_int milkywayBuildProgram(CLInfo* ci, const char** src, cl_uint srcCount, const char* compileDefs)
+{
+    cl_int err = CL_SUCCESS;
+
+    ci->prog = clCreateProgramWithSource(ci->clctx, 2, src, NULL, &err);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error creating program: %s\n", showCLInt(err));
+        return err;
+    }
+
+    err = clBuildProgram(ci->prog, 1, &ci->dev, compileDefs, NULL, NULL);
+    if (err != CL_SUCCESS)
+        warn("Build failure: %s\n", showCLInt(err));
 
     return err;
 }
 
+static cl_int createCtxQueue(CLInfo* ci)
+{
+    cl_int err = CL_SUCCESS;
 
-/* Query one device specified by type, create a context, command
- * queue, and compile the kernel for it
- * Returns: non-zero on failure
- *  TODO: Multiple device support
- *  TODO: Caching of compiled binaries
- */
-cl_int getCLInfo(CLInfo* ci,
-                 cl_device_type type,
-                 const char* kernName,
-                 const char** src,
-                 const char* compileDefs)
+    ci->clctx = clCreateContext(NULL, 1, &ci->dev, clLogMessagesToStdoutAPPLE, NULL, &err);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error creating context: %s\n", showCLInt(err));
+        return err;
+    }
+
+    ci->queue = clCreateCommandQueue(ci->clctx, ci->dev, 0, &err);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error creating command queue: %s\n", showCLInt(err));
+        return err;
+    }
+
+    return CL_SUCCESS;
+}
+
+static cl_int getDevInfo(CLInfo* ci, cl_device_type type)
 {
     cl_int err;
     cl_uint maxComputeUnits, clockFreq;
@@ -144,20 +168,6 @@ cl_int getCLInfo(CLInfo* ci,
 
     ci->devType = type;
 
-    ci->clctx = clCreateContext(NULL, 1, &ci->dev, clLogMessagesToStdoutAPPLE, NULL, &err);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating context: %s\n", showCLInt(err));
-        return err;
-    }
-
-    ci->queue = clCreateCommandQueue(ci->clctx, ci->dev, 0, &err);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating command Queue: %s\n", showCLInt(err));
-        return err;
-    }
-
     /* Print some device information */
     clGetDeviceInfo(ci->dev, CL_DEVICE_MAX_COMPUTE_UNITS,   sizeof(cl_uint),  &maxComputeUnits, NULL);
     clGetDeviceInfo(ci->dev, CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(cl_uint),  &clockFreq, NULL);
@@ -167,14 +177,44 @@ cl_int getCLInfo(CLInfo* ci,
            showCLDeviceType(type), maxComputeUnits, clockFreq, (unsigned long) memSize);
     printCLExtensions(ci->dev);
 
-    ci->prog = clCreateProgramWithSource(ci->clctx, 1, src, NULL, &err);
+    return CL_SUCCESS;
+}
+
+/* Query one device specified by type, create a context, command
+ * queue, and compile the kernel for it
+ * Returns: non-zero on failure
+ *  TODO: Multiple device support
+ *  TODO: Caching of compiled binaries
+ */
+cl_int getCLInfo(CLInfo* ci,
+                 cl_device_type type,
+                 const char* kernName,
+                 const char** src,
+                 const cl_uint srcCount,
+                 const char* compileDefs)
+{
+    cl_int err;
+
+    err = getDevInfo(ci, type);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating program: %s\n", showCLInt(err));
+        warn("Failed to get information about device\n");
         return err;
     }
 
-    buildProgram(ci, compileDefs, src);
+    err = createCtxQueue(ci);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error creating CL context and command queue: %s\n", showCLInt(err));
+        return err;
+    }
+
+    err = milkywayBuildProgram(ci, src, srcCount, compileDefs);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error building program: %s\n", showCLInt(err));
+        return err;
+    }
 
     ci->kern = clCreateKernel(ci->prog, kernName, &err);
     if (err != CL_SUCCESS)

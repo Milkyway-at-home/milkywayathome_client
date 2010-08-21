@@ -28,7 +28,7 @@ extern "C" {
 #include "separation_constants.h"
 #include "separation_types.h"
 #include "milkyway_math.h"
-#include "separation_cl.h"
+#include "milkyway_cl.h"
 
 /* Used in innermost loops of integrals and likelihood calculation,
  * and we want it inlined. C99 inlining is annoying and sort of forces

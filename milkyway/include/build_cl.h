@@ -46,6 +46,7 @@ cl_int getCLInfo(CLInfo* ci,
                  cl_device_type type,
                  const char* kernName,
                  const char** src,
+                 const cl_uint srcCount,
                  const char* compileDefs);
 
 cl_int destroyCLInfo(CLInfo* ci);

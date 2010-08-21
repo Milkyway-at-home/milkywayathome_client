@@ -25,7 +25,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include "milkyway_vectors.h"
+#include "milkyway_math.h"
+
 
 /* Get the xth component of the nth item in STAR_POINTS */
 #define VN(sp, n) (((sp)->stars)[VECTOR_SIZE * (n)])

@@ -18,12 +18,17 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _SEPARATION_CL_H_
-#define _SEPARATION_CL_H_
+#ifndef _MILKYWAY_CL_H_
+#define _MILKYWAY_CL_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifndef __OPENCL_VERSION__
+  #include <OpenCL/cl.h>
+  #include <OpenCL/cl_ext.h>
+#endif  /* __OPENCL_VERSION__ */
 
 #ifdef __OPENCL_VERSION__
   #define __MW_LOCAL __local
@@ -41,5 +46,5 @@ extern "C" {
 }
 #endif
 
-#endif /* _SEPARATION_CL_H_ */
+#endif /* _MILKYWAY_CL_H_ */
 

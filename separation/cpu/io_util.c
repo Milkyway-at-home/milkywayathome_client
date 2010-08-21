@@ -119,7 +119,7 @@ int* fread_int_array(FILE *file, const char *array_name, unsigned int* sizeOut)
 	return arr;
 }
 
-void printIntegralArea(INTEGRAL_AREA* ia)
+void printIntegralArea(const INTEGRAL_AREA* ia)
 {
     printf("integral-area {\n"
            "  r_min        = %g\n"
@@ -140,7 +140,34 @@ void printIntegralArea(INTEGRAL_AREA* ia)
            ia->r_steps, ia->nu_steps, ia->mu_steps);
 }
 
-void printAstronomyParameters(ASTRONOMY_PARAMETERS* ap)
+void printNuConstants(const NU_CONSTANTS* c, unsigned int n)
+{
+    unsigned int i;
+    printf("Nu constants:\n");
+    for (i = 0; i < n; ++i)
+        printf("[%u] { nu = %g, id = %g } \n", i, c[i].nu, c[i].id);
+}
+
+void printStreamGauss(const STREAM_GAUSS* c, unsigned int n)
+{
+    unsigned int i;
+    printf("Stream gauss:\n");
+    for (i = 0; i < n; ++i)
+        printf("[%u] { dx = %g, qgaus_W = %g } \n", i, c[i].dx, c[i].qgaus_W);
+}
+
+void printStreamConstants(const STREAM_CONSTANTS* c, unsigned int n)
+{
+    unsigned int i;
+    printf("Stream constants:\n");
+    for (i = 0; i < n; ++i)
+        printf("[%u] { a = { %g, %g, %g }, c = { %g, %g, %g }, sigma_sq2 = %g, large_sigma = %d } \n",
+               i, X(c[i].a), Y(c[i].a), Z(c[i].a),
+               X(c[i].c), Y(c[i].c), Z(c[i].c),
+               c[i].sigma_sq2, c[i].large_sigma);
+}
+
+void printAstronomyParameters(const ASTRONOMY_PARAMETERS* ap)
 {
     unsigned int i;
     printf("astronomy-parameters {\n"

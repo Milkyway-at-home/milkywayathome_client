@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 #include "separation_types.h"
-#include "separation_cl.h"
+#include "milkyway_cl.h"
 
 real set_r_points(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
                   __MW_CONSTANT const STREAM_GAUSS* sg,
