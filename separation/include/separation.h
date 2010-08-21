@@ -22,11 +22,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _SEPARATION_H_
 
 
-#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "config.h"
+#include "milkyway_math.h"
 #include "milkyway_util.h"
 #include "separation_types.h"
 #include "evaluation.h"

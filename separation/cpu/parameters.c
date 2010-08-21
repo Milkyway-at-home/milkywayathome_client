@@ -114,9 +114,9 @@ int write_parameters(const char* filename,
 
 static void calc_integral_step_sizes(INTEGRAL_AREA* i)
 {
-    i->r_step_size = (i->r_max - i->r_min) / (double)i->r_steps;
-    i->mu_step_size = (i->mu_max - i->mu_min) / (double)i->mu_steps;
-    i->nu_step_size = (i->nu_max - i->nu_min) / (double)i->nu_steps;
+    i->r_step_size = (i->r_max - i->r_min) / (real)i->r_steps;
+    i->mu_step_size = (i->mu_max - i->mu_min) / (real)i->mu_steps;
+    i->nu_step_size = (i->nu_max - i->nu_min) / (real)i->nu_steps;
 }
 
 void fread_parameters(FILE* file,
@@ -126,8 +126,10 @@ void fread_parameters(FILE* file,
 {
     unsigned int i, temp;
     int retval;
+    double tmp1, tmp2;
 
-    retval = fscanf(file, "parameters_version: %lf\n", &ap->parameters_version);
+    retval = fscanf(file, "parameters_version: %lf\n", &tmp1);
+    ap->parameters_version = (real) tmp1;
     if (retval < 1)
     {
         ap->parameters_version = 0.01;
@@ -136,7 +138,8 @@ void fread_parameters(FILE* file,
     }
 
     fscanf(file, "number_parameters: %u\n", &ap->number_background_parameters);
-    fscanf(file, "background_weight: %lf\n", &ap->background_weight);
+    fscanf(file, "background_weight: %lf\n", &tmp1);
+    ap->background_weight = (real) tmp1;
 
     bgp->parameters = fread_double_array(file, "background_parameters", NULL);
     bgp->step       = fread_double_array(file, "background_step", NULL);
@@ -153,10 +156,14 @@ void fread_parameters(FILE* file,
 
     for (i = 0; i < streams->number_streams; ++i)
     {
-        fscanf(file, "stream_weight: %lf\n", &streams->stream_weight[i].weight);
-        fscanf(file, "stream_weight_step: %lf\n", &streams->stream_weight[i].step);
-        fscanf(file, "stream_weight_min: %lf\n", &streams->stream_weight[i].min);
-        fscanf(file, "stream_weight_max: %lf\n", &streams->stream_weight[i].max);
+        fscanf(file, "stream_weight: %lf\n", &tmp1);
+        streams->stream_weight[i].weight = (real) tmp1;
+        fscanf(file, "stream_weight_step: %lf\n", &tmp1);
+        streams->stream_weight[i].step = (real) tmp1;
+        fscanf(file, "stream_weight_min: %lf\n", &tmp1);
+        streams->stream_weight[i].min = (real) tmp1;
+        fscanf(file, "stream_weight_max: %lf\n", &tmp1);
+        streams->stream_weight[i].max = (real) tmp1;
         fscanf(file, "optimize_weight: %d\n", &streams->stream_weight[i].optimize);
 
         streams->parameters[i].stream_parameters = fread_double_array(file, "stream_parameters", NULL);
@@ -166,33 +173,42 @@ void fread_parameters(FILE* file,
         streams->parameters[i].stream_optimize   = fread_int_array(file, "optimize_parameter", NULL);
     }
 
-    fscanf(file, "convolve: %u\n", &ap->convolve);
-    fscanf(file, "sgr_coordinates: %u\n", &ap->sgr_coordinates);
+    if (fscanf(file, "convolve: %u\n", &ap->convolve) < 1)
+        warn("Error reading convolve\n");
+
+    fscanf(file, "sgr_coordinates: %d\n", &ap->sgr_coordinates);
     if (ap->parameters_version > 0.01)
     {
-        fscanf(file, "aux_bg_profile: %u\n", &ap->aux_bg_profile);
+        if (fscanf(file, "aux_bg_profile: %d\n", &ap->aux_bg_profile) < 1)
+            warn("Error reading aux_bg_profile\n");
     }
-    fscanf(file, "wedge: %u\n", &ap->wedge);
+
+    if (fscanf(file, "wedge: %d\n", &ap->wedge) < 1)
+        warn("Error reading wedge\n");
 
     ap->integral = (INTEGRAL_AREA*) mallocSafe(sizeof(INTEGRAL_AREA));
 
     fscanf(file,
            "r[min,max,steps]: %lf, %lf, %u\n",
-           &ap->integral[0].r_min,
-           &ap->integral[0].r_max,
-           &ap->integral[0].r_steps);
+           &tmp1, &tmp2, &ap->integral[0].r_steps);
+
+    ap->integral[0].r_min = (real) tmp1;
+    ap->integral[0].r_max = (real) tmp2;
 
     fscanf(file,
            "mu[min,max,steps]: %lf, %lf, %u\n",
-           &ap->integral[0].mu_min,
-           &ap->integral[0].mu_max,
-           &ap->integral[0].mu_steps);
+           &tmp1, &tmp2, &ap->integral[0].mu_steps);
+
+    ap->integral[0].mu_min = (real) tmp1;
+    ap->integral[0].mu_max = (real) tmp2;
+
 
     fscanf(file,
            "nu[min,max,steps]: %lf, %lf, %u\n",
-           &ap->integral[0].nu_min,
-           &ap->integral[0].nu_max,
-           &ap->integral[0].nu_steps);
+           &tmp1, &tmp2, &ap->integral[0].nu_steps);
+
+    ap->integral[0].nu_min = (real) tmp1;
+    ap->integral[0].nu_max = (real) tmp2;
 
     calc_integral_step_sizes(&ap->integral[0]);
 
@@ -211,24 +227,26 @@ void fread_parameters(FILE* file,
         {
             fscanf(file,
                    "r_cut[min,max,steps][%u]: %lf, %lf, %u\n",
-                   &temp,
-                   &ap->integral[i].r_min,
-                   &ap->integral[i].r_max,
-                   &ap->integral[i].r_steps);
+                   &temp, &tmp1, &tmp2, &ap->integral[i].r_steps);
+
+            ap->integral[i].r_min = (real) tmp1;
+            ap->integral[i].r_max = (real) tmp2;
 
             fscanf(file,
                    "mu_cut[min,max,steps][%u]: %lf, %lf, %u\n",
-                   &temp,
-                   &ap->integral[i].mu_min,
-                   &ap->integral[i].mu_max,
-                   &ap->integral[i].mu_steps);
+                   &temp, &tmp1, &tmp2, &ap->integral[i].mu_steps);
+
+            ap->integral[i].mu_min = (real) tmp1;
+            ap->integral[i].mu_max = (real) tmp2;
+
 
             fscanf(file,
                    "nu_cut[min,max,steps][%u]: %lf, %lf, %u\n",
-                   &temp,
-                   &ap->integral[i].nu_min,
-                   &ap->integral[i].nu_max,
-                   &ap->integral[i].nu_steps);
+                   &temp, &tmp1, &tmp2, &ap->integral[i].nu_steps);
+
+            ap->integral[i].nu_min = (real) tmp1;
+            ap->integral[i].nu_max = (real) tmp2;
+
 
             calc_integral_step_sizes(&ap->integral[i]);
         }
@@ -243,7 +261,7 @@ void fread_parameters(FILE* file,
         total_calc_probs += ia->mu_steps * ia->nu_steps * ia->r_steps;
     }
 
-    ap->total_calc_probs = (double) total_calc_probs;
+    ap->total_calc_probs = (real) total_calc_probs;
 }
 
 void fwrite_parameters(FILE* file,
@@ -361,7 +379,7 @@ unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap,
 void set_parameters(ASTRONOMY_PARAMETERS* ap,
                     BACKGROUND_PARAMETERS* bgp,
                     STREAMS* streams,
-                    double* parameters)
+                    real* parameters)
 {
     unsigned int i, j;
     unsigned int current = 0;

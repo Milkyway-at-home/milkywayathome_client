@@ -34,8 +34,8 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
 STREAM_GAUSS* get_stream_gauss(const unsigned int convolve);
 
 NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
-                                   const double nu_step_size,
-                                   const double nu_min);
+                                   const real nu_step_size,
+                                   const real nu_min);
 
 
 #ifdef __cplusplus

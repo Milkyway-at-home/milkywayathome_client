@@ -30,16 +30,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #if BOINC_APPLICATION
 
 __attribute ((always_inline))
-inline static double progress(const EVALUATION_STATE* es,
-                              const INTEGRAL_AREA* ia,
-                              unsigned int total_calc_probs)
+inline static real progress(const EVALUATION_STATE* es,
+                            const INTEGRAL_AREA* ia,
+                            unsigned int total_calc_probs)
 {
     /* This integral's progress */
     /* When checkpointing is done, ia->mu_step would always be 0 */
     unsigned int i_prog =  (es->r_step * ia->nu_steps * ia->mu_steps)
                          + (es->nu_step * ia->mu_steps); /* + es->mu_step */
 
-    return (double)(i_prog + es->current_calc_probs) / total_calc_probs;
+    return (real)(i_prog + es->current_calc_probs) / total_calc_probs;
 }
 
 __attribute ((always_inline))
@@ -70,8 +70,8 @@ __attribute__ ((always_inline))
 inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
                           const STREAM_CONSTANTS* sc,
                           const INTEGRAL_AREA* ia,
-                          const double irv,
-                          const double reff_xr_rp3,
+                          const real irv,
+                          const real reff_xr_rp3,
                           const R_POINTS* r_pts,
                           const NU_CONSTANTS* nu_consts,
                           ST_PROBS* probs,
@@ -82,8 +82,8 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
 
     const unsigned int nu_steps = ia->nu_steps;
     const unsigned int mu_steps = ia->mu_steps;
-    const double mu_min = ia->mu_min;
-    const double mu_step_size = ia->mu_step_size;
+    const real mu_min = ia->mu_min;
+    const real mu_step_size = ia->mu_step_size;
 
     for ( ; es->nu_step < nu_steps; es->nu_step++)
     {
@@ -108,24 +108,24 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
     es->nu_step = 0;
 }
 
-double r_sum(const ASTRONOMY_PARAMETERS* ap,
-             const INTEGRAL_AREA* ia,
-             const STREAM_CONSTANTS* sc,
-             const STREAM_GAUSS* sg,
-             const NU_CONSTANTS* nu_consts,
-             R_POINTS* r_pts,
-             ST_PROBS* probs,
-             vector* xyz,
-             EVALUATION_STATE* es)
+real r_sum(const ASTRONOMY_PARAMETERS* ap,
+           const INTEGRAL_AREA* ia,
+           const STREAM_CONSTANTS* sc,
+           const STREAM_GAUSS* sg,
+           const NU_CONSTANTS* nu_consts,
+           R_POINTS* r_pts,
+           ST_PROBS* probs,
+           vector* xyz,
+           EVALUATION_STATE* es)
 {
-    double r, next_r, rPrime;
-    double irv, reff_xr_rp3;
+    real r, next_r, rPrime;
+    real irv, reff_xr_rp3;
 
   #ifdef USE_KPC
-    const double r_max           = ia->r_min + ia->r_step_size * r_steps;
-    const double r_min_kpc       = distance_magnitude(ia->r_min);
-    const double r_max_kpc       = distance_magnitude(ia->r_max);
-    const double r_step_size_kpc = (r_max_kpc - r_min_kpc) / r_steps;
+    const real r_max           = ia->r_min + ia->r_step_size * r_steps;
+    const real r_min_kpc       = distance_magnitude(ia->r_min);
+    const real r_max_kpc       = distance_magnitude(ia->r_max);
+    const real r_step_size_kpc = (r_max_kpc - r_min_kpc) / r_steps;
   #endif
 
     const unsigned int r_steps = ia->r_steps;
@@ -136,7 +136,7 @@ double r_sum(const ASTRONOMY_PARAMETERS* ap,
         r = r_min_kpc + (es->r_step * r_step_size_kpc);
         next_r = r + r_step_size_kpc;
       #else
-        double log_r = ia->r_min + (es->r_step * ia->r_step_size);
+        real log_r = ia->r_min + (es->r_step * ia->r_step_size);
         r = distance_magnitude(log_r);
         next_r = distance_magnitude(log_r + ia->r_step_size);
       #endif

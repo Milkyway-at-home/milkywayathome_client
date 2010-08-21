@@ -21,28 +21,29 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_types.h"
 #include "separation_constants.h"
+#include "separation_cl.h"
 #include "milkyway_math.h"
 #include "r_points.h"
 
-static const double sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
+static const real sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
-double set_r_points(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
-                    __MW_CONSTANT const STREAM_GAUSS* sg,
-                    const unsigned int n_convolve,
-                    const double coords,
-                    __MW_LOCAL R_POINTS* r_pts)
+real set_r_points(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
+                  __MW_CONSTANT const STREAM_GAUSS* sg,
+                  const unsigned int n_convolve,
+                  const real coords,
+                  __MW_LOCAL R_POINTS* r_pts)
 {
-    double g, exponent, r3, N;
-    double reff_xr_rp3;
+    real g, exponent, r3, N;
+    real reff_xr_rp3;
     unsigned int i;
 
     /* R2MAG */
-    const double gPrime = 5.0 * (mw_log10(coords * 1000.0) - 1.0) + absm;
+    const real gPrime = 5.0 * (mw_log10(coords * 1000.0) - 1.0) + absm;
 
     /* REFF */
-    const double exp_result = mw_exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));
-    const double reff_value = sigmoid_curve_params[0] / (exp_result + 1.0);
-    const double rPrime3 = cube(coords);
+    const real exp_result = mw_exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));
+    const real reff_value = sigmoid_curve_params[0] / (exp_result + 1.0);
+    const real rPrime3 = cube(coords);
 
     for (i = 0; i < n_convolve; ++i)
     {

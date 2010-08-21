@@ -1,4 +1,3 @@
-/* ************************************************************************** */
 /* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
 Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
 Rensselaer Polytechnic Institute.
@@ -18,6 +17,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+#if !defined(_MILKYWAY_MATH_H_INSIDE_) && !defined(MILKYWAY_MATH_COMPILATION)
+  #error "Only milkyway_math.h can be included directly."
+#endif
 
 #ifndef _MILKYWAY_VECTORS_H_
 #define _MILKYWAY_VECTORS_H_

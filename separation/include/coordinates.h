@@ -23,7 +23,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _COORDINATES_H_
 
 #include "separation_constants.h"
-#include "milkyway_vectors.h"
 #include "milkyway_math.h"
 #include "separation_cl.h"
 
@@ -35,35 +34,35 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
 __attribute__ ((always_inline, hot, const))
-inline LB gc2lb(const int wedge, const double mu, const double nu)
+inline LB gc2lb(const int wedge, const real mu, const real nu)
 {
     LB lb;
 
     /* Rotation */
-    double sinnu, cosnu;
+    real sinnu, cosnu;
     mw_sincos(d2r(nu), &sinnu, &cosnu);
 
-    double sinmunode, cosmunode;
-    double munode = mu - NODE_GC_COORDS;
+    real sinmunode, cosmunode;
+    real munode = mu - NODE_GC_COORDS;
     mw_sincos(d2r(munode), &sinmunode, &cosmunode);
 
-    const double x12 = cosmunode * cosnu;  /* x1 = x2 */
-    const double y2 = sinmunode * cosnu;
+    const real x12 = cosmunode * cosnu;  /* x1 = x2 */
+    const real y2 = sinmunode * cosnu;
     /* z2 = sin(nu) */
 
-    const double wedge_eta = wedge * d2r(stripeSeparation) - d2r(57.5) - (wedge > 46 ? M_PI : 0.0);
+    const real wedge_eta = wedge * d2r(stripeSeparation) - d2r(57.5) - (wedge > 46 ? M_PI : 0.0);
 
     /* Get inclination for the given wedge. */
-    const double wedge_incl = wedge_eta + d2r(surveyCenterDec);
+    const real wedge_incl = wedge_eta + d2r(surveyCenterDec);
 
-    double sininc, cosinc;
+    real sininc, cosinc;
     mw_sincos(wedge_incl, &sininc, &cosinc);
 
-    const double y1 = y2 * cosinc - sinnu * sininc;
-    const double z1 = y2 * sininc + sinnu * cosinc;
+    const real y1 = y2 * cosinc - sinnu * sininc;
+    const real z1 = y2 * sininc + sinnu * cosinc;
 
-    const double ra = mw_atan2(y1, x12) + NODE_GC_COORDS_RAD;
-    const double dec = mw_asin(z1);
+    const real ra = mw_atan2(y1, x12) + NODE_GC_COORDS_RAD;
+    const real dec = mw_asin(z1);
 
     /* Use SLALIB to do the actual conversion */
     vector v2;
@@ -71,7 +70,7 @@ inline LB gc2lb(const int wedge, const double mu, const double nu)
     {
         unsigned int i, j;
 
-        static const double rmat[3][3] =
+        static const real rmat[3][3] =
             {
                 { -0.054875539726, -0.873437108010, -0.483834985808 },
                 {  0.494109453312, -0.444829589425,  0.746982251810 },
@@ -79,10 +78,10 @@ inline LB gc2lb(const int wedge, const double mu, const double nu)
             };
 
         /* Spherical to Cartesian */
-        double sinra, cosra;
+        real sinra, cosra;
         mw_sincos(ra, &sinra, &cosra);
 
-        const double cosdec = mw_cos(dec);
+        const real cosdec = mw_cos(dec);
         const vector v1 = VECTOR( cosra * cosdec,
                                   sinra * cosdec,
                                   z1         /* mw_sin(asin(z1)) == z1 */
@@ -103,7 +102,7 @@ inline LB gc2lb(const int wedge, const double mu, const double nu)
 
     /* Cartesian to spherical */
     {
-        double r = mw_hypot(X(v2), Y(v2));
+        real r = mw_hypot(X(v2), Y(v2));
 
         LB_L(lb) = ( r != 0.0 ) ? mw_atan2( Y(v2), X(v2) ) : 0.0;
         LB_B(lb) = ( Z(v2) != 0.0 ) ? mw_atan2( Z(v2), r ) : 0.0;

@@ -118,7 +118,7 @@ static cl_int enqueueIntegralKernel(CLInfo* ci, const unsigned int r_steps)
 }
 
 /* The nu steps were done in parallel. After that we need to sum the results */
-inline static double sumNuResults(BG_PROB* nu_results, const unsigned int r_steps)
+inline static real sumNuResults(BG_PROB* nu_results, const unsigned int r_steps)
 {
     unsigned int i;
     BG_PROB bg_prob = ZERO_BG_PROB;
@@ -130,20 +130,23 @@ inline static double sumNuResults(BG_PROB* nu_results, const unsigned int r_step
 }
 
 
-static double runIntegral(CLInfo* ci,
-                          SeparationCLMem* cm,
-                          ST_PROBS* probs_results,
-                          const unsigned int r_steps,
-                          const unsigned int number_streams)
+static real runIntegral(CLInfo* ci,
+                        SeparationCLMem* cm,
+                        ST_PROBS* probs_results,
+                        const unsigned int r_steps,
+                        const unsigned int number_streams)
 {
     BG_PROB* nu_results;
-    double bg_result;
+    real bg_result;
 
+    printf("Enqueue kernel\n");
     enqueueIntegralKernel(ci, r_steps);
 
     nu_results = mallocSafe(sizeof(BG_PROB) * r_steps);
+    printf("Read nu results\n");
     readIntegralResults(ci, cm, nu_results, r_steps);
     bg_result = sumNuResults(nu_results, r_steps);
+    printf("Free nu results\n");
     free(nu_results);
 
     readProbsResults(ci, cm, probs_results, r_steps, number_streams);
@@ -152,27 +155,31 @@ static double runIntegral(CLInfo* ci,
 }
 
 /* FIXME: This can only work right now for 1 integral */
-/* FIXME: Stream integrals, etc. */
-double integrateCL(const ASTRONOMY_PARAMETERS* ap,
-                   const INTEGRAL_AREA* ia,
-                   const STREAM_CONSTANTS* sc,
-                   const STREAM_GAUSS* sg,
-                   ST_PROBS* probs_results)
+real integrateCL(const ASTRONOMY_PARAMETERS* ap,
+                 const INTEGRAL_AREA* ia,
+                 const STREAM_CONSTANTS* sc,
+                 const STREAM_GAUSS* sg,
+                 ST_PROBS* probs_results)
 {
-    double result;
-    CLInfo ci;
-    SeparationCLMem cm;
+    real result;
+    CLInfo ci = EMPTY_CL_INFO;
+    SeparationCLMem cm = EMPTY_SEPARATION_CL_MEM;
     NU_CONSTANTS* nu_consts;
 
     nu_consts = prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
+    if (setupSeparationCL(ap, ia, sc, sg, nu_consts, &ci, &cm) != CL_SUCCESS)
+    {
+        warn("Failed to setup up CL\n");
+        result = NAN;
+    }
+    else
+    {
+        result = runIntegral(&ci, &cm, probs_results, ia->r_steps, ap->number_streams);
+    }
 
-    setupSeparationCL(ap, ia, sc, sg, nu_consts, &ci, &cm);
-    free(nu_consts);
-
-    result = runIntegral(&ci, &cm, probs_results, ia->r_steps, ap->number_streams);
-
-    releaseSeparationBuffers(&cm);
     destroyCLInfo(&ci);
+    releaseSeparationBuffers(&cm);
+    free(nu_consts);
 
     return result;
 }

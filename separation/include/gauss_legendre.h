@@ -1,7 +1,7 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
-Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
-and Rensselaer Polytechnic Institute.
+Copyright 2008-2010 Travis Desell, Dave Przybylo, Nathan Cole, Matthew
+Arsenault, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
+Magdon-Ismail and Rensselaer Polytechnic Institute.
 
 This file is part of Milkway@Home.
 
@@ -22,7 +22,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _GAUSS_LEGENDRE_H_
 #define _GAUSS_LEGENDRE_H_
 
-void gaussLegendre(double x1, double x2, double* x, double* restrict w, int n);
+#include "milkyway_math.h"
+
+void gaussLegendre(real x1, real x2, real* x, real* restrict w, int n);
 
 #endif /* _GAUSS_LEGENDRE_H_ */
 

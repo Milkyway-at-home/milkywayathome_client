@@ -69,6 +69,12 @@ int write_star_points(const char* filename, STAR_POINTS* sp)
     return retval;
 }
 
+#if DOUBLEPREC
+  #define STAR_POINTS_READ_STR "%lf %lf %lf\n"
+#else
+  #define STAR_POINTS_READ_STR "%f %f %f\n"
+#endif /* DOUBLEPREC */
+
 int fread_star_points(FILE* data_file, STAR_POINTS* sp)
 {
     unsigned int i;
@@ -78,9 +84,11 @@ int fread_star_points(FILE* data_file, STAR_POINTS* sp)
         mw_finish(EXIT_FAILURE);
     }
 
-    sp->stars = (double*) mallocSafe(sizeof(double) * VECTOR_SIZE * sp->number_stars);
-    for (i = 0; i < sp->number_stars; i++)
-        fscanf(data_file, "%lf %lf %lf\n", &XN(sp, i), &YN(sp, i), &ZN(sp, i));
+    sp->stars = (real*) mallocSafe(sizeof(real) * VECTOR_SIZE * sp->number_stars);
+    for (i = 0; i < sp->number_stars; ++i)
+    {
+        fscanf(data_file, STAR_POINTS_READ_STR, &XN(sp, i), &YN(sp, i), &ZN(sp, i));
+    }
 
     return 0;
 }
@@ -91,7 +99,7 @@ int fwrite_star_points(FILE* data_file, STAR_POINTS* sp)
     fprintf(data_file, "%u\n", sp->number_stars);
 
     for (i = 0; i < sp->number_stars; i++)
-        fprintf(data_file, "%lf %lf %lf\n", XN(sp, i), YN(sp, i), ZN(sp, i));
+        fprintf(data_file, STAR_POINTS_READ_STR, XN(sp, i), YN(sp, i), ZN(sp, i));
 
     return 0;
 }

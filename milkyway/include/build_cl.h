@@ -39,7 +39,7 @@ typedef struct
     cl_kernel kern;
 } CLInfo;
 
-#define EMPTY_CL_INFO { -1, -1, 0, NULL, NULL, NULL, NULL }
+#define EMPTY_CL_INFO { NULL, -1, 0, NULL, NULL, NULL, NULL }
 
 
 cl_int getCLInfo(CLInfo* ci,
@@ -48,7 +48,7 @@ cl_int getCLInfo(CLInfo* ci,
                  const char** src,
                  const char* compileDefs);
 
-void destroyCLInfo(CLInfo* ci);
+cl_int destroyCLInfo(CLInfo* ci);
 cl_int printCLExtensions(cl_device_id dev);
 
 #ifdef __cplusplus

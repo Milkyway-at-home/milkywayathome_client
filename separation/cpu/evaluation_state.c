@@ -26,7 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 void initialize_integral(INTEGRAL* integral, unsigned int number_streams)
 {
     integral->background_integral = 0.0;
-    integral->stream_integrals = callocSafe(number_streams, sizeof(double));
+    integral->stream_integrals = callocSafe(number_streams, sizeof(real));
     integral->probs = callocSafe(number_streams, sizeof(ST_PROBS));
 }
 
@@ -126,7 +126,7 @@ int read_checkpoint(EVALUATION_STATE* es)
     for (i = es->integrals; i < es->integrals + es->number_integrals; ++i)
     {
         fread(&i->background_integral, sizeof(i->background_integral), 1, f);
-        fread(i->stream_integrals, sizeof(double), es->number_streams, f);
+        fread(i->stream_integrals, sizeof(real), es->number_streams, f);
         fread(i->probs, sizeof(ST_PROBS), es->number_streams, f);
     }
 
@@ -170,7 +170,7 @@ int write_checkpoint(const EVALUATION_STATE* es)
     for (i = es->integrals; i < endi; ++i)
     {
         fwrite(&i->background_integral, sizeof(i->background_integral), 1, f);
-        fwrite(i->stream_integrals, sizeof(double), es->number_streams, f);
+        fwrite(i->stream_integrals, sizeof(real), es->number_streams, f);
         fwrite(i->probs, sizeof(ST_PROBS), es->number_streams, f);
     }
 

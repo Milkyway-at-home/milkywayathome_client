@@ -28,8 +28,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* Completed integral state */
 typedef struct
 {
-    double background_integral;
-    double* stream_integrals;
+    real background_integral;
+    real* stream_integrals;
     ST_PROBS* probs;
 } INTEGRAL;
 

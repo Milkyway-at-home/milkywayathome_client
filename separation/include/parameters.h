@@ -56,7 +56,7 @@ void fwrite_parameters(FILE* file,
 void set_parameters(ASTRONOMY_PARAMETERS* ap,
                     BACKGROUND_PARAMETERS* bgp,
                     STREAMS* streams,
-                    double* parameters);
+                    real* parameters);
 
 
 #endif /* _PARAMETERS_H_ */

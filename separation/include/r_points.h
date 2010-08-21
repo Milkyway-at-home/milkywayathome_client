@@ -28,11 +28,11 @@ extern "C" {
 #include "separation_types.h"
 #include "separation_cl.h"
 
-double set_r_points(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
-                    __MW_CONSTANT const STREAM_GAUSS* sg,
-                    const unsigned int n_convolve,
-                    const double coords,
-                    __MW_LOCAL R_POINTS* r_pts);
+real set_r_points(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
+                  __MW_CONSTANT const STREAM_GAUSS* sg,
+                  const unsigned int n_convolve,
+                  const real coords,
+                  __MW_LOCAL R_POINTS* r_pts);
 
 #ifdef __cplusplus
 }

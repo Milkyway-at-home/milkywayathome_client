@@ -54,9 +54,9 @@ extern "C" {
   #define mw_remove(x) remove((x))
 #endif /* BOINC_APPLICATION */
 
-
-void* callocSafe(size_t count, size_t size);
 void* mallocSafe(size_t size);
+void* callocSafe(size_t count, size_t size);
+
 
 #define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)
 #define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \

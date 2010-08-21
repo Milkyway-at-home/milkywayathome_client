@@ -25,23 +25,24 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include "separation_types.h"
 #include "separation_cl.h"
+#include "separation_types.h"
 #include "milkyway_math.h"
 #include "coordinates.h"
+#include "integrals_likelihood.h"
 
 __attribute__ ((always_inline))
 inline static void probabilities(__MW_CONSTANT const STREAM_CONSTANTS* sc,
                                  __MW_LOCAL const R_POINTS* r_pts,
                                  __MW_LOCAL vector* const xyz,
-                                 const double V,
-                                 const double reff_xr_rp3,
+                                 const real V,
+                                 const real reff_xr_rp3,
                                  const unsigned int number_streams,
                                  const unsigned int nconvolve,
                                  __MW_LOCAL ST_PROBS* probs)
 {
     unsigned int i;
-    double st_prob;
+    real st_prob;
 
     for (i = 0; i < number_streams; ++i)
     {
@@ -50,12 +51,17 @@ inline static void probabilities(__MW_CONSTANT const STREAM_CONSTANTS* sc,
         else
             st_prob = 0.0;
 
-        KAHAN_ADD(probs[i].st_prob_int, st_prob, probs[i].st_prob_int_c);
+
+        real _tmp = probs[i].st_prob_int;
+        probs[i].st_prob_int += st_prob;
+        probs[i].st_prob_int_c += (st_prob) - ((probs[i].st_prob_int) - _tmp);
+
+        //KAHAN_ADD(probs[i].st_prob_int, st_prob, probs[i].st_prob_int_c);
     }
 }
 
 __attribute__ ((always_inline, const))
-inline static double distance_magnitude(const double m)
+inline static real distance_magnitude(const real m)
 {
     return mw_powr(10.0, (m - 14.2) / 5.0);
 }
@@ -65,25 +71,25 @@ __attribute__ ((always_inline, hot))
 inline static BG_PROB mu_sum(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
                              __MW_CONSTANT const STREAM_CONSTANTS* sc,
                              __MW_LOCAL const R_POINTS* r_pts,
-                             const double irv,             /* r constants */
-                             const double reff_xr_rp3,
-                             const double nu_consts_id,    /* nu constants */
-                             const double nu_consts_nu,
+                             const real irv,             /* r constants */
+                             const real reff_xr_rp3,
+                             const real nu_consts_id,    /* nu constants */
+                             const real nu_consts_nu,
                              const unsigned int mu_steps,
-                             const double mu_step_size,
-                             const double mu_min,
+                             const real mu_step_size,
+                             const real mu_min,
                              __MW_LOCAL ST_PROBS* probs,
                              __MW_LOCAL vector* xyz)
 {
     unsigned int mu_step_current;
-    double mu, V;
-    double bg_prob;
+    real mu, V;
+    real bg_prob;
     BG_PROB bg_prob_int = ZERO_BG_PROB; /* for Kahan summation */
     LB lb;
 
     for (mu_step_current = 0; mu_step_current < mu_steps; ++mu_step_current)
     {
-        mu = mu_min + (((double) mu_step_current + 0.5) * mu_step_size);
+        mu = mu_min + (((real) mu_step_current + 0.5) * mu_step_size);
 
         lb = gc2lb(ap->wedge, mu, nu_consts_nu);
 

@@ -30,25 +30,24 @@ char* separationCLDefs(const ASTRONOMY_PARAMETERS* ap, const char* extra)
     char* buf;
 
     asprintf(&buf,
-             "%s "
-             "-DAP_ALPHA=%.20e "
-             "-DAP_Q=%.20e "
-             "-DAP_sn=%.20e "
-             "-DAP_r0=%.20e "
-             "-DAP_DELTA=%.20e "
-             "-DAP_COEFF=%.20e "
-             "-DAP_ALPHA_DELTA3=%.20e "
-             "-DAP_BG_A=%.20e "
-             "-DAP_BG_B=%.20e "
-             "-DAP_BG_C=%.20e "
-             "-DAP_WEDGE=%d "
-             "-DAP_AUX_BG_PROFILE=%d "
-             "-DAP_CONVOLVE=%u "
-             "-DAP_NUMBER_STREAMS=%u "
-             "-DAP_SGR_COORDINATES=%d "
-             "-DAP_TOTAL_CALC_PROBS=%.20e "
-             "-DAP_BACKGROUND_WEIGHT=%.20e ",
-
+             " %s "
+             "-D AP_ALPHA=%.20e "
+             "-D AP_Q=%.20e "
+             "-D AP_sn=%.20e "
+             "-D AP_r0=%.20e "
+             "-D AP_DELTA=%.20e "
+             "-D AP_COEFF=%.20e "
+             "-D AP_ALPHA_DELTA3=%.20e "
+             "-D AP_BG_A=%.20e "
+             "-D AP_BG_B=%.20e "
+             "-D AP_BG_C=%.20e "
+             "-D AP_WEDGE=%d "
+             "-D AP_AUX_BG_PROFILE=%d "
+             "-D AP_CONVOLVE=%u "
+             "-D AP_NUMBER_STREAMS=%u "
+             "-D AP_SGR_COORDINATES=%d "
+             "-D AP_TOTAL_CALC_PROBS=%.20e "
+             "-D AP_BACKGROUND_WEIGHT=%.20e ",
              extra,
 
              ap->alpha,

@@ -8,6 +8,10 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
+#if !defined(_MILKYWAY_MATH_H_INSIDE_) && !defined(MILKYWAY_MATH_COMPILATION)
+  #error "Only milkyway_math.h can be included directly."
+#endif
+
 #ifndef _MILKYWAY_VECTORS_OPS_H_
 #define _MILKYWAY_VECTORS_OPS_H_
 

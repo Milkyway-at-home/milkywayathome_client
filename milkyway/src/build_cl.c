@@ -49,7 +49,7 @@ cl_int printCLExtensions(cl_device_id dev)
     return CL_SUCCESS;
 }
 
-void destroyCLInfo(CLInfo* ci)
+cl_int destroyCLInfo(CLInfo* ci)
 {
     cl_int err = CL_SUCCESS;
     err |= clReleaseCommandQueue(ci->queue);
@@ -60,26 +60,18 @@ void destroyCLInfo(CLInfo* ci)
     /* TODO: or'ing the err and showing = useless */
     if (err)
         warn("Error cleaning up CLInfo: %s\n", showCLInt(err));
+
+    return err;
 }
 
-static cl_int buildProgram(CLInfo* ci, const char* compileDefs, const char** src)
+void milkywayBuildCB(cl_program prog, void* user_data)
 {
-    cl_int err;
-    char* compileDefinitions;
     char buildLog[BUFSIZE] = "";
     cl_int infoErr;
     cl_build_status stat;
     size_t failSize;
 
-    err = clBuildProgram(ci->prog,
-                         1,
-                         &ci->dev,
-                         compileDefs,
-                         NULL,
-                         NULL);
-
-    if (err == CL_SUCCESS)
-        return CL_SUCCESS;
+    CLInfo* ci = (CLInfo*) user_data;
 
     infoErr = clGetProgramBuildInfo(ci->prog,
                                     ci->dev,

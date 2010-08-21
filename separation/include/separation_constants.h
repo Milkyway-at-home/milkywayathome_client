@@ -21,7 +21,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _SEPARATION_CONSTANTS_H_
 #define _SEPARATION_CONSTANTS_H_
 
-#define EPS (3.0e-11)
+#if DOUBLEPREC
+  #define EPS (3.0e-11)
+#else
+  #define EPS (5.96e-08)
+#endif /* DOUBLEPREC */
 
 #define stdev (0.6)
 #define xr (3.0 * stdev)

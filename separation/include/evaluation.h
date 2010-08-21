@@ -24,10 +24,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_types.h"
 
-double evaluate(const ASTRONOMY_PARAMETERS* ap,
-                const STREAMS* streams,
-                const STREAM_CONSTANTS* sc,
-                const char* star_points_file);
+real evaluate(const ASTRONOMY_PARAMETERS* ap,
+              const STREAMS* streams,
+              const STREAM_CONSTANTS* sc,
+              const char* star_points_file);
 
 #endif /* _EVALUATION_H_ */
 

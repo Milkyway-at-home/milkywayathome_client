@@ -28,13 +28,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "gauss_legendre.h"
 
 /* Convert sun-centered lbr (degrees) into galactic xyz coordinates. */
-static void lbr2xyz(const double* lbr, vector xyz)
+static void lbr2xyz(const real* lbr, vector xyz)
 {
-    double zp, d;
+    real zp, d;
 /* TODO: Use radians to begin with */
 
-    double lsin, lcos;
-    double bsin, bcos;
+    real lsin, lcos;
+    real bsin, bcos;
 
     mw_sincos(d2r(B(lbr)), &bsin, &bcos);
     mw_sincos(d2r(L(lbr)), &lsin, &lcos);
@@ -83,7 +83,7 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < streams->number_streams; i++)
     {
-        double stream_sigma = streams->parameters[i].stream_parameters[4];
+        real stream_sigma = streams->parameters[i].stream_parameters[4];
         sc[i].large_sigma = (stream_sigma > SIGMA_LIMIT || stream_sigma < -SIGMA_LIMIT);
         sc[i].sigma_sq2 = 2.0 * sqr(stream_sigma);
 
@@ -117,8 +117,8 @@ STREAM_GAUSS* get_stream_gauss(const unsigned int convolve)
     unsigned int i;
     STREAM_GAUSS* sg;
 
-    double* qgaus_X = mallocSafe(sizeof(double) * convolve);
-    double* qgaus_W = mallocSafe(sizeof(double) * convolve);
+    real* qgaus_X = mallocSafe(sizeof(real) * convolve);
+    real* qgaus_W = mallocSafe(sizeof(real) * convolve);
 
     gaussLegendre(-1.0, 1.0, qgaus_X, qgaus_W, convolve);
 
@@ -140,11 +140,11 @@ STREAM_GAUSS* get_stream_gauss(const unsigned int convolve)
 }
 
 NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
-                                   const double nu_step_size,
-                                   const double nu_min)
+                                   const real nu_step_size,
+                                   const real nu_min)
 {
     unsigned int i;
-    double tmp1, tmp2;
+    real tmp1, tmp2;
 
     NU_CONSTANTS* nu_consts = mallocSafe(sizeof(NU_CONSTANTS) * nu_steps);
 

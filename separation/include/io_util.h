@@ -19,16 +19,21 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef GEM_IO_UTIL_H
-#define GEM_IO_UTIL_H
+#ifndef _IO_UTIL_H_
+#define _IO_UTIL_H_
 
 #include <stdio.h>
+#include "milkyway_math.h"
+#include "separation_types.h"
 
-void fwrite_double_array(FILE* file, const char* array_name, double* array_t, size_t size);
+void fwrite_double_array(FILE* file, const char* array_name, real* array_t, size_t size);
 void fwrite_int_array(FILE* file, const char* array_name, int* array_t, size_t size);
 
-double* fread_double_array(FILE* file, const char* array_name, unsigned int* sizeOut);
+real* fread_double_array(FILE* file, const char* array_name, unsigned int* sizeOut);
 int* fread_int_array(FILE* file, const char* array_name, unsigned int* sizeOut);
 
-#endif
+void printIntegralArea(INTEGRAL_AREA* ia);
+void printAstronomyParameters(ASTRONOMY_PARAMETERS* ap);
+
+#endif /* _IO_UTIL_H_ */
 

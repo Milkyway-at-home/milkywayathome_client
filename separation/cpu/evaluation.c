@@ -30,6 +30,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "likelihood.h"
 #include "star_points.h"
 #include "run_cl.h"
+#include "evaluation.h"
 
 static void final_stream_integrals(FINAL_STREAM_INTEGRALS* fsi,
                                    const EVALUATION_STATE* es,
@@ -38,7 +39,7 @@ static void final_stream_integrals(FINAL_STREAM_INTEGRALS* fsi,
 {
     unsigned int i, j;
 
-    fsi->stream_integrals = callocSafe(number_streams, sizeof(double));
+    fsi->stream_integrals = callocSafe(number_streams, sizeof(real));
 
     fsi->background_integral = es->integrals[0].background_integral;
     for (i = 0; i < number_streams; ++i)
@@ -69,7 +70,7 @@ static void print_stream_integrals(const FINAL_STREAM_INTEGRALS* fsi, const unsi
 }
 
 inline static void calculate_stream_integrals(const ST_PROBS* probs,
-                                              double* stream_integrals,
+                                              real* stream_integrals,
                                               const unsigned int number_streams)
 {
     unsigned int i;
@@ -79,8 +80,8 @@ inline static void calculate_stream_integrals(const ST_PROBS* probs,
 }
 
 /* Add up completed integrals for progress reporting */
-inline static double completed_integral_progress(const ASTRONOMY_PARAMETERS* ap,
-                                                 const EVALUATION_STATE* es)
+inline static real completed_integral_progress(const ASTRONOMY_PARAMETERS* ap,
+                                               const EVALUATION_STATE* es)
 {
     INTEGRAL_AREA* ia;
     unsigned int i, current_calc_probs = 0;
@@ -95,14 +96,14 @@ inline static double completed_integral_progress(const ASTRONOMY_PARAMETERS* ap,
 }
 
 /* returns background integral */
-static double integrate(const ASTRONOMY_PARAMETERS* ap,
-                        const INTEGRAL_AREA* ia,
-                        const STREAM_CONSTANTS* sc,
-                        const STREAM_GAUSS* sg,
-                        ST_PROBS* probs,
-                        EVALUATION_STATE* es)
+static real integrate(const ASTRONOMY_PARAMETERS* ap,
+                      const INTEGRAL_AREA* ia,
+                      const STREAM_CONSTANTS* sc,
+                      const STREAM_GAUSS* sg,
+                      ST_PROBS* probs,
+                      EVALUATION_STATE* es)
 {
-    double result;
+    real result;
 
     NU_CONSTANTS* nu_consts = prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
     R_POINTS* r_pts = mallocSafe(sizeof(R_POINTS) * ap->convolve);
@@ -135,25 +136,30 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         es->current_calc_probs = completed_integral_progress(ap, es);
 
         t1 = get_time();
-        //integral->background_integral = integrate(ap, ia, sc, sg, integral->probs, es);
+      #if SEPARATION_OPENCL
+        #warning "USING OPENCL\n"
+        printAstronomyParameters(ap);
         integral->background_integral = integrateCL(ap, ia, sc, sg, integral->probs);
-        t2 = get_time();
+      #else
+        #warning "USING NORMAL\n"
+        integral->background_integral = integrate(ap, ia, sc, sg, integral->probs, es);
+      #endif /* SEPARATION_CL */
 
+        t2 = get_time();
         printf("Time = %.20g\n", t2 - t1);
 
         calculate_stream_integrals(integral->probs, integral->stream_integrals, ap->number_streams);
 
         CLEAR_BG_PROB(es->r_acc);
     }
-
 }
 
-double evaluate(const ASTRONOMY_PARAMETERS* ap,
-                const STREAMS* streams,
-                const STREAM_CONSTANTS* sc,
-                const char* star_points_file)
+real evaluate(const ASTRONOMY_PARAMETERS* ap,
+              const STREAMS* streams,
+              const STREAM_CONSTANTS* sc,
+              const char* star_points_file)
 {
-    double likelihood_val;
+    real likelihood_val;
     EVALUATION_STATE es = EMPTY_EVALUATION_STATE;
     STREAM_GAUSS* sg;
     FINAL_STREAM_INTEGRALS fsi;

@@ -26,7 +26,6 @@ extern "C" {
 #endif
 
 #ifdef __OPENCL_VERSION__
-  #pragma OPENCL EXTENSION cl_khr_fp64 : enable
   #define __MW_LOCAL __local
   #define __MW_PRIVATE __private
   #define __MW_GLOBAL __global

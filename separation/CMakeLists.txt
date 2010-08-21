@@ -32,9 +32,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 
 include_directories(${PROJECT_INCLUDE_DIR})
-add_definitions("-DMILKYWAY -DDOUBLEPREC")
-
-set(CMAKE_C_FLAGS "-std=c99 ${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS "-std=c99 -warn-uninit-values ${CMAKE_C_FLAGS}")
 
 configure_file (
   "${PROJECT_INCLUDE_DIR}/config.h.in"
@@ -50,6 +48,7 @@ if(WIN32)
 endif()
 
 add_definitions("-DSEPARATION_OPENCL=1")
+add_definitions("-DDOUBLEPREC=1")
 
 
 if(CPU_SEPARATION)

@@ -28,7 +28,6 @@ extern "C" {
 #include "separation_constants.h"
 #include "separation_types.h"
 #include "milkyway_math.h"
-#include "milkyway_vectors.h"
 #include "separation_cl.h"
 
 /* Used in innermost loops of integrals and likelihood calculation,
@@ -37,18 +36,18 @@ extern "C" {
 
 /* FIXME: Better name? */
 __attribute__ ((always_inline, pure, hot))
-inline double probabilities_convolve(__MW_CONSTANT const STREAM_CONSTANTS* sc,
-                                     __MW_LOCAL const R_POINTS* r_pts,
-                                     __MW_LOCAL vector* const xyz,
-                                     const unsigned int convolve)
+inline real probabilities_convolve(__MW_CONSTANT const STREAM_CONSTANTS* sc,
+                                   __MW_LOCAL const R_POINTS* r_pts,
+                                   __MW_LOCAL vector* const xyz,
+                                   const unsigned int convolve)
 {
     unsigned int i;
-    double dotted, xyz_norm;
+    real dotted, xyz_norm;
     vector xyzs;
 
-    double st_prob = 0.0;
+    real st_prob = 0.0;
 
-    for (i = 0; i < convolve; i++)
+    for (i = 0; i < convolve; ++i)
     {
         SUBV(xyzs, xyz[i], sc->c);
         DOTVP(dotted, sc->a, xyzs);
@@ -63,19 +62,19 @@ inline double probabilities_convolve(__MW_CONSTANT const STREAM_CONSTANTS* sc,
 
 /* FIXME: I don't know what these do enough to name it properly */
 __attribute__ ((always_inline, hot))
-inline double sub_bg_probability1(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
-                                  __MW_LOCAL const R_POINTS* r_pts,
-                                  __MW_LOCAL vector* const xyz,
-                                  const LB integral_point,
-                                  const int aux_bg_profile,
-                                  const unsigned int convolve)
+inline real sub_bg_probability1(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
+                                __MW_LOCAL const R_POINTS* r_pts,
+                                __MW_LOCAL vector* const xyz,
+                                const LB integral_point,
+                                const int aux_bg_profile,
+                                const unsigned int convolve)
 {
     unsigned int i;
-    double h_prob, aux_prob;
-    double rg, rs, zp;
-    double lsin, lcos;
-    double bsin, bcos;
-    double bg_prob = 0.0;
+    real h_prob, aux_prob;
+    real rg, rs, zp;
+    real lsin, lcos;
+    real bsin, bcos;
+    real bg_prob = 0.0;
 
     mw_sincos(d2r(LB_L(integral_point)), &lsin, &lcos);
     mw_sincos(d2r(LB_B(integral_point)), &bsin, &bcos);
@@ -108,17 +107,17 @@ inline double sub_bg_probability1(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
 }
 
 __attribute__ ((always_inline))
-inline double sub_bg_probability2(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
-                                  __MW_LOCAL const R_POINTS* r_pts,
-                                  __MW_LOCAL vector* const xyz,
-                                  const LB integral_point,
-                                  const unsigned int convolve)
+inline real sub_bg_probability2(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
+                                __MW_LOCAL const R_POINTS* r_pts,
+                                __MW_LOCAL vector* const xyz,
+                                const LB integral_point,
+                                const unsigned int convolve)
 {
     unsigned int i;
-    double rg, zp;
-    double lsin, lcos;
-    double bsin, bcos;
-    double bg_prob = 0.0;
+    real rg, zp;
+    real lsin, lcos;
+    real bsin, bcos;
+    real bg_prob = 0.0;
 
     mw_sincos(d2r(LB_L(integral_point)), &lsin, &lcos);
     mw_sincos(d2r(LB_B(integral_point)), &bsin, &bcos);
@@ -139,13 +138,13 @@ inline double sub_bg_probability2(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
 }
 
 __attribute__ ((always_inline, hot))
-inline double bg_probability(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
-                             __MW_LOCAL const R_POINTS* r_pts,
-                             __MW_LOCAL vector* const xyz,
-                             const LB integral_point,
-                             const double reff_xr_rp3)
+inline real bg_probability(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
+                           __MW_LOCAL const R_POINTS* r_pts,
+                           __MW_LOCAL vector* const xyz,
+                           const LB integral_point,
+                           const real reff_xr_rp3)
 {
-    double bg_prob;
+    real bg_prob;
 
     /* if q is 0, there is no probability */
     if (ap->q == 0)

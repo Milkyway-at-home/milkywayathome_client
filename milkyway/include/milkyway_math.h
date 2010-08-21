@@ -23,6 +23,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define _MILKYWAY_MATH_H_INSIDE_
 
+#include "real.h"
+#include "milkyway_vectors.h"
 #include "milkyway_math_functions.h"
 
 #ifdef __cplusplus
@@ -48,17 +50,16 @@ extern "C" {
 #define sqr(x)  ((x) * (x))
 #define inv(x)  (1.0 / (x))
 
-#define dmod(A,B) ((B) != 0.0 ? ((A)*(B) > 0.0 ? (A) - (B) * floor((A)/(B)) \
-                             : (A) + (B) * floor(-(A)/(B))):(A))
+#define dmod(A,B) ((B) != 0.0 ? ((A) * (B) > 0.0 ? (A) - (B) * mw_floor((A)/(B)) \
+                             : (A) + (B) * mw_floor(-(A)/(B))) : (A))
 #define dsign(A,B) ((B) < 0.0 ? -(A) : (A))
 
 #define KAHAN_ADD(sum, item, correction)        \
     {                                           \
-        double _tmp = sum;                      \
+        real _tmp = sum;                        \
         sum += item;                            \
-        correction +=  item - (sum - _tmp);     \
+        correction += (item) - ((sum) - _tmp);  \
     }
-
 
 /* other useful nonstandard constants */
 

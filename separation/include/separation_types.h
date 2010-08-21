@@ -39,8 +39,8 @@ extern "C" {
 
 typedef struct
 {
-    double l;
-    double b;
+    real l;
+    real b;
 } LB;
 
 #define LB_L(x) ((x).l)
@@ -51,7 +51,7 @@ typedef struct
 typedef struct
 {
     unsigned int number_stars;
-    double* stars;
+    real* stars;
 } STAR_POINTS;
 
 #define EMPTY_STAR_POINTS { 0, NULL }
@@ -61,28 +61,28 @@ typedef struct
 {
     vector a;
     vector c;
-    double sigma_sq2;
+    real sigma_sq2;
     int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
 } STREAM_CONSTANTS;
 
 typedef struct
 {
-    double r_point;
-    double r_in_mag;
-    double r_in_mag2;
-    double qw_r3_N;
+    real r_point;
+    real r_in_mag;
+    real r_in_mag2;
+    real qw_r3_N;
 } R_POINTS;
 
 typedef struct
 {
-    double nu;
-    double id;
+    real nu;
+    real id;
 } NU_CONSTANTS;
 
 typedef struct
 {
-    double dx;
-    double qgaus_W;
+    real dx;
+    real qgaus_W;
 } STREAM_GAUSS;
 
 
@@ -90,18 +90,18 @@ typedef struct
 
 typedef struct
 {
-    double r_min, r_max, r_step_size;
-    double nu_min, nu_max, nu_step_size;
-    double mu_min, mu_max, mu_step_size;
+    real r_min, r_max, r_step_size;
+    real nu_min, nu_max, nu_step_size;
+    real mu_min, mu_max, mu_step_size;
     unsigned int r_steps, nu_steps, mu_steps;
 } INTEGRAL_AREA;
 
 typedef struct
 {
-    double weight;
-    double step;
-    double min;
-    double max;
+    real weight;
+    real step;
+    real min;
+    real max;
     int optimize;
 } STREAM_WEIGHT;
 
@@ -109,10 +109,10 @@ typedef struct
 
 typedef struct
 {
-    double* stream_parameters;
-    double* stream_step;
-    double* stream_min;
-    double* stream_max;
+    real* stream_parameters;
+    real* stream_step;
+    real* stream_min;
+    real* stream_max;
     int* stream_optimize;
 } STREAM_PARAMETERS;
 
@@ -131,10 +131,10 @@ typedef struct
 
 typedef struct
 {
-    double* parameters;
-    double* step;
-    double* min;
-    double* max;
+    real* parameters;
+    real* step;
+    real* min;
+    real* max;
     int* optimize;
 } BACKGROUND_PARAMETERS;
 
@@ -143,8 +143,8 @@ typedef struct
 
 typedef struct
 {
-    double background_integral;
-    double* stream_integrals;
+    real background_integral;
+    real* stream_integrals;
 } FINAL_STREAM_INTEGRALS;
 
 #define EMPTY_FINAL_STREAM_INTEGRALS { 0.0, NULL }
@@ -152,16 +152,16 @@ typedef struct
 
 typedef struct
 {
-    double parameters_version;
-    double total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
+    real parameters_version;
+    real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
 
     unsigned int number_background_parameters;
-    double background_weight;
+    real background_weight;
 
     unsigned int number_streams;
     unsigned int convolve;
 
-    unsigned int sgr_coordinates;
+    int sgr_coordinates;
 
     int aux_bg_profile;
     int wedge;
@@ -170,8 +170,8 @@ typedef struct
     INTEGRAL_AREA* integral;
 
     /* Constants determined by other parameters */
-    double alpha, q, sn, r0, delta, coeff, alpha_delta3;
-    double bg_a, bg_b, bg_c;
+    real alpha, q, sn, r0, delta, coeff, alpha_delta3;
+    real bg_a, bg_b, bg_c;
 } ASTRONOMY_PARAMETERS;
 
 
@@ -182,28 +182,26 @@ typedef struct
                                      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
                                      0.0, 0.0, 0.0 }
 
-
-
 typedef struct
 {
-    double st_prob_int;    /* for Kahan summation */
-    double st_prob_int_c;
+    real st_prob_int;    /* for Kahan summation */
+    real st_prob_int_c;
 } ST_PROBS;
 
 #define ZERO_ST_PROBS = { 0.0, 0.0 }
 
 typedef struct
 {
-    double bg_int;
-    double correction;   /* Correction for Kahan summation */
+    real bg_int;
+    real correction;   /* Correction for Kahan summation */
 } BG_PROB;
 
-/* TODO: All these tuples of doubles really serve the same
+/* TODO: All these tuples of reals really serve the same
  * purpose. Fix having all of them. */
 typedef struct
 {
-    double sum;
-    double correction;
+    real sum;
+    real correction;
 } PROB_SUM;
 
 #define ZERO_PROB_SUM { 0.0, 0.0 }
@@ -217,8 +215,8 @@ typedef struct
 
 typedef struct
 {
-    double st_only_sum;
-    double st_only_sum_c;
+    real st_only_sum;
+    real st_only_sum_c;
 } ST_SUM;
 
 

@@ -1,7 +1,7 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
-Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
-and Rensselaer Polytechnic Institute.
+Copyright 2008-2010 Travis Desell, Dave Przybylo, Nathan Cole, Matthew
+Arsenault, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
+Magdon-Ismail and Rensselaer Polytechnic Institute.
 
 This file is part of Milkway@Home.
 
@@ -45,7 +45,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #include "separation.h"
-#include "milkyway_util.h"
 
 #if USE_CUDA
     #include "evaluation_gpu.h"
@@ -80,12 +79,12 @@ void AppInvalidParameterHandler(const wchar_t* expression,
 
 
 /* Returns the newly allocated array of parameters */
-static double* parse_parameters(int argc, const char** argv, int* paramnOut)
+static real* parse_parameters(int argc, const char** argv, int* paramnOut)
 {
     poptContext context;
     int o;
     unsigned int i, paramn = 0;
-    double* parameters = NULL;
+    real* parameters = NULL;
     static unsigned int numParams;
     static int server_params = 0;
     static const char** rest;
@@ -170,12 +169,12 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
             mw_finish(EXIT_FAILURE);
         }
 
-        parameters = (double*) mallocSafe(sizeof(double) * paramn);
+        parameters = (real*) mallocSafe(sizeof(real) * paramn);
 
         errno = 0;
-        for ( i = 0; i < paramn; ++i )
+        for (i = 0; i < paramn; ++i)
         {
-            parameters[i] = strtod(rest[i], NULL);
+            parameters[i] = (real) strtod(rest[i], NULL);
 
             if (errno)
             {
@@ -204,7 +203,7 @@ static void cleanup_worker()
 
 static void worker(int argc, const char** argv)
 {
-    double* parameters;
+    real* parameters;
     int number_parameters, ap_number_parameters;
     ASTRONOMY_PARAMETERS ap = EMPTY_ASTRONOMY_PARAMETERS;
     BACKGROUND_PARAMETERS bgp = EMPTY_BACKGROUND_PARAMETERS;
@@ -248,7 +247,7 @@ static void worker(int argc, const char** argv)
     set_parameters(&ap, &bgp, &streams, parameters);
     free(parameters);
 
-    double likelihood;
+    real likelihood;
     STREAM_CONSTANTS* sc = init_constants(&ap, &bgp, &streams);
     free_background_parameters(&bgp);
 

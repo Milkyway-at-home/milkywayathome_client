@@ -27,12 +27,12 @@ extern "C" {
 
 #include "separation_types.h"
 
-double likelihood(const ASTRONOMY_PARAMETERS* ap,
-                  const STAR_POINTS* sp,
-                  const STREAM_CONSTANTS* sc,
-                  const STREAMS* streams,
-                  const FINAL_STREAM_INTEGRALS* fsi,
-                  STREAM_GAUSS* sg);
+real likelihood(const ASTRONOMY_PARAMETERS* ap,
+                const STAR_POINTS* sp,
+                const STREAM_CONSTANTS* sc,
+                const STREAMS* streams,
+                const FINAL_STREAM_INTEGRALS* fsi,
+                const STREAM_GAUSS* sg);
 
 #ifdef __cplusplus
 }
