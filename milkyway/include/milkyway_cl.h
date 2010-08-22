@@ -26,8 +26,13 @@ extern "C" {
 #endif
 
 #ifndef __OPENCL_VERSION__
-  #include <OpenCL/cl.h>
-  #include <OpenCL/cl_ext.h>
+  #ifdef __APPLE__
+    #include <OpenCL/cl.h>
+    #include <OpenCL/cl_ext.h>
+  #else
+    #include <CL/cl.h>
+    #include <CL/cl_ext.h>
+  #endif /* __APPLE__ */
 #endif  /* __OPENCL_VERSION__ */
 
 #ifdef __OPENCL_VERSION__

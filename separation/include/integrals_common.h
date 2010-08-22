@@ -63,7 +63,7 @@ inline static void probabilities(__MW_CONSTANT const STREAM_CONSTANTS* sc,
 __attribute__ ((always_inline, const))
 inline static real distance_magnitude(const real m)
 {
-    return mw_powr(10.0, (m - 14.2) / 5.0);
+    return mw_powr((real) 10.0, (m - (real) 14.2) / (real) 5.0);
 }
 
 /* Sum over mu steps using Kahan summation */

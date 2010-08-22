@@ -50,7 +50,7 @@ inline LB gc2lb(const int wedge, const real mu, const real nu)
     const real y2 = sinmunode * cosnu;
     /* z2 = sin(nu) */
 
-    const real wedge_eta = wedge * d2r(stripeSeparation) - d2r(57.5) - (wedge > 46 ? M_PI : 0.0);
+    const real wedge_eta = wedge * d2r(stripeSeparation) - d2r((real) 57.5) - (wedge > 46 ? M_PI : 0.0);
 
     /* Get inclination for the given wedge. */
     const real wedge_incl = wedge_eta + d2r(surveyCenterDec);

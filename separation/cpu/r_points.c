@@ -25,6 +25,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_math.h"
 #include "r_points.h"
 
+/* Literals are assumed to be doubles by default, and the
+ * -cl-single-precision-constant flag seems to not be working when
+ * trying to use float */
+#define R1 ((real) 1.0)
+#define R2 ((real) 2.0)
+#define R5 ((real) 5.0)
+#define R10 ((real) 10.0)
+#define R1000 ((real) 1000.0)
+
 static const real sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
 real set_r_points(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
@@ -38,11 +47,11 @@ real set_r_points(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
     unsigned int i;
 
     /* R2MAG */
-    const real gPrime = 5.0 * (mw_log10(coords * 1000.0) - 1.0) + absm;
+    const real gPrime = R5 * (mw_log10(coords * R1000) - R1) + absm;
 
     /* REFF */
     const real exp_result = mw_exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));
-    const real reff_value = sigmoid_curve_params[0] / (exp_result + 1.0);
+    const real reff_value = sigmoid_curve_params[0] / (exp_result + R1);
     const real rPrime3 = cube(coords);
 
     for (i = 0; i < n_convolve; ++i)
@@ -52,10 +61,10 @@ real set_r_points(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
         /* MAG2R */
         r_pts[i].r_in_mag = g;
         r_pts[i].r_in_mag2 = sqr(g);
-        r_pts[i].r_point = mw_powr(10.0, (g - absm) / 5.0 + 1.0) / 1000.0;
+        r_pts[i].r_point = mw_powr(R10, (g - absm) / R5 + R1) / R1000;
 
         r3 = cube(r_pts[i].r_point);
-        exponent = sqr(g - gPrime) / (2.0 * sqr(stdev));
+        exponent = sqr(g - gPrime) / (R2 * sqr(stdev));
         N = ap->coeff * mw_exp(-exponent);
         r_pts[i].qw_r3_N = sg[i].qgaus_W * r3 * N;
     }

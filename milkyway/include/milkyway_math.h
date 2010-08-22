@@ -40,15 +40,15 @@ extern "C" {
 #define   MIN(x,y)     (((x) < (y)) ? (x) : (y))
 
 /* degrees to radians */
-#define d2r(x) ((x) * M_PI / 180.0)
+#define d2r(x) ((x) * (real) M_PI / (real) 180.0)
 
 /* radians to degrees */
-#define r2d(x) ((x) * 180.0 / M_PI)
+#define r2d(x) ((x) * (real) 180.0 / (real) M_PI)
 
 /* simple math macros */
 #define cube(x) ((x) * (x) * (x))
 #define sqr(x)  ((x) * (x))
-#define inv(x)  (1.0 / (x))
+#define inv(x)  ((real) 1.0 / (x))
 
 #define dmod(A,B) ((B) != 0.0 ? ((A) * (B) > 0.0 ? (A) - (B) * mw_floor((A)/(B)) \
                              : (A) + (B) * mw_floor(-(A)/(B))) : (A))
@@ -64,11 +64,11 @@ extern "C" {
 /* other useful nonstandard constants */
 
 /* (4 * pi) / 3 */
-#define PI_4_3 (4.188790204786390984616857844372670512262892532500141)
-#define PI_2_3 (2.094395102393195492308428922186335256131446266250071)
-#define PI_3_2 (4.712388980384689857693965074919254326295754099062659)
-#define M_2PI (6.2831853071795864769252867665590057683943387987502)
-#define SQRT_2PI (2.506628274631000502415765284811045253006986740609938)
+#define PI_4_3 ((real) 4.188790204786390984616857844372670512262892532500141)
+#define PI_2_3 ((real) 2.094395102393195492308428922186335256131446266250071)
+#define PI_3_2 ((real) 4.712388980384689857693965074919254326295754099062659)
+#define M_2PI ((real) 6.2831853071795864769252867665590057683943387987502)
+#define SQRT_2PI ((real) 2.506628274631000502415765284811045253006986740609938)
 
 
 /* Taken from glibc */

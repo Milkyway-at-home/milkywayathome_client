@@ -102,7 +102,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
     char* allSrc[] = { rPointsSrc, kernelSrc };
 
     //compileDefs = separationCLDefs(ap, extraDefs);
-    err = getCLInfo(ci, CL_DEVICE_TYPE_GPU, "r_sum_kernel", allSrc, 2, extraDefs);
+    err = getCLInfo(ci, CL_DEVICE_TYPE_CPU, "r_sum_kernel", allSrc, 2, extraDefs);
 
     free(kernelSrc);
     free(rPointsSrc);

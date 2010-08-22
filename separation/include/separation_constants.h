@@ -22,25 +22,25 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _SEPARATION_CONSTANTS_H_
 
 #if DOUBLEPREC
-  #define EPS (3.0e-11)
+  #define EPS ((real) 3.0e-11)
 #else
-  #define EPS (5.96e-08)
+  #define EPS ((real) 5.96e-08)
 #endif /* DOUBLEPREC */
 
-#define stdev (0.6)
-#define xr (3.0 * stdev)
-#define absm (4.2)
-#define SIGMA_LIMIT (0.0001)
+#define stdev ((real) 0.6)
+#define xr ((real) 3.0 * stdev)
+#define absm ((real) 4.2)
+#define SIGMA_LIMIT ((real) 0.0001)
 
-#define stripeSeparation  (2.5)
-#define surveyCenterRa (185.0)
-#define surveyCenterDec (32.5)
+#define stripeSeparation  ((real) 2.5)
+#define surveyCenterRa ((real) 185.0)
+#define surveyCenterDec ((real) 32.5)
 
 /* The node of the GC coordinates used in the survey. */
-#define NODE_GC_COORDS (surveyCenterRa - 90.0)
-#define NODE_GC_COORDS_RAD d2r(NODE_GC_COORDS)
+#define NODE_GC_COORDS (surveyCenterRa - (real) 90.0)
+#define NODE_GC_COORDS_RAD ((real) d2r(NODE_GC_COORDS))
 
-#define sun_r0 (8.5)
+#define sun_r0 ((real) 8.5)
 
 #define CHECKPOINT_FILE "separation_checkpoint"
 #define CHECKPOINT_FILE_TMP "separation_checkpoint_tmp"
