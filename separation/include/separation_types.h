@@ -57,8 +57,9 @@ typedef struct
 
 #define EMPTY_STAR_POINTS { 0, NULL }
 
+#define SEPARATION_ALIGN __attribute__ ((packed, aligned))
 
-typedef struct
+typedef struct SEPARATION_ALIGN
 {
     vector a;
     vector c;
@@ -66,7 +67,7 @@ typedef struct
     int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
 } STREAM_CONSTANTS;
 
-typedef struct
+typedef struct SEPARATION_ALIGN
 {
     real r_point;
     real r_in_mag;
@@ -74,13 +75,13 @@ typedef struct
     real qw_r3_N;
 } R_POINTS;
 
-typedef struct
+typedef struct SEPARATION_ALIGN
 {
     real nu;
     real id;
 } NU_CONSTANTS;
 
-typedef struct
+typedef struct SEPARATION_ALIGN
 {
     real dx;
     real qgaus_W;
@@ -89,7 +90,7 @@ typedef struct
 
 /* Parameter related types */
 
-typedef struct
+typedef struct SEPARATION_ALIGN
 {
     real r_min, r_max, r_step_size;
     real nu_min, nu_max, nu_step_size;
@@ -151,7 +152,7 @@ typedef struct
 #define EMPTY_FINAL_STREAM_INTEGRALS { 0.0, NULL }
 
 
-typedef struct
+typedef struct SEPARATION_ALIGN
 {
     real parameters_version;
     real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
