@@ -18,8 +18,6 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <OpenCL/cl.h>
-#include <OpenCL/cl_ext.h>
 #include "milkyway_util.h"
 #include "show_cl_types.h"
 
