@@ -46,13 +46,45 @@
   #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
   #define VECTOR(x, y, z) { (x), (y), (z), 0.0 }
 
-  #define L(v) ((v)[0])
-  #define B(v) ((v)[1])
-  #define R(v) ((v)[2])
+  #ifdef __APPLE__
+    /* The host side implementation of cl_double4 seems on OS X to be
+     * just an array of cl_double. This seems to not be true on ATI's,
+     * using a more complicated union of different structs, which is
+     * actually sort of nicer */
+    #define L(v) ((v)[0])
+    #define B(v) ((v)[1])
+    #define R(v) ((v)[2])
 
-  #define X(v) ((v)[0])
-  #define Y(v) ((v)[1])
-  #define Z(v) ((v)[2])
+    #define X(v) ((v)[0])
+    #define Y(v) ((v)[1])
+    #define Z(v) ((v)[2])
+
+    /* clear vector. The 4th component can be ignored for everything else. */
+    #define CLRV(v)                             \
+    {                                           \
+        (v)[0] = 0.0;                           \
+        (v)[1] = 0.0;                           \
+        (v)[2] = 0.0;                           \
+        (v)[2] = 0.0;                           \
+    }
+
+  #else
+    #define L(v) ((v).x)
+    #define B(v) ((v).y)
+    #define R(v) ((v).z)
+
+    #define X(v) ((v).x)
+    #define Y(v) ((v).y)
+    #define Z(v) ((v).z)
+
+    #define CLRV(v)                            \
+    {                                          \
+        (v).x = 0.0;                           \
+        (v).y = 0.0;                           \
+        (v).z = 0.0;                           \
+        (v).w = 0.0;                           \
+    }
+  #endif /* __APPLE__ */
 
 #endif /* __OPENCL_VERSION__ */
 
@@ -63,16 +95,6 @@ typedef real4 matrix[NDIM];
 
 #define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
 
-/* clear vector. The 4th component can be ignored for everything else.
-
- */
-#define CLRV(v)                                 \
-    {                                           \
-        (v)[0] = 0.0;                           \
-        (v)[1] = 0.0;                           \
-        (v)[2] = 0.0;                           \
-        (v)[2] = 0.0;                           \
-    }
 
 #endif /* _MILKYWAY_VECTORS_CL_H_ */
 

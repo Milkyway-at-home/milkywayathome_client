@@ -21,6 +21,18 @@ typedef real vector[NDIM];
 typedef real matrix[NDIM][NDIM];
 typedef real* vectorptr;
 
+/*
+typedef real _mwvector __attribute__((vector_size(sizeof(real) * 4)));
+
+typedef union
+{
+    real __attribute__ ((aligned(sizeof(real) * 4))) s[4];
+    struct { real x, y, z, w; };
+    _mwvector v4;
+} mwvector;
+*/
+
+
 #define VECTOR(x, y, z) { (x), (y), (z) }
 
 /* Note: vectorptr is NOT the same as vector*.  By using real* as
