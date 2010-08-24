@@ -93,12 +93,6 @@
         Z(v) = Z(u) / (s);                  \
     }
 
-/* DOT Vector Product */
-#define DOTVP(s,v,u)                                    \
-    {                                                   \
-        (s) = X(v) * X(u) + Y(v) * Y(u) + Z(v) * Z(u);  \
-    }
-
 /* DOT Vector Product with itself */
 #define SQRV(s,v)                                   \
     {                                               \
@@ -250,16 +244,6 @@
                 (p)[_i][_j] = (q)[_i][_j] / (s);    \
     }
 
-/* MULtiply Matrix by Vector */
-#define MULMV(v,p,u)                                \
-    {                                               \
-        size_t _i, _j;                              \
-        for (_i = 0; _i < NDIM; ++_i) {             \
-            (v)[_i] = 0.0;                          \
-            for (_j = 0; _j < NDIM; ++_j)           \
-                (v)[_i] += (p)[_i][_j] * (u)[_j];   \
-        }                                           \
-    }
 
 /* OUTer Vector Product */
 #define OUTVP(p,v,u)                                \
@@ -305,6 +289,14 @@
             for (_j = 0; _j < NDIM; ++_j)       \
                 (p)[_i][_j] = (s);              \
     }
+
+/* MULtiply Matrix by Vector */
+#define MULMV(v, p, u)                          \
+    {                                           \
+        size_t _i;                              \
+        for (_i = 0; _i < NDIM; ++_i)           \
+            DOTVP((v)[_i], (p)[_i], (u));       \
+   }
 
 #endif /* _MILKYWAY_VECTORS_OPS_H_ */
 

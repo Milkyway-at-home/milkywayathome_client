@@ -61,6 +61,11 @@ typedef union
         (v)[2] = 0.0;                           \
     }
 
+/* DOT Vector Product */
+#define DOTVP(s,v,u)                                    \
+    {                                                   \
+        (s) = X(v) * X(u) + Y(v) * Y(u) + Z(v) * Z(u);  \
+    }
 
 
 #endif /* _MILKYWAY_VECTORS_CPU_H_ */

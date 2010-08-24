@@ -46,14 +46,31 @@ static void lbr2xyz(const real* lbr, vector xyz)
     Y(xyz) = zp * lsin;
 }
 
+inline static void stream_a(vector a, real* parameters)
+{
+    X(a) = mw_sin(parameters[2]) * mw_cos(parameters[3]);
+    Y(a) = mw_sin(parameters[2]) * mw_sin(parameters[3]);
+    Z(a) = mw_cos(parameters[2]);
+}
+
+inline static void stream_c(vector c, int wedge, real mu, real r)
+{
+    LB lb;
+    vector lbr;
+
+    lb = gc2lb(wedge, mu, 0.0);
+
+    L(lbr) = LB_L(lb);
+    B(lbr) = LB_B(lb);
+    R(lbr) = r;
+    lbr2xyz(lbr, c);
+}
+
 STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
                                  const BACKGROUND_PARAMETERS* bgp,
                                  const STREAMS* streams)
 {
     unsigned int i;
-    LB lb;
-    vector lbr;
-
     STREAM_CONSTANTS* sc = mallocSafe(sizeof(STREAM_CONSTANTS) * streams->number_streams);
 
     ap->alpha = bgp->parameters[0];
@@ -78,6 +95,13 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
         fprintf(stderr, "Error: aux_bg_profile invalid");
     }
 
+    if (ap->sgr_coordinates)
+    {
+        fprintf(stderr, "gc2sgr probably broken right now, so refusing to run\n");
+        mw_finish(EXIT_FAILURE);
+    }
+
+
     ap->coeff = 1.0 / (stdev * SQRT_2PI);
     ap->alpha_delta3 = 3.0 - ap->alpha + ap->delta;
 
@@ -87,26 +111,11 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
         sc[i].large_sigma = (stream_sigma > SIGMA_LIMIT || stream_sigma < -SIGMA_LIMIT);
         sc[i].sigma_sq2 = 2.0 * sqr(stream_sigma);
 
-        if (ap->sgr_coordinates)
-        {
-            fprintf(stderr, "gc2sgr probably broken right now, so refusing to run\n");
-            mw_finish(EXIT_FAILURE);
-        }
-
-        lb = gc2lb(ap->wedge, streams->parameters[i].stream_parameters[0], 0.0);
-
-        L(lbr) = LB_L(lb);
-        B(lbr) = LB_B(lb);
-        R(lbr) = streams->parameters[i].stream_parameters[1];
-        lbr2xyz(lbr, sc[i].c);
-
-        X(sc[i].a) =   mw_sin(streams->parameters[i].stream_parameters[2])
-                     * mw_cos(streams->parameters[i].stream_parameters[3]);
-
-        Y(sc[i].a) =   mw_sin(streams->parameters[i].stream_parameters[2])
-                     * mw_sin(streams->parameters[i].stream_parameters[3]);
-
-        Z(sc[i].a) = mw_cos(streams->parameters[i].stream_parameters[2]);
+        stream_a(sc[i].a, streams->parameters[i].stream_parameters);
+        stream_c(sc[i].c,
+                 ap->wedge,
+                 streams->parameters[i].stream_parameters[0],
+                 streams->parameters[i].stream_parameters[1]);
     }
 
     return sc;

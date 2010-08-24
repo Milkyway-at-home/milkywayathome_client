@@ -68,45 +68,33 @@ inline LB gc2lb(const int wedge, const real mu, const real nu)
     /* Use SLALIB to do the actual conversion */
     vector v2;
 
-    {
-        unsigned int i, j;
-        _MW_STATIC const matrix rmat =
-            {
-                VECTOR( -0.054875539726, -0.873437108010, -0.483834985808 ),
-                VECTOR(  0.494109453312, -0.444829589425,  0.746982251810 ),
-                VECTOR( -0.867666135858, -0.198076386122,  0.455983795705 )
-            };
-
-        /* Spherical to Cartesian */
-        real sinra, cosra;
-        mw_sincos(ra, &sinra, &cosra);
-
-        const real cosdec = mw_cos(dec);
-        const vector v1 = VECTOR( cosra * cosdec,
-                                  sinra * cosdec,
-                                  z1         /* mw_sin(asin(z1)) == z1 */
-                                );
-
-        /* Equatorial to Galactic */
-
-        /* Matrix rmat * vector v1 -> vector vb */
-        for ( i = 0; i < 3; ++i )
+    _MW_STATIC const matrix rmat =
         {
-            v2[i] = 0.0;
-            for ( j = 0; j < 3; ++j )
-            {
-                v2[i] += rmat[i][j] * v1[j];
-            }
-        }
-    }
+            VECTOR( -0.054875539726, -0.873437108010, -0.483834985808 ),
+            VECTOR(  0.494109453312, -0.444829589425,  0.746982251810 ),
+            VECTOR( -0.867666135858, -0.198076386122,  0.455983795705 )
+        };
+
+    /* Spherical to Cartesian */
+    real sinra, cosra;
+    mw_sincos(ra, &sinra, &cosra);
+
+    const real cosdec = mw_cos(dec);
+    const vector v1 = VECTOR( cosra * cosdec,
+                              sinra * cosdec,
+                              z1         /* mw_sin(asin(z1)) == z1 */
+                            );
+
+    /* Equatorial to Galactic */
+
+    /* Matrix rmat * vector v1 -> vector vb */
+    MULMV(v2, rmat, v1);
 
     /* Cartesian to spherical */
-    {
-        real r = mw_hypot(X(v2), Y(v2));
+    real r = mw_hypot(X(v2), Y(v2));
 
-        LB_L(lb) = ( r != 0.0 ) ? mw_atan2( Y(v2), X(v2) ) : 0.0;
-        LB_B(lb) = ( Z(v2) != 0.0 ) ? mw_atan2( Z(v2), r ) : 0.0;
-    }
+    LB_L(lb) = ( r != 0.0 ) ? mw_atan2( Y(v2), X(v2) ) : 0.0;
+    LB_B(lb) = ( Z(v2) != 0.0 ) ? mw_atan2( Z(v2), r ) : 0.0;
 
     LB_L(lb) = r2d(LB_L(lb));
     LB_B(lb) = r2d(LB_B(lb));

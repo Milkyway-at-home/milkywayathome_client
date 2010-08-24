@@ -28,6 +28,12 @@
   #define ZERO_VECTOR (0.0, 0.0, 0.0, 0.0)
   #define VECTOR(x, y, z) ((vector) ( (x), (y), (z), 0.0 ))
 
+/* DOT Vector Product */
+#define DOTVP(s,v,u)                                    \
+    {                                                   \
+        (s) = dot(v, u);                                \
+    }
+
   #define L(v) ((v).x)
   #define B(v) ((v).y)
   #define R(v) ((v).z)
@@ -35,6 +41,8 @@
   #define X(v) ((v).x)
   #define Y(v) ((v).y)
   #define Z(v) ((v).z)
+
+
 
 #else  /* Host */
   #if DOUBLEPREC
@@ -45,6 +53,12 @@
 
   #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
   #define VECTOR(x, y, z) { (x), (y), (z), 0.0 }
+
+/* DOT Vector Product */
+#define DOTVP(s,v,u)                                    \
+    {                                                   \
+        (s) = X(v) * X(u) + Y(v) * Y(u) + Z(v) * Z(u);  \
+    }
 
   #ifdef __APPLE__
     /* The host side implementation of cl_double4 seems on OS X to be

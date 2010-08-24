@@ -60,6 +60,15 @@ inline real probabilities_convolve(__MW_CONSTANT const STREAM_CONSTANTS* sc,
     return st_prob;
 }
 
+__attribute__ ((always_inline, hot))
+inline void lbr2xyz_2(vector xyz, real r_point, real bsin, real bcos, real lsin, real lcos)
+{
+    real zp = r_point * bcos;
+    X(xyz) = zp * lcos - sun_r0;
+    Y(xyz) = zp * lsin;
+    Z(xyz) = r_point * bsin;
+}
+
 /* FIXME: I don't know what these do enough to name it properly */
 __attribute__ ((always_inline, hot))
 inline real sub_bg_probability1(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
@@ -71,7 +80,7 @@ inline real sub_bg_probability1(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
 {
     unsigned int i;
     real h_prob, aux_prob;
-    real rg, rs, zp;
+    real rg, rs;
     real lsin, lcos;
     real bsin, bcos;
     real bg_prob = 0.0;
@@ -81,10 +90,7 @@ inline real sub_bg_probability1(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < convolve; ++i)
     {
-        Z(xyz[i]) = r_pts[i].r_point * bsin;
-        zp = r_pts[i].r_point * bcos;
-        X(xyz[i]) = zp * lcos - sun_r0;
-        Y(xyz[i]) = zp * lsin;
+        lbr2xyz_2(xyz[i], r_pts[i].r_point, bsin, bcos, lsin, lcos);
 
         rg = mw_sqrt(sqr(X(xyz[i])) + sqr(Y(xyz[i])) + sqr(Z(xyz[i])) / sqr(ap->q));
         rs = rg + ap->r0;
@@ -114,7 +120,7 @@ inline real sub_bg_probability2(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
                                 const unsigned int convolve)
 {
     unsigned int i;
-    real rg, zp;
+    real rg;
     real lsin, lcos;
     real bsin, bcos;
     real bg_prob = 0.0;
@@ -124,10 +130,7 @@ inline real sub_bg_probability2(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < convolve; ++i)
     {
-        Z(xyz[i]) = r_pts[i].r_point * bsin;
-        zp = r_pts[i].r_point * bcos;
-        X(xyz[i]) = zp * lcos - sun_r0;
-        Y(xyz[i]) = zp * lsin;
+        lbr2xyz_2(xyz[i], r_pts[i].r_point, bsin, bcos, lsin, lcos);
 
         rg = mw_sqrt(sqr(X(xyz[i])) + sqr(Y(xyz[i])) + sqr(Z(xyz[i])) / sqr(ap->q));
 
