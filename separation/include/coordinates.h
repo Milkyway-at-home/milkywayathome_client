@@ -25,6 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_constants.h"
 #include "milkyway_math.h"
 #include "milkyway_cl.h"
+#include "milkyway_extra.h"
 
 //vickej2 for sgr stripes, the great circles are defined thus:
 //sgr stripes run parallel to sgr longitude lines, centered on lamda=2.5*wedge number
@@ -69,12 +70,11 @@ inline LB gc2lb(const int wedge, const real mu, const real nu)
 
     {
         unsigned int i, j;
-
-        static const real rmat[3][3] =
+        _MW_STATIC const matrix rmat =
             {
-                { -0.054875539726, -0.873437108010, -0.483834985808 },
-                {  0.494109453312, -0.444829589425,  0.746982251810 },
-                { -0.867666135858, -0.198076386122,  0.455983795705 }
+                VECTOR( -0.054875539726, -0.873437108010, -0.483834985808 ),
+                VECTOR(  0.494109453312, -0.444829589425,  0.746982251810 ),
+                VECTOR( -0.867666135858, -0.198076386122,  0.455983795705 )
             };
 
         /* Spherical to Cartesian */

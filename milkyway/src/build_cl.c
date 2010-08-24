@@ -151,8 +151,19 @@ static cl_int getDevInfo(CLInfo* ci, cl_device_type type)
     cl_int err;
     cl_uint maxComputeUnits, clockFreq;
     cl_ulong memSize;
+    cl_platform_id platform;
+    cl_uint n_platform;
 
-    err = clGetDeviceIDs(NULL, type, 1, &ci->dev, &ci->devCount);
+    err = clGetPlatformIDs(1, &platform, &n_platform);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error getting CL platform IDs: %s\n", showCLInt(err));
+        return err;
+    }
+
+    warn("Found %u platforms\n", n_platform);
+
+    err = clGetDeviceIDs(platform, type, 1, &ci->dev, &ci->devCount);
     if (err != CL_SUCCESS)
     {
         warn("Error getting device: %s\n", showCLInt(err));

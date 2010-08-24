@@ -33,6 +33,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_cl.h"
 #include "milkyway_math.h"
+#include "milkyway_extra.h"
 
 #include "integrals_likelihood.h"
 #include "coordinates.h"
@@ -40,15 +41,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 __attribute__ ((always_inline))
-inline static BG_PROB nu_sum(__private const ASTRONOMY_PARAMETERS* ap,
-                             __constant const STREAM_CONSTANTS* sc,
-                             __private const INTEGRAL_AREA* ia,
-                             const real irv,
-                             const real reff_xr_rp3,
-                             __local const R_POINTS* r_pts,
-                             __constant const NU_CONSTANTS* nu_consts,
-                             __local ST_PROBS* probs,
-                             __local vector* xyz)
+inline _MW_STATIC BG_PROB nu_sum(__private const ASTRONOMY_PARAMETERS* ap,
+                                 __constant const STREAM_CONSTANTS* sc,
+                                 __private const INTEGRAL_AREA* ia,
+                                 const real irv,
+                                 const real reff_xr_rp3,
+                                 __local const R_POINTS* r_pts,
+                                 __constant const NU_CONSTANTS* nu_consts,
+                                 __local ST_PROBS* probs,
+                                 __local vector* xyz)
 {
     unsigned int nu_step;
     BG_PROB mu_result;
@@ -80,15 +81,15 @@ inline static BG_PROB nu_sum(__private const ASTRONOMY_PARAMETERS* ap,
 }
 
 __attribute__ ((always_inline))
-inline static BG_PROB r_sum(__private const ASTRONOMY_PARAMETERS* ap,
-                            __private const INTEGRAL_AREA* ia,
-                            __constant const STREAM_CONSTANTS* sc,
-                            __constant const STREAM_GAUSS* sg,
-                            __constant const NU_CONSTANTS* nu_consts,
-                            __local R_POINTS* r_pts,
-                            __local ST_PROBS* probs,
-                            __local vector* xyz,
-                            const unsigned int r_step)
+inline _MW_STATIC BG_PROB r_sum(__private const ASTRONOMY_PARAMETERS* ap,
+                                __private const INTEGRAL_AREA* ia,
+                                __constant const STREAM_CONSTANTS* sc,
+                                __constant const STREAM_GAUSS* sg,
+                                __constant const NU_CONSTANTS* nu_consts,
+                                __local R_POINTS* r_pts,
+                                __local ST_PROBS* probs,
+                                __local vector* xyz,
+                                const unsigned int r_step)
 {
     BG_PROB nu_result;
     real r, next_r, rPrime;

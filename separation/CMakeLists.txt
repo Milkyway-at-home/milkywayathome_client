@@ -47,8 +47,8 @@ if(WIN32)
   set(OS_SPECIFIC_LIBS msvcrt)
 endif()
 
-add_definitions("-DSEPARATION_OPENCL=1")
-add_definitions("-DDOUBLEPREC=0")
+add_definitions("-DSEPARATION_OPENCL=0")
+add_definitions("-DDOUBLEPREC=1")
 
 
 if(CPU_SEPARATION)
