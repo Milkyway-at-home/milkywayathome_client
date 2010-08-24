@@ -36,7 +36,6 @@ cl_int printCLExtensions(cl_device_id dev)
     char exts[1024];
 
     err = clGetDeviceInfo(dev, CL_DEVICE_EXTENSIONS, sizeof(exts), exts, NULL);
-
     if (err != CL_SUCCESS)
     {
         warn("Failed to print CL extensions for device: %s", exts);
@@ -46,6 +45,24 @@ cl_int printCLExtensions(cl_device_id dev)
         printf("Extensions: %s\n", exts);
 
     return CL_SUCCESS;
+}
+
+cl_int printDeviceInfo(cl_device_id dev, cl_device_type type)
+{
+    cl_uint maxComputeUnits, clockFreq;
+    cl_ulong memSize;
+    cl_int err = CL_SUCCESS;
+
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_COMPUTE_UNITS,   sizeof(cl_uint),  &maxComputeUnits, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(cl_uint),  &clockFreq, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_GLOBAL_MEM_SIZE,     sizeof(cl_ulong), &memSize, NULL);
+
+    printf("arst device %s: %u %u %lu\n",
+           showCLDeviceType(type), maxComputeUnits, clockFreq, (unsigned long) memSize);
+
+    if (err)
+        warn("Error getting device information: %s\n", showCLInt(err));
+    return err;
 }
 
 cl_int destroyCLInfo(CLInfo* ci)
@@ -82,7 +99,7 @@ void milkywayBuildCB(cl_program prog, void* user_data)
     if (infoErr != CL_SUCCESS)
         warn("Get build status failed: %s\n", showCLInt(infoErr));
     else
-        printf("Build status: %s\n", showCLBuildStatus(stat));
+        warn("Build status: %s\n", showCLBuildStatus(stat));
 
     clGetProgramBuildInfo(ci->prog,
                           ci->dev,
@@ -102,7 +119,7 @@ void milkywayBuildCB(cl_program prog, void* user_data)
                               bigBuf,
                               NULL);
 
-        printf("Large build message: \n%s\n", bigBuf);
+        warn("Large build message: \n%s\n", bigBuf);
         free(bigBuf);
     }
 }
@@ -149,8 +166,6 @@ static cl_int createCtxQueue(CLInfo* ci)
 static cl_int getDevInfo(CLInfo* ci, cl_device_type type)
 {
     cl_int err;
-    cl_uint maxComputeUnits, clockFreq;
-    cl_ulong memSize;
     cl_platform_id platform;
     cl_uint n_platform;
 
@@ -178,14 +193,19 @@ static cl_int getDevInfo(CLInfo* ci, cl_device_type type)
 
     ci->devType = type;
 
-    /* Print some device information */
-    clGetDeviceInfo(ci->dev, CL_DEVICE_MAX_COMPUTE_UNITS,   sizeof(cl_uint),  &maxComputeUnits, NULL);
-    clGetDeviceInfo(ci->dev, CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(cl_uint),  &clockFreq, NULL);
-    clGetDeviceInfo(ci->dev, CL_DEVICE_GLOBAL_MEM_SIZE,     sizeof(cl_ulong), &memSize, NULL);
+    err = printDeviceInfo(ci->dev, type);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error getting printing device information: %s\n", showCLInt(err));
+        return err;
+    }
 
-    printf("arst device %s: %u %u %lu\n",
-           showCLDeviceType(type), maxComputeUnits, clockFreq, (unsigned long) memSize);
-    printCLExtensions(ci->dev);
+    err = printCLExtensions(ci->dev);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error getting printing device extensions: %s\n", showCLInt(err));
+        return err;
+    }
 
     return CL_SUCCESS;
 }

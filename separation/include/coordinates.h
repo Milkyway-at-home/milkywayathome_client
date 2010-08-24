@@ -23,7 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _COORDINATES_H_
 
 #include "separation_constants.h"
-#include "milkyway_math.h"
+#include "separation_types.h"
 #include "milkyway_cl.h"
 #include "milkyway_extra.h"
 

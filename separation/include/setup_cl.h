@@ -42,7 +42,7 @@ typedef struct
     cl_mem nuConsts;  /* nu step constants */
 } SeparationCLMem;
 
-#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL }
+#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL }
 
 
 cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,

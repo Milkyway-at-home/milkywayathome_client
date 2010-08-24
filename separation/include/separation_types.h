@@ -28,7 +28,6 @@ extern "C" {
 #include "config.h"
 #include "milkyway_math.h"
 
-
 /* Get the xth component of the nth item in STAR_POINTS */
 #define VN(sp, n) (((sp)->stars)[VECTOR_SIZE * (n)])
 #define XN(sp, n) VN(sp, n)

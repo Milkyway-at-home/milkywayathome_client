@@ -86,18 +86,23 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
     static const char* extraDefs = DOUBLEPREC_DEF_STRING
                                    "-cl-strict-aliasing "
                                    "-cl-finite-math-only "
-                                   "-I/Users/matt/src/milkywayathome_client/separation/cpu "
-                                   "-I/Users/matt/src/milkywayathome_client/separation/include "
-                                   "-I/Users/matt/src/milkywayathome_client/milkyway/include ";
+                                   "-I../src "
+                                   "-I../include "
+                                   "-I../../milkyway/include ";
 
-    kernelSrc = mwReadFile("/Users/matt/src/milkywayathome_client/separation/kernels/integrals.cl");
+    kernelSrc = mwReadFile("../kernels/integrals.cl");
     if (!kernelSrc)
     {
         warn("Failed to read kernel file\n");
         return -1;
     }
 
-    rPointsSrc = mwReadFile("/Users/matt/src/milkywayathome_client/separation/cpu/r_points.c");
+    rPointsSrc = mwReadFile("../src/r_points.c");
+    if (!rPointsSrc)
+    {
+        warn("Failed to read r_points file\n");
+        return -1;
+    }
 
     char* allSrc[] = { rPointsSrc, kernelSrc };
 

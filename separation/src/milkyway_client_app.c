@@ -138,7 +138,6 @@ static real* parse_parameters(int argc, const char** argv, int* paramnOut)
         }
 
         parameters = (real*) mallocSafe(sizeof(real) * paramn);
-
         errno = 0;
         for (i = 0; i < paramn; ++i)
         {
@@ -178,7 +177,6 @@ static void worker(int argc, const char** argv)
     STREAMS streams = EMPTY_STREAMS;
 
     parameters = parse_parameters(argc, argv, &number_parameters);
-
     if (!parameters)
     {
         fprintf(stderr, "Could not parse parameters from the command line\n");
@@ -239,13 +237,13 @@ static int separation_init(int argc, char** argv)
 {
     int rc;
 
-    #if BOINC_DEBUG
+  #if BOINC_DEBUG
     rc = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
                                 | BOINC_DIAG_HEAPCHECKENABLED
                                 | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
-    #else
+  #else
     rc = boinc_init();
-    #endif /* BOINC_DEBUG */
+  #endif /* BOINC_DEBUG */
 
 
   #if BOINC_APP_GRAPHICS
