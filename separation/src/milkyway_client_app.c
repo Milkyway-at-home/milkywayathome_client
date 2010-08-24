@@ -286,27 +286,6 @@ int main(int argc, char** argv)
     if (rc)
         exit(rc);
 
-
-
-#if COMPUTE_ON_GPU
-    //Choose the GPU to execute on, first look
-    //at the command line argument for a
-    //--device 0..n string, then enumerate all CUDA
-    //devices on the system and choose the one
-    //with double precision support and the most
-    //GFLOPS
-    //APP_INIT_DATA init_data;
-    //boinc_get_init_data_p(&init_data);
-    char* project_prefs = NULL;  //init_data.project_preferences;
-    if (choose_gpu(argc, argv) == -1)
-    {
-        fprintf(stderr, "Unable to find a capable GPU\n");
-        mw_finish(EXIT_FAILURE);
-    }
-    MW_DEBUGMSG("got here\n");
-    parse_prefs(project_prefs);
-#endif /* COMPUTE_ON_GPU */
-
     worker(argc, (const char**) argv);
 
     return rc;

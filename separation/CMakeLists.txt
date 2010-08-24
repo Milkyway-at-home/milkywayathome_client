@@ -55,10 +55,6 @@ if(CPU_SEPARATION)
   add_subdirectory(cpu)
 endif()
 
-if(CUDA_SEPARATION)
-  add_subdirectory(cuda)
-endif()
-
 add_subdirectory(src)
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 

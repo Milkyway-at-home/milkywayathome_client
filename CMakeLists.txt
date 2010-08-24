@@ -99,7 +99,6 @@ endif()
 
 find_package(Popt REQUIRED)
 find_package(BOINC)
-find_package(CUDA)
 find_package(OpenCL)
 
 #FIXME: Somehow test for and require the Apple gcc. The macports gccs
@@ -140,10 +139,6 @@ if(BOINC_FOUND AND POPT_FOUND)
   include_directories(${BOINC_INCLUDE_DIR})
   include_directories(${POPT_INCLUDE_DIR})
 
-  if(CUDA_FOUND)
-    set(CUDA_IS_BUILDABLE ON)
-  endif()
-
   if(OPENCL_FOUND)
     set(OPENCL_IS_BUILDABLE ON)
     include_directories(${OPENCL_INCLUDE_DIRS})
@@ -158,9 +153,6 @@ endif()
 #You can turn things off if you really want to
 option(CPU_SEPARATION
        "Build the cpu separation" ${SEPARATION_IS_BUILDABLE})
-
-option(CUDA_SEPARATION
-        "Build the CUDA separation" OFF)  # ${CUDA_IS_BUILDABLE})
 
 option(OPENCL_SEPARATION
         "Build the OpenCL separation" OFF)
@@ -202,7 +194,6 @@ message("   Project src dir:   ${CMAKE_SOURCE_DIR}")
 message("   Project bin dir:   ${CMAKE_BINARY_DIR}")
 message("   ----")
 message("   BOINC Library:     ${BOINC_LIBRARY}")
-message("   CUDA  Libraries    ${CUDA_LIBRARIES}")
 message("   OpenCL Libraries   ${OPENCL_LIBRARIES}")
 message("   POPT Library       ${POPT_LIBRARY}")
 message("   ----")
@@ -213,13 +204,12 @@ message("   C Compiler:        ${CMAKE_C_COMPILER}")
 message("   ----")
 message("   Double precision:  ${DOUBLE_PRECISION}")
 message("   OpenCL separation: ${OPENCL_SEPARATION}")
-message("   CUDA separation:   ${CUDA_SEPARATION}")
 message("   CPU separaton:     ${CPU_SEPARATION}")
 message("   N-Body:            ${NBODY}")
 message("   BOINC graphics:    ${BOINC_APP_GRAPHICS}")
 message("---------------------------------------------")
 
-if(NOT CPU_SEPARATION AND NOT CUDA_SEPARATION AND NOT OPENCL_SEPARATION AND NOT NBODY)
+if(NOT CPU_SEPARATION AND NOT OPENCL_SEPARATION AND NOT NBODY)
   message(FATAL_ERROR "Nothing will be built!")
 endif()
 
