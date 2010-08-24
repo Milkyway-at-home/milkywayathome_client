@@ -21,6 +21,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(milkyway_separation)
 
+include(StaticBOINC)
+
 enable_testing()
 
 set(milkyway_separation_VERSION_MAJOR 0)
@@ -47,13 +49,6 @@ if(WIN32)
   set(OS_SPECIFIC_LIBS msvcrt)
 endif()
 
-add_definitions("-DSEPARATION_OPENCL=0")
-add_definitions("-DDOUBLEPREC=1")
-
-
-add_subdirectory(tests EXCLUDE_FROM_ALL)
-
-
 set(lib_source_file_list src/evaluation_state.c
                          src/io_util.c
                          src/gauss_legendre.c
@@ -69,25 +64,17 @@ set(lib_source_file_list src/evaluation_state.c
                          src/run_cl.c
                          src/separation_cl_defs.c)
 
-add_library(separation_cpu STATIC ${lib_source_file_list})
+add_library(separation STATIC ${lib_source_file_list})
 
 include_directories(${OPENCL_INCLUDE_DIRS})
 
+set(separation_bin_name milkyway_separation)
 
-#target_link_libraries(separation_cpu ${BOINC_LIBRARIES} ${OS_SPECIFIC_LIBS} m ${OPENCL_LIBRARIES})
+set(exe_link_libs ${POPT_LIBRARY})
 
-
-# install(TARGETS separation_cpu DESTINATION lib
-#        PERMISSIONS           #Fix occasional issuse with people who change their umask
-#        OWNER_READ OWNER_WRITE OWNER_EXECUTE
-#        GROUP_READ GROUP_EXECUTE
-#        WORLD_READ WORLD_EXECUTE)
-
-# install(FILES ${PROJECT_INCLUDE_DIR}/separation.h DESTINATION include/milkyway)
-# install(FILES ${PROJECT_INCLUDE_DIR}/config.h DESTINATION include/milkyway)
-
-
-set(client_bin_name milkyway_separation)
+if(BOINC_APPLICATION)
+  list(APPEND exe_link_libs ${BOINC_LIBRARIES})
+endif()
 
 if(NEED_POPT_DEPS)
   # Popt dependencies for static linking For some reason, on OS X /
@@ -98,60 +85,28 @@ endif()
 
 
 
-add_executable(${client_bin_name} src/milkyway_client_app.c)
-set_target_properties(${client_bin_name}
-                      PROPERTIES
-                       COMPILE_FLAGS "-DCOMPUTE_ON_CPU=1 -DUSE_CUDA=0 -D USE_OCL=0")
-  target_link_libraries(${client_bin_name} ${POPT_LIBRARY} ${BOINC_LIBRARIES} separation_cpu milkyway
-                           ${exe_link_libs})
-
-  install(TARGETS ${client_bin_name} DESTINATION bin
-          PERMISSIONS
-            OWNER_READ OWNER_WRITE OWNER_EXECUTE
-            GROUP_READ GROUP_EXECUTE
-            WORLD_READ WORLD_EXECUTE)
-
-
-  if(NOT APPLE)
-    #CHECKME: What about Windows?
-    set(separation_static_link_flags "-static -static-libgcc -static-libstdc++")
-
-    if(UNIX)
-      #We need to do this to statically link pthreads. Otherwise really
-      #bizarre things happen.
-      set(separation_static_link_flags "-pthread ${nbody_static_link_flags}")
-    endif()
-
-    set_target_properties(${client_bin_name}
-      PROPERTIES
-      LINKER_LANGUAGE CXX
-      LINK_SEARCH_END_STATIC ON
-      LINK_FLAGS ${separation_static_link_flags})
-  else()
-    set_target_properties(${client_bin_name}
-      PROPERTIES
-      LINKER_LANGUAGE CXX
-      LINK_SEARCH_END_STATIC ON)
-  endif()
-
-
-
+add_executable(${separation_bin_name} src/milkyway_client_app.c)
+target_link_libraries(${separation_bin_name} separation milkyway ${exe_link_libs} ${OS_SPECIFIC_LIBS})
+if(BOINC_RELEASE)
+  #Static linking tends to interfere with debugging with valgrind/gdb
+  #in annoying ways
+  correct_static_link(${separation_bin_name})
+endif()
 
 if(OPENCL_SEPARATION)
-  add_executable(${client_bin_name}_ocl milkyway_client_app.c)
-  target_link_libraries(${client_bin_name}_ocl ${POPT_LIBRARY}
+  add_executable(${separation_bin_name}_ocl milkyway_client_app.c)
+  target_link_libraries(${separation_bin_name}_ocl ${POPT_LIBRARY}
                                                ${BOINC_LIBRARIES}
                                                milkyway_separation_ocl
                                                milkyway_separation_cpu)
-  set_target_properties(${client_bin_name}_ocl
+  set_target_properties(${separation_bin_name}_ocl
                         PROPERTIES
+                        LINK_FLAGS
                         COMPILE_FLAGS "-DCOMPUTE_ON_CPU=0 -DUSE_CUDA=0 -D USE_OCL=1")
 
-  install(TARGETS ${client_bin_name}_ocl DESTINATION bin
-          PERMISSIONS
-            OWNER_READ OWNER_WRITE OWNER_EXECUTE
-            GROUP_READ GROUP_EXECUTE
-            WORLD_READ WORLD_EXECUTE)
 endif()
+
+
+add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 

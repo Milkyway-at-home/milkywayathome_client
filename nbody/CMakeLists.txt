@@ -329,35 +329,8 @@ if(NEED_POPT_DEPS)
                             ${LIBINTL_LIBRARY})
 endif()
 
-if(NOT APPLE)
-  #CHECKME: What about Windows?
-  set(nbody_static_link_flags "-static -static-libgcc -static-libstdc++")
-
-  if(UNIX)
-    #We need to do this to statically link pthreads. Otherwise really
-    #bizarre things happen.
-    set(nbody_static_link_flags "-pthread ${nbody_static_link_flags}")
-  endif()
-
-  set_target_properties(milkyway_nbody
-    PROPERTIES
-    LINKER_LANGUAGE CXX
-    LINK_SEARCH_END_STATIC ON
-    LINK_FLAGS ${nbody_static_link_flags})
-else()
-  set_target_properties(milkyway_nbody
-    PROPERTIES
-    LINKER_LANGUAGE CXX
-    LINK_SEARCH_END_STATIC ON)
-
-endif()
-
 target_link_libraries(milkyway_nbody ${exe_link_libs} ${BOINC_LIBRARIES} milkyway)
-
-if(WIN32)
-  #For some reason I can't wrestle out the C++ on Windows.
-  set_target_properties(milkyway_nbody PROPERTIES LINKER_LANGUAGE CXX)
-endif()
+correct_static_link(milkyway_nbody)
 
 
 #add_subdirectory(tests EXCLUDE_FROM_ALL)

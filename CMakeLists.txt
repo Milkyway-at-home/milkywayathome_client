@@ -45,6 +45,9 @@ option(BOINC_APPLICATION
 option(BOINC_RELEASE
        "Build with all options for making an actual release" ON)
 
+option(DOUBLEPREC
+       "Build with double precision" ON)
+
 
 
 #set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules;${CMAKE_MODULE_PATH}")
