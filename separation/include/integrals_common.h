@@ -50,12 +50,7 @@ inline static void probabilities(__MW_CONSTANT const STREAM_CONSTANTS* sc,
         else
             st_prob = 0.0;
 
-
-        real _tmp = probs[i].st_prob_int;
-        probs[i].st_prob_int += st_prob;
-        probs[i].st_prob_int_c += (st_prob) - ((probs[i].st_prob_int) - _tmp);
-
-        //KAHAN_ADD(probs[i].st_prob_int, st_prob, probs[i].st_prob_int_c);
+        KAHAN_ADD(probs[i].st_prob_int, st_prob, probs[i].st_prob_int_c);
     }
 }
 

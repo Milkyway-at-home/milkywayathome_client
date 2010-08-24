@@ -20,7 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifdef __FAST_RELAXED_MATH__
-  #error "Bad bad bad"
+  #error "Bad bad bad bad"
 #endif /* __FAST_RELAXED_MATH__ */
 
 #if DOUBLEPREC

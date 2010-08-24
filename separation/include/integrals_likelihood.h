@@ -59,14 +59,14 @@ inline real probabilities_convolve(__MW_CONSTANT const STREAM_CONSTANTS* sc,
     return st_prob;
 }
 
-__attribute__ ((always_inline, hot))
-inline void lbr2xyz_2(vector xyz, real r_point, real bsin, real bcos, real lsin, real lcos)
-{
-    real zp = r_point * bcos;
-    X(xyz) = zp * lcos - sun_r0;
-    Y(xyz) = zp * lsin;
-    Z(xyz) = r_point * bsin;
-}
+
+#define lbr2xyz_2(xyz, r_point, bsin, bcos, lsin, lcos) \
+    {                                                   \
+        real zp = r_point * bcos;                       \
+        X(xyz) = zp * lcos - sun_r0;                    \
+        Y(xyz) = zp * lsin;                             \
+        Z(xyz) = r_point * bsin;                        \
+    }
 
 /* FIXME: I don't know what these do enough to name it properly */
 __attribute__ ((always_inline, hot))
@@ -104,7 +104,6 @@ inline real sub_bg_probability1(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
                                            + ap->bg_c );
             h_prob += aux_prob;
         }
-
         bg_prob += h_prob;
     }
 

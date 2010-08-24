@@ -25,7 +25,7 @@
     typedef float4 real4, *real4ptr;
   #endif /* DOUBLEPREC */
 
-  #define ZERO_VECTOR (0.0, 0.0, 0.0, 0.0)
+  #define ZERO_VECTOR ((vector) (0.0, 0.0, 0.0, 0.0))
   #define VECTOR(x, y, z) ((vector) ( (x), (y), (z), 0.0 ))
 
 /* DOT Vector Product */

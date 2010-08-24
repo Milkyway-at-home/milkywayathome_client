@@ -66,8 +66,6 @@ inline LB gc2lb(const int wedge, const real mu, const real nu)
     const real dec = mw_asin(z1);
 
     /* Use SLALIB to do the actual conversion */
-    vector v2;
-
     _MW_STATIC const matrix rmat =
         {
             VECTOR( -0.054875539726, -0.873437108010, -0.483834985808 ),
@@ -88,6 +86,7 @@ inline LB gc2lb(const int wedge, const real mu, const real nu)
     /* Equatorial to Galactic */
 
     /* Matrix rmat * vector v1 -> vector vb */
+    vector v2;
     MULMV(v2, rmat, v1);
 
     /* Cartesian to spherical */
