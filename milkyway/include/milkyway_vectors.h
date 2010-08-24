@@ -25,6 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_VECTORS_H_
 #define _MILKYWAY_VECTORS_H_
 
+
 #include "real.h"
 
 #if NBODY_OPENCL || SEPARATION_OPENCL || defined(__OPENCL_VERSION__)
@@ -34,6 +35,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #include "milkyway_vectors_ops.h"
+
+
+#if 0
+  #if defined(__clang__) || defined(__OPENCL_VERSION__)
+    #include "milkyway_vectors_clang.h"
+  #else /* GCC, MSVC */
+    #include "milkyway_vectors_gcc.h"
+  #endif /* defined(__clang__) || defined(__OPENCL_VERSION__) */
+#endif /* 0 */
 
 #endif /* _MILKYWAY_VECTORS_H_ */
 
