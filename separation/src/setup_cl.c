@@ -88,7 +88,10 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                                    "-cl-finite-math-only "
                                    "-I../src "
                                    "-I../include "
-                                   "-I../../milkyway/include ";
+                                   "-I../../milkyway/include "
+                                   "-I/Users/matt/src/milkywayathome_client/separation/cpu "
+                                    "-I/Users/matt/src/milkywayathome_client/separation/include "
+                                   "-I/Users/matt/src/milkywayathome_client/milkyway/include ";
 
     kernelSrc = mwReadFile("../kernels/integrals.cl");
     if (!kernelSrc)

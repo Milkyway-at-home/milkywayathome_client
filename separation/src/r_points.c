@@ -22,7 +22,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_types.h"
 #include "separation_constants.h"
 #include "milkyway_cl.h"
-#include "milkyway_math.h"
 #include "r_points.h"
 
 /* Literals are assumed to be doubles by default, and the

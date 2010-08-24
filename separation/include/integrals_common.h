@@ -27,7 +27,6 @@ extern "C" {
 
 #include "milkyway_cl.h"
 #include "separation_types.h"
-#include "milkyway_math.h"
 #include "coordinates.h"
 #include "integrals_likelihood.h"
 

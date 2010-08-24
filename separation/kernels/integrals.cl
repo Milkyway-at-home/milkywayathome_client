@@ -30,7 +30,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_types.h"
 //#include "r_points.h"
 
-
 #include "milkyway_cl.h"
 #include "milkyway_math.h"
 #include "milkyway_extra.h"

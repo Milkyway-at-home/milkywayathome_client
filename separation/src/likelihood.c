@@ -21,11 +21,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 
+#include "separation_types.h"
 #include "likelihood.h"
 #include "integrals_likelihood.h"
 #include "r_points.h"
 #include "milkyway_util.h"
-#include "milkyway_math.h"
+
 
 inline static void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
                                             const STREAM_CONSTANTS* sc,

@@ -20,6 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "separation_constants.h"
+#include "config.h"
 #include "gauss_legendre.h"
 #include "milkyway_math.h"
 

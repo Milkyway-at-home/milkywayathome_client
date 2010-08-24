@@ -48,6 +48,13 @@ option(BOINC_RELEASE
 option(DOUBLEPREC
        "Build with double precision" ON)
 
+# Avoid issue I'm too lazy to fix where using the config header, some
+# files were getting single and others double
+if(DOUBLEPREC)
+  add_definitions("-DDOUBLEPREC=1")
+else()
+  add_definitions("-DDOUBLEPREC=0")
+endif()
 
 
 #set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules;${CMAKE_MODULE_PATH}")

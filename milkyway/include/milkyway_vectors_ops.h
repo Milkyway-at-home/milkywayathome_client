@@ -293,9 +293,9 @@
 /* MULtiply Matrix by Vector */
 #define MULMV(v, p, u)                          \
     {                                           \
-        size_t _i;                              \
-        for (_i = 0; _i < NDIM; ++_i)           \
-            DOTVP((v)[_i], (p)[_i], (u));       \
+        DOTVP(X(v), (p)[0], (u));               \
+        DOTVP(Y(v), (p)[1], (u));               \
+        DOTVP(Z(v), (p)[2], (u));               \
    }
 
 #endif /* _MILKYWAY_VECTORS_OPS_H_ */

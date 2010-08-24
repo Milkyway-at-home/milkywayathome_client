@@ -27,7 +27,6 @@ extern "C" {
 
 #include "separation_constants.h"
 #include "separation_types.h"
-#include "milkyway_math.h"
 #include "milkyway_cl.h"
 
 /* Used in innermost loops of integrals and likelihood calculation,
