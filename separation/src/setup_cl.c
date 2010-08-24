@@ -70,6 +70,12 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
   #define DOUBLEPREC_DEF_STRING "-D DOUBLEPREC=0 -cl-single-precision-constant "
 #endif /* DOUBLEPREC */
 
+#if 1
+  #define ROOT "/Users/matt/src/milkywayathome_client/"
+#else
+  #define ROOT "/Users/matt/Desktop/separation_fix/milkywayathome_client/"
+#endif
+
 cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                          const INTEGRAL_AREA* ia,
                          const STREAM_CONSTANTS* sc,
@@ -89,9 +95,9 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                                    "-I../src "
                                    "-I../include "
                                    "-I../../milkyway/include "
-                                   "-I/Users/matt/src/milkywayathome_client/separation/cpu "
-                                    "-I/Users/matt/src/milkywayathome_client/separation/include "
-                                   "-I/Users/matt/src/milkywayathome_client/milkyway/include ";
+                                   "-I" ROOT "separation/src "
+                                   "-I" ROOT "separation/include "
+                                   "-I" ROOT "milkyway/include ";
 
     kernelSrc = mwReadFile("../kernels/integrals.cl");
     if (!kernelSrc)

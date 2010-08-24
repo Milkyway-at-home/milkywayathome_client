@@ -119,9 +119,11 @@ void milkywayBuildCB(cl_program prog, void* user_data)
                               bigBuf,
                               NULL);
 
-        warn("Large build message: \n%s\n", bigBuf);
+        warn("Build log: \n%s\n", bigBuf);
         free(bigBuf);
     }
+    else
+        warn("Build log: \n%s\n", buildLog);
 }
 
 static cl_int milkywayBuildProgram(CLInfo* ci, const char** src, cl_uint srcCount, const char* compileDefs)
