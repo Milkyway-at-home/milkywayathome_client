@@ -144,7 +144,6 @@ if(BOINC_FOUND AND POPT_FOUND)
 
   if(OPENCL_FOUND)
     set(OPENCL_IS_BUILDABLE ON)
-    include_directories(${OPENCL_INCLUDE_DIRS})
   endif()
 endif()
 
@@ -157,7 +156,7 @@ endif()
 option(CPU_SEPARATION
        "Build the cpu separation" ${SEPARATION_IS_BUILDABLE})
 
-option(OPENCL_SEPARATION
+option(SEPARATION_OPENCL
         "Build the OpenCL separation" OFF)
 
 option(NBODY

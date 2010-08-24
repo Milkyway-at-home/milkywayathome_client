@@ -49,6 +49,11 @@ if(WIN32)
   set(OS_SPECIFIC_LIBS msvcrt)
 endif()
 
+set(cl_source_list src/separation_cl_buffers.c
+                   src/setup_cl.c
+                   src/run_cl.c
+                   src/separation_cl_defs.c)
+
 set(lib_source_file_list src/evaluation_state.c
                          src/io_util.c
                          src/gauss_legendre.c
@@ -58,11 +63,11 @@ set(lib_source_file_list src/evaluation_state.c
                          src/integrals.c
                          src/likelihood.c
                          src/calculated_constants.c
-                         src/r_points.c
-                         src/separation_cl_buffers.c
-                         src/setup_cl.c
-                         src/run_cl.c
-                         src/separation_cl_defs.c)
+                         src/r_points.c)
+
+if(SEPARATION_OPENCL)
+  list(APPEND lib_source_file_list ${cl_source_list})
+endif()
 
 add_library(separation STATIC ${lib_source_file_list})
 
@@ -74,6 +79,11 @@ set(exe_link_libs ${POPT_LIBRARY})
 
 if(BOINC_APPLICATION)
   list(APPEND exe_link_libs ${BOINC_LIBRARIES})
+endif()
+
+if(SEPARATION_OPENCL)
+  include_directories(${OPENCL_INCLUDE_DIRS})
+  list(APPEND exe_link_libs ${OPENCL_LIBRARIES})
 endif()
 
 if(NEED_POPT_DEPS)
