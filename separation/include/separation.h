@@ -21,6 +21,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _SEPARATION_H_
 #define _SEPARATION_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+
 
 #include <stdlib.h>
 #include <string.h>
@@ -41,12 +47,33 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "integrals.h"
 #include "likelihood.h"
 
-
-
 #if BOINC_APPLICATION
   #include <boinc_api.h>
   #include <filesys.h>
+
+  #if BOINC_DEBUG
+    #include <diagnostics.h>
+  #endif /* BOINC_DEBUG */
+
+  #if BOINC_APP_GRAPHICS
+    #include <graphics_api.h>
+    #include <graphics_lib.h>
+  #endif /* BOINC_APP_GRAPHICS */
+
+  /* I'm not sure what the MSVC macro is.
+     This only needs the Windows API for the stuff to deal with the
+     truly awful Windows API / WinMain, which you only need to deal with
+     for visual studio and should be avoided as much as possible. */
+  #if defined(_WIN32) && !defined(__MINGW32__)
+    #include <str_util.h>
+  #endif
+
+#endif /* BOINC_APPLICATION */
+
+#ifdef __cplusplus
+}
 #endif
+
 
 #endif /* _SEPARATION_H_ */
 

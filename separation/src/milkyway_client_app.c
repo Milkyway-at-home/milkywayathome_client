@@ -23,39 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <errno.h>
 #include <stdio.h>
 
-#include <boinc_api.h>
-#include <diagnostics.h>
-
-#if BOINC_APP_GRAPHICS
-	#include <graphics_api.h>
-	#include <graphics_lib.h>
-#endif
-
-/* I'm not sure what the MSVC macro is.
- This only needs the Windows API for the stuff to deal with the
- truly awful Windows API / WinMain, which you only need to deal with
- for visual studio and should be avoided as much as possible. */
-#if defined(_WIN32) && !defined(__MINGW32__)
-    #include <str_util.h>
-#endif
-
-
-#ifdef __cplusplus  /* Workaround for Windows / boinc issue */
- extern "C" {
-#endif
-
 #include "separation.h"
-
-#if USE_CUDA
-    #include "evaluation_gpu.h"
-#elif USE_OCL
-    #include "evaluation_ocl.h"
-#endif
-
-
-#ifdef __cplusplus
- }
-#endif
 
 static char* boinc_graphics = NULL;
 static char* star_points_file = NULL;
@@ -251,15 +219,7 @@ static void worker(int argc, const char** argv)
     STREAM_CONSTANTS* sc = init_constants(&ap, &bgp, &streams);
     free_background_parameters(&bgp);
 
-#if COMPUTE_ON_CPU
     likelihood = evaluate(&ap, &streams, sc, star_points_file);
-#elif USE_CUDA
-    likelihood = cuda_evaluate(&ap, &sp, sc);
-#elif USE_OCL
-    likelihood = ocl_evaluate(&ap, &sp, sc);
-#else
-    #error "Must choose CUDA, OpenCL or CPU"
-#endif /* COMPUTE_ON_CPU */
 
     fprintf(stderr, "<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
     fprintf(stderr, "<search_application> %s </search_application>\n", BOINC_APP_VERSION);
@@ -271,41 +231,61 @@ static void worker(int argc, const char** argv)
 	cleanup_worker();
 
     mw_finish(EXIT_SUCCESS);
-
 }
 
-int main(int argc, char** argv)
+#if BOINC_APPLICATION
+
+static int separation_init(int argc, char** argv)
 {
-    int retval = 0;
+    int rc;
 
-#if BOINC_APP_GRAPHICS
-  #if defined(_WIN32) || defined(__APPLE__)
-      retval = boinc_init_graphics(worker);
-  #else
-      retval = boinc_init_graphics_lib(worker, argv[0]);
-  #endif /*  defined(_WIN32) || defined(__APPLE__) */
+    #if BOINC_DEBUG
+    rc = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
+                                | BOINC_DIAG_HEAPCHECKENABLED
+                                | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
+    #else
+    rc = boinc_init();
+    #endif /* BOINC_DEBUG */
 
-  if (retval)
-      exit(retval);
-#endif /* BOINC_APP_GRAPHICS */
 
-#if defined(_WIN32) && COMPUTE_ON_GPU
+  #if BOINC_APP_GRAPHICS
+    #if defined(_WIN32) || defined(__APPLE__)
+    rc = boinc_init_graphics(worker);
+    #else
+    rc = boinc_init_graphics_lib(worker, argv[0]);
+    #endif /*  defined(_WIN32) || defined(__APPLE__) */
+  #endif /* BOINC_APP_GRAPHICS */
+
+  #if defined(_WIN32) && COMPUTE_ON_GPU
     //make the windows GPU app have a higher priority
     BOINC_OPTIONS options;
     boinc_options_defaults(options);
     options.normal_thread_priority = 1; // higher priority (normal instead of idle)
-    retval = boinc_init_options(&options);
+    rc = boinc_init_options(&options);
+  #endif /* defined(_WIN32) && COMPUTE_ON_GPU */
+
+    return rc;
+}
+
 #else
-    /* TODO: for release build, use the boinc defaults*/
-    //retval = boinc_init();
 
-    retval = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
-                                    | BOINC_DIAG_HEAPCHECKENABLED
-                                    | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
+static int separation_init(int argc, char** argv)
+{
+  #pragma unused(argc)
+  #pragma unused(argv)
+    return 0;
+}
 
-#endif /* defined(_WIN32) && COMPUTE_ON_GPU */
-    if (retval)
-        exit(retval);
+#endif /* BOINC_APPLICATION */
+
+
+
+int main(int argc, char** argv)
+{
+    int rc = separation_init(argc, argv);
+    if (rc)
+        exit(rc);
+
 
 
 #if COMPUTE_ON_GPU
@@ -329,7 +309,7 @@ int main(int argc, char** argv)
 
     worker(argc, (const char**) argv);
 
-    return retval;
+    return rc;
 }
 
 #if defined(_WIN32) && !defined(__MINGW32__)
