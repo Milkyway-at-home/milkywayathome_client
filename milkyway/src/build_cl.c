@@ -130,7 +130,7 @@ static cl_int milkywayBuildProgram(CLInfo* ci, const char** src, cl_uint srcCoun
 {
     cl_int err = CL_SUCCESS;
 
-    ci->prog = clCreateProgramWithSource(ci->clctx, 2, src, NULL, &err);
+    ci->prog = clCreateProgramWithSource(ci->clctx, srcCount, src, NULL, &err);
     if (err != CL_SUCCESS)
     {
         warn("Error creating program: %s\n", showCLInt(err));

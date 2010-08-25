@@ -56,7 +56,6 @@ else()
   add_definitions("-DDOUBLEPREC=0")
 endif()
 
-
 #set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules;${CMAKE_MODULE_PATH}")
 set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules")
 set(PROJECT_TOOL_DIR "${milkywayathome_SOURCE_DIR}/tools")
@@ -222,16 +221,13 @@ if(NOT CPU_SEPARATION AND NOT OPENCL_SEPARATION AND NOT NBODY)
   message(FATAL_ERROR "Nothing will be built!")
 endif()
 
+set(MILKYWAY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/milkyway/include")
+set(MILKYWAY_LIB_DIR milkyway/lib)
 add_subdirectory(milkyway)
-include_directories(milkyway/include)
-#link_directories(milkyway/lib)
+include_directories(${MILKYWAY_INCLUDE_DIR})
+#link_directories(${MILKYWAY_LIB_DIR})
 
-if(SEPARATION_IS_BUILDABLE)
-  add_subdirectory(separation)
-endif()
-
-if(NBODY_IS_BUILDABLE)
-  add_subdirectory(nbody)
-endif()
+add_subdirectory(separation)
+add_subdirectory(nbody)
 
 

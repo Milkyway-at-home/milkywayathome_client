@@ -18,22 +18,15 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#meant to be called at build time using cmake -P, setting variables
-#with -D
+# Run the C preprocessor to dump everything into 1 file, which we then
+# can embed in the source and ship that without needing to send source
+# files.
 
-function(inline_kernel name file c_kernel_dir)
-  file(READ "${dir}/${file}" str)
-  set(name "cl_${name}")
-
-  #Remove the comments. Otherwise, C++ comments will comment out the
-  #rest of the program unless we do more work.
-  string(REGEX REPLACE
-             "(/\\*([^*]|[\r\n]|(\\*+([^*/]|[\r\n])))*\\*+/)|(//[^\r\n]*)"
-             "" # No comment
-             str_stripped
-
-             #Quote this to prevent ;'s being interpreted as list separators
-             "${str}")
+function(inline_kernel kernel_file name c_kernel_dir include_dirs)
+   #Run preprocessor
+   execute_process(COMMAND ${CMAKE_C_COMPILER} ${include_dirs} -std=c99 -E -x c ${kernel_file}
+                   OUTPUT_VARIABLE kernel_cpp OUTPUT_STRIP_TRAILING_WHITESPACE)
+  file(WRITE "${name}.cl" "${kernel_cpp}")
 
   #Escape special characters
   #TODO: Other things that need escaping
@@ -63,9 +56,4 @@ function(inline_kernel name file c_kernel_dir)
   file(WRITE "${c_kernel_dir}/${name}.c" "${cfile}")
   file(WRITE "${c_kernel_dir}/${name}.h" "${hfile}")
 endfunction()
-
-inline_kernel("${KERNEL_NAME}"
-              "${KERNEL_FILE}"
-              "${C_KERNEL_DIR}")
-
 

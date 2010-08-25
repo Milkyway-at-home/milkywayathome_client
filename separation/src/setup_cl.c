@@ -113,6 +113,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
         return -1;
     }
 
+
     char* allSrc[] = { rPointsSrc, kernelSrc };
 
     //compileDefs = separationCLDefs(ap, extraDefs);

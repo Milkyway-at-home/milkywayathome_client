@@ -22,6 +22,7 @@ cmake_minimum_required(VERSION 2.8)
 project(milkyway_separation)
 
 include(StaticBOINC)
+include(CLKernelInline)
 
 enable_testing()
 
@@ -39,6 +40,13 @@ set(CMAKE_C_FLAGS "-std=c99 -warn-uninit-values ${CMAKE_C_FLAGS}")
 configure_file (
   "${PROJECT_INCLUDE_DIR}/config.h.in"
   "${PROJECT_INCLUDE_DIR}/config.h")
+
+
+# set(kernel_includes "-I${PROJECT_INCLUDE_DIR} -I${PROJECT_SOURCE_DIR}/src -I${MILKYWAY_INCLUDE_DIR}")
+# inline_kernel("${PROJECT_SOURCE_DIR}/kernels/integrals.cl"
+#               "integral_kernel"
+#                "ckernels"
+#                ${kernel_includes})
 
 
 if(UNIX AND NOT APPLE)  #Unix that isn't OS X
