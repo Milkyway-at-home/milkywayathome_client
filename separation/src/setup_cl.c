@@ -44,8 +44,8 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
     err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->outProbs);
 
     /* The constant arguments */
-    err |= clSetKernelArg(ci->kern, 2, sizeof(ASTRONOMY_PARAMETERS), ap);
-    err |= clSetKernelArg(ci->kern, 3, sizeof(INTEGRAL_AREA), ia);
+    err |= clSetKernelArg(ci->kern, 2, sizeof(cl_mem), &cm->ap);
+    err |= clSetKernelArg(ci->kern, 3, sizeof(cl_mem), &cm->ia);
     err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->sc);
     err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->sg);
     err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->nuConsts);
@@ -117,7 +117,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
     char* allSrc[] = { rPointsSrc, kernelSrc };
 
     //compileDefs = separationCLDefs(ap, extraDefs);
-    err = getCLInfo(ci, CL_DEVICE_TYPE_CPU, "r_sum_kernel", allSrc, 2, extraDefs);
+    err = getCLInfo(ci, CL_DEVICE_TYPE_GPU, "r_sum_kernel", allSrc, 2, extraDefs);
 
     free(kernelSrc);
     free(rPointsSrc);

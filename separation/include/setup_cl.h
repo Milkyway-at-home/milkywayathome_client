@@ -37,6 +37,8 @@ typedef struct
     cl_mem outProbs;
 
     /* constant, read only buffers */
+    cl_mem ap;
+    cl_mem ia;
     cl_mem sg;        /* Stream Gauss */
     cl_mem sc;        /* Stream Constants */
     cl_mem nuConsts;  /* nu step constants */

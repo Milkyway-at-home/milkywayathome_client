@@ -83,6 +83,42 @@ inline static cl_int createSCBuffer(const STREAM_CONSTANTS* sc,
     return CL_SUCCESS;
 }
 
+inline static cl_int createAPBuffer(const ASTRONOMY_PARAMETERS* ap,
+                                    CLInfo* ci,
+                                    SeparationCLMem* cm,
+                                    const cl_mem_flags constBufFlags)
+{
+    cl_int err;
+    cm->ap = clCreateBuffer(ci->clctx,
+                            constBufFlags,
+                            sizeof(ASTRONOMY_PARAMETERS),
+                            ap,
+                            &err);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error creating astronomy parameters buffer of size %zu: %s\n", sizeof(ASTRONOMY_PARAMETERS), showCLInt(err));
+        return err;
+    }
+
+    return CL_SUCCESS;
+}
+
+inline static cl_int createIABuffer(const INTEGRAL_AREA* ia,
+                                    CLInfo* ci,
+                                    SeparationCLMem* cm,
+                                    const cl_mem_flags constBufFlags)
+{
+    cl_int err;
+    cm->ia = clCreateBuffer(ci->clctx, constBufFlags, sizeof(INTEGRAL_AREA), ia, &err);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error creating integral area buffer of size %zu: %s\n", sizeof(INTEGRAL_AREA), showCLInt(err));
+        return err;
+    }
+
+    return CL_SUCCESS;
+}
+
 inline static cl_int createSGBuffer(const STREAM_GAUSS* sg,
                                     const unsigned int nconvolve,
                                     CLInfo* ci,
@@ -145,6 +181,8 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
 
     err |= createOutNuBuffer(ia->r_steps, ci, cm);
     err |= createOutProbsBuffer(ia->r_steps, ap->number_streams, ci, cm);
+    err |= createAPBuffer(ap, ci, cm, constBufFlags);
+    err |= createIABuffer(ia, ci, cm, constBufFlags);
     err |= createSCBuffer(sc, ap->number_streams, ci, cm, constBufFlags);
     err |= createSGBuffer(sg, ap->convolve, ci, cm, constBufFlags);
     err |= createNuConstsBuffer(nu_consts, ia->nu_steps, ci, cm, constBufFlags);
@@ -156,6 +194,8 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
 {
     clReleaseMemObject(cm->outProbs);
     clReleaseMemObject(cm->outNu);
+    clReleaseMemObject(cm->ap);
+    clReleaseMemObject(cm->ia);
     clReleaseMemObject(cm->sc);
     clReleaseMemObject(cm->sg);
     clReleaseMemObject(cm->nuConsts);

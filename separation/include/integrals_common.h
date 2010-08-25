@@ -62,7 +62,7 @@ inline static real distance_magnitude(const real m)
 
 /* Sum over mu steps using Kahan summation */
 __attribute__ ((always_inline, hot))
-inline static BG_PROB mu_sum(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
+inline static BG_PROB mu_sum(__MW_CONSTANT const ASTRONOMY_PARAMETERS* ap,
                              __MW_CONSTANT const STREAM_CONSTANTS* sc,
                              __MW_LOCAL const R_POINTS* r_pts,
                              const real irv,             /* r constants */

@@ -70,7 +70,7 @@ inline real probabilities_convolve(__MW_CONSTANT const STREAM_CONSTANTS* sc,
 
 /* FIXME: I don't know what these do enough to name it properly */
 __attribute__ ((always_inline, hot))
-inline real sub_bg_probability1(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
+inline real sub_bg_probability1(__MW_CONSTANT const ASTRONOMY_PARAMETERS* ap,
                                 __MW_LOCAL const R_POINTS* r_pts,
                                 __MW_LOCAL vector* const xyz,
                                 const LB integral_point,
@@ -111,7 +111,7 @@ inline real sub_bg_probability1(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
 }
 
 __attribute__ ((always_inline))
-inline real sub_bg_probability2(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
+inline real sub_bg_probability2(__MW_CONSTANT const ASTRONOMY_PARAMETERS* ap,
                                 __MW_LOCAL const R_POINTS* r_pts,
                                 __MW_LOCAL vector* const xyz,
                                 const LB integral_point,
@@ -139,7 +139,7 @@ inline real sub_bg_probability2(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
 }
 
 __attribute__ ((always_inline, hot))
-inline real bg_probability(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
+inline real bg_probability(__MW_CONSTANT const ASTRONOMY_PARAMETERS* ap,
                            __MW_LOCAL const R_POINTS* r_pts,
                            __MW_LOCAL vector* const xyz,
                            const LB integral_point,

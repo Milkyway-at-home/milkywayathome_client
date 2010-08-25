@@ -33,9 +33,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define R10 ((real) 10.0)
 #define R1000 ((real) 1000.0)
 
-static const real sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
-
-real set_r_points(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
+real set_r_points(__MW_CONSTANT const ASTRONOMY_PARAMETERS* ap,
                   __MW_CONSTANT const STREAM_GAUSS* sg,
                   const unsigned int n_convolve,
                   const real coords,
@@ -47,6 +45,7 @@ real set_r_points(__MW_PRIVATE const ASTRONOMY_PARAMETERS* ap,
 
     /* R2MAG */
     const real gPrime = R5 * (mw_log10(coords * R1000) - R1) + absm;
+    static const real sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
     /* REFF */
     const real exp_result = mw_exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));

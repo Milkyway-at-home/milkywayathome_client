@@ -20,7 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifdef __FAST_RELAXED_MATH__
-  #error "Bad bad bad bad"
+  #error "Bad bad bad bad bad"
 #endif /* __FAST_RELAXED_MATH__ */
 
 #if DOUBLEPREC
@@ -41,9 +41,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 __attribute__ ((always_inline))
-inline _MW_STATIC BG_PROB nu_sum(__private const ASTRONOMY_PARAMETERS* ap,
+inline _MW_STATIC BG_PROB nu_sum(__constant const ASTRONOMY_PARAMETERS* ap,
                                  __constant const STREAM_CONSTANTS* sc,
-                                 __private const INTEGRAL_AREA* ia,
+                                 __constant const INTEGRAL_AREA* ia,
                                  const real irv,
                                  const real reff_xr_rp3,
                                  __local const R_POINTS* r_pts,
@@ -81,8 +81,8 @@ inline _MW_STATIC BG_PROB nu_sum(__private const ASTRONOMY_PARAMETERS* ap,
 }
 
 __attribute__ ((always_inline))
-inline _MW_STATIC BG_PROB r_sum(__private const ASTRONOMY_PARAMETERS* ap,
-                                __private const INTEGRAL_AREA* ia,
+inline _MW_STATIC BG_PROB r_sum(__constant const ASTRONOMY_PARAMETERS* ap,
+                                __constant const INTEGRAL_AREA* ia,
                                 __constant const STREAM_CONSTANTS* sc,
                                 __constant const STREAM_GAUSS* sg,
                                 __constant const NU_CONSTANTS* nu_consts,
@@ -121,8 +121,8 @@ inline _MW_STATIC BG_PROB r_sum(__private const ASTRONOMY_PARAMETERS* ap,
 __kernel void r_sum_kernel(__global BG_PROB* nu_out,
                            __global ST_PROBS* probs_out,
 
-                           __private const ASTRONOMY_PARAMETERS ap,
-                           __private const INTEGRAL_AREA ia,
+                           __constant const ASTRONOMY_PARAMETERS* ap,
+                           __constant const INTEGRAL_AREA* ia,
                            __constant STREAM_CONSTANTS* sc,
                            __constant STREAM_GAUSS* sg,
                            __constant NU_CONSTANTS* nu_consts,
@@ -135,20 +135,20 @@ __kernel void r_sum_kernel(__global BG_PROB* nu_out,
     BG_PROB nu_result;
     size_t r_step = get_global_id(0);
 
-    if (r_step > ia.r_steps)
+    if (r_step > ia->r_steps)
         return;
 
-    for (i = 0; i < ap.number_streams; ++i)
+    for (i = 0; i < ap->number_streams; ++i)
     {
         probs[i].st_prob_int = 0.0;
         probs[i].st_prob_int_c = 0.0;
     }
 
-    nu_result = r_sum(&ap, &ia, sc, sg, nu_consts, r_pts, probs, xyz, r_step);
+    nu_result = r_sum(ap, ia, sc, sg, nu_consts, r_pts, probs, xyz, r_step);
 
     /* Write results back */
     nu_out[r_step] = nu_result;
-    for (i = 0; i < ap.number_streams; ++i)
-        probs_out[r_step * ap.number_streams + i] = probs[i];
+    for (i = 0; i < ap->number_streams; ++i)
+        probs_out[r_step * ap->number_streams + i] = probs[i];
 }
 
