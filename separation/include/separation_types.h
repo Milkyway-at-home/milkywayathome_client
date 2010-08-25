@@ -38,7 +38,10 @@ extern "C" {
 #define BN(sp, n) YN(sp, n)
 #define RN(sp, n) RN(sp, n)
 
-typedef struct
+#define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(x)))
+
+
+typedef struct SEPARATION_ALIGN(sizeof(real))
 {
     real l;
     real b;
@@ -57,9 +60,7 @@ typedef struct
 
 #define EMPTY_STAR_POINTS { 0, NULL }
 
-#define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(x)))
-
-typedef struct SEPARATION_ALIGN(sizeof(vector))
+typedef struct SEPARATION_ALIGN(4 * sizeof(real))
 {
     vector a;
     vector c;
@@ -179,7 +180,7 @@ typedef struct SEPARATION_ALIGN(sizeof(real))
                                      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
                                      0.0, 0.0, 0.0 }
 
-typedef struct
+typedef struct SEPARATION_ALIGN(sizeof(real))
 {
     real st_prob_int;    /* for Kahan summation */
     real st_prob_int_c;
@@ -187,7 +188,7 @@ typedef struct
 
 #define ZERO_ST_PROBS = { 0.0, 0.0 }
 
-typedef struct
+typedef struct SEPARATION_ALIGN(sizeof(real))
 {
     real bg_int;
     real correction;   /* Correction for Kahan summation */
@@ -195,7 +196,7 @@ typedef struct
 
 /* TODO: All these tuples of reals really serve the same
  * purpose. Fix having all of them. */
-typedef struct
+typedef struct SEPARATION_ALIGN(sizeof(real))
 {
     real sum;
     real correction;
@@ -210,7 +211,7 @@ typedef struct
 
 #define ZERO_BG_PROB { 0.0, 0.0 }
 
-typedef struct
+typedef struct SEPARATION_ALIGN(sizeof(real))
 {
     real st_only_sum;
     real st_only_sum_c;
