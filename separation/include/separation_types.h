@@ -169,7 +169,6 @@ typedef struct SEPARATION_ALIGN
     int wedge;
 
     unsigned int number_integrals;
-    INTEGRAL_AREA* integral;
 
     /* Constants determined by other parameters */
     real alpha, q, sn, r0, delta, coeff, alpha_delta3;
@@ -180,7 +179,7 @@ typedef struct SEPARATION_ALIGN
 #define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0.0, \
                                      0, 0.0,   \
                                      0, 0,     \
-                                     0, 0, 0, 0, NULL, \
+                                     0, 0, 0, 0, \
                                      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
                                      0.0, 0.0, 0.0 }
 

@@ -55,15 +55,10 @@ void free_streams(STREAMS* streams)
     free(streams->stream_weight);
 }
 
-void free_astronomy_parameters(ASTRONOMY_PARAMETERS* ap)
-{
-    free(ap->integral);
-}
-
-int read_parameters(const char* filename,
-                    ASTRONOMY_PARAMETERS* ap,
-                    BACKGROUND_PARAMETERS* bgp,
-                    STREAMS* streams)
+INTEGRAL_AREA* read_parameters(const char* filename,
+                               ASTRONOMY_PARAMETERS* ap,
+                               BACKGROUND_PARAMETERS* bgp,
+                               STREAMS* streams)
 {
 #if BOINC_APPLICATION
     char input_path[512];
@@ -72,7 +67,7 @@ int read_parameters(const char* filename,
     if (retval)
     {
         fprintf(stderr, "APP: error resolving parameters file [%s], %d\n", filename, retval);
-        return retval;
+        return NULL;
     }
 
     FILE* data_file = boinc_fopen(input_path, "r");
@@ -82,21 +77,23 @@ int read_parameters(const char* filename,
     if (!data_file)
     {
         fprintf(stderr, "Couldn't find input file [%s] to read astronomy parameters.\n", filename);
-        return 1;
+        return NULL;
     }
 
-    fread_parameters(data_file, ap, bgp, streams);
+    INTEGRAL_AREA* integral = fread_parameters(data_file, ap, bgp, streams);
     if (ap->parameters_version < 0)
     {
+        free(integral);
         fprintf(stderr, "Input file [%s] did not specify parameter file version.\n", filename);
-        return 1;
+        return NULL;
     }
     fclose(data_file);
-    return 0;
+    return integral;
 }
 
 int write_parameters(const char* filename,
                      ASTRONOMY_PARAMETERS* ap,
+                     INTEGRAL_AREA* ias,
                      BACKGROUND_PARAMETERS* bgp,
                      STREAMS* streams)
 {
@@ -107,7 +104,7 @@ int write_parameters(const char* filename,
         return 1;
     }
 
-    fwrite_parameters(data_file, ap, bgp, streams);
+    fwrite_parameters(data_file, ap, ias, bgp, streams);
     fclose(data_file);
     return 0;
 }
@@ -119,10 +116,10 @@ static void calc_integral_step_sizes(INTEGRAL_AREA* i)
     i->nu_step_size = (i->nu_max - i->nu_min) / (real)i->nu_steps;
 }
 
-void fread_parameters(FILE* file,
-                      ASTRONOMY_PARAMETERS* ap,
-                      BACKGROUND_PARAMETERS* bgp,
-                      STREAMS* streams)
+INTEGRAL_AREA* fread_parameters(FILE* file,
+                                ASTRONOMY_PARAMETERS* ap,
+                                BACKGROUND_PARAMETERS* bgp,
+                                STREAMS* streams)
 {
     unsigned int i, temp;
     int retval;
@@ -186,38 +183,38 @@ void fread_parameters(FILE* file,
     if (fscanf(file, "wedge: %d\n", &ap->wedge) < 1)
         warn("Error reading wedge\n");
 
-    ap->integral = (INTEGRAL_AREA*) mallocSafe(sizeof(INTEGRAL_AREA));
+    INTEGRAL_AREA* integral = (INTEGRAL_AREA*) mallocSafe(sizeof(INTEGRAL_AREA));
 
     fscanf(file,
            "r[min,max,steps]: %lf, %lf, %u\n",
-           &tmp1, &tmp2, &ap->integral[0].r_steps);
+           &tmp1, &tmp2, &integral[0].r_steps);
 
-    ap->integral[0].r_min = (real) tmp1;
-    ap->integral[0].r_max = (real) tmp2;
+    integral[0].r_min = (real) tmp1;
+    integral[0].r_max = (real) tmp2;
 
     fscanf(file,
            "mu[min,max,steps]: %lf, %lf, %u\n",
-           &tmp1, &tmp2, &ap->integral[0].mu_steps);
+           &tmp1, &tmp2, &integral[0].mu_steps);
 
-    ap->integral[0].mu_min = (real) tmp1;
-    ap->integral[0].mu_max = (real) tmp2;
+    integral[0].mu_min = (real) tmp1;
+    integral[0].mu_max = (real) tmp2;
 
 
     fscanf(file,
            "nu[min,max,steps]: %lf, %lf, %u\n",
-           &tmp1, &tmp2, &ap->integral[0].nu_steps);
+           &tmp1, &tmp2, &integral[0].nu_steps);
 
-    ap->integral[0].nu_min = (real) tmp1;
-    ap->integral[0].nu_max = (real) tmp2;
+    integral[0].nu_min = (real) tmp1;
+    integral[0].nu_max = (real) tmp2;
 
-    calc_integral_step_sizes(&ap->integral[0]);
+    calc_integral_step_sizes(&integral[0]);
 
     fscanf(file, "number_cuts: %u\n", &ap->number_integrals);
     ap->number_integrals++;
     if (ap->number_integrals > 1)
     {
-        ap->integral = (INTEGRAL_AREA*) realloc(ap->integral, sizeof(INTEGRAL_AREA) * ap->number_integrals);
-        if (!ap->integral)
+        integral = (INTEGRAL_AREA*) realloc(integral, sizeof(INTEGRAL_AREA) * ap->number_integrals);
+        if (!integral)
         {
             fprintf(stderr, "realloc failed\n");
             mw_finish(EXIT_FAILURE);
@@ -227,28 +224,28 @@ void fread_parameters(FILE* file,
         {
             fscanf(file,
                    "r_cut[min,max,steps][%u]: %lf, %lf, %u\n",
-                   &temp, &tmp1, &tmp2, &ap->integral[i].r_steps);
+                   &temp, &tmp1, &tmp2, &integral[i].r_steps);
 
-            ap->integral[i].r_min = (real) tmp1;
-            ap->integral[i].r_max = (real) tmp2;
+            integral[i].r_min = (real) tmp1;
+            integral[i].r_max = (real) tmp2;
 
             fscanf(file,
                    "mu_cut[min,max,steps][%u]: %lf, %lf, %u\n",
-                   &temp, &tmp1, &tmp2, &ap->integral[i].mu_steps);
+                   &temp, &tmp1, &tmp2, &integral[i].mu_steps);
 
-            ap->integral[i].mu_min = (real) tmp1;
-            ap->integral[i].mu_max = (real) tmp2;
+            integral[i].mu_min = (real) tmp1;
+            integral[i].mu_max = (real) tmp2;
 
 
             fscanf(file,
                    "nu_cut[min,max,steps][%u]: %lf, %lf, %u\n",
-                   &temp, &tmp1, &tmp2, &ap->integral[i].nu_steps);
+                   &temp, &tmp1, &tmp2, &integral[i].nu_steps);
 
-            ap->integral[i].nu_min = (real) tmp1;
-            ap->integral[i].nu_max = (real) tmp2;
+            integral[i].nu_min = (real) tmp1;
+            integral[i].nu_max = (real) tmp2;
 
 
-            calc_integral_step_sizes(&ap->integral[i]);
+            calc_integral_step_sizes(&integral[i]);
         }
     }
 
@@ -257,15 +254,17 @@ void fread_parameters(FILE* file,
     unsigned int total_calc_probs = 0;
     for (i = 0; i < ap->number_integrals; ++i)
     {
-        const INTEGRAL_AREA* ia = &ap->integral[i];
+        const INTEGRAL_AREA* ia = &integral[i];
         total_calc_probs += ia->mu_steps * ia->nu_steps * ia->r_steps;
     }
 
     ap->total_calc_probs = (real) total_calc_probs;
+    return integral;
 }
 
 void fwrite_parameters(FILE* file,
                        ASTRONOMY_PARAMETERS* ap,
+                       INTEGRAL_AREA* integral,
                        BACKGROUND_PARAMETERS* bgp,
                        STREAMS* streams)
 {
@@ -309,21 +308,21 @@ void fwrite_parameters(FILE* file,
 
     fprintf(file,
             "r[min,max,steps]: %lf, %lf, %u\n",
-            ap->integral[0].r_min,
-            ap->integral[0].r_max,
-            ap->integral[0].r_steps);
+            integral[0].r_min,
+            integral[0].r_max,
+            integral[0].r_steps);
 
     fprintf(file,
             "mu[min,max,steps]: %lf, %lf, %u\n",
-            ap->integral[0].mu_min,
-            ap->integral[0].mu_max,
-            ap->integral[0].mu_steps);
+            integral[0].mu_min,
+            integral[0].mu_max,
+            integral[0].mu_steps);
 
     fprintf(file,
             "nu[min,max,steps]: %lf, %lf, %u\n",
-            ap->integral[0].nu_min,
-            ap->integral[0].nu_max,
-            ap->integral[0].nu_steps);
+            integral[0].nu_min,
+            integral[0].nu_max,
+            integral[0].nu_steps);
 
     fprintf(file, "number_cuts: %u\n", ap->number_integrals - 1);
 
@@ -331,21 +330,21 @@ void fwrite_parameters(FILE* file,
     {
         fprintf(file,
                 "r_cut[min,max,steps][3]: %lf, %lf, %u\n",
-                ap->integral[i].r_min,
-                ap->integral[i].r_max,
-                ap->integral[i].r_steps);
+                integral[i].r_min,
+                integral[i].r_max,
+                integral[i].r_steps);
 
         fprintf(file,
                 "mu_cut[min,max,steps][3]: %lf, %lf, %u\n",
-                ap->integral[i].mu_min,
-                ap->integral[i].mu_max,
-                ap->integral[i].mu_steps);
+                integral[i].mu_min,
+                integral[i].mu_max,
+                integral[i].mu_steps);
 
         fprintf(file,
                 "nu_cut[min,max,steps][3]: %lf, %lf, %u\n",
-                ap->integral[i].nu_min,
-                ap->integral[i].nu_max,
-                ap->integral[i].nu_steps);
+                integral[i].nu_min,
+                integral[i].nu_max,
+                integral[i].nu_steps);
     }
 }
 

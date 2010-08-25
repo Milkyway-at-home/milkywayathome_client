@@ -81,6 +81,7 @@ inline static void calculate_stream_integrals(const ST_PROBS* probs,
 
 /* Add up completed integrals for progress reporting */
 inline static real completed_integral_progress(const ASTRONOMY_PARAMETERS* ap,
+                                               const INTEGRAL_AREA* ias,
                                                const EVALUATION_STATE* es)
 {
     INTEGRAL_AREA* ia;
@@ -88,7 +89,7 @@ inline static real completed_integral_progress(const ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < es->current_integral; ++i)
     {
-        ia = &ap->integral[i];
+        ia = &ias[i];
         current_calc_probs += ia->r_steps * ia->mu_steps * ia->nu_steps;
     }
 
@@ -120,6 +121,7 @@ static real integrate(const ASTRONOMY_PARAMETERS* ap,
 }
 
 static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
+                                const INTEGRAL_AREA* ias,
                                 const STREAM_CONSTANTS* sc,
                                 const STREAM_GAUSS* sg,
                                 EVALUATION_STATE* es)
@@ -132,8 +134,8 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
     {
         integral = &es->integrals[es->current_integral];
-        ia = &ap->integral[es->current_integral];
-        es->current_calc_probs = completed_integral_progress(ap, es);
+        ia = &ias[es->current_integral];
+        es->current_calc_probs = completed_integral_progress(ap, ias, es);
 
         t1 = get_time();
       #if SEPARATION_OPENCL
@@ -154,6 +156,7 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
 }
 
 real evaluate(const ASTRONOMY_PARAMETERS* ap,
+              const INTEGRAL_AREA* ias,
               const STREAMS* streams,
               const STREAM_CONSTANTS* sc,
               const char* star_points_file)
@@ -181,7 +184,7 @@ real evaluate(const ASTRONOMY_PARAMETERS* ap,
     }
   #endif
 
-    calculate_integrals(ap, sc, sg, &es);
+    calculate_integrals(ap, ias, sc, sg, &es);
 
   #if BOINC_APPLICATION && !SEPARATION_OPENCL
     /* Final checkpoint. */

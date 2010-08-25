@@ -24,7 +24,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_types.h"
 
-void free_astronomy_parameters(ASTRONOMY_PARAMETERS* ap);
 void free_background_parameters(BACKGROUND_PARAMETERS* bgp);
 void free_streams(STREAMS* streams);
 void free_stream_parameters(STREAM_PARAMETERS* p);
@@ -33,23 +32,25 @@ unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap,
                                            BACKGROUND_PARAMETERS* bgp,
                                            STREAMS* streams);
 
-int read_parameters(const char* file,
-                    ASTRONOMY_PARAMETERS* ap,
-                    BACKGROUND_PARAMETERS* bgp,
-                    STREAMS* streams);
+INTEGRAL_AREA* read_parameters(const char* file,
+                               ASTRONOMY_PARAMETERS* ap,
+                               BACKGROUND_PARAMETERS* bgp,
+                               STREAMS* streams);
 
-void fread_parameters(FILE* file,
-                      ASTRONOMY_PARAMETERS* ap,
-                      BACKGROUND_PARAMETERS* bgp,
-                      STREAMS* streams);
+INTEGRAL_AREA* fread_parameters(FILE* file,
+                                ASTRONOMY_PARAMETERS* ap,
+                                BACKGROUND_PARAMETERS* bgp,
+                                STREAMS* streams);
 
 int write_parameters(const char* file,
                      ASTRONOMY_PARAMETERS* ap,
+                     INTEGRAL_AREA* integral,
                      BACKGROUND_PARAMETERS* bgp,
                      STREAMS* streams);
 
 void fwrite_parameters(FILE* file,
                        ASTRONOMY_PARAMETERS* ap,
+                       INTEGRAL_AREA* integral,
                        BACKGROUND_PARAMETERS* bgp,
                        STREAMS* streams);
 

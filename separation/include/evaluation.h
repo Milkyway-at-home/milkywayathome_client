@@ -25,6 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_types.h"
 
 real evaluate(const ASTRONOMY_PARAMETERS* ap,
+              const INTEGRAL_AREA* ias,
               const STREAMS* streams,
               const STREAM_CONSTANTS* sc,
               const char* star_points_file);

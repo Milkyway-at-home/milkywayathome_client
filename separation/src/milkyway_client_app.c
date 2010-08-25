@@ -183,7 +183,8 @@ static void worker(int argc, const char** argv)
         mw_finish(EXIT_FAILURE);
     }
 
-    if (read_parameters(astronomy_parameter_file, &ap, &bgp, &streams))
+    INTEGRAL_AREA* ias = read_parameters(astronomy_parameter_file, &ap, &bgp, &streams);
+    if (!ias)
     {
         fprintf(stderr,
                 "Error reading astronomy parameters from file '%s'\n",
@@ -206,6 +207,7 @@ static void worker(int argc, const char** argv)
                 ap_number_parameters);
 
         free(parameters);
+        free(ias);
         cleanup_worker();
         mw_finish(EXIT_FAILURE);
     }
@@ -217,13 +219,13 @@ static void worker(int argc, const char** argv)
     STREAM_CONSTANTS* sc = init_constants(&ap, &bgp, &streams);
     free_background_parameters(&bgp);
 
-    likelihood = evaluate(&ap, &streams, sc, star_points_file);
+    likelihood = evaluate(&ap, ias, &streams, sc, star_points_file);
 
     fprintf(stderr, "<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
     fprintf(stderr, "<search_application> %s </search_application>\n", BOINC_APP_VERSION);
 
+    free(ias);
     free(sc);
-    free_astronomy_parameters(&ap);
     free_streams(&streams);
 
 	cleanup_worker();
