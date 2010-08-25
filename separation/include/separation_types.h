@@ -57,9 +57,9 @@ typedef struct
 
 #define EMPTY_STAR_POINTS { 0, NULL }
 
-#define SEPARATION_ALIGN __attribute__ ((packed, aligned))
+#define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(x)))
 
-typedef struct SEPARATION_ALIGN
+typedef struct SEPARATION_ALIGN(sizeof(vector))
 {
     vector a;
     vector c;
@@ -67,7 +67,7 @@ typedef struct SEPARATION_ALIGN
     int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
 } STREAM_CONSTANTS;
 
-typedef struct SEPARATION_ALIGN
+typedef struct SEPARATION_ALIGN(sizeof(real))
 {
     real r_point;
     real r_in_mag;
@@ -75,13 +75,13 @@ typedef struct SEPARATION_ALIGN
     real qw_r3_N;
 } R_POINTS;
 
-typedef struct SEPARATION_ALIGN
+typedef struct SEPARATION_ALIGN(sizeof(real))
 {
     real nu;
     real id;
 } NU_CONSTANTS;
 
-typedef struct SEPARATION_ALIGN
+typedef struct SEPARATION_ALIGN(sizeof(real))
 {
     real dx;
     real qgaus_W;
@@ -90,7 +90,7 @@ typedef struct SEPARATION_ALIGN
 
 /* Parameter related types */
 
-typedef struct SEPARATION_ALIGN
+typedef struct SEPARATION_ALIGN(sizeof(real))
 {
     real r_min, r_max, r_step_size;
     real nu_min, nu_max, nu_step_size;
@@ -152,23 +152,19 @@ typedef struct
 #define EMPTY_FINAL_STREAM_INTEGRALS { 0.0, NULL }
 
 
-typedef struct SEPARATION_ALIGN
+typedef struct SEPARATION_ALIGN(sizeof(real))
 {
     real parameters_version;
     real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
-
+    int sgr_coordinates;
+    unsigned int number_integrals;
     unsigned int number_background_parameters;
-    real background_weight;
-
     unsigned int number_streams;
     unsigned int convolve;
 
-    int sgr_coordinates;
-
     int aux_bg_profile;
     int wedge;
-
-    unsigned int number_integrals;
+    real background_weight;
 
     /* Constants determined by other parameters */
     real alpha, q, sn, r0, delta, coeff, alpha_delta3;
