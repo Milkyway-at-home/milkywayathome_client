@@ -116,6 +116,12 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
           st->tout += 1.0 / ctx->freqout;     /* schedule next data out */
         #endif
     }
+
+  #if BOINC_APPLICATION
+    warn("Making final checkpoint\n");
+    nbodyCheckpoint(ctx, st);
+  #endif
+
 }
 
 static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
