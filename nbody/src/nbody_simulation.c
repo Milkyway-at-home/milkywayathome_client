@@ -253,6 +253,5 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
         warn("Failed to calculate chisq\n");
 
     endRun(&ctx, &st, chisq);
-
 }
 

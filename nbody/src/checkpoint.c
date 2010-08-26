@@ -126,9 +126,6 @@ void closeCheckpoint(NBodyCtx* ctx)
             nbody_finish(EXIT_FAILURE);
         }
     }
-
-    warn("Removing checkpoint file '%s'\n", ctx->cp.filename);
-    nbody_remove(ctx->cp.filename);
 }
 
 #else  /* Windows version */
