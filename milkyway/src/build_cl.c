@@ -28,6 +28,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "show_cl_types.h"
 #include "build_cl.h"
 
+/* This doesn't seem to exist on OS X, but the callback on ATI on
+ * Linux/Windows dies without it */
+#ifndef CL_CALLBACK
+  #define CL_CALLBACK
+#endif
+
 cl_int printCLExtensions(cl_device_id dev)
 {
     cl_int err;

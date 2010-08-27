@@ -157,21 +157,16 @@ real integrateCL(const ASTRONOMY_PARAMETERS* ap,
                  const STREAM_GAUSS* sg,
                  ST_PROBS* probs_results)
 {
-    real result;
+    real result = NAN;
     CLInfo ci = EMPTY_CL_INFO;
     SeparationCLMem cm = EMPTY_SEPARATION_CL_MEM;
     NU_CONSTANTS* nu_consts;
 
     nu_consts = prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
     if (setupSeparationCL(ap, ia, sc, sg, nu_consts, &ci, &cm) != CL_SUCCESS)
-    {
         warn("Failed to setup up CL\n");
-        result = NAN;
-    }
     else
-    {
         result = runIntegral(&ci, &cm, probs_results, ia->r_steps, ap->number_streams);
-    }
 
     destroyCLInfo(&ci);
     releaseSeparationBuffers(&cm);

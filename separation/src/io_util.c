@@ -156,7 +156,6 @@ void printStreamGauss(const STREAM_GAUSS* c, unsigned int n)
         printf("[%u] { dx = %g, qgaus_W = %g } \n", i, c[i].dx, c[i].qgaus_W);
 }
 
-#if 0
 void printStreamConstants(const STREAM_CONSTANTS* c, unsigned int n)
 {
     unsigned int i;
@@ -169,7 +168,6 @@ void printStreamConstants(const STREAM_CONSTANTS* c, unsigned int n)
                c[i].sigma_sq2, c[i].large_sigma);
     }
 }
-#endif
 
 void printAstronomyParameters(const ASTRONOMY_PARAMETERS* ap)
 {

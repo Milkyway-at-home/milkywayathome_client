@@ -22,10 +22,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define WIN32_LEAN_AND_MEAN
   #include <windows.h>
 #else
-#define _GNU_SOURCE
   #include <time.h>
   #include <sys/time.h>
-  #include <sys/timex.h>
   #include <sys/resource.h>
 #endif
 

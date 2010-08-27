@@ -28,7 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif /* DOUBLEPREC */
 
 #ifdef __FAST_RELAXED_MATH__
-  #error "Bad bad bad bad bad"
+  #error "Bad bad bad bad bad bad"
 #endif /* __FAST_RELAXED_MATH__ */
 
 
@@ -154,6 +154,9 @@ __kernel void r_sum_kernel(__global BG_PROB* nu_out,
     /* Write results back */
     nu_out[r_step] = nu_result;
     for (i = 0; i < ap->number_streams; ++i)
+    {
+        //printf("Soup: %g, %g\n", probs[i].st_prob_int, probs[i].st_prob_int_c);
         probs_out[r_step * ap->number_streams + i] = probs[i];
+    }
 }
 
