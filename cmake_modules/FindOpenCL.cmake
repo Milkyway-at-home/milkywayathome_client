@@ -52,6 +52,7 @@ ELSE (APPLE)
             # Unix style platforms
             FIND_LIBRARY(OPENCL_LIBRARIES OpenCL
               ENV LD_LIBRARY_PATH
+              /opt/amdstream/lib/x86_64
             )
 
             GET_FILENAME_COMPONENT(OPENCL_LIB_DIR ${OPENCL_LIBRARIES} PATH)
@@ -60,7 +61,7 @@ ELSE (APPLE)
             # The AMD SDK currently does not place its headers
             # in /usr/include, therefore also search relative
             # to the library
-            FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h PATHS ${_OPENCL_INC_CAND})
+            FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h PATHS ${_OPENCL_INC_CAND} /opt/amdstream/include)
             FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp PATHS ${_OPENCL_INC_CAND})
 
 	ENDIF (WIN32)

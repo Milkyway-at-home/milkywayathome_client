@@ -28,8 +28,8 @@ extern "C" {
 #include "separation_types.h"
 #include "milkyway_cl.h"
 
-real set_r_points(__MW_CONSTANT const ASTRONOMY_PARAMETERS* ap,
-                  __MW_CONSTANT const STREAM_GAUSS* sg,
+real set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+                  __MW_CONSTANT STREAM_GAUSS* sg,
                   const unsigned int n_convolve,
                   const real coords,
                   __MW_LOCAL R_POINTS* r_pts);

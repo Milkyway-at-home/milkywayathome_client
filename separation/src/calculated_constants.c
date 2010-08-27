@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "gauss_legendre.h"
 
 /* Convert sun-centered lbr (degrees) into galactic xyz coordinates. */
-static void lbr2xyz(const real* lbr, vector xyz)
+static void lbr2xyz(const vector lbr, vector xyz)
 {
     real zp, d;
 /* TODO: Use radians to begin with */

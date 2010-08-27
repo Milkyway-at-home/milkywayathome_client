@@ -19,13 +19,18 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if DOUBLEPREC
+  #ifdef __ATI_CL__
+    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
+  #else
+    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+  #endif /* __ATI_CL__ */
+#endif /* DOUBLEPREC */
+
 #ifdef __FAST_RELAXED_MATH__
   #error "Bad bad bad bad bad"
 #endif /* __FAST_RELAXED_MATH__ */
 
-#if DOUBLEPREC
-  #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-#endif /* DOUBLEPREC */
 
 #include "separation_types.h"
 //#include "r_points.h"
@@ -41,13 +46,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 __attribute__ ((always_inline))
-inline _MW_STATIC BG_PROB nu_sum(__constant const ASTRONOMY_PARAMETERS* ap,
-                                 __constant const STREAM_CONSTANTS* sc,
-                                 __constant const INTEGRAL_AREA* ia,
+inline _MW_STATIC BG_PROB nu_sum(__constant ASTRONOMY_PARAMETERS* ap,
+                                 __constant STREAM_CONSTANTS* sc,
+                                 __constant INTEGRAL_AREA* ia,
                                  const real irv,
                                  const real reff_xr_rp3,
                                  __local const R_POINTS* r_pts,
-                                 __constant const NU_CONSTANTS* nu_consts,
+                                 __constant NU_CONSTANTS* nu_consts,
                                  __local ST_PROBS* probs,
                                  __local vector* xyz)
 {
@@ -81,11 +86,11 @@ inline _MW_STATIC BG_PROB nu_sum(__constant const ASTRONOMY_PARAMETERS* ap,
 }
 
 __attribute__ ((always_inline))
-inline _MW_STATIC BG_PROB r_sum(__constant const ASTRONOMY_PARAMETERS* ap,
-                                __constant const INTEGRAL_AREA* ia,
-                                __constant const STREAM_CONSTANTS* sc,
-                                __constant const STREAM_GAUSS* sg,
-                                __constant const NU_CONSTANTS* nu_consts,
+inline _MW_STATIC BG_PROB r_sum(__constant ASTRONOMY_PARAMETERS* ap,
+                                __constant INTEGRAL_AREA* ia,
+                                __constant STREAM_CONSTANTS* sc,
+                                __constant STREAM_GAUSS* sg,
+                                __constant NU_CONSTANTS* nu_consts,
                                 __local R_POINTS* r_pts,
                                 __local ST_PROBS* probs,
                                 __local vector* xyz,
@@ -121,8 +126,8 @@ inline _MW_STATIC BG_PROB r_sum(__constant const ASTRONOMY_PARAMETERS* ap,
 __kernel void r_sum_kernel(__global BG_PROB* nu_out,
                            __global ST_PROBS* probs_out,
 
-                           __constant const ASTRONOMY_PARAMETERS* ap,
-                           __constant const INTEGRAL_AREA* ia,
+                           __constant ASTRONOMY_PARAMETERS* ap,
+                           __constant INTEGRAL_AREA* ia,
                            __constant STREAM_CONSTANTS* sc,
                            __constant STREAM_GAUSS* sg,
                            __constant NU_CONSTANTS* nu_consts,

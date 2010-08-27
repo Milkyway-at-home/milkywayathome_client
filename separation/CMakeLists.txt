@@ -35,7 +35,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 
 include_directories(${PROJECT_INCLUDE_DIR})
-set(CMAKE_C_FLAGS "-std=c99 -warn-uninit-values ${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS "-std=gnu99 -warn-uninit-values ${CMAKE_C_FLAGS}")
 
 
 option(SEPARATION_INLINE_KERNEL
@@ -112,7 +112,7 @@ endif()
 
 
 add_executable(${separation_bin_name} src/milkyway_client_app.c)
-target_link_libraries(${separation_bin_name} separation milkyway ${exe_link_libs} ${OS_SPECIFIC_LIBS})
+target_link_libraries(${separation_bin_name} separation milkyway ${exe_link_libs} ${OS_SPECIFIC_LIBS} m)
 if(BOINC_RELEASE)
   #Static linking tends to interfere with debugging with valgrind/gdb
   #in annoying ways

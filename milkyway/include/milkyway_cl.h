@@ -44,7 +44,7 @@ extern "C" {
   #define __MW_LOCAL
   #define __MW_PRIVATE
   #define __MW_GLOBAL
-  #define __MW_CONSTANT
+  #define __MW_CONSTANT const
 #endif /* __OPENCL_VERSION__ */
 
 #ifdef __cplusplus

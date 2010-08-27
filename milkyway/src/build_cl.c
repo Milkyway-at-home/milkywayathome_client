@@ -78,11 +78,37 @@ cl_int destroyCLInfo(CLInfo* ci)
     return err;
 }
 
+static char* getBuildLog(CLInfo* ci)
+{
+    size_t logSize, readSize;
+    char* buildLog;
+
+    clGetProgramBuildInfo(ci->prog,
+                          ci->dev,
+                          CL_PROGRAM_BUILD_LOG,
+                          0,
+                          NULL,
+                          &logSize);
+
+    buildLog = callocSafe(sizeof(char), logSize + 1);
+
+    clGetProgramBuildInfo(ci->prog,
+                          ci->dev,
+                          CL_PROGRAM_BUILD_LOG,
+                          logSize,
+                          buildLog,
+                          &readSize);
+
+    if (readSize != logSize)
+        warn("Failed to read complete build log\n");
+
+    return buildLog;
+}
+
 static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
 {
     cl_int infoErr;
     cl_build_status stat;
-    size_t logSize, readSize;
     CLInfo* ci;
     char* buildLog;
 
@@ -106,24 +132,7 @@ static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
     else
         warn("Build status: %s\n", showCLBuildStatus(stat));
 
-    clGetProgramBuildInfo(ci->prog,
-                          ci->dev,
-                          CL_PROGRAM_BUILD_LOG,
-                          0,
-                          NULL,
-                          &logSize);
-
-    buildLog = callocSafe(sizeof(char), logSize + 1);
-
-    clGetProgramBuildInfo(ci->prog,
-                          ci->dev,
-                          CL_PROGRAM_BUILD_LOG,
-                          logSize,
-                          buildLog,
-                          &readSize);
-
-    if (readSize != logSize)
-        warn("Failed to read complete build log\n");
+    buildLog = getBuildLog(ci);
 
     warn("Build log: \n%s\n", buildLog);
     free(buildLog);
@@ -151,7 +160,7 @@ static cl_int createCtxQueue(CLInfo* ci)
 {
     cl_int err = CL_SUCCESS;
 
-    ci->clctx = clCreateContext(NULL, 1, &ci->dev, clLogMessagesToStdoutAPPLE, NULL, &err);
+    ci->clctx = clCreateContext(NULL, 1, &ci->dev, NULL, NULL, &err);
     if (err != CL_SUCCESS)
     {
         warn("Error creating context: %s\n", showCLInt(err));

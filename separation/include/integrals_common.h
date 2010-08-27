@@ -31,14 +31,14 @@ extern "C" {
 #include "integrals_likelihood.h"
 
 __attribute__ ((always_inline))
-inline static void probabilities(__MW_CONSTANT const STREAM_CONSTANTS* sc,
-                                 __MW_LOCAL const R_POINTS* r_pts,
-                                 __MW_LOCAL vector* const xyz,
-                                 const real V,
-                                 const real reff_xr_rp3,
-                                 const unsigned int number_streams,
-                                 const unsigned int nconvolve,
-                                 __MW_LOCAL ST_PROBS* probs)
+inline _MW_STATIC void probabilities(__MW_CONSTANT STREAM_CONSTANTS* sc,
+                                     __MW_LOCAL const R_POINTS* r_pts,
+                                     __MW_LOCAL vector* const xyz,
+                                     const real V,
+                                     const real reff_xr_rp3,
+                                     const unsigned int number_streams,
+                                     const unsigned int nconvolve,
+                                     __MW_LOCAL ST_PROBS* probs)
 {
     unsigned int i;
     real st_prob;
@@ -55,25 +55,25 @@ inline static void probabilities(__MW_CONSTANT const STREAM_CONSTANTS* sc,
 }
 
 __attribute__ ((always_inline, const))
-inline static real distance_magnitude(const real m)
+inline _MW_STATIC real distance_magnitude(const real m)
 {
     return mw_powr((real) 10.0, (m - (real) 14.2) / (real) 5.0);
 }
 
 /* Sum over mu steps using Kahan summation */
 __attribute__ ((always_inline, hot))
-inline static BG_PROB mu_sum(__MW_CONSTANT const ASTRONOMY_PARAMETERS* ap,
-                             __MW_CONSTANT const STREAM_CONSTANTS* sc,
-                             __MW_LOCAL const R_POINTS* r_pts,
-                             const real irv,             /* r constants */
-                             const real reff_xr_rp3,
-                             const real nu_consts_id,    /* nu constants */
-                             const real nu_consts_nu,
-                             const unsigned int mu_steps,
-                             const real mu_step_size,
-                             const real mu_min,
-                             __MW_LOCAL ST_PROBS* probs,
-                             __MW_LOCAL vector* xyz)
+inline _MW_STATIC BG_PROB mu_sum(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+                                 __MW_CONSTANT STREAM_CONSTANTS* sc,
+                                 __MW_LOCAL const R_POINTS* r_pts,
+                                 const real irv,             /* r constants */
+                                 const real reff_xr_rp3,
+                                 const real nu_consts_id,    /* nu constants */
+                                 const real nu_consts_nu,
+                                 const unsigned int mu_steps,
+                                 const real mu_step_size,
+                                 const real mu_min,
+                                 __MW_LOCAL ST_PROBS* probs,
+                                 __MW_LOCAL vector* xyz)
 {
     unsigned int mu_step_current;
     real mu, V;

@@ -22,6 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_types.h"
 #include "separation_constants.h"
 #include "milkyway_cl.h"
+#include "milkyway_extra.h"
 #include "r_points.h"
 
 /* Literals are assumed to be doubles by default, and the
@@ -33,8 +34,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define R10 ((real) 10.0)
 #define R1000 ((real) 1000.0)
 
-real set_r_points(__MW_CONSTANT const ASTRONOMY_PARAMETERS* ap,
-                  __MW_CONSTANT const STREAM_GAUSS* sg,
+real set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+                  __MW_CONSTANT STREAM_GAUSS* sg,
                   const unsigned int n_convolve,
                   const real coords,
                   __MW_LOCAL R_POINTS* r_pts)
@@ -45,7 +46,7 @@ real set_r_points(__MW_CONSTANT const ASTRONOMY_PARAMETERS* ap,
 
     /* R2MAG */
     const real gPrime = R5 * (mw_log10(coords * R1000) - R1) + absm;
-    static const real sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
+    _MW_STATIC const real sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
     /* REFF */
     const real exp_result = mw_exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));

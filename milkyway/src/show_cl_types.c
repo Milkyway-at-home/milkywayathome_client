@@ -66,6 +66,8 @@ const char* showCLInt(const cl_int x)
     {
         case CL_SUCCESS:
             return "CL_SUCCESS";
+        case CL_DEVICE_NOT_FOUND:
+            return "CL_DEVICE_NOT_FOUND";
         case CL_INVALID_PROGRAM:
             return "CL_INVALID_PROGRAM";
         case CL_INVALID_KERNEL_NAME:

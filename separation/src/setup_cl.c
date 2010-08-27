@@ -69,15 +69,16 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
 }
 
 #if DOUBLEPREC
-  #define DOUBLEPREC_DEF_STRING "-D DOUBLEPREC=1"
+  #define DOUBLEPREC_DEF_STRING "-D DOUBLEPREC=1 "
 #else
   #define DOUBLEPREC_DEF_STRING "-D DOUBLEPREC=0 -cl-single-precision-constant "
 #endif /* DOUBLEPREC */
 
 #if 1
-  #define ROOT "/Users/matt/src/milkywayathome_client/"
+  #define ROOT "/home/matt/Desktop/milkywayathome_client/"
 #else
-  #define ROOT "/Users/matt/Desktop/separation_fix/milkywayathome_client/"
+  #define ROOT "/Users/matt/src/milkywayathome_client/"
+//#define ROOT "/Users/matt/Desktop/separation_fix/milkywayathome_client/"
 #endif
 
 #if SEPARATION_INLINE_KERNEL
@@ -128,6 +129,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
     char* rPointsSrc;
 
     static const char* extraDefs = DOUBLEPREC_DEF_STRING
+                                   "-D__ATI_CL__=1 "
                                    "-cl-strict-aliasing "
                                    "-cl-finite-math-only "
                                    "-I../src "
