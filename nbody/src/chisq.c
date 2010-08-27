@@ -29,9 +29,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define phi d2r(128.79)
 #define theta d2r(54.39)
 #define psi d2r(90.70)
-#define startRaw ((real) -50.0)
-#define endRaw ((real) 50.0)
-#define binsize ((real) 3.0)
+#define startRaw ((real) -50)
+#define endRaw ((real) 50)
+#define binsize ((real) 2.9411764705882355)
 #define center ((real) 0.0)
 
 typedef struct

@@ -35,10 +35,10 @@
         "dwarf-model": {
             "plummer" : {
             "mass" : 16,
-            "nbody" : 100000, 
+            "nbody" : 2048, 
             "scale-radius" : 0.2, 
             "time-orbit" : 4, 
-            "time-dwarf" : 3.945 
+            "time-dwarf" : 3.935 
             }
         }
     },
