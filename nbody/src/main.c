@@ -139,7 +139,8 @@ static json_object* readParameters(const int argc,
                                    int* printTiming,
                                    int* verifyOnly,
                                    int* outputBodies,
-                                   int* outputHistogram)
+                                   int* outputHistogram,
+                                   int* cleanCheckpoint)
 {
   #if !BOINC_APPLICATION
     #pragma unused(checkpointFileName)
@@ -214,6 +215,12 @@ static json_object* readParameters(const int argc,
             "checkpoint", 'c',
             POPT_ARG_STRING, checkpointFileName,
             0, "Checkpoint file to use", NULL
+        },
+
+        {
+            "clean-checkpoint", 'k',
+            POPT_ARG_NONE, cleanCheckpoint,
+            0, "Cleanup checkpoint after finishing run", NULL
         },
 
         {
@@ -398,6 +405,7 @@ int main(int argc, const char* argv[])
     int verifyOnly       = FALSE;
     int outputBodies     = FALSE;
     int outputHistogram  = FALSE;
+    int cleanupCheck      = FALSE;
     char* checkpointFile = NULL;
     char* histogramFile  = NULL;
     char* histoutFile    = NULL;
@@ -420,7 +428,8 @@ int main(int argc, const char* argv[])
                          &printTiming,
                          &verifyOnly,
                          &outputBodies,
-                         &outputHistogram);
+                         &outputHistogram,
+                         &cleanupCheck);
 
     /* Use default if checkpoint file not specified */
     stringDefault(checkpointFile, DEFAULT_CHECKPOINT_FILE);
@@ -443,11 +452,16 @@ int main(int argc, const char* argv[])
         nbody_finish(EXIT_FAILURE);
     }
 
+    if (cleanupCheck)
+    {
+        warn("Removing checkpoint file '%s'\n", checkpointFile);
+        nbody_remove(checkpointFile);
+    }
+
     free(outFile);
     free(checkpointFile);
     free(histogramFile);
     free(histoutFile);
-
     nbody_finish(EXIT_SUCCESS);
 }
 
