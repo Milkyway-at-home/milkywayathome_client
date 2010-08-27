@@ -28,8 +28,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "show_cl_types.h"
 #include "build_cl.h"
 
-#define BUFSIZE 4096
-
 cl_int printCLExtensions(cl_device_id dev)
 {
     cl_int err;
@@ -80,14 +78,21 @@ cl_int destroyCLInfo(CLInfo* ci)
     return err;
 }
 
-void milkywayBuildCB(cl_program prog, void* user_data)
+static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
 {
-    char buildLog[BUFSIZE] = "";
     cl_int infoErr;
     cl_build_status stat;
-    size_t failSize;
+    size_t logSize, readSize;
+    CLInfo* ci;
+    char* buildLog;
 
-    CLInfo* ci = (CLInfo*) user_data;
+    if (!user_data)
+    {
+        warn("milkywayBuildCB got null user_data\n");
+        return;
+    }
+
+    ci = (CLInfo*) user_data;
 
     infoErr = clGetProgramBuildInfo(ci->prog,
                                     ci->dev,
@@ -104,26 +109,24 @@ void milkywayBuildCB(cl_program prog, void* user_data)
     clGetProgramBuildInfo(ci->prog,
                           ci->dev,
                           CL_PROGRAM_BUILD_LOG,
-                          sizeof(buildLog),
+                          0,
+                          NULL,
+                          &logSize);
+
+    buildLog = callocSafe(sizeof(char), logSize + 1);
+
+    clGetProgramBuildInfo(ci->prog,
+                          ci->dev,
+                          CL_PROGRAM_BUILD_LOG,
+                          logSize,
                           buildLog,
-                          &failSize);
+                          &readSize);
 
-    if (failSize > BUFSIZE)
-    {
-        char* bigBuf = callocSafe(sizeof(char), failSize + 1);
+    if (readSize != logSize)
+        warn("Failed to read complete build log\n");
 
-        clGetProgramBuildInfo(ci->prog,
-                              ci->dev,
-                              CL_PROGRAM_BUILD_LOG,
-                              failSize,
-                              bigBuf,
-                              NULL);
-
-        warn("Build log: \n%s\n", bigBuf);
-        free(bigBuf);
-    }
-    else
-        warn("Build log: \n%s\n", buildLog);
+    warn("Build log: \n%s\n", buildLog);
+    free(buildLog);
 }
 
 static cl_int milkywayBuildProgram(CLInfo* ci, const char** src, cl_uint srcCount, const char* compileDefs)
@@ -137,9 +140,9 @@ static cl_int milkywayBuildProgram(CLInfo* ci, const char** src, cl_uint srcCoun
         return err;
     }
 
-    err = clBuildProgram(ci->prog, 1, &ci->dev, compileDefs, NULL, NULL);
+    err = clBuildProgram(ci->prog, 1, &ci->dev, compileDefs, milkywayBuildCB, ci);
     if (err != CL_SUCCESS)
-        warn("Build failure: %s\n", showCLInt(err));
+        warn("clBuildProgram: Build failure: %s\n", showCLInt(err));
 
     return err;
 }
