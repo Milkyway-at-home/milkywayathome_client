@@ -78,10 +78,10 @@ inline LB gc2lb(const int wedge, const real mu, const real nu)
     mw_sincos(ra, &sinra, &cosra);
 
     const real cosdec = mw_cos(dec);
-    const vector v1 = VECTOR( cosra * cosdec,
-                              sinra * cosdec,
-                              z1         /* mw_sin(asin(z1)) == z1 */
-                            );
+    vector v1 = VECTOR( cosra * cosdec,
+                        sinra * cosdec,
+                        z1         /* mw_sin(asin(z1)) == z1 */
+                      );
 
     /* Equatorial to Galactic */
 
