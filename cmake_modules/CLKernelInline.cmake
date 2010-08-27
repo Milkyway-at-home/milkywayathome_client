@@ -22,11 +22,17 @@
 # can embed in the source and ship that without needing to send source
 # files.
 
-function(inline_kernel kernel_file name c_kernel_dir include_dirs)
-   #Run preprocessor
-   execute_process(COMMAND ${CMAKE_C_COMPILER} ${include_dirs} -std=c99 -E -x c ${kernel_file}
+#FIXME: Passing a list of include arguments wasn't working and I don't
+#feel like fighting with cmake now.
+function(inline_kernel kernel_file name c_kernel_dir include_dir1 include_dir2 include_dir3)
+
+  #FIXME: Less hacky than definining __OPENCL_VERSION__
+  #This is also somewhat sketchy in the first place.
+  #Run preprocessor
+  execute_process(COMMAND ${CMAKE_C_COMPILER} -I${include_dir1} -I${include_dir2} -I${include_dir3} -std=c99 -D__OPENCL_VERSION__=100 -DSEPARATION_INLINE_KERNEL=1 -E -x c ${kernel_file}
                    OUTPUT_VARIABLE kernel_cpp OUTPUT_STRIP_TRAILING_WHITESPACE)
-  file(WRITE "${name}.cl" "${kernel_cpp}")
+
+  #file(WRITE "${c_kernel_dir}/${name}.cl" "${kernel_cpp}")
 
   #Escape special characters
   #TODO: Other things that need escaping
@@ -34,7 +40,7 @@ function(inline_kernel kernel_file name c_kernel_dir include_dirs)
              "(\n)|(\r\n)"
              "\\\\n"
              str_escaped
-             "${str_stripped}")
+             "${kernel_cpp}")
 
   string(REGEX REPLACE
              "(\")"

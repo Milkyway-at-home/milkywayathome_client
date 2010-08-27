@@ -30,6 +30,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_cl_buffers.h"
 #include "separation_cl_defs.h"
 
+#if SEPARATION_INLINE_KERNEL
+  #include "integral_kernel.h"
+#endif /* SEPARATION_INLINE_KERNEL */
+
 #define BUFSIZE 4096
 
 inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
@@ -76,6 +80,40 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
   #define ROOT "/Users/matt/Desktop/separation_fix/milkywayathome_client/"
 #endif
 
+#if SEPARATION_INLINE_KERNEL
+
+char* findKernelSrc()
+{
+    return integral_kernel_src;
+}
+
+void freeKernelSrc(char* src)
+{
+  #pragma unused(src)
+}
+
+#else
+
+/* Reading from the file is more convenient for actually working on
+ * it. Inlining is more useful for releasing when we don't want to
+ * deal with the hassle of distributing more files. */
+char* findKernelSrc()
+{
+    char* kernelSrc = NULL;
+    kernelSrc = mwReadFile("../kernels/integrals.cl");
+    if (!kernelSrc)
+        warn("Failed to read kernel file\n");
+
+    return kernelSrc;
+}
+
+void freeKernelSrc(char* src)
+{
+    free(src);
+}
+
+#endif
+
 cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                          const INTEGRAL_AREA* ia,
                          const STREAM_CONSTANTS* sc,
@@ -99,28 +137,17 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                                    "-I" ROOT "separation/include "
                                    "-I" ROOT "milkyway/include ";
 
-    kernelSrc = mwReadFile("../kernels/integrals.cl");
+    kernelSrc = findKernelSrc();
     if (!kernelSrc)
     {
-        warn("Failed to read kernel file\n");
+        warn("Failed to read CL kernel source\n");
         return -1;
     }
-
-    rPointsSrc = mwReadFile("../src/r_points.c");
-    if (!rPointsSrc)
-    {
-        warn("Failed to read r_points file\n");
-        return -1;
-    }
-
-
-    char* allSrc[] = { rPointsSrc, kernelSrc };
 
     //compileDefs = separationCLDefs(ap, extraDefs);
-    err = getCLInfo(ci, CL_DEVICE_TYPE_GPU, "r_sum_kernel", allSrc, 2, extraDefs);
+    err = getCLInfo(ci, CL_DEVICE_TYPE_CPU, "r_sum_kernel", &kernelSrc, 1, extraDefs);
 
-    free(kernelSrc);
-    free(rPointsSrc);
+    freeKernelSrc(kernelSrc);
     //free(compileDefs);
 
     if (err != CL_SUCCESS)

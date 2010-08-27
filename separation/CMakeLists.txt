@@ -37,17 +37,14 @@ set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_INCLUDE_DIR})
 set(CMAKE_C_FLAGS "-std=c99 -warn-uninit-values ${CMAKE_C_FLAGS}")
 
+
+option(SEPARATION_INLINE_KERNEL
+       "Inline the CL kernel" ON)
+
+
 configure_file (
   "${PROJECT_INCLUDE_DIR}/config.h.in"
   "${PROJECT_INCLUDE_DIR}/config.h")
-
-
-# set(kernel_includes "-I${PROJECT_INCLUDE_DIR} -I${PROJECT_SOURCE_DIR}/src -I${MILKYWAY_INCLUDE_DIR}")
-# inline_kernel("${PROJECT_SOURCE_DIR}/kernels/integrals.cl"
-#               "integral_kernel"
-#                "ckernels"
-#                ${kernel_includes})
-
 
 if(UNIX AND NOT APPLE)  #Unix that isn't OS X
     set(OS_SPECIFIC_LIBS pthread)
@@ -75,6 +72,17 @@ set(lib_source_file_list src/evaluation_state.c
 
 if(SEPARATION_OPENCL)
   list(APPEND lib_source_file_list ${cl_source_list})
+
+  if(SEPARATION_INLINE_KERNEL)
+    message("Inlining kernel")
+    set(c_kernel_dir "${PROJECT_SOURCE_DIR}/ckernels")
+    inline_kernel("${PROJECT_SOURCE_DIR}/kernels/integrals.cl"
+                  "integral_kernel"
+                  "${c_kernel_dir}"
+                  "${PROJECT_INCLUDE_DIR}" "${PROJECT_SOURCE_DIR}/src" "${MILKYWAY_INCLUDE_DIR}")
+   include_directories(${c_kernel_dir})
+   list(APPEND lib_source_file_list "${c_kernel_dir}/integral_kernel.c")
+  endif()
 endif()
 
 add_library(separation STATIC ${lib_source_file_list})
