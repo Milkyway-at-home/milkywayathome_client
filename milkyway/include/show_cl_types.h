@@ -32,6 +32,12 @@ const char* showCLDeviceType(const cl_device_type x) __attribute__ ((const));
 const char* showCLBuildStatus(const cl_build_status x) __attribute__ ((const));
 const char* showCLInt(const cl_int x) __attribute__ ((const));
 const char* showCLMemFlags(const cl_mem_flags x) __attribute__ ((const));
+const char* showCLDeviceFPConfig(const cl_device_fp_config x) __attribute__ ((const));
+const char* showCLDeviceLocalMemType(const cl_device_local_mem_type x) __attribute__ ((const));
+const char* showCLDeviceExecCapabilities(const cl_device_exec_capabilities x) __attribute__ ((const));
+const char* showCLCommandQueueProperties(const cl_command_queue_properties x) __attribute__ ((const));
+const char* showCLBool(const cl_bool x) __attribute__ ((const));
+const char* showCLDeviceMemCacheType(const cl_device_mem_cache_type x) __attribute__ ((const));
 
 #ifdef __cplusplus
 }

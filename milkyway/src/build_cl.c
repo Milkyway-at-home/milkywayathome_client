@@ -53,16 +53,120 @@ cl_int printCLExtensions(cl_device_id dev)
 
 cl_int printDeviceInfo(cl_device_id dev, cl_device_type type)
 {
-    cl_uint maxComputeUnits, clockFreq;
+    cl_uint maxCompUnits, clockFreq;
     cl_ulong memSize;
+    cl_ulong gMemCache;
+    cl_ulong localMemSize;
+    cl_device_local_mem_type localMemType;
+    //cl_bool unifiedMem;
+    cl_uint maxConstArgs;
+    cl_ulong maxConstBufSize;
+    cl_ulong maxMemAlloc;
+    size_t maxWorkGroupSize;
+    size_t maxParamSize;
+    size_t timerRes;
+    cl_uint maxWorkItemDim;
+    cl_uint memBaseAddrAlign;
+    cl_uint minAlignSize;
+    cl_uint vendorID;
+    cl_uint addrBits;
     cl_int err = CL_SUCCESS;
+    cl_uint cachelineSize;
+    cl_bool littleEndian;
+    cl_bool errCorrect;
+    char devName[128];
+    char vendor[128];
+    char version[128];
+    char driver[128];
+    //char clCVer[128];
 
-    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_COMPUTE_UNITS,   sizeof(cl_uint),  &maxComputeUnits, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(cl_uint),  &clockFreq, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_GLOBAL_MEM_SIZE,     sizeof(cl_ulong), &memSize, NULL);
+    size_t maxWorkItemSizes[3] = { 0, 0, 0 };
 
-    printf("arst device %s: %u %u %lu\n",
-           showCLDeviceType(type), maxComputeUnits, clockFreq, (unsigned long) memSize);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_NAME,                     sizeof(devName),  devName, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_VENDOR,                   sizeof(vendor),   vendor, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_VENDOR_ID,                sizeof(cl_uint),  &vendorID, NULL);
+    err |= clGetDeviceInfo(dev, CL_DRIVER_VERSION,                  sizeof(driver),   driver, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_VERSION,                  sizeof(version),  version, NULL);
+  //err |= clGetDeviceInfo(dev, CL_DEVICE_OPENCL_C_VERSION,         sizeof(clCVer),   clCVer, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_ENDIAN_LITTLE,            sizeof(cl_bool),  &littleEndian, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_ERROR_CORRECTION_SUPPORT, sizeof(cl_bool),  &errCorrect, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_ADDRESS_BITS,             sizeof(cl_uint),  &addrBits, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_COMPUTE_UNITS,        sizeof(cl_uint),  &maxCompUnits, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_CLOCK_FREQUENCY,      sizeof(cl_uint),  &clockFreq, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_GLOBAL_MEM_SIZE,          sizeof(cl_ulong), &memSize, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_MEM_ALLOC_SIZE,       sizeof(cl_ulong), &maxMemAlloc, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_GLOBAL_MEM_CACHE_SIZE,    sizeof(cl_ulong), &gMemCache, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE, sizeof(cl_uint), &cachelineSize, NULL);
+
+  //err |= clGetDeviceInfo(dev, CL_DEVICE_HOST_UNIFIED_MEMORY,      sizeof(cl_ulong), &unifiedMem, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_LOCAL_MEM_TYPE, sizeof(cl_device_local_mem_type), &localMemType, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_LOCAL_MEM_SIZE,           sizeof(cl_ulong), &localMemSize, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_CONSTANT_ARGS,        sizeof(cl_uint),  &maxConstArgs, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE, sizeof(cl_ulong), &maxConstBufSize, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_PARAMETER_SIZE, sizeof(size_t), &maxParamSize, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &maxWorkGroupSize, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(cl_uint), &maxWorkItemDim, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(maxWorkItemSizes), maxWorkItemSizes, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MEM_BASE_ADDR_ALIGN, sizeof(cl_uint), &memBaseAddrAlign, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE, sizeof(cl_uint), &minAlignSize, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_PROFILING_TIMER_RESOLUTION, sizeof(size_t), &timerRes, NULL);
+
+
+
+
+    printf("Device %s (%s:0x%x)\n"
+           "Type:                %s\n"
+           "Driver version:      %s\n"
+           "Version:             %s\n"
+           "Little endian:       %s\n"
+           "Error correction:    %s\n"
+           "Address bits:        %u\n"
+           "Max compute units:   %u\n"
+           "Clock frequency:     %u Mhz\n"
+           "Global mem size:     %llu\n"
+           "Max mem alloc:       %llu\n"
+           "Global mem cache:    %llu\n"
+           "Cacheline size:      %u\n"
+           "Local mem type:      %s\n"
+           "Local mem size:      %llu\n"
+           "Max const args:      %u\n"
+           "Max const buf size:  %llu\n"
+           "Max parameter size:  %zu\n"
+           "Max work group size: %zu\n"
+           "Max work item dim:   %u\n"
+           "Max work item sizes: { %zu, %zu, %zu }\n"
+           "Mem base addr align: %u\n"
+           "Min type align size: %u\n"
+           "Timer resolution:    %zu ns\n"
+           ,
+           devName,
+           vendor,
+           vendorID,
+           showCLDeviceType(type),
+           driver,
+           version,
+           showCLBool(littleEndian),
+           showCLBool(errCorrect),
+           addrBits,
+           maxCompUnits,
+           clockFreq,
+           memSize,
+           maxMemAlloc,
+           gMemCache,
+           cachelineSize,
+           //showBool(unifiedMem),
+           showCLDeviceLocalMemType(localMemType),
+           localMemSize,
+           maxConstArgs,
+           maxConstBufSize,
+           maxParamSize,
+           maxWorkGroupSize,
+           maxWorkItemDim,
+           maxWorkItemSizes[0], maxWorkItemSizes[1], maxWorkItemSizes[2],
+           memBaseAddrAlign,
+           minAlignSize,
+           timerRes
+        );
 
     if (err)
         warn("Error getting device information: %s\n", showCLInt(err));

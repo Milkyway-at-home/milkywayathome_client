@@ -187,3 +187,103 @@ const char* showCLMemFlags(const cl_mem_flags x)
     }
 }
 
+const char* showCLDeviceFPConfig(const cl_device_fp_config x)
+{
+    switch (x)
+    {
+        case CL_FP_DENORM:
+            return "CL_FP_DENORM";
+        case CL_FP_INF_NAN:
+            return "CL_FP_INF_NAN";
+        case CL_FP_ROUND_TO_NEAREST:
+            return "CL_FP_ROUND_TO_NEAREST";
+        case CL_FP_ROUND_TO_ZERO:
+            return "CL_FP_ROUND_TO_ZERO";
+        case CL_FP_ROUND_TO_INF:
+            return "CL_FP_ROUND_TO_INF";
+            /* FIXME:: Typeo in opencl docs? */
+        case CL_FP_FMA:
+            return "CL_FP_FMA";
+
+            /*
+        case CL_FP_SOFT_FLOAT:
+            return "CL_FP_SOFT_FLOAT";
+            */
+        default:
+            warn("Trying to show unknown cl_device_local_mem_type %d\n", (int) x);
+            return "Unhandled cl_local_mem_type";
+    }
+}
+
+const char* showCLDeviceLocalMemType(const cl_device_local_mem_type x)
+{
+    switch (x)
+    {
+        case CL_LOCAL:
+            return "CL_LOCAL";
+        case CL_GLOBAL:
+            return "CL_GLOBAL";
+        default:
+            warn("Trying to show unknown cl_device_local_mem_type %d\n", (int) x);
+            return "Unhandled cl_local_mem_type";
+    }
+}
+
+const char* showCLDeviceExecCapabilities(const cl_device_exec_capabilities x)
+{
+    switch (x)
+    {
+        case CL_EXEC_KERNEL:
+            return "CL_EXEC_KERNEL";
+        case CL_EXEC_NATIVE_KERNEL:
+            return "CL_EXEC_NATIVE_KERNEL";
+        default:
+            warn("Trying to show unknown cl_device_exec_capabilities %d\n", (int) x);
+            return "Unhandled cl_device_exec_capabilities";
+    }
+}
+
+const char* showCLCommandQueueProperties(const cl_command_queue_properties x)
+{
+    switch (x)
+    {
+        case CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE:
+            return "CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE";
+        case CL_QUEUE_PROFILING_ENABLE:
+            return "CL_QUEUE_PROFILING_ENABLE";
+        default:
+            warn("Trying to show unknown cl_command_queue_properties %d\n", (int) x);
+            return "Unhandled cl_command_queue_properties";
+    }
+}
+
+const char* showCLBool(const cl_bool x)
+{
+    switch (x)
+    {
+        case CL_TRUE:
+            return "CL_TRUE";
+        case CL_FALSE:
+            return "CL_FALSE";
+        default:
+            warn("Trying to show unknown cl_bool %d\n", (int) x);
+            return "Unhandled cl_bool";
+    }
+}
+
+const char* showCLDeviceMemCacheType(const cl_device_mem_cache_type x)
+{
+    switch (x)
+    {
+        case CL_NONE:
+            return "CL_NONE";
+        case CL_READ_ONLY_CACHE:
+            return "CL_READ_ONLY_CACHE";
+        case CL_READ_WRITE_CACHE:
+            return "CL_READ_WRITE_CACHE";
+        default:
+            warn("Trying to show unknown cl_device_mem_cache_type %d\n", (int) x);
+            return "Unhandled cl_device_mem_cache_type";
+    }
+}
+
