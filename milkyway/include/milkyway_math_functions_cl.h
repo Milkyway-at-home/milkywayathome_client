@@ -38,7 +38,14 @@ extern "C" {
 #define mw_asinh asinh
 #define mw_asinpi asinpi
 #define mw_atan atan
-#define mw_atan2 atan2
+
+#ifndef __ATI_CL__
+  #define mw_atan2 atan2
+#else
+  /* ATI currently missing double version of this  */
+  #define mw_atan2(x, y) mw_atan((x) / (y))
+#endif /* __ATI_CL__ */
+
 #define mw_atanh atanh
 #define mw_atanpi atanpi
 #define mw_atan2pi atan2pi
@@ -63,7 +70,13 @@ extern "C" {
 #define mw_fmod fmod
 #define mw_fract fract
 #define mw_frexp frexp
-#define mw_hypot hypot
+
+#ifndef __ATI_CL__
+  #define mw_hypot hypot
+#else
+  #define mw_hypot(x, y) mw_sqrt( sqr(x) + sqr(y) )
+#endif /* __ATI_CL__ */
+
 #define mw_ilogb ilogb
 #define mw_ldexp ldexp
 #define mw_lgamma lgamma
