@@ -24,7 +24,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #else
   #include <time.h>
   #include <sys/time.h>
-  #include <sys/resource.h>
 #endif
 
 #include <stdlib.h>
