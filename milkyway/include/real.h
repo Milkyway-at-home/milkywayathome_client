@@ -22,11 +22,23 @@
 #ifndef _REAL_H_
 #define _REAL_H_
 
-#if DOUBLEPREC
-  typedef double real, *realptr;
+#include "milkyway_cl.h"
+
+#if (!SEPARATION_OPENCL && !NBODY_OPENCL) || __OPENCL_VERSION__
+  /* No opencl, or in the kernel */
+  #if DOUBLEPREC
+    typedef double real;
+  #else
+    typedef float real;
+  #endif /* DOUBLEPREC */
 #else
-  typedef float real, *realptr;
-#endif /* DOUBLEPREC */
+  /* Should use correctly aligned cl_types for the host */
+  #if DOUBLEPREC
+    typedef cl_double real;
+  #else
+    typedef cl_float real;
+  #endif /* DOUBLEPREC */
+#endif
 
 #ifndef __OPENCL_VERSION__
 
