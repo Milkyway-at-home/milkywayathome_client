@@ -55,8 +55,8 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
     err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->nuConsts);
 
     /* Local workspaces */
-    err |= clSetKernelArg(ci->kern, 7, sizeof(ST_PROBS) * ap->number_streams, NULL); /* st_probs */
-    err |= clSetKernelArg(ci->kern, 8, sizeof(vector) * ap->convolve, NULL);         /* xyz */
+    err |= clSetKernelArg(ci->kern, 7, sizeof(real) * ap->number_streams, NULL);    /* st_probs scratch */
+    err |= clSetKernelArg(ci->kern, 8, sizeof(ST_PROBS) * ap->number_streams, NULL); /* st_probs */
     err |= clSetKernelArg(ci->kern, 9, sizeof(R_POINTS) * ap->convolve, NULL);       /* r_pts */
 
     if (err != CL_SUCCESS)
@@ -74,7 +74,7 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
   #define DOUBLEPREC_DEF_STRING "-D DOUBLEPREC=0 -cl-single-precision-constant "
 #endif /* DOUBLEPREC */
 
-#if 1
+#if 0
   #define ROOT "/home/matt/Desktop/milkywayathome_client/"
 #else
   #define ROOT "/Users/matt/src/milkywayathome_client/"
@@ -138,6 +138,23 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                                    "-I" ROOT "separation/src "
                                    "-I" ROOT "separation/include "
                                    "-I" ROOT "milkyway/include ";
+
+    printf("rpoints size = %zu -> %zu\n",
+           sizeof(R_POINTS) * ap->convolve,
+           2 * sizeof(R_POINTS) * ap->convolve);
+    printf("st_probs size = %zu -> %zu\n",
+           sizeof(ST_PROBS) * ap->number_streams,
+           2 * sizeof(ST_PROBS) * ap->number_streams);
+    printf("st_probs scratch size = %zu -> %zu\n",
+           sizeof(real) * ap->number_streams,
+           2 * sizeof(real) * ap->number_streams);
+
+    printf("Total size = %zu, %zu\n",
+           sizeof(R_POINTS) * ap->convolve + sizeof(ST_PROBS) * ap->number_streams + sizeof(real) * ap->number_streams,
+           2 * sizeof(R_POINTS) * ap->convolve + 2 * sizeof(ST_PROBS) * ap->number_streams + 2 * sizeof(real) * ap->number_streams);
+
+
+
 
     kernelSrc = findKernelSrc();
     if (!kernelSrc)

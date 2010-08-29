@@ -28,7 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif /* DOUBLEPREC */
 
 #ifdef __FAST_RELAXED_MATH__
-  #error "Bad bad bad bad bad bad"
+  #error "Bad bad bad bad bad"
 #endif /* __FAST_RELAXED_MATH__ */
 
 
@@ -44,7 +44,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "coordinates.h"
 #include "integrals_common.h"
 
-
 __attribute__ ((always_inline))
 inline _MW_STATIC BG_PROB nu_sum(__constant ASTRONOMY_PARAMETERS* ap,
                                  __constant STREAM_CONSTANTS* sc,
@@ -53,8 +52,8 @@ inline _MW_STATIC BG_PROB nu_sum(__constant ASTRONOMY_PARAMETERS* ap,
                                  const real reff_xr_rp3,
                                  __local const R_POINTS* r_pts,
                                  __constant NU_CONSTANTS* nu_consts,
-                                 __local ST_PROBS* probs,
-                                 __local vector* xyz)
+                                 __local real* st_probs,
+                                 __local ST_PROBS* probs)
 {
     unsigned int nu_step;
     BG_PROB mu_result;
@@ -77,8 +76,8 @@ inline _MW_STATIC BG_PROB nu_sum(__constant ASTRONOMY_PARAMETERS* ap,
                            mu_steps,
                            mu_step_size,
                            mu_min,
-                           probs,
-                           xyz);
+                           st_probs,
+                           probs);
         INCADD_BG_PROB(nu_acc, mu_result);
     }
 
@@ -92,8 +91,8 @@ inline _MW_STATIC BG_PROB r_sum(__constant ASTRONOMY_PARAMETERS* ap,
                                 __constant STREAM_GAUSS* sg,
                                 __constant NU_CONSTANTS* nu_consts,
                                 __local R_POINTS* r_pts,
+                                __local real* st_probs,
                                 __local ST_PROBS* probs,
-                                __local vector* xyz,
                                 const unsigned int r_step)
 {
     BG_PROB nu_result;
@@ -118,7 +117,10 @@ inline _MW_STATIC BG_PROB r_sum(__constant ASTRONOMY_PARAMETERS* ap,
 
     reff_xr_rp3 = set_r_points(ap, sg, ap->convolve, rPrime, r_pts);
 
-    nu_result = nu_sum(ap, sc, ia, irv, reff_xr_rp3, r_pts, nu_consts, probs, xyz);
+    nu_result.bg_int = r_pts[3].qw_r3_N;
+    nu_result.correction = sg[3].qgaus_W;
+
+    nu_result = nu_sum(ap, sc, ia, irv, reff_xr_rp3, r_pts, nu_consts, st_probs, probs);
 
     return nu_result;
 }
@@ -132,8 +134,8 @@ __kernel void r_sum_kernel(__global BG_PROB* nu_out,
                            __constant STREAM_GAUSS* sg,
                            __constant NU_CONSTANTS* nu_consts,
 
+                           __local real* st_probs,
                            __local ST_PROBS* probs,
-                           __local vector* xyz,
                            __local R_POINTS* r_pts)
 {
     unsigned int i;
@@ -149,14 +151,11 @@ __kernel void r_sum_kernel(__global BG_PROB* nu_out,
         probs[i].st_prob_int_c = 0.0;
     }
 
-    nu_result = r_sum(ap, ia, sc, sg, nu_consts, r_pts, probs, xyz, r_step);
+    nu_result = r_sum(ap, ia, sc, sg, nu_consts, r_pts, st_probs, probs, r_step);
 
     /* Write results back */
     nu_out[r_step] = nu_result;
     for (i = 0; i < ap->number_streams; ++i)
-    {
-        //printf("Soup: %g, %g\n", probs[i].st_prob_int, probs[i].st_prob_int_c);
         probs_out[r_step * ap->number_streams + i] = probs[i];
-    }
 }
 

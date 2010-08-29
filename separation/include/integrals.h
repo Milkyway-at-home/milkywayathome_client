@@ -34,8 +34,8 @@ real r_sum(const ASTRONOMY_PARAMETERS* ap,
            const STREAM_GAUSS* sg,
            const NU_CONSTANTS* nu_consts,
            R_POINTS* r_pts,
+           real* st_probs,
            ST_PROBS* probs,
-           vector* xyz,
            EVALUATION_STATE* es);
 
 #ifdef __cplusplus

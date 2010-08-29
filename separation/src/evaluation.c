@@ -108,14 +108,14 @@ static real integrate(const ASTRONOMY_PARAMETERS* ap,
 
     NU_CONSTANTS* nu_consts = prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
     R_POINTS* r_pts = mallocSafe(sizeof(R_POINTS) * ap->convolve);
-    vector* xyz = mallocSafe(sizeof(vector) * ap->convolve);
+    real* st_probs = mallocSafe(sizeof(real) * ap->number_streams);
 
-    result = r_sum(ap, ia, sc, sg, nu_consts, r_pts, probs, xyz, es);
+    result = r_sum(ap, ia, sc, sg, nu_consts, r_pts, st_probs, probs, es);
     es->r_step = 0;
 
     free(nu_consts);
     free(r_pts);
-    free(xyz);
+    free(st_probs);
 
     return result;
 }

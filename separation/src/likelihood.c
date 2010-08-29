@@ -27,6 +27,32 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "r_points.h"
 #include "milkyway_util.h"
 
+/* FIXME: Excessive duplication with stuff used in integrals which I
+ * was too lazy to also fix here */
+
+inline static real probabilities_convolve(__MW_CONSTANT STREAM_CONSTANTS* sc,
+                                          __MW_LOCAL const R_POINTS* r_pts,
+                                          __MW_LOCAL vector* const xyz,
+                                          const unsigned int convolve)
+{
+    unsigned int i;
+    real dotted, xyz_norm;
+    vector xyzs;
+
+    real st_prob = 0.0;
+
+    for (i = 0; i < convolve; ++i)
+    {
+        SUBV(xyzs, xyz[i], sc->c);
+        DOTVP(dotted, sc->a, xyzs);
+        INCSUBVMS(xyzs, dotted, sc->a);
+        SQRV(xyz_norm, xyzs);
+
+        st_prob += r_pts[i].qw_r3_N * mw_exp(-xyz_norm / sc->sigma_sq2);
+    }
+
+    return st_prob;
+}
 
 inline static void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
                                             const STREAM_CONSTANTS* sc,
@@ -44,6 +70,104 @@ inline static void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
         else
             probs[i] = 0.0;
     }
+}
+
+inline static real likelihood_bg_probability_main(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+                                                  __MW_LOCAL const R_POINTS* r_pts,
+                                                  __MW_LOCAL vector* const xyz,
+                                                  const LB integral_point,
+                                                  const int aux_bg_profile,
+                                                  const unsigned int convolve)
+{
+    unsigned int i;
+    real h_prob, aux_prob;
+    real rg, rs;
+    real lsin, lcos;
+    real bsin, bcos;
+    real bg_prob = 0.0;
+
+    mw_sincos(d2r(LB_L(integral_point)), &lsin, &lcos);
+    mw_sincos(d2r(LB_B(integral_point)), &bsin, &bcos);
+
+    for (i = 0; i < convolve; ++i)
+    {
+        lbr2xyz_2(xyz[i], r_pts[i].r_point, bsin, bcos, lsin, lcos);
+
+        rg = mw_sqrt(sqr(X(xyz[i])) + sqr(Y(xyz[i])) + sqr(Z(xyz[i])) / sqr(ap->q));
+        rs = rg + ap->r0;
+
+        h_prob = r_pts[i].qw_r3_N / (rg * cube(rs));
+
+        //the hernquist profile includes a quadratic term in g
+        if (aux_bg_profile)
+        {
+            aux_prob = r_pts[i].qw_r3_N * (  ap->bg_a * r_pts[i].r_in_mag2
+                                           + ap->bg_b * r_pts[i].r_in_mag
+                                           + ap->bg_c );
+            h_prob += aux_prob;
+        }
+        bg_prob += h_prob;
+    }
+
+    return bg_prob;
+}
+
+inline static real likelihood_bg_probability_full(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+                                                  __MW_LOCAL const R_POINTS* r_pts,
+                                                  __MW_LOCAL vector* const xyz,
+                                                  const LB integral_point,
+                                                  const unsigned int convolve)
+{
+    unsigned int i;
+    real rg;
+    real lsin, lcos;
+    real bsin, bcos;
+    real bg_prob = 0.0;
+
+    mw_sincos(d2r(LB_L(integral_point)), &lsin, &lcos);
+    mw_sincos(d2r(LB_B(integral_point)), &bsin, &bcos);
+
+    for (i = 0; i < convolve; ++i)
+    {
+        lbr2xyz_2(xyz[i], r_pts[i].r_point, bsin, bcos, lsin, lcos);
+
+        rg = mw_sqrt(sqr(X(xyz[i])) + sqr(Y(xyz[i])) + sqr(Z(xyz[i])) / sqr(ap->q));
+
+        bg_prob += r_pts[i].qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rg + ap->r0, ap->alpha_delta3));
+    }
+
+    return bg_prob;
+}
+
+inline static real likelihood_bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+                                             __MW_LOCAL const R_POINTS* r_pts,
+                                             __MW_LOCAL vector* const xyz,
+                                             const LB integral_point,
+                                             const real reff_xr_rp3)
+{
+    real bg_prob;
+
+    /* if q is 0, there is no probability */
+    if (ap->q == 0)
+        bg_prob = -1.0;
+    else
+    {
+        if (ap->alpha == 1 && ap->delta == 1)
+        {
+            bg_prob = likelihood_bg_probability_main(ap,
+                                                     r_pts,
+                                                     xyz,
+                                                     integral_point,
+                                                     ap->aux_bg_profile,
+                                                     ap->convolve);
+        }
+        else
+            bg_prob = likelihood_bg_probability_full(ap, r_pts, xyz, integral_point, ap->convolve);
+
+        bg_prob *= reff_xr_rp3;
+    }
+
+    return bg_prob;
 }
 
 inline static real stream_sum(const unsigned int number_streams,
@@ -141,7 +265,7 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
         LB_L(lb) = LN(sp, current_star_point);
         LB_B(lb) = BN(sp, current_star_point);
 
-        bg_prob = bg_probability(ap, r_pts, xyz, lb, reff_xr_rp3);
+        bg_prob = likelihood_bg_probability(ap, r_pts, xyz, lb, reff_xr_rp3);
 
         bg = (bg_prob / fsi->background_integral) * exp_background_weight;
 
@@ -198,7 +322,7 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
     R_POINTS* r_pts = mallocSafe(sizeof(R_POINTS) * ap->convolve);
     ST_SUM* st_sum = callocSafe(sizeof(ST_SUM), streams->number_streams);
     real* exp_stream_weights = mallocSafe(sizeof(real) * streams->number_streams);
-    vector* xyzs = mallocSafe(sizeof(vector) * ap->convolve);
+    vector* xyzs = callocSafe(sizeof(vector), ap->convolve);
 
     const real exp_background_weight = mw_exp(ap->background_weight);
     real sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);

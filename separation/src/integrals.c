@@ -74,8 +74,8 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
                           const real reff_xr_rp3,
                           const R_POINTS* r_pts,
                           const NU_CONSTANTS* nu_consts,
+                          real* st_probs,
                           ST_PROBS* probs,
-                          vector* xyz,
                           EVALUATION_STATE* es)
 {
     BG_PROB mu_result;
@@ -99,8 +99,8 @@ inline static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
                            mu_steps,
                            mu_step_size,
                            mu_min,
-                           probs,
-                           xyz);
+                           st_probs,
+                           probs);
 
         INCADD_BG_PROB(es->nu_acc, mu_result);
     }
@@ -114,8 +114,8 @@ real r_sum(const ASTRONOMY_PARAMETERS* ap,
            const STREAM_GAUSS* sg,
            const NU_CONSTANTS* nu_consts,
            R_POINTS* r_pts,
+           real* st_probs,
            ST_PROBS* probs,
-           vector* xyz,
            EVALUATION_STATE* es)
 {
     real r, next_r, rPrime;
@@ -146,7 +146,7 @@ real r_sum(const ASTRONOMY_PARAMETERS* ap,
 
         reff_xr_rp3 = set_r_points(ap, sg, ap->convolve, rPrime, r_pts);
 
-        nu_sum(ap, sc, ia, irv, reff_xr_rp3, r_pts, nu_consts, probs, xyz, es);
+        nu_sum(ap, sc, ia, irv, reff_xr_rp3, r_pts, nu_consts, st_probs, probs, es);
 
         INCADD_BG_PROB(es->r_acc, es->nu_acc);
         CLEAR_BG_PROB(es->nu_acc);

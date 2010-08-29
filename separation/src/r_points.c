@@ -41,17 +41,11 @@ real set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                   __MW_LOCAL R_POINTS* r_pts)
 {
     real g, exponent, r3, N;
-    real reff_xr_rp3;
     unsigned int i;
 
     /* R2MAG */
-    const real gPrime = R5 * (mw_log10(coords * R1000) - R1) + absm;
     _MW_STATIC const real sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
-
-    /* REFF */
-    const real exp_result = mw_exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));
-    const real reff_value = sigmoid_curve_params[0] / (exp_result + R1);
-    const real rPrime3 = cube(coords);
+    const real gPrime = R5 * (mw_log10(coords * R1000) - R1) + absm;
 
     for (i = 0; i < n_convolve; ++i)
     {
@@ -68,7 +62,11 @@ real set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
         r_pts[i].qw_r3_N = sg[i].qgaus_W * r3 * N;
     }
 
-    reff_xr_rp3 = reff_value * xr / rPrime3;
+    /* REFF */
+    const real exp_result = mw_exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));
+    const real reff_value = sigmoid_curve_params[0] / (exp_result + R1);
+    const real rPrime3 = cube(coords);
+    const real reff_xr_rp3 = reff_value * xr / rPrime3;
     return reff_xr_rp3;
 }
 

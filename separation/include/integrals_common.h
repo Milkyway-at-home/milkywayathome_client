@@ -31,27 +31,172 @@ extern "C" {
 #include "integrals_likelihood.h"
 
 __attribute__ ((always_inline))
-inline _MW_STATIC void probabilities(__MW_CONSTANT STREAM_CONSTANTS* sc,
-                                     __MW_LOCAL const R_POINTS* r_pts,
-                                     __MW_LOCAL vector* const xyz,
-                                     const real V,
-                                     const real reff_xr_rp3,
-                                     const unsigned int number_streams,
-                                     const unsigned int nconvolve,
-                                     __MW_LOCAL ST_PROBS* probs)
+inline void zero_st_probs(__MW_LOCAL real* st_probs, const unsigned int nstream)
 {
     unsigned int i;
-    real st_prob;
 
-    for (i = 0; i < number_streams; ++i)
+    for (i = 0; i < nstream; ++i)
+        st_probs[i] = 0.0;
+}
+
+__attribute__ ((always_inline, hot))
+inline void stream_sums(__MW_LOCAL real* st_probs,
+                        __MW_CONSTANT STREAM_CONSTANTS* sc,
+                        const vector xyz,
+                        const real qw_r3_N,
+                        const unsigned int nstreams)
+{
+    unsigned int i;
+    real dotted, xyz_norm;
+    vector xyzs;
+
+    for (i = 0; i < nstreams; ++i)
     {
         if (sc[i].large_sigma)
-            st_prob = V * reff_xr_rp3 * probabilities_convolve(&sc[i], r_pts, xyz, nconvolve);
-        else
-            st_prob = 0.0;
+        {
+            SUBV(xyzs, xyz, sc[i].c);
+            DOTVP(dotted, sc[i].a, xyzs);
+            INCSUBVMS(xyzs, dotted, sc[i].a);
+            SQRV(xyz_norm, xyzs);
 
-        KAHAN_ADD(probs[i].st_prob_int, st_prob, probs[i].st_prob_int_c);
+            st_probs[i] += qw_r3_N * mw_exp(-xyz_norm / sc[i].sigma_sq2);
+        }
     }
+}
+
+__attribute__ ((always_inline))
+inline void sum_probs(__MW_LOCAL ST_PROBS* probs,
+                      __MW_LOCAL const real* st_probs,
+                      const real V_reff_xr_rp3,
+                      const unsigned int nstream)
+{
+    unsigned int i;
+    for (i = 0; i < nstream; ++i)
+        KAHAN_ADD(probs[i].st_prob_int, V_reff_xr_rp3 * st_probs[i], probs[i].st_prob_int_c);
+}
+
+/* FIXME: I don't know what these do enough to name it properly */
+__attribute__ ((always_inline, hot))
+inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+                                __MW_LOCAL const R_POINTS* r_pts,
+                                __MW_CONSTANT STREAM_CONSTANTS* sc,
+                                const LB integral_point,
+                                const int aux_bg_profile,
+                                const unsigned int convolve,
+                                __MW_LOCAL real* st_probs)
+{
+    unsigned int i;
+    real h_prob, aux_prob;
+    real rg, rs;
+    real lsin, lcos;
+    real bsin, bcos;
+    vector xyz;
+    real bg_prob = 0.0;
+
+    mw_sincos(d2r(LB_L(integral_point)), &lsin, &lcos);
+    mw_sincos(d2r(LB_B(integral_point)), &bsin, &bcos);
+
+    for (i = 0; i < convolve; ++i)
+    {
+        lbr2xyz_2(xyz, r_pts[i].r_point, bsin, bcos, lsin, lcos);
+
+        rg = mw_sqrt(sqr(X(xyz)) + sqr(Y(xyz)) + sqr(Z(xyz)) / sqr(ap->q));
+        rs = rg + ap->r0;
+
+        h_prob = r_pts[i].qw_r3_N / (rg * cube(rs));
+
+        //the hernquist profile includes a quadratic term in g
+        if (aux_bg_profile)
+        {
+            aux_prob = r_pts[i].qw_r3_N * (  ap->bg_a * r_pts[i].r_in_mag2
+                                           + ap->bg_b * r_pts[i].r_in_mag
+                                           + ap->bg_c );
+            h_prob += aux_prob;
+        }
+        bg_prob += h_prob;
+
+        stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
+    }
+
+    return bg_prob;
+}
+
+__attribute__ ((always_inline))
+inline real sub_bg_probability2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+                                __MW_LOCAL const R_POINTS* r_pts,
+                                __MW_CONSTANT STREAM_CONSTANTS* sc,
+                                const LB integral_point,
+                                const unsigned int convolve,
+                                __MW_LOCAL real* st_probs)
+{
+    unsigned int i;
+    real rg;
+    real lsin, lcos;
+    real bsin, bcos;
+    vector xyz;
+    real bg_prob = 0.0;
+
+    mw_sincos(d2r(LB_L(integral_point)), &lsin, &lcos);
+    mw_sincos(d2r(LB_B(integral_point)), &bsin, &bcos);
+
+    for (i = 0; i < convolve; ++i)
+    {
+        lbr2xyz_2(xyz, r_pts[i].r_point, bsin, bcos, lsin, lcos);
+
+        rg = mw_sqrt(sqr(X(xyz)) + sqr(Y(xyz)) + sqr(Z(xyz)) / sqr(ap->q));
+
+        bg_prob += r_pts[i].qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rg + ap->r0, ap->alpha_delta3));
+        stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
+    }
+
+    return bg_prob;
+}
+
+__attribute__ ((always_inline, hot))
+inline real bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+                           __MW_LOCAL const R_POINTS* r_pts,
+                           __MW_CONSTANT STREAM_CONSTANTS* sc,
+                           const LB integral_point,
+                           const real reff_xr_rp3,
+                           const real V,
+                           __MW_LOCAL real* st_probs,
+                           __MW_LOCAL ST_PROBS* probs)
+
+{
+    real bg_prob;
+
+    /* if q is 0, there is no probability */
+    if (ap->q == 0)
+        bg_prob = -1.0;
+    else
+    {
+        zero_st_probs(st_probs, ap->number_streams);
+        if (ap->alpha == 1 && ap->delta == 1)
+        {
+            bg_prob = sub_bg_probability1(ap,
+                                          r_pts,
+                                          sc,
+                                          integral_point,
+                                          ap->aux_bg_profile,
+                                          ap->convolve,
+                                          st_probs);
+        }
+        else
+        {
+            bg_prob = sub_bg_probability2(ap,
+                                          r_pts,
+                                          sc,
+                                          integral_point,
+                                          ap->convolve,
+                                          st_probs);
+        }
+
+        sum_probs(probs, st_probs, V * reff_xr_rp3, ap->number_streams);
+
+        bg_prob *= reff_xr_rp3;
+    }
+
+    return bg_prob;
 }
 
 __attribute__ ((always_inline, const))
@@ -72,8 +217,9 @@ inline _MW_STATIC BG_PROB mu_sum(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                  const unsigned int mu_steps,
                                  const real mu_step_size,
                                  const real mu_min,
-                                 __MW_LOCAL ST_PROBS* probs,
-                                 __MW_LOCAL vector* xyz)
+                                 __MW_LOCAL real* st_probs,
+                                 __MW_LOCAL ST_PROBS* probs)
+
 {
     unsigned int mu_step_current;
     real mu, V;
@@ -87,14 +233,12 @@ inline _MW_STATIC BG_PROB mu_sum(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 
         lb = gc2lb(ap->wedge, mu, nu_consts_nu);
 
-        bg_prob = bg_probability(ap, r_pts, xyz, lb, reff_xr_rp3);
-
         V = irv * nu_consts_id;
+        bg_prob = bg_probability(ap, r_pts, sc, lb, reff_xr_rp3, V, st_probs, probs);
+
         bg_prob *= V;
 
         KAHAN_ADD(bg_prob_int.bg_int, bg_prob, bg_prob_int.correction);
-
-        probabilities(sc, r_pts, xyz, V, reff_xr_rp3, ap->number_streams, ap->convolve, probs);
     }
 
     return bg_prob_int;
