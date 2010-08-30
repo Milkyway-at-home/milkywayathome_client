@@ -122,28 +122,6 @@ inline static cl_int createIABuffer(const INTEGRAL_AREA* ia,
     return CL_SUCCESS;
 }
 
-inline static cl_int createSGBuffer(const STREAM_GAUSS* sg,
-                                    const unsigned int nconvolve,
-                                    CLInfo* ci,
-                                    SeparationCLMem* cm,
-                                    const cl_mem_flags constBufFlags)
-{
-    cl_int err;
-    size_t size = sizeof(STREAM_GAUSS) * nconvolve;
-    cm->sg = clCreateBuffer(ci->clctx,
-                            constBufFlags,
-                            size,
-                            sg,
-                            &err);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating stream gauss buffer of size %zu: %s\n", size, showCLInt(err));
-        return err;
-    }
-
-    return CL_SUCCESS;
-}
-
 inline static cl_int createNuConstsBuffer(const NU_CONSTANTS* nu_consts,
                                           const unsigned int nu_steps,
                                           CLInfo* ci,
@@ -193,7 +171,6 @@ inline static cl_int createRPtsBuffer(const R_POINTS* r_pts_all,
 cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
                                const INTEGRAL_AREA* ia,
                                const STREAM_CONSTANTS* sc,
-                               const STREAM_GAUSS* sg,
                                const NU_CONSTANTS* nu_consts,
                                const R_POINTS* r_pts_all,
                                CLInfo* ci,
@@ -212,7 +189,6 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
     err |= createAPBuffer(ap, ci, cm, constBufFlags);
     err |= createIABuffer(ia, ci, cm, constBufFlags);
     err |= createSCBuffer(sc, ap->number_streams, ci, cm, constBufFlags);
-    err |= createSGBuffer(sg, ap->convolve, ci, cm, constBufFlags);
     err |= createNuConstsBuffer(nu_consts, ia->nu_steps, ci, cm, constBufFlags);
     err |= createRPtsBuffer(r_pts_all, ap->convolve, ia->r_steps, ci, cm, constBufFlags);
 
@@ -226,7 +202,6 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
     clReleaseMemObject(cm->ap);
     clReleaseMemObject(cm->ia);
     clReleaseMemObject(cm->sc);
-    clReleaseMemObject(cm->sg);
     clReleaseMemObject(cm->nuConsts);
     clReleaseMemObject(cm->rPts);
 }

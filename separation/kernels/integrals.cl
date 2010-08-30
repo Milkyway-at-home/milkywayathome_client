@@ -88,7 +88,6 @@ inline _MW_STATIC void r_sum(__global BG_PROB* mu_out,
                              __constant ASTRONOMY_PARAMETERS* ap,
                              __constant INTEGRAL_AREA* ia,
                              __constant STREAM_CONSTANTS* sc,
-                             __constant STREAM_GAUSS* sg,
                              __constant NU_CONSTANTS* nu_consts,
                              __local R_POINTS* r_pts,
                              __local real* st_probs,
@@ -110,7 +109,6 @@ __kernel void r_sum_kernel(__global BG_PROB* mu_out,
                            __constant ASTRONOMY_PARAMETERS* ap,
                            __constant INTEGRAL_AREA* ia,
                            __constant STREAM_CONSTANTS* sc,
-                           __constant STREAM_GAUSS* sg,
                            __constant NU_CONSTANTS* nu_consts,
                            __constant R_POINTS* r_pts_all,
 
@@ -139,6 +137,6 @@ __kernel void r_sum_kernel(__global BG_PROB* mu_out,
         r_pts[i] = r_pts_this[i];
 
     nu_probs = &probs_out[r_step * ia->nu_steps * ap->number_streams];
-    r_sum(mu_out, nu_probs, ap, ia, sc, sg, nu_consts, r_pts, st_probs, probs, r_step);
+    r_sum(mu_out, nu_probs, ap, ia, sc, nu_consts, r_pts, st_probs, probs, r_step);
 }
 

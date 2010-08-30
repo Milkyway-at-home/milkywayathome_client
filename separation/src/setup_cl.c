@@ -51,14 +51,13 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
     err |= clSetKernelArg(ci->kern, 2, sizeof(cl_mem), &cm->ap);
     err |= clSetKernelArg(ci->kern, 3, sizeof(cl_mem), &cm->ia);
     err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->sc);
-    err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->sg);
-    err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->nuConsts);
-    err |= clSetKernelArg(ci->kern, 7, sizeof(cl_mem), &cm->rPts);
+    err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->nuConsts);
+    err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->rPts);
 
     /* Local workspaces */
-    err |= clSetKernelArg(ci->kern, 8, sizeof(real) * ap->number_streams, NULL);    /* st_probs scratch */
-    err |= clSetKernelArg(ci->kern, 9, sizeof(ST_PROBS) * ap->number_streams, NULL); /* st_probs */
-    err |= clSetKernelArg(ci->kern, 10, sizeof(R_POINTS) * ap->convolve, NULL);      /* r_pts */
+    err |= clSetKernelArg(ci->kern, 7, sizeof(real) * ap->number_streams, NULL);    /* st_probs scratch */
+    err |= clSetKernelArg(ci->kern, 8, sizeof(ST_PROBS) * ap->number_streams, NULL); /* st_probs */
+    err |= clSetKernelArg(ci->kern, 9, sizeof(R_POINTS) * ap->convolve, NULL);      /* r_pts */
 
     if (err != CL_SUCCESS)
     {
@@ -119,7 +118,6 @@ void freeKernelSrc(char* src)
 cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                          const INTEGRAL_AREA* ia,
                          const STREAM_CONSTANTS* sc,
-                         const STREAM_GAUSS* sg,
                          const NU_CONSTANTS* nu_consts,
                          const R_POINTS* r_pts_all,
                          CLInfo* ci,
@@ -177,7 +175,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
         return err;
     }
 
-    err = createSeparationBuffers(ap, ia, sc, sg, nu_consts, r_pts_all, ci, cm);
+    err = createSeparationBuffers(ap, ia, sc, nu_consts, r_pts_all, ci, cm);
     if (err != CL_SUCCESS)
     {
         fail("Failed to create CL buffers: %s\n", showCLInt(err));
