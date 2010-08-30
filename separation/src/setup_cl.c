@@ -131,7 +131,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
     char* rPointsSrc;
 
     static const char* extraDefs = DOUBLEPREC_DEF_STRING
-                                   "-D__ATI_CL__=0 "
+                                 //"-D__ATI_CL__=1 "
                                    "-cl-strict-aliasing "
                                    "-cl-finite-math-only "
                                    "-I../src "

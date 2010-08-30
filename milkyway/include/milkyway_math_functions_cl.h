@@ -42,8 +42,11 @@ extern "C" {
 #ifndef __ATI_CL__
   #define mw_atan2 atan2
 #else
-  /* ATI currently missing double version of this  */
-  #define mw_atan2(x, y) mw_atan((x) / (y))
+  /* ATI currently missing double version of this.  Wikipedia gives
+     this formula, but also an alternate version which avoids
+     underflow but is undefined for 0.
+   */
+  #define mw_atan2(y, x) (((real) 2.0) * mw_atan((y) / (mw_hypot(x, y) + (x))))
 #endif /* __ATI_CL__ */
 
 #define mw_atanh atanh
