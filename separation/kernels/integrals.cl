@@ -45,7 +45,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "integrals_common.h"
 
 __attribute__ ((always_inline))
-inline _MW_STATIC BG_PROB nu_sum(__constant ASTRONOMY_PARAMETERS* ap,
+inline _MW_STATIC BG_PROB nu_sum(__global BG_PROB* mu_out,
+                                 __global ST_PROBS* probs_out,
+                                 __constant ASTRONOMY_PARAMETERS* ap,
                                  __constant STREAM_CONSTANTS* sc,
                                  __constant INTEGRAL_AREA* ia,
                                  const real irv,
@@ -53,48 +55,45 @@ inline _MW_STATIC BG_PROB nu_sum(__constant ASTRONOMY_PARAMETERS* ap,
                                  __local const R_POINTS* r_pts,
                                  __constant NU_CONSTANTS* nu_consts,
                                  __local real* st_probs,
-                                 __local ST_PROBS* probs)
+                                 __local ST_PROBS* probs,
+                                 const size_t r_step)
 {
-    unsigned int nu_step;
+    unsigned int i;
     BG_PROB mu_result;
-    BG_PROB nu_acc = ZERO_BG_PROB;
+    size_t nu_step = get_global_id(1);
 
-    const unsigned int nu_steps = ia->nu_steps;
-    const unsigned int mu_steps = ia->mu_steps;
-    const real mu_min = ia->mu_min;
-    const real mu_step_size = ia->mu_step_size;
+    mu_result = mu_sum(ap,
+                       sc,
+                       r_pts,
+                       irv,
+                       reff_xr_rp3,
+                       nu_consts[nu_step].id,
+                       nu_consts[nu_step].nu,
+                       ia->mu_steps,
+                       ia->mu_step_size,
+                       ia->mu_min,
+                       st_probs,
+                       probs);
 
-    for (nu_step = 0; nu_step < nu_steps; ++nu_step)
-    {
-        mu_result = mu_sum(ap,
-                           sc,
-                           r_pts,
-                           irv,
-                           reff_xr_rp3,
-                           nu_consts[nu_step].id,
-                           nu_consts[nu_step].nu,
-                           mu_steps,
-                           mu_step_size,
-                           mu_min,
-                           st_probs,
-                           probs);
+    mu_out[r_step * ia->nu_steps + nu_step] = mu_result;
 
-        INCADD_BG_PROB(nu_acc, mu_result);
-    }
-
-    return nu_acc;
+    /* Write results back */
+    for (i = 0; i < ap->number_streams; ++i)
+        probs_out[nu_step * ap->number_streams + i] = probs[i];
 }
 
 __attribute__ ((always_inline))
-inline _MW_STATIC BG_PROB r_sum(__constant ASTRONOMY_PARAMETERS* ap,
-                                __constant INTEGRAL_AREA* ia,
-                                __constant STREAM_CONSTANTS* sc,
-                                __constant STREAM_GAUSS* sg,
-                                __constant NU_CONSTANTS* nu_consts,
-                                __local R_POINTS* r_pts,
-                                __local real* st_probs,
-                                __local ST_PROBS* probs,
-                                const unsigned int r_step)
+inline _MW_STATIC void r_sum(__global BG_PROB* mu_out,
+                             __global ST_PROBS* probs_out,
+                             __constant ASTRONOMY_PARAMETERS* ap,
+                             __constant INTEGRAL_AREA* ia,
+                             __constant STREAM_CONSTANTS* sc,
+                             __constant STREAM_GAUSS* sg,
+                             __constant NU_CONSTANTS* nu_consts,
+                             __local R_POINTS* r_pts,
+                             __local real* st_probs,
+                             __local ST_PROBS* probs,
+                             const size_t r_step)
 {
     R_PRIME rp;
     real reff_xr_rp3;
@@ -102,10 +101,10 @@ inline _MW_STATIC BG_PROB r_sum(__constant ASTRONOMY_PARAMETERS* ap,
     rp = calcRPrime(ia, r_step);
     reff_xr_rp3 = calcReffXrRp3(rp.rPrime);
 
-    return nu_sum(ap, sc, ia, rp.irv, reff_xr_rp3, r_pts, nu_consts, st_probs, probs);
+    nu_sum(mu_out, probs_out, ap, sc, ia, rp.irv, reff_xr_rp3, r_pts, nu_consts, st_probs, probs, r_step);
 }
 
-__kernel void r_sum_kernel(__global BG_PROB* nu_out,
+__kernel void r_sum_kernel(__global BG_PROB* mu_out,
                            __global ST_PROBS* probs_out,
 
                            __constant ASTRONOMY_PARAMETERS* ap,
@@ -122,6 +121,7 @@ __kernel void r_sum_kernel(__global BG_PROB* nu_out,
     unsigned int i;
     BG_PROB nu_result;
     __constant R_POINTS* r_pts_this;
+    __global ST_PROBS* nu_probs;
     size_t r_step = get_global_id(0);
 
     if (r_step > ia->r_steps)
@@ -138,11 +138,7 @@ __kernel void r_sum_kernel(__global BG_PROB* nu_out,
     for (i = 0; i < ap->convolve; ++i)
         r_pts[i] = r_pts_this[i];
 
-    nu_result = r_sum(ap, ia, sc, sg, nu_consts, r_pts, st_probs, probs, r_step);
-
-    /* Write results back */
-    nu_out[r_step] = nu_result;
-    for (i = 0; i < ap->number_streams; ++i)
-        probs_out[r_step * ap->number_streams + i] = probs[i];
+    nu_probs = &probs_out[r_step * ia->nu_steps * ap->number_streams];
+    r_sum(mu_out, nu_probs, ap, ia, sc, sg, nu_consts, r_pts, st_probs, probs, r_step);
 }
 

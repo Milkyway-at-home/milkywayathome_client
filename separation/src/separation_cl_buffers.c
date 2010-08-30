@@ -22,19 +22,21 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "show_cl_types.h"
 #include "separation_cl_buffers.h"
 
-inline static cl_int createOutNuBuffer(const unsigned int r_steps,
+inline static cl_int createOutMuBuffer(const unsigned int r_steps,
+                                       const unsigned int nu_steps,
                                        CLInfo* ci,
                                        SeparationCLMem* cm)
 {
     cl_int err;
-    cm->outNu = clCreateBuffer(ci->clctx,
+    size_t size = sizeof(BG_PROB) * r_steps * nu_steps;
+    cm->outMu = clCreateBuffer(ci->clctx,
                                CL_MEM_WRITE_ONLY,
-                               sizeof(BG_PROB) * r_steps,
+                               size,
                                NULL,
                                &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating out nu buffer: %s\n", showCLInt(err));
+        warn("Error creating out mu buffer of size %zu: %s\n", showCLInt(err), size);
         return err;
     }
 
@@ -42,6 +44,7 @@ inline static cl_int createOutNuBuffer(const unsigned int r_steps,
 }
 
 inline static cl_int createOutProbsBuffer(const unsigned int r_steps,
+                                          const unsigned int nu_steps,
                                           const unsigned int number_streams,
                                           CLInfo* ci,
                                           SeparationCLMem* cm)
@@ -49,7 +52,7 @@ inline static cl_int createOutProbsBuffer(const unsigned int r_steps,
     cl_int err;
     cm->outProbs = clCreateBuffer(ci->clctx,
                                   CL_MEM_WRITE_ONLY,
-                                  sizeof(ST_PROBS) * r_steps * number_streams,
+                                  sizeof(ST_PROBS) * r_steps * nu_steps * number_streams,
                                   NULL,
                                   &err);
     if (err != CL_SUCCESS)
@@ -204,8 +207,8 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
     else
         constBufFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
 
-    err |= createOutNuBuffer(ia->r_steps, ci, cm);
-    err |= createOutProbsBuffer(ia->r_steps, ap->number_streams, ci, cm);
+    err |= createOutMuBuffer(ia->r_steps, ia->nu_steps, ci, cm);
+    err |= createOutProbsBuffer(ia->r_steps, ia->nu_steps, ap->number_streams, ci, cm);
     err |= createAPBuffer(ap, ci, cm, constBufFlags);
     err |= createIABuffer(ia, ci, cm, constBufFlags);
     err |= createSCBuffer(sc, ap->number_streams, ci, cm, constBufFlags);
@@ -219,7 +222,7 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
 void releaseSeparationBuffers(SeparationCLMem* cm)
 {
     clReleaseMemObject(cm->outProbs);
-    clReleaseMemObject(cm->outNu);
+    clReleaseMemObject(cm->outMu);
     clReleaseMemObject(cm->ap);
     clReleaseMemObject(cm->ia);
     clReleaseMemObject(cm->sc);

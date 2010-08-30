@@ -44,7 +44,7 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
     cl_int err = CL_SUCCESS;
 
     /* Output buffer */
-    err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outNu);
+    err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outMu);
     err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->outProbs);
 
     /* The constant arguments */
@@ -58,7 +58,7 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
     /* Local workspaces */
     err |= clSetKernelArg(ci->kern, 8, sizeof(real) * ap->number_streams, NULL);    /* st_probs scratch */
     err |= clSetKernelArg(ci->kern, 9, sizeof(ST_PROBS) * ap->number_streams, NULL); /* st_probs */
-    err |= clSetKernelArg(ci->kern, 10, sizeof(R_POINTS) * ap->convolve, NULL);       /* r_pts */
+    err |= clSetKernelArg(ci->kern, 10, sizeof(R_POINTS) * ap->convolve, NULL);      /* r_pts */
 
     if (err != CL_SUCCESS)
     {

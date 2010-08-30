@@ -35,14 +35,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 static cl_int readIntegralResults(CLInfo* ci,
                                   SeparationCLMem* cm,
-                                  BG_PROB* nu_results,
-                                  const unsigned int r_steps)
+                                  BG_PROB* mu_results,
+                                  size_t resultsSize)
 {
     cl_int err;
     err = clEnqueueReadBuffer(ci->queue,
-                              cm->outNu,
+                              cm->outMu,
                               CL_TRUE,
-                              0, sizeof(BG_PROB) * r_steps, nu_results,
+                              0, resultsSize, mu_results,
                               0, NULL, NULL);
 
     if (err != CL_SUCCESS)
@@ -54,19 +54,29 @@ static cl_int readIntegralResults(CLInfo* ci,
     return CL_SUCCESS;
 }
 
+inline static void sumStreamResults(ST_PROBS* probs_results,
+                                    ST_PROBS* probs,
+                                    const unsigned int number_streams)
+{
+    unsigned int i;
+    for (i = 0; i < number_streams; ++i)
+        KAHAN_ADD(probs_results[i].st_prob_int, probs[i].st_prob_int, probs[i].st_prob_int_c);
+}
+
 inline static void sumProbsResults(ST_PROBS* probs_results,
-                                   ST_PROBS* probs_r,
+                                   ST_PROBS* probs_r_nu,
                                    const unsigned int r_steps,
+                                   const unsigned int nu_steps,
                                    const unsigned int number_streams)
 {
     unsigned int i, j, idx;
 
     for (i = 0; i < r_steps; ++i)
     {
-        for (j = 0; j < number_streams; ++j)
+        for (j = 0; j < nu_steps; ++j)
         {
-            idx = i * number_streams + j;
-            KAHAN_ADD(probs_results[j].st_prob_int, probs_r[idx].st_prob_int, probs_r[idx].st_prob_int_c);
+            idx = (i * nu_steps * number_streams) + (j * number_streams);
+            sumStreamResults(probs_results, &probs_r_nu[idx], number_streams);
         }
     }
 }
@@ -75,12 +85,13 @@ static cl_int readProbsResults(CLInfo* ci,
                                SeparationCLMem* cm,
                                ST_PROBS* probs_results,
                                const unsigned int r_steps,
+                               const unsigned int nu_steps,
                                const unsigned int number_streams)
 {
     ST_PROBS* probs_tmp;
     cl_int err = CL_SUCCESS;
 
-    size_t size = sizeof(ST_PROBS) * r_steps * number_streams;
+    size_t size = sizeof(ST_PROBS) * r_steps * nu_steps * number_streams;
     probs_tmp = mallocSafe(size);
 
     err = clEnqueueReadBuffer(ci->queue,
@@ -92,20 +103,24 @@ static cl_int readProbsResults(CLInfo* ci,
     if (err != CL_SUCCESS)
         warn("Error reading probs result buffer for stream: %s\n", showCLInt(err));
     else
-        sumProbsResults(probs_results, probs_tmp, r_steps, number_streams);
+        sumProbsResults(probs_results, probs_tmp, r_steps, nu_steps, number_streams);
 
     free(probs_tmp);
     return err;
 }
 
-static cl_int enqueueIntegralKernel(CLInfo* ci, const unsigned int r_steps)
+static cl_int enqueueIntegralKernel(CLInfo* ci,
+                                    const unsigned int r_steps,
+                                    const unsigned int nu_steps)
 {
     cl_int err;
-    const size_t global[] = { r_steps };
+    const size_t global[] = { r_steps, nu_steps };
+    //const size_t local[] = { 0, nu_steps };
+    //printf("local = %u\n", nu_steps);
 
     err = clEnqueueNDRangeKernel(ci->queue,
                                  ci->kern,
-                                 1,
+                                 2,
                                  NULL, global, NULL,
                                  0, NULL, NULL);
     if (err != CL_SUCCESS)
@@ -118,13 +133,18 @@ static cl_int enqueueIntegralKernel(CLInfo* ci, const unsigned int r_steps)
 }
 
 /* The nu steps were done in parallel. After that we need to sum the results */
-inline static real sumNuResults(BG_PROB* nu_results, const unsigned int r_steps)
+inline static real sumMuResults(BG_PROB* mu_results,
+                                const unsigned int r_steps,
+                                const unsigned int nu_steps)
 {
-    unsigned int i;
+    unsigned int i, j;
     BG_PROB bg_prob = ZERO_BG_PROB;
 
     for (i = 0; i < r_steps; ++i)
-        INCADD_BG_PROB(bg_prob, nu_results[i]);
+    {
+        for (j = 0; j < nu_steps; ++j)
+            INCADD_BG_PROB(bg_prob, mu_results[nu_steps * i + j]);
+    }
 
     return bg_prob.bg_int + bg_prob.correction;
 }
@@ -153,19 +173,23 @@ static real runIntegral(CLInfo* ci,
                         SeparationCLMem* cm,
                         ST_PROBS* probs_results,
                         const unsigned int r_steps,
+                        const unsigned int nu_steps,
                         const unsigned int number_streams)
 {
-    BG_PROB* nu_results;
+    BG_PROB* mu_results;
     real bg_result;
+    size_t resultSize = sizeof(BG_PROB) * r_steps * nu_steps;
 
-    enqueueIntegralKernel(ci, r_steps);
+    enqueueIntegralKernel(ci, r_steps, nu_steps);
 
-    nu_results = mallocSafe(sizeof(BG_PROB) * r_steps);
-    readIntegralResults(ci, cm, nu_results, r_steps);
-    bg_result = sumNuResults(nu_results, r_steps);
-    free(nu_results);
+    mu_results = mallocSafe(resultSize);
+    readIntegralResults(ci, cm, mu_results, resultSize);
 
-    readProbsResults(ci, cm, probs_results, r_steps, number_streams);
+    printf("Read integral results\n");
+    bg_result = sumMuResults(mu_results, r_steps, nu_steps);
+    free(mu_results);
+
+    readProbsResults(ci, cm, probs_results, r_steps, nu_steps, number_streams);
 
     return bg_result;
 }
@@ -188,7 +212,7 @@ real integrateCL(const ASTRONOMY_PARAMETERS* ap,
     if (setupSeparationCL(ap, ia, sc, sg, nu_consts, r_pts_all, &ci, &cm) != CL_SUCCESS)
         warn("Failed to setup up CL\n");
     else
-        result = runIntegral(&ci, &cm, probs_results, ia->r_steps, ap->number_streams);
+        result = runIntegral(&ci, &cm, probs_results, ia->r_steps, ia->nu_steps, ap->number_streams);
 
     destroyCLInfo(&ci);
     releaseSeparationBuffers(&cm);
