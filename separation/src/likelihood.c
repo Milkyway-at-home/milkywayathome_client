@@ -260,7 +260,8 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
 
     for (current_star_point = 0; current_star_point < sp->number_stars; ++current_star_point)
     {
-        reff_xr_rp3 = set_r_points(ap, sg, ap->convolve, ZN(sp, current_star_point), r_pts);
+        set_r_points(ap, sg, ap->convolve, ZN(sp, current_star_point), r_pts);
+        reff_xr_rp3 = calcReffXrRp3(ZN(sp, current_star_point));
 
         LB_L(lb) = LN(sp, current_star_point);
         LB_B(lb) = BN(sp, current_star_point);

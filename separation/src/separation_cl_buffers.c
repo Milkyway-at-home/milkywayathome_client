@@ -163,11 +163,36 @@ inline static cl_int createNuConstsBuffer(const NU_CONSTANTS* nu_consts,
     return CL_SUCCESS;
 }
 
+
+inline static cl_int createRPtsBuffer(const R_POINTS* r_pts_all,
+                                      const unsigned int nconvolve,
+                                      const unsigned int r_steps,
+                                      CLInfo* ci,
+                                      SeparationCLMem* cm,
+                                      const cl_mem_flags constBufFlags)
+{
+    cl_int err;
+    size_t size = sizeof(R_POINTS) * nconvolve * r_steps;
+    cm->rPts = clCreateBuffer(ci->clctx,
+                              constBufFlags,
+                              size,
+                              r_pts_all,
+                              &err);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error creating r_pts buffer of size %zu: %s\n", size, showCLInt(err));
+        return err;
+    }
+
+    return CL_SUCCESS;
+}
+
 cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
                                const INTEGRAL_AREA* ia,
                                const STREAM_CONSTANTS* sc,
                                const STREAM_GAUSS* sg,
                                const NU_CONSTANTS* nu_consts,
+                               const R_POINTS* r_pts_all,
                                CLInfo* ci,
                                SeparationCLMem* cm)
 {
@@ -186,6 +211,7 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
     err |= createSCBuffer(sc, ap->number_streams, ci, cm, constBufFlags);
     err |= createSGBuffer(sg, ap->convolve, ci, cm, constBufFlags);
     err |= createNuConstsBuffer(nu_consts, ia->nu_steps, ci, cm, constBufFlags);
+    err |= createRPtsBuffer(r_pts_all, ap->convolve, ia->r_steps, ci, cm, constBufFlags);
 
     return err;
 }
@@ -199,5 +225,6 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
     clReleaseMemObject(cm->sc);
     clReleaseMemObject(cm->sg);
     clReleaseMemObject(cm->nuConsts);
+    clReleaseMemObject(cm->rPts);
 }
 

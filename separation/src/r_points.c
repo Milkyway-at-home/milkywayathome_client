@@ -20,21 +20,32 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "separation_types.h"
-#include "separation_constants.h"
 #include "milkyway_cl.h"
 #include "milkyway_extra.h"
 #include "r_points.h"
 
-/* Literals are assumed to be doubles by default, and the
- * -cl-single-precision-constant flag seems to not be working when
- * trying to use float */
-#define R1 ((real) 1.0)
-#define R2 ((real) 2.0)
-#define R5 ((real) 5.0)
-#define R10 ((real) 10.0)
-#define R1000 ((real) 1000.0)
+__attribute__ ((always_inline, const))
+inline _MW_STATIC real distance_magnitude(const real m)
+{
+    return mw_powr(R10, (m - (real) 14.2) / R5);
+}
 
-real set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+R_PRIME calcRPrime(__MW_CONSTANT INTEGRAL_AREA* ia, const unsigned int r_step)
+{
+    real r, next_r, log_r;
+    R_PRIME ret;
+
+    log_r = ia->r_min + (r_step * ia->r_step_size);
+    r = distance_magnitude(log_r);
+    next_r = distance_magnitude(log_r + ia->r_step_size);
+
+    ret.irv = d2r(((cube(next_r) - cube(r)) / R3) * ia->mu_step_size);
+    ret.rPrime = (next_r + r) / R2;
+
+    return ret;
+}
+
+void set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                   __MW_CONSTANT STREAM_GAUSS* sg,
                   const unsigned int n_convolve,
                   const real coords,
@@ -43,9 +54,7 @@ real set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
     real g, exponent, r3, N;
     unsigned int i;
 
-    /* R2MAG */
-    _MW_STATIC const real sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
-    const real gPrime = R5 * (mw_log10(coords * R1000) - R1) + absm;
+    const real gPrime = calcGPrime(coords);
 
     for (i = 0; i < n_convolve; ++i)
     {
@@ -61,12 +70,5 @@ real set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
         N = ap->coeff * mw_exp(-exponent);
         r_pts[i].qw_r3_N = sg[i].qgaus_W * r3 * N;
     }
-
-    /* REFF */
-    const real exp_result = mw_exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));
-    const real reff_value = sigmoid_curve_params[0] / (exp_result + R1);
-    const real rPrime3 = cube(coords);
-    const real reff_xr_rp3 = reff_value * xr / rPrime3;
-    return reff_xr_rp3;
 }
 

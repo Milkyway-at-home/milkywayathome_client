@@ -31,6 +31,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_cl_defs.h"
 #include "calculated_constants.h"
 #include "run_cl.h"
+#include "r_points.h"
 
 static cl_int readIntegralResults(CLInfo* ci,
                                   SeparationCLMem* cm,
@@ -128,6 +129,25 @@ inline static real sumNuResults(BG_PROB* nu_results, const unsigned int r_steps)
     return bg_prob.bg_int + bg_prob.correction;
 }
 
+static R_POINTS* prepare_r_pts(const ASTRONOMY_PARAMETERS* ap,
+                               const INTEGRAL_AREA* ia,
+                               const STREAM_CONSTANTS* sc,
+                               const STREAM_GAUSS* sg,
+                               const unsigned int r_steps)
+{
+    unsigned int i;
+    R_PRIME rp;
+    const unsigned int nconvolve = ap->convolve;
+    R_POINTS* r_pts_all = mallocSafe(sizeof(R_POINTS) * r_steps * nconvolve);
+
+    for (i = 0; i < r_steps; ++i)
+    {
+        rp = calcRPrime(ia, i);
+        set_r_points(ap, sg, nconvolve, rp.rPrime, &r_pts_all[i * nconvolve]);
+    }
+
+    return r_pts_all;
+}
 
 static real runIntegral(CLInfo* ci,
                         SeparationCLMem* cm,
@@ -161,9 +181,11 @@ real integrateCL(const ASTRONOMY_PARAMETERS* ap,
     CLInfo ci = EMPTY_CL_INFO;
     SeparationCLMem cm = EMPTY_SEPARATION_CL_MEM;
     NU_CONSTANTS* nu_consts;
+    R_POINTS* r_pts_all;
 
     nu_consts = prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
-    if (setupSeparationCL(ap, ia, sc, sg, nu_consts, &ci, &cm) != CL_SUCCESS)
+    r_pts_all = prepare_r_pts(ap, ia, sc, sg, ia->r_steps);
+    if (setupSeparationCL(ap, ia, sc, sg, nu_consts, r_pts_all, &ci, &cm) != CL_SUCCESS)
         warn("Failed to setup up CL\n");
     else
         result = runIntegral(&ci, &cm, probs_results, ia->r_steps, ap->number_streams);
@@ -171,6 +193,7 @@ real integrateCL(const ASTRONOMY_PARAMETERS* ap,
     destroyCLInfo(&ci);
     releaseSeparationBuffers(&cm);
     free(nu_consts);
+    free(r_pts_all);
 
     return result;
 }

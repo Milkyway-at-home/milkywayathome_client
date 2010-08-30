@@ -53,11 +53,12 @@ inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
     err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->sc);
     err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->sg);
     err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->nuConsts);
+    err |= clSetKernelArg(ci->kern, 7, sizeof(cl_mem), &cm->rPts);
 
     /* Local workspaces */
-    err |= clSetKernelArg(ci->kern, 7, sizeof(real) * ap->number_streams, NULL);    /* st_probs scratch */
-    err |= clSetKernelArg(ci->kern, 8, sizeof(ST_PROBS) * ap->number_streams, NULL); /* st_probs */
-    err |= clSetKernelArg(ci->kern, 9, sizeof(R_POINTS) * ap->convolve, NULL);       /* r_pts */
+    err |= clSetKernelArg(ci->kern, 8, sizeof(real) * ap->number_streams, NULL);    /* st_probs scratch */
+    err |= clSetKernelArg(ci->kern, 9, sizeof(ST_PROBS) * ap->number_streams, NULL); /* st_probs */
+    err |= clSetKernelArg(ci->kern, 10, sizeof(R_POINTS) * ap->convolve, NULL);       /* r_pts */
 
     if (err != CL_SUCCESS)
     {
@@ -120,6 +121,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                          const STREAM_CONSTANTS* sc,
                          const STREAM_GAUSS* sg,
                          const NU_CONSTANTS* nu_consts,
+                         const R_POINTS* r_pts_all,
                          CLInfo* ci,
                          SeparationCLMem* cm)
 {
@@ -129,7 +131,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
     char* rPointsSrc;
 
     static const char* extraDefs = DOUBLEPREC_DEF_STRING
-                                   "-D__ATI_CL__=1 "
+                                   "-D__ATI_CL__=0 "
                                    "-cl-strict-aliasing "
                                    "-cl-finite-math-only "
                                    "-I../src "
@@ -175,7 +177,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
         return err;
     }
 
-    err = createSeparationBuffers(ap, ia, sc, sg, nu_consts, ci, cm);
+    err = createSeparationBuffers(ap, ia, sc, sg, nu_consts, r_pts_all, ci, cm);
     if (err != CL_SUCCESS)
     {
         fail("Failed to create CL buffers: %s\n", showCLInt(err));

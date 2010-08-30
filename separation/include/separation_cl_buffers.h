@@ -35,6 +35,7 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
                                const STREAM_CONSTANTS* sc,
                                const STREAM_GAUSS* sg,
                                const NU_CONSTANTS* nu_consts,
+                               const R_POINTS* r_pts_all,
                                CLInfo* ci,
                                SeparationCLMem* cm);
 

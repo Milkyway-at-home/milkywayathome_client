@@ -199,12 +199,6 @@ inline real bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
     return bg_prob;
 }
 
-__attribute__ ((always_inline, const))
-inline _MW_STATIC real distance_magnitude(const real m)
-{
-    return mw_powr((real) 10.0, (m - (real) 14.2) / (real) 5.0);
-}
-
 /* Sum over mu steps using Kahan summation */
 __attribute__ ((always_inline, hot))
 inline _MW_STATIC BG_PROB mu_sum(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
@@ -234,9 +228,7 @@ inline _MW_STATIC BG_PROB mu_sum(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
         lb = gc2lb(ap->wedge, mu, nu_consts_nu);
 
         V = irv * nu_consts_id;
-        bg_prob = bg_probability(ap, r_pts, sc, lb, reff_xr_rp3, V, st_probs, probs);
-
-        bg_prob *= V;
+        bg_prob = V * bg_probability(ap, r_pts, sc, lb, reff_xr_rp3, V, st_probs, probs);
 
         KAHAN_ADD(bg_prob_int.bg_int, bg_prob, bg_prob_int.correction);
     }

@@ -118,35 +118,19 @@ real r_sum(const ASTRONOMY_PARAMETERS* ap,
            ST_PROBS* probs,
            EVALUATION_STATE* es)
 {
-    real r, next_r, rPrime;
-    real irv, reff_xr_rp3;
-
-  #ifdef USE_KPC
-    const real r_max           = ia->r_min + ia->r_step_size * r_steps;
-    const real r_min_kpc       = distance_magnitude(ia->r_min);
-    const real r_max_kpc       = distance_magnitude(ia->r_max);
-    const real r_step_size_kpc = (r_max_kpc - r_min_kpc) / r_steps;
-  #endif
+    real reff_xr_rp3;
+    R_PRIME rp;
 
     const unsigned int r_steps = ia->r_steps;
 
     for ( ; es->r_step < r_steps; es->r_step++)
     {
-      #ifdef USE_KPC
-        r = r_min_kpc + (es->r_step * r_step_size_kpc);
-        next_r = r + r_step_size_kpc;
-      #else
-        real log_r = ia->r_min + (es->r_step * ia->r_step_size);
-        r = distance_magnitude(log_r);
-        next_r = distance_magnitude(log_r + ia->r_step_size);
-      #endif
+        rp = calcRPrime(ia, es->r_step);
 
-        irv = d2r(((cube(next_r) - cube(r)) / 3.0) * ia->mu_step_size);
-        rPrime = (next_r + r) / 2.0;
+        set_r_points(ap, sg, ap->convolve, rp.rPrime, r_pts);
+        reff_xr_rp3 = calcReffXrRp3(rp.rPrime);
 
-        reff_xr_rp3 = set_r_points(ap, sg, ap->convolve, rPrime, r_pts);
-
-        nu_sum(ap, sc, ia, irv, reff_xr_rp3, r_pts, nu_consts, st_probs, probs, es);
+        nu_sum(ap, sc, ia, rp.irv, reff_xr_rp3, r_pts, nu_consts, st_probs, probs, es);
 
         INCADD_BG_PROB(es->r_acc, es->nu_acc);
         CLEAR_BG_PROB(es->nu_acc);

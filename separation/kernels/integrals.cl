@@ -78,6 +78,7 @@ inline _MW_STATIC BG_PROB nu_sum(__constant ASTRONOMY_PARAMETERS* ap,
                            mu_min,
                            st_probs,
                            probs);
+
         INCADD_BG_PROB(nu_acc, mu_result);
     }
 
@@ -95,34 +96,13 @@ inline _MW_STATIC BG_PROB r_sum(__constant ASTRONOMY_PARAMETERS* ap,
                                 __local ST_PROBS* probs,
                                 const unsigned int r_step)
 {
-    BG_PROB nu_result;
-    real r, next_r, rPrime;
-    real irv, reff_xr_rp3;
+    R_PRIME rp;
+    real reff_xr_rp3;
 
-  #ifdef USE_KPC
-    const real r_max           = ia->r_min + ia->r_step_size * r_steps;
-    const real r_min_kpc       = distance_magnitude(ia->r_min);
-    const real r_max_kpc       = distance_magnitude(ia->r_max);
-    const real r_step_size_kpc = (r_max_kpc - r_min_kpc) / r_steps;
-    r = r_min_kpc + (r_step * r_step_size_kpc);
-    next_r = r + r_step_size_kpc;
-  #else
-    real log_r = ia->r_min + (r_step * ia->r_step_size);
-    r = distance_magnitude(log_r);
-    next_r = distance_magnitude(log_r + ia->r_step_size);
-  #endif /* USE_KPC */
+    rp = calcRPrime(ia, r_step);
+    reff_xr_rp3 = calcReffXrRp3(rp.rPrime);
 
-    irv = d2r(((cube(next_r) - cube(r)) / (real) 3.0) * ia->mu_step_size);
-    rPrime = (next_r + r) / (real) 2.0;
-
-    reff_xr_rp3 = set_r_points(ap, sg, ap->convolve, rPrime, r_pts);
-
-    nu_result.bg_int = r_pts[3].qw_r3_N;
-    nu_result.correction = sg[3].qgaus_W;
-
-    nu_result = nu_sum(ap, sc, ia, irv, reff_xr_rp3, r_pts, nu_consts, st_probs, probs);
-
-    return nu_result;
+    return nu_sum(ap, sc, ia, rp.irv, reff_xr_rp3, r_pts, nu_consts, st_probs, probs);
 }
 
 __kernel void r_sum_kernel(__global BG_PROB* nu_out,
@@ -133,6 +113,7 @@ __kernel void r_sum_kernel(__global BG_PROB* nu_out,
                            __constant STREAM_CONSTANTS* sc,
                            __constant STREAM_GAUSS* sg,
                            __constant NU_CONSTANTS* nu_consts,
+                           __constant R_POINTS* r_pts_all,
 
                            __local real* st_probs,
                            __local ST_PROBS* probs,
@@ -140,6 +121,7 @@ __kernel void r_sum_kernel(__global BG_PROB* nu_out,
 {
     unsigned int i;
     BG_PROB nu_result;
+    __constant R_POINTS* r_pts_this;
     size_t r_step = get_global_id(0);
 
     if (r_step > ia->r_steps)
@@ -150,6 +132,11 @@ __kernel void r_sum_kernel(__global BG_PROB* nu_out,
         probs[i].st_prob_int = 0.0;
         probs[i].st_prob_int_c = 0.0;
     }
+
+    /* Load r_pts into local memory */
+    r_pts_this = &r_pts_all[r_step * ap->convolve];
+    for (i = 0; i < ap->convolve; ++i)
+        r_pts[i] = r_pts_this[i];
 
     nu_result = r_sum(ap, ia, sc, sg, nu_consts, r_pts, st_probs, probs, r_step);
 

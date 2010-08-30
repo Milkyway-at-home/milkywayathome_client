@@ -152,6 +152,13 @@ typedef struct
 
 #define EMPTY_FINAL_STREAM_INTEGRALS { 0.0, NULL }
 
+typedef struct
+{
+    real irv;
+    real rPrime
+} R_PRIME;
+
+
 
 typedef struct SEPARATION_ALIGN(sizeof(real))
 {
