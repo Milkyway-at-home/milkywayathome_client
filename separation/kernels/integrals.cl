@@ -33,8 +33,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "separation_types.h"
-//#include "r_points.h"
-#include "r_points.c"
+#include "r_points.h"
 
 #include "milkyway_cl.h"
 #include "milkyway_math.h"
@@ -45,18 +44,18 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "integrals_common.h"
 
 __attribute__ ((always_inline))
-inline _MW_STATIC BG_PROB nu_sum(__global BG_PROB* mu_out,
-                                 __global ST_PROBS* probs_out,
-                                 __constant ASTRONOMY_PARAMETERS* ap,
-                                 __constant STREAM_CONSTANTS* sc,
-                                 __constant INTEGRAL_AREA* ia,
-                                 const real irv,
-                                 const real reff_xr_rp3,
-                                 __local const R_POINTS* r_pts,
-                                 __constant NU_CONSTANTS* nu_consts,
-                                 __local real* st_probs,
-                                 __local ST_PROBS* probs,
-                                 const size_t r_step)
+inline _MW_STATIC void nu_sum(__global BG_PROB* mu_out,
+                              __global ST_PROBS* probs_out,
+                              __constant ASTRONOMY_PARAMETERS* ap,
+                              __constant STREAM_CONSTANTS* sc,
+                              __constant INTEGRAL_AREA* ia,
+                              const real irv,
+                              const real reff_xr_rp3,
+                              __local const R_POINTS* r_pts,
+                              __constant NU_CONSTANTS* nu_consts,
+                              __local real* st_probs,
+                              __local ST_PROBS* probs,
+                              const size_t r_step)
 {
     unsigned int i;
     BG_PROB mu_result;
@@ -117,7 +116,6 @@ __kernel void r_sum_kernel(__global BG_PROB* mu_out,
                            __local R_POINTS* r_pts)
 {
     unsigned int i;
-    BG_PROB nu_result;
     __constant R_POINTS* r_pts_this;
     __global ST_PROBS* nu_probs;
     size_t r_step = get_global_id(0);
@@ -136,7 +134,7 @@ __kernel void r_sum_kernel(__global BG_PROB* mu_out,
     for (i = 0; i < ap->convolve; ++i)
         r_pts[i] = r_pts_this[i];
 
-    barrier(CLK_LOCAL_MEM_FENCE);
+    //barrier(CLK_LOCAL_MEM_FENCE);
 
     nu_probs = &probs_out[r_step * ia->nu_steps * ap->number_streams];
     r_sum(mu_out, nu_probs, ap, ia, sc, nu_consts, r_pts, st_probs, probs, r_step);

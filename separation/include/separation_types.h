@@ -155,10 +155,8 @@ typedef struct
 typedef struct
 {
     real irv;
-    real rPrime
+    real rPrime;
 } R_PRIME;
-
-
 
 typedef struct SEPARATION_ALIGN(sizeof(real))
 {
