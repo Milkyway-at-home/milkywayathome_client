@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_types.h"
 #include "evaluation_state.h"
+#include "separation_constants.h"
 #include "milkyway_util.h"
 #include "calculated_constants.h"
 #include "integrals.h"

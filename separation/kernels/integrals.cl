@@ -136,6 +136,8 @@ __kernel void r_sum_kernel(__global BG_PROB* mu_out,
     for (i = 0; i < ap->convolve; ++i)
         r_pts[i] = r_pts_this[i];
 
+    barrier(CLK_LOCAL_MEM_FENCE);
+
     nu_probs = &probs_out[r_step * ia->nu_steps * ap->number_streams];
     r_sum(mu_out, nu_probs, ap, ia, sc, nu_consts, r_pts, st_probs, probs, r_step);
 }

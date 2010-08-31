@@ -24,27 +24,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_extra.h"
 #include "r_points.h"
 
-__attribute__ ((always_inline, const))
-inline _MW_STATIC real distance_magnitude(const real m)
-{
-    return mw_powr(R10, (m - (real) 14.2) / R5);
-}
-
-R_PRIME calcRPrime(__MW_CONSTANT INTEGRAL_AREA* ia, const unsigned int r_step)
-{
-    real r, next_r, log_r;
-    R_PRIME ret;
-
-    log_r = ia->r_min + (r_step * ia->r_step_size);
-    r = distance_magnitude(log_r);
-    next_r = distance_magnitude(log_r + ia->r_step_size);
-
-    ret.irv = d2r(((cube(next_r) - cube(r)) / R3) * ia->mu_step_size);
-    ret.rPrime = (next_r + r) / R2;
-
-    return ret;
-}
-
 void set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                   __MW_CONSTANT STREAM_GAUSS* sg,
                   const unsigned int n_convolve,
@@ -63,10 +42,10 @@ void set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
         /* MAG2R */
         r_pts[i].r_in_mag = g;
         r_pts[i].r_in_mag2 = sqr(g);
-        r_pts[i].r_point = mw_powr(R10, (g - absm) / R5 + R1) / R1000;
+        r_pts[i].r_point = mw_powr(RL10, (g - absm) / RL5 + RL1) / RL1000;
 
         r3 = cube(r_pts[i].r_point);
-        exponent = sqr(g - gPrime) / (R2 * sqr(stdev));
+        exponent = sqr(g - gPrime) / (RL2 * sqr(stdev));
         N = ap->coeff * mw_exp(-exponent);
         r_pts[i].qw_r3_N = sg[i].qgaus_W * r3 * N;
     }
