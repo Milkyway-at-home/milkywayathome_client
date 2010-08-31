@@ -38,6 +38,7 @@ const char* showCLDeviceExecCapabilities(const cl_device_exec_capabilities x) __
 const char* showCLCommandQueueProperties(const cl_command_queue_properties x) __attribute__ ((const));
 const char* showCLBool(const cl_bool x) __attribute__ ((const));
 const char* showCLDeviceMemCacheType(const cl_device_mem_cache_type x) __attribute__ ((const));
+const char* showCLKernelInfo(const cl_kernel_info x) __attribute__ ((const));
 
 #ifdef __cplusplus
 }

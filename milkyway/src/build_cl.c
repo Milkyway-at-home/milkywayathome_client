@@ -188,6 +188,47 @@ cl_int destroyCLInfo(CLInfo* ci)
     return err;
 }
 
+static cl_int printKernelWorkGroupInfo(CLInfo* ci)
+{
+    cl_int err = CL_SUCCESS;
+    size_t wgs;
+    size_t cwgs[3];
+    cl_long lms;
+
+    err |= clGetKernelWorkGroupInfo(ci->kern,
+                                    ci->dev,
+                                    CL_KERNEL_COMPILE_WORK_GROUP_SIZE,
+                                    sizeof(cwgs),
+                                    cwgs,
+                                    NULL);
+
+
+    err |= clGetKernelWorkGroupInfo(ci->kern,
+                                    ci->dev,
+                                    CL_KERNEL_WORK_GROUP_SIZE,
+                                    sizeof(size_t),
+                                    &wgs,
+                                    NULL);
+
+    err |= clGetKernelWorkGroupInfo(ci->kern,
+                                    ci->dev,
+                                    CL_KERNEL_LOCAL_MEM_SIZE,
+                                    sizeof(cl_ulong),
+                                    &lms,
+                                    NULL);
+
+    if (err != CL_SUCCESS)
+        warn("Failed to get kernel work group info: %s\n", showCLInt(err));
+    else
+    {
+        printf("Work group size = %zu\n", wgs);
+        printf("Kernel local mem size = %lu\n", lms);
+        printf("Kernel compile work group size = { %zu, %zu, %zu }\n", cwgs[0], cwgs[1], cwgs[2]);
+    }
+
+    return err;
+}
+
 static char* getBuildLog(CLInfo* ci)
 {
     size_t logSize, readSize;

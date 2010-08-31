@@ -287,3 +287,23 @@ const char* showCLDeviceMemCacheType(const cl_device_mem_cache_type x)
     }
 }
 
+const char* showCLKernelInfo(const cl_kernel_info x)
+{
+    switch (x)
+    {
+        case CL_KERNEL_FUNCTION_NAME:
+            return "CL_KERNEL_FUNCTION_NAME";
+        case CL_KERNEL_NUM_ARGS:
+            return "CL_KERNEL_NUM_ARGS";
+        case CL_KERNEL_REFERENCE_COUNT:
+            return "CL_KERNEL_REFERENCE_COUNT";
+        case CL_KERNEL_CONTEXT:
+            return "CL_KERNEL_CONTEXT";
+        case CL_KERNEL_PROGRAM:
+            return "CL_KERNEL_PROGRAM";
+        default:
+            warn("Trying to show unknown cl_kernel_info %d\n", (int) x);
+            return "Unhandled cl_kernel_info";
+    }
+}
+
