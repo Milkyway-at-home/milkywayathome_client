@@ -204,19 +204,16 @@ real integrateCL(const ASTRONOMY_PARAMETERS* ap,
     real result = NAN;
     CLInfo ci = EMPTY_CL_INFO;
     SeparationCLMem cm = EMPTY_SEPARATION_CL_MEM;
-    NU_CONSTANTS* nu_consts;
     R_POINTS* r_pts_all;
 
-    nu_consts = prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
     r_pts_all = prepare_r_pts(ap, ia, sc, sg, ia->r_steps);
-    if (setupSeparationCL(ap, ia, sc, nu_consts, r_pts_all, &ci, &cm) != CL_SUCCESS)
+    if (setupSeparationCL(ap, ia, sc, r_pts_all, &ci, &cm) != CL_SUCCESS)
         warn("Failed to setup up CL\n");
     else
         result = runIntegral(&ci, &cm, probs_results, ia->r_steps, ia->nu_steps, ap->number_streams);
 
     destroyCLInfo(&ci);
     releaseSeparationBuffers(&cm);
-    free(nu_consts);
     free(r_pts_all);
 
     return result;

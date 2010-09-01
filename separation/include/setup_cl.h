@@ -40,17 +40,15 @@ typedef struct
     cl_mem ap;
     cl_mem ia;
     cl_mem sc;        /* Stream Constants */
-    cl_mem nuConsts;  /* nu step constants */
     cl_mem rPts;
 } SeparationCLMem;
 
-#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL }
 
 
 cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                          const INTEGRAL_AREA* ia,
                          const STREAM_CONSTANTS* sc,
-                         const NU_CONSTANTS* nu_consts,
                          const R_POINTS* r_pts_all,
                          CLInfo* ci,
                          SeparationCLMem* cm);

@@ -36,7 +36,7 @@ inline static cl_int createOutMuBuffer(const unsigned int r_steps,
                                &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating out mu buffer of size %zu: %s\n", showCLInt(err), size);
+        warn("Error creating out mu buffer of size %zu: %s\n", size, showCLInt(err));
         return err;
     }
 
@@ -75,7 +75,7 @@ inline static cl_int createSCBuffer(const STREAM_CONSTANTS* sc,
     cm->sc = clCreateBuffer(ci->clctx,
                             constBufFlags,
                             size,
-                            sc,
+                            (void*) sc,
                             &err);
     if (err != CL_SUCCESS)
     {
@@ -95,7 +95,7 @@ inline static cl_int createAPBuffer(const ASTRONOMY_PARAMETERS* ap,
     cm->ap = clCreateBuffer(ci->clctx,
                             constBufFlags,
                             sizeof(ASTRONOMY_PARAMETERS),
-                            ap,
+                            (void*) ap,
                             &err);
     if (err != CL_SUCCESS)
     {
@@ -112,7 +112,7 @@ inline static cl_int createIABuffer(const INTEGRAL_AREA* ia,
                                     const cl_mem_flags constBufFlags)
 {
     cl_int err;
-    cm->ia = clCreateBuffer(ci->clctx, constBufFlags, sizeof(INTEGRAL_AREA), ia, &err);
+    cm->ia = clCreateBuffer(ci->clctx, constBufFlags, sizeof(INTEGRAL_AREA), (void*) ia, &err);
     if (err != CL_SUCCESS)
     {
         warn("Error creating integral area buffer of size %zu: %s\n", sizeof(INTEGRAL_AREA), showCLInt(err));
@@ -121,29 +121,6 @@ inline static cl_int createIABuffer(const INTEGRAL_AREA* ia,
 
     return CL_SUCCESS;
 }
-
-inline static cl_int createNuConstsBuffer(const NU_CONSTANTS* nu_consts,
-                                          const unsigned int nu_steps,
-                                          CLInfo* ci,
-                                          SeparationCLMem* cm,
-                                          const cl_mem_flags constBufFlags)
-{
-    cl_int err;
-    size_t size = sizeof(NU_CONSTANTS) * nu_steps;
-    cm->nuConsts = clCreateBuffer(ci->clctx,
-                                  constBufFlags,
-                                  size,
-                                  nu_consts,
-                                  &err);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating nu constants buffer of size %zu: %s\n", size, showCLInt(err));
-        return err;
-    }
-
-    return CL_SUCCESS;
-}
-
 
 inline static cl_int createRPtsBuffer(const R_POINTS* r_pts_all,
                                       const unsigned int nconvolve,
@@ -157,7 +134,7 @@ inline static cl_int createRPtsBuffer(const R_POINTS* r_pts_all,
     cm->rPts = clCreateBuffer(ci->clctx,
                               constBufFlags,
                               size,
-                              r_pts_all,
+                              (void*) r_pts_all,
                               &err);
     if (err != CL_SUCCESS)
     {
@@ -171,7 +148,6 @@ inline static cl_int createRPtsBuffer(const R_POINTS* r_pts_all,
 cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
                                const INTEGRAL_AREA* ia,
                                const STREAM_CONSTANTS* sc,
-                               const NU_CONSTANTS* nu_consts,
                                const R_POINTS* r_pts_all,
                                CLInfo* ci,
                                SeparationCLMem* cm)
@@ -189,7 +165,6 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
     err |= createAPBuffer(ap, ci, cm, constBufFlags);
     err |= createIABuffer(ia, ci, cm, constBufFlags);
     err |= createSCBuffer(sc, ap->number_streams, ci, cm, constBufFlags);
-    err |= createNuConstsBuffer(nu_consts, ia->nu_steps, ci, cm, constBufFlags);
     err |= createRPtsBuffer(r_pts_all, ap->convolve, ia->r_steps, ci, cm, constBufFlags);
 
     return err;
@@ -202,7 +177,6 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
     clReleaseMemObject(cm->ap);
     clReleaseMemObject(cm->ia);
     clReleaseMemObject(cm->sc);
-    clReleaseMemObject(cm->nuConsts);
     clReleaseMemObject(cm->rPts);
 }
 
