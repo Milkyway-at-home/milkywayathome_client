@@ -42,7 +42,7 @@ extern "C" {
 #define RL1000 ((real) 1000.0)
 
 __attribute__ ((always_inline, const))
-inline _MW_STATIC real distance_magnitude(const real m)
+inline real distance_magnitude(const real m)
 {
     return mw_powr(RL10, (m - (real) 14.2) / RL5);
 }

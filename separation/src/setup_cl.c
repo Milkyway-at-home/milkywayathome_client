@@ -125,7 +125,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
     char* rPointsSrc;
 
     static const char* extraDefs = DOUBLEPREC_DEF_STRING
-                                 //"-D__ATI_CL__=1 "
+                                   "-D __ATI_CL__=1 "
                                    "-cl-strict-aliasing "
                                    "-cl-finite-math-only "
                                    "-I../src "
@@ -134,23 +134,6 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                                    "-I" ROOT "separation/src "
                                    "-I" ROOT "separation/include "
                                    "-I" ROOT "milkyway/include ";
-
-    printf("rpoints size = %zu -> %zu\n",
-           sizeof(R_POINTS) * ap->convolve,
-           2 * sizeof(R_POINTS) * ap->convolve);
-    printf("st_probs size = %zu -> %zu\n",
-           sizeof(ST_PROBS) * ap->number_streams,
-           2 * sizeof(ST_PROBS) * ap->number_streams);
-    printf("st_probs scratch size = %zu -> %zu\n",
-           sizeof(real) * ap->number_streams,
-           2 * sizeof(real) * ap->number_streams);
-
-    printf("Total size = %zu, %zu\n",
-           sizeof(R_POINTS) * ap->convolve + sizeof(ST_PROBS) * ap->number_streams + sizeof(real) * ap->number_streams,
-           2 * sizeof(R_POINTS) * ap->convolve + 2 * sizeof(ST_PROBS) * ap->number_streams + 2 * sizeof(real) * ap->number_streams);
-
-
-
 
     kernelSrc = findKernelSrc();
     if (!kernelSrc)

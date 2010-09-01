@@ -31,7 +31,7 @@ extern "C" {
 #include "integrals_likelihood.h"
 
 __attribute__ ((always_inline))
-inline void zero_st_probs(__MW_LOCAL real* st_probs, const unsigned int nstream)
+inline void zero_st_probs(real* st_probs, const unsigned int nstream)
 {
     unsigned int i;
 
@@ -40,7 +40,7 @@ inline void zero_st_probs(__MW_LOCAL real* st_probs, const unsigned int nstream)
 }
 
 __attribute__ ((always_inline, hot))
-inline void stream_sums(__MW_LOCAL real* st_probs,
+inline void stream_sums(real* st_probs,
                         __MW_CONSTANT STREAM_CONSTANTS* sc,
                         const vector xyz,
                         const real qw_r3_N,
@@ -65,8 +65,8 @@ inline void stream_sums(__MW_LOCAL real* st_probs,
 }
 
 __attribute__ ((always_inline))
-inline void sum_probs(__MW_LOCAL ST_PROBS* probs,
-                      __MW_LOCAL const real* st_probs,
+inline void sum_probs(ST_PROBS* probs,
+                      const real* st_probs,
                       const real V_reff_xr_rp3,
                       const unsigned int nstream)
 {
@@ -78,12 +78,12 @@ inline void sum_probs(__MW_LOCAL ST_PROBS* probs,
 /* FIXME: I don't know what these do enough to name it properly */
 __attribute__ ((always_inline, hot))
 inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
-                                __MW_LOCAL const R_POINTS* r_pts,
+                                __MW_CONSTANT const R_POINTS* r_pts,
                                 __MW_CONSTANT STREAM_CONSTANTS* sc,
                                 const LB integral_point,
                                 const int aux_bg_profile,
                                 const unsigned int convolve,
-                                __MW_LOCAL real* st_probs)
+                                real* st_probs)
 {
     unsigned int i;
     real h_prob, aux_prob;
@@ -113,6 +113,7 @@ inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                            + ap->bg_c );
             h_prob += aux_prob;
         }
+
         bg_prob += h_prob;
 
         stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
@@ -123,11 +124,11 @@ inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 
 __attribute__ ((always_inline))
 inline real sub_bg_probability2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
-                                __MW_LOCAL const R_POINTS* r_pts,
+                                __MW_CONSTANT const R_POINTS* r_pts,
                                 __MW_CONSTANT STREAM_CONSTANTS* sc,
                                 const LB integral_point,
                                 const unsigned int convolve,
-                                __MW_LOCAL real* st_probs)
+                                real* st_probs)
 {
     unsigned int i;
     real rg;
@@ -154,13 +155,13 @@ inline real sub_bg_probability2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 
 __attribute__ ((always_inline, hot))
 inline real bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
-                           __MW_LOCAL const R_POINTS* r_pts,
+                           __MW_CONSTANT const R_POINTS* r_pts,
                            __MW_CONSTANT STREAM_CONSTANTS* sc,
                            const LB integral_point,
                            const real reff_xr_rp3,
                            const real V,
-                           __MW_LOCAL real* st_probs,
-                           __MW_LOCAL ST_PROBS* probs)
+                           real* st_probs,
+                           ST_PROBS* probs)
 
 {
     real bg_prob;
@@ -203,7 +204,7 @@ inline real bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 __attribute__ ((always_inline, hot))
 inline _MW_STATIC BG_PROB mu_sum(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                  __MW_CONSTANT STREAM_CONSTANTS* sc,
-                                 __MW_LOCAL const R_POINTS* r_pts,
+                                 __MW_CONSTANT R_POINTS* r_pts,
                                  const real irv,             /* r constants */
                                  const real reff_xr_rp3,
                                  const real nu_consts_id,    /* nu constants */
@@ -211,8 +212,8 @@ inline _MW_STATIC BG_PROB mu_sum(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                  const unsigned int mu_steps,
                                  const real mu_step_size,
                                  const real mu_min,
-                                 __MW_LOCAL real* st_probs,
-                                 __MW_LOCAL ST_PROBS* probs)
+                                 real* st_probs,
+                                 ST_PROBS* probs)
 
 {
     unsigned int mu_step_current;
