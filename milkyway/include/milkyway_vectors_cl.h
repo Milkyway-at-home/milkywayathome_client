@@ -20,9 +20,11 @@
 #ifdef __OPENCL_VERSION__ /* In the kernel */
 
   #if DOUBLEPREC
-    typedef double4 real4, *real4ptr;
+    typedef double4 real4;
+    typedef double2 real2;
   #else
-    typedef float4 real4, *real4ptr;
+    typedef float4 real4;
+    typedef float2 real2;
   #endif /* DOUBLEPREC */
 
   #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
@@ -41,14 +43,16 @@
   #define X(v) ((v).x)
   #define Y(v) ((v).y)
   #define Z(v) ((v).z)
-
+  #define W(v) ((v).w)
 
 
 #else  /* Host */
   #if DOUBLEPREC
-    typedef cl_double4 real4, *real4ptr;
+    typedef cl_double4 real4;
+    typedef cl_double2 real2;
   #else
-    typedef cl_float4 real4, *real4ptr;
+    typedef cl_float4 real4;
+    typedef cl_float2 real2;
   #endif /* DOUBLEPREC */
 
   #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
@@ -72,6 +76,7 @@
     #define X(v) ((v)[0])
     #define Y(v) ((v)[1])
     #define Z(v) ((v)[2])
+    #define W(v) ((v)[3])
 
     /* clear vector. The 4th component can be ignored for everything else. */
     #define CLRV(v)                             \
