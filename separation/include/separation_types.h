@@ -38,10 +38,10 @@ extern "C" {
 #define BN(sp, n) YN(sp, n)
 #define RN(sp, n) RN(sp, n)
 
-#define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(x)))
+//#define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(x)))
+#define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(32)))
 
-
-typedef struct SEPARATION_ALIGN(sizeof(real))
+typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real l;
     real b;
@@ -68,7 +68,7 @@ typedef struct SEPARATION_ALIGN(4 * sizeof(real))
     int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
 } STREAM_CONSTANTS;
 
-typedef struct SEPARATION_ALIGN(sizeof(real))
+typedef struct SEPARATION_ALIGN(4 * sizeof(real))
 {
     real r_point;
     real r_in_mag;
@@ -76,13 +76,13 @@ typedef struct SEPARATION_ALIGN(sizeof(real))
     real qw_r3_N;
 } R_POINTS;
 
-typedef struct SEPARATION_ALIGN(sizeof(real))
+typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real nu;
     real id;
 } NU_CONSTANTS;
 
-typedef struct SEPARATION_ALIGN(sizeof(real))
+typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real dx;
     real qgaus_W;
@@ -91,7 +91,7 @@ typedef struct SEPARATION_ALIGN(sizeof(real))
 
 /* Parameter related types */
 
-typedef struct SEPARATION_ALIGN(sizeof(real))
+typedef struct SEPARATION_ALIGN(64)
 {
     real r_min, r_max, r_step_size;
     real nu_min, nu_max, nu_step_size;
@@ -152,13 +152,13 @@ typedef struct
 
 #define EMPTY_FINAL_STREAM_INTEGRALS { 0.0, NULL }
 
-typedef struct
+typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real irv;
     real rPrime;
 } R_PRIME;
 
-typedef struct SEPARATION_ALIGN(sizeof(real))
+typedef struct SEPARATION_ALIGN(128)
 {
     real parameters_version;
     real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
@@ -185,7 +185,9 @@ typedef struct SEPARATION_ALIGN(sizeof(real))
                                      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
                                      0.0, 0.0, 0.0 }
 
-typedef struct SEPARATION_ALIGN(sizeof(real))
+//    typedef struct __attribute__((packed, aligned(4 * sizeof(real)), vec_type_hint(float2)))  //SEPARATION_ALIGN(2 * sizeof(real))
+
+typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real st_prob_int;    /* for Kahan summation */
     real st_prob_int_c;
@@ -193,7 +195,7 @@ typedef struct SEPARATION_ALIGN(sizeof(real))
 
 #define ZERO_ST_PROBS = { 0.0, 0.0 }
 
-typedef struct SEPARATION_ALIGN(sizeof(real))
+typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real bg_int;
     real correction;   /* Correction for Kahan summation */
@@ -201,7 +203,7 @@ typedef struct SEPARATION_ALIGN(sizeof(real))
 
 /* TODO: All these tuples of reals really serve the same
  * purpose. Fix having all of them. */
-typedef struct SEPARATION_ALIGN(sizeof(real))
+typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real sum;
     real correction;
@@ -216,7 +218,7 @@ typedef struct SEPARATION_ALIGN(sizeof(real))
 
 #define ZERO_BG_PROB { 0.0, 0.0 }
 
-typedef struct SEPARATION_ALIGN(sizeof(real))
+typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real st_only_sum;
     real st_only_sum_c;
