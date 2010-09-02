@@ -176,20 +176,36 @@ static real runIntegral(CLInfo* ci,
                         const unsigned int nu_steps,
                         const unsigned int number_streams)
 {
+    cl_int err;
     BG_PROB* mu_results;
     real bg_result;
     size_t resultSize = sizeof(BG_PROB) * r_steps * nu_steps;
 
-    enqueueIntegralKernel(ci, r_steps, nu_steps);
+    err = enqueueIntegralKernel(ci, r_steps, nu_steps);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to enqueue integral kernel: %s\n", showCLInt(err));
+        return NAN;
+    }
 
     mu_results = mallocSafe(resultSize);
-    readIntegralResults(ci, cm, mu_results, resultSize);
+    err = readIntegralResults(ci, cm, mu_results, resultSize);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to read integral results: %s\n", showCLInt(err));
+        free(mu_results);
+        return NAN;
+    }
 
-    printf("Read integral results\n");
     bg_result = sumMuResults(mu_results, r_steps, nu_steps);
     free(mu_results);
 
-    readProbsResults(ci, cm, probs_results, r_steps, nu_steps, number_streams);
+    err = readProbsResults(ci, cm, probs_results, r_steps, nu_steps, number_streams);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to read probs results: %s\n", showCLInt(err));
+        return NAN;
+    }
 
     return bg_result;
 }
