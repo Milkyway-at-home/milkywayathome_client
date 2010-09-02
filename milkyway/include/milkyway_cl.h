@@ -39,7 +39,15 @@ extern "C" {
   #define __MW_LOCAL __local
   #define __MW_PRIVATE __private
   #define __MW_GLOBAL __global
-  #define __MW_CONSTANT __constant
+
+    /* Right now on Nvidia with Apple opencl there are weird bugs when
+     * you try to actually use __constant, but it most definitely
+     * should be used. */
+  #ifdef __APPLE__
+    #define __MW_CONSTANT __global
+  #else
+    #define __MW_CONSTANT __constant
+  #endif /* __APPLE__ */
 #else
   #define __MW_LOCAL
   #define __MW_PRIVATE

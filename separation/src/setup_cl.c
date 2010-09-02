@@ -126,6 +126,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
 
     static const char* extraDefs = DOUBLEPREC_DEF_STRING
                                    "-D __ATI_CL__=1 "
+                                   "-D __APPLE_CL__=1 "
                                    "-cl-strict-aliasing "
                                    "-cl-finite-math-only "
                                    "-I../src "

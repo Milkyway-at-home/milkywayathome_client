@@ -56,12 +56,12 @@ inline void write_st_probs(__global ST_PROBS* probs_out,
 __attribute__ ((always_inline))
 inline _MW_STATIC void nu_sum(__global BG_PROB* mu_out,
                               __global ST_PROBS* probs_out,
-                              __constant ASTRONOMY_PARAMETERS* ap,
-                              __constant STREAM_CONSTANTS* sc,
-                              __constant INTEGRAL_AREA* ia,
+                              __MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+                              __MW_CONSTANT STREAM_CONSTANTS* sc,
+                              __MW_CONSTANT INTEGRAL_AREA* ia,
                               const real irv,
                               const real reff_xr_rp3,
-                              __constant R_POINTS* r_pts,
+                              __MW_CONSTANT R_POINTS* r_pts,
                               real* st_probs,
                               ST_PROBS* probs,
                               const size_t r_step)
@@ -99,14 +99,14 @@ inline _MW_STATIC void nu_sum(__global BG_PROB* mu_out,
 __kernel void r_sum_kernel(__global BG_PROB* mu_out,
                            __global ST_PROBS* probs_out,
 
-                           __constant ASTRONOMY_PARAMETERS* ap,
-                           __constant INTEGRAL_AREA* ia,
-                           __constant STREAM_CONSTANTS* sc,
-                           __constant R_POINTS* r_pts_all,
+                           __MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+                           __MW_CONSTANT INTEGRAL_AREA* ia,
+                           __MW_CONSTANT STREAM_CONSTANTS* sc,
+                           __MW_CONSTANT R_POINTS* r_pts_all,
                            __local R_POINTS* r_pts)
 {
     unsigned int i;
-    __constant R_POINTS* r_pts_this;
+    __MW_CONSTANT R_POINTS* r_pts_this;
     __global ST_PROBS* nu_probs;
     size_t r_step = get_global_id(0);
 
