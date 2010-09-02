@@ -150,7 +150,10 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         t2 = get_time();
         printf("Time = %.20g\n", t2 - t1);
 
-        calculate_stream_integrals(integral->probs, integral->stream_integrals, ap->number_streams);
+        if (!isnan(integral->background_integral))
+            calculate_stream_integrals(integral->probs, integral->stream_integrals, ap->number_streams);
+        else
+            fail("Failed to calculate integral %u\n", es->current_integral);
 
         CLEAR_BG_PROB(es->r_acc);
     }
