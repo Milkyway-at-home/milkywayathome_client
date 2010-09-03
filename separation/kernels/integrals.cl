@@ -23,11 +23,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #error "Bad bad bad bad bad"
 #endif /* __FAST_RELAXED_MATH__ */
 
+#include "milkyway_math.h"
 #include "separation_types.h"
 #include "r_points.h"
-
 #include "milkyway_cl.h"
-#include "milkyway_math.h"
 #include "milkyway_extra.h"
 
 #include "integrals_likelihood.h"
@@ -57,7 +56,6 @@ inline _MW_STATIC void nu_sum(__global BG_PROB* mu_out,
                               ST_PROBS* probs,
                               const size_t r_step)
 {
-    unsigned int i;
     BG_PROB mu_result;
     size_t nu_step = get_global_id(1);
 

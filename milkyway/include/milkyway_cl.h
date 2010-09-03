@@ -55,6 +55,18 @@ extern "C" {
   #define __MW_CONSTANT const
 #endif /* __OPENCL_VERSION__ */
 
+/* The ATI CL compiler is horribly broken, especially when using
+ * doubles on the GPU. */
+#if defined(__ATI_CL__) && !defined(__CPU__)
+  #define BROKEN_CL_MATH 1
+#else
+  #define BROKEN_CL_MATH 0
+#endif
+
+#if defined(__ATI_RV770__) || defined(__ATI_RV730__) || defined(__ATI_RV710__)
+  #define MW_RADEON_4XXX 1
+#endif
+
 #ifdef __cplusplus
 }
 #endif

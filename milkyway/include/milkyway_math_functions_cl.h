@@ -35,7 +35,7 @@ extern "C" {
 #define mw_acosh acosh
 #define mw_acospi acospi
 
-#ifndef __ATI_CL__
+#if !BROKEN_CL_MATH
   #define mw_asin asin
 #else
     #warning "double asin broken on ATI"
@@ -45,19 +45,19 @@ extern "C" {
   #define mw_asin(x) ((x) + (cube(x) / 6.0) + 3.0 * (sqr(x) * cube(x) / 40.0)   \
     + (5.0 * (x) * cube(x) * cube(x) / 112.0) + (35.0 * cube(cube(x)) / 1152.0) \
     + (63.0 * sqr(x) * cube(cube(x)) / 2816.0))
-#endif /* __ATI_CL__ */
+#endif /* !BROKEN_CL_MATH */
 
 
 #define mw_asinh asinh
 #define mw_asinpi asinpi
 
-#ifndef __ATI_CL__
+#if !BROKEN_CL_MATH
   #define mw_atan atan
 #else
   #define mw_atan(x) ((x) - cube(x) / 3.0 + sqr(x) * cube(x) / 5.0 - cube(x) * cube(x) * (x) / 7.0 + cube(cube(x)) / 9.0)
-#endif /* __ATI_CL__ */
+#endif /* !BROKEN_CL_MATH */
 
-#ifndef __ATI_CL__
+#if !BROKEN_CL_MATH
   #define mw_atan2 atan2
 #else
   /* ATI currently missing double version of this.  Wikipedia gives
@@ -66,7 +66,7 @@ extern "C" {
    */
   #warning "Using replacement for missing atan2"
   #define mw_atan2(y, x) (((real) 2.0) * mw_atan((y) / (mw_hypot(x, y) + (x))))
-#endif /* __ATI_CL__ */
+#endif /* !BROKEN_CL_MATH */
 
 #define mw_atanh atanh
 #define mw_atanpi atanpi
@@ -75,7 +75,7 @@ extern "C" {
 #define mw_ceil ceil
 #define mw_copysign copysign
 
-#ifndef __ATI_CL__
+#if !BROKEN_CL_MATH
   #define mw_cos cos
 #else
     /* The ATI compiler is the buggiest garbage I've ever used. It
@@ -83,7 +83,7 @@ extern "C" {
      * function. */
   #define mw_cos(x) (1.0 - sqr(x) / 2.0 + sqr(sqr(x)) / 24.0 - sqr(cube(x)) / 720.0 + sqr(sqr(sqr(x))) / 40320.0 - (x) * cube(cube(x)) / 3628800.0)
   #warning "Using cos replacement"
-#endif /* __ATI_CL__ */
+#endif /* !BROKEN_CL_MATH */
 
 
 #define mw_cosh cosh
@@ -104,12 +104,12 @@ extern "C" {
 #define mw_fract fract
 #define mw_frexp frexp
 
-#ifndef __ATI_CL__
+#if !BROKEN_CL_MATH
   #define mw_hypot hypot
 #else
     #warning "Using replacement for hypot"
   #define mw_hypot(x, y) mw_sqrt(sqr(x) + sqr(y))
-#endif /* __ATI_CL__ */
+#endif /* !BROKEN_CL_MATH */
 
 #define mw_ilogb ilogb
 #define mw_ldexp ldexp
@@ -127,12 +127,12 @@ extern "C" {
 #define mw_pow pow
 #define mw_pown pown
 
-#ifndef __ATI_CL__
+#if !BROKEN_CL_MATH
   #define mw_powr powr
 #else
   #warning "Using pow replacement for powr"
   #define mw_powr pow
-#endif /* __ATI_CL__ */
+#endif /* !BROKEN_CL_MATH */
 
 #define mw_remainder remainder
 #define mw_remquo remquo
@@ -141,34 +141,34 @@ extern "C" {
 #define mw_round round
 #define mw_rsqrt rsqrt
 
-#ifndef __ATI_CL__
+#if !BROKEN_CL_MATH
   #define mw_sin sin
 #else
   #define mw_sin(x) ((x) - cube(x) / 120.0 - (x) * cube(x) * cube(x) / 5040.0 + cube(cube(x)) / 362880.0)
-#endif /* __ATI_CL___ */
+#endif /* !BROKEN_CL_MATH_ */
 
-#ifndef __ATI_CL__
+#if !BROKEN_CL_MATH
     /* The glibc one uses 2 out arguments. We want to use it when
      * available without CL, so wrap it for consistency */
   #define mw_sincos(x, s, c) (*(s) = sincos((x), (c)))
 #else
   #define mw_sincos(x, s, c) { *(s) = mw_sin(x); *(c) = mw_cos(x); }
-#endif /* __ATI_CL__ */
+#endif /* !BROKEN_CL_MATH */
 
 #define mw_sinh sinh
 #define mw_sinpi sinpi
 
-#ifndef __ATI_CL__
+#if !BROKEN_CL_MATH
   #define mw_sqrt sqrt
 #else
-  #if defined(__ATI_RV770__) || defined(__ATI_RV730__) || defined(__ATI_RV710__)
+  #if MW_RADEON_4XXX
     /* As of Stream SDK 2.2, double sqrt isn't supported on radeon 4xxx series */
     #warning "Using pow(x, 2) for sqrt replacement"
     #define mw_sqrt(x) mw_pow((x), 2.0)
   #else
     #define mw_sqrt(x) sqrt
   #endif /* Radeon 4xxx */
-#endif /* __ATI_CL__ */
+#endif /* !BROKEN_CL_MATH */
 
 #define mw_tan tan
 #define mw_tanh tanh

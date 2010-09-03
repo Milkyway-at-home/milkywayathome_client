@@ -32,7 +32,7 @@
 
 /* DOT Vector Product */
 
-#ifndef __ATI_CL__
+#if !BROKEN_CL_MATH
   #define DOTVP(s,v,u)                                  \
     {                                                   \
         (s) = dot(v, u);                                \
@@ -43,7 +43,7 @@
     {                                                   \
         (s) = sqr(X(v)) + sqr(Y(v)) + sqr(Z(v));        \
     }
-#endif /* __ATI_CL__ */
+#endif /* !BROKEN_CL_MATH */
 
   #define L(v) ((v).x)
   #define B(v) ((v).y)

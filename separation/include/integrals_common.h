@@ -105,7 +105,7 @@ inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 
         h_prob = r_pts[i].qw_r3_N / (rg * cube(rs));
 
-        //the hernquist profile includes a quadratic term in g
+        /* the Hernquist profile includes a quadratic term in g */
         if (aux_bg_profile)
         {
             aux_prob = r_pts[i].qw_r3_N * (  ap->bg_a * r_pts[i].r_in_mag2
