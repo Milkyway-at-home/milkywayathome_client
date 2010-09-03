@@ -50,7 +50,12 @@ extern "C" {
 
 #define mw_asinh asinh
 #define mw_asinpi asinpi
-#define mw_atan atan
+
+#ifndef __ATI_CL__
+  #define mw_atan atan
+#else
+  #define mw_atan(x) ((x) - cube(x) / 3.0 + sqr(x) * cube(x) / 5.0 - cube(x) * cube(x) * (x) / 7.0 + cube(cube(x)) / 9.0)
+#endif /* __ATI_CL__ */
 
 #ifndef __ATI_CL__
   #define mw_atan2 atan2
@@ -69,7 +74,18 @@ extern "C" {
 #define mw_cbrt cbrt
 #define mw_ceil ceil
 #define mw_copysign copysign
-#define mw_cos cos
+
+#ifndef __ATI_CL__
+  #define mw_cos cos
+#else
+    /* The ATI compiler is the buggiest garbage I've ever used. It
+     * makes the compile take 60 seconds when I use the actual cos
+     * function. */
+  #define mw_cos(x) (1.0 - sqr(x) / 2.0 + sqr(sqr(x)) / 24.0 - sqr(cube(x)) / 720.0 + sqr(sqr(sqr(x))) / 40320.0 - (x) * cube(cube(x)) / 3628800.0)
+  #warning "Using cos replacement"
+#endif /* __ATI_CL__ */
+
+
 #define mw_cosh cosh
 #define mw_cospi cospi
 #define mw_erfc erfc
@@ -124,11 +140,20 @@ extern "C" {
 #define mw_rootn rootn
 #define mw_round round
 #define mw_rsqrt rsqrt
-#define mw_sin sin
 
-/* The glibc one uses 2 out arguments. We want to use it when
- * available without CL, so wrap it for consistency */
-#define mw_sincos(x, s, c) (*(s) = sincos((x), (c)))
+#ifndef __ATI_CL__
+  #define mw_sin sin
+#else
+  #define mw_sin(x) ((x) - cube(x) / 120.0 - (x) * cube(x) * cube(x) / 5040.0 + cube(cube(x)) / 362880.0)
+#endif /* __ATI_CL___ */
+
+#ifndef __ATI_CL__
+    /* The glibc one uses 2 out arguments. We want to use it when
+     * available without CL, so wrap it for consistency */
+  #define mw_sincos(x, s, c) (*(s) = sincos((x), (c)))
+#else
+  #define mw_sincos(x, s, c) { *(s) = mw_sin(x); *(c) = mw_cos(x); }
+#endif /* __ATI_CL__ */
 
 #define mw_sinh sinh
 #define mw_sinpi sinpi

@@ -31,10 +31,19 @@
   #define VECTOR(x, y, z) { (x), (y), (z), 0.0 }
 
 /* DOT Vector Product */
-#define DOTVP(s,v,u)                                    \
+
+#ifndef __ATI_CL__
+  #define DOTVP(s,v,u)                                  \
     {                                                   \
         (s) = dot(v, u);                                \
     }
+#else
+  #warning "Using broken dot product"
+  #define DOTVP(s,v,u)                                  \
+    {                                                   \
+        (s) = sqr(X(v)) + sqr(Y(v)) + sqr(Z(v));        \
+    }
+#endif /* __ATI_CL__ */
 
   #define L(v) ((v).x)
   #define B(v) ((v).y)
