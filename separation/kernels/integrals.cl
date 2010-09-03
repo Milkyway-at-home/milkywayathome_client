@@ -19,14 +19,6 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if DOUBLEPREC
-  #ifdef __ATI_CL__
-    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
-  #else
-    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-  #endif /* __ATI_CL__ */
-#endif /* DOUBLEPREC */
-
 #ifdef __FAST_RELAXED_MATH__
   #error "Bad bad bad bad bad"
 #endif /* __FAST_RELAXED_MATH__ */

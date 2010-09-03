@@ -23,6 +23,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define _MILKYWAY_MATH_H_INSIDE_
 
+#if DOUBLEPREC
+  #ifdef __ATI_CL__
+    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
+  #else
+    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+  #endif /* __ATI_CL__ */
+#endif /* DOUBLEPREC */
+
 #include "real.h"
 #include "milkyway_vectors.h"
 #include "milkyway_math_functions.h"
