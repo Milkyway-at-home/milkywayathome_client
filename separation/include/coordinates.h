@@ -90,7 +90,7 @@ inline LB gc2lb(const int wedge, const real mu, const real nu)
     MULMV(v2, rmat, v1);
 
     /* Cartesian to spherical */
-    real r = mw_hypot(X(v2), Y(v2));
+    const real r = mw_hypot(X(v2), Y(v2));
 
     LB_L(lb) = ( r != 0.0 ) ? mw_atan2( Y(v2), X(v2) ) : 0.0;
     LB_B(lb) = ( Z(v2) != 0.0 ) ? mw_atan2( Z(v2), r ) : 0.0;

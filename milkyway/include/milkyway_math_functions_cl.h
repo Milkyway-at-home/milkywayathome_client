@@ -34,7 +34,20 @@ extern "C" {
 #define mw_acos acos
 #define mw_acosh acosh
 #define mw_acospi acospi
-#define mw_asin asin
+
+#ifndef __ATI_CL__
+  #define mw_asin asin
+#else
+    #warning "double asin broken on ATI"
+    /* Cheap replacement using Taylor expansion that shouldn't actually be used
+       asin(x) ~= x + x^3/6 + 3x^5/40 + 5x^7/112 + 35x^9/1152 + 63x^11/2816 + ...
+     */
+  #define mw_asin(x) ((x) + (cube(x) / 6.0) + 3.0 * (sqr(x) * cube(x) / 40.0)   \
+    + (5.0 * (x) * cube(x) * cube(x) / 112.0) + (35.0 * cube(cube(x)) / 1152.0) \
+    + (63.0 * sqr(x) * cube(cube(x)) / 2816.0))
+#endif /* __ATI_CL__ */
+
+
 #define mw_asinh asinh
 #define mw_asinpi asinpi
 #define mw_atan atan
@@ -46,6 +59,7 @@ extern "C" {
      this formula, but also an alternate version which avoids
      underflow but is undefined for 0.
    */
+  #warning "Using replacement for missing atan2"
   #define mw_atan2(y, x) (((real) 2.0) * mw_atan((y) / (mw_hypot(x, y) + (x))))
 #endif /* __ATI_CL__ */
 
@@ -77,7 +91,8 @@ extern "C" {
 #ifndef __ATI_CL__
   #define mw_hypot hypot
 #else
-  #define mw_hypot(x, y) mw_sqrt( sqr(x) + sqr(y) )
+    #warning "Using replacement for hypot"
+  #define mw_hypot(x, y) mw_sqrt(sqr(x) + sqr(y))
 #endif /* __ATI_CL__ */
 
 #define mw_ilogb ilogb
@@ -95,7 +110,14 @@ extern "C" {
 #define mw_nextafter nextafter
 #define mw_pow pow
 #define mw_pown pown
-#define mw_powr powr
+
+#ifndef __ATI_CL__
+  #define mw_powr powr
+#else
+  #warning "Using pow replacement for powr"
+  #define mw_powr pow
+#endif /* __ATI_CL__ */
+
 #define mw_remainder remainder
 #define mw_remquo remquo
 #define mw_rint rint
@@ -110,7 +132,19 @@ extern "C" {
 
 #define mw_sinh sinh
 #define mw_sinpi sinpi
-#define mw_sqrt sqrt
+
+#ifndef __ATI_CL__
+  #define mw_sqrt sqrt
+#else
+  #if defined(__ATI_RV770__) || defined(__ATI_RV730__) || defined(__ATI_RV710__)
+    /* As of Stream SDK 2.2, double sqrt isn't supported on radeon 4xxx series */
+    #warning "Using pow(x, 2) for sqrt replacement"
+    #define mw_sqrt(x) mw_pow((x), 2.0)
+  #else
+    #define mw_sqrt(x) sqrt
+  #endif /* Radeon 4xxx */
+#endif /* __ATI_CL__ */
+
 #define mw_tan tan
 #define mw_tanh tanh
 #define mw_tanpi tanpi

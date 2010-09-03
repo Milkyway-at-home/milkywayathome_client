@@ -31,7 +31,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #error "Bad bad bad bad bad"
 #endif /* __FAST_RELAXED_MATH__ */
 
-
 #include "separation_types.h"
 #include "r_points.h"
 
@@ -121,6 +120,7 @@ __kernel void r_sum_kernel(__global BG_PROB* mu_out,
         probs[i].st_prob_int = 0.0;
         probs[i].st_prob_int_c = 0.0;
     }
+
 
     #if 0
     /* Load r_pts into local memory */

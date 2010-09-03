@@ -227,8 +227,8 @@ inline _MW_STATIC BG_PROB mu_sum(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
         mu = mu_min + (((real) mu_step_current + 0.5) * mu_step_size);
 
         lb = gc2lb(ap->wedge, mu, nu_consts_nu);
-
         V = irv * nu_consts_id;
+
         bg_prob = V * bg_probability(ap, r_pts, sc, lb, reff_xr_rp3, V, st_probs, probs);
 
         KAHAN_ADD(bg_prob_int.bg_int, bg_prob, bg_prob_int.correction);

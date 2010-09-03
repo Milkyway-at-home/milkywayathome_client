@@ -290,6 +290,8 @@
                 (p)[_i][_j] = (s);              \
     }
 
+#ifndef __ATI_CL__
+
 /* MULtiply Matrix by Vector */
 #define MULMV(v, p, u)                          \
     {                                           \
@@ -297,6 +299,12 @@
         DOTVP(Y(v), (p)[1], (u));               \
         DOTVP(Z(v), (p)[2], (u));               \
    }
+
+#else
+  #warning "VERY BROKEN: Using nothing for MULMV"
+  #define MULMV(v, p, u)
+
+#endif /*  __ATI_CL__ */
 
 #endif /* _MILKYWAY_VECTORS_OPS_H_ */
 
