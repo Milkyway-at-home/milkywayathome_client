@@ -1,7 +1,7 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
-Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
-and Rensselaer Polytechnic Institute.
+Copyright 2008-2010 Travis Desell, Dave Przybylo, Nathan Cole, Matthew
+Arsenault, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
+Magdon-Ismail and Rensselaer Polytechnic Institute.
 
 This file is part of Milkway@Home.
 
@@ -23,42 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <errno.h>
 #include <stdio.h>
 
-#include <boinc_api.h>
-#include <diagnostics.h>
-
-#if BOINC_APP_GRAPHICS
-	#include <graphics_api.h>
-	#include <graphics_lib.h>
-#endif
-
-/* I'm not sure what the MSVC macro is.
- This only needs the Windows API for the stuff to deal with the
- truly awful Windows API / WinMain, which you only need to deal with
- for visual studio and should be avoided as much as possible. */
-#if defined(_WIN32) && !defined(__MINGW32__)
-    #include <str_util.h>
-#endif
-
-
-#ifdef __cplusplus  /* Workaround for Windows / boinc issue */
- extern "C" {
-#endif
-
-#include "milkyway.h"
-#include "milkyway_priv.h"
-#include "star_points.h"
-#include "evaluation_state.h"
-
-#if USE_CUDA
-    #include "evaluation_gpu.h"
-#elif USE_OCL
-    #include "evaluation_ocl.h"
-#endif
-
-
-#ifdef __cplusplus
- }
-#endif
+#include "separation.h"
 
 static char* boinc_graphics = NULL;
 static char* star_points_file = NULL;
@@ -82,14 +47,15 @@ void AppInvalidParameterHandler(const wchar_t* expression,
 
 
 /* Returns the newly allocated array of parameters */
-static double* parse_parameters(int argc, const char** argv, int* paramnOut)
+static real* parse_parameters(int argc, const char** argv, int* paramnOut)
 {
     poptContext context;
     int o;
     unsigned int i, paramn = 0;
-    double* parameters = NULL;
+    real* parameters = NULL;
+    static unsigned int numParams;
+    static int server_params = 0;
     static const char** rest;
-
     static const struct poptOption options[] =
     {
         {
@@ -114,6 +80,18 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
             "output", 'o',
             POPT_ARG_STRING, &output_file,
             'o', "Output file", NULL
+        },
+
+        {
+            "p", 'p',
+            POPT_ARG_NONE, &server_params,
+            0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
+        },
+
+        {
+            "np", '\0',
+            POPT_ARG_INT | POPT_ARGFLAG_ONEDASH, &numParams,
+            0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
         },
 
         POPT_AUTOHELP
@@ -152,12 +130,18 @@ static double* parse_parameters(int argc, const char** argv, int* paramnOut)
 
         MW_DEBUG("%u arguments leftover\n", paramn);
 
-        parameters = (double*) malloc(sizeof(double) * paramn);
-
-        errno = 0;
-        for ( i = 0; i < paramn; ++i )
+        if (server_params && (paramn != numParams))
         {
-            parameters[i] = strtod(rest[i], NULL);
+            poptFreeContext(context);
+            fprintf(stderr, "Parameter count mismatch: Expected %u, got %u\n", numParams, paramn);
+            mw_finish(EXIT_FAILURE);
+        }
+
+        parameters = (real*) mallocSafe(sizeof(real) * paramn);
+        errno = 0;
+        for (i = 0; i < paramn; ++i)
+        {
+            parameters[i] = (real) strtod(rest[i], NULL);
 
             if (errno)
             {
@@ -186,52 +170,31 @@ static void cleanup_worker()
 
 static void worker(int argc, const char** argv)
 {
-    double* parameters;
-    int ret1, ret2;
+    real* parameters;
     int number_parameters, ap_number_parameters;
-    ASTRONOMY_PARAMETERS ap = { 0 };
-    STAR_POINTS sp = { 0 };
-    EVALUATION_STATE es = { 0 };
+    ASTRONOMY_PARAMETERS ap = EMPTY_ASTRONOMY_PARAMETERS;
+    BACKGROUND_PARAMETERS bgp = EMPTY_BACKGROUND_PARAMETERS;
+    STREAMS streams = EMPTY_STREAMS;
 
     parameters = parse_parameters(argc, argv, &number_parameters);
-
     if (!parameters)
     {
         fprintf(stderr, "Could not parse parameters from the command line\n");
         mw_finish(EXIT_FAILURE);
     }
 
-    ret1 = read_astronomy_parameters(astronomy_parameter_file, &ap);
-    ret2 = read_star_points(star_points_file, &sp);
-
-    MW_DEBUG("ap.number_stream_parameters = %d\n", ap.number_stream_parameters);
-
-    if (ret1)
+    INTEGRAL_AREA* ias = read_parameters(astronomy_parameter_file, &ap, &bgp, &streams);
+    if (!ias)
     {
         fprintf(stderr,
-                "APP: error reading astronomy parameters from file %s: %d\n",
-                astronomy_parameter_file,
-                ret1);
-    }
-
-    if (ret2)
-    {
-        fprintf(stderr,
-                "APP: error reading star points from file %s: %d\n",
-                star_points_file,
-                ret2);
-    }
-
-    if (ret1 | ret2)
-    {
+                "Error reading astronomy parameters from file '%s'\n",
+                astronomy_parameter_file);
         free(parameters);
         cleanup_worker();
 		mw_finish(EXIT_FAILURE);
     }
 
-    initialize_state(&ap, &sp, &es);
-
-    ap_number_parameters = get_optimized_parameter_count(&ap);
+    ap_number_parameters = get_optimized_parameter_count(&ap, &bgp, &streams);
 
     if (number_parameters < 1 || number_parameters != ap_number_parameters)
     {
@@ -244,89 +207,88 @@ static void worker(int argc, const char** argv)
                 ap_number_parameters);
 
         free(parameters);
+        free(ias);
         cleanup_worker();
         mw_finish(EXIT_FAILURE);
     }
 
-    set_astronomy_parameters(&ap, parameters);
+    set_parameters(&ap, &bgp, &streams, parameters);
+    free(parameters);
 
-    init_constants(&ap);
-#if COMPUTE_ON_CPU
-    init_simple_evaluator(cpu_evaluate);
-#elif USE_CUDA
-    init_simple_evaluator(cuda_evaluate);
-#elif USE_OCL
-    init_simple_evaluator(ocl_evaluate);
-#else
-    #error "Must choose CUDA, OpenCL or CPU"
-#endif /* COMPUTE_ON_CPU */
+    real likelihood;
+    STREAM_CONSTANTS* sc = init_constants(&ap, &bgp, &streams);
+    free_background_parameters(&bgp);
 
-    double likelihood = evaluate(parameters, &ap, &es, &sp);
+    likelihood = evaluate(&ap, ias, &streams, sc, star_points_file);
 
     fprintf(stderr, "<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
     fprintf(stderr, "<search_application> %s </search_application>\n", BOINC_APP_VERSION);
 
-    free(parameters);
+    free(ias);
+    free(sc);
+    free_streams(&streams);
+
 	cleanup_worker();
 
     mw_finish(EXIT_SUCCESS);
-
 }
 
-int main(int argc, char** argv)
+#if BOINC_APPLICATION
+
+static int separation_init(int argc, char** argv)
 {
-    int retval = 0;
+    int rc;
 
-#if BOINC_APP_GRAPHICS
-  #if defined(_WIN32) || defined(__APPLE__)
-      retval = boinc_init_graphics(worker);
+  #if BOINC_DEBUG
+    rc = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
+                                | BOINC_DIAG_HEAPCHECKENABLED
+                                | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
   #else
-      retval = boinc_init_graphics_lib(worker, argv[0]);
-  #endif /*  defined(_WIN32) || defined(__APPLE__) */
+    rc = boinc_init();
+  #endif /* BOINC_DEBUG */
 
-  if (retval)
-      exit(retval);
-#endif /* BOINC_APP_GRAPHICS */
 
-#if defined(_WIN32) && COMPUTE_ON_GPU
+  #if BOINC_APP_GRAPHICS
+    #if defined(_WIN32) || defined(__APPLE__)
+    rc = boinc_init_graphics(worker);
+    #else
+    rc = boinc_init_graphics_lib(worker, argv[0]);
+    #endif /*  defined(_WIN32) || defined(__APPLE__) */
+  #endif /* BOINC_APP_GRAPHICS */
+
+  #if defined(_WIN32) && COMPUTE_ON_GPU
     //make the windows GPU app have a higher priority
     BOINC_OPTIONS options;
     boinc_options_defaults(options);
     options.normal_thread_priority = 1; // higher priority (normal instead of idle)
-    retval = boinc_init_options(&options);
+    rc = boinc_init_options(&options);
+  #endif /* defined(_WIN32) && COMPUTE_ON_GPU */
+
+    return rc;
+}
+
 #else
-    /* TODO: for release build, use the boinc defaults*/
-    //retval = boinc_init();
-    retval = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
-                                    | BOINC_DIAG_HEAPCHECKENABLED
-                                    | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
-#endif /* defined(_WIN32) && COMPUTE_ON_GPU */
-    if (retval)
-        exit(retval);
+
+static int separation_init(int argc, char** argv)
+{
+  #pragma unused(argc)
+  #pragma unused(argv)
+    return 0;
+}
+
+#endif /* BOINC_APPLICATION */
 
 
-#if COMPUTE_ON_GPU
-    //Choose the GPU to execute on, first look
-    //at the command line argument for a
-    //--device 0..n string, then enumerate all CUDA
-    //devices on the system and choose the one
-    //with double precision support and the most
-    //GFLOPS
-    //APP_INIT_DATA init_data;
-    //boinc_get_init_data_p(&init_data);
-    char* project_prefs = NULL;  //init_data.project_preferences;
-    if (choose_gpu(argc, argv) == -1)
-    {
-        fprintf(stderr, "Unable to find a capable GPU\n");
-        mw_finish(EXIT_FAILURE);
-    }
-    MW_DEBUGMSG("got here\n");
-    parse_prefs(project_prefs);
-#endif /* COMPUTE_ON_GPU */
+
+int main(int argc, char** argv)
+{
+    int rc = separation_init(argc, argv);
+    if (rc)
+        exit(rc);
 
     worker(argc, (const char**) argv);
 
-    return retval;
+    return rc;
 }
 
 #if defined(_WIN32) && !defined(__MINGW32__)

@@ -17,6 +17,7 @@
 #include <json/json.h>
 
 #include "nbody_config.h"
+#include "milkyway_util.h"
 
 #if ENABLE_CRLIBM
   #include <crlibm.h>
@@ -104,7 +105,7 @@ static json_object* nbodyJSONObjectFromFile(char* inputFile)
     if (rc)
         fail("Error resolving file '%s': %d\n", inputFile, rc);
 
-    buf = nbodyReadFile(resolvedPath);
+    buf = mwReadFile(resolvedPath);
     if (!buf)
     {
         warn("Failed to read resolved path '%s'\n", resolvedPath);
@@ -276,7 +277,7 @@ static json_object* readParameters(const int argc,
     {
         poptPrintUsage(context, stderr, 0);
         poptFreeContext(context);
-        nbody_finish(EXIT_FAILURE);
+        mw_finish(EXIT_FAILURE);
     }
 
     while ( (o = poptGetNextOpt(context)) >= 0 );
@@ -364,7 +365,7 @@ static json_object* readParameters(const int argc,
         {
             perror("Failed to read input file");
             free(inputFile);
-            nbody_finish(EXIT_FAILURE);
+            mw_finish(EXIT_FAILURE);
         }
 
         /* The lack of parse errors from json-c is unfortunate.
@@ -448,20 +449,19 @@ int main(int argc, const char* argv[])
     }
     else
     {
-        warn("Failed to read parameters\n");
-        nbody_finish(EXIT_FAILURE);
+        fail("Failed to read parameters\n");
     }
 
     if (cleanupCheck)
     {
         warn("Removing checkpoint file '%s'\n", checkpointFile);
-        nbody_remove(checkpointFile);
+        mw_remove(checkpointFile);
     }
 
     free(outFile);
     free(checkpointFile);
     free(histogramFile);
     free(histoutFile);
-    nbody_finish(EXIT_SUCCESS);
+    mw_finish(EXIT_SUCCESS);
 }
 

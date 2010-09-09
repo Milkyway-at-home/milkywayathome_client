@@ -5,14 +5,9 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#include "nbody_types.h"
-#include "nbody_boinc.h"
-#include "load.h"
-#include "orbitintegrator.h"
+#include "nbody_priv.h"
+#include "milkyway_util.h"
 #include "grav.h"
-#include "real.h"
-#include "nbody_util.h"
-#include "vectmath.h"
 
 typedef struct
 {

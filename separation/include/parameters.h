@@ -19,72 +19,46 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ASTRONOMY_PARAMETERS_H
-#define ASTRONOMY_PARAMETERS_H
+#ifndef _PARAMETERS_H_
+#define _PARAMETERS_H_
 
-#include <stdio.h>
+#include "separation_types.h"
 
-typedef struct
-{
-    double r_min, r_max, r_step_size;
-    double nu_min, nu_max, nu_step_size;
-    double mu_min, mu_max, mu_step_size;
-    int r_steps, nu_steps, mu_steps;
+void free_background_parameters(BACKGROUND_PARAMETERS* bgp);
+void free_streams(STREAMS* streams);
+void free_stream_parameters(STREAM_PARAMETERS* p);
 
-    long min_calculation, max_calculation;
-} INTEGRAL;
+unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap,
+                                           BACKGROUND_PARAMETERS* bgp,
+                                           STREAMS* streams);
 
-typedef struct
-{
-    double parameters_version;
+INTEGRAL_AREA* read_parameters(const char* file,
+                               ASTRONOMY_PARAMETERS* ap,
+                               BACKGROUND_PARAMETERS* bgp,
+                               STREAMS* streams);
 
-    int number_background_parameters;
-    double background_weight;
-    double* background_parameters;
-    double* background_step;
-    double* background_min;
-    double* background_max;
-    int* background_optimize;
+INTEGRAL_AREA* fread_parameters(FILE* file,
+                                ASTRONOMY_PARAMETERS* ap,
+                                BACKGROUND_PARAMETERS* bgp,
+                                STREAMS* streams);
 
-    int number_streams;
-    int number_stream_parameters;
+int write_parameters(const char* file,
+                     ASTRONOMY_PARAMETERS* ap,
+                     INTEGRAL_AREA* integral,
+                     BACKGROUND_PARAMETERS* bgp,
+                     STREAMS* streams);
 
-    double* stream_weights;
-    double* stream_weight_step;
-    double* stream_weight_min;
-    double* stream_weight_max;
-    int* stream_weight_optimize;
+void fwrite_parameters(FILE* file,
+                       ASTRONOMY_PARAMETERS* ap,
+                       INTEGRAL_AREA* integral,
+                       BACKGROUND_PARAMETERS* bgp,
+                       STREAMS* streams);
 
-    double** stream_parameters;
-    double** stream_step;
-    double** stream_min;
-    double** stream_max;
-    int** stream_optimize;
+void set_parameters(ASTRONOMY_PARAMETERS* ap,
+                    BACKGROUND_PARAMETERS* bgp,
+                    STREAMS* streams,
+                    real* parameters);
 
-    int convolve;
-    int sgr_coordinates;
-    int aux_bg_profile;
-    int wedge;
 
-    int number_integrals;
-    INTEGRAL** integral;
-} ASTRONOMY_PARAMETERS;
-
-int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap);
-
-int read_astronomy_parameters(const char* file, ASTRONOMY_PARAMETERS* ap);
-void fread_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap);
-int write_astronomy_parameters(const char* file, ASTRONOMY_PARAMETERS* ap);
-void fwrite_astronomy_parameters(FILE* file, ASTRONOMY_PARAMETERS* ap);
-void free_parameters(ASTRONOMY_PARAMETERS* ap);
-
-void split_astronomy_parameters(ASTRONOMY_PARAMETERS* ap, int rank, int max_rank);
-
-void set_astronomy_parameters(ASTRONOMY_PARAMETERS* ap, double* parameters);
-void get_search_parameters(ASTRONOMY_PARAMETERS* ap, double** parameters);
-void get_min_parameters(ASTRONOMY_PARAMETERS* ap, double** parameters);
-void get_max_parameters(ASTRONOMY_PARAMETERS* ap, double** parameters);
-void get_step(ASTRONOMY_PARAMETERS* ap, double** step);
-
-#endif
+#endif /* _PARAMETERS_H_ */
 

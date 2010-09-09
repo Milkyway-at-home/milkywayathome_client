@@ -18,22 +18,21 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#meant to be called at build time using cmake -P, setting variables
-#with -D
+# Run the C preprocessor to dump everything into 1 file, which we then
+# can embed in the source and ship that without needing to send source
+# files.
 
-function(inline_kernel name file c_kernel_dir)
-  file(READ "${dir}/${file}" str)
-  set(name "cl_${name}")
+#FIXME: Passing a list of include arguments wasn't working and I don't
+#feel like fighting with cmake now.
+function(inline_kernel kernel_file name c_kernel_dir include_dir1 include_dir2 include_dir3)
 
-  #Remove the comments. Otherwise, C++ comments will comment out the
-  #rest of the program unless we do more work.
-  string(REGEX REPLACE
-             "(/\\*([^*]|[\r\n]|(\\*+([^*/]|[\r\n])))*\\*+/)|(//[^\r\n]*)"
-             "" # No comment
-             str_stripped
+  #FIXME: Less hacky than definining __OPENCL_VERSION__
+  #This is also somewhat sketchy in the first place.
+  #Run preprocessor
+  execute_process(COMMAND ${CMAKE_C_COMPILER} -I${include_dir1} -I${include_dir2} -I${include_dir3} -std=c99 -D__OPENCL_VERSION__=100 -DSEPARATION_INLINE_KERNEL=1 -E -x c ${kernel_file}
+                   OUTPUT_VARIABLE kernel_cpp OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-             #Quote this to prevent ;'s being interpreted as list separators
-             "${str}")
+  #file(WRITE "${c_kernel_dir}/${name}.cl" "${kernel_cpp}")
 
   #Escape special characters
   #TODO: Other things that need escaping
@@ -41,7 +40,7 @@ function(inline_kernel name file c_kernel_dir)
              "(\n)|(\r\n)"
              "\\\\n"
              str_escaped
-             "${str_stripped}")
+             "${kernel_cpp}")
 
   string(REGEX REPLACE
              "(\")"
@@ -63,9 +62,4 @@ function(inline_kernel name file c_kernel_dir)
   file(WRITE "${c_kernel_dir}/${name}.c" "${cfile}")
   file(WRITE "${c_kernel_dir}/${name}.h" "${hfile}")
 endfunction()
-
-inline_kernel("${KERNEL_NAME}"
-              "${KERNEL_FILE}"
-              "${C_KERNEL_DIR}")
-
 

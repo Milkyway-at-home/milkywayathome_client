@@ -16,6 +16,7 @@
 
 #include "nbody_priv.h"
 #include "load.h"
+#include "milkyway_util.h"
 
 /* subIndex: compute subcell index for body p in cell q. */
 static int subIndex(bodyptr p, cellptr q)

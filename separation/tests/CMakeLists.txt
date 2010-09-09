@@ -80,6 +80,6 @@ foreach(test ${test_list})
 endforeach()
 
 if(CPU_SEPARATION)
-  separation_test(${EXECUTABLE_OUTPUT_PATH}/milkyway_separation_client "cpu")
+  separation_test(${EXECUTABLE_OUTPUT_PATH}/milkyway_separation "cpu")
 endif()
 

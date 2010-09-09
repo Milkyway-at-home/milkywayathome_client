@@ -27,10 +27,6 @@ extern "C" {
 
 #include <stdlib.h>
 #include "nbody_types.h"
-#include "nbody_boinc.h"
-
-FILE* nbodyOpenResolved(const char* filename, const char* mode);
-char* nbodyReadFile(const char* filename);
 
 /* FIXME: This is just an arbitrary threshold I made up. What should it be? */
 #define REQ(a, b) (rabs((a) - (b)) < 0.00001)
@@ -44,60 +40,6 @@ void lbrToCartesian_rad(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr
 /* xrandom: generate floating-point random number */
 #define xrandom(st, xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * dsfmt_genrand_open_open((st)))
 
-
-void* callocSafe(size_t count, size_t size);
-void* mallocSafe(size_t size);
-
-#define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)
-#define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \
-                         nbody_finish(EXIT_FAILURE); }
-
-
-/*  ABS: returns the absolute value of its argument
- *  MAX: returns the argument with the highest value
- *  MIN: returns the argument with the lowest value
- */
-
-#define   ABS(x)       (((x) < 0) ? -(x) : (x))
-#define   MAX(x,y)     (((x) > (y)) ? (x) : (y))
-#define   MIN(x,y)     (((x) < (y)) ? (x) : (y))
-
-
-/* degrees to radians */
-#define d2r(x) ((x) * M_PI / 180.0)
-
-/* radians to degrees */
-#define r2d(x) ((x) * 180.0 / M_PI)
-
-/* simple math macros */
-#define cube(x) ((x) * (x) * (x))
-#define sqr(x)  ((x) * (x))
-#define inv(x)  (1.0 / (x))
-
-/* other useful nonstandard constants */
-
-/* (4 * pi) / 3 Should be enough for 128-bit long double should we choose to use
- * that */
-#define PI_4_3 (4.1887902047863909846168578443727)
-
-/* Taken from glibc */
-#ifndef M_PI
-# define M_E		2.7182818284590452354	/* e */
-# define M_LOG2E	1.4426950408889634074	/* log_2 e */
-# define M_LOG10E	0.43429448190325182765	/* log_10 e */
-# define M_LN2		0.69314718055994530942	/* log_e 2 */
-# define M_LN10		2.30258509299404568402	/* log_e 10 */
-# define M_PI		3.14159265358979323846	/* pi */
-# define M_PI_2		1.57079632679489661923	/* pi/2 */
-# define M_PI_4		0.78539816339744830962	/* pi/4 */
-# define M_1_PI		0.31830988618379067154	/* 1/pi */
-# define M_2_PI		0.63661977236758134308	/* 2/pi */
-# define M_2_SQRTPI	1.12837916709551257390	/* 2/sqrt(pi) */
-# define M_SQRT2	1.41421356237309504880	/* sqrt(2) */
-# define M_SQRT1_2	0.70710678118654752440	/* 1/sqrt(2) */
-#endif /* M_PI */
-
-__attribute__ ((visibility("default"))) double get_time();
 
 #ifdef __cplusplus
 }

@@ -27,9 +27,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define BOINC_APP_VERSION "${CMAKE_PROJECT_NAME} ${milkyway_client_VERSION}"
 
-#cmakedefine01 DOUBLE_PRECISION
+#cmakedefine01 SEPARATION_OPENCL
 #cmakedefine01 BOINC_APP_GRAPHICS
 #cmakedefine01 BOINC_APPLICATION
+#cmakedefine01 SEPARATION_INLINE_KERNEL
 
 #cmakedefine MW_ENABLE_DEBUG
 #cmakedefine01 MW_DEBUG_EXCESSIVE

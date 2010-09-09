@@ -327,7 +327,8 @@ add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
 
 set(exe_link_libs ${POPT_LIBRARY}
                   ${nbody_libs}
-                  ${nbody_link_libs})
+                  ${nbody_link_libs}
+                  milkyway)
 
 if(NEED_POPT_DEPS)
   # Popt dependencies for static linking For some reason, on OS X /
@@ -350,7 +351,7 @@ if(NOT APPLE)
     PROPERTIES
     LINKER_LANGUAGE CXX
     LINK_SEARCH_END_STATIC ON
-    LINK_FLAGS ${nbody_static_link_flags})
+    LINK_FLAGS ${nbody_static_linsrc/k_flags})
 else()
   set_target_properties(milkyway_nbody
     PROPERTIES

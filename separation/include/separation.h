@@ -1,7 +1,6 @@
-/*
-Copyright 2010 Travis Desell, Dave Przybylo, Nathan Cole,
-Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
-and Rensselaer Polytechnic Institute.
+/* Copyright 2010 Matthew Arsenault, Travis Desell, Dave Przybylo,
+Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
+Magdon-Ismail and Rensselaer Polytechnic Institute.
 
 This file is part of Milkway@Home.
 
@@ -22,9 +21,57 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _SEPARATION_H_
 #define _SEPARATION_H_
 
-#include <stdio.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void separation(const char* filename, double background_integral, double* stream_integrals);
+
+#include <stdlib.h>
+#include <string.h>
+
+#include "config.h"
+#include "milkyway_math.h"
+#include "milkyway_util.h"
+#include "separation_types.h"
+#include "evaluation.h"
+#include "parameters.h"
+#include "star_points.h"
+#include "calculated_constants.h"
+#include "separation_constants.h"
+#include "r_points.h"
+#include "gauss_legendre.h"
+#include "io_util.h"
+#include "coordinates.h"
+#include "integrals.h"
+#include "likelihood.h"
+
+#if BOINC_APPLICATION
+  #include <boinc_api.h>
+  #include <filesys.h>
+
+  #if BOINC_DEBUG
+    #include <diagnostics.h>
+  #endif /* BOINC_DEBUG */
+
+  #if BOINC_APP_GRAPHICS
+    #include <graphics_api.h>
+    #include <graphics_lib.h>
+  #endif /* BOINC_APP_GRAPHICS */
+
+  /* I'm not sure what the MSVC macro is.
+     This only needs the Windows API for the stuff to deal with the
+     truly awful Windows API / WinMain, which you only need to deal with
+     for visual studio and should be avoided as much as possible. */
+  #if defined(_WIN32) && !defined(__MINGW32__)
+    #include <str_util.h>
+  #endif
+
+#endif /* BOINC_APPLICATION */
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif /* _SEPARATION_H_ */
 

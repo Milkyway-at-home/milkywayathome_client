@@ -45,7 +45,16 @@ option(BOINC_APPLICATION
 option(BOINC_RELEASE
        "Build with all options for making an actual release" ON)
 
+option(DOUBLEPREC
+       "Build with double precision" ON)
 
+# Avoid issue I'm too lazy to fix where using the config header, some
+# files were getting single and others double
+if(DOUBLEPREC)
+  add_definitions("-DDOUBLEPREC=1")
+else()
+  add_definitions("-DDOUBLEPREC=0")
+endif()
 
 #set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules;${CMAKE_MODULE_PATH}")
 set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules")
@@ -99,7 +108,6 @@ endif()
 
 find_package(Popt REQUIRED)
 find_package(BOINC)
-find_package(CUDA)
 find_package(OpenCL)
 
 #FIXME: Somehow test for and require the Apple gcc. The macports gccs
@@ -140,13 +148,8 @@ if(BOINC_FOUND AND POPT_FOUND)
   include_directories(${BOINC_INCLUDE_DIR})
   include_directories(${POPT_INCLUDE_DIR})
 
-  if(CUDA_FOUND)
-    set(CUDA_IS_BUILDABLE ON)
-  endif()
-
   if(OPENCL_FOUND)
     set(OPENCL_IS_BUILDABLE ON)
-    include_directories(${OPENCL_INCLUDE_DIRS})
   endif()
 endif()
 
@@ -159,10 +162,7 @@ endif()
 option(CPU_SEPARATION
        "Build the cpu separation" ${SEPARATION_IS_BUILDABLE})
 
-option(CUDA_SEPARATION
-        "Build the CUDA separation" OFF)  # ${CUDA_IS_BUILDABLE})
-
-option(OPENCL_SEPARATION
+option(SEPARATION_OPENCL
         "Build the OpenCL separation" OFF)
 
 option(NBODY
@@ -202,7 +202,6 @@ message("   Project src dir:   ${CMAKE_SOURCE_DIR}")
 message("   Project bin dir:   ${CMAKE_BINARY_DIR}")
 message("   ----")
 message("   BOINC Library:     ${BOINC_LIBRARY}")
-message("   CUDA  Libraries    ${CUDA_LIBRARIES}")
 message("   OpenCL Libraries   ${OPENCL_LIBRARIES}")
 message("   POPT Library       ${POPT_LIBRARY}")
 message("   ----")
@@ -212,24 +211,23 @@ message("   C Compiler:        ${CMAKE_C_COMPILER}")
 #message("   CFLAGS:           ${CMAKE_C_FLAGS}")
 message("   ----")
 message("   Double precision:  ${DOUBLE_PRECISION}")
-message("   OpenCL separation: ${OPENCL_SEPARATION}")
-message("   CUDA separation:   ${CUDA_SEPARATION}")
+message("   OpenCL separation: ${SEPARATION_OPENCL}")
 message("   CPU separaton:     ${CPU_SEPARATION}")
 message("   N-Body:            ${NBODY}")
 message("   BOINC graphics:    ${BOINC_APP_GRAPHICS}")
 message("---------------------------------------------")
 
-
-if(NOT CPU_SEPARATION AND NOT CUDA_SEPARATION AND NOT OPENCL_SEPARATION AND NOT NBODY)
+if(NOT CPU_SEPARATION AND NOT OPENCL_SEPARATION AND NOT NBODY)
   message(FATAL_ERROR "Nothing will be built!")
 endif()
 
-if(SEPARATION_IS_BUILDABLE)
-  add_subdirectory(separation)
-endif()
+set(MILKYWAY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/milkyway/include")
+set(MILKYWAY_LIB_DIR milkyway/lib)
+add_subdirectory(milkyway)
+include_directories(${MILKYWAY_INCLUDE_DIR})
+#link_directories(${MILKYWAY_LIB_DIR})
 
-if(NBODY_IS_BUILDABLE)
-  add_subdirectory(nbody)
-endif()
+add_subdirectory(separation)
+add_subdirectory(nbody)
 
 

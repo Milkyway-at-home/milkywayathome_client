@@ -8,6 +8,7 @@
 #include "nbody.h"
 #include "json_params.h"
 #include "nbody_priv.h"
+#include "milkyway_util.h"
 
 inline static void initState(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
@@ -224,7 +225,7 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
             warn("File failed\n");
         else
             warn("File is OK\n");
-        nbody_finish(rc);
+        mw_finish(rc);
     }
 
     if (rc)

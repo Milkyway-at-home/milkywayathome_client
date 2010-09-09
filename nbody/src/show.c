@@ -21,6 +21,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include "nbody_util.h"
 #include "nbody_types.h"
+#include "milkyway_util.h"
 #include "show.h"
 
 /* A bunch of boilerplate for debug printing */

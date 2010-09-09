@@ -31,9 +31,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string.h>
 #include "nbody_priv.h"
-#include "nbody_util.h"
+#include "milkyway_util.h"
 #include "io.h"
-#include "nbody_boinc.h"
+
 
 static const char hdr[] = "mwnbody";
 static const char tail[] = "end";
@@ -77,7 +77,7 @@ void openCheckpoint(NBodyCtx* ctx)
     if (ctx->cp.fd == -1)
     {
         perror("open checkpoint");
-        nbody_finish(EXIT_FAILURE);
+        mw_finish(EXIT_FAILURE);
     }
 
     /* Make the file the right size in case it's a new file */
@@ -86,7 +86,7 @@ void openCheckpoint(NBodyCtx* ctx)
     if (fstat(ctx->cp.fd, &sb) == -1)
     {
         perror("fstat");
-        nbody_finish(EXIT_FAILURE);
+        mw_finish(EXIT_FAILURE);
     }
 
     if (!S_ISREG(sb.st_mode))
@@ -96,7 +96,7 @@ void openCheckpoint(NBodyCtx* ctx)
     if (ctx->cp.mptr == MAP_FAILED)
     {
         perror("mmap: Failed to open checkpoint file for writing");
-        nbody_finish(EXIT_FAILURE);
+        mw_finish(EXIT_FAILURE);
     }
 
 }
@@ -111,19 +111,19 @@ void closeCheckpoint(NBodyCtx* ctx)
         if (fstat(ctx->cp.fd, &sb) == -1)
         {
             perror("fstat on closing checkpoint");
-            nbody_finish(EXIT_FAILURE);
+            mw_finish(EXIT_FAILURE);
         }
 
         if (close(ctx->cp.fd) == -1)
         {
             perror("closing checkpoint file");
-            nbody_finish(EXIT_FAILURE);
+            mw_finish(EXIT_FAILURE);
         }
 
         if (munmap(ctx->cp.mptr, sb.st_size) == -1)
         {
             perror("munmap");
-            nbody_finish(EXIT_FAILURE);
+            mw_finish(EXIT_FAILURE);
         }
     }
 }
@@ -244,9 +244,6 @@ void closeCheckpoint(NBodyCtx* ctx)
                  GetLastError(), ctx->cp.filename);
         }
     }
-
-    warn("Removing checkpoint file '%s'\n", ctx->cp.filename);
-    nbody_remove(ctx->cp.filename);
 }
 
 #endif /* _WIN32 */

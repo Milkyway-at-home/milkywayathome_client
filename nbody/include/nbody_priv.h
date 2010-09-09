@@ -29,10 +29,9 @@ extern "C" {
 
 #include "nbody_config.h" /* Must be included first */
 
-#include "real.h"
+#include "milkyway_math.h"
+
 #include "nbody_types.h"
-#include "vectmath.h"
-#include "real.h"
 #include "grav.h"
 #include "chisq.h"
 #include "load.h"

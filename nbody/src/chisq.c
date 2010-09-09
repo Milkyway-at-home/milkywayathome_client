@@ -22,8 +22,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <string.h>
 #include "nbody_priv.h"
-#include "nbody_util.h"
 #include "chisq.h"
+#include "milkyway_util.h"
 
 /* FIXME: sort of magic numbers */
 #define phi d2r(128.79)
@@ -105,7 +105,7 @@ static void writeHistogram(const char* histout,           /* Filename to write h
 
     if (histout && strcmp(histout, ""))  /* If file specified, try to open it */
     {
-        f = nbodyOpenResolved(histout, "w");
+        f = mwOpenResolved(histout, "w");
         if (f == NULL)
         {
             perror("Writing histout. Using stderr instead");
@@ -197,7 +197,7 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
     HistData* histData;
     unsigned int fileCount = 0;
 
-    f = nbodyOpenResolved(histogram, "r");
+    f = mwOpenResolved(histogram, "r");
     if (f == NULL)
     {
         perror("Opening histogram");

@@ -1,0 +1,106 @@
+/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
+Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
+Rensselaer Polytechnic Institute.
+
+This file is part of Milkway@Home.
+
+Milkyway@Home is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Milkyway@Home is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#ifndef _MILKYWAY_MATH_H_
+#define _MILKYWAY_MATH_H_
+
+#define _MILKYWAY_MATH_H_INSIDE_
+
+#if DOUBLEPREC
+  #ifdef __ATI_CL__
+    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
+  #else
+    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+  #endif /* __ATI_CL__ */
+#endif /* DOUBLEPREC */
+
+#include "real.h"
+#include "milkyway_vectors.h"
+#include "milkyway_math_functions.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*  ABS: returns the absolute value of its argument
+ *  MAX: returns the argument with the highest value
+ *  MIN: returns the argument with the lowest value
+ */
+#define   ABS(x)       (((x) < 0) ? -(x) : (x))
+#define   MAX(x,y)     (((x) > (y)) ? (x) : (y))
+#define   MIN(x,y)     (((x) < (y)) ? (x) : (y))
+
+/* degrees to radians */
+#define d2r(x) ((x) * (real) M_PI / (real) 180.0)
+
+/* radians to degrees */
+#define r2d(x) ((x) * (real) 180.0 / (real) M_PI)
+
+/* simple math macros */
+#define cube(x) ((x) * (x) * (x))
+#define sqr(x)  ((x) * (x))
+#define inv(x)  ((real) 1.0 / (x))
+
+#define dmod(A,B) ((B) != 0.0 ? ((A) * (B) > 0.0 ? (A) - (B) * mw_floor((A)/(B)) \
+                             : (A) + (B) * mw_floor(-(A)/(B))) : (A))
+#define dsign(A,B) ((B) < 0.0 ? -(A) : (A))
+
+#define KAHAN_ADD(sum, item, correction)        \
+    {                                           \
+        real _tmp = sum;                        \
+        sum += item;                            \
+        correction += (item) - ((sum) - _tmp);  \
+    }
+
+/* other useful nonstandard constants */
+
+/* (4 * pi) / 3 */
+#define PI_4_3 ((real) 4.188790204786390984616857844372670512262892532500141)
+#define PI_2_3 ((real) 2.094395102393195492308428922186335256131446266250071)
+#define PI_3_2 ((real) 4.712388980384689857693965074919254326295754099062659)
+#define M_2PI ((real) 6.2831853071795864769252867665590057683943387987502)
+#define SQRT_2PI ((real) 2.506628274631000502415765284811045253006986740609938)
+
+
+/* Taken from glibc */
+#ifndef M_PI
+# define M_E		2.7182818284590452354	/* e */
+# define M_LOG2E	1.4426950408889634074	/* log_2 e */
+# define M_LOG10E	0.43429448190325182765	/* log_10 e */
+# define M_LN2		0.69314718055994530942	/* log_e 2 */
+# define M_LN10		2.30258509299404568402	/* log_e 10 */
+# define M_PI		3.14159265358979323846	/* pi */
+# define M_PI_2		1.57079632679489661923	/* pi/2 */
+# define M_PI_4		0.78539816339744830962	/* pi/4 */
+# define M_1_PI		0.31830988618379067154	/* 1/pi */
+# define M_2_PI		0.63661977236758134308	/* 2/pi */
+# define M_2_SQRTPI	1.12837916709551257390	/* 2/sqrt(pi) */
+# define M_SQRT2	1.41421356237309504880	/* sqrt(2) */
+# define M_SQRT1_2	0.70710678118654752440	/* 1/sqrt(2) */
+#endif /* M_PI */
+
+#ifdef __cplusplus
+}
+#endif
+
+#undef _MILKYWAY_MATH_H_INSIDE_
+
+#endif /* _MILKYWAY_MATH_H_ */
+

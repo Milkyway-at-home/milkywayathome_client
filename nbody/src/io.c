@@ -8,13 +8,12 @@
 
 #include <string.h>
 #include "nbody_priv.h"
-#include "nbody_util.h"
 #include "io.h"
-#include "nbody_boinc.h"
+#include "milkyway_util.h"
 
 void initOutput(NBodyCtx* ctx)
 {
-    ctx->outfile = ctx->outfilename ? nbodyOpenResolved(ctx->outfilename, "w") : DEFAULT_OUTPUT_FILE;
+    ctx->outfile = ctx->outfilename ? mwOpenResolved(ctx->outfilename, "w") : DEFAULT_OUTPUT_FILE;
     if (ctx->outfile == NULL)
         fail("initOutput: cannot open output file %s\n", ctx->outfilename);
 }

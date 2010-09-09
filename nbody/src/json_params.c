@@ -23,6 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_config.h"
 #include "json_params.h"
 #include "nbody_priv.h"
+#include "milkyway_util.h"
 
 static int processHalo(Halo* h)
 {

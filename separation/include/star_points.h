@@ -23,20 +23,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _STAR_POINTS_H_
 
 #include <stdio.h>
+#include "separation_types.h"
 
-typedef struct star_points
-{
-    int number_stars;
-    double** stars;
-} STAR_POINTS;
-
-int read_star_points(const char* file, STAR_POINTS* sp);
+int read_star_points(STAR_POINTS* sp, const char* file);
 int fread_star_points(FILE* data_file, STAR_POINTS* sp);
 int write_star_points(const char* file, STAR_POINTS* sp);
 int fwrite_star_points(FILE* data_file, STAR_POINTS* sp);
 void free_star_points(STAR_POINTS* sp);
-
-void split_star_points(STAR_POINTS* sp, int rank, int max_rank);
 
 #endif /* _STAR_POINTS_H_ */
 
