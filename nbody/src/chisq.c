@@ -141,12 +141,12 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
     unsigned int idx;
     unsigned int totalNum = 0;
     bodyptr p;
-    const real cosphi = rcos(phi);
-    const real sinphi = rsin(phi);
-    const real sinpsi = rsin(psi);
-    const real cospsi = rcos(psi);
-    const real costh  = rcos(theta);
-    const real sinth  = rsin(theta);
+    const real cosphi = mw_cos(phi);
+    const real sinphi = mw_sin(phi);
+    const real sinpsi = mw_sin(psi);
+    const real cospsi = mw_cos(psi);
+    const real costh  = mw_cos(theta);
+    const real sinth  = mw_sin(theta);
 
     unsigned int* histogram = callocSafe(maxIdx, sizeof(unsigned int));
 
@@ -160,12 +160,12 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
 
         // Convert to (lambda, beta) (involves a rotation using the
         // Newberg et al (2009) rotation matrices)
-        bcos = rcos(B(lbr));
-        bsin = rsin(B(lbr));
-        lsin = rsin(L(lbr));
-        lcos = rcos(L(lbr));
+        bcos = mw_cos(B(lbr));
+        bsin = mw_sin(B(lbr));
+        lsin = mw_sin(L(lbr));
+        lcos = mw_cos(L(lbr));
 
-        lambda = r2d(atan2(
+        lambda = r2d(mw_atan2(
                          - (sinpsi * cosphi + costh * sinphi * cospsi) * bcos * lcos
                          + (-sinpsi * sinphi + costh * cosphi * cospsi) * bcos * lsin
                          + cospsi * sinth * bsin,
@@ -174,7 +174,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
                          + (cospsi * sinphi + costh * cosphi * sinpsi) * bcos * lsin
                          + sinpsi * sinth * bsin ));
 
-        idx = (unsigned int) rfloor((lambda - start) / binsize);
+        idx = (unsigned int) mw_floor((lambda - start) / binsize);
         if (idx < maxIdx)
         {
             ++histogram[idx];
@@ -255,7 +255,7 @@ real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st)
     const real rawCount = (endRaw - startRaw) / binsize;
     const unsigned int maxIdx = (unsigned int) ceil(rawCount);
 
-    const real start = rceil(center - binsize * (real) maxIdx / 2.0);
+    const real start = mw_ceil(center - binsize * (real) maxIdx / 2.0);
 
     histogram = createHistogram(ctx, st, maxIdx, start, &totalNum);
     histData  = readHistData(ctx->histogram, maxIdx);

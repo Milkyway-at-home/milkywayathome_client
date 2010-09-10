@@ -41,11 +41,11 @@ void miyamotoNagaiDiskAccel(vectorptr restrict acc, const Disk* disk, const vect
 {
     const real a   = disk->scale_length;
     const real b   = disk->scale_height;
-    const real zp  = rsqrt( sqr(Z(pos)) + sqr(b) );
+    const real zp  = mw_sqrt( sqr(Z(pos)) + sqr(b) );
     const real azp = a + zp;
 
     const real rp  = sqr(X(pos)) + sqr(Y(pos)) + sqr(azp);
-    const real rth = rsqrt(cube(rp));  /* rp ^ (3/2) */
+    const real rth = mw_sqrt(cube(rp));  /* rp ^ (3/2) */
 
     X(acc) = -disk->mass * X(pos) / rth;
     Y(acc) = -disk->mass * Y(pos) / rth;
@@ -58,7 +58,7 @@ void exponentialDiskAccel(vectorptr restrict acc, const Disk* disk, const vector
     real r;
     ABSV(r, pos);
 
-    const real expPiece = rexp(-r / b) * (r + b) / b;
+    const real expPiece = mw_exp(-r / b) * (r + b) / b;
     const real factor   = disk->mass * (expPiece - 1.0) / cube(r);
     MULVS(acc, pos, factor);
 }
@@ -84,7 +84,7 @@ void nfwHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr rest
     ABSV(r, pos);
     const real a  = halo->scale_length;
     const real ar = a + r;
-    const real c  = a * sqr(halo->vhalo) * ((-ar * rlog1p(r / a)) + r) / (0.2162165954 * cube(r) * ar);
+    const real c  = a * sqr(halo->vhalo) * ((-ar * mw_log1p(r / a)) + r) / (0.2162165954 * cube(r) * ar);
 
     MULVS(acc, pos, c);
 }

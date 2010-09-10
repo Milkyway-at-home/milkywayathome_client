@@ -29,13 +29,48 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#define mw_acos acos
+#if ENABLE_CRLIBM && DOUBLEPREC
+  #define mw_sin   sin_rn
+  #define mw_cos   cos_rn
+  #define mw_tan   tan_rn
+  #define mw_asin  asin_rn
+  #define mw_acos  acos_rn
+  #define mw_atan  atan_rn
+
+  #define mw_log   log_rn
+  #define mw_log1p log1p_rn
+  #define mw_exp   exp_rn
+  #define mw_expm1 expm1_rn
+  #define mw_log10 log10_rn
+  #define mw_sinh  sinh_rn
+  #define mw_cosh  cosh_rn
+  #define mw_tanh  tanh_rn
+  #define mw_pow   pow_rn
+#else
+  #define mw_sin   sin
+  #define mw_cos   cos
+  #define mw_tan   tan
+  #define mw_asin  asin
+  #define mw_acos  acos
+  #define mw_atan  atan
+  #define mw_log   log
+  #define mw_log1p log1p
+  #define mw_exp   exp
+  #define mw_expm1 expm1
+  #define mw_log10 log10
+  #define mw_sinh  sinh
+  #define mw_cosh  cosh
+  #define mw_tanh  tanh
+  #define mw_pow   pow
+#endif /* ENABLE_CRLIBM */
+
+#define mw_abs   fabs
+#define mw_max   fmax
+
 #define mw_acosh acosh
 #define mw_acospi(x) (mw_acos(x) / M_PI))
-#define mw_asin asin
 #define mw_asinh asinh
 #define mw_asinpi asinpi (mw_asin(x) / M_PI))
-#define mw_atan atan
 #define mw_atan2 atan2
 #define mw_atanh atanh
 #define mw_atanpi(x) (mw_atan(x) / M_PI)
@@ -43,15 +78,11 @@ extern "C" {
 #define mw_cbrt cbrt
 #define mw_ceil ceil
 #define mw_copysign copysign
-#define mw_cos cos
-#define mw_cosh cosh
-#define mw_cospi(x) mw_cos(M_PII * (x))
+#define mw_cospi(x) mw_cos(M_PI * (x))
 #define mw_erfc erfc
 #define mw_erf erf
-#define mw_exp exp
 #define mw_exp2 exp2
 #define mw_exp10 exp10
-#define mw_expm1 expm1
 #define mw_fabs fabs
 #define mw_fdim fdim
 #define mw_floor floor
@@ -70,18 +101,16 @@ extern "C" {
 #define mw_hypot(x, y) mw_sqrt(sqr(x) + sqr(y))
 #define mw_ilogb mw_ilogb
 #define mw_ldexp ldexp
+#define mw_tgamma tgamma
+#define mw_tgamma_r tgamma_r
 #define mw_lgamma lgamma
 #define mw_lgamma_r lgamma_r
-#define mw_log log
 #define mw_log2 log2
-#define mw_log10 log10
-#define mw_log1p log1p
 #define mw_logb logb
 #define mw_mad(a, b, c) ((a) * (b) + (c))
 #define mw_modf modf
 #define mw_nan nan
 #define mw_nextafter nextafter
-#define mw_pow pow
 
 /* TODO: assertions that these satisfy integer y or x >= 0 */
 #define mw_pown(x, iy) pow(x, iy)
@@ -100,7 +129,6 @@ extern "C" {
   #define mw_rsqrt(x) (1.0 / mw_sqrt(x))
 #endif /* HAVE_RSQRT && USE_RSQRT */
 
-#define mw_sin sin
 
 #if HAVE_SINCOS
   /* Assuming glibc style, e.g. sincos(x, &sinval, &cosval) */
@@ -113,12 +141,8 @@ extern "C" {
   #define mw_sincos(x, s, c) { *(s) = mw_sin(x); *(c) = mw_cos(x); }
 #endif /* HAVE_SINCOS */
 
-
-#define mw_sinh sinh
 #define mw_sinpi sinpi
 #define mw_sqrt sqrt
-#define mw_tan tan
-#define mw_tanh tanh
 #define mw_tanpi(x) (mw_tan(M_PI * (x)))
 #define mw_tgamma tgamma
 #define mw_trunc trunc

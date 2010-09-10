@@ -25,13 +25,12 @@ void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr restrict lbR, const vecto
 {
     const real xp = X(r) + ctx->sunGCDist;
 
-    L(lbR) = ratan2(Y(r), xp);
-    B(lbR) = ratan2( Z(r), rsqrt( sqr(xp) + sqr(Y(r)) ) );
-    R(lbR) = rsqrt(sqr(xp) + sqr(Y(r)) + sqr(Z(r)));
+    L(lbR) = mw_atan2(Y(r), xp);
+    B(lbR) = mw_atan2( Z(r), mw_sqrt( sqr(xp) + sqr(Y(r)) ) );
+    R(lbR) = mw_sqrt(sqr(xp) + sqr(Y(r)) + sqr(Z(r)));
 
     if (L(lbR) < 0.0)
         L(lbR) += 2 * M_PI;
-
 }
 
 void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r)
@@ -43,9 +42,9 @@ void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr
 
 inline static void _lbrToCartesian(vectorptr cart, const real l, const real b, const real r, const real sun)
 {
-    X(cart) = r * rcos(l) * rcos(b) - sun;
-    Y(cart) = r * rsin(l) * rcos(b);
-    Z(cart) = r * rsin(b);
+    X(cart) = r * mw_cos(l) * mw_cos(b) - sun;
+    Y(cart) = r * mw_sin(l) * mw_cos(b);
+    Z(cart) = r * mw_sin(b);
 }
 
 void lbrToCartesian_rad(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr)

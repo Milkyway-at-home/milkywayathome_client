@@ -22,7 +22,7 @@ inline static void pickshell(dsfmt_t* dsfmtState, vector vec, real rad)
     }
     while (rsq > 1.0);              /* reject if outside sphere */
 
-    rsc = rad / rsqrt(rsq);         /* compute scaling factor */
+    rsc = rad / mw_sqrt(rsq);         /* compute scaling factor */
     INCMULVS(vec, rsc);             /* rescale to radius given */
 }
 
@@ -78,7 +78,7 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
     printPlummer(rshift, vshift);
 
     rsc = ctx->model.scale_radius;              /* set length scale factor */
-    vsc = rsqrt(ctx->model.mass / rsc);         /* and recip. speed scale */
+    vsc = mw_sqrt(ctx->model.mass / rsc);         /* and recip. speed scale */
 
     MULVS(scaledrshift, rshift, rsc);   /* Multiply shift by scale factor */
     MULVS(scaledvshift, vshift, vsc);   /* Multiply shift by scale factor */
@@ -94,7 +94,7 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
 
         /* pick r in struct units */
 
-        r = 1.0 / rsqrt(rpow(rnd, -2.0 / 3.0) - 1.0);
+        r = 1.0 / mw_sqrt(mw_pow(rnd, -2.0 / 3.0) - 1.0);
 
         pickshell(&dsfmtState, Pos(p), rsc * r);     /* pick scaled position */
         INCADDV(Pos(p), rshift);        /* move the position */
@@ -105,9 +105,9 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
             x = xrandom(&dsfmtState, 0.0, 1.0);      /* for x in range 0:1 */
             y = xrandom(&dsfmtState, 0.0, 0.1);      /* max of g(x) is 0.092 */
         }   /* using von Neumann tech */
-        while (y > -cube(x - 1.0) * sqr(x) * cube(x + 1.0) * rsqrt(1.0 - sqr(x)));
+        while (y > -cube(x - 1.0) * sqr(x) * cube(x + 1.0) * mw_sqrt(1.0 - sqr(x)));
 
-        v = M_SQRT2 * x / rsqrt(rsqrt(1.0 + sqr(r)));   /* find v in struct units */
+        v = M_SQRT2 * x / mw_sqrt(mw_sqrt(1.0 + sqr(r)));   /* find v in struct units */
         pickshell(&dsfmtState, Vel(p), vsc * v);        /* pick scaled velocity */
         INCADDV(Vel(p), vshift);       /* move the velocity */
         INCADDV(cmv, Vel(p));         /* add to running sum */

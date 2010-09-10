@@ -106,7 +106,7 @@
         _tmp = sqr(X(v));                       \
         _tmp += sqr(Y(v));                      \
         _tmp += sqr(Z(v));                      \
-        (s) = rsqrt(_tmp);                      \
+        (s) = mw_sqrt(_tmp);                    \
     }
 
 /* DISTance between Vectors */
@@ -116,7 +116,7 @@
         _tmp = sqr(X(u)-X(v));                  \
         _tmp += sqr(Y(u)-Y(v));                 \
         _tmp += sqr(Z(u)-Z(v));                 \
-        (s) = rsqrt(_tmp);                      \
+        (s) = mw_sqrt(_tmp);                    \
     }
 
 /* CROSS Vector Product */

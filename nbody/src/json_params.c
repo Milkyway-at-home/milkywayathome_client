@@ -30,9 +30,9 @@ static int processHalo(Halo* h)
     if (h->type == TriaxialHalo)
     {
         const real phi = h->triaxAngle;
-        const real cp  = rcos(phi);
+        const real cp  = mw_cos(phi);
         const real cps = sqr(cp);
-        const real sp  = rsin(phi);
+        const real sp  = mw_sin(phi);
         const real sps = sqr(sp);
 
         const real qxs = sqr(h->flattenX);
@@ -41,8 +41,8 @@ static int processHalo(Halo* h)
         h->c1 = (cps / qxs) + (sps / qys);
         h->c2 = (cps / qys) + (sps / qxs);
 
-        /* 2 * sin(x) * rcos(x) == sin(2 * x) */
-        h->c3 = rsin(2 * phi) * ((qys - qxs) / (qxs * qys));
+        /* 2 * sin(x) * cos(x) == sin(2 * x) */
+        h->c3 = mw_sin(2 * phi) * ((qys - qxs) / (qxs * qys));
     }
 
     return 0;
@@ -69,10 +69,10 @@ static int processModel(DwarfModel* mod)
             /* If not set, and no default, it's calculated based on
              * other parameters. */
             if (isnan(mod->eps))
-                mod->eps = r0 / (10.0 * rsqrt((real) mod->nbody));
+                mod->eps = r0 / (10.0 * mw_sqrt((real) mod->nbody));
 
             if (isnan(mod->timestep))
-                mod->timestep = sqr(1/10.0) * rsqrt((PI_4_3 * cube(r0)) / mod->mass);
+                mod->timestep = sqr(1/10.0) * mw_sqrt((PI_4_3 * cube(r0)) / mod->mass);
 
             /* for the orbit, use dt = dtnbody/2 to make sure we get enough orbit precision. */
             if (isnan(mod->orbit_timestep))

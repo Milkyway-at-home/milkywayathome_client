@@ -113,7 +113,7 @@ static void expandBox(Tree* t, bodyptr btab, int nbody)
     for (p = btab; p < btab + nbody; ++p)
     {
         for (k = 0; k < NDIM; ++k)
-            xyzmax = rmax(xyzmax, rabs(Pos(p)[k] - Pos(root)[k]));
+            xyzmax = mw_max(xyzmax, mw_abs(Pos(p)[k] - Pos(root)[k]));
     }
 
     while (t->rsize < 2 * xyzmax)
@@ -231,10 +231,10 @@ static void setRCrit(const NBodyCtx* ctx, NBodyState* st, cellptr p, vector cmpo
                 /* CHECKME: use rdim here? */
                 dmin = cmpos[k] - (Pos(p)[k] - psize / 2);
                 /* dist from 1st corner */
-                bmax2 += sqr(rmax(dmin, psize - dmin));
+                bmax2 += sqr(mw_max(dmin, psize - dmin));
                 /* sum max distance^2 */
             }
-            rc = rsqrt(bmax2) / ctx->theta;      /* using max dist from cm */
+            rc = mw_sqrt(bmax2) / ctx->theta;      /* using max dist from cm */
             break;
         default:
             rc = 0.0; /* Stop clang static analysis warning */
