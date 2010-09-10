@@ -32,9 +32,12 @@ include_directories(${PROJECT_INCLUDE_DIR})
 
 set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
 
-set(mw_lib_src src/milkyway_util.c
-               src/show_cl_types.c
-               src/build_cl.c)
+set(mw_lib_src src/milkyway_util.c)
+
+if(MILKYWAY_OPENCL)
+  list(APPEND mw_lib_src src/show_cl_types.c
+                         src/build_cl.c)
+endif()
 
 add_library(milkyway STATIC ${mw_lib_src})
 

@@ -364,12 +364,7 @@ if(BOINC_APPLICATION)
 endif()
 
 target_link_libraries(milkyway_nbody ${exe_link_libs})
-
-if(WIN32)
-  #For some reason I can't wrestle out the C++ on Windows.
-  set_target_properties(milkyway_nbody PROPERTIES LINKER_LANGUAGE CXX)
-endif()
-
+set_target_properties(milkyway_nbody PROPERTIES LINKER_LANGUAGE CXX)
 
 #add_subdirectory(tests EXCLUDE_FROM_ALL)
 

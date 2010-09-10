@@ -153,11 +153,6 @@ if(BOINC_FOUND AND POPT_FOUND)
   endif()
 endif()
 
-if(POPT_FOUND)
-  set(NBODY_IS_BUILDABLE ON)
-endif()
-
-
 #You can turn things off if you really want to
 option(CPU_SEPARATION
        "Build the cpu separation" ${SEPARATION_IS_BUILDABLE})
@@ -165,8 +160,17 @@ option(CPU_SEPARATION
 option(SEPARATION_OPENCL
         "Build the OpenCL separation" OFF)
 
+option(NBODY_OPENCL
+        "Build the OpenCL nbody" OFF)
+
+if(NBODY_OPENCL OR SEPARATION_OPENCL)
+  set(MILKYWAY_OPENCL ON)
+  #FIXME: Be able to build one with / without openl
+  add_definitions("-DMILKYWAY_OPENCL=1")
+endif()
+
 option(NBODY
-    "Build the n-body code" ${NBODY_IS_BUILDABLE})
+    "Build the n-body code" ON)
 
 option(DOUBLE_PRECISION
          "Use double precision" ON)
