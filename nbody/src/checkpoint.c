@@ -42,7 +42,7 @@ static const char tail[] = "end";
 static const size_t hdrSize = sizeof(size_t)                                  /* size of real */
                             + sizeof(char) * (sizeof(tail) + sizeof(hdr) - 2) /* error checking tags */
                             + 2 * sizeof(int)                                 /* nbody count + valid flag */
-                            + 2 * sizeof(real);                               /* tout and tnow */
+                            + 3 * sizeof(real);                               /* tout and tnow and rsize */
 
 /* Macros to read/write the buffer and advance the pointer the correct size */
 #define DUMP_REAL(p, x) { *((real*) (p)) = (x); (p) += sizeof(real); }
