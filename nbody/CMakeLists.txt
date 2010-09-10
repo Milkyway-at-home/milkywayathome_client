@@ -351,7 +351,7 @@ if(NOT APPLE)
     PROPERTIES
     LINKER_LANGUAGE CXX
     LINK_SEARCH_END_STATIC ON
-    LINK_FLAGS ${nbody_static_linsrc/k_flags})
+    LINK_FLAGS ${nbody_static_link_flags})
 else()
   set_target_properties(milkyway_nbody
     PROPERTIES
