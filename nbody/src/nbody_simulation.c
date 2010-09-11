@@ -132,6 +132,7 @@ static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
     boincOutput(ctx, st, chisq);
   #else
     output(ctx, st);
+    printf("chisq = %.15g\n", chisq);
   #endif /* BOINC_APPLICATION && !BOINC_DEBUG */
 
   #if BOINC_APPLICATION

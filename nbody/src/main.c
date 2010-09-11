@@ -8,7 +8,6 @@
 /* TODO: wuh wuh windows */
 #include <unistd.h>
 #include <fcntl.h>
-#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <popt.h>
@@ -18,11 +17,6 @@
 
 #include "nbody_config.h"
 #include "milkyway_util.h"
-
-#if ENABLE_CRLIBM
-  #include <crlibm.h>
-#endif /* ENABLE_CRLIBM */
-
 #include "nbody.h"
 
 #ifdef _WIN32
