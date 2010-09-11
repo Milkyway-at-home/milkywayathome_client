@@ -120,7 +120,7 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
 
   #if BOINC_APPLICATION
     warn("Making final checkpoint\n");
-    nbodyCheckpoint(ctx, st);
+    freezeState(ctx, st);
   #endif
 
 }
