@@ -42,7 +42,7 @@ static const char tail[] = "end";
 static const size_t hdrSize = sizeof(size_t)                                  /* size of real */
                             + sizeof(char) * (sizeof(tail) + sizeof(hdr) - 2) /* error checking tags */
                             + 2 * sizeof(int)                                 /* nbody count + valid flag */
-                            + 3 * sizeof(real);                               /* tout and tnow and rsize */
+                            + 3 * sizeof(real);                               /* tout, tnow, rsize */
 
 /* Macros to read/write the buffer and advance the pointer the correct size */
 #define DUMP_REAL(p, x) { *((real*) (p)) = (x); (p) += sizeof(real); }
@@ -156,16 +156,21 @@ void closeCheckpoint(NBodyCtx* ctx)
 
 void openCheckpoint(NBodyCtx* ctx)
 {
-    const DWORD checkpointFileSize = hdrSize + ctx->model.nbody * sizeof(body);
-
+    char resolvedPath[1024];
+    int rc;
     SYSTEM_INFO si;
     DWORD sysGran;
     DWORD mapViewSize;
     DWORD fileMapStart;
     DWORD fileMapSize;
+    const DWORD checkpointFileSize = hdrSize + ctx->model.nbody * sizeof(body);
+
+    rc = boinc_resolve_filename(ctx->cp.filename, resolvedPath, sizeof(resolvedPath));
+    if (rc)
+        fail("Error resolving checkpoint file '%s': %d\n", ctx->cp.filename, rc);
 
     /* Try to create a new file */
-    ctx->cp.file = CreateFile(ctx->cp.filename,
+    ctx->cp.file = CreateFile(resolvedPath,
                               GENERIC_READ | GENERIC_WRITE,
                               0,     /* Other processes can't touch this */
                               NULL,
