@@ -46,5 +46,8 @@ void printVector(const vector v);
 char* showFitParams(const FitParams* fp);
 void printFitParams(const FitParams* fp);
 
+char* showBody(const bodyptr p);
+void printBody(const bodyptr p);
+
 #endif /* _SHOW_H_ */
 

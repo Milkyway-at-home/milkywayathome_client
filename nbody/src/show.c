@@ -183,6 +183,33 @@ char* showDisk(const Disk* d)
     return buf;
 }
 
+char* showBody(const bodyptr p)
+{
+    char* buf;
+    char* vel = showVector(Vel(p));
+    char* pos = showVector(Pos(p));
+
+
+    if (0 > asprintf(&buf,
+                     "body { \n"
+                     "      mass = %g\n"
+                     "      pos  = %s\n"
+                     "      vel  = %s\n"
+                     "    };\n",
+                     Mass(p),
+                     pos,
+                     vel))
+
+    {
+        fail("asprintf() failed\n");
+    }
+
+    free(vel);
+    free(pos);
+
+    return buf;
+}
+
 /* For debugging. Need to make this go away for release since it uses
  * GNU extensions */
 char* showPotential(const Potential* p)
@@ -352,7 +379,6 @@ char* showVector(const vector v)
         fail("asprintf() failed\n");
 
     return buf;
-
 }
 
 void printVector(const vector v)
@@ -389,6 +415,13 @@ char* showFitParams(const FitParams* fp)
 void printFitParams(const FitParams* fp)
 {
     char* buf = showFitParams(fp);
+    puts(buf);
+    free(buf);
+}
+
+void printBody(const bodyptr p)
+{
+    char* buf = showBody(p);
     puts(buf);
     free(buf);
 }
