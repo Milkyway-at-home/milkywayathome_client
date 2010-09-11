@@ -240,7 +240,9 @@ set_property(SOURCE ${dsmft_src}
 set(CMAKE_C_FLAGS "-std=gnu99 -mfpmath=sse -msse -msse2 ${CMAKE_C_FLAGS}")
 
 if(APPLE)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=10.5")
+  # Try to avoid the dyld: unknown required load command 0x80000022
+  # runtime error on Leopard for binaries built on 10.6
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -isysroot/Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5")
 endif()
 
 if (!WIN32)
