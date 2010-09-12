@@ -88,6 +88,8 @@
   #define FALSE 0
 #endif
 
+#define NBODY_ALIGN __attribute__((aligned, packed))
+
 /*
 typedef enum
 {
@@ -100,7 +102,7 @@ typedef enum
 typedef short body_t;
 
 /* node: data common to BODY and CELL structures. */
-typedef struct _node
+typedef struct NBODY_ALIGN _node
 {
     body_t type;            /* code for node type */
     real mass;              /* total mass of node */
@@ -115,7 +117,7 @@ typedef struct _node
 
 /* BODY: data structure used to represent particles. */
 
-typedef struct
+typedef struct NBODY_ALIGN
 {
     node bodynode;              /* data common to all nodes */
     vector vel;                 /* velocity of body */
@@ -129,7 +131,7 @@ typedef struct
 
 #define NSUB (1 << NDIM)        /* subcells per cell */
 
-typedef struct
+typedef struct NBODY_ALIGN
 {
     node cellnode;              /* data common to all nodes */
     real rcrit2;                /* critical c-of-m radius^2 */
@@ -158,7 +160,7 @@ typedef enum
 } spherical_t;
 
 /* Spherical potential */
-typedef struct
+typedef struct NBODY_ALIGN
 {
     spherical_t type;
     real mass;
@@ -178,7 +180,7 @@ typedef enum
     ExponentialDisk   = _EXP_DISK
 } disk_t;
 
-typedef struct
+typedef struct NBODY_ALIGN
 {
     disk_t type;
     real mass;          /* disk mass */
@@ -199,7 +201,7 @@ typedef enum
     TriaxialHalo    = _TRIAXIAL_HALO
 } halo_t;
 
-typedef struct
+typedef struct NBODY_ALIGN
 {
     halo_t type;
     real vhalo;         /* common to all 3 halos */
@@ -214,7 +216,7 @@ typedef struct
     real c3;
 } Halo;
 
-typedef struct
+typedef struct NBODY_ALIGN
 {
     Spherical sphere[1];  /* 1 for now, flexibility can be added later */
     Disk disk;
@@ -230,7 +232,7 @@ typedef struct
 
 /* Variables used in tree construction. */
 
-typedef struct
+typedef struct NBODY_ALIGN
 {
     cellptr root;   /* pointer to root cell */
     real rsize;     /* side-length of root cell */
@@ -239,7 +241,7 @@ typedef struct
     unsigned int maxlevel;   /* count of levels in tree */
 } Tree;
 
-typedef struct
+typedef struct NBODY_ALIGN
 {
     vector position;     /* (x, y, z) if cartesian / useGalC, otherwise (l, b, r) */
     vector velocity;
@@ -248,7 +250,7 @@ typedef struct
 } InitialConditions;
 
 
-typedef struct
+typedef struct NBODY_ALIGN
 {
     int useFitParams;
     real modelMass;
@@ -267,7 +269,7 @@ typedef enum
     DwarfModelDehnen
 } dwarf_model_t;
 
-typedef struct
+typedef struct NBODY_ALIGN
 {
     dwarf_model_t type;
     int nbody;
@@ -286,7 +288,7 @@ typedef struct
 
 #ifndef _WIN32
 
-typedef struct
+typedef struct NBODY_ALIGN
 {
     int fd;            /* File descriptor for checkpoint file */
     char* mptr;        /* mmap'd pointer for checkpoint file */
@@ -297,7 +299,7 @@ typedef struct
 
 #else
 
-typedef struct
+typedef struct NBODY_ALIGN
 {
     HANDLE file;
     HANDLE mapFile;
@@ -327,7 +329,7 @@ typedef struct
 #ifndef __OPENCL_VERSION__
 
 /* Mutable state used during an evaluation */
-typedef struct
+typedef struct NBODY_ALIGN
 {
     Tree tree;
     real tout;
@@ -353,7 +355,7 @@ typedef struct
    once at the beginning of a simulation based on settings, and then
    stays constant for the actual simulation.
  */
-typedef struct
+typedef struct NBODY_ALIGN
 {
     Potential pot;
     DwarfModel model;         /* dwarf model */
