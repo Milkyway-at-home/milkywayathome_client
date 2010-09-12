@@ -235,7 +235,7 @@ static void worker(int argc, const char** argv)
 
 #if BOINC_APPLICATION
 
-static int separation_init(int argc, char** argv)
+static int separation_init(int argc, const char* argv[])
 {
     int rc;
 
@@ -269,18 +269,21 @@ static int separation_init(int argc, char** argv)
 
 #else
 
-static int separation_init(int argc, char** argv)
+static int separation_init(int argc, const char* argv[])
 {
   #pragma unused(argc)
   #pragma unused(argv)
+
+  #if DISABLE_DENORMALS
+    mwDisableDenormalsSSE();
+  #endif
+
     return 0;
 }
 
 #endif /* BOINC_APPLICATION */
 
-
-
-int main(int argc, char** argv)
+int main(int argc, const char* argv[])
 {
     int rc = separation_init(argc, argv);
     if (rc)

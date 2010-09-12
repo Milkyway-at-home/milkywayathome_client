@@ -73,6 +73,10 @@ FILE* mwOpenResolved(const char* filename, const char* mode);
 
 double get_time();
 
+#if defined(__SSE__) && DISABLE_DENORMALS
+int mwDisableDenormalsSSE();
+#endif /* defined(__SSE__) && DISABLE_DENORMALS */
+
 #ifdef __cplusplus
 }
 #endif

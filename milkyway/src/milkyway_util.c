@@ -31,6 +31,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_util.h"
 
+#ifdef __SSE__
+  #include <xmmintrin.h>
+#endif /* __SSE__ */
+
+
 void* callocSafe(size_t count, size_t size)
 {
     void* mem = (void*) calloc(count, size);
@@ -128,4 +133,21 @@ double get_time()
 }
 
 #endif
+
+
+#if defined(__SSE__) && DISABLE_DENORMALS
+
+int mwDisableDenormalsSSE()
+{
+    int oldMXCSR = _mm_getcsr();
+    int newMXCSR = oldMXCSR | 0x8040;
+    _mm_setcsr(newMXCSR);
+
+    warn("Disabled denormals\n");
+    return oldMXCSR;
+}
+
+#endif /* defined(__SSE__) && DISABLE_DENORMALS */
+
+
 
