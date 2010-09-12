@@ -28,7 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 void openCheckpoint(NBodyCtx* ctx);
 void closeCheckpoint(NBodyCtx* ctx);
 
-void freezeState(const NBodyCtx* ctx, const NBodyState* st);
+int freezeState(const NBodyCtx* ctx, const NBodyState* st);
 int thawState(const NBodyCtx* ctx, NBodyState* st);
 
 #endif /* BOINC_APPLICATION */

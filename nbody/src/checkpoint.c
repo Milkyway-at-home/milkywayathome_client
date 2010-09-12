@@ -28,7 +28,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <windows.h>
 #endif /* _WIN32 */
 
-
 #include <string.h>
 #include "nbody_priv.h"
 #include "milkyway_util.h"
@@ -57,10 +56,26 @@ static const size_t hdrSize = sizeof(size_t)                                  /*
 
 #ifndef _WIN32
 
-/* The ctx is ignored here. It's only there for windows. */
-#define SET_LOCK(lock, x, ctx) { *((int*) (lock)) = (x); msync((lock), sizeof(int), MS_SYNC);}
+/* We sync the header, which includes the lock flag */
+#define SET_LOCK(lock, x, ctx, failed)                  \
+    {                                                   \
+        *((int*) (lock)) = (x);                         \
+        if (msync(ctx->cp.mptr, hdrSize, MS_SYNC) < 0)  \
+        {                                               \
+            perror("error checkpoint locking");         \
+            failed = TRUE;                              \
+        }                                               \
+    }
 
-#define SYNC_WRITE(ctx, size)  msync(ctx->cp.mptr, (size), MS_SYNC)
+#define SYNC_WRITE(ctx, size, failed)                  \
+    {                                                  \
+        if (msync(ctx->cp.mptr, (size), MS_SYNC) < 0)  \
+        {                                              \
+            perror("error checkpoint msync");          \
+            failed = TRUE;                             \
+        }                                              \
+    }
+
 
 void openCheckpoint(NBodyCtx* ctx)
 {
@@ -140,18 +155,33 @@ void closeCheckpoint(NBodyCtx* ctx)
 
 
 /* CHECKME: Do we need to do the file handle, the mapFile handle, or both? */
-/* TODO: Check that these actually succeed */
-#define SET_LOCK(lock, x, ctx)                          \
-    {                                                   \
-        *((int*) (lock)) = (x);                         \
-        FlushViewOfFile((lock), sizeof(int));           \
-        FlushFileBuffers(((NBodyCtx*) ctx)->cp.file);   \
-    }
 
-#define SYNC_WRITE(ctx, size)                                   \
-    {                                                           \
-        FlushViewOfFile(((NBodyCtx*) ctx)->cp.mptr, (size));    \
-        FlushFileBuffers(((NBodyCtx*) ctx)->cp.file);           \
+#define SYNC_WRITE(ctx, size, failed)                                   \
+    {                                                                   \
+        if (FlushViewOfFile(((NBodyCtx*) ctx)->cp.mptr, (size)))        \
+        {                                                               \
+            warn("Error in FlushViewOfFile %ld syncing checkpoint!\n", GetLastError()); \
+            failed = TRUE;                                              \
+        }                                                               \
+        if (FlushFileBuffers(((NBodyCtx*) ctx)->cp.file))               \
+        {                                                               \
+            warn("Error in FlushFileBuffers %ld syncing checkpoint!\n", GetLastError()); \
+            failed = TRUE;                                              \
+        }                                                               \
+    }
+#define SET_LOCK(lock, x, ctx, failed)                                  \
+    {                                                                   \
+        *((int*) (lock)) = (x);                                         \
+        if (FlushViewOfFile(((NBodyCtx*) ctx)->cp.mptr, hdrSize))       \
+        {                                                               \
+            warn("Error in FlushViewOfFile %ld locking checkpoint!\n", GetLastError()); \
+            failed = TRUE;                                              \
+        }                                                               \
+        if (FlushFileBuffers(((NBodyCtx*) ctx)->cp.file))               \
+        {                                                               \
+            warn("Error in FlushFileBuffers %ld locking checkpoint!\n", GetLastError()); \
+            failed = TRUE;                                              \
+        }                                                               \
     }
 
 void openCheckpoint(NBodyCtx* ctx)
@@ -343,13 +373,13 @@ int thawState(const NBodyCtx* ctx, NBodyState* st)
  * checkpoint file is garbage and we lose everything. Uses the boinc
  * critical sections, so it hopefully won't be interrupted.
  */
-void freezeState(const NBodyCtx* ctx, const NBodyState* st)
+int freezeState(const NBodyCtx* ctx, const NBodyState* st)
 {
+    double t1 = get_time();
     const size_t bodySize = sizeof(body) * ctx->model.nbody;
     char* p = ctx->cp.mptr;
     char* lock;
-
-    /* TODO: Better error checking */
+    int failed = FALSE;
 
     /* -1 so we don't bother with the null terminator. It's slightly
         annoying since the strcmps use it, but memcpy doesn't. We
@@ -359,7 +389,7 @@ void freezeState(const NBodyCtx* ctx, const NBodyState* st)
     lock = p;        /* We keep the lock here */
     p += sizeof(int);
 
-    SET_LOCK(lock, 0, ctx);         /* Mark the file as in the middle of writing */
+    SET_LOCK(lock, 0, ctx, failed); /* Mark the file as in the middle of writing */
 
     DUMP_INT(p, ctx->model.nbody);  /* Make sure we get the right number of bodies */
     DUMP_SIZE_T(p, sizeof(real));   /* Make sure we don't confuse double and float checkpoints */
@@ -377,9 +407,17 @@ void freezeState(const NBodyCtx* ctx, const NBodyState* st)
 
     DUMP_STR(p, tail, sizeof(tail) - 1);
 
-    SYNC_WRITE(ctx, hdrSize + bodySize);
+    SYNC_WRITE(ctx, hdrSize + bodySize, failed);
 
-    SET_LOCK(lock, 1, ctx);   /* Done writing, flag file as valid  */
+    SET_LOCK(lock, 1, ctx, failed);   /* Done writing, flag file as valid  */
+
+
+    double t2 = get_time();
+    printf("Time for checkpointing = %g\n", t2 - t1);
+    if (failed)
+        warn("Failed to write checkpoint\n");
+
+    return failed;
 }
 
 
