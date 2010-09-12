@@ -1,0 +1,65 @@
+/* Copyright 2010 Matthew Arsenault, Travis Desell, Dave Przybylo,
+Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
+Magdon-Ismail and Rensselaer Polytechnic Institute.
+
+This file is part of Milkway@Home.
+
+Milkyway@Home is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Milkyway@Home is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#ifndef _MILKYWAY_CONFIG_H_
+#define _MILKYWAY_CONFIG_H_
+
+#cmakedefine01 BOINC_APPLICATION
+#cmakedefine01 BOINC_DEBUG
+#cmakedefine01 BOINC_APP_GRAPHICS
+#cmakedefine01 DOUBLEPREC
+
+#cmakedefine MW_ENABLE_DEBUG
+#cmakedefine01 MW_DEBUG_EXCESSIVE
+
+#cmakedefine01 USE_BOINC_DIAGNOSTICS
+
+
+#if DOUBLEPREC
+  #define PRECSTRING "double"
+#else
+  #define PRECSTRING "float"
+#endif
+
+#if DISABLE_DENORMALS
+  #define DENORMAL_STRING " no denormals"
+#else
+  #define DENORMAL_STRING
+#endif
+
+
+/* ${CMAKE_SYSTEM_PROCESSOR} seems to always give i386 even on OS X 64 */
+
+/* FIXME: This would be totally wrong when using a universal binary */
+#if defined(__i386__)
+  #define ARCH_STRING "x86"
+#elif defined(__ppc__)
+  #define ARCH_STRING "PPC"
+#elif defined(__x86_64__)
+  #define ARCH_STRING "x86_64"
+#elif defined(__ppc64__)
+  #define ARCH_STRING "PPC64"
+#else
+  #error "Unknown architecture!"
+#endif
+
+
+#endif /* _MILKYWAY_CONFIG_H_ */
+
