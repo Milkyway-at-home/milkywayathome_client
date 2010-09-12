@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 int openCheckpointTmp(NBodyCtx* ctx);
 
-void closeCheckpoint(NBodyCtx* ctx);
+int closeCheckpoint(NBodyCtx* ctx);
 int readCheckpoint(const NBodyCtx* ctx, NBodyState* st, const char* filename);
 
 int freezeState(const NBodyCtx* ctx, const NBodyState* st);

@@ -107,18 +107,6 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
     return FALSE;
 }
 
-/* Open the temporary checkpoint file for writing */
-int openCheckpointTmp(NBodyCtx* ctx)
-{
-    if (openCheckpointHandle(ctx, &ctx->cp, CHECKPOINT_TMP_FILE))
-    {
-        warn("Failed to open temporary checkpoint file\n");
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
 static int closeCheckpointHandle(CheckpointHandle* cp)
 {
     struct stat sb;
@@ -148,36 +136,6 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
     return FALSE;
 }
 
-/* Read the actual checkpoint file to resume */
-int readCheckpoint(const NBodyCtx* ctx, NBodyState* st, const char* filename)
-{
-    int rc;
-    CheckpointHandle cp;
-    char resolvedPath[1024];
-
-    rc = boinc_resolve_filename(filename, resolvedPath, sizeof(resolvedPath));
-    if (rc)
-        fail("Failed to resolve checkpoint file for reading '%s': %d\n", filename, rc);
-
-    if (openCheckpointHandle(ctx, &cp, resolvedPath))
-    {
-        warn("Opening checkpoint for resuming failed\n");
-        return TRUE;
-    }
-
-    if (thawState(ctx, st, &cp))
-    {
-        warn("Thawing state failed\n");
-        return TRUE;
-    }
-
-    if (closeCheckpointHandle(&cp))
-        warn("Failed to close checkpoint properly\n");
-
-    return FALSE;
-}
-
-
 #else  /* Windows version */
 
 /* Relevant: http://msdn.microsoft.com/en-us/library/aa366556(VS.85).aspx
@@ -193,12 +151,12 @@ int readCheckpoint(const NBodyCtx* ctx, NBodyState* st, const char* filename)
 
 #define SYNC_WRITE(ctx, size, failed)                                   \
     {                                                                   \
-        if (FlushViewOfFile(((NBodyCtx*) ctx)->cp.mptr, (size)))        \
+        if (!FlushViewOfFile(((NBodyCtx*) ctx)->cp.mptr, (size)))       \
         {                                                               \
             warn("Error in FlushViewOfFile %ld syncing checkpoint!\n", GetLastError()); \
             failed = TRUE;                                              \
         }                                                               \
-        if (FlushFileBuffers(((NBodyCtx*) ctx)->cp.file))               \
+        if (!FlushFileBuffers(((NBodyCtx*) ctx)->cp.file))              \
         {                                                               \
             warn("Error in FlushFileBuffers %ld syncing checkpoint!\n", GetLastError()); \
             failed = TRUE;                                              \
@@ -207,7 +165,6 @@ int readCheckpoint(const NBodyCtx* ctx, NBodyState* st, const char* filename)
 
 static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const char* filename)
 {
-    int rc;
     SYSTEM_INFO si;
     DWORD sysGran;
     DWORD mapViewSize;
@@ -240,7 +197,7 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
 
     if ( cp->file == INVALID_HANDLE_VALUE )
     {
-        warn( "Failed to open checkpoint file '%s': %ld\n", cp->filename, GetLastError());
+        warn("Failed to open checkpoint file '%s': %ld\n", filename, GetLastError());
         return TRUE;
     }
 
@@ -279,28 +236,33 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
     return FALSE;
 }
 
-static void closeCheckpointHandle(CheckpointHandle* cp)
+static int closeCheckpointHandle(CheckpointHandle* cp)
 {
     if ( cp->file != INVALID_HANDLE_VALUE )
     {
         if (!UnmapViewOfFile((LPVOID) cp->mptr))
         {
-            fail("Error %ld occurred unmapping the checkpoint view object!\n",
+            warn("Error %ld occurred unmapping the checkpoint view object!\n",
                  GetLastError());
+            return TRUE;
         }
 
         if (!CloseHandle(cp->mapFile))
         {
-            fail("Error %ld occurred closing the checkpoint mapping!\n",
+            warn("Error %ld occurred closing the checkpoint mapping!\n",
                  GetLastError());
+            return TRUE;
         }
 
         if (!CloseHandle(cp->file))
         {
-            fail("Error %ld occurred closing the checkpoint file '%s'\n",
+            warn("Error %ld occurred closing the checkpoint file '%s'\n",
                  GetLastError(), cp->filename);
+            return TRUE;
         }
     }
+
+    return FALSE;
 }
 
 #endif /* _WIN32 */
@@ -348,9 +310,9 @@ int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     if (realSize != sizeof(real))
     {
         warn("Got checkpoint file for wrong type. "
-                "Expected sizeof(real) = %lu, got %lu\n",
-                sizeof(real),
-                realSize);
+             "Expected sizeof(real) = %lu, got %lu\n",
+             (long unsigned int) sizeof(real),
+             (long unsigned int) realSize);
         failed = TRUE;
     }
 
@@ -418,7 +380,7 @@ int freezeState(const NBodyCtx* ctx, const NBodyState* st)
 
     SYNC_WRITE(ctx, hdrSize + bodySize, failed);
 
-    if (boinc_copy(CHECKPOINT_TMP_FILE, ctx->cp.filename))
+    if (boinc_copy(CHECKPOINT_TMP_FILE, ctx->cp.resolvedPath))
     {
         perror("copy checkpoint");
         failed = TRUE;
@@ -432,9 +394,62 @@ int freezeState(const NBodyCtx* ctx, const NBodyState* st)
     return failed;
 }
 
-void closeCheckpoint(NBodyCtx* ctx)
+int closeCheckpoint(NBodyCtx* ctx)
 {
-    closeCheckpointHandle(&ctx->cp);
+    return closeCheckpointHandle(&ctx->cp);
 }
 
+/* Open the temporary checkpoint file for writing */
+int openCheckpointTmp(NBodyCtx* ctx)
+{
+    int rc;
+    /* Resolve the permanent checkpoint name which the temporary is
+       copied to to avoid possible corruption. */
+    rc = boinc_resolve_filename(ctx->cp.filename,
+                                ctx->cp.resolvedPath,
+                                sizeof(ctx->cp.resolvedPath));
+    if (rc)
+    {
+        warn("Failed to resolve checkpoint file '%s': %d\n", ctx->cp.filename, rc);
+        return rc;
+    }
+
+    if (openCheckpointHandle(ctx, &ctx->cp, CHECKPOINT_TMP_FILE))
+    {
+        warn("Failed to open temporary checkpoint file\n");
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+
+/* Read the actual checkpoint file to resume */
+int readCheckpoint(const NBodyCtx* ctx, NBodyState* st, const char* filename)
+{
+    int rc;
+    CheckpointHandle cp;
+    char resolvedPath[1024];
+
+    rc = boinc_resolve_filename(filename, resolvedPath, sizeof(resolvedPath));
+    if (rc)
+        fail("Failed to resolve checkpoint file for reading '%s': %d\n", filename, rc);
+
+    if (openCheckpointHandle(ctx, &cp, resolvedPath))
+    {
+        warn("Opening checkpoint for resuming failed\n");
+        return TRUE;
+    }
+
+    if (thawState(ctx, st, &cp))
+    {
+        warn("Thawing state failed\n");
+        return TRUE;
+    }
+
+    if (closeCheckpointHandle(&cp))
+        warn("Failed to close checkpoint properly\n");
+
+    return FALSE;
+}
 
