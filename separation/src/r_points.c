@@ -24,6 +24,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_extra.h"
 #include "r_points.h"
 
+#ifndef NDEBUG
+extern real calcReffXrRp3(const real coords);
+extern real calcGPrime(const real coords);
+extern R_PRIME calcRPrime(__MW_CONSTANT INTEGRAL_AREA* ia, const unsigned int r_step);
+#endif
+
 void set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                   __MW_CONSTANT STREAM_GAUSS* sg,
                   const unsigned int n_convolve,
