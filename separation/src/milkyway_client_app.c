@@ -222,7 +222,7 @@ static void worker(int argc, const char** argv)
     likelihood = evaluate(&ap, ias, &streams, sc, star_points_file);
 
     fprintf(stderr, "<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
-    fprintf(stderr, "<search_application> %s </search_application>\n", BOINC_APP_VERSION);
+    fprintf(stderr, "<search_application> %s </search_application>\n", SEPARATION_APP_VERSION);
 
     free(ias);
     free(sc);

@@ -22,7 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _GAUSS_LEGENDRE_H_
 #define _GAUSS_LEGENDRE_H_
 
-#include "config.h"
+#include "separation_config.h"
 #include "milkyway_math.h"
 
 void gaussLegendre(real x1, real x2, real* x, real* restrict w, int n);

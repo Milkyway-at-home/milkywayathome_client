@@ -46,14 +46,16 @@ option(BOINC_DEBUG
 #  "Use OpenCL" ${OPENCL_FOUND})
 
 option(NBODY_OPENCL
-  "Use OpenCL" OFF)
+     "Use OpenCL" OFF)
 
-option(DOUBLEPREC
-       "Use double precision" ON)
 
 option(ENABLE_CRLIBM
-       "Use crlibm double" ON)
+      "Use crlibm double" ON)
 mark_as_advanced(ENABLE_CRLIBM)
+
+if(NOT DOUBLEPREC)
+  set(ENABLE_CRLIBM OFF)
+endif()
 
 
 set(nbody_thirdparty "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty")

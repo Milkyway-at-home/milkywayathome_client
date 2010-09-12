@@ -29,7 +29,7 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
+#include "separation_config.h"
 #include "milkyway_math.h"
 #include "milkyway_util.h"
 #include "separation_types.h"

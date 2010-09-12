@@ -26,9 +26,9 @@ include(CLKernelInline)
 
 enable_testing()
 
-set(milkyway_separation_VERSION_MAJOR 0)
-set(milkyway_separation_VERSION_MINOR 4)
-set(milkyway_separation_${milkyway_client_MAJOR_VERSION}.${milkyway_client_MINOR_VERSION})
+set(separation_VERSION_MAJOR 0)
+set(separation_VERSION_MINOR 4)
+set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}")
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
@@ -43,8 +43,8 @@ option(SEPARATION_INLINE_KERNEL
 
 
 configure_file (
-  "${PROJECT_INCLUDE_DIR}/config.h.in"
-  "${PROJECT_INCLUDE_DIR}/config.h")
+  "${PROJECT_INCLUDE_DIR}/separation_config.h.in"
+  "${PROJECT_INCLUDE_DIR}/separation_config.h")
 
 if(UNIX AND NOT APPLE)  #Unix that isn't OS X
     set(OS_SPECIFIC_LIBS pthread)

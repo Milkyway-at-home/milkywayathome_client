@@ -27,6 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "r_points.h"
 #include "milkyway_util.h"
 
+
 /* FIXME: Excessive duplication with stuff used in integrals which I
  * was too lazy to also fix here */
 

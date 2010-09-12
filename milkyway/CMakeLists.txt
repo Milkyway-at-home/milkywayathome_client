@@ -23,9 +23,15 @@ project(milkyway)
 
 enable_testing()
 
+
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
+
+configure_file (
+  "${PROJECT_INCLUDE_DIR}/milkyway_config.h.in"
+  "${PROJECT_INCLUDE_DIR}/milkyway_config.h")
+
 
 link_directories(${LIBRARY_OUTPUT_PATH})
 include_directories(${PROJECT_INCLUDE_DIR})

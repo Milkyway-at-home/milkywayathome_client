@@ -205,6 +205,7 @@ endif(CMAKE_COMPILER_IS_GNUCC)
 #checking, or the other rounding modes.
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mhard-float -fno-rounding-math -fno-math-errno")
 
+
 if(NOT DOUBLEPREC)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsingle-precision-constant")
 endif()

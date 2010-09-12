@@ -18,24 +18,19 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
+#ifndef _SEPARATION_CONFIG_H_
+#define _SEPARATION_CONFIG_H_
 
-#define MILKYWAY_CLIENT_VERSION_MAJOR ${milkyway_client_VERSION_MAJOR}
-#define MILKYWAY_CLIENT_VERSION_MINOR ${milkyway_client_VERSION_MINOR}
-#define MILKYWAY_CLIENT_VERSION       ${milkyway_client_VERSION}
+#include "milkyway_config.h"
 
-#define BOINC_APP_VERSION "${CMAKE_PROJECT_NAME} ${milkyway_client_VERSION}"
+#define SEPARATION_VERSION_MAJOR ${separation_VERSION_MAJOR}
+#define SEPARATION_VERSION_MINOR ${separation_VERSION_MINOR}
+#define SEPARATION_VERSION       ${separation_VERSION}
+
+#define SEPARATION_APP_VERSION "${CMAKE_PROJECT_NAME} separation ${separation_VERSION} ${CMAKE_SYSTEM_NAME} " ARCH_STRING " " PRECSTRING DENORMAL_STRING
 
 #cmakedefine01 SEPARATION_OPENCL
-#cmakedefine01 BOINC_APP_GRAPHICS
-#cmakedefine01 BOINC_APPLICATION
 #cmakedefine01 SEPARATION_INLINE_KERNEL
 
-#cmakedefine MW_ENABLE_DEBUG
-#cmakedefine01 MW_DEBUG_EXCESSIVE
-
-#cmakedefine01 USE_BOINC_DIAGNOSTICS
-
-#endif /* CONFIG_H_ */
+#endif /* _SEPARATION_CONFIG_H_ */
 

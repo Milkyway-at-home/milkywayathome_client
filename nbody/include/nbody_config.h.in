@@ -21,39 +21,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _NBODY_CONFIG_H_
 #define _NBODY_CONFIG_H_
 
+#include "milkyway_config.h"
+
 #define MILKYWAY_NBODY_CLIENT_VERSION_MAJOR ${milkyway_nbody_VERSION_MAJOR}
 #define MILKYWAY_NBODY_CLIENT_VERSION_MINOR ${milkyway_nbody_VERSION_MINOR}
 #define MILKYWAY_NBODY_CLIENT_VERSION       ${milkyway_nbody_VERSION}
 
-#cmakedefine01 BOINC_APPLICATION
-#cmakedefine01 BOINC_DEBUG
 #cmakedefine01 NBODY_OPENCL
 #cmakedefine01 ENABLE_CRLIBM
-#cmakedefine01 DOUBLEPREC
-
-
-#if DOUBLEPREC
-  #define PRECSTRING "double"
-#else
-  #define PRECSTRING "float"
-#endif
-
-
-/* ${CMAKE_SYSTEM_PROCESSOR} seems to always give i386 even on OS X 64 */
-
-/* FIXME: This would be totally wrong when using a universal binary */
-#if defined(__i386__)
-  #define ARCH_STRING "x86"
-#elif defined(__ppc__)
-  #define ARCH_STRING "PPC"
-#elif defined(__x86_64__)
-  #define ARCH_STRING "x86_64"
-#elif defined(__ppc64__)
-  #define ARCH_STRING "PPC64"
-#else
-  #error "Unknown architecture!"
-#endif
-
 
 
 #define BOINC_NBODY_APP_VERSION "milkywayathome nbody ${milkyway_nbody_VERSION} ${CMAKE_SYSTEM_NAME} " ARCH_STRING " " PRECSTRING

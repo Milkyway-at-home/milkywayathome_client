@@ -25,7 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include "config.h"
+#include "separation_config.h"
 #include "milkyway_math.h"
 
 /* Get the xth component of the nth item in STAR_POINTS */
