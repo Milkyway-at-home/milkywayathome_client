@@ -149,23 +149,24 @@ static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
 /* Setup the run, taking care of checkpointing things when using BOINC */
 static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
 {
+    /* Open the temporary checkpoint for writing */
+    if (openCheckpointTmp(ctx))
+        fail("Failed to open temporary checkpoint\n");
+
     /* If the checkpoint exists, try to use it */
     if (boinc_file_exists(ctx->cp.filename))
     {
         warn("Checkpoint exists. Attempting to resume from it.\n");
-        openCheckpoint(ctx);
-
         /* When the resume fails, start a fresh run */
-        if (thawState(ctx, st))
+        if (readCheckpoint(ctx, st, ctx->cp.filename))
         {
-            warn("Failed to resume checkpoint\n");
-            closeCheckpoint(ctx);     /* Something is wrong with this file */
-            openCheckpoint(ctx);      /* Make a new one */
+            warn("Failed to read checkpoint\n");
             nbodyStateDestroy(st);
             startRun(ctx, ic, st);
         }
         else
         {
+            warn("Successfully read checkpoint\n");
             /* We restored the useful state. Now still need to create
              * the workspace where new accelerations are
              * calculated. */
@@ -179,7 +180,6 @@ static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
     }
     else   /* Otherwise, just start a fresh run */
     {
-        openCheckpoint(ctx);
         startRun(ctx, ic, st);
     }
 }

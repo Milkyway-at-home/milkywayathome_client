@@ -53,11 +53,12 @@ extern "C" {
   #define mw_finish(x) boinc_finish(x)
   #define mw_fopen(x,y) boinc_fopen((x),(y))
   #define mw_remove(x) boinc_delete_file((x))
-
+  #define mw_rename(x, y) boinc_rename((x), (y))
 #else
   #define mw_finish(x) exit(x)
   #define mw_fopen(x,y) fopen((x),(y))
   #define mw_remove(x) remove((x))
+  #define mw_rename(x, y) rename((x), (y))
 #endif /* BOINC_APPLICATION */
 
 void* mallocSafe(size_t size);

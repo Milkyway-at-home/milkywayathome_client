@@ -25,11 +25,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #if BOINC_APPLICATION
 
-void openCheckpoint(NBodyCtx* ctx);
+int openCheckpointTmp(NBodyCtx* ctx);
+
 void closeCheckpoint(NBodyCtx* ctx);
+int readCheckpoint(const NBodyCtx* ctx, NBodyState* st, const char* filename);
 
 int freezeState(const NBodyCtx* ctx, const NBodyState* st);
-int thawState(const NBodyCtx* ctx, NBodyState* st);
+int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp);
 
 #endif /* BOINC_APPLICATION */
 
