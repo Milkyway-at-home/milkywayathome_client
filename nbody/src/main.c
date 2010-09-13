@@ -124,18 +124,7 @@ static json_object* nbodyJSONObjectFromFile(char* inputFile)
 static json_object* readParameters(const int argc,
                                    const char** argv,
                                    FitParams* fitParams,
-                                   char** outFileName,
-                                   char** checkpointFileName,
-                                   char** histogramFileName,
-                                   char** histoutFileName,
-                                   int* setSeed,
-                                   int* ignoreCheckpoint,
-                                   int* outputCartesian,
-                                   int* printTiming,
-                                   int* verifyOnly,
-                                   int* outputBodies,
-                                   int* outputHistogram,
-                                   int* cleanCheckpoint)
+                                   NBodyFlags* nbf)
 {
   #if !BOINC_APPLICATION
     #pragma unused(checkpointFileName)
@@ -165,19 +154,19 @@ static json_object* readParameters(const int argc,
 
         {
             "histoout-file", 'z',
-            POPT_ARG_STRING, histoutFileName,
+            POPT_ARG_STRING, &nbf->histoutFileName,
             0, "Output histogram file", NULL
         },
 
         {
             "histogram-file", 'h',
-            POPT_ARG_STRING, histogramFileName,
+            POPT_ARG_STRING, &nbf->histogramFileName,
             0, "Histogram file", NULL
         },
 
         {
             "output-file", 'o',
-            POPT_ARG_STRING, outFileName,
+            POPT_ARG_STRING, &nbf->outFileName,
             0, "Output file", NULL
         },
 
@@ -189,50 +178,50 @@ static json_object* readParameters(const int argc,
 
         {
             "output-cartesian", 'x',
-            POPT_ARG_NONE, outputCartesian,
+            POPT_ARG_NONE, &nbf->outputCartesian,
             0, "Output Cartesian coordinates instead of lbR", NULL
         },
 
         {
             "timing", 't',
-            POPT_ARG_NONE, printTiming,
+            POPT_ARG_NONE, &nbf->printTiming,
             0, "Print timing of actual run", NULL
         },
 
         {
             "check-file", 'g',
-            POPT_ARG_NONE, verifyOnly,
+            POPT_ARG_NONE, &nbf->verifyOnly,
             0, "Check that the input file is valid only; perform no calculation.", NULL
         },
 
       #if BOINC_APPLICATION
         {
             "checkpoint", 'c',
-            POPT_ARG_STRING, checkpointFileName,
+            POPT_ARG_STRING, &nbf->checkpointFileName,
             0, "Checkpoint file to use", NULL
         },
 
         {
             "clean-checkpoint", 'k',
-            POPT_ARG_NONE, cleanCheckpoint,
+            POPT_ARG_NONE, &nbf->cleanCheckpoint,
             0, "Cleanup checkpoint after finishing run", NULL
         },
 
         {
             "ignore-checkpoint", 'i',
-            POPT_ARG_NONE, ignoreCheckpoint,
+            POPT_ARG_NONE, &nbf->ignoreCheckpoint,
             0, "Ignore the checkpoint file", NULL
         },
 
         {
             "print-bodies", 'b',
-            POPT_ARG_NONE, outputBodies,
+            POPT_ARG_NONE, &nbf->printBodies,
             0, "Print bodies", NULL
         },
 
         {
             "print-histogram", 'm',
-            POPT_ARG_NONE, outputHistogram,
+            POPT_ARG_NONE, &nbf->printHistogram,
             0, "Print histogram", NULL
         },
 
@@ -250,7 +239,7 @@ static json_object* readParameters(const int argc,
 
         {  /* FIXME: Only used when using the server arguments. */
             "seed", 'e',
-            POPT_ARG_INT, setSeed,
+            POPT_ARG_INT, &nbf->setSeed,
             0, "seed for PRNG", NULL
         },
 
@@ -394,68 +383,38 @@ int main(int argc, const char* argv[])
 {
     char* outFile        = NULL;
     json_object* obj     = NULL;
-    int outputCartesian  = FALSE;
-    int ignoreCheckpoint = FALSE;
-    int printTiming      = FALSE;
-    int verifyOnly       = FALSE;
-    int outputBodies     = FALSE;
-    int outputHistogram  = FALSE;
-    int cleanupCheck      = FALSE;
-    char* checkpointFile = NULL;
-    char* histogramFile  = NULL;
-    char* histoutFile    = NULL;
+    NBodyFlags nbf       = EMPTY_NBODY_FLAGS;
     FitParams fitParams  = EMPTY_FIT_PARAMS;
-    int setSeed;         /* the PRNG uses a long for a seed, but int is more portable. */
 
     specialSetup();
     nbodyBoincInit();
 
-    obj = readParameters(argc,
-                         argv,
-                         &fitParams,
-                         &outFile,
-                         &checkpointFile,
-                         &histogramFile,
-                         &histoutFile,
-                         &setSeed,
-                         &ignoreCheckpoint,
-                         &outputCartesian,
-                         &printTiming,
-                         &verifyOnly,
-                         &outputBodies,
-                         &outputHistogram,
-                         &cleanupCheck);
+    obj = readParameters(argc, argv, &fitParams, &nbf);
 
     /* Use default if checkpoint file not specified */
-    stringDefault(checkpointFile, DEFAULT_CHECKPOINT_FILE);
-    stringDefault(histogramFile,  DEFAULT_HISTOGRAM_FILE);
+    stringDefault(nbf.checkpointFileName, DEFAULT_CHECKPOINT_FILE);
+    stringDefault(nbf.histogramFileName,  DEFAULT_HISTOGRAM_FILE);
 
     if (outFile)
-        outputBodies = TRUE;
-    if (histoutFile)    /* Specifying output files implies using them */
-        outputHistogram = TRUE;
+        nbf.printBodies = TRUE;
+    if (nbf.histoutFileName)    /* Specifying output files implies using them */
+        nbf.printHistogram = TRUE;
 
     if (obj)
-    {
-        runNBodySimulation(obj, &fitParams,
-                           outFile, checkpointFile, histogramFile, histoutFile, (long) setSeed,
-                           outputCartesian, printTiming, verifyOnly, outputBodies, outputHistogram);
-    }
+        runNBodySimulation(obj, &fitParams, &nbf);
     else
-    {
         fail("Failed to read parameters\n");
-    }
 
-    if (cleanupCheck)
+    if (nbf.cleanCheckpoint)
     {
-        warn("Removing checkpoint file '%s'\n", checkpointFile);
-        mw_remove(checkpointFile);
+        warn("Removing checkpoint file '%s'\n", nbf.checkpointFileName);
+        mw_remove(nbf.checkpointFileName);
     }
 
-    free(outFile);
-    free(checkpointFile);
-    free(histogramFile);
-    free(histoutFile);
+    free(nbf.outFileName);
+    free(nbf.checkpointFileName);
+    free(nbf.histogramFileName);
+    free(nbf.histoutFileName);
     mw_finish(EXIT_SUCCESS);
 }
 

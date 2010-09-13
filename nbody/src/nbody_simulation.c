@@ -189,22 +189,23 @@ static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
 
 #endif /* BOINC_APPLICATION */
 
-
+/* Set context fields read from command line flags */
+inline static void nbodySetContextFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
+{
+    ctx->outputCartesian = nbf->outputCartesian;
+    ctx->outputBodies    = nbf->printBodies;
+    ctx->outputHistogram = nbf->printHistogram;
+    ctx->outfilename     = nbf->outFileName;
+    ctx->histogram       = nbf->histogramFileName;
+    ctx->histout         = nbf->histoutFileName;
+    ctx->cp_filename     = nbf->checkpointFileName;
+}
 
 /* Takes parsed json and run the simulation, using outFileName for
  * output. */
 void runNBodySimulation(json_object* obj,                 /* The main configuration */
                         const FitParams* fitParams,       /* For server's arguments */
-                        const char* outFileName,          /* Misc. parameters to control output */
-                        const char* checkpointFileName,
-                        const char* histogramFileName,
-                        const char* histoutFileName,
-                        const long setSeed,
-                        const int outputCartesian,
-                        const int printTiming,
-                        const int verifyOnly,
-                        const int outputBodies,
-                        const int outputHistogram)
+                        const NBodyFlags* nbf)           /* Misc. parameters to control output */
 {
     NBodyCtx ctx         = EMPTY_CTX;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
@@ -214,8 +215,8 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
     double ts = 0.0, te = 0.0;
     int rc;
 
-    rc = getParamsFromJSON(&ctx, &ic, obj, fitParams, setSeed);
-    if (verifyOnly)
+    rc = getParamsFromJSON(&ctx, &ic, obj, fitParams, nbf->setSeed);
+    if (nbf->verifyOnly)
     {
         if (rc)
             warn("File failed\n");
@@ -227,13 +228,7 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
     if (rc)
         fail("Failed to read input parameters file\n");
 
-    ctx.outputCartesian = outputCartesian;
-    ctx.outputBodies    = outputBodies;
-    ctx.outputHistogram = outputHistogram;
-    ctx.outfilename     = outFileName;
-    ctx.histogram       = histogramFileName;
-    ctx.histout         = histoutFileName;
-    ctx.cp_filename     = checkpointFileName;
+    nbodySetContextFromFlags(&ctx, nbf);
 
     if (resolveCheckpoint(&ctx))
         fail("Failed to resolve checkpoint\n");
@@ -243,13 +238,13 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
 
     setupRun(&ctx, &ic, &st);
 
-    if (printTiming)     /* Time the body of the calculation */
+    if (nbf->printTiming)     /* Time the body of the calculation */
         ts = get_time();
 
     runSystem(&ctx, &st);
     warn("Simulation complete\n");
 
-    if (printTiming)
+    if (nbf->printTiming)
     {
         te = get_time();
         printf("Elapsed time for run = %g\n", te - ts);

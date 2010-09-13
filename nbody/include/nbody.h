@@ -30,19 +30,26 @@ extern "C" {
 #include "nbody_config.h"
 #include "nbody_util.h"
 
-__attribute__ ((visibility("default"))) void runNBodySimulation(json_object* obj,
-                                                                const FitParams* fitParams,
-                                                                const char* outFileName,
-                                                                const char* checkpointFileName,
-                                                                const char* histogramFileName,
-                                                                const char* histoutFileName,
-                                                                const long setSeed,
-                                                                const int outputCartesian,
-                                                                const int printTiming,
-                                                                const int verifyOnly,
-                                                                const int printBodies,
-                                                                const int printHistogram);
+/* Command line arguments */
+typedef struct
+{
+    char* outFileName;
+    char* checkpointFileName;
+    char* histogramFileName;
+    char* histoutFileName;
+    long setSeed;         /* the PRNG uses a long for a seed, but int is more portable. */
+    int outputCartesian;
+    int printTiming;
+    int verifyOnly;
+    int printBodies;
+    int printHistogram;
+    int cleanCheckpoint;
+    int ignoreCheckpoint;
+} NBodyFlags;
 
+#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0 }
+
+void runNBodySimulation(json_object* obj, const FitParams* fitParams, const NBodyFlags* nbf);
 
 #ifdef _cplusplus
 }

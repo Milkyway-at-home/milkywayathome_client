@@ -29,7 +29,7 @@ int output(const NBodyCtx* ctx, const NBodyState* st);
 void boincOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq); /* Output with xml tags */
 
 /* Close output and free things */
-void nbodyCtxDestroy(NBodyCtx* ctx);
+int nbodyCtxDestroy(NBodyCtx* ctx);
 void nbodyStateDestroy(NBodyState* st);
 
 #endif /* _IO_H_ */
