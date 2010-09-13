@@ -104,7 +104,7 @@ inline static void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
         warn("Checkpoint: tnow = %g. time since last = %gs\n", st->tnow, tmp - lastTime);
         lastTime = tmp;
 
-        if (freezeState(ctx, st))
+        if (writeCheckpoint(ctx, st))
             fail("Failed to write checkpoint\n");
 
         boinc_checkpoint_completed();
@@ -138,7 +138,7 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
 
   #if BOINC_APPLICATION
     warn("Making final checkpoint\n");
-    if (freezeState(ctx, st))
+    if (writeCheckpoint(ctx, st))
         fail("Failed to write final checkpoint\n");
   #endif
 

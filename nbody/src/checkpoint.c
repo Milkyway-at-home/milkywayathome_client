@@ -242,17 +242,15 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
 #endif /* _WIN32 */
 
 /* Should be given the same context as the dump. Returns nonzero if the state failed to be thawed */
-int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
+inline static int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 {
-    const size_t bodySize = ctx->model.nbody * sizeof(body);
-
-    int failed = FALSE;
-
     unsigned int nbody;
     size_t realSize;
     char buf[sizeof(hdr)];
     char tailBuf[sizeof(tail)];
+    const size_t bodySize = ctx->model.nbody * sizeof(body);
     char* p = cp->mptr;
+    int failed = FALSE;
 
     warn("Thawing state\n");
 
@@ -322,19 +320,11 @@ int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
  * checkpoint file is garbage and we lose everything. Uses the boinc
  * critical sections, so it hopefully won't be interrupted.
  */
-int freezeState(const NBodyCtx* ctx, const NBodyState* st)
+inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHandle* cp)
 {
     const size_t bodySize = sizeof(body) * ctx->model.nbody;
     int failed = FALSE;
-    CheckpointHandle cp;
-
-    if (openCheckpointHandle(ctx, &cp, CHECKPOINT_TMP_FILE))
-    {
-        warn("Failed to open temporary checkpoint file\n");
-        return TRUE;
-    }
-
-    char* p = cp.mptr;
+    char* p = cp->mptr;
 
     /* -1 so we don't bother with the null terminator. It's slightly
         annoying since the strcmps use it, but memcpy doesn't. We
@@ -355,26 +345,6 @@ int freezeState(const NBodyCtx* ctx, const NBodyState* st)
     p += bodySize;
 
     DUMP_STR(p, tail, sizeof(tail) - 1);
-
-    if (closeCheckpointHandle(&cp))
-    {
-        warn("Failed to properly close temporary checkpoint file\n");
-        failed = TRUE;
-    }
-
-    /* Swap the real checkpoint with the temporary atomically. This
-     * should avoid corruption in the event the file write is
-     * interrupted. */
-    if (mw_rename(CHECKPOINT_TMP_FILE, ctx->cp_resolved))
-    {
-        perror("tmp -> checkpoint");
-        failed = TRUE;
-    }
-
-    if (failed)
-        warn("Failed to write checkpoint\n");
-
-    return failed;
 }
 
 /* Open the temporary checkpoint file for writing */
@@ -415,5 +385,41 @@ int readCheckpoint(const NBodyCtx* ctx, NBodyState* st)
         warn("Failed to close checkpoint properly\n");
 
     return FALSE;
+}
+
+int writeCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
+{
+    int failed = FALSE;
+    CheckpointHandle cp;
+
+    if (openCheckpointHandle(ctx, &cp, CHECKPOINT_TMP_FILE))
+    {
+        warn("Failed to open temporary checkpoint file\n"
+             "Failed to write checkpoint\n");
+        return TRUE;
+    }
+
+    freezeState(ctx, st, &cp);
+
+    if (closeCheckpointHandle(&cp))
+    {
+        warn("Failed to properly close temporary checkpoint file\n");
+        failed = TRUE;
+    }
+
+    /* Swap the real checkpoint with the temporary atomically. This
+     * should avoid corruption in the event the file write is
+     * interrupted. */
+    /* Don't update if the file was not closed properly; it can't be trusted. */
+    if (!failed && mw_rename(CHECKPOINT_TMP_FILE, ctx->cp_resolved))
+    {
+        perror("Failed to update checkpoint with temporary");
+        failed = TRUE;
+    }
+
+    if (failed)
+        warn("Failed to write checkpoint\n");
+
+    return failed;
 }
 
