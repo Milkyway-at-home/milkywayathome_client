@@ -340,6 +340,10 @@ if(NEED_POPT_DEPS)
 endif()
 
 correct_static_link(milkyway_nbody)
+if(BOINC_APPLICATION)
+  list(APPEND exe_link_libs ${BOINC_LIBRARIES})
+endif()
+
 target_link_libraries(milkyway_nbody ${exe_link_libs})
 
 #add_subdirectory(tests EXCLUDE_FROM_ALL)
