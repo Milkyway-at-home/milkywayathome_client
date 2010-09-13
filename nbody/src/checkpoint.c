@@ -34,7 +34,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "io.h"
 
 #define CHECKPOINT_TMP_FILE "nbody_checkpoint_tmp"
-#define CHECKPOINT_TMP_TMP_FILE "nbody_checkpoint_tmp_tmp"
+
 
 static const char hdr[] = "mwnbody";
 static const char tail[] = "end";
@@ -58,15 +58,6 @@ static const size_t hdrSize = sizeof(size_t)                                  /*
 
 
 #ifndef _WIN32
-
-#define SYNC_WRITE(ctx, size, failed)                  \
-    {                                                  \
-        if (msync(ctx->cp.mptr, (size), MS_SYNC) < 0)  \
-        {                                              \
-            perror("error checkpoint msync");          \
-            failed = TRUE;                             \
-        }                                              \
-    }
 
 static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const char* filename)
 {
@@ -148,22 +139,6 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
              http://msdn.microsoft.com/en-us/library/aa366563(v=VS.85).aspx
  */
 
-
-/* CHECKME: Do we need to do the file handle, the mapFile handle, or both? */
-
-#define SYNC_WRITE(ctx, size, failed)                                   \
-    {                                                                   \
-        if (!FlushViewOfFile(((NBodyCtx*) ctx)->cp.mptr, (size)))       \
-        {                                                               \
-            warn("Error in FlushViewOfFile %ld syncing checkpoint!\n", GetLastError()); \
-            failed = TRUE;                                              \
-        }                                                               \
-        if (!FlushFileBuffers(((NBodyCtx*) ctx)->cp.file))              \
-        {                                                               \
-            warn("Error in FlushFileBuffers %ld syncing checkpoint!\n", GetLastError()); \
-            failed = TRUE;                                              \
-        }                                                               \
-    }
 
 static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const char* filename)
 {
@@ -335,28 +310,6 @@ int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     return failed;
 }
 
-inline static int copyCheckpointFile(const NBodyCtx* ctx)
-{
-    CheckpointHandle cp;
-
-    if (openCheckpointHandle(ctx, &cp, ctx->cp.resolvedPath))
-    {
-        warn("Failed to open checkpoint file\n");
-        return TRUE;
-    }
-
-    memcpy(cp.mptr, ctx->cp.mptr, hdrSize + ctx->model.nbody * sizeof(body));
-
-    if (closeCheckpointHandle(&cp))
-    {
-        warn("Failed to close checkpoint file\n");
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
-
 /* Checkpoint file: Very simple binary "format"
    Name     Type    Values     Notes
 -------------------------------------------------------
@@ -379,8 +332,16 @@ int freezeState(const NBodyCtx* ctx, const NBodyState* st)
 {
     double t1 = get_time();
     const size_t bodySize = sizeof(body) * ctx->model.nbody;
-    char* p = ctx->cp.mptr;
     int failed = FALSE;
+    CheckpointHandle cp;
+
+    if (openCheckpointHandle(ctx, &cp, CHECKPOINT_TMP_FILE))
+    {
+        warn("Failed to open temporary checkpoint file\n");
+        return TRUE;
+    }
+
+    char* p = cp.mptr;
 
     /* -1 so we don't bother with the null terminator. It's slightly
         annoying since the strcmps use it, but memcpy doesn't. We
@@ -402,25 +363,18 @@ int freezeState(const NBodyCtx* ctx, const NBodyState* st)
 
     DUMP_STR(p, tail, sizeof(tail) - 1);
 
-    SYNC_WRITE(ctx, hdrSize + bodySize, failed);
-
-    /* Swap the real checkpoint with the temporary. This should avoid
-     * corruption in the event the file write is interrupted. */
-    if (mw_rename(ctx->cp.resolvedPath, CHECKPOINT_TMP_TMP_FILE))
+    if (closeCheckpointHandle(&cp))
     {
-        perror("checkpoint -> tmp_tmp");
+        warn("Failed to properly close temporary checkpoint file\n");
         failed = TRUE;
     }
 
-    if (mw_rename(CHECKPOINT_TMP_FILE, ctx->cp.resolvedPath))
+    /* Swap the real checkpoint with the temporary atomically. This
+     * should avoid corruption in the event the file write is
+     * interrupted. */
+    if (mw_rename(CHECKPOINT_TMP_FILE, ctx->cp_resolved))
     {
-        failed = TRUE;
         perror("tmp -> checkpoint");
-    }
-
-    if (mw_rename(CHECKPOINT_TMP_TMP_FILE, CHECKPOINT_TMP_FILE))
-    {
-        perror("tmp_tmp -> tmp");
         failed = TRUE;
     }
 
@@ -432,30 +386,17 @@ int freezeState(const NBodyCtx* ctx, const NBodyState* st)
     return failed;
 }
 
-int closeCheckpoint(NBodyCtx* ctx)
-{
-    return closeCheckpointHandle(&ctx->cp);
-}
-
 /* Open the temporary checkpoint file for writing */
-int openCheckpointTmp(NBodyCtx* ctx)
+int resolveCheckpoint(NBodyCtx* ctx)
 {
     int rc;
-    /* Resolve the permanent checkpoint name which the temporary is
-       copied to to avoid possible corruption. */
-    rc = boinc_resolve_filename(ctx->cp.filename,
-                                ctx->cp.resolvedPath,
-                                sizeof(ctx->cp.resolvedPath));
+    rc = boinc_resolve_filename(ctx->cp_filename,
+                                ctx->cp_resolved,
+                                sizeof(ctx->cp_resolved));
     if (rc)
     {
-        warn("Failed to resolve checkpoint file '%s': %d\n", ctx->cp.filename, rc);
+        warn("Failed to resolve checkpoint file '%s': %d\n", ctx->cp_filename, rc);
         return rc;
-    }
-
-    if (openCheckpointHandle(ctx, &ctx->cp, CHECKPOINT_TMP_FILE))
-    {
-        warn("Failed to open temporary checkpoint file\n");
-        return TRUE;
     }
 
     return FALSE;
@@ -463,17 +404,11 @@ int openCheckpointTmp(NBodyCtx* ctx)
 
 
 /* Read the actual checkpoint file to resume */
-int readCheckpoint(const NBodyCtx* ctx, NBodyState* st, const char* filename)
+int readCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 {
-    int rc;
     CheckpointHandle cp;
-    char resolvedPath[1024];
 
-    rc = boinc_resolve_filename(filename, resolvedPath, sizeof(resolvedPath));
-    if (rc)
-        fail("Failed to resolve checkpoint file for reading '%s': %d\n", filename, rc);
-
-    if (openCheckpointHandle(ctx, &cp, resolvedPath))
+    if (openCheckpointHandle(ctx, &cp, ctx->cp_resolved))
     {
         warn("Opening checkpoint for resuming failed\n");
         return TRUE;

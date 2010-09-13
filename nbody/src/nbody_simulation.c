@@ -44,11 +44,6 @@ static void startRun(const NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
     warn("Starting fresh nbody run\n");
     reverseOrbit(&fc, ctx, ic);
     initState(ctx, &fc, st);
-
-  #if BOINC_APPLICATION
-    /* Need to create the empty checkpoint file */
-    boinc_touch_file(ctx->cp.resolvedPath);
-  #endif
 }
 
 /* stepSystem: advance N-body system one time-step. */
@@ -140,10 +135,6 @@ static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
     printf("chisq = %.15g\n", chisq);
   #endif /* BOINC_APPLICATION && !BOINC_DEBUG */
 
-  #if BOINC_APPLICATION
-    closeCheckpoint(ctx);       /* We finished so kill the checkpoint */
-  #endif
-
     nbodyCtxDestroy(ctx);     /* finish up output */
     nbodyStateDestroy(st);
 }
@@ -154,16 +145,12 @@ static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
 /* Setup the run, taking care of checkpointing things when using BOINC */
 static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
 {
-    /* Open the temporary checkpoint for writing */
-    if (openCheckpointTmp(ctx))
-        fail("Failed to open temporary checkpoint\n");
-
     /* If the checkpoint exists, try to use it */
-    if (boinc_file_exists(ctx->cp.filename))
+    if (boinc_file_exists(ctx->cp_resolved))
     {
         warn("Checkpoint exists. Attempting to resume from it.\n");
         /* When the resume fails, start a fresh run */
-        if (readCheckpoint(ctx, st, ctx->cp.filename))
+        if (readCheckpoint(ctx, st))
         {
             warn("Failed to read checkpoint\n");
             nbodyStateDestroy(st);
@@ -243,7 +230,10 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
     ctx.outfilename     = outFileName;
     ctx.histogram       = histogramFileName;
     ctx.histout         = histoutFileName;
-    ctx.cp.filename     = checkpointFileName;
+    ctx.cp_filename     = checkpointFileName;
+
+    if (resolveCheckpoint(&ctx))
+        fail("Failed to resolve checkpoint\n");
 
     initOutput(&ctx);
     setupRun(&ctx, &ic, &st);

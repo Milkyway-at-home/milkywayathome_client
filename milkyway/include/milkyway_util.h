@@ -72,6 +72,8 @@ void* callocSafe(size_t count, size_t size);
 char* mwReadFile(const char* filename);
 FILE* mwOpenResolved(const char* filename, const char* mode);
 
+int mwRename(const char* oldf, const char* newf);
+
 double get_time();
 
 #if defined(__SSE__) && DISABLE_DENORMALS

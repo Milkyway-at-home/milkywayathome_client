@@ -134,6 +134,52 @@ double get_time()
 
 #endif
 
+/* Modified from boinc_rename, which doesn't use MoveFileEx on
+ * windows, which is more atomic.*/
+inline static int _mwRename(const char* oldf, const char* newf)
+{
+  #ifdef _WIN32
+    if (MoveFileEx(oldf, newf))
+        return 0;
+    return GetLastError();
+  #else
+    return rename(oldf, newf);
+  #endif
+}
+
+
+#define MW_FILE_RETRY_INTERVAL
+
+#if BOINC_APPLICATION
+
+int mwRename(const char* oldf, const char* newf)
+{
+    int rc;
+
+    rc = _mwRename(oldf, newf);
+    if (rc)
+    {
+        double start = dtime();
+        do
+        {
+            boinc_sleep(2.0 * drand());       /* avoid lockstep */
+            rc = _mwRename(oldf, newf);
+            if (!rc)
+                break;
+        } while (dtime() < start + MW_FILE_RETRY_INTERVAL);
+    }
+
+    return rc;
+}
+
+#else
+
+int mwRename(const char* oldf, const char* newf)
+{
+    return _mwRename(oldf, newf);
+}
+
+#endif /* BOINC_APPLICATION*/
 
 #if defined(__SSE__) && DISABLE_DENORMALS
 
