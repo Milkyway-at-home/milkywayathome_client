@@ -139,7 +139,7 @@ double get_time()
 inline static int _mwRename(const char* oldf, const char* newf)
 {
   #ifdef _WIN32
-    if (MoveFileEx(oldf, newf))
+    if (MoveFileEx(oldf, newf, MOVEFILE_REPLACE_EXISTING))
         return 0;
     return GetLastError();
   #else
