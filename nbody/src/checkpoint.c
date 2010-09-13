@@ -219,22 +219,19 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
     {
         if (!UnmapViewOfFile((LPVOID) cp->mptr))
         {
-            warn("Error %ld occurred unmapping the checkpoint view object!\n",
-                 GetLastError());
+            warn("Error %ld occurred unmapping the checkpoint view object!\n", GetLastError());
             return TRUE;
         }
 
         if (!CloseHandle(cp->mapFile))
         {
-            warn("Error %ld occurred closing the checkpoint mapping!\n",
-                 GetLastError());
+            warn("Error %ld occurred closing the checkpoint mapping!\n", GetLastError());
             return TRUE;
         }
 
         if (!CloseHandle(cp->file))
         {
-            warn("Error %ld occurred closing the checkpoint file '%s'\n",
-                 GetLastError(), cp->filename);
+            warn("Error %ld occurred closing checkpoint file\n", GetLastError());
             return TRUE;
         }
     }
@@ -251,7 +248,7 @@ int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
     int failed = FALSE;
 
-    int nbody;
+    unsigned int nbody;
     size_t realSize;
     char buf[sizeof(hdr)];
     char tailBuf[sizeof(tail)];
@@ -268,7 +265,6 @@ int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     READ_REAL(st->tnow, p);
     READ_REAL(st->tree.rsize, p);
 
-    /* TODO: Better checking of things */
     if (strncmp(hdr, buf, sizeof(hdr) - 1))
     {
         warn("Didn't find header for checkpoint file.\n");
@@ -295,12 +291,10 @@ int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
     /* Read the bodies */
     st->bodytab = mallocSafe(bodySize);
-
     memcpy(st->bodytab, p, bodySize);
     p += bodySize;
 
     READ_STR(tailBuf, p, sizeof(tailBuf) - 1);
-
     if (strncmp(tail, tailBuf, sizeof(tailBuf) - 1))
     {
         warn("Failed to find end marker in checkpoint file.\n");
@@ -330,7 +324,6 @@ int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
  */
 int freezeState(const NBodyCtx* ctx, const NBodyState* st)
 {
-    double t1 = get_time();
     const size_t bodySize = sizeof(body) * ctx->model.nbody;
     int failed = FALSE;
     CheckpointHandle cp;
@@ -378,8 +371,6 @@ int freezeState(const NBodyCtx* ctx, const NBodyState* st)
         failed = TRUE;
     }
 
-    double t2 = get_time();
-    printf("Time for checkpointing = %g\n", t2 - t1);
     if (failed)
         warn("Failed to write checkpoint\n");
 

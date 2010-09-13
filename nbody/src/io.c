@@ -11,11 +11,16 @@
 #include "io.h"
 #include "milkyway_util.h"
 
-void initOutput(NBodyCtx* ctx)
+int initOutput(NBodyCtx* ctx)
 {
     ctx->outfile = ctx->outfilename ? mwOpenResolved(ctx->outfilename, "w") : DEFAULT_OUTPUT_FILE;
     if (ctx->outfile == NULL)
-        fail("initOutput: cannot open output file %s\n", ctx->outfilename);
+    {
+        warn("initOutput: cannot open output file %s\n", ctx->outfilename);
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
 /* Low-level input and output operations. */
@@ -42,8 +47,8 @@ void boincOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq)
     fprintf(ctx->outfile, "<search_application>" BOINC_NBODY_APP_VERSION "</search_application>\n");
 }
 
-/* output: compute diagnostics and output data. */
-void output(const NBodyCtx* ctx, const NBodyState* st)
+/* output: Print bodies */
+int output(const NBodyCtx* ctx, const NBodyState* st)
 {
     bodyptr p;
     vector lbR;
@@ -60,14 +65,28 @@ void output(const NBodyCtx* ctx, const NBodyState* st)
         }
     }
 
-    fflush(ctx->outfile);             /* drain output buffer */
+    if (fflush(ctx->outfile))
+    {
+        perror("Body output flush");
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
-void nbodyCtxDestroy(NBodyCtx* ctx)
+int nbodyCtxDestroy(NBodyCtx* ctx)
 {
     free(ctx->headline);
-    if (ctx->outfile && ctx->outfile != stdout)
-        fclose(ctx->outfile);
+    if (ctx->outfile && ctx->outfile != DEFAULT_OUTPUT_FILE)
+    {
+        if (fclose(ctx->outfile))
+        {
+            perror("closing output\n");
+            return TRUE;
+        }
+    }
+
+    return FALSE;
 }
 
 static void freeTree(Tree* t)

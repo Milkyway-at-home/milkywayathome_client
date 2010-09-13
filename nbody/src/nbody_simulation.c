@@ -88,7 +88,9 @@ inline static void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
         warn("Checkpoint: tnow = %g. time since last = %gs\n", st->tnow, tmp - lastTime);
         lastTime = tmp;
 
-        freezeState(ctx, st);
+        if (freezeState(ctx, st))
+            fail("Failed to write checkpoint\n");
+
         boinc_checkpoint_completed();
     }
 
@@ -120,7 +122,8 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
 
   #if BOINC_APPLICATION
     warn("Making final checkpoint\n");
-    freezeState(ctx, st);
+    if (freezeState(ctx, st))
+        fail("Failed to write final checkpoint\n");
   #endif
 
 }
@@ -235,7 +238,9 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
     if (resolveCheckpoint(&ctx))
         fail("Failed to resolve checkpoint\n");
 
-    initOutput(&ctx);
+    if (initOutput(&ctx))
+        fail("Failed to open output files\n");
+
     setupRun(&ctx, &ic, &st);
 
     if (printTiming)     /* Time the body of the calculation */

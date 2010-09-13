@@ -24,8 +24,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 
 /* Basic IO and initialization */
-void initOutput(NBodyCtx*);
-void output(const NBodyCtx* ctx, const NBodyState* st);
+int initOutput(NBodyCtx*);
+int output(const NBodyCtx* ctx, const NBodyState* st);
 void boincOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq); /* Output with xml tags */
 
 /* Close output and free things */
