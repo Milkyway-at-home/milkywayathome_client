@@ -101,7 +101,7 @@ static void specialSetup()
 #if BOINC_APPLICATION
 
 /* Read JSON from a file using BOINC file functions */
-static json_object* nbodyJSONObjectFromFile(char* inputFile)
+static json_object* nbodyJSONObjectFromFile(const char* inputFile)
 {
     char resolvedPath[1024];
     int rc;
@@ -126,12 +126,108 @@ static json_object* nbodyJSONObjectFromFile(char* inputFile)
 
 #else
 
-static json_object* nbodyJSONObjectFromFile(char* inputFile)
+static json_object* nbodyJSONObjectFromFile(const char* inputFile)
 {
     return json_object_from_file(inputFile);
 }
 
 #endif /* BOINC_APPLICATION */
+
+
+static void setFitParams(FitParams* fitParams, const real* parameters)
+{
+    fitParams->modelMass        = parameters[0];
+    fitParams->modelRadius      = parameters[1];
+    fitParams->reverseOrbitTime = parameters[2];
+    fitParams->simulationTime   = parameters[3];
+}
+
+static json_object* readJSONFileOrStr(const char* inputFile, const char* inputStr)
+{
+    json_object* obj         = NULL;
+    if (inputFile)
+    {
+        /* Check if we can read the file, so we can fail saying that
+         * and not be left to guessing if it's that or a parse
+         * error */
+        if (access(inputFile, R_OK) < 0)
+        {
+            perror("Failed to read input file");
+            return NULL;
+        }
+
+        /* The lack of parse errors from json-c is unfortunate.
+           TODO: If we use the tokener directly, can get them.
+         */
+
+        obj = nbodyJSONObjectFromFile(inputFile);
+        if (is_error(obj))
+        {
+            warn("Parse error in file '%s'\n", inputFile);
+            obj = NULL;
+        }
+    }
+    else
+    {
+        obj = json_tokener_parse(inputStr);
+        if (is_error(obj))
+        {
+            warn("Failed to parse given string\n");
+            return NULL;
+        }
+    }
+
+    return obj;
+}
+
+static int handleServerArguments(FitParams* fitParams, const char** rest, const unsigned int numParams)
+{
+    unsigned int i;
+    real* parameters = NULL;
+    unsigned int paramCount = 0;
+
+    fitParams->useFitParams = TRUE;
+
+    /* Read through all the server arguments, and make sure we can
+     * read everything and have the right number before trying to
+     * do anything with them */
+
+    while (rest[++paramCount]);  /* Count number of parameters */
+
+    if (numParams == 0)
+    {
+        warn("numParams = 0 makes no sense\n");
+        return 1;
+    }
+
+    /* Make sure the number of extra parameters matches the number
+     * we were told to expect. */
+    if (numParams != paramCount)
+    {
+        warn("Parameter count mismatch: Expected %u, got %u\n", numParams, paramCount);
+        return 1;
+    }
+
+    parameters = (real*) mallocSafe(sizeof(real) * numParams);
+
+    errno = 0;
+    for (i = 0; i < numParams; ++i)
+    {
+        parameters[i] = (real) strtod(rest[i], NULL);
+        if (errno)
+        {
+            perror("Error parsing command line fit parameters");
+            free(parameters);
+            return 1;
+        }
+    }
+
+    setFitParams(fitParams, parameters);
+    free(parameters);
+
+    return 0;
+}
+
 
 /* Read the command line arguments, and do the inital parsing of the parameter file. */
 static json_object* readParameters(const int argc,
@@ -146,12 +242,13 @@ static json_object* readParameters(const int argc,
 
     poptContext context;
     int o;
+    json_object* obj         = NULL;
     static char* inputFile   = NULL;   /* input JSON file */
     static char* inputStr    = NULL;   /* a string of JSON to use directly */
-    json_object* obj         = NULL;
-    static const char** rest = NULL;   /* Leftover arguments */
+    const char** rest        = NULL;   /* Leftover arguments */
+    int failed = FALSE;
 
-    unsigned int numParams = 0, params = 0, paramCount = 0;
+    unsigned int numParams = 0, params = 0;
 
     /* FIXME: There's a small leak of the inputFile from use of
        poptGetNextOpt(). Some mailing list post suggestst that this
@@ -284,109 +381,32 @@ static json_object* readParameters(const int argc,
          || !(inputFile || inputStr))
     {
         poptPrintHelp(context, stderr, 0);
-        free(inputFile);
-        free(inputStr);
-        poptFreeContext(context);
-        return NULL;
+        failed = TRUE;
     }
 
-    if (params) /* Using primitive server arguments */
+    if (params)
     {
-        unsigned int i;
-        real* parameters = NULL;
-
-        fitParams->useFitParams = TRUE;
-
-        /* Read through all the server arguments, and make sure we can
-         * read everything and have the right number before trying to
-         * do anything with them */
         rest = poptGetArgs(context);
         if (!rest)
         {
-            poptFreeContext(context);
             warn("Expected arguments to follow, got 0\n");
-            return NULL;
+            failed = TRUE;
         }
 
-        while (rest[++paramCount]);  /* Count number of parameters */
-
-        if (numParams == 0)
+        if (handleServerArguments(fitParams, rest, numParams))
         {
-            poptFreeContext(context);
-            warn("numParams = 0 makes no sense\n");
-            return NULL;
+            warn("Failed to read server arguments\n");
+            poptPrintHelp(context, stderr, 0);
+            failed = TRUE;
         }
-
-        /* Make sure the number of extra parameters matches the number
-         * we were told to expect. */
-        if (numParams != paramCount)
-        {
-            poptFreeContext(context);
-            warn("Parameter count mismatch: Expected %u, got %u\n", numParams, paramCount);
-            return NULL;
-        }
-
-        parameters = (real*) mallocSafe(sizeof(real) * numParams);
-
-        errno = 0;
-        for ( i = 0; i < numParams; ++i )
-        {
-            parameters[i] = (real) strtod(rest[i], NULL);
-            if (errno)
-            {
-                perror("Error parsing command line fit parameters");
-                poptPrintHelp(context, stderr, 0);
-                free(parameters);
-                poptFreeContext(context);
-                return NULL;
-            }
-        }
-
-        fitParams->modelMass        = parameters[0];
-        fitParams->modelRadius      = parameters[1];
-        fitParams->reverseOrbitTime = parameters[2];
-        fitParams->simulationTime   = parameters[3];
-
-        free(parameters);
     }
+
+    if (!failed)
+        obj = readJSONFileOrStr(inputFile, inputStr);
 
     poptFreeContext(context);
-
-    if (inputFile)
-    {
-        /* Check if we can read the file, so we can fail saying that
-         * and not be left to guessing if it's that or a parse
-         * error */
-        if (access(inputFile, R_OK) < 0)
-        {
-            perror("Failed to read input file");
-            free(inputFile);
-            mw_finish(EXIT_FAILURE);
-        }
-
-        /* The lack of parse errors from json-c is unfortunate.
-           TODO: If we use the tokener directly, can get them.
-         */
-
-        obj = nbodyJSONObjectFromFile(inputFile);
-        if (is_error(obj))
-        {
-            warn("Parse error in file '%s'\n", inputFile);
-            obj = NULL;
-        }
-
-        free(inputFile);
-    }
-    else
-    {
-        obj = json_tokener_parse(inputStr);
-        free(inputStr);
-        if (is_error(obj))
-        {
-            warn("Failed to parse given string\n");
-            return NULL;
-        }
-    }
+    free(inputFile);
+    free(inputStr);
 
     return obj;
 }
