@@ -155,7 +155,7 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
                           0,     /* Other processes can't touch this */
                           NULL,
                           CREATE_NEW,
-                          FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_SEQUENTIAL_SCAN,
+                          FILE_FLAG_SEQUENTIAL_SCAN,u
                           NULL);
 
     /* If the checkpoint already exists, open it */
@@ -166,7 +166,7 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
                               0,     /* Other processes can't touch this */
                               NULL,
                               OPEN_EXISTING,
-                              FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_SEQUENTIAL_SCAN,
+                              FILE_FLAG_SEQUENTIAL_SCAN,
                               NULL);
     }
 
