@@ -34,6 +34,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "io.h"
 
 #define CHECKPOINT_TMP_FILE "nbody_checkpoint_tmp"
+#define CHECKPOINT_TMP_TMP_FILE "nbody_checkpoint_tmp_tmp"
 
 static const char hdr[] = "mwnbody";
 static const char tail[] = "end";
@@ -54,6 +55,7 @@ static const size_t hdrSize = sizeof(size_t)                                  /*
 #define READ_INT(x, p) { (x) = *((int*) (p)); (p) += sizeof(int); }
 #define READ_SIZE_T(x, p) { (x) = *((size_t*) (p)); (p) += sizeof(size_t); }
 #define READ_STR(x, p, size) { memcpy((x), (p), (size)); (p) += (size); }
+
 
 #ifndef _WIN32
 
@@ -333,6 +335,28 @@ int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     return failed;
 }
 
+inline static int copyCheckpointFile(const NBodyCtx* ctx)
+{
+    CheckpointHandle cp;
+
+    if (openCheckpointHandle(ctx, &cp, ctx->cp.resolvedPath))
+    {
+        warn("Failed to open checkpoint file\n");
+        return TRUE;
+    }
+
+    memcpy(cp.mptr, ctx->cp.mptr, hdrSize + ctx->model.nbody * sizeof(body));
+
+    if (closeCheckpointHandle(&cp))
+    {
+        warn("Failed to close checkpoint file\n");
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+
 /* Checkpoint file: Very simple binary "format"
    Name     Type    Values     Notes
 -------------------------------------------------------
@@ -380,9 +404,23 @@ int freezeState(const NBodyCtx* ctx, const NBodyState* st)
 
     SYNC_WRITE(ctx, hdrSize + bodySize, failed);
 
-    if (boinc_copy(CHECKPOINT_TMP_FILE, ctx->cp.resolvedPath))
+    /* Swap the real checkpoint with the temporary. This should avoid
+     * corruption in the event the file write is interrupted. */
+    if (mw_rename(ctx->cp.resolvedPath, CHECKPOINT_TMP_TMP_FILE))
     {
-        perror("copy checkpoint");
+        perror("checkpoint -> tmp_tmp");
+        failed = TRUE;
+    }
+
+    if (mw_rename(CHECKPOINT_TMP_FILE, ctx->cp.resolvedPath))
+    {
+        failed = TRUE;
+        perror("tmp -> checkpoint");
+    }
+
+    if (mw_rename(CHECKPOINT_TMP_TMP_FILE, CHECKPOINT_TMP_FILE))
+    {
+        perror("tmp_tmp -> tmp");
         failed = TRUE;
     }
 

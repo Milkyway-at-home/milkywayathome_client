@@ -44,6 +44,11 @@ static void startRun(const NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
     warn("Starting fresh nbody run\n");
     reverseOrbit(&fc, ctx, ic);
     initState(ctx, &fc, st);
+
+  #if BOINC_APPLICATION
+    /* Need to create the empty checkpoint file */
+    boinc_touch_file(ctx->cp.resolvedPath);
+  #endif
 }
 
 /* stepSystem: advance N-body system one time-step. */
