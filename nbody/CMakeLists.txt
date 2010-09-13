@@ -31,6 +31,7 @@ set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
 include(MaybeDlCheck)
+include(StaticBOINC)
 
 include_directories(${PROJECT_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -247,9 +248,6 @@ if(APPLE)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -isysroot/Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5")
 endif()
 
-if (!WIN32)
-  list(APPEND CMAKE_C_FLAGS "-fvisibility=hidden")
-endif()
 
 message("---------------------------------------------")
 message("   Building:          ${PROJECT_NAME}")
@@ -341,34 +339,8 @@ if(NEED_POPT_DEPS)
                             ${LIBINTL_LIBRARY})
 endif()
 
-if(NOT APPLE)
-  #CHECKME: What about Windows?
-  set(nbody_static_link_flags "-static -static-libgcc -static-libstdc++")
-
-  if(UNIX)
-    #We need to do this to statically link pthreads. Otherwise really
-    #bizarre things happen.
-    set(nbody_static_link_flags "-pthread ${nbody_static_link_flags}")
-  endif()
-
-  set_target_properties(milkyway_nbody
-    PROPERTIES
-    LINKER_LANGUAGE CXX
-    LINK_SEARCH_END_STATIC ON
-    LINK_FLAGS ${nbody_static_link_flags})
-else()
-  set_target_properties(milkyway_nbody
-    PROPERTIES
-    LINKER_LANGUAGE CXX
-    LINK_SEARCH_END_STATIC ON)
-endif()
-
-if(BOINC_APPLICATION)
-  list(APPEND exe_link_libs ${BOINC_LIBRARIES})
-endif()
-
+correct_static_link(milkyway_nbody)
 target_link_libraries(milkyway_nbody ${exe_link_libs})
-set_target_properties(milkyway_nbody PROPERTIES LINKER_LANGUAGE CXX)
 
 #add_subdirectory(tests EXCLUDE_FROM_ALL)
 
