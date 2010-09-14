@@ -22,7 +22,7 @@ cmake_minimum_required (VERSION 2.8)
 project(milkyway_nbody)
 
 set(milkyway_nbody_MAJOR_VERSION 0)
-set(milkyway_nbody_MINOR_VERSION 06)
+set(milkyway_nbody_MINOR_VERSION 07)
 set(milkyway_nbody_VERSION "${milkyway_nbody_MAJOR_VERSION}.${milkyway_nbody_MINOR_VERSION}")
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
