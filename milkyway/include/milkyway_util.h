@@ -25,6 +25,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
+#include "milkyway_config.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 

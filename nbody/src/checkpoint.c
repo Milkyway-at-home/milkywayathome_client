@@ -305,13 +305,14 @@ inline static int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandl
 /* Checkpoint file: Very simple binary "format"
    Name     Type    Values     Notes
 -------------------------------------------------------
-   header  string   "mwnbody"  No null terminator
-   nbody   int      anything   Number of bodies expected in the file. Error if doesn't match nbody in reading context.
-   tout    real     anything   Saved parts of the program state
-   tnow    real     anything
-   rsize   real     anything
-   bodytab bodyptr  anything   Array of bodies
-   ending  string   "end"      No null terminator
+   header       string   "mwnbody"  No null terminator
+   nbody        uint     anything   Num. of bodies expected. Error if doesn't match nbody in context.
+   sizeof(real) size_t   4, 8       Does the checkpoint use float or double
+   tout         real     anything   Saved parts of the program state
+   tnow         real     anything
+   rsize        real     anything
+   bodytab      bodyptr  anything   Array of bodies
+   ending       string   "end"      No null terminator
  */
 
 /* Use a very simple flag to mark when writing the checkpoint file

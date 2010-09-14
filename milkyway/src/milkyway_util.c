@@ -148,25 +148,25 @@ inline static int _mwRename(const char* oldf, const char* newf)
 }
 
 
-#define MW_FILE_RETRY_INTERVAL
-
 #if BOINC_APPLICATION
 
 int mwRename(const char* oldf, const char* newf)
 {
     int rc;
+    unsigned int i;
 
+    /* FIXME: BOINC has random timing for retries. Fix boinc rename on
+     * windows, then we can just get rid of this. */
     rc = _mwRename(oldf, newf);
     if (rc)
     {
-        double start = dtime();
-        do
+        for (i = 0; i < 5; ++i)
         {
-            boinc_sleep(2.0 * drand());       /* avoid lockstep */
+            sleep(1);       /* sleep 1 second, avoid lockstep */
             rc = _mwRename(oldf, newf);
             if (!rc)
                 break;
-        } while (dtime() < start + MW_FILE_RETRY_INTERVAL);
+        }
     }
 
     return rc;

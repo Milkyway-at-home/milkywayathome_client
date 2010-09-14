@@ -101,13 +101,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define FALSE 0
 #endif
 
-#ifndef _WIN32
-  #define NBODY_ALIGN __attribute__((aligned, packed))
-#else
-  /* Horrible things happen if you try aligning on mingw. This will
-   * probably be problematic later for opencl. */
-  #define NBODY_ALIGN __attribute__((packed))
-#endif /* _WIN32 */
+#define NBODY_ALIGN __attribute__((packed))
 
 /*
 typedef enum
