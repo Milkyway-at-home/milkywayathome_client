@@ -323,7 +323,6 @@ inline static int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandl
 inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHandle* cp)
 {
     const size_t bodySize = sizeof(body) * ctx->model.nbody;
-    int failed = FALSE;
     char* p = cp->mptr;
 
     /* -1 so we don't bother with the null terminator. It's slightly
