@@ -46,3 +46,27 @@ function(correct_static_link client_bin_name)
       LINK_SEARCH_END_STATIC ON)
   endif()
 endfunction()
+
+function(milkyway_link client_bin_name use_boinc use_static link_libs)
+  if(use_static)
+    #Static linking tends to interfere with debugging with valgrind/gdb
+    #in annoying ways
+    correct_static_link(${client_bin_name})
+  endif()
+
+  if(use_boinc)
+    #Something dumb is happening with linking order and I'm sick of
+    #fighting with it right now (Sep. 2010)
+    list(APPEND link_libs ${BOINC_LIBRARIES})
+    list(INSERT link_libs 0 ${BOINC_LIBRARIES})
+  endif()
+
+  #Include libm first before anything else. I can't seem to make cmake
+  #always give a static executable, and only try to use static
+  #libraries. When statically linking, by explicitly finding libm.a,
+  #and linking to that first, it avoids trying to dynamically link
+  #libm
+
+  target_link_libraries(${client_bin_name} ${link_libs})
+endfunction()
+

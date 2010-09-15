@@ -32,10 +32,13 @@ set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
 include(MaybeDlCheck)
 include(StaticBOINC)
+include(SpecialLibs)
 
 include_directories(${PROJECT_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 link_directories(${LIBRARY_OUTPUT_PATH})
+
+set_os_specific_libs()
 
 option(BOINC_APPLICATION
   "Build as a BOINC Application" ON)
@@ -271,17 +274,12 @@ configure_file (
   "${PROJECT_INCLUDE_DIR}/nbody_config.h")
 
 if(WIN32)
-  list(APPEND OS_SPECIFIC_LIBS "msvcrt" "stdc++")
   add_definitions(-D_WIN32_IE=0x0501)
   add_definitions(-D_WINDOWS)
   add_definitions(-D_WIN32_WINDOWS=0x0501)
 endif()
 
-list(APPEND nbody_link_libs ${JSON_C_LIBRARY} ${OS_SPECIFIC_LIBS} m)
-
-if(BOINC_APPLICATION)
-  list(APPEND nbody_link_libs ${BOINC_LIBRARIES})
-endif()
+list(APPEND nbody_link_libs ${JSON_C_LIBRARY} ${OS_SPECIFIC_LIBS} milkyway ${LIBM_LIBRARY})
 
 if(NBODY_OPENCL)
   set(c_kernel_dir "${CMAKE_CURRENT_SOURCE_DIR}/ckernels")
@@ -326,12 +324,10 @@ if(NOT USE_SYSTEM_JSON_C)
   add_dependencies(nbody_simulation jsonc_build)
 endif()
 
-add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
-
-set(exe_link_libs ${POPT_LIBRARY}
+set(exe_link_libs ${LIBM_LIBRARY}
+                  ${POPT_LIBRARY}
                   ${nbody_libs}
-                  ${nbody_link_libs}
-                  milkyway)
+                  ${nbody_link_libs})
 
 if(NEED_POPT_DEPS)
   # Popt dependencies for static linking For some reason, on OS X /
@@ -340,13 +336,8 @@ if(NEED_POPT_DEPS)
                             ${LIBINTL_LIBRARY})
 endif()
 
-correct_static_link(milkyway_nbody)
-if(BOINC_APPLICATION)
-  list(APPEND exe_link_libs ${BOINC_LIBRARIES})
-endif()
-
-target_link_libraries(milkyway_nbody ${exe_link_libs})
-
+add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
+milkyway_link(milkyway_nbody ${BOINC_APPLICATION} ${BOINC_RELEASE} "${exe_link_libs}")
 #add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 

@@ -94,6 +94,7 @@ if(MINGW)
   set(CMAKE_FIND_ROOT_PATH "${TAKEOFFGW_ROOT}/i686-pc-mingw32/sys-root/mingw")
 endif(MINGW)
 
+set(LIBM_USE_STATIC 1)
 if(BOINC_RELEASE)
   set(POPT_USE_STATIC 1)
   set(JSON_C_USE_STATIC 1)
@@ -118,6 +119,7 @@ if(NEED_POPT_DEPS)
   find_package(Libiconv REQUIRED)
 endif()
 
+find_package(Libm REQUIRED)
 find_package(Popt REQUIRED)
 find_package(BOINC)
 find_package(OpenCL)
@@ -137,8 +139,6 @@ if(APPLE)
   endif()
 
   find_library(COREFOUNDATION_LIBRARY CoreFoundation )
-
-  list(APPEND OS_SPECIFIC_LIBS ${COREFOUNDATION_LIBRARY})
 
   if(BOINC_RELEASE)
     # We don't want to bother compiling twice until we need the universal binary for releases

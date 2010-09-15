@@ -23,6 +23,7 @@ project(milkyway_separation)
 
 include(StaticBOINC)
 include(CLKernelInline)
+include(SpecialLibs)
 
 enable_testing()
 
@@ -33,6 +34,8 @@ set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}"
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
+
+set_os_specific_libs()
 
 include_directories(${PROJECT_INCLUDE_DIR})
 set(CMAKE_C_FLAGS "-std=gnu99 -warn-uninit-values ${CMAKE_C_FLAGS}")
@@ -46,13 +49,9 @@ configure_file (
   "${PROJECT_INCLUDE_DIR}/separation_config.h.in"
   "${PROJECT_INCLUDE_DIR}/separation_config.h")
 
-if(UNIX AND NOT APPLE)  #Unix that isn't OS X
-    set(OS_SPECIFIC_LIBS pthread)
-endif()
-
-if(WIN32)
-  set(OS_SPECIFIC_LIBS msvcrt)
-endif()
+#if(UNIX AND NOT APPLE)  #Unix that isn't OS X
+#    set(OS_SPECIFIC_LIBS pthread)
+#endif()
 
 set(cl_source_list src/separation_cl_buffers.c
                    src/setup_cl.c
@@ -71,6 +70,7 @@ set(lib_source_file_list src/evaluation_state.c
                          src/r_points.c)
 
 if(SEPARATION_OPENCL)
+  include_directories(${OPENCL_INCLUDE_DIRS})
   list(APPEND lib_source_file_list ${cl_source_list})
 
   if(SEPARATION_INLINE_KERNEL)
@@ -85,22 +85,17 @@ if(SEPARATION_OPENCL)
   endif()
 endif()
 
+set(separation_link_libs ${OS_SPECIFIC_LIBS} milkyway ${LIBM_LIBRARY})
+
 add_library(separation STATIC ${lib_source_file_list})
+target_link_libraries(separation ${separation_link_libs})
 
-include_directories(${OPENCL_INCLUDE_DIRS})
 
-set(separation_bin_name milkyway_separation)
 
-set(exe_link_libs ${POPT_LIBRARY})
-
-if(BOINC_APPLICATION)
-  list(APPEND exe_link_libs ${BOINC_LIBRARIES})
-endif()
-
-if(SEPARATION_OPENCL)
-  include_directories(${OPENCL_INCLUDE_DIRS})
-  list(APPEND exe_link_libs ${OPENCL_LIBRARIES})
-endif()
+set(exe_link_libs ${LIBM_LIBRARY}
+                  ${POPT_LIBRARY}
+                  separation
+                  ${separation_link_libs})
 
 if(NEED_POPT_DEPS)
   # Popt dependencies for static linking For some reason, on OS X /
@@ -109,29 +104,15 @@ if(NEED_POPT_DEPS)
                             ${LIBINTL_LIBRARY})
 endif()
 
+if(SEPARATION_OPENCL)
+  include_directories(${OPENCL_INCLUDE_DIRS})
+  list(APPEND exe_link_libs ${OPENCL_LIBRARIES})
+endif()
 
+set(separation_bin_name milkyway_separation)
 
 add_executable(${separation_bin_name} src/milkyway_client_app.c)
-target_link_libraries(${separation_bin_name} separation milkyway ${exe_link_libs} ${OS_SPECIFIC_LIBS} m)
-if(BOINC_RELEASE)
-  #Static linking tends to interfere with debugging with valgrind/gdb
-  #in annoying ways
-  correct_static_link(${separation_bin_name})
-endif()
-
-if(OPENCL_SEPARATION)
-  add_executable(${separation_bin_name}_ocl milkyway_client_app.c)
-  target_link_libraries(${separation_bin_name}_ocl ${POPT_LIBRARY}
-                                               ${BOINC_LIBRARIES}
-                                               milkyway_separation_ocl
-                                               milkyway_separation_cpu)
-  set_target_properties(${separation_bin_name}_ocl
-                        PROPERTIES
-                        LINK_FLAGS
-                        COMPILE_FLAGS "-DCOMPUTE_ON_CPU=0 -DUSE_CUDA=0 -D USE_OCL=1")
-
-endif()
-
+milkyway_link(${separation_bin_name} ${BOINC_APPLICATION} ${BOINC_RELEASE} "${exe_link_libs}")
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 
