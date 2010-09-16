@@ -25,15 +25,23 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation.h"
 
+#define DEFAULT_ASTRONOMY_PARAMETERS "astronomy_parameters.txt"
+#define DEFAULT_STAR_POINTS "stars.txt"
+
 typedef struct
 {
     char* star_points_file;
     char* astronomy_parameter_file;
-    char* output_file;
 } SeparationFlags;
 
 #define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL }
 
+/* Use hardcoded names if files not specified */
+static void setDefaultFiles(SeparationFlags* sf)
+{
+    stringDefault(sf->star_points_file, DEFAULT_STAR_POINTS);
+    stringDefault(sf->astronomy_parameter_file, DEFAULT_ASTRONOMY_PARAMETERS);
+}
 
 
 #ifdef _WIN32
@@ -74,12 +82,6 @@ static real* parse_parameters(int argc, const char** argv, int* paramnOut, Separ
             "astronomy-parameter-file", 'a',
             POPT_ARG_STRING, &sf->astronomy_parameter_file,
             'a', "Astronomy parameter file", NULL
-        },
-
-        {
-            "output", 'o',
-            POPT_ARG_STRING, &sf->output_file,
-            'o', "Output file", NULL
         },
 
         {
@@ -146,6 +148,7 @@ static real* parse_parameters(int argc, const char** argv, int* paramnOut, Separ
 
     poptFreeContext(context);
 
+    setDefaultFiles(sf);
     *paramnOut = paramn;
     return parameters;
 }
@@ -154,7 +157,6 @@ static void freeSeparationFlags(SeparationFlags* sf)
 {
 	free(sf->star_points_file);
 	free(sf->astronomy_parameter_file);
-	free(sf->output_file);
 }
 
 static void worker(const SeparationFlags* sf, const real* parameters, const int number_parameters)
@@ -163,8 +165,9 @@ static void worker(const SeparationFlags* sf, const real* parameters, const int 
     ASTRONOMY_PARAMETERS ap = EMPTY_ASTRONOMY_PARAMETERS;
     BACKGROUND_PARAMETERS bgp = EMPTY_BACKGROUND_PARAMETERS;
     STREAMS streams = EMPTY_STREAMS;
+    INTEGRAL_AREA* ias;
 
-    INTEGRAL_AREA* ias = read_parameters(sf->astronomy_parameter_file, &ap, &bgp, &streams);
+    ias = read_parameters(sf->astronomy_parameter_file, &ap, &bgp, &streams);
     if (!ias)
     {
         fprintf(stderr,
