@@ -97,7 +97,10 @@ FILE* mwOpenResolved(const char* filename, const char* mode)
 
     ret = boinc_resolve_filename(filename, resolvedPath, sizeof(resolvedPath));
     if (ret)
-        fail("Error resolving file '%s': %d\n", filename, ret);
+    {
+        warn("Error resolving file '%s': %d\n", filename, ret);
+        return NULL;
+    }
 
     return mw_fopen(resolvedPath, mode);
 }
