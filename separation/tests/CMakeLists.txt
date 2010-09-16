@@ -19,7 +19,6 @@
 #
 
 function(separation_test test_app suffix)
-
   #arguments shared by several of the tests
   set(param_set1 0.571713 12.312119 -3.305187 148.010257 22.453902 0.42035
     -0.468858 0.760579 -1.361644 177.884238 23.882892 1.210639
@@ -79,7 +78,6 @@ foreach(test ${test_list})
     target_link_libraries(${test} m)
 endforeach()
 
-if(CPU_SEPARATION)
-  separation_test(${EXECUTABLE_OUTPUT_PATH}/milkyway_separation "cpu")
-endif()
+separation_test("${EXECUTABLE_OUTPUT_PATH}/${separation_bin_name}" "cpu")
+
 

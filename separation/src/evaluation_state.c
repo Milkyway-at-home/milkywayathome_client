@@ -19,6 +19,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <string.h>
+
 #include "separation_types.h"
 #include "separation_constants.h"
 #include "evaluation_state.h"
@@ -112,7 +114,7 @@ int read_checkpoint(EVALUATION_STATE* es)
         return 1;
 
     fread(str_buf, sizeof(checkpoint_header), 1, f);
-    if (strcmp(str_buf, checkpoint_header))
+    if (strncmp(str_buf, checkpoint_header, sizeof(str_buf)))
     {
         fprintf(stderr, "Failed to find header in checkpoint file\n");
         return 1;

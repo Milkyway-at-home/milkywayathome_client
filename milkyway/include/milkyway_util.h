@@ -71,6 +71,10 @@ void* callocSafe(size_t count, size_t size);
 #define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \
                          mw_finish(EXIT_FAILURE); }
 
+
+/* If one of these options is null, use the default. */
+#define stringDefault(s, d) ((s) = (s) ? (s) : strdup((d)))
+
 char* mwReadFile(const char* filename);
 FILE* mwOpenResolved(const char* filename, const char* mode);
 

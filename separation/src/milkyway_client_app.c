@@ -25,10 +25,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation.h"
 
-static char* boinc_graphics = NULL;
-static char* star_points_file = NULL;
-static char* astronomy_parameter_file = NULL;
-static char* output_file = NULL;
+typedef struct
+{
+    char* star_points_file;
+    char* astronomy_parameter_file;
+    char* output_file;
+} SeparationFlags;
+
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL }
+
 
 
 #ifdef _WIN32
@@ -47,38 +52,33 @@ void AppInvalidParameterHandler(const wchar_t* expression,
 
 
 /* Returns the newly allocated array of parameters */
-static real* parse_parameters(int argc, const char** argv, int* paramnOut)
+static real* parse_parameters(int argc, const char** argv, int* paramnOut, SeparationFlags* sf)
 {
     poptContext context;
     int o;
-    unsigned int i, paramn = 0;
     real* parameters = NULL;
+    unsigned int i, paramn = 0;
     static unsigned int numParams;
     static int server_params = 0;
     static const char** rest;
-    static const struct poptOption options[] =
+
+    const struct poptOption options[] =
     {
         {
-            "boinc-init-graphics", 'b',
-            POPT_ARG_STRING, &boinc_graphics,
-            'b', "Argument to boinc_init_graphics", NULL
-        },
-
-        {
             "star-points-file", 's',
-            POPT_ARG_STRING, &star_points_file,
+            POPT_ARG_STRING, &sf->star_points_file,
             's', "Star points files", NULL
         },
 
         {
             "astronomy-parameter-file", 'a',
-            POPT_ARG_STRING, &astronomy_parameter_file,
+            POPT_ARG_STRING, &sf->astronomy_parameter_file,
             'a', "Astronomy parameter file", NULL
         },
 
         {
             "output", 'o',
-            POPT_ARG_STRING, &output_file,
+            POPT_ARG_STRING, &sf->output_file,
             'o', "Output file", NULL
         },
 
@@ -112,16 +112,6 @@ static real* parse_parameters(int argc, const char** argv, int* paramnOut)
         poptPrintHelp(context, stderr, 0);
         mw_finish(EXIT_FAILURE);
     }
-
-    MW_DEBUG("Got arguments: "
-             "boinc_graphics = '%s' "
-             "star_points_file = '%s' "
-             "astronomy_parameter_file = '%s' "
-             "output_file = '%s'\n",
-             boinc_graphics,
-             star_points_file,
-             astronomy_parameter_file,
-             output_file);
 
     rest = poptGetArgs(context);
     if (rest)
@@ -160,37 +150,26 @@ static real* parse_parameters(int argc, const char** argv, int* paramnOut)
     return parameters;
 }
 
-static void cleanup_worker()
+static void freeSeparationFlags(SeparationFlags* sf)
 {
-	free(boinc_graphics);
-	free(star_points_file);
-	free(astronomy_parameter_file);
-	free(output_file);
+	free(sf->star_points_file);
+	free(sf->astronomy_parameter_file);
+	free(sf->output_file);
 }
 
-static void worker(int argc, const char** argv)
+static void worker(const SeparationFlags* sf, const real* parameters, const int number_parameters)
 {
-    real* parameters;
-    int number_parameters, ap_number_parameters;
+    int ap_number_parameters;
     ASTRONOMY_PARAMETERS ap = EMPTY_ASTRONOMY_PARAMETERS;
     BACKGROUND_PARAMETERS bgp = EMPTY_BACKGROUND_PARAMETERS;
     STREAMS streams = EMPTY_STREAMS;
 
-    parameters = parse_parameters(argc, argv, &number_parameters);
-    if (!parameters)
-    {
-        fprintf(stderr, "Could not parse parameters from the command line\n");
-        mw_finish(EXIT_FAILURE);
-    }
-
-    INTEGRAL_AREA* ias = read_parameters(astronomy_parameter_file, &ap, &bgp, &streams);
+    INTEGRAL_AREA* ias = read_parameters(sf->astronomy_parameter_file, &ap, &bgp, &streams);
     if (!ias)
     {
         fprintf(stderr,
                 "Error reading astronomy parameters from file '%s'\n",
-                astronomy_parameter_file);
-        free(parameters);
-        cleanup_worker();
+                sf->astronomy_parameter_file);
 		mw_finish(EXIT_FAILURE);
     }
 
@@ -203,39 +182,32 @@ static void worker(int argc, const char** argv)
                 "command line (%d) does not match the number of parameters "
                 "to be optimized in %s (%d)\n",
                 number_parameters,
-                astronomy_parameter_file,
+                sf->astronomy_parameter_file,
                 ap_number_parameters);
 
-        free(parameters);
         free(ias);
-        cleanup_worker();
         mw_finish(EXIT_FAILURE);
     }
 
     set_parameters(&ap, &bgp, &streams, parameters);
-    free(parameters);
 
-    real likelihood;
+    real likelihood_val;
     STREAM_CONSTANTS* sc = init_constants(&ap, &bgp, &streams);
     free_background_parameters(&bgp);
 
-    likelihood = evaluate(&ap, ias, &streams, sc, star_points_file);
+    likelihood_val = evaluate(&ap, ias, &streams, sc, sf->star_points_file);
 
-    fprintf(stderr, "<search_likelihood> %0.20f </search_likelihood>\n", likelihood);
-    fprintf(stderr, "<search_application> %s </search_application>\n", SEPARATION_APP_VERSION);
+    fprintf(stderr, "<search_likelihood> %0.20f </search_likelihood>\n", likelihood_val);
+    fprintf(stderr, "<search_application> " SEPARATION_APP_VERSION " </search_application>\n");
 
     free(ias);
     free(sc);
     free_streams(&streams);
-
-	cleanup_worker();
-
-    mw_finish(EXIT_SUCCESS);
 }
 
 #if BOINC_APPLICATION
 
-static int separation_init(int argc, const char* argv[])
+static int separation_init(const char* appname)
 {
     int rc;
 
@@ -252,8 +224,10 @@ static int separation_init(int argc, const char* argv[])
     #if defined(_WIN32) || defined(__APPLE__)
     rc = boinc_init_graphics(worker);
     #else
-    rc = boinc_init_graphics_lib(worker, argv[0]);
+    rc = boinc_init_graphics_lib(worker, appname);
     #endif /*  defined(_WIN32) || defined(__APPLE__) */
+  #else
+    #pragma unused(appname)
   #endif /* BOINC_APP_GRAPHICS */
 
   #if defined(_WIN32) && COMPUTE_ON_GPU
@@ -269,7 +243,7 @@ static int separation_init(int argc, const char* argv[])
 
 #else
 
-static int separation_init(int argc, const char* argv[])
+static int separation_init(const char* appname)
 {
   #pragma unused(argc)
   #pragma unused(argv)
@@ -285,11 +259,30 @@ static int separation_init(int argc, const char* argv[])
 
 int main(int argc, const char* argv[])
 {
-    int rc = separation_init(argc, argv);
+    int rc;
+    SeparationFlags sf;
+    real* parameters;
+    int number_parameters;
+
+    rc = separation_init(argv[0]);
     if (rc)
         exit(rc);
 
-    worker(argc, (const char**) argv);
+    parameters = parse_parameters(argc, argv, &number_parameters, &sf);
+    if (!parameters)
+    {
+        fprintf(stderr, "Could not parse parameters from the command line\n");
+        mw_finish(EXIT_FAILURE);
+    }
+
+
+
+    worker(&sf, parameters, number_parameters);
+
+    freeSeparationFlags(&sf);
+    free(parameters);
+
+    mw_finish(EXIT_SUCCESS);
 
     return rc;
 }

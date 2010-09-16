@@ -378,7 +378,7 @@ unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap,
 void set_parameters(ASTRONOMY_PARAMETERS* ap,
                     BACKGROUND_PARAMETERS* bgp,
                     STREAMS* streams,
-                    real* parameters)
+                    const real* parameters)
 {
     unsigned int i, j;
     unsigned int current = 0;

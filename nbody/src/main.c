@@ -41,10 +41,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define DEFAULT_HISTOGRAM_FILE  "histogram"
 
 
-/* If one of these options is null, use the default. */
-#define stringDefault(s, d) ((s) = (s) ? (s) : strdup((d)))
-
-
 #if !BOINC_APPLICATION
 static void nbodyBoincInit() { }
 #else
