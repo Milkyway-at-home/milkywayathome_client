@@ -23,6 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include "nbody.h"
 #include "json_params.h"
+#include "calc_params.h"
 #include "nbody_priv.h"
 #include "milkyway_util.h"
 
@@ -206,7 +207,7 @@ static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
 #endif /* BOINC_APPLICATION */
 
 /* Set context fields read from command line flags */
-inline static void nbodySetContextFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
+inline static void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
 {
     ctx->outputCartesian = nbf->outputCartesian;
     ctx->outputBodies    = nbf->printBodies;
@@ -221,7 +222,7 @@ inline static void nbodySetContextFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf
  * output. */
 void runNBodySimulation(json_object* obj,                 /* The main configuration */
                         const FitParams* fitParams,       /* For server's arguments */
-                        const NBodyFlags* nbf)           /* Misc. parameters to control output */
+                        const NBodyFlags* nbf)            /* Misc. parameters to control output */
 {
     NBodyCtx ctx         = EMPTY_CTX;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
@@ -229,9 +230,11 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
 
     real chisq;
     double ts = 0.0, te = 0.0;
-    int rc;
+    int rc = 0;
 
-    rc = getParamsFromJSON(&ctx, &ic, obj, fitParams, nbf->setSeed);
+    rc |= getParamsFromJSON(&ctx, &ic, obj);
+    rc |= setCtxConsts(&ctx, fitParams, &ic, nbf->setSeed);
+
     if (nbf->verifyOnly)
     {
         if (rc)
@@ -244,7 +247,7 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
     if (rc)
         fail("Failed to read input parameters file\n");
 
-    nbodySetContextFromFlags(&ctx, nbf);
+    nbodySetCtxFromFlags(&ctx, nbf);
 
     if (resolveCheckpoint(&ctx))
         fail("Failed to resolve checkpoint\n");

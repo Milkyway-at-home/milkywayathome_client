@@ -99,7 +99,7 @@ typedef struct _Parameter
 #define OBJ_PARAM(name, items) { name, nbody_type_object, NULL, NULL, NULL, FALSE, items }
 
 
-int getParamsFromJSON(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj, const FitParams* fitParams, const long setSeed);
+int getParamsFromJSON(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj);
 
 #ifdef __cplusplus
 }

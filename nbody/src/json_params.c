@@ -25,115 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 #include "milkyway_util.h"
 
-static int processHalo(Halo* h)
-{
-    if (h->type == TriaxialHalo)
-    {
-        const real phi = h->triaxAngle;
-        const real cp  = mw_cos(phi);
-        const real cps = sqr(cp);
-        const real sp  = mw_sin(phi);
-        const real sps = sqr(sp);
-
-        const real qxs = sqr(h->flattenX);
-        const real qys = sqr(h->flattenY);
-
-        h->c1 = (cps / qxs) + (sps / qys);
-        h->c2 = (cps / qys) + (sps / qxs);
-
-        /* 2 * sin(x) * cos(x) == sin(2 * x) */
-        h->c3 = mw_sin(2 * phi) * ((qys - qxs) / (qxs * qys));
-    }
-
-    return 0;
-}
-
-static int processPotential(Potential* p)
-{
-    return processHalo(&p->halo);
-}
-
-static int processModel(DwarfModel* mod)
-{
-    const real r0 = mod->scale_radius;
-
-    if (isnan(mod->time_dwarf) && isnan(mod->time_orbit))
-    {
-        warn("At least one of the evolution times must be specified for the dwarf model\n");
-        return 1;
-    }
-
-    switch (mod->type)
-    {
-        case DwarfModelPlummer:
-            /* If not set, and no default, it's calculated based on
-             * other parameters. */
-            if (isnan(mod->eps))
-                mod->eps = r0 / (10.0 * mw_sqrt((real) mod->nbody));
-
-            if (isnan(mod->timestep))
-                mod->timestep = sqr(1/10.0) * mw_sqrt((PI_4_3 * cube(r0)) / mod->mass);
-
-            /* for the orbit, use dt = dtnbody/2 to make sure we get enough orbit precision. */
-            if (isnan(mod->orbit_timestep))
-                mod->orbit_timestep = mod->timestep / 2.0;
-
-            break;
-
-        case DwarfModelKing:
-        case DwarfModelDehnen:
-        default:
-            warn("Unhandled model type: %d\n", mod->type);
-            return 1;
-    }
-
-    if (isnan(mod->time_orbit))
-        mod->time_orbit = mod->timestep / 2.0;
-
-    /* if (isnan(mod->time_dwarf))
-           ?????;
-    */
-    return 0;
-}
-
-static int processInitialConditions(const NBodyCtx* ctx, InitialConditions* ic)
-{
-    if (!ic->useGalC)
-    {
-        /* We aren't given galactic coordinates, so convert them */
-        if (ic->useRadians)
-            lbrToCartesian_rad(ctx, ic->position, ic->position);
-        else
-            lbrToCartesian(ctx, ic->position, ic->position);
-        ic->useGalC = TRUE;
-    }
-
-    return 0;
-}
-
-/* Calculate needed parameters from whatever we read in */
-/* TODO: I'm dissatisfied with having to throw these checks here at
- * the end */
-static int postProcess(NBodyCtx* ctx)
-{
-    int rc;
-
-    rc = processPotential(&ctx->pot);
-    rc |= processModel(&ctx->model);
-
-    /* These other pieces are dependent on the others being set up
-     * first */
-
-    ctx->freqout = inv(ctx->model.timestep);
-
-    if (ctx->model.nbody < 1)
-    {
-        warn("nbody = %d is absurd\n", ctx->model.nbody);
-        rc |= 1;
-    }
-
-    return rc;
-}
 
 /* also works for json_object_type */
 static const char* showNBodyType(nbody_type bt)
@@ -520,9 +411,8 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
  * destroys the object in the process. */
 int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
                       InitialConditions* ic,       /* Initial conditions to fill */
-                      json_object* fileObj,        /* Parsed JSON file */
-                      const FitParams* fitParams,  /* Hacked in overrides for using server's args */
-                      const long setSeed)
+                      json_object* fileObj)        /* Parsed JSON file */
+
 {
     /* Constants used for defaulting. Each field only used if
      * specified in the actual parameter tables. */
@@ -703,7 +593,7 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
         };
 
     json_object* hdr;
-    int rc = 0;
+    int rc;
 
     /* Check that this is actually one of our files */
     if (   !json_object_is_type(fileObj, nbody_type_object)
@@ -714,44 +604,10 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
     }
 
     /* loop through table of accepted sets of parameters */
-    rc |= readParameterGroup(parameters, hdr, NULL);
+    rc = readParameterGroup(parameters, hdr, NULL);
 
     /* deref the top level object should take care of freeing whatever's left */
     json_object_put(fileObj);
-
-    if (rc)  /* We don't want to try processing things if we didn't read successfully */
-        return rc;
-
-    /* Hack: Ignore these parameters in the file if using the command
-     * line arguments. */
-    if (fitParams->useFitParams)
-    {
-        ctx->model.mass         = fitParams->modelMass;
-        ctx->model.scale_radius = fitParams->modelRadius;
-        ctx->model.time_dwarf   = fitParams->simulationTime;
-        ctx->model.time_orbit   = fitParams->reverseOrbitTime;
-        ctx->seed               = setSeed;
-    }
-
-    rc |= postProcess(ctx);
-    rc |= processInitialConditions(ctx, ic);
-
-    /* A quick, and nonexhaustive debugging check */
-    assert(   !isnan(ic->position[0])
-           && !isnan(ic->position[1])
-           && !isnan(ic->position[2])
-           && !isnan(ic->velocity[0])
-           && !isnan(ic->velocity[1])
-           && !isnan(ic->velocity[2])
-           && !isnan(ctx->model.timestep)
-           && !isnan(ctx->model.orbit_timestep)
-           && !isnan(ctx->model.nbody)
-           && !isnan(ctx->model.mass)
-           && !isnan(ctx->pot.disk.mass)
-           && !isnan(ctx->pot.halo.vhalo)
-           && !isnan(ctx->pot.halo.scale_length)
-           && !isnan(ctx->pot.sphere[0].mass)
-           && !isnan(ctx->pot.sphere[0].scale));
 
     return rc;
 }
