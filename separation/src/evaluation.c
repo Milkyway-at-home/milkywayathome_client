@@ -207,10 +207,6 @@ real evaluate(const ASTRONOMY_PARAMETERS* ap,
     free_final_stream_integrals(&fsi);
     free(sg);
 
-  #if BOINC_APPLICATION && !SEPARATION_OPENCL
-    boinc_delete_file(CHECKPOINT_FILE);
-  #endif
-
     return likelihood_val;
 }
 

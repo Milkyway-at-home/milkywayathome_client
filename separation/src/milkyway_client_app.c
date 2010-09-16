@@ -32,6 +32,7 @@ typedef struct
 {
     char* star_points_file;
     char* astronomy_parameter_file;
+    int cleanup_checkpoint;
 } SeparationFlags;
 
 #define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL }
@@ -83,6 +84,14 @@ static real* parse_parameters(int argc, const char** argv, int* paramnOut, Separ
             POPT_ARG_STRING, &sf->astronomy_parameter_file,
             'a', "Astronomy parameter file", NULL
         },
+
+      #if BOINC_APPLICATION
+        {
+            "cleanup-checkpoint", 'c',
+            POPT_ARG_NONE, &sf->cleanup_checkpoint,
+            'c', "Delete checkpoint on successful", NULL
+        },
+      #endif /* BOINC_APPLICATION */
 
         {
             "p", 'p',
@@ -278,12 +287,15 @@ int main(int argc, const char* argv[])
         mw_finish(EXIT_FAILURE);
     }
 
-
-
     worker(&sf, parameters, number_parameters);
 
     freeSeparationFlags(&sf);
     free(parameters);
+
+  #if BOINC_APPLICATION && !SEPARATION_OPENCL
+    if (sf.cleanup_checkpoint)
+        boinc_delete_file(CHECKPOINT_FILE);
+  #endif
 
     mw_finish(EXIT_SUCCESS);
 
