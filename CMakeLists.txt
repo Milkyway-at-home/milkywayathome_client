@@ -94,8 +94,12 @@ if(MINGW)
   set(CMAKE_FIND_ROOT_PATH "${TAKEOFFGW_ROOT}/i686-pc-mingw32/sys-root/mingw")
 endif(MINGW)
 
-set(LIBM_USE_STATIC 1)
 if(BOINC_RELEASE)
+
+  if(NOT APPLE)
+    set(LIBM_USE_STATIC 1)
+  endif()
+
   set(POPT_USE_STATIC 1)
   set(JSON_C_USE_STATIC 1)
   set(LIBINTL_USE_STATIC 1)
@@ -137,8 +141,6 @@ if(APPLE)
              "You should specify a compiler by setting the CC environment variable or "
              "with -DCMAKE_C_COMPILER=/path/to/compiler. This should be /usr/bin/gcc usually.")
   endif()
-
-  find_library(COREFOUNDATION_LIBRARY CoreFoundation )
 
   if(BOINC_RELEASE)
     # We don't want to bother compiling twice until we need the universal binary for releases
