@@ -26,46 +26,36 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 int read_star_points(STAR_POINTS* sp, const char* filename)
 {
-    int retval;
-    FILE* data_file;
-#if BOINC_APPLICATION
-    char input_path[512];
+    int rc;
+    FILE* f;
 
-    retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
-    if (retval)
+    f = mwOpenResolved(filename, "r");
+    if (!f)
     {
-        fprintf(stderr, "APP: error resolving star points file %d\n", retval);
-        return retval;
-    }
-
-    data_file = boinc_fopen(input_path, "r");
-#else
-    data_file = fopen(filename, "r");
-#endif
-
-    if (!data_file)
-    {
-        fprintf(stderr, "Couldn't find input file %s.\n", filename);
+        perror("Opening star points file");
         return 1;
     }
 
-    retval = fread_star_points(data_file, sp);
-    fclose(data_file);
-    return retval;
+    rc = fread_star_points(f, sp);
+    fclose(f);
+
+    return rc;
 }
 
 int write_star_points(const char* filename, STAR_POINTS* sp)
 {
     int retval;
-    FILE* data_file = fopen(filename, "w");
-    if (!data_file)
+    FILE* f;
+
+    f = mw_fopen(filename, "w");
+    if (!f)
     {
-        fprintf(stderr, "Couldn't find input file %s.\n", filename);
+        perror("Writing star file");
         return 1;
     }
 
-    retval = fwrite_star_points(data_file, sp);
-    fclose(data_file);
+    retval = fwrite_star_points(f, sp);
+    fclose(f);
     return retval;
 }
 

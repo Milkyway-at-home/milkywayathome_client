@@ -30,7 +30,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #if BOINC_APPLICATION
 
-__attribute ((always_inline))
+__attribute__ ((always_inline))
 inline static real progress(const EVALUATION_STATE* es,
                             const INTEGRAL_AREA* ia,
                             unsigned int total_calc_probs)
@@ -43,7 +43,7 @@ inline static real progress(const EVALUATION_STATE* es,
     return (real)(i_prog + es->current_calc_probs) / total_calc_probs;
 }
 
-__attribute ((always_inline))
+__attribute__ ((always_inline))
 inline static void do_boinc_checkpoint(const EVALUATION_STATE* es,
                                        const INTEGRAL_AREA* ia,
                                        unsigned int total_calc_probs)
@@ -51,10 +51,7 @@ inline static void do_boinc_checkpoint(const EVALUATION_STATE* es,
     if (boinc_time_to_checkpoint())
     {
         if (write_checkpoint(es))
-        {
-            warn("Write checkpoint failed\n");
-            return;
-        }
+            fail("Write checkpoint failed\n");
         boinc_checkpoint_completed();
     }
 

@@ -85,13 +85,11 @@ static real* parse_parameters(int argc, const char** argv, int* paramnOut, Separ
             'a', "Astronomy parameter file", NULL
         },
 
-      #if BOINC_APPLICATION
         {
             "cleanup-checkpoint", 'c',
             POPT_ARG_NONE, &sf->cleanup_checkpoint,
             'c', "Delete checkpoint on successful", NULL
         },
-      #endif /* BOINC_APPLICATION */
 
         {
             "p", 'p',

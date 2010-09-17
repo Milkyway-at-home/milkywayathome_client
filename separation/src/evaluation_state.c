@@ -100,23 +100,16 @@ void print_evaluation_state(const EVALUATION_STATE* es)
 static const char checkpoint_header[] = "separation_checkpoint";
 static const char checkpoint_tail[] = "end_checkpoint";
 
-int read_checkpoint(EVALUATION_STATE* es)
+
+static int read_state(FILE* f, EVALUATION_STATE* es)
 {
     INTEGRAL* i;
-    char input_path[512];
-    char str_buf[sizeof(checkpoint_tail)];
-
-    if (boinc_resolve_filename(CHECKPOINT_FILE, input_path, sizeof(input_path)))
-        return 1;
-
-    FILE* f = boinc_fopen(input_path, "r");
-    if (!f)
-        return 1;
+    char str_buf[sizeof(checkpoint_header) + 1];
 
     fread(str_buf, sizeof(checkpoint_header), 1, f);
     if (strncmp(str_buf, checkpoint_header, sizeof(str_buf)))
     {
-        fprintf(stderr, "Failed to find header in checkpoint file\n");
+        warn("Failed to find header in checkpoint file\n");
         return 1;
     }
 
@@ -134,33 +127,40 @@ int read_checkpoint(EVALUATION_STATE* es)
     }
 
     fread(str_buf, sizeof(checkpoint_tail), 1, f);
-    if (strcmp(str_buf, checkpoint_tail))
+    if (strncmp(str_buf, checkpoint_tail, sizeof(str_buf)))
     {
-        fprintf(stderr, "Failed to find tail in checkpoint file\n");
+        warn("Failed to find tail in checkpoint file\n");
         return 1;
     }
-
-    fclose(f);
 
     return 0;
 }
 
-int write_checkpoint(const EVALUATION_STATE* es)
+int read_checkpoint(EVALUATION_STATE* es)
 {
-    INTEGRAL* i;
-    char output_path[512];
+    int rc;
     FILE* f;
-    const INTEGRAL* endi = es->integrals + es->number_integrals;
 
-    /* Avoid corrupting the checkpoint file by writing to a temporary file, and moving that */
-    boinc_resolve_filename(CHECKPOINT_FILE_TMP, output_path, sizeof(output_path));
-
-    f = boinc_fopen(output_path, "wb");
+    f = mwOpenResolved(CHECKPOINT_FILE, "rb");
     if (!f)
     {
-        fprintf(stderr, "APP: error writing checkpoint (opening checkpoint file)\n");
+        perror("Opening checkpoint");
         return 1;
     }
+
+    rc = read_state(f, es);
+    if (rc)
+        warn("Failed to read state\n");
+
+    fclose(f);
+
+    return rc;
+}
+
+inline static void write_state(FILE* f, const EVALUATION_STATE* es)
+{
+    INTEGRAL* i;
+    const INTEGRAL* endi = es->integrals + es->number_integrals;
 
     fwrite(checkpoint_header, sizeof(checkpoint_header), 1, f);
 
@@ -178,15 +178,28 @@ int write_checkpoint(const EVALUATION_STATE* es)
     }
 
     fwrite(checkpoint_tail, sizeof(checkpoint_tail), 1, f);
+}
 
-    fclose(f);
+int write_checkpoint(const EVALUATION_STATE* es)
+{
+    FILE* f;
 
-    if (boinc_rename(CHECKPOINT_FILE_TMP, CHECKPOINT_FILE))
+    /* Avoid corrupting the checkpoint file by writing to a temporary file, and moving that */
+    f = mw_fopen(CHECKPOINT_FILE_TMP, "wb");
+    if (!f)
     {
-        fprintf(stderr, "Failed to update checkpoint file\n");
-        mw_finish(EXIT_FAILURE);
+        perror("Opening checkpoint temp");
+        return 1;
     }
 
+    write_state(f, es);
+    fclose(f);
+
+    if (mwRename(CHECKPOINT_FILE_TMP, CHECKPOINT_FILE))
+    {
+        perror("Failed to update checkpoint file");
+        return 1;
+    }
 
     return 0;
 }
