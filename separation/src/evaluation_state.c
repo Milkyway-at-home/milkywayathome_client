@@ -26,6 +26,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "evaluation_state.h"
 #include "milkyway_util.h"
 
+static char resolvedCheckpointPath[1024];
+
+
 void initialize_integral(INTEGRAL* integral, unsigned int number_streams)
 {
     integral->background_integral = 0.0;
@@ -195,7 +198,7 @@ int write_checkpoint(const EVALUATION_STATE* es)
     write_state(f, es);
     fclose(f);
 
-    if (mwRename(CHECKPOINT_FILE_TMP, CHECKPOINT_FILE))
+    if (mwRename(CHECKPOINT_FILE_TMP, resolvedCheckpointPath))
     {
         perror("Failed to update checkpoint file");
         return 1;
@@ -205,5 +208,50 @@ int write_checkpoint(const EVALUATION_STATE* es)
 }
 
 #endif /* BOINC_APPLICATION */
+
+#if BOINC_APPLICATION && !SEPARATION_OPENCL
+
+int resolveCheckpoint()
+{
+    int rc;
+
+    rc = boinc_resolve_filename(CHECKPOINT_FILE, resolvedCheckpointPath, sizeof(resolvedCheckpointPath));
+    if (rc)
+        warn("Error resolving checkpoint file '%s': %d\n", CHECKPOINT_FILE, rc);
+    return rc;
+}
+
+int maybeResume(EVALUATION_STATE* es)
+{
+    if (boinc_file_exists(resolvedCheckpointPath))
+    {
+        mw_report("Checkpoint exists. Attempting to resume from it\n");
+
+        if (read_checkpoint(es))
+        {
+            mw_report("Reading checkpoint failed\n");
+            mw_remove(CHECKPOINT_FILE);
+            return 1;
+        }
+        else
+            mw_report("Successfully resumed checkpoint\n");
+    }
+
+    return 0;
+}
+
+#else
+
+int resolveCheckpoint()
+{
+    return 0;
+}
+
+int maybeResume(EVALUATION_STATE* es)
+{
+    return 0;
+}
+
+#endif /* BOINC_APPLICATION && !SEPARATION_OPENCL */
 
 

@@ -56,6 +56,8 @@ void free_evaluation_state(EVALUATION_STATE* es);
 
 int write_checkpoint(const EVALUATION_STATE* es);
 int read_checkpoint(EVALUATION_STATE* es);
+int resolveCheckpoint();
+int maybeResume(EVALUATION_STATE* es);
 
 
 #endif /* _EVALUATION_STATE_H_ */

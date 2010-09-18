@@ -158,35 +158,6 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
     }
 }
 
-#if BOINC_APPLICATION && !SEPARATION_OPENCL
-
-static int maybeResume(EVALUATION_STATE* es)
-{
-    if (boinc_file_exists(CHECKPOINT_FILE))
-    {
-        mw_report("Checkpoint exists. Attempting to resume from it\n");
-
-        if (read_checkpoint(es))
-        {
-            mw_report("Reading checkpoint failed\n");
-            mw_remove(CHECKPOINT_FILE);
-            return 1;
-        }
-        else
-            mw_report("Successfully resumed checkpoint\n");
-    }
-
-    return 0;
-}
-
-#else
-
-static int maybeResume(EVALUATION_STATE* es)
-{
-    return 0;
-}
-
-#endif /* BOINC_APPLICATION && !SEPARATION_OPENCL */
 real evaluate(const ASTRONOMY_PARAMETERS* ap,
               const INTEGRAL_AREA* ias,
               const STREAMS* streams,
@@ -201,6 +172,9 @@ real evaluate(const ASTRONOMY_PARAMETERS* ap,
 
     initialize_state(ap, &es);
     sg = get_stream_gauss(ap->convolve);
+
+    if (resolveCheckpoint())
+        fail("Failed to resolve checkpoint file '%s'\n", CHECKPOINT_FILE);
 
     if (maybeResume(&es))
         fail("Failed to resume checkpoint\n");
