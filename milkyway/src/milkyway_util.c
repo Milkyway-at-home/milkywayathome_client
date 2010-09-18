@@ -59,7 +59,7 @@ char* mwReadFile(const char* filename)
     size_t readSize;
     char* buf;
 
-    f = mw_fopen(filename, "r");
+    f = mw_fopen(filename, "rb");
     if (!f)
     {
         warn("Failed to open file '%s' for reading\n", filename);
