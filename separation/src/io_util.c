@@ -33,7 +33,8 @@ void fwrite_double_array(FILE *file, const char *array_name, real* array_t, size
 {
 	size_t i;
 
-	fprintf(file, "%s[%u]: ", array_name, size);
+    /* Should use %zu for size_t but Windows is broken */
+	fprintf(file, "%s[%lu]: ", array_name, (unsigned long) size);
 	for (i = 0; i < size; i++)
     {
 		fprintf(file, "%.20lf", array_t[i]);
@@ -46,7 +47,7 @@ void fwrite_double_array(FILE *file, const char *array_name, real* array_t, size
 void fwrite_int_array(FILE* file, const char* array_name, int* array_t, size_t size)
 {
 	size_t i;
-	fprintf(file, "%s[%u]: ", array_name, size);
+	fprintf(file, "%s[%lu]: ", array_name, (unsigned long) size);
 	for (i = 0; i < size; i++)
     {
 		if (i == 0)

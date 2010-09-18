@@ -255,7 +255,6 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
     real star_prob;
     real bg_prob, bg, reff_xr_rp3;
     LB lb;
-    vector current_star;
 
     unsigned int num_zero = 0;
     unsigned int bad_jacobians = 0;
