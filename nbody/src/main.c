@@ -42,8 +42,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #if !BOINC_APPLICATION
+
 static void nbodyBoincInit() { }
+static void nbodyPrintVersion() { }
+
 #else
+
+static void nbodyPrintVersion()
+{
+    warn("<search_application>" BOINC_NBODY_APP_VERSION "</search_application>\n");
+}
 
 #if BOINC_DEBUG
 /* Use BOINC, but prevent it from redirecting stderr to a file, which
@@ -417,6 +425,7 @@ int main(int argc, const char* argv[])
 
     specialSetup();
     nbodyBoincInit();
+    nbodyPrintVersion();
 
     obj = readParameters(argc, argv, &fitParams, &nbf);
 
