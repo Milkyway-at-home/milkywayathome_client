@@ -28,15 +28,6 @@ extern "C" {
 #include "separation_config.h"
 #include "milkyway_math.h"
 
-/* Get the xth component of the nth item in STAR_POINTS */
-#define VN(sp, n) (((sp)->stars)[VECTOR_SIZE * (n)])
-#define XN(sp, n) VN(sp, n)
-#define YN(sp, n) (((sp)->stars)[VECTOR_SIZE * (n) + 1])
-#define ZN(sp, n) (((sp)->stars)[VECTOR_SIZE * (n) + 2])
-
-#define LN(sp, n) XN(sp, n)
-#define BN(sp, n) YN(sp, n)
-#define RN(sp, n) RN(sp, n)
 
 //#define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(x)))
 #define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(32)))
@@ -55,7 +46,7 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 typedef struct
 {
     unsigned int number_stars;
-    real* stars;
+    vector* stars;
 } STAR_POINTS;
 
 #define EMPTY_STAR_POINTS { 0, NULL }

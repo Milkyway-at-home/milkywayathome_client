@@ -24,6 +24,42 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "star_points.h"
 #include "milkyway_util.h"
 
+#if DOUBLEPREC
+  #define STAR_POINTS_READ_STR "%lf %lf %lf\n"
+#else
+  #define STAR_POINTS_READ_STR "%f %f %f\n"
+#endif /* DOUBLEPREC */
+
+static int fread_star_points(FILE* data_file, STAR_POINTS* sp)
+{
+    real x, y, z;
+    unsigned int i;
+
+    if (fscanf(data_file, "%u\n", &sp->number_stars) != 1)
+    {
+        perror("reading sp->number_stars");
+        warn("Failed to read number of star points from file\n");
+        return 1;
+    }
+
+    sp->stars = mallocSafe(sizeof(vector) * sp->number_stars);
+    for (i = 0; i < sp->number_stars; ++i)
+    {
+        if (fscanf(data_file, STAR_POINTS_READ_STR, &x, &y, &z) != 3)
+        {
+            perror("star points");
+            warn("Failed to read star points item\n");
+            return 1;
+        }
+
+        X(sp->stars[i]) = x;
+        Y(sp->stars[i]) = y;
+        Z(sp->stars[i]) = z;
+    }
+
+    return 0;
+}
+
 int read_star_points(STAR_POINTS* sp, const char* filename)
 {
     int rc;
@@ -40,58 +76,6 @@ int read_star_points(STAR_POINTS* sp, const char* filename)
     fclose(f);
 
     return rc;
-}
-
-int write_star_points(const char* filename, STAR_POINTS* sp)
-{
-    int retval;
-    FILE* f;
-
-    f = mw_fopen(filename, "w");
-    if (!f)
-    {
-        perror("Writing star file");
-        return 1;
-    }
-
-    retval = fwrite_star_points(f, sp);
-    fclose(f);
-    return retval;
-}
-
-#if DOUBLEPREC
-  #define STAR_POINTS_READ_STR "%lf %lf %lf\n"
-#else
-  #define STAR_POINTS_READ_STR "%f %f %f\n"
-#endif /* DOUBLEPREC */
-
-int fread_star_points(FILE* data_file, STAR_POINTS* sp)
-{
-    unsigned int i;
-    if (!fscanf(data_file, "%u\n", &sp->number_stars))
-    {
-        fprintf(stderr, "Failed to read star points file\n");
-        mw_finish(EXIT_FAILURE);
-    }
-
-    sp->stars = (real*) mallocSafe(sizeof(real) * VECTOR_SIZE * sp->number_stars);
-    for (i = 0; i < sp->number_stars; ++i)
-    {
-        fscanf(data_file, STAR_POINTS_READ_STR, &XN(sp, i), &YN(sp, i), &ZN(sp, i));
-    }
-
-    return 0;
-}
-
-int fwrite_star_points(FILE* data_file, STAR_POINTS* sp)
-{
-    unsigned int i;
-    fprintf(data_file, "%u\n", sp->number_stars);
-
-    for (i = 0; i < sp->number_stars; i++)
-        fprintf(data_file, STAR_POINTS_READ_STR, XN(sp, i), YN(sp, i), ZN(sp, i));
-
-    return 0;
 }
 
 void free_star_points(STAR_POINTS* sp)
