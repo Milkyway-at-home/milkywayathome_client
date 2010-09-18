@@ -55,60 +55,6 @@ void free_streams(STREAMS* streams)
     free(streams->stream_weight);
 }
 
-INTEGRAL_AREA* read_parameters(const char* filename,
-                               ASTRONOMY_PARAMETERS* ap,
-                               BACKGROUND_PARAMETERS* bgp,
-                               STREAMS* streams)
-{
-#if BOINC_APPLICATION
-    char input_path[512];
-    int retval = boinc_resolve_filename(filename, input_path, sizeof(input_path));
-
-    if (retval)
-    {
-        fprintf(stderr, "APP: error resolving parameters file [%s], %d\n", filename, retval);
-        return NULL;
-    }
-
-    FILE* data_file = boinc_fopen(input_path, "r");
-#else
-    FILE* data_file = fopen(filename, "r");
-#endif
-    if (!data_file)
-    {
-        fprintf(stderr, "Couldn't find input file [%s] to read astronomy parameters.\n", filename);
-        return NULL;
-    }
-
-    INTEGRAL_AREA* integral = fread_parameters(data_file, ap, bgp, streams);
-    if (ap->parameters_version < 0)
-    {
-        free(integral);
-        fprintf(stderr, "Input file [%s] did not specify parameter file version.\n", filename);
-        return NULL;
-    }
-    fclose(data_file);
-    return integral;
-}
-
-int write_parameters(const char* filename,
-                     ASTRONOMY_PARAMETERS* ap,
-                     INTEGRAL_AREA* ias,
-                     BACKGROUND_PARAMETERS* bgp,
-                     STREAMS* streams)
-{
-    FILE* data_file = fopen(filename, "w");
-    if (!data_file)
-    {
-        fprintf(stderr, "Couldn't find output file [%s] to write astronomy parameters.\n", filename);
-        return 1;
-    }
-
-    fwrite_parameters(data_file, ap, ias, bgp, streams);
-    fclose(data_file);
-    return 0;
-}
-
 static void calc_integral_step_sizes(INTEGRAL_AREA* i)
 {
     i->r_step_size = (i->r_max - i->r_min) / (real)i->r_steps;
@@ -116,10 +62,10 @@ static void calc_integral_step_sizes(INTEGRAL_AREA* i)
     i->nu_step_size = (i->nu_max - i->nu_min) / (real)i->nu_steps;
 }
 
-INTEGRAL_AREA* fread_parameters(FILE* file,
-                                ASTRONOMY_PARAMETERS* ap,
-                                BACKGROUND_PARAMETERS* bgp,
-                                STREAMS* streams)
+static INTEGRAL_AREA* fread_parameters(FILE* file,
+                                       ASTRONOMY_PARAMETERS* ap,
+                                       BACKGROUND_PARAMETERS* bgp,
+                                       STREAMS* streams)
 {
     unsigned int i, temp;
     int retval;
@@ -251,10 +197,11 @@ INTEGRAL_AREA* fread_parameters(FILE* file,
 
     /* Calculate total probability calculations for checkpointing */
 
+    const INTEGRAL_AREA* ia;
     unsigned int total_calc_probs = 0;
     for (i = 0; i < ap->number_integrals; ++i)
     {
-        const INTEGRAL_AREA* ia = &integral[i];
+        ia = &integral[i];
         total_calc_probs += ia->mu_steps * ia->nu_steps * ia->r_steps;
     }
 
@@ -262,11 +209,38 @@ INTEGRAL_AREA* fread_parameters(FILE* file,
     return integral;
 }
 
-void fwrite_parameters(FILE* file,
-                       ASTRONOMY_PARAMETERS* ap,
-                       INTEGRAL_AREA* integral,
-                       BACKGROUND_PARAMETERS* bgp,
-                       STREAMS* streams)
+INTEGRAL_AREA* read_parameters(const char* filename,
+                               ASTRONOMY_PARAMETERS* ap,
+                               BACKGROUND_PARAMETERS* bgp,
+                               STREAMS* streams)
+{
+
+    FILE* f;
+    INTEGRAL_AREA* integral;
+
+    f = mwOpenResolved(filename, "r");
+    if (!f)
+    {
+        perror("Opening astronomy parameters file");
+        return NULL;
+    }
+
+    integral = fread_parameters(f, ap, bgp, streams);
+    if (ap->parameters_version < 0)
+    {
+        free(integral);
+        warn("Input file [%s] did not specify parameter file version.\n", filename);
+        return NULL;
+    }
+    fclose(f);
+    return integral;
+}
+
+static void fwrite_parameters(FILE* file,
+                              ASTRONOMY_PARAMETERS* ap,
+                              INTEGRAL_AREA* integral,
+                              BACKGROUND_PARAMETERS* bgp,
+                              STREAMS* streams)
 {
     unsigned int i;
 
@@ -346,6 +320,24 @@ void fwrite_parameters(FILE* file,
                 integral[i].nu_max,
                 integral[i].nu_steps);
     }
+}
+
+int write_parameters(const char* filename,
+                     ASTRONOMY_PARAMETERS* ap,
+                     INTEGRAL_AREA* ias,
+                     BACKGROUND_PARAMETERS* bgp,
+                     STREAMS* streams)
+{
+    FILE* f = mw_fopen(filename, "w");
+    if (!f)
+    {
+        fprintf(stderr, "Couldn't find output file [%s] to write astronomy parameters.\n", filename);
+        return 1;
+    }
+
+    fwrite_parameters(f, ap, ias, bgp, streams);
+    fclose(f);
+    return 0;
 }
 
 unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap,

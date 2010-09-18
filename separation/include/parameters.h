@@ -37,22 +37,11 @@ INTEGRAL_AREA* read_parameters(const char* file,
                                BACKGROUND_PARAMETERS* bgp,
                                STREAMS* streams);
 
-INTEGRAL_AREA* fread_parameters(FILE* file,
-                                ASTRONOMY_PARAMETERS* ap,
-                                BACKGROUND_PARAMETERS* bgp,
-                                STREAMS* streams);
-
 int write_parameters(const char* file,
                      ASTRONOMY_PARAMETERS* ap,
                      INTEGRAL_AREA* integral,
                      BACKGROUND_PARAMETERS* bgp,
                      STREAMS* streams);
-
-void fwrite_parameters(FILE* file,
-                       ASTRONOMY_PARAMETERS* ap,
-                       INTEGRAL_AREA* integral,
-                       BACKGROUND_PARAMETERS* bgp,
-                       STREAMS* streams);
 
 void set_parameters(ASTRONOMY_PARAMETERS* ap,
                     BACKGROUND_PARAMETERS* bgp,
