@@ -137,7 +137,7 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         ia = &ias[es->current_integral];
         es->current_calc_probs = completed_integral_progress(ias, es);
 
-        t1 = get_time();
+        t1 = mwGetTime();
       #if SEPARATION_OPENCL
         #warning "USING OPENCL\n"
         integral->background_integral = integrateCL(ap, ia, sc, sg, integral->probs);
@@ -146,7 +146,7 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         integral->background_integral = integrate(ap, ia, sc, sg, integral->probs, es);
       #endif /* SEPARATION_CL */
 
-        t2 = get_time();
+        t2 = mwGetTime();
         printf("Time = %.20g\n", t2 - t1);
 
         if (!isnan(integral->background_integral))

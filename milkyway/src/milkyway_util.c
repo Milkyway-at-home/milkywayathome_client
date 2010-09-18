@@ -117,7 +117,7 @@ FILE* mwOpenResolved(const char* filename, const char* mode)
 
 #ifdef _WIN32
 
-double get_time()
+double mwGetTime()
 {
     LARGE_INTEGER t, f;
     QueryPerformanceCounter(&t);
@@ -127,7 +127,7 @@ double get_time()
 
 #else
 
-double get_time()
+double mwGetTime()
 {
     struct timeval t;
     struct timezone tzp;

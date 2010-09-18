@@ -80,7 +80,7 @@ FILE* mwOpenResolved(const char* filename, const char* mode);
 
 int mwRename(const char* oldf, const char* newf);
 
-double get_time();
+double mwGetTime();
 
 #if defined(__SSE__) && DISABLE_DENORMALS
 int mwDisableDenormalsSSE();

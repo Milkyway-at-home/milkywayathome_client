@@ -253,14 +253,14 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
     setupRun(&ctx, &ic, &st);
 
     if (nbf->printTiming)     /* Time the body of the calculation */
-        ts = get_time();
+        ts = mwGetTime();
 
     runSystem(&ctx, &st);
     warn("Simulation complete\n");
 
     if (nbf->printTiming)
     {
-        te = get_time();
+        te = mwGetTime();
         printf("Elapsed time for run = %g\n", te - ts);
     }
 
