@@ -186,9 +186,7 @@ static json_object* readJSONFileOrStr(const char* inputFile, const char* inputSt
 
 static int handleServerArguments(FitParams* fitParams, const char** rest, const unsigned int numParams)
 {
-    unsigned int i;
     real* parameters = NULL;
-    unsigned int paramCount = 0;
 
     fitParams->useFitParams = TRUE;
 
@@ -196,34 +194,11 @@ static int handleServerArguments(FitParams* fitParams, const char** rest, const 
      * read everything and have the right number before trying to
      * do anything with them */
 
-    while (rest[++paramCount]);  /* Count number of parameters */
-
-    if (numParams == 0)
+    parameters = mwReadRestArgs(rest, numParams, NULL);
+    if (!parameters)
     {
-        warn("numParams = 0 makes no sense\n");
+        warn("Failed to read server arguments\n");
         return 1;
-    }
-
-    /* Make sure the number of extra parameters matches the number
-     * we were told to expect. */
-    if (numParams != paramCount)
-    {
-        warn("Parameter count mismatch: Expected %u, got %u\n", numParams, paramCount);
-        return 1;
-    }
-
-    parameters = (real*) mallocSafe(sizeof(real) * numParams);
-
-    errno = 0;
-    for (i = 0; i < numParams; ++i)
-    {
-        parameters[i] = (real) strtod(rest[i], NULL);
-        if (errno)
-        {
-            perror("Error parsing command line fit parameters");
-            free(parameters);
-            return 1;
-        }
     }
 
     setFitParams(fitParams, parameters);

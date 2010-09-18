@@ -26,6 +26,7 @@ extern "C" {
 #endif
 
 #include "milkyway_config.h"
+#include "milkyway_math.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -82,6 +83,11 @@ FILE* mwOpenResolved(const char* filename, const char* mode);
 int mwRename(const char* oldf, const char* newf);
 
 double mwGetTime();
+
+/* Read array of strings into doubles. Returns NULL on failure. */
+real* mwReadRestArgs(const char** rest,            /* String array as returned by poptGetArgs() */
+                     const unsigned int numParams, /* Expected number of parameters */
+                     unsigned int* paramCountOut); /* (Optional) return count of actual number parameters that could have been read */
 
 #if defined(__SSE__) && DISABLE_DENORMALS
 int mwDisableDenormalsSSE();

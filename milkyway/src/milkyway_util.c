@@ -28,8 +28,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 
 #include "milkyway_util.h"
+#include "milkyway_math.h"
 
 #ifdef __SSE__
   #include <xmmintrin.h>
@@ -206,5 +208,57 @@ int mwDisableDenormalsSSE()
 
 #endif /* defined(__SSE__) && DISABLE_DENORMALS */
 
+/* From the extra parameters, read them as doubles */
+real* mwReadRestArgs(const char** rest, const unsigned int numParams, unsigned int* pCountOut)
+{
+    unsigned int i;
+    real* parameters = NULL;
+    unsigned int paramCount = 0;
+
+    /* Read through all the server arguments, and make sure we can
+     * read everything and have the right number before trying to
+     * do anything with them */
+
+    if (numParams == 0)
+    {
+        warn("numParams = 0 makes no sense\n");
+        return NULL;
+    }
+
+    if (!rest)
+    {
+        warn("%s: got rest == NULL\n", __func__);
+        return NULL;
+    }
+
+    while (rest[++paramCount]);  /* Count number of parameters */
+
+    /* Make sure the number of extra parameters matches the number
+     * we were told to expect. */
+    if (numParams != paramCount)
+    {
+        warn("Parameter count mismatch: Expected %u, got %u\n", numParams, paramCount);
+        return NULL;
+    }
+
+    parameters = (real*) mallocSafe(sizeof(real) * numParams);
+
+    errno = 0;
+    for (i = 0; i < numParams; ++i)
+    {
+        parameters[i] = (real) strtod(rest[i], NULL);
+        if (errno)
+        {
+            perror("Error parsing command line fit parameters");
+            free(parameters);
+            return NULL;
+        }
+    }
+
+    if (pCountOut)
+        *pCountOut = paramCount;
+
+    return parameters;
+}
 
 

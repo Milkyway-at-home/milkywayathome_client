@@ -20,7 +20,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <popt.h>
-#include <errno.h>
 #include <stdio.h>
 
 #include "separation.h"
@@ -36,6 +35,12 @@ typedef struct
 } SeparationFlags;
 
 #define EMPTY_SEPARATION_FLAGS { NULL, NULL, 0 }
+
+static void freeSeparationFlags(SeparationFlags* sf)
+{
+	free(sf->star_points_file);
+	free(sf->ap_file);
+}
 
 /* Use hardcoded names if files not specified */
 static void setDefaultFiles(SeparationFlags* sf)
@@ -61,12 +66,11 @@ void AppInvalidParameterHandler(const wchar_t* expression,
 
 
 /* Returns the newly allocated array of parameters */
-static real* parse_parameters(int argc, const char** argv, int* paramnOut, SeparationFlags* sf)
+static real* parse_parameters(int argc, const char** argv, unsigned int* paramnOut, SeparationFlags* sf)
 {
     poptContext context;
     int o;
     real* parameters = NULL;
-    unsigned int i, paramn = 0;
     static unsigned int numParams;
     static int server_params = 0;
     static const char** rest;
@@ -119,51 +123,23 @@ static real* parse_parameters(int argc, const char** argv, int* paramnOut, Separ
     if ( o < -1 )
     {
         poptPrintHelp(context, stderr, 0);
+        freeSeparationFlags(sf);
         mw_finish(EXIT_FAILURE);
     }
 
     rest = poptGetArgs(context);
-    if (rest)
+    parameters = mwReadRestArgs(rest, numParams, paramnOut);
+    if (!parameters)
     {
-        while (rest[++paramn]);  /* Count number of parameters */
-
-        MW_DEBUG("%u arguments leftover\n", paramn);
-
-        if (server_params && (paramn != numParams))
-        {
-            poptFreeContext(context);
-            fprintf(stderr, "Parameter count mismatch: Expected %u, got %u\n", numParams, paramn);
-            mw_finish(EXIT_FAILURE);
-        }
-
-        parameters = (real*) mallocSafe(sizeof(real) * paramn);
-        errno = 0;
-        for (i = 0; i < paramn; ++i)
-        {
-            parameters[i] = (real) strtod(rest[i], NULL);
-
-            if (errno)
-            {
-                perror("error parsing command line parameters");
-                poptPrintHelp(context, stderr, 0);
-                free(parameters);
-                poptFreeContext(context);
-                mw_finish(EXIT_FAILURE);
-            }
-        }
+        warn("Failed to read server arguments\n");
+        freeSeparationFlags(sf);
+        poptFreeContext(context);
+        mw_finish(EXIT_FAILURE);
     }
 
     poptFreeContext(context);
-
     setDefaultFiles(sf);
-    *paramnOut = paramn;
     return parameters;
-}
-
-static void freeSeparationFlags(SeparationFlags* sf)
-{
-	free(sf->star_points_file);
-	free(sf->ap_file);
 }
 
 static INTEGRAL_AREA* prepare_parameters(const char* ap_file,
@@ -314,7 +290,7 @@ int main(int argc, const char* argv[])
     int rc;
     SeparationFlags sf = EMPTY_SEPARATION_FLAGS;
     real* parameters;
-    int number_parameters;
+    unsigned int number_parameters;
 
     rc = separation_init(argv[0]);
     printVersion();
