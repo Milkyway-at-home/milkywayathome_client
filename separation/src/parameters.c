@@ -159,10 +159,7 @@ static INTEGRAL_AREA* fread_parameters(FILE* file,
     ap->number_integrals++;
     if (ap->number_integrals > 1)
     {
-        integral = (INTEGRAL_AREA*) realloc(integral, sizeof(INTEGRAL_AREA) * ap->number_integrals);
-        if (!integral)
-            fail("realloc failed\n");
-
+        integral = (INTEGRAL_AREA*) reallocSafe(integral, sizeof(INTEGRAL_AREA) * ap->number_integrals);
         for (i = 1; i < ap->number_integrals; i++)
         {
             fscanf(file,

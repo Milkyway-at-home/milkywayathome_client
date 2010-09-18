@@ -65,6 +65,7 @@ extern "C" {
 
 void* mallocSafe(size_t size);
 void* callocSafe(size_t count, size_t size);
+void* reallocSafe(void* ptr, size_t size);
 
 
 #define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)

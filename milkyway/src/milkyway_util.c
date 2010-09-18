@@ -52,6 +52,14 @@ void* mallocSafe(size_t size)
     return mem;
 }
 
+void* reallocSafe(void* ptr, size_t size)
+{
+    void* mem = (void*) realloc(ptr, size);
+    if (mem == NULL)
+        fail("realloc failed: %lu bytes\n", (unsigned long) size);
+    return mem;
+}
+
 char* mwReadFile(const char* filename)
 {
     FILE* f;
