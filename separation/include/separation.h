@@ -66,6 +66,11 @@ extern "C" {
     #include <str_util.h>
   #endif
 
+  #ifdef _WIN32
+    #define WIN32_LEAN_AND_MEAN
+    #define VC_EXTRALEAN
+    #include <windows.h>
+  #endif /* _WIN32 */
 #endif /* BOINC_APPLICATION */
 
 #ifdef __cplusplus

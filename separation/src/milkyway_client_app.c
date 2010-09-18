@@ -21,6 +21,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <popt.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "separation.h"
 
@@ -38,8 +39,8 @@ typedef struct
 
 static void freeSeparationFlags(SeparationFlags* sf)
 {
-	free(sf->star_points_file);
-	free(sf->ap_file);
+    free(sf->star_points_file);
+    free(sf->ap_file);
 }
 
 /* Use hardcoded names if files not specified */
@@ -50,15 +51,16 @@ static void setDefaultFiles(SeparationFlags* sf)
 }
 
 
-#ifdef _WIN32
+#if defined(_WIN32)  && 0 
+/* FIXME: undefined reference to _set_invalid_parameter_handler */
 void AppInvalidParameterHandler(const wchar_t* expression,
                                 const wchar_t* function,
                                 const wchar_t* file,
                                 unsigned int line,
                                 uintptr_t pReserved )
 {
-    fprintf(stderr, "Invalid parameter detected in function %s. File: %s Line: %d\n", function, file, line);
-    fprintf(stderr, "Expression: %s\n", expression);
+    fprintf(stderr, "Invalid parameter detected in function %ls. File: %ls Line: %d\n", function, file, line);
+    fprintf(stderr, "Expression: %ls\n", expression);
     // Cause a Debug Breakpoint.
     DebugBreak();
 }
@@ -247,6 +249,12 @@ static int separation_init(const char* appname)
   #else
     #pragma unused(appname)
   #endif /* BOINC_APP_GRAPHICS */
+
+  #if defined(_WIN32) && 0
+    /* FIXME */
+    _set_invalid_parameter_handler(AppInvalidParameterHandler);
+  #endif /* _WIN32 */
+
 
   #if defined(_WIN32) && COMPUTE_ON_GPU
     //make the windows GPU app have a higher priority
