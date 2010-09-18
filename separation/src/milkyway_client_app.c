@@ -206,9 +206,10 @@ static void worker(const SeparationFlags* sf, const real* parameters, const int 
     free_background_parameters(&bgp);
 
     likelihood_val = evaluate(&ap, ias, &streams, sc, sf->star_points_file);
+    if (isnan(likelihood_val))
+        fail("Failed to calculate likelihood\n");
 
-    fprintf(stderr, "<search_likelihood> %0.20f </search_likelihood>\n", likelihood_val);
-    fprintf(stderr, "<search_application> " SEPARATION_APP_VERSION " </search_application>\n");
+    warn("<search_likelihood> %0.20f </search_likelihood>\n", likelihood_val);
 
     free(ias);
     free(sc);
@@ -251,6 +252,11 @@ static int separation_init(const char* appname)
     return rc;
 }
 
+static void printVersion()
+{
+    warn("<search_application> " SEPARATION_APP_VERSION " </search_application>\n");
+}
+
 #else
 
 static int separation_init(const char* appname)
@@ -265,6 +271,11 @@ static int separation_init(const char* appname)
     return 0;
 }
 
+static void printVersion()
+{
+    warn("<search_application> " SEPARATION_APP_VERSION " </search_application>\n");
+}
+
 #endif /* BOINC_APPLICATION */
 
 int main(int argc, const char* argv[])
@@ -275,15 +286,13 @@ int main(int argc, const char* argv[])
     int number_parameters;
 
     rc = separation_init(argv[0]);
+    printVersion();
     if (rc)
         exit(rc);
 
     parameters = parse_parameters(argc, argv, &number_parameters, &sf);
     if (!parameters)
-    {
-        fprintf(stderr, "Could not parse parameters from the command line\n");
-        mw_finish(EXIT_FAILURE);
-    }
+        fail("Could not parse parameters from the command line\n");
 
     worker(&sf, parameters, number_parameters);
 
