@@ -35,7 +35,7 @@ typedef struct
     int cleanup_checkpoint;
 } SeparationFlags;
 
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL }
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, 0 }
 
 /* Use hardcoded names if files not specified */
 static void setDefaultFiles(SeparationFlags* sf)
@@ -281,7 +281,7 @@ static void printVersion()
 int main(int argc, const char* argv[])
 {
     int rc;
-    SeparationFlags sf;
+    SeparationFlags sf = EMPTY_SEPARATION_FLAGS;
     real* parameters;
     int number_parameters;
 
@@ -301,7 +301,10 @@ int main(int argc, const char* argv[])
 
   #if BOINC_APPLICATION && !SEPARATION_OPENCL
     if (sf.cleanup_checkpoint)
+    {
+        warn("Removing checkpoint file '%s'\n", CHECKPOINT_FILE);
         boinc_delete_file(CHECKPOINT_FILE);
+    }
   #endif
 
     mw_finish(EXIT_SUCCESS);
