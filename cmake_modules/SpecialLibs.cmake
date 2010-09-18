@@ -25,6 +25,7 @@
 
 macro(set_os_specific_libs)
   if(APPLE)
+    find_library(COREFOUNDATION_LIBRARY CoreFoundation )
     list(APPEND OS_SPECIFIC_LIBS ${COREFOUNDATION_LIBRARY})
   endif()
 

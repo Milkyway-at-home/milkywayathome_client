@@ -139,10 +139,10 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
 
         t1 = mwGetTime();
       #if SEPARATION_OPENCL
-        #warning "USING OPENCL\n"
+        #warning "USING OPENCL"
         integral->background_integral = integrateCL(ap, ia, sc, sg, integral->probs);
       #else
-        #warning "USING NORMAL\n"
+        #warning "USING NORMAL"
         integral->background_integral = integrate(ap, ia, sc, sg, integral->probs, es);
       #endif /* SEPARATION_CL */
 
