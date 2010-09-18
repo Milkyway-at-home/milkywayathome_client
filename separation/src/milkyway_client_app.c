@@ -31,7 +31,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 typedef struct
 {
     char* star_points_file;
-    char* astronomy_parameter_file;
+    char* ap_file;  /* astronomy parameters */
     int cleanup_checkpoint;
 } SeparationFlags;
 
@@ -41,7 +41,7 @@ typedef struct
 static void setDefaultFiles(SeparationFlags* sf)
 {
     stringDefault(sf->star_points_file, DEFAULT_STAR_POINTS);
-    stringDefault(sf->astronomy_parameter_file, DEFAULT_ASTRONOMY_PARAMETERS);
+    stringDefault(sf->ap_file, DEFAULT_ASTRONOMY_PARAMETERS);
 }
 
 
@@ -81,7 +81,7 @@ static real* parse_parameters(int argc, const char** argv, int* paramnOut, Separ
 
         {
             "astronomy-parameter-file", 'a',
-            POPT_ARG_STRING, &sf->astronomy_parameter_file,
+            POPT_ARG_STRING, &sf->ap_file,
             'a', "Astronomy parameter file", NULL
         },
 
@@ -163,57 +163,88 @@ static real* parse_parameters(int argc, const char** argv, int* paramnOut, Separ
 static void freeSeparationFlags(SeparationFlags* sf)
 {
 	free(sf->star_points_file);
-	free(sf->astronomy_parameter_file);
+	free(sf->ap_file);
 }
 
-static void worker(const SeparationFlags* sf, const real* parameters, const int number_parameters)
+static INTEGRAL_AREA* prepare_parameters(const char* ap_file,
+                                         ASTRONOMY_PARAMETERS* ap,
+                                         BACKGROUND_PARAMETERS* bgp,
+                                         STREAMS* streams,
+                                         const real* parameters,
+                                         const int number_parameters)
 {
     int ap_number_parameters;
+    INTEGRAL_AREA* ias;
+
+    ias = read_parameters(ap_file, ap, bgp, streams);
+    if (!ias)
+    {
+        warn("Error reading astronomy parameters from file '%s'\n", ap_file);
+        return NULL;
+    }
+
+    ap_number_parameters = get_optimized_parameter_count(ap, bgp, streams);
+    if (number_parameters < 1 || number_parameters != ap_number_parameters)
+    {
+        warn("Error reading parameters: number of parameters from the "
+             "command line (%d) does not match the number of parameters "
+             "to be optimized in %s (%d)\n",
+             number_parameters,
+             ap_file,
+             ap_number_parameters);
+
+        free(ias);
+        free_streams(streams);
+        free_background_parameters(bgp);
+        return NULL;
+    }
+
+    set_parameters(ap, bgp, streams, parameters);
+
+    return ias;
+}
+
+static int worker(const SeparationFlags* sf, const real* parameters, const int number_parameters)
+{
     ASTRONOMY_PARAMETERS ap = EMPTY_ASTRONOMY_PARAMETERS;
     BACKGROUND_PARAMETERS bgp = EMPTY_BACKGROUND_PARAMETERS;
     STREAMS streams = EMPTY_STREAMS;
     INTEGRAL_AREA* ias;
+    STREAM_CONSTANTS* sc;
+    real likelihood_val;
+    int rc;
 
-    ias = read_parameters(sf->astronomy_parameter_file, &ap, &bgp, &streams);
+    ias = prepare_parameters(sf->ap_file, &ap, &bgp, &streams, parameters, number_parameters);
     if (!ias)
     {
-        fprintf(stderr,
-                "Error reading astronomy parameters from file '%s'\n",
-                sf->astronomy_parameter_file);
-		mw_finish(EXIT_FAILURE);
+        warn("Failed to read parameters\n");
+        return 1;
     }
 
-    ap_number_parameters = get_optimized_parameter_count(&ap, &bgp, &streams);
-
-    if (number_parameters < 1 || number_parameters != ap_number_parameters)
-    {
-        fprintf(stderr,
-                "Error reading parameters: number of parameters from the "
-                "command line (%d) does not match the number of parameters "
-                "to be optimized in %s (%d)\n",
-                number_parameters,
-                sf->astronomy_parameter_file,
-                ap_number_parameters);
-
-        free(ias);
-        mw_finish(EXIT_FAILURE);
-    }
-
-    set_parameters(&ap, &bgp, &streams, parameters);
-
-    real likelihood_val;
-    STREAM_CONSTANTS* sc = init_constants(&ap, &bgp, &streams);
+    sc = init_constants(&ap, &bgp, &streams);
     free_background_parameters(&bgp);
 
+    if (!sc)
+    {
+        warn("Failed to init_constants\n");
+        free(ias);
+        free_streams(&streams);
+        return 1;
+    }
+
     likelihood_val = evaluate(&ap, ias, &streams, sc, sf->star_points_file);
-    if (isnan(likelihood_val))
-        fail("Failed to calculate likelihood\n");
+    rc = isnan(likelihood_val);
 
     warn("<search_likelihood> %0.20f </search_likelihood>\n", likelihood_val);
 
     free(ias);
     free(sc);
     free_streams(&streams);
+
+    if (rc)
+        warn("Failed to calculate likelihood\n");
+
+    return rc;
 }
 
 #if BOINC_APPLICATION
@@ -292,22 +323,29 @@ int main(int argc, const char* argv[])
 
     parameters = parse_parameters(argc, argv, &number_parameters, &sf);
     if (!parameters)
-        fail("Could not parse parameters from the command line\n");
-
-    worker(&sf, parameters, number_parameters);
+    {
+        warn("Could not parse parameters from the command line\n");
+        rc = 1;
+    }
+    else
+    {
+        rc = worker(&sf, parameters, number_parameters);
+        if (rc)
+            warn("Worker failed\n");
+    }
 
     freeSeparationFlags(&sf);
     free(parameters);
 
   #if BOINC_APPLICATION && !SEPARATION_OPENCL
-    if (sf.cleanup_checkpoint)
+    if (sf.cleanup_checkpoint && rc == 0)
     {
         warn("Removing checkpoint file '%s'\n", CHECKPOINT_FILE);
-        boinc_delete_file(CHECKPOINT_FILE);
+        mw_remove(CHECKPOINT_FILE);
     }
   #endif
 
-    mw_finish(EXIT_SUCCESS);
+    mw_finish(rc);
 
     return rc;
 }

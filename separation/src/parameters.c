@@ -1,5 +1,5 @@
 /*
-Copyright 2008, 2009 Travis Desell, Dave Przybylo, Nathan Cole,
+Copyright 2008-2010 Travis Desell, Dave Przybylo, Nathan Cole,
 Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
 and Rensselaer Polytechnic Institute.
 
@@ -161,10 +161,7 @@ static INTEGRAL_AREA* fread_parameters(FILE* file,
     {
         integral = (INTEGRAL_AREA*) realloc(integral, sizeof(INTEGRAL_AREA) * ap->number_integrals);
         if (!integral)
-        {
-            fprintf(stderr, "realloc failed\n");
-            mw_finish(EXIT_FAILURE);
-        }
+            fail("realloc failed\n");
 
         for (i = 1; i < ap->number_integrals; i++)
         {
@@ -226,12 +223,9 @@ INTEGRAL_AREA* read_parameters(const char* filename,
     }
 
     integral = fread_parameters(f, ap, bgp, streams);
-    if (ap->parameters_version < 0)
-    {
-        free(integral);
-        warn("Input file [%s] did not specify parameter file version.\n", filename);
-        return NULL;
-    }
+    if (!integral)
+        warn("Error reading parameters file\n");
+
     fclose(f);
     return integral;
 }
@@ -328,15 +322,19 @@ int write_parameters(const char* filename,
                      BACKGROUND_PARAMETERS* bgp,
                      STREAMS* streams)
 {
-    FILE* f = mw_fopen(filename, "w");
+    FILE* f;
+
+    f = mw_fopen(filename, "w");
     if (!f)
     {
-        fprintf(stderr, "Couldn't find output file [%s] to write astronomy parameters.\n", filename);
+        perror("Opening parameter file for writing");
+        warn("Couldn't write output file '%s' to write astronomy parameters.\n", filename);
         return 1;
     }
 
     fwrite_parameters(f, ap, ias, bgp, streams);
     fclose(f);
+
     return 0;
 }
 

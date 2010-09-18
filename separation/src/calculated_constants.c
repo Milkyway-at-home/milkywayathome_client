@@ -90,10 +90,16 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
         ap->bg_c = bgp->parameters[6];
     }
     else
-        fail("Error: aux_bg_profile invalid");
+    {
+        warn("Error: aux_bg_profile invalid");
+        return NULL;
+    }
 
     if (ap->sgr_coordinates)
-        fail("gc2sgr not implemented\n");
+    {
+        warn("gc2sgr not implemented\n");
+        return NULL;
+    }
 
     ap->coeff = 1.0 / (stdev * SQRT_2PI);
     ap->alpha_delta3 = 3.0 - ap->alpha + ap->delta;
