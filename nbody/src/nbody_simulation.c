@@ -133,7 +133,7 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
     }
 
   #if BOINC_APPLICATION
-    warn("Making final checkpoint\n");
+    mw_report("Making final checkpoint\n");
     if (writeCheckpoint(ctx, st))
         fail("Failed to write final checkpoint\n");
   #endif
@@ -163,17 +163,17 @@ static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
     /* If the checkpoint exists, try to use it */
     if (boinc_file_exists(ctx->cp_resolved))
     {
-        warn("Checkpoint exists. Attempting to resume from it.\n");
+        mw_report("Checkpoint exists. Attempting to resume from it.\n");
         /* When the resume fails, start a fresh run */
         if (readCheckpoint(ctx, st))
         {
-            warn("Failed to read checkpoint\n");
+            mw_report("Failed to read checkpoint\n");
             nbodyStateDestroy(st);
             startRun(ctx, ic, st);
         }
         else
         {
-            warn("Successfully read checkpoint\n");
+            mw_report("Successfully read checkpoint\n");
             /* We restored the useful state. Now still need to create
              * the workspace where new accelerations are
              * calculated. */
@@ -256,7 +256,7 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
         ts = mwGetTime();
 
     runSystem(&ctx, &st);
-    warn("Simulation complete\n");
+    mw_report("Simulation complete\n");
 
     if (nbf->printTiming)
     {

@@ -316,7 +316,7 @@ int main(int argc, const char* argv[])
   #if BOINC_APPLICATION && !SEPARATION_OPENCL
     if (sf.cleanup_checkpoint && rc == 0)
     {
-        warn("Removing checkpoint file '%s'\n", CHECKPOINT_FILE);
+        mw_report("Removing checkpoint file '%s'\n", CHECKPOINT_FILE);
         mw_remove(CHECKPOINT_FILE);
     }
   #endif

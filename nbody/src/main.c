@@ -420,7 +420,7 @@ int main(int argc, const char* argv[])
 
     if (nbf.cleanCheckpoint)
     {
-        warn("Removing checkpoint file '%s'\n", nbf.checkpointFileName);
+        mw_report("Removing checkpoint file '%s'\n", nbf.checkpointFileName);
         mw_remove(nbf.checkpointFileName);
     }
 

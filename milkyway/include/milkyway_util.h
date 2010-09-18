@@ -84,6 +84,15 @@ int mwRename(const char* oldf, const char* newf);
 
 double mwGetTime();
 
+void _mw_time_prefix(char* buf, size_t bufSize);
+#define mw_report(msg, ...)                             \
+    {                                                   \
+        char _buf[256];                                 \
+        _mw_time_prefix(_buf, sizeof(_buf));            \
+        fprintf(stderr, "%s: " msg, _buf, ##__VA_ARGS__);   \
+    }
+
+
 /* Read array of strings into doubles. Returns NULL on failure. */
 real* mwReadRestArgs(const char** rest,            /* String array as returned by poptGetArgs() */
                      const unsigned int numParams, /* Expected number of parameters */

@@ -164,16 +164,16 @@ static int maybeResume(EVALUATION_STATE* es)
 {
     if (boinc_file_exists(CHECKPOINT_FILE))
     {
-        warn("Checkpoint exists. Attempting to resume from it\n");
+        mw_report("Checkpoint exists. Attempting to resume from it\n");
 
         if (read_checkpoint(es))
         {
-            warn("Reading checkpoint failed\n");
-            boinc_delete_file(CHECKPOINT_FILE);
+            mw_report("Reading checkpoint failed\n");
+            mw_remove(CHECKPOINT_FILE);
             return 1;
         }
         else
-            warn("Successfully resumed checkpoint\n");
+            mw_report("Successfully resumed checkpoint\n");
     }
 
     return 0;

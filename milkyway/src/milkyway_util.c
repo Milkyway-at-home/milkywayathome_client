@@ -261,4 +261,11 @@ real* mwReadRestArgs(const char** rest, const unsigned int numParams, unsigned i
     return parameters;
 }
 
+void _mw_time_prefix(char* buf, size_t bufSize)
+{
+    time_t x = time(NULL);
+    struct tm* tm = localtime(&x);
+    if (!strftime(buf, bufSize - 1, "%H:%M:%S", tm))
+        buf[0] = '\0';
+}
 
