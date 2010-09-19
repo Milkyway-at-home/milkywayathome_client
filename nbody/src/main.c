@@ -214,11 +214,6 @@ static json_object* readParameters(const int argc,
                                    FitParams* fitParams,
                                    NBodyFlags* nbf)
 {
-  #if !BOINC_APPLICATION
-    #pragma unused(checkpointFileName)
-    #pragma unused(ignoreCheckpoint)
-  #endif
-
     poptContext context;
     int o;
     json_object* obj         = NULL;
@@ -313,6 +308,7 @@ static json_object* readParameters(const int argc,
             POPT_ARG_NONE, &nbf->printHistogram,
             0, "Print histogram", NULL
         },
+      #endif /* BOINC_APPLICATION */
 
         {
             "p", 'p',
@@ -331,8 +327,6 @@ static json_object* readParameters(const int argc,
             POPT_ARG_INT, &nbf->setSeed,
             0, "seed for PRNG", NULL
         },
-
-      #endif /* BOINC_APPLICATION */
 
         POPT_AUTOHELP
 

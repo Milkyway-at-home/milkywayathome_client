@@ -244,8 +244,10 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
 
     nbodySetCtxFromFlags(&ctx, nbf);
 
+  #if BOINC_APPLICATION
     if (resolveCheckpoint(&ctx))
         fail("Failed to resolve checkpoint\n");
+  #endif /* BOINC_APPLICATION */
 
     if (initOutput(&ctx))
         fail("Failed to open output files\n");
