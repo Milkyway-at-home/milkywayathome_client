@@ -246,13 +246,6 @@ set_property(SOURCE ${dsmft_src}
 #
 set(CMAKE_C_FLAGS "-std=gnu99 -mfpmath=sse -msse -msse2 ${CMAKE_C_FLAGS}")
 
-if(APPLE)
-  # Try to avoid the dyld: unknown required load command 0x80000022
-  # runtime error on Leopard for binaries built on 10.6
-  set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5)
-  set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.5.sdk")
-endif()
-
 
 message("---------------------------------------------")
 message("   Building:          ${PROJECT_NAME}")

@@ -28,7 +28,7 @@ include(SpecialLibs)
 enable_testing()
 
 set(separation_VERSION_MAJOR 0)
-set(separation_VERSION_MINOR 4)
+set(separation_VERSION_MINOR 5)
 set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}")
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)

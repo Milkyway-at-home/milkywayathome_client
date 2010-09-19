@@ -133,6 +133,11 @@ find_package(OpenCL)
 #CoreFoundation etc. There's probably a better way to check and handle
 #this.
 if(APPLE)
+  # Try to avoid the dyld: unknown required load command 0x80000022
+  # runtime error on Leopard for binaries built on 10.6
+  set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5)
+  set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.5.sdk")
+
   include(CheckAppleGCC)
   check_apple_gcc()
   if(NOT HAVE_APPLE_GCC)
