@@ -18,24 +18,20 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# For releases, we want to be able to statically link as much as
-# possible. This requires special handling on OS X since Apple
-# doesn't like you trying to statically link the standard libraries.
-# We also have to link as C++ when we do this because of BOINC.
+find_path(CRLIBM_INCLUDE_DIR "crlibm.h")
+find_library(CRLIBM_LIBRARY crlibm)
 
-macro(set_os_specific_libs)
-  if(APPLE)
-    # Try to avoid the dyld: unknown required load command 0x80000022
-    # runtime error on Leopard for binaries built on 10.6
-    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5)
-    set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.5.sdk")
+if(CRLIBM_INCLUDE_DIR AND CRLIBM_LIBRARY)
+   set(CRLIBM_FOUND TRUE)
+endif()
 
-    find_library(COREFOUNDATION_LIBRARY CoreFoundation )
-    list(APPEND OS_SPECIFIC_LIBS ${COREFOUNDATION_LIBRARY})
-  endif()
-
-  if(WIN32)
-    set(OS_SPECIFIC_LIBS msvcrt)
-  endif()
-endmacro()
+if(CRLIBM_FOUND)
+   if(NOT Crlibm_FIND_QUIETLY)
+      message(STATUS "Found crlibm Library: ${CRLIBM_LIBRARY}")
+   endif(NOT Crlibm_FIND_QUIETLY)
+else(CRLIBM_FOUND)
+   if(Crlibm_FIND_REQUIRED)
+      message(FATAL_ERROR "Could not find crlibm Library")
+   endif(Crlibm_FIND_REQUIRED)
+endif()
 

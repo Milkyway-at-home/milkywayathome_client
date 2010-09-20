@@ -25,11 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 BOINC_DEBUG
 #cmakedefine01 BOINC_APP_GRAPHICS
 #cmakedefine01 DOUBLEPREC
-
-#cmakedefine MW_ENABLE_DEBUG
-#cmakedefine01 MW_DEBUG_EXCESSIVE
-
-#cmakedefine01 USE_BOINC_DIAGNOSTICS
+#cmakedefine01 MW_ENABLE_DEBUG
 
 
 #if DOUBLEPREC

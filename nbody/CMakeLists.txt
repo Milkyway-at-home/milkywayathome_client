@@ -18,27 +18,62 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 2.6)
 project(milkyway_nbody)
 
-set(milkyway_nbody_MAJOR_VERSION 0)
-set(milkyway_nbody_MINOR_VERSION 09)
-set(milkyway_nbody_VERSION "${milkyway_nbody_MAJOR_VERSION}.${milkyway_nbody_MINOR_VERSION}")
+set(nbody_MAJOR_VERSION 0)
+set(nbody_MINOR_VERSION 09)
+set(nbody_VERSION "${nbody_MAJOR_VERSION}.${nbody_MINOR_VERSION}")
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
-set(CMAKE_SKIP_BUILD_RPATH TRUE)
+if(BOINC_RELEASE_NAME)
+  get_boinc_bin_name("milkyway_nbody" "${nbody_VERSION}" "sse2")
+  set(nbody_bin_name "${BOINC_BIN_NAME}")
+else()
+  set(nbody_bin_name "milkyway_nbody")
+endif()
 
 include(MaybeDlCheck)
 include(StaticBOINC)
 include(SpecialLibs)
+include(PrintInfo)
 
-include_directories(${PROJECT_INCLUDE_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-link_directories(${LIBRARY_OUTPUT_PATH})
+maybe_static()
+
+if(BOINC_APPLICATION)
+  find_package(BOINC)
+  include_directories(${BOINC_INCLUDE_DIR})
+endif()
+
+find_package(OpenCL)
+find_package(JsonC REQUIRED)
+include_directories(${JSON_C_INCLUDE_DIR})
+
+if(BOINC_RELEASE)
+  find_package(Crlibm REQUIRED)
+else()
+  find_package(Crlibm)
+endif()
+
+if(ENABLE_CRLIBM)
+  include_directories(${CRLIBM_INCLUDE_DIR})
+  set(nbody_link_libs ${CRLIBM_LIBRARY})
+endif()
+
+
+if(NEED_POPT_DEPS)
+    #These are only dependencies of popt needed for static linking
+  find_package(Libintl REQUIRED)
+  find_package(Libiconv REQUIRED)
+endif()
+find_package(Popt REQUIRED)
+include_directories(${POPT_INCLUDE_DIR})
+
+
 
 set_os_specific_libs()
+
+set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
+include_directories(${NBODY_INCLUDE_DIR})
 
 option(BOINC_APPLICATION
   "Build as a BOINC Application" ON)
@@ -46,85 +81,29 @@ option(BOINC_APPLICATION
 option(BOINC_DEBUG
   "Avoid annoying things BOINC does for debugging" OFF)
 
-#option(NBODY_OPENCL
-#  "Use OpenCL" ${OPENCL_FOUND})
-
 option(NBODY_OPENCL
-     "Use OpenCL" OFF)
-
+       "Use OpenCL" OFF)
 
 option(ENABLE_CRLIBM
       "Use crlibm double" ON)
 mark_as_advanced(ENABLE_CRLIBM)
 
-if(NOT DOUBLEPREC)
+if(BOINC_RELEASE)
+  set(ENABLE_CRLIBM ON)
+endif()
+
+if(NOT DOUBLEPREC AND ENABLE_CRLIBM)
+  message(WARNING "Attempting to use single precision with crlibm. Disabling use of crlibm")
   set(ENABLE_CRLIBM OFF)
 endif()
 
-
-set(nbody_thirdparty "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty")
-
-#This is really only intended for windows, since it's a pain in the
-#ass. Everywhere else has much more convenient ways of installing.
-if(WIN32)
-  set(default_use_system_json_c OFF)
-else()
-  set(default_use_system_json_c ON)
-endif()
-
-option(USE_SYSTEM_JSON_C
-       "Use system json-c" ${default_use_system_json_c})
-
-if(NOT USE_SYSTEM_JSON_C)
-
-  find_path(JSON_C_INCLUDE_DIR "json/json.h" "${PROJECT_INCLUDE_DIR}")
-  find_library(JSON_C_LIBRARY json "${LIBRARY_OUTPUT_PATH}")
-
-  # set(jsoncVer "0.9")
-  # set(jsoncMD5 "3a13d264528dcbaf3931b0cede24abae")
-  # set(jsoncSrcPath "${nbody_thirdparty}")
-  # set(jsoncTar "json-c-${jsoncVer}.tar.gz")
-  # maybe_dl_check("json-c"
-  #                "${jsoncVer}"
-  #                "${jsoncMD5}"
-  #                "http://oss.metaparadigm.com/json-c/${jsoncTar}"
-  #                "${jsoncSrcPath}"
-  #                "${jsoncTar}")
-
-  # set(jsonc_file "${LIBRARY_OUTPUT_PATH}/libjson${CMAKE_STATIC_LIBRARY_SUFFIX}")
-
-  # if(WIN32)
-  #   file(RENAME "${jsoncSrcPath}/json-c-${crlibmVer}/config.h.win32"
-  #               "${jsoncSrcPath}/json-c-${crlibmVer}/config.h")
-  # endif()
-
-  # add_custom_command(
-  #   OUTPUT "${jsonc_file}"
-  #   COMMAND "${jsoncSrcPath}/json-c-${jsoncVer}/configure"
-  #                        "--prefix=${CMAKE_CURRENT_SOURCE_DIR}"
-  #                        "--disable-werror"
-  #                        "CC=${CMAKE_C_COMPILER}"
-  #                        "MAKE=${CMAKE_BUILD_TOOL}"
-  #                        "CFLAGS=${CMAKE_C_FLAGS}"
-  #   COMMAND "${CMAKE_BUILD_TOOL}"
-  #   COMMAND "${CMAKE_BUILD_TOOL}" "install"
-  #   WORKING_DIRECTORY "${jsoncSrcPath}/json-c-${jsoncVer}/"
-  #   COMMENT "Building json-c")
-
-  # set(JSON_C_LIBRARY ${jsonc_file})
-
-  # add_custom_target(jsonc_build DEPENDS "${jsonc_file}")
-else()
-  find_package(JsonC)
-  include_directories(${JSON_C_INCLUDE_DIR})
-endif()
 
 
 # Handle downloading, extracting and building dSFMT
 
 set(dsfmtVer "2.1")
 set(randSrcMD5 "b3a38dac7fd8996a70d02edc4432dd75")
-set(randSrcPath "${nbody_thirdparty}")
+set(randSrcPath "${MILKYWAY_THIRDPARTY}")
 set(dsfmtTar "dSFMT-src-${dsfmtVer}.tar.gz")
 maybe_dl_check("dSFMT"
                "${dsfmtVer}"
@@ -137,56 +116,29 @@ maybe_dl_check("dSFMT"
 set(dsfmt_mexp "19937") #Value it assumes if you don't specify it; stops warning
 set(dsmft_flags "-O3 -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99 -mfpmath=sse -msse -msse2")
 
-#Find the headers for dSFMT
-
-
-include_directories("${nbody_thirdparty}/dSFMT-src-${dsfmtVer}/")
-
-set(dsmft_src "${nbody_thirdparty}/dSFMT-src-${dsfmtVer}/dSFMT.c")
+set(dsmft_src "${MILKYWAY_THIRDPARTY}/dSFMT-src-${dsfmtVer}/dSFMT.c")
+include_directories("${MILKYWAY_THIRDPARTY}/dSFMT-src-${dsfmtVer}/")
 add_definitions("-DDSFMT_MEXP=${dsfmt_mexp}")
 
 
-# Take care of crlibm
-if(ENABLE_CRLIBM)
-  set(crlibmVer "1.0beta4")
-  set(crlibmMD5 "8ecabd55d4a2d08030eb770ae2a5670a")
-  set(crlibmTar "crlibm-${crlibmVer}.tar.gz")
-  set(crlibmSrcPath "${nbody_thirdparty}")
 
-  maybe_dl_check("crlibm"
-                 "${crlibmVer}"
-                 "${crlibmMD5}"
-                 "http://lipforge.ens-lyon.fr/frs/download.php/162/${crlibmTar}"
-                 "${nbody_thirdparty}"
-                 "${crlibmTar}")
-  #add_custom_target(crlibm ALL)
+print_separator()
+message("   Building:          ${PROJECT_NAME}")
+message("   BOINC Application: ${BOINC_APPLICATION}")
+message("   BOINC Debug:       ${BOINC_DEBUG}")
+message("   Double precision:  ${DOUBLEPREC}")
+message("   Enable crlibm:     ${ENABLE_CRLIBM}")
+message("  ----")
+print_libs()
+print_separator()
 
-  #TODO: Set march, mtune etc. from user flags, but avoid some others
-  set(crlibm_flags "-std=c99 -O3 -mfpmath=sse -msse -msse2")
-
-  set(crlibm_file "${LIBRARY_OUTPUT_PATH}/libcrlibm${CMAKE_STATIC_LIBRARY_SUFFIX}")
-  set(crlibm_header "${PROJECT_INCLUDE_DIR}/crlibm.h")
-  set(scs_file "${LIBRARY_OUTPUT_PATH}/libscs{CMAKE_STATIC_LIBRARY_SUFFIX}")
-  add_custom_command(
-        OUTPUT "${crlibm_file}" "${crlibm_header}"
-        COMMAND "${crlibmSrcPath}/crlibm-${crlibmVer}/configure"
-                                                 "--enable-sse2"
-                                                 "--prefix=${CMAKE_CURRENT_SOURCE_DIR}"
-                                                 "CC=${CMAKE_C_COMPILER}"
-                                                 "MAKE=${CMAKE_BUILD_TOOL}"
-                                                 "CFLAGS=${crlibm_flags}"
-        COMMAND "${CMAKE_BUILD_TOOL}"
-        COMMAND "${CMAKE_BUILD_TOOL}" "install"
-        WORKING_DIRECTORY "${crlibmSrcPath}/crlibm-${crlibmVer}"
-        COMMENT "Building crlibm")
-
-  add_custom_target(crlibm_build DEPENDS "${crlibm_file}")
-  set(nbody_link_libs crlibm)
+if(BOINC_APPLICATION AND NOT BOINC_LIBRARIES)
+  message(FATAL_ERROR "Trying to build as a BOINC application, but the BOINC library wasn't found")
 endif()
 
 
-#CHECKME: Seems to only be problematic when we define our own NAN, at
-#least for GCC, since we don't actually need special number math
+
+#CHECKME: We don't actually need special number math
 #except for assignment in a couple places. Not sure how useful this is
 #anyway.
 #if(NOT ENABLE_FDLIBM)
@@ -244,27 +196,11 @@ set_property(SOURCE ${dsmft_src}
 # and consistency, and a nice speed boost on modern x86/x86_64
 # hardware.
 #
+
 set(CMAKE_C_FLAGS "-std=gnu99 -mfpmath=sse -msse -msse2 ${CMAKE_C_FLAGS}")
 
-
-message("---------------------------------------------")
-message("   Building:          ${PROJECT_NAME}")
-message("   BOINC Application: ${BOINC_APPLICATION}")
-message("   BOINC Debug:       ${BOINC_DEBUG}")
-message("   Double precision:  ${DOUBLEPREC}")
-message("   Enable crlibm:     ${ENABLE_CRLIBM}")
-message("   json-c Library     ${JSON_C_LIBRARY}")
-message("   BOINC Libraries    ${BOINC_LIBRARIES}")
-message("   Popt Library       ${POPT_LIBRARY}")
-message("---------------------------------------------")
-
-if(BOINC_APPLICATION AND NOT BOINC_LIBRARIES)
-  message(FATAL_ERROR "Trying to build as a BOINC application, but the BOINC library wasn't found")
-endif()
-
-
 configure_file (
-  "${PROJECT_INCLUDE_DIR}/nbody_config.h.in"
+  "${NBODY_INCLUDE_DIR}/nbody_config.h.in"
   "${PROJECT_INCLUDE_DIR}/nbody_config.h")
 
 if(WIN32)
@@ -291,37 +227,19 @@ add_library(nbody_simulation STATIC ${nbody_lib_src})
 
 set(nbody_libs nbody_simulation)
 
-#Inline the CL kernels if they have changed, and make the library
-#depend on them
-if(NBODY_OPENCL)
-  add_custom_command(OUTPUT "${c_kernel_dir}/cl_gravmap.c" "${c_kernel_dir}/cl_gravmap.h"
-                     COMMAND ${CMAKE_COMMAND}
-                               "-DCMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}"
-                               "-DKERNEL_NAME=gravmap"
-                               "-DKERNEL_FILE=${CMAKE_CURRENT_SOURCE_DIR}/kernels/gravmap.cl"
-                               "-DC_KERNEL_DIR=${CMAKE_CURRENT_SOURCE_DIR}/ckernels"
-                               -P "${CMAKE_MODULE_PATH}/InlineNBody.cmake"
-                      COMMENT "Inlining gravmap kernel")
-
-  # I have no idea why you need to do this extra target. I'm probably
-  # doing it wrong.
-  add_custom_target(gravmap_kernel DEPENDS "${c_kernel_dir}/cl_gravmap.c")
-
-  add_dependencies(nbody_simulation gravmap_kernel)
-endif()
+set(exe_link_libs ${LIBM_LIBRARY}
+                  ${POPT_LIBRARY}
+                  ${nbody_libs}
+                  ${nbody_link_libs})
 
 if (ENABLE_CRLIBM)
   add_dependencies(nbody_simulation crlibm_build)
+  list(APPEND exe_link_libs ${CRLIBM_LIBRARY})
 endif()
 
 if(NOT USE_SYSTEM_JSON_C)
   add_dependencies(nbody_simulation jsonc_build)
 endif()
-
-set(exe_link_libs ${LIBM_LIBRARY}
-                  ${POPT_LIBRARY}
-                  ${nbody_libs}
-                  ${nbody_link_libs})
 
 if(NEED_POPT_DEPS)
   # Popt dependencies for static linking For some reason, on OS X /
@@ -330,8 +248,8 @@ if(NEED_POPT_DEPS)
                             ${LIBINTL_LIBRARY})
 endif()
 
-add_executable(milkyway_nbody ${PROJECT_SOURCE_DIR}/src/main.c)
-milkyway_link(milkyway_nbody ${BOINC_APPLICATION} ${BOINC_RELEASE} "${exe_link_libs}")
+add_executable(${nbody_bin_name} ${PROJECT_SOURCE_DIR}/src/main.c)
+milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} ${BOINC_RELEASE} "${exe_link_libs}")
 #add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 

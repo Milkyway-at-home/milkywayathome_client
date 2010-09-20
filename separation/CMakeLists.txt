@@ -21,32 +21,79 @@
 cmake_minimum_required(VERSION 2.8)
 project(milkyway_separation)
 
+enable_testing()
+
 include(StaticBOINC)
 include(CLKernelInline)
 include(SpecialLibs)
-
-enable_testing()
+include(BOINCBinNames)
+include(PrintInfo)
 
 set(separation_VERSION_MAJOR 0)
 set(separation_VERSION_MINOR 5)
 set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}")
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
+
+if(BOINC_RELEASE_NAME)
+  get_boinc_bin_name("milkyway_separation" "${separation_VERSION}" "")
+  set(separation_bin_name "${BOINC_BIN_NAME}")
+else()
+  set(separation_bin_name "milkyway_separation")
+endif()
 
 set_os_specific_libs()
 
-include_directories(${PROJECT_INCLUDE_DIR})
+
+set(SEPARATION_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
+include_directories(${SEPARATION_INCLUDE_DIR})
+
+
 set(CMAKE_C_FLAGS "-std=gnu99 -warn-uninit-values ${CMAKE_C_FLAGS}")
 
 
 option(SEPARATION_INLINE_KERNEL
        "Inline the CL kernel" ON)
 
+option(SMALL_TESTS
+       "Run small tests" ON)
+
+option(LARGE_TESTS
+       "Run large tests" OFF)
+
+option(AUX_LARGE_TESTS
+       "Run large aux tests" OFF)
+
+option(AUX_SMALL_TESTS
+       "Run small aux tests" OFF)
+
+maybe_static()
+
+find_package(Libm REQUIRED)
+
+if(BOINC_APPLICATION)
+  find_package(BOINC)
+  include_directories(${BOINC_INCLUDE_DIR})
+endif()
+
+find_package(OpenCL)
+if(NEED_POPT_DEPS)
+    #These are only dependencies of popt needed for static linking
+  find_package(Libintl REQUIRED)
+  find_package(Libiconv REQUIRED)
+endif()
+
+find_package(Popt REQUIRED)
+include_directories(${POPT_INCLUDE_DIR})
+
+print_separator()
+message("Separation build:")
+print_libs()
+print_separator()
+
+
 
 configure_file (
-  "${PROJECT_INCLUDE_DIR}/separation_config.h.in"
+  "${SEPARATION_INCLUDE_DIR}/separation_config.h.in"
   "${PROJECT_INCLUDE_DIR}/separation_config.h")
 
 #if(UNIX AND NOT APPLE)  #Unix that isn't OS X
@@ -108,8 +155,6 @@ if(SEPARATION_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
   list(APPEND exe_link_libs ${OPENCL_LIBRARIES})
 endif()
-
-set(separation_bin_name milkyway_separation)
 
 add_executable(${separation_bin_name} src/milkyway_client_app.c)
 milkyway_link(${separation_bin_name} ${BOINC_APPLICATION} ${BOINC_RELEASE} "${exe_link_libs}")
