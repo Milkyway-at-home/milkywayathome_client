@@ -42,10 +42,10 @@ extern "C" {
   #endif /* BOINC_DEBUG */
 #endif /* BOINC_APPLICATION */
 
-#ifdef MW_ENABLE_DEBUG
+#if MW_ENABLE_DEBUG
     /* convenient functions for printing debugging stuffs */
-    #define MW_DEBUG(msg, ...) printf("%s():%d: ", __func__, __LINE__);\
-                                 printf(msg, __VA_ARGS__);
+  #define MW_DEBUG(msg, ...) fprintf(stderr, "%s():%d: ", __func__, __LINE__); \
+                             fprintf(stderr, msg, __VA_ARGS__);
     #define MW_DEBUGMSG(msg) puts(msg)
 #else
     #define MW_DEBUG(msg, ...) ((void) 0)

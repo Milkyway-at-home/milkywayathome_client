@@ -51,7 +51,7 @@ static void setDefaultFiles(SeparationFlags* sf)
 }
 
 
-#if defined(_WIN32)  && 0 
+#if defined(_WIN32) && 0
 /* FIXME: undefined reference to _set_invalid_parameter_handler */
 void AppInvalidParameterHandler(const wchar_t* expression,
                                 const wchar_t* function,

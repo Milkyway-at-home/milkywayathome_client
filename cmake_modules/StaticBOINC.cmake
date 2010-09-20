@@ -70,3 +70,18 @@ function(milkyway_link client_bin_name use_boinc use_static link_libs)
   target_link_libraries(${client_bin_name} ${link_libs})
 endfunction()
 
+macro(maybe_static)
+  if(STATIC_EVERYTHING)
+    if(NOT APPLE)
+      set(LIBM_USE_STATIC 1)
+    endif()
+
+    set(POPT_USE_STATIC 1)
+    set(JSON_C_USE_STATIC 1)
+    set(LIBINTL_USE_STATIC 1)
+    set(LIBICONV_USE_STATIC 1)
+    set(BOINC_USE_STATIC 1)
+  endif()
+endmacro()
+
+

@@ -292,7 +292,7 @@ typedef struct NBODY_ALIGN
     /* calculated depending on model */
     real timestep;
     real orbit_timestep;
-    real eps;            /* potential softening parameter */
+    real eps2;            /* (potential softening parameter)^2 */
 
     /* model parameters */
     real mass;

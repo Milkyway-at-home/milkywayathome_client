@@ -541,7 +541,7 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
             INT_PARAM("nbody", &ctx->model.nbody),
             DBL_PARAM_DFLT("mass",           &ctx->model.mass,           &nanN),
             DBL_PARAM_DFLT("scale-radius",   &ctx->model.scale_radius,   &nanN),
-            DBL_PARAM_DFLT("eps",            &ctx->model.eps,            &nanN),
+            DBL_PARAM_DFLT("eps2",           &ctx->model.eps2,           &nanN),
             DBL_PARAM_DFLT("timestep",       &ctx->model.timestep,       &nanN),
             DBL_PARAM_DFLT("orbit-timestep", &ctx->model.orbit_timestep, &nanN),
             DBL_PARAM_DFLT("time-dwarf",     &ctx->model.time_dwarf,     &nanN),

@@ -18,27 +18,27 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 2.6)
 project(milkywayathome)
 
 enable_testing()
 
+# Find custom cmake modules
+set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules")
+set(PROJECT_TOOL_DIR "${milkywayathome_SOURCE_DIR}/tools")
 
-option(SMALL_TESTS
-       "Run small tests" ON)
+include(MinGWPaths)
+include(StaticBOINC)
+include(PrintInfo)
+set_mingw_paths()
 
-option(LARGE_TESTS
-       "Run large tests" OFF)
 
-option(AUX_LARGE_TESTS
-       "Run large aux tests" OFF)
+# Project build selection
+option(SEPARATION "Build separation" ON)
+option(NBODY "Build nbody" ON)
 
-option(AUX_SMALL_TESTS
-       "Run small aux tests" OFF)
 
-option(MW_DEBUG_EXCESSIVE
-       "Excessive debugging output" OFF)
-
+# Normal options
 option(BOINC_APPLICATION
        "Run as BOINC application or independently" ON)
 
@@ -48,29 +48,65 @@ option(BOINC_RELEASE
 option(DOUBLEPREC
        "Build with double precision" ON)
 
+
+# 'Secret' options
 option(DISABLE_DENORMALS
        "Disable denormal handling with SSE" OFF)
 mark_as_advanced(DISABLE_DENORMALS)
 
+option(STATIC_EVERYTHING
+       "Prefer static libraries" ON)
+mark_as_advanced(STATIC_EVERYTHING)
+
+option(BOINC_RELEASE_NAME
+       "Use BOINC platform binary names" OFF)
+mark_as_advanced(BOINC_RELEASE_NAME)
+
+option(DOWNLOAD_CRLIBM
+       "Download crlibm and install to thirdparty" OFF)
+mark_as_advanced(DOWNLOAD_CRLIBM)
+
+
+# Stuff which the build will download and use from there.
+set(MILKYWAY_THIRDPARTY "${MILKYWAY_ROOT}/thirdparty")
+
+
+if(DOWNLOAD_CRLIBM)
+  download_build_crlibm()
+endif()
+
+
+# Find libraries installed to this prefix. This way we can just dump
+# dependencies here on windows where everything is painful.
+set(MILKYWAY_ROOT ${PROJECT_SOURCE_DIR})
+list(INSERT CMAKE_PREFIX_PATH 0 ${MILKYWAY_ROOT})
+
+# Set output to be in this root
+set(EXECUTABLE_OUTPUT_PATH ${MILKYWAY_ROOT}/bin)
+set(LIBRARY_OUTPUT_PATH ${MILKYWAY_ROOT}/lib)
+set(PROJECT_INCLUDE_DIR ${MILKYWAY_ROOT}/include)
+
+include_directories(${PROJECT_INCLUDE_DIR})
+link_directories(${LIBRARY_OUTPUT_PATH})
 
 # Avoid issue I'm too lazy to fix where using the config header, some
 # files were getting single and others double
 if(DOUBLEPREC)
   add_definitions("-DDOUBLEPREC=1")
-else()
-  add_definitions("-DDOUBLEPREC=0")
 endif()
 
 if(DISABLE_DENORMALS)
   add_definitions("-DDISABLE_DENORMALS=1")
-else()
-  add_definitions("-DDISABLE_DENORMALS=0")
+endif()
+
+if(BOINC_RELEASE)
+  set(STATIC_EVERYTHING ON)
+  set(BOINC_RELEASE_NAME ON)
+  set(BOINC_APPLICATION ON)
+  set(DOUBLEPREC ON)
 endif()
 
 
-#set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules;${CMAKE_MODULE_PATH}")
-set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules")
-set(PROJECT_TOOL_DIR "${milkywayathome_SOURCE_DIR}/tools")
 
 #choose release build type by default
 if(NOT CMAKE_BUILD_TYPE)
@@ -81,31 +117,10 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(MW_ENABLE_DEBUG ON)
-  set(USE_BOINC_DIAGNOSTICS ON)
 endif()
 
-include_directories(${PROJECT_INCLUDE_DIR})
 
-if(MINGW)
-  if(NOT TAKEOFFGW_ROOT)
-    set(TAKEOFFGW_ROOT "C:/takeoffgw/")
-  endif(NOT TAKEOFFGW_ROOT)
-
-  set(CMAKE_FIND_ROOT_PATH "${TAKEOFFGW_ROOT}/i686-pc-mingw32/sys-root/mingw")
-endif(MINGW)
-
-if(BOINC_RELEASE)
-
-  if(NOT APPLE)
-    set(LIBM_USE_STATIC 1)
-  endif()
-
-  set(POPT_USE_STATIC 1)
-  set(JSON_C_USE_STATIC 1)
-  set(LIBINTL_USE_STATIC 1)
-  set(LIBICONV_USE_STATIC 1)
-  set(BOINC_USE_STATIC 1)
-endif()
+maybe_static()
 
 if(UNIX AND NOT APPLE)
   set(NEED_POPT_DEPS 0)
@@ -113,38 +128,20 @@ else()
   set(NEED_POPT_DEPS 1)
 endif()
 
-
-list(APPEND CMAKE_LIBRARY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/nbody/lib")
-list(APPEND CMAKE_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/nbody/include")
-
-if(NEED_POPT_DEPS)
-    #These are only dependencies of popt needed for static linking
-  find_package(Libintl REQUIRED)
-  find_package(Libiconv REQUIRED)
-endif()
-
-find_package(Libm REQUIRED)
-find_package(Popt REQUIRED)
-find_package(BOINC)
-find_package(OpenCL)
-
 #FIXME: Somehow test for and require the Apple gcc. The macports gccs
 #seem to not work when you try to link against frameworks,
 #CoreFoundation etc. There's probably a better way to check and handle
 #this.
-if(APPLE)
-  # Try to avoid the dyld: unknown required load command 0x80000022
-  # runtime error on Leopard for binaries built on 10.6
-  set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5)
-  set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.5.sdk")
-
+if(APPLE AND BOINC_APPLICATION)
   include(CheckAppleGCC)
   check_apple_gcc()
   if(NOT HAVE_APPLE_GCC)
-    message(WARNING "Attempting to use a non-Apple GCC. An Apple compiler is required on OS X.")
-    message(FATAL_ERROR
-             "You should specify a compiler by setting the CC environment variable or "
-             "with -DCMAKE_C_COMPILER=/path/to/compiler. This should be /usr/bin/gcc usually.")
+
+    message(WARNING
+            "You should specify a compiler by setting the CC environment variable or "
+            "with -DCMAKE_C_COMPILER=/path/to/compiler. This should be /usr/bin/gcc usually."
+            "Latest clang also works")
+    message(FATAL_ERROR "Attempting to use a non-Apple GCC. An Apple compiler is required on OS X.")
   endif()
 
   if(BOINC_RELEASE)
@@ -152,29 +149,11 @@ if(APPLE)
     #set(CMAKE_OSX_ARCHITECTURES i386;x86_64)
     set(CMAKE_OSX_ARCHITECTURES x86_64)
   endif()
-endif(APPLE)
+endif()
 
 #Some kind of workaround for a popular cmake bug where make test
 #doesn't behave as anyone would ever expect.
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-
-# If we found all the dependencies for something, by default try to
-# build it
-
-
-if(BOINC_FOUND AND POPT_FOUND)
-  set(SEPARATION_IS_BUILDABLE ON)
-  include_directories(${BOINC_INCLUDE_DIR})
-  include_directories(${POPT_INCLUDE_DIR})
-
-  if(OPENCL_FOUND)
-    set(OPENCL_IS_BUILDABLE ON)
-  endif()
-endif()
-
-#You can turn things off if you really want to
-option(CPU_SEPARATION
-       "Build the cpu separation" ${SEPARATION_IS_BUILDABLE})
 
 option(SEPARATION_OPENCL
         "Build the OpenCL separation" OFF)
@@ -190,9 +169,6 @@ endif()
 
 option(NBODY
     "Build the n-body code" ON)
-
-option(DOUBLE_PRECISION
-         "Use double precision" ON)
 
 option(BOINC_APP_GRAPHICS
        "BOINC app graphics" OFF)
@@ -218,49 +194,26 @@ if(NOT DOUBLEPREC)
 endif()
 
 
+print_separator()
+print_build_info()
+print_build_options()
+print_separator()
 
-message("---------------------------------------------")
-message("   Building:          ${PROJECT_NAME}")
-message("   System:            ${CMAKE_SYSTEM}")
-message("   Build type:        ${CMAKE_BUILD_TYPE}")
-message("   Arch:              ${CMAKE_SYSTEM_PROCESSOR}")
-message("   Install path:      ${CMAKE_INSTALL_PREFIX}")
-message("   ----")
-message("   CMAKE version:     ${CMAKE_VERSION}")
-message("   CMAKE binary:      ${CMAKE_COMMAND}")
-message("   CTEST binary:      ${CMAKE_CTEST_COMMAND}")
-message("   CMAKE generator:   ${CMAKE_GENERATOR}")
-message("   ----")
-message("   Project src dir:   ${CMAKE_SOURCE_DIR}")
-message("   Project bin dir:   ${CMAKE_BINARY_DIR}")
-message("   ----")
-message("   BOINC Library:     ${BOINC_LIBRARY}")
-message("   OpenCL Libraries   ${OPENCL_LIBRARIES}")
-message("   POPT Library       ${POPT_LIBRARY}")
-message("   ----")
-message("   Build tool:        ${CMAKE_BUILD_TOOL}")
-message("   C Compiler:        ${CMAKE_C_COMPILER}")
-#TODO:Report CFLAGS used based on build type
-#message("   CFLAGS:           ${CMAKE_C_FLAGS}")
-message("   ----")
-message("   Double precision:  ${DOUBLE_PRECISION}")
-message("   OpenCL separation: ${SEPARATION_OPENCL}")
-message("   CPU separaton:     ${CPU_SEPARATION}")
-message("   N-Body:            ${NBODY}")
-message("   BOINC graphics:    ${BOINC_APP_GRAPHICS}")
-message("---------------------------------------------")
 
-if(NOT CPU_SEPARATION AND NOT OPENCL_SEPARATION AND NOT NBODY)
+if(NOT SEPARATION AND NOT NBODY)
   message(FATAL_ERROR "Nothing will be built!")
 endif()
 
-set(MILKYWAY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/milkyway/include")
-set(MILKYWAY_LIB_DIR milkyway/lib)
-add_subdirectory(milkyway)
-include_directories(${MILKYWAY_INCLUDE_DIR})
-#link_directories(${MILKYWAY_LIB_DIR})
 
-add_subdirectory(separation)
-add_subdirectory(nbody)
+add_subdirectory(milkyway)
+include_directories("${PROJECT_SOURCE_DIR}/milkyway/include")
+
+if(SEPARATION)
+  add_subdirectory(separation)
+endif()
+
+if(NBODY)
+  add_subdirectory(nbody)
+endif()
 
 
