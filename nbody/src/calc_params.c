@@ -56,6 +56,7 @@ static int processPotential(Potential* p)
 static int processModel(DwarfModel* mod)
 {
     const real r0 = mod->scale_radius;
+    real eps;
 
     if (isnan(mod->time_dwarf) && isnan(mod->time_orbit))
     {
@@ -68,8 +69,11 @@ static int processModel(DwarfModel* mod)
         case DwarfModelPlummer:
             /* If not set, and no default, it's calculated based on
              * other parameters. */
-            if (isnan(mod->eps))
-                mod->eps = r0 / (10.0 * mw_sqrt((real) mod->nbody));
+            if (isnan(mod->eps2))
+            {
+                eps = r0 / (10.0 * mw_sqrt((real) mod->nbody));
+                mod->eps2 = sqr(eps);
+            }
 
             if (isnan(mod->timestep))
                 mod->timestep = sqr(1/10.0) * mw_sqrt((PI_4_3 * cube(r0)) / mod->mass);

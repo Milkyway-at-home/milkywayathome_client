@@ -62,7 +62,7 @@ inline static void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, nodeptr q)
         SUBV(fest->dr, Pos(q), fest->pos0);           /* then compute sep. */
         SQRV(fest->drsq, fest->dr);                   /* and sep. squared */
     }
-    fest->drsq += sqr(ctx->model.eps);              /* use standard softening */
+    fest->drsq += ctx->model.eps2;                    /* use standard softening */
     drab = mw_sqrt(fest->drsq);
     phii = Mass(q) / drab;
     mor3 = phii / fest->drsq;

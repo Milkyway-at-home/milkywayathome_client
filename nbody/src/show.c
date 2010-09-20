@@ -260,7 +260,7 @@ char* showDwarfModel(const DwarfModel* d)
                      "      orbit_timestep = %g\n"
                      "      time_dwarf     = %g\n"
                      "      time_orbit     = %g\n"
-                     "      eps            = %g\n"
+                     "      eps2           = %g\n"
                      "    };\n",
                      showDwarfModelT(d->type),
                      d->nbody,
@@ -270,7 +270,7 @@ char* showDwarfModel(const DwarfModel* d)
                      d->orbit_timestep,
                      d->time_orbit,
                      d->time_dwarf,
-                     d->eps))
+                     d->eps2))
     {
         fail("asprintf() failed\n");
     }
