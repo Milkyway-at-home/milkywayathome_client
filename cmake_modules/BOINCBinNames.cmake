@@ -24,7 +24,8 @@ macro(unknown_system)
 endmacro()
 
 function(get_boinc_bin_name basename version plan)
-  if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "i386")
+  # CMAKE_SYSTEM_PROCESSOR is unfortunately still i386 on 64 bit OS X
+  if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "i386" OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
     set(SYSTEM_IS_X86 TRUE)
   else()
     set(SYSTEM_IS_X86 FALSE)

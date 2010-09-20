@@ -32,26 +32,25 @@ macro(download_build_crlibm)
                  "http://lipforge.ens-lyon.fr/frs/download.php/162/${crlibmTar}"
                  "${MILKYWAY_THIRDPARTY}"
                  "${crlibmTar}")
-               #add_custom_target(crlibm ALL)
 
-               #TODO: Set march, mtune etc. from user flags, but avoid some others
-               set(crlibm_flags "-std=c99 -O3 -mfpmath=sse -msse -msse2")
+ #TODO: Set march, mtune etc. from user flags, but avoid some others
+  set(crlibm_flags "-std=c99 -O3 -mfpmath=sse -msse -msse2")
 
-               set(crlibm_file "${LIBRARY_OUTPUT_PATH}/libcrlibm${CMAKE_STATIC_LIBRARY_SUFFIX}")
-               set(crlibm_header "${PROJECT_INCLUDE_DIR}/crlibm.h")
-               set(scs_file "${LIBRARY_OUTPUT_PATH}/libscs{CMAKE_STATIC_LIBRARY_SUFFIX}")
-               add_custom_command(
-                 OUTPUT "${crlibm_file}" "${crlibm_header}"
-                 COMMAND "${crlibmSrcPath}/crlibm-${crlibmVer}/configure"
-                          "--enable-sse2"
-                          "--prefix=${MILKYWAY_ROOT}"
-                          "CC=${CMAKE_C_COMPILER}"
-                          "MAKE=${CMAKE_BUILD_TOOL}"
-                          "CFLAGS=${crlibm_flags}"
-                COMMAND "${CMAKE_BUILD_TOOL}"
-                COMMAND "${CMAKE_BUILD_TOOL}" "install"
-                WORKING_DIRECTORY "${crlibmSrcPath}/crlibm-${crlibmVer}"
-                COMMENT "Building crlibm")
+  set(crlibm_file "${LIBRARY_OUTPUT_PATH}/libcrlibm${CMAKE_STATIC_LIBRARY_SUFFIX}")
+  set(crlibm_header "${PROJECT_INCLUDE_DIR}/crlibm.h")
+  set(scs_file "${LIBRARY_OUTPUT_PATH}/libscs${CMAKE_STATIC_LIBRARY_SUFFIX}")
+  add_custom_command(
+         OUTPUT "${crlibm_file}" "${crlibm_header}"
+         COMMAND "${crlibmSrcPath}/crlibm-${crlibmVer}/configure"
+                 "--enable-sse2"
+                 "--prefix=${MILKYWAY_ROOT}"
+                 "CC=${CMAKE_C_COMPILER}"
+                 "MAKE=${CMAKE_BUILD_TOOL}"
+                 "CFLAGS=${crlibm_flags}"
+         COMMAND "${CMAKE_BUILD_TOOL}"
+         COMMAND "${CMAKE_BUILD_TOOL}" "install"
+         WORKING_DIRECTORY "${crlibmSrcPath}/crlibm-${crlibmVer}"
+         COMMENT "Building crlibm")
 
   add_custom_target(crlibm_build DEPENDS "${crlibm_file}")
 endmacro()

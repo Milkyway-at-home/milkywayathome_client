@@ -48,17 +48,6 @@ find_package(OpenCL)
 find_package(JsonC REQUIRED)
 include_directories(${JSON_C_INCLUDE_DIR})
 
-if(BOINC_RELEASE)
-  find_package(Crlibm REQUIRED)
-else()
-  find_package(Crlibm)
-endif()
-
-if(ENABLE_CRLIBM)
-  include_directories(${CRLIBM_INCLUDE_DIR})
-  set(nbody_link_libs ${CRLIBM_LIBRARY})
-endif()
-
 
 if(NEED_POPT_DEPS)
     #These are only dependencies of popt needed for static linking
@@ -96,7 +85,6 @@ if(NOT DOUBLEPREC AND ENABLE_CRLIBM)
   message(WARNING "Attempting to use single precision with crlibm. Disabling use of crlibm")
   set(ENABLE_CRLIBM OFF)
 endif()
-
 
 
 # Handle downloading, extracting and building dSFMT
@@ -232,14 +220,25 @@ set(exe_link_libs ${LIBM_LIBRARY}
                   ${nbody_libs}
                   ${nbody_link_libs})
 
-if (ENABLE_CRLIBM)
-  add_dependencies(nbody_simulation crlibm_build)
+
+if(ENABLE_CRLIBM)
+  if(DOWNLOAD_CRLIBM)
+    add_dependencies(nbody_simulation crlibm_build)
+    set(CRLIBM_INCLUDE_DIR "${MILKYWAY_ROOT}/include"})
+    set(CRLIBM_LIBRARY "${LIBRARY_OUTPUT_PATH}/libcrlibm${CMAKE_STATIC_LIBRARY_SUFFIX}")
+  else()
+    if(BOINC_RELEASE)
+      find_package(Crlibm REQUIRED)
+    else()
+      find_package(Crlibm)
+    endif()
+  endif()
+
+  include_directories(${CRLIBM_INCLUDE_DIR})
   list(APPEND exe_link_libs ${CRLIBM_LIBRARY})
 endif()
 
-if(NOT USE_SYSTEM_JSON_C)
-  add_dependencies(nbody_simulation jsonc_build)
-endif()
+
 
 if(NEED_POPT_DEPS)
   # Popt dependencies for static linking For some reason, on OS X /

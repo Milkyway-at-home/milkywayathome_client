@@ -30,6 +30,7 @@ set(PROJECT_TOOL_DIR "${milkywayathome_SOURCE_DIR}/tools")
 include(MinGWPaths)
 include(StaticBOINC)
 include(PrintInfo)
+include(DownloadCrlibm)
 set_mingw_paths()
 
 
@@ -67,19 +68,18 @@ option(DOWNLOAD_CRLIBM
 mark_as_advanced(DOWNLOAD_CRLIBM)
 
 
+# Find libraries installed to this prefix. This way we can just dump
+# dependencies here on windows where everything is painful.
+set(MILKYWAY_ROOT ${PROJECT_SOURCE_DIR})
+list(INSERT CMAKE_PREFIX_PATH 0 ${MILKYWAY_ROOT})
+
 # Stuff which the build will download and use from there.
 set(MILKYWAY_THIRDPARTY "${MILKYWAY_ROOT}/thirdparty")
-
 
 if(DOWNLOAD_CRLIBM)
   download_build_crlibm()
 endif()
 
-
-# Find libraries installed to this prefix. This way we can just dump
-# dependencies here on windows where everything is painful.
-set(MILKYWAY_ROOT ${PROJECT_SOURCE_DIR})
-list(INSERT CMAKE_PREFIX_PATH 0 ${MILKYWAY_ROOT})
 
 # Set output to be in this root
 set(EXECUTABLE_OUTPUT_PATH ${MILKYWAY_ROOT}/bin)
