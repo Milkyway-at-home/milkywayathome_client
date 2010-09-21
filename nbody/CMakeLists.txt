@@ -36,6 +36,7 @@ include(MaybeDlCheck)
 include(StaticBOINC)
 include(SpecialLibs)
 include(PrintInfo)
+include(CheckFunctionExists)
 
 maybe_static()
 
@@ -47,6 +48,8 @@ endif()
 find_package(OpenCL)
 find_package(JsonC REQUIRED)
 include_directories(${JSON_C_INCLUDE_DIR})
+
+check_function_exists(asprintf HAS_ASPRINTF)
 
 
 if(NEED_POPT_DEPS)
@@ -133,19 +136,33 @@ endif()
 #  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffinite-math-only")
 #endif()
 
-set(nbody_lib_src ${PROJECT_SOURCE_DIR}/src/chisq.c
-                  ${PROJECT_SOURCE_DIR}/src/grav.c
-                  ${PROJECT_SOURCE_DIR}/src/io.c
-                  ${PROJECT_SOURCE_DIR}/src/load.c
-                  ${PROJECT_SOURCE_DIR}/src/orbitintegrator.c
-                  ${PROJECT_SOURCE_DIR}/src/accelerations.c
-                  ${PROJECT_SOURCE_DIR}/src/nbody_simulation.c
-                  ${PROJECT_SOURCE_DIR}/src/json_params.c
-                  ${PROJECT_SOURCE_DIR}/src/calc_params.c
-                  ${PROJECT_SOURCE_DIR}/src/show.c
-                  ${PROJECT_SOURCE_DIR}/src/plummer.c
-                  ${PROJECT_SOURCE_DIR}/src/nbody_util.c
+set(NBODY_SRC_DIR "${PROJECT_SOURCE_DIR}/src/")
+set(nbody_lib_src ${NBODY_SRC_DIR}/chisq.c
+                  ${NBODY_SRC_DIR}/grav.c
+                  ${NBODY_SRC_DIR}/io.c
+                  ${NBODY_SRC_DIR}/load.c
+                  ${NBODY_SRC_DIR}/orbitintegrator.c
+                  ${NBODY_SRC_DIR}/accelerations.c
+                  ${NBODY_SRC_DIR}/nbody_simulation.c
+                  ${NBODY_SRC_DIR}/json_params.c
+                  ${NBODY_SRC_DIR}/calc_params.c
+                  ${NBODY_SRC_DIR}/plummer.c
+                  ${NBODY_SRC_DIR}/nbody_util.c
                   ${dsmft_src})
+
+if(BOINC_RELEASE OR NOT HAS_ASPRINTF)
+  set(DEFAULT_NBODY_SHOW OFF)
+else()
+  set(DEFAULT_NBODY_SHOW ON)
+endif()
+
+option(NBODY_SHOW "Build show type functions" ${DEFAULT_NBODY_SHOW})
+
+if(NBODY_SHOW)
+  #Uses asprintf extension
+  list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/show.c)
+endif()
+
 
 if(BOINC_APPLICATION)
   list(APPEND nbody_lib_src ${PROJECT_SOURCE_DIR}/src/checkpoint.c)
