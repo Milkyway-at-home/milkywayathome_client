@@ -34,17 +34,21 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 //in this manner an equatorial stripe of standard coordinate conventions is created.
 
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
-__attribute__ ((always_inline, hot, const))
-inline LB gc2lb(const int wedge, const real mu, const real nu)
+
+HOT CONST_F ALWAYS_INLINE
+__inline LB gc2lb(const int wedge, const real mu, const real nu)
 {
     LB lb;
+    real sinmunode, cosmunode;
+    real sinnu, cosnu;
+    real munode;
+    real sininc, cosinc;
+    real sinra, cosra;
 
     /* Rotation */
-    real sinnu, cosnu;
     mw_sincos(d2r(nu), &sinnu, &cosnu);
 
-    real sinmunode, cosmunode;
-    real munode = mu - NODE_GC_COORDS;
+    munode = mu - NODE_GC_COORDS;
     mw_sincos(d2r(munode), &sinmunode, &cosmunode);
 
     const real x12 = cosmunode * cosnu;  /* x1 = x2 */
@@ -56,7 +60,6 @@ inline LB gc2lb(const int wedge, const real mu, const real nu)
     /* Get inclination for the given wedge. */
     const real wedge_incl = wedge_eta + d2r(surveyCenterDec);
 
-    real sininc, cosinc;
     mw_sincos(wedge_incl, &sininc, &cosinc);
 
     const real y1 = y2 * cosinc - sinnu * sininc;
@@ -74,7 +77,6 @@ inline LB gc2lb(const int wedge, const real mu, const real nu)
         };
 
     /* Spherical to Cartesian */
-    real sinra, cosra;
     mw_sincos(ra, &sinra, &cosra);
 
     const real cosdec = mw_cos(dec);

@@ -37,6 +37,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_vectors.h"
 #include "milkyway_math_functions.h"
 
+#ifdef _MSC_VER
+  #include <float.h>
+#endif /* _MSC_VER */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -101,7 +105,7 @@ extern "C" {
 
 #if defined(_WIN32)
 /* MSVC hacks */
-  #ifdef NAN
+  #ifndef NAN
     static const unsigned long nan[2]={ 0xffffffff, 0x7fffffff };
     #define NAN (*(const double *) nan)
   #endif /* NAN*/

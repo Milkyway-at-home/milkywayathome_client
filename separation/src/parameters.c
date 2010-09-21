@@ -70,6 +70,9 @@ static INTEGRAL_AREA* fread_parameters(FILE* file,
     unsigned int i, temp;
     int retval;
     double tmp1, tmp2;
+    INTEGRAL_AREA* integral;
+    const INTEGRAL_AREA* ia;
+    unsigned int total_calc_probs;
 
     retval = fscanf(file, "parameters_version: %lf\n", &tmp1);
     ap->parameters_version = (real) tmp1;
@@ -129,7 +132,7 @@ static INTEGRAL_AREA* fread_parameters(FILE* file,
     if (fscanf(file, "wedge: %d\n", &ap->wedge) < 1)
         warn("Error reading wedge\n");
 
-    INTEGRAL_AREA* integral = (INTEGRAL_AREA*) mallocSafe(sizeof(INTEGRAL_AREA));
+    integral = (INTEGRAL_AREA*) mallocSafe(sizeof(INTEGRAL_AREA));
 
     fscanf(file,
            "r[min,max,steps]: %lf, %lf, %u\n",
@@ -191,8 +194,7 @@ static INTEGRAL_AREA* fread_parameters(FILE* file,
 
     /* Calculate total probability calculations for checkpointing */
 
-    const INTEGRAL_AREA* ia;
-    unsigned int total_calc_probs = 0;
+    total_calc_probs = 0;
     for (i = 0; i < ap->number_integrals; ++i)
     {
         ia = &integral[i];

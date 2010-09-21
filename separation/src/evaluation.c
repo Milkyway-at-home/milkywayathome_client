@@ -22,10 +22,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "milkyway_util.h"
+#include "milkyway_math.h"
 #include "separation_types.h"
 #include "evaluation_state.h"
 #include "separation_constants.h"
-#include "milkyway_util.h"
 #include "calculated_constants.h"
 #include "integrals.h"
 #include "likelihood.h"
@@ -142,10 +143,8 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
 
         t1 = mwGetTime();
       #if SEPARATION_OPENCL
-        #warning "USING OPENCL"
         integral->background_integral = integrateCL(ap, ia, sc, sg, integral->probs);
       #else
-        #warning "USING NORMAL"
         integral->background_integral = integrate(ap, ia, sc, sg, integral->probs, es);
       #endif /* SEPARATION_CL */
 

@@ -27,35 +27,35 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_types.h"
 
 /****
-	*	Functions for printing parameters to files/output
+    *   Functions for printing parameters to files/output
 *****/
 void fwrite_double_array(FILE *file, const char *array_name, real* array_t, size_t size)
 {
-	size_t i;
+    size_t i;
 
     /* Should use %zu for size_t but Windows is broken */
-	fprintf(file, "%s[%lu]: ", array_name, (unsigned long) size);
-	for (i = 0; i < size; i++)
+    fprintf(file, "%s[%lu]: ", array_name, (unsigned long) size);
+    for (i = 0; i < size; i++)
     {
-		fprintf(file, "%.20lf", array_t[i]);
-		if (i < size - 1)
+        fprintf(file, "%.20lf", array_t[i]);
+        if (i < size - 1)
             fprintf(file, ", ");
-	}
-	fprintf(file, "\n");
+    }
+    fprintf(file, "\n");
 }
 
 void fwrite_int_array(FILE* file, const char* array_name, int* array_t, size_t size)
 {
-	size_t i;
-	fprintf(file, "%s[%lu]: ", array_name, (unsigned long) size);
-	for (i = 0; i < size; i++)
+    size_t i;
+    fprintf(file, "%s[%lu]: ", array_name, (unsigned long) size);
+    for (i = 0; i < size; i++)
     {
-		if (i == 0)
+        if (i == 0)
             fprintf(file, " %d", array_t[i]);
-		else
+        else
             fprintf(file, ", %d", array_t[i]);
-	}
-	fprintf(file, "\n");
+    }
+    fprintf(file, "\n");
 }
 
 #if DOUBLEPREC
@@ -71,53 +71,54 @@ real* fread_double_array(FILE* file, const char* array_name, unsigned int* sizeO
     int rc;
     real* arr;
 
-	fscanf(file, array_name);
-	fscanf(file, "[%u]: ", &size);
+    fscanf(file, array_name);
+    fscanf(file, "[%u]: ", &size);
 
     arr = (real*) mallocSafe(sizeof(real) * size);
 
-	for (i = 0; i < size; i++)
+    for (i = 0; i < size; i++)
     {
         rc = fscanf(file, READ_DOUBLE_ARRAY_READ_STR, &arr[i]);
-		if (rc != 1)
-			fail("Error reading into %s\n", array_name);
-		if (i < size - 1)
+        if (rc != 1)
+            fail("Error reading into %s\n", array_name);
+        if (i < size - 1)
             fscanf(file, ", ");
-	}
-	fscanf(file, "\n");
+    }
+    fscanf(file, "\n");
 
     if (sizeOut)
         *sizeOut = size;
 
-	return arr;
+    return arr;
 }
 
 int* fread_int_array(FILE *file, const char *array_name, unsigned int* sizeOut)
 {
-	unsigned int i, size;
-	fscanf(file, array_name);
-	fscanf(file, "[%u]: ", &size);
+    unsigned int i, size;
     int* arr;
 
-	arr = (int*) mallocSafe(sizeof(int) * size);
+    fscanf(file, array_name);
+    fscanf(file, "[%u]: ", &size);
 
-	for (i = 0; i < size; i++)
+    arr = (int*) mallocSafe(sizeof(int) * size);
+
+    for (i = 0; i < size; i++)
     {
-		if (fscanf(file, "%d", &arr[i]) != 1)
+        if (fscanf(file, "%d", &arr[i]) != 1)
         {
-			fprintf(stderr,"Error reading into %s\n", array_name);
-			exit(-1);
-		}
+            fprintf(stderr, "Error reading into %s\n", array_name);
+            exit(-1);
+        }
 
-		if (i < size - 1)
+        if (i < size - 1)
             fscanf(file, ", ");
-	}
-	fscanf(file, "\n");
+    }
+    fscanf(file, "\n");
 
     if (sizeOut)
         *sizeOut = size;
 
-	return arr;
+    return arr;
 }
 
 void printIntegralArea(const INTEGRAL_AREA* ia)

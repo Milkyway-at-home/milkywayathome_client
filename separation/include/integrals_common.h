@@ -30,7 +30,8 @@ extern "C" {
 #include "coordinates.h"
 #include "integrals_likelihood.h"
 
-__attribute__ ((always_inline))
+
+ALWAYS_INLINE
 inline void zero_st_probs(real* st_probs, const unsigned int nstream)
 {
     unsigned int i;
@@ -39,7 +40,7 @@ inline void zero_st_probs(real* st_probs, const unsigned int nstream)
         st_probs[i] = 0.0;
 }
 
-__attribute__ ((always_inline, hot))
+ALWAYS_INLINE HOT
 inline void stream_sums(real* st_probs,
                         __MW_CONSTANT STREAM_CONSTANTS* sc,
                         const vector xyz,
@@ -64,7 +65,7 @@ inline void stream_sums(real* st_probs,
     }
 }
 
-__attribute__ ((always_inline))
+ALWAYS_INLINE
 inline void sum_probs(ST_PROBS* probs,
                       const real* st_probs,
                       const real V_reff_xr_rp3,
@@ -76,7 +77,7 @@ inline void sum_probs(ST_PROBS* probs,
 }
 
 /* FIXME: I don't know what these do enough to name it properly */
-__attribute__ ((always_inline, hot))
+ALWAYS_INLINE HOT
 inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                 __MW_CONSTANT const R_POINTS* r_pts,
                                 __MW_CONSTANT STREAM_CONSTANTS* sc,
@@ -122,7 +123,7 @@ inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
     return bg_prob;
 }
 
-__attribute__ ((always_inline))
+ALWAYS_INLINE
 inline real sub_bg_probability2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                 __MW_CONSTANT const R_POINTS* r_pts,
                                 __MW_CONSTANT STREAM_CONSTANTS* sc,
@@ -153,7 +154,7 @@ inline real sub_bg_probability2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
     return bg_prob;
 }
 
-__attribute__ ((always_inline, hot))
+ALWAYS_INLINE HOT
 inline real bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                            __MW_CONSTANT const R_POINTS* r_pts,
                            __MW_CONSTANT STREAM_CONSTANTS* sc,
@@ -201,7 +202,7 @@ inline real bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 }
 
 /* Sum over mu steps using Kahan summation */
-__attribute__ ((always_inline, hot))
+ALWAYS_INLINE HOT
 inline _MW_STATIC BG_PROB mu_sum(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                  __MW_CONSTANT STREAM_CONSTANTS* sc,
                                  __MW_CONSTANT R_POINTS* r_pts,

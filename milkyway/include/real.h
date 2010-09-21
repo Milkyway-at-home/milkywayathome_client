@@ -41,7 +41,17 @@
 #endif
 
 #ifndef __OPENCL_VERSION__
-  #include <tgmath.h>
+
+  /* FIXME: This happens to work with MSVC with double since the
+     functions.  MSVC is stupid and doesn't support C99 or anything,
+     so we'll have to do work to make float work to not have horrible
+     casting everywhere
+   */
+  #ifndef _MSC_VER
+    #include <tgmath.h>
+  #else
+    #include <math.h>
+  #endif
 
   #if ENABLE_CRLIBM
     #include <crlibm.h>

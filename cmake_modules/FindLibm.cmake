@@ -19,7 +19,11 @@
 #
 
 
-find_path(LIBM_INCLUDE_DIR math.h)
+if(NOT MSVC)
+  find_path(LIBM_INCLUDE_DIR math.h)
+else()
+  set(LIBM_INCLUDE_DIR ${CMAKE_INCLUDE_PATH})
+endif()
 
 if(APPLE OR MSVC)
   set(LIBM_LIBRARY m)

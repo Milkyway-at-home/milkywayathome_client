@@ -36,10 +36,22 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef _MSC_VER
   #define RESTRICT __restrict
   #define FUNC_NAME __FUNCTION__
+  #define inline __inline
 #else
   #define RESTRICT restrict
   #define FUNC_NAME __func__
-#endif /* MSVC */
+#endif /* _MSC_VER */
+
+
+#ifndef _MSC_VER
+  #define HOT __attribute__((hot))
+  #define CONST_F __attribute__((const))
+  #define ALWAYS_INLINE __attribute__((always_inline))
+#else
+  #define HOT
+  #define CONST_F
+  #define ALWAYS_INLINE
+#endif /* _MSC_VER */
 
 
 #if DOUBLEPREC

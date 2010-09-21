@@ -30,7 +30,11 @@ extern "C" {
 
 
 //#define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(x)))
-#define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(32)))
+#ifndef _MSC_VER
+  #define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(32)))
+#else
+  #define SEPARATION_ALIGN(x)
+#endif /* _MSC_VER */
 
 typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
