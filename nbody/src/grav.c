@@ -116,7 +116,7 @@ static inline bool treescan(const NBodyCtx* ctx,
 /* hackGrav: evaluate gravitational field on body p; checks to be
  * sure self-interaction was handled correctly if intree is true.
  */
-static inline void hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p, vectorptr restrict acc)
+static inline void hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p, vectorptr RESTRICT acc)
 {
     vector externalacc;
     static bool treeincest = FALSE;     /* tree-incest occured */

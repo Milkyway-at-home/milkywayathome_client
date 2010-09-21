@@ -21,7 +21,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 #include "milkyway_util.h"
 
-void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r)
+void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr RESTRICT lbR, const vectorptr RESTRICT r)
 {
     const real xp = X(r) + ctx->sunGCDist;
 
@@ -33,7 +33,7 @@ void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr restrict lbR, const vecto
         L(lbR) += 2 * M_PI;
 }
 
-void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r)
+void cartesianToLbr(const NBodyCtx* ctx, vectorptr RESTRICT lbR, const vectorptr RESTRICT r)
 {
     cartesianToLbr_rad(ctx, lbR, r);
     L(lbR) = r2d(L(lbR));

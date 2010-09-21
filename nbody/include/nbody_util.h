@@ -32,8 +32,8 @@ extern "C" {
 #define REQ(a, b) (rabs((a) - (b)) < 0.00001)
 
 /* Coordinate conversion */
-void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r);
-void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr restrict r);
+void cartesianToLbr(const NBodyCtx* ctx, vectorptr RESTRICT lbR, const vectorptr RESTRICT r);
+void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr RESTRICT lbR, const vectorptr RESTRICT r);
 void lbrToCartesian(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr);
 void lbrToCartesian_rad(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr);
 

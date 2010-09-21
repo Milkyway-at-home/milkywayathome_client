@@ -43,7 +43,7 @@ static inline void pickshell(dsfmt_t* dsfmtState, vector vec, real rad)
 
 #if BOINC_APPLICATION
 
-static void printPlummer(vectorptr restrict rshift, vectorptr restrict vshift)
+static void printPlummer(vectorptr RESTRICT rshift, vectorptr RESTRICT vshift)
 {
     fprintf(DEFAULT_OUTPUT_FILE,
             "<plummer_r> %.14g %.14g %.14g </plummer_r>\n"
@@ -54,7 +54,7 @@ static void printPlummer(vectorptr restrict rshift, vectorptr restrict vshift)
 
 #else
 
-static void printPlummer(vectorptr restrict rshift, vectorptr restrict vshift)
+static void printPlummer(vectorptr RESTRICT rshift, vectorptr RESTRICT vshift)
 {
     printf("Shifting plummer sphere to r = (%.10f, %.10f, %.10f) v = (%.10f, %.10f, %.10f)\n",
            X(rshift), Y(rshift), Z(rshift),

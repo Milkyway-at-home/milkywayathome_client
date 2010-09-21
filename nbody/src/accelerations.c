@@ -28,7 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Pure functions are the best ones */
 
-void sphericalAccel(vectorptr restrict acc, const Spherical* sph, const vectorptr restrict pos)
+void sphericalAccel(vectorptr RESTRICT acc, const Spherical* sph, const vectorptr RESTRICT pos)
 {
     real r;
     ABSV(r, pos);
@@ -37,7 +37,7 @@ void sphericalAccel(vectorptr restrict acc, const Spherical* sph, const vectorpt
 }
 
 /* gets negative of the acceleration vector of this disk component */
-void miyamotoNagaiDiskAccel(vectorptr restrict acc, const Disk* disk, const vectorptr restrict pos)
+void miyamotoNagaiDiskAccel(vectorptr RESTRICT acc, const Disk* disk, const vectorptr RESTRICT pos)
 {
     const real a   = disk->scale_length;
     const real b   = disk->scale_height;
@@ -52,7 +52,7 @@ void miyamotoNagaiDiskAccel(vectorptr restrict acc, const Disk* disk, const vect
     Z(acc) = -disk->mass * Z(pos) * azp / (zp * rth);
 }
 
-void exponentialDiskAccel(vectorptr restrict acc, const Disk* disk, const vectorptr restrict pos)
+void exponentialDiskAccel(vectorptr RESTRICT acc, const Disk* disk, const vectorptr RESTRICT pos)
 {
     const real b = disk->scale_length;
     real r;
@@ -63,7 +63,7 @@ void exponentialDiskAccel(vectorptr restrict acc, const Disk* disk, const vector
     MULVS(acc, pos, factor);
 }
 
-void logHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr restrict pos)
+void logHaloAccel(vectorptr RESTRICT acc, const Halo* halo, const vectorptr RESTRICT pos)
 {
     const real tvsqr = -2.0 * sqr(halo->vhalo);
     const real qsqr  = sqr(halo->flattenZ);
@@ -78,7 +78,7 @@ void logHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr rest
     Z(acc) = tvsqr * Z(pos) / ((qsqr * arst) + zsqr);
 }
 
-void nfwHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr restrict pos)
+void nfwHaloAccel(vectorptr RESTRICT acc, const Halo* halo, const vectorptr RESTRICT pos)
 {
     real r;
     ABSV(r, pos);
@@ -90,7 +90,7 @@ void nfwHaloAccel(vectorptr restrict acc, const Halo* halo, const vectorptr rest
 }
 
 /* CHECKME: Seems to have precision related issues for a small number of cases for very small qy */
-void triaxialHaloAccel(vectorptr restrict acc, const Halo* h, const vectorptr restrict pos)
+void triaxialHaloAccel(vectorptr RESTRICT acc, const Halo* h, const vectorptr RESTRICT pos)
 {
     /* TODO: More things here can be cached */
     const real qzs      = sqr(h->flattenZ);

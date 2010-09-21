@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 #include "orbitintegrator.h"
 
-inline void acceleration(vectorptr restrict acc, const NBodyCtx* ctx, const vectorptr restrict pos)
+inline void acceleration(vectorptr RESTRICT acc, const NBodyCtx* ctx, const vectorptr RESTRICT pos)
 {
     /* lookup table for functions for calculating accelerations */
     static const HaloAccel haloFuncs[] = { [LogarithmicHalo] = logHaloAccel,

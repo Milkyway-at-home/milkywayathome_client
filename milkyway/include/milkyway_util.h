@@ -58,7 +58,7 @@ extern "C" {
 
 #if MW_ENABLE_DEBUG
     /* convenient functions for printing debugging stuffs */
-  #define MW_DEBUG(msg, ...) fprintf(stderr, "%s():%d: ", __func__, __LINE__); \
+  #define MW_DEBUG(msg, ...) fprintf(stderr, "%s():%d: ", FUNC_NAME, __LINE__); \
                              fprintf(stderr, msg, __VA_ARGS__);
     #define MW_DEBUGMSG(msg) puts(msg)
 #else

@@ -23,12 +23,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_types.h"
 
-void sphericalAccel(vectorptr restrict acc, const Spherical* sph, const vectorptr restrict pos);
-void miyamotoNagaiDiskAccel(vectorptr restrict acc, const Disk* d, const vectorptr restrict pos);
-void exponentialDiskAccel(vectorptr restrict acc, const Disk* d, const vectorptr restrict pos);
-void triaxialHaloAccel(vectorptr restrict acc, const Halo* h, const vectorptr restrict pos);
-void logHaloAccel(vectorptr restrict acc, const Halo* h, const vectorptr restrict pos);
-void nfwHaloAccel(vectorptr restrict acc, const Halo* h, const vectorptr restrict pos);
+void sphericalAccel(vectorptr RESTRICT acc, const Spherical* sph, const vectorptr RESTRICT pos);
+void miyamotoNagaiDiskAccel(vectorptr RESTRICT acc, const Disk* d, const vectorptr RESTRICT pos);
+void exponentialDiskAccel(vectorptr RESTRICT acc, const Disk* d, const vectorptr RESTRICT pos);
+void triaxialHaloAccel(vectorptr RESTRICT acc, const Halo* h, const vectorptr RESTRICT pos);
+void logHaloAccel(vectorptr RESTRICT acc, const Halo* h, const vectorptr RESTRICT pos);
+void nfwHaloAccel(vectorptr RESTRICT acc, const Halo* h, const vectorptr RESTRICT pos);
 
 #endif /* _ACCELERATIONS_H_ */
 

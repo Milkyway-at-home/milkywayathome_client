@@ -30,6 +30,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <errno.h>
 
+#include "milkyway_config.h"
 #include "milkyway_util.h"
 #include "milkyway_math.h"
 
@@ -227,7 +228,7 @@ real* mwReadRestArgs(const char** rest, const unsigned int numParams, unsigned i
 
     if (!rest)
     {
-        warn("%s: got rest == NULL\n", __func__);
+        warn("%s: got rest == NULL\n", FUNC_NAME);
         return NULL;
     }
 

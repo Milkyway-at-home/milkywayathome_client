@@ -417,12 +417,12 @@ typedef int generic_enum_t;  /* A general enum type. */
 
 #ifndef __OPENCL_VERSION__  /* No function pointers allowed in kernels */
 /* Acceleration functions for a given potential */
-typedef void (*SphericalAccel) (vectorptr restrict, const Spherical*, const vectorptr restrict);
-typedef void (*HaloAccel) (vectorptr restrict, const Halo*, const vectorptr restrict);
-typedef void (*DiskAccel) (vectorptr restrict, const Disk*, const vectorptr restrict);
+typedef void (*SphericalAccel) (vectorptr RESTRICT, const Spherical*, const vectorptr RESTRICT);
+typedef void (*HaloAccel) (vectorptr RESTRICT, const Halo*, const vectorptr RESTRICT);
+typedef void (*DiskAccel) (vectorptr RESTRICT, const Disk*, const vectorptr RESTRICT);
 
 /* Generic potential function */
-typedef void (*AccelFunc) (vectorptr restrict, const void*, const vectorptr restrict);
+typedef void (*AccelFunc) (vectorptr RESTRICT, const void*, const vectorptr RESTRICT);
 
 #endif /* __OPENCL_VERSION__ */
 
