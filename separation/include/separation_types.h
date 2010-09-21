@@ -174,9 +174,9 @@ typedef struct SEPARATION_ALIGN(128)
 
 
 #define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0.0, \
-                                     0, 0.0,   \
+                                     0, 0,   \
                                      0, 0,     \
-                                     0, 0, 0, 0, \
+                                     0, 0, 0, 0.0, \
                                      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
                                      0.0, 0.0, 0.0 }
 

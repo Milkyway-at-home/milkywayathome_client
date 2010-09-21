@@ -45,28 +45,12 @@ __inline LB gc2lb(const int wedge, const real mu, const real nu)
     real sininc, cosinc;
     real sinra, cosra;
 
-    /* Rotation */
-    mw_sincos(d2r(nu), &sinnu, &cosnu);
-
-    munode = mu - NODE_GC_COORDS;
-    mw_sincos(d2r(munode), &sinmunode, &cosmunode);
-
-    const real x12 = cosmunode * cosnu;  /* x1 = x2 */
-    const real y2 = sinmunode * cosnu;
-    /* z2 = sin(nu) */
-
-    const real wedge_eta = wedge * d2r(stripeSeparation) - d2r((real) 57.5) - (wedge > 46 ? M_PI : 0.0);
-
-    /* Get inclination for the given wedge. */
-    const real wedge_incl = wedge_eta + d2r(surveyCenterDec);
-
-    mw_sincos(wedge_incl, &sininc, &cosinc);
-
-    const real y1 = y2 * cosinc - sinnu * sininc;
-    const real z1 = y2 * sininc + sinnu * cosinc;
-
-    const real ra = mw_atan2(y1, x12) + NODE_GC_COORDS_RAD;
-    const real dec = mw_asin(z1);
+    real x12, y2, y1, z1;
+    real ra, dec;
+    real wedge_eta, wedge_incl;
+    real cosdec;
+    vector v1, v2;
+    real r;
 
     /* Use SLALIB to do the actual conversion */
     _MW_STATIC const matrix rmat =
@@ -76,23 +60,47 @@ __inline LB gc2lb(const int wedge, const real mu, const real nu)
             VECTOR( -0.867666135858, -0.198076386122,  0.455983795705 )
         };
 
+    /* Rotation */
+    mw_sincos(d2r(nu), &sinnu, &cosnu);
+
+    munode = mu - NODE_GC_COORDS;
+    mw_sincos(d2r(munode), &sinmunode, &cosmunode);
+
+    x12 = cosmunode * cosnu;  /* x1 = x2 */
+    y2 = sinmunode * cosnu;
+    /* z2 = sin(nu) */
+
+    wedge_eta = wedge * d2r(stripeSeparation) - d2r((real) 57.5) - (wedge > 46 ? M_PI : 0.0);
+
+    /* Get inclination for the given wedge. */
+    wedge_incl = wedge_eta + d2r(surveyCenterDec);
+
+    mw_sincos(wedge_incl, &sininc, &cosinc);
+
+    y1 = y2 * cosinc - sinnu * sininc;
+    z1 = y2 * sininc + sinnu * cosinc;
+
+    ra = mw_atan2(y1, x12) + NODE_GC_COORDS_RAD;
+    dec = mw_asin(z1);
+
+
     /* Spherical to Cartesian */
     mw_sincos(ra, &sinra, &cosra);
 
-    const real cosdec = mw_cos(dec);
-    vector v1 = VECTOR( cosra * cosdec,
-                        sinra * cosdec,
-                        z1         /* mw_sin(asin(z1)) == z1 */
-                      );
+    cosdec = mw_cos(dec);
+    SET_VECTOR(v1, 
+               cosra * cosdec,
+               sinra * cosdec,
+               z1         /* mw_sin(asin(z1)) == z1 */
+              );
 
     /* Equatorial to Galactic */
 
     /* Matrix rmat * vector v1 -> vector vb */
-    vector v2;
     MULMV(v2, rmat, v1);
 
     /* Cartesian to spherical */
-    const real r = mw_hypot(X(v2), Y(v2));
+    r = mw_hypot(X(v2), Y(v2));
 
     LB_L(lb) = ( r != 0.0 ) ? mw_atan2( Y(v2), X(v2) ) : 0.0;
     LB_B(lb) = ( Z(v2) != 0.0 ) ? mw_atan2( Z(v2), r ) : 0.0;

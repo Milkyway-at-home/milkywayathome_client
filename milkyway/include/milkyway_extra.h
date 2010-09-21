@@ -28,6 +28,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define _MW_STATIC
 #endif /* __ATI_CL__ */
 
+#ifdef _MSC_VER
+  #define strdup _strdup
+  #define isnan _isnan
+  #define copysign _copysign
+  #define access _access
+#endif /* _MSC_VER */
 
 #endif /* _MILKYWAY_EXTRA_H_ */
 

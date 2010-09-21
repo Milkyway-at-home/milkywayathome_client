@@ -29,6 +29,7 @@
 
   #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
   #define VECTOR(x, y, z) { (x), (y), (z), 0.0 }
+  #define SET_VECTOR(v, x, y, z) { X(v) = (x); Y(v) = (y); Z(v) = (z); }
 
 /* DOT Vector Product */
 
@@ -66,6 +67,7 @@
 
   #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
   #define VECTOR(x, y, z) { (x), (y), (z), 0.0 }
+  #define SET_VECTOR(v, x, y, z) { X(v) = (x); Y(v) = (y); Z(v) = (z); }
 
 /* DOT Vector Product */
 #define DOTVP(s,v,u)                                    \

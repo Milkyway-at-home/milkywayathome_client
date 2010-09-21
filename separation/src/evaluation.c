@@ -82,8 +82,8 @@ static inline void calculate_stream_integrals(const ST_PROBS* probs,
 }
 
 /* Add up completed integrals for progress reporting */
-static inline real completed_integral_progress(const INTEGRAL_AREA* ias,
-                                               const EVALUATION_STATE* es)
+static inline unsigned int completed_integral_progress(const INTEGRAL_AREA* ias,
+                                                       const EVALUATION_STATE* es)
 {
     const INTEGRAL_AREA* ia;
     unsigned int i, current_calc_probs = 0;

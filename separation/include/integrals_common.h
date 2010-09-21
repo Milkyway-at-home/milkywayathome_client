@@ -79,7 +79,7 @@ inline void sum_probs(ST_PROBS* probs,
 /* FIXME: I don't know what these do enough to name it properly */
 ALWAYS_INLINE HOT
 inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
-                                __MW_CONSTANT const R_POINTS* r_pts,
+                                __MW_CONSTANT R_POINTS* r_pts,
                                 __MW_CONSTANT STREAM_CONSTANTS* sc,
                                 const LB integral_point,
                                 const int aux_bg_profile,
@@ -125,7 +125,7 @@ inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 
 ALWAYS_INLINE
 inline real sub_bg_probability2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
-                                __MW_CONSTANT const R_POINTS* r_pts,
+                                __MW_CONSTANT R_POINTS* r_pts,
                                 __MW_CONSTANT STREAM_CONSTANTS* sc,
                                 const LB integral_point,
                                 const unsigned int convolve,
@@ -156,7 +156,7 @@ inline real sub_bg_probability2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 
 ALWAYS_INLINE HOT
 inline real bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
-                           __MW_CONSTANT const R_POINTS* r_pts,
+                           __MW_CONSTANT R_POINTS* r_pts,
                            __MW_CONSTANT STREAM_CONSTANTS* sc,
                            const LB integral_point,
                            const real reff_xr_rp3,

@@ -30,10 +30,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #if BOINC_APPLICATION
 
-__attribute__ ((always_inline))
+ALWAYS_INLINE
 static inline real progress(const EVALUATION_STATE* es,
                             const INTEGRAL_AREA* ia,
-                            unsigned int total_calc_probs)
+                            real total_calc_probs)
 {
     /* This integral's progress */
     /* When checkpointing is done, ia->mu_step would always be 0 */
@@ -43,10 +43,10 @@ static inline real progress(const EVALUATION_STATE* es,
     return (real)(i_prog + es->current_calc_probs) / total_calc_probs;
 }
 
-__attribute__ ((always_inline))
+ALWAYS_INLINE
 static inline void do_boinc_checkpoint(const EVALUATION_STATE* es,
                                        const INTEGRAL_AREA* ia,
-                                       unsigned int total_calc_probs)
+                                       real total_calc_probs)
 {
     if (boinc_time_to_checkpoint())
     {
@@ -64,7 +64,7 @@ static inline void do_boinc_checkpoint(const EVALUATION_STATE* es,
 
 #endif /* BOINC_APPLICATION */
 
-__attribute__ ((always_inline))
+ALWAYS_INLINE
 static inline void nu_sum(const ASTRONOMY_PARAMETERS* ap,
                           const STREAM_CONSTANTS* sc,
                           const INTEGRAL_AREA* ia,

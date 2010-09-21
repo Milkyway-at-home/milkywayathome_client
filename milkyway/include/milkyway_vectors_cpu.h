@@ -34,6 +34,7 @@ typedef union
 
 
 #define VECTOR(x, y, z) { (x), (y), (z) }
+#define SET_VECTOR(v, x, y, z) { X(v) = (x); Y(v) = (y); Z(v) = (z); }
 
 /* Note: vectorptr is NOT the same as vector*.  By using real* as
    vectorptr, we can do nice things to avoid pointer aliasing and
