@@ -31,7 +31,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* FIXME: Excessive duplication with stuff used in integrals which I
  * was too lazy to also fix here */
 
-inline static real probabilities_convolve(__MW_CONSTANT STREAM_CONSTANTS* sc,
+static inline real probabilities_convolve(__MW_CONSTANT STREAM_CONSTANTS* sc,
                                           __MW_LOCAL const R_POINTS* r_pts,
                                           __MW_LOCAL vector* const xyz,
                                           const unsigned int convolve)
@@ -55,7 +55,7 @@ inline static real probabilities_convolve(__MW_CONSTANT STREAM_CONSTANTS* sc,
     return st_prob;
 }
 
-inline static void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
+static inline void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
                                             const STREAM_CONSTANTS* sc,
                                             const R_POINTS* r_pts,
                                             const real reff_xr_rp3,
@@ -73,7 +73,7 @@ inline static void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
     }
 }
 
-inline static real likelihood_bg_probability_main(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+static inline real likelihood_bg_probability_main(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                                   __MW_LOCAL const R_POINTS* r_pts,
                                                   __MW_LOCAL vector* const xyz,
                                                   const LB integral_point,
@@ -113,7 +113,7 @@ inline static real likelihood_bg_probability_main(__MW_CONSTANT ASTRONOMY_PARAME
     return bg_prob;
 }
 
-inline static real likelihood_bg_probability_full(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+static inline real likelihood_bg_probability_full(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                                   __MW_LOCAL const R_POINTS* r_pts,
                                                   __MW_LOCAL vector* const xyz,
                                                   const LB integral_point,
@@ -140,7 +140,7 @@ inline static real likelihood_bg_probability_full(__MW_CONSTANT ASTRONOMY_PARAME
     return bg_prob;
 }
 
-inline static real likelihood_bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+static inline real likelihood_bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                              __MW_LOCAL const R_POINTS* r_pts,
                                              __MW_LOCAL vector* const xyz,
                                              const LB integral_point,
@@ -171,7 +171,7 @@ inline static real likelihood_bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS*
     return bg_prob;
 }
 
-inline static real stream_sum(const unsigned int number_streams,
+static inline real stream_sum(const unsigned int number_streams,
                               const FINAL_STREAM_INTEGRALS* fsi,
                               real* st_prob,
                               ST_SUM* st_sum,
@@ -201,7 +201,7 @@ inline static real stream_sum(const unsigned int number_streams,
 }
 
 /* Populates exp_stream_weights, and returns the sum */
-inline static real get_exp_stream_weights(real* exp_stream_weights,
+static inline real get_exp_stream_weights(real* exp_stream_weights,
                                           const STREAMS* streams,
                                           real exp_background_weight)
 {
@@ -218,7 +218,7 @@ inline static real get_exp_stream_weights(real* exp_stream_weights,
     return sum_exp_weights;
 }
 
-inline static void get_stream_only_likelihood(ST_SUM* st_sum,
+static inline void get_stream_only_likelihood(ST_SUM* st_sum,
                                               const unsigned int number_stars,
                                               const unsigned int number_streams)
 {
@@ -320,11 +320,17 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
                 const STREAM_GAUSS* sg)
 
 {
-    real* st_prob = mallocSafe(sizeof(real) * streams->number_streams);
-    R_POINTS* r_pts = mallocSafe(sizeof(R_POINTS) * ap->convolve);
-    ST_SUM* st_sum = callocSafe(sizeof(ST_SUM), streams->number_streams);
-    real* exp_stream_weights = mallocSafe(sizeof(real) * streams->number_streams);
-    vector* xyzs = callocSafe(sizeof(vector), ap->convolve);
+    real* st_prob;
+    R_POINTS* r_pts;
+    ST_SUM* st_sum;
+    real* exp_stream_weights;
+    vector* xyzs;
+
+    st_prob = (real*) mallocSafe(sizeof(real) * streams->number_streams);
+    r_pts = (R_POINTS*) mallocSafe(sizeof(R_POINTS) * ap->convolve);
+    st_sum = (ST_SUM*) callocSafe(sizeof(ST_SUM), streams->number_streams);
+    exp_stream_weights = (real*) mallocSafe(sizeof(real) * streams->number_streams);
+    xyzs = (vector*) callocSafe(sizeof(vector), ap->convolve);
 
     const real exp_background_weight = mw_exp(ap->background_weight);
     real sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);

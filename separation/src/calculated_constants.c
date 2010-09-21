@@ -45,14 +45,14 @@ static void lbr2xyz(const vector lbr, vector xyz)
     Y(xyz) = zp * lsin;
 }
 
-inline static void stream_a(vector a, real* parameters)
+static inline void stream_a(vector a, real* parameters)
 {
     X(a) = mw_sin(parameters[2]) * mw_cos(parameters[3]);
     Y(a) = mw_sin(parameters[2]) * mw_sin(parameters[3]);
     Z(a) = mw_cos(parameters[2]);
 }
 
-inline static void stream_c(vector c, int wedge, real mu, real r)
+static inline void stream_c(vector c, int wedge, real mu, real r)
 {
     LB lb;
     vector lbr;
@@ -70,7 +70,9 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
                                  const STREAMS* streams)
 {
     unsigned int i;
-    STREAM_CONSTANTS* sc = mallocSafe(sizeof(STREAM_CONSTANTS) * streams->number_streams);
+    STREAM_CONSTANTS* sc;
+
+    sc = (STREAM_CONSTANTS*) mallocSafe(sizeof(STREAM_CONSTANTS) * streams->number_streams);
 
     ap->alpha = bgp->parameters[0];
     ap->q     = bgp->parameters[1];
@@ -125,12 +127,12 @@ STREAM_GAUSS* get_stream_gauss(const unsigned int convolve)
     unsigned int i;
     STREAM_GAUSS* sg;
 
-    real* qgaus_X = mallocSafe(sizeof(real) * convolve);
-    real* qgaus_W = mallocSafe(sizeof(real) * convolve);
+    real* qgaus_X = (real*) mallocSafe(sizeof(real) * convolve);
+    real* qgaus_W = (real*) mallocSafe(sizeof(real) * convolve);
 
     gaussLegendre(-1.0, 1.0, qgaus_X, qgaus_W, convolve);
 
-    sg = mallocSafe(sizeof(STREAM_GAUSS) * convolve);
+    sg = (STREAM_GAUSS*) mallocSafe(sizeof(STREAM_GAUSS) * convolve);
 
     /* Use separate buffers at first since that's what the gaussLegendre takes,
        but then pack them into a more coherent struct */
@@ -153,8 +155,9 @@ NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
 {
     unsigned int i;
     real tmp1, tmp2;
+    NU_CONSTANTS* nu_consts;
 
-    NU_CONSTANTS* nu_consts = mallocSafe(sizeof(NU_CONSTANTS) * nu_steps);
+    nu_consts = (NU_CONSTANTS*) mallocSafe(sizeof(NU_CONSTANTS) * nu_steps);
 
     for (i = 0; i < nu_steps; ++i)
     {

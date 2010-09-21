@@ -40,7 +40,7 @@ void cartesianToLbr(const NBodyCtx* ctx, vectorptr restrict lbR, const vectorptr
     B(lbR) = r2d(B(lbR));
 }
 
-inline static void _lbrToCartesian(vectorptr cart, const real l, const real b, const real r, const real sun)
+static inline void _lbrToCartesian(vectorptr cart, const real l, const real b, const real r, const real sun)
 {
     X(cart) = r * mw_cos(l) * mw_cos(b) - sun;
     Y(cart) = r * mw_sin(l) * mw_cos(b);

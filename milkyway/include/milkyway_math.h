@@ -31,6 +31,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #endif /* __ATI_CL__ */
 #endif /* DOUBLEPREC */
 
+#define _USE_MATH_DEFINES
+
 #include "real.h"
 #include "milkyway_vectors.h"
 #include "milkyway_math_functions.h"
@@ -95,6 +97,22 @@ extern "C" {
 # define M_SQRT2	1.41421356237309504880	/* sqrt(2) */
 # define M_SQRT1_2	0.70710678118654752440	/* 1/sqrt(2) */
 #endif /* M_PI */
+
+
+#if defined(_WIN32)
+/* MSVC hacks */
+  #ifdef NAN
+    static const unsigned long nan[2]={ 0xffffffff, 0x7fffffff };
+    #define NAN (*(const double *) nan)
+  #endif /* NAN*/
+
+  #ifndef INFINITY
+    //#warning "FIXME: USING MAX_DOUBLE FOR INFINITY for MSVC"
+    //#define INFINITY MAX_DOUBLE
+    #define INFINITY HUGE_VAL
+  #endif /* INFINITY */
+
+#endif /* _WIN32 */
 
 #ifdef __cplusplus
 }

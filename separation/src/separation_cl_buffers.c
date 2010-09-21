@@ -22,7 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "show_cl_types.h"
 #include "separation_cl_buffers.h"
 
-inline static cl_int createOutMuBuffer(const unsigned int r_steps,
+static inline cl_int createOutMuBuffer(const unsigned int r_steps,
                                        const unsigned int nu_steps,
                                        CLInfo* ci,
                                        SeparationCLMem* cm)
@@ -43,7 +43,7 @@ inline static cl_int createOutMuBuffer(const unsigned int r_steps,
     return CL_SUCCESS;
 }
 
-inline static cl_int createOutProbsBuffer(const unsigned int r_steps,
+static inline cl_int createOutProbsBuffer(const unsigned int r_steps,
                                           const unsigned int nu_steps,
                                           const unsigned int number_streams,
                                           CLInfo* ci,
@@ -64,7 +64,7 @@ inline static cl_int createOutProbsBuffer(const unsigned int r_steps,
     return CL_SUCCESS;
 }
 
-inline static cl_int createSCBuffer(const STREAM_CONSTANTS* sc,
+static inline cl_int createSCBuffer(const STREAM_CONSTANTS* sc,
                                     const unsigned int number_streams,
                                     CLInfo* ci,
                                     SeparationCLMem* cm,
@@ -86,7 +86,7 @@ inline static cl_int createSCBuffer(const STREAM_CONSTANTS* sc,
     return CL_SUCCESS;
 }
 
-inline static cl_int createAPBuffer(const ASTRONOMY_PARAMETERS* ap,
+static inline cl_int createAPBuffer(const ASTRONOMY_PARAMETERS* ap,
                                     CLInfo* ci,
                                     SeparationCLMem* cm,
                                     const cl_mem_flags constBufFlags)
@@ -106,7 +106,7 @@ inline static cl_int createAPBuffer(const ASTRONOMY_PARAMETERS* ap,
     return CL_SUCCESS;
 }
 
-inline static cl_int createIABuffer(const INTEGRAL_AREA* ia,
+static inline cl_int createIABuffer(const INTEGRAL_AREA* ia,
                                     CLInfo* ci,
                                     SeparationCLMem* cm,
                                     const cl_mem_flags constBufFlags)
@@ -122,7 +122,7 @@ inline static cl_int createIABuffer(const INTEGRAL_AREA* ia,
     return CL_SUCCESS;
 }
 
-inline static cl_int createRPtsBuffer(const R_POINTS* r_pts_all,
+static inline cl_int createRPtsBuffer(const R_POINTS* r_pts_all,
                                       const unsigned int nconvolve,
                                       const unsigned int r_steps,
                                       CLInfo* ci,

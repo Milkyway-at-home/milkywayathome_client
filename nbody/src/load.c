@@ -52,7 +52,7 @@ static int subIndex(bodyptr p, cellptr q)
  */
 
 /* TODO: Incremental matrix operations */
-inline static void hackQuad(cellptr p)
+static inline void hackQuad(cellptr p)
 {
     unsigned int ndesc, i;
     nodeptr desc[NSUB], q;

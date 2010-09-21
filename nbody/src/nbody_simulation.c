@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 #include "milkyway_util.h"
 
-inline static void initState(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
+static inline void initState(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     warn("Starting nbody system\n");
 
@@ -64,7 +64,7 @@ static void startRun(const NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
 }
 
 /* stepSystem: advance N-body system one time-step. */
-inline static void stepSystem(const NBodyCtx* ctx, NBodyState* st)
+static inline void stepSystem(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
     vector* a;
@@ -96,7 +96,7 @@ inline static void stepSystem(const NBodyCtx* ctx, NBodyState* st)
 }
 
 #if BOINC_APPLICATION
-inline static void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
+static inline void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
 {
     if (boinc_time_to_checkpoint())
     {
@@ -202,7 +202,7 @@ static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
 #endif /* BOINC_APPLICATION */
 
 /* Set context fields read from command line flags */
-inline static void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
+static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
 {
     ctx->outputCartesian = nbf->outputCartesian;
     ctx->outputBodies    = nbf->printBodies;

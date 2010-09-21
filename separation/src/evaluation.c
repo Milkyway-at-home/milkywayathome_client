@@ -40,7 +40,7 @@ static void final_stream_integrals(FINAL_STREAM_INTEGRALS* fsi,
 {
     unsigned int i, j;
 
-    fsi->stream_integrals = callocSafe(number_streams, sizeof(real));
+    fsi->stream_integrals = (real*) callocSafe(number_streams, sizeof(real));
 
     fsi->background_integral = es->integrals[0].background_integral;
     for (i = 0; i < number_streams; ++i)
@@ -70,7 +70,7 @@ static void print_stream_integrals(const FINAL_STREAM_INTEGRALS* fsi, const unsi
     fprintf(stderr, " </stream_integrals>\n");
 }
 
-inline static void calculate_stream_integrals(const ST_PROBS* probs,
+static inline void calculate_stream_integrals(const ST_PROBS* probs,
                                               real* stream_integrals,
                                               const unsigned int number_streams)
 {
@@ -81,7 +81,7 @@ inline static void calculate_stream_integrals(const ST_PROBS* probs,
 }
 
 /* Add up completed integrals for progress reporting */
-inline static real completed_integral_progress(const INTEGRAL_AREA* ias,
+static inline real completed_integral_progress(const INTEGRAL_AREA* ias,
                                                const EVALUATION_STATE* es)
 {
     const INTEGRAL_AREA* ia;
@@ -105,10 +105,13 @@ static real integrate(const ASTRONOMY_PARAMETERS* ap,
                       EVALUATION_STATE* es)
 {
     real result;
+    NU_CONSTANTS* nu_consts;
+    R_POINTS* r_pts;
+    real* st_probs;
 
-    NU_CONSTANTS* nu_consts = prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
-    R_POINTS* r_pts = mallocSafe(sizeof(R_POINTS) * ap->convolve);
-    real* st_probs = mallocSafe(sizeof(real) * ap->number_streams);
+    nu_consts = (NU_CONSTANTS*) prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
+    r_pts = (R_POINTS*) mallocSafe(sizeof(R_POINTS) * ap->convolve);
+    st_probs = (real*) mallocSafe(sizeof(real) * ap->number_streams);
 
     result = r_sum(ap, ia, sc, sg, nu_consts, r_pts, st_probs, probs, es);
     es->r_step = 0;

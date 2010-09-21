@@ -36,7 +36,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define BUFSIZE 4096
 
-inline static cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
+static inline cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
                                              const INTEGRAL_AREA* ia,
                                              const CLInfo* ci,
                                              SeparationCLMem* cm)

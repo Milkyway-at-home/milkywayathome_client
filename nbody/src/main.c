@@ -18,9 +18,6 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* TODO: wuh wuh windows */
-#include <unistd.h>
-#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <popt.h>

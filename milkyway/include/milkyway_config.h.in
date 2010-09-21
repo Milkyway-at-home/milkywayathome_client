@@ -27,6 +27,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 DOUBLEPREC
 #cmakedefine01 MW_ENABLE_DEBUG
 
+#ifdef MSVC
+  #define restrict __restrict
+#endif /* MSVC */
+
 
 #if DOUBLEPREC
   #define PRECSTRING "double"

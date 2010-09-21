@@ -35,7 +35,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define BUFSIZE 4096
 
-inline static void releaseNBodyCLMem(NBodyCLMem* cm)
+static inline void releaseNBodyCLMem(NBodyCLMem* cm)
 {
     clReleaseMemObject(cm->acc);
     clReleaseMemObject(cm->bodies);
@@ -43,7 +43,7 @@ inline static void releaseNBodyCLMem(NBodyCLMem* cm)
     clReleaseMemObject(cm->nbctx);
 }
 
-inline static int nbodySetKernelArgs(const CLInfo* ci, NBodyCLMem* cm, const size_t nbody)
+static inline int nbodySetKernelArgs(const CLInfo* ci, NBodyCLMem* cm, const size_t nbody)
 {
     cl_int err = CL_SUCCESS;
     err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->nbctx);
@@ -115,7 +115,7 @@ static int createBuffers(CLInfo* ci,
     return 0;
 }
 
-inline static int enqueueGravMap(CLInfo* ci, const size_t nbody)
+static inline int enqueueGravMap(CLInfo* ci, const size_t nbody)
 {
     const size_t global[] = { nbody };
     cl_int err;
@@ -146,7 +146,7 @@ static void printResults(vector* vs, const char* name, const size_t n)
     }
 }
 
-inline static int prepareExec(CLInfo* ci, NBodyCLMem* cm, const NBodyCtx* ctx, NBodyState* st)
+static inline int prepareExec(CLInfo* ci, NBodyCLMem* cm, const NBodyCtx* ctx, NBodyState* st)
 {
     int rc = 0;
     rc |= createBuffers(ci, cm, ctx, st);
@@ -155,7 +155,7 @@ inline static int prepareExec(CLInfo* ci, NBodyCLMem* cm, const NBodyCtx* ctx, N
 }
 
 /* Write bodies into the CL buffer */
-inline static void writeBodies(NBodyState* st, const size_t bodySize)
+static inline void writeBodies(NBodyState* st, const size_t bodySize)
 {
     cl_int err;
     err = clEnqueueWriteBuffer(st->ci.queue,

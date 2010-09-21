@@ -21,7 +21,7 @@
 
 find_path(LIBM_INCLUDE_DIR math.h)
 
-if(APPLE)
+if(APPLE OR MSVC)
   set(LIBM_LIBRARY m)
 else()
   if(LIBM_USE_STATIC)

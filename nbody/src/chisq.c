@@ -66,7 +66,7 @@ static real calcChisq(const HistData* histData,
     return -chisqval;
 }
 
-inline static void printHistogram(FILE* f,
+static inline void printHistogram(FILE* f,
                                   const HistData* histData,
                                   const unsigned int* histogram,
                                   const unsigned int maxIdx,
@@ -141,6 +141,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
     unsigned int idx;
     unsigned int totalNum = 0;
     bodyptr p;
+    unsigned int* histogram;
     const real cosphi = mw_cos(phi);
     const real sinphi = mw_sin(phi);
     const real sinpsi = mw_sin(psi);
@@ -148,9 +149,9 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
     const real costh  = mw_cos(theta);
     const real sinth  = mw_sin(theta);
 
-    unsigned int* histogram = callocSafe(maxIdx, sizeof(unsigned int));
 
     const bodyptr endp = st->bodytab + ctx->model.nbody;
+    histogram = (unsigned int*) callocSafe(maxIdx, sizeof(unsigned int));
 
     for (p = st->bodytab; p < endp; ++p)
     {
@@ -209,7 +210,7 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
     fsize = ceil((real) (ftell(f) + 1) / 3);
     fseek(f, 0L, SEEK_SET);
 
-    histData = callocSafe(sizeof(HistData), fsize);
+    histData = (HistData*) callocSafe(sizeof(HistData), fsize);
 
     while ( (rc = fscanf(f,
                        #if DOUBLEPREC

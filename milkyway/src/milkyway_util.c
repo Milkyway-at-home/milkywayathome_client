@@ -149,7 +149,7 @@ double mwGetTime()
 
 /* Modified from boinc_rename, which doesn't use MoveFileEx on
  * windows, which is more atomic.*/
-inline static int _mwRename(const char* oldf, const char* newf)
+static inline int _mwRename(const char* oldf, const char* newf)
 {
   #ifdef _WIN32
     if (MoveFileEx(oldf, newf, MOVEFILE_REPLACE_EXISTING))

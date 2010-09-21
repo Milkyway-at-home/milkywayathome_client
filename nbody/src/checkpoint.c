@@ -242,7 +242,7 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
 #endif /* _WIN32 */
 
 /* Should be given the same context as the dump. Returns nonzero if the state failed to be thawed */
-inline static int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
+static inline int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 {
     unsigned int nbody;
     size_t realSize;
@@ -288,7 +288,7 @@ inline static int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandl
     }
 
     /* Read the bodies */
-    st->bodytab = mallocSafe(bodySize);
+    st->bodytab = (bodyptr) mallocSafe(bodySize);
     memcpy(st->bodytab, p, bodySize);
     p += bodySize;
 
@@ -321,7 +321,7 @@ inline static int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandl
  * checkpoint file is garbage and we lose everything. Uses the boinc
  * critical sections, so it hopefully won't be interrupted.
  */
-inline static void freezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHandle* cp)
+static inline void freezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHandle* cp)
 {
     const size_t bodySize = sizeof(body) * ctx->model.nbody;
     char* p = cp->mptr;

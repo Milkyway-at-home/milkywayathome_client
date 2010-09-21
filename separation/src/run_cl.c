@@ -54,7 +54,7 @@ static cl_int readIntegralResults(CLInfo* ci,
     return CL_SUCCESS;
 }
 
-inline static void sumStreamResults(ST_PROBS* probs_results,
+static inline void sumStreamResults(ST_PROBS* probs_results,
                                     ST_PROBS* probs,
                                     const unsigned int number_streams)
 {
@@ -63,7 +63,7 @@ inline static void sumStreamResults(ST_PROBS* probs_results,
         KAHAN_ADD(probs_results[i].st_prob_int, probs[i].st_prob_int, probs[i].st_prob_int_c);
 }
 
-inline static void sumProbsResults(ST_PROBS* probs_results,
+static inline void sumProbsResults(ST_PROBS* probs_results,
                                    ST_PROBS* probs_r_nu,
                                    const unsigned int r_steps,
                                    const unsigned int nu_steps,
@@ -92,7 +92,7 @@ static cl_int readProbsResults(CLInfo* ci,
     cl_int err = CL_SUCCESS;
 
     size_t size = sizeof(ST_PROBS) * r_steps * nu_steps * number_streams;
-    probs_tmp = mallocSafe(size);
+    probs_tmp = (ST_PROBS*) mallocSafe(size);
 
     err = clEnqueueReadBuffer(ci->queue,
                               cm->outProbs,
@@ -133,7 +133,7 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
 }
 
 /* The nu steps were done in parallel. After that we need to sum the results */
-inline static real sumMuResults(BG_PROB* mu_results,
+static inline real sumMuResults(BG_PROB* mu_results,
                                 const unsigned int r_steps,
                                 const unsigned int nu_steps)
 {
@@ -157,8 +157,10 @@ static R_POINTS* prepare_r_pts(const ASTRONOMY_PARAMETERS* ap,
 {
     unsigned int i;
     R_PRIME rp;
+    R_POINTS* r_pts_all;
     const unsigned int nconvolve = ap->convolve;
-    R_POINTS* r_pts_all = mallocSafe(sizeof(R_POINTS) * r_steps * nconvolve);
+
+    r_pts_all = (R_POINTS*) mallocSafe(sizeof(R_POINTS) * r_steps * nconvolve);
 
     for (i = 0; i < r_steps; ++i)
     {
@@ -188,7 +190,7 @@ static real runIntegral(CLInfo* ci,
         return NAN;
     }
 
-    mu_results = mallocSafe(resultSize);
+    mu_results = (BG_PROB*) mallocSafe(resultSize);
     err = readIntegralResults(ci, cm, mu_results, resultSize);
     if (err != CL_SUCCESS)
     {

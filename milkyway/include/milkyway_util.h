@@ -31,6 +31,20 @@ extern "C" {
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifndef _WIN32
+  #include <unistd.h>
+  #include <fcntl.h>
+#else
+  #include <windows.h>
+#endif /* _WIN32 */
+
+
+#ifdef _MSC_VER
+  #define isnan _isnan
+  #define copysign _copysign
+  #define access _access
+#endif /* _MSC_VER */
+
 #if BOINC_APPLICATION
   #include <boinc_api.h>
   #include <filesys.h>

@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "dSFMT.h"
 
 /* pickshell: pick a random point on a sphere of specified radius. */
-inline static void pickshell(dsfmt_t* dsfmtState, vector vec, real rad)
+static inline void pickshell(dsfmt_t* dsfmtState, vector vec, real rad)
 {
     unsigned int k;
     real rsq, rsc;

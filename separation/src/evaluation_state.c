@@ -32,8 +32,8 @@ static char resolvedCheckpointPath[1024];
 void initialize_integral(INTEGRAL* integral, unsigned int number_streams)
 {
     integral->background_integral = 0.0;
-    integral->stream_integrals = callocSafe(number_streams, sizeof(real));
-    integral->probs = callocSafe(number_streams, sizeof(ST_PROBS));
+    integral->stream_integrals = (real*) callocSafe(number_streams, sizeof(real));
+    integral->probs = (ST_PROBS*) callocSafe(number_streams, sizeof(ST_PROBS));
 }
 
 void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
@@ -44,7 +44,7 @@ void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
     es->number_streams = ap->number_streams;
 
     es->number_integrals = ap->number_integrals;
-    es->integrals = mallocSafe(sizeof(INTEGRAL) * ap->number_integrals);
+    es->integrals = (INTEGRAL*) mallocSafe(sizeof(INTEGRAL) * ap->number_integrals);
 
     for (i = 0; i < ap->number_integrals; i++)
         initialize_integral(&es->integrals[i], ap->number_streams);
@@ -160,7 +160,7 @@ int read_checkpoint(EVALUATION_STATE* es)
     return rc;
 }
 
-inline static void write_state(FILE* f, const EVALUATION_STATE* es)
+static inline void write_state(FILE* f, const EVALUATION_STATE* es)
 {
     INTEGRAL* i;
     const INTEGRAL* endi = es->integrals + es->number_integrals;
