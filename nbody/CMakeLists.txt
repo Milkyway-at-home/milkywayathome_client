@@ -137,6 +137,7 @@ endif()
 #endif()
 
 set(NBODY_SRC_DIR "${PROJECT_SOURCE_DIR}/src/")
+set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include/")
 set(nbody_lib_src ${NBODY_SRC_DIR}/chisq.c
                   ${NBODY_SRC_DIR}/grav.c
                   ${NBODY_SRC_DIR}/io.c
@@ -150,6 +151,21 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/chisq.c
                   ${NBODY_SRC_DIR}/nbody_util.c
                   ${dsmft_src})
 
+set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/chisq.h
+                      ${NBODY_INCLUDE_DIR}/grav.h
+                      ${NBODY_INCLUDE_DIR}/nbody_config.h.in
+                      ${NBODY_INCLUDE_DIR}/io.h
+                      ${NBODY_INCLUDE_DIR}/load.h
+                      ${NBODY_INCLUDE_DIR}/orbitintegrator.h
+                      ${NBODY_INCLUDE_DIR}/accelerations.h
+                      ${NBODY_INCLUDE_DIR}/json_params.h
+                      ${NBODY_INCLUDE_DIR}/calc_params.h
+                      ${NBODY_INCLUDE_DIR}/plummer.h
+                      ${NBODY_INCLUDE_DIR}/nbody.h
+                      ${NBODY_INCLUDE_DIR}/nbody_priv.h
+                      ${NBODY_INCLUDE_DIR}/nbody_types.h
+                      ${NBODY_INCLUDE_DIR}/nbody_util.h)
+
 if(BOINC_RELEASE OR NOT HAS_ASPRINTF)
   set(DEFAULT_NBODY_SHOW OFF)
 else()
@@ -161,11 +177,13 @@ option(NBODY_SHOW "Build show type functions" ${DEFAULT_NBODY_SHOW})
 if(NBODY_SHOW)
   #Uses asprintf extension
   list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/show.c)
+  list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/show.h)
 endif()
 
 
 if(BOINC_APPLICATION)
-  list(APPEND nbody_lib_src ${PROJECT_SOURCE_DIR}/src/checkpoint.c)
+  list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/checkpoint.c)
+  list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/checkpoint.h)
 endif()
 
 set_property(SOURCE ${dsmft_src}
@@ -228,7 +246,7 @@ if(NBODY_OPENCL)
 endif()
 
 
-add_library(nbody_simulation STATIC ${nbody_lib_src})
+add_library(nbody_simulation STATIC ${nbody_lib_src} ${nbody_lib_headers})
 
 set(nbody_libs nbody_simulation)
 
@@ -264,7 +282,9 @@ if(NEED_POPT_DEPS)
                             ${LIBINTL_LIBRARY})
 endif()
 
-add_executable(${nbody_bin_name} ${PROJECT_SOURCE_DIR}/src/main.c)
+
+
+add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
 milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} ${BOINC_RELEASE} "${exe_link_libs}")
 #add_subdirectory(tests EXCLUDE_FROM_ALL)
 

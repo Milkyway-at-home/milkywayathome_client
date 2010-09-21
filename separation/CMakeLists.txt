@@ -116,9 +116,35 @@ set(lib_source_file_list src/evaluation_state.c
                          src/calculated_constants.c
                          src/r_points.c)
 
+set(separation_headers include/calculated_constants.h
+                       include/integrals_common.h
+                       include/separation_types.h
+                       include/coordinates.h
+                       include/integrals_likelihood.h
+                       include/separation.h
+                       include/evaluation.h
+                       include/io_util.h
+                       include/star_points.h
+                       include/evaluation_state.h
+                       include/likelihood.h
+                       include/gauss_legendre.h
+                       include/parameters.h
+                       include/separation_config.h.in
+                       include/integrals.h
+                       include/r_points.h
+                       include/separation_constants.h)
+
+set(separation_cl_headers include/setup_cl.h
+                          include/run_cl.h
+                          include/separation_cl_defs.h
+                          include/separation_cl_buffers.h)
+
+
+
 if(SEPARATION_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
   list(APPEND lib_source_file_list ${cl_source_list})
+  list(APPEND separation_headers ${separation_cl_headers})
 
   if(SEPARATION_INLINE_KERNEL)
     message("Inlining kernel")
@@ -134,7 +160,7 @@ endif()
 
 set(separation_link_libs ${OS_SPECIFIC_LIBS} milkyway ${LIBM_LIBRARY})
 
-add_library(separation STATIC ${lib_source_file_list})
+add_library(separation STATIC ${lib_source_file_list} ${separation_headers})
 target_link_libraries(separation ${separation_link_libs})
 
 

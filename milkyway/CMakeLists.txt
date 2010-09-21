@@ -34,15 +34,38 @@ configure_file (
   "${MILKYWAY_INCLUDE_DIR}/milkyway_config.h.in"
   "${PROJECT_INCLUDE_DIR}/milkyway_config.h")
 
+include_directories(${MILKYWAY_INCLUDE_DIR})
+
 set(mw_lib_src src/milkyway_util.c)
 set(mw_cl_lib_src src/show_cl_types.c
                   src/build_cl.c)
 
+set(mw_lib_headers include/milkyway_config.h.in
+                   include/milkyway_extra.h
+                   include/milkyway_math.h
+                   include/milkyway_math_functions.h
+                   include/milkyway_math_functions_cl.h
+                   include/milkyway_vectors_cl.h
+                   include/milkyway_math_functions_standard.h
+                   include/milkyway_util.h
+                   include/milkyway_vectors.h
+                   include/milkyway_vectors_clang.h
+                   include/milkyway_vectors_cpu.h
+                   include/milkyway_vectors_gcc.h
+                   include/milkyway_vectors_ops.h
+                   include/real.h)
+
+set(mw_cl_lib_headers show_cl_types.h
+                      build_cl.h
+                      milkyway_cl.h)
+
+
 if(MILKYWAY_OPENCL)
   list(APPEND mw_lib_src ${mw_cl_lib_src})
+  list(APPEND mw_lib_headers ${mw_cl_lib_headers})
 endif()
 
-add_library(milkyway STATIC ${mw_lib_src})
+add_library(milkyway STATIC ${mw_lib_src} ${mw_lib_headers})
 
 set_target_properties(milkyway PROPERTIES
                       COMPILE_DEFINITIONS "MILKYWAY_MATH_COMPILATION")
