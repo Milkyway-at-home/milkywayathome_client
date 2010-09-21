@@ -80,7 +80,12 @@ real* fread_double_array(FILE* file, const char* array_name, unsigned int* sizeO
     {
         rc = fscanf(file, READ_DOUBLE_ARRAY_READ_STR, &arr[i]);
         if (rc != 1)
-            fail("Error reading into %s\n", array_name);
+        {
+            warn("Error reading into %s\n", array_name);
+            free(arr);
+            return arr;
+        }
+
         if (i < size - 1)
             fscanf(file, ", ");
     }
@@ -106,8 +111,9 @@ int* fread_int_array(FILE *file, const char *array_name, unsigned int* sizeOut)
     {
         if (fscanf(file, "%d", &arr[i]) != 1)
         {
-            fprintf(stderr, "Error reading into %s\n", array_name);
-            exit(-1);
+            warn("Error reading into %s\n", array_name);
+            free(arr);
+            return NULL;
         }
 
         if (i < size - 1)
