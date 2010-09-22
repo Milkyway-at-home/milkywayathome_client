@@ -50,23 +50,6 @@ static void setDefaultFiles(SeparationFlags* sf)
     stringDefault(sf->ap_file, DEFAULT_ASTRONOMY_PARAMETERS);
 }
 
-
-#if defined(_WIN32) && 0
-/* FIXME: undefined reference to _set_invalid_parameter_handler */
-void AppInvalidParameterHandler(const wchar_t* expression,
-                                const wchar_t* function,
-                                const wchar_t* file,
-                                unsigned int line,
-                                uintptr_t pReserved )
-{
-    fprintf(stderr, "Invalid parameter detected in function %ls. File: %ls Line: %d\n", function, file, line);
-    fprintf(stderr, "Expression: %ls\n", expression);
-    // Cause a Debug Breakpoint.
-    DebugBreak();
-}
-#endif /* _WIN32 */
-
-
 /* Returns the newly allocated array of parameters */
 static real* parse_parameters(int argc, const char** argv, unsigned int* paramnOut, SeparationFlags* sf)
 {
@@ -250,12 +233,6 @@ static int separation_init(const char* appname)
     #pragma unused(appname)
   #endif /* BOINC_APP_GRAPHICS */
 
-  #if defined(_WIN32) && 0
-    /* FIXME */
-    _set_invalid_parameter_handler(AppInvalidParameterHandler);
-  #endif /* _WIN32 */
-
-
   #if defined(_WIN32) && COMPUTE_ON_GPU
     //make the windows GPU app have a higher priority
     BOINC_OPTIONS options;
@@ -333,19 +310,4 @@ int main(int argc, const char* argv[])
 
     return rc;
 }
-
-#if defined(_WIN32) && !defined(__MINGW32__)
-int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode)
-{
-    LPSTR command_line;
-    char* argv[100];
-    int argc;
-
-    command_line = GetCommandLine();
-    argc = parse_command_line( command_line, argv );
-    return main(argc, argv);
-}
-#endif /* defined(_WIN32) && !defined(__MINGW__) */
-
-const char BOINC_RCSID_33ac47a071[] = "$Id: boinc_astronomy.C,v 1.24 2010/05/04 04:21:24 deselt Exp $";
 

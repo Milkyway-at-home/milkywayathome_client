@@ -58,14 +58,6 @@ extern "C" {
     #include <graphics_lib.h>
   #endif /* BOINC_APP_GRAPHICS */
 
-  /* I'm not sure what the MSVC macro is.
-     This only needs the Windows API for the stuff to deal with the
-     truly awful Windows API / WinMain, which you only need to deal with
-     for visual studio and should be avoided as much as possible. */
-  #if defined(_WIN32) && !defined(__MINGW32__)
-    #include <str_util.h>
-  #endif
-
   #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
     #define VC_EXTRALEAN

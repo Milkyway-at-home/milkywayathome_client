@@ -182,7 +182,13 @@ if(SEPARATION_OPENCL)
   list(APPEND exe_link_libs ${OPENCL_LIBRARIES})
 endif()
 
-add_executable(${separation_bin_name} src/milkyway_client_app.c)
+set(separation_main_src src/separation_main.c)
+
+if(MSVC)
+  list(APPEND separation_main_src src/main_win.cpp)
+endif()
+
+add_executable(${separation_bin_name} ${separation_main_src})
 milkyway_link(${separation_bin_name} ${BOINC_APPLICATION} ${BOINC_RELEASE} "${exe_link_libs}")
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
