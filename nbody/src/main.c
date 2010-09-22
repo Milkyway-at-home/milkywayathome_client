@@ -145,7 +145,8 @@ static void setFitParams(FitParams* fitParams, const real* parameters)
 
 static json_object* readJSONFileOrStr(const char* inputFile, const char* inputStr)
 {
-    json_object* obj         = NULL;
+    json_object* obj = NULL;
+
     if (inputFile)
     {
         /* Check if we can read the file, so we can fail saying that
@@ -168,15 +169,17 @@ static json_object* readJSONFileOrStr(const char* inputFile, const char* inputSt
             obj = NULL;
         }
     }
-    else
+    else if (inputStr)
     {
         obj = json_tokener_parse(inputStr);
         if (is_error(obj))
         {
             warn("Failed to parse given string\n");
-            return NULL;
+            obj = NULL;
         }
     }
+    else
+        warn("%s: got neither input file name or string\n", FUNC_NAME);
 
     return obj;
 }
@@ -381,10 +384,28 @@ static json_object* readParameters(const int argc,
     return obj;
 }
 
+static void setDefaultFlags(NBodyFlags* nbf)
+{
+   /* Use default if checkpoint file not specified */
+    stringDefault(nbf->checkpointFileName, DEFAULT_CHECKPOINT_FILE);
+    stringDefault(nbf->histogramFileName,  DEFAULT_HISTOGRAM_FILE);
+
+    /* Specifying output files implies using them */
+    nbf->printBodies = (nbf->outFileName != NULL);
+    nbf->printHistogram = (nbf->histoutFileName != NULL);
+}
+
+static void freeNBodyFlags(NBodyFlags* nbf)
+{
+    free(nbf->outFileName);
+    free(nbf->checkpointFileName);
+    free(nbf->histogramFileName);
+    free(nbf->histoutFileName);
+}
+
 /* main: toplevel routine for hierarchical N-body code. */
 int main(int argc, const char* argv[])
 {
-    char* outFile        = NULL;
     json_object* obj     = NULL;
     NBodyFlags nbf       = EMPTY_NBODY_FLAGS;
     FitParams fitParams  = EMPTY_FIT_PARAMS;
@@ -395,14 +416,7 @@ int main(int argc, const char* argv[])
 
     obj = readParameters(argc, argv, &fitParams, &nbf);
 
-    /* Use default if checkpoint file not specified */
-    stringDefault(nbf.checkpointFileName, DEFAULT_CHECKPOINT_FILE);
-    stringDefault(nbf.histogramFileName,  DEFAULT_HISTOGRAM_FILE);
-
-    if (outFile)
-        nbf.printBodies = TRUE;
-    if (nbf.histoutFileName)    /* Specifying output files implies using them */
-        nbf.printHistogram = TRUE;
+    setDefaultFlags(&nbf);
 
     if (obj)
         runNBodySimulation(obj, &fitParams, &nbf);
@@ -415,10 +429,8 @@ int main(int argc, const char* argv[])
         mw_remove(nbf.checkpointFileName);
     }
 
-    free(nbf.outFileName);
-    free(nbf.checkpointFileName);
-    free(nbf.histogramFileName);
-    free(nbf.histoutFileName);
+    freeNBodyFlags(&nbf);
+
     mw_finish(EXIT_SUCCESS);
 }
 

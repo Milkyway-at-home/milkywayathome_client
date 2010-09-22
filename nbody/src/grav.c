@@ -118,12 +118,11 @@ static inline bool treescan(const NBodyCtx* ctx,
  */
 static inline void hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p, vectorptr RESTRICT acc)
 {
-    vector externalacc;
     static bool treeincest = FALSE;     /* tree-incest occured */
     bool skipself          = FALSE;     /* self-interaction skipped */
-    bool intree = Mass(p) > 0.0;
-
     ForceEvalState fest = EMPTY_FORCE_EVAL_STATE;
+    vector externalacc;
+    bool intree = Mass(p) > 0.0;
 
     fest.pskip = p;                /* exclude p from f.c. */
     SETV(fest.pos0, Pos(p));       /* set field point */

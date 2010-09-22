@@ -101,7 +101,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define FALSE 0
 #endif
 
-#define NBODY_ALIGN __attribute__((packed))
+#ifndef _MSC_VER
+  #define NBODY_ALIGN __attribute__((packed))
+#else
+  #define NBODY_ALIGN
+#endif /* _MSC_VER */
 
 /*
 typedef enum
