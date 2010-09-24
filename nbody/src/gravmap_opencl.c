@@ -25,10 +25,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <OpenCL/cl.h>
 #include <OpenCL/cl_ext.h>
 
+#include "milkyway_util.h"
 #include "nbody_util.h"
 #include "nbody_priv.h"
 #include "gravmap_opencl.h"
-#include "ckernels/cl_gravmap.h"
+//#include "ckernels/cl_gravmap.h"
 #include "show_cl_types.h"
 #include "build_cl.h"
 //#include "ckernels/cl_nbody_types.h"

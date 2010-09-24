@@ -21,6 +21,8 @@
 cmake_minimum_required(VERSION 2.6)
 project(milkyway)
 
+include(SpecialLibs)
+
 set(MILKYWAY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 include_directories(${MILKYWAY_INCLUDE_DIR})
 
@@ -28,6 +30,13 @@ if(BOINC_APPLICATION)
   find_package(BOINC)
   include_directories(${BOINC_INCLUDE_DIR})
 endif()
+
+if(MILKYWAY_OPENCL)
+  find_package(OpenCL)
+  include_directories(${OPENCL_INCLUDE_DIRS})
+endif()
+
+set_os_specific_libs(${MILKYWAY_OPENCL})
 
 
 configure_file (
@@ -55,9 +64,9 @@ set(mw_lib_headers include/milkyway_config.h.in
                    include/milkyway_vectors_ops.h
                    include/real.h)
 
-set(mw_cl_lib_headers show_cl_types.h
-                      build_cl.h
-                      milkyway_cl.h)
+set(mw_cl_lib_headers include/show_cl_types.h
+                      include/build_cl.h
+                      include/milkyway_cl.h)
 
 
 if(MILKYWAY_OPENCL)

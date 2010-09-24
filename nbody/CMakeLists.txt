@@ -45,7 +45,6 @@ if(BOINC_APPLICATION)
   include_directories(${BOINC_INCLUDE_DIR})
 endif()
 
-find_package(OpenCL)
 find_package(JsonC REQUIRED)
 include_directories(${JSON_C_INCLUDE_DIR})
 
@@ -59,10 +58,6 @@ if(NEED_POPT_DEPS)
 endif()
 find_package(Popt REQUIRED)
 include_directories(${POPT_INCLUDE_DIR})
-
-
-
-set_os_specific_libs()
 
 set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 include_directories(${NBODY_INCLUDE_DIR})
@@ -101,6 +96,18 @@ if(NOT DOUBLEPREC AND ENABLE_CRLIBM)
   message(WARNING "Attempting to use single precision with crlibm. Disabling use of crlibm")
   set(ENABLE_CRLIBM OFF)
 endif()
+
+if(NBODY_OPENCL)
+  find_package(OpenCL)
+  if(NOT OPENCL_FOUND)
+    message(WARNING "N-body OpenCL was requested, but OpenCL not found. Disabling OpenCL.")
+    set(NBODY_OPENCL OFF)
+  else()
+    include_directories(${OPENCL_DIRECTORIES})
+  endif()
+endif()
+
+set_os_specific_libs(${NBODY_OPENCL})
 
 
 # Handle downloading, extracting and building dSFMT
