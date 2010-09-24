@@ -68,23 +68,35 @@ static void startRun(const NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
     initState(ctx, &fc, st);
 }
 
+static inline void bodyAdvancePosVel(bodyptr p, const vectorptr a, const real dt)
+{
+    vector dvel;
+    vector dpos;
+
+    MULVS(dvel, (vectorptr) a, 0.5 * dt);      /* get velocity increment */
+    INCADDV(Vel(p), dvel);                     /* advance v by 1/2 step */
+    MULVS(dpos, Vel(p), dt);                   /* get positon increment */
+    INCADDV(Pos(p), dpos);                     /* advance r by 1 step */
+}
+
+static inline void bodyAdvanceVelocity(bodyptr p, const vectorptr a, const real dt)
+{
+    vector dvel;
+
+    MULVS(dvel, (vectorptr) a, 0.5 * dt);   /* get velocity increment */
+    INCADDV(Vel(p), dvel);                  /* advance v by 1/2 step */
+}
+
 #ifndef _OPENMP
 
-static inline void advancePosAcc(NBodyState* st, const unsigned int nbody, const real dt)
+static inline void advancePosVel(NBodyState* st, const unsigned int nbody, const real dt)
 {
     bodyptr p;
     vector* a;
-    vector dvel;
-    vector dpos;
     const bodyptr endp = st->bodytab + nbody;
 
     for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)    /* loop over all bodies */
-    {
-        MULVS(dvel, (vectorptr) a, 0.5 * dt);      /* get velocity increment */
-        INCADDV(Vel(p), dvel);                     /* advance v by 1/2 step */
-        MULVS(dpos, Vel(p), dt);                   /* get positon increment */
-        INCADDV(Pos(p), dpos);                     /* advance r by 1 step */
-    }
+        bodyAdvancePosVel(p, (vectorptr) a, dt);
 }
 
 
@@ -92,48 +104,31 @@ static inline void advanceVelocities(NBodyState* st, const unsigned int nbody, c
 {
     bodyptr p;
     vector* a;
-    vector dvel;
-
     const bodyptr endp = st->bodytab + nbody;
 
-    for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)      /* loop over all bodies */
-    {
-        MULVS(dvel, (vectorptr) a, 0.5 * dt);   /* get velocity increment */
-        INCADDV(Vel(p), dvel);                  /* advance v by 1/2 step */
-    }
+    for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)
+        bodyAdvanceVelocity(p, (vectorptr) a, dt);
 }
 
 #else
 
-static inline void advancePosAcc(NBodyState* st, const unsigned int nbody, const real dt)
+static inline void advancePosVel(NBodyState* st, const unsigned int nbody, const real dt)
 {
     unsigned int i;
-    vector dvel;
-    vector dpos;
-    bodyptr p;
 
-  #pragma omp parallel for private(i, p, dvel, dpos) schedule(static)
-    for (i = 0; i < nbody; ++i)     /* loop over all bodies */
-    {
-        p = &st->bodytab[i];
-        MULVS(dvel, (vectorptr) &st->acctab[i], 0.5 * dt);      /* get velocity increment */
-        INCADDV(Vel(p), dvel);                     /* advance v by 1/2 step */
-        MULVS(dpos, Vel(p), dt);                   /* get positon increment */
-        INCADDV(Pos(p), dpos);                     /* advance r by 1 step */
-    }
+  #pragma omp parallel for private(i) schedule(static)
+    for (i = 0; i < nbody; ++i)
+        bodyAdvancePosVel(&st->bodytab[i], &st->acctab[i], dt);
+
 }
 
 static inline void advanceVelocities(NBodyState* st, const unsigned int nbody, const real dt)
 {
     unsigned int i;
-    vector dvel;
 
-    #pragma omp parallel for private(i, dvel) schedule(static)
+    #pragma omp parallel for private(i) schedule(static)
     for (i = 0; i < nbody; ++i)      /* loop over all bodies */
-    {
-        MULVS(dvel, (vectorptr) &st->acctab[i], 0.5 * dt);   /* get velocity increment */
-        INCADDV(Vel(&st->bodytab[i]), dvel);                  /* advance v by 1/2 step */
-    }
+        bodyAdvanceVelocity(&st->bodytab[i], (vectorptr) &st->acctab[i], dt);
 }
 
 #endif /* _OPENMP */
@@ -143,7 +138,7 @@ static inline void stepSystem(const NBodyCtx* ctx, NBodyState* st)
 {
     const real dt = ctx->model.timestep;
 
-    advancePosAcc(st, ctx->model.nbody, dt);
+    advancePosVel(st, ctx->model.nbody, dt);
 
   #if !NBODY_OPENCL
     gravMap(ctx, st);
