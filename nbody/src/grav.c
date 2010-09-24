@@ -178,7 +178,7 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
     unsigned int i;
     const unsigned int nbody = ctx->model.nbody;
 
-    #pragma omp parallel for private(i) schedule(static)
+    #pragma omp parallel for private(i) schedule(dynamic)
     for (i = 0; i < nbody; ++i)      /* get force on each body */
     {
         hackGrav(ctx,
