@@ -52,39 +52,46 @@ static inline bool subdivp(ForceEvalState* fest, cellptr q)
     return (fest->drsq < Rcrit2(q));      /* apply standard rule */
 }
 
+
+static inline void cellQuadTerm(ForceEvalState* fest, const nodeptr q, const real drab)
+{
+    real dr5inv, drquaddr, phiquad;
+    vector ai, quaddr;
+
+    dr5inv = 1.0 / (sqr(fest->drsq) * drab); /* form dr^-5 */
+    MULMV(quaddr, Quad(q), fest->dr);        /* form Q * dr */
+    DOTVP(drquaddr, fest->dr, quaddr);       /* form dr * Q * dr */
+    phiquad = -0.5 * dr5inv * drquaddr;      /* get quad. part of phi */
+    phiquad = 5.0 * phiquad / fest->drsq;    /* save for acceleration */
+    MULVS(ai, fest->dr, phiquad);            /* components of acc. */
+    INCSUBV(fest->acc0, ai);                 /* increment */
+    INCMULVS(quaddr, dr5inv);
+    INCSUBV(fest->acc0, quaddr);             /* acceleration */
+}
+
 /* gravsub: compute contribution of node q to gravitational field at
  * point pos0, and add to running totals phi0 and acc0.
  */
-static inline void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, nodeptr q)
+static inline void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, const nodeptr q)
 {
     real drab, phii, mor3;
-    vector ai, quaddr;
-    real dr5inv, phiquad, drquaddr;
+    vector ai;
 
     if (q != (nodeptr) fest->qmem)                    /* cant use memorized data? */
     {
         SUBV(fest->dr, Pos(q), fest->pos0);           /* then compute sep. */
         SQRV(fest->drsq, fest->dr);                   /* and sep. squared */
     }
-    fest->drsq += ctx->model.eps2;                    /* use standard softening */
+
+    fest->drsq += ctx->model.eps2;   /* use standard softening */
     drab = mw_sqrt(fest->drsq);
     phii = Mass(q) / drab;
     mor3 = phii / fest->drsq;
     MULVS(ai, fest->dr, mor3);
-    INCADDV(fest->acc0, ai);                   /* ... and to total accel. */
+    INCADDV(fest->acc0, ai);         /* ... and to total accel. */
 
     if (ctx->usequad && Type(q) == CELL)             /* if cell, add quad term */
-    {
-        dr5inv = 1.0 / (sqr(fest->drsq) * drab); /* form dr^-5 */
-        MULMV(quaddr, Quad(q), fest->dr);        /* form Q * dr */
-        DOTVP(drquaddr, fest->dr, quaddr);       /* form dr * Q * dr */
-        phiquad = -0.5 * dr5inv * drquaddr;      /* get quad. part of phi */
-        phiquad = 5.0 * phiquad / fest->drsq;    /* save for acceleration */
-        MULVS(ai, fest->dr, phiquad);            /* components of acc. */
-        INCSUBV(fest->acc0, ai);                 /* increment */
-        INCMULVS(quaddr, dr5inv);
-        INCSUBV(fest->acc0, quaddr);             /* acceleration */
-    }
+        cellQuadTerm(fest, q, drab);
 }
 
 /* treescan: iterative routine to do force calculation, starting with
