@@ -122,7 +122,6 @@ set(lib_source_file_list src/evaluation_state.c
                          src/evaluation.c
                          src/parameters.c
                          src/star_points.c
-                         src/integrals.c
                          src/likelihood.c
                          src/calculated_constants.c
                          src/r_points.c)
@@ -167,6 +166,8 @@ if(SEPARATION_OPENCL)
    include_directories(${c_kernel_dir})
    list(APPEND lib_source_file_list "${c_kernel_dir}/integral_kernel.c")
   endif()
+else()
+  list(APPEND lib_source_file_list src/integrals.c)
 endif()
 
 set(separation_link_libs ${OS_SPECIFIC_LIBS} milkyway ${LIBM_LIBRARY})
