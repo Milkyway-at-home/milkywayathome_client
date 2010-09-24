@@ -41,8 +41,6 @@ else()
   set(separation_bin_name "milkyway_separation")
 endif()
 
-set_os_specific_libs()
-
 
 set(SEPARATION_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 include_directories(${SEPARATION_INCLUDE_DIR})
@@ -52,7 +50,8 @@ set(CMAKE_C_FLAGS "-std=gnu99 -warn-uninit-values ${CMAKE_C_FLAGS}")
 
 
 option(SEPARATION_INLINE_KERNEL
-       "Inline the CL kernel" ON)
+       "Inline the CL kernel" OFF)
+mark_as_advanced(SEPARATION_INLINE_KERNEL)
 
 option(SMALL_TESTS
        "Run small tests" ON)
@@ -75,7 +74,19 @@ if(BOINC_APPLICATION)
   include_directories(${BOINC_INCLUDE_DIR})
 endif()
 
-find_package(OpenCL)
+if(SEPARATION_OPENCL)
+  find_package(OpenCL)
+  if(NOT OPENCL_FOUND)
+    message(WARNING "Separation OpenCL was requested, but OpenCL not found. Disabling OpenCL.")
+    set(SEPARATION_OPENCL OFF)
+  else()
+    include_directories(${OPENCL_DIRECTORIES})
+  endif()
+endif()
+
+set_os_specific_libs(${SEPARATION_OPENCL})
+
+
 if(NEED_POPT_DEPS)
     #These are only dependencies of popt needed for static linking
   find_package(Libintl REQUIRED)
@@ -111,7 +122,6 @@ set(lib_source_file_list src/evaluation_state.c
                          src/evaluation.c
                          src/parameters.c
                          src/star_points.c
-                         src/integrals.c
                          src/likelihood.c
                          src/calculated_constants.c
                          src/r_points.c)
@@ -156,6 +166,8 @@ if(SEPARATION_OPENCL)
    include_directories(${c_kernel_dir})
    list(APPEND lib_source_file_list "${c_kernel_dir}/integral_kernel.c")
   endif()
+else()
+  list(APPEND lib_source_file_list src/integrals.c)
 endif()
 
 set(separation_link_libs ${OS_SPECIFIC_LIBS} milkyway ${LIBM_LIBRARY})

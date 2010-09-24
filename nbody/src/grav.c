@@ -24,6 +24,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "grav.h"
 
+#ifdef _OPENMP
+  #include <omp.h>
+#endif /* _OPENMP */
+
 typedef struct
 {
     vector pos0;      /* point to evaluate field */
@@ -48,39 +52,46 @@ static inline bool subdivp(ForceEvalState* fest, cellptr q)
     return (fest->drsq < Rcrit2(q));      /* apply standard rule */
 }
 
+
+static inline void cellQuadTerm(ForceEvalState* fest, const nodeptr q, const real drab)
+{
+    real dr5inv, drquaddr, phiquad;
+    vector ai, quaddr;
+
+    dr5inv = 1.0 / (sqr(fest->drsq) * drab); /* form dr^-5 */
+    MULMV(quaddr, Quad(q), fest->dr);        /* form Q * dr */
+    DOTVP(drquaddr, fest->dr, quaddr);       /* form dr * Q * dr */
+    phiquad = -0.5 * dr5inv * drquaddr;      /* get quad. part of phi */
+    phiquad = 5.0 * phiquad / fest->drsq;    /* save for acceleration */
+    MULVS(ai, fest->dr, phiquad);            /* components of acc. */
+    INCSUBV(fest->acc0, ai);                 /* increment */
+    INCMULVS(quaddr, dr5inv);
+    INCSUBV(fest->acc0, quaddr);             /* acceleration */
+}
+
 /* gravsub: compute contribution of node q to gravitational field at
  * point pos0, and add to running totals phi0 and acc0.
  */
-static inline void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, nodeptr q)
+static inline void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, const nodeptr q)
 {
     real drab, phii, mor3;
-    vector ai, quaddr;
-    real dr5inv, phiquad, drquaddr;
+    vector ai;
 
     if (q != (nodeptr) fest->qmem)                    /* cant use memorized data? */
     {
         SUBV(fest->dr, Pos(q), fest->pos0);           /* then compute sep. */
         SQRV(fest->drsq, fest->dr);                   /* and sep. squared */
     }
-    fest->drsq += ctx->model.eps2;                    /* use standard softening */
+
+    fest->drsq += ctx->model.eps2;   /* use standard softening */
     drab = mw_sqrt(fest->drsq);
     phii = Mass(q) / drab;
     mor3 = phii / fest->drsq;
     MULVS(ai, fest->dr, mor3);
-    INCADDV(fest->acc0, ai);                   /* ... and to total accel. */
+    INCADDV(fest->acc0, ai);         /* ... and to total accel. */
 
     if (ctx->usequad && Type(q) == CELL)             /* if cell, add quad term */
-    {
-        dr5inv = 1.0 / (sqr(fest->drsq) * drab); /* form dr^-5 */
-        MULMV(quaddr, Quad(q), fest->dr);        /* form Q * dr */
-        DOTVP(drquaddr, fest->dr, quaddr);       /* form dr * Q * dr */
-        phiquad = -0.5 * dr5inv * drquaddr;      /* get quad. part of phi */
-        phiquad = 5.0 * phiquad / fest->drsq;    /* save for acceleration */
-        MULVS(ai, fest->dr, phiquad);            /* components of acc. */
-        INCSUBV(fest->acc0, ai);                 /* increment */
-        INCMULVS(quaddr, dr5inv);
-        INCSUBV(fest->acc0, quaddr);             /* acceleration */
-    }
+        cellQuadTerm(fest, q, drab);
 }
 
 /* treescan: iterative routine to do force calculation, starting with
@@ -147,26 +158,41 @@ static inline void hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p, vector
     SETV(acc, fest.acc0);         /* and acceleration */
 }
 
-void gravMap(const NBodyCtx* ctx, NBodyState* st)
+#ifndef _OPENMP
+
+static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
     vector* a;
+
     const bodyptr endp = st->bodytab + ctx->model.nbody;
-
-    //double tstree = get_time();
-
-    makeTree(ctx, st);                /* build tree structure */
-
-    //double tetree = get_time();
-    //printf("Time for makeTree = %gs\n", tetree - tstree);
-
-    //double ts = get_time();
 
     for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)      /* get force on each body */
         hackGrav(ctx, (nodeptr) st->tree.root, p, (vectorptr) a);
+}
 
-    //double te = get_time();
+#else
 
-    //printf("Time for map = %gs\n", te - ts);
+static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
+{
+    unsigned int i;
+    const unsigned int nbody = ctx->model.nbody;
+
+    #pragma omp parallel for private(i) schedule(dynamic)
+    for (i = 0; i < nbody; ++i)      /* get force on each body */
+    {
+        hackGrav(ctx,
+                 (nodeptr) st->tree.root,
+                 &st->bodytab[i],
+                 (vectorptr) &st->acctab[i]);
+    }
+}
+
+#endif /* _OPENMP */
+
+void gravMap(const NBodyCtx* ctx, NBodyState* st)
+{
+    makeTree(ctx, st);
+    mapForceBody(ctx, st);
 }
 

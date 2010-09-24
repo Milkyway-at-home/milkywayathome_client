@@ -45,7 +45,6 @@ if(BOINC_APPLICATION)
   include_directories(${BOINC_INCLUDE_DIR})
 endif()
 
-find_package(OpenCL)
 find_package(JsonC REQUIRED)
 include_directories(${JSON_C_INCLUDE_DIR})
 
@@ -59,10 +58,6 @@ if(NEED_POPT_DEPS)
 endif()
 find_package(Popt REQUIRED)
 include_directories(${POPT_INCLUDE_DIR})
-
-
-
-set_os_specific_libs()
 
 set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 include_directories(${NBODY_INCLUDE_DIR})
@@ -80,6 +75,19 @@ option(ENABLE_CRLIBM
       "Use crlibm double" ON)
 mark_as_advanced(ENABLE_CRLIBM)
 
+option(NBODY_OPENMP "Use OpenMP" OFF)
+
+find_package(OpenMP)
+
+if(OPENMP_FOUND AND NBODY_OPENMP)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+elseif(NOT OPENMP_POUND AND NBODY_OPENMP)
+  message(WARNING "Did not find OpenMP support, but was enabled. Continuing without OpenMP")
+endif()
+
+
+
 if(BOINC_RELEASE)
   set(ENABLE_CRLIBM ON)
 endif()
@@ -88,6 +96,18 @@ if(NOT DOUBLEPREC AND ENABLE_CRLIBM)
   message(WARNING "Attempting to use single precision with crlibm. Disabling use of crlibm")
   set(ENABLE_CRLIBM OFF)
 endif()
+
+if(NBODY_OPENCL)
+  find_package(OpenCL)
+  if(NOT OPENCL_FOUND)
+    message(WARNING "N-body OpenCL was requested, but OpenCL not found. Disabling OpenCL.")
+    set(NBODY_OPENCL OFF)
+  else()
+    include_directories(${OPENCL_DIRECTORIES})
+  endif()
+endif()
+
+set_os_specific_libs(${NBODY_OPENCL})
 
 
 # Handle downloading, extracting and building dSFMT
@@ -149,6 +169,7 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/chisq.c
                   ${NBODY_SRC_DIR}/calc_params.c
                   ${NBODY_SRC_DIR}/plummer.c
                   ${NBODY_SRC_DIR}/nbody_util.c
+                  ${NBODY_SRC_DIR}/nbody_step.c
                   ${dsmft_src})
 
 set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/chisq.h

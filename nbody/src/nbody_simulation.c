@@ -26,10 +26,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "calc_params.h"
 #include "nbody_priv.h"
 #include "milkyway_util.h"
+#include "nbody_step.h"
+#include "grav.h"
 
 static inline void initState(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
-    warn("Starting nbody system\n");
+    mw_report("Starting nbody system\n");
 
     st->tout       = st->tnow;       /* schedule first output */
     st->tree.rsize = ctx->tree_rsize;
@@ -58,41 +60,9 @@ static void startRun(const NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
 {
     InitialConditions fc;
 
-    warn("Starting fresh nbody run\n");
+    mw_report("Starting fresh nbody run\n");
     reverseOrbit(&fc, ctx, ic);
     initState(ctx, &fc, st);
-}
-
-/* stepSystem: advance N-body system one time-step. */
-static inline void stepSystem(const NBodyCtx* ctx, NBodyState* st)
-{
-    bodyptr p;
-    vector* a;
-    vector dvel, dpos;
-    const bodyptr endp = st->bodytab + ctx->model.nbody;
-    const real dt = ctx->model.timestep;
-
-    for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)    /* loop over all bodies */
-    {
-        MULVS(dvel, (vectorptr) a, 0.5 * dt);      /* get velocity increment */
-        INCADDV(Vel(p), dvel);                     /* advance v by 1/2 step */
-        MULVS(dpos, Vel(p), dt);                   /* get positon increment */
-        INCADDV(Pos(p), dpos);                     /* advance r by 1 step */
-    }
-
-  #if !NBODY_OPENCL
-    gravMap(ctx, st);
-  #else
-    gravMapCL(ctx, st);
-  #endif /* !NBODY_OPENCL */
-
-    for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)      /* loop over all bodies */
-    {
-        MULVS(dvel, (vectorptr) a, 0.5 * dt);   /* get velocity increment */
-        INCADDV(Vel(p), dvel);                  /* advance v by 1/2 step */
-    }
-
-    st->tnow += dt;                           /* finally, advance time */
 }
 
 #if BOINC_APPLICATION

@@ -23,12 +23,18 @@
 # doesn't like you trying to statically link the standard libraries.
 # We also have to link as C++ when we do this because of BOINC.
 
-macro(set_os_specific_libs)
+macro(set_os_specific_libs cl_required)
   if(APPLE)
-    # Try to avoid the dyld: unknown required load command 0x80000022
-    # runtime error on Leopard for binaries built on 10.6
-    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5)
-    set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.5.sdk")
+    # OpenCL is 10.6+ feature
+    if(${cl_required} MATCHES "ON")
+      set(CMAKE_OSX_DEPLOYMENT_TARGET 10.6)
+      set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.6.sdk")
+    else()
+      # Try to avoid the dyld: unknown required load command 0x80000022
+      # runtime error on Leopard for binaries built on 10.6
+      set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5)
+      set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.5.sdk")
+    endif()
 
     find_library(COREFOUNDATION_LIBRARY CoreFoundation )
     list(APPEND OS_SPECIFIC_LIBS ${COREFOUNDATION_LIBRARY})
