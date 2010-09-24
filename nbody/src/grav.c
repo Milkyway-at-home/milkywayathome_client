@@ -24,6 +24,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "grav.h"
 
+#ifdef _OPENMP
+  #include <omp.h>
+#endif /* _OPENMP */
+
 typedef struct
 {
     vector pos0;      /* point to evaluate field */
@@ -147,6 +151,8 @@ static inline void hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p, vector
     SETV(acc, fest.acc0);         /* and acceleration */
 }
 
+#ifndef _OPENMP
+
 static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
@@ -158,17 +164,28 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
         hackGrav(ctx, (nodeptr) st->tree.root, p, (vectorptr) a);
 }
 
+#else
+
+static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
+{
+    unsigned int i;
+    const unsigned int nbody = ctx->model.nbody;
+
+    #pragma omp parallel for private(i) schedule(static)
+    for (i = 0; i < nbody; ++i)      /* get force on each body */
+    {
+        hackGrav(ctx,
+                 (nodeptr) st->tree.root,
+                 &st->bodytab[i],
+                 (vectorptr) &st->acctab[i]);
+    }
+}
+
+#endif /* _OPENMP */
 
 void gravMap(const NBodyCtx* ctx, NBodyState* st)
 {
-    makeTree(ctx, st);                /* build tree structure */
-
-    //double ts = mwGetTime();
-
+    makeTree(ctx, st);
     mapForceBody(ctx, st);
-
-    //double te = mwGetTime();
-
-    //printf("Time for map = %gs\n", te - ts);
 }
 
