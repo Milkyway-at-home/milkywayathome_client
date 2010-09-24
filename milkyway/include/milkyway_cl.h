@@ -25,6 +25,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
+#include "milkyway_config.h"
+
 #if !defined(__OPENCL_VERSION__) && MILKYWAY_OPENCL
   #ifdef __APPLE__
     #include <OpenCL/cl.h>
@@ -33,7 +35,7 @@ extern "C" {
     #include <CL/cl.h>
     #include <CL/cl_ext.h>
   #endif /* __APPLE__ */
-#endif  /* __OPENCL_VERSION__ */
+#endif  /* !defined(__OPENCL_VERSION__) && MILKYWAY_OPENCL */
 
 #ifdef __OPENCL_VERSION__
   #define __MW_LOCAL __local
