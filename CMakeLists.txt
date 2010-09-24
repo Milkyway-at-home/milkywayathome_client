@@ -161,9 +161,12 @@ option(SEPARATION_OPENCL
 option(NBODY_OPENCL
         "Build the OpenCL nbody" OFF)
 
+option(MILKYWAY_OPENCL
+        "Build the OpenCL nbody" OFF)
+mark_as_advanced(MILKYWAY_OPENCL)
+#FIXME: Be able to build one with / without openl
 if(NBODY_OPENCL OR SEPARATION_OPENCL)
   set(MILKYWAY_OPENCL ON)
-  #FIXME: Be able to build one with / without openl
   add_definitions("-DMILKYWAY_OPENCL=1")
 endif()
 
