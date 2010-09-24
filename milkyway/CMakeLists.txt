@@ -31,7 +31,7 @@ if(BOINC_APPLICATION)
   include_directories(${BOINC_INCLUDE_DIR})
 endif()
 
-if(MILKYWAY_OPENCL)
+if(${MILKYWAY_OPENCL} MATCHES "ON")
   find_package(OpenCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
 endif()

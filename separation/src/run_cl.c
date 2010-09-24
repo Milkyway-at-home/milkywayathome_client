@@ -151,7 +151,6 @@ static inline real sumMuResults(BG_PROB* mu_results,
 
 static R_POINTS* prepare_r_pts(const ASTRONOMY_PARAMETERS* ap,
                                const INTEGRAL_AREA* ia,
-                               const STREAM_CONSTANTS* sc,
                                const STREAM_GAUSS* sg,
                                const unsigned int r_steps)
 {
@@ -224,7 +223,7 @@ real integrateCL(const ASTRONOMY_PARAMETERS* ap,
     SeparationCLMem cm = EMPTY_SEPARATION_CL_MEM;
     R_POINTS* r_pts_all;
 
-    r_pts_all = prepare_r_pts(ap, ia, sc, sg, ia->r_steps);
+    r_pts_all = prepare_r_pts(ap, ia, sg, ia->r_steps);
     if (setupSeparationCL(ap, ia, sc, r_pts_all, &ci, &cm) != CL_SUCCESS)
         warn("Failed to setup up CL\n");
     else
