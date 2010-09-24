@@ -80,6 +80,19 @@ option(ENABLE_CRLIBM
       "Use crlibm double" ON)
 mark_as_advanced(ENABLE_CRLIBM)
 
+option(NBODY_OPENMP "Use OpenMP" OFF)
+
+find_package(OpenMP)
+
+if(OPENMP_FOUND AND NBODY_OPENMP)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+elseif(NOT OPENMP_POUND AND NBODY_OPENMP)
+  message(WARNING "Did not find OpenMP support, but was enabled. Continuing without OpenMP")
+endif()
+
+
+
 if(BOINC_RELEASE)
   set(ENABLE_CRLIBM ON)
 endif()

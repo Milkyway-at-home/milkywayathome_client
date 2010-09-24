@@ -69,7 +69,13 @@ static void nbodyBoincInit()
 /* For BOINC releases */
 static void nbodyBoincInit()
 {
-    int rc = boinc_init();
+    int rc;
+
+  #ifndef _OPENMP
+    rc = boinc_init();
+  #else
+    rc = boinc_init_parallel();
+  #endif /* _OPENMP */
     if (rc)
     {
         warn("boinc_init failed: %d\n", rc);

@@ -27,6 +27,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 #include "milkyway_util.h"
 
+#ifdef _OPENMP
+  #include <omp.h>
+#endif /* _OPENMP */
+
+
 static inline void initState(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     warn("Starting nbody system\n");
@@ -63,6 +68,8 @@ static void startRun(const NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
     initState(ctx, &fc, st);
 }
 
+#ifndef _OPENMP
+
 static inline void advancePosAcc(NBodyState* st, const unsigned int nbody, const real dt)
 {
     bodyptr p;
@@ -95,6 +102,41 @@ static inline void advanceVelocities(NBodyState* st, const unsigned int nbody, c
         INCADDV(Vel(p), dvel);                  /* advance v by 1/2 step */
     }
 }
+
+#else
+
+static inline void advancePosAcc(NBodyState* st, const unsigned int nbody, const real dt)
+{
+    unsigned int i;
+    vector dvel;
+    vector dpos;
+    bodyptr p;
+
+  #pragma omp parallel for private(i, p, dvel, dpos) schedule(static)
+    for (i = 0; i < nbody; ++i)     /* loop over all bodies */
+    {
+        p = &st->bodytab[i];
+        MULVS(dvel, (vectorptr) &st->acctab[i], 0.5 * dt);      /* get velocity increment */
+        INCADDV(Vel(p), dvel);                     /* advance v by 1/2 step */
+        MULVS(dpos, Vel(p), dt);                   /* get positon increment */
+        INCADDV(Pos(p), dpos);                     /* advance r by 1 step */
+    }
+}
+
+static inline void advanceVelocities(NBodyState* st, const unsigned int nbody, const real dt)
+{
+    unsigned int i;
+    vector dvel;
+
+    #pragma omp parallel for private(i, dvel) schedule(static)
+    for (i = 0; i < nbody; ++i)      /* loop over all bodies */
+    {
+        MULVS(dvel, (vectorptr) &st->acctab[i], 0.5 * dt);   /* get velocity increment */
+        INCADDV(Vel(&st->bodytab[i]), dvel);                  /* advance v by 1/2 step */
+    }
+}
+
+#endif /* _OPENMP */
 
 /* stepSystem: advance N-body system one time-step. */
 static inline void stepSystem(const NBodyCtx* ctx, NBodyState* st)
