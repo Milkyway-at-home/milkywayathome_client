@@ -45,9 +45,10 @@ typedef struct
     int printHistogram;
     int cleanCheckpoint;
     int ignoreCheckpoint;
+    int num_threads;
 } NBodyFlags;
 
-#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 
 void runNBodySimulation(json_object* obj, const FitParams* fitParams, const NBodyFlags* nbf);
 
