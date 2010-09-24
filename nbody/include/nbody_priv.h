@@ -39,6 +39,7 @@ extern "C" {
 #include "accelerations.h"
 #include "plummer.h"
 #include "nbody_util.h"
+#include "nbody_step.h"
 
 #if NBODY_SHOW
   #include "show.h"

@@ -162,6 +162,7 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/chisq.c
                   ${NBODY_SRC_DIR}/calc_params.c
                   ${NBODY_SRC_DIR}/plummer.c
                   ${NBODY_SRC_DIR}/nbody_util.c
+                  ${NBODY_SRC_DIR}/nbody_step.c
                   ${dsmft_src})
 
 set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/chisq.h
