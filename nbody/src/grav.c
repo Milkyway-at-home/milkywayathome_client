@@ -147,25 +147,27 @@ static inline void hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p, vector
     SETV(acc, fest.acc0);         /* and acceleration */
 }
 
-void gravMap(const NBodyCtx* ctx, NBodyState* st)
+static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
     vector* a;
+
     const bodyptr endp = st->bodytab + ctx->model.nbody;
-
-    //double tstree = get_time();
-
-    makeTree(ctx, st);                /* build tree structure */
-
-    //double tetree = get_time();
-    //printf("Time for makeTree = %gs\n", tetree - tstree);
-
-    //double ts = get_time();
 
     for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)      /* get force on each body */
         hackGrav(ctx, (nodeptr) st->tree.root, p, (vectorptr) a);
+}
 
-    //double te = get_time();
+
+void gravMap(const NBodyCtx* ctx, NBodyState* st)
+{
+    makeTree(ctx, st);                /* build tree structure */
+
+    //double ts = mwGetTime();
+
+    mapForceBody(ctx, st);
+
+    //double te = mwGetTime();
 
     //printf("Time for map = %gs\n", te - ts);
 }
