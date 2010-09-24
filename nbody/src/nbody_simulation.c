@@ -63,14 +63,13 @@ static void startRun(const NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
     initState(ctx, &fc, st);
 }
 
-/* stepSystem: advance N-body system one time-step. */
-static inline void stepSystem(const NBodyCtx* ctx, NBodyState* st)
+static inline void advancePosAcc(NBodyState* st, const unsigned int nbody, const real dt)
 {
     bodyptr p;
     vector* a;
-    vector dvel, dpos;
-    const bodyptr endp = st->bodytab + ctx->model.nbody;
-    const real dt = ctx->model.timestep;
+    vector dvel;
+    vector dpos;
+    const bodyptr endp = st->bodytab + nbody;
 
     for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)    /* loop over all bodies */
     {
@@ -79,6 +78,30 @@ static inline void stepSystem(const NBodyCtx* ctx, NBodyState* st)
         MULVS(dpos, Vel(p), dt);                   /* get positon increment */
         INCADDV(Pos(p), dpos);                     /* advance r by 1 step */
     }
+}
+
+
+static inline void advanceVelocities(NBodyState* st, const unsigned int nbody, const real dt)
+{
+    bodyptr p;
+    vector* a;
+    vector dvel;
+
+    const bodyptr endp = st->bodytab + nbody;
+
+    for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)      /* loop over all bodies */
+    {
+        MULVS(dvel, (vectorptr) a, 0.5 * dt);   /* get velocity increment */
+        INCADDV(Vel(p), dvel);                  /* advance v by 1/2 step */
+    }
+}
+
+/* stepSystem: advance N-body system one time-step. */
+static inline void stepSystem(const NBodyCtx* ctx, NBodyState* st)
+{
+    const real dt = ctx->model.timestep;
+
+    advancePosAcc(st, ctx->model.nbody, dt);
 
   #if !NBODY_OPENCL
     gravMap(ctx, st);
@@ -86,11 +109,7 @@ static inline void stepSystem(const NBodyCtx* ctx, NBodyState* st)
     gravMapCL(ctx, st);
   #endif /* !NBODY_OPENCL */
 
-    for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)      /* loop over all bodies */
-    {
-        MULVS(dvel, (vectorptr) a, 0.5 * dt);   /* get velocity increment */
-        INCADDV(Vel(p), dvel);                  /* advance v by 1/2 step */
-    }
+    advanceVelocities(st, ctx->model.nbody, dt);
 
     st->tnow += dt;                           /* finally, advance time */
 }
