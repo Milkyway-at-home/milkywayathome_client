@@ -132,7 +132,8 @@ static INTEGRAL_AREA* fread_parameters(FILE* file,
     if (fscanf(file, "wedge: %d\n", &ap->wedge) < 1)
         warn("Error reading wedge\n");
 
-    integral = (INTEGRAL_AREA*) mallocSafe(sizeof(INTEGRAL_AREA));
+    //integral = (INTEGRAL_AREA*) mallocSafe(sizeof(INTEGRAL_AREA));
+    integral = (INTEGRAL_AREA*) mwMallocAligned(sizeof(INTEGRAL_AREA), sizeof(INTEGRAL_AREA));
 
     fscanf(file,
            "r[min,max,steps]: %lf, %lf, %u\n",
@@ -162,6 +163,7 @@ static INTEGRAL_AREA* fread_parameters(FILE* file,
     ap->number_integrals++;
     if (ap->number_integrals > 1)
     {
+        /* FIXME?: Alignment in case where copy happens */
         integral = (INTEGRAL_AREA*) reallocSafe(integral, sizeof(INTEGRAL_AREA) * ap->number_integrals);
         for (i = 1; i < ap->number_integrals; i++)
         {

@@ -27,6 +27,7 @@ extern "C" {
 
 #include "separation_config.h"
 #include "milkyway_math.h"
+#include "milkyway_types.h"
 
 #ifndef _MSC_VER
   #define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(x)))
@@ -57,7 +58,7 @@ typedef struct SEPARATION_ALIGN(64)
     vector a;
     vector c;
     real sigma_sq2;
-    int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
+    mw_int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
 } STREAM_CONSTANTS;
 
 typedef struct SEPARATION_ALIGN(4 * sizeof(real))
@@ -88,7 +89,7 @@ typedef struct SEPARATION_ALIGN(128)
     real r_min, r_max, r_step_size;
     real nu_min, nu_max, nu_step_size;
     real mu_min, mu_max, mu_step_size;
-    unsigned int r_steps, nu_steps, mu_steps;
+    mw_uint r_steps, nu_steps, mu_steps;
 } INTEGRAL_AREA;
 
 typedef struct
@@ -154,14 +155,14 @@ typedef struct SEPARATION_ALIGN(128)
 {
     real parameters_version;
     real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
-    int sgr_coordinates;
-    unsigned int number_integrals;
-    unsigned int number_background_parameters;
-    unsigned int number_streams;
-    unsigned int convolve;
+    mw_int sgr_coordinates;
+    mw_uint number_integrals;
+    mw_uint number_background_parameters;
+    mw_uint number_streams;
+    mw_uint convolve;
 
-    int aux_bg_profile;
-    int wedge;
+    mw_int aux_bg_profile;
+    mw_int wedge;
     real background_weight;
 
     /* Constants determined by other parameters */

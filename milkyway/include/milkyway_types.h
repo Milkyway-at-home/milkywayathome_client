@@ -18,29 +18,26 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _CALCULATED_CONSTANTS_H_
-#define _CALCULATED_CONSTANTS_H_
+#ifndef _MILKYWAY_TYPES_H_
+#define _MILKYWAY_TYPES_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "separation_types.h"
+#include "milkyway_config.h"
+#include "milkyway_cl.h"
 
-STREAM_CONSTANTS* getStreamConstants(const ASTRONOMY_PARAMETERS* ap, const STREAMS* streams);
+#if defined(__OPENCL_VERSION__) || !defined(CL_VERSION_1_0)
+  /* In kernel, or regular types */
+  typedef int mw_int;
+  typedef unsigned int mw_uint;
+#else
+  /* On the host side, we need the properly aligned CL types */
+  typedef cl_int mw_int;
+  typedef cl_uint mw_uint;
+#endif /* __OPENCL_VERSION__ */
 
-int setAstronomyParameters(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS* bgp);
 
-STREAM_GAUSS* get_stream_gauss(const unsigned int convolve);
-
-NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
-                                   const real nu_step_size,
-                                   const real nu_min);
-
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _CALCULATED_CONSTANTS_H_ */
+#endif /* _MILKYWAY_TYPES_H_ */
 

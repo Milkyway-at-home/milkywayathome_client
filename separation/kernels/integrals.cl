@@ -33,14 +33,28 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "coordinates.h"
 #include "integrals_common.h"
 
+#pragma OPENCL EXTENSION cl_amd_printf : enable
+
 __attribute__ ((always_inline))
 inline void write_st_probs(__global ST_PROBS* probs_out,
                            const ST_PROBS* probs,
                            const unsigned int number_streams)
 {
     unsigned int i;
+
     for (i = 0; i < number_streams; ++i)
+    {
         probs_out[i] = probs[i];
+
+       #if 0
+        ST_PROBS arst = { 0xabcd, 0xbeef };
+        if (isnan(probs[i].st_prob_int) || isnan(probs[i].st_prob_int_c))
+            probs_out[i] = arst;
+        else
+            probs_out[i] = probs[i];
+        #endif
+    }
+
 }
 
 __attribute__ ((always_inline))
@@ -85,6 +99,19 @@ inline _MW_STATIC void nu_sum(__global BG_PROB* mu_out,
     write_st_probs(&probs_out[nu_step * ap->number_streams], probs, ap->number_streams);
 }
 
+__attribute__ ((always_inline))
+inline _MW_STATIC void zero_stream_probs(ST_PROBS* probs, const unsigned int nstreams)
+{
+    unsigned int i;
+
+    for (i = 0; i < nstreams; ++i)
+    {
+        probs[i].st_prob_int = 0.0;
+        probs[i].st_prob_int_c = 0.0;
+    }
+}
+
+
 __kernel void r_sum_kernel(__global BG_PROB* mu_out,
                            __global ST_PROBS* probs_out,
 
@@ -94,22 +121,17 @@ __kernel void r_sum_kernel(__global BG_PROB* mu_out,
                            __MW_CONSTANT R_POINTS* r_pts_all,
                            __local R_POINTS* r_pts)
 {
-    unsigned int i;
     __MW_CONSTANT R_POINTS* r_pts_this;
     __global ST_PROBS* nu_probs;
     size_t r_step = get_global_id(0);
 
-    real st_probs[3]; /* FIXME: hardcoded stream limit */
+    real st_probs[3];   /* FIXME: hardcoded stream limit */
     ST_PROBS probs[3];
 
     if (r_step > ia->r_steps)
         return;
 
-    for (i = 0; i < ap->number_streams; ++i)
-    {
-        probs[i].st_prob_int = 0.0;
-        probs[i].st_prob_int_c = 0.0;
-    }
+    zero_stream_probs(probs, ap->number_streams);
 
     #if 0
     /* Load r_pts into local memory */
@@ -120,16 +142,17 @@ __kernel void r_sum_kernel(__global BG_PROB* mu_out,
     mem_fence(CLK_LOCAL_MEM_FENCE);
     #endif
 
-    r_pts_this = &r_pts_all[r_step * ap->convolve];
-    nu_probs = &probs_out[r_step * ia->nu_steps * ap->number_streams];
-
     R_PRIME rp;
     real reff_xr_rp3;
 
     rp = calcRPrime(ia, r_step);
     reff_xr_rp3 = calcReffXrRp3(rp.rPrime);
 
+    r_pts_this = &r_pts_all[r_step * ap->convolve];
+    nu_probs = &probs_out[r_step * ia->nu_steps * ap->number_streams];
+
     //nu_sum(mu_out, nu_probs, ap, sc, ia, rp.irv, reff_xr_rp3, r_pts, st_probs, probs, r_step);
     nu_sum(mu_out, nu_probs, ap, sc, ia, rp.irv, reff_xr_rp3, r_pts_this, st_probs, probs, r_step);
+
 }
 

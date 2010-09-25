@@ -64,15 +64,10 @@ static inline void stream_c(vector c, int wedge, real mu, real r)
     R(lbr) = r;
     lbr2xyz(lbr, c);
 }
+int setAstronomyParameters(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS* bgp)
 
-STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
-                                 const BACKGROUND_PARAMETERS* bgp,
-                                 const STREAMS* streams)
 {
-    unsigned int i;
     STREAM_CONSTANTS* sc;
-
-    sc = (STREAM_CONSTANTS*) mallocSafe(sizeof(STREAM_CONSTANTS) * streams->number_streams);
 
     ap->alpha = bgp->parameters[0];
     ap->q     = bgp->parameters[1];
@@ -94,21 +89,34 @@ STREAM_CONSTANTS* init_constants(ASTRONOMY_PARAMETERS* ap,
     else
     {
         warn("Error: aux_bg_profile invalid");
-        return NULL;
+        return 1;
     }
 
     if (ap->sgr_coordinates)
     {
         warn("gc2sgr not implemented\n");
-        return NULL;
+        return 1;
     }
 
     ap->coeff = 1.0 / (stdev * SQRT_2PI);
     ap->alpha_delta3 = 3.0 - ap->alpha + ap->delta;
 
+    return 0;
+}
+
+STREAM_CONSTANTS* getStreamConstants(const ASTRONOMY_PARAMETERS* ap, const STREAMS* streams)
+
+{
+    unsigned int i;
+    STREAM_CONSTANTS* sc;
+    real stream_sigma;
+
+    sc = (STREAM_CONSTANTS*) mwMallocAligned(sizeof(STREAM_CONSTANTS) * streams->number_streams,
+                                             sizeof(STREAM_CONSTANTS));
+
     for (i = 0; i < streams->number_streams; i++)
     {
-        real stream_sigma = streams->parameters[i].stream_parameters[4];
+        stream_sigma = streams->parameters[i].stream_parameters[4];
         sc[i].large_sigma = (stream_sigma > SIGMA_LIMIT || stream_sigma < -SIGMA_LIMIT);
         sc[i].sigma_sq2 = 2.0 * sqr(stream_sigma);
 

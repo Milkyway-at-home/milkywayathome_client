@@ -88,7 +88,7 @@ __inline LB gc2lb(const int wedge, const real mu, const real nu)
     mw_sincos(ra, &sinra, &cosra);
 
     cosdec = mw_cos(dec);
-    SET_VECTOR(v1, 
+    SET_VECTOR(v1,
                cosra * cosdec,
                sinra * cosdec,
                z1         /* mw_sin(asin(z1)) == z1 */

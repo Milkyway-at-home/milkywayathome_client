@@ -170,9 +170,9 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     ASTRONOMY_PARAMETERS ap = EMPTY_ASTRONOMY_PARAMETERS;
     BACKGROUND_PARAMETERS bgp = EMPTY_BACKGROUND_PARAMETERS;
     STREAMS streams = EMPTY_STREAMS;
-    INTEGRAL_AREA* ias;
-    STREAM_CONSTANTS* sc;
-    real likelihood_val;
+    INTEGRAL_AREA* ias = NULL;
+    STREAM_CONSTANTS* sc = NULL;
+    real likelihood_val = NAN;
     int rc;
 
     ias = prepare_parameters(sf->ap_file, &ap, &bgp, &streams, parameters, number_parameters);
@@ -182,12 +182,20 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
         return 1;
     }
 
-    sc = init_constants(&ap, &bgp, &streams);
+    rc = setAstronomyParameters(&ap, &bgp);
     free_background_parameters(&bgp);
+    if (rc)
+    {
+        warn("Failed to set astronomy parameters\n");
+        free(ias);
+        free_streams(&streams);
+        return 1;
+    }
 
+    sc = getStreamConstants(&ap, &streams);
     if (!sc)
     {
-        warn("Failed to init_constants\n");
+        warn("Failed to get stream constants\n");
         free(ias);
         free_streams(&streams);
         return 1;
@@ -198,12 +206,12 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
 
     warn("<search_likelihood> %0.20f </search_likelihood>\n", likelihood_val);
 
-    free(ias);
-    free(sc);
-    free_streams(&streams);
-
     if (rc)
         warn("Failed to calculate likelihood\n");
+
+    free(ias);
+    mwAlignedFree(sc);
+    free_streams(&streams);
 
     return rc;
 }

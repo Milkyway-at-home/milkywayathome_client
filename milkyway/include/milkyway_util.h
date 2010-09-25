@@ -27,6 +27,7 @@ extern "C" {
 
 #include "milkyway_config.h"
 #include "milkyway_math.h"
+#include "milkyway_types.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -75,6 +76,13 @@ void* mallocSafe(size_t size);
 void* callocSafe(size_t count, size_t size);
 void* reallocSafe(void* ptr, size_t size);
 void* mwMallocAligned(size_t size, size_t alignment);
+void* mwCallocAligned(size_t count, size_t size, size_t alignment);
+
+#ifndef _WIN32
+  #define mwAlignedFree free
+#else
+  #define mwAlignedFree _aligned_free
+#endif /* _WIN32 */
 
 #define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)
 #define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \

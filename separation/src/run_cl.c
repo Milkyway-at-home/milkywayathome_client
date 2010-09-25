@@ -39,6 +39,7 @@ static cl_int readIntegralResults(CLInfo* ci,
                                   size_t resultsSize)
 {
     cl_int err;
+
     err = clEnqueueReadBuffer(ci->queue,
                               cm->outMu,
                               CL_TRUE,
@@ -54,13 +55,30 @@ static cl_int readIntegralResults(CLInfo* ci,
     return CL_SUCCESS;
 }
 
+
+/* Debugging, remove me */
+static unsigned int cur_r_step = 0;
+static unsigned int cur_nu_step = 0;
+static unsigned int nanCount = 0;
+
 static inline void sumStreamResults(ST_PROBS* probs_results,
                                     ST_PROBS* probs,
                                     const unsigned int number_streams)
 {
     unsigned int i;
+
     for (i = 0; i < number_streams; ++i)
+    {
+        if (isnan(probs[i].st_prob_int) || isnan(probs[i].st_prob_int_c))
+        {
+            ++nanCount;
+            printf("Read nan [%u][%u][%u] = %g %g\n",
+                   cur_r_step, cur_nu_step, i,
+                   probs[i].st_prob_int, probs[i].st_prob_int_c);
+        }
+
         KAHAN_ADD(probs_results[i].st_prob_int, probs[i].st_prob_int, probs[i].st_prob_int_c);
+    }
 }
 
 static inline void sumProbsResults(ST_PROBS* probs_results,
@@ -75,10 +93,14 @@ static inline void sumProbsResults(ST_PROBS* probs_results,
     {
         for (j = 0; j < nu_steps; ++j)
         {
+            cur_r_step = i;
+            cur_nu_step = j;
             idx = (i * nu_steps * number_streams) + (j * number_streams);
             sumStreamResults(probs_results, &probs_r_nu[idx], number_streams);
         }
     }
+
+    printf("nanCount = %u\n", nanCount);
 }
 
 static cl_int readProbsResults(CLInfo* ci,
@@ -92,7 +114,7 @@ static cl_int readProbsResults(CLInfo* ci,
     cl_int err = CL_SUCCESS;
 
     size_t size = sizeof(ST_PROBS) * r_steps * nu_steps * number_streams;
-    probs_tmp = (ST_PROBS*) mallocSafe(size);
+    probs_tmp = (ST_PROBS*) mwMallocAligned(size, sizeof(ST_PROBS));
 
     err = clEnqueueReadBuffer(ci->queue,
                               cm->outProbs,
@@ -105,7 +127,7 @@ static cl_int readProbsResults(CLInfo* ci,
     else
         sumProbsResults(probs_results, probs_tmp, r_steps, nu_steps, number_streams);
 
-    free(probs_tmp);
+    mwAlignedFree(probs_tmp);
     return err;
 }
 
@@ -115,8 +137,6 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
 {
     cl_int err;
     const size_t global[] = { r_steps, nu_steps };
-    //const size_t local[] = { 0, nu_steps };
-    //printf("local = %u\n", nu_steps);
 
     err = clEnqueueNDRangeKernel(ci->queue,
                                  ci->kern,
@@ -159,7 +179,7 @@ static R_POINTS* prepare_r_pts(const ASTRONOMY_PARAMETERS* ap,
     R_POINTS* r_pts_all;
     const unsigned int nconvolve = ap->convolve;
 
-    r_pts_all = (R_POINTS*) mallocSafe(sizeof(R_POINTS) * r_steps * nconvolve);
+    r_pts_all = (R_POINTS*) mwMallocAligned(sizeof(R_POINTS) * r_steps * nconvolve, sizeof(R_POINTS));
 
     for (i = 0; i < r_steps; ++i)
     {
@@ -189,17 +209,18 @@ static real runIntegral(CLInfo* ci,
         return NAN;
     }
 
-    mu_results = (BG_PROB*) mallocSafe(resultSize);
+    //mu_results = (BG_PROB*) mallocSafe(resultSize);
+    mu_results = (BG_PROB*) mwMallocAligned(resultSize, sizeof(BG_PROB));
     err = readIntegralResults(ci, cm, mu_results, resultSize);
     if (err != CL_SUCCESS)
     {
         warn("Failed to read integral results: %s\n", showCLInt(err));
-        free(mu_results);
+        mwAlignedFree(mu_results);
         return NAN;
     }
 
     bg_result = sumMuResults(mu_results, r_steps, nu_steps);
-    free(mu_results);
+    mwAlignedFree(mu_results);
 
     err = readProbsResults(ci, cm, probs_results, r_steps, nu_steps, number_streams);
     if (err != CL_SUCCESS)
@@ -231,7 +252,7 @@ real integrateCL(const ASTRONOMY_PARAMETERS* ap,
 
     destroyCLInfo(&ci);
     releaseSeparationBuffers(&cm);
-    free(r_pts_all);
+    mwAlignedFree(r_pts_all);
 
     return result;
 }

@@ -50,14 +50,16 @@ static inline cl_int createOutProbsBuffer(const unsigned int r_steps,
                                           SeparationCLMem* cm)
 {
     cl_int err;
+    size_t size = sizeof(ST_PROBS) * r_steps * nu_steps * number_streams;
     cm->outProbs = clCreateBuffer(ci->clctx,
                                   CL_MEM_WRITE_ONLY,
-                                  sizeof(ST_PROBS) * r_steps * nu_steps * number_streams,
+                                  size,
                                   NULL,
                                   &err);
+
     if (err != CL_SUCCESS)
     {
-        warn("Error creating out probs buffer: %s\n", showCLInt(err));
+        warn("Error creating out probs buffer of size %zu: %s\n", size, showCLInt(err));
         return err;
     }
 

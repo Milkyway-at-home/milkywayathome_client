@@ -28,6 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <errno.h>
 
 #include "milkyway_config.h"
@@ -83,6 +84,16 @@ void* mwMallocAligned(size_t size, size_t alignment)
     return p;
 }
 #endif
+
+void* mwCallocAligned(size_t count, size_t size, size_t alignment)
+{
+    void* p;
+
+    p = mwMallocAligned(count * size, alignment);
+    memset(p, 0, size);
+
+    return p;
+}
 
 void* reallocSafe(void* ptr, size_t size)
 {
