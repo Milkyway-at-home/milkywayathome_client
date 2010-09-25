@@ -74,7 +74,7 @@ extern "C" {
 void* mallocSafe(size_t size);
 void* callocSafe(size_t count, size_t size);
 void* reallocSafe(void* ptr, size_t size);
-
+void* mwMallocAligned(size_t size, size_t alignment);
 
 #define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)
 #define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \

@@ -55,6 +55,35 @@ void* mallocSafe(size_t size)
     return mem;
 }
 
+#ifndef _WIN32
+void* mwMallocAligned(size_t size, size_t alignment)
+{
+    void* p;
+
+    if (posix_memalign(&p, alignment, size))
+    {
+        perror(__func__);
+        fail("Failed to allocate block of size %zu aligned to %zu\n", size, alignment);
+    }
+
+    if (!p)
+        fail("%s: NULL\n", __func__);
+
+    return p;
+}
+#else
+void* mwMallocAligned(size_t size, size_t alignment)
+{
+    void* p;
+    p = _aligned_malloc(size, alignment);
+
+    if (!p)
+        fail("%s: NULL: _aligned_malloc error = %d\n", FUNC_NAME, GetLastError());
+
+    return p;
+}
+#endif
+
 void* reallocSafe(void* ptr, size_t size)
 {
     void* mem = (void*) realloc(ptr, size);
