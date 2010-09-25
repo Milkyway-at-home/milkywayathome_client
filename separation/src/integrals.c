@@ -106,15 +106,15 @@ static inline void nu_sum(const ASTRONOMY_PARAMETERS* ap,
     es->nu_step = 0;
 }
 
-real r_sum(const ASTRONOMY_PARAMETERS* ap,
-           const INTEGRAL_AREA* ia,
-           const STREAM_CONSTANTS* sc,
-           const STREAM_GAUSS* sg,
-           const NU_CONSTANTS* nu_consts,
-           R_POINTS* r_pts,
-           real* st_probs,
-           ST_PROBS* probs,
-           EVALUATION_STATE* es)
+static real r_sum(const ASTRONOMY_PARAMETERS* ap,
+                  const INTEGRAL_AREA* ia,
+                  const STREAM_CONSTANTS* sc,
+                  const STREAM_GAUSS* sg,
+                  const NU_CONSTANTS* nu_consts,
+                  R_POINTS* r_pts,
+                  real* st_probs,
+                  ST_PROBS* probs,
+                  EVALUATION_STATE* es)
 {
     real reff_xr_rp3;
     R_PRIME rp;
@@ -136,4 +136,32 @@ real r_sum(const ASTRONOMY_PARAMETERS* ap,
 
     return es->r_acc.bg_int + es->r_acc.correction;
 }
+
+/* returns background integral */
+real integrate(const ASTRONOMY_PARAMETERS* ap,
+               const INTEGRAL_AREA* ia,
+               const STREAM_CONSTANTS* sc,
+               const STREAM_GAUSS* sg,
+               ST_PROBS* probs,
+               EVALUATION_STATE* es)
+{
+    real result;
+    NU_CONSTANTS* nu_consts;
+    R_POINTS* r_pts;
+    real* st_probs;
+
+    nu_consts = (NU_CONSTANTS*) prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
+    r_pts = (R_POINTS*) mallocSafe(sizeof(R_POINTS) * ap->convolve);
+    st_probs = (real*) mallocSafe(sizeof(real) * ap->number_streams);
+
+    result = r_sum(ap, ia, sc, sg, nu_consts, r_pts, st_probs, probs, es);
+    es->r_step = 0;
+
+    free(nu_consts);
+    free(r_pts);
+    free(st_probs);
+
+    return result;
+}
+
 

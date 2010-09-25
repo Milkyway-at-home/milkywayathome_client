@@ -28,10 +28,8 @@ extern "C" {
 #include "separation_config.h"
 #include "milkyway_math.h"
 
-
-//#define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(x)))
 #ifndef _MSC_VER
-  #define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(32)))
+  #define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(x)))
 #else
   #define SEPARATION_ALIGN(x)
 #endif /* _MSC_VER */
@@ -46,7 +44,6 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 #define LB_B(x) ((x).b)
 
 
-
 typedef struct
 {
     unsigned int number_stars;
@@ -55,7 +52,7 @@ typedef struct
 
 #define EMPTY_STAR_POINTS { 0, NULL }
 
-typedef struct SEPARATION_ALIGN(4 * sizeof(real))
+typedef struct SEPARATION_ALIGN(64)
 {
     vector a;
     vector c;
@@ -86,7 +83,7 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 
 /* Parameter related types */
 
-typedef struct SEPARATION_ALIGN(64)
+typedef struct SEPARATION_ALIGN(128)
 {
     real r_min, r_max, r_step_size;
     real nu_min, nu_max, nu_step_size;

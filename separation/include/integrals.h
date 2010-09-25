@@ -28,15 +28,12 @@ extern "C" {
 #include "separation_types.h"
 #include "evaluation_state.h"
 
-real r_sum(const ASTRONOMY_PARAMETERS* ap,
-           const INTEGRAL_AREA* ia,
-           const STREAM_CONSTANTS* sc,
-           const STREAM_GAUSS* sg,
-           const NU_CONSTANTS* nu_consts,
-           R_POINTS* r_pts,
-           real* st_probs,
-           ST_PROBS* probs,
-           EVALUATION_STATE* es);
+real integrate(const ASTRONOMY_PARAMETERS* ap,
+               const INTEGRAL_AREA* ia,
+               const STREAM_CONSTANTS* sc,
+               const STREAM_GAUSS* sg,
+               ST_PROBS* probs,
+               EVALUATION_STATE* es);
 
 #ifdef __cplusplus
 }
