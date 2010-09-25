@@ -51,12 +51,12 @@ extern "C" {
 
 #if MW_ENABLE_DEBUG
     /* convenient functions for printing debugging stuffs */
-  #define MW_DEBUG(msg, ...) fprintf(stderr, "%s():%d: ", FUNC_NAME, __LINE__); \
+  #define mw_debug(msg, ...) fprintf(stderr, "%s():%d: ", FUNC_NAME, __LINE__); \
                              fprintf(stderr, msg, __VA_ARGS__);
-    #define MW_DEBUGMSG(msg) puts(msg)
+    #define mw_debugmsg(msg) puts(msg)
 #else
-    #define MW_DEBUG(msg, ...) ((void) 0)
-    #define MW_DEBUGMSG(msg, ...) ((void) 0)
+    #define mw_debug(msg, ...) ((void) 0)
+    #define mw_debugmsg(msg, ...) ((void) 0)
 #endif
 
 #if BOINC_APPLICATION

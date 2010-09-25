@@ -28,7 +28,14 @@
   #endif /* DOUBLEPREC */
 
   #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
-  #define VECTOR(x, y, z) { (x), (y), (z), 0.0 }
+
+  /* Another glorious victory for standards */
+  #ifdef __NVIDIA_CL__
+    #define VECTOR(x, y, z) ( (x), (y), (z), 0.0 )
+  #else
+    #define VECTOR(x, y, z) { (x), (y), (z), 0.0 }
+  #endif /* __NVIDIA_CL__ */
+
   #define SET_VECTOR(v, x, y, z) { X(v) = (x); Y(v) = (y); Z(v) = (z); }
 
 /* DOT Vector Product */

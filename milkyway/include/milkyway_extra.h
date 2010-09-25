@@ -21,8 +21,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_EXTRA_H_
 #define _MILKYWAY_EXTRA_H_
 
-/* The ATI CL compiler is dumb and has a problem with static anything */
-#ifndef __ATI_CL__ /* FIXME: What is actually defined? */
+//#if defined(__ATI_CL__) || defined(__NVIDIA_CL__)
+#ifndef __OPENCL_VERSION__
   #define _MW_STATIC static
 #else
   #define _MW_STATIC
