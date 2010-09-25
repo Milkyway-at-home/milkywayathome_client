@@ -111,7 +111,6 @@ __kernel void r_sum_kernel(__global BG_PROB* mu_out,
         probs[i].st_prob_int_c = 0.0;
     }
 
-
     #if 0
     /* Load r_pts into local memory */
     r_pts_this = &r_pts_all[r_step * ap->convolve];

@@ -29,6 +29,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "nbody.h"
 
+#ifdef _OPENMP
+  #include <omp.h>
+#endif /* _OPENMP */
+
 #ifdef _WIN32
   #define R_OK 4 /* FIXME: Windows */
 #endif
@@ -316,6 +320,14 @@ static json_object* readParameters(const int argc,
         },
       #endif /* BOINC_APPLICATION */
 
+      #ifdef _OPENMP
+        {
+            "nthreads", 'n',
+            POPT_ARG_INT, &nbf->num_threads,
+            'n', "BOINC argument for number of threads", NULL
+        },
+      #endif /* _OPENMP */
+
         {
             "p", 'p',
             POPT_ARG_NONE, &params,
@@ -409,6 +421,23 @@ static void freeNBodyFlags(NBodyFlags* nbf)
     free(nbf->histoutFileName);
 }
 
+#ifdef _OPENMP
+static void setNumThreads(int num_threads)
+{
+    if (num_threads != 0)
+    {
+        omp_set_num_threads(num_threads);
+        mw_report("Using OpenMP %d max threads on a system with %d processors\n",
+                  omp_get_max_threads(),
+                  omp_get_num_procs());
+    }
+}
+#else
+
+static void setNumThreads(int num_threads) { }
+
+#endif /* _OPENMP */
+
 /* main: toplevel routine for hierarchical N-body code. */
 int main(int argc, const char* argv[])
 {
@@ -422,6 +451,7 @@ int main(int argc, const char* argv[])
 
     obj = readParameters(argc, argv, &fitParams, &nbf);
 
+    setNumThreads(nbf.num_threads);
     setDefaultFlags(&nbf);
 
     if (obj)

@@ -67,7 +67,7 @@ public:
 
     int getStarTotal() { return starTotal; }
 
-    bool readStars( HaloField& stream, double lum = .1 )
+    bool readStars( HaloField& stream, double lum = .5 )
 
         // Reads next step in 'fstrm' into stream data
         // Returns true if another step exists, false if this is the last step in the file
@@ -276,7 +276,7 @@ public:
 
     const WedgeInfo getWedgeInfo()
     {
-
+        /// TODO /// STUB
         wedgeInfo.lCenter = 0.;
         wedgeInfo.center = 0.;
         wedgeInfo.rCenter = 0.;
@@ -285,7 +285,6 @@ public:
         wedgeInfo.crossVector = Vector3d(0., 0., 0.);
         wedgeInfo.depthVector = Vector3d(0., 0., 0.);
 
-//        wedgeInfo.depthVector =
         wedgeInfo.initialized = true;
         return (const WedgeInfo) wedgeInfo;
     }

@@ -32,37 +32,13 @@
 
 using namespace std;
 
-SDL_Color lToOStarColor( int l )
-{
-    SDL_Color c;
-    c.r = l*9/10;
-    c.g = l*9/10;
-    c.b = l;
-    c.unused = 0;
-    return c;
-}
-
-SDL_Color* getOStarPalette( SDL_Color* palette )
-{
-   for( int i = 0; i<0x80; i++ )
-      palette[i] = lToOStarColor((i<<1)+(i>>6));
-   return palette;
-}
-
-void setOStarPalette( SDL_Surface* surface )
-{
-    SDL_Color pal[0x80];
-    SDL_SetColors(surface, getOStarPalette(pal), 0, 0x80);
-}
-
 HaloField* getLastFrameNBody()
 {
-    NBodyFile nb("../sim/nbody/plummer1.bin");
+    NBodyFile nb("plummer1.bin");
     HaloField* stream = new HaloField(10000);
     nb.readStars(*stream);
     return stream;
 }
-
 
 
 int main( int args, char **argv )
@@ -85,17 +61,17 @@ int main( int args, char **argv )
     WedgeFile wf;
     int totalStars = wf.getStarTotal(fileName);
     HaloField wedge(totalStars);
-    wf.readStars(fileName, wedge, .01);
+    wf.readStars(fileName, wedge);
 
     // Create display
-    FieldAnimation sim(bpp, fps);
+    FieldAnimation sim(bpp, fps, "MilkyWay@Home Screensaver Demo", "milkyway.bmp");
 
     // Read in galaxy
     ImagePlot imagePlot("eso32.bmp", 25000, 30.*1.18, .3);
 
     sim.add(&wedge, diameter);
-    sim.add(getLastFrameNBody(), diameter*2);
-    sim.add(imagePlot.getField(), 10.);
+    sim.add(getLastFrameNBody(), diameter);
+    sim.add(imagePlot.getField(), 20.);
 
     sim.showCamera();
     sim.cv->setFocusPoint(sim.cv->getFocusPoint(100., 45., 30.), 0.);

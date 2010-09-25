@@ -39,28 +39,50 @@ int main( int args, char **argv )
 
     // Handle arguments
     if( args<4 ){
-        cout << "Usage: ./nbodysim n_body_file_name wedge_file_name star_brightness\n";
+        cout << "Usage: ./nbody n_body_file_name wedge_file_name star_brightness\n";
         return 0;
     }
-    string nFileName = argv[1];
-    string wFileName = argv[2];
-    double lum = atof(argv[3]);
-    double rad = 3.5;
+    double diameter = 7.;
+    double fps = 30.;
+    int bpp = 32;
 
-    // Set up environment
-    SDL_Surface* display = setVideo();
-    SDL_Event event;
-    stellarClass fStar(rad, lum, 96);
+    string fileName = "stars_82.txt";
+    if( args>1 )
+        fileName = argv[1];
 
-    stellarClass fStarLow(rad, lum/5., 96);
+    // Read in wedge
+    WedgeFile wf;
+    int totalStars = wf.getStarTotal(fileName);
+    HaloField wedge(totalStars);
+    wf.readStars(fileName, wedge, .01);
 
-    camera cv(0.253, 0., 0., 0., 0., 0.);
+    // Create display
+    FieldAnimation sim(bpp, fps);
 
-    // Read in wedges
-    wedgeFile wf(fStarLow);
-    starField wedges(*display, cv, wf.getStarTotal(wFileName));
-    wf.readStars(wFileName, wedges);
+    // Read in galaxy
+    ImagePlot imagePlot("eso32.bmp", 25000, 30.*1.18, .3);
 
+    sim.add(&wedge, diameter);
+    sim.add(getLastFrameNBody(), diameter);
+    sim.add(imagePlot.getField(), 20.);
+
+    sim.showCamera();
+    sim.cv->setFocusPoint(sim.cv->getFocusPoint(100., 45., 30.), 0.);
+
+    while( true )
+    {
+
+        if( sim.pollEvent() ) {
+            ;
+        }
+
+    }
+
+    return 0;
+
+}
+
+/*
     while( true ) {
 
         // Read file data and display
@@ -98,7 +120,7 @@ int main( int args, char **argv )
             stream.draw();
             wedges.draw();
             SDL_Flip(display);
-            if( cv.pollEvent(event) ) {
+            if( ??.pollEvent(event) ) {
 
                 if( event.key.keysym.sym==SDLK_BACKSPACE )
                     break;
@@ -139,3 +161,4 @@ int main( int args, char **argv )
     return 0;
 
 }
+*/
