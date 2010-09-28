@@ -85,7 +85,7 @@ static inline void printHistogram(FILE* f,
                 histData[i].useBin,
                 ((real) i  + 0.5) * binsize + start,
                 ((real) histogram[i]) / totalNum,
-                histogram[i] == 0 ? inv(totalNum) : sqrt(histogram[i]) / totalNum);
+                histogram[i] == 0 ? inv(totalNum) : mw_sqrt(histogram[i]) / totalNum);
     }
 
   #if BOINC_APPLICATION

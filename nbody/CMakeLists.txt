@@ -294,7 +294,7 @@ if(ENABLE_CRLIBM)
   list(APPEND exe_link_libs ${CRLIBM_LIBRARY})
 endif()
 
-
+find_package(Libm REQUIRED)
 
 if(NEED_POPT_DEPS)
   # Popt dependencies for static linking For some reason, on OS X /
