@@ -26,6 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "coordinates.h"
 #include "r_points.h"
 #include "milkyway_util.h"
+#include "calculated_constants.h"
 
 
 #if BOINC_APPLICATION
