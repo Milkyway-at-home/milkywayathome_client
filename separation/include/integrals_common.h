@@ -97,6 +97,13 @@ inline real h_prob_fast(const real qw_r3_N, const real rg, const real rs)
     return qw_r3_N / (rg * cube(rs));
 }
 
+ALWAYS_INLINE HOT CONST_F
+inline real h_prob_slow(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap, const real qw_r3_N, const real rg)
+{
+    return qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rg + ap->r0, ap->alpha_delta3));
+}
+
+
 /* FIXME: I don't know what these do enough to name it properly */
 ALWAYS_INLINE HOT
 inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
@@ -136,12 +143,6 @@ inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
     }
 
     return bg_prob;
-}
-
-ALWAYS_INLINE HOT CONST_F
-inline real h_prob_slow(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap, const real qw_r3_N, const real rg)
-{
-    return qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rg + ap->r0, ap->alpha_delta3));
 }
 
 ALWAYS_INLINE

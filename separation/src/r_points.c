@@ -30,30 +30,39 @@ extern real calcGPrime(const real coords);
 extern R_PRIME calcRPrime(__MW_CONSTANT INTEGRAL_AREA* ia, const unsigned int r_step);
 #endif
 
+
+static inline R_POINTS calc_r_point(__MW_CONSTANT STREAM_GAUSS* sg, const real gPrime, const real coeff)
+{
+    R_POINTS r_pt;
+    real g, exponent, r3, N;
+
+    g = gPrime + sg->dx;
+
+    /* MAG2R */
+    r_pt.r_in_mag = g;
+    r_pt.r_in_mag2 = sqr(g);
+    r_pt.r_point = mw_powr(RL10, (g - absm) / RL5 + RL1) / RL1000;
+
+    r3 = cube(r_pt.r_point);
+    exponent = sqr(g - gPrime) / (RL2 * sqr(stdev));
+    N = coeff * mw_exp(-exponent);
+    r_pt.qw_r3_N = sg->qgaus_W * r3 * N;
+
+    return r_pt;
+}
+
+
 void set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                   __MW_CONSTANT STREAM_GAUSS* sg,
                   const unsigned int n_convolve,
                   const real coords,
                   __MW_LOCAL R_POINTS* r_pts)
 {
-    real g, exponent, r3, N;
     unsigned int i;
 
     const real gPrime = calcGPrime(coords);
 
     for (i = 0; i < n_convolve; ++i)
-    {
-        g = gPrime + sg[i].dx;
-
-        /* MAG2R */
-        r_pts[i].r_in_mag = g;
-        r_pts[i].r_in_mag2 = sqr(g);
-        r_pts[i].r_point = mw_powr(RL10, (g - absm) / RL5 + RL1) / RL1000;
-
-        r3 = cube(r_pts[i].r_point);
-        exponent = sqr(g - gPrime) / (RL2 * sqr(stdev));
-        N = ap->coeff * mw_exp(-exponent);
-        r_pts[i].qw_r3_N = sg[i].qgaus_W * r3 * N;
-    }
+        r_pts[i] = calc_r_point(&sg[i], gPrime, ap->coeff);
 }
 
