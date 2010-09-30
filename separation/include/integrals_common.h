@@ -76,6 +76,27 @@ inline void sum_probs(ST_PROBS* probs,
         KAHAN_ADD(probs[i].st_prob_int, V_reff_xr_rp3 * st_probs[i], probs[i].st_prob_int_c);
 }
 
+ALWAYS_INLINE HOT
+inline real aux_prob(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+                     const real qw_r3_N,
+                     const real r_in_mag,
+                     const real r_in_mag2)
+{
+    return qw_r3_N * (ap->bg_a * r_in_mag2 + ap->bg_b * r_in_mag + ap->bg_b);
+}
+
+ALWAYS_INLINE HOT CONST_F
+inline real rg_calc(const vector xyz, const real q)
+{
+    return mw_sqrt(sqr(X(xyz)) + sqr(Y(xyz)) + sqr(Z(xyz)) / sqr(q));
+}
+
+ALWAYS_INLINE HOT CONST_F
+inline real h_prob_fast(const real qw_r3_N, const real rg, const real rs)
+{
+    return qw_r3_N / (rg * cube(rs));
+}
+
 /* FIXME: I don't know what these do enough to name it properly */
 ALWAYS_INLINE HOT
 inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
@@ -87,7 +108,7 @@ inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                 real* st_probs)
 {
     unsigned int i;
-    real h_prob, aux_prob;
+    real h_prob;
     real rg, rs;
     real lsin, lcos;
     real bsin, bcos;
@@ -101,26 +122,26 @@ inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
     {
         lbr2xyz_2(xyz, r_pts[i].r_point, bsin, bcos, lsin, lcos);
 
-        rg = mw_sqrt(sqr(X(xyz)) + sqr(Y(xyz)) + sqr(Z(xyz)) / sqr(ap->q));
+        rg = rg_calc(xyz, ap->q);
         rs = rg + ap->r0;
 
-        h_prob = r_pts[i].qw_r3_N / (rg * cube(rs));
+        h_prob = h_prob_fast(r_pts[i].qw_r3_N, rg, rs);
 
         /* the Hernquist profile includes a quadratic term in g */
         if (aux_bg_profile)
-        {
-            aux_prob = r_pts[i].qw_r3_N * (  ap->bg_a * r_pts[i].r_in_mag2
-                                           + ap->bg_b * r_pts[i].r_in_mag
-                                           + ap->bg_c );
-            h_prob += aux_prob;
-        }
-
+            h_prob += aux_prob(ap, r_pts[i].qw_r3_N, r_pts[i].r_in_mag, r_pts[i].r_in_mag2);
         bg_prob += h_prob;
 
         stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
     }
 
     return bg_prob;
+}
+
+ALWAYS_INLINE HOT CONST_F
+inline real h_prob_slow(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap, const real qw_r3_N, const real rg)
+{
+    return qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rg + ap->r0, ap->alpha_delta3));
 }
 
 ALWAYS_INLINE
@@ -145,9 +166,9 @@ inline real sub_bg_probability2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
     {
         lbr2xyz_2(xyz, r_pts[i].r_point, bsin, bcos, lsin, lcos);
 
-        rg = mw_sqrt(sqr(X(xyz)) + sqr(Y(xyz)) + sqr(Z(xyz)) / sqr(ap->q));
+        rg = rg_calc(xyz, ap->q);
 
-        bg_prob += r_pts[i].qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rg + ap->r0, ap->alpha_delta3));
+        bg_prob += h_prob_slow(ap, r_pts[i].qw_r3_N, rg);
         stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
     }
 
@@ -173,7 +194,8 @@ inline real bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
     else
     {
         zero_st_probs(st_probs, ap->number_streams);
-        if (ap->alpha == 1 && ap->delta == 1)
+
+        if (ap->fast_h_prob)
         {
             bg_prob = sub_bg_probability1(ap,
                                           r_pts,

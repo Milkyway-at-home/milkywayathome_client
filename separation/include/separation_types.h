@@ -162,6 +162,7 @@ typedef struct SEPARATION_ALIGN(128)
     mw_uint convolve;
 
     mw_int aux_bg_profile;
+    mw_int fast_h_prob;
     mw_int wedge;
     real background_weight;
 

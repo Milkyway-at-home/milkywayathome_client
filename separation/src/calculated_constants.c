@@ -101,6 +101,8 @@ int setAstronomyParameters(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS
     ap->coeff = 1.0 / (stdev * SQRT_2PI);
     ap->alpha_delta3 = 3.0 - ap->alpha + ap->delta;
 
+    ap->fast_h_prob = (ap->alpha == 1 && ap->delta == 1);
+
     return 0;
 }
 
