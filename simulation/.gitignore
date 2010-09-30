@@ -9,6 +9,7 @@ sim/
 *.a
 *.exe
 *.dll
+*~
 
 # Packages
 
