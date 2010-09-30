@@ -169,27 +169,6 @@ static inline real sumMuResults(BG_PROB* mu_results,
     return bg_prob.bg_int + bg_prob.correction;
 }
 
-static R_POINTS* prepare_r_pts(const ASTRONOMY_PARAMETERS* ap,
-                               const INTEGRAL_AREA* ia,
-                               const STREAM_GAUSS* sg,
-                               const unsigned int r_steps)
-{
-    unsigned int i;
-    R_PRIME rp;
-    R_POINTS* r_pts_all;
-    const unsigned int nconvolve = ap->convolve;
-
-    r_pts_all = (R_POINTS*) mwMallocAligned(sizeof(R_POINTS) * r_steps * nconvolve, sizeof(R_POINTS));
-
-    for (i = 0; i < r_steps; ++i)
-    {
-        rp = calcRPrime(ia, i);
-        set_r_points(ap, sg, nconvolve, rp.rPrime, &r_pts_all[i * nconvolve]);
-    }
-
-    return r_pts_all;
-}
-
 static real runIntegral(CLInfo* ci,
                         SeparationCLMem* cm,
                         ST_PROBS* probs_results,
@@ -244,8 +223,7 @@ real integrateCL(const ASTRONOMY_PARAMETERS* ap,
     SeparationCLMem cm = EMPTY_SEPARATION_CL_MEM;
     R_POINTS* r_pts_all;
 
-    r_pts_all = prepare_r_pts(ap, ia, sg, ia->r_steps);
-    if (setupSeparationCL(ap, ia, sc, r_pts_all, &ci, &cm) != CL_SUCCESS)
+    if (setupSeparationCL(ap, ia, sc, sg, &ci, &cm) != CL_SUCCESS)
         warn("Failed to setup up CL\n");
     else
         result = runIntegral(&ci, &cm, probs_results, ia->r_steps, ia->nu_steps, ap->number_streams);

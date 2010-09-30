@@ -118,8 +118,8 @@ __kernel void r_sum_kernel(__global BG_PROB* mu_out,
                            __MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                            __MW_CONSTANT INTEGRAL_AREA* ia,
                            __MW_CONSTANT STREAM_CONSTANTS* sc,
-                           __MW_CONSTANT R_POINTS* r_pts_all,
-                           __local R_POINTS* r_pts)
+                           __MW_CONSTANT STREAM_GAUSS* sg,
+
 {
     __MW_CONSTANT R_POINTS* r_pts_this;
     __global ST_PROBS* nu_probs;
@@ -148,11 +148,9 @@ __kernel void r_sum_kernel(__global BG_PROB* mu_out,
     rp = calcRPrime(ia, r_step);
     reff_xr_rp3 = calcReffXrRp3(rp.rPrime);
 
-    r_pts_this = &r_pts_all[r_step * ap->convolve];
     nu_probs = &probs_out[r_step * ia->nu_steps * ap->number_streams];
 
-    //nu_sum(mu_out, nu_probs, ap, sc, ia, rp.irv, reff_xr_rp3, r_pts, st_probs, probs, r_step);
-    nu_sum(mu_out, nu_probs, ap, sc, ia, rp.irv, reff_xr_rp3, r_pts_this, st_probs, probs, r_step);
+    nu_sum(mu_out, nu_probs, ap, sc, ia, rp.irv, reff_xr_rp3, sg, st_probs, probs, r_step);
 
 }
 

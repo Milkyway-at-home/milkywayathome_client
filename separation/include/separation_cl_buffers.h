@@ -33,7 +33,7 @@ extern "C" {
 cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
                                const INTEGRAL_AREA* ia,
                                const STREAM_CONSTANTS* sc,
-                               const R_POINTS* r_pts_all,
+                               const STREAM_GAUSS* sg,
                                CLInfo* ci,
                                SeparationCLMem* cm);
 

@@ -51,10 +51,7 @@ static inline cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
     err |= clSetKernelArg(ci->kern, 2, sizeof(cl_mem), &cm->ap);
     err |= clSetKernelArg(ci->kern, 3, sizeof(cl_mem), &cm->ia);
     err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->sc);
-    err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->rPts);
-
-    /* Local workspaces */
-    err |= clSetKernelArg(ci->kern, 6, sizeof(R_POINTS) * ap->convolve, NULL);      /* r_pts */
+    err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->sg);
 
     if (err != CL_SUCCESS)
     {
@@ -115,7 +112,7 @@ void freeKernelSrc(char* src)
 cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                          const INTEGRAL_AREA* ia,
                          const STREAM_CONSTANTS* sc,
-                         const R_POINTS* r_pts_all,
+                         const STREAM_GAUSS* sg,
                          CLInfo* ci,
                          SeparationCLMem* cm)
 {
@@ -156,7 +153,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
         return err;
     }
 
-    err = createSeparationBuffers(ap, ia, sc, r_pts_all, ci, cm);
+    err = createSeparationBuffers(ap, ia, sc, sg, ci, cm);
     if (err != CL_SUCCESS)
     {
         fail("Failed to create CL buffers: %s\n", showCLInt(err));
