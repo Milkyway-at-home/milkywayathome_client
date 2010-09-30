@@ -65,11 +65,10 @@ void* mwMallocAligned(size_t size, size_t alignment)
     return mallocSafe(size);
 }
 
-#elif defined(_WIN32)
+#elif !defined(_WIN32)
 
 void* mwMallocAligned(size_t size, size_t alignment)
 {
-    return mallocSafe(size);
     void* p;
 
     if (posix_memalign(&p, alignment, size))
