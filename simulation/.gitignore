@@ -40,3 +40,6 @@ desktop.ini
 stderr.txt
 stdout.txt
 *.bmp
+
+# Exceptions
+!eso32.bmp
