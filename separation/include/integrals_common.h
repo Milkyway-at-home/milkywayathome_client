@@ -190,35 +190,33 @@ inline real bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 
     /* if q is 0, there is no probability */
     if (ap->q == 0)
-        bg_prob = -1.0;
+        return -1.0;
+
+    zero_st_probs(st_probs, ap->number_streams);
+
+    if (ap->fast_h_prob)
+    {
+        bg_prob = sub_bg_probability1(ap,
+                                      r_pts,
+                                      sc,
+                                      integral_point,
+                                      ap->aux_bg_profile,
+                                      ap->convolve,
+                                      st_probs);
+    }
     else
     {
-        zero_st_probs(st_probs, ap->number_streams);
-
-        if (ap->fast_h_prob)
-        {
-            bg_prob = sub_bg_probability1(ap,
-                                          r_pts,
-                                          sc,
-                                          integral_point,
-                                          ap->aux_bg_profile,
-                                          ap->convolve,
-                                          st_probs);
-        }
-        else
-        {
-            bg_prob = sub_bg_probability2(ap,
-                                          r_pts,
-                                          sc,
-                                          integral_point,
-                                          ap->convolve,
-                                          st_probs);
-        }
-
-        sum_probs(probs, st_probs, V * reff_xr_rp3, ap->number_streams);
-
-        bg_prob *= reff_xr_rp3;
+        bg_prob = sub_bg_probability2(ap,
+                                      r_pts,
+                                      sc,
+                                      integral_point,
+                                      ap->convolve,
+                                      st_probs);
     }
+
+    sum_probs(probs, st_probs, V * reff_xr_rp3, ap->number_streams);
+
+    bg_prob *= reff_xr_rp3;
 
     return bg_prob;
 }
