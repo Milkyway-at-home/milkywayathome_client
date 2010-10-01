@@ -192,6 +192,8 @@ void printAstronomyParameters(const ASTRONOMY_PARAMETERS* ap)
            "  number_integrals             = %u\n"
            "  alpha                        = %g\n"
            "  q                            = %g\n"
+           "  zero_q                       = %d\n"
+           "  q_inv_sqr                    = %g\n"
            "  sn                           = %g\n"
            "  r0                           = %g\n"
            "  delta                        = %g\n"
@@ -210,7 +212,8 @@ void printAstronomyParameters(const ASTRONOMY_PARAMETERS* ap)
            ap->aux_bg_profile,
            ap->wedge,
            ap->number_integrals,
-           ap->alpha, ap->q, ap->sn, ap->r0, ap->delta, ap->coeff, ap->alpha_delta3,
+           ap->alpha, ap->q, ap->zero_q, ap->q_inv_sqr,
+           ap->sn, ap->r0, ap->delta, ap->coeff, ap->alpha_delta3,
            ap->bg_a, ap->bg_b, ap->bg_c);
 }
 

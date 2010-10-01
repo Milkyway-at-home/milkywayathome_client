@@ -60,9 +60,9 @@ inline real aux_prob(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 }
 
 ALWAYS_INLINE HOT CONST_F
-inline real rg_calc(const vector xyz, const real q)
+inline real rg_calc(const vector xyz, const real q_inv_sqr)
 {
-    return mw_sqrt(sqr(X(xyz)) + sqr(Y(xyz)) + sqr(Z(xyz)) / sqr(q));
+    return mw_sqrt(sqr(X(xyz)) + sqr(Y(xyz)) + sqr(Z(xyz)) * q_inv_sqr);
 }
 
 ALWAYS_INLINE HOT CONST_F

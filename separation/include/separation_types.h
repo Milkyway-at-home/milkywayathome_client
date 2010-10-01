@@ -168,19 +168,22 @@ typedef struct SEPARATION_ALIGN(128)
 
     mw_int aux_bg_profile;
     mw_int fast_h_prob;
+    mw_int zero_q;
     mw_int wedge;
     real background_weight;
 
     /* Constants determined by other parameters */
-    real alpha, q, sn, r0, delta, coeff, alpha_delta3;
+    real alpha, sn, r0, delta, coeff, alpha_delta3;
+    real q;
+    real q_inv_sqr;  /* 1 / q^2 */
     real bg_a, bg_b, bg_c;
 } ASTRONOMY_PARAMETERS;
 
 
 #define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0.0, \
                                      0, 0,   \
-                                     0, 0, 0, \
-                                     0, 0, 0, 0.0, \
+                                     0, 0, 0, 0, \
+                                     0, 0, 0, 0.0, 0.0,   \
                                      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
                                      0.0, 0.0, 0.0 }
 

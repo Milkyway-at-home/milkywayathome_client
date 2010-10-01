@@ -83,7 +83,7 @@ static inline real likelihood_bg_probability_main(__MW_CONSTANT ASTRONOMY_PARAME
     {
         lbr2xyz_2(xyz[i], r_pts[i].r_point, bsin, bcos, lsin, lcos);
 
-        rg = rg_calc(xyz[i], ap->q);
+        rg = rg_calc(xyz[i], ap->q_inv_sqr);
 
         rs = rg + ap->r0;
 
@@ -116,7 +116,7 @@ static inline real likelihood_bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS*
     real bg_prob;
 
     /* if q is 0, there is no probability */
-    if (ap->q == 0)
+    if (ap->zero_q)
         return -1.0;
 
     bg_prob = likelihood_bg_probability_main(ap, r_pts, xyz, integral_point, ap->convolve);

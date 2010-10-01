@@ -92,7 +92,7 @@ static inline real sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
     {
         lbr2xyz_2(xyz, r_pts[i].r_point, bsin, bcos, lsin, lcos);
 
-        rg = rg_calc(xyz, ap->q);
+        rg = rg_calc(xyz, ap->q_inv_sqr);
         rs = rg + ap->r0;
 
         h_prob = h_prob_fast(r_pts[i].qw_r3_N, rg, rs);
@@ -132,7 +132,7 @@ static real sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
     {
         lbr2xyz_2(xyz, r_pts[i].r_point, bsin, bcos, lsin, lcos);
 
-        rg = rg_calc(xyz, ap->q);
+        rg = rg_calc(xyz, ap->q_inv_sqr);
 
         bg_prob += h_prob_slow(ap, r_pts[i].qw_r3_N, rg);
         stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
@@ -156,7 +156,7 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
     real bg_prob;
 
     /* if q is 0, there is no probability */
-    if (ap->q == 0)
+    if (ap->zero_q)
         return -1.0;
 
     zero_st_probs(st_probs, ap->number_streams);

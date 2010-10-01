@@ -69,8 +69,12 @@ int setAstronomyParameters(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS
 {
     ap->alpha = bgp->parameters[0];
     ap->q     = bgp->parameters[1];
+
     ap->r0    = bgp->parameters[2];
     ap->delta = bgp->parameters[3];
+
+    ap->zero_q = (ap->q == 0.0);
+    ap->q_inv_sqr = inv(sqr(ap->q));
 
     if (ap->aux_bg_profile == 0)
     {
