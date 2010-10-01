@@ -114,6 +114,7 @@ inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                 const real gPrime,
                                 const int aux_bg_profile,
                                 const unsigned int convolve,
+                                const R_POINTS* r_pts,
                                 real* st_probs)
 {
     unsigned int i;
@@ -123,26 +124,24 @@ inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
     real bsin, bcos;
     vector xyz;
     real bg_prob = 0.0;
-    R_POINTS r_pt;
 
     mw_sincos(d2r(LB_L(integral_point)), &lsin, &lcos);
     mw_sincos(d2r(LB_B(integral_point)), &bsin, &bcos);
 
     for (i = 0; i < convolve; ++i)
     {
-        r_pt = calc_r_point(&sg[i], gPrime, ap->coeff);
-        lbr2xyz_2(xyz, r_pt.r_point, bsin, bcos, lsin, lcos);
+        lbr2xyz_2(xyz, r_pts[i].r_point, bsin, bcos, lsin, lcos);
 
         rg = rg_calc(xyz, ap->q);
         rs = rg + ap->r0;
 
-        h_prob = h_prob_fast(r_pt.qw_r3_N, rg, rs);
+        h_prob = h_prob_fast(r_pts[i].qw_r3_N, rg, rs);
         /* the Hernquist profile includes a quadratic term in g */
         if (aux_bg_profile)
-            h_prob += aux_prob(ap, r_pt.qw_r3_N, r_pt.r_in_mag, r_pt.r_in_mag2);
+            h_prob += aux_prob(ap, r_pts[i].qw_r3_N, r_pts[i].r_in_mag, r_pts[i].r_in_mag2);
         bg_prob += h_prob;
 
-        stream_sums(st_probs, sc, xyz, r_pt.qw_r3_N, ap->number_streams);
+        stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
     }
 
     return bg_prob;
@@ -155,6 +154,7 @@ inline real sub_bg_probability2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                 const LB integral_point,
                                 const real gPrime,
                                 const unsigned int convolve,
+                                const R_POINTS* r_pts,
                                 real* st_probs)
 {
     unsigned int i;
@@ -170,13 +170,12 @@ inline real sub_bg_probability2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < convolve; ++i)
     {
-        r_pt = calc_r_point(&sg[i], gPrime, ap->coeff);
-        lbr2xyz_2(xyz, r_pt.r_point, bsin, bcos, lsin, lcos);
+        lbr2xyz_2(xyz, r_pts[i].r_point, bsin, bcos, lsin, lcos);
 
         rg = rg_calc(xyz, ap->q);
 
-        bg_prob += h_prob_slow(ap, r_pt.qw_r3_N, rg);
-        stream_sums(st_probs, sc, xyz, r_pt.qw_r3_N, ap->number_streams);
+        bg_prob += h_prob_slow(ap, r_pts[i].qw_r3_N, rg);
+        stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
     }
 
     return bg_prob;
@@ -190,6 +189,7 @@ inline real bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                            const real gPrime,
                            const real reff_xr_rp3,
                            const real V,
+                           const R_POINTS* r_pts,
                            real* st_probs,
                            ST_PROBS* probs)
 
@@ -212,6 +212,7 @@ inline real bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                       gPrime,
                                       ap->aux_bg_profile,
                                       ap->convolve,
+                                      r_pts,
                                       st_probs);
     }
     else
@@ -222,6 +223,7 @@ inline real bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                       integral_point,
                                       gPrime,
                                       ap->convolve,
+                                      r_pts,
                                       st_probs);
     }
 

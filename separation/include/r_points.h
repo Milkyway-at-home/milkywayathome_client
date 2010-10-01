@@ -107,6 +107,10 @@ void set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                   const real coords,
                   __MW_LOCAL R_POINTS* r_pts);
 
+R_POINTS* precalculate_r_pts(const ASTRONOMY_PARAMETERS* ap,
+                             const INTEGRAL_AREA* ia,
+                             const STREAM_GAUSS* sg);
+
 #ifdef __cplusplus
 }
 #endif
