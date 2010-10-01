@@ -65,6 +65,134 @@ static inline void do_boinc_checkpoint(const EVALUATION_STATE* es,
 
 #endif /* BOINC_APPLICATION */
 
+/* FIXME: I don't know what these do enough to name it properly */
+ALWAYS_INLINE HOT
+inline real sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
+                                const STREAM_CONSTANTS* sc,
+                                const STREAM_GAUSS* sg,
+                                const LB integral_point,
+                                const real gPrime,
+                                const int aux_bg_profile,
+                                const unsigned int convolve,
+                                const R_POINTS* r_pts,
+                                real* st_probs)
+{
+    unsigned int i;
+    real h_prob;
+    real rg, rs;
+    real lsin, lcos;
+    real bsin, bcos;
+    vector xyz;
+    real bg_prob = 0.0;
+
+    mw_sincos(d2r(LB_L(integral_point)), &lsin, &lcos);
+    mw_sincos(d2r(LB_B(integral_point)), &bsin, &bcos);
+
+    for (i = 0; i < convolve; ++i)
+    {
+        lbr2xyz_2(xyz, r_pts[i].r_point, bsin, bcos, lsin, lcos);
+
+        rg = rg_calc(xyz, ap->q);
+        rs = rg + ap->r0;
+
+        h_prob = h_prob_fast(r_pts[i].qw_r3_N, rg, rs);
+        /* the Hernquist profile includes a quadratic term in g */
+        if (aux_bg_profile)
+            h_prob += aux_prob(ap, r_pts[i].qw_r3_N, r_pts[i].r_in_mag, r_pts[i].r_in_mag2);
+        bg_prob += h_prob;
+
+        stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
+    }
+
+    return bg_prob;
+}
+
+ALWAYS_INLINE
+inline real sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
+                                const STREAM_CONSTANTS* sc,
+                                const STREAM_GAUSS* sg,
+                                const LB integral_point,
+                                const real gPrime,
+                                const unsigned int convolve,
+                                const R_POINTS* r_pts,
+                                real* st_probs)
+{
+    unsigned int i;
+    real rg;
+    real lsin, lcos;
+    real bsin, bcos;
+    vector xyz;
+    R_POINTS r_pt;
+    real bg_prob = 0.0;
+
+    mw_sincos(d2r(LB_L(integral_point)), &lsin, &lcos);
+    mw_sincos(d2r(LB_B(integral_point)), &bsin, &bcos);
+
+    for (i = 0; i < convolve; ++i)
+    {
+        lbr2xyz_2(xyz, r_pts[i].r_point, bsin, bcos, lsin, lcos);
+
+        rg = rg_calc(xyz, ap->q);
+
+        bg_prob += h_prob_slow(ap, r_pts[i].qw_r3_N, rg);
+        stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
+    }
+
+    return bg_prob;
+}
+
+ALWAYS_INLINE HOT
+inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
+                           const STREAM_CONSTANTS* sc,
+                           const STREAM_GAUSS* sg,
+                           const LB integral_point,
+                           const real gPrime,
+                           const real reff_xr_rp3,
+                           const real V,
+                           const R_POINTS* r_pts,
+                           real* st_probs,
+                           ST_PROBS* probs)
+{
+    real bg_prob;
+
+    /* if q is 0, there is no probability */
+    if (ap->q == 0)
+        return -1.0;
+
+    zero_st_probs(st_probs, ap->number_streams);
+
+    if (ap->fast_h_prob)
+    {
+        bg_prob = sub_bg_probability1(ap,
+                                      sc,
+                                      sg,
+                                      integral_point,
+                                      gPrime,
+                                      ap->aux_bg_profile,
+                                      ap->convolve,
+                                      r_pts,
+                                      st_probs);
+    }
+    else
+    {
+        bg_prob = sub_bg_probability2(ap,
+                                      sc,
+                                      sg,
+                                      integral_point,
+                                      gPrime,
+                                      ap->convolve,
+                                      r_pts,
+                                      st_probs);
+    }
+
+    sum_probs(probs, st_probs, V * reff_xr_rp3, ap->number_streams);
+
+    bg_prob *= reff_xr_rp3;
+
+    return bg_prob;
+}
+
+
 ALWAYS_INLINE HOT
 _MW_STATIC inline BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
                                 const INTEGRAL_AREA* ia,
@@ -97,10 +225,10 @@ _MW_STATIC inline BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
 
 /* Sum over mu steps using Kahan summation */
 ALWAYS_INLINE HOT
-_MW_STATIC inline void mu_sum(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
-                              __MW_CONSTANT INTEGRAL_AREA* ia,
-                              __MW_CONSTANT STREAM_CONSTANTS* sc,
-                              __MW_CONSTANT STREAM_GAUSS* sg,
+_MW_STATIC inline void mu_sum(const ASTRONOMY_PARAMETERS* ap,
+                              const INTEGRAL_AREA* ia,
+                              const STREAM_CONSTANTS* sc,
+                              const STREAM_GAUSS* sg,
                               const real nu,   /* nu constants */
                               const real id,
                               real* st_probs,
