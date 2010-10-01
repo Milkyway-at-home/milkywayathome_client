@@ -110,6 +110,7 @@ STREAM_CONSTANTS* getStreamConstants(const ASTRONOMY_PARAMETERS* ap, const STREA
     unsigned int i;
     STREAM_CONSTANTS* sc;
     real stream_sigma;
+    real sigma_sq2;
 
     sc = (STREAM_CONSTANTS*) mwMallocAligned(sizeof(STREAM_CONSTANTS) * streams->number_streams,
                                              sizeof(STREAM_CONSTANTS));
@@ -118,7 +119,8 @@ STREAM_CONSTANTS* getStreamConstants(const ASTRONOMY_PARAMETERS* ap, const STREA
     {
         stream_sigma = streams->parameters[i].stream_parameters[4];
         sc[i].large_sigma = (stream_sigma > SIGMA_LIMIT || stream_sigma < -SIGMA_LIMIT);
-        sc[i].sigma_sq2 = 2.0 * sqr(stream_sigma);
+        sigma_sq2 = 2.0 * sqr(stream_sigma);
+        sc[i].sigma_sq2_inv = 1.0 / sigma_sq2;
 
         stream_a(sc[i].a, streams->parameters[i].stream_parameters);
         stream_c(sc[i].c,

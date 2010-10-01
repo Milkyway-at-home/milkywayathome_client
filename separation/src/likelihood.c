@@ -49,7 +49,7 @@ static inline real probabilities_convolve(__MW_CONSTANT STREAM_CONSTANTS* sc,
         INCSUBVMS(xyzs, dotted, sc->a);
         SQRV(xyz_norm, xyzs);
 
-        st_prob += r_pts[i].qw_r3_N * mw_exp(-xyz_norm / sc->sigma_sq2);
+        st_prob += r_pts[i].qw_r3_N * mw_exp(-xyz_norm * sc->sigma_sq2_inv);
     }
 
     return st_prob;

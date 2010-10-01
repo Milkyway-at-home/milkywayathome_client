@@ -170,10 +170,10 @@ void printStreamConstants(const STREAM_CONSTANTS* c, unsigned int n)
     printf("Stream constants:\n");
     for (i = 0; i < n; ++i)
     {
-        printf("[%u] { a = { %g, %g, %g }, c = { %g, %g, %g }, sigma_sq2 = %g, large_sigma = %d } \n",
+        printf("[%u] { a = { %g, %g, %g }, c = { %g, %g, %g }, sigma_sq2_inv = %g, large_sigma = %d } \n",
                i, X(c[i].a), Y(c[i].a), Z(c[i].a),
                X(c[i].c), Y(c[i].c), Z(c[i].c),
-               c[i].sigma_sq2, c[i].large_sigma);
+               c[i].sigma_sq2_inv, c[i].large_sigma);
     }
 }
 

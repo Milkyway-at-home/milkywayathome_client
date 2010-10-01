@@ -62,7 +62,7 @@ typedef struct SEPARATION_ALIGN(64)
 {
     vector a;
     vector c;
-    real sigma_sq2;
+    real sigma_sq2_inv;
     mw_int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
 } STREAM_CONSTANTS;
 

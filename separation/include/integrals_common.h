@@ -61,7 +61,7 @@ inline void stream_sums(real* st_probs,
             INCSUBVMS(xyzs, dotted, sc[i].a);
             SQRV(xyz_norm, xyzs);
 
-            st_probs[i] += qw_r3_N * mw_exp(-xyz_norm / sc[i].sigma_sq2);
+            st_probs[i] += qw_r3_N * mw_exp(-xyz_norm * sc[i].sigma_sq2_inv);
         }
     }
 }
