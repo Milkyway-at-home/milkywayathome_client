@@ -37,20 +37,10 @@ static inline real probabilities_convolve(__MW_CONSTANT STREAM_CONSTANTS* sc,
                                           const unsigned int convolve)
 {
     unsigned int i;
-    real dotted, xyz_norm;
-    vector xyzs;
-
     real st_prob = 0.0;
 
     for (i = 0; i < convolve; ++i)
-    {
-        SUBV(xyzs, xyz[i], sc->c);
-        DOTVP(dotted, sc->a, xyzs);
-        INCSUBVMS(xyzs, dotted, sc->a);
-        SQRV(xyz_norm, xyzs);
-
-        st_prob += r_pts[i].qw_r3_N * mw_exp(-xyz_norm * sc->sigma_sq2_inv);
-    }
+        st_prob += calc_st_prob_inc(sc, xyz[i], r_pts[i].qw_r3_N);
 
     return st_prob;
 }

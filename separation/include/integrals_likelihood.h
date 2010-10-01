@@ -36,6 +36,21 @@ extern "C" {
         Z(xyz) = r_point * bsin;                        \
     }
 
+ALWAYS_INLINE HOT
+inline real calc_st_prob_inc(__MW_CONSTANT STREAM_CONSTANTS* sc, const vector xyz, const real qw_r3_N)
+{
+    vector xyzs;
+    real xyz_norm, dotted;
+
+    SUBV(xyzs, xyz, sc->c);
+    DOTVP(dotted, sc->a, xyzs);
+    INCSUBVMS(xyzs, dotted, sc->a);
+    SQRV(xyz_norm, xyzs);
+
+    return qw_r3_N * mw_exp(-xyz_norm * sc->sigma_sq2_inv);
+}
+
+
 #ifdef __cplusplus
 }
 #endif
