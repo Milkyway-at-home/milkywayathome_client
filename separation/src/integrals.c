@@ -75,22 +75,19 @@ _MW_STATIC inline BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
                                 real* st_probs,
                                 ST_PROBS* probs,
                                 const R_POINTS* r_pts,
+                                const R_CONSTS* rc,
                                 const unsigned int r_steps)
 {
     unsigned int r_step;
-    R_PRIME rp;
-    real reff_xr_rp3, gPrime, V;
+    real gPrime, V;
     real bg_prob;
     BG_PROB bg_prob_int = ZERO_BG_PROB; /* for Kahan summation */
 
     for (r_step = 0; r_step < r_steps; ++r_step)
     {
-        rp = calcRPrime(ia, r_step);
-        reff_xr_rp3 = calcReffXrRp3(rp.rPrime);
-        V = id * rp.irv;
+        V = id * rc[r_step].irv;
 
-
-        bg_prob = V * bg_probability(ap, sc, sg, lb, gPrime, reff_xr_rp3, V, &r_pts[r_step * ap->convolve], st_probs, probs);
+        bg_prob = V * bg_probability(ap, sc, sg, lb, gPrime, rc[r_step].reff_xr_rp3, V, &r_pts[r_step * ap->convolve], st_probs, probs);
 
         KAHAN_ADD(bg_prob_int.bg_int, bg_prob, bg_prob_int.correction);
     }
@@ -109,6 +106,7 @@ _MW_STATIC inline void mu_sum(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                               real* st_probs,
                               ST_PROBS* probs,
                               const R_POINTS* r_pts,
+                              const R_CONSTS* rc,
                               EVALUATION_STATE* es)
 {
     real mu;
@@ -125,7 +123,7 @@ _MW_STATIC inline void mu_sum(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 
         lb = gc2lb(ap->wedge, mu, nu);
 
-        r_result = r_sum(ap, ia, sc, sg, lb, id, st_probs, probs, r_pts, ia->r_steps);
+        r_result = r_sum(ap, ia, sc, sg, lb, id, st_probs, probs, r_pts, rc, ia->r_steps);
 
         INCADD_BG_PROB(es->mu_acc, r_result);
     }
@@ -141,6 +139,7 @@ static real nu_sum(const ASTRONOMY_PARAMETERS* ap,
                    real* st_probs,
                    ST_PROBS* probs,
                    const R_POINTS* r_pts,
+                   const R_CONSTS* rc,
                    EVALUATION_STATE* es)
 {
     real nu, id;
@@ -163,7 +162,7 @@ static real nu_sum(const ASTRONOMY_PARAMETERS* ap,
 
         mu_sum(ap, ia, sc, sg,
                nu, id,
-               st_probs, probs, r_pts, es);
+               st_probs, probs, r_pts, rc, es);
 
         INCADD_BG_PROB(es->nu_acc, es->mu_acc);
         CLEAR_BG_PROB(es->mu_acc);
@@ -184,15 +183,17 @@ real integrate(const ASTRONOMY_PARAMETERS* ap,
     real result;
     real* st_probs;
     R_POINTS* r_pts;
+    R_CONSTS* rc;
 
     st_probs = (real*) mallocSafe(sizeof(real) * ap->number_streams);
-    r_pts = precalculate_r_pts(ap, ia, sg);
+    r_pts = precalculate_r_pts(ap, ia, sg, &rc);
 
-    result = nu_sum(ap, ia, sc, sg, st_probs, probs, r_pts, es);
+    result = nu_sum(ap, ia, sc, sg, st_probs, probs, r_pts, rc, es);
     es->nu_step = 0;
 
     free(st_probs);
     free(r_pts);
+    free(rc);
 
     return result;
 }

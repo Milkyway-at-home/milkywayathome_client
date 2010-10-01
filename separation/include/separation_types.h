@@ -44,6 +44,11 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 #define LB_L(x) ((x).l)
 #define LB_B(x) ((x).b)
 
+typedef struct SEPARATION_ALIGN(2 * sizeof(real))
+{
+    real reff_xr_rp3;
+    real irv;
+} R_CONSTS;
 
 typedef struct
 {

@@ -48,22 +48,37 @@ void set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
         r_pts[i] = calc_r_point(&sg[i], gPrime, ap->coeff);
 }
 
+R_CONSTS calcRConsts(R_PRIME rp)
+{
+    R_CONSTS rc;
+
+    rc.reff_xr_rp3 = calcReffXrRp3(rp.rPrime);
+    rc.irv = rp.irv;
+
+    return rc;
+}
+
 R_POINTS* precalculate_r_pts(const ASTRONOMY_PARAMETERS* ap,
                              const INTEGRAL_AREA* ia,
-                             const STREAM_GAUSS* sg)
+                             const STREAM_GAUSS* sg,
+                             R_CONSTS** rc_out)
 {
     unsigned int i;
     R_POINTS* r_pts;
     R_PRIME rp;
+    R_CONSTS* rc;
 
     r_pts = (R_POINTS*) mallocSafe(sizeof(R_POINTS) * ap->convolve * ia->r_steps);
+    rc = (R_CONSTS*) mallocSafe(sizeof(R_CONSTS) * ia->r_steps);
 
     for (i = 0; i < ia->r_steps; ++i)
     {
         rp = calcRPrime(ia, i);
+        rc[i] = calcRConsts(rp);
         set_r_points(ap, sg, ap->convolve, rp.rPrime, &r_pts[i * ap->convolve]);
     }
 
+    *rc_out = rc;
     return r_pts;
 }
 
