@@ -49,9 +49,39 @@ typedef struct
 
 #define EMPTY_WG_INFO { 0, { 0, 0, 0 }, 0 }
 
+typedef struct
+{
+    cl_device_type devType;
+    cl_uint maxCompUnits, clockFreq;
+    cl_ulong memSize;
+    cl_ulong gMemCache;
+    cl_ulong localMemSize;
+    cl_device_local_mem_type localMemType;
+    //cl_bool unifiedMem;
+    cl_uint maxConstArgs;
+    cl_ulong maxConstBufSize;
+    cl_ulong maxMemAlloc;
+    size_t maxWorkGroupSize;
+    size_t maxParamSize;
+    size_t timerRes;
+    cl_uint maxWorkItemDim;
+    cl_uint memBaseAddrAlign;
+    cl_uint minAlignSize;
+    cl_uint vendorID;
+    cl_uint addrBits;
+    cl_uint cachelineSize;
+    cl_bool littleEndian;
+    cl_bool errCorrect;
+    char devName[128];
+    char vendor[128];
+    char version[128];
+    char driver[128];
+    //char clCVer[128];
 
+    size_t maxWorkItemSizes[3];
+} DevInfo;
 
-cl_int getCLInfo(CLInfo* ci,
+cl_int mwSetupCL(CLInfo* ci,
                  cl_device_type type,
                  const char* kernName,
                  const char** src,
@@ -62,6 +92,9 @@ cl_int destroyCLInfo(CLInfo* ci);
 cl_int printCLExtensions(cl_device_id dev);
 cl_int getWorkGroupInfo(CLInfo* ci, WGInfo* wgi);
 void printWorkGroupInfo(const WGInfo* wgi);
+
+cl_int getDevInfo(DevInfo* di, cl_device_id dev);
+void printDevInfo(const DevInfo* di);
 
 #ifdef __cplusplus
 }

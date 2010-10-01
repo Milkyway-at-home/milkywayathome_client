@@ -132,6 +132,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                                    "-I../src "
                                    "-I../include "
                                    "-I../../milkyway/include "
+                                   "-I" ROOT "include "
                                    "-I" ROOT "separation/src "
                                    "-I" ROOT "separation/include "
                                    "-I" ROOT "milkyway/include ";
@@ -144,7 +145,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
     }
 
     //compileDefs = separationCLDefs(ap, extraDefs);
-    err = getCLInfo(ci, CL_DEVICE_TYPE_CPU, "r_sum_kernel", &kernelSrc, 1, extraDefs);
+    err = mwSetupCL(ci, CL_DEVICE_TYPE_CPU, "r_sum_kernel", &kernelSrc, 1, extraDefs);
 
     freeKernelSrc(kernelSrc);
     //free(compileDefs);
