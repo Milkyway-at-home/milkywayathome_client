@@ -67,7 +67,6 @@ static inline real likelihood_bg_probability_main(__MW_CONSTANT ASTRONOMY_PARAME
                                                   __MW_LOCAL const R_POINTS* r_pts,
                                                   __MW_LOCAL vector* const xyz,
                                                   const LB integral_point,
-                                                  const int aux_bg_profile,
                                                   const unsigned int convolve)
 {
     unsigned int i;
@@ -88,38 +87,21 @@ static inline real likelihood_bg_probability_main(__MW_CONSTANT ASTRONOMY_PARAME
 
         rs = rg + ap->r0;
 
-        h_prob = h_prob_fast(r_pts[i].qw_r3_N, rg, rs);
+        /* CHECKME: Not having quadratic term on slow one looks like a bug but I'm not sure */
+        if (ap->fast_h_prob)
+        {
+            h_prob = h_prob_fast(r_pts[i].qw_r3_N, rg, rs);
 
-        //the hernquist profile includes a quadratic term in g
-        if (aux_bg_profile)
-            h_prob += aux_prob(ap, r_pts[i].qw_r3_N, r_pts[i].r_in_mag, r_pts[i].r_in_mag2);
+            /* The Hernquist profile includes a quadratic term in g */
+            if (ap->aux_bg_profile)
+                h_prob += aux_prob(ap, r_pts[i].qw_r3_N, r_pts[i].r_in_mag, r_pts[i].r_in_mag2);
+        }
+        else
+        {
+            h_prob = h_prob_slow(ap, r_pts[i].qw_r3_N, rg);
+        }
+
         bg_prob += h_prob;
-    }
-
-    return bg_prob;
-}
-
-static inline real likelihood_bg_probability_full(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
-                                                  __MW_LOCAL const R_POINTS* r_pts,
-                                                  __MW_LOCAL vector* const xyz,
-                                                  const LB integral_point,
-                                                  const unsigned int convolve)
-{
-    unsigned int i;
-    real rg;
-    real lsin, lcos;
-    real bsin, bcos;
-    real bg_prob = 0.0;
-
-    mw_sincos(d2r(LB_L(integral_point)), &lsin, &lcos);
-    mw_sincos(d2r(LB_B(integral_point)), &bsin, &bcos);
-
-    for (i = 0; i < convolve; ++i)
-    {
-        lbr2xyz_2(xyz[i], r_pts[i].r_point, bsin, bcos, lsin, lcos);
-        rg = rg_calc(xyz[i], ap->q);
-
-        bg_prob += h_prob_slow(ap, r_pts[i].qw_r3_N, rg);
     }
 
     return bg_prob;
@@ -135,23 +117,10 @@ static inline real likelihood_bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS*
 
     /* if q is 0, there is no probability */
     if (ap->q == 0)
-        bg_prob = -1.0;
-    else
-    {
-        if (ap->alpha == 1 && ap->delta == 1)
-        {
-            bg_prob = likelihood_bg_probability_main(ap,
-                                                     r_pts,
-                                                     xyz,
-                                                     integral_point,
-                                                     ap->aux_bg_profile,
-                                                     ap->convolve);
-        }
-        else
-            bg_prob = likelihood_bg_probability_full(ap, r_pts, xyz, integral_point, ap->convolve);
+        return -1.0;
 
-        bg_prob *= reff_xr_rp3;
-    }
+    bg_prob = likelihood_bg_probability_main(ap, r_pts, xyz, integral_point, ap->convolve);
+    bg_prob *= reff_xr_rp3;
 
     return bg_prob;
 }
