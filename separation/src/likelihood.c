@@ -71,7 +71,7 @@ static inline real likelihood_bg_probability_main(__MW_CONSTANT ASTRONOMY_PARAME
                                                   const unsigned int convolve)
 {
     unsigned int i;
-    real h_prob, aux_prob;
+    real h_prob;
     real rg, rs;
     real lsin, lcos;
     real bsin, bcos;
@@ -84,19 +84,15 @@ static inline real likelihood_bg_probability_main(__MW_CONSTANT ASTRONOMY_PARAME
     {
         lbr2xyz_2(xyz[i], r_pts[i].r_point, bsin, bcos, lsin, lcos);
 
-        rg = mw_sqrt(sqr(X(xyz[i])) + sqr(Y(xyz[i])) + sqr(Z(xyz[i])) / sqr(ap->q));
+        rg = rg_calc(xyz[i], ap->q);
+
         rs = rg + ap->r0;
 
-        h_prob = r_pts[i].qw_r3_N / (rg * cube(rs));
+        h_prob = h_prob_fast(r_pts[i].qw_r3_N, rg, rs);
 
         //the hernquist profile includes a quadratic term in g
         if (aux_bg_profile)
-        {
-            aux_prob = r_pts[i].qw_r3_N * (  ap->bg_a * r_pts[i].r_in_mag2
-                                           + ap->bg_b * r_pts[i].r_in_mag
-                                           + ap->bg_c );
-            h_prob += aux_prob;
-        }
+            h_prob += aux_prob(ap, r_pts[i].qw_r3_N, r_pts[i].r_in_mag, r_pts[i].r_in_mag2);
         bg_prob += h_prob;
     }
 
@@ -121,10 +117,9 @@ static inline real likelihood_bg_probability_full(__MW_CONSTANT ASTRONOMY_PARAME
     for (i = 0; i < convolve; ++i)
     {
         lbr2xyz_2(xyz[i], r_pts[i].r_point, bsin, bcos, lsin, lcos);
+        rg = rg_calc(xyz[i], ap->q);
 
-        rg = mw_sqrt(sqr(X(xyz[i])) + sqr(Y(xyz[i])) + sqr(Z(xyz[i])) / sqr(ap->q));
-
-        bg_prob += r_pts[i].qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rg + ap->r0, ap->alpha_delta3));
+        bg_prob += h_prob_slow(ap, r_pts[i].qw_r3_N, rg);
     }
 
     return bg_prob;

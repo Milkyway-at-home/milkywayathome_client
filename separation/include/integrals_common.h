@@ -70,34 +70,6 @@ inline void sum_probs(ST_PROBS* probs,
         KAHAN_ADD(probs[i].st_prob_int, V_reff_xr_rp3 * st_probs[i], probs[i].st_prob_int_c);
 }
 
-ALWAYS_INLINE HOT
-inline real aux_prob(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
-                     const real qw_r3_N,
-                     const real r_in_mag,
-                     const real r_in_mag2)
-{
-    return qw_r3_N * (ap->bg_a * r_in_mag2 + ap->bg_b * r_in_mag + ap->bg_b);
-}
-
-ALWAYS_INLINE HOT CONST_F
-inline real rg_calc(const vector xyz, const real q)
-{
-    return mw_sqrt(sqr(X(xyz)) + sqr(Y(xyz)) + sqr(Z(xyz)) / sqr(q));
-}
-
-ALWAYS_INLINE HOT CONST_F
-inline real h_prob_fast(const real qw_r3_N, const real rg, const real rs)
-{
-    return qw_r3_N / (rg * cube(rs));
-}
-
-ALWAYS_INLINE HOT CONST_F
-inline real h_prob_slow(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap, const real qw_r3_N, const real rg)
-{
-    return qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rg + ap->r0, ap->alpha_delta3));
-}
-
-
 /* FIXME: I don't know what these do enough to name it properly */
 ALWAYS_INLINE HOT
 inline real sub_bg_probability1(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,

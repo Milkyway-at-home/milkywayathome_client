@@ -50,6 +50,33 @@ inline real calc_st_prob_inc(__MW_CONSTANT STREAM_CONSTANTS* sc, const vector xy
     return qw_r3_N * mw_exp(-xyz_norm * sc->sigma_sq2_inv);
 }
 
+ALWAYS_INLINE HOT
+inline real aux_prob(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+                     const real qw_r3_N,
+                     const real r_in_mag,
+                     const real r_in_mag2)
+{
+    return qw_r3_N * (ap->bg_a * r_in_mag2 + ap->bg_b * r_in_mag + ap->bg_b);
+}
+
+ALWAYS_INLINE HOT CONST_F
+inline real rg_calc(const vector xyz, const real q)
+{
+    return mw_sqrt(sqr(X(xyz)) + sqr(Y(xyz)) + sqr(Z(xyz)) / sqr(q));
+}
+
+ALWAYS_INLINE HOT CONST_F
+inline real h_prob_fast(const real qw_r3_N, const real rg, const real rs)
+{
+    return qw_r3_N / (rg * cube(rs));
+}
+
+ALWAYS_INLINE HOT CONST_F
+inline real h_prob_slow(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap, const real qw_r3_N, const real rg)
+{
+    return qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rg + ap->r0, ap->alpha_delta3));
+}
+
 
 #ifdef __cplusplus
 }
