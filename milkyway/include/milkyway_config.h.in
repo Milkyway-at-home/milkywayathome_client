@@ -26,8 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 BOINC_APP_GRAPHICS
 #cmakedefine01 DOUBLEPREC
 #cmakedefine01 MW_ENABLE_DEBUG
-
-
+#cmakedefine01 HAS_EXP10
 
 /* C99 Restrict.
 

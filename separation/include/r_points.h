@@ -36,15 +36,18 @@ extern "C" {
  * trying to use float */
 #define RL1 ((real) 1.0)
 #define RL2 ((real) 2.0)
+#define RL_1_2 ((real) 0.5)
 #define RL3 ((real) 3.0)
+#define RL_1_3 ((real) 0.33333333333333333333333333)
 #define RL5 ((real) 5.0)
-#define RL10 ((real) 10.0)
+#define RL_1_5 ((real) 0.2)
 #define RL1000 ((real) 1000.0)
+#define RL_1_1000 ((real) 0.001)
 
 ALWAYS_INLINE CONST_F
 inline real distance_magnitude(const real m)
 {
-    return mw_powr(RL10, (m - (real) 14.2) / RL5);
+    return mw_exp10((m - (real) 14.2) * RL_1_5);
 }
 
 inline R_PRIME calcRPrime(__MW_CONSTANT INTEGRAL_AREA* ia, const unsigned int r_step)
@@ -56,8 +59,8 @@ inline R_PRIME calcRPrime(__MW_CONSTANT INTEGRAL_AREA* ia, const unsigned int r_
     r = distance_magnitude(log_r);
     next_r = distance_magnitude(log_r + ia->r_step_size);
 
-    ret.irv = d2r(((cube(next_r) - cube(r)) / RL3) * ia->mu_step_size);
-    ret.rPrime = (next_r + r) / RL2;
+    ret.irv = d2r(((cube(next_r) - cube(r)) * RL_1_3) * ia->mu_step_size);
+    ret.rPrime = RL_1_2 * (next_r + r);
 
     return ret;
 }
@@ -91,10 +94,10 @@ inline R_POINTS calc_r_point(__MW_CONSTANT STREAM_GAUSS* sg, const real gPrime, 
     /* MAG2R */
     r_pt.r_in_mag = g;
     r_pt.r_in_mag2 = sqr(g);
-    r_pt.r_point = mw_powr(RL10, (g - absm) / RL5 + RL1) / RL1000;
+    r_pt.r_point = RL_1_1000 * mw_exp10(RL_1_5 * (g - absm) + RL1);
 
     r3 = cube(r_pt.r_point);
-    exponent = sqr(g - gPrime) / (RL2 * sqr(stdev));
+    exponent = sqr(g - gPrime) * inv(RL2 * sqr(stdev));
     N = coeff * mw_exp(-exponent);
     r_pt.qw_r3_N = sg->qgaus_W * r3 * N;
 

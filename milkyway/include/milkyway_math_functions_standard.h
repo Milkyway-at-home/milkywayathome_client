@@ -82,7 +82,13 @@ extern "C" {
 #define mw_erfc erfc
 #define mw_erf erf
 #define mw_exp2 exp2
-#define mw_exp10 exp10
+
+#if HAVE_EXP10
+  #define mw_exp10 exp10
+#else
+  #define mw_exp10(x) mw_powr((real) 10.0, x)
+#endif /* HAVE_EXP10 */
+
 #define mw_fabs fabs
 #define mw_fdim fdim
 #define mw_floor floor

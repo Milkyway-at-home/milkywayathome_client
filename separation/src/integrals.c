@@ -67,15 +67,15 @@ static inline void do_boinc_checkpoint(const EVALUATION_STATE* es,
 
 /* FIXME: I don't know what these do enough to name it properly */
 ALWAYS_INLINE HOT
-inline real sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
-                                const STREAM_CONSTANTS* sc,
-                                const STREAM_GAUSS* sg,
-                                const LB integral_point,
-                                const real gPrime,
-                                const int aux_bg_profile,
-                                const unsigned int convolve,
-                                const R_POINTS* r_pts,
-                                real* st_probs)
+static inline real sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
+                                       const STREAM_CONSTANTS* sc,
+                                       const STREAM_GAUSS* sg,
+                                       const LB integral_point,
+                                       const real gPrime,
+                                       const int aux_bg_profile,
+                                       const unsigned int convolve,
+                                       const R_POINTS* r_pts,
+                                       real* st_probs)
 {
     unsigned int i;
     real h_prob;
@@ -107,8 +107,8 @@ inline real sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
     return bg_prob;
 }
 
-ALWAYS_INLINE
-inline real sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
+
+static real sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
                                 const STREAM_CONSTANTS* sc,
                                 const STREAM_GAUSS* sg,
                                 const LB integral_point,
@@ -142,16 +142,16 @@ inline real sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
 }
 
 ALWAYS_INLINE HOT
-inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
-                           const STREAM_CONSTANTS* sc,
-                           const STREAM_GAUSS* sg,
-                           const LB integral_point,
-                           const real gPrime,
-                           const real reff_xr_rp3,
-                           const real V,
-                           const R_POINTS* r_pts,
-                           real* st_probs,
-                           ST_PROBS* probs)
+static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
+                                  const STREAM_CONSTANTS* sc,
+                                  const STREAM_GAUSS* sg,
+                                  const LB integral_point,
+                                  const real gPrime,
+                                  const real reff_xr_rp3,
+                                  const real V,
+                                  const R_POINTS* r_pts,
+                                  real* st_probs,
+                                  ST_PROBS* probs)
 {
     real bg_prob;
 
@@ -193,18 +193,18 @@ inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
 }
 
 
-ALWAYS_INLINE HOT
-_MW_STATIC inline BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
-                                const INTEGRAL_AREA* ia,
-                                const STREAM_CONSTANTS* sc,
-                                const STREAM_GAUSS* sg,
-                                const LB lb,
-                                const real id,
-                                real* st_probs,
-                                ST_PROBS* probs,
-                                const R_POINTS* r_pts,
-                                const R_CONSTS* rc,
-                                const unsigned int r_steps)
+HOT
+static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
+                     const INTEGRAL_AREA* ia,
+                     const STREAM_CONSTANTS* sc,
+                     const STREAM_GAUSS* sg,
+                     const LB lb,
+                     const real id,
+                     real* st_probs,
+                     ST_PROBS* probs,
+                     const R_POINTS* r_pts,
+                     const R_CONSTS* rc,
+                     const unsigned int r_steps)
 {
     unsigned int r_step;
     real gPrime, V;
@@ -225,17 +225,17 @@ _MW_STATIC inline BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
 
 /* Sum over mu steps using Kahan summation */
 ALWAYS_INLINE HOT
-_MW_STATIC inline void mu_sum(const ASTRONOMY_PARAMETERS* ap,
-                              const INTEGRAL_AREA* ia,
-                              const STREAM_CONSTANTS* sc,
-                              const STREAM_GAUSS* sg,
-                              const real nu,   /* nu constants */
-                              const real id,
-                              real* st_probs,
-                              ST_PROBS* probs,
-                              const R_POINTS* r_pts,
-                              const R_CONSTS* rc,
-                              EVALUATION_STATE* es)
+static inline void mu_sum(const ASTRONOMY_PARAMETERS* ap,
+                          const INTEGRAL_AREA* ia,
+                          const STREAM_CONSTANTS* sc,
+                          const STREAM_GAUSS* sg,
+                          const real nu,   /* nu constants */
+                          const real id,
+                          real* st_probs,
+                          ST_PROBS* probs,
+                          const R_POINTS* r_pts,
+                          const R_CONSTS* rc,
+                          EVALUATION_STATE* es)
 {
     real mu;
     LB lb;

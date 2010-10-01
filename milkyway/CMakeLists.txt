@@ -22,6 +22,7 @@ cmake_minimum_required(VERSION 2.6)
 project(milkyway)
 
 include(SpecialLibs)
+include(CheckFunctionExists)
 
 set(MILKYWAY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 include_directories(${MILKYWAY_INCLUDE_DIR})
@@ -38,6 +39,7 @@ endif()
 
 set_os_specific_libs(${MILKYWAY_OPENCL})
 
+check_function_exists(exp10 HAS_EXP10)
 
 configure_file (
   "${MILKYWAY_INCLUDE_DIR}/milkyway_config.h.in"
