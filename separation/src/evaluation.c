@@ -129,7 +129,7 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         else
             fail("Failed to calculate integral %u\n", es->current_integral);
 
-        CLEAR_BG_PROB(es->r_acc);
+        CLEAR_BG_PROB(es->nu_acc);
     }
 }
 

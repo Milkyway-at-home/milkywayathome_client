@@ -37,9 +37,9 @@ typedef struct
 {
     /* State for integral calculation. */
     INTEGRAL* integrals;
-    unsigned int r_step, nu_step;   /* r_steps aren't checkpointed */
-    BG_PROB nu_acc;                 /* Accumulated during the nu_sum */
-    BG_PROB r_acc;                  /* Accumulated during the mu sum */
+    unsigned int nu_step, mu_step;   /* r_steps aren't checkpointed */
+    BG_PROB nu_acc;                  /* Accumulated during the nu_sum */
+    BG_PROB mu_acc;                  /* Accumulated during the mu sum */
 
     unsigned int current_calc_probs; /* progress of completed integrals */
 

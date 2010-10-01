@@ -28,28 +28,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern real calcReffXrRp3(const real coords);
 extern real calcGPrime(const real coords);
 extern R_PRIME calcRPrime(__MW_CONSTANT INTEGRAL_AREA* ia, const unsigned int r_step);
+extern R_POINTS calc_r_point(__MW_CONSTANT STREAM_GAUSS* sg, const real gPrime, const real coeff);
 #endif
-
-
-static inline R_POINTS calc_r_point(__MW_CONSTANT STREAM_GAUSS* sg, const real gPrime, const real coeff)
-{
-    R_POINTS r_pt;
-    real g, exponent, r3, N;
-
-    g = gPrime + sg->dx;
-
-    /* MAG2R */
-    r_pt.r_in_mag = g;
-    r_pt.r_in_mag2 = sqr(g);
-    r_pt.r_point = mw_powr(RL10, (g - absm) / RL5 + RL1) / RL1000;
-
-    r3 = cube(r_pt.r_point);
-    exponent = sqr(g - gPrime) / (RL2 * sqr(stdev));
-    N = coeff * mw_exp(-exponent);
-    r_pt.qw_r3_N = sg->qgaus_W * r3 * N;
-
-    return r_pt;
-}
 
 
 void set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,

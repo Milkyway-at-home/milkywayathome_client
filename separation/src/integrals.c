@@ -65,78 +65,111 @@ static inline void do_boinc_checkpoint(const EVALUATION_STATE* es,
 
 #endif /* BOINC_APPLICATION */
 
-ALWAYS_INLINE
-static inline void nu_sum(const ASTRONOMY_PARAMETERS* ap,
-                          const STREAM_CONSTANTS* sc,
-                          const INTEGRAL_AREA* ia,
-                          const real irv,
-                          const real reff_xr_rp3,
-                          const R_POINTS* r_pts,
-                          const NU_CONSTANTS* nu_consts,
-                          real* st_probs,
-                          ST_PROBS* probs,
-                          EVALUATION_STATE* es)
+ALWAYS_INLINE HOT
+_MW_STATIC inline BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
+                                const INTEGRAL_AREA* ia,
+                                const STREAM_CONSTANTS* sc,
+                                const STREAM_GAUSS* sg,
+                                const LB lb,
+                                const real id,
+                                real* st_probs,
+                                ST_PROBS* probs,
+                                const unsigned int r_steps)
 {
-    BG_PROB mu_result;
+    unsigned int r_step;
+    R_PRIME rp;
+    real reff_xr_rp3, gPrime, V;
+    real bg_prob;
+    BG_PROB bg_prob_int = ZERO_BG_PROB; /* for Kahan summation */
+
+    for (r_step = 0; r_step < r_steps; ++r_step)
+    {
+        rp = calcRPrime(ia, r_step);
+        reff_xr_rp3 = calcReffXrRp3(rp.rPrime);
+        gPrime = calcGPrime(rp.rPrime);
+
+        V = id * rp.irv;
+
+        bg_prob = V * bg_probability(ap, sc, sg, lb, gPrime, reff_xr_rp3, V, st_probs, probs);
+
+        KAHAN_ADD(bg_prob_int.bg_int, bg_prob, bg_prob_int.correction);
+    }
+
+    return bg_prob_int;
+}
+
+/* Sum over mu steps using Kahan summation */
+ALWAYS_INLINE HOT
+_MW_STATIC inline void mu_sum(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+                              __MW_CONSTANT INTEGRAL_AREA* ia,
+                              __MW_CONSTANT STREAM_CONSTANTS* sc,
+                              __MW_CONSTANT STREAM_GAUSS* sg,
+                              const real nu,   /* nu constants */
+                              const real id,
+                              real* st_probs,
+                              ST_PROBS* probs,
+                              EVALUATION_STATE* es)
+{
+    real mu;
+    LB lb;
+    BG_PROB r_result;
+
+    const unsigned int mu_steps = ia->mu_steps;
+    const real mu_step_size = ia->mu_step_size;
+    const real mu_min = ia->mu_min;
+
+    for (; es->mu_step < mu_steps; es->mu_step++)
+    {
+        mu = mu_min + (((real) es->mu_step + 0.5) * mu_step_size);
+
+        lb = gc2lb(ap->wedge, mu, nu);
+
+        r_result = r_sum(ap, ia, sc, sg, lb, id, st_probs, probs, ia->r_steps);
+
+        INCADD_BG_PROB(es->mu_acc, r_result);
+    }
+
+    es->mu_step = 0;
+}
+
+
+static real nu_sum(const ASTRONOMY_PARAMETERS* ap,
+                   const INTEGRAL_AREA* ia,
+                   const STREAM_CONSTANTS* sc,
+                   const STREAM_GAUSS* sg,
+                   real* st_probs,
+                   ST_PROBS* probs,
+                   EVALUATION_STATE* es)
+{
+    real nu, id;
+    real tmp1, tmp2;
 
     const unsigned int nu_steps = ia->nu_steps;
-    const unsigned int mu_steps = ia->mu_steps;
-    const real mu_min = ia->mu_min;
-    const real mu_step_size = ia->mu_step_size;
+    const real nu_step_size = ia->nu_step_size;
 
     for ( ; es->nu_step < nu_steps; es->nu_step++)
     {
         do_boinc_checkpoint(es, ia, ap->total_calc_probs);
 
-        mu_result = mu_sum(ap,
-                           sc,
-                           r_pts,
-                           irv,
-                           reff_xr_rp3,
-                           nu_consts[es->nu_step].id,
-                           nu_consts[es->nu_step].nu,
-                           mu_steps,
-                           mu_step_size,
-                           mu_min,
-                           st_probs,
-                           probs);
+        nu = ia->nu_min + (es->nu_step * nu_step_size);
 
-        INCADD_BG_PROB(es->nu_acc, mu_result);
+        tmp1 = d2r(90.0 - nu - nu_step_size);
+        tmp2 = d2r(90.0 - nu);
+
+        id = mw_cos(tmp1) - mw_cos(tmp2);
+        nu += 0.5 * nu_step_size;
+
+        mu_sum(ap, ia, sc, sg,
+               nu, id,
+               st_probs, probs, es);
+
+        INCADD_BG_PROB(es->nu_acc, es->mu_acc);
+        CLEAR_BG_PROB(es->mu_acc);
     }
 
-    es->nu_step = 0;
+    return es->nu_acc.bg_int + es->nu_acc.correction;
 }
 
-static real r_sum(const ASTRONOMY_PARAMETERS* ap,
-                  const INTEGRAL_AREA* ia,
-                  const STREAM_CONSTANTS* sc,
-                  const STREAM_GAUSS* sg,
-                  const NU_CONSTANTS* nu_consts,
-                  R_POINTS* r_pts,
-                  real* st_probs,
-                  ST_PROBS* probs,
-                  EVALUATION_STATE* es)
-{
-    real reff_xr_rp3;
-    R_PRIME rp;
-
-    const unsigned int r_steps = ia->r_steps;
-
-    for ( ; es->r_step < r_steps; es->r_step++)
-    {
-        rp = calcRPrime(ia, es->r_step);
-
-        set_r_points(ap, sg, ap->convolve, rp.rPrime, r_pts);
-        reff_xr_rp3 = calcReffXrRp3(rp.rPrime);
-
-        nu_sum(ap, sc, ia, rp.irv, reff_xr_rp3, r_pts, nu_consts, st_probs, probs, es);
-
-        INCADD_BG_PROB(es->r_acc, es->nu_acc);
-        CLEAR_BG_PROB(es->nu_acc);
-    }
-
-    return es->r_acc.bg_int + es->r_acc.correction;
-}
 
 /* returns background integral */
 real integrate(const ASTRONOMY_PARAMETERS* ap,
@@ -147,19 +180,13 @@ real integrate(const ASTRONOMY_PARAMETERS* ap,
                EVALUATION_STATE* es)
 {
     real result;
-    NU_CONSTANTS* nu_consts;
-    R_POINTS* r_pts;
     real* st_probs;
 
-    nu_consts = (NU_CONSTANTS*) prepare_nu_constants(ia->nu_steps, ia->nu_step_size, ia->nu_min);
-    r_pts = (R_POINTS*) mallocSafe(sizeof(R_POINTS) * ap->convolve);
     st_probs = (real*) mallocSafe(sizeof(real) * ap->number_streams);
 
-    result = r_sum(ap, ia, sc, sg, nu_consts, r_pts, st_probs, probs, es);
-    es->r_step = 0;
+    result = nu_sum(ap, ia, sc, sg, st_probs, probs, es);
+    es->nu_step = 0;
 
-    free(nu_consts);
-    free(r_pts);
     free(st_probs);
 
     return result;

@@ -67,8 +67,6 @@ static inline void stream_c(vector c, int wedge, real mu, real r)
 int setAstronomyParameters(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS* bgp)
 
 {
-    STREAM_CONSTANTS* sc;
-
     ap->alpha = bgp->parameters[0];
     ap->q     = bgp->parameters[1];
     ap->r0    = bgp->parameters[2];

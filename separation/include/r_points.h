@@ -80,6 +80,27 @@ inline real calcReffXrRp3(const real coords)
     return reff_xr_rp3;
 }
 
+ALWAYS_INLINE HOT
+inline R_POINTS calc_r_point(__MW_CONSTANT STREAM_GAUSS* sg, const real gPrime, const real coeff)
+{
+    R_POINTS r_pt;
+    real g, exponent, r3, N;
+
+    g = gPrime + sg->dx;
+
+    /* MAG2R */
+    r_pt.r_in_mag = g;
+    r_pt.r_in_mag2 = sqr(g);
+    r_pt.r_point = mw_powr(RL10, (g - absm) / RL5 + RL1) / RL1000;
+
+    r3 = cube(r_pt.r_point);
+    exponent = sqr(g - gPrime) / (RL2 * sqr(stdev));
+    N = coeff * mw_exp(-exponent);
+    r_pt.qw_r3_N = sg->qgaus_W * r3 * N;
+
+    return r_pt;
+}
+
 void set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                   __MW_CONSTANT STREAM_GAUSS* sg,
                   const unsigned int n_convolve,
