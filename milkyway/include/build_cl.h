@@ -40,6 +40,16 @@ typedef struct
 
 #define EMPTY_CL_INFO { NULL, -1, 0, NULL, NULL, NULL, NULL }
 
+typedef struct
+{
+    size_t wgs;      /* CL_KERNEL_WORK_GROUP_SIZE */
+    size_t cwgs[3];  /* CL_KERNEL_COMPILE_WORK_GROUP_SIZE */
+    cl_ulong lms;    /* CL_KERNEL_LOCAL_MEM_SIZE */
+} WGInfo;
+
+#define EMPTY_WG_INFO { 0, { 0, 0, 0 }, 0 }
+
+
 
 cl_int getCLInfo(CLInfo* ci,
                  cl_device_type type,
@@ -50,6 +60,8 @@ cl_int getCLInfo(CLInfo* ci,
 
 cl_int destroyCLInfo(CLInfo* ci);
 cl_int printCLExtensions(cl_device_id dev);
+cl_int getWorkGroupInfo(CLInfo* ci, WGInfo* wgi);
+void printWorkGroupInfo(const WGInfo* wgi);
 
 #ifdef __cplusplus
 }
