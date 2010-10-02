@@ -83,6 +83,17 @@ inline real calcReffXrRp3(const real coords)
     return reff_xr_rp3;
 }
 
+ALWAYS_INLINE
+inline R_CONSTS calcRConsts(R_PRIME rp)
+{
+    R_CONSTS rc;
+
+    rc.reff_xr_rp3 = calcReffXrRp3(rp.rPrime);
+    rc.irv = rp.irv;
+
+    return rc;
+}
+
 ALWAYS_INLINE HOT
 inline R_POINTS calc_r_point(__MW_CONSTANT STREAM_GAUSS* sg, const real gPrime, const real coeff)
 {

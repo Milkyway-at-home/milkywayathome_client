@@ -50,6 +50,13 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
     real irv;
 } R_CONSTS;
 
+typedef struct SEPARATION_ALIGN(2 * sizeof(real))
+{
+    real nu;
+    real id;
+} NU_ID;
+
+
 typedef struct
 {
     unsigned int number_stars;

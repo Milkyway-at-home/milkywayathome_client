@@ -70,6 +70,22 @@ inline void sum_probs(ST_PROBS* probs,
         KAHAN_ADD(probs[i].st_prob_int, V_reff_xr_rp3 * st_probs[i], probs[i].st_prob_int_c);
 }
 
+ALWAYS_INLINE
+inline NU_ID calc_nu_step(__MW_CONSTANT INTEGRAL_AREA* ia, const unsigned int nu_step)
+{
+    NU_ID nuid;
+    real tmp1, tmp2;
+
+    nuid.nu = ia->nu_min + (nu_step * ia->nu_step_size);
+
+    tmp1 = d2r(90.0 - nuid.nu - ia->nu_step_size);
+    tmp2 = d2r(90.0 - nuid.nu);
+
+    nuid.id = mw_cos(tmp1) - mw_cos(tmp2);
+    nuid.nu += 0.5 * ia->nu_step_size;
+
+    return nuid;
+}
 
 #ifdef __cplusplus
 }

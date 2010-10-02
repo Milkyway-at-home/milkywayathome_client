@@ -48,16 +48,6 @@ void set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
         r_pts[i] = calc_r_point(&sg[i], gPrime, ap->coeff);
 }
 
-R_CONSTS calcRConsts(R_PRIME rp)
-{
-    R_CONSTS rc;
-
-    rc.reff_xr_rp3 = calcReffXrRp3(rp.rPrime);
-    rc.irv = rp.irv;
-
-    return rc;
-}
-
 R_POINTS* precalculate_r_pts(const ASTRONOMY_PARAMETERS* ap,
                              const INTEGRAL_AREA* ia,
                              const STREAM_GAUSS* sg,

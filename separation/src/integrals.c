@@ -229,8 +229,7 @@ static inline void mu_sum(const ASTRONOMY_PARAMETERS* ap,
                           const INTEGRAL_AREA* ia,
                           const STREAM_CONSTANTS* sc,
                           const STREAM_GAUSS* sg,
-                          const real nu,   /* nu constants */
-                          const real id,
+                          const NU_ID nuid,
                           real* st_probs,
                           ST_PROBS* probs,
                           const R_POINTS* r_pts,
@@ -249,16 +248,15 @@ static inline void mu_sum(const ASTRONOMY_PARAMETERS* ap,
     {
         mu = mu_min + (((real) es->mu_step + 0.5) * mu_step_size);
 
-        lb = gc2lb(ap->wedge, mu, nu);
+        lb = gc2lb(ap->wedge, mu, nuid.nu);
 
-        r_result = r_sum(ap, ia, sc, sg, lb, id, st_probs, probs, r_pts, rc, ia->r_steps);
+        r_result = r_sum(ap, ia, sc, sg, lb, nuid.id, st_probs, probs, r_pts, rc, ia->r_steps);
 
         INCADD_BG_PROB(es->mu_acc, r_result);
     }
 
     es->mu_step = 0;
 }
-
 
 static real nu_sum(const ASTRONOMY_PARAMETERS* ap,
                    const INTEGRAL_AREA* ia,
@@ -270,8 +268,7 @@ static real nu_sum(const ASTRONOMY_PARAMETERS* ap,
                    const R_CONSTS* rc,
                    EVALUATION_STATE* es)
 {
-    real nu, id;
-    real tmp1, tmp2;
+    NU_ID nuid;
 
     const unsigned int nu_steps = ia->nu_steps;
     const real nu_step_size = ia->nu_step_size;
@@ -280,16 +277,10 @@ static real nu_sum(const ASTRONOMY_PARAMETERS* ap,
     {
         do_boinc_checkpoint(es, ia, ap->total_calc_probs);
 
-        nu = ia->nu_min + (es->nu_step * nu_step_size);
-
-        tmp1 = d2r(90.0 - nu - nu_step_size);
-        tmp2 = d2r(90.0 - nu);
-
-        id = mw_cos(tmp1) - mw_cos(tmp2);
-        nu += 0.5 * nu_step_size;
+        nuid = calc_nu_step(ia, es->nu_step);
 
         mu_sum(ap, ia, sc, sg,
-               nu, id,
+               nuid,
                st_probs, probs, r_pts, rc, es);
 
         INCADD_BG_PROB(es->nu_acc, es->mu_acc);
