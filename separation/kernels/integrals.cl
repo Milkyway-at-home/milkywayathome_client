@@ -43,26 +43,21 @@ inline real sub_bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
                                __constant STREAM_CONSTANTS* sc,
                                __constant STREAM_GAUSS* sg,
                                const real gPrime,
-                               const LB integral_point,
+                               const LB_TRIG lbt,
                                const unsigned int convolve,
                                real* st_probs)
 {
     unsigned int i;
     real h_prob;
     real rg, rs;
-    real lsin, lcos;
-    real bsin, bcos;
     vector xyz;
     real bg_prob = 0.0;
     R_POINTS r_pt;
 
-    mw_sincos(d2r(LB_L(integral_point)), &lsin, &lcos);
-    mw_sincos(d2r(LB_B(integral_point)), &bsin, &bcos);
-
     for (i = 0; i < convolve; ++i)
     {
         r_pt = calc_r_point(&sg[i], gPrime, ap->coeff);
-        lbr2xyz_2(xyz, r_pt.r_point, bsin, bcos, lsin, lcos);
+        lbr2xyz_2(xyz, r_pt.r_point, lbt);
 
         rg = rg_calc(xyz, ap->q_inv_sqr);
         rs = rg + ap->r0;
@@ -100,7 +95,7 @@ __attribute__ ((always_inline))
 inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
                            __constant STREAM_CONSTANTS* sc,
                            __constant STREAM_GAUSS* sg,
-                           const LB integral_point,
+                           const LB_TRIG lbt,
                            const R_CONSTS rc,
                            const real V,
                            real* st_probs)
@@ -124,14 +119,10 @@ real r_calculation(__constant ASTRONOMY_PARAMETERS* ap,
                    __constant INTEGRAL_AREA* ia,
                    __constant STREAM_CONSTANTS* sc,
                    __constant STREAM_GAUSS* sg,
-                   const LB lb,
+                   const LB_TRIG lbt,
                    const real id,
                    real* st_probs,
-                   const unsigned int r_step,
-
-                   unsigned int mu_step,
-                   unsigned int nu_step
-    )
+                   const unsigned int r_step)
 {
     real V;
     R_PRIME rp;
@@ -167,6 +158,7 @@ __kernel void mu_sum_kernel(__global real* mu_out,
 {
     NU_ID nuid;
     LB lb;
+    LB_TRIG lbt;
     real mu, r_result;
 
     real st_probs[3];     /* FIXME: hardcoded stream limit */
@@ -185,6 +177,7 @@ __kernel void mu_sum_kernel(__global real* mu_out,
     mu = ia->mu_min + (((real) mu_step + 0.5) * ia->mu_step_size);
     nuid = calc_nu_step(ia, nu_step);
     lb = gc2lb(ap->wedge, mu, nuid.nu);
+    lbt = lb_trig(lb);
 
     r_result = r_calculation(ap, ia, sc, sg, lbt, nuid.id, st_probs, r_step);
 

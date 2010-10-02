@@ -70,26 +70,20 @@ ALWAYS_INLINE HOT
 static inline real sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
                                        const STREAM_CONSTANTS* sc,
                                        const STREAM_GAUSS* sg,
-                                       const LB integral_point,
+                                       const LB_TRIG lbt,
                                        const int aux_bg_profile,
                                        const unsigned int convolve,
                                        const R_POINTS* r_pts,
                                        real* st_probs)
 {
     unsigned int i;
-    real h_prob;
-    real rg, rs;
-    real lsin, lcos;
-    real bsin, bcos;
+    real h_prob, rg, rs;
     vector xyz;
     real bg_prob = 0.0;
 
-    mw_sincos(d2r(LB_L(integral_point)), &lsin, &lcos);
-    mw_sincos(d2r(LB_B(integral_point)), &bsin, &bcos);
-
     for (i = 0; i < convolve; ++i)
     {
-        lbr2xyz_2(xyz, r_pts[i].r_point, bsin, bcos, lsin, lcos);
+        lbr2xyz_2(xyz, r_pts[i].r_point, lbt);
 
         rg = rg_calc(xyz, ap->q_inv_sqr);
         rs = rg + ap->r0;
@@ -110,25 +104,20 @@ static inline real sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
 static real sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
                                 const STREAM_CONSTANTS* sc,
                                 const STREAM_GAUSS* sg,
-                                const LB integral_point,
+                                const LB_TRIG lbt,
                                 const unsigned int convolve,
                                 const R_POINTS* r_pts,
                                 real* st_probs)
 {
     unsigned int i;
     real rg;
-    real lsin, lcos;
-    real bsin, bcos;
     vector xyz;
     R_POINTS r_pt;
     real bg_prob = 0.0;
 
-    mw_sincos(d2r(LB_L(integral_point)), &lsin, &lcos);
-    mw_sincos(d2r(LB_B(integral_point)), &bsin, &bcos);
-
     for (i = 0; i < convolve; ++i)
     {
-        lbr2xyz_2(xyz, r_pts[i].r_point, bsin, bcos, lsin, lcos);
+        lbr2xyz_2(xyz, r_pts[i].r_point, lbt);
 
         rg = rg_calc(xyz, ap->q_inv_sqr);
 
@@ -143,7 +132,7 @@ ALWAYS_INLINE HOT
 static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
                                   const STREAM_CONSTANTS* sc,
                                   const STREAM_GAUSS* sg,
-                                  const LB integral_point,
+                                  const LB_TRIG lbt, /* integral point */
                                   const real reff_xr_rp3,
                                   const real V,
                                   const R_POINTS* r_pts,
@@ -163,7 +152,7 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
         bg_prob = sub_bg_probability1(ap,
                                       sc,
                                       sg,
-                                      integral_point,
+                                      lbt,
                                       ap->aux_bg_profile,
                                       ap->convolve,
                                       r_pts,
@@ -174,7 +163,7 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
         bg_prob = sub_bg_probability2(ap,
                                       sc,
                                       sg,
-                                      integral_point,
+                                      lbt,
                                       ap->convolve,
                                       r_pts,
                                       st_probs);
@@ -191,7 +180,7 @@ static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
                      const INTEGRAL_AREA* ia,
                      const STREAM_CONSTANTS* sc,
                      const STREAM_GAUSS* sg,
-                     const LB lb,
+                     const LB_TRIG lbt,
                      const real id,
                      real* st_probs,
                      ST_PROBS* probs,
@@ -208,7 +197,7 @@ static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
     {
         V = id * rc[r_step].irv;
 
-        bg_prob = V * bg_probability(ap, sc, sg, lb, rc[r_step].reff_xr_rp3, V, &r_pts[r_step * ap->convolve], st_probs, probs);
+        bg_prob = V * bg_probability(ap, sc, sg, lbt, rc[r_step].reff_xr_rp3, V, &r_pts[r_step * ap->convolve], st_probs, probs);
 
         KAHAN_ADD(bg_prob_int.bg_int, bg_prob, bg_prob_int.correction);
     }
@@ -231,6 +220,7 @@ static inline void mu_sum(const ASTRONOMY_PARAMETERS* ap,
 {
     real mu;
     LB lb;
+    LB_TRIG lbt;
     BG_PROB r_result;
 
     const unsigned int mu_steps = ia->mu_steps;
@@ -241,9 +231,10 @@ static inline void mu_sum(const ASTRONOMY_PARAMETERS* ap,
     {
         mu = mu_min + (((real) es->mu_step + 0.5) * mu_step_size);
 
-        lb = gc2lb(ap->wedge, mu, nuid.nu);
+        lb = gc2lb(ap->wedge, mu, nuid.nu); /* integral point */
+        lbt = lb_trig(lb);
 
-        r_result = r_sum(ap, ia, sc, sg, lb, nuid.id, st_probs, probs, r_pts, rc, ia->r_steps);
+        r_result = r_sum(ap, ia, sc, sg, lbt, nuid.id, st_probs, probs, r_pts, rc, ia->r_steps);
 
         INCADD_BG_PROB(es->mu_acc, r_result);
     }

@@ -66,7 +66,7 @@ static inline void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
 static inline real likelihood_bg_probability_main(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                                   __MW_LOCAL const R_POINTS* r_pts,
                                                   __MW_LOCAL vector* const xyz,
-                                                  const LB integral_point,
+                                                  const LB_TRIG lbt,
                                                   const unsigned int convolve)
 {
     unsigned int i;
@@ -76,12 +76,9 @@ static inline real likelihood_bg_probability_main(__MW_CONSTANT ASTRONOMY_PARAME
     real bsin, bcos;
     real bg_prob = 0.0;
 
-    mw_sincos(d2r(LB_L(integral_point)), &lsin, &lcos);
-    mw_sincos(d2r(LB_B(integral_point)), &bsin, &bcos);
-
     for (i = 0; i < convolve; ++i)
     {
-        lbr2xyz_2(xyz[i], r_pts[i].r_point, bsin, bcos, lsin, lcos);
+        lbr2xyz_2(xyz[i], r_pts[i].r_point, lbt);
 
         rg = rg_calc(xyz[i], ap->q_inv_sqr);
 
@@ -110,7 +107,7 @@ static inline real likelihood_bg_probability_main(__MW_CONSTANT ASTRONOMY_PARAME
 static inline real likelihood_bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                                              __MW_LOCAL const R_POINTS* r_pts,
                                              __MW_LOCAL vector* const xyz,
-                                             const LB integral_point,
+                                             const LB_TRIG lbt,
                                              const real reff_xr_rp3)
 {
     real bg_prob;
@@ -119,7 +116,7 @@ static inline real likelihood_bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS*
     if (ap->zero_q)
         return -1.0;
 
-    bg_prob = likelihood_bg_probability_main(ap, r_pts, xyz, integral_point, ap->convolve);
+    bg_prob = likelihood_bg_probability_main(ap, r_pts, xyz, lbt, ap->convolve);
     bg_prob *= reff_xr_rp3;
 
     return bg_prob;
@@ -210,6 +207,7 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
     real bg_prob, bg, reff_xr_rp3;
     LB lb;
     real gPrime;
+    LB_TRIG lbt;
 
     unsigned int num_zero = 0;
     unsigned int bad_jacobians = 0;
@@ -223,7 +221,9 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
         LB_L(lb) = L(sp->stars[current_star_point]);
         LB_B(lb) = B(sp->stars[current_star_point]);
 
-        bg_prob = likelihood_bg_probability(ap, r_pts, xyz, lb, reff_xr_rp3);
+        lbt = lb_trig(lb);
+
+        bg_prob = likelihood_bg_probability(ap, r_pts, xyz, lbt, reff_xr_rp3);
 
         bg = (bg_prob / fsi->background_integral) * exp_background_weight;
 

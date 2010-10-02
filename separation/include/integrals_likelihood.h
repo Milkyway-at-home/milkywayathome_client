@@ -28,12 +28,12 @@ extern "C" {
 #include "separation_constants.h"
 #include "separation_types.h"
 
-#define lbr2xyz_2(xyz, r_point, bsin, bcos, lsin, lcos) \
-    {                                                   \
-        real zp = r_point * bcos;                       \
-        X(xyz) = zp * lcos - sun_r0;                    \
-        Y(xyz) = zp * lsin;                             \
-        Z(xyz) = r_point * bsin;                        \
+#define lbr2xyz_2(xyz, r_point, lbt)            \
+    {                                           \
+        real zp = r_point * lbt.bcos;           \
+        X(xyz) = zp * lbt.lcos - sun_r0;        \
+        Y(xyz) = zp * lbt.lsin;                 \
+        Z(xyz) = r_point * lbt.bsin;            \
     }
 
 ALWAYS_INLINE HOT
@@ -75,6 +75,15 @@ ALWAYS_INLINE HOT CONST_F
 inline real h_prob_slow(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap, const real qw_r3_N, const real rg)
 {
     return qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rg + ap->r0, ap->alpha_delta3));
+}
+
+ALWAYS_INLINE HOT CONST_F
+inline LB_TRIG lb_trig(LB lb)
+{
+    LB_TRIG lbt;
+    mw_sincos(d2r(LB_L(lb)), &lbt.lsin, &lbt.lcos);
+    mw_sincos(d2r(LB_B(lb)), &lbt.bsin, &lbt.bcos);
+    return lbt;
 }
 
 
