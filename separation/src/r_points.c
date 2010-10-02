@@ -34,15 +34,13 @@ extern R_POINTS calc_r_point(__MW_CONSTANT STREAM_GAUSS* sg, const real gPrime, 
 #endif
 
 
-void set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
-                  __MW_CONSTANT STREAM_GAUSS* sg,
+void set_r_points(const ASTRONOMY_PARAMETERS* ap,
+                  const STREAM_GAUSS* sg,
                   const unsigned int n_convolve,
-                  const real coords,
-                  __MW_LOCAL R_POINTS* r_pts)
+                  const real gPrime,
+                  R_POINTS* r_pts)
 {
     unsigned int i;
-
-    const real gPrime = calcGPrime(coords);
 
     for (i = 0; i < n_convolve; ++i)
         r_pts[i] = calc_r_point(&sg[i], gPrime, ap->coeff);
@@ -65,7 +63,7 @@ R_POINTS* precalculate_r_pts(const ASTRONOMY_PARAMETERS* ap,
     {
         rp = calcRPrime(ia, i);
         rc[i] = calcRConsts(rp);
-        set_r_points(ap, sg, ap->convolve, rp.rPrime, &r_pts[i * ap->convolve]);
+        set_r_points(ap, sg, ap->convolve, rc[i].gPrime, &r_pts[i * ap->convolve]);
     }
 
     *rc_out = rc;

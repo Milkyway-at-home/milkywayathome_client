@@ -45,11 +45,7 @@ extern "C" {
     /* Right now on Nvidia with Apple opencl there are weird bugs when
      * you try to actually use __constant, but it most definitely
      * should be used. */
-  #ifdef __APPLE__
-    #define __MW_CONSTANT __global
-  #else
-    #define __MW_CONSTANT __constant
-  #endif /* __APPLE__ */
+  #define __MW_CONSTANT __constant
 #else
   #define __MW_LOCAL
   #define __MW_PRIVATE

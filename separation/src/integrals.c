@@ -71,7 +71,6 @@ static inline real sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
                                        const STREAM_CONSTANTS* sc,
                                        const STREAM_GAUSS* sg,
                                        const LB integral_point,
-                                       const real gPrime,
                                        const int aux_bg_profile,
                                        const unsigned int convolve,
                                        const R_POINTS* r_pts,
@@ -112,7 +111,6 @@ static real sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
                                 const STREAM_CONSTANTS* sc,
                                 const STREAM_GAUSS* sg,
                                 const LB integral_point,
-                                const real gPrime,
                                 const unsigned int convolve,
                                 const R_POINTS* r_pts,
                                 real* st_probs)
@@ -146,7 +144,6 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
                                   const STREAM_CONSTANTS* sc,
                                   const STREAM_GAUSS* sg,
                                   const LB integral_point,
-                                  const real gPrime,
                                   const real reff_xr_rp3,
                                   const real V,
                                   const R_POINTS* r_pts,
@@ -167,7 +164,6 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
                                       sc,
                                       sg,
                                       integral_point,
-                                      gPrime,
                                       ap->aux_bg_profile,
                                       ap->convolve,
                                       r_pts,
@@ -179,19 +175,16 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
                                       sc,
                                       sg,
                                       integral_point,
-                                      gPrime,
                                       ap->convolve,
                                       r_pts,
                                       st_probs);
     }
 
     sum_probs(probs, st_probs, V * reff_xr_rp3, ap->number_streams);
-
     bg_prob *= reff_xr_rp3;
 
     return bg_prob;
 }
-
 
 HOT
 static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
@@ -207,7 +200,7 @@ static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
                      const unsigned int r_steps)
 {
     unsigned int r_step;
-    real gPrime, V;
+    real V;
     real bg_prob;
     BG_PROB bg_prob_int = ZERO_BG_PROB; /* for Kahan summation */
 
@@ -215,7 +208,7 @@ static BG_PROB r_sum(const ASTRONOMY_PARAMETERS* ap,
     {
         V = id * rc[r_step].irv;
 
-        bg_prob = V * bg_probability(ap, sc, sg, lb, gPrime, rc[r_step].reff_xr_rp3, V, &r_pts[r_step * ap->convolve], st_probs, probs);
+        bg_prob = V * bg_probability(ap, sc, sg, lb, rc[r_step].reff_xr_rp3, V, &r_pts[r_step * ap->convolve], st_probs, probs);
 
         KAHAN_ADD(bg_prob_int.bg_int, bg_prob, bg_prob_int.correction);
     }

@@ -70,10 +70,9 @@ inline real calcGPrime(const real coords)
     return RL5 * (mw_log10(coords * RL1000) - RL1) + absm;
 }
 
-inline real calcReffXrRp3(const real coords)
+inline real calcReffXrRp3(const real coords, const real gPrime)
 {
     _MW_STATIC const real sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
-    const real gPrime = calcGPrime(coords);
 
     /* REFF */
     const real exp_result = mw_exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));
@@ -87,8 +86,8 @@ ALWAYS_INLINE
 inline R_CONSTS calcRConsts(R_PRIME rp)
 {
     R_CONSTS rc;
-
-    rc.reff_xr_rp3 = calcReffXrRp3(rp.rPrime);
+    rc.gPrime = calcGPrime(rp.rPrime);
+    rc.reff_xr_rp3 = calcReffXrRp3(rp.rPrime, rc.gPrime);
     rc.irv = rp.irv;
 
     return rc;

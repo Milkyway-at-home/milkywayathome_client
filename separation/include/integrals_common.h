@@ -31,7 +31,6 @@ extern "C" {
 #include "integrals_likelihood.h"
 #include "r_points.h"
 
-
 ALWAYS_INLINE
 inline void zero_st_probs(real* st_probs, const unsigned int nstream)
 {
@@ -66,6 +65,7 @@ inline void sum_probs(ST_PROBS* probs,
                       const unsigned int nstream)
 {
     unsigned int i;
+
     for (i = 0; i < nstream; ++i)
         KAHAN_ADD(probs[i].st_prob_int, V_reff_xr_rp3 * st_probs[i], probs[i].st_prob_int_c);
 }

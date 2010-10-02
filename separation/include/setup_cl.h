@@ -34,7 +34,7 @@ typedef struct
 {
     /* Write only buffers */
     cl_mem outMu;     /* Output from each mu_sum done in parallel */
-    cl_mem outProbs;
+    cl_mem outProbs;  /* st_probs * V * reff_xr_rp3 */
 
     /* constant, read only buffers */
     cl_mem ap;

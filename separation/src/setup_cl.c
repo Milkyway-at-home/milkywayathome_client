@@ -122,8 +122,6 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
     char* rPointsSrc;
 
     static const char* extraDefs = DOUBLEPREC_DEF_STRING
-                                   "-D __ATI_CL__=1 "
-                                   "-D __APPLE_CL__=1 "
                                    "-cl-strict-aliasing "
                                    "-cl-finite-math-only "
                                    "-I../src "
@@ -142,7 +140,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
     }
 
     //compileDefs = separationCLDefs(ap, extraDefs);
-    err = mwSetupCL(ci, CL_DEVICE_TYPE_CPU, "r_sum_kernel", &kernelSrc, 1, extraDefs);
+    err = mwSetupCL(ci, CL_DEVICE_TYPE_CPU, "mu_sum_kernel", &kernelSrc, 1, extraDefs);
 
     freeKernelSrc(kernelSrc);
     //free(compileDefs);

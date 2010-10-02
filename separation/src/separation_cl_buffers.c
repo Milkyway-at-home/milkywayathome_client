@@ -22,13 +22,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "show_cl_types.h"
 #include "separation_cl_buffers.h"
 
-static inline cl_int createOutMuBuffer(const unsigned int r_steps,
-                                       const unsigned int nu_steps,
+static inline cl_int createOutMuBuffer(const unsigned int mu_steps,
+                                       const unsigned int r_steps,
                                        CLInfo* ci,
                                        SeparationCLMem* cm)
 {
     cl_int err;
-    size_t size = sizeof(BG_PROB) * r_steps * nu_steps;
+    size_t size = sizeof(real) * mu_steps * r_steps;
     cm->outMu = clCreateBuffer(ci->clctx,
                                CL_MEM_WRITE_ONLY,
                                size,
@@ -43,14 +43,14 @@ static inline cl_int createOutMuBuffer(const unsigned int r_steps,
     return CL_SUCCESS;
 }
 
-static inline cl_int createOutProbsBuffer(const unsigned int r_steps,
-                                          const unsigned int nu_steps,
+static inline cl_int createOutProbsBuffer(const unsigned int mu_steps,
+                                          const unsigned int r_steps,
                                           const unsigned int number_streams,
                                           CLInfo* ci,
                                           SeparationCLMem* cm)
 {
     cl_int err;
-    size_t size = sizeof(ST_PROBS) * r_steps * nu_steps * number_streams;
+    size_t size = sizeof(real) * mu_steps * r_steps * number_streams;
     cm->outProbs = clCreateBuffer(ci->clctx,
                                   CL_MEM_WRITE_ONLY,
                                   size,
@@ -131,6 +131,7 @@ static inline cl_int createSGBuffer(const STREAM_GAUSS* sg,
 {
     cl_int err;
     size_t size = sizeof(STREAM_GAUSS) * nconvolve;
+
     cm->sg = clCreateBuffer(ci->clctx,
                             CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                             size,
@@ -160,8 +161,8 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
     else
         constBufFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
 
-    err |= createOutMuBuffer(ia->r_steps, ia->nu_steps, ci, cm);
-    err |= createOutProbsBuffer(ia->r_steps, ia->nu_steps, ap->number_streams, ci, cm);
+    err |= createOutMuBuffer(ia->mu_steps, ia->r_steps, ci, cm);
+    err |= createOutProbsBuffer(ia->mu_steps, ia->r_steps, ap->number_streams, ci, cm);
     err |= createAPBuffer(ap, ci, cm, constBufFlags);
     err |= createIABuffer(ia, ci, cm, constBufFlags);
     err |= createSCBuffer(sc, ap->number_streams, ci, cm, constBufFlags);
