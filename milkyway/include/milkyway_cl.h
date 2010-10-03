@@ -30,9 +30,11 @@ extern "C" {
 #if !defined(__OPENCL_VERSION__) && MILKYWAY_OPENCL
   #ifdef __APPLE__
     #include <OpenCL/cl.h>
+    #include <CL/cl_platform.h>
     #include <OpenCL/cl_ext.h>
   #else
     #include <CL/cl.h>
+    #include <CL/cl_platform.h>
     #include <CL/cl_ext.h>
   #endif /* __APPLE__ */
 #endif  /* !defined(__OPENCL_VERSION__) && MILKYWAY_OPENCL */
@@ -41,10 +43,6 @@ extern "C" {
   #define __MW_LOCAL __local
   #define __MW_PRIVATE __private
   #define __MW_GLOBAL __global
-
-    /* Right now on Nvidia with Apple opencl there are weird bugs when
-     * you try to actually use __constant, but it most definitely
-     * should be used. */
   #define __MW_CONSTANT __constant
 #else
   #define __MW_LOCAL

@@ -34,6 +34,57 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define CL_CALLBACK
 #endif
 
+cl_int mwEnableProfiling(CLInfo* ci)
+{
+    cl_int err;
+
+    err = clSetCommandQueueProperty(ci->queue, CL_QUEUE_PROFILING_ENABLE, CL_TRUE, NULL);
+    if (err != CL_SUCCESS)
+        warn("Enabling profiling on queue failed: %s\n", showCLInt(err));
+
+    return err;
+}
+
+cl_int mwDisableProfiling(CLInfo* ci)
+{
+    cl_int err;
+
+    err = clSetCommandQueueProperty(ci->queue, CL_QUEUE_PROFILING_ENABLE, CL_FALSE, NULL);
+    if (err != CL_SUCCESS)
+        warn("Disabling profiling on queue failed: %s\n", showCLInt(err));
+
+    return err;
+}
+
+/* Timing in nanoseconds */
+cl_ulong mwEventTimeNS(cl_event ev)
+{
+    cl_int err;
+    cl_ulong ts, te;
+
+    err = clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &ts, NULL);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to get event start time: %s\n", showCLInt(err));
+        return 0;
+    }
+
+    err = clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &te, NULL);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to get event end time: %s\n", showCLInt(err));
+        return 0;
+    }
+
+    return te - ts;
+}
+
+/* Timing in seconds */
+double mwEventTime(cl_event ev)
+{
+    return (double) mwEventTimeNS(ev) / 10.0e9;
+}
+
 cl_int printCLExtensions(cl_device_id dev)
 {
     cl_int err;

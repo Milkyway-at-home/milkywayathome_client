@@ -93,6 +93,11 @@ cl_int printCLExtensions(cl_device_id dev);
 cl_int getWorkGroupInfo(CLInfo* ci, WGInfo* wgi);
 void printWorkGroupInfo(const WGInfo* wgi);
 
+cl_int mwEnableProfiling(CLInfo* ci);
+cl_int mwDisableProfiling(CLInfo* ci);
+cl_ulong mwEventTimeNS(cl_event ev);
+double mwEventTime(cl_event ev);
+
 cl_int getDevInfo(DevInfo* di, cl_device_id dev);
 void printDevInfo(const DevInfo* di);
 

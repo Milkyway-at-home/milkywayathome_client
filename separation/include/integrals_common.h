@@ -48,8 +48,6 @@ inline void stream_sums(real* st_probs,
                         const unsigned int nstreams)
 {
     unsigned int i;
-    real dotted, xyz_norm;
-    vector xyzs;
 
     for (i = 0; i < nstreams; ++i)
     {
