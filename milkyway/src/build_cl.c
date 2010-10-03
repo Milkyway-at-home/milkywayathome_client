@@ -85,6 +85,33 @@ double mwEventTime(cl_event ev)
     return (double) mwEventTimeNS(ev) / 10.0e9;
 }
 
+cl_event mwCreateEvent(CLInfo* ci)
+{
+    cl_int err;
+    cl_event ev;
+
+    ev = clCreateUserEvent(ci->clctx, &err);
+
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to create custom event: %s\n", showCLInt(err));
+        return NULL;
+    }
+
+    return ev;
+}
+
+cl_int mwFinishEvent(cl_event ev)
+{
+    cl_int err;
+
+    err = clSetUserEventStatus(ev, CL_COMPLETE);
+    if (err != CL_SUCCESS)
+        warn("Failed to mark custom event as completed: %s\n", showCLInt(err));
+
+    return err;
+}
+
 cl_int printCLExtensions(cl_device_id dev)
 {
     cl_int err;

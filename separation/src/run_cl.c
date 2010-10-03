@@ -33,27 +33,74 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "run_cl.h"
 #include "r_points.h"
 
+typedef struct
+{
+    cl_event ndRange;  /* kernel execution event */
+    cl_event outRead;  /* reading main output buffer */
+    cl_event probRead; /* reading stream probs buffer */
 
-static cl_int readIntegralResults(CLInfo* ci,
-                                  SeparationCLMem* cm,
-                                  real* mu_results,
-                                  size_t resultsSize)
+    cl_event probCalc;  /* custom events for summing temporary output buffers */
+    cl_event stProbCalc;
+} _SeparationCLEvents;
+
+#define N_SEP_CL_EVENTS (sizeof(_SeparationCLEvents) / sizeof(cl_event))
+
+typedef union
+{
+    _SeparationCLEvents events;
+    cl_event eventv[N_SEP_CL_EVENTS];
+} SeparationCLEvents;
+
+static void printSeparationEventTimes(SeparationCLEvents* evs)
+{
+    printf("NDrange:    %.15g s\n"
+           "Read out:   %.15g s\n"
+           "Read probs: %.15g s\n",
+           mwEventTime(evs->events.ndRange),
+           mwEventTime(evs->events.outRead),
+           mwEventTime(evs->events.probRead));
+}
+
+static real* mapIntegralResults(CLInfo* ci,
+                                SeparationCLMem* cm,
+                                SeparationCLEvents* evs,
+                                size_t resultsSize)
 {
     cl_int err;
+    real* mapOutMu;
 
-    err = clEnqueueReadBuffer(ci->queue,
-                              cm->outMu,
-                              CL_TRUE,
-                              0, resultsSize, mu_results,
-                              0, NULL, NULL);
-
+    mapOutMu = (real*) clEnqueueMapBuffer(ci->queue,
+                                          cm->outMu,
+                                          CL_TRUE, CL_MAP_READ,
+                                          0, resultsSize,
+                                          1, &evs->events.ndRange, /* Wait for calculation */
+                                          &evs->events.outRead,
+                                          &err);
     if (err != CL_SUCCESS)
-    {
-        warn("Error reading integral result buffer: %s\n", showCLInt(err));
-        return err;
-    }
+        warn("Error mapping integral result buffer: %s\n", showCLInt(err));
 
-    return CL_SUCCESS;
+    return mapOutMu;
+}
+
+static real* mapProbsResults(CLInfo* ci,
+                             SeparationCLMem* cm,
+                             SeparationCLEvents* evs,
+                             size_t probsResultsSize)
+{
+    cl_int err;
+    real* mapOutProbs;
+
+    mapOutProbs = (real*) clEnqueueMapBuffer(ci->queue,
+                                             cm->outProbs,
+                                             CL_TRUE, CL_MAP_READ,
+                                             0, probsResultsSize,
+                                             1, &evs->events.ndRange, /* Wait for calculation */
+                                             &evs->events.probRead,
+                                             &err);
+    if (err != CL_SUCCESS)
+        warn("Error mapping probs result buffer: %s\n", showCLInt(err));
+
+    return mapOutProbs;
 }
 
 static inline void sumStreamResults(ST_PROBS* probs_results,
@@ -84,26 +131,8 @@ static inline void sumProbsResults(ST_PROBS* probs_results,
     }
 }
 
-static cl_int readProbsResults(CLInfo* ci,
-                               SeparationCLMem* cm,
-                               real* probs_tmp,
-                               size_t size)
-{
-    cl_int err;
-
-    err = clEnqueueReadBuffer(ci->queue,
-                              cm->outProbs,
-                              CL_TRUE,
-                              0, size, probs_tmp,
-                              0, NULL, NULL);
-
-    if (err != CL_SUCCESS)
-        warn("Error reading probs result buffer for stream: %s\n", showCLInt(err));
-
-    return err;
-}
-
 static cl_int enqueueIntegralKernel(CLInfo* ci,
+                                    SeparationCLEvents* evs,
                                     const unsigned int mu_steps,
                                     const unsigned int r_steps)
 {
@@ -114,7 +143,7 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
                                  ci->kern,
                                  2,
                                  NULL, global, NULL,
-                                 0, NULL, NULL);
+                                 0, NULL, &evs->events.ndRange);
     if (err != CL_SUCCESS)
     {
         warn("Error enqueueing integral kernel execution: %s\n", showCLInt(err));
@@ -143,7 +172,7 @@ static inline void sumMuResults(BG_PROB* bg_prob,
     }
 }
 
-static cl_int setNuKernelArg(CLInfo* ci, SeparationCLMem* cm, const unsigned int nu_step)
+static cl_int setNuKernelArg(CLInfo* ci, const unsigned int nu_step)
 {
     cl_int err;
 
@@ -159,12 +188,10 @@ static cl_int setNuKernelArg(CLInfo* ci, SeparationCLMem* cm, const unsigned int
 
 static cl_int runNuStep(CLInfo* ci,
                         SeparationCLMem* cm,
+                        SeparationCLEvents* evs,
 
                         BG_PROB* bg_progress,    /* Accumulating results over nu steps */
                         ST_PROBS* probs_results,
-
-                        real* mu_results,        /* Scratch buffer for reading from cl buffer */
-                        real* probs_tmp,
 
                         const unsigned int mu_steps,
                         const unsigned int r_steps,
@@ -172,39 +199,64 @@ static cl_int runNuStep(CLInfo* ci,
                         const unsigned int nu_step)
 {
     cl_int err;
-    size_t resultSize = sizeof(real) * mu_steps * r_steps;
-    size_t probsSize = sizeof(real) * mu_steps * r_steps * number_streams;
+    real* mu_results;
+    real* probs_tmp;
 
-    err = setNuKernelArg(ci, cm, nu_step);
+
+    err = setNuKernelArg(ci, nu_step);
     if (err != CL_SUCCESS)
     {
         warn("Failed to set nu kernel argument\n");
         return err;
     }
 
-    err = enqueueIntegralKernel(ci, mu_steps, r_steps);
+    err = enqueueIntegralKernel(ci, evs, mu_steps, r_steps);
     if (err != CL_SUCCESS)
     {
         warn("Failed to enqueue integral kernel: %s\n", showCLInt(err));
         return err;
     }
 
-    err = readIntegralResults(ci, cm, mu_results, resultSize);
-    if (err != CL_SUCCESS)
+
+    /* If we don't remap the buffer on each step, it seems to only
+     * mostly work. */
+    size_t resultSize = sizeof(real) * mu_steps * r_steps;
+    mu_results = mapIntegralResults(ci, cm, evs, resultSize);
+    if (!mu_results)
     {
-        warn("Failed to read integral results: %s\n", showCLInt(err));
-        return err;
+        warn("Failed to map integral results\n");
+        return NAN;
     }
 
-    err = readProbsResults(ci, cm, probs_tmp, probsSize);
-    if (err != CL_SUCCESS)
+    size_t probsSize = sizeof(real) * mu_steps * r_steps * number_streams;
+    probs_tmp = mapProbsResults(ci, cm, evs, probsSize);
+    if (!probs_tmp)
     {
-        warn("Failed to read probs results: %s\n", showCLInt(err));
-        return err;
+        warn("Failed to map probs results\n");
+        return NAN;
     }
 
     sumMuResults(bg_progress, mu_results, mu_steps, r_steps);
     sumProbsResults(probs_results, probs_tmp, mu_steps, r_steps, number_streams);
+
+
+    err = clEnqueueUnmapMemObject(ci->queue, cm->outMu, mu_results, 0, NULL, NULL);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to unmap results buffer: %s\n", showCLInt(err));
+        return err;
+    }
+
+    err = clEnqueueUnmapMemObject(ci->queue, cm->outProbs, probs_tmp, 0, NULL, NULL);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to unmap probs buffer: %s\n", showCLInt(err));
+        return err;
+    }
+
+
+    printf("Nu step %u:\n", nu_step);
+    //printSeparationEventTimes(evs);
 
     return CL_SUCCESS;
 }
@@ -220,17 +272,16 @@ static real runIntegral(CLInfo* ci,
     real* probs_tmp;
     cl_int err;
     BG_PROB bg_sum = ZERO_BG_PROB;
+    SeparationCLEvents evs;
     size_t resultSize = sizeof(real) * ia->mu_steps * ia->r_steps;
     size_t probsTmpSize = sizeof(real) * ia->mu_steps * ia->r_steps * ap->number_streams;
 
-    mu_results = (real*) mwMallocAligned(resultSize, sizeof(real));
-    probs_tmp = (real*) mwMallocAligned(probsTmpSize, sizeof(real));
+    //mwEnableProfiling(ci);
 
     for (i = 0; i < ia->nu_steps; ++i)
     {
-        err = runNuStep(ci, cm,
+        err = runNuStep(ci, cm, &evs,
                         &bg_sum, probs_results,
-                        mu_results, probs_tmp,
                         ia->mu_steps, ia->r_steps, ap->number_streams, i);
 
         if (err != CL_SUCCESS)
@@ -240,9 +291,6 @@ static real runIntegral(CLInfo* ci,
             break;
         }
     }
-
-    mwAlignedFree(mu_results);
-    mwAlignedFree(probs_tmp);
 
     return bg_sum.bg_int + bg_sum.correction;
 }

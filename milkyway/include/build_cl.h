@@ -98,6 +98,9 @@ cl_int mwDisableProfiling(CLInfo* ci);
 cl_ulong mwEventTimeNS(cl_event ev);
 double mwEventTime(cl_event ev);
 
+cl_event mwCreateEvent(CLInfo* ci);
+cl_int mwFinishEvent(cl_event ev);
+
 cl_int getDevInfo(DevInfo* di, cl_device_id dev);
 void printDevInfo(const DevInfo* di);
 
