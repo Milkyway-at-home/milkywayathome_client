@@ -51,7 +51,8 @@ static inline cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
     err |= clSetKernelArg(ci->kern, 2, sizeof(cl_mem), &cm->ap);
     err |= clSetKernelArg(ci->kern, 3, sizeof(cl_mem), &cm->ia);
     err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->sc);
-    err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->sg);
+    err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->rc);
+    err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->rPts);
 
     if (err != CL_SUCCESS)
     {

@@ -41,7 +41,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 __attribute__ ((always_inline))
 inline real sub_bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
                                __constant STREAM_CONSTANTS* sc,
-                               __constant STREAM_GAUSS* sg,
+                               __global const R_POINTS* r_pts,
                                const real gPrime,
                                const LB_TRIG lbt,
                                const unsigned int convolve,
@@ -56,7 +56,7 @@ inline real sub_bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < convolve; ++i)
     {
-        r_pt = calc_r_point(&sg[i], gPrime, ap->coeff);
+        r_pt = r_pts[i];
         lbr2xyz_2(xyz, r_pt.r_point, lbt);
 
         rg = rg_calc(xyz, ap->q_inv_sqr);
@@ -94,7 +94,7 @@ inline void mult_probs(real* st_probs, const real V_reff_xr_rp3, const unsigned 
 __attribute__ ((always_inline))
 inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
                            __constant STREAM_CONSTANTS* sc,
-                           __constant STREAM_GAUSS* sg,
+                           __global const R_POINTS* r_pts,
                            const LB_TRIG lbt,
                            const R_CONSTS rc,
                            const real V,
@@ -106,7 +106,7 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
     if (ap->zero_q)
         return -1.0;
 
-    bg_prob = sub_bg_probability(ap, sc, sg, rc.gPrime, lbt, ap->convolve, st_probs);
+    bg_prob = sub_bg_probability(ap, sc, r_pts, rc.gPrime, lbt, ap->convolve, st_probs);
     bg_prob *= rc.reff_xr_rp3;
 
     mult_probs(st_probs, V * rc.reff_xr_rp3, ap->number_streams);
@@ -118,22 +118,20 @@ __attribute__ ((always_inline))
 real r_calculation(__constant ASTRONOMY_PARAMETERS* ap,
                    __constant INTEGRAL_AREA* ia,
                    __constant STREAM_CONSTANTS* sc,
-                   __constant STREAM_GAUSS* sg,
+                   __constant R_CONSTS* rcs,
+                   __global const R_POINTS* r_pts,
                    const LB_TRIG lbt,
                    const real id,
                    real* st_probs,
                    const unsigned int r_step)
 {
     real V;
-    R_PRIME rp;
     R_CONSTS rc;
 
-    rp = calcRPrime(ia, r_step);
-    rc = calcRConsts(rp);
-
+    rc = rcs[r_step];
     V = id * rc.irv;
 
-    return V * bg_probability(ap, sc, sg, lbt, rc, V, st_probs);
+    return V * bg_probability(ap, sc, &r_pts[r_step * ap->convolve], lbt, rc, V, st_probs);
 }
 
 __attribute__ ((always_inline))
@@ -153,7 +151,8 @@ __kernel void mu_sum_kernel(__global real* mu_out,
                             __constant ASTRONOMY_PARAMETERS* ap,
                             __constant INTEGRAL_AREA* ia,
                             __constant STREAM_CONSTANTS* sc,
-                            __constant STREAM_GAUSS* sg,
+                            __constant R_CONSTS* rcs,
+                            __global const R_POINTS* r_pts,
                             const unsigned int nu_step)
 {
     NU_ID nuid;
@@ -179,7 +178,7 @@ __kernel void mu_sum_kernel(__global real* mu_out,
     lb = gc2lb(ap->wedge, mu, nuid.nu);
     lbt = lb_trig(lb);
 
-    r_result = r_calculation(ap, ia, sc, sg, lbt, nuid.id, st_probs, r_step);
+    r_result = r_calculation(ap, ia, sc, rcs, r_pts, lbt, nuid.id, st_probs, r_step);
 
     /* Output to buffers */
     mu_out[mu_step * ia->r_steps + r_step] = r_result;

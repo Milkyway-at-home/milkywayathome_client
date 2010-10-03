@@ -21,6 +21,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "show_cl_types.h"
 #include "separation_cl_buffers.h"
+#include "r_points.h"
 
 static inline cl_int createOutMuBuffer(const unsigned int mu_steps,
                                        const unsigned int r_steps,
@@ -124,27 +125,49 @@ static inline cl_int createIABuffer(const INTEGRAL_AREA* ia,
     return CL_SUCCESS;
 }
 
-static inline cl_int createSGBuffer(const STREAM_GAUSS* sg,
-                                    const unsigned int nconvolve,
+static inline cl_int createRBuffers(const ASTRONOMY_PARAMETERS* ap,
+                                    const INTEGRAL_AREA* ia,
+                                    const STREAM_GAUSS* sg,
                                     CLInfo* ci,
                                     SeparationCLMem* cm)
 {
     cl_int err;
-    size_t size = sizeof(STREAM_GAUSS) * nconvolve;
 
-    cm->sg = clCreateBuffer(ci->clctx,
-                            CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                            size,
-                            sg,
-                            &err);
+    R_POINTS* r_pts;
+    R_CONSTS* rc;
+    size_t rPtsSize = sizeof(R_POINTS) * ap->convolve * ia->r_steps;
+    size_t rcSize = sizeof(R_CONSTS) * ia->r_steps;
+
+    r_pts = precalculate_r_pts(ap, ia, sg, &rc);
+
+    cm->rPts = clCreateBuffer(ci->clctx,
+                              CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                              rPtsSize,
+                              r_pts,
+                              &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating stream gauss buffer of size %zu: %s\n", size, showCLInt(err));
+        warn("Error creating stream r points buffer of size %zu: %s\n", rPtsSize, showCLInt(err));
         return err;
     }
 
+    cm->rc = clCreateBuffer(ci->clctx,
+                            CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                            rPtsSize,
+                            rc,
+                            &err);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error creating stream r consts buffer of size %zu: %s\n", rcSize, showCLInt(err));
+        return err;
+    }
+
+    mwAlignedFree(r_pts);
+    mwAlignedFree(rc);
+
     return CL_SUCCESS;
 }
+
 
 cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
                                const INTEGRAL_AREA* ia,
@@ -166,7 +189,7 @@ cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
     err |= createAPBuffer(ap, ci, cm, constBufFlags);
     err |= createIABuffer(ia, ci, cm, constBufFlags);
     err |= createSCBuffer(sc, ap->number_streams, ci, cm, constBufFlags);
-    err |= createSGBuffer(sg, ap->convolve, ci, cm);
+    err |= createRBuffers(ap, ia, sg, ci, cm);
 
     return err;
 }
@@ -178,6 +201,7 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
     clReleaseMemObject(cm->ap);
     clReleaseMemObject(cm->ia);
     clReleaseMemObject(cm->sc);
-    clReleaseMemObject(cm->sg);
+    clReleaseMemObject(cm->rPts);
+    clReleaseMemObject(cm->rc);
 }
 
