@@ -145,8 +145,8 @@ inline void write_st_probs(__global real* probs_out,
         probs_out[i] = st_probs[i];
 }
 
-__kernel void mu_sum_kernel(__global real* mu_out,
-                            __global real* probs_out,
+__kernel void mu_sum_kernel(__global real* restrict mu_out,
+                            __global real* restrict probs_out,
 
                             __constant ASTRONOMY_PARAMETERS* ap,
                             __constant INTEGRAL_AREA* ia,

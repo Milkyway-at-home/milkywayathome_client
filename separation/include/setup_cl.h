@@ -36,6 +36,9 @@ typedef struct
     cl_mem outMu;     /* Output from each mu_sum done in parallel */
     cl_mem outProbs;  /* st_probs * V * reff_xr_rp3 */
 
+    cl_mem outMu_tmp;    /* Use double buffering to avoid blocking on intermediate results */
+    cl_mem outProbs_tmp;
+
     /* constant, read only buffers */
     cl_mem ap;
     cl_mem ia;
@@ -44,7 +47,7 @@ typedef struct
     cl_mem rPts;
 } SeparationCLMem;
 
-#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 
 
 cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,

@@ -36,16 +36,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define BUFSIZE 4096
 
+
+/* Only sets the constant arguments, not the outputs which we double buffer */
 static inline cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
                                              const INTEGRAL_AREA* ia,
                                              const CLInfo* ci,
                                              SeparationCLMem* cm)
 {
     cl_int err = CL_SUCCESS;
-
-    /* Output buffer */
-    err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outMu);
-    err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->outProbs);
 
     /* The constant arguments */
     err |= clSetKernelArg(ci->kern, 2, sizeof(cl_mem), &cm->ap);

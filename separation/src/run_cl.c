@@ -105,9 +105,9 @@ static real* mapProbsResults(CLInfo* ci,
 
 static inline void sumStreamResults(ST_PROBS* probs_results,
                                     const real* probs_V_reff_xr_rp3,
-                                    const unsigned int number_streams)
+                                    const cl_uint number_streams)
 {
-    unsigned int i;
+    cl_uint i;
 
     for (i = 0; i < number_streams; ++i)
         KAHAN_ADD(probs_results[i].st_prob_int, probs_V_reff_xr_rp3[i], probs_results[i].st_prob_int_c);
@@ -115,11 +115,11 @@ static inline void sumStreamResults(ST_PROBS* probs_results,
 
 static inline void sumProbsResults(ST_PROBS* probs_results,
                                    const real* st_probs_V_reff_xr_rp3_mu_r,
-                                   const unsigned int mu_steps,
-                                   const unsigned int r_steps,
-                                   const unsigned int number_streams)
+                                   const cl_uint mu_steps,
+                                   const cl_uint r_steps,
+                                   const cl_uint number_streams)
 {
-    unsigned int i, j, idx;
+    cl_uint i, j, idx;
 
     for (i = 0; i < mu_steps; ++i)
     {
@@ -133,8 +133,8 @@ static inline void sumProbsResults(ST_PROBS* probs_results,
 
 static cl_int enqueueIntegralKernel(CLInfo* ci,
                                     SeparationCLEvents* evs,
-                                    const unsigned int mu_steps,
-                                    const unsigned int r_steps)
+                                    const cl_uint mu_steps,
+                                    const cl_uint r_steps)
 {
     cl_int err;
     const size_t global[] = { mu_steps, r_steps };
@@ -158,10 +158,10 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
  * all the nu steps */
 static inline void sumMuResults(BG_PROB* bg_prob,
                                 const real* mu_results,
-                                const unsigned int mu_steps,
-                                const unsigned int r_steps)
+                                const cl_uint mu_steps,
+                                const cl_uint r_steps)
 {
-    unsigned int i, j;
+    cl_uint i, j;
 
     for (i = 0; i < mu_steps; ++i)
     {
@@ -172,11 +172,11 @@ static inline void sumMuResults(BG_PROB* bg_prob,
     }
 }
 
-static cl_int setNuKernelArg(CLInfo* ci, const unsigned int nu_step)
+static cl_int setNuKernelArg(CLInfo* ci, const cl_uint nu_step)
 {
     cl_int err;
 
-    err = clSetKernelArg(ci->kern, 7, sizeof(unsigned int), &nu_step);
+    err = clSetKernelArg(ci->kern, 7, sizeof(cl_uint), &nu_step);
     if (err != CL_SUCCESS)
     {
         warn("Error setting nu step argument for step %u: %s\n", nu_step, showCLInt(err));
@@ -186,46 +186,28 @@ static cl_int setNuKernelArg(CLInfo* ci, const unsigned int nu_step)
     return CL_SUCCESS;
 }
 
-static cl_int runNuStep(CLInfo* ci,
-                        SeparationCLMem* cm,
-                        SeparationCLEvents* evs,
-
-                        BG_PROB* bg_progress,    /* Accumulating results over nu steps */
-                        ST_PROBS* probs_results,
-
-                        const unsigned int mu_steps,
-                        const unsigned int r_steps,
-                        const unsigned int number_streams,
-                        const unsigned int nu_step)
+static inline cl_int readKernelResults(CLInfo* ci,
+                                       SeparationCLMem* cm,
+                                       SeparationCLEvents* evs,
+                                       BG_PROB* bg_progress,
+                                       ST_PROBS* probs_results,
+                                       const cl_uint mu_steps,
+                                       const cl_uint r_steps,
+                                       const cl_uint number_streams)
 {
     cl_int err;
     real* mu_results;
     real* probs_tmp;
 
+    /* We must map/unmap the buffer on each step. A kernel writing to
+     * a mapped buffer is undefined. */
 
-    err = setNuKernelArg(ci, nu_step);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to set nu kernel argument\n");
-        return err;
-    }
-
-    err = enqueueIntegralKernel(ci, evs, mu_steps, r_steps);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to enqueue integral kernel: %s\n", showCLInt(err));
-        return err;
-    }
-
-
-    /* If we don't remap the buffer on each step, it seems to only
-     * mostly work. */
     size_t resultSize = sizeof(real) * mu_steps * r_steps;
     mu_results = mapIntegralResults(ci, cm, evs, resultSize);
     if (!mu_results)
     {
         warn("Failed to map integral results\n");
-        return NAN;
+        return -1;
     }
 
     size_t probsSize = sizeof(real) * mu_steps * r_steps * number_streams;
@@ -233,11 +215,15 @@ static cl_int runNuStep(CLInfo* ci,
     if (!probs_tmp)
     {
         warn("Failed to map probs results\n");
-        return NAN;
+        return -1;
     }
+
+    //cl_event sumEvent = mwCreateEvent(ci);
 
     sumMuResults(bg_progress, mu_results, mu_steps, r_steps);
     sumProbsResults(probs_results, probs_tmp, mu_steps, r_steps, number_streams);
+
+    //mwFinishEvent(sumEvent);
 
 
     err = clEnqueueUnmapMemObject(ci->queue, cm->outMu, mu_results, 0, NULL, NULL);
@@ -254,6 +240,50 @@ static cl_int runNuStep(CLInfo* ci,
         return err;
     }
 
+    return CL_SUCCESS;
+}
+
+static cl_int runNuStep(CLInfo* ci,
+                        SeparationCLMem* cm,
+                        SeparationCLEvents* evs,
+
+                        BG_PROB* bg_progress,    /* Accumulating results over nu steps */
+                        ST_PROBS* probs_results,
+
+                        const cl_uint mu_steps,
+                        const cl_uint r_steps,
+                        const cl_uint number_streams,
+                        const cl_uint nu_step)
+{
+    cl_int err;
+
+    err = setNuKernelArg(ci, nu_step);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to set nu kernel argument\n");
+        return err;
+    }
+
+    err = separationSwapOutputBuffers(ci, cm);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to set output buffer arguments on step %u: %s\n", nu_step, showCLInt(err));
+        return err;
+    }
+
+    err = enqueueIntegralKernel(ci, evs, mu_steps, r_steps);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to enqueue integral kernel: %s\n", showCLInt(err));
+        return err;
+    }
+
+    err = readKernelResults(ci, cm, evs, bg_progress, probs_results, mu_steps, r_steps, number_streams);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to read kernel results: %s\n", showCLInt(err));
+        return err;
+    }
 
     printf("Nu step %u:\n", nu_step);
     //printSeparationEventTimes(evs);
@@ -267,14 +297,10 @@ static real runIntegral(CLInfo* ci,
                         const ASTRONOMY_PARAMETERS* ap,
                         const INTEGRAL_AREA* ia)
 {
-    unsigned int i;
-    real* mu_results;
-    real* probs_tmp;
+    cl_uint i;
     cl_int err;
     BG_PROB bg_sum = ZERO_BG_PROB;
     SeparationCLEvents evs;
-    size_t resultSize = sizeof(real) * ia->mu_steps * ia->r_steps;
-    size_t probsTmpSize = sizeof(real) * ia->mu_steps * ia->r_steps * ap->number_streams;
 
     //mwEnableProfiling(ci);
 
