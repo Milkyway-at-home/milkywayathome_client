@@ -28,8 +28,8 @@ static inline cl_mem createWriteBuffer(cl_context clctx, size_t size, cl_int* er
     return  clCreateBuffer(clctx, CL_MEM_WRITE_ONLY, size, NULL, err);
 }
 
-static inline cl_int createOutMuBuffer(const unsigned int mu_steps,
-                                       const unsigned int r_steps,
+static inline cl_int createOutMuBuffer(const cl_uint mu_steps,
+                                       const cl_uint r_steps,
                                        CLInfo* ci,
                                        SeparationCLMem* cm)
 {
@@ -53,9 +53,9 @@ static inline cl_int createOutMuBuffer(const unsigned int mu_steps,
     return CL_SUCCESS;
 }
 
-static inline cl_int createOutProbsBuffer(const unsigned int mu_steps,
-                                          const unsigned int r_steps,
-                                          const unsigned int number_streams,
+static inline cl_int createOutProbsBuffer(const cl_uint mu_steps,
+                                          const cl_uint r_steps,
+                                          const cl_uint number_streams,
                                           CLInfo* ci,
                                           SeparationCLMem* cm)
 {
@@ -80,7 +80,7 @@ static inline cl_int createOutProbsBuffer(const unsigned int mu_steps,
 }
 
 static inline cl_int createSCBuffer(const STREAM_CONSTANTS* sc,
-                                    const unsigned int number_streams,
+                                    const cl_uint number_streams,
                                     CLInfo* ci,
                                     SeparationCLMem* cm,
                                     const cl_mem_flags constBufFlags)
@@ -166,7 +166,7 @@ static inline cl_int createRBuffers(const ASTRONOMY_PARAMETERS* ap,
 
     cm->rc = clCreateBuffer(ci->clctx,
                             CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                            rPtsSize,
+                            rcSize,
                             rc,
                             &err);
     if (err != CL_SUCCESS)
