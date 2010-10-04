@@ -30,7 +30,7 @@ extern "C" {
 #if !defined(__OPENCL_VERSION__) && MILKYWAY_OPENCL
   #ifdef __APPLE__
     #include <OpenCL/cl.h>
-    #include <CL/cl_platform.h>
+    #include <OpenCL/cl_platform.h>
     #include <OpenCL/cl_ext.h>
   #else
     #include <CL/cl.h>

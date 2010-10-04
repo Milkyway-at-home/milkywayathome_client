@@ -150,25 +150,18 @@ static inline cl_int createRBuffers(const ASTRONOMY_PARAMETERS* ap,
     R_CONSTS* rc;
     size_t rPtsSize = sizeof(R_POINTS) * ap->convolve * ia->r_steps;
     size_t rcSize = sizeof(R_CONSTS) * ia->r_steps;
+    const cl_mem_flags constBufFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
 
     r_pts = precalculate_r_pts(ap, ia, sg, &rc);
 
-    cm->rPts = clCreateBuffer(ci->clctx,
-                              CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                              rPtsSize,
-                              r_pts,
-                              &err);
+    cm->rPts = clCreateBuffer(ci->clctx, constBufFlags, rPtsSize, r_pts, &err);
     if (err != CL_SUCCESS)
     {
         warn("Error creating stream r points buffer of size %zu: %s\n", rPtsSize, showCLInt(err));
         return err;
     }
 
-    cm->rc = clCreateBuffer(ci->clctx,
-                            CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                            rcSize,
-                            rc,
-                            &err);
+    cm->rc = clCreateBuffer(ci->clctx, constBufFlags, rcSize, rc, &err);
     if (err != CL_SUCCESS)
     {
         warn("Error creating stream r consts buffer of size %zu: %s\n", rcSize, showCLInt(err));

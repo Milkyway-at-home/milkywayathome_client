@@ -85,6 +85,8 @@ double mwEventTime(cl_event ev)
     return (double) mwEventTimeNS(ev) / 10.0e9;
 }
 
+#ifdef CL_VERSION_1_1
+
 cl_event mwCreateEvent(CLInfo* ci)
 {
     cl_int err;
@@ -111,6 +113,8 @@ cl_int mwFinishEvent(cl_event ev)
 
     return err;
 }
+
+#endif /* CL_VERSION_1_1 */
 
 cl_int printCLExtensions(cl_device_id dev)
 {
