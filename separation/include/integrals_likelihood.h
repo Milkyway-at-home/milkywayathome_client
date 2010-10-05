@@ -56,7 +56,7 @@ inline real aux_prob(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                      const real r_in_mag,
                      const real r_in_mag2)
 {
-    return qw_r3_N * (ap->bg_a * r_in_mag2 + ap->bg_b * r_in_mag + ap->bg_b);
+    return qw_r3_N * (ap->bg_a * r_in_mag2 + ap->bg_b * r_in_mag + ap->bg_c);
 }
 
 ALWAYS_INLINE HOT CONST_F
