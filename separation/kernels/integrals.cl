@@ -83,15 +83,6 @@ inline real sub_bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
 }
 
 __attribute__ ((always_inline))
-inline void mult_probs(real* st_probs, const real V_reff_xr_rp3, const unsigned int n_stream)
-{
-    unsigned int i;
-
-    for (i = 0; i < n_stream; ++i)
-        st_probs[i] *= V_reff_xr_rp3;
-}
-
-__attribute__ ((always_inline))
 inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
                            __constant STREAM_CONSTANTS* sc,
                            __global const R_POINTS* r_pts,

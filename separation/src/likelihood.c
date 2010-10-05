@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_types.h"
 #include "likelihood.h"
 #include "integrals_likelihood.h"
+#include "integrals_common.h"
 #include "r_points.h"
 #include "milkyway_util.h"
 
@@ -31,65 +32,34 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* FIXME: Excessive duplication with stuff used in integrals which I
  * was too lazy to also fix here */
 
-static inline real probabilities_convolve(__MW_CONSTANT STREAM_CONSTANTS* sc,
-                                          __MW_LOCAL const R_POINTS* r_pts,
-                                          __MW_LOCAL vector* const xyz,
-                                          const unsigned int convolve)
-{
-    unsigned int i;
-    real st_prob = 0.0;
 
-    for (i = 0; i < convolve; ++i)
-        st_prob += calc_st_prob_inc(sc, xyz[i], r_pts[i].qw_r3_N);
-
-    return st_prob;
-}
-
-static inline void likelihood_probabilities(const ASTRONOMY_PARAMETERS* ap,
-                                            const STREAM_CONSTANTS* sc,
-                                            const R_POINTS* r_pts,
-                                            const real reff_xr_rp3,
-                                            vector* const xyz,
-                                            real* probs)
-{
-    unsigned int i;
-
-    for (i = 0; i < ap->number_streams; ++i)
-    {
-        if (sc[i].large_sigma)
-            probs[i] = reff_xr_rp3 * probabilities_convolve(&sc[i], r_pts, xyz, ap->convolve);
-        else
-            probs[i] = 0.0;
-    }
-}
-
-static inline real likelihood_bg_probability_main(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
-                                                  __MW_LOCAL const R_POINTS* r_pts,
-                                                  __MW_LOCAL vector* const xyz,
+static inline real likelihood_bg_probability_main(const ASTRONOMY_PARAMETERS* ap,
+                                                  const STREAM_CONSTANTS* sc,
+                                                  const R_POINTS* r_pts,
                                                   const LB_TRIG lbt,
-                                                  const unsigned int convolve)
+                                                  const real reff_xr_rp3,
+                                                  const unsigned int convolve,
+                                                  real* st_probs)
 {
     unsigned int i;
     real h_prob;
     real rg, rs;
-    real lsin, lcos;
-    real bsin, bcos;
+    vector xyz;
     real bg_prob = 0.0;
+
+    zero_st_probs(st_probs, ap->number_streams);
 
     for (i = 0; i < convolve; ++i)
     {
-        lbr2xyz_2(xyz[i], r_pts[i].r_point, lbt);
-
-        rg = rg_calc(xyz[i], ap->q_inv_sqr);
-
+        lbr2xyz_2(xyz, r_pts[i].r_point, lbt);
+        rg = rg_calc(xyz, ap->q_inv_sqr);
         rs = rg + ap->r0;
 
         /* CHECKME: Not having quadratic term on slow one looks like a bug but I'm not sure */
         if (ap->fast_h_prob)
         {
             h_prob = h_prob_fast(r_pts[i].qw_r3_N, rg, rs);
-
-            /* The Hernquist profile includes a quadratic term in g */
+            /* the Hernquist profile includes a quadratic term in g */
             if (ap->aux_bg_profile)
                 h_prob += aux_prob(ap, r_pts[i].qw_r3_N, r_pts[i].r_in_mag, r_pts[i].r_in_mag2);
         }
@@ -98,17 +68,22 @@ static inline real likelihood_bg_probability_main(__MW_CONSTANT ASTRONOMY_PARAME
             h_prob = h_prob_slow(ap, r_pts[i].qw_r3_N, rg);
         }
 
+        stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
+
         bg_prob += h_prob;
     }
+
+    mult_probs(st_probs, reff_xr_rp3, ap->number_streams);
 
     return bg_prob;
 }
 
-static inline real likelihood_bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
-                                             __MW_LOCAL const R_POINTS* r_pts,
-                                             __MW_LOCAL vector* const xyz,
+static inline real likelihood_bg_probability(const ASTRONOMY_PARAMETERS* ap,
+                                             const STREAM_CONSTANTS* sc,
+                                             const R_POINTS* r_pts,
                                              const LB_TRIG lbt,
-                                             const real reff_xr_rp3)
+                                             const real reff_xr_rp3,
+                                             real* st_probs)
 {
     real bg_prob;
 
@@ -116,7 +91,7 @@ static inline real likelihood_bg_probability(__MW_CONSTANT ASTRONOMY_PARAMETERS*
     if (ap->zero_q)
         return -1.0;
 
-    bg_prob = likelihood_bg_probability_main(ap, r_pts, xyz, lbt, ap->convolve);
+    bg_prob = likelihood_bg_probability_main(ap, sc, r_pts, lbt, reff_xr_rp3, ap->convolve, st_probs);
     bg_prob *= reff_xr_rp3;
 
     return bg_prob;
@@ -130,13 +105,13 @@ static inline real stream_sum(const unsigned int number_streams,
                               const real sum_exp_weights,
                               real bg_only)
 {
-    unsigned int current_stream;
+    unsigned int i;
     real st_only;
     real star_prob = bg_only;
 
-    for (current_stream = 0; current_stream < number_streams; current_stream++)
+    for (i = 0; i < number_streams; ++i)
     {
-        st_only = st_prob[current_stream] / fsi->stream_integrals[current_stream] * exp_stream_weights[current_stream];
+        st_only = st_prob[i] / fsi->stream_integrals[i] * exp_stream_weights[i];
         star_prob += st_only;
 
         if (st_only == 0.0)
@@ -144,7 +119,7 @@ static inline real stream_sum(const unsigned int number_streams,
         else
             st_only = mw_log10(st_only / sum_exp_weights);
 
-        KAHAN_ADD(st_sum[current_stream].st_only_sum, st_only, st_sum[current_stream].st_only_sum_c);
+        KAHAN_ADD(st_sum[i].st_only_sum, st_only, st_sum[i].st_only_sum_c);
     }
     star_prob /= sum_exp_weights;
 
@@ -193,7 +168,6 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
                            const STREAM_GAUSS* sg,
                            R_POINTS* r_pts,
                            ST_SUM* st_sum,
-                           vector* xyz,
                            real* st_prob,
                            const real* exp_stream_weights,
                            const real sum_exp_weights,
@@ -223,11 +197,9 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
 
         lbt = lb_trig(lb);
 
-        bg_prob = likelihood_bg_probability(ap, r_pts, xyz, lbt, reff_xr_rp3);
+        bg_prob = likelihood_bg_probability(ap, sc, r_pts, lbt, reff_xr_rp3, st_prob);
 
         bg = (bg_prob / fsi->background_integral) * exp_background_weight;
-
-        likelihood_probabilities(ap, sc, r_pts, reff_xr_rp3, xyz, st_prob);
 
         star_prob = stream_sum(streams->number_streams,
                                fsi,
@@ -280,7 +252,6 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
     R_POINTS* r_pts;
     ST_SUM* st_sum;
     real* exp_stream_weights;
-    vector* xyzs;
     real sum_exp_weights;
     real likelihood_val;
 
@@ -290,13 +261,12 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
     r_pts = (R_POINTS*) mallocSafe(sizeof(R_POINTS) * ap->convolve);
     st_sum = (ST_SUM*) callocSafe(sizeof(ST_SUM), streams->number_streams);
     exp_stream_weights = (real*) mallocSafe(sizeof(real) * streams->number_streams);
-    xyzs = (vector*) callocSafe(sizeof(vector), ap->convolve);
 
     sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);
 
     likelihood_val = likelihood_sum(ap, sp, sc, streams, fsi,
                                     sg, r_pts,
-                                    st_sum, xyzs, st_prob,
+                                    st_sum, st_prob,
                                     exp_stream_weights,
                                     sum_exp_weights,
                                     exp_background_weight);
@@ -307,7 +277,6 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
     free(r_pts);
     free(st_sum);
     free(exp_stream_weights);
-    free(xyzs);
 
     return likelihood_val;
 }

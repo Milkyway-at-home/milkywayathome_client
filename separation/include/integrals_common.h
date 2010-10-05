@@ -69,6 +69,15 @@ inline void sum_probs(ST_PROBS* probs,
 }
 
 ALWAYS_INLINE
+inline void mult_probs(real* st_probs, const real V_reff_xr_rp3, const unsigned int n_stream)
+{
+    unsigned int i;
+
+    for (i = 0; i < n_stream; ++i)
+        st_probs[i] *= V_reff_xr_rp3;
+}
+
+ALWAYS_INLINE
 inline NU_ID calc_nu_step(__MW_CONSTANT INTEGRAL_AREA* ia, const unsigned int nu_step)
 {
     NU_ID nuid;
