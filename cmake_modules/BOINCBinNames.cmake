@@ -37,7 +37,8 @@ function(get_boinc_bin_name basename version plan)
     set(SYSTEM_IS_PPC FALSE)
   endif()
 
-  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  #FIXME: This seems to not be set on windows
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8 AND NOT WIN32)
     set(SYSTEM_IS_64 TRUE)
   elseif(PTR_SIZE EQUAL 4)
     set(SYSTEM_IS_64 FALSE)
@@ -46,15 +47,21 @@ function(get_boinc_bin_name basename version plan)
   endif()
 
   if(WIN32)
-    if(NOT SYSTEM_IS_X86)
-      message("Weird Windows that only sort of once existed?")
-    endif()
-
-    if(SYSTEM_IS_64)
+    if(MINGW)
+      # I haven't gotten mingw 64 bit to work yet
       set(boinc_sys_name "windows_intelx86")
     else()
-      set(boinc_sys_name "windows_x86_64")
+      if(NOT SYSTEM_IS_X86)
+        message("Weird Windows that only sort of once existed?")
+      endif()
+
+      if(SYSTEM_IS_64)
+        set(boinc_sys_name "windows_intelx86")
+      else()
+        set(boinc_sys_name "windows_x86_64")
+      endif()
     endif()
+
   elseif(UNIX)
     if(APPLE)
       if(SYSTEM_IS_64 AND SYSTEM_IS_X86)
