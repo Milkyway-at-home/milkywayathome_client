@@ -73,18 +73,18 @@ void print_evaluation_state(const EVALUATION_STATE* es)
     unsigned int j;
 
     printf("evaluation-state {\n"
-           "  r_step           = %u\n"
-           "  nu_step          = %u\n"
+           "  nu_step           = %u\n"
+           "  mu_step          = %u\n"
            "  current_integral = %u\n"
-           "  r_acc            = { %.20g, %.20g }\n"
-           "  nu_acc           = { %.20g, %.20g }\n",
-           es->r_step,
+           "  nu_acc            = { %.20g, %.20g }\n"
+           "  mu_acc           = { %.20g, %.20g }\n",
            es->nu_step,
+           es->mu_step,
            es->current_integral,
-           es->r_acc.bg_int,
-           es->r_acc.correction,
            es->nu_acc.bg_int,
-           es->nu_acc.correction);
+           es->nu_acc.correction,
+           es->mu_acc.bg_int,
+           es->mu_acc.correction);
 
     for (i = es->integrals; i < es->integrals + es->number_integrals; ++i)
     {
@@ -117,10 +117,10 @@ static int read_state(FILE* f, EVALUATION_STATE* es)
     }
 
     fread(&es->current_integral, sizeof(es->current_integral), 1, f);
-    fread(&es->r_step, sizeof(es->r_step), 1, f);
     fread(&es->nu_step, sizeof(es->nu_step), 1, f);
-    fread(&es->r_acc, sizeof(es->r_acc), 1, f);
+    fread(&es->mu_step, sizeof(es->mu_step), 1, f);
     fread(&es->nu_acc, sizeof(es->nu_acc), 1, f);
+    fread(&es->mu_acc, sizeof(es->mu_acc), 1, f);
 
     for (i = es->integrals; i < es->integrals + es->number_integrals; ++i)
     {
@@ -168,10 +168,10 @@ static inline void write_state(FILE* f, const EVALUATION_STATE* es)
     fwrite(checkpoint_header, sizeof(checkpoint_header), 1, f);
 
     fwrite(&es->current_integral, sizeof(es->current_integral), 1, f);
-    fwrite(&es->r_step, sizeof(es->r_step), 1, f);
     fwrite(&es->nu_step, sizeof(es->nu_step), 1, f);
-    fwrite(&es->r_acc, sizeof(es->r_acc), 1, f);
+    fwrite(&es->mu_step, sizeof(es->mu_step), 1, f);
     fwrite(&es->nu_acc, sizeof(es->nu_acc), 1, f);
+    fwrite(&es->mu_acc, sizeof(es->mu_acc), 1, f);
 
     for (i = es->integrals; i < endi; ++i)
     {

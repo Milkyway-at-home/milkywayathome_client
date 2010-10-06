@@ -56,6 +56,29 @@ void* mallocSafe(size_t size)
     return mem;
 }
 
+
+#ifndef __APPLE__
+
+void* mwCallocAligned(size_t count, size_t size, size_t alignment)
+{
+    void* p;
+
+    p = mwMallocAligned(count * size, alignment);
+    memset(p, 0, size);
+
+    return p;
+}
+
+#else
+
+void* mwCallocAligned(size_t count, size_t size, size_t alignment)
+{
+    return callocSafe(count, size);
+}
+
+
+#endif /* __APPLE__ */
+
 #if defined(__APPLE__)
 
 /* OS X already aligns everything to 16 bytes */
@@ -96,16 +119,6 @@ void* mwMallocAligned(size_t size, size_t alignment)
     return p;
 }
 #endif /* defined(__APPLE__) */
-
-void* mwCallocAligned(size_t count, size_t size, size_t alignment)
-{
-    void* p;
-
-    p = mwMallocAligned(count * size, alignment);
-    memset(p, 0, size);
-
-    return p;
-}
 
 void* reallocSafe(void* ptr, size_t size)
 {

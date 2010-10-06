@@ -38,8 +38,8 @@ static inline real progress(const EVALUATION_STATE* es,
 {
     /* This integral's progress */
     /* When checkpointing is done, ia->mu_step would always be 0 */
-    unsigned int i_prog =  (es->r_step * ia->nu_steps * ia->mu_steps)
-                         + (es->nu_step * ia->mu_steps); /* + es->mu_step */
+    unsigned int i_prog =  (es->nu_step * ia->mu_steps * ia->r_steps)
+                         + (es->mu_step * ia->r_steps); /* + es->r_step */
 
     return (real)(i_prog + es->current_calc_probs) / total_calc_probs;
 }
@@ -112,7 +112,6 @@ static real sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
     unsigned int i;
     real rg;
     vector xyz;
-    R_POINTS r_pt;
     real bg_prob = 0.0;
 
     for (i = 0; i < convolve; ++i)
@@ -229,6 +228,8 @@ static inline void mu_sum(const ASTRONOMY_PARAMETERS* ap,
 
     for (; es->mu_step < mu_steps; es->mu_step++)
     {
+        do_boinc_checkpoint(es, ia, ap->total_calc_probs);
+
         mu = mu_min + (((real) es->mu_step + 0.5) * mu_step_size);
 
         lb = gc2lb(ap->wedge, mu, nuid.nu); /* integral point */
@@ -254,13 +255,8 @@ static real nu_sum(const ASTRONOMY_PARAMETERS* ap,
 {
     NU_ID nuid;
 
-    const unsigned int nu_steps = ia->nu_steps;
-    const real nu_step_size = ia->nu_step_size;
-
-    for ( ; es->nu_step < nu_steps; es->nu_step++)
+    for ( ; es->nu_step < ia->nu_steps; es->nu_step++)
     {
-        do_boinc_checkpoint(es, ia, ap->total_calc_probs);
-
         nuid = calc_nu_step(ia, es->nu_step);
 
         mu_sum(ap, ia, sc, sg,
