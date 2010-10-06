@@ -50,7 +50,7 @@ inline real sub_bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
     unsigned int i;
     real h_prob;
     real rg, rs;
-    vector xyz;
+    vector xyz = ZERO_VECTOR;
     real bg_prob = 0.0;
     R_POINTS r_pt;
 
