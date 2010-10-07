@@ -218,7 +218,12 @@ static inline cl_int readKernelResults(CLInfo* ci,
         return err;
     }
 
+    double t1, t2;
+    t1 = mwGetTimeMilli();
     sumMuResults(bg_progress, mu_results, mu_steps, r_steps);
+    t2 = mwGetTimeMilli();
+    printf("Sum mu time: %f milliseconds\n", t2 - t1);
+
 
     /* CHECKME: Do we need this event? */
     err = clEnqueueUnmapMemObject(ci->queue, cm->outMu, mu_results, 0, NULL, &evs->outUnmap);
@@ -236,7 +241,11 @@ static inline cl_int readKernelResults(CLInfo* ci,
         return err;
     }
 
+    t1 = mwGetTimeMilli();
     sumProbsResults(probs_results, probs_tmp, mu_steps, r_steps, number_streams);
+    t2 = mwGetTimeMilli();
+    printf("Sum probs time: %f ms\n", t2 - t1);
+
 
     err = clEnqueueUnmapMemObject(ci->queue, cm->outProbs, probs_tmp, 0, NULL, &evs->probUnmap);
     if (err != CL_SUCCESS)
@@ -272,13 +281,14 @@ static cl_int runNuStep(CLInfo* ci,
         return err;
     }
 
+    printf("Step took %f\n", mwEventTime(evs->endTmp));
+
     err = mwWaitReleaseEvent(&evs->endTmp);
     if (err != CL_SUCCESS)
     {
         warn("Failed to wait/release NDRange event: %s\n", showCLInt(err));
         return err;
     }
-
 
     /* Swap the temporary buffer to the main buffer, and set the
      * kernel arguments to the new temporary buffer */
@@ -346,6 +356,7 @@ static real runIntegral(CLInfo* ci,
 
     for (i = 1; i < ia->nu_steps; ++i)
     {
+        double t1 = mwGetTimeMilli();
         err = runNuStep(ci, cm, &evs,
                         &bg_sum, probs_results,
                         ia->mu_steps, ia->r_steps, ap->number_streams, i);
@@ -355,6 +366,9 @@ static real runIntegral(CLInfo* ci,
             warn("Failed to run nu step: %s\n", showCLInt(err));
             return NAN;
         }
+
+        double t2 = mwGetTimeMilli();
+        printf("Loop time: %f ms\n", t2 - t1);
     }
 
     /* Read results from final step */

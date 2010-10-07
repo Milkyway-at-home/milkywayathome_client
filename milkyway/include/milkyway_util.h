@@ -99,6 +99,13 @@ int mwRename(const char* oldf, const char* newf);
 
 double mwGetTime();
 
+#ifndef _WIN32
+double mwGetTimeMilli();
+long mwGetTimeMicro();
+#endif /* _WIN32 */
+
+#define mus_to_s(mus) ((double) (mus) / 1.0e6)
+
 void _mw_time_prefix(char* buf, size_t bufSize);
 #define mw_report(msg, ...)                             \
     {                                                   \

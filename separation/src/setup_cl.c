@@ -38,10 +38,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 /* Only sets the constant arguments, not the outputs which we double buffer */
-static inline cl_int separationSetKernelArgs(const ASTRONOMY_PARAMETERS* ap,
-                                             const INTEGRAL_AREA* ia,
-                                             const CLInfo* ci,
-                                             SeparationCLMem* cm)
+static inline cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm)
 {
     cl_int err = CL_SUCCESS;
 
@@ -157,7 +154,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
         return err;
     }
 
-    err = separationSetKernelArgs(ap, ia, ci, cm);
+    err = separationSetKernelArgs(ci, cm);
     if (err != CL_SUCCESS)
     {
         fail("Failed to set integral kernel arguments: %s\n", showCLInt(err));

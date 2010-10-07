@@ -203,12 +203,27 @@ double mwGetTime()
 
 #else
 
+/* Seconds */
 double mwGetTime()
 {
     struct timeval t;
     struct timezone tzp;
     gettimeofday(&t, &tzp);
     return t.tv_sec + t.tv_usec*1e-6;
+}
+
+/* Get time in microseconds */
+long mwGetTimeMicro()
+{
+    struct timeval t;
+    gettimeofday(&t, NULL);
+    return 1000000 * t.tv_sec  + t.tv_usec;
+}
+
+/* Get time in milliseconds */
+double mwGetTimeMilli()
+{
+    return (double) mwGetTimeMicro() / 1.0e3;
 }
 
 #endif
