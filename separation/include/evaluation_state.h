@@ -30,7 +30,7 @@ typedef struct
 {
     real background_integral;
     real* stream_integrals;
-    ST_PROBS* probs;
+    KAHAN* probs;
 } INTEGRAL;
 
 typedef struct
@@ -38,7 +38,7 @@ typedef struct
     /* State for integral calculation. */
     INTEGRAL* integrals;
     unsigned int nu_step, mu_step;   /* r_steps aren't checkpointed */
-    BG_PROB sum;                     /* Accumulated during the nu_sum */
+    KAHAN sum;
 
     unsigned int current_calc_probs; /* progress of completed integrals */
 
@@ -48,7 +48,7 @@ typedef struct
     unsigned int number_streams;
 } EVALUATION_STATE;
 
-#define EMPTY_EVALUATION_STATE { NULL, 0, 0, ZERO_BG_PROB, 0, 0, 0, 0 }
+#define EMPTY_EVALUATION_STATE { NULL, 0, 0, ZERO_KAHAN, 0, 0, 0, 0 }
 
 void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es);
 void free_evaluation_state(EVALUATION_STATE* es);

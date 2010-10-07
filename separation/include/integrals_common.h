@@ -57,7 +57,7 @@ inline void stream_sums(real* st_probs,
 }
 
 ALWAYS_INLINE
-inline void sum_probs(ST_PROBS* probs,
+inline void sum_probs(KAHAN* probs,
                       const real* st_probs,
                       const real V_reff_xr_rp3,
                       const unsigned int nstream)
@@ -65,7 +65,7 @@ inline void sum_probs(ST_PROBS* probs,
     unsigned int i;
 
     for (i = 0; i < nstream; ++i)
-        KAHAN_ADD(probs[i].st_prob_int, V_reff_xr_rp3 * st_probs[i], probs[i].st_prob_int_c);
+        KAHAN_ADD(probs[i], V_reff_xr_rp3 * st_probs[i]);
 }
 
 ALWAYS_INLINE

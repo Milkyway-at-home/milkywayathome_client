@@ -96,17 +96,17 @@ static real* mapProbsResults(CLInfo* ci,
     return mapOutProbs;
 }
 
-static inline void sumStreamResults(ST_PROBS* probs_results,
+static inline void sumStreamResults(KAHAN* probs_results,
                                     const real* probs_V_reff_xr_rp3,
                                     const cl_uint number_streams)
 {
     cl_uint i;
 
     for (i = 0; i < number_streams; ++i)
-        KAHAN_ADD(probs_results[i].st_prob_int, probs_V_reff_xr_rp3[i], probs_results[i].st_prob_int_c);
+        KAHAN_ADD(probs_results[i], probs_V_reff_xr_rp3[i]);
 }
 
-static inline void sumProbsResults(ST_PROBS* probs_results,
+static inline void sumProbsResults(KAHAN* probs_results,
                                    const real* st_probs_V_reff_xr_rp3_mu_r,
                                    const cl_uint mu_steps,
                                    const cl_uint r_steps,
@@ -149,7 +149,7 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
 /* The mu and r steps for a nu step were done in parallel. After that
  * we need to add the result to the running total + correction from
  * all the nu steps */
-static inline void sumMuResults(BG_PROB* bg_prob,
+static inline void sumMuResults(KAHAN* bg_prob,
                                 const real* mu_results,
                                 const cl_uint mu_steps,
                                 const cl_uint r_steps)
@@ -160,7 +160,7 @@ static inline void sumMuResults(BG_PROB* bg_prob,
     {
         for (j = 0; j < r_steps; ++j)
         {
-            KAHAN_ADD(bg_prob->bg_int, mu_results[r_steps * i + j], bg_prob->correction);
+            KAHAN_ADD(*bg_prob, mu_results[r_steps * i + j]);
         }
     }
 }
@@ -182,8 +182,8 @@ static cl_int setNuKernelArg(CLInfo* ci, const cl_uint nu_step)
 static inline cl_int readKernelResults(CLInfo* ci,
                                        SeparationCLMem* cm,
                                        SeparationCLEvents* evs,
-                                       BG_PROB* bg_progress,
-                                       ST_PROBS* probs_results,
+                                       KAHAN* restrict bg_progress,
+                                       KAHAN* restrict probs_results,
                                        const cl_uint mu_steps,
                                        const cl_uint r_steps,
                                        const cl_uint number_streams)
@@ -252,8 +252,8 @@ static cl_int runNuStep(CLInfo* ci,
                         SeparationCLMem* cm,
                         SeparationCLEvents* evs,
 
-                        BG_PROB* bg_progress,    /* Accumulating results over nu steps */
-                        ST_PROBS* probs_results,
+                        KAHAN* restrict bg_progress,    /* Accumulating results over nu steps */
+                        KAHAN* restrict probs_results,
 
                         const cl_uint mu_steps,
                         const cl_uint r_steps,
@@ -311,13 +311,13 @@ static cl_int runNuStep(CLInfo* ci,
 
 static real runIntegral(CLInfo* ci,
                         SeparationCLMem* cm,
-                        ST_PROBS* probs_results,
+                        KAHAN* probs_results,
                         const ASTRONOMY_PARAMETERS* ap,
                         const INTEGRAL_AREA* ia)
 {
     cl_uint i;
     cl_int err;
-    BG_PROB bg_sum = ZERO_BG_PROB;
+    KAHAN bg_sum = ZERO_KAHAN;
     SeparationCLEvents evs;
 
     mwEnableProfiling(ci);
@@ -366,7 +366,7 @@ static real runIntegral(CLInfo* ci,
     }
 
 
-    return bg_sum.bg_int + bg_sum.correction;
+    return bg_sum.sum + bg_sum.correction;
 }
 
 /* FIXME: This can only work right now for 1 integral */
@@ -374,7 +374,7 @@ real integrateCL(const ASTRONOMY_PARAMETERS* ap,
                  const INTEGRAL_AREA* ia,
                  const STREAM_CONSTANTS* sc,
                  const STREAM_GAUSS* sg,
-                 ST_PROBS* probs_results)
+                 KAHAN* probs_results)
 {
     real result = NAN;
     CLInfo ci = EMPTY_CL_INFO;

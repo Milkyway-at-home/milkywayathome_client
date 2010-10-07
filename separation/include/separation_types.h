@@ -205,41 +205,13 @@ typedef struct SEPARATION_ALIGN(128)
 
 typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
-    real st_prob_int;    /* for Kahan summation */
-    real st_prob_int_c;
-} ST_PROBS;
-
-#define ZERO_ST_PROBS = { 0.0, 0.0 }
-
-typedef struct SEPARATION_ALIGN(2 * sizeof(real))
-{
-    real bg_int;
-    real correction;   /* Correction for Kahan summation */
-} BG_PROB;
-
-/* TODO: All these tuples of reals really serve the same
- * purpose. Fix having all of them. */
-typedef struct SEPARATION_ALIGN(2 * sizeof(real))
-{
     real sum;
     real correction;
-} PROB_SUM;
+} KAHAN;
 
-#define ZERO_PROB_SUM { 0.0, 0.0 }
+#define ZERO_KAHAN { 0.0, 0.0 }
 
-#define CLEAR_BG_PROB(bgp) { (bgp).bg_int = 0.0; (bgp).correction = 0.0; }
-
-/* Add b to a */
-#define INCADD_BG_PROB(a, b) { (a).bg_int += (b).bg_int; (a).correction += (b).correction; }
-
-#define ZERO_BG_PROB { 0.0, 0.0 }
-
-typedef struct SEPARATION_ALIGN(2 * sizeof(real))
-{
-    real st_only_sum;
-    real st_only_sum_c;
-} ST_SUM;
-
+#define CLEAR_KAHAN(k) { (k).sum = 0.0; (k).correction = 0.0; }
 
 #ifdef __cplusplus
 }

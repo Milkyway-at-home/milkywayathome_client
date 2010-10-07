@@ -33,7 +33,7 @@ void initialize_integral(INTEGRAL* integral, unsigned int number_streams)
 {
     integral->background_integral = 0.0;
     integral->stream_integrals = (real*) callocSafe(number_streams, sizeof(real));
-    integral->probs = (ST_PROBS*) callocSafe(number_streams, sizeof(ST_PROBS));
+    integral->probs = (KAHAN*) callocSafe(number_streams, sizeof(KAHAN));
 }
 
 void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
@@ -122,7 +122,7 @@ static int read_state(FILE* f, EVALUATION_STATE* es)
     {
         fread(&i->background_integral, sizeof(i->background_integral), 1, f);
         fread(i->stream_integrals, sizeof(real), es->number_streams, f);
-        fread(i->probs, sizeof(ST_PROBS), es->number_streams, f);
+        fread(i->probs, sizeof(KAHAN), es->number_streams, f);
     }
 
     fread(str_buf, sizeof(checkpoint_tail), 1, f);
@@ -172,7 +172,7 @@ static inline void write_state(FILE* f, const EVALUATION_STATE* es)
     {
         fwrite(&i->background_integral, sizeof(i->background_integral), 1, f);
         fwrite(i->stream_integrals, sizeof(real), es->number_streams, f);
-        fwrite(i->probs, sizeof(ST_PROBS), es->number_streams, f);
+        fwrite(i->probs, sizeof(KAHAN), es->number_streams, f);
     }
 
     fwrite(checkpoint_tail, sizeof(checkpoint_tail), 1, f);

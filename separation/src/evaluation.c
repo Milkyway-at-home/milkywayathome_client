@@ -71,14 +71,14 @@ static void print_stream_integrals(const FINAL_STREAM_INTEGRALS* fsi, const unsi
     fprintf(stderr, " </stream_integrals>\n");
 }
 
-static inline void calculate_stream_integrals(const ST_PROBS* probs,
+static inline void calculate_stream_integrals(const KAHAN* probs,
                                               real* stream_integrals,
                                               const unsigned int number_streams)
 {
     unsigned int i;
 
     for (i = 0; i < number_streams; ++i)
-        stream_integrals[i] = probs[i].st_prob_int + probs[i].st_prob_int_c;
+        stream_integrals[i] = probs[i].sum + probs[i].correction;
 }
 
 /* Add up completed integrals for progress reporting */
@@ -129,7 +129,7 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         else
             fail("Failed to calculate integral %u\n", es->current_integral);
 
-        CLEAR_BG_PROB(es->sum);
+        CLEAR_KAHAN(es->sum);
     }
 }
 

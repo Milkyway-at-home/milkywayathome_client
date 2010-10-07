@@ -136,7 +136,7 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
                                   const real V,
                                   const R_POINTS* r_pts,
                                   real* st_probs,
-                                  ST_PROBS* probs)
+                                  KAHAN* probs)
 {
     real bg_prob;
 
@@ -182,7 +182,7 @@ static void r_sum(const ASTRONOMY_PARAMETERS* ap,
                   const LB_TRIG lbt,
                   const real id,
                   real* st_probs,
-                  ST_PROBS* probs,
+                  KAHAN* probs,
                   EVALUATION_STATE* es,
                   const R_POINTS* r_pts,
                   const R_CONSTS* rc,
@@ -198,7 +198,7 @@ static void r_sum(const ASTRONOMY_PARAMETERS* ap,
 
         bg_prob = V * bg_probability(ap, sc, sg, lbt, rc[r_step].reff_xr_rp3, V, &r_pts[r_step * ap->convolve], st_probs, probs);
 
-        KAHAN_ADD(es->sum.bg_int, bg_prob, es->sum.correction);
+        KAHAN_ADD(es->sum, bg_prob);
     }
 }
 
@@ -209,7 +209,7 @@ static inline void mu_sum(const ASTRONOMY_PARAMETERS* ap,
                           const STREAM_GAUSS* sg,
                           const NU_ID nuid,
                           real* st_probs,
-                          ST_PROBS* probs,
+                          KAHAN* probs,
                           const R_POINTS* r_pts,
                           const R_CONSTS* rc,
                           EVALUATION_STATE* es)
@@ -241,7 +241,7 @@ static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
                    const STREAM_CONSTANTS* sc,
                    const STREAM_GAUSS* sg,
                    real* st_probs,
-                   ST_PROBS* probs,
+                   KAHAN* probs,
                    const R_POINTS* r_pts,
                    const R_CONSTS* rc,
                    EVALUATION_STATE* es)
@@ -264,7 +264,7 @@ real integrate(const ASTRONOMY_PARAMETERS* ap,
                const INTEGRAL_AREA* ia,
                const STREAM_CONSTANTS* sc,
                const STREAM_GAUSS* sg,
-               ST_PROBS* probs,
+               KAHAN* probs,
                EVALUATION_STATE* es)
 {
     real result;
@@ -278,7 +278,7 @@ real integrate(const ASTRONOMY_PARAMETERS* ap,
     nu_sum(ap, ia, sc, sg, st_probs, probs, r_pts, rc, es);
     es->nu_step = 0;
 
-    result = es->sum.bg_int + es->sum.correction;
+    result = es->sum.sum + es->sum.correction;
 
     mwAlignedFree(st_probs);
     mwAlignedFree(r_pts);

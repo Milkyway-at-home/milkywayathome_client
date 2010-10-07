@@ -100,7 +100,7 @@ static inline real likelihood_bg_probability(const ASTRONOMY_PARAMETERS* ap,
 static inline real stream_sum(const unsigned int number_streams,
                               const FINAL_STREAM_INTEGRALS* fsi,
                               real* st_prob,
-                              ST_SUM* st_sum,
+                              KAHAN* st_only_sum,
                               const real* exp_stream_weights,
                               const real sum_exp_weights,
                               real bg_only)
@@ -119,7 +119,7 @@ static inline real stream_sum(const unsigned int number_streams,
         else
             st_only = mw_log10(st_only / sum_exp_weights);
 
-        KAHAN_ADD(st_sum[i].st_only_sum, st_only, st_sum[i].st_only_sum_c);
+        KAHAN_ADD(st_only_sum[i], st_only);
     }
     star_prob /= sum_exp_weights;
 
@@ -144,7 +144,7 @@ static inline real get_exp_stream_weights(real* exp_stream_weights,
     return sum_exp_weights;
 }
 
-static inline void get_stream_only_likelihood(ST_SUM* st_sum,
+static inline void get_stream_only_likelihood(KAHAN* st_only_sum,
                                               const unsigned int number_stars,
                                               const unsigned int number_streams)
 {
@@ -152,10 +152,10 @@ static inline void get_stream_only_likelihood(ST_SUM* st_sum,
     fprintf(stderr, "<stream_only_likelihood>");
     for (i = 0; i < number_streams; i++)
     {
-        st_sum[i].st_only_sum += st_sum[i].st_only_sum_c;
-        st_sum[i].st_only_sum /= number_stars;
+        st_only_sum[i].sum += st_only_sum[i].correction;
+        st_only_sum[i].sum /= number_stars;
 
-        fprintf(stderr, " %.20lf", st_sum[i].st_only_sum - 3.0);
+        fprintf(stderr, " %.20lf", st_only_sum[i].sum - 3.0);
     }
     fprintf(stderr, " </stream_only_likelihood>\n");
 }
@@ -167,14 +167,14 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
                            const FINAL_STREAM_INTEGRALS* fsi,
                            const STREAM_GAUSS* sg,
                            R_POINTS* r_pts,
-                           ST_SUM* st_sum,
+                           KAHAN* st_sum,
                            real* st_prob,
                            const real* exp_stream_weights,
                            const real sum_exp_weights,
                            const real exp_background_weight)
 {
-    PROB_SUM prob = ZERO_PROB_SUM;
-    PROB_SUM bg_only = ZERO_PROB_SUM;
+    KAHAN prob = ZERO_KAHAN;
+    KAHAN bg_only = ZERO_KAHAN;
 
     unsigned int current_star_point;
     real star_prob;
@@ -212,7 +212,7 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
         if (star_prob != 0.0)
         {
             star_prob = mw_log10(star_prob);
-            KAHAN_ADD(prob.sum, star_prob, prob.correction);
+            KAHAN_ADD(prob, star_prob);
         }
         else
         {
@@ -225,7 +225,7 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
         else
             bg = mw_log10(bg / sum_exp_weights);
 
-        KAHAN_ADD(bg_only.sum, bg, bg_only.correction);
+        KAHAN_ADD(bg_only, bg);
     }
 
     prob.sum += prob.correction;
@@ -250,7 +250,7 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
 {
     real* st_prob;
     R_POINTS* r_pts;
-    ST_SUM* st_sum;
+    KAHAN* st_sum;
     real* exp_stream_weights;
     real sum_exp_weights;
     real likelihood_val;
@@ -259,7 +259,7 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
 
     st_prob = (real*) mallocSafe(sizeof(real) * streams->number_streams);
     r_pts = (R_POINTS*) mallocSafe(sizeof(R_POINTS) * ap->convolve);
-    st_sum = (ST_SUM*) callocSafe(sizeof(ST_SUM), streams->number_streams);
+    st_sum = (KAHAN*) callocSafe(sizeof(KAHAN), streams->number_streams);
     exp_stream_weights = (real*) mallocSafe(sizeof(real) * streams->number_streams);
 
     sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);
