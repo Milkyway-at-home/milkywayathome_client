@@ -34,6 +34,20 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define CL_CALLBACK
 #endif
 
+cl_int mwSetOutOfOrder(CLInfo* ci)
+{
+    cl_int err;
+
+    err = clSetCommandQueueProperty(ci->queue,
+                                    CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE,
+                                    CL_TRUE,
+                                    NULL);
+    if (err != CL_SUCCESS)
+        warn("Setting out of order on queue failed: %s\n", showCLInt(err));
+
+    return err;
+}
+
 cl_int mwEnableProfiling(CLInfo* ci)
 {
     cl_int err;
