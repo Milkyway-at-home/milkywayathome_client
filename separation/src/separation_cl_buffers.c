@@ -216,7 +216,7 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
 }
 
 
-static inline void swapOutputBuffers(SeparationCLMem* cm)
+void swapOutputBuffers(SeparationCLMem* cm)
 {
     cl_mem tmp;
 
@@ -229,15 +229,12 @@ static inline void swapOutputBuffers(SeparationCLMem* cm)
     cm->outProbs     = tmp;
 }
 
-cl_int separationSwapOutputBuffers(const CLInfo* ci, SeparationCLMem* cm)
+/* Set kernel arguments to the temporary output buffers */
+cl_int separationSetOutputBuffers(CLInfo* ci, SeparationCLMem* cm)
 {
     cl_int err = CL_SUCCESS;
 
-    printf("Swapping buffers\n");
-
-    swapOutputBuffers(cm);
-
-    /* Output buffers */
+    /* Set output buffer arguments */
     err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outMu_tmp);
     err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->outProbs_tmp);
 

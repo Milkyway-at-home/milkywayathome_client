@@ -101,6 +101,8 @@ double mwEventTime(cl_event ev);
 cl_int getDevInfo(DevInfo* di, cl_device_id dev);
 void printDevInfo(const DevInfo* di);
 
+cl_int mwWaitReleaseEvent(cl_event* ev);
+
 #ifdef CL_VERSION_1_1
 cl_event mwCreateEvent(CLInfo* ci);
 cl_int mwFinishEvent(cl_event ev);

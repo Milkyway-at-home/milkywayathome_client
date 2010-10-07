@@ -85,6 +85,30 @@ double mwEventTime(cl_event ev)
     return (double) mwEventTimeNS(ev) / 10.0e9;
 }
 
+/* Wait for an event then release it */
+cl_int mwWaitReleaseEvent(cl_event* ev)
+{
+    cl_int err;
+
+    assert(ev);
+
+    err = clWaitForEvents(1, ev);
+    if (err != CL_SUCCESS)
+    {
+        warn("%s: Failed to wait for event: %s\n", FUNC_NAME, showCLInt(err));
+        return err;
+    }
+
+    err = clReleaseEvent(*ev);
+    if (err != CL_SUCCESS)
+    {
+        warn("%s: Failed to release event: %s\n", FUNC_NAME, showCLInt(err));
+        return err;
+    }
+
+    return CL_SUCCESS;
+}
+
 #ifdef CL_VERSION_1_1
 
 cl_event mwCreateEvent(CLInfo* ci)

@@ -35,20 +35,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef struct
 {
-    cl_event ndRange;  /* kernel execution event */
-    cl_event outRead;  /* reading main output buffer */
-    cl_event probRead; /* reading stream probs buffer */
+    cl_event outMap;  /* reading main output buffer */
+    cl_event probMap; /* reading stream probs buffer */
 
-    cl_event probCalc;  /* custom events for summing temporary output buffers */
-    cl_event stProbCalc;
-} _SeparationCLEvents;
+    cl_event outUnmap;
+    cl_event probUnmap;
 
-#define N_SEP_CL_EVENTS (sizeof(_SeparationCLEvents) / sizeof(cl_event))
-
-typedef union
-{
-    _SeparationCLEvents events;
-    cl_event eventv[N_SEP_CL_EVENTS];
+    cl_event endTmp;   /* end of the NDRange writing to the temporary output buffers */
 } SeparationCLEvents;
 
 static void printSeparationEventTimes(SeparationCLEvents* evs)
@@ -56,9 +49,9 @@ static void printSeparationEventTimes(SeparationCLEvents* evs)
     printf("NDrange:    %.15g s\n"
            "Read out:   %.15g s\n"
            "Read probs: %.15g s\n",
-           mwEventTime(evs->events.ndRange),
-           mwEventTime(evs->events.outRead),
-           mwEventTime(evs->events.probRead));
+           mwEventTime(evs->endTmp),
+           mwEventTime(evs->outMap),
+           mwEventTime(evs->probMap));
 }
 
 static real* mapIntegralResults(CLInfo* ci,
@@ -71,10 +64,10 @@ static real* mapIntegralResults(CLInfo* ci,
 
     mapOutMu = (real*) clEnqueueMapBuffer(ci->queue,
                                           cm->outMu,
-                                          CL_TRUE, CL_MAP_READ,
+                                          CL_FALSE, CL_MAP_READ,
                                           0, resultsSize,
-                                          1, &evs->events.ndRange, /* Wait for calculation */
-                                          &evs->events.outRead,
+                                          0, NULL,
+                                          &evs->outMap,
                                           &err);
     if (err != CL_SUCCESS)
         warn("Error mapping integral result buffer: %s\n", showCLInt(err));
@@ -92,10 +85,10 @@ static real* mapProbsResults(CLInfo* ci,
 
     mapOutProbs = (real*) clEnqueueMapBuffer(ci->queue,
                                              cm->outProbs,
-                                             CL_TRUE, CL_MAP_READ,
+                                             CL_FALSE, CL_MAP_READ,
                                              0, probsResultsSize,
-                                             1, &evs->events.ndRange, /* Wait for calculation */
-                                             &evs->events.probRead,
+                                             0, NULL,
+                                             &evs->probMap,
                                              &err);
     if (err != CL_SUCCESS)
         warn("Error mapping probs result buffer: %s\n", showCLInt(err));
@@ -143,7 +136,7 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
                                  ci->kern,
                                  2,
                                  NULL, global, NULL,
-                                 0, NULL, &evs->events.ndRange);
+                                 0, NULL, &evs->endTmp);
     if (err != CL_SUCCESS)
     {
         warn("Error enqueueing integral kernel execution: %s\n", showCLInt(err));
@@ -218,22 +211,34 @@ static inline cl_int readKernelResults(CLInfo* ci,
         return -1;
     }
 
-    //cl_event sumEvent = mwCreateEvent(ci);
+    err = mwWaitReleaseEvent(&evs->outMap);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to wait/release map output: %s\n", showCLInt(err));
+        return err;
+    }
 
     sumMuResults(bg_progress, mu_results, mu_steps, r_steps);
-    sumProbsResults(probs_results, probs_tmp, mu_steps, r_steps, number_streams);
 
-    //mwFinishEvent(sumEvent);
-
-
-    err = clEnqueueUnmapMemObject(ci->queue, cm->outMu, mu_results, 0, NULL, NULL);
+    /* CHECKME: Do we need this event? */
+    err = clEnqueueUnmapMemObject(ci->queue, cm->outMu, mu_results, 0, NULL, &evs->outUnmap);
     if (err != CL_SUCCESS)
     {
         warn("Failed to unmap results buffer: %s\n", showCLInt(err));
         return err;
     }
 
-    err = clEnqueueUnmapMemObject(ci->queue, cm->outProbs, probs_tmp, 0, NULL, NULL);
+    /* Probs output */
+    err = mwWaitReleaseEvent(&evs->probMap);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to wait/release probs output: %s\n", showCLInt(err));
+        return err;
+    }
+
+    sumProbsResults(probs_results, probs_tmp, mu_steps, r_steps, number_streams);
+
+    err = clEnqueueUnmapMemObject(ci->queue, cm->outProbs, probs_tmp, 0, NULL, &evs->probUnmap);
     if (err != CL_SUCCESS)
     {
         warn("Failed to unmap probs buffer: %s\n", showCLInt(err));
@@ -257,6 +262,9 @@ static cl_int runNuStep(CLInfo* ci,
 {
     cl_int err;
 
+    printf("Nu step %u:\n", nu_step);
+    //printSeparationEventTimes(evs);
+
     err = setNuKernelArg(ci, nu_step);
     if (err != CL_SUCCESS)
     {
@@ -264,13 +272,25 @@ static cl_int runNuStep(CLInfo* ci,
         return err;
     }
 
-    err = separationSwapOutputBuffers(ci, cm);
+    err = mwWaitReleaseEvent(&evs->endTmp);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to wait/release NDRange event: %s\n", showCLInt(err));
+        return err;
+    }
+
+
+    /* Swap the temporary buffer to the main buffer, and set the
+     * kernel arguments to the new temporary buffer */
+    swapOutputBuffers(cm);
+    err = separationSetOutputBuffers(ci, cm);
     if (err != CL_SUCCESS)
     {
         warn("Failed to set output buffer arguments on step %u: %s\n", nu_step, showCLInt(err));
         return err;
     }
 
+    /* Enqueue write to temporary buffers */
     err = enqueueIntegralKernel(ci, evs, mu_steps, r_steps);
     if (err != CL_SUCCESS)
     {
@@ -278,15 +298,13 @@ static cl_int runNuStep(CLInfo* ci,
         return err;
     }
 
+    /* Read results from the main buffer */
     err = readKernelResults(ci, cm, evs, bg_progress, probs_results, mu_steps, r_steps, number_streams);
     if (err != CL_SUCCESS)
     {
         warn("Failed to read kernel results: %s\n", showCLInt(err));
         return err;
     }
-
-    printf("Nu step %u:\n", nu_step);
-    //printSeparationEventTimes(evs);
 
     return CL_SUCCESS;
 }
@@ -302,9 +320,31 @@ static real runIntegral(CLInfo* ci,
     BG_PROB bg_sum = ZERO_BG_PROB;
     SeparationCLEvents evs;
 
-    //mwEnableProfiling(ci);
+    mwEnableProfiling(ci);
 
-    for (i = 0; i < ia->nu_steps; ++i)
+    /* Prepare 1st step. Need to run first step to fill the temporary buffer */
+    err = setNuKernelArg(ci, 0);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to set nu kernel argument for step 0: %s\n", showCLInt(err));
+        return NAN;
+    }
+
+    err = separationSetOutputBuffers(ci, cm);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to set output buffer arguments on step %u: %s\n", 0, showCLInt(err));
+        return NAN;
+    }
+
+    err = enqueueIntegralKernel(ci, &evs, ia->mu_steps, ia->r_steps);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to enqueue first integral kernel: %s\n", showCLInt(err));
+        return NAN;
+    }
+
+    for (i = 1; i < ia->nu_steps; ++i)
     {
         err = runNuStep(ci, cm, &evs,
                         &bg_sum, probs_results,
@@ -313,10 +353,18 @@ static real runIntegral(CLInfo* ci,
         if (err != CL_SUCCESS)
         {
             warn("Failed to run nu step: %s\n", showCLInt(err));
-            bg_sum.bg_int = bg_sum.correction = NAN;
-            break;
+            return NAN;
         }
     }
+
+    /* Read results from final step */
+    err = readKernelResults(ci, cm, &evs, &bg_sum, probs_results, ia->mu_steps, ia->r_steps, ap->number_streams);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to read final kernel results: %s\n", showCLInt(err));
+        return NAN;
+    }
+
 
     return bg_sum.bg_int + bg_sum.correction;
 }
