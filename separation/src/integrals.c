@@ -284,15 +284,15 @@ real integrate(const ASTRONOMY_PARAMETERS* ap,
     R_POINTS* r_pts;
     R_CONSTS* rc;
 
-    st_probs = (real*) mallocSafe(sizeof(real) * ap->number_streams);
+    st_probs = (real*) mwMallocAligned(sizeof(real) * ap->number_streams, 2 * sizeof(real));
     r_pts = precalculate_r_pts(ap, ia, sg, &rc);
 
     result = nu_sum(ap, ia, sc, sg, st_probs, probs, r_pts, rc, es);
     es->nu_step = 0;
 
-    free(st_probs);
-    free(r_pts);
-    free(rc);
+    mwAlignedFree(st_probs);
+    mwAlignedFree(r_pts);
+    mwAlignedFree(rc);
 
     return result;
 }
