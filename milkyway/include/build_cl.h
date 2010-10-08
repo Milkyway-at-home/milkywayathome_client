@@ -26,6 +26,7 @@ extern "C" {
 #endif
 
 #include "milkyway_cl.h"
+#include "build_cl.h"
 
 typedef struct
 {

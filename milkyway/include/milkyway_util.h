@@ -29,9 +29,6 @@ extern "C" {
 #include "milkyway_math.h"
 #include "milkyway_types.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-
 #ifndef _WIN32
   #include <unistd.h>
   #include <fcntl.h>
@@ -49,6 +46,10 @@ extern "C" {
     #include <boinc/diagnostics.h>
   #endif /* BOINC_DEBUG */
 #endif /* BOINC_APPLICATION */
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #if MW_ENABLE_DEBUG
     /* convenient functions for printing debugging stuffs */

@@ -80,7 +80,7 @@ void print_evaluation_state(const EVALUATION_STATE* es)
            es->nu_step,
            es->mu_step,
            es->current_integral,
-           es->sum.bg_int,
+           es->sum.sum,
            es->sum.correction);
 
     for (i = es->integrals; i < es->integrals + es->number_integrals; ++i)
@@ -91,7 +91,7 @@ void print_evaluation_state(const EVALUATION_STATE* es)
             printf("  %g, ", i->stream_integrals[j]);
         printf("Probs = ");
         for (j = 0; j < es->number_streams; ++j)
-            printf(" { %g, %g },", i->probs[j].st_prob_int, i->probs[j].st_prob_int_c);
+            printf(" { %g, %g },", i->probs[j].sum, i->probs[j].correction);
         printf("\n");
     }
     printf("\n");
