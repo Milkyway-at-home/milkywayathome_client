@@ -66,15 +66,17 @@ inline real rg_calc(const vector xyz, const real q_inv_sqr)
 }
 
 ALWAYS_INLINE HOT CONST_F
-inline real h_prob_fast(const real qw_r3_N, const real rg, const real rs)
+inline real h_prob_fast(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap, const real qw_r3_N, const real rg)
 {
+    const real rs = rg + ap->r0;
     return qw_r3_N / (rg * cube(rs));
 }
 
 ALWAYS_INLINE HOT CONST_F
 inline real h_prob_slow(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap, const real qw_r3_N, const real rg)
 {
-    return qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rg + ap->r0, ap->alpha_delta3));
+    const real rs = rg + ap->r0;
+    return qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
 }
 
 ALWAYS_INLINE HOT CONST_F

@@ -42,8 +42,7 @@ static inline real likelihood_bg_probability_main(const ASTRONOMY_PARAMETERS* ap
                                                   real* st_probs)
 {
     unsigned int i;
-    real h_prob;
-    real rg, rs;
+    real h_prob, rg;
     vector xyz;
     real bg_prob = 0.0;
 
@@ -53,12 +52,11 @@ static inline real likelihood_bg_probability_main(const ASTRONOMY_PARAMETERS* ap
     {
         lbr2xyz_2(xyz, r_pts[i].r_point, lbt);
         rg = rg_calc(xyz, ap->q_inv_sqr);
-        rs = rg + ap->r0;
 
         /* CHECKME: Not having quadratic term on slow one looks like a bug but I'm not sure */
         if (ap->fast_h_prob)
         {
-            h_prob = h_prob_fast(r_pts[i].qw_r3_N, rg, rs);
+            h_prob = h_prob_fast(ap, r_pts[i].qw_r3_N, rg);
             /* the Hernquist profile includes a quadratic term in g */
             if (ap->aux_bg_profile)
                 h_prob += aux_prob(ap, r_pts[i].qw_r3_N, r_pts[i].r_in_mag, r_pts[i].r_in_mag2);

@@ -38,6 +38,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define FAST_HPROB 1
 #define AUX_BG_PROFILE 0
 
+#if FAST_HPROB
+  #define h_prob_f h_prob_fast
+#else
+  #define h_prob_f h_prob_slow
+#endif /* FAST_H_PROB */
+
 __attribute__ ((always_inline))
 inline real sub_bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
                                __constant STREAM_CONSTANTS* sc,
@@ -49,7 +55,7 @@ inline real sub_bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
 {
     unsigned int i;
     real h_prob;
-    real rg, rs;
+    real rg;
     vector xyz = ZERO_VECTOR;
     real bg_prob = 0.0;
     R_POINTS r_pt;
@@ -60,21 +66,13 @@ inline real sub_bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
         lbr2xyz_2(xyz, r_pt.r_point, lbt);
 
         rg = rg_calc(xyz, ap->q_inv_sqr);
-        rs = rg + ap->r0;
 
-      #if FAST_HPROB
-        h_prob = h_prob_fast(r_pt.qw_r3_N, rg, rs);
+        bg_prob += h_prob_f(ap, r_pt.qw_r3_N, rg);
 
-        #if AUX_BG_PROFILE
-        /* the Hernquist profile includes a quadratic term in g */
-        h_prob += aux_prob(ap, r_pt.qw_r3_N, r_pt.r_in_mag, r_pt.r_in_mag2);
-        #endif /* AUX_BG_PROFILE */
-
-        bg_prob += h_prob;
-
-      #else
-        bg_prob += h_prob_slow(ap, r_pt.qw_r3_N, rg);
-      #endif /* FAST_HPROB */
+      #if AUX_BG_PROFILE
+        /* Add a quadratic term in g to the Hernquist profile */
+        bg_prob += aux_prob(ap, r_pt.qw_r3_N, r_pt.r_in_mag, r_pt.r_in_mag2);
+      #endif /* AUX_BG_PROFILE */
 
         stream_sums(st_probs, sc, xyz, r_pt.qw_r3_N, ap->number_streams);
     }
