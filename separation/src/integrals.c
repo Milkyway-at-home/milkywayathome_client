@@ -65,16 +65,15 @@ static inline void do_boinc_checkpoint(const EVALUATION_STATE* es,
 
 #endif /* BOINC_APPLICATION */
 
-/* FIXME: I don't know what these do enough to name it properly */
 ALWAYS_INLINE HOT
-static inline real sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
-                                       const STREAM_CONSTANTS* sc,
-                                       const STREAM_GAUSS* sg,
-                                       const LB_TRIG lbt,
-                                       const int aux_bg_profile,
-                                       const unsigned int convolve,
-                                       const R_POINTS* r_pts,
-                                       real* st_probs)
+static inline real bg_probability_fast_hprob(const ASTRONOMY_PARAMETERS* ap,
+                                             const STREAM_CONSTANTS* sc,
+                                             const STREAM_GAUSS* sg,
+                                             const LB_TRIG lbt,
+                                             const int aux_bg_profile,
+                                             const unsigned int convolve,
+                                             const R_POINTS* r_pts,
+                                             real* st_probs)
 {
     unsigned int i;
     real h_prob, rg, rs;
@@ -89,7 +88,7 @@ static inline real sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
         rs = rg + ap->r0;
 
         h_prob = h_prob_fast(r_pts[i].qw_r3_N, rg, rs);
-        /* the Hernquist profile includes a quadratic term in g */
+        /* Add a quadratic term in g to the the Hernquist profile */
         if (aux_bg_profile)
             h_prob += aux_prob(ap, r_pts[i].qw_r3_N, r_pts[i].r_in_mag, r_pts[i].r_in_mag2);
         bg_prob += h_prob;
@@ -101,13 +100,14 @@ static inline real sub_bg_probability1(const ASTRONOMY_PARAMETERS* ap,
 }
 
 
-static real sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
-                                const STREAM_CONSTANTS* sc,
-                                const STREAM_GAUSS* sg,
-                                const LB_TRIG lbt,
-                                const unsigned int convolve,
-                                const R_POINTS* r_pts,
-                                real* st_probs)
+static real bg_probability_slow_hprob(const ASTRONOMY_PARAMETERS* ap,
+                                      const STREAM_CONSTANTS* sc,
+                                      const STREAM_GAUSS* sg,
+                                      const LB_TRIG lbt,
+                                      const int aux_bg_profile,
+                                      const unsigned int convolve,
+                                      const R_POINTS* r_pts,
+                                      real* st_probs)
 {
     unsigned int i;
     real rg;
@@ -121,6 +121,9 @@ static real sub_bg_probability2(const ASTRONOMY_PARAMETERS* ap,
         rg = rg_calc(xyz, ap->q_inv_sqr);
 
         bg_prob += h_prob_slow(ap, r_pts[i].qw_r3_N, rg);
+        if (aux_bg_profile)
+            bg_prob += aux_prob(ap, r_pts[i].qw_r3_N, r_pts[i].r_in_mag, r_pts[i].r_in_mag2);
+
         stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
     }
 
@@ -148,24 +151,25 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
 
     if (ap->fast_h_prob)
     {
-        bg_prob = sub_bg_probability1(ap,
-                                      sc,
-                                      sg,
-                                      lbt,
-                                      ap->aux_bg_profile,
-                                      ap->convolve,
-                                      r_pts,
-                                      st_probs);
+        bg_prob = bg_probability_fast_hprob(ap,
+                                            sc,
+                                            sg,
+                                            lbt,
+                                            ap->aux_bg_profile,
+                                            ap->convolve,
+                                            r_pts,
+                                            st_probs);
     }
     else
     {
-        bg_prob = sub_bg_probability2(ap,
-                                      sc,
-                                      sg,
-                                      lbt,
-                                      ap->convolve,
-                                      r_pts,
-                                      st_probs);
+        bg_prob = bg_probability_slow_hprob(ap,
+                                            sc,
+                                            sg,
+                                            lbt,
+                                            ap->aux_bg_profile,
+                                            ap->convolve,
+                                            r_pts,
+                                            st_probs);
     }
 
     sum_probs(probs, st_probs, V * reff_xr_rp3, ap->number_streams);
