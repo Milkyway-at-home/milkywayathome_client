@@ -190,9 +190,17 @@ typedef struct SEPARATION_ALIGN(128) _ASTRONOMY_PARAMETERS
     mw_int wedge;
     real background_weight;
 
+    /* Constants determined by other parameters */
+    real alpha, sn, r0, delta, coeff, alpha_delta3;
+    real q;
+    real q_inv_sqr;  /* 1 / q^2 */
+    real bg_a, bg_b, bg_c;
+
     /* really should be BGProbabilityFunc bg_prob_func, but need to
      * refer to pointer to this struct before  */
-
+   /* FIXME: Put this at the end; GPU pointer size may be different;
+    * Relies on struct being < next size up and a little extra
+    * space. */
   #ifndef __OPENCL_VERSION__
     real (*bg_prob_func) (const struct _ASTRONOMY_PARAMETERS*,
                           const STREAM_CONSTANTS*,
@@ -203,14 +211,8 @@ typedef struct SEPARATION_ALIGN(128) _ASTRONOMY_PARAMETERS
                           const R_POINTS*,
                           real*);
    #else
-    void* bg_prob_func;
+    void* _useless_padding_which_is_not_necessarily_the_right_size;
    #endif
-
-    /* Constants determined by other parameters */
-    real alpha, sn, r0, delta, coeff, alpha_delta3;
-    real q;
-    real q_inv_sqr;  /* 1 / q^2 */
-    real bg_a, bg_b, bg_c;
 } ASTRONOMY_PARAMETERS;
 
 #ifndef __OPENCL_VERSION__
@@ -222,11 +224,6 @@ typedef real (*BGProbabilityFunc) (const ASTRONOMY_PARAMETERS*,
                                    const unsigned int,
                                    const R_POINTS*,
                                    real*);
-
-#else
-
-typedef void* BGProbabilityFunc;
-
 #endif /* __OPENCL_VERSION__ */
 
 
@@ -235,9 +232,9 @@ typedef void* BGProbabilityFunc;
 #define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0.0, \
                                      0, 0,   \
                                      0, 0, 0, 0, \
-                                     0, 0, 0, 0.0, NULL, 0.0,          \
+                                     0, 0, 0, 0.0, 0.0,          \
                                      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
-                                     0.0, 0.0, 0.0 }
+                                     0.0, 0.0, 0.0, NULL }
 
 //    typedef struct __attribute__((packed, aligned(4 * sizeof(real)), vec_type_hint(float2)))  //SEPARATION_ALIGN(2 * sizeof(real))
 

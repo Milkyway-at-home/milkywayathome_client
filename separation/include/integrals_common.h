@@ -50,10 +50,7 @@ inline void stream_sums(real* st_probs,
     unsigned int i;
 
     for (i = 0; i < nstreams; ++i)
-    {
-        if (sc[i].large_sigma)
-            st_probs[i] += calc_st_prob_inc(&sc[i], xyz, qw_r3_N);
-    }
+        st_probs[i] += calc_st_prob_inc(&sc[i], xyz, qw_r3_N);
 }
 
 ALWAYS_INLINE

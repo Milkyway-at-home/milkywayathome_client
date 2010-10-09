@@ -19,20 +19,10 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "separation.h"
+
 #include <stdlib.h>
 #include <stdio.h>
-
-#include "milkyway_util.h"
-#include "milkyway_math.h"
-#include "separation_types.h"
-#include "evaluation_state.h"
-#include "separation_constants.h"
-#include "calculated_constants.h"
-#include "integrals.h"
-#include "likelihood.h"
-#include "star_points.h"
-#include "run_cl.h"
-#include "evaluation.h"
 
 static void final_stream_integrals(FINAL_STREAM_INTEGRALS* fsi,
                                    const EVALUATION_STATE* es,
@@ -73,12 +63,17 @@ static void print_stream_integrals(const FINAL_STREAM_INTEGRALS* fsi, const unsi
 
 static inline void calculate_stream_integrals(const KAHAN* probs,
                                               real* stream_integrals,
+                                              const STREAM_CONSTANTS* sc,
                                               const unsigned int number_streams)
 {
     unsigned int i;
 
     for (i = 0; i < number_streams; ++i)
-        stream_integrals[i] = probs[i].sum + probs[i].correction;
+    {
+        /* Rather than not adding up these streams, let them add and then
+         * ignore them. They would have ended up being zero anyway */
+        stream_integrals[i] = sc[i].large_sigma ? probs[i].sum + probs[i].correction : 0.0;
+    }
 }
 
 /* Add up completed integrals for progress reporting */
@@ -125,7 +120,7 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
         printf("Time = %.20g\n", t2 - t1);
 
         if (!isnan(integral->background_integral))
-            calculate_stream_integrals(integral->probs, integral->stream_integrals, ap->number_streams);
+            calculate_stream_integrals(integral->probs, integral->stream_integrals, sc, ap->number_streams);
         else
             fail("Failed to calculate integral %u\n", es->current_integral);
 

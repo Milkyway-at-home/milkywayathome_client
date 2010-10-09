@@ -26,10 +26,11 @@ extern "C" {
 #endif
 
 #include "separation_config.h"
-#include "milkyway_math.h"
-#include "milkyway_util.h"
 #include "separation_types.h"
+#include "milkyway_util.h"
+#include "milkyway_math.h"
 #include "evaluation.h"
+#include "evaluation_state.h"
 #include "parameters.h"
 #include "star_points.h"
 #include "calculated_constants.h"
@@ -40,6 +41,10 @@ extern "C" {
 #include "coordinates.h"
 #include "integrals.h"
 #include "likelihood.h"
+
+#if SEPARATION_OPENCL
+  #include "run_cl.h"
+#endif /* SEPARATION_OPENCL */
 
 #if BOINC_APPLICATION
   #include <boinc_api.h>
