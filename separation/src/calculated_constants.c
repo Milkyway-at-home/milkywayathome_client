@@ -25,6 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "coordinates.h"
 #include "gauss_legendre.h"
+#include "integrals.h"
 
 /* Convert sun-centered lbr (degrees) into galactic xyz coordinates. */
 static void lbr2xyz(const vector lbr, vector xyz)
@@ -76,13 +77,7 @@ int setAstronomyParameters(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS
     ap->zero_q = (ap->q == 0.0);
     ap->q_inv_sqr = inv(sqr(ap->q));
 
-    if (ap->aux_bg_profile == 0)
-    {
-        ap->bg_a = 0;
-        ap->bg_b = 0;
-        ap->bg_c = 0;
-    }
-    else if (ap->aux_bg_profile == 1)
+    if (ap->aux_bg_profile)
     {
         ap->bg_a = bgp->parameters[4];
         ap->bg_b = bgp->parameters[5];
@@ -90,8 +85,9 @@ int setAstronomyParameters(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS
     }
     else
     {
-        warn("Error: aux_bg_profile invalid");
-        return 1;
+        ap->bg_a = 0.0;
+        ap->bg_b = 0.0;
+        ap->bg_c = 0.0;
     }
 
     if (ap->sgr_coordinates)
@@ -104,6 +100,10 @@ int setAstronomyParameters(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS
     ap->alpha_delta3 = 3.0 - ap->alpha + ap->delta;
 
     ap->fast_h_prob = (ap->alpha == 1 && ap->delta == 1);
+
+  #if !SEPARATION_OPENCL
+    ap->bg_prob_func = ap->fast_h_prob ? bg_probability_fast_hprob : bg_probability_slow_hprob;
+  #endif /* !SEPARATION_OPENCL */
 
     return 0;
 }

@@ -65,15 +65,15 @@ static inline void do_boinc_checkpoint(const EVALUATION_STATE* es,
 
 #endif /* BOINC_APPLICATION */
 
-ALWAYS_INLINE HOT
-static inline real bg_probability_fast_hprob(const ASTRONOMY_PARAMETERS* ap,
-                                             const STREAM_CONSTANTS* sc,
-                                             const STREAM_GAUSS* sg,
-                                             const LB_TRIG lbt,
-                                             const int aux_bg_profile,
-                                             const unsigned int convolve,
-                                             const R_POINTS* r_pts,
-                                             real* st_probs)
+HOT
+real bg_probability_fast_hprob(const ASTRONOMY_PARAMETERS* ap,
+                               const STREAM_CONSTANTS* sc,
+                               const STREAM_GAUSS* sg,
+                               const LB_TRIG lbt,
+                               const int aux_bg_profile,
+                               const unsigned int convolve,
+                               const R_POINTS* r_pts,
+                               real* st_probs)
 {
     unsigned int i;
     real h_prob, rg;
@@ -100,14 +100,15 @@ static inline real bg_probability_fast_hprob(const ASTRONOMY_PARAMETERS* ap,
 }
 
 
-static real bg_probability_slow_hprob(const ASTRONOMY_PARAMETERS* ap,
-                                      const STREAM_CONSTANTS* sc,
-                                      const STREAM_GAUSS* sg,
-                                      const LB_TRIG lbt,
-                                      const int aux_bg_profile,
-                                      const unsigned int convolve,
-                                      const R_POINTS* r_pts,
-                                      real* st_probs)
+HOT
+real bg_probability_slow_hprob(const ASTRONOMY_PARAMETERS* ap,
+                               const STREAM_CONSTANTS* sc,
+                               const STREAM_GAUSS* sg,
+                               const LB_TRIG lbt,
+                               const int aux_bg_profile,
+                               const unsigned int convolve,
+                               const R_POINTS* r_pts,
+                               real* st_probs)
 {
     unsigned int i;
     real rg;
@@ -149,28 +150,12 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
 
     zero_st_probs(st_probs, ap->number_streams);
 
-    if (ap->fast_h_prob)
-    {
-        bg_prob = bg_probability_fast_hprob(ap,
-                                            sc,
-                                            sg,
-                                            lbt,
-                                            ap->aux_bg_profile,
-                                            ap->convolve,
-                                            r_pts,
-                                            st_probs);
-    }
-    else
-    {
-        bg_prob = bg_probability_slow_hprob(ap,
-                                            sc,
-                                            sg,
-                                            lbt,
-                                            ap->aux_bg_profile,
-                                            ap->convolve,
-                                            r_pts,
-                                            st_probs);
-    }
+    bg_prob = ap->bg_prob_func(ap, sc, sg,
+                               lbt,
+                               ap->aux_bg_profile,
+                               ap->convolve,
+                               r_pts,
+                               st_probs);
 
     sum_probs(probs, st_probs, V * reff_xr_rp3, ap->number_streams);
     bg_prob *= reff_xr_rp3;

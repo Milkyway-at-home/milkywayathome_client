@@ -170,7 +170,11 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
     real rPrime;
 } R_PRIME;
 
-typedef struct SEPARATION_ALIGN(128)
+
+
+
+
+typedef struct SEPARATION_ALIGN(128) _ASTRONOMY_PARAMETERS
 {
     real parameters_version;
     real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
@@ -186,6 +190,22 @@ typedef struct SEPARATION_ALIGN(128)
     mw_int wedge;
     real background_weight;
 
+    /* really should be BGProbabilityFunc bg_prob_func, but need to
+     * refer to pointer to this struct before  */
+
+  #ifndef __OPENCL_VERSION__
+    real (*bg_prob_func) (const struct _ASTRONOMY_PARAMETERS*,
+                          const STREAM_CONSTANTS*,
+                          const STREAM_GAUSS*,
+                          const LB_TRIG,
+                          const int,
+                          const unsigned int,
+                          const R_POINTS*,
+                          real*);
+   #else
+    void* bg_prob_func;
+   #endif
+
     /* Constants determined by other parameters */
     real alpha, sn, r0, delta, coeff, alpha_delta3;
     real q;
@@ -193,11 +213,29 @@ typedef struct SEPARATION_ALIGN(128)
     real bg_a, bg_b, bg_c;
 } ASTRONOMY_PARAMETERS;
 
+#ifndef __OPENCL_VERSION__
+typedef real (*BGProbabilityFunc) (const ASTRONOMY_PARAMETERS*,
+                                   const STREAM_CONSTANTS*,
+                                   const STREAM_GAUSS*,
+                                   const LB_TRIG,
+                                   const int,
+                                   const unsigned int,
+                                   const R_POINTS*,
+                                   real*);
+
+#else
+
+typedef void* BGProbabilityFunc;
+
+#endif /* __OPENCL_VERSION__ */
+
+
+
 
 #define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0.0, \
                                      0, 0,   \
                                      0, 0, 0, 0, \
-                                     0, 0, 0, 0.0, 0.0,   \
+                                     0, 0, 0, 0.0, NULL, 0.0,          \
                                      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
                                      0.0, 0.0, 0.0 }
 
