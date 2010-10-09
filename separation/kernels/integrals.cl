@@ -54,7 +54,6 @@ inline real sub_bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
                                real* st_probs)
 {
     unsigned int i;
-    real h_prob;
     real rg;
     vector xyz = ZERO_VECTOR;
     real bg_prob = 0.0;
@@ -105,7 +104,6 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
 
 __attribute__ ((always_inline))
 real r_calculation(__constant ASTRONOMY_PARAMETERS* ap,
-                   __constant INTEGRAL_AREA* ia,
                    __constant STREAM_CONSTANTS* sc,
                    __constant R_CONSTS* rcs,
                    __global const R_POINTS* r_pts,
@@ -149,17 +147,15 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     LB_TRIG lbt;
     real mu, r_result;
 
-    real st_probs[3];     /* FIXME: hardcoded stream limit */
+    //real st_probs[3];     /* FIXME: hardcoded stream limit */
+    real st_probs[3] = { 0.0, 0.0, 0.0 };
 
     size_t idx;     /* index into stream probs output buffer */
     size_t mu_step = get_global_id(0);
     size_t r_step = get_global_id(1);
 
 
-    if (mu_step > ia->mu_steps || r_step > ia->r_steps)
-        return;
-
-    zero_st_probs(st_probs, ap->number_streams);
+    //zero_st_probs(st_probs, ap->number_streams);
 
     /* Actual calculations */
     mu = ia->mu_min + (((real) mu_step + 0.5) * ia->mu_step_size);
@@ -167,7 +163,7 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     lb = gc2lb(ap->wedge, mu, nuid.nu);
     lbt = lb_trig(lb);
 
-    r_result = r_calculation(ap, ia, sc, rcs, r_pts, lbt, nuid.id, st_probs, r_step);
+    r_result = r_calculation(ap, sc, rcs, r_pts, lbt, nuid.id, st_probs, r_step);
 
     /* Output to buffers */
     mu_out[mu_step * ia->r_steps + r_step] = r_result;
