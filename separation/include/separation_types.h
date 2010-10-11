@@ -176,25 +176,29 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 
 typedef struct SEPARATION_ALIGN(128) _ASTRONOMY_PARAMETERS
 {
+    /* Constants determined by other parameters */
+    real q_inv_sqr;  /* 1 / q^2 */
+    real bg_a, bg_b, bg_c;
+    real alpha, delta, alpha_delta3, r0;
+
+    mw_int wedge;
+    mw_uint convolve;
+    mw_uint number_streams;
+
+    mw_int aux_bg_profile;
+    mw_int zero_q;
+    real q;
+    real sn;
+    real coeff;
+
     real parameters_version;
     real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
     mw_int sgr_coordinates;
     mw_uint number_integrals;
     mw_uint number_background_parameters;
-    mw_uint number_streams;
-    mw_uint convolve;
 
-    mw_int aux_bg_profile;
-    mw_int fast_h_prob;
-    mw_int zero_q;
-    mw_int wedge;
     real background_weight;
-
-    /* Constants determined by other parameters */
-    real alpha, sn, r0, delta, coeff, alpha_delta3;
-    real q;
-    real q_inv_sqr;  /* 1 / q^2 */
-    real bg_a, bg_b, bg_c;
+    mw_int fast_h_prob;
 
     /* really should be BGProbabilityFunc bg_prob_func, but need to
      * refer to pointer to this struct before  */
