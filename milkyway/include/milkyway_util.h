@@ -51,6 +51,25 @@ extern "C" {
 #include <string.h>
 #include <stdlib.h>
 
+
+#if MILKYWAY_OPENCL
+
+typedef struct
+{
+    cl_device_type devType;
+    /* TODO: Device numbers, desired platform, etc. */
+} CLRequest;
+
+#else
+
+typedef struct
+{
+    int _useless;
+} CLRequest;
+
+#endif /* MILKYWAY_OPENCL */
+
+
 #if MW_ENABLE_DEBUG
     /* convenient functions for printing debugging stuffs */
   #define mw_debug(msg, ...) fprintf(stderr, "%s():%d: ", FUNC_NAME, __LINE__); \

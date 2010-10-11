@@ -96,7 +96,8 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                                 const INTEGRAL_AREA* ias,
                                 const STREAM_CONSTANTS* sc,
                                 const STREAM_GAUSS* sg,
-                                EVALUATION_STATE* es)
+                                EVALUATION_STATE* es,
+                                const CLRequest* clr)
 {
     INTEGRAL* integral;
     const INTEGRAL_AREA* ia;
@@ -111,7 +112,7 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
 
         t1 = mwGetTime();
       #if SEPARATION_OPENCL
-        integral->background_integral = integrateCL(ap, ia, sc, sg, integral->probs);
+        integral->background_integral = integrateCL(ap, ia, sc, sg, integral->probs, clr);
       #else
         integral->background_integral = integrate(ap, ia, sc, sg, integral->probs, es);
       #endif /* SEPARATION_CL */
@@ -132,7 +133,8 @@ real evaluate(const ASTRONOMY_PARAMETERS* ap,
               const INTEGRAL_AREA* ias,
               const STREAMS* streams,
               const STREAM_CONSTANTS* sc,
-              const char* star_points_file)
+              const char* star_points_file,
+              const CLRequest* clr)
 {
     real likelihood_val = NAN;
     EVALUATION_STATE es = EMPTY_EVALUATION_STATE;
@@ -149,7 +151,7 @@ real evaluate(const ASTRONOMY_PARAMETERS* ap,
     if (maybeResume(&es))
         fail("Failed to resume checkpoint\n");
 
-    calculate_integrals(ap, ias, sc, sg, &es);
+    calculate_integrals(ap, ias, sc, sg, &es, clr);
 
   #if BOINC_APPLICATION && !SEPARATION_OPENCL
     /* Final checkpoint. */

@@ -478,7 +478,7 @@ static cl_int getCLInfo(CLInfo* ci, cl_device_type type)
  *  TODO: Caching of compiled binaries
  */
 cl_int mwSetupCL(CLInfo* ci,
-                 cl_device_type type,
+                 const CLRequest* clr,
                  const char* kernName,
                  const char** src,
                  const cl_uint srcCount,
@@ -486,7 +486,7 @@ cl_int mwSetupCL(CLInfo* ci,
 {
     cl_int err;
 
-    err = getCLInfo(ci, type);
+    err = getCLInfo(ci, clr->devType);
     if (err != CL_SUCCESS)
     {
         warn("Failed to get information about device\n");

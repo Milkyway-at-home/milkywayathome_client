@@ -33,9 +33,12 @@ typedef struct
     char* star_points_file;
     char* ap_file;  /* astronomy parameters */
     int cleanup_checkpoint;
+
+    int useGPU;   /* For choosing CL device */
+    int useDevNumber;
 } SeparationFlags;
 
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, 0 }
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, 0, 0, 0 }
 
 static void freeSeparationFlags(SeparationFlags* sf)
 {
@@ -49,6 +52,17 @@ static void setDefaultFiles(SeparationFlags* sf)
     stringDefault(sf->star_points_file, DEFAULT_STAR_POINTS);
     stringDefault(sf->ap_file, DEFAULT_ASTRONOMY_PARAMETERS);
 }
+
+#if SEPARATION_OPENCL
+
+static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
+{
+    clr->devType = sf->useGPU ? CL_DEVICE_TYPE_GPU : CL_DEVICE_TYPE_CPU;
+}
+
+#else
+  #define getCLReqFromFlags(clr, sf)
+#endif /* SEFPARATION_OPENCL */
 
 /* Returns the newly allocated array of parameters */
 static real* parse_parameters(int argc, const char** argv, unsigned int* paramnOut, SeparationFlags* sf)
@@ -79,6 +93,14 @@ static real* parse_parameters(int argc, const char** argv, unsigned int* paramnO
             POPT_ARG_NONE, &sf->cleanup_checkpoint,
             'c', "Delete checkpoint on successful", NULL
         },
+
+      #if SEPARATION_OPENCL
+        {
+            "use-gpu", 'g',
+            POPT_ARG_NONE, &sf->useGPU,
+            'g', "Use GPU", NULL
+        },
+      #endif /* SEPARATION_OPENCL */
 
         {
             "p", 'p',
@@ -174,6 +196,9 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     STREAM_CONSTANTS* sc = NULL;
     real likelihood_val = NAN;
     int rc;
+    CLRequest clr;
+
+    getCLReqFromFlags(&clr, sf);
 
     ias = prepare_parameters(sf->ap_file, &ap, &bgp, &streams, parameters, number_parameters);
     if (!ias)
@@ -201,7 +226,7 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
         return 1;
     }
 
-    likelihood_val = evaluate(&ap, ias, &streams, sc, sf->star_points_file);
+    likelihood_val = evaluate(&ap, ias, &streams, sc, sf->star_points_file, &clr);
     rc = isnan(likelihood_val);
 
     warn("<search_likelihood> %0.20f </search_likelihood>\n", likelihood_val);

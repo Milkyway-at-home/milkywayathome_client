@@ -109,6 +109,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                          const INTEGRAL_AREA* ia,
                          const STREAM_CONSTANTS* sc,
                          const STREAM_GAUSS* sg,
+                         const CLRequest* clr,
                          CLInfo* ci,
                          SeparationCLMem* cm)
 {
@@ -136,7 +137,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
     }
 
     //compileDefs = separationCLDefs(ap, extraDefs);
-    err = mwSetupCL(ci, CL_DEVICE_TYPE_CPU, "mu_sum_kernel", &kernelSrc, 1, extraDefs);
+    err = mwSetupCL(ci, clr, "mu_sum_kernel", &kernelSrc, 1, extraDefs);
 
     freeKernelSrc(kernelSrc);
     //free(compileDefs);

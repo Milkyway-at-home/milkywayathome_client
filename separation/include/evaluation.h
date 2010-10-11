@@ -28,7 +28,8 @@ real evaluate(const ASTRONOMY_PARAMETERS* ap,
               const INTEGRAL_AREA* ias,
               const STREAMS* streams,
               const STREAM_CONSTANTS* sc,
-              const char* star_points_file);
+              const char* star_points_file,
+              const CLRequest* clr);
 
 #endif /* _EVALUATION_H_ */
 

@@ -388,13 +388,14 @@ real integrateCL(const ASTRONOMY_PARAMETERS* ap,
                  const INTEGRAL_AREA* ia,
                  const STREAM_CONSTANTS* sc,
                  const STREAM_GAUSS* sg,
-                 KAHAN* probs_results)
+                 KAHAN* probs_results,
+                 const CLRequest* clr)
 {
     real result = NAN;
     CLInfo ci = EMPTY_CL_INFO;
     SeparationCLMem cm = EMPTY_SEPARATION_CL_MEM;
 
-    if (setupSeparationCL(ap, ia, sc, sg, &ci, &cm) != CL_SUCCESS)
+    if (setupSeparationCL(ap, ia, sc, sg, clr, &ci, &cm) != CL_SUCCESS)
         warn("Failed to setup up CL\n");
     else
         result = runIntegral(&ci, &cm, probs_results, ap, ia);

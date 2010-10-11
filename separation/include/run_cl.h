@@ -31,7 +31,8 @@ real integrateCL(const ASTRONOMY_PARAMETERS* ap,
                  const INTEGRAL_AREA* ia,
                  const STREAM_CONSTANTS* sc,
                  const STREAM_GAUSS* sg,
-                 KAHAN* probs);
+                 KAHAN* probs,
+                 const CLRequest* clr);
 
 #ifdef __cplusplus
 }

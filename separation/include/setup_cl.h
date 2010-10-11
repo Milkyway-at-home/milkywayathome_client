@@ -54,6 +54,7 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
                          const INTEGRAL_AREA* ia,
                          const STREAM_CONSTANTS* sc,
                          const STREAM_GAUSS* sg,
+                         const CLRequest* clr,
                          CLInfo* ci,
                          SeparationCLMem* cm);
 

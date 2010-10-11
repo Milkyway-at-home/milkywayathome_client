@@ -83,7 +83,7 @@ typedef struct
 } DevInfo;
 
 cl_int mwSetupCL(CLInfo* ci,
-                 cl_device_type type,
+                 const CLRequest* clr,
                  const char* kernName,
                  const char** src,
                  const cl_uint srcCount,
