@@ -64,13 +64,6 @@ static inline cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm)
   #define DOUBLEPREC_DEF_STRING "-D DOUBLEPREC=0 -cl-single-precision-constant "
 #endif /* DOUBLEPREC */
 
-#if 0
-  #define ROOT "/home/matt/Desktop/milkywayathome_client/"
-#else
-  #define ROOT "/Users/matt/src/milkywayathome_client/"
-//#define ROOT "/Users/matt/Desktop/separation_fix/milkywayathome_client/"
-#endif
-
 #if SEPARATION_INLINE_KERNEL
 
 char* findKernelSrc()
@@ -116,18 +109,18 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
     cl_int err;
     //char* compileDefs;
     char* kernelSrc;
-    char* rPointsSrc;
+    char* extraDefs;
+    char* cwd;
 
-    static const char* extraDefs = DOUBLEPREC_DEF_STRING
-                                   "-cl-strict-aliasing "
-                                   "-cl-finite-math-only "
-                                   "-I../src "
-                                   "-I../include "
-                                   "-I../../milkyway/include "
-                                   "-I" ROOT "include "
-                                   "-I" ROOT "separation/src "
-                                   "-I" ROOT "separation/include "
-                                   "-I" ROOT "milkyway/include ";
+    cwd = getcwd(NULL, 0);
+    asprintf(&extraDefs, DOUBLEPREC_DEF_STRING
+                         //"-D__ATI_CL__ "
+                        "-cl-strict-aliasing "
+                        "-cl-finite-math-only "
+                        "-I%s/../include "
+                        "-I%s/../../include "
+                        "-I%s/../../milkyway/include ",
+                        cwd, cwd, cwd);
 
     kernelSrc = findKernelSrc();
     if (!kernelSrc)
@@ -140,6 +133,8 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
     err = mwSetupCL(ci, clr, "mu_sum_kernel", &kernelSrc, 1, extraDefs);
 
     freeKernelSrc(kernelSrc);
+    free(cwd);
+    free(extraDefs);
     //free(compileDefs);
 
     if (err != CL_SUCCESS)
