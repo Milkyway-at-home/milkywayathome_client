@@ -44,7 +44,10 @@ typedef union
 #define X(v) ((v).x)
 #define Y(v) ((v).y)
 #define Z(v) ((v).z)
+#define W(v) ((v).w)
 
+#define ZERO_VECTOR { .v = { 0.0, 0.0, 0.0, 0.0 } }
+#define SET_VECTOR(v, x, y, z) { X(v) = (x); Y(v) = (y); Z(v) = (z); W(v) = 0.0; }
 
 #define mw_vec(x, y, z) { .v = { (x), (y), (z), 0.0 } }
 
@@ -108,7 +111,7 @@ inline real mw_sqrv(mwvector a)
 }
 
 __attribute__((const, always_inline))
-inline mwvector mw_mulvs(mwvector a, real s)
+inline mwvector mw_mulvs(real s, mwvector a)
 {
     mwvector tmp =
         {
@@ -130,6 +133,7 @@ inline mwvector mw_mulmv(const mwmatrix m, mwvector a)
     return tmp;
 }
 
+#define mw_incsubv(v1, v2) ((v1).v -= (v2).v)
 
 #endif /* _MILKYWAY_VECTORS_GCC_H_ */
 

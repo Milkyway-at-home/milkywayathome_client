@@ -38,6 +38,10 @@ typedef real mwvector __attribute__((ext_vector_type(4)));
 #define X(v) ((v).x)
 #define Y(v) ((v).y)
 #define Z(v) ((v).z)
+#define W(v) ((v).w)
+
+#define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
+#define SET_VECTOR(v, x, y, z) { X(v) = (x); Y(v) = (y); Z(v) = (z); W(v) = 0.0; }
 
 
 #define mw_vec(x, y, z) { (x), (y), (z), 0.0 }
@@ -103,7 +107,7 @@ inline real mw_sqrv(mwvector a)
 }
 
 __attribute__((const, always_inline))
-inline mwvector mw_mulvs(mwvector a, real s)
+inline mwvector mw_mulvs(real s, mwvector a)
 {
     mwvector tmp =
         {
@@ -118,11 +122,14 @@ inline mwvector mw_mulvs(mwvector a, real s)
 __attribute__((pure, const, always_inline))
 inline mwvector mw_mulmv(const mwmatrix m, mwvector a)
 {
-    mwvector tmp = mw_vec(mw_dotv(m[0], a)
+    mwvector tmp = mw_vec(mw_dotv(m[0], a),
                           mw_dotv(m[1], a),
                           mw_dotv(m[2], a));
     return tmp;
 }
+
+
+#define mw_incsubv(v1, v2) ((v1) -= (v2))
 
 
 #endif /* _MILKYWAY_VECTORS_CLANG_H_ */
