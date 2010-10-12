@@ -25,12 +25,6 @@ set(nbody_MAJOR_VERSION 0)
 set(nbody_MINOR_VERSION 09)
 set(nbody_VERSION "${nbody_MAJOR_VERSION}.${nbody_MINOR_VERSION}")
 
-if(BOINC_RELEASE_NAME)
-  get_boinc_bin_name("milkyway_nbody" "${nbody_VERSION}" "sse2")
-  set(nbody_bin_name "${BOINC_BIN_NAME}")
-else()
-  set(nbody_bin_name "milkyway_nbody")
-endif()
 
 include(MaybeDlCheck)
 include(StaticBOINC)
@@ -300,6 +294,21 @@ if(NEED_POPT_DEPS)
   # windows you need these dependencies but not Linux.
   list(APPEND exe_link_libs ${LIBICONV_LIBRARY}
                             ${LIBINTL_LIBRARY})
+endif()
+
+
+
+if(BOINC_RELEASE_NAME)
+  if(NBODY_OPENMP)
+    set(NBODY_PLAN "mt")
+  else()
+    set(NBODY_PLAN "sse2")
+  endif()
+
+  get_boinc_bin_name("milkyway_nbody" "${nbody_VERSION}" "${NBODY_PLAN}")
+  set(nbody_bin_name "${BOINC_BIN_NAME}")
+else()
+  set(nbody_bin_name "milkyway_nbody")
 endif()
 
 
