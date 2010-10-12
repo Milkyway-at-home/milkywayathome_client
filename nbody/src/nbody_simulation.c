@@ -28,6 +28,22 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "nbody_step.h"
 #include "grav.h"
+#include "show.h"
+
+/* make test model */
+static void generateModel(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
+{
+    switch (ctx->model.type)
+    {
+        case DwarfModelPlummer:
+            generatePlummer(ctx, ic, st);
+            break;
+        case DwarfModelKing:
+        case DwarfModelDehnen:
+        default:
+            fail("Unsupported model: %s", showDwarfModelT(ctx->model.type));
+    }
+}
 
 static inline void initState(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
@@ -40,7 +56,7 @@ static inline void initState(const NBodyCtx* ctx, const InitialConditions* ic, N
     st->bodytab = (bodyptr) mallocSafe(ctx->model.nbody * sizeof(body));
     st->acctab  = (vector*) mallocSafe(ctx->model.nbody * sizeof(vector));
 
-    generatePlummer(ctx, ic, st);    /* make test model */
+    generateModel(ctx, ic, st);
 
   #if NBODY_OPENCL
     setupNBodyCL(ctx, st);

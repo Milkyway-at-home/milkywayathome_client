@@ -50,7 +50,6 @@ include_directories(${JSON_C_INCLUDE_DIR})
 
 check_function_exists(asprintf HAS_ASPRINTF)
 
-
 if(NEED_POPT_DEPS)
     #These are only dependencies of popt needed for static linking
   find_package(Libintl REQUIRED)
