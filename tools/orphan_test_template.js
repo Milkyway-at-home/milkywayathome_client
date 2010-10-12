@@ -1,4 +1,4 @@
-{  //test results are using double
+{
 "nbody-parameters-file": {
     "nbody-context": {
         "headline" : "%s",
@@ -27,7 +27,7 @@
                 "%s" : {
                     "vhalo" : 73,
                     "scale-length" : 12.0,
-                    "z-flattening" : 1.1,
+                    "z-flattening" : 1.0,
                     "x-flattening" : 0.8,
                     "y-flattening" : 1.0,
                     "triaxial-angle" : 0.1
@@ -37,11 +37,11 @@
 
         "dwarf-model": {
             "plummer" : {
-                "mass" : 10,
-                "nbody" : 100,
-                "scale-radius" : 0.3,
-                "time-orbit" : 4,
-                "time-dwarf" : 3.945
+            "mass" : 16,
+            "nbody" : 100,
+            "scale-radius" : 0.2,
+            "time-orbit" : 4,
+            "time-dwarf" : 3.945
             }
         }
     },
@@ -50,7 +50,7 @@
         "useGalC" : false,
         "angle-use-radians" : false,
         "velocity" : [ -156, 79, 107 ],
-        "position" : [ 28.6, 218.0, 53.5 ]
+        "position" : [ 218, 53.5, 28.6 ]
     },
 
 

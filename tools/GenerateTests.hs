@@ -46,9 +46,8 @@ printTemplate :: String -> NBodyPerm -> String
 printTemplate ts np@(NBodyPerm q c d h) = printf ts (lowshow np) (lowshow c) (lowshow q) (lowshow d) (lowshow h)
 
 runTest dir bin name str = do
-  let fname prec = dir </> prec </> (name ++ "_results")
-  rawSystem bin [ "-s", str, "-o", fname "float"]
-  rawSystem bin [ "-s", str, "-o", fname "double", "-d"]
+  let fname = dir </> (name ++ "_results")
+  rawSystem bin [ "-s", str, "-o", fname ]
 
 makeRunTest dir bin ts np = do let name  = show np
                                    str   = printTemplate ts np
@@ -57,11 +56,11 @@ makeRunTest dir bin ts np = do let name  = show np
                                runTest dir bin name str
 
 generateTests template testDir bin = do
-  createDirectoryIfMissing True (testDir </> "double")
-  createDirectoryIfMissing True (testDir </> "float")
+  createDirectoryIfMissing True testDir
   ts <- readFile template
   mapM_ (makeRunTest testDir bin ts) allTests
 
 
-main = generateTests "test_set2_template.js" "test_set2" "../nbody/bin/milkyway_nbody"
+--main = generateTests "test_set2_template.js" "test_set2" "../bin/milkyway_nbody"
+main = generateTests "orphan_test_template.js" "test_set1" "../bin/milkyway_nbody"
 
