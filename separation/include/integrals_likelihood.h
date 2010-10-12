@@ -27,25 +27,33 @@ extern "C" {
 
 #include "separation_constants.h"
 #include "separation_types.h"
+#include "milkyway_math.h"
 
-#define lbr2xyz_2(xyz, r_point, lbt)            \
-    {                                           \
-        real zp = r_point * lbt.bcos;           \
-        X(xyz) = zp * lbt.lcos - sun_r0;        \
-        Y(xyz) = zp * lbt.lsin;                 \
-        Z(xyz) = r_point * lbt.bsin;            \
-    }
 
 ALWAYS_INLINE HOT
-inline real calc_st_prob_inc(__MW_CONSTANT STREAM_CONSTANTS* sc, const vector xyz, const real qw_r3_N)
+inline mwvector lbr2xyz_2(const real r_point, const LB_TRIG lbt)
 {
-    vector xyzs;
+    mwvector xyz;
+    real zp = r_point * lbt.bcos;
+
+    xyz.x = zp * lbt.lcos - sun_r0;
+    xyz.y = zp * lbt.lsin;
+    xyz.z = r_point * lbt.bsin;
+    return xyz;
+}
+
+ALWAYS_INLINE HOT
+inline real calc_st_prob_inc(__MW_CONSTANT STREAM_CONSTANTS* sc, const mwvector xyz, const real qw_r3_N)
+{
+    mwvector xyzs, tmp;
     real xyz_norm, dotted;
 
-    SUBV(xyzs, xyz, sc->c);
-    DOTVP(dotted, sc->a, xyzs);
-    INCSUBVMS(xyzs, dotted, sc->a);
-    SQRV(xyz_norm, xyzs);
+    xyzs = mw_subv(xyz, sc->c);
+    dotted = mw_dotv(sc->a, xyzs);
+    tmp = mw_mulvs(dotted, sc->a);
+    mw_incsubv(xyzs, tmp);
+
+    xyz_norm = mw_sqrv(xyzs);
 
     return qw_r3_N * mw_exp(-xyz_norm * sc->sigma_sq2_inv);
 }
@@ -60,7 +68,7 @@ inline real aux_prob(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 }
 
 ALWAYS_INLINE HOT CONST_F
-inline real rg_calc(const vector xyz, const real q_inv_sqr)
+inline real rg_calc(const mwvector xyz, const real q_inv_sqr)
 {
     return mw_sqrt(sqr(X(xyz)) + sqr(Y(xyz)) + sqr(Z(xyz)) * q_inv_sqr);
 }

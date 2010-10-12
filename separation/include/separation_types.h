@@ -67,15 +67,15 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 typedef struct
 {
     unsigned int number_stars;
-    vector* stars;
+    mwvector* stars;
 } STAR_POINTS;
 
 #define EMPTY_STAR_POINTS { 0, NULL }
 
 typedef struct SEPARATION_ALIGN(64)
 {
-    vector a;
-    vector c;
+    mwvector a;
+    mwvector c;
     real sigma_sq2_inv;
     mw_int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
 } STREAM_CONSTANTS;

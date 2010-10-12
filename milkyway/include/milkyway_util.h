@@ -51,7 +51,6 @@ extern "C" {
 #include <string.h>
 #include <stdlib.h>
 
-
 #if MILKYWAY_OPENCL
 
 typedef struct

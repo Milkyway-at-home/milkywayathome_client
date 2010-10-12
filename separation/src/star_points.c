@@ -42,7 +42,7 @@ static int fread_star_points(FILE* data_file, STAR_POINTS* sp)
         return 1;
     }
 
-    sp->stars = (vector*) mallocSafe(sizeof(vector) * sp->number_stars);
+    sp->stars = (mwvector*) mallocSafe(sizeof(mwvector) * sp->number_stars);
     for (i = 0; i < sp->number_stars; ++i)
     {
         if (fscanf(data_file, STAR_POINTS_READ_STR, &x, &y, &z) != 3)
@@ -52,9 +52,7 @@ static int fread_star_points(FILE* data_file, STAR_POINTS* sp)
             return 1;
         }
 
-        X(sp->stars[i]) = x;
-        Y(sp->stars[i]) = y;
-        Z(sp->stars[i]) = z;
+        SET_VECTOR(sp->stars[i], x, y, z);
     }
 
     return 0;

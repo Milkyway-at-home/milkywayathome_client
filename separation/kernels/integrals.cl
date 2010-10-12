@@ -55,14 +55,14 @@ inline real sub_bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
 {
     unsigned int i;
     real rg;
-    vector xyz = ZERO_VECTOR;
+    mwvector xyz = ZERO_VECTOR;
     real bg_prob = 0.0;
     R_POINTS r_pt;
 
     for (i = 0; i < convolve; ++i)
     {
         r_pt = r_pts[i];
-        lbr2xyz_2(xyz, r_pt.r_point, lbt);
+        xyz = lbr2xyz_2(r_pt.r_point, lbt);
 
         rg = rg_calc(xyz, ap->q_inv_sqr);
 

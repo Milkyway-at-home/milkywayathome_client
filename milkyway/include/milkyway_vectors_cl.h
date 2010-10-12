@@ -1,138 +1,122 @@
-/* ************************************************************************** */
-/* MILKYWAY_VECTORS.H: include file for vector/matrix operations. */
-/* */
-/* Copyright (c) 1993 by Joshua E. Barnes, Honolulu, HI. */
 /* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-   Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-   Rensselaer Polytechnic Institute. */
-/* It's free because it's yours. */
-/* ************************************************************************** */
+Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
+Rensselaer Polytechnic Institute.
+
+This file is part of Milkway@Home.
+
+Milkyway@Home is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Milkyway@Home is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef _MILKYWAY_VECTORS_CL_H_
 #define _MILKYWAY_VECTORS_CL_H_
 
 #include "milkyway_cl.h"
 #include "real.h"
+#include "milkyway_math_functions.h"
 
-#define NDIM 3
-#define VECTOR_SIZE 4
+/* Wrap the basic operations on the kernel side */
 
-#ifdef __OPENCL_VERSION__ /* In the kernel */
+__attribute__((const, always_inline))
+inline mwvector mw_addv(mwvector a, mwvector b)
+{
+    return a + b;
+}
 
-  #if DOUBLEPREC
-    typedef double4 real4;
-    typedef double2 real2;
-  #else
-    typedef float4 real4;
-    typedef float2 real2;
-  #endif /* DOUBLEPREC */
+__attribute__((const, always_inline))
+inline mwvector mw_subv(mwvector a, mwvector b)
+{
+    return a - b;
+}
 
-  #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
+__attribute__((const, always_inline))
+inline mwvector mw_mulv(mwvector a, mwvector b)
+{
+    return a * b;
+}
 
-  /* Another glorious victory for standards */
-  #ifdef __NVIDIA_CL__
-    #define VECTOR(x, y, z) ( (x), (y), (z), 0.0 )
-  #else
-    #define VECTOR(x, y, z) { (x), (y), (z), 0.0 }
-  #endif /* __NVIDIA_CL__ */
+__attribute__((const, always_inline))
+inline mwvector mw_divv(mwvector a, mwvector b)
+{
+    return a / b;
+}
 
-  #define SET_VECTOR(v, x, y, z) { X(v) = (x); Y(v) = (y); Z(v) = (z); }
+__attribute__((const, always_inline))
+inline real mw_dotv(mwvector a, mwvector b)
+{
+    mwvector tmp = a * b;
+    return tmp.x + tmp.y + tmp.z + tmp.w;
+}
 
-/* DOT Vector Product */
+__attribute__((const, always_inline))
+inline mwvector mw_crossv(mwvector a, mwvector b)
+{
+    mwvector tmp = mw_vec(b.z * a.y - b.y * a.z,
+                          b.x * a.z - b.z * a.x,
+                          b.y * a.x - b.x * a.y);
+    return tmp;
+}
 
-#if !BROKEN_CL_MATH
-  #define DOTVP(s,v,u)                                  \
-    {                                                   \
-        (s) = dot(v, u);                                \
-    }
-#else
-  #warning "Using broken dot product"
-  #define DOTVP(s,v,u)                                  \
-    {                                                   \
-        (s) = sqr(X(v)) + sqr(Y(v)) + sqr(Z(v));        \
-    }
-#endif /* !BROKEN_CL_MATH */
+__attribute__((const, always_inline))
+inline real mw_length(mwvector a)
+{
+    mwvector tmp = a * a;
+    return mw_sqrt(tmp.x + tmp.y + tmp.z + tmp.w);
+}
 
-  #define L(v) ((v).x)
-  #define B(v) ((v).y)
-  #define R(v) ((v).z)
+__attribute__((const, always_inline))
+inline real mw_sqrv(mwvector a)
+{
+    return mw_dotv(a, a);
+}
 
-  #define X(v) ((v).x)
-  #define Y(v) ((v).y)
-  #define Z(v) ((v).z)
-  #define W(v) ((v).w)
+__attribute__((const, always_inline))
+inline real mw_absv(mwvector a)
+{
+    return mw_sqrt(mw_sqrv(a));
+}
+
+__attribute__((const, always_inline))
+inline mwvector mw_mulvs(real s, mwvector a)
+{
+    mwvector tmp =
+        {
+            s * a.x,
+            s * a.y,
+            s * a.z,
+            s * a.w
+        };
+    return tmp;
+}
+
+__attribute__((pure, const, always_inline))
+inline mwvector mw_mulmv(const mwmatrix m, mwvector a)
+{
+    mwvector tmp = mw_vec(mw_dotv(m[0], a),
+                          mw_dotv(m[1], a),
+                          mw_dotv(m[2], a));
+    return tmp;
+}
 
 
-#else  /* Host */
-  #if DOUBLEPREC
-    typedef cl_double4 real4;
-    typedef cl_double2 real2;
-  #else
-    typedef cl_float4 real4;
-    typedef cl_float2 real2;
-  #endif /* DOUBLEPREC */
-
-  #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
-  #define VECTOR(x, y, z) { (x), (y), (z), 0.0 }
-  #define SET_VECTOR(v, x, y, z) { X(v) = (x); Y(v) = (y); Z(v) = (z); }
-
-/* DOT Vector Product */
-#define DOTVP(s,v,u)                                    \
-    {                                                   \
-        (s) = X(v) * X(u) + Y(v) * Y(u) + Z(v) * Z(u);  \
-    }
-
-  #ifdef __APPLE__
-    /* The host side implementation of cl_double4 seems on OS X to be
-     * just an array of cl_double. This seems to not be true on ATI's,
-     * using a more complicated union of different structs, which is
-     * actually sort of nicer */
-    #define L(v) ((v)[0])
-    #define B(v) ((v)[1])
-    #define R(v) ((v)[2])
-
-    #define X(v) ((v)[0])
-    #define Y(v) ((v)[1])
-    #define Z(v) ((v)[2])
-    #define W(v) ((v)[3])
-
-    /* clear vector. The 4th component can be ignored for everything else. */
-    #define CLRV(v)                             \
-    {                                           \
-        (v)[0] = 0.0;                           \
-        (v)[1] = 0.0;                           \
-        (v)[2] = 0.0;                           \
-        (v)[2] = 0.0;                           \
-    }
-
-  #else
-    #define L(v) ((v).x)
-    #define B(v) ((v).y)
-    #define R(v) ((v).z)
-
-    #define X(v) ((v).x)
-    #define Y(v) ((v).y)
-    #define Z(v) ((v).z)
-    #define W(v) ((v).w)
-
-    #define CLRV(v)                            \
-    {                                          \
-        (v).x = 0.0;                           \
-        (v).y = 0.0;                           \
-        (v).z = 0.0;                           \
-        (v).w = 0.0;                           \
-    }
-  #endif /* __APPLE__ */
-
-#endif /* __OPENCL_VERSION__ */
-
-typedef real4 vector;
-typedef real* vectorptr;
-
-typedef real4 matrix[NDIM];
-
-#define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
-
+#define mw_incsubv(v1, v2) ((v1) -= (v2))
+#define mw_incaddv(v1, v2) ((v1) += (v2))
+#define mw_incdivv(v1, v2) ((v1) /= (v2))
+#define mw_incmulv(v1, v2) ((v1) *= (v2))
+#define mw_incnegv(v) ((v) = -(v))
+#define mw_zerov(v) { (v).x = 0.0; (v).y = 0.0; (v).z = 0.0; (v).w = 0.0; }
+#define mw_incdivs(v, s) { (v).x /= (s); (v).y /= (s); (v).z /= (s); (v).w /= (s) }
+#define mw_incmulvs(v, s) { (v).x *= (s); (v).y *= (s); (v).z *= (s); (v).w *= (s) }
 
 #endif /* _MILKYWAY_VECTORS_CL_H_ */
 

@@ -15,26 +15,7 @@
 
 #define NDIM 3
 
-#define VECTOR_SIZE 3
-typedef real vector[NDIM];
 
-typedef real matrix[NDIM][NDIM];
-typedef real* vectorptr;
-
-/*
-typedef real _mwvector __attribute__((vector_size(sizeof(real) * 4)));
-
-typedef union
-{
-    real __attribute__ ((aligned(sizeof(real) * 4))) s[4];
-    struct { real x, y, z, w; };
-    _mwvector v4;
-} mwvector;
-*/
-
-
-#define VECTOR(x, y, z) { (x), (y), (z) }
-#define SET_VECTOR(v, x, y, z) { X(v) = (x); Y(v) = (y); Z(v) = (z); }
 
 /* Note: vectorptr is NOT the same as vector*.  By using real* as
    vectorptr, we can do nice things to avoid pointer aliasing and
@@ -42,17 +23,7 @@ typedef union
    array of vectors.
  */
 
-#define ZERO_VECTOR { 0.0, 0.0, 0.0 }
 #define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
-
-#define L(x) ((x)[0])
-#define B(x) ((x)[1])
-#define R(x) ((x)[2])
-
-#define X(x) ((x)[0])
-#define Y(x) ((x)[1])
-#define Z(x) ((x)[2])
-
 
 /* Clear vector */
 #define CLRV(v)                                 \
@@ -62,11 +33,7 @@ typedef union
         (v)[2] = 0.0;                           \
     }
 
-/* DOT Vector Product */
-#define DOTVP(s,v,u)                                    \
-    {                                                   \
-        (s) = X(v) * X(u) + Y(v) * Y(u) + Z(v) * Z(u);  \
-    }
+
 
 
 #endif /* _MILKYWAY_VECTORS_CPU_H_ */

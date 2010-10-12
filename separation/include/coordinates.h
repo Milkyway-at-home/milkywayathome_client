@@ -49,15 +49,15 @@ __inline LB gc2lb(const int wedge, const real mu, const real nu)
     real ra, dec;
     real wedge_eta, wedge_incl;
     real cosdec;
-    vector v1, v2;
+    mwvector v1, v2;
     real r;
 
     /* Use SLALIB to do the actual conversion */
-    _MW_STATIC const matrix rmat =
+    _MW_STATIC const mwmatrix rmat =
         {
-            VECTOR( -0.054875539726, -0.873437108010, -0.483834985808 ),
-            VECTOR(  0.494109453312, -0.444829589425,  0.746982251810 ),
-            VECTOR( -0.867666135858, -0.198076386122,  0.455983795705 )
+            mw_vec( -0.054875539726, -0.873437108010, -0.483834985808 ),
+            mw_vec(  0.494109453312, -0.444829589425,  0.746982251810 ),
+            mw_vec( -0.867666135858, -0.198076386122,  0.455983795705 )
         };
 
     /* Rotation */
@@ -97,7 +97,7 @@ __inline LB gc2lb(const int wedge, const real mu, const real nu)
     /* Equatorial to Galactic */
 
     /* Matrix rmat * vector v1 -> vector vb */
-    MULMV(v2, rmat, v1);
+    v2 = mw_mulmv(rmat, v1);
 
     /* Cartesian to spherical */
     r = mw_hypot(X(v2), Y(v2));

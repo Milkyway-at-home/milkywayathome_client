@@ -43,7 +43,7 @@ inline void zero_st_probs(real* st_probs, const unsigned int nstream)
 ALWAYS_INLINE HOT
 inline void stream_sums(real* st_probs,
                         __MW_CONSTANT STREAM_CONSTANTS* sc,
-                        const vector xyz,
+                        const mwvector xyz,
                         const real qw_r3_N,
                         const unsigned int nstreams)
 {

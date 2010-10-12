@@ -23,18 +23,21 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_constants.h"
 #include "calculated_constants.h"
 #include "milkyway_util.h"
+#include "milkyway_math.h"
 #include "coordinates.h"
 #include "gauss_legendre.h"
 #include "integrals.h"
 
 /* Convert sun-centered lbr (degrees) into galactic xyz coordinates. */
-static void lbr2xyz(const vector lbr, vector xyz)
+static mwvector lbr2xyz(const mwvector lbr)
 {
     real zp, d;
 /* TODO: Use radians to begin with */
 
     real lsin, lcos;
     real bsin, bcos;
+
+    mwvector xyz;
 
     mw_sincos(d2r(B(lbr)), &bsin, &bcos);
     mw_sincos(d2r(L(lbr)), &lsin, &lcos);
@@ -44,26 +47,32 @@ static void lbr2xyz(const vector lbr, vector xyz)
     d = mw_sqrt(sqr(sun_r0) + sqr(zp) - 2.0 * sun_r0 * zp * lcos);
     X(xyz) = (sqr(zp) - sqr(sun_r0) - sqr(d)) / (2.0 * sun_r0);
     Y(xyz) = zp * lsin;
+    W(xyz) = 0.0;
+    return xyz;
 }
 
-static inline void stream_a(vector a, real* parameters)
+static inline mwvector stream_a(real* parameters)
 {
+    mwvector a;
     X(a) = mw_sin(parameters[2]) * mw_cos(parameters[3]);
     Y(a) = mw_sin(parameters[2]) * mw_sin(parameters[3]);
     Z(a) = mw_cos(parameters[2]);
+    W(a) = 0.0;
+    return a;
 }
 
-static inline void stream_c(vector c, int wedge, real mu, real r)
+static inline mwvector stream_c(int wedge, real mu, real r)
 {
     LB lb;
-    vector lbr;
+    mwvector lbr;
 
     lb = gc2lb(wedge, mu, 0.0);
 
     L(lbr) = LB_L(lb);
     B(lbr) = LB_B(lb);
     R(lbr) = r;
-    lbr2xyz(lbr, c);
+    W(lbr) = 0.0;
+    return lbr2xyz(lbr);
 }
 int setAstronomyParameters(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS* bgp)
 
@@ -126,11 +135,10 @@ STREAM_CONSTANTS* getStreamConstants(const ASTRONOMY_PARAMETERS* ap, const STREA
         sigma_sq2 = 2.0 * sqr(stream_sigma);
         sc[i].sigma_sq2_inv = 1.0 / sigma_sq2;
 
-        stream_a(sc[i].a, streams->parameters[i].stream_parameters);
-        stream_c(sc[i].c,
-                 ap->wedge,
-                 streams->parameters[i].stream_parameters[0],
-                 streams->parameters[i].stream_parameters[1]);
+        sc[i].a = stream_a(streams->parameters[i].stream_parameters);
+        sc[i].c = stream_c(ap->wedge,
+                           streams->parameters[i].stream_parameters[0],
+                           streams->parameters[i].stream_parameters[1]);
     }
 
     return sc;

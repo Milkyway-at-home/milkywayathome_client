@@ -27,23 +27,17 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "real.h"
+#include "milkyway_vector_types.h"
 
-#if NBODY_OPENCL || SEPARATION_OPENCL || defined(__OPENCL_VERSION__)
+#ifdef __OPENCL_VERSION__
   #include "milkyway_vectors_cl.h"
 #else
   #include "milkyway_vectors_cpu.h"
+  #include "milkyway_vectors_func.h"
 #endif
 
 #include "milkyway_vectors_ops.h"
 
-
-#if 0
-  #if defined(__clang__) || defined(__OPENCL_VERSION__)
-    #include "milkyway_vectors_clang.h"
-  #else /* GCC, MSVC */
-    #include "milkyway_vectors_gcc.h"
-  #endif /* defined(__clang__) || defined(__OPENCL_VERSION__) */
-#endif /* 0 */
 
 #endif /* _MILKYWAY_VECTORS_H_ */
 
