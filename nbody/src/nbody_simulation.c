@@ -112,18 +112,10 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
 
 static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
 {
-  /* Make final output */
-  #if BOINC_APPLICATION && !BOINC_DEBUG
-    boincOutput(ctx, st, chisq);
-  #else
-    output(ctx, st);
-    printf("chisq = %.15g\n", chisq);
-  #endif /* BOINC_APPLICATION && !BOINC_DEBUG */
-
+    finalOutput(ctx, st, chisq);
     nbodyCtxDestroy(ctx);     /* finish up output */
     nbodyStateDestroy(st);
 }
-
 
 #if BOINC_APPLICATION
 

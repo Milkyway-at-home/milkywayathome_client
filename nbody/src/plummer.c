@@ -41,27 +41,14 @@ static inline void pickshell(dsfmt_t* dsfmtState, vector vec, real rad)
     INCMULVS(vec, rsc);             /* rescale to radius given */
 }
 
-#if BOINC_APPLICATION
-
-static void printPlummer(vectorptr RESTRICT rshift, vectorptr RESTRICT vshift)
+static void printPlummer(const NBodyCtx* ctx, vectorptr RESTRICT rshift, vectorptr RESTRICT vshift)
 {
-    fprintf(DEFAULT_OUTPUT_FILE,
+    fprintf(ctx->outfile,
             "<plummer_r> %.14g %.14g %.14g </plummer_r>\n"
             "<plummer_v> %.14g %.14g %.14g </plummer_v>\n",
             X(rshift), Y(rshift), Z(rshift),
             X(vshift), Y(vshift), Z(vshift));
 }
-
-#else
-
-static void printPlummer(vectorptr RESTRICT rshift, vectorptr RESTRICT vshift)
-{
-    printf("Shifting plummer sphere to r = (%.10f, %.10f, %.10f) v = (%.10f, %.10f, %.10f)\n",
-           X(rshift), Y(rshift), Z(rshift),
-           X(vshift), Y(vshift), Z(vshift));
-}
-
-#endif /* BOINC_APPLICATION */
 
 /* generatePlummer: generate Plummer model initial conditions for test
  * runs, scaled to units such that M = -4E = G = 1 (Henon, Hegge,
@@ -90,7 +77,7 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
 
     dsfmt_init_gen_rand(&dsfmtState, ctx->seed);
 
-    printPlummer(rshift, vshift);
+    printPlummer(ctx, rshift, vshift);
 
     rsc = ctx->model.scale_radius;              /* set length scale factor */
     vsc = mw_sqrt(ctx->model.mass / rsc);         /* and recip. speed scale */

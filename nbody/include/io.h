@@ -25,8 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Basic IO and initialization */
 int initOutput(NBodyCtx*);
-int output(const NBodyCtx* ctx, const NBodyState* st);
-void boincOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq); /* Output with xml tags */
+int finalOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq);
 
 /* Close output and free things */
 int nbodyCtxDestroy(NBodyCtx* ctx);

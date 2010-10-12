@@ -75,10 +75,7 @@ static inline void printHistogram(FILE* f,
 {
     unsigned int i;
 
-  #if BOINC_APPLICATION
-    fprintf(f, "<histogram>\n");
-  #endif
-
+    mw_boinc_print(f, "<histogram>\n");
     for (i = 0; i < maxIdx; ++i)
     {
         fprintf(f, "%d %2.10f %2.10f %2.10f\n",  /* Report center of the bins */
@@ -88,34 +85,31 @@ static inline void printHistogram(FILE* f,
                 histogram[i] == 0 ? inv(totalNum) : mw_sqrt(histogram[i]) / totalNum);
     }
 
-  #if BOINC_APPLICATION
-    fprintf(f, "</histogram>\n");
-  #endif
-
+    mw_boinc_print(f, "</histogram>\n");
 }
 
-static void writeHistogram(const char* histout,           /* Filename to write histogram to */
+static void writeHistogram(const NBodyCtx* ctx,
                            const HistData* histData,      /* Read histogram data */
                            const unsigned int* histogram, /* Binned simulation data */
                            const unsigned int maxIdx,     /* number of bins */
                            const real start,              /* Calculated low point of bin range */
                            const real totalNum)           /* Total number in range */
 {
-    FILE* f = DEFAULT_OUTPUT_FILE;
+    FILE* f = ctx->outfile;
 
-    if (histout && strcmp(histout, ""))  /* If file specified, try to open it */
+    if (ctx->histout && strcmp(ctx->histout, ""))  /* If file specified, try to open it */
     {
-        f = mwOpenResolved(histout, "w");
+        f = mwOpenResolved(ctx->histout, "w");
         if (f == NULL)
         {
-            perror("Writing histout. Using stderr instead");
-            f = DEFAULT_OUTPUT_FILE;
+            perror("Writing histout. Using output file instead");
+            f = ctx->outfile;
         }
     }
 
     printHistogram(f, histData, histogram, maxIdx, start, totalNum);
 
-    if (f != DEFAULT_OUTPUT_FILE)
+    if (f != ctx->outfile)
         fclose(f);
 }
 
@@ -264,7 +258,7 @@ real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st)
     if (histogram && histData)
     {
         if (ctx->outputHistogram)
-            writeHistogram(ctx->histout, histData, histogram, maxIdx, start, (real) totalNum);
+            writeHistogram(ctx, histData, histogram, maxIdx, start, (real) totalNum);
 
         if (totalNum != 0)
             chisqval = calcChisq(histData, histogram, maxIdx, (real) totalNum);

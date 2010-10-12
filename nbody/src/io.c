@@ -40,27 +40,14 @@ int initOutput(NBodyCtx* ctx)
 
 static void out_2vectors(FILE* str, vector vec1, vector vec2)
 {
-    fprintf(str, " %21.14E %21.14E %21.14E %21.14E %21.14E %21.14E\n", vec1[0], vec1[1], vec1[2], vec2[0], vec2[1], vec2[2]);
-}
-
-
-/* Output with the silly xml stuff that BOINC uses */
-void boincOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq)
-{
-    //not printing out the bodies because it will food the server.
-
-    if (ctx->outputBodies)
-    {
-        fprintf(ctx->outfile, "<bodies>\n");
-        output(ctx, st);
-        fprintf(ctx->outfile, "</bodies>\n");
-    }
-
-    fprintf(ctx->outfile, "<search_likelihood>%.20g</search_likelihood>\n", chisq);
+    fprintf(str,
+            " %21.14E %21.14E %21.14E %21.14E %21.14E %21.14E\n",
+            X(vec1), Y(vec1), Z(vec1),
+            X(vec2), Y(vec2), Z(vec2));
 }
 
 /* output: Print bodies */
-int output(const NBodyCtx* ctx, const NBodyState* st)
+static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st)
 {
     bodyptr p;
     vector lbR;
@@ -69,21 +56,38 @@ int output(const NBodyCtx* ctx, const NBodyState* st)
     for (p = st->bodytab; p < endp; p++)
     {
         if (ctx->outputCartesian)     /* Probably useful for making movies and such */
-            out_2vectors(ctx->outfile, Pos(p), Vel(p));
+            out_2vectors(f, Pos(p), Vel(p));
         else
         {
             cartesianToLbr(ctx, lbR, Pos(p));
-            out_2vectors(ctx->outfile, lbR, Vel(p));
+            out_2vectors(f, lbR, Vel(p));
         }
     }
 
-    if (fflush(ctx->outfile))
+    if (fflush(f))
     {
         perror("Body output flush");
         return TRUE;
     }
 
     return FALSE;
+}
+
+int finalOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq)
+{
+    int rc;
+
+    /* Printing out the bodies will food the server. */
+    if (ctx->outputBodies)
+    {
+        mw_boinc_print(ctx->outfile, "<bodies>\n");
+        rc = outputBodies(ctx->outfile, ctx, st);
+        mw_boinc_print(ctx->outfile, "</bodies>\n");
+    }
+
+    fprintf(ctx->outfile, "<search_likelihood>%.20g</search_likelihood>\n", chisq);
+
+    return rc;
 }
 
 int nbodyCtxDestroy(NBodyCtx* ctx)

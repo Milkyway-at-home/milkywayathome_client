@@ -47,7 +47,7 @@ printTemplate ts np@(NBodyPerm q c d h) = printf ts (lowshow np) (lowshow c) (lo
 
 runTest dir bin name str = do
   let fname = dir </> (name ++ "_results")
-  rawSystem bin [ "-s", str, "-o", fname ]
+  rawSystem bin [ "-s", str, "-o", fname, "-h", histFile ]
 
 makeRunTest dir bin ts np = do let name  = show np
                                    str   = printTemplate ts np
@@ -60,7 +60,9 @@ generateTests template testDir bin = do
   ts <- readFile template
   mapM_ (makeRunTest testDir bin ts) allTests
 
+histFile = "orphan_test_histogram"
+templateFile = "orphan_test_template.js"
 
 --main = generateTests "test_set2_template.js" "test_set2" "../bin/milkyway_nbody"
-main = generateTests "orphan_test_template.js" "test_set1" "../bin/milkyway_nbody"
+main = generateTests templateFile "test_set1" "../bin/milkyway_nbody"
 

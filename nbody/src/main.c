@@ -307,6 +307,8 @@ static json_object* readParameters(const int argc,
             0, "Ignore the checkpoint file", NULL
         },
 
+      #endif /* BOINC_APPLICATION */
+
         {
             "print-bodies", 'b',
             POPT_ARG_NONE, &nbf->printBodies,
@@ -318,7 +320,6 @@ static json_object* readParameters(const int argc,
             POPT_ARG_NONE, &nbf->printHistogram,
             0, "Print histogram", NULL
         },
-      #endif /* BOINC_APPLICATION */
 
       #ifdef _OPENMP
         {
@@ -409,8 +410,10 @@ static void setDefaultFlags(NBodyFlags* nbf)
     stringDefault(nbf->histogramFileName,  DEFAULT_HISTOGRAM_FILE);
 
     /* Specifying output files implies using them */
-    nbf->printBodies = (nbf->outFileName != NULL);
-    nbf->printHistogram = (nbf->histoutFileName != NULL);
+    if (!nbf->printBodies)
+        nbf->printBodies = (nbf->outFileName != NULL);
+    if (!nbf->printHistogram)
+        nbf->printHistogram = (nbf->histoutFileName != NULL);
 }
 
 static void freeNBodyFlags(NBodyFlags* nbf)

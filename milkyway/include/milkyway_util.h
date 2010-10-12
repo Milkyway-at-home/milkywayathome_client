@@ -107,6 +107,11 @@ void* mwCallocAligned(size_t count, size_t size, size_t alignment);
 #define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \
                          mw_finish(EXIT_FAILURE); }
 
+#if BOINC_APPLICATION
+  #define mw_boinc_print(f, msg, ...) fprintf(f, msg, ##__VA_ARGS__)
+#else
+  #define mw_boinc_print(f, msg, ...)
+#endif
 
 /* If one of these options is null, use the default. */
 #define stringDefault(s, d) ((s) = (s) ? (s) : strdup((d)))
