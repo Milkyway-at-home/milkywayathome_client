@@ -18,6 +18,10 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if !defined(_MILKYWAY_MATH_H_INSIDE_) && !defined(MILKYWAY_MATH_COMPILATION)
+  #error "Only milkyway_math.h can be included directly."
+#endif
+
 #ifndef _MILKYWAY_VECTOR_TYPES_H_
 #define _MILKYWAY_VECTOR_TYPES_H_
 
@@ -78,9 +82,6 @@ typedef struct MW_ALIGN(4 * sizeof(real))
 #define ZERO_VECTOR { 0.0, 0.0, 0.0, 0.0 }
 typedef mwvector mwmatrix[NDIM];
 #define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
-
-
-
 
 
 #endif /* _MILKYWAY_VECTOR_TYPES_H_ */

@@ -8,14 +8,67 @@
 /* It's free because it's yours. */
 /* ************************************************************************** */
 
-#if !defined(_MILKYWAY_MATH_H_INSIDE_) && !defined(MILKYWAY_MATH_COMPILATION)
-  #error "Only milkyway_math.h can be included directly."
-#endif
+#ifndef _NBODY_VECTORS_H_
+#define _NBODY_VECTORS_H_
 
-#ifndef _MILKYWAY_VECTORS_OPS_H_
-#define _MILKYWAY_VECTORS_OPS_H_
+/* FIXME: This entire thing should be killed with fire and replaced
+ * with mwvec stuff */
 
-#include "real.h"
+#undef X
+#undef Y
+#undef Z
+#undef W
+#undef L
+#undef B
+#undef R
+#undef ZERO_VECTOR
+#undef ZERO_MATRIX
+
+
+#define NDIM 3
+
+#define VECTOR_SIZE 3
+typedef real vector[NDIM];
+
+typedef real matrix[NDIM][NDIM];
+typedef real* vectorptr;
+
+
+#define VECTOR(x, y, z) { (x), (y), (z) }
+#define SET_VECTOR(v, x, y, z) { X(v) = (x); Y(v) = (y); Z(v) = (z); }
+
+/* Note: vectorptr is NOT the same as vector*.  By using real* as
+   vectorptr, we can do nice things to avoid pointer aliasing and
+   copying in various places. Use vector* only for mapping over an
+   array of vectors.
+ */
+
+#define ZERO_VECTOR { 0.0, 0.0, 0.0 }
+#define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
+
+#define L(x) ((x)[0])
+#define B(x) ((x)[1])
+#define R(x) ((x)[2])
+
+#define X(x) ((x)[0])
+#define Y(x) ((x)[1])
+#define Z(x) ((x)[2])
+
+
+/* Clear vector */
+#define CLRV(v)                                 \
+    {                                           \
+        (v)[0] = 0.0;                           \
+        (v)[1] = 0.0;                           \
+        (v)[2] = 0.0;                           \
+    }
+
+/* DOT Vector Product */
+#define DOTVP(s,v,u)                                    \
+    {                                                   \
+        (s) = X(v) * X(u) + Y(v) * Y(u) + Z(v) * Z(u);  \
+    }
+
 
 /* Vector operations. */
 
@@ -298,5 +351,5 @@
         DOTVP(Z(v), (p)[2], (u));               \
    }
 
-#endif /* _MILKYWAY_VECTORS_OPS_H_ */
+#endif /* _NBODY_VECTORS_H_ */
 

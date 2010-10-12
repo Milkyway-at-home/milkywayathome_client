@@ -32,12 +32,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef __OPENCL_VERSION__
   #include "milkyway_vectors_cl.h"
 #else
-  #include "milkyway_vectors_cpu.h"
   #include "milkyway_vectors_func.h"
 #endif
-
-#include "milkyway_vectors_ops.h"
-
 
 #endif /* _MILKYWAY_VECTORS_H_ */
 

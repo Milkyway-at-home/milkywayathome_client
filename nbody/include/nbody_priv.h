@@ -30,6 +30,7 @@ extern "C" {
 #include "nbody_config.h" /* Must be included first */
 
 #include "milkyway_math.h"
+#include "nbody_vectors.h"
 
 #include "nbody_types.h"
 #include "grav.h"

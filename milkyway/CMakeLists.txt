@@ -60,10 +60,8 @@ set(mw_lib_headers include/milkyway_config.h.in
                    include/milkyway_math_functions_standard.h
                    include/milkyway_util.h
                    include/milkyway_vectors.h
-                   include/milkyway_vectors_cpu.h
                    include/milkyway_vectors_func.h
                    include/milkyway_vector_types.h
-                   include/milkyway_vectors_ops.h
                    include/real.h)
 
 set(mw_cl_lib_headers include/show_cl_types.h

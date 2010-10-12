@@ -67,6 +67,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_config.h"
 #include "milkyway_math.h"
+#include "nbody_vectors.h"
 
 #ifndef __OPENCL_VERSION__   /* Not compiling CL kernel */
   #if NBODY_OPENCL
