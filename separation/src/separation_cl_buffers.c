@@ -166,7 +166,7 @@ static inline cl_int createRBuffers(CLInfo* ci,
     return CL_SUCCESS;
 }
 
-static void calculateSizes(SeparationSizes* sizes, const ASTRONOMY_PARAMETERS* ap, const INTEGRAL_AREA* ia)
+void calculateSizes(SeparationSizes* sizes, const ASTRONOMY_PARAMETERS* ap, const INTEGRAL_AREA* ia)
 {
     sizes->outMu = sizeof(real) * ia->mu_steps * ia->r_steps;
     sizes->outProbs = sizeof(real) * ia->mu_steps * ia->r_steps * ap->number_streams;
@@ -177,31 +177,28 @@ static void calculateSizes(SeparationSizes* sizes, const ASTRONOMY_PARAMETERS* a
     sizes->rc = sizeof(R_CONSTS) * ia->r_steps;
 }
 
-cl_int createSeparationBuffers(const ASTRONOMY_PARAMETERS* ap,
+cl_int createSeparationBuffers(CLInfo* ci,
+                               SeparationCLMem* cm,
+                               const ASTRONOMY_PARAMETERS* ap,
                                const INTEGRAL_AREA* ia,
                                const STREAM_CONSTANTS* sc,
                                const STREAM_GAUSS* sg,
-                               CLInfo* ci,
-                               SeparationCLMem* cm)
+                               const SeparationSizes* sizes)
 {
     cl_int err = CL_SUCCESS;
     cl_mem_flags constBufFlags;
-
-    SeparationSizes sizes;
-
-    calculateSizes(&sizes, ap, ia);
 
     if (ci->devType == CL_DEVICE_TYPE_CPU)
         constBufFlags = CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR;
     else
         constBufFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
 
-    err |= createOutMuBuffer(ci, cm, &sizes);
-    err |= createOutProbsBuffer(ci, cm, &sizes);
-    err |= createAPBuffer(ci, cm, ap, &sizes, constBufFlags);
-    err |= createIABuffer(ci, cm, ia, &sizes, constBufFlags);
-    err |= createSCBuffer(ci, cm, sc, &sizes, constBufFlags);
-    err |= createRBuffers(ci, cm, ap, ia, sg, &sizes);
+    err |= createOutMuBuffer(ci, cm, sizes);
+    err |= createOutProbsBuffer(ci, cm, sizes);
+    err |= createAPBuffer(ci, cm, ap, sizes, constBufFlags);
+    err |= createIABuffer(ci, cm, ia, sizes, constBufFlags);
+    err |= createSCBuffer(ci, cm, sc, sizes, constBufFlags);
+    err |= createRBuffers(ci, cm, ap, ia, sg, sizes);
 
     return err;
 }

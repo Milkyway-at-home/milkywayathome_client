@@ -395,7 +395,7 @@ real integrateCL(const ASTRONOMY_PARAMETERS* ap,
     CLInfo ci = EMPTY_CL_INFO;
     SeparationCLMem cm = EMPTY_SEPARATION_CL_MEM;
 
-    if (setupSeparationCL(ap, ia, sc, sg, clr, &ci, &cm) != CL_SUCCESS)
+    if (setupSeparationCL(&ci, &cm, ap, ia, sc, sg, clr) != CL_SUCCESS)
         warn("Failed to setup up CL\n");
     else
         result = runIntegral(&ci, &cm, probs_results, ap, ia);

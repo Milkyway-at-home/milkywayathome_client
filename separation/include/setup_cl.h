@@ -50,13 +50,13 @@ typedef struct
 #define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 
 
-cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
+cl_int setupSeparationCL(CLInfo* ci,
+                         SeparationCLMem* cm,
+                         const ASTRONOMY_PARAMETERS* ap,
                          const INTEGRAL_AREA* ia,
                          const STREAM_CONSTANTS* sc,
                          const STREAM_GAUSS* sg,
-                         const CLRequest* clr,
-                         CLInfo* ci,
-                         SeparationCLMem* cm);
+                         const CLRequest* clr);
 
 #ifdef __cplusplus
 }

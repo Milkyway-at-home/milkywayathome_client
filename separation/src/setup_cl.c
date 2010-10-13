@@ -96,19 +96,59 @@ void freeKernelSrc(char* src)
 
 #endif
 
-cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
+
+#define NUM_CONST_BUF_ARGS 4
+
+/* Check that the device has the necessary resources */
+static cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes* sizes)
+{
+    size_t totalOut;
+    size_t totalConstBuf;
+
+    totalOut = 2 * sizes->outMu + 2 * sizes->outProbs; /* 2 buffers for double buffering */
+    if (totalOut > di->memSize)
+    {
+        warn("Device has insufficient global memory for output buffers\n");
+        return CL_FALSE;
+    }
+
+    if (sizes->outMu > di->maxMemAlloc || sizes->outProbs > di->maxMemAlloc)
+    {
+        warn("An output buffer would exceed CL_DEVICE_MAX_MEM_ALLOC_SIZE\n");
+        return CL_FALSE;
+    }
+
+    if (NUM_CONST_BUF_ARGS > di->maxConstArgs)
+    {
+        warn("Need more constant arguments than available\n");
+        return CL_FALSE;
+    }
+
+    totalConstBuf = sizes->ap + sizes->ia + sizes->sc + sizes-> rc;
+    if (totalConstBuf > di-> maxConstBufSize)
+    {
+        warn("Device doesn't have enough constant buffer space\n");
+        return CL_FALSE;
+    }
+
+    return CL_TRUE;
+}
+
+cl_int setupSeparationCL(CLInfo* ci,
+                         SeparationCLMem* cm,
+                         const ASTRONOMY_PARAMETERS* ap,
                          const INTEGRAL_AREA* ia,
                          const STREAM_CONSTANTS* sc,
                          const STREAM_GAUSS* sg,
-                         const CLRequest* clr,
-                         CLInfo* ci,
-                         SeparationCLMem* cm)
+                         const CLRequest* clr)
 {
     cl_int err;
     //char* compileDefs;
     char* kernelSrc;
     char* extraDefs;
     char* cwd;
+    DevInfo di;
+    SeparationSizes sizes;
 
     cwd = getcwd(NULL, 0);
     asprintf(&extraDefs, DOUBLEPREC_DEF_STRING
@@ -141,17 +181,39 @@ cl_int setupSeparationCL(const ASTRONOMY_PARAMETERS* ap,
         return err;
     }
 
-    err = createSeparationBuffers(ap, ia, sc, sg, ci, cm);
+    err = getDevInfo(&di, ci->dev);
     if (err != CL_SUCCESS)
     {
-        fail("Failed to create CL buffers: %s\n", showCLInt(err));
+        warn("Failed to get device info\n");
+        return err;
+    }
+
+    err = printDevInfoExts(ci, &di);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to print device extensions\n");
+        return err;
+    }
+
+    calculateSizes(&sizes, ap, ia);
+
+    if (!separationCheckDevCapabilities(&di, &sizes))
+    {
+        warn("Device failed capability check\n");
+        return -1;
+    }
+
+    err = createSeparationBuffers(ci, cm, ap, ia, sc, sg, &sizes);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to create CL buffers: %s\n", showCLInt(err));
         return err;
     }
 
     err = separationSetKernelArgs(ci, cm);
     if (err != CL_SUCCESS)
     {
-        fail("Failed to set integral kernel arguments: %s\n", showCLInt(err));
+        warn("Failed to set integral kernel arguments: %s\n", showCLInt(err));
         return err;
     }
 

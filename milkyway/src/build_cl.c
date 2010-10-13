@@ -166,7 +166,7 @@ cl_int printCLExtensions(cl_device_id dev)
         return err;
     }
     else
-        printf("Extensions: %s\n", exts);
+        warn("Extensions: %s\n", exts);
 
     return CL_SUCCESS;
 }
@@ -213,57 +213,57 @@ cl_int getDevInfo(DevInfo* di, cl_device_id dev)
 
 void printDevInfo(const DevInfo* di)
 {
-    printf("Device %s (%s:0x%x)\n"
-           "Type:                %s\n"
-           "Driver version:      %s\n"
-           "Version:             %s\n"
-           "Little endian:       %s\n"
-           "Error correction:    %s\n"
-           "Address bits:        %u\n"
-           "Max compute units:   %u\n"
-           "Clock frequency:     %u Mhz\n"
-           "Global mem size:     %llu\n"
-           "Max mem alloc:       %llu\n"
-           "Global mem cache:    %llu\n"
-           "Cacheline size:      %u\n"
-           "Local mem type:      %s\n"
-           "Local mem size:      %llu\n"
-           "Max const args:      %u\n"
-           "Max const buf size:  %llu\n"
-           "Max parameter size:  %zu\n"
-           "Max work group size: %zu\n"
-           "Max work item dim:   %u\n"
-           "Max work item sizes: { %zu, %zu, %zu }\n"
-           "Mem base addr align: %u\n"
-           "Min type align size: %u\n"
-           "Timer resolution:    %zu ns\n" ,
-           di->devName,
-           di->vendor,
-           di->vendorID,
-           showCLDeviceType(di->devType),
-           di->driver,
-           di->version,
-           showCLBool(di->littleEndian),
-           showCLBool(di->errCorrect),
-           di->addrBits,
-           di->maxCompUnits,
-           di->clockFreq,
-           di->memSize,
-           di->maxMemAlloc,
-           di->gMemCache,
-           di->cachelineSize,
-           //di->showBool(unifiedMem),
-           showCLDeviceLocalMemType(di->localMemType),
-           di->localMemSize,
-           di->maxConstArgs,
-           di->maxConstBufSize,
-           di->maxParamSize,
-           di->maxWorkGroupSize,
-           di->maxWorkItemDim,
-           di->maxWorkItemSizes[0], di->maxWorkItemSizes[1], di->maxWorkItemSizes[2],
-           di->memBaseAddrAlign,
-           di->minAlignSize,
-           di->timerRes
+    warn("Device %s (%s:0x%x)\n"
+         "Type:                %s\n"
+         "Driver version:      %s\n"
+         "Version:             %s\n"
+         "Little endian:       %s\n"
+         "Error correction:    %s\n"
+         "Address bits:        %u\n"
+         "Max compute units:   %u\n"
+         "Clock frequency:     %u Mhz\n"
+         "Global mem size:     %llu\n"
+         "Max mem alloc:       %llu\n"
+         "Global mem cache:    %llu\n"
+         "Cacheline size:      %u\n"
+         "Local mem type:      %s\n"
+         "Local mem size:      %llu\n"
+         "Max const args:      %u\n"
+         "Max const buf size:  %llu\n"
+         "Max parameter size:  %zu\n"
+         "Max work group size: %zu\n"
+         "Max work item dim:   %u\n"
+         "Max work item sizes: { %zu, %zu, %zu }\n"
+         "Mem base addr align: %u\n"
+         "Min type align size: %u\n"
+         "Timer resolution:    %zu ns\n" ,
+         di->devName,
+         di->vendor,
+         di->vendorID,
+         showCLDeviceType(di->devType),
+         di->driver,
+         di->version,
+         showCLBool(di->littleEndian),
+         showCLBool(di->errCorrect),
+         di->addrBits,
+         di->maxCompUnits,
+         di->clockFreq,
+         di->memSize,
+         di->maxMemAlloc,
+         di->gMemCache,
+         di->cachelineSize,
+         //di->showBool(unifiedMem),
+         showCLDeviceLocalMemType(di->localMemType),
+         di->localMemSize,
+         di->maxConstArgs,
+         di->maxConstBufSize,
+         di->maxParamSize,
+         di->maxWorkGroupSize,
+         di->maxWorkItemDim,
+         di->maxWorkItemSizes[0], di->maxWorkItemSizes[1], di->maxWorkItemSizes[2],
+         di->memBaseAddrAlign,
+         di->minAlignSize,
+         di->timerRes
         );
 }
 
@@ -314,13 +314,13 @@ cl_int getWorkGroupInfo(CLInfo* ci, WGInfo* wgi)
 
 void printWorkGroupInfo(const WGInfo* wgi)
 {
-    printf("Kernel work group info:\n"
-           "Work group size = %zu\n"
-           "Kernel local mem size = %lu\n"
-           "Compile work group size = { %zu, %zu, %zu }\n",
-           wgi->wgs,
-           wgi->lms,
-           wgi->cwgs[0], wgi->cwgs[1], wgi->cwgs[2]);
+    warn("Kernel work group info:\n"
+         "Work group size = %zu\n"
+         "Kernel local mem size = %lu\n"
+         "Compile work group size = { %zu, %zu, %zu }\n",
+         wgi->wgs,
+         wgi->lms,
+         wgi->cwgs[0], wgi->cwgs[1], wgi->cwgs[2]);
 }
 
 static char* getBuildLog(CLInfo* ci)
@@ -422,6 +422,21 @@ static cl_int createCtxQueue(CLInfo* ci)
     return CL_SUCCESS;
 }
 
+cl_int printDevInfoExts(const CLInfo* ci, const DevInfo* di)
+{
+    cl_int err;
+
+    printDevInfo(di);
+
+    err = printCLExtensions(ci->dev);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error getting printing device extensions: %s\n", showCLInt(err));
+        return err;
+    }
+    return CL_SUCCESS;
+}
+
 static cl_int getCLInfo(CLInfo* ci, cl_device_type type)
 {
     cl_int err;
@@ -452,22 +467,6 @@ static cl_int getCLInfo(CLInfo* ci, cl_device_type type)
     }
 
     ci->devType = type;
-
-    err = getDevInfo(&di, ci->dev);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error getting getting device information: %s\n", showCLInt(err));
-        return err;
-    }
-
-    printDevInfo(&di);
-
-    err = printCLExtensions(ci->dev);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error getting printing device extensions: %s\n", showCLInt(err));
-        return err;
-    }
 
     return CL_SUCCESS;
 }
