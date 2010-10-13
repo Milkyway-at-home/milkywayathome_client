@@ -34,8 +34,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include "integral_kernel.h"
 #endif /* SEPARATION_INLINE_KERNEL */
 
-#define BUFSIZE 4096
-
 
 /* Only sets the constant arguments, not the outputs which we double buffer */
 static inline cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm)
