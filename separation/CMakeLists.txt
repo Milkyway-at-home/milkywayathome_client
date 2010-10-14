@@ -130,7 +130,6 @@ set(separation_headers include/calculated_constants.h
                        include/integrals_common.h
                        include/separation_types.h
                        include/coordinates.h
-                       include/integrals_likelihood.h
                        include/separation.h
                        include/evaluation.h
                        include/io_util.h
