@@ -23,7 +23,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_types.h"
 #include "likelihood.h"
-#include "integrals_likelihood.h"
 #include "integrals_common.h"
 #include "r_points.h"
 #include "milkyway_util.h"

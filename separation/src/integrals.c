@@ -21,7 +21,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "evaluation_state.h"
 #include "integrals.h"
-#include "integrals_likelihood.h"
 #include "integrals_common.h"
 #include "coordinates.h"
 #include "r_points.h"

@@ -28,8 +28,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "r_points.h"
 #include "milkyway_cl.h"
 #include "milkyway_extra.h"
-
-#include "integrals_likelihood.h"
 #include "coordinates.h"
 #include "integrals_common.h"
 
