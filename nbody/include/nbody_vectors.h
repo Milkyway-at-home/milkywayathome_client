@@ -58,9 +58,9 @@ typedef real* vectorptr;
 /* Clear vector */
 #define CLRV(v)                                 \
     {                                           \
-        (v)[0] = 0.0;                           \
-        (v)[1] = 0.0;                           \
-        (v)[2] = 0.0;                           \
+        X(v) = 0.0;                             \
+        Y(v) = 0.0;                             \
+        Z(v) = 0.0;                             \
     }
 
 /* DOT Vector Product */
@@ -71,14 +71,6 @@ typedef real* vectorptr;
 
 
 /* Vector operations. */
-
-/* UNIT Vector */
-#define UNITV(v,j)                              \
-    {                                           \
-        X(v) = (0 == (j)) ? 1.0 : 0.0;          \
-        Y(v) = (1 == (j)) ? 1.0 : 0.0;          \
-        Z(v) = (2 == (j)) ? 1.0 : 0.0;          \
-    }
 
 /* SET Vector */
 #define SETV(v,u)                               \
@@ -133,17 +125,17 @@ typedef real* vectorptr;
 
 #define INCNEGV(v)                              \
     {                                           \
-        v[0] = -v[0];                           \
-        v[1] = -v[1];                           \
-        v[2] = -v[2];                           \
+        X(v) = -X(v);                           \
+        Y(v) = -Y(v);                           \
+        Z(v) = -Z(v);                           \
     }
 
 /* DIVide Vector by Scalar */
 #define DIVVS(v,u,s)                            \
     {                                           \
-        X(v) = X(u) / (s);                  \
-        Y(v) = Y(u) / (s);                  \
-        Z(v) = Z(u) / (s);                  \
+        X(v) = X(u) / (s);                      \
+        Y(v) = Y(u) / (s);                      \
+        Z(v) = Z(u) / (s);                      \
     }
 
 /* DOT Vector Product with itself */
@@ -170,14 +162,6 @@ typedef real* vectorptr;
         _tmp += sqr(Y(u)-Y(v));                 \
         _tmp += sqr(Z(u)-Z(v));                 \
         (s) = mw_sqrt(_tmp);                    \
-    }
-
-/* CROSS Vector Product */
-#define CROSSVP(v,u,w)                          \
-    {                                           \
-        X(v) = Y(u)*Z(w) - Z(u)*Y(w);           \
-        Y(v) = Z(u)*X(w) - X(u)*Z(w);           \
-        Z(v) = X(u)*Y(w) - Y(u)*X(w);           \
     }
 
 /* INCrementally ADD Vector */
@@ -214,133 +198,87 @@ typedef real* vectorptr;
 
 /* Matrix operations. */
 
-#define CLRM(p)         /* CLeaR Matrix */      \
+/* CLeaR Matrix */
+#define CLRM(p)                                 \
     {                                           \
-        size_t _i, _j;                          \
-        for (_i = 0; _i < NDIM; ++_i)           \
-            for (_j = 0; _j < NDIM; ++_j)       \
-                (p)[_i][_j] = 0.0;              \
+        X((p)[0]) = 0.0;                        \
+        Y((p)[0]) = 0.0;                        \
+        Z((p)[0]) = 0.0;                        \
+                                                \
+        X((p)[1]) = 0.0;                        \
+        Y((p)[1]) = 0.0;                        \
+        Z((p)[1]) = 0.0;                        \
+                                                \
+        X((p)[2]) = 0.0;                        \
+        Y((p)[2]) = 0.0;                        \
+        Z((p)[2]) = 0.0;                        \
     }
 
 /* SET Matrix to Identity */
-#define SETMI(p)                                        \
-    {                                                   \
-        size_t _i, _j;                                  \
-        for (_i = 0; _i < NDIM; ++_i)                   \
-            for (_j = 0; _j < NDIM; ++_j)               \
-                (p)[_i][_j] = (_i == _j) ? 1.0 : 0.0;   \
-    }
-
-/* SET Matrix */
-#define SETM(p,q)                               \
+#define SETMI(p)                                \
     {                                           \
-        size_t _i, _j;                          \
-        for (_i = 0; _i < NDIM; ++_i)           \
-            for (_j = 0; _j < NDIM; ++_j)       \
-                (p)[_i][_j] = (q)[_i][_j];      \
-    }
-
-/* TRANspose Matrix */
-#define TRANM(p,q)                              \
-    {                                           \
-        size_t _i, _j;                          \
-        for (_i = 0; _i < NDIM; ++_i)           \
-            for (_j = 0; _j < NDIM; ++_j)       \
-                (p)[_i][_j] = (q)[_j][_i];      \
+        X((p)[0]) = 1.0;                        \
+        Y((p)[0]) = 0.0;                        \
+        Z((p)[0]) = 0.0;                        \
+                                                \
+        X((p)[1]) = 0.0;                        \
+        Y((p)[1]) = 1.0;                        \
+        Z((p)[1]) = 0.0;                        \
+                                                \
+        X((p)[2]) = 0.0;                        \
+        Y((p)[2]) = 0.0;                        \
+        Z((p)[2]) = 1.0;                        \
     }
 
 /* ADD Matrix */
-#define ADDM(p,q,r)                                         \
-    {                                                       \
-        size_t _i, _j;                                      \
-        for (_i = 0; _i < NDIM; ++_i)                       \
-            for (_j = 0; _j < NDIM; ++_j)                   \
-                (p)[_i][_j] = (q)[_i][_j] + (r)[_i][_j];    \
+#define ADDM(p,q,r)                                 \
+    {                                               \
+        size_t _i;                                  \
+        for (_i = 0; _i < NDIM; ++_i)               \
+        {                                           \
+            X((p)[_i]) = X((q)[_i]) + X((r)[_i]);   \
+            Y((p)[_i]) = Y((q)[_i]) + Y((r)[_i]);   \
+            Z((p)[_i]) = Z((q)[_i]) + Z((r)[_i]);   \
+        }                                           \
     }
+
 
 /* SUBtract Matrix */
-#define SUBM(p,q,r)                                         \
-    {                                                       \
-        size_t _i, _j;                                      \
-        for (_i = 0; _i < NDIM; ++_i)                       \
-            for (_j = 0; _j < NDIM; ++_j)                   \
-                (p)[_i][_j] = (q)[_i][_j] - (r)[_i][_j];    \
-    }
 
-/* Multiply Matrix */
-#define MULM(p,q,r)                                             \
-    {                                                           \
-        size_t _i, _j, _k;                                      \
-        for (_i = 0; _i < NDIM; ++_i)                           \
-            for (_j = 0; _j < NDIM; ++_j) {                     \
-                (p)[_i][_j] = 0.0;                              \
-                for (_k = 0; _k < NDIM; _k++)                   \
-                    (p)[_i][_j] += (q)[_i][_k] * (r)[_k][_j];   \
-            }                                                   \
+
+#define SUBM(p,q,r)                                 \
+    {                                               \
+        size_t _i;                                  \
+        for (_i = 0; _i < NDIM; ++_i)               \
+        {                                           \
+            X((p)[_i]) = X((q)[_i]) - X((r)[_i]);   \
+            Y((p)[_i]) = Y((q)[_i]) - Y((r)[_i]);   \
+            Z((p)[_i]) = Z((q)[_i]) - Z((r)[_i]);   \
+        }                                           \
     }
 
 /* MULtiply Matrix by Scalar */
-#define MULMS(p,q,s)                                \
-    {                                               \
-        size_t _i, _j;                              \
-        for (_i = 0; _i < NDIM; ++_i)               \
-            for (_j = 0; _j < NDIM; ++_j)           \
-                (p)[_i][_j] = (q)[_i][_j] * (s);    \
+#define MULMS(p,q,s)                            \
+    {                                           \
+        size_t _i;                              \
+        for (_i = 0; _i < NDIM; ++_i)           \
+        {                                       \
+            X((p)[_i]) = X((q)[_i]) * s;        \
+            Y((p)[_i]) = Y((q)[_i]) * s;        \
+            Z((p)[_i]) = Z((q)[_i]) * s;        \
+        }                                       \
     }
-
-/* DIVide Matrix by Scalar */
-#define DIVMS(p,q,s)                                \
-    {                                               \
-        size_t _i, _j;                              \
-        for (_i = 0; _i < NDIM; ++_i)               \
-            for (_j = 0; _j < NDIM; ++_j)           \
-                (p)[_i][_j] = (q)[_i][_j] / (s);    \
-    }
-
 
 /* OUTer Vector Product */
 #define OUTVP(p,v,u)                                \
     {                                               \
-        size_t _i, _j;                              \
+        size_t _i;                                  \
         for (_i = 0; _i < NDIM; ++_i)               \
-            for (_j = 0; _j < NDIM; ++_j)           \
-                (p)[_i][_j] = (v)[_i] * (u)[_j];    \
-    }
-
-/* TRACE of Matrix */
-#define TRACEM(s,p)                             \
-    {                                           \
-        size_t _i;                              \
-        (s) = 0.0;                              \
-        for (_i = 0.0; _i < NDIM; ++_i)         \
-            (s) += (p)[_i][_i];                 \
-    }
-
-/* Misc. impure operations. */
-
-/* SET Vector to Scalar */
-#define SETVS(v,s)                              \
-    {                                           \
-        X(v) = (s);                             \
-        Y(v) = (s);                             \
-        Z(v) = (s);                             \
-    }
-
-/* ADD Vector and Scalar */
-#define ADDVS(v,u,s)                            \
-    {                                           \
-        X(v) = X(u) + (s);                      \
-        Y(v) = Y(u) + (s);                      \
-        Z(v) = Z(u) + (s);                      \
-    }
-
-/* SET Matrix to Scalar */
-#define SETMS(p,s)                              \
-    {                                           \
-        size_t _i, _j;                          \
-        for (_i = 0; _i < NDIM; ++_i)           \
-            for (_j = 0; _j < NDIM; ++_j)       \
-                (p)[_i][_j] = (s);              \
+        {                                           \
+            X((p)[_i]) = (v)[_i] * X((u));          \
+            Y((p)[_i]) = (v)[_i] * Y((u));          \
+            Z((p)[_i]) = (v)[_i] * Z((u));          \
+        }                                           \
     }
 
 /* MULtiply Matrix by Vector */
