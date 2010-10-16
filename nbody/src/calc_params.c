@@ -42,7 +42,7 @@ static int processHalo(Halo* h)
         h->c2 = (cps / qys) + (sps / qxs);
 
         /* 2 * sin(x) * cos(x) == sin(2 * x) */
-        h->c3 = mw_sin(2 * phi) * ((qys - qxs) / (qxs * qys));
+        h->c3 = mw_sin(2.0 * phi) * ((qys - qxs) / (qxs * qys));
     }
 
     return 0;
@@ -106,9 +106,9 @@ static int processInitialConditions(const NBodyCtx* ctx, InitialConditions* ic)
     {
         /* We aren't given galactic coordinates, so convert them */
         if (ic->useRadians)
-            lbrToCartesian_rad(ctx, ic->position, ic->position);
+            ic->position = lbrToCartesian_rad(ctx, ic->position);
         else
-            lbrToCartesian(ctx, ic->position, ic->position);
+            ic->position = lbrToCartesian(ctx, ic->position);
         ic->useGalC = TRUE;
     }
 

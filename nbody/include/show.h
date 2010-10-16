@@ -39,10 +39,10 @@ char* showPotential(const Potential*);
 char* showDwarfModel(const DwarfModel*);
 char* showInitialConditions(const InitialConditions*);
 char* showContext(const NBodyCtx*);
-char* showVector(const vector v);
+char* showVector(const mwvector v);
 void printContext(const NBodyCtx*);
 void printInitialConditions(const InitialConditions*);
-void printVector(const vector v);
+void printVector(const mwvector v);
 char* showFitParams(const FitParams* fp);
 void printFitParams(const FitParams* fp);
 

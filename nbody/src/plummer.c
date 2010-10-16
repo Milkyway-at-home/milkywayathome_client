@@ -28,38 +28,39 @@ static real unitRandom(dsfmt_t* dsfmtState)
     return xrandom(dsfmtState, -1.0, 1.0);
 }
 
-//static mwvector randomVec(vectorptr vec, dsfmt_t* dsfmtState)
-static void randomVec(vectorptr vec, dsfmt_t* dsfmtState)
+static mwvector randomVec(dsfmt_t* dsfmtState)
 {
     /* pick from unit cube */
-    //mwvector vec;
+    mwvector vec;
 
     X(vec) = unitRandom(dsfmtState);
     Y(vec) = unitRandom(dsfmtState);
     Z(vec) = unitRandom(dsfmtState);
-    //W(vec) = 0.0;
+    W(vec) = 0.0;
 
-    //return vec;
+    return vec;
 }
 
 /* pickshell: pick a random point on a sphere of specified radius. */
-static inline void pickshell(dsfmt_t* dsfmtState, vector vec, real rad)
+static inline mwvector pickshell(dsfmt_t* dsfmtState, real rad)
 {
-    unsigned int k;
     real rsq, rsc;
+    mwvector vec;
 
     do                      /* pick point in NDIM-space */
     {
-        randomVec(vec, dsfmtState);
-        SQRV(rsq, vec);            /* compute radius squared */
+        vec = randomVec(dsfmtState);
+        rsq = mw_sqrv(vec);         /* compute radius squared */
     }
     while (rsq > 1.0);              /* reject if outside sphere */
 
     rsc = rad / mw_sqrt(rsq);         /* compute scaling factor */
-    INCMULVS(vec, rsc);             /* rescale to radius given */
+    mw_incmulvs(vec, rsc);            /* rescale to radius given */
+
+    return vec;
 }
 
-static void printPlummer(const NBodyCtx* ctx, vectorptr RESTRICT rshift, vectorptr RESTRICT vshift)
+static void printPlummer(const NBodyCtx* ctx, mwvector rshift, mwvector vshift)
 {
     fprintf(ctx->outfile,
             "<plummer_r> %.14g %.14g %.14g </plummer_r>\n"
@@ -77,10 +78,10 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
 {
     bodyptr p, endp;
     real rsc, vsc, r, v, x, y;
-    vector scaledrshift = ZERO_VECTOR;
-    vector scaledvshift = ZERO_VECTOR;
-    vector cmr          = ZERO_VECTOR;
-    vector cmv          = ZERO_VECTOR;
+    mwvector scaledrshift = ZERO_VECTOR;
+    mwvector scaledvshift = ZERO_VECTOR;
+    mwvector cmr          = ZERO_VECTOR;
+    mwvector cmv          = ZERO_VECTOR;
 
     dsfmt_t dsfmtState;
     real rnd;
@@ -90,8 +91,8 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
     const real mpp    = mass / rnbody;     /* mass per particle */
 
     // The coordinates to shift the plummer sphere by
-    vector rshift = { X(ic->position), Y(ic->position), Z(ic->position) };
-    vector vshift = { X(ic->velocity), Y(ic->velocity), Z(ic->velocity) };
+    mwvector rshift = ic->position;
+    mwvector vshift = ic->velocity;
 
     dsfmt_init_gen_rand(&dsfmtState, ctx->seed);
 
@@ -100,8 +101,8 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
     rsc = ctx->model.scale_radius;              /* set length scale factor */
     vsc = mw_sqrt(ctx->model.mass / rsc);         /* and recip. speed scale */
 
-    MULVS(scaledrshift, rshift, rsc);   /* Multiply shift by scale factor */
-    MULVS(scaledvshift, vshift, vsc);   /* Multiply shift by scale factor */
+    scaledrshift = mw_mulvs(rsc, rshift);   /* Multiply shift by scale factor */
+    scaledvshift = mw_mulvs(vsc, vshift);   /* Multiply shift by scale factor */
 
     endp = st->bodytab + ctx->model.nbody;
     for (p = st->bodytab; p < endp; ++p)   /* loop over particles */
@@ -116,9 +117,9 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
 
         r = 1.0 / mw_sqrt(mw_pow(rnd, -2.0 / 3.0) - 1.0);
 
-        pickshell(&dsfmtState, Pos(p), rsc * r);     /* pick scaled position */
-        INCADDV(Pos(p), rshift);        /* move the position */
-        INCADDV(cmr, Pos(p));           /* add to running sum */
+        Pos(p) = pickshell(&dsfmtState, rsc * r);     /* pick scaled position */
+        mw_incaddv(Pos(p), rshift);      /* move the position */
+        mw_incaddv(cmr, Pos(p));         /* add to running sum */
 
         do                      /* select from fn g(x) */
         {
@@ -128,13 +129,13 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
         while (y > -cube(x - 1.0) * sqr(x) * cube(x + 1.0) * mw_sqrt(1.0 - sqr(x)));
 
         v = M_SQRT2 * x / mw_sqrt(mw_sqrt(1.0 + sqr(r)));   /* find v in struct units */
-        pickshell(&dsfmtState, Vel(p), vsc * v);        /* pick scaled velocity */
-        INCADDV(Vel(p), vshift);       /* move the velocity */
-        INCADDV(cmv, Vel(p));         /* add to running sum */
+        Vel(p) = pickshell(&dsfmtState, vsc * v);        /* pick scaled velocity */
+        mw_incaddv(Vel(p), vshift);      /* move the velocity */
+        mw_incaddv(cmv, Vel(p));         /* add to running sum */
     }
 
-    INCDIVVS(cmr, rnbody);      /* normalize cm coords */
-    INCDIVVS(cmv, rnbody);
+    mw_incdivs(cmr, rnbody);      /* normalize cm coords */
+    mw_incdivs(cmv, rnbody);
 }
 
 

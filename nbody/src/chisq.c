@@ -131,7 +131,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
 {
     real lambda;
     real bcos, bsin, lsin, lcos;
-    vector lbr;
+    mwvector lbr;
     unsigned int idx;
     unsigned int totalNum = 0;
     bodyptr p;
@@ -151,7 +151,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
     {
         // Convert to (l,b) (involves convert x to Sun-centered)
         // Leave in radians to make rotation easier
-        cartesianToLbr_rad(ctx, lbr, Pos(p));
+        lbr = cartesianToLbr_rad(ctx, Pos(p));
 
         // Convert to (lambda, beta) (involves a rotation using the
         // Newberg et al (2009) rotation matrices)

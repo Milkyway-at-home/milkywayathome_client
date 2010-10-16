@@ -38,7 +38,7 @@ int initOutput(NBodyCtx* ctx)
 
 /* Low-level input and output operations. */
 
-static void out_2vectors(FILE* str, vector vec1, vector vec2)
+static void out_2vectors(FILE* str, mwvector vec1, mwvector vec2)
 {
     fprintf(str,
             " %21.14E %21.14E %21.14E %21.14E %21.14E %21.14E\n",
@@ -50,7 +50,7 @@ static void out_2vectors(FILE* str, vector vec1, vector vec2)
 static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st)
 {
     bodyptr p;
-    vector lbR;
+    mwvector lbR;
     const bodyptr endp = st->bodytab + ctx->model.nbody;
 
     for (p = st->bodytab; p < endp; p++)
@@ -59,7 +59,7 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st)
             out_2vectors(f, Pos(p), Vel(p));
         else
         {
-            cartesianToLbr(ctx, lbR, Pos(p));
+            lbR = cartesianToLbr(ctx, Pos(p));
             out_2vectors(f, lbR, Vel(p));
         }
     }
@@ -75,7 +75,7 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st)
 
 int finalOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq)
 {
-    int rc;
+    int rc = 0;
 
     /* Printing out the bodies will food the server. */
     if (ctx->outputBodies)

@@ -54,7 +54,7 @@ static inline void initState(const NBodyCtx* ctx, const InitialConditions* ic, N
 
     st->tnow = 0.0;                 /* reset elapsed model time */
     st->bodytab = (bodyptr) mallocSafe(ctx->model.nbody * sizeof(body));
-    st->acctab  = (vector*) mallocSafe(ctx->model.nbody * sizeof(vector));
+    st->acctab  = (mwvector*) mallocSafe(ctx->model.nbody * sizeof(mwvector));
 
     generateModel(ctx, ic, st);
 
@@ -155,7 +155,7 @@ static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
             /* We restored the useful state. Now still need to create
              * the workspace where new accelerations are
              * calculated. */
-            st->acctab  = (vector*) mallocSafe(ctx->model.nbody * sizeof(vector));
+            st->acctab  = (mwvector*) mallocSafe(ctx->model.nbody * sizeof(mwvector));
           #if !NBODY_OPENCL
             gravMap(ctx, st);
           #else

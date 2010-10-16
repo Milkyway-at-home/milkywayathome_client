@@ -30,11 +30,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef struct
 {
-    vector pos0;      /* point to evaluate field */
-    vector acc0;      /* resulting acceleration */
+    mwvector pos0;    /* point to evaluate field */
+    mwvector acc0;    /* resulting acceleration */
     bodyptr pskip;    /* skip in force evaluation */
     cellptr qmem;     /* data shared with gravsub */
-    vector dr;        /* vector from q to pos0 */
+    mwvector dr;      /* vector from q to pos0 */
     real drsq;        /* squared distance to pos0 */
 } ForceEvalState;
 
@@ -46,27 +46,27 @@ typedef struct
  */
 static inline bool subdivp(ForceEvalState* fest, cellptr q)
 {
-    SUBV(fest->dr, Pos(q), fest->pos0);   /* compute displacement */
-    SQRV(fest->drsq, fest->dr);           /* and find dist squared */
-    fest->qmem = q;                       /* remember we know them */
-    return (fest->drsq < Rcrit2(q));      /* apply standard rule */
+    fest->dr = mw_subv(Pos(q), fest->pos0);   /* compute displacement */
+    fest->drsq = mw_sqrv(fest->dr);           /* and find dist squared */
+    fest->qmem = q;                           /* remember we know them */
+    return (fest->drsq < Rcrit2(q));          /* apply standard rule */
 }
 
 
 static inline void cellQuadTerm(ForceEvalState* fest, const nodeptr q, const real drab)
 {
     real dr5inv, drquaddr, phiquad;
-    vector ai, quaddr;
+    mwvector ai, quaddr;
 
     dr5inv = 1.0 / (sqr(fest->drsq) * drab); /* form dr^-5 */
-    MULMV(quaddr, Quad(q), fest->dr);        /* form Q * dr */
-    DOTVP(drquaddr, fest->dr, quaddr);       /* form dr * Q * dr */
+    quaddr = mw_mulmv(Quad(q), fest->dr);    /* form Q * dr */
+    drquaddr = mw_dotv(fest->dr, quaddr);    /* form dr * Q * dr */
     phiquad = -0.5 * dr5inv * drquaddr;      /* get quad. part of phi */
     phiquad = 5.0 * phiquad / fest->drsq;    /* save for acceleration */
-    MULVS(ai, fest->dr, phiquad);            /* components of acc. */
-    INCSUBV(fest->acc0, ai);                 /* increment */
-    INCMULVS(quaddr, dr5inv);
-    INCSUBV(fest->acc0, quaddr);             /* acceleration */
+    ai = mw_mulvs(phiquad, fest->dr);        /* components of acc. */
+    mw_incsubv(fest->acc0, ai);              /* increment */
+    mw_incmulvs(quaddr, dr5inv);
+    mw_incsubv(fest->acc0, quaddr);          /* acceleration */
 }
 
 /* gravsub: compute contribution of node q to gravitational field at
@@ -75,20 +75,20 @@ static inline void cellQuadTerm(ForceEvalState* fest, const nodeptr q, const rea
 static inline void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, const nodeptr q)
 {
     real drab, phii, mor3;
-    vector ai;
+    mwvector ai;
 
     if (q != (nodeptr) fest->qmem)                    /* cant use memorized data? */
     {
-        SUBV(fest->dr, Pos(q), fest->pos0);           /* then compute sep. */
-        SQRV(fest->drsq, fest->dr);                   /* and sep. squared */
+        fest->dr = mw_subv(Pos(q), fest->pos0);       /* then compute sep. */
+        fest->drsq = mw_sqrv(fest->dr);               /* and sep. squared */
     }
 
     fest->drsq += ctx->model.eps2;   /* use standard softening */
     drab = mw_sqrt(fest->drsq);
     phii = Mass(q) / drab;
     mor3 = phii / fest->drsq;
-    MULVS(ai, fest->dr, mor3);
-    INCADDV(fest->acc0, ai);         /* ... and to total accel. */
+    ai = mw_mulvs(mor3, fest->dr);
+    mw_incaddv(fest->acc0, ai);         /* ... and to total accel. */
 
     if (ctx->usequad && Type(q) == CELL)             /* if cell, add quad term */
         cellQuadTerm(fest, q, drab);
@@ -127,16 +127,16 @@ static inline bool treescan(const NBodyCtx* ctx,
 /* hackGrav: evaluate gravitational field on body p; checks to be
  * sure self-interaction was handled correctly if intree is true.
  */
-static inline void hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p, vectorptr RESTRICT acc)
+static inline mwvector hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p)
 {
     static bool treeincest = FALSE;     /* tree-incest occured */
     bool skipself          = FALSE;     /* self-interaction skipped */
     ForceEvalState fest = EMPTY_FORCE_EVAL_STATE;
-    vector externalacc;
+    mwvector externalacc;
     bool intree = Mass(p) > 0.0;
 
-    fest.pskip = p;                /* exclude p from f.c. */
-    SETV(fest.pos0, Pos(p));       /* set field point */
+    fest.pskip = p;           /* exclude p from f.c. */
+    fest.pos0 = Pos(p);       /* set field point */
 
                   /* watch for tree-incest */
     skipself = treescan(ctx, &fest, root);         /* scan tree from t.root */
@@ -150,12 +150,12 @@ static inline void hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p, vector
     }
 
     /* Adding the external potential */
-    acceleration(externalacc, ctx, Pos(p));
+    externalacc = acceleration(ctx, Pos(p));
 
-    INCADDV(fest.acc0, externalacc);
+    mw_incaddv(fest.acc0, externalacc);
 
     /* TODO: Sharing */
-    SETV(acc, fest.acc0);         /* and acceleration */
+    return fest.acc0;         /* and acceleration */
 }
 
 #ifndef _OPENMP
@@ -163,12 +163,12 @@ static inline void hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p, vector
 static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
-    vector* a;
+    mwvector* a;
 
     const bodyptr endp = st->bodytab + ctx->model.nbody;
 
     for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)      /* get force on each body */
-        hackGrav(ctx, (nodeptr) st->tree.root, p, (vectorptr) a);
+        *a = hackGrav(ctx, (nodeptr) st->tree.root, p);
 }
 
 #else
@@ -181,10 +181,9 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
     #pragma omp parallel for private(i) schedule(dynamic)
     for (i = 0; i < nbody; ++i)      /* get force on each body */
     {
-        hackGrav(ctx,
-                 (nodeptr) st->tree.root,
-                 &st->bodytab[i],
-                 (vectorptr) &st->acctab[i]);
+        st->acctab[i] = hackGrav(ctx,
+                                 (nodeptr) st->tree.root,
+                                 &st->bodytab[i]);
     }
 }
 

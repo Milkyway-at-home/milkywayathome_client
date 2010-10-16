@@ -32,10 +32,10 @@ extern "C" {
 #define REQ(a, b) (rabs((a) - (b)) < 0.00001)
 
 /* Coordinate conversion */
-void cartesianToLbr(const NBodyCtx* ctx, vectorptr RESTRICT lbR, const vectorptr RESTRICT r);
-void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr RESTRICT lbR, const vectorptr RESTRICT r);
-void lbrToCartesian(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr);
-void lbrToCartesian_rad(const NBodyCtx* ctx, vectorptr cart, const vectorptr lbr);
+mwvector cartesianToLbr(const NBodyCtx* ctx, const mwvector r);
+mwvector cartesianToLbr_rad(const NBodyCtx* ctx, const mwvector r);
+mwvector lbrToCartesian(const NBodyCtx* ctx, const mwvector lbr);
+mwvector lbrToCartesian_rad(const NBodyCtx* ctx, const mwvector lbr);
 
 /* xrandom: generate floating-point random number */
 #define xrandom(st, xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * dsfmt_genrand_open_open((st)))

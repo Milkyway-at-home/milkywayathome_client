@@ -290,12 +290,12 @@ char* showInitialConditions(const InitialConditions* ic)
                      "};\n",
                      showBool(ic->useGalC),
                      showBool(ic->useRadians),
-                     ic->position[0],
-                     ic->position[1],
-                     ic->position[2],
-                     ic->velocity[0],
-                     ic->velocity[1],
-                     ic->velocity[2]))
+                     X(ic->position),
+                     Y(ic->position),
+                     Z(ic->position),
+                     X(ic->velocity),
+                     Y(ic->velocity),
+                     Z(ic->velocity)))
     {
         fail("asprintf() failed\n");
     }
@@ -371,17 +371,17 @@ void printInitialConditions(const InitialConditions* ic)
     free(buf);
 }
 
-char* showVector(const vector v)
+char* showVector(const mwvector v)
 {
     char* buf;
 
-    if (asprintf(&buf, "{ %g, %g, %g }", v[0], v[1], v[2]) < 0)
+    if (asprintf(&buf, "{ %g, %g, %g }", X(v), Y(v), Z(v)) < 0)
         fail("asprintf() failed\n");
 
     return buf;
 }
 
-void printVector(const vector v)
+void printVector(const mwvector v)
 {
     char* buf = showVector(v);
     puts(buf);

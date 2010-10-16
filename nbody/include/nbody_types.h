@@ -67,7 +67,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_config.h"
 #include "milkyway_math.h"
-#include "nbody_vectors.h"
 
 #ifndef __OPENCL_VERSION__   /* Not compiling CL kernel */
   #if NBODY_OPENCL
@@ -124,7 +123,7 @@ typedef struct NBODY_ALIGN _node
 {
     body_t type;            /* code for node type */
     real mass;              /* total mass of node */
-    vector pos;             /* position of node */
+    mwvector pos;           /* position of node */
     struct _node* next;     /* link to next force-calc */
 } node, *nodeptr;
 
@@ -138,7 +137,7 @@ typedef struct NBODY_ALIGN _node
 typedef struct NBODY_ALIGN
 {
     node bodynode;              /* data common to all nodes */
-    vector vel;                 /* velocity of body */
+    mwvector vel;               /* velocity of body */
  } body, *bodyptr;
 
 #define Body    body
@@ -157,7 +156,7 @@ typedef struct NBODY_ALIGN
     union                       /* shared storage for... */
     {
         nodeptr subp[NSUB];     /* descendents of cell */
-        matrix quad;            /* quad. moment of cell */
+        mwmatrix quad;         /* quad. moment of cell */
     } stuff;
 } cell, *cellptr;
 
@@ -261,8 +260,8 @@ typedef struct NBODY_ALIGN
 
 typedef struct NBODY_ALIGN
 {
-    vector position;     /* (x, y, z) if cartesian / useGalC, otherwise (l, b, r) */
-    vector velocity;
+    mwvector position;     /* (x, y, z) if cartesian / useGalC, otherwise (l, b, r) */
+    mwvector velocity;
     bool useGalC;
     bool useRadians;
 } InitialConditions;
@@ -351,7 +350,7 @@ typedef struct NBODY_ALIGN
     real tout;
     real tnow;
     bodyptr bodytab;    /* points to array of bodies */
-    vector* acctab;     /* Corresponding accelerations of bodies */
+    mwvector* acctab;   /* Corresponding accelerations of bodies */
 
   #if NBODY_OPENCL
     CLInfo ci;
@@ -414,7 +413,7 @@ typedef int generic_enum_t;  /* A general enum type. */
 #define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
-#define EMPTY_VECTOR { NAN, NAN, NAN }
+#define EMPTY_VECTOR { NAN, NAN, NAN, NAN }
 #define EMPTY_INITIAL_CONDITIONS { EMPTY_VECTOR, EMPTY_VECTOR, FALSE, FALSE }
 #define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, NULL, NULL,  \
                    NAN, NAN, NAN, NAN, 0, 0,           \
@@ -422,12 +421,12 @@ typedef int generic_enum_t;  /* A general enum type. */
 
 #ifndef __OPENCL_VERSION__  /* No function pointers allowed in kernels */
 /* Acceleration functions for a given potential */
-typedef void (*SphericalAccel) (vectorptr RESTRICT, const Spherical*, const vectorptr RESTRICT);
-typedef void (*HaloAccel) (vectorptr RESTRICT, const Halo*, const vectorptr RESTRICT);
-typedef void (*DiskAccel) (vectorptr RESTRICT, const Disk*, const vectorptr RESTRICT);
+typedef mwvector (*SphericalAccel) (const Spherical*, const mwvector);
+typedef mwvector (*HaloAccel) (const Halo*, const mwvector);
+typedef mwvector (*DiskAccel) (const Disk*, const mwvector);
 
 /* Generic potential function */
-typedef void (*AccelFunc) (vectorptr RESTRICT, const void*, const vectorptr RESTRICT);
+typedef mwvector (*AccelFunc) (const void*, const mwvector);
 
 #endif /* __OPENCL_VERSION__ */
 

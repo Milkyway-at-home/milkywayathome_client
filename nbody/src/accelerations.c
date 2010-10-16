@@ -28,17 +28,18 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Pure functions are the best ones */
 
-void sphericalAccel(vectorptr RESTRICT acc, const Spherical* sph, const vectorptr RESTRICT pos)
+mwvector sphericalAccel(const Spherical* sph, const mwvector pos)
 {
-    real r;
-    ABSV(r, pos);
+    const real r   = mw_absv(pos);
     const real tmp = sph->scale + r;
-    MULVS(acc, pos, -sph->mass / (r * sqr(tmp)));
+
+    return mw_mulvs(-sph->mass / (r * sqr(tmp)), pos);
 }
 
 /* gets negative of the acceleration vector of this disk component */
-void miyamotoNagaiDiskAccel(vectorptr RESTRICT acc, const Disk* disk, const vectorptr RESTRICT pos)
+mwvector miyamotoNagaiDiskAccel(const Disk* disk, const mwvector pos)
 {
+    mwvector acc;
     const real a   = disk->scale_length;
     const real b   = disk->scale_height;
     const real zp  = mw_sqrt( sqr(Z(pos)) + sqr(b) );
@@ -50,21 +51,25 @@ void miyamotoNagaiDiskAccel(vectorptr RESTRICT acc, const Disk* disk, const vect
     X(acc) = -disk->mass * X(pos) / rth;
     Y(acc) = -disk->mass * Y(pos) / rth;
     Z(acc) = -disk->mass * Z(pos) * azp / (zp * rth);
+
+    return acc;
 }
 
-void exponentialDiskAccel(vectorptr RESTRICT acc, const Disk* disk, const vectorptr RESTRICT pos)
+mwvector exponentialDiskAccel(const Disk* disk, const mwvector pos)
 {
     const real b = disk->scale_length;
-    real r;
-    ABSV(r, pos);
+    const real r = mw_absv(pos);
 
     const real expPiece = mw_exp(-r / b) * (r + b) / b;
     const real factor   = disk->mass * (expPiece - 1.0) / cube(r);
-    MULVS(acc, pos, factor);
+
+    return mw_mulvs(factor, pos);
 }
 
-void logHaloAccel(vectorptr RESTRICT acc, const Halo* halo, const vectorptr RESTRICT pos)
+mwvector logHaloAccel(const Halo* halo, const mwvector pos)
 {
+    mwvector acc;
+
     const real tvsqr = -2.0 * sqr(halo->vhalo);
     const real qsqr  = sqr(halo->flattenZ);
     const real d     = halo->scale_length;
@@ -76,22 +81,25 @@ void logHaloAccel(vectorptr RESTRICT acc, const Halo* halo, const vectorptr REST
     X(acc) = tvsqr * X(pos) / denom;
     Y(acc) = tvsqr * Y(pos) / denom;
     Z(acc) = tvsqr * Z(pos) / ((qsqr * arst) + zsqr);
+
+    return acc;
 }
 
-void nfwHaloAccel(vectorptr RESTRICT acc, const Halo* halo, const vectorptr RESTRICT pos)
+mwvector nfwHaloAccel(const Halo* halo, const mwvector pos)
 {
-    real r;
-    ABSV(r, pos);
+    const real r  = mw_absv(pos);
     const real a  = halo->scale_length;
     const real ar = a + r;
     const real c  = a * sqr(halo->vhalo) * ((-ar * mw_log1p(r / a)) + r) / (0.2162165954 * cube(r) * ar);
 
-    MULVS(acc, pos, c);
+    return mw_mulvs(c, pos);
 }
 
 /* CHECKME: Seems to have precision related issues for a small number of cases for very small qy */
-void triaxialHaloAccel(vectorptr RESTRICT acc, const Halo* h, const vectorptr RESTRICT pos)
+mwvector triaxialHaloAccel(const Halo* h, const mwvector pos)
 {
+    mwvector acc;
+
     /* TODO: More things here can be cached */
     const real qzs      = sqr(h->flattenZ);
     const real rhalosqr = sqr(h->scale_length);
@@ -109,5 +117,7 @@ void triaxialHaloAccel(vectorptr RESTRICT acc, const Halo* h, const vectorptr RE
     Y(acc) = mvsqr * (((2.0 * h->c2) * Y(pos)) + (h->c3 * X(pos)) ) / arst2;
 
     Z(acc) = (2.0 * mvsqr * Z(pos)) / ((qzs * arst) + zsqr);
+
+    return acc;
 }
 

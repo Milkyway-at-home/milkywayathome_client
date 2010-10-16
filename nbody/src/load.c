@@ -61,9 +61,9 @@ static inline void hackQuad(cellptr p)
 {
     unsigned int ndesc, i;
     nodeptr desc[NSUB], q;
-    vector dr;
+    mwvector dr;
     real drsq;
-    matrix drdr, Idrsq, tmpm;
+    mwmatrix drdr, Idrsq, tmpm;
 
     ndesc = 0;                                  /* count occupied subnodes  */
     for (i = 0; i < NSUB; ++i)                  /* loop over all subnodes   */
@@ -71,23 +71,24 @@ static inline void hackQuad(cellptr p)
         if (Subp(p)[i] != NULL)                 /* if this one's occupied   */
             desc[ndesc++] = Subp(p)[i];         /* copy it to safety        */
     }
-    CLRM(Quad(p));                              /* init quadrupole moment   */
+
+    mw_set_matrix_zero(Quad(p));                /* init quadrupole moment   */
     for (i = 0; i < ndesc; ++i)                 /* loop over real subnodes  */
     {
-        q = desc[i];                            /* access ech one in turn   */
+        q = desc[i];                            /* access each one in turn  */
         if (Type(q) == CELL)                    /* if it's also a cell      */
             hackQuad((cellptr) q);              /* then process it first    */
-        SUBV(dr, Pos(q), Pos(p));               /* find displacement vect.  */
-        OUTVP(drdr, dr, dr);                    /* form outer prod. of dr   */
-        SQRV(drsq, dr);                         /* and dot prod. dr * dr    */
-        SETMI(Idrsq);                           /* init unit matrix         */
-        MULMS(Idrsq, Idrsq, drsq);              /* and scale by dr * dr     */
-        MULMS(tmpm, drdr, 3.0);                 /* scale drdr by 3          */
-        SUBM(tmpm, tmpm, Idrsq);                /* now form quad. moment    */
-        MULMS(tmpm, tmpm, Mass(q));             /* from cm of subnode       */
+        dr = mw_subv(Pos(q), Pos(p));           /* find displacement vect.  */
+        mw_outv(drdr, dr, dr);                  /* form outer prod. of dr   */
+        drsq = mw_sqrv(dr);                     /* and dot prod. dr * dr    */
+        mw_set_matrix_identity(Idrsq);          /* init unit matrix         */
+        mw_incmulms(Idrsq, drsq);               /* and scale by dr * dr     */
+        mw_mulms(tmpm, drdr, 3.0);              /* scale drdr by 3          */
+        mw_incsubm(tmpm, Idrsq);                /* now form quad. moment    */
+        mw_incmulms(tmpm, Mass(q));             /* from cm of subnode       */
         if (Type(q) == CELL)                    /* if subnode is cell       */
-            ADDM(tmpm, tmpm, Quad(q));          /* then include its moment  */
-        ADDM(Quad(p), Quad(p), tmpm);           /* increment moment of cell */
+            mw_incaddm(tmpm, Quad(q));          /* then include its moment  */
+        mw_incaddm(Quad(p), tmpm);              /* increment moment of cell */
     }
 }
 
@@ -97,14 +98,14 @@ static inline void hackQuad(cellptr p)
  */
 static void threadTree(nodeptr p, nodeptr n)
 {
-    int ndesc, i;
+    unsigned int ndesc, i;
     nodeptr desc[NSUB+1];
 
     Next(p) = n;                                /* link to next node */
     if (Type(p) == CELL)                        /* any children to thread? */
     {
         ndesc = 0;                              /* count extant children */
-        for (i = 0; i < NSUB; i++)              /* loop over subnodes */
+        for (i = 0; i < NSUB; ++i)              /* loop over subnodes */
         {
             if (Subp(p)[i] != NULL)             /* found a live one? */
                 desc[ndesc++] = Subp(p)[i];     /* store in table */
@@ -196,7 +197,7 @@ static inline real calcOffset(real pPos, real qPos, real qsize)
 }
 
 ALWAYS_INLINE
-static inline void initMidpoint(bodyptr c, const bodyptr p, const bodyptr q, real qsize)
+static inline void initMidpoint(cellptr c, const bodyptr p, const cellptr q, real qsize)
 {
     X(Pos(c)) = calcOffset(X(Pos(p)), X(Pos(q)), qsize);
     Y(Pos(c)) = calcOffset(Y(Pos(p)), Y(Pos(q)), qsize);
@@ -207,7 +208,7 @@ static inline void initMidpoint(bodyptr c, const bodyptr p, const bodyptr q, rea
 static void loadBody(Tree* t, bodyptr p)
 {
     cellptr q, c;
-    size_t qind, k;
+    size_t qind;
     unsigned int lev;
     real qsize;
 
@@ -244,8 +245,7 @@ static inline real bmax2Inc(real cmPos, real pPos, real psize)
 }
 
 ALWAYS_INLINE
-//static inline real calcSW93maxDist2(const bodyptr p, const mwvector cmpos, real psize)
-static inline real calcSW93MaxDist2(const bodyptr p, const vectorptr cmpos, real psize)
+static inline real calcSW93MaxDist2(const cellptr p, const mwvector cmpos, real psize)
 {
     real bmax2;
 
@@ -260,16 +260,14 @@ static inline real calcSW93MaxDist2(const bodyptr p, const vectorptr cmpos, real
 
 /* setRCrit: assign critical radius for cell p, using center-of-mass
  * position cmpos and cell size psize. */
-static void setRCrit(const NBodyCtx* ctx, NBodyState* st, cellptr p, vector cmpos, real psize)
+static void setRCrit(const NBodyCtx* ctx, NBodyState* st, cellptr p, mwvector cmpos, real psize)
 {
-    real rc, bmax2, dmin, tmp;
-    size_t k;
+    real rc, bmax2;
 
     switch (ctx->criterion)
     {
         case NEWCRITERION:
-            DISTV(tmp, cmpos, Pos(p));
-            rc = psize / ctx->theta + tmp;
+            rc = psize / ctx->theta + mw_distv(cmpos, Pos(p));
             /* use size plus offset */
             break;
         case EXACT:                         /* exact force calculation? */
@@ -294,8 +292,8 @@ static void setRCrit(const NBodyCtx* ctx, NBodyState* st, cellptr p, vector cmpo
 static inline void checkTreeDim(const real pPos, const real cmPos, const real halfPsize)
 {
     /* CHECKME: Precision: This gets angry as N gets big, and the divisions get small */
-    if (cmPos < pPos - halfPsize ||    /* if out of bounds */
-        pPos + halfPsize < cmPos)      /* in either direction */
+    if (   cmPos < pPos - halfPsize       /* if out of bounds */
+        || cmPos > pPos + halfPsize)      /* in either direction */
     {
         warn("hackCofM: tree structure error.\n"
              "\tcmpos out of bounds\n"
@@ -312,8 +310,7 @@ static inline void checkTreeDim(const real pPos, const real cmPos, const real ha
     }
 }
 
-//static inline void checkTreeStructure(const mwvector pPos, const mwvector cmPos, const real psize)
-static inline void checkTreeStructure(const vector pPos, const vector cmPos, const real psize)
+static inline void checkTreeStructure(const mwvector pPos, const mwvector cmPos, const real psize)
 {
     real halfPsize = 0.5 * psize;
 
@@ -328,10 +325,9 @@ static inline void checkTreeStructure(const vector pPos, const vector cmPos, con
  */
 static void hackCofM(const NBodyCtx* ctx, NBodyState* st, cellptr p, real psize)
 {
-    int i, k;
+    int i;
     nodeptr q;
-    vector tmpv;
-    vector cmpos = ZERO_VECTOR;                 /* init center of mass */
+    mwvector cmpos = ZERO_VECTOR;                 /* init center of mass */
 
     Mass(p) = 0.0;                              /* init total mass... */
     for (i = 0; i < NSUB; ++i)                  /* loop over subnodes */
@@ -339,26 +335,26 @@ static void hackCofM(const NBodyCtx* ctx, NBodyState* st, cellptr p, real psize)
         if ((q = Subp(p)[i]) != NULL)           /* does subnode exist? */
         {
             if (Type(q) == CELL)                /* and is it a cell? */
-                hackCofM(ctx, st, (cellptr) q, psize / 2); /* find subcell cm */
-            Mass(p) += Mass(q);                 /* sum total mass */
-            MULVS(tmpv, Pos(q), Mass(q));       /* weight pos by mass */
-            INCADDV(cmpos, tmpv);               /* sum c-of-m position */
+                hackCofM(ctx, st, (cellptr) q, 0.5 * psize); /* find subcell cm */
+            Mass(p) += Mass(q);                       /* sum total mass */
+                                                      /* weight pos by mass */
+            mw_incaddv_s(cmpos, Pos(q), Mass(q));     /* sum c-of-m position */
         }
     }
 
     if (Mass(p) > 0.0)                          /* usually, cell has mass   */
     {
-        INCDIVVS(cmpos, Mass(p));               /* so find c-of-m position  */
+        mw_incdivs(cmpos, Mass(p));            /* so find c-of-m position  */
     }
     else                                        /* but if no mass inside    */
     {
         warn("Found massless cell\n"); /* Debugging */
-        SETV(cmpos, Pos(p));                    /* use geo. center for now  */
+        cmpos = Pos(p);                /* use geo. center for now  */
     }
 
     checkTreeStructure(Pos(p), cmpos, psize);
     setRCrit(ctx, st, p, cmpos, psize);            /* set critical radius */
-    SETV(Pos(p), cmpos);            /* and center-of-mass pos */
+    Pos(p) = cmpos;             /* and center-of-mass pos */
 }
 
 /* makeTree: initialize tree structure for hierarchical force calculation
@@ -372,7 +368,7 @@ void makeTree(const NBodyCtx* ctx, NBodyState* st)
 
     newTree(t);                                      /* flush existing tree, etc */
     t->root = makeCell(t);                           /* allocate the t.root cell */
-    CLRV(Pos(t->root));                              /* initialize the midpoint */
+    mw_zerov(Pos(t->root));                          /* initialize the midpoint */
     expandBox(t, st->bodytab, ctx->model.nbody);     /* and expand cell to fit */
     t->maxlevel = 0;                                 /* init count of levels */
     for (p = st->bodytab; p < endp; p++)             /* loop over bodies... */
@@ -385,6 +381,5 @@ void makeTree(const NBodyCtx* ctx, NBodyState* st)
     threadTree((nodeptr) t->root, NULL);        /* add Next and More links */
     if (ctx->usequad)                           /* including quad moments? */
         hackQuad(t->root);                      /* assign Quad moments */
-
 }
 

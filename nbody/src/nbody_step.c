@@ -29,22 +29,22 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Advance velocity by half a timestep */
 ALWAYS_INLINE
-static inline void bodyAdvanceVel(bodyptr p, const vectorptr a, const real dt)
+static inline void bodyAdvanceVel(bodyptr p, const mwvector a, const real dt)
 {
-    vector dvel;
+    mwvector dv;
 
-    MULVS(dvel, (vectorptr) a, 0.5 * dt);   /* get velocity increment */
-    INCADDV(Vel(p), dvel);                  /* advance v by 1/2 step */
+    dv = mw_mulvs(0.5 * dt, a);   /* get velocity increment */
+    mw_incaddv(Vel(p), dv);       /* advance v by 1/2 step */
 }
 
 
 /* Advance body position by 1 timestep */
 static inline void bodyAdvancePos(bodyptr p, const real dt)
 {
-    vector dpos;
+    mwvector dr;
 
-    MULVS(dpos, Vel(p), dt); /* get positon increment */
-    INCADDV(Pos(p), dpos);   /* advance r by 1 step */
+    dr = mw_mulvs(dt, Vel(p));  /* get position increment */
+    mw_incaddv(Pos(p), dr);     /* advance r by 1 step */
 }
 
 #ifndef _OPENMP
@@ -54,12 +54,12 @@ ALWAYS_INLINE
 static inline void advancePosVel(NBodyState* st, const unsigned int nbody, const real dt)
 {
     bodyptr p;
-    vector* a;
+    mwvector* a;
     const bodyptr endp = st->bodytab + nbody;
 
     for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)    /* loop over all bodies */
     {
-        bodyAdvanceVel(p, (vectorptr) a, dt);
+        bodyAdvanceVel(p, *a, dt);
         bodyAdvancePos(p, dt);
     }
 }
@@ -69,11 +69,11 @@ ALWAYS_INLINE
 static inline void advanceVelocities(NBodyState* st, const unsigned int nbody, const real dt)
 {
     bodyptr p;
-    vector* a;
+    mwvector* a;
     const bodyptr endp = st->bodytab + nbody;
 
     for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)
-        bodyAdvanceVel(p, (vectorptr) a, dt);
+        bodyAdvanceVel(p, *a, dt);
 }
 
 #else
@@ -86,7 +86,7 @@ static inline void advancePosVel(NBodyState* st, const unsigned int nbody, const
   #pragma omp parallel for private(i) schedule(static)
     for (i = 0; i < nbody; ++i)
     {
-        bodyAdvanceVel(&st->bodytab[i], (vectorptr) &st->acctab[i], dt);
+        bodyAdvanceVel(&st->bodytab[i], st->acctab[i], dt);
         bodyAdvancePos(&st->bodytab[i], dt);
     }
 
@@ -99,7 +99,7 @@ static inline void advanceVelocities(NBodyState* st, const unsigned int nbody, c
 
     #pragma omp parallel for private(i) schedule(static)
     for (i = 0; i < nbody; ++i)      /* loop over all bodies */
-        bodyAdvanceVel(&st->bodytab[i], (vectorptr) &st->acctab[i], dt);
+        bodyAdvanceVel(&st->bodytab[i], st->acctab[i], dt);
 }
 
 #endif /* _OPENMP */
