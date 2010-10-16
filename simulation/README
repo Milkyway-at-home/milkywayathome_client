@@ -3,18 +3,18 @@ See 'COPYING' for license information.
 Library overview:
 
     astroconv.h         astronomy conversions
-    demofile.hpp        demo file i/o
+    demofile.hpp        demo file I/O
 
 Application overview:
 
-    lightsim.cpp        light simulation animator
     mwdemo.cpp          MilkyWay@Home demo app
+    nbody.cpp           animation of n-body simulation file
 
 Note: run application without arguments to for parameter information
 
 Known bugs:
 
-    Seems to reset movement far too high after changing light value the first time
+    -
 
 Project information:
 
