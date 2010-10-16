@@ -1,0 +1,2 @@
+./win_make mwdemo
+./win_make nbody

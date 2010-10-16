@@ -49,6 +49,11 @@ int main( int args, char **argv )
         return 1;
     }
 */
+
+    cout << "Initializing draw routines\n" << flush;
+
+    initDraw();
+
     double diameter = 7.;
     double fps = 30.;
     int bpp = 32;
@@ -58,21 +63,26 @@ int main( int args, char **argv )
         fileName = argv[1];
 
     // Read in wedge
+    cout << "Reading wedge file\n" << flush;
     WedgeFile wf;
     int totalStars = wf.getStarTotal(fileName);
     HaloField wedge(totalStars);
     wf.readStars(fileName, wedge);
 
     // Create display
+    cout << "Setting up window\n" << flush;
     FieldAnimation sim(bpp, fps, "MilkyWay@Home Screensaver Demo", "milkyway.bmp");
 
     // Read in galaxy
+    cout << "Reading/generating galaxy\n" << flush;
     ImagePlot imagePlot("eso32.bmp", 25000, 30.*1.18, .3);
 
+    cout << "Adding stars to field...\n" << flush;
     sim.add(&wedge, diameter);
     sim.add(getLastFrameNBody(), diameter);
     sim.add(imagePlot.getField(), 20.);
 
+    cout << "Changing settings...\n" << flush;
     sim.showCamera();
     sim.cv->setFocusPoint(sim.cv->getFocusPoint(100., 45., 30.), 0.);
 
@@ -104,6 +114,8 @@ setFocusAngle(RandomAngle);   /// TODO /// Buffered with fade-in
 
 /////////    while( sim.pollDemo() ) ;
 
+    cout << "Entering event loop\n" << flush;
+
     while( true )
     {
 
@@ -112,6 +124,8 @@ setFocusAngle(RandomAngle);   /// TODO /// Buffered with fade-in
         }
 
     }
+
+    cout << "Done\n" << flush;
 
     return 0;
 
