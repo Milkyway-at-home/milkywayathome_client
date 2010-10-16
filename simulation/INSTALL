@@ -1,9 +1,3 @@
-In addition to the system-specific instructions below, a copy of the
-SimpleDirectMedia Library (SDL) is needed to compile any of the code.
-
-This may be obtained here:
-    http://www.libsdl.org/
-
 Windows:
 
     MinGW:
