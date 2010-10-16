@@ -1,9 +1,18 @@
+In addition to the instructions below, source files must be downloaded using git:
+
+        http://help.github.com/
+
+Submodules such as LModL can be downloaded using the following commands from the main folder:
+
+    git submodule init
+    git submodule update
+
 Windows:
 
     MinGW:
 
         install msysgit:
-                https://git.wiki.kernel.org/index.php/MSysGit:InstallMSysGit
+            https://git.wiki.kernel.org/index.php/MSysGit:InstallMSysGit
 
         to get libraries such as editors refer to the MSYS and MinGW
             repository:
@@ -70,7 +79,7 @@ Linux:
 
         Ubuntu:
 
-            sudo apt-get install build-essentials git-core libsdl1.2-dev
+            sudo apt-get install build-essential git-core libsdl1.2-dev
 
             to check for a new revision of SDL to insert in the place of "libsdl1.2-dev" above, use the following command
 
