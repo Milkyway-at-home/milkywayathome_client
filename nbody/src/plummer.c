@@ -23,6 +23,25 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_util.h"
 #include "dSFMT.h"
 
+static real unitRandom(dsfmt_t* dsfmtState)
+{
+    return xrandom(dsfmtState, -1.0, 1.0);
+}
+
+//static mwvector randomVec(vectorptr vec, dsfmt_t* dsfmtState)
+static void randomVec(vectorptr vec, dsfmt_t* dsfmtState)
+{
+    /* pick from unit cube */
+    //mwvector vec;
+
+    X(vec) = unitRandom(dsfmtState);
+    Y(vec) = unitRandom(dsfmtState);
+    Z(vec) = unitRandom(dsfmtState);
+    //W(vec) = 0.0;
+
+    //return vec;
+}
+
 /* pickshell: pick a random point on a sphere of specified radius. */
 static inline void pickshell(dsfmt_t* dsfmtState, vector vec, real rad)
 {
@@ -31,8 +50,7 @@ static inline void pickshell(dsfmt_t* dsfmtState, vector vec, real rad)
 
     do                      /* pick point in NDIM-space */
     {
-        for (k = 0; k < NDIM; k++)      /* loop over dimensions */
-            vec[k] = xrandom(dsfmtState, -1.0, 1.0);        /* pick from unit cube */
+        randomVec(vec, dsfmtState);
         SQRV(rsq, vec);            /* compute radius squared */
     }
     while (rsq > 1.0);              /* reject if outside sphere */

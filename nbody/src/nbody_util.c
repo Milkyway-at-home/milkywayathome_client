@@ -30,7 +30,7 @@ void cartesianToLbr_rad(const NBodyCtx* ctx, vectorptr RESTRICT lbR, const vecto
     R(lbR) = mw_sqrt(sqr(xp) + sqr(Y(r)) + sqr(Z(r)));
 
     if (L(lbR) < 0.0)
-        L(lbR) += 2 * M_PI;
+        L(lbR) += M_2PI;
 }
 
 void cartesianToLbr(const NBodyCtx* ctx, vectorptr RESTRICT lbR, const vectorptr RESTRICT r)

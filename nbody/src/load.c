@@ -35,14 +35,19 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* subIndex: compute subcell index for body p in cell q. */
 static int subIndex(bodyptr p, cellptr q)
 {
-    size_t k, ind = 0;
+    int ind = 0;
 
     /* accumulate subcell index */
-    for (k = 0; k < NDIM; ++k)          /* loop over dimensions */
-    {
-        if (Pos(q)[k] <= Pos(p)[k])     /* if beyond midpoint */
-            ind += NSUB >> (k + 1);     /* skip over subcells */
-    }
+    /* loop over dimensions */
+    if (X(Pos(q)) <= X(Pos(p)))     /* if beyond midpoint */
+        ind += NSUB >> (0 + 1);     /* skip over subcells */
+
+    if (Y(Pos(q)) <= Y(Pos(p)))
+        ind += NSUB >> (1 + 1);
+
+    if (Z(Pos(q)) <= Z(Pos(p)))
+        ind += NSUB >> (2 + 1);
+
     return ind;
 }
 
@@ -115,23 +120,23 @@ static void threadTree(nodeptr p, nodeptr n)
  * and expand t.root cell to fit.  The size is doubled at each step to
  * take advantage of exact representation of powers of two.
  */
-static void expandBox(Tree* t, bodyptr btab, int nbody)
+static void expandBox(Tree* t, bodyptr btab, unsigned int nbody)
 {
     real xyzmax;
     bodyptr p;
-    size_t k;
 
     const cellptr root = t->root;
 
     xyzmax = 0.0;
     for (p = btab; p < btab + nbody; ++p)
     {
-        for (k = 0; k < NDIM; ++k)
-            xyzmax = mw_max(xyzmax, mw_abs(Pos(p)[k] - Pos(root)[k]));
+        xyzmax = mw_max(xyzmax, mw_abs(X(Pos(p)) - X(Pos(root))));
+        xyzmax = mw_max(xyzmax, mw_abs(Y(Pos(p)) - Y(Pos(root))));
+        xyzmax = mw_max(xyzmax, mw_abs(Z(Pos(p)) - Z(Pos(root))));
     }
 
-    while (t->rsize < 2 * xyzmax)
-        t->rsize *= 2;
+    while (t->rsize < 2.0 * xyzmax)
+        t->rsize *= 2.0;
 }
 
 /* newTree: reclaim cells in tree, prepare to build new one. */
@@ -183,6 +188,21 @@ static cellptr makeCell(Tree* t)
     return c;
 }
 
+ALWAYS_INLINE
+static inline real calcOffset(real pPos, real qPos, real qsize)
+{
+    /* offset from parent */
+    return qPos + 0.25 * (pPos < qPos ? -qsize : qsize);
+}
+
+ALWAYS_INLINE
+static inline void initMidpoint(bodyptr c, const bodyptr p, const bodyptr q, real qsize)
+{
+    X(Pos(c)) = calcOffset(X(Pos(p)), X(Pos(q)), qsize);
+    Y(Pos(c)) = calcOffset(Y(Pos(p)), Y(Pos(q)), qsize);
+    Z(Pos(c)) = calcOffset(Z(Pos(p)), Z(Pos(q)), qsize);
+}
+
 /* loadBody: descend tree and insert body p in appropriate place. */
 static void loadBody(Tree* t, bodyptr p)
 {
@@ -200,11 +220,8 @@ static void loadBody(Tree* t, bodyptr p)
         if (Type(Subp(q)[qind]) == BODY)        /* reached a "leaf"? */
         {
             c = makeCell(t);                    /* allocate new cell */
-            for (k = 0; k < NDIM; k++)          /* initialize midpoint */
-            {
-                Pos(c)[k] = Pos(q)[k] +         /* offset from parent */
-                            (Pos(p)[k] < Pos(q)[k] ? - qsize : qsize) / 4;
-            }
+            initMidpoint(c, p, q, qsize);      /* initialize midpoint */
+
             Subp(c)[subIndex((bodyptr) Subp(q)[qind], c)] = Subp(q)[qind];
             /* put body in cell */
             Subp(q)[qind] = (nodeptr) c;        /* link cell in tree */
@@ -216,6 +233,29 @@ static void loadBody(Tree* t, bodyptr p)
     }
     Subp(q)[qind] = (nodeptr) p;            /* found place, store p */
     t->maxlevel = MAX(t->maxlevel, lev);    /* remember maximum level */
+}
+
+ALWAYS_INLINE
+static inline real bmax2Inc(real cmPos, real pPos, real psize)
+{
+    real dmin;
+    dmin = cmPos - (pPos - 0.5 * psize);         /* dist from 1st corner */
+    return sqr(mw_max(dmin, psize - dmin));      /* sum max distance^2 */
+}
+
+ALWAYS_INLINE
+//static inline real calcSW93maxDist2(const bodyptr p, const mwvector cmpos, real psize)
+static inline real calcSW93MaxDist2(const bodyptr p, const vectorptr cmpos, real psize)
+{
+    real bmax2;
+
+    /* compute max distance^2 */
+    /* loop over dimensions */
+    bmax2 = bmax2Inc(X(cmpos), X(Pos(p)), psize);
+    bmax2 += bmax2Inc(Y(cmpos), Y(Pos(p)), psize);
+    bmax2 += bmax2Inc(Z(cmpos), Z(Pos(p)), psize);
+
+    return bmax2;
 }
 
 /* setRCrit: assign critical radius for cell p, using center-of-mass
@@ -239,15 +279,8 @@ static void setRCrit(const NBodyCtx* ctx, NBodyState* st, cellptr p, vector cmpo
             rc = psize / ctx->theta;        /* using size of cell */
             break;
         case SW93:                           /* use S&W's criterion? */
-            bmax2 = 0.0;                     /* compute max distance^2 */
-            for (k = 0; k < NDIM; ++k)       /* loop over dimensions */
-            {
-                /* CHECKME: use rdim here? */
-                dmin = cmpos[k] - (Pos(p)[k] - psize / 2);
-                /* dist from 1st corner */
-                bmax2 += sqr(mw_max(dmin, psize - dmin));
-                /* sum max distance^2 */
-            }
+            /* compute max distance^2 */
+            bmax2 = calcSW93MaxDist2(p, cmpos, psize);
             rc = mw_sqrt(bmax2) / ctx->theta;      /* using max dist from cm */
             break;
         default:
@@ -257,6 +290,38 @@ static void setRCrit(const NBodyCtx* ctx, NBodyState* st, cellptr p, vector cmpo
 
     Rcrit2(p) = sqr(rc);           /* store square of radius */
 }
+
+static inline void checkTreeDim(const real pPos, const real cmPos, const real halfPsize)
+{
+    /* CHECKME: Precision: This gets angry as N gets big, and the divisions get small */
+    if (cmPos < pPos - halfPsize ||    /* if out of bounds */
+        pPos + halfPsize < cmPos)      /* in either direction */
+    {
+        warn("hackCofM: tree structure error.\n"
+             "\tcmpos out of bounds\n"
+             "\tPos(p)           = %e\n"
+             "\tpsize/2          = %e\n"
+             "\tPos(p) + psize/2 = %e\n"
+             "\tcmpos            = %e\n"
+             "\tPos(p) - psize/2 = %e\n",
+             pPos,
+             halfPsize,
+             pPos + halfPsize,
+             cmPos,
+             pPos - halfPsize);
+    }
+}
+
+//static inline void checkTreeStructure(const mwvector pPos, const mwvector cmPos, const real psize)
+static inline void checkTreeStructure(const vector pPos, const vector cmPos, const real psize)
+{
+    real halfPsize = 0.5 * psize;
+
+    checkTreeDim(X(pPos), X(cmPos), halfPsize);
+    checkTreeDim(Y(pPos), Y(cmPos), halfPsize);
+    checkTreeDim(Z(pPos), Z(cmPos), halfPsize);
+}
+
 
 /* hackCofM: descend tree finding center-of-mass coordinates and
  * setting critical cell radii.
@@ -291,26 +356,7 @@ static void hackCofM(const NBodyCtx* ctx, NBodyState* st, cellptr p, real psize)
         SETV(cmpos, Pos(p));                    /* use geo. center for now  */
     }
 
-    for (k = 0; k < NDIM; k++)          /* check tree structure... */
-    {
-        /* CHECKME: Precision: This gets angry as N gets big, and the divisions get small */
-        if (cmpos[k] < Pos(p)[k] - psize / 2.0 ||    /* if out of bounds */
-                Pos(p)[k] + psize / 2.0 < cmpos[k])  /* in either direction */
-        {
-            warn("hackCofM: tree structure error.\n"
-                 "\tcmpos out of bounds\n"
-                 "\tPos(p)[%d]           = %e\n"
-                 "\tpsize                = %e\n"
-                 "\tPos(p)[%d] + psize/2 = %e\n"
-                 "\tcmpos[%d]            = %e\n"
-                 "\tPos(p)[%d] - psize/2 = %e\n",
-                 k, Pos(p)[k],
-                 psize,
-                 k, Pos(p)[k] + psize / 2.0,
-                 k, cmpos[k],
-                 k, Pos(p)[k] - psize / 2.0);
-        }
-    }
+    checkTreeStructure(Pos(p), cmpos, psize);
     setRCrit(ctx, st, p, cmpos, psize);            /* set critical radius */
     SETV(Pos(p), cmpos);            /* and center-of-mass pos */
 }

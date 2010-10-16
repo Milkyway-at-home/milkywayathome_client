@@ -263,23 +263,27 @@ typedef real* vectorptr;
         size_t _i;                              \
         for (_i = 0; _i < NDIM; ++_i)           \
         {                                       \
-            X((p)[_i]) = X((q)[_i]) * s;        \
-            Y((p)[_i]) = Y((q)[_i]) * s;        \
-            Z((p)[_i]) = Z((q)[_i]) * s;        \
+            X((p)[_i]) = s * X((q)[_i]);        \
+            Y((p)[_i]) = s * Y((q)[_i]);        \
+            Z((p)[_i]) = s * Z((q)[_i]);        \
         }                                       \
     }
 
-/* OUTer Vector Product */
-#define OUTVP(p,v,u)                                \
-    {                                               \
-        size_t _i;                                  \
-        for (_i = 0; _i < NDIM; ++_i)               \
-        {                                           \
-            X((p)[_i]) = (v)[_i] * X((u));          \
-            Y((p)[_i]) = (v)[_i] * Y((u));          \
-            Z((p)[_i]) = (v)[_i] * Z((u));          \
-        }                                           \
+#define OUTVP(p,v,u)                            \
+    {                                           \
+        X((p)[0]) = X(v) * X(u);                \
+        Y((p)[0]) = X(v) * Y(u);                \
+        Z((p)[0]) = X(v) * Z(u);                \
+                                                \
+        X((p)[1]) = Y(v) * X(u);                \
+        Y((p)[1]) = Y(v) * Y(u);                \
+        Z((p)[1]) = Y(v) * Z(u);                \
+                                                \
+        X((p)[2]) = Z(v) * X(u);                \
+        Y((p)[2]) = Z(v) * Y(u);                \
+        Z((p)[2]) = Z(v) * Z(u);                \
     }
+
 
 /* MULtiply Matrix by Vector */
 #define MULMV(v, p, u)                          \
