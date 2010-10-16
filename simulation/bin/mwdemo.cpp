@@ -71,7 +71,7 @@ int main( int args, char **argv )
 
     // Create display
     cout << "Setting up window\n" << flush;
-    FieldAnimation sim(bpp, fps, "MilkyWay@Home Screensaver Demo", "milkyway.bmp");
+    FieldAnimation sim(bpp, fps, false, "MilkyWay@Home Screensaver Demo", "milkyway.bmp");
 
     // Read in galaxy
     cout << "Reading/generating galaxy\n" << flush;

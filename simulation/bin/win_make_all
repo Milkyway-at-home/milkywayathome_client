@@ -1,2 +1,3 @@
 ./win_make mwdemo
+./win_make mwdemo_fullscreen
 ./win_make nbody

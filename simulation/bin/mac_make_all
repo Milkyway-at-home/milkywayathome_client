@@ -1,2 +1,3 @@
+./mac_make mwdemo_fullscreen
 ./mac_make mwdemo
 ./mac_make nbody
