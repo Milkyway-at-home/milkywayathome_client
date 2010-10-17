@@ -55,7 +55,7 @@ inline mwvector acceleration(const NBodyCtx* ctx, const mwvector pos)
 /* Simple orbit integrator in user-defined potential
     Written for BOINC Nbody
     willeb 10 May 2010 */
-void reverseOrbit(InitialConditions* fc, const NBodyCtx* ctx, InitialConditions* ic)
+void reverseOrbit(InitialConditions* fc, const NBodyCtx* ctx, const InitialConditions* ic)
 {
     mwvector acc, v, x;
     real t;

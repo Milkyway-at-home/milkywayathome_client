@@ -28,6 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "nbody_step.h"
 #include "grav.h"
+#include "orbitintegrator.h"
 #include "show.h"
 
 /* make test model */
@@ -45,7 +46,7 @@ static void generateModel(const NBodyCtx* ctx, const InitialConditions* ic, NBod
     }
 }
 
-static inline void initState(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
+static void initState(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     mw_report("Starting nbody system\n");
 
@@ -172,7 +173,7 @@ static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
 #else
 
 /* When not using BOINC, we don't need to deal with the checkpointing */
-static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
+static void setupRun(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
 {
     startRun(ctx, ic, st);
 }

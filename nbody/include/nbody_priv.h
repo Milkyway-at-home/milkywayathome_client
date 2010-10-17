@@ -35,8 +35,8 @@ extern "C" {
 #include "grav.h"
 #include "chisq.h"
 #include "load.h"
-#include "orbitintegrator.h"
 #include "accelerations.h"
+#include "orbitintegrator.h"
 #include "plummer.h"
 #include "nbody_util.h"
 #include "nbody_step.h"
@@ -59,3 +59,4 @@ extern "C" {
 #endif
 
 #endif /* _NBODY_PRIV_H_ */
+

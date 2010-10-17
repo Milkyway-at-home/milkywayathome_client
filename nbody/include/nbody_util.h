@@ -25,11 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include <stdlib.h>
 #include "nbody_types.h"
-
-/* FIXME: This is just an arbitrary threshold I made up. What should it be? */
-#define REQ(a, b) (rabs((a) - (b)) < 0.00001)
 
 /* Coordinate conversion */
 mwvector cartesianToLbr(const NBodyCtx* ctx, const mwvector r);
