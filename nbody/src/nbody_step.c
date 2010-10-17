@@ -33,7 +33,7 @@ static inline void bodyAdvanceVel(bodyptr p, const mwvector a, const real dt)
 {
     mwvector dv;
 
-    dv = mw_mulvs(0.5 * dt, a);   /* get velocity increment */
+    dv = mw_mulvs(a, 0.5 * dt);   /* get velocity increment */
     mw_incaddv(Vel(p), dv);       /* advance v by 1/2 step */
 }
 
@@ -43,7 +43,7 @@ static inline void bodyAdvancePos(bodyptr p, const real dt)
 {
     mwvector dr;
 
-    dr = mw_mulvs(dt, Vel(p));  /* get position increment */
+    dr = mw_mulvs(Vel(p), dt);  /* get position increment */
     mw_incaddv(Pos(p), dr);     /* advance r by 1 step */
 }
 

@@ -101,8 +101,8 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
     rsc = ctx->model.scale_radius;              /* set length scale factor */
     vsc = mw_sqrt(ctx->model.mass / rsc);         /* and recip. speed scale */
 
-    scaledrshift = mw_mulvs(rsc, rshift);   /* Multiply shift by scale factor */
-    scaledvshift = mw_mulvs(vsc, vshift);   /* Multiply shift by scale factor */
+    scaledrshift = mw_mulvs(rshift, rsc);   /* Multiply shift by scale factor */
+    scaledvshift = mw_mulvs(vshift, vsc);   /* Multiply shift by scale factor */
 
     endp = st->bodytab + ctx->model.nbody;
     for (p = st->bodytab; p < endp; ++p)   /* loop over particles */

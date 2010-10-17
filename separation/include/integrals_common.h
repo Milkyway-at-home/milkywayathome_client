@@ -54,7 +54,7 @@ inline real calc_st_prob_inc(__MW_CONSTANT STREAM_CONSTANTS* sc, const mwvector 
 
     xyzs = mw_subv(xyz, sc->c);
     dotted = mw_dotv(sc->a, xyzs);
-    tmp = mw_mulvs(dotted, sc->a);
+    tmp = mw_mulvs(sc->a, dotted);
     mw_incsubv(xyzs, tmp);
 
     xyz_norm = mw_sqrv(xyzs);

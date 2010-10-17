@@ -18,9 +18,6 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
 #include "nbody_priv.h"
 #include "orbitintegrator.h"
 
@@ -60,7 +57,7 @@ inline mwvector acceleration(const NBodyCtx* ctx, const mwvector pos)
     willeb 10 May 2010 */
 void reverseOrbit(InitialConditions* fc, const NBodyCtx* ctx, InitialConditions* ic)
 {
-    mwvector acc, v, x, tmp;
+    mwvector acc, v, x;
     real t;
 
     const real tstop = ctx->model.time_orbit;
@@ -78,12 +75,8 @@ void reverseOrbit(InitialConditions* fc, const NBodyCtx* ctx, InitialConditions*
     for (t = 0; t <= tstop; t += dt)
     {
         // Update the velocities and positions
-
-        tmp = mw_mulvs(dt, acc);
-        mw_incaddv(v, tmp);
-
-        tmp = mw_mulvs(dt, v);
-        mw_incaddv(x, tmp);
+        mw_incaddv_s(v, acc, dt);
+        mw_incaddv_s(x, v, dt);
 
         // Compute the new acceleration
         acc = acceleration(ctx, x);

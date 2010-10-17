@@ -63,7 +63,7 @@ static inline void cellQuadTerm(ForceEvalState* fest, const nodeptr q, const rea
     drquaddr = mw_dotv(fest->dr, quaddr);    /* form dr * Q * dr */
     phiquad = -0.5 * dr5inv * drquaddr;      /* get quad. part of phi */
     phiquad = 5.0 * phiquad / fest->drsq;    /* save for acceleration */
-    ai = mw_mulvs(phiquad, fest->dr);        /* components of acc. */
+    ai = mw_mulvs(fest->dr, phiquad);        /* components of acc. */
     mw_incsubv(fest->acc0, ai);              /* increment */
     mw_incmulvs(quaddr, dr5inv);
     mw_incsubv(fest->acc0, quaddr);          /* acceleration */
@@ -87,7 +87,7 @@ static inline void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, const node
     drab = mw_sqrt(fest->drsq);
     phii = Mass(q) / drab;
     mor3 = phii / fest->drsq;
-    ai = mw_mulvs(mor3, fest->dr);
+    ai = mw_mulvs(fest->dr, mor3);
     mw_incaddv(fest->acc0, ai);         /* ... and to total accel. */
 
     if (ctx->usequad && Type(q) == CELL)             /* if cell, add quad term */

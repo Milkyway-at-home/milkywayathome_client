@@ -33,7 +33,7 @@ mwvector sphericalAccel(const Spherical* sph, const mwvector pos)
     const real r   = mw_absv(pos);
     const real tmp = sph->scale + r;
 
-    return mw_mulvs(-sph->mass / (r * sqr(tmp)), pos);
+    return mw_mulvs(pos, -sph->mass / (r * sqr(tmp)));
 }
 
 /* gets negative of the acceleration vector of this disk component */
@@ -63,7 +63,7 @@ mwvector exponentialDiskAccel(const Disk* disk, const mwvector pos)
     const real expPiece = mw_exp(-r / b) * (r + b) / b;
     const real factor   = disk->mass * (expPiece - 1.0) / cube(r);
 
-    return mw_mulvs(factor, pos);
+    return mw_mulvs(pos, factor);
 }
 
 mwvector logHaloAccel(const Halo* halo, const mwvector pos)
@@ -92,7 +92,7 @@ mwvector nfwHaloAccel(const Halo* halo, const mwvector pos)
     const real ar = a + r;
     const real c  = a * sqr(halo->vhalo) * ((-ar * mw_log1p(r / a)) + r) / (0.2162165954 * cube(r) * ar);
 
-    return mw_mulvs(c, pos);
+    return mw_mulvs(pos, c);
 }
 
 /* CHECKME: Seems to have precision related issues for a small number of cases for very small qy */

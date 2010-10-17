@@ -109,7 +109,7 @@ inline real mw_absv(mwvector a)
 }
 
 __attribute__((const, always_inline))
-inline mwvector mw_mulvs(real s, mwvector a)
+inline mwvector mw_mulvs(mwvector a, real s)
 {
     mwvector v;
     v.x =  s * a.x;
@@ -237,9 +237,9 @@ inline void mw_incsubm(mwmatrix p, mwmatrix q)
 __attribute__((always_inline))
 inline void mw_mulms(mwmatrix p, mwmatrix q, real s)
 {
-    p[0] = mw_mulvs(s, q[0]);
-    p[1] = mw_mulvs(s, q[1]);
-    p[2] = mw_mulvs(s, q[2]);
+    p[0] = mw_mulvs(q[0], s);
+    p[1] = mw_mulvs(q[1], s);
+    p[2] = mw_mulvs(q[2], s);
 }
 
 __attribute__((always_inline))
