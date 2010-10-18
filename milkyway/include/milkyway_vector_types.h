@@ -40,7 +40,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
   typedef real4 mwvector;
 #else
-  #ifndef _MSC_VER
+  #if !defined(_MSC_VER) && !defined(__clang__)
+/* When we align the structs we use the mwvector in, there is a clang
+ * bug so for now we can't align it or use the ext_vector_type:
+ * http://llvm.org/bugs/show_bug.cgi?id=8413 */
     #define MW_ALIGN(x) __attribute__((packed, aligned(x)))
   #else
     #define MW_ALIGN(x)
