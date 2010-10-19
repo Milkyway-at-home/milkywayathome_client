@@ -35,7 +35,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
 
-HOT CONST_F ALWAYS_INLINE
+HOT CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 __inline LB gc2lb(const int wedge, const real mu, const real nu)
 {
     LB lb;

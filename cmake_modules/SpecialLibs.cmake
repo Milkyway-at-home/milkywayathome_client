@@ -23,23 +23,43 @@
 # doesn't like you trying to statically link the standard libraries.
 # We also have to link as C++ when we do this because of BOINC.
 
+include(CPUNameTest)
+
 macro(set_os_specific_libs cl_required)
+
+  get_info_from_processor_name()
+
   if(APPLE)
-    # OpenCL is 10.6+ feature
     if(${cl_required} MATCHES "ON")
       set(CMAKE_OSX_DEPLOYMENT_TARGET 10.6)
       set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.6.sdk")
     else()
-      # Try to avoid the dyld: unknown required load command 0x80000022
-      # runtime error on Leopard for binaries built on 10.6
-      set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5)
-      set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.5.sdk")
+      # Assume we only care about old OS X on PPC
+
+      if(SYSTEM_IS_PPC)
+        set(CMAKE_OSX_DEPLOYMENT_TARGET 10.3)
+        set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.3.9.sdk")
+
+        # You seem to have to specify these explicitly on really old OS X
+        # CoreFoundation seems to take care of everything now
+        find_library(CARBON_LIBRARY Carbon)
+        find_library(STD_C_LIB c)
+        find_library(SYSTEM_STUBS SystemStubs)
+        mark_as_advanced(CARBON_LIBRARY
+                         SYSTEM_STUBS
+                         STD_C_LIB)
+        list(APPEND link_libs ${CARBON_LIBRARY} ${SYSTEM_STUBS} ${STD_C_LIB})
+      else()
+        # Try to avoid the dyld: unknown required load command 0x80000022
+        # runtime error on Leopard for binaries built on 10.6
+        set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5)
+        set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.5.sdk")
+
+        find_library(COREFOUNDATION_LIBRARY CoreFoundation)
+        list(APPEND OS_SPECIFIC_LIBS ${COREFOUNDATION_LIBRARY})
+      endif()
     endif()
-
-    find_library(COREFOUNDATION_LIBRARY CoreFoundation )
-    list(APPEND OS_SPECIFIC_LIBS ${COREFOUNDATION_LIBRARY})
-  endif()
-
+endif()
   if(WIN32)
     set(OS_SPECIFIC_LIBS msvcrt)
   endif()

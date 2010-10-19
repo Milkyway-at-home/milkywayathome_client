@@ -24,14 +24,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_VECTORS_FUNC_H_
 #define _MILKYWAY_VECTORS_FUNC_H_
 
+#include "milkyway_config.h"
 #include "real.h"
 #include "milkyway_math_functions.h"
-
 
 /* FIXME: Does not belong */
 #define sqr(x) ((x) * (x))
 
-__attribute__((const, always_inline))
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline mwvector mw_addv(mwvector a, mwvector b)
 {
     mwvector v;
@@ -41,8 +41,8 @@ inline mwvector mw_addv(mwvector a, mwvector b)
     return v;
 }
 
-__attribute__((const, always_inline))
-inline mwvector mw_subv(mwvector a, mwvector b)
+CONST_F ALWAYS_INLINE
+OLD_GCC_EXTERNINLINE inline mwvector mw_subv(mwvector a, mwvector b)
 {
     mwvector v;
     v.x = a.x - b.x;
@@ -52,8 +52,8 @@ inline mwvector mw_subv(mwvector a, mwvector b)
     return v;
 }
 
-__attribute__((const, always_inline))
-inline mwvector mw_mulv(mwvector a, mwvector b)
+CONST_F ALWAYS_INLINE
+OLD_GCC_EXTERNINLINE inline mwvector mw_mulv(mwvector a, mwvector b)
 {
     mwvector v;
     v.x = a.x * b.x;
@@ -63,7 +63,7 @@ inline mwvector mw_mulv(mwvector a, mwvector b)
     return v;
 }
 
-__attribute__((const, always_inline))
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline mwvector mw_divv(mwvector a, mwvector b)
 {
     mwvector v;
@@ -74,13 +74,13 @@ inline mwvector mw_divv(mwvector a, mwvector b)
     return v;
 }
 
-__attribute__((const, always_inline))
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline real mw_dotv(mwvector a, mwvector b)
 {
     return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
 }
 
-__attribute__((const, always_inline))
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline mwvector mw_crossv(mwvector a, mwvector b)
 {
     mwvector tmp = mw_vec(b.z * a.y - b.y * a.z,
@@ -89,26 +89,26 @@ inline mwvector mw_crossv(mwvector a, mwvector b)
     return tmp;
 }
 
-__attribute__((const, always_inline))
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline real mw_length(mwvector a)
 {
 
     return mw_sqrt(sqr(a.x) + sqr(a.y) + sqr(a.z));
 }
 
-__attribute__((const, always_inline))
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline real mw_sqrv(mwvector a)
 {
     return sqr(a.x) + sqr(a.y) + sqr(a.z);
 }
 
-__attribute__((const, always_inline))
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline real mw_absv(mwvector a)
 {
     return mw_sqrt(mw_sqrv(a));
 }
 
-__attribute__((const, always_inline))
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline mwvector mw_mulvs(mwvector a, real s)
 {
     mwvector v;
@@ -118,7 +118,7 @@ inline mwvector mw_mulvs(mwvector a, real s)
     return v;
 }
 
-__attribute__((const, always_inline))
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline mwvector mw_mulmv(const mwmatrix m, mwvector a)
 {
     mwvector tmp;
@@ -128,7 +128,7 @@ inline mwvector mw_mulmv(const mwmatrix m, mwvector a)
     return tmp;
 }
 
-__attribute__((const, always_inline))
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline real mw_distv(mwvector u, mwvector v)
 {
     return mw_sqrt(sqr(u.x - v.x) + sqr(u.y - v.y) + sqr(u.z - v.z));
@@ -151,7 +151,7 @@ inline real mw_distv(mwvector u, mwvector v)
 
 
 /* Outer product */
-__attribute__((always_inline))
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline void mw_outv(mwmatrix p, mwvector v, mwvector u)
 {
     X(p[0]) = X(v) * X(u);
@@ -167,7 +167,7 @@ inline void mw_outv(mwmatrix p, mwvector v, mwvector u)
     Z(p[2]) = Z(v) * Z(u);
 }
 
-__attribute__((always_inline))
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline void mw_set_matrix_identity(mwmatrix p)
 {
     X(p[0]) = 1.0;
@@ -183,7 +183,7 @@ inline void mw_set_matrix_identity(mwmatrix p)
     Z(p[2]) = 1.0;
 }
 
-__attribute__((always_inline))
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline void mw_set_matrix_zero(mwmatrix p)
 {
     X(p[0]) = 0.0;
@@ -199,7 +199,7 @@ inline void mw_set_matrix_zero(mwmatrix p)
     Z(p[2]) = 0.0;
 }
 
-__attribute__((always_inline))
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline void mw_addm(mwmatrix p, mwmatrix q, mwmatrix r)
 {
     p[0] = mw_addv(q[0], r[0]);
@@ -207,7 +207,7 @@ inline void mw_addm(mwmatrix p, mwmatrix q, mwmatrix r)
     p[0] = mw_addv(q[2], r[2]);
 }
 
-__attribute__((always_inline))
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline void mw_incaddm(mwmatrix p, mwmatrix q)
 {
     mw_incaddv(p[0], q[0]);
@@ -216,7 +216,7 @@ inline void mw_incaddm(mwmatrix p, mwmatrix q)
 }
 
 
-__attribute__((always_inline))
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline void mw_subm(mwmatrix p, mwmatrix q, mwmatrix r)
 {
     p[0] = mw_subv(q[0], r[0]);
@@ -224,7 +224,7 @@ inline void mw_subm(mwmatrix p, mwmatrix q, mwmatrix r)
     p[0] = mw_subv(q[2], r[2]);
 }
 
-__attribute__((always_inline))
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline void mw_incsubm(mwmatrix p, mwmatrix q)
 {
     mw_incsubv(p[0], q[0]);
@@ -234,7 +234,7 @@ inline void mw_incsubm(mwmatrix p, mwmatrix q)
 
 
 /* MULtiply Matrix by Scalar */
-__attribute__((always_inline))
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline void mw_mulms(mwmatrix p, mwmatrix q, real s)
 {
     p[0] = mw_mulvs(q[0], s);
@@ -242,7 +242,7 @@ inline void mw_mulms(mwmatrix p, mwmatrix q, real s)
     p[2] = mw_mulvs(q[2], s);
 }
 
-__attribute__((always_inline))
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline void mw_incmulms(mwmatrix p, real s)
 {
     mw_incmulvs(p[0], s);

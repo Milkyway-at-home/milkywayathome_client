@@ -22,7 +22,7 @@ cmake_minimum_required (VERSION 2.6)
 project(milkyway_nbody)
 
 set(nbody_MAJOR_VERSION 0)
-set(nbody_MINOR_VERSION 21)
+set(nbody_MINOR_VERSION 22)
 set(nbody_VERSION "${nbody_MAJOR_VERSION}.${nbody_MINOR_VERSION}")
 
 
@@ -31,6 +31,7 @@ include(StaticBOINC)
 include(SpecialLibs)
 include(PrintInfo)
 include(CheckFunctionExists)
+include(CheckSSE2)
 
 maybe_static()
 
@@ -43,6 +44,7 @@ find_package(JsonC REQUIRED)
 include_directories(${JSON_C_INCLUDE_DIR})
 
 check_function_exists(asprintf HAS_ASPRINTF)
+check_sse2()
 
 if(NEED_POPT_DEPS)
     #These are only dependencies of popt needed for static linking
@@ -102,7 +104,6 @@ endif()
 
 set_os_specific_libs(${NBODY_OPENCL})
 
-
 # Handle downloading, extracting and building dSFMT
 
 set(dsfmtVer "2.1")
@@ -118,7 +119,8 @@ maybe_dl_check("dSFMT"
 
 
 set(dsfmt_mexp "19937") #Value it assumes if you don't specify it; stops warning
-set(dsmft_flags "-O3 -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99 -mfpmath=sse -msse -msse2")
+set(dsmft_flags "-O3 -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99 ${SSE2_FLAGS}")
+
 
 set(dsmft_src "${MILKYWAY_THIRDPARTY}/dSFMT-src-${dsfmtVer}/dSFMT.c")
 include_directories("${MILKYWAY_THIRDPARTY}/dSFMT-src-${dsfmtVer}/")
@@ -234,7 +236,7 @@ set_property(SOURCE ${dsmft_src}
 # hardware.
 #
 
-set(CMAKE_C_FLAGS "-std=gnu99 -mfpmath=sse -msse -msse2 ${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS "-std=gnu99 ${SSE2_FLAGS} ${CMAKE_C_FLAGS}")
 
 configure_file (
   "${NBODY_INCLUDE_DIR}/nbody_config.h.in"
@@ -296,13 +298,17 @@ if(NEED_POPT_DEPS)
                             ${LIBINTL_LIBRARY})
 endif()
 
-
+if(NOT HAVE_SSE2 AND SYSTEM_IS_x86)
+  message(FATAL_ERROR "SSE2 is required for x86 systems")
+endif()
 
 if(BOINC_RELEASE_NAME)
   if(NBODY_OPENMP)
     set(NBODY_PLAN "mt")
   else()
-    set(NBODY_PLAN "sse2")
+    if(HAVE_SSE2)
+      set(NBODY_PLAN "sse2")
+    endif()
   endif()
 
   get_boinc_bin_name("milkyway_nbody" "${nbody_VERSION}" "${NBODY_PLAN}")
@@ -310,8 +316,6 @@ if(BOINC_RELEASE_NAME)
 else()
   set(nbody_bin_name "milkyway_nbody")
 endif()
-
-
 
 add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
 milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} ${BOINC_RELEASE} "${exe_link_libs}")

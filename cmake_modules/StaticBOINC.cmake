@@ -35,15 +35,20 @@ function(correct_static_link client_bin_name)
     endif()
 
     set_target_properties(${client_bin_name}
-      PROPERTIES
-      LINKER_LANGUAGE CXX
-      LINK_SEARCH_END_STATIC ON
-      LINK_FLAGS ${client_static_link_flags})
+                            PROPERTIES
+                              LINKER_LANGUAGE CXX
+                              LINK_SEARCH_END_STATIC ON
+                              LINK_FLAGS ${client_static_link_flags})
   else()
+    if(CMAKE_OSX_DEPLOYMENT_TARGET MATCHES "10.3")
+      set(osx_link_flags "-bind_at_load")
+    endif()
+
     set_target_properties(${client_bin_name}
-      PROPERTIES
-      LINKER_LANGUAGE CXX
-      LINK_SEARCH_END_STATIC ON)
+                            PROPERTIES
+                              LINKER_LANGUAGE CXX
+                              LINK_FLAGS "${osx_link_flags}"
+                              LINK_SEARCH_END_STATIC ON)
   endif()
 endfunction()
 

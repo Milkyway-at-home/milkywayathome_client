@@ -23,6 +23,14 @@ project(milkyway)
 
 include(SpecialLibs)
 include(CheckFunctionExists)
+include(CheckIncludeFiles)
+
+
+check_include_files(tgmath.h HAVE_TGMATH_H)
+if(NOT DOUBLEPREC AND NOT HAVE_TGMATH_H)
+  message(FATAL_ERROR "Float requires tgmath.h")
+endif()
+
 
 set(MILKYWAY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 include_directories(${MILKYWAY_INCLUDE_DIR})
@@ -39,7 +47,8 @@ endif()
 
 set_os_specific_libs(${MILKYWAY_OPENCL})
 
-check_function_exists(exp10 HAS_EXP10)
+check_function_exists(exp10 HAVE_EXP10)
+check_function_exists(sincos HAVE_SINCOS)
 
 configure_file (
   "${MILKYWAY_INCLUDE_DIR}/milkyway_config.h.in"

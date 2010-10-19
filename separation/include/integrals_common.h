@@ -34,7 +34,7 @@ extern "C" {
 
 
 
-ALWAYS_INLINE HOT
+ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
 inline mwvector lbr2xyz_2(const real r_point, const LB_TRIG lbt)
 {
     mwvector xyz;
@@ -46,7 +46,7 @@ inline mwvector lbr2xyz_2(const real r_point, const LB_TRIG lbt)
     return xyz;
 }
 
-ALWAYS_INLINE HOT
+ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
 inline real calc_st_prob_inc(__MW_CONSTANT STREAM_CONSTANTS* sc, const mwvector xyz, const real qw_r3_N)
 {
     mwvector xyzs, tmp;
@@ -62,7 +62,7 @@ inline real calc_st_prob_inc(__MW_CONSTANT STREAM_CONSTANTS* sc, const mwvector 
     return qw_r3_N * mw_exp(-xyz_norm * sc->sigma_sq2_inv);
 }
 
-ALWAYS_INLINE HOT
+ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
 inline real aux_prob(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                      const real qw_r3_N,
                      const real r_in_mag,
@@ -71,27 +71,27 @@ inline real aux_prob(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
     return qw_r3_N * (ap->bg_a * r_in_mag2 + ap->bg_b * r_in_mag + ap->bg_c);
 }
 
-ALWAYS_INLINE HOT CONST_F
+ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE
 inline real rg_calc(const mwvector xyz, const real q_inv_sqr)
 {
     return mw_sqrt(sqr(X(xyz)) + sqr(Y(xyz)) + sqr(Z(xyz)) * q_inv_sqr);
 }
 
-ALWAYS_INLINE HOT CONST_F
+ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE
 inline real h_prob_fast(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap, const real qw_r3_N, const real rg)
 {
     const real rs = rg + ap->r0;
     return qw_r3_N / (rg * cube(rs));
 }
 
-ALWAYS_INLINE HOT CONST_F
+ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE
 inline real h_prob_slow(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap, const real qw_r3_N, const real rg)
 {
     const real rs = rg + ap->r0;
     return qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
 }
 
-ALWAYS_INLINE HOT CONST_F
+ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE
 inline LB_TRIG lb_trig(LB lb)
 {
     LB_TRIG lbt;
@@ -100,7 +100,7 @@ inline LB_TRIG lb_trig(LB lb)
     return lbt;
 }
 
-ALWAYS_INLINE
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline void zero_st_probs(real* st_probs, const unsigned int nstream)
 {
     unsigned int i;
@@ -109,7 +109,7 @@ inline void zero_st_probs(real* st_probs, const unsigned int nstream)
         st_probs[i] = 0.0;
 }
 
-ALWAYS_INLINE HOT
+ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
 inline void stream_sums(real* st_probs,
                         __MW_CONSTANT STREAM_CONSTANTS* sc,
                         const mwvector xyz,
@@ -122,7 +122,7 @@ inline void stream_sums(real* st_probs,
         st_probs[i] += calc_st_prob_inc(&sc[i], xyz, qw_r3_N);
 }
 
-ALWAYS_INLINE
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline void sum_probs(KAHAN* probs,
                       const real* st_probs,
                       const real V_reff_xr_rp3,
@@ -134,7 +134,7 @@ inline void sum_probs(KAHAN* probs,
         KAHAN_ADD(probs[i], V_reff_xr_rp3 * st_probs[i]);
 }
 
-ALWAYS_INLINE
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline void mult_probs(real* st_probs, const real V_reff_xr_rp3, const unsigned int n_stream)
 {
     unsigned int i;
@@ -143,7 +143,7 @@ inline void mult_probs(real* st_probs, const real V_reff_xr_rp3, const unsigned 
         st_probs[i] *= V_reff_xr_rp3;
 }
 
-ALWAYS_INLINE
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline NU_ID calc_nu_step(__MW_CONSTANT INTEGRAL_AREA* ia, const unsigned int nu_step)
 {
     NU_ID nuid;

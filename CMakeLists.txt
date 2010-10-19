@@ -33,7 +33,6 @@ include(PrintInfo)
 include(DownloadCrlibm)
 set_mingw_paths()
 
-
 # Project build selection
 option(SEPARATION "Build separation" ON)
 option(NBODY "Build nbody" ON)
@@ -147,7 +146,7 @@ if(APPLE AND BOINC_APPLICATION)
   if(BOINC_RELEASE)
     # We don't want to bother compiling twice until we need the universal binary for releases
     #set(CMAKE_OSX_ARCHITECTURES i386;x86_64)
-    set(CMAKE_OSX_ARCHITECTURES x86_64)
+    #set(CMAKE_OSX_ARCHITECTURES x86_64)
   endif()
 endif()
 

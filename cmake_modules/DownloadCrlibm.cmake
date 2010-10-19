@@ -19,6 +19,9 @@
 #
 
 include(MaybeDlCheck)
+include(CheckSSE2)
+
+check_sse2()
 
 macro(download_build_crlibm)
   set(crlibmVer "1.0beta4")
@@ -34,7 +37,12 @@ macro(download_build_crlibm)
                  "${crlibmTar}")
 
  #TODO: Set march, mtune etc. from user flags, but avoid some others
-  set(crlibm_flags "-std=c99 -O3 -mfpmath=sse -msse -msse2")
+  set(crlibm_flags "-std=c99 -O3 ${SSE2_FLAGS}")
+
+  if(HAVE_SSE2) # x86/x86_64 systems
+    set(crlibm_configure_sse2 "--enable-sse2")
+    # doesn't apply and breaks the build on PPC
+  endif()
 
   set(crlibm_file "${LIBRARY_OUTPUT_PATH}/libcrlibm${CMAKE_STATIC_LIBRARY_SUFFIX}")
   set(crlibm_header "${PROJECT_INCLUDE_DIR}/crlibm.h")
@@ -42,7 +50,7 @@ macro(download_build_crlibm)
   add_custom_command(
          OUTPUT "${crlibm_file}" "${crlibm_header}"
          COMMAND "${crlibmSrcPath}/crlibm-${crlibmVer}/configure"
-                 "--enable-sse2"
+                 "${crlibm_configure_sse2}"
                  "--prefix=${MILKYWAY_ROOT}"
                  "CC=${CMAKE_C_COMPILER}"
                  "MAKE=${CMAKE_BUILD_TOOL}"

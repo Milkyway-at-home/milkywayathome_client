@@ -47,7 +47,7 @@
      so we'll have to do work to make float work to not have horrible
      casting everywhere
    */
-  #ifndef _MSC_VER
+  #if HAVE_TGMATH_H
     #include <tgmath.h>
   #else
     #include <math.h>

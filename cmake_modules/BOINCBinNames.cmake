@@ -23,32 +23,10 @@ macro(unknown_system)
   set(boinc_sys_name "unknown-system")
 endmacro()
 
+include(CPUNameTest)
+
 function(get_boinc_bin_name basename version plan)
-  # CMAKE_SYSTEM_PROCESSOR is unfortunately still i386 on 64 bit OS X
-  if(    ${CMAKE_SYSTEM_PROCESSOR} MATCHES "i386"
-      OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "i486"
-      OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "i586"  # This is stupid
-      OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "i686"
-      OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
-    set(SYSTEM_IS_X86 TRUE)
-  else()
-    set(SYSTEM_IS_X86 FALSE)
-  endif()
-
-  if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc")
-    set(SYSTEM_IS_PPC TRUE)
-  else()
-    set(SYSTEM_IS_PPC FALSE)
-  endif()
-
-  # FIXME: This seems to not be set on windows
-  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(SYSTEM_IS_64 TRUE)
-  elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-    set(SYSTEM_IS_64 FALSE)
-  else()
-    message(FATAL_ERROR "sizeof(void*) != 4, 8. What is this crazy system?")
-  endif()
+  get_info_from_processor_name()
 
   if(WIN32)
     if(SYSTEM_IS_64)

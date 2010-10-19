@@ -44,12 +44,13 @@ extern "C" {
 #define RL1000 ((real) 1000.0)
 #define RL_1_1000 ((real) 0.001)
 
-ALWAYS_INLINE CONST_F
+ALWAYS_INLINE CONST_F OLD_GCC_EXTERNINLINE
 inline real distance_magnitude(const real m)
 {
     return mw_exp10((m - (real) 14.2) * RL_1_5);
 }
 
+OLD_GCC_EXTERNINLINE
 inline R_PRIME calcRPrime(__MW_CONSTANT INTEGRAL_AREA* ia, const unsigned int r_step)
 {
     real r, next_r, log_r;
@@ -65,11 +66,13 @@ inline R_PRIME calcRPrime(__MW_CONSTANT INTEGRAL_AREA* ia, const unsigned int r_
     return ret;
 }
 
+OLD_GCC_EXTERNINLINE
 inline real calcGPrime(const real coords)
 {
     return RL5 * (mw_log10(coords * RL1000) - RL1) + absm;
 }
 
+OLD_GCC_EXTERNINLINE
 inline real calcReffXrRp3(const real coords, const real gPrime)
 {
     _MW_STATIC const real sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
@@ -82,7 +85,7 @@ inline real calcReffXrRp3(const real coords, const real gPrime)
     return reff_xr_rp3;
 }
 
-ALWAYS_INLINE
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline R_CONSTS calcRConsts(R_PRIME rp)
 {
     R_CONSTS rc;
@@ -93,7 +96,7 @@ inline R_CONSTS calcRConsts(R_PRIME rp)
     return rc;
 }
 
-ALWAYS_INLINE HOT
+ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
 inline R_POINTS calc_r_point(__MW_CONSTANT STREAM_GAUSS* sg, const real gPrime, const real coeff)
 {
     R_POINTS r_pt;

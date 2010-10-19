@@ -26,7 +26,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 BOINC_APP_GRAPHICS
 #cmakedefine01 DOUBLEPREC
 #cmakedefine01 MW_ENABLE_DEBUG
-#cmakedefine01 HAS_EXP10
+
+#cmakedefine01 HAVE_EXP10
+#cmakedefine01 HAVE_SINCOS
+#cmakedefine01 HAVE_TGMATH_H
 
 /* C99 Restrict.
 
@@ -58,6 +61,19 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define CONST_F
   #define ALWAYS_INLINE
 #endif /* _MSC_VER */
+
+
+/* Apple's GCC 4.2 has many features backported, so it counts as a newer GCC even though it isn't. */
+#if defined(__APPLE__) && (__GNUC__ >= 4 && __GNUC_MINOR__ >= 2)
+  #define _MW_NEW_APPLE_GCC
+#endif
+
+/* GCC 4.3 switched to C99 compliant inlining with -std=c99/gnu99 */
+#if (__GNUC__ <= 4 && __GNUC_MINOR__ < 3) && !defined(_MW_NEW_APPLE_GCC)
+  #define OLD_GCC_EXTERNINLINE extern
+#else
+  #define OLD_GCC_EXTERNINLINE
+#endif
 
 
 #if DOUBLEPREC
