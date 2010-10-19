@@ -25,7 +25,11 @@ endmacro()
 
 function(get_boinc_bin_name basename version plan)
   # CMAKE_SYSTEM_PROCESSOR is unfortunately still i386 on 64 bit OS X
-  if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "i386" OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
+  if(    ${CMAKE_SYSTEM_PROCESSOR} MATCHES "i386"
+      OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "i486"
+      OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "i586"  # This is stupid
+      OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "i686"
+      OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
     set(SYSTEM_IS_X86 TRUE)
   else()
     set(SYSTEM_IS_X86 FALSE)
@@ -37,36 +41,21 @@ function(get_boinc_bin_name basename version plan)
     set(SYSTEM_IS_PPC FALSE)
   endif()
 
-  if(NOT MINGW)
-    # FIXME: This seems to not be set on windows
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-      set(SYSTEM_IS_64 TRUE)
-    elseif(PTR_SIZE EQUAL 4)
-      set(SYSTEM_IS_64 FALSE)
-    else()
-      message(FATAL_ERROR "sizeof(void*) != 4, 8. What is this crazy system?")
-    endif()
-  else()
-    #I Haven't gotten this to work yet
+  # FIXME: This seems to not be set on windows
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(SYSTEM_IS_64 TRUE)
+  elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
     set(SYSTEM_IS_64 FALSE)
+  else()
+    message(FATAL_ERROR "sizeof(void*) != 4, 8. What is this crazy system?")
   endif()
 
   if(WIN32)
-    if(MINGW)
-      # I haven't gotten mingw 64 bit to work yet
-      set(boinc_sys_name "windows_intelx86")
+    if(SYSTEM_IS_64)
+      set(boinc_sys_name "windows_x86_64")
     else()
-      if(NOT SYSTEM_IS_X86)
-        message("Weird Windows that only sort of once existed?")
-      endif()
-
-      if(SYSTEM_IS_64)
-        set(boinc_sys_name "windows_intelx86")
-      else()
-        set(boinc_sys_name "windows_x86_64")
-      endif()
+      set(boinc_sys_name "windows_intelx86")
     endif()
-
   elseif(UNIX)
     if(APPLE)
       if(SYSTEM_IS_64 AND SYSTEM_IS_X86)
