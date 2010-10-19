@@ -103,6 +103,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #warning "Unknown architecture!"
 #endif
 
+#define WIN32_LEAN_AND_MEAN
+#define VC_EXTRALEAN
 
 #endif /* _MILKYWAY_CONFIG_H_ */
 

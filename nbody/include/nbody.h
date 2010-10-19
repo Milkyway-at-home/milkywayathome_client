@@ -25,10 +25,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#define WIN32_LEAN_AND_MEAN
-#include <json/json.h>
 #include "nbody_config.h"
 #include "nbody_util.h"
+
+#include <json/json.h>
+
 
 /* Command line arguments */
 typedef struct

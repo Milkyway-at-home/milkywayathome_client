@@ -37,13 +37,18 @@ function(get_boinc_bin_name basename version plan)
     set(SYSTEM_IS_PPC FALSE)
   endif()
 
-  #FIXME: This seems to not be set on windows
-  if(CMAKE_SIZEOF_VOID_P EQUAL 8 AND NOT WIN32)
-    set(SYSTEM_IS_64 TRUE)
-  elseif(PTR_SIZE EQUAL 4)
-    set(SYSTEM_IS_64 FALSE)
+  if(NOT MINGW)
+    # FIXME: This seems to not be set on windows
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+      set(SYSTEM_IS_64 TRUE)
+    elseif(PTR_SIZE EQUAL 4)
+      set(SYSTEM_IS_64 FALSE)
+    else()
+      message(FATAL_ERROR "sizeof(void*) != 4, 8. What is this crazy system?")
+    endif()
   else()
-    message(FATAL_ERROR "sizeof(void*) != 4, 8. What is this crazy system?")
+    #I Haven't gotten this to work yet
+    set(SYSTEM_IS_64 FALSE)
   endif()
 
   if(WIN32)

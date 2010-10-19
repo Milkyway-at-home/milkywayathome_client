@@ -23,9 +23,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <popt.h>
 #include <errno.h>
 
-#include <json/json.h>
-
-#include "nbody_config.h"
 #include "milkyway_util.h"
 #include "nbody.h"
 
