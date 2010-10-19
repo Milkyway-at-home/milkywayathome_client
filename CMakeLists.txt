@@ -31,6 +31,7 @@ include(MinGWPaths)
 include(StaticBOINC)
 include(PrintInfo)
 include(DownloadCrlibm)
+include(CheckCFlag)
 set_mingw_paths()
 
 # Project build selection
@@ -180,7 +181,8 @@ set(gcc_extra_warnings "-Wshadow -Wpointer-arith -Wcast-align -common-Wwrite-str
 
 #TODO: Other compilers
 if(CMAKE_COMPILER_IS_GNUCC) # I think this could maybe be IS_UNIX
-  set(CMAKE_C_FLAGS "-Wall -Wextra ${CMAKE_C_FLAGS} -funroll-loops -maccumulate-outgoing-args")
+  set(CMAKE_C_FLAGS "-Wall -Wextra ${CMAKE_C_FLAGS} -funroll-loops ")
+  add_flag_if_supported(-maccumulate-outgoing-args)
 
   set(CMAKE_C_FLAGS_DEBUG "-Wall -Wextra ${gcc_extra_warnings} -O0 -g ${CMAKE_C_FLAGS_DEBUG}")
 endif(CMAKE_COMPILER_IS_GNUCC)

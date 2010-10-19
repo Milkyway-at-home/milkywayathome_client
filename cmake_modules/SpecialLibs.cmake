@@ -43,12 +43,12 @@ macro(set_os_specific_libs cl_required)
         # You seem to have to specify these explicitly on really old OS X
         # CoreFoundation seems to take care of everything now
         find_library(CARBON_LIBRARY Carbon)
-        find_library(STD_C_LIB c)
+        find_library(STD_C_LIBRARY c)
         find_library(SYSTEM_STUBS SystemStubs)
         mark_as_advanced(CARBON_LIBRARY
                          SYSTEM_STUBS
-                         STD_C_LIB)
-        list(APPEND link_libs ${CARBON_LIBRARY} ${SYSTEM_STUBS} ${STD_C_LIB})
+                         STD_C_LIBRARY)
+        list(APPEND OS_SPECIFIC_LIBS ${CARBON_LIBRARY} ${SYSTEM_STUBS} ${STD_C_LIBRARY})
       else()
         # Try to avoid the dyld: unknown required load command 0x80000022
         # runtime error on Leopard for binaries built on 10.6

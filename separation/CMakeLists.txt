@@ -107,10 +107,6 @@ configure_file (
   "${SEPARATION_INCLUDE_DIR}/separation_config.h.in"
   "${PROJECT_INCLUDE_DIR}/separation_config.h")
 
-#if(UNIX AND NOT APPLE)  #Unix that isn't OS X
-#    set(OS_SPECIFIC_LIBS pthread)
-#endif()
-
 set(cl_source_list src/separation_cl_buffers.c
                    src/setup_cl.c
                    src/run_cl.c
@@ -169,15 +165,14 @@ else()
   list(APPEND lib_source_file_list src/integrals.c)
 endif()
 
-set(separation_link_libs ${OS_SPECIFIC_LIBS} milkyway ${LIBM_LIBRARY})
+list(APPEND separation_link_libs ${OS_SPECIFIC_LIBS} milkyway ${LIBM_LIBRARY})
 
 add_library(separation STATIC ${lib_source_file_list} ${separation_headers})
 target_link_libraries(separation ${separation_link_libs})
 
 
 
-set(exe_link_libs ${LIBM_LIBRARY}
-                  ${POPT_LIBRARY}
+set(exe_link_libs ${POPT_LIBRARY}
                   separation
                   ${separation_link_libs})
 

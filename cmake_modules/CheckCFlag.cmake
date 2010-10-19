@@ -18,32 +18,15 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-include(CPUNameTest)
+include(CheckCCompilerFlag)
 
-get_info_from_processor_name()
+function(add_flag_if_supported flagname)
+  message("Checking for flag ${flagname}")
 
-if(NOT SYSTEM_IS_PPC)
-  if(NOT MSVC)
-    set(SSE2_FLAGS "-mfpmath=sse -msse -msse2")
-  else()
-    set(SSE2_FLAGS "${CMAKE_C_FLAGS} /arch:SSE2")
+  check_c_compiler_flag("${flagname}" HAVE_FLAG_${flagname})
+
+  if(${HAVE_FLAG_${flagname}})
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${flagname}" PARENT_SCOPE)
   endif()
-endif()
-
-function(check_sse2)
-    message(STATUS "Checking for SSE2")
-
-    try_compile(SSE2_CHECK ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH}/sse2_check.c
-                CMAKE_FLAGS "${SSE2_FLAGS}")
-
-    if(SSE2_CHECK)
-        set(HAVE_SSE2 1 CACHE STRING "Status of SSE2")
-        message(STATUS "Checking if SSE2 is available - yes")
-    else()
-        set(HAVE_SSE2 0 CACHE STRING "Status of SSE2")
-        message(STATUS "Checking if SSE2 is available - no")
-    endif()
-
-    mark_as_advanced(HAVE_SSE2)
 endfunction()
 

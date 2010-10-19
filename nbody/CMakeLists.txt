@@ -33,6 +33,7 @@ include(PrintInfo)
 include(CheckFunctionExists)
 include(CheckSSE2)
 
+
 maybe_static()
 
 if(BOINC_APPLICATION)
@@ -116,7 +117,6 @@ maybe_dl_check("dSFMT"
                "http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/${dsfmtTar}"
                "${randSrcPath}"
                "${dsfmtTar}")
-
 
 set(dsfmt_mexp "19937") #Value it assumes if you don't specify it; stops warning
 set(dsmft_flags "-O3 -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99 ${SSE2_FLAGS}")
@@ -316,6 +316,7 @@ if(BOINC_RELEASE_NAME)
 else()
   set(nbody_bin_name "milkyway_nbody")
 endif()
+
 
 add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
 milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} ${BOINC_RELEASE} "${exe_link_libs}")
