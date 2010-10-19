@@ -127,6 +127,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
                                      const NBodyState* st,      /* Final state of the simulation */
                                      const unsigned int maxIdx, /* Total number of bins */
                                      const real start,          /* Calculated start point of bin range */
+                                     const HistData* histData,  /* Data histogram; which bins to skip */
                                      unsigned int* totalNumOut) /* Out: Number of particles in range */
 {
     real lambda;
@@ -170,7 +171,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
                          + sinpsi * sinth * bsin ));
 
         idx = (unsigned int) mw_floor((lambda - start) / binsize);
-        if (idx < maxIdx)
+        if (idx < maxIdx && histData[idx].useBin)
         {
             ++histogram[idx];
             ++totalNum;
@@ -252,8 +253,8 @@ real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st)
 
     const real start = mw_ceil(center - binsize * (real) maxIdx / 2.0);
 
-    histogram = createHistogram(ctx, st, maxIdx, start, &totalNum);
     histData  = readHistData(ctx->histogram, maxIdx);
+    histogram = createHistogram(ctx, st, maxIdx, start, histData, &totalNum);
 
     if (histogram && histData)
     {
