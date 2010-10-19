@@ -349,11 +349,7 @@ static json_object* readParameters(const int argc,
         { NULL, 0, 0, NULL, 0, NULL, NULL }
     };
 
-    context = poptGetContext(argv[0],
-                             argc,
-                             argv,
-                             options,
-                             POPT_CONTEXT_POSIXMEHARDER);
+    context = poptGetContext(argv[0], argc, argv, options, 0);
 
     if (argc < 2)
     {
