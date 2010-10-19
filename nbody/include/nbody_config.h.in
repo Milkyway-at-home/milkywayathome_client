@@ -31,8 +31,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 NBODY_SHOW
 #cmakedefine01 ENABLE_CRLIBM
 
+#if defined(_OPENMP)
+  #define EXTRAVER " OpenMP"
+#elif NBODY_OPENCL
+  #define EXTRAVER " OpenCL"
+#endif /* defined(_OPENMP) */
 
-#define BOINC_NBODY_APP_VERSION "milkywayathome nbody ${nbody_VERSION} ${CMAKE_SYSTEM_NAME} " ARCH_STRING " " PRECSTRING
+
+#define BOINC_NBODY_APP_VERSION "milkywayathome nbody ${nbody_VERSION} ${CMAKE_SYSTEM_NAME} " ARCH_STRING " " PRECSTRING EXTRAVER
 
 #if BOINC_APPLICATION && !BOINC_DEBUG
   #define DEFAULT_OUTPUT_FILE stderr
