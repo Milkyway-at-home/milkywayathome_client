@@ -253,21 +253,27 @@ real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st)
 
     const real start = mw_ceil(center - binsize * (real) maxIdx / 2.0);
 
-    histData  = readHistData(ctx->histogram, maxIdx);
-    histogram = createHistogram(ctx, st, maxIdx, start, histData, &totalNum);
-
-    if (histogram && histData)
+    histData = readHistData(ctx->histogram, maxIdx);
+    if (!histData)
     {
-        if (ctx->outputHistogram)
-            writeHistogram(ctx, histData, histogram, maxIdx, start, (real) totalNum);
-
-        if (totalNum != 0)
-            chisqval = calcChisq(histData, histogram, maxIdx, (real) totalNum);
-        else
-            chisqval = -INFINITY;
+        warn("Failed to read histogram\n");
+        return NAN;
     }
+
+    histogram = createHistogram(ctx, st, maxIdx, start, histData, &totalNum);
+    if (!histogram)
+    {
+        warn("Failed to create histogram\n");
+        return NAN;
+    }
+
+    if (ctx->outputHistogram)
+        writeHistogram(ctx, histData, histogram, maxIdx, start, (real) totalNum);
+
+    if (totalNum != 0)
+        chisqval = calcChisq(histData, histogram, maxIdx, (real) totalNum);
     else
-        chisqval = NAN;
+        chisqval = -INFINITY;
 
     free(histData);
     free(histogram);
