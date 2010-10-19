@@ -23,16 +23,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_config.h"
 
-#define MILKYWAY_NBODY_CLIENT_VERSION_MAJOR ${milkyway_nbody_VERSION_MAJOR}
-#define MILKYWAY_NBODY_CLIENT_VERSION_MINOR ${milkyway_nbody_VERSION_MINOR}
-#define MILKYWAY_NBODY_CLIENT_VERSION       ${milkyway_nbody_VERSION}
+#define MILKYWAY_NBODY_CLIENT_VERSION_MAJOR ${nbody_VERSION_MAJOR}
+#define MILKYWAY_NBODY_CLIENT_VERSION_MINOR ${nbody_VERSION_MINOR}
+#define MILKYWAY_NBODY_CLIENT_VERSION       ${nbody_VERSION}
 
 #cmakedefine01 NBODY_OPENCL
 #cmakedefine01 NBODY_SHOW
 #cmakedefine01 ENABLE_CRLIBM
 
 
-#define BOINC_NBODY_APP_VERSION "milkywayathome nbody ${milkyway_nbody_VERSION} ${CMAKE_SYSTEM_NAME} " ARCH_STRING " " PRECSTRING
+#define BOINC_NBODY_APP_VERSION "milkywayathome nbody ${nbody_VERSION} ${CMAKE_SYSTEM_NAME} " ARCH_STRING " " PRECSTRING
 
 #if BOINC_APPLICATION && !BOINC_DEBUG
   #define DEFAULT_OUTPUT_FILE stderr
