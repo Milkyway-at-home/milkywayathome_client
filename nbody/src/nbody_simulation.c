@@ -42,7 +42,7 @@ static void generateModel(const NBodyCtx* ctx, const InitialConditions* ic, NBod
         case DwarfModelKing:
         case DwarfModelDehnen:
         default:
-            fail("Unsupported model: %s", showDwarfModelT(ctx->model.type));
+            fail("Unsupported model: %d", ctx->model.type);
     }
 }
 
