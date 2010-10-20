@@ -30,7 +30,7 @@ include(BOINCBinNames)
 include(PrintInfo)
 
 set(separation_VERSION_MAJOR 0)
-set(separation_VERSION_MINOR 52)
+set(separation_VERSION_MINOR 42)
 set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}")
 
 
@@ -65,8 +65,19 @@ option(AUX_LARGE_TESTS
 option(AUX_SMALL_TESTS
        "Run small aux tests" OFF)
 
+option(SEPARATION_CRLIBM
+      "Use crlibm double" OFF)
+mark_as_advanced(SEPARATION_CRLIBM)
+
+if(NOT DOUBLEPREC AND SEPARATION_CRLIBM)
+  message(WARNING "Attempting to use single precision with crlibm. Disabling use of crlibm")
+  set(SEPARTION_CRLIBM OFF)
+endif()
+
+
 maybe_static()
 
+find_package(Crlibm)
 find_package(Libm REQUIRED)
 
 if(BOINC_APPLICATION)
@@ -98,6 +109,8 @@ include_directories(${POPT_INCLUDE_DIR})
 
 print_separator()
 message("Separation build:")
+message("   Double precision:    ${DOUBLEPREC}")
+message("   Separation crlibm:   ${SEPARATION_CRLIBM}")
 print_libs()
 print_separator()
 
@@ -171,7 +184,6 @@ add_library(separation STATIC ${lib_source_file_list} ${separation_headers})
 target_link_libraries(separation ${separation_link_libs})
 
 
-
 set(exe_link_libs ${POPT_LIBRARY}
                   separation
                   ${separation_link_libs})
@@ -182,6 +194,13 @@ if(NEED_POPT_DEPS)
   list(APPEND exe_link_libs ${LIBICONV_LIBRARY}
                             ${LIBINTL_LIBRARY})
 endif()
+
+
+if(CRLIBM_LIBRARY AND SEPARATION_CRLIBM)
+  include_directories(${CRLIBM_INCLUDE_DIR})
+  list(APPEND exe_link_libs ${CRLIBM_LIBRARY})
+endif()
+
 
 if(SEPARATION_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})

@@ -67,9 +67,9 @@ option(BOINC_DEBUG
 option(NBODY_OPENCL
        "Use OpenCL" OFF)
 
-option(ENABLE_CRLIBM
+option(NBODY_CRLIBM
       "Use crlibm double" ON)
-mark_as_advanced(ENABLE_CRLIBM)
+mark_as_advanced(NBODY_CRLIBM)
 
 option(NBODY_OPENMP "Use OpenMP" OFF)
 
@@ -85,12 +85,12 @@ endif()
 
 
 if(BOINC_RELEASE)
-  set(ENABLE_CRLIBM ON)
+  set(NBODY_CRLIBM ON)
 endif()
 
-if(NOT DOUBLEPREC AND ENABLE_CRLIBM)
+if(NOT DOUBLEPREC AND NBODY_CRLIBM)
   message(WARNING "Attempting to use single precision with crlibm. Disabling use of crlibm")
-  set(ENABLE_CRLIBM OFF)
+  set(NBODY_CRLIBM OFF)
 endif()
 
 if(NBODY_OPENCL)
@@ -133,7 +133,7 @@ message("   Building:          ${PROJECT_NAME}")
 message("   BOINC Application: ${BOINC_APPLICATION}")
 message("   BOINC Debug:       ${BOINC_DEBUG}")
 message("   Double precision:  ${DOUBLEPREC}")
-message("   Enable crlibm:     ${ENABLE_CRLIBM}")
+message("   Enable crlibm:     ${NBODY_CRLIBM}")
 message("  ----")
 print_libs()
 print_separator()
@@ -271,20 +271,7 @@ set(exe_link_libs ${LIBM_LIBRARY}
                   ${nbody_libs}
                   ${nbody_link_libs})
 
-
-if(ENABLE_CRLIBM)
-  if(DOWNLOAD_CRLIBM)
-    add_dependencies(nbody_simulation crlibm_build)
-    set(CRLIBM_INCLUDE_DIR "${MILKYWAY_ROOT}/include"})
-    set(CRLIBM_LIBRARY "${LIBRARY_OUTPUT_PATH}/libcrlibm${CMAKE_STATIC_LIBRARY_SUFFIX}")
-  else()
-    if(BOINC_RELEASE)
-      find_package(Crlibm REQUIRED)
-    else()
-      find_package(Crlibm)
-    endif()
-  endif()
-
+if(NBODY_CRLIBM)
   include_directories(${CRLIBM_INCLUDE_DIR})
   list(APPEND exe_link_libs ${CRLIBM_LIBRARY})
 endif()

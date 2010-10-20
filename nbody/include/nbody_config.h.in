@@ -29,7 +29,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #cmakedefine01 NBODY_OPENCL
 #cmakedefine01 NBODY_SHOW
-#cmakedefine01 ENABLE_CRLIBM
+#cmakedefine01 NBODY_CRLIBM
+
+#define ENABLE_CRLIBM NBODY_CRLIBM
 
 #if defined(_OPENMP)
   #define EXTRAVER " OpenMP"

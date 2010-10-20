@@ -80,6 +80,18 @@ if(DOWNLOAD_CRLIBM)
   download_build_crlibm()
 endif()
 
+if(DOWNLOAD_CRLIBM)
+  add_dependencies(nbody_simulation crlibm_build)
+  set(CRLIBM_INCLUDE_DIR "${MILKYWAY_ROOT}/include"})
+  set(CRLIBM_LIBRARY "${LIBRARY_OUTPUT_PATH}/libcrlibm${CMAKE_STATIC_LIBRARY_SUFFIX}")
+else()
+  if(BOINC_RELEASE)
+    find_package(Crlibm REQUIRED)
+  else()
+    find_package(Crlibm)
+  endif()
+endif()
+
 
 # Set output to be in this root
 set(EXECUTABLE_OUTPUT_PATH ${MILKYWAY_ROOT}/bin)
