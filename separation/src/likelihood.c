@@ -254,10 +254,10 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
 
     const real exp_background_weight = mw_exp(ap->background_weight);
 
-    st_prob = (real*) mallocSafe(sizeof(real) * streams->number_streams);
-    r_pts = (R_POINTS*) mallocSafe(sizeof(R_POINTS) * ap->convolve);
-    st_sum = (KAHAN*) callocSafe(sizeof(KAHAN), streams->number_streams);
-    exp_stream_weights = (real*) mallocSafe(sizeof(real) * streams->number_streams);
+    st_prob = (real*) mwMallocAligned(sizeof(real) * streams->number_streams, 2 * sizeof(real));
+    r_pts = (R_POINTS*) mwMallocAligned(sizeof(R_POINTS) * ap->convolve, sizeof(R_POINTS));
+    st_sum = (KAHAN*) mwCallocAligned(sizeof(KAHAN), streams->number_streams, sizeof(KAHAN));
+    exp_stream_weights = (real*) mwMallocAligned(sizeof(real) * streams->number_streams, 2 * sizeof(real));
 
     sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);
 
@@ -270,10 +270,10 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
 
     get_stream_only_likelihood(st_sum, sp->number_stars, streams->number_streams);
 
-    free(st_prob);
-    free(r_pts);
-    free(st_sum);
-    free(exp_stream_weights);
+    mwAlignedFree(st_prob);
+    mwAlignedFree(r_pts);
+    mwAlignedFree(st_sum);
+    mwAlignedFree(exp_stream_weights);
 
     return likelihood_val;
 }

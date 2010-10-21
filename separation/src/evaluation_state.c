@@ -32,8 +32,8 @@ static char resolvedCheckpointPath[1024];
 void initialize_integral(INTEGRAL* integral, unsigned int number_streams)
 {
     integral->background_integral = 0.0;
-    integral->stream_integrals = (real*) callocSafe(number_streams, sizeof(real));
-    integral->probs = (KAHAN*) callocSafe(number_streams, sizeof(KAHAN));
+    integral->stream_integrals = (real*) mwCallocAligned(number_streams, sizeof(real), 2 * sizeof(real));
+    integral->probs = (KAHAN*) mwCallocAligned(number_streams, sizeof(KAHAN), sizeof(KAHAN));
 }
 
 void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
@@ -52,8 +52,8 @@ void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
 
 void free_integral(INTEGRAL* i)
 {
-    free(i->stream_integrals);
-    free(i->probs);
+    mwAlignedFree(i->stream_integrals);
+    mwAlignedFree(i->probs);
 }
 
 void free_evaluation_state(EVALUATION_STATE* es)

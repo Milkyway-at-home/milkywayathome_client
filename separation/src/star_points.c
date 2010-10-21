@@ -42,7 +42,7 @@ static int fread_star_points(FILE* data_file, STAR_POINTS* sp)
         return 1;
     }
 
-    sp->stars = (mwvector*) mallocSafe(sizeof(mwvector) * sp->number_stars);
+    sp->stars = (mwvector*) mwMallocAligned(sizeof(mwvector) * sp->number_stars, sizeof(mwvector));
     for (i = 0; i < sp->number_stars; ++i)
     {
         if (fscanf(data_file, STAR_POINTS_READ_STR, &x, &y, &z) != 3)
@@ -78,6 +78,6 @@ int read_star_points(STAR_POINTS* sp, const char* filename)
 
 void free_star_points(STAR_POINTS* sp)
 {
-    free(sp->stars);
+    mwAlignedFree(sp->stars);
 }
 

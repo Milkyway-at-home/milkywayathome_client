@@ -148,13 +148,15 @@ STREAM_GAUSS* get_stream_gauss(const unsigned int convolve)
 {
     unsigned int i;
     STREAM_GAUSS* sg;
+    real* qgaus_X;
+    real* qgaus_W;
 
-    real* qgaus_X = (real*) mallocSafe(sizeof(real) * convolve);
-    real* qgaus_W = (real*) mallocSafe(sizeof(real) * convolve);
+    qgaus_X = (real*) mwMallocAligned(sizeof(real) * convolve, 2 * sizeof(real));
+    qgaus_W = (real*) mwMallocAligned(sizeof(real) * convolve, 2 * sizeof(real));
 
     gaussLegendre(-1.0, 1.0, qgaus_X, qgaus_W, convolve);
 
-    sg = (STREAM_GAUSS*) mallocSafe(sizeof(STREAM_GAUSS) * convolve);
+    sg = (STREAM_GAUSS*) mwMallocAligned(sizeof(STREAM_GAUSS) * convolve, sizeof(STREAM_GAUSS));
 
     /* Use separate buffers at first since that's what the gaussLegendre takes,
        but then pack them into a more coherent struct */
@@ -164,8 +166,8 @@ STREAM_GAUSS* get_stream_gauss(const unsigned int convolve)
         sg[i].qgaus_W = qgaus_W[i];
     }
 
-    free(qgaus_X);
-    free(qgaus_W);
+    mwAlignedFree(qgaus_X);
+    mwAlignedFree(qgaus_W);
 
     return sg;
 
@@ -179,7 +181,7 @@ NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
     real tmp1, tmp2;
     NU_CONSTANTS* nu_consts;
 
-    nu_consts = (NU_CONSTANTS*) mallocSafe(sizeof(NU_CONSTANTS) * nu_steps);
+    nu_consts = (NU_CONSTANTS*) mwMallocAligned(sizeof(NU_CONSTANTS) * nu_steps, sizeof(NU_CONSTANTS));
 
     for (i = 0; i < nu_steps; ++i)
     {

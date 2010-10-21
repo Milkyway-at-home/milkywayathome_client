@@ -170,7 +170,7 @@ real evaluate(const ASTRONOMY_PARAMETERS* ap,
 
     free_star_points(&sp);
     free_final_stream_integrals(&fsi);
-    free(sg);
+    mwAlignedFree(sg);
 
     return likelihood_val;
 }

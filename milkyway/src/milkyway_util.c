@@ -26,6 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <sys/time.h>
 #endif
 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -114,7 +115,7 @@ void* mwMallocAligned(size_t size, size_t alignment)
     p = _aligned_malloc(size, alignment);
 
     if (!p)
-        fail("%s: NULL: _aligned_malloc error = %d\n", FUNC_NAME, GetLastError());
+        fail("%s: NULL: _aligned_malloc error = %ld\n", FUNC_NAME, GetLastError());
 
     return p;
 }
@@ -256,7 +257,11 @@ int mwRename(const char* oldf, const char* newf)
     {
         for (i = 0; i < 5; ++i)
         {
+          #ifndef _WIN32
             sleep(1);       /* sleep 1 second, avoid lockstep */
+          #else
+	    Sleep(1);
+          #endif /* _WIN32 */
             rc = _mwRename(oldf, newf);
             if (!rc)
                 break;

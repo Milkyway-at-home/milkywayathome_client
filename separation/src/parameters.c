@@ -132,7 +132,6 @@ static INTEGRAL_AREA* fread_parameters(FILE* file,
     if (fscanf(file, "wedge: %d\n", &ap->wedge) < 1)
         warn("Error reading wedge\n");
 
-    //integral = (INTEGRAL_AREA*) mallocSafe(sizeof(INTEGRAL_AREA));
     integral = (INTEGRAL_AREA*) mwMallocAligned(sizeof(INTEGRAL_AREA), sizeof(INTEGRAL_AREA));
 
     fscanf(file,
