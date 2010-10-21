@@ -25,6 +25,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
 #include "milkyway_config.h"
 #include "milkyway_math.h"
 #include "milkyway_types.h"
@@ -46,10 +50,6 @@ extern "C" {
     #include <boinc/diagnostics.h>
   #endif /* BOINC_DEBUG */
 #endif /* BOINC_APPLICATION */
-
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 
 #if MILKYWAY_OPENCL
 
