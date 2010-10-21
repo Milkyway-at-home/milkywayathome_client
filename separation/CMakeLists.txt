@@ -30,7 +30,7 @@ include(BOINCBinNames)
 include(PrintInfo)
 
 set(separation_VERSION_MAJOR 0)
-set(separation_VERSION_MINOR 42)
+set(separation_VERSION_MINOR 43)
 set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}")
 
 
