@@ -29,7 +29,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "real.h"
 
 
-#ifdef __OPENCL_VERSION__ /* In the kernel */
+#if defined(__OPENCL_VERSION__) && USE_CL_MATH_TYPES
+ /* In the kernel */
   #if DOUBLEPREC
     typedef double4 real4;
     typedef double2 real2;

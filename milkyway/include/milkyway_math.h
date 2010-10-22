@@ -24,11 +24,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _MILKYWAY_MATH_H_INSIDE_
 
 #if __OPENCL_VERSION__ && DOUBLEPREC
-  #ifdef __ATI_CL__
+  #ifdef cl_amd_fp64
     #pragma OPENCL EXTENSION cl_amd_fp64 : enable
   #else
     #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-  #endif /* __ATI_CL__ */
+  #endif /* cl_amd_fp64 */
 #endif /* DOUBLEPREC */
 
 #define _USE_MATH_DEFINES

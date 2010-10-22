@@ -29,7 +29,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "real.h"
 #include "milkyway_vector_types.h"
 
-#ifdef __OPENCL_VERSION__
+
+#if defined(__OPENCL_VERSION__) && USE_CL_MATH_TYPES
   #include "milkyway_vectors_cl.h"
 #else
   #include "milkyway_vectors_func.h"
