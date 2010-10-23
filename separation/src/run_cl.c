@@ -32,6 +32,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "calculated_constants.h"
 #include "run_cl.h"
 #include "r_points.h"
+#include "integrals_common.h"
 
 typedef struct
 {
@@ -165,11 +166,22 @@ static inline void sumMuResults(KAHAN* bg_prob,
     }
 }
 
-static cl_int setNuKernelArg(CLInfo* ci, const cl_uint nu_step)
+static cl_int setNuKernelArgs(CLInfo* ci, const INTEGRAL_AREA* ia, const cl_uint nu_step)
 {
     cl_int err;
+    NU_ID nuid;
 
-    err = clSetKernelArg(ci->kern, 9, sizeof(cl_uint), &nu_step);
+    /* Avoid doing any trig in the broken ATI math. Also trig seems to
+     * be more expensive there. */
+    nuid = calc_nu_step(ia, nu_step);
+    err = clSetKernelArg(ci->kern, 9, sizeof(real), &nuid.id);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error setting nu_id argument for step %u: %s\n", nu_step, showCLInt(err));
+        return err;
+    }
+
+    err = clSetKernelArg(ci->kern, 10, sizeof(cl_uint), &nu_step);
     if (err != CL_SUCCESS)
     {
         warn("Error setting nu step argument for step %u: %s\n", nu_step, showCLInt(err));
@@ -264,8 +276,7 @@ static cl_int runNuStep(CLInfo* ci,
                         KAHAN* restrict bg_progress,    /* Accumulating results over nu steps */
                         KAHAN* restrict probs_results,
 
-                        const cl_uint mu_steps,
-                        const cl_uint r_steps,
+                        const INTEGRAL_AREA* ia,
                         const cl_uint number_streams,
                         const cl_uint nu_step)
 {
@@ -274,7 +285,7 @@ static cl_int runNuStep(CLInfo* ci,
     printf("Nu step %u:\n", nu_step);
     //printSeparationEventTimes(evs);
 
-    err = setNuKernelArg(ci, nu_step);
+    err = setNuKernelArgs(ci, ia, nu_step);
     if (err != CL_SUCCESS)
     {
         warn("Failed to set nu kernel argument\n");
@@ -301,7 +312,7 @@ static cl_int runNuStep(CLInfo* ci,
     }
 
     /* Enqueue write to temporary buffers */
-    err = enqueueIntegralKernel(ci, evs, mu_steps, r_steps);
+    err = enqueueIntegralKernel(ci, evs, ia->mu_steps, ia->r_steps);
     if (err != CL_SUCCESS)
     {
         warn("Failed to enqueue integral kernel: %s\n", showCLInt(err));
@@ -309,7 +320,7 @@ static cl_int runNuStep(CLInfo* ci,
     }
 
     /* Read results from the main buffer */
-    err = readKernelResults(ci, cm, evs, bg_progress, probs_results, mu_steps, r_steps, number_streams);
+    err = readKernelResults(ci, cm, evs, bg_progress, probs_results, ia->mu_steps, ia->r_steps, number_streams);
     if (err != CL_SUCCESS)
     {
         warn("Failed to read kernel results: %s\n", showCLInt(err));
@@ -333,7 +344,7 @@ static real runIntegral(CLInfo* ci,
     mwEnableProfiling(ci);
 
     /* Prepare 1st step. Need to run first step to fill the temporary buffer */
-    err = setNuKernelArg(ci, 0);
+    err = setNuKernelArgs(ci, ia, 0);
     if (err != CL_SUCCESS)
     {
         warn("Failed to set nu kernel argument for step 0: %s\n", showCLInt(err));
@@ -359,7 +370,7 @@ static real runIntegral(CLInfo* ci,
         double t1 = mwGetTimeMilli();
         err = runNuStep(ci, cm, &evs,
                         &bg_sum, probs_results,
-                        ia->mu_steps, ia->r_steps, ap->number_streams, i);
+                        ia, ap->number_streams, i);
 
         if (err != CL_SUCCESS)
         {

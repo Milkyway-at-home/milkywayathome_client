@@ -28,7 +28,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "r_points.h"
 #include "milkyway_cl.h"
 #include "milkyway_extra.h"
-#include "coordinates.h"
 #include "integrals_common.h"
 
 #pragma OPENCL EXTENSION cl_amd_printf : enable
@@ -80,13 +79,12 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
                            __global const R_POINTS* r_pts,
                            const LB_TRIG lbt,
                            const real gPrime,
-                           const unsigned int convolve,
                            real* st_probs)
 {
     unsigned int i;
-    real rg;
     mwvector xyz = ZERO_VECTOR;
     real bg_prob = 0.0;
+    real rg;
     R_POINTS r_pt;
 
 
@@ -96,6 +94,7 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
     return -1.0;
   #endif /* ZERO_BG_PROB */
 
+    const unsigned int convolve = ap->convolve; /* Much faster to load this into register first. */
 
     for (i = 0; i < convolve; ++i)
     {
@@ -106,8 +105,8 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
         xyz = lbr2xyz_2(r_pt.r_point, lbt);
 
         rg = rg_calc(xyz, ap->q_inv_sqr);
-
         bg_prob += h_prob_f(ap, r_pt.qw_r3_N, rg);
+
 
       #if AUX_BG_PROFILE
         /* Add a quadratic term in g to the Hernquist profile */
@@ -126,22 +125,20 @@ __attribute__ ((always_inline))
 real r_calculation(__constant ASTRONOMY_PARAMETERS* ap,
                    __constant STREAM_CONSTANTS* sc,
                    __constant real* sg_dx,
-                   __constant R_CONSTS* rcs,
+                   __constant R_CONSTS* rc,
                    __global const R_POINTS* r_pts,
                    const LB_TRIG lbt,
                    const real id,
-                   real* st_probs,
-                   const unsigned int r_step)
+                   real* st_probs)
 {
     real bg_prob = bg_probability(ap, sc, sg_dx,
-                                  &r_pts[r_step * ap->convolve],
+                                  r_pts,
                                   lbt,
-                                  rcs[r_step].gPrime,
-                                  ap->convolve,
+                                  rc->gPrime,
                                   st_probs);
 
-    real V = id * rcs[r_step].irv;
-    real V_reff_xr_rp3 = V * rcs[r_step].reff_xr_rp3;
+    real V = id * rc->irv;
+    real V_reff_xr_rp3 = V * rc->reff_xr_rp3;
 
     mult_probs_cl(st_probs, V_reff_xr_rp3, ap->number_streams);
 
@@ -171,36 +168,20 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
                             __global const LB_TRIG* lbts,
                             __global const R_POINTS* r_pts,
                             __constant real* sg_dx,
+                            const real nu_id,
                             const unsigned int nu_step)
 
 {
-    NU_ID nuid;
-    LB_TRIG lbt;
-    real r_result;
-
-    //real st_probs[3];     /* FIXME: hardcoded stream limit */
-    real st_probs[3] = { 0.0, 0.0, 0.0 };
-
-    size_t idx;     /* index into stream probs output buffer */
     size_t mu_step = get_global_id(0);
     size_t r_step = get_global_id(1);
+    size_t idx = mu_step * ia->r_steps + r_step; /* Index into output buffers */
 
-    //zero_st_probs(st_probs, ap->number_streams);
+    LB_TRIG lbt = lbts[nu_step * ia->mu_steps + mu_step];
 
-    /* Actual calculations */
-    nuid = calc_nu_step(ia, nu_step);
+    real st_probs[3] = { 0.0, 0.0, 0.0 };      /* FIXME: hardcoded stream limit */
+    mu_out[idx] = r_calculation(ap, sc, sg_dx, &rcs[r_step], &r_pts[r_step * ap->convolve], lbt, nu_id, st_probs);
 
-    lbt = lbts[nu_step * ia->mu_steps + mu_step];
-
-    r_result = r_calculation(ap, sc, sg_dx, rcs, r_pts, lbt, nuid.id, st_probs, r_step);
-
-    /* Output to buffers */
-    mu_out[mu_step * ia->r_steps + r_step] = r_result;
-    idx = mu_step * ia->r_steps * ap->number_streams + r_step * ap->number_streams;
-    write_st_probs(&probs_out[idx],
-                   st_probs,
-                   ap->number_streams);
-
+    write_st_probs(&probs_out[ap->number_streams * idx], st_probs, ap->number_streams);
 }
 
 
