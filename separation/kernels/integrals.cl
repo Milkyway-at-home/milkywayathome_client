@@ -99,9 +99,6 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
     for (i = 0; i < convolve; ++i)
     {
         r_pt = r_pts[i];
-        //r_pt.r_point = gPrime * bg_prob; // attempt to estimate cost of load
-        //r_pt.qw_r3_N = lbt.lcos * gPrime;
-
         xyz = lbr2xyz_2(r_pt.r_point, lbt);
 
         /* Moving stream_sums here reduces GPR usage by 2, but also
@@ -118,6 +115,8 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
 
         //stream_sums(st_probs, sc, xyz, r_pt.qw_r3_N, ap->number_streams);
         stream_sums_cl(st_probs, sc, xyz, r_pt.qw_r3_N, ap->number_streams);
+
+
     }
 
     return bg_prob;

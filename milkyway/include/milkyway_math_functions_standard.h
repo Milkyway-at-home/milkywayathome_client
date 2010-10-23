@@ -94,7 +94,7 @@ extern "C" {
 #define mw_floor floor
 
 /* TODO: Have fma */
-#define mw_fma(a, b, c) ((a) * (b) + (c))
+#define mw_fma(a, b, c) (((a) * (b)) + (c))
 
 #define mw_fmax fmax
 #define mw_fmin fmin
@@ -113,7 +113,7 @@ extern "C" {
 #define mw_lgamma_r lgamma_r
 #define mw_log2 log2
 #define mw_logb logb
-#define mw_mad(a, b, c) ((a) * (b) + (c))
+#define mw_mad(a, b, c) (((a) * (b)) + (c))
 #define mw_modf modf
 #define mw_nan nan
 #define mw_nextafter nextafter

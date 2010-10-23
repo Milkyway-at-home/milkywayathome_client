@@ -97,7 +97,12 @@ extern "C" {
 #define mw_fabs fabs
 #define mw_fdim fdim
 #define mw_floor floor
-#define mw_fma fma
+
+#if USE_FMA
+  #define mw_fma fma
+#else
+  #define mw_fma(a, b, c) (((a) * (b)) + (c))
+#endif
 #define mw_fmax fmax
 #define mw_fmin fmin
 #define mw_fmod fmod
@@ -120,7 +125,12 @@ extern "C" {
 #define mw_log10 log10
 #define mw_log1p log1p
 #define mw_logb logb
-#define mw_mad mad
+
+#if USE_MAD
+  #define mw_mad mad
+#else
+  #define mw_mad(a, b, c) (((a) * (b)) + (c))
+#endif /* USE_MAD */
 #define mw_modf modf
 #define mw_nan nan
 #define mw_nextafter nextafter

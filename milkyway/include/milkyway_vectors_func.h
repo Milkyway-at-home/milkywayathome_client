@@ -77,7 +77,7 @@ inline mwvector mw_divv(mwvector a, mwvector b)
 CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline real mw_dotv(mwvector a, mwvector b)
 {
-    return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
+    return mw_mad(a.z, b.z, mw_mad(a.y, b.y, a.x * b.x));
 }
 
 CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
@@ -99,7 +99,7 @@ inline real mw_length(mwvector a)
 CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline real mw_sqrv(mwvector a)
 {
-    return sqr(a.x) + sqr(a.y) + sqr(a.z);
+    return mw_mad(a.z, a.z, mw_mad(a.y, a.y, a.x * a.x));
 }
 
 CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE

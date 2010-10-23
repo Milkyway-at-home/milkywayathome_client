@@ -40,6 +40,8 @@ inline mwvector lbr2xyz_2(const real r_point, const LB_TRIG lbt)
     mwvector xyz;
     real zp = r_point * lbt.bcos;
 
+    // This mad for some reason increases GPR usage by 1 pushing into next level of unhappy
+    //xyz.x = mw_mad(zp, lbt.lcos, m_sun_r0);
     xyz.x = zp * lbt.lcos - sun_r0;
     xyz.y = zp * lbt.lsin;
     xyz.z = r_point * lbt.bsin;
@@ -67,13 +69,27 @@ inline real aux_prob(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                      const real qw_r3_N,
                      const real r_in_mag)
 {
-    return qw_r3_N * (ap->bg_a * sqr(r_in_mag) + ap->bg_b * r_in_mag + ap->bg_c);
+    //return qw_r3_N * (ap->bg_a * sqr(r_in_mag) + ap->bg_b * r_in_mag + ap->bg_c);
+    real tmp;
+
+    tmp = mw_mad(ap->bg_b, r_in_mag, ap->bg_c); /* bg_b * r_in_mag + bg_c */
+    tmp = mw_mad(ap->bg_a, sqr(r_in_mag), tmp); /* bg_a * r_in_mag2 + (bg_b * r_in_mag + bg_c)*/
+
+    return qw_r3_N * tmp;
 }
 
 ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE
 inline real rg_calc(const mwvector xyz, const real q_inv_sqr)
 {
-    return mw_sqrt(sqr(X(xyz)) + sqr(Y(xyz)) + sqr(Z(xyz)) * q_inv_sqr);
+    /* sqrt(x^2 + y^2 + q_inv_sqr * z^2) */
+
+    real tmp;
+
+    tmp = sqr(X(xyz));
+    tmp = mw_mad(Y(xyz), Y(xyz), tmp);           /* x^2 + y^2 */
+    tmp = mw_mad(q_inv_sqr, sqr(Z(xyz)), tmp);   /* (q_invsqr * z^2) + (x^2 + y^2) */
+
+    return mw_sqrt(tmp);
 }
 
 ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE

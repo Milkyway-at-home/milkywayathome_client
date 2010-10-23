@@ -41,6 +41,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define NODE_GC_COORDS_RAD ((real) d2r(NODE_GC_COORDS))
 
 #define sun_r0 ((real) 8.5)
+#define m_sun_r0 (-sun_r0)
 
 #define CHECKPOINT_FILE "separation_checkpoint"
 #define CHECKPOINT_FILE_TMP "separation_checkpoint_tmp"
