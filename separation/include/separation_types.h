@@ -80,11 +80,9 @@ typedef struct SEPARATION_ALIGN(64)
     mw_int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
 } STREAM_CONSTANTS;
 
-typedef struct SEPARATION_ALIGN(4 * sizeof(real))
+typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real r_point;
-    real r_in_mag;
-    real r_in_mag2;
     real qw_r3_N;
 } R_POINTS;
 
@@ -210,6 +208,7 @@ typedef struct SEPARATION_ALIGN(128) _ASTRONOMY_PARAMETERS
                           const STREAM_CONSTANTS*,
                           const STREAM_GAUSS*,
                           const LB_TRIG,
+                          const real,
                           const int,
                           const unsigned int,
                           const R_POINTS*,
@@ -224,6 +223,7 @@ typedef real (*BGProbabilityFunc) (const ASTRONOMY_PARAMETERS*,
                                    const STREAM_CONSTANTS*,
                                    const STREAM_GAUSS*,
                                    const LB_TRIG,
+                                   const real,
                                    const int,
                                    const unsigned int,
                                    const R_POINTS*,

@@ -69,13 +69,14 @@ real bg_probability_fast_hprob(const ASTRONOMY_PARAMETERS* ap,
                                const STREAM_CONSTANTS* sc,
                                const STREAM_GAUSS* sg,
                                const LB_TRIG lbt,
+                               const real gPrime,
                                const int aux_bg_profile,
                                const unsigned int convolve,
                                const R_POINTS* r_pts,
                                real* st_probs)
 {
     unsigned int i;
-    real h_prob, rg;
+    real h_prob, g, rg;
     mwvector xyz;
     real bg_prob = 0.0;
 
@@ -85,11 +86,15 @@ real bg_probability_fast_hprob(const ASTRONOMY_PARAMETERS* ap,
 
         rg = rg_calc(xyz, ap->q_inv_sqr);
 
+
         h_prob = h_prob_fast(ap, r_pts[i].qw_r3_N, rg);
 
         /* Add a quadratic term in g to the the Hernquist profile */
         if (aux_bg_profile)
-            h_prob += aux_prob(ap, r_pts[i].qw_r3_N, r_pts[i].r_in_mag, r_pts[i].r_in_mag2);
+        {
+            g = gPrime + sg[i].dx;
+            h_prob += aux_prob(ap, r_pts[i].qw_r3_N, g);
+        }
         bg_prob += h_prob;
 
         stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
@@ -104,13 +109,14 @@ real bg_probability_slow_hprob(const ASTRONOMY_PARAMETERS* ap,
                                const STREAM_CONSTANTS* sc,
                                const STREAM_GAUSS* sg,
                                const LB_TRIG lbt,
+                               const real gPrime,
                                const int aux_bg_profile,
                                const unsigned int convolve,
                                const R_POINTS* r_pts,
                                real* st_probs)
 {
     unsigned int i;
-    real rg;
+    real rg, g;
     mwvector xyz;
     real bg_prob = 0.0;
 
@@ -122,7 +128,10 @@ real bg_probability_slow_hprob(const ASTRONOMY_PARAMETERS* ap,
 
         bg_prob += h_prob_slow(ap, r_pts[i].qw_r3_N, rg);
         if (aux_bg_profile)
-            bg_prob += aux_prob(ap, r_pts[i].qw_r3_N, r_pts[i].r_in_mag, r_pts[i].r_in_mag2);
+        {
+            g = gPrime + sg[i].dx;
+            bg_prob += aux_prob(ap, r_pts[i].qw_r3_N, g);
+        }
 
         stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
     }
@@ -135,7 +144,7 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
                                   const STREAM_CONSTANTS* sc,
                                   const STREAM_GAUSS* sg,
                                   const LB_TRIG lbt, /* integral point */
-                                  const real reff_xr_rp3,
+                                  const R_CONSTS rc,
                                   const real V,
                                   const R_POINTS* r_pts,
                                   real* st_probs,
@@ -151,13 +160,14 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
 
     bg_prob = ap->bg_prob_func(ap, sc, sg,
                                lbt,
+                               rc.gPrime,
                                ap->aux_bg_profile,
                                ap->convolve,
                                r_pts,
                                st_probs);
 
-    sum_probs(probs, st_probs, V * reff_xr_rp3, ap->number_streams);
-    bg_prob *= reff_xr_rp3;
+    sum_probs(probs, st_probs, V * rc.reff_xr_rp3, ap->number_streams);
+    bg_prob *= rc.reff_xr_rp3;
 
     return bg_prob;
 }
@@ -184,7 +194,7 @@ static void r_sum(const ASTRONOMY_PARAMETERS* ap,
     {
         V = id * rc[r_step].irv;
 
-        bg_prob = V * bg_probability(ap, sc, sg, lbt, rc[r_step].reff_xr_rp3, V, &r_pts[r_step * ap->convolve], st_probs, probs);
+        bg_prob = V * bg_probability(ap, sc, sg, lbt, rc[r_step], V, &r_pts[r_step * ap->convolve], st_probs, probs);
 
         KAHAN_ADD(es->sum, bg_prob);
     }

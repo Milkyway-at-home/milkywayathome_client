@@ -65,10 +65,9 @@ inline real calc_st_prob_inc(__MW_CONSTANT STREAM_CONSTANTS* sc, const mwvector 
 ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
 inline real aux_prob(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                      const real qw_r3_N,
-                     const real r_in_mag,
-                     const real r_in_mag2)
+                     const real r_in_mag)
 {
-    return qw_r3_N * (ap->bg_a * r_in_mag2 + ap->bg_b * r_in_mag + ap->bg_c);
+    return qw_r3_N * (ap->bg_a * sqr(r_in_mag) + ap->bg_b * r_in_mag + ap->bg_c);
 }
 
 ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE

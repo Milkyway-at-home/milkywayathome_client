@@ -105,8 +105,6 @@ inline R_POINTS calc_r_point(__MW_CONSTANT STREAM_GAUSS* sg, const real gPrime, 
     g = gPrime + sg->dx;
 
     /* MAG2R */
-    r_pt.r_in_mag = g;
-    r_pt.r_in_mag2 = sqr(g);
     r_pt.r_point = RL_1_1000 * mw_exp10(RL_1_5 * (g - absm) + RL1);
 
     r3 = cube(r_pt.r_point);
