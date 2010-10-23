@@ -82,7 +82,7 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
                            real* st_probs)
 {
     unsigned int i;
-    mwvector xyz = ZERO_VECTOR;
+    mwvector xyz;
     real bg_prob = 0.0;
     real rg;
     R_POINTS r_pt;
@@ -104,9 +104,11 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
 
         xyz = lbr2xyz_2(r_pt.r_point, lbt);
 
+        /* Moving stream_sums here reduces GPR usage by 2, but also
+         * for some reason gets slightly slower. */
+
         rg = rg_calc(xyz, ap->q_inv_sqr);
         bg_prob += h_prob_f(ap, r_pt.qw_r3_N, rg);
-
 
       #if AUX_BG_PROFILE
         /* Add a quadratic term in g to the Hernquist profile */

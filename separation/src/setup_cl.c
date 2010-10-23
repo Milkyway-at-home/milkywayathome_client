@@ -156,7 +156,7 @@ cl_int setupSeparationCL(CLInfo* ci,
 
     cwd = getcwd(NULL, 0);
     asprintf(&extraDefs, DOUBLEPREC_DEF_STRING
-                         //"-D__ATI_CL__ "
+                        "-DUSE_CL_MATH_TYPES=0 "
                         "-cl-strict-aliasing "
                         "-cl-finite-math-only "
                         "-I%s/../include "

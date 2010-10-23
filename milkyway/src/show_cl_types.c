@@ -151,16 +151,17 @@ const char* showCLInt(const cl_int x)
         case CL_INVALID_PLATFORM:
             return "CL_INVALID_PLATFORM";
 
-            /*
-              OpenCL 1.1
-        case CL_MISALIGNED_SUB_BUFFER_OFFSET:
-            return "CL_MISALIGNED_SUB_BUFFER_OFFSET";
-        case CL_INVALID_D3D10_RESOURCE_KHR:
-            return "CL_INVALID_D3D10_RESOURCE_KHR";
+     #ifdef CL_VERSION_1_1
         case CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST:
             return "CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST";
-
+        case CL_MISALIGNED_SUB_BUFFER_OFFSET:
+            return "CL_MISALIGNED_SUB_BUFFER_OFFSET";
+            /*
+        case CL_INVALID_D3D10_RESOURCE_KHR:
+            return "CL_INVALID_D3D10_RESOURCE_KHR";
             */
+     #endif /* CL_VERSION_1_1 */
+
         default:
             warn("Trying to show unknown cl_int %d\n", x);
             return "Unknown cl_int";
