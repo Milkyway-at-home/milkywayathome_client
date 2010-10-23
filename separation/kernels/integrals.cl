@@ -35,6 +35,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define FAST_HPROB 1
 #define AUX_BG_PROFILE 0
+#define ZERO_BG_PROB 0
 
 #if FAST_HPROB
   #define h_prob_f h_prob_fast
@@ -42,21 +43,59 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define h_prob_f h_prob_slow
 #endif /* FAST_H_PROB */
 
+
 __attribute__ ((always_inline))
-inline real sub_bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
-                               __constant STREAM_CONSTANTS* sc,
-                               __constant real* sg_dx,
-                               __global const R_POINTS* r_pts,
-                               const real gPrime,
-                               const LB_TRIG lbt,
-                               const unsigned int convolve,
-                               real* st_probs)
+inline void stream_sums_cl(real* st_probs,
+                           __constant STREAM_CONSTANTS* sc,
+                           const mwvector xyz,
+                           const real qw_r3_N,
+                           const unsigned int nstreams)
+
+{
+    //unsigned int i;
+    //for (i = 0; i < nstreams; ++i)
+    st_probs[0] += calc_st_prob_inc(&sc[0], xyz, qw_r3_N);
+    st_probs[1] += calc_st_prob_inc(&sc[1], xyz, qw_r3_N);
+    st_probs[2] += calc_st_prob_inc(&sc[2], xyz, qw_r3_N);
+
+}
+
+__attribute__ ((always_inline))
+inline void mult_probs_cl(real* st_probs, const real V_reff_xr_rp3, const unsigned int n_stream)
+{
+    //unsigned int i;
+    //for (i = 0; i < n_stream; ++i)
+
+    st_probs[0] *= V_reff_xr_rp3;
+    st_probs[1] *= V_reff_xr_rp3;
+    st_probs[2] *= V_reff_xr_rp3;
+}
+
+
+
+__attribute__ ((always_inline))
+inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
+                           __constant STREAM_CONSTANTS* sc,
+                           __constant real* sg_dx,
+                           __global const R_POINTS* r_pts,
+                           const LB_TRIG lbt,
+                           const real gPrime,
+                           const unsigned int convolve,
+                           real* st_probs)
 {
     unsigned int i;
     real rg;
     mwvector xyz = ZERO_VECTOR;
     real bg_prob = 0.0;
     R_POINTS r_pt;
+
+
+  #if ZERO_BG_PROB
+    /* if q is 0, there is no probability */
+    /* CHECKME: What happens to the st_probs? */
+    return -1.0;
+  #endif /* ZERO_BG_PROB */
+
 
     for (i = 0; i < convolve; ++i)
     {
@@ -73,32 +112,9 @@ inline real sub_bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
         bg_prob += aux_prob(ap, r_pt.qw_r3_N, g);
       #endif /* AUX_BG_PROFILE */
 
-        stream_sums(st_probs, sc, xyz, r_pt.qw_r3_N, ap->number_streams);
+        //stream_sums(st_probs, sc, xyz, r_pt.qw_r3_N, ap->number_streams);
+        stream_sums_cl(st_probs, sc, xyz, r_pt.qw_r3_N, ap->number_streams);
     }
-
-    return bg_prob;
-}
-
-__attribute__ ((always_inline))
-inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
-                           __constant STREAM_CONSTANTS* sc,
-                           __constant real* sg_dx,
-                           __global const R_POINTS* r_pts,
-                           const LB_TRIG lbt,
-                           const R_CONSTS rc,
-                           const real V,
-                           real* st_probs)
-{
-    real bg_prob;
-
-    /* if q is 0, there is no probability */
-    if (ap->zero_q)
-        return -1.0;
-
-    bg_prob = sub_bg_probability(ap, sc, sg_dx, r_pts, rc.gPrime, lbt, ap->convolve, st_probs);
-    bg_prob *= rc.reff_xr_rp3;
-
-    mult_probs(st_probs, V * rc.reff_xr_rp3, ap->number_streams);
 
     return bg_prob;
 }
@@ -114,13 +130,19 @@ real r_calculation(__constant ASTRONOMY_PARAMETERS* ap,
                    real* st_probs,
                    const unsigned int r_step)
 {
-    real V;
-    R_CONSTS rc;
+    real bg_prob = bg_probability(ap, sc, sg_dx,
+                                  &r_pts[r_step * ap->convolve],
+                                  lbt,
+                                  rcs[r_step].gPrime,
+                                  ap->convolve,
+                                  st_probs);
 
-    rc = rcs[r_step];
-    V = id * rc.irv;
+    real V = id * rcs[r_step].irv;
+    real V_reff_xr_rp3 = V * rcs[r_step].reff_xr_rp3;
 
-    return V * bg_probability(ap, sc, sg_dx, &r_pts[r_step * ap->convolve], lbt, rc, V, st_probs);
+    mult_probs_cl(st_probs, V_reff_xr_rp3, ap->number_streams);
+
+    return V_reff_xr_rp3 * bg_prob;
 }
 
 __attribute__ ((always_inline))
@@ -128,10 +150,12 @@ inline void write_st_probs(__global real* probs_out,
                            const real* st_probs,
                            const unsigned int n_streams)
 {
-    unsigned int i;
+    //unsigned int i;
+    //for (i = 0; i < n_streams; ++i)
 
-    for (i = 0; i < n_streams; ++i)
-        probs_out[i] = st_probs[i];
+    probs_out[0] = st_probs[0];
+    probs_out[1] = st_probs[1];
+    probs_out[2] = st_probs[2];
 }
 
 __kernel void mu_sum_kernel(__global real* restrict mu_out,
