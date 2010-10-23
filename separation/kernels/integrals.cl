@@ -100,6 +100,9 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
     for (i = 0; i < convolve; ++i)
     {
         r_pt = r_pts[i];
+        //r_pt.r_point = gPrime * bg_prob; // attempt to estimate cost of load
+        //r_pt.qw_r3_N = lbt.lcos * gPrime;
+
         xyz = lbr2xyz_2(r_pt.r_point, lbt);
 
         rg = rg_calc(xyz, ap->q_inv_sqr);
@@ -165,14 +168,15 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
                             __constant INTEGRAL_AREA* ia,
                             __constant STREAM_CONSTANTS* sc,
                             __constant R_CONSTS* rcs,
+                            __global const LB_TRIG* lbts,
                             __global const R_POINTS* r_pts,
                             __constant real* sg_dx,
                             const unsigned int nu_step)
+
 {
     NU_ID nuid;
-    LB lb;
     LB_TRIG lbt;
-    real mu, r_result;
+    real r_result;
 
     //real st_probs[3];     /* FIXME: hardcoded stream limit */
     real st_probs[3] = { 0.0, 0.0, 0.0 };
@@ -184,10 +188,9 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     //zero_st_probs(st_probs, ap->number_streams);
 
     /* Actual calculations */
-    mu = ia->mu_min + (((real) mu_step + 0.5) * ia->mu_step_size);
     nuid = calc_nu_step(ia, nu_step);
-    lb = gc2lb(ap->wedge, mu, nuid.nu);
-    lbt = lb_trig(lb);
+
+    lbt = lbts[nu_step * ia->mu_steps + mu_step];
 
     r_result = r_calculation(ap, sc, sg_dx, rcs, r_pts, lbt, nuid.id, st_probs, r_step);
 

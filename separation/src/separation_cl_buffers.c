@@ -22,6 +22,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "show_cl_types.h"
 #include "separation_cl_buffers.h"
 #include "r_points.h"
+#include "integrals_common.h"
+
 
 static inline cl_mem createWriteBuffer(cl_context clctx, size_t size, cl_int* err)
 {
@@ -173,6 +175,53 @@ static inline cl_int createRBuffers(CLInfo* ci,
     return CL_SUCCESS;
 }
 
+static LB_TRIG* precalculateLBTrig(const ASTRONOMY_PARAMETERS* ap, const INTEGRAL_AREA* ia)
+{
+    unsigned int i, j;
+    LB_TRIG* lbts;
+    NU_ID nuid;
+    LB lb;
+    real mu;
+
+    lbts = (LB_TRIG*) mwMallocAligned(sizeof(LB_TRIG) * ia->mu_steps * ia->nu_steps, sizeof(LB_TRIG));
+
+    for (i = 0; i < ia->nu_steps; ++i)
+    {
+        nuid = calc_nu_step(ia, i);
+        for (j = 0; j < ia->mu_steps; ++j)
+        {
+            mu = ia->mu_min + (((real) j + 0.5) * ia->mu_step_size);
+            lb = gc2lb(ap->wedge, mu, nuid.nu);
+            lbts[i * ia->mu_steps + j] = lb_trig(lb);
+        }
+    }
+
+    return lbts;
+}
+
+static cl_int createLBTrigBuffer(CLInfo* ci,
+                                 SeparationCLMem* cm,
+                                 const ASTRONOMY_PARAMETERS* ap,
+                                 const INTEGRAL_AREA* ia,
+                                 const SeparationSizes* sizes)
+{
+    cl_int err;
+    LB_TRIG* lbts;
+    const cl_mem_flags constBufFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
+
+    lbts = precalculateLBTrig(ap, ia);
+    cm->lbts = clCreateBuffer(ci->clctx, constBufFlags, sizes->lbts, lbts, &err);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error creating lb_trig buffer of size %zu: %s\n", sizes->lbts, showCLInt(err));
+        return err;
+    }
+
+    mwAlignedFree(lbts);
+
+    return CL_SUCCESS;
+}
+
 void calculateSizes(SeparationSizes* sizes, const ASTRONOMY_PARAMETERS* ap, const INTEGRAL_AREA* ia)
 {
     sizes->outMu = sizeof(real) * ia->mu_steps * ia->r_steps;
@@ -183,6 +232,7 @@ void calculateSizes(SeparationSizes* sizes, const ASTRONOMY_PARAMETERS* ap, cons
     sizes->rPts = sizeof(R_POINTS) * ap->convolve * ia->r_steps;
     sizes->rc = sizeof(R_CONSTS) * ia->r_steps;
     sizes->sg_dx = sizeof(real) * ap->convolve;
+    sizes->lbts = sizeof(LB_TRIG) * ia->mu_steps * ia->nu_steps;
 }
 
 cl_int createSeparationBuffers(CLInfo* ci,
@@ -207,6 +257,7 @@ cl_int createSeparationBuffers(CLInfo* ci,
     err |= createIABuffer(ci, cm, ia, sizes, constBufFlags);
     err |= createSCBuffer(ci, cm, sc, sizes, constBufFlags);
     err |= createRBuffers(ci, cm, ap, ia, sg, sizes);
+    err |= createLBTrigBuffer(ci, cm, ap, ia, sizes);
 
     return err;
 }
@@ -225,6 +276,7 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
     clReleaseMemObject(cm->rPts);
     clReleaseMemObject(cm->rc);
     clReleaseMemObject(cm->sg_dx);
+    clReleaseMemObject(cm->lbts);
 }
 
 

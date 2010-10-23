@@ -46,9 +46,10 @@ typedef struct
     cl_mem rc;        /* r constants */
     cl_mem rPts;
     cl_mem sg_dx;
+    cl_mem lbts;
 } SeparationCLMem;
 
-#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 
 
 cl_int setupSeparationCL(CLInfo* ci,

@@ -169,7 +169,7 @@ static cl_int setNuKernelArg(CLInfo* ci, const cl_uint nu_step)
 {
     cl_int err;
 
-    err = clSetKernelArg(ci->kern, 8, sizeof(cl_uint), &nu_step);
+    err = clSetKernelArg(ci->kern, 9, sizeof(cl_uint), &nu_step);
     if (err != CL_SUCCESS)
     {
         warn("Error setting nu step argument for step %u: %s\n", nu_step, showCLInt(err));

@@ -42,6 +42,7 @@ typedef struct
     size_t rc;
     size_t rPts;
     size_t sg_dx;
+    size_t lbts;
 } SeparationSizes;
 
 
