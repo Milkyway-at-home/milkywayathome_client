@@ -30,29 +30,30 @@ extern "C" {
 
 real bg_probability_fast_hprob(const ASTRONOMY_PARAMETERS* ap,
                                const STREAM_CONSTANTS* sc,
-                               const STREAM_GAUSS* sg,
+                               const R_POINTS* r_pts,
+                               const real* sg_dx,
                                const LB_TRIG lbt,
                                const real gPrime,
                                const int aux_bg_profile,
                                const unsigned int convolve,
-                               const R_POINTS* r_pts,
+
                                real* st_probs);
 
 real bg_probability_slow_hprob(const ASTRONOMY_PARAMETERS* ap,
                                const STREAM_CONSTANTS* sc,
-                               const STREAM_GAUSS* sg,
+                               const R_POINTS* r_pts,
+                               const real* sg_dx,
                                const LB_TRIG lbt,
                                const real gPrime,
                                const int aux_bg_profile,
                                const unsigned int convolve,
-                               const R_POINTS* r_pts,
                                real* st_probs);
 
 
 real integrate(const ASTRONOMY_PARAMETERS* ap,
                const INTEGRAL_AREA* ia,
                const STREAM_CONSTANTS* sc,
-               const STREAM_GAUSS* sg,
+               const STREAM_GAUSS sg,
                KAHAN* probs,
                EVALUATION_STATE* es);
 

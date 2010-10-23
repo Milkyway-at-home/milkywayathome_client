@@ -30,12 +30,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern real calcReffXrRp3(const real coords, const real gPrime);
 extern real calcGPrime(const real coords);
 extern R_PRIME calcRPrime(__MW_CONSTANT INTEGRAL_AREA* ia, const unsigned int r_step);
-extern R_POINTS calc_r_point(__MW_CONSTANT STREAM_GAUSS* sg, const real gPrime, const real coeff);
+extern R_POINTS calc_r_point(const real dx, const real qgaus_W, const real gPrime, const real coeff);
 #endif
 
 
 void set_r_points(const ASTRONOMY_PARAMETERS* ap,
-                  const STREAM_GAUSS* sg,
+                  const STREAM_GAUSS sg,
                   const unsigned int n_convolve,
                   const real gPrime,
                   R_POINTS* r_pts)
@@ -43,12 +43,12 @@ void set_r_points(const ASTRONOMY_PARAMETERS* ap,
     unsigned int i;
 
     for (i = 0; i < n_convolve; ++i)
-        r_pts[i] = calc_r_point(&sg[i], gPrime, ap->coeff);
+        r_pts[i] = calc_r_point(sg.dx[i], sg.qgaus_W[i], gPrime, ap->coeff);
 }
 
 R_POINTS* precalculate_r_pts(const ASTRONOMY_PARAMETERS* ap,
                              const INTEGRAL_AREA* ia,
-                             const STREAM_GAUSS* sg,
+                             const STREAM_GAUSS sg,
                              R_CONSTS** rc_out)
 {
     unsigned int i;

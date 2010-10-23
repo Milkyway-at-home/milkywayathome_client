@@ -135,7 +135,7 @@ static inline cl_int createRBuffers(CLInfo* ci,
                                     SeparationCLMem* cm,
                                     const ASTRONOMY_PARAMETERS* ap,
                                     const INTEGRAL_AREA* ia,
-                                    const STREAM_GAUSS* sg,
+                                    const STREAM_GAUSS sg,
                                     const SeparationSizes* sizes)
 {
     cl_int err;
@@ -160,6 +160,13 @@ static inline cl_int createRBuffers(CLInfo* ci,
         return err;
     }
 
+    cm->sg_dx = clCreateBuffer(ci->clctx, constBufFlags, sizes->sg_dx, sg.dx, &err);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error creating stream sg_dx buffer of size %zu: %s\n", sizes->sg_dx, showCLInt(err));
+        return err;
+    }
+
     mwAlignedFree(r_pts);
     mwAlignedFree(rc);
 
@@ -175,6 +182,7 @@ void calculateSizes(SeparationSizes* sizes, const ASTRONOMY_PARAMETERS* ap, cons
     sizes->sc = sizeof(STREAM_CONSTANTS) * ap->number_streams;
     sizes->rPts = sizeof(R_POINTS) * ap->convolve * ia->r_steps;
     sizes->rc = sizeof(R_CONSTS) * ia->r_steps;
+    sizes->sg_dx = sizeof(real) * ap->convolve;
 }
 
 cl_int createSeparationBuffers(CLInfo* ci,
@@ -182,7 +190,7 @@ cl_int createSeparationBuffers(CLInfo* ci,
                                const ASTRONOMY_PARAMETERS* ap,
                                const INTEGRAL_AREA* ia,
                                const STREAM_CONSTANTS* sc,
-                               const STREAM_GAUSS* sg,
+                               const STREAM_GAUSS sg,
                                const SeparationSizes* sizes)
 {
     cl_int err = CL_SUCCESS;
@@ -216,6 +224,7 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
     clReleaseMemObject(cm->sc);
     clReleaseMemObject(cm->rPts);
     clReleaseMemObject(cm->rc);
+    clReleaseMemObject(cm->sg_dx);
 }
 
 

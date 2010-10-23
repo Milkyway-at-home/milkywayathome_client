@@ -34,8 +34,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 static inline real likelihood_bg_probability_main(const ASTRONOMY_PARAMETERS* ap,
                                                   const STREAM_CONSTANTS* sc,
-                                                  const STREAM_GAUSS* sg,
                                                   const R_POINTS* r_pts,
+                                                  const real* sg_dx,
                                                   const LB_TRIG lbt,
                                                   const R_CONSTS rc,
                                                   const unsigned int convolve,
@@ -60,7 +60,7 @@ static inline real likelihood_bg_probability_main(const ASTRONOMY_PARAMETERS* ap
             /* the Hernquist profile includes a quadratic term in g */
             if (ap->aux_bg_profile)
             {
-                g = rc.gPrime + sg[i].dx;
+                g = rc.gPrime + sg_dx[i];
                 h_prob += aux_prob(ap, r_pts[i].qw_r3_N, g);
             }
         }
@@ -81,8 +81,8 @@ static inline real likelihood_bg_probability_main(const ASTRONOMY_PARAMETERS* ap
 
 static inline real likelihood_bg_probability(const ASTRONOMY_PARAMETERS* ap,
                                              const STREAM_CONSTANTS* sc,
-                                             const STREAM_GAUSS* sg,
                                              const R_POINTS* r_pts,
+                                             const real* sg_dx,
                                              const LB_TRIG lbt,
                                              const R_CONSTS rc,
                                              real* st_probs)
@@ -93,7 +93,7 @@ static inline real likelihood_bg_probability(const ASTRONOMY_PARAMETERS* ap,
     if (ap->zero_q)
         return -1.0;
 
-    bg_prob = likelihood_bg_probability_main(ap, sc, sg, r_pts, lbt, rc, ap->convolve, st_probs);
+    bg_prob = likelihood_bg_probability_main(ap, sc, r_pts, sg_dx, lbt, rc, ap->convolve, st_probs);
     bg_prob *= rc.reff_xr_rp3;
 
     return bg_prob;
@@ -167,7 +167,7 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
                            const STREAM_CONSTANTS* sc,
                            const STREAMS* streams,
                            const FINAL_STREAM_INTEGRALS* fsi,
-                           const STREAM_GAUSS* sg,
+                           const STREAM_GAUSS sg,
                            R_POINTS* r_pts,
                            KAHAN* st_sum,
                            real* st_prob,
@@ -199,7 +199,7 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
 
         lbt = lb_trig(lb);
 
-        bg_prob = likelihood_bg_probability(ap, sc, sg, r_pts, lbt, rc, st_prob);
+        bg_prob = likelihood_bg_probability(ap, sc, r_pts, sg.dx, lbt, rc, st_prob);
 
         bg = (bg_prob / fsi->background_integral) * exp_background_weight;
 
@@ -247,7 +247,7 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
                 const STREAM_CONSTANTS* sc,
                 const STREAMS* streams,
                 const FINAL_STREAM_INTEGRALS* fsi,
-                const STREAM_GAUSS* sg)
+                const STREAM_GAUSS sg)
 
 {
     real* st_prob;

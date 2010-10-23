@@ -97,12 +97,12 @@ inline R_CONSTS calcRConsts(R_PRIME rp)
 }
 
 ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
-inline R_POINTS calc_r_point(__MW_CONSTANT STREAM_GAUSS* sg, const real gPrime, const real coeff)
+inline R_POINTS calc_r_point(const real dx, const real qgaus_W, const real gPrime, const real coeff)
 {
     R_POINTS r_pt;
     real g, exponent, r3, N;
 
-    g = gPrime + sg->dx;
+    g = gPrime + dx;
 
     /* MAG2R */
     r_pt.r_point = RL_1_1000 * mw_exp10(RL_1_5 * (g - absm) + RL1);
@@ -110,20 +110,20 @@ inline R_POINTS calc_r_point(__MW_CONSTANT STREAM_GAUSS* sg, const real gPrime, 
     r3 = cube(r_pt.r_point);
     exponent = sqr(g - gPrime) * inv(RL2 * sqr(stdev));
     N = coeff * mw_exp(-exponent);
-    r_pt.qw_r3_N = sg->qgaus_W * r3 * N;
+    r_pt.qw_r3_N = qgaus_W * r3 * N;
 
     return r_pt;
 }
 
 void set_r_points(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
-                  __MW_CONSTANT STREAM_GAUSS* sg,
+                  const STREAM_GAUSS sg,
                   const unsigned int n_convolve,
                   const real coords,
                   __MW_LOCAL R_POINTS* r_pts);
 
 R_POINTS* precalculate_r_pts(const ASTRONOMY_PARAMETERS* ap,
                              const INTEGRAL_AREA* ia,
-                             const STREAM_GAUSS* sg,
+                             const STREAM_GAUSS sg,
                              R_CONSTS** rc_out);
 
 #ifdef __cplusplus

@@ -33,6 +33,9 @@ macro(set_os_specific_libs cl_required)
     if(${cl_required} MATCHES "ON")
       set(CMAKE_OSX_DEPLOYMENT_TARGET 10.6)
       set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.6.sdk")
+
+      find_library(COREFOUNDATION_LIBRARY CoreFoundation)
+      list(APPEND OS_SPECIFIC_LIBS ${COREFOUNDATION_LIBRARY})
     else()
       # Assume we only care about old OS X on PPC
 
@@ -50,7 +53,7 @@ macro(set_os_specific_libs cl_required)
                          STD_C_LIBRARY)
         list(APPEND OS_SPECIFIC_LIBS ${CARBON_LIBRARY} ${SYSTEM_STUBS} ${STD_C_LIBRARY})
       else()
-        # Try to avoid the dyld: unknown required load command 0x80000022
+        # Try to avoid the dyld: unknown required load commaCMakeMnd 0x80000022
         # runtime error on Leopard for binaries built on 10.6
         set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5)
         set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.5.sdk")

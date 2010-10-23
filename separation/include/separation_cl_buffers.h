@@ -41,6 +41,7 @@ typedef struct
     size_t ic;
     size_t rc;
     size_t rPts;
+    size_t sg_dx;
 } SeparationSizes;
 
 
@@ -49,7 +50,7 @@ cl_int createSeparationBuffers(CLInfo* ci,
                                const ASTRONOMY_PARAMETERS* ap,
                                const INTEGRAL_AREA* ia,
                                const STREAM_CONSTANTS* sc,
-                               const STREAM_GAUSS* sg,
+                               const STREAM_GAUSS sg,
                                const SeparationSizes* sizes);
 
 void releaseSeparationBuffers(SeparationCLMem* cm);

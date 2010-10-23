@@ -45,6 +45,7 @@ typedef struct
     cl_mem sc;        /* Stream Constants */
     cl_mem rc;        /* r constants */
     cl_mem rPts;
+    cl_mem sg_dx;
 } SeparationCLMem;
 
 #define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
@@ -55,7 +56,7 @@ cl_int setupSeparationCL(CLInfo* ci,
                          const ASTRONOMY_PARAMETERS* ap,
                          const INTEGRAL_AREA* ia,
                          const STREAM_CONSTANTS* sc,
-                         const STREAM_GAUSS* sg,
+                         const STREAM_GAUSS sg,
                          const CLRequest* clr);
 
 #ifdef __cplusplus

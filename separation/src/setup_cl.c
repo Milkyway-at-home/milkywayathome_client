@@ -46,6 +46,7 @@ static inline cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm)
     err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->sc);
     err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->rc);
     err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->rPts);
+    err |= clSetKernelArg(ci->kern, 7, sizeof(cl_mem), &cm->sg_dx);
 
     if (err != CL_SUCCESS)
     {
@@ -139,7 +140,7 @@ cl_int setupSeparationCL(CLInfo* ci,
                          const ASTRONOMY_PARAMETERS* ap,
                          const INTEGRAL_AREA* ia,
                          const STREAM_CONSTANTS* sc,
-                         const STREAM_GAUSS* sg,
+                         const STREAM_GAUSS sg,
                          const CLRequest* clr)
 {
     cl_int err;

@@ -31,7 +31,8 @@ STREAM_CONSTANTS* getStreamConstants(const ASTRONOMY_PARAMETERS* ap, const STREA
 
 int setAstronomyParameters(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS* bgp);
 
-STREAM_GAUSS* get_stream_gauss(const unsigned int convolve);
+STREAM_GAUSS get_stream_gauss(const unsigned int convolve);
+void free_stream_gauss(STREAM_GAUSS sg);
 
 NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
                                    const real nu_step_size,

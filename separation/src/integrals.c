@@ -67,12 +67,12 @@ static inline void do_boinc_checkpoint(const EVALUATION_STATE* es,
 HOT
 real bg_probability_fast_hprob(const ASTRONOMY_PARAMETERS* ap,
                                const STREAM_CONSTANTS* sc,
-                               const STREAM_GAUSS* sg,
+                               const R_POINTS* r_pts,
+                               const real* sg_dx,
                                const LB_TRIG lbt,
                                const real gPrime,
                                const int aux_bg_profile,
                                const unsigned int convolve,
-                               const R_POINTS* r_pts,
                                real* st_probs)
 {
     unsigned int i;
@@ -92,7 +92,7 @@ real bg_probability_fast_hprob(const ASTRONOMY_PARAMETERS* ap,
         /* Add a quadratic term in g to the the Hernquist profile */
         if (aux_bg_profile)
         {
-            g = gPrime + sg[i].dx;
+            g = gPrime + sg_dx[i];
             h_prob += aux_prob(ap, r_pts[i].qw_r3_N, g);
         }
         bg_prob += h_prob;
@@ -107,12 +107,12 @@ real bg_probability_fast_hprob(const ASTRONOMY_PARAMETERS* ap,
 HOT
 real bg_probability_slow_hprob(const ASTRONOMY_PARAMETERS* ap,
                                const STREAM_CONSTANTS* sc,
-                               const STREAM_GAUSS* sg,
+                               const R_POINTS* r_pts,
+                               const real* sg_dx,
                                const LB_TRIG lbt,
                                const real gPrime,
                                const int aux_bg_profile,
                                const unsigned int convolve,
-                               const R_POINTS* r_pts,
                                real* st_probs)
 {
     unsigned int i;
@@ -129,7 +129,7 @@ real bg_probability_slow_hprob(const ASTRONOMY_PARAMETERS* ap,
         bg_prob += h_prob_slow(ap, r_pts[i].qw_r3_N, rg);
         if (aux_bg_profile)
         {
-            g = gPrime + sg[i].dx;
+            g = gPrime + sg_dx[i];
             bg_prob += aux_prob(ap, r_pts[i].qw_r3_N, g);
         }
 
@@ -142,11 +142,11 @@ real bg_probability_slow_hprob(const ASTRONOMY_PARAMETERS* ap,
 ALWAYS_INLINE HOT
 static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
                                   const STREAM_CONSTANTS* sc,
-                                  const STREAM_GAUSS* sg,
+                                  const R_POINTS* r_pts,
+                                  const real* sg_dx,
                                   const LB_TRIG lbt, /* integral point */
                                   const R_CONSTS rc,
                                   const real V,
-                                  const R_POINTS* r_pts,
                                   real* st_probs,
                                   KAHAN* probs)
 {
@@ -158,12 +158,11 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
 
     zero_st_probs(st_probs, ap->number_streams);
 
-    bg_prob = ap->bg_prob_func(ap, sc, sg,
+    bg_prob = ap->bg_prob_func(ap, sc, r_pts, sg_dx,
                                lbt,
                                rc.gPrime,
                                ap->aux_bg_profile,
                                ap->convolve,
-                               r_pts,
                                st_probs);
 
     sum_probs(probs, st_probs, V * rc.reff_xr_rp3, ap->number_streams);
@@ -176,7 +175,7 @@ HOT
 static void r_sum(const ASTRONOMY_PARAMETERS* ap,
                   const INTEGRAL_AREA* ia,
                   const STREAM_CONSTANTS* sc,
-                  const STREAM_GAUSS* sg,
+                  const real* sg_dx,
                   const LB_TRIG lbt,
                   const real id,
                   real* st_probs,
@@ -194,7 +193,7 @@ static void r_sum(const ASTRONOMY_PARAMETERS* ap,
     {
         V = id * rc[r_step].irv;
 
-        bg_prob = V * bg_probability(ap, sc, sg, lbt, rc[r_step], V, &r_pts[r_step * ap->convolve], st_probs, probs);
+        bg_prob = V * bg_probability(ap, sc, &r_pts[r_step * ap->convolve], sg_dx, lbt, rc[r_step], V, st_probs, probs);
 
         KAHAN_ADD(es->sum, bg_prob);
     }
@@ -204,12 +203,12 @@ ALWAYS_INLINE HOT
 static inline void mu_sum(const ASTRONOMY_PARAMETERS* ap,
                           const INTEGRAL_AREA* ia,
                           const STREAM_CONSTANTS* sc,
-                          const STREAM_GAUSS* sg,
+                          const R_CONSTS* rc,
+                          const R_POINTS* r_pts,
+                          const real* sg_dx,
                           const NU_ID nuid,
                           real* st_probs,
                           KAHAN* probs,
-                          const R_POINTS* r_pts,
-                          const R_CONSTS* rc,
                           EVALUATION_STATE* es)
 {
     real mu;
@@ -228,7 +227,7 @@ static inline void mu_sum(const ASTRONOMY_PARAMETERS* ap,
         lb = gc2lb(ap->wedge, mu, nuid.nu); /* integral point */
         lbt = lb_trig(lb);
 
-        r_sum(ap, ia, sc, sg, lbt, nuid.id, st_probs, probs, es, r_pts, rc, ia->r_steps);
+        r_sum(ap, ia, sc, sg_dx, lbt, nuid.id, st_probs, probs, es, r_pts, rc, ia->r_steps);
     }
 
     es->mu_step = 0;
@@ -237,11 +236,11 @@ static inline void mu_sum(const ASTRONOMY_PARAMETERS* ap,
 static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
                    const INTEGRAL_AREA* ia,
                    const STREAM_CONSTANTS* sc,
-                   const STREAM_GAUSS* sg,
+                   const R_CONSTS* rc,
+                   const R_POINTS* r_pts,
+                   const real* sg_dx,
                    real* st_probs,
                    KAHAN* probs,
-                   const R_POINTS* r_pts,
-                   const R_CONSTS* rc,
                    EVALUATION_STATE* es)
 {
     NU_ID nuid;
@@ -250,9 +249,7 @@ static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
     {
         nuid = calc_nu_step(ia, es->nu_step);
 
-        mu_sum(ap, ia, sc, sg,
-               nuid,
-               st_probs, probs, r_pts, rc, es);
+        mu_sum(ap, ia, sc, rc, r_pts, sg_dx, nuid, st_probs, probs, es);
     }
 }
 
@@ -261,7 +258,7 @@ static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
 real integrate(const ASTRONOMY_PARAMETERS* ap,
                const INTEGRAL_AREA* ia,
                const STREAM_CONSTANTS* sc,
-               const STREAM_GAUSS* sg,
+               const STREAM_GAUSS sg,
                KAHAN* probs,
                EVALUATION_STATE* es)
 {
@@ -273,7 +270,7 @@ real integrate(const ASTRONOMY_PARAMETERS* ap,
     st_probs = (real*) mwMallocAligned(sizeof(real) * ap->number_streams, 2 * sizeof(real));
     r_pts = precalculate_r_pts(ap, ia, sg, &rc);
 
-    nu_sum(ap, ia, sc, sg, st_probs, probs, r_pts, rc, es);
+    nu_sum(ap, ia, sc, rc, r_pts, sg.dx, st_probs, probs, es);
     es->nu_step = 0;
 
     result = es->sum.sum + es->sum.correction;

@@ -95,7 +95,7 @@ static inline unsigned int completed_integral_progress(const INTEGRAL_AREA* ias,
 static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
                                 const INTEGRAL_AREA* ias,
                                 const STREAM_CONSTANTS* sc,
-                                const STREAM_GAUSS* sg,
+                                const STREAM_GAUSS sg,
                                 EVALUATION_STATE* es,
                                 const CLRequest* clr)
 {
@@ -138,7 +138,7 @@ real evaluate(const ASTRONOMY_PARAMETERS* ap,
 {
     real likelihood_val = NAN;
     EVALUATION_STATE es = EMPTY_EVALUATION_STATE;
-    STREAM_GAUSS* sg;
+    STREAM_GAUSS sg;
     FINAL_STREAM_INTEGRALS fsi;
     STAR_POINTS sp = EMPTY_STAR_POINTS;
 
@@ -170,7 +170,7 @@ real evaluate(const ASTRONOMY_PARAMETERS* ap,
 
     free_star_points(&sp);
     free_final_stream_integrals(&fsi);
-    mwAlignedFree(sg);
+    free_stream_gauss(sg);
 
     return likelihood_val;
 }

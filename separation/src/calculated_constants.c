@@ -144,33 +144,31 @@ STREAM_CONSTANTS* getStreamConstants(const ASTRONOMY_PARAMETERS* ap, const STREA
     return sc;
 }
 
-STREAM_GAUSS* get_stream_gauss(const unsigned int convolve)
+void free_stream_gauss(STREAM_GAUSS sg)
+{
+    mwAlignedFree(sg.dx);
+    mwAlignedFree(sg.qgaus_W);
+}
+
+STREAM_GAUSS get_stream_gauss(const unsigned int convolve)
 {
     unsigned int i;
-    STREAM_GAUSS* sg;
+    STREAM_GAUSS sg;
     real* qgaus_X;
-    real* qgaus_W;
 
     qgaus_X = (real*) mwMallocAligned(sizeof(real) * convolve, 2 * sizeof(real));
-    qgaus_W = (real*) mwMallocAligned(sizeof(real) * convolve, 2 * sizeof(real));
+    sg.qgaus_W = (real*) mwMallocAligned(sizeof(real) * convolve, 2 * sizeof(real));
 
-    gaussLegendre(-1.0, 1.0, qgaus_X, qgaus_W, convolve);
+    gaussLegendre(-1.0, 1.0, qgaus_X, sg.qgaus_W, convolve);
 
-    sg = (STREAM_GAUSS*) mwMallocAligned(sizeof(STREAM_GAUSS) * convolve, sizeof(STREAM_GAUSS));
+    sg.dx = (real*) mwMallocAligned(sizeof(real) * convolve, 2 * sizeof(real));
 
-    /* Use separate buffers at first since that's what the gaussLegendre takes,
-       but then pack them into a more coherent struct */
     for (i = 0; i < convolve; ++i)
-    {
-        sg[i].dx = 3.0 * stdev * qgaus_X[i];
-        sg[i].qgaus_W = qgaus_W[i];
-    }
+        sg.dx[i] = 3.0 * stdev * qgaus_X[i];
 
     mwAlignedFree(qgaus_X);
-    mwAlignedFree(qgaus_W);
 
     return sg;
-
 }
 
 NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,

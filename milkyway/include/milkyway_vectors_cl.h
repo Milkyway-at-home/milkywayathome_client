@@ -90,7 +90,7 @@ inline real mw_absv(mwvector a)
 }
 
 __attribute__((const, always_inline))
-inline mwvector mw_mulvs(real s, mwvector a)
+inline mwvector mw_mulvs(mwvector a, real s)
 {
     mwvector tmp =
         {

@@ -92,10 +92,10 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
     real id;
 } NU_CONSTANTS;
 
-typedef struct SEPARATION_ALIGN(2 * sizeof(real))
+typedef struct
 {
-    real dx;
-    real qgaus_W;
+    real* dx;
+    real* qgaus_W;
 } STREAM_GAUSS;
 
 
@@ -206,12 +206,12 @@ typedef struct SEPARATION_ALIGN(128) _ASTRONOMY_PARAMETERS
   #ifndef __OPENCL_VERSION__
     real (*bg_prob_func) (const struct _ASTRONOMY_PARAMETERS*,
                           const STREAM_CONSTANTS*,
-                          const STREAM_GAUSS*,
+                          const R_POINTS*,
+                          const real*,
                           const LB_TRIG,
                           const real,
                           const int,
                           const unsigned int,
-                          const R_POINTS*,
                           real*);
    #else
     void* _useless_padding_which_is_not_necessarily_the_right_size;
@@ -221,12 +221,12 @@ typedef struct SEPARATION_ALIGN(128) _ASTRONOMY_PARAMETERS
 #ifndef __OPENCL_VERSION__
 typedef real (*BGProbabilityFunc) (const ASTRONOMY_PARAMETERS*,
                                    const STREAM_CONSTANTS*,
-                                   const STREAM_GAUSS*,
+                                   const R_POINTS*,
+                                   const real*,
                                    const LB_TRIG,
                                    const real,
                                    const int,
                                    const unsigned int,
-                                   const R_POINTS*,
                                    real*);
 #endif /* __OPENCL_VERSION__ */
 

@@ -169,7 +169,7 @@ static cl_int setNuKernelArg(CLInfo* ci, const cl_uint nu_step)
 {
     cl_int err;
 
-    err = clSetKernelArg(ci->kern, 7, sizeof(cl_uint), &nu_step);
+    err = clSetKernelArg(ci->kern, 8, sizeof(cl_uint), &nu_step);
     if (err != CL_SUCCESS)
     {
         warn("Error setting nu step argument for step %u: %s\n", nu_step, showCLInt(err));
@@ -387,7 +387,7 @@ static real runIntegral(CLInfo* ci,
 real integrateCL(const ASTRONOMY_PARAMETERS* ap,
                  const INTEGRAL_AREA* ia,
                  const STREAM_CONSTANTS* sc,
-                 const STREAM_GAUSS* sg,
+                 const STREAM_GAUSS sg,
                  KAHAN* probs_results,
                  const CLRequest* clr)
 {
