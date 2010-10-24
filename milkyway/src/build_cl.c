@@ -437,35 +437,135 @@ cl_int printDevInfoExts(const CLInfo* ci, const DevInfo* di)
     return CL_SUCCESS;
 }
 
-static cl_int getCLInfo(CLInfo* ci, cl_device_type type)
+typedef struct
 {
-    cl_int err;
-    cl_platform_id platform;
-    cl_uint n_platform;
-    DevInfo di;
+	char name[128];
+	char vendor[128];
+	char version[128];
+	char profile[128];
+	char extensions[512];
+} PlatformInfo;
 
-    err = clGetPlatformIDs(1, &platform, &n_platform);
+#define EMPTY_PLATFORM_INFO { "", "", "", "", "" }
+
+static void getPlatformInfo(PlatformInfo* pi, cl_platform_id platform)
+{
+	cl_int err;
+	size_t readSize;
+
+	err = clGetPlatformInfo(platform, CL_PLATFORM_PROFILE,
+                            sizeof(pi->name), pi->name, &readSize);
+	if (readSize > sizeof(pi->name))
+		warn("Failed to read platform profile: %s\n", showCLInt(err));
+
+
+	err = clGetPlatformInfo(platform, CL_PLATFORM_VERSION,
+                            sizeof(pi->version), pi->version, &readSize);
+	if (readSize > sizeof(pi->version))
+		warn("Failed to read platform version: %s\n", showCLInt(err));
+
+
+	err = clGetPlatformInfo(platform, CL_PLATFORM_NAME,
+                            sizeof(pi->name), pi->name, &readSize);
+	if (readSize > sizeof(pi->name))
+		warn("Failed to read platform name: %s\n", showCLInt(err));
+
+
+	err = clGetPlatformInfo(platform, CL_PLATFORM_EXTENSIONS,
+                            sizeof(pi->extensions), pi->extensions, &readSize);
+	if (readSize > sizeof(pi->extensions))
+		warn("Failed to read platform extensions: %s\n", showCLInt(err));
+}
+
+static void printPlatformInfo(PlatformInfo* pi, cl_uint n)
+{
+	warn("Platform %u information:\n"
+	     "  Platform name:       %s\n"
+	     "  Platform version:    %s\n"
+	     "  Platform vendor:     %s\n"
+	     "  Platform profile:    %s\n"
+	     "  Platform extensions: %s\n",
+	     n,
+	     pi->name,
+	     pi->version,
+	     pi->vendor,
+	     pi->profile,
+	     pi->extensions);
+}
+
+static void printPlatforms(cl_platform_id* platforms, cl_uint n_platforms)
+{
+	cl_uint i;
+	PlatformInfo pi = EMPTY_PLATFORM_INFO;
+
+	for (i = 0; i < n_platforms; ++i)
+	{
+		getPlatformInfo(&pi, platforms[i]);
+		printPlatformInfo(&pi, i);
+	}
+}
+
+static cl_platform_id* getAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out)
+{
+    cl_uint n_platform = 0;
+    cl_platform_id* ids;
+    cl_int err;
+
+    err = clGetPlatformIDs(0, NULL, &n_platform);
     if (err != CL_SUCCESS)
     {
-        warn("Error getting CL platform IDs: %s\n", showCLInt(err));
-        return err;
+        warn("Error getting number of platform: %s\n", showCLInt(err));
+        return NULL;
+    }
+
+    ids = mallocSafe(sizeof(cl_platform_id) * n_platform);
+    err = clGetPlatformIDs(n_platform, ids, NULL);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error getting platform IDs: %s\n", showCLInt(err));
+        free(ids);
+        return NULL;
     }
 
     warn("Found %u platforms\n", n_platform);
 
-    err = clGetDeviceIDs(platform, type, 1, &ci->dev, &ci->devCount);
+    *n_platforms_out = n_platform;
+    return ids;
+}
+
+static cl_int getCLInfo(CLInfo* ci, cl_device_type type)
+{
+    cl_int err = CL_SUCCESS;
+    cl_uint n_platform;
+    DevInfo di;
+    cl_platform_id* ids;
+    cl_uint platID = 0;
+
+    ids = getAllPlatformIDs(ci, &n_platform);
+    if (!ids)
+    {
+        warn("Failed to get any platforms\n");
+        return -1;
+    }
+
+    printPlatforms(ids, n_platform);
+
+    err = clGetDeviceIDs(ids[platID], type, 1, &ci->dev, &ci->devCount);
     if (err != CL_SUCCESS)
     {
         warn("Error getting device: %s\n", showCLInt(err));
+        free(ids);
         return err;
     }
 
     if (ci->devCount == 0)
     {
         warn("Didn't find any %s devices\n", showCLDeviceType(type));
+        free(ids);
         return -1; /* FIXME: Meaningful error? */
     }
 
+    free(ids);
     ci->devType = type;
 
     return CL_SUCCESS;
