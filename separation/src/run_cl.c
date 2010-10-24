@@ -63,7 +63,7 @@ static real* mapIntegralResults(CLInfo* ci,
     cl_int err;
     real* mapOutMu;
 
-    mapOutMu = (real*) clEnqueueMapBuffer(ci->queue,
+    mapOutMu = (real*) clEnqueueMapBuffer(ci->bufQueue,
                                           cm->outMu,
                                           CL_FALSE, CL_MAP_READ,
                                           0, resultsSize,
@@ -84,7 +84,7 @@ static real* mapProbsResults(CLInfo* ci,
     cl_int err;
     real* mapOutProbs;
 
-    mapOutProbs = (real*) clEnqueueMapBuffer(ci->queue,
+    mapOutProbs = (real*) clEnqueueMapBuffer(ci->bufQueue,
                                              cm->outProbs,
                                              CL_FALSE, CL_MAP_READ,
                                              0, probsResultsSize,
@@ -238,7 +238,7 @@ static inline cl_int readKernelResults(CLInfo* ci,
 
 
     /* CHECKME: Do we need this event? */
-    err = clEnqueueUnmapMemObject(ci->queue, cm->outMu, mu_results, 0, NULL, &evs->outUnmap);
+    err = clEnqueueUnmapMemObject(ci->bufQueue, cm->outMu, mu_results, 0, NULL, &evs->outUnmap);
     if (err != CL_SUCCESS)
     {
         warn("Failed to unmap results buffer: %s\n", showCLInt(err));
@@ -259,7 +259,7 @@ static inline cl_int readKernelResults(CLInfo* ci,
     printf("Sum probs time: %f ms\n", t2 - t1);
 
 
-    err = clEnqueueUnmapMemObject(ci->queue, cm->outProbs, probs_tmp, 0, NULL, &evs->probUnmap);
+    err = clEnqueueUnmapMemObject(ci->bufQueue, cm->outProbs, probs_tmp, 0, NULL, &evs->probUnmap);
     if (err != CL_SUCCESS)
     {
         warn("Failed to unmap probs buffer: %s\n", showCLInt(err));

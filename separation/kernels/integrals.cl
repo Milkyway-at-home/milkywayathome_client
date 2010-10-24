@@ -98,7 +98,9 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < convolve; ++i)
     {
-        r_pt = r_pts[i];
+      r_pt = r_pts[i];
+      //r_pt.r_point = gPrime * bg_prob;
+      //r_pt.qw_r3_N = xyz.x * gPrime;
         xyz = lbr2xyz_2(r_pt.r_point, lbt);
 
         /* Moving stream_sums here reduces GPR usage by 2, but also

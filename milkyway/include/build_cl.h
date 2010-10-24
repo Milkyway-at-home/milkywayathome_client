@@ -35,11 +35,12 @@ typedef struct
     unsigned int devCount;
     cl_context clctx;
     cl_command_queue queue;
+    cl_command_queue bufQueue; /* Queue for buffer ops when double buffering */
     cl_program prog;
     cl_kernel kern;
 } CLInfo;
 
-#define EMPTY_CL_INFO { NULL, -1, 0, NULL, NULL, NULL, NULL }
+#define EMPTY_CL_INFO { NULL, -1, 0, NULL, NULL, NULL, NULL, NULL }
 
 typedef struct
 {

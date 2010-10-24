@@ -271,6 +271,8 @@ cl_int destroyCLInfo(CLInfo* ci)
 {
     cl_int err = CL_SUCCESS;
     err |= clReleaseCommandQueue(ci->queue);
+    if (ci->bufQueue)
+        err |= clReleaseCommandQueue(ci->bufQueue);
     err |= clReleaseProgram(ci->prog);
     err |= clReleaseKernel(ci->kern);
     err |= clReleaseContext(ci->clctx);
@@ -401,7 +403,7 @@ static cl_int milkywayBuildProgram(CLInfo* ci, const char** src, cl_uint srcCoun
     return err;
 }
 
-static cl_int createCtxQueue(CLInfo* ci)
+static cl_int createCtxQueue(CLInfo* ci, cl_bool useBufQueue)
 {
     cl_int err = CL_SUCCESS;
 
@@ -417,6 +419,16 @@ static cl_int createCtxQueue(CLInfo* ci)
     {
         warn("Error creating command queue: %s\n", showCLInt(err));
         return err;
+    }
+
+    if (useBufQueue)
+    {
+        ci->bufQueue = clCreateCommandQueue(ci->clctx, ci->dev, 0, &err);
+        if (err != CL_SUCCESS)
+        {
+            warn("Error creating buffer command queue: %s\n", showCLInt(err));
+            return err;
+        }
     }
 
     return CL_SUCCESS;
@@ -539,7 +551,7 @@ static cl_int getCLInfo(CLInfo* ci, cl_device_type type)
     cl_uint n_platform;
     DevInfo di;
     cl_platform_id* ids;
-    cl_uint platID = 0;
+    cl_uint platID = 1;
 
     ids = getAllPlatformIDs(ci, &n_platform);
     if (!ids)
@@ -592,7 +604,7 @@ cl_int mwSetupCL(CLInfo* ci,
         return err;
     }
 
-    err = createCtxQueue(ci);
+    err = createCtxQueue(ci, CL_TRUE);
     if (err != CL_SUCCESS)
     {
         warn("Error creating CL context and command queue: %s\n", showCLInt(err));
