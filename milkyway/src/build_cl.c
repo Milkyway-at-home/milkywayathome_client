@@ -604,7 +604,7 @@ cl_int mwSetupCL(CLInfo* ci,
         return err;
     }
 
-    err = createCtxQueue(ci, CL_TRUE);
+    err = createCtxQueue(ci, CL_FALSE);
     if (err != CL_SUCCESS)
     {
         warn("Error creating CL context and command queue: %s\n", showCLInt(err));

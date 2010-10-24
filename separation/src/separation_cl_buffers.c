@@ -30,20 +30,37 @@ static inline cl_mem createWriteBuffer(cl_context clctx, size_t size, cl_int* er
     return clCreateBuffer(clctx, CL_MEM_WRITE_ONLY, size, NULL, err);
 }
 
+static inline cl_mem createReadWriteBuffer(cl_context clctx, size_t size, cl_int* err)
+{
+    return clCreateBuffer(clctx, CL_MEM_READ_WRITE, size, NULL, err);
+}
+
+static inline cl_mem createZeroReadWriteBuffer(cl_context clctx, size_t size, cl_int* err)
+{
+    void* p;
+    cl_mem mem;
+
+    p = callocSafe(1, size);
+    mem = clCreateBuffer(clctx, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, size, p, err);
+    free(p);
+
+    return mem;
+}
+
 static inline cl_int createOutMuBuffer(CLInfo* ci,
                                        SeparationCLMem* cm,
                                        const SeparationSizes* sizes)
 {
     cl_int err;
 
-    cm->outMu = createWriteBuffer(ci->clctx, sizes->outMu, &err);
+    cm->outMu = createZeroReadWriteBuffer(ci->clctx, sizes->outMu, &err);
     if (err != CL_SUCCESS)
     {
         warn("Error creating out mu buffer of size %zu: %s\n", sizes->outMu, showCLInt(err));
         return err;
     }
 
-    cm->outMu_tmp = createWriteBuffer(ci->clctx, sizes->outMu, &err);
+    cm->outMu_tmp = createZeroReadWriteBuffer(ci->clctx, sizes->outMu, &err);
     if (err != CL_SUCCESS)
     {
         warn("Error creating out mu temp buffer of size %zu: %s\n", sizes->outMu, showCLInt(err));
@@ -59,14 +76,14 @@ static inline cl_int createOutProbsBuffer(CLInfo* ci,
 {
     cl_int err;
 
-    cm->outProbs = createWriteBuffer(ci->clctx, sizes->outProbs, &err);
+    cm->outProbs = createZeroReadWriteBuffer(ci->clctx, sizes->outProbs, &err);
     if (err != CL_SUCCESS)
     {
         warn("Error creating out probs buffer of size %zu: %s\n", sizes->outProbs, showCLInt(err));
         return err;
     }
 
-    cm->outProbs_tmp = createWriteBuffer(ci->clctx, sizes->outProbs, &err);
+    cm->outProbs_tmp = createZeroReadWriteBuffer(ci->clctx, sizes->outProbs, &err);
     if (err != CL_SUCCESS)
     {
         warn("Error creating out probs temp buffer of size %zu: %s\n", sizes->outProbs, showCLInt(err));
@@ -299,8 +316,8 @@ cl_int separationSetOutputBuffers(CLInfo* ci, SeparationCLMem* cm)
     cl_int err = CL_SUCCESS;
 
     /* Set output buffer arguments */
-    err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outMu_tmp);
-    err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->outProbs_tmp);
+    err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outMu);
+    err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->outProbs);
 
     if (err != CL_SUCCESS)
         warn("Failed to set output buffer arguments: %s\n", showCLInt(err));

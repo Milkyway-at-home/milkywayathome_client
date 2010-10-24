@@ -156,9 +156,9 @@ inline void write_st_probs(__global real* probs_out,
     //unsigned int i;
     //for (i = 0; i < n_streams; ++i)
 
-    probs_out[0] = st_probs[0];
-    probs_out[1] = st_probs[1];
-    probs_out[2] = st_probs[2];
+    probs_out[0] += st_probs[0];
+    probs_out[1] += st_probs[1];
+    probs_out[2] += st_probs[2];
 }
 
 __kernel void mu_sum_kernel(__global real* restrict mu_out,
@@ -182,7 +182,7 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     LB_TRIG lbt = lbts[nu_step * ia->mu_steps + mu_step];
 
     real st_probs[3] = { 0.0, 0.0, 0.0 };      /* FIXME: hardcoded stream limit */
-    mu_out[idx] = r_calculation(ap, sc, sg_dx, &rcs[r_step], &r_pts[r_step * ap->convolve], lbt, nu_id, st_probs);
+    mu_out[idx] += r_calculation(ap, sc, sg_dx, &rcs[r_step], &r_pts[r_step * ap->convolve], lbt, nu_id, st_probs);
 
     write_st_probs(&probs_out[ap->number_streams * idx], st_probs, ap->number_streams);
 }

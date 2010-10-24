@@ -63,12 +63,12 @@ static real* mapIntegralResults(CLInfo* ci,
     cl_int err;
     real* mapOutMu;
 
-    mapOutMu = (real*) clEnqueueMapBuffer(ci->bufQueue,
+    mapOutMu = (real*) clEnqueueMapBuffer(ci->queue,
                                           cm->outMu,
-                                          CL_FALSE, CL_MAP_READ,
+                                          CL_TRUE, CL_MAP_READ,
                                           0, resultsSize,
                                           0, NULL,
-                                          &evs->outMap,
+                                          NULL,
                                           &err);
     if (err != CL_SUCCESS)
         warn("Error mapping integral result buffer: %s\n", showCLInt(err));
@@ -84,12 +84,12 @@ static real* mapProbsResults(CLInfo* ci,
     cl_int err;
     real* mapOutProbs;
 
-    mapOutProbs = (real*) clEnqueueMapBuffer(ci->bufQueue,
+    mapOutProbs = (real*) clEnqueueMapBuffer(ci->queue,
                                              cm->outProbs,
-                                             CL_FALSE, CL_MAP_READ,
+                                             CL_TRUE, CL_MAP_READ,
                                              0, probsResultsSize,
                                              0, NULL,
-                                             &evs->probMap,
+                                             NULL,
                                              &err);
     if (err != CL_SUCCESS)
         warn("Error mapping probs result buffer: %s\n", showCLInt(err));
@@ -97,9 +97,9 @@ static real* mapProbsResults(CLInfo* ci,
     return mapOutProbs;
 }
 
-static inline void sumStreamResults(KAHAN* probs_results,
-                                    const real* probs_V_reff_xr_rp3,
-                                    const cl_uint number_streams)
+static void sumStreamResults(KAHAN* probs_results,
+                             const real* probs_V_reff_xr_rp3,
+                             const cl_uint number_streams)
 {
     cl_uint i;
 
@@ -107,11 +107,11 @@ static inline void sumStreamResults(KAHAN* probs_results,
         KAHAN_ADD(probs_results[i], probs_V_reff_xr_rp3[i]);
 }
 
-static inline void sumProbsResults(KAHAN* probs_results,
-                                   const real* st_probs_V_reff_xr_rp3_mu_r,
-                                   const cl_uint mu_steps,
-                                   const cl_uint r_steps,
-                                   const cl_uint number_streams)
+static void sumProbsResults(KAHAN* probs_results,
+                            const real* st_probs_V_reff_xr_rp3_mu_r,
+                            const cl_uint mu_steps,
+                            const cl_uint r_steps,
+                            const cl_uint number_streams)
 {
     cl_uint i, j, idx;
 
@@ -150,10 +150,10 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
 /* The mu and r steps for a nu step were done in parallel. After that
  * we need to add the result to the running total + correction from
  * all the nu steps */
-static inline void sumMuResults(KAHAN* bg_prob,
-                                const real* mu_results,
-                                const cl_uint mu_steps,
-                                const cl_uint r_steps)
+static void sumMuResults(KAHAN* bg_prob,
+                         const real* mu_results,
+                         const cl_uint mu_steps,
+                         const cl_uint r_steps)
 {
     cl_uint i, j;
 
@@ -172,7 +172,10 @@ static cl_int setNuKernelArgs(CLInfo* ci, const INTEGRAL_AREA* ia, const cl_uint
     NU_ID nuid;
 
     /* Avoid doing any trig in the broken ATI math. Also trig seems to
-     * be more expensive there. */
+     * be more expensive there. Not doing the coordinate conversion
+     * there also halves number of required registers, which prevents
+     * enough threads to hide the horrible latency of the other
+     * required reads. */
     nuid = calc_nu_step(ia, nu_step);
     err = clSetKernelArg(ci->kern, 9, sizeof(real), &nuid.id);
     if (err != CL_SUCCESS)
@@ -204,15 +207,21 @@ static inline cl_int readKernelResults(CLInfo* ci,
     real* mu_results;
     real* probs_tmp;
 
-    /* We must map/unmap the buffer on each step. A kernel writing to
-     * a mapped buffer is undefined. */
-
     size_t resultSize = sizeof(real) * mu_steps * r_steps;
     mu_results = mapIntegralResults(ci, cm, evs, resultSize);
     if (!mu_results)
     {
         warn("Failed to map integral results\n");
         return -1;
+    }
+
+    sumMuResults(bg_progress, mu_results, mu_steps, r_steps);
+
+    err = clEnqueueUnmapMemObject(ci->queue, cm->outMu, mu_results, 0, NULL, NULL);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to unmap results buffer: %s\n", showCLInt(err));
+        return err;
     }
 
     size_t probsSize = sizeof(real) * mu_steps * r_steps * number_streams;
@@ -223,43 +232,9 @@ static inline cl_int readKernelResults(CLInfo* ci,
         return -1;
     }
 
-    err = mwWaitReleaseEvent(&evs->outMap);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to wait/release map output: %s\n", showCLInt(err));
-        return err;
-    }
-
-    double t1, t2;
-    t1 = mwGetTimeMilli();
-    sumMuResults(bg_progress, mu_results, mu_steps, r_steps);
-    t2 = mwGetTimeMilli();
-    printf("Sum mu time: %f milliseconds\n", t2 - t1);
-
-
-    /* CHECKME: Do we need this event? */
-    err = clEnqueueUnmapMemObject(ci->bufQueue, cm->outMu, mu_results, 0, NULL, &evs->outUnmap);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to unmap results buffer: %s\n", showCLInt(err));
-        return err;
-    }
-
-    /* Probs output */
-    err = mwWaitReleaseEvent(&evs->probMap);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to wait/release probs output: %s\n", showCLInt(err));
-        return err;
-    }
-
-    t1 = mwGetTimeMilli();
     sumProbsResults(probs_results, probs_tmp, mu_steps, r_steps, number_streams);
-    t2 = mwGetTimeMilli();
-    printf("Sum probs time: %f ms\n", t2 - t1);
 
-
-    err = clEnqueueUnmapMemObject(ci->bufQueue, cm->outProbs, probs_tmp, 0, NULL, &evs->probUnmap);
+    err = clEnqueueUnmapMemObject(ci->queue, cm->outProbs, probs_tmp, 0, NULL, &evs->probUnmap);
     if (err != CL_SUCCESS)
     {
         warn("Failed to unmap probs buffer: %s\n", showCLInt(err));
@@ -292,15 +267,7 @@ static cl_int runNuStep(CLInfo* ci,
         return err;
     }
 
-    printf("Step took %f\n", mwEventTime(evs->endTmp));
-
-    err = mwWaitReleaseEvent(&evs->endTmp);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to wait/release NDRange event: %s\n", showCLInt(err));
-        return err;
-    }
-
+    #if 0
     /* Swap the temporary buffer to the main buffer, and set the
      * kernel arguments to the new temporary buffer */
     swapOutputBuffers(cm);
@@ -311,19 +278,13 @@ static cl_int runNuStep(CLInfo* ci,
         return err;
     }
 
+    #endif
+
     /* Enqueue write to temporary buffers */
     err = enqueueIntegralKernel(ci, evs, ia->mu_steps, ia->r_steps);
     if (err != CL_SUCCESS)
     {
         warn("Failed to enqueue integral kernel: %s\n", showCLInt(err));
-        return err;
-    }
-
-    /* Read results from the main buffer */
-    err = readKernelResults(ci, cm, evs, bg_progress, probs_results, ia->mu_steps, ia->r_steps, number_streams);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to read kernel results: %s\n", showCLInt(err));
         return err;
     }
 
@@ -343,29 +304,14 @@ static real runIntegral(CLInfo* ci,
 
     mwEnableProfiling(ci);
 
-    /* Prepare 1st step. Need to run first step to fill the temporary buffer */
-    err = setNuKernelArgs(ci, ia, 0);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to set nu kernel argument for step 0: %s\n", showCLInt(err));
-        return NAN;
-    }
-
     err = separationSetOutputBuffers(ci, cm);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to set output buffer arguments on step %u: %s\n", 0, showCLInt(err));
+        warn("Failed to set output buffer arguments: %s\n", showCLInt(err));
         return NAN;
     }
 
-    err = enqueueIntegralKernel(ci, &evs, ia->mu_steps, ia->r_steps);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to enqueue first integral kernel: %s\n", showCLInt(err));
-        return NAN;
-    }
-
-    for (i = 1; i < ia->nu_steps; ++i)
+    for (i = 0; i < ia->nu_steps; ++i)
     {
         double t1 = mwGetTimeMilli();
         err = runNuStep(ci, cm, &evs,
@@ -378,9 +324,23 @@ static real runIntegral(CLInfo* ci,
             return NAN;
         }
 
+
+        printf("Step took %f\n", mwEventTime(evs.endTmp));
+
+        err = mwWaitReleaseEvent(&evs.endTmp);
+        if (err != CL_SUCCESS)
+        {
+            warn("Failed to wait/release NDRange event: %s\n", showCLInt(err));
+            return err;
+        }
+
+
+
         double t2 = mwGetTimeMilli();
         printf("Loop time: %f ms\n", t2 - t1);
     }
+
+    clFinish(ci->queue);
 
     /* Read results from final step */
     err = readKernelResults(ci, cm, &evs, &bg_sum, probs_results, ia->mu_steps, ia->r_steps, ap->number_streams);
