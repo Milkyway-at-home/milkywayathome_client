@@ -46,26 +46,6 @@ extern "C" {
   #include "run_cl.h"
 #endif /* SEPARATION_OPENCL */
 
-#if BOINC_APPLICATION
-  #include <boinc_api.h>
-  #include <filesys.h>
-
-  #if BOINC_DEBUG
-    #include <diagnostics.h>
-  #endif /* BOINC_DEBUG */
-
-  #if BOINC_APP_GRAPHICS
-    #include <graphics_api.h>
-    #include <graphics_lib.h>
-  #endif /* BOINC_APP_GRAPHICS */
-
-  #ifdef _WIN32
-    #define WIN32_LEAN_AND_MEAN
-    #define VC_EXTRALEAN
-    #include <windows.h>
-  #endif /* _WIN32 */
-#endif /* BOINC_APPLICATION */
-
 #ifdef __cplusplus
 }
 #endif

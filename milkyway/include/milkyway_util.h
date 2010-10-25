@@ -41,15 +41,32 @@ extern "C" {
 #endif /* _WIN32 */
 
 #if BOINC_APPLICATION
-  #include <boinc_api.h>
-  #include <filesys.h>
+  #include <boinc/boinc_api.h>
+  #include <boinc/filesys.h>
 
   #define WIN32_LEAN_AND_MEAN
   #define VC_EXTRALEAN
   #if BOINC_DEBUG
-    #include <boinc/diagnostics.h>
+    #ifndef _WIN32
+      #include <boinc/diagnostics.h>
+    #else
+      #include <boinc/diagnostics_win.h>
+    #endif /* _WIN32 */
   #endif /* BOINC_DEBUG */
+
+  #if BOINC_APP_GRAPHICS
+    #include <boinc/graphics_api.h>
+    #include <boinc/graphics_lib.h>
+  #endif /* BOINC_APP_GRAPHICS */
+
+  #ifdef _WIN32
+    #define WIN32_LEAN_AND_MEAN
+    #define VC_EXTRALEAN
+    #include <windows.h>
+  #endif /* _WIN32 */
 #endif /* BOINC_APPLICATION */
+
+
 
 #if MILKYWAY_OPENCL
 
