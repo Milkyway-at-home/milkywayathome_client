@@ -77,7 +77,6 @@ endif()
 
 maybe_static()
 
-find_package(Crlibm)
 find_package(Libm REQUIRED)
 
 if(BOINC_APPLICATION)
@@ -195,6 +194,9 @@ if(NEED_POPT_DEPS)
                             ${LIBINTL_LIBRARY})
 endif()
 
+if(SEPARATION_CRLIBM)
+  find_package(Crlibm)
+endif()
 
 if(CRLIBM_LIBRARY AND SEPARATION_CRLIBM)
   include_directories(${CRLIBM_INCLUDE_DIR})
