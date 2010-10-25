@@ -49,8 +49,6 @@ static inline cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm)
     err |= clSetKernelArg(ci->kern, 7, sizeof(cl_mem), &cm->rPts);
     err |= clSetKernelArg(ci->kern, 8, sizeof(cl_mem), &cm->sg_dx);
 
-
-
     if (err != CL_SUCCESS)
     {
         warn("Error setting kernel arguments: %s\n", showCLInt(err));

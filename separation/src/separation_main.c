@@ -34,8 +34,8 @@ typedef struct
     char* ap_file;  /* astronomy parameters */
     int cleanup_checkpoint;
 
-    int useGPU;   /* For choosing CL device */
-    int useDevNumber;
+    int usePlatform;
+    int useDevNumber;  /* Choose CL platform and device */
 } SeparationFlags;
 
 #define EMPTY_SEPARATION_FLAGS { NULL, NULL, 0, 0, 0 }
@@ -57,7 +57,8 @@ static void setDefaultFiles(SeparationFlags* sf)
 
 static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 {
-    clr->devType = sf->useGPU ? CL_DEVICE_TYPE_GPU : CL_DEVICE_TYPE_CPU;
+    clr->platform = sf->usePlatform;
+    clr->devNum = sf->useDevNumber;
 }
 
 #else
@@ -96,9 +97,15 @@ static real* parse_parameters(int argc, const char** argv, unsigned int* paramnO
 
       #if SEPARATION_OPENCL
         {
-            "use-gpu", 'g',
-            POPT_ARG_NONE, &sf->useGPU,
-            'g', "Use GPU", NULL
+            "device", 'd',
+            POPT_ARG_INT, &sf->useDevNumber,
+            'd', "Device number passed by boinc to use", NULL
+        },
+
+        {
+            "platform", 'l',
+            POPT_ARG_INT, &sf->usePlatform,
+            'l', "CL Platform to use", NULL
         },
       #endif /* SEPARATION_OPENCL */
 

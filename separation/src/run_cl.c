@@ -131,6 +131,28 @@ static size_t nextMultiple(const size_t x, const size_t n)
     return (x % n == 0) ? x : x + (n - x % n);
 }
 
+static void cpuGroupSizes(const INTEGRAL_AREA* ia, size_t global[], size_t local[])
+{
+    global[0] = ia->mu_steps;
+    global[1] = ia->r_steps;
+    local[0] = 1;
+    local[1] = 1;
+}
+
+static void gpuGroupSizes(const INTEGRAL_AREA* ia, size_t global[], size_t local[])
+{
+    size_t groupSize = 64;
+
+    /* Ideally these are already nicely divisible by 32/64/128, otherwise
+     * round up a bit. */
+    global[0] = nextMultiple(ia->mu_steps, groupSize);
+    global[1] = ia->r_steps;
+
+    /* Bias towards mu steps seems to be better */
+    local[0] = groupSize;
+    local[1] = 1;
+}
+
 /* TODO: Do we need hadware specific workgroup sizes? */
 static cl_bool findWorkGroupSizes(CLInfo* ci, const INTEGRAL_AREA* ia, size_t global[], size_t local[])
 {
@@ -143,16 +165,10 @@ static cl_bool findWorkGroupSizes(CLInfo* ci, const INTEGRAL_AREA* ia, size_t gl
     else
         printWorkGroupInfo(&wgi);
 
-    size_t groupSize = 64;
-
-    /* Ideally these are already nicely divisible by 32/64/128, otherwise
-     * round up a bit. */
-    global[0] = nextMultiple(ia->mu_steps, groupSize);
-    global[1] = ia->r_steps;
-
-    /* Bias towards mu steps seems to be better */
-    local[0] = groupSize;
-    local[1] = 1;
+    if (ci->devType == CL_DEVICE_TYPE_CPU)
+        cpuGroupSizes(ia, global, local);
+    else
+        gpuGroupSizes(ia, global, local);
 
     size_t localSize = local[0] * local[1];
 

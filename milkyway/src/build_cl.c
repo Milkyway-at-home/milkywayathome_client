@@ -318,7 +318,7 @@ void printWorkGroupInfo(const WGInfo* wgi)
 {
     warn("Kernel work group info:\n"
          "  Work group size = %zu\n"
-         "  Kernel local mem size = %lu\n"
+         "  Kernel local mem size = %llu\n"
          "  Compile work group size = { %zu, %zu, %zu }\n",
          wgi->wgs,
          wgi->lms,
@@ -545,13 +545,76 @@ static cl_platform_id* getAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out)
     return ids;
 }
 
-static cl_int getCLInfo(CLInfo* ci, cl_device_type type)
+static cl_device_id* getAllDevices(cl_platform_id platform, cl_uint* numDevOut)
+{
+    cl_int err;
+    cl_device_id* devs;
+    cl_uint numDev;
+
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &numDev);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to find number of devices: %s\n", showCLInt(err));
+        return NULL;
+    }
+
+    if (numDev == 0)
+    {
+        warn("Didn't find any CL devices\n");
+        return NULL;
+    }
+
+    warn("Found %u CL devices\n", numDev);
+
+    devs = (cl_device_id*) mallocSafe(sizeof(cl_device_id) * numDev);
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, numDev, devs, &numDev);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to get device IDs: %s\n", showCLInt(err));
+        return NULL;
+    }
+
+    *numDevOut = numDev;
+    return devs;
+}
+
+static cl_int getDeviceType(cl_device_id dev, cl_device_type* devType)
+{
+    cl_int err = CL_SUCCESS;
+
+    err = clGetDeviceInfo(dev, CL_DEVICE_TYPE, sizeof(cl_device_type), devType, NULL);
+    if (err != CL_SUCCESS)
+        warn("Failed to get device type: %s\n", showCLInt(err));
+
+    return err;
+}
+
+static cl_int selectDevice(CLInfo* ci, const cl_device_id* devs, const CLRequest* clr, const cl_uint nDev)
+{
+    cl_int err = CL_SUCCESS;
+
+    if (clr->devNum >= nDev)
+    {
+        warn("Requested device is out of range of number found devices\n");
+        return -1;
+    }
+
+    ci->dev = devs[clr->devNum];
+    err = getDeviceType(ci->dev, &ci->devType);
+    if (err != CL_SUCCESS)
+        warn("Failed to find type of device %u\n", clr->devNum);
+
+    return err;
+}
+
+static cl_int getCLInfo(CLInfo* ci, const CLRequest* clr)
 {
     cl_int err = CL_SUCCESS;
     cl_uint n_platform;
     DevInfo di;
     cl_platform_id* ids;
-    cl_uint platID = 1;
+    cl_device_id* devs;
+    cl_uint nDev;
 
     ids = getAllPlatformIDs(ci, &n_platform);
     if (!ids)
@@ -561,26 +624,27 @@ static cl_int getCLInfo(CLInfo* ci, cl_device_type type)
     }
 
     printPlatforms(ids, n_platform);
+    warn("Using device %u on platform %u\n", clr->devNum, clr->platform);
 
-    err = clGetDeviceIDs(ids[platID], type, 1, &ci->dev, &ci->devCount);
-    if (err != CL_SUCCESS)
+    devs = getAllDevices(ids[clr->platform], &nDev);
+    if (!devs)
     {
-        warn("Error getting device: %s\n", showCLInt(err));
+        warn("Error getting devices\n");
         free(ids);
-        return err;
+        return -1;
     }
 
-    if (ci->devCount == 0)
+    err = selectDevice(ci, devs, clr, nDev);
+    if (err != CL_SUCCESS)
     {
-        warn("Didn't find any %s devices\n", showCLDeviceType(type));
-        free(ids);
-        return -1; /* FIXME: Meaningful error? */
+        warn("Failed to select a device: %s\n", showCLInt(err));
+        err = -1;
     }
 
     free(ids);
-    ci->devType = type;
+    free(devs);
 
-    return CL_SUCCESS;
+    return err;
 }
 
 /* Query one device specified by type, create a context, command
@@ -597,7 +661,7 @@ cl_int mwSetupCL(CLInfo* ci,
 {
     cl_int err;
 
-    err = getCLInfo(ci, clr->devType);
+    err = getCLInfo(ci, clr);
     if (err != CL_SUCCESS)
     {
         warn("Failed to get information about device\n");
