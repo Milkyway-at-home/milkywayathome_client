@@ -653,6 +653,7 @@ static cl_int getCLInfo(CLInfo* ci, const CLRequest* clr)
  *  TODO: Caching of compiled binaries
  */
 cl_int mwSetupCL(CLInfo* ci,
+                 DevInfo* di,   /* get detailed device information for selected device */
                  const CLRequest* clr,
                  const char* kernName,
                  const char** src,
@@ -665,6 +666,20 @@ cl_int mwSetupCL(CLInfo* ci,
     if (err != CL_SUCCESS)
     {
         warn("Failed to get information about device\n");
+        return err;
+    }
+
+    err = getDevInfo(di, ci->dev);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to get device info\n");
+        return err;
+    }
+
+    err = printDevInfoExts(ci, di);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to print device extensions\n");
         return err;
     }
 

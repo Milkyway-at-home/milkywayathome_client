@@ -84,6 +84,7 @@ typedef struct
 } DevInfo;
 
 cl_int mwSetupCL(CLInfo* ci,
+                 DevInfo* di,
                  const CLRequest* clr,
                  const char* kernName,
                  const char** src,

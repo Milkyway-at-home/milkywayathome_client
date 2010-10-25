@@ -173,7 +173,7 @@ cl_int setupSeparationCL(CLInfo* ci,
     }
 
     //compileDefs = separationCLDefs(ap, extraDefs);
-    err = mwSetupCL(ci, clr, "mu_sum_kernel", &kernelSrc, 1, extraDefs);
+    err = mwSetupCL(ci, &di, clr, "mu_sum_kernel", &kernelSrc, 1, extraDefs);
 
     freeKernelSrc(kernelSrc);
     free(cwd);
@@ -183,20 +183,6 @@ cl_int setupSeparationCL(CLInfo* ci,
     if (err != CL_SUCCESS)
     {
         fail("Failed to setup OpenCL device: %s\n", showCLInt(err));
-        return err;
-    }
-
-    err = getDevInfo(&di, ci->dev);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to get device info\n");
-        return err;
-    }
-
-    err = printDevInfoExts(ci, &di);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to print device extensions\n");
         return err;
     }
 
