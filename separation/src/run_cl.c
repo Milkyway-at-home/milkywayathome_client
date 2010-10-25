@@ -125,18 +125,60 @@ static void sumProbsResults(KAHAN* probs_results,
     }
 }
 
-static cl_int enqueueIntegralKernel(CLInfo* ci,
-                                    SeparationCLEvents* evs,
-                                    const cl_uint mu_steps,
-                                    const cl_uint r_steps)
+/* Find the smallest integer i >= x that is divisible by n */
+static size_t nextMultiple(const size_t x, const size_t n)
+{
+    return (x % n == 0) ? x : x + (n - x % n);
+}
+
+/* TODO: Do we need hadware specific workgroup sizes? */
+static cl_bool findWorkGroupSizes(CLInfo* ci, const INTEGRAL_AREA* ia, size_t global[], size_t local[])
 {
     cl_int err;
-    const size_t global[] = { mu_steps, r_steps };
+    WGInfo wgi;
+
+    err = getWorkGroupInfo(ci, &wgi);
+    if (err != CL_SUCCESS)
+        warn("Failed to get work group info: %s\n", showCLInt(err));
+    else
+        printWorkGroupInfo(&wgi);
+
+    size_t groupSize = 64;
+
+    /* Ideally these are already nicely divisible by 32/64/128, otherwise
+     * round up a bit. */
+    global[0] = nextMultiple(ia->mu_steps, groupSize);
+    global[1] = ia->r_steps;
+
+    /* Bias towards mu steps seems to be better */
+    local[0] = groupSize;
+    local[1] = 1;
+
+    size_t localSize = local[0] * local[1];
+
+    warn("Range is { mu_steps = %zu, r_steps = %zu }\n"
+         "Rounded range is  { %zu, %zu }\n"
+         "Attempting to use a workgroup size of { %zu, %zu } = %zu \n",
+         ia->mu_steps, ia->r_steps,
+         global[0], global[1],
+         local[0], local[1], localSize);
+
+    /* Sanity checks */
+    /* TODO: also check against CL_DEVICE_MAX_WORK_ITEM_SIZES */
+    return (global[0] % local[0] || global[1] % local[1] || localSize > wgi.wgs);
+}
+
+static cl_int enqueueIntegralKernel(CLInfo* ci,
+                                    SeparationCLEvents* evs,
+                                    const size_t global[],
+                                    const size_t local[])
+{
+    cl_int err;
 
     err = clEnqueueNDRangeKernel(ci->queue,
                                  ci->kern,
                                  2,
-                                 NULL, global, NULL,
+                                 NULL, global, local,
                                  0, NULL, &evs->endTmp);
     if (err != CL_SUCCESS)
     {
@@ -252,6 +294,8 @@ static cl_int runNuStep(CLInfo* ci,
                         KAHAN* restrict probs_results,
 
                         const INTEGRAL_AREA* ia,
+                        const size_t global[],
+                        const size_t local[],
                         const cl_uint number_streams,
                         const cl_uint nu_step)
 {
@@ -281,7 +325,7 @@ static cl_int runNuStep(CLInfo* ci,
     #endif
 
     /* Enqueue write to temporary buffers */
-    err = enqueueIntegralKernel(ci, evs, ia->mu_steps, ia->r_steps);
+    err = enqueueIntegralKernel(ci, evs, global, local);
     if (err != CL_SUCCESS)
     {
         warn("Failed to enqueue integral kernel: %s\n", showCLInt(err));
@@ -311,19 +355,25 @@ static real runIntegral(CLInfo* ci,
         return NAN;
     }
 
+    size_t global[2];
+    size_t local[2];
+
+    if (findWorkGroupSizes(ci, ia, global, local))
+        warn("Failed to calculate acceptable work group sizes\n");
+
     for (i = 0; i < ia->nu_steps; ++i)
     {
         double t1 = mwGetTimeMilli();
         err = runNuStep(ci, cm, &evs,
                         &bg_sum, probs_results,
-                        ia, ap->number_streams, i);
+                        ia, global, local,
+                        ap->number_streams, i);
 
         if (err != CL_SUCCESS)
         {
             warn("Failed to run nu step: %s\n", showCLInt(err));
             return NAN;
         }
-
 
         printf("Step took %f\n", mwEventTime(evs.endTmp));
 
@@ -333,7 +383,6 @@ static real runIntegral(CLInfo* ci,
             warn("Failed to wait/release NDRange event: %s\n", showCLInt(err));
             return err;
         }
-
 
 
         double t2 = mwGetTimeMilli();

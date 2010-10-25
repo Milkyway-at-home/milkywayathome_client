@@ -179,6 +179,9 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     size_t r_step = get_global_id(1);
     size_t idx = mu_step * ia->r_steps + r_step; /* Index into output buffers */
 
+    if (r_step > ia->r_steps || mu_step > ia->mu_steps)
+        return;
+
     LB_TRIG lbt = lbts[nu_step * ia->mu_steps + mu_step];
 
     real st_probs[3] = { 0.0, 0.0, 0.0 };      /* FIXME: hardcoded stream limit */

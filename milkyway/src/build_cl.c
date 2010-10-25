@@ -317,9 +317,9 @@ cl_int getWorkGroupInfo(CLInfo* ci, WGInfo* wgi)
 void printWorkGroupInfo(const WGInfo* wgi)
 {
     warn("Kernel work group info:\n"
-         "Work group size = %zu\n"
-         "Kernel local mem size = %lu\n"
-         "Compile work group size = { %zu, %zu, %zu }\n",
+         "  Work group size = %zu\n"
+         "  Kernel local mem size = %lu\n"
+         "  Compile work group size = { %zu, %zu, %zu }\n",
          wgi->wgs,
          wgi->lms,
          wgi->cwgs[0], wgi->cwgs[1], wgi->cwgs[2]);
