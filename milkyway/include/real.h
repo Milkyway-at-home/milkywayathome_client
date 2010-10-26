@@ -47,12 +47,18 @@
      so we'll have to do work to make float work to not have horrible
      casting everywhere
    */
-  #if HAVE_TGMATH_H
-    #include <tgmath.h>
-  #else
-    #include <math.h>
-  #endif
 
+  #if ENABLE_FDLIBM
+    #include <fdlibm.h>
+  #else
+    #if HAVE_TGMATH_H
+      #include <tgmath.h>
+    #else
+      #include <math.h>
+    #endif
+  #endif /* ENABLE_FDLIBM */
+
+  /* crlibm is a math.h supplement. fdlibm is a replacement.*/
   #if ENABLE_CRLIBM
     #include <crlibm.h>
   #endif /* ENABLE_CRLIBM */

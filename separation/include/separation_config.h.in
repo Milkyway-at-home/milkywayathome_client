@@ -28,11 +28,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define SEPARATION_VERSION       ${separation_VERSION}
 
 #cmakedefine01 SEPARATION_CRLIBM
+#cmakedefine01 SEPARATION_FDLIBM
 
 #define ENABLE_CRLIBM SEPARATION_CRLIBM
+#define ENABLE_FDLIBM SEPARATION_FDLIBM
 
 #if SEPARATION_CRLIBM
   #define SEPARATION_CRLIBM_STRING " crlibm"
+#elif SEPARATION_FDLIBM
+  #define SEPARATION_CRLIBM_STRING " fdlibm"
 #else
   #define SEPARATION_CRLIBM_STRING
 #endif /* SEPARATION_CRLIBM */
