@@ -1,5 +1,1 @@
-<<<<<<< HEAD
-g++ -o $1 $1.cpp ../LModL/src/3dproj.cpp ../LModL/src/binfile.cpp ../LModL/src/draw.cpp ../LModL/src/draw32.cpp ../LModL/src/draw32p.cpp ../LModL/src/draw8.cpp ../LModL/src/drawcore.cpp ../LModL/src/drawhalo.cpp ../LModL/src/imgplot.cpp ../LModL/src/trigtbl.cpp ../LModL/src/rgbconv.cpp ../LModL/src/hsltorgb.cpp -I../LModL/include -I../include -L/opt/local/lib -I/opt/local/include/SDL -lSDLmain -lSDL -framework Cocoa -O3 -Wall
-=======
-g++ -o $1 $1.cpp ../LModL/src/3dproj.cpp ../LModL/src/binfile.cpp ../LModL/src/draw.cpp ../LModL/src/draw32.cpp ../LModL/src/draw32p.cpp ../LModL/src/draw8.cpp ../LModL/src/drawcore.cpp ../LModL/src/drawhalo.cpp ../LModL/src/imgplot.cpp ../LModL/src/trigtbl.cpp ../LModL/src/rgbconv.cpp ../LModL/src/hsltorgb.cpp -I/usr/include/SDL -I../LModL/include -I../include -L/usr/lib -lSDLmain -lSDL -framework Cocoa -O3 -Wall
->>>>>>> 5b33473fec3ce497ddfecd463a5e30b5d7f01507
+g++ -o $1 $1.cpp ../LModL/src/3dproj.cpp ../LModL/src/binfile.cpp ../LModL/src/draw.cpp ../LModL/src/draw32.cpp ../LModL/src/draw32p.cpp ../LModL/src/draw8.cpp ../LModL/src/drawcore.cpp ../LModL/src/drawhalo.cpp ../LModL/src/imgplot.cpp ../LModL/src/trigtbl.cpp ../LModL/src/rgbconv.cpp -I../LModL/include -I../include -L/opt/local/lib -I/opt/local/include/SDL -lSDLmain -lSDL -framework Cocoa -O3 -Wall
