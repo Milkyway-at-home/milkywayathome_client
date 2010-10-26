@@ -113,13 +113,13 @@ extern "C" {
 #endif /* M_PI */
 
 
+#ifndef NAN
+  static const unsigned long nan[2]={ 0xffffffff, 0x7fffffff };
+  #define NAN (*(const double *) nan)
+#endif /* NAN*/
+
 #if defined(_WIN32)
 /* MSVC hacks */
-  #ifndef NAN
-    static const unsigned long nan[2]={ 0xffffffff, 0x7fffffff };
-    #define NAN (*(const double *) nan)
-  #endif /* NAN*/
-
   #ifndef INFINITY
     //#warning "FIXME: USING MAX_DOUBLE FOR INFINITY for MSVC"
     //#define INFINITY MAX_DOUBLE

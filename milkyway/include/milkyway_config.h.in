@@ -31,6 +31,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 HAVE_SINCOS
 #cmakedefine01 HAVE_TGMATH_H
 
+#if ENABLE_FDLIBM
+/* These actually aren't in crlibm. FIXME: Check function exists in specific math library */
+  #undef HAVE_EXP10
+  #undef HAVE_SINCOS
+  #undef HAVE_TGMATH_H
+#endif
+
 /* C99 Restrict.
 
    For MSVC, just defining restrict to __restrict doesn't work because

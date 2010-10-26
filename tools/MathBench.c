@@ -28,9 +28,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#include <fdlibm.h>
-//#include <math.h>
-#include <crlibm.h>
+//#include <fdlibm.h>
+#include <math.h>
+//#include <crlibm.h>
 
 /* Windows doesn't have drand48, so do stupid things */
 #define RANDOM_DOUBLE (rand() / RAND_MAX)
@@ -76,6 +76,7 @@ double get_time()
     }
 
 
+#if CRLIBM
 #define MAKE_TEST_crlibm(funcname, mfunc, strname)              \
     void (funcname)(const unsigned int n)                       \
     {                                                           \
@@ -93,10 +94,14 @@ double get_time()
         free(randoms);                                          \
         free(results);                                          \
     }
+#else
+  #define MAKE_TEST_crlibm(funcname, mfunc, strname)
+#endif
 
 
 MAKE_TEST_fdlibm(test_fdlibm_cbrt, cbrt, "cbrt")
 
+#if CRLIBM
 void test_crlibm_pow32(const unsigned int n)
 {
     double* randoms;
@@ -113,6 +118,10 @@ void test_crlibm_pow32(const unsigned int n)
     free(randoms);
     free(results);
 }
+
+#else
+  #define test_crlibm_pow32(n)
+#endif
 
 
 void test_fdlibm_pow32(const unsigned int n)
@@ -153,22 +162,21 @@ void test_sqrt_cube(const unsigned int n)
     free(results);
 }
 
-
+#if CRLIBM
 MAKE_TEST_crlibm(test_crlibm_log1p, log1p_rn, "log1p")
-MAKE_TEST_fdlibm(test_fdlibm_log1p, log1p,    "log1p")
-
 MAKE_TEST_crlibm(test_crlibm_exp, exp_rn, "exp")
-MAKE_TEST_fdlibm(test_fdlibm_exp, exp,    "exp")
-
-
 MAKE_TEST_crlibm(test_crlibm_expm1, expm1_rn, "expm1")
-MAKE_TEST_fdlibm(test_fdlibm_expm1, expm1,    "expm1")
-
 MAKE_TEST_crlibm(test_crlibm_sin, sin_rn, "sin")
-MAKE_TEST_fdlibm(test_fdlibm_sin, sin,    "sin")
-
 MAKE_TEST_crlibm(test_crlibm_cos, cos_rn, "cos")
+#endif
+
+
+MAKE_TEST_fdlibm(test_fdlibm_log1p, log1p,    "log1p")
+MAKE_TEST_fdlibm(test_fdlibm_exp, exp,    "exp")
+MAKE_TEST_fdlibm(test_fdlibm_expm1, expm1,    "expm1")
+MAKE_TEST_fdlibm(test_fdlibm_sin, sin,    "sin")
 MAKE_TEST_fdlibm(test_fdlibm_cos, cos,    "cos")
+
 
 
 
@@ -186,27 +194,27 @@ int main(int argc, char** argv)
     srand(seed);
 
 
-    test_crlibm_exp(n);
+    //test_crlibm_exp(n);
     test_fdlibm_exp(n);
     printf("\n");
 
-    test_crlibm_log1p(n);
+    //test_crlibm_log1p(n);
     test_fdlibm_log1p(n);
     printf("\n");
 
-    test_crlibm_sin(n);
+    //test_crlibm_sin(n);
     test_fdlibm_sin(n);
     printf("\n");
 
-    test_crlibm_cos(n);
+    //test_crlibm_cos(n);
     test_fdlibm_cos(n);
     printf("\n");
 
-    test_crlibm_expm1(n);
+    //test_crlibm_expm1(n);
     test_fdlibm_expm1(n);
     printf("\n");
 
-    test_crlibm_pow32(n);
+    //test_crlibm_pow32(n);
     test_fdlibm_pow32(n);
     test_sqrt_cube(n);
     printf("\n");

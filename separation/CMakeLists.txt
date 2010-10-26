@@ -69,15 +69,33 @@ option(SEPARATION_CRLIBM
       "Use crlibm double" OFF)
 mark_as_advanced(SEPARATION_CRLIBM)
 
+option(SEPARATION_FDLIBM
+      "Use fdlibm double" OFF)
+mark_as_advanced(SEPARATION_FDLIBM)
+
 if(NOT DOUBLEPREC AND SEPARATION_CRLIBM)
   message(WARNING "Attempting to use single precision with crlibm. Disabling use of crlibm")
   set(SEPARTION_CRLIBM OFF)
 endif()
 
+if(NOT DOUBLEPREC AND SEPARATION_FDLIBM)
+  message(WARNING "Attempting to use single precision with fdlibm. Disabling use of fdlibm")
+  set(SEPARTION_FDLIBM OFF)
+endif()
+
 
 maybe_static()
 
-find_package(Libm REQUIRED)
+if(NOT SEPARATION_FDLIBM)
+  find_package(Libm REQUIRED)
+  include_directories(${LIBM_INCLUDE_DIR})
+  set(SEPARATION_LIBM_LIBRARY ${LIBM_LIBRARY})
+else()
+  # Replace standard libm with Fdlibm
+  find_package(Fdlibm REQUIRED)
+  include_directories(${FDLIBM_INCLUDE_DIR})
+  set(SEPARATION_LIBM_LIBRARY ${FDLIBM_LIBRARY})
+endif()
 
 if(BOINC_APPLICATION)
   find_package(BOINC)
@@ -177,7 +195,7 @@ else()
   list(APPEND lib_source_file_list src/integrals.c)
 endif()
 
-list(APPEND separation_link_libs ${OS_SPECIFIC_LIBS} milkyway ${LIBM_LIBRARY})
+list(APPEND separation_link_libs ${OS_SPECIFIC_LIBS} milkyway ${SEPARATION_LIBM_LIBRARY})
 
 add_library(separation STATIC ${lib_source_file_list} ${separation_headers})
 target_link_libraries(separation ${separation_link_libs})
@@ -203,6 +221,7 @@ if(CRLIBM_LIBRARY AND SEPARATION_CRLIBM)
   list(APPEND exe_link_libs ${CRLIBM_LIBRARY})
 endif()
 
+list(APPEND exe_link_libs ${SEPARATION_LIBM_LIBRARY})
 
 if(SEPARATION_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
