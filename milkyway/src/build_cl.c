@@ -403,6 +403,56 @@ static cl_int milkywayBuildProgram(CLInfo* ci, const char** src, cl_uint srcCoun
     return err;
 }
 
+unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
+{
+    cl_int err;
+    size_t binSize;
+    size_t readSize;
+    unsigned char* bin = NULL;
+
+    err = clGetProgramInfo(ci->prog, CL_PROGRAM_BINARY_SIZES, sizeof(binSize), &binSize, NULL);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to get program binary size: %s\n", showCLInt(err));
+        return NULL;
+    }
+
+    bin = (unsigned char*) mallocSafe(binSize);
+    err = clGetProgramInfo(ci->prog, CL_PROGRAM_BINARIES, binSize, &bin, NULL);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error getting program binary: %s\n", showCLInt(err));
+        free(bin);
+        bin = NULL;
+        binSize = 0;
+    }
+
+    if (binSizeOut)
+        *binSizeOut = binSize;
+    return bin;
+}
+
+cl_int mwSetProgramFromBinary(CLInfo* ci, const unsigned char* bin, size_t binSize)
+{
+    cl_int err;
+    cl_int binStatus;
+
+    ci->prog = clCreateProgramWithBinary(ci->clctx, 1, &ci->dev, &binSize, &bin, &binStatus, &err);
+    warn("Binary status: %s\n", showCLInt(err));
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to create program from binary: %s\n", showCLInt(err));
+        return err;
+    }
+    if (binStatus != CL_SUCCESS)
+    {
+        warn("Reading binary failed: %s\n", showCLInt(err));
+        return binStatus;
+    }
+
+    return CL_SUCCESS;
+}
+
 static cl_int createCtxQueue(CLInfo* ci, cl_bool useBufQueue)
 {
     cl_int err = CL_SUCCESS;

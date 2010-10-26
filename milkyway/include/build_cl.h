@@ -83,6 +83,9 @@ typedef struct
     size_t maxWorkItemSizes[3];
 } DevInfo;
 
+unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut);
+cl_int mwSetProgramFromBinary(CLInfo* ci, const unsigned char* bin, size_t binSize);
+
 cl_int mwSetupCL(CLInfo* ci,
                  DevInfo* di,
                  const CLRequest* clr,
