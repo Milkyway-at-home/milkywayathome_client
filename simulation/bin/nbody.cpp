@@ -37,6 +37,7 @@ const int MOVIE_FRAMES = 1500;
 int main( int args, char **argv )
 {
 
+/*
     // Handle arguments
     if( args<4 ){
         cout << "Usage: ./nbody n_body_file_name wedge_file_name star_brightness\n";
@@ -77,7 +78,7 @@ int main( int args, char **argv )
         }
 
     }
-
+*/
     return 0;
 
 }
