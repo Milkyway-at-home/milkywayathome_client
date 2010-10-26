@@ -33,7 +33,7 @@ extern "C" {
 
 #include <math.h>
 
-void raDecRadToCart( double ra, double dec, double r, double &x, double &y, double &z )
+inline void raDecRadToCart( double ra, double dec, double r, double &x, double &y, double &z )
 {
 
     // RA/Dec to cartesian conversion
@@ -56,7 +56,7 @@ void raDecRadToCart( double ra, double dec, double r, double &x, double &y, doub
 
 }
 
-double absMagToLum( double absMagnitude )
+inline double absMagToLum( double absMagnitude )
     // Calculate luminosity relative to sun given the absolute magnitude
 {
     return pow(10., 2.-.4*absMagnitude);
