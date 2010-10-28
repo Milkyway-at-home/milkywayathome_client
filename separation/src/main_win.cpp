@@ -23,7 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <windows.h>
 #include <stdio.h>
 
-#include <str_util.h>
+#include <boinc/str_util.h>
 
 extern "C" int main(int argc, const char* argv[]);
 
@@ -46,11 +46,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
     char* argv[100];
     int argc;
 
-    _set_invalid_parameter_handler(AppInvalidParameterHandler);
+    //_set_invalid_parameter_handler(AppInvalidParameterHandler);
 
     command_line = GetCommandLine();
     argc = parse_command_line( command_line, argv );
-    return main(argc, argv);
+    return main(argc, (const char**) argv);
 }
 
 

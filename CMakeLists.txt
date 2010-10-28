@@ -32,7 +32,9 @@ include(StaticBOINC)
 include(PrintInfo)
 include(DownloadCrlibm)
 include(CheckCFlag)
+include(MSVCFlags)
 set_mingw_paths()
+set_msvc_extra_link_flags()
 
 # Project build selection
 option(SEPARATION "Build separation" ON)
@@ -121,10 +123,10 @@ endif()
 
 maybe_static()
 
-if(UNIX AND NOT APPLE)
-  set(NEED_POPT_DEPS 0)
-else()
+if(APPLE OR MINGW)
   set(NEED_POPT_DEPS 1)
+else()
+  set(NEED_POPT_DEPS 0)
 endif()
 
 #FIXME: Somehow test for and require the Apple gcc. The macports gccs

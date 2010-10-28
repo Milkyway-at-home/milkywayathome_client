@@ -46,7 +46,10 @@ set(SEPARATION_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 include_directories(${SEPARATION_INCLUDE_DIR})
 
 
-set(CMAKE_C_FLAGS "-std=gnu99 -warn-uninit-values ${CMAKE_C_FLAGS}")
+
+if(NOT MSVC)
+  set(CMAKE_C_FLAGS "-std=gnu99 -warn-uninit-values ${CMAKE_C_FLAGS}")
+endif()
 
 
 option(SEPARATION_INLINE_KERNEL

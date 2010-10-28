@@ -19,39 +19,19 @@
 #
 
 
-if(NOT MSVC)
-  find_path(LIBM_INCLUDE_DIR math.h)
-else()
-  set(LIBM_INCLUDE_DIR ${CMAKE_INCLUDE_PATH})
-endif()
-
-if(APPLE)
-  find_library(LIBM_LIBRARY m)
-elseif(MSVC)
-  set(LIBM_LIBRARY "")
-else()
-  if(LIBM_USE_STATIC)
-    set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
-    set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
+macro(set_msvc_extra_link_flags)
+  if(MSVC)
+    set(CMAKE_EXE_LINKER_FLAGS "/VERBOSE:LIB ${CMAKE_EXE_LINKER_FLAGS}")
   endif()
+endmacro()
 
-  find_library(LIBM_LIBRARY m)
-  if(LIBM_USE_STATIC)
-    set(CMAKE_FIND_LIBRARY_SUFFIXES ${__old_cmake_find_lib_suffixes})
-  endif()
 
-  if(LIBM_INCLUDE_DIR AND LIBM_LIBRARY)
-    set(LIBM_FOUND TRUE)
-  endif()
-
-  if(LIBM_FOUND)
-    if(NOT Libm_FIND_QUIETLY)
-      message(STATUS "Found LIBM Library: ${LIBM_LIBRARY}")
-    endif(NOT Libm_FIND_QUIETLY)
-  else()
-    if(Libm_FIND_REQUIRED)
-      message(FATAL_ERROR "Could not find LIBM Library")
-    endif(Libm_FIND_REQUIRED)
-  endif()
-endif()
-
+macro(set_msvc_mt)
+  foreach(flag_var
+      CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+      CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+    if(${flag_var} MATCHES "/MD")
+      string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
+    endif(${flag_var} MATCHES "/MD")
+  endforeach(flag_var)
+endmacro()
