@@ -22,6 +22,9 @@
 macro(set_msvc_extra_link_flags)
   if(MSVC)
     set(CMAKE_EXE_LINKER_FLAGS "/VERBOSE:LIB ${CMAKE_EXE_LINKER_FLAGS}")
+	set(_extra_msvc_opt_flags "/fp:precise /fp:except- /Ot /Oi /Ob2 /GL ${CMAKE_C_FLAGS}")
+	set(CMAKE_C_FLAGS_RELEASE "${_extra_msvc_opt_flags} ${CMAKE_C_FLAGS_RELEASE}")
+	set(CMAKE_CXX_FLAGS_RELEASE "${_extra_msvc_opt_flags} ${CMAKE_CXX_FLAGS_RELEASE}")
   endif()
 endmacro()
 
@@ -29,7 +32,10 @@ endmacro()
 macro(set_msvc_mt)
   foreach(flag_var
       CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-      CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+      CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO
+
+	  CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
+      CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
     if(${flag_var} MATCHES "/MD")
       string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
     endif(${flag_var} MATCHES "/MD")

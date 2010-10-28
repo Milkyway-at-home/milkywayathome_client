@@ -35,6 +35,7 @@ include(CheckCFlag)
 include(MSVCFlags)
 set_mingw_paths()
 set_msvc_extra_link_flags()
+set_msvc_mt() # For some horrible reason the /MT and /MD runtimes get different results. /MT seems to be more right.
 
 # Project build selection
 option(SEPARATION "Build separation" ON)
