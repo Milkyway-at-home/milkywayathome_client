@@ -270,12 +270,18 @@ void printDevInfo(const DevInfo* di)
 cl_int destroyCLInfo(CLInfo* ci)
 {
     cl_int err = CL_SUCCESS;
-    err |= clReleaseCommandQueue(ci->queue);
+  /* Depending on where things fail, some of these will be NULL, and
+   * will spew errors when trying to cleanup. */
+    if (ci->queue)
+        err |= clReleaseCommandQueue(ci->queue);
     if (ci->bufQueue)
         err |= clReleaseCommandQueue(ci->bufQueue);
-    err |= clReleaseProgram(ci->prog);
-    err |= clReleaseKernel(ci->kern);
-    err |= clReleaseContext(ci->clctx);
+    if (ci->prog)
+        err |= clReleaseProgram(ci->prog);
+    if (ci->kern)
+        err |= clReleaseKernel(ci->kern);
+    if (ci->clctx)
+        err |= clReleaseContext(ci->clctx);
 
     /* TODO: or'ing the err and showing = useless */
     if (err)
@@ -385,20 +391,21 @@ static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
     free(buildLog);
 }
 
-static cl_int milkywayBuildProgram(CLInfo* ci, const char** src, cl_uint srcCount, const char* compileDefs)
+/* Build program and create kernel */
+static cl_int mwBuildProgram(CLInfo* ci, const char* options, const char* kernName)
 {
     cl_int err = CL_SUCCESS;
 
-    ci->prog = clCreateProgramWithSource(ci->clctx, srcCount, src, NULL, &err);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating program: %s\n", showCLInt(err));
-        return err;
-    }
-
-    err = clBuildProgram(ci->prog, 1, &ci->dev, compileDefs, milkywayBuildCB, ci);
+    err = clBuildProgram(ci->prog, 1, &ci->dev, options, milkywayBuildCB, ci);
     if (err != CL_SUCCESS)
         warn("clBuildProgram: Build failure: %s\n", showCLInt(err));
+
+    ci->kern = clCreateKernel(ci->prog, kernName, &err);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error creating kernel '%s': %s\n", kernName, showCLInt(err));
+        return err;
+    }
 
     return err;
 }
@@ -430,27 +437,6 @@ unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
     if (binSizeOut)
         *binSizeOut = binSize;
     return bin;
-}
-
-cl_int mwSetProgramFromBinary(CLInfo* ci, const unsigned char* bin, size_t binSize)
-{
-    cl_int err;
-    cl_int binStatus;
-
-    ci->prog = clCreateProgramWithBinary(ci->clctx, 1, &ci->dev, &binSize, &bin, &binStatus, &err);
-    warn("Binary status: %s\n", showCLInt(err));
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to create program from binary: %s\n", showCLInt(err));
-        return err;
-    }
-    if (binStatus != CL_SUCCESS)
-    {
-        warn("Reading binary failed: %s\n", showCLInt(err));
-        return binStatus;
-    }
-
-    return CL_SUCCESS;
 }
 
 static cl_int createCtxQueue(CLInfo* ci, cl_bool useBufQueue)
@@ -697,18 +683,76 @@ static cl_int getCLInfo(CLInfo* ci, const CLRequest* clr)
     return err;
 }
 
-/* Query one device specified by type, create a context, command
- * queue, and compile the kernel for it
- *  TODO: Multiple device support
- *  TODO: Caching of compiled binaries
+cl_int mwSetProgramFromBin(CLInfo* ci, const char* kernName, const unsigned char* bin, size_t binSize)
+{
+    cl_int err;
+    cl_int binStatus;
+
+    ci->prog = clCreateProgramWithBinary(ci->clctx, 1, &ci->dev, &binSize, &bin, &binStatus, &err);
+    warn("Binary status: %s\n", showCLInt(err));
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to create program from binary: %s\n", showCLInt(err));
+        return err;
+    }
+
+    if (binStatus != CL_SUCCESS)
+    {
+        warn("Reading binary failed: %s\n", showCLInt(err));
+        return binStatus;
+    }
+
+    err = mwBuildProgram(ci, NULL, kernName);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error building program from binary: %s\n", showCLInt(err));
+        return err;
+    }
+
+    return CL_SUCCESS;
+}
+
+cl_int mwSetProgramFromSrc(CLInfo* ci,
+                           const char* kernName,
+                           const char** src,
+                           const cl_uint srcCount,
+                           const char* compileDefs)
+{
+    cl_int err;
+
+    ci->prog = clCreateProgramWithSource(ci->clctx, srcCount, src, NULL, &err);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error creating program: %s\n", showCLInt(err));
+        return err;
+    }
+
+    err = mwBuildProgram(ci, compileDefs, kernName);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error building program from source: %s\n", showCLInt(err));
+        return err;
+    }
+
+    ci->kern = clCreateKernel(ci->prog, kernName, &err);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error creating kernel '%s': %s\n", kernName, showCLInt(err));
+        return err;
+    }
+
+    clUnloadCompiler();
+
+    return CL_SUCCESS;
+}
+
+
+/* Query one device specified by type, create a context and command
+ * queue, as well as retrieve device information
  */
 cl_int mwSetupCL(CLInfo* ci,
                  DevInfo* di,   /* get detailed device information for selected device */
-                 const CLRequest* clr,
-                 const char* kernName,
-                 const char** src,
-                 const cl_uint srcCount,
-                 const char* compileDefs)
+                 const CLRequest* clr)
 {
     cl_int err;
 
@@ -739,22 +783,6 @@ cl_int mwSetupCL(CLInfo* ci,
         warn("Error creating CL context and command queue: %s\n", showCLInt(err));
         return err;
     }
-
-    err = milkywayBuildProgram(ci, src, srcCount, compileDefs);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error building program: %s\n", showCLInt(err));
-        return err;
-    }
-
-    ci->kern = clCreateKernel(ci->prog, kernName, &err);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating kernel '%s': %s\n", kernName, showCLInt(err));
-        return err;
-    }
-
-    clUnloadCompiler();
 
     return CL_SUCCESS;
 }

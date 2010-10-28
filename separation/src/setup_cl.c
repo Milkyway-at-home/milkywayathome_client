@@ -29,6 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "setup_cl.h"
 #include "separation_cl_buffers.h"
 #include "separation_cl_defs.h"
+#include "separation_binaries.h"
 
 #if SEPARATION_INLINE_KERNEL
   #include "integral_kernel.h"
@@ -151,6 +152,13 @@ cl_int setupSeparationCL(CLInfo* ci,
     DevInfo di;
     SeparationSizes sizes;
 
+    err = mwSetupCL(ci, &di, clr);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error getting device and context: %s\n", showCLInt(err));
+        return err;
+    }
+
     cwd = getcwd(NULL, 0);
     asprintf(&compileDefs, DOUBLEPREC_DEF_STRING
                            "-DUSE_CL_MATH_TYPES=0 "
@@ -179,7 +187,7 @@ cl_int setupSeparationCL(CLInfo* ci,
         return -1;
     }
 
-    err = mwSetupCL(ci, &di, clr, "mu_sum_kernel", &kernelSrc, 1, compileDefs);
+    err = mwSetProgramFromSrc(ci, "mu_sum_kernel", &kernelSrc, 1, compileDefs);
 
     freeKernelSrc(kernelSrc);
     free(cwd);
@@ -187,7 +195,7 @@ cl_int setupSeparationCL(CLInfo* ci,
 
     if (err != CL_SUCCESS)
     {
-        fail("Failed to setup OpenCL device: %s\n", showCLInt(err));
+        warn("Error creating program from source: %s\n", showCLInt(err));
         return err;
     }
 

@@ -141,6 +141,7 @@ configure_file (
   "${PROJECT_INCLUDE_DIR}/separation_config.h")
 
 set(cl_source_list src/separation_cl_buffers.c
+                   src/separation_binaries.c
                    src/setup_cl.c
                    src/run_cl.c)
 

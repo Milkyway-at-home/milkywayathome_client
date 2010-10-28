@@ -84,15 +84,18 @@ typedef struct
 } DevInfo;
 
 unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut);
-cl_int mwSetProgramFromBinary(CLInfo* ci, const unsigned char* bin, size_t binSize);
+
+cl_int mwSetProgramFromBin(CLInfo* ci, const char* kernName, const unsigned char* bin, size_t binSize);
+cl_int mwSetProgramFromSrc(CLInfo* ci,
+                           const char* kernName,
+                           const char** src,
+                           const cl_uint srcCount,
+                           const char* compileDefs);
 
 cl_int mwSetupCL(CLInfo* ci,
                  DevInfo* di,
-                 const CLRequest* clr,
-                 const char* kernName,
-                 const char** src,
-                 const cl_uint srcCount,
-                 const char* compileDefs);
+                 const CLRequest* clr);
+
 
 cl_int destroyCLInfo(CLInfo* ci);
 cl_int printCLExtensions(cl_device_id dev);
