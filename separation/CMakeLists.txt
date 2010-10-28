@@ -142,8 +142,7 @@ configure_file (
 
 set(cl_source_list src/separation_cl_buffers.c
                    src/setup_cl.c
-                   src/run_cl.c
-                   src/separation_cl_defs.c)
+                   src/run_cl.c)
 
 set(lib_source_file_list src/evaluation_state.c
                          src/io_util.c

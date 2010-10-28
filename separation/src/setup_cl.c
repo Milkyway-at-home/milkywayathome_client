@@ -145,25 +145,32 @@ cl_int setupSeparationCL(CLInfo* ci,
                          const CLRequest* clr)
 {
     cl_int err;
-    //char* compileDefs;
+    char* compileDefs;
     char* kernelSrc;
-    char* extraDefs;
     char* cwd;
     DevInfo di;
     SeparationSizes sizes;
 
     cwd = getcwd(NULL, 0);
-    asprintf(&extraDefs, DOUBLEPREC_DEF_STRING
-                        "-DUSE_CL_MATH_TYPES=0 "
-                        "-DUSE_MAD=1 "
-                        "-DUSE_FMA=1 "
-                        "-cl-mad-enable "
-                        "-cl-strict-aliasing "
-                        "-cl-finite-math-only "
-                        "-I%s/../include "
-                        "-I%s/../../include "
-                        "-I%s/../../milkyway/include ",
-                        cwd, cwd, cwd);
+    asprintf(&compileDefs, DOUBLEPREC_DEF_STRING
+                           "-DUSE_CL_MATH_TYPES=0 "
+                           "-DUSE_MAD=1 "
+                           "-DUSE_FMA=1 "
+                           "-cl-mad-enable "
+                           "-cl-strict-aliasing "
+                           "-cl-finite-math-only "
+                           "-I%s/../include "
+                           "-I%s/../../include "
+                           "-I%s/../../milkyway/include "
+                           "-DNSTREAM=%u "
+                           "-DFAST_H_PROB=%d "
+                           "-DAUX_BG_PROFILE=%d "
+                           "-DZERO_Q=%d ",
+                           cwd, cwd, cwd,
+                           ap->number_streams,
+                           ap->fast_h_prob,
+                           ap->aux_bg_profile,
+                           ap->zero_q);
 
     kernelSrc = findKernelSrc();
     if (!kernelSrc)
@@ -172,13 +179,11 @@ cl_int setupSeparationCL(CLInfo* ci,
         return -1;
     }
 
-    //compileDefs = separationCLDefs(ap, extraDefs);
-    err = mwSetupCL(ci, &di, clr, "mu_sum_kernel", &kernelSrc, 1, extraDefs);
+    err = mwSetupCL(ci, &di, clr, "mu_sum_kernel", &kernelSrc, 1, compileDefs);
 
     freeKernelSrc(kernelSrc);
     free(cwd);
-    free(extraDefs);
-    //free(compileDefs);
+    free(compileDefs);
 
     if (err != CL_SUCCESS)
     {

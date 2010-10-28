@@ -32,45 +32,76 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma OPENCL EXTENSION cl_amd_printf : enable
 
-#define FAST_HPROB 1
-#define AUX_BG_PROFILE 0
-#define ZERO_BG_PROB 0
-
-#if FAST_HPROB
+#if FAST_H_PROB
   #define h_prob_f h_prob_fast
 #else
   #define h_prob_f h_prob_slow
 #endif /* FAST_H_PROB */
+
+/* The ATI CL compiler is too stupid to unroll the loops over the
+ * streams if we loop over NSTREAMS (as of Stream SDK 2.2), so we have
+ * to manually expand. A macro to expand an arbitrary number of times
+ * is also quite terrible. Not unrolling these loops murders the
+ * performance. */
+#if NSTREAM > 5
+  #error "Requested number of streams greater than supported maximum (5)"
+#elif NSTREAM <= 0
+  #error "Requested number of streams is absurd"
+#endif
 
 
 __attribute__ ((always_inline))
 inline void stream_sums_cl(real* st_probs,
                            __constant STREAM_CONSTANTS* sc,
                            const mwvector xyz,
-                           const real qw_r3_N,
-                           const unsigned int nstreams)
-
+                           const real qw_r3_N)
 {
-    //unsigned int i;
-    //for (i = 0; i < nstreams; ++i)
+  #if NSTREAM >= 1
     st_probs[0] += calc_st_prob_inc(&sc[0], xyz, qw_r3_N);
+  #endif
+
+  #if NSTREAM >= 2
     st_probs[1] += calc_st_prob_inc(&sc[1], xyz, qw_r3_N);
+  #endif
+
+  #if NSTREAM >= 3
     st_probs[2] += calc_st_prob_inc(&sc[2], xyz, qw_r3_N);
+  #endif
+
+  #if NSTREAM >= 4
+    st_probs[3] += calc_st_prob_inc(&sc[3], xyz, qw_r3_N);
+  #endif
+
+  #if NSTREAM >= 5
+    st_probs[4] += calc_st_prob_inc(&sc[4], xyz, qw_r3_N);
+  #endif
 
 }
 
 __attribute__ ((always_inline))
-inline void mult_probs_cl(real* st_probs, const real V_reff_xr_rp3, const unsigned int n_stream)
+inline void mult_probs_cl(real* st_probs, const real V_reff_xr_rp3)
 {
-    //unsigned int i;
-    //for (i = 0; i < n_stream; ++i)
-
+   #if NSTREAM >= 1
     st_probs[0] *= V_reff_xr_rp3;
+  #endif
+
+  #if NSTREAM >= 2
     st_probs[1] *= V_reff_xr_rp3;
+  #endif
+
+  #if NSTREAM >= 3
     st_probs[2] *= V_reff_xr_rp3;
+  #endif
+
+  #if NSTREAM >= 4
+    st_probs[3] *= V_reff_xr_rp3;
+  #endif
+
+  #if NSTREAM >= 5
+    st_probs[4] *= V_reff_xr_rp3;
+  #endif
+
 }
-
-
 
 __attribute__ ((always_inline))
 inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
@@ -87,18 +118,17 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
     real rg;
     R_POINTS r_pt;
 
-
-  #if ZERO_BG_PROB
+  #if ZERO_Q
     /* if q is 0, there is no probability */
     /* CHECKME: What happens to the st_probs? */
     return -1.0;
-  #endif /* ZERO_BG_PROB */
+  #endif /* ZERO_Q */
 
     const unsigned int convolve = ap->convolve; /* Much faster to load this into register first. */
 
     for (i = 0; i < convolve; ++i)
     {
-      r_pt = r_pts[i];
+        r_pt = r_pts[i];
       //r_pt.r_point = gPrime * bg_prob;
       //r_pt.qw_r3_N = xyz.x * gPrime;
         xyz = lbr2xyz_2(r_pt.r_point, lbt);
@@ -115,10 +145,7 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
         bg_prob += aux_prob(ap, r_pt.qw_r3_N, g);
       #endif /* AUX_BG_PROFILE */
 
-        //stream_sums(st_probs, sc, xyz, r_pt.qw_r3_N, ap->number_streams);
-        stream_sums_cl(st_probs, sc, xyz, r_pt.qw_r3_N, ap->number_streams);
-
-
+        stream_sums_cl(st_probs, sc, xyz, r_pt.qw_r3_N);
     }
 
     return bg_prob;
@@ -143,22 +170,36 @@ real r_calculation(__constant ASTRONOMY_PARAMETERS* ap,
     real V = id * rc->irv;
     real V_reff_xr_rp3 = V * rc->reff_xr_rp3;
 
-    mult_probs_cl(st_probs, V_reff_xr_rp3, ap->number_streams);
+    mult_probs_cl(st_probs, V_reff_xr_rp3);
 
     return V_reff_xr_rp3 * bg_prob;
 }
 
 __attribute__ ((always_inline))
-inline void write_st_probs(__global real* probs_out,
-                           const real* st_probs,
-                           const unsigned int n_streams)
-{
-    //unsigned int i;
-    //for (i = 0; i < n_streams; ++i)
+inline void write_st_probs(__global real* probs_out, const real* st_probs)
 
+{
+
+  #if NSTREAM >= 1
     probs_out[0] += st_probs[0];
+  #endif
+
+  #if NSTREAM >=2
     probs_out[1] += st_probs[1];
+  #endif
+
+  #if NSTREAM >= 3
     probs_out[2] += st_probs[2];
+  #endif
+
+  #if NSTREAM >= 4
+    probs_out[3] += st_probs[3];
+  #endif
+
+  #if NSTREAM >= 5
+    probs_out[4] += st_probs[4];
+  #endif
+
 }
 
 __kernel void mu_sum_kernel(__global real* restrict mu_out,
@@ -184,10 +225,10 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
 
     LB_TRIG lbt = lbts[nu_step * ia->mu_steps + mu_step];
 
-    real st_probs[3] = { 0.0, 0.0, 0.0 };      /* FIXME: hardcoded stream limit */
+    real st_probs[NSTREAM] = { 0.0 };
     mu_out[idx] += r_calculation(ap, sc, sg_dx, &rcs[r_step], &r_pts[r_step * ap->convolve], lbt, nu_id, st_probs);
 
-    write_st_probs(&probs_out[ap->number_streams * idx], st_probs, ap->number_streams);
+    write_st_probs(&probs_out[NSTREAM * idx], st_probs);
 }
 
 
