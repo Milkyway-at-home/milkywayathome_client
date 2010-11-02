@@ -60,9 +60,9 @@ static inline cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm)
 }
 
 #if DOUBLEPREC
-  #define DOUBLEPREC_DEF_STRING "-D DOUBLEPREC=1 "
+  #define DOUBLEPREC_DEF_STRING "-DDOUBLEPREC=1 "
 #else
-  #define DOUBLEPREC_DEF_STRING "-D DOUBLEPREC=0 -cl-single-precision-constant "
+  #define DOUBLEPREC_DEF_STRING "-DDOUBLEPREC=0 -cl-single-precision-constant "
 #endif /* DOUBLEPREC */
 
 #if SEPARATION_INLINE_KERNEL

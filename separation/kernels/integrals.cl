@@ -132,11 +132,12 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
       //r_pt.r_point = gPrime * bg_prob;
       //r_pt.qw_r3_N = xyz.x * gPrime;
         xyz = lbr2xyz_2(r_pt.r_point, lbt);
-
-        /* Moving stream_sums here reduces GPR usage by 2, but also
+        /* Moving stream_sums up from here reduces GPR usage by 2, but also
          * for some reason gets slightly slower. */
-
         rg = rg_calc(xyz, ap->q_inv_sqr);
+
+
+
         bg_prob += h_prob_f(ap, r_pt.qw_r3_N, rg);
 
       #if AUX_BG_PROFILE
@@ -226,8 +227,9 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     LB_TRIG lbt = lbts[nu_step * ia->mu_steps + mu_step];
 
     real st_probs[NSTREAM] = { 0.0 };
-    mu_out[idx] += r_calculation(ap, sc, sg_dx, &rcs[r_step], &r_pts[r_step * ap->convolve], lbt, nu_id, st_probs);
+    real r_result = r_calculation(ap, sc, sg_dx, &rcs[r_step], &r_pts[r_step * ap->convolve], lbt, nu_id, st_probs);
 
+    mu_out[idx] += r_result;
     write_st_probs(&probs_out[NSTREAM * idx], st_probs);
 }
 
