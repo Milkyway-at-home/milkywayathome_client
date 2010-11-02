@@ -131,7 +131,7 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
         r_pt = r_pts[i];
       //r_pt.r_point = gPrime * bg_prob;
       //r_pt.qw_r3_N = xyz.x * gPrime;
-        xyz = lbr2xyz_2(r_pt.r_point, lbt);
+        xyz = lbr2xyz_2(ap, r_pt.r_point, lbt);
         /* Moving stream_sums up from here reduces GPR usage by 2, but also
          * for some reason gets slightly slower. */
         rg = rg_calc(xyz, ap->q_inv_sqr);

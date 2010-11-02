@@ -82,7 +82,7 @@ real bg_probability_fast_hprob(const ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < convolve; ++i)
     {
-        xyz = lbr2xyz_2(r_pts[i].r_point, lbt);
+        xyz = lbr2xyz_2(ap, r_pts[i].r_point, lbt);
 
         rg = rg_calc(xyz, ap->q_inv_sqr);
 
@@ -122,7 +122,7 @@ real bg_probability_slow_hprob(const ASTRONOMY_PARAMETERS* ap,
 
     for (i = 0; i < convolve; ++i)
     {
-        xyz = lbr2xyz_2(r_pts[i].r_point, lbt);
+        xyz = lbr2xyz_2(ap, r_pts[i].r_point, lbt);
 
         rg = rg_calc(xyz, ap->q_inv_sqr);
 
