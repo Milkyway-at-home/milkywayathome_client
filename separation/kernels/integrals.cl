@@ -129,14 +129,10 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
     for (i = 0; i < convolve; ++i)
     {
         r_pt = r_pts[i];
-      //r_pt.r_point = gPrime * bg_prob;
-      //r_pt.qw_r3_N = xyz.x * gPrime;
         xyz = lbr2xyz_2(ap, r_pt.r_point, lbt);
         /* Moving stream_sums up from here reduces GPR usage by 2, but also
          * for some reason gets slightly slower. */
         rg = rg_calc(xyz, ap->q_inv_sqr);
-
-
 
         bg_prob += h_prob_f(ap, r_pt.qw_r3_N, rg);
 
@@ -221,7 +217,7 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     size_t r_step = get_global_id(1);
     size_t idx = mu_step * ia->r_steps + r_step; /* Index into output buffers */
 
-    if (mu_step >= ia->mu_steps || r_step >= ia->r_steps)
+    if (mu_step >= ia->mu_steps) /* We don't round the r_steps */
         return;
 
     LB_TRIG lbt = lbts[nu_step * ia->mu_steps + mu_step];
