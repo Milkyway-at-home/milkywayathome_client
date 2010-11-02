@@ -43,8 +43,8 @@ inline mwvector lbr2xyz_2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
     real zp = r_point * lbt.bcos;
 
     // This mad for some reason increases GPR usage by 1 pushing into next level of unhappy
-    //xyz.x = mw_mad(zp, lbt.lcos, ap->m_sun_r0);
-    xyz.x = zp * lbt.lcos - ap->sun_r0;
+    xyz.x = mw_mad(zp, lbt.lcos, ap->m_sun_r0);
+    //xyz.x = zp * lbt.lcos - ap->sun_r0;
     xyz.y = zp * lbt.lsin;
     xyz.z = r_point * lbt.bsin;
     return xyz;
