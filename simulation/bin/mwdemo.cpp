@@ -29,9 +29,10 @@
 #include "drawhalo.hpp"
 #include "demofile.hpp"
 #include "imgplot.hpp"
-#include "mwdemo.hpp"
+
 
 using namespace std;
+
 
 HaloField* getLastFrameNBody()
 {
@@ -40,7 +41,6 @@ HaloField* getLastFrameNBody()
     nb.readStars(*stream);
     return stream;
 }
-
 
 
 int main( int args, char **argv )
@@ -132,6 +132,3 @@ setFocusAngle(RandomAngle);   /// TODO /// Buffered with fade-in
     return 0;
 
 }
-
-
-
