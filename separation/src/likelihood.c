@@ -50,7 +50,7 @@ static inline real likelihood_bg_probability_main(const ASTRONOMY_PARAMETERS* ap
 
     for (i = 0; i < convolve; ++i)
     {
-        xyz = lbr2xyz_2(r_pts[i].r_point, lbt);
+        xyz = lbr2xyz_2(ap, r_pts[i].r_point, lbt);
         rg = rg_calc(xyz, ap->q_inv_sqr);
 
         /* CHECKME: Not having quadratic term on slow one looks like a bug but I'm not sure */

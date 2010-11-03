@@ -25,6 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
+#define _CRT_SECURE_NO_WARNINGS
 #include "separation_config.h"
 #include "separation_types.h"
 #include "milkyway_util.h"

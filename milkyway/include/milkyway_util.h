@@ -46,6 +46,7 @@ extern "C" {
 
   #define WIN32_LEAN_AND_MEAN
   #define VC_EXTRALEAN
+  #define _CRT_SECURE_NO_WARNINGS
   #if BOINC_DEBUG
     #ifndef _WIN32
       #include <boinc/diagnostics.h>

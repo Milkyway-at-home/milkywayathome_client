@@ -400,7 +400,6 @@ static real runIntegral(CLInfo* ci,
             return err;
         }
 
-
         double t2 = mwGetTimeMilli();
         printf("Loop time: %f ms\n", t2 - t1);
     }
@@ -414,7 +413,6 @@ static real runIntegral(CLInfo* ci,
         warn("Failed to read final kernel results: %s\n", showCLInt(err));
         return NAN;
     }
-
 
     return bg_sum.sum + bg_sum.correction;
 }

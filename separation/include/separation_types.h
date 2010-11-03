@@ -178,6 +178,7 @@ typedef struct SEPARATION_ALIGN(128) _ASTRONOMY_PARAMETERS
     real q_inv_sqr;  /* 1 / q^2 */
     real bg_a, bg_b, bg_c;
     real alpha, delta, alpha_delta3, r0;
+    real sun_r0, m_sun_r0;
 
     mw_int wedge;
     mw_uint convolve;
@@ -234,13 +235,11 @@ typedef real (*BGProbabilityFunc) (const ASTRONOMY_PARAMETERS*,
 
 
 #define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0.0, \
-                                     0, 0,   \
-                                     0, 0, 0, 0, \
-                                     0, 0, 0, 0.0, 0.0,          \
-                                     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
-                                     0.0, 0.0, 0.0, NULL }
-
-//    typedef struct __attribute__((packed, aligned(4 * sizeof(real)), vec_type_hint(float2)))  //SEPARATION_ALIGN(2 * sizeof(real))
+                                     0.0, 0.0,   \
+                                     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
+                                     0, 0, 0, 0, 0,          \
+                                     0, 0, 0.0, 0.0, 0, 0, 0, \
+                                     0, 0.0, 0, NULL }
 
 typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {

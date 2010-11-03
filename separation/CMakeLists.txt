@@ -30,7 +30,7 @@ include(BOINCBinNames)
 include(PrintInfo)
 
 set(separation_VERSION_MAJOR 0)
-set(separation_VERSION_MINOR 44)
+set(separation_VERSION_MINOR 45)
 set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}")
 
 
@@ -46,7 +46,10 @@ set(SEPARATION_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 include_directories(${SEPARATION_INCLUDE_DIR})
 
 
-set(CMAKE_C_FLAGS "-std=gnu99 -warn-uninit-values ${CMAKE_C_FLAGS}")
+
+if(NOT MSVC)
+  set(CMAKE_C_FLAGS "-std=gnu99 -warn-uninit-values ${CMAKE_C_FLAGS}")
+endif()
 
 
 option(SEPARATION_INLINE_KERNEL
@@ -138,9 +141,9 @@ configure_file (
   "${PROJECT_INCLUDE_DIR}/separation_config.h")
 
 set(cl_source_list src/separation_cl_buffers.c
+                   src/separation_binaries.c
                    src/setup_cl.c
-                   src/run_cl.c
-                   src/separation_cl_defs.c)
+                   src/run_cl.c)
 
 set(lib_source_file_list src/evaluation_state.c
                          src/io_util.c

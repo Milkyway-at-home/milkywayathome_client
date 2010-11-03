@@ -29,6 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "setup_cl.h"
 #include "separation_cl_buffers.h"
 #include "separation_cl_defs.h"
+#include "separation_binaries.h"
 
 #if SEPARATION_INLINE_KERNEL
   #include "integral_kernel.h"
@@ -59,9 +60,9 @@ static inline cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm)
 }
 
 #if DOUBLEPREC
-  #define DOUBLEPREC_DEF_STRING "-D DOUBLEPREC=1 "
+  #define DOUBLEPREC_DEF_STRING "-DDOUBLEPREC=1 "
 #else
-  #define DOUBLEPREC_DEF_STRING "-D DOUBLEPREC=0 -cl-single-precision-constant "
+  #define DOUBLEPREC_DEF_STRING "-DDOUBLEPREC=0 -cl-single-precision-constant "
 #endif /* DOUBLEPREC */
 
 #if SEPARATION_INLINE_KERNEL
@@ -145,25 +146,39 @@ cl_int setupSeparationCL(CLInfo* ci,
                          const CLRequest* clr)
 {
     cl_int err;
-    //char* compileDefs;
+    char* compileDefs;
     char* kernelSrc;
-    char* extraDefs;
     char* cwd;
     DevInfo di;
     SeparationSizes sizes;
 
+    err = mwSetupCL(ci, &di, clr);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error getting device and context: %s\n", showCLInt(err));
+        return err;
+    }
+
     cwd = getcwd(NULL, 0);
-    asprintf(&extraDefs, DOUBLEPREC_DEF_STRING
-                        "-DUSE_CL_MATH_TYPES=0 "
-                        "-DUSE_MAD=1 "
-                        "-DUSE_FMA=1 "
-                        "-cl-mad-enable "
-                        "-cl-strict-aliasing "
-                        "-cl-finite-math-only "
-                        "-I%s/../include "
-                        "-I%s/../../include "
-                        "-I%s/../../milkyway/include ",
-                        cwd, cwd, cwd);
+    asprintf(&compileDefs, DOUBLEPREC_DEF_STRING
+                           "-DUSE_CL_MATH_TYPES=0 "
+                           "-DUSE_MAD=1 "
+                           "-DUSE_FMA=1 "
+                           "-cl-mad-enable "
+                           "-cl-strict-aliasing "
+                           "-cl-finite-math-only "
+                           "-I%s/../include "
+                           "-I%s/../../include "
+                           "-I%s/../../milkyway/include "
+                           "-DNSTREAM=%u "
+                           "-DFAST_H_PROB=%d "
+                           "-DAUX_BG_PROFILE=%d "
+                           "-DZERO_Q=%d ",
+                           cwd, cwd, cwd,
+                           ap->number_streams,
+                           ap->fast_h_prob,
+                           ap->aux_bg_profile,
+                           ap->zero_q);
 
     kernelSrc = findKernelSrc();
     if (!kernelSrc)
@@ -172,17 +187,15 @@ cl_int setupSeparationCL(CLInfo* ci,
         return -1;
     }
 
-    //compileDefs = separationCLDefs(ap, extraDefs);
-    err = mwSetupCL(ci, &di, clr, "mu_sum_kernel", &kernelSrc, 1, extraDefs);
+    err = mwSetProgramFromSrc(ci, "mu_sum_kernel", &kernelSrc, 1, compileDefs);
 
     freeKernelSrc(kernelSrc);
     free(cwd);
-    free(extraDefs);
-    //free(compileDefs);
+    free(compileDefs);
 
     if (err != CL_SUCCESS)
     {
-        fail("Failed to setup OpenCL device: %s\n", showCLInt(err));
+        warn("Error creating program from source: %s\n", showCLInt(err));
         return err;
     }
 

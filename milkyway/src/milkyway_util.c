@@ -112,7 +112,16 @@ void* mwMallocAligned(size_t size, size_t alignment)
 void* mwMallocAligned(size_t size, size_t alignment)
 {
     void* p;
-    p = _aligned_malloc(size, alignment);
+    size_t realAlign;
+
+  #ifndef _MSC_VER
+    realAlign = alignment;
+  #else
+    /* I'm too lazy to fix MSVC not having an intelligent way to pack structs properly right now. */
+    realAlign = 16;
+  #endif /* _MSC_VER */
+
+    p = _aligned_malloc(size, realAlign);
 
     if (!p)
         fail("%s: NULL: _aligned_malloc error = %ld\n", FUNC_NAME, GetLastError());

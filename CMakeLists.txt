@@ -32,11 +32,29 @@ include(StaticBOINC)
 include(PrintInfo)
 include(DownloadCrlibm)
 include(CheckCFlag)
+include(MSVCFlags)
 set_mingw_paths()
+
+option(MSVC_USE_STATIC_CRT "Use static CRT" OFF) # SEem to get slightly different / more wrong answer with static crt
+mark_as_advanced(MSVC_USE_STATIC_CRT)
+
+if(MSVC)
+  set_msvc_extra_link_flags()
+  set_msvc_find_paths()
+  if(MSVC_USE_STATIC_CRT)
+    # http://msdn.microsoft.com/en-us/library/2kzt1wy3(v=VS.100).aspx
+    set_msvc_mt() # For some horrible reason the /MT and /MD runtimes get different results. /MT seems to be more right.
+  endif()
+endif()
 
 # Project build selection
 option(SEPARATION "Build separation" ON)
 option(NBODY "Build nbody" ON)
+
+if(MSVC)
+  set(NBODY OFF)
+  message("NBody doesn't work with MSVC, disabling")
+endif()
 
 
 # Normal options
@@ -121,10 +139,10 @@ endif()
 
 maybe_static()
 
-if(UNIX AND NOT APPLE)
-  set(NEED_POPT_DEPS 0)
-else()
+if(APPLE OR MINGW)
   set(NEED_POPT_DEPS 1)
+else()
+  set(NEED_POPT_DEPS 0)
 endif()
 
 #FIXME: Somehow test for and require the Apple gcc. The macports gccs
