@@ -90,7 +90,7 @@ int main( int args, char **argv )
 //moveTo(Vector3d{-8, 0, 0}, 0.);
 
 /*
-// Find earth-view focus
+ Find earth-view focus
 Vector3d sev;
 Vector3d eev;
 Vector3d cev;
