@@ -153,7 +153,7 @@ set(lib_source_file_list src/evaluation_state.c
                          src/star_points.c
                          src/likelihood.c
                          src/calculated_constants.c
-                         src/separation_separation.c
+                         src/separation_utils.c
                          src/r_points.c)
 
 set(separation_headers include/calculated_constants.h
@@ -177,7 +177,6 @@ set(separation_cl_headers include/setup_cl.h
                           include/run_cl.h
                           include/separation_cl_defs.h
                           include/separation_cl_buffers.h)
-
 
 
 if(SEPARATION_OPENCL)
