@@ -27,6 +27,8 @@ extern "C" {
 
 #include "separation_types.h"
 
+mwvector lbr2xyz(const ASTRONOMY_PARAMETERS* ap, const mwvector lbr);
+
 STREAM_CONSTANTS* getStreamConstants(const ASTRONOMY_PARAMETERS* ap, const STREAMS* streams);
 
 int setAstronomyParameters(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS* bgp);

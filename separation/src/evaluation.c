@@ -166,7 +166,12 @@ real evaluate(const ASTRONOMY_PARAMETERS* ap,
     if (read_star_points(&sp, star_points_file))
         warn("Failed to read star points file\n");
     else
+    {
         likelihood_val = likelihood(ap, &sp, sc, streams, &fsi, sg);
+
+        const INTEGRAL_AREA* ia = &ias[0];
+        separation(ap, &sp, sc, streams, &fsi, sg);
+    }
 
     free_star_points(&sp);
     free_final_stream_integrals(&fsi);

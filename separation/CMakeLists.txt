@@ -153,6 +153,7 @@ set(lib_source_file_list src/evaluation_state.c
                          src/star_points.c
                          src/likelihood.c
                          src/calculated_constants.c
+                         src/separation_separation.c
                          src/r_points.c)
 
 set(separation_headers include/calculated_constants.h

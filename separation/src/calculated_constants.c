@@ -29,7 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "integrals.h"
 
 /* Convert sun-centered lbr (degrees) into galactic xyz coordinates. */
-static mwvector lbr2xyz(const ASTRONOMY_PARAMETERS* ap, const mwvector lbr)
+mwvector lbr2xyz(const ASTRONOMY_PARAMETERS* ap, const mwvector lbr)
 {
     real zp, d;
 /* TODO: Use radians to begin with */

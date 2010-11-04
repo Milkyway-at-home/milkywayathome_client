@@ -79,13 +79,13 @@ static inline real likelihood_bg_probability_main(const ASTRONOMY_PARAMETERS* ap
     return bg_prob;
 }
 
-static inline real likelihood_bg_probability(const ASTRONOMY_PARAMETERS* ap,
-                                             const STREAM_CONSTANTS* sc,
-                                             const R_POINTS* r_pts,
-                                             const real* sg_dx,
-                                             const LB_TRIG lbt,
-                                             const R_CONSTS rc,
-                                             real* st_probs)
+real likelihood_bg_probability(const ASTRONOMY_PARAMETERS* ap,
+                               const STREAM_CONSTANTS* sc,
+                               const R_POINTS* r_pts,
+                               const real* sg_dx,
+                               const LB_TRIG lbt,
+                               const R_CONSTS rc,
+                               real* st_probs)
 {
     real bg_prob;
 
@@ -99,13 +99,13 @@ static inline real likelihood_bg_probability(const ASTRONOMY_PARAMETERS* ap,
     return bg_prob;
 }
 
-static inline real stream_sum(const unsigned int number_streams,
-                              const FINAL_STREAM_INTEGRALS* fsi,
-                              real* st_prob,
-                              KAHAN* st_only_sum,
-                              const real* exp_stream_weights,
-                              const real sum_exp_weights,
-                              real bg_only)
+real stream_sum(const unsigned int number_streams,
+                const FINAL_STREAM_INTEGRALS* fsi,
+                real* st_prob,
+                KAHAN* st_only_sum,
+                const real* exp_stream_weights,
+                const real sum_exp_weights,
+                real bg_only)
 {
     unsigned int i;
     real st_only;
@@ -129,9 +129,9 @@ static inline real stream_sum(const unsigned int number_streams,
 }
 
 /* Populates exp_stream_weights, and returns the sum */
-static inline real get_exp_stream_weights(real* exp_stream_weights,
-                                          const STREAMS* streams,
-                                          real exp_background_weight)
+real get_exp_stream_weights(real* exp_stream_weights,
+                            const STREAMS* streams,
+                            real exp_background_weight)
 {
     unsigned int i;
     real sum_exp_weights = exp_background_weight;
@@ -146,9 +146,9 @@ static inline real get_exp_stream_weights(real* exp_stream_weights,
     return sum_exp_weights;
 }
 
-static inline void get_stream_only_likelihood(KAHAN* st_only_sum,
-                                              const unsigned int number_stars,
-                                              const unsigned int number_streams)
+void get_stream_only_likelihood(KAHAN* st_only_sum,
+                                const unsigned int number_stars,
+                                const unsigned int number_streams)
 {
     unsigned int i;
     fprintf(stderr, "<stream_only_likelihood>");
