@@ -128,13 +128,19 @@ real likelihood_bg_probability(const ASTRONOMY_PARAMETERS* ap,
     return bg_prob;
 }
 
-real stream_sum(const unsigned int number_streams,
-                const FINAL_STREAM_INTEGRALS* fsi,
-                const real* st_prob,
-                KAHAN* st_only_sum,
-                const real* exp_stream_weights,
-                const real sum_exp_weights,
-                real bg_only)
+/* CHECKME: What is this? */
+static real probability_log(real bg, real sum_exp_weights)
+{
+    return (bg == 0.0) ? -238.0 : mw_log10(bg / sum_exp_weights);
+}
+
+static real stream_sum(const unsigned int number_streams,
+                       const FINAL_STREAM_INTEGRALS* fsi,
+                       const real* st_prob,
+                       KAHAN* st_only_sum,
+                       const real* exp_stream_weights,
+                       const real sum_exp_weights,
+                       real bg_only)
 {
     unsigned int i;
     real st_only;
@@ -145,11 +151,7 @@ real stream_sum(const unsigned int number_streams,
         st_only = st_prob[i] / fsi->stream_integrals[i] * exp_stream_weights[i];
         star_prob += st_only;
 
-        if (st_only == 0.0)
-            st_only = -238.0;
-        else
-            st_only = mw_log10(st_only / sum_exp_weights);
-
+        st_only = probability_log(st_only, sum_exp_weights);
         KAHAN_ADD(st_only_sum[i], st_only);
     }
     star_prob /= sum_exp_weights;
@@ -195,6 +197,62 @@ void get_stream_only_likelihood(KAHAN* st_only_sum,
 const int calculateSeparation = 1;
 const int twoPanel = 1;
 
+/* get stream & background weight constants */
+static real get_stream_bg_weight_consts(StreamStats ss, const STREAMS* streams)
+{
+    unsigned int j;
+    double epsilon_b;
+    double denom = 1.0;
+
+    for (j = 0; j < streams->number_streams; j++)
+        denom += mw_exp(streams->stream_weight[j].weight);
+
+    for (j = 0; j < streams->number_streams; j++)
+    {
+        ss.epsilon_s[j] = mw_exp(streams->stream_weight[j].weight) / denom;
+        printf("epsilon_s[%d]: %lf\n", j, ss.epsilon_s[j]);
+    }
+    epsilon_b = 1.0 / denom;
+    printf("epsilon_b:    %lf\n", epsilon_b);
+    return epsilon_b;
+}
+
+static void twoPanelSeparation(const ASTRONOMY_PARAMETERS* ap,
+                               const FINAL_STREAM_INTEGRALS* fsi,
+                               StreamStats ss,
+                               const real* st_probs,
+                               real bg_prob,
+                               real epsilon_b)
+{
+    unsigned int i;
+    double pbx, psgSum;
+
+    pbx = epsilon_b * bg_prob / fsi->background_integral;
+
+    for (i = 0; i < ap->number_streams; i++)
+        ss.psg[i] = ss.epsilon_s[i] * st_probs[i] / fsi->stream_integrals[i];
+
+    psgSum = 0;
+    for (i = 0; i < ap->number_streams; i++)
+        psgSum += ss.psg[i];
+
+    for (i = 0; i < ap->number_streams; i++)
+        ss.sprob[i] = ss.psg[i] / (psgSum + pbx);
+
+    for (i = 0; i < ap->number_streams; i++)
+        ss.nstars[i] += ss.sprob[i];
+}
+
+static void nonTwoPanelSeparation(StreamStats ss, unsigned int number_streams)
+{
+    unsigned int i;
+
+    for (i = 0; i < number_streams; i++)
+    {
+        ss.sprob[i] = 1.0;
+        ss.nstars[i] += 1.0;
+    }
+}
 
 static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
                            const STAR_POINTS* sp,
@@ -272,18 +330,7 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
         }
         printf("\n");
 
-        /* get stream & background weight constants */
-        double denom = 1.0;
-        for (j = 0; j < ap->number_streams; j++)
-            denom += exp(streams->stream_weight[j].weight);
-
-        for (j = 0; j < ap->number_streams; j++)
-        {
-            ss.epsilon_s[j] = exp(streams->stream_weight[j].weight) / denom;
-            printf("epsilon_s[%d]: %lf\n", j, ss.epsilon_s[j]);
-        }
-        epsilon_b = 1.0 / denom;
-        printf("epsilon_b:    %lf\n", epsilon_b);
+        epsilon_b = get_stream_bg_weight_consts(ss, streams);
     }
 
     FILE* file = fopen("merged_sep_likelihood_out", "w");
@@ -327,36 +374,16 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
             prob.sum -= 238.0;
         }
 
-        bg = (bg == 0.0) ? -238.0 : mw_log10(bg / sum_exp_weights);
+        bg = probability_log(bg, sum_exp_weights);
         KAHAN_ADD(bg_only, bg);
 
 
         {
 
-        if (twoPanel == 1)
-        {
-            double pbx = epsilon_b * bg_prob / fsi->background_integral;
-
-            for (j = 0; j < ap->number_streams; j++)
-                ss.psg[j] = ss.epsilon_s[j] * st_prob[j] / fsi->stream_integrals[j];
-
-            double psgSum = 0;
-            for (j = 0; j < ap->number_streams; j++)
-                psgSum += ss.psg[j];
-            for (j = 0; j < ap->number_streams; j++)
-                ss.sprob[j] = ss.psg[j] / (psgSum + pbx);
-
-            for (j = 0; j < ap->number_streams; j++)
-                ss.nstars[j] += ss.sprob[j];
-        }
+        if (twoPanel)
+            twoPanelSeparation(ap, fsi, ss, st_prob, bg_prob, epsilon_b);
         else
-        {
-            for (j = 0; j < ap->number_streams; j++)
-            {
-                ss.sprob[j] = 1.0;
-                ss.nstars[j] += 1.0;
-            }
-        }
+            nonTwoPanelSeparation(ss, ap->number_streams);
 
         /* determine if star with sprob should be put into stream */
         int s_ok = prob_ok(ap->number_streams, ss.sprob);
