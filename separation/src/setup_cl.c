@@ -159,6 +159,8 @@ cl_int setupSeparationCL(CLInfo* ci,
         return err;
     }
 
+    /* ATI CLC: --single_precision_constant */
+
     cwd = getcwd(NULL, 0);
     asprintf(&compileDefs, DOUBLEPREC_DEF_STRING
                            "-DUSE_CL_MATH_TYPES=0 "

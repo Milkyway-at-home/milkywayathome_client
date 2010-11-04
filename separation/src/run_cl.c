@@ -131,30 +131,45 @@ static size_t nextMultiple(const size_t x, const size_t n)
     return (x % n == 0) ? x : x + (n - x % n);
 }
 
-static void cpuGroupSizes(const INTEGRAL_AREA* ia, size_t global[], size_t local[])
+static cl_int cpuGroupSizes(const INTEGRAL_AREA* ia, size_t global[], size_t local[])
 {
     global[0] = ia->mu_steps;
     global[1] = ia->r_steps;
     local[0] = 1;
     local[1] = 1;
+
+    return CL_SUCCESS;
 }
 
-static void gpuGroupSizes(const INTEGRAL_AREA* ia, size_t global[], size_t local[])
+static cl_int gpuGroupSizes(const INTEGRAL_AREA* ia, size_t numChunks, size_t global[], size_t local[])
 {
     size_t groupSize = 64;
+    size_t chunkSize = ia->r_steps / numChunks;
+
+    if (ia->r_steps % numChunks != 0)
+    {
+        warn("Error: r_steps (%zu) not divisible by number of chunks (%zu)\n", ia->r_steps, numChunks);
+        return -1;
+    }
 
     /* Ideally these are already nicely divisible by 32/64/128, otherwise
      * round up a bit. */
-    global[0] = nextMultiple(ia->mu_steps, groupSize);
-    global[1] = ia->r_steps;
+    global[0] = ia->mu_steps;
+    global[1] = chunkSize;
 
     /* Bias towards mu steps seems to be better */
     local[0] = groupSize;
     local[1] = 1;
+
+    return CL_SUCCESS;
 }
 
 /* TODO: Do we need hadware specific workgroup sizes? */
-static cl_bool findWorkGroupSizes(CLInfo* ci, const INTEGRAL_AREA* ia, size_t global[], size_t local[])
+static cl_bool findWorkGroupSizes(CLInfo* ci,
+                                  const INTEGRAL_AREA* ia,
+                                  size_t numChunks,
+                                  size_t global[],
+                                  size_t local[])
 {
     cl_int err;
     WGInfo wgi;
@@ -166,14 +181,20 @@ static cl_bool findWorkGroupSizes(CLInfo* ci, const INTEGRAL_AREA* ia, size_t gl
         printWorkGroupInfo(&wgi);
 
     if (ci->devType == CL_DEVICE_TYPE_CPU)
-        cpuGroupSizes(ia, global, local);
+        err = cpuGroupSizes(ia, global, local);
     else
-        gpuGroupSizes(ia, global, local);
+        err = gpuGroupSizes(ia, numChunks, global, local);
+
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to choose group size\n");
+        return CL_TRUE;
+    }
 
     size_t localSize = local[0] * local[1];
 
     warn("Range is { mu_steps = %zu, r_steps = %zu }\n"
-         "Rounded range is  { %zu, %zu }\n"
+         "Chunked range is  { mu_steps = %zu, r_steps = %zu }\n"
          "Attempting to use a workgroup size of { %zu, %zu } = %zu \n",
          ia->mu_steps, ia->r_steps,
          global[0], global[1],
@@ -186,6 +207,7 @@ static cl_bool findWorkGroupSizes(CLInfo* ci, const INTEGRAL_AREA* ia, size_t gl
 
 static cl_int enqueueIntegralKernel(CLInfo* ci,
                                     SeparationCLEvents* evs,
+                                    const size_t offset[],
                                     const size_t global[],
                                     const size_t local[])
 {
@@ -194,7 +216,7 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
     err = clEnqueueNDRangeKernel(ci->queue,
                                  ci->kern,
                                  2,
-                                 NULL, global, local,
+                                 offset, global, local,
                                  0, NULL, &evs->endTmp);
     if (err != CL_SUCCESS)
     {
@@ -310,12 +332,15 @@ static cl_int runNuStep(CLInfo* ci,
                         KAHAN* restrict probs_results,
 
                         const INTEGRAL_AREA* ia,
+                        const size_t numChunks,
                         const size_t global[],
                         const size_t local[],
                         const cl_uint number_streams,
                         const cl_uint nu_step)
 {
     cl_int err;
+    size_t offset[2];
+    unsigned int i;
 
     printf("Nu step %u:\n", nu_step);
     //printSeparationEventTimes(evs);
@@ -327,25 +352,31 @@ static cl_int runNuStep(CLInfo* ci,
         return err;
     }
 
-    #if 0
-    /* Swap the temporary buffer to the main buffer, and set the
-     * kernel arguments to the new temporary buffer */
-    swapOutputBuffers(cm);
-    err = separationSetOutputBuffers(ci, cm);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to set output buffer arguments on step %u: %s\n", nu_step, showCLInt(err));
-        return err;
-    }
+    size_t chunkSize = ia->r_steps / numChunks;
 
-    #endif
-
-    /* Enqueue write to temporary buffers */
-    err = enqueueIntegralKernel(ci, evs, global, local);
-    if (err != CL_SUCCESS)
+    offset[0] = 0;
+    for (i = 0; i < numChunks; ++i)
     {
-        warn("Failed to enqueue integral kernel: %s\n", showCLInt(err));
-        return err;
+        offset[1] = i * chunkSize;
+
+        err = enqueueIntegralKernel(ci, evs, offset, global, local);
+        if (err != CL_SUCCESS)
+        {
+            warn("Failed to enqueue integral kernel: %s\n", showCLInt(err));
+            return err;
+        }
+
+        #if 0
+        clWaitForEvents(1, &evs->endTmp);
+        printf("Step took %f\n", mwEventTime(evs->endTmp) * 1000.0);
+
+        err = mwWaitReleaseEvent(&evs->endTmp);
+        if (err != CL_SUCCESS)
+        {
+            warn("Failed to wait/release NDRange event: %s\n", showCLInt(err));
+            return err;
+        }
+        #endif
     }
 
     return CL_SUCCESS;
@@ -362,7 +393,9 @@ static real runIntegral(CLInfo* ci,
     KAHAN bg_sum = ZERO_KAHAN;
     SeparationCLEvents evs;
 
-    mwEnableProfiling(ci);
+    err = mwEnableProfiling(ci);
+    if (err != CL_SUCCESS)
+        warn("Failed to enable profiling: %s\n", showCLInt(err));
 
     err = separationSetOutputBuffers(ci, cm);
     if (err != CL_SUCCESS)
@@ -374,15 +407,22 @@ static real runIntegral(CLInfo* ci,
     size_t global[2];
     size_t local[2];
 
-    if (findWorkGroupSizes(ci, ia, global, local))
+    /* TODO: Figure out a number based on GPU speed to keep execution
+     * times under 100ms to prevent unusable system */
+    size_t numChunks = 1;
+
+    if (findWorkGroupSizes(ci, ia, numChunks, global, local))
+    {
         warn("Failed to calculate acceptable work group sizes\n");
+        return NAN;
+    }
 
     for (i = 0; i < ia->nu_steps; ++i)
     {
         double t1 = mwGetTimeMilli();
         err = runNuStep(ci, cm, &evs,
                         &bg_sum, probs_results,
-                        ia, global, local,
+                        ia, numChunks, global, local,
                         ap->number_streams, i);
 
         if (err != CL_SUCCESS)
@@ -391,14 +431,7 @@ static real runIntegral(CLInfo* ci,
             return NAN;
         }
 
-        printf("Step took %f\n", mwEventTime(evs.endTmp));
-
-        err = mwWaitReleaseEvent(&evs.endTmp);
-        if (err != CL_SUCCESS)
-        {
-            warn("Failed to wait/release NDRange event: %s\n", showCLInt(err));
-            return err;
-        }
+        clWaitForEvents(1, &evs.endTmp);
 
         double t2 = mwGetTimeMilli();
         printf("Loop time: %f ms\n", t2 - t1);

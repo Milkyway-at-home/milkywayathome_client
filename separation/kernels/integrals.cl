@@ -199,26 +199,24 @@ inline void write_st_probs(__global real* probs_out, const real* st_probs)
 
 }
 
-__kernel void mu_sum_kernel(__global real* restrict mu_out,
-                            __global real* restrict probs_out,
+__kernel
+//__attribute__((reqd_work_group_size(64, 1, 1)))
+void mu_sum_kernel(__global real* restrict mu_out,
+                   __global real* restrict probs_out,
 
-                            __constant ASTRONOMY_PARAMETERS* ap,
-                            __constant INTEGRAL_AREA* ia,
-                            __constant STREAM_CONSTANTS* sc,
-                            __constant R_CONSTS* rcs,
-                            __global const LB_TRIG* lbts,
-                            __global const R_POINTS* r_pts,
-                            __constant real* sg_dx,
-                            const real nu_id,
-                            const unsigned int nu_step)
-
+                   __constant ASTRONOMY_PARAMETERS* ap,
+                   __constant INTEGRAL_AREA* ia,
+                   __constant STREAM_CONSTANTS* sc,
+                   __constant R_CONSTS* rcs,
+                   __global const LB_TRIG* lbts,
+                   __global const R_POINTS* r_pts,
+                   __constant real* restrict sg_dx,
+                   const real nu_id,
+                   const unsigned int nu_step)
 {
     size_t mu_step = get_global_id(0);
     size_t r_step = get_global_id(1);
     size_t idx = mu_step * ia->r_steps + r_step; /* Index into output buffers */
-
-    if (mu_step >= ia->mu_steps) /* We don't round the r_steps */
-        return;
 
     LB_TRIG lbt = lbts[nu_step * ia->mu_steps + mu_step];
 
