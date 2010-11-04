@@ -34,6 +34,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define ENABLE_CRLIBM SEPARATION_CRLIBM
 #define ENABLE_FDLIBM SEPARATION_FDLIBM
 
+#define ENABLE_OPENCL SEPARATION_OPENCL
+
 #if SEPARATION_CRLIBM
   #define SEPARATION_CRLIBM_STRING " crlibm"
 #elif SEPARATION_FDLIBM
