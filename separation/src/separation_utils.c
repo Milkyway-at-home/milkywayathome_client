@@ -103,32 +103,36 @@ static void slaDmxv(const real dm[3][3], real va[3], real vb[3])
     }
 }
 
-static void atBound (
-    real* angle,    /* MODIFIED -- the angle to bound in degrees*/
-    real min,   /* IN -- inclusive minimum value */
-    real max    /* IN -- exclusive maximum value */
-)
+
+static inline real bound0_360(real angle)
 {
-    while (*angle < min)
-        *angle += 360.0;
-    while (*angle >= max)
-        *angle -= 360.0;
-    return;
+    angle = mw_fmod(angle, 360.0);
+
+    if (angle < 0.0)
+        angle += 360.0;
+
+    return angle;
 }
 
-static real slaDranrm ( real angle )
+/* Bind angle to bound in degrees to -180.0 to 180.0 */
+inline static real boundm180_180(real angle)
 {
-    real w;
+    while (angle < 180.0)
+        angle += 360.0;
+    while (angle >= 180.0)
+        angle -= 360.0;
+    return angle;
+}
 
-    w = dmod(angle, M_2PI);
+static real slaDranrm(real angle)
+{
+    real w = mw_fmod(angle, M_2PI);
     return (w >= 0.0) ? w : w + M_2PI;
 }
 
-static real slaDrange ( real angle )
+static real slaDrange(real angle)
 {
-    real w;
-
-    w = dmod(angle, M_2PI);
+    real w = mw_fmod(angle, M_2PI);
     return (fabs(w) < M_PI) ? w : w - dsign(M_2PI, angle);
 }
 
@@ -137,14 +141,15 @@ static void atBound2(
     real* phi   /* MODIFIED -- the 0 to 360 angle */
 )
 {
-    atBound(theta, -180.0, 180.0);
+    *theta = boundm180_180(*theta);
     if (fabs(*theta) > 90.0)
     {
         *theta = 180.0 - *theta;
         *phi += 180;
     }
-    atBound(theta, -180.0, 180.0);
-    atBound(phi, 0.0, 360.0);
+
+    *theta = boundm180_180(*theta);
+    *phi = bound0_360(*phi);
     if (fabs(*theta) == 90.0)
         *phi = 0.0;
     return;

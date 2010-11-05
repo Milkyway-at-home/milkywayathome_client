@@ -64,8 +64,6 @@ extern "C" {
 #define sqr(x)  ((x) * (x))
 #define inv(x)  ((real) 1.0 / (x))
 
-#define dmod(A,B) ((B) != 0.0 ? ((A) * (B) > 0.0 ? (A) - (B) * mw_floor((A)/(B)) \
-                             : (A) + (B) * mw_floor(-(A)/(B))) : (A))
 #define dsign(A,B) ((B) < 0.0 ? -(A) : (A))
 
 #define KAHAN_ADD(k, item)                              \
