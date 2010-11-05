@@ -173,7 +173,6 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
 
 HOT
 static void r_sum(const ASTRONOMY_PARAMETERS* ap,
-                  const INTEGRAL_AREA* ia,
                   const STREAM_CONSTANTS* sc,
                   const real* sg_dx,
                   const LB_TRIG lbt,
@@ -227,7 +226,7 @@ static inline void mu_sum(const ASTRONOMY_PARAMETERS* ap,
         lb = gc2lb(ap->wedge, mu, nuid.nu); /* integral point */
         lbt = lb_trig(lb);
 
-        r_sum(ap, ia, sc, sg_dx, lbt, nuid.id, st_probs, probs, es, r_pts, rc, ia->r_steps);
+        r_sum(ap, sc, sg_dx, lbt, nuid.id, st_probs, probs, es, r_pts, rc, ia->r_steps);
     }
 
     es->mu_step = 0;

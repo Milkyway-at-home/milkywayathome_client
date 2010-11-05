@@ -30,8 +30,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "separation_utils.h"
 
-static const mwvector xsun = mw_vec(-8.5, 0.0, 0.0 );
-
 /* FIXME: Excessive duplication with stuff used in integrals which I
  * was too lazy to also fix here */
 
@@ -186,6 +184,7 @@ static real get_stream_bg_weight_consts(StreamStats* ss, const STREAMS* streams)
         ss[i].epsilon_s = mw_exp(streams->stream_weight[i].weight) / denom;
         printf("epsilon_s[%d]: %lf\n", i, ss[i].epsilon_s);
     }
+
     epsilon_b = 1.0 / denom;
     printf("epsilon_b:    %lf\n", epsilon_b);
     return epsilon_b;
@@ -231,8 +230,6 @@ static void nonTwoPanelSeparation(StreamStats* ss, unsigned int number_streams)
 static void separation(FILE* f,
                        const ASTRONOMY_PARAMETERS* ap,
                        const FINAL_STREAM_INTEGRALS* fsi,
-                       const STREAM_CONSTANTS* sc,
-                       const STREAMS* streams,
                        const mwmatrix cmatrix,
                        StreamStats* ss,
                        const real* st_probs,
@@ -242,6 +239,9 @@ static void separation(FILE* f,
 {
     mwvector starxyz;
     mwvector starxyzTransform;
+
+    mwvector xsun = ZERO_VECTOR;
+    X(xsun) = ap->m_sun_r0;
 
     if (twoPanel)
         twoPanelSeparation(ap, fsi, ss, st_probs, bg_prob, epsilon_b);
@@ -275,35 +275,25 @@ static void setSeparationConstants(const ASTRONOMY_PARAMETERS* ap,
     mwvector dnormal;
     const mwvector dortho = mw_vec(0.0, 0.0, 1.0);
 
-    if (ap->sgr_coordinates)
-    {
-        fail("sgr coordinates not implemented\n");
-    }
-    else
-    {
+    if (!ap->sgr_coordinates)
         dnormal = stripe_normal(ap->wedge);
-    }
+    else
+        fail("sgr coordinates not implemented\n");
 
     get_transform(cmatrix, dnormal, dortho);
 
     printf("\nTransformation matrix:\n"
            "\t%lf %lf %lf\n"
            "\t%lf %lf %lf\n"
-           "\t%lf %lf %lf\n\n",
+           "\t%lf %lf %lf\n",
            X(cmatrix[0]), Y(cmatrix[0]), Z(cmatrix[0]),
            X(cmatrix[1]), Y(cmatrix[1]), Z(cmatrix[1]),
            X(cmatrix[2]), Y(cmatrix[2]), Z(cmatrix[2]));
 
-    d = mw_dotv(dnormal, xsun);
-
     printf("==============================================\n");
-    printf("bint: %lf", fsi->background_integral);
+    printf("bint: %lf\n", fsi->background_integral);
     for (i = 0; i < ap->number_streams; i++)
-    {
-        printf(", ");
-        printf("sint[%d]: %lf", i, fsi->stream_integrals[i]);
-    }
-    printf("\n");
+        printf("sint[%d]: %lf\n", i, fsi->stream_integrals[i]);
 }
 
 static void printSeparationStats(const StreamStats* ss,
@@ -316,11 +306,11 @@ static void printSeparationStats(const StreamStats* ss,
     printf("%d total stars\n", number_stars);
     for (i = 0; i < number_streams; ++i)
     {
-        percent = ss[i].nstars / number_stars * 100;
+        percent = 100.0 * (ss[i].nstars / (real) number_stars);
         printf("%lf in stream[%d] (%lf%%)\n", ss[i].nstars, i, percent);
     }
 
-    for (i = 0; i < number_streams; i++)
+    for (i = 0; i < number_streams; ++i)
         printf("%d stars separated into stream\n", ss[i].q);
 }
 
@@ -349,7 +339,7 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
     real bg_prob, bg;
     LB lb;
     LB_TRIG lbt;
-    R_CONSTS rc;
+    R_CONSTS rc = { 0.0, 0.0, 0.0 };
 
     real epsilon_b;
     mwmatrix cmatrix;
@@ -401,7 +391,7 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
         KAHAN_ADD(bg_only, bg);
 
         if (do_separation)
-            separation(f, ap, fsi, sc, streams, cmatrix, ss, st_prob, bg_prob, epsilon_b, point);
+            separation(f, ap, fsi, cmatrix, ss, st_prob, bg_prob, epsilon_b, point);
     }
 
     prob.sum += prob.correction;

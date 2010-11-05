@@ -158,7 +158,7 @@ void printStreamGauss(const STREAM_GAUSS* c, unsigned int n)
     unsigned int i;
     printf("Stream gauss:\n");
     for (i = 0; i < n; ++i)
-        printf("[%u] { dx = %g, qgaus_W = %g } \n", i, c[i].dx, c[i].qgaus_W);
+        printf("[%u] { dx = %g, qgaus_W = %g } \n", i, c->dx[i], c->qgaus_W[i]);
 }
 
 void printStreamConstants(const STREAM_CONSTANTS* c, unsigned int n)

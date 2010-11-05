@@ -134,7 +134,8 @@ inline real mw_distv(mwvector u, mwvector v)
 }
 
 /* Angle between two vectors, in the range [0,pi] */
-static real mw_vecangle(mwvector a, mwvector b)
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
+inline real mw_vecangle(mwvector a, mwvector b)
 {
     real anorm, bnorm, dot;
 

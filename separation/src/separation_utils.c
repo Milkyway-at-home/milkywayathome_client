@@ -89,6 +89,7 @@ void prob_ok_init(long seed)
 }
 
 /* FIXME: WTF? */
+/* FIXME: lack of else leads to possibility of returned garbage */
 /* determines if star with prob p should be separrated into stream */
 int prob_ok(StreamStats* ss, int n)
 {
@@ -126,7 +127,7 @@ int prob_ok(StreamStats* ss, int n)
                 ok = 2;
             else if (r > step1 && r <= step2)
                 ok = 3;
-            /* CHECME: else? */
+            /* CHECKME: else? */
             break;
         case 4:
             step1 = ss[0].sprob + ss[1].sprob;
