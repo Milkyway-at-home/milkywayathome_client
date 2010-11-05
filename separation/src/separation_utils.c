@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation.h"
 #include "integrals_common.h"
 #include "milkyway_math.h"
-
+#include "separation_utils.h"
 
 /* Convert galactic xyz into sun-centered lbr coordinates. */
 static mwvector xyz2lbr(const ASTRONOMY_PARAMETERS* ap, const mwvector xyz)
@@ -336,7 +336,7 @@ void prob_ok_init()
 
 /* FIXME: WTF? */
 /* determines if star with prob p should be separrated into stream */
-int prob_ok(int n, real* p)
+int prob_ok(StreamStats* ss, int n)
 {
     int ok;
     real r;
@@ -347,42 +347,42 @@ int prob_ok(int n, real* p)
     switch (n)
     {
         case 1:
-            if (r > p[0])
+            if (r > ss[0].sprob)
                 ok = 0;
             else
                 ok = 1;
             break;
         case 2:
-            step1 = p[0] + p[1];
+            step1 = ss[0].sprob + ss[1].sprob;
             if (r > step1)
                 ok = 0;
-            else if (r < p[0])
+            else if (r < ss[0].sprob)
                 ok = 1;
-            else if (r > p[0] && r <= step1)
+            else if (r > ss[0].sprob && r <= step1)
                 ok = 2;
             break;
         case 3:
-            step1 = p[0] + p[1];
-            step2 = p[0] + p[1] + p[2];
+            step1 = ss[0].sprob + ss[1].sprob;
+            step2 = ss[0].sprob + ss[1].sprob + ss[2].sprob;
             if (r > step2)
                 ok = 0;
-            else if (r < p[0])
+            else if (r < ss[0].sprob)
                 ok = 1;
-            else if (r > p[0] && r <= step1)
+            else if (r > ss[0].sprob && r <= step1)
                 ok = 2;
             else if (r > step1 && r <= step2)
                 ok = 3;
             /* CHECME: else? */
             break;
         case 4:
-            step1 = p[0] + p[1];
-            step2 = p[0] + p[1] + p[2];
-            step3 = p[0] + p[1] + p[2] + p[3];
+            step1 = ss[0].sprob + ss[1].sprob;
+            step2 = ss[0].sprob + ss[1].sprob + ss[2].sprob;
+            step3 = ss[0].sprob + ss[1].sprob + ss[2].sprob + ss[3].sprob;
             if (r > step3)
                 ok = 0;
-            else if (r <= p[0])
+            else if (r <= ss[0].sprob)
                 ok = 1;
-            else if (r > p[0] && r <= step1)
+            else if (r > ss[0].sprob && r <= step1)
                 ok = 2;
             else if (r > step1 && r <= step2)
                 ok = 3;

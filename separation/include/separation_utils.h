@@ -27,13 +27,22 @@ extern "C" {
 
 #include "separation_types.h"
 
+typedef struct
+{
+    int q;
+    real nstars;
+    real sprob;
+    real psg;
+    real epsilon_s;
+} StreamStats;
+
 mwvector transform_point(const ASTRONOMY_PARAMETERS* ap,
                          mwvector point,
                          const mwmatrix cmat,
                          mwvector xsun);
 
 void get_transform(mwmatrix mat, const mwvector f, const mwvector t);
-int prob_ok(int n, real* p);
+int prob_ok(StreamStats* ss, int n);
 void prob_ok_init();
 mwvector stripe_normal(int wedge);
 

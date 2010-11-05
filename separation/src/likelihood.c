@@ -35,24 +35,6 @@ static const mwvector xsun = mw_vec(-8.5, 0.0, 0.0 );
 /* FIXME: Excessive duplication with stuff used in integrals which I
  * was too lazy to also fix here */
 
-typedef struct
-{
-    int* q;
-    real* nstars;
-    real* sprob;
-    real* psg;
-    real* epsilon_s;
-} StreamStats;
-
-static void freeStreamStats(StreamStats ss)
-{
-    free(ss.q);
-    free(ss.nstars);
-    free(ss.sprob);
-    free(ss.psg);
-    free(ss.epsilon_s);
-}
-
 static inline real likelihood_bg_probability_main(const ASTRONOMY_PARAMETERS* ap,
                                                   const STREAM_CONSTANTS* sc,
                                                   const R_POINTS* r_pts,
@@ -190,7 +172,7 @@ const int calculateSeparation = 1;
 const int twoPanel = 1;
 
 /* get stream & background weight constants */
-static real get_stream_bg_weight_consts(StreamStats ss, const STREAMS* streams)
+static real get_stream_bg_weight_consts(StreamStats* ss, const STREAMS* streams)
 {
     unsigned int i;
     real epsilon_b;
@@ -201,8 +183,8 @@ static real get_stream_bg_weight_consts(StreamStats ss, const STREAMS* streams)
 
     for (i = 0; i < streams->number_streams; i++)
     {
-        ss.epsilon_s[i] = mw_exp(streams->stream_weight[i].weight) / denom;
-        printf("epsilon_s[%d]: %lf\n", i, ss.epsilon_s[i]);
+        ss[i].epsilon_s = mw_exp(streams->stream_weight[i].weight) / denom;
+        printf("epsilon_s[%d]: %lf\n", i, ss[i].epsilon_s);
     }
     epsilon_b = 1.0 / denom;
     printf("epsilon_b:    %lf\n", epsilon_b);
@@ -211,7 +193,7 @@ static real get_stream_bg_weight_consts(StreamStats ss, const STREAMS* streams)
 
 static void twoPanelSeparation(const ASTRONOMY_PARAMETERS* ap,
                                const FINAL_STREAM_INTEGRALS* fsi,
-                               StreamStats ss,
+                               StreamStats* ss,
                                const real* st_probs,
                                real bg_prob,
                                real epsilon_b)
@@ -222,27 +204,27 @@ static void twoPanelSeparation(const ASTRONOMY_PARAMETERS* ap,
     pbx = epsilon_b * bg_prob / fsi->background_integral;
 
     for (i = 0; i < ap->number_streams; i++)
-        ss.psg[i] = ss.epsilon_s[i] * st_probs[i] / fsi->stream_integrals[i];
+        ss[i].psg = ss[i].epsilon_s * st_probs[i] / fsi->stream_integrals[i];
 
     psgSum = 0;
     for (i = 0; i < ap->number_streams; i++)
-        psgSum += ss.psg[i];
+        psgSum += ss[i].psg;
 
     for (i = 0; i < ap->number_streams; i++)
-        ss.sprob[i] = ss.psg[i] / (psgSum + pbx);
+        ss[i].sprob = ss[i].psg / (psgSum + pbx);
 
     for (i = 0; i < ap->number_streams; i++)
-        ss.nstars[i] += ss.sprob[i];
+        ss[i].nstars += ss[i].sprob;
 }
 
-static void nonTwoPanelSeparation(StreamStats ss, unsigned int number_streams)
+static void nonTwoPanelSeparation(StreamStats* ss, unsigned int number_streams)
 {
     unsigned int i;
 
     for (i = 0; i < number_streams; i++)
     {
-        ss.sprob[i] = 1.0;
-        ss.nstars[i] += 1.0;
+        ss[i].sprob = 1.0;
+        ss[i].nstars += 1.0;
     }
 }
 
@@ -252,25 +234,24 @@ static void separation(FILE* f,
                        const STREAM_CONSTANTS* sc,
                        const STREAMS* streams,
                        const mwmatrix cmatrix,
-                       StreamStats ss,
+                       StreamStats* ss,
                        const real* st_probs,
                        real bg_prob,
                        real epsilon_b,
                        mwvector current_star_point)
 {
+    mwvector starxyz;
+    mwvector starxyzTransform;
+
     if (twoPanel)
         twoPanelSeparation(ap, fsi, ss, st_probs, bg_prob, epsilon_b);
     else
         nonTwoPanelSeparation(ss, ap->number_streams);
 
     /* determine if star with sprob should be put into stream */
-    int s_ok = prob_ok(ap->number_streams, ss.sprob);
+    int s_ok = prob_ok(ss, ap->number_streams);
     if (s_ok >= 1)
-        ss.q[s_ok-1]++;
-
-
-    mwvector starxyz;
-    mwvector starxyzTransform;
+        ss[s_ok-1].q++;
 
     starxyz = lbr2xyz(ap, current_star_point);
     starxyzTransform = transform_point(ap, starxyz, cmatrix, xsun);
@@ -290,27 +271,28 @@ static void setSeparationConstants(const ASTRONOMY_PARAMETERS* ap,
                                    mwmatrix cmatrix)
 {
     unsigned int i;
+    real d;
     mwvector dnormal;
     const mwvector dortho = mw_vec(0.0, 0.0, 1.0);
 
     if (ap->sgr_coordinates)
     {
         fail("sgr coordinates not implemented\n");
-        //sgr_stripe_normal(ap->wedge, dnormal);
     }
     else
     {
         dnormal = stripe_normal(ap->wedge);
     }
 
-    real d;
-
     get_transform(cmatrix, dnormal, dortho);
 
-    printf("\nTransformation matrix:\n");
-    printf("\t%lf %lf %lf\n", X(cmatrix[0]), Y(cmatrix[0]), Z(cmatrix[0]));
-    printf("\t%lf %lf %lf\n", X(cmatrix[1]), Y(cmatrix[1]), Z(cmatrix[1]));
-    printf("\t%lf %lf %lf\n\n", X(cmatrix[2]), Y(cmatrix[2]), Z(cmatrix[2]));
+    printf("\nTransformation matrix:\n"
+           "\t%lf %lf %lf\n"
+           "\t%lf %lf %lf\n"
+           "\t%lf %lf %lf\n\n",
+           X(cmatrix[0]), Y(cmatrix[0]), Z(cmatrix[0]),
+           X(cmatrix[1]), Y(cmatrix[1]), Z(cmatrix[1]),
+           X(cmatrix[2]), Y(cmatrix[2]), Z(cmatrix[2]));
 
     d = mw_dotv(dnormal, xsun);
 
@@ -324,7 +306,7 @@ static void setSeparationConstants(const ASTRONOMY_PARAMETERS* ap,
     printf("\n");
 }
 
-static void printSeparationStats(const StreamStats ss,
+static void printSeparationStats(const StreamStats* ss,
                                  const unsigned int number_stars,
                                  const unsigned int number_streams)
 {
@@ -332,14 +314,14 @@ static void printSeparationStats(const StreamStats ss,
     real percent;
 
     printf("%d total stars\n", number_stars);
-    for (i = 0; i < number_streams; i++)
+    for (i = 0; i < number_streams; ++i)
     {
-        real percent = ss.nstars[i] / number_stars * 100;
-        printf("%lf in stream[%d] (%lf%%)\n", ss.nstars[i], i, percent);
+        percent = ss[i].nstars / number_stars * 100;
+        printf("%lf in stream[%d] (%lf%%)\n", ss[i].nstars, i, percent);
     }
 
     for (i = 0; i < number_streams; i++)
-        printf("%d stars separated into stream\n", ss.q[i]);
+        printf("%d stars separated into stream\n", ss[i].q);
 }
 
 static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
@@ -354,7 +336,7 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
                            const real* exp_stream_weights,
                            const real sum_exp_weights,
                            const real exp_background_weight,
-                           StreamStats ss)
+                           StreamStats* ss)
 {
     KAHAN prob = ZERO_KAHAN;
     KAHAN bg_only = ZERO_KAHAN;
@@ -439,17 +421,9 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
     return (prob.sum / (sp->number_stars - bad_jacobians)) - 3.0;
 }
 
-StreamStats newStreamStats(const unsigned int number_streams)
+StreamStats* newStreamStats(const unsigned int number_streams)
 {
-    StreamStats ss;
-    ss.q = callocSafe(number_streams, sizeof(int));
-    ss.nstars = callocSafe(number_streams, sizeof(real));
-    ss.nstars = callocSafe(number_streams, sizeof(real));
-    ss.sprob = callocSafe(number_streams, sizeof(real));
-    ss.psg = callocSafe(number_streams, sizeof(real));
-    ss.epsilon_s = callocSafe(number_streams, sizeof(real));
-
-    return ss;
+    return callocSafe(number_streams, sizeof(StreamStats));
 }
 
 real likelihood(const ASTRONOMY_PARAMETERS* ap,
@@ -474,7 +448,7 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
     st_sum = (KAHAN*) mwCallocAligned(sizeof(KAHAN), streams->number_streams, sizeof(KAHAN));
     exp_stream_weights = (real*) mwMallocAligned(sizeof(real) * streams->number_streams, 2 * sizeof(real));
 
-    StreamStats ss = newStreamStats(streams->number_streams);
+    StreamStats* ss = newStreamStats(streams->number_streams);
 
     prob_ok_init();
 
@@ -494,7 +468,7 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
     mwAlignedFree(r_pts);
     mwAlignedFree(st_sum);
     mwAlignedFree(exp_stream_weights);
-    freeStreamStats(ss);
+    free(ss);
 
     return likelihood_val;
 }
