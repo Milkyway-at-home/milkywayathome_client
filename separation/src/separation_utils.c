@@ -80,7 +80,7 @@ static mwvector xyz_mag(const ASTRONOMY_PARAMETERS* ap, mwvector point, real off
 }
 
 
-static void slaDmxv(real dm[3][3], real va[3], real vb[3])
+static void slaDmxv(const real dm[3][3], real va[3], real vb[3])
 {
     int i, j;
     real w, vw[3];
@@ -204,17 +204,12 @@ static void slaEqgal( real dr, real dd, real* dl, real* db )
 {
     real v1[3], v2[3];
 
-    static real rmat[3][3];
-
-    rmat[0][0] = -0.054875539726;
-    rmat[0][1] = -0.873437108010;
-    rmat[0][2] = -0.483834985808;
-    rmat[1][0] =  0.494109453312;
-    rmat[1][1] = -0.444829589425;
-    rmat[1][2] =  0.746982251810;
-    rmat[2][0] = -0.867666135858;
-    rmat[2][1] = -0.198076386122;
-    rmat[2][2] =  0.455983795705;
+    static const real rmat[3][3] =
+        {
+            { -0.054875539726, -0.873437108010, -0.483834985808 },
+            { 0.494109453312, -0.444829589425, 0.746982251810 },
+            { -0.867666135858, -0.198076386122, 0.455983795705 }
+        };
 
     /* Spherical to Cartesian */
     slaDcs2c( dr, dd, v1 );

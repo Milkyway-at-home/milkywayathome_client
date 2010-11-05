@@ -152,6 +152,7 @@ set(lib_source_file_list src/evaluation_state.c
                          src/parameters.c
                          src/star_points.c
                          src/likelihood.c
+                         src/coordinates.c
                          src/calculated_constants.c
                          src/separation_utils.c
                          src/r_points.c)
