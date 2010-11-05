@@ -21,6 +21,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "coordinates.h"
 
+typedef struct
+{
+    real ra;
+    real dec;
+} RADec;
+
 /* Convert sun-centered lbr (degrees) into galactic xyz coordinates. */
 mwvector lbr2xyz(const ASTRONOMY_PARAMETERS* ap, const mwvector lbr)
 {
@@ -93,41 +99,26 @@ mwvector xyz_mag(const ASTRONOMY_PARAMETERS* ap, mwvector point, real offset)
     return logPoint;
 }
 
-/* Return ra & dec from survey longitude and latitude (radians) */
-static void atSurveyToEq(real slong, real slat, real* ra, real* dec)
+static LB cartesianToSpherical(mwvector v)
 {
-    real x1, y1, z1;
-
-    const real anode = NODE_GC_COORDS_RAD;
-    const real etaPole = surveyCenterDec_rad;
-
-    /* Rotation */
-    x1   = -mw_sin(slong);
-    y1   = mw_cos(slat + etaPole) * mw_cos(slong);
-    z1   = mw_sin(slat + etaPole) * mw_cos(slong);
-    *ra  = mw_atan2(y1, x1) + anode;
-    *dec = mw_asin(z1);
-
-    return;
-}
-
-static void cartesianToSpherical(mwvector v, real* a, real* b)
-{
+    LB lb;
     real r = mw_hypot(X(v), Y(v));
 
-    *a = (r != 0.0)    ? mw_atan2(Y(v), X(v)) : 0.0;
-    *b = (Z(v) != 0.0) ? mw_atan2(Z(v), r)    : 0.0;
+    lb.l = (r != 0.0)    ? mw_atan2(Y(v), X(v)) : 0.0;
+    lb.b = (Z(v) != 0.0) ? mw_atan2(Z(v), r)    : 0.0;
+
+    return lb;
 }
 
-static mwvector sphericalToCartesian(real a, real b)
+static mwvector raDecToCartesian(RADec raDec)
 {
     real cosb;
     mwvector v;
 
-    cosb = mw_cos(b);
-    X(v) = mw_cos(a) * cosb;
-    Y(v) = mw_sin(a) * cosb;
-    Z(v) = mw_sin(b);
+    cosb = mw_cos(raDec.dec);
+    X(v) = mw_cos(raDec.ra) * cosb;
+    Y(v) = mw_sin(raDec.ra) * cosb;
+    Z(v) = mw_sin(raDec.dec);
 
     return v;
 }
@@ -139,41 +130,61 @@ static const mwmatrix rmat =
     mw_vec( -0.867666135858, -0.198076386122,  0.455983795705 )
 };
 
-static void slaEqgal(real dr, real dd, real* dl, real* db)
+/* convert galactic coordinates l,b (radians) into cartesian x,y,z */
+static inline mwvector lbToXyz(LB lb)
+{
+    mwvector xyz;
+
+    X(xyz) = cos(lb.l) * cos(lb.b);
+    Y(xyz) = sin(lb.l) * cos(lb.b);
+    Z(xyz) = sin(lb.b);
+
+    return xyz;
+}
+
+static RADec surveyToRADec(real slong, real slat)
+{
+    RADec raDec;
+    real x1, y1, z1;
+
+    const real etaPole = surveyCenterDec_rad;
+
+    /* Rotation */
+    x1        = -mw_sin(slong);
+    y1        = mw_cos(slat + etaPole) * mw_cos(slong);
+    z1        = mw_sin(slat + etaPole) * mw_cos(slong);
+    raDec.ra  = mw_atan2(y1, x1) + NODE_GC_COORDS_RAD;
+    raDec.dec = mw_asin(z1);
+
+    return raDec;
+}
+
+static LB surveyToLB(real slong, real slat)
 {
     mwvector v1, v2;
+    RADec raDec;
 
-    v1 = sphericalToCartesian(dr, dd);
+    /* To equatorial */
+    raDec = surveyToRADec(slong, slat);
+
+    /* To galactic coordinates */
+    v1 = raDecToCartesian(raDec);
 
     /* Equatorial to Galactic */
     v2 = mw_mulmv(rmat, v1);
 
-    cartesianToSpherical(v2, dl, db);
-}
-
-
-/* convert galactic coordinates l,b (radians) into cartesian x,y,z */
-static mwvector lbToXyz(real l, real b)
-{
-    mwvector xyz;
-
-    X(xyz) = cos(l) * cos(b);
-    Y(xyz) = sin(l) * cos(b);
-    Z(xyz) = sin(b);
-
-    return xyz;
+    return cartesianToSpherical(v2);
 }
 
 /* Get normal vector of data slice from stripe number */
 mwvector stripe_normal(int wedge)
 {
-    real eta, ra, dec, l, b;
+    real eta;
+    LB lb;
 
     eta = atEtaFromStripeNumber_rad(wedge);
-    atSurveyToEq(0.0, M_PI_2 + eta, &ra, &dec);
-
-    slaEqgal(ra, dec, &l, &b);
-    return lbToXyz(l, b);
+    lb = surveyToLB(0.0, M_PI_2 + eta);
+    return lbToXyz(lb);
 }
 
 
