@@ -29,10 +29,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 
 double dotp( const double* a, const double* b );
-void transform_point(double* point, const double** cmat, const double* xsun, double* logPoint);
+mwvector transform_point(const ASTRONOMY_PARAMETERS* ap, real* point, const mwmatrix cmat, mwvector xsun);
+void get_transform(mwmatrix mat, const mwvector f, const mwvector t);
 int prob_ok(int n, double* p);
 void prob_ok_init();
-void get_transform(const mwvector f, const mwvector t, real** mat);
 void lbr2xyz_old(const double* lbr, double* xyz);
 void stripe_normal( int wedge, double* xyz );
 
@@ -258,7 +258,7 @@ static void separation(FILE* f,
                        const FINAL_STREAM_INTEGRALS* fsi,
                        const STREAM_CONSTANTS* sc,
                        const STREAMS* streams,
-                       const real** cmatrix,
+                       const mwmatrix cmatrix,
                        StreamStats ss,
                        const real* st_probs,
                        real bg_prob,
@@ -277,27 +277,35 @@ static void separation(FILE* f,
 
 
     real starxyz[3];
-    real starxyzTransform[3];
+    mwvector starxyzTransform;
     real star_coords[3];
     star_coords[0] = X(current_star_point);
     star_coords[1] = Y(current_star_point);
     star_coords[2] = Z(current_star_point);
 
     lbr2xyz_old(star_coords, starxyz);
-    transform_point(starxyz, cmatrix, xsun_old, starxyzTransform);
+    starxyzTransform = transform_point(ap, starxyz, cmatrix, xsun);
 
     if (f)
-        fprintf(f, "%d %lf %lf %lf\n", s_ok, starxyzTransform[0], starxyzTransform[1], starxyzTransform[2]);
+    {
+        fprintf(f,
+                "%d %lf %lf %lf\n",
+                s_ok,
+                X(starxyzTransform), Y(starxyzTransform), Z(starxyzTransform));
+    }
 }
 
-static void marshal_mwvector_to_array(real* arr, mwvector v)
+void marshal_mwvector_to_array(real* arr, mwvector v);
+mwvector marshal_array_to_mwvector(real* arr);
+
+void marshal_mwvector_to_array(real* arr, mwvector v)
 {
     arr[0] = X(v);
     arr[1] = Y(v);
     arr[2] = Z(v);
 }
 
-static mwvector marshal_array_to_mwvector(real* arr)
+mwvector marshal_array_to_mwvector(real* arr)
 {
     mwvector v;
 
@@ -311,7 +319,7 @@ static mwvector marshal_array_to_mwvector(real* arr)
 /* separation init stuffs */
 static void setSeparationConstants(const ASTRONOMY_PARAMETERS* ap,
                                    const FINAL_STREAM_INTEGRALS* fsi,
-                                   double** cmatrix)
+                                   mwmatrix cmatrix)
 {
     unsigned int i;
     mwvector dnormal;
@@ -331,12 +339,12 @@ static void setSeparationConstants(const ASTRONOMY_PARAMETERS* ap,
 
     real d;
 
-    get_transform(dnormal, dortho, cmatrix);
+    get_transform(cmatrix, dnormal, dortho);
 
     printf("\nTransformation matrix:\n");
-    printf("\t%lf %lf %lf\n", cmatrix[0][0], cmatrix[0][1], cmatrix[0][2]);
-    printf("\t%lf %lf %lf\n", cmatrix[1][0], cmatrix[1][1], cmatrix[1][2]);
-    printf("\t%lf %lf %lf\n\n", cmatrix[2][0], cmatrix[2][1], cmatrix[2][2]);
+    printf("\t%lf %lf %lf\n", X(cmatrix[0]), Y(cmatrix[0]), Z(cmatrix[0]));
+    printf("\t%lf %lf %lf\n", X(cmatrix[1]), Y(cmatrix[1]), Z(cmatrix[1]));
+    printf("\t%lf %lf %lf\n\n", X(cmatrix[2]), Y(cmatrix[2]), Z(cmatrix[2]));
 
     d = mw_dotv(dnormal, xsun);
 
@@ -398,12 +406,7 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
 
     unsigned int i, j;
 
-    real** cmatrix;
-
-    cmatrix = (real**)malloc(sizeof(real*) * 3);
-    for (i = 0; i < 3; i++)
-        cmatrix[i] = (real*)malloc(sizeof(real) * 3);
-
+    mwmatrix cmatrix;
 
     setSeparationConstants(ap, fsi, cmatrix);
     real epsilon_b = get_stream_bg_weight_consts(ss, streams);

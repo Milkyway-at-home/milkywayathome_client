@@ -168,9 +168,6 @@ real evaluate(const ASTRONOMY_PARAMETERS* ap,
     else
     {
         likelihood_val = likelihood(ap, &sp, sc, streams, &fsi, sg);
-
-        //const INTEGRAL_AREA* ia = &ias[0];
-        //separation(ap, &sp, sc, streams, &fsi, sg);
     }
 
     free_star_points(&sp);

@@ -109,14 +109,22 @@ static void xyz2lbg(real* point, real offset, real* lbg)
     lbg[2] = g;
 }
 
+void marshal_mwvector_to_array(real* arr, mwvector v);
+mwvector marshal_array_to_mwvector(real* arr);
+
 
 /* wrapper that converts a point into magnitude-space pseudo-xyz */
-static void xyz_mag(real* point, real offset, real* logPoint)
+static mwvector xyz_mag(const ASTRONOMY_PARAMETERS* ap, real* point, real offset)
 {
+    mwvector logPoint;
     real lbg[3];
     xyz2lbg(point, offset, lbg);
 
-    lbr2xyz_old(lbg, logPoint);
+    mwvector arst = marshal_array_to_mwvector(lbg);
+
+    logPoint = lbr2xyz(ap, arst);
+
+    return logPoint;
 }
 
 
@@ -407,7 +415,7 @@ static void atEqToGal (
 /* Determine the rotation matrix needed to transform f into t.  The result is an
    array of 9 elements representing a (flattened) 3x3 matrix.
    Adapted from information at http://www.flipcode.com/documents/matrfaq.html */
-void get_transform(const mwvector f, const mwvector t, real** mat)
+void get_transform(mwmatrix mat, const mwvector f, const mwvector t)
 {
     real angle, sin_a;
     real x, y, z, w;
@@ -424,49 +432,30 @@ void get_transform(const mwvector f, const mwvector t, real** mat)
     z = Z(axis) * sin_a;
     w = mw_cos(0.5 * angle);
 
-    mat[0][0] = 1.0 - 2.0 * (y * y + z * z);
-    mat[0][1] =       2.0 * (x * y - z * w);
-    mat[0][2] =       2.0 * (x * z + y * w);
+    X(mat[0]) = 1.0 - 2.0 * (y * y + z * z);
+    Y(mat[0]) =       2.0 * (x * y - z * w);
+    Z(mat[0]) =       2.0 * (x * z + y * w);
 
-    mat[1][0] =       2.0 * (x * y + z * w);
-    mat[1][1] = 1.0 - 2.0 * (x * x + z * z);
-    mat[1][2] =       2.0 * (y * z - x * w);
+    X(mat[1]) =       2.0 * (x * y + z * w);
+    Y(mat[1]) = 1.0 - 2.0 * (x * x + z * z);
+    Z(mat[1]) =       2.0 * (y * z - x * w);
 
-    mat[2][0] =       2.0 * (x * z - y * w);
-    mat[2][1] =       2.0 * (y * z + x * w);
-    mat[2][2] = 1.0 - 2.0 * (x * x + y * y);
+    X(mat[2]) =       2.0 * (x * z - y * w);
+    Y(mat[2]) =       2.0 * (y * z + x * w);
+    Z(mat[2]) = 1.0 - 2.0 * (x * x + y * y);
 }
 
 
 /* Transform v by applying the rotation matrix mat */
-static void do_transform(real* v, const real** mat)
-{
-    real newv[3];
-
-    newv[0] = dotp( mat[0], v );
-    newv[1] = dotp( mat[1], v );
-    newv[2] = dotp( mat[2], v );
-
-    v[0] = newv[0];
-    v[1] = newv[1];
-    v[2] = newv[2];
-}
-
 /* apply coordinate transformations to the given point */
-void transform_point(real* point, const real** cmat, real* xsun, real* logPoint)
+mwvector transform_point(const ASTRONOMY_PARAMETERS* ap, real* point, const mwmatrix cmat, mwvector xsun)
 {
     real mcutoff = 11.0;
+    mwvector logPoint = xyz_mag(ap, point, mcutoff);
 
-    xyz_mag(point, mcutoff, logPoint);
+    mw_incsubv(logPoint, xsun);
 
-    real newx = logPoint[0] - xsun[0];
-    real newy = logPoint[1] - xsun[1];
-    real newz = logPoint[2] - xsun[2];
-    logPoint[0] = newx;
-    logPoint[1] = newy;
-    logPoint[2] = newz;
-
-    do_transform(logPoint, cmat);
+    return mw_mulmv(cmat, logPoint); /* do transform */
 }
 
 /* Initialize seed for prob_ok */
@@ -476,7 +465,7 @@ void prob_ok_init()
 }
 
 /* Get normal vector of data slice from stripe number */
-void stripe_normal( int wedge, real* xyz )
+void stripe_normal(int wedge, real* xyz)
 {
     real eta, ra, dec, l, b;
 
