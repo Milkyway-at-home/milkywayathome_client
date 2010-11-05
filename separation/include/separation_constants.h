@@ -35,6 +35,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define stripeSeparation  ((real) 2.5)
 #define surveyCenterRa ((real) 185.0)
 #define surveyCenterDec ((real) 32.5)
+#define surveyCenterDec_rad (d2r(surveyCenterDec))
 
 /* The node of the GC coordinates used in the survey. */
 #define NODE_GC_COORDS (surveyCenterRa - (real) 90.0)

@@ -60,7 +60,7 @@ static mwvector xyz2lbr(const ASTRONOMY_PARAMETERS* ap, const mwvector xyz)
     L(lbr) = r2d(L(lbr));
     B(lbr) = r2d(B(lbr));
 
-    if (L(lbr) < 0)
+    if (L(lbr) < 0.0)
         L(lbr) += 360.0;
 
     return lbr;
@@ -68,7 +68,7 @@ static mwvector xyz2lbr(const ASTRONOMY_PARAMETERS* ap, const mwvector xyz)
 
 static inline real calc_g(mwvector lbg)
 {
-    return 5.0 * (mw_log(100.0 * R(lbg)) / mw_log(10.0) ) + absm;
+    return 5.0 * (mw_log(100.0 * R(lbg)) / mw_log(10.0)) + absm;
 }
 
 /* CHECKME: Isn't this supposed to be log10? */
@@ -116,18 +116,13 @@ static void slaDmxv(const real dm[3][3], real va[3], real vb[3])
     }
 }
 
-/* Return ra & dec from survey longitude and latitude */
+/* Return ra & dec from survey longitude and latitude (radians) */
 static void atSurveyToEq(real slong, real slat, real* ra, real* dec)
 {
-    real anode, etaPole;
     real x1, y1, z1;
 
-    /* Convert to radians */
-    slong = d2r(slong);
-    slat = d2r(slat);
-    anode = surveyCenterRa - 90.0;
-    anode = d2r(anode);
-    etaPole = d2r(surveyCenterDec);
+    const real anode = NODE_GC_COORDS_RAD;
+    const real etaPole = surveyCenterDec_rad;
 
     /* Rotation */
     x1 = -mw_sin(slong);
@@ -135,8 +130,6 @@ static void atSurveyToEq(real slong, real slat, real* ra, real* dec)
     z1 = mw_sin(slat + etaPole) * mw_cos(slong);
     *ra = mw_atan2(y1, x1) + anode;
     *dec = mw_asin(z1);
-    *ra = r2d(*ra);
-    *dec = r2d(*dec);
 
     return;
 }
@@ -187,12 +180,10 @@ static void slaEqgal( real dr, real dd, real* dl, real* db )
 }
 
 
-/* convert galactic coordinates l,b into cartesian x,y,z */
+/* convert galactic coordinates l,b (radians) into cartesian x,y,z */
 static mwvector lbToXyz(real l, real b)
 {
     mwvector xyz;
-    l = d2r(l);
-    b = d2r(b);
 
     X(xyz) = cos(l) * cos(b);
     Y(xyz) = sin(l) * cos(b);
@@ -201,34 +192,15 @@ static mwvector lbToXyz(real l, real b)
     return xyz;
 }
 
-
-static void atEqToGal(
-    real ra,  /* IN -- ra in degrees */
-    real dec, /* IN -- dec in degrees */
-    real* glong,  /* OUT -- Galactic longitude in degrees */
-    real* glat    /* OUT -- Galactic latitude in degrees */
-)
-{
-    /* Convert to radians */
-    ra = d2r(ra);
-    dec = d2r(dec);
-
-    /* Use SLALIB to do the actual conversion */
-    slaEqgal(ra, dec, glong, glat);
-    /* Convert back to degrees */
-    *glong = r2d(*glong);
-    *glat = r2d(*glat);
-    return;
-}
-
 /* Get normal vector of data slice from stripe number */
 mwvector stripe_normal(int wedge)
 {
     real eta, ra, dec, l, b;
 
-    eta = atEtaFromStripeNumber_deg(wedge);
-    atSurveyToEq(0, 90.0 + eta, &ra, &dec);
-    atEqToGal(ra, dec, &l, &b);
+    eta = atEtaFromStripeNumber_rad(wedge);
+    atSurveyToEq(0.0, M_PI_2 + eta, &ra, &dec);
+
+    slaEqgal(ra, dec, &l, &b);
     return lbToXyz(l, b);
 }
 
