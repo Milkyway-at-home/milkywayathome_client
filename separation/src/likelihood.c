@@ -355,7 +355,7 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
     for (current_star_point = 0; current_star_point < sp->number_stars; ++current_star_point)
     {
         point = sp->stars[current_star_point];
-        rc.gPrime = calcGPrime(Z(point));
+        rc.gPrime = calcG(Z(point));
         set_r_points(ap, sg, ap->convolve, rc.gPrime, r_pts);
         rc.reff_xr_rp3 = calcReffXrRp3(Z(point), rc.gPrime);
 

@@ -27,27 +27,14 @@ extern "C" {
 
 #include "separation_types.h"
 #include "separation_constants.h"
+#include "coordinates.h"
 #include "milkyway_cl.h"
 #include "milkyway_extra.h"
-
-
-/* Literals are assumed to be doubles by default, and the
- * -cl-single-precision-constant flag seems to not be working when
- * trying to use float */
-#define RL1 ((real) 1.0)
-#define RL2 ((real) 2.0)
-#define RL_1_2 ((real) 0.5)
-#define RL3 ((real) 3.0)
-#define RL_1_3 ((real) 0.33333333333333333333333333)
-#define RL5 ((real) 5.0)
-#define RL_1_5 ((real) 0.2)
-#define RL1000 ((real) 1000.0)
-#define RL_1_1000 ((real) 0.001)
 
 ALWAYS_INLINE CONST_F OLD_GCC_EXTERNINLINE
 inline real distance_magnitude(const real m)
 {
-    return mw_exp10((m - (real) 14.2) * RL_1_5);
+    return mw_exp10((m - (real) 14.2) * 0.2);
 }
 
 OLD_GCC_EXTERNINLINE
@@ -60,26 +47,20 @@ inline R_PRIME calcRPrime(__MW_CONSTANT INTEGRAL_AREA* ia, const unsigned int r_
     r = distance_magnitude(log_r);
     next_r = distance_magnitude(log_r + ia->r_step_size);
 
-    ret.irv = d2r(((cube(next_r) - cube(r)) * RL_1_3) * ia->mu_step_size);
-    ret.rPrime = RL_1_2 * (next_r + r);
+    ret.irv = d2r(((cube(next_r) - cube(r)) * (1.0 / 3.0)) * ia->mu_step_size);
+    ret.rPrime = 0.5 * (next_r + r);
 
     return ret;
 }
 
 OLD_GCC_EXTERNINLINE
-inline real calcGPrime(const real coords)
-{
-    return RL5 * (mw_log10(coords * RL1000) - RL1) + absm;
-}
-
-OLD_GCC_EXTERNINLINE
 inline real calcReffXrRp3(const real coords, const real gPrime)
 {
-    _MW_STATIC const real sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
+    static const real sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
     /* REFF */
     const real exp_result = mw_exp(sigmoid_curve_params[1] * (gPrime - sigmoid_curve_params[2]));
-    const real reff_value = sigmoid_curve_params[0] / (exp_result + RL1);
+    const real reff_value = sigmoid_curve_params[0] / (exp_result + 1.0);
     const real rPrime3 = cube(coords);
     const real reff_xr_rp3 = reff_value * xr / rPrime3;
     return reff_xr_rp3;
@@ -89,7 +70,7 @@ ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline R_CONSTS calcRConsts(R_PRIME rp)
 {
     R_CONSTS rc;
-    rc.gPrime = calcGPrime(rp.rPrime);
+    rc.gPrime = calcG(rp.rPrime);
     rc.reff_xr_rp3 = calcReffXrRp3(rp.rPrime, rc.gPrime);
     rc.irv = rp.irv;
 
@@ -105,10 +86,10 @@ inline R_POINTS calc_r_point(const real dx, const real qgaus_W, const real gPrim
     g = gPrime + dx;
 
     /* MAG2R */
-    r_pt.r_point = RL_1_1000 * mw_exp10(RL_1_5 * (g - absm) + RL1);
+    r_pt.r_point = 0.001 * mw_exp10(0.2 * (g - absm) + 1.0);
 
     r3 = cube(r_pt.r_point);
-    exponent = sqr(g - gPrime) * inv(RL2 * sqr(stdev));
+    exponent = sqr(g - gPrime) * inv(2.0 * sqr(stdev));
     N = coeff * mw_exp(-exponent);
     r_pt.qw_r3_N = qgaus_W * r3 * N;
 

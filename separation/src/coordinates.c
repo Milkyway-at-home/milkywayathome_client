@@ -21,6 +21,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "coordinates.h"
 #include "separation_constants.h"
+#include "r_points.h"
 
 //vickej2 for sgr stripes, the great circles are defined thus:
 //sgr stripes run parallel to sgr longitude lines, centered on lamda=2.5*wedge number
@@ -80,16 +81,11 @@ static mwvector xyz2lbr(const ASTRONOMY_PARAMETERS* ap, const mwvector xyz)
     return lbr;
 }
 
-static inline real calc_g(mwvector lbg)
-{
-    return 5.0 * (mw_log(100.0 * R(lbg)) / mw_log(10.0)) + absm;
-}
-
 /* CHECKME: Isn't this supposed to be log10? */
 static mwvector xyz2lbg(const ASTRONOMY_PARAMETERS* ap, mwvector point, real offset)
 {
     mwvector lbg = xyz2lbr(ap, point);
-    real g = calc_g(lbg) - offset;
+    real g = calcG(R(lbg)) - offset;
 
     R(lbg) = g;
 
