@@ -141,11 +141,14 @@ static real* parse_parameters(int argc, const char** argv, unsigned int* paramnO
         { NULL, 0, 0, NULL, 0, NULL, NULL }
     };
 
-    context = poptGetContext(argv[0],
-                             argc,
-                             argv,
-                             options,
-                             POPT_CONTEXT_POSIXMEHARDER);
+    context = poptGetContext(argv[0], argc, argv, options, 0);
+
+    if (argc < 2)
+    {
+        poptPrintUsage(context, stderr, 0);
+        poptFreeContext(context);
+        mw_finish(EXIT_FAILURE);
+    }
 
     while ( ( o = poptGetNextOpt(context)) >= 0 );
 
