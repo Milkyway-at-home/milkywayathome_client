@@ -99,7 +99,7 @@ mwvector xyz_mag(const ASTRONOMY_PARAMETERS* ap, mwvector point, real offset)
     return logPoint;
 }
 
-static LB cartesianToSpherical(mwvector v)
+static inline LB cartesianToSpherical(mwvector v)
 {
     LB lb;
     real r = mw_hypot(X(v), Y(v));
@@ -142,21 +142,28 @@ static inline mwvector lbToXyz(LB lb)
     return xyz;
 }
 
-static RADec surveyToRADec(real slong, real slat)
+static inline RADec xyzToRADec(real x1, real y1, real z1)
 {
     RADec raDec;
+
+    raDec.ra  = mw_atan2(y1, x1) + NODE_GC_COORDS_RAD;
+    raDec.dec = mw_asin(z1);
+
+    return raDec;
+}
+
+static RADec surveyToRADec(real slong, real slat)
+{
     real x1, y1, z1;
 
     const real etaPole = surveyCenterDec_rad;
 
     /* Rotation */
-    x1        = -mw_sin(slong);
-    y1        = mw_cos(slat + etaPole) * mw_cos(slong);
-    z1        = mw_sin(slat + etaPole) * mw_cos(slong);
-    raDec.ra  = mw_atan2(y1, x1) + NODE_GC_COORDS_RAD;
-    raDec.dec = mw_asin(z1);
+    x1 = -mw_sin(slong);
+    y1 = mw_cos(slat + etaPole) * mw_cos(slong);
+    z1 = mw_sin(slat + etaPole) * mw_cos(slong);
 
-    return raDec;
+    return xyzToRADec(x1, y1, z1);
 }
 
 static LB surveyToLB(real slong, real slat)
@@ -187,6 +194,13 @@ mwvector stripe_normal(int wedge)
     return lbToXyz(lb);
 }
 
+/* Convert lb in radians to degrees */
+static inline LB lbr2d(LB lb)
+{
+    lb.l = r2d(lb.l);
+    lb.b = r2d(lb.b);
+    return lb;
+}
 
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
 HOT CONST_F
@@ -200,11 +214,10 @@ LB gc2lb(const int wedge, const real mu, const real nu)
     real sinra, cosra;
 
     real x12, y2, y1, z1;
-    real ra, dec;
     real wedge_eta, wedge_incl;
     real cosdec;
     mwvector v1, v2;
-    real r;
+    RADec raDec;
 
     /* Rotation */
     mw_sincos(d2r(nu), &sinnu, &cosnu);
@@ -226,14 +239,12 @@ LB gc2lb(const int wedge, const real mu, const real nu)
     y1 = y2 * cosinc - sinnu * sininc;
     z1 = y2 * sininc + sinnu * cosinc;
 
-    ra = mw_atan2(y1, x12) + NODE_GC_COORDS_RAD;
-    dec = mw_asin(z1);
-
+    raDec = xyzToRADec(x12, y1, z1);
 
     /* Spherical to Cartesian */
-    mw_sincos(ra, &sinra, &cosra);
+    mw_sincos(raDec.ra, &sinra, &cosra);
 
-    cosdec = mw_cos(dec);
+    cosdec = mw_cos(raDec.dec);
     SET_VECTOR(v1,
                cosra * cosdec,
                sinra * cosdec,
@@ -241,19 +252,10 @@ LB gc2lb(const int wedge, const real mu, const real nu)
               );
 
     /* Equatorial to Galactic */
-
-    /* Matrix rmat * vector v1 -> vector vb */
     v2 = mw_mulmv(rmat, v1);
 
-    /* Cartesian to spherical */
-    r = mw_hypot(X(v2), Y(v2));
+    lb = cartesianToSpherical(v2);
 
-    LB_L(lb) = ( r != 0.0 ) ? mw_atan2( Y(v2), X(v2) ) : 0.0;
-    LB_B(lb) = ( Z(v2) != 0.0 ) ? mw_atan2( Z(v2), r ) : 0.0;
-
-    LB_L(lb) = r2d(LB_L(lb));
-    LB_B(lb) = r2d(LB_B(lb));
-
-    return lb;
+    return lbr2d(lb);
 }
 
