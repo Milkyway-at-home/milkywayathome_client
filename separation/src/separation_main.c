@@ -141,7 +141,7 @@ static real* parse_parameters(int argc, const char** argv, unsigned int* paramnO
         { NULL, 0, 0, NULL, 0, NULL, NULL }
     };
 
-    context = poptGetContext(argv[0], argc, argv, options, 0);
+    context = poptGetContext(argv[0], argc, argv, options, POPT_CONTEXT_POSIXMEHARDER);
 
     if (argc < 2)
     {

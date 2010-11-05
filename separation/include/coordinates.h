@@ -34,11 +34,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 //in this manner an equatorial stripe of standard coordinate conventions is created.
 
 /* Return eta from stripe number */
+HOT CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline real atEtaFromStripeNumber_rad(int wedge)
 {
     return wedge * d2r(stripeSeparation) - d2r((real) 57.5) - (wedge > 46 ? M_PI : 0.0);
 }
 
+HOT CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline real atEtaFromStripeNumber_deg(int wedge)
 {
     return wedge * stripeSeparation - 57.5 - (wedge > 46 ? 180.0 : 0.0);
@@ -47,7 +49,7 @@ inline real atEtaFromStripeNumber_deg(int wedge)
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
 
 HOT CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
-__inline LB gc2lb(const int wedge, const real mu, const real nu)
+inline LB gc2lb(const int wedge, const real mu, const real nu)
 {
     LB lb;
     real sinmunode, cosmunode;
