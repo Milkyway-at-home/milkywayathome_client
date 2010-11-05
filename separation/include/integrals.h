@@ -49,6 +49,7 @@ real bg_probability_slow_hprob(const ASTRONOMY_PARAMETERS* ap,
                                const unsigned int convolve,
                                real* st_probs);
 
+NU_ID calc_nu_step(const INTEGRAL_AREA* ia, const unsigned int nu_step);
 
 real integrate(const ASTRONOMY_PARAMETERS* ap,
                const INTEGRAL_AREA* ia,

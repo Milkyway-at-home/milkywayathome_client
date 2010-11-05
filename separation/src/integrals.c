@@ -232,6 +232,22 @@ static inline void mu_sum(const ASTRONOMY_PARAMETERS* ap,
     es->mu_step = 0;
 }
 
+inline NU_ID calc_nu_step(const INTEGRAL_AREA* ia, const unsigned int nu_step)
+{
+    NU_ID nuid;
+    real tmp1, tmp2;
+
+    nuid.nu = ia->nu_min + (nu_step * ia->nu_step_size);
+
+    tmp1 = d2r(90.0 - nuid.nu - ia->nu_step_size);
+    tmp2 = d2r(90.0 - nuid.nu);
+
+    nuid.id = mw_cos(tmp1) - mw_cos(tmp2);
+    nuid.nu += 0.5 * ia->nu_step_size;
+
+    return nuid;
+}
+
 static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
                    const INTEGRAL_AREA* ia,
                    const STREAM_CONSTANTS* sc,

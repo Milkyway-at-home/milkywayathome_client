@@ -160,23 +160,6 @@ inline void mult_probs(real* st_probs, const real V_reff_xr_rp3, const unsigned 
         st_probs[i] *= V_reff_xr_rp3;
 }
 
-ALWAYS_INLINE OLD_GCC_EXTERNINLINE
-inline NU_ID calc_nu_step(__MW_CONSTANT INTEGRAL_AREA* ia, const unsigned int nu_step)
-{
-    NU_ID nuid;
-    real tmp1, tmp2;
-
-    nuid.nu = ia->nu_min + (nu_step * ia->nu_step_size);
-
-    tmp1 = d2r(90.0 - nuid.nu - ia->nu_step_size);
-    tmp2 = d2r(90.0 - nuid.nu);
-
-    nuid.id = mw_cos(tmp1) - mw_cos(tmp2);
-    nuid.nu += 0.5 * ia->nu_step_size;
-
-    return nuid;
-}
-
 #ifdef __cplusplus
 }
 #endif
