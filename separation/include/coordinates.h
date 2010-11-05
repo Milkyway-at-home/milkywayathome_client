@@ -25,12 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_types.h"
 #include "separation_constants.h"
 
-OLD_GCC_EXTERNINLINE
-inline real calcG(const real coords)
-{
-    return 5.0 * (mw_log10(1000.0 * coords) - 1.0) + absm;
-}
-
 mwvector stripe_normal(int wedge);
 
 mwvector lbr2xyz(const ASTRONOMY_PARAMETERS* ap, const mwvector lbr);
