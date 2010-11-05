@@ -32,11 +32,12 @@ double dotp( const double* a, const double* b );
 void transform_point(double* point, const double** cmat, const double* xsun, double* logPoint);
 int prob_ok(int n, double* p);
 void prob_ok_init();
-void get_transform( const double* f, const double* t, double** mat );
+void get_transform(const mwvector f, const mwvector t, real** mat);
 void lbr2xyz_old(const double* lbr, double* xyz);
 void stripe_normal( int wedge, double* xyz );
 
-static const real xsun[3] = { -8.5, 0.0, 0.0 };
+static const mwvector xsun = mw_vec(-8.5, 0.0, 0.0 );
+static const real xsun_old[3] = { -8.5, 0.0, 0.0 };
 
 /* FIXME: Excessive duplication with stuff used in integrals which I
  * was too lazy to also fix here */
@@ -44,10 +45,10 @@ static const real xsun[3] = { -8.5, 0.0, 0.0 };
 typedef struct
 {
     int* q;
-    double* nstars;
-    double* sprob;
-    double* psg;
-    double* epsilon_s;
+    real* nstars;
+    real* sprob;
+    real* psg;
+    real* epsilon_s;
 } StreamStats;
 
 static void freeStreamStats(StreamStats ss)
@@ -199,8 +200,8 @@ const int twoPanel = 1;
 static real get_stream_bg_weight_consts(StreamStats ss, const STREAMS* streams)
 {
     unsigned int i;
-    double epsilon_b;
-    double denom = 1.0;
+    real epsilon_b;
+    real denom = 1.0;
 
     for (i = 0; i < streams->number_streams; i++)
         denom += mw_exp(streams->stream_weight[i].weight);
@@ -223,7 +224,7 @@ static void twoPanelSeparation(const ASTRONOMY_PARAMETERS* ap,
                                real epsilon_b)
 {
     unsigned int i;
-    double pbx, psgSum;
+    real pbx, psgSum;
 
     pbx = epsilon_b * bg_prob / fsi->background_integral;
 
@@ -274,19 +275,37 @@ static void separation(FILE* f,
     if (s_ok >= 1)
         ss.q[s_ok-1]++;
 
-    double star_coords[3];
-    double starxyz[3];
-    double starxyzTransform[3];
 
+    real starxyz[3];
+    real starxyzTransform[3];
+    real star_coords[3];
     star_coords[0] = X(current_star_point);
     star_coords[1] = Y(current_star_point);
     star_coords[2] = Z(current_star_point);
 
     lbr2xyz_old(star_coords, starxyz);
-    transform_point(starxyz, cmatrix, xsun, starxyzTransform);
+    transform_point(starxyz, cmatrix, xsun_old, starxyzTransform);
 
     if (f)
         fprintf(f, "%d %lf %lf %lf\n", s_ok, starxyzTransform[0], starxyzTransform[1], starxyzTransform[2]);
+}
+
+static void marshal_mwvector_to_array(real* arr, mwvector v)
+{
+    arr[0] = X(v);
+    arr[1] = Y(v);
+    arr[2] = Z(v);
+}
+
+static mwvector marshal_array_to_mwvector(real* arr)
+{
+    mwvector v;
+
+    X(v) = arr[0];
+    Y(v) = arr[1];
+    Z(v) = arr[2];
+
+    return v;
 }
 
 /* separation init stuffs */
@@ -295,8 +314,9 @@ static void setSeparationConstants(const ASTRONOMY_PARAMETERS* ap,
                                    double** cmatrix)
 {
     unsigned int i;
-    double dnormal[3];
-    double dortho[3] = { 0.0, 0.0, 1.0 };
+    mwvector dnormal;
+    const mwvector dortho = { 0.0, 0.0, 1.0 };
+    real dnormal_old[3];
 
     if (ap->sgr_coordinates)
     {
@@ -305,10 +325,11 @@ static void setSeparationConstants(const ASTRONOMY_PARAMETERS* ap,
     }
     else
     {
-        stripe_normal(ap->wedge, dnormal);
+        stripe_normal(ap->wedge, dnormal_old);
+        dnormal = marshal_array_to_mwvector(dnormal_old);
     }
 
-    double d;
+    real d;
 
     get_transform(dnormal, dortho, cmatrix);
 
@@ -317,7 +338,7 @@ static void setSeparationConstants(const ASTRONOMY_PARAMETERS* ap,
     printf("\t%lf %lf %lf\n", cmatrix[1][0], cmatrix[1][1], cmatrix[1][2]);
     printf("\t%lf %lf %lf\n\n", cmatrix[2][0], cmatrix[2][1], cmatrix[2][2]);
 
-    d = dotp(dnormal, xsun);
+    d = mw_dotv(dnormal, xsun);
 
     printf("==============================================\n");
     printf("bint: %lf", fsi->background_integral);
@@ -379,9 +400,9 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
 
     real** cmatrix;
 
-    cmatrix = (double**)malloc(sizeof(double*) * 3);
+    cmatrix = (real**)malloc(sizeof(real*) * 3);
     for (i = 0; i < 3; i++)
-        cmatrix[i] = (double*)malloc(sizeof(double) * 3);
+        cmatrix[i] = (real*)malloc(sizeof(real) * 3);
 
 
     setSeparationConstants(ap, fsi, cmatrix);
@@ -453,11 +474,11 @@ StreamStats newStreamStats(const unsigned int number_streams)
 {
     StreamStats ss;
     ss.q = callocSafe(number_streams, sizeof(int));
-    ss.nstars = callocSafe(number_streams, sizeof(double));
-    ss.nstars = callocSafe(number_streams, sizeof(double));
-    ss.sprob = callocSafe(number_streams, sizeof(double));
-    ss.psg = callocSafe(number_streams, sizeof(double));
-    ss.epsilon_s = callocSafe(number_streams, sizeof(double));
+    ss.nstars = callocSafe(number_streams, sizeof(real));
+    ss.nstars = callocSafe(number_streams, sizeof(real));
+    ss.sprob = callocSafe(number_streams, sizeof(real));
+    ss.psg = callocSafe(number_streams, sizeof(real));
+    ss.epsilon_s = callocSafe(number_streams, sizeof(real));
 
     return ss;
 }

@@ -35,7 +35,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define r0 8.5
 
 /* Cross product; stores result in prod */
-static void crossp( const double* a, const double* b, double* prod )
+static void crossp( const real* a, const real* b, real* prod )
 {
     prod[0] = a[1] * b[2] - a[2] * b[1];
     prod[1] = a[2] * b[0] - a[0] * b[2];
@@ -43,7 +43,7 @@ static void crossp( const double* a, const double* b, double* prod )
 }
 
 /* Dot product */
-double dotp( const double* a, const double* b )
+real dotp( const real* a, const real* b )
 {
     return a[0] * b[0] +
            a[1] * b[1] +
@@ -51,7 +51,7 @@ double dotp( const double* a, const double* b )
 }
 
 /* Get norm of input vector */
-static double norm( const double* vec )
+static real norm( const real* vec )
 {
     return sqrt( vec[0] * vec[0] +
                  vec[1] * vec[1] +
@@ -59,32 +59,19 @@ static double norm( const double* vec )
 }
 
 /* Normalize input vector */
-static void normalize( double* vec )
+static void normalize( real* vec )
 {
-    double vnorm = norm( vec );
+    real vnorm = norm( vec );
 
     vec[0] /= vnorm;
     vec[1] /= vnorm;
     vec[2] /= vnorm;
 }
 
-/* Angle between two vectors, in the range [0,pi] */
-static double vecangle( const double* a, const double* b )
-{
-    double anorm, bnorm, dprod;
-
-    anorm = norm( a );
-    bnorm = norm( b );
-    dprod = dotp( a, b );
-
-    return acos( dprod / (anorm * bnorm) );
-}
-
-
 /* Convert sun-centered lbr into galactic xyz coordinates. */
-void lbr2xyz_old(const double* lbr, double* xyz)
+void lbr2xyz_old(const real* lbr, real* xyz)
 {
-    double bsin, lsin, bcos, lcos, zp, d;
+    real bsin, lsin, bcos, lcos, zp, d;
 
     bsin = sin(lbr[1] / deg);
     lsin = sin(lbr[0] / deg);
@@ -100,9 +87,9 @@ void lbr2xyz_old(const double* lbr, double* xyz)
 
 
 /* Convert galactic xyz into sun-centered lbr coordinates. */
-static void xyz2lbr(const double* xyz, double* lbr)
+static void xyz2lbr(const real* xyz, real* lbr)
 {
-    double temp, xsun;
+    real temp, xsun;
 
     xsun = xyz[0] + 8.5;
     temp = xsun * xsun + xyz[1] * xyz[1];
@@ -114,19 +101,19 @@ static void xyz2lbr(const double* xyz, double* lbr)
     if ( lbr[0] < 0 ) lbr[0] += 360;
 }
 
-static void xyz2lbg(double* point, double offset, double* lbg)
+static void xyz2lbg(real* point, real offset, real* lbg)
 {
     xyz2lbr(point, lbg);
-    double g = 5.0 * (log(100.0 * lbg[2]) / log(10.0) ) + 4.2 - offset;
+    real g = 5.0 * (log(100.0 * lbg[2]) / log(10.0) ) + 4.2 - offset;
 
     lbg[2] = g;
 }
 
 
 /* wrapper that converts a point into magnitude-space pseudo-xyz */
-static void xyz_mag(double* point, double offset, double* logPoint)
+static void xyz_mag(real* point, real offset, real* logPoint)
 {
-    double lbg[3];
+    real lbg[3];
     xyz2lbg(point, offset, lbg);
 
     lbr2xyz_old(lbg, logPoint);
@@ -135,10 +122,10 @@ static void xyz_mag(double* point, double offset, double* logPoint)
 
 
 
-static void slaDmxv ( double dm[3][3], double va[3], double vb[3] )
+static void slaDmxv(real dm[3][3], real va[3], real vb[3])
 {
     int i, j;
-    double w, vw[3];
+    real w, vw[3];
 
     /* Matrix dm * vector va -> vector vw */
     for ( j = 0; j < 3; j++ )
@@ -159,9 +146,9 @@ static void slaDmxv ( double dm[3][3], double va[3], double vb[3] )
 }
 
 static void atBound (
-    double* angle,    /* MODIFIED -- the angle to bound in degrees*/
-    double min,   /* IN -- inclusive minimum value */
-    double max    /* IN -- exclusive maximum value */
+    real* angle,    /* MODIFIED -- the angle to bound in degrees*/
+    real min,   /* IN -- inclusive minimum value */
+    real max    /* IN -- exclusive maximum value */
 )
 {
     while (*angle < min)
@@ -175,25 +162,25 @@ static void atBound (
     return;
 }
 
-static double slaDranrm ( double angle )
+static real slaDranrm ( real angle )
 {
-    double w;
+    real w;
 
     w = dmod ( angle, M_2PI );
     return ( w >= 0.0 ) ? w : w + M_2PI;
 }
 
-static double slaDrange ( double angle )
+static real slaDrange ( real angle )
 {
-    double w;
+    real w;
 
     w = dmod ( angle, M_2PI );
     return ( fabs ( w ) < M_PI ) ? w : w - dsign ( M_2PI, angle );
 }
 
 static void atBound2(
-    double* theta,    /* MODIFIED -- the -90 to 90 angle */
-    double* phi   /* MODIFIED -- the 0 to 360 angle */
+    real* theta,    /* MODIFIED -- the -90 to 90 angle */
+    real* phi   /* MODIFIED -- the 0 to 360 angle */
 )
 {
     atBound(theta, -180.0, 180.0);
@@ -209,10 +196,10 @@ static void atBound2(
 }
 
 /* Return ra & dec from survey longitude and latitude */
-static void atSurveyToEq (double slong, double slat, double* ra, double* dec)
+static void atSurveyToEq (real slong, real slat, real* ra, real* dec)
 {
-    double anode, etaPole;
-    double x1, y1, z1;
+    real anode, etaPole;
+    real x1, y1, z1;
 
     /* Convert to radians */
     slong = slong * at_deg2Rad;
@@ -234,9 +221,9 @@ static void atSurveyToEq (double slong, double slat, double* ra, double* dec)
     return;
 }
 
-static void slaDcc2s( double v[3], double* a, double* b )
+static void slaDcc2s( real v[3], real* a, real* b )
 {
-    double x, y, z, r;
+    real x, y, z, r;
 
     x = v[0];
     y = v[1];
@@ -248,9 +235,9 @@ static void slaDcc2s( double v[3], double* a, double* b )
 }
 
 
-static void slaDcs2c( double a, double b, double v[3] )
+static void slaDcs2c( real a, real b, real v[3] )
 {
-    double cosb;
+    real cosb;
 
     cosb = cos ( b );
     v[0] = cos ( a ) * cosb;
@@ -259,11 +246,11 @@ static void slaDcs2c( double a, double b, double v[3] )
 }
 
 
-static void slaEqgal( double dr, double dd, double* dl, double* db )
+static void slaEqgal( real dr, real dd, real* dl, real* db )
 {
-    double v1[3], v2[3];
+    real v1[3], v2[3];
 
-    static double rmat[3][3];
+    static real rmat[3][3];
 
     rmat[0][0] = -0.054875539726;
     rmat[0][1] = -0.873437108010;
@@ -291,11 +278,11 @@ static void slaEqgal( double dr, double dd, double* dl, double* db )
 
 
 /* determines if star with prob p should be separrated into stream */
-int prob_ok(int n, double* p)
+int prob_ok(int n, real* p)
 {
     int ok;
-    double r;
-    double step1, step2, step3;
+    real r;
+    real step1, step2, step3;
 
     r = drand48();
 
@@ -378,7 +365,7 @@ int prob_ok(int n, double* p)
 }
 
 /* convert galactic coordinates l,b into cartesian x,y,z */
-static void lbToXyz(double l, double b, double* xyz)
+static void lbToXyz(real l, real b, real* xyz)
 {
     l = l / deg;
     b = b / deg;
@@ -389,27 +376,19 @@ static void lbToXyz(double l, double b, double* xyz)
 }
 
 /* Return eta from stripe number */
-static double atEtaFromStripeNumber(int wedge)
+static real atEtaFromStripeNumber(int wedge)
 {
-    double eta;
-
-    if (wedge <= 46)
-    {
-        eta = wedge * stripeSeparation - 57.5;
-    }
+    if (wedge > 46)
+        return wedge * stripeSeparation - 57.5 - 180.0;
     else
-    {
-        eta = wedge * stripeSeparation - 57.5 - 180.0;
-    }
-
-    return eta;
+        return wedge * stripeSeparation - 57.5;
 }
 
 static void atEqToGal (
-    double ra,  /* IN -- ra in degrees */
-    double dec, /* IN -- dec in degrees */
-    double* glong,  /* OUT -- Galactic longitude in degrees */
-    double* glat    /* OUT -- Galactic latitude in degrees */
+    real ra,  /* IN -- ra in degrees */
+    real dec, /* IN -- dec in degrees */
+    real* glong,  /* OUT -- Galactic longitude in degrees */
+    real* glat    /* OUT -- Galactic latitude in degrees */
 )
 {
     /* Convert to radians */
@@ -428,41 +407,41 @@ static void atEqToGal (
 /* Determine the rotation matrix needed to transform f into t.  The result is an
    array of 9 elements representing a (flattened) 3x3 matrix.
    Adapted from information at http://www.flipcode.com/documents/matrfaq.html */
-void get_transform( const double* f, const double* t, double** mat )
+void get_transform(const mwvector f, const mwvector t, real** mat)
 {
-    double angle, sin_a;
-    double x, y, z, w;
-    double axis[3];
+    real angle, sin_a;
+    real x, y, z, w;
+    mwvector axis;
 
-    crossp( f, t, axis );
-    normalize( axis );
+    axis = mw_crossv(f, t);
+    mw_normalize(axis);
 
-    angle = vecangle( f, t );
-    sin_a = sin( angle / 2 );
+    angle = mw_vecangle(f, t);
+    sin_a = mw_sin(0.5 * angle);
 
-    x = axis[0] * sin_a;
-    y = axis[1] * sin_a;
-    z = axis[2] * sin_a;
-    w = cos( angle / 2 );
+    x = X(axis) * sin_a;
+    y = Y(axis) * sin_a;
+    z = Z(axis) * sin_a;
+    w = mw_cos(0.5 * angle);
 
-    mat[0][0] = 1 - 2 * (y * y + z * z);
-    mat[0][1] =     2 * (x * y - z * w);
-    mat[0][2] =     2 * (x * z + y * w);
+    mat[0][0] = 1.0 - 2.0 * (y * y + z * z);
+    mat[0][1] =       2.0 * (x * y - z * w);
+    mat[0][2] =       2.0 * (x * z + y * w);
 
-    mat[1][0] =     2 * (x * y + z * w);
-    mat[1][1] = 1 - 2 * (x * x + z * z);
-    mat[1][2] =     2 * (y * z - x * w);
+    mat[1][0] =       2.0 * (x * y + z * w);
+    mat[1][1] = 1.0 - 2.0 * (x * x + z * z);
+    mat[1][2] =       2.0 * (y * z - x * w);
 
-    mat[2][0] =     2 * (x * z - y * w);
-    mat[2][1] =     2 * (y * z + x * w);
-    mat[2][2] = 1 - 2 * (x * x + y * y);
+    mat[2][0] =       2.0 * (x * z - y * w);
+    mat[2][1] =       2.0 * (y * z + x * w);
+    mat[2][2] = 1.0 - 2.0 * (x * x + y * y);
 }
 
 
 /* Transform v by applying the rotation matrix mat */
-static void do_transform(double* v, const double** mat)
+static void do_transform(real* v, const real** mat)
 {
-    double newv[3];
+    real newv[3];
 
     newv[0] = dotp( mat[0], v );
     newv[1] = dotp( mat[1], v );
@@ -474,15 +453,15 @@ static void do_transform(double* v, const double** mat)
 }
 
 /* apply coordinate transformations to the given point */
-void transform_point(double* point, const double** cmat, double* xsun, double* logPoint)
+void transform_point(real* point, const real** cmat, real* xsun, real* logPoint)
 {
-    double mcutoff = 11.0;
+    real mcutoff = 11.0;
 
     xyz_mag(point, mcutoff, logPoint);
 
-    double newx = logPoint[0] - xsun[0];
-    double newy = logPoint[1] - xsun[1];
-    double newz = logPoint[2] - xsun[2];
+    real newx = logPoint[0] - xsun[0];
+    real newy = logPoint[1] - xsun[1];
+    real newz = logPoint[2] - xsun[2];
     logPoint[0] = newx;
     logPoint[1] = newy;
     logPoint[2] = newz;
@@ -497,9 +476,9 @@ void prob_ok_init()
 }
 
 /* Get normal vector of data slice from stripe number */
-void stripe_normal( int wedge, double* xyz )
+void stripe_normal( int wedge, real* xyz )
 {
-    double eta, ra, dec, l, b;
+    real eta, ra, dec, l, b;
 
     eta = atEtaFromStripeNumber(wedge);
     atSurveyToEq(0, 90.0 + eta, &ra, &dec);

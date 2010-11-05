@@ -92,7 +92,6 @@ inline mwvector mw_crossv(mwvector a, mwvector b)
 CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline real mw_length(mwvector a)
 {
-
     return mw_sqrt(sqr(a.x) + sqr(a.y) + sqr(a.z));
 }
 
@@ -134,6 +133,19 @@ inline real mw_distv(mwvector u, mwvector v)
     return mw_sqrt(sqr(u.x - v.x) + sqr(u.y - v.y) + sqr(u.z - v.z));
 }
 
+/* Angle between two vectors, in the range [0,pi] */
+static real mw_vecangle(mwvector a, mwvector b)
+{
+    real anorm, bnorm, dot;
+
+    anorm = mw_length(a);
+    bnorm = mw_length(b);
+    dot = mw_dotv(a, b);
+
+    return mw_acos(dot / (anorm * bnorm));
+}
+
+
 #define mw_incsubv(v1, v2) { (v1).x -= (v2).x; (v1).y -= (v2).y; (v1).z -= (v2).z; }
 #define mw_incaddv(v1, v2) { (v1).x += (v2).x; (v1).y += (v2).y; (v1).z += (v2).z; }
 #define mw_incdivv(v1, v2) { (v1).x /= (v2).x; (v1).y /= (v2).y; (v1).z /= (v2).z; }
@@ -148,6 +160,9 @@ inline real mw_distv(mwvector u, mwvector v)
 
 #define mw_incdivs(v, s) { (v).x /= (s); (v).y /= (s); (v).z /= (s); }
 #define mw_incmulvs(v, s) { (v).x *= (s); (v).y *= (s); (v).z *= (s); }
+
+#define mw_normalize(v) { real len = mw_length(v); (v).x /= len; (v).y /= len; (v).z /= len; }
+
 
 
 /* Outer product */
