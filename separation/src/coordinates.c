@@ -93,29 +93,6 @@ mwvector xyz_mag(const ASTRONOMY_PARAMETERS* ap, mwvector point, real offset)
     return logPoint;
 }
 
-static void slaDmxv(const real dm[3][3], real va[3], real vb[3])
-{
-    int i, j;
-    real w, vw[3];
-
-    /* Matrix dm * vector va -> vector vw */
-    for ( j = 0; j < 3; j++ )
-    {
-        w = 0.0;
-        for ( i = 0; i < 3; i++ )
-        {
-            w += dm[j][i] * va[i];
-        }
-        vw[j] = w;
-    }
-
-    /* Vector vw -> vector vb */
-    for ( j = 0; j < 3; j++ )
-    {
-        vb[j] = vw[j];
-    }
-}
-
 /* Return ra & dec from survey longitude and latitude (radians) */
 static void atSurveyToEq(real slong, real slat, real* ra, real* dec)
 {
@@ -125,58 +102,53 @@ static void atSurveyToEq(real slong, real slat, real* ra, real* dec)
     const real etaPole = surveyCenterDec_rad;
 
     /* Rotation */
-    x1 = -mw_sin(slong);
-    y1 = mw_cos(slat + etaPole) * mw_cos(slong);
-    z1 = mw_sin(slat + etaPole) * mw_cos(slong);
-    *ra = mw_atan2(y1, x1) + anode;
+    x1   = -mw_sin(slong);
+    y1   = mw_cos(slat + etaPole) * mw_cos(slong);
+    z1   = mw_sin(slat + etaPole) * mw_cos(slong);
+    *ra  = mw_atan2(y1, x1) + anode;
     *dec = mw_asin(z1);
 
     return;
 }
 
-static void slaDcc2s(real v[3], real* a, real* b)
+static void cartesianToSpherical(mwvector v, real* a, real* b)
 {
-    real x, y, z, r;
+    real r = mw_hypot(X(v), Y(v));
 
-    x = v[0];
-    y = v[1];
-    z = v[2];
-    r = mw_hypot(x, y);
-
-    *a = (r != 0.0) ? mw_atan2(y, x) : 0.0;
-    *b = (z != 0.0) ? mw_atan2(z, r) : 0.0;
+    *a = (r != 0.0)    ? mw_atan2(Y(v), X(v)) : 0.0;
+    *b = (Z(v) != 0.0) ? mw_atan2(Z(v), r)    : 0.0;
 }
 
-static void slaDcs2c(real a, real b, real v[3])
+static mwvector sphericalToCartesian(real a, real b)
 {
     real cosb;
+    mwvector v;
 
     cosb = mw_cos(b);
-    v[0] = mw_cos(a) * cosb;
-    v[1] = mw_sin(a) * cosb;
-    v[2] = mw_sin(b);
+    X(v) = mw_cos(a) * cosb;
+    Y(v) = mw_sin(a) * cosb;
+    Z(v) = mw_sin(b);
+
+    return v;
 }
 
-
-static void slaEqgal( real dr, real dd, real* dl, real* db )
+static const mwmatrix rmat =
 {
-    real v1[3], v2[3];
+    mw_vec( -0.054875539726, -0.873437108010, -0.483834985808 ),
+    mw_vec(  0.494109453312, -0.444829589425,  0.746982251810 ),
+    mw_vec( -0.867666135858, -0.198076386122,  0.455983795705 )
+};
 
-    static const real rmat[3][3] =
-        {
-            { -0.054875539726, -0.873437108010, -0.483834985808 },
-            { 0.494109453312, -0.444829589425, 0.746982251810 },
-            { -0.867666135858, -0.198076386122, 0.455983795705 }
-        };
+static void slaEqgal(real dr, real dd, real* dl, real* db)
+{
+    mwvector v1, v2;
 
-    /* Spherical to Cartesian */
-    slaDcs2c(dr, dd, v1);
+    v1 = sphericalToCartesian(dr, dd);
 
     /* Equatorial to Galactic */
-    slaDmxv(rmat, v1, v2);
+    v2 = mw_mulmv(rmat, v1);
 
-    /* Cartesian to spherical */
-    slaDcc2s(v2, dl, db);
+    cartesianToSpherical(v2, dl, db);
 }
 
 
@@ -222,14 +194,6 @@ LB gc2lb(const int wedge, const real mu, const real nu)
     real cosdec;
     mwvector v1, v2;
     real r;
-
-    /* Use SLALIB to do the actual conversion */
-    static const mwmatrix rmat =
-        {
-            mw_vec( -0.054875539726, -0.873437108010, -0.483834985808 ),
-            mw_vec(  0.494109453312, -0.444829589425,  0.746982251810 ),
-            mw_vec( -0.867666135858, -0.198076386122,  0.455983795705 )
-        };
 
     /* Rotation */
     mw_sincos(d2r(nu), &sinnu, &cosnu);
