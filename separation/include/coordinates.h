@@ -46,6 +46,11 @@ inline real atEtaFromStripeNumber_deg(int wedge)
     return wedge * stripeSeparation - 57.5 - (wedge > 46 ? 180.0 : 0.0);
 }
 
+mwvector stripe_normal(int wedge);
+
+mwvector lbr2xyz(const ASTRONOMY_PARAMETERS* ap, const mwvector lbr);
+mwvector xyz_mag(const ASTRONOMY_PARAMETERS* ap, mwvector point, real offset);
+
 LB gc2lb(const int wedge, const real mu, const real nu);
 
 #endif /* _COORDINATES_H_ */

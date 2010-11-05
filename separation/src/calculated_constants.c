@@ -28,29 +28,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "gauss_legendre.h"
 #include "integrals.h"
 
-/* Convert sun-centered lbr (degrees) into galactic xyz coordinates. */
-mwvector lbr2xyz(const ASTRONOMY_PARAMETERS* ap, const mwvector lbr)
-{
-    real zp, d;
-/* TODO: Use radians to begin with */
-
-    real lsin, lcos;
-    real bsin, bcos;
-
-    mwvector xyz;
-
-    mw_sincos(d2r(B(lbr)), &bsin, &bcos);
-    mw_sincos(d2r(L(lbr)), &lsin, &lcos);
-
-    Z(xyz) = R(lbr) * bsin;
-    zp = R(lbr) * bcos;
-    d = mw_sqrt(sqr(ap->sun_r0) + sqr(zp) - 2.0 * ap->sun_r0 * zp * lcos);
-    X(xyz) = (sqr(zp) - sqr(ap->sun_r0) - sqr(d)) / (2.0 * ap->sun_r0);
-    Y(xyz) = zp * lsin;
-    W(xyz) = 0.0;
-    return xyz;
-}
-
 static inline mwvector stream_a(real* parameters)
 {
     mwvector a;
