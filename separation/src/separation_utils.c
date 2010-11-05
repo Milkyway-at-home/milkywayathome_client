@@ -327,12 +327,14 @@ mwvector stripe_normal(int wedge)
     return lbToXyz(l, b);
 }
 
-/* Initialize seed for prob_ok */
-void prob_ok_init()
+/* Initialize seed for prob_ok; time based seed if 0 */
+void prob_ok_init(long seed)
 {
-    srand48(time(NULL));
+    if (seed)
+        srand48(seed);
+    else
+        srand48(time(NULL));
 }
-
 
 /* FIXME: WTF? */
 /* determines if star with prob p should be separrated into stream */

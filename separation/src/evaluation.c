@@ -134,7 +134,9 @@ real evaluate(const ASTRONOMY_PARAMETERS* ap,
               const STREAMS* streams,
               const STREAM_CONSTANTS* sc,
               const char* star_points_file,
-              const CLRequest* clr)
+              const CLRequest* clr,
+              const int do_separation,
+              const char* separation_outfile)
 {
     real likelihood_val = NAN;
     EVALUATION_STATE es = EMPTY_EVALUATION_STATE;
@@ -167,7 +169,7 @@ real evaluate(const ASTRONOMY_PARAMETERS* ap,
         warn("Failed to read star points file\n");
     else
     {
-        likelihood_val = likelihood(ap, &sp, sc, streams, &fsi, sg);
+        likelihood_val = likelihood(ap, &sp, sc, streams, &fsi, sg, do_separation, separation_outfile);
     }
 
     free_star_points(&sp);

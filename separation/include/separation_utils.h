@@ -43,7 +43,7 @@ mwvector transform_point(const ASTRONOMY_PARAMETERS* ap,
 
 void get_transform(mwmatrix mat, const mwvector f, const mwvector t);
 int prob_ok(StreamStats* ss, int n);
-void prob_ok_init();
+void prob_ok_init(long seed);
 mwvector stripe_normal(int wedge);
 
 #ifdef __cplusplus

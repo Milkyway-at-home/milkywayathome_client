@@ -40,7 +40,9 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
                 const STREAM_CONSTANTS* sc,
                 const STREAMS* streams,
                 const FINAL_STREAM_INTEGRALS* fsi,
-                const STREAM_GAUSS sg);
+                const STREAM_GAUSS sg,
+                const int do_separation,
+                const char* separation_outfile);
 
 #ifdef __cplusplus
 }

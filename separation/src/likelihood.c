@@ -336,7 +336,9 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
                            const real* exp_stream_weights,
                            const real sum_exp_weights,
                            const real exp_background_weight,
-                           StreamStats* ss)
+                           StreamStats* ss,
+                           const int do_separation,
+                           FILE* f)
 {
     KAHAN prob = ZERO_KAHAN;
     KAHAN bg_only = ZERO_KAHAN;
@@ -349,21 +351,15 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
     LB_TRIG lbt;
     R_CONSTS rc;
 
+    real epsilon_b;
+    mwmatrix cmatrix;
     unsigned int num_zero = 0;
     unsigned int bad_jacobians = 0;
 
-    unsigned int i, j;
-
-    mwmatrix cmatrix;
-
-    setSeparationConstants(ap, fsi, cmatrix);
-    real epsilon_b = get_stream_bg_weight_consts(ss, streams);
-
-    FILE* file = fopen("merged_sep_likelihood_out", "w");
-    if (!file)
+    if (do_separation)
     {
-        perror("open new file");
-        return NAN;
+        setSeparationConstants(ap, fsi, cmatrix);
+        epsilon_b = get_stream_bg_weight_consts(ss, streams);
     }
 
     for (current_star_point = 0; current_star_point < sp->number_stars; ++current_star_point)
@@ -404,7 +400,8 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
         bg = probability_log(bg, sum_exp_weights);
         KAHAN_ADD(bg_only, bg);
 
-        separation(file, ap, fsi, sc, streams, cmatrix, ss, st_prob, bg_prob, epsilon_b, point);
+        if (do_separation)
+            separation(f, ap, fsi, sc, streams, cmatrix, ss, st_prob, bg_prob, epsilon_b, point);
     }
 
     prob.sum += prob.correction;
@@ -414,8 +411,8 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
 
     fprintf(stderr, "<background_only_likelihood> %.20lf </background_only_likelihood>\n", bg_only.sum);
 
-    printSeparationStats(ss, sp->number_stars, ap->number_streams);
-    fclose(file);
+    if (do_separation)
+        printSeparationStats(ss, sp->number_stars, ap->number_streams);
 
     /*  log10(x * 0.001) = log10(x) - 3.0 */
     return (prob.sum / (sp->number_stars - bad_jacobians)) - 3.0;
@@ -423,7 +420,7 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
 
 StreamStats* newStreamStats(const unsigned int number_streams)
 {
-    return callocSafe(number_streams, sizeof(StreamStats));
+    return (StreamStats*) callocSafe(number_streams, sizeof(StreamStats));
 }
 
 real likelihood(const ASTRONOMY_PARAMETERS* ap,
@@ -431,27 +428,38 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
                 const STREAM_CONSTANTS* sc,
                 const STREAMS* streams,
                 const FINAL_STREAM_INTEGRALS* fsi,
-                const STREAM_GAUSS sg)
-
+                const STREAM_GAUSS sg,
+                const int do_separation,
+                const char* separation_outfile)
 {
     real* st_prob;
     R_POINTS* r_pts;
     KAHAN* st_sum;
+    StreamStats* ss = NULL;
     real* exp_stream_weights;
     real sum_exp_weights;
+    real exp_background_weight;
     real likelihood_val;
+    FILE* f = NULL;
 
-    const real exp_background_weight = mw_exp(ap->background_weight);
+    if (do_separation)
+    {
+        f = mw_fopen(separation_outfile, "w");
+        if (!f)
+        {
+            perror("Opening separation output file");
+            return NAN;
+        }
+
+        ss = newStreamStats(streams->number_streams);
+    }
 
     st_prob = (real*) mwMallocAligned(sizeof(real) * streams->number_streams, 2 * sizeof(real));
     r_pts = (R_POINTS*) mwMallocAligned(sizeof(R_POINTS) * ap->convolve, sizeof(R_POINTS));
     st_sum = (KAHAN*) mwCallocAligned(sizeof(KAHAN), streams->number_streams, sizeof(KAHAN));
     exp_stream_weights = (real*) mwMallocAligned(sizeof(real) * streams->number_streams, 2 * sizeof(real));
 
-    StreamStats* ss = newStreamStats(streams->number_streams);
-
-    prob_ok_init();
-
+    exp_background_weight = mw_exp(ap->background_weight);
     sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);
 
     likelihood_val = likelihood_sum(ap, sp, sc, streams, fsi,
@@ -460,7 +468,9 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
                                     exp_stream_weights,
                                     sum_exp_weights,
                                     exp_background_weight,
-                                    ss);
+                                    ss,
+                                    do_separation,
+                                    f);
 
     get_stream_only_likelihood(st_sum, sp->number_stars, streams->number_streams);
 
@@ -469,6 +479,9 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
     mwAlignedFree(st_sum);
     mwAlignedFree(exp_stream_weights);
     free(ss);
+
+    if (f && fclose(f))
+        perror("Closing separation output file");
 
     return likelihood_val;
 }

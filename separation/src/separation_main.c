@@ -32,18 +32,21 @@ typedef struct
 {
     char* star_points_file;
     char* ap_file;  /* astronomy parameters */
+    char* separation_outfile;
+    int do_separation;
+    int separationSeed;
     int cleanup_checkpoint;
-
     int usePlatform;
     int useDevNumber;  /* Choose CL platform and device */
 } SeparationFlags;
 
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, 0, 0, 0 }
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, 0, 0, 0, 0, 0 }
 
 static void freeSeparationFlags(SeparationFlags* sf)
 {
     free(sf->star_points_file);
     free(sf->ap_file);
+    free(sf->separation_outfile);
 }
 
 /* Use hardcoded names if files not specified */
@@ -93,6 +96,18 @@ static real* parse_parameters(int argc, const char** argv, unsigned int* paramnO
             "cleanup-checkpoint", 'c',
             POPT_ARG_NONE, &sf->cleanup_checkpoint,
             'c', "Delete checkpoint on successful", NULL
+        },
+
+        {
+            "output", 'o',
+            POPT_ARG_STRING, &sf->separation_outfile,
+            'o', "Output file for separation (enables separation)", NULL
+        },
+
+        {
+            "separation-seed", 'e',
+            POPT_ARG_INT, &sf->separationSeed,
+            'e', "Seed for random number generator", NULL
         },
 
       #if SEPARATION_OPENCL
@@ -153,6 +168,12 @@ static real* parse_parameters(int argc, const char** argv, unsigned int* paramnO
 
     poptFreeContext(context);
     setDefaultFiles(sf);
+
+    sf->do_separation = (sf->separation_outfile && strcmp(sf->separation_outfile, ""));
+
+    if (sf->do_separation)
+        prob_ok_init(sf->separationSeed);
+
     return parameters;
 }
 
@@ -233,7 +254,8 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
         return 1;
     }
 
-    likelihood_val = evaluate(&ap, ias, &streams, sc, sf->star_points_file, &clr);
+    likelihood_val = evaluate(&ap, ias, &streams, sc, sf->star_points_file,
+                              &clr, sf->do_separation, sf->separation_outfile);
     rc = isnan(likelihood_val);
 
     warn("<search_likelihood> %0.20f </search_likelihood>\n", likelihood_val);

@@ -42,6 +42,7 @@ extern "C" {
 #include "coordinates.h"
 #include "integrals.h"
 #include "likelihood.h"
+#include "separation_utils.h"
 
 #if SEPARATION_OPENCL
   #include "run_cl.h"

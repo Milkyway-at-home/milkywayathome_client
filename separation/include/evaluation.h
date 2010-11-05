@@ -29,7 +29,9 @@ real evaluate(const ASTRONOMY_PARAMETERS* ap,
               const STREAMS* streams,
               const STREAM_CONSTANTS* sc,
               const char* star_points_file,
-              const CLRequest* clr);
+              const CLRequest* clr,
+              const int do_separation,
+              const char* separation_outfile);
 
 #endif /* _EVALUATION_H_ */
 
