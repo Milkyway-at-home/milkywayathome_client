@@ -26,18 +26,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "likelihood.h"
 #include "integrals_common.h"
 #include "r_points.h"
+#include "calculated_constants.h"
 #include "milkyway_util.h"
-
-double dotp( const double* a, const double* b );
-mwvector transform_point(const ASTRONOMY_PARAMETERS* ap, real* point, const mwmatrix cmat, mwvector xsun);
-void get_transform(mwmatrix mat, const mwvector f, const mwvector t);
-int prob_ok(int n, double* p);
-void prob_ok_init();
-void lbr2xyz_old(const double* lbr, double* xyz);
-void stripe_normal( int wedge, double* xyz );
+#include "separation_utils.h"
 
 static const mwvector xsun = mw_vec(-8.5, 0.0, 0.0 );
-static const real xsun_old[3] = { -8.5, 0.0, 0.0 };
 
 /* FIXME: Excessive duplication with stuff used in integrals which I
  * was too lazy to also fix here */
@@ -276,14 +269,10 @@ static void separation(FILE* f,
         ss.q[s_ok-1]++;
 
 
-    real starxyz[3];
+    mwvector starxyz;
     mwvector starxyzTransform;
-    real star_coords[3];
-    star_coords[0] = X(current_star_point);
-    star_coords[1] = Y(current_star_point);
-    star_coords[2] = Z(current_star_point);
 
-    lbr2xyz_old(star_coords, starxyz);
+    starxyz = lbr2xyz(ap, current_star_point);
     starxyzTransform = transform_point(ap, starxyz, cmatrix, xsun);
 
     if (f)
@@ -295,27 +284,6 @@ static void separation(FILE* f,
     }
 }
 
-void marshal_mwvector_to_array(real* arr, mwvector v);
-mwvector marshal_array_to_mwvector(real* arr);
-
-void marshal_mwvector_to_array(real* arr, mwvector v)
-{
-    arr[0] = X(v);
-    arr[1] = Y(v);
-    arr[2] = Z(v);
-}
-
-mwvector marshal_array_to_mwvector(real* arr)
-{
-    mwvector v;
-
-    X(v) = arr[0];
-    Y(v) = arr[1];
-    Z(v) = arr[2];
-
-    return v;
-}
-
 /* separation init stuffs */
 static void setSeparationConstants(const ASTRONOMY_PARAMETERS* ap,
                                    const FINAL_STREAM_INTEGRALS* fsi,
@@ -323,8 +291,7 @@ static void setSeparationConstants(const ASTRONOMY_PARAMETERS* ap,
 {
     unsigned int i;
     mwvector dnormal;
-    const mwvector dortho = { 0.0, 0.0, 1.0 };
-    real dnormal_old[3];
+    const mwvector dortho = mw_vec(0.0, 0.0, 1.0);
 
     if (ap->sgr_coordinates)
     {
@@ -333,8 +300,7 @@ static void setSeparationConstants(const ASTRONOMY_PARAMETERS* ap,
     }
     else
     {
-        stripe_normal(ap->wedge, dnormal_old);
-        dnormal = marshal_array_to_mwvector(dnormal_old);
+        dnormal = stripe_normal(ap->wedge);
     }
 
     real d;

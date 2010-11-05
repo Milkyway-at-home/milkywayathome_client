@@ -29,105 +29,55 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_math.h"
 
 
-#define at_rad2Deg (180.0 / M_PI)
-#define at_deg2Rad (M_PI / 180.0)
-#define deg (180.0 / M_PI)
-#define r0 8.5
-
-/* Cross product; stores result in prod */
-static void crossp( const real* a, const real* b, real* prod )
-{
-    prod[0] = a[1] * b[2] - a[2] * b[1];
-    prod[1] = a[2] * b[0] - a[0] * b[2];
-    prod[2] = a[0] * b[1] - a[1] * b[0];
-}
-
-/* Dot product */
-real dotp( const real* a, const real* b )
-{
-    return a[0] * b[0] +
-           a[1] * b[1] +
-           a[2] * b[2];
-}
-
-/* Get norm of input vector */
-static real norm( const real* vec )
-{
-    return sqrt( vec[0] * vec[0] +
-                 vec[1] * vec[1] +
-                 vec[2] * vec[2] );
-}
-
-/* Normalize input vector */
-static void normalize( real* vec )
-{
-    real vnorm = norm( vec );
-
-    vec[0] /= vnorm;
-    vec[1] /= vnorm;
-    vec[2] /= vnorm;
-}
-
-/* Convert sun-centered lbr into galactic xyz coordinates. */
-void lbr2xyz_old(const real* lbr, real* xyz)
-{
-    real bsin, lsin, bcos, lcos, zp, d;
-
-    bsin = sin(lbr[1] / deg);
-    lsin = sin(lbr[0] / deg);
-    bcos = cos(lbr[1] / deg);
-    lcos = cos(lbr[0] / deg);
-
-    xyz[2] = lbr[2] * bsin;
-    zp = lbr[2] * bcos;
-    d = sqrt( r0 * r0 + zp * zp - 2 * r0 * zp * lcos);
-    xyz[0] = (zp * zp - r0 * r0 - d * d) / (2 * r0);
-    xyz[1] = zp * lsin;
-}
-
-
 /* Convert galactic xyz into sun-centered lbr coordinates. */
-static void xyz2lbr(const real* xyz, real* lbr)
+static mwvector xyz2lbr(const ASTRONOMY_PARAMETERS* ap, const mwvector xyz)
 {
-    real temp, xsun;
+    mwvector lbr;
+    real tmp, xsun;
 
-    xsun = xyz[0] + 8.5;
-    temp = xsun * xsun + xyz[1] * xyz[1];
+    xsun = X(xyz) + ap->sun_r0;
+    tmp = sqr(xsun) + sqr(Y(xyz));
 
-    lbr[0] = atan2( xyz[1], xsun ) * deg;
-    lbr[1] = atan2( xyz[2], sqrt( temp ) ) * deg;
-    lbr[2] = sqrt( temp + xyz[2] * xyz[2] );
+    L(lbr) = mw_atan2(Y(xyz), xsun);
+    B(lbr) = mw_atan2(Z(xyz), mw_sqrt(tmp));
+    R(lbr) = mw_sqrt(tmp + sqr(Z(xyz)));
 
-    if ( lbr[0] < 0 ) lbr[0] += 360;
+    L(lbr) = r2d(L(lbr));
+    B(lbr) = r2d(B(lbr));
+
+    if (L(lbr) < 0)
+        L(lbr) += 360.0;
+
+    return lbr;
 }
 
-static void xyz2lbg(real* point, real offset, real* lbg)
+static inline real calc_g(mwvector lbg)
 {
-    xyz2lbr(point, lbg);
-    real g = 5.0 * (log(100.0 * lbg[2]) / log(10.0) ) + 4.2 - offset;
-
-    lbg[2] = g;
+    return 5.0 * (mw_log(100.0 * R(lbg)) / mw_log(10.0) ) + absm;
 }
 
-void marshal_mwvector_to_array(real* arr, mwvector v);
-mwvector marshal_array_to_mwvector(real* arr);
+/* CHECKME: Isn't this supposed to be log10? */
+static mwvector xyz2lbg(const ASTRONOMY_PARAMETERS* ap, mwvector point, real offset)
+{
+    mwvector lbg = xyz2lbr(ap, point);
+    real g = calc_g(lbg) - offset;
+
+    R(lbg) = g;
+
+    return lbg;
+}
 
 
 /* wrapper that converts a point into magnitude-space pseudo-xyz */
-static mwvector xyz_mag(const ASTRONOMY_PARAMETERS* ap, real* point, real offset)
+static mwvector xyz_mag(const ASTRONOMY_PARAMETERS* ap, mwvector point, real offset)
 {
-    mwvector logPoint;
-    real lbg[3];
-    xyz2lbg(point, offset, lbg);
+    mwvector logPoint, lbg;
 
-    mwvector arst = marshal_array_to_mwvector(lbg);
-
-    logPoint = lbr2xyz(ap, arst);
+    lbg = xyz2lbg(ap, point, offset);
+    logPoint = lbr2xyz(ap, lbg);
 
     return logPoint;
 }
-
-
 
 
 static void slaDmxv(real dm[3][3], real va[3], real vb[3])
@@ -160,13 +110,9 @@ static void atBound (
 )
 {
     while (*angle < min)
-    {
         *angle += 360.0;
-    }
     while (*angle >= max)
-    {
         *angle -= 360.0;
-    }
     return;
 }
 
@@ -174,16 +120,16 @@ static real slaDranrm ( real angle )
 {
     real w;
 
-    w = dmod ( angle, M_2PI );
-    return ( w >= 0.0 ) ? w : w + M_2PI;
+    w = dmod(angle, M_2PI);
+    return (w >= 0.0) ? w : w + M_2PI;
 }
 
 static real slaDrange ( real angle )
 {
     real w;
 
-    w = dmod ( angle, M_2PI );
-    return ( fabs ( w ) < M_PI ) ? w : w - dsign ( M_2PI, angle );
+    w = dmod(angle, M_2PI);
+    return (fabs(w) < M_PI) ? w : w - dsign(M_2PI, angle);
 }
 
 static void atBound2(
@@ -199,58 +145,58 @@ static void atBound2(
     }
     atBound(theta, -180.0, 180.0);
     atBound(phi, 0.0, 360.0);
-    if (fabs(*theta) == 90.0) *phi = 0.;
+    if (fabs(*theta) == 90.0)
+        *phi = 0.0;
     return;
 }
 
 /* Return ra & dec from survey longitude and latitude */
-static void atSurveyToEq (real slong, real slat, real* ra, real* dec)
+static void atSurveyToEq(real slong, real slat, real* ra, real* dec)
 {
     real anode, etaPole;
     real x1, y1, z1;
 
     /* Convert to radians */
-    slong = slong * at_deg2Rad;
-    slat = slat * at_deg2Rad;
+    slong = d2r(slong);
+    slat = d2r(slat);
     anode = surveyCenterRa - 90.0;
-    anode = anode * at_deg2Rad;
-    etaPole = surveyCenterDec * at_deg2Rad;
+    anode = d2r(anode);
+    etaPole = d2r(surveyCenterDec);
 
     /* Rotation */
-    x1 = -sin(slong);
-    y1 = cos(slat + etaPole) * cos(slong);
-    z1 = sin(slat + etaPole) * cos(slong);
-    *ra = atan2(y1, x1) + anode;
-    *dec = asin(z1);
-    *ra = *ra * at_rad2Deg;
-    *dec = *dec * at_rad2Deg;
+    x1 = -mw_sin(slong);
+    y1 = mw_cos(slat + etaPole) * mw_cos(slong);
+    z1 = mw_sin(slat + etaPole) * mw_cos(slong);
+    *ra = mw_atan2(y1, x1) + anode;
+    *dec = mw_asin(z1);
+    *ra = r2d(*ra);
+    *dec = r2d(*dec);
     atBound2(dec, ra);
 
     return;
 }
 
-static void slaDcc2s( real v[3], real* a, real* b )
+static void slaDcc2s(real v[3], real* a, real* b)
 {
     real x, y, z, r;
 
     x = v[0];
     y = v[1];
     z = v[2];
-    r = sqrt ( x * x + y * y );
+    r = mw_hypot(x, y);
 
-    *a = ( r != 0.0 ) ? atan2 ( y, x ) : 0.0;
-    *b = ( z != 0.0 ) ? atan2 ( z, r ) : 0.0;
+    *a = (r != 0.0) ? mw_atan2(y, x) : 0.0;
+    *b = (z != 0.0) ? mw_atan2(z, r) : 0.0;
 }
 
-
-static void slaDcs2c( real a, real b, real v[3] )
+static void slaDcs2c(real a, real b, real v[3])
 {
     real cosb;
 
-    cosb = cos ( b );
-    v[0] = cos ( a ) * cosb;
-    v[1] = sin ( a ) * cosb;
-    v[2] = sin ( b );
+    cosb = mw_cos(b);
+    v[0] = mw_cos(a) * cosb;
+    v[1] = mw_sin(a) * cosb;
+    v[2] = mw_sin(b);
 }
 
 
@@ -271,128 +217,36 @@ static void slaEqgal( real dr, real dd, real* dl, real* db )
     rmat[2][2] =  0.455983795705;
 
     /* Spherical to Cartesian */
-    slaDcs2c ( dr, dd, v1 );
+    slaDcs2c( dr, dd, v1 );
 
     /* Equatorial to Galactic */
-    slaDmxv ( rmat, v1, v2 );
+    slaDmxv( rmat, v1, v2 );
 
     /* Cartesian to spherical */
-    slaDcc2s ( v2, dl, db );
+    slaDcc2s( v2, dl, db );
 
     /* Express in conventional ranges */
-    *dl = slaDranrm ( *dl );
-    *db = slaDrange ( *db );
+    *dl = slaDranrm(*dl);
+    *db = slaDrange(*db);
 }
 
-
-/* determines if star with prob p should be separrated into stream */
-int prob_ok(int n, real* p)
-{
-    int ok;
-    real r;
-    real step1, step2, step3;
-
-    r = drand48();
-
-    switch (n)
-    {
-    case 1:
-        if ( r > p[0] )
-        {
-            ok = 0;
-        }
-        else
-        {
-            ok = 1;
-        }
-        break;
-    case 2:
-        step1 = p[0] + p[1];
-        if ( r > step1 )
-        {
-            ok = 0;
-        }
-        else if ( (r < p[0]) )
-        {
-            ok = 1;
-        }
-        else if ( (r > p[0]) && (r <= step1) )
-        {
-            ok = 2;
-        }
-        break;
-    case 3:
-        step1 = p[0] + p[1];
-        step2 = p[0] + p[1] + p[2];
-        if ( r > step2 )
-        {
-            ok = 0;
-        }
-        else if ( (r < p[0]) )
-        {
-            ok = 1;
-        }
-        else if ( (r > p[0]) && (r <= step1) )
-        {
-            ok = 2;
-        }
-        else if ( (r > step1) && (r <= step2) )
-        {
-            ok = 3;
-        }
-        break;
-    case 4:
-        step1 = p[0] + p[1];
-        step2 = p[0] + p[1] + p[2];
-        step3 = p[0] + p[1] + p[2] + p[3];
-        if ( r > step3 )
-        {
-            ok = 0;
-        }
-        else if ( (r <= p[0]) )
-        {
-            ok = 1;
-        }
-        else if ( (r > p[0]) && (r <= step1) )
-        {
-            ok = 2;
-        }
-        else if ( (r > step1) && (r <= step2) )
-        {
-            ok = 3;
-        }
-        else if ( (r > step2) && (r <= step3) )
-        {
-            ok = 4;
-        }
-        break;
-    default:
-        fail("ERROR:  Too many streams to separate using current code; please update the switch statement in probability.c->prob_ok to handle %d streams", n);
-    }
-    return ok;
-}
 
 /* convert galactic coordinates l,b into cartesian x,y,z */
-static void lbToXyz(real l, real b, real* xyz)
+static mwvector lbToXyz(real l, real b)
 {
-    l = l / deg;
-    b = b / deg;
+    mwvector xyz;
+    l = d2r(l);
+    b = d2r(b);
 
-    xyz[0] = cos(l) * cos(b);
-    xyz[1] = sin(l) * cos(b);
-    xyz[2] = sin(b);
+    X(xyz) = cos(l) * cos(b);
+    Y(xyz) = sin(l) * cos(b);
+    Z(xyz) = sin(b);
+
+    return xyz;
 }
 
-/* Return eta from stripe number */
-static real atEtaFromStripeNumber(int wedge)
-{
-    if (wedge > 46)
-        return wedge * stripeSeparation - 57.5 - 180.0;
-    else
-        return wedge * stripeSeparation - 57.5;
-}
 
-static void atEqToGal (
+static void atEqToGal(
     real ra,  /* IN -- ra in degrees */
     real dec, /* IN -- dec in degrees */
     real* glong,  /* OUT -- Galactic longitude in degrees */
@@ -400,13 +254,14 @@ static void atEqToGal (
 )
 {
     /* Convert to radians */
-    ra = ra * at_deg2Rad;
-    dec = dec * at_deg2Rad;
+    ra = d2r(ra);
+    dec = d2r(dec);
+
     /* Use SLALIB to do the actual conversion */
     slaEqgal(ra, dec, glong, glat);
     /* Convert back to degrees */
-    *glong = *glong * at_rad2Deg;
-    *glat = *glat * at_rad2Deg;
+    *glong = r2d(*glong);
+    *glat = r2d(*glat);
     atBound2(glat, glong);
     return;
 }
@@ -448,7 +303,10 @@ void get_transform(mwmatrix mat, const mwvector f, const mwvector t)
 
 /* Transform v by applying the rotation matrix mat */
 /* apply coordinate transformations to the given point */
-mwvector transform_point(const ASTRONOMY_PARAMETERS* ap, real* point, const mwmatrix cmat, mwvector xsun)
+mwvector transform_point(const ASTRONOMY_PARAMETERS* ap,
+                         mwvector point,
+                         const mwmatrix cmat,
+                         mwvector xsun)
 {
     real mcutoff = 11.0;
     mwvector logPoint = xyz_mag(ap, point, mcutoff);
@@ -458,20 +316,83 @@ mwvector transform_point(const ASTRONOMY_PARAMETERS* ap, real* point, const mwma
     return mw_mulmv(cmat, logPoint); /* do transform */
 }
 
+/* Get normal vector of data slice from stripe number */
+mwvector stripe_normal(int wedge)
+{
+    real eta, ra, dec, l, b;
+
+    eta = atEtaFromStripeNumber_deg(wedge);
+    atSurveyToEq(0, 90.0 + eta, &ra, &dec);
+    atEqToGal(ra, dec, &l, &b);
+    return lbToXyz(l, b);
+}
+
 /* Initialize seed for prob_ok */
 void prob_ok_init()
 {
     srand48(time(NULL));
 }
 
-/* Get normal vector of data slice from stripe number */
-void stripe_normal(int wedge, real* xyz)
-{
-    real eta, ra, dec, l, b;
 
-    eta = atEtaFromStripeNumber(wedge);
-    atSurveyToEq(0, 90.0 + eta, &ra, &dec);
-    atEqToGal(ra, dec, &l, &b);
-    lbToXyz(l, b, xyz);
+/* FIXME: WTF? */
+/* determines if star with prob p should be separrated into stream */
+int prob_ok(int n, real* p)
+{
+    int ok;
+    real r;
+    real step1, step2, step3;
+
+    r = drand48();
+
+    switch (n)
+    {
+        case 1:
+            if (r > p[0])
+                ok = 0;
+            else
+                ok = 1;
+            break;
+        case 2:
+            step1 = p[0] + p[1];
+            if (r > step1)
+                ok = 0;
+            else if (r < p[0])
+                ok = 1;
+            else if (r > p[0] && r <= step1)
+                ok = 2;
+            break;
+        case 3:
+            step1 = p[0] + p[1];
+            step2 = p[0] + p[1] + p[2];
+            if (r > step2)
+                ok = 0;
+            else if (r < p[0])
+                ok = 1;
+            else if (r > p[0] && r <= step1)
+                ok = 2;
+            else if (r > step1 && r <= step2)
+                ok = 3;
+            /* CHECME: else? */
+            break;
+        case 4:
+            step1 = p[0] + p[1];
+            step2 = p[0] + p[1] + p[2];
+            step3 = p[0] + p[1] + p[2] + p[3];
+            if (r > step3)
+                ok = 0;
+            else if (r <= p[0])
+                ok = 1;
+            else if (r > p[0] && r <= step1)
+                ok = 2;
+            else if (r > step1 && r <= step2)
+                ok = 3;
+            else if (r > step2 && r <= step3)
+                ok = 4;
+            break;
+        default:
+            fail("ERROR:  Too many streams to separate using current code; "
+                 "please update the switch statement in prob_ok to handle %d streams", n);
+    }
+    return ok;
 }
 

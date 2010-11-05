@@ -33,6 +33,17 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 //and nu=0 at the center and increasing in the -y direction (inversely to lamda)
 //in this manner an equatorial stripe of standard coordinate conventions is created.
 
+/* Return eta from stripe number */
+inline real atEtaFromStripeNumber_rad(int wedge)
+{
+    return wedge * d2r(stripeSeparation) - d2r((real) 57.5) - (wedge > 46 ? M_PI : 0.0);
+}
+
+inline real atEtaFromStripeNumber_deg(int wedge)
+{
+    return wedge * stripeSeparation - 57.5 - (wedge > 46 ? 180.0 : 0.0);
+}
+
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
 
 HOT CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
@@ -70,7 +81,7 @@ __inline LB gc2lb(const int wedge, const real mu, const real nu)
     y2 = sinmunode * cosnu;
     /* z2 = sin(nu) */
 
-    wedge_eta = wedge * d2r(stripeSeparation) - d2r((real) 57.5) - (wedge > 46 ? M_PI : 0.0);
+    wedge_eta = atEtaFromStripeNumber_rad(wedge);
 
     /* Get inclination for the given wedge. */
     wedge_incl = wedge_eta + d2r(surveyCenterDec);

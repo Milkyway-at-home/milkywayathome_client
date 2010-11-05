@@ -171,6 +171,7 @@ set(separation_headers include/calculated_constants.h
                        include/separation_config.h.in
                        include/integrals.h
                        include/r_points.h
+                       include/separation_utils.h
                        include/separation_constants.h)
 
 set(separation_cl_headers include/setup_cl.h
