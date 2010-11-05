@@ -116,58 +116,6 @@ static void slaDmxv(const real dm[3][3], real va[3], real vb[3])
     }
 }
 
-
-static inline real bound0_360(real angle)
-{
-    angle = mw_fmod(angle, 360.0);
-
-    if (angle < 0.0)
-        angle += 360.0;
-
-    return angle;
-}
-
-/* Bind angle to bound in degrees to -180.0 to 180.0 */
-inline static real boundm180_180(real angle)
-{
-    while (angle < 180.0)
-        angle += 360.0;
-    while (angle >= 180.0)
-        angle -= 360.0;
-    return angle;
-}
-
-static real slaDranrm(real angle)
-{
-    real w = mw_fmod(angle, M_2PI);
-    return (w >= 0.0) ? w : w + M_2PI;
-}
-
-static real slaDrange(real angle)
-{
-    real w = mw_fmod(angle, M_2PI);
-    return (fabs(w) < M_PI) ? w : w - dsign(M_2PI, angle);
-}
-
-static void atBound2(
-    real* theta,    /* MODIFIED -- the -90 to 90 angle */
-    real* phi   /* MODIFIED -- the 0 to 360 angle */
-)
-{
-    *theta = boundm180_180(*theta);
-    if (fabs(*theta) > 90.0)
-    {
-        *theta = 180.0 - *theta;
-        *phi += 180;
-    }
-
-    *theta = boundm180_180(*theta);
-    *phi = bound0_360(*phi);
-    if (fabs(*theta) == 90.0)
-        *phi = 0.0;
-    return;
-}
-
 /* Return ra & dec from survey longitude and latitude */
 static void atSurveyToEq(real slong, real slat, real* ra, real* dec)
 {
@@ -189,7 +137,6 @@ static void atSurveyToEq(real slong, real slat, real* ra, real* dec)
     *dec = mw_asin(z1);
     *ra = r2d(*ra);
     *dec = r2d(*dec);
-    atBound2(dec, ra);
 
     return;
 }
@@ -230,17 +177,13 @@ static void slaEqgal( real dr, real dd, real* dl, real* db )
         };
 
     /* Spherical to Cartesian */
-    slaDcs2c( dr, dd, v1 );
+    slaDcs2c(dr, dd, v1);
 
     /* Equatorial to Galactic */
-    slaDmxv( rmat, v1, v2 );
+    slaDmxv(rmat, v1, v2);
 
     /* Cartesian to spherical */
-    slaDcc2s( v2, dl, db );
-
-    /* Express in conventional ranges */
-    *dl = slaDranrm(*dl);
-    *db = slaDrange(*db);
+    slaDcc2s(v2, dl, db);
 }
 
 
@@ -275,7 +218,6 @@ static void atEqToGal(
     /* Convert back to degrees */
     *glong = r2d(*glong);
     *glat = r2d(*glat);
-    atBound2(glat, glong);
     return;
 }
 
