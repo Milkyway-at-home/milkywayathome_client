@@ -38,6 +38,8 @@ NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
                                    const real nu_step_size,
                                    const real nu_min);
 
+NU_ID calc_nu_step(const INTEGRAL_AREA* ia, const unsigned int nu_step);
+LB_TRIG* precalculateLBTrig(const ASTRONOMY_PARAMETERS* ap, const INTEGRAL_AREA* ia);
 
 #ifdef __cplusplus
 }

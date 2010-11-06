@@ -22,8 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "show_cl_types.h"
 #include "separation_cl_buffers.h"
 #include "r_points.h"
-#include "integrals_common.h"
-
+#include "calculated_constants.h"
 
 static inline cl_mem createWriteBuffer(cl_context clctx, size_t size, cl_int* err)
 {
@@ -190,30 +189,6 @@ static inline cl_int createRBuffers(CLInfo* ci,
     mwAlignedFree(rc);
 
     return CL_SUCCESS;
-}
-
-static LB_TRIG* precalculateLBTrig(const ASTRONOMY_PARAMETERS* ap, const INTEGRAL_AREA* ia)
-{
-    unsigned int i, j;
-    LB_TRIG* lbts;
-    NU_ID nuid;
-    LB lb;
-    real mu;
-
-    lbts = (LB_TRIG*) mwMallocAligned(sizeof(LB_TRIG) * ia->mu_steps * ia->nu_steps, sizeof(LB_TRIG));
-
-    for (i = 0; i < ia->nu_steps; ++i)
-    {
-        nuid = calc_nu_step(ia, i);
-        for (j = 0; j < ia->mu_steps; ++j)
-        {
-            mu = ia->mu_min + (((real) j + 0.5) * ia->mu_step_size);
-            lb = gc2lb(ap->wedge, mu, nuid.nu);
-            lbts[i * ia->mu_steps + j] = lb_trig(lb);
-        }
-    }
-
-    return lbts;
 }
 
 static cl_int createLBTrigBuffer(CLInfo* ci,

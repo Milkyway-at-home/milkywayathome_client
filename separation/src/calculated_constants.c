@@ -27,6 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "coordinates.h"
 #include "gauss_legendre.h"
 #include "integrals.h"
+#include "integrals_common.h"
 
 static inline mwvector stream_a(real* parameters)
 {
@@ -177,5 +178,45 @@ NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
     }
 
     return nu_consts;
+}
+
+NU_ID calc_nu_step(const INTEGRAL_AREA* ia, const unsigned int nu_step)
+{
+    NU_ID nuid;
+    real tmp1, tmp2;
+
+    nuid.nu = ia->nu_min + (nu_step * ia->nu_step_size);
+
+    tmp1 = d2r(90.0 - nuid.nu - ia->nu_step_size);
+    tmp2 = d2r(90.0 - nuid.nu);
+
+    nuid.id = mw_cos(tmp1) - mw_cos(tmp2);
+    nuid.nu += 0.5 * ia->nu_step_size;
+
+    return nuid;
+}
+
+LB_TRIG* precalculateLBTrig(const ASTRONOMY_PARAMETERS* ap, const INTEGRAL_AREA* ia)
+{
+    unsigned int i, j;
+    LB_TRIG* lbts;
+    NU_ID nuid;
+    LB lb;
+    real mu;
+
+    lbts = (LB_TRIG*) mwMallocAligned(sizeof(LB_TRIG) * ia->mu_steps * ia->nu_steps, sizeof(LB_TRIG));
+
+    for (i = 0; i < ia->nu_steps; ++i)
+    {
+        nuid = calc_nu_step(ia, i);
+        for (j = 0; j < ia->mu_steps; ++j)
+        {
+            mu = ia->mu_min + (((real) j + 0.5) * ia->mu_step_size);
+            lb = gc2lb(ap->wedge, mu, nuid.nu);
+            lbts[i * ia->mu_steps + j] = lb_trig(lb);
+        }
+    }
+
+    return lbts;
 }
 
