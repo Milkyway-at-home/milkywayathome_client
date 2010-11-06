@@ -172,17 +172,17 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
 }
 
 HOT
-static void r_sum(const ASTRONOMY_PARAMETERS* ap,
-                  const STREAM_CONSTANTS* sc,
-                  const real* sg_dx,
-                  const LB_TRIG lbt,
-                  const real id,
-                  real* st_probs,
-                  KAHAN* probs,
-                  EVALUATION_STATE* es,
-                  const R_POINTS* r_pts,
-                  const R_CONSTS* rc,
-                  const unsigned int r_steps)
+static inline void r_sum(const ASTRONOMY_PARAMETERS* ap,
+                         const STREAM_CONSTANTS* sc,
+                         const real* sg_dx,
+                         const LB_TRIG lbt,
+                         const real id,
+                         real* st_probs,
+                         KAHAN* probs,
+                         EVALUATION_STATE* es,
+                         const R_POINTS* r_pts,
+                         const R_CONSTS* rc,
+                         const unsigned int r_steps)
 {
     unsigned int r_step;
     real V;
@@ -252,27 +252,30 @@ static void nu_sum(const ASTRONOMY_PARAMETERS* ap,
     }
 }
 
-
 /* returns background integral */
 real integrate(const ASTRONOMY_PARAMETERS* ap,
                const INTEGRAL_AREA* ia,
                const STREAM_CONSTANTS* sc,
                const STREAM_GAUSS sg,
-               KAHAN* probs,
+               real* probs,
+               KAHAN* probs_sum,
                EVALUATION_STATE* es)
 {
     real result;
     real* st_probs;
     R_POINTS* r_pts;
     R_CONSTS* rc;
+    unsigned int i;
 
     st_probs = (real*) mwMallocAligned(sizeof(real) * ap->number_streams, 2 * sizeof(real));
     r_pts = precalculate_r_pts(ap, ia, sg, &rc);
 
-    nu_sum(ap, ia, sc, rc, r_pts, sg.dx, st_probs, probs, es);
+    nu_sum(ap, ia, sc, rc, r_pts, sg.dx, st_probs, probs_sum, es);
     es->nu_step = 0;
 
     result = es->sum.sum + es->sum.correction;
+    for (i  = 0; i < ap->number_streams; ++i)
+        probs[i] = probs_sum[i].sum + probs_sum[i].correction;
 
     mwAlignedFree(st_probs);
     mwAlignedFree(r_pts);

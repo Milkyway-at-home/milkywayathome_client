@@ -61,21 +61,6 @@ static void print_stream_integrals(const FINAL_STREAM_INTEGRALS* fsi, const unsi
     fprintf(stderr, " </stream_integrals>\n");
 }
 
-static inline void calculate_stream_integrals(const KAHAN* probs,
-                                              real* stream_integrals,
-                                              const STREAM_CONSTANTS* sc,
-                                              const unsigned int number_streams)
-{
-    unsigned int i;
-
-    for (i = 0; i < number_streams; ++i)
-    {
-        /* Rather than not adding up these streams, let them add and then
-         * ignore them. They would have ended up being zero anyway */
-        stream_integrals[i] = sc[i].large_sigma ? probs[i].sum + probs[i].correction : 0.0;
-    }
-}
-
 /* Add up completed integrals for progress reporting */
 static inline unsigned int completed_integral_progress(const INTEGRAL_AREA* ias,
                                                        const EVALUATION_STATE* es)
@@ -90,6 +75,22 @@ static inline unsigned int completed_integral_progress(const INTEGRAL_AREA* ias,
     }
 
     return current_calc_probs;
+}
+
+/* Zero insignificant streams */
+static void clean_stream_integrals(real* stream_integrals,
+                                   const STREAM_CONSTANTS* sc,
+                                   const unsigned int number_streams)
+{
+    unsigned int i;
+
+    for (i = 0; i < number_streams; ++i)
+    {
+        /* Rather than not adding up these streams, let them add and then
+         * ignore them. They would have ended up being zero anyway */
+        if (!sc[i].large_sigma)
+        stream_integrals[i] = 0.0;
+    }
 }
 
 static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
@@ -112,18 +113,19 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
 
         t1 = mwGetTime();
       #if SEPARATION_OPENCL
-        integral->background_integral = integrateCL(ap, ia, sc, sg, integral->probs, clr);
+        integral->background_integral = integrateCL(ap, ia, sc, sg, integral->stream_integrals, clr);
       #else
-        integral->background_integral = integrate(ap, ia, sc, sg, integral->probs, es);
+        integral->background_integral = integrate(ap, ia, sc, sg,
+                                                  integral->stream_integrals, integral->probs, es);
       #endif /* SEPARATION_CL */
 
         t2 = mwGetTime();
         printf("Time = %.20g\n", t2 - t1);
 
-        if (!isnan(integral->background_integral))
-            calculate_stream_integrals(integral->probs, integral->stream_integrals, sc, ap->number_streams);
-        else
+        if (isnan(integral->background_integral))
             fail("Failed to calculate integral %u\n", es->current_integral);
+
+        clean_stream_integrals(integral->stream_integrals, sc, ap->number_streams);
 
         CLEAR_KAHAN(es->sum);
     }

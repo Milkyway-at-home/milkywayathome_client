@@ -55,7 +55,8 @@ real integrate(const ASTRONOMY_PARAMETERS* ap,
                const INTEGRAL_AREA* ia,
                const STREAM_CONSTANTS* sc,
                const STREAM_GAUSS sg,
-               KAHAN* probs,
+               real* probs,
+               KAHAN* probs_sum,
                EVALUATION_STATE* es);
 
 #ifdef __cplusplus
