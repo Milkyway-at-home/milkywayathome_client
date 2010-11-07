@@ -28,18 +28,32 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_cl.h"
 #include "real.h"
 
+#if __OPENCL_VERSION__ >= __CL_VERSION_1_1__
+  #define HAVE_VEC3 1
+  #define USE_VEC3 1
+#endif /* OpenCL 1.1 */
 
-#if defined(__OPENCL_VERSION__) && USE_CL_MATH_TYPES
+#if defined(__OPENCL_VERSION__)
  /* In the kernel */
   #if DOUBLEPREC
-    typedef double4 real4;
     typedef double2 real2;
+    typedef double4 real4;
+    #if HAVE_VEC3
+    typedef double3 real3;
+    #endif
   #else
-    typedef float4 real4;
     typedef float2 real2;
+    typedef float4 real4;
+  #if HAVE_VEC3
+    typedef float3 real3;
+  #endif
   #endif /* DOUBLEPREC */
 
-  typedef real4 mwvector;
+  #if USE_VEC3
+    typedef real3 mwvector;
+  #else
+    typedef real4 mwvector;
+  #endif /* USE_VEC3 */
 #else
   #if !defined(_MSC_VER) && !defined(__clang__)
 /* When we align the structs we use the mwvector in, there is a clang
@@ -69,12 +83,18 @@ typedef struct MW_ALIGN(4 * sizeof(real))
 #define W(v) ((v).w)
 
 
+#if USE_VEC3
+  #define mw_vec(x, y, z) { (x), (y), (z) }
+#else
+
 /* Another glorious victory for standards */
 #ifdef __NVIDIA_CL__
   #define mw_vec(x, y, z) ( (x), (y), (z), 0.0 )
 #else
   #define mw_vec(x, y, z) { (x), (y), (z), 0.0 }
 #endif /* __NVIDIA_CL__ */
+
+#endif /* USE_VEC3 */
 
 
 #define SET_VECTOR(v, x, y, z) { X(v) = (x); Y(v) = (y); Z(v) = (z); }

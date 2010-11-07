@@ -58,7 +58,7 @@ __attribute__((const, always_inline))
 inline real mw_dotv(mwvector a, mwvector b)
 {
     mwvector tmp = a * b;
-    return tmp.x + tmp.y + tmp.z + tmp.w;
+    return tmp.x + tmp.y + tmp.z;
 }
 
 __attribute__((const, always_inline))
@@ -74,7 +74,7 @@ __attribute__((const, always_inline))
 inline real mw_length(mwvector a)
 {
     mwvector tmp = a * a;
-    return mw_sqrt(tmp.x + tmp.y + tmp.z + tmp.w);
+    return mw_sqrt(tmp.x + tmp.y + tmp.z);
 }
 
 __attribute__((const, always_inline))
@@ -96,8 +96,7 @@ inline mwvector mw_mulvs(mwvector a, real s)
         {
             s * a.x,
             s * a.y,
-            s * a.z,
-            s * a.w
+            s * a.z
         };
     return tmp;
 }
@@ -117,9 +116,14 @@ inline mwvector mw_mulmv(const mwmatrix m, mwvector a)
 #define mw_incdivv(v1, v2) ((v1) /= (v2))
 #define mw_incmulv(v1, v2) ((v1) *= (v2))
 #define mw_incnegv(v) ((v) = -(v))
-#define mw_zerov(v) { (v).x = 0.0; (v).y = 0.0; (v).z = 0.0; (v).w = 0.0; }
-#define mw_incdivs(v, s) { (v).x /= (s); (v).y /= (s); (v).z /= (s); (v).w /= (s) }
-#define mw_incmulvs(v, s) { (v).x *= (s); (v).y *= (s); (v).z *= (s); (v).w *= (s) }
+#define mw_zerov(v) { (v).x = 0.0; (v).y = 0.0; (v).z = 0.0; }
+#define mw_incdivs(v, s) { (v).x /= (s); (v).y /= (s); (v).z /= (s); }
+#define mw_incmulvs(v, s) { (v).x *= (s); (v).y *= (s); (v).z *= (s); }
+
+/* v1 -= s * v2 */
+
+#define mw_incsubv_s(v1, v2, s) { (v1) -= (s) * (v2); }
+
 
 #endif /* _MILKYWAY_VECTORS_CL_H_ */
 

@@ -41,12 +41,6 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
     real b;
 } LB;
 
-typedef struct SEPARATION_ALIGN(4 * sizeof(real))
-{
-    real lsin, lcos;
-    real bsin, bcos;
-} LB_TRIG;
-
 #define LB_L(x) ((x).l)
 #define LB_B(x) ((x).b)
 
@@ -80,11 +74,44 @@ typedef struct SEPARATION_ALIGN(64)
     mw_int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
 } STREAM_CONSTANTS;
 
+#ifndef __OPENCL_VERSION__
 typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real r_point;
     real qw_r3_N;
 } R_POINTS;
+
+#define R_POINT(r) ((r).r_point)
+#define QW_R3_N(r) ((r).qw_r3_N)
+
+typedef struct SEPARATION_ALIGN(4 * sizeof(real))
+{
+    real lsin, lcos;
+    real bsin, bcos;
+} LB_TRIG;
+
+#define LSIN(x) ((x).lsin)
+#define LCOS(x) ((x).lcos)
+#define BSIN(x) ((x).bsin)
+#define BCOS(x) ((x).bcos)
+
+#else
+
+/* x = r_point; y = qw_r3_N */
+typedef real2 R_POINTS;
+
+#define R_POINT(r) ((r).x)
+#define QW_R3_N(r) ((r).y)
+
+
+typedef real4 LB_TRIG;
+
+#define LSIN(l) ((l).x)
+#define LCOS(l) ((l).y)
+#define BSIN(l) ((l).z)
+#define BCOS(l) ((l).w)
+
+#endif /* __OPENCL_VERSION__ */
 
 typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {

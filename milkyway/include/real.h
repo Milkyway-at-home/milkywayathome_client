@@ -24,7 +24,7 @@
 
 #include "milkyway_cl.h"
 
-#if !ENABLE_OPENCL || __OPENCL_VERSION__
+#if !ENABLE_OPENCL || defined(__OPENCL_VERSION__)
   /* No opencl, or in the kernel */
   #if DOUBLEPREC
     typedef double real;

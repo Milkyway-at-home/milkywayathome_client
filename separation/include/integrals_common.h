@@ -40,13 +40,13 @@ inline mwvector lbr2xyz_2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
                           const LB_TRIG lbt)
 {
     mwvector xyz;
-    real zp = r_point * lbt.bcos;
+    real zp = r_point * BCOS(lbt);
 
     // This mad for some reason increases GPR usage by 1 pushing into next level of unhappy
-    xyz.x = mw_mad(zp, lbt.lcos, ap->m_sun_r0);
+    xyz.x = mw_mad(zp, LCOS(lbt), ap->m_sun_r0);
     //xyz.x = zp * lbt.lcos - ap->sun_r0;
-    xyz.y = zp * lbt.lsin;
-    xyz.z = r_point * lbt.bsin;
+    xyz.y = zp * LSIN(lbt);
+    xyz.z = r_point * BSIN(lbt);
     return xyz;
 }
 
@@ -107,15 +107,6 @@ inline real h_prob_slow(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap, const real qw_r3
     return qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
 }
 
-ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE
-inline LB_TRIG lb_trig(LB lb)
-{
-    LB_TRIG lbt;
-    mw_sincos(d2r(LB_L(lb)), &lbt.lsin, &lbt.lcos);
-    mw_sincos(d2r(LB_B(lb)), &lbt.bsin, &lbt.bcos);
-    return lbt;
-}
-
 ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline void zero_st_probs(real* st_probs, const unsigned int nstream)
 {
@@ -158,6 +149,17 @@ inline void stream_sums(real* st_probs,
     for (i = 0; i < nstreams; ++i)
         st_probs[i] += qw_r3_N * calc_st_prob_inc(&sc[i], xyz);
 }
+
+#ifndef __OPENCL_VERSION__
+ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE
+inline LB_TRIG lb_trig(LB lb)
+{
+    LB_TRIG lbt;
+    mw_sincos(d2r(LB_L(lb)), &lbt.lsin, &lbt.lcos);
+    mw_sincos(d2r(LB_B(lb)), &lbt.bsin, &lbt.bcos);
+    return lbt;
+}
+#endif /* __OPENCL_VERSION__ */
 
 
 #ifdef __cplusplus

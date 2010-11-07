@@ -108,7 +108,7 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
                            __constant STREAM_CONSTANTS* sc,
                            __constant real* sg_dx,
                            __global const R_POINTS* r_pts,
-                           const LB_TRIG lbt,
+                           const real4 lbt,
                            const real gPrime,
                            real* st_probs)
 {
@@ -116,7 +116,7 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
     mwvector xyz;
     real bg_prob = 0.0;
     real rg;
-    R_POINTS r_pt;
+    real2 r_pt;
 
     /* if q is 0, there is no probability */
     /* CHECKME: What happens to the st_probs? */
@@ -128,8 +128,8 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
     for (i = 0; i < convolve; ++i)
     {
         r_pt = r_pts[i];   /* 16 byte read */
-        xyz = lbr2xyz_2(ap, r_pt.r_point, lbt);
-        stream_sums_cl(st_probs, sc, xyz, r_pt.qw_r3_N);
+        xyz = lbr2xyz_2(ap, R_POINT(r_pt), lbt);
+        stream_sums_cl(st_probs, sc, xyz, QW_R3_N(r_pt));
 
         /* Moving stream_sums up from here reduces GPR usage by 2, but also
          * for some reason gets slightly slower. */
@@ -139,13 +139,13 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
 
         rg = rg_calc(xyz, ap->q_inv_sqr);
 
-        bg_prob += h_prob_f(ap, r_pt.qw_r3_N, rg);
+        bg_prob += h_prob_f(ap, QW_R3_N(r_pt), rg);
 
       #if AUX_BG_PROFILE
         /* Currently not used */
         /* Add a quadratic term in g to the Hernquist profile */
         real g = gPrime + sg_dx[i];
-        bg_prob += aux_prob(ap, r_pt.qw_r3_N, g);
+        bg_prob += aux_prob(ap, QW_R3_N(r_pt), g);
       #endif /* AUX_BG_PROFILE */
     }
 
@@ -157,8 +157,8 @@ real r_calculation(__constant ASTRONOMY_PARAMETERS* ap,
                    __constant STREAM_CONSTANTS* sc,
                    __constant real* sg_dx,
                    __constant R_CONSTS* rc,
-                   __global const R_POINTS* r_pts,
-                   const LB_TRIG lbt,
+                   __global const real2* r_pts,
+                   const real4 lbt,
                    const real id,
                    real* st_probs)
 {
@@ -209,7 +209,7 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
                             __constant INTEGRAL_AREA* ia,
                             __constant STREAM_CONSTANTS* sc,
                             __constant R_CONSTS* rcs,
-                            __global const LB_TRIG* lbts,
+                            __global const real4* lbts,
                             __global const R_POINTS* r_pts,
                             __constant real* restrict sg_dx,
                             const real nu_id,
@@ -219,7 +219,7 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     size_t r_step = get_global_id(1);
     size_t idx = mu_step * ia->r_steps + r_step; /* Index into output buffers */
 
-    LB_TRIG lbt = lbts[nu_step * ia->mu_steps + mu_step]; /* 32-byte read */
+    real4 lbt = lbts[nu_step * ia->mu_steps + mu_step]; /* 32-byte read */
 
     real st_probs[NSTREAM] = { 0.0 };
     real r_result = r_calculation(ap, sc, sg_dx, &rcs[r_step], &r_pts[r_step * ap->convolve], lbt, nu_id, st_probs);
