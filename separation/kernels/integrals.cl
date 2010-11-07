@@ -38,7 +38,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define h_prob_f h_prob_slow
 #endif /* FAST_H_PROB */
 
-/* The ATI CL compiler is too stupid to unroll the loops over the
+/* Compiler is too stupid to unroll the loops over the
  * streams if we loop over NSTREAMS (as of Stream SDK 2.2), so we have
  * to manually expand. A macro to expand an arbitrary number of times
  * is also quite terrible. Not unrolling these loops murders the
@@ -118,27 +118,31 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
     real rg;
     R_POINTS r_pt;
 
-  #if ZERO_Q
     /* if q is 0, there is no probability */
     /* CHECKME: What happens to the st_probs? */
-    return -1.0;
-  #endif /* ZERO_Q */
+    if (ap->zero_q)
+        return -1.0;
 
     const unsigned int convolve = ap->convolve; /* Much faster to load this into register first. */
 
     for (i = 0; i < convolve; ++i)
     {
-        r_pt = r_pts[i];
+        r_pt = r_pts[i];   /* 16 byte read */
         xyz = lbr2xyz_2(ap, r_pt.r_point, lbt);
         stream_sums_cl(st_probs, sc, xyz, r_pt.qw_r3_N);
 
         /* Moving stream_sums up from here reduces GPR usage by 2, but also
          * for some reason gets slightly slower. */
+
+        /* Using stream_sums_cl twice (while giving a nonsense result)
+         * somehow ends up using fewer registers */
+
         rg = rg_calc(xyz, ap->q_inv_sqr);
 
         bg_prob += h_prob_f(ap, r_pt.qw_r3_N, rg);
 
       #if AUX_BG_PROFILE
+        /* Currently not used */
         /* Add a quadratic term in g to the Hernquist profile */
         real g = gPrime + sg_dx[i];
         bg_prob += aux_prob(ap, r_pt.qw_r3_N, g);
@@ -174,7 +178,6 @@ real r_calculation(__constant ASTRONOMY_PARAMETERS* ap,
 
 __attribute__ ((always_inline))
 inline void write_st_probs(__global real* probs_out, const real* st_probs)
-
 {
 
   #if NSTREAM >= 1
@@ -199,26 +202,24 @@ inline void write_st_probs(__global real* probs_out, const real* st_probs)
 
 }
 
-__kernel
-//__attribute__((reqd_work_group_size(64, 1, 1)))
-void mu_sum_kernel(__global real* restrict mu_out,
-                   __global real* restrict probs_out,
+__kernel void mu_sum_kernel(__global real* restrict mu_out,
+                            __global real* restrict probs_out,
 
-                   __constant ASTRONOMY_PARAMETERS* ap,
-                   __constant INTEGRAL_AREA* ia,
-                   __constant STREAM_CONSTANTS* sc,
-                   __constant R_CONSTS* rcs,
-                   __global const LB_TRIG* lbts,
-                   __global const R_POINTS* r_pts,
-                   __constant real* restrict sg_dx,
-                   const real nu_id,
-                   const unsigned int nu_step)
+                            __constant ASTRONOMY_PARAMETERS* ap,
+                            __constant INTEGRAL_AREA* ia,
+                            __constant STREAM_CONSTANTS* sc,
+                            __constant R_CONSTS* rcs,
+                            __global const LB_TRIG* lbts,
+                            __global const R_POINTS* r_pts,
+                            __constant real* restrict sg_dx,
+                            const real nu_id,
+                            const unsigned int nu_step)
 {
     size_t mu_step = get_global_id(0);
     size_t r_step = get_global_id(1);
     size_t idx = mu_step * ia->r_steps + r_step; /* Index into output buffers */
 
-    LB_TRIG lbt = lbts[nu_step * ia->mu_steps + mu_step];
+    LB_TRIG lbt = lbts[nu_step * ia->mu_steps + mu_step]; /* 32-byte read */
 
     real st_probs[NSTREAM] = { 0.0 };
     real r_result = r_calculation(ap, sc, sg_dx, &rcs[r_step], &r_pts[r_step * ap->convolve], lbt, nu_id, st_probs);

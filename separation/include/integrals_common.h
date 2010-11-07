@@ -51,17 +51,15 @@ inline mwvector lbr2xyz_2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 }
 
 ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
-inline real calc_st_prob_inc(__MW_CONSTANT STREAM_CONSTANTS* sc, const mwvector xyz, const real qw_r3_N)
+inline real calc_st_prob_inc(__MW_CONSTANT STREAM_CONSTANTS* sc, mwvector xyz, const real qw_r3_N)
 {
-    mwvector xyzs, tmp;
     real xyz_norm, dotted;
 
-    xyzs = mw_subv(xyz, sc->c);
-    dotted = mw_dotv(sc->a, xyzs);
-    tmp = mw_mulvs(sc->a, dotted);
-    mw_incsubv(xyzs, tmp);
+    mw_incsubv(xyz, sc->c);
+    dotted = mw_dotv(sc->a, xyz);
+    mw_incsubv_s(xyz, sc->a, dotted);
 
-    xyz_norm = mw_sqrv(xyzs);
+    xyz_norm = mw_sqrv(xyz);
 
     return qw_r3_N * mw_exp(-xyz_norm * sc->sigma_sq2_inv);
 }

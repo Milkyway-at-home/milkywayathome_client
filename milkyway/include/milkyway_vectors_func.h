@@ -156,8 +156,22 @@ inline real mw_vecangle(mwvector a, mwvector b)
 
 /* v1 += s * v2 */
 #define mw_incaddv_s(v1, v2, s) { (v1).x += (s) * (v2).x; (v1).y += (s) * (v2).y; (v1).z += (s) * (v2).z; }
+
+#if !USE_MAD
+
 /* v1 -= s * v2 */
 #define mw_incsubv_s(v1, v2, s) { (v1).x -= (s) * (v2).x; (v1).y -= (s) * (v2).y; (v1).z -= (s) * (v2).z; }
+
+#else
+
+#define mw_incsubv_s(v1, v2, s)                 \
+    {                                           \
+        (v1).x = mw_mad(-(s), (v2).x, (v1).x);  \
+        (v1).y = mw_mad(-(s), (v2).y, (v1).y);  \
+        (v1).z = mw_mad(-(s), (v2).z, (v1).z);  \
+    }
+
+#endif /* USE_MAD */
 
 #define mw_incdivs(v, s) { (v).x /= (s); (v).y /= (s); (v).z /= (s); }
 #define mw_incmulvs(v, s) { (v).x *= (s); (v).y *= (s); (v).z *= (s); }
