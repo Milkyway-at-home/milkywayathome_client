@@ -57,23 +57,23 @@ inline void stream_sums_cl(real* st_probs,
                            const real qw_r3_N)
 {
   #if NSTREAM >= 1
-    st_probs[0] += calc_st_prob_inc(&sc[0], xyz, qw_r3_N);
+    st_probs[0] = mw_mad(qw_r3_N, calc_st_prob_inc(&sc[0], xyz), st_probs[0]);
   #endif
 
   #if NSTREAM >= 2
-    st_probs[1] += calc_st_prob_inc(&sc[1], xyz, qw_r3_N);
+    st_probs[1] = mw_mad(qw_r3_N, calc_st_prob_inc(&sc[1], xyz), st_probs[1]);
   #endif
 
   #if NSTREAM >= 3
-    st_probs[2] += calc_st_prob_inc(&sc[2], xyz, qw_r3_N);
+    st_probs[2] = mw_mad(qw_r3_N, calc_st_prob_inc(&sc[2], xyz), st_probs[2]);
   #endif
 
   #if NSTREAM >= 4
-    st_probs[3] += calc_st_prob_inc(&sc[3], xyz, qw_r3_N);
+    st_probs[3] = mw_mad(qw_r3_N, calc_st_prob_inc(&sc[3], xyz), st_probs[3]);
   #endif
 
   #if NSTREAM >= 5
-    st_probs[4] += calc_st_prob_inc(&sc[4], xyz, qw_r3_N);
+    st_probs[4] = mw_mad(qw_r3_N, calc_st_prob_inc(&sc[4], xyz), st_probs[4]);
   #endif
 
 }

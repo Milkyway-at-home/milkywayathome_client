@@ -51,17 +51,18 @@ inline mwvector lbr2xyz_2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 }
 
 ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
-inline real calc_st_prob_inc(__MW_CONSTANT STREAM_CONSTANTS* sc, mwvector xyz, const real qw_r3_N)
+inline real calc_st_prob_inc(__MW_CONSTANT STREAM_CONSTANTS* sc, mwvector xyz)
 {
     real xyz_norm, dotted;
+    mwvector xyzs;
 
-    mw_incsubv(xyz, sc->c);
-    dotted = mw_dotv(sc->a, xyz);
-    mw_incsubv_s(xyz, sc->a, dotted);
+    xyzs = mw_subv(xyz, sc->c);
+    dotted = mw_dotv(sc->a, xyzs);
+    mw_incsubv_s(xyzs, sc->a, dotted);
 
-    xyz_norm = mw_sqrv(xyz);
+    xyz_norm = mw_sqrv(xyzs);
 
-    return qw_r3_N * mw_exp(-xyz_norm * sc->sigma_sq2_inv);
+    return mw_exp(-xyz_norm * sc->sigma_sq2_inv);
 }
 
 ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
@@ -124,19 +125,6 @@ inline void zero_st_probs(real* st_probs, const unsigned int nstream)
         st_probs[i] = 0.0;
 }
 
-ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
-inline void stream_sums(real* st_probs,
-                        __MW_CONSTANT STREAM_CONSTANTS* sc,
-                        const mwvector xyz,
-                        const real qw_r3_N,
-                        const unsigned int nstreams)
-{
-    unsigned int i;
-
-    for (i = 0; i < nstreams; ++i)
-        st_probs[i] += calc_st_prob_inc(&sc[i], xyz, qw_r3_N);
-}
-
 ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline void sum_probs(KAHAN* probs,
                       const real* st_probs,
@@ -157,6 +145,20 @@ inline void mult_probs(real* st_probs, const real V_reff_xr_rp3, const unsigned 
     for (i = 0; i < n_stream; ++i)
         st_probs[i] *= V_reff_xr_rp3;
 }
+
+ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
+inline void stream_sums(real* st_probs,
+                        __MW_CONSTANT STREAM_CONSTANTS* sc,
+                        const mwvector xyz,
+                        const real qw_r3_N,
+                        const unsigned int nstreams)
+{
+    unsigned int i;
+
+    for (i = 0; i < nstreams; ++i)
+        st_probs[i] += qw_r3_N * calc_st_prob_inc(&sc[i], xyz);
+}
+
 
 #ifdef __cplusplus
 }

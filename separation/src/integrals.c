@@ -64,6 +64,7 @@ static inline void do_boinc_checkpoint(const EVALUATION_STATE* es,
 
 #endif /* BOINC_APPLICATION */
 
+
 HOT
 real bg_probability_fast_hprob(const ASTRONOMY_PARAMETERS* ap,
                                const STREAM_CONSTANTS* sc,
