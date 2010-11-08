@@ -35,39 +35,11 @@ extern "C" {
 #define mw_acosh acosh
 #define mw_acospi acospi
 
-#if !BROKEN_CL_MATH
-  #define mw_asin asin
-#else
-    #warning "double asin broken on ATI"
-    /* Cheap replacement using Taylor expansion that shouldn't actually be used
-       asin(x) ~= x + x^3/6 + 3x^5/40 + 5x^7/112 + 35x^9/1152 + 63x^11/2816 + ...
-     */
-  #define mw_asin(x) ((x) + (cube(x) / 6.0) + 3.0 * (sqr(x) * cube(x) / 40.0)   \
-    + (5.0 * (x) * cube(x) * cube(x) / 112.0) + (35.0 * cube(cube(x)) / 1152.0) \
-    + (63.0 * sqr(x) * cube(cube(x)) / 2816.0))
-#endif /* !BROKEN_CL_MATH */
-
-
+#define mw_asin asin
 #define mw_asinh asinh
 #define mw_asinpi asinpi
-
-#if !BROKEN_CL_MATH
-  #define mw_atan atan
-#else
-  #define mw_atan(x) ((x) - cube(x) / 3.0 + sqr(x) * cube(x) / 5.0 - cube(x) * cube(x) * (x) / 7.0 + cube(cube(x)) / 9.0)
-#endif /* !BROKEN_CL_MATH */
-
-#if !BROKEN_CL_MATH
-  #define mw_atan2 atan2
-#else
-  /* ATI currently missing double version of this.  Wikipedia gives
-     this formula, but also an alternate version which avoids
-     underflow but is undefined for 0.
-   */
-  #warning "Using replacement for missing atan2"
-  #define mw_atan2(y, x) (((real) 2.0) * mw_atan((y) / (mw_hypot(x, y) + (x))))
-#endif /* !BROKEN_CL_MATH */
-
+#define mw_atan atan
+#define mw_atan2 atan2
 #define mw_atanh atanh
 #define mw_atanpi atanpi
 #define mw_atan2pi atan2pi
@@ -75,17 +47,7 @@ extern "C" {
 #define mw_ceil ceil
 #define mw_copysign copysign
 
-#if !BROKEN_CL_MATH
-  #define mw_cos cos
-#else
-    /* The ATI compiler is the buggiest garbage I've ever used. It
-     * makes the compile take 60 seconds when I use the actual cos
-     * function. */
-  #define mw_cos(x) (1.0 - sqr(x) / 2.0 + sqr(sqr(x)) / 24.0 - sqr(cube(x)) / 720.0 + sqr(sqr(sqr(x))) / 40320.0 - (x) * cube(cube(x)) / 3628800.0)
-  #warning "Using cos replacement"
-#endif /* !BROKEN_CL_MATH */
-
-
+#define mw_cos cos
 #define mw_cosh cosh
 #define mw_cospi cospi
 #define mw_erfc erfc
@@ -151,11 +113,7 @@ extern "C" {
 #define mw_round round
 #define mw_rsqrt rsqrt
 
-#if !BROKEN_CL_MATH
-  #define mw_sin sin
-#else
-  #define mw_sin(x) ((x) - cube(x) / 120.0 - (x) * cube(x) * cube(x) / 5040.0 + cube(cube(x)) / 362880.0)
-#endif /* !BROKEN_CL_MATH_ */
+#define mw_sin sin
 
 #if !BROKEN_CL_MATH
     /* The glibc one uses 2 out arguments. We want to use it when
