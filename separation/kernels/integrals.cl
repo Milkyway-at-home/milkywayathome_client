@@ -209,9 +209,9 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
                             __constant INTEGRAL_AREA* ia,
                             __constant STREAM_CONSTANTS* sc,
                             __constant R_CONSTS* rcs,
-                            __global const LB_TRIG* lbts,
-                            __global const R_POINTS* r_pts,
                             __constant real* restrict sg_dx,
+                            __global const R_POINTS* r_pts,
+                            __global const LB_TRIG* lbts,
                             const real nu_id)
 {
     size_t mu_step = get_global_id(1);

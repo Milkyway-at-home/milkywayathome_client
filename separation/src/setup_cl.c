@@ -46,9 +46,9 @@ static inline cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm)
     err |= clSetKernelArg(ci->kern, 3, sizeof(cl_mem), &cm->ia);
     err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->sc);
     err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->rc);
-    err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->lbts);
+    err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->sg_dx);
     err |= clSetKernelArg(ci->kern, 7, sizeof(cl_mem), &cm->rPts);
-    err |= clSetKernelArg(ci->kern, 8, sizeof(cl_mem), &cm->sg_dx);
+    err |= clSetKernelArg(ci->kern, 8, sizeof(cl_mem), &cm->lbts);
 
     if (err != CL_SUCCESS)
     {
