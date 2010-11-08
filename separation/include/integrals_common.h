@@ -80,15 +80,15 @@ inline real aux_prob(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 }
 
 ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE
-inline real rg_calc(const mwvector xyz, const real q_inv_sqr)
+inline real rg_calc(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap, const mwvector xyz)
 {
     /* sqrt(x^2 + y^2 + q_inv_sqr * z^2) */
 
     real tmp;
 
     tmp = sqr(X(xyz));
-    tmp = mw_mad(Y(xyz), Y(xyz), tmp);           /* x^2 + y^2 */
-    tmp = mw_mad(q_inv_sqr, sqr(Z(xyz)), tmp);   /* (q_invsqr * z^2) + (x^2 + y^2) */
+    tmp = mw_mad(Y(xyz), Y(xyz), tmp);               /* x^2 + y^2 */
+    tmp = mw_mad(ap->q_inv_sqr, sqr(Z(xyz)), tmp);   /* (q_invsqr * z^2) + (x^2 + y^2) */
 
     return mw_sqrt(tmp);
 }

@@ -38,10 +38,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define h_prob_f h_prob_slow
 #endif /* FAST_H_PROB */
 
-/* Compiler is too stupid to unroll the loops over the
- * streams if we loop over NSTREAMS (as of Stream SDK 2.2), so we have
- * to manually expand. A macro to expand an arbitrary number of times
- * is also quite terrible. Not unrolling these loops murders the
+/* Compiler apparently can't unroll the loops over the streams if we
+ * loop over NSTREAMS (as of Stream SDK 2.2), so we have to manually
+ * expand. A macro to expand an arbitrary number of times is also
+ * quite terrible. Not unrolling these loops murders the
  * performance. */
 #if NSTREAM > 5
   #error "Requested number of streams greater than supported maximum (5)"
@@ -116,7 +116,7 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
     mwvector xyz;
     real bg_prob = 0.0;
     real rg;
-    real2 r_pt;
+    R_POINTS r_pt;
 
     /* if q is 0, there is no probability */
     /* CHECKME: What happens to the st_probs? */
@@ -137,7 +137,7 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
         /* Using stream_sums_cl twice (while giving a nonsense result)
          * somehow ends up using fewer registers */
 
-        rg = rg_calc(xyz, ap->q_inv_sqr);
+        rg = rg_calc(ap, xyz);
 
         bg_prob += h_prob_f(ap, QW_R3_N(r_pt), rg);
 
@@ -209,7 +209,7 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
                             __constant INTEGRAL_AREA* ia,
                             __constant STREAM_CONSTANTS* sc,
                             __constant R_CONSTS* rcs,
-                            __global const real4* lbts,
+                            __global const LB_TRIG* lbts,
                             __global const R_POINTS* r_pts,
                             __constant real* restrict sg_dx,
                             const real nu_id,
@@ -219,7 +219,7 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     size_t r_step = get_global_id(1);
     size_t idx = mu_step * ia->r_steps + r_step; /* Index into output buffers */
 
-    real4 lbt = lbts[nu_step * ia->mu_steps + mu_step]; /* 32-byte read */
+    LB_TRIG lbt = lbts[nu_step * ia->mu_steps + mu_step]; /* 32-byte read */
 
     real st_probs[NSTREAM] = { 0.0 };
     real r_result = r_calculation(ap, sc, sg_dx, &rcs[r_step], &r_pts[r_step * ap->convolve], lbt, nu_id, st_probs);

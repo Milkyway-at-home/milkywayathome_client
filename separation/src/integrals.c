@@ -85,8 +85,7 @@ real bg_probability_fast_hprob(const ASTRONOMY_PARAMETERS* ap,
     {
         xyz = lbr2xyz_2(ap, r_pts[i].r_point, lbt);
 
-        rg = rg_calc(xyz, ap->q_inv_sqr);
-
+        rg = rg_calc(ap, xyz);
 
         h_prob = h_prob_fast(ap, r_pts[i].qw_r3_N, rg);
 
@@ -125,7 +124,7 @@ real bg_probability_slow_hprob(const ASTRONOMY_PARAMETERS* ap,
     {
         xyz = lbr2xyz_2(ap, r_pts[i].r_point, lbt);
 
-        rg = rg_calc(xyz, ap->q_inv_sqr);
+        rg = rg_calc(ap, xyz);
 
         bg_prob += h_prob_slow(ap, r_pts[i].qw_r3_N, rg);
         if (aux_bg_profile)
