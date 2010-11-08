@@ -59,13 +59,6 @@ static inline cl_int createOutMuBuffer(CLInfo* ci,
         return err;
     }
 
-    cm->outMu_tmp = createZeroReadWriteBuffer(ci->clctx, sizes->outMu, &err);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating out mu temp buffer of size %zu: %s\n", sizes->outMu, showCLInt(err));
-        return err;
-    }
-
     return CL_SUCCESS;
 }
 
@@ -79,13 +72,6 @@ static inline cl_int createOutProbsBuffer(CLInfo* ci,
     if (err != CL_SUCCESS)
     {
         warn("Error creating out probs buffer of size %zu: %s\n", sizes->outProbs, showCLInt(err));
-        return err;
-    }
-
-    cm->outProbs_tmp = createZeroReadWriteBuffer(ci->clctx, sizes->outProbs, &err);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating out probs temp buffer of size %zu: %s\n", sizes->outProbs, showCLInt(err));
         return err;
     }
 
@@ -257,10 +243,7 @@ cl_int createSeparationBuffers(CLInfo* ci,
 void releaseSeparationBuffers(SeparationCLMem* cm)
 {
     clReleaseMemObject(cm->outProbs);
-    clReleaseMemObject(cm->outProbs_tmp);
-
     clReleaseMemObject(cm->outMu);
-    clReleaseMemObject(cm->outMu_tmp);
 
     clReleaseMemObject(cm->ap);
     clReleaseMemObject(cm->ia);
@@ -271,19 +254,6 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
     clReleaseMemObject(cm->lbts);
 }
 
-
-void swapOutputBuffers(SeparationCLMem* cm)
-{
-    cl_mem tmp;
-
-    tmp           = cm->outMu_tmp;
-    cm->outMu_tmp = cm->outMu;
-    cm->outMu     = tmp;
-
-    tmp              = cm->outProbs_tmp;
-    cm->outProbs_tmp = cm->outProbs;
-    cm->outProbs     = tmp;
-}
 
 /* Set kernel arguments to the temporary output buffers */
 cl_int separationSetOutputBuffers(CLInfo* ci, SeparationCLMem* cm)
