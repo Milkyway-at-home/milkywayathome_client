@@ -141,10 +141,12 @@ static size_t nextMultiple(const size_t x, const size_t n)
 
 static cl_int cpuGroupSizes(const INTEGRAL_AREA* ia, size_t global[], size_t local[])
 {
-    global[0] = ia->mu_steps;
-    global[1] = ia->r_steps;
+    global[0] = 1;
+    global[1] = ia->mu_steps;
+    global[2] = ia->r_steps;
     local[0] = 1;
     local[1] = 1;
+    local[2] = 1;
 
     return CL_SUCCESS;
 }
@@ -162,12 +164,14 @@ static cl_int gpuGroupSizes(const INTEGRAL_AREA* ia, size_t numChunks, size_t gl
 
     /* Ideally these are already nicely divisible by 32/64/128, otherwise
      * round up a bit. */
-    global[0] = ia->mu_steps;
-    global[1] = chunkSize;
+    global[0] = 1;
+    global[1] = ia->mu_steps;
+    global[2] = chunkSize;
 
     /* Bias towards mu steps seems to be better */
-    local[0] = groupSize;
-    local[1] = 1;
+    local[0] = 1;
+    local[1] = groupSize;
+    local[2] = 1;
 
     return CL_SUCCESS;
 }
@@ -199,18 +203,19 @@ static cl_bool findWorkGroupSizes(CLInfo* ci,
         return CL_TRUE;
     }
 
-    size_t localSize = local[0] * local[1];
+    size_t localSize = local[0] * local[1] * local[2];
 
-    warn("Range is { mu_steps = %zu, r_steps = %zu }\n"
-         "Chunked range is  { mu_steps = %zu, r_steps = %zu }\n"
-         "Attempting to use a workgroup size of { %zu, %zu } = %zu \n",
-         ia->mu_steps, ia->r_steps,
-         global[0], global[1],
-         local[0], local[1], localSize);
+    warn("Range is { nu_steps = %zu, mu_steps = %zu, r_steps = %zu }\n"
+         "Chunked range is  { nu_steps = %zu, mu_steps = %zu, r_steps = %zu }\n"
+         "Attempting to use a workgroup size of { %zu, %zu, %zu } = %zu \n",
+         ia->nu_steps, ia->mu_steps, ia->r_steps,
+         global[0], global[1], global[2],
+         local[0], local[1], local[2],
+         localSize);
 
     /* Sanity checks */
     /* TODO: also check against CL_DEVICE_MAX_WORK_ITEM_SIZES */
-    return (global[0] % local[0] || global[1] % local[1] || localSize > wgi.wgs);
+    return (global[0] % local[0] || global[1] % local[1] || global[2] % local[2] || localSize > wgi.wgs);
 }
 
 static cl_int enqueueIntegralKernel(CLInfo* ci,
@@ -223,7 +228,7 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
 
     err = clEnqueueNDRangeKernel(ci->queue,
                                  ci->kern,
-                                 2,
+                                 3,
                                  offset, global, local,
                                  0, NULL, &evs->endTmp);
     if (err != CL_SUCCESS)
@@ -271,13 +276,6 @@ static cl_int setNuKernelArgs(CLInfo* ci, const INTEGRAL_AREA* ia, const cl_uint
     if (err != CL_SUCCESS)
     {
         warn("Error setting nu_id argument for step %u: %s\n", nu_step, showCLInt(err));
-        return err;
-    }
-
-    err = clSetKernelArg(ci->kern, 10, sizeof(cl_uint), &nu_step);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error setting nu step argument for step %u: %s\n", nu_step, showCLInt(err));
         return err;
     }
 
@@ -361,10 +359,11 @@ static cl_int runNuStep(CLInfo* ci,
 
     size_t chunkSize = ia->r_steps / numChunks;
 
-    offset[0] = 0;
+    offset[0] = nu_step;
+    offset[1] = 0;
     for (i = 0; i < numChunks; ++i)
     {
-        offset[1] = i * chunkSize;
+        offset[2] = i * chunkSize;
 
         err = enqueueIntegralKernel(ci, evs, offset, global, local);
         if (err != CL_SUCCESS)
@@ -411,8 +410,8 @@ static real runIntegral(CLInfo* ci,
         return NAN;
     }
 
-    size_t global[2];
-    size_t local[2];
+    size_t global[3];
+    size_t local[3];
 
     /* TODO: Figure out a number based on GPU speed to keep execution
      * times under 100ms to prevent unusable system */

@@ -212,13 +212,12 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
                             __global const LB_TRIG* lbts,
                             __global const R_POINTS* r_pts,
                             __constant real* restrict sg_dx,
-                            const real nu_id,
-                            const unsigned int nu_step)
+                            const real nu_id)
 {
-    size_t mu_step = get_global_id(0);
-    size_t r_step = get_global_id(1);
+    size_t mu_step = get_global_id(1);
+    size_t r_step = get_global_id(2);
     size_t idx = mu_step * ia->r_steps + r_step; /* Index into output buffers */
-
+    size_t nu_step = get_global_id(0);
     LB_TRIG lbt = lbts[nu_step * ia->mu_steps + mu_step]; /* 32-byte read */
 
     real st_probs[NSTREAM] = { 0.0 };
