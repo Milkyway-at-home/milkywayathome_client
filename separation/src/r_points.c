@@ -84,9 +84,9 @@ static inline R_POINTS calc_r_point(const real dx, const real qgaus_W, const rea
 static inline R_CONSTS calcRConsts(R_PRIME rp)
 {
     R_CONSTS rc;
+
     rc.gPrime = calcG(rp.rPrime);
-    rc.reff_xr_rp3 = calcReffXrRp3(rp.rPrime, rc.gPrime);
-    rc.irv = rp.irv;
+    rc.irv_reff_xr_rp3 = rp.irv * calcReffXrRp3(rp.rPrime, rc.gPrime);
 
     return rc;
 }

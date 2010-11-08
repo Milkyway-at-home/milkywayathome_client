@@ -75,8 +75,6 @@ static inline real likelihood_bg_probability_main(const ASTRONOMY_PARAMETERS* ap
         bg_prob += h_prob;
     }
 
-    mult_probs(st_probs, rc.reff_xr_rp3, ap->number_streams);
-
     return bg_prob;
 }
 
@@ -86,6 +84,7 @@ real likelihood_bg_probability(const ASTRONOMY_PARAMETERS* ap,
                                const real* sg_dx,
                                const LB_TRIG lbt,
                                const R_CONSTS rc,
+                               const real reff_xr_rp3,
                                real* st_probs)
 {
     real bg_prob;
@@ -95,7 +94,11 @@ real likelihood_bg_probability(const ASTRONOMY_PARAMETERS* ap,
         return -1.0;
 
     bg_prob = likelihood_bg_probability_main(ap, sc, r_pts, sg_dx, lbt, rc, ap->convolve, st_probs);
-    bg_prob *= rc.reff_xr_rp3;
+    bg_prob *= reff_xr_rp3;
+
+    mult_probs(st_probs, reff_xr_rp3, ap->number_streams);
+
+
 
     return bg_prob;
 }
@@ -339,7 +342,8 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
     real bg_prob, bg;
     LB lb;
     LB_TRIG lbt;
-    R_CONSTS rc = { 0.0, 0.0, 0.0 };
+    real reff_xr_rp3;
+    R_CONSTS rc = { 0.0, 0.0 };
 
     real epsilon_b;
     mwmatrix cmatrix;
@@ -357,14 +361,14 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
         point = sp->stars[current_star_point];
         rc.gPrime = calcG(Z(point));
         set_r_points(ap, sg, ap->convolve, rc.gPrime, r_pts);
-        rc.reff_xr_rp3 = calcReffXrRp3(Z(point), rc.gPrime);
+        reff_xr_rp3 = calcReffXrRp3(Z(point), rc.gPrime);
 
         LB_L(lb) = L(point);
         LB_B(lb) = B(point);
 
         lbt = lb_trig(lb);
 
-        bg_prob = likelihood_bg_probability(ap, sc, r_pts, sg.dx, lbt, rc, st_prob);
+        bg_prob = likelihood_bg_probability(ap, sc, r_pts, sg.dx, lbt, rc, reff_xr_rp3, st_prob);
 
         bg = (bg_prob / fsi->background_integral) * exp_background_weight;
 

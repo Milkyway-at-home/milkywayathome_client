@@ -33,6 +33,7 @@ real likelihood_bg_probability(const ASTRONOMY_PARAMETERS* ap,
                                const real* sg_dx,
                                const LB_TRIG lbt,
                                const R_CONSTS rc,
+                               const real reff_xr_rp3,
                                real* st_probs);
 
 real likelihood(const ASTRONOMY_PARAMETERS* ap,

@@ -108,7 +108,7 @@ inline real bg_probability(__constant ASTRONOMY_PARAMETERS* ap,
                            __constant STREAM_CONSTANTS* sc,
                            __constant real* sg_dx,
                            __global const R_POINTS* r_pts,
-                           const real4 lbt,
+                           const LB_TRIG lbt,
                            const real gPrime,
                            real* st_probs)
 {
@@ -156,24 +156,23 @@ __attribute__ ((always_inline))
 real r_calculation(__constant ASTRONOMY_PARAMETERS* ap,
                    __constant STREAM_CONSTANTS* sc,
                    __constant real* sg_dx,
-                   __constant R_CONSTS* rc,
-                   __global const real2* r_pts,
-                   const real4 lbt,
+                   __global const R_POINTS* r_pts,
+                   R_CONSTS rc,
+                   const LB_TRIG lbt,
                    const real id,
                    real* st_probs)
 {
     real bg_prob = bg_probability(ap, sc, sg_dx,
                                   r_pts,
                                   lbt,
-                                  rc->gPrime,
+                                  rc.gPrime,
                                   st_probs);
-
-    real V = id * rc->irv;
-    real V_reff_xr_rp3 = V * rc->reff_xr_rp3;
+    real V_reff_xr_rp3 = id * rc.irv_reff_xr_rp3;
+    bg_prob *= V_reff_xr_rp3;
 
     mult_probs_cl(st_probs, V_reff_xr_rp3);
 
-    return V_reff_xr_rp3 * bg_prob;
+    return bg_prob;
 }
 
 __attribute__ ((always_inline))
@@ -221,8 +220,14 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     LB_TRIG lbt = lbts[nu_step * ia->mu_steps + mu_step]; /* 32-byte read */
 
     real st_probs[NSTREAM] = { 0.0 };
-    real r_result = r_calculation(ap, sc, sg_dx, &rcs[r_step], &r_pts[r_step * ap->convolve], lbt, nu_id, st_probs);
-
+    real r_result = r_calculation(ap,
+                                  sc,
+                                  sg_dx,
+                                  &r_pts[r_step * ap->convolve],
+                                  rcs[r_step],
+                                  lbt,
+                                  nu_id,
+                                  st_probs);
     mu_out[idx] += r_result;
     write_st_probs(&probs_out[NSTREAM * idx], st_probs);
 }

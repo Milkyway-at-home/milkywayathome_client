@@ -144,9 +144,8 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
                                   const STREAM_CONSTANTS* sc,
                                   const R_POINTS* r_pts,
                                   const real* sg_dx,
+                                  const real gPrime,
                                   const LB_TRIG lbt, /* integral point */
-                                  const R_CONSTS rc,
-                                  const real V,
                                   real* st_probs,
                                   KAHAN* probs)
 {
@@ -160,13 +159,10 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
 
     bg_prob = ap->bg_prob_func(ap, sc, r_pts, sg_dx,
                                lbt,
-                               rc.gPrime,
+                               gPrime,
                                ap->aux_bg_profile,
                                ap->convolve,
                                st_probs);
-
-    sum_probs(probs, st_probs, V * rc.reff_xr_rp3, ap->number_streams);
-    bg_prob *= rc.reff_xr_rp3;
 
     return bg_prob;
 }
@@ -185,14 +181,18 @@ static inline void r_sum(const ASTRONOMY_PARAMETERS* ap,
                          const unsigned int r_steps)
 {
     unsigned int r_step;
-    real V;
+    real V_reff_xr_rp3;
     real bg_prob;
 
     for (r_step = 0; r_step < r_steps; ++r_step)
     {
-        V = id * rc[r_step].irv;
+        bg_prob = bg_probability(ap, sc,
+                                 &r_pts[r_step * ap->convolve], sg_dx,
+                                 rc[r_step].gPrime, lbt, st_probs, probs);
 
-        bg_prob = V * bg_probability(ap, sc, &r_pts[r_step * ap->convolve], sg_dx, lbt, rc[r_step], V, st_probs, probs);
+        V_reff_xr_rp3 = id * rc[r_step].irv_reff_xr_rp3;
+        bg_prob *= V_reff_xr_rp3;
+        sum_probs(probs, st_probs, V_reff_xr_rp3, ap->number_streams);
 
         KAHAN_ADD(es->sum, bg_prob);
     }
