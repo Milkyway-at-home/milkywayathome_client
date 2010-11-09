@@ -51,18 +51,19 @@ inline mwvector lbr2xyz_2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 }
 
 ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
-inline real calc_st_prob_inc(__MW_CONSTANT STREAM_CONSTANTS* sc, mwvector xyz)
+inline real calc_st_prob_inc(STREAM_CONSTANTS sc, mwvector xyz)
 {
     real xyz_norm, dotted;
     mwvector xyzs;
 
-    xyzs = mw_subv(xyz, sc->c);
-    dotted = mw_dotv(sc->a, xyzs);
-    mw_incsubv_s(xyzs, sc->a, dotted);
+    xyzs = mw_subv(xyz, sc.c);
+    dotted = mw_dotv(sc.a, xyzs);
+    mw_incsubv_s(xyzs, sc.a, dotted);
 
     xyz_norm = mw_sqrv(xyzs);
 
-    return mw_exp(-xyz_norm * sc->sigma_sq2_inv);
+    return mw_exp(-xyz_norm * sc.sigma_sq2_inv);
+    //return -xyz_norm * sc->sigma_sq2_inv;
 }
 
 ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
@@ -137,6 +138,7 @@ inline void mult_probs(real* st_probs, const real V_reff_xr_rp3, const unsigned 
         st_probs[i] *= V_reff_xr_rp3;
 }
 
+#ifndef __OPENCL_VERSION__
 ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
 inline void stream_sums(real* st_probs,
                         __MW_CONSTANT STREAM_CONSTANTS* sc,
@@ -147,10 +149,9 @@ inline void stream_sums(real* st_probs,
     unsigned int i;
 
     for (i = 0; i < nstreams; ++i)
-        st_probs[i] += qw_r3_N * calc_st_prob_inc(&sc[i], xyz);
+        st_probs[i] += qw_r3_N * calc_st_prob_inc(sc[i], xyz);
 }
 
-#ifndef __OPENCL_VERSION__
 ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE
 inline LB_TRIG lb_trig(LB lb)
 {

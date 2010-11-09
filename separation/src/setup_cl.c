@@ -167,6 +167,7 @@ cl_int setupSeparationCL(CLInfo* ci,
                            "-DUSE_MAD=1 "
                            "-DUSE_FMA=1 "
                            "-cl-mad-enable "
+                           "-cl-no-signed-zeros "
                            "-cl-strict-aliasing "
                            "-cl-finite-math-only "
                            "-I%s/../include "

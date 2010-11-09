@@ -44,11 +44,25 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 #define LB_L(x) ((x).l)
 #define LB_B(x) ((x).b)
 
+
+
+
+#ifndef __OPENCL_VERSION__
 typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real irv_reff_xr_rp3;
     real gPrime;
 } R_CONSTS;
+
+  #define IRV_REFF_XR_RP3(r) ((r).irv_reff_xr_rp3)
+  #define GPRIME(r) ((r).gPrime)
+#else
+
+typedef real2 R_CONSTS;
+
+  #define IRV_REFF_XR_RP3(r) ((r).x)
+  #define GPRIME(r) ((r).y)
+#endif
 
 typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
