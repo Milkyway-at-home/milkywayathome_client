@@ -57,6 +57,14 @@ function(milkyway_link client_bin_name use_boinc use_static link_libs)
     #Static linking tends to interfere with debugging with valgrind/gdb
     #in annoying ways
     correct_static_link(${client_bin_name})
+  else()
+    if(use_boinc)
+      list(APPEND link_libs "stdc++")
+      if(UNIX)
+        message("PTHREADING TIME")
+        list(APPEND link_libs "pthread")
+      endif()
+    endif()
   endif()
 
   if(use_boinc)

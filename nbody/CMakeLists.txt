@@ -232,10 +232,6 @@ set_property(SOURCE ${dsmft_src}
 
 set(CMAKE_C_FLAGS "-std=gnu99 ${SSE2_FLAGS} ${CMAKE_C_FLAGS}")
 
-configure_file (
-  "${NBODY_INCLUDE_DIR}/nbody_config.h.in"
-  "${PROJECT_INCLUDE_DIR}/nbody_config.h")
-
 if(WIN32)
   add_definitions(-D_WIN32_IE=0x0501)
   add_definitions(-D_WINDOWS)
@@ -316,8 +312,12 @@ else()
 endif()
 
 
+configure_file (
+  "${NBODY_INCLUDE_DIR}/nbody_config.h.in"
+  "${PROJECT_INCLUDE_DIR}/nbody_config.h")
+
 add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
-milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} ${BOINC_RELEASE} "${exe_link_libs}")
+milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} ${STATIC_EVERYTHING} "${exe_link_libs}")
 #add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 

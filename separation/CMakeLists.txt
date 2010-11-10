@@ -220,13 +220,14 @@ if(NEED_POPT_DEPS)
                             ${LIBINTL_LIBRARY})
 endif()
 
-if(SEPARATION_CRLIBM)
-  find_package(Crlibm)
-endif()
+find_package(Crlibm)
 
-if(CRLIBM_LIBRARY AND SEPARATION_CRLIBM)
+if(CRLIBM_FOUND AND SEPARATION_CRLIBM)
   include_directories(${CRLIBM_INCLUDE_DIR})
   list(APPEND exe_link_libs ${CRLIBM_LIBRARY})
+elseif(NOT CRLIBM_FOUND AND SEPARATION_CRLIBM)
+  message(WARNING "Trying to build separation crlibm, but crlibm not found. Disabling crlibm")
+  set(SEPARATION_CRLIBM OFF)
 endif()
 
 list(APPEND exe_link_libs ${SEPARATION_LIBM_LIBRARY})
@@ -243,7 +244,7 @@ if(MSVC)
 endif()
 
 add_executable(${separation_bin_name} ${separation_main_src})
-milkyway_link(${separation_bin_name} ${BOINC_APPLICATION} ${BOINC_RELEASE} "${exe_link_libs}")
+milkyway_link(${separation_bin_name} ${BOINC_APPLICATION} ${STATIC_EVERYTHING} "${exe_link_libs}")
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 
