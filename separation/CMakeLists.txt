@@ -31,7 +31,7 @@ include(PrintInfo)
 include(CPUNameTest)
 
 set(separation_VERSION_MAJOR 0)
-set(separation_VERSION_MINOR 46)
+set(separation_VERSION_MINOR 47)
 set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}")
 
 get_info_from_processor_name()
