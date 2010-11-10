@@ -24,11 +24,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "r_points.h"
 #include "calculated_constants.h"
 
-static inline cl_mem createWriteBuffer(cl_context clctx, size_t size, cl_int* err)
-{
-    return clCreateBuffer(clctx, CL_MEM_WRITE_ONLY, size, NULL, err);
-}
-
 static inline cl_mem createReadWriteBuffer(cl_context clctx, size_t size, cl_int* err)
 {
     return clCreateBuffer(clctx, CL_MEM_READ_WRITE, size, NULL, err);

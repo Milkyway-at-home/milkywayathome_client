@@ -423,6 +423,14 @@ static real runIntegral(CLInfo* ci,
         return NAN;
     }
 
+    printf("Sizes: ap = %zu ia = %zu, sc = %u * %zu, rcs = %u * %zu, sg_dx = %u * %zu total = %zu\n",
+           sizeof(ASTRONOMY_PARAMETERS), sizeof(INTEGRAL_AREA),
+           ap->number_streams, sizeof(STREAM_CONSTANTS), ia->r_steps, sizeof(R_CONSTS),
+           ia->r_steps, sizeof(real),
+           sizeof(ASTRONOMY_PARAMETERS) + sizeof(INTEGRAL_AREA) + ap->number_streams * sizeof(STREAM_CONSTANTS) + ia->r_steps * sizeof(R_CONSTS) + ia->r_steps * sizeof(real)
+
+        );
+
     for (i = 0; i < ia->nu_steps; ++i)
     {
         double t1 = mwGetTimeMilli();
@@ -435,7 +443,12 @@ static real runIntegral(CLInfo* ci,
             return NAN;
         }
 
-        clWaitForEvents(1, &evs.endTmp);
+        err = clWaitForEvents(1, &evs.endTmp);
+        if (err != CL_SUCCESS)
+        {
+            warn("Failed to wait for event: %s\n", showCLInt(err));
+            return NAN;
+        }
 
         double t2 = mwGetTimeMilli();
         printf("Loop time: %f ms\n", t2 - t1);
