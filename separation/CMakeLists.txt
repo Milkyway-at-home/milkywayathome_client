@@ -28,11 +28,13 @@ include(CLKernelInline)
 include(SpecialLibs)
 include(BOINCBinNames)
 include(PrintInfo)
+include(CPUNameTest)
 
 set(separation_VERSION_MAJOR 0)
 set(separation_VERSION_MINOR 46)
 set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}")
 
+get_info_from_processor_name()
 
 if(BOINC_RELEASE_NAME)
   get_boinc_bin_name("milkyway_separation" "${separation_VERSION}" "")
@@ -45,7 +47,9 @@ endif()
 set(SEPARATION_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 include_directories(${SEPARATION_INCLUDE_DIR})
 
-
+if(SYSTEM_IS_PPC)
+  set(CMAKE_C_FLAGS "-maltivec -mfused-madd -mhard-float -mabi=altivec ${CMAKE_C_FLAGS}")
+endif()
 
 if(NOT MSVC)
   set(CMAKE_C_FLAGS "-std=gnu99 -warn-uninit-values ${CMAKE_C_FLAGS}")

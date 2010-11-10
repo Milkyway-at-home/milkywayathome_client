@@ -105,7 +105,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* FIXME: This would be totally wrong when using a universal binary */
 #if defined(__i386__) || defined(_M_IX86)
   #define ARCH_STRING "x86"
-#elif defined(__ppc__) || defined(_M_PPC)
+#elif defined(__powerpc__) || defined(__ppc__) || defined(_M_PPC)
   #define ARCH_STRING "PPC"
 #elif defined(__x86_64__) || defined(_M_X64)
   #define ARCH_STRING "x86_64"

@@ -126,17 +126,6 @@ set(dsmft_src "${MILKYWAY_THIRDPARTY}/dSFMT-src-${dsfmtVer}/dSFMT.c")
 include_directories("${MILKYWAY_THIRDPARTY}/dSFMT-src-${dsfmtVer}/")
 add_definitions("-DDSFMT_MEXP=${dsfmt_mexp}")
 
-if(DOWNLOAD_CRLIBM)
-  add_dependencies(nbody_simulation crlibm_build)
-  set(CRLIBM_INCLUDE_DIR "${MILKYWAY_ROOT}/include"})
-  set(CRLIBM_LIBRARY "${LIBRARY_OUTPUT_PATH}/libcrlibm${CMAKE_STATIC_LIBRARY_SUFFIX}")
-else()
-  if(BOINC_RELEASE)
-    find_package(Crlibm REQUIRED)
-  else()
-    find_package(Crlibm)
-  endif()
-endif()
 
 
 print_separator()
@@ -274,6 +263,19 @@ endif()
 
 
 add_library(nbody_simulation STATIC ${nbody_lib_src} ${nbody_lib_headers})
+
+
+if(DOWNLOAD_CRLIBM)
+  add_dependencies(nbody_simulation crlibm_build)
+  set(CRLIBM_INCLUDE_DIR "${MILKYWAY_ROOT}/include"})
+  set(CRLIBM_LIBRARY "${LIBRARY_OUTPUT_PATH}/libcrlibm${CMAKE_STATIC_LIBRARY_SUFFIX}")
+else()
+  if(BOINC_RELEASE)
+    find_package(Crlibm REQUIRED)
+  else()
+    find_package(Crlibm)
+  endif()
+endif()
 
 set(nbody_libs nbody_simulation)
 
