@@ -82,6 +82,12 @@ elseif(NOT OPENMP_POUND AND NBODY_OPENMP)
   message(WARNING "Did not find OpenMP support, but was enabled. Continuing without OpenMP")
 endif()
 
+
+
+if(BOINC_RELEASE)
+  set(NBODY_CRLIBM ON)
+endif()
+
 if(NOT DOUBLEPREC AND NBODY_CRLIBM)
   message(WARNING "Attempting to use single precision with crlibm. Disabling use of crlibm")
   set(NBODY_CRLIBM OFF)
@@ -264,10 +270,6 @@ else()
     find_package(Crlibm REQUIRED)
   else()
     find_package(Crlibm)
-    if (NOT CRLIBM_FOUND AND NBODY_CRLIBM)
-      message(WARNING "Trying to use Crlibm, but not found. Disabling N-body use of Crlibm")
-      set(NBODY_CRLIBM OFF)
-    endif()
   endif()
 endif()
 

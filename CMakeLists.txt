@@ -219,12 +219,6 @@ print_build_info()
 print_build_options()
 print_separator()
 
-find_package(JsonC)
-if(NOT JSON_C_FOUND AND NBODY)
-  message(WARNING "Didn't find json-c. Disabling N-body build.")
-  set(NBODY OFF)
-endif()
-
 
 if(NOT SEPARATION AND NOT NBODY)
   message(FATAL_ERROR "Nothing will be built!")
