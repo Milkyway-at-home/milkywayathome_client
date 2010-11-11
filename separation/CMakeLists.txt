@@ -104,19 +104,19 @@ else()
   set(SEPARATION_LIBM_LIBRARY ${FDLIBM_LIBRARY})
 endif()
 
+find_package(BOINC)
+
 if(BOINC_APPLICATION)
-  find_package(BOINC)
   include_directories(${BOINC_INCLUDE_DIR})
 endif()
 
-if(SEPARATION_OPENCL)
-  find_package(OpenCL)
-  if(NOT OPENCL_FOUND)
-    message(WARNING "Separation OpenCL was requested, but OpenCL not found. Disabling OpenCL.")
-    set(SEPARATION_OPENCL OFF)
-  else()
-    include_directories(${OPENCL_DIRECTORIES})
-  endif()
+find_package(OpenCL)
+
+if(SEPARATION_OPENCL AND NOT OPENCL_FOUND)
+  message(WARNING "Separation OpenCL was requested, but OpenCL not found. Disabling OpenCL.")
+  set(SEPARATION_OPENCL OFF)
+else()
+  include_directories(${OPENCL_DIRECTORIES})
 endif()
 
 set_os_specific_libs(${SEPARATION_OPENCL})

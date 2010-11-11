@@ -181,10 +181,10 @@ option(NBODY_OPENCL
 option(MILKYWAY_OPENCL
         "Build the OpenCL nbody" OFF)
 mark_as_advanced(MILKYWAY_OPENCL)
+
 #FIXME: Be able to build one with / without openl
 if(NBODY_OPENCL OR SEPARATION_OPENCL)
   set(MILKYWAY_OPENCL ON)
-  add_definitions("-DMILKYWAY_OPENCL=1")
 endif()
 
 option(NBODY
@@ -192,7 +192,6 @@ option(NBODY
 
 option(BOINC_APP_GRAPHICS
        "BOINC app graphics" OFF)
-
 
 set(gcc_extra_warnings "-Wshadow -Wpointer-arith -Wcast-align -common-Wwrite-strings -compare -fno-common -Wstrict-aliasing -Wstrict-aliasing=3 -Wswitch-enum -Wswitch-default -Wmissing-declarations -Wfloat-equal -Wcomment")
 
