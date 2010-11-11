@@ -423,14 +423,6 @@ static real runIntegral(CLInfo* ci,
         return NAN;
     }
 
-    printf("Sizes: ap = %zu ia = %zu, sc = %u * %zu, rcs = %u * %zu, sg_dx = %u * %zu total = %zu\n",
-           sizeof(ASTRONOMY_PARAMETERS), sizeof(INTEGRAL_AREA),
-           ap->number_streams, sizeof(STREAM_CONSTANTS), ia->r_steps, sizeof(R_CONSTS),
-           ia->r_steps, sizeof(real),
-           sizeof(ASTRONOMY_PARAMETERS) + sizeof(INTEGRAL_AREA) + ap->number_streams * sizeof(STREAM_CONSTANTS) + ia->r_steps * sizeof(R_CONSTS) + ia->r_steps * sizeof(real)
-
-        );
-
     for (i = 0; i < ia->nu_steps; ++i)
     {
         double t1 = mwGetTimeMilli();
@@ -459,7 +451,7 @@ static real runIntegral(CLInfo* ci,
     /* Read results from final step */
     result = readKernelResults(ci, cm, &evs, probs_results, ia->mu_steps, ia->r_steps, ap->number_streams);
     if (isnan(result))
-        warn("Failed to read final kernel results: %s\n", showCLInt(err));
+        warn("Failed to read final kernel results\n");
 
     return result;
 }
