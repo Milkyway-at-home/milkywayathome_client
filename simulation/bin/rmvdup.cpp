@@ -4,67 +4,75 @@
  *  Newberg, Malik Magdon-Ismail, Carlos Varela, Boleslaw Szymanski, and     *
  *  Rensselaer Polytechnic Institute                                         *
  *                                                                           *
- *  This file is part of the MilkyWay@Home Project.                          *
+ *  This file is part of Milkway@Home.                                       *
  *                                                                           *
- *  This program is free software: you can redistribute it and/or modify     *
+ *  Milkyway@Home is free software: you can redistribute it and/or modify    *
  *  it under the terms of the GNU General Public License as published by     *
  *  the Free Software Foundation, either version 3 of the License, or        *
  *  (at your option) any later version.                                      *
  *                                                                           *
- *  This program is distributed in the hope that it will be useful,          *
+ *  Milkyway@Home is distributed in the hope that it will be useful,         *
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
  *  GNU General Public License for more details.                             *
  *                                                                           *
  *  You should have received a copy of the GNU General Public License        *
- *  along with this program. If not, see <http://www.gnu.org/licenses/>.     *
+ *  along with Milkyway@Home. If not, see <http://www.gnu.org/licenses/>.    *
  *                                                                           *
  *  Shane Reilly                                                             *
  *  reills2@cs.rpi.edu                                                       *
  *                                                                           *
  *****************************************************************************/
 
-#ifndef _ASTROCONV_H_
-#define _ASTROCONV_H_
+#include <cstdlib>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "demofile.hpp"
+#include "drawhalo.hpp"
 
-#include <math.h>
-#include "trigtbl.hpp"
+using namespace std;
 
-inline void raDecRadToCart( double ra, double dec, double r, double &x, double &y, double &z )
+
+int main( int args, char **argv )
 {
+/*
+    if( args<2 ){
+        printf("Usage: ./mwdemo wedge_file_name\n");
+        return 1;
+    }
+*/
 
-    // RA/Dec to cartesian conversion
-    double t0 = cos(dec*TRIG_DEG_TO_RAD)*cos(ra*TRIG_DEG_TO_RAD);
-    double t1 = cos(dec*TRIG_DEG_TO_RAD)*sin(ra*TRIG_DEG_TO_RAD);
-    double t2 = sin(dec*TRIG_DEG_TO_RAD);
+    string fileName;
+    if( args>1 )
+        fileName = argv[1];
+    else {
+        cout << "Usage: rmvdup [lba text file] [output file]\n";
+        exit(0);
+    }
 
-    double mm[3][3] =
-        {   { -.06699 , -.87276, -.48354 } ,
-            {  .49273 , -.45035,  .74458 } ,
-            { -.86760 , -.18837,  .46020 }  };
+    bool earthCenter = true;
 
-    double c0 = t0*mm[0][0] + t1*mm[0][1] + t2*mm[0][2];
-    double c1 = t0*mm[1][0] + t1*mm[1][1] + t2*mm[1][2];
-    double c2 = t0*mm[2][0] + t1*mm[2][1] + t2*mm[2][2];
+    // Read in wedge
+    WedgeFile wf;
 
-    x = r*c0;
-    y = r*c1;
-    z = r*c2;
+    int totalStars = wf.getStarTotal(fileName);
 
+    HaloField wedge(totalStars);
+
+    wf.readStars(fileName, wedge, .5, true);
+
+    totalStars = wf.getStarTotal();
+    HaloPoint **star = wedge.getPoints();
+    
+    cout << totalStars << endl;
+    for( int i = 0; i<totalStars; i++ ) {
+        if( earthCenter )
+            cout << star[i]->position.x+8 << " ";
+        else
+            cout << star[i]->position.x << " ";
+        cout << star[i]->position.y << " ";
+        cout << star[i]->position.z << endl;
+    }
+    
+    return 0;
+    
 }
-
-inline double absMagToLum( double absMagnitude )
-    // Calculate luminosity relative to sun given the absolute magnitude
-{
-    return pow(10., 2.-.4*absMagnitude);
-}
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _ASTROCONV_H_ */

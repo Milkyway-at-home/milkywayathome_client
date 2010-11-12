@@ -54,8 +54,8 @@ int main( int args, char **argv )
 
     initDraw();
 
-    double diameter = 7.;
-    double fps = 30.;
+    float diameter = 7.;
+    float fps = 30.;
     int bpp = 32;
 
     string fileName = "stars_82.txt";
@@ -100,8 +100,8 @@ cevRot90.rotate(TRIG_2PI/4., , )
 // Find random focus
 Vector3d randAngle;
 
-double topDist = wedgeStdDev*3;
-double rViewDist = topDis*2;
+float topDist = wedgeStdDev*3;
+float rViewDist = topDis*2;
 
 setFocusAngle(0., sev, 0.);
 setFocusAngle(0., eev, 10.);   /// TODO /// Buffered

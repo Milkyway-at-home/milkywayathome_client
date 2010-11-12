@@ -81,36 +81,52 @@ int main( int args, char **argv )
 
     cout << "Adding stars to field...\n" << flush;
     sim.add(&wedge, diameter);
-    sim.add(getLastFrameNBody(), diameter);
+//    sim.add(getLastFrameNBody(), diameter);
     sim.add(imagePlot.getField(), 20.);
 
     cout << "Changing settings...\n" << flush;
     sim.showCamera();
     sim.cv->setFocusPoint(sim.cv->getFocusPoint(100., 45., 30.), 0.);
 
-//setFocusPoint(Vector3d{-8, 0, 0});
-//moveTo(Vector3d{-8, 0, 0}, 0.);
+    // Find earth-view focus
+    Vector3d wedgeCenter = wedge.getCenter();
+HaloField plot(1);
+plot.add(wedgeCenter.x, wedgeCenter.y, wedgeCenter.z, 1., 1., 3.14);
+sim.add(&plot, 200);
+
+    sim.cv->moveToPoint(Vector3d(-8, 0, 0));
+    sim.cv->setFocusDirection(wedgeCenter, 10);
+
 
 /*
- Find earth-view focus
 Vector3d sev;
 Vector3d eev;
 Vector3d cev;
-Vector3d cevRot90 = cev;
-cevRot90.rotate(TRIG_2PI/4., , )
-
-// Find random focus
-Vector3d randAngle;
-
-float topDist = wedgeStdDev*3;
-float rViewDist = topDis*2;
+Vector3d cevPerp = cev;
+Vector3d temp = cev;
+temp.x += 1.
+cevPerp *= temp;
 
 setFocusAngle(0., sev, 0.);
 setFocusAngle(0., eev, 10.);   /// TODO /// Buffered
 
-setFocusAngle(topDist, cEvRot90, 1.);   /// TODO /// Buffered
+// Find random focus
+//Vector3d randAngle;
+
+//float topDist = wedgeStdDev*3;
+//float rViewDist = topDis*2;
+
+// Find top-down focus
+//setFocusAngle(topDist, cEvPerp90, 1.);
+/// TODO /// Add glow
+
+
+
 
 setFocusAngle(RandomAngle);   /// TODO /// Buffered with fade-in
+
+
+moveToPoint( const Vector3d &newPosition, float finalDist, float seconds )
 
 */
 

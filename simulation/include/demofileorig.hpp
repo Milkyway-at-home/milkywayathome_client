@@ -215,7 +215,7 @@ public:
             starTotal = fileGetInt(fstrm);
         }
         fstrm.close();
-//cout << starTotal << endl;
+cout << starTotal << endl;
         return starTotal;
 
     }
