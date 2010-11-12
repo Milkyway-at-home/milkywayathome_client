@@ -9,10 +9,34 @@ Tests can be run with:
     $ make check
 
 Default build type is release. To enable debugging
-    $ cmake /path/to/source -DCMAKE_BUILD_TYPE=Debug
+    $ cmake /path/to/source/checkout -DCMAKE_BUILD_TYPE=Debug
 
-Pieces which are buildable based on the dependencies found will be
-built.
+    e.g, in the checkout directory,
+    $ cmake .
+
+Options can be passed to cmake with -D. cmake will walk you through
+various options if you run it with -i, such as
+
+  $ cmake -i .
+
+ Example options:
+    $ cmake . -DBOINC_APPLICATION=OFF -DCMAKE_C_COMPILER=/usr/bin/clang
+
+Common ON/OFF options:
+  BOINC_APPLICATION: Build with BOINC or not. More convenient to not use BOINC for general use, testing
+  STATIC_EVERYTHING: Statically link everything.
+  BOINC_RELEASE_NAME: Use the long names BOINC uses which include
+  version and system information
+  DOUBLEPREC: Use doubles (on by default)
+
+
+
+Semi-broken options:
+  DOWNLOAD_CRLIBM: Will download, build and install crlibm with the
+  checkout as a prefix. Sort of broken right now; you're probably
+  better off installing crlibm yourself. I think it works with some
+  series of turning it on and off again, or else it rebuilds crlibm
+  constantly or something.
 
 
 Notes:
@@ -22,4 +46,40 @@ when you try linking against frameworks. Note you need to delete
 CMakeCache.txt when you change compilers. I'm trying to take care of
 this automatically but it only sort of works. Specify the Apple gcc
 with -DCMAKE_C_COMPILER=/usr/bin/gcc, for it's usual location.
+
+Recommended compilers:
+  separation: clang
+  nbody: gcc
+
+  MSVC should work with separation
+  A popt which builds with MSVC: https://github.com/arsenm/POPT
+
+Dependencies:
+  () = optional for a functioning build
+  separation: popt, (boinc)
+  nbody: popt, json-c, (boinc) (crlibm)
+
+  On Ubuntu / Debian:
+    $ apt-get install cmake libpopt-dev libjson0-dev boinc-dev
+
+  Macports:
+    $ port install cmake popt json-c
+
+    Build BOINC libraries yourself
+
+MinGW32 dependency binaries can be found:
+  http://www.rpi.edu/~arsenm2/milkyway/milkyway_mingw_deps/
+  Extract them to the source directory, and they should be found and
+  used.
+  The crlibm binary has crlibm_init() removed, and is built with SSE2.
+
+
+Notes:
+  - Consistent N-body results between different systems require crlibm
+  and SSE2 (at least on x86, not sure about other architectures)
+
+  - All give usage with --help/-? arguments
+
+  - separation will do a separation after the integration if given an
+    output file. There is also an argument to set the random number seed.
 

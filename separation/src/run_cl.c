@@ -435,7 +435,12 @@ static real runIntegral(CLInfo* ci,
             return NAN;
         }
 
-        clWaitForEvents(1, &evs.endTmp);
+        err = clWaitForEvents(1, &evs.endTmp);
+        if (err != CL_SUCCESS)
+        {
+            warn("Failed to wait for event: %s\n", showCLInt(err));
+            return NAN;
+        }
 
         double t2 = mwGetTimeMilli();
         printf("Loop time: %f ms\n", t2 - t1);
@@ -446,7 +451,7 @@ static real runIntegral(CLInfo* ci,
     /* Read results from final step */
     result = readKernelResults(ci, cm, &evs, probs_results, ia->mu_steps, ia->r_steps, ap->number_streams);
     if (isnan(result))
-        warn("Failed to read final kernel results: %s\n", showCLInt(err));
+        warn("Failed to read final kernel results\n");
 
     return result;
 }

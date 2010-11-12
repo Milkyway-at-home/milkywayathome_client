@@ -24,25 +24,40 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "r_points.h"
 #include "calculated_constants.h"
 
-static inline cl_mem createWriteBuffer(cl_context clctx, size_t size, cl_int* err)
-{
-    return clCreateBuffer(clctx, CL_MEM_WRITE_ONLY, size, NULL, err);
-}
-
 static inline cl_mem createReadWriteBuffer(cl_context clctx, size_t size, cl_int* err)
 {
     return clCreateBuffer(clctx, CL_MEM_READ_WRITE, size, NULL, err);
 }
 
-static inline cl_mem createZeroReadWriteBuffer(cl_context clctx, size_t size, cl_int* err)
+static inline cl_mem createZeroReadWriteBuffer(CLInfo* ci, size_t size, cl_int* errOut)
 {
     void* p;
-    cl_mem mem;
+    cl_mem mem = NULL;
+    cl_int err = CL_SUCCESS;
 
-    p = callocSafe(1, size);
-    mem = clCreateBuffer(clctx, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, size, p, err);
-    free(p);
+    mem = clCreateBuffer(ci->clctx, CL_MEM_READ_WRITE, size, NULL, &err);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to create zero buffer: %s\n", showCLInt(err));
+        goto fail;
+    }
 
+    p = clEnqueueMapBuffer(ci->queue, mem, CL_TRUE, CL_MAP_WRITE,
+                           0, size, 0, NULL, NULL, &err);
+    if (err != CL_SUCCESS)
+    {
+        warn("Error mapping zero buffer: %s\n", showCLInt(err));
+        goto fail;
+    }
+
+    memset(p, 0, size);
+
+    err = clEnqueueUnmapMemObject(ci->queue, mem, p, 0, NULL, NULL);
+    if (err != CL_SUCCESS)
+        warn("Failed to unmap zero buffer: %s\n", showCLInt(err));
+
+fail:
+    *errOut = err;
     return mem;
 }
 
@@ -52,7 +67,7 @@ static inline cl_int createOutMuBuffer(CLInfo* ci,
 {
     cl_int err;
 
-    cm->outMu = createZeroReadWriteBuffer(ci->clctx, sizes->outMu, &err);
+    cm->outMu = createZeroReadWriteBuffer(ci, sizes->outMu, &err);
     if (err != CL_SUCCESS)
     {
         warn("Error creating out mu buffer of size %zu: %s\n", sizes->outMu, showCLInt(err));
@@ -68,7 +83,7 @@ static inline cl_int createOutProbsBuffer(CLInfo* ci,
 {
     cl_int err;
 
-    cm->outProbs = createZeroReadWriteBuffer(ci->clctx, sizes->outProbs, &err);
+    cm->outProbs = createZeroReadWriteBuffer(ci, sizes->outProbs, &err);
     if (err != CL_SUCCESS)
     {
         warn("Error creating out probs buffer of size %zu: %s\n", sizes->outProbs, showCLInt(err));

@@ -30,6 +30,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #cmakedefine01 SEPARATION_CRLIBM
 #cmakedefine01 SEPARATION_FDLIBM
+#cmakedefine01 SEPARATION_OPENCL
+#cmakedefine01 SEPARATION_INLINE_KERNEL
+
 
 #define ENABLE_CRLIBM SEPARATION_CRLIBM
 #define ENABLE_FDLIBM SEPARATION_FDLIBM
@@ -47,9 +50,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define SEPARATION_APP_VERSION "${CMAKE_PROJECT_NAME} separation ${separation_VERSION} ${CMAKE_SYSTEM_NAME} " ARCH_STRING " " PRECSTRING DENORMAL_STRING SEPARATION_CRLIBM_STRING
 
-
-#cmakedefine01 SEPARATION_OPENCL
-#cmakedefine01 SEPARATION_INLINE_KERNEL
 
 #endif /* _SEPARATION_CONFIG_H_ */
 
