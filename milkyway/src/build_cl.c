@@ -154,24 +154,25 @@ cl_int mwFinishEvent(cl_event ev)
 
 #endif /* CL_VERSION_1_1 */
 
-cl_int printCLExtensions(cl_device_id dev)
+/* Read the double supported extensions; i.e. AMD's subset or the actual Khronos one. */
+MWDoubleExts mwGetDoubleExts(const char* exts)
 {
-    cl_int err;
-    char exts[1024];
+    MWDoubleExts found = MW_NONE_DOUBLE;
 
-    err = clGetDeviceInfo(dev, CL_DEVICE_EXTENSIONS, sizeof(exts), exts, NULL);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to print CL extensions for device: %s", exts);
-        return err;
-    }
-    else
-        warn("Extensions: %s\n", exts);
+    if (strstr(exts, "cl_amd_fp64"))
+        found |= MW_CL_AMD_FP64;
+    if (strstr(exts, "cl_khr_fp64"))
+        found |= MW_CL_KHR_FP64;
 
-    return CL_SUCCESS;
+    return found;
 }
 
-cl_int getDevInfo(DevInfo* di, cl_device_id dev)
+cl_bool mwSupportsDoubles(const DevInfo* di)
+{
+    return di->doubleExts != MW_NONE_DOUBLE;
+}
+
+cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
 {
     cl_int err = CL_SUCCESS;
 
@@ -205,13 +206,17 @@ cl_int getDevInfo(DevInfo* di, cl_device_id dev)
     err |= clGetDeviceInfo(dev, CL_DEVICE_MEM_BASE_ADDR_ALIGN, sizeof(cl_uint), &di->memBaseAddrAlign, NULL);
     err |= clGetDeviceInfo(dev, CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE, sizeof(cl_uint), &di->minAlignSize, NULL);
     err |= clGetDeviceInfo(dev, CL_DEVICE_PROFILING_TIMER_RESOLUTION, sizeof(size_t), &di->timerRes, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_EXTENSIONS, sizeof(di->exts), &di->exts, NULL);
 
     if (err)
         warn("Error getting device information: %s\n", showCLInt(err));
+    else
+        di->doubleExts = mwGetDoubleExts(di->exts);
+
     return err;
 }
 
-void printDevInfo(const DevInfo* di)
+void mwPrintDevInfo(const DevInfo* di)
 {
     warn("Device %s (%s:0x%x)\n"
          "Type:                %s\n"
@@ -236,7 +241,9 @@ void printDevInfo(const DevInfo* di)
          "Max work item sizes: { %zu, %zu, %zu }\n"
          "Mem base addr align: %u\n"
          "Min type align size: %u\n"
-         "Timer resolution:    %zu ns\n" ,
+         "Timer resolution:    %zu ns\n"
+         "Double extension:    %s\n"
+         "Extensions:          %s\n" ,
          di->devName,
          di->vendor,
          di->vendorID,
@@ -263,11 +270,13 @@ void printDevInfo(const DevInfo* di)
          di->maxWorkItemSizes[0], di->maxWorkItemSizes[1], di->maxWorkItemSizes[2],
          di->memBaseAddrAlign,
          di->minAlignSize,
-         di->timerRes
+         di->timerRes,
+         showMWDoubleExts(di->doubleExts),
+         di->exts
         );
 }
 
-cl_int destroyCLInfo(CLInfo* ci)
+cl_int mwDestroyCLInfo(CLInfo* ci)
 {
     cl_int err = CL_SUCCESS;
   /* Depending on where things fail, some of these will be NULL, and
@@ -290,7 +299,7 @@ cl_int destroyCLInfo(CLInfo* ci)
     return err;
 }
 
-cl_int getWorkGroupInfo(CLInfo* ci, WGInfo* wgi)
+cl_int mwGetWorkGroupInfo(CLInfo* ci, WGInfo* wgi)
 {
     cl_int err = CL_SUCCESS;
 
@@ -320,7 +329,7 @@ cl_int getWorkGroupInfo(CLInfo* ci, WGInfo* wgi)
     return err;
 }
 
-void printWorkGroupInfo(const WGInfo* wgi)
+void mwPrintWorkGroupInfo(const WGInfo* wgi)
 {
     warn("Kernel work group info:\n"
          "  Work group size = %zu\n"
@@ -331,7 +340,7 @@ void printWorkGroupInfo(const WGInfo* wgi)
          wgi->cwgs[0], wgi->cwgs[1], wgi->cwgs[2]);
 }
 
-static char* getBuildLog(CLInfo* ci)
+static char* mwGetBuildLog(CLInfo* ci)
 {
     size_t logSize, readSize;
     char* buildLog;
@@ -385,7 +394,7 @@ static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
     else
         warn("Build status: %s\n", showCLBuildStatus(stat));
 
-    buildLog = getBuildLog(ci);
+    buildLog = mwGetBuildLog(ci);
 
     warn("Build log: \n%s\n", buildLog);
     free(buildLog);
@@ -439,7 +448,7 @@ unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
     return bin;
 }
 
-static cl_int createCtxQueue(CLInfo* ci, cl_bool useBufQueue)
+static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useBufQueue)
 {
     cl_int err = CL_SUCCESS;
 
@@ -470,33 +479,7 @@ static cl_int createCtxQueue(CLInfo* ci, cl_bool useBufQueue)
     return CL_SUCCESS;
 }
 
-cl_int printDevInfoExts(const CLInfo* ci, const DevInfo* di)
-{
-    cl_int err;
-
-    printDevInfo(di);
-
-    err = printCLExtensions(ci->dev);
-    if (err != CL_SUCCESS)
-    {
-        warn("Error getting printing device extensions: %s\n", showCLInt(err));
-        return err;
-    }
-    return CL_SUCCESS;
-}
-
-typedef struct
-{
-	char name[128];
-	char vendor[128];
-	char version[128];
-	char profile[128];
-	char extensions[512];
-} PlatformInfo;
-
-#define EMPTY_PLATFORM_INFO { "", "", "", "", "" }
-
-static void getPlatformInfo(PlatformInfo* pi, cl_platform_id platform)
+static void mwGetPlatformInfo(PlatformInfo* pi, cl_platform_id platform)
 {
 	cl_int err;
 	size_t readSize;
@@ -525,7 +508,7 @@ static void getPlatformInfo(PlatformInfo* pi, cl_platform_id platform)
 		warn("Failed to read platform extensions: %s\n", showCLInt(err));
 }
 
-static void printPlatformInfo(PlatformInfo* pi, cl_uint n)
+static void mwPrintPlatformInfo(PlatformInfo* pi, cl_uint n)
 {
 	warn("Platform %u information:\n"
 	     "  Platform name:       %s\n"
@@ -541,19 +524,19 @@ static void printPlatformInfo(PlatformInfo* pi, cl_uint n)
 	     pi->extensions);
 }
 
-static void printPlatforms(cl_platform_id* platforms, cl_uint n_platforms)
+static void mwPrintPlatforms(cl_platform_id* platforms, cl_uint n_platforms)
 {
 	cl_uint i;
 	PlatformInfo pi = EMPTY_PLATFORM_INFO;
 
 	for (i = 0; i < n_platforms; ++i)
 	{
-		getPlatformInfo(&pi, platforms[i]);
-		printPlatformInfo(&pi, i);
+		mwGetPlatformInfo(&pi, platforms[i]);
+		mwPrintPlatformInfo(&pi, i);
 	}
 }
 
-static cl_platform_id* getAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out)
+static cl_platform_id* mwGetAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out)
 {
     cl_uint n_platform = 0;
     cl_platform_id* ids;
@@ -581,7 +564,7 @@ static cl_platform_id* getAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out)
     return ids;
 }
 
-static cl_device_id* getAllDevices(cl_platform_id platform, cl_uint* numDevOut)
+static cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut)
 {
     cl_int err;
     cl_device_id* devs;
@@ -614,7 +597,7 @@ static cl_device_id* getAllDevices(cl_platform_id platform, cl_uint* numDevOut)
     return devs;
 }
 
-static cl_int getDeviceType(cl_device_id dev, cl_device_type* devType)
+static cl_int mwGetDeviceType(cl_device_id dev, cl_device_type* devType)
 {
     cl_int err = CL_SUCCESS;
 
@@ -625,7 +608,7 @@ static cl_int getDeviceType(cl_device_id dev, cl_device_type* devType)
     return err;
 }
 
-static cl_int selectDevice(CLInfo* ci, const cl_device_id* devs, const CLRequest* clr, const cl_uint nDev)
+static cl_int mwSelectDevice(CLInfo* ci, const cl_device_id* devs, const CLRequest* clr, const cl_uint nDev)
 {
     cl_int err = CL_SUCCESS;
 
@@ -636,14 +619,14 @@ static cl_int selectDevice(CLInfo* ci, const cl_device_id* devs, const CLRequest
     }
 
     ci->dev = devs[clr->devNum];
-    err = getDeviceType(ci->dev, &ci->devType);
+    err = mwGetDeviceType(ci->dev, &ci->devType);
     if (err != CL_SUCCESS)
         warn("Failed to find type of device %u\n", clr->devNum);
 
     return err;
 }
 
-static cl_int getCLInfo(CLInfo* ci, const CLRequest* clr)
+static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
 {
     cl_int err = CL_SUCCESS;
     cl_uint n_platform;
@@ -652,17 +635,17 @@ static cl_int getCLInfo(CLInfo* ci, const CLRequest* clr)
     cl_device_id* devs;
     cl_uint nDev;
 
-    ids = getAllPlatformIDs(ci, &n_platform);
+    ids = mwGetAllPlatformIDs(ci, &n_platform);
     if (!ids)
     {
         warn("Failed to get any platforms\n");
         return -1;
     }
 
-    printPlatforms(ids, n_platform);
+    mwPrintPlatforms(ids, n_platform);
     warn("Using device %u on platform %u\n", clr->devNum, clr->platform);
 
-    devs = getAllDevices(ids[clr->platform], &nDev);
+    devs = mwGetAllDevices(ids[clr->platform], &nDev);
     if (!devs)
     {
         warn("Error getting devices\n");
@@ -670,7 +653,7 @@ static cl_int getCLInfo(CLInfo* ci, const CLRequest* clr)
         return -1;
     }
 
-    err = selectDevice(ci, devs, clr, nDev);
+    err = mwSelectDevice(ci, devs, clr, nDev);
     if (err != CL_SUCCESS)
     {
         warn("Failed to select a device: %s\n", showCLInt(err));
@@ -756,28 +739,23 @@ cl_int mwSetupCL(CLInfo* ci,
 {
     cl_int err;
 
-    err = getCLInfo(ci, clr);
+    err = mwGetCLInfo(ci, clr);
     if (err != CL_SUCCESS)
     {
         warn("Failed to get information about device\n");
         return err;
     }
 
-    err = getDevInfo(di, ci->dev);
+    err = mwGetDevInfo(di, ci->dev);
     if (err != CL_SUCCESS)
     {
         warn("Failed to get device info\n");
         return err;
     }
 
-    err = printDevInfoExts(ci, di);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to print device extensions\n");
-        return err;
-    }
+    mwPrintDevInfo(di);
 
-    err = createCtxQueue(ci, CL_FALSE);
+    err = mwCreateCtxQueue(ci, CL_FALSE);
     if (err != CL_SUCCESS)
     {
         warn("Error creating CL context and command queue: %s\n", showCLInt(err));

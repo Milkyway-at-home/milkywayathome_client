@@ -308,3 +308,19 @@ const char* showCLKernelInfo(const cl_kernel_info x)
     }
 }
 
+const char* showMWDoubleExts(const MWDoubleExts x)
+{
+    switch (x)
+    {
+        case MW_NONE_DOUBLE:
+            return "MW_NONE_DOUBLE";
+        case MW_CL_AMD_FP64:
+            return "MW_CL_AMD_FP64";
+        case MW_CL_KHR_FP64:
+            return "MW_CL_KHR_FP64";
+        default:
+            warn("Trying to show unknown MWDoubleExts %d\n", (int) x);
+            return "Unhandled MWDoubleExts";
+    }
+}
+

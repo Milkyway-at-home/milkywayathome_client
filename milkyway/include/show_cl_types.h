@@ -27,6 +27,15 @@ extern "C" {
 
 #include "milkyway_cl.h"
 
+/* TODO: Move me*/
+typedef enum
+{
+    MW_NONE_DOUBLE = 0,
+    MW_CL_AMD_FP64 = 1 << 1,
+    MW_CL_KHR_FP64 = 1 << 2
+} MWDoubleExts;
+
+
 /* TODO: clint and memflags are usually or'd, so most of the time these won't work right */
 const char* showCLDeviceType(const cl_device_type x) __attribute__ ((const));
 const char* showCLBuildStatus(const cl_build_status x) __attribute__ ((const));
@@ -39,6 +48,7 @@ const char* showCLCommandQueueProperties(const cl_command_queue_properties x) __
 const char* showCLBool(const cl_bool x) __attribute__ ((const));
 const char* showCLDeviceMemCacheType(const cl_device_mem_cache_type x) __attribute__ ((const));
 const char* showCLKernelInfo(const cl_kernel_info x) __attribute__ ((const));
+const char* showMWDoubleExts(const MWDoubleExts x)  __attribute__ ((const));
 
 #ifdef __cplusplus
 }

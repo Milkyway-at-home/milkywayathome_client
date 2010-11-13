@@ -186,11 +186,11 @@ static cl_bool findWorkGroupSizes(CLInfo* ci,
     cl_int err;
     WGInfo wgi;
 
-    err = getWorkGroupInfo(ci, &wgi);
+    err = mwGetWorkGroupInfo(ci, &wgi);
     if (err != CL_SUCCESS)
         warn("Failed to get work group info: %s\n", showCLInt(err));
     else
-        printWorkGroupInfo(&wgi);
+        mwPrintWorkGroupInfo(&wgi);
 
     if (ci->devType == CL_DEVICE_TYPE_CPU)
         err = cpuGroupSizes(ia, global, local);
@@ -473,7 +473,7 @@ real integrateCL(const ASTRONOMY_PARAMETERS* ap,
     else
         result = runIntegral(&ci, &cm, probs_results, ap, ia);
 
-    destroyCLInfo(&ci);
+    mwDestroyCLInfo(&ci);
     releaseSeparationBuffers(&cm);
 
     return result;

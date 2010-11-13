@@ -81,7 +81,22 @@ typedef struct
     //char clCVer[128];
 
     size_t maxWorkItemSizes[3];
+    MWDoubleExts doubleExts;
+    char exts[1024];
 } DevInfo;
+
+
+typedef struct
+{
+	char name[128];
+	char vendor[128];
+	char version[128];
+	char profile[128];
+	char extensions[512];
+} PlatformInfo;
+
+#define EMPTY_PLATFORM_INFO { "", "", "", "", "" }
+
 
 unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut);
 
@@ -97,10 +112,9 @@ cl_int mwSetupCL(CLInfo* ci,
                  const CLRequest* clr);
 
 
-cl_int destroyCLInfo(CLInfo* ci);
-cl_int printCLExtensions(cl_device_id dev);
-cl_int getWorkGroupInfo(CLInfo* ci, WGInfo* wgi);
-void printWorkGroupInfo(const WGInfo* wgi);
+cl_int mwDestroyCLInfo(CLInfo* ci);
+cl_int mwGetWorkGroupInfo(CLInfo* ci, WGInfo* wgi);
+void mwPrintWorkGroupInfo(const WGInfo* wgi);
 
 cl_int mwEnableProfiling(CLInfo* ci);
 cl_int mwDisableProfiling(CLInfo* ci);
@@ -109,12 +123,13 @@ cl_int mwSetOutOfOrder(CLInfo* ci);
 cl_ulong mwEventTimeNS(cl_event ev);
 double mwEventTime(cl_event ev);
 
-cl_int getDevInfo(DevInfo* di, cl_device_id dev);
-void printDevInfo(const DevInfo* di);
-
-cl_int printDevInfoExts(const CLInfo* ci, const DevInfo* di);
+cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev);
+void mwPrintDevInfo(const DevInfo* di);
 
 cl_int mwWaitReleaseEvent(cl_event* ev);
+
+MWDoubleExts mwGetDoubleExts(const char* extensions);
+cl_bool mwSupportsDoubles(const DevInfo* di);
 
 #ifdef CL_VERSION_1_1
 cl_event mwCreateEvent(CLInfo* ci);
