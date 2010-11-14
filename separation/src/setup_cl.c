@@ -104,15 +104,31 @@ void freeKernelSrc(char* src)
 #endif
 
 
-#define NUM_CONST_BUF_ARGS 4
+#define NUM_CONST_BUF_ARGS 5
 
 /* Check that the device has the necessary resources */
 static cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes* sizes)
 {
     size_t totalOut;
     size_t totalConstBuf;
+    size_t totalGlobalConst;
+    size_t totalMem;
 
     totalOut = 2 * sizes->outMu + 2 * sizes->outProbs; /* 2 buffers for double buffering */
+    totalConstBuf = sizes->ap + sizes->ia + sizes->sc + sizes->rc + sizes->sg_dx;
+    totalGlobalConst = sizes->lbts + sizes->rPts;
+
+    totalMem = totalOut + totalConstBuf + totalGlobalConst;
+
+    if (totalMem > di->memSize)
+    {
+        warn("Total required device memory (%zu) > available (%zu)\n", totalMem, di->memSize);
+        return CL_FALSE;
+    }
+
+    /* Check individual allocations. Right now ATI has a fairly small
+     * maximum allowed allocation compared to the actual memory
+     * available. */
     if (totalOut > di->memSize)
     {
         warn("Device has insufficient global memory for output buffers\n");
@@ -125,18 +141,31 @@ static cl_bool separationCheckDevCapabilities(const DevInfo* di, const Separatio
         return CL_FALSE;
     }
 
+    if (sizes->lbts > di->maxMemAlloc || sizes->rPts > di->maxMemAlloc)
+    {
+        warn("A global constant buffer would exceed CL_DEVICE_MAX_MEM_ALLOC_SIZE\n");
+        return CL_FALSE;
+    }
+
     if (NUM_CONST_BUF_ARGS > di->maxConstArgs)
     {
         warn("Need more constant arguments than available\n");
         return CL_FALSE;
     }
 
-    totalConstBuf = sizes->ap + sizes->ia + sizes->sc + sizes-> rc;
     if (totalConstBuf > di-> maxConstBufSize)
     {
         warn("Device doesn't have enough constant buffer space\n");
         return CL_FALSE;
     }
+
+  #if DOUBLEPREC
+    if (!mwSupportsDoubles(di))
+    {
+        warn("Device doesn't support double precision\n");
+        return CL_FALSE;
+    }
+  #endif
 
     return CL_TRUE;
 }

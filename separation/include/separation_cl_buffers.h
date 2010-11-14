@@ -39,7 +39,6 @@ typedef struct
     size_t ap;        /* Constants */
     size_t sc;
     size_t ia;
-    size_t ic;
     size_t rc;
     size_t rPts;
     size_t sg_dx;
