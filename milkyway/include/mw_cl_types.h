@@ -58,6 +58,7 @@ typedef enum
 
 typedef struct
 {
+    cl_device_id devID;
     cl_device_type devType;
     cl_uint maxCompUnits, clockFreq;
     cl_ulong memSize;

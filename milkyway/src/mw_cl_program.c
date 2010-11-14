@@ -25,6 +25,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "mw_cl_show_types.h"
 #include "mw_cl_program.h"
 
+/* This doesn't seem to exist on OS X, but the callback on ATI on
+ * Linux/Windows dies without it */
+#ifndef CL_CALLBACK
+  #define CL_CALLBACK
+#endif
+
 static char* mwGetBuildLog(CLInfo* ci)
 {
     size_t logSize, readSize;

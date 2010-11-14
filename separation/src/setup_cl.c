@@ -164,8 +164,50 @@ static cl_bool separationCheckDevCapabilities(const DevInfo* di, const Separatio
     return CL_TRUE;
 }
 
+#ifndef __APPLE__
+/* Return flag for Nvidia compiler for maximum registers to use. */
+static const char* getNvidiaRegCount(const DevInfo* di)
+{
+    cl_uint major, minor;
+    const char* regCount32 = "-cl-nv-maxrregcount=32 ";
+    const char* regDefault = "";
+    cl_int err = CL_SUCCESS;
+
+    err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV, sizeof(cl_uint), &major, NULL);
+    err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV, sizeof(cl_uint), &minor, NULL);
+
+    if (err != CL_SUCCESS)
+    {
+        warn("Error getting device compute capability: %s\n", showCLInt(err));
+        return regDefault;
+    }
+
+    /* On the 285 GTX, max. 32 seems to help. Trying that on the 480
+       makes it quite a bit slower. */
+
+    if (major == 1 && minor == 3) /* 1.3 == GT200 */
+    {
+        warn("Found a compute capability 1.3 device. Using maxrregcount=32");
+        return regCount32;
+    }
+
+    /* Higher or other is Fermi or unknown, */
+    return regDefault;
+}
+
+#else
+
+/* Nvidia extension stuff missing from OS X headers */
+static const char* getNvidiaRegCount(const DevInfo* di)
+{
+    return "";
+}
+
+#endif /* __APPLE__ */
+
 /* Get string of options to pass to the CL compiler. */
-static char* getCompilerFlags(const ASTRONOMY_PARAMETERS* ap, const DevInfo* di)
+static char* getCompilerFlags(const ASTRONOMY_PARAMETERS* ap,
+                              const DevInfo* di)
 {
     char* compileFlags = NULL;
     char cwd[1024] = "";
@@ -184,7 +226,7 @@ static char* getCompilerFlags(const ASTRONOMY_PARAMETERS* ap, const DevInfo* di)
                               "-DUSE_FMA=0 ";
 
     /* Extra flags for different compilers */
-    const char* nvidiaOptFlags = "-cl-nv-maxrregcount=32 ";
+    const char* nvidiaOptFlags = "-cl-nv-verbose ";
     const char* atiOptFlags    = "";
 
   #if DOUBLEPREC
@@ -239,7 +281,15 @@ static char* getCompilerFlags(const ASTRONOMY_PARAMETERS* ap, const DevInfo* di)
 
 
     if (di->vendorID == MW_NVIDIA)
-        strncat(extraFlags, nvidiaOptFlags, sizeof(extraFlags));
+    {
+        if (snprintf(extraFlags, sizeof(extraFlags),
+                     "%s %s ",
+                     nvidiaOptFlags, getNvidiaRegCount(di)) < 0)
+        {
+            warn("Error getting extra Nvidia flags\n");
+            return NULL;
+        }
+    }
     else if (di->vendorID == MW_AMD_ATI)
         strncat(extraFlags, atiOptFlags, sizeof(extraFlags));
     else

@@ -47,6 +47,8 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
 {
     cl_int err = CL_SUCCESS;
 
+    di->devID = dev;
+
     err |= clGetDeviceInfo(dev, CL_DEVICE_TYPE,                     sizeof(di->devType),  &di->devType, NULL);
 
     err |= clGetDeviceInfo(dev, CL_DEVICE_NAME,                     sizeof(di->devName),  di->devName, NULL);
