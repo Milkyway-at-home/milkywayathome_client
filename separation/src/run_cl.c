@@ -164,9 +164,9 @@ static cl_int gpuGroupSizes(const INTEGRAL_AREA* ia, size_t numChunks, size_t gl
 
     /* Ideally these are already nicely divisible by 32/64/128, otherwise
      * round up a bit. */
-    global[0] = 1;
+    global[0] = chunkSize;
     global[1] = ia->mu_steps;
-    global[2] = chunkSize;
+    global[2] = 1;
 
     /* Bias towards mu steps seems to be better */
     local[0] = 1;
@@ -206,7 +206,7 @@ static cl_bool findWorkGroupSizes(CLInfo* ci,
     size_t localSize = local[0] * local[1] * local[2];
 
     warn("Range is { nu_steps = %zu, mu_steps = %zu, r_steps = %zu }\n"
-         "Chunked range is  { nu_steps = %zu, mu_steps = %zu, r_steps = %zu }\n"
+         "Chunked range is  { r_steps = %zu, mu_steps = %zu, nu_steps = %zu }\n"
          "Attempting to use a workgroup size of { %zu, %zu, %zu } = %zu \n",
          ia->nu_steps, ia->mu_steps, ia->r_steps,
          global[0], global[1], global[2],
@@ -359,11 +359,12 @@ static cl_int runNuStep(CLInfo* ci,
 
     size_t chunkSize = ia->r_steps / numChunks;
 
-    offset[0] = nu_step;
+
     offset[1] = 0;
+    offset[2] = nu_step;
     for (i = 0; i < numChunks; ++i)
     {
-        offset[2] = i * chunkSize;
+        offset[0] = i * chunkSize;
 
         err = enqueueIntegralKernel(ci, evs, offset, global, local);
         if (err != CL_SUCCESS)

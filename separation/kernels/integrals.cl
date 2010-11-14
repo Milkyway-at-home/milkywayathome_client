@@ -116,9 +116,9 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
                             __global const LB_TRIG* lbts,
                             const real nu_id)
 {
-    size_t nu_step = get_global_id(0);
+    size_t nu_step = get_global_id(2);
     size_t mu_step = get_global_id(1);
-    size_t r_step  = get_global_id(2);
+    size_t r_step  = get_global_id(0);
 
     LB_TRIG lbt = lbts[nu_step * ia->mu_steps + mu_step]; /* 32-byte read */
 
