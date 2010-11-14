@@ -63,12 +63,6 @@ static inline cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm)
     return CL_SUCCESS;
 }
 
-#if DOUBLEPREC
-  #define DOUBLEPREC_DEF_STRING "-DDOUBLEPREC=1 "
-#else
-  #define DOUBLEPREC_DEF_STRING "-DDOUBLEPREC=0 -cl-single-precision-constant "
-#endif /* DOUBLEPREC */
-
 #if SEPARATION_INLINE_KERNEL
 
 char* findKernelSrc()
@@ -170,6 +164,116 @@ static cl_bool separationCheckDevCapabilities(const DevInfo* di, const Separatio
     return CL_TRUE;
 }
 
+/* Get string of options to pass to the CL compiler. */
+static char* getCompilerFlags(const ASTRONOMY_PARAMETERS* ap, const DevInfo* di)
+{
+    char* compileFlags = NULL;
+    char cwd[1024] = "";
+    char extraFlags[1024] = "";
+    char includeFlags[4096] = "";
+
+    /* Math options for CL compiler */
+    const char* mathFlags = "-cl-mad-enable "
+                            "-cl-no-signed-zeros "
+                            "-cl-strict-aliasing "
+                            "-cl-finite-math-only ";
+
+    /* Build options used by milkyway_math stuff */
+    const char* mathOptions = "-DUSE_CL_MATH_TYPES=0 "
+                              "-DUSE_MAD=1 "
+                              "-DUSE_FMA=0 ";
+
+    /* Extra flags for different compilers */
+    const char* nvidiaOptFlags = "-cl-nv-maxrregcount=32 ";
+    const char* atiOptFlags    = "";
+
+  #if DOUBLEPREC
+    const char* precDefStr   = "-DDOUBLEPREC=1 ";
+    const char* atiPrecStr   = "";
+    const char* otherPrecStr = "";
+  #else
+    const char* precDefStr = "-DDOUBLEPREC=0 ";
+    const char* atiPrecStr = "--single_precision_constant ";
+    const char* clPrecStr  = "-cl-single-precision-constant ";
+  #endif
+
+    /* Constants compiled into kernel */
+    const char* apDefStr = "-DNSTREAM=%u "
+                           "-DFAST_H_PROB=%d "
+                           "-DAUX_BG_PROFILE=%d ";
+
+    const char* includeStr = "-I%s/../include "
+                             "-I%s/../../include "
+                             "-I%s/../../milkyway/include ";
+
+    /* Big enough. Also make sure to count for the extra characters of the format specifiers */
+    char apDefBuf[sizeof(apDefStr) + 3 * 12 + 6];
+    char precDefBuf[2 * sizeof(atiPrecStr) + sizeof(precDefStr)];
+
+    size_t totalSize = 3 * sizeof(cwd) + (sizeof(includeStr) + 6)
+                     + sizeof(precDefBuf)
+                     + sizeof(apDefBuf)
+                     + sizeof(mathOptions)
+                     + sizeof(mathFlags)
+                     + sizeof(extraFlags);
+
+    if (snprintf(apDefBuf, sizeof(apDefBuf), apDefStr,
+                 ap->number_streams,
+                 ap->fast_h_prob,
+                 ap->aux_bg_profile) < 0)
+    {
+        warn("Error getting ap constant definitions\n");
+        return NULL;
+    }
+
+    /* Always use this flag */
+    strncpy(precDefBuf, precDefStr, sizeof(precDefBuf));
+
+  #if !DOUBLEPREC
+    /* The ATI compiler rejects the one you're supposed to use, in
+     * favor of a totally undocumented flag. */
+    strncat(precDefBuf,
+            di->vendorID != MW_AMD_ATI ? clPrecStr : atiPrecStr,
+            sizeof(2 * atiPrecStr));
+  #endif /* !DOUBLEPREC */
+
+
+    if (di->vendorID == MW_NVIDIA)
+        strncat(extraFlags, nvidiaOptFlags, sizeof(extraFlags));
+    else if (di->vendorID == MW_AMD_ATI)
+        strncat(extraFlags, atiOptFlags, sizeof(extraFlags));
+    else
+        warn("Unknown vendor ID: 0x%x\n", di->vendorID);
+
+    if (!getcwd(cwd, sizeof(cwd)))
+    {
+        perror("getcwd");
+        return NULL;
+    }
+
+    if (snprintf(includeFlags, sizeof(includeFlags), includeStr, cwd, cwd, cwd) < 0)
+    {
+        warn("Failed to get include flags\n");
+        return NULL;
+    }
+
+    compileFlags = mallocSafe(totalSize);
+    if (snprintf(compileFlags, totalSize, "%s %s %s %s %s %s ",
+                 includeFlags,
+                 precDefBuf,
+                 apDefBuf,
+                 mathOptions,
+                 mathFlags,
+                 extraFlags) < 0)
+    {
+        warn("Failed to get compile flags\n");
+        free(compileFlags);
+        return NULL;
+    }
+
+    return compileFlags;
+}
+
 cl_int setupSeparationCL(CLInfo* ci,
                          SeparationCLMem* cm,
                          const ASTRONOMY_PARAMETERS* ap,
@@ -179,9 +283,9 @@ cl_int setupSeparationCL(CLInfo* ci,
                          const CLRequest* clr)
 {
     cl_int err;
-    char* compileDefs;
+    char* compileFlags;
     char* kernelSrc;
-    char* cwd;
+
     DevInfo di;
     SeparationSizes sizes;
 
@@ -192,29 +296,12 @@ cl_int setupSeparationCL(CLInfo* ci,
         return err;
     }
 
-    /* ATI CLC: --single_precision_constant */
-
-    cwd = getcwd(NULL, 0);
-    asprintf(&compileDefs, DOUBLEPREC_DEF_STRING
-                           "-DUSE_CL_MATH_TYPES=0 "
-                           "-DUSE_MAD=1 "
-                           "-DUSE_FMA=1 "
-                           "-cl-mad-enable "
-                           "-cl-no-signed-zeros "
-                           "-cl-strict-aliasing "
-                           "-cl-finite-math-only "
-                           "-I%s/../include "
-                           "-I%s/../../include "
-                           "-I%s/../../milkyway/include "
-                           "-DNSTREAM=%u "
-                           "-DFAST_H_PROB=%d "
-                           "-DAUX_BG_PROFILE=%d "
-                           "-DZERO_Q=%d ",
-                           cwd, cwd, cwd,
-                           ap->number_streams,
-                           ap->fast_h_prob,
-                           ap->aux_bg_profile,
-                           ap->zero_q);
+    compileFlags = getCompilerFlags(ap, &di);
+    if (!compileFlags)
+    {
+        warn("Failed to get compiler flags\n");
+        return -1;
+    }
 
     kernelSrc = findKernelSrc();
     if (!kernelSrc)
@@ -223,11 +310,11 @@ cl_int setupSeparationCL(CLInfo* ci,
         return -1;
     }
 
-    err = mwSetProgramFromSrc(ci, "mu_sum_kernel", &kernelSrc, 1, compileDefs);
+    warn("\nCompiler flags:\n%s\n\n", compileFlags);
+    err = mwSetProgramFromSrc(ci, "mu_sum_kernel", &kernelSrc, 1, compileFlags);
 
     freeKernelSrc(kernelSrc);
-    free(cwd);
-    free(compileDefs);
+    free(compileFlags);
 
     if (err != CL_SUCCESS)
     {

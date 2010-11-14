@@ -33,6 +33,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define isnan _isnan
   #define copysign _copysign
   #define access _access
+  #define snprintf _snprintf
+  #define getcwd _getcwd
 #endif /* _MSC_VER */
 
 #endif /* _MILKYWAY_EXTRA_H_ */

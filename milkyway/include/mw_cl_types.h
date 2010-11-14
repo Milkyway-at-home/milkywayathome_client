@@ -50,6 +50,11 @@ typedef enum
     MW_CL_KHR_FP64 = 1 << 2
 } MWDoubleExts;
 
+typedef enum
+{
+    MW_AMD_ATI = 0x1002,
+    MW_NVIDIA = 0x10de
+} MW_VENDOR_ID;
 
 typedef struct
 {
