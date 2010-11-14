@@ -18,23 +18,15 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _SHOW_CL_TYPES_H_
-#define _SHOW_CL_TYPES_H_
+#ifndef _MW_CL_SHOW_TYPES_H_
+#define _MW_CL_SHOW_TYPES_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "milkyway_cl.h"
-
-/* TODO: Move me*/
-typedef enum
-{
-    MW_NONE_DOUBLE = 0,
-    MW_CL_AMD_FP64 = 1 << 1,
-    MW_CL_KHR_FP64 = 1 << 2
-} MWDoubleExts;
-
+#include "mw_cl_device.h"
 
 /* TODO: clint and memflags are usually or'd, so most of the time these won't work right */
 const char* showCLDeviceType(const cl_device_type x) __attribute__ ((const));
@@ -54,5 +46,5 @@ const char* showMWDoubleExts(const MWDoubleExts x)  __attribute__ ((const));
 }
 #endif
 
-#endif /* _SHOW_CL_TYPES_H_ */
+#endif /* _MW_CL_SHOW_TYPES_H_ */
 

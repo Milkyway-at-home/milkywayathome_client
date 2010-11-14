@@ -27,7 +27,7 @@ extern "C" {
 
 #include "milkyway_cl.h"
 #include "separation_types.h"
-#include "build_cl.h"
+#include "mw_cl.h"
 
 /* The various buffers needed by the integrate function. */
 typedef struct

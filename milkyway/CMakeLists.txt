@@ -57,8 +57,11 @@ configure_file (
 include_directories(${MILKYWAY_INCLUDE_DIR})
 
 set(mw_lib_src src/milkyway_util.c)
-set(mw_cl_lib_src src/show_cl_types.c
-                  src/build_cl.c)
+set(mw_cl_lib_src src/mw_cl_show_types.c
+                  src/mw_cl_device.c
+                  src/mw_cl_util.c
+                  src/mw_cl_program.c
+                  src/mw_cl_setup.c)
 
 set(mw_lib_headers include/milkyway_config.h.in
                    include/milkyway_extra.h
@@ -73,10 +76,14 @@ set(mw_lib_headers include/milkyway_config.h.in
                    include/milkyway_vector_types.h
                    include/real.h)
 
-set(mw_cl_lib_headers include/show_cl_types.h
-                      include/build_cl.h
-                      include/milkyway_cl.h)
-
+set(mw_cl_lib_headers include/milkyway_cl.h
+                      include/mw_cl.h
+                      include/mw_cl_types.h
+                      include/mw_cl_show_types.h
+                      include/mw_cl_util.h
+                      include/mw_cl_device.h
+                      include/mw_cl_program.h
+                      include/mw_cl_setup.h)
 
 if(MILKYWAY_OPENCL)
   list(APPEND mw_lib_src ${mw_cl_lib_src})

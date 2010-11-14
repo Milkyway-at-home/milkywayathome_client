@@ -19,7 +19,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "milkyway_util.h"
-#include "show_cl_types.h"
+#include "mw_cl.h"
 #include "separation_cl_buffers.h"
 #include "r_points.h"
 #include "calculated_constants.h"

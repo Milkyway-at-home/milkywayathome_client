@@ -19,8 +19,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "milkyway_util.h"
-#include "show_cl_types.h"
 #include "milkyway_cl.h"
+#include "mw_cl.h"
 #include "setup_cl.h"
 #include "separation_cl_buffers.h"
 #include "separation_cl_defs.h"

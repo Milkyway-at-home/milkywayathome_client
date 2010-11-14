@@ -19,7 +19,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "milkyway_util.h"
-#include "show_cl_types.h"
+#include "mw_cl_show_types.h"
 
 const char* showCLDeviceType(const cl_device_type x)
 {

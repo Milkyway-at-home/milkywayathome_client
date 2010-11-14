@@ -18,21 +18,21 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _BUILD_CL_H_
-#define _BUILD_CL_H_
+#ifndef _MW_CL_TYPES_H_
+#define _MW_CL_TYPES_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "milkyway_cl.h"
-#include "build_cl.h"
+
 
 typedef struct
 {
     cl_device_id dev;
     cl_device_type devType;
-    unsigned int devCount;
+    cl_uint devCount;
     cl_context clctx;
     cl_command_queue queue;
     cl_command_queue bufQueue; /* Queue for buffer ops when double buffering */
@@ -42,14 +42,14 @@ typedef struct
 
 #define EMPTY_CL_INFO { NULL, -1, 0, NULL, NULL, NULL, NULL, NULL }
 
-typedef struct
-{
-    size_t wgs;      /* CL_KERNEL_WORK_GROUP_SIZE */
-    size_t cwgs[3];  /* CL_KERNEL_COMPILE_WORK_GROUP_SIZE */
-    cl_ulong lms;    /* CL_KERNEL_LOCAL_MEM_SIZE */
-} WGInfo;
 
-#define EMPTY_WG_INFO { 0, { 0, 0, 0 }, 0 }
+typedef enum
+{
+    MW_NONE_DOUBLE = 0,
+    MW_CL_AMD_FP64 = 1 << 1,
+    MW_CL_KHR_FP64 = 1 << 2
+} MWDoubleExts;
+
 
 typedef struct
 {
@@ -85,7 +85,6 @@ typedef struct
     char exts[1024];
 } DevInfo;
 
-
 typedef struct
 {
 	char name[128];
@@ -98,48 +97,20 @@ typedef struct
 #define EMPTY_PLATFORM_INFO { "", "", "", "", "" }
 
 
-unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut);
+typedef struct
+{
+    size_t wgs;      /* CL_KERNEL_WORK_GROUP_SIZE */
+    size_t cwgs[3];  /* CL_KERNEL_COMPILE_WORK_GROUP_SIZE */
+    cl_ulong lms;    /* CL_KERNEL_LOCAL_MEM_SIZE */
+} WGInfo;
 
-cl_int mwSetProgramFromBin(CLInfo* ci, const char* kernName, const unsigned char* bin, size_t binSize);
-cl_int mwSetProgramFromSrc(CLInfo* ci,
-                           const char* kernName,
-                           const char** src,
-                           const cl_uint srcCount,
-                           const char* compileDefs);
+#define EMPTY_WG_INFO { 0, { 0, 0, 0 }, 0 }
 
-cl_int mwSetupCL(CLInfo* ci,
-                 DevInfo* di,
-                 const CLRequest* clr);
-
-
-cl_int mwDestroyCLInfo(CLInfo* ci);
-cl_int mwGetWorkGroupInfo(CLInfo* ci, WGInfo* wgi);
-void mwPrintWorkGroupInfo(const WGInfo* wgi);
-
-cl_int mwEnableProfiling(CLInfo* ci);
-cl_int mwDisableProfiling(CLInfo* ci);
-cl_int mwSetOutOfOrder(CLInfo* ci);
-
-cl_ulong mwEventTimeNS(cl_event ev);
-double mwEventTime(cl_event ev);
-
-cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev);
-void mwPrintDevInfo(const DevInfo* di);
-
-cl_int mwWaitReleaseEvent(cl_event* ev);
-
-MWDoubleExts mwGetDoubleExts(const char* extensions);
-cl_bool mwSupportsDoubles(const DevInfo* di);
-
-#ifdef CL_VERSION_1_1
-cl_event mwCreateEvent(CLInfo* ci);
-cl_int mwFinishEvent(cl_event ev);
-#endif /* CL_VERSION_1_1 */
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _BUILD_CL_H_ */
+#endif /* _MW_CL_TYPES_H_ */
 
