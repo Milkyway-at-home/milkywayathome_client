@@ -57,8 +57,6 @@ cl_int createSeparationBuffers(CLInfo* ci,
 
 void releaseSeparationBuffers(SeparationCLMem* cm);
 
-void swapOutputBuffers(SeparationCLMem* cm);
-cl_int separationSetOutputBuffers(CLInfo* ci, SeparationCLMem* cm);
 void calculateSizes(SeparationSizes* sizes, const ASTRONOMY_PARAMETERS* ap, const INTEGRAL_AREA* ia);
 
 

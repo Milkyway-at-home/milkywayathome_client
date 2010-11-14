@@ -269,19 +269,3 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
     clReleaseMemObject(cm->lbts);
 }
 
-
-/* Set kernel arguments to the temporary output buffers */
-cl_int separationSetOutputBuffers(CLInfo* ci, SeparationCLMem* cm)
-{
-    cl_int err = CL_SUCCESS;
-
-    /* Set output buffer arguments */
-    err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outMu);
-    err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->outProbs);
-
-    if (err != CL_SUCCESS)
-        warn("Failed to set output buffer arguments: %s\n", showCLInt(err));
-
-    return err;
-}
-

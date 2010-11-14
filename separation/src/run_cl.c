@@ -398,24 +398,17 @@ static real runIntegral(CLInfo* ci,
     cl_int err;
     real result;
     SeparationCLEvents evs;
-
-    err = mwEnableProfiling(ci);
-    if (err != CL_SUCCESS)
-        warn("Failed to enable profiling: %s\n", showCLInt(err));
-
-    err = separationSetOutputBuffers(ci, cm);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to set output buffer arguments: %s\n", showCLInt(err));
-        return NAN;
-    }
-
     size_t global[3];
     size_t local[3];
 
     /* TODO: Figure out a number based on GPU speed to keep execution
      * times under 100ms to prevent unusable system */
     size_t numChunks = 1;
+
+
+    err = mwEnableProfiling(ci);
+    if (err != CL_SUCCESS)
+        warn("Failed to enable profiling: %s\n", showCLInt(err));
 
     if (findWorkGroupSizes(ci, ia, numChunks, global, local))
     {

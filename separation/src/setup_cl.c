@@ -41,6 +41,10 @@ static inline cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm)
 {
     cl_int err = CL_SUCCESS;
 
+    /* Set output buffer arguments */
+    err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outMu);
+    err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->outProbs);
+
     /* The constant arguments */
     err |= clSetKernelArg(ci->kern, 2, sizeof(cl_mem), &cm->ap);
     err |= clSetKernelArg(ci->kern, 3, sizeof(cl_mem), &cm->ia);
