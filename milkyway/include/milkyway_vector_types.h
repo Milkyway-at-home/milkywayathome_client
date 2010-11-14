@@ -28,7 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_cl.h"
 #include "real.h"
 
-#if __OPENCL_VERSION__ >= __CL_VERSION_1_1__
+#ifdef __CL_VERSION_1_1__
   #define HAVE_VEC3 1
   #define USE_VEC3 1
 #endif /* OpenCL 1.1 */

@@ -25,12 +25,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_math.h"
 #include "separation_types.h"
-#include "r_points.h"
 #include "milkyway_cl.h"
 #include "milkyway_extra.h"
 #include "integrals_common.h"
-
-#pragma OPENCL EXTENSION cl_amd_printf : enable
 
 #if FAST_H_PROB
   #define h_prob_f h_prob_fast
