@@ -190,6 +190,10 @@ static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
     ctx->histogram       = nbf->histogramFileName;
     ctx->histout         = nbf->histoutFileName;
     ctx->cp_filename     = nbf->checkpointFileName;
+
+    /* Override number of bodies in file */
+    if (nbf->numBodies)
+        ctx->model.nbody = nbf->numBodies;
 }
 
 /* Takes parsed json and run the simulation, using outFileName for

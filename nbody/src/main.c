@@ -285,6 +285,12 @@ static json_object* readParameters(const int argc,
             0, "Check that the input file is valid only; perform no calculation.", NULL
         },
 
+        {
+            "bodies", 'u',
+            POPT_ARG_INT, &nbf->numBodies,
+            'u', "Override number of bodies", NULL
+        },
+
       #if BOINC_APPLICATION
         {
             "checkpoint", 'c',
@@ -321,7 +327,7 @@ static json_object* readParameters(const int argc,
       #ifdef _OPENMP
         {
             "nthreads", 'n',
-            POPT_ARG_INT, &nbf->num_threads,
+            POPT_ARG_INT, &nbf->numThreads,
             'n', "BOINC argument for number of threads", NULL
         },
       #endif /* _OPENMP */
@@ -418,11 +424,11 @@ static void freeNBodyFlags(NBodyFlags* nbf)
 }
 
 #ifdef _OPENMP
-static void setNumThreads(int num_threads)
+static void setNumThreads(int numThreads)
 {
-    if (num_threads != 0)
+    if (numThreads != 0)
     {
-        omp_set_num_threads(num_threads);
+        omp_set_num_threads(numThreads);
         mw_report("Using OpenMP %d max threads on a system with %d processors\n",
                   omp_get_max_threads(),
                   omp_get_num_procs());
@@ -430,7 +436,7 @@ static void setNumThreads(int num_threads)
 }
 #else
 
-static void setNumThreads(int num_threads) { }
+static void setNumThreads(int numThreads) { }
 
 #endif /* _OPENMP */
 
@@ -447,7 +453,7 @@ int main(int argc, const char* argv[])
 
     obj = readParameters(argc, argv, &fitParams, &nbf);
 
-    setNumThreads(nbf.num_threads);
+    setNumThreads(nbf.numThreads);
     setDefaultFlags(&nbf);
 
     if (obj)
