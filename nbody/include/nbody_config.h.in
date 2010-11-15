@@ -45,12 +45,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define BOINC_NBODY_APP_VERSION "milkywayathome nbody ${nbody_VERSION} ${CMAKE_SYSTEM_NAME} " ARCH_STRING " " PRECSTRING EXTRAVER
 
-#if BOINC_APPLICATION && !BOINC_DEBUG
-  #define DEFAULT_OUTPUT_FILE stderr
-#else
-  #define DEFAULT_OUTPUT_FILE stdout
-#endif /* BOINC_APPLICATION && !BOINC_DEBUG */
-
+#define DEFAULT_OUTPUT_FILE stderr
 
 #endif /* NBODY_CONFIG_H_ */
 

@@ -246,7 +246,7 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
     if (nbf->printTiming)
     {
         te = mwGetTime();
-        printf("Elapsed time for run = %g\n", te - ts);
+        printf("<run_time> %g </run_time>\n", te - ts);
     }
 
     /* Get the likelihood */
