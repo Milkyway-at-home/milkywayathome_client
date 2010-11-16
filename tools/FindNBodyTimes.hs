@@ -1,7 +1,3 @@
-{-# LANGUAGE NoMonomorphismRestriction, BangPatterns, PatternGuards #-}
-{-# OPTIONS_GHC -W #-}
-
--- Compile with -threaded
 
 import Data.List
 import System.Process
@@ -9,9 +5,7 @@ import System.IO
 import System.Exit
 import Text.Printf
 import Control.Applicative
-import Control.Monad
 import Control.Concurrent
-import Control.Exception
 import Control.Concurrent.Spawn
 
 -- mass 1 - 50
@@ -25,10 +19,12 @@ outFile = "runtime_results"
 inFile = "arst.js"
 histogram = "histogram"
 
-nthreads = 2
+nthreads = 4
 
 --nbodySets = [ 1024, 2048, 3072, 4096, 8192, 10000, 15000 ]
-nbodySets = [ 100 ]
+manyNbodySets = [ 100, 200, 300, 500, 750, 1000, 2000,
+                  3000, 4000, 5000, 8000, 10000, 12000,
+                  15000, 20000, 30000, 40000, 50000, 75000, 100000 ]
 
 simpleArguments = arguments 1234 inFile histogram
 
@@ -60,23 +56,32 @@ steps = FitParams { mass        = 5.0,
                     reverseTime = 1.0,
                     forwardTime = 1.0
                   }
+
 fpRange :: (FitParams -> Double) -> [Double]
 fpRange f = [f low, f low + f steps .. f high]
 
 
-mapM' :: Monad m => (a-> m b) -> [a] -> m [b]
-mapM' _ []     = return []
-mapM' f (x:xs) = do y  <- f x
-                    ys <- y `seq` mapM' f xs
-                    return (y:ys)
+sample = FitParams { mass        = 15.0,
+                     radius      = 0.2,
+                     reverseTime = 3.945,
+                     forwardTime = 4.0
+                   }
+
+
 
 findWorkunit :: Int -> [Workunit]
 findWorkunit n = map (Workunit n) fps
   where fps = [ FitParams m r 4.0 4.0 | m <- fpRange mass,
                                         r <- fpRange radius ]
 
+-- Workunits with different numbers of bodies, each with the same set of bodies
 findWorkunits :: [Int] -> [Workunit]
 findWorkunits ns = concatMap findWorkunit ns
+
+-- One workunit with different numbers of bodiesp
+differentBodies :: FitParams -> [Int] -> [Workunit]
+differentBodies fp = map (flip Workunit fp)
+
 
 arguments :: Int -> FilePath -> FilePath -> Workunit -> [String]
 arguments seed file histogram wu = [ "-t",
@@ -131,7 +136,7 @@ runWorkunit results wu = do
 
 
 runWorkunits results runPool wus = do
-  mapM' (spawn . runPool . runWorkunit results) wus
+  mapM (spawn . runPool . runWorkunit results) wus
 
 readChanN :: Int -> Chan a -> IO [a]
 readChanN n chan = take n <$> getChanContents chan
@@ -139,7 +144,8 @@ readChanN n chan = take n <$> getChanContents chan
 main = do
   results <- newChan :: IO (Chan String)
   runPool <- pool nthreads
-  let wus = findWorkunits nbodySets
+  let wus = differentBodies sample manyNbodySets
+      --wus = findWorkunits nbodySets
       n = length wus
   hPrintf stdout "Running %d workunits\n" n
   runWorkunits results runPool wus
