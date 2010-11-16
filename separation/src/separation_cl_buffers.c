@@ -269,3 +269,39 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
     clReleaseMemObject(cm->lbts);
 }
 
+real* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSize)
+{
+    cl_int err;
+    real* mapOutMu;
+
+    mapOutMu = (real*) clEnqueueMapBuffer(ci->queue,
+                                          cm->outMu,
+                                          CL_TRUE, CL_MAP_READ,
+                                          0, resultsSize,
+                                          0, NULL,
+                                          NULL,
+                                          &err);
+    if (err != CL_SUCCESS)
+        warn("Error mapping integral result buffer: %s\n", showCLInt(err));
+
+    return mapOutMu;
+}
+
+real* mapProbsResults(CLInfo* ci, SeparationCLMem* cm, size_t probsResultsSize)
+{
+    cl_int err;
+    real* mapOutProbs;
+
+    mapOutProbs = (real*) clEnqueueMapBuffer(ci->queue,
+                                             cm->outProbs,
+                                             CL_TRUE, CL_MAP_READ,
+                                             0, probsResultsSize,
+                                             0, NULL,
+                                             NULL,
+                                             &err);
+    if (err != CL_SUCCESS)
+        warn("Error mapping probs result buffer: %s\n", showCLInt(err));
+
+    return mapOutProbs;
+}
+

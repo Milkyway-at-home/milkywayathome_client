@@ -36,66 +36,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef struct
 {
-    cl_event outMap;  /* reading main output buffer */
-    cl_event probMap; /* reading stream probs buffer */
-
-    cl_event outUnmap;
-    cl_event probUnmap;
-
     cl_event endTmp;   /* end of the NDRange writing to the temporary output buffers */
 } SeparationCLEvents;
-
-static void printSeparationEventTimes(SeparationCLEvents* evs)
-{
-    printf("NDrange:    %.15g s\n"
-           "Read out:   %.15g s\n"
-           "Read probs: %.15g s\n",
-           mwEventTime(evs->endTmp),
-           mwEventTime(evs->outMap),
-           mwEventTime(evs->probMap));
-}
-
-static real* mapIntegralResults(CLInfo* ci,
-                                SeparationCLMem* cm,
-                                SeparationCLEvents* evs,
-                                size_t resultsSize)
-{
-    cl_int err;
-    real* mapOutMu;
-
-    mapOutMu = (real*) clEnqueueMapBuffer(ci->queue,
-                                          cm->outMu,
-                                          CL_TRUE, CL_MAP_READ,
-                                          0, resultsSize,
-                                          0, NULL,
-                                          NULL,
-                                          &err);
-    if (err != CL_SUCCESS)
-        warn("Error mapping integral result buffer: %s\n", showCLInt(err));
-
-    return mapOutMu;
-}
-
-static real* mapProbsResults(CLInfo* ci,
-                             SeparationCLMem* cm,
-                             SeparationCLEvents* evs,
-                             size_t probsResultsSize)
-{
-    cl_int err;
-    real* mapOutProbs;
-
-    mapOutProbs = (real*) clEnqueueMapBuffer(ci->queue,
-                                             cm->outProbs,
-                                             CL_TRUE, CL_MAP_READ,
-                                             0, probsResultsSize,
-                                             0, NULL,
-                                             NULL,
-                                             &err);
-    if (err != CL_SUCCESS)
-        warn("Error mapping probs result buffer: %s\n", showCLInt(err));
-
-    return mapOutProbs;
-}
 
 static void sumStreamResults(KAHAN* probs_results,
                              const real* probs_V_reff_xr_rp3,
@@ -284,7 +226,6 @@ static cl_int setNuKernelArgs(CLInfo* ci, const INTEGRAL_AREA* ia, const cl_uint
 
 static inline real readKernelResults(CLInfo* ci,
                                      SeparationCLMem* cm,
-                                     SeparationCLEvents* evs,
                                      real* probs_results,
                                      const cl_uint mu_steps,
                                      const cl_uint r_steps,
@@ -296,7 +237,7 @@ static inline real readKernelResults(CLInfo* ci,
     real result;
 
     size_t resultSize = sizeof(real) * mu_steps * r_steps;
-    mu_results = mapIntegralResults(ci, cm, evs, resultSize);
+    mu_results = mapIntegralResults(ci, cm, resultSize);
     if (!mu_results)
     {
         warn("Failed to map integral results\n");
@@ -313,7 +254,7 @@ static inline real readKernelResults(CLInfo* ci,
     }
 
     size_t probsSize = sizeof(real) * mu_steps * r_steps * number_streams;
-    probs_tmp = mapProbsResults(ci, cm, evs, probsSize);
+    probs_tmp = mapProbsResults(ci, cm, probsSize);
     if (!probs_tmp)
     {
         warn("Failed to map probs results\n");
@@ -322,7 +263,7 @@ static inline real readKernelResults(CLInfo* ci,
 
     sumProbsResults(probs_results, probs_tmp, mu_steps, r_steps, number_streams);
 
-    err = clEnqueueUnmapMemObject(ci->queue, cm->outProbs, probs_tmp, 0, NULL, &evs->probUnmap);
+    err = clEnqueueUnmapMemObject(ci->queue, cm->outProbs, probs_tmp, 0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
         warn("Failed to unmap probs buffer: %s\n", showCLInt(err));
@@ -443,7 +384,7 @@ static real runIntegral(CLInfo* ci,
     clFinish(ci->queue);
 
     /* Read results from final step */
-    result = readKernelResults(ci, cm, &evs, probs_results, ia->mu_steps, ia->r_steps, ap->number_streams);
+    result = readKernelResults(ci, cm, probs_results, ia->mu_steps, ia->r_steps, ap->number_streams);
     if (isnan(result))
         warn("Failed to read final kernel results\n");
 

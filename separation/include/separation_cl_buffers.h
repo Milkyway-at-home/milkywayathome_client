@@ -58,6 +58,10 @@ void releaseSeparationBuffers(SeparationCLMem* cm);
 
 void calculateSizes(SeparationSizes* sizes, const ASTRONOMY_PARAMETERS* ap, const INTEGRAL_AREA* ia);
 
+real* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSize);
+
+real* mapProbsResults(CLInfo* ci, SeparationCLMem* cm, size_t probsResultsSize);
+
 
 #ifdef __cplusplus
 }
