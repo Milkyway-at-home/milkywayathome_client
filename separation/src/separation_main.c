@@ -159,20 +159,22 @@ static real* parse_parameters(int argc, const char** argv, unsigned int* paramnO
         mw_finish(EXIT_FAILURE);
     }
 
-    rest = poptGetArgs(context);
-    parameters = mwReadRestArgs(rest, numParams, paramnOut);
-    if (!parameters)
+    sf->do_separation = (sf->separation_outfile && strcmp(sf->separation_outfile, ""));
+    if (!sf->do_separation) /* Skip server arguments for just running separation */
     {
-        warn("Failed to read server arguments\n");
-        freeSeparationFlags(sf);
-        poptFreeContext(context);
-        mw_finish(EXIT_FAILURE);
+        rest = poptGetArgs(context);
+        parameters = mwReadRestArgs(rest, numParams, paramnOut);
+        if (!parameters)
+        {
+            warn("Failed to read server arguments\n");
+            freeSeparationFlags(sf);
+            poptFreeContext(context);
+            mw_finish(EXIT_FAILURE);
+        }
     }
 
     poptFreeContext(context);
     setDefaultFiles(sf);
-
-    sf->do_separation = (sf->separation_outfile && strcmp(sf->separation_outfile, ""));
 
     if (sf->do_separation)
         prob_ok_init(sf->separationSeed);
@@ -180,7 +182,7 @@ static real* parse_parameters(int argc, const char** argv, unsigned int* paramnO
     return parameters;
 }
 
-static INTEGRAL_AREA* prepare_parameters(const char* ap_file,
+static INTEGRAL_AREA* prepare_parameters(const SeparationFlags* sf,
                                          ASTRONOMY_PARAMETERS* ap,
                                          BACKGROUND_PARAMETERS* bgp,
                                          STREAMS* streams,
@@ -189,22 +191,24 @@ static INTEGRAL_AREA* prepare_parameters(const char* ap_file,
 {
     int ap_number_parameters;
     INTEGRAL_AREA* ias;
+    int badNumberParameters;
 
-    ias = read_parameters(ap_file, ap, bgp, streams);
+    ias = read_parameters(sf->ap_file, ap, bgp, streams);
     if (!ias)
     {
-        warn("Error reading astronomy parameters from file '%s'\n", ap_file);
+        warn("Error reading astronomy parameters from file '%s'\n", sf->ap_file);
         return NULL;
     }
 
     ap_number_parameters = get_optimized_parameter_count(ap, bgp, streams);
-    if (number_parameters < 1 || number_parameters != ap_number_parameters)
+    badNumberParameters = number_parameters < 1 || number_parameters != ap_number_parameters;
+    if (badNumberParameters && !sf->do_separation)
     {
         warn("Error reading parameters: number of parameters from the "
              "command line (%d) does not match the number of parameters "
              "to be optimized in %s (%d)\n",
              number_parameters,
-             ap_file,
+             sf->ap_file,
              ap_number_parameters);
 
         mwAlignedFree(ias);
@@ -213,7 +217,8 @@ static INTEGRAL_AREA* prepare_parameters(const char* ap_file,
         return NULL;
     }
 
-    set_parameters(ap, bgp, streams, parameters);
+    if (!sf->do_separation)
+        set_parameters(ap, bgp, streams, parameters);
 
     return ias;
 }
@@ -231,7 +236,7 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
 
     getCLReqFromFlags(&clr, sf);
 
-    ias = prepare_parameters(sf->ap_file, &ap, &bgp, &streams, parameters, number_parameters);
+    ias = prepare_parameters(sf, &ap, &bgp, &streams, parameters, number_parameters);
     if (!ias)
     {
         warn("Failed to read parameters\n");
@@ -348,7 +353,7 @@ int main(int argc, const char* argv[])
         exit(rc);
 
     parameters = parse_parameters(argc, argv, &number_parameters, &sf);
-    if (!parameters)
+    if (!parameters && !sf.do_separation)
     {
         warn("Could not parse parameters from the command line\n");
         rc = 1;
