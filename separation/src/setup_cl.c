@@ -276,7 +276,7 @@ static char* getCompilerFlags(const ASTRONOMY_PARAMETERS* ap,
      * favor of a totally undocumented flag. */
     strncat(precDefBuf,
             di->vendorID != MW_AMD_ATI ? clPrecStr : atiPrecStr,
-            sizeof(2 * atiPrecStr));
+            2 * sizeof(atiPrecStr));
   #endif /* !DOUBLEPREC */
 
 
