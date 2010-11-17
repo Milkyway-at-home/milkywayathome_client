@@ -90,15 +90,13 @@ real likelihood_bg_probability(const ASTRONOMY_PARAMETERS* ap,
     real bg_prob;
 
     /* if q is 0, there is no probability */
-    if (ap->zero_q)
+    if (ap->q == 0.0)
         return -1.0;
 
     bg_prob = likelihood_bg_probability_main(ap, sc, r_pts, sg_dx, lbt, rc, ap->convolve, st_probs);
     bg_prob *= reff_xr_rp3;
 
     mult_probs(st_probs, reff_xr_rp3, ap->number_streams);
-
-
 
     return bg_prob;
 }

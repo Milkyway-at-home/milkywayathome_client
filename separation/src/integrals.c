@@ -151,10 +151,6 @@ static inline real bg_probability(const ASTRONOMY_PARAMETERS* ap,
 {
     real bg_prob;
 
-    /* if q is 0, there is no probability */
-    if (ap->zero_q)
-        return -1.0;
-
     zero_st_probs(st_probs, ap->number_streams);
 
     bg_prob = ap->bg_prob_func(ap, sc, r_pts, sg_dx,
@@ -266,6 +262,15 @@ real integrate(const ASTRONOMY_PARAMETERS* ap,
     R_POINTS* r_pts;
     R_CONSTS* rc;
     unsigned int i;
+
+
+    if (ap->q == 0.0)
+    {
+        /* if q is 0, there is no probability */
+        /* Short circuit the entire integral rather than add up -1 many times. */
+        result = warn("q is 0.0\n");
+        return -1.0 * ia->nu_steps * ia->mu_steps * ia->r_steps;
+    }
 
     st_probs = (real*) mwMallocAligned(sizeof(real) * ap->number_streams, 2 * sizeof(real));
     r_pts = precalculate_r_pts(ap, ia, sg, &rc);

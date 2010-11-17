@@ -225,7 +225,6 @@ typedef struct SEPARATION_ALIGN(128) _ASTRONOMY_PARAMETERS
     mw_uint number_streams;
 
     mw_int aux_bg_profile;
-    mw_int zero_q;
     real q;
     real sn;
     real coeff;
@@ -277,7 +276,7 @@ typedef real (*BGProbabilityFunc) (const ASTRONOMY_PARAMETERS*,
 #define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0.0, \
                                      0.0, 0.0,   \
                                      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
-                                     0, 0, 0, 0, 0,          \
+                                     0, 0, 0, 0,        \
                                      0, 0, 0.0, 0.0, 0, 0, 0, \
                                      0, 0.0, 0, NULL }
 

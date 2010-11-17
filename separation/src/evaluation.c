@@ -89,7 +89,7 @@ static void clean_stream_integrals(real* stream_integrals,
         /* Rather than not adding up these streams, let them add and then
          * ignore them. They would have ended up being zero anyway */
         if (!sc[i].large_sigma)
-        stream_integrals[i] = 0.0;
+            stream_integrals[i] = 0.0;
     }
 }
 

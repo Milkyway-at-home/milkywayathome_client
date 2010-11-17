@@ -42,7 +42,6 @@ static void setSeparationBinaryHeader(SeparationBinaryHeader* hdr,
     hdr->number_streams = ap->number_streams;
     hdr->fast_h_prob    = ap->fast_h_prob;
     hdr->aux_bg_profile = ap->aux_bg_profile;
-    hdr->zero_q         = ap->zero_q;
 
     hdr->binSize        = binSize;
 
@@ -74,8 +73,7 @@ static cl_bool checkBinaryHeader(const ASTRONOMY_PARAMETERS* ap,
 
     if (   hdr->number_streams != ap->number_streams
         || hdr->fast_h_prob    != ap->fast_h_prob
-        || hdr->aux_bg_profile != ap->aux_bg_profile
-        || hdr->zero_q         != ap->zero_q)
+        || hdr->aux_bg_profile != ap->aux_bg_profile)
     {
         warn("Kernel compiled parameters do not match\n");
         return CL_FALSE;
