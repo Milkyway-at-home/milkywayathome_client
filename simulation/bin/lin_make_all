@@ -1,3 +1,8 @@
 ./lin_make mwdemo
 ./lin_make mwdemo_fullscreen
 ./lin_make nbody
+./lin_make lbatoxyz
+./lin_make readcel
+./lin_make rmvdup
+./lin_make showstar
+./lin_make ssdemo

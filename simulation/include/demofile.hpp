@@ -77,7 +77,7 @@ public:
     {
         return timeStep;
     }
-    
+
     bool readStars( HaloField& stream, double lum = .5 )
 
         // Reads next step in 'fstrm' into stream data
@@ -204,8 +204,6 @@ public:
     int getStarTotal( string fileName )
     {
 
-        int starTotal;
-
         if( binFlag ) {
             fstrm.open(fileName.c_str(), ios::in|ios::binary);
             starTotal = fileGetIntBin(fstrm);
@@ -227,8 +225,6 @@ public:
 
     {
 
-        int starTotal;
-
         if( binFlag ) {
             fstrm.open(fileName.c_str(), ios::in|ios::binary);
             starTotal = fileGetIntBin(fstrm);
@@ -249,10 +245,10 @@ public:
             lc = new double[starTotal];
             bc = new double[starTotal];
         }
-//cout << starTotal << endl << flush; 
+//cout << starTotal << endl << flush;
         int skipTotal = 0;
         for( int i = 0; i<starTotal; i++ ) {
-        
+
             if( binFlag )
                 fileGetDoubleArrayBin(fstrm, 3, lineArg);
             else
@@ -269,7 +265,7 @@ public:
 
                 bool skip = false;
                 for( int j = 0; j<i; j++ )
-                    if( sqrt((l-lc[j])*(l-lc[j])+(b-bc[j])*(b-bc[j]))<0.0001 ) {
+                    if( sqrt((l-lc[j])*(l-lc[j])+(b-bc[j])*(b-bc[j]))<0.001 ) {
 //cout << ": " << sqrt((l-lc[i])*(l-lc[i])+(b-bc[i])*(b-bc[i])) << endl;
                         skip = true;
                         skipTotal++;
@@ -277,7 +273,7 @@ public:
                     }
                 if( skip )
                     continue;
-                        
+
             }
 //cout << endl;
             double x = r*cos(b*TRIG_DEG_TO_RAD)*cos(l*TRIG_DEG_TO_RAD);
@@ -288,7 +284,7 @@ public:
             x -= 8.;
 
             field.add(x, y, z, lum, 64, 45);
-//cout << scientific << showpoint << setprecision(6) << l << " " << b << " " << r << endl << flush;
+cout << scientific << showpoint << setprecision(6) << l << " " << b << " " << r << endl << flush;
             if( fstrm.eof() ) {
                 fstrm.close();
                 if( starTotal!=i ) {
@@ -303,7 +299,7 @@ public:
             delete [] bc;
             this->starTotal -= skipTotal;
         }
-        
+
         /// TODO /// Check to see if there is more data in the file (use a look ahead perhaps to avoid doubling the error checking)
 /*      if( !fstrm.eof() ) {
             fstrm.close();
@@ -318,7 +314,7 @@ public:
 
     const WedgeInfo getWedgeInfo()
     {
-    
+
         if( !wedgeInfo.initialized ) {
 
             /// TODO /// STUB
@@ -333,12 +329,64 @@ public:
             wedgeInfo.initialized = true;
 
         }
-        
+
         return (const WedgeInfo) wedgeInfo;
-        
+
     }
 
 };
+
+HaloField* readStarFileXyz( const char* fileName, double lum = .5, bool binFlag = false )
+{
+
+    int starTotal;
+
+    ifstream fstrm;
+
+    if( binFlag ) {
+        fstrm.open(fileName, ios::in|ios::binary);
+        starTotal = fileGetIntBin(fstrm);
+    }
+    else {
+        fstrm.open(fileName);
+        starTotal = fileGetInt(fstrm);
+    }
+
+    HaloField* field = new HaloField(starTotal);
+
+    // Get star positions
+    float lineArg[3];
+
+    for( int i = 0; i<starTotal; i++ ) {
+
+        if( binFlag )
+            fileGetFloatArrayBin(fstrm, 3, lineArg);
+        else
+            fileGetFloatArray(fstrm, 3, lineArg);
+
+        float x = lineArg[0];
+        float y = lineArg[1];
+        float z = lineArg[2];
+
+        field->add(x/*-26093.0901*/, y, z, lum, 64, 45);
+
+        if( fstrm.eof() ) {
+
+            if( starTotal!=i ) {
+                fstrm.close();
+                cerr << "Number of stars indicated in wedge file does not match data." << endl;
+                exit(1);
+            }
+
+        }
+
+    }
+
+    fstrm.close();
+
+    return field;
+
+}
 
 
 #endif /* _DEMOFILE_HPP_ */

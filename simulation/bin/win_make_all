@@ -1,3 +1,8 @@
 ./win_make mwdemo
 ./win_make mwdemo_fullscreen
 ./win_make nbody
+./win_make lbatoxyz
+./win_make readcel
+./win_make rmvdup
+./win_make showstar
+./win_make ssdemo

@@ -1,3 +1,8 @@
-./mac_make mwdemo_fullscreen
 ./mac_make mwdemo
+./mac_make mwdemo_fullscreen
 ./mac_make nbody
+./mac_make lbatoxyz
+./mac_make readcel
+./mac_make rmvdup
+./mac_make showstar
+./mac_make ssdemo
