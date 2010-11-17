@@ -81,8 +81,8 @@ int main( int args, char **argv )
 
     cout << "Adding stars to field...\n" << flush;
     sim.add(&wedge, diameter);
-    sim.add(getLastFrameNBody(), diameter);
-    sim.add(imagePlot.getField(), 20.);
+//    sim.add(getLastFrameNBody(), diameter);
+//    sim.add(imagePlot.getField(), 20.);
 
     cout << "Changing settings...\n" << flush;
     sim.showCamera();

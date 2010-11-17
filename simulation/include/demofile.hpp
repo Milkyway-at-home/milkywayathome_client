@@ -106,9 +106,9 @@ public:
 
         // Get elapsed time at current step in billions of years
         if( binFlag )
-            timeStep = fileGetDoubleBin(fstrm);
+            timeStep = fileGetFloatBin(fstrm);
         else
-            timeStep = fileGetDouble(fstrm);
+            timeStep = fileGetFloat(fstrm);
 /*
         // Eat masses
         if( binFlag )
@@ -116,12 +116,12 @@ public:
                 fileGetDoubleBin(fstrm);
 */
         // Get star positions and velocity vectors at current step
-        double lineArg[3];
+        float lineArg[3];
         for( int i = 0; i<starTotal; i++ ) {
             if( binFlag )
-                fileGetDoubleArrayBin(fstrm, 3, lineArg);
+                fileGetFloatArrayBin(fstrm, 3, lineArg);
             else
-                fileGetDoubleArray(fstrm, 3, lineArg);
+                fileGetFloatArray(fstrm, 3, lineArg);
             stream.add(lineArg[0], lineArg[1], lineArg[2], lum, 120, 151);
 
         }
@@ -129,9 +129,9 @@ public:
         // Skip over velocities since they are not used
         for( int i = 0; i<starTotal; i++ )
             if( binFlag )
-                fileGetDoubleArrayBin(fstrm, 3, lineArg);
+                fileGetFloatArrayBin(fstrm, 3, lineArg);
             else
-                fileGetDoubleArray(fstrm, 3, lineArg);
+                fileGetFloatArray(fstrm, 3, lineArg);
 
         // Check to see if there is another step
         if( fstrm.eof() ) {
@@ -224,7 +224,8 @@ public:
         // Returns true if another step exists, false if this is the last step in the file
 
     {
-		
+	
+		int starTotal;
         if( binFlag ) {
             fstrm.open(fileName.c_str(), ios::in|ios::binary);
             starTotal = fileGetIntBin(fstrm);
@@ -233,7 +234,7 @@ public:
             fstrm.open(fileName.c_str());
             starTotal = fileGetInt(fstrm);
         }
-
+//		cout << starTotal << endl;
         this->starTotal += starTotal;
 
         // Get star positions
@@ -283,16 +284,12 @@ public:
             // Offset x to align with galactic center
             x -= 8.;
 
-cout << "start\n" << flush;
-			
             field.add(x, y, z, lum, 64, 45);
 //cout << scientific << showpoint << setprecision(6) << l << " " << b << " " << r << endl << flush;
-cout << "stop\n" << flush;
-			cout << i << ": "<<  starTotal << endl;
+//cout << i << ": "<<  starTotal << endl;
             if( fstrm.eof() || i==starTotal-1 ) {
-cout << "close\n" << flush;
                 fstrm.close();
-                if( starTotal!=i ) {
+                if( starTotal-1!=i ) {
                     cerr << "Number of stars indicated in wedge file does not match data." << endl;
                     exit(1);
                 }
