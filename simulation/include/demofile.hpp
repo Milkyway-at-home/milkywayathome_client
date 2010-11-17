@@ -224,7 +224,7 @@ public:
         // Returns true if another step exists, false if this is the last step in the file
 
     {
-
+		
         if( binFlag ) {
             fstrm.open(fileName.c_str(), ios::in|ios::binary);
             starTotal = fileGetIntBin(fstrm);
@@ -247,7 +247,7 @@ public:
         }
 //cout << starTotal << endl << flush;
         int skipTotal = 0;
-        for( int i = 0; i<starTotal; i++ ) {
+        for( int i = 0; ; i++ ) {
 
             if( binFlag )
                 fileGetDoubleArrayBin(fstrm, 3, lineArg);
@@ -283,17 +283,25 @@ public:
             // Offset x to align with galactic center
             x -= 8.;
 
+cout << "start\n" << flush;
+			
             field.add(x, y, z, lum, 64, 45);
-cout << scientific << showpoint << setprecision(6) << l << " " << b << " " << r << endl << flush;
-            if( fstrm.eof() ) {
+//cout << scientific << showpoint << setprecision(6) << l << " " << b << " " << r << endl << flush;
+cout << "stop\n" << flush;
+			cout << i << ": "<<  starTotal << endl;
+            if( fstrm.eof() || i==starTotal-1 ) {
+cout << "close\n" << flush;
                 fstrm.close();
                 if( starTotal!=i ) {
                     cerr << "Number of stars indicated in wedge file does not match data." << endl;
                     exit(1);
                 }
+				break;
             }
 
         }
+		
+		
         if( removeDuplicates ) {
             delete [] lc;
             delete [] bc;
@@ -307,8 +315,6 @@ cout << scientific << showpoint << setprecision(6) << l << " " << b << " " << r 
             exit(1);
         }
 */
-
-        fstrm.close();
 
     }
 
