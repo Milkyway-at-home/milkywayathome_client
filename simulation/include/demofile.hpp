@@ -238,8 +238,8 @@ public:
 
         // Get star positions
         double lineArg[3];
-        double *lc;
-        double *bc;
+        double *lc = NULL;
+        double *bc = NULL;
 
         if( removeDuplicates ) {
             lc = new double[starTotal];
