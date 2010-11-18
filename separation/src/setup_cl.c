@@ -206,8 +206,7 @@ static const char* getNvidiaRegCount(const DevInfo* di)
 #endif /* __APPLE__ */
 
 /* Get string of options to pass to the CL compiler. */
-static char* getCompilerFlags(const ASTRONOMY_PARAMETERS* ap,
-                              const DevInfo* di)
+static char* getCompilerFlags(const ASTRONOMY_PARAMETERS* ap, const DevInfo* di, cl_bool useImages)
 {
     char* compileFlags = NULL;
     char cwd[1024] = "";
@@ -240,32 +239,34 @@ static char* getCompilerFlags(const ASTRONOMY_PARAMETERS* ap,
   #endif
 
     /* Constants compiled into kernel */
-    const char* apDefStr = "-DNSTREAM=%u "
-                           "-DFAST_H_PROB=%d "
-                           "-DAUX_BG_PROFILE=%d ";
+    const char* kernelDefStr = "-DNSTREAM=%u "
+                               "-DFAST_H_PROB=%d "
+                               "-DAUX_BG_PROFILE=%d "
+                               "-DUSE_IMAGES=%d ";
 
     const char* includeStr = "-I%s/../include "
                              "-I%s/../../include "
                              "-I%s/../../milkyway/include ";
 
     /* Big enough. Also make sure to count for the extra characters of the format specifiers */
-    char apDefBuf[sizeof(apDefStr) + 3 * 12 + 6];
+    char kernelDefBuf[sizeof(kernelDefStr) + 4 * 12 + 8];
     char precDefBuf[2 * sizeof(atiPrecStr) + sizeof(precDefStr)];
 
     size_t totalSize = 3 * sizeof(cwd) + (sizeof(includeStr) + 6)
                      + sizeof(mathFlags)
                      + sizeof(precDefBuf)
-                     + sizeof(apDefBuf)
+                     + sizeof(kernelDefBuf)
                      + sizeof(mathOptions)
 
                      + sizeof(extraFlags);
 
-    if (snprintf(apDefBuf, sizeof(apDefBuf), apDefStr,
+    if (snprintf(kernelDefBuf, sizeof(kernelDefBuf), kernelDefStr,
                  ap->number_streams,
                  ap->fast_h_prob,
-                 ap->aux_bg_profile) < 0)
+                 ap->aux_bg_profile,
+                 useImages) < 0)
     {
-        warn("Error getting ap constant definitions\n");
+        warn("Error getting kernel constant definitions\n");
         return NULL;
     }
 
@@ -315,7 +316,7 @@ static char* getCompilerFlags(const ASTRONOMY_PARAMETERS* ap,
                  mathOptions,
                  extraFlags,
                  precDefBuf,
-                 apDefBuf) < 0)
+                 kernelDefBuf) < 0)
     {
         warn("Failed to get compile flags\n");
         free(compileFlags);
@@ -339,6 +340,7 @@ cl_int setupSeparationCL(CLInfo* ci,
 
     DevInfo di;
     SeparationSizes sizes;
+    cl_bool useImages = CL_TRUE;
 
     err = mwSetupCL(ci, &di, clr);
     if (err != CL_SUCCESS)
@@ -347,7 +349,9 @@ cl_int setupSeparationCL(CLInfo* ci,
         return err;
     }
 
-    compileFlags = getCompilerFlags(ap, &di);
+    useImages = useImages && di.imgSupport;
+
+    compileFlags = getCompilerFlags(ap, &di, useImages);
     if (!compileFlags)
     {
         warn("Failed to get compiler flags\n");
@@ -381,7 +385,7 @@ cl_int setupSeparationCL(CLInfo* ci,
         return -1;
     }
 
-    err = createSeparationBuffers(ci, cm, ap, ia, sc, sg, &sizes);
+    err = createSeparationBuffers(ci, cm, ap, ia, sc, sg, &sizes, useImages);
     if (err != CL_SUCCESS)
     {
         warn("Failed to create CL buffers: %s\n", showCLInt(err));

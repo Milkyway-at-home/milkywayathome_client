@@ -52,7 +52,8 @@ cl_int createSeparationBuffers(CLInfo* ci,
                                const INTEGRAL_AREA* ia,
                                const STREAM_CONSTANTS* sc,
                                const STREAM_GAUSS sg,
-                               const SeparationSizes* sizes);
+                               const SeparationSizes* sizes,
+                               cl_bool useImages);
 
 void releaseSeparationBuffers(SeparationCLMem* cm);
 

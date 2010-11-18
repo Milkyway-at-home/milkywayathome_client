@@ -59,6 +59,7 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
   //err |= clGetDeviceInfo(dev, CL_DEVICE_OPENCL_C_VERSION,         sizeof(di->clCVer),   di->clCVer, NULL);
     err |= clGetDeviceInfo(dev, CL_DEVICE_ENDIAN_LITTLE,            sizeof(cl_bool),  &di->littleEndian, NULL);
     err |= clGetDeviceInfo(dev, CL_DEVICE_ERROR_CORRECTION_SUPPORT, sizeof(cl_bool),  &di->errCorrect, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_IMAGE_SUPPORT, sizeof(cl_bool),  &di->imgSupport, NULL);
     err |= clGetDeviceInfo(dev, CL_DEVICE_ADDRESS_BITS,             sizeof(cl_uint),  &di->addrBits, NULL);
     err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_COMPUTE_UNITS,        sizeof(cl_uint),  &di->maxCompUnits, NULL);
     err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_CLOCK_FREQUENCY,      sizeof(cl_uint),  &di->clockFreq, NULL);
@@ -97,6 +98,7 @@ void mwPrintDevInfo(const DevInfo* di)
          "Version:             %s\n"
          "Little endian:       %s\n"
          "Error correction:    %s\n"
+         "Image support:       %s\n"
          "Address bits:        %u\n"
          "Max compute units:   %u\n"
          "Clock frequency:     %u Mhz\n"
@@ -125,6 +127,7 @@ void mwPrintDevInfo(const DevInfo* di)
          di->version,
          showCLBool(di->littleEndian),
          showCLBool(di->errCorrect),
+         showCLBool(di->imgSupport),
          di->addrBits,
          di->maxCompUnits,
          di->clockFreq,

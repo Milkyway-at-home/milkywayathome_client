@@ -273,7 +273,7 @@ real integrate(const ASTRONOMY_PARAMETERS* ap,
     }
 
     st_probs = (real*) mwMallocAligned(sizeof(real) * ap->number_streams, 2 * sizeof(real));
-    r_pts = precalculate_r_pts(ap, ia, sg, &rc);
+    r_pts = precalculate_r_pts(ap, ia, sg, &rc, 0);
 
     nu_sum(ap, ia, sc, rc, r_pts, sg.dx, st_probs, probs_sum, es);
     es->nu_step = 0;

@@ -80,6 +80,7 @@ typedef struct
     cl_uint cachelineSize;
     cl_bool littleEndian;
     cl_bool errCorrect;
+    cl_bool imgSupport;
     char devName[128];
     char vendor[128];
     char version[128];

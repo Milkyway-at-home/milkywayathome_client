@@ -150,22 +150,33 @@ static inline cl_int createIABuffer(CLInfo* ci,
     return CL_SUCCESS;
 }
 
-static inline cl_int createRBuffers(CLInfo* ci,
-                                    SeparationCLMem* cm,
-                                    const ASTRONOMY_PARAMETERS* ap,
-                                    const INTEGRAL_AREA* ia,
-                                    const STREAM_GAUSS sg,
-                                    const SeparationSizes* sizes)
+static cl_int createRBuffers(CLInfo* ci,
+                             SeparationCLMem* cm,
+                             const ASTRONOMY_PARAMETERS* ap,
+                             const INTEGRAL_AREA* ia,
+                             const STREAM_GAUSS sg,
+                             const SeparationSizes* sizes,
+                             cl_bool useImages)
 {
     cl_int err;
-
     R_POINTS* r_pts;
     R_CONSTS* rc;
     const cl_mem_flags constBufFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
+    cl_image_format format = { CL_RGBA, CL_UNSIGNED_INT32 };
 
-    r_pts = precalculate_r_pts(ap, ia, sg, &rc);
+    r_pts = precalculate_r_pts(ap, ia, sg, &rc, useImages);
 
-    cm->rPts = clCreateBuffer(ci->clctx, constBufFlags, sizes->rPts, r_pts, &err);
+    if (useImages)
+    {
+        cm->rPts = clCreateImage2D(ci->clctx, constBufFlags, &format,
+                                   ia->r_steps, ap->convolve,
+                                   0, r_pts, &err);
+    }
+    else
+    {
+        cm->rPts = clCreateBuffer(ci->clctx, constBufFlags, sizes->rPts, r_pts, &err);
+    }
+
     if (err != CL_SUCCESS)
     {
         warn("Error creating stream r points buffer of size %zu: %s\n", sizes->rPts, showCLInt(err));
@@ -234,7 +245,8 @@ cl_int createSeparationBuffers(CLInfo* ci,
                                const INTEGRAL_AREA* ia,
                                const STREAM_CONSTANTS* sc,
                                const STREAM_GAUSS sg,
-                               const SeparationSizes* sizes)
+                               const SeparationSizes* sizes,
+                               cl_bool useImages)  /* Use images for some buffers if wanted / available. */
 {
     cl_int err = CL_SUCCESS;
     cl_mem_flags constBufFlags;
@@ -249,7 +261,7 @@ cl_int createSeparationBuffers(CLInfo* ci,
     err |= createAPBuffer(ci, cm, ap, sizes, constBufFlags);
     err |= createIABuffer(ci, cm, ia, sizes, constBufFlags);
     err |= createSCBuffer(ci, cm, sc, sizes, constBufFlags);
-    err |= createRBuffers(ci, cm, ap, ia, sg, sizes);
+    err |= createRBuffers(ci, cm, ap, ia, sg, sizes, useImages);
     err |= createLBTrigBuffer(ci, cm, ap, ia, sizes);
 
     return err;

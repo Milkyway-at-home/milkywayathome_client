@@ -47,6 +47,50 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 
+#if USE_IMAGES
+
+#if 0
+/* This breaks Nvidia compiler */
+R_POINTS readImageDouble(uint4 a)
+{
+    union {
+        uint4 i;
+        R_POINTS d;
+    } arst;
+    arst.i = a;
+    return arst.d;
+}
+#endif
+
+inline R_POINTS readImageDouble(uint4 a)
+{
+    union {
+        uint2 i[2];
+        R_POINTS d;
+    } arst;
+    arst.i[0] = a.lo;
+    arst.i[1] = a.hi;
+    return arst.d;
+}
+
+inline R_POINTS readRPts(__read_only image2d_t r_pts, __constant INTEGRAL_AREA* ia, int2 i)
+{
+    const sampler_t sample = CLK_ADDRESS_NONE
+                           | CLK_NORMALIZED_COORDS_FALSE
+                           | CLK_FILTER_NEAREST;
+
+    return readImageDouble(read_imageui(r_pts, sample, i));
+}
+
+#else
+
+inline R_POINTS readRPts(__global const R_POINTS* r_pts, __constant INTEGRAL_AREA* ia, int2 i)
+{
+    return r_pts[i.y * ia->r_steps + i.x];
+}
+
+#endif /* USE_IMAGES */
+
 __attribute__ ((always_inline))
 inline void stream_sums_cl(real* st_probs,
                            __constant STREAM_CONSTANTS* sc,
@@ -109,7 +153,13 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
                             __constant STREAM_CONSTANTS* sc MAX_CONST(NSTREAM, STREAM_CONSTANTS),
                             __constant R_CONSTS* rcs MAX_CONST(200, R_CONSTS),
                             __constant real* restrict sg_dx MAX_CONST(200, real),
+
+                          #if USE_IMAGES
+                            __read_only image2d_t r_pts,
+                          #else
                             __global const R_POINTS* r_pts,
+                          #endif
+
                             __global const LB_TRIG* lbts,
                             const real nu_id)
 {
@@ -123,11 +173,11 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     real st_probs[NSTREAM] = { 0.0 };
 
     unsigned int i;
-    unsigned int convolve = ap->convolve; /* faster to load this into register first. */
-    r_pts = &r_pts[convolve * r_step];
+    unsigned int convolve = ap->convolve; /* Faster to load this into register first */
     for (i = 0; i < convolve; ++i)
     {
-        R_POINTS r_pt = r_pts[i];   /* 16 byte read */
+        R_POINTS r_pt = readRPts(r_pts, ia, (int2) (r_step, i));
+
         mwvector xyz = lbr2xyz_2(ap, R_POINT(r_pt), lbt);
         real rg = rg_calc(ap, xyz);
         bg_prob += h_prob_f(ap, QW_R3_N(r_pt), rg);

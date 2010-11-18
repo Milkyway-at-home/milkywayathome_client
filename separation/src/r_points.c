@@ -91,6 +91,7 @@ static inline R_CONSTS calcRConsts(R_PRIME rp)
     return rc;
 }
 
+
 void set_r_points(const ASTRONOMY_PARAMETERS* ap,
                   const STREAM_GAUSS sg,
                   const unsigned int n_convolve,
@@ -106,12 +107,14 @@ void set_r_points(const ASTRONOMY_PARAMETERS* ap,
 R_POINTS* precalculate_r_pts(const ASTRONOMY_PARAMETERS* ap,
                              const INTEGRAL_AREA* ia,
                              const STREAM_GAUSS sg,
-                             R_CONSTS** rc_out)
+                             R_CONSTS** rc_out,
+                             int transpose)
 {
-    unsigned int i;
+    unsigned int i, j, idx;
     R_POINTS* r_pts;
     R_PRIME rp;
     R_CONSTS* rc;
+    R_POINTS r_pt;
 
     size_t rPtsSize = sizeof(R_POINTS) * ap->convolve * ia->r_steps;
     size_t rConstsSize = sizeof(R_CONSTS) * ia->r_steps;
@@ -123,7 +126,13 @@ R_POINTS* precalculate_r_pts(const ASTRONOMY_PARAMETERS* ap,
     {
         rp = calcRPrime(ia, i);
         rc[i] = calcRConsts(rp);
-        set_r_points(ap, sg, ap->convolve, rc[i].gPrime, &r_pts[i * ap->convolve]);
+
+        for (j = 0; j < ap->convolve; ++j)
+        {
+            r_pt = calc_r_point(sg.dx[j], sg.qgaus_W[j], rc[i].gPrime, ap->coeff);
+            idx = transpose ? j * ia->r_steps + i : i * ap->convolve + j;
+            r_pts[idx] = r_pt;
+        }
     }
 
     *rc_out = rc;
