@@ -253,10 +253,11 @@ static char* getCompilerFlags(const ASTRONOMY_PARAMETERS* ap,
     char precDefBuf[2 * sizeof(atiPrecStr) + sizeof(precDefStr)];
 
     size_t totalSize = 3 * sizeof(cwd) + (sizeof(includeStr) + 6)
+                     + sizeof(mathFlags)
                      + sizeof(precDefBuf)
                      + sizeof(apDefBuf)
                      + sizeof(mathOptions)
-                     + sizeof(mathFlags)
+
                      + sizeof(extraFlags);
 
     if (snprintf(apDefBuf, sizeof(apDefBuf), apDefStr,
@@ -308,13 +309,13 @@ static char* getCompilerFlags(const ASTRONOMY_PARAMETERS* ap,
     }
 
     compileFlags = mallocSafe(totalSize);
-    if (snprintf(compileFlags, totalSize, "%s %s %s %s %s %s ",
+    if (snprintf(compileFlags, totalSize, "%s%s%s%s%s%s ",
                  includeFlags,
-                 precDefBuf,
-                 apDefBuf,
-                 mathOptions,
                  mathFlags,
-                 extraFlags) < 0)
+                 mathOptions,
+                 extraFlags,
+                 precDefBuf,
+                 apDefBuf) < 0)
     {
         warn("Failed to get compile flags\n");
         free(compileFlags);
