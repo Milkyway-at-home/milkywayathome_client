@@ -32,11 +32,11 @@ void fwrite_int_array(FILE* file, const char* array_name, int* array_t, size_t s
 real* fread_double_array(FILE* file, const char* array_name, unsigned int* sizeOut);
 int* fread_int_array(FILE* file, const char* array_name, unsigned int* sizeOut);
 
-void printIntegralArea(const INTEGRAL_AREA* ia);
-void printAstronomyParameters(const ASTRONOMY_PARAMETERS* ap);
-void printNuConstants(const NU_CONSTANTS* c, unsigned int n);
-void printStreamGauss(const STREAM_GAUSS* c, unsigned int n);
-void printStreamConstants(const STREAM_CONSTANTS* c, unsigned int n);
+void printIntegralArea(const IntegralArea* ia);
+void printAstronomyParameters(const AstronomyParameters* ap);
+void printNuConstants(const NuConstants* c, unsigned int n);
+void printStreamGauss(const StreamGauss* c, unsigned int n);
+void printStreamConstants(const StreamConstants* c, unsigned int n);
 
 #endif /* _IO_UTIL_H_ */
 

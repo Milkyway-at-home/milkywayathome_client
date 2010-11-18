@@ -95,7 +95,7 @@ static inline cl_int createOutProbsBuffer(CLInfo* ci,
 
 static inline cl_int createSCBuffer(CLInfo* ci,
                                     SeparationCLMem* cm,
-                                    const STREAM_CONSTANTS* sc,
+                                    const StreamConstants* sc,
                                     const SeparationSizes* sizes,
                                     const cl_mem_flags constBufFlags)
 {
@@ -117,7 +117,7 @@ static inline cl_int createSCBuffer(CLInfo* ci,
 
 static inline cl_int createAPBuffer(CLInfo* ci,
                                     SeparationCLMem* cm,
-                                    const ASTRONOMY_PARAMETERS* ap,
+                                    const AstronomyParameters* ap,
                                     const SeparationSizes* sizes,
                                     const cl_mem_flags constBufFlags)
 {
@@ -134,7 +134,7 @@ static inline cl_int createAPBuffer(CLInfo* ci,
 
 static inline cl_int createIABuffer(CLInfo* ci,
                                     SeparationCLMem* cm,
-                                    const INTEGRAL_AREA* ia,
+                                    const IntegralArea* ia,
                                     const SeparationSizes* sizes,
                                     const cl_mem_flags constBufFlags)
 {
@@ -152,19 +152,19 @@ static inline cl_int createIABuffer(CLInfo* ci,
 
 static cl_int createRBuffers(CLInfo* ci,
                              SeparationCLMem* cm,
-                             const ASTRONOMY_PARAMETERS* ap,
-                             const INTEGRAL_AREA* ia,
-                             const STREAM_GAUSS sg,
+                             const AstronomyParameters* ap,
+                             const IntegralArea* ia,
+                             const StreamGauss sg,
                              const SeparationSizes* sizes,
                              cl_bool useImages)
 {
     cl_int err;
-    R_POINTS* r_pts;
-    R_CONSTS* rc;
+    RPoints* r_pts;
+    RConsts* rc;
     const cl_mem_flags constBufFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
     cl_image_format format = { CL_RGBA, CL_UNSIGNED_INT32 };
 
-    r_pts = precalculate_r_pts(ap, ia, sg, &rc, useImages);
+    r_pts = precalculateRPts(ap, ia, sg, &rc, useImages);
 
     if (useImages)
     {
@@ -205,12 +205,12 @@ static cl_int createRBuffers(CLInfo* ci,
 
 static cl_int createLBTrigBuffer(CLInfo* ci,
                                  SeparationCLMem* cm,
-                                 const ASTRONOMY_PARAMETERS* ap,
-                                 const INTEGRAL_AREA* ia,
+                                 const AstronomyParameters* ap,
+                                 const IntegralArea* ia,
                                  const SeparationSizes* sizes)
 {
     cl_int err;
-    LB_TRIG* lbts;
+    LBTrig* lbts;
     const cl_mem_flags constBufFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
 
     lbts = precalculateLBTrig(ap, ia);
@@ -226,25 +226,25 @@ static cl_int createLBTrigBuffer(CLInfo* ci,
     return CL_SUCCESS;
 }
 
-void calculateSizes(SeparationSizes* sizes, const ASTRONOMY_PARAMETERS* ap, const INTEGRAL_AREA* ia)
+void calculateSizes(SeparationSizes* sizes, const AstronomyParameters* ap, const IntegralArea* ia)
 {
     sizes->outMu = sizeof(real) * ia->mu_steps * ia->r_steps;
     sizes->outProbs = sizeof(real) * ia->mu_steps * ia->r_steps * ap->number_streams;
-    sizes->ap = sizeof(ASTRONOMY_PARAMETERS);
-    sizes->ia = sizeof(INTEGRAL_AREA);
-    sizes->sc = sizeof(STREAM_CONSTANTS) * ap->number_streams;
-    sizes->rPts = sizeof(R_POINTS) * ap->convolve * ia->r_steps;
-    sizes->rc = sizeof(R_CONSTS) * ia->r_steps;
+    sizes->ap = sizeof(AstronomyParameters);
+    sizes->ia = sizeof(IntegralArea);
+    sizes->sc = sizeof(StreamConstants) * ap->number_streams;
+    sizes->rPts = sizeof(RPoints) * ap->convolve * ia->r_steps;
+    sizes->rc = sizeof(RConsts) * ia->r_steps;
     sizes->sg_dx = sizeof(real) * ap->convolve;
-    sizes->lbts = sizeof(LB_TRIG) * ia->mu_steps * ia->nu_steps;
+    sizes->lbts = sizeof(LBTrig) * ia->mu_steps * ia->nu_steps;
 }
 
 cl_int createSeparationBuffers(CLInfo* ci,
                                SeparationCLMem* cm,
-                               const ASTRONOMY_PARAMETERS* ap,
-                               const INTEGRAL_AREA* ia,
-                               const STREAM_CONSTANTS* sc,
-                               const STREAM_GAUSS sg,
+                               const AstronomyParameters* ap,
+                               const IntegralArea* ia,
+                               const StreamConstants* sc,
+                               const StreamGauss sg,
                                const SeparationSizes* sizes,
                                cl_bool useImages)  /* Use images for some buffers if wanted / available. */
 {

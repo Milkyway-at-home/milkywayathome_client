@@ -36,7 +36,7 @@ typedef struct
     real epsilon_s;
 } StreamStats;
 
-mwvector transform_point(const ASTRONOMY_PARAMETERS* ap,
+mwvector transform_point(const AstronomyParameters* ap,
                          mwvector point,
                          const mwmatrix cmat,
                          mwvector xsun);

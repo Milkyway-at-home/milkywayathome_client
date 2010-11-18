@@ -66,7 +66,7 @@ void get_transform(mwmatrix mat, const mwvector f, const mwvector t)
 
 /* Transform v by applying the rotation matrix mat */
 /* apply coordinate transformations to the given point */
-mwvector transform_point(const ASTRONOMY_PARAMETERS* ap,
+mwvector transform_point(const AstronomyParameters* ap,
                          mwvector point,
                          const mwmatrix cmat,
                          mwvector xsun)

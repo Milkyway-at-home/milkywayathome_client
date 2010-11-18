@@ -69,7 +69,7 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 #endif /* SEFPARATION_OPENCL */
 
 /* Returns the newly allocated array of parameters */
-static real* parse_parameters(int argc, const char** argv, unsigned int* paramnOut, SeparationFlags* sf)
+static real* parseParameters(int argc, const char** argv, unsigned int* paramnOut, SeparationFlags* sf)
 {
     poptContext context;
     int o;
@@ -182,25 +182,25 @@ static real* parse_parameters(int argc, const char** argv, unsigned int* paramnO
     return parameters;
 }
 
-static INTEGRAL_AREA* prepare_parameters(const SeparationFlags* sf,
-                                         ASTRONOMY_PARAMETERS* ap,
-                                         BACKGROUND_PARAMETERS* bgp,
-                                         STREAMS* streams,
-                                         const real* parameters,
-                                         const int number_parameters)
+static IntegralArea* prepareParameters(const SeparationFlags* sf,
+                                       AstronomyParameters* ap,
+                                       BackgroundParameters* bgp,
+                                       Streams* streams,
+                                       const real* parameters,
+                                       const int number_parameters)
 {
     int ap_number_parameters;
-    INTEGRAL_AREA* ias;
+    IntegralArea* ias;
     int badNumberParameters;
 
-    ias = read_parameters(sf->ap_file, ap, bgp, streams);
+    ias = readParameters(sf->ap_file, ap, bgp, streams);
     if (!ias)
     {
         warn("Error reading astronomy parameters from file '%s'\n", sf->ap_file);
         return NULL;
     }
 
-    ap_number_parameters = get_optimized_parameter_count(ap, bgp, streams);
+    ap_number_parameters = getOptimizedParameterCount(ap, bgp, streams);
     badNumberParameters = number_parameters < 1 || number_parameters != ap_number_parameters;
     if (badNumberParameters && !sf->do_separation)
     {
@@ -212,31 +212,31 @@ static INTEGRAL_AREA* prepare_parameters(const SeparationFlags* sf,
              ap_number_parameters);
 
         mwAlignedFree(ias);
-        free_streams(streams);
-        free_background_parameters(bgp);
+        freeStreams(streams);
+        freeBackgroundParameters(bgp);
         return NULL;
     }
 
     if (!sf->do_separation)
-        set_parameters(ap, bgp, streams, parameters);
+        setParameters(ap, bgp, streams, parameters);
 
     return ias;
 }
 
 static int worker(const SeparationFlags* sf, const real* parameters, const int number_parameters)
 {
-    ASTRONOMY_PARAMETERS ap = EMPTY_ASTRONOMY_PARAMETERS;
-    BACKGROUND_PARAMETERS bgp = EMPTY_BACKGROUND_PARAMETERS;
-    STREAMS streams = EMPTY_STREAMS;
-    INTEGRAL_AREA* ias = NULL;
-    STREAM_CONSTANTS* sc = NULL;
+    AstronomyParameters ap = EMPTY_ASTRONOMY_PARAMETERS;
+    BackgroundParameters bgp = EMPTY_BACKGROUND_PARAMETERS;
+    Streams streams = EMPTY_STREAMS;
+    IntegralArea* ias = NULL;
+    StreamConstants* sc = NULL;
     real likelihood_val = NAN;
     int rc;
     CLRequest clr;
 
     getCLReqFromFlags(&clr, sf);
 
-    ias = prepare_parameters(sf, &ap, &bgp, &streams, parameters, number_parameters);
+    ias = prepareParameters(sf, &ap, &bgp, &streams, parameters, number_parameters);
     if (!ias)
     {
         warn("Failed to read parameters\n");
@@ -244,12 +244,12 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     }
 
     rc = setAstronomyParameters(&ap, &bgp);
-    free_background_parameters(&bgp);
+    freeBackgroundParameters(&bgp);
     if (rc)
     {
         warn("Failed to set astronomy parameters\n");
         mwAlignedFree(ias);
-        free_streams(&streams);
+        freeStreams(&streams);
         return 1;
     }
 
@@ -258,7 +258,7 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     {
         warn("Failed to get stream constants\n");
         mwAlignedFree(ias);
-        free_streams(&streams);
+        freeStreams(&streams);
         return 1;
     }
 
@@ -273,14 +273,14 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
 
     mwAlignedFree(ias);
     mwAlignedFree(sc);
-    free_streams(&streams);
+    freeStreams(&streams);
 
     return rc;
 }
 
 #if BOINC_APPLICATION
 
-static int separation_init(const char* appname)
+static int separationInit(const char* appname)
 {
     int rc;
 
@@ -321,7 +321,7 @@ static void printVersion()
 
 #else
 
-static int separation_init(const char* appname)
+static int separationInit(const char* appname)
 {
   #pragma unused(argc)
   #pragma unused(argv)
@@ -347,12 +347,12 @@ int main(int argc, const char* argv[])
     real* parameters;
     unsigned int number_parameters;
 
-    rc = separation_init(argv[0]);
+    rc = separationInit(argv[0]);
     printVersion();
     if (rc)
         exit(rc);
 
-    parameters = parse_parameters(argc, argv, &number_parameters, &sf);
+    parameters = parseParameters(argc, argv, &number_parameters, &sf);
     if (!parameters && !sf.do_separation)
     {
         warn("Could not parse parameters from the command line\n");

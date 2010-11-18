@@ -33,16 +33,16 @@ extern "C" {
 
 cl_int createSeparationBuffers(CLInfo* ci,
                                SeparationCLMem* cm,
-                               const ASTRONOMY_PARAMETERS* ap,
-                               const INTEGRAL_AREA* ia,
-                               const STREAM_CONSTANTS* sc,
-                               const STREAM_GAUSS sg,
+                               const AstronomyParameters* ap,
+                               const IntegralArea* ia,
+                               const StreamConstants* sc,
+                               const StreamGauss sg,
                                const SeparationSizes* sizes,
                                cl_bool useImages);
 
 void releaseSeparationBuffers(SeparationCLMem* cm);
 
-void calculateSizes(SeparationSizes* sizes, const ASTRONOMY_PARAMETERS* ap, const INTEGRAL_AREA* ia);
+void calculateSizes(SeparationSizes* sizes, const AstronomyParameters* ap, const IntegralArea* ia);
 
 real* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSize);
 

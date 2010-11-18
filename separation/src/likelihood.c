@@ -33,12 +33,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* FIXME: Excessive duplication with stuff used in integrals which I
  * was too lazy to also fix here */
 
-static inline real likelihood_bg_probability_main(const ASTRONOMY_PARAMETERS* ap,
-                                                  const STREAM_CONSTANTS* sc,
-                                                  const R_POINTS* r_pts,
+static inline real likelihood_bg_probability_main(const AstronomyParameters* ap,
+                                                  const StreamConstants* sc,
+                                                  const RPoints* r_pts,
                                                   const real* sg_dx,
-                                                  const LB_TRIG lbt,
-                                                  const R_CONSTS rc,
+                                                  const LBTrig lbt,
+                                                  const RConsts rc,
                                                   const unsigned int convolve,
                                                   real* st_probs)
 {
@@ -74,12 +74,12 @@ static inline real likelihood_bg_probability_main(const ASTRONOMY_PARAMETERS* ap
     return bg_prob;
 }
 
-real likelihood_bg_probability(const ASTRONOMY_PARAMETERS* ap,
-                               const STREAM_CONSTANTS* sc,
-                               const R_POINTS* r_pts,
+real likelihood_bg_probability(const AstronomyParameters* ap,
+                               const StreamConstants* sc,
+                               const RPoints* r_pts,
                                const real* sg_dx,
-                               const LB_TRIG lbt,
-                               const R_CONSTS rc,
+                               const LBTrig lbt,
+                               const RConsts rc,
                                const real reff_xr_rp3,
                                real* st_probs)
 {
@@ -104,9 +104,9 @@ static real probability_log(real bg, real sum_exp_weights)
 }
 
 static real stream_sum(const unsigned int number_streams,
-                       const FINAL_STREAM_INTEGRALS* fsi,
+                       const FinalStreamIntegrals* fsi,
                        const real* st_prob,
-                       KAHAN* st_only_sum,
+                       Kahan* st_only_sum,
                        const real* exp_stream_weights,
                        const real sum_exp_weights,
                        real bg_only)
@@ -130,7 +130,7 @@ static real stream_sum(const unsigned int number_streams,
 
 /* Populates exp_stream_weights, and returns the sum */
 real get_exp_stream_weights(real* exp_stream_weights,
-                            const STREAMS* streams,
+                            const Streams* streams,
                             real exp_background_weight)
 {
     unsigned int i;
@@ -146,7 +146,7 @@ real get_exp_stream_weights(real* exp_stream_weights,
     return sum_exp_weights;
 }
 
-void get_stream_only_likelihood(KAHAN* st_only_sum,
+void get_stream_only_likelihood(Kahan* st_only_sum,
                                 const unsigned int number_stars,
                                 const unsigned int number_streams)
 {
@@ -167,7 +167,7 @@ const int calculateSeparation = 1;
 const int twoPanel = 1;
 
 /* get stream & background weight constants */
-static real get_stream_bg_weight_consts(StreamStats* ss, const STREAMS* streams)
+static real get_stream_bg_weight_consts(StreamStats* ss, const Streams* streams)
 {
     unsigned int i;
     real epsilon_b;
@@ -187,8 +187,8 @@ static real get_stream_bg_weight_consts(StreamStats* ss, const STREAMS* streams)
     return epsilon_b;
 }
 
-static void twoPanelSeparation(const ASTRONOMY_PARAMETERS* ap,
-                               const FINAL_STREAM_INTEGRALS* fsi,
+static void twoPanelSeparation(const AstronomyParameters* ap,
+                               const FinalStreamIntegrals* fsi,
                                StreamStats* ss,
                                const real* st_probs,
                                real bg_prob,
@@ -225,8 +225,8 @@ static void nonTwoPanelSeparation(StreamStats* ss, unsigned int number_streams)
 }
 
 static void separation(FILE* f,
-                       const ASTRONOMY_PARAMETERS* ap,
-                       const FINAL_STREAM_INTEGRALS* fsi,
+                       const AstronomyParameters* ap,
+                       const FinalStreamIntegrals* fsi,
                        const mwmatrix cmatrix,
                        StreamStats* ss,
                        const real* st_probs,
@@ -263,8 +263,8 @@ static void separation(FILE* f,
 }
 
 /* separation init stuffs */
-static void setSeparationConstants(const ASTRONOMY_PARAMETERS* ap,
-                                   const FINAL_STREAM_INTEGRALS* fsi,
+static void setSeparationConstants(const AstronomyParameters* ap,
+                                   const FinalStreamIntegrals* fsi,
                                    mwmatrix cmatrix)
 {
     unsigned int i;
@@ -311,14 +311,14 @@ static void printSeparationStats(const StreamStats* ss,
         printf("%d stars separated into stream\n", ss[i].q);
 }
 
-static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
-                           const STAR_POINTS* sp,
-                           const STREAM_CONSTANTS* sc,
-                           const STREAMS* streams,
-                           const FINAL_STREAM_INTEGRALS* fsi,
-                           const STREAM_GAUSS sg,
-                           R_POINTS* r_pts,
-                           KAHAN* st_sum,
+static real likelihood_sum(const AstronomyParameters* ap,
+                           const StarPoints* sp,
+                           const StreamConstants* sc,
+                           const Streams* streams,
+                           const FinalStreamIntegrals* fsi,
+                           const StreamGauss sg,
+                           RPoints* r_pts,
+                           Kahan* st_sum,
                            real* st_prob,
                            const real* exp_stream_weights,
                            const real sum_exp_weights,
@@ -327,17 +327,17 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
                            const int do_separation,
                            FILE* f)
 {
-    KAHAN prob = ZERO_KAHAN;
-    KAHAN bg_only = ZERO_KAHAN;
+    Kahan prob = ZERO_KAHAN;
+    Kahan bg_only = ZERO_KAHAN;
 
     unsigned int current_star_point;
     mwvector point;
     real star_prob;
     real bg_prob, bg;
     LB lb;
-    LB_TRIG lbt;
+    LBTrig lbt;
     real reff_xr_rp3;
-    R_CONSTS rc = { 0.0, 0.0 };
+    RConsts rc = { 0.0, 0.0 };
 
     real epsilon_b;
     mwmatrix cmatrix;
@@ -354,7 +354,7 @@ static real likelihood_sum(const ASTRONOMY_PARAMETERS* ap,
     {
         point = sp->stars[current_star_point];
         rc.gPrime = calcG(Z(point));
-        set_r_points(ap, sg, ap->convolve, rc.gPrime, r_pts);
+        setRPoints(ap, sg, ap->convolve, rc.gPrime, r_pts);
         reff_xr_rp3 = calcReffXrRp3(Z(point), rc.gPrime);
 
         LB_L(lb) = L(point);
@@ -411,18 +411,18 @@ StreamStats* newStreamStats(const unsigned int number_streams)
     return (StreamStats*) callocSafe(number_streams, sizeof(StreamStats));
 }
 
-real likelihood(const ASTRONOMY_PARAMETERS* ap,
-                const STAR_POINTS* sp,
-                const STREAM_CONSTANTS* sc,
-                const STREAMS* streams,
-                const FINAL_STREAM_INTEGRALS* fsi,
-                const STREAM_GAUSS sg,
+real likelihood(const AstronomyParameters* ap,
+                const StarPoints* sp,
+                const StreamConstants* sc,
+                const Streams* streams,
+                const FinalStreamIntegrals* fsi,
+                const StreamGauss sg,
                 const int do_separation,
                 const char* separation_outfile)
 {
     real* st_prob;
-    R_POINTS* r_pts;
-    KAHAN* st_sum;
+    RPoints* r_pts;
+    Kahan* st_sum;
     StreamStats* ss = NULL;
     real* exp_stream_weights;
     real sum_exp_weights;
@@ -443,8 +443,8 @@ real likelihood(const ASTRONOMY_PARAMETERS* ap,
     }
 
     st_prob = (real*) mwMallocAligned(sizeof(real) * streams->number_streams, 2 * sizeof(real));
-    r_pts = (R_POINTS*) mwMallocAligned(sizeof(R_POINTS) * ap->convolve, sizeof(R_POINTS));
-    st_sum = (KAHAN*) mwCallocAligned(sizeof(KAHAN), streams->number_streams, sizeof(KAHAN));
+    r_pts = (RPoints*) mwMallocAligned(sizeof(RPoints) * ap->convolve, sizeof(RPoints));
+    st_sum = (Kahan*) mwCallocAligned(sizeof(Kahan), streams->number_streams, sizeof(Kahan));
     exp_stream_weights = (real*) mwMallocAligned(sizeof(real) * streams->number_streams, 2 * sizeof(real));
 
     exp_background_weight = mw_exp(ap->background_weight);

@@ -29,14 +29,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 static char resolvedCheckpointPath[1024];
 
 
-void initialize_integral(INTEGRAL* integral, unsigned int number_streams)
+void initializeIntegral(Integral* integral, unsigned int number_streams)
 {
     integral->background_integral = 0.0;
     integral->stream_integrals = (real*) mwCallocAligned(number_streams, sizeof(real), 2 * sizeof(real));
-    integral->probs = (KAHAN*) mwCallocAligned(number_streams, sizeof(KAHAN), sizeof(KAHAN));
+    integral->probs = (Kahan*) mwCallocAligned(number_streams, sizeof(Kahan), sizeof(Kahan));
 }
 
-void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
+void initializeState(const AstronomyParameters* ap, EvaluationState* es)
 {
     unsigned int i;
 
@@ -44,32 +44,32 @@ void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es)
     es->number_streams = ap->number_streams;
 
     es->number_integrals = ap->number_integrals;
-    es->integrals = (INTEGRAL*) mallocSafe(sizeof(INTEGRAL) * ap->number_integrals);
+    es->integrals = (Integral*) mallocSafe(sizeof(Integral) * ap->number_integrals);
 
     for (i = 0; i < ap->number_integrals; i++)
-        initialize_integral(&es->integrals[i], ap->number_streams);
+        initializeIntegral(&es->integrals[i], ap->number_streams);
 }
 
-void free_integral(INTEGRAL* i)
+void freeIntegral(Integral* i)
 {
     mwAlignedFree(i->stream_integrals);
     mwAlignedFree(i->probs);
 }
 
-void free_evaluation_state(EVALUATION_STATE* es)
+void freeEvaluationState(EvaluationState* es)
 {
     unsigned int i;
 
     for (i = 0; i < es->number_integrals; ++i)
-        free_integral(&es->integrals[i]);
+        freeIntegral(&es->integrals[i]);
     free(es->integrals);
 }
 
 #if BOINC_APPLICATION
 
-void print_evaluation_state(const EVALUATION_STATE* es)
+void printEvaluationState(const EvaluationState* es)
 {
-    INTEGRAL* i;
+    Integral* i;
     unsigned int j;
 
     printf("evaluation-state {\n"
@@ -101,9 +101,9 @@ static const char checkpoint_header[] = "separation_checkpoint";
 static const char checkpoint_tail[] = "end_checkpoint";
 
 
-static int read_state(FILE* f, EVALUATION_STATE* es)
+static int readState(FILE* f, EvaluationState* es)
 {
-    INTEGRAL* i;
+    Integral* i;
     char str_buf[sizeof(checkpoint_header) + 1];
 
     fread(str_buf, sizeof(checkpoint_header), 1, f);
@@ -122,7 +122,7 @@ static int read_state(FILE* f, EVALUATION_STATE* es)
     {
         fread(&i->background_integral, sizeof(i->background_integral), 1, f);
         fread(i->stream_integrals, sizeof(real), es->number_streams, f);
-        fread(i->probs, sizeof(KAHAN), es->number_streams, f);
+        fread(i->probs, sizeof(Kahan), es->number_streams, f);
     }
 
     fread(str_buf, sizeof(checkpoint_tail), 1, f);
@@ -135,7 +135,7 @@ static int read_state(FILE* f, EVALUATION_STATE* es)
     return 0;
 }
 
-int read_checkpoint(EVALUATION_STATE* es)
+int readCheckpoint(EvaluationState* es)
 {
     int rc;
     FILE* f;
@@ -147,7 +147,7 @@ int read_checkpoint(EVALUATION_STATE* es)
         return 1;
     }
 
-    rc = read_state(f, es);
+    rc = readState(f, es);
     if (rc)
         warn("Failed to read state\n");
 
@@ -156,10 +156,10 @@ int read_checkpoint(EVALUATION_STATE* es)
     return rc;
 }
 
-static inline void write_state(FILE* f, const EVALUATION_STATE* es)
+static inline void writeState(FILE* f, const EvaluationState* es)
 {
-    INTEGRAL* i;
-    const INTEGRAL* endi = es->integrals + es->number_integrals;
+    Integral* i;
+    const Integral* endi = es->integrals + es->number_integrals;
 
     fwrite(checkpoint_header, sizeof(checkpoint_header), 1, f);
 
@@ -172,13 +172,13 @@ static inline void write_state(FILE* f, const EVALUATION_STATE* es)
     {
         fwrite(&i->background_integral, sizeof(i->background_integral), 1, f);
         fwrite(i->stream_integrals, sizeof(real), es->number_streams, f);
-        fwrite(i->probs, sizeof(KAHAN), es->number_streams, f);
+        fwrite(i->probs, sizeof(Kahan), es->number_streams, f);
     }
 
     fwrite(checkpoint_tail, sizeof(checkpoint_tail), 1, f);
 }
 
-int write_checkpoint(const EVALUATION_STATE* es)
+int writeCheckpoint(const EvaluationState* es)
 {
     FILE* f;
 
@@ -190,7 +190,7 @@ int write_checkpoint(const EVALUATION_STATE* es)
         return 1;
     }
 
-    write_state(f, es);
+    writeState(f, es);
     fclose(f);
 
     if (mwRename(CHECKPOINT_FILE_TMP, resolvedCheckpointPath))
@@ -216,13 +216,13 @@ int resolveCheckpoint()
     return rc;
 }
 
-int maybeResume(EVALUATION_STATE* es)
+int maybeResume(EvaluationState* es)
 {
     if (boinc_file_exists(resolvedCheckpointPath))
     {
         mw_report("Checkpoint exists. Attempting to resume from it\n");
 
-        if (read_checkpoint(es))
+        if (readCheckpoint(es))
         {
             mw_report("Reading checkpoint failed\n");
             mw_remove(CHECKPOINT_FILE);
@@ -242,7 +242,7 @@ int resolveCheckpoint()
     return 0;
 }
 
-int maybeResume(EVALUATION_STATE* es)
+int maybeResume(EvaluationState* es)
 {
     return 0;
 }

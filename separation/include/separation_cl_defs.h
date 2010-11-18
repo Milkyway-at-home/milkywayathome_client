@@ -27,7 +27,7 @@ extern "C" {
 
 #include "separation_types.h"
 
-char* separationCLDefs(const ASTRONOMY_PARAMETERS* ap, const char* extra);
+char* separationCLDefs(const AstronomyParameters* ap, const char* extra);
 
 #ifdef __cplusplus
 }

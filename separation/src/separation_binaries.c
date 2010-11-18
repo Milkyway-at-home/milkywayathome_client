@@ -31,7 +31,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 static void setSeparationBinaryHeader(SeparationBinaryHeader* hdr,
-                                      const ASTRONOMY_PARAMETERS* ap,
+                                      const AstronomyParameters* ap,
                                       const DevInfo* di,
                                       size_t binSize)
 {
@@ -54,7 +54,7 @@ static void setSeparationBinaryHeader(SeparationBinaryHeader* hdr,
     memset(hdr->_reserved, 0, sizeof(hdr->_reserved));
 }
 
-static cl_bool checkBinaryHeader(const ASTRONOMY_PARAMETERS* ap,
+static cl_bool checkBinaryHeader(const AstronomyParameters* ap,
                                  const DevInfo* di,
                                  const SeparationBinaryHeader* hdr)
 {
@@ -128,7 +128,7 @@ static unsigned char* readCoreBinary(FILE* f, SeparationBinaryHeader* hdr)
 
 static unsigned char* separationLoadBinaryFile(FILE* f,
                                                SeparationBinaryHeader* hdr,
-                                               const ASTRONOMY_PARAMETERS* ap,
+                                               const AstronomyParameters* ap,
                                                const DevInfo* di,
                                                size_t* binSizeOut)
 {
@@ -165,7 +165,7 @@ static unsigned char* separationLoadBinaryFile(FILE* f,
     return bin;
 }
 
-unsigned char* separationLoadBinary(const ASTRONOMY_PARAMETERS* ap,
+unsigned char* separationLoadBinary(const AstronomyParameters* ap,
                                     const DevInfo* di,
                                     const char* filename,
                                     size_t* binSizeOut)
@@ -195,7 +195,7 @@ unsigned char* separationLoadBinary(const ASTRONOMY_PARAMETERS* ap,
     return bin;
 }
 
-cl_bool separationSaveBinary(const ASTRONOMY_PARAMETERS* ap,
+cl_bool separationSaveBinary(const AstronomyParameters* ap,
                              const DevInfo* di,
                              const unsigned char* bin,
                              const size_t binSize,

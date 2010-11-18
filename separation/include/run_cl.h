@@ -28,10 +28,10 @@ extern "C" {
 #include "separation_types.h"
 #include "mw_cl.h"
 
-real integrateCL(const ASTRONOMY_PARAMETERS* ap,
-                 const INTEGRAL_AREA* ia,
-                 const STREAM_CONSTANTS* sc,
-                 const STREAM_GAUSS sg,
+real integrateCL(const AstronomyParameters* ap,
+                 const IntegralArea* ia,
+                 const StreamConstants* sc,
+                 const StreamGauss sg,
                  real* st_probs,
                  const CLRequest* clr,
                  CLInfo* ci,

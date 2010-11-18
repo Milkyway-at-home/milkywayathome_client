@@ -29,7 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "integrals.h"
 #include "integrals_common.h"
 
-static inline mwvector stream_a(real* parameters)
+static inline mwvector streamA(real* parameters)
 {
     mwvector a;
     X(a) = mw_sin(parameters[2]) * mw_cos(parameters[3]);
@@ -39,10 +39,7 @@ static inline mwvector stream_a(real* parameters)
     return a;
 }
 
-static inline mwvector stream_c(const ASTRONOMY_PARAMETERS* ap,
-                                int wedge,
-                                real mu,
-                                real r)
+static inline mwvector streamC(const AstronomyParameters* ap, int wedge, real mu, real r)
 {
     LB lb;
     mwvector lbr;
@@ -55,7 +52,7 @@ static inline mwvector stream_c(const ASTRONOMY_PARAMETERS* ap,
     W(lbr) = 0.0;
     return lbr2xyz(ap, lbr);
 }
-int setAstronomyParameters(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS* bgp)
+int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* bgp)
 
 {
     ap->alpha = bgp->parameters[0];
@@ -100,16 +97,16 @@ int setAstronomyParameters(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS
     return 0;
 }
 
-STREAM_CONSTANTS* getStreamConstants(const ASTRONOMY_PARAMETERS* ap, const STREAMS* streams)
+StreamConstants* getStreamConstants(const AstronomyParameters* ap, const Streams* streams)
 
 {
     unsigned int i;
-    STREAM_CONSTANTS* sc;
+    StreamConstants* sc;
     real stream_sigma;
     real sigma_sq2;
 
-    sc = (STREAM_CONSTANTS*) mwMallocAligned(sizeof(STREAM_CONSTANTS) * streams->number_streams,
-                                             sizeof(STREAM_CONSTANTS));
+    sc = (StreamConstants*) mwMallocAligned(sizeof(StreamConstants) * streams->number_streams,
+                                             sizeof(StreamConstants));
 
     for (i = 0; i < streams->number_streams; i++)
     {
@@ -118,26 +115,26 @@ STREAM_CONSTANTS* getStreamConstants(const ASTRONOMY_PARAMETERS* ap, const STREA
         sigma_sq2 = 2.0 * sqr(stream_sigma);
         sc[i].sigma_sq2_inv = 1.0 / sigma_sq2;
 
-        sc[i].a = stream_a(streams->parameters[i].stream_parameters);
-        sc[i].c = stream_c(ap,
-                           ap->wedge,
-                           streams->parameters[i].stream_parameters[0],
-                           streams->parameters[i].stream_parameters[1]);
+        sc[i].a = streamA(streams->parameters[i].stream_parameters);
+        sc[i].c = streamC(ap,
+                          ap->wedge,
+                          streams->parameters[i].stream_parameters[0],
+                          streams->parameters[i].stream_parameters[1]);
     }
 
     return sc;
 }
 
-void free_stream_gauss(STREAM_GAUSS sg)
+void freeStreamGauss(StreamGauss sg)
 {
     mwAlignedFree(sg.dx);
     mwAlignedFree(sg.qgaus_W);
 }
 
-STREAM_GAUSS get_stream_gauss(const unsigned int convolve)
+StreamGauss getStreamGauss(const unsigned int convolve)
 {
     unsigned int i;
-    STREAM_GAUSS sg;
+    StreamGauss sg;
     real* qgaus_X;
 
     qgaus_X = (real*) mwMallocAligned(sizeof(real) * convolve, 2 * sizeof(real));
@@ -155,15 +152,13 @@ STREAM_GAUSS get_stream_gauss(const unsigned int convolve)
     return sg;
 }
 
-NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
-                                   const real nu_step_size,
-                                   const real nu_min)
+NuConstants* prepareNuConstants(const unsigned int nu_steps, const real nu_step_size, const real nu_min)
 {
     unsigned int i;
     real tmp1, tmp2;
-    NU_CONSTANTS* nu_consts;
+    NuConstants* nu_consts;
 
-    nu_consts = (NU_CONSTANTS*) mwMallocAligned(sizeof(NU_CONSTANTS) * nu_steps, sizeof(NU_CONSTANTS));
+    nu_consts = (NuConstants*) mwMallocAligned(sizeof(NuConstants) * nu_steps, sizeof(NuConstants));
 
     for (i = 0; i < nu_steps; ++i)
     {
@@ -179,9 +174,9 @@ NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
     return nu_consts;
 }
 
-NU_ID calc_nu_step(const INTEGRAL_AREA* ia, const unsigned int nu_step)
+NuId calcNuStep(const IntegralArea* ia, const unsigned int nu_step)
 {
-    NU_ID nuid;
+    NuId nuid;
     real tmp1, tmp2;
 
     nuid.nu = ia->nu_min + (nu_step * ia->nu_step_size);
@@ -195,19 +190,19 @@ NU_ID calc_nu_step(const INTEGRAL_AREA* ia, const unsigned int nu_step)
     return nuid;
 }
 
-LB_TRIG* precalculateLBTrig(const ASTRONOMY_PARAMETERS* ap, const INTEGRAL_AREA* ia)
+LBTrig* precalculateLBTrig(const AstronomyParameters* ap, const IntegralArea* ia)
 {
     unsigned int i, j;
-    LB_TRIG* lbts;
-    NU_ID nuid;
+    LBTrig* lbts;
+    NuId nuid;
     LB lb;
     real mu;
 
-    lbts = (LB_TRIG*) mwMallocAligned(sizeof(LB_TRIG) * ia->mu_steps * ia->nu_steps, sizeof(LB_TRIG));
+    lbts = (LBTrig*) mwMallocAligned(sizeof(LBTrig) * ia->mu_steps * ia->nu_steps, sizeof(LBTrig));
 
     for (i = 0; i < ia->nu_steps; ++i)
     {
-        nuid = calc_nu_step(ia, i);
+        nuid = calcNuStep(ia, i);
         for (j = 0; j < ia->mu_steps; ++j)
         {
             mu = ia->mu_min + (((real) j + 0.5) * ia->mu_step_size);

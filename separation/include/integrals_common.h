@@ -35,9 +35,9 @@ extern "C" {
 
 
 ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
-inline mwvector lbr2xyz_2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+inline mwvector lbr2xyz_2(__MW_CONSTANT AstronomyParameters* ap,
                           const real r_point,
-                          const LB_TRIG lbt)
+                          const LBTrig lbt)
 {
     mwvector xyz;
     real zp = r_point * BCOS(lbt);
@@ -51,7 +51,7 @@ inline mwvector lbr2xyz_2(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 }
 
 ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
-inline real calc_st_prob_inc(STREAM_CONSTANTS sc, mwvector xyz)
+inline real calc_st_prob_inc(StreamConstants sc, mwvector xyz)
 {
     real xyz_norm, dotted;
     mwvector xyzs;
@@ -67,7 +67,7 @@ inline real calc_st_prob_inc(STREAM_CONSTANTS sc, mwvector xyz)
 }
 
 ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
-inline real aux_prob(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
+inline real aux_prob(__MW_CONSTANT AstronomyParameters* ap,
                      const real qw_r3_N,
                      const real r_in_mag)
 {
@@ -81,7 +81,7 @@ inline real aux_prob(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap,
 }
 
 ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE
-inline real rg_calc(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap, const mwvector xyz)
+inline real rg_calc(__MW_CONSTANT AstronomyParameters* ap, const mwvector xyz)
 {
     /* sqrt(x^2 + y^2 + q_inv_sqr * z^2) */
 
@@ -95,14 +95,14 @@ inline real rg_calc(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap, const mwvector xyz)
 }
 
 ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE
-inline real h_prob_fast(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap, const real qw_r3_N, const real rg)
+inline real h_prob_fast(__MW_CONSTANT AstronomyParameters* ap, const real qw_r3_N, const real rg)
 {
     const real rs = rg + ap->r0;
     return qw_r3_N / (rg * cube(rs));
 }
 
 ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE
-inline real h_prob_slow(__MW_CONSTANT ASTRONOMY_PARAMETERS* ap, const real qw_r3_N, const real rg)
+inline real h_prob_slow(__MW_CONSTANT AstronomyParameters* ap, const real qw_r3_N, const real rg)
 {
     const real rs = rg + ap->r0;
     return qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
@@ -118,7 +118,7 @@ inline void zero_st_probs(real* st_probs, const unsigned int nstream)
 }
 
 ALWAYS_INLINE OLD_GCC_EXTERNINLINE
-inline void sum_probs(KAHAN* probs,
+inline void sum_probs(Kahan* probs,
                       const real* st_probs,
                       const real V_reff_xr_rp3,
                       const unsigned int nstream)
@@ -141,7 +141,7 @@ inline void mult_probs(real* st_probs, const real V_reff_xr_rp3, const unsigned 
 #ifndef __OPENCL_VERSION__
 ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
 inline void stream_sums(real* st_probs,
-                        __MW_CONSTANT STREAM_CONSTANTS* sc,
+                        __MW_CONSTANT StreamConstants* sc,
                         const mwvector xyz,
                         const real qw_r3_N,
                         const unsigned int nstreams)
@@ -153,9 +153,9 @@ inline void stream_sums(real* st_probs,
 }
 
 ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE
-inline LB_TRIG lb_trig(LB lb)
+inline LBTrig lb_trig(LB lb)
 {
-    LB_TRIG lbt;
+    LBTrig lbt;
     mw_sincos(d2r(LB_L(lb)), &lbt.lsin, &lbt.lcos);
     mw_sincos(d2r(LB_B(lb)), &lbt.bsin, &lbt.bcos);
     return lbt;

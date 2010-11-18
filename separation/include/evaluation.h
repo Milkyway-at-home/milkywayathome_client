@@ -24,10 +24,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_types.h"
 
-real evaluate(const ASTRONOMY_PARAMETERS* ap,
-              const INTEGRAL_AREA* ias,
-              const STREAMS* streams,
-              const STREAM_CONSTANTS* sc,
+real evaluate(const AstronomyParameters* ap,
+              const IntegralArea* ias,
+              const Streams* streams,
+              const StreamConstants* sc,
               const char* star_points_file,
               const CLRequest* clr,
               const int do_separation,

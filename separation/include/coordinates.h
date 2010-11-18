@@ -27,8 +27,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 mwvector stripe_normal(int wedge);
 
-mwvector lbr2xyz(const ASTRONOMY_PARAMETERS* ap, const mwvector lbr);
-mwvector xyz_mag(const ASTRONOMY_PARAMETERS* ap, mwvector point, real offset);
+mwvector lbr2xyz(const AstronomyParameters* ap, const mwvector lbr);
+mwvector xyz_mag(const AstronomyParameters* ap, mwvector point, real offset);
 
 LB gc2lb(const int wedge, const real mu, const real nu);
 

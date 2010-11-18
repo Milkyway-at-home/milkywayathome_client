@@ -36,7 +36,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif /* FAST_H_PROB */
 
 /* Compiler apparently can't unroll the loops over the streams if we
- * loop over NSTREAMS (as of Stream SDK 2.2), so we have to manually
+ * loop over NStreams (as of Stream SDK 2.2), so we have to manually
  * expand. A macro to expand an arbitrary number of times is also
  * quite terrible. Not unrolling these loops murders the
  * performance. */
@@ -51,29 +51,29 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #if 0
 /* This breaks Nvidia compiler */
-R_POINTS readImageDouble(uint4 a)
+RPoints readImageDouble(uint4 a)
 {
     union {
         uint4 i;
-        R_POINTS d;
+        RPoints d;
     } arst;
     arst.i = a;
     return arst.d;
 }
 #endif
 
-inline R_POINTS readImageDouble(uint4 a)
+inline RPoints readImageDouble(uint4 a)
 {
     union {
         uint2 i[2];
-        R_POINTS d;
+        RPoints d;
     } arst;
     arst.i[0] = a.lo;
     arst.i[1] = a.hi;
     return arst.d;
 }
 
-inline R_POINTS readRPts(__read_only image2d_t r_pts, __constant INTEGRAL_AREA* ia, int2 i)
+inline RPoints readRPts(__read_only image2d_t r_pts, __constant IntegralArea* ia, int2 i)
 {
     const sampler_t sample = CLK_ADDRESS_NONE
                            | CLK_NORMALIZED_COORDS_FALSE
@@ -84,7 +84,7 @@ inline R_POINTS readRPts(__read_only image2d_t r_pts, __constant INTEGRAL_AREA* 
 
 #else
 
-inline R_POINTS readRPts(__global const R_POINTS* r_pts, __constant INTEGRAL_AREA* ia, int2 i)
+inline RPoints readRPts(__global const RPoints* r_pts, __constant IntegralArea* ia, int2 i)
 {
     return r_pts[i.y * ia->r_steps + i.x];
 }
@@ -93,9 +93,9 @@ inline R_POINTS readRPts(__global const R_POINTS* r_pts, __constant INTEGRAL_ARE
 
 __attribute__ ((always_inline))
 inline void stream_sums_cl(real* st_probs,
-                           __constant STREAM_CONSTANTS* sc,
+                           __constant StreamConstants* sc,
                            const mwvector xyz,
-                           const R_POINTS r_pt)
+                           const RPoints r_pt)
 {
   #if NSTREAM >= 1
     st_probs[0] = mw_mad(QW_R3_N(r_pt), calc_st_prob_inc(sc[0], xyz), st_probs[0]);
@@ -148,26 +148,26 @@ inline void write_mult_st_probs(__global real* probs_out, real V_reff_xr_rp3, co
 __kernel void mu_sum_kernel(__global real* restrict mu_out,
                             __global real* restrict probs_out,
 
-                            __constant ASTRONOMY_PARAMETERS* ap MAX_CONST(1, ASTRONOMY_PARAMETERS),
-                            __constant INTEGRAL_AREA* ia MAX_CONST(1, INTEGRAL_AREA),
-                            __constant STREAM_CONSTANTS* sc MAX_CONST(NSTREAM, STREAM_CONSTANTS),
-                            __constant R_CONSTS* rcs MAX_CONST(200, R_CONSTS),
+                            __constant AstronomyParameters* ap MAX_CONST(1, ASTRONOMY_PARAMETERS),
+                            __constant IntegralArea* ia MAX_CONST(1, Integral_AREA),
+                            __constant StreamConstants* sc MAX_CONST(NSTREAM, STREAM_CONSTANTS),
+                            __constant RConsts* rcs MAX_CONST(200, RConsts),
                             __constant real* restrict sg_dx MAX_CONST(200, real),
 
                           #if USE_IMAGES
                             __read_only image2d_t r_pts,
                           #else
-                            __global const R_POINTS* r_pts,
+                            __global const RPoints* r_pts,
                           #endif
 
-                            __global const LB_TRIG* lbts,
+                            __global const LBTrig* lbts,
                             const real nu_id)
 {
     size_t nu_step = get_global_id(2);
     size_t mu_step = get_global_id(1);
     size_t r_step  = get_global_id(0);
 
-    LB_TRIG lbt = lbts[nu_step * ia->mu_steps + mu_step]; /* 32-byte read */
+    LBTrig lbt = lbts[nu_step * ia->mu_steps + mu_step]; /* 32-byte read */
 
     real bg_prob = 0.0;
     real st_probs[NSTREAM] = { 0.0 };
@@ -176,7 +176,7 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     unsigned int convolve = ap->convolve; /* Faster to load this into register first */
     for (i = 0; i < convolve; ++i)
     {
-        R_POINTS r_pt = readRPts(r_pts, ia, (int2) (r_step, i));
+        RPoints r_pt = readRPts(r_pts, ia, (int2) (r_step, i));
 
         mwvector xyz = lbr2xyz_2(ap, R_POINT(r_pt), lbt);
         real rg = rg_calc(ap, xyz);

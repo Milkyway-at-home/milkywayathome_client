@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "io_util.h"
 #include "milkyway_util.h"
 
-void free_background_parameters(BACKGROUND_PARAMETERS* bgp)
+void freeBackgroundParameters(BackgroundParameters* bgp)
 {
     free(bgp->parameters);
     free(bgp->step);
@@ -33,7 +33,7 @@ void free_background_parameters(BACKGROUND_PARAMETERS* bgp)
     free(bgp->optimize);
 }
 
-void free_stream_parameters(STREAM_PARAMETERS* p)
+void freeStreamParameters(StreamParameters* p)
 {
     free(p->stream_parameters);
     free(p->stream_step);
@@ -42,33 +42,33 @@ void free_stream_parameters(STREAM_PARAMETERS* p)
     free(p->stream_optimize);
 }
 
-void free_streams(STREAMS* streams)
+void freeStreams(Streams* streams)
 {
     unsigned int i;
 
     for (i = 0; i < streams->number_streams; ++i)
-        free_stream_parameters(&streams->parameters[i]);
+        freeStreamParameters(&streams->parameters[i]);
     free(streams->parameters);
     free(streams->stream_weight);
 }
 
-static void calc_integral_step_sizes(INTEGRAL_AREA* i)
+static void calcIntegralStepSizes(IntegralArea* i)
 {
     i->r_step_size = (i->r_max - i->r_min) / (real)i->r_steps;
     i->mu_step_size = (i->mu_max - i->mu_min) / (real)i->mu_steps;
     i->nu_step_size = (i->nu_max - i->nu_min) / (real)i->nu_steps;
 }
 
-static INTEGRAL_AREA* fread_parameters(FILE* file,
-                                       ASTRONOMY_PARAMETERS* ap,
-                                       BACKGROUND_PARAMETERS* bgp,
-                                       STREAMS* streams)
+static IntegralArea* freadParameters(FILE* file,
+                                     AstronomyParameters* ap,
+                                     BackgroundParameters* bgp,
+                                     Streams* streams)
 {
     unsigned int i, temp;
     int retval;
     double tmp1, tmp2;
-    INTEGRAL_AREA* integral;
-    const INTEGRAL_AREA* ia;
+    IntegralArea* integral;
+    const IntegralArea* ia;
     unsigned int total_calc_probs;
 
     retval = fscanf(file, "parameters_version: %lf\n", &tmp1);
@@ -94,8 +94,8 @@ static INTEGRAL_AREA* fread_parameters(FILE* file,
 
     ap->number_streams = streams->number_streams;
 
-    streams->stream_weight = (STREAM_WEIGHT*) mallocSafe(sizeof(STREAM_WEIGHT) * streams->number_streams);
-    streams->parameters = (STREAM_PARAMETERS*) mallocSafe(sizeof(STREAM_PARAMETERS) * streams->number_streams);
+    streams->stream_weight = (StreamWeight*) mallocSafe(sizeof(StreamWeight) * streams->number_streams);
+    streams->parameters = (StreamParameters*) mallocSafe(sizeof(StreamParameters) * streams->number_streams);
 
     for (i = 0; i < streams->number_streams; ++i)
     {
@@ -129,7 +129,7 @@ static INTEGRAL_AREA* fread_parameters(FILE* file,
     if (fscanf(file, "wedge: %d\n", &ap->wedge) < 1)
         warn("Error reading wedge\n");
 
-    integral = (INTEGRAL_AREA*) mwMallocAligned(sizeof(INTEGRAL_AREA), sizeof(INTEGRAL_AREA));
+    integral = (IntegralArea*) mwMallocAligned(sizeof(IntegralArea), sizeof(IntegralArea));
 
     fscanf(file,
            "r[min,max,steps]: %lf, %lf, %u\n",
@@ -153,14 +153,14 @@ static INTEGRAL_AREA* fread_parameters(FILE* file,
     integral[0].nu_min = (real) tmp1;
     integral[0].nu_max = (real) tmp2;
 
-    calc_integral_step_sizes(&integral[0]);
+    calcIntegralStepSizes(&integral[0]);
 
     fscanf(file, "number_cuts: %u\n", &ap->number_integrals);
     ap->number_integrals++;
     if (ap->number_integrals > 1)
     {
         /* FIXME?: Alignment in case where copy happens */
-        integral = (INTEGRAL_AREA*) reallocSafe(integral, sizeof(INTEGRAL_AREA) * ap->number_integrals);
+        integral = (IntegralArea*) reallocSafe(integral, sizeof(IntegralArea) * ap->number_integrals);
         for (i = 1; i < ap->number_integrals; i++)
         {
             fscanf(file,
@@ -186,7 +186,7 @@ static INTEGRAL_AREA* fread_parameters(FILE* file,
             integral[i].nu_max = (real) tmp2;
 
 
-            calc_integral_step_sizes(&integral[i]);
+            calcIntegralStepSizes(&integral[i]);
         }
     }
 
@@ -203,14 +203,13 @@ static INTEGRAL_AREA* fread_parameters(FILE* file,
     return integral;
 }
 
-INTEGRAL_AREA* read_parameters(const char* filename,
-                               ASTRONOMY_PARAMETERS* ap,
-                               BACKGROUND_PARAMETERS* bgp,
-                               STREAMS* streams)
+IntegralArea* readParameters(const char* filename,
+                             AstronomyParameters* ap,
+                             BackgroundParameters* bgp,
+                             Streams* streams)
 {
-
     FILE* f;
-    INTEGRAL_AREA* integral;
+    IntegralArea* integral;
 
     f = mwOpenResolved(filename, "r");
     if (!f)
@@ -219,7 +218,7 @@ INTEGRAL_AREA* read_parameters(const char* filename,
         return NULL;
     }
 
-    integral = fread_parameters(f, ap, bgp, streams);
+    integral = freadParameters(f, ap, bgp, streams);
     if (!integral)
         warn("Error reading parameters file\n");
 
@@ -227,11 +226,11 @@ INTEGRAL_AREA* read_parameters(const char* filename,
     return integral;
 }
 
-static void fwrite_parameters(FILE* file,
-                              ASTRONOMY_PARAMETERS* ap,
-                              INTEGRAL_AREA* integral,
-                              BACKGROUND_PARAMETERS* bgp,
-                              STREAMS* streams)
+static void fwriteParameters(FILE* file,
+                             AstronomyParameters* ap,
+                             IntegralArea* integral,
+                             BackgroundParameters* bgp,
+                             Streams* streams)
 {
     unsigned int i;
 
@@ -313,11 +312,11 @@ static void fwrite_parameters(FILE* file,
     }
 }
 
-int write_parameters(const char* filename,
-                     ASTRONOMY_PARAMETERS* ap,
-                     INTEGRAL_AREA* ias,
-                     BACKGROUND_PARAMETERS* bgp,
-                     STREAMS* streams)
+int writeParameters(const char* filename,
+                    AstronomyParameters* ap,
+                    IntegralArea* ias,
+                    BackgroundParameters* bgp,
+                    Streams* streams)
 {
     FILE* f;
 
@@ -329,15 +328,15 @@ int write_parameters(const char* filename,
         return 1;
     }
 
-    fwrite_parameters(f, ap, ias, bgp, streams);
+    fwriteParameters(f, ap, ias, bgp, streams);
     fclose(f);
 
     return 0;
 }
 
-unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap,
-                                           BACKGROUND_PARAMETERS* bgp,
-                                           STREAMS* streams)
+unsigned int getOptimizedParameterCount(AstronomyParameters* ap,
+                                        BackgroundParameters* bgp,
+                                        Streams* streams)
 {
     unsigned int i, j, count = 0;
 
@@ -362,10 +361,10 @@ unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap,
     return count;
 }
 
-void set_parameters(ASTRONOMY_PARAMETERS* ap,
-                    BACKGROUND_PARAMETERS* bgp,
-                    STREAMS* streams,
-                    const real* parameters)
+void setParameters(AstronomyParameters* ap,
+                   BackgroundParameters* bgp,
+                   Streams* streams,
+                   const real* parameters)
 {
     unsigned int i, j;
     unsigned int current = 0;

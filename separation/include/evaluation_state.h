@@ -30,15 +30,15 @@ typedef struct
 {
     real background_integral;
     real* stream_integrals;
-    KAHAN* probs;
-} INTEGRAL;
+    Kahan* probs;
+} Integral;
 
 typedef struct
 {
     /* State for integral calculation. */
-    INTEGRAL* integrals;
+    Integral* integrals;
     unsigned int nu_step, mu_step;   /* r_steps aren't checkpointed */
-    KAHAN sum;
+    Kahan sum;
 
     unsigned int current_calc_probs; /* progress of completed integrals */
 
@@ -46,17 +46,17 @@ typedef struct
 
     unsigned int number_integrals;
     unsigned int number_streams;
-} EVALUATION_STATE;
+} EvaluationState;
 
 #define EMPTY_EVALUATION_STATE { NULL, 0, 0, ZERO_KAHAN, 0, 0, 0, 0 }
 
-void initialize_state(const ASTRONOMY_PARAMETERS* ap, EVALUATION_STATE* es);
-void free_evaluation_state(EVALUATION_STATE* es);
+void initializeState(const AstronomyParameters* ap, EvaluationState* es);
+void freeEvaluationState(EvaluationState* es);
 
-int write_checkpoint(const EVALUATION_STATE* es);
-int read_checkpoint(EVALUATION_STATE* es);
+int writeCheckpoint(const EvaluationState* es);
+int readCheckpoint(EvaluationState* es);
 int resolveCheckpoint();
-int maybeResume(EVALUATION_STATE* es);
+int maybeResume(EvaluationState* es);
 
 
 #endif /* _EVALUATION_STATE_H_ */

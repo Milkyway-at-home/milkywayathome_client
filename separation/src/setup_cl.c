@@ -206,7 +206,7 @@ static const char* getNvidiaRegCount(const DevInfo* di)
 #endif /* __APPLE__ */
 
 /* Get string of options to pass to the CL compiler. */
-static char* getCompilerFlags(const ASTRONOMY_PARAMETERS* ap, const DevInfo* di, cl_bool useImages)
+static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, cl_bool useImages)
 {
     char* compileFlags = NULL;
     char cwd[1024] = "";
@@ -329,10 +329,10 @@ static char* getCompilerFlags(const ASTRONOMY_PARAMETERS* ap, const DevInfo* di,
 cl_int setupSeparationCL(CLInfo* ci,
                          DevInfo* di,
                          SeparationSizes* sizes,
-                         const ASTRONOMY_PARAMETERS* ap,
-                         const INTEGRAL_AREA* ia,
-                         const STREAM_CONSTANTS* sc,
-                         const STREAM_GAUSS sg,
+                         const AstronomyParameters* ap,
+                         const IntegralArea* ia,
+                         const StreamConstants* sc,
+                         const StreamGauss sg,
                          const CLRequest* clr,
                          cl_bool useImages)
 {

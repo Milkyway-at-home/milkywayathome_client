@@ -68,10 +68,10 @@ typedef struct
 cl_int setupSeparationCL(CLInfo* ci,
                          DevInfo* di,
                          SeparationSizes* sizes,
-                         const ASTRONOMY_PARAMETERS* ap,
-                         const INTEGRAL_AREA* ia,
-                         const STREAM_CONSTANTS* sc,
-                         const STREAM_GAUSS sg,
+                         const AstronomyParameters* ap,
+                         const IntegralArea* ia,
+                         const StreamConstants* sc,
+                         const StreamGauss sg,
                          const CLRequest* clr,
                          cl_bool useImages);
 

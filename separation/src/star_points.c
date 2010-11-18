@@ -25,12 +25,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 
 #if DOUBLEPREC
-  #define STAR_POINTS_READ_STR "%lf %lf %lf\n"
+  #define STARPOINTS_READ_STR "%lf %lf %lf\n"
 #else
-  #define STAR_POINTS_READ_STR "%f %f %f\n"
+  #define STARPOINTS_READ_STR "%f %f %f\n"
 #endif /* DOUBLEPREC */
 
-static int fread_star_points(FILE* data_file, STAR_POINTS* sp)
+static int freadStarPoints(FILE* data_file, StarPoints* sp)
 {
     real x, y, z;
     unsigned int i;
@@ -45,7 +45,7 @@ static int fread_star_points(FILE* data_file, STAR_POINTS* sp)
     sp->stars = (mwvector*) mwMallocAligned(sizeof(mwvector) * sp->number_stars, sizeof(mwvector));
     for (i = 0; i < sp->number_stars; ++i)
     {
-        if (fscanf(data_file, STAR_POINTS_READ_STR, &x, &y, &z) != 3)
+        if (fscanf(data_file, STARPOINTS_READ_STR, &x, &y, &z) != 3)
         {
             perror("star points");
             warn("Failed to read star points item\n");
@@ -58,7 +58,7 @@ static int fread_star_points(FILE* data_file, STAR_POINTS* sp)
     return 0;
 }
 
-int read_star_points(STAR_POINTS* sp, const char* filename)
+int readStarPoints(StarPoints* sp, const char* filename)
 {
     int rc;
     FILE* f;
@@ -70,13 +70,13 @@ int read_star_points(STAR_POINTS* sp, const char* filename)
         return 1;
     }
 
-    rc = fread_star_points(f, sp);
+    rc = freadStarPoints(f, sp);
     fclose(f);
 
     return rc;
 }
 
-void free_star_points(STAR_POINTS* sp)
+void freeStarPoints(StarPoints* sp)
 {
     mwAlignedFree(sp->stars);
 }

@@ -124,7 +124,7 @@ int* fread_int_array(FILE *file, const char *array_name, unsigned int* sizeOut)
     return arr;
 }
 
-void printIntegralArea(const INTEGRAL_AREA* ia)
+void printIntegralArea(const IntegralArea* ia)
 {
     printf("integral-area {\n"
            "  r_min        = %g\n"
@@ -145,7 +145,7 @@ void printIntegralArea(const INTEGRAL_AREA* ia)
            ia->r_steps, ia->nu_steps, ia->mu_steps);
 }
 
-void printNuConstants(const NU_CONSTANTS* c, unsigned int n)
+void printNuConstants(const NuConstants* c, unsigned int n)
 {
     unsigned int i;
     printf("Nu constants:\n");
@@ -153,7 +153,7 @@ void printNuConstants(const NU_CONSTANTS* c, unsigned int n)
         printf("[%u] { nu = %g, id = %g } \n", i, c[i].nu, c[i].id);
 }
 
-void printStreamGauss(const STREAM_GAUSS* c, unsigned int n)
+void printStreamGauss(const StreamGauss* c, unsigned int n)
 {
     unsigned int i;
     printf("Stream gauss:\n");
@@ -161,7 +161,7 @@ void printStreamGauss(const STREAM_GAUSS* c, unsigned int n)
         printf("[%u] { dx = %g, qgaus_W = %g } \n", i, c->dx[i], c->qgaus_W[i]);
 }
 
-void printStreamConstants(const STREAM_CONSTANTS* c, unsigned int n)
+void printStreamConstants(const StreamConstants* c, unsigned int n)
 {
     unsigned int i;
     printf("Stream constants:\n");
@@ -174,7 +174,7 @@ void printStreamConstants(const STREAM_CONSTANTS* c, unsigned int n)
     }
 }
 
-void printAstronomyParameters(const ASTRONOMY_PARAMETERS* ap)
+void printAstronomyParameters(const AstronomyParameters* ap)
 {
     printf("astronomy-parameters {\n"
            "  parameters_version           = %g\n"

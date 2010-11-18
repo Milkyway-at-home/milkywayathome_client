@@ -27,19 +27,19 @@ extern "C" {
 
 #include "separation_types.h"
 
-STREAM_CONSTANTS* getStreamConstants(const ASTRONOMY_PARAMETERS* ap, const STREAMS* streams);
+StreamConstants* getStreamConstants(const AstronomyParameters* ap, const Streams* streams);
 
-int setAstronomyParameters(ASTRONOMY_PARAMETERS* ap, const BACKGROUND_PARAMETERS* bgp);
+int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* bgp);
 
-STREAM_GAUSS get_stream_gauss(const unsigned int convolve);
-void free_stream_gauss(STREAM_GAUSS sg);
+StreamGauss getStreamGauss(const unsigned int convolve);
+void freeStreamGauss(StreamGauss sg);
 
-NU_CONSTANTS* prepare_nu_constants(const unsigned int nu_steps,
-                                   const real nu_step_size,
-                                   const real nu_min);
+NuConstants* prepareNuConstants(const unsigned int nu_steps,
+                                const real nu_step_size,
+                                const real nu_min);
 
-NU_ID calc_nu_step(const INTEGRAL_AREA* ia, const unsigned int nu_step);
-LB_TRIG* precalculateLBTrig(const ASTRONOMY_PARAMETERS* ap, const INTEGRAL_AREA* ia);
+NuId calcNuStep(const IntegralArea* ia, const unsigned int nu_step);
+LBTrig* precalculateLBTrig(const AstronomyParameters* ap, const IntegralArea* ia);
 
 #ifdef __cplusplus
 }

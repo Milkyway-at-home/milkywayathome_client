@@ -28,36 +28,36 @@ extern "C" {
 #include "separation_types.h"
 #include "evaluation_state.h"
 
-real bg_probability_fast_hprob(const ASTRONOMY_PARAMETERS* ap,
-                               const STREAM_CONSTANTS* sc,
-                               const R_POINTS* r_pts,
+real bg_probability_fast_hprob(const AstronomyParameters* ap,
+                               const StreamConstants* sc,
+                               const RPoints* r_pts,
                                const real* sg_dx,
-                               const LB_TRIG lbt,
+                               const LBTrig lbt,
                                const real gPrime,
                                const int aux_bg_profile,
                                const unsigned int convolve,
 
                                real* st_probs);
 
-real bg_probability_slow_hprob(const ASTRONOMY_PARAMETERS* ap,
-                               const STREAM_CONSTANTS* sc,
-                               const R_POINTS* r_pts,
+real bg_probability_slow_hprob(const AstronomyParameters* ap,
+                               const StreamConstants* sc,
+                               const RPoints* r_pts,
                                const real* sg_dx,
-                               const LB_TRIG lbt,
+                               const LBTrig lbt,
                                const real gPrime,
                                const int aux_bg_profile,
                                const unsigned int convolve,
                                real* st_probs);
 
-NU_ID calc_nu_step(const INTEGRAL_AREA* ia, const unsigned int nu_step);
+NuId calcNuStep(const IntegralArea* ia, const unsigned int nu_step);
 
-real integrate(const ASTRONOMY_PARAMETERS* ap,
-               const INTEGRAL_AREA* ia,
-               const STREAM_CONSTANTS* sc,
-               const STREAM_GAUSS sg,
+real integrate(const AstronomyParameters* ap,
+               const IntegralArea* ia,
+               const StreamConstants* sc,
+               const StreamGauss sg,
                real* probs,
-               KAHAN* probs_sum,
-               EVALUATION_STATE* es);
+               Kahan* probs_sum,
+               EvaluationState* es);
 
 #ifdef __cplusplus
 }

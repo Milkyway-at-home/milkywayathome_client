@@ -24,29 +24,29 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_types.h"
 
-void free_background_parameters(BACKGROUND_PARAMETERS* bgp);
-void free_streams(STREAMS* streams);
-void free_stream_parameters(STREAM_PARAMETERS* p);
+void freeBackgroundParameters(BackgroundParameters* bgp);
+void freeStreams(Streams* streams);
+void freeStreamParameters(StreamParameters* p);
 
-unsigned int get_optimized_parameter_count(ASTRONOMY_PARAMETERS* ap,
-                                           BACKGROUND_PARAMETERS* bgp,
-                                           STREAMS* streams);
+unsigned int getOptimizedParameterCount(AstronomyParameters* ap,
+                                        BackgroundParameters* bgp,
+                                        Streams* streams);
 
-INTEGRAL_AREA* read_parameters(const char* file,
-                               ASTRONOMY_PARAMETERS* ap,
-                               BACKGROUND_PARAMETERS* bgp,
-                               STREAMS* streams);
+IntegralArea* readParameters(const char* file,
+                             AstronomyParameters* ap,
+                             BackgroundParameters* bgp,
+                             Streams* streams);
 
-int write_parameters(const char* file,
-                     ASTRONOMY_PARAMETERS* ap,
-                     INTEGRAL_AREA* integral,
-                     BACKGROUND_PARAMETERS* bgp,
-                     STREAMS* streams);
+int writeParameters(const char* file,
+                    AstronomyParameters* ap,
+                    IntegralArea* integral,
+                    BackgroundParameters* bgp,
+                    Streams* streams);
 
-void set_parameters(ASTRONOMY_PARAMETERS* ap,
-                    BACKGROUND_PARAMETERS* bgp,
-                    STREAMS* streams,
-                    const real* parameters);
+void setParameters(AstronomyParameters* ap,
+                   BackgroundParameters* bgp,
+                   Streams* streams,
+                   const real* parameters);
 
 
 #endif /* _PARAMETERS_H_ */

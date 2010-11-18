@@ -39,7 +39,7 @@ typedef struct
     cl_event endTmp;   /* end of the NDRange writing to the temporary output buffers */
 } SeparationCLEvents;
 
-static void sumStreamResults(KAHAN* probs_results,
+static void sumStreamResults(Kahan* probs_results,
                              const real* probs_V_reff_xr_rp3,
                              const cl_uint number_streams)
 {
@@ -56,9 +56,9 @@ static void sumProbsResults(real* probs_results,
                             const cl_uint number_streams)
 {
     cl_uint i, j, idx;
-    KAHAN* probs_sum;
+    Kahan* probs_sum;
 
-    probs_sum = (KAHAN*) callocSafe(number_streams, sizeof(KAHAN));
+    probs_sum = (Kahan*) callocSafe(number_streams, sizeof(Kahan));
 
     for (i = 0; i < mu_steps; ++i)
     {
@@ -81,7 +81,7 @@ static size_t nextMultiple(const size_t x, const size_t n)
     return (x % n == 0) ? x : x + (n - x % n);
 }
 
-static cl_int cpuGroupSizes(const INTEGRAL_AREA* ia, size_t global[], size_t local[])
+static cl_int cpuGroupSizes(const IntegralArea* ia, size_t global[], size_t local[])
 {
     global[0] = 1;
     global[1] = ia->mu_steps;
@@ -93,7 +93,7 @@ static cl_int cpuGroupSizes(const INTEGRAL_AREA* ia, size_t global[], size_t loc
     return CL_SUCCESS;
 }
 
-static cl_int gpuGroupSizes(const INTEGRAL_AREA* ia, size_t numChunks, size_t global[], size_t local[])
+static cl_int gpuGroupSizes(const IntegralArea* ia, size_t numChunks, size_t global[], size_t local[])
 {
     size_t groupSize = 64;
     size_t chunkSize = ia->r_steps / numChunks;
@@ -120,7 +120,7 @@ static cl_int gpuGroupSizes(const INTEGRAL_AREA* ia, size_t numChunks, size_t gl
 
 /* TODO: Do we need hadware specific workgroup sizes? */
 static cl_bool findWorkGroupSizes(CLInfo* ci,
-                                  const INTEGRAL_AREA* ia,
+                                  const IntegralArea* ia,
                                   size_t numChunks,
                                   size_t global[],
                                   size_t local[])
@@ -191,7 +191,7 @@ static real sumMuResults(const real* mu_results,
                          const cl_uint r_steps)
 {
     cl_uint i, j;
-    KAHAN bg_prob = ZERO_KAHAN;
+    Kahan bg_prob = ZERO_KAHAN;
 
     for (i = 0; i < mu_steps; ++i)
     {
@@ -204,17 +204,17 @@ static real sumMuResults(const real* mu_results,
     return bg_prob.sum + bg_prob.correction;
 }
 
-static cl_int setNuKernelArgs(CLInfo* ci, const INTEGRAL_AREA* ia, const cl_uint nu_step)
+static cl_int setNuKernelArgs(CLInfo* ci, const IntegralArea* ia, const cl_uint nu_step)
 {
     cl_int err;
-    NU_ID nuid;
+    NuId nuid;
 
     /* Avoid doing any trig in the broken ATI math. Also trig seems to
      * be more expensive there. Not doing the coordinate conversion
      * there also halves number of required registers, which prevents
      * enough threads to hide the horrible latency of the other
      * required reads. */
-    nuid = calc_nu_step(ia, nu_step);
+    nuid = calcNuStep(ia, nu_step);
     err = clSetKernelArg(ci->kern, 9, sizeof(real), &nuid.id);
     if (err != CL_SUCCESS)
     {
@@ -278,7 +278,7 @@ static cl_int runNuStep(CLInfo* ci,
                         SeparationCLMem* cm,
                         SeparationCLEvents* evs,
 
-                        const INTEGRAL_AREA* ia,
+                        const IntegralArea* ia,
                         const size_t numChunks,
                         const size_t global[],
                         const size_t local[],
@@ -334,8 +334,8 @@ static cl_int runNuStep(CLInfo* ci,
 static real runIntegral(CLInfo* ci,
                         SeparationCLMem* cm,
                         real* probs_results,
-                        const ASTRONOMY_PARAMETERS* ap,
-                        const INTEGRAL_AREA* ia)
+                        const AstronomyParameters* ap,
+                        const IntegralArea* ia)
 {
     cl_uint i;
     cl_int err;
@@ -392,10 +392,10 @@ static real runIntegral(CLInfo* ci,
     return result;
 }
 
-real integrateCL(const ASTRONOMY_PARAMETERS* ap,
-                 const INTEGRAL_AREA* ia,
-                 const STREAM_CONSTANTS* sc,
-                 const STREAM_GAUSS sg,
+real integrateCL(const AstronomyParameters* ap,
+                 const IntegralArea* ia,
+                 const StreamConstants* sc,
+                 const StreamGauss sg,
                  real* probs_results,
                  const CLRequest* clr,
                  CLInfo* ci,

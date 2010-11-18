@@ -31,10 +31,10 @@ static inline real distance_magnitude(const real m)
     return mw_exp10((m - (real) 14.2) * 0.2);
 }
 
-static R_PRIME calcRPrime(const INTEGRAL_AREA* ia, const unsigned int r_step)
+static RPrime calcRPrime(const IntegralArea* ia, const unsigned int r_step)
 {
     real r, next_r, log_r;
-    R_PRIME ret;
+    RPrime ret;
 
     log_r = ia->r_min + (r_step * ia->r_step_size);
     r = distance_magnitude(log_r);
@@ -63,9 +63,9 @@ real calcG(const real coords)
     return 5.0 * (mw_log10(1000.0 * coords) - 1.0) + absm;
 }
 
-static inline R_POINTS calc_r_point(const real dx, const real qgaus_W, const real gPrime, const real coeff)
+static inline RPoints calc_r_point(const real dx, const real qgaus_W, const real gPrime, const real coeff)
 {
-    R_POINTS r_pt;
+    RPoints r_pt;
     real g, exponent, r3, N;
 
     g = gPrime + dx;
@@ -81,9 +81,9 @@ static inline R_POINTS calc_r_point(const real dx, const real qgaus_W, const rea
     return r_pt;
 }
 
-static inline R_CONSTS calcRConsts(R_PRIME rp)
+static inline RConsts calcRConsts(RPrime rp)
 {
-    R_CONSTS rc;
+    RConsts rc;
 
     rc.gPrime = calcG(rp.rPrime);
     rc.irv_reff_xr_rp3 = rp.irv * calcReffXrRp3(rp.rPrime, rc.gPrime);
@@ -92,11 +92,11 @@ static inline R_CONSTS calcRConsts(R_PRIME rp)
 }
 
 
-void set_r_points(const ASTRONOMY_PARAMETERS* ap,
-                  const STREAM_GAUSS sg,
-                  const unsigned int n_convolve,
-                  const real gPrime,
-                  R_POINTS* r_pts)
+void setRPoints(const AstronomyParameters* ap,
+                const StreamGauss sg,
+                const unsigned int n_convolve,
+                const real gPrime,
+                RPoints* r_pts)
 {
     unsigned int i;
 
@@ -104,23 +104,23 @@ void set_r_points(const ASTRONOMY_PARAMETERS* ap,
         r_pts[i] = calc_r_point(sg.dx[i], sg.qgaus_W[i], gPrime, ap->coeff);
 }
 
-R_POINTS* precalculate_r_pts(const ASTRONOMY_PARAMETERS* ap,
-                             const INTEGRAL_AREA* ia,
-                             const STREAM_GAUSS sg,
-                             R_CONSTS** rc_out,
-                             int transpose)
+RPoints* precalculateRPts(const AstronomyParameters* ap,
+                          const IntegralArea* ia,
+                          const StreamGauss sg,
+                          RConsts** rc_out,
+                          int transpose)
 {
     unsigned int i, j, idx;
-    R_POINTS* r_pts;
-    R_PRIME rp;
-    R_CONSTS* rc;
-    R_POINTS r_pt;
+    RPoints* r_pts;
+    RPrime rp;
+    RConsts* rc;
+    RPoints r_pt;
 
-    size_t rPtsSize = sizeof(R_POINTS) * ap->convolve * ia->r_steps;
-    size_t rConstsSize = sizeof(R_CONSTS) * ia->r_steps;
+    size_t rPtsSize = sizeof(RPoints) * ap->convolve * ia->r_steps;
+    size_t rConstsSize = sizeof(RConsts) * ia->r_steps;
 
-    r_pts = (R_POINTS*) mwMallocAligned(rPtsSize, sizeof(R_POINTS));
-    rc = (R_CONSTS*) mwMallocAligned(rConstsSize, sizeof(R_CONSTS));
+    r_pts = (RPoints*) mwMallocAligned(rPtsSize, sizeof(RPoints));
+    rc = (RConsts*) mwMallocAligned(rConstsSize, sizeof(RConsts));
 
     for (i = 0; i < ia->r_steps; ++i)
     {

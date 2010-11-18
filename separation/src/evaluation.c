@@ -30,10 +30,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 
 
-static void final_stream_integrals(FINAL_STREAM_INTEGRALS* fsi,
-                                   const EVALUATION_STATE* es,
-                                   const unsigned int number_streams,
-                                   const unsigned int number_integrals)
+static void finalStreamIntegrals(FinalStreamIntegrals* fsi,
+                                 const EvaluationState* es,
+                                 const unsigned int number_streams,
+                                 const unsigned int number_integrals)
 {
     unsigned int i, j;
 
@@ -52,12 +52,12 @@ static void final_stream_integrals(FINAL_STREAM_INTEGRALS* fsi,
 
 }
 
-static void free_final_stream_integrals(FINAL_STREAM_INTEGRALS* fsi)
+static void freeFinalStreamIntegrals(FinalStreamIntegrals* fsi)
 {
     free(fsi->stream_integrals);
 }
 
-static void print_stream_integrals(const FINAL_STREAM_INTEGRALS* fsi, const unsigned int number_streams)
+static void printStreamIntegrals(const FinalStreamIntegrals* fsi, const unsigned int number_streams)
 {
     unsigned int i;
     fprintf(stderr, "<background_integral> %.20lf </background_integral>\n", fsi->background_integral);
@@ -68,10 +68,9 @@ static void print_stream_integrals(const FINAL_STREAM_INTEGRALS* fsi, const unsi
 }
 
 /* Add up completed integrals for progress reporting */
-static inline unsigned int completed_integral_progress(const INTEGRAL_AREA* ias,
-                                                       const EVALUATION_STATE* es)
+static inline unsigned int completedIntegralProgress(const IntegralArea* ias, const EvaluationState* es)
 {
-    const INTEGRAL_AREA* ia;
+    const IntegralArea* ia;
     unsigned int i, current_calc_probs = 0;
 
     for (i = 0; i < es->current_integral; ++i)
@@ -84,9 +83,9 @@ static inline unsigned int completed_integral_progress(const INTEGRAL_AREA* ias,
 }
 
 /* Zero insignificant streams */
-static void clean_stream_integrals(real* stream_integrals,
-                                   const STREAM_CONSTANTS* sc,
-                                   const unsigned int number_streams)
+static void cleanStreamIntegrals(real* stream_integrals,
+                                 const StreamConstants* sc,
+                                 const unsigned int number_streams)
 {
     unsigned int i;
 
@@ -99,15 +98,15 @@ static void clean_stream_integrals(real* stream_integrals,
     }
 }
 
-static void calculateIntegrals(const ASTRONOMY_PARAMETERS* ap,
-                               const INTEGRAL_AREA* ias,
-                               const STREAM_CONSTANTS* sc,
-                               const STREAM_GAUSS sg,
-                               EVALUATION_STATE* es,
+static void calculateIntegrals(const AstronomyParameters* ap,
+                               const IntegralArea* ias,
+                               const StreamConstants* sc,
+                               const StreamGauss sg,
+                               EvaluationState* es,
                                const CLRequest* clr)
 {
-    INTEGRAL* integral;
-    const INTEGRAL_AREA* ia;
+    Integral* integral;
+    const IntegralArea* ia;
     double t1, t2;
 
   #if SEPARATION_OPENCL
@@ -129,7 +128,7 @@ static void calculateIntegrals(const ASTRONOMY_PARAMETERS* ap,
     {
         integral = &es->integrals[es->current_integral];
         ia = &ias[es->current_integral];
-        es->current_calc_probs = completed_integral_progress(ias, es);
+        es->current_calc_probs = completedIntegralProgress(ias, es);
 
         t1 = mwGetTime();
       #if SEPARATION_OPENCL
@@ -147,7 +146,7 @@ static void calculateIntegrals(const ASTRONOMY_PARAMETERS* ap,
         if (isnan(integral->background_integral))
             fail("Failed to calculate integral %u\n", es->current_integral);
 
-        clean_stream_integrals(integral->stream_integrals, sc, ap->number_streams);
+        cleanStreamIntegrals(integral->stream_integrals, sc, ap->number_streams);
 
         CLEAR_KAHAN(es->sum);
     }
@@ -158,23 +157,23 @@ static void calculateIntegrals(const ASTRONOMY_PARAMETERS* ap,
   #endif
 }
 
-real evaluate(const ASTRONOMY_PARAMETERS* ap,
-              const INTEGRAL_AREA* ias,
-              const STREAMS* streams,
-              const STREAM_CONSTANTS* sc,
+real evaluate(const AstronomyParameters* ap,
+              const IntegralArea* ias,
+              const Streams* streams,
+              const StreamConstants* sc,
               const char* star_points_file,
               const CLRequest* clr,
               const int do_separation,
               const char* separation_outfile)
 {
     real likelihood_val = NAN;
-    EVALUATION_STATE es = EMPTY_EVALUATION_STATE;
-    STREAM_GAUSS sg;
-    FINAL_STREAM_INTEGRALS fsi;
-    STAR_POINTS sp = EMPTY_STAR_POINTS;
+    EvaluationState es = EMPTY_EVALUATION_STATE;
+    StreamGauss sg;
+    FinalStreamIntegrals fsi;
+    StarPoints sp = EMPTY_STAR_POINTS;
 
-    initialize_state(ap, &es);
-    sg = get_stream_gauss(ap->convolve);
+    initializeState(ap, &es);
+    sg = getStreamGauss(ap->convolve);
 
     if (resolveCheckpoint())
         fail("Failed to resolve checkpoint file '%s'\n", CHECKPOINT_FILE);
@@ -186,24 +185,24 @@ real evaluate(const ASTRONOMY_PARAMETERS* ap,
 
   #if BOINC_APPLICATION && !SEPARATION_OPENCL
     /* Final checkpoint. */
-    if (write_checkpoint(&es))
+    if (writeCheckpoint(&es))
         fail("Failed to write final checkpoint\n");
   #endif
 
-    final_stream_integrals(&fsi, &es, ap->number_streams, ap->number_integrals);
-    print_stream_integrals(&fsi, ap->number_streams);
-    free_evaluation_state(&es);
+    finalStreamIntegrals(&fsi, &es, ap->number_streams, ap->number_integrals);
+    printStreamIntegrals(&fsi, ap->number_streams);
+    freeEvaluationState(&es);
 
-    if (read_star_points(&sp, star_points_file))
+    if (readStarPoints(&sp, star_points_file))
         warn("Failed to read star points file\n");
     else
     {
         likelihood_val = likelihood(ap, &sp, sc, streams, &fsi, sg, do_separation, separation_outfile);
     }
 
-    free_star_points(&sp);
-    free_final_stream_integrals(&fsi);
-    free_stream_gauss(sg);
+    freeStarPoints(&sp);
+    freeFinalStreamIntegrals(&fsi);
+    freeStreamGauss(sg);
 
     return likelihood_val;
 }

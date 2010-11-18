@@ -37,7 +37,7 @@ typedef struct
 } RADec;
 
 /* Convert sun-centered lbr (degrees) into galactic xyz coordinates. */
-mwvector lbr2xyz(const ASTRONOMY_PARAMETERS* ap, const mwvector lbr)
+mwvector lbr2xyz(const AstronomyParameters* ap, const mwvector lbr)
 {
     real zp, d;
 /* TODO: Use radians to begin with */
@@ -60,7 +60,7 @@ mwvector lbr2xyz(const ASTRONOMY_PARAMETERS* ap, const mwvector lbr)
 }
 
 /* Convert galactic xyz into sun-centered lbr coordinates. */
-static mwvector xyz2lbr(const ASTRONOMY_PARAMETERS* ap, const mwvector xyz)
+static mwvector xyz2lbr(const AstronomyParameters* ap, const mwvector xyz)
 {
     mwvector lbr;
     real tmp, xsun;
@@ -82,7 +82,7 @@ static mwvector xyz2lbr(const ASTRONOMY_PARAMETERS* ap, const mwvector xyz)
 }
 
 /* CHECKME: Isn't this supposed to be log10? */
-static mwvector xyz2lbg(const ASTRONOMY_PARAMETERS* ap, mwvector point, real offset)
+static mwvector xyz2lbg(const AstronomyParameters* ap, mwvector point, real offset)
 {
     mwvector lbg = xyz2lbr(ap, point);
     real g = calcG(R(lbg)) - offset;
@@ -93,7 +93,7 @@ static mwvector xyz2lbg(const ASTRONOMY_PARAMETERS* ap, mwvector point, real off
 }
 
 /* wrapper that converts a point into magnitude-space pseudo-xyz */
-mwvector xyz_mag(const ASTRONOMY_PARAMETERS* ap, mwvector point, real offset)
+mwvector xyz_mag(const AstronomyParameters* ap, mwvector point, real offset)
 {
     mwvector logPoint, lbg;
 

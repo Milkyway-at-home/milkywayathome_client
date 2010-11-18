@@ -52,13 +52,13 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real irv_reff_xr_rp3;
     real gPrime;
-} R_CONSTS;
+} RConsts;
 
   #define IRV_REFF_XR_RP3(r) ((r).irv_reff_xr_rp3)
   #define GPRIME(r) ((r).gPrime)
 #else
 
-typedef real2 R_CONSTS;
+typedef real2 RConsts;
 
   #define IRV_REFF_XR_RP3(r) ((r).x)
   #define GPRIME(r) ((r).y)
@@ -68,14 +68,14 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real nu;
     real id;
-} NU_ID;
+} NuId;
 
 
 typedef struct
 {
     unsigned int number_stars;
     mwvector* stars;
-} STAR_POINTS;
+} StarPoints;
 
 #define EMPTY_STAR_POINTS { 0, NULL }
 
@@ -85,14 +85,14 @@ typedef struct SEPARATION_ALIGN(64)
     mwvector c;
     real sigma_sq2_inv;
     mw_int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
-} STREAM_CONSTANTS;
+} StreamConstants;
 
 #ifndef __OPENCL_VERSION__
 typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real r_point;
     real qw_r3_N;
-} R_POINTS;
+} RPoints;
 
 #define R_POINT(r) ((r).r_point)
 #define QW_R3_N(r) ((r).qw_r3_N)
@@ -101,7 +101,7 @@ typedef struct SEPARATION_ALIGN(4 * sizeof(real))
 {
     real lsin, lcos;
     real bsin, bcos;
-} LB_TRIG;
+} LBTrig;
 
 #define LSIN(x) ((x).lsin)
 #define LCOS(x) ((x).lcos)
@@ -111,13 +111,13 @@ typedef struct SEPARATION_ALIGN(4 * sizeof(real))
 #else
 
 /* x = r_point; y = qw_r3_N */
-typedef real2 R_POINTS;
+typedef real2 RPoints;
 
 #define R_POINT(r) ((r).x)
 #define QW_R3_N(r) ((r).y)
 
 
-typedef real4 LB_TRIG;
+typedef real4 LBTrig;
 
 #define LSIN(l) ((l).x)
 #define LCOS(l) ((l).y)
@@ -130,13 +130,13 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real nu;
     real id;
-} NU_CONSTANTS;
+} NuConstants;
 
 typedef struct
 {
     real* dx;
     real* qgaus_W;
-} STREAM_GAUSS;
+} StreamGauss;
 
 
 /* Parameter related types */
@@ -147,7 +147,7 @@ typedef struct SEPARATION_ALIGN(128)
     real nu_min, nu_max, nu_step_size;
     real mu_min, mu_max, mu_step_size;
     mw_uint r_steps, nu_steps, mu_steps;
-} INTEGRAL_AREA;
+} IntegralArea;
 
 typedef struct
 {
@@ -156,7 +156,7 @@ typedef struct
     real min;
     real max;
     int optimize;
-} STREAM_WEIGHT;
+} StreamWeight;
 
 #define EMPTY_STREAM_WEIGHT { 0.0, 0.0, 0.0, 0.0, 0 }
 
@@ -167,18 +167,18 @@ typedef struct
     real* stream_min;
     real* stream_max;
     int* stream_optimize;
-} STREAM_PARAMETERS;
+} StreamParameters;
 
 #define EMPTY_STREAM_PARAMETERS { NULL, NULL, NULL, NULL, NULL }
 
 typedef struct
 {
-    STREAM_WEIGHT* stream_weight;
-    STREAM_PARAMETERS* parameters;
+    StreamWeight* stream_weight;
+    StreamParameters* parameters;
 
     unsigned int number_streams;
     unsigned int number_stream_parameters;
-} STREAMS;
+} Streams;
 
 #define EMPTY_STREAMS { NULL, NULL, 0, 0 }
 
@@ -189,7 +189,7 @@ typedef struct
     real* min;
     real* max;
     int* optimize;
-} BACKGROUND_PARAMETERS;
+} BackgroundParameters;
 
 #define EMPTY_BACKGROUND_PARAMETERS { NULL, NULL, NULL, NULL, NULL }
 
@@ -198,7 +198,7 @@ typedef struct
 {
     real background_integral;
     real* stream_integrals;
-} FINAL_STREAM_INTEGRALS;
+} FinalStreamIntegrals;
 
 #define EMPTY_FINAL_STREAM_INTEGRALS { 0.0, NULL }
 
@@ -206,13 +206,11 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real irv;
     real rPrime;
-} R_PRIME;
+} RPrime;
 
 
 
-
-
-typedef struct SEPARATION_ALIGN(128) _ASTRONOMY_PARAMETERS
+typedef struct SEPARATION_ALIGN(128) _AstronomyParameters
 {
     /* Constants determined by other parameters */
     real q_inv_sqr;  /* 1 / q^2 */
@@ -244,11 +242,11 @@ typedef struct SEPARATION_ALIGN(128) _ASTRONOMY_PARAMETERS
     * Relies on struct being < next size up and a little extra
     * space. */
   #ifndef __OPENCL_VERSION__
-    real (*bg_prob_func) (const struct _ASTRONOMY_PARAMETERS*,
-                          const STREAM_CONSTANTS*,
-                          const R_POINTS*,
+    real (*bg_prob_func) (const struct _AstronomyParameters*,
+                          const StreamConstants*,
+                          const RPoints*,
                           const real*,
-                          const LB_TRIG,
+                          const LBTrig,
                           const real,
                           const int,
                           const unsigned int,
@@ -256,14 +254,14 @@ typedef struct SEPARATION_ALIGN(128) _ASTRONOMY_PARAMETERS
    #else
     void* _useless_padding_which_is_not_necessarily_the_right_size;
    #endif
-} ASTRONOMY_PARAMETERS;
+} AstronomyParameters;
 
 #ifndef __OPENCL_VERSION__
-typedef real (*BGProbabilityFunc) (const ASTRONOMY_PARAMETERS*,
-                                   const STREAM_CONSTANTS*,
-                                   const R_POINTS*,
+typedef real (*BGProbabilityFunc) (const AstronomyParameters*,
+                                   const StreamConstants*,
+                                   const RPoints*,
                                    const real*,
-                                   const LB_TRIG,
+                                   const LBTrig,
                                    const real,
                                    const int,
                                    const unsigned int,
@@ -284,7 +282,7 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real sum;
     real correction;
-} KAHAN;
+} Kahan;
 
 #define ZERO_KAHAN { 0.0, 0.0 }
 

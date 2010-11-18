@@ -48,13 +48,13 @@ typedef struct
     char _reserved[512];
 } SeparationBinaryHeader;
 
-unsigned char* separationLoadBinary(const ASTRONOMY_PARAMETERS* ap,
+unsigned char* separationLoadBinary(const AstronomyParameters* ap,
                                     const DevInfo* di,
                                     const char* filename,
                                     size_t* binSizeOut);
 
 
-cl_bool separationSaveBinary(const ASTRONOMY_PARAMETERS* ap,
+cl_bool separationSaveBinary(const AstronomyParameters* ap,
                              const DevInfo* di,
                              const unsigned char* bin,
                              const size_t binSize,
