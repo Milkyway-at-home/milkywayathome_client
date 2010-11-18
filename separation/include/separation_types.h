@@ -213,16 +213,21 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 typedef struct SEPARATION_ALIGN(128) _AstronomyParameters
 {
     /* Constants determined by other parameters */
+    real m_sun_r0;
     real q_inv_sqr;  /* 1 / q^2 */
-    real bg_a, bg_b, bg_c;
-    real alpha, delta, alpha_delta3, r0;
-    real sun_r0, m_sun_r0;
+    real r0;
+    real alpha;
 
-    mw_int wedge;
+    real alpha_delta3;
+    real bg_a, bg_b, bg_c;
+
     mw_uint convolve;
     mw_uint number_streams;
 
+    mw_int wedge;
     mw_int aux_bg_profile;
+    real sun_r0;
+    real delta;
     real q;
     real sn;
     real coeff;
