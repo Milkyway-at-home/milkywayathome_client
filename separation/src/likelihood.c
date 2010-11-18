@@ -54,20 +54,16 @@ static inline real likelihood_bg_probability_main(const ASTRONOMY_PARAMETERS* ap
         xyz = lbr2xyz_2(ap, r_pts[i].r_point, lbt);
         rg = rg_calc(ap, xyz);
 
-        /* CHECKME: Not having quadratic term on slow one looks like a bug but I'm not sure */
         if (ap->fast_h_prob)
-        {
             h_prob = h_prob_fast(ap, r_pts[i].qw_r3_N, rg);
-            /* the Hernquist profile includes a quadratic term in g */
-            if (ap->aux_bg_profile)
-            {
-                g = rc.gPrime + sg_dx[i];
-                h_prob += aux_prob(ap, r_pts[i].qw_r3_N, g);
-            }
-        }
         else
-        {
             h_prob = h_prob_slow(ap, r_pts[i].qw_r3_N, rg);
+
+        /* add a quadratic term in g to the Hernquist profile */
+        if (ap->aux_bg_profile)
+        {
+            g = rc.gPrime + sg_dx[i];
+            h_prob += aux_prob(ap, r_pts[i].qw_r3_N, g);
         }
 
         stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
