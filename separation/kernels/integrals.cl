@@ -148,9 +148,9 @@ inline void write_mult_st_probs(__global real* probs_out, real V_reff_xr_rp3, co
 __kernel void mu_sum_kernel(__global real* restrict mu_out,
                             __global real* restrict probs_out,
 
-                            __constant AstronomyParameters* ap MAX_CONST(1, ASTRONOMY_PARAMETERS),
-                            __constant IntegralArea* ia MAX_CONST(1, Integral_AREA),
-                            __constant StreamConstants* sc MAX_CONST(NSTREAM, STREAM_CONSTANTS),
+                            __constant AstronomyParameters* ap MAX_CONST(1, AstronomyParameters),
+                            __constant IntegralArea* ia MAX_CONST(1, IntegralArea),
+                            __constant StreamConstants* sc MAX_CONST(NSTREAM, StreamConstants),
                             __constant RConsts* rcs MAX_CONST(200, RConsts),
                             __constant real* restrict sg_dx MAX_CONST(200, real),
 
@@ -204,7 +204,7 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     bg_prob *= V_reff_xr_rp3;
     mu_out[idx] += bg_prob;
 
-    write_mult_st_probs( &probs_out[NSTREAM * idx], V_reff_xr_rp3, st_probs);
+    write_mult_st_probs(&probs_out[NSTREAM * idx], V_reff_xr_rp3, st_probs);
 
 }
 
