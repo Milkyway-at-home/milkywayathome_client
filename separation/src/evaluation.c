@@ -21,8 +21,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation.h"
 
+#if SEPARATION_OPENCL
+  #include "run_cl.h"
+  #include "setup_cl.h"
+#endif /* SEPARATION_OPENCL */
+
 #include <stdlib.h>
 #include <stdio.h>
+
 
 static void final_stream_integrals(FINAL_STREAM_INTEGRALS* fsi,
                                    const EVALUATION_STATE* es,
@@ -93,17 +99,31 @@ static void clean_stream_integrals(real* stream_integrals,
     }
 }
 
-static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
-                                const INTEGRAL_AREA* ias,
-                                const STREAM_CONSTANTS* sc,
-                                const STREAM_GAUSS sg,
-                                EVALUATION_STATE* es,
-                                const CLRequest* clr)
+static void calculateIntegrals(const ASTRONOMY_PARAMETERS* ap,
+                               const INTEGRAL_AREA* ias,
+                               const STREAM_CONSTANTS* sc,
+                               const STREAM_GAUSS sg,
+                               EVALUATION_STATE* es,
+                               const CLRequest* clr)
 {
     INTEGRAL* integral;
     const INTEGRAL_AREA* ia;
-
     double t1, t2;
+
+  #if SEPARATION_OPENCL
+    DevInfo di;
+    SeparationSizes sizes;
+    CLInfo ci = EMPTY_CL_INFO;
+    cl_bool useImages = CL_TRUE;
+  #endif
+
+
+  #if SEPARATION_OPENCL
+    if (setupSeparationCL(&ci, &di, &sizes, ap, ia, sc, sg, clr, useImages) != CL_SUCCESS)
+        fail("Failed to setup up CL\n");
+
+    useImages = useImages && di.imgSupport;
+  #endif /* SEPARATION_OPENCL */
 
     for (; es->current_integral < ap->number_integrals; es->current_integral++)
     {
@@ -113,7 +133,9 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
 
         t1 = mwGetTime();
       #if SEPARATION_OPENCL
-        integral->background_integral = integrateCL(ap, ia, sc, sg, integral->stream_integrals, clr);
+        integral->background_integral = integrateCL(ap, ia, sc, sg,
+                                                    integral->stream_integrals,
+                                                    clr, &ci, useImages);
       #else
         integral->background_integral = integrate(ap, ia, sc, sg,
                                                   integral->stream_integrals, integral->probs, es);
@@ -129,6 +151,11 @@ static void calculate_integrals(const ASTRONOMY_PARAMETERS* ap,
 
         CLEAR_KAHAN(es->sum);
     }
+
+
+  #if SEPARATION_OPENCL
+    mwDestroyCLInfo(&ci);
+  #endif
 }
 
 real evaluate(const ASTRONOMY_PARAMETERS* ap,
@@ -155,7 +182,7 @@ real evaluate(const ASTRONOMY_PARAMETERS* ap,
     if (maybeResume(&es))
         fail("Failed to resume checkpoint\n");
 
-    calculate_integrals(ap, ias, sc, sg, &es, clr);
+    calculateIntegrals(ap, ias, sc, sg, &es, clr);
 
   #if BOINC_APPLICATION && !SEPARATION_OPENCL
     /* Final checkpoint. */

@@ -31,21 +31,6 @@ extern "C" {
 #include "setup_cl.h"
 
 
-typedef struct
-{
-    size_t outMu;
-    size_t outProbs;
-
-    size_t ap;        /* Constants */
-    size_t sc;
-    size_t ia;
-    size_t rc;
-    size_t rPts;
-    size_t sg_dx;
-    size_t lbts;
-} SeparationSizes;
-
-
 cl_int createSeparationBuffers(CLInfo* ci,
                                SeparationCLMem* cm,
                                const ASTRONOMY_PARAMETERS* ap,

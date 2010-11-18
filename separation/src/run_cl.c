@@ -171,7 +171,8 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
     err = clEnqueueNDRangeKernel(ci->queue,
                                  ci->kern,
                                  3,
-                                 offset, global, local,
+                                 //offset, global, local,
+                                 offset, global, NULL,
                                  0, NULL, &evs->endTmp);
     if (err != CL_SUCCESS)
     {
@@ -355,7 +356,7 @@ static real runIntegral(CLInfo* ci,
     if (findWorkGroupSizes(ci, ia, numChunks, global, local))
     {
         warn("Failed to calculate acceptable work group sizes\n");
-        return NAN;
+        //return NAN;
     }
 
     for (i = 0; i < ia->nu_steps; ++i)
@@ -391,24 +392,38 @@ static real runIntegral(CLInfo* ci,
     return result;
 }
 
-/* FIXME: This can only work right now for 1 integral */
 real integrateCL(const ASTRONOMY_PARAMETERS* ap,
                  const INTEGRAL_AREA* ia,
                  const STREAM_CONSTANTS* sc,
                  const STREAM_GAUSS sg,
                  real* probs_results,
-                 const CLRequest* clr)
+                 const CLRequest* clr,
+                 CLInfo* ci,
+                 cl_bool useImages)
 {
-    real result = NAN;
-    CLInfo ci = EMPTY_CL_INFO;
+    real result;
+    cl_int err;
+    SeparationSizes sizes;
     SeparationCLMem cm = EMPTY_SEPARATION_CL_MEM;
 
-    if (setupSeparationCL(&ci, &cm, ap, ia, sc, sg, clr) != CL_SUCCESS)
-        warn("Failed to setup up CL\n");
-    else
-        result = runIntegral(&ci, &cm, probs_results, ap, ia);
+    calculateSizes(&sizes, ap, ia);
 
-    mwDestroyCLInfo(&ci);
+    err = createSeparationBuffers(ci, &cm, ap, ia, sc, sg, &sizes, useImages);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to create CL buffers: %s\n", showCLInt(err));
+        return NAN;
+    }
+
+    err = separationSetKernelArgs(ci, &cm);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to set integral kernel arguments: %s\n", showCLInt(err));
+        return NAN;
+    }
+
+    result = runIntegral(ci, &cm, probs_results, ap, ia);
+
     releaseSeparationBuffers(&cm);
 
     return result;

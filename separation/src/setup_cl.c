@@ -37,7 +37,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 /* Only sets the constant arguments, not the outputs which we double buffer */
-static inline cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm)
+cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm)
 {
     cl_int err = CL_SUCCESS;
 
@@ -214,14 +214,14 @@ static char* getCompilerFlags(const ASTRONOMY_PARAMETERS* ap, const DevInfo* di,
     char includeFlags[4096] = "";
 
     /* Math options for CL compiler */
-    const char* mathFlags = "-cl-mad-enable "
+    const char* mathFlags = //"-cl-mad-enable "
                             "-cl-no-signed-zeros "
                             "-cl-strict-aliasing "
                             "-cl-finite-math-only ";
 
     /* Build options used by milkyway_math stuff */
     const char* mathOptions = "-DUSE_CL_MATH_TYPES=0 "
-                              "-DUSE_MAD=1 "
+                              "-DUSE_MAD=0 "
                               "-DUSE_FMA=0 ";
 
     /* Extra flags for different compilers */
@@ -327,31 +327,27 @@ static char* getCompilerFlags(const ASTRONOMY_PARAMETERS* ap, const DevInfo* di,
 }
 
 cl_int setupSeparationCL(CLInfo* ci,
-                         SeparationCLMem* cm,
+                         DevInfo* di,
+                         SeparationSizes* sizes,
                          const ASTRONOMY_PARAMETERS* ap,
                          const INTEGRAL_AREA* ia,
                          const STREAM_CONSTANTS* sc,
                          const STREAM_GAUSS sg,
-                         const CLRequest* clr)
+                         const CLRequest* clr,
+                         cl_bool useImages)
 {
     cl_int err;
     char* compileFlags;
     char* kernelSrc;
 
-    DevInfo di;
-    SeparationSizes sizes;
-    cl_bool useImages = CL_TRUE;
-
-    err = mwSetupCL(ci, &di, clr);
+    err = mwSetupCL(ci, di, clr);
     if (err != CL_SUCCESS)
     {
         warn("Error getting device and context: %s\n", showCLInt(err));
         return err;
     }
 
-    useImages = useImages && di.imgSupport;
-
-    compileFlags = getCompilerFlags(ap, &di, useImages);
+    compileFlags = getCompilerFlags(ap, di, useImages);
     if (!compileFlags)
     {
         warn("Failed to get compiler flags\n");
@@ -377,26 +373,12 @@ cl_int setupSeparationCL(CLInfo* ci,
         return err;
     }
 
-    calculateSizes(&sizes, ap, ia);
+    calculateSizes(sizes, ap, ia);
 
-    if (!separationCheckDevCapabilities(&di, &sizes))
+    if (!separationCheckDevCapabilities(di, sizes))
     {
         warn("Device failed capability check\n");
         return -1;
-    }
-
-    err = createSeparationBuffers(ci, cm, ap, ia, sc, sg, &sizes, useImages);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to create CL buffers: %s\n", showCLInt(err));
-        return err;
-    }
-
-    err = separationSetKernelArgs(ci, cm);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to set integral kernel arguments: %s\n", showCLInt(err));
-        return err;
     }
 
     return CL_SUCCESS;

@@ -18,25 +18,28 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _SETUP_CL_H_
-#define _SETUP_CL_H_
+#ifndef _RUN_CL_H_
+#define _RUN_CL_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "separation_types.h"
+#include "mw_cl.h"
 
 real integrateCL(const ASTRONOMY_PARAMETERS* ap,
                  const INTEGRAL_AREA* ia,
                  const STREAM_CONSTANTS* sc,
                  const STREAM_GAUSS sg,
                  real* st_probs,
-                 const CLRequest* clr);
+                 const CLRequest* clr,
+                 CLInfo* ci,
+                 cl_bool useImages);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _SETUP_CL_H_ */
+#endif /* _RUN_CL_H_ */
 

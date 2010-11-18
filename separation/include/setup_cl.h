@@ -26,8 +26,24 @@ extern "C" {
 #endif
 
 #include "milkyway_cl.h"
-#include "separation_types.h"
 #include "mw_cl.h"
+#include "separation_types.h"
+
+
+typedef struct
+{
+    size_t outMu;
+    size_t outProbs;
+
+    size_t ap;        /* Constants */
+    size_t sc;
+    size_t ia;
+    size_t rc;
+    size_t rPts;
+    size_t sg_dx;
+    size_t lbts;
+} SeparationSizes;
+
 
 /* The various buffers needed by the integrate function. */
 typedef struct
@@ -50,12 +66,16 @@ typedef struct
 
 
 cl_int setupSeparationCL(CLInfo* ci,
-                         SeparationCLMem* cm,
+                         DevInfo* di,
+                         SeparationSizes* sizes,
                          const ASTRONOMY_PARAMETERS* ap,
                          const INTEGRAL_AREA* ia,
                          const STREAM_CONSTANTS* sc,
                          const STREAM_GAUSS sg,
-                         const CLRequest* clr);
+                         const CLRequest* clr,
+                         cl_bool useImages);
+
+cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm);
 
 #ifdef __cplusplus
 }
