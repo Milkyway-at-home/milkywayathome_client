@@ -171,8 +171,7 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
     err = clEnqueueNDRangeKernel(ci->queue,
                                  ci->kern,
                                  3,
-                                 //offset, global, local,
-                                 offset, global, NULL,
+                                 offset, global, local,
                                  0, NULL, &evs->endTmp);
     if (err != CL_SUCCESS)
     {
@@ -356,7 +355,7 @@ static real runIntegral(CLInfo* ci,
     if (findWorkGroupSizes(ci, ia, numChunks, global, local))
     {
         warn("Failed to calculate acceptable work group sizes\n");
-        //return NAN;
+        return NAN;
     }
 
     for (i = 0; i < ia->nu_steps; ++i)
