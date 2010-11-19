@@ -215,6 +215,7 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
 
     if (nbf->verifyOnly)
     {
+        printContext(&ctx);
         if (rc)
             warn("File failed\n");
         else

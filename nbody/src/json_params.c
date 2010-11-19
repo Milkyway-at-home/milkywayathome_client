@@ -203,6 +203,95 @@ static bool readString(const Parameter* p, const char* pname, json_object* obj, 
     return FALSE;
 }
 
+static bool readVector(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
+{
+    unsigned int i, arrLen;
+    array_list* arr;
+    json_object* tmp;
+
+    /* FIXME: Right now assuming no default vectors, groups etc. will be used */
+    assert(json_object_is_type(obj, json_type_array));
+    arr = json_object_get_array(obj);
+    arrLen = json_object_array_length(obj);
+    if (arrLen != 3)
+    {
+        warn("Got %d items for vector '%s' in '%s', expected 3\n",
+             arrLen,
+             p->name,
+             pname);
+        return TRUE;
+    }
+
+    for (i = 0; i < 3; ++i)
+    {
+        tmp = (json_object*) array_list_get_idx(arr, i);
+
+        if (   !json_object_is_type(tmp, json_type_double)
+            && !json_object_is_type(tmp, json_type_int))
+        {
+            warn("Got unexpected type '%s' in position %d "
+                 "of key '%s' in '%s', expected number.\n",
+                 showNBodyType(json_object_get_type(tmp)),
+                 i,
+                 p->name,
+                 pname);
+            return TRUE;
+        }
+
+        ((real*) p->param)[i] = json_object_get_double(tmp);
+    }
+
+    return FALSE;
+}
+
+static bool readGroup(const Parameter* p, const char* pname, json_object* obj, generic_enum_t* group_type)
+{
+
+    if (!p->dflt)
+    {
+        warn("Expected nbody_type_group_item for "
+             "'%s' in '%s', but no enum value set\n", p->name, pname);
+        return TRUE;
+    }
+
+    if (!group_type)
+    {
+        warn("Group does not have a type (Trying to read the root?)\n");
+        return TRUE;
+    }
+
+    *group_type = *((generic_enum_t*) p->dflt);
+
+    return FALSE;
+}
+
+static bool readEnum(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
+{
+    generic_enum_t conv;
+
+    /* This is actually a json_type_string, which we read
+     * into an enum, or take a default value */
+    if (useDflt)
+    {
+        *((generic_enum_t*) p->param) = *((generic_enum_t*) p->dflt);
+        return FALSE;
+    }
+
+    if (!p->conv)
+    {
+        warn("Error: read function not set for enum '%s'\n", p->name);
+        return TRUE;
+    }
+
+    conv = p->conv(json_object_get_string(obj));
+    if (conv == -1)
+        return TRUE;
+
+    *((generic_enum_t*) p->param) = conv;
+
+    return FALSE;
+}
+
 /* Read a set of related parameters, e.g. the main NBodyCtx.
    If the unique flag is set, it's only valid to have one of the items in the group.
    Otherwise, it tries to use all of the parameters, and warns when extra elements are found.
@@ -220,9 +309,6 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
     bool unique;
     bool found = FALSE, done = FALSE, readError = FALSE;
     generic_enum_t* group_type;
-    array_list* arr;
-    json_object* tmp;
-    int i, arrLen;
     int subRc;
 
     if (parent)
@@ -298,56 +384,11 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
                 break;
 
             case nbody_type_vector:
-                /* FIXME: Right now assuming no default vectors, groups etc. will be used */
-                assert(json_object_is_type(obj, json_type_array));
-                arr = json_object_get_array(obj);
-                arrLen = json_object_array_length(obj);
-                if (arrLen != 3)
-                {
-                    warn("Got %d items for vector '%s' in '%s', expected 3\n",
-                         arrLen,
-                         p->name,
-                         pname);
-                    readError = TRUE;
-                }
-
-                for ( i = 0; i < 3; ++i )
-                {
-                    tmp = (json_object*) array_list_get_idx(arr, i);
-
-                    if (    !json_object_is_type(tmp, json_type_double)
-                         && !json_object_is_type(tmp, json_type_int))
-                    {
-                        warn("Got unexpected type '%s' in position %d "
-                             "of key '%s' in '%s', expected number.\n",
-                             showNBodyType(json_object_get_type(tmp)),
-                             i,
-                             p->name,
-                             pname);
-                        readError = TRUE;
-                    }
-
-                    ((real*) p->param)[i] = json_object_get_double(tmp);
-                }
+                readError = readVector(p, pname, obj, useDflt);
                 break;
 
             case nbody_type_group_item:
-                if (p->dflt)
-                {
-                    if (!group_type)
-                    {
-                        warn("Group does not have a type (Trying to read the root?)\n");
-                        readError = TRUE;
-                    }
-                    else
-                        *group_type = *((generic_enum_t*) p->dflt);
-                }
-                else
-                {
-                    warn("Expected nbody_type_group_item for "
-                         "'%s' in '%s', but no enum value set\n", p->name, pname);
-                    readError = TRUE;
-                }
+                readError = readGroup(p, pname, obj, group_type);
 
                 /* fall through to nbody_type_object */
             case nbody_type_group:
@@ -357,29 +398,9 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
                     return subRc;
                 break;
             case nbody_type_enum:
-                /* This is actually a json_type_string, which we read
-                 * into an enum, or take a default value */
-                if (useDflt)
-                {
-                    *((generic_enum_t*) p->param) = *((generic_enum_t*) p->dflt);
-                    break;
-                }
-
-                if (p->conv)
-                {
-                    generic_enum_t conv = p->conv(json_object_get_string(obj));
-                    if (conv == -1)
-                        return 1;
-                    else
-                        *((generic_enum_t*) p->param) = conv;
-                }
-                else
-                {
-                    warn("Error: read function not set for enum '%s'\n", p->name);
-                    return 1;
-                }
-
+                readError = readEnum(p, pname, obj, useDflt);
                 break;
+
             default:
                 warn("Unhandled parameter type %d for key '%s' in '%s'\n",
                      p->type,

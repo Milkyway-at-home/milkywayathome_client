@@ -52,6 +52,9 @@ typedef enum
     nbody_type_group_item /* an object with an associated type, in the container */
 } nbody_type;
 
+
+//typedef void (*ReadFunc) (json_object* p, nbody_type type, void* dest, void* dflt);
+
 /* Same basic idea as a popt option table */
 typedef struct _Parameter
 {
