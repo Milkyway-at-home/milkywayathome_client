@@ -34,10 +34,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "r_points.h"
 #include "integrals_common.h"
 
-typedef struct
-{
-    cl_event endTmp;   /* end of the NDRange writing to the temporary output buffers */
-} SeparationCLEvents;
 
 static void sumStreamResults(Kahan* probs_results,
                              const real* probs_V_reff_xr_rp3,
@@ -161,7 +157,6 @@ static cl_bool findWorkGroupSizes(CLInfo* ci,
 }
 
 static cl_int enqueueIntegralKernel(CLInfo* ci,
-                                    SeparationCLEvents* evs,
                                     const size_t offset[],
                                     const size_t global[],
                                     const size_t local[])
@@ -172,7 +167,7 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
                                  ci->kern,
                                  3,
                                  offset, global, local,
-                                 0, NULL, &evs->endTmp);
+                                 0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
         warn("Error enqueueing integral kernel execution: %s\n", showCLInt(err));
@@ -275,7 +270,6 @@ static inline real readKernelResults(CLInfo* ci,
 
 static cl_int runNuStep(CLInfo* ci,
                         SeparationCLMem* cm,
-                        SeparationCLEvents* evs,
 
                         const IntegralArea* ia,
                         const size_t numChunks,
@@ -307,24 +301,12 @@ static cl_int runNuStep(CLInfo* ci,
     {
         offset[0] = i * chunkSize;
 
-        err = enqueueIntegralKernel(ci, evs, offset, global, local);
+        err = enqueueIntegralKernel(ci, offset, global, local);
         if (err != CL_SUCCESS)
         {
             warn("Failed to enqueue integral kernel: %s\n", showCLInt(err));
             return err;
         }
-
-        #if 0
-        clWaitForEvents(1, &evs->endTmp);
-        printf("Step took %f\n", mwEventTime(evs->endTmp) * 1000.0);
-
-        err = mwWaitReleaseEvent(&evs->endTmp);
-        if (err != CL_SUCCESS)
-        {
-            warn("Failed to wait/release NDRange event: %s\n", showCLInt(err));
-            return err;
-        }
-        #endif
     }
 
     return CL_SUCCESS;
@@ -339,12 +321,14 @@ static real runIntegral(CLInfo* ci,
     cl_uint i;
     cl_int err;
     real result;
-    SeparationCLEvents evs;
     size_t global[3];
     size_t local[3];
 
     /* TODO: Figure out a number based on GPU speed to keep execution
      * times under 100ms to prevent unusable system */
+    //size_t numChunks = 140;
+    //size_t numChunks = 70;
+    //size_t numChunks = 100;
     size_t numChunks = 1;
 
 
@@ -355,13 +339,13 @@ static real runIntegral(CLInfo* ci,
     if (findWorkGroupSizes(ci, ia, numChunks, global, local))
     {
         warn("Failed to calculate acceptable work group sizes\n");
-        return NAN;
+        //return NAN;
     }
 
     for (i = 0; i < ia->nu_steps; ++i)
     {
         double t1 = mwGetTimeMilli();
-        err = runNuStep(ci, cm, &evs,
+        err = runNuStep(ci, cm,
                         ia, numChunks, global, local,
                         ap->number_streams, i);
         if (err != CL_SUCCESS)
@@ -370,10 +354,10 @@ static real runIntegral(CLInfo* ci,
             return NAN;
         }
 
-        err = clWaitForEvents(1, &evs.endTmp);
+        err = clFinish(ci->queue);
         if (err != CL_SUCCESS)
         {
-            warn("Failed to wait for event: %s\n", showCLInt(err));
+            warn("Failed to finish: %s\n", showCLInt(err));
             return NAN;
         }
 
@@ -381,7 +365,12 @@ static real runIntegral(CLInfo* ci,
         printf("Loop time: %f ms\n", t2 - t1);
     }
 
-    clFinish(ci->queue);
+    err = clFinish(ci->queue);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to finish: %s\n", showCLInt(err));
+        return NAN;
+    }
 
     /* Read results from final step */
     result = readKernelResults(ci, cm, probs_results, ia->mu_steps, ia->r_steps, ap->number_streams);

@@ -79,7 +79,7 @@ typedef struct
 
 #define EMPTY_STAR_POINTS { 0, NULL }
 
-typedef struct SEPARATION_ALIGN(64)
+typedef struct SEPARATION_ALIGN(128)
 {
     mwvector a;
     mwvector c;
