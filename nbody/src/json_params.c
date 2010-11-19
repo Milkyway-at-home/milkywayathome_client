@@ -119,6 +119,90 @@ static bool warnExtraParams(json_object* obj, const char* grpName)
     return haveExtra;
 }
 
+
+static bool readDouble(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
+{
+    /* json_type_int and double are OK for numbers. i.e. you can leave off the decimal.
+       We don't want the other conversions, which just give you 0.0 for anything else.
+    */
+
+    if (useDflt)
+        *((real*) p->param) = *((real*) p->dflt);
+    else if (   json_object_is_type(obj, json_type_double)
+             || json_object_is_type(obj, json_type_int))
+    {
+        *((real*) p->param) = (real) json_object_get_double(obj);
+    }
+    else
+    {
+        warn("Error: expected number for '%s' in '%s', but got %s\n",
+             p->name,
+             pname,
+             showNBodyType(p->type));
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static bool readInt(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
+{
+    /* I don't think any of the conversions are acceptable */
+    if (useDflt)
+        *((int*) p->param) = *((int*) p->dflt);
+    else if (json_object_is_type(obj, json_type_int))
+        *((int*) p->param) = json_object_get_int(obj);
+    else
+    {
+        warn("Error: expected type int for '%s' in '%s', but got %s\n",
+             p->name,
+             pname,
+             showNBodyType(json_object_get_type(obj)));
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static bool readBool(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
+{
+    if (useDflt)
+        *((bool*) p->param) = *((int*) p->dflt);
+    else if (json_object_is_type(obj, json_type_boolean))
+        *((bool*) p->param) = (bool) json_object_get_boolean(obj);
+    else
+    {
+        warn("Error: expected type boolean for '%s' in '%s', but got %s\n",
+             p->name,
+             pname,
+             showNBodyType(json_object_get_type(obj)));
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static bool readString(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
+{
+    /* The json_object has ownership of the string so we need to copy it. */
+    if (useDflt)
+        *((char**) p->param) = strdup(*((char**) p->dflt));
+    else if (json_object_is_type(obj, json_type_string))
+    {
+        *((char**) p->param) = strdup(json_object_get_string(obj));
+    }
+    else
+    {
+        warn("Error: expected type string for '%s' in '%s', but got %s\n",
+             p->name,
+             pname,
+             showNBodyType(json_object_get_type(obj)));
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
 /* Read a set of related parameters, e.g. the main NBodyCtx.
    If the unique flag is set, it's only valid to have one of the items in the group.
    Otherwise, it tries to use all of the parameters, and warns when extra elements are found.
@@ -198,73 +282,19 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
         switch (p->type)
         {
             case nbody_type_double:
-                /* json_type_int and double are OK for numbers. i.e. you can leave off the decimal.
-                   We don't want the other conversions, which just give you 0.0 for anything else.
-                */
-                if (useDflt)
-                    *((real*) p->param) = *((real*) p->dflt);
-                else if (   json_object_is_type(obj, json_type_double)
-                         || json_object_is_type(obj, json_type_int))
-                {
-                    *((real*) p->param) = (real) json_object_get_double(obj);
-                }
-                else
-                {
-                    warn("Error: expected number for '%s' in '%s', but got %s\n",
-                         p->name,
-                         pname,
-                         showNBodyType(p->type));
-                    readError = TRUE;
-                }
+                readError = readDouble(p, pname, obj, useDflt);
                 break;
 
             case nbody_type_int:
-                /* I don't think any of the conversions are acceptable */
-                if (useDflt)
-                    *((int*) p->param) = *((int*) p->dflt);
-                else if (json_object_is_type(obj, json_type_int))
-                    *((int*) p->param) = json_object_get_int(obj);
-                else
-                {
-                    warn("Error: expected type int for '%s' in '%s', but got %s\n",
-                         p->name,
-                         pname,
-                         showNBodyType(json_object_get_type(obj)));
-                    readError = TRUE;
-                }
+                readError = readInt(p, pname, obj, useDflt);
                 break;
 
             case nbody_type_boolean:  /* CHECKME: Size */
-                if (useDflt)
-                    *((bool*) p->param) = *((int*) p->dflt);
-                else if (json_object_is_type(obj, json_type_boolean))
-                    *((bool*) p->param) = (bool) json_object_get_boolean(obj);
-                else
-                {
-                    warn("Error: expected type boolean for '%s' in '%s', but got %s\n",
-                         p->name,
-                         pname,
-                         showNBodyType(json_object_get_type(obj)));
-                    readError = TRUE;
-                }
+                readError = readBool(p, pname, obj, useDflt);
                 break;
 
             case nbody_type_string:
-                /* The json_object has ownership of the string so we need to copy it. */
-                if (useDflt)
-                    *((char**) p->param) = strdup(*((char**) p->dflt));
-                else if (json_object_is_type(obj, json_type_string))
-                {
-                    *((char**) p->param) = strdup(json_object_get_string(obj));
-                }
-                else
-                {
-                    warn("Error: expected type string for '%s' in '%s', but got %s\n",
-                         p->name,
-                         pname,
-                         showNBodyType(json_object_get_type(obj)));
-                    readError = TRUE;
-                }
+                readError = readString(p, pname, obj, useDflt);
                 break;
 
             case nbody_type_vector:
