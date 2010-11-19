@@ -76,6 +76,7 @@ typedef struct
     cl_device_type devType;
     cl_uint platform;
     cl_uint devNum;
+    cl_bool nonResponsive;  /* If screen redraws aren't important. Either don't care or something like an outputless Tesla */
 } CLRequest;
 
 #else

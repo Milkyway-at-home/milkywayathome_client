@@ -315,6 +315,7 @@ static cl_int runNuStep(CLInfo* ci,
 static real runIntegral(CLInfo* ci,
                         SeparationCLMem* cm,
                         real* probs_results,
+                        const CLRequest* clr,
                         const AstronomyParameters* ap,
                         const IntegralArea* ia)
 {
@@ -328,8 +329,11 @@ static real runIntegral(CLInfo* ci,
      * times under 100ms to prevent unusable system */
     //size_t numChunks = 140;
     //size_t numChunks = 70;
-    //size_t numChunks = 100;
-    size_t numChunks = 1;
+    size_t numChunks = 100;
+    //size_t numChunks = 1;
+
+    if (clr->nonResponsive)
+        numChunks = 1;
 
 
     err = mwEnableProfiling(ci);
@@ -410,7 +414,7 @@ real integrateCL(const AstronomyParameters* ap,
         return NAN;
     }
 
-    result = runIntegral(ci, &cm, probs_results, ap, ia);
+    result = runIntegral(ci, &cm, probs_results, clr, ap, ia);
 
     releaseSeparationBuffers(&cm);
 

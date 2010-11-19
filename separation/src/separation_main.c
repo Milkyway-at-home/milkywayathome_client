@@ -38,9 +38,10 @@ typedef struct
     int cleanup_checkpoint;
     int usePlatform;
     int useDevNumber;  /* Choose CL platform and device */
+    int nonResponsive;
 } SeparationFlags;
 
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, 0, 0, 0, 0, 0 }
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, 0, 0, 0, 0, 0, 0 }
 
 static void freeSeparationFlags(SeparationFlags* sf)
 {
@@ -62,6 +63,7 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 {
     clr->platform = sf->usePlatform;
     clr->devNum = sf->useDevNumber;
+    clr->nonResponsive = sf->nonResponsive;
 }
 
 #else
@@ -121,6 +123,12 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
             "platform", 'l',
             POPT_ARG_INT, &sf->usePlatform,
             'l', "CL Platform to use", NULL
+        },
+
+        {
+            "non-responsive", 'r',
+            POPT_ARG_NONE, &sf->nonResponsive,
+            'r', "Don't care about responsiveness on GPU", NULL
         },
       #endif /* SEPARATION_OPENCL */
 
