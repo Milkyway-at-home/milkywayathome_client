@@ -35,6 +35,7 @@ real integrateCL(const AstronomyParameters* ap,
                  real* st_probs,
                  const CLRequest* clr,
                  CLInfo* ci,
+                 DevInfo* di,
                  cl_bool useImages);
 
 #ifdef __cplusplus

@@ -67,14 +67,13 @@ typedef struct
 
 cl_int setupSeparationCL(CLInfo* ci,
                          DevInfo* di,
-                         SeparationSizes* sizes,
                          const AstronomyParameters* ap,
-                         const IntegralArea* ia,
                          const StreamConstants* sc,
                          const StreamGauss sg,
                          const CLRequest* clr,
                          cl_bool useImages);
 
+cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes* sizes);
 cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm);
 
 #ifdef __cplusplus

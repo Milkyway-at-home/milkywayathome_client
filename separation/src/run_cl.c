@@ -329,8 +329,8 @@ static real runIntegral(CLInfo* ci,
      * times under 100ms to prevent unusable system */
     //size_t numChunks = 140;
     //size_t numChunks = 70;
-    size_t numChunks = 100;
-    //size_t numChunks = 1;
+    //size_t numChunks = 100;
+    size_t numChunks = 1;
 
     if (clr->nonResponsive)
         numChunks = 1;
@@ -391,6 +391,7 @@ real integrateCL(const AstronomyParameters* ap,
                  real* probs_results,
                  const CLRequest* clr,
                  CLInfo* ci,
+                 DevInfo* di,
                  cl_bool useImages)
 {
     real result;
@@ -398,7 +399,14 @@ real integrateCL(const AstronomyParameters* ap,
     SeparationSizes sizes;
     SeparationCLMem cm = EMPTY_SEPARATION_CL_MEM;
 
+    /* Need to test sizes for each integral, since the area size can change */
     calculateSizes(&sizes, ap, ia);
+
+    if (!separationCheckDevCapabilities(di, &sizes))
+    {
+        warn("Device failed capability check\n");
+        return NAN;
+    }
 
     err = createSeparationBuffers(ci, &cm, ap, ia, sc, sg, &sizes, useImages);
     if (err != CL_SUCCESS)

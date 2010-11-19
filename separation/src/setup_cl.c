@@ -101,7 +101,7 @@ void freeKernelSrc(char* src)
 #define NUM_CONST_BUF_ARGS 5
 
 /* Check that the device has the necessary resources */
-static cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes* sizes)
+cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes* sizes)
 {
     size_t totalOut;
     size_t totalConstBuf;
@@ -328,9 +328,7 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
 
 cl_int setupSeparationCL(CLInfo* ci,
                          DevInfo* di,
-                         SeparationSizes* sizes,
                          const AstronomyParameters* ap,
-                         const IntegralArea* ia,
                          const StreamConstants* sc,
                          const StreamGauss sg,
                          const CLRequest* clr,
@@ -371,14 +369,6 @@ cl_int setupSeparationCL(CLInfo* ci,
     {
         warn("Error creating program from source: %s\n", showCLInt(err));
         return err;
-    }
-
-    calculateSizes(sizes, ap, ia);
-
-    if (!separationCheckDevCapabilities(di, sizes))
-    {
-        warn("Device failed capability check\n");
-        return -1;
     }
 
     return CL_SUCCESS;

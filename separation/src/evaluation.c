@@ -111,14 +111,12 @@ static void calculateIntegrals(const AstronomyParameters* ap,
 
   #if SEPARATION_OPENCL
     DevInfo di;
-    SeparationSizes sizes;
     CLInfo ci = EMPTY_CL_INFO;
     cl_bool useImages = CL_TRUE;
   #endif
 
-
   #if SEPARATION_OPENCL
-    if (setupSeparationCL(&ci, &di, &sizes, ap, ia, sc, sg, clr, useImages) != CL_SUCCESS)
+    if (setupSeparationCL(&ci, &di, ap, sc, sg, clr, useImages) != CL_SUCCESS)
         fail("Failed to setup up CL\n");
 
     useImages = useImages && di.imgSupport;
@@ -134,7 +132,7 @@ static void calculateIntegrals(const AstronomyParameters* ap,
       #if SEPARATION_OPENCL
         integral->background_integral = integrateCL(ap, ia, sc, sg,
                                                     integral->stream_integrals,
-                                                    clr, &ci, useImages);
+                                                    clr, &ci, &di, useImages);
       #else
         integral->background_integral = integrate(ap, ia, sc, sg,
                                                   integral->stream_integrals, integral->probs, es);
