@@ -25,7 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 #include "milkyway_util.h"
 
-
 /* also works for json_object_type */
 static const char* showNBodyType(nbody_type bt)
 {
@@ -70,6 +69,11 @@ static criterion_t readCriterion(const char* str)
              str);
 
     return -1;
+}
+
+static bool readDwarfModel(DwarfModel* model, json_object* obj)
+{
+    return FALSE;
 }
 
 static void printParameter(Parameter* p)
@@ -244,6 +248,48 @@ static bool readVector(const Parameter* p, const char* pname, json_object* obj, 
     return FALSE;
 }
 
+static bool readArray(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
+{
+    unsigned int i, arrLen;
+    array_list* arr;
+    json_object* tmp;
+    char* readArr;
+    char* readLoc;
+    ArrayRead reader;
+
+    reader = (ArrayRead) p->conv;
+    if (!reader || p->size == 0)
+    {
+        warn("Read function or size not set for array '%s' in '%s'\n", p->name, pname);
+        return TRUE;
+    }
+
+    assert(json_object_is_type(obj, json_type_array));
+
+    arr = json_object_get_array(obj);
+    arrLen = json_object_array_length(obj);
+
+    readArr = (char*) callocSafe(arrLen, p->size);
+
+    for (i = 0; i < arrLen; ++i)
+    {
+        tmp = (json_object*) array_list_get_idx(arr, i);
+
+        readLoc = readArr + i * p->size;  /* Index into mystery sized type  */
+        if (reader((void*) readLoc, tmp) == -1)
+        {
+            warn("Failed to read array item in position %d "
+                 "of key '%s' in '%s'.\n", i, p->name, pname);
+            free(readArr);
+            return TRUE;
+        }
+    }
+
+    *((char**) p->param) = (char*) readArr;
+
+    return FALSE;
+}
+
 static bool readGroup(const Parameter* p, const char* pname, json_object* obj, generic_enum_t* group_type)
 {
 
@@ -268,6 +314,7 @@ static bool readGroup(const Parameter* p, const char* pname, json_object* obj, g
 static bool readEnum(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
 {
     generic_enum_t conv;
+    ReadEnum reader;
 
     /* This is actually a json_type_string, which we read
      * into an enum, or take a default value */
@@ -277,13 +324,14 @@ static bool readEnum(const Parameter* p, const char* pname, json_object* obj, bo
         return FALSE;
     }
 
-    if (!p->conv)
+    reader = (ReadEnum) p->conv;
+    if (!reader)
     {
         warn("Error: read function not set for enum '%s'\n", p->name);
         return TRUE;
     }
 
-    conv = p->conv(json_object_get_string(obj));
+    conv = reader(json_object_get_string(obj));
     if (conv == -1)
         return TRUE;
 
@@ -385,6 +433,10 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
 
             case nbody_type_vector:
                 readError = readVector(p, pname, obj, useDflt);
+                break;
+
+            case nbody_type_array:
+                readError = readArray(p, pname, obj, useDflt);
                 break;
 
             case nbody_type_group_item:
@@ -618,7 +670,7 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
 
             BOOL_PARAM_DFLT("allow-incest",          &ctx->allowIncest, &defaultCtx.allowIncest),
             DBL_PARAM_DFLT("accuracy-parameter",     &ctx->theta, &defaultCtx.theta),
-            ENUM_PARAM_DFLT("criterion",             &ctx->criterion, &defaultCtx.criterion, (ReadEnum) readCriterion),
+            ENUM_PARAM_DFLT("criterion",             &ctx->criterion, &defaultCtx.criterion, (GenericReadFunc) readCriterion),
             OBJ_PARAM("potential", potentialItems),
             GROUP_PARAM("dwarf-model",               &ctx->model.type, dwarfModelOptions),
             DBL_PARAM_DFLT("sun-gc-dist", &ctx->sunGCDist, &defaultCtx.sunGCDist),

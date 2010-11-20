@@ -33,6 +33,12 @@ extern "C"
 /* :: (Enum a) => String -> a */
 typedef int (*ReadEnum) (const char*);
 
+typedef int (*GenericReadFunc) (void*);
+
+/* Read a json_object into some type */
+typedef int (*ArrayRead) (void*, json_object*);
+
+
 /* We could use a little more than the basic json types, and maintain
  * compatability with json_type */
 typedef enum
@@ -49,11 +55,10 @@ typedef enum
     nbody_type_vector,  /* an array of length 3 */
     nbody_type_enum,   /* a string with an associated enum value */
     nbody_type_group,  /* a container */
-    nbody_type_group_item /* an object with an associated type, in the container */
+    nbody_type_group_item, /* an object with an associated type, in the container */
+    nbody_type_group_one_or_many /* Try a single group, or an array of them. */
 } nbody_type;
 
-
-//typedef void (*ReadFunc) (json_object* p, nbody_type type, void* dest, void* dflt);
 
 /* Same basic idea as a popt option table */
 typedef struct _Parameter
@@ -68,38 +73,40 @@ typedef struct _Parameter
                                that for reading an enum from a string, use
                                the enum value and not the string name. */
 
-    const ReadEnum conv;    /* function to read a name into an enum. Should return -1 for failure. */
+    const GenericReadFunc conv; /* function to read a name into an enum. Should return -1 for failure. */
+
     const bool unique;      /* If this is an object, whether the parameters are supposed to be unique.
                                i.e. there's a set of options to choose from.
                             */
+    const size_t size;            /* Size of type for a list. Should be 0 otherwise */
     const struct _Parameter* parameters; /* if an object, the subitems */
 } Parameter;
 
 /* Macros useful for making the parameter tables because they became beastly */
-#define NULLPARAMETER { NULL, nbody_type_null, NULL, NULL, NULL, FALSE, NULL }
+#define NULLPARAMETER { NULL, nbody_type_null, NULL, NULL, NULL, FALSE, 0, NULL }
 
-#define BASIC_PARAM(name, type, dest) { name, type, dest, NULL, NULL, FALSE, NULL }
-#define DBL_PARAM(name, dest) { name, nbody_type_double, dest, NULL, NULL, FALSE, NULL }
-#define INT_PARAM(name, dest) { name, nbody_type_int, dest, NULL, NULL, FALSE, NULL }
-#define INT_PARAM_DFLT(name, dest, dfl) { name, nbody_type_int, dest, dfl, NULL, FALSE, NULL }
-#define STR_PARAM(name, dest) { name, nbody_type_string, dest, NULL, NULL, FALSE, NULL }
-#define BOOL_PARAM(name, dest) { name, nbody_type_boolean, dest, NULL, NULL, FALSE, NULL }
-#define DBL_PARAM_DFLT(name, dest, dfl) { name, nbody_type_double, dest, dfl, NULL, FALSE, NULL }
-#define BOOL_PARAM_DFLT(name, dest, dfl) { name, nbody_type_boolean, dest, dfl, NULL, FALSE, NULL }
-#define ENUM_PARAM(name, dest, readf) { name, nbody_type_enum, dest, NULL, readf, FALSE, NULL }
-#define ENUM_PARAM_DFLT(name, dest, dflt, readf) { name, nbody_type_enum, dest, dflt, readf, FALSE, NULL }
-#define VEC_PARAM(name, dest) { name, nbody_type_vector, dest, NULL, NULL, FALSE, NULL }
-#define VEC_PARAM_DFLT(name, dest, dfl) { name, nbody_type_vector, dest, dfl, NULL, FALSE, NULL }
+#define BASIC_PARAM(name, type, dest) { name, type, dest, NULL, NULL, FALSE, 0, NULL }
+#define DBL_PARAM(name, dest) { name, nbody_type_double, dest, NULL, NULL, FALSE, 0, NULL }
+#define INT_PARAM(name, dest) { name, nbody_type_int, dest, NULL, NULL, FALSE, 0, NULL }
+#define INT_PARAM_DFLT(name, dest, dfl) { name, nbody_type_int, dest, dfl, NULL, FALSE, 0, NULL }
+#define STR_PARAM(name, dest) { name, nbody_type_string, dest, NULL, NULL, FALSE, 0, NULL }
+#define BOOL_PARAM(name, dest) { name, nbody_type_boolean, dest, NULL, NULL, FALSE, 0, NULL }
+#define DBL_PARAM_DFLT(name, dest, dfl) { name, nbody_type_double, dest, dfl, NULL, FALSE, 0, NULL }
+#define BOOL_PARAM_DFLT(name, dest, dfl) { name, nbody_type_boolean, dest, dfl, NULL, FALSE, 0, NULL }
+#define ENUM_PARAM(name, dest, readf) { name, nbody_type_enum, dest, NULL, readf, FALSE, 0, NULL }
+#define ENUM_PARAM_DFLT(name, dest, dflt, readf) { name, nbody_type_enum, dest, dflt, readf, FALSE, 0, NULL }
+#define VEC_PARAM(name, dest) { name, nbody_type_vector, dest, NULL, NULL, FALSE, 0, NULL }
+#define VEC_PARAM_DFLT(name, dest, dfl) { name, nbody_type_vector, dest, dfl, NULL, FALSE, 0, NULL }
 
 /* A group where we want one of the options. dest is where the enum
  * identifier for the sub-item will go */
-#define GROUP_PARAM(name, dest, items) { name, nbody_type_group, dest, NULL, NULL, TRUE, items }
+#define GROUP_PARAM(name, dest, items) { name, nbody_type_group, dest, NULL, NULL, TRUE, 0, items }
 
 /* The group item with it's enum value */
-#define GROUP_PARAM_ITEM(name, val, items) { name, nbody_type_group_item, NULL, val, NULL, FALSE, items }
+#define GROUP_PARAM_ITEM(name, val, items) { name, nbody_type_group_item, NULL, val, NULL, FALSE, 0, items }
 
 /* A set of parameters where all of them are required. Mostly for organization */
-#define OBJ_PARAM(name, items) { name, nbody_type_object, NULL, NULL, NULL, FALSE, items }
+#define OBJ_PARAM(name, items) { name, nbody_type_object, NULL, NULL, NULL, FALSE, 0, items }
 
 
 int getParamsFromJSON(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj);
