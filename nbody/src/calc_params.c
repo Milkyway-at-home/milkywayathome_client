@@ -162,11 +162,81 @@ static int postProcess(NBodyCtx* ctx)
      * first */
 
     ctx->freqout = inv(ctx->timestep);
-    if (ctx->nbody < 1)
+    return rc;
+}
+
+/* Make sure we aren't ignoring all of the models */
+static int hasNonIgnorableModel(const NBodyCtx* ctx)
+{
+    unsigned int i;
+    unsigned int totalNonIgnorableModels = 0;
+    int rc;
+
+    if (ctx->modelNum == 0)
     {
-        warn("nbody = %d is absurd\n", ctx->nbody);
-        rc |= 1;
+        warn("Context has no models\n");
+        return 1;
     }
+
+    for (i = 0; i < ctx->modelNum; ++i)
+    {
+        if (!ctx->models[i].ignoreFinal)
+            ++totalNonIgnorableModels;
+    }
+
+    rc = (totalNonIgnorableModels == 0);
+    if (rc)
+        warn("Trying to ignore all of %u models\n", ctx->modelNum);
+
+    return rc;
+}
+
+static int hasSetEps2(const NBodyCtx* ctx)
+{
+    int rc = !isfinite(ctx->eps2);
+    if (rc)
+        warn("Got a nonfinite eps2\n");
+
+    return rc;
+}
+
+static int hasAcceptableTimes(const NBodyCtx* ctx)
+{
+    int rc = !isnormal(ctx->time_evolve) || !isnormal(ctx->time_orbit);
+    if (rc)
+        warn("At least one of the evolution times must be specified for the dwarf model\n");
+    return rc;
+}
+
+static int hasAcceptableSteps(const NBodyCtx* ctx)
+{
+    int rc =    !isnormal(ctx->timestep)
+             || !isnormal(ctx->orbit_timestep)
+             || (ctx->timestep == 0.0)
+             || (ctx->orbit_timestep == 0.0);
+    if (rc)
+        warn("Context has unacceptable timesteps\n");
+
+    return rc;
+}
+
+static int hasAcceptableNbody(const NBodyCtx* ctx)
+{
+    int rc = ctx->nbody < 1;
+    if (rc)
+        warn("nbody = %d is absurd\n", ctx->nbody);
+    return rc;
+}
+
+static int contextSanityCheck(const NBodyCtx* ctx)
+{
+    int rc = 0;
+
+    rc |= hasAcceptableNbody(ctx);
+    rc |= hasAcceptableTimes(ctx);
+    rc |= hasAcceptableSteps(ctx);
+    rc |= hasSetEps2(ctx);
+    rc |= hasNonIgnorableModel(ctx);
 
     return rc;
 }
@@ -191,19 +261,7 @@ int setCtxConsts(NBodyCtx* ctx,
     }
 
     rc |= postProcess(ctx);
-
-    if (isnan(ctx->time_evolve) && isnan(ctx->time_orbit))
-    {
-        warn("At least one of the evolution times must be specified for the dwarf model\n");
-        rc |= 1;
-    }
-
-    if (!isfinite(ctx->eps2))
-    {
-        warn("Got a nonfinite eps2\n");
-        rc |= 1;
-    }
-
+    rc |= contextSanityCheck(ctx);
     if (rc)
         warn("Failed to set context constants\n");
 

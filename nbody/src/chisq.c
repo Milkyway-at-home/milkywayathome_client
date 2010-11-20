@@ -150,6 +150,10 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
 
     for (p = st->bodytab; p < endp; ++p)
     {
+        /* Only include bodies in models we aren't ignoring */
+        if (ctx->models[bodyModel(p)].ignoreFinal)
+            continue;
+
         // Convert to (l,b) (involves convert x to Sun-centered)
         // Leave in radians to make rotation easier
         lbr = cartesianToLbr_rad(ctx, Pos(p));
