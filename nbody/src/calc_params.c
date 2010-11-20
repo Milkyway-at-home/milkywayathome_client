@@ -81,10 +81,9 @@ static int processInitialConditions(const NBodyCtx* ctx, InitialConditions* ic)
 
 static int processModel(NBodyCtx* ctx, DwarfModel* mod)
 {
-    int rc = 0;
-    const real r0 = mod->scale_radius;
+    int rc;
 
-    rc |= processInitialConditions(ctx, &mod->initialConditions);
+    rc = processInitialConditions(ctx, &mod->initialConditions);
 
     switch (mod->type)
     {
@@ -149,14 +148,6 @@ static int processAllModels(NBodyCtx* ctx)
     }
 
     return rc;
-}
-
-static void findTotalNumberBodies(NBodyCtx* ctx)
-{
-    unsigned int i;
-
-    for (i = 0; i < ctx->modelNum; ++i)
-        ctx->nbody += ctx->models[i].nbody;
 }
 
 /* Calculate needed parameters from whatever we read in */

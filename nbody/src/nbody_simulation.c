@@ -32,7 +32,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "show.h"
 
 /* make test model */
-static void generateModel(const NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodies)
+static void generateModel(NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodies)
 {
     dwarf_model_t type = ctx->models[modelIdx].type;
 
@@ -48,7 +48,7 @@ static void generateModel(const NBodyCtx* ctx, unsigned int modelIdx, bodyptr bo
     }
 }
 
-static void generateAllModels(const NBodyCtx* ctx, bodyptr bodies)
+static void generateAllModels(NBodyCtx* ctx, bodyptr bodies)
 {
     unsigned int i, bodyIdx;
 
@@ -59,10 +59,8 @@ static void generateAllModels(const NBodyCtx* ctx, bodyptr bodies)
     }
 }
 
-static void initState(const NBodyCtx* ctx, NBodyState* st)
+static void initState(NBodyCtx* ctx, NBodyState* st)
 {
-    unsigned int i;
-
     mw_report("Starting nbody system\n");
 
     st->tout       = st->tnow;       /* schedule first output */
@@ -106,7 +104,7 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
         boinc_checkpoint_completed();
     }
 
-    boinc_fraction_done(st->tnow / ctx->model.time_dwarf);
+    boinc_fraction_done(st->tnow / ctx->time_evolve);
 }
 #endif /* BOINC_APPLICATION */
 
