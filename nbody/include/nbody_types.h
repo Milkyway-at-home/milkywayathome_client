@@ -348,6 +348,7 @@ typedef struct
 typedef struct NBODY_ALIGN
 {
     Tree tree;
+    nodeptr freecell;   /* list of free cells */
     real tout;
     real tnow;
     bodyptr bodytab;    /* points to array of bodies */
@@ -360,9 +361,9 @@ typedef struct NBODY_ALIGN
 } NBodyState;
 
 #if NBODY_OPENCL
-  #define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
+  #define EMPTY_STATE { EMPTY_TREE, NULL, NAN, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
 #else
-  #define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL, NULL }
+  #define EMPTY_STATE { EMPTY_TREE, NULL, NAN, NAN, NULL, NULL }
 #endif /* NBODY_OPENCL */
 
 #endif /* __OPENCL_VERSION__ */

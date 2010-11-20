@@ -127,11 +127,24 @@ static void freeTree(Tree* t)
     t->cellused = 0;
 }
 
+static void freeFreeCells(nodeptr freecell)
+{
+    nodeptr p;
+    nodeptr tmp;
+
+    p = freecell;
+    while (p)
+    {
+        tmp = Next(p);
+        free(p);
+        p = tmp;
+    }
+}
+
 void nbodyStateDestroy(NBodyState* st)
 {
-    warn("I happen\n");
     freeTree(&st->tree);
-    freeFreeCells();
+    freeFreeCells(st->freecell);
     free(st->bodytab);
     free(st->acctab);
 

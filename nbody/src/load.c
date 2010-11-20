@@ -141,24 +141,7 @@ static void expandBox(Tree* t, bodyptr btab, unsigned int nbody)
 }
 
 /* newTree: reclaim cells in tree, prepare to build new one. */
-static nodeptr freecell = NULL;              /* list of free cells */
-
-void freeFreeCells()
-{
-    nodeptr p;
-    nodeptr tmp;
-
-    p = freecell;
-
-    while (p)
-    {
-        tmp = Next(p);
-        free(p);
-        p = tmp;
-    }
-}
-
-static void newTree(Tree* t)
+static void newTree(NBodyState* st, Tree* t)
 {
     static bool firstcall = TRUE;
     nodeptr p;
@@ -170,8 +153,8 @@ static void newTree(Tree* t)
         {
             if (Type(p) == CELL)                /* found cell to free? */
             {
-                Next(p) = freecell;             /* link to front of */
-                freecell = p;                   /* ...existing list */
+                Next(p) = st->freecell;         /* link to front of */
+                st->freecell = p;               /* ...existing list */
                 p = More(p);                    /* scan down tree */
             }
             else                                /* skip over bodies */
@@ -185,17 +168,17 @@ static void newTree(Tree* t)
 }
 
 /* makecell: return pointer to free cell. */
-static cellptr makeCell(Tree* t)
+static cellptr makeCell(NBodyState* st, Tree* t)
 {
     cellptr c;
     size_t i;
 
-    if (freecell == NULL)                        /* no free cells left? */
+    if (st->freecell == NULL)                    /* no free cells left? */
         c = (cellptr) mallocSafe(sizeof(cell));  /* allocate a new one */
     else                                         /* use existing free cell */
     {
-        c = (cellptr) freecell;                 /* take one on front */
-        freecell = Next(c);                     /* go on to next one */
+        c = (cellptr) st->freecell;             /* take one on front */
+        st->freecell = Next(c);                 /* go on to next one */
     }
     Type(c) = CELL;                             /* initialize cell type */
     for (i = 0; i < NSUB; i++)                  /* loop over subcells */
@@ -220,7 +203,7 @@ static inline void initMidpoint(cellptr c, const bodyptr p, const cellptr q, rea
 }
 
 /* loadBody: descend tree and insert body p in appropriate place. */
-static void loadBody(Tree* t, bodyptr p)
+static void loadBody(NBodyState* st, Tree* t, bodyptr p)
 {
     cellptr q, c;
     size_t qind;
@@ -235,7 +218,7 @@ static void loadBody(Tree* t, bodyptr p)
     {
         if (Type(Subp(q)[qind]) == BODY)        /* reached a "leaf"? */
         {
-            c = makeCell(t);                    /* allocate new cell */
+            c = makeCell(st, t);               /* allocate new cell */
             initMidpoint(c, p, q, qsize);      /* initialize midpoint */
 
             Subp(c)[subIndex((bodyptr) Subp(q)[qind], c)] = Subp(q)[qind];
@@ -381,15 +364,15 @@ void makeTree(const NBodyCtx* ctx, NBodyState* st)
     const bodyptr endp = st->bodytab + ctx->nbody;
     Tree* t = &st->tree;
 
-    newTree(t);                                      /* flush existing tree, etc */
-    t->root = makeCell(t);                           /* allocate the t.root cell */
+    newTree(st, t);                                  /* flush existing tree, etc */
+    t->root = makeCell(st, t);                       /* allocate the t.root cell */
     mw_zerov(Pos(t->root));                          /* initialize the midpoint */
     expandBox(t, st->bodytab, ctx->nbody);           /* and expand cell to fit */
     t->maxlevel = 0;                                 /* init count of levels */
     for (p = st->bodytab; p < endp; p++)             /* loop over bodies... */
     {
         if (Mass(p) != 0.0)                  /* exclude test particles */
-            loadBody(t, p);                  /* and insert into tree */
+            loadBody(st, t, p);              /* and insert into tree */
     }
 
     hackCofM(ctx, st, t->root, t->rsize);       /* find c-of-m coordinates */

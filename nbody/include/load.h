@@ -25,7 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "load.h"
 
 void makeTree(const NBodyCtx*, NBodyState*);    /* construct tree structure */
-void freeFreeCells();
 
 #endif /* _LOAD_H_ */
 
