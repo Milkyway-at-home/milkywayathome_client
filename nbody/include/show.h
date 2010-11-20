@@ -44,8 +44,12 @@ char* showVector(const mwvector v);
 void printContext(const NBodyCtx*);
 void printInitialConditions(const InitialConditions*);
 void printVector(const mwvector v);
+
 char* showFitParams(const FitParams* fp);
 void printFitParams(const FitParams* fp);
+
+char* showHistogramParams(const HistogramParams* hp);
+void printHistogramParams(const HistogramParams* hp);
 
 char* showBody(const bodyptr p);
 void printBody(const bodyptr p);

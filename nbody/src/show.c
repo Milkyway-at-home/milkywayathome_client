@@ -448,9 +448,44 @@ char* showFitParams(const FitParams* fp)
     return buf;
 }
 
+char* showHistogramParams(const HistogramParams* hp)
+{
+    char* buf;
+    if (0 > asprintf(&buf,
+                     "histogram-params = { \n"
+                     "  phi      = %g\n"
+                     "  theta    = %g\n"
+                     "  psi      = %g\n"
+                     "  startRaw = %g\n"
+                     "  endRaw   = %g\n"
+                     "  binSize  = %g\n"
+                     "  center   = %g\n"
+                     "};\n",
+                     hp->phi,
+                     hp->theta,
+                     hp->psi,
+                     hp->startRaw,
+                     hp->endRaw,
+                     hp->binSize,
+                     hp->center))
+
+    {
+        fail("asprintf() failed\n");
+    }
+
+    return buf;
+}
+
 void printFitParams(const FitParams* fp)
 {
     char* buf = showFitParams(fp);
+    puts(buf);
+    free(buf);
+}
+
+void printHistogramParams(const HistogramParams* hp)
+{
+    char* buf = showHistogramParams(hp);
     puts(buf);
     free(buf);
 }

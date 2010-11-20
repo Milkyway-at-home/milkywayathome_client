@@ -111,8 +111,7 @@ typedef struct _Parameter
 #define OBJ_PARAM(name, items) { name, nbody_type_object, NULL, 0, NULL, NULL, NULL, FALSE, items }
 
 
-
-int getParamsFromJSON(NBodyCtx* ctx, json_object* fileObj);
+int getParamsFromJSON(NBodyCtx* ctx, HistogramParams* hist, json_object* fileObj);
 
 #ifdef __cplusplus
 }

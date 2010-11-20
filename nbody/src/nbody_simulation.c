@@ -203,9 +203,11 @@ static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
     ctx->cp_filename     = nbf->checkpointFileName;
 }
 
-static void verifyFile(const NBodyCtx* ctx, int rc)
+static void verifyFile(const NBodyCtx* ctx, const HistogramParams* hp, int rc)
 {
     printContext(ctx);
+    printHistogramParams(hp);
+
     if (rc)
         warn("File failed\n");
     else
@@ -221,19 +223,20 @@ void runNBodySimulation(json_object* obj,            /* The main configuration *
 {
     NBodyCtx ctx  = EMPTY_CTX;
     NBodyState st = EMPTY_STATE;
+    HistogramParams histParams;
 
     real chisq;
     double ts = 0.0, te = 0.0;
     int rc = 0;
 
-    rc |= getParamsFromJSON(&ctx, obj);
+    rc |= getParamsFromJSON(&ctx, &histParams, obj);
     if (rc && !nbf->verifyOnly)   /* Fail right away, unless we are diagnosing file problems */
         fail("Failed to read input parameters file\n");
 
     rc |= setCtxConsts(&ctx, fitParams, nbf->setSeed);
 
     if (nbf->verifyOnly)
-        verifyFile(&ctx, rc);
+        verifyFile(&ctx, &histParams, rc);
 
     if (rc)
         fail("Failed to read input parameters file\n");
@@ -263,7 +266,7 @@ void runNBodySimulation(json_object* obj,            /* The main configuration *
     }
 
     /* Get the likelihood */
-    chisq = nbodyChisq(&ctx, &st);
+    chisq = nbodyChisq(&ctx, &st, &histParams);
     if (isnan(chisq))
         warn("Failed to calculate chisq\n");
 

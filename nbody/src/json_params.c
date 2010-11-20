@@ -25,6 +25,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 #include "milkyway_util.h"
 
+#define histogramPhi 128.79
+#define histogramTheta 54.39
+#define histogramPsi 90.70
+#define histogramStartRaw ((real) -50.0)
+#define histogramEndRaw ((real) 50.0)
+#define histogramBinSize ((real) 2.9411764705882355)
+#define histogramCenter ((real) 0.0)
+
+
 static const real nanN = NAN;
 
 static int readParameterGroup(const Parameter* g, json_object* hdr, const Parameter* parent, generic_enum_t* group_type);
@@ -221,7 +230,7 @@ static bool readDouble(const Parameter* p, const char* pname, json_object* obj, 
         warn("Error: expected number for '%s' in '%s', but got %s\n",
              p->name,
              pname,
-             showNBodyType(p->type));
+             showNBodyType(json_object_get_type(obj)));
         return TRUE;
     }
 
@@ -459,6 +468,8 @@ static int readParameterGroup(const Parameter* g,        /* The set of parameter
         useDflt = FALSE;
         found = FALSE;
 
+
+
         obj = json_object_object_get(hdr, p->name);
         if (!obj)
         {
@@ -520,6 +531,9 @@ static int readParameterGroup(const Parameter* g,        /* The set of parameter
                 /* fall through to nbody_type_object */
             case nbody_type_group:
             case nbody_type_object:
+                if (useDflt)
+                    fail("Defaultable objects not implemented\n");
+
                 /* Fail now if sub group fails */
                 if ((subRc = readParameterGroup(p->parameters, obj, p, (generic_enum_t*) p->param)))
                     return subRc;
@@ -586,8 +600,9 @@ static int readParameterGroup(const Parameter* g,        /* The set of parameter
 
 /* Read the parameters from the top level json object into ctx. It
  * destroys the object in the process. */
-int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
-                      json_object* fileObj)        /* Parsed JSON file */
+int getParamsFromJSON(NBodyCtx* ctx,         /* Context to fill */
+                      HistogramParams* hist, /* Histogram parameters to fill */
+                      json_object* fileObj)  /* Parsed JSON file */
 
 {
     /* Constants used for defaulting. Each field only used if
@@ -607,6 +622,17 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
             .outfile = NULL,
             .outfilename = NULL,
             .headline = NULL
+        };
+
+    const HistogramParams defaultHistogram =
+        {
+            .phi        = histogramPhi,
+            .theta      = histogramTheta,
+            .psi        = histogramPsi,
+            .startRaw   = histogramStartRaw,
+            .endRaw     = histogramEndRaw,
+            .binSize    = histogramBinSize,
+            .center     = histogramCenter
         };
 
     /* Spherical potential options */
@@ -719,14 +745,29 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
             NULLPARAMETER
         };
 
+    const Parameter histogramParams[] =
+        {
+            DBL_PARAM_DFLT("phi",     &hist->phi,      &defaultHistogram.phi),
+            DBL_PARAM_DFLT("theta",   &hist->theta,    &defaultHistogram.theta),
+            DBL_PARAM_DFLT("psi",     &hist->psi,      &defaultHistogram.psi),
+            DBL_PARAM_DFLT("start",   &hist->startRaw, &defaultHistogram.startRaw),
+            DBL_PARAM_DFLT("end",     &hist->endRaw,   &defaultHistogram.endRaw),
+            DBL_PARAM_DFLT("binsize", &hist->binSize,  &defaultHistogram.binSize),
+            DBL_PARAM_DFLT("center",  &hist->center,   &defaultHistogram.center),
+            NULLPARAMETER
+        };
+
     const Parameter parameters[] =
         {
             OBJ_PARAM("nbody-context", nbodyCtxParams),
+            OBJ_PARAM("histogram", histogramParams),
             NULLPARAMETER
         };
 
     json_object* hdr;
     int rc;
+
+    *hist = defaultHistogram;    /* Set all items to default */
 
     /* Check that this is actually one of our files */
     if (   !json_object_is_type(fileObj, nbody_type_object)
@@ -741,7 +782,6 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
 
     /* deref the top level object should take care of freeing whatever's left */
     json_object_put(fileObj);
-
 
     return rc;
 }

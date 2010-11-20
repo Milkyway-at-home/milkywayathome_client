@@ -438,6 +438,28 @@ typedef int generic_enum_t;  /* A general enum type. */
                     NAN, NAN, NAN, NAN, NAN, 0, 0,                   \
                     FALSE, FALSE, FALSE, FALSE, FALSE, NULL, "" }
 
+
+typedef struct
+{
+    real phi;
+    real theta;
+    real psi;
+    real startRaw;
+    real endRaw;
+    real binSize;
+    real center;
+} HistogramParams;
+
+
+typedef struct
+{
+    int useBin;
+    real lambda;
+    real err;
+    real count;
+} HistData;
+
+
 #ifndef __OPENCL_VERSION__  /* No function pointers allowed in kernels */
 /* Acceleration functions for a given potential */
 typedef mwvector (*SphericalAccel) (const Spherical*, const mwvector);
