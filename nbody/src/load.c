@@ -143,6 +143,21 @@ static void expandBox(Tree* t, bodyptr btab, unsigned int nbody)
 /* newTree: reclaim cells in tree, prepare to build new one. */
 static nodeptr freecell = NULL;              /* list of free cells */
 
+void freeFreeCells()
+{
+    nodeptr p;
+    nodeptr tmp;
+
+    p = freecell;
+
+    while (p)
+    {
+        tmp = Next(p);
+        free(p);
+        p = tmp;
+    }
+}
+
 static void newTree(Tree* t)
 {
     static bool firstcall = TRUE;

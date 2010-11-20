@@ -129,7 +129,9 @@ static void freeTree(Tree* t)
 
 void nbodyStateDestroy(NBodyState* st)
 {
+    warn("I happen\n");
     freeTree(&st->tree);
+    freeFreeCells();
     free(st->bodytab);
     free(st->acctab);
 
