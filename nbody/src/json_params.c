@@ -43,11 +43,10 @@ static const char* showNBodyType(nbody_type bt)
             [nbody_type_string]     = "string",
             [nbody_type_enum]       = "enum",
             [nbody_type_group]      = "group",
-            [nbody_type_group_item] = "group_item",
-            [nbody_type_group_one_or_many] = "nbody_type_group_one_or_many"
+            [nbody_type_group_item] = "group_item"
         };
 
-    if (bt > nbody_type_group_one_or_many)
+    if (bt > nbody_type_group_item)
     {
         warn("Trying to show unknown nbody_type %d\n", bt);
         return NULL;
@@ -88,14 +87,29 @@ static criterion_t readCriterion(const char* str)
     else if (!strcasecmp(str, "sw93"))
         return SW93;
     else
-        warn("Invalid model %s: Model options are either 'bh86', "
+        warn("Invalid criterion %s: Criterion options are either 'bh86', "
              "'sw93', 'exact' or 'new-criterion' (default),\n",
              str);
 
     return -1;
 }
 
-static bool readDwarfModel(DwarfModel* model, const Parameter* parent, json_object* obj)
+static dwarf_model_t readDwarfModelT(const char* str)
+{
+    if (!strcasecmp(str, "plummer"))
+        return DwarfModelPlummer;
+    if (!strcasecmp(str, "king"))
+        return DwarfModelKing;
+    if (!strcasecmp(str, "dehnen"))
+        return DwarfModelDehnen;
+    else
+        warn("Invalid model %s: Model options are "
+             "'plummer', 'king', 'dehnen'\n", str);
+
+    return -1;
+}
+
+static bool readDwarfModel(DwarfModel* model, json_object* obj, const Parameter* parent)
 {
         /* The current different dwarf models all use the same parameters */
     const real nanN = NAN;
@@ -105,6 +119,7 @@ static bool readDwarfModel(DwarfModel* model, const Parameter* parent, json_obje
              * in the file, to be filled in by the server sent
              * FitParams. This will probably result in unfortunate
              * things when using the file. */
+            ENUM_PARAM("type",               &model->type,           (GenericReadFunc) readDwarfModelT),
             INT_PARAM("nbody",               &model->nbody),
             DBL_PARAM_DFLT("mass",           &model->mass,           &nanN),
             DBL_PARAM_DFLT("scale-radius",   &model->scale_radius,   &nanN),
@@ -116,16 +131,7 @@ static bool readDwarfModel(DwarfModel* model, const Parameter* parent, json_obje
             NULLPARAMETER
         };
 
-    const dwarf_model_t plummerT = DwarfModelPlummer, kingT = DwarfModelKing, dehnenT = DwarfModelDehnen;
-    const Parameter dwarfModelOptions[] =
-        {
-            GROUP_PARAM_ITEM("plummer", &plummerT, dwarfModelParams),
-            GROUP_PARAM_ITEM("king",    &kingT,    dwarfModelParams),
-            GROUP_PARAM_ITEM("dehnen",  &dehnenT,  dwarfModelParams),
-            NULLPARAMETER
-        };
-
-    return readParameterGroup(dwarfModelOptions, obj, parent, &model->type);
+    return readParameterGroup(dwarfModelParams, obj, parent, NULL);
 }
 
 static void printParameter(Parameter* p)
@@ -321,8 +327,6 @@ static bool readArray(const Parameter* p, const char* pname, json_object* obj, b
     arr = json_object_get_array(obj);
     arrLen = json_object_array_length(obj);
 
-    printf("Found %u items\n", arrLen);
-
     readArr = (char*) callocSafe(arrLen, p->size);
 
     for (i = 0; i < arrLen; ++i)
@@ -330,7 +334,7 @@ static bool readArray(const Parameter* p, const char* pname, json_object* obj, b
         tmp = (json_object*) array_list_get_idx(arr, i);
 
         readLoc = readArr + i * p->size;  /* Index into mystery sized type  */
-        if (reader((void*) readLoc, tmp, p) == -1)
+        if (reader((void*) readLoc, tmp, p))
         {
             warn("Failed to read array item in position %d "
                  "of key '%s' in '%s'.\n", i, p->name, pname);
@@ -340,6 +344,9 @@ static bool readArray(const Parameter* p, const char* pname, json_object* obj, b
     }
 
     *((char**) p->param) = (char*) readArr;
+
+    if (p->length)
+        *p->length = arrLen;
 
     return FALSE;
 }
@@ -373,36 +380,6 @@ static bool readEnum(const Parameter* p, const char* pname, json_object* obj, bo
     return FALSE;
 }
 
-static bool readGroupOneOrMany(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
-{
-    void* ptr;
-
-    if (!p->conv)
-    {
-        warn("Read function not set for key '%s' in '%s'\n", p->name, pname);
-        return TRUE;
-    }
-
-    if (json_object_is_type(obj, nbody_type_array))
-        return readArray(p, pname, obj, useDflt);
-    else if (json_object_is_type(obj, nbody_type_object))
-    {
-        ptr = callocSafe(1, p->size); /* Pretend list of 1 */
-
-        *((void**) p->param) = ptr;
-
-        return (p->conv(ptr, p, obj) == -1);
-    }
-
-    warn("Got unexpected type '%s' of key '%s' in '%s', "
-         "expected item or array of items.\n",
-         showNBodyType(json_object_get_type(obj)),
-         p->name,
-         pname);
-
-    return TRUE;
-}
-
 /* Read a set of related parameters, e.g. the main NBodyCtx.
    If the unique flag is set, it's only valid to have one of the items in the group.
    Otherwise, it tries to use all of the parameters, and warns when extra elements are found.
@@ -429,7 +406,7 @@ static int readParameterGroup(const Parameter* g,        /* The set of parameter
     }
     else
     {
-        pname = "<?>";       /* Probably at the root of the configuration */
+        pname = "<root>";       /* Probably at the root of the configuration */
         unique = FALSE;
     }
 
@@ -509,10 +486,6 @@ static int readParameterGroup(const Parameter* g,        /* The set of parameter
                 /* Fail now if sub group fails */
                 if ((subRc = readParameterGroup(p->parameters, obj, p, (generic_enum_t*) p->param)))
                     return subRc;
-                break;
-
-            case nbody_type_group_one_or_many:
-                readError = readGroupOneOrMany(p, pname, obj, useDflt);
                 break;
 
             case nbody_type_enum:
@@ -699,6 +672,7 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
         };
 
     DwarfModel* allModels = NULL;
+    unsigned int modelNum = 0;
 
     /* Must be null terminated arrays */
     const Parameter nbodyCtxParams[] =
@@ -711,10 +685,9 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
             DBL_PARAM_DFLT("accuracy-parameter",     &ctx->theta, &defaultCtx.theta),
             ENUM_PARAM_DFLT("criterion",             &ctx->criterion, &defaultCtx.criterion, (GenericReadFunc) readCriterion),
             OBJ_PARAM("potential", potentialItems),
-            GROUP_PARAM_ONE_MANY("dwarf-model", &allModels, sizeof(DwarfModel), (GenericReadFunc) readDwarfModel),
+            ARRAY_PARAM("dwarf-model", &allModels, sizeof(DwarfModel), &modelNum, (GenericReadFunc) readDwarfModel),
             DBL_PARAM_DFLT("sun-gc-dist", &ctx->sunGCDist, &defaultCtx.sunGCDist),
             DBL_PARAM_DFLT("tree_rsize", &ctx->tree_rsize, &defaultCtx.tree_rsize),
-
             NULLPARAMETER
         };
 
@@ -748,8 +721,8 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
     /* loop through table of accepted sets of parameters */
     rc = readParameterGroup(parameters, hdr, NULL, NULL);
 
-    ctx->model = allModels[0];
-    free(allModels);
+    if (modelNum > 0)
+        ctx->model = allModels[0];
 
     /* deref the top level object should take care of freeing whatever's left */
     json_object_put(fileObj);
