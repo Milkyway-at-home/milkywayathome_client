@@ -298,7 +298,6 @@ typedef struct NBODY_ALIGN
 {
     dwarf_model_t type;
     int nbody;
-    real time_orbit;
 
     /* calculated depending on model */
     real timestep;

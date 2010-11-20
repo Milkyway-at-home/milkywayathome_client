@@ -104,12 +104,6 @@ static int processModel(NBodyCtx* ctx, DwarfModel* mod)
             return 1;
     }
 
-    if (isnan(mod->time_orbit))
-        mod->time_orbit = mod->timestep / 2.0;
-
-    /* if (isnan(mod->time_dwarf))
-           ?????;
-    */
     return rc;
 }
 
@@ -162,6 +156,14 @@ static int postProcess(NBodyCtx* ctx)
      * first */
 
     ctx->freqout = inv(ctx->timestep);
+
+    if (isnan(ctx->time_orbit))
+        ctx->time_orbit = ctx->timestep / 2.0;
+
+    /* if (isnan(ctx->time_dwarf))
+           ?????;
+    */
+
     return rc;
 }
 
@@ -254,10 +256,10 @@ int setCtxConsts(NBodyCtx* ctx,
     {
         ctx->models[0].mass         = fitParams->modelMass;
         ctx->models[0].scale_radius = fitParams->modelRadius;
-        ctx->models[0].time_orbit   = fitParams->reverseOrbitTime;
 
-        ctx->time_evolve            = fitParams->simulationTime;
-        ctx->seed                   = setSeed;
+        ctx->time_orbit  = fitParams->reverseOrbitTime;
+        ctx->time_evolve = fitParams->simulationTime;
+        ctx->seed        = setSeed;
     }
 
     rc |= postProcess(ctx);
