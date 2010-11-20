@@ -33,11 +33,6 @@ extern "C"
 /* :: (Enum a) => String -> a */
 typedef int (*ReadEnum) (const char*);
 
-typedef int (*GenericReadFunc) (void*);
-
-/* Read a json_object into some type */
-typedef int (*ArrayRead) (void*, json_object*);
-
 
 /* We could use a little more than the basic json types, and maintain
  * compatability with json_type */
@@ -58,6 +53,11 @@ typedef enum
     nbody_type_group_item, /* an object with an associated type, in the container */
     nbody_type_group_one_or_many /* Try a single group, or an array of them. */
 } nbody_type;
+
+typedef int (*GenericReadFunc) (void*, const void*, json_object*);
+
+/* Read a json_object into some type */
+typedef int (*ArrayRead) (void*, json_object*, const void*);
 
 
 /* Same basic idea as a popt option table */
@@ -85,6 +85,7 @@ typedef struct _Parameter
 /* Macros useful for making the parameter tables because they became beastly */
 #define NULLPARAMETER { NULL, nbody_type_null, NULL, NULL, NULL, FALSE, 0, NULL }
 
+
 #define BASIC_PARAM(name, type, dest) { name, type, dest, NULL, NULL, FALSE, 0, NULL }
 #define DBL_PARAM(name, dest) { name, nbody_type_double, dest, NULL, NULL, FALSE, 0, NULL }
 #define INT_PARAM(name, dest) { name, nbody_type_int, dest, NULL, NULL, FALSE, 0, NULL }
@@ -101,12 +102,14 @@ typedef struct _Parameter
 /* A group where we want one of the options. dest is where the enum
  * identifier for the sub-item will go */
 #define GROUP_PARAM(name, dest, items) { name, nbody_type_group, dest, NULL, NULL, TRUE, 0, items }
+#define GROUP_PARAM_ONE_MANY(name, dest, size, readf) { name, nbody_type_group_one_or_many, dest, NULL, readf, TRUE, size, NULL }
 
 /* The group item with it's enum value */
 #define GROUP_PARAM_ITEM(name, val, items) { name, nbody_type_group_item, NULL, val, NULL, FALSE, 0, items }
 
 /* A set of parameters where all of them are required. Mostly for organization */
 #define OBJ_PARAM(name, items) { name, nbody_type_object, NULL, NULL, NULL, FALSE, 0, items }
+
 
 
 int getParamsFromJSON(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj);

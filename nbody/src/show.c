@@ -426,3 +426,10 @@ void printBody(const bodyptr p)
     free(buf);
 }
 
+void printDwarfModel(const DwarfModel* p)
+{
+    char* buf = showDwarfModel(p);
+    puts(buf);
+    free(buf);
+}
+

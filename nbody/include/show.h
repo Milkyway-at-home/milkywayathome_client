@@ -37,6 +37,7 @@ char* showHalo(const Halo*);
 char* showDisk(const Disk*);
 char* showPotential(const Potential*);
 char* showDwarfModel(const DwarfModel*);
+void printDwarfModel(const DwarfModel*);
 char* showInitialConditions(const InitialConditions*);
 char* showContext(const NBodyCtx*);
 char* showVector(const mwvector v);
