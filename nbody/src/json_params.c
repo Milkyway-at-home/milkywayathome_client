@@ -113,6 +113,7 @@ static dwarf_model_t readDwarfModelT(const char* str)
 
 static bool readDwarfModel(DwarfModel* model, json_object* obj, const Parameter* parent)
 {
+    const bool defaultIgnore = FALSE;
     const InitialConditions defaultIC =
         {
             .useGalC      = FALSE,
@@ -145,6 +146,8 @@ static bool readDwarfModel(DwarfModel* model, json_object* obj, const Parameter*
             DBL_PARAM_DFLT("scale-radius",   &model->scale_radius,   &nanN),
             DBL_PARAM_DFLT("timestep",       &model->timestep,       &nanN),
             DBL_PARAM_DFLT("orbit-timestep", &model->orbit_timestep, &nanN),
+            BOOL_PARAM_DFLT("ignore-final",  &model->ignoreFinal, &defaultIgnore),
+
             OBJ_PARAM("initial-conditions",  initialConditionParams),
             NULLPARAMETER
         };

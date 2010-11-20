@@ -258,6 +258,7 @@ char* showDwarfModel(const DwarfModel* d)
                      "      scale_radius      = %g\n"
                      "      timestep          = %g\n"
                      "      orbit_timestep    = %g\n"
+                     "      ignoreFinal       = %s\n"
                      "      initialConditions = %s\n"
                      "    };\n",
                      showDwarfModelT(d->type),
@@ -266,6 +267,7 @@ char* showDwarfModel(const DwarfModel* d)
                      d->scale_radius,
                      d->timestep,
                      d->orbit_timestep,
+                     showBool(d->ignoreFinal),
                      icBuf))
     {
         fail("asprintf() failed\n");
