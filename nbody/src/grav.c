@@ -158,27 +158,15 @@ static inline mwvector hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p)
     return fest.acc0;         /* and acceleration */
 }
 
-#ifndef _OPENMP
-
 static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
 {
-    bodyptr p;
-    mwvector* a;
 
-    const bodyptr endp = st->bodytab + ctx->nbody;
-
-    for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)      /* get force on each body */
-        *a = hackGrav(ctx, (nodeptr) st->tree.root, p);
-}
-
-#else
-
-static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
-{
     unsigned int i;
     const unsigned int nbody = ctx->nbody;
 
+  #ifdef _OPENMP
     #pragma omp parallel for private(i) schedule(dynamic)
+  #endif
     for (i = 0; i < nbody; ++i)      /* get force on each body */
     {
         st->acctab[i] = hackGrav(ctx,
@@ -186,8 +174,6 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
                                  &st->bodytab[i]);
     }
 }
-
-#endif /* _OPENMP */
 
 void gravMap(const NBodyCtx* ctx, NBodyState* st)
 {
