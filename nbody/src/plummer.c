@@ -74,7 +74,7 @@ static void printPlummer(const NBodyCtx* ctx, mwvector rshift, mwvector vshift)
  * etc).  See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
  * 183.
  */
-void generatePlummer(const NBodyCtx* ctx, const DwarfModel* model, bodyptr bodytab)
+void generatePlummer(NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodytab)
 {
     bodyptr p, endp;
     real rsc, vsc, r, v, x, y;
@@ -86,7 +86,8 @@ void generatePlummer(const NBodyCtx* ctx, const DwarfModel* model, bodyptr bodyt
     dsfmt_t dsfmtState;
     real rnd;
 
-    const InitialConditions* ic = &model->initialConditions;
+    DwarfModel* model = &ctx->models[modelIdx];
+    InitialConditions* ic = &model->initialConditions;
 
     const real rnbody = (real) model->nbody;
     const real mass   = model->mass;
@@ -109,8 +110,8 @@ void generatePlummer(const NBodyCtx* ctx, const DwarfModel* model, bodyptr bodyt
     endp = bodytab + model->nbody;
     for (p = bodytab; p < endp; ++p)   /* loop over particles */
     {
-        Type(p) = BODY;    /* tag as a body */
-        Mass(p) = mpp;     /* set masses equal */
+        Type(p) = BODY(modelIdx);    /* tag as a body belonging to this model */
+        Mass(p) = mpp;               /* set masses equal */
 
         /* returns [0, 1) */
         rnd = (real) dsfmt_genrand_close_open(&dsfmtState);

@@ -32,17 +32,19 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "show.h"
 
 /* make test model */
-static void generateModel(const NBodyCtx* ctx, const DwarfModel* model, bodyptr bodies)
+static void generateModel(const NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodies)
 {
-    switch (model->type)
+    dwarf_model_t type = ctx->models[modelIdx].type;
+
+    switch (type)
     {
         case DwarfModelPlummer:
-            generatePlummer(ctx, model, bodies);
+            generatePlummer(ctx, modelIdx, bodies);
             break;
         case DwarfModelKing:
         case DwarfModelDehnen:
         default:
-            fail("Unsupported model: %d", model->type);
+            fail("Unsupported model: %d", type);
     }
 }
 
@@ -52,7 +54,7 @@ static void generateAllModels(const NBodyCtx* ctx, bodyptr bodies)
 
     for (i = 0, bodyIdx = 0; i < ctx->modelNum; ++i)
     {
-        generateModel(ctx, &ctx->models[i], &bodies[bodyIdx]);
+        generateModel(ctx, i, &bodies[bodyIdx]);
         bodyIdx += ctx->models[i].nbody;
     }
 }

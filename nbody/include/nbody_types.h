@@ -107,14 +107,21 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define NBODY_ALIGN
 #endif /* _MSC_VER */
 
-/*
-typedef enum
-{
-    BODY,
-    CELL
-} body_t; */
-#define BODY 01
-#define CELL 02
+/* There are bodies and cells. Cells are 0. A body will be nonzero,
+ * where this is the index of the model the body is in + 1.  This way
+ * checking for a cell is a fast comparison with 0 which is usually
+ * what needs to happen, while still being able to pick out which
+ * bodies belong to each model. Actually since the bodies don't
+ * actually move (for now at least, the GPU version will most likely
+ * end up sorting) we could just not tag each body with its parent
+ * model.
+ */
+#define CELL(x) (0)
+#define BODY(x) ((x) + 1)
+
+#define bodyModel(x) (((nodeptr) (x))->type - 1)
+#define isBody(x) (((nodeptr) (x))->type != 0)
+#define isCell(x) (((nodeptr) (x))->type == 0)
 
 typedef short body_t;
 

@@ -55,6 +55,7 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st)
 
     for (p = st->bodytab; p < endp; p++)
     {
+        fprintf(f, "%d ", bodyModel(p));   /* Print model it belongs indexed from 0 */
         if (ctx->outputCartesian)     /* Probably useful for making movies and such */
             out_2vectors(f, Pos(p), Vel(p));
         else
@@ -113,7 +114,7 @@ static void freeTree(Tree* t)
     p = (nodeptr) t->root;
     while (p != NULL)
     {
-        if (Type(p) == CELL)
+        if (isCell(p))
         {
             tmp = More(p);
             free(p);

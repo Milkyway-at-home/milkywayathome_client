@@ -76,7 +76,7 @@ static inline void hackQuad(cellptr p)
     for (i = 0; i < ndesc; ++i)                 /* loop over real subnodes  */
     {
         q = desc[i];                            /* access each one in turn  */
-        if (Type(q) == CELL)                    /* if it's also a cell      */
+        if (isCell(q))                          /* if it's also a cell      */
             hackQuad((cellptr) q);              /* then process it first    */
         dr = mw_subv(Pos(q), Pos(p));           /* find displacement vect.  */
         mw_outv(drdr, dr, dr);                  /* form outer prod. of dr   */
@@ -86,7 +86,7 @@ static inline void hackQuad(cellptr p)
         mw_mulms(tmpm, drdr, 3.0);              /* scale drdr by 3          */
         mw_incsubm(tmpm, Idrsq);                /* now form quad. moment    */
         mw_incmulms(tmpm, Mass(q));             /* from cm of subnode       */
-        if (Type(q) == CELL)                    /* if subnode is cell       */
+        if (isCell(q))                          /* if subnode is cell       */
             mw_incaddm(tmpm, Quad(q));          /* then include its moment  */
         mw_incaddm(Quad(p), tmpm);              /* increment moment of cell */
     }
@@ -102,7 +102,7 @@ static void threadTree(nodeptr p, nodeptr n)
     nodeptr desc[NSUB+1];
 
     Next(p) = n;                                /* link to next node */
-    if (Type(p) == CELL)                        /* any children to thread? */
+    if (isCell(p))                              /* any children to thread? */
     {
         ndesc = 0;                              /* count extant children */
         for (i = 0; i < NSUB; ++i)              /* loop over subnodes */
@@ -151,7 +151,7 @@ static void newTree(NBodyState* st, Tree* t)
         p = (nodeptr) t->root;                  /* start with the t.root */
         while (p != NULL)                       /* loop scanning tree */
         {
-            if (Type(p) == CELL)                /* found cell to free? */
+            if (isCell(p))                      /* found cell to free? */
             {
                 Next(p) = st->freecell;         /* link to front of */
                 st->freecell = p;               /* ...existing list */
@@ -180,7 +180,7 @@ static cellptr makeCell(NBodyState* st, Tree* t)
         c = (cellptr) st->freecell;             /* take one on front */
         st->freecell = Next(c);                 /* go on to next one */
     }
-    Type(c) = CELL;                             /* initialize cell type */
+    Type(c) = CELL(0);                          /* initialize cell type */
     for (i = 0; i < NSUB; i++)                  /* loop over subcells */
         Subp(c)[i] = NULL;                      /* and empty each one */
     t->cellused++;                              /* count one more cell */
@@ -216,7 +216,7 @@ static void loadBody(NBodyState* st, Tree* t, bodyptr p)
     lev = 0;                                    /* count levels descended */
     while (Subp(q)[qind] != NULL)               /* loop descending tree */
     {
-        if (Type(Subp(q)[qind]) == BODY)        /* reached a "leaf"? */
+        if (isBody(Subp(q)[qind]))              /* reached a "leaf"? */
         {
             c = makeCell(st, t);               /* allocate new cell */
             initMidpoint(c, p, q, qsize);      /* initialize midpoint */
@@ -332,7 +332,7 @@ static void hackCofM(const NBodyCtx* ctx, NBodyState* st, cellptr p, real psize)
     {
         if ((q = Subp(p)[i]) != NULL)           /* does subnode exist? */
         {
-            if (Type(q) == CELL)                /* and is it a cell? */
+            if (isCell(q))                     /* and is it a cell? */
                 hackCofM(ctx, st, (cellptr) q, 0.5 * psize); /* find subcell cm */
             Mass(p) += Mass(q);                       /* sum total mass */
                                                       /* weight pos by mass */

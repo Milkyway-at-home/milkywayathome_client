@@ -90,7 +90,7 @@ static inline void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, const node
     ai = mw_mulvs(fest->dr, mor3);
     mw_incaddv(fest->acc0, ai);         /* ... and to total accel. */
 
-    if (ctx->usequad && Type(q) == CELL)             /* if cell, add quad term */
+    if (ctx->usequad && isCell(q))      /* if cell, add quad term */
         cellQuadTerm(fest, q, drab);
 }
 
@@ -106,7 +106,7 @@ static inline bool treescan(const NBodyCtx* ctx,
 
     while (q != NULL)               /* while not at end of scan */
     {
-        if (   Type(q) == CELL                   /* is node a cell and... */
+        if (   isCell(q)                         /* is node a cell and... */
             && subdivp(fest, (cellptr) q))       /* too close to accept? */
         {
             q = More(q);            /* follow to next level */
