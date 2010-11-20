@@ -112,7 +112,7 @@ typedef struct _Parameter
 
 
 
-int getParamsFromJSON(NBodyCtx* ctx, InitialConditions* ic, json_object* fileObj);
+int getParamsFromJSON(NBodyCtx* ctx, json_object* fileObj);
 
 #ifdef __cplusplus
 }

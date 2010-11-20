@@ -50,51 +50,18 @@ static int processPotential(Potential* p)
     return processHalo(&p->halo);
 }
 
-static int processModel(DwarfModel* mod)
+static real calculateTimestep(real mass, real r0)
 {
-    const real r0 = mod->scale_radius;
+    return sqr(1/10.0) * mw_sqrt((PI_4_3 * cube(r0)) / mass);
+}
+
+static real calculateEps2(real nbody, real r0)
+{
     real eps;
 
-    if (isnan(mod->time_dwarf) && isnan(mod->time_orbit))
-    {
-        warn("At least one of the evolution times must be specified for the dwarf model\n");
-        return 1;
-    }
+    eps = r0 / (10.0 * mw_sqrt(nbody));
 
-    switch (mod->type)
-    {
-        case DwarfModelPlummer:
-            /* If not set, and no default, it's calculated based on
-             * other parameters. */
-            if (isnan(mod->eps2))
-            {
-                eps = r0 / (10.0 * mw_sqrt((real) mod->nbody));
-                mod->eps2 = sqr(eps);
-            }
-
-            if (isnan(mod->timestep))
-                mod->timestep = sqr(1/10.0) * mw_sqrt((PI_4_3 * cube(r0)) / mod->mass);
-
-            /* for the orbit, use dt = dtnbody/2 to make sure we get enough orbit precision. */
-            if (isnan(mod->orbit_timestep))
-                mod->orbit_timestep = mod->timestep / 2.0;
-
-            break;
-
-        case DwarfModelKing:
-        case DwarfModelDehnen:
-        default:
-            warn("Unhandled model type: %d\n", mod->type);
-            return 1;
-    }
-
-    if (isnan(mod->time_orbit))
-        mod->time_orbit = mod->timestep / 2.0;
-
-    /* if (isnan(mod->time_dwarf))
-           ?????;
-    */
-    return 0;
+    return sqr(eps);
 }
 
 static int processInitialConditions(const NBodyCtx* ctx, InitialConditions* ic)
@@ -112,24 +79,101 @@ static int processInitialConditions(const NBodyCtx* ctx, InitialConditions* ic)
     return 0;
 }
 
+static int processModel(NBodyCtx* ctx, DwarfModel* mod)
+{
+    int rc = 0;
+    const real r0 = mod->scale_radius;
+
+    rc |= processInitialConditions(ctx, &mod->initialConditions);
+
+    switch (mod->type)
+    {
+        case DwarfModelPlummer:
+            if (isnan(mod->timestep))
+                mod->timestep = calculateTimestep(mod->mass, mod->scale_radius);
+
+            /* for the orbit, use dt = dtnbody/2 to make sure we get enough orbit precision. */
+            if (isnan(mod->orbit_timestep))
+                mod->orbit_timestep = mod->timestep / 2.0;
+
+            break;
+
+        case DwarfModelKing:
+        case DwarfModelDehnen:
+        default:
+            warn("Unhandled model type: %s\n", showDwarfModelT(mod->type));
+            return 1;
+    }
+
+    if (isnan(mod->time_orbit))
+        mod->time_orbit = mod->timestep / 2.0;
+
+    /* if (isnan(mod->time_dwarf))
+           ?????;
+    */
+    return rc;
+}
+
+static int processAllModels(NBodyCtx* ctx)
+{
+    real eps2;
+    unsigned int i;
+    int rc = 0;
+    int findEps2 = isnan(ctx->eps2);
+
+    /* Start out as high as possible */
+    ctx->timestep       = INFINITY;
+    ctx->orbit_timestep = INFINITY;
+
+    if (findEps2)      /* Setting this in the file overrides calculating it */
+        ctx->eps2 = INFINITY;
+
+    for (i = 0; i < ctx->modelNum; ++i)
+    {
+        rc |= processModel(ctx, &ctx->models[i]);
+
+        /* Find the total number of bodies */
+        ctx->nbody += ctx->models[i].nbody;
+
+        /* Find the smallest timestep and use that */
+        ctx->timestep       = mw_fmin(ctx->timestep, ctx->models[i].timestep);
+        ctx->orbit_timestep = mw_fmin(ctx->orbit_timestep, ctx->models[i].orbit_timestep);
+
+        if (findEps2)
+        {
+            /* Find the smallest eps2 */
+            eps2 = calculateEps2((real) ctx->models[i].nbody, ctx->models[i].scale_radius);
+            ctx->eps2 = mw_fmin(ctx->eps2, eps2);
+        }
+
+    }
+
+    return rc;
+}
+
+static void findTotalNumberBodies(NBodyCtx* ctx)
+{
+    unsigned int i;
+
+    for (i = 0; i < ctx->modelNum; ++i)
+        ctx->nbody += ctx->models[i].nbody;
+}
+
 /* Calculate needed parameters from whatever we read in */
-/* TODO: I'm dissatisfied with having to throw these checks here at
- * the end */
 static int postProcess(NBodyCtx* ctx)
 {
-    int rc;
+    int rc = 0;
 
-    rc = processPotential(&ctx->pot);
-    rc |= processModel(&ctx->model);
+    rc |= processPotential(&ctx->pot);
+    rc |= processAllModels(ctx);
 
     /* These other pieces are dependent on the others being set up
      * first */
 
-    ctx->freqout = inv(ctx->model.timestep);
-
-    if (ctx->model.nbody < 1)
+    ctx->freqout = inv(ctx->timestep);
+    if (ctx->nbody < 1)
     {
-        warn("nbody = %d is absurd\n", ctx->model.nbody);
+        warn("nbody = %d is absurd\n", ctx->nbody);
         rc |= 1;
     }
 
@@ -138,24 +182,36 @@ static int postProcess(NBodyCtx* ctx)
 
 int setCtxConsts(NBodyCtx* ctx,
                  const FitParams* fitParams, /* Hacked in overrides for using server's args */
-                 InitialConditions* ic,
                  const long setSeed)
 {
     int rc = 0;
 
     /* Hack: Ignore these parameters in the file if using the command
      * line arguments. */
+    /* FIXME: Assumes using first model */
     if (fitParams->useFitParams)
     {
-        ctx->model.mass         = fitParams->modelMass;
-        ctx->model.scale_radius = fitParams->modelRadius;
-        ctx->model.time_dwarf   = fitParams->simulationTime;
-        ctx->model.time_orbit   = fitParams->reverseOrbitTime;
-        ctx->seed               = setSeed;
+        ctx->models[0].mass         = fitParams->modelMass;
+        ctx->models[0].scale_radius = fitParams->modelRadius;
+        ctx->models[0].time_orbit   = fitParams->reverseOrbitTime;
+
+        ctx->time_evolve            = fitParams->simulationTime;
+        ctx->seed                   = setSeed;
     }
 
     rc |= postProcess(ctx);
-    rc |= processInitialConditions(ctx, ic);
+
+    if (isnan(ctx->time_evolve) && isnan(ctx->time_orbit))
+    {
+        warn("At least one of the evolution times must be specified for the dwarf model\n");
+        rc |= 1;
+    }
+
+    if (!isfinite(ctx->eps2))
+    {
+        warn("Got a nonfinite eps2\n");
+        rc |= 1;
+    }
 
     if (rc)
         warn("Failed to set context constants\n");

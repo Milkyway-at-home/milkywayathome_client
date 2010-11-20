@@ -32,32 +32,45 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "show.h"
 
 /* make test model */
-static void generateModel(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
+static void generateModel(const NBodyCtx* ctx, const DwarfModel* model, bodyptr bodies)
 {
-    switch (ctx->model.type)
+    switch (model->type)
     {
         case DwarfModelPlummer:
-            generatePlummer(ctx, ic, st);
+            generatePlummer(ctx, model, bodies);
             break;
         case DwarfModelKing:
         case DwarfModelDehnen:
         default:
-            fail("Unsupported model: %d", ctx->model.type);
+            fail("Unsupported model: %d", model->type);
     }
 }
 
-static void initState(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
+static void generateAllModels(const NBodyCtx* ctx, bodyptr bodies)
 {
+    unsigned int i, bodyIdx;
+
+    for (i = 0, bodyIdx = 0; i < ctx->modelNum; ++i)
+    {
+        generateModel(ctx, &ctx->models[i], &bodies[bodyIdx]);
+        bodyIdx += ctx->models[i].nbody;
+    }
+}
+
+static void initState(const NBodyCtx* ctx, NBodyState* st)
+{
+    unsigned int i;
+
     mw_report("Starting nbody system\n");
 
     st->tout       = st->tnow;       /* schedule first output */
     st->tree.rsize = ctx->tree_rsize;
+    st->tnow       = 0.0;            /* reset elapsed model time */
 
-    st->tnow = 0.0;                 /* reset elapsed model time */
-    st->bodytab = (bodyptr) mallocSafe(ctx->model.nbody * sizeof(body));
-    st->acctab  = (mwvector*) mallocSafe(ctx->model.nbody * sizeof(mwvector));
+    st->bodytab = (bodyptr) mallocSafe(ctx->nbody * sizeof(body));
+    st->acctab  = (mwvector*) mallocSafe(ctx->nbody * sizeof(mwvector));
 
-    generateModel(ctx, ic, st);
+    generateAllModels(ctx, st->bodytab);
 
   #if NBODY_OPENCL
     setupNBodyCL(ctx, st);
@@ -73,13 +86,11 @@ static void initState(const NBodyCtx* ctx, const InitialConditions* ic, NBodySta
 
 }
 
-static void startRun(const NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
+static void startRun(NBodyCtx* ctx, NBodyState* st)
 {
-    InitialConditions fc;
-
     mw_report("Starting fresh nbody run\n");
-    reverseOrbit(&fc, ctx, ic);
-    initState(ctx, &fc, st);
+    reverseModelOrbits(ctx);
+    initState(ctx, st);
 }
 
 #if BOINC_APPLICATION
@@ -99,7 +110,7 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
 
 static void runSystem(const NBodyCtx* ctx, NBodyState* st)
 {
-    const real tstop = ctx->model.time_dwarf - ctx->model.timestep / 1024.0;
+    const real tstop = ctx->time_evolve - ctx->timestep / 1024.0;
 
     while (st->tnow < tstop)
     {
@@ -137,7 +148,7 @@ static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
 #if BOINC_APPLICATION
 
 /* Setup the run, taking care of checkpointing things when using BOINC */
-static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
+static void setupRun(NBodyCtx* ctx, NBodyState* st)
 {
     /* If the checkpoint exists, try to use it */
     if (boinc_file_exists(ctx->cp_resolved))
@@ -148,7 +159,7 @@ static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
         {
             mw_report("Failed to read checkpoint\n");
             nbodyStateDestroy(st);
-            startRun(ctx, ic, st);
+            startRun(ctx, st);
         }
         else
         {
@@ -156,7 +167,7 @@ static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
             /* We restored the useful state. Now still need to create
              * the workspace where new accelerations are
              * calculated. */
-            st->acctab  = (mwvector*) mallocSafe(ctx->model.nbody * sizeof(mwvector));
+            st->acctab  = (mwvector*) mallocSafe(ctx->nbody * sizeof(mwvector));
           #if !NBODY_OPENCL
             gravMap(ctx, st);
           #else
@@ -166,16 +177,16 @@ static void setupRun(NBodyCtx* ctx, InitialConditions* ic, NBodyState* st)
     }
     else   /* Otherwise, just start a fresh run */
     {
-        startRun(ctx, ic, st);
+        startRun(ctx, st);
     }
 }
 
 #else
 
 /* When not using BOINC, we don't need to deal with the checkpointing */
-static void setupRun(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
+static void setupRun(NBodyCtx* ctx, NBodyState* st)
 {
-    startRun(ctx, ic, st);
+    startRun(ctx, st);
 }
 
 #endif /* BOINC_APPLICATION */
@@ -190,28 +201,23 @@ static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
     ctx->histogram       = nbf->histogramFileName;
     ctx->histout         = nbf->histoutFileName;
     ctx->cp_filename     = nbf->checkpointFileName;
-
-    /* Override number of bodies in file */
-    if (nbf->numBodies)
-        ctx->model.nbody = nbf->numBodies;
 }
 
 /* Takes parsed json and run the simulation, using outFileName for
  * output. */
-void runNBodySimulation(json_object* obj,                 /* The main configuration */
-                        const FitParams* fitParams,       /* For server's arguments */
-                        const NBodyFlags* nbf)            /* Misc. parameters to control output */
+void runNBodySimulation(json_object* obj,            /* The main configuration */
+                        const FitParams* fitParams,  /* For server's arguments */
+                        const NBodyFlags* nbf)       /* Misc. parameters to control output */
 {
-    NBodyCtx ctx         = EMPTY_CTX;
-    InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
-    NBodyState st        = EMPTY_STATE;
+    NBodyCtx ctx  = EMPTY_CTX;
+    NBodyState st = EMPTY_STATE;
 
     real chisq;
     double ts = 0.0, te = 0.0;
     int rc = 0;
 
-    rc |= getParamsFromJSON(&ctx, &ic, obj);
-    rc |= setCtxConsts(&ctx, fitParams, &ic, nbf->setSeed);
+    rc |= getParamsFromJSON(&ctx, obj);
+    rc |= setCtxConsts(&ctx, fitParams, nbf->setSeed);
 
     if (nbf->verifyOnly)
     {
@@ -236,7 +242,7 @@ void runNBodySimulation(json_object* obj,                 /* The main configurat
     if (initOutput(&ctx))
         fail("Failed to open output files\n");
 
-    setupRun(&ctx, &ic, &st);
+    setupRun(&ctx, &st);
 
     if (nbf->printTiming)     /* Time the body of the calculation */
         ts = mwGetTime();

@@ -145,7 +145,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
     const real sinth  = mw_sin(theta);
 
 
-    const bodyptr endp = st->bodytab + ctx->model.nbody;
+    const bodyptr endp = st->bodytab + ctx->nbody;
     histogram = (unsigned int*) callocSafe(maxIdx, sizeof(unsigned int));
 
     for (p = st->bodytab; p < endp; ++p)

@@ -83,7 +83,7 @@ static inline void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, const node
         fest->drsq = mw_sqrv(fest->dr);               /* and sep. squared */
     }
 
-    fest->drsq += ctx->model.eps2;   /* use standard softening */
+    fest->drsq += ctx->eps2;   /* use standard softening */
     drab = mw_sqrt(fest->drsq);
     phii = Mass(q) / drab;
     mor3 = phii / fest->drsq;
@@ -165,7 +165,7 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
     bodyptr p;
     mwvector* a;
 
-    const bodyptr endp = st->bodytab + ctx->model.nbody;
+    const bodyptr endp = st->bodytab + ctx->nbody;
 
     for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)      /* get force on each body */
         *a = hackGrav(ctx, (nodeptr) st->tree.root, p);
@@ -176,7 +176,7 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
 static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
 {
     unsigned int i;
-    const unsigned int nbody = ctx->model.nbody;
+    const unsigned int nbody = ctx->nbody;
 
     #pragma omp parallel for private(i) schedule(dynamic)
     for (i = 0; i < nbody; ++i)      /* get force on each body */

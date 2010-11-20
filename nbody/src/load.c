@@ -363,13 +363,13 @@ static void hackCofM(const NBodyCtx* ctx, NBodyState* st, cellptr p, real psize)
 void makeTree(const NBodyCtx* ctx, NBodyState* st)
 {
     bodyptr p;
-    const bodyptr endp = st->bodytab + ctx->model.nbody;
+    const bodyptr endp = st->bodytab + ctx->nbody;
     Tree* t = &st->tree;
 
     newTree(t);                                      /* flush existing tree, etc */
     t->root = makeCell(t);                           /* allocate the t.root cell */
     mw_zerov(Pos(t->root));                          /* initialize the midpoint */
-    expandBox(t, st->bodytab, ctx->model.nbody);     /* and expand cell to fit */
+    expandBox(t, st->bodytab, ctx->nbody);           /* and expand cell to fit */
     t->maxlevel = 0;                                 /* init count of levels */
     for (p = st->bodytab; p < endp; p++)             /* loop over bodies... */
     {

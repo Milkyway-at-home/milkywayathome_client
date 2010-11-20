@@ -25,6 +25,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 #include "milkyway_util.h"
 
+static const real nanN = NAN;
+
 static int readParameterGroup(const Parameter* g, json_object* hdr, const Parameter* parent, generic_enum_t* group_type);
 
 
@@ -111,8 +113,26 @@ static dwarf_model_t readDwarfModelT(const char* str)
 
 static bool readDwarfModel(DwarfModel* model, json_object* obj, const Parameter* parent)
 {
-        /* The current different dwarf models all use the same parameters */
-    const real nanN = NAN;
+    const InitialConditions defaultIC =
+        {
+            .useGalC      = FALSE,
+            .useRadians   = FALSE,
+            .reverseOrbit = TRUE,
+            .position     = EMPTY_VECTOR,
+            .velocity     = EMPTY_VECTOR
+        };
+
+    const Parameter initialConditionParams[] =
+        {
+            BOOL_PARAM("useGalC", &model->initialConditions.useGalC),
+            BOOL_PARAM_DFLT("angle-use-radians", &model->initialConditions.useRadians, &defaultIC.useRadians),
+            BOOL_PARAM_DFLT("reverse-orbit", &model->initialConditions.reverseOrbit, &defaultIC.reverseOrbit),
+            VEC_PARAM("position", &model->initialConditions.position),
+            VEC_PARAM("velocity", &model->initialConditions.velocity),
+            NULLPARAMETER
+        };
+
+    /* The current different dwarf models all use the same parameters */
     const Parameter dwarfModelParams[] =
         {
             /* FIXME: Hack: Defaulting on NAN's so we can ignore them
@@ -123,11 +143,9 @@ static bool readDwarfModel(DwarfModel* model, json_object* obj, const Parameter*
             INT_PARAM("nbody",               &model->nbody),
             DBL_PARAM_DFLT("mass",           &model->mass,           &nanN),
             DBL_PARAM_DFLT("scale-radius",   &model->scale_radius,   &nanN),
-            DBL_PARAM_DFLT("eps2",           &model->eps2,           &nanN),
             DBL_PARAM_DFLT("timestep",       &model->timestep,       &nanN),
             DBL_PARAM_DFLT("orbit-timestep", &model->orbit_timestep, &nanN),
-            DBL_PARAM_DFLT("time-dwarf",     &model->time_dwarf,     &nanN),
-            DBL_PARAM_DFLT("time-orbit",     &model->time_orbit,     &nanN),
+            OBJ_PARAM("initial-conditions",  initialConditionParams),
             NULLPARAMETER
         };
 
@@ -551,7 +569,6 @@ static int readParameterGroup(const Parameter* g,        /* The set of parameter
 /* Read the parameters from the top level json object into ctx. It
  * destroys the object in the process. */
 int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
-                      InitialConditions* ic,       /* Initial conditions to fill */
                       json_object* fileObj)        /* Parsed JSON file */
 
 {
@@ -572,14 +589,6 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
             .outfile = NULL,
             .outfilename = NULL,
             .headline = NULL
-        };
-
-    const InitialConditions defaultIC =
-        {
-            .useGalC    = FALSE,
-            .useRadians = FALSE,
-            .position   = EMPTY_VECTOR,
-            .velocity   = EMPTY_VECTOR
         };
 
     /* Spherical potential options */
@@ -671,9 +680,6 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
             NULLPARAMETER
         };
 
-    DwarfModel* allModels = NULL;
-    unsigned int modelNum = 0;
-
     /* Must be null terminated arrays */
     const Parameter nbodyCtxParams[] =
         {
@@ -684,26 +690,20 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
             BOOL_PARAM_DFLT("allow-incest",          &ctx->allowIncest, &defaultCtx.allowIncest),
             DBL_PARAM_DFLT("accuracy-parameter",     &ctx->theta, &defaultCtx.theta),
             ENUM_PARAM_DFLT("criterion",             &ctx->criterion, &defaultCtx.criterion, (GenericReadFunc) readCriterion),
+            DBL_PARAM_DFLT("eps2", &ctx->eps2, &nanN),
+
             OBJ_PARAM("potential", potentialItems),
-            ARRAY_PARAM("dwarf-model", &allModels, sizeof(DwarfModel), &modelNum, (GenericReadFunc) readDwarfModel),
+            DBL_PARAM_DFLT("time-evolve",    &ctx->time_evolve,    &nanN),
+            DBL_PARAM_DFLT("time-orbit",     &ctx->time_orbit,     &nanN),
+            ARRAY_PARAM("dwarf-model", &ctx->models, sizeof(DwarfModel), &ctx->modelNum, (GenericReadFunc) readDwarfModel),
             DBL_PARAM_DFLT("sun-gc-dist", &ctx->sunGCDist, &defaultCtx.sunGCDist),
             DBL_PARAM_DFLT("tree_rsize", &ctx->tree_rsize, &defaultCtx.tree_rsize),
-            NULLPARAMETER
-        };
-
-    const Parameter initialConditions[] =
-        {
-            BOOL_PARAM("useGalC", &ic->useGalC),
-            BOOL_PARAM_DFLT("angle-use-radians", &ic->useRadians, &defaultIC.useRadians),
-            VEC_PARAM("position", &ic->position),
-            VEC_PARAM("velocity", &ic->velocity),
             NULLPARAMETER
         };
 
     const Parameter parameters[] =
         {
             OBJ_PARAM("nbody-context", nbodyCtxParams),
-            OBJ_PARAM("initial-conditions", initialConditions),
             NULLPARAMETER
         };
 
@@ -720,9 +720,6 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
 
     /* loop through table of accepted sets of parameters */
     rc = readParameterGroup(parameters, hdr, NULL, NULL);
-
-    if (modelNum > 0)
-        ctx->model = allModels[0];
 
     /* deref the top level object should take care of freeing whatever's left */
     json_object_put(fileObj);

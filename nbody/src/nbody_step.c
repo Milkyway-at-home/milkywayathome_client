@@ -107,9 +107,9 @@ static inline void advanceVelocities(NBodyState* st, const unsigned int nbody, c
 /* stepSystem: advance N-body system one time-step. */
 void stepSystem(const NBodyCtx* ctx, NBodyState* st)
 {
-    const real dt = ctx->model.timestep;
+    const real dt = ctx->timestep;
 
-    advancePosVel(st, ctx->model.nbody, dt);
+    advancePosVel(st, ctx->nbody, dt);
 
   #if !NBODY_OPENCL
     gravMap(ctx, st);
@@ -117,7 +117,7 @@ void stepSystem(const NBodyCtx* ctx, NBodyState* st)
     gravMapCL(ctx, st);
   #endif /* !NBODY_OPENCL */
 
-    advanceVelocities(st, ctx->model.nbody, dt);
+    advanceVelocities(st, ctx->nbody, dt);
 
     st->tnow += dt;                           /* finally, advance time */
 }

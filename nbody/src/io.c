@@ -51,7 +51,7 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st)
 {
     bodyptr p;
     mwvector lbR;
-    const bodyptr endp = st->bodytab + ctx->model.nbody;
+    const bodyptr endp = st->bodytab + ctx->nbody;
 
     for (p = st->bodytab; p < endp; p++)
     {
@@ -92,6 +92,7 @@ int finalOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq)
 
 int nbodyCtxDestroy(NBodyCtx* ctx)
 {
+    free(ctx->models);
     free(ctx->headline);
     if (ctx->outfile && ctx->outfile != DEFAULT_OUTPUT_FILE)
     {
