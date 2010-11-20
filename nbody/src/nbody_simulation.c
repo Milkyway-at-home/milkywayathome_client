@@ -203,6 +203,16 @@ static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
     ctx->cp_filename     = nbf->checkpointFileName;
 }
 
+static void verifyFile(const NBodyCtx* ctx, int rc)
+{
+    printContext(ctx);
+    if (rc)
+        warn("File failed\n");
+    else
+        warn("File is OK\n");
+    mw_finish(rc);
+}
+
 /* Takes parsed json and run the simulation, using outFileName for
  * output. */
 void runNBodySimulation(json_object* obj,            /* The main configuration */
@@ -217,17 +227,13 @@ void runNBodySimulation(json_object* obj,            /* The main configuration *
     int rc = 0;
 
     rc |= getParamsFromJSON(&ctx, obj);
+    if (rc && !nbf->verifyOnly)   /* Fail right away, unless we are diagnosing file problems */
+        fail("Failed to read input parameters file\n");
+
     rc |= setCtxConsts(&ctx, fitParams, nbf->setSeed);
 
     if (nbf->verifyOnly)
-    {
-        printContext(&ctx);
-        if (rc)
-            warn("File failed\n");
-        else
-            warn("File is OK\n");
-        mw_finish(rc);
-    }
+        verifyFile(&ctx, rc);
 
     if (rc)
         fail("Failed to read input parameters file\n");

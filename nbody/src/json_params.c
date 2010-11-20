@@ -290,7 +290,16 @@ static bool readVector(const Parameter* p, const char* pname, json_object* obj, 
     json_object* tmp;
 
     /* FIXME: Right now assuming no default vectors, groups etc. will be used */
-    assert(json_object_is_type(obj, json_type_array));
+
+    if (!json_object_is_type(obj, json_type_array))
+    {
+        warn("Error: expected type vector for '%s' in '%s', but got %s\n",
+             p->name,
+             pname,
+             showNBodyType(json_object_get_type(obj)));
+        return TRUE;
+    }
+
     arr = json_object_get_array(obj);
     arrLen = json_object_array_length(obj);
     if (arrLen != 3)
@@ -340,7 +349,14 @@ static bool readArray(const Parameter* p, const char* pname, json_object* obj, b
         return TRUE;
     }
 
-    assert(json_object_is_type(obj, json_type_array));
+    if (!json_object_is_type(obj, json_type_array))
+    {
+        warn("Error: expected type array for '%s' in '%s', but got %s\n",
+             p->name,
+             pname,
+             showNBodyType(json_object_get_type(obj)));
+        return TRUE;
+    }
 
     arr = json_object_get_array(obj);
     arrLen = json_object_array_length(obj);
@@ -529,7 +545,6 @@ static int readParameterGroup(const Parameter* g,        /* The set of parameter
     if (!readError)
         warnExtraParams(hdr, pname);
 
-    /* FIXME: This condition is confusing and probably could be better */
     /* Report what was expected in more detail */
     if (   ((!found || readError) && !defaultable)
         || (!found && unique) )
