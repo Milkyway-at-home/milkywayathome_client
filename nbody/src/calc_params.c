@@ -113,10 +113,14 @@ static int processAllModels(NBodyCtx* ctx)
     unsigned int i;
     int rc = 0;
     int findEps2 = isnan(ctx->eps2);
+    int findTimestep = isnan(ctx->timestep);
+    int findOrbitTimestep = isnan(ctx->orbit_timestep);
 
     /* Start out as high as possible */
-    ctx->timestep       = INFINITY;
-    ctx->orbit_timestep = INFINITY;
+    if (findTimestep)
+        ctx->timestep = INFINITY;
+    if (findOrbitTimestep)
+        ctx->orbit_timestep = INFINITY;
 
     if (findEps2)      /* Setting this in the file overrides calculating it */
         ctx->eps2 = INFINITY;
@@ -129,8 +133,10 @@ static int processAllModels(NBodyCtx* ctx)
         ctx->nbody += ctx->models[i].nbody;
 
         /* Find the smallest timestep and use that */
-        ctx->timestep       = mw_fmin(ctx->timestep, ctx->models[i].timestep);
-        ctx->orbit_timestep = mw_fmin(ctx->orbit_timestep, ctx->models[i].orbit_timestep);
+        if (findTimestep)
+            ctx->timestep = mw_fmin(ctx->timestep, ctx->models[i].timestep);
+        if (findOrbitTimestep)
+            ctx->orbit_timestep = mw_fmin(ctx->orbit_timestep, ctx->models[i].orbit_timestep);
 
         if (findEps2)
         {
@@ -214,8 +220,8 @@ static int hasAcceptableTimes(const NBodyCtx* ctx)
 
     rc =   !isnormal(ctx->time_evolve)
         || !isnormal(ctx->time_orbit)
-        || ctx->time_evolve < 0.0
-        || ctx->time_orbit < 0.0;
+        || ctx->time_evolve <= 0.0
+        || ctx->time_orbit <= 0.0;
 
     if (rc)
         warn("Got an unacceptable orbit or evolution time\n");

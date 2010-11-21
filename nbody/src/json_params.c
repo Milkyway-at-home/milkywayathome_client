@@ -744,6 +744,10 @@ int getParamsFromJSON(NBodyCtx* ctx,         /* Context to fill */
             OBJ_PARAM("potential", potentialItems),
             DBL_PARAM_DFLT("time-evolve",    &ctx->time_evolve,    &nanN),
             DBL_PARAM_DFLT("time-orbit",     &ctx->time_orbit,     &nanN),
+
+            DBL_PARAM_DFLT("timestep",       &ctx->timestep,       &nanN),
+            DBL_PARAM_DFLT("orbit_timestep", &ctx->orbit_timestep, &nanN),
+
             ARRAY_PARAM("dwarf-model", &ctx->models, sizeof(DwarfModel), &ctx->modelNum, (GenericReadFunc) readDwarfModel),
             DBL_PARAM_DFLT("sun-gc-dist", &ctx->sunGCDist, &defaultCtx.sunGCDist),
             DBL_PARAM_DFLT("tree_rsize", &ctx->tree_rsize, &defaultCtx.tree_rsize),
