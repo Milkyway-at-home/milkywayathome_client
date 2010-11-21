@@ -55,13 +55,15 @@ inline mwvector acceleration(const NBodyCtx* ctx, const mwvector pos)
 /* Simple orbit integrator in user-defined potential
     Written for BOINC Nbody
     willeb 10 May 2010 */
-void reverseOrbit(InitialConditions* fc, const NBodyCtx* ctx, const InitialConditions* ic)
+static void reverseOrbit(NBodyCtx* ctx, DwarfModel* model)
 {
     mwvector acc, v, x;
     real t;
 
-    const real tstop = ctx->model.time_orbit;
-    const real dt    = ctx->model.orbit_timestep;
+    InitialConditions* ic  = &model->initialConditions;
+
+    const real tstop = ctx->time_orbit;
+    const real dt    = ctx->orbit_timestep;
 
     // Set the initial conditions
     x = ic->position;
@@ -83,13 +85,20 @@ void reverseOrbit(InitialConditions* fc, const NBodyCtx* ctx, const InitialCondi
     }
 
     /* Report the final values (don't forget to reverse the velocities) */
-    fc->position = x;
-    fc->velocity = v;
-    mw_incnegv(fc->velocity);
-
-    fc->useGalC = ic->useGalC;  /* Not actually necessary */
-    fc->useRadians = ic->useRadians;
-
+    ic->position = x;
+    ic->velocity = v;
+    mw_incnegv(ic->velocity);
 }
 
+/* For each of the models, if its initial conditions needs to be reverse orbited, do it. */
+void reverseModelOrbits(NBodyCtx* ctx)
+{
+    unsigned int i;
+
+    for (i = 0; i < ctx->modelNum; ++i)
+    {
+        if (ctx->models[i].initialConditions.reverseOrbit)
+            reverseOrbit(ctx, &ctx->models[i]);
+    }
+}
 

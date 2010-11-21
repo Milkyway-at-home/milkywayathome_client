@@ -1,11 +1,14 @@
-{  //test results are using double
+{
 "nbody-parameters-file": {
     "nbody-context": {
-        "headline" : "disk=miyamoto-nagai_halo=logarithmic_quad=true_criterion=sw93",
+        "headline" : "orphan test tiny",
         "criterion" : "sw93",
         "use-quadrupole-corrections" : true,
         "accuracy-parameter" : 1.0,
         "seed" : 0,
+
+        "time-orbit" : 4,
+        "time-evolve" : 3.945,
 
         "potential" : {
             "disk" : {
@@ -19,7 +22,7 @@
             "spherical" : {
                 "sphere" : {
                     "mass" : 1.52954402E5,
-                    "r0-scale" : 0.7 
+                    "r0-scale" : 0.7
                 }
             },
 
@@ -32,24 +35,23 @@
             }
         },
 
-        "dwarf-model": {
-            "plummer" : {
+        "dwarf-model": [
+            {
+                "type" : "plummer",
                 "mass" : 11.25,
                 "nbody" : 256,
                 "scale-radius" : 0.2,
-                "time-orbit" : 4,
-                "time-dwarf" : 3.945 
+                "initial-conditions": {
+                    "useGalC" : false,
+                    "angle-use-radians" : false,
+                    "velocity" : [ -156, 79, 107 ],
+                    "position" : [ 28.6, 218, 53.5 ]
+                }
             }
-        }
+        ]
     },
 
-    "initial-conditions": {
-        "useGalC" : false,
-        "angle-use-radians" : false,
-        "velocity" : [ -156, 79, 107 ],
-        "position" : [ 28.6, 218, 53.5 ]
-    },
-
+    "histogram" : { }
 
 }}
 

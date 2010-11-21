@@ -62,7 +62,7 @@ static const size_t hdrSize = sizeof(size_t)                                  /*
 static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const char* filename)
 {
     struct stat sb;
-    const size_t checkpointFileSize = hdrSize + ctx->model.nbody * sizeof(body);
+    const size_t checkpointFileSize = hdrSize + ctx->nbody * sizeof(body);
 
     cp->fd = open(filename, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
     if (cp->fd == -1)
@@ -147,7 +147,7 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
     DWORD mapViewSize;
     DWORD fileMapStart;
     DWORD fileMapSize;
-    const DWORD checkpointFileSize = hdrSize + ctx->model.nbody * sizeof(body);
+    const DWORD checkpointFileSize = hdrSize + ctx->nbody * sizeof(body);
 
     /* Try to create a new file */
     cp->file = CreateFile(filename,
@@ -248,7 +248,7 @@ static inline int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandl
     size_t realSize;
     char buf[sizeof(hdr)];
     char tailBuf[sizeof(tail)];
-    const size_t bodySize = ctx->model.nbody * sizeof(body);
+    const size_t bodySize = ctx->nbody * sizeof(body);
     char* p = cp->mptr;
     int failed = FALSE;
 
@@ -269,12 +269,12 @@ static inline int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandl
         failed = TRUE;
     }
 
-    if (ctx->model.nbody != nbody)
+    if (ctx->nbody != nbody)
     {
         warn("Number of bodies in checkpoint file (%u) "
              "does not match number expected by context (%u).\n",
              nbody,
-             ctx->model.nbody);
+             ctx->nbody);
         failed = TRUE;
     }
 
@@ -323,14 +323,14 @@ static inline int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandl
  */
 static inline void freezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHandle* cp)
 {
-    const size_t bodySize = sizeof(body) * ctx->model.nbody;
+    const size_t bodySize = sizeof(body) * ctx->nbody;
     char* p = cp->mptr;
 
     /* -1 so we don't bother with the null terminator. It's slightly
         annoying since the strcmps use it, but memcpy doesn't. We
         don't need it anyway  */
     DUMP_STR(p, hdr, sizeof(hdr) - 1);  /* Simple marker for a checkpoint file */
-    DUMP_INT(p, ctx->model.nbody);  /* Make sure we get the right number of bodies */
+    DUMP_INT(p, ctx->nbody);        /* Make sure we get the right number of bodies */
     DUMP_SIZE_T(p, sizeof(real));   /* Make sure we don't confuse double and float checkpoints */
 
     /* Now that we have some basic check stuff written, dump the state */

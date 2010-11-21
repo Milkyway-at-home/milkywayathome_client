@@ -27,7 +27,7 @@ extern "C"
 
 #include "nbody_types.h"
 
-int setCtxConsts(NBodyCtx* ctx, const FitParams* fitParams, InitialConditions* ic, const long setSeed);
+int setCtxConsts(NBodyCtx* ctx, const FitParams* fitParams, const long setSeed);
 
 #ifdef __cplusplus
 }

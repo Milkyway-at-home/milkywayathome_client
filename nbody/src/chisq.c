@@ -25,24 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "chisq.h"
 #include "milkyway_util.h"
 
-/* FIXME: sort of magic numbers */
-#define phi d2r(128.79)
-#define theta d2r(54.39)
-#define psi d2r(90.70)
-#define startRaw ((real) -50)
-#define endRaw ((real) 50)
-#define binsize ((real) 2.9411764705882355)
-#define center ((real) 0.0)
-
-typedef struct
-{
-    int useBin;
-    real lambda;
-    real err;
-    real count;
-} HistData;
-
-
 /* Calculate chisq from data read from histData and the histogram
  * generated from the simulation, histogram, with maxIdx bins. */
 static real calcChisq(const HistData* histData,
@@ -67,6 +49,7 @@ static real calcChisq(const HistData* histData,
 }
 
 static inline void printHistogram(FILE* f,
+                                  const HistogramParams* hp,
                                   const HistData* histData,
                                   const unsigned int* histogram,
                                   const unsigned int maxIdx,
@@ -80,7 +63,7 @@ static inline void printHistogram(FILE* f,
     {
         fprintf(f, "%d %2.10f %2.10f %2.10f\n",  /* Report center of the bins */
                 histData[i].useBin,
-                ((real) i  + 0.5) * binsize + start,
+                ((real) i  + 0.5) * hp->binSize + start,
                 ((real) histogram[i]) / totalNum,
                 histogram[i] == 0 ? inv(totalNum) : mw_sqrt(histogram[i]) / totalNum);
     }
@@ -89,6 +72,7 @@ static inline void printHistogram(FILE* f,
 }
 
 static void writeHistogram(const NBodyCtx* ctx,
+                           const HistogramParams* hp,
                            const HistData* histData,      /* Read histogram data */
                            const unsigned int* histogram, /* Binned simulation data */
                            const unsigned int maxIdx,     /* number of bins */
@@ -107,7 +91,7 @@ static void writeHistogram(const NBodyCtx* ctx,
         }
     }
 
-    printHistogram(f, histData, histogram, maxIdx, start, totalNum);
+    printHistogram(f, hp, histData, histogram, maxIdx, start, totalNum);
 
     if (f != ctx->outfile)
         fclose(f);
@@ -127,6 +111,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
                                      const NBodyState* st,      /* Final state of the simulation */
                                      const unsigned int maxIdx, /* Total number of bins */
                                      const real start,          /* Calculated start point of bin range */
+                                     const HistogramParams* hp,
                                      const HistData* histData,  /* Data histogram; which bins to skip */
                                      unsigned int* totalNumOut) /* Out: Number of particles in range */
 {
@@ -137,19 +122,27 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
     unsigned int totalNum = 0;
     bodyptr p;
     unsigned int* histogram;
-    const real cosphi = mw_cos(phi);
-    const real sinphi = mw_sin(phi);
-    const real sinpsi = mw_sin(psi);
-    const real cospsi = mw_cos(psi);
-    const real costh  = mw_cos(theta);
-    const real sinth  = mw_sin(theta);
 
+    real rphi = d2r(hp->phi);
+    real rpsi = d2r(hp->psi);
+    real rth  = d2r(hp->theta);
 
-    const bodyptr endp = st->bodytab + ctx->model.nbody;
+    const real cosphi = mw_cos(rphi);
+    const real sinphi = mw_sin(rphi);
+    const real sinpsi = mw_sin(rpsi);
+    const real cospsi = mw_cos(rpsi);
+    const real costh  = mw_cos(rth);
+    const real sinth  = mw_sin(rth);
+
+    const bodyptr endp = st->bodytab + ctx->nbody;
     histogram = (unsigned int*) callocSafe(maxIdx, sizeof(unsigned int));
 
     for (p = st->bodytab; p < endp; ++p)
     {
+        /* Only include bodies in models we aren't ignoring */
+        if (ctx->models[bodyModel(p)].ignoreFinal)
+            continue;
+
         // Convert to (l,b) (involves convert x to Sun-centered)
         // Leave in radians to make rotation easier
         lbr = cartesianToLbr_rad(ctx, Pos(p));
@@ -170,7 +163,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
                          + (cospsi * sinphi + costh * cosphi * sinpsi) * bcos * lsin
                          + sinpsi * sinth * bsin ));
 
-        idx = (unsigned int) mw_floor((lambda - start) / binsize);
+        idx = (unsigned int) mw_floor((lambda - start) / hp->binSize);
         if (idx < maxIdx && histData[idx].useBin)
         {
             ++histogram[idx];
@@ -238,7 +231,7 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
 }
 
 /* Calculate the likelihood from the final state of the simulation */
-real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st)
+real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st, const HistogramParams* hp)
 {
     real chisqval;
     unsigned int totalNum = 0;
@@ -248,10 +241,10 @@ real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st)
     /* Calculate the bounds of the bin range, making sure to use a
      * fixed bin size which spans the entire range, and is symmetric
      * around 0 */
-    const real rawCount = (endRaw - startRaw) / binsize;
+    const real rawCount = (hp->endRaw - hp->startRaw) / hp->binSize;
     const unsigned int maxIdx = (unsigned int) ceil(rawCount);
 
-    const real start = mw_ceil(center - binsize * (real) maxIdx / 2.0);
+    const real start = mw_ceil(hp->center - hp->binSize * (real) maxIdx / 2.0);
 
     histData = readHistData(ctx->histogram, maxIdx);
     if (!histData)
@@ -260,7 +253,7 @@ real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st)
         return NAN;
     }
 
-    histogram = createHistogram(ctx, st, maxIdx, start, histData, &totalNum);
+    histogram = createHistogram(ctx, st, maxIdx, start, hp, histData, &totalNum);
     if (!histogram)
     {
         warn("Failed to create histogram\n");
@@ -268,7 +261,7 @@ real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st)
     }
 
     if (ctx->outputHistogram)
-        writeHistogram(ctx, histData, histogram, maxIdx, start, (real) totalNum);
+        writeHistogram(ctx, hp, histData, histogram, maxIdx, start, (real) totalNum);
 
     if (totalNum != 0)
         chisqval = calcChisq(histData, histogram, maxIdx, (real) totalNum);

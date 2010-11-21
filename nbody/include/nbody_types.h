@@ -107,14 +107,21 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define NBODY_ALIGN
 #endif /* _MSC_VER */
 
-/*
-typedef enum
-{
-    BODY,
-    CELL
-} body_t; */
-#define BODY 01
-#define CELL 02
+/* There are bodies and cells. Cells are 0. A body will be nonzero,
+ * where this is the index of the model the body is in + 1.  This way
+ * checking for a cell is a fast comparison with 0 which is usually
+ * what needs to happen, while still being able to pick out which
+ * bodies belong to each model. Actually since the bodies don't
+ * actually move (for now at least, the GPU version will most likely
+ * end up sorting) we could just not tag each body with its parent
+ * model.
+ */
+#define CELL(x) (0)
+#define BODY(x) ((x) + 1)
+
+#define bodyModel(x) (((nodeptr) (x))->type - 1)
+#define isBody(x) (((nodeptr) (x))->type != 0)
+#define isCell(x) (((nodeptr) (x))->type == 0)
 
 typedef short body_t;
 
@@ -264,6 +271,7 @@ typedef struct NBODY_ALIGN
     mwvector velocity;
     bool useGalC;
     bool useRadians;
+    bool reverseOrbit;     /* Do a reverse orbit. Otherwise, take initial conditions as they are */
 } InitialConditions;
 
 
@@ -290,17 +298,17 @@ typedef struct NBODY_ALIGN
 {
     dwarf_model_t type;
     int nbody;
-    real time_dwarf;
-    real time_orbit;
 
     /* calculated depending on model */
     real timestep;
     real orbit_timestep;
-    real eps2;            /* (potential softening parameter)^2 */
 
     /* model parameters */
     real mass;
     real scale_radius;
+
+    bool ignoreFinal;
+    InitialConditions initialConditions;
 } DwarfModel;
 
 #ifndef _WIN32
@@ -347,6 +355,7 @@ typedef struct
 typedef struct NBODY_ALIGN
 {
     Tree tree;
+    nodeptr freecell;   /* list of free cells */
     real tout;
     real tnow;
     bodyptr bodytab;    /* points to array of bodies */
@@ -359,9 +368,9 @@ typedef struct NBODY_ALIGN
 } NBodyState;
 
 #if NBODY_OPENCL
-  #define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
+  #define EMPTY_STATE { EMPTY_TREE, NULL, NAN, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
 #else
-  #define EMPTY_STATE { EMPTY_TREE, NAN, NAN, NULL, NULL }
+  #define EMPTY_STATE { EMPTY_TREE, NULL, NAN, NAN, NULL, NULL }
 #endif /* NBODY_OPENCL */
 
 #endif /* __OPENCL_VERSION__ */
@@ -373,9 +382,17 @@ typedef struct NBODY_ALIGN
 typedef struct NBODY_ALIGN
 {
     Potential pot;
-    DwarfModel model;         /* dwarf model */
-    char* headline;           /* message describing calculation */
 
+    DwarfModel* models;       /* dwarf models */
+    unsigned int modelNum;    /* Number of models */
+    unsigned int nbody;       /* Total number of bodies in all models */
+
+    real timestep;
+    real time_evolve;
+    real orbit_timestep;
+    real time_orbit;
+
+    char* headline;           /* message describing calculation */
     const char* outfilename;  /* output */
     const char* histogram;
     const char* histout;
@@ -383,6 +400,8 @@ typedef struct NBODY_ALIGN
 
     real freqout;
     real theta;               /* accuracy parameter: 0.0 */
+    real eps2;                /* (potential softening parameter)^2 */
+
     real tree_rsize;
     real sunGCDist;
     criterion_t criterion;
@@ -414,10 +433,32 @@ typedef int generic_enum_t;  /* A general enum type. */
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 #define EMPTY_VECTOR { NAN, NAN, NAN, NAN }
-#define EMPTY_INITIAL_CONDITIONS { EMPTY_VECTOR, EMPTY_VECTOR, FALSE, FALSE }
-#define EMPTY_CTX { EMPTY_POTENTIAL, EMPTY_MODEL, NULL, NULL, NULL, NULL, NULL,  \
-                   NAN, NAN, NAN, NAN, 0, 0,           \
-                   FALSE, FALSE, FALSE, FALSE, FALSE, NULL, "" }
+#define EMPTY_CTX { EMPTY_POTENTIAL, NULL, 0, 0, NAN, NAN, NAN, NAN, \
+                    NULL, NULL, NULL, NULL, NULL,                    \
+                    NAN, NAN, NAN, NAN, NAN, 0, 0,                   \
+                    FALSE, FALSE, FALSE, FALSE, FALSE, NULL, "" }
+
+
+typedef struct
+{
+    real phi;
+    real theta;
+    real psi;
+    real startRaw;
+    real endRaw;
+    real binSize;
+    real center;
+} HistogramParams;
+
+
+typedef struct
+{
+    int useBin;
+    real lambda;
+    real err;
+    real count;
+} HistData;
+
 
 #ifndef __OPENCL_VERSION__  /* No function pointers allowed in kernels */
 /* Acceleration functions for a given potential */

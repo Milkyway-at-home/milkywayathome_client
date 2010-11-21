@@ -51,10 +51,11 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st)
 {
     bodyptr p;
     mwvector lbR;
-    const bodyptr endp = st->bodytab + ctx->model.nbody;
+    const bodyptr endp = st->bodytab + ctx->nbody;
 
     for (p = st->bodytab; p < endp; p++)
     {
+        fprintf(f, "%d ", bodyModel(p));   /* Print model it belongs indexed from 0 */
         if (ctx->outputCartesian)     /* Probably useful for making movies and such */
             out_2vectors(f, Pos(p), Vel(p));
         else
@@ -92,6 +93,7 @@ int finalOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq)
 
 int nbodyCtxDestroy(NBodyCtx* ctx)
 {
+    free(ctx->models);
     free(ctx->headline);
     if (ctx->outfile && ctx->outfile != DEFAULT_OUTPUT_FILE)
     {
@@ -112,7 +114,7 @@ static void freeTree(Tree* t)
     p = (nodeptr) t->root;
     while (p != NULL)
     {
-        if (Type(p) == CELL)
+        if (isCell(p))
         {
             tmp = More(p);
             free(p);
@@ -126,9 +128,24 @@ static void freeTree(Tree* t)
     t->cellused = 0;
 }
 
+static void freeFreeCells(nodeptr freecell)
+{
+    nodeptr p;
+    nodeptr tmp;
+
+    p = freecell;
+    while (p)
+    {
+        tmp = Next(p);
+        free(p);
+        p = tmp;
+    }
+}
+
 void nbodyStateDestroy(NBodyState* st)
 {
     freeTree(&st->tree);
+    freeFreeCells(st->freecell);
     free(st->bodytab);
     free(st->acctab);
 

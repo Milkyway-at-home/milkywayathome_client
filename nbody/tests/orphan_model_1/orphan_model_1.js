@@ -1,37 +1,34 @@
 {
 "nbody-parameters-file": {
     "nbody-context": {
-        "headline" : "orphan test big",
+        "headline" : "orphan model 1",
         "criterion" : "sw93",
         "use-quadrupole-corrections" : true,
         "accuracy-parameter" : 1.0,
         "seed" : 0,
 
         "time-orbit" : 4,
-        "time-evolve" : 3.935,
-
+        "time-evolve" : 3.945,
 
         "potential" : {
             "disk" : {
-                "miyamoto-nagai" : {
-                    "mass" : 4.45865888E5,
-                    "scale-length" : 6.5,
-                    "scale-height" : 0.26
+                "exponential" : {
+                    "mass" : 224933,
+                    "scale-length" : 4
                 }
             },
 
             "spherical" : {
                 "sphere" : {
-                    "mass" : 1.52954402E5,
-                    "r0-scale" : 0.7
+                    "mass" : 67479.9,
+                    "r0-scale" : 0.6
                 }
             },
 
             "halo" : {
-                "logarithmic" : {
-                    "vhalo" : 73,
-                    "scale-length" : 12.0,
-                    "z-flattening" : 1.0,
+                "nfw" : {
+                    "vhalo" : 155,
+                    "scale-length" : 22.25,
                 }
             }
         },
@@ -40,13 +37,13 @@
             {
                 "type" : "plummer",
                 "mass" : 16,
-                "nbody" : 2048,
+                "nbody" : 1024,
                 "scale-radius" : 0.2,
                 "initial-conditions": {
                     "useGalC" : false,
                     "angle-use-radians" : false,
-                    "velocity" : [ -156, 79, 107 ],
-                    "position" : [ 218, 53.5, 28.6 ]
+                    "velocity" : [ -170, 94, 108 ],
+                    "position" : [ 218, 53.5, 28.8 ]
                 }
             }
         ]

@@ -83,14 +83,14 @@ static inline void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, const node
         fest->drsq = mw_sqrv(fest->dr);               /* and sep. squared */
     }
 
-    fest->drsq += ctx->model.eps2;   /* use standard softening */
+    fest->drsq += ctx->eps2;   /* use standard softening */
     drab = mw_sqrt(fest->drsq);
     phii = Mass(q) / drab;
     mor3 = phii / fest->drsq;
     ai = mw_mulvs(fest->dr, mor3);
     mw_incaddv(fest->acc0, ai);         /* ... and to total accel. */
 
-    if (ctx->usequad && Type(q) == CELL)             /* if cell, add quad term */
+    if (ctx->usequad && isCell(q))      /* if cell, add quad term */
         cellQuadTerm(fest, q, drab);
 }
 
@@ -106,7 +106,7 @@ static inline bool treescan(const NBodyCtx* ctx,
 
     while (q != NULL)               /* while not at end of scan */
     {
-        if (   Type(q) == CELL                   /* is node a cell and... */
+        if (   isCell(q)                         /* is node a cell and... */
             && subdivp(fest, (cellptr) q))       /* too close to accept? */
         {
             q = More(q);            /* follow to next level */
@@ -158,27 +158,15 @@ static inline mwvector hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p)
     return fest.acc0;         /* and acceleration */
 }
 
-#ifndef _OPENMP
-
 static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
 {
-    bodyptr p;
-    mwvector* a;
 
-    const bodyptr endp = st->bodytab + ctx->model.nbody;
-
-    for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)      /* get force on each body */
-        *a = hackGrav(ctx, (nodeptr) st->tree.root, p);
-}
-
-#else
-
-static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
-{
     unsigned int i;
-    const unsigned int nbody = ctx->model.nbody;
+    const unsigned int nbody = ctx->nbody;
 
+  #ifdef _OPENMP
     #pragma omp parallel for private(i) schedule(dynamic)
+  #endif
     for (i = 0; i < nbody; ++i)      /* get force on each body */
     {
         st->acctab[i] = hackGrav(ctx,
@@ -186,8 +174,6 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
                                  &st->bodytab[i]);
     }
 }
-
-#endif /* _OPENMP */
 
 void gravMap(const NBodyCtx* ctx, NBodyState* st)
 {

@@ -25,6 +25,19 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 #include "milkyway_util.h"
 
+#define histogramPhi 128.79
+#define histogramTheta 54.39
+#define histogramPsi 90.70
+#define histogramStartRaw ((real) -50.0)
+#define histogramEndRaw ((real) 50.0)
+#define histogramBinSize ((real) 2.9411764705882355)
+#define histogramCenter ((real) 0.0)
+
+
+static const real nanN = NAN;
+
+static int readParameterGroup(const Parameter* g, json_object* hdr, const Parameter* parent, generic_enum_t* group_type);
+
 
 /* also works for json_object_type */
 static const char* showNBodyType(nbody_type bt)
@@ -53,6 +66,26 @@ static const char* showNBodyType(nbody_type bt)
     return table[bt];
 }
 
+static bool readGroupItem(const Parameter* p, const char* pname, json_object* obj, generic_enum_t* group_type)
+{
+    if (!p->dflt)
+    {
+        warn("Expected nbody_type_group_item for "
+             "'%s' in '%s', but no enum value set\n", p->name, pname);
+        return TRUE;
+    }
+
+    if (!group_type)
+    {
+        warn("Group does not have a type (Trying to read the root?)\n");
+        return TRUE;
+    }
+
+    *group_type = *((generic_enum_t*) p->dflt);
+
+    return FALSE;
+}
+
 /* Reads a name of the criterion into the C value, with name str */
 static criterion_t readCriterion(const char* str)
 {
@@ -65,11 +98,70 @@ static criterion_t readCriterion(const char* str)
     else if (!strcasecmp(str, "sw93"))
         return SW93;
     else
-        warn("Invalid model %s: Model options are either 'bh86', "
+        warn("Invalid criterion %s: Criterion options are either 'bh86', "
              "'sw93', 'exact' or 'new-criterion' (default),\n",
              str);
 
     return -1;
+}
+
+static dwarf_model_t readDwarfModelT(const char* str)
+{
+    if (!strcasecmp(str, "plummer"))
+        return DwarfModelPlummer;
+    if (!strcasecmp(str, "king"))
+        return DwarfModelKing;
+    if (!strcasecmp(str, "dehnen"))
+        return DwarfModelDehnen;
+    else
+        warn("Invalid model %s: Model options are "
+             "'plummer', 'king', 'dehnen'\n", str);
+
+    return -1;
+}
+
+static bool readDwarfModel(DwarfModel* model, json_object* obj, const Parameter* parent)
+{
+    const bool defaultIgnore = FALSE;
+    const InitialConditions defaultIC =
+        {
+            .useGalC      = FALSE,
+            .useRadians   = FALSE,
+            .reverseOrbit = TRUE,
+            .position     = EMPTY_VECTOR,
+            .velocity     = EMPTY_VECTOR
+        };
+
+    const Parameter initialConditionParams[] =
+        {
+            BOOL_PARAM("useGalC", &model->initialConditions.useGalC),
+            BOOL_PARAM_DFLT("angle-use-radians", &model->initialConditions.useRadians, &defaultIC.useRadians),
+            BOOL_PARAM_DFLT("reverse-orbit", &model->initialConditions.reverseOrbit, &defaultIC.reverseOrbit),
+            VEC_PARAM("position", &model->initialConditions.position),
+            VEC_PARAM("velocity", &model->initialConditions.velocity),
+            NULLPARAMETER
+        };
+
+    /* The current different dwarf models all use the same parameters */
+    const Parameter dwarfModelParams[] =
+        {
+            /* FIXME: Hack: Defaulting on NAN's so we can ignore them
+             * in the file, to be filled in by the server sent
+             * FitParams. This will probably result in unfortunate
+             * things when using the file. */
+            ENUM_PARAM("type",               &model->type,           (GenericReadFunc) readDwarfModelT),
+            INT_PARAM("nbody",               &model->nbody),
+            DBL_PARAM_DFLT("mass",           &model->mass,           &nanN),
+            DBL_PARAM_DFLT("scale-radius",   &model->scale_radius,   &nanN),
+            DBL_PARAM_DFLT("timestep",       &model->timestep,       &nanN),
+            DBL_PARAM_DFLT("orbit-timestep", &model->orbit_timestep, &nanN),
+            BOOL_PARAM_DFLT("ignore-final",  &model->ignoreFinal, &defaultIgnore),
+
+            OBJ_PARAM("initial-conditions",  initialConditionParams),
+            NULLPARAMETER
+        };
+
+    return readParameterGroup(dwarfModelParams, obj, parent, NULL);
 }
 
 static void printParameter(Parameter* p)
@@ -119,14 +211,230 @@ static bool warnExtraParams(json_object* obj, const char* grpName)
     return haveExtra;
 }
 
+
+static bool readDouble(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
+{
+    /* json_type_int and double are OK for numbers. i.e. you can leave off the decimal.
+       We don't want the other conversions, which just give you 0.0 for anything else.
+    */
+
+    if (useDflt)
+        *((real*) p->param) = *((real*) p->dflt);
+    else if (   json_object_is_type(obj, json_type_double)
+             || json_object_is_type(obj, json_type_int))
+    {
+        *((real*) p->param) = (real) json_object_get_double(obj);
+    }
+    else
+    {
+        warn("Error: expected number for '%s' in '%s', but got %s\n",
+             p->name,
+             pname,
+             showNBodyType(json_object_get_type(obj)));
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static bool readInt(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
+{
+    /* I don't think any of the conversions are acceptable */
+    if (useDflt)
+        *((int*) p->param) = *((int*) p->dflt);
+    else if (json_object_is_type(obj, json_type_int))
+        *((int*) p->param) = json_object_get_int(obj);
+    else
+    {
+        warn("Error: expected type int for '%s' in '%s', but got %s\n",
+             p->name,
+             pname,
+             showNBodyType(json_object_get_type(obj)));
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static bool readBool(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
+{
+    if (useDflt)
+        *((bool*) p->param) = *((int*) p->dflt);
+    else if (json_object_is_type(obj, json_type_boolean))
+        *((bool*) p->param) = (bool) json_object_get_boolean(obj);
+    else
+    {
+        warn("Error: expected type boolean for '%s' in '%s', but got %s\n",
+             p->name,
+             pname,
+             showNBodyType(json_object_get_type(obj)));
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static bool readString(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
+{
+    /* The json_object has ownership of the string so we need to copy it. */
+    if (useDflt)
+        *((char**) p->param) = strdup(*((char**) p->dflt));
+    else if (json_object_is_type(obj, json_type_string))
+    {
+        *((char**) p->param) = strdup(json_object_get_string(obj));
+    }
+    else
+    {
+        warn("Error: expected type string for '%s' in '%s', but got %s\n",
+             p->name,
+             pname,
+             showNBodyType(json_object_get_type(obj)));
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static bool readVector(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
+{
+    int i, arrLen;
+    array_list* arr;
+    json_object* tmp;
+
+    /* FIXME: Right now assuming no default vectors, groups etc. will be used */
+
+    if (!json_object_is_type(obj, json_type_array))
+    {
+        warn("Error: expected type vector for '%s' in '%s', but got %s\n",
+             p->name,
+             pname,
+             showNBodyType(json_object_get_type(obj)));
+        return TRUE;
+    }
+
+    arr = json_object_get_array(obj);
+    arrLen = json_object_array_length(obj);
+    if (arrLen != 3)
+    {
+        warn("Got %d items for vector '%s' in '%s', expected 3\n",
+             arrLen,
+             p->name,
+             pname);
+        return TRUE;
+    }
+
+    for (i = 0; i < 3; ++i)
+    {
+        tmp = (json_object*) array_list_get_idx(arr, i);
+
+        if (   !json_object_is_type(tmp, json_type_double)
+            && !json_object_is_type(tmp, json_type_int))
+        {
+            warn("Got unexpected type '%s' in position %d "
+                 "of key '%s' in '%s', expected number.\n",
+                 showNBodyType(json_object_get_type(tmp)),
+                 i,
+                 p->name,
+                 pname);
+            return TRUE;
+        }
+
+        ((real*) p->param)[i] = json_object_get_double(tmp);
+    }
+
+    return FALSE;
+}
+
+static bool readArray(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
+{
+    int i, arrLen;
+    array_list* arr;
+    json_object* tmp;
+    char* readArr;
+    char* readLoc;
+    ArrayRead reader;
+
+    reader = (ArrayRead) p->conv;
+    if (!reader || p->size == 0)
+    {
+        warn("Read function or size not set for array '%s' in '%s'\n", p->name, pname);
+        return TRUE;
+    }
+
+    if (!json_object_is_type(obj, json_type_array))
+    {
+        warn("Error: expected type array for '%s' in '%s', but got %s\n",
+             p->name,
+             pname,
+             showNBodyType(json_object_get_type(obj)));
+        return TRUE;
+    }
+
+    arr = json_object_get_array(obj);
+    arrLen = json_object_array_length(obj);
+
+    readArr = (char*) callocSafe(arrLen, p->size);
+
+    for (i = 0; i < arrLen; ++i)
+    {
+        tmp = (json_object*) array_list_get_idx(arr, i);
+
+        readLoc = readArr + i * p->size;  /* Index into mystery sized type  */
+        if (reader((void*) readLoc, tmp, p))
+        {
+            warn("Failed to read array item in position %d "
+                 "of key '%s' in '%s'.\n", i, p->name, pname);
+            free(readArr);
+            return TRUE;
+        }
+    }
+
+    *((char**) p->param) = (char*) readArr;
+
+    if (p->length)
+        *p->length = arrLen;
+
+    return FALSE;
+}
+
+static bool readEnum(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
+{
+    generic_enum_t conv;
+    ReadEnum reader;
+
+    /* This is actually a json_type_string, which we read
+     * into an enum, or take a default value */
+    if (useDflt)
+    {
+        *((generic_enum_t*) p->param) = *((generic_enum_t*) p->dflt);
+        return FALSE;
+    }
+
+    reader = (ReadEnum) p->conv;
+    if (!reader)
+    {
+        warn("Error: read function not set for enum '%s'\n", p->name);
+        return TRUE;
+    }
+
+    conv = reader(json_object_get_string(obj));
+    if (conv == -1)
+        return TRUE;
+
+    *((generic_enum_t*) p->param) = conv;
+
+    return FALSE;
+}
+
 /* Read a set of related parameters, e.g. the main NBodyCtx.
    If the unique flag is set, it's only valid to have one of the items in the group.
    Otherwise, it tries to use all of the parameters, and warns when extra elements are found.
    Fails if it fails to find a parameter that isn't defaultable (returns nonzero).
  */
-static int readParameterGroup(const Parameter* g,      /* The set of parameters */
-                              json_object* hdr,        /* The object of the group */
-                              const Parameter* parent) /* non-null if within another group */
+static int readParameterGroup(const Parameter* g,        /* The set of parameters */
+                              json_object* hdr,           /* The object of the group */
+                              const Parameter* parent,    /* non-null if within another group */
+                              generic_enum_t* group_type) /* non-null if within a group. i.e. type of model */
 {
     const Parameter* p;
     const Parameter* q;
@@ -135,23 +443,17 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
     const char* pname;
     bool unique;
     bool found = FALSE, done = FALSE, readError = FALSE;
-    generic_enum_t* group_type;
-    array_list* arr;
-    json_object* tmp;
-    int i, arrLen;
     int subRc;
 
     if (parent)
     {
         pname = parent->name;     /* Name of the group we're in */
         unique = parent->unique;  /* Expect one, or try to take all of them*/
-        group_type = (generic_enum_t*) parent->param;
     }
     else
     {
-        pname = "<root>";       /* at the root of the configuration */
+        pname = "<root>";       /* Probably at the root of the configuration */
         unique = FALSE;
-        group_type = NULL;
     }
 
     assert(g);
@@ -165,6 +467,8 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
         defaultable = (p->dflt != NULL);
         useDflt = FALSE;
         found = FALSE;
+
+
 
         obj = json_object_object_get(hdr, p->name);
         if (!obj)
@@ -198,158 +502,47 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
         switch (p->type)
         {
             case nbody_type_double:
-                /* json_type_int and double are OK for numbers. i.e. you can leave off the decimal.
-                   We don't want the other conversions, which just give you 0.0 for anything else.
-                */
-                if (useDflt)
-                    *((real*) p->param) = *((real*) p->dflt);
-                else if (   json_object_is_type(obj, json_type_double)
-                         || json_object_is_type(obj, json_type_int))
-                {
-                    *((real*) p->param) = (real) json_object_get_double(obj);
-                }
-                else
-                {
-                    warn("Error: expected number for '%s' in '%s', but got %s\n",
-                         p->name,
-                         pname,
-                         showNBodyType(p->type));
-                    readError = TRUE;
-                }
+                readError = readDouble(p, pname, obj, useDflt);
                 break;
 
             case nbody_type_int:
-                /* I don't think any of the conversions are acceptable */
-                if (useDflt)
-                    *((int*) p->param) = *((int*) p->dflt);
-                else if (json_object_is_type(obj, json_type_int))
-                    *((int*) p->param) = json_object_get_int(obj);
-                else
-                {
-                    warn("Error: expected type int for '%s' in '%s', but got %s\n",
-                         p->name,
-                         pname,
-                         showNBodyType(json_object_get_type(obj)));
-                    readError = TRUE;
-                }
+                readError = readInt(p, pname, obj, useDflt);
                 break;
 
             case nbody_type_boolean:  /* CHECKME: Size */
-                if (useDflt)
-                    *((bool*) p->param) = *((int*) p->dflt);
-                else if (json_object_is_type(obj, json_type_boolean))
-                    *((bool*) p->param) = (bool) json_object_get_boolean(obj);
-                else
-                {
-                    warn("Error: expected type boolean for '%s' in '%s', but got %s\n",
-                         p->name,
-                         pname,
-                         showNBodyType(json_object_get_type(obj)));
-                    readError = TRUE;
-                }
+                readError = readBool(p, pname, obj, useDflt);
                 break;
 
             case nbody_type_string:
-                /* The json_object has ownership of the string so we need to copy it. */
-                if (useDflt)
-                    *((char**) p->param) = strdup(*((char**) p->dflt));
-                else if (json_object_is_type(obj, json_type_string))
-                {
-                    *((char**) p->param) = strdup(json_object_get_string(obj));
-                }
-                else
-                {
-                    warn("Error: expected type string for '%s' in '%s', but got %s\n",
-                         p->name,
-                         pname,
-                         showNBodyType(json_object_get_type(obj)));
-                    readError = TRUE;
-                }
+                readError = readString(p, pname, obj, useDflt);
                 break;
 
             case nbody_type_vector:
-                /* FIXME: Right now assuming no default vectors, groups etc. will be used */
-                assert(json_object_is_type(obj, json_type_array));
-                arr = json_object_get_array(obj);
-                arrLen = json_object_array_length(obj);
-                if (arrLen != 3)
-                {
-                    warn("Got %d items for vector '%s' in '%s', expected 3\n",
-                         arrLen,
-                         p->name,
-                         pname);
-                    readError = TRUE;
-                }
+                readError = readVector(p, pname, obj, useDflt);
+                break;
 
-                for ( i = 0; i < 3; ++i )
-                {
-                    tmp = (json_object*) array_list_get_idx(arr, i);
-
-                    if (    !json_object_is_type(tmp, json_type_double)
-                         && !json_object_is_type(tmp, json_type_int))
-                    {
-                        warn("Got unexpected type '%s' in position %d "
-                             "of key '%s' in '%s', expected number.\n",
-                             showNBodyType(json_object_get_type(tmp)),
-                             i,
-                             p->name,
-                             pname);
-                        readError = TRUE;
-                    }
-
-                    ((real*) p->param)[i] = json_object_get_double(tmp);
-                }
+            case nbody_type_array:
+                readError = readArray(p, pname, obj, useDflt);
                 break;
 
             case nbody_type_group_item:
-                if (p->dflt)
-                {
-                    if (!group_type)
-                    {
-                        warn("Group does not have a type (Trying to read the root?)\n");
-                        readError = TRUE;
-                    }
-                    else
-                        *group_type = *((generic_enum_t*) p->dflt);
-                }
-                else
-                {
-                    warn("Expected nbody_type_group_item for "
-                         "'%s' in '%s', but no enum value set\n", p->name, pname);
-                    readError = TRUE;
-                }
+                readError = readGroupItem(p, pname, obj, group_type);
 
                 /* fall through to nbody_type_object */
             case nbody_type_group:
             case nbody_type_object:
+                if (useDflt)
+                    fail("Defaultable objects not implemented\n");
+
                 /* Fail now if sub group fails */
-                if ((subRc = readParameterGroup(p->parameters, obj, p)))
+                if ((subRc = readParameterGroup(p->parameters, obj, p, (generic_enum_t*) p->param)))
                     return subRc;
                 break;
+
             case nbody_type_enum:
-                /* This is actually a json_type_string, which we read
-                 * into an enum, or take a default value */
-                if (useDflt)
-                {
-                    *((generic_enum_t*) p->param) = *((generic_enum_t*) p->dflt);
-                    break;
-                }
-
-                if (p->conv)
-                {
-                    generic_enum_t conv = p->conv(json_object_get_string(obj));
-                    if (conv == -1)
-                        return 1;
-                    else
-                        *((generic_enum_t*) p->param) = conv;
-                }
-                else
-                {
-                    warn("Error: read function not set for enum '%s'\n", p->name);
-                    return 1;
-                }
-
+                readError = readEnum(p, pname, obj, useDflt);
                 break;
+
             default:
                 warn("Unhandled parameter type %d for key '%s' in '%s'\n",
                      p->type,
@@ -369,7 +562,6 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
     if (!readError)
         warnExtraParams(hdr, pname);
 
-    /* FIXME: This condition is confusing and probably could be better */
     /* Report what was expected in more detail */
     if (   ((!found || readError) && !defaultable)
         || (!found && unique) )
@@ -398,7 +590,6 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
     return 0;
 }
 
-
 /* CHECKME: Assumption that all enums are the same size, size of an
  * int, which I think is always true on all compilers, but I'm
  * probably wrong. */
@@ -409,9 +600,9 @@ static int readParameterGroup(const Parameter* g,      /* The set of parameters 
 
 /* Read the parameters from the top level json object into ctx. It
  * destroys the object in the process. */
-int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
-                      InitialConditions* ic,       /* Initial conditions to fill */
-                      json_object* fileObj)        /* Parsed JSON file */
+int getParamsFromJSON(NBodyCtx* ctx,         /* Context to fill */
+                      HistogramParams* hist, /* Histogram parameters to fill */
+                      json_object* fileObj)  /* Parsed JSON file */
 
 {
     /* Constants used for defaulting. Each field only used if
@@ -433,12 +624,15 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
             .headline = NULL
         };
 
-    const InitialConditions defaultIC =
+    const HistogramParams defaultHistogram =
         {
-            .useGalC    = FALSE,
-            .useRadians = FALSE,
-            .position   = EMPTY_VECTOR,
-            .velocity   = EMPTY_VECTOR
+            .phi        = histogramPhi,
+            .theta      = histogramTheta,
+            .psi        = histogramPsi,
+            .startRaw   = histogramStartRaw,
+            .endRaw     = histogramEndRaw,
+            .binSize    = histogramBinSize,
+            .center     = histogramCenter
         };
 
     /* Spherical potential options */
@@ -530,34 +724,6 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
             NULLPARAMETER
         };
 
-    /* The current different dwarf models all use the same parameters */
-    const real nanN = NAN;
-    const Parameter dwarfModelParams[] =
-        {
-            /* FIXME: Hack: Defaulting on NAN's so we can ignore them
-             * in the file, to be filled in by the server sent
-             * FitParams. This will probably result in unfortunate
-             * things when using the file. */
-            INT_PARAM("nbody", &ctx->model.nbody),
-            DBL_PARAM_DFLT("mass",           &ctx->model.mass,           &nanN),
-            DBL_PARAM_DFLT("scale-radius",   &ctx->model.scale_radius,   &nanN),
-            DBL_PARAM_DFLT("eps2",           &ctx->model.eps2,           &nanN),
-            DBL_PARAM_DFLT("timestep",       &ctx->model.timestep,       &nanN),
-            DBL_PARAM_DFLT("orbit-timestep", &ctx->model.orbit_timestep, &nanN),
-            DBL_PARAM_DFLT("time-dwarf",     &ctx->model.time_dwarf,     &nanN),
-            DBL_PARAM_DFLT("time-orbit",     &ctx->model.time_orbit,     &nanN),
-            NULLPARAMETER
-        };
-
-    const dwarf_model_t plummerT = DwarfModelPlummer, kingT = DwarfModelKing, dehnenT = DwarfModelDehnen;
-    const Parameter dwarfModelOptions[] =
-        {
-            GROUP_PARAM_ITEM("plummer", &plummerT, dwarfModelParams),
-            GROUP_PARAM_ITEM("king",    &kingT,    dwarfModelParams),
-            GROUP_PARAM_ITEM("dehnen",  &dehnenT,  dwarfModelParams),
-            NULLPARAMETER
-        };
-
     /* Must be null terminated arrays */
     const Parameter nbodyCtxParams[] =
         {
@@ -567,33 +733,41 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
 
             BOOL_PARAM_DFLT("allow-incest",          &ctx->allowIncest, &defaultCtx.allowIncest),
             DBL_PARAM_DFLT("accuracy-parameter",     &ctx->theta, &defaultCtx.theta),
-            ENUM_PARAM_DFLT("criterion",             &ctx->criterion, &defaultCtx.criterion, (ReadEnum) readCriterion),
+            ENUM_PARAM_DFLT("criterion",             &ctx->criterion, &defaultCtx.criterion, (GenericReadFunc) readCriterion),
+            DBL_PARAM_DFLT("eps2", &ctx->eps2, &nanN),
+
             OBJ_PARAM("potential", potentialItems),
-            GROUP_PARAM("dwarf-model",               &ctx->model.type, dwarfModelOptions),
+            DBL_PARAM_DFLT("time-evolve",    &ctx->time_evolve,    &nanN),
+            DBL_PARAM_DFLT("time-orbit",     &ctx->time_orbit,     &nanN),
+            ARRAY_PARAM("dwarf-model", &ctx->models, sizeof(DwarfModel), &ctx->modelNum, (GenericReadFunc) readDwarfModel),
             DBL_PARAM_DFLT("sun-gc-dist", &ctx->sunGCDist, &defaultCtx.sunGCDist),
             DBL_PARAM_DFLT("tree_rsize", &ctx->tree_rsize, &defaultCtx.tree_rsize),
-
             NULLPARAMETER
         };
 
-    const Parameter initialConditions[] =
+    const Parameter histogramParams[] =
         {
-            BOOL_PARAM("useGalC", &ic->useGalC),
-            BOOL_PARAM_DFLT("angle-use-radians", &ic->useRadians, &defaultIC.useRadians),
-            VEC_PARAM("position", &ic->position),
-            VEC_PARAM("velocity", &ic->velocity),
+            DBL_PARAM_DFLT("phi",     &hist->phi,      &defaultHistogram.phi),
+            DBL_PARAM_DFLT("theta",   &hist->theta,    &defaultHistogram.theta),
+            DBL_PARAM_DFLT("psi",     &hist->psi,      &defaultHistogram.psi),
+            DBL_PARAM_DFLT("start",   &hist->startRaw, &defaultHistogram.startRaw),
+            DBL_PARAM_DFLT("end",     &hist->endRaw,   &defaultHistogram.endRaw),
+            DBL_PARAM_DFLT("binsize", &hist->binSize,  &defaultHistogram.binSize),
+            DBL_PARAM_DFLT("center",  &hist->center,   &defaultHistogram.center),
             NULLPARAMETER
         };
 
     const Parameter parameters[] =
         {
             OBJ_PARAM("nbody-context", nbodyCtxParams),
-            OBJ_PARAM("initial-conditions", initialConditions),
+            OBJ_PARAM("histogram", histogramParams),
             NULLPARAMETER
         };
 
     json_object* hdr;
     int rc;
+
+    *hist = defaultHistogram;    /* Set all items to default */
 
     /* Check that this is actually one of our files */
     if (   !json_object_is_type(fileObj, nbody_type_object)
@@ -604,7 +778,7 @@ int getParamsFromJSON(NBodyCtx* ctx,               /* Context to fill */
     }
 
     /* loop through table of accepted sets of parameters */
-    rc = readParameterGroup(parameters, hdr, NULL);
+    rc = readParameterGroup(parameters, hdr, NULL, NULL);
 
     /* deref the top level object should take care of freeing whatever's left */
     json_object_put(fileObj);

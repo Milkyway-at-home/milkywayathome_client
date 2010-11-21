@@ -47,43 +47,14 @@ static inline void bodyAdvancePos(bodyptr p, const real dt)
     mw_incaddv(Pos(p), dr);     /* advance r by 1 step */
 }
 
-#ifndef _OPENMP
-
-/* Advance positions of all bodies by 1 timestep, and the velocities half a timestep. */
-ALWAYS_INLINE
-static inline void advancePosVel(NBodyState* st, const unsigned int nbody, const real dt)
-{
-    bodyptr p;
-    mwvector* a;
-    const bodyptr endp = st->bodytab + nbody;
-
-    for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)    /* loop over all bodies */
-    {
-        bodyAdvanceVel(p, *a, dt);
-        bodyAdvancePos(p, dt);
-    }
-}
-
-/* Advance velocities of all bodies by 1 timestep. */
-ALWAYS_INLINE
-static inline void advanceVelocities(NBodyState* st, const unsigned int nbody, const real dt)
-{
-    bodyptr p;
-    mwvector* a;
-    const bodyptr endp = st->bodytab + nbody;
-
-    for (p = st->bodytab, a = st->acctab; p < endp; ++p, ++a)
-        bodyAdvanceVel(p, *a, dt);
-}
-
-#else
-
 ALWAYS_INLINE
 static inline void advancePosVel(NBodyState* st, const unsigned int nbody, const real dt)
 {
     unsigned int i;
 
-  #pragma omp parallel for private(i) schedule(static)
+  #ifdef _OPENMP
+    #pragma omp parallel for private(i) schedule(static)
+  #endif
     for (i = 0; i < nbody; ++i)
     {
         bodyAdvanceVel(&st->bodytab[i], st->acctab[i], dt);
@@ -97,19 +68,20 @@ static inline void advanceVelocities(NBodyState* st, const unsigned int nbody, c
 {
     unsigned int i;
 
+  #ifdef _OPENMP
     #pragma omp parallel for private(i) schedule(static)
+  #endif
     for (i = 0; i < nbody; ++i)      /* loop over all bodies */
         bodyAdvanceVel(&st->bodytab[i], st->acctab[i], dt);
 }
 
-#endif /* _OPENMP */
 
 /* stepSystem: advance N-body system one time-step. */
 void stepSystem(const NBodyCtx* ctx, NBodyState* st)
 {
-    const real dt = ctx->model.timestep;
+    const real dt = ctx->timestep;
 
-    advancePosVel(st, ctx->model.nbody, dt);
+    advancePosVel(st, ctx->nbody, dt);
 
   #if !NBODY_OPENCL
     gravMap(ctx, st);
@@ -117,7 +89,7 @@ void stepSystem(const NBodyCtx* ctx, NBodyState* st)
     gravMapCL(ctx, st);
   #endif /* !NBODY_OPENCL */
 
-    advanceVelocities(st, ctx->model.nbody, dt);
+    advanceVelocities(st, ctx->nbody, dt);
 
     st->tnow += dt;                           /* finally, advance time */
 }

@@ -285,12 +285,6 @@ static json_object* readParameters(const int argc,
             0, "Check that the input file is valid only; perform no calculation.", NULL
         },
 
-        {
-            "bodies", 'u',
-            POPT_ARG_INT, &nbf->numBodies,
-            'u', "Override number of bodies", NULL
-        },
-
       #if BOINC_APPLICATION
         {
             "checkpoint", 'c',

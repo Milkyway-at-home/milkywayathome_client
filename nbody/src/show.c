@@ -51,9 +51,7 @@ const char* showCriterionT(const criterion_t x)
 
     if (x > SW93)
         return "invalid criterion_t";
-    else
-        return table[x];
-
+    return table[x];
 }
 
 const char* showSphericalT(const spherical_t x)
@@ -65,8 +63,7 @@ const char* showSphericalT(const spherical_t x)
 
     if (x > SphericalPotential)
         return "invalid spherical_t";
-    else
-        return table[x];
+    return table[x];
 }
 
 const char* showDiskT(const disk_t x)
@@ -79,8 +76,8 @@ const char* showDiskT(const disk_t x)
 
     if (x > ExponentialDisk)
         return "invalid disk_t";
-    else
-        return table[x];
+
+    return table[x];
 }
 
 const char* showHaloT(const halo_t x)
@@ -94,8 +91,8 @@ const char* showHaloT(const halo_t x)
 
     if (x > TriaxialHalo)
         return "invalid halo_t";
-    else
-        return table[x];
+
+    return table[x];
 }
 
 const char* showDwarfModelT(const dwarf_model_t x)
@@ -109,8 +106,8 @@ const char* showDwarfModelT(const dwarf_model_t x)
 
     if (x > DwarfModelDehnen)
         return "invalid dwarf_model_t";
-    else
-        return table[x];
+
+    return table[x];
 }
 
 char* showSpherical(const Spherical* s)
@@ -249,18 +246,20 @@ char* showPotential(const Potential* p)
 char* showDwarfModel(const DwarfModel* d)
 {
     char* buf;
+    char* icBuf;
+
+    icBuf = showInitialConditions(&d->initialConditions);
 
     if (0 > asprintf(&buf,
-                     "{ \n"
-                     "      type           = %s\n"
-                     "      nbody          = %d\n"
-                     "      mass           = %g\n"
-                     "      scale_radius   = %g\n"
-                     "      timestep       = %g\n"
-                     "      orbit_timestep = %g\n"
-                     "      time_dwarf     = %g\n"
-                     "      time_orbit     = %g\n"
-                     "      eps2           = %g\n"
+                     "  { \n"
+                     "      type              = %s\n"
+                     "      nbody             = %d\n"
+                     "      mass              = %g\n"
+                     "      scale_radius      = %g\n"
+                     "      timestep          = %g\n"
+                     "      orbit_timestep    = %g\n"
+                     "      ignoreFinal       = %s\n"
+                     "      initialConditions = %s\n"
                      "    };\n",
                      showDwarfModelT(d->type),
                      d->nbody,
@@ -268,12 +267,13 @@ char* showDwarfModel(const DwarfModel* d)
                      d->scale_radius,
                      d->timestep,
                      d->orbit_timestep,
-                     d->time_orbit,
-                     d->time_dwarf,
-                     d->eps2))
+                     showBool(d->ignoreFinal),
+                     icBuf))
     {
         fail("asprintf() failed\n");
     }
+
+    free(icBuf);
 
     return buf;
 }
@@ -282,14 +282,16 @@ char* showInitialConditions(const InitialConditions* ic)
 {
     char* buf;
     if (0 > asprintf(&buf,
-                     "initial-conditions = { \n"
-                     "  useGalC    = %s\n"
-                     "  useRadians = %s\n"
-                     "  position   = { %g, %g, %g }\n"
-                     "  velocity   = { %g, %g, %g }\n"
-                     "};\n",
+                     "{ \n"
+                     "          useGalC      = %s\n"
+                     "          useRadians   = %s\n"
+                     "          reverseOrbit = %s\n"
+                     "          position     = { %g, %g, %g }\n"
+                     "          velocity     = { %g, %g, %g }\n"
+                     "        };\n",
                      showBool(ic->useGalC),
                      showBool(ic->useRadians),
+                     showBool(ic->reverseOrbit),
                      X(ic->position),
                      Y(ic->position),
                      Z(ic->position),
@@ -303,19 +305,42 @@ char* showInitialConditions(const InitialConditions* ic)
     return buf;
 }
 
+/* Most efficient function ever */
 char* showContext(const NBodyCtx* ctx)
 {
     char* buf;
     char* potBuf;
     char* modelBuf;
 
-    potBuf   = showPotential(&ctx->pot);
-    modelBuf = showDwarfModel(&ctx->model);
+    size_t totalLen = 0;
+    char** allModels;
+    unsigned int i;
+
+    potBuf = showPotential(&ctx->pot);
+
+    allModels = mallocSafe(sizeof(char*) * ctx->modelNum);
+
+    for (i = 0; i < ctx->modelNum; ++i)
+    {
+        allModels[i] = showDwarfModel(&ctx->models[i]);
+        totalLen += strlen(allModels[i]);
+    }
+
+    modelBuf = (char*) callocSafe(totalLen + 1, sizeof(char));
+    for (i = 0; i < ctx->modelNum; ++i)
+    {
+        strcat(modelBuf, allModels[i]);
+        free(allModels[i]);
+    }
+    free(allModels);
 
     if (0 > asprintf(&buf,
                      "ctx = { \n"
-                     "  pot             = %s\n"
-                     "  model           = %s\n"
+                     "  pot = %s\n"
+                     "  time_evolve     = %g\n"
+                     "  time_orbit      = %g\n"
+                     "  timestep        = %g\n"
+                     "  orbit_timestep  = %g\n"
                      "  headline        = %s\n"
                      "  outfilename     = %s\n"
                      "  histogram       = %s\n"
@@ -329,10 +354,17 @@ char* showContext(const NBodyCtx* ctx)
                      "  seed            = %ld\n"
                      "  tree_rsize      = %g\n"
                      "  theta           = %g\n"
+                     "  eps2            = %g\n"
                      "  freqout         = %g\n"
+                     "  nbody           = %d\n"
+                     "  modelNum        = %u\n"
+                     "  models          = %s\n"
                      "};\n",
                      potBuf,
-                     modelBuf,
+                     ctx->time_evolve,
+                     ctx->time_orbit,
+                     ctx->timestep,
+                     ctx->orbit_timestep,
                      ctx->headline,
                      ctx->outfilename,
                      ctx->histogram,
@@ -346,7 +378,11 @@ char* showContext(const NBodyCtx* ctx)
                      ctx->seed,
                      ctx->tree_rsize,
                      ctx->theta,
-                     ctx->freqout))
+                     ctx->eps2,
+                     ctx->freqout,
+                     ctx->nbody,
+                     ctx->modelNum,
+                     modelBuf))
     {
         fail("asprintf() failed\n");
     }
@@ -412,6 +448,34 @@ char* showFitParams(const FitParams* fp)
     return buf;
 }
 
+char* showHistogramParams(const HistogramParams* hp)
+{
+    char* buf;
+    if (0 > asprintf(&buf,
+                     "histogram-params = { \n"
+                     "  phi      = %g\n"
+                     "  theta    = %g\n"
+                     "  psi      = %g\n"
+                     "  startRaw = %g\n"
+                     "  endRaw   = %g\n"
+                     "  binSize  = %g\n"
+                     "  center   = %g\n"
+                     "};\n",
+                     hp->phi,
+                     hp->theta,
+                     hp->psi,
+                     hp->startRaw,
+                     hp->endRaw,
+                     hp->binSize,
+                     hp->center))
+
+    {
+        fail("asprintf() failed\n");
+    }
+
+    return buf;
+}
+
 void printFitParams(const FitParams* fp)
 {
     char* buf = showFitParams(fp);
@@ -419,9 +483,23 @@ void printFitParams(const FitParams* fp)
     free(buf);
 }
 
+void printHistogramParams(const HistogramParams* hp)
+{
+    char* buf = showHistogramParams(hp);
+    puts(buf);
+    free(buf);
+}
+
 void printBody(const bodyptr p)
 {
     char* buf = showBody(p);
+    puts(buf);
+    free(buf);
+}
+
+void printDwarfModel(const DwarfModel* p)
+{
+    char* buf = showDwarfModel(p);
     puts(buf);
     free(buf);
 }

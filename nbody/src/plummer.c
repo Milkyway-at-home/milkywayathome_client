@@ -74,7 +74,7 @@ static void printPlummer(const NBodyCtx* ctx, mwvector rshift, mwvector vshift)
  * etc).  See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
  * 183.
  */
-void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyState* st)
+void generatePlummer(NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodytab)
 {
     bodyptr p, endp;
     real rsc, vsc, r, v, x, y;
@@ -86,11 +86,14 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
     dsfmt_t dsfmtState;
     real rnd;
 
-    const real rnbody = (real) ctx->model.nbody;
-    const real mass   = ctx->model.mass;
+    DwarfModel* model = &ctx->models[modelIdx];
+    InitialConditions* ic = &model->initialConditions;
+
+    const real rnbody = (real) model->nbody;
+    const real mass   = model->mass;
     const real mpp    = mass / rnbody;     /* mass per particle */
 
-    // The coordinates to shift the plummer sphere by
+    /* The coordinates to shift the plummer sphere by */
     mwvector rshift = ic->position;
     mwvector vshift = ic->velocity;
 
@@ -98,17 +101,17 @@ void generatePlummer(const NBodyCtx* ctx, const InitialConditions* ic, NBodyStat
 
     printPlummer(ctx, rshift, vshift);
 
-    rsc = ctx->model.scale_radius;              /* set length scale factor */
-    vsc = mw_sqrt(ctx->model.mass / rsc);         /* and recip. speed scale */
+    rsc = model->scale_radius;              /* set length scale factor */
+    vsc = mw_sqrt(model->mass / rsc);       /* and recip. speed scale */
 
     scaledrshift = mw_mulvs(rshift, rsc);   /* Multiply shift by scale factor */
     scaledvshift = mw_mulvs(vshift, vsc);   /* Multiply shift by scale factor */
 
-    endp = st->bodytab + ctx->model.nbody;
-    for (p = st->bodytab; p < endp; ++p)   /* loop over particles */
+    endp = bodytab + model->nbody;
+    for (p = bodytab; p < endp; ++p)   /* loop over particles */
     {
-        Type(p) = BODY;    /* tag as a body */
-        Mass(p) = mpp;     /* set masses equal */
+        Type(p) = BODY(modelIdx);    /* tag as a body belonging to this model */
+        Mass(p) = mpp;               /* set masses equal */
 
         /* returns [0, 1) */
         rnd = (real) dsfmt_genrand_close_open(&dsfmtState);
