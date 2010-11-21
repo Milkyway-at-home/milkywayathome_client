@@ -180,6 +180,12 @@ static int hasNonIgnorableModel(const NBodyCtx* ctx)
         return 1;
     }
 
+    if (ctx->modelNum > ((1 << 8 * sizeof(body_t)) - 1))
+    {
+        warn("Too many models: %u\n", ctx->modelNum);
+        return 1;
+    }
+
     for (i = 0; i < ctx->modelNum; ++i)
     {
         if (!ctx->models[i].ignoreFinal)
@@ -193,20 +199,26 @@ static int hasNonIgnorableModel(const NBodyCtx* ctx)
     return rc;
 }
 
-static int hasSetEps2(const NBodyCtx* ctx)
+static int hasAcceptableEps2(const NBodyCtx* ctx)
 {
-    int rc = !isfinite(ctx->eps2);
+    int rc = !isfinite(ctx->eps2) || ctx->eps2 <= 0.0;
     if (rc)
-        warn("Got a nonfinite eps2\n");
+        warn("Got an absurd eps2\n");
 
     return rc;
 }
 
 static int hasAcceptableTimes(const NBodyCtx* ctx)
 {
-    int rc = !isnormal(ctx->time_evolve) || !isnormal(ctx->time_orbit);
+    int rc;
+
+    rc =   !isnormal(ctx->time_evolve)
+        || !isnormal(ctx->time_orbit)
+        || ctx->time_evolve < 0.0
+        || ctx->time_orbit < 0.0;
+
     if (rc)
-        warn("At least one of the evolution times must be specified for the dwarf model\n");
+        warn("Got an unacceptable orbit or evolution time\n");
     return rc;
 }
 
@@ -214,8 +226,8 @@ static int hasAcceptableSteps(const NBodyCtx* ctx)
 {
     int rc =    !isnormal(ctx->timestep)
              || !isnormal(ctx->orbit_timestep)
-             || (ctx->timestep == 0.0)
-             || (ctx->orbit_timestep == 0.0);
+             || (ctx->timestep <= 0.0)
+             || (ctx->orbit_timestep <= 0.0);
     if (rc)
         warn("Context has unacceptable timesteps\n");
 
@@ -234,11 +246,11 @@ static int contextSanityCheck(const NBodyCtx* ctx)
 {
     int rc = 0;
 
+    rc |= hasNonIgnorableModel(ctx);
     rc |= hasAcceptableNbody(ctx);
     rc |= hasAcceptableTimes(ctx);
     rc |= hasAcceptableSteps(ctx);
-    rc |= hasSetEps2(ctx);
-    rc |= hasNonIgnorableModel(ctx);
+    rc |= hasAcceptableEps2(ctx);
 
     return rc;
 }

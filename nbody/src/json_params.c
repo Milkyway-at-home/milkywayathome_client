@@ -468,8 +468,6 @@ static int readParameterGroup(const Parameter* g,        /* The set of parameter
         useDflt = FALSE;
         found = FALSE;
 
-
-
         obj = json_object_object_get(hdr, p->name);
         if (!obj)
         {
@@ -563,8 +561,9 @@ static int readParameterGroup(const Parameter* g,        /* The set of parameter
         warnExtraParams(hdr, pname);
 
     /* Report what was expected in more detail */
-    if (   ((!found || readError) && !defaultable)
-        || (!found && unique) )
+    if (   (!found && !defaultable)
+        || (!found && unique)
+        || readError)
     {
         warn("Failed to find required item of correct type in group '%s'\n", pname);
 
