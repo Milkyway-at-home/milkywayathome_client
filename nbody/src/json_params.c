@@ -66,6 +66,11 @@ static const char* showNBodyType(nbody_type bt)
     return table[bt];
 }
 
+static nbody_type json_object_get_type_safe(json_object* obj)
+{
+    return obj ? json_object_get_type(obj) : nbody_type_null;
+}
+
 static bool readGroupItem(const Parameter* p, const char* pname, json_object* obj, generic_enum_t* group_type)
 {
     if (!p->dflt)
@@ -211,6 +216,10 @@ static bool warnExtraParams(json_object* obj, const char* grpName)
     return haveExtra;
 }
 
+static bool json_object_is_number(json_object* obj)
+{
+    return obj && (json_object_is_type(obj, json_type_double) || json_object_is_type(obj, json_type_int));
+}
 
 static bool readDouble(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
 {
@@ -220,8 +229,7 @@ static bool readDouble(const Parameter* p, const char* pname, json_object* obj, 
 
     if (useDflt)
         *((real*) p->param) = *((real*) p->dflt);
-    else if (   json_object_is_type(obj, json_type_double)
-             || json_object_is_type(obj, json_type_int))
+    else if (json_object_is_number(obj))
     {
         *((real*) p->param) = (real) json_object_get_double(obj);
     }
@@ -230,7 +238,7 @@ static bool readDouble(const Parameter* p, const char* pname, json_object* obj, 
         warn("Error: expected number for '%s' in '%s', but got %s\n",
              p->name,
              pname,
-             showNBodyType(json_object_get_type(obj)));
+             showNBodyType(json_object_get_type_safe(obj)));
         return TRUE;
     }
 
@@ -249,7 +257,7 @@ static bool readInt(const Parameter* p, const char* pname, json_object* obj, boo
         warn("Error: expected type int for '%s' in '%s', but got %s\n",
              p->name,
              pname,
-             showNBodyType(json_object_get_type(obj)));
+             showNBodyType(json_object_get_type_safe(obj)));
         return TRUE;
     }
 
@@ -267,7 +275,7 @@ static bool readBool(const Parameter* p, const char* pname, json_object* obj, bo
         warn("Error: expected type boolean for '%s' in '%s', but got %s\n",
              p->name,
              pname,
-             showNBodyType(json_object_get_type(obj)));
+             showNBodyType(json_object_get_type_safe(obj)));
         return TRUE;
     }
 
@@ -288,7 +296,7 @@ static bool readString(const Parameter* p, const char* pname, json_object* obj, 
         warn("Error: expected type string for '%s' in '%s', but got %s\n",
              p->name,
              pname,
-             showNBodyType(json_object_get_type(obj)));
+             showNBodyType(json_object_get_type_safe(obj)));
         return TRUE;
     }
 
@@ -308,7 +316,7 @@ static bool readVector(const Parameter* p, const char* pname, json_object* obj, 
         warn("Error: expected type vector for '%s' in '%s', but got %s\n",
              p->name,
              pname,
-             showNBodyType(json_object_get_type(obj)));
+             showNBodyType(json_object_get_type_safe(obj)));
         return TRUE;
     }
 
@@ -326,13 +334,11 @@ static bool readVector(const Parameter* p, const char* pname, json_object* obj, 
     for (i = 0; i < 3; ++i)
     {
         tmp = (json_object*) array_list_get_idx(arr, i);
-
-        if (   !json_object_is_type(tmp, json_type_double)
-            && !json_object_is_type(tmp, json_type_int))
+        if (!json_object_is_number(tmp))
         {
             warn("Got unexpected type '%s' in position %d "
                  "of key '%s' in '%s', expected number.\n",
-                 showNBodyType(json_object_get_type(tmp)),
+                 showNBodyType(json_object_get_type_safe(tmp)),
                  i,
                  p->name,
                  pname);
@@ -366,7 +372,7 @@ static bool readArray(const Parameter* p, const char* pname, json_object* obj, b
         warn("Error: expected type array for '%s' in '%s', but got %s\n",
              p->name,
              pname,
-             showNBodyType(json_object_get_type(obj)));
+             showNBodyType(json_object_get_type_safe(obj)));
         return TRUE;
     }
 
