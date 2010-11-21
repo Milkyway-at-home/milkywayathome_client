@@ -123,7 +123,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define isBody(x) (((nodeptr) (x))->type != 0)
 #define isCell(x) (((nodeptr) (x))->type == 0)
 
-typedef short body_t;
+typedef unsigned short body_t;
 
 /* node: data common to BODY and CELL structures. */
 typedef struct NBODY_ALIGN _node
