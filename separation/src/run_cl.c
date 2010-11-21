@@ -93,8 +93,9 @@ static cl_int gpuGroupSizes(const IntegralArea* ia, size_t numChunks, size_t glo
 {
     size_t groupSize = 64;
     size_t chunkSize = ia->r_steps / numChunks;
+    size_t totalArea = ia->r_steps * ia->mu_steps;
 
-    if (ia->r_steps % numChunks != 0)
+    if (totalArea % numChunks != 0)
     {
         warn("Error: r_steps (%zu) not divisible by number of chunks (%zu)\n", ia->r_steps, numChunks);
         return -1;
@@ -102,14 +103,12 @@ static cl_int gpuGroupSizes(const IntegralArea* ia, size_t numChunks, size_t glo
 
     /* Ideally these are already nicely divisible by 32/64/128, otherwise
      * round up a bit. */
-    global[0] = chunkSize;
-    global[1] = ia->mu_steps;
-    global[2] = 1;
+    global[0] = totalArea / numChunks;
+    global[1] = 1;
 
     /* Bias towards mu steps seems to be better */
-    local[0] = 1;
-    local[1] = groupSize;
-    local[2] = 1;
+    local[0] = groupSize;
+    local[1] = 1;
 
     return CL_SUCCESS;
 }
@@ -165,7 +164,7 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
 
     err = clEnqueueNDRangeKernel(ci->queue,
                                  ci->kern,
-                                 3,
+                                 2,
                                  offset, global, local,
                                  0, NULL, NULL);
     if (err != CL_SUCCESS)
@@ -273,6 +272,7 @@ static cl_int runNuStep(CLInfo* ci,
 
                         const IntegralArea* ia,
                         const size_t numChunks,
+                        const size_t chunkSize,
                         const size_t global[],
                         const size_t local[],
                         const cl_uint number_streams,
@@ -292,11 +292,7 @@ static cl_int runNuStep(CLInfo* ci,
         return err;
     }
 
-    size_t chunkSize = ia->r_steps / numChunks;
-
-
-    offset[1] = 0;
-    offset[2] = nu_step;
+    offset[1] = nu_step;
     for (i = 0; i < numChunks; ++i)
     {
         offset[0] = i * chunkSize;
@@ -306,6 +302,14 @@ static cl_int runNuStep(CLInfo* ci,
         {
             warn("Failed to enqueue integral kernel: %s\n", showCLInt(err));
             return err;
+        }
+
+        /* Give the screen a chance to redraw */
+        err = clFinish(ci->queue);
+        if (err != CL_SUCCESS)
+        {
+            warn("Failed to finish: %s\n", showCLInt(err));
+            return NAN;
         }
     }
 
@@ -329,8 +333,12 @@ static real runIntegral(CLInfo* ci,
      * times under 100ms to prevent unusable system */
     //size_t numChunks = 140;
     //size_t numChunks = 70;
-    //size_t numChunks = 100;
+    //size_t numChunks = 224;
+    //size_t numChunks = 280;
+    //size_t numChunks = 140;
     size_t numChunks = 1;
+
+    size_t chunkSize = ia->r_steps * ia->mu_steps / numChunks;
 
     if (clr->nonResponsive)
         numChunks = 1;
@@ -343,14 +351,14 @@ static real runIntegral(CLInfo* ci,
     if (findWorkGroupSizes(ci, ia, numChunks, global, local))
     {
         warn("Failed to calculate acceptable work group sizes\n");
-        //return NAN;
+        return NAN;
     }
 
     for (i = 0; i < ia->nu_steps; ++i)
     {
         double t1 = mwGetTimeMilli();
         err = runNuStep(ci, cm,
-                        ia, numChunks, global, local,
+                        ia, numChunks, chunkSize, global, local,
                         ap->number_streams, i);
         if (err != CL_SUCCESS)
         {
@@ -358,22 +366,8 @@ static real runIntegral(CLInfo* ci,
             return NAN;
         }
 
-        err = clFinish(ci->queue);
-        if (err != CL_SUCCESS)
-        {
-            warn("Failed to finish: %s\n", showCLInt(err));
-            return NAN;
-        }
-
         double t2 = mwGetTimeMilli();
         printf("Loop time: %f ms\n", t2 - t1);
-    }
-
-    err = clFinish(ci->queue);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to finish: %s\n", showCLInt(err));
-        return NAN;
     }
 
     /* Read results from final step */
