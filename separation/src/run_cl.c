@@ -309,7 +309,7 @@ static cl_int runNuStep(CLInfo* ci,
         if (err != CL_SUCCESS)
         {
             warn("Failed to finish: %s\n", showCLInt(err));
-            return NAN;
+            return err;
         }
     }
 
