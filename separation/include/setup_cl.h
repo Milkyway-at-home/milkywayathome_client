@@ -76,6 +76,9 @@ cl_int setupSeparationCL(CLInfo* ci,
 cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes* sizes);
 cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm);
 
+cl_double estimateWUFLOPsPerIter(const AstronomyParameters* ap, const IntegralArea* ia);
+cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_double flops);
+
 #ifdef __cplusplus
 }
 #endif

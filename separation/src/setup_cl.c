@@ -164,46 +164,25 @@ cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes*
     return CL_TRUE;
 }
 
-#ifndef __APPLE__
 /* Return flag for Nvidia compiler for maximum registers to use. */
 static const char* getNvidiaRegCount(const DevInfo* di)
 {
     cl_uint major, minor;
     const char* regCount32 = "-cl-nv-maxrregcount=32 ";
     const char* regDefault = "";
-    cl_int err = CL_SUCCESS;
-
-    err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV, sizeof(cl_uint), &major, NULL);
-    err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV, sizeof(cl_uint), &minor, NULL);
-
-    if (err != CL_SUCCESS)
-    {
-        warn("Error getting device compute capability: %s\n", showCLInt(err));
-        return regDefault;
-    }
 
     /* On the 285 GTX, max. 32 seems to help. Trying that on the 480
        makes it quite a bit slower. */
 
-    if (major == 1 && minor == 3) /* 1.3 == GT200 */
+    if (computeCapabilityIs(di, 1, 3)) /* 1.3 == GT200 */
     {
-        warn("Found a compute capability 1.3 device. Using maxrregcount=32");
+        warn("Found a compute capability 1.3 device. Using %s\n", regCount32);
         return regCount32;
     }
 
     /* Higher or other is Fermi or unknown, */
     return regDefault;
 }
-
-#else
-
-/* Nvidia extension stuff missing from OS X headers */
-static const char* getNvidiaRegCount(const DevInfo* di)
-{
-    return "";
-}
-
-#endif /* __APPLE__ */
 
 /* Get string of options to pass to the CL compiler. */
 static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, cl_bool useImages)
@@ -214,7 +193,7 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
     char includeFlags[4096] = "";
 
     /* Math options for CL compiler */
-    const char* mathFlags = //"-cl-mad-enable "
+    const char* mathFlags = "-cl-mad-enable "
                             "-cl-no-signed-zeros "
                             "-cl-strict-aliasing "
                             "-cl-finite-math-only ";
@@ -324,6 +303,32 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
     }
 
     return compileFlags;
+}
+
+/* Bad estimate */
+cl_double estimateWUFLOPsPerIter(const AstronomyParameters* ap, const IntegralArea* ia)
+{
+    cl_ulong perItem, perIter; /* Needs 64 bit int */
+
+    perItem = 4
+            + 28 * ap->convolve
+            + 4  * ap->number_streams
+            + 51 * ap->convolve * ap->number_streams;
+
+    perIter = perItem * ia->mu_steps * ia->r_steps;
+
+    return (cl_double) perIter;
+}
+
+/* Estimate time for a nu step in milliseconds */
+cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_double flops)
+{
+    cl_double devFactor;
+
+    /* Experimentally determined constants */
+    devFactor = computeCapabilityIs(di, 1, 3) ? 1.87 : 1.53;
+
+    return 1000.0 * devFactor * flopsPerIter / flops;
 }
 
 cl_int setupSeparationCL(CLInfo* ci,

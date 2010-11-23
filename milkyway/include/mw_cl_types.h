@@ -86,6 +86,9 @@ typedef struct
     char vendor[128];
     char version[128];
     char driver[128];
+    cl_uint computeCapabilityMajor; /* Nvidia only */
+    cl_uint computeCapabilityMinor;
+
     //char clCVer[128];
 
     size_t maxWorkItemSizes[3];

@@ -84,6 +84,15 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
 
     di->nonOutput = CL_FALSE; /* TODO: Check for Tesla or similar */
 
+    di->computeCapabilityMajor = di->computeCapabilityMinor = 0;
+  #ifndef __APPLE__
+    /* Nvidia extension stuff missing from OS X headers, but not ATI's */
+    err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV,
+                           sizeof(cl_uint), &di->computeCapabilityMajor, NULL);
+    err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV,
+                           sizeof(cl_uint), &di->computeCapabilityMinor, NULL);
+  #endif /* __APPLE__ */
+
     if (err)
         warn("Error getting device information: %s\n", showCLInt(err));
     else
@@ -92,12 +101,75 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
     return err;
 }
 
+/* True if devices compute capability >= requested version */
+cl_bool minComputeCapabilityCheck(const DevInfo* di, cl_uint major, cl_uint minor)
+{
+    return     di->computeCapabilityMajor > major
+           || (di->computeCapabilityMajor == major
+                && di->computeCapabilityMinor >= minor);
+}
+
+/* Exact check on compute capability version */
+cl_bool computeCapabilityIs(const DevInfo* di, cl_uint major, cl_uint minor)
+{
+    return di->computeCapabilityMajor == major && di->computeCapabilityMinor == minor;
+}
+
+/* Different on different Nvidia architectures.
+   Uses numbers from appendix of Nvidia OpenCL programming guide. */
+cl_uint cudaCoresPerComputeUnit(const DevInfo* di)
+{
+    if (minComputeCapabilityCheck(di, 2, 0))
+        return 32;
+
+    return 8;     /* 1.x is 8 */
+}
+
+/* approximate ratio of float : double flops */
+cl_uint cudaEstimateDoubleFrac(const DevInfo* di)
+{
+    /* FIXME: This is smaller for Teslas */
+    return 8;
+}
+
+cl_double cudaEstimateGFLOPs(const DevInfo* di)
+{
+    cl_uint corePerCU;
+    cl_uint numCUDACores;
+    cl_double freq, gflops;
+    cl_uint cyclesPerOpFloat, cyclesPerOpDouble, cyclesPerOp;
+    cl_double instrRateFloat, instrRateDouble, instrRate;
+    cl_double flopsFloat, flopsDouble, flops;
+
+    corePerCU = cudaCoresPerComputeUnit(di);
+    numCUDACores = di->maxCompUnits * corePerCU;
+    freq = (cl_double) di->clockFreq * 1.0e6;
+
+    cl_double flopsFactor = 2;
+    cl_uint doubleRat = cudaEstimateDoubleFrac(di);
+
+    flopsFloat = flopsFactor * numCUDACores * freq;
+    flopsDouble = flopsFactor * numCUDACores * freq / doubleRat;
+
+    flops = DOUBLEPREC ? flopsDouble : flopsFloat;
+    gflops = flops * 1.0e-9;
+
+    flopsFloat *= 1.0e-9;  /* FLOPS -> GFLOPS */
+    flopsDouble *= 1.0e-9;
+
+    warn("Estimated Nvidia device FLOP/s: %.0f SP FLOP/s, %.0f DP FLOP/s\n",
+         flopsFloat, flopsDouble);
+
+    return flops;
+}
+
 void mwPrintDevInfo(const DevInfo* di)
 {
     warn("Device %s (%s:0x%x)\n"
          "Type:                %s\n"
          "Driver version:      %s\n"
          "Version:             %s\n"
+         "Compute capability:  %u.%u\n"
          "Little endian:       %s\n"
          "Error correction:    %s\n"
          "Image support:       %s\n"
@@ -127,6 +199,7 @@ void mwPrintDevInfo(const DevInfo* di)
          showCLDeviceType(di->devType),
          di->driver,
          di->version,
+         di->computeCapabilityMajor, di->computeCapabilityMinor,
          showCLBool(di->littleEndian),
          showCLBool(di->errCorrect),
          showCLBool(di->imgSupport),
