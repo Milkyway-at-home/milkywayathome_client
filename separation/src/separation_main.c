@@ -39,9 +39,10 @@ typedef struct
     int usePlatform;
     int useDevNumber;  /* Choose CL platform and device */
     int nonResponsive;
+    unsigned int numChunk;
 } SeparationFlags;
 
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0 }
 
 static void freeSeparationFlags(SeparationFlags* sf)
 {
@@ -64,6 +65,7 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->platform = sf->usePlatform;
     clr->devNum = sf->useDevNumber;
     clr->nonResponsive = sf->nonResponsive;
+    clr->numChunk = sf->numChunk;
 }
 
 #else
@@ -129,6 +131,12 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
             "non-responsive", 'r',
             POPT_ARG_NONE, &sf->nonResponsive,
             'r', "Don't care about responsiveness on GPU", NULL
+        },
+
+        {
+            "num-chunk", 'u',
+            POPT_ARG_INT, &sf->numChunk,
+            'u', "Manually set number of chunks per GPU iteration", NULL
         },
       #endif /* SEPARATION_OPENCL */
 

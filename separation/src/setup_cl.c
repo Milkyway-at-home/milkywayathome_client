@@ -36,8 +36,236 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif /* SEPARATION_INLINE_KERNEL */
 
 
+typedef struct
+{
+    cl_uint x;  /* Extra area */
+    cl_uint n;  /* Number chunks */
+} SizeSolution;
+
+static size_t findGroupSize(const DevInfo* di)
+{
+    return di->devType == CL_DEVICE_TYPE_CPU ? 1 : 64;
+}
+
+static cl_uint chooseNumChunk(const CLRequest* clr, const DevInfo* di)
+{
+    /* If not being used for output, 1 has the least overhead */
+    if (di->nonOutput || clr->nonResponsive)
+        return 1;
+
+    if (clr->numChunk != 0)   /* Use manual override */
+        return clr->numChunk;
+
+    return 400;
+}
+
+/* Brute force possible solutions */
+static SizeSolution* findSolutions(const IntegralArea* ia,
+                                   cl_uint nThread,
+                                   cl_uint nCU,
+                                   cl_uint* numSolutionsOut)
+{
+    cl_uint tolerance;
+    cl_uint block;
+
+    cl_uint x, n;
+    cl_bool isSolution;
+
+    SizeSolution* allSoln;
+    cl_uint area;
+    cl_uint numSolutions = 0;
+    size_t maxPossible;
+    size_t maxN;
+
+    area = ia->r_steps * ia->mu_steps;
+
+    tolerance = area / 200; /* Solutions can only add max. ~0.5% more work */
+    block = nThread * nCU;
+
+    maxN = ia->r_steps / 2;
+    maxPossible = tolerance * ((maxN + 1) / nThread);
+    allSoln = callocSafe(maxPossible, sizeof(SizeSolution));
+
+    n = 2; /* Don't care about n = 1 */
+    while (n < maxN)
+    {
+        x = 0;
+        isSolution = CL_FALSE;
+        while (!isSolution && x < tolerance)
+        {
+            /* If we found a solution, it's the minimum amount of work already.
+               Don't care about ones with the same n and more extra work. */
+
+            isSolution = (area + x) % (block * n) == 0;
+
+            x += nThread; /* x will be a multiple of the number of threads */
+        }
+
+        if (isSolution)
+        {
+            assert(numSolutions < maxPossible);
+
+            allSoln[numSolutions].x = x;
+            allSoln[numSolutions].n = n;
+            warn("Found solution n = %u, x = %u\n", n, x);
+            ++numSolutions;
+        }
+
+        ++n;
+    }
+
+    printf("Found %u solutions\n", numSolutions);
+
+    if (numSolutions == 0)
+    {
+        free(allSoln);
+        allSoln = NULL;
+    }
+
+    *numSolutionsOut = numSolutions;
+    return allSoln;
+}
+
+static SizeSolution chooseSolution(const SizeSolution* allSol,
+                                   cl_uint numSolution,
+                                   cl_uint desiredNumChunk)
+{
+    cl_uint i = 0;
+    SizeSolution sol;
+
+    sol.x = 0;
+    sol.n = 1;
+
+    if (!allSol || numSolution == 0) /* No solutions to look for */
+        return sol;
+
+    /* Use minimum number of chunks */
+    if (desiredNumChunk == 1 || desiredNumChunk == 0)
+        return sol;
+
+    /* Find where we cross */
+    while (allSol[i].n < desiredNumChunk && i < numSolution)
+        ++i;
+
+    if (i == numSolution)
+    {
+        warn("Desired number of chunks went beyond solution range. "
+             "Choosing highest solution\n");
+        sol = allSol[numSolution - 1];
+    }
+    else
+    {
+        sol = allSol[i];
+    }
+
+    return sol;
+}
+
+/* Returns CL_TRUE on error */
+cl_bool findGoodRunSizes(RunSizes* sizes,
+                         const CLInfo* ci,
+                         const DevInfo* di,
+                         const IntegralArea* ia,
+                         const CLRequest* clr)
+{
+    /* To avoid lots of idle compute units near the end of each iteration, it helps to round the area up so that the total area is evenly divisible by the number of threads times the number of compute units when chunked.
+
+       We can ensure this by finding solutions to this this equation:
+
+       There exists some integers m and x such that:
+
+       m == (mu_steps * r_steps + x) / (n_chunk * n_thread * n_cu)
+
+       where n_chunk = number of chunks the iteration is divided into
+             n_thread = number of threads used for local size, i.e 64
+             n_cu = number of compute units of the GPU
+
+        Good numbers of chunks have solutions for m and n, of which we only care what x is. Otherwise there will be more idle time.
+
+        groupSize = nthreads
+     */
+
+    SizeSolution* allSolutions = NULL;
+    cl_uint numSolutions;
+    SizeSolution solution;
+    cl_uint desiredNumChunk;
+    WGInfo wgi;
+    size_t localSize;
+    cl_int err;
+    cl_uint groupSize;
+
+    err = mwGetWorkGroupInfo(ci, &wgi);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to get work group info: %s\n", showCLInt(err));
+        return CL_TRUE;
+    }
+    else
+        mwPrintWorkGroupInfo(&wgi);
+
+    groupSize = findGroupSize(di);
+    desiredNumChunk = chooseNumChunk(clr, di);
+
+    allSolutions = findSolutions(ia, groupSize, di->maxCompUnits, &numSolutions);
+    solution = chooseSolution(allSolutions, numSolutions, desiredNumChunk);
+    free(allSolutions);
+
+    warn("Using solution: n = %u, x = %u\n", solution.n, solution.x);
+
+    sizes->groupSize     = groupSize;
+    sizes->area          = ia->mu_steps * ia->r_steps;
+    sizes->numChunks     = solution.n;
+    sizes->extra         = solution.x;
+    sizes->effectiveArea = sizes->area + sizes->extra;
+    sizes->chunkSize     = sizes->effectiveArea / sizes->numChunks;
+
+    sizes->global[0] = sizes->effectiveArea;
+    sizes->global[1] = 1;
+
+    sizes->local[0] = sizes->groupSize;
+    sizes->local[1] = 1;
+
+    warn("Range:          { nu_steps = %zu, mu_steps = %zu, r_steps = %zu }\n"
+         "Iteration area: %zu\n"
+         "Chunk estimate: %u\n"
+         "Num chunks:     %zu\n"
+         "Added area:     %u\n"
+         "Effective area: %zu\n",
+         ia->nu_steps, ia->mu_steps, ia->r_steps,
+         sizes->area,
+         desiredNumChunk,
+         sizes->numChunks,
+         sizes->extra,
+         sizes->effectiveArea);
+
+    /* Check for error in solution just in case */
+    if (sizes->effectiveArea % sizes->chunkSize != 0)
+    {
+        warn("Effective area (%zu) not divisible by chunk size (%zu)\n",
+             sizes->effectiveArea, sizes->chunkSize);
+        return CL_TRUE;
+    }
+
+    /* TODO: also check against CL_DEVICE_MAX_WORK_ITEM_SIZES */
+    if (sizes->global[0] % sizes->local[0] || sizes->global[1] % sizes->local[1])
+    {
+        warn("Global dimensions not divisible by local\n");
+        return CL_TRUE;
+    }
+
+    localSize = sizes->local[0] * sizes->local[1];
+    if (localSize > wgi.wgs)
+    {
+        warn("Local size (%zu) > maximum work group size (%zu)\n", localSize, wgi.wgs);
+        return CL_TRUE;
+    }
+
+    return CL_FALSE;
+}
+
+
 /* Only sets the constant arguments, not the outputs which we double buffer */
-cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm)
+cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* runSizes)
 {
     cl_int err = CL_SUCCESS;
 
@@ -53,6 +281,7 @@ cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm)
     err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->sg_dx);
     err |= clSetKernelArg(ci->kern, 7, sizeof(cl_mem), &cm->rPts);
     err |= clSetKernelArg(ci->kern, 8, sizeof(cl_mem), &cm->lbts);
+    err |= clSetKernelArg(ci->kern, 9, sizeof(cl_uint), &runSizes->extra);
 
     if (err != CL_SUCCESS)
     {

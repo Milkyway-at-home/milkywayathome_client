@@ -44,6 +44,17 @@ typedef struct
     size_t lbts;
 } SeparationSizes;
 
+typedef struct
+{
+    size_t global[2];
+    size_t local[2];
+    size_t groupSize;
+    size_t numChunks;   /* Number of chunks to divide each iteration into */
+    cl_uint extra;      /* Extra area added */
+    size_t area;
+    size_t effectiveArea;
+    size_t chunkSize;   /* effectiveArea / numChunks */
+} RunSizes;
 
 /* The various buffers needed by the integrate function. */
 typedef struct
@@ -74,7 +85,14 @@ cl_int setupSeparationCL(CLInfo* ci,
                          cl_bool useImages);
 
 cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes* sizes);
-cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm);
+cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* runSizes);
+
+cl_bool findGoodRunSizes(RunSizes* sizes,
+                         const CLInfo* ci,
+                         const DevInfo* di,
+                         const IntegralArea* ia,
+                         const CLRequest* clr);
+
 
 cl_double estimateWUFLOPsPerIter(const AstronomyParameters* ap, const IntegralArea* ia);
 cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_double flops);

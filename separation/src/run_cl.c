@@ -71,90 +71,6 @@ static void sumProbsResults(real* probs_results,
     free(probs_sum);
 }
 
-/* Find the smallest integer i >= x that is divisible by n */
-static size_t nextMultiple(const size_t x, const size_t n)
-{
-    return (x % n == 0) ? x : x + (n - x % n);
-}
-
-static cl_int cpuGroupSizes(const IntegralArea* ia, size_t global[], size_t local[])
-{
-    global[0] = 1;
-    global[1] = ia->mu_steps;
-    global[2] = ia->r_steps;
-    local[0] = 1;
-    local[1] = 1;
-    local[2] = 1;
-
-    return CL_SUCCESS;
-}
-
-static cl_int gpuGroupSizes(const IntegralArea* ia, size_t numChunks, size_t global[], size_t local[])
-{
-    size_t groupSize = 64;
-    size_t chunkSize = ia->r_steps / numChunks;
-    size_t totalArea = ia->r_steps * ia->mu_steps;
-
-    if (totalArea % numChunks != 0)
-    {
-        warn("Error: r_steps (%zu) not divisible by number of chunks (%zu)\n", ia->r_steps, numChunks);
-        return -1;
-    }
-
-    /* Ideally these are already nicely divisible by 32/64/128, otherwise
-     * round up a bit. */
-    global[0] = totalArea / numChunks;
-    global[1] = 1;
-
-    /* Bias towards mu steps seems to be better */
-    local[0] = groupSize;
-    local[1] = 1;
-
-    return CL_SUCCESS;
-}
-
-/* TODO: Do we need hadware specific workgroup sizes? */
-static cl_bool findWorkGroupSizes(CLInfo* ci,
-                                  const IntegralArea* ia,
-                                  size_t numChunks,
-                                  size_t global[],
-                                  size_t local[])
-{
-    cl_int err;
-    WGInfo wgi;
-
-    err = mwGetWorkGroupInfo(ci, &wgi);
-    if (err != CL_SUCCESS)
-        warn("Failed to get work group info: %s\n", showCLInt(err));
-    else
-        mwPrintWorkGroupInfo(&wgi);
-
-    if (ci->devType == CL_DEVICE_TYPE_CPU)
-        err = cpuGroupSizes(ia, global, local);
-    else
-        err = gpuGroupSizes(ia, numChunks, global, local);
-
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to choose group size\n");
-        return CL_TRUE;
-    }
-
-    size_t localSize = local[0] * local[1] * local[2];
-
-    warn("Range is { nu_steps = %zu, mu_steps = %zu, r_steps = %zu }\n"
-         "Chunked range is  { r_steps = %zu, mu_steps = %zu, nu_steps = %zu }\n"
-         "Attempting to use a workgroup size of { %zu, %zu, %zu } = %zu \n",
-         ia->nu_steps, ia->mu_steps, ia->r_steps,
-         global[0], global[1], global[2],
-         local[0], local[1], local[2],
-         localSize);
-
-    /* Sanity checks */
-    /* TODO: also check against CL_DEVICE_MAX_WORK_ITEM_SIZES */
-    return (global[0] % local[0] || global[1] % local[1] || global[2] % local[2] || localSize > wgi.wgs);
-}
-
 static cl_int enqueueIntegralKernel(CLInfo* ci,
                                     const size_t offset[],
                                     const size_t global[],
@@ -208,7 +124,7 @@ static cl_int setNuKernelArgs(CLInfo* ci, const IntegralArea* ia, const cl_uint 
      * enough threads to hide the horrible latency of the other
      * required reads. */
     nuid = calcNuStep(ia, nu_step);
-    err = clSetKernelArg(ci->kern, 9, sizeof(real), &nuid.id);
+    err = clSetKernelArg(ci->kern, 10, sizeof(real), &nuid.id);
     if (err != CL_SUCCESS)
     {
         warn("Error setting nu_id argument for step %u: %s\n", nu_step, showCLInt(err));
@@ -271,10 +187,7 @@ static cl_int runNuStep(CLInfo* ci,
                         SeparationCLMem* cm,
 
                         const IntegralArea* ia,
-                        const size_t numChunks,
-                        const size_t chunkSize,
-                        const size_t global[],
-                        const size_t local[],
+                        const RunSizes* runSizes,
                         const cl_uint number_streams,
                         const cl_uint nu_step)
 {
@@ -283,7 +196,6 @@ static cl_int runNuStep(CLInfo* ci,
     unsigned int i;
 
     printf("Nu step %u:\n", nu_step);
-    //printSeparationEventTimes(evs);
 
     err = setNuKernelArgs(ci, ia, nu_step);
     if (err != CL_SUCCESS)
@@ -293,11 +205,11 @@ static cl_int runNuStep(CLInfo* ci,
     }
 
     offset[1] = nu_step;
-    for (i = 0; i < numChunks; ++i)
+    for (i = 0; i < runSizes->numChunks; ++i)
     {
-        offset[0] = i * chunkSize;
+        offset[0] = i * runSizes->chunkSize;
 
-        err = enqueueIntegralKernel(ci, offset, global, local);
+        err = enqueueIntegralKernel(ci, offset, runSizes->global, runSizes->local);
         if (err != CL_SUCCESS)
         {
             warn("Failed to enqueue integral kernel: %s\n", showCLInt(err));
@@ -309,7 +221,7 @@ static cl_int runNuStep(CLInfo* ci,
         if (err != CL_SUCCESS)
         {
             warn("Failed to finish: %s\n", showCLInt(err));
-            return NAN;
+            return err;
         }
     }
 
@@ -318,6 +230,7 @@ static cl_int runNuStep(CLInfo* ci,
 
 static real runIntegral(CLInfo* ci,
                         SeparationCLMem* cm,
+                        RunSizes* runSizes,
                         real* probs_results,
                         const CLRequest* clr,
                         const AstronomyParameters* ap,
@@ -329,37 +242,14 @@ static real runIntegral(CLInfo* ci,
     size_t global[3];
     size_t local[3];
 
-    /* TODO: Figure out a number based on GPU speed to keep execution
-     * times under 100ms to prevent unusable system */
-    //size_t numChunks = 140;
-    //size_t numChunks = 70;
-    //size_t numChunks = 224;
-    //size_t numChunks = 280;
-    //size_t numChunks = 140;
-    size_t numChunks = 1;
-
-    size_t chunkSize = ia->r_steps * ia->mu_steps / numChunks;
-
-    if (clr->nonResponsive)
-        numChunks = 1;
-
-
     err = mwEnableProfiling(ci);
     if (err != CL_SUCCESS)
         warn("Failed to enable profiling: %s\n", showCLInt(err));
 
-    if (findWorkGroupSizes(ci, ia, numChunks, global, local))
-    {
-        warn("Failed to calculate acceptable work group sizes\n");
-        return NAN;
-    }
-
     for (i = 0; i < ia->nu_steps; ++i)
     {
         double t1 = mwGetTimeMilli();
-        err = runNuStep(ci, cm,
-                        ia, numChunks, chunkSize, global, local,
-                        ap->number_streams, i);
+        err = runNuStep(ci, cm, ia, runSizes, ap->number_streams, i);
         if (err != CL_SUCCESS)
         {
             warn("Failed to run nu step: %s\n", showCLInt(err));
@@ -391,10 +281,17 @@ real integrateCL(const AstronomyParameters* ap,
     real result;
     cl_int err;
     SeparationSizes sizes;
+    RunSizes runSizes;
+    cl_uint groupSize = 64;
     SeparationCLMem cm = EMPTY_SEPARATION_CL_MEM;
 
     /* Need to test sizes for each integral, since the area size can change */
     calculateSizes(&sizes, ap, ia);
+    if (findGoodRunSizes(&runSizes, ci, di, ia, clr))
+    {
+        warn("Failed to find good run sizes\n");
+        return NAN;
+    }
 
     if (!separationCheckDevCapabilities(di, &sizes))
     {
@@ -409,14 +306,14 @@ real integrateCL(const AstronomyParameters* ap,
         return NAN;
     }
 
-    err = separationSetKernelArgs(ci, &cm);
+    err = separationSetKernelArgs(ci, &cm, &runSizes);
     if (err != CL_SUCCESS)
     {
         warn("Failed to set integral kernel arguments: %s\n", showCLInt(err));
         return NAN;
     }
 
-    result = runIntegral(ci, &cm, probs_results, clr, ap, ia);
+    result = runIntegral(ci, &cm, &runSizes, probs_results, clr, ap, ia);
 
     releaseSeparationBuffers(&cm);
 

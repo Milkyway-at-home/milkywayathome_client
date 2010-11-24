@@ -82,7 +82,8 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
     err |= clGetDeviceInfo(dev, CL_DEVICE_PROFILING_TIMER_RESOLUTION, sizeof(size_t), &di->timerRes, NULL);
     err |= clGetDeviceInfo(dev, CL_DEVICE_EXTENSIONS, sizeof(di->exts), &di->exts, NULL);
 
-    di->nonOutput = CL_FALSE; /* TODO: Check for Tesla or similar */
+    /* TODO: Check for Tesla or similar */
+    di->nonOutput = (di->devType != CL_DEVICE_TYPE_GPU);
 
     di->computeCapabilityMajor = di->computeCapabilityMinor = 0;
   #ifndef __APPLE__
