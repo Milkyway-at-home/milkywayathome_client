@@ -193,50 +193,49 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
     char includeFlags[4096] = "";
 
     /* Math options for CL compiler */
-    const char* mathFlags = "-cl-mad-enable "
-                            "-cl-no-signed-zeros "
-                            "-cl-strict-aliasing "
-                            "-cl-finite-math-only ";
+    const char mathFlags[] = "-cl-mad-enable "
+                             "-cl-no-signed-zeros "
+                             "-cl-strict-aliasing "
+                             "-cl-finite-math-only ";
 
     /* Build options used by milkyway_math stuff */
-    const char* mathOptions = "-DUSE_CL_MATH_TYPES=0 "
-                              "-DUSE_MAD=0 "
-                              "-DUSE_FMA=0 ";
+    const char mathOptions[] = "-DUSE_CL_MATH_TYPES=0 "
+                               "-DUSE_MAD=0 "
+                               "-DUSE_FMA=0 ";
 
     /* Extra flags for different compilers */
-    const char* nvidiaOptFlags = "-cl-nv-verbose ";
-    const char* atiOptFlags    = "";
+    const char nvidiaOptFlags[] = "-cl-nv-verbose ";
+    const char atiOptFlags[]    = "";
 
   #if DOUBLEPREC
-    const char* precDefStr   = "-DDOUBLEPREC=1 ";
-    const char* atiPrecStr   = "";
-    const char* otherPrecStr = "";
+    const char precDefStr[]   = "-DDOUBLEPREC=1 ";
+    const char atiPrecStr[]   = "";
+    const char otherPrecStr[] = "";
   #else
-    const char* precDefStr = "-DDOUBLEPREC=0 ";
-    const char* atiPrecStr = "--single_precision_constant ";
-    const char* clPrecStr  = "-cl-single-precision-constant ";
+    const char precDefStr[] = "-DDOUBLEPREC=0 ";
+    const char atiPrecStr[] = "--single_precision_constant ";
+    const char clPrecStr[]  = "-cl-single-precision-constant ";
   #endif
 
     /* Constants compiled into kernel */
-    const char* kernelDefStr = "-DNSTREAM=%u "
-                               "-DFAST_H_PROB=%d "
-                               "-DAUX_BG_PROFILE=%d "
-                               "-DUSE_IMAGES=%d ";
+    const char kernelDefStr[] = "-DNSTREAM=%u "
+                                "-DFAST_H_PROB=%d "
+                                "-DAUX_BG_PROFILE=%d "
+                                "-DUSE_IMAGES=%d ";
 
-    const char* includeStr = "-I%s/../include "
-                             "-I%s/../../include "
-                             "-I%s/../../milkyway/include ";
+    const char includeStr[] = "-I%s/../include "
+                              "-I%s/../../include "
+                              "-I%s/../../milkyway/include ";
 
     /* Big enough. Also make sure to count for the extra characters of the format specifiers */
     char kernelDefBuf[sizeof(kernelDefStr) + 4 * 12 + 8];
-    char precDefBuf[2 * sizeof(atiPrecStr) + sizeof(precDefStr)];
+    char precDefBuf[2 * sizeof(atiPrecStr) + sizeof(precDefStr) + 1];
 
     size_t totalSize = 3 * sizeof(cwd) + (sizeof(includeStr) + 6)
                      + sizeof(mathFlags)
                      + sizeof(precDefBuf)
                      + sizeof(kernelDefBuf)
                      + sizeof(mathOptions)
-
                      + sizeof(extraFlags);
 
     if (snprintf(kernelDefBuf, sizeof(kernelDefBuf), kernelDefStr,
@@ -259,7 +258,6 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
             di->vendorID != MW_AMD_ATI ? clPrecStr : atiPrecStr,
             2 * sizeof(atiPrecStr));
   #endif /* !DOUBLEPREC */
-
 
     if (di->vendorID == MW_NVIDIA)
     {
