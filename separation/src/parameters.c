@@ -67,9 +67,11 @@ static IntegralArea* freadParameters(FILE* file,
     unsigned int i, temp;
     int retval;
     double tmp1, tmp2;
-    IntegralArea* integral;
+    IntegralArea integralTmp;
+    IntegralArea* integrals;
     const IntegralArea* ia;
     unsigned int total_calc_probs;
+    unsigned int integralNumTmp;
 
     retval = fscanf(file, "parameters_version: %lf\n", &tmp1);
     ap->parameters_version = (real) tmp1;
@@ -129,78 +131,76 @@ static IntegralArea* freadParameters(FILE* file,
     if (fscanf(file, "wedge: %d\n", &ap->wedge) < 1)
         warn("Error reading wedge\n");
 
-    integral = (IntegralArea*) mwMallocAligned(sizeof(IntegralArea), sizeof(IntegralArea));
-
     fscanf(file,
            "r[min,max,steps]: %lf, %lf, %u\n",
-           &tmp1, &tmp2, &integral[0].r_steps);
+           &tmp1, &tmp2, &integralTmp.r_steps);
 
-    integral[0].r_min = (real) tmp1;
-    integral[0].r_max = (real) tmp2;
+    integralTmp.r_min = (real) tmp1;
+    integralTmp.r_max = (real) tmp2;
 
     fscanf(file,
            "mu[min,max,steps]: %lf, %lf, %u\n",
-           &tmp1, &tmp2, &integral[0].mu_steps);
+           &tmp1, &tmp2, &integralTmp.mu_steps);
 
-    integral[0].mu_min = (real) tmp1;
-    integral[0].mu_max = (real) tmp2;
-
+    integralTmp.mu_min = (real) tmp1;
+    integralTmp.mu_max = (real) tmp2;
 
     fscanf(file,
            "nu[min,max,steps]: %lf, %lf, %u\n",
-           &tmp1, &tmp2, &integral[0].nu_steps);
+           &tmp1, &tmp2, &integralTmp.nu_steps);
 
-    integral[0].nu_min = (real) tmp1;
-    integral[0].nu_max = (real) tmp2;
+    integralTmp.nu_min = (real) tmp1;
+    integralTmp.nu_max = (real) tmp2;
 
-    calcIntegralStepSizes(&integral[0]);
+    calcIntegralStepSizes(&integralTmp);
 
-    fscanf(file, "number_cuts: %u\n", &ap->number_integrals);
-    ap->number_integrals++;
+    ap->number_integrals = 1;
+    fscanf(file, "number_cuts: %u\n", &integralNumTmp);
+    ap->number_integrals += integralNumTmp;
+
+    integrals = (IntegralArea*) mwMallocAligned(ap->number_integrals * sizeof(IntegralArea), sizeof(IntegralArea));
+
+    integrals[0] = integralTmp;
+
     if (ap->number_integrals > 1)
     {
-        /* FIXME?: Alignment in case where copy happens */
-        integral = (IntegralArea*) reallocSafe(integral, sizeof(IntegralArea) * ap->number_integrals);
         for (i = 1; i < ap->number_integrals; i++)
         {
             fscanf(file,
                    "r_cut[min,max,steps][%u]: %lf, %lf, %u\n",
-                   &temp, &tmp1, &tmp2, &integral[i].r_steps);
+                   &temp, &tmp1, &tmp2, &integrals[i].r_steps);
 
-            integral[i].r_min = (real) tmp1;
-            integral[i].r_max = (real) tmp2;
+            integrals[i].r_min = (real) tmp1;
+            integrals[i].r_max = (real) tmp2;
 
             fscanf(file,
                    "mu_cut[min,max,steps][%u]: %lf, %lf, %u\n",
-                   &temp, &tmp1, &tmp2, &integral[i].mu_steps);
+                   &temp, &tmp1, &tmp2, &integrals[i].mu_steps);
 
-            integral[i].mu_min = (real) tmp1;
-            integral[i].mu_max = (real) tmp2;
-
+            integrals[i].mu_min = (real) tmp1;
+            integrals[i].mu_max = (real) tmp2;
 
             fscanf(file,
                    "nu_cut[min,max,steps][%u]: %lf, %lf, %u\n",
-                   &temp, &tmp1, &tmp2, &integral[i].nu_steps);
+                   &temp, &tmp1, &tmp2, &integrals[i].nu_steps);
 
-            integral[i].nu_min = (real) tmp1;
-            integral[i].nu_max = (real) tmp2;
+            integrals[i].nu_min = (real) tmp1;
+            integrals[i].nu_max = (real) tmp2;
 
-
-            calcIntegralStepSizes(&integral[i]);
+            calcIntegralStepSizes(&integrals[i]);
         }
     }
 
     /* Calculate total probability calculations for checkpointing */
-
     total_calc_probs = 0;
     for (i = 0; i < ap->number_integrals; ++i)
     {
-        ia = &integral[i];
+        ia = &integrals[i];
         total_calc_probs += ia->mu_steps * ia->nu_steps * ia->r_steps;
     }
 
     ap->total_calc_probs = (real) total_calc_probs;
-    return integral;
+    return integrals;
 }
 
 IntegralArea* readParameters(const char* filename,
@@ -267,7 +267,7 @@ static void fwriteParameters(FILE* file,
 
     fprintf(file, "convolve: %d\n", ap->convolve);
     fprintf(file, "sgr_coordinates: %d\n", ap->sgr_coordinates);
-    fprintf(file, "aux_bg_profile: %d\n", ap->aux_bg_profile); //vickej2_bg
+    fprintf(file, "aux_bg_profile: %d\n", ap->aux_bg_profile);
     fprintf(file, "wedge: %d\n", ap->wedge);
 
     fprintf(file,
