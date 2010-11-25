@@ -56,7 +56,7 @@ static cl_uint chooseNumChunk(const CLRequest* clr, const DevInfo* di)
     if (clr->numChunk != 0)   /* Use manual override */
         return clr->numChunk;
 
-    return 100;
+    return 150;
 }
 
 static cl_bool checkSolution(cl_uint area, cl_uint block, cl_uint n, cl_uint x)
@@ -281,7 +281,7 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
     sizes->effectiveArea = sizes->area + sizes->extra;
     sizes->chunkSize     = sizes->effectiveArea / sizes->numChunks;
 
-    sizes->global[0] = sizes->effectiveArea;
+    sizes->global[0] = sizes->chunkSize;;
     sizes->global[1] = 1;
 
     sizes->local[0] = sizes->groupSize;
