@@ -56,74 +56,141 @@ static cl_uint chooseNumChunk(const CLRequest* clr, const DevInfo* di)
     if (clr->numChunk != 0)   /* Use manual override */
         return clr->numChunk;
 
-    return 400;
+    return 100;
+}
+
+static cl_bool checkSolution(cl_uint area, cl_uint block, cl_uint n, cl_uint x)
+{
+    return (area + x) % (block * n) == 0;
+}
+
+/* Find the extra area added */
+static cl_bool findMinWorkN(SizeSolution* sol, cl_uint tolerance, cl_uint area, cl_uint block, cl_uint n, cl_uint nThread)
+{
+    cl_uint x = 0;
+    cl_bool isSolution = CL_FALSE;
+
+    while (!isSolution && x < tolerance)
+    {
+        /* If we found a solution, it's the minimum amount of work already.
+           Don't care about ones with the same n and more extra work. */
+
+        isSolution = checkSolution(area, block, n, x);
+        if (isSolution)
+        {
+            sol->x = x;
+            sol->n = n;
+        }
+
+        x += nThread; /* x will be a multiple of the number of threads */
+    }
+
+    return isSolution;
+}
+
+/* Finds number of chunks that will divide the area if all else fails */
+static cl_uint findFallbackSolution(const IntegralArea* ia, cl_uint area, cl_uint desiredChunkNum, cl_uint nthread)
+{
+    cl_bool minCloser;
+    cl_uint nMin, nMax;
+
+    nMin = nMax = desiredChunkNum;
+
+    while (nMin > 1 && (area % nMin != 0))
+        --nMin;
+
+    while (nMax < ia->r_steps && (area % nMax != 0))
+        ++nMax;
+
+    /* Choose the closer one, unless the max is the max possible, which doesn't work very well */
+    minCloser = desiredChunkNum - nMin <= nMax - desiredChunkNum;
+    return (minCloser || nMax == ia->r_steps) ? nMin : nMax;
+}
+
+static SizeSolution chooseLowerOrHigher(SizeSolution max, SizeSolution min, cl_uint desiredChunkNum)
+{
+    cl_bool minCloser;
+
+    /* Pick the direction to go. First try choosing the closest one */
+    minCloser = max.n - desiredChunkNum >= desiredChunkNum - min.n;
+    if (minCloser)
+        return min;
+
+    /* If the max solution adds many more chunks, prefer the lower one anyway. */
+    if (max.n >= 3 * min.n / 2)
+    {
+        warn("Next highest solution has many more, prefering smaller solution\n");
+        return min;
+    }
+
+    return max;
 }
 
 /* Brute force possible solutions */
-static SizeSolution* findSolutions(const IntegralArea* ia,
-                                   cl_uint nThread,
-                                   cl_uint nCU,
-                                   cl_uint* numSolutionsOut)
+static SizeSolution findSolution(const IntegralArea* ia,
+                                 cl_uint desiredChunkNum,
+                                 cl_uint nThread,
+                                 cl_uint nCU)
 {
-    cl_uint tolerance;
-    cl_uint block;
+    cl_uint n, maxN;
+    cl_uint area, block, tolerance;
 
-    cl_uint x, n;
-    cl_bool isSolution;
+    SizeSolution min, max;
+    SizeSolution sol = { 0, 1 }; /* Minimum possible */
 
-    SizeSolution* allSoln;
-    cl_uint area;
-    cl_uint numSolutions = 0;
-    size_t maxPossible;
-    size_t maxN;
+    cl_bool haveSolution = CL_FALSE;
+    cl_bool minSolution = CL_FALSE;
+    cl_bool maxSolution = CL_FALSE;
+
+    min = max = sol;
 
     area = ia->r_steps * ia->mu_steps;
-
     tolerance = area / 200; /* Solutions can only add max. ~0.5% more work */
     block = nThread * nCU;
 
-    maxN = ia->r_steps / 2;
-    maxPossible = tolerance * ((maxN + 1) / nThread);
-    allSoln = callocSafe(maxPossible, sizeof(SizeSolution));
+    if (nCU == 0 || nCU == 1 || desiredChunkNum == 0 || desiredChunkNum == 1)
+        return sol;
 
-    n = 2; /* Don't care about n = 1 */
-    while (n < maxN)
+    /* Find the closest one with a smaller n */
+    n = desiredChunkNum;
+    while (!minSolution && n > 1)
     {
-        x = 0;
-        isSolution = CL_FALSE;
-        while (!isSolution && x < tolerance)
-        {
-            /* If we found a solution, it's the minimum amount of work already.
-               Don't care about ones with the same n and more extra work. */
+        minSolution = findMinWorkN(&min, tolerance, area, block, n, nThread);
+        --n;
+    }
 
-            isSolution = (area + x) % (block * n) == 0;
-
-            x += nThread; /* x will be a multiple of the number of threads */
-        }
-
-        if (isSolution)
-        {
-            assert(numSolutions < maxPossible);
-
-            allSoln[numSolutions].x = x;
-            allSoln[numSolutions].n = n;
-            warn("Found solution n = %u, x = %u\n", n, x);
-            ++numSolutions;
-        }
-
+    /* Find the closest one with a larger n */
+    n = desiredChunkNum;
+    maxN = ia->r_steps / 2;
+    while (!maxSolution && n < maxN)
+    {
+        maxSolution = findMinWorkN(&max, tolerance, area, block, n, nThread);
         ++n;
     }
 
-    printf("Found %u solutions\n", numSolutions);
+    if (minSolution)
+        warn("Lower n solution: n = %u, x = %u\n", min.n, min.x);
 
-    if (numSolutions == 0)
+    if (maxSolution)
+        warn("Higher n solution: n = %u, x = %u\n", max.n, max.x);
+
+    haveSolution = minSolution || maxSolution;
+    if (!haveSolution)
     {
-        free(allSoln);
-        allSoln = NULL;
+        /* This really shouldn't happen, but if it does we give up on
+           adding extra work. Find the closest n which will divide the
+           total area */
+        sol.n = findFallbackSolution(ia, area, desiredChunkNum, nThread);
+        sol.x = 0;
+        warn("Didn't find a solution. Using fallback solution n = %u, x = %u\n", sol.n, sol.x);
+        /* TODO: Try a bigger tolerance */
+    }
+    else
+    {
+        sol = chooseLowerOrHigher(max, min, desiredChunkNum);
     }
 
-    *numSolutionsOut = numSolutions;
-    return allSoln;
+    return sol;
 }
 
 static SizeSolution chooseSolution(const SizeSolution* allSol,
@@ -185,7 +252,6 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
         groupSize = nthreads
      */
 
-    SizeSolution* allSolutions = NULL;
     cl_uint numSolutions;
     SizeSolution solution;
     cl_uint desiredNumChunk;
@@ -205,11 +271,7 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
 
     groupSize = findGroupSize(di);
     desiredNumChunk = chooseNumChunk(clr, di);
-
-    allSolutions = findSolutions(ia, groupSize, di->maxCompUnits, &numSolutions);
-    solution = chooseSolution(allSolutions, numSolutions, desiredNumChunk);
-    free(allSolutions);
-
+    solution = findSolution(ia, desiredNumChunk, groupSize, di->maxCompUnits);
     warn("Using solution: n = %u, x = %u\n", solution.n, solution.x);
 
     sizes->groupSize     = groupSize;
