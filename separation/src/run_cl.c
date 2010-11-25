@@ -228,6 +228,15 @@ static cl_int runNuStep(CLInfo* ci,
     return CL_SUCCESS;
 }
 
+static inline void reportProgress(cl_uint nuSteps, cl_uint step)
+{
+  #if BOINC_APPLICATION
+    boinc_fraction_done((double) nuSteps / (double) step);
+  #else
+    printf("Step %u\n", step);
+  #endif /* BOINC_APPLICATION */
+}
+
 static real runIntegral(CLInfo* ci,
                         SeparationCLMem* cm,
                         RunSizes* runSizes,
@@ -239,8 +248,8 @@ static real runIntegral(CLInfo* ci,
     cl_uint i;
     cl_int err;
     real result;
-    size_t global[3];
-    size_t local[3];
+    double t1, t2, dt;
+    double tAcc = 0.0;
 
     err = mwEnableProfiling(ci);
     if (err != CL_SUCCESS)
@@ -248,17 +257,23 @@ static real runIntegral(CLInfo* ci,
 
     for (i = 0; i < ia->nu_steps; ++i)
     {
-        double t1 = mwGetTimeMilli();
+        t1 = mwGetTimeMilli();
         err = runNuStep(ci, cm, ia, runSizes, ap->number_streams, i);
         if (err != CL_SUCCESS)
         {
             warn("Failed to run nu step: %s\n", showCLInt(err));
             return NAN;
         }
+        t2 = mwGetTimeMilli();
 
-        double t2 = mwGetTimeMilli();
-        printf("Loop time: %f ms\n", t2 - t1);
+        dt = t2 - t1;
+        tAcc += dt;
+
+        reportProgress(ia->nu_steps, i);
+        printf("Loop time: %f ms\n", dt);
     }
+
+    warn("Integration time: %f ms. Average time per iteration = %f ms\n", tAcc, tAcc / (double) ia->nu_steps);
 
     /* Read results from final step */
     result = readKernelResults(ci, cm, probs_results, ia->mu_steps, ia->r_steps, ap->number_streams);
