@@ -47,6 +47,10 @@ cl_uint cudaCoresPerComputeUnit(const DevInfo* di);
 cl_double cudaEstimateGFLOPs(const DevInfo* di);
 cl_uint cudaEstimateDoubleFrac(const DevInfo* di);
 
+cl_double referenceGFLOPsGTX285(cl_bool doubleprec);
+cl_double referenceGFLOPsGTX480(cl_bool doubleprec);
+cl_double referenceGFLOPsRadeon5870(cl_bool doubleprec);
+
 #ifdef __cplusplus
 }
 #endif

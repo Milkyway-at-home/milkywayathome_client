@@ -300,12 +300,21 @@ static int separationInit(const char* appname)
 {
     int rc;
 
+    /* Everything is on by default except for option to not use idle
+     * priority on Windows */
+    BOINC_OPTIONS options = { 1 };
+    options.normal_thread_priority = 1;
+
   #if BOINC_DEBUG
     rc = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
                                 | BOINC_DIAG_HEAPCHECKENABLED
                                 | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
   #else
+    #if SEPARATION_OPENCL
+    rc = boinc_init_options(&options);
+    #else
     rc = boinc_init();
+    #endif /* SEPARATION_OPENCL */
   #endif /* BOINC_DEBUG */
 
 
@@ -318,14 +327,6 @@ static int separationInit(const char* appname)
   #else
     #pragma unused(appname)
   #endif /* BOINC_APP_GRAPHICS */
-
-  #if defined(_WIN32) && COMPUTE_ON_GPU
-    //make the windows GPU app have a higher priority
-    BOINC_OPTIONS options;
-    boinc_options_defaults(options);
-    options.normal_thread_priority = 1; // higher priority (normal instead of idle)
-    rc = boinc_init_options(&options);
-  #endif /* defined(_WIN32) && COMPUTE_ON_GPU */
 
     return rc;
 }

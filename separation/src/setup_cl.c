@@ -617,6 +617,10 @@ cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_dou
     /* Experimentally determined constants */
     devFactor = computeCapabilityIs(di, 1, 3) ? 1.87 : 1.53;
 
+    /* Idea is this is a sort of efficiency factor for the
+     * architecture vs. the theoretical FLOPs. We can then scale by
+     * the theoretical flops compared to the reference devices. */
+
     return 1000.0 * devFactor * flopsPerIter / flops;
 }
 

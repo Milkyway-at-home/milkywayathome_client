@@ -164,6 +164,21 @@ cl_double cudaEstimateGFLOPs(const DevInfo* di)
     return flops;
 }
 
+cl_double referenceGFLOPsGTX480(cl_bool doubleprec)
+{
+    return doubleprec ? 168.0 : 1350.0;
+}
+
+cl_double referenceGFLOPsGTX285(cl_bool doubleprec)
+{
+    return doubleprec ? 168.0 : 1350.0;
+}
+
+cl_double referenceGFLOPsRadeon5870(cl_bool doubleprec)
+{
+    return doubleprec ? 544.0 : 2720.0;
+}
+
 void mwPrintDevInfo(const DevInfo* di)
 {
     warn("Device %s (%s:0x%x)\n"
