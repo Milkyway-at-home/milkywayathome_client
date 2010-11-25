@@ -149,7 +149,7 @@ cl_int mwFinishEvent(cl_event ev)
 
 #endif /* CL_VERSION_1_1 */
 
-cl_int mwGetWorkGroupInfo(CLInfo* ci, WGInfo* wgi)
+cl_int mwGetWorkGroupInfo(const CLInfo* ci, WGInfo* wgi)
 {
     cl_int err = CL_SUCCESS;
 
