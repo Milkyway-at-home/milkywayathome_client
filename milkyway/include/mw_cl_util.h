@@ -32,10 +32,6 @@ extern "C" {
 cl_int mwGetWorkGroupInfo(const CLInfo* ci, WGInfo* wgi);
 void mwPrintWorkGroupInfo(const WGInfo* wgi);
 
-cl_int mwEnableProfiling(CLInfo* ci);
-cl_int mwDisableProfiling(CLInfo* ci);
-cl_int mwSetOutOfOrder(CLInfo* ci);
-
 cl_ulong mwEventTimeNS(cl_event ev);
 double mwEventTime(cl_event ev);
 
