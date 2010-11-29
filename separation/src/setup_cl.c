@@ -47,6 +47,14 @@ static size_t findGroupSize(const DevInfo* di)
     return di->devType == CL_DEVICE_TYPE_CPU ? 1 : 64;
 }
 
+static cl_uint nvidiaNumChunks(const DevInfo* di)
+{
+    if (minComputeCapabilityCheck(di, 2, 0))
+        return 40;
+
+    return 140;
+}
+
 static cl_uint chooseNumChunk(const CLRequest* clr, const DevInfo* di)
 {
     /* If not being used for output, 1 has the least overhead */
@@ -56,7 +64,10 @@ static cl_uint chooseNumChunk(const CLRequest* clr, const DevInfo* di)
     if (clr->numChunk != 0)   /* Use manual override */
         return clr->numChunk;
 
-    return 150;
+    if (di->vendorID == MW_NVIDIA)
+        return nvidiaNumChunks(di);
+
+    return 140; /* FIXME: Semi-random guess */
 }
 
 static cl_bool checkSolution(cl_uint area, cl_uint block, cl_uint n, cl_uint x)
@@ -512,14 +523,15 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
     const char kernelDefStr[] = "-DNSTREAM=%u "
                                 "-DFAST_H_PROB=%d "
                                 "-DAUX_BG_PROFILE=%d "
-                                "-DUSE_IMAGES=%d ";
+                                "-DUSE_IMAGES=%d "
+                                "-DI_DONT_KNOW_WHY_THIS_DOESNT_WORK_HERE=%d ";
 
     const char includeStr[] = "-I%s/../include "
                               "-I%s/../../include "
                               "-I%s/../../milkyway/include ";
 
     /* Big enough. Also make sure to count for the extra characters of the format specifiers */
-    char kernelDefBuf[sizeof(kernelDefStr) + 4 * 12 + 8];
+    char kernelDefBuf[sizeof(kernelDefStr) + 5 * 12 + 8];
     char precDefBuf[2 * sizeof(atiPrecStr) + sizeof(precDefStr) + 1];
 
     size_t totalSize = 3 * sizeof(cwd) + (sizeof(includeStr) + 6)
@@ -529,11 +541,14 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
                      + sizeof(mathOptions)
                      + sizeof(extraFlags);
 
+    cl_bool isFermi = minComputeCapabilityCheck(di, 2, 0);
+
     if (snprintf(kernelDefBuf, sizeof(kernelDefBuf), kernelDefStr,
                  ap->number_streams,
                  ap->fast_h_prob,
                  ap->aux_bg_profile,
-                 useImages) < 0)
+                 useImages,
+                 isFermi) < 0)
     {
         warn("Error getting kernel constant definitions\n");
         return NULL;

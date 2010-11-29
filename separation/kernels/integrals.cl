@@ -19,8 +19,10 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// Using constant mysteriously doesn't work on Fermi
-//#define __constant __global
+#if I_DONT_KNOW_WHY_THIS_DOESNT_WORK_HERE
+  /* Using constant mysteriously doesn't work on Fermi */
+  #define __constant __global
+#endif
 
 #ifdef __FAST_RELAXED_MATH__
   #error "Bad bad bad bad bad"

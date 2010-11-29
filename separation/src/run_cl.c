@@ -251,10 +251,6 @@ static real runIntegral(CLInfo* ci,
     double t1, t2, dt;
     double tAcc = 0.0;
 
-    err = mwEnableProfiling(ci);
-    if (err != CL_SUCCESS)
-        warn("Failed to enable profiling: %s\n", showCLInt(err));
-
     for (i = 0; i < ia->nu_steps; ++i)
     {
         t1 = mwGetTimeMilli();
@@ -273,7 +269,8 @@ static real runIntegral(CLInfo* ci,
         printf("Loop time: %f ms\n", dt);
     }
 
-    warn("Integration time: %f ms. Average time per iteration = %f ms\n", tAcc, tAcc / (double) ia->nu_steps);
+    warn("Integration time: %f s. Average time per iteration = %f ms\n",
+         tAcc / 1000.0, tAcc / (double) ia->nu_steps);
 
     /* Read results from final step */
     result = readKernelResults(ci, cm, probs_results, ia->mu_steps, ia->r_steps, ap->number_streams);
