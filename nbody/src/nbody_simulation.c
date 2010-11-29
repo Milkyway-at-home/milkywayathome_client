@@ -35,11 +35,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 static void generateModel(NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodies)
 {
     dwarf_model_t type = ctx->models[modelIdx].type;
+    dsfmt_t dsfmtState;
+
+    dsfmt_init_gen_rand(&dsfmtState, ctx->seed);
 
     switch (type)
     {
         case DwarfModelPlummer:
-            generatePlummer(ctx, modelIdx, bodies);
+            generatePlummer(&dsfmtState, ctx, modelIdx, bodies);
             break;
         case DwarfModelKing:
         case DwarfModelDehnen:

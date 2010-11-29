@@ -21,7 +21,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_priv.h"
 #include "nbody_util.h"
-#include "milkyway_util.h"
 
 static mwvector randomVec(dsfmt_t* dsfmtState)
 {
@@ -69,7 +68,7 @@ static void printPlummer(const NBodyCtx* ctx, mwvector rshift, mwvector vshift)
  * etc).  See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
  * 183.
  */
-void generatePlummer(NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodytab)
+void generatePlummer(dsfmt_t* dsfmtState, NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodytab)
 {
     bodyptr p, endp;
     real rsc, vsc, r, v, x, y;
@@ -78,7 +77,6 @@ void generatePlummer(NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodytab)
     mwvector cmr          = ZERO_VECTOR;
     mwvector cmv          = ZERO_VECTOR;
 
-    dsfmt_t dsfmtState;
     real rnd;
 
     DwarfModel* model = &ctx->models[modelIdx];
@@ -91,8 +89,6 @@ void generatePlummer(NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodytab)
     /* The coordinates to shift the plummer sphere by */
     mwvector rshift = ic->position;
     mwvector vshift = ic->velocity;
-
-    dsfmt_init_gen_rand(&dsfmtState, ctx->seed);
 
     printPlummer(ctx, rshift, vshift);
 
@@ -109,25 +105,25 @@ void generatePlummer(NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodytab)
         Mass(p) = mpp;               /* set masses equal */
 
         /* returns [0, 1) */
-        rnd = (real) dsfmt_genrand_close_open(&dsfmtState);
+        rnd = (real) dsfmt_genrand_close_open(dsfmtState);
 
         /* pick r in struct units */
 
         r = 1.0 / mw_sqrt(mw_pow(rnd, -2.0 / 3.0) - 1.0);
 
-        Pos(p) = pickshell(&dsfmtState, rsc * r);     /* pick scaled position */
+        Pos(p) = pickshell(dsfmtState, rsc * r);     /* pick scaled position */
         mw_incaddv(Pos(p), rshift);      /* move the position */
         mw_incaddv(cmr, Pos(p));         /* add to running sum */
 
         do                      /* select from fn g(x) */
         {
-            x = mwXrandom(&dsfmtState, 0.0, 1.0);      /* for x in range 0:1 */
-            y = mwXrandom(&dsfmtState, 0.0, 0.1);      /* max of g(x) is 0.092 */
+            x = mwXrandom(dsfmtState, 0.0, 1.0);      /* for x in range 0:1 */
+            y = mwXrandom(dsfmtState, 0.0, 0.1);      /* max of g(x) is 0.092 */
         }   /* using von Neumann tech */
         while (y > -cube(x - 1.0) * sqr(x) * cube(x + 1.0) * mw_sqrt(1.0 - sqr(x)));
 
         v = M_SQRT2 * x / mw_sqrt(mw_sqrt(1.0 + sqr(r)));   /* find v in struct units */
-        Vel(p) = pickshell(&dsfmtState, vsc * v);        /* pick scaled velocity */
+        Vel(p) = pickshell(dsfmtState, vsc * v);        /* pick scaled velocity */
         mw_incaddv(Vel(p), vshift);      /* move the velocity */
         mw_incaddv(cmv, Vel(p));         /* add to running sum */
     }

@@ -22,8 +22,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _PLUMMER_H_
 
 #include "nbody_types.h"
+#include "milkyway_util.h"
 
-void generatePlummer(NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodytab);
+void generatePlummer(dsfmt_t* dsfmtState, NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodytab);
 
 #endif /* _PLUMMER_H_ */
 
