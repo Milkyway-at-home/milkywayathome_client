@@ -31,6 +31,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <assert.h>
 
+#ifdef _WIN32
+  #include <direct.h>
+#endif /* _WIN32 */
+
 
 #if SEPARATION_INLINE_KERNEL
   #include "integral_kernel.h"
