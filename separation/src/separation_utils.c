@@ -28,6 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "integrals_common.h"
 #include "milkyway_math.h"
 #include "separation_utils.h"
+#include "milkyway_util.h"
 
 
 /* Determine the rotation matrix needed to transform f into t.  The result is an
@@ -79,13 +80,15 @@ mwvector transform_point(const AstronomyParameters* ap,
     return mw_mulmv(cmat, logPoint); /* do transform */
 }
 
+static dsfmt_t dsfmtState;
+
 /* Initialize seed for prob_ok; time based seed if 0 */
 void prob_ok_init(long seed)
 {
-    if (seed)
-        srand48(seed);
-    else
-        srand48(time(NULL));
+    if (!seed)
+        seed = time(NULL);
+
+    dsfmt_init_gen_rand(&dsfmtState, seed);
 }
 
 /* FIXME: WTF? */
@@ -97,7 +100,7 @@ int prob_ok(StreamStats* ss, int n)
     real r;
     real step1, step2, step3;
 
-    r = drand48();
+    r = mwXrandom(&dsfmtState, 0.0, 1.0);
 
     switch (n)
     {

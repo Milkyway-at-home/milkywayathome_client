@@ -35,6 +35,7 @@ endif()
 set(MILKYWAY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 include_directories(${MILKYWAY_INCLUDE_DIR})
 
+
 if(BOINC_APPLICATION)
   find_package(BOINC)
   include_directories(${BOINC_INCLUDE_DIR})
@@ -91,6 +92,8 @@ if(MILKYWAY_OPENCL)
 endif()
 
 add_library(milkyway STATIC ${mw_lib_src} ${mw_lib_headers})
+target_link_libraries(milkyway dsfmt)
+
 
 set_target_properties(milkyway PROPERTIES
                       COMPILE_DEFINITIONS "MILKYWAY_MATH_COMPILATION")

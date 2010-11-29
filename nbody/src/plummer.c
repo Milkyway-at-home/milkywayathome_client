@@ -21,21 +21,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_priv.h"
 #include "nbody_util.h"
-#include "dSFMT.h"
-
-static real unitRandom(dsfmt_t* dsfmtState)
-{
-    return xrandom(dsfmtState, -1.0, 1.0);
-}
+#include "milkyway_util.h"
 
 static mwvector randomVec(dsfmt_t* dsfmtState)
 {
     /* pick from unit cube */
     mwvector vec;
 
-    X(vec) = unitRandom(dsfmtState);
-    Y(vec) = unitRandom(dsfmtState);
-    Z(vec) = unitRandom(dsfmtState);
+    X(vec) = mwUnitRandom(dsfmtState);
+    Y(vec) = mwUnitRandom(dsfmtState);
+    Z(vec) = mwUnitRandom(dsfmtState);
     W(vec) = 0.0;
 
     return vec;
@@ -126,8 +121,8 @@ void generatePlummer(NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodytab)
 
         do                      /* select from fn g(x) */
         {
-            x = xrandom(&dsfmtState, 0.0, 1.0);      /* for x in range 0:1 */
-            y = xrandom(&dsfmtState, 0.0, 0.1);      /* max of g(x) is 0.092 */
+            x = mwXrandom(&dsfmtState, 0.0, 1.0);      /* for x in range 0:1 */
+            y = mwXrandom(&dsfmtState, 0.0, 0.1);      /* max of g(x) is 0.092 */
         }   /* using von Neumann tech */
         while (y > -cube(x - 1.0) * sqr(x) * cube(x + 1.0) * mw_sqrt(1.0 - sqr(x)));
 

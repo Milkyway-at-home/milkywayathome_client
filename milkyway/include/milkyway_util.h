@@ -32,6 +32,7 @@ extern "C" {
 #include "milkyway_config.h"
 #include "milkyway_math.h"
 #include "milkyway_types.h"
+#include "dSFMT.h"
 
 #ifndef _WIN32
   #include <unistd.h>
@@ -158,6 +159,10 @@ void _mw_time_prefix(char* buf, size_t bufSize);
         _mw_time_prefix(_buf, sizeof(_buf));            \
         fprintf(stderr, "%s: " msg, _buf, ##__VA_ARGS__);   \
     }
+
+/* mw_xrandom: generate floating-point random number */
+#define mwXrandom(st, xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * dsfmt_genrand_open_open((st)))
+#define mwUnitRandom(st) mwXrandom(st, -1.0, 1.0)
 
 
 /* Read array of strings into doubles. Returns NULL on failure. */

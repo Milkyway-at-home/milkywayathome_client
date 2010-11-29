@@ -31,6 +31,7 @@ include(MinGWPaths)
 include(StaticBOINC)
 include(PrintInfo)
 include(DownloadCrlibm)
+include(DownloadDsfmt)
 include(CheckCFlag)
 include(MSVCFlags)
 set_mingw_paths()
@@ -97,6 +98,8 @@ set(MILKYWAY_THIRDPARTY "${MILKYWAY_ROOT}/thirdparty")
 if(DOWNLOAD_CRLIBM)
   download_build_crlibm()
 endif()
+
+install_dsfmt()
 
 # Set output to be in this root
 set(EXECUTABLE_OUTPUT_PATH ${MILKYWAY_ROOT}/bin)

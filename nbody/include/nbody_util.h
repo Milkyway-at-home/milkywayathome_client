@@ -33,10 +33,6 @@ mwvector cartesianToLbr_rad(const NBodyCtx* ctx, const mwvector r);
 mwvector lbrToCartesian(const NBodyCtx* ctx, const mwvector lbr);
 mwvector lbrToCartesian_rad(const NBodyCtx* ctx, const mwvector lbr);
 
-/* xrandom: generate floating-point random number */
-#define xrandom(st, xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * dsfmt_genrand_open_open((st)))
-
-
 #ifdef __cplusplus
 }
 #endif

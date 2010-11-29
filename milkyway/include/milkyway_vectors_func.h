@@ -41,8 +41,8 @@ inline mwvector mw_addv(mwvector a, mwvector b)
     return v;
 }
 
-CONST_F ALWAYS_INLINE
-OLD_GCC_EXTERNINLINE inline mwvector mw_subv(mwvector a, mwvector b)
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
+inline mwvector mw_subv(mwvector a, mwvector b)
 {
     mwvector v;
     v.x = a.x - b.x;
@@ -52,8 +52,8 @@ OLD_GCC_EXTERNINLINE inline mwvector mw_subv(mwvector a, mwvector b)
     return v;
 }
 
-CONST_F ALWAYS_INLINE
-OLD_GCC_EXTERNINLINE inline mwvector mw_mulv(mwvector a, mwvector b)
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
+inline mwvector mw_mulv(mwvector a, mwvector b)
 {
     mwvector v;
     v.x = a.x * b.x;

@@ -107,27 +107,6 @@ set_os_specific_libs(${NBODY_OPENCL})
 
 # Handle downloading, extracting and building dSFMT
 
-set(dsfmtVer "2.1")
-set(randSrcMD5 "b3a38dac7fd8996a70d02edc4432dd75")
-set(randSrcPath "${MILKYWAY_THIRDPARTY}")
-set(dsfmtTar "dSFMT-src-${dsfmtVer}.tar.gz")
-maybe_dl_check("dSFMT"
-               "${dsfmtVer}"
-               "${randSrcMD5}"
-               "http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/${dsfmtTar}"
-               "${randSrcPath}"
-               "${dsfmtTar}")
-
-set(dsfmt_mexp "19937") #Value it assumes if you don't specify it; stops warning
-set(dsmft_flags "-O3 -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99 ${SSE2_FLAGS}")
-
-
-set(dsmft_src "${MILKYWAY_THIRDPARTY}/dSFMT-src-${dsfmtVer}/dSFMT.c")
-include_directories("${MILKYWAY_THIRDPARTY}/dSFMT-src-${dsfmtVer}/")
-add_definitions("-DDSFMT_MEXP=${dsfmt_mexp}")
-
-
-
 print_separator()
 message("   Building:          ${PROJECT_NAME}")
 message("   BOINC Application: ${BOINC_APPLICATION}")
@@ -164,8 +143,7 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/chisq.c
                   ${NBODY_SRC_DIR}/calc_params.c
                   ${NBODY_SRC_DIR}/plummer.c
                   ${NBODY_SRC_DIR}/nbody_util.c
-                  ${NBODY_SRC_DIR}/nbody_step.c
-                  ${dsmft_src})
+                  ${NBODY_SRC_DIR}/nbody_step.c)
 
 set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/chisq.h
                       ${NBODY_INCLUDE_DIR}/grav.h
@@ -201,12 +179,6 @@ if(BOINC_APPLICATION)
   list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/checkpoint.c)
   list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/checkpoint.h)
 endif()
-
-set_property(SOURCE ${dsmft_src}
-               PROPERTY COMPILE_DEFINITIONS "DSFMT_MEXP=19937")
-
-set_property(SOURCE ${dsmft_src}
-               PROPERTY COMPILE_FLAGS "${dsmft_flags}")
 
 #TODO: The tests dSFMT has
 

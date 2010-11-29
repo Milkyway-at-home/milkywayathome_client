@@ -33,8 +33,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <errno.h>
 
 #include "milkyway_config.h"
-#include "milkyway_util.h"
 #include "milkyway_math.h"
+#include "milkyway_util.h"
+
 
 #ifdef __SSE__
   #include <xmmintrin.h>
