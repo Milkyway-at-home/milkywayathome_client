@@ -234,6 +234,7 @@ static void separation(FILE* f,
                        real epsilon_b,
                        mwvector current_star_point)
 {
+    int s_ok;
     mwvector starxyz;
     mwvector starxyzTransform;
 
@@ -246,7 +247,7 @@ static void separation(FILE* f,
         nonTwoPanelSeparation(ss, ap->number_streams);
 
     /* determine if star with sprob should be put into stream */
-    int s_ok = prob_ok(ss, ap->number_streams);
+    s_ok = prob_ok(ss, ap->number_streams);
     if (s_ok >= 1)
         ss[s_ok-1].q++;
 

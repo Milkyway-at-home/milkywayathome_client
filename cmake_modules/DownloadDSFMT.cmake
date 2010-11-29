@@ -21,7 +21,6 @@
 include(MaybeDlCheck)
 
 macro(install_dsfmt)
-  message("Doing some shit")
   set(dsfmtVer "2.1")
   set(randSrcMD5 "b3a38dac7fd8996a70d02edc4432dd75")
   set(randSrcPath "${MILKYWAY_THIRDPARTY}")
@@ -35,7 +34,12 @@ macro(install_dsfmt)
 
   set(dsfmt_mexp "19937") #Value it assumes if you don't specify it; stops warning
   add_definitions("-DDSFMT_MEXP=${dsfmt_mexp}")
-  set(dsmft_flags "-O3 -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99 ${SSE2_FLAGS}")
+
+  if(NOT MSVC)
+    set(dsmft_flags "-O3 -DNDEBUG -finline-functions -fomit-frame-pointer -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99 ${SSE2_FLAGS}")
+  else()
+      set(dsmft_flags "/O2 -DNDEBUG ${SSE2_FLAGS}")
+  endif()
 
   set(dsmft_src "${MILKYWAY_THIRDPARTY}/dSFMT-src-${dsfmtVer}/dSFMT.c")
   set(DSMFT_INCLUDE_DIR "${MILKYWAY_THIRDPARTY}/dSFMT-src-${dsfmtVer}/")
