@@ -298,24 +298,24 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
     sizes->local[0] = sizes->groupSize;
     sizes->local[1] = 1;
 
-    warn("Range:          { nu_steps = %zu, mu_steps = %zu, r_steps = %zu }\n"
-         "Iteration area: %zu\n"
+    warn("Range:          { nu_steps = %llu, mu_steps = %llu, r_steps = %llu }\n"
+         "Iteration area: %llu\n"
          "Chunk estimate: %u\n"
-         "Num chunks:     %zu\n"
+         "Num chunks:     %llu\n"
          "Added area:     %u\n"
-         "Effective area: %zu\n",
-         ia->nu_steps, ia->mu_steps, ia->r_steps,
-         sizes->area,
+         "Effective area: %llu\n",
+         (cl_ulong) ia->nu_steps, (cl_ulong) ia->mu_steps, (cl_ulong) ia->r_steps,
+         (cl_ulong) sizes->area,
          desiredNumChunk,
-         sizes->numChunks,
+         (cl_ulong) sizes->numChunks,
          sizes->extra,
-         sizes->effectiveArea);
+        (cl_ulong) sizes->effectiveArea);
 
     /* Check for error in solution just in case */
     if (sizes->effectiveArea % sizes->chunkSize != 0)
     {
-        warn("Effective area (%zu) not divisible by chunk size (%zu)\n",
-             sizes->effectiveArea, sizes->chunkSize);
+        warn("Effective area (%llu) not divisible by chunk size (%llu)\n",
+             (cl_ulong) sizes->effectiveArea, (cl_ulong) sizes->chunkSize);
         return CL_TRUE;
     }
 
@@ -329,7 +329,7 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
     localSize = sizes->local[0] * sizes->local[1];
     if (localSize > wgi.wgs)
     {
-        warn("Local size (%zu) > maximum work group size (%zu)\n", localSize, wgi.wgs);
+        warn("Local size (%llu) > maximum work group size (%llu)\n", (cl_ulong) localSize, (cl_ulong) wgi.wgs);
         return CL_TRUE;
     }
 
@@ -418,7 +418,7 @@ cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes*
 
     if (totalMem > di->memSize)
     {
-        warn("Total required device memory (%zu) > available (%zu)\n", totalMem, di->memSize);
+        warn("Total required device memory (%llu) > available (%llu)\n", (cl_ulong) totalMem, (cl_ulong) di->memSize);
         return CL_FALSE;
     }
 

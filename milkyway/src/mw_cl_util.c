@@ -146,11 +146,11 @@ cl_int mwGetWorkGroupInfo(const CLInfo* ci, WGInfo* wgi)
 void mwPrintWorkGroupInfo(const WGInfo* wgi)
 {
     warn("Kernel work group info:\n"
-         "  Work group size = %zu\n"
+         "  Work group size = %llu\n"
          "  Kernel local mem size = %llu\n"
-         "  Compile work group size = { %zu, %zu, %zu }\n",
-         wgi->wgs,
+         "  Compile work group size = { %llu, %llu, %llu }\n",
+         (cl_ulong) wgi->wgs,
          wgi->lms,
-         wgi->cwgs[0], wgi->cwgs[1], wgi->cwgs[2]);
+         (cl_ulong) wgi->cwgs[0], (cl_ulong) wgi->cwgs[1], (cl_ulong) wgi->cwgs[2]);
 }
 

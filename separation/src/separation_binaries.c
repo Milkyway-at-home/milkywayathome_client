@@ -116,8 +116,8 @@ static unsigned char* readCoreBinary(FILE* f, SeparationBinaryHeader* hdr)
     read = fread(bin, sizeof(unsigned char), hdr->binSize, f);
     if (read != hdr->binSize)
     {
-        warn("Error reading program binary header: read %zu, expected %zu\n",
-             read, hdr->binSize);
+        warn("Error reading program binary header: read %llu, expected %llu\n",
+             (cl_ulong) read, (cl_ulong) hdr->binSize);
         hdr->binSize = 0;
         free(bin);
         bin = NULL;
@@ -146,7 +146,7 @@ static unsigned char* separationLoadBinaryFile(FILE* f,
     read = fread(hdr, sizeof(SeparationBinaryHeader), 1, f);
     if (read != 1)
     {
-        warn("Error reading program binary header: read %zu, expected %zu\n", read, 1);
+        warn("Error reading program binary header: read %llu, expected %llu\n", (cl_ulong) read, (cl_ulong) 1);
         return NULL;
     }
 

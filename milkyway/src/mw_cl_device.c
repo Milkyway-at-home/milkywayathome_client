@@ -200,13 +200,13 @@ void mwPrintDevInfo(const DevInfo* di)
          "Local mem size:      %llu\n"
          "Max const args:      %u\n"
          "Max const buf size:  %llu\n"
-         "Max parameter size:  %zu\n"
-         "Max work group size: %zu\n"
+         "Max parameter size:  %llu\n"
+         "Max work group size: %llu\n"
          "Max work item dim:   %u\n"
-         "Max work item sizes: { %zu, %zu, %zu }\n"
+         "Max work item sizes: { %llu, %llu, %llu }\n"
          "Mem base addr align: %u\n"
          "Min type align size: %u\n"
-         "Timer resolution:    %zu ns\n"
+         "Timer resolution:    %llu ns\n"
          "Double extension:    %s\n"
          "Extensions:          %s\n" ,
          di->devName,
@@ -231,13 +231,13 @@ void mwPrintDevInfo(const DevInfo* di)
          di->localMemSize,
          di->maxConstArgs,
          di->maxConstBufSize,
-         di->maxParamSize,
-         di->maxWorkGroupSize,
+         (cl_ulong) di->maxParamSize,
+         (cl_ulong) di->maxWorkGroupSize,
          di->maxWorkItemDim,
-         di->maxWorkItemSizes[0], di->maxWorkItemSizes[1], di->maxWorkItemSizes[2],
+         (cl_ulong) di->maxWorkItemSizes[0], (cl_ulong) di->maxWorkItemSizes[1], (cl_ulong) di->maxWorkItemSizes[2],
          di->memBaseAddrAlign,
          di->minAlignSize,
-         di->timerRes,
+         (cl_ulong) di->timerRes,
          showMWDoubleExts(di->doubleExts),
          di->exts
         );

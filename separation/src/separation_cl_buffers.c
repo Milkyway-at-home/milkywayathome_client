@@ -70,7 +70,7 @@ static inline cl_int createOutMuBuffer(CLInfo* ci,
     cm->outMu = createZeroReadWriteBuffer(ci, sizes->outMu, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating out mu buffer of size %zu: %s\n", sizes->outMu, showCLInt(err));
+        warn("Error creating out mu buffer of size %llu: %s\n", (cl_ulong) sizes->outMu, showCLInt(err));
         return err;
     }
 
@@ -86,7 +86,7 @@ static inline cl_int createOutProbsBuffer(CLInfo* ci,
     cm->outProbs = createZeroReadWriteBuffer(ci, sizes->outProbs, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating out probs buffer of size %zu: %s\n", sizes->outProbs, showCLInt(err));
+        warn("Error creating out probs buffer of size %llu: %s\n", (cl_ulong) sizes->outProbs, showCLInt(err));
         return err;
     }
 
@@ -108,7 +108,7 @@ static inline cl_int createSCBuffer(CLInfo* ci,
                             &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating stream constants buffer of size %zu: %s\n", sizes->sc, showCLInt(err));
+        warn("Error creating stream constants buffer of size %llu: %s\n", (cl_ulong) sizes->sc, showCLInt(err));
         return err;
     }
 
@@ -125,7 +125,7 @@ static inline cl_int createAPBuffer(CLInfo* ci,
     cm->ap = clCreateBuffer(ci->clctx, constBufFlags, sizes->ap, (void*) ap, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating astronomy parameters buffer of size %zu: %s\n", sizes->ap, showCLInt(err));
+        warn("Error creating astronomy parameters buffer of size %llu: %s\n", (cl_ulong) sizes->ap, showCLInt(err));
         return err;
     }
 
@@ -143,7 +143,7 @@ static inline cl_int createIABuffer(CLInfo* ci,
     cm->ia = clCreateBuffer(ci->clctx, constBufFlags, sizes->ia, (void*) ia, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating integral area buffer of size %zu: %s\n", sizes->ia, showCLInt(err));
+        warn("Error creating integral area buffer of size %llu: %s\n", (cl_ulong) sizes->ia, showCLInt(err));
         return err;
     }
 
@@ -179,21 +179,21 @@ static cl_int createRBuffers(CLInfo* ci,
 
     if (err != CL_SUCCESS)
     {
-        warn("Error creating stream r points buffer of size %zu: %s\n", sizes->rPts, showCLInt(err));
+        warn("Error creating stream r points buffer of size %llu: %s\n", (cl_ulong) sizes->rPts, showCLInt(err));
         return err;
     }
 
     cm->rc = clCreateBuffer(ci->clctx, constBufFlags, sizes->rc, rc, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating stream r consts buffer of size %zu: %s\n", sizes->rc, showCLInt(err));
+        warn("Error creating stream r consts buffer of size %llu: %s\n", (cl_ulong) sizes->rc, showCLInt(err));
         return err;
     }
 
     cm->sg_dx = clCreateBuffer(ci->clctx, constBufFlags, sizes->sg_dx, sg.dx, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating stream sg_dx buffer of size %zu: %s\n", sizes->sg_dx, showCLInt(err));
+        warn("Error creating stream sg_dx buffer of size %llu: %s\n", (cl_ulong) sizes->sg_dx, showCLInt(err));
         return err;
     }
 
@@ -217,7 +217,7 @@ static cl_int createLBTrigBuffer(CLInfo* ci,
     cm->lbts = clCreateBuffer(ci->clctx, constBufFlags, sizes->lbts, lbts, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating lb_trig buffer of size %zu: %s\n", sizes->lbts, showCLInt(err));
+        warn("Error creating lb_trig buffer of size %llu: %s\n", (cl_ulong) sizes->lbts, showCLInt(err));
         return err;
     }
 
