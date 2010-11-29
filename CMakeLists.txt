@@ -206,6 +206,9 @@ if(CMAKE_COMPILER_IS_GNUCC) # I think this could maybe be IS_UNIX
   set(CMAKE_C_FLAGS_DEBUG "-Wall -Wextra ${gcc_extra_warnings} -O0 -g ${CMAKE_C_FLAGS_DEBUG}")
 endif(CMAKE_COMPILER_IS_GNUCC)
 
+if(NOT MSVC)
+  set(CMAKE_C_FLAGS "-std=c99 -warn-uninit-values ${CMAKE_C_FLAGS}")
+endif()
 
 #Set math assumptions that we can make. We don't ever use the error
 #checking, or the other rounding modes.

@@ -51,11 +51,6 @@ if(SYSTEM_IS_PPC)
   set(CMAKE_C_FLAGS "-maltivec -mfused-madd -mhard-float -mabi=altivec ${CMAKE_C_FLAGS}")
 endif()
 
-if(NOT MSVC)
-  set(CMAKE_C_FLAGS "-std=gnu99 -warn-uninit-values ${CMAKE_C_FLAGS}")
-endif()
-
-
 option(SEPARATION_INLINE_KERNEL
        "Inline the CL kernel" OFF)
 mark_as_advanced(SEPARATION_INLINE_KERNEL)
