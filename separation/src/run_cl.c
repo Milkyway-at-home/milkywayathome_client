@@ -145,8 +145,9 @@ static inline real readKernelResults(CLInfo* ci,
     real* mu_results;
     real* probs_tmp;
     real result;
+    size_t resultSize, probsSize;
 
-    size_t resultSize = sizeof(real) * mu_steps * r_steps;
+    resultSize = sizeof(real) * mu_steps * r_steps;
     mu_results = mapIntegralResults(ci, cm, resultSize);
     if (!mu_results)
     {
@@ -163,7 +164,7 @@ static inline real readKernelResults(CLInfo* ci,
         return NAN;
     }
 
-    size_t probsSize = sizeof(real) * mu_steps * r_steps * number_streams;
+    probsSize = sizeof(real) * mu_steps * r_steps * number_streams;
     probs_tmp = mapProbsResults(ci, cm, probsSize);
     if (!probs_tmp)
     {

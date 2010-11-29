@@ -25,11 +25,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
 #include "milkyway_config.h"
+#include "milkyway_extra.h"
 #include "milkyway_math.h"
 #include "milkyway_types.h"
 #include "dSFMT.h"
@@ -67,7 +64,10 @@ extern "C" {
     #include <windows.h>
   #endif /* _WIN32 */
 #endif /* BOINC_APPLICATION */
-
+  
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 
 #if MILKYWAY_OPENCL
@@ -144,9 +144,9 @@ FILE* mwOpenResolved(const char* filename, const char* mode);
 int mwRename(const char* oldf, const char* newf);
 
 double mwGetTime();
+double mwGetTimeMilli();
 
 #ifndef _WIN32
-double mwGetTimeMilli();
 long mwGetTimeMicro();
 #endif /* _WIN32 */
 

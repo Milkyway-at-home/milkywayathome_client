@@ -63,7 +63,6 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
 {
     cl_int err = CL_SUCCESS;
     cl_uint n_platform;
-    DevInfo di;
     cl_platform_id* ids;
     cl_device_id* devs;
     cl_uint nDev;

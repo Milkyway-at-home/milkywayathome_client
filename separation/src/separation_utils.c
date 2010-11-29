@@ -86,7 +86,7 @@ static dsfmt_t dsfmtState;
 void prob_ok_init(long seed)
 {
     if (!seed)
-        seed = time(NULL);
+        seed = (long) time(NULL);
 
     dsfmt_init_gen_rand(&dsfmtState, seed);
 }

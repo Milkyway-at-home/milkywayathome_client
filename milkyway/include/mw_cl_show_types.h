@@ -29,18 +29,18 @@ extern "C" {
 #include "mw_cl_device.h"
 
 /* TODO: clint and memflags are usually or'd, so most of the time these won't work right */
-const char* showCLDeviceType(const cl_device_type x) __attribute__ ((const));
-const char* showCLBuildStatus(const cl_build_status x) __attribute__ ((const));
-const char* showCLInt(const cl_int x) __attribute__ ((const));
-const char* showCLMemFlags(const cl_mem_flags x) __attribute__ ((const));
-const char* showCLDeviceFPConfig(const cl_device_fp_config x) __attribute__ ((const));
-const char* showCLDeviceLocalMemType(const cl_device_local_mem_type x) __attribute__ ((const));
-const char* showCLDeviceExecCapabilities(const cl_device_exec_capabilities x) __attribute__ ((const));
-const char* showCLCommandQueueProperties(const cl_command_queue_properties x) __attribute__ ((const));
-const char* showCLBool(const cl_bool x) __attribute__ ((const));
-const char* showCLDeviceMemCacheType(const cl_device_mem_cache_type x) __attribute__ ((const));
-const char* showCLKernelInfo(const cl_kernel_info x) __attribute__ ((const));
-const char* showMWDoubleExts(const MWDoubleExts x)  __attribute__ ((const));
+const char* showCLDeviceType(const cl_device_type x) CONST_F;
+const char* showCLBuildStatus(const cl_build_status x) CONST_F;
+const char* showCLInt(const cl_int x) CONST_F;
+const char* showCLMemFlags(const cl_mem_flags x) CONST_F;
+const char* showCLDeviceFPConfig(const cl_device_fp_config x) CONST_F;
+const char* showCLDeviceLocalMemType(const cl_device_local_mem_type x) CONST_F;
+const char* showCLDeviceExecCapabilities(const cl_device_exec_capabilities x) CONST_F;
+const char* showCLCommandQueueProperties(const cl_command_queue_properties x) CONST_F;
+const char* showCLBool(const cl_bool x) CONST_F;
+const char* showCLDeviceMemCacheType(const cl_device_mem_cache_type x) CONST_F;
+const char* showCLKernelInfo(const cl_kernel_info x) CONST_F;
+const char* showMWDoubleExts(const MWDoubleExts x)  CONST_F;
 
 #ifdef __cplusplus
 }

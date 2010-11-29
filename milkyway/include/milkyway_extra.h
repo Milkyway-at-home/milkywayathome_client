@@ -21,13 +21,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_EXTRA_H_
 #define _MILKYWAY_EXTRA_H_
 
-//#if defined(__ATI_CL__) || defined(__NVIDIA_CL__)
-#ifndef __OPENCL_VERSION__
-  #define _MW_STATIC static
-#else
-  #define _MW_STATIC
-#endif /* __ATI_CL__ */
-
 #ifdef _MSC_VER
   #define strdup _strdup
   #define isnan _isnan

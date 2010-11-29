@@ -278,8 +278,8 @@ typedef real (*BGProbabilityFunc) (const AstronomyParameters*,
 
 #define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0.0, \
                                      0.0, 0.0,   \
-                                     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, \
-                                     0, 0, 0, 0,        \
+                                     0.0, 0.0, 0.0, 0.0, 0, 0, \
+                                     0, 0, 0.0, 0.0,        \
                                      0, 0, 0.0, 0.0, 0, 0, 0, \
                                      0, 0.0, 0, NULL }
 

@@ -269,7 +269,6 @@ static void setSeparationConstants(const AstronomyParameters* ap,
                                    mwmatrix cmatrix)
 {
     unsigned int i;
-    real d;
     mwvector dnormal;
     const mwvector dortho = mw_vec(0.0, 0.0, 1.0);
 

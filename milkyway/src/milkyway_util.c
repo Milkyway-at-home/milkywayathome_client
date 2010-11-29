@@ -22,14 +22,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define WIN32_LEAN_AND_MEAN
   #include <windows.h>
 #else
-  #include <time.h>
   #include <sys/time.h>
 #endif
-
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include <errno.h>
 
 #include "milkyway_config.h"
@@ -210,6 +209,11 @@ double mwGetTime()
     QueryPerformanceCounter(&t);
     QueryPerformanceFrequency(&f);
     return (double)t.QuadPart/(double)f.QuadPart;
+}
+
+double mwGetTimeMilli()
+{
+    return 1.0e3 * mwGetTime();
 }
 
 #else

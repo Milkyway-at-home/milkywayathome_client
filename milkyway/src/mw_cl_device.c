@@ -138,16 +138,16 @@ cl_double cudaEstimateGFLOPs(const DevInfo* di)
     cl_uint corePerCU;
     cl_uint numCUDACores;
     cl_double freq, gflops;
-    cl_uint cyclesPerOpFloat, cyclesPerOpDouble, cyclesPerOp;
-    cl_double instrRateFloat, instrRateDouble, instrRate;
     cl_double flopsFloat, flopsDouble, flops;
+    cl_double flopsFactor;
+    cl_uint doubleRat;
 
     corePerCU = cudaCoresPerComputeUnit(di);
     numCUDACores = di->maxCompUnits * corePerCU;
     freq = (cl_double) di->clockFreq * 1.0e6;
 
-    cl_double flopsFactor = 2;
-    cl_uint doubleRat = cudaEstimateDoubleFrac(di);
+    flopsFactor = 2;
+    doubleRat = cudaEstimateDoubleFrac(di);
 
     flopsFloat = flopsFactor * numCUDACores * freq;
     flopsDouble = flopsFactor * numCUDACores * freq / doubleRat;

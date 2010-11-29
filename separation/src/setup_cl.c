@@ -18,11 +18,6 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-
 #include "milkyway_util.h"
 #include "milkyway_cl.h"
 #include "mw_cl.h"
@@ -30,6 +25,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_cl_buffers.h"
 #include "separation_cl_defs.h"
 #include "separation_binaries.h"
+
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
+
 
 #if SEPARATION_INLINE_KERNEL
   #include "integral_kernel.h"
@@ -263,7 +264,6 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
         groupSize = nthreads
      */
 
-    cl_uint numSolutions;
     SizeSolution solution;
     cl_uint desiredNumChunk;
     WGInfo wgi;
@@ -469,7 +469,6 @@ cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes*
 /* Return flag for Nvidia compiler for maximum registers to use. */
 static const char* getNvidiaRegCount(const DevInfo* di)
 {
-    cl_uint major, minor;
     const char* regCount32 = "-cl-nv-maxrregcount=32 ";
     const char* regDefault = "";
 

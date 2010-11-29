@@ -114,7 +114,6 @@ unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
 {
     cl_int err;
     size_t binSize;
-    size_t readSize;
     unsigned char* bin = NULL;
 
     err = clGetProgramInfo(ci->prog, CL_PROGRAM_BINARY_SIZES, sizeof(binSize), &binSize, NULL);
