@@ -302,24 +302,24 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
     sizes->local[0] = sizes->groupSize;
     sizes->local[1] = 1;
 
-    warn("Range:          { nu_steps = %llu, mu_steps = %llu, r_steps = %llu }\n"
-         "Iteration area: %llu\n"
+    warn("Range:          { nu_steps = "ZU", mu_steps = "ZU", r_steps = "ZU" }\n"
+         "Iteration area: "ZU"\n"
          "Chunk estimate: %u\n"
-         "Num chunks:     %llu\n"
+         "Num chunks:     "ZU"\n"
          "Added area:     %u\n"
-         "Effective area: %llu\n",
-         (cl_ulong) ia->nu_steps, (cl_ulong) ia->mu_steps, (cl_ulong) ia->r_steps,
-         (cl_ulong) sizes->area,
+         "Effective area: "ZU"\n",
+         ia->nu_steps, ia->mu_steps, ia->r_steps,
+         sizes->area,
          desiredNumChunk,
-         (cl_ulong) sizes->numChunks,
+         sizes->numChunks,
          sizes->extra,
-        (cl_ulong) sizes->effectiveArea);
+        sizes->effectiveArea);
 
     /* Check for error in solution just in case */
     if (sizes->effectiveArea % sizes->chunkSize != 0)
     {
-        warn("Effective area (%llu) not divisible by chunk size (%llu)\n",
-             (cl_ulong) sizes->effectiveArea, (cl_ulong) sizes->chunkSize);
+        warn("Effective area ("ZU") not divisible by chunk size ("ZU")\n",
+             sizes->effectiveArea, sizes->chunkSize);
         return CL_TRUE;
     }
 
@@ -333,7 +333,7 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
     localSize = sizes->local[0] * sizes->local[1];
     if (localSize > wgi.wgs)
     {
-        warn("Local size (%llu) > maximum work group size (%llu)\n", (cl_ulong) localSize, (cl_ulong) wgi.wgs);
+        warn("Local size ("ZU") > maximum work group size ("ZU")\n", localSize, wgi.wgs);
         return CL_TRUE;
     }
 
@@ -422,7 +422,7 @@ cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes*
 
     if (totalMem > di->memSize)
     {
-        warn("Total required device memory (%llu) > available (%llu)\n", (cl_ulong) totalMem, (cl_ulong) di->memSize);
+        warn("Total required device memory ("ZU") > available ("LLU")\n", totalMem, di->memSize);
         return CL_FALSE;
     }
 

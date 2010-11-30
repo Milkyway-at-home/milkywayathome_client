@@ -30,5 +30,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define getcwd _getcwd
 #endif /* _MSC_VER */
 
+/* Horrible workaround for lack of C99 in MSVCRT and it being
+   impossible to print size_t correctly and standardly */
+#ifdef _WIN32
+  #define ZU "%Iu"
+  #define LLU "%I64u"
+#else
+  #define ZU "%zu"
+  #define LLU "%llu"
+#endif /* _WIN32 */
+
+
 #endif /* _MILKYWAY_EXTRA_H_ */
 

@@ -295,7 +295,6 @@ real integrateCL(const AstronomyParameters* ap,
     cl_int err;
     SeparationSizes sizes;
     RunSizes runSizes;
-    cl_uint groupSize = 64;
     SeparationCLMem cm = EMPTY_SEPARATION_CL_MEM;
 
     /* Need to test sizes for each integral, since the area size can change */

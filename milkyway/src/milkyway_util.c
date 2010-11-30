@@ -134,7 +134,7 @@ void* reallocSafe(void* ptr, size_t size)
 {
     void* mem = (void*) realloc(ptr, size);
     if (mem == NULL)
-        fail("realloc failed: %lu bytes\n", (unsigned long) size);
+        fail("realloc failed: "ZU" bytes\n", size);
     return mem;
 }
 
@@ -164,10 +164,8 @@ char* mwReadFile(const char* filename)
     if (readSize != fsize)
     {
         free(buf);
-        warn("Failed to read file '%s': Expected to read %ld, but got %u\n",
-             filename,
-             fsize,
-             (unsigned int) readSize);
+        warn("Failed to read file '%s': Expected to read %ld, but got "ZU"\n",
+             filename, fsize, readSize);
         return NULL;
     }
 

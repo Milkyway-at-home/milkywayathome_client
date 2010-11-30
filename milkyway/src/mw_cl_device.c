@@ -192,21 +192,21 @@ void mwPrintDevInfo(const DevInfo* di)
          "Address bits:        %u\n"
          "Max compute units:   %u\n"
          "Clock frequency:     %u Mhz\n"
-         "Global mem size:     %llu\n"
-         "Max mem alloc:       %llu\n"
-         "Global mem cache:    %llu\n"
+         "Global mem size:     "LLU"\n"
+         "Max mem alloc:       "LLU"\n"
+         "Global mem cache:    "LLU"\n"
          "Cacheline size:      %u\n"
          "Local mem type:      %s\n"
-         "Local mem size:      %llu\n"
+         "Local mem size:      "LLU"\n"
          "Max const args:      %u\n"
-         "Max const buf size:  %llu\n"
-         "Max parameter size:  %llu\n"
-         "Max work group size: %llu\n"
+         "Max const buf size:  "LLU"\n"
+         "Max parameter size:  "ZU"\n"
+         "Max work group size: "ZU"\n"
          "Max work item dim:   %u\n"
-         "Max work item sizes: { %llu, %llu, %llu }\n"
+         "Max work item sizes: { "ZU", "ZU", "ZU" }\n"
          "Mem base addr align: %u\n"
          "Min type align size: %u\n"
-         "Timer resolution:    %llu ns\n"
+         "Timer resolution:    "ZU" ns\n"
          "Double extension:    %s\n"
          "Extensions:          %s\n" ,
          di->devName,
@@ -231,13 +231,13 @@ void mwPrintDevInfo(const DevInfo* di)
          di->localMemSize,
          di->maxConstArgs,
          di->maxConstBufSize,
-         (cl_ulong) di->maxParamSize,
-         (cl_ulong) di->maxWorkGroupSize,
+         di->maxParamSize,
+         di->maxWorkGroupSize,
          di->maxWorkItemDim,
-         (cl_ulong) di->maxWorkItemSizes[0], (cl_ulong) di->maxWorkItemSizes[1], (cl_ulong) di->maxWorkItemSizes[2],
+         di->maxWorkItemSizes[0], di->maxWorkItemSizes[1], di->maxWorkItemSizes[2],
          di->memBaseAddrAlign,
          di->minAlignSize,
-         (cl_ulong) di->timerRes,
+         di->timerRes,
          showMWDoubleExts(di->doubleExts),
          di->exts
         );
