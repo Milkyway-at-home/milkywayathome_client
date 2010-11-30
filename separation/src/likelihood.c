@@ -100,7 +100,7 @@ real likelihood_bg_probability(const AstronomyParameters* ap,
 /* CHECKME: What is this? */
 static real probability_log(real bg, real sum_exp_weights)
 {
-    return (bg == 0.0) ? -238.0 : mw_log10(bg / sum_exp_weights);
+  return mw_cmpzero(bg) ? -238.0 : mw_log10(bg / sum_exp_weights);
 }
 
 static real stream_sum(const unsigned int number_streams,
@@ -119,7 +119,6 @@ static real stream_sum(const unsigned int number_streams,
     {
         st_only = st_prob[i] / fsi->stream_integrals[i] * exp_stream_weights[i];
         star_prob += st_only;
-
         st_only = probability_log(st_only, sum_exp_weights);
         KAHAN_ADD(st_only_sum[i], st_only);
     }
@@ -339,7 +338,7 @@ static real likelihood_sum(const AstronomyParameters* ap,
     real reff_xr_rp3;
     RConsts rc = { 0.0, 0.0 };
 
-    real epsilon_b;
+    real epsilon_b = 0.0;
     mwmatrix cmatrix;
     unsigned int num_zero = 0;
     unsigned int bad_jacobians = 0;

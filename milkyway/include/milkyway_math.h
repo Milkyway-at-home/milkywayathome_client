@@ -37,9 +37,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_vectors.h"
 #include "milkyway_math_functions.h"
 
-#ifdef _MSC_VER
+#ifndef __OPENCL_VERSION__
   #include <float.h>
-#endif /* _MSC_VER */
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +52,8 @@ extern "C" {
 #define   ABS(x)       (((x) < 0) ? -(x) : (x))
 #define   MAX(x,y)     (((x) > (y)) ? (x) : (y))
 #define   MIN(x,y)     (((x) < (y)) ? (x) : (y))
+
+#define mw_cmpzero(x) (mw_fabs(x) <= REAL_EPSILON)
 
 /* degrees to radians */
 #define d2r(x) ((x) * (real) M_PI / (real) 180.0)
@@ -110,6 +112,12 @@ extern "C" {
 # define M_SQRT1_2	0.70710678118654752440	/* 1/sqrt(2) */
 #endif /* M_PI */
 
+
+#if DOUBLEPREC
+  #define REAL_EPSILON DBL_EPSILON
+#else
+  #define REAL_EPSILON FLT_EPSILON
+#endif
 
 #ifndef NAN
   static const unsigned long nan[2]={ 0xffffffff, 0x7fffffff };
