@@ -19,10 +19,7 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <string.h>
-
-#include "separation_types.h"
-#include "separation_constants.h"
+#include "separation.h"
 #include "evaluation_state.h"
 #include "milkyway_util.h"
 

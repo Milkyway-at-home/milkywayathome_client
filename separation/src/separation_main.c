@@ -331,7 +331,14 @@ static int separationInit(const char* appname)
 
 static void printVersion()
 {
-    warn("<search_application> " SEPARATION_APP_VERSION " </search_application>\n");
+    warn("<search_application> %s %u.%u %s %s%s%s%s </search_application>\n",
+         SEPARATION_APP_NAME,
+         SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR,
+         ARCH_STRING,
+         PRECSTRING,
+         DENORMAL_STRING,
+         SEPARATION_OPENCL_STR,
+         SEPARATION_SPECIAL_LIBM_STR);
 }
 
 #else
@@ -348,10 +355,7 @@ static int separationInit(const char* appname)
     return 0;
 }
 
-static void printVersion()
-{
-    warn("<search_application> " SEPARATION_APP_VERSION " </search_application>\n");
-}
+static void printVersion() { }
 
 #endif /* BOINC_APPLICATION */
 

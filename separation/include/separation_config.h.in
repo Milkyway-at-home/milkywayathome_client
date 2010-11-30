@@ -21,7 +21,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _SEPARATION_CONFIG_H_
 #define _SEPARATION_CONFIG_H_
 
-#define _CRT_SECURE_NO_WARNINGS
 #include "milkyway_config.h"
 
 #define SEPARATION_VERSION_MAJOR ${separation_VERSION_MAJOR}
@@ -39,16 +38,22 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define ENABLE_OPENCL SEPARATION_OPENCL
 
-#if SEPARATION_CRLIBM
-  #define SEPARATION_CRLIBM_STRING " crlibm"
-#elif SEPARATION_FDLIBM
-  #define SEPARATION_CRLIBM_STRING " fdlibm"
+#if SEPARATION_OPENCL
+  #define SEPARATION_OPENCL_STR " OpenCL"
 #else
-  #define SEPARATION_CRLIBM_STRING
+  #define SEPARATION_OPENCL_STR ""
+#endif
+
+#if SEPARATION_CRLIBM
+  #define SEPARATION_SPECIAL_LIBM_STR " crlibm"
+#elif SEPARATION_FDLIBM
+  #define SEPARATION_SPECIAL_LIBM_STR " fdlibm"
+#else
+  #define SEPARATION_SPECIAL_LIBM_STR ""
 #endif /* SEPARATION_CRLIBM */
 
-
-#define SEPARATION_APP_VERSION "${CMAKE_PROJECT_NAME} separation ${separation_VERSION} ${CMAKE_SYSTEM_NAME} " ARCH_STRING " " PRECSTRING DENORMAL_STRING SEPARATION_CRLIBM_STRING
+#define SEPARATION_SYSTEM_NAME "${CMAKE_SYSTEM_NAME}"
+#define SEPARATION_APP_NAME "${CMAKE_PROJECT_NAME} separation"
 
 
 #endif /* _SEPARATION_CONFIG_H_ */

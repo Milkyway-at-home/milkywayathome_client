@@ -302,7 +302,7 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
     sizes->local[0] = sizes->groupSize;
     sizes->local[1] = 1;
 
-    warn("Range:          { nu_steps = "ZU", mu_steps = "ZU", r_steps = "ZU" }\n"
+    warn("Range:          { nu_steps = %u, mu_steps = %u, r_steps = %u }\n"
          "Iteration area: "ZU"\n"
          "Chunk estimate: %u\n"
          "Num chunks:     "ZU"\n"
@@ -313,7 +313,7 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
          desiredNumChunk,
          sizes->numChunks,
          sizes->extra,
-        sizes->effectiveArea);
+         sizes->effectiveArea);
 
     /* Check for error in solution just in case */
     if (sizes->effectiveArea % sizes->chunkSize != 0)
