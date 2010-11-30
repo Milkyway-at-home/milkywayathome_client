@@ -389,9 +389,16 @@ void freeKernelSrc(char* src)
 char* findKernelSrc()
 {
     char* kernelSrc = NULL;
+
+    kernelSrc = mwReadFile("integrals.cl"); /* Try here first */
+    if (kernelSrc)
+        return kernelSrc;
+
     kernelSrc = mwReadFile("../kernels/integrals.cl");
-    if (!kernelSrc)
-        warn("Failed to read kernel file\n");
+    if (kernelSrc)
+        return kernelSrc;
+
+    warn("Failed to read kernel file\n");
 
     return kernelSrc;
 }
