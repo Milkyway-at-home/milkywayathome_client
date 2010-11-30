@@ -331,9 +331,10 @@ static int separationInit(const char* appname)
 
 static void printVersion()
 {
-    warn("<search_application> %s %u.%u %s %s%s%s%s </search_application>\n",
+    warn("<search_application> %s %u.%u %s %s %s%s%s%s </search_application>\n",
          SEPARATION_APP_NAME,
          SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR,
+         SEPARATION_SYSTEM_NAME,
          ARCH_STRING,
          PRECSTRING,
          DENORMAL_STRING,
