@@ -27,7 +27,6 @@ extern "C" {
 
 #include "separation_config.h"
 #include "milkyway_math.h"
-#include "milkyway_types.h"
 
 #ifndef _MSC_VER
   #define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(x)))
@@ -84,7 +83,7 @@ typedef struct SEPARATION_ALIGN(128)
     mwvector a;
     mwvector c;
     real sigma_sq2_inv;
-    mw_int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
+    int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
 } StreamConstants;
 
 #ifndef __OPENCL_VERSION__
@@ -146,7 +145,7 @@ typedef struct SEPARATION_ALIGN(128)
     real r_min, r_max, r_step_size;
     real nu_min, nu_max, nu_step_size;
     real mu_min, mu_max, mu_step_size;
-    mw_uint r_steps, nu_steps, mu_steps;
+    unsigned int r_steps, nu_steps, mu_steps;
 } IntegralArea;
 
 typedef struct
@@ -221,11 +220,11 @@ typedef struct SEPARATION_ALIGN(128) _AstronomyParameters
     real alpha_delta3;
     real bg_a, bg_b, bg_c;
 
-    mw_uint convolve;
-    mw_uint number_streams;
+    unsigned int convolve;
+    unsigned int number_streams;
 
-    mw_int wedge;
-    mw_int aux_bg_profile;
+    int wedge;
+    int aux_bg_profile;
     real sun_r0;
     real delta;
     real q;
@@ -234,12 +233,12 @@ typedef struct SEPARATION_ALIGN(128) _AstronomyParameters
 
     real parameters_version;
     real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
-    mw_int sgr_coordinates;
-    mw_uint number_integrals;
-    mw_uint number_background_parameters;
+    int sgr_coordinates;
+    unsigned int number_integrals;
+    unsigned int number_background_parameters;
 
     real background_weight;
-    mw_int fast_h_prob;
+    int fast_h_prob;
 
     /* really should be BGProbabilityFunc bg_prob_func, but need to
      * refer to pointer to this struct before  */

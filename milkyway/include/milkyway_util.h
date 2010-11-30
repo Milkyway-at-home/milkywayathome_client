@@ -32,7 +32,6 @@ extern "C" {
 #include "milkyway_config.h"
 #include "milkyway_extra.h"
 #include "milkyway_math.h"
-#include "milkyway_types.h"
 #include "dSFMT.h"
 
 #ifndef _WIN32
