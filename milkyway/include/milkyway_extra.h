@@ -37,7 +37,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define LLU "%I64u"
 #else
   #define ZU "%zu"
-  #define LLU "%llu"
+
+  /* FIXME: Should correctly check sizes */
+  #ifdef __APPLE__
+    #define LLU "%llu"
+  #else
+    #define LLU "%lu"
+  #endif
 #endif /* _WIN32 */
 
 

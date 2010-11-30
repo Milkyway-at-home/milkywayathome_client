@@ -25,6 +25,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
+#ifndef _MSC_VER
+  #define _GNU_SOURCE
+#endif
+
 #include "milkyway_config.h"
 #include "milkyway_extra.h"
 #include "milkyway_math.h"
@@ -35,6 +39,9 @@ extern "C" {
   #include <unistd.h>
   #include <fcntl.h>
 #else
+  #define _CRT_SECURE_NO_WARNINGS
+  #define WIN32_LEAN_AND_MEAN
+  #define VC_EXTRALEAN
   #include <windows.h>
 #endif /* _WIN32 */
 
@@ -57,14 +64,8 @@ extern "C" {
     #include <boinc/graphics_api.h>
     #include <boinc/graphics_lib.h>
   #endif /* BOINC_APP_GRAPHICS */
-
-  #ifdef _WIN32
-    #define WIN32_LEAN_AND_MEAN
-    #define VC_EXTRALEAN
-    #include <windows.h>
-  #endif /* _WIN32 */
 #endif /* BOINC_APPLICATION */
-  
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

@@ -18,23 +18,14 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef _WIN32
-  #define WIN32_LEAN_AND_MEAN
-  #include <windows.h>
-#else
+#include "milkyway_util.h"
+
+#ifndef _WIN32
   #include <sys/time.h>
 #endif
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <time.h>
 #include <errno.h>
-
-#include "milkyway_config.h"
-#include "milkyway_math.h"
-#include "milkyway_util.h"
-
 
 #ifdef __SSE__
   #include <xmmintrin.h>
@@ -45,7 +36,7 @@ void* callocSafe(size_t count, size_t size)
 {
     void* mem = (void*) calloc(count, size);
     if (mem == NULL)
-        fail("calloc failed: %lu bytes\n", (unsigned long) count * size);
+        fail("calloc failed: "ZU" bytes\n", count * size);
     return mem;
 }
 
@@ -53,7 +44,7 @@ void* mallocSafe(size_t size)
 {
     void* mem = (void*) malloc(size);
     if (mem == NULL)
-        fail("malloc failed: %lu bytes\n", (unsigned long) size);
+        fail("malloc failed: "ZU" bytes\n", size);
     return mem;
 }
 
