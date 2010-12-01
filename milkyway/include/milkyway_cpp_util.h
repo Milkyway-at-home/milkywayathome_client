@@ -25,7 +25,22 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-char* mwGetProjectDir();
+/* Stuff that might be actually useful */
+typedef struct
+{
+    int majorVersion;
+    int minorVersion;
+    int release;
+    int appVersion;
+    double checkpointPeriod;
+    char wuName[256];
+    char projectDir[256];
+    char boincDir[256];
+} MWAppInitData;
+
+#if BOINC_APPLICATION
+int mwGetMWAppInitData(MWAppInitData* mwaid);
+#endif /* BOINC_APPLICATION */
 
 #ifdef __cplusplus
 }

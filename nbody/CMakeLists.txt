@@ -210,12 +210,6 @@ endif()
 
 set(CMAKE_C_FLAGS "-std=gnu99 ${SSE2_FLAGS} ${CMAKE_C_FLAGS}")
 
-if(WIN32)
-  add_definitions(-D_WIN32_IE=0x0501)
-  add_definitions(-D_WINDOWS)
-  add_definitions(-D_WIN32_WINDOWS=0x0501)
-endif()
-
 list(APPEND nbody_link_libs ${JSON_C_LIBRARY} ${OS_SPECIFIC_LIBS} milkyway ${LIBM_LIBRARY})
 
 if(NBODY_OPENCL)

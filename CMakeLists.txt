@@ -230,6 +230,11 @@ if(NOT SEPARATION AND NOT NBODY)
   message(FATAL_ERROR "Nothing will be built!")
 endif()
 
+if(WIN32)
+  add_definitions(-D_WIN32_IE=0x0501)
+  add_definitions(-D_WINDOWS)
+  add_definitions(-D_WIN32_WINDOWS=0x0501)
+endif()
 
 add_subdirectory(milkyway)
 include_directories("${PROJECT_SOURCE_DIR}/milkyway/include")

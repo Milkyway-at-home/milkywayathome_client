@@ -18,6 +18,7 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
 #include "milkyway_config.h"
 #include "milkyway_extra.h"
 #include "milkyway_cpp_util.h"
@@ -32,25 +33,25 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #if BOINC_APPLICATION
 
-char* mwGetProjectDir()
+int mwGetMWAppInitData(MWAppInitData* mwaid)
 {
     struct APP_INIT_DATA aid;
-    char* projectDir;
 
     /* The C API function, yet the headers are broken so you need C++ anyway */
     if (boinc_get_init_data_p(&aid))
-        return NULL;
+        return 1;
 
-    //projectDir = strndup(aid.project_dir, sizeof(aid.project_dir));
-    projectDir = strdup(aid.project_dir);
+    mwaid->majorVersion = aid.major_version;
+    mwaid->minorVersion = aid.minor_version;
+    mwaid->release = aid.release;
+    mwaid->appVersion = aid.app_version;
+    mwaid->checkpointPeriod = aid.checkpoint_period;
 
-}
+    strncpy(mwaid->wuName, aid.wu_name, sizeof(mwaid->wuName));
+    strncpy(mwaid->projectDir, aid.project_dir, sizeof(mwaid->projectDir));
+    strncpy(mwaid->boincDir, aid.boinc_dir, sizeof(mwaid->boincDir));
 
-#else
-
-char* mwGetProjectDir()
-{
-    return "";
+    return 0;
 }
 
 #endif /* BOINC_APPLICATION */

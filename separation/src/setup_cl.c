@@ -501,16 +501,19 @@ static const char* getNvidiaRegCount(const DevInfo* di)
 static cl_bool headerDir(char* dir, size_t dirSize)
 {
   #if BOINC_APPLICATION
-    char* projDir;
+    MWAppInitData mwaid;
 
     if (!boinc_is_standalone())
     {
-        projDir = mwGetProjectDir();
-        strncpy(dir, projDir, dirSize);
-        free(projDir);
+        if(mwGetMWAppInitData(&mwaid))
+        {
+            warn("Failed to get project directory\n");
+            return CL_TRUE;
+        }
+        strncpy(dir, mwaid.projectDir, dirSize);
         return CL_FALSE;
     }
-  #endif
+  #endif /* BOINC_APPLICATION */
 
     if (!getcwd(dir, dirSize))
     {
@@ -561,7 +564,8 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
                                 "-DUSE_IMAGES=%d "
                                 "-DI_DONT_KNOW_WHY_THIS_DOESNT_WORK_HERE=%d ";
 
-    const char includeStr[] = "-I%s/../include "
+    const char includeStr[] = "-I%s "
+                              "-I%s/../include "
                               "-I%s/../../include "
                               "-I%s/../../milkyway/include ";
 
@@ -569,7 +573,7 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
     char kernelDefBuf[sizeof(kernelDefStr) + 5 * 12 + 8];
     char precDefBuf[2 * sizeof(atiPrecStr) + sizeof(precDefStr) + 1];
 
-    size_t totalSize = 3 * sizeof(cwd) + (sizeof(includeStr) + 6)
+    size_t totalSize = 4 * sizeof(cwd) + (sizeof(includeStr) + 8)
                      + sizeof(mathFlags)
                      + sizeof(precDefBuf)
                      + sizeof(kernelDefBuf)
@@ -621,7 +625,7 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
         return NULL;
     }
 
-    if (snprintf(includeFlags, sizeof(includeFlags), includeStr, cwd, cwd, cwd) < 0)
+    if (snprintf(includeFlags, sizeof(includeFlags), includeStr, cwd, cwd, cwd, cwd) < 0)
     {
         warn("Failed to get include flags\n");
         return NULL;
