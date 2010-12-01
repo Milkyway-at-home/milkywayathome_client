@@ -303,7 +303,6 @@ static json_object* readParameters(const int argc,
             POPT_ARG_NONE, &nbf->ignoreCheckpoint,
             0, "Ignore the checkpoint file", NULL
         },
-
       #endif /* BOINC_APPLICATION */
 
         {
@@ -322,7 +321,7 @@ static json_object* readParameters(const int argc,
         {
             "nthreads", 'n',
             POPT_ARG_INT, &nbf->numThreads,
-            'n', "BOINC argument for number of threads", NULL
+            0, "BOINC argument for number of threads", NULL
         },
       #endif /* _OPENMP */
 
@@ -341,7 +340,7 @@ static json_object* readParameters(const int argc,
         {  /* FIXME: Only used when using the server arguments. */
             "seed", 'e',
             POPT_ARG_INT, &nbf->setSeed,
-            0, "seed for PRNG", NULL
+            'e', "seed for PRNG", NULL
         },
 
         POPT_AUTOHELP
