@@ -47,10 +47,6 @@ extern "C" {
 #if BOINC_APPLICATION
   #include <boinc/boinc_api.h>
   #include <boinc/filesys.h>
-
-  #define WIN32_LEAN_AND_MEAN
-  #define VC_EXTRALEAN
-  #define _CRT_SECURE_NO_WARNINGS
   #if BOINC_DEBUG
     #ifndef _WIN32
       #include <boinc/diagnostics.h>
@@ -139,6 +135,7 @@ void* mwCallocAligned(size_t count, size_t size, size_t alignment);
 #define stringDefault(s, d) ((s) = (s) ? (s) : strdup((d)))
 
 char* mwReadFile(const char* filename);
+char* mwReadFileResolved(const char* filename);
 FILE* mwOpenResolved(const char* filename, const char* mode);
 
 int mwRename(const char* oldf, const char* newf);

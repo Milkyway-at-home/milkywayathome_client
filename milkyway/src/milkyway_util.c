@@ -129,14 +129,12 @@ void* reallocSafe(void* ptr, size_t size)
     return mem;
 }
 
-char* mwReadFile(const char* filename)
+static char* mwFreadFile(FILE* f, const char* filename)
 {
-    FILE* f;
     long fsize;
     size_t readSize;
     char* buf;
 
-    f = mw_fopen(filename, "rb");
     if (!f)
     {
         warn("Failed to open file '%s' for reading\n", filename);
@@ -161,6 +159,12 @@ char* mwReadFile(const char* filename)
     }
 
     return buf;
+
+}
+
+char* mwReadFile(const char* filename)
+{
+    return mwFreadFile(mw_fopen(filename, "rb"), filename);
 }
 
 #if BOINC_APPLICATION
@@ -180,11 +184,21 @@ FILE* mwOpenResolved(const char* filename, const char* mode)
     return mw_fopen(resolvedPath, mode);
 }
 
+char* mwReadFileResolved(const char* filename)
+{
+    return mwFreadFile(mwOpenResolved(filename, "rb"), filename);
+}
+
 #else
 
 FILE* mwOpenResolved(const char* filename, const char* mode)
 {
     return mw_fopen(filename, mode);
+}
+
+char* mwReadFileResolved(const char* filename)
+{
+    return mwReadFile(filename);
 }
 
 #endif /* BOINC_APPLICATION */

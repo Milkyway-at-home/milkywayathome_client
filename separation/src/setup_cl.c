@@ -19,6 +19,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "milkyway_util.h"
+#include "milkyway_cpp_util.h"
 #include "milkyway_cl.h"
 #include "mw_cl.h"
 #include "setup_cl.h"
@@ -390,7 +391,7 @@ char* findKernelSrc()
 {
     char* kernelSrc = NULL;
 
-    kernelSrc = mwReadFile("integrals.cl"); /* Try here first */
+    kernelSrc = mwReadFileResolved("integrals.cl"); /* Try here first */
     if (kernelSrc)
         return kernelSrc;
 
@@ -496,6 +497,30 @@ static const char* getNvidiaRegCount(const DevInfo* di)
     return regDefault;
 }
 
+/* Temporary hack until there's a better solution for all the header files */
+static cl_bool headerDir(char* dir, size_t dirSize)
+{
+  #if BOINC_APPLICATION
+    char* projDir;
+
+    if (!boinc_is_standalone())
+    {
+        projDir = mwGetProjectDir();
+        strncpy(dir, projDir, dirSize);
+        free(projDir);
+        return CL_FALSE;
+    }
+  #endif
+
+    if (!getcwd(dir, dirSize))
+    {
+        perror("getcwd");
+        return CL_TRUE;
+    }
+
+    return CL_FALSE;
+}
+
 /* Get string of options to pass to the CL compiler. */
 static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, cl_bool useImages)
 {
@@ -590,9 +615,9 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
     else
         warn("Unknown vendor ID: 0x%x\n", di->vendorID);
 
-    if (!getcwd(cwd, sizeof(cwd)))
+    if (headerDir(cwd, sizeof(cwd)))
     {
-        perror("getcwd");
+        warn("Failed to get header directory\n");
         return NULL;
     }
 
