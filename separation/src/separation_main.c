@@ -20,6 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "separation.h"
+#include "milkyway_cpp_util.h"
 #include <popt.h>
 
 
@@ -384,10 +385,11 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
 static int separationInit(const char* appname)
 {
     int rc;
+    BOINC_OPTIONS options;
 
     /* Everything is on by default except for option to not use idle
      * priority on Windows */
-    BOINC_OPTIONS options = { 1 };
+    mwGetBoincOptionsDefault(&options);
     options.normal_thread_priority = 1;
 
   #if BOINC_DEBUG

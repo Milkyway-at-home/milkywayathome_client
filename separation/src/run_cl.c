@@ -233,7 +233,7 @@ static inline void reportProgress(const AstronomyParameters* ap,
                                   cl_uint step)
 {
   #if BOINC_APPLICATION
-    double prog;
+    cl_uint prog;
     prog = es->current_calc_probs + ia->mu_steps * ia->r_steps * step;
     boinc_fraction_done((double) prog / ap->total_calc_probs);
   #else
@@ -270,8 +270,7 @@ static real runIntegral(CLInfo* ci,
         dt = t2 - t1;
         tAcc += dt;
 
-        reportProgress(ap, ia, es, i);
-        printf("Loop time: %f ms\n", dt);
+        reportProgress(ap, ia, es, i + 1);
     }
 
     warn("Integration time: %f s. Average time per iteration = %f ms\n",

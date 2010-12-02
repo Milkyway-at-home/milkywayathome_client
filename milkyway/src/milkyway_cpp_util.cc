@@ -54,6 +54,11 @@ int mwGetMWAppInitData(MWAppInitData* mwaid)
     return 0;
 }
 
+void mwGetBoincOptionsDefault(BOINC_OPTIONS* options)
+{
+    boinc_options_defaults(*options);
+}
+
 #endif /* BOINC_APPLICATION */
 
 
