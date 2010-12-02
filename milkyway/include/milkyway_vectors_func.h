@@ -28,9 +28,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "real.h"
 #include "milkyway_math_functions.h"
 
-/* FIXME: Does not belong */
-#define sqr(x) ((x) * (x))
-
 CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline mwvector mw_addv(mwvector a, mwvector b)
 {
@@ -279,10 +276,6 @@ inline void mw_incmulms(mwmatrix p, real s)
     mw_incmulvs(p[1], s);
     mw_incmulvs(p[2], s);
 }
-
-
-#undef sqr
-
 
 #endif /* _MILKYWAY_VECTORS_FUNC_H_ */
 

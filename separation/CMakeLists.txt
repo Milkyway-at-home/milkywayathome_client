@@ -180,21 +180,48 @@ set(separation_cl_headers include/setup_cl.h
                           include/separation_cl_defs.h
                           include/separation_cl_buffers.h)
 
-
 if(SEPARATION_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
   list(APPEND lib_source_file_list ${cl_source_list})
   list(APPEND separation_headers ${separation_cl_headers})
 
   if(SEPARATION_INLINE_KERNEL)
-    message("Inlining kernel")
-    set(c_kernel_dir "${PROJECT_SOURCE_DIR}/ckernels")
-    inline_kernel("${PROJECT_SOURCE_DIR}/kernels/integrals.cl"
-                  "integral_kernel"
-                  "${c_kernel_dir}"
-                  "${PROJECT_INCLUDE_DIR}" "${PROJECT_SOURCE_DIR}/src" "${MILKYWAY_INCLUDE_DIR}")
-   include_directories(${c_kernel_dir})
-   list(APPEND lib_source_file_list "${c_kernel_dir}/integral_kernel.c")
+    set(SEPARATION_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
+    set(SEPARATION_KERNEL_DIR ${PROJECT_SOURCE_DIR}/kernels)
+
+    # Can figure out many of the header dependencies of kernel with C
+    # preprocessor with -MM flag.  However, some of the files only purpose
+    # is to include some other files in the kernel, so we have to exclude
+    # those ones.
+    set(all_cl_files
+      ${MILKYWAY_INSTALL_INCLUDE_DIR}/milkyway_config.h
+      ${MILKYWAY_INSTALL_INCLUDE_DIR}/separation_config.h
+
+      ${MILKYWAY_INCLUDE_DIR}/milkyway_extra.h
+      # This one not used in kernel
+      #${MILKYWAY_INCLUDE_DIR}/milkyway_math_functions_standard.h
+
+      ${MILKYWAY_INCLUDE_DIR}/milkyway_math_functions.h
+      ${MILKYWAY_INCLUDE_DIR}/milkyway_math_functions_cl.h
+
+      ${MILKYWAY_INCLUDE_DIR}/milkyway_math.h
+
+      ${MILKYWAY_INCLUDE_DIR}/real.h
+      ${MILKYWAY_INCLUDE_DIR}/milkyway_vector_types.h
+      ${MILKYWAY_INCLUDE_DIR}/milkyway_vectors_func.h
+      ${MILKYWAY_INCLUDE_DIR}/milkyway_vectors.h
+      ${MILKYWAY_INCLUDE_DIR}/milkyway_cl.h
+
+      ${SEPARATION_INCLUDE_DIR}/separation_types.h
+      ${SEPARATION_INCLUDE_DIR}/integrals_common.h
+
+      ${SEPARATION_KERNEL_DIR}/integrals.cl)
+
+    set(INLINE_KERNEL_FILE "${LIBRARY_OUTPUT_PATH}/AllInOneFile.c")
+    all_in_one_file("${all_cl_files}")
+    inline_kernel("inlinedIntegralKernelSrc" "${ALL_IN_ONE_STRING}" ${INLINE_KERNEL_FILE})
+    add_library(all_in_one_library STATIC ${INLINE_KERNEL_FILE})
+    list(APPEND separation_link_libs all_in_one_library)
   endif()
 endif()
 
@@ -242,5 +269,7 @@ add_executable(${separation_bin_name} ${separation_main_src})
 milkyway_link(${separation_bin_name} ${BOINC_APPLICATION} ${STATIC_EVERYTHING} "${exe_link_libs}")
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
+
+
 
 

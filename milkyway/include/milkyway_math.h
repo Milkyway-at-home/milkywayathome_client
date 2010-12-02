@@ -61,11 +61,6 @@ extern "C" {
 /* radians to degrees */
 #define r2d(x) ((x) * (real) 180.0 / (real) M_PI)
 
-/* simple math macros */
-#define cube(x) ((x) * (x) * (x))
-#define sqr(x)  ((x) * (x))
-#define inv(x)  ((real) 1.0 / (x))
-
 #define dsign(A,B) ((B) < 0.0 ? -(A) : (A))
 
 #define KAHAN_ADD(k, item)                              \

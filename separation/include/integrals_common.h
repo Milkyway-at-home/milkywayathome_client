@@ -28,10 +28,6 @@ extern "C" {
 #include "milkyway_cl.h"
 #include "milkyway_math.h"
 #include "separation_types.h"
-#include "separation_constants.h"
-#include "coordinates.h"
-#include "r_points.h"
-
 
 
 ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE

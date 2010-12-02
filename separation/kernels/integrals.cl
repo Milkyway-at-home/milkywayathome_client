@@ -211,7 +211,11 @@ double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double 
 #endif /* USE_CUSTOM_MATH */
 
 
-#define MAX_CONST(n, type) __attribute__((max_constant_size(n * sizeof(type))))
+#if 0
+  #define MAX_CONST(n, type) __attribute__((max_constant_size(n * sizeof(type))))
+#else
+  #define MAX_CONST(n, type)
+#endif
 
 __kernel void mu_sum_kernel(__global real* restrict mu_out,
                             __global real* restrict probs_out,

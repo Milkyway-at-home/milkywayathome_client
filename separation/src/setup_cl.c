@@ -38,7 +38,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #if SEPARATION_INLINE_KERNEL
-  #include "integral_kernel.h"
+extern char* inlinedIntegralKernelSrc;
+#else
+static char* inlinedIntegralKernelSrc = NULL;
 #endif /* SEPARATION_INLINE_KERNEL */
 
 
@@ -370,20 +372,6 @@ cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* 
     return CL_SUCCESS;
 }
 
-#if SEPARATION_INLINE_KERNEL
-
-char* findKernelSrc()
-{
-    return integral_kernel_src;
-}
-
-void freeKernelSrc(char* src)
-{
-  #pragma unused(src)
-}
-
-#else
-
 /* Reading from the file is more convenient for actually working on
  * it. Inlining is more useful for releasing when we don't want to
  * deal with the hassle of distributing more files. */
@@ -391,7 +379,16 @@ char* findKernelSrc()
 {
     char* kernelSrc = NULL;
 
-    kernelSrc = mwReadFileResolved("integrals.cl"); /* Try here first */
+    /* Try different alternatives */
+
+    if (inlinedIntegralKernelSrc)
+        return inlinedIntegralKernelSrc;
+
+    kernelSrc = mwReadFileResolved("AllInOneFile.cl");
+    if (kernelSrc)
+        return kernelSrc;
+
+    kernelSrc = mwReadFileResolved("integrals.cl");
     if (kernelSrc)
         return kernelSrc;
 
@@ -406,11 +403,9 @@ char* findKernelSrc()
 
 void freeKernelSrc(char* src)
 {
-    free(src);
+    if (src != inlinedIntegralKernelSrc)
+        free(src);
 }
-
-#endif
-
 
 #define NUM_CONST_BUF_ARGS 5
 
@@ -497,33 +492,6 @@ static const char* getNvidiaRegCount(const DevInfo* di)
     return regDefault;
 }
 
-/* Temporary hack until there's a better solution for all the header files */
-static cl_bool headerDir(char* dir, size_t dirSize)
-{
-  #if BOINC_APPLICATION
-    MWAppInitData mwaid;
-
-    if (!boinc_is_standalone())
-    {
-        if(mwGetMWAppInitData(&mwaid))
-        {
-            warn("Failed to get project directory\n");
-            return CL_TRUE;
-        }
-        strncpy(dir, mwaid.projectDir, dirSize);
-        return CL_FALSE;
-    }
-  #endif /* BOINC_APPLICATION */
-
-    if (!getcwd(dir, dirSize))
-    {
-        perror("getcwd");
-        return CL_TRUE;
-    }
-
-    return CL_FALSE;
-}
-
 /* Get string of options to pass to the CL compiler. */
 static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, cl_bool useImages)
 {
@@ -557,8 +525,12 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
     const char clPrecStr[]  = "-cl-single-precision-constant ";
   #endif
 
-    /* Constants compiled into kernel */
-    const char kernelDefStr[] = "-DNSTREAM=%u "
+    /* Constants compiled into kernel. We need to define
+     * MILKYWAY_MATH_COMPILATION since the header inclusion protection
+     * doesn't really matter and doesn't work when everything is
+     * dumped together. */
+    const char kernelDefStr[] = "-DMILKYWAY_MATH_COMPILATION "
+                                "-DNSTREAM=%u "
                                 "-DFAST_H_PROB=%d "
                                 "-DAUX_BG_PROFILE=%d "
                                 "-DUSE_IMAGES=%d "
@@ -619,16 +591,19 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
     else
         warn("Unknown vendor ID: 0x%x\n", di->vendorID);
 
-    if (headerDir(cwd, sizeof(cwd)))
+    if (!inlinedIntegralKernelSrc)
     {
-        warn("Failed to get header directory\n");
-        return NULL;
-    }
+        if (!getcwd(cwd, sizeof(cwd)))
+        {
+            warn("Failed to get header directory\n");
+            return NULL;
+        }
 
-    if (snprintf(includeFlags, sizeof(includeFlags), includeStr, cwd, cwd, cwd, cwd) < 0)
-    {
-        warn("Failed to get include flags\n");
-        return NULL;
+        if (snprintf(includeFlags, sizeof(includeFlags), includeStr, cwd, cwd, cwd, cwd) < 0)
+        {
+            warn("Failed to get include flags\n");
+            return NULL;
+        }
     }
 
     compileFlags = mallocSafe(totalSize);
@@ -712,7 +687,7 @@ cl_int setupSeparationCL(CLInfo* ci,
     }
 
     warn("\nCompiler flags:\n%s\n\n", compileFlags);
-    err = mwSetProgramFromSrc(ci, "mu_sum_kernel", &kernelSrc, 1, compileFlags);
+    err = mwSetProgramFromSrc(ci, "mu_sum_kernel", (const char**) &kernelSrc, 1, compileFlags);
 
     freeKernelSrc(kernelSrc);
     free(compileFlags);

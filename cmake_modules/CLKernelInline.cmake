@@ -18,29 +18,23 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Run the C preprocessor to dump everything into 1 file, which we then
-# can embed in the source and ship that without needing to send source
-# files.
 
-#FIXME: Passing a list of include arguments wasn't working and I don't
-#feel like fighting with cmake now.
-function(inline_kernel kernel_file name c_kernel_dir include_dir1 include_dir2 include_dir3)
-
-  #FIXME: Less hacky than definining __OPENCL_VERSION__
-  #This is also somewhat sketchy in the first place.
-  #Run preprocessor
-  execute_process(COMMAND ${CMAKE_C_COMPILER} -I${include_dir1} -I${include_dir2} -I${include_dir3} -std=c99 -D__OPENCL_VERSION__=100 -DSEPARATION_INLINE_KERNEL=1 -E -x c ${kernel_file}
-                   OUTPUT_VARIABLE kernel_cpp OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-  #file(WRITE "${c_kernel_dir}/${name}.cl" "${kernel_cpp}")
-
+function(inline_kernel name full_src outfile)
   #Escape special characters
   #TODO: Other things that need escaping
+
+  # Escape escaped newlines, e.g. those in macros
+  string(REGEX REPLACE
+             "\\\\(\n)|(\r\n)"
+             "\\\\\\\\\\n"
+             str_escaped
+             "${full_src}")
+
   string(REGEX REPLACE
              "(\n)|(\r\n)"
              "\\\\n"
              str_escaped
-             "${kernel_cpp}")
+             "${str_escaped}")
 
   string(REGEX REPLACE
              "(\")"
@@ -48,18 +42,53 @@ function(inline_kernel kernel_file name c_kernel_dir include_dir1 include_dir2 i
              str_escaped
              "${str_escaped}")
 
-  set(cfile "\n#include \"${name}.h\"\n
-           \nconst char* ${name}_src = \"${str_escaped}\";
-           \n\n")
+  set(cfile "\nconst char* ${name} = \"${str_escaped}\";\n\n")
 
-  string(TOUPPER "${name}" upname)
-  set(hfile "\n#ifndef _${upname}_H_\n#define _${upname}_H_
-            \n#ifdef __cplusplus\nextern \"C\" {\n#endif
-            \nextern const char* ${name}_src;
-            \n#ifdef __cplusplus\n} \n#endif
-            \n#endif /* _${upname}_H_ */\n\n")
+  file(WRITE "${outfile}" "${cfile}")
+endfunction()
 
-  file(WRITE "${c_kernel_dir}/${name}.c" "${cfile}")
-  file(WRITE "${c_kernel_dir}/${name}.h" "${hfile}")
+
+macro(strip_includes)
+  string(REGEX REPLACE "[ \t]*#include[ \t]*[\"<][^\">]*[\">]" "" str "${str}")
+endmacro()
+
+# Warning: This won't work if there are comments in strings
+macro(strip_comments)
+  #Remove the comments. Otherwise, C++ comments will comment out the
+  #rest of the program unless we do more work.
+  string(REGEX REPLACE
+             "(/\\*([^*]|[\r\n]|(\\*+([^*/]|[\r\n])))*\\*+/)|(//[^\r\n]*)"
+             "" # No comment
+             str
+             #Quote this to prevent ;'s being interpreted as list separators
+             "${str}")
+  string(REGEX REPLACE "\n\n" "\n" str "${str}")
+endmacro()
+
+
+# It's a Webkit joke
+
+# Need to pull in all header file dependencies for the kernel, and
+# strip out the #include's. Then we can pack it into a string, and
+# then we don't need to deal with distributing extra files. Ideally we
+# could also strip comments, extra white space, rename things to
+# save space etc. Hopefully someday someone will write an OpenCL minifier
+# that will do this for you. There seem to be GLSL ones that don't
+# seem to work.
+
+# We can't ship headers anyway. Because of the stupid way BOINC
+# handles files, they won't persist in the project directory if we
+# just put them there. They will either be deleted, or will have a
+# stupid "XML link" thing which it uses, which obviously won't work
+# with the CL compiler.
+function(all_in_one_file src_list)
+  set(all_in_one_string "")
+  foreach(i ${src_list})
+    file(READ ${i} str)
+    strip_includes()
+    strip_comments()
+    set(all_in_one_string "${all_in_one_string}${str}")
+  endforeach()
+  set(ALL_IN_ONE_STRING "${all_in_one_string}" PARENT_SCOPE)
 endfunction()
 

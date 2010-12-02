@@ -236,6 +236,12 @@ if(WIN32)
   add_definitions(-D_WIN32_WINDOWS=0x0501)
 endif()
 
+# milkyway includes
+set(MILKYWAY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/milkyway/include")
+
+# locally installed headers, and generated *_config.h
+set(MILKYWAY_INSTALL_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
+
 add_subdirectory(milkyway)
 include_directories("${PROJECT_SOURCE_DIR}/milkyway/include")
 
