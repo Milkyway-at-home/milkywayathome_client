@@ -196,8 +196,6 @@ static cl_int runNuStep(CLInfo* ci,
     size_t offset[2];
     unsigned int i;
 
-    printf("Nu step %u:\n", nu_step);
-
     err = setNuKernelArgs(ci, ia, nu_step);
     if (err != CL_SUCCESS)
     {
@@ -229,10 +227,15 @@ static cl_int runNuStep(CLInfo* ci,
     return CL_SUCCESS;
 }
 
-static inline void reportProgress(cl_uint nuSteps, cl_uint step)
+static inline void reportProgress(const AstronomyParameters* ap,
+                                  const IntegralArea* ia,
+                                  EvaluationState* es,
+                                  cl_uint step)
 {
   #if BOINC_APPLICATION
-    boinc_fraction_done((double) nuSteps / (double) step);
+    double prog;
+    prog = es->current_calc_probs + ia->mu_steps * ia->r_steps * step;
+    boinc_fraction_done((double) prog / ap->total_calc_probs);
   #else
     printf("Step %u\n", step);
   #endif /* BOINC_APPLICATION */
@@ -242,6 +245,7 @@ static real runIntegral(CLInfo* ci,
                         SeparationCLMem* cm,
                         RunSizes* runSizes,
                         real* probs_results,
+                        EvaluationState* es,
                         const CLRequest* clr,
                         const AstronomyParameters* ap,
                         const IntegralArea* ia)
@@ -266,7 +270,7 @@ static real runIntegral(CLInfo* ci,
         dt = t2 - t1;
         tAcc += dt;
 
-        reportProgress(ia->nu_steps, i);
+        reportProgress(ap, ia, es, i);
         printf("Loop time: %f ms\n", dt);
     }
 
@@ -286,6 +290,7 @@ real integrateCL(const AstronomyParameters* ap,
                  const StreamConstants* sc,
                  const StreamGauss sg,
                  real* probs_results,
+                 EvaluationState* es,
                  const CLRequest* clr,
                  CLInfo* ci,
                  DevInfo* di,
@@ -325,7 +330,7 @@ real integrateCL(const AstronomyParameters* ap,
         return NAN;
     }
 
-    result = runIntegral(ci, &cm, &runSizes, probs_results, clr, ap, ia);
+    result = runIntegral(ci, &cm, &runSizes, probs_results, es, clr, ap, ia);
 
     releaseSeparationBuffers(&cm);
 

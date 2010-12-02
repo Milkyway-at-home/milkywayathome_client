@@ -131,7 +131,7 @@ static void calculateIntegrals(const AstronomyParameters* ap,
         t1 = mwGetTime();
       #if SEPARATION_OPENCL
         integral->background_integral = integrateCL(ap, ia, sc, sg,
-                                                    integral->stream_integrals,
+                                                    integral->stream_integrals, es,
                                                     clr, &ci, &di, useImages);
       #else
         integral->background_integral = integrate(ap, ia, sc, sg,
