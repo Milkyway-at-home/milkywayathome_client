@@ -305,7 +305,7 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
       #if AUX_BG_PROFILE
         /* Currently not used */
         /* Add a quadratic term in g to the Hernquist profile */
-        real g = GPRIME(rc[r_step]) + sg_dx[i];
+        real g = GPRIME(rcs[r_step]) + sg_dx[i];
         bg_prob += aux_prob(ap, QW_R3_N(r_pt), g);
       #endif /* AUX_BG_PROFILE */
     }
