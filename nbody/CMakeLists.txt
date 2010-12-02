@@ -285,7 +285,7 @@ configure_file (
   "${PROJECT_INCLUDE_DIR}/nbody_config.h")
 
 add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
-milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} ${STATIC_EVERYTHING} "${exe_link_libs}")
+milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} 0 ${STATIC_EVERYTHING} "${exe_link_libs}")
 #add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 

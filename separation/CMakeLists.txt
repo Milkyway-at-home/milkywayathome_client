@@ -266,7 +266,7 @@ if(MSVC)
 endif()
 
 add_executable(${separation_bin_name} ${separation_main_src})
-milkyway_link(${separation_bin_name} ${BOINC_APPLICATION} ${STATIC_EVERYTHING} "${exe_link_libs}")
+milkyway_link(${separation_bin_name} ${BOINC_APPLICATION} ${SEPARATION_OPENCL} ${STATIC_EVERYTHING} "${exe_link_libs}")
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 

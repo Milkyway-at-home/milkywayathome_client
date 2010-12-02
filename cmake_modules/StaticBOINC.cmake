@@ -23,12 +23,17 @@
 # doesn't like you trying to statically link the standard libraries.
 # We also have to link as C++ when we do this because of BOINC.
 
-function(correct_static_link client_bin_name)
+function(correct_static_link client_bin_name partially_dynamic)
   if(NOT APPLE)
     #CHECKME: What about Windows?
-    set(client_static_link_flags "-static -static-libgcc -static-libstdc++")
+    set(client_static_link_flags "-static-libgcc -static-libstdc++")
 
-    if(UNIX)
+    if(NOT partially_dynamic)
+      # For dynamically linking to libOpenCL.so and dependencies
+      set(client_static_link_flags "-static ${client_static_link_flags}")
+    endif()
+
+    if(UNIX AND NOT partially_dynamic)
       #We need to do this to statically link pthreads. Otherwise really
       #bizarre things happen.
       set(client_static_link_flags "-pthread ${client_static_link_flags}")
@@ -52,11 +57,23 @@ function(correct_static_link client_bin_name)
   endif()
 endfunction()
 
-function(milkyway_link client_bin_name use_boinc use_static link_libs)
+function(milkyway_link client_bin_name use_boinc use_opencl use_static link_libs)
+  if (UNIX AND NOT APPLE AND use_opencl)
+    #Avoid weird linking conflict when trying to dynamically link
+    #against opencl library, and avoid dynamically linking libc unless
+    #we need to
+    list(INSERT link_libs 0 c)
+  endif()
+
   if(use_static)
-    #Static linking tends to interfere with debugging with valgrind/gdb
-    #in annoying ways
-    correct_static_link(${client_bin_name})
+    #Static linking tends to interfere with debugging with
+    #valgrind/gdb in annoying ways
+
+    # On Linux, you must dynamically link against libOpenCL.so, and
+    #then pthreads, libc etc. to avoid conflicts. On Windows, you
+    #statically link against libOpenCL.lib, which then links to a dll
+    #at runtime.
+    correct_static_link(${client_bin_name} ${use_opencl})
   else()
     if(use_boinc)
       list(APPEND link_libs "stdc++")
