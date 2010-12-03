@@ -1,0 +1,97 @@
+In addition to the instructions below, source files must be downloaded using git:
+
+        http://help.github.com/
+
+Windows:
+
+    MinGW:
+
+        install msysgit:
+            https://git.wiki.kernel.org/index.php/MSysGit:InstallMSysGit
+
+        to get libraries such as editors refer to the MSYS and MinGW
+            repository:
+                http://www.mingw.org/
+
+        alternative GUI-based C/C++ editor - Notepad++
+            -has tab-size control
+            -allows changing indentation on highlighted blocks of text (shift
+                tab reduces indent while tab increases)
+            -able to translate unix-style and windows-style carriage returns
+            -allows auto-indenting of entire file of code by clicking: TextFX
+                ->TextFX Edit->Reindent C++ Code
+            -many other popular features
+
+            Notepad++ suggested configuration:
+
+                Make sure indentation matches the code in MilkyWay@Home (auto
+                    indent can be reconfigured to match any standard, but to
+                    keep things simple it can be turned off):
+
+                    settings->preferences
+                        misc->auto-indent - uncheck
+                        language menu/tab settings->tab settings - uncheck
+                            'use default value', 'tab size' should be 4, check
+                            'replace by space'
+                        new document/default directory->format - select 'unix'
+
+                Make sure trailing whitespace is removed on saving to avoid
+                    merging problems with git:
+
+                    settings->shortcut mapper->
+                        main menu->save (right click)->modify - uncheck all
+                            and change to 'none'
+                        macros->trim trailing and save (right click)->modify
+                            - uncheck all but ctrl, 's' should be selected
+
+        Build instructions:
+
+            go to "test" directory
+            ./win_make_all
+
+Mac:
+
+    install gcc/g++ by downloading X-Code tools
+
+        http://developer.apple.com/technologies/xcode.html
+
+    install SDL (http://www.libsdl.org/) and git
+
+        port install libsdl-devel git-core
+
+        Build instructions:
+
+            go to "test" directory
+            ./mac_make_all
+
+Linux:
+
+    install gcc/g++ development packages, git, and SDL (http://www.libsdl.org/)
+
+        Linux:
+
+            sudo yum install gcc-c++ git-core SDL-devel.i686
+
+        Ubuntu:
+
+            sudo apt-get install build-essential git-core libsdl1.2-dev
+
+            to check for a new revision of SDL to insert in the place of "libsdl1.2-dev" above, use the following command
+
+                apt-cache search libsdl
+
+        Build instructions:
+
+            go to "test" directory
+            ./lin_make_all
+
+Other platforms:
+
+    Install gcc/g++ development packages, git, and SDL (http://www.libsdl.org/)
+
+    For a list of all compatible platforms and compilers go to this page:
+        
+Other compilers:
+
+    Other compilers supported with SDL (including MSVC) should also compile and run LModL
+

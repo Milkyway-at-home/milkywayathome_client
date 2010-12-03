@@ -1,0 +1,1 @@
+g++ -o $1 $1.cpp ../src/3dproj.cpp ../src/binfile.cpp ../src/draw.cpp ../src/draw32.cpp ../src/draw32p.cpp ../src/draw8.cpp ../src/drawcore.cpp ../src/drawhalo.cpp ../src/imgplot.cpp ../src/trigtbl.cpp ../src/rgbconv.cpp -I../include -L/opt/local/lib -I/opt/local/include/SDL  -lSDLmain -lSDL -framework Cocoa -O3 -Wall

@@ -1,0 +1,9 @@
+./lin_make coltest
+./lin_make cubetest_fullscreen
+./lin_make cubetest
+./lin_make fpstest
+./lin_make gfxinfo
+./lin_make imgrender
+./lin_make quattest
+./lin_make trigtblm
+

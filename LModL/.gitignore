@@ -1,0 +1,48 @@
+# Folders
+
+
+# Compiled files
+
+*.o
+*.a
+*.exe
+*.dll
+*~
+coltest
+cubetest
+fpstest
+gfxinfo
+imgrender
+quattest
+trigtblm
+
+# Packages
+
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Temp files
+
+*~
+
+# Windows files
+
+Thumbs.db
+desktop.ini
+
+# Mac files
+
+.DS_Store
+
+#Data files
+
+stderr.txt
+stdout.txt
+*.bmp
+*.jpg

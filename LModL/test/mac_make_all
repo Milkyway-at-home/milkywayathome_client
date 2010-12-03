@@ -1,0 +1,9 @@
+./mac_make coltest
+./mac_make cubetest
+./mac_make cubetest_fullscreen
+./mac_make fpstest
+./mac_make gfxinfo
+./mac_make imgrender
+./mac_make quattest
+./mac_make trigtblm
+

@@ -1,0 +1,9 @@
+./win_make coltest
+./win_make cubetest
+./win_make cubetest_fullscreen
+./win_make fpstest
+./win_make gfxinfo
+./win_make imgrender
+./win_make quattest
+./win_make trigtblm
+
