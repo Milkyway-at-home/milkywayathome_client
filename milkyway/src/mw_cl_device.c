@@ -379,7 +379,7 @@ cl_int mwSelectDevice(CLInfo* ci, const cl_device_id* devs, const CLRequest* clr
     if (clr->devNum >= nDev)
     {
         warn("Requested device is out of range of number found devices\n");
-        return -1;
+        return MW_CL_ERROR;
     }
 
     ci->dev = devs[clr->devNum];

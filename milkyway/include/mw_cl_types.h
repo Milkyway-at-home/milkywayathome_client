@@ -27,6 +27,7 @@ extern "C" {
 
 #include "milkyway_cl.h"
 
+#define MW_CL_ERROR ((cl_int) 1)
 
 typedef struct
 {

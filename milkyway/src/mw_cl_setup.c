@@ -71,7 +71,7 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
     if (!ids)
     {
         warn("Failed to get any platforms\n");
-        return -1;
+        return MW_CL_ERROR;
     }
 
     mwPrintPlatforms(ids, n_platform);
@@ -82,7 +82,7 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
     {
         warn("Error getting devices\n");
         free(ids);
-        return -1;
+        return MW_CL_ERROR;
     }
 
     err = mwSelectDevice(ci, devs, clr, nDev);
@@ -123,6 +123,14 @@ cl_int mwSetupCL(CLInfo* ci,
     }
 
     mwPrintDevInfo(di);
+
+  #if DOUBLEPREC
+    if (!mwSupportsDoubles(di))
+    {
+        warn("Device doesn't support double precision\n");
+        return MW_CL_ERROR;
+    }
+  #endif
 
     err = mwCreateCtxQueue(ci, CL_FALSE);
     if (err != CL_SUCCESS)

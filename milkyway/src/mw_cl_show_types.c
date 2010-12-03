@@ -64,6 +64,8 @@ const char* showCLInt(const cl_int x)
 {
     switch (x)  /* Giant switch statements are fun */
     {
+        case MW_CL_ERROR:  /* Custom error */
+            return "MW_CL_ERROR";
         case CL_SUCCESS:
             return "CL_SUCCESS";
         case CL_DEVICE_NOT_FOUND:

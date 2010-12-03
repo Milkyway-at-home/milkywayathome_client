@@ -422,7 +422,6 @@ cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes*
     totalGlobalConst = sizes->lbts + sizes->rPts;
 
     totalMem = totalOut + totalConstBuf + totalGlobalConst;
-
     if (totalMem > di->memSize)
     {
         warn("Total required device memory ("ZU") > available ("LLU")\n", totalMem, di->memSize);
@@ -461,14 +460,6 @@ cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes*
         warn("Device doesn't have enough constant buffer space\n");
         return CL_FALSE;
     }
-
-  #if DOUBLEPREC
-    if (!mwSupportsDoubles(di))
-    {
-        warn("Device doesn't support double precision\n");
-        return CL_FALSE;
-    }
-  #endif
 
     return CL_TRUE;
 }
@@ -676,14 +667,14 @@ cl_int setupSeparationCL(CLInfo* ci,
     if (!compileFlags)
     {
         warn("Failed to get compiler flags\n");
-        return -1;
+        return MW_CL_ERROR;
     }
 
     kernelSrc = findKernelSrc();
     if (!kernelSrc)
     {
         warn("Failed to read CL kernel source\n");
-        return -1;
+        return MW_CL_ERROR;
     }
 
     warn("\nCompiler flags:\n%s\n\n", compileFlags);
