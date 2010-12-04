@@ -55,7 +55,18 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #if !defined(__Cypress__) && !defined(__ATI_RV770__)
   #define USE_CUSTOM_DIVISION 1
+
+  /* It's faster to load the stream constants into private memory on
+   * Nvidia, which I think there spills into shared stuff. It seems
+   * much slower on ATI though. */
+  #define LOAD_STREAM_CONSTANTS 1
 #endif
+
+#if LOAD_STREAM_CONSTANTS
+  #define __SC_CONSTANT __private
+#else
+  #define __SC_CONSTANT __constant
+#endif /* LOAD_STREAM_CONSTANTS */
 
 #if USE_IMAGES
 
@@ -103,7 +114,7 @@ inline RPoints readRPts(__global const RPoints* r_pts, __constant IntegralArea* 
 
 __attribute__ ((always_inline))
 inline void stream_sums_cl(real* st_probs,
-                           StreamConstants* sc,
+                           __SC_CONSTANT StreamConstants* sc,
                            const mwvector xyz,
                            const RPoints r_pt)
 {
@@ -152,6 +163,7 @@ inline void write_mult_st_probs(__global real* probs_out, real V_reff_xr_rp3, co
   #endif
 }
 
+#if LOAD_STREAM_CONSTANTS
 __attribute__ ((always_inline))
 inline void set_sc_priv(StreamConstants* sc, __constant StreamConstants* sc_c)
 {
@@ -175,6 +187,8 @@ inline void set_sc_priv(StreamConstants* sc, __constant StreamConstants* sc_c)
     sc[4] = sc_c[4];
   #endif
 }
+
+#endif /* LOAD_STREAM_CONSTANTS */
 
 #if USE_CUSTOM_DIVISION && DOUBLEPREC
 
@@ -222,12 +236,20 @@ double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double 
   #define MAX_CONST(n, type)
 #endif
 
+#if LOAD_STREAM_CONSTANTS
+  #define SC_ARG sc_c
+#else
+  #define SC_ARG sc
+#endif /* LOAD_STREAM_CONSTANTS */
+
+
 __kernel void mu_sum_kernel(__global real* restrict mu_out,
                             __global real* restrict probs_out,
 
                             __constant AstronomyParameters* ap MAX_CONST(1, AstronomyParameters),
                             __constant IntegralArea* ia MAX_CONST(1, IntegralArea),
-                            __constant StreamConstants* sc_c MAX_CONST(NSTREAM, StreamConstants),
+
+                            __constant StreamConstants* SC_ARG MAX_CONST(NSTREAM, StreamConstants),
                             __constant RConsts* rcs MAX_CONST(200, RConsts),
                             __constant real* restrict sg_dx MAX_CONST(200, real),
 
@@ -253,9 +275,10 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     real bg_prob = 0.0;
     real st_probs[NSTREAM] = { 0.0 };
 
-
+  #if LOAD_STREAM_CONSTANTS
     StreamConstants sc[NSTREAM];
     set_sc_priv(sc, sc_c);
+  #endif /* LOAD_STREAM_CONSTANTS */
 
     real m_sun_r0 = ap->m_sun_r0;
     real q_inv_sqr = ap->q_inv_sqr;
