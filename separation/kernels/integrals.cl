@@ -51,8 +51,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #error "Requested number of streams is absurd"
 #endif
 
-#define USE_CUSTOM_MATH 1
+#define USE_CUSTOM_SQRT 1
 
+#if !defined(__Cypress__) && !defined(__ATI_RV770__)
+  #define USE_CUSTOM_DIVISION 1
+#endif
 
 #if USE_IMAGES
 
@@ -173,7 +176,7 @@ inline void set_sc_priv(StreamConstants* sc, __constant StreamConstants* sc_c)
   #endif
 }
 
-#if USE_CUSTOM_MATH && DOUBLEPREC
+#if USE_CUSTOM_DIVISION && DOUBLEPREC
 
 /* TODO: Move these */
 
@@ -193,6 +196,12 @@ double mw_div(double a, double b)  // accurate to 1 ulp, i.e the last bit of the
                        // one would have to add a second Newton iteration before the Markstein rounding step,
                        // but one looses the gained half bit of precision in the following additions, so the added effort doesn't make sense
 
+#else
+  #define mw_div(a, b) ((a) / (b))
+#endif /* USE_CUSTOM_DIVISION && DOUBLEPREC */
+
+#if USE_CUSTOM_SQRT && DOUBLEPREC
+
 double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double precision number
 {
     // cuts some corners on the numbers range but is significantly faster, employs "faithful rounding"
@@ -204,12 +213,8 @@ double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double 
 }   // same precision as division (1 ulp)
 
 #else
-
-#define mw_div(a, b) ((a) / (b))
-#define mw_fsqrt mw_sqrt
-
-#endif /* USE_CUSTOM_MATH */
-
+  #define mw_fsqrt mw_sqrt
+#endif /* USE_CUSTOM_SQRT && DOUBLEPREC */
 
 #if 0
   #define MAX_CONST(n, type) __attribute__((max_constant_size(n * sizeof(type))))

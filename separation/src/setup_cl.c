@@ -522,7 +522,7 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
 
     /* Build options used by milkyway_math stuff */
     const char mathOptions[] = "-DUSE_CL_MATH_TYPES=0 "
-                               "-DUSE_MAD=0 "
+                               "-DUSE_MAD=1 "
                                "-DUSE_FMA=0 ";
 
     /* Extra flags for different compilers */
