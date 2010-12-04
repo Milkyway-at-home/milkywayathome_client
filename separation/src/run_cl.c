@@ -230,14 +230,15 @@ static cl_int runNuStep(CLInfo* ci,
 static inline void reportProgress(const AstronomyParameters* ap,
                                   const IntegralArea* ia,
                                   EvaluationState* es,
-                                  cl_uint step)
+                                  cl_uint step,
+                                  double dt)
 {
   #if BOINC_APPLICATION
     cl_uint prog;
     prog = es->current_calc_probs + ia->mu_steps * ia->r_steps * step;
     boinc_fraction_done((double) prog / ap->total_calc_probs);
   #else
-    printf("Step %u\n", step);
+    printf("Step %u: %fms\n", step, dt);
   #endif /* BOINC_APPLICATION */
 }
 
@@ -270,7 +271,7 @@ static real runIntegral(CLInfo* ci,
         dt = t2 - t1;
         tAcc += dt;
 
-        reportProgress(ap, ia, es, i + 1);
+        reportProgress(ap, ia, es, i + 1, dt);
     }
 
     warn("Integration time: %f s. Average time per iteration = %f ms\n",

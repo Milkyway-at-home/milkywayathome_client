@@ -87,11 +87,14 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
 
     di->computeCapabilityMajor = di->computeCapabilityMinor = 0;
   #ifndef __APPLE__
-    /* Nvidia extension stuff missing from OS X headers, but not ATI's */
-    err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV,
-                           sizeof(cl_uint), &di->computeCapabilityMajor, NULL);
-    err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV,
-                           sizeof(cl_uint), &di->computeCapabilityMinor, NULL);
+    if (di->vendorID == MW_NVIDIA)
+    {
+        /* Nvidia extension stuff missing from OS X headers, but not ATI's */
+        err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV,
+                               sizeof(cl_uint), &di->computeCapabilityMajor, NULL);
+        err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV,
+                               sizeof(cl_uint), &di->computeCapabilityMinor, NULL);
+    }
   #endif /* __APPLE__ */
 
     if (err)
