@@ -55,12 +55,35 @@ static size_t findGroupSize(const DevInfo* di)
     return di->devType == CL_DEVICE_TYPE_CPU ? 1 : 64;
 }
 
+
+/* Experimentally determined 40 for GTX 480. Estimate other GPUs by
+ * scaling by flops ratio from this base.*/
+static cl_uint fermiNumChunks(const DevInfo* di)
+{
+    cl_double gflops;
+    cl_uint baseGTX480 = 40;
+
+    gflops = cudaEstimateGFLOPs(di);
+
+    return (cl_uint) (baseGTX480 * referenceGFLOPsGTX480(DOUBLEPREC) / gflops);
+}
+
+static cl_uint gt200NumChunks(const DevInfo* di)
+{
+    cl_double gflops;
+    cl_uint baseGTX285 = 140;
+
+    gflops = cudaEstimateGFLOPs(di);
+
+    return (cl_uint) (baseGTX285 * referenceGFLOPsGTX285(DOUBLEPREC) / gflops);
+}
+
 static cl_uint nvidiaNumChunks(const DevInfo* di)
 {
     if (minComputeCapabilityCheck(di, 2, 0))
-        return 40;
+        return fermiNumChunks(di);
 
-    return 140;
+    return gt200NumChunks(di);
 }
 
 static cl_uint chooseNumChunk(const CLRequest* clr, const DevInfo* di)
