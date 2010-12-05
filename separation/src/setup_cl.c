@@ -61,21 +61,39 @@ static size_t findGroupSize(const DevInfo* di)
 static cl_uint fermiNumChunks(const DevInfo* di)
 {
     cl_double gflops;
+    cl_uint n;
+    cl_double baseGTX480Flops;
     cl_uint baseGTX480 = 40;
 
+    baseGTX480Flops = referenceGFLOPsGTX480(DOUBLEPREC);
     gflops = cudaEstimateGFLOPs(di);
 
-    return baseGTX480 * (cl_uint) (referenceGFLOPsGTX480(DOUBLEPREC) / gflops);
+    /* Go for low n estimates with slower cards, but avoid going to
+     * 0 for faster. */
+    if (gflops >= baseGTX480Flops)
+        n = baseGTX480 * (cl_uint) (baseGTX480Flops / gflops);
+    else
+        n = (baseGTX480 * baseGTX480Flops) / gflops;
+
+    return n;
 }
 
 static cl_uint gt200NumChunks(const DevInfo* di)
 {
     cl_double gflops;
+    cl_double baseGTX285Flops;
+    cl_uint n;
     cl_uint baseGTX285 = 140;
 
+    baseGTX285Flops = referenceGFLOPsGTX285(DOUBLEPREC);
     gflops = cudaEstimateGFLOPs(di);
 
-    return baseGTX285 * (cl_uint) (referenceGFLOPsGTX285(DOUBLEPREC) / gflops);
+    if (gflops >= baseGTX285Flops)
+        n = baseGTX285 * (cl_uint) (baseGTX285Flops / gflops);
+    else
+        n = (baseGTX285 * baseGTX285Flops) / gflops;
+
+    return n;
 }
 
 static cl_uint nvidiaNumChunks(const DevInfo* di)
