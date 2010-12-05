@@ -28,7 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Pure functions are the best ones */
 
-mwvector sphericalAccel(const Spherical* sph, const mwvector pos)
+static inline mwvector sphericalAccel(const Spherical* sph, const mwvector pos)
 {
     const real r   = mw_absv(pos);
     const real tmp = sph->scale + r;
@@ -37,7 +37,7 @@ mwvector sphericalAccel(const Spherical* sph, const mwvector pos)
 }
 
 /* gets negative of the acceleration vector of this disk component */
-mwvector miyamotoNagaiDiskAccel(const Disk* disk, const mwvector pos)
+static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, const mwvector pos)
 {
     mwvector acc;
     const real a   = disk->scale_length;
@@ -55,7 +55,7 @@ mwvector miyamotoNagaiDiskAccel(const Disk* disk, const mwvector pos)
     return acc;
 }
 
-mwvector exponentialDiskAccel(const Disk* disk, const mwvector pos)
+static inline mwvector exponentialDiskAccel(const Disk* disk, const mwvector pos)
 {
     const real b = disk->scale_length;
     const real r = mw_absv(pos);
@@ -66,7 +66,7 @@ mwvector exponentialDiskAccel(const Disk* disk, const mwvector pos)
     return mw_mulvs(pos, factor);
 }
 
-mwvector logHaloAccel(const Halo* halo, const mwvector pos)
+static inline mwvector logHaloAccel(const Halo* halo, const mwvector pos)
 {
     mwvector acc;
 
@@ -85,7 +85,7 @@ mwvector logHaloAccel(const Halo* halo, const mwvector pos)
     return acc;
 }
 
-mwvector nfwHaloAccel(const Halo* halo, const mwvector pos)
+static inline mwvector nfwHaloAccel(const Halo* halo, const mwvector pos)
 {
     const real r  = mw_absv(pos);
     const real a  = halo->scale_length;
@@ -96,7 +96,7 @@ mwvector nfwHaloAccel(const Halo* halo, const mwvector pos)
 }
 
 /* CHECKME: Seems to have precision related issues for a small number of cases for very small qy */
-mwvector triaxialHaloAccel(const Halo* h, const mwvector pos)
+static inline mwvector triaxialHaloAccel(const Halo* h, const mwvector pos)
 {
     mwvector acc;
 
@@ -117,6 +117,41 @@ mwvector triaxialHaloAccel(const Halo* h, const mwvector pos)
     Y(acc) = mvsqr * (((2.0 * h->c2) * Y(pos)) + (h->c3 * X(pos)) ) / arst2;
 
     Z(acc) = (2.0 * mvsqr * Z(pos)) / ((qzs * arst) + zsqr);
+
+    return acc;
+}
+
+mwvector acceleration(const NBodyCtx* ctx, const mwvector pos)
+{
+    mwvector acc, acctmp;
+
+    /* GCC and clang both turn these into jump tables */
+    switch (ctx->pot.disk.type)
+    {
+        case ExponentialDisk:
+            acc = exponentialDiskAccel(&ctx->pot.disk, pos);
+            break;
+        case MiyamotoNagaiDisk:
+            acc = miyamotoNagaiDiskAccel(&ctx->pot.disk, pos);
+            break;
+    }
+
+    switch (ctx->pot.halo.type)
+    {
+        case LogarithmicHalo:
+            acctmp = logHaloAccel(&ctx->pot.halo, pos);
+            break;
+        case NFWHalo:
+            acctmp = nfwHaloAccel(&ctx->pot.halo, pos);
+            break;
+        case TriaxialHalo:
+            acctmp = triaxialHaloAccel(&ctx->pot.halo, pos);
+            break;
+    }
+
+    mw_incaddv(acc, acctmp);
+    acctmp = sphericalAccel(&ctx->pot.sphere[0], pos);
+    mw_incaddv(acc, acctmp);
 
     return acc;
 }

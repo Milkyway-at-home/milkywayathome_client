@@ -20,37 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_priv.h"
 #include "orbitintegrator.h"
-
-inline mwvector acceleration(const NBodyCtx* ctx, const mwvector pos)
-{
-    mwvector acc;
-
-    /* lookup table for functions for calculating accelerations */
-    static const HaloAccel haloFuncs[] = { [LogarithmicHalo] = logHaloAccel,
-                                           [NFWHalo]         = nfwHaloAccel,
-                                           [TriaxialHalo]    = triaxialHaloAccel };
-
-    static const DiskAccel diskFuncs[] = { [ExponentialDisk]   = exponentialDiskAccel,
-                                           [MiyamotoNagaiDisk] = miyamotoNagaiDiskAccel };
-
-    static const SphericalAccel sphFuncs[] = { [SphericalPotential] = sphericalAccel };
-
-    mwvector acctmp1, acctmp2;
-
-    /* Use the type of potential to index into the table, and use the
-     * appropriate function */
-
-    acctmp1 = diskFuncs[ctx->pot.disk.type](&ctx->pot.disk, pos);
-    acctmp2 = haloFuncs[ctx->pot.halo.type](&ctx->pot.halo, pos);
-
-    acc = mw_addv(acctmp1, acctmp2);
-
-    acctmp1 = sphFuncs[ctx->pot.sphere[0].type](&ctx->pot.sphere[0], pos);
-
-    /* add the resulting vectors */
-    mw_incaddv(acc, acctmp1);
-    return acc;
-}
+#include "accelerations.h"
 
 /* Simple orbit integrator in user-defined potential
     Written for BOINC Nbody

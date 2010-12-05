@@ -195,7 +195,7 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
 
     fseek(f, 0L, SEEK_END);
     /* Make sure it's big enough, avoid fun with integer division */
-    fsize = ceil((real) (ftell(f) + 1) / 3);
+    fsize = (size_t) ceil((real) (ftell(f) + 1) / 3);
     fseek(f, 0L, SEEK_SET);
 
     histData = (HistData*) callocSafe(sizeof(HistData), fsize);
