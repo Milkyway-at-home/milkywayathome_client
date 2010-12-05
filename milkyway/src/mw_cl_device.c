@@ -161,10 +161,10 @@ cl_double cudaEstimateGFLOPs(const DevInfo* di)
     flopsFloat *= 1.0e-9;  /* FLOPS -> GFLOPS */
     flopsDouble *= 1.0e-9;
 
-    warn("Estimated Nvidia device FLOP/s: %.0f SP FLOP/s, %.0f DP FLOP/s\n",
+    warn("Estimated Nvidia device GFLOP/s: %.0f SP GFLOP/s, %.0f DP FLOP/s\n",
          flopsFloat, flopsDouble);
 
-    return flops;
+    return gflops;
 }
 
 cl_double referenceGFLOPsGTX480(cl_bool doubleprec)
@@ -174,7 +174,7 @@ cl_double referenceGFLOPsGTX480(cl_bool doubleprec)
 
 cl_double referenceGFLOPsGTX285(cl_bool doubleprec)
 {
-    return doubleprec ? 168.0 : 1350.0;
+    return doubleprec ? 88.5 : 708.0;
 }
 
 cl_double referenceGFLOPsRadeon5870(cl_bool doubleprec)

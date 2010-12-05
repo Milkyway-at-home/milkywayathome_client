@@ -65,7 +65,7 @@ static cl_uint fermiNumChunks(const DevInfo* di)
 
     gflops = cudaEstimateGFLOPs(di);
 
-    return (cl_uint) (baseGTX480 * referenceGFLOPsGTX480(DOUBLEPREC) / gflops);
+    return baseGTX480 * (cl_uint) (referenceGFLOPsGTX480(DOUBLEPREC) / gflops);
 }
 
 static cl_uint gt200NumChunks(const DevInfo* di)
@@ -75,7 +75,7 @@ static cl_uint gt200NumChunks(const DevInfo* di)
 
     gflops = cudaEstimateGFLOPs(di);
 
-    return (cl_uint) (baseGTX285 * referenceGFLOPsGTX285(DOUBLEPREC) / gflops);
+    return baseGTX285 * (cl_uint) (referenceGFLOPsGTX285(DOUBLEPREC) / gflops);
 }
 
 static cl_uint nvidiaNumChunks(const DevInfo* di)
