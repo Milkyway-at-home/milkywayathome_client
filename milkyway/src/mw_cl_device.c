@@ -164,7 +164,7 @@ cl_double cudaEstimateGFLOPs(const DevInfo* di)
     warn("Estimated Nvidia device GFLOP/s: %.0f SP GFLOP/s, %.0f DP FLOP/s\n",
          flopsFloat, flopsDouble);
 
-    return gflops;
+    return floor(gflops);
 }
 
 cl_double referenceGFLOPsGTX480(cl_bool doubleprec)
