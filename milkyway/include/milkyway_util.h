@@ -21,10 +21,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_UTIL_H_
 #define _MILKYWAY_UTIL_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef _MSC_VER
   #define _GNU_SOURCE
 #endif
@@ -64,6 +60,11 @@ extern "C" {
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 #if MILKYWAY_OPENCL

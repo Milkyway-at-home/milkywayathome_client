@@ -67,6 +67,9 @@ option(AUX_LARGE_TESTS
 option(AUX_SMALL_TESTS
        "Run small aux tests" OFF)
 
+option(SEPARATION_GRAPHICS
+       "Use Separation Graphics" OFF)
+
 option(SEPARATION_CRLIBM
       "Use crlibm double" OFF)
 mark_as_advanced(SEPARATION_CRLIBM)
@@ -85,6 +88,10 @@ if(NOT DOUBLEPREC AND SEPARATION_FDLIBM)
   set(SEPARTION_FDLIBM OFF)
 endif()
 
+if(NOT BOINC_APPLICATION AND SEPARATION_GRAPHICS)
+  message(WARNING "Attempting to separation graphics without BOINC. Disabling graphics")
+  set(SEPARATION_GRAPHICS OFF)
+endif()
 
 maybe_static()
 
@@ -144,6 +151,9 @@ set(cl_source_list src/separation_cl_buffers.c
                    src/setup_cl.c
                    src/run_cl.c)
 
+set(graphics_src_list src/separation_graphics.cc)
+set(graphics_hdr_list include/separation_graphics.h)
+
 set(lib_source_file_list src/evaluation_state.c
                          src/io_util.c
                          src/gauss_legendre.c
@@ -179,6 +189,12 @@ set(separation_cl_headers include/setup_cl.h
                           include/run_cl.h
                           include/separation_cl_defs.h
                           include/separation_cl_buffers.h)
+
+if(SEPARATION_GRAPHICS)
+  list(APPEND lib_source_file_list ${graphics_src_list})
+  list(APPEND separation_headers ${graphics_hdr_list})
+endif()
+
 
 if(SEPARATION_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})

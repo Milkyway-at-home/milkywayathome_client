@@ -26,6 +26,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include "setup_cl.h"
 #endif /* SEPARATION_OPENCL */
 
+#if SEPARATION_GRAPHICS
+  #include "separation_graphics.h"
+#endif /* SEPARATION_GRAPHICS */
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -165,31 +169,36 @@ real evaluate(const AstronomyParameters* ap,
               const char* separation_outfile)
 {
     real likelihood_val = NAN;
-    EvaluationState es = EMPTY_EVALUATION_STATE;
+    EvaluationState* es;
     StreamGauss sg;
     FinalStreamIntegrals fsi;
     StarPoints sp = EMPTY_STAR_POINTS;
 
-    initializeState(ap, &es);
+    es = newEvaluationState(ap);
     sg = getStreamGauss(ap->convolve);
+
+  #if SEPARATION_GRAPHICS
+    if (separationInitSharedEvaluationState(es))
+        warn("Failed to initialize shared evaluation state\n");
+  #endif /* SEPARATION_GRAPHICS */
 
     if (resolveCheckpoint())
         fail("Failed to resolve checkpoint file '%s'\n", CHECKPOINT_FILE);
 
-    if (maybeResume(&es))
+    if (maybeResume(es))
         fail("Failed to resume checkpoint\n");
 
-    calculateIntegrals(ap, ias, sc, sg, &es, clr);
+    calculateIntegrals(ap, ias, sc, sg, es, clr);
 
   #if BOINC_APPLICATION && !SEPARATION_OPENCL
     /* Final checkpoint. */
-    if (writeCheckpoint(&es))
+    if (writeCheckpoint(es))
         fail("Failed to write final checkpoint\n");
   #endif
 
-    finalStreamIntegrals(&fsi, &es, ap->number_streams, ap->number_integrals);
+    finalStreamIntegrals(&fsi, es, ap->number_streams, ap->number_integrals);
     printStreamIntegrals(&fsi, ap->number_streams);
-    freeEvaluationState(&es);
+    freeEvaluationState(es);
 
     if (readStarPoints(&sp, star_points_file))
         warn("Failed to read star points file\n");

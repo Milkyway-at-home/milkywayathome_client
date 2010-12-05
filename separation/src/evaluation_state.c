@@ -33,7 +33,7 @@ void initializeIntegral(Integral* integral, unsigned int number_streams)
     integral->probs = (Kahan*) mwCallocAligned(number_streams, sizeof(Kahan), sizeof(Kahan));
 }
 
-void initializeState(const AstronomyParameters* ap, EvaluationState* es)
+static void initializeState(const AstronomyParameters* ap, EvaluationState* es)
 {
     unsigned int i;
 
@@ -47,7 +47,28 @@ void initializeState(const AstronomyParameters* ap, EvaluationState* es)
         initializeIntegral(&es->integrals[i], ap->number_streams);
 }
 
-void freeIntegral(Integral* i)
+EvaluationState* newEvaluationState(const AstronomyParameters* ap)
+{
+    EvaluationState* es;
+
+    es = callocSafe(1, sizeof(EvaluationState));
+    initializeState(ap, es);
+
+    return es;
+}
+
+void copyEvaluationState(EvaluationState* esDest, const EvaluationState* esSrc)
+{
+    unsigned int i;
+
+    assert(esDest && esSrc);
+
+    *esDest = *esSrc;
+    for (i = 0; i < esSrc->number_integrals; ++i)
+        esDest->integrals[i] = esSrc->integrals[i];
+}
+
+static void freeIntegral(Integral* i)
 {
     mwAlignedFree(i->stream_integrals);
     mwAlignedFree(i->probs);
@@ -60,6 +81,7 @@ void freeEvaluationState(EvaluationState* es)
     for (i = 0; i < es->number_integrals; ++i)
         freeIntegral(&es->integrals[i]);
     free(es->integrals);
+    free(es);
 }
 
 #if BOINC_APPLICATION

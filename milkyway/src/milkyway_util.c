@@ -372,3 +372,7 @@ void _mw_time_prefix(char* buf, size_t bufSize)
         buf[0] = '\0';
 }
 
+#if BOINC_APPLICATION
+
+#endif /* BOINC_APPLICATION */
+

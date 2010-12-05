@@ -25,6 +25,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /* Completed integral state */
 typedef struct
 {
@@ -48,15 +53,18 @@ typedef struct
     unsigned int number_streams;
 } EvaluationState;
 
-#define EMPTY_EVALUATION_STATE { NULL, 0, 0, ZERO_KAHAN, 0, 0, 0, 0 }
-
-void initializeState(const AstronomyParameters* ap, EvaluationState* es);
+EvaluationState* newEvaluationState(const AstronomyParameters* ap);
 void freeEvaluationState(EvaluationState* es);
+void copyEvaluationState(EvaluationState* esDest, const EvaluationState* esSrc);
 
 int writeCheckpoint(const EvaluationState* es);
 int readCheckpoint(EvaluationState* es);
 int resolveCheckpoint();
 int maybeResume(EvaluationState* es);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif /* _EVALUATION_STATE_H_ */

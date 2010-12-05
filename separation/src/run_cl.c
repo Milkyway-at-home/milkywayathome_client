@@ -251,16 +251,15 @@ static real runIntegral(CLInfo* ci,
                         const AstronomyParameters* ap,
                         const IntegralArea* ia)
 {
-    cl_uint i;
     cl_int err;
     real result;
     double t1, t2, dt;
     double tAcc = 0.0;
 
-    for (i = 0; i < ia->nu_steps; ++i)
+    for (es->nu_step = 0; es->nu_step < ia->nu_steps; es->nu_step++)
     {
         t1 = mwGetTimeMilli();
-        err = runNuStep(ci, cm, ia, runSizes, ap->number_streams, i);
+        err = runNuStep(ci, cm, ia, runSizes, ap->number_streams, es->nu_step);
         if (err != CL_SUCCESS)
         {
             warn("Failed to run nu step: %s\n", showCLInt(err));
@@ -271,7 +270,7 @@ static real runIntegral(CLInfo* ci,
         dt = t2 - t1;
         tAcc += dt;
 
-        reportProgress(ap, ia, es, i + 1, dt);
+        reportProgress(ap, ia, es, es->nu_step + 1, dt);
     }
 
     warn("Integration time: %f s. Average time per iteration = %f ms\n",

@@ -31,6 +31,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 SEPARATION_FDLIBM
 #cmakedefine01 SEPARATION_OPENCL
 #cmakedefine01 SEPARATION_INLINE_KERNEL
+#cmakedefine01 SEPARATION_GRAPHICS
 
 
 #define ENABLE_CRLIBM SEPARATION_CRLIBM
