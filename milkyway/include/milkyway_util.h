@@ -43,13 +43,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #if BOINC_APPLICATION
   #include <boinc/boinc_api.h>
   #include <boinc/filesys.h>
-  #if BOINC_DEBUG
-    #ifndef _WIN32
-      #include <boinc/diagnostics.h>
-    #else
-      #include <boinc/diagnostics_win.h>
-    #endif /* _WIN32 */
-  #endif /* BOINC_DEBUG */
 
   #if BOINC_APP_GRAPHICS
     #include <boinc/graphics_api.h>
@@ -171,6 +164,8 @@ real* mwReadRestArgs(const char** rest,            /* String array as returned b
 #if defined(__SSE__) && DISABLE_DENORMALS
 int mwDisableDenormalsSSE();
 #endif /* defined(__SSE__) && DISABLE_DENORMALS */
+
+int mwBoincInit(const char* appname, int useDebug);
 
 #ifdef __cplusplus
 }

@@ -61,9 +61,6 @@ include_directories(${NBODY_INCLUDE_DIR})
 option(BOINC_APPLICATION
   "Build as a BOINC Application" ON)
 
-option(BOINC_DEBUG
-  "Avoid annoying things BOINC does for debugging" OFF)
-
 option(NBODY_OPENCL
        "Use OpenCL" OFF)
 
@@ -110,7 +107,6 @@ set_os_specific_libs(${NBODY_OPENCL})
 print_separator()
 message("   Building:          ${PROJECT_NAME}")
 message("   BOINC Application: ${BOINC_APPLICATION}")
-message("   BOINC Debug:       ${BOINC_DEBUG}")
 message("   Double precision:  ${DOUBLEPREC}")
 message("   Enable crlibm:     ${NBODY_CRLIBM}")
 message("  ----")

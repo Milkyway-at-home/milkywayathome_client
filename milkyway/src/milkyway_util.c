@@ -31,6 +31,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <xmmintrin.h>
 #endif /* __SSE__ */
 
+#if BOINC_APPLICATION
+  #include <boinc/diagnostics.h>
+#endif /* BOINC_APPLICATION */
+
+
 
 void* callocSafe(size_t count, size_t size)
 {
@@ -373,6 +378,38 @@ void _mw_time_prefix(char* buf, size_t bufSize)
 }
 
 #if BOINC_APPLICATION
+
+int mwBoincInit(const char* appname, int useDebug)
+{
+    int rc;
+    BOINC_OPTIONS options;
+
+    if (useDebug)
+    {
+        rc = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
+                                    | BOINC_DIAG_HEAPCHECKENABLED
+                                    | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
+    }
+    else
+    {
+      #if MILKYWAY_OPENCL
+        mwGetBoincOptionsDefault(&options);
+        options.normal_thread_priority = 1;
+        rc = boinc_init_options(&options);
+      #else
+        rc = boinc_init();
+      #endif /* MILKYWAY_OPENCL */
+    }
+
+    return rc;
+}
+
+#else
+
+int mwBoincInit(const char* appname, int useDebug)
+{
+    return 0;
+}
 
 #endif /* BOINC_APPLICATION */
 

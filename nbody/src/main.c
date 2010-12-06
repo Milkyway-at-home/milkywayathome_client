@@ -40,10 +40,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #if !BOINC_APPLICATION
-
-static void nbodyBoincInit() { }
 static void nbodyPrintVersion() { }
-
 #else
 
 static void nbodyPrintVersion()
@@ -51,40 +48,7 @@ static void nbodyPrintVersion()
     warn("<search_application>" BOINC_NBODY_APP_VERSION "</search_application>\n");
 }
 
-#if BOINC_DEBUG
-/* Use BOINC, but prevent it from redirecting stderr to a file, which
- * is really annoying for debugging */
-static void nbodyBoincInit()
-{
-    int rc =  boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
-                                     | BOINC_DIAG_HEAPCHECKENABLED
-                                     | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
-    if (rc)
-    {
-        warn("boinc_init failed: %d\n", rc);
-        exit(EXIT_FAILURE);
-    }
-}
-
-#else
-/* For BOINC releases */
-static void nbodyBoincInit()
-{
-    int rc;
-
-  #ifndef _OPENMP
-    rc = boinc_init();
-  #else
-    rc = boinc_init_parallel();
-  #endif /* _OPENMP */
-    if (rc)
-    {
-        warn("boinc_init failed: %d\n", rc);
-        exit(EXIT_FAILURE);
-    }
-}
-#endif /* BOINC_DEBUG */
-#endif /* !BOINC_APPLICATION */
+#endif
 
 
 /* Maybe set up some platform specific issues */
@@ -280,7 +244,7 @@ static json_object* readParameters(const int argc,
         },
 
         {
-            "check-file", 'g',
+            "verify-file", 'v',
             POPT_ARG_NONE, &nbf->verifyOnly,
             0, "Check that the input file is valid only; perform no calculation.", NULL
         },
@@ -302,6 +266,12 @@ static json_object* readParameters(const int argc,
             "ignore-checkpoint", 'i',
             POPT_ARG_NONE, &nbf->ignoreCheckpoint,
             0, "Ignore the checkpoint file", NULL
+        },
+
+        {
+            "boinc-debug", 'g',
+            POPT_ARG_NONE, &nbf->boincDebug,
+            0, "Init BOINC with diagnostics", NULL
         },
       #endif /* BOINC_APPLICATION */
 
@@ -441,10 +411,15 @@ int main(int argc, const char* argv[])
     FitParams fitParams  = EMPTY_FIT_PARAMS;
 
     specialSetup();
-    nbodyBoincInit();
     nbodyPrintVersion();
 
     obj = readParameters(argc, argv, &fitParams, &nbf);
+
+    if (mwBoincInit(argv[0], nbf.boincDebug))
+    {
+        warn("Failed to init BOINC\n");
+        exit(EXIT_FAILURE);
+    }
 
     setNumThreads(nbf.numThreads);
     setDefaultFlags(&nbf);

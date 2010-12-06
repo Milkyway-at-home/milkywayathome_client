@@ -32,6 +32,7 @@ typedef struct
     char* star_points_file;
     char* ap_file;  /* astronomy parameters */
     char* separation_outfile;
+    int boincDebug;
     int do_separation;
     int separationSeed;
     int cleanup_checkpoint;
@@ -41,7 +42,7 @@ typedef struct
     unsigned int numChunk;
 } SeparationFlags;
 
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0 }
 
 static void freeSeparationFlags(SeparationFlags* sf)
 {
@@ -190,6 +191,14 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
             POPT_ARG_NONE, &sf->cleanup_checkpoint,
             0, "Delete checkpoint on successful", NULL
         },
+
+      #if BOINC_APPLICATION
+        {
+            "boinc-debug", 'g',
+            POPT_ARG_NONE, &sf->boincDebug,
+            0, "Use BOINC diagnostics", NULL
+        },
+      #endif /* BOINC_APPLICATION */
 
       #if SEPARATION_OPENCL
         {
@@ -382,42 +391,6 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
 
 #if BOINC_APPLICATION
 
-static int separationInit(const char* appname)
-{
-    int rc;
-    BOINC_OPTIONS options;
-
-    /* Everything is on by default except for option to not use idle
-     * priority on Windows */
-    mwGetBoincOptionsDefault(&options);
-    options.normal_thread_priority = 1;
-
-  #if BOINC_DEBUG
-    rc = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
-                                | BOINC_DIAG_HEAPCHECKENABLED
-                                | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
-  #else
-    #if SEPARATION_OPENCL
-    rc = boinc_init_options(&options);
-    #else
-    rc = boinc_init();
-    #endif /* SEPARATION_OPENCL */
-  #endif /* BOINC_DEBUG */
-
-
-  #if BOINC_APP_GRAPHICS
-    #if defined(_WIN32) || defined(__APPLE__)
-    rc = boinc_init_graphics(worker);
-    #else
-    rc = boinc_init_graphics_lib(worker, appname);
-    #endif /*  defined(_WIN32) || defined(__APPLE__) */
-  #else
-    #pragma unused(appname)
-  #endif /* BOINC_APP_GRAPHICS */
-
-    return rc;
-}
-
 static void printVersion()
 {
     warn("<search_application> %s %u.%u %s %s %s%s%s%s </search_application>\n",
@@ -456,10 +429,7 @@ int main(int argc, const char* argv[])
     real* parameters;
     unsigned int number_parameters;
 
-    rc = separationInit(argv[0]);
     printVersion();
-    if (rc)
-        exit(rc);
 
     parameters = parseParameters(argc, argv, &number_parameters, &sf);
     if (!parameters && !sf.do_separation)
@@ -469,6 +439,10 @@ int main(int argc, const char* argv[])
     }
     else
     {
+        rc = mwBoincInit(argv[0], sf.boincDebug);
+        if (rc)
+            exit(rc);
+
         rc = worker(&sf, parameters, number_parameters);
         if (rc)
             warn("Worker failed\n");
