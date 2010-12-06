@@ -253,14 +253,8 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
     argvCopy = fixArgv(argc, argv);
     context = poptGetContext(argv[0], argc, argvCopy ? argvCopy : argv, options, POPT_CONTEXT_POSIXMEHARDER);
 
-    while ( ( o = poptGetNextOpt(context)) >= 0 );
-
-    if (o < -1)
+    if (mwReadArguments(context))
     {
-        warn("Argument parsing error: %s: %s\n",
-             poptBadOption(context, 0),
-             poptStrerror(o));
-
         poptPrintHelp(context, stderr, 0);
         poptFreeContext(context);
         freeSeparationFlags(sf);

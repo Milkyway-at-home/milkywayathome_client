@@ -413,3 +413,21 @@ int mwBoincInit(const char* appname, int useDebug)
 
 #endif /* BOINC_APPLICATION */
 
+int mwReadArguments(poptContext context)
+{
+    int o;
+
+    while ( ( o = poptGetNextOpt(context)) >= 0 );
+
+    if (o < -1)
+    {
+        warn("Argument parsing error: %s: %s\n",
+             poptBadOption(context, 0),
+             poptStrerror(o));
+
+        return 1;
+    }
+
+    return 0;
+}
+

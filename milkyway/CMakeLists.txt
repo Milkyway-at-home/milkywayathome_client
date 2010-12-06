@@ -35,6 +35,8 @@ endif()
 set(MILKYWAY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 include_directories(${MILKYWAY_INCLUDE_DIR})
 
+find_package(Popt REQUIRED)
+include_directories(${POPT_INCLUDE_DIR})
 
 if(BOINC_APPLICATION)
   find_package(BOINC)

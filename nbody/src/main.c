@@ -327,10 +327,8 @@ static json_object* readParameters(const int argc,
         mw_finish(EXIT_FAILURE);
     }
 
-    while ( (o = poptGetNextOpt(context)) >= 0 );
-
     /* Check for invalid options, and must have one of input file or input string */
-    if (     o < -1
+    if (     mwReadArguments(context)
          ||  (inputFile && inputStr)
          || !(inputFile || inputStr))
     {

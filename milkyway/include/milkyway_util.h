@@ -54,6 +54,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <stdlib.h>
 
+#include <popt.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -166,6 +168,7 @@ int mwDisableDenormalsSSE();
 #endif /* defined(__SSE__) && DISABLE_DENORMALS */
 
 int mwBoincInit(const char* appname, int useDebug);
+int mwReadArguments(poptContext context);
 
 #ifdef __cplusplus
 }
