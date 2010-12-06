@@ -60,6 +60,7 @@ configure_file (
 include_directories(${MILKYWAY_INCLUDE_DIR})
 
 set(mw_lib_src src/milkyway_util.c
+               src/mw_boinc_util.c
                src/milkyway_cpp_util.cc)
 
 set(mw_cl_lib_src src/mw_cl_show_types.c
@@ -76,6 +77,7 @@ set(mw_lib_headers include/milkyway_config.h.in
                    include/milkyway_vectors_cl.h
                    include/milkyway_math_functions_standard.h
                    include/milkyway_util.h
+                   include/mw_boinc_util.h
                    include/milkyway_cpp_util.h
                    include/milkyway_vectors.h
                    include/milkyway_vectors_func.h

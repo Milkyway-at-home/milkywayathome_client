@@ -19,6 +19,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "milkyway_util.h"
+#include "mw_boinc_util.h"
 
 #ifndef _WIN32
   #include <sys/time.h>
@@ -30,11 +31,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef __SSE__
   #include <xmmintrin.h>
 #endif /* __SSE__ */
-
-#if BOINC_APPLICATION
-  #include <boinc/diagnostics.h>
-#endif /* BOINC_APPLICATION */
-
 
 
 void* callocSafe(size_t count, size_t size)
@@ -134,7 +130,7 @@ void* reallocSafe(void* ptr, size_t size)
     return mem;
 }
 
-static char* mwFreadFile(FILE* f, const char* filename)
+char* mwFreadFile(FILE* f, const char* filename)
 {
     long fsize;
     size_t readSize;
@@ -171,42 +167,6 @@ char* mwReadFile(const char* filename)
 {
     return mwFreadFile(mw_fopen(filename, "rb"), filename);
 }
-
-#if BOINC_APPLICATION
-
-FILE* mwOpenResolved(const char* filename, const char* mode)
-{
-    int ret;
-    char resolvedPath[1024];
-
-    ret = boinc_resolve_filename(filename, resolvedPath, sizeof(resolvedPath));
-    if (ret)
-    {
-        warn("Error resolving file '%s': %d\n", filename, ret);
-        return NULL;
-    }
-
-    return mw_fopen(resolvedPath, mode);
-}
-
-char* mwReadFileResolved(const char* filename)
-{
-    return mwFreadFile(mwOpenResolved(filename, "rb"), filename);
-}
-
-#else
-
-FILE* mwOpenResolved(const char* filename, const char* mode)
-{
-    return mw_fopen(filename, mode);
-}
-
-char* mwReadFileResolved(const char* filename)
-{
-    return mwReadFile(filename);
-}
-
-#endif /* BOINC_APPLICATION */
 
 
 #ifdef _WIN32
@@ -250,57 +210,6 @@ double mwGetTimeMilli()
 }
 
 #endif
-
-/* Modified from boinc_rename, which doesn't use MoveFileEx on
- * windows, which is more atomic. */
-static inline int _mwRename(const char* oldf, const char* newf)
-{
-  #ifdef _WIN32
-    if (MoveFileEx(oldf, newf, MOVEFILE_REPLACE_EXISTING))
-        return 0;
-    return GetLastError();
-  #else
-    return rename(oldf, newf);
-  #endif
-}
-
-
-#if BOINC_APPLICATION
-
-int mwRename(const char* oldf, const char* newf)
-{
-    int rc;
-    unsigned int i;
-
-    /* FIXME: BOINC has random timing for retries. Fix boinc rename on
-     * windows, then we can just get rid of this. */
-    rc = _mwRename(oldf, newf);
-    if (rc)
-    {
-        for (i = 0; i < 5; ++i)
-        {
-          #ifndef _WIN32
-            sleep(1);       /* sleep 1 second, avoid lockstep */
-          #else
-	    Sleep(1);
-          #endif /* _WIN32 */
-            rc = _mwRename(oldf, newf);
-            if (!rc)
-                break;
-        }
-    }
-
-    return rc;
-}
-
-#else
-
-int mwRename(const char* oldf, const char* newf)
-{
-    return _mwRename(oldf, newf);
-}
-
-#endif /* BOINC_APPLICATION*/
 
 #if defined(__SSE__) && DISABLE_DENORMALS
 
@@ -377,41 +286,6 @@ void _mw_time_prefix(char* buf, size_t bufSize)
         buf[0] = '\0';
 }
 
-#if BOINC_APPLICATION
-
-int mwBoincInit(const char* appname, int useDebug)
-{
-    int rc;
-    BOINC_OPTIONS options;
-
-    if (useDebug)
-    {
-        rc = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
-                                    | BOINC_DIAG_HEAPCHECKENABLED
-                                    | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
-    }
-    else
-    {
-      #if MILKYWAY_OPENCL
-        mwGetBoincOptionsDefault(&options);
-        options.normal_thread_priority = 1;
-        rc = boinc_init_options(&options);
-      #else
-        rc = boinc_init();
-      #endif /* MILKYWAY_OPENCL */
-    }
-
-    return rc;
-}
-
-#else
-
-int mwBoincInit(const char* appname, int useDebug)
-{
-    return 0;
-}
-
-#endif /* BOINC_APPLICATION */
 
 int mwReadArguments(poptContext context)
 {

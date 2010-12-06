@@ -28,6 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_config.h"
 #include "milkyway_extra.h"
 #include "milkyway_math.h"
+#include "mw_boinc_util.h"
 #include "dSFMT.h"
 
 #ifndef _WIN32
@@ -39,16 +40,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define VC_EXTRALEAN
   #include <windows.h>
 #endif /* _WIN32 */
-
-#if BOINC_APPLICATION
-  #include <boinc/boinc_api.h>
-  #include <boinc/filesys.h>
-
-  #if BOINC_APP_GRAPHICS
-    #include <boinc/graphics_api.h>
-    #include <boinc/graphics_lib.h>
-  #endif /* BOINC_APP_GRAPHICS */
-#endif /* BOINC_APPLICATION */
 
 #include <stdio.h>
 #include <string.h>
@@ -93,18 +84,6 @@ typedef struct
   #define mw_debugmsg(msg, ...) ((void) 0)
 #endif
 
-#if BOINC_APPLICATION
-  #define mw_finish(x) boinc_finish(x)
-  #define mw_fopen(x,y) boinc_fopen((x),(y))
-  #define mw_remove(x) boinc_delete_file((x))
-  #define mw_rename(x, y) boinc_rename((x), (y))
-#else
-  #define mw_finish(x) exit(x)
-  #define mw_fopen(x,y) fopen((x),(y))
-  #define mw_remove(x) remove((x))
-  #define mw_rename(x, y) rename((x), (y))
-#endif /* BOINC_APPLICATION */
-
 void* mallocSafe(size_t size);
 void* callocSafe(size_t count, size_t size);
 void* reallocSafe(void* ptr, size_t size);
@@ -121,20 +100,11 @@ void* mwCallocAligned(size_t count, size_t size, size_t alignment);
 #define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \
                          mw_finish(EXIT_FAILURE); }
 
-#if BOINC_APPLICATION
-  #define mw_boinc_print(f, msg, ...) fprintf(f, msg, ##__VA_ARGS__)
-#else
-  #define mw_boinc_print(f, msg, ...)
-#endif
-
 /* If one of these options is null, use the default. */
 #define stringDefault(s, d) ((s) = (s) ? (s) : strdup((d)))
 
 char* mwReadFile(const char* filename);
-char* mwReadFileResolved(const char* filename);
-FILE* mwOpenResolved(const char* filename, const char* mode);
-
-int mwRename(const char* oldf, const char* newf);
+char* mwFreadFile(FILE* f, const char* filename);
 
 double mwGetTime();
 double mwGetTimeMilli();
@@ -158,6 +128,9 @@ void _mw_time_prefix(char* buf, size_t bufSize);
 #define mwUnitRandom(st) mwXrandom(st, -1.0, 1.0)
 
 
+/* Loop through all arguments and report bad arguments */
+int mwReadArguments(poptContext context);
+
 /* Read array of strings into doubles. Returns NULL on failure. */
 real* mwReadRestArgs(const char** rest,            /* String array as returned by poptGetArgs() */
                      const unsigned int numParams, /* Expected number of parameters */
@@ -167,8 +140,6 @@ real* mwReadRestArgs(const char** rest,            /* String array as returned b
 int mwDisableDenormalsSSE();
 #endif /* defined(__SSE__) && DISABLE_DENORMALS */
 
-int mwBoincInit(const char* appname, int useDebug);
-int mwReadArguments(poptContext context);
 
 #ifdef __cplusplus
 }
