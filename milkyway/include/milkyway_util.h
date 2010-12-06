@@ -128,6 +128,8 @@ void _mw_time_prefix(char* buf, size_t bufSize);
 #define mwUnitRandom(st) mwXrandom(st, -1.0, 1.0)
 
 
+const char** mwFixArgv(int argc, const char** argv);
+
 /* Loop through all arguments and report bad arguments */
 int mwReadArguments(poptContext context);
 

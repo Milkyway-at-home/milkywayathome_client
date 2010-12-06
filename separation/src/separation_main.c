@@ -73,81 +73,6 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 #endif /* SEFPARATION_OPENCL */
 
 
-/* This is a really stupid workaround: The server sends double
- * arguments. Some of them happen to be negative numbers. Since
- * BOINC is stupid and appends extra arguments, e.g. --nthreads 4
- * or --device 0 for multithreaded or GPU applications to the
- * command line instead of prepending like it should do, you can't
- * use POPT_CONTEXT_POSIXMEHARDER. Popt tries to interpret
- * negative numbers as options when not using
- * POPT_CONTEXT_POSIXMEHARDER, which results in them being
- * interpreted as wrong options and then erroring.
- */
-
-/* Horrible function to find the -p -np arguments, and take anything
- * after them and move them to the front */
-static const char** fixArgv(int argc, const char** argv)
-{
-    const char** argvCopy;
-    const char** p;
-    char* endP;
-
-    unsigned long i, j;
-    unsigned long np, remaining, appendedCount;
-    unsigned long npCheck = 0;
-
-    p = argv;
-    while (*p && strncmp(*p, "-np", 3)) /* Find how many numbers we're expected to find */
-        ++p, ++npCheck;
-
-    if (!*p)  /* Probably not using the server arguments */
-        return NULL;
-
-    if (!*(++p)) /* Go to the actual value of np */
-        return NULL;
-
-    /* The next argument after np should be the number */
-    np = strtoul(*p, &endP, 10);
-    if (*endP != '\0')
-    {
-        perror("Reading np");
-        return NULL;
-    }
-
-    /* -2: -1 from argv[0], -1 from -p arg, -1 from np value */
-    remaining = (argc - 3) - npCheck;  /* All remaining arguments */
-    if (np > remaining || np >= argc)  /* Careful of underflow */
-        return NULL;
-
-    ++p;   /* Move on to the p argument */
-    if (*p && strncmp(*p, "-p", 2))
-    {
-        warn("Didn't find expected p argument\n");
-        return NULL;
-    }
-
-    if (!*(++p))  /* Should be first actual number argument */
-        return NULL;
-
-    /* FIXME: Have no dependence on np. FIXME: BOINC really, really,
-     * really shouldn't ever append arguments ever (should prepend)
-     * and it should be fixed. */
-
-    argvCopy = (const char**) callocSafe(argc, sizeof(const char*));
-    i = j = 0;  /* Index into copy argv, original argv */
-    argvCopy[i++] = argv[j++];
-    p += np;  /* Skip the arguments */
-
-    appendedCount = remaining - np;  /* Extras added by BOINC */
-    while (*p && i <= appendedCount)
-        argvCopy[i++] = *p++;
-
-    while (i < argc && j < argc)  /* Copy the rest of the arguments into an appropriate order */
-        argvCopy[i++] = argv[j++];
-
-    return argvCopy;
-}
-
 /* Returns the newly allocated array of parameters */
 static real* parseParameters(int argc, const char** argv, unsigned int* paramnOut, SeparationFlags* sf)
 {
@@ -250,7 +175,7 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
     }
 
     /* Workaround for BOINC arguments being appended */
-    argvCopy = fixArgv(argc, argv);
+    argvCopy = mwFixArgv(argc, argv);
     context = poptGetContext(argv[0], argc, argvCopy ? argvCopy : argv, options, POPT_CONTEXT_POSIXMEHARDER);
 
     if (mwReadArguments(context))
