@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "json_params.h"
 #include "nbody_priv.h"
 #include "milkyway_util.h"
+#include "milkyway_extra.h"
 
 #define histogramPhi 128.79
 #define histogramTheta 54.39
@@ -34,7 +35,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define histogramCenter ((real) 0.0)
 
 
-static const real nanN = NAN;
+/* static const real nanN = NAN; */
+static real nanN;
 
 static int readParameterGroup(const Parameter* g, json_object* hdr, const Parameter* parent, generic_enum_t* group_type);
 
@@ -131,17 +133,18 @@ static dwarf_model_t readDwarfModelT(const char* str)
     return -1;
 }
 
+
 static bool readDwarfModel(DwarfModel* model, json_object* obj, const Parameter* parent)
 {
     const bool defaultIgnore = FALSE;
     const InitialConditions defaultIC =
-        {
-            .useGalC      = FALSE,
-            .useRadians   = FALSE,
-            .reverseOrbit = TRUE,
-            .position     = EMPTY_VECTOR,
-            .velocity     = EMPTY_VECTOR
-        };
+    {
+        /* .position     */ EMPTY_VECTOR,
+        /* .velocity     */ EMPTY_VECTOR,
+        /* .useGalC      */ FALSE,
+        /* .useRadians   */ FALSE,
+        /* .reverseOrbit */ TRUE
+    };
 
     const Parameter initialConditionParams[] =
         {
@@ -620,30 +623,49 @@ int getParamsFromJSON(NBodyCtx* ctx,         /* Context to fill */
      * specified in the actual parameter tables. */
     const NBodyCtx defaultCtx =
         {
-            .pot = EMPTY_POTENTIAL,
-            .freqout = NAN,
-            .usequad = TRUE,
-            .sunGCDist  = 8.0,
-            .allowIncest = FALSE,
-            .outputCartesian = FALSE,
-            .criterion = NEWCRITERION,
-            .theta = 0.0,
-            .seed = 0,
-            .tree_rsize = 4.0,
-            .outfile = NULL,
-            .outfilename = NULL,
-            .headline = NULL
+            /* Grr lack of C99 named struct initializers in MSVC */
+            /* .pot             */  EMPTY_POTENTIAL,
+            /* .models          */  NULL,
+            /* .modelNum        */  0,
+            /* .nbody           */  0,
+            /* .timestep        */  0.0,
+            /* .time_evolve     */  0.0,
+            /* .orbit_timestep  */  0.0,
+            /* time_orbit       */  0.0,
+
+            /* .headline        */  NULL,
+            /* .outfilename     */  NULL,
+            /* .histogram       */  NULL,
+            /* .histout         */  NULL,
+            /* .outfile         */  NULL,
+
+            /* .freqout         */  0.0,
+            /* .theta           */  0.0,
+            /* .eps2            */  0.0,
+
+            /* .tree_rsize      */  4.0,
+            /* .sunGCDist       */  8.0,
+            /* .criterion       */  NEWCRITERION,
+            /* .seed            */  0,
+            /* .usequad         */  TRUE,
+            /* .allowIncest     */  FALSE,
+
+            /* .outputCartesian */  FALSE,
+            /* .outputBodies    */  FALSE,
+            /* .outputHistogram */  FALSE,
+            /* .cp_filename     */  NULL,
+            /* .cp_resolved     */  ""
         };
 
     const HistogramParams defaultHistogram =
         {
-            .phi        = histogramPhi,
-            .theta      = histogramTheta,
-            .psi        = histogramPsi,
-            .startRaw   = histogramStartRaw,
-            .endRaw     = histogramEndRaw,
-            .binSize    = histogramBinSize,
-            .center     = histogramCenter
+            /* .phi      */  histogramPhi,
+            /* .theta    */  histogramTheta,
+            /* .psi      */  histogramPsi,
+            /* .startRaw */  histogramStartRaw,
+            /* .endRaw   */  histogramEndRaw,
+            /* .binSize  */  histogramBinSize,
+            /* .center   */  histogramCenter
         };
 
     /* Spherical potential options */
@@ -781,6 +803,8 @@ int getParamsFromJSON(NBodyCtx* ctx,         /* Context to fill */
 
     json_object* hdr;
     int rc;
+
+    nanN = NAN; /* Work around MSVC stupidity. Actually set value of nan that's defaulted to */
 
     *hist = defaultHistogram;    /* Set all items to default */
 

@@ -114,10 +114,15 @@ extern "C" {
   #define REAL_EPSILON FLT_EPSILON
 #endif
 
-#ifndef NAN
-  static const unsigned long nan[2]={ 0xffffffff, 0x7fffffff };
-  #define NAN (*(const double *) nan)
-#endif /* NAN*/
+#if !defined(NAN) && defined(_MSC_VER) && DOUBLEPREC
+  /* CHECKME, also float */
+    static const union
+    {
+        unsigned __int32 _mw_nanbytes[2];
+        double _mw_nanval;
+    } _mw_nanhack = { { 0xffffffff, 0x7fffffff } };
+  #define NAN (_mw_nanhack._mw_nanval)
+#endif /* NAN */
 
 #if defined(_WIN32)
 /* MSVC hacks */

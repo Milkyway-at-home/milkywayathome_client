@@ -19,6 +19,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "milkyway_util.h"
+#include "milkyway_extra.h"
 #include "milkyway_cpp_util.h"
 #include "milkyway_cl.h"
 #include "mw_cl.h"
@@ -73,7 +74,7 @@ static cl_uint fermiNumChunks(const DevInfo* di)
     if (gflops >= baseGTX480Flops)
         n = baseGTX480 * (cl_uint) (baseGTX480Flops / gflops);
     else
-        n = (baseGTX480 * baseGTX480Flops) / gflops;
+        n = (cl_uint) (baseGTX480 * baseGTX480Flops) / gflops;
 
     return n;
 }
@@ -91,7 +92,7 @@ static cl_uint gt200NumChunks(const DevInfo* di)
     if (gflops >= baseGTX285Flops)
         n = baseGTX285 * (cl_uint) (baseGTX285Flops / gflops);
     else
-        n = (baseGTX285 * baseGTX285Flops) / gflops;
+        n = (cl_uint) (baseGTX285 * baseGTX285Flops) / gflops;
 
     return n;
 }

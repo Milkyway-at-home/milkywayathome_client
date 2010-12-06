@@ -24,10 +24,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef _MSC_VER
   #define strdup _strdup
   #define isnan _isnan
+  #define isfinite _finite
   #define copysign _copysign
   #define access _access
   #define snprintf _snprintf
   #define getcwd _getcwd
+  #define strncasecmp(a, b, n) _strnicmp(a, b, n)
+  #define strcasecmp(a, b) _stricmp(a, b)
 #endif /* _MSC_VER */
 
 /* Horrible workaround for lack of C99 in MSVCRT and it being
