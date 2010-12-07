@@ -44,7 +44,7 @@ typedef struct
 /* subdivp: decide if cell q is too close to accept as a single
  * term. Also sets qmem, dr, and drsq for use by gravsub.
  */
-static inline bool subdivp(ForceEvalState* fest, cellptr q)
+static inline mwbool subdivp(ForceEvalState* fest, cellptr q)
 {
     fest->dr = mw_subv(Pos(q), fest->pos0);   /* compute displacement */
     fest->drsq = mw_sqrv(fest->dr);           /* and find dist squared */
@@ -98,11 +98,11 @@ static inline void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, const node
  * node q, which is typically the t.root cell. Watches for tree
  * incest.
  */
-static inline bool treescan(const NBodyCtx* ctx,
+static inline mwbool treescan(const NBodyCtx* ctx,
                             ForceEvalState* fest,
                             nodeptr q)
 {
-    bool skipself = FALSE;
+    mwbool skipself = FALSE;
 
     while (q != NULL)               /* while not at end of scan */
     {
@@ -129,11 +129,11 @@ static inline bool treescan(const NBodyCtx* ctx,
  */
 static inline mwvector hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p)
 {
-    static bool treeincest = FALSE;     /* tree-incest occured */
-    bool skipself          = FALSE;     /* self-interaction skipped */
+    static mwbool treeincest = FALSE;     /* tree-incest occured */
+    mwbool skipself          = FALSE;     /* self-interaction skipped */
     ForceEvalState fest = EMPTY_FORCE_EVAL_STATE;
     mwvector externalacc;
-    bool intree = Mass(p) > 0.0;
+    mwbool intree = Mass(p) > 0.0;
 
     fest.pskip = p;           /* exclude p from f.c. */
     fest.pos0 = Pos(p);       /* set field point */

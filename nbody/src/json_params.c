@@ -31,7 +31,7 @@ static mw_type json_object_get_type_safe(json_object* obj)
     return obj ? json_object_get_type(obj) : mw_type_null;
 }
 
-static bool json_object_is_number(json_object* obj)
+static mwbool json_object_is_number(json_object* obj)
 {
     return obj && (json_object_is_type(obj, json_type_double) || json_object_is_type(obj, json_type_int));
 }
@@ -74,7 +74,7 @@ static void typeWarning(mw_type expected, const char* name, const char* pname, j
          showNBodyType(json_object_get_type_safe(obj)));
 }
 
-static bool checkIsObject(json_object* obj, const char* name)
+static mwbool checkIsObject(json_object* obj, const char* name)
 {
     mw_type readType;
 
@@ -90,9 +90,9 @@ static bool checkIsObject(json_object* obj, const char* name)
 
 /* Iterate through remaining keys in obj to provide useful warnings of
  * unknown parameters in the file. Returns true if any found. */
-static bool warnExtraParams(json_object* obj, const char* grpName)
+static mwbool warnExtraParams(json_object* obj, const char* grpName)
 {
-    bool haveExtra = FALSE;
+    mwbool haveExtra = FALSE;
 
     json_object_object_foreach(obj,key,val)
     {
@@ -130,7 +130,7 @@ const MWParameterSet* mwReadParameterSet(const MWParameterSet* ps, const char* s
     return p;
 }
 
-static bool readDouble(const MWParameter* p, const char* pname, json_object* obj, bool useDflt)
+static mwbool readDouble(const MWParameter* p, const char* pname, json_object* obj, mwbool useDflt)
 {
     /* json_type_int and double are OK for numbers. i.e. you can leave off the decimal.
        We don't want the other conversions, which just give you 0.0 for anything else.
@@ -151,7 +151,7 @@ static bool readDouble(const MWParameter* p, const char* pname, json_object* obj
     return FALSE;
 }
 
-static bool readInt(const MWParameter* p, const char* pname, json_object* obj, bool useDflt)
+static mwbool readInt(const MWParameter* p, const char* pname, json_object* obj, mwbool useDflt)
 {
     /* I don't think any of the conversions are acceptable */
     if (useDflt)
@@ -167,13 +167,13 @@ static bool readInt(const MWParameter* p, const char* pname, json_object* obj, b
     return FALSE;
 }
 
-static bool readBool(const MWParameter* p, const char* pname, json_object* obj, bool useDflt)
+static mwbool readBool(const MWParameter* p, const char* pname, json_object* obj, mwbool useDflt)
 {
     /* CHECKME: Size */
     if (useDflt)
-        *((bool*) p->param) = *((int*) p->dflt);
+        *((mwbool*) p->param) = *((int*) p->dflt);
     else if (json_object_is_type(obj, json_type_boolean))
-        *((bool*) p->param) = (bool) json_object_get_boolean(obj);
+        *((mwbool*) p->param) = (mwbool) json_object_get_boolean(obj);
     else
     {
         typeWarning(mw_type_boolean, p->name, pname, obj);
@@ -183,7 +183,7 @@ static bool readBool(const MWParameter* p, const char* pname, json_object* obj, 
     return FALSE;
 }
 
-static bool readString(const MWParameter* p, const char* pname, json_object* obj, bool useDflt)
+static mwbool readString(const MWParameter* p, const char* pname, json_object* obj, mwbool useDflt)
 {
     /* The json_object has ownership of the string so we need to copy it. */
     if (useDflt)
@@ -201,7 +201,7 @@ static bool readString(const MWParameter* p, const char* pname, json_object* obj
     return FALSE;
 }
 
-static bool readVector(const MWParameter* p, const char* pname, json_object* obj, bool useDflt)
+static mwbool readVector(const MWParameter* p, const char* pname, json_object* obj, mwbool useDflt)
 {
     int i, arrLen;
     array_list* arr;
@@ -246,7 +246,7 @@ static bool readVector(const MWParameter* p, const char* pname, json_object* obj
     return FALSE;
 }
 
-static bool readArray(const MWParameter* p, const char* pname, json_object* obj, bool useDflt)
+static mwbool readArray(const MWParameter* p, const char* pname, json_object* obj, mwbool useDflt)
 {
     int i, arrLen;
     array_list* arr;
@@ -295,7 +295,7 @@ static bool readArray(const MWParameter* p, const char* pname, json_object* obj,
     return FALSE;
 }
 
-static bool readEnum(const MWParameter* p, const char* pname, json_object* obj, bool useDflt)
+static mwbool readEnum(const MWParameter* p, const char* pname, json_object* obj, mwbool useDflt)
 {
     generic_enum_t conv;
     MWReadEnum reader;
@@ -324,14 +324,14 @@ static bool readEnum(const MWParameter* p, const char* pname, json_object* obj, 
     return FALSE;
 }
 
-static bool readObject(const MWParameter* p, const char* pname, json_object* obj, bool useDflt)
+static mwbool readObject(const MWParameter* p, const char* pname, json_object* obj, mwbool useDflt)
 {
     MWReadFunc readFunc = (MWReadFunc) p->conv;
 
     return readFunc(p->param, p->name, obj);
 }
 
-static bool readItem(const MWParameter* p, const char* pname, json_object* obj, bool useDflt)
+static mwbool readItem(const MWParameter* p, const char* pname, json_object* obj, mwbool useDflt)
 {
     switch (p->type)
     {
@@ -387,15 +387,15 @@ static void printAvailableFields(const MWParameter* p, const char* pname)
    Otherwise, it tries to use all of the parameters, and warns when extra elements are found.
    Fails if it fails to find a parameter that isn't defaultable (returns nonzero).
  */
-int mwReadParameterGroup(const MWParameter* g, /* The set of parameters */
-                         json_object* hdr,     /* The object of the group */
-                         const char* pname)    /* parent name */
+mwbool mwReadParameterGroup(const MWParameter* g, /* The set of parameters */
+                            json_object* hdr,     /* The object of the group */
+                            const char* pname)    /* parent name */
 {
     const MWParameter* p;
     const MWParameter* q;
     json_object* obj;
-    bool useDflt, defaultable = FALSE;
-    bool found = FALSE, readError = FALSE;
+    mwbool useDflt, defaultable = FALSE;
+    mwbool found = FALSE, readError = FALSE;
 
     assert(g);
     assert(hdr);
@@ -444,13 +444,13 @@ int mwReadParameterGroup(const MWParameter* g, /* The set of parameters */
     if (readError || (!found && !defaultable))
     {
         printAvailableFields(g, pname);
-        return 1;
+        return TRUE;
     }
 
-    return 0;
+    return FALSE;
 }
 
-bool mwReadTypedGroup(const MWParameterSet* ps,  /* Set of possible options */
+mwbool mwReadTypedGroup(const MWParameterSet* ps,  /* Set of possible options */
                       json_object* obj,          /* Object to read from */
                       const char* name,          /* Name of the item */
                       generic_enum_t* typeRead)  /* Read enum value */

@@ -143,7 +143,7 @@ static void expandBox(Tree* t, bodyptr btab, unsigned int nbody)
 /* newTree: reclaim cells in tree, prepare to build new one. */
 static void newTree(NBodyState* st, Tree* t)
 {
-    static bool firstcall = TRUE;
+    static mwbool firstcall = TRUE;
     nodeptr p;
 
     if (!firstcall)                             /* tree data to reclaim? */

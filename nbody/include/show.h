@@ -26,7 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 
 /* Types -> String */
-const char* showBool(const bool);
+const char* showBool(const mwbool);
 const char* showCriterionT(const criterion_t);
 const char* showSphericalT(const spherical_t);
 const char* showDiskT(const disk_t);

@@ -67,6 +67,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_config.h"
 #include "milkyway_math.h"
+#include "milkyway_extra.h"
 
 #ifndef __OPENCL_VERSION__   /* Not compiling CL kernel */
   #if NBODY_OPENCL
@@ -88,17 +89,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   CHECKME: type of HANDLE on windows = ? */
   #define FILE void
   #define HANDLE void*
-#endif
-
-#if NBODY_OPENCL && !defined(bool)
-    typedef int bool;
-#elif !defined(bool)
-    typedef short int bool;
-#endif /* NBODY_OPENCL && !defined(bool) */
-
-#ifndef TRUE
-  #define TRUE  1
-  #define FALSE 0
 #endif
 
 #ifndef _MSC_VER
@@ -269,9 +259,9 @@ typedef struct NBODY_ALIGN
 {
     mwvector position;     /* (x, y, z) if cartesian / useGalC, otherwise (l, b, r) */
     mwvector velocity;
-    bool useGalC;
-    bool useRadians;
-    bool reverseOrbit;     /* Do a reverse orbit. Otherwise, take initial conditions as they are */
+    mwbool useGalC;
+    mwbool useRadians;
+    mwbool reverseOrbit;     /* Do a reverse orbit. Otherwise, take initial conditions as they are */
 } InitialConditions;
 
 
@@ -307,7 +297,7 @@ typedef struct NBODY_ALIGN
     real mass;
     real scale_radius;
 
-    bool ignoreFinal;
+    mwbool ignoreFinal;
     InitialConditions initialConditions;
 } DwarfModel;
 
@@ -406,11 +396,11 @@ typedef struct NBODY_ALIGN
     real sunGCDist;
     criterion_t criterion;
     long seed;                /* random number seed */
-    bool usequad;             /* use quadrupole corrections */
-    bool allowIncest;
-    bool outputCartesian;     /* print (x,y,z) instead of (l, b, r) */
-    bool outputBodies;
-    bool outputHistogram;
+    mwbool usequad;           /* use quadrupole corrections */
+    mwbool allowIncest;
+    mwbool outputCartesian;   /* print (x,y,z) instead of (l, b, r) */
+    mwbool outputBodies;
+    mwbool outputHistogram;
 
     const char* cp_filename;
     char cp_resolved[1024];

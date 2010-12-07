@@ -74,7 +74,7 @@ static dwarf_model_t readDwarfModelT(const char* str)
     return -1;
 }
 
-static bool readInitialConditions(InitialConditions* ic, const char* pname, json_object* obj)
+static mwbool readInitialConditions(InitialConditions* ic, const char* pname, json_object* obj)
 {
     const InitialConditions defaultIC =
         {
@@ -98,7 +98,7 @@ static bool readInitialConditions(InitialConditions* ic, const char* pname, json
     return mwReadParameterGroup(initialConditionParams, obj, pname);
 }
 
-static bool readHaloParams(Halo* halo, const char* pname, json_object* obj)
+static mwbool readHaloParams(Halo* halo, const char* pname, json_object* obj)
 {
     const MWParameter nfwParams[] =
         {
@@ -137,9 +137,9 @@ static bool readHaloParams(Halo* halo, const char* pname, json_object* obj)
     return mwReadTypedGroup(haloOptions, obj, pname, (generic_enum_t*) &halo->type);
 }
 
-static bool readDwarfModel(DwarfModel* model, const char* parentName, json_object* obj)
+static mwbool readDwarfModel(DwarfModel* model, const char* parentName, json_object* obj)
 {
-    const bool defaultIgnore = FALSE;
+    const mwbool defaultIgnore = FALSE;
 
     /* The current different dwarf models all use the same parameters */
     const MWParameter dwarfModelParams[] =
@@ -162,7 +162,7 @@ static bool readDwarfModel(DwarfModel* model, const char* parentName, json_objec
     return mwReadParameterGroup(dwarfModelParams, obj, parentName);
 }
 
-static bool readDiskParams(Disk* disk, const char* pname, json_object* obj)
+static mwbool readDiskParams(Disk* disk, const char* pname, json_object* obj)
 {
     const MWParameter miyamotoParams[] =
         {
@@ -189,7 +189,7 @@ static bool readDiskParams(Disk* disk, const char* pname, json_object* obj)
     return mwReadTypedGroup(diskOptions, obj, pname, (generic_enum_t*) &disk->type);
 }
 
-static bool readSphericalParams(Spherical* sph, const char* pname, json_object* obj)
+static mwbool readSphericalParams(Spherical* sph, const char* pname, json_object* obj)
 {
     const MWParameter sphericalParams[] =
         {
@@ -207,7 +207,7 @@ static bool readSphericalParams(Spherical* sph, const char* pname, json_object* 
     return mwReadTypedGroup(sphericalOptions, obj, pname, (generic_enum_t*) &sph->type);
 }
 
-static bool readPotential(Potential* pot, const char* pname, json_object* obj)
+static mwbool readPotential(Potential* pot, const char* pname, json_object* obj)
 {
     const MWParameter potentialItems[] =
         {
@@ -220,7 +220,7 @@ static bool readPotential(Potential* pot, const char* pname, json_object* obj)
     return mwReadParameterGroup(potentialItems, obj, pname);
 }
 
-static bool readNbodyContext(NBodyCtx* ctx, const char* pname, json_object* obj)
+static mwbool readNbodyContext(NBodyCtx* ctx, const char* pname, json_object* obj)
 {
     /* Constants used for defaulting. Each field only used if
      * specified in the actual parameter tables. */
@@ -288,7 +288,7 @@ static bool readNbodyContext(NBodyCtx* ctx, const char* pname, json_object* obj)
     return mwReadParameterGroup(nbodyCtxParams, obj, pname);
 }
 
-static bool readHistogramParams(HistogramParams* hist, const char* pname, json_object* obj)
+static mwbool readHistogramParams(HistogramParams* hist, const char* pname, json_object* obj)
 {
     const HistogramParams defaultHistogram =
         {

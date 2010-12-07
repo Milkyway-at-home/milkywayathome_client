@@ -51,10 +51,10 @@ typedef enum
 } mw_type;
 
 /* ItemToBeRead -> NameOfItem -> JsonObject -> True on failure */
-typedef bool (*MWReadFunc) (void*, const char*, json_object*);
+typedef mwbool (*MWReadFunc) (void*, const char*, json_object*);
 
 /* Read a json_object into some type */
-typedef bool (*MWArrayRead) (void*, json_object*, const void*);
+typedef mwbool (*MWArrayRead) (void*, json_object*, const void*);
 
 
 /* Same basic idea as a popt option table */
@@ -112,8 +112,8 @@ typedef struct
 
 
 const MWParameterSet* mwReadParameterSet(const MWParameterSet* ps, const char* str, const char* name);
-int mwReadParameterGroup(const MWParameter* g, json_object* hdr, const char* parentName);
-bool mwReadTypedGroup(const MWParameterSet* ps, json_object* obj, const char* name, generic_enum_t* typeRead);
+mwbool mwReadParameterGroup(const MWParameter* g, json_object* hdr, const char* parentName);
+mwbool mwReadTypedGroup(const MWParameterSet* ps, json_object* obj, const char* name, generic_enum_t* typeRead);
 
 
 #ifdef __cplusplus

@@ -21,6 +21,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_EXTRA_H_
 #define _MILKYWAY_EXTRA_H_
 
+/* FIXME: OpenCL bool size */
+typedef short int mwbool;
+
+#ifndef TRUE
+  #define TRUE  1
+  #define FALSE 0
+#endif
+
 #ifdef _MSC_VER
   #define strdup _strdup
   #define isnan _isnan

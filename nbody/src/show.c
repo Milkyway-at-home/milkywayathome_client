@@ -26,7 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* A bunch of boilerplate for debug printing */
 
-const char* showBool(const bool x)
+const char* showBool(const mwbool x)
 {
     switch (x)
     {
