@@ -84,6 +84,8 @@ void ImagePlot::readImage( string fileName, int pointTotal, float width, float t
 
 //    cout << (int) r << ", " << (int) g << ", " << (int) b << endl;
         rgbToHsl(r, g, b, h, s, l2);
+if( h!=h )
+    h = 0;
 //cout << h << ", "<<c << ", " << l2 << endl;
         if( colorToL(image, pixel)>(255-threshold*threshold) ) {
             if( h<0. )

@@ -27,6 +27,7 @@
 #define _TRIGTBL_HPP_
 
 #include <iostream>
+#include <cstdlib>
 
 using namespace std;
 
