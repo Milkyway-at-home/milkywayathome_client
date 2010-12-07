@@ -103,13 +103,14 @@ typedef struct
 #define VEC_PARAM(name, dest) { name, nbody_type_vector, dest, 0, NULL, NULL, NULL }
 #define VEC_PARAM_DFLT(name, dest, dfl) { name, nbody_type_vector, dest, 0, NULL, dfl, NULL }
 
+#define OBJ_PARAM(name, dest, readf) { name, nbody_type_object, dest, 0, 0, NULL, readf }
 #define ARRAY_PARAM(name, dest, size, length, readf) { name, nbody_type_array, dest, size, length, NULL, readf }
 
 
-#define OBJ_PARAM(name, dest, readf) { name, nbody_type_object, dest, 0, 0, NULL, readf }
+const ParameterSet* readParameterSet(const ParameterSet* ps, const char* str, const char* name);
+int readParameterGroup(const Parameter* g, json_object* hdr, const char* parentName);
+bool readTypedGroup(const ParameterSet* ps, json_object* obj, const char* name, generic_enum_t* typeRead);
 
-
-int getParamsFromJSON(NBodyCtx* ctx, HistogramParams* hist, json_object* fileObj);
 
 #ifdef __cplusplus
 }

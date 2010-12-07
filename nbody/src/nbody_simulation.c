@@ -22,7 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdlib.h>
 #include "nbody.h"
-#include "json_params.h"
+#include "nbody_params.h"
 #include "calc_params.h"
 #include "nbody_priv.h"
 #include "milkyway_util.h"
@@ -232,7 +232,7 @@ void runNBodySimulation(json_object* obj,            /* The main configuration *
     double ts = 0.0, te = 0.0;
     int rc = 0;
 
-    rc |= getParamsFromJSON(&ctx, &histParams, obj);
+    rc |= nbodyGetParamsFromJSON(&ctx, &histParams, obj);
     if (rc && !nbf->verifyOnly)   /* Fail right away, unless we are diagnosing file problems */
         fail("Failed to read input parameters file\n");
 
