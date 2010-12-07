@@ -98,6 +98,51 @@ void xylToRgb( double x, double y, double l, Uint8 &r, Uint8 &g, Uint8 &b )
 
 }
 
+void xylToRgb( double x, double y, double l, double &r, double &g, double &b )
+{
+
+    // Rotate Y-axis
+
+    double cosa = sqrt(2./3.);
+    double sina = 1./sqrt(3.);
+
+    double xp = l*sina + x*cosa;
+    double yp = y;
+    double lp = l*cosa - x*sina;
+
+    // Rotate X-axis
+
+    cosa = sqrt(2.)/2.;
+    sina = -sqrt(2.)/2.;
+
+    double yp2 = yp*cosa - lp*sina;
+    lp = yp*sina + lp*cosa;
+
+
+    double dr = xp+127.5 + .5;
+    double dg = yp2+127.5 + .5;
+    double db = lp+127.5 + .5;
+
+    /// STUB /// This can be handled better by changing line size
+    if( dr>255. )
+        dr = 255.;
+    if( dg>255. )
+        dg = 255.;
+    if( db>255. )
+        db = 255.;
+    if( dr<0. )
+        dr = 0.;
+    if( dg<0. )
+        dg = 0.;
+    if( db<0. )
+        db = 0.;
+
+    r = dr/255.;
+    g = dg/255.;
+    b = db/255.;
+
+}
+
 void xylToHsl( double x, double y, double li, double &h, double &s, double &l )
 {
 
@@ -161,6 +206,20 @@ void rgbToHsl( Uint8 r, Uint8 g, Uint8 b, double &h, double &s, double &l )
 }
 
 void hslToRgb( double h, double s, double l, Uint8 &r, Uint8 &g, Uint8 &b )
+    // Returns machine R, G, B values
+    //   h is a degree in radians
+    //   s values are from 0. - 1.
+    //   l values are from 0. - 1.
+    //   r, g, b, are integers from 0-255
+{
+
+    double x, y;
+    hslToXyl(h, s, l, x, y, l);
+    xylToRgb(x, y, l, r, g, b);
+
+}
+
+void hslToRgb( double h, double s, double l, double &r, double &g, double &b )
     // Returns machine R, G, B values
     //   h is a degree in radians
     //   s values are from 0. - 1.

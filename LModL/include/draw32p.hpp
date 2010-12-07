@@ -32,6 +32,7 @@
 #include "draw32.hpp"
 
 
+
 using namespace std;
 
 
@@ -80,7 +81,7 @@ void resizeCopySurfaceClip32p( const SDL_Surface *copySurface, SDL_Surface *dest
 void resizeSumSurfaceClip32p( const SDL_Surface *copySurface, SDL_Surface *destSurface, int xd, int yd, int xSkip, int ySkip );
 
 
-inline void putPixelSum32p( SDL_Surface *surface, int x, int y, Uint32 color )
+inline void putPixelSum32pf( SDL_Surface *surface, int x, int y, Uint32 color )
 {
 
 /// STUB ///
@@ -112,7 +113,7 @@ inline void putPixelSum32p( SDL_Surface *surface, int x, int y, Uint32 color )
     if( a&0x00000800 )                  // shl reg2, 10 / jc [skip 1]
         a |= 0x000003ff;                // or reg1, 0x000003ff
 
-    a &= 0xffdff7ff;                    // and reg1, 0xffdff7ff
+    a &= 0xffdffbff;                    // and reg1, 0xffdffbff
 
     *( (Uint32*) pixelPtr ) = a;
 
@@ -147,6 +148,54 @@ b = 0x000001ff
 
     *( (Uint32*) pixelPtr ) = r1;
 */
+
+}
+
+inline void putPixelSumClip32pf( SDL_Surface *surface, int x, int y, Uint32 color )
+{
+    if( (unsigned int) x >= (unsigned int) surface->w || (unsigned int) y >= (unsigned int) surface->h )
+        return;
+    putPixelSum32p(surface, x, y, color);
+}
+
+inline void putPixelSum32p( SDL_Surface *surface, int x, int y, Uint32 color )
+{
+
+#ifdef TEST_MODE
+    if( (unsigned int) x >= (unsigned int) surface->w || (unsigned int) y >= (unsigned int) surface->h ) {
+        cerr << "Putpixel access out of range (0-" << surface->w-1 << ", 0-" << surface->h-1 << ")\n";
+        exit(1);
+    }
+#endif
+
+    Uint8 *pixelPtr = ((Uint8*)(surface->pixels)) + y*(surface->pitch)+(x<<2);
+
+    // 32-bit-p representation
+    // RRRRRRRR rrxGGGGG GGGggxBB BBBBBBbb
+
+    // 32-bit representation
+    // xxrrggbb RRRRRRRR GGGGGGGG BBBBBBBB
+
+    Uint32 a, b;
+
+    a = color;                          // reg1 = color
+    b = *( (Uint32*) pixelPtr );        // reg2 = *( (Uint32*) pixelPtr )
+
+    a = b32Tob32p(a);
+    b = b32Tob32p(b);
+    a += b;                             // add reg1, reg2
+
+    // Max intensity check testing
+    if( a<b )                           // jc [skip 1]
+        a |= 0xffc00000;                // or reg1, 0xffc000000
+    if( a&0x00200000 )                   // mov reg2, reg1 / shl  reg2, 11 / jc [skip 1]
+        a |= 0x001ff800;                // or reg1, 0x001ff000
+    if( a&0x00000400 )                  // shl reg2, 10 / jc [skip 1]
+        a |= 0x000003ff;                // or reg1, 0x000003ff
+
+    a &= 0xffdffbff;                    // and reg1, 0xffdffbff
+
+    *( (Uint32*) pixelPtr ) = b32pTob32(a);
 
 }
 
@@ -250,7 +299,7 @@ inline void blitSurfaceClipSum32p( const SDL_Surface *copySurface, SDL_Surface *
             if( a&0x00000800 )                  // shl reg2, 10 / jc [skip 1]
                 a |= 0x000003ff;                // or reg1, 0x000003ff
 
-            a &= 0xffdff7ff;                    // and reg1, 0xffdff7ff
+            a &= 0xffdffbff;                    // and reg1, 0xffdffbff
 
             *( (Uint32*) dp ) = a;
 
@@ -265,9 +314,9 @@ inline SDL_Surface * newSurface32p( int xSize, int ySize )
 
     Uint32 rmask, gmask, bmask, amask;
 
-    rmask = 0xffc00000;
-    gmask = 0x001ffc00;
-    bmask = 0x000001ff;
+    rmask = 0xff000000;
+    gmask = 0x000ff000;
+    bmask = 0x000000ff;
     amask = 0x00000000;
 
     /* Initialize image buffer */

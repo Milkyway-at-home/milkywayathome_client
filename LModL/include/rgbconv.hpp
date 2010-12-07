@@ -93,4 +93,11 @@ void hslToRgb( double h, double s, double l, Uint8 &r, Uint8 &g, Uint8 &b );
     //   l values are from 0. - 1.
     //   r, g, b, are integers from 0-255
 
+void hslToRgb( double h, double s, double l, double &r, double &g, double &b );
+    // Returns machine R, G, B values
+    //   h is a degree in radians
+    //   s values are from 0. - 1.
+    //   l values are from 0. - 1.
+    //   r, g, b, values are from 0.-1.
+
 #endif /* _RGBCONV_HPP_ */

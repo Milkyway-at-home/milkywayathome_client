@@ -62,6 +62,8 @@ using namespace std;
    #define SWAP32(X)    SDL_Swap32(X)
 #endif
 
+#define  b32Tob32p(a)  ( (((a)&0x00ff0000)<<8) | (((a)&0x0000ff00)<<5) | (((a)&0x000000ff)<<2) |  (((a)&0x30000000)>>6) | (((a)&0x0c000000)>>15) | (((a)&0x03000000)>>24) )
+#define  b32pTob32(a)  ( (((a)&0xff000000)>>8) | (((a)&0x001fe000)>>5) | (((a)&0x000003fc)>>2) |  (((a)&0x00c00000)<<6) | (((a)&0x00001800)<<15) | (((a)&0x00000003)<<24) )
 
 void initDraw();
 
@@ -118,7 +120,7 @@ void setPalette8( SDL_Surface* surface, SDL_Color* palette );
 
 extern Uint32 PALETTE_TABLE[SATURATION_GRAN][HUE_GRAN][256];
 
-extern Uint32 PALETTE_TABLE_32P[SATURATION_GRAN][HUE_GRAN][1024];
+extern Uint32 PALETTE_TABLE_P[SATURATION_GRAN][HUE_GRAN][1024];
 
 extern Uint32* GRAY_PALETTE;
 
@@ -221,7 +223,7 @@ inline Uint32* getLightnessColor32p( int saturation, int hue )
 
     }
 #endif
-    return PALETTE_TABLE_32P[saturation>>(8-SATURATION_GRAN_SHIFT)][hue>>(8-HUE_GRAN_SHIFT)];
+    return PALETTE_TABLE_P[saturation>>(8-SATURATION_GRAN_SHIFT)][hue>>(8-HUE_GRAN_SHIFT)];
 }
 
 

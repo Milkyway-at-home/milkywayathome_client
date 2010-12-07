@@ -81,11 +81,12 @@ SDL_Surface* setVideo( int bpp, int winXSize, int winYSize, bool fullScreen, str
 
     if( bpp==8 ) {
         // Set default 8bpp palette
-        setPaletteTable();
         int saturation = 64;
         int hue = 170;
         setPalette8(display, getLightnessPalette(saturation, hue));
     }
+
+    setPaletteTable();
 
     return display;
 
@@ -149,26 +150,35 @@ void setPalette8( SDL_Surface* surface, SDL_Color* palette )
 
 Uint32 PALETTE_TABLE[SATURATION_GRAN][HUE_GRAN][256];
 
-Uint32 PALETTE_TABLE_32P[SATURATION_GRAN][HUE_GRAN][1024];
+Uint32 PALETTE_TABLE_P[SATURATION_GRAN][HUE_GRAN][1024];
 
 Uint32* GRAY_PALETTE = PALETTE_TABLE[0][0];
+Uint32* GRAY_PALETTE_P = PALETTE_TABLE_P[0][0];
 
 void setPaletteTable()
 {
     SDL_Surface *display = SDL_GetVideoSurface();
     Uint32 rmask, gmask, bmask, amask;
-    rmask = 0xffc00000;
-    gmask = 0x001ffc00;
-    bmask = 0x000001ff;
+    rmask = 0xff000000;
+    gmask = 0x000ff000;
+    bmask = 0x000000ff;
     amask = 0x00000000;
     SDL_Surface * surface32p = SDL_CreateRGBSurface(SDL_SWSURFACE, 1, 1, 32, rmask, gmask, bmask, amask);
     for( int saturation = 0; saturation<SATURATION_GRAN; saturation++ )
         for( int hue = 0; hue<HUE_GRAN; hue++ )
-            for( int lightness = 0; lightness<1024; lightness++ ) {
+            for( int lightness = 0; lightness<256; lightness++ ) {
                 Uint8 r, g, b;
                 hslToRgb(TRIG_2PI*hue/double(HUE_GRAN), saturation/double(SATURATION_GRAN), lightness/255., r, g, b);
-                PALETTE_TABLE[saturation][hue][lightness] = rgbToColor(display, r, g, b);
-                PALETTE_TABLE[saturation][hue][lightness] = rgbToColor(surface32p, r, g, b);
+                Uint32 pixel = rgbToColor(display, r, g, b);
+                PALETTE_TABLE[saturation][hue][lightness] = pixel;
+            }
+    for( int saturation = 0; saturation<SATURATION_GRAN; saturation++ )
+        for( int hue = 0; hue<HUE_GRAN; hue++ )
+            for( int lightness = 0; lightness<1024; lightness++ ) {
+                double r, g, b;
+                hslToRgb(TRIG_2PI*hue/double(HUE_GRAN), saturation/double(SATURATION_GRAN), lightness/1024., r, g, b);
+                Uint32 pixel = (((Uint32)(r*1023.))<<22) | (((Uint32)(g*1023.))<<11) | ((Uint32)(b*1023.));
+                PALETTE_TABLE_P[saturation][hue][lightness] = b32pTob32(pixel);
             }
     SDL_FreeSurface(surface32p);
 }

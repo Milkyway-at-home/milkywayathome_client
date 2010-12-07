@@ -38,28 +38,15 @@ Note: run application without arguments to for parameter information
 Known bugs:
 
     3d line clipping buggy at close range
-    3d line draws currently only accurate up to ~1,000,000 units
-    in ~1/100 trials, passing just beyond a point and looking back fails setting camera to indeterminate values
+    Issues with custom bitmaps
+    24-bit routines not compatable with Mac
+    Needs generic get/putPixel option for compatibilty
 
-Associated projects:
+Project Page:
 
-    MilkyWay@Home
-
-        Project Page:
-            http://milkyway.cs.rpi.edu/milkyway/
-        Source page:
-            http://github.com/Milkyway-at-home
-        Affiliation:
-            Rensselaer Polytechnic Institute (RPI)
-
-More information on the LModL project:
-
-    Project page:
-        coming soon
+    MilkyWay@Home:
+        http://milkyway.cs.rpi.edu/milkyway/
     Source page:
-        http://github.com/lunardivide/LModL
-    Project Author:
-        Shane Reilly <reills2@cs.rpi.edu>
+        http://github.com/Milkyway-at-home/LModL
     Affiliation:
         Rensselaer Polytechnic Institute (RPI)
-
