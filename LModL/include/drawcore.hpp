@@ -200,7 +200,7 @@ inline void unlockSurface( SDL_Surface* surface )
 
 inline Uint32* getLightnessColor32( int saturation, int hue )
 {
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( (unsigned int) (saturation>>(8-SATURATION_GRAN_SHIFT)) > (unsigned int) SATURATION_GRAN
       || (unsigned int) (hue>>(8-HUE_GRAN_SHIFT)) > (unsigned int) HUE_GRAN ) {
 
@@ -214,7 +214,7 @@ inline Uint32* getLightnessColor32( int saturation, int hue )
 
 inline Uint32* getLightnessColor32p( int saturation, int hue )
 {
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( (unsigned int) (saturation>>(8-SATURATION_GRAN_SHIFT)) > (unsigned int) SATURATION_GRAN
       || (unsigned int) (hue>>(8-HUE_GRAN_SHIFT)) > (unsigned int) HUE_GRAN ) {
 

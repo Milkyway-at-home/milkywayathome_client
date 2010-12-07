@@ -65,7 +65,7 @@ inline float sin_lu( float x )
 
     int ix = int(x*TRIGTBL_GRAN);
 
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( (unsigned int) ix >= TRIGTBL_SIZE )
     {
         cerr << "Sine table access out of range (0-2*pi)\n";
@@ -82,7 +82,7 @@ inline float cos_lu( float x )
 
     int ix = int(x*TRIGTBL_GRAN) + TRIGTBL_COS_OFFSET;
 
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( (unsigned int) ix >= TRIGTBL_SIZE )
     {
         cerr << "Cosine table access out of range (0-2*pi)\n";

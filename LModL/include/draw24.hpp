@@ -36,7 +36,7 @@ using namespace std;
 inline void putPixel24( SDL_Surface *surface, int x, int y, Uint32 color )
 {
 
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( (unsigned int) x >= (unsigned int) surface->w || (unsigned int) y >= (unsigned int) surface->h ) {
         cerr << "Putpixel access out of range (0-" << surface->w-1 << ", 0-" << surface->h-1 << ")\n";
         exit(1);
@@ -60,7 +60,7 @@ inline void putPixel24( SDL_Surface *surface, int x, int y, Uint32 color )
 inline Uint32 getPixel24( const SDL_Surface *surface, int x, int y )
 {
 
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( (unsigned int) x >= (unsigned int) surface->w || (unsigned int) y >= (unsigned int) surface->h ) {
         cerr << "Putpixel access out of range (0-" << surface->w-1 << ", 0-" << surface->h-1 << ")\n";
         exit(1);

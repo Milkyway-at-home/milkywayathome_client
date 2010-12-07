@@ -80,7 +80,7 @@ void resizeSumSurfaceClip32( const SDL_Surface *copySurface, SDL_Surface *destSu
 
 inline void putPixelSum32( SDL_Surface *surface, int x, int y, Uint32 color )
 {
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( (unsigned int) x >= (unsigned int) surface->w || (unsigned int) y >= (unsigned int) surface->h ) {
         cerr << "Putpixel access out of range (0-" << surface->w-1 << ", 0-" << surface->h-1 << ")\n";
         exit(1);
@@ -119,7 +119,7 @@ inline void putPixelSumClip32( SDL_Surface *surface, int x, int y, Uint32 color 
 
 inline Uint32 getPixel32( const SDL_Surface *surface, int x, int y )
 {
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( (unsigned int) x >= (unsigned int) surface->w || (unsigned int) y >= (unsigned int) surface->h ) {
         cerr << "Putpixel access out of range (0-" << surface->w-1 << ", 0-" << surface->h-1 << ")\n";
         exit(1);
@@ -137,7 +137,7 @@ inline Uint32 getPixelClip32( const SDL_Surface *surface, int x, int y )
 
 inline void putPixel32( SDL_Surface *surface, int x, int y, Uint32 color )
 {
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( (unsigned int) x >= (unsigned int) surface->w || (unsigned int) y >= (unsigned int) surface->h ) {
         cerr << "Putpixel access out of range (0-" << surface->w-1 << ", 0-" << surface->h-1 << ")\n";
         exit(1);
@@ -280,7 +280,7 @@ inline SDL_Surface * newSurface32( int xSize, int ySize, bool trans )
 
 inline void putPixelTrans32( SDL_Surface *surface, int x, int y, Uint8 index )
 {
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( (unsigned int) x >= (unsigned int) surface->w || (unsigned int) y >= (unsigned int) surface->h ) {
         cerr << "Putpixel access out of range (0-" << surface->w-1 << ", 0-" << surface->h-1 << ")\n";
         exit(1);

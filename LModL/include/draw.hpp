@@ -41,7 +41,7 @@ void inline blitSurfaceClipSumPalette( SDL_Surface* copySurface, SDL_Surface* de
 void inline blitSurfaceClipSumPalette( SDL_Surface* copySurface, SDL_Surface* destSurface, int x, int y, Uint32* palette )
 {
 
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( copySurface->format->BytesPerPixel!=1 ) {
         cerr << "Must apply indexed color from 8bpp surface\n";
         exit(1);

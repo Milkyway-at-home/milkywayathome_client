@@ -261,7 +261,7 @@ void HaloField::clearField()
 
 void HaloField::add( float x, float y, float z, float L, int C, int h )
 {
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( stackPtr>arrayTotal ) {
         cerr << "Halo-field stack pointer overflow" << endl;
         exit(1);
@@ -287,7 +287,7 @@ void HaloField::add( float x, float y, float z, float L, int C, int h )
 
 void HaloField::add( float x, float y, float z, Uint8 G, Uint8 R, Uint8 B )
 {
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( stackPtr>arrayTotal ) {
         cerr << "Halo-field stack pointer overflow" << endl;
         exit(1);

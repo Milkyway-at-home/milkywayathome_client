@@ -91,7 +91,7 @@ inline void clearSurface8( SDL_Surface *surface, Uint8 index )
 /// TODO /// speed test - Try Uint32 for 'index'
 inline Uint8 getPixel8( const SDL_Surface *surface, int x, int y )
 {
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( (unsigned int) x >= (unsigned int) surface->w || (unsigned int) y >= (unsigned int) surface->h ) {
         cerr << "Putpixel access out of range (0-" << surface->w-1 << ", 0-" << surface->h-1 << ")\n";
         exit(1);
@@ -109,7 +109,7 @@ inline Uint8 getPixelClip8( const SDL_Surface *surface, int x, int y )
 
 inline void putPixel8( SDL_Surface *surface, int x, int y, Uint8 index )
 {
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( (unsigned int) x >= (unsigned int) surface->w || (unsigned int) y >= (unsigned int) surface->h ) {
         cerr << "Putpixel access out of range (0-" << surface->w-1 << ", 0-" << surface->h-1 << ")\n";
         exit(1);
@@ -128,7 +128,7 @@ inline void putPixelClip8( SDL_Surface *surface, int x, int y, Uint8 index )
 inline void putPixelSum8( SDL_Surface *surface, int x, int y, Uint8 index )
 {
     /// TODO /// Retest
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( (unsigned int) x >= (unsigned int) surface->w || (unsigned int) y >= (unsigned int) surface->h ) {
         cerr << "Putpixel access out of range (0-" << surface->w-1 << ", 0-" << surface->h-1 << ")\n";
         exit(1);
@@ -268,7 +268,7 @@ inline SDL_Surface *newSurface8( int xSize, int ySize )
 /*
 inline void putPixelTrans8( SDL_Surface *surface, int x, int y, Uint8 index )
 {
-#ifdef TEST_MODE
+#ifndef NDEBUG
     if( (unsigned int) x >= (unsigned int) surface->w || (unsigned int) y >= (unsigned int) surface->h ) {
         cerr << "Putpixel access out of range (0-" << surface->w-1 << ", 0-" << surface->h-1 << ")\n";
         exit(1);
