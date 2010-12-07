@@ -184,7 +184,11 @@ void setPaletteTable()
             for( int lightness = 0; lightness<1024; lightness++ ) {
                 double r, g, b;
                 hslToRgb(TRIG_2PI*hue/double(HUE_GRAN), saturation/double(SATURATION_GRAN), lightness/1024., r, g, b);
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+                Uint32 pixel = (((Uint32)(b*1023.))<<22) | (((Uint32)(g*1023.))<<11) | ((Uint32)(r*1023.));
+#else
                 Uint32 pixel = (((Uint32)(r*1023.))<<22) | (((Uint32)(g*1023.))<<11) | ((Uint32)(b*1023.));
+#endif
                 PALETTE_TABLE_P[saturation][hue][lightness] = b32pTob32(pixel);
             }
     SDL_FreeSurface(surface32p);
