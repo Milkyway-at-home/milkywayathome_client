@@ -421,14 +421,13 @@ HaloField* readStarFileRaDecGru( const char* fileName, bool binFlag = false )
 
         float Ra = lineArg[0];
         float Dec = lineArg[1];
-        float max = 25.;
-	Uint8 g_mag = 255./lineArg[2];
-	Uint8 r_mag = 255./lineArg[3];
-	Uint8 u_mag = 255./lineArg[4];
+        Uint8 g_mag = 255./lineArg[2];
+        Uint8 r_mag = 255./lineArg[3];
+        Uint8 u_mag = 255./lineArg[4];
 
-	double x, y, z;
-	raDecRadToCart( Ra, Dec, 1000., x, y, z );
-	
+        double x, y, z;
+        raDecRadToCart( Ra, Dec, 1000., x, y, z );
+
         field->add(x-8., y, z, g_mag, r_mag, u_mag);
 
         if( fstrm.eof() ) {

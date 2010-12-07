@@ -159,10 +159,17 @@ void setPaletteTable()
 {
     SDL_Surface *display = SDL_GetVideoSurface();
     Uint32 rmask, gmask, bmask, amask;
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
     rmask = 0xff000000;
     gmask = 0x000ff000;
     bmask = 0x000000ff;
     amask = 0x00000000;
+#else
+    rmask = 0x000000ff;
+    gmask = 0x000ff000;
+    bmask = 0xff000000;
+    amask = 0x00000000;
+#endif
     SDL_Surface * surface32p = SDL_CreateRGBSurface(SDL_SWSURFACE, 1, 1, 32, rmask, gmask, bmask, amask);
     for( int saturation = 0; saturation<SATURATION_GRAN; saturation++ )
         for( int hue = 0; hue<HUE_GRAN; hue++ )
