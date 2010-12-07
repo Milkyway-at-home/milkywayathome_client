@@ -85,37 +85,37 @@ static bool readInitialConditions(InitialConditions* ic, const char* pname, json
             /* .reverseOrbit */ TRUE
         };
 
-    const Parameter initialConditionParams[] =
+    const MWParameter initialConditionParams[] =
         {
             BOOL_PARAM("use-galactic-coordinates", &ic->useGalC),
             BOOL_PARAM_DFLT("angle-use-radians", &ic->useRadians, &defaultIC.useRadians),
             BOOL_PARAM_DFLT("reverse-orbit", &ic->reverseOrbit, &defaultIC.reverseOrbit),
             VEC_PARAM("position", &ic->position),
             VEC_PARAM("velocity", &ic->velocity),
-            NULLPARAMETER
+            NULL_MWPARAMETER
         };
 
-    return readParameterGroup(initialConditionParams, obj, pname);
+    return mwReadParameterGroup(initialConditionParams, obj, pname);
 }
 
 static bool readHaloParams(Halo* halo, const char* pname, json_object* obj)
 {
-    const Parameter nfwParams[] =
+    const MWParameter nfwParams[] =
         {
             DBL_PARAM("scale-length", &halo->scale_length),
             DBL_PARAM("vhalo",        &halo->vhalo),
-            NULLPARAMETER
+            NULL_MWPARAMETER
         };
 
-    const Parameter logarithmicParams[] =
+    const MWParameter logarithmicParams[] =
         {
             DBL_PARAM("vhalo",        &halo->vhalo),
             DBL_PARAM("z-flattening", &halo->flattenZ),
             DBL_PARAM("scale-length", &halo->scale_length),
-            NULLPARAMETER
+            NULL_MWPARAMETER
         };
 
-    const Parameter triaxialParams[] =
+    const MWParameter triaxialParams[] =
         {
             DBL_PARAM("vhalo",          &halo->vhalo),
             DBL_PARAM("scale-length",   &halo->scale_length),
@@ -123,18 +123,18 @@ static bool readHaloParams(Halo* halo, const char* pname, json_object* obj)
             DBL_PARAM("y-flattening",   &halo->flattenY),
             DBL_PARAM("z-flattening",   &halo->flattenZ),
             DBL_PARAM("triaxial-angle", &halo->triaxAngle),
-            NULLPARAMETER
+            NULL_MWPARAMETER
         };
 
-    const ParameterSet haloOptions[] =
+    const MWParameterSet haloOptions[] =
         {
             { "logarithmic", LogarithmicHalo, logarithmicParams },
             { "nfw",         NFWHalo,         nfwParams },
             { "triaxial",    TriaxialHalo,    triaxialParams },
-            NULL_PARAMETER_SET
+            NULL_MWPARAMETERSET
         };
 
-    return readTypedGroup(haloOptions, obj, pname, (generic_enum_t*) &halo->type);
+    return mwReadTypedGroup(haloOptions, obj, pname, (generic_enum_t*) &halo->type);
 }
 
 static bool readDwarfModel(DwarfModel* model, const char* parentName, json_object* obj)
@@ -142,82 +142,82 @@ static bool readDwarfModel(DwarfModel* model, const char* parentName, json_objec
     const bool defaultIgnore = FALSE;
 
     /* The current different dwarf models all use the same parameters */
-    const Parameter dwarfModelParams[] =
+    const MWParameter dwarfModelParams[] =
         {
             /* FIXME: Hack: Defaulting on NAN's so we can ignore them
              * in the file, to be filled in by the server sent
              * FitParams. This will probably result in unfortunate
              * things when using the file. */
-            ENUM_PARAM("type",               &model->type,           (NbodyReadFunc) readDwarfModelT),
+            ENUM_PARAM("type",               &model->type,           (MWReadFunc) readDwarfModelT),
             INT_PARAM("nbody",               &model->nbody),
             DBL_PARAM_DFLT("mass",           &model->mass,           &nanN),
             DBL_PARAM_DFLT("scale-radius",   &model->scale_radius,   &nanN),
             DBL_PARAM_DFLT("timestep",       &model->timestep,       &nanN),
             DBL_PARAM_DFLT("orbit-timestep", &model->orbit_timestep, &nanN),
             BOOL_PARAM_DFLT("ignore-final",  &model->ignoreFinal, &defaultIgnore),
-            OBJ_PARAM("initial-conditions",  &model->initialConditions, (NbodyReadFunc) readInitialConditions),
-            NULLPARAMETER
+            OBJ_PARAM("initial-conditions",  &model->initialConditions, (MWReadFunc) readInitialConditions),
+            NULL_MWPARAMETER
         };
 
-    return readParameterGroup(dwarfModelParams, obj, parentName);
+    return mwReadParameterGroup(dwarfModelParams, obj, parentName);
 }
 
 static bool readDiskParams(Disk* disk, const char* pname, json_object* obj)
 {
-    const Parameter miyamotoParams[] =
+    const MWParameter miyamotoParams[] =
         {
             DBL_PARAM("mass",         &disk->mass),
             DBL_PARAM("scale-length", &disk->scale_length),
             DBL_PARAM("scale-height", &disk->scale_height),
-            NULLPARAMETER
+            NULL_MWPARAMETER
         };
 
-    const Parameter exponentialParams[] =
+    const MWParameter exponentialParams[] =
         {
             DBL_PARAM("mass",         &disk->mass),
             DBL_PARAM("scale-length", &disk->scale_length),
-            NULLPARAMETER
+            NULL_MWPARAMETER
         };
 
-    const ParameterSet diskOptions[] =
+    const MWParameterSet diskOptions[] =
         {
             { "exponential",    ExponentialDisk,   exponentialParams },
             { "miyamoto-nagai", MiyamotoNagaiDisk, miyamotoParams },
-            NULL_PARAMETER_SET
+            NULL_MWPARAMETERSET
         };
 
-    return readTypedGroup(diskOptions, obj, pname, (generic_enum_t*) &disk->type);
+    return mwReadTypedGroup(diskOptions, obj, pname, (generic_enum_t*) &disk->type);
 }
 
 static bool readSphericalParams(Spherical* sph, const char* pname, json_object* obj)
 {
-    const Parameter sphericalParams[] =
+    const MWParameter sphericalParams[] =
         {
             DBL_PARAM("mass",     &sph->mass),
             DBL_PARAM("r0-scale", &sph->scale),
-            NULLPARAMETER
+            NULL_MWPARAMETER
         };
 
-    const ParameterSet sphericalOptions[] =
+    const MWParameterSet sphericalOptions[] =
         {
             { "sphere", SphericalPotential, sphericalParams },
-            NULL_PARAMETER_SET
+            NULL_MWPARAMETERSET
         };
 
-    return readTypedGroup(sphericalOptions, obj, pname, (generic_enum_t*) &sph->type);
+    return mwReadTypedGroup(sphericalOptions, obj, pname, (generic_enum_t*) &sph->type);
 }
 
 static bool readPotential(Potential* pot, const char* pname, json_object* obj)
 {
-    const Parameter potentialItems[] =
+    const MWParameter potentialItems[] =
         {
-            OBJ_PARAM("disk",      &pot->disk,      (NbodyReadFunc) readDiskParams),
-            OBJ_PARAM("halo",      &pot->halo,      (NbodyReadFunc) readHaloParams),
-            OBJ_PARAM("spherical", &pot->sphere[0], (NbodyReadFunc) readSphericalParams),
-            NULLPARAMETER
+            OBJ_PARAM("disk",      &pot->disk,      (MWReadFunc) readDiskParams),
+            OBJ_PARAM("halo",      &pot->halo,      (MWReadFunc) readHaloParams),
+            OBJ_PARAM("spherical", &pot->sphere[0], (MWReadFunc) readSphericalParams),
+            NULL_MWPARAMETER
         };
 
-    return readParameterGroup(potentialItems, obj, pname);
+    return mwReadParameterGroup(potentialItems, obj, pname);
 }
 
 static bool readNbodyContext(NBodyCtx* ctx, const char* pname, json_object* obj)
@@ -261,7 +261,7 @@ static bool readNbodyContext(NBodyCtx* ctx, const char* pname, json_object* obj)
         };
 
     /* Must be null terminated arrays */
-    const Parameter nbodyCtxParams[] =
+    const MWParameter nbodyCtxParams[] =
         {
             STR_PARAM("headline",                    &ctx->headline),
             INT_PARAM_DFLT("seed",                   &ctx->seed, &defaultCtx.seed),
@@ -269,23 +269,23 @@ static bool readNbodyContext(NBodyCtx* ctx, const char* pname, json_object* obj)
 
             BOOL_PARAM_DFLT("allow-incest",          &ctx->allowIncest, &defaultCtx.allowIncest),
             DBL_PARAM_DFLT("accuracy-parameter",     &ctx->theta, &defaultCtx.theta),
-            ENUM_PARAM_DFLT("criterion",             &ctx->criterion, &defaultCtx.criterion, (NbodyReadFunc) readCriterion),
+            ENUM_PARAM_DFLT("criterion",             &ctx->criterion, &defaultCtx.criterion, (MWReadFunc) readCriterion),
             DBL_PARAM_DFLT("eps2", &ctx->eps2, &nanN),
 
-            OBJ_PARAM("potential", &ctx->pot, (NbodyReadFunc) readPotential),
+            OBJ_PARAM("potential", &ctx->pot, (MWReadFunc) readPotential),
             DBL_PARAM_DFLT("time-evolve",    &ctx->time_evolve,    &nanN),
             DBL_PARAM_DFLT("time-orbit",     &ctx->time_orbit,     &nanN),
 
             DBL_PARAM_DFLT("timestep",       &ctx->timestep,       &nanN),
             DBL_PARAM_DFLT("orbit_timestep", &ctx->orbit_timestep, &nanN),
 
-            ARRAY_PARAM("dwarf-model", &ctx->models, sizeof(DwarfModel), &ctx->modelNum, (NbodyReadFunc) readDwarfModel),
+            ARRAY_PARAM("dwarf-model", &ctx->models, sizeof(DwarfModel), &ctx->modelNum, (MWReadFunc) readDwarfModel),
             DBL_PARAM_DFLT("sun-gc-dist", &ctx->sunGCDist, &defaultCtx.sunGCDist),
             DBL_PARAM_DFLT("tree_rsize", &ctx->tree_rsize, &defaultCtx.tree_rsize),
-            NULLPARAMETER
+            NULL_MWPARAMETER
         };
 
-    return readParameterGroup(nbodyCtxParams, obj, pname);
+    return mwReadParameterGroup(nbodyCtxParams, obj, pname);
 }
 
 static bool readHistogramParams(HistogramParams* hist, const char* pname, json_object* obj)
@@ -301,7 +301,7 @@ static bool readHistogramParams(HistogramParams* hist, const char* pname, json_o
             /* .center   */  histogramCenter
         };
 
-    const Parameter histogramParams[] =
+    const MWParameter histogramParams[] =
         {
             DBL_PARAM_DFLT("phi",     &hist->phi,      &defaultHistogram.phi),
             DBL_PARAM_DFLT("theta",   &hist->theta,    &defaultHistogram.theta),
@@ -310,12 +310,12 @@ static bool readHistogramParams(HistogramParams* hist, const char* pname, json_o
             DBL_PARAM_DFLT("end",     &hist->endRaw,   &defaultHistogram.endRaw),
             DBL_PARAM_DFLT("binsize", &hist->binSize,  &defaultHistogram.binSize),
             DBL_PARAM_DFLT("center",  &hist->center,   &defaultHistogram.center),
-            NULLPARAMETER
+            NULL_MWPARAMETER
         };
 
     *hist = defaultHistogram;    /* Set all items to default */
 
-    return readParameterGroup(histogramParams, obj, pname);
+    return mwReadParameterGroup(histogramParams, obj, pname);
 }
 
 
@@ -335,11 +335,11 @@ int nbodyGetParamsFromJSON(NBodyCtx* ctx,         /* Context to fill */
                            json_object* fileObj)  /* Parsed JSON file */
 
 {
-    const Parameter parameters[] =
+    const MWParameter parameters[] =
         {
-            OBJ_PARAM("nbody-context", ctx,  (NbodyReadFunc) readNbodyContext),
-            OBJ_PARAM("histogram",     hist, (NbodyReadFunc) readHistogramParams),
-            NULLPARAMETER
+            OBJ_PARAM("nbody-context", ctx,  (MWReadFunc) readNbodyContext),
+            OBJ_PARAM("histogram",     hist, (MWReadFunc) readHistogramParams),
+            NULL_MWPARAMETER
         };
 
     json_object* hdr;
@@ -348,7 +348,7 @@ int nbodyGetParamsFromJSON(NBodyCtx* ctx,         /* Context to fill */
     nanN = NAN; /* Work around MSVC stupidity. Actually set value of nan that's defaulted to */
 
     /* Check that this is actually one of our files */
-    if (   !json_object_is_type(fileObj, nbody_type_object)
+    if (   !json_object_is_type(fileObj, mw_type_object)
         || !(hdr = json_object_object_get(fileObj, "nbody-parameters-file")))
     {
         warn("Parameters not in expected format.\n");
@@ -356,7 +356,7 @@ int nbodyGetParamsFromJSON(NBodyCtx* ctx,         /* Context to fill */
     }
 
     /* loop through table of accepted sets of parameters */
-    rc = readParameterGroup(parameters, hdr, "<root>");
+    rc = mwReadParameterGroup(parameters, hdr, "<root>");
 
     /* deref the top level object should take care of freeing whatever's left */
     json_object_put(fileObj);
