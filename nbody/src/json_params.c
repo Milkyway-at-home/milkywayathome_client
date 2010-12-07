@@ -220,7 +220,7 @@ static bool readInitialConditions(InitialConditions* ic, const char* pname, json
 
     const Parameter initialConditionParams[] =
         {
-            BOOL_PARAM("useGalC", &ic->useGalC),
+            BOOL_PARAM("use-galactic-coordinates", &ic->useGalC),
             BOOL_PARAM_DFLT("angle-use-radians", &ic->useRadians, &defaultIC.useRadians),
             BOOL_PARAM_DFLT("reverse-orbit", &ic->reverseOrbit, &defaultIC.reverseOrbit),
             VEC_PARAM("position", &ic->position),

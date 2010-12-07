@@ -46,7 +46,7 @@
                 "ignore-final" : false,
 
                 "initial-conditions": {
-                    "useGalC" : false,
+                    "use-galactic-coordinates" : false,
                     "angle-use-radians" : false,
                     "velocity" : [ -156, 79, 107 ],
                     "position" : [ 218, 53.5, 28.6 ]
@@ -63,7 +63,7 @@
                 "ignore-final" : true,
 
                 "initial-conditions": {
-                    "useGalC" : false,
+                    "use-galactic-coordinates" : false,
                     "angle-use-radians" : false,
                     "velocity" : [ -156, 79, 107 ],
                     "position" : [ 218, 53.5, 28.6 ]

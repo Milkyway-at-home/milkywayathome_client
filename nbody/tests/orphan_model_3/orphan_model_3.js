@@ -42,7 +42,7 @@
                 "scale-radius" : 0.2,
 
                 "initial-conditions": {
-                    "useGalC" : false,
+                    "use-galactic-coordinates" : false,
                     "angle-use-radians" : false,
                     "velocity" : [ -152, 72, 106 ],
                     "position" : [ 218, 53.5, 28.4 ]

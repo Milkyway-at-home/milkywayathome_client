@@ -40,7 +40,7 @@
                 "nbody" : 1024,
                 "scale-radius" : 0.2,
                 "initial-conditions": {
-                    "useGalC" : false,
+                    "use-galactic-coordinates" : false,
                     "angle-use-radians" : false,
                     "velocity" : [ -170, 94, 108 ],
                     "position" : [ 218, 53.5, 28.8 ]
