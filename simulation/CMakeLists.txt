@@ -25,30 +25,16 @@ find_package(SDL REQUIRED)
 find_package(SDL_image REQUIRED)
 
 include_directories(${SDL_INCLUDE_DIR})
+include_directories(${LMODL_INCLUDE_DIR})
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
-include_directories(${PROJECT_SOURCE_DIR}/LModL/include)
-link_directories(${PROJECT_SOURCE_DIR}/LModL/lib)
-
-
-add_subdirectory(LModL)
-
-
-
-
 
 set(test_list mwdemo_fullscreen)
 
+add_executable(nbody_demo bin/nbody.cpp)
+add_executable(mwdemo     bin/mwdemo.cpp)
 
-add_executable(nbody_demo bin/nbody.cpp bin/mwdemo.cpp)
-target_link_libraries(nbody_demo lmodl)
-
-# foreach(i ${test_list})
-#   add_executable(${i} bin/${i}.cpp)
-#   target_link_libraries(${i} lmodl)
-# endforeach()
-
-
-
+target_link_libraries(nbody_demo lmodl ${SDL_LIBRARY})
+target_link_libraries(mwdemo lmodl ${SDL_LIBRARY})
 
 

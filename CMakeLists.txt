@@ -253,4 +253,14 @@ if(NBODY)
   add_subdirectory(nbody)
 endif()
 
+set(SIMULATION ON)
+set(LMODL ON)
+
+if(LMODL)
+  add_subdirectory(LModL)
+endif()
+
+if(SIMULATION)
+  add_subdirectory(simulation)
+endif()
 

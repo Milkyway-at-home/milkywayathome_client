@@ -47,8 +47,9 @@ int main( int args, char **argv )
     float lum = .5;
 
     int totalNBody = 3;
-    
-    string fileName[totalNBody];
+
+    //string fileName[totalNBody];
+    string fileName[3];
     fileName[0] = "gd1.stoa";
     fileName[1] = "orphan.stoa";
     fileName[2] = "sgrsim.stoa";
@@ -57,7 +58,7 @@ int main( int args, char **argv )
     cout << "Reading N-body files.\n" << flush;
 
     bool binary = false;
-    
+
     NBodyFile* nBody[totalNBody];
     for( int i = 0; i<totalNBody; i++ )
         nBody[i] = new NBodyFile(fileName[i], binary);
@@ -66,7 +67,7 @@ int main( int args, char **argv )
     HaloField* field[totalNBody];
     for( int i = 0; i<totalNBody; i++ )
         field[i] = new HaloField(totalStars);
-    
+
     for( int i = 0; i<totalNBody; i++ )
         nBody[i]->readStars(*field[i], lum);
 
@@ -97,7 +98,7 @@ int main( int args, char **argv )
     {
 
         if( sim.pollEvent() ) {
-//            if( field.getTimeStep()>currentTimeStep) 
+//            if( field.getTimeStep()>currentTimeStep)
             for( int i = 0; i<totalNBody; i++ ) {
                 field[i]->clearField();
                 nBody[i]->readStars(*field[i], lum);

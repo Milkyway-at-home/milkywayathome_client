@@ -224,7 +224,7 @@ public:
         // Returns true if another step exists, false if this is the last step in the file
 
     {
-	
+
 		int starTotal;
         if( binFlag ) {
             fstrm.open(fileName.c_str(), ios::in|ios::binary);
@@ -297,8 +297,8 @@ public:
             }
 
         }
-		
-		
+
+
         if( removeDuplicates ) {
             delete [] lc;
             delete [] bc;
@@ -339,7 +339,7 @@ public:
 
 };
 
-HaloField* readStarFileXyz( const char* fileName, double lum = .5, bool binFlag = false )
+inline HaloField* readStarFileXyz( const char* fileName, double lum = .5, bool binFlag = false )
 {
 
     int starTotal;
