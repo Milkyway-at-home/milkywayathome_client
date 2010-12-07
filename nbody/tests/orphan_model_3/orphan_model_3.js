@@ -12,25 +12,22 @@
 
         "potential" : {
             "disk" : {
-                "exponential" : {
-                    "mass" : 224933,
-                    "scale-length" : 4
-                }
+                "type" : "exponential",
+                "mass" : 224933,
+                "scale-length" : 4
             },
 
             "spherical" : {
-                "sphere" : {
-                    "mass" : 67479.9,
-                    "r0-scale" : 0.6
-                }
+                "type" : "sphere",
+                "mass" : 67479.9,
+                "r0-scale" : 0.6
             },
 
             "halo" : {
-                "logarithmic" : {
-                    "vhalo" : 81,
-                    "scale-length" : 12.0,
-                    "z-flattening" : 1.0,
-                }
+                "type" : "logarithmic",
+                "vhalo" : 81,
+                "scale-length" : 12.0,
+                "z-flattening" : 1.0,
             }
         },
 

@@ -12,25 +12,22 @@
 
         "potential" : {
             "disk" : {
-                "miyamoto-nagai" : {
-                    "mass" : 4.45865888E5,
-                    "scale-length" : 6.5,
-                    "scale-height" : 0.26
-                }
+                "type" : "miyamoto-nagai",
+                "mass" : 4.45865888E5,
+                "scale-length" : 6.5,
+                "scale-height" : 0.26
             },
 
             "spherical" : {
-                "sphere" : {
-                    "mass" : 1.52954402E5,
-                    "r0-scale" : 0.7
-                }
+                "type" : "sphere",
+                "mass" : 1.52954402E5,
+                "r0-scale" : 0.7
             },
 
             "halo" : {
-                "nfw" : {
-                    "vhalo" : 109,
-                    "scale-length" : 22.25
-                }
+                "type" : "nfw",
+                "vhalo" : 109,
+                "scale-length" : 22.25
             }
         },
 
