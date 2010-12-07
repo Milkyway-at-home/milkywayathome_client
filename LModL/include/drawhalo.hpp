@@ -147,6 +147,9 @@ public:
         // Saturation (C) is an integer from 0 to 255
         // Hue (h) is an integer from 0 to 255
 
+    void add( float x, float y, float z, Uint8 G, Uint8 R, Uint8 B );
+        // R, G, B are integers from 0 to 255
+
     HaloPoint** getPoints() { return field; }
 
     void getNext( float x, float y, float z, float L, int C, int h );

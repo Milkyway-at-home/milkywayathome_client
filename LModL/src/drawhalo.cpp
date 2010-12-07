@@ -285,6 +285,37 @@ void HaloField::add( float x, float y, float z, float L, int C, int h )
         axesLimit = z;
 }
 
+void HaloField::add( float x, float y, float z, Uint8 G, Uint8 R, Uint8 B )
+{
+#ifdef TEST_MODE
+    if( stackPtr>arrayTotal ) {
+        cerr << "Halo-field stack pointer overflow" << endl;
+        exit(1);
+    }
+#endif
+    field[stackPtr]->position.x = x;
+    field[stackPtr]->position.y = y;
+    field[stackPtr]->position.z = z;
+   
+    double h, s, l;
+    rgbToHsl(R, G, B, h, s, l);
+
+    field[stackPtr]->lightness = l;
+
+//cout << "!!!" << getLightnessColor32(C, h) << " < " << L << ", " << C << ", " << h << endl << flush;
+    field[stackPtr]->palette = getLightnessColor32p(s, h);
+//if( (int)(field[stackPtr]->palette)==0x592040 ){
+    stackPtr++;
+    if( stackPtr>stackEndPtr )
+        stackEndPtr = stackPtr;
+    if( x>axesLimit )
+        axesLimit = x;
+    if( y>axesLimit )
+        axesLimit = y;
+    if( z>axesLimit )
+        axesLimit = z;
+}
+
 void HaloField::set( int index, float x, float y, float z, float l, float c, float h )
 {
     stackPtr = index;

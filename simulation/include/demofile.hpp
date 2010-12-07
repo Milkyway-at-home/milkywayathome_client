@@ -391,5 +391,61 @@ inline HaloField* readStarFileXyz( const char* fileName, double lum = .5, bool b
 
 }
 
+HaloField* readStarFileRaDecGru( const char* fileName, bool binFlag = false )
+{
 
+    int starTotal;
+
+    ifstream fstrm;
+
+    if( binFlag ) {
+        fstrm.open(fileName, ios::in|ios::binary);
+        starTotal = fileGetIntBin(fstrm);
+    }
+    else {
+        fstrm.open(fileName);
+        starTotal = fileGetInt(fstrm);
+    }
+
+    HaloField* field = new HaloField(starTotal);
+
+    // Get star positions
+    float lineArg[5];
+
+    for( int i = 0; i<starTotal; i++ ) {
+
+        if( binFlag )
+            fileGetFloatArrayBin(fstrm, 5, lineArg);
+        else
+            fileGetFloatArray(fstrm, 5, lineArg);
+
+        float Ra = lineArg[0];
+        float Dec = lineArg[1];
+        float max = 25.;
+	Uint8 g_mag = 255./lineArg[2];
+	Uint8 r_mag = 255./lineArg[3];
+	Uint8 u_mag = 255./lineArg[4];
+
+	double x, y, z;
+	raDecRadToCart( Ra, Dec, 1000., x, y, z );
+	
+        field->add(x-8., y, z, g_mag, r_mag, u_mag);
+
+        if( fstrm.eof() ) {
+
+            if( starTotal!=i ) {
+                fstrm.close();
+                cerr << "Number of stars indicated in wedge file does not match data." << endl;
+                exit(1);
+            }
+
+        }
+
+    }
+
+    fstrm.close();
+
+    return field;
+
+}
 #endif /* _DEMOFILE_HPP_ */
