@@ -326,6 +326,7 @@ static bool readHistogramParams(HistogramParams* hist, const char* pname, json_o
 /* TODO: Could use hash table more directly and avoid all the extra
  * lookups, but it probably doesn't matter. */
 
+/* FIXME: Duplicates in a group lead to bad things */
 
 /* Read the parameters from the top level json object into ctx. It
  * destroys the object in the process. */
@@ -355,7 +356,7 @@ int nbodyGetParamsFromJSON(NBodyCtx* ctx,         /* Context to fill */
     }
 
     /* loop through table of accepted sets of parameters */
-    rc = readParameterGroup(parameters, hdr, NULL);
+    rc = readParameterGroup(parameters, hdr, "<root>");
 
     /* deref the top level object should take care of freeing whatever's left */
     json_object_put(fileObj);

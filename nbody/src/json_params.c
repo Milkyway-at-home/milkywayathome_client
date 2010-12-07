@@ -65,6 +65,15 @@ static const char* showNBodyType(nbody_type bt)
     }
 }
 
+static void typeWarning(nbody_type expected, const char* name, const char* pname, json_object* obj)
+{
+    warn("Error: expected type %s for '%s' in '%s', but got %s\n",
+         showNBodyType(expected),
+         name,
+         pname,
+         showNBodyType(json_object_get_type_safe(obj)));
+}
+
 static bool checkIsObject(json_object* obj, const char* name)
 {
     nbody_type readType;
@@ -88,11 +97,10 @@ static bool warnExtraParams(json_object* obj, const char* grpName)
     json_object_object_foreach(obj,key,val)
     {
         haveExtra = TRUE;
-        fprintf(stderr,
-                "Warning: In group '%s': Unknown field '%s': '%s'\n",
-                grpName,
-                key,
-                json_object_to_json_string(val));
+        warn("Warning: In group '%s': Unknown field '%s': '%s'\n",
+             grpName,
+             key,
+             json_object_to_json_string(val));
     }
 
     return haveExtra;
@@ -136,10 +144,7 @@ static bool readDouble(const Parameter* p, const char* pname, json_object* obj, 
     }
     else
     {
-        warn("Error: expected number for '%s' in '%s', but got %s\n",
-             p->name,
-             pname,
-             showNBodyType(json_object_get_type_safe(obj)));
+        typeWarning(nbody_type_double, p->name, pname, obj);
         return TRUE;
     }
 
@@ -155,10 +160,7 @@ static bool readInt(const Parameter* p, const char* pname, json_object* obj, boo
         *((int*) p->param) = json_object_get_int(obj);
     else
     {
-        warn("Error: expected type int for '%s' in '%s', but got %s\n",
-             p->name,
-             pname,
-             showNBodyType(json_object_get_type_safe(obj)));
+        typeWarning(nbody_type_int, p->name, pname, obj);
         return TRUE;
     }
 
@@ -167,16 +169,14 @@ static bool readInt(const Parameter* p, const char* pname, json_object* obj, boo
 
 static bool readBool(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
 {
+    /* CHECKME: Size */
     if (useDflt)
         *((bool*) p->param) = *((int*) p->dflt);
     else if (json_object_is_type(obj, json_type_boolean))
         *((bool*) p->param) = (bool) json_object_get_boolean(obj);
     else
     {
-        warn("Error: expected type boolean for '%s' in '%s', but got %s\n",
-             p->name,
-             pname,
-             showNBodyType(json_object_get_type_safe(obj)));
+        typeWarning(nbody_type_boolean, p->name, pname, obj);
         return TRUE;
     }
 
@@ -194,10 +194,7 @@ static bool readString(const Parameter* p, const char* pname, json_object* obj, 
     }
     else
     {
-        warn("Error: expected type string for '%s' in '%s', but got %s\n",
-             p->name,
-             pname,
-             showNBodyType(json_object_get_type_safe(obj)));
+        typeWarning(nbody_type_string, p->name, pname, obj);
         return TRUE;
     }
 
@@ -214,10 +211,7 @@ static bool readVector(const Parameter* p, const char* pname, json_object* obj, 
 
     if (!json_object_is_type(obj, json_type_array))
     {
-        warn("Error: expected type vector for '%s' in '%s', but got %s\n",
-             p->name,
-             pname,
-             showNBodyType(json_object_get_type_safe(obj)));
+        typeWarning(nbody_type_vector, p->name, pname, obj);
         return TRUE;
     }
 
@@ -270,10 +264,7 @@ static bool readArray(const Parameter* p, const char* pname, json_object* obj, b
 
     if (!json_object_is_type(obj, json_type_array))
     {
-        warn("Error: expected type array for '%s' in '%s', but got %s\n",
-             p->name,
-             pname,
-             showNBodyType(json_object_get_type_safe(obj)));
+        typeWarning(nbody_type_array, p->name, pname, obj);
         return TRUE;
     }
 
@@ -333,6 +324,132 @@ static bool readEnum(const Parameter* p, const char* pname, json_object* obj, bo
     return FALSE;
 }
 
+static bool readObject(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
+{
+    NbodyReadFunc readFunc = (NbodyReadFunc) p->conv;
+
+    return readFunc(p->param, p->name, obj);
+}
+
+static bool readItem(const Parameter* p, const char* pname, json_object* obj, bool useDflt)
+{
+    switch (p->type)
+    {
+        case nbody_type_double:
+            return readDouble(p, pname, obj, useDflt);
+
+        case nbody_type_int:
+            return readInt(p, pname, obj, useDflt);
+
+        case nbody_type_boolean:
+            return readBool(p, pname, obj, useDflt);
+
+        case nbody_type_string:
+            return readString(p, pname, obj, useDflt);
+
+        case nbody_type_vector:
+            return readVector(p, pname, obj, useDflt);
+
+        case nbody_type_array:
+            return readArray(p, pname, obj, useDflt);
+
+        case nbody_type_object:
+            return readObject(p, pname, obj, useDflt);
+
+        case nbody_type_enum:
+            return readEnum(p, pname, obj, useDflt);
+
+        default:
+            warn("Unhandled parameter type %d for key '%s' in '%s'\n",
+                 p->type, p->name, pname);
+            return 1;
+    }
+}
+
+static void printAvailableFields(const Parameter* p, const char* pname)
+{
+    warn("Failed to read required item of correct type in group '%s'\n"
+         "\tFields are:\n", pname);
+
+    while (p->name)
+    {
+        warn("\t\t%s (%s)", p->name, showNBodyType(p->type));
+
+        if (p->dflt)
+            warn("  (optional)");
+        warn(",\n");
+        ++p;
+    }
+}
+
+/* Read a set of related parameters, e.g. the main NBodyCtx.
+   If the unique flag is set, it's only valid to have one of the items in the group.
+   Otherwise, it tries to use all of the parameters, and warns when extra elements are found.
+   Fails if it fails to find a parameter that isn't defaultable (returns nonzero).
+ */
+int readParameterGroup(const Parameter* g,   /* The set of parameters */
+                       json_object* hdr,     /* The object of the group */
+                       const char* pname)    /* parent name */
+{
+    const Parameter* p;
+    const Parameter* q;
+    json_object* obj;
+    bool useDflt, defaultable = FALSE;
+    bool found = FALSE, readError = FALSE;
+
+    assert(g);
+    assert(hdr);
+
+    if (checkIsObject(hdr, pname))
+        return TRUE;
+
+    p = g;
+    while (p->name && !readError)
+    {
+        defaultable = (p->dflt != NULL);
+        useDflt = found = FALSE;
+
+        obj = json_object_object_get(hdr, p->name);
+        if (!obj)
+        {
+            if (defaultable)
+                useDflt = TRUE;
+            else
+            {
+                warn("Failed to find or got 'null' for required key '%s' in '%s'\n",
+                     p->name,
+                     pname);
+                readError = TRUE;
+                break;  /* abandon the loop and print useful debugging */
+            }
+        }
+        else
+        {
+            found = TRUE;
+        }
+
+        readError = readItem(p, pname, obj, useDflt);
+
+        /* Explicitly delete it so we can check for extra stuff */
+        json_object_object_del(hdr, p->name);
+        ++p;
+    }
+
+    /* Skip the extra parameter warning if there was an error, since
+     * abandoning the loop leaves lots of stuff in it */
+    if (!readError)
+        warnExtraParams(hdr, pname);
+
+    /* Report what was expected in more detail */
+    if (readError || (!found && !defaultable))
+    {
+        printAvailableFields(g, pname);
+        return 1;
+    }
+
+    return 0;
+}
+
 bool readTypedGroup(const ParameterSet* ps,    /* Set of possible options */
                     json_object* obj,          /* Object to read from */
                     const char* name,          /* Name of the item */
@@ -361,136 +478,5 @@ bool readTypedGroup(const ParameterSet* ps,    /* Set of possible options */
 
     *typeRead = p->enumVal;
     return readParameterGroup(p->parameters, obj, name);
-}
-
-/* Read a set of related parameters, e.g. the main NBodyCtx.
-   If the unique flag is set, it's only valid to have one of the items in the group.
-   Otherwise, it tries to use all of the parameters, and warns when extra elements are found.
-   Fails if it fails to find a parameter that isn't defaultable (returns nonzero).
- */
-int readParameterGroup(const Parameter* g,         /* The set of parameters */
-                       json_object* hdr,           /* The object of the group */
-                       const char* parentName)     /* non-null if within another group */
-{
-    const Parameter* p;
-    const Parameter* q;
-    bool useDflt, defaultable = FALSE;
-    json_object* obj;
-    const char* pname;
-    bool found = FALSE, done = FALSE, readError = FALSE;
-    int subRc;
-    nbody_type readType;
-    NbodyReadFunc readFunc;
-
-    /* Name of the group we're in */
-    pname = parentName ? parentName : "<root>";
-
-    assert(g);
-    assert(hdr);
-
-    p = g;
-
-    if (checkIsObject(hdr, pname))
-        return TRUE;
-
-    /* CHECKME: Handling of defaultable, cases in unique? */
-    while (p->name && !done && !readError)
-    {
-        defaultable = (p->dflt != NULL);
-        useDflt = FALSE;
-        found = FALSE;
-
-        obj = json_object_object_get(hdr, p->name);
-        if (!obj)
-        {
-            if (defaultable)
-                useDflt = TRUE;
-            else
-            {
-                warn("Failed to find or got 'null' for required key '%s' in '%s'\n",
-                     p->name,
-                     pname);
-                readError = TRUE;
-                break;  /* abandon the loop and print useful debugging */
-            }
-        }
-        else
-        {
-            found = TRUE;
-        }
-
-        switch (p->type)
-        {
-            case nbody_type_double:
-                readError = readDouble(p, pname, obj, useDflt);
-                break;
-
-            case nbody_type_int:
-                readError = readInt(p, pname, obj, useDflt);
-                break;
-
-            case nbody_type_boolean:  /* CHECKME: Size */
-                readError = readBool(p, pname, obj, useDflt);
-                break;
-
-            case nbody_type_string:
-                readError = readString(p, pname, obj, useDflt);
-                break;
-
-            case nbody_type_vector:
-                readError = readVector(p, pname, obj, useDflt);
-                break;
-
-            case nbody_type_array:
-                readError = readArray(p, pname, obj, useDflt);
-                break;
-
-            case nbody_type_object:
-                readFunc = (NbodyReadFunc) p->conv;
-                readError = readFunc(p->param, p->name, obj);
-                break;
-
-            case nbody_type_enum:
-                readError = readEnum(p, pname, obj, useDflt);
-                break;
-
-            default:
-                warn("Unhandled parameter type %d for key '%s' in '%s'\n",
-                     p->type, p->name, pname);
-                return 1;
-        }
-
-        /* Explicitly delete it so we can check for extra stuff */
-        json_object_object_del(hdr, p->name);
-
-        ++p;
-    }
-
-    /* Skip the extra parameter warning if there was an error, since
-     * abandoning the loop leaves lots of stuff in it */
-    if (!readError)
-        warnExtraParams(hdr, pname);
-
-    /* Report what was expected in more detail */
-    if (   (!found && !defaultable)
-        || readError)
-    {
-        warn("Failed to find required item of correct type in group '%s'\n"
-             "\tFields are:\n", pname);
-        q = g;
-        while (q->name)
-        {
-            warn("\t\t%s (%s)", q->name, showNBodyType(q->type));
-
-            if (q->dflt)
-                warn("  (optional)");
-            warn(",\n");
-            ++q;
-        }
-
-        return 1;
-    }
-
-    return 0;
 }
 
