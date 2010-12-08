@@ -56,56 +56,31 @@ static size_t findGroupSize(const DevInfo* di)
     return di->devType == CL_DEVICE_TYPE_CPU ? 1 : 64;
 }
 
-
-/* Experimentally determined 40 for GTX 480. Estimate other GPUs by
- * scaling by flops ratio from this base.*/
-static cl_uint fermiNumChunks(const DevInfo* di)
+static cl_uint findGroupsPerCU(const DevInfo* di)
 {
-    cl_double gflops;
-    cl_uint n;
-    cl_double baseGTX480Flops;
-    cl_uint baseGTX480 = 40;
+    if (di->devType == CL_DEVICE_TYPE_CPU)
+        return 1;
 
-    baseGTX480Flops = referenceGFLOPsGTX480(DOUBLEPREC);
-    gflops = cudaEstimateGFLOPs(di);
+    if (di->vendorID == MW_NVIDIA)
+        return cudaCoresPerComputeUnit(di);
 
-    /* Go for low n estimates with slower cards, but avoid going to
-     * 0 for faster. */
-    if (gflops >= baseGTX480Flops)
-        n = baseGTX480 * (cl_uint) (baseGTX480Flops / gflops);
-    else
-        n = (cl_uint) (baseGTX480 * baseGTX480Flops) / gflops;
-
-    return n;
+    return 1; /* TODO: ATI, etc. */
 }
 
-static cl_uint gt200NumChunks(const DevInfo* di)
+static cl_uint nvidiaNumChunks(const IntegralArea* ia, const DevInfo* di, cl_uint nthread)
 {
-    cl_double gflops;
-    cl_double baseGTX285Flops;
-    cl_uint n;
-    cl_uint baseGTX285 = 140;
+    cl_uint n = (ia->mu_steps * ia->r_steps) / (nthread * di->maxCompUnits);
 
-    baseGTX285Flops = referenceGFLOPsGTX285(DOUBLEPREC);
-    gflops = cudaEstimateGFLOPs(di);
-
-    if (gflops >= baseGTX285Flops)
-        n = baseGTX285 * (cl_uint) (baseGTX285Flops / gflops);
-    else
-        n = (cl_uint) (baseGTX285 * baseGTX285Flops) / gflops;
-
-    return n;
-}
-
-static cl_uint nvidiaNumChunks(const DevInfo* di)
-{
+    /* The 480 seems to be fine with half, although this doesn't help that much. */
     if (minComputeCapabilityCheck(di, 2, 0))
-        return fermiNumChunks(di);
+        n /= 2;
 
-    return gt200NumChunks(di);
+    n += 1;  /* ceil, avoid 0 in tiny cases like the small tests */
+
+    return n;
 }
 
-static cl_uint chooseNumChunk(const CLRequest* clr, const DevInfo* di)
+static cl_uint chooseNumChunk(const IntegralArea* ia, const CLRequest* clr, const DevInfo* di, cl_uint nthread)
 {
     /* If not being used for output, 1 has the least overhead */
     if (di->nonOutput || clr->nonResponsive)
@@ -115,9 +90,9 @@ static cl_uint chooseNumChunk(const CLRequest* clr, const DevInfo* di)
         return clr->numChunk;
 
     if (di->vendorID == MW_NVIDIA)
-        return nvidiaNumChunks(di);
+        return nvidiaNumChunks(ia, di, nthread);
 
-    return 140; /* FIXME: Semi-random guess */
+    return 1; /* FIXME: others */
 }
 
 static cl_bool checkSolution(cl_uint area, cl_uint block, cl_uint n, cl_uint x)
@@ -206,7 +181,7 @@ static SizeSolution findSolution(const IntegralArea* ia,
     min = max = sol;
 
     area = ia->r_steps * ia->mu_steps;
-    tolerance = area / 200; /* Solutions can only add max. ~0.5% more work */
+    tolerance = area / 50; /* Solutions can only add max. ~2% more work */
     block = nThread * nCU;
 
     if (nCU == 0 || nCU == 1 || desiredChunkNum == 0 || desiredChunkNum == 1)
@@ -318,7 +293,7 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
     WGInfo wgi;
     size_t localSize;
     cl_int err;
-    cl_uint groupSize;
+    cl_uint groupSize, groupsPerCU, threadsPerCU;
 
     err = mwGetWorkGroupInfo(ci, &wgi);
     if (err != CL_SUCCESS)
@@ -329,9 +304,15 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
     else
         mwPrintWorkGroupInfo(&wgi);
 
-    groupSize = findGroupSize(di);
-    desiredNumChunk = chooseNumChunk(clr, di);
-    solution = findSolution(ia, desiredNumChunk, groupSize, di->maxCompUnits);
+    groupSize   = findGroupSize(di);
+    groupsPerCU = findGroupsPerCU(di);
+    threadsPerCU = groupSize * groupsPerCU;
+
+    warn("Group size = %u, per CU = %u, threads per CU = %u\n",
+         groupSize, groupsPerCU, threadsPerCU);
+
+    desiredNumChunk = chooseNumChunk(ia, clr, di, threadsPerCU);
+    solution = findSolution(ia, desiredNumChunk, threadsPerCU, di->maxCompUnits);
     warn("Using solution: n = %u, x = %u\n", solution.n, solution.x);
 
     sizes->groupSize     = groupSize;
