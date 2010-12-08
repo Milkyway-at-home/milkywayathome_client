@@ -23,9 +23,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <windows.h>
 #include <stdio.h>
 
-#if BOINC_APPLICATION
-  #include <boinc/str_util.h>
-#endif
+
+#include <popt.h>
+#include "milkyway_util.h"
 
 extern "C" int main(int argc, const char* argv[]);
 
@@ -42,20 +42,26 @@ void AppInvalidParameterHandler(const wchar_t* expression,
     DebugBreak();
 }
 
-#if BOINC_APPLICATION
+
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode)
 {
-    LPSTR command_line;
-    char* argv[100];
-    int argc;
+    LPSTR commandLine;
+    const char** argv;
+    int argc, rc;
 
     //_set_invalid_parameter_handler(AppInvalidParameterHandler);
 
-    command_line = GetCommandLine();
-    argc = parse_command_line( command_line, argv );
-    return main(argc, (const char**) argv);
-}
+    commandLine = GetCommandLine();
+    if (poptParseArgvString(commandLine, &argc, &argv))
+    {
+        warn("Failed to parse command line into argv\n");
+        return 1;
+    }
 
-#endif
+    rc = main(argc, argv);
+    free(argv);
+
+    return rc;
+}
 
 

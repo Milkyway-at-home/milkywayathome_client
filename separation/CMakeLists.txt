@@ -278,7 +278,7 @@ endif()
 set(separation_main_src src/separation_main.c)
 
 if(MSVC)
-  list(APPEND separation_main_src src/main_win.cpp)
+  list(APPEND separation_main_src src/main_win.c)
 endif()
 
 add_executable(${separation_bin_name} ${separation_main_src})
