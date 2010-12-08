@@ -53,7 +53,23 @@ extern "C" {
 #define   MAX(x,y)     (((x) > (y)) ? (x) : (y))
 #define   MIN(x,y)     (((x) < (y)) ? (x) : (y))
 
-#define mw_cmpzero(x) (mw_fabs(x) <= REAL_EPSILON)
+/* Different variants on floating point comparisons */
+
+/* Compare to zero using machine epsilon */
+#define mw_cmpzero_machineeps(x) (mw_fabs(x) < REAL_EPSILON)
+#define mw_cmpnzero_machineeps(x) (mw_fabs(x) >= REAL_EPSILON)
+
+/* Compare to zero using custom epsilon */
+#define mw_cmpzero_eps(x, eps) (mw_fabs(x) < (eps))
+#define mw_cmpnzero_eps(x, eps) (mw_fabs(x) >= (eps))
+
+/* Compare to zero using custom epsilon to multiplied by the value */
+#define mw_cmpzero_muleps(x, eps) (mw_fabs(x) < (mw_fabs(x) * (eps)))
+#define mw_cmpnzero_muleps(x, eps) (mw_fabs(x) >= (mw_fabs(x) * (eps)))
+
+#define mw_cmpf(a, b, eps) (mw_fabs((a) - (b)) < (mw_fmax(mw_fabs(a), mw_fabs(b)) * (eps)))
+#define mw_cmpnf(a, b, eps) (mw_fabs((a) - (b)) >= (mw_fmax(mw_fabs(a), mw_fabs(b)) * (eps)))
+
 
 /* degrees to radians */
 #define d2r(x) ((x) * (real) M_PI / (real) 180.0)

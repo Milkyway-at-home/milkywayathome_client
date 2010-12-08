@@ -27,6 +27,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define EPS ((real) 5.96e-08)
 #endif /* DOUBLEPREC */
 
+#if DOUBLEPREC
+  #define SEPARATION_EPS (1.0e-15)
+#else
+  #define SEPARATION_EPS (1.0e-7)
+#endif /* DOUBLEPREC */
+
 #define stdev ((real) 0.6)
 #define xr ((real) 3.0 * stdev)
 #define absm ((real) 4.2)

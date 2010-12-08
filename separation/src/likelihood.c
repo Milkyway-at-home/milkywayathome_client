@@ -100,7 +100,7 @@ real likelihood_bg_probability(const AstronomyParameters* ap,
 /* CHECKME: What is this? */
 static real probability_log(real bg, real sum_exp_weights)
 {
-  return mw_cmpzero(bg) ? -238.0 : mw_log10(bg / sum_exp_weights);
+    return mw_cmpzero_eps(bg, SEPARATION_EPS) ? -238.0 : mw_log10(bg / sum_exp_weights);
 }
 
 static real stream_sum(const unsigned int number_streams,

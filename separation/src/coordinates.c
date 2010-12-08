@@ -108,8 +108,8 @@ static inline LB cartesianToSpherical(mwvector v)
     LB lb;
     real r = mw_hypot(X(v), Y(v));
 
-    lb.l = (r != 0.0)    ? mw_atan2(Y(v), X(v)) : 0.0;
-    lb.b = (Z(v) != 0.0) ? mw_atan2(Z(v), r)    : 0.0;
+    lb.l = mw_cmpnzero_eps(r,    SEPARATION_EPS) ? mw_atan2(Y(v), X(v)) : 0.0;
+    lb.b = mw_cmpnzero_eps(Z(v), SEPARATION_EPS) ? mw_atan2(Z(v), r)    : 0.0;
 
     return lb;
 }
