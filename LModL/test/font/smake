@@ -1,2 +1,0 @@
-g++ -o $1 $1.cpp -I/home/Shane/SDL-1.2.14/include/SDL -L/home/Shane/SDL-1.2.14/lib -I/home/Shane/SDL_image-1.2.10/include -L/home/Shane/SDL_image-1.2.10/lib -I../../include -lmingw32 -lSDLmain -lSDL -mwindows -lSDL_image -O3 -Wall
-
