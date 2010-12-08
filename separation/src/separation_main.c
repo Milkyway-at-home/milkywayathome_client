@@ -76,9 +76,7 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 static real* parseParameters(int argc, const char** argv, unsigned int* paramnOut, SeparationFlags* sf)
 {
     poptContext context;
-    int o;
     real* parameters = NULL;
-    unsigned int argPos;
     static unsigned int numParams;
     static int server_params = 0;
     static const char** rest;
@@ -332,6 +330,12 @@ static void printVersion() { }
 
 #endif /* BOINC_APPLICATION */
 
+#ifdef NDEBUG
+  #define useBoincDebug 0
+#else
+  #define useBoincDebug 1
+#endif /* NDEBUG */
+
 int main(int argc, const char* argv[])
 {
     int rc;
@@ -339,7 +343,7 @@ int main(int argc, const char* argv[])
     real* parameters;
     unsigned int number_parameters;
 
-    rc = mwBoincInit(argv[0], !NDEBUG);
+    rc = mwBoincInit(argv[0], useBoincDebug);
     if (rc)
         exit(rc);
 

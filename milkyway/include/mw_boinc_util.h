@@ -21,6 +21,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MW_BOINC_UTIL_H_
 #define _MW_BOINC_UTIL_H_
 
+#include <stdio.h>
+
 #if BOINC_APPLICATION
   #include <boinc/boinc_api.h>
   #include <boinc/filesys.h>

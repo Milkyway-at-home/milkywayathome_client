@@ -395,6 +395,13 @@ static void setNumThreads(int numThreads) { }
 
 #endif /* _OPENMP */
 
+#ifdef NDEBUG
+  #define useBoincDebug 0
+#else
+  #define useBoincDebug 1
+#endif /* NDEBUG */
+
+
 /* main: toplevel routine for hierarchical N-body code. */
 int main(int argc, const char* argv[])
 {
@@ -404,7 +411,7 @@ int main(int argc, const char* argv[])
 
     specialSetup();
 
-    if (mwBoincInit(argv[0], !NDEBUG))
+    if (mwBoincInit(argv[0], useBoincDebug))
     {
         warn("Failed to init BOINC\n");
         exit(EXIT_FAILURE);
