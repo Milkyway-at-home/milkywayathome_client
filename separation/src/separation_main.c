@@ -32,7 +32,6 @@ typedef struct
     char* star_points_file;
     char* ap_file;  /* astronomy parameters */
     char* separation_outfile;
-    int boincDebug;
     int do_separation;
     int separationSeed;
     int cleanup_checkpoint;
@@ -42,7 +41,7 @@ typedef struct
     unsigned int numChunk;
 } SeparationFlags;
 
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0 }
 
 static void freeSeparationFlags(SeparationFlags* sf)
 {
@@ -116,14 +115,6 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
             POPT_ARG_NONE, &sf->cleanup_checkpoint,
             0, "Delete checkpoint on successful", NULL
         },
-
-      #if BOINC_APPLICATION
-        {
-            "boinc-debug", 'g',
-            POPT_ARG_NONE, &sf->boincDebug,
-            0, "Use BOINC diagnostics", NULL
-        },
-      #endif /* BOINC_APPLICATION */
 
       #if SEPARATION_OPENCL
         {
@@ -348,6 +339,10 @@ int main(int argc, const char* argv[])
     real* parameters;
     unsigned int number_parameters;
 
+    rc = mwBoincInit(argv[0], !NDEBUG);
+    if (rc)
+        exit(rc);
+
     printVersion();
 
     parameters = parseParameters(argc, argv, &number_parameters, &sf);
@@ -358,10 +353,6 @@ int main(int argc, const char* argv[])
     }
     else
     {
-        rc = mwBoincInit(argv[0], sf.boincDebug);
-        if (rc)
-            exit(rc);
-
         rc = worker(&sf, parameters, number_parameters);
         if (rc)
             warn("Worker failed\n");

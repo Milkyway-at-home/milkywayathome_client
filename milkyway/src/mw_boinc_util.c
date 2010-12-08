@@ -25,6 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <boinc/diagnostics.h>
 
 #include "milkyway_util.h"
+#include "milkyway_cpp_util.h"
 #include "mw_boinc_util.h"
 
 

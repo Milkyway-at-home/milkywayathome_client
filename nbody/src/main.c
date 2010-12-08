@@ -267,12 +267,6 @@ static json_object* readParameters(const int argc,
             POPT_ARG_NONE, &nbf->ignoreCheckpoint,
             0, "Ignore the checkpoint file", NULL
         },
-
-        {
-            "boinc-debug", 'g',
-            POPT_ARG_NONE, &nbf->boincDebug,
-            0, "Init BOINC with diagnostics", NULL
-        },
       #endif /* BOINC_APPLICATION */
 
         {
@@ -404,20 +398,21 @@ static void setNumThreads(int numThreads) { }
 /* main: toplevel routine for hierarchical N-body code. */
 int main(int argc, const char* argv[])
 {
-    json_object* obj     = NULL;
-    NBodyFlags nbf       = EMPTY_NBODY_FLAGS;
-    FitParams fitParams  = EMPTY_FIT_PARAMS;
+    json_object* obj    = NULL;
+    NBodyFlags nbf      = EMPTY_NBODY_FLAGS;
+    FitParams fitParams = EMPTY_FIT_PARAMS;
 
     specialSetup();
-    nbodyPrintVersion();
 
-    obj = readParameters(argc, argv, &fitParams, &nbf);
-
-    if (mwBoincInit(argv[0], nbf.boincDebug))
+    if (mwBoincInit(argv[0], !NDEBUG))
     {
         warn("Failed to init BOINC\n");
         exit(EXIT_FAILURE);
     }
+
+    nbodyPrintVersion();
+
+    obj = readParameters(argc, argv, &fitParams, &nbf);
 
     setNumThreads(nbf.numThreads);
     setDefaultFlags(&nbf);
