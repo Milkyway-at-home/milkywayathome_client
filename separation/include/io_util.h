@@ -22,7 +22,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _IO_UTIL_H_
 #define _IO_UTIL_H_
 
-#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include "separation_types.h"
 

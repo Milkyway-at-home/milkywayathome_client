@@ -36,7 +36,7 @@ include(CheckCFlag)
 include(MSVCFlags)
 set_mingw_paths()
 
-option(MSVC_USE_STATIC_CRT "Use static CRT" OFF) # SEem to get slightly different / more wrong answer with static crt
+option(MSVC_USE_STATIC_CRT "Use static CRT" ON) # SEem to get slightly different / more wrong answer with static crt
 mark_as_advanced(MSVC_USE_STATIC_CRT)
 
 if(MSVC)
@@ -215,10 +215,6 @@ set(gcc_warnings "-Wall"
                  "-Wwrite-strings"
                  "-Wcomment"
                  "-warn-uninit-values")
-
-if(CLANG)
-  message("LOL CLANG")
-endif()
 
 set(gcc_extra_flags "-fno-common"
                     "-maccumulate-outgoing-args")

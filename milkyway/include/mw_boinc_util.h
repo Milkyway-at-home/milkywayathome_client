@@ -26,6 +26,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 
 #if BOINC_APPLICATION
+  #ifndef _WIN32
+    /* Workaround: Old version of BOINC libraries missed including this */
+    #include <sys/types.h>
+  #endif
   #include <boinc/boinc_api.h>
   #include <boinc/filesys.h>
 
