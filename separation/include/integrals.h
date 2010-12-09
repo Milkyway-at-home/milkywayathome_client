@@ -49,8 +49,6 @@ real bg_probability_slow_hprob(const AstronomyParameters* ap,
                                const unsigned int convolve,
                                real* st_probs);
 
-NuId calcNuStep(const IntegralArea* ia, const unsigned int nu_step);
-
 real integrate(const AstronomyParameters* ap,
                const IntegralArea* ia,
                const StreamConstants* sc,

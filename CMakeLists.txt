@@ -196,29 +196,82 @@ option(NBODY
 option(BOINC_APP_GRAPHICS
        "BOINC app graphics" OFF)
 
-set(gcc_extra_warnings "-Wshadow -Wpointer-arith -Wcast-align -common-Wwrite-strings -compare -fno-common -Wstrict-aliasing -Wstrict-aliasing=3 -Wswitch-enum -Wswitch-default -Wmissing-declarations -Wfloat-equal -Wcomment")
+set(gcc_warnings "-Wall"
+                 "-Wextra"
+                 "-Wshadow"
+                 "-Wredundant-decls"
+                 "-Winline"
+                 "-Wdisabled-optimization"
+                 "-Wpointer-arith"
+                 "-Wcast-align"
+                 "-Wstrict-aliasing"
+                 "-Wstrict-aliasing=3"
+                 "-Wstrict-overflow=5"
+                 "-Wswitch-enum"
+                 "-Wswitch-default"
+                # "-Wmissing-declarations"
+                # "-Wunreachable-code"
+                 "-Wfloat-equal"
+                 "-Wwrite-strings"
+                 "-Wcomment"
+                 "-warn-uninit-values")
 
-#TODO: Other compilers
-if(CMAKE_COMPILER_IS_GNUCC) # I think this could maybe be IS_UNIX
-  set(CMAKE_C_FLAGS "-Wall -Wextra ${CMAKE_C_FLAGS} -funroll-loops ")
-  add_flag_if_supported(-maccumulate-outgoing-args)
+if(CLANG)
+  message("LOL CLANG")
+endif()
 
-  set(CMAKE_C_FLAGS_DEBUG "-Wall -Wextra ${gcc_extra_warnings} -O0 -g ${CMAKE_C_FLAGS_DEBUG}")
-endif(CMAKE_COMPILER_IS_GNUCC)
+set(gcc_extra_flags "-fno-common"
+                    "-maccumulate-outgoing-args")
 
 if(NOT MSVC)
-  set(CMAKE_C_FLAGS "-std=c99 -warn-uninit-values ${CMAKE_C_FLAGS}")
+  set(CMAKE_C_FLAGS "-std=c99 ${CMAKE_C_FLAGS}")
 endif()
 
 #Set math assumptions that we can make. We don't ever use the error
 #checking, or the other rounding modes.
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mhard-float -fno-rounding-math -fno-math-errno")
-
+set(extra_gcc_math_flags "-mhard-float"
+                         "-fno-rounding-math"
+                         "-fno-math-errno")
 
 if(NOT DOUBLEPREC)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsingle-precision-constant")
+  list(APPEND gcc_extra_flags "-fsingle-precision-constant")
 endif()
 
+if("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
+  set(C_COMPILER_IS_CLANG 1)
+endif()
+
+if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+  set(CXX_COMPILER_IS_CLANG 1)
+endif()
+
+if(CXX_COMPILER_IS_CLANG OR C_COMPILER_IS_CLANG)
+  set(COMPILER_IS_CLANG 1)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCC OR C_COMPILER_IS_CLANG)
+  foreach(flag ${gcc_extra_flags} ${gcc_warnings} ${extra_gcc_math_flags})
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${flag}")
+  endforeach()
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCC OR CXX_COMPILER_IS_CLANG)
+  foreach(flag ${gcc_extra_flags} ${gcc_warnings} ${extra_gcc_math_flags})
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
+  endforeach()
+endif()
+
+# Clang currently missing many of the gcc warnings and options, so
+# shut up the warnings about them
+set(shut_up_unknown_flags "-Wno-unknown-warning-option -Qunused-arguments")
+
+if(C_COMPILER_IS_CLANG)
+  set(CMAKE_C_FLAGS "${shut_up_unknown_flags} ${CMAKE_C_FLAGS}")
+endif()
+
+if(CXX_COMPILER_IS_CLANG)
+  set(CMAKE_CXX_FLAGS "${shut_up_unknown_flags} ${CMAKE_CXX_FLAGS}")
+endif()
 
 print_separator()
 print_build_info()

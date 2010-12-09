@@ -30,3 +30,9 @@ function(add_flag_if_supported flagname)
   endif()
 endfunction()
 
+function(append_supported_flags flags)
+  foreach(flag ${flags})
+    add_flag_if_supported(${flag})
+  endforeach()
+endfunction()
+
