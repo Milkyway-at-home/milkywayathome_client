@@ -23,11 +23,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <windows.h>
 #include <stdio.h>
 
-
 #include <popt.h>
 #include "milkyway_util.h"
 
-extern "C" int main(int argc, const char* argv[]);
+extern int main(int argc, const char* argv[]);
 
 /* FIXME: undefined reference to _set_invalid_parameter_handler */
 void AppInvalidParameterHandler(const wchar_t* expression,

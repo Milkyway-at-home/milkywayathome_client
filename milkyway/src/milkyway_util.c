@@ -27,11 +27,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <time.h>
 #include <errno.h>
+#include <float.h>
 
 #ifdef __SSE__
   #include <xmmintrin.h>
 #endif /* __SSE__ */
-
 
 void* callocSafe(size_t count, size_t size)
 {
@@ -224,6 +224,28 @@ int mwDisableDenormalsSSE()
 }
 
 #endif /* defined(__SSE__) && DISABLE_DENORMALS */
+
+
+#if WINDOWS_USES_X87
+
+void mwSetConsistentx87FPUPrecision()
+{
+#if defined(_WIN32) && defined(_MSC_VER)
+    //unsigned int control_word_x87;
+    //control_word_x87 = __control87_2(_PC_64
+    /* Set x87 intermediate rounding precision to 64 bits */
+    warn("Setting FPU precision\n");
+    _controlfp(_MCW_PC, _PC_64);
+#else
+  #warning Setting FPU flags with MinGW broken
+#endif
+}
+
+#else
+
+void mwSetConsistentx87FPUPrecision() { }
+
+#endif
 
 /* From the extra parameters, read them as doubles */
 real* mwReadRestArgs(const char** rest, const unsigned int numParams, unsigned int* pCountOut)

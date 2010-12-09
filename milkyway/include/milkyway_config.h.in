@@ -115,6 +115,22 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #warning "Unknown architecture!"
 #endif
 
+
+#if DOUBLEPREC
+  #ifdef __SSE2__
+    #define HAVE_SSE_MATHS 1
+  #endif
+#else
+  #ifdef __SSE__
+    #define HAVE_SSE_MATHS 1
+  #endif
+#endif /* DOUBLEPREC */
+
+#if !HAVE_SSE_MATHS && defined(_WIN32) && !defined(_WIN64)
+  /* 32 bit Windows without SSE2 */
+  #define WINDOWS_USES_X87 1
+#endif
+
 #endif /* __OPENCL_VERSION__ */
 
 #endif /* _MILKYWAY_CONFIG_H_ */

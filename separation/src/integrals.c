@@ -267,7 +267,7 @@ real integrate(const AstronomyParameters* ap,
     {
         /* if q is 0, there is no probability */
         /* Short circuit the entire integral rather than add up -1 many times. */
-        result = warn("q is 0.0\n");
+        warn("q is 0.0\n");
         return -1.0 * ia->nu_steps * ia->mu_steps * ia->r_steps;
     }
 

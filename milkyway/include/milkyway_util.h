@@ -142,6 +142,7 @@ real* mwReadRestArgs(const char** rest,            /* String array as returned b
 int mwDisableDenormalsSSE();
 #endif /* defined(__SSE__) && DISABLE_DENORMALS */
 
+void mwSetConsistentx87FPUPrecision();
 
 #ifdef __cplusplus
 }
