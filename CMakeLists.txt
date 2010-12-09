@@ -206,18 +206,23 @@ set(gcc_warnings "-Wall"
                  "-Wcast-align"
                  "-Wstrict-aliasing"
                  "-Wstrict-aliasing=3"
-                 "-Wstrict-overflow=5"
                  "-Wswitch-enum"
                  "-Wswitch-default"
-                # "-Wmissing-declarations"
-                # "-Wunreachable-code"
                  "-Wfloat-equal"
                  "-Wwrite-strings"
                  "-Wcomment"
-                 "-warn-uninit-values")
+                 "-warn-uninit-values"
+               # "-Wstrict-overflow=5"
+               # "-Wmissing-declarations"
+               # "-Wunreachable-code"
+               )
 
-set(gcc_extra_flags "-fno-common"
-                    "-maccumulate-outgoing-args")
+
+set(gcc_extra_flags "-fno-common")
+
+if(SYSTEM_IS_X86)
+  list(APPEND gcc_extra_flags "-maccumulate-outgoing-args")
+endif()
 
 if(NOT MSVC)
   set(CMAKE_C_FLAGS "-std=c99 ${CMAKE_C_FLAGS}")
@@ -285,14 +290,10 @@ if(WIN32)
   add_definitions(-D_WIN32_WINDOWS=0x0501)
 endif()
 
-# milkyway includes
-set(MILKYWAY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/milkyway/include")
-
 # locally installed headers, and generated *_config.h
-set(MILKYWAY_INSTALL_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
+set(MILKYWAY_INSTALL_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "Locally installed headers")
 
 add_subdirectory(milkyway)
-include_directories("${PROJECT_SOURCE_DIR}/milkyway/include")
 
 if(SEPARATION)
   add_subdirectory(separation)

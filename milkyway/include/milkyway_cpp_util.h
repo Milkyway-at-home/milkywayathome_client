@@ -21,6 +21,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_CPP_UTIL_H_
 #define _MILKYWAY_CPP_UTIL_H_
 
+
 #if BOINC_APPLICATION
   #include <boinc/boinc_api.h>
 #endif /* BOINC_APPLICATION */

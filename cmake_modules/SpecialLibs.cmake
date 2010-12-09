@@ -40,8 +40,12 @@ macro(set_os_specific_libs cl_required)
       # Assume we only care about old OS X on PPC
 
       if(SYSTEM_IS_PPC)
-        set(CMAKE_OSX_DEPLOYMENT_TARGET 10.3)
-        set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.3.9.sdk")
+        set(CMAKE_OSX_DEPLOYMENT_TARGET 10.2)
+        set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.2.8.sdk")
+
+        # Hack to work around bits/c++config.h not being found by clang on PPC OS X
+        # Also need to manually install boinc header "cal.h" in 6.10.58
+	include_directories("/usr/include/c++/4.0.0/powerpc-apple-darwin8/")
 
         # You seem to have to specify these explicitly on really old OS X
         # CoreFoundation seems to take care of everything now

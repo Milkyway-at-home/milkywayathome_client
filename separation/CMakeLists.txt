@@ -43,8 +43,11 @@ else()
   set(separation_bin_name "milkyway_separation")
 endif()
 
+include_directories(${MILKYWAY_INCLUDE_DIR})
+include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 
-set(SEPARATION_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
+set(SEPARATION_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "Sepaation includes")
+set(SEPARATION_KERNEL_DIR "${PROJECT_SOURCE_DIR}/kernels" CACHE INTERNAL "Separation kernels")
 include_directories(${SEPARATION_INCLUDE_DIR})
 
 if(SYSTEM_IS_PPC)
@@ -140,8 +143,6 @@ message("   Separation crlibm:   ${SEPARATION_CRLIBM}")
 print_libs()
 print_separator()
 
-
-
 configure_file (
   "${SEPARATION_INCLUDE_DIR}/separation_config.h.in"
   "${PROJECT_INCLUDE_DIR}/separation_config.h")
@@ -195,15 +196,12 @@ if(SEPARATION_GRAPHICS)
   list(APPEND separation_headers ${graphics_hdr_list})
 endif()
 
-
 if(SEPARATION_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
   list(APPEND lib_source_file_list ${cl_source_list})
   list(APPEND separation_headers ${separation_cl_headers})
 
   if(SEPARATION_INLINE_KERNEL)
-    set(SEPARATION_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
-    set(SEPARATION_KERNEL_DIR ${PROJECT_SOURCE_DIR}/kernels)
 
     # Can figure out many of the header dependencies of kernel with C
     # preprocessor with -MM flag.  However, some of the files only purpose
@@ -233,10 +231,16 @@ if(SEPARATION_OPENCL)
 
       ${SEPARATION_KERNEL_DIR}/integrals.cl)
 
-    set(INLINE_KERNEL_FILE "${LIBRARY_OUTPUT_PATH}/AllInOneFile.c")
-    all_in_one_file("${all_cl_files}")
-    inline_kernel("inlinedIntegralKernelSrc" "${ALL_IN_ONE_STRING}" ${INLINE_KERNEL_FILE})
-    add_library(all_in_one_library STATIC ${INLINE_KERNEL_FILE})
+    set(SEPARATION_INLINE_KERNEL_FILE "${LIBRARY_OUTPUT_PATH}/AllInOneFile.c")
+    set(SEPARATION_INLINE_SCRIPT "${CMAKE_MODULE_PATH}/InlineSeparation.cmake")
+    set(SEPARATION_OUT_STR_NAME "inlinedIntegralKernelSrc")
+    add_custom_command(
+      OUTPUT "${SEPARATION_INLINE_KERNEL_FILE}"
+      COMMAND ${CMAKE_COMMAND} "-DOUTFILE=${SEPARATION_INLINE_KERNEL_FILE}"
+                               "-DSOURCEFILES=\"${all_cl_files}\""
+                               "-DSTRNAME=${SEPARATION_OUT_STR_NAME}"
+                               -P ${SEPARATION_INLINE_SCRIPT})
+    add_library(all_in_one_library STATIC "${SEPARATION_INLINE_KERNEL_FILE}")
     list(APPEND separation_link_libs all_in_one_library)
   endif()
 endif()

@@ -24,10 +24,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_cpp_util.h"
 #include <string.h>
 
-#if BOINC_APPLICATION
-  #include <boinc/boinc_api.h>
-#endif
-
 /* Work around areas broken in the BOINC libraries which make you use
  * C++ */
 

@@ -32,7 +32,7 @@ if(NOT DOUBLEPREC AND NOT HAVE_TGMATH_H)
 endif()
 
 
-set(MILKYWAY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
+set(MILKYWAY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "libmilkyway headers")
 include_directories(${MILKYWAY_INCLUDE_DIR})
 
 find_package(Popt REQUIRED)

@@ -33,6 +33,8 @@ include(PrintInfo)
 include(CheckFunctionExists)
 include(CheckSSE2)
 
+include_directories(${MILKYWAY_INCLUDE_DIR})
+include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 
 maybe_static()
 
