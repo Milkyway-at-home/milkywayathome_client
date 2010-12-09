@@ -156,16 +156,16 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
         POPT_TABLEEND
     };
 
+    /* Workaround for BOINC arguments being appended */
+    argvCopy = mwFixArgv(argc, argv);
+    context = poptGetContext(argv[0], argc, argvCopy ? argvCopy : argv, options, POPT_CONTEXT_POSIXMEHARDER);
+
     if (argc < 2)
     {
         poptPrintUsage(context, stderr, 0);
         poptFreeContext(context);
         mw_finish(EXIT_FAILURE);
     }
-
-    /* Workaround for BOINC arguments being appended */
-    argvCopy = mwFixArgv(argc, argv);
-    context = poptGetContext(argv[0], argc, argvCopy ? argvCopy : argv, options, POPT_CONTEXT_POSIXMEHARDER);
 
     if (mwReadArguments(context))
     {
