@@ -373,7 +373,7 @@ static real likelihood_sum(const AstronomyParameters* ap,
                                sum_exp_weights,
                                bg);
 
-        if (star_prob != 0.0)
+        if (mw_cmpnzero_muleps(star_prob, SEPARATION_EPS))
         {
             star_prob = mw_log10(star_prob);
             KAHAN_ADD(prob, star_prob);
