@@ -55,9 +55,10 @@ void* mallocSafe(size_t size)
 void* mwCallocAligned(size_t count, size_t size, size_t alignment)
 {
     void* p;
+    size_t totalSize = count * size;
 
-    p = mwMallocAligned(count * size, alignment);
-    memset(p, 0, size);
+    p = mwMallocAligned(totalSize, alignment);
+    memset(p, 0, totalSize);
 
     return p;
 }
