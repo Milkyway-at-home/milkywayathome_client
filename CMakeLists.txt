@@ -36,7 +36,7 @@ include(CheckCFlag)
 include(MSVCFlags)
 set_mingw_paths()
 
-option(MSVC_USE_STATIC_CRT "Use static CRT" ON) # SEem to get slightly different / more wrong answer with static crt
+option(MSVC_USE_STATIC_CRT "Use static CRT" ON)
 mark_as_advanced(MSVC_USE_STATIC_CRT)
 
 if(MSVC)
@@ -44,7 +44,7 @@ if(MSVC)
   set_msvc_find_paths()
   if(MSVC_USE_STATIC_CRT)
     # http://msdn.microsoft.com/en-us/library/2kzt1wy3(v=VS.100).aspx
-    set_msvc_mt() # For some horrible reason the /MT and /MD runtimes get different results. /MT seems to be more right.
+    set_msvc_mt()
   endif()
 endif()
 
@@ -68,6 +68,12 @@ option(BOINC_RELEASE
 option(DOUBLEPREC
        "Build with double precision" ON)
 
+option(OPENCL_NVIDIA "Using Nvidia OpenCL")
+mark_as_advanced(OPENCL_NVIDIA)
+
+option(OPENCL_ATI "Using ATI OpenCL")
+mark_as_advanced(OPENCL_ATI)
+
 
 # 'Secret' options
 option(DISABLE_DENORMALS
@@ -78,9 +84,9 @@ option(STATIC_EVERYTHING
        "Prefer static libraries" ON)
 mark_as_advanced(STATIC_EVERYTHING)
 
-option(BOINC_RELEASE_NAME
+option(BOINC_RELEASE_NAMES
        "Use BOINC platform binary names" OFF)
-mark_as_advanced(BOINC_RELEASE_NAME)
+mark_as_advanced(BOINC_RELEASE_NAMES)
 
 option(DOWNLOAD_CRLIBM
        "Download crlibm and install to thirdparty" OFF)
@@ -121,7 +127,7 @@ endif()
 
 if(BOINC_RELEASE)
   set(STATIC_EVERYTHING ON)
-  set(BOINC_RELEASE_NAME ON)
+  set(BOINC_RELEASE_NAMES ON)
   set(BOINC_APPLICATION ON)
   set(DOUBLEPREC ON)
 endif()
@@ -195,6 +201,12 @@ option(NBODY
 
 option(BOINC_APP_GRAPHICS
        "BOINC app graphics" OFF)
+
+if(APPLE AND SYSTEM_IS_X86)
+  # Any OS X system will surely have sse3
+  set(CMAKE_C_FLAGS "-msse -msse2 -msse3 ${CMAKE_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "-msse -msse2 -msse3 ${CMAKE_C_FLAGS}")
+endif()
 
 set(gcc_warnings "-Wall"
                  "-Wextra"

@@ -29,19 +29,13 @@ include(SpecialLibs)
 include(BOINCBinNames)
 include(PrintInfo)
 include(CPUNameTest)
+include(BuildSSELevels)
 
 set(separation_VERSION_MAJOR 0)
 set(separation_VERSION_MINOR 48)
 set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}")
 
 get_info_from_processor_name()
-
-if(BOINC_RELEASE_NAME)
-  get_boinc_bin_name("milkyway_separation" "${separation_VERSION}" "")
-  set(separation_bin_name "${BOINC_BIN_NAME}")
-else()
-  set(separation_bin_name "milkyway_separation")
-endif()
 
 include_directories(${MILKYWAY_INCLUDE_DIR})
 include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
@@ -57,6 +51,10 @@ endif()
 option(SEPARATION_INLINE_KERNEL
        "Inline the CL kernel" OFF)
 mark_as_advanced(SEPARATION_INLINE_KERNEL)
+
+option(ALL_OF_THE_SSES
+       "All of them" OFF)
+mark_as_advanced(ALL_OF_THE_SSES)
 
 option(SMALL_TESTS
        "Run small tests" ON)
@@ -247,12 +245,7 @@ endif()
 
 list(APPEND separation_link_libs ${OS_SPECIFIC_LIBS} milkyway ${SEPARATION_LIBM_LIBRARY})
 
-add_library(separation STATIC ${lib_source_file_list} ${separation_headers})
-target_link_libraries(separation ${separation_link_libs})
-
-
 set(exe_link_libs ${POPT_LIBRARY}
-                  separation
                   ${separation_link_libs})
 
 if(NEED_POPT_DEPS)
@@ -285,11 +278,53 @@ if(MSVC)
   list(APPEND separation_main_src src/main_win.c)
 endif()
 
-add_executable(${separation_bin_name} ${separation_main_src})
-milkyway_link(${separation_bin_name} ${BOINC_APPLICATION} ${SEPARATION_OPENCL} ${STATIC_EVERYTHING} "${exe_link_libs}")
+if(SEPARATION_OPENCL)
+  if(OPENCL_NVIDIA)
+    set(CL_PLAN_CLASS "cuda_opencl")
+  elseif(OPENCL_ATI)
+    set(CL_PLAN_CLASS "ati_opencl")
+  else()
+    set(CL_PLAN_CLASS "opencl")
+  endif()
+else()
+  set(CL_PLAN_CLASS "")
+endif()
+
+set(separation_base_lib_name "separation")
+if(BOINC_RELEASE_NAMES)
+  get_boinc_bin_name("milkyway_separation" "${separation_VERSION}" "${CL_PLAN_CLASS}")
+  set(separation_base_bin_name "${BOINC_BIN_NAME}")
+else()
+  set(separation_base_bin_name "milkyway_separation")
+endif()
+
+add_library("${separation_base_lib_name}" STATIC ${lib_source_file_list} ${separation_headers})
+add_executable("${separation_base_bin_name}" ${separation_main_src})
+#target_link_libraries("${separation_base_bin_name} ${separation_base_lib_name}")
+milkyway_link("${separation_base_bin_name}" ${BOINC_APPLICATION}
+                                            ${SEPARATION_OPENCL}
+                                            ${STATIC_EVERYTHING}
+                                            "${separation_base_lib_name};${exe_link_libs}")
+
+
+if(ALL_OF_THE_SSES)
+  if(BOINC_RELEASE_NAMES)
+    get_boinc_bin_name("${separation_base_bin_name}" "${separation_VERSION}" "${i}")
+    set(sse_base_bin_name "${BOINC_BIN_NAME}")
+  else()
+    set(sse_base_bin_name "${separation_base_bin_name}")
+  endif()
+
+  foreach(i ${AVAILABLE_SSE_LEVELS})
+    add_sseX_library("${separation_base_lib_name}" "${i}" "${lib_source_file_list}" "${separation_headers}")
+    add_sseX_executable("${sse_base_bin_name}" "${i}" "${separation_main_src}")
+    milkyway_link(${SSE_EXE_NAME} ${BOINC_APPLICATION}
+                                  ${SEPARATION_OPENCL}
+                                  ${STATIC_EVERYTHING}
+                                  "${separation_base_lib_name};${exe_link_libs}")
+  endforeach()
+endif()
+
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
-
-
-
 

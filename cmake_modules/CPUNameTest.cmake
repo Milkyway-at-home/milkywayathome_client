@@ -25,25 +25,31 @@ function(get_info_from_processor_name)
       OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "i586"  # This is stupid
       OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "i686"
       OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
-    set(SYSTEM_IS_X86 TRUE PARENT_SCOPE)
+    set(SYSTEM_IS_X86 TRUE CACHE INTERNAL "Is x86")
   else()
-    set(SYSTEM_IS_X86 FALSE PARENT_SCOPE)
+    set(SYSTEM_IS_X86 FALSE CACHE INTERNAL "Is x86")
   endif()
 
   if(   ${CMAKE_SYSTEM_PROCESSOR} MATCHES "powerpc"
      OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc")
-    set(SYSTEM_IS_PPC TRUE PARENT_SCOPE)
+    set(SYSTEM_IS_PPC TRUE CACHE INTERNAL "Is PPC")
   else()
-    set(SYSTEM_IS_PPC FALSE PARENT_SCOPE)
+    set(SYSTEM_IS_PPC FALSE CACHE INTERNAL "Is PPC")
   endif()
 
   # FIXME: This seems to not be set on windows
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(SYSTEM_IS_64 TRUE PARENT_SCOPE)
+    set(SYSTEM_IS_64 TRUE CACHE INTERNAL "Is 32 bit")
   elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-    set(SYSTEM_IS_64 FALSE PARENT_SCOPE)
+    set(SYSTEM_IS_64 FALSE CACHE INTERNAL "Is 64 bit")
   else()
     message(FATAL_ERROR "sizeof(void*) != 4, 8. What is this crazy system?")
+  endif()
+
+  if(SYSTEM_IS_X86 AND NOT SYSTEM_IS_64)
+    set(SYSTEM_IS_X86_32 1 CACHE INTERNAL "Is 32-bit x86")
+  elseif(SYSTEM_IS_X86 AND SYSTEM_IS_64)
+    set(SYSTEM_IS_X86_64 1 CACHE INTERNAL "Is 64-bit x86")
   endif()
 
 endfunction()
