@@ -181,7 +181,7 @@ static SizeSolution findSolution(const IntegralArea* ia,
     min = max = sol;
 
     area = ia->r_steps * ia->mu_steps;
-    tolerance = area / 50; /* Solutions can only add max. ~2% more work */
+    tolerance = area / 40; /* Solutions can only add max. ~2.5% more work */
     block = nThread * nCU;
 
     warn("Block size = %u\n", block);
