@@ -123,6 +123,12 @@ void _mw_time_prefix(char* buf, size_t bufSize);
         fprintf(stderr, "%s: " msg, _buf, ##__VA_ARGS__);   \
     }
 
+#ifndef _WIN32
+  #define mw_win_perror perror
+#else
+  #define mw_win_perror(str) fprintf(stderr, str ": %d\n", GetLastError());
+#endif
+
 /* mw_xrandom: generate floating-point random number */
 #define mwXrandom(st, xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * dsfmt_genrand_open_open((st)))
 #define mwUnitRandom(st) mwXrandom(st, -1.0, 1.0)
