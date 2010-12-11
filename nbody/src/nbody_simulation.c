@@ -151,18 +151,17 @@ static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
 #if BOINC_APPLICATION
 
 /* Setup the run, taking care of checkpointing things when using BOINC */
-static void setupRun(NBodyCtx* ctx, NBodyState* st)
+static int setupRun(NBodyCtx* ctx, NBodyState* st)
 {
     /* If the checkpoint exists, try to use it */
     if (boinc_file_exists(ctx->cp_resolved))
     {
         mw_report("Checkpoint exists. Attempting to resume from it.\n");
-        /* When the resume fails, start a fresh run */
         if (readCheckpoint(ctx, st))
         {
             mw_report("Failed to read checkpoint\n");
             nbodyStateDestroy(st);
-            startRun(ctx, st);
+            return 1;
         }
         else
         {
@@ -182,14 +181,17 @@ static void setupRun(NBodyCtx* ctx, NBodyState* st)
     {
         startRun(ctx, st);
     }
+
+    return 0;
 }
 
 #else
 
 /* When not using BOINC, we don't need to deal with the checkpointing */
-static void setupRun(NBodyCtx* ctx, NBodyState* st)
+static int setupRun(NBodyCtx* ctx, NBodyState* st)
 {
     startRun(ctx, st);
+    return 0;
 }
 
 #endif /* BOINC_APPLICATION */
@@ -254,7 +256,8 @@ void runNBodySimulation(json_object* obj,            /* The main configuration *
     if (initOutput(&ctx))
         fail("Failed to open output files\n");
 
-    setupRun(&ctx, &st);
+    if (setupRun(&ctx, &st))
+        fail("Failed to setup run\n");
 
     if (nbf->printTiming)     /* Time the body of the calculation */
         ts = mwGetTime();
