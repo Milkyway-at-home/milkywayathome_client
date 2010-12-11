@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "mw_cl_show_types.h"
 #include "mw_cl_program.h"
+#include "mw_cl_util.h"
 
 /* This doesn't seem to exist on OS X, but the callback on ATI on
  * Linux/Windows dies without it */
@@ -81,7 +82,7 @@ static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
                                     NULL);
 
     if (infoErr != CL_SUCCESS)
-        warn("Get build status failed: %s\n", showCLInt(infoErr));
+        mwCLWarn("Get build status failed", infoErr);
     else
         warn("Build status: %s\n", showCLBuildStatus(stat));
 
@@ -98,12 +99,12 @@ cl_int mwBuildProgram(CLInfo* ci, const char* options, const char* kernName)
 
     err = clBuildProgram(ci->prog, 1, &ci->dev, options, milkywayBuildCB, ci);
     if (err != CL_SUCCESS)
-        warn("clBuildProgram: Build failure: %s\n", showCLInt(err));
+        mwCLWarn("clBuildProgram: Build failure", err);
 
     ci->kern = clCreateKernel(ci->prog, kernName, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating kernel '%s': %s\n", kernName, showCLInt(err));
+        mwCLWarn("Error creating kernel '%s'", err, kernName);
         return err;
     }
 
@@ -119,7 +120,7 @@ unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
     err = clGetProgramInfo(ci->prog, CL_PROGRAM_BINARY_SIZES, sizeof(binSize), &binSize, NULL);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to get program binary size: %s\n", showCLInt(err));
+        mwCLWarn("Failed to get program binary size", err);
         return NULL;
     }
 
@@ -127,7 +128,7 @@ unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
     err = clGetProgramInfo(ci->prog, CL_PROGRAM_BINARIES, binSize, &bin, NULL);
     if (err != CL_SUCCESS)
     {
-        warn("Error getting program binary: %s\n", showCLInt(err));
+        mwCLWarn("Error getting program binary", err);
         free(bin);
         bin = NULL;
         binSize = 0;
@@ -145,23 +146,23 @@ cl_int mwSetProgramFromBin(CLInfo* ci, const char* kernName, const unsigned char
     cl_int binStatus;
 
     ci->prog = clCreateProgramWithBinary(ci->clctx, 1, &ci->dev, &binSize, &bin, &binStatus, &err);
-    warn("Binary status: %s\n", showCLInt(err));
+    mwCLWarn("Binary status", err);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to create program from binary: %s\n", showCLInt(err));
+        mwCLWarn("Failed to create program from binary", err);
         return err;
     }
 
     if (binStatus != CL_SUCCESS)
     {
-        warn("Reading binary failed: %s\n", showCLInt(err));
+        mwCLWarn("Reading binary failed", err);
         return binStatus;
     }
 
     err = mwBuildProgram(ci, NULL, kernName);
     if (err != CL_SUCCESS)
     {
-        warn("Error building program from binary: %s\n", showCLInt(err));
+        mwCLWarn("Error building program from binary", err);
         return err;
     }
 
@@ -179,21 +180,21 @@ cl_int mwSetProgramFromSrc(CLInfo* ci,
     ci->prog = clCreateProgramWithSource(ci->clctx, srcCount, src, NULL, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating program: %s\n", showCLInt(err));
+        mwCLWarn("Error creating program", err);
         return err;
     }
 
     err = mwBuildProgram(ci, compileDefs, kernName);
     if (err != CL_SUCCESS)
     {
-        warn("Error building program from source: %s\n", showCLInt(err));
+        mwCLWarn("Error building program from source", err);
         return err;
     }
 
     ci->kern = clCreateKernel(ci->prog, kernName, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating kernel '%s': %s\n", kernName, showCLInt(err));
+        mwCLWarn("Error creating kernel '%s'", err, kernName);
         return err;
     }
 

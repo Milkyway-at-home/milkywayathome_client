@@ -303,7 +303,7 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
     err = mwGetWorkGroupInfo(ci, &wgi);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to get work group info: %s\n", showCLInt(err));
+        mwCLWarn("Failed to get work group info", err);
         return CL_TRUE;
     }
     else
@@ -397,7 +397,7 @@ cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* 
 
     if (err != CL_SUCCESS)
     {
-        warn("Error setting kernel arguments: %s\n", showCLInt(err));
+        mwCLWarn("Error setting kernel arguments", err);
         return err;
     }
 
@@ -691,7 +691,7 @@ cl_int setupSeparationCL(CLInfo* ci,
     err = mwSetupCL(ci, di, clr);
     if (err != CL_SUCCESS)
     {
-        warn("Error getting device and context: %s\n", showCLInt(err));
+        mwCLWarn("Error getting device and context", err);
         return err;
     }
 
@@ -717,7 +717,7 @@ cl_int setupSeparationCL(CLInfo* ci,
 
     if (err != CL_SUCCESS)
     {
-        warn("Error creating program from source: %s\n", showCLInt(err));
+        mwCLWarn("Error creating program from source", err);
         return err;
     }
 

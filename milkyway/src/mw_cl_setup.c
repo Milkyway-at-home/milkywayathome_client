@@ -27,6 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "mw_cl_setup.h"
 #include "mw_cl_program.h"
 #include "mw_cl_device.h"
+#include "mw_cl_util.h"
 
 static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useBufQueue)
 {
@@ -35,14 +36,14 @@ static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useBufQueue)
     ci->clctx = clCreateContext(NULL, 1, &ci->dev, NULL, NULL, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating context: %s\n", showCLInt(err));
+        mwCLWarn("Error creating context", err);
         return err;
     }
 
     ci->queue = clCreateCommandQueue(ci->clctx, ci->dev, 0, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating command queue: %s\n", showCLInt(err));
+        mwCLWarn("Error creating command queue", err);
         return err;
     }
 
@@ -51,7 +52,7 @@ static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useBufQueue)
         ci->bufQueue = clCreateCommandQueue(ci->clctx, ci->dev, 0, &err);
         if (err != CL_SUCCESS)
         {
-            warn("Error creating buffer command queue: %s\n", showCLInt(err));
+            mwCLWarn("Error creating buffer command queue", err);
             return err;
         }
     }
@@ -88,7 +89,7 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
     err = mwSelectDevice(ci, devs, clr, nDev);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to select a device: %s\n", showCLInt(err));
+        mwCLWarn("Failed to select a device", err);
         err = -1;
     }
 
@@ -135,7 +136,7 @@ cl_int mwSetupCL(CLInfo* ci,
     err = mwCreateCtxQueue(ci, CL_FALSE);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating CL context and command queue: %s\n", showCLInt(err));
+        mwCLWarn("Error creating CL context and command queue", err);
         return err;
     }
 
@@ -160,7 +161,7 @@ cl_int mwDestroyCLInfo(CLInfo* ci)
 
     /* TODO: or'ing the err and showing = useless */
     if (err)
-        warn("Error cleaning up CLInfo: %s\n", showCLInt(err));
+        mwCLWarn("Error cleaning up CLInfo", err);
 
     return err;
 }

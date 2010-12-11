@@ -85,7 +85,7 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
                                  0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
-        warn("Error enqueueing integral kernel execution: %s\n", showCLInt(err));
+        mwCLWarn("Error enqueueing integral kernel execution", err);
         return err;
     }
 
@@ -127,7 +127,7 @@ static cl_int setNuKernelArgs(CLInfo* ci, const IntegralArea* ia, const cl_uint 
     err = clSetKernelArg(ci->kern, 10, sizeof(real), &nuid.id);
     if (err != CL_SUCCESS)
     {
-        warn("Error setting nu_id argument for step %u: %s\n", nu_step, showCLInt(err));
+        mwCLWarn("Error setting nu_id argument for step %u", err, nu_step);
         return err;
     }
 
@@ -160,7 +160,7 @@ static inline real readKernelResults(CLInfo* ci,
     err = clEnqueueUnmapMemObject(ci->queue, cm->outMu, mu_results, 0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to unmap results buffer: %s\n", showCLInt(err));
+        mwCLWarn("Failed to unmap results buffer", err);
         return NAN;
     }
 
@@ -177,7 +177,7 @@ static inline real readKernelResults(CLInfo* ci,
     err = clEnqueueUnmapMemObject(ci->queue, cm->outProbs, probs_tmp, 0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to unmap probs buffer: %s\n", showCLInt(err));
+        mwCLWarn("Failed to unmap probs buffer", err);
         return NAN;
     }
 
@@ -211,7 +211,7 @@ static cl_int runNuStep(CLInfo* ci,
         err = enqueueIntegralKernel(ci, offset, runSizes->global, runSizes->local);
         if (err != CL_SUCCESS)
         {
-            warn("Failed to enqueue integral kernel: %s\n", showCLInt(err));
+            mwCLWarn("Failed to enqueue integral kernel", err);
             return err;
         }
 
@@ -219,7 +219,7 @@ static cl_int runNuStep(CLInfo* ci,
         err = clFinish(ci->queue);
         if (err != CL_SUCCESS)
         {
-            warn("Failed to finish: %s\n", showCLInt(err));
+            mwCLWarn("Failed to finish", err);
             return err;
         }
     }
@@ -262,7 +262,7 @@ static real runIntegral(CLInfo* ci,
         err = runNuStep(ci, cm, ia, runSizes, ap->number_streams, es->nu_step);
         if (err != CL_SUCCESS)
         {
-            warn("Failed to run nu step: %s\n", showCLInt(err));
+            mwCLWarn("Failed to run nu step", err);
             return NAN;
         }
         t2 = mwGetTimeMilli();
@@ -318,14 +318,14 @@ real integrateCL(const AstronomyParameters* ap,
     err = createSeparationBuffers(ci, &cm, ap, ia, sc, sg, &sizes, useImages);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to create CL buffers: %s\n", showCLInt(err));
+        mwCLWarn("Failed to create CL buffers", err);
         return NAN;
     }
 
     err = separationSetKernelArgs(ci, &cm, &runSizes);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to set integral kernel arguments: %s\n", showCLInt(err));
+        mwCLWarn("Failed to set integral kernel arguments", err);
         return NAN;
     }
 

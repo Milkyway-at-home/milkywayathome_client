@@ -38,7 +38,7 @@ static inline cl_mem createZeroReadWriteBuffer(CLInfo* ci, size_t size, cl_int* 
     mem = clCreateBuffer(ci->clctx, CL_MEM_READ_WRITE, size, NULL, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to create zero buffer: %s\n", showCLInt(err));
+        mwCLWarn("Failed to create zero buffer", err);
         goto fail;
     }
 
@@ -46,7 +46,7 @@ static inline cl_mem createZeroReadWriteBuffer(CLInfo* ci, size_t size, cl_int* 
                            0, size, 0, NULL, NULL, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error mapping zero buffer: %s\n", showCLInt(err));
+        mwCLWarn("Error mapping zero buffer", err);
         goto fail;
     }
 
@@ -54,7 +54,7 @@ static inline cl_mem createZeroReadWriteBuffer(CLInfo* ci, size_t size, cl_int* 
 
     err = clEnqueueUnmapMemObject(ci->queue, mem, p, 0, NULL, NULL);
     if (err != CL_SUCCESS)
-        warn("Failed to unmap zero buffer: %s\n", showCLInt(err));
+        mwCLWarn("Failed to unmap zero buffer", err);
 
 fail:
     *errOut = err;
@@ -70,7 +70,7 @@ static inline cl_int createOutMuBuffer(CLInfo* ci,
     cm->outMu = createZeroReadWriteBuffer(ci, sizes->outMu, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating out mu buffer of size "ZU": %s\n", sizes->outMu, showCLInt(err));
+        mwCLWarn("Error creating out mu buffer of size "ZU, err, sizes->outMu);
         return err;
     }
 
@@ -86,7 +86,7 @@ static inline cl_int createOutProbsBuffer(CLInfo* ci,
     cm->outProbs = createZeroReadWriteBuffer(ci, sizes->outProbs, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating out probs buffer of size "ZU": %s\n", sizes->outProbs, showCLInt(err));
+        mwCLWarn("Error creating out probs buffer of size "ZU, err, sizes->outProbs);
         return err;
     }
 
@@ -101,14 +101,10 @@ static inline cl_int createSCBuffer(CLInfo* ci,
 {
     cl_int err;
 
-    cm->sc = clCreateBuffer(ci->clctx,
-                            constBufFlags,
-                            sizes->sc,
-                            (void*) sc,
-                            &err);
+    cm->sc = clCreateBuffer(ci->clctx, constBufFlags, sizes->sc, (void*) sc, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating stream constants buffer of size "ZU": %s\n", sizes->sc, showCLInt(err));
+        mwCLWarn("Error creating stream constants buffer of size "ZU, err, sizes->sc);
         return err;
     }
 
@@ -125,7 +121,7 @@ static inline cl_int createAPBuffer(CLInfo* ci,
     cm->ap = clCreateBuffer(ci->clctx, constBufFlags, sizes->ap, (void*) ap, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating astronomy parameters buffer of size "ZU": %s\n", sizes->ap, showCLInt(err));
+        mwCLWarn("Error creating astronomy parameters buffer of size "ZU, err, sizes->ap);
         return err;
     }
 
@@ -143,7 +139,7 @@ static inline cl_int createIABuffer(CLInfo* ci,
     cm->ia = clCreateBuffer(ci->clctx, constBufFlags, sizes->ia, (void*) ia, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating integral area buffer of size "ZU": %s\n", sizes->ia, showCLInt(err));
+        mwCLWarn("Error creating integral area buffer of size "ZU, err, sizes->ia);
         return err;
     }
 
@@ -179,21 +175,21 @@ static cl_int createRBuffers(CLInfo* ci,
 
     if (err != CL_SUCCESS)
     {
-        warn("Error creating stream r points buffer of size "ZU": %s\n", sizes->rPts, showCLInt(err));
+        mwCLWarn("Error creating stream r points buffer of size "ZU, err, sizes->rPts);
         return err;
     }
 
     cm->rc = clCreateBuffer(ci->clctx, constBufFlags, sizes->rc, rc, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating stream r consts buffer of size "ZU": %s\n", sizes->rc, showCLInt(err));
+        mwCLWarn("Error creating stream r consts buffer of size "ZU, err, sizes->rc);
         return err;
     }
 
     cm->sg_dx = clCreateBuffer(ci->clctx, constBufFlags, sizes->sg_dx, sg.dx, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating stream sg_dx buffer of size "ZU": %s\n", sizes->sg_dx, showCLInt(err));
+        mwCLWarn("Error creating stream sg_dx buffer of size "ZU"", err, sizes->sg_dx);
         return err;
     }
 
@@ -217,7 +213,7 @@ static cl_int createLBTrigBuffer(CLInfo* ci,
     cm->lbts = clCreateBuffer(ci->clctx, constBufFlags, sizes->lbts, lbts, &err);
     if (err != CL_SUCCESS)
     {
-        warn("Error creating lb_trig buffer of size "ZU": %s\n", sizes->lbts, showCLInt(err));
+        mwCLWarn("Error creating lb_trig buffer of size "ZU, err, sizes->lbts);
         return err;
     }
 
@@ -294,7 +290,7 @@ real* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSize)
                                           NULL,
                                           &err);
     if (err != CL_SUCCESS)
-        warn("Error mapping integral result buffer: %s\n", showCLInt(err));
+        mwCLWarn("Error mapping integral result buffer", err);
 
     return mapOutMu;
 }
@@ -312,7 +308,7 @@ real* mapProbsResults(CLInfo* ci, SeparationCLMem* cm, size_t probsResultsSize)
                                              NULL,
                                              &err);
     if (err != CL_SUCCESS)
-        warn("Error mapping probs result buffer: %s\n", showCLInt(err));
+        mwCLWarn("Error mapping probs result buffer", err);
 
     return mapOutProbs;
 }

@@ -38,14 +38,14 @@ cl_ulong mwEventTimeNS(cl_event ev)
     err = clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &ts, NULL);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to get event start time: %s\n", showCLInt(err));
+        mwCLWarn("Failed to get event start time", err);
         return 0;
     }
 
     err = clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &te, NULL);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to get event end time: %s\n", showCLInt(err));
+        mwCLWarn("Failed to get event end time", err);
         return 0;
     }
 
@@ -68,14 +68,14 @@ cl_int mwWaitReleaseEvent(cl_event* ev)
     err = clWaitForEvents(1, ev);
     if (err != CL_SUCCESS)
     {
-        warn("%s: Failed to wait for event: %s\n", FUNC_NAME, showCLInt(err));
+        mwCLWarn("%s: Failed to wait for event", err, FUNC_NAME);
         return err;
     }
 
     err = clReleaseEvent(*ev);
     if (err != CL_SUCCESS)
     {
-        warn("%s: Failed to release event: %s\n", FUNC_NAME, showCLInt(err));
+        mwCLWarn("%s: Failed to release event", err, FUNC_NAME);
         return err;
     }
 
@@ -90,10 +90,9 @@ cl_event mwCreateEvent(CLInfo* ci)
     cl_event ev;
 
     ev = clCreateUserEvent(ci->clctx, &err);
-
     if (err != CL_SUCCESS)
     {
-        warn("Failed to create custom event: %s\n", showCLInt(err));
+        mwCLWarn("Failed to create custom event", err);
         return NULL;
     }
 
@@ -106,7 +105,7 @@ cl_int mwFinishEvent(cl_event ev)
 
     err = clSetUserEventStatus(ev, CL_COMPLETE);
     if (err != CL_SUCCESS)
-        warn("Failed to mark custom event as completed: %s\n", showCLInt(err));
+        mwCLWarn("Failed to mark custom event as completed", err);
 
     return err;
 }
@@ -138,7 +137,7 @@ cl_int mwGetWorkGroupInfo(const CLInfo* ci, WGInfo* wgi)
                                     &wgi->lms,
                                     NULL);
     if (err != CL_SUCCESS)
-        warn("Failed to get kernel work group info: %s\n", showCLInt(err));
+        mwCLWarn("Failed to get kernel work group info", err);
 
     return err;
 }

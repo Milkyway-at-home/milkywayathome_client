@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "mw_cl_show_types.h"
 #include "mw_cl_setup.h"
+#include "mw_cl_util.h"
 
 /* Read the double supported extensions; i.e. AMD's subset or the actual Khronos one. */
 MWDoubleExts mwGetDoubleExts(const char* exts)
@@ -98,7 +99,7 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
   #endif /* __APPLE__ */
 
     if (err)
-        warn("Error getting device information: %s\n", showCLInt(err));
+        mwCLWarn("Error getting device information", err);
     else
         di->doubleExts = mwGetDoubleExts(di->exts);
 
@@ -254,25 +255,25 @@ static void mwGetPlatformInfo(PlatformInfo* pi, cl_platform_id platform)
 	err = clGetPlatformInfo(platform, CL_PLATFORM_PROFILE,
                             sizeof(pi->name), pi->name, &readSize);
 	if (readSize > sizeof(pi->name))
-		warn("Failed to read platform profile: %s\n", showCLInt(err));
+		mwCLWarn("Failed to read platform profile", err);
 
 
 	err = clGetPlatformInfo(platform, CL_PLATFORM_VERSION,
                             sizeof(pi->version), pi->version, &readSize);
 	if (readSize > sizeof(pi->version))
-		warn("Failed to read platform version: %s\n", showCLInt(err));
+		mwCLWarn("Failed to read platform version", err);
 
 
 	err = clGetPlatformInfo(platform, CL_PLATFORM_NAME,
                             sizeof(pi->name), pi->name, &readSize);
 	if (readSize > sizeof(pi->name))
-		warn("Failed to read platform name: %s\n", showCLInt(err));
+		mwCLWarn("Failed to read platform name", err);
 
 
 	err = clGetPlatformInfo(platform, CL_PLATFORM_EXTENSIONS,
                             sizeof(pi->extensions), pi->extensions, &readSize);
 	if (readSize > sizeof(pi->extensions))
-		warn("Failed to read platform extensions: %s\n", showCLInt(err));
+		mwCLWarn("Failed to read platform extensions", err);
 }
 
 static void mwPrintPlatformInfo(PlatformInfo* pi, cl_uint n)
@@ -312,7 +313,7 @@ cl_platform_id* mwGetAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out)
     err = clGetPlatformIDs(0, NULL, &n_platform);
     if (err != CL_SUCCESS)
     {
-        warn("Error getting number of platform: %s\n", showCLInt(err));
+        mwCLWarn("Error getting number of platform", err);
         return NULL;
     }
 
@@ -320,7 +321,7 @@ cl_platform_id* mwGetAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out)
     err = clGetPlatformIDs(n_platform, ids, NULL);
     if (err != CL_SUCCESS)
     {
-        warn("Error getting platform IDs: %s\n", showCLInt(err));
+        mwCLWarn("Error getting platform IDs", err);
         free(ids);
         return NULL;
     }
@@ -340,7 +341,7 @@ cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut)
     err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &numDev);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to find number of devices: %s\n", showCLInt(err));
+        mwCLWarn("Failed to find number of devices", err);
         return NULL;
     }
 
@@ -356,7 +357,7 @@ cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut)
     err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, numDev, devs, &numDev);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to get device IDs: %s\n", showCLInt(err));
+        mwCLWarn("Failed to get device IDs", err);
         return NULL;
     }
 
@@ -370,7 +371,7 @@ static cl_int mwGetDeviceType(cl_device_id dev, cl_device_type* devType)
 
     err = clGetDeviceInfo(dev, CL_DEVICE_TYPE, sizeof(cl_device_type), devType, NULL);
     if (err != CL_SUCCESS)
-        warn("Failed to get device type: %s\n", showCLInt(err));
+        mwCLWarn("Failed to get device type", err);
 
     return err;
 }
