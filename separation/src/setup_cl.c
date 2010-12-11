@@ -629,7 +629,7 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
         }
     }
 
-    compileFlags = mallocSafe(totalSize);
+    compileFlags = mwMalloc(totalSize);
     if (snprintf(compileFlags, totalSize, "%s%s%s%s%s%s ",
                  includeFlags,
                  mathFlags,

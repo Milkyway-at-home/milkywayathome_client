@@ -271,7 +271,7 @@ static mwbool readArray(const MWParameter* p, const char* pname, json_object* ob
     arr = json_object_get_array(obj);
     arrLen = json_object_array_length(obj);
 
-    readArr = (char*) callocSafe(arrLen, p->size);
+    readArr = (char*) mwCalloc(arrLen, p->size);
 
     for (i = 0; i < arrLen; ++i)
     {

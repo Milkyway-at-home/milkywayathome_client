@@ -43,7 +43,7 @@ static char* mwGetBuildLog(CLInfo* ci)
                           NULL,
                           &logSize);
 
-    buildLog = callocSafe(sizeof(char), logSize + 1);
+    buildLog = mwCalloc(sizeof(char), logSize + 1);
 
     clGetProgramBuildInfo(ci->prog,
                           ci->dev,
@@ -123,7 +123,7 @@ unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
         return NULL;
     }
 
-    bin = (unsigned char*) mallocSafe(binSize);
+    bin = (unsigned char*) mwMalloc(binSize);
     err = clGetProgramInfo(ci->prog, CL_PROGRAM_BINARIES, binSize, &bin, NULL);
     if (err != CL_SUCCESS)
     {

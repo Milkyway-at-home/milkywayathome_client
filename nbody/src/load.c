@@ -174,7 +174,7 @@ static cellptr makeCell(NBodyState* st, Tree* t)
     size_t i;
 
     if (st->freecell == NULL)                    /* no free cells left? */
-        c = (cellptr) mallocSafe(sizeof(cell));  /* allocate a new one */
+        c = (cellptr) mwMalloc(sizeof(cell));    /* allocate a new one */
     else                                         /* use existing free cell */
     {
         c = (cellptr) st->freecell;             /* take one on front */

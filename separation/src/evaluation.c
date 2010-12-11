@@ -41,7 +41,7 @@ static void finalStreamIntegrals(FinalStreamIntegrals* fsi,
 {
     unsigned int i, j;
 
-    fsi->stream_integrals = (real*) callocSafe(number_streams, sizeof(real));
+    fsi->stream_integrals = (real*) mwCalloc(number_streams, sizeof(real));
 
     fsi->background_integral = es->integrals[0].background_integral;
     for (i = 0; i < number_streams; ++i)

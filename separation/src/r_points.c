@@ -119,8 +119,8 @@ RPoints* precalculateRPts(const AstronomyParameters* ap,
     size_t rPtsSize = sizeof(RPoints) * ap->convolve * ia->r_steps;
     size_t rConstsSize = sizeof(RConsts) * ia->r_steps;
 
-    r_pts = (RPoints*) mwMallocAligned(rPtsSize, sizeof(RPoints));
-    rc = (RConsts*) mwMallocAligned(rConstsSize, sizeof(RConsts));
+    r_pts = (RPoints*) mwMallocA(rPtsSize);
+    rc = (RConsts*) mwMallocA(rConstsSize);
 
     for (i = 0; i < ia->r_steps; ++i)
     {

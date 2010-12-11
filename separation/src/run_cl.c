@@ -54,7 +54,7 @@ static void sumProbsResults(real* probs_results,
     cl_uint i, j, idx;
     Kahan* probs_sum;
 
-    probs_sum = (Kahan*) callocSafe(number_streams, sizeof(Kahan));
+    probs_sum = (Kahan*) mwCalloc(number_streams, sizeof(Kahan));
 
     for (i = 0; i < mu_steps; ++i)
     {

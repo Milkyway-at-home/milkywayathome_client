@@ -33,7 +33,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <xmmintrin.h>
 #endif /* __SSE__ */
 
-void* callocSafe(size_t count, size_t size)
+void* mwCalloc(size_t count, size_t size)
 {
     void* mem = (void*) calloc(count, size);
     if (mem == NULL)
@@ -41,7 +41,7 @@ void* callocSafe(size_t count, size_t size)
     return mem;
 }
 
-void* mallocSafe(size_t size)
+void* mwMalloc(size_t size)
 {
     void* mem = (void*) malloc(size);
     if (mem == NULL)
@@ -52,12 +52,12 @@ void* mallocSafe(size_t size)
 
 #ifndef __APPLE__
 
-void* mwCallocAligned(size_t count, size_t size, size_t alignment)
+void* mwCallocA(size_t count, size_t size)
 {
     void* p;
     size_t totalSize = count * size;
 
-    p = mwMallocAligned(totalSize, alignment);
+    p = mwMallocA(totalSize);
     memset(p, 0, totalSize);
 
     return p;
@@ -65,9 +65,9 @@ void* mwCallocAligned(size_t count, size_t size, size_t alignment)
 
 #else
 
-void* mwCallocAligned(size_t count, size_t size, size_t alignment)
+void* mwCallocA(size_t count, size_t size)
 {
-    return callocSafe(count, size);
+    return mwCalloc(count, size);
 }
 
 
@@ -76,22 +76,21 @@ void* mwCallocAligned(size_t count, size_t size, size_t alignment)
 #if defined(__APPLE__)
 
 /* OS X already aligns everything to 16 bytes */
-void* mwMallocAligned(size_t size, size_t alignment)
+void* mwMallocA(size_t size)
 {
-  #pragma unused(alignment)
-    return mallocSafe(size);
+    return mwMalloc(size);
 }
 
 #elif !defined(_WIN32)
 
-void* mwMallocAligned(size_t size, size_t alignment)
+void* mwMallocA(size_t size)
 {
     void* p;
 
-    if (posix_memalign(&p, alignment, size))
+    if (posix_memalign(&p, 16, size))
     {
         perror(__func__);
-        fail("Failed to allocate block of size %zu aligned to %zu\n", size, alignment);
+        fail("Failed to allocate block of size %zu aligned to 16\n", size);
     }
 
     if (!p)
@@ -102,20 +101,11 @@ void* mwMallocAligned(size_t size, size_t alignment)
 
 #else
 
-void* mwMallocAligned(size_t size, size_t alignment)
+void* mwMallocA(size_t size)
 {
     void* p;
-    size_t realAlign;
 
-  #ifndef _MSC_VER
-    realAlign = alignment;
-  #else
-    /* I'm too lazy to fix MSVC not having an intelligent way to pack structs properly right now. */
-    realAlign = 16;
-  #endif /* _MSC_VER */
-
-    p = _aligned_malloc(size, realAlign);
-
+    p = _aligned_malloc(size, 16);
     if (!p)
         fail("%s: NULL: _aligned_malloc error = %ld\n", FUNC_NAME, GetLastError());
 
@@ -123,7 +113,7 @@ void* mwMallocAligned(size_t size, size_t alignment)
 }
 #endif /* defined(__APPLE__) */
 
-void* reallocSafe(void* ptr, size_t size)
+void* mwRealloc(void* ptr, size_t size)
 {
     void* mem = (void*) realloc(ptr, size);
     if (mem == NULL)
@@ -148,8 +138,7 @@ char* mwFreadFile(FILE* f, const char* filename)
 
     fseek(f, 0, SEEK_SET);
 
-    buf = callocSafe(fsize + 1, sizeof(char));
-
+    buf = mwCalloc(fsize + 1, sizeof(char));
     readSize = fread(buf, sizeof(char), fsize, f);
 
     if (readSize != fsize)
@@ -161,7 +150,6 @@ char* mwFreadFile(FILE* f, const char* filename)
     }
 
     return buf;
-
 }
 
 char* mwReadFile(const char* filename)
@@ -281,7 +269,7 @@ real* mwReadRestArgs(const char** rest, const unsigned int numParams, unsigned i
         return NULL;
     }
 
-    parameters = (real*) mallocSafe(sizeof(real) * numParams);
+    parameters = (real*) mwMalloc(sizeof(real) * numParams);
 
     errno = 0;
     for (i = 0; i < numParams; ++i)
@@ -389,7 +377,7 @@ const char** mwFixArgv(int argc, const char** argv)
      * really shouldn't ever append arguments ever (should prepend)
      * and it should be fixed. */
 
-    argvCopy = (const char**) callocSafe(argc, sizeof(const char*));
+    argvCopy = (const char**) mwCalloc(argc, sizeof(const char*));
     i = j = 0;  /* Index into copy argv, original argv */
     argvCopy[i++] = argv[j++];
     p += np;  /* Skip the arguments */

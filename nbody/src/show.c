@@ -318,7 +318,7 @@ char* showContext(const NBodyCtx* ctx)
 
     potBuf = showPotential(&ctx->pot);
 
-    allModels = mallocSafe(sizeof(char*) * ctx->modelNum);
+    allModels = mwMalloc(sizeof(char*) * ctx->modelNum);
 
     for (i = 0; i < ctx->modelNum; ++i)
     {
@@ -326,7 +326,7 @@ char* showContext(const NBodyCtx* ctx)
         totalLen += strlen(allModels[i]);
     }
 
-    modelBuf = (char*) callocSafe(totalLen + 1, sizeof(char));
+    modelBuf = (char*) mwCalloc(totalLen + 1, sizeof(char));
     for (i = 0; i < ctx->modelNum; ++i)
     {
         strcat(modelBuf, allModels[i]);

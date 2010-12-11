@@ -70,8 +70,8 @@ static void initState(NBodyCtx* ctx, NBodyState* st)
     st->tree.rsize = ctx->tree_rsize;
     st->tnow       = 0.0;            /* reset elapsed model time */
 
-    st->bodytab = (bodyptr) mallocSafe(ctx->nbody * sizeof(body));
-    st->acctab  = (mwvector*) mallocSafe(ctx->nbody * sizeof(mwvector));
+    st->bodytab = (bodyptr) mwMalloc(ctx->nbody * sizeof(body));
+    st->acctab  = (mwvector*) mwMalloc(ctx->nbody * sizeof(mwvector));
 
     generateAllModels(ctx, st->bodytab);
 
@@ -169,7 +169,7 @@ static int setupRun(NBodyCtx* ctx, NBodyState* st)
             /* We restored the useful state. Now still need to create
              * the workspace where new accelerations are
              * calculated. */
-            st->acctab  = (mwvector*) mallocSafe(ctx->nbody * sizeof(mwvector));
+            st->acctab  = (mwvector*) mwMalloc(ctx->nbody * sizeof(mwvector));
           #if !NBODY_OPENCL
             gravMap(ctx, st);
           #else

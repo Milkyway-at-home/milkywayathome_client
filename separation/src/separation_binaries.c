@@ -111,7 +111,7 @@ static unsigned char* readCoreBinary(FILE* f, SeparationBinaryHeader* hdr)
     unsigned char* bin;
     size_t read;
 
-    bin = (unsigned char*) mallocSafe(hdr->binSize);
+    bin = (unsigned char*) mwMalloc(hdr->binSize);
 
     read = fread(bin, sizeof(unsigned char), hdr->binSize, f);
     if (read != hdr->binSize)

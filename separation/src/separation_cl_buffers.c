@@ -197,8 +197,8 @@ static cl_int createRBuffers(CLInfo* ci,
         return err;
     }
 
-    mwAlignedFree(r_pts);
-    mwAlignedFree(rc);
+    mwFreeA(r_pts);
+    mwFreeA(rc);
 
     return CL_SUCCESS;
 }
@@ -221,7 +221,7 @@ static cl_int createLBTrigBuffer(CLInfo* ci,
         return err;
     }
 
-    mwAlignedFree(lbts);
+    mwFreeA(lbts);
 
     return CL_SUCCESS;
 }

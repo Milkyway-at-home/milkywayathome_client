@@ -135,7 +135,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
     const real sinth  = mw_sin(rth);
 
     const bodyptr endp = st->bodytab + ctx->nbody;
-    histogram = (unsigned int*) callocSafe(maxIdx, sizeof(unsigned int));
+    histogram = (unsigned int*) mwCalloc(maxIdx, sizeof(unsigned int));
 
     for (p = st->bodytab; p < endp; ++p)
     {
@@ -198,7 +198,7 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
     fsize = (size_t) ceil((real) (ftell(f) + 1) / 3);
     fseek(f, 0L, SEEK_SET);
 
-    histData = (HistData*) callocSafe(sizeof(HistData), fsize);
+    histData = (HistData*) mwCalloc(sizeof(HistData), fsize);
 
     while ( (rc = fscanf(f,
                        #if DOUBLEPREC

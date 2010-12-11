@@ -84,16 +84,19 @@ typedef struct
   #define mw_debugmsg(msg, ...) ((void) 0)
 #endif
 
-void* mallocSafe(size_t size);
-void* callocSafe(size_t count, size_t size);
-void* reallocSafe(void* ptr, size_t size);
-void* mwMallocAligned(size_t size, size_t alignment);
-void* mwCallocAligned(size_t count, size_t size, size_t alignment);
+/* Allocations with that abort everything on failure */
+void* mwMalloc(size_t size);
+void* mwCalloc(size_t count, size_t size);
+void* mwRealloc(void* ptr, size_t size);
+
+/* Safe allocations aligned to 16 */
+void* mwMallocA(size_t size);
+void* mwCallocA(size_t count, size_t size);
 
 #ifndef _WIN32
-  #define mwAlignedFree free
+  #define mwFreeA free
 #else
-  #define mwAlignedFree _aligned_free
+  #define mwFreeA _aligned_free
 #endif /* _WIN32 */
 
 #define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)

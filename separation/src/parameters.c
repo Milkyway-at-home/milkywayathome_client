@@ -93,8 +93,8 @@ static IntegralArea* freadParameters(FILE* file,
 
     ap->number_streams = streams->number_streams;
 
-    streams->stream_weight = (StreamWeight*) mallocSafe(sizeof(StreamWeight) * streams->number_streams);
-    streams->parameters = (StreamParameters*) mallocSafe(sizeof(StreamParameters) * streams->number_streams);
+    streams->stream_weight = (StreamWeight*) mwMalloc(sizeof(StreamWeight) * streams->number_streams);
+    streams->parameters = (StreamParameters*) mwMalloc(sizeof(StreamParameters) * streams->number_streams);
 
     for (i = 0; i < streams->number_streams; ++i)
     {
@@ -169,7 +169,7 @@ static IntegralArea* freadParameters(FILE* file,
         warn("Error reading number_cuts\n");
     ap->number_integrals += integralNumTmp;
 
-    integrals = (IntegralArea*) mwMallocAligned(ap->number_integrals * sizeof(IntegralArea), sizeof(IntegralArea));
+    integrals = (IntegralArea*) mwMallocA(ap->number_integrals * sizeof(IntegralArea));
 
     integrals[0] = integralTmp;
 

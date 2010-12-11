@@ -105,8 +105,7 @@ StreamConstants* getStreamConstants(const AstronomyParameters* ap, const Streams
     real stream_sigma;
     real sigma_sq2;
 
-    sc = (StreamConstants*) mwMallocAligned(sizeof(StreamConstants) * streams->number_streams,
-                                             sizeof(StreamConstants));
+    sc = (StreamConstants*) mwMallocA(sizeof(StreamConstants) * streams->number_streams);
 
     for (i = 0; i < streams->number_streams; i++)
     {
@@ -127,8 +126,8 @@ StreamConstants* getStreamConstants(const AstronomyParameters* ap, const Streams
 
 void freeStreamGauss(StreamGauss sg)
 {
-    mwAlignedFree(sg.dx);
-    mwAlignedFree(sg.qgaus_W);
+    mwFreeA(sg.dx);
+    mwFreeA(sg.qgaus_W);
 }
 
 StreamGauss getStreamGauss(const unsigned int convolve)
@@ -137,17 +136,17 @@ StreamGauss getStreamGauss(const unsigned int convolve)
     StreamGauss sg;
     real* qgaus_X;
 
-    qgaus_X = (real*) mwMallocAligned(sizeof(real) * convolve, 2 * sizeof(real));
-    sg.qgaus_W = (real*) mwMallocAligned(sizeof(real) * convolve, 2 * sizeof(real));
+    qgaus_X = (real*) mwMallocA(sizeof(real) * convolve);
+    sg.qgaus_W = (real*) mwMallocA(sizeof(real) * convolve);
 
     gaussLegendre(-1.0, 1.0, qgaus_X, sg.qgaus_W, convolve);
 
-    sg.dx = (real*) mwMallocAligned(sizeof(real) * convolve, 2 * sizeof(real));
+    sg.dx = (real*) mwMallocA(sizeof(real) * convolve);
 
     for (i = 0; i < convolve; ++i)
         sg.dx[i] = 3.0 * stdev * qgaus_X[i];
 
-    mwAlignedFree(qgaus_X);
+    mwFreeA(qgaus_X);
 
     return sg;
 }
@@ -158,7 +157,7 @@ NuConstants* prepareNuConstants(const unsigned int nu_steps, const real nu_step_
     real tmp1, tmp2;
     NuConstants* nu_consts;
 
-    nu_consts = (NuConstants*) mwMallocAligned(sizeof(NuConstants) * nu_steps, sizeof(NuConstants));
+    nu_consts = (NuConstants*) mwMallocA(sizeof(NuConstants) * nu_steps);
 
     for (i = 0; i < nu_steps; ++i)
     {
@@ -198,7 +197,7 @@ LBTrig* precalculateLBTrig(const AstronomyParameters* ap, const IntegralArea* ia
     LB lb;
     real mu;
 
-    lbts = (LBTrig*) mwMallocAligned(sizeof(LBTrig) * ia->mu_steps * ia->nu_steps, sizeof(LBTrig));
+    lbts = (LBTrig*) mwMallocA(sizeof(LBTrig) * ia->mu_steps * ia->nu_steps);
 
     for (i = 0; i < ia->nu_steps; ++i)
     {

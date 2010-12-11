@@ -271,7 +271,7 @@ real integrate(const AstronomyParameters* ap,
         return -1.0 * ia->nu_steps * ia->mu_steps * ia->r_steps;
     }
 
-    st_probs = (real*) mwMallocAligned(sizeof(real) * ap->number_streams, 2 * sizeof(real));
+    st_probs = (real*) mwMalloc(sizeof(real) * ap->number_streams);
     r_pts = precalculateRPts(ap, ia, sg, &rc, 0);
 
     nuSum(ap, ia, sc, rc, r_pts, sg.dx, st_probs, probs_sum, es);
@@ -281,9 +281,9 @@ real integrate(const AstronomyParameters* ap,
     for (i  = 0; i < ap->number_streams; ++i)
         probs[i] = probs_sum[i].sum + probs_sum[i].correction;
 
-    mwAlignedFree(st_probs);
-    mwAlignedFree(r_pts);
-    mwAlignedFree(rc);
+    mwFreeA(st_probs);
+    mwFreeA(r_pts);
+    mwFreeA(rc);
 
     return result;
 }

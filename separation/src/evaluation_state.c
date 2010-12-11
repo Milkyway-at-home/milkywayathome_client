@@ -29,8 +29,8 @@ static char resolvedCheckpointPath[1024];
 void initializeIntegral(Integral* integral, unsigned int number_streams)
 {
     integral->background_integral = 0.0;
-    integral->stream_integrals = (real*) mwCallocAligned(number_streams, sizeof(real), 2 * sizeof(real));
-    integral->probs = (Kahan*) mwCallocAligned(number_streams, sizeof(Kahan), sizeof(Kahan));
+    integral->stream_integrals = (real*) mwCallocA(number_streams, sizeof(real));
+    integral->probs = (Kahan*) mwCallocA(number_streams, sizeof(Kahan));
 }
 
 static void initializeState(const AstronomyParameters* ap, EvaluationState* es)
@@ -41,7 +41,7 @@ static void initializeState(const AstronomyParameters* ap, EvaluationState* es)
     es->number_streams = ap->number_streams;
 
     es->number_integrals = ap->number_integrals;
-    es->integrals = (Integral*) mallocSafe(sizeof(Integral) * ap->number_integrals);
+    es->integrals = (Integral*) mwMalloc(sizeof(Integral) * ap->number_integrals);
 
     for (i = 0; i < ap->number_integrals; i++)
         initializeIntegral(&es->integrals[i], ap->number_streams);
@@ -51,7 +51,7 @@ EvaluationState* newEvaluationState(const AstronomyParameters* ap)
 {
     EvaluationState* es;
 
-    es = callocSafe(1, sizeof(EvaluationState));
+    es = mwCalloc(1, sizeof(EvaluationState));
     initializeState(ap, es);
 
     return es;
@@ -70,8 +70,8 @@ void copyEvaluationState(EvaluationState* esDest, const EvaluationState* esSrc)
 
 static void freeIntegral(Integral* i)
 {
-    mwAlignedFree(i->stream_integrals);
-    mwAlignedFree(i->probs);
+    mwFreeA(i->stream_integrals);
+    mwFreeA(i->probs);
 }
 
 void freeEvaluationState(EvaluationState* es)

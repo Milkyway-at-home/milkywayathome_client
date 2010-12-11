@@ -71,7 +71,7 @@ real* fread_double_array(FILE* file, const char* array_name, unsigned int* sizeO
     fscanf(file, array_name);
     fscanf(file, "[%u]: ", &size);
 
-    arr = (real*) mallocSafe(sizeof(real) * size);
+    arr = (real*) mwMalloc(sizeof(real) * size);
 
     for (i = 0; i < size; i++)
     {
@@ -102,7 +102,7 @@ int* fread_int_array(FILE *file, const char *array_name, unsigned int* sizeOut)
     fscanf(file, array_name);
     fscanf(file, "[%u]: ", &size);
 
-    arr = (int*) mallocSafe(sizeof(int) * size);
+    arr = (int*) mwMalloc(sizeof(int) * size);
 
     for (i = 0; i < size; i++)
     {

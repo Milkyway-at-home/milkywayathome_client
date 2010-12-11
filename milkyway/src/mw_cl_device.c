@@ -316,7 +316,7 @@ cl_platform_id* mwGetAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out)
         return NULL;
     }
 
-    ids = mallocSafe(sizeof(cl_platform_id) * n_platform);
+    ids = mwMalloc(sizeof(cl_platform_id) * n_platform);
     err = clGetPlatformIDs(n_platform, ids, NULL);
     if (err != CL_SUCCESS)
     {
@@ -352,7 +352,7 @@ cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut)
 
     warn("Found %u CL devices\n", numDev);
 
-    devs = (cl_device_id*) mallocSafe(sizeof(cl_device_id) * numDev);
+    devs = (cl_device_id*) mwMalloc(sizeof(cl_device_id) * numDev);
     err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, numDev, devs, &numDev);
     if (err != CL_SUCCESS)
     {

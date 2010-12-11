@@ -230,7 +230,7 @@ static IntegralArea* prepareParameters(const SeparationFlags* sf,
              sf->ap_file,
              ap_number_parameters);
 
-        mwAlignedFree(ias);
+        mwFreeA(ias);
         freeStreams(streams);
         freeBackgroundParameters(bgp);
         return NULL;
@@ -267,7 +267,7 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     if (rc)
     {
         warn("Failed to set astronomy parameters\n");
-        mwAlignedFree(ias);
+        mwFreeA(ias);
         freeStreams(&streams);
         return 1;
     }
@@ -276,7 +276,7 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     if (!sc)
     {
         warn("Failed to get stream constants\n");
-        mwAlignedFree(ias);
+        mwFreeA(ias);
         freeStreams(&streams);
         return 1;
     }
@@ -290,8 +290,8 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     if (rc)
         warn("Failed to calculate likelihood\n");
 
-    mwAlignedFree(ias);
-    mwAlignedFree(sc);
+    mwFreeA(ias);
+    mwFreeA(sc);
     freeStreams(&streams);
 
     return rc;
