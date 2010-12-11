@@ -413,7 +413,7 @@ int writeCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
     /* Don't update if the file was not closed properly; it can't be trusted. */
     if (!failed && mw_rename(CHECKPOINT_TMP_FILE, ctx->cp_resolved))
     {
-        perror("Failed to update checkpoint with temporary");
+        mw_win_perror("Failed to update checkpoint with temporary");
         failed = TRUE;
     }
 

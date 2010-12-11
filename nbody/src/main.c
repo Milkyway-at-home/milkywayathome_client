@@ -186,11 +186,10 @@ static json_object* readParameters(const int argc,
                                    NBodyFlags* nbf)
 {
     poptContext context;
-    int o;
-    json_object* obj         = NULL;
-    static char* inputFile   = NULL;   /* input JSON file */
-    static char* inputStr    = NULL;   /* a string of JSON to use directly */
-    const char** rest        = NULL;   /* Leftover arguments */
+    json_object* obj       = NULL;
+    static char* inputFile = NULL;   /* input JSON file */
+    static char* inputStr  = NULL;   /* a string of JSON to use directly */
+    const char** rest      = NULL;   /* Leftover arguments */
     int failed = FALSE;
 
     unsigned int numParams = 0, params = 0;
