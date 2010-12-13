@@ -34,24 +34,36 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 static char* mwGetBuildLog(CLInfo* ci)
 {
+    cl_int err;
     size_t logSize, readSize;
     char* buildLog;
 
-    clGetProgramBuildInfo(ci->prog,
-                          ci->dev,
-                          CL_PROGRAM_BUILD_LOG,
-                          0,
-                          NULL,
-                          &logSize);
+    err = clGetProgramBuildInfo(ci->prog,
+                                ci->dev,
+                                CL_PROGRAM_BUILD_LOG,
+                                0,
+                                NULL,
+                                &logSize);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Failed to get build log size", err);
+        return NULL;
+    }
 
     buildLog = mwCalloc(sizeof(char), logSize + 1);
 
-    clGetProgramBuildInfo(ci->prog,
-                          ci->dev,
-                          CL_PROGRAM_BUILD_LOG,
-                          logSize,
-                          buildLog,
-                          &readSize);
+    err = clGetProgramBuildInfo(ci->prog,
+                                ci->dev,
+                                CL_PROGRAM_BUILD_LOG,
+                                logSize,
+                                buildLog,
+                                &readSize);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Failed to read program build log", err);
+        free(buildLog);
+        return NULL;
+    }
 
     if (readSize != logSize)
         warn("Failed to read complete build log\n");
