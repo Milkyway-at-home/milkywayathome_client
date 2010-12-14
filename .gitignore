@@ -1,6 +1,8 @@
 *~
 *.o
 *.a
+*.rej
+*.orig
 .DS_Store
 config.h
 Makefile
@@ -26,4 +28,7 @@ nbody/include/crlibm.h
 nbody/include/crlibm_config.h
 nbody/include/scs.h
 nbody/thirdparty/
-
+nbody_checkpoint
+separation_checkpoint
+init_data.xml
+app_info.xml
