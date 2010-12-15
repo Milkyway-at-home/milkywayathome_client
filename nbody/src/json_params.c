@@ -78,7 +78,7 @@ static mwbool checkIsObject(json_object* obj, const char* name)
 {
     mw_type readType;
 
-    readType = json_object_get_type(obj);
+    readType = json_object_get_type_safe(obj);
     if (readType != mw_type_object)
     {
         warn("Got wrong type '%s' for expected object '%s'\n", showNBodyType(readType), name);
@@ -392,7 +392,6 @@ mwbool mwReadParameterGroup(const MWParameter* g, /* The set of parameters */
                             const char* pname)    /* parent name */
 {
     const MWParameter* p;
-    const MWParameter* q;
     json_object* obj;
     mwbool useDflt, defaultable = FALSE;
     mwbool found = FALSE, readError = FALSE;
@@ -456,7 +455,6 @@ mwbool mwReadTypedGroup(const MWParameterSet* ps,  /* Set of possible options */
                       generic_enum_t* typeRead)  /* Read enum value */
 {
     json_object* typeObj;
-    mw_type readType;
     const MWParameterSet* p;
 
     if (checkIsObject(obj, name))
