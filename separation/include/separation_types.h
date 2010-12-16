@@ -21,12 +21,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _SEPARATION_TYPES_H_
 #define _SEPARATION_TYPES_H_
 
+#include "separation_config.h"
+#include "milkyway_math.h"
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "separation_config.h"
-#include "milkyway_math.h"
 
 #ifndef _MSC_VER
   #define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(x)))

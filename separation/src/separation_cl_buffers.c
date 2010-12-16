@@ -152,12 +152,12 @@ static cl_int createRBuffers(CLInfo* ci,
                              const IntegralArea* ia,
                              const StreamGauss sg,
                              const SeparationSizes* sizes,
+                             cl_mem_flags constBufFlags,
                              cl_bool useImages)
 {
     cl_int err;
     RPoints* r_pts;
     RConsts* rc;
-    const cl_mem_flags constBufFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
     cl_image_format format = { CL_RGBA, CL_UNSIGNED_INT32 };
 
     r_pts = precalculateRPts(ap, ia, sg, &rc, useImages);
@@ -189,7 +189,7 @@ static cl_int createRBuffers(CLInfo* ci,
     cm->sg_dx = clCreateBuffer(ci->clctx, constBufFlags, sizes->sg_dx, sg.dx, &err);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Error creating stream sg_dx buffer of size "ZU"", err, sizes->sg_dx);
+        mwCLWarn("Error creating stream sg_dx buffer of size "ZU, err, sizes->sg_dx);
         return err;
     }
 
@@ -203,11 +203,11 @@ static cl_int createLBTrigBuffer(CLInfo* ci,
                                  SeparationCLMem* cm,
                                  const AstronomyParameters* ap,
                                  const IntegralArea* ia,
-                                 const SeparationSizes* sizes)
+                                 const SeparationSizes* sizes,
+                                 const cl_mem_flags constBufFlags)
 {
     cl_int err;
     LBTrig* lbts;
-    const cl_mem_flags constBufFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
 
     lbts = precalculateLBTrig(ap, ia);
     cm->lbts = clCreateBuffer(ci->clctx, constBufFlags, sizes->lbts, lbts, &err);
@@ -245,20 +245,15 @@ cl_int createSeparationBuffers(CLInfo* ci,
                                cl_bool useImages)  /* Use images for some buffers if wanted / available. */
 {
     cl_int err = CL_SUCCESS;
-    cl_mem_flags constBufFlags;
-
-    if (ci->devType == CL_DEVICE_TYPE_CPU)
-        constBufFlags = CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR;
-    else
-        constBufFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
+    cl_mem_flags constBufFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
 
     err |= createOutMuBuffer(ci, cm, sizes);
     err |= createOutProbsBuffer(ci, cm, sizes);
     err |= createAPBuffer(ci, cm, ap, sizes, constBufFlags);
     err |= createIABuffer(ci, cm, ia, sizes, constBufFlags);
     err |= createSCBuffer(ci, cm, sc, sizes, constBufFlags);
-    err |= createRBuffers(ci, cm, ap, ia, sg, sizes, useImages);
-    err |= createLBTrigBuffer(ci, cm, ap, ia, sizes);
+    err |= createRBuffers(ci, cm, ap, ia, sg, sizes, constBufFlags, useImages);
+    err |= createLBTrigBuffer(ci, cm, ap, ia, sizes, constBufFlags);
 
     return err;
 }

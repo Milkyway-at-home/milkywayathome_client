@@ -544,7 +544,6 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
     const char otherPrecStr[] = "";
   #else
     const char precDefStr[] = "-DDOUBLEPREC=0 ";
-    const char atiPrecStr[] = "--single_precision_constant ";
     const char clPrecStr[]  = "-cl-single-precision-constant ";
   #endif
 
@@ -566,7 +565,7 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
 
     /* Big enough. Also make sure to count for the extra characters of the format specifiers */
     char kernelDefBuf[sizeof(kernelDefStr) + 5 * 12 + 8];
-    char precDefBuf[2 * sizeof(atiPrecStr) + sizeof(precDefStr) + 1];
+    char precDefBuf[sizeof(precDefStr)];
 
     size_t totalSize = 4 * sizeof(cwd) + (sizeof(includeStr) + 8)
                      + sizeof(mathFlags)
@@ -594,9 +593,7 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
   #if !DOUBLEPREC
     /* The ATI compiler rejects the one you're supposed to use, in
      * favor of a totally undocumented flag. */
-    strncat(precDefBuf,
-            di->vendorID != MW_AMD_ATI ? clPrecStr : atiPrecStr,
-            2 * sizeof(atiPrecStr));
+    strcat(precDefBuf, di->vendorID != MW_AMD_ATI ? clPrecStr : "");
   #endif /* !DOUBLEPREC */
 
     if (di->vendorID == MW_NVIDIA)

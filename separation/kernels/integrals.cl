@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
 #if I_DONT_KNOW_WHY_THIS_DOESNT_WORK_HERE
   /* Using constant mysteriously doesn't work on Fermi */
   #define __constant __global
@@ -53,7 +54,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define USE_CUSTOM_SQRT 1
 
-#if !defined(__Cypress__) && !defined(__ATI_RV770__)
+#if !defined(__Cypress__) && !defined(__ATI_RV770__) && !defined(__CPU__)
   #define USE_CUSTOM_DIVISION 1
 
   /* It's faster to load the stream constants into private memory on
@@ -94,20 +95,20 @@ inline RPoints readImageDouble(uint4 a)
     return arst.d;
 }
 
-inline RPoints readRPts(__read_only image2d_t r_pts, __constant IntegralArea* ia, int2 i)
-{
-    const sampler_t sample = CLK_ADDRESS_NONE
-                           | CLK_NORMALIZED_COORDS_FALSE
-                           | CLK_FILTER_NEAREST;
+constant sampler_t sample = CLK_ADDRESS_NONE
+                          | CLK_NORMALIZED_COORDS_FALSE
+                          | CLK_FILTER_NEAREST;
 
+inline RPoints readRPts(__read_only image2d_t r_pts, __constant AstronomyParameters* ap, int2 i)
+{
     return readImageDouble(read_imageui(r_pts, sample, i));
 }
 
 #else
 
-inline RPoints readRPts(__global const RPoints* r_pts, __constant IntegralArea* ia, int2 i)
+inline RPoints readRPts(__global const RPoints* r_pts, __constant AstronomyParameters* ap, int2 i)
 {
-    return r_pts[i.y * ia->r_steps + i.x];
+    return r_pts[i.x * ap->convolve + i.y];
 }
 
 #endif /* USE_IMAGES */
@@ -288,7 +289,7 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     unsigned int convolve = ap->convolve; /* Faster to load this into register first */
     for (i = 0; i < convolve; ++i)
     {
-        RPoints r_pt = readRPts(r_pts, ia, (int2) (r_step, i));
+        RPoints r_pt = readRPts(r_pts, ap, (int2) (r_step, i));
 
         //mwvector xyz = lbr2xyz_2(ap, R_POINT(r_pt), lbt);
         //real rg = rg_calc(ap, xyz);
@@ -345,7 +346,6 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     mu_out[idx] += bg_prob;
 
     write_mult_st_probs(&probs_out[NSTREAM * idx], V_reff_xr_rp3, st_probs);
-
 }
 
 
