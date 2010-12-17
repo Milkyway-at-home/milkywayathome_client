@@ -243,10 +243,10 @@ typedef struct SEPARATION_ALIGN(128) _AstronomyParameters
 
     /* really should be BGProbabilityFunc bg_prob_func, but need to
      * refer to pointer to this struct before  */
-   /* FIXME: Put this at the end; GPU pointer size may be different;
-    * Relies on struct being < next size up and a little extra
-    * space. */
   #ifndef __OPENCL_VERSION__
+    /* Function pointer only used by CPU version.
+       As the last element, just ignore it's existence in the kernel.
+     */
     real (*bg_prob_func) (const struct _AstronomyParameters*,
                           const StreamConstants*,
                           const RPoints*,
@@ -256,8 +256,6 @@ typedef struct SEPARATION_ALIGN(128) _AstronomyParameters
                           const int,
                           const unsigned int,
                           real*);
-   #else
-    void* _useless_padding_which_is_not_necessarily_the_right_size;
    #endif
 } AstronomyParameters;
 
