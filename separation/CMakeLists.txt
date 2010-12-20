@@ -48,6 +48,8 @@ if(SYSTEM_IS_PPC)
   set(CMAKE_C_FLAGS "-maltivec -mfused-madd -mhard-float -mabi=altivec ${CMAKE_C_FLAGS}")
 endif()
 
+option(SEPARATION_CAL "Use CAL++ voodoo" ON)
+
 option(SEPARATION_INLINE_KERNEL
        "Inline the CL kernel" OFF)
 mark_as_advanced(SEPARATION_INLINE_KERNEL)
@@ -107,6 +109,8 @@ else()
   set(SEPARATION_LIBM_LIBRARY ${FDLIBM_LIBRARY})
 endif()
 
+find_package(CAL)
+find_package(CAL++)
 find_package(BOINC)
 
 if(BOINC_APPLICATION)
@@ -115,11 +119,20 @@ endif()
 
 find_package(OpenCL)
 
+if(SEPARATION_CAL AND NOT CAL++_FOUND)
+  message(WARNING "Separation CAL was requested, but CAL++ not found. Disabling CAL.")
+  set(SEPARATION_CAL OFF)
+endif()
+
 if(SEPARATION_OPENCL AND NOT OPENCL_FOUND)
   message(WARNING "Separation OpenCL was requested, but OpenCL not found. Disabling OpenCL.")
   set(SEPARATION_OPENCL OFF)
 else()
   include_directories(${OPENCL_DIRECTORIES})
+endif()
+
+if(SEPARATION_OPENCL AND SEPARATION_CAL)
+  message(FATAL_ERROR "Can only choose one of OpenCL or CAL at a time")
 endif()
 
 set_os_specific_libs(${SEPARATION_OPENCL})
@@ -149,6 +162,12 @@ set(cl_source_list src/separation_cl_buffers.c
                    src/separation_binaries.c
                    src/setup_cl.c
                    src/run_cl.c)
+
+set(cal_source_list src/separation_cal.cpp
+                    src/separation_cal_kernelgen.cpp
+                    src/cal_binary.c
+                    src/show_cal_types.c)
+
 
 set(graphics_src_list src/separation_graphics.cc)
 set(graphics_hdr_list include/separation_graphics.h)
@@ -188,6 +207,11 @@ set(separation_cl_headers include/setup_cl.h
                           include/run_cl.h
                           include/separation_cl_defs.h
                           include/separation_cl_buffers.h)
+
+set(separation_cl_headers include/separation_cal.h
+                          include/separation_cal_kernelgen.h
+                          include/cal_binary.h
+                          include/show_cal_types.h)
 
 if(SEPARATION_GRAPHICS)
   list(APPEND lib_source_file_list ${graphics_src_list})
@@ -241,6 +265,9 @@ if(SEPARATION_OPENCL)
     add_library(all_in_one_library STATIC "${SEPARATION_INLINE_KERNEL_FILE}")
     list(APPEND separation_link_libs all_in_one_library)
   endif()
+elseif(SEPARATION_CAL)
+  list(APPEND lib_source_file_list ${cal_source_list})
+  list(APPEND separation_headers ${separation_cal_headers})
 endif()
 
 list(APPEND separation_link_libs ${OS_SPECIFIC_LIBS} milkyway ${SEPARATION_LIBM_LIBRARY})
@@ -270,6 +297,10 @@ list(APPEND exe_link_libs ${SEPARATION_LIBM_LIBRARY})
 if(SEPARATION_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
   list(APPEND exe_link_libs ${OPENCL_LIBRARIES})
+elseif(SEPARATION_CAL)
+  include_directories(${ATICAL_INCLUDE_DIR})
+  include_directories(${CAL++_INCLUDE_DIR})
+  list(APPEND exe_link_libs ${ATICALCL_LIBRARY} ${ATICALRT_LIBRARY})
 endif()
 
 set(separation_main_src src/separation_main.c)
@@ -286,6 +317,8 @@ if(SEPARATION_OPENCL)
   else()
     set(CL_PLAN_CLASS "opencl")
   endif()
+elseif(SEPARATION_CAL)
+  set(CL_PLAN_CLASS "ati13ati")
 else()
   set(CL_PLAN_CLASS "")
 endif()

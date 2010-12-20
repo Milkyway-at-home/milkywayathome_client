@@ -189,9 +189,11 @@ NuId calcNuStep(const IntegralArea* ia, const unsigned int nu_step)
     return nuid;
 }
 
-LBTrig* precalculateLBTrig(const AstronomyParameters* ap, const IntegralArea* ia)
+LBTrig* precalculateLBTrig(const AstronomyParameters* ap,
+                           const IntegralArea* ia,
+                           int transpose)
 {
-    unsigned int i, j;
+    unsigned int i, j, idx;
     LBTrig* lbts;
     NuId nuid;
     LB lb;
@@ -206,7 +208,8 @@ LBTrig* precalculateLBTrig(const AstronomyParameters* ap, const IntegralArea* ia
         {
             mu = ia->mu_min + (((real) j + 0.5) * ia->mu_step_size);
             lb = gc2lb(ap->wedge, mu, nuid.nu);
-            lbts[i * ia->mu_steps + j] = lb_trig(lb);
+            idx = transpose ? j * ia->nu_steps + i : i * ia->mu_steps + j;
+            lbts[idx] = lb_trig(lb);
         }
     }
 
