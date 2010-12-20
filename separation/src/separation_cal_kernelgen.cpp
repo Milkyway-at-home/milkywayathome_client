@@ -142,18 +142,6 @@ static void createSeparationKernelCore(global<double2>& bgOut,
 
             /* Dot product */
 
-            #if 1
-
-            tmp = xs.x() * double1(X(sc[j].a));
-            tmp = mad(double1(Y(sc[j].a)), ys.x(), tmp);
-            tmp = mad(double1(Z(sc[j].a)), zs.x(), tmp);  /* tmp = dotted */
-
-            xs.y() = mad(-tmp, double1(X(sc[j].a)), xs.x());
-            ys.y() = mad(-tmp, double1(Y(sc[j].a)), ys.x());
-            zs.y() = mad(-tmp, double1(Z(sc[j].a)), zs.x());
-
-            #else
-
             /* Juggle the second components of these to prevent usage
              * of 2 extra temp registers. */
             zs.y() = xs.x() * double1(X(sc[j].a));
@@ -164,27 +152,14 @@ static void createSeparationKernelCore(global<double2>& bgOut,
             ys.y() = mad(-ys.y(), double1(Y(sc[j].a)), ys.x());
             zs.y() = mad(-ys.y(), double1(Z(sc[j].a)), zs.x());
 
-            #endif
+            zs.x() = xs.y() * xs.y();
+            xs.x() = mad(ys.y(), ys.y(), zs.x());
+            ys.x() = mad(zs.y(), zs.y(), xs.x());
 
-            #if 1
-
-            tmp = xs.y() * xs.y();
-            tmp = mad(ys.y(), ys.y(), tmp);
-            tmp = mad(zs.y(), zs.y(), tmp);
-            tmp = tmp * double1(sc[j].sigma_sq2_inv);
-
-            streamIntegrals[j] = mad(rPt.y(), exp_custom(tmp), streamIntegrals[j]);
-
-            #else
-            xs.x() = xs.y() * xs.y();
-            ys.x() = mad(ys.y(), ys.y(), xs.x());
-            zs.x() = mad(zs.y(), zs.y(), ys.x());
-            xs.x() = zs.x() * double1(sc[j].sigma_sq2_inv);
-
+            xs.x() = ys.x() * double1(sc[j].sigma_sq2_inv);
             ys.x() = exp_custom(xs.x());
 
             streamIntegrals[j] = mad(rPt.y(), ys.x(), streamIntegrals[j]);
-            #endif
         }
     }
     il_endloop
