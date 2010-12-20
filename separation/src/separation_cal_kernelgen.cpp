@@ -33,6 +33,7 @@ using namespace cal::il;
 
 static double1 sqrt_custom(double1 x)
 {
+    emit_comment("sqrt");
     float1 fx = cast_type<float1>(x);
     double1 y = cast_type<double1>(-rsqrt(fx));
 
@@ -51,6 +52,7 @@ static double1 sqrt_custom(double1 x)
 /* exp which uses fewer registers and is accurate enough */
 static double1 exp_custom(double1 x)
 {
+    emit_comment("exp");
     double2 dtmp;
     double1 tmp1 = x * double1(0x1.71547652b82fep+0);
     dtmp.y() = fract(tmp1);
@@ -93,13 +95,14 @@ static void createSeparationKernelCore(global<double2>& bgOut,
     double2 lTrig = lbts(cast_type<float1>(get_global_id(0)), nu_step);
     double2 bTrig = lbts(nu_step, nu_step); // FIXME: Where is this actually?
 
+    float1 i = float1(0.0);
+    float1 r_step = cast_type<float1>(get_global_id(1));
+
     /* 0 integrals and get stream constants */
     double1 bg_int = double1(0.0);
     for (j = 0; j < number_streams; ++j)
         streamIntegrals.push_back(double1(0.0));
 
-    float1 i = float1(0.0);
-    float1 r_step = cast_type<float1>(get_global_id(1));
     il_while (i < float1(ap->convolve))
     {
         /* CHECKME: could try rPts[float2something] */
@@ -121,6 +124,8 @@ static void createSeparationKernelCore(global<double2>& bgOut,
         double1 tmp = rg * rs;
         tmp = tmp * rs;
         tmp = tmp * rs;
+
+        emit_comment("bg_int increment");
         bg_int += rPt.y() / tmp;
 
         #if 0
@@ -133,8 +138,10 @@ static void createSeparationKernelCore(global<double2>& bgOut,
         }
         #endif
 
+        emit_comment("stream loops");
         for (j = 0; j < number_streams; ++j)
         {
+            emit_comment("begin stream");
             double2 xs, ys, zs;
             xs.x() = x - double1(X(sc[j].c));
             ys.x() = y - double1(Y(sc[j].c));
@@ -166,6 +173,8 @@ static void createSeparationKernelCore(global<double2>& bgOut,
 
     named_variable<double1> nu_id("cb7[0].wz");
     double1 V_reff_xr_rp3 = nu_id * rConsts(r_step).x();
+
+    emit_comment("Output index calculation");
     uint1 idx = get_global_id(0) * uint1(ia->r_steps) + get_global_id(1);
 
     /* FIXME: Buffer size and read register requirement */
@@ -173,6 +182,7 @@ static void createSeparationKernelCore(global<double2>& bgOut,
     double1 tmp = bgOut[idx].x();
     bgOut[idx].x() = tmp + (V_reff_xr_rp3 * bg_int);
 
+    emit_comment("Stream output");
     //for (j = 0; j < ap->number_streams; ++j)
     for (j = 0; j < number_streams; ++j)
     {
