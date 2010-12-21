@@ -19,13 +19,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cal.h>
 #include <calcl.h>
+
 #include "milkyway_util.h"
 #include "separation_types.h"
 #include "calculated_constants.h"
+#include "r_points.h"
 #include "show_cal_types.h"
 #include "cal_binary.h"
+#include "separation_cal_kernelgen.h"
 
-#include "r_points.h"
 
 /* FIXME: Also defined in CL version */
 typedef struct
@@ -33,12 +35,8 @@ typedef struct
     size_t outMu;
     size_t outProbs;
 
-    size_t ap;        /* Constants */
-    size_t sc;
-    size_t ia;
-    size_t ic;
-    size_t rc;
     size_t rPts;
+    size_t rc;
     size_t sg_dx;
     size_t lbts;
 } SeparationSizes;
@@ -73,22 +71,21 @@ typedef struct
     CALmem mem;
 } MWMemRes;
 
+#define EMPTY_MEM_RES { 0, 0 }
+
 typedef struct
 {
     MWMemRes outMu;
     MWMemRes outProbs;
 
     /* constant, read only buffers */
-    MWMemRes ap;
-    MWMemRes ia;
-    MWMemRes sc;
     MWMemRes rc;        /* r constants */
     MWMemRes rPts;
     MWMemRes sg_dx;
     MWMemRes lbts;      /* sin, cos of l, b */
 } SeparationCALMem;
 
-#define EMPTY_SEPARATION_CAL_MEM { 0 }
+#define EMPTY_SEPARATION_CAL_MEM { EMPTY_MEM_RES, EMPTY_MEM_RES, EMPTY_MEM_RES, EMPTY_MEM_RES, EMPTY_MEM_RES, EMPTY_MEM_RES }
 
 #define cal_warn(str, err) fprintf(stderr, str ": %s\n", showCALresult(err))
 
@@ -294,7 +291,7 @@ static CALresult createConstantBuffer(MWMemRes* mr,
     }
 
     /* Map and write to the buffer */
-    err = mapMWMemRes(&cm->ap, ci, &cbPtr, &cbPitch);
+    err = mapMWMemRes(mr, ci, &cbPtr, &cbPitch);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to map ap resource", err);
@@ -404,50 +401,6 @@ static CALresult createOutProbsBuffer(MWCALInfo* ci,
     return err;
 }
 
-static CALresult createSCBuffer(MWCALInfo* ci,
-                                SeparationCALMem* cm,
-                                const StreamConstants* sc,
-                                const SeparationSizes* sizes)
-{
-    CALresult err = CAL_RESULT_OK;
-
-    err = createConstantBuffer(&cm->sc, ci, cm, sc, sizes->sc);
-    if (err != CAL_RESULT_OK)
-        cal_warn("Failed to create sc buffer", err);
-
-    return err;
-}
-
-static CALresult createAPBuffer(MWCALInfo* ci,
-                                SeparationCALMem* cm,
-                                const AstronomyParameters* ap,
-                                const SeparationSizes* sizes)
-{
-    CALresult err = CAL_RESULT_OK;
-
-    err = createConstantBuffer(&cm->ap, ci, cm,
-                               ap, sizeof(AstronomyParameters));
-    if (err != CAL_RESULT_OK)
-        cal_warn("Failed to create ap buffer", err);
-
-    return err;
-}
-
-static CALresult createIABuffer(MWCALInfo* ci,
-                                SeparationCALMem* cm,
-                                const IntegralArea* ia,
-                                const SeparationSizes* sizes)
-{
-    CALresult err = CAL_RESULT_OK;
-
-    err = createConstantBuffer(&cm->ia, ci, cm,
-                               ia, sizeof(IntegralArea));
-    if (err != CAL_RESULT_OK)
-        cal_warn("Failed to create ia buffer", err);
-
-    return err;
-}
-
 static CALresult createRBuffers(MWCALInfo* ci,
                                 SeparationCALMem* cm,
                                 const AstronomyParameters* ap,
@@ -518,9 +471,6 @@ CALresult createSeparationBuffers(MWCALInfo* ci,
 
     err |= createOutMuBuffer(ci, cm, sizes);
     err |= createOutProbsBuffer(ci, cm, sizes);
-    err |= createAPBuffer(ci, cm, ap, sizes);
-    err |= createIABuffer(ci, cm, ia, sizes);
-    err |= createSCBuffer(ci, cm, sc, sizes);
     err |= createRBuffers(ci, cm, ap, ia, sg, sizes);
     err |= createLBTrigBuffer(ci, cm, ap, ia, sizes);
 
@@ -534,9 +484,6 @@ CALresult releaseSeparationBuffers(MWCALInfo* ci, SeparationCALMem* cm)
     err |= releaseMWMemRes(ci->calctx, &cm->outProbs);
     err |= releaseMWMemRes(ci->calctx, &cm->outMu);
 
-    err |= releaseMWMemRes(ci->calctx, &cm->ap);
-    err |= releaseMWMemRes(ci->calctx, &cm->ia);
-    err |= releaseMWMemRes(ci->calctx, &cm->sc);
     err |= releaseMWMemRes(ci->calctx, &cm->rPts);
     err |= releaseMWMemRes(ci->calctx, &cm->rc);
     err |= releaseMWMemRes(ci->calctx, &cm->sg_dx);
@@ -595,6 +542,9 @@ static CALobject createCALBinary(const char* srcIL)
     CALobject obj;
     CALresult err;
 
+    if (!srcIL)
+        return NULL;
+
     err = calclCompile(&obj, CAL_LANGUAGE_IL, srcIL, CAL_TARGET_CYPRESS);
     if (err != CAL_RESULT_OK)
     {
@@ -605,24 +555,17 @@ static CALobject createCALBinary(const char* srcIL)
     return obj;
 }
 
-CALimage readCALImageFromFile(const char* filename)
+static CALimage createCALImage(const char* src)
 {
-    char* src;
     CALobject obj;
     CALuint size;
     CALresult rc;
     CALimage img;
 
-    src = mwReadFile(filename);
     if (!src)
-    {
-        perror("IL source file");
         return NULL;
-    }
 
     obj = createCALBinary(src);
-    free(src);
-
     rc = calclLink(&img, &obj, 1);
     calclFreeObject(obj);
 
@@ -635,16 +578,55 @@ CALimage readCALImageFromFile(const char* filename)
     return img;
 }
 
+static CALimage createCALImageFromFile(const char* filename)
+{
+    char* src;
+    CALimage img;
+
+    src = mwReadFile(filename);
+    if (!src)
+    {
+        perror("IL source file");
+        return NULL;
+    }
+
+    img = createCALImage(src);
+    free(src);
+
+    return img;
+}
+
 static void isaLogFunction(const char* msg)
 {
     fputs(msg, stdout);
 }
 
-CALresult getISA(CALimage image)
+static CALresult printISA(CALimage image)
 {
+    if (!image)
+        return CAL_RESULT_ERROR;
+
     calclDisassembleImage(image, isaLogFunction);
     return CAL_RESULT_OK;
 }
+
+static CALimage createCALImageFromGeneratedKernel(const AstronomyParameters* ap,
+                                                  const IntegralArea* ia,
+                                                  const StreamConstants* sc)
+
+{
+    CALimage img;
+    const char* src;
+
+    src = separationKernelSrc(ap, ia, sc);
+    puts(src);
+
+    img = createCALImage(src);
+
+    printISA(img);
+    return img;
+}
+
 
 typedef struct
 {
@@ -669,16 +651,13 @@ static CALresult getModuleNames(SeparationCALNames* cn, MWCALInfo* ci)
 {
     CALresult err = CAL_RESULT_OK;
 
-    err |= getNameMWCALInfo(ci, &cn->outMu, "o0");
-    err |= getNameMWCALInfo(ci, &cn->outProbs, "o1");
-    err |= getNameMWCALInfo(ci, &cn->ap, "cb0");
-    err |= getNameMWCALInfo(ci, &cn->ia, "cb1");
-    err |= getNameMWCALInfo(ci, &cn->sc, "cb2");
-    err |= getNameMWCALInfo(ci, &cn->rc, "cb3");
-    err |= getNameMWCALInfo(ci, &cn->rPts, "cb4");
-    err |= getNameMWCALInfo(ci, &cn->sg_dx, "cb5");
-    err |= getNameMWCALInfo(ci, &cn->lbts, "cb6");
-    err |= getNameMWCALInfo(ci, &cn->lbts, "cb7");
+    //err |= getNameMWCALInfo(ci, &cn->outMu, "o0");
+    //err |= getNameMWCALInfo(ci, &cn->outProbs, "o1");
+    //err |= getNameMWCALInfo(ci, &cn->rc, "cb3");
+    //err |= getNameMWCALInfo(ci, &cn->rPts, "cb4");
+    err |= getNameMWCALInfo(ci, &cn->sg_dx, "cb2");
+    //err |= getNameMWCALInfo(ci, &cn->lbts, "cb6");
+    //err |= getNameMWCALInfo(ci, &cn->lbts, "cb7");
 
     return err;
 }
@@ -704,13 +683,16 @@ static CALresult setKernelArguments(MWCALInfo* ci, SeparationCALMem* cm, Separat
     return err;
 }
 
-static CALresult setupCAL(MWCALInfo* ci, SeparationCALMem* cm)
+static CALresult setupCAL(MWCALInfo* ci,
+                          SeparationCALMem* cm,
+                          const AstronomyParameters* ap,
+                          const IntegralArea* ia,
+                          const StreamConstants* sc)
 {
     CALresult err;
     SeparationCALNames cn;
 
-    //ci->image = readCALImageFromFile("/home/matt/RawATIAppKernel.il");
-    ci->image = readCALImageFromFile("mu_sum_kernel_Cypress.il");
+    ci->image = createCALImageFromGeneratedKernel(ap, ia, sc);
     if (!ci->image)
     {
         warn("Failed to load image\n");
@@ -734,7 +716,7 @@ static CALresult setupCAL(MWCALInfo* ci, SeparationCALMem* cm)
     err = calModuleGetEntry(&ci->func, ci->calctx, ci->module, "main");
     if (err != CAL_RESULT_OK)
     {
-        cal_warn("Failed to get module entry", err);
+        cal_warn("Failed to find main in module", err);
         return err;
     }
 
@@ -841,7 +823,7 @@ static CALresult readMuResults(MWCALInfo* ci,
 static CALresult runIntegral(MWCALInfo* ci,
                              SeparationCALMem* cm,
                              const IntegralArea* ia,
-                             Kahan* probs_results)
+                             real* probs_results)
 {
     CALresult err;
     Kahan bg_sum = ZERO_KAHAN;
@@ -888,7 +870,7 @@ real integrateCAL(const AstronomyParameters* ap,
         return NAN;
     }
 
-    err = setupCAL(&ci, &cm);
+    err = setupCAL(&ci, &cm, ap, ia, sc);
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to setup CAL", err);
     else

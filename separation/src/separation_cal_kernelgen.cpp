@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <cal/il/cal_il_functors_math.hpp>
 
 #include "separation_cal.h"
+#include "separation_cal_kernelgen.h"
 #include "calculated_constants.h"
 #include "r_points.h"
 
@@ -90,7 +91,10 @@ static void createSeparationKernelCore(global<double2>& bgOut,
     std::vector<double1> streamIntegrals;
     unsigned int number_streams = 3;  /* FIXME: Temporary to compare against old things */
 
-    named_variable<float1> nu_step("cb7[0].x");
+    named_variable<double1> nu_id("cb0[0].wz");
+    named_variable<float1> nu_step("cb1[0].x");
+    indexed_register<double1> sg_dx("cb2");
+
 
     double2 lTrig = lbts(cast_type<float1>(get_global_id(0)), nu_step);
     double2 bTrig = lbts(nu_step, nu_step); // FIXME: Where is this actually?
@@ -171,7 +175,6 @@ static void createSeparationKernelCore(global<double2>& bgOut,
     }
     il_endloop
 
-    named_variable<double1> nu_id("cb7[0].wz");
     double1 V_reff_xr_rp3 = nu_id * rConsts(r_step).x();
 
     emit_comment("Output index calculation");
@@ -198,11 +201,22 @@ std::string createSeparationKernel(const AstronomyParameters* ap,
                                    const IntegralArea* ia,
                                    const StreamConstants* sc)
 {
+    unsigned int numRegSgDx;
+    unsigned int sgdxSize;
     std::stringstream code;
+
+    sgdxSize = sizeof(real) * ap->convolve;
+    numRegSgDx = sgdxSize / 16;
+    if (sgdxSize % 16 != 0)
+    {
+        warn("sg_dx size not divisible by register size\n");
+        return "";
+    }
 
     code << "il_ps_2_0\n";
     code << "dcl_cb cb0[1]\n";
-    code << "dcl_cb cb7[1]\n";
+    code << "dcl_cb cb1[1]\n";
+    code << format("dcl_cb cb2[%u]\n") % numRegSgDx;
 
     code << "dcl_input_position_interp(linear_noperspective) vWinCoord0.xy__\n";
 

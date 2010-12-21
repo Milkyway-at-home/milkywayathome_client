@@ -157,8 +157,6 @@ static void createProgram(SeparationCALInfo& ci,
     ci.program = Program(ci.context, source.c_str(), source.length());
     ci.program.build(devices);
 
-
-
     ci.program.disassemble(std::cout);
 }
 
