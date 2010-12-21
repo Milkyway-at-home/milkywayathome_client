@@ -163,7 +163,7 @@ set(cl_source_list src/separation_cl_buffers.c
                    src/setup_cl.c
                    src/run_cl.c)
 
-set(cal_source_list src/separation_cal.cpp
+set(cal_source_list #src/separation_cal.cpp
                     src/separation_cal_kernelgen.cpp
                     src/cal_binary.c
                     src/show_cal_types.c)

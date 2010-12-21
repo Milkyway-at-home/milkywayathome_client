@@ -44,12 +44,12 @@ typedef struct
 {
     Image2D outBg;
     Image2D outStreams;
-    Image2D lbts;
+    Image2D lTrig;
+    Image2D bTrig;
     Image2D rPts;
     Image1D sg_dx;
     Image1D rc;
     NDRange range;
-    Image2D         A0, A1, B0, B1, C;
 } SeparationCALMem;
 
 
@@ -60,6 +60,27 @@ static void mapWriteBuffer(SeparationCALInfo& ci, Image& img, void* p, size_t si
 
     mapP = ci.queue.mapMemObject(img, pitch);
     memcpy(mapP, p, size);
+    ci.queue.unmapMemObject(img);
+}
+
+static void mapWriteBufferPitch(SeparationCALInfo& ci, Image& img, void* p, size_t size)
+{
+    void* line;
+    void* ptr;
+    CALuint i, j, width, height, pitch;
+
+    width = img.getWidth();
+    height = img.getHeight();
+    line = ci.queue.mapMemObject(img, pitch);
+
+    for (i = 0; i < height; ++i)
+    {
+        ptr = line;
+        for (j = 0; j < width; ++j)
+            *ptr++ = v;
+        line += 4 * pitch;
+    }
+
     ci.queue.unmapMemObject(img);
 }
 
@@ -114,7 +135,8 @@ static void createLBTrigBuffer(SeparationCALInfo& ci,
     height = ia->nu_steps;
 
     lbts = precalculateLBTrig(ap, ia, TRUE);
-    cm.lbts = Image2D(ci.context, width, 2 * height, CAL_FORMAT_UNSIGNED_INT32_4, 0);
+    cm.lTrig = Image2D(ci.context, width, height, CAL_FORMAT_UNSIGNED_INT32_4, 2 * sizeof(real));
+    cm.bTrig = Image2D(ci.context, width, height, CAL_FORMAT_UNSIGNED_INT32_4, 2 * sizeof(real));
 
     mapWriteBuffer(ci, cm.lbts, (void*) lbts, width * height * sizeof(LBTrig));
 

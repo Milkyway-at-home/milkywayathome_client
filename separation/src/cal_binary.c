@@ -38,8 +38,9 @@ typedef struct
     size_t rPts;
     size_t rc;
     size_t sg_dx;
-    size_t lbts;
-} SeparationSizes;
+    size_t lTrig;
+    size_t bTrig;
+} CALSeparationSizes;
 
 
 
@@ -82,7 +83,8 @@ typedef struct
     MWMemRes rc;        /* r constants */
     MWMemRes rPts;
     MWMemRes sg_dx;
-    MWMemRes lbts;      /* sin, cos of l, b */
+    MWMemRes lTrig;      /* sin, cos of l */
+    MWMemRes bTrig;      /* sin, cos of b */
 } SeparationCALMem;
 
 #define EMPTY_SEPARATION_CAL_MEM { EMPTY_MEM_RES, EMPTY_MEM_RES, EMPTY_MEM_RES, EMPTY_MEM_RES, EMPTY_MEM_RES, EMPTY_MEM_RES }
@@ -92,23 +94,23 @@ typedef struct
 
 static CALresult releaseMWMemRes(CALcontext ctx, MWMemRes* mr)
 {
-    CALresult err;
+    CALresult err = CAL_RESULT_OK;
 
-    err = calCtxReleaseMem(ctx, mr->mem);
-    if (err != CAL_RESULT_OK)
+    if (mr->res)
     {
-        cal_warn("Failed to release CALmem", err);
-        return err;
+        err = calResFree(mr->res);
+        if (err != CAL_RESULT_OK)
+            cal_warn("Failed to release CAL resource", err);
     }
 
-    err = calResFree(mr->res);
-    if (err != CAL_RESULT_OK)
+    if (mr->mem)
     {
-        cal_warn("Failed to release CAL resource", err);
-        return err;
+        err = calCtxReleaseMem(ctx, mr->mem);
+        if (err != CAL_RESULT_OK)
+            cal_warn("Failed to release CALmem", err);
     }
 
-    return CAL_RESULT_OK;
+    return err;
 }
 
 static CALresult mwDestroyCALInfo(MWCALInfo* ci)
@@ -139,6 +141,7 @@ static CALresult mwDestroyCALInfo(MWCALInfo* ci)
     return CAL_RESULT_OK;
 }
 
+/* Find devices and create context */
 static CALresult mwInitCAL(MWCALInfo* ci, CALuint devID)
 {
     CALresult err;
@@ -244,10 +247,11 @@ static CALresult mapMWMemRes(MWMemRes* mr, MWCALInfo* ci, CALvoid** pPtr, CALuin
     err = calResMap(pPtr, pitch, mr->res, 0);
     if (err != CAL_RESULT_OK)
     {
-        cal_warn("Failed to map ap resource", err);
+        cal_warn("Failed to map resource", err);
         if (calResFree(mr->res) != CAL_RESULT_OK)
             warn("Failed to release CAL resource\n");
     }
+
     return err;
 }
 
@@ -265,6 +269,39 @@ static CALresult unmapMWMemRes(MWMemRes* mr, MWCALInfo* ci)
     }
 
     return err;
+}
+
+
+static CALresult writeConstantBufferDouble(MWMemRes* mr,
+                                           MWCALInfo* ci,
+                                           const double* dataPtr,
+                                           CALuint width,
+                                           CALuint height)
+{
+    CALuint i, j, pitch;
+    double* cbPtr;
+    double* tmp;
+    CALresult err;
+
+    err = mapMWMemRes(mr, ci, &cbPtr, &pitch);
+    if (err != CAL_RESULT_OK)
+        return err;
+
+    for(i = 0; i < height; ++i)
+    {
+        tmp = &cbPtr[i * pitch];
+        for (j = 0; j < width; ++j)
+        {
+            tmp[2 * j] = dataPtr[i * width + j];
+            tmp[2 * j + 1] = dataPtr[i * width + j + 1];
+        }
+    }
+
+    err = unmapMWMemRes(mr, ci);
+    if (err != CAL_RESULT_OK)
+        return err;
+
+    return CAL_RESULT_OK;
 }
 
 static CALresult createConstantBuffer(MWMemRes* mr,
@@ -286,33 +323,24 @@ static CALresult createConstantBuffer(MWMemRes* mr,
                              size, CAL_FORMAT_UNSIGNED_INT32_1, 0);
     if (err != CAL_RESULT_OK)
     {
-        cal_warn("Failed to create ap resource", err);
+        cal_warn("Failed to create resource", err);
         return err;
     }
 
     /* Map and write to the buffer */
     err = mapMWMemRes(mr, ci, &cbPtr, &cbPitch);
     if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Failed to map ap resource", err);
         return err;
-    }
 
     memcpy(cbPtr, src, size);
 
     err = unmapMWMemRes(mr, ci);
     if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Failed to unmap resource", err);
         return err;
-    }
 
     err = getMemoryHandle(mr, ci);
     if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Failed to get memory handle", err);
         return err;
-    }
 
     return CAL_RESULT_OK;
 }
@@ -324,20 +352,13 @@ static CALresult zeroBuffer1D(MWMemRes* mr, MWCALInfo* ci, size_t size)
     CALvoid* ptr;
 
     err = mapMWMemRes(mr, ci, &ptr, &pitch);
-    if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Failed to map ap resource", err);
         return err;
-    }
 
     memset(ptr, 0, size);
 
     err = unmapMWMemRes(mr, ci);
     if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Failed to unmap resource", err);
         return err;
-    }
 
     return CAL_RESULT_OK;
 }
@@ -377,7 +398,7 @@ static CALresult createOutputBuffer1D(MWMemRes* mr, MWCALInfo* ci, size_t size)
 
 static CALresult createOutMuBuffer(MWCALInfo* ci,
                                    SeparationCALMem* cm,
-                                   const SeparationSizes* sizes)
+                                   const CALSeparationSizes* sizes)
 {
     CALresult err;
 
@@ -390,7 +411,7 @@ static CALresult createOutMuBuffer(MWCALInfo* ci,
 
 static CALresult createOutProbsBuffer(MWCALInfo* ci,
                                       SeparationCALMem* cm,
-                                      const SeparationSizes* sizes)
+                                      const CALSeparationSizes* sizes)
 {
     CALresult err;
 
@@ -406,7 +427,7 @@ static CALresult createRBuffers(MWCALInfo* ci,
                                 const AstronomyParameters* ap,
                                 const IntegralArea* ia,
                                 const StreamGauss sg,
-                                const SeparationSizes* sizes)
+                                const CALSeparationSizes* sizes)
 {
     RPoints* r_pts;
     RConsts* rc;
@@ -416,45 +437,94 @@ static CALresult createRBuffers(MWCALInfo* ci,
 
     err = createConstantBuffer(&cm->rPts, ci, cm, r_pts, sizes->rPts);
     if (err != CAL_RESULT_OK)
+    {
         cal_warn("Failed to create r_pts buffer", err);
+        goto fail;
+    }
 
     err = createConstantBuffer(&cm->rc, ci, cm, rc, sizes->rc);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create rc buffer", err);
-        releaseMWMemRes(ci->calctx, &cm->rPts);
+        goto fail;
     }
 
     err = createConstantBuffer(&cm->sg_dx, ci, cm, sg.dx, sizes->sg_dx);
     if (err != CAL_RESULT_OK)
-    {
         cal_warn("Failed to create sg_dx buffer", err);
-        releaseMWMemRes(ci->calctx, &cm->rPts);
-        releaseMWMemRes(ci->calctx, &cm->rc);
-    }
 
+fail:
     mwFreeA(r_pts);
     mwFreeA(rc);
 
     return err;
 }
 
-
-static CALresult createLBTrigBuffer(MWCALInfo* ci,
-                                    SeparationCALMem* cm,
-                                    const AstronomyParameters* ap,
-                                    const IntegralArea* ia,
-                                    const SeparationSizes* sizes)
+/* Might be more convenient to split l and b stuff for CAL */
+static void getSplitLBTrig(const AstronomyParameters* ap,
+                           const IntegralArea* ia,
+                           TrigPair** lTrigOut,
+                           TrigPair** bTrigOut)
 {
-    CALresult err = CAL_RESULT_OK;
+    CALuint i, j;
+    TrigPair* lTrig;
+    TrigPair* bTrig;
     LBTrig* lbts;
+    size_t idx;
+    CALboolean transpose = CAL_TRUE;
 
-    lbts = precalculateLBTrig(ap, ia, TRUE);
-    err = createConstantBuffer(&cm->lbts, ci, cm, lbts, sizes->lbts);
-    if (err != CAL_RESULT_OK)
-        cal_warn("Failed to create lb trig buffer", err);
+    size_t size = ia->mu_steps * ia->nu_steps * sizeof(TrigPair);
+    lTrig = (TrigPair*) mwMallocA(size);
+    bTrig = (TrigPair*) mwMallocA(size);
+
+    lbts = precalculateLBTrig(ap, ia, transpose);
+
+    for (i = 0; i < ia->nu_steps; ++i)
+    {
+        for (j = 0; j < ia->mu_steps; ++j)
+        {
+            idx = transpose ? j * ia->nu_steps + i : i * ia->mu_steps + j;
+
+            lTrig[idx].sinAngle = lbts[idx].lsin;
+            lTrig[idx].cosAngle = lbts[idx].lcos;
+
+            bTrig[idx].sinAngle = lbts[idx].bsin;
+            bTrig[idx].cosAngle = lbts[idx].bcos;
+        }
+    }
 
     mwFreeA(lbts);
+
+    *lTrigOut = lTrig;
+    *bTrigOut = bTrig;
+}
+
+static CALresult createLBTrigBuffers(MWCALInfo* ci,
+                                     SeparationCALMem* cm,
+                                     const AstronomyParameters* ap,
+                                     const IntegralArea* ia,
+                                     const CALSeparationSizes* sizes)
+{
+    CALresult err = CAL_RESULT_OK;
+    TrigPair* lTrig;
+    TrigPair* bTrig;
+
+    getSplitLBTrig(ap, ia, &lTrig, &bTrig);
+
+    err = createConstantBuffer(&cm->lTrig, ci, cm, lTrig, sizes->lTrig);
+    if (err != CAL_RESULT_OK)
+    {
+        cal_warn("Failed to create l trig buffer", err);
+        goto fail;
+    }
+
+    err = createConstantBuffer(&cm->bTrig, ci, cm, bTrig, sizes->bTrig);
+    if (err != CAL_RESULT_OK)
+        cal_warn("Failed to create b trig buffer", err);
+
+fail:
+    mwFreeA(lTrig);
+    mwFreeA(bTrig);
 
     return err;
 }
@@ -465,14 +535,14 @@ CALresult createSeparationBuffers(MWCALInfo* ci,
                                   const IntegralArea* ia,
                                   const StreamConstants* sc,
                                   const StreamGauss sg,
-                                  const SeparationSizes* sizes)
+                                  const CALSeparationSizes* sizes)
 {
     CALresult err = CAL_RESULT_OK;
 
     err |= createOutMuBuffer(ci, cm, sizes);
     err |= createOutProbsBuffer(ci, cm, sizes);
     err |= createRBuffers(ci, cm, ap, ia, sg, sizes);
-    err |= createLBTrigBuffer(ci, cm, ap, ia, sizes);
+    err |= createLBTrigBuffers(ci, cm, ap, ia, sizes);
 
     return err;
 }
@@ -487,7 +557,7 @@ CALresult releaseSeparationBuffers(MWCALInfo* ci, SeparationCALMem* cm)
     err |= releaseMWMemRes(ci->calctx, &cm->rPts);
     err |= releaseMWMemRes(ci->calctx, &cm->rc);
     err |= releaseMWMemRes(ci->calctx, &cm->sg_dx);
-    err |= releaseMWMemRes(ci->calctx, &cm->lbts);
+    //err |= releaseMWMemRes(ci->calctx, &cm->lbts);
 
     return err;
 }
@@ -639,7 +709,8 @@ typedef struct
     CALname rc;
     CALname rPts;
     CALname sg_dx;
-    CALname lbts;
+    CALname lTrig;
+    CALname bTrig;
 } SeparationCALNames;
 
 static inline CALresult getNameMWCALInfo(MWCALInfo* ci, CALname* name, const CALchar* varName)
@@ -687,7 +758,9 @@ static CALresult setupCAL(MWCALInfo* ci,
                           SeparationCALMem* cm,
                           const AstronomyParameters* ap,
                           const IntegralArea* ia,
-                          const StreamConstants* sc)
+                          const StreamConstants* sc,
+                          const StreamGauss sg,
+                          const CALSeparationSizes* sizes)
 {
     CALresult err;
     SeparationCALNames cn;
@@ -717,6 +790,13 @@ static CALresult setupCAL(MWCALInfo* ci,
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to find main in module", err);
+        return err;
+    }
+
+    err = createSeparationBuffers(ci, cm, ap, ia, sc, sg, &sizes);
+    if (err != CAL_RESULT_OK)
+    {
+        cal_warn("Failed to create buffers", err);
         return err;
     }
 
@@ -850,6 +930,20 @@ static CALresult runIntegral(MWCALInfo* ci,
 
     return CAL_RESULT_OK;
 }
+
+static void calculateCALSeparationSizes(CALSeparationSizes* sizes,
+                                        const AstronomyParameters* ap,
+                                        const IntegralArea* ia)
+{
+    sizes->outMu = sizeof(real) * ia->mu_steps * ia->r_steps;
+    sizes->outProbs = sizeof(real) * ia->mu_steps * ia->r_steps * ap->number_streams;
+    sizes->rPts = sizeof(RPoints) * ap->convolve * ia->r_steps;
+    sizes->rc = sizeof(RConsts) * ia->r_steps;
+    sizes->sg_dx = sizeof(real) * ap->convolve;
+    sizes->lTrig = sizeof(real) * ia->mu_steps * ia->nu_steps;
+    sizes->bTrig = sizes->lTrig;
+}
+
 real integrateCAL(const AstronomyParameters* ap,
                   const IntegralArea* ia,
                   const StreamConstants* sc,
@@ -862,6 +956,7 @@ real integrateCAL(const AstronomyParameters* ap,
     MWCALInfo ci = EMPTY_CAL_INFO;
     SeparationCALMem cm = EMPTY_SEPARATION_CAL_MEM;
     CALresult err;
+    CALSeparationSizes sizes;
 
     err = mwInitCAL(&ci, 0);
     if (err != CAL_RESULT_OK)
@@ -870,7 +965,9 @@ real integrateCAL(const AstronomyParameters* ap,
         return NAN;
     }
 
-    err = setupCAL(&ci, &cm, ap, ia, sc);
+    calculateCALSeparationSizes(&sizes, ap, ia);
+
+    err = setupCAL(&ci, &cm, ap, ia, sc, sg, &sizes);
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to setup CAL", err);
     else
