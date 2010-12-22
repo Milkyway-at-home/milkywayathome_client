@@ -199,7 +199,7 @@ LBTrig* precalculateLBTrig(const AstronomyParameters* ap,
     LB lb;
     real mu;
 
-    lbts = (LBTrig*) mwMallocA(sizeof(LBTrig) * ia->mu_steps * ia->nu_steps);
+    lbts = (LBTrig*) mwMallocA(sizeof(LBTrig) * ia->nu_steps * ia->mu_steps);
 
     for (i = 0; i < ia->nu_steps; ++i)
     {

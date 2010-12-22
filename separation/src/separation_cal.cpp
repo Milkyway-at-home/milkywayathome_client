@@ -138,7 +138,7 @@ static void createLBTrigBuffer(SeparationCALInfo& ci,
     cm.lTrig = Image2D(ci.context, width, height, CAL_FORMAT_UNSIGNED_INT32_4, 2 * sizeof(real));
     cm.bTrig = Image2D(ci.context, width, height, CAL_FORMAT_UNSIGNED_INT32_4, 2 * sizeof(real));
 
-    mapWriteBuffer(ci, cm.lbts, (void*) lbts, width * height * sizeof(LBTrig));
+    mapWriteBuffer(ci, cm.l, (void*) lbts, width * height * sizeof(LBTrig));
 
     mwFreeA(lbts);
 }

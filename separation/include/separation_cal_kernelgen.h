@@ -29,9 +29,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-const char* separationKernelSrc(const AstronomyParameters* ap,
-                                const IntegralArea* ia,
-                                const StreamConstants* sc);
+char* separationKernelSrc(const AstronomyParameters* ap,
+                          const IntegralArea* ia,
+                          const StreamConstants* sc);
 
 #ifdef __cplusplus
 }

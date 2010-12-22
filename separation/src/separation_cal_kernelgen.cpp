@@ -21,7 +21,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <cal/cal.hpp>
 #include <cal/il/cal_il.hpp>
 #include <cal/il/cal_il_math.hpp>
-#include <cal/il/cal_il_functors_math.hpp>
+#include <fstream>
 
 #include "separation_cal.h"
 #include "separation_cal_kernelgen.h"
@@ -50,23 +50,24 @@ static double1 sqrt_custom(double1 x)
 }
 
 
-/* exp which uses fewer registers and is accurate enough */
+/* exp which uses fewer registers and is accurate enough. CHECKME: Destroys x? */
 static double1 exp_custom(double1 x)
 {
     emit_comment("exp");
-    double2 dtmp;
+
     double1 tmp1 = x * double1(0x1.71547652b82fep+0);
+    double2 dtmp;
     dtmp.y() = fract(tmp1);
 
-    int1 expi = cast_type<int1>(dtmp.y() - tmp1);
+    int1 expi = cast_type<int1>(tmp1 - dtmp.y());
 
     tmp1 = dtmp.y() + double1(-0x1p-1);
     dtmp.x() = tmp1 * tmp1;
-    double1 tmp2 = mad(dtmp.x(), double1(0x1.52b5c4d1f00b9p-16), double1(0x1.4aa4eb649a98fp-7));
-    tmp2 = mad(dtmp.x(), tmp2, double1(0x1.62e42fefa39efp-1));
+    x = mad(dtmp.x(), double1(0x1.52b5c4d1f00b9p-16), double1(0x1.4aa4eb649a98fp-7));
+    x = mad(dtmp.x(), x, double1(0x1.62e42fefa39efp-1));
 
     double2 tmp23;
-    tmp23.x() = tmp1 * tmp2;
+    tmp23.x() = tmp1 * x;
     tmp23.y() = mad(dtmp.x(), double1(0x1.657cdd06316dcp-23), double1(0x1.3185f478ff1ebp-12));
     tmp23.y() = mad(dtmp.x(), tmp23.y(), double1(0x1.bf3e7389ceff9p-5));
     tmp23.y() = mad(dtmp.x(), tmp23.y(), double1(0x1p+0));
@@ -78,11 +79,12 @@ static double1 exp_custom(double1 x)
     return ldexp(tmp1, expi);
 }
 
-static void createSeparationKernelCore(global<double2>& bgOut,
-                                       global<double2>& streamOut,
+static void createSeparationKernelCore(input2d<double1>& bgInput,
+                                       std::vector< input2d<double1> >& streamInput,
                                        input2d<double2>& rPts,
                                        input1d<double2>& rConsts,
-                                       input2d<double2>& lbts,
+                                       input2d<double2>& lTrigBuf,
+                                       input2d<double2>& bTrigBuf,
                                        const AstronomyParameters* ap,
                                        const IntegralArea* ia,
                                        const StreamConstants* sc)
@@ -91,16 +93,25 @@ static void createSeparationKernelCore(global<double2>& bgOut,
     std::vector<double1> streamIntegrals;
     unsigned int number_streams = 3;  /* FIXME: Temporary to compare against old things */
 
-    named_variable<double1> nu_id("cb0[0].wz");
+    indexed_register<double1> sg_dx("cb0");
     named_variable<float1> nu_step("cb1[0].x");
-    indexed_register<double1> sg_dx("cb2");
+    named_variable<double1> nu_id("cb1[0].zw");
+    named_variable<double1> bgOut("o0");
+    named_variable<float2> pos("vWinCoord0"); /* .x() = mu, .y() = r */
+    std::vector< named_variable<double1> > streamOutputRegisters;
 
+    std::stringstream regName;
+    for (j = 0; j < number_streams; ++j)
+    {
+        regName.seekp(0);
+        regName << 'o' << (j + 1);
+        streamOutputRegisters.push_back(regName.str());
+    }
 
-    double2 lTrig = lbts(cast_type<float1>(get_global_id(0)), nu_step);
-    double2 bTrig = lbts(nu_step, nu_step); // FIXME: Where is this actually?
+    double2 lTrig = lTrigBuf(nu_step, pos.x());
+    double2 bTrig = bTrigBuf(nu_step, pos.x());
 
     float1 i = float1(0.0);
-    float1 r_step = cast_type<float1>(get_global_id(1));
 
     /* 0 integrals and get stream constants */
     double1 bg_int = double1(0.0);
@@ -110,7 +121,7 @@ static void createSeparationKernelCore(global<double2>& bgOut,
     il_while (i < float1(ap->convolve))
     {
         /* CHECKME: could try rPts[float2something] */
-        double2 rPt = rPts(r_step, i);
+        double2 rPt = rPts(pos.y(), i);
         i = i + float1(1.0);
 
         double1 zp = rPt.x() * bTrig.y();
@@ -118,10 +129,11 @@ static void createSeparationKernelCore(global<double2>& bgOut,
         double1 y = zp * lTrig.x();
         double1 z = rPt.x() * bTrig.x();
 
+
         double1 tmp1 = x * x;
-        double1 tmp3 = z * z;
-        double1 tmp2 = mad(y, y, tmp1);
-        double1 tmp4 = mad(tmp3, double1(ap->q_inv_sqr), tmp2);
+        double1 tmp2 = z * z;
+        double1 tmp3 = mad(y, y, tmp1);
+        double1 tmp4 = mad(double1(ap->q_inv_sqr), tmp2, tmp3);
         double1 rg = sqrt_custom(tmp4);
         double1 rs = rg + double1(ap->r0);
 
@@ -135,7 +147,7 @@ static void createSeparationKernelCore(global<double2>& bgOut,
         #if 0
         if (ap->aux_bg_profile)
         {
-            r_in_mag = sg_dx[i] + gPrime(rcs[r_step]);
+            r_in_mag = sg_dx[i] + gPrime(rcs[pos.y()]);
             tmp = mad(double1(ap->bg_b), r_in_mag, double1(ap->bg_c));
             tmp = mad(double1(ap->bg_a, r_in_mag * r_in_mag, tmp));
             bg_int += tmp * rPt.y();
@@ -146,53 +158,46 @@ static void createSeparationKernelCore(global<double2>& bgOut,
         for (j = 0; j < number_streams; ++j)
         {
             emit_comment("begin stream");
-            double2 xs, ys, zs;
-            xs.x() = x - double1(X(sc[j].c));
-            ys.x() = y - double1(Y(sc[j].c));
-            zs.x() = z - double1(Z(sc[j].c));
+            double1 xs = x - double1(X(sc[j].c));
+            double1 ys = y - double1(Y(sc[j].c));
+            double1 zs = z - double1(Z(sc[j].c));
 
             /* Dot product */
+            tmp = double1(X(sc[j].a)) * xs;
+            tmp = mad(double1(Y(sc[j].a)), ys.x(), tmp);
+            tmp = mad(double1(Z(sc[j].a)), zs.x(), tmp);  /* tmp = dotted */
 
-            /* Juggle the second components of these to prevent usage
-             * of 2 extra temp registers. */
-            zs.y() = xs.x() * double1(X(sc[j].a));
-            xs.y() = mad(double1(Y(sc[j].a)), ys.x(), zs.y());
-            ys.y() = mad(double1(Z(sc[j].a)), zs.x(), xs.y());  /* tmp = dotted */
+            xs = mad(-tmp, double1(X(sc[j].a)), xs);
+            ys = mad(-tmp, double1(Y(sc[j].a)), ys);
+            zs = mad(-tmp, double1(Z(sc[j].a)), zs);
 
-            xs.y() = mad(-ys.y(), double1(X(sc[j].a)), xs.x());
-            ys.y() = mad(-ys.y(), double1(Y(sc[j].a)), ys.x());
-            zs.y() = mad(-ys.y(), double1(Z(sc[j].a)), zs.x());
+            tmp = xs * xs;
+            tmp = mad(ys, ys, tmp);
+            tmp = mad(zs, zs, tmp);
 
-            zs.x() = xs.y() * xs.y();
-            xs.x() = mad(ys.y(), ys.y(), zs.x());
-            ys.x() = mad(zs.y(), zs.y(), xs.x());
+            tmp = tmp * double1(-sc[j].sigma_sq2_inv);
+            tmp = exp_custom(tmp);
 
-            xs.x() = ys.x() * double1(sc[j].sigma_sq2_inv);
-            ys.x() = exp_custom(xs.x());
-
-            streamIntegrals[j] = mad(rPt.y(), ys.x(), streamIntegrals[j]);
+            streamIntegrals[j] = mad(rPt.y(), tmp, streamIntegrals[j]);
         }
     }
     il_endloop
 
-    double1 V_reff_xr_rp3 = nu_id * rConsts(r_step).x();
+    double1 V_reff_xr_rp3 = nu_id * rConsts(pos.y()).x();
 
-    emit_comment("Output index calculation");
-    uint1 idx = get_global_id(0) * uint1(ia->r_steps) + get_global_id(1);
+    std::vector<double1> streamRead;
+    double1 bgRead = bgInput[pos];
+    for (j = 0; j < number_streams; ++j)
+        streamRead.push_back(streamInput[j][pos]);
 
-    /* FIXME: Buffer size and read register requirement */
 
-    double1 tmp = bgOut[idx].x();
-    bgOut[idx].x() = tmp + (V_reff_xr_rp3 * bg_int);
+    emit_comment("Output");
+    bgOut.x() = bgRead + (V_reff_xr_rp3 * bg_int);
 
     emit_comment("Stream output");
     //for (j = 0; j < ap->number_streams; ++j)
     for (j = 0; j < number_streams; ++j)
-    {
-        tmp = streamOut[idx + j].x();
-        streamOut[idx + j].x() = tmp + (V_reff_xr_rp3 * streamIntegrals[j]);
-    }
-
+        streamOutputRegisters[j].x() = streamRead[j] + (V_reff_xr_rp3 * streamIntegrals[j]);
 
     streamIntegrals.clear();
 }
@@ -203,6 +208,7 @@ std::string createSeparationKernel(const AstronomyParameters* ap,
 {
     unsigned int numRegSgDx;
     unsigned int sgdxSize;
+    unsigned int i;
     std::stringstream code;
 
     sgdxSize = sizeof(real) * ap->convolve;
@@ -214,21 +220,28 @@ std::string createSeparationKernel(const AstronomyParameters* ap,
     }
 
     code << "il_ps_2_0\n";
-    code << "dcl_cb cb0[1]\n";
+    code << format("dcl_cb cb0[%u]\n") % numRegSgDx;
     code << "dcl_cb cb1[1]\n";
-    code << format("dcl_cb cb2[%u]\n") % numRegSgDx;
+
+    for (i = 0; i < ap->number_streams; ++i)
+        code << format("dcl_output_usage(generic) o%u.xy\n") % (i + 1);
 
     code << "dcl_input_position_interp(linear_noperspective) vWinCoord0.xy__\n";
 
     Source::begin();
 
-    global<double2> bgOut;
-    global<double2> streamOut;
     input2d<double2> rPts(0);
-    input2d<double2> lbts(1);  /* Actually should be double4 */
-    input1d<double2> rConsts(2);
+    input1d<double2> rConsts(1);
+    input2d<double2> lTrig(2);
+    input2d<double2> bTrig(3);
 
-    createSeparationKernelCore(bgOut, streamOut, rPts, rConsts, lbts, ap, ia, sc);
+    input2d<double1> bgInput(4);
+    std::vector< input2d<double1> > streamInputs;
+
+    for (i = 0; i < ap->number_streams; ++i)
+        streamInputs.push_back(input2d<double1>(5 + i));
+
+    createSeparationKernelCore(bgInput, streamInputs, rPts, rConsts, lTrig, bTrig, ap, ia, sc);
 
     Source::end();
 
@@ -240,11 +253,12 @@ std::string createSeparationKernel(const AstronomyParameters* ap,
     return code.str();
 }
 
-const char* separationKernelSrc(const AstronomyParameters* ap,
-                                const IntegralArea* ia,
-                                const StreamConstants* sc)
+char* separationKernelSrc(const AstronomyParameters* ap,
+                          const IntegralArea* ia,
+                          const StreamConstants* sc)
 {
-    return createSeparationKernel(ap, ia, sc).c_str();
-}
+    std::string src = createSeparationKernel(ap, ia, sc);
+     return strdup(src.c_str());
+ }
 
 
