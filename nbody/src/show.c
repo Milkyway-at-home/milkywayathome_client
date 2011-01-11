@@ -355,7 +355,7 @@ char* showContext(const NBodyCtx* ctx)
                      "  tree_rsize      = %g\n"
                      "  theta           = %g\n"
                      "  eps2            = %g\n"
-                     "  freqout         = %g\n"
+                     "  freqOut         = %u\n"
                      "  nbody           = %d\n"
                      "  modelNum        = %u\n"
                      "  models          = %s\n"
@@ -379,7 +379,7 @@ char* showContext(const NBodyCtx* ctx)
                      ctx->tree_rsize,
                      ctx->theta,
                      ctx->eps2,
-                     ctx->freqout,
+                     ctx->freqOut,
                      ctx->nbody,
                      ctx->modelNum,
                      modelBuf))

@@ -66,7 +66,6 @@ static void initState(NBodyCtx* ctx, NBodyState* st)
 {
     mw_report("Starting nbody system\n");
 
-    st->tout       = st->tnow;       /* schedule first output */
     st->tree.rsize = ctx->tree_rsize;
     st->tnow       = 0.0;            /* reset elapsed model time */
 
@@ -122,15 +121,11 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
         nbodyCheckpoint(ctx, st);
       #endif
 
-        #if 0 /* TODO: Some day this will allow printing at intervals, for making movies etc. */
-          /* TODO: organize use of this output better since it only
-           * half makes sense now with boinc */
-
-          if (ctx->model.time_dwarf - st->tnow < 0.01 * ctx->model.timestep)
-              output(ctx, st);
-
-          st->tout += 1.0 / ctx->freqout;     /* schedule next data out */
-        #endif
+      #if PERIODIC_OUTPUT
+        st->outputTime = (st->outputTime + 1) % ctx->freqOut;
+        if (st->outputTime == 0)
+            outputBodyPositionBin(ctx, st);
+      #endif /* PERIODIC_OUTPUT */
     }
 
   #if BOINC_APPLICATION

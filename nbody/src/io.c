@@ -74,6 +74,23 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st)
     return FALSE;
 }
 
+int outputBodyPositionBin(const NBodyCtx* ctx, const NBodyState* st)
+{
+    bodyptr p;
+    const bodyptr endp = st->bodytab + ctx->nbody;
+
+    for (p = st->bodytab; p < endp; p++)
+        fwrite(&Pos(p), sizeof(mwvector), 1, ctx->outfile);
+
+    if (fflush(ctx->outfile))
+    {
+        perror("Body output flush");
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
 int finalOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq)
 {
     int rc = 0;

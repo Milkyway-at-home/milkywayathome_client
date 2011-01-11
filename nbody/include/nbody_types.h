@@ -346,7 +346,7 @@ typedef struct NBODY_ALIGN
 {
     Tree tree;
     nodeptr freecell;   /* list of free cells */
-    real tout;
+    unsigned int outputTime;
     real tnow;
     bodyptr bodytab;    /* points to array of bodies */
     mwvector* acctab;   /* Corresponding accelerations of bodies */
@@ -358,9 +358,9 @@ typedef struct NBODY_ALIGN
 } NBodyState;
 
 #if NBODY_OPENCL
-  #define EMPTY_STATE { EMPTY_TREE, NULL, NAN, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
+  #define EMPTY_STATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
 #else
-  #define EMPTY_STATE { EMPTY_TREE, NULL, NAN, NAN, NULL, NULL }
+  #define EMPTY_STATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL }
 #endif /* NBODY_OPENCL */
 
 #endif /* __OPENCL_VERSION__ */
@@ -388,7 +388,7 @@ typedef struct NBODY_ALIGN
     const char* histout;
     FILE* outfile;            /* file for snapshot output */
 
-    real freqout;
+    unsigned int freqOut;
     real theta;               /* accuracy parameter: 0.0 */
     real eps2;                /* (potential softening parameter)^2 */
 

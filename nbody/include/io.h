@@ -27,6 +27,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 int initOutput(NBodyCtx*);
 int finalOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq);
 
+int outputBodyPositionBin(const NBodyCtx* ctx, const NBodyState* st);
+
 /* Close output and free things */
 int nbodyCtxDestroy(NBodyCtx* ctx);
 void nbodyStateDestroy(NBodyState* st);

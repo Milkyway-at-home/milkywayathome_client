@@ -162,7 +162,7 @@ static int postProcess(NBodyCtx* ctx)
     /* These other pieces are dependent on the others being set up
      * first */
 
-    ctx->freqout = inv(ctx->timestep);
+    ctx->freqOut = 4;
 
     if (isnan(ctx->time_orbit))
         ctx->time_orbit = ctx->timestep / 2.0;
