@@ -43,7 +43,7 @@ static const char tail[] = "end";
 static const size_t hdrSize = sizeof(size_t)                                  /* size of real */
                             + sizeof(char) * (sizeof(tail) + sizeof(hdr) - 2) /* error checking tags */
                             + 1 * sizeof(unsigned int)                        /* nbody count */
-                            + 3 * sizeof(real);                               /* tout, tnow, rsize */
+                            + 2 * sizeof(real);                               /* tnow, rsize */
 
 /* Macros to read/write the buffer and advance the pointer the correct size */
 #define DUMP_REAL(p, x) { *((real*) (p)) = (x); (p) += sizeof(real); }
@@ -259,7 +259,6 @@ static inline int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandl
     READ_INT(nbody, p);
     READ_SIZE_T(realSize, p);
 
-    READ_REAL(st->tout, p);
     READ_REAL(st->tnow, p);
     READ_REAL(st->tree.rsize, p);
 
@@ -288,7 +287,7 @@ static inline int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandl
     }
 
     /* Read the bodies */
-    st->bodytab = (bodyptr) mallocSafe(bodySize);
+    st->bodytab = (bodyptr) mwMalloc(bodySize);
     memcpy(st->bodytab, p, bodySize);
     p += bodySize;
 
@@ -308,7 +307,7 @@ static inline int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandl
    header       string   "mwnbody"  No null terminator
    nbody        uint     anything   Num. of bodies expected. Error if doesn't match nbody in context.
    sizeof(real) size_t   4, 8       Does the checkpoint use float or double
-   tout         real     anything   Saved parts of the program state
+                                    Saved parts of the program state
    tnow         real     anything
    rsize        real     anything
    bodytab      bodyptr  anything   Array of bodies
@@ -336,7 +335,6 @@ static inline void freezeState(const NBodyCtx* ctx, const NBodyState* st, Checkp
     /* Now that we have some basic check stuff written, dump the state */
 
     /* Little state pieces */
-    DUMP_REAL(p, st->tout);
     DUMP_REAL(p, st->tnow);
     DUMP_REAL(p, st->tree.rsize);
 
