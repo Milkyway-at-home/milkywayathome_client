@@ -38,6 +38,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* static const real nanN = NAN; */
 static real nanN;
+static const real zeroN = 0.0;
 
 
 /* Reads a name of the criterion into the C value, with name str */
@@ -151,6 +152,8 @@ static mwbool readDwarfModel(DwarfModel* model, const char* parentName, json_obj
             ENUM_PARAM("type",               &model->type,           (MWReadFunc) readDwarfModelT),
             INT_PARAM("nbody",               &model->nbody),
             DBL_PARAM_DFLT("mass",           &model->mass,           &nanN),
+            DBL_PARAM_DFLT("small-mass",     &model->smallMass,      &nanN),
+            DBL_PARAM_DFLT("small-radius",   &model->smallRadius,    &nanN),
             DBL_PARAM_DFLT("scale-radius",   &model->scale_radius,   &nanN),
             DBL_PARAM_DFLT("timestep",       &model->timestep,       &nanN),
             DBL_PARAM_DFLT("orbit-timestep", &model->orbit_timestep, &nanN),

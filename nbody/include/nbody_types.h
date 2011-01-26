@@ -297,6 +297,9 @@ typedef struct NBODY_ALIGN
     real mass;
     real scale_radius;
 
+    real smallMass;
+    real smallRadius;
+
     mwbool ignoreFinal;
     InitialConditions initialConditions;
 } DwarfModel;
