@@ -279,6 +279,8 @@ static size_t divChunks(size_t a, size_t b)
 /* Reset things if not setting local size manually */
 cl_bool fallbackDriverSolution(RunSizes* sizes)
 {
+    size_t integrationArea;
+
     sizes->extra = 0;
     sizes->effectiveArea = sizes->area;
 
@@ -292,10 +294,11 @@ cl_bool fallbackDriverSolution(RunSizes* sizes)
     sizes->global[0] = sizes->chunkSize;
     sizes->global[1] = 1;
 
-    if (sizes->area % sizes->numChunks != 0)
+    /* Just be sure nothing bad happened with division */
+    integrationArea = sizes->chunkSize * sizes->area;
+    if (integrationArea < sizes->area)
     {
-        warn("Fallback area ("ZU") not divisible by number of chunks ("ZU")\n",
-	     sizes->area, sizes->numChunks);
+        warn("Integration area ("ZU") less than actual area ("ZU")\n", integrationArea, sizes->area);
         return CL_TRUE;
     }
 
