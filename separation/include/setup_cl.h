@@ -54,6 +54,8 @@ typedef struct
     size_t area;
     size_t effectiveArea;
     size_t chunkSize;   /* effectiveArea / numChunks */
+    cl_bool letTheDriverDoIt;  /* Failed to find something nice, let the driver do what it wants */
+    cl_uint blockSize;         /* Threads Per CU * Number CU used by fallback */
 } RunSizes;
 
 /* The various buffers needed by the integrate function. */
@@ -93,6 +95,7 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
                          const IntegralArea* ia,
                          const CLRequest* clr);
 
+cl_bool fallbackDriverSolution(RunSizes* sizes);
 
 cl_double estimateWUFLOPsPerIter(const AstronomyParameters* ap, const IntegralArea* ia);
 cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_double flops);

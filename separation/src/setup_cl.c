@@ -269,6 +269,39 @@ static SizeSolution chooseSolution(const SizeSolution* allSol,
     return sol;
 }
 
+/* Straightforward division of area for fallback solution, round up */
+static size_t divChunks(size_t a, size_t b)
+{
+    return (a % b != 0) ? a / b + 1 : a / b;
+}
+
+/* FIXME: Depends on findGoodRunSizes first */
+/* Reset things if not setting local size manually */
+cl_bool fallbackDriverSolution(RunSizes* sizes)
+{
+    sizes->extra = 0;
+    sizes->effectiveArea = sizes->area;
+
+    /* round up number chunks */
+    sizes->numChunks = divChunks(sizes->area, sizes->blockSize);
+    sizes->letTheDriverDoIt = CL_TRUE;
+    sizes->chunkSize = sizes->area / sizes->numChunks;
+
+    sizes->local[0] = 0;
+    sizes->local[1] = 0;
+    sizes->global[0] = sizes->chunkSize;
+    sizes->global[1] = 1;
+
+    if (sizes->area % sizes->numChunks != 0)
+    {
+        warn("Fallback area ("ZU") not divisible by number of chunks ("ZU")\n",
+	     sizes->area, sizes->numChunks);
+        return CL_TRUE;
+    }
+
+    return CL_FALSE;
+}
+
 /* Returns CL_TRUE on error */
 cl_bool findGoodRunSizes(RunSizes* sizes,
                          const CLInfo* ci,
@@ -324,14 +357,16 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
                             di->maxCompUnits);
     warn("Using solution: n = %u, x = %u\n", solution.n, solution.x);
 
+    sizes->letTheDriverDoIt = CL_FALSE;
     sizes->groupSize     = groupSize;
     sizes->area          = ia->mu_steps * ia->r_steps;
     sizes->numChunks     = solution.n;
     sizes->extra         = solution.x;
     sizes->effectiveArea = sizes->area + sizes->extra;
     sizes->chunkSize     = sizes->effectiveArea / sizes->numChunks;
+    sizes->blockSize = threadsPerCU * di->maxCompUnits;
 
-    sizes->global[0] = sizes->chunkSize;;
+    sizes->global[0] = sizes->chunkSize;
     sizes->global[1] = 1;
 
     sizes->local[0] = sizes->groupSize;
@@ -342,13 +377,15 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
          "Chunk estimate: %u\n"
          "Num chunks:     "ZU"\n"
          "Added area:     %u\n"
-         "Effective area: "ZU"\n",
+         "Effective area: "ZU"\n"
+         "Block size:     %u\n",
          ia->nu_steps, ia->mu_steps, ia->r_steps,
          sizes->area,
          desiredNumChunk,
          sizes->numChunks,
          sizes->extra,
-         sizes->effectiveArea);
+         sizes->effectiveArea,
+         sizes->blockSize);
 
     /* Check for error in solution just in case */
     if (sizes->effectiveArea % sizes->chunkSize != 0)

@@ -72,6 +72,7 @@ static void sumProbsResults(real* probs_results,
 }
 
 static cl_int enqueueIntegralKernel(CLInfo* ci,
+                                    cl_bool useDefault,
                                     const size_t offset[],
                                     const size_t global[],
                                     const size_t local[])
@@ -81,7 +82,7 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
     err = clEnqueueNDRangeKernel(ci->queue,
                                  ci->kern,
                                  2,
-                                 offset, global, local,
+                                 offset, global, useDefault ? NULL : local,
                                  0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
@@ -208,7 +209,7 @@ static cl_int runNuStep(CLInfo* ci,
     {
         offset[0] = i * runSizes->chunkSize;
 
-        err = enqueueIntegralKernel(ci, offset, runSizes->global, runSizes->local);
+        err = enqueueIntegralKernel(ci, runSizes->letTheDriverDoIt, offset, runSizes->global, runSizes->local);
         if (err != CL_SUCCESS)
         {
             mwCLWarn("Failed to enqueue integral kernel", err);
@@ -306,7 +307,11 @@ real integrateCL(const AstronomyParameters* ap,
     if (findGoodRunSizes(&runSizes, ci, di, ia, clr))
     {
         warn("Failed to find good run sizes\n");
-        return NAN;
+        if (fallbackDriverSolution(&runSizes))
+        {
+            warn("Fallback solution failed\n");
+            return NAN;
+        }
     }
 
     if (!separationCheckDevCapabilities(di, &sizes))

@@ -95,9 +95,9 @@ inline RPoints readImageDouble(uint4 a)
     return arst.d;
 }
 
-constant sampler_t sample = CLK_ADDRESS_NONE
-                          | CLK_NORMALIZED_COORDS_FALSE
-                          | CLK_FILTER_NEAREST;
+const sampler_t sample = CLK_ADDRESS_NONE
+                       | CLK_NORMALIZED_COORDS_FALSE
+                       | CLK_FILTER_NEAREST;
 
 inline RPoints readRPts(__read_only image2d_t r_pts, __constant AstronomyParameters* ap, int2 i)
 {
