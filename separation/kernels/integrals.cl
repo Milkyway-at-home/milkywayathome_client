@@ -120,23 +120,23 @@ inline void stream_sums_cl(real* st_probs,
                            const RPoints r_pt)
 {
   #if NSTREAM >= 1
-    st_probs[0] = mw_mad(QW_R3_N(r_pt), calc_st_prob_inc(sc[0], xyz), st_probs[0]);
+    st_probs[0] = mw_mad(QW_R3_N(r_pt), calc_st_prob_inc(&sc[0], xyz), st_probs[0]);
   #endif
 
   #if NSTREAM >= 2
-    st_probs[1] = mw_mad(QW_R3_N(r_pt), calc_st_prob_inc(sc[1], xyz), st_probs[1]);
+    st_probs[1] = mw_mad(QW_R3_N(r_pt), calc_st_prob_inc(&sc[1], xyz), st_probs[1]);
   #endif
 
   #if NSTREAM >= 3
-    st_probs[2] = mw_mad(QW_R3_N(r_pt), calc_st_prob_inc(sc[2], xyz), st_probs[2]);
+    st_probs[2] = mw_mad(QW_R3_N(r_pt), calc_st_prob_inc(&sc[2], xyz), st_probs[2]);
   #endif
 
   #if NSTREAM >= 4
-    st_probs[3] = mw_mad(QW_R3_N(r_pt), calc_st_prob_inc(sc[3], xyz), st_probs[3]);
+    st_probs[3] = mw_mad(QW_R3_N(r_pt), calc_st_prob_inc(&sc[3], xyz), st_probs[3]);
   #endif
 
   #if NSTREAM >= 5
-    st_probs[4] = mw_mad(QW_R3_N(r_pt), calc_st_prob_inc(sc[4], xyz), st_probs[4]);
+    st_probs[4] = mw_mad(QW_R3_N(r_pt), calc_st_prob_inc(&sc[4], xyz), st_probs[4]);
   #endif
 }
 

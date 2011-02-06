@@ -32,10 +32,10 @@ extern "C" {
 #ifndef _MSC_VER
   #define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(x)))
 #else
-  #define SEPARATION_ALIGN(x)
+  #define SEPARATION_ALIGN(x) __declspec(align(x))
 #endif /* _MSC_VER */
 
-typedef struct SEPARATION_ALIGN(2 * sizeof(real))
+typedef struct
 {
     real l;
     real b;
@@ -48,7 +48,7 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 
 
 #ifndef __OPENCL_VERSION__
-typedef struct SEPARATION_ALIGN(2 * sizeof(real))
+typedef struct
 {
     real irv_reff_xr_rp3;
     real gPrime;
@@ -64,7 +64,7 @@ typedef real2 RConsts;
   #define GPRIME(r) ((r).y)
 #endif
 
-typedef struct SEPARATION_ALIGN(2 * sizeof(real))
+typedef struct
 {
     real nu;
     real id;
@@ -88,7 +88,7 @@ typedef struct SEPARATION_ALIGN(128)
 } StreamConstants;
 
 #ifndef __OPENCL_VERSION__
-typedef struct SEPARATION_ALIGN(2 * sizeof(real))
+typedef struct
 {
     real r_point;
     real qw_r3_N;
@@ -97,7 +97,7 @@ typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 #define R_POINT(r) ((r).r_point)
 #define QW_R3_N(r) ((r).qw_r3_N)
 
-typedef struct SEPARATION_ALIGN(4 * sizeof(real))
+typedef struct
 {
     real lsin, lcos;
     real bsin, bcos;
@@ -126,7 +126,7 @@ typedef real4 LBTrig;
 
 #endif /* __OPENCL_VERSION__ */
 
-typedef struct SEPARATION_ALIGN(2 * sizeof(real))
+typedef struct
 {
     real nu;
     real id;
@@ -202,7 +202,7 @@ typedef struct
 
 #define EMPTY_FINAL_STREAM_INTEGRALS { 0.0, NULL }
 
-typedef struct SEPARATION_ALIGN(2 * sizeof(real))
+typedef struct
 {
     real irv;
     real rPrime;
@@ -281,7 +281,7 @@ typedef real (*BGProbabilityFunc) (const AstronomyParameters*,
                                      0, 0, 0.0, 0.0, 0, 0, 0, \
                                      0, 0.0, 0, NULL }
 
-typedef struct SEPARATION_ALIGN(2 * sizeof(real))
+typedef struct SEPARATION_ALIGN(16)
 {
     real sum;
     real correction;
