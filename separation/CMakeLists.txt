@@ -200,7 +200,6 @@ if(SEPARATION_OPENCL)
   list(APPEND separation_headers ${separation_cl_headers})
 
   if(SEPARATION_INLINE_KERNEL)
-
     # Can figure out many of the header dependencies of kernel with C
     # preprocessor with -MM flag.  However, some of the files only purpose
     # is to include some other files in the kernel, so we have to exclude

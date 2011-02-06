@@ -19,6 +19,37 @@
 #
 
 
+# Visual Studio has some kind of idiotic string literal length
+# limitation of 16380 characters which you work around by breaking it
+# up into multiple literals which get concatenated
+# Cmake also makes this painful to do. This function makes me want to cry.
+function(visual_studio_is_shit str)
+  set(chunk_size 10000)
+  string(LENGTH "${str}" str_len)
+  math(EXPR num_str_chunks "${str_len} / ${chunk_size}")
+  math(EXPR len_chunks "${num_str_chunks} * ${chunk_size}")
+
+  # Horrible work around lack of ceil()
+  if (${len_chunks} LESS ${str_len})
+    math(EXPR num_str_chunks "${num_str_chunks} + 1")
+  endif()
+
+  set(new_str "")
+  set(chunk_len ${chunk_size})
+  foreach(i RANGE 1 ${num_str_chunks})
+    math(EXPR lower "(${i} - 1) * ${chunk_size}")
+    math(EXPR upper "${i} * ${chunk_size}")
+
+    if(${upper} GREATER ${str_len})
+      math(EXPR chunk_len "${str_len} - ${lower}")
+    endif()
+
+    string(SUBSTRING "${str}" "${lower}" "${chunk_len}" sub_str)
+    set(new_str "${new_str}\"${sub_str}\"\n")
+  endforeach()
+  set(BROKEN_UP_LITERAL "${new_str}" PARENT_SCOPE)
+endfunction()
+
 function(inline_kernel name full_src outfile)
   #Escape special characters
   #TODO: Other things that need escaping
@@ -42,7 +73,8 @@ function(inline_kernel name full_src outfile)
              str_escaped
              "${str_escaped}")
 
-  set(cfile "\nconst char* ${name} = \"${str_escaped}\";\n\n")
+  visual_studio_is_shit("${str_escaped}")
+  set(cfile "\nconst char* ${name} = ${BROKEN_UP_LITERAL};\n\n")
 
   file(WRITE "${outfile}" "${cfile}")
 endfunction()
