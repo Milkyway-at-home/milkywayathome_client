@@ -34,7 +34,6 @@ include(DownloadCrlibm)
 include(DownloadDSFMT)
 include(CheckCFlag)
 include(MSVCFlags)
-set_mingw_paths()
 
 option(MSVC_USE_STATIC_CRT "Use static CRT" ON)
 mark_as_advanced(MSVC_USE_STATIC_CRT)

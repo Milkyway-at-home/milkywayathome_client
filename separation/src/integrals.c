@@ -271,7 +271,7 @@ real integrate(const AstronomyParameters* ap,
         return -1.0 * ia->nu_steps * ia->mu_steps * ia->r_steps;
     }
 
-    st_probs = (real*) mwMalloc(sizeof(real) * ap->number_streams);
+    st_probs = (real*) mwMallocA(sizeof(real) * ap->number_streams);
     r_pts = precalculateRPts(ap, ia, sg, &rc, 0);
 
     nuSum(ap, ia, sc, rc, r_pts, sg.dx, st_probs, probs_sum, es);

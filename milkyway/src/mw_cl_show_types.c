@@ -154,6 +154,8 @@ const char* showCLInt(const cl_int x)
             return "CL_INVALID_PLATFORM";
 
      #ifdef CL_VERSION_1_1
+        case CL_PLATFORM_NOT_FOUND_KHR:
+            return "CL_PLATFORM_NOT_FOUND_KHR";
         case CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST:
             return "CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST";
         case CL_MISALIGNED_SUB_BUFFER_OFFSET:

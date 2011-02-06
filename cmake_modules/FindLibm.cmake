@@ -27,7 +27,7 @@ endif()
 
 if(APPLE)
   find_library(LIBM_LIBRARY m)
-elseif(MSVC)
+elseif(WIN32)
   set(LIBM_LIBRARY "")
 else()
   if(LIBM_USE_STATIC)
