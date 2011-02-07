@@ -47,7 +47,7 @@ inline mwvector lbr2xyz_2(__MW_CONSTANT AstronomyParameters* ap,
 }
 
 ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
-inline real calc_st_prob_inc(StreamConstants* sc, mwvector xyz)
+inline real calc_st_prob_inc(const StreamConstants* sc, mwvector xyz)
 {
     real xyz_norm, dotted;
     mwvector xyzs;

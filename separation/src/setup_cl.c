@@ -124,7 +124,7 @@ static cl_bool findMinWorkN(SizeSolution* sol, cl_uint tolerance, cl_uint area, 
 }
 
 /* Finds number of chunks that will divide the area if all else fails */
-static cl_uint findFallbackSolution(const IntegralArea* ia, cl_uint area, cl_uint desiredChunkNum, cl_uint nthread)
+static cl_uint findFallbackSolution(const IntegralArea* ia, cl_uint area, cl_uint desiredChunkNum)
 {
     cl_bool minCloser;
     cl_uint nMin, nMax;
@@ -221,7 +221,7 @@ static SizeSolution findSolution(const IntegralArea* ia,
         /* This really shouldn't happen, but if it does we give up on
            adding extra work. Find the closest n which will divide the
            total area */
-        sol.n = findFallbackSolution(ia, area, desiredChunkNum, nThread);
+        sol.n = findFallbackSolution(ia, area, desiredChunkNum);
         sol.x = 0;
         warn("Didn't find a solution. Using fallback solution n = %u, x = %u\n", sol.n, sol.x);
         /* TODO: Try a bigger tolerance */
@@ -229,41 +229,6 @@ static SizeSolution findSolution(const IntegralArea* ia,
     else
     {
         sol = chooseLowerOrHigher(max, min, desiredChunkNum);
-    }
-
-    return sol;
-}
-
-static SizeSolution chooseSolution(const SizeSolution* allSol,
-                                   cl_uint numSolution,
-                                   cl_uint desiredNumChunk)
-{
-    cl_uint i = 0;
-    SizeSolution sol;
-
-    sol.x = 0;
-    sol.n = 1;
-
-    if (!allSol || numSolution == 0) /* No solutions to look for */
-        return sol;
-
-    /* Use minimum number of chunks */
-    if (desiredNumChunk == 1 || desiredNumChunk == 0)
-        return sol;
-
-    /* Find where we cross */
-    while (allSol[i].n < desiredNumChunk && i < numSolution)
-        ++i;
-
-    if (i == numSolution)
-    {
-        warn("Desired number of chunks went beyond solution range. "
-             "Choosing highest solution\n");
-        sol = allSol[numSolution - 1];
-    }
-    else
-    {
-        sol = allSol[i];
     }
 
     return sol;
@@ -580,8 +545,6 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
 
   #if DOUBLEPREC
     const char precDefStr[]   = "-DDOUBLEPREC=1 ";
-    const char atiPrecStr[]   = "";
-    const char otherPrecStr[] = "";
   #else
     const char precDefStr[] = "-DDOUBLEPREC=0 ";
     const char clPrecStr[]  = "-cl-single-precision-constant ";
@@ -647,7 +610,13 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
         }
     }
     else if (di->vendorID == MW_AMD_ATI)
-        strncat(extraFlags, atiOptFlags, sizeof(extraFlags));
+    {
+        if (snprintf(extraFlags, sizeof(extraFlags), "%s", atiOptFlags) < 0)
+        {
+            warn("Error getting extra ATI flags\n");
+            return NULL;
+        }
+    }
     else
         warn("Unknown vendor ID: 0x%x\n", di->vendorID);
 
@@ -716,8 +685,6 @@ cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_dou
 cl_int setupSeparationCL(CLInfo* ci,
                          DevInfo* di,
                          const AstronomyParameters* ap,
-                         const StreamConstants* sc,
-                         const StreamGauss sg,
                          const CLRequest* clr,
                          cl_bool useImages)
 {

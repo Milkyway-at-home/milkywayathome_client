@@ -109,15 +109,15 @@ static cl_bool checkBinaryHeader(const AstronomyParameters* ap,
 static unsigned char* readCoreBinary(FILE* f, SeparationBinaryHeader* hdr)
 {
     unsigned char* bin;
-    size_t read;
+    size_t readn;
 
     bin = (unsigned char*) mwMalloc(hdr->binSize);
 
-    read = fread(bin, sizeof(unsigned char), hdr->binSize, f);
-    if (read != hdr->binSize)
+    readn = fread(bin, sizeof(unsigned char), hdr->binSize, f);
+    if (readn != hdr->binSize)
     {
         warn("Error reading program binary header: read "ZU", expected "ZU"\n",
-             read, hdr->binSize);
+             readn, hdr->binSize);
         hdr->binSize = 0;
         free(bin);
         bin = NULL;
@@ -126,33 +126,50 @@ static unsigned char* readCoreBinary(FILE* f, SeparationBinaryHeader* hdr)
     return bin;
 }
 
+static mwbool freadCheckedStr(char* buf, const char* str, size_t len, FILE* f)
+{
+    size_t readn;
+
+    readn = fread(buf, sizeof(char), len, f);
+    if (readn != len)
+    {
+        warn("Failed to read '%s' from file: read "ZU", expected "ZU"\n", str, readn, len);
+        return TRUE;
+    }
+
+    if (strncmp(buf, str, len))
+    {
+        warn("Read string doesn't match '%s'\n", str);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
 static unsigned char* separationLoadBinaryFile(FILE* f,
                                                SeparationBinaryHeader* hdr,
-                                               const AstronomyParameters* ap,
-                                               const DevInfo* di,
                                                size_t* binSizeOut)
 {
     char buf[64] = "";
-    size_t read;
+    size_t readn;
     unsigned char* bin;
 
-    fread(buf, sizeof(char), sizeof(SEPARATION_BINARY_HEADER), f);
-    if (strncmp(buf, SEPARATION_BINARY_HEADER, sizeof(SEPARATION_BINARY_HEADER)))
+    if (freadCheckedStr(buf, SEPARATION_BINARY_HEADER, sizeof(SEPARATION_BINARY_HEADER), f))
     {
         warn("Failed to find binary prefix\n");
         return NULL;
     }
 
-    read = fread(hdr, sizeof(SeparationBinaryHeader), 1, f);
-    if (read != 1)
+    readn = fread(hdr, sizeof(SeparationBinaryHeader), 1, f);
+    if (readn != 1)
     {
-        warn("Error reading program binary header: read "ZU", expected "ZU"\n", read, 1);
+        warn("Error reading program binary header: read "ZU", expected %d\n", readn, 1);
         return NULL;
     }
 
     bin = readCoreBinary(f, hdr);
-    fread(buf, sizeof(char), sizeof(SEPARATION_BINARY_TAIL), f);
-    if (strncmp(buf, SEPARATION_BINARY_TAIL, sizeof(SEPARATION_BINARY_TAIL)))
+
+    if (freadCheckedStr(buf, SEPARATION_BINARY_TAIL, sizeof(SEPARATION_BINARY_TAIL), f))
     {
         warn("Failed to find end marker of program binary\n");
         free(bin);
@@ -181,7 +198,7 @@ unsigned char* separationLoadBinary(const AstronomyParameters* ap,
         return NULL;
     }
 
-    bin = separationLoadBinaryFile(f, &hdr, ap, di, binSizeOut);
+    bin = separationLoadBinaryFile(f, &hdr, binSizeOut);
     if (fclose(f))
         perror("Failed to close program binary");
 

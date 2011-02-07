@@ -120,7 +120,7 @@ static void calculateIntegrals(const AstronomyParameters* ap,
   #endif
 
   #if SEPARATION_OPENCL
-    if (setupSeparationCL(&ci, &di, ap, sc, sg, clr, useImages) != CL_SUCCESS)
+    if (setupSeparationCL(&ci, &di, ap, clr, useImages) != CL_SUCCESS)
         fail("Failed to setup up CL\n");
 
     useImages = useImages && di.imgSupport;
