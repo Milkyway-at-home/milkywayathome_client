@@ -32,7 +32,7 @@ include(CPUNameTest)
 include(BuildSSELevels)
 
 set(separation_VERSION_MAJOR 0)
-set(separation_VERSION_MINOR 52)
+set(separation_VERSION_MINOR 53)
 set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}")
 
 get_info_from_processor_name()
