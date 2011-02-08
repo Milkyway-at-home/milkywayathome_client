@@ -24,7 +24,9 @@
 # up into multiple literals which get concatenated
 # Cmake also makes this painful to do. This function makes me want to cry.
 function(visual_studio_is_shit str)
-  set(chunk_size 10000)
+  # FIXME: if you get unlucky, this will break on special characters and escaping will get all broken.
+  # I gave up on splitting on newline with cmake regex.
+  set(chunk_size 12000)
   string(LENGTH "${str}" str_len)
   math(EXPR num_str_chunks "${str_len} / ${chunk_size}")
   math(EXPR len_chunks "${num_str_chunks} * ${chunk_size}")
