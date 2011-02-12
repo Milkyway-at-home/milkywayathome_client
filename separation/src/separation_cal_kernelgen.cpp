@@ -19,8 +19,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <boost/format.hpp>
 #include <cal/cal.hpp>
-#include <cal/il/cal_il.hpp>
-#include <cal/il/cal_il_math.hpp>
+#include <cal/cal_il.hpp>
+#include <cal/cal_il_math.hpp>
 #include <fstream>
 
 #include "separation_cal.h"
@@ -198,6 +198,7 @@ static void createSeparationKernelCore(input2d<double1>& bgInput,
     //for (j = 0; j < ap->number_streams; ++j)
     for (j = 0; j < number_streams; ++j)
         streamOutputRegisters[j].x() = streamRead[j] + (V_reff_xr_rp3 * streamIntegrals[j]);
+
 
     streamIntegrals.clear();
 }

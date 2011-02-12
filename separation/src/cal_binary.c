@@ -53,8 +53,7 @@ typedef struct
     CALname inMu;
     CALname* inStreams;
 
-    CALname nu_id;
-    CALname nu_step;
+    CALname nuBuf;
     CALname rPts;
     CALname rc;
     CALname sg_dx;
@@ -105,13 +104,11 @@ typedef struct
     MWMemRes sg_dx;
     MWMemRes lTrig;      /* sin, cos of l */
     MWMemRes bTrig;      /* sin, cos of b */
-    MWMemRes nu_id;
-    MWMemRes nu_step;
+    MWMemRes nuBuf;
     CALuint numberStreams;
 } SeparationCALMem;
 
 #define cal_warn(msg, err, ...) fprintf(stderr, msg ": %s (%s)\n", ##__VA_ARGS__, calGetErrorString(), showCALresult(err))
-
 
 static CALresult releaseMWMemRes(CALcontext ctx, MWMemRes* mr)
 {
@@ -394,7 +391,7 @@ static CALresult createCB(MWMemRes* mr, MWCALInfo* ci, CALformat format, CALuint
     return getMemoryHandle(mr, ci);
 }
 
-const CALuint formatToNumElements(CALformat x)
+static CALuint formatToNumElements(CALformat x)
 {
     switch (x)
     {
@@ -408,7 +405,7 @@ const CALuint formatToNumElements(CALformat x)
     }
 }
 
-const size_t formatToSize(CALformat x)
+static size_t formatToSize(CALformat x)
 {
     switch (x)
     {
@@ -487,17 +484,26 @@ static CALresult createConstantBuffer1D(MWMemRes* mr,
     return CAL_RESULT_OK;
 }
 
-static CALresult zeroBuffer(MWMemRes* mr, MWCALInfo* ci, CALuint size)
+static CALresult zeroBuffer(MWMemRes* mr, MWCALInfo* ci, CALuint width, CALuint height)
 {
     CALresult err;
     CALuint pitch;
-    CALvoid* ptr;
+    CALdouble* ptr;
+    CALdouble* tmp;
+    CALuint i, j;
 
-    err = mapMWMemRes(mr, &ptr, &pitch);
+    err = mapMWMemRes(mr, (CALvoid**) &ptr, &pitch);
     if (err != CAL_RESULT_OK)
         return err;
 
-    memset(ptr, 0, pitch * size);
+    for (i = 0; i < height; ++i)
+    {
+        tmp = &ptr[i * pitch];
+        for (j = 0; j < width; ++j)
+        {
+            tmp[j] = 0.0;
+        }
+    }
 
     err = unmapMWMemRes(mr);
     if (err != CAL_RESULT_OK)
@@ -518,7 +524,7 @@ static CALresult createOutputBuffer2D(MWMemRes* mr, MWCALInfo* ci, CALuint width
         return err;
     }
 
-    err = zeroBuffer(mr, ci, width * sizeof(real));
+    err = zeroBuffer(mr, ci, width, height);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to zero output buffer", err);
@@ -557,7 +563,7 @@ static CALresult createOutStreamBuffers(MWCALInfo* ci,
     CALuint i, numberAllocated;
     CALresult err = CAL_RESULT_OK;
 
-    cm->outStreams = mwCalloc(cm->numberStreams, sizeof(MWMemRes));
+    cm->outStreams = (MWMemRes*) mwCalloc(cm->numberStreams, sizeof(MWMemRes));
     for (i = 0; i < cm->numberStreams; ++i)
     {
         err = createOutputBuffer2D(&cm->outStreams[i], ci, sizes->muSteps, sizes->rSteps);
@@ -715,11 +721,7 @@ CALresult releaseSeparationBuffers(MWCALInfo* ci, SeparationCALMem* cm)
     err |= releaseMWMemRes(ci->calctx, &cm->sg_dx);
     err |= releaseMWMemRes(ci->calctx, &cm->lTrig);
     err |= releaseMWMemRes(ci->calctx, &cm->bTrig);
-
-    err |= releaseMWMemRes(ci->calctx, &cm->nu_id);
-
-    /* nu_step and nu_id arguments in same buffer */
-    //err |= releaseMWMemRes(ci->calctx, &cm->nu_step);
+    err |= releaseMWMemRes(ci->calctx, &cm->nuBuf);
 
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to release buffers", err);
@@ -741,13 +743,12 @@ static CALresult createSeparationBuffers(MWCALInfo* ci,
 
     err |= createOutMuBuffer(ci, cm, sizes);
     err |= createOutStreamBuffers(ci, cm, sizes);
+
     err |= createRBuffers(ci, cm, ap, ia, sg, sizes);
     err |= createLBTrigBuffers(ci, cm, ap, ia, sizes);
 
-
     /* both arguments set on nu step share 1 single element buffer */
-    err |= createCB(&cm->nu_id, ci, formatReal2, 1);
-    cm->nu_step = cm->nu_id;
+    err |= createCB(&cm->nuBuf, ci, formatReal2, 1);
 
     if (err != CAL_RESULT_OK)
     {
@@ -834,7 +835,6 @@ static CALimage createCALImage(const char* src)
     obj = createCALBinary(src);
     rc = calclLink(&img, &obj, 1);
     calclFreeObject(obj);
-
     if (rc != CAL_RESULT_OK)
     {
         warn("Error linking image (%d) : %s\n", rc, calclGetErrorString());
@@ -885,12 +885,12 @@ static CALimage createCALImageFromGeneratedKernel(const AstronomyParameters* ap,
     char* src;
 
     src = separationKernelSrc(ap, ia, sc);
-    fputs(src, stderr);
+    //fputs(src, stderr);
 
     img = createCALImage(src);
     free(src);
 
-    printISA(img);
+    //printISA(img);
     return img;
 }
 
@@ -903,7 +903,10 @@ static inline CALresult getNameMWCALInfo(MWCALInfo* ci, CALname* name, const CAL
 static void destroyModuleNames(SeparationCALNames* cn)
 {
     free(cn->outStreams);
+    cn->outStreams = NULL;
+
     free(cn->inStreams);
+    cn->inStreams = NULL;
 }
 
 static CALresult getModuleNames(MWCALInfo* ci, SeparationCALNames* cn, CALuint numberStreams)
@@ -912,13 +915,13 @@ static CALresult getModuleNames(MWCALInfo* ci, SeparationCALNames* cn, CALuint n
     CALuint i;
     char buf[20] = "";
 
+    printf("what what: %d\n", err);
+    printf("What what: %d\n", CAL_RESULT_BAD_HANDLE);
     cn->outStreams = mwCalloc(numberStreams, sizeof(CALname));
     cn->inStreams = mwCalloc(numberStreams, sizeof(CALname));
 
-
     err |= getNameMWCALInfo(ci, &cn->sg_dx,   "cb0");
-    err |= getNameMWCALInfo(ci, &cn->nu_id,   "cb1");
-    err |= getNameMWCALInfo(ci, &cn->nu_step, "cb1");
+    err |= getNameMWCALInfo(ci, &cn->nuBuf,   "cb1");
 
     err |= getNameMWCALInfo(ci, &cn->rPts,    "i0");
     err |= getNameMWCALInfo(ci, &cn->rc,      "i1");
@@ -961,9 +964,7 @@ static CALresult setKernelArguments(MWCALInfo* ci, SeparationCALMem* cm, Separat
     err |= calCtxSetMem(ci->calctx, cn->lTrig, cm->lTrig.mem);
     err |= calCtxSetMem(ci->calctx, cn->bTrig, cm->bTrig.mem);
     err |= calCtxSetMem(ci->calctx, cn->sg_dx, cm->sg_dx.mem);
-
-    err |= calCtxSetMem(ci->calctx, cn->nu_step, cm->nu_step.mem);
-    err |= calCtxSetMem(ci->calctx, cn->nu_id, cm->nu_id.mem);
+    err |= calCtxSetMem(ci->calctx, cn->nuBuf, cm->nuBuf.mem);
 
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to set kernel arguments", err);
@@ -977,6 +978,8 @@ static CALresult separationSetupCAL(MWCALInfo* ci,
                                     const StreamConstants* sc)
 {
     CALresult err;
+
+    warn("CAL setup\n");
 
     ci->image = createCALImageFromGeneratedKernel(ap, ia, sc);
     if (!ci->image)
@@ -1026,22 +1029,22 @@ static CALresult setNuKernelArgs(MWCALInfo* ci,
                                  CALuint nuStep)
 {
     CALresult err;
+    CALdouble* nuBufPtr;
     CALfloat* nuStepPtr;
-    CALdouble* nuIdPtr;
     CALuint pitch = 0;
     NuId nuid;
 
-    err = mapMWMemRes(&cm->nu_step, (CALvoid**) &nuStepPtr, &pitch);
+    err = mapMWMemRes(&cm->nuBuf, (CALvoid**) &nuBufPtr, &pitch);
     if (err != CAL_RESULT_OK)
         return err;
 
     nuid = calcNuStep(ia, nuStep);
 
-    nuStepPtr[0] = (CALfloat) nuStep;
-    nuIdPtr = (CALdouble*) &nuStepPtr[2];
-    *nuIdPtr = nuid.id;
+    nuStepPtr = (CALfloat*) nuBufPtr;
+    *nuStepPtr = (CALfloat) nuStep;
+    nuBufPtr[1] = nuid.id;
 
-    err = unmapMWMemRes(&cm->nu_step);
+    err = unmapMWMemRes(&cm->nuBuf);
     if (err != CAL_RESULT_OK)
         return err;
 
@@ -1107,11 +1110,20 @@ static real runIntegral(MWCALInfo* ci,
     SeparationCALNames cn;
     double t1, t2;
 
-    getModuleNames(ci, &cn, cm->numberStreams);
+    memset(&cn, 0, sizeof(SeparationCALNames));
+    err = getModuleNames(ci, &cn, cm->numberStreams);
+    if (err != CAL_RESULT_OK)
+    {
+        cal_warn("Failed to get module names", err);
+        return NAN;
+    }
 
     err = setKernelArguments(ci, cm, &cn);
     if (err != CAL_RESULT_OK)
+    {
+        destroyModuleNames(&cn);
         return NAN;
+    }
 
     for (i = 0; i < ia->nu_steps; ++i)
     {
@@ -1119,11 +1131,11 @@ static real runIntegral(MWCALInfo* ci,
         t1 = mwGetTime();
         err = setNuKernelArgs(ci, cm, &cn, ia, i);
         if (err != CAL_RESULT_OK)
-            return NAN;
+            break;
 
         err = runKernel(ci, cm, ia);
         if (err != CAL_RESULT_OK)
-            return NAN;
+            break;
 
         t2 = mwGetTime();
         warn("Time = %fms\n", 1000.0 * (t2 - t1));
@@ -1131,7 +1143,7 @@ static real runIntegral(MWCALInfo* ci,
 
     destroyModuleNames(&cn);
 
-    return readResults(ci, cm, ia, probs_results, cm->numberStreams);
+    return  (err != CAL_RESULT_OK) ? NAN : readResults(ci, cm, ia, probs_results, cm->numberStreams);
 }
 
 static void calculateCALSeparationSizes(CALSeparationSizes* sizes,
@@ -1190,6 +1202,7 @@ real integrateCAL(const AstronomyParameters* ap,
     }
 
     calculateCALSeparationSizes(&sizes, ap, ia);
+
     err = createSeparationBuffers(&ci, &cm, ap, ia, sc, sg, &sizes);
     if (err != CAL_RESULT_OK)
         return NAN;
