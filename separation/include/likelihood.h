@@ -36,14 +36,14 @@ real likelihood_bg_probability(const AstronomyParameters* ap,
                                const real reff_xr_rp3,
                                real* st_probs);
 
-real likelihood(const AstronomyParameters* ap,
-                const StarPoints* sp,
-                const StreamConstants* sc,
-                const Streams* streams,
-                const FinalStreamIntegrals* fsi,
-                const StreamGauss sg,
-                const int do_separation,
-                const char* separation_outfile);
+int likelihood(SeparationResults* results,
+               const AstronomyParameters* ap,
+               const StarPoints* sp,
+               const StreamConstants* sc,
+               const Streams* streams,
+               const StreamGauss sg,
+               const int do_separation,
+               const char* separation_outfile);
 
 #ifdef __cplusplus
 }

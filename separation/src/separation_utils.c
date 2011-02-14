@@ -154,3 +154,80 @@ int prob_ok(StreamStats* ss, int n)
     return ok;
 }
 
+SeparationResults* newSeparationResults(unsigned int numberStreams)
+{
+    unsigned int i;
+    SeparationResults* p;
+
+    p = mwCalloc(1, sizeof(SeparationResults));
+    p->streamIntegrals = mwCalloc(numberStreams, sizeof(real));
+    p->streamLikelihoods = mwCalloc(numberStreams, sizeof(real));
+
+    p->backgroundIntegral = NAN;
+    p->backgroundLikelihood = NAN;
+    p->likelihood = NAN;
+
+    for (i = 0; i < numberStreams; ++i)
+    {
+        p->streamIntegrals[i] = NAN;
+        p->streamLikelihoods[i] = NAN;
+    }
+
+    return p;
+}
+
+void freeSeparationResults(SeparationResults* p)
+{
+    free(p->streamIntegrals);
+    free(p->streamLikelihoods);
+    free(p);
+}
+
+int checkSeparationResults(const SeparationResults* results, unsigned int numberStreams)
+{
+    unsigned int i;
+    int rc = 0;
+
+    rc |= !isfinite(results->likelihood);
+    rc |= !isfinite(results->backgroundIntegral);
+    rc |= !isfinite(results->backgroundLikelihood);
+
+    for (i = 0; i < numberStreams; ++i)
+    {
+        rc |= !isfinite(results->streamIntegrals[i]);
+        rc |= !isfinite(results->streamLikelihoods[i]);
+    }
+
+    if (rc)
+        warn("Non-finite result\n");
+
+    return rc;
+}
+
+static inline int closeEnough(real a, real b, real eps)
+{
+    return mw_fabs(a - b) < eps;
+}
+
+/* Return non-zero if all components are within eps */
+int compareSeparationResults(const SeparationResults* a,
+                             const SeparationResults* b,
+                             unsigned int numberStreams,
+                             real eps)
+{
+    unsigned int i;
+    int rc = 0;
+
+    rc |= closeEnough(a->likelihood, b->likelihood, eps);
+    rc |= closeEnough(a->backgroundIntegral, b->backgroundIntegral, eps);
+    rc |= closeEnough(a->backgroundLikelihood, b->backgroundLikelihood, eps);
+
+    for (i = 0; i < numberStreams; ++i)
+    {
+        rc |= closeEnough(a->streamIntegrals[i], b->streamIntegrals[i], eps);
+        rc |= closeEnough(a->streamLikelihoods[i], b->streamLikelihoods[i], eps);
+    }
+
+    return rc;
+}
+

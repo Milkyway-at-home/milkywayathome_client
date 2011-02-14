@@ -20,6 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "separation.h"
+#include "separation_utils.h"
 
 #if SEPARATION_OPENCL
   #include "run_cl.h"
@@ -34,33 +35,26 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 
 
-static void finalStreamIntegrals(FinalStreamIntegrals* fsi,
-                                 const EvaluationState* es,
-                                 const unsigned int number_streams,
-                                 const unsigned int number_integrals)
+static void getFinalIntegrals(SeparationResults* results,
+                              const EvaluationState* es,
+                              const unsigned int number_streams,
+                              const unsigned int number_integrals)
 {
     unsigned int i, j;
 
-    fsi->stream_integrals = (real*) mwCalloc(number_streams, sizeof(real));
-
-    fsi->background_integral = es->integrals[0].background_integral;
+    results->backgroundIntegral = es->integrals[0].background_integral;
     for (i = 0; i < number_streams; ++i)
-        fsi->stream_integrals[i] = es->integrals[0].stream_integrals[i];
+        results->streamIntegrals[i] = es->integrals[0].stream_integrals[i];
 
     for (i = 1; i < number_integrals; ++i)
     {
-        fsi->background_integral -= es->integrals[i].background_integral;
+        results->backgroundIntegral -= es->integrals[i].background_integral;
         for (j = 0; j < number_streams; j++)
-            fsi->stream_integrals[j] -= es->integrals[i].stream_integrals[j];
+            results->streamIntegrals[j] -= es->integrals[i].stream_integrals[j];
     }
-
 }
 
-static void freeFinalStreamIntegrals(FinalStreamIntegrals* fsi)
-{
-    free(fsi->stream_integrals);
-}
-
+#if 0
 static void printStreamIntegrals(const FinalStreamIntegrals* fsi, const unsigned int number_streams)
 {
     unsigned int i;
@@ -70,6 +64,7 @@ static void printStreamIntegrals(const FinalStreamIntegrals* fsi, const unsigned
         fprintf(stderr, " %.20lf", fsi->stream_integrals[i]);
     fprintf(stderr, " </stream_integrals>\n");
 }
+#endif
 
 /* Add up completed integrals for progress reporting */
 static inline unsigned int completedIntegralProgress(const IntegralArea* ias, const EvaluationState* es)
@@ -159,19 +154,19 @@ static void calculateIntegrals(const AstronomyParameters* ap,
   #endif
 }
 
-real evaluate(const AstronomyParameters* ap,
-              const IntegralArea* ias,
-              const Streams* streams,
-              const StreamConstants* sc,
-              const char* star_points_file,
-              const CLRequest* clr,
-              const int do_separation,
-              const char* separation_outfile)
+int evaluate(SeparationResults* results,
+             const AstronomyParameters* ap,
+             const IntegralArea* ias,
+             const Streams* streams,
+             const StreamConstants* sc,
+             const char* star_points_file,
+             const CLRequest* clr,
+             const int do_separation,
+             const char* separation_outfile)
 {
-    real likelihood_val = NAN;
+    int rc;
     EvaluationState* es;
     StreamGauss sg;
-    FinalStreamIntegrals fsi;
     StarPoints sp = EMPTY_STAR_POINTS;
 
     es = newEvaluationState(ap);
@@ -196,22 +191,21 @@ real evaluate(const AstronomyParameters* ap,
         fail("Failed to write final checkpoint\n");
   #endif
 
-    finalStreamIntegrals(&fsi, es, ap->number_streams, ap->number_integrals);
-    printStreamIntegrals(&fsi, ap->number_streams);
+    getFinalIntegrals(results, es, ap->number_streams, ap->number_integrals);
     freeEvaluationState(es);
 
     if (readStarPoints(&sp, star_points_file))
         warn("Failed to read star points file\n");
     else
     {
-        likelihood_val = likelihood(ap, &sp, sc, streams, &fsi, sg, do_separation, separation_outfile);
+        rc = likelihood(results, ap, &sp, sc, streams, sg, do_separation, separation_outfile);
+        rc |= checkSeparationResults(results, ap->number_streams);
     }
 
     freeStarPoints(&sp);
-    freeFinalStreamIntegrals(&fsi);
     freeStreamGauss(sg);
 
-    return likelihood_val;
+    return rc;
 }
 
 

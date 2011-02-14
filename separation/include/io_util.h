@@ -36,6 +36,7 @@ void printAstronomyParameters(const AstronomyParameters* ap);
 void printNuConstants(const NuConstants* c, unsigned int n);
 void printStreamGauss(const StreamGauss* c, unsigned int n);
 void printStreamConstants(const StreamConstants* c, unsigned int n);
+void printSeparationResults(const SeparationResults* results, unsigned int numberStreams);
 
 #endif /* _IO_UTIL_H_ */
 

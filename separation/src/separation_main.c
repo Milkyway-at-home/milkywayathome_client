@@ -21,6 +21,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation.h"
 #include "milkyway_cpp_util.h"
+#include "io_util.h"
 #include <popt.h>
 
 
@@ -249,7 +250,7 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     Streams streams = EMPTY_STREAMS;
     IntegralArea* ias = NULL;
     StreamConstants* sc = NULL;
-    real likelihood_val = NAN;
+    SeparationResults* results = NULL;
     int rc;
     CLRequest clr;
 
@@ -281,18 +282,18 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
         return 1;
     }
 
-    likelihood_val = evaluate(&ap, ias, &streams, sc, sf->star_points_file,
-                              &clr, sf->do_separation, sf->separation_outfile);
-    rc = isnan(likelihood_val);
-
-    warn("<search_likelihood> %0.20f </search_likelihood>\n", likelihood_val);
-
+    results = newSeparationResults(ap.number_streams);
+    rc = evaluate(results, &ap, ias, &streams, sc, sf->star_points_file,
+                  &clr, sf->do_separation, sf->separation_outfile);
     if (rc)
         warn("Failed to calculate likelihood\n");
+
+    printSeparationResults(results, ap.number_streams);
 
     mwFreeA(ias);
     mwFreeA(sc);
     freeStreams(&streams);
+    freeSeparationResults(results);
 
     return rc;
 }
@@ -316,9 +317,6 @@ static void printVersion()
 
 static int separationInit(const char* appname)
 {
-  #pragma unused(argc)
-  #pragma unused(argv)
-
   #if DISABLE_DENORMALS
     mwDisableDenormalsSSE();
   #endif

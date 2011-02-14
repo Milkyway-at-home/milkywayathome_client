@@ -193,15 +193,6 @@ typedef struct
 
 #define EMPTY_BACKGROUND_PARAMETERS { NULL, NULL, NULL, NULL, NULL }
 
-
-typedef struct
-{
-    real background_integral;
-    real* stream_integrals;
-} FinalStreamIntegrals;
-
-#define EMPTY_FINAL_STREAM_INTEGRALS { 0.0, NULL }
-
 typedef struct
 {
     real irv;
@@ -290,6 +281,17 @@ typedef struct SEPARATION_ALIGN(16)
 #define ZERO_KAHAN { 0.0, 0.0 }
 
 #define CLEAR_KAHAN(k) { (k).sum = 0.0; (k).correction = 0.0; }
+
+typedef struct
+{
+    real likelihood;
+
+    real backgroundIntegral;
+    real backgroundLikelihood;
+
+    real* streamIntegrals;
+    real* streamLikelihoods;
+} SeparationResults;
 
 #ifdef __cplusplus
 }

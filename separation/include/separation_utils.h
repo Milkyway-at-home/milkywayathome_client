@@ -45,6 +45,16 @@ void get_transform(mwmatrix mat, const mwvector f, const mwvector t);
 int prob_ok(StreamStats* ss, int n);
 void prob_ok_init(long seed);
 
+SeparationResults* newSeparationResults(unsigned int numberStreams);
+void freeSeparationResults(SeparationResults* p);
+int checkSeparationResults(const SeparationResults* results, unsigned int numberStreams);
+
+int compareSeparationResults(const SeparationResults* a,
+                             const SeparationResults* b,
+                             unsigned int numberStreams,
+                             real eps);
+
+
 #ifdef __cplusplus
 }
 #endif
