@@ -22,6 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "io_util.h"
 #include "milkyway_util.h"
 #include "separation_types.h"
+#include "separation_utils.h"
 
 /****
     *   Functions for printing parameters to files/output
@@ -233,6 +234,63 @@ void printSeparationResults(const SeparationResults* results, unsigned int numbe
 
     /* Print overall likelihood */
     warn("<search_likelihood> %0.15lf </search_likelihood>\n", results->likelihood);
+}
+
+/* FIXME: Kill this with fire when we switch to JSON everything for separation */
+static SeparationResults* freadReferenceResults(FILE* f, unsigned int nStream)
+{
+    SeparationResults* r;
+    char buf[256] = "";
+    unsigned int i;
+
+    r = newSeparationResults(nStream);
+
+    /* Can put comments at start of this junk */
+    while (buf[0] == '#' || buf[0] == ' ' || !strncmp(buf, "", sizeof(buf)))
+        fgets(buf, sizeof(buf), f);
+
+    if (sscanf(buf, "likelihood: %lf\n", &r->likelihood) != 1)
+        goto fail_read;
+
+    if (fscanf(f, "background_integral: %lf\n", &r->backgroundIntegral) != 1)
+        goto fail_read;
+
+    if (fscanf(f, "background_likelihood: %lf\n", &r->backgroundLikelihood) != 1)
+        goto fail_read;
+
+    for (i = 0; i < nStream; ++i)
+    {
+        if (fscanf(f, "stream_integral: %lf\n", &r->streamIntegrals[i]) != 1)
+            goto fail_read;
+
+        if (fscanf(f, "stream_likelihood: %lf\n", &r->streamLikelihoods[i]) != 1)
+            goto fail_read;
+    }
+
+    return r;
+
+fail_read:
+    freeSeparationResults(r);
+    return NULL;
+}
+
+SeparationResults* readReferenceResults(const char* refFile, unsigned int nStream)
+{
+    FILE* f;
+    SeparationResults* refResults;
+
+    f = fopen(refFile, "r");
+    if (!f)
+    {
+        perror("Opening reference results");
+        return NULL;
+    }
+
+    refResults = freadReferenceResults(f, nStream);
+
+    fclose(f);
+
+    return refResults;
 }
 
 

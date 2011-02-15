@@ -33,6 +33,7 @@ typedef struct
     char* star_points_file;
     char* ap_file;  /* astronomy parameters */
     char* separation_outfile;
+    char* referenceFile;
     int do_separation;
     int separationSeed;
     int cleanup_checkpoint;
@@ -42,13 +43,14 @@ typedef struct
     unsigned int numChunk;
 } SeparationFlags;
 
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0 }
 
 static void freeSeparationFlags(SeparationFlags* sf)
 {
     free(sf->star_points_file);
     free(sf->ap_file);
     free(sf->separation_outfile);
+    free(sf->referenceFile);
 }
 
 /* Use hardcoded names if files not specified */
@@ -113,6 +115,12 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
             "cleanup-checkpoint", 'c',
             POPT_ARG_NONE, &sf->cleanup_checkpoint,
             0, "Delete checkpoint on successful", NULL
+        },
+
+        {
+            "verify", 'v',
+            POPT_ARG_STRING, &sf->referenceFile,
+            0, "Verify against result file", NULL
         },
 
       #if SEPARATION_OPENCL
@@ -289,6 +297,9 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
         warn("Failed to calculate likelihood\n");
 
     printSeparationResults(results, ap.number_streams);
+
+    if (sf->referenceFile)
+        rc |= verifySeparationResults(sf->referenceFile, results, ap.number_streams);
 
     mwFreeA(ias);
     mwFreeA(sc);

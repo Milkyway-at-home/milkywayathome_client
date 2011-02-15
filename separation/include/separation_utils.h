@@ -49,11 +49,7 @@ SeparationResults* newSeparationResults(unsigned int numberStreams);
 void freeSeparationResults(SeparationResults* p);
 int checkSeparationResults(const SeparationResults* results, unsigned int numberStreams);
 
-int compareSeparationResults(const SeparationResults* a,
-                             const SeparationResults* b,
-                             unsigned int numberStreams,
-                             real eps);
-
+int verifySeparationResults(const char* refFile, const SeparationResults* results, unsigned int nStreams);
 
 #ifdef __cplusplus
 }

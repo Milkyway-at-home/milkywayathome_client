@@ -38,5 +38,7 @@ void printStreamGauss(const StreamGauss* c, unsigned int n);
 void printStreamConstants(const StreamConstants* c, unsigned int n);
 void printSeparationResults(const SeparationResults* results, unsigned int numberStreams);
 
+SeparationResults* readReferenceResults(const char* refFile, unsigned int nStream);
+
 #endif /* _IO_UTIL_H_ */
 

@@ -204,29 +204,93 @@ int checkSeparationResults(const SeparationResults* results, unsigned int number
     return rc;
 }
 
-static inline int closeEnough(real a, real b, real eps)
+static void printDifference(const char* name, real a, real b)
 {
-    return mw_fabs(a - b) < eps;
+    warn("%21s: | %20.15lf - %20.15lf | = %20.15lf\n", name, a, b, mw_fabs(a - b));
+}
+
+static void printDifferences(const SeparationResults* a,
+                             const SeparationResults* b,
+                             unsigned int numberStreams)
+{
+    unsigned int i;
+    char buf[128] = "";
+
+    warn("\n%21s    %20s   %20s    %20s\n"
+         "-----------------------------------------------"
+         "-----------------------------------------------\n",
+         "Field", "Expected", "Result", "Difference");
+
+    printDifference("background integral", a->backgroundIntegral, b->backgroundIntegral);
+    for (i = 0; i < numberStreams; ++i)
+    {
+        sprintf(buf, "stream_integral[%u]", i);
+        printDifference(buf, a->streamIntegrals[i], b->streamIntegrals[i]);
+    }
+
+    warn("\n");
+    printDifference("background likelihood", a->backgroundLikelihood, b->backgroundLikelihood);
+    for (i = 0; i < numberStreams; ++i)
+    {
+        sprintf(buf, "stream likelihood[%u]", i);
+        printDifference(buf, a->streamLikelihoods[i], b->streamLikelihoods[i]);
+    }
+
+    printDifference("likelihood", a->likelihood, b->likelihood);
+}
+
+static inline int notCloseEnough(real a, real b, real eps)
+{
+    return mw_fabs(a - b) >= eps;
 }
 
 /* Return non-zero if all components are within eps */
-int compareSeparationResults(const SeparationResults* a,
-                             const SeparationResults* b,
-                             unsigned int numberStreams,
-                             real eps)
+static int compareSeparationResults(const SeparationResults* a,
+                                    const SeparationResults* b,
+                                    unsigned int numberStreams,
+                                    real eps)
 {
     unsigned int i;
     int rc = 0;
 
-    rc |= closeEnough(a->likelihood, b->likelihood, eps);
-    rc |= closeEnough(a->backgroundIntegral, b->backgroundIntegral, eps);
-    rc |= closeEnough(a->backgroundLikelihood, b->backgroundLikelihood, eps);
+    rc |= notCloseEnough(a->likelihood, b->likelihood, eps);
+    rc |= notCloseEnough(a->backgroundIntegral, b->backgroundIntegral, eps);
+    rc |= notCloseEnough(a->backgroundLikelihood, b->backgroundLikelihood, eps);
 
     for (i = 0; i < numberStreams; ++i)
     {
-        rc |= closeEnough(a->streamIntegrals[i], b->streamIntegrals[i], eps);
-        rc |= closeEnough(a->streamLikelihoods[i], b->streamLikelihoods[i], eps);
+        rc |= notCloseEnough(a->streamIntegrals[i], b->streamIntegrals[i], eps);
+        rc |= notCloseEnough(a->streamLikelihoods[i], b->streamLikelihoods[i], eps);
     }
+
+    return rc;
+}
+
+int verifySeparationResults(const char* refFile, const SeparationResults* results, unsigned int nStreams)
+{
+    SeparationResults* ref;
+    int rc;
+
+  #if DOUBLEPREC
+    const real epsResults = 1.0e-12;
+  #else
+    const real epsResulst = 1.0e-7;
+  #endif /* DOUBLEPREC */
+
+    ref = readReferenceResults(refFile, nStreams);
+    if (!ref)
+    {
+        warn("Failed to read reference results\n");
+        return 1;
+    }
+
+    rc = compareSeparationResults(ref, results, nStreams, epsResults);
+    if (rc)
+        warn("\n\nResults differ from expected\n");
+
+    printDifferences(ref, results, nStreams);
+
+    free(ref);
 
     return rc;
 }
