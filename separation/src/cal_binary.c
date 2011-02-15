@@ -313,7 +313,6 @@ static CALresult unmapMWMemRes(MWMemRes* mr)
     return err;
 }
 
-/* 2 element double items */
 static CALresult writeConstantBufferDouble(MWMemRes* mr,
                                            const CALdouble* dataPtr,
                                            CALuint numberElements,
@@ -484,25 +483,24 @@ static CALresult createConstantBuffer1D(MWMemRes* mr,
     return CAL_RESULT_OK;
 }
 
-static CALresult zeroBuffer(MWMemRes* mr, MWCALInfo* ci, CALuint width, CALuint height)
+static CALresult zeroBuffer(MWMemRes* mr, MWCALInfo* ci, CALuint numberElements, CALuint width, CALuint height)
 {
     CALresult err;
     CALuint pitch;
     CALdouble* ptr;
     CALdouble* tmp;
-    CALuint i, j;
+    CALuint i;
+    size_t widthSize;
 
     err = mapMWMemRes(mr, (CALvoid**) &ptr, &pitch);
     if (err != CAL_RESULT_OK)
         return err;
 
+    widthSize = numberElements * width * sizeof(real);
     for (i = 0; i < height; ++i)
     {
-        tmp = &ptr[i * pitch];
-        for (j = 0; j < width; ++j)
-        {
-            tmp[j] = 0.0;
-        }
+        tmp = &ptr[i * numberElements * pitch];
+        memset(tmp, 0, widthSize);
     }
 
     err = unmapMWMemRes(mr);
@@ -517,14 +515,14 @@ static CALresult createOutputBuffer2D(MWMemRes* mr, MWCALInfo* ci, CALuint width
 {
     CALresult err;
 
-    err = calResAllocLocal2D(&mr->res, ci->dev, width, height, formatReal1, 0);
+    err = calResAllocLocal2D(&mr->res, ci->dev, width, height, formatReal2, 0);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create output resource", err);
         return err;
     }
 
-    err = zeroBuffer(mr, ci, width, height);
+    err = zeroBuffer(mr, ci, 2, width, height);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to zero output buffer", err);
@@ -1054,8 +1052,8 @@ static CALresult setNuKernelArgs(MWCALInfo* ci,
 static real sumResults(MWMemRes* mr, const IntegralArea* ia)
 {
     CALuint i, j, pitch;
-    real* bufPtr;
-    real* tmp;
+    Kahan* bufPtr;
+    Kahan* tmp;
     Kahan ksum = ZERO_KAHAN;
     CALresult err = CAL_RESULT_OK;
 
@@ -1068,8 +1066,7 @@ static real sumResults(MWMemRes* mr, const IntegralArea* ia)
         tmp = &bufPtr[i * pitch];
         for (j = 0; j < ia->mu_steps; ++j)
         {
-            //warn("Reading in [%u][%u] = %.20lf\n", j, i, tmp[j]);
-            KAHAN_ADD(ksum, tmp[j]);
+            KAHAN_ADD(ksum, tmp[j].sum);
         }
     }
 
@@ -1143,7 +1140,7 @@ static real runIntegral(MWCALInfo* ci,
 
     destroyModuleNames(&cn);
 
-    return  (err != CAL_RESULT_OK) ? NAN : readResults(ci, cm, ia, probs_results, cm->numberStreams);
+    return (err != CAL_RESULT_OK) ? NAN : readResults(ci, cm, ia, probs_results, cm->numberStreams);
 }
 
 static void calculateCALSeparationSizes(CALSeparationSizes* sizes,

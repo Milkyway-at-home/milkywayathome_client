@@ -79,8 +79,8 @@ static double1 exp_custom(double1 x)
     return ldexp(tmp1, expi);
 }
 
-static void createSeparationKernelCore(input2d<double1>& bgInput,
-                                       std::vector< input2d<double1> >& streamInput,
+static void createSeparationKernelCore(input2d<double2>& bgInput,
+                                       std::vector< input2d<double2> >& streamInput,
                                        input2d<double2>& rPts,
                                        input1d<double2>& rConsts,
                                        input2d<double2>& lTrigBuf,
@@ -96,9 +96,9 @@ static void createSeparationKernelCore(input2d<double1>& bgInput,
     indexed_register<double1> sg_dx("cb0");
     named_variable<float1> nu_step("cb1[0].x");
     named_variable<double1> nu_id("cb1[0].zw");
-    named_variable<double1> bgOut("o0");
+    named_variable<double2> bgOut("o0");
     named_variable<float2> pos("vWinCoord0"); /* .x() = mu, .y() = r */
-    std::vector< named_variable<double1> > streamOutputRegisters;
+    std::vector< named_variable<double2> > streamOutputRegisters;
 
     std::stringstream regName;
     for (j = 0; j < number_streams; ++j)
@@ -185,20 +185,18 @@ static void createSeparationKernelCore(input2d<double1>& bgInput,
 
     double1 V_reff_xr_rp3 = nu_id * rConsts(pos.y()).x();
 
-    std::vector<double1> streamRead;
-    double1 bgRead = bgInput[pos];
+    std::vector<double2> streamRead;
+    double2 bgRead = bgInput[pos];
     for (j = 0; j < number_streams; ++j)
         streamRead.push_back(streamInput[j][pos]);
 
-
     emit_comment("Output");
-    bgOut.x() = bgRead + (V_reff_xr_rp3 * bg_int);
+    bgOut.x() = bgRead.x() + (V_reff_xr_rp3 * bg_int);
 
     emit_comment("Stream output");
     //for (j = 0; j < ap->number_streams; ++j)
     for (j = 0; j < number_streams; ++j)
-        streamOutputRegisters[j].x() = streamRead[j] + (V_reff_xr_rp3 * streamIntegrals[j]);
-
+        streamOutputRegisters[j].x() = streamRead[j].x() + (V_reff_xr_rp3 * streamIntegrals[j]);
 
     streamIntegrals.clear();
 }
@@ -236,11 +234,11 @@ std::string createSeparationKernel(const AstronomyParameters* ap,
     input2d<double2> lTrig(2);
     input2d<double2> bTrig(3);
 
-    input2d<double1> bgInput(4);
-    std::vector< input2d<double1> > streamInputs;
+    input2d<double2> bgInput(4);
+    std::vector< input2d<double2> > streamInputs;
 
     for (i = 0; i < ap->number_streams; ++i)
-        streamInputs.push_back(input2d<double1>(5 + i));
+        streamInputs.push_back(input2d<double2>(5 + i));
 
     createSeparationKernelCore(bgInput, streamInputs, rPts, rConsts, lTrig, bTrig, ap, ia, sc);
 
