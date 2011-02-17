@@ -282,7 +282,7 @@ static mwbool readNbodyContext(NBodyCtx* ctx, const char* pname, json_object* ob
             DBL_PARAM_DFLT("timestep",       &ctx->timestep,       &nanN),
             DBL_PARAM_DFLT("orbit_timestep", &ctx->orbit_timestep, &nanN),
 
-            ARRAY_PARAM("dwarf-model", &ctx->models, sizeof(DwarfModel), &ctx->modelNum, (MWReadFunc) readDwarfModel),
+            ONE_OR_MANY_PARAM("dwarf-model", &ctx->models, sizeof(DwarfModel), &ctx->modelNum, (MWReadFunc) readDwarfModel),
             DBL_PARAM_DFLT("sun-gc-dist", &ctx->sunGCDist, &defaultCtx.sunGCDist),
             DBL_PARAM_DFLT("tree_rsize", &ctx->tree_rsize, &defaultCtx.tree_rsize),
             NULL_MWPARAMETER

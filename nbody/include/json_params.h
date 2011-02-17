@@ -46,8 +46,9 @@ typedef enum
     mw_type_string  = json_type_string,
 
     /* new stuff */
-    mw_type_vector,  /* an array of length 3 */
-    mw_type_enum     /* a string with an associated enum value */
+    mw_type_vector,     /* an array of length 3 */
+    mw_type_enum,       /* a string with an associated enum value */
+    mw_type_one_or_many /* Try a single object, or try a list of them */
 } mw_type;
 
 /* ItemToBeRead -> NameOfItem -> JsonObject -> True on failure */
@@ -109,6 +110,7 @@ typedef struct
 
 #define OBJ_PARAM(name, dest, readf) { name, mw_type_object, dest, 0, 0, NULL, readf }
 #define ARRAY_PARAM(name, dest, size, length, readf) { name, mw_type_array, dest, size, length, NULL, readf }
+#define ONE_OR_MANY_PARAM(name, dest, size, length, readf) { name, mw_type_one_or_many, dest, size, length, NULL, readf }
 
 
 const MWParameterSet* mwReadParameterSet(const MWParameterSet* ps, const char* str, const char* name);
