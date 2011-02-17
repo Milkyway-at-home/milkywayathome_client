@@ -407,16 +407,19 @@ static mwbool readItem(const MWParameter* p, const char* pname, json_object* obj
 
 static void printAvailableFields(const MWParameter* p, const char* pname)
 {
+    char buf[128];
+
     warn("Failed to read required item of correct type in group '%s'\n"
-         "\tFields are:\n", pname);
+         "%10s\n", pname, "    Fields are:");
 
     while (p->name)
     {
-        warn("\t\t%s (%s)", p->name, showNBodyType(p->type));
+        sprintf(buf, "(%s)", showNBodyType(p->type));
+        warn("%28s %13s", p->name, buf);
 
         if (p->dflt)
             warn("  (optional)");
-        warn(",\n");
+        warn("\n");
         ++p;
     }
 }

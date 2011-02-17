@@ -39,12 +39,12 @@
                 "nbody" : 1024,
                 "scale-radius" : 0.2,
 
-                "reverse-orbit" : true,
                 "ignore-final" : false,
 
                 "initial-conditions": {
                     "use-galactic-coordinates" : false,
                     "angle-use-radians" : false,
+                    "reverse-orbit" : true,
                     "velocity" : [ -156, 79, 107 ],
                     "position" : [ 218, 53.5, 28.6 ]
                 }
@@ -55,13 +55,12 @@
                 "mass" : 12,
                 "nbody" : 4096,
                 "scale-radius" : 0.5,
-
-                "reverse-orbit" : true,
                 "ignore-final" : true,
 
                 "initial-conditions": {
                     "use-galactic-coordinates" : false,
                     "angle-use-radians" : false,
+                    "reverse-orbit" : true,
                     "velocity" : [ -156, 79, 107 ],
                     "position" : [ 218, 53.5, 28.6 ]
                 }
