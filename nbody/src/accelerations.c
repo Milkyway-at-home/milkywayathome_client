@@ -134,6 +134,9 @@ mwvector acceleration(const NBodyCtx* ctx, const mwvector pos)
         case MiyamotoNagaiDisk:
             acc = miyamotoNagaiDiskAccel(&ctx->pot.disk, pos);
             break;
+        case InvalidDisk:
+        default:
+            fail("Invalid disk type in acceleration()\n");
     }
 
     switch (ctx->pot.halo.type)
@@ -147,6 +150,9 @@ mwvector acceleration(const NBodyCtx* ctx, const mwvector pos)
         case TriaxialHalo:
             acctmp = triaxialHaloAccel(&ctx->pot.halo, pos);
             break;
+        case InvalidHalo:
+        default:
+            fail("Invalid halo type in acceleration()\n");
     }
 
     mw_incaddv(acc, acctmp);

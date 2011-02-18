@@ -41,73 +41,83 @@ const char* showBool(const mwbool x)
 
 const char* showCriterionT(const criterion_t x)
 {
-    static const char* table[] =
-        {
-            [EXACT]        = "exact",
-            [NEWCRITERION] = "new criterion",
-            [BH86]         = "bh86",
-            [SW93]         = "sw93"
-        };
-
-    if (x > SW93)
-        return "invalid criterion_t";
-    return table[x];
+    switch (x)
+    {
+        case Exact:
+            return "Exact";
+        case NewCriterion:
+            return "NewCriterion";
+        case BH86:
+            return "BH86";
+        case SW93:
+            return "SW93";
+        case InvalidCriterion:
+            return "InvalidCriterion";
+        default:
+            return "Bad criterion_t";
+    }
 }
 
 const char* showSphericalT(const spherical_t x)
 {
-    static const char* table[] =
-        {
-            [SphericalPotential]        = "SphericalPotential",
-        };
-
-    if (x > SphericalPotential)
-        return "invalid spherical_t";
-    return table[x];
+    switch (x)
+    {
+        case SphericalPotential:
+            return "SphericalPotential";
+        case InvalidSpherical:
+            return "InvalidSpherical";
+        default:
+            return "Bad spherical_t";
+    }
 }
 
 const char* showDiskT(const disk_t x)
 {
-    static const char* table[] =
-        {
-            [MiyamotoNagaiDisk] = "MiyamotoNagaiDisk",
-            [ExponentialDisk]   = "ExponentialDisk"
-        };
-
-    if (x > ExponentialDisk)
-        return "invalid disk_t";
-
-    return table[x];
+    switch (x)
+    {
+        case MiyamotoNagaiDisk:
+            return "MiyamotoNagaiDisk";
+        case ExponentialDisk:
+            return "ExponentialDisk";
+        case InvalidDisk:
+            return "InvalidDisk";
+        default:
+            return "Bad disk_t";
+    }
 }
 
 const char* showHaloT(const halo_t x)
 {
-    static const char* table[] =
-        {
-            [LogarithmicHalo] = "LogarithmicHalo",
-            [NFWHalo]         = "NFWHalo",
-            [TriaxialHalo]    = "TriaxialHalo"
-        };
-
-    if (x > TriaxialHalo)
-        return "invalid halo_t";
-
-    return table[x];
+    switch (x)
+    {
+        case LogarithmicHalo:
+            return "LogarithmicHalo";
+        case NFWHalo:
+            return "NFWHalo";
+        case TriaxialHalo:
+            return "TriaxialHalo";
+        case InvalidHalo:
+            return "InvalidHalo";
+        default:
+            return "Bad halo_t";
+    }
 }
 
 const char* showDwarfModelT(const dwarf_model_t x)
 {
-    static const char* table[] =
-        {
-            [DwarfModelPlummer] = "DwarfModelPlummer",
-            [DwarfModelKing]    = "DwarfModelKing",
-            [DwarfModelDehnen]  = "DwarfModelDehnen"
-        };
-
-    if (x > DwarfModelDehnen)
-        return "invalid dwarf_model_t";
-
-    return table[x];
+    switch (x)
+    {
+        case DwarfModelPlummer:
+            return "DwarfModelPlummer";
+        case DwarfModelKing:
+            return "DwarfModelKing";
+        case DwarfModelDehnen:
+            return "DwarfModelDehnen";
+        case InvalidDwarfModel:
+            return "InvalidDwarfModel";
+        default:
+            return "Bad dwarf_model_t";
+    }
 }
 
 char* showSpherical(const Spherical* s)

@@ -318,7 +318,7 @@ static mwbool readEnum(const MWParameter* p, const char* pname, json_object* obj
     }
 
     conv = reader(json_object_get_string(obj));
-    if (conv == -1)
+    if (conv == InvalidEnum)
         return TRUE;
 
     *((generic_enum_t*) p->param) = conv;
