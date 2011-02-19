@@ -222,8 +222,9 @@ std::string createSeparationKernel(const AstronomyParameters* ap,
     code << format("dcl_cb cb0[%u]\n") % numRegSgDx;
     code << "dcl_cb cb1[1]\n";
 
+    code << "dcl_output_usage(generic) o0\n";
     for (i = 0; i < ap->number_streams; ++i)
-        code << format("dcl_output_usage(generic) o%u.xy\n") % (i + 1);
+        code << format("dcl_output_usage(generic) o%u\n") % (i + 1);
 
     code << "dcl_input_position_interp(linear_noperspective) vWinCoord0.xy__\n";
 
