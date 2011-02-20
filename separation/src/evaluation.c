@@ -97,6 +97,14 @@ static void cleanStreamIntegrals(real* stream_integrals,
     }
 }
 
+extern real integrateCAL(const AstronomyParameters* ap,
+                         const IntegralArea* ia,
+                         const StreamConstants* sc,
+                         const StreamGauss sg,
+                         real* st_probs,
+                         EvaluationState* es,
+                         const CLRequest* clr);
+
 static void calculateIntegrals(const AstronomyParameters* ap,
                                const IntegralArea* ias,
                                const StreamConstants* sc,
@@ -132,6 +140,10 @@ static void calculateIntegrals(const AstronomyParameters* ap,
         integral->background_integral = integrateCL(ap, ia, sc, sg,
                                                     integral->stream_integrals, es,
                                                     clr, &ci, &di, useImages);
+      #elif SEPARATION_CAL
+        integral->background_integral = integrateCAL(ap, ia, sc, sg,
+                                                     integral->stream_integrals, es,
+                                                     clr);
       #else
         integral->background_integral = integrate(ap, ia, sc, sg,
                                                   integral->stream_integrals, integral->probs, es);

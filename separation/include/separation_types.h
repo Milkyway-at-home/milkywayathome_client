@@ -128,6 +128,11 @@ typedef real4 LBTrig;
 
 typedef struct
 {
+    real sinAngle, cosAngle;
+} TrigPair;
+
+typedef struct SEPARATION_ALIGN(2 * sizeof(real))
+{
     real nu;
     real id;
 } NuConstants;
