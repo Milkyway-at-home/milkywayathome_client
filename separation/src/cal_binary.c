@@ -408,6 +408,7 @@ static CALresult createNuCB(MWMemRes* mr, MWCALInfo* ci)
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to allocate constant buffer", err);
+        releaseMWMemRes(ci->calctx, mr);
         return err;
     }
 
@@ -459,6 +460,7 @@ static CALresult createConstantBuffer2D(MWMemRes* mr,
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create 2D constant resource", err);
+        releaseMWMemRes(ci->calctx, mr);
         return err;
     }
 
@@ -490,6 +492,7 @@ static CALresult createConstantBuffer1D(MWMemRes* mr,
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create constant 1D resource", err);
+        releaseMWMemRes(ci->calctx, mr);
         return err;
     }
 
@@ -542,6 +545,7 @@ static CALresult createOutputBuffer2D(MWMemRes* mr, MWCALInfo* ci, CALuint width
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create output resource", err);
+        releaseMWMemRes(ci->calctx, mr);
         return err;
     }
 
