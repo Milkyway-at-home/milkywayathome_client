@@ -295,12 +295,9 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
         //real rg = rg_calc(ap, xyz);
         mwvector xyz;
         {
-
-            real zp = R_POINT(r_pt) * BCOS(lbt);
-
             // This mad for some reason increases GPR usage by 1 pushing into next level of unhappy
-            xyz.x = mw_mad(zp, LCOS(lbt), m_sun_r0);
-            xyz.y = zp * LSIN(lbt);
+            xyz.x = mw_mad(R_POINT(r_pt), LCOS_BCOS(lbt), m_sun_r0);
+            xyz.y = R_POINT(r_pt) * LSIN_BCOS(lbt);
             xyz.z = R_POINT(r_pt) * BSIN(lbt);
         }
 

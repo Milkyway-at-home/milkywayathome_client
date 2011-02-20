@@ -628,19 +628,18 @@ fail:
 /* Might be more convenient to split l and b stuff for CAL */
 static void getSplitLBTrig(const AstronomyParameters* ap,
                            const IntegralArea* ia,
-                           TrigPair** lTrigOut,
-                           TrigPair** bTrigOut)
+                           LTrigPair** lTrigBCosOut,
+                           real** bTrigOut)
 {
     CALuint i, j;
-    TrigPair* lTrig;
-    TrigPair* bTrig;
+    LTrigPair* lTrigBCos;
+    real* bTrig;
     LBTrig* lbts;
     size_t idx;
     CALboolean transpose = CAL_TRUE;
 
-    size_t size = ia->mu_steps * ia->nu_steps * sizeof(TrigPair);
-    lTrig = (TrigPair*) mwMallocA(size);
-    bTrig = (TrigPair*) mwMallocA(size);
+    lTrigBCos = (LTrigPair*) mwMallocA(ia->mu_steps * ia->nu_steps * sizeof(LTrigPair));
+    bTrig = (real*) mwMallocA(ia->mu_steps * ia->nu_steps * sizeof(real));
 
     lbts = precalculateLBTrig(ap, ia, transpose);
 
@@ -650,17 +649,16 @@ static void getSplitLBTrig(const AstronomyParameters* ap,
         {
             idx = transpose ? j * ia->nu_steps + i : i * ia->mu_steps + j;
 
-            lTrig[idx].sinAngle = lbts[idx].lsin;
-            lTrig[idx].cosAngle = lbts[idx].lcos;
+            lTrigBCos[idx].lCosBCos = lbts[idx].lCosBCos;
+            lTrigBCos[idx].lSinBCos = lbts[idx].lSinBCos;
 
-            bTrig[idx].sinAngle = lbts[idx].bsin;
-            bTrig[idx].cosAngle = lbts[idx].bcos;
+            bTrig[idx] = lbts[idx].bSin;
         }
     }
 
     mwFreeA(lbts);
 
-    *lTrigOut = lTrig;
+    *lTrigBCosOut = lTrigBCos;
     *bTrigOut = bTrig;
 }
 
@@ -671,8 +669,8 @@ static CALresult createLBTrigBuffers(MWCALInfo* ci,
                                      const CALSeparationSizes* sizes)
 {
     CALresult err = CAL_RESULT_OK;
-    TrigPair* lTrig;
-    TrigPair* bTrig;
+    LTrigPair* lTrig;
+    real* bTrig;
 
     getSplitLBTrig(ap, ia, &lTrig, &bTrig);
 
@@ -683,7 +681,7 @@ static CALresult createLBTrigBuffers(MWCALInfo* ci,
         goto fail;
     }
 
-    err = createConstantBuffer2D(&cm->bTrig, ci, (CALdouble*) bTrig, formatReal2, ia->nu_steps, ia->mu_steps);
+    err = createConstantBuffer2D(&cm->bTrig, ci, (CALdouble*) bTrig, formatReal1, ia->nu_steps, ia->mu_steps);
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to create b trig buffer", err);
 
@@ -1150,8 +1148,8 @@ static void calculateCALSeparationSizes(CALSeparationSizes* sizes,
     sizes->rPts = sizeof(RPoints) * ap->convolve * ia->r_steps;
     sizes->rc = sizeof(RConsts) * ia->r_steps;
     sizes->sg_dx = sizeof(real) * ap->convolve;
-    sizes->lTrig = sizeof(TrigPair) * ia->mu_steps * ia->nu_steps;
-    sizes->bTrig = sizes->lTrig;
+    sizes->lTrig = sizeof(LTrigPair) * ia->mu_steps * ia->nu_steps;
+    sizes->bTrig = sizeof(real) * ia->mu_steps * ia->nu_steps;
 
     sizes->nuSteps = ia->nu_steps;
     sizes->muSteps = ia->mu_steps;

@@ -99,13 +99,13 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
                                        input2d<double2>& rPts,
                                        input1d<double2>& rConsts,
                                        input2d<double2>& lTrigBuf,
-                                       input2d<double2>& bTrigBuf,
+                                       input2d<double1>& bTrigBuf,
                                        const AstronomyParameters* ap,
                                        const IntegralArea* ia,
                                        const StreamConstants* sc)
 {
     unsigned int j;
-    unsigned int number_streams = 2;  /* FIXME: Temporary to compare against old things */
+    unsigned int number_streams = 3;  /* FIXME: Temporary to compare against old things */
 
     indexed_register<double1> sg_dx("cb0");
     named_variable<float1> nu_step("cb1[0].x");
@@ -124,7 +124,7 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     }
 
     double2 lTrig = lTrigBuf(nu_step, pos.x());
-    double2 bTrig = bTrigBuf(nu_step, pos.x());
+    double1 bSin = bTrigBuf(nu_step, pos.x());
 
     float2 i = float2(float1(0.0), pos.y());
 
@@ -141,10 +141,9 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         double2 rPt = rPts[i.yx()];
         i.x() = i.x() + float1(1.0);
 
-        double1 zp = rPt.x() * bTrig.y();
-        double1 x = mad(zp, lTrig.y(), double1(ap->m_sun_r0));
-        double1 y = zp * lTrig.x();
-        double1 z = rPt.x() * bTrig.x();
+        double1 x = mad(rPt.x(), lTrig.x(), double1(ap->m_sun_r0));
+        double1 y = rPt.x() * lTrig.y();
+        double1 z = rPt.x() * bSin;
 
         double1 tmp1 = x * x;
         double1 tmp2 = z * z;
@@ -256,7 +255,7 @@ std::string createSeparationKernel(const AstronomyParameters* ap,
     input2d<double2> rPts(0);
     input1d<double2> rConsts(1);
     input2d<double2> lTrig(2);
-    input2d<double2> bTrig(3);
+    input2d<double1> bTrig(3);
 
     input2d<double2> bgInput(4);
     std::vector< input2d<double2> > streamInputs;
