@@ -32,6 +32,7 @@ using namespace boost;
 using namespace cal;
 using namespace cal::il;
 
+
 /* Doesn't give correct inf results when dividing by 0 */
 static double1 div_custom(double1 x, double1 y)
 {
@@ -44,6 +45,12 @@ static double1 div_custom(double1 x, double1 y)
     double1 tmp5 = mad(-y, tmp4, x);
 
     return mad(tmp5, tmp3, tmp4);
+}
+
+static double1 local_div(double1 x, double1 y)
+{
+    return div_custom(x, y);
+    //return x / y;
 }
 
 static double1 sqrt_custom(double1 x)
@@ -66,33 +73,36 @@ static double1 sqrt_custom(double1 x)
 
 
 /* exp which uses fewer registers and is accurate enough. CHECKME: Destroys x? */
+/* FIXME: Quality variable names */
 static double1 exp_custom(double1 x)
 {
     emit_comment("exp");
 
-    double1 tmp1 = x * double1(0x1.71547652b82fep+0);
-    double2 dtmp;
-    dtmp.y() = fract(tmp1);
+    double1 xx = x * double1(1.0 / log(2.0));
+    double1 xxFract = fract(xx);
 
-    int1 expi = cast_type<int1>(tmp1 - dtmp.y());
+    int1 expi = cast_type<int1>(xx - xxFract);
 
-    tmp1 = dtmp.y() + double1(-0.5);
-    dtmp.x() = tmp1 * tmp1;
-    x = mad(dtmp.x(), double1(0x1.52b5c4d1f00b9p-16), double1(0x1.4aa4eb649a98fp-7));
-    x = mad(dtmp.x(), x, double1(0x1.62e42fefa39efp-1));
+    double1 tmp = xxFract + double1(-0.5);
+    double1 dtmp = tmp * tmp;
+    double1 y = mad(dtmp, double1(0x1.52b5c4d1f00b9p-16), double1(0x1.4aa4eb649a98fp-7));
+    double1 z = tmp * mad(dtmp, y, double1(0x1.62e42fefa39efp-1));
 
-    double2 tmp23;
-    tmp23.x() = tmp1 * x;
-    tmp23.y() = mad(dtmp.x(), double1(0x1.657cdd06316dcp-23), double1(0x1.3185f478ff1ebp-12));
-    tmp23.y() = mad(dtmp.x(), tmp23.y(), double1(0x1.bf3e7389ceff9p-5));
-    tmp23.y() = mad(dtmp.x(), tmp23.y(), double1(1.0));
+    double1 tmp3 = mad(dtmp, double1(0x1.657cdd06316dcp-23), double1(0x1.3185f478ff1ebp-12));
+    tmp3 = mad(dtmp, tmp3, double1(0x1.bf3e7389ceff9p-5));
+    tmp3 = mad(dtmp, tmp3, double1(1.0));
 
-    double1 tmp4 = mad(tmp23.x(), double1(-0.5), tmp23.y());
-    tmp1 = tmp23.x() / tmp4;
-    tmp1 = mad(tmp1, double1(0x1.6a09e667f3bcdp+0), double1(0x1.6a09e667f3bcdp+0));
+    double1 tmp4 = mad(z, double1(-0.5), tmp3);
+    double1 divRes = div_custom(z, tmp4);
+    divRes = mad(divRes, double1(sqrt(2.0)), double1(sqrt(2.0)));
 
-    return ldexp(tmp1, expi);
+    return ldexp(divRes, expi);
 }
+
+/* Slightly faster if true, but 7 more registers */
+#define R_PT_SWAP 0
+
+/* For reference: ATI application register usage in 1, 2, 3 stream cases: 13, 19, 25 respectively */
 
 static void createSeparationKernelCore(input2d<double2>& bgInput,
                                        std::vector< input2d<double2> >& streamInput,
@@ -126,7 +136,11 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     double2 lTrig = lTrigBuf(nu_step, pos.x());
     double1 bSin = bTrigBuf(nu_step, pos.x());
 
-    float2 i = float2(float1(0.0), pos.y());
+  #if R_PT_SWAP
+    float2 i = float2(0.0, pos.y());
+  #else
+    float1 i = float1(0.0);
+  #endif
 
     /* 0 integrals and get stream constants */
     double1 bg_int = double1(0.0);
@@ -134,12 +148,24 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     for (j = 0; j < number_streams; ++j)
         streamIntegrals.push_back(double1(0.0));
 
+    #if R_PT_SWAP
     il_while (i.x() < float1((float) ap->convolve))
+    #else
+    il_while (i < float1((float) ap->convolve))
+    #endif
     {
         /* CHECKME: this rPts[i.xy()] is a bit faster than doing
          * rPts(i, pos.y()) but uses more registers. */
-        double2 rPt = rPts[i.yx()];
+
+      #if R_PT_SWAP
+        double2 rPt = rPts[i.xy()];
         i.x() = i.x() + float1(1.0);
+      #else
+        double2 rPt = rPts(i, pos.y());
+        i = i + float1(1.0);
+      #endif /* R_PT_SWAP */
+
+        //il_breakc(i.x() < float1(0.0)); /* Somehow saves registers */
 
         double1 x = mad(rPt.x(), lTrig.x(), double1(ap->m_sun_r0));
         double1 y = rPt.x() * lTrig.y();
@@ -148,18 +174,18 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         double1 tmp1 = x * x;
         double1 tmp2 = z * z;
         double1 tmp3 = mad(y, y, tmp1);
+
         double1 tmp4 = mad(double1(ap->q_inv_sqr), tmp2, tmp3);
+
         double1 rg = sqrt_custom(tmp4);
         //double1 rg = sqrt(tmp4);
+
+        emit_comment("End sqrt");
         double1 rs = rg + double1(ap->r0);
 
-        double1 tmp = rg * rs;
-        tmp *= rs;
-        tmp *= rs;
-
         emit_comment("bg_int increment");
-        //bg_int += rPt.y() / tmp;
-        bg_int += div_custom(rPt.y(), tmp);
+        //bg_int += rPt.y() / (rg * rs * rs * rs);
+        bg_int += div_custom(rPt.y(), rg * rs * rs * rs);
 
         #if 0
         if (ap->aux_bg_profile)
@@ -171,34 +197,59 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         }
         #endif
 
+        //il_breakc(i.x() < float1(0.0)); /* Somehow saves registers */
+
         emit_comment("stream loops");
         for (j = 0; j < number_streams; ++j)
         {
             emit_comment("begin stream");
+            #if 1
+            if (j == 1)
+                il_breakc(i.x() < float1(0.0)); /* Somehow saves registers */
+            #endif
+
+
+            // Maximum register savings, but speed penalty
+            //il_breakc(i.x() < float1(0.0)); /* Somehow saves registers */
+
             double1 xs = x - double1(X(sc[j].c));
             double1 ys = y - double1(Y(sc[j].c));
             double1 zs = z - double1(Z(sc[j].c));
 
             /* Dot product */
-            tmp = double1(X(sc[j].a)) * xs;
-            tmp = mad(double1(Y(sc[j].a)), ys, tmp);
-            tmp = mad(double1(Z(sc[j].a)), zs, tmp);  /* tmp = dotted */
+            double1 dotted = double1(X(sc[j].a)) * xs;
+            dotted = mad(double1(Y(sc[j].a)), ys, dotted);
+            dotted = mad(double1(Z(sc[j].a)), zs, dotted);
 
-            xs = mad(-tmp, double1(X(sc[j].a)), xs);
-            ys = mad(-tmp, double1(Y(sc[j].a)), ys);
-            zs = mad(-tmp, double1(Z(sc[j].a)), zs);
+            xs = mad(-dotted, double1(X(sc[j].a)), xs);
+            ys = mad(-dotted, double1(Y(sc[j].a)), ys);
+            zs = mad(-dotted, double1(Z(sc[j].a)), zs);
 
-            tmp = xs * xs;
+            double1 tmp = xs * xs;
             tmp = mad(ys, ys, tmp);
             tmp = mad(zs, zs, tmp);
 
-            tmp = tmp * double1(-sc[j].sigma_sq2_inv);
-            tmp = exp_custom(tmp);
 
-            streamIntegrals[j] = mad(rPt.y(), tmp, streamIntegrals[j]);
+            #if 0
+            // This is a pretty good one
+            if (j == 1)
+                il_breakc(i < float1(0.0)); /* Somehow saves registers */
+            #endif
+
+            double1 arst = exp_custom(tmp * double1(-sc[j].sigma_sq2_inv));
+            emit_comment("End exp");
+
+            streamIntegrals[j] = mad(rPt.y(), arst, streamIntegrals[j]);
+
+            #if 0
+            if (j == 0 || j == 1)
+                il_breakc(i.x() < float1(0.0)); /* Somehow saves registers */
+            #endif
         }
     }
     il_endloop
+
+    emit_comment("End streams");
 
     double1 V_reff_xr_rp3 = nu_id * rConsts(pos.y()).x();
 

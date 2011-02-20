@@ -598,9 +598,9 @@ static CALresult createRBuffers(MWCALInfo* ci,
     RConsts* rc;
     CALresult err = CAL_RESULT_OK;
 
-    r_pts = precalculateRPts(ap, ia, sg, &rc, TRUE);
+    r_pts = precalculateRPts(ap, ia, sg, &rc, FALSE);
 
-    err = createConstantBuffer2D(&cm->rPts, ci, (CALdouble*) r_pts, formatReal2, ia->r_steps, ap->convolve);
+    err = createConstantBuffer2D(&cm->rPts, ci, (CALdouble*) r_pts, formatReal2, ap->convolve, ia->r_steps);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create r_pts buffer", err);
@@ -1138,6 +1138,7 @@ static real runIntegral(MWCALInfo* ci,
     }
 
     for (i = 0; i < ia->nu_steps; ++i)
+    //for (i = 0; i < 10; ++i)
     {
         warn("Trying to run step: %u\n", i);
         t1 = mwGetTime();

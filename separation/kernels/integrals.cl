@@ -54,6 +54,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define USE_CUSTOM_SQRT 1
 
+#define USE_CUSTOM_DIVISION 1
+
 #if !defined(__Cypress__) && !defined(__ATI_RV770__) && !defined(__CPU__)
   #define USE_CUSTOM_DIVISION 1
 
