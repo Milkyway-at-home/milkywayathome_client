@@ -47,12 +47,6 @@ static double1 div_custom(double1 x, double1 y)
     return mad(tmp5, tmp3, tmp4);
 }
 
-static double1 local_div(double1 x, double1 y)
-{
-    return div_custom(x, y);
-    //return x / y;
-}
-
 static double1 sqrt_custom(double1 x)
 {
     emit_comment("sqrt");
@@ -99,8 +93,18 @@ static double1 exp_custom(double1 x)
     return ldexp(divRes, expi);
 }
 
+static double2 kahanAdd(double2 kSum, double1 x)
+{
+    double1 y = x - kSum.y();
+    double2 tc;
+    tc.x() = kSum.x() + y;
+    tc.y() = (tc.x() - kSum.x()) - y;
+    return tc;
+}
+
+
 /* Slightly faster if true, but 7 more registers */
-#define R_PT_SWAP 1
+
 
 /* For reference: ATI application register usage in 1, 2, 3 stream cases: 13, 19, 25 respectively */
 /* With R_PT_SWAP = 0: 12, 14, 16 */
@@ -137,12 +141,9 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
 
     double2 lTrig = lTrigBuf(nu_step, pos.x());
     double1 bSin = bTrigBuf(nu_step, pos.x());
+    double1 V_reff_xr_rp3 = nu_id * rConsts(pos.y()).x();
 
-  #if R_PT_SWAP
     float2 i = float2(0.0, pos.y());
-  #else
-    float1 i = float1(0.0);
-  #endif
 
     /* 0 integrals and get stream constants */
     double1 bg_int = double1(0.0);
@@ -150,24 +151,10 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     for (j = 0; j < number_streams; ++j)
         streamIntegrals.push_back(double1(0.0));
 
-    #if R_PT_SWAP
     il_while (i.x() < float1((float) ap->convolve))
-    #else
-    il_while (i < float1((float) ap->convolve))
-    #endif
     {
-        /* CHECKME: this rPts[i.xy()] is a bit faster than doing
-         * rPts(i, pos.y()) but uses more registers. */
-
-      #if R_PT_SWAP
         double2 rPt = rPts[i.xy()];
         i.x() = i.x() + float1(1.0);
-      #else
-        double2 rPt = rPts(i, pos.y());
-        i = i + float1(1.0);
-      #endif /* R_PT_SWAP */
-
-        //il_breakc(i.x() < float1(0.0)); /* Somehow saves registers */
 
         double1 x = mad(rPt.x(), lTrig.x(), double1(ap->m_sun_r0));
         double1 y = rPt.x() * lTrig.y();
@@ -176,17 +163,14 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         double1 tmp1 = x * x;
         double1 tmp2 = z * z;
         double1 tmp3 = mad(y, y, tmp1);
-
         double1 tmp4 = mad(double1(ap->q_inv_sqr), tmp2, tmp3);
 
-        double1 rg = sqrt_custom(tmp4);
-        //double1 rg = sqrt(tmp4);
+        il_breakc(i.x() < float1(0.0)); /* Hack that somehow saves registers */
 
-        emit_comment("End sqrt");
+        double1 rg = sqrt_custom(tmp4);
         double1 rs = rg + double1(ap->r0);
 
         emit_comment("bg_int increment");
-        //bg_int += rPt.y() / (rg * rs * rs * rs);
         bg_int += div_custom(rPt.y(), rg * rs * rs * rs);
 
         #if 0
@@ -199,19 +183,12 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         }
         #endif
 
-        //il_breakc(i.x() < float1(0.0)); /* Somehow saves registers */
-
         emit_comment("stream loops");
         for (j = 0; j < number_streams; ++j)
         {
             emit_comment("begin stream");
-            #if 1
-            if (j == 1)
-                il_breakc(i.x() < float1(0.0)); /* Somehow saves registers */
-            #endif
 
-
-            // Maximum register savings, but speed penalty
+            // Maximum register savings, but biggest speed penalty
             //il_breakc(i.x() < float1(0.0)); /* Somehow saves registers */
 
             double1 xs = x - double1(X(sc[j].c));
@@ -231,47 +208,44 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
             tmp = mad(ys, ys, tmp);
             tmp = mad(zs, zs, tmp);
 
-
-            #if 0
-            // This is a pretty good one
-            if (j == 1)
-                il_breakc(i < float1(0.0)); /* Somehow saves registers */
-            #endif
-
             double1 arst = exp_custom(tmp * double1(-sc[j].sigma_sq2_inv));
             emit_comment("End exp");
 
             streamIntegrals[j] = mad(rPt.y(), arst, streamIntegrals[j]);
-
-            #if 0
-            if (j == 0 || j == 1)
-                il_breakc(i.x() < float1(0.0)); /* Somehow saves registers */
-            #endif
         }
+        emit_comment("End streams");
     }
     il_endloop
-
-    emit_comment("End streams");
-
-    double1 V_reff_xr_rp3 = nu_id * rConsts(pos.y()).x();
-
-    /* Put these multiplies together */
-    bg_int *= V_reff_xr_rp3;
-    for (j = 0; j < number_streams; ++j)
-        streamIntegrals[j] *= V_reff_xr_rp3;
 
     std::vector<double2> streamRead;
     double2 bgRead = bgInput[pos];
     for (j = 0; j < number_streams; ++j)
         streamRead.push_back(streamInput[j][pos]);
 
+    /* Put these multiplies together */
+    bg_int *= V_reff_xr_rp3;
+    for (j = 0; j < number_streams; ++j)
+        streamIntegrals[j] *= V_reff_xr_rp3;
+
+#define KAHAN 1
+
+#if KAHAN
+    bgOut = kahanAdd(bgRead, bg_int);
+    for (j = 0; j < number_streams; ++j)
+        streamOutputRegisters[j] = kahanAdd(streamRead[j], streamIntegrals[j]);
+#else
+    bg_int += bgRead.x();
+    for (j = 0; j < number_streams; ++j)
+        streamIntegrals[j] += streamRead[j].x();
+
     emit_comment("Output");
-    bgOut.x() = bgRead.x() + bg_int;
+    bgOut.x() = bg_int;
 
     emit_comment("Stream output");
     //for (j = 0; j < ap->number_streams; ++j)
     for (j = 0; j < number_streams; ++j)
-        streamOutputRegisters[j].x() = streamRead[j].x() + streamIntegrals[j];
+        streamOutputRegisters[j].x() = streamIntegrals[j];
+#endif /* KAHAN */
 
     streamIntegrals.clear();
 }
