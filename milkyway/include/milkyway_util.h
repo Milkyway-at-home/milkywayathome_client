@@ -21,10 +21,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_UTIL_H_
 #define _MILKYWAY_UTIL_H_
 
-#ifndef _MSC_VER
-  #define _GNU_SOURCE
-#endif
-
 #include "milkyway_config.h"
 #include "milkyway_extra.h"
 #include "milkyway_math.h"
@@ -108,6 +104,7 @@ void* mwCallocA(size_t count, size_t size);
 
 char* mwReadFile(const char* filename);
 char* mwFreadFile(FILE* f, const char* filename);
+int mwWriteFile(const char* filename, const char* str);
 
 double mwGetTime();
 double mwGetTimeMilli();

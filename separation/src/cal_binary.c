@@ -110,6 +110,26 @@ typedef struct
 
 #define cal_warn(msg, err, ...) fprintf(stderr, msg ": %s (%s)\n", ##__VA_ARGS__, calGetErrorString(), showCALresult(err))
 
+static FILE* _isaLogFunctionFile = NULL;
+
+static void isaLogFunction(const char* msg)
+{
+    if (_isaLogFunctionFile)
+        fputs(msg, _isaLogFunctionFile);
+}
+
+static CALresult printISA(FILE* f, CALimage image)
+{
+    if (!image)
+        return CAL_RESULT_ERROR;
+
+    _isaLogFunctionFile = f;
+    calclDisassembleImage(image, isaLogFunction);
+    _isaLogFunctionFile = NULL;
+
+    return CAL_RESULT_OK;
+}
+
 static CALresult releaseMWMemRes(CALcontext ctx, MWMemRes* mr)
 {
     CALresult err = CAL_RESULT_OK;
@@ -805,8 +825,8 @@ static void printCALInfo(const MWCALInfo* ci)
 
 static CALobject createCALBinary(const char* srcIL)
 {
-    CALobject obj;
     CALresult err;
+    CALobject obj = NULL;
 
     if (!srcIL)
         return NULL;
@@ -831,6 +851,9 @@ static CALimage createCALImage(const char* src)
         return NULL;
 
     obj = createCALBinary(src);
+    if (!obj)
+        return NULL;
+
     rc = calclLink(&img, &obj, 1);
     calclFreeObject(obj);
     if (rc != CAL_RESULT_OK)
@@ -860,21 +883,22 @@ static CALimage createCALImageFromFile(const char* filename)
     return img;
 }
 
-static FILE* srcLog = NULL;
-
-static void isaLogFunction(const char* msg)
+static CALresult printISAToFile(const char* filename, CALimage img)
 {
-    if (srcLog)
-        fputs(msg, srcLog);
-}
+    CALresult err;
+    FILE* srcLog;
 
-static CALresult printISA(CALimage image)
-{
-    if (!image)
+    srcLog = fopen(filename, "w");
+    if (!srcLog)
+    {
+        perror("ISA output file");
         return CAL_RESULT_ERROR;
+    }
 
-    calclDisassembleImage(image, isaLogFunction);
-    return CAL_RESULT_OK;
+    err = printISA(srcLog, img);
+    fclose(srcLog);
+
+    return err;
 }
 
 static CALimage createCALImageFromGeneratedKernel(const AstronomyParameters* ap,
@@ -885,26 +909,18 @@ static CALimage createCALImageFromGeneratedKernel(const AstronomyParameters* ap,
     CALimage img;
     char* src;
     char buf[512];
-    const char* outFile = "kernels_calpp.il";
+    const char* ilFile = "calpp_kernel.il";
+    const char* isaFile = "calpp_kernel_Cypress.isa";
 
-    srcLog = fopen(outFile, "w");
     src = separationKernelSrc(ap, ia, sc);
-
-    if (srcLog)
-        fputs(src, srcLog);
-
-    fputs("\n--------------------------------------------------------------------------------\n", srcLog);
+    mwWriteFile(ilFile, src);
 
     img = createCALImage(src);
     free(src);
 
-    printISA(img);
-
-    if (srcLog != stderr && srcLog != stdout)
+    if (printISAToFile(isaFile, img) == CAL_RESULT_OK)
     {
-        fclose(srcLog);
-
-        sprintf(buf, "grep GPR %s", outFile);
+        sprintf(buf, "grep GPR %s", isaFile);
         system(buf);
     }
 

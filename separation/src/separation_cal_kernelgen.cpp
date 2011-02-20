@@ -100,9 +100,11 @@ static double1 exp_custom(double1 x)
 }
 
 /* Slightly faster if true, but 7 more registers */
-#define R_PT_SWAP 0
+#define R_PT_SWAP 1
 
 /* For reference: ATI application register usage in 1, 2, 3 stream cases: 13, 19, 25 respectively */
+/* With R_PT_SWAP = 0: 12, 14, 16 */
+/* With R_PT_SWAP = 1: 12, 15, 17 */
 
 static void createSeparationKernelCore(input2d<double2>& bgInput,
                                        std::vector< input2d<double2> >& streamInput,
