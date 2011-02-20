@@ -860,9 +860,12 @@ static CALimage createCALImageFromFile(const char* filename)
     return img;
 }
 
+static FILE* srcLog = NULL;
+
 static void isaLogFunction(const char* msg)
 {
-    fputs(msg, stdout);
+    if (srcLog)
+        fputs(msg, srcLog);
 }
 
 static CALresult printISA(CALimage image)
@@ -881,14 +884,30 @@ static CALimage createCALImageFromGeneratedKernel(const AstronomyParameters* ap,
 {
     CALimage img;
     char* src;
+    char buf[512];
+    const char* outFile = "kernels_calpp.il";
 
+    srcLog = fopen(outFile, "w");
     src = separationKernelSrc(ap, ia, sc);
-    //fputs(src, stderr);
+
+    if (srcLog)
+        fputs(src, srcLog);
+
+    fputs("\n--------------------------------------------------------------------------------\n", srcLog);
 
     img = createCALImage(src);
     free(src);
 
-    //printISA(img);
+    printISA(img);
+
+    if (srcLog != stderr && srcLog != stdout)
+    {
+        fclose(srcLog);
+
+        sprintf(buf, "grep GPR %s", outFile);
+        system(buf);
+    }
+
     return img;
 }
 
