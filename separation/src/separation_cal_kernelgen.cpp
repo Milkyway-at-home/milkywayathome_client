@@ -46,21 +46,21 @@ static double1 div_custom(double1 x, double1 y)
     return mad(tmp5, tmp3, tmp4);
 }
 
-
 static double1 sqrt_custom(double1 x)
 {
     emit_comment("sqrt");
     float1 fx = cast_type<float1>(x);
-    double1 y = cast_type<double1>(-rsqrt(fx));
+    fx = rsqrt(fx);
+    double1 y = cast_type<double1>(-fx);
 
     double1 tmp = y * y;
-    tmp = mad(x, tmp, double1(-0x1.8p+1));
+    tmp = mad(x, tmp, double1(-3.0));
     y = y * tmp;
 
     tmp = x * y;
     y = y * tmp;
 
-    y = mad(y,  double1(-0x1p-4), double1(0x1.8p-1));
+    y = mad(y, double1(-0.0625), double1(0.75));
     return y * tmp;
 }
 
@@ -76,7 +76,7 @@ static double1 exp_custom(double1 x)
 
     int1 expi = cast_type<int1>(tmp1 - dtmp.y());
 
-    tmp1 = dtmp.y() + double1(-0x1p-1);
+    tmp1 = dtmp.y() + double1(-0.5);
     dtmp.x() = tmp1 * tmp1;
     x = mad(dtmp.x(), double1(0x1.52b5c4d1f00b9p-16), double1(0x1.4aa4eb649a98fp-7));
     x = mad(dtmp.x(), x, double1(0x1.62e42fefa39efp-1));
@@ -85,9 +85,9 @@ static double1 exp_custom(double1 x)
     tmp23.x() = tmp1 * x;
     tmp23.y() = mad(dtmp.x(), double1(0x1.657cdd06316dcp-23), double1(0x1.3185f478ff1ebp-12));
     tmp23.y() = mad(dtmp.x(), tmp23.y(), double1(0x1.bf3e7389ceff9p-5));
-    tmp23.y() = mad(dtmp.x(), tmp23.y(), double1(0x1p+0));
+    tmp23.y() = mad(dtmp.x(), tmp23.y(), double1(1.0));
 
-    double1 tmp4 = mad(tmp23.x(), double1(-0x1p-1), tmp23.y());
+    double1 tmp4 = mad(tmp23.x(), double1(-0.5), tmp23.y());
     tmp1 = tmp23.x() / tmp4;
     tmp1 = mad(tmp1, double1(0x1.6a09e667f3bcdp+0), double1(0x1.6a09e667f3bcdp+0));
 
@@ -105,14 +105,14 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
                                        const StreamConstants* sc)
 {
     unsigned int j;
-    std::vector<double1> streamIntegrals;
-    unsigned int number_streams = 3;  /* FIXME: Temporary to compare against old things */
+    unsigned int number_streams = 2;  /* FIXME: Temporary to compare against old things */
 
     indexed_register<double1> sg_dx("cb0");
     named_variable<float1> nu_step("cb1[0].x");
     named_variable<double1> nu_id("cb1[0].zw");
-    named_variable<double2> bgOut("o0");
     named_variable<float2> pos("vWinCoord0"); /* .x() = mu, .y() = r */
+
+    named_variable<double2> bgOut("o0");
     std::vector< named_variable<double2> > streamOutputRegisters;
 
     std::stringstream regName;
@@ -126,14 +126,15 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     double2 lTrig = lTrigBuf(nu_step, pos.x());
     double2 bTrig = bTrigBuf(nu_step, pos.x());
 
-    float4 i = float4(float1(0.0), pos.y(), float1(0.0), float1((float) ap->convolve));
+    float2 i = float2(float1(0.0), pos.y());
 
     /* 0 integrals and get stream constants */
     double1 bg_int = double1(0.0);
+    std::vector<double1> streamIntegrals;
     for (j = 0; j < number_streams; ++j)
         streamIntegrals.push_back(double1(0.0));
 
-    il_while (i.x() < i.w())
+    il_while (i.x() < float1((float) ap->convolve))
     {
         /* CHECKME: this rPts[i.xy()] is a bit faster than doing
          * rPts(i, pos.y()) but uses more registers. */
@@ -158,8 +159,8 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         tmp *= rs;
 
         emit_comment("bg_int increment");
-        bg_int += rPt.y() / tmp;
-        //bg_int += div_custom(rPt.y(), tmp);
+        //bg_int += rPt.y() / tmp;
+        bg_int += div_custom(rPt.y(), tmp);
 
         #if 0
         if (ap->aux_bg_profile)
@@ -202,18 +203,23 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
 
     double1 V_reff_xr_rp3 = nu_id * rConsts(pos.y()).x();
 
+    /* Put these multiplies together */
+    bg_int *= V_reff_xr_rp3;
+    for (j = 0; j < number_streams; ++j)
+        streamIntegrals[j] *= V_reff_xr_rp3;
+
     std::vector<double2> streamRead;
     double2 bgRead = bgInput[pos];
     for (j = 0; j < number_streams; ++j)
         streamRead.push_back(streamInput[j][pos]);
 
     emit_comment("Output");
-    bgOut.x() = bgRead.x() + (V_reff_xr_rp3 * bg_int);
+    bgOut.x() = bgRead.x() + bg_int;
 
     emit_comment("Stream output");
     //for (j = 0; j < ap->number_streams; ++j)
     for (j = 0; j < number_streams; ++j)
-        streamOutputRegisters[j].x() = streamRead[j].x() + (V_reff_xr_rp3 * streamIntegrals[j]);
+        streamOutputRegisters[j].x() = streamRead[j].x() + streamIntegrals[j];
 
     streamIntegrals.clear();
 }
