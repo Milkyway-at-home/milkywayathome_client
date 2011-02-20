@@ -32,6 +32,21 @@ using namespace boost;
 using namespace cal;
 using namespace cal::il;
 
+/* Doesn't give correct inf results when dividing by 0 */
+static double1 div_custom(double1 x, double1 y)
+{
+    float1 yf = cast_type<float1>(y);
+    double1 tmp = cast_type<double1>(reciprocal(yf));
+
+    double1 tmp2 = mad(-y, tmp, double1(1.0));
+    double1 tmp3 = mad(tmp, tmp2, tmp);
+    double1 tmp4 = x * tmp3;
+    double1 tmp5 = mad(-y, tmp4, x);
+
+    return mad(tmp5, tmp3, tmp4);
+}
+
+
 static double1 sqrt_custom(double1 x)
 {
     emit_comment("sqrt");
@@ -111,38 +126,40 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     double2 lTrig = lTrigBuf(nu_step, pos.x());
     double2 bTrig = bTrigBuf(nu_step, pos.x());
 
-    float1 i = float1(0.0);
+    float4 i = float4(float1(0.0), pos.y(), float1(0.0), float1((float) ap->convolve));
 
     /* 0 integrals and get stream constants */
     double1 bg_int = double1(0.0);
     for (j = 0; j < number_streams; ++j)
         streamIntegrals.push_back(double1(0.0));
 
-    il_while (i < float1(ap->convolve))
+    il_while (i.x() < i.w())
     {
-        /* CHECKME: could try rPts[float2something] */
-        double2 rPt = rPts(pos.y(), i);
-        i = i + float1(1.0);
+        /* CHECKME: this rPts[i.xy()] is a bit faster than doing
+         * rPts(i, pos.y()) but uses more registers. */
+        double2 rPt = rPts[i.yx()];
+        i.x() = i.x() + float1(1.0);
 
         double1 zp = rPt.x() * bTrig.y();
         double1 x = mad(zp, lTrig.y(), double1(ap->m_sun_r0));
         double1 y = zp * lTrig.x();
         double1 z = rPt.x() * bTrig.x();
 
-
         double1 tmp1 = x * x;
         double1 tmp2 = z * z;
         double1 tmp3 = mad(y, y, tmp1);
         double1 tmp4 = mad(double1(ap->q_inv_sqr), tmp2, tmp3);
         double1 rg = sqrt_custom(tmp4);
+        //double1 rg = sqrt(tmp4);
         double1 rs = rg + double1(ap->r0);
 
         double1 tmp = rg * rs;
-        tmp = tmp * rs;
-        tmp = tmp * rs;
+        tmp *= rs;
+        tmp *= rs;
 
         emit_comment("bg_int increment");
         bg_int += rPt.y() / tmp;
+        //bg_int += div_custom(rPt.y(), tmp);
 
         #if 0
         if (ap->aux_bg_profile)
@@ -164,8 +181,8 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
 
             /* Dot product */
             tmp = double1(X(sc[j].a)) * xs;
-            tmp = mad(double1(Y(sc[j].a)), ys.x(), tmp);
-            tmp = mad(double1(Z(sc[j].a)), zs.x(), tmp);  /* tmp = dotted */
+            tmp = mad(double1(Y(sc[j].a)), ys, tmp);
+            tmp = mad(double1(Z(sc[j].a)), zs, tmp);  /* tmp = dotted */
 
             xs = mad(-tmp, double1(X(sc[j].a)), xs);
             ys = mad(-tmp, double1(Y(sc[j].a)), ys);
@@ -258,7 +275,7 @@ char* separationKernelSrc(const AstronomyParameters* ap,
                           const StreamConstants* sc)
 {
     std::string src = createSeparationKernel(ap, ia, sc);
-     return strdup(src.c_str());
+    return strdup(src.c_str());
  }
 
 
