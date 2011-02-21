@@ -45,9 +45,9 @@ static const real zeroN = 0.0;
 static criterion_t readCriterion(const char* str)
 {
     if (!strcasecmp(str, "new-criterion"))
-        return NEWCRITERION;
+        return NewCriterion;
     if (!strcasecmp(str, "exact"))
-        return EXACT;
+        return Exact;
     if (!strcasecmp(str, "bh86"))
         return BH86;
     else if (!strcasecmp(str, "sw93"))
@@ -72,7 +72,7 @@ static dwarf_model_t readDwarfModelT(const char* str)
         warn("Invalid model %s: Model options are "
              "'plummer', 'king', 'dehnen'\n", str);
 
-    return -1;
+    return InvalidDwarfModel;
 }
 
 static mwbool readInitialConditions(InitialConditions* ic, const char* pname, json_object* obj)
@@ -251,7 +251,7 @@ static mwbool readNbodyContext(NBodyCtx* ctx, const char* pname, json_object* ob
 
             /* .tree_rsize      */  4.0,
             /* .sunGCDist       */  8.0,
-            /* .criterion       */  NEWCRITERION,
+            /* .criterion       */  NewCriterion,
             /* .seed            */  0,
             /* .usequad         */  TRUE,
             /* .allowIncest     */  FALSE,
@@ -282,7 +282,7 @@ static mwbool readNbodyContext(NBodyCtx* ctx, const char* pname, json_object* ob
             DBL_PARAM_DFLT("timestep",       &ctx->timestep,       &nanN),
             DBL_PARAM_DFLT("orbit_timestep", &ctx->orbit_timestep, &nanN),
 
-            ARRAY_PARAM("dwarf-model", &ctx->models, sizeof(DwarfModel), &ctx->modelNum, (MWReadFunc) readDwarfModel),
+            ONE_OR_MANY_PARAM("dwarf-model", &ctx->models, sizeof(DwarfModel), &ctx->modelNum, (MWReadFunc) readDwarfModel),
             DBL_PARAM_DFLT("sun-gc-dist", &ctx->sunGCDist, &defaultCtx.sunGCDist),
             DBL_PARAM_DFLT("tree_rsize", &ctx->tree_rsize, &defaultCtx.tree_rsize),
             NULL_MWPARAMETER

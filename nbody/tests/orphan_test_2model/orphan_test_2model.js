@@ -39,12 +39,12 @@
                 "nbody" : 10000,
                 "scale-radius" : 0.2,
 
-                "reverse-orbit" : true,
                 "ignore-final" : false,
 
                 "initial-conditions": {
                     "use-galactic-coordinates" : false,
                     "angle-use-radians" : false,
+                    "reverse-orbit" : true,
                     "velocity" : [ -156, 79, 107 ],
                     "position" : [ 218, 53.5, 28.6 ]
                 }
@@ -52,16 +52,23 @@
 
             {
                 "type" : "plummer",
+<<<<<<< HEAD
                 "mass" : 5000,
                 "nbody" : 1024,
                 "scale-radius" : 0.9,
 
                 "reverse-orbit" : true,
+=======
+                "mass" : 12,
+                "nbody" : 4096,
+                "scale-radius" : 0.5,
+>>>>>>> e92fc06fec4b33b2f24ba67e02403d396cd16349
                 "ignore-final" : true,
 
                 "initial-conditions": {
                     "use-galactic-coordinates" : false,
                     "angle-use-radians" : false,
+                    "reverse-orbit" : true,
                     "velocity" : [ -156, 79, 107 ],
                     "position" : [ 218, 53.5, 28.6 ]
                 }

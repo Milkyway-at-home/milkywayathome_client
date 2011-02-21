@@ -46,6 +46,8 @@ static void generateModel(NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodies)
             break;
         case DwarfModelKing:
         case DwarfModelDehnen:
+        case InvalidDwarfModel:
+            fail("Trying to run with invalid dwarf model\n");
         default:
             fail("Unsupported model: %d", type);
     }

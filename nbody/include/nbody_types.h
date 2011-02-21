@@ -157,11 +157,15 @@ typedef struct NBODY_ALIGN
     } stuff;
 } cell, *cellptr;
 
+#define InvalidEnum (-1)
+typedef int generic_enum_t;  /* A general enum type. */
+
 /* use alternate criteria */
 typedef enum
 {
-    NEWCRITERION,  /* FIXME: What is this exactly? Rename it. */
-    EXACT,
+    InvalidCriterion = InvalidEnum,
+    NewCriterion,  /* FIXME: What is this exactly? Rename it. */
+    Exact,
     BH86,
     SW93
 } criterion_t;
@@ -170,6 +174,7 @@ typedef enum
 
 typedef enum
 {
+    InvalidSpherical   = InvalidEnum,
     SphericalPotential = _SPHERICAL
 } spherical_t;
 
@@ -190,6 +195,7 @@ typedef struct NBODY_ALIGN
 /* Supported disk models */
 typedef enum
 {
+    InvalidDisk       = InvalidEnum,
     MiyamotoNagaiDisk = _MN_DISK,
     ExponentialDisk   = _EXP_DISK
 } disk_t;
@@ -210,6 +216,7 @@ typedef struct NBODY_ALIGN
 #define _TRIAXIAL_HALO 2
 typedef enum
 {
+    InvalidHalo     = InvalidEnum,
     LogarithmicHalo = _LOG_HALO,
     NFWHalo         = _NFW_HALO,
     TriaxialHalo    = _TRIAXIAL_HALO
@@ -279,6 +286,7 @@ typedef struct NBODY_ALIGN
 
 typedef enum
 {
+    InvalidDwarfModel = InvalidEnum,
     DwarfModelPlummer,
     DwarfModelKing,
     DwarfModelDehnen
@@ -408,8 +416,6 @@ typedef struct NBODY_ALIGN
     const char* cp_filename;
     char cp_resolved[1024];
 } NBodyCtx;
-
-typedef int generic_enum_t;  /* A general enum type. */
 
 
 /* Note: 'type' should first field for all types. */

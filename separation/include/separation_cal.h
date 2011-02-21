@@ -18,32 +18,33 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _CALCULATED_CONSTANTS_H_
-#define _CALCULATED_CONSTANTS_H_
+#ifndef _SEPARATION_CAL_H_
+#define _SEPARATION_CAL_H_
+
+#include "separation_types.h"
+#include "evaluation_state.h"
+#include "milkyway_util.h"
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "separation_types.h"
+const char* getIntegralKernelSource();
 
-StreamConstants* getStreamConstants(const AstronomyParameters* ap, const Streams* streams);
+real integrateCAL_cpp(const AstronomyParameters* ap,
+                      const IntegralArea* ia,
+                      const StreamConstants* sc,
+                      const StreamGauss sg,
+                      real* st_probs,
+                      EvaluationState* es,
+                      const CLRequest* clr);
 
-int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* bgp);
 
-StreamGauss getStreamGauss(const unsigned int convolve);
-void freeStreamGauss(StreamGauss sg);
-
-NuConstants* prepareNuConstants(const unsigned int nu_steps,
-                                const real nu_step_size,
-                                const real nu_min);
-
-NuId calcNuStep(const IntegralArea* ia, const unsigned int nu_step);
-LBTrig* precalculateLBTrig(const AstronomyParameters* ap, const IntegralArea* ia, int transpose);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _CALCULATED_CONSTANTS_H_ */
+#endif /* _SEPARATION_CAL_H_ */
 
