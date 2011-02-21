@@ -133,11 +133,41 @@ static int processAllModels(NBodyCtx* ctx)
         /* Find the total number of bodies */
         ctx->nbody += ctx->models[i].nbody;
 
-        /* Find the smallest timestep and use that */
-        if (findTimestep)
-            ctx->timestep = mw_fmin(ctx->timestep, ctx->models[i].timestep);
-        if (findOrbitTimestep)
-            ctx->orbit_timestep = mw_fmin(ctx->orbit_timestep, ctx->models[i].orbit_timestep);
+        /* Use a combination of light and dark models to generate timestep
+        Assumes model 0 is light, model 1 is dark */
+
+        /* Calculate the enclosed mass of the big sphere within the little sphere's scale length */
+        double val, encmass = 0.0, step=1e-5;
+        double smalla = ctx->models[0].scale_radius;
+        double biga = ctx->models[1].scale_radius;
+        double Ml = ctx->models[0].mass, Md = ctx->models[1].mass;
+        double r;
+	int intstep;
+
+        if (findTimestep) {
+           encmass = 0.0;
+           for(r=0.0; r<=smalla; r+=step) {
+                val = r*r / pow(r*r + biga*biga, 2.5);
+                encmass += val*step;
+           }
+           encmass *= 3*Md*biga*biga;
+
+           ctx->timestep = calculateTimestep(ctx->models[0].mass + encmass, ctx->models[0].scale_radius);
+           warn("i = %i smalla = %f biga = %f Ml = %f Md = %f integral value = %f combined timestep = %f\n", i, smalla, biga, Ml, Md, encmass/(3*Md*biga*biga), ctx->timestep);
+        }
+
+        if (findOrbitTimestep) {
+           encmass = 0.0;
+           for(r=0.0; r<=smalla; r+=step) {
+                val = r*r / pow(r*r + biga*biga, 2.5);
+                encmass += val*step;
+           }
+           encmass *= 3*Md*biga*biga;
+
+           /* Use 1/10th of the nbody timestep */ 
+           ctx->orbit_timestep = calculateTimestep(ctx->models[0].mass + encmass, ctx->models[0].scale_radius)/10.0;
+           warn("i = %i smalla = %f biga = %f Ml = %f Md = %f integral value = %f combined orbit timestep = %f\n", i, smalla, biga, Ml, Md, encmass/(3*Md*biga*biga), ctx->orbit_timestep);
+        }
 
         if (findEps2)
         {
@@ -271,6 +301,7 @@ int setCtxConsts(NBodyCtx* ctx,
     /* Hack: Ignore these parameters in the file if using the command
      * line arguments. */
     /* FIXME: Assumes using first model */
+    /* willeb: assumes the first model is the smaller, light model */
     if (fitParams->useFitParams)
     {
         ctx->models[0].mass         = fitParams->modelMass;

@@ -52,11 +52,12 @@
     #include <fdlibm.h>
   #else
     #if HAVE_TGMATH_H
-      #include <tgmath.h>
+      //#include <tgmath.h>
     #else
       #include <math.h>
     #endif
   #endif /* ENABLE_FDLIBM */
+	#include <math.h>
 
   /* crlibm is a math.h supplement. fdlibm is a replacement.*/
   #if ENABLE_CRLIBM

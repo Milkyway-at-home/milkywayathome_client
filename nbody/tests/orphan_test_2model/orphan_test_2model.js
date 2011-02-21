@@ -35,8 +35,8 @@
         "dwarf-model": [
             {
                 "type" : "plummer",
-                "mass" : 4,
-                "nbody" : 1024,
+                "mass" : 12,
+                "nbody" : 10000,
                 "scale-radius" : 0.2,
 
                 "reverse-orbit" : true,
@@ -52,9 +52,9 @@
 
             {
                 "type" : "plummer",
-                "mass" : 12,
-                "nbody" : 4096,
-                "scale-radius" : 0.5,
+                "mass" : 5000,
+                "nbody" : 1024,
+                "scale-radius" : 0.9,
 
                 "reverse-orbit" : true,
                 "ignore-final" : true,

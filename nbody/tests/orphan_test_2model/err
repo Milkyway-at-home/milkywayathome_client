@@ -1,0 +1,8 @@
+Warning: In group 'dwarf-model': Unknown field 'reverse-orbit': 'true'
+Warning: In group 'dwarf-model': Unknown field 'reverse-orbit': 'true'
+i = 0 smalla = 0.200000 biga = 0.900000 Ml = 12.000000 Md = 5000.000000 integral value = 0.004201 combined timestep = 0.000231
+i = 0 smalla = 0.200000 biga = 0.900000 Ml = 12.000000 Md = 5000.000000 integral value = 0.004201 combined orbit timestep = 0.000023
+i = 1 smalla = 0.200000 biga = 0.900000 Ml = 12.000000 Md = 5000.000000 integral value = 0.004201 combined timestep = 0.000231
+i = 1 smalla = 0.200000 biga = 0.900000 Ml = 12.000000 Md = 5000.000000 integral value = 0.004201 combined orbit timestep = 0.000023
+13:32:50: Starting fresh nbody run
+13:32:50: Starting nbody system
