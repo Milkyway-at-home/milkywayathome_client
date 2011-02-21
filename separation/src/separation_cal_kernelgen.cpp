@@ -75,7 +75,7 @@ static double1 exp_custom(double1 x)
     double1 xx = x * double1(1.0 / log(2.0));
     double1 xxFract = fract(xx);
 
-    int1 expi = cast_type<int1>(xx - xxFract);
+    float1 expif = cast_type<float1>(xx - xxFract);
 
     double1 tmp = xxFract + double1(-0.5);
     double1 dtmp = tmp * tmp;
@@ -90,7 +90,7 @@ static double1 exp_custom(double1 x)
     double1 divRes = div_custom(z, tmp4);
     divRes = mad(divRes, double1(sqrt(2.0)), double1(sqrt(2.0)));
 
-    return ldexp(divRes, expi);
+    return ldexp(divRes, cast_type<int1>(expif));
 }
 
 static double2 kahanAdd(double2 kSum, double1 x)
@@ -160,28 +160,8 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         double1 y = rPt.x() * lTrig.y();
         double1 z = rPt.x() * bSin;
 
-        double1 tmp1 = x * x;
-        double1 tmp2 = z * z;
-        double1 tmp3 = mad(y, y, tmp1);
-        double1 tmp4 = mad(double1(ap->q_inv_sqr), tmp2, tmp3);
-
-        double1 rg = sqrt_custom(tmp4);
-        double1 rs = rg + double1(ap->r0);
-
-        emit_comment("bg_int increment");
-        bg_int += div_custom(rPt.y(), rg * rs * rs * rs);
-
-        #if 0
-        if (ap->aux_bg_profile)
-        {
-            r_in_mag = sg_dx[i] + gPrime(rcs[pos.y()]);
-            tmp = mad(double1(ap->bg_b), r_in_mag, double1(ap->bg_c));
-            tmp = mad(double1(ap->bg_a, r_in_mag * r_in_mag, tmp));
-            bg_int += tmp * rPt.y();
-        }
-        #endif
-
         emit_comment("stream loops");
+        std::vector<double1> streamSqrv;
         for (j = 0; j < number_streams; ++j)
         {
             emit_comment("begin stream");
@@ -203,12 +183,40 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
             sqrv = mad(ysp, ysp, sqrv);
             sqrv = mad(zsp, zsp, sqrv);
 
-            double1 streamExp = exp_custom(sqrv * double1(-sc[j].sigma_sq2_inv));
+            streamSqrv.push_back(sqrv);
             emit_comment("End exp");
+        }
 
-            streamIntegrals[j] = mad(rPt.y(), streamExp, streamIntegrals[j]);
+        /* Moving this down here and splitting where bg_int gets
+         * incremented saves registers */
+        double1 tmp1 = x * x;
+        double1 tmp2 = z * z;
+        double1 tmp3 = mad(y, y, tmp1);
+        double1 tmp4 = mad(double1(ap->q_inv_sqr), tmp2, tmp3);
+
+        double1 rg = sqrt_custom(tmp4);
+        double1 rs = rg + double1(ap->r0);
+
+        for (j = 0; j < number_streams; ++j)
+        {
+            streamSqrv[j] *= double1(-sc[j].sigma_sq2_inv);
+            streamSqrv[j] = exp_custom(streamSqrv[j]);
+            streamIntegrals[j] = mad(rPt.y(), streamSqrv[j], streamIntegrals[j]);
         }
         emit_comment("End streams");
+
+        emit_comment("bg_int increment");
+        bg_int += div_custom(rPt.y(), rg * rs * rs * rs);
+
+       #if 0
+        if (ap->aux_bg_profile)
+        {
+            r_in_mag = sg_dx[i] + gPrime(rcs[pos.y()]);
+            tmp = mad(double1(ap->bg_b), r_in_mag, double1(ap->bg_c));
+            tmp = mad(double1(ap->bg_a, r_in_mag * r_in_mag, tmp));
+            bg_int = mad(tmp, rPt.y(), bg_int);
+        }
+        #endif
     }
     il_endloop
 
