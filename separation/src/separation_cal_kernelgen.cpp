@@ -36,6 +36,7 @@ using namespace cal::il;
 /* Doesn't give correct inf results when dividing by 0 */
 static double1 div_custom(double1 x, double1 y)
 {
+    emit_comment("div_custom");
     float1 yf = cast_type<float1>(y);
     double1 tmp = cast_type<double1>(reciprocal(yf));
 
@@ -56,10 +57,10 @@ static double1 sqrt_custom(double1 x)
 
     double1 tmp = y * y;
     tmp = mad(x, tmp, double1(-3.0));
-    y = y * tmp;
+    y *= tmp;
 
     tmp = x * y;
-    y = y * tmp;
+    y *= tmp;
 
     y = mad(y, double1(-0.0625), double1(0.75));
     return y * tmp;
@@ -74,7 +75,6 @@ static double1 exp_custom(double1 x)
 
     double1 xx = x * double1(1.0 / log(2.0));
     double1 xxFract = fract(xx);
-
     float1 expif = cast_type<float1>(xx - xxFract);
 
     double1 tmp = xxFract + double1(-0.5);
@@ -165,44 +165,42 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         for (j = 0; j < number_streams; ++j)
         {
             emit_comment("begin stream");
-
-            double1 xs = x - double1(X(sc[j].c));
-            double1 ys = y - double1(Y(sc[j].c));
-            double1 zs = z - double1(Z(sc[j].c));
+            double1 xs = x + double1(-X(sc[j].c));
+            double1 ys = y + double1(-Y(sc[j].c));
+            double1 zs = z + double1(-Z(sc[j].c));
 
             /* Dot product */
             double1 dotted = double1(X(sc[j].a)) * xs;
             dotted = mad(double1(Y(sc[j].a)), ys, dotted);
             dotted = mad(double1(Z(sc[j].a)), zs, dotted);
 
-            double1 xsp = mad(dotted, double1(-X(sc[j].a)), xs);
-            double1 ysp = mad(dotted, double1(-Y(sc[j].a)), ys);
-            double1 zsp = mad(dotted, double1(-Z(sc[j].a)), zs);
+            xs = mad(dotted, double1(-X(sc[j].a)), xs);
+            ys = mad(dotted, double1(-Y(sc[j].a)), ys);
+            zs = mad(dotted, double1(-Z(sc[j].a)), zs);
 
-            double1 sqrv = xsp * xsp;
-            sqrv = mad(ysp, ysp, sqrv);
-            sqrv = mad(zsp, zsp, sqrv);
+            double1 sqrv = xs * xs;
+            sqrv = mad(ys, ys, sqrv);
+            sqrv = mad(zs, zs, sqrv);
 
-            streamSqrv.push_back(sqrv);
-            emit_comment("End exp");
+            streamSqrv.push_back(sqrv * double1(-sc[j].sigma_sq2_inv));
+            emit_comment("End stream exp");
         }
+        emit_comment("End streams phase 1");
 
         /* Moving this down here and splitting where bg_int gets
          * incremented saves registers */
+
         double1 tmp1 = x * x;
-        double1 tmp2 = z * z;
         double1 tmp3 = mad(y, y, tmp1);
+        double1 tmp2 = z * z;
         double1 tmp4 = mad(double1(ap->q_inv_sqr), tmp2, tmp3);
 
         double1 rg = sqrt_custom(tmp4);
         double1 rs = rg + double1(ap->r0);
 
+        emit_comment("Streams phase 2");
         for (j = 0; j < number_streams; ++j)
-        {
-            streamSqrv[j] *= double1(-sc[j].sigma_sq2_inv);
-            streamSqrv[j] = exp_custom(streamSqrv[j]);
-            streamIntegrals[j] = mad(rPt.y(), streamSqrv[j], streamIntegrals[j]);
-        }
+            streamIntegrals[j] = mad(rPt.y(), exp_custom(streamSqrv[j]), streamIntegrals[j]);
         emit_comment("End streams");
 
         emit_comment("bg_int increment");

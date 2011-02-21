@@ -1045,6 +1045,33 @@ static CALresult runKernel(MWCALInfo* ci, SeparationCALMem* cm, const IntegralAr
     CALdomain domain = { 0, 0, ia->mu_steps, ia->r_steps };
 
     err = calCtxRunProgram(&ev, ci->calctx, ci->func, &domain);
+
+#if 0
+    CALdomain3D global = { ia->mu_steps, ia->r_steps, 1 };
+    //CALdomain3D local = { 400, ia->r_steps, 1 };
+    //CALdomain3D local = { ia->mu_steps, 2, 1 };
+    //CALdomain3D local = { 400, ia->r_steps, 1 };
+    CALdomain3D local = { 64, 28, 1 };
+    CALprogramGrid grid;
+
+    grid.func = ci->func;
+    grid.flags = 0;
+
+    grid.gridBlock = local;
+
+    grid.gridSize.width  = (global.width + local.width - 1) / local.width;
+    grid.gridSize.height = (global.height + local.height - 1) / local.height;
+    grid.gridSize.depth  = (global.depth + local.depth - 1) / local.depth;
+
+    warn("arst %u %u %u -> { %u %u }\n", grid.gridSize.width, grid.gridSize.height, grid.gridSize.depth,
+
+         grid.gridSize.width * local.width,
+         grid.gridSize.height * local.height
+        );
+
+    err = calCtxRunProgramGrid(&ev, ci->calctx, &grid);
+#endif
+
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Error running kernel", err);
