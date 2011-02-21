@@ -157,6 +157,26 @@ char* mwReadFile(const char* filename)
     return mwFreadFile(mw_fopen(filename, "rb"), filename);
 }
 
+int mwWriteFile(const char* filename, const char* str)
+{
+    FILE* f;
+    int rc;
+
+    f = mw_fopen(filename, "w");
+    if (!f)
+    {
+        perror("Writing file");
+        return 1;
+    }
+
+    rc = fputs(str, f);
+    if (rc == EOF)
+        warn("Error writing file '%s'\n", filename);
+
+    fclose(f);
+    return rc;
+}
+
 
 #ifdef _WIN32
 

@@ -32,22 +32,21 @@ extern "C" {
 
 ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
 inline mwvector lbr2xyz_2(__MW_CONSTANT AstronomyParameters* ap,
-                          const real r_point,
+                          const real rPoint,
                           const LBTrig lbt)
 {
     mwvector xyz;
-    real zp = r_point * BCOS(lbt);
 
     // This mad for some reason increases GPR usage by 1 pushing into next level of unhappy
-    xyz.x = mw_mad(zp, LCOS(lbt), ap->m_sun_r0);
-    //xyz.x = zp * lbt.lcos - ap->sun_r0;
-    xyz.y = zp * LSIN(lbt);
-    xyz.z = r_point * BSIN(lbt);
+    xyz.x = mw_mad(rPoint, LCOS_BCOS(lbt), ap->m_sun_r0);
+    xyz.y = rPoint * LSIN_BCOS(lbt);
+    xyz.z = rPoint * BSIN(lbt);
+
     return xyz;
 }
 
 ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
-inline real calc_st_prob_inc(const StreamConstants* sc, mwvector xyz)
+inline real calc_st_prob_inc(__MW_CONSTANT StreamConstants* sc, mwvector xyz)
 {
     real xyz_norm, dotted;
     mwvector xyzs;
@@ -151,8 +150,14 @@ ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE
 inline LBTrig lb_trig(LB lb)
 {
     LBTrig lbt;
-    mw_sincos(d2r(LB_L(lb)), &lbt.lsin, &lbt.lcos);
-    mw_sincos(d2r(LB_B(lb)), &lbt.bsin, &lbt.bcos);
+    real bCos;
+
+    mw_sincos(d2r(LB_L(lb)), &lbt.lSinBCos, &lbt.lCosBCos);
+    mw_sincos(d2r(LB_B(lb)), &lbt.bSin, &bCos);
+
+    lbt.lCosBCos *= bCos;
+    lbt.lSinBCos *= bCos;
+
     return lbt;
 }
 #endif /* __OPENCL_VERSION__ */

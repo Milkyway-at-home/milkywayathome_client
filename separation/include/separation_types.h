@@ -99,14 +99,15 @@ typedef struct
 
 typedef struct
 {
-    real lsin, lcos;
-    real bsin, bcos;
+    real lCosBCos;
+    real lSinBCos;
+    real bSin;
+    real _pad;
 } LBTrig;
 
-#define LSIN(x) ((x).lsin)
-#define LCOS(x) ((x).lcos)
-#define BSIN(x) ((x).bsin)
-#define BCOS(x) ((x).bcos)
+#define LCOS_BCOS(x) ((x).lCosBCos)
+#define LSIN_BCOS(x) ((x).lSinBCos)
+#define BSIN(x) ((x).bSin)
 
 #else
 
@@ -119,14 +120,19 @@ typedef real2 RPoints;
 
 typedef real4 LBTrig;
 
-#define LSIN(l) ((l).x)
-#define LCOS(l) ((l).y)
+#define LCOS_BCOS(l) ((l).x)
+#define LSIN_BCOS(l) ((l).y)
 #define BSIN(l) ((l).z)
-#define BCOS(l) ((l).w)
 
 #endif /* __OPENCL_VERSION__ */
 
+/* Convenience structure for passing mess of LBTrig to CAL kernel in 2 parts */
 typedef struct
+{
+    real lCosBCos, lSinBCos;
+} LTrigPair;
+
+typedef struct SEPARATION_ALIGN(2 * sizeof(real))
 {
     real nu;
     real id;

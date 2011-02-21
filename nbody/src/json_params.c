@@ -59,6 +59,8 @@ static const char* showNBodyType(mw_type bt)
             return "string";
         case mw_type_enum:
             return "enum";
+        case mw_type_one_or_many:
+            return "one_or_many";
         default:
             warn("Trying to show unknown mw_type %d\n", bt);
             return "<unknown type>";
@@ -316,7 +318,7 @@ static mwbool readEnum(const MWParameter* p, const char* pname, json_object* obj
     }
 
     conv = reader(json_object_get_string(obj));
-    if (conv == -1)
+    if (conv == InvalidEnum)
         return TRUE;
 
     *((generic_enum_t*) p->param) = conv;
@@ -329,6 +331,40 @@ static mwbool readObject(const MWParameter* p, const char* pname, json_object* o
     MWReadFunc readFunc = (MWReadFunc) p->conv;
 
     return readFunc(p->param, p->name, obj);
+}
+
+static mwbool readOneOrMany(const MWParameter* p, const char* pname, json_object* obj, mwbool useDflt)
+{
+    mw_type type;
+    json_object* tmpArray;
+    mwbool rc;
+
+    if (useDflt)
+    {
+        warn("Unimplemented: defaultable one/many objects");
+        return TRUE;
+    }
+
+    type = json_object_get_type_safe(obj);
+
+    if (type == mw_type_object)
+    {
+        tmpArray = json_object_new_array();
+        json_object_array_add(tmpArray, obj);
+        rc = readArray(p, pname, tmpArray, useDflt);
+        json_object_get(obj);
+        json_object_put(tmpArray);
+        return rc;
+    }
+    else if (type == mw_type_array)
+    {
+        return readArray(p, pname, obj, useDflt);
+    }
+    else
+    {
+        typeWarning(mw_type_one_or_many, p->name, pname, obj);
+        return TRUE;
+    }
 }
 
 static mwbool readItem(const MWParameter* p, const char* pname, json_object* obj, mwbool useDflt)
@@ -359,6 +395,9 @@ static mwbool readItem(const MWParameter* p, const char* pname, json_object* obj
         case mw_type_enum:
             return readEnum(p, pname, obj, useDflt);
 
+        case mw_type_one_or_many:
+            return readOneOrMany(p, pname, obj, useDflt);
+
         default:
             warn("Unhandled parameter type %d for key '%s' in '%s'\n",
                  p->type, p->name, pname);
@@ -368,16 +407,19 @@ static mwbool readItem(const MWParameter* p, const char* pname, json_object* obj
 
 static void printAvailableFields(const MWParameter* p, const char* pname)
 {
+    char buf[128];
+
     warn("Failed to read required item of correct type in group '%s'\n"
-         "\tFields are:\n", pname);
+         "%10s\n", pname, "    Fields are:");
 
     while (p->name)
     {
-        warn("\t\t%s (%s)", p->name, showNBodyType(p->type));
+        sprintf(buf, "(%s)", showNBodyType(p->type));
+        warn("%28s %13s", p->name, buf);
 
         if (p->dflt)
             warn("  (optional)");
-        warn(",\n");
+        warn("\n");
         ++p;
     }
 }

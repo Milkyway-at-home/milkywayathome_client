@@ -209,7 +209,7 @@ static cl_int createLBTrigBuffer(CLInfo* ci,
     cl_int err;
     LBTrig* lbts;
 
-    lbts = precalculateLBTrig(ap, ia);
+    lbts = precalculateLBTrig(ap, ia, CL_FALSE);
     cm->lbts = clCreateBuffer(ci->clctx, constBufFlags, sizes->lbts, lbts, &err);
     if (err != CL_SUCCESS)
     {

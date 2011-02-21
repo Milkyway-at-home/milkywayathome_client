@@ -48,11 +48,23 @@
      casting everywhere
    */
 
+  #if __GLIBC__ <= 2 && __GLIBC_MINOR__ < 7
+    #define HAVE_BROKEN_TGMATH 1
+    #if !DOUBLEPREC
+      #warning "Old Glibc tgmath.h doesn't work, so float don't really work"
+    #endif
+  #endif /* __GLIBC__ <= 2 && __GLIBC_MINOR__ < 7 */
+
   #if ENABLE_FDLIBM
     #include <fdlibm.h>
   #else
+<<<<<<< HEAD
     #if HAVE_TGMATH_H
       //#include <tgmath.h>
+=======
+    #if HAVE_TGMATH_H && !HAVE_BROKEN_TGMATH
+      #include <tgmath.h>
+>>>>>>> e92fc06fec4b33b2f24ba67e02403d396cd16349
     #else
       #include <math.h>
     #endif

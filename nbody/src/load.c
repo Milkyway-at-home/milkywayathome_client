@@ -264,11 +264,11 @@ static void setRCrit(const NBodyCtx* ctx, NBodyState* st, cellptr p, mwvector cm
 
     switch (ctx->criterion)
     {
-        case NEWCRITERION:
+        case NewCriterion:
             rc = psize / ctx->theta + mw_distv(cmpos, Pos(p));
             /* use size plus offset */
             break;
-        case EXACT:                         /* exact force calculation? */
+        case Exact:                         /* exact force calculation? */
             rc = 2.0 * st->tree.rsize;      /* always open cells */
             break;
         case BH86:                          /* use old BH criterion? */
@@ -281,7 +281,7 @@ static void setRCrit(const NBodyCtx* ctx, NBodyState* st, cellptr p, mwvector cm
             break;
         default:
             rc = 0.0; /* Stop clang static analysis warning */
-            fail("Got unknown criterion: %d\n", ctx->criterion);
+            fail("Bad criterion: %d\n", ctx->criterion);
     }
 
     Rcrit2(p) = sqr(rc);           /* store square of radius */

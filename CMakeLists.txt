@@ -236,7 +236,7 @@ if(SYSTEM_IS_X86)
 endif()
 
 if(NOT MSVC)
-  set(CMAKE_C_FLAGS "-std=c99 ${CMAKE_C_FLAGS}")
+  set(CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
 endif()
 
 #Set math assumptions that we can make. We don't ever use the error
