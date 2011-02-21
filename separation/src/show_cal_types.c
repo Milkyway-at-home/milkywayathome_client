@@ -96,7 +96,13 @@ const char* showCALtargetEnum(enum CALtargetEnum x)
         case CAL_TARGET_REDWOOD:
             return "CAL_TARGET_REDWOOD";
         case CAL_TARGET_CEDAR :
-            return "CAL_TARGET_CEDAR ";
+            return "CAL_TARGET_CEDAR";
+        case CAL_TARGET_WRESTLER:
+            return "CAL_TARGET_WRESTLER";
+        case CAL_TARGET_CAYMAN:
+            return "CAL_TARGET_CAYMAN";
+        case CAL_TARGET_BARTS:
+            return "CAL_TARGET_BARTS";
         default:
             warn("Trying to show unhandled CALenumTarget: %d\n", x);
             return "Unknown CALtargetEnum";

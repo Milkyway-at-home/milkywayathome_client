@@ -757,7 +757,7 @@ static void printCALInfo(const MWCALInfo* ci)
         );
 }
 
-static CALobject createCALBinary(const char* srcIL)
+static CALobject createCALBinary(const char* srcIL, CALtarget target)
 {
     CALresult err;
     CALobject obj = NULL;
@@ -765,7 +765,7 @@ static CALobject createCALBinary(const char* srcIL)
     if (!srcIL)
         return NULL;
 
-    err = calclCompile(&obj, CAL_LANGUAGE_IL, srcIL, CAL_TARGET_CYPRESS);
+    err = calclCompile(&obj, CAL_LANGUAGE_IL, srcIL, target);
     if (err != CAL_RESULT_OK)
     {
         warn("Error compiling kernel (%d) : %s\n", err, calclGetErrorString());
@@ -775,7 +775,7 @@ static CALobject createCALBinary(const char* srcIL)
     return obj;
 }
 
-static CALimage createCALImage(const char* src)
+static CALimage createCALImage(const char* src, CALtarget target)
 {
     CALobject obj;
     CALresult rc;
@@ -784,7 +784,7 @@ static CALimage createCALImage(const char* src)
     if (!src)
         return NULL;
 
-    obj = createCALBinary(src);
+    obj = createCALBinary(src, target);
     if (!obj)
         return NULL;
 
@@ -799,7 +799,7 @@ static CALimage createCALImage(const char* src)
     return img;
 }
 
-static CALimage createCALImageFromFile(const char* filename)
+static CALimage createCALImageFromFile(const char* filename, CALtarget target)
 {
     char* src;
     CALimage img;
@@ -811,7 +811,7 @@ static CALimage createCALImageFromFile(const char* filename)
         return NULL;
     }
 
-    img = createCALImage(src);
+    img = createCALImage(src, target);
     free(src);
 
     return img;
@@ -835,7 +835,8 @@ static CALresult printISAToFile(const char* filename, CALimage img)
     return err;
 }
 
-static CALimage createCALImageFromGeneratedKernel(const AstronomyParameters* ap,
+static CALimage createCALImageFromGeneratedKernel(CALtarget target,
+                                                  const AstronomyParameters* ap,
                                                   const IntegralArea* ia,
                                                   const StreamConstants* sc)
 
@@ -849,7 +850,7 @@ static CALimage createCALImageFromGeneratedKernel(const AstronomyParameters* ap,
     src = separationKernelSrc(ap, ia, sc);
     mwWriteFile(ilFile, src);
 
-    img = createCALImage(src);
+    img = createCALImage(src, target);
     free(src);
 
     if (printISAToFile(isaFile, img) == CAL_RESULT_OK)
@@ -944,7 +945,7 @@ static CALresult separationSetupCAL(MWCALInfo* ci,
 {
     CALresult err;
 
-    ci->image = createCALImageFromGeneratedKernel(ap, ia, sc);
+    ci->image = createCALImageFromGeneratedKernel(ci->devInfo.target, ap, ia, sc);
     if (!ci->image)
     {
         warn("Failed to load image\n");
