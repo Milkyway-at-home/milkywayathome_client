@@ -17,96 +17,15 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <cal.h>
-#include <calcl.h>
-
 #include "milkyway_util.h"
 #include "separation_types.h"
 #include "calculated_constants.h"
 #include "r_points.h"
 #include "show_cal_types.h"
 #include "cal_binary.h"
+#include "separation_cal_types.h"
 #include "separation_cal_kernelgen.h"
 
-
-/* FIXME: Also defined in CL version */
-typedef struct
-{
-    size_t outBg;
-    size_t outStreams;
-
-    size_t nuSteps, muSteps, rSteps;
-
-    size_t rPts;
-    size_t rc;
-    size_t sg_dx;
-    size_t lTrig;
-    size_t bTrig;
-} CALSeparationSizes;
-
-
-typedef struct
-{
-    CALname outBg;
-    CALname* outStreams;
-
-    CALname inMu;
-    CALname* inStreams;
-
-    CALname nuBuf;
-    CALname rPts;
-    CALname rc;
-    CALname sg_dx;
-    CALname lTrig;
-    CALname bTrig;
-} SeparationCALNames;
-
-
-typedef struct
-{
-    CALuint major, minor, patchLevel;
-} MWCALVersion;
-
-#define EMPTY_CAL_VERSION { 0, 0, 0 }
-
-typedef struct
-{
-    MWCALVersion version;
-    CALuint numDevices;
-    CALdevice devID;    /* Index of device chosen */
-    CALdevice dev;
-    CALdeviceinfo devInfo;
-    CALdeviceattribs devAttribs;
-    CALcontext calctx;
-    CALmodule module;
-    CALimage image;
-    CALfunc func;
-} MWCALInfo;
-#define EMPTY_CAL_INFO { EMPTY_CAL_VERSION, 0, 0, 0, { 0, }, { 0 }, 0, 0, 0, 0, NULL, 0 }
-
-/* Pair of resource and associated CALmem */
-typedef struct
-{
-    CALresource res;
-    CALmem mem;
-} MWMemRes;
-
-#define EMPTY_MEM_RES { 0, 0 }
-
-typedef struct
-{
-    MWMemRes outBg;
-    MWMemRes* outStreams;
-
-    /* constant, read only buffers */
-    MWMemRes rc;        /* r constants */
-    MWMemRes rPts;
-    MWMemRes sg_dx;
-    MWMemRes lTrig;      /* sin, cos of l */
-    MWMemRes bTrig;      /* sin, cos of b */
-    MWMemRes nuBuf;
-    CALuint numberStreams;
-} SeparationCALMem;
 
 #define cal_warn(msg, err, ...) fprintf(stderr, msg ": %s (%s)\n", ##__VA_ARGS__, calGetErrorString(), showCALresult(err))
 
@@ -514,7 +433,7 @@ static CALresult createConstantBuffer1D(MWMemRes* mr,
     return CAL_RESULT_OK;
 }
 
-static CALresult zeroBuffer(MWMemRes* mr, MWCALInfo* ci, CALuint numberElements, CALuint width, CALuint height)
+static CALresult zeroBuffer(MWMemRes* mr, CALuint numberElements, CALuint width, CALuint height)
 {
     CALresult err;
     CALdouble* ptr;
@@ -557,7 +476,7 @@ static CALresult createOutputBuffer2D(MWMemRes* mr, MWCALInfo* ci, CALuint width
         return err;
     }
 
-    err = zeroBuffer(mr, ci, 2, width, height);
+    err = zeroBuffer(mr, 2, width, height);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to zero output buffer", err);
@@ -807,11 +726,17 @@ static void printCALInfo(const MWCALInfo* ci)
          "Compute shader:        %s\n"
          "Engine clock:          %u Mhz\n"
          "Memory clock:          %u Mhz\n"
-         "Wavefront size:        %u Mhz\n"
+         "GPU RAM:               %u\n"
+         "Wavefront size:        %u\n"
          "Double precision:      %s\n"
+         "Compute shader:        %s\n"
          "Number SIMD:           %u\n"
          "Number shader engines: %u\n"
-         "GPU RAM:               %u\n",
+         "Pitch alignment:       %u\n"
+         "Surface alignment:     %u\n"
+         "Max size 2D:           { %u, %u }\n"
+         "\n"
+         ,
          ci->numDevices,
          ci->devID,
          showCALtargetEnum(ci->devInfo.target),
@@ -820,11 +745,16 @@ static void printCALInfo(const MWCALInfo* ci)
 
          ci->devAttribs.engineClock,
          ci->devAttribs.memoryClock,
+         ci->devAttribs.localRAM,
          ci->devAttribs.wavefrontSize,
          showCALboolean(ci->devAttribs.doublePrecision),
+         showCALboolean(ci->devAttribs.computeShader),
          ci->devAttribs.numberOfSIMD,
          ci->devAttribs.numberOfShaderEngines,
-         ci->devAttribs.localRAM);
+         ci->devAttribs.pitch_alignment,
+         ci->devAttribs.surface_alignment,
+         ci->devInfo.maxResource2DWidth, ci->devInfo.maxResource2DHeight
+        );
 }
 
 static CALobject createCALBinary(const char* srcIL)
@@ -1223,63 +1153,79 @@ static void calculateCALSeparationSizes(CALSeparationSizes* sizes,
     sizes->rSteps = ia->r_steps;
 }
 
+/* Init CAL, and prepare separation kernel from workunit parameters */
+CALresult separationCALInit(MWCALInfo* ci,
+                            const AstronomyParameters* ap,
+                            const IntegralArea* ia,
+                            const StreamConstants* sc)
+{
+    CALresult err;
+
+    err = calInit();
+    if (err != CAL_RESULT_OK)
+    {
+        cal_warn("Failed to init CAL", err);
+        return err;
+    }
+
+    err = mwGetCALInfo(ci, 0);
+    if (err != CAL_RESULT_OK)
+    {
+        cal_warn("Failed to get CAL info", err);
+        return err;
+    }
+
+    printCALInfo(ci);
+
+    err = separationSetupCAL(ci, ap, ia, sc);
+    if (err != CAL_RESULT_OK)
+    {
+        cal_warn("Failed to setup CAL", err);
+        mwDestroyCALInfo(ci);
+        return err;
+    }
+
+    return CAL_RESULT_OK;
+}
+
+CALresult mwCALShutdown(MWCALInfo* ci)
+{
+    CALresult err = CAL_RESULT_OK;
+
+    err |= mwDestroyCALInfo(ci);
+    err |= calShutdown();
+    if (err != CAL_RESULT_OK)
+        cal_warn("Failed to shutdown CAL", err);
+
+    return err;
+}
+
 real integrateCAL(const AstronomyParameters* ap,
                   const IntegralArea* ia,
                   const StreamConstants* sc,
                   const StreamGauss sg,
                   real* st_probs,
                   EvaluationState* es,
-                  const CLRequest* clr)
+                  const CLRequest* clr,
+                  MWCALInfo* ci)
 {
-    real result = NAN;
-    MWCALInfo ci;
-    SeparationCALMem cm;
     CALresult err;
+    SeparationCALMem cm;
     CALSeparationSizes sizes;
-
-    err = calInit();
-    if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Failed to init CAL", err);
-        return NAN;
-    }
-
-    memset(&ci, 0, sizeof(MWCALInfo));
-    memset(&cm, 0, sizeof(SeparationCALMem));
-    err = mwGetCALInfo(&ci, 0);
-    if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Failed to get CAL info", err);
-        return NAN;
-    }
-
-    err = separationSetupCAL(&ci, ap, ia, sc);
-    if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Failed to setup CAL", err);
-        mwDestroyCALInfo(&ci);
-        return NAN;
-    }
+    real result = NAN;
 
     calculateCALSeparationSizes(&sizes, ap, ia);
 
-    err = createSeparationBuffers(&ci, &cm, ap, ia, sc, sg, &sizes);
+    memset(&cm, 0, sizeof(SeparationCALMem));
+    err = createSeparationBuffers(ci, &cm, ap, ia, sc, sg, &sizes);
     if (err != CAL_RESULT_OK)
         return NAN;
 
-    result = runIntegral(&ci, &cm, ia, st_probs);
+    result = runIntegral(ci, &cm, ia, st_probs);
 
-    err = releaseSeparationBuffers(&ci, &cm);
+    err = releaseSeparationBuffers(ci, &cm);
     if (err != CAL_RESULT_OK)
         result = NAN;
-
-    err = mwDestroyCALInfo(&ci);
-    if (err != CAL_RESULT_OK)
-        result = NAN;
-
-    err = calShutdown();
-    if (err != CAL_RESULT_OK)
-        cal_warn("Failed to shutdown CAL", err);
 
     return result;
 }

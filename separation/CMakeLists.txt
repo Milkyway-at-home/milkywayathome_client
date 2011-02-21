@@ -208,10 +208,11 @@ set(separation_cl_headers include/setup_cl.h
                           include/separation_cl_defs.h
                           include/separation_cl_buffers.h)
 
-set(separation_cl_headers include/separation_cal.h
-                          include/separation_cal_kernelgen.h
-                          include/cal_binary.h
-                          include/show_cal_types.h)
+set(separation_cal_headers include/separation_cal.h
+                           include/separation_cal_kernelgen.h
+                           include/separation_cal_types.h
+                           include/cal_binary.h
+                           include/show_cal_types.h)
 
 if(SEPARATION_GRAPHICS)
   list(APPEND lib_source_file_list ${graphics_src_list})

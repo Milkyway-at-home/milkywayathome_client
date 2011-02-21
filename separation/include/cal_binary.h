@@ -24,10 +24,18 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "separation_types.h"
 #include "evaluation_state.h"
+#include "separation_cal_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+CALresult separationCALInit(MWCALInfo* ci,
+                            const AstronomyParameters* ap,
+                            const IntegralArea* ia,
+                            const StreamConstants* sc);
+
+CALresult mwCALShutdown(MWCALInfo* ci);
 
 real integrateCAL(const AstronomyParameters* ap,
                   const IntegralArea* ia,
@@ -35,8 +43,8 @@ real integrateCAL(const AstronomyParameters* ap,
                   const StreamGauss sg,
                   real* st_probs,
                   EvaluationState* es,
-                  const CLRequest* clr);
-
+                  const CLRequest* clr,
+                  MWCALInfo* ci);
 
 
 #ifdef __cplusplus
