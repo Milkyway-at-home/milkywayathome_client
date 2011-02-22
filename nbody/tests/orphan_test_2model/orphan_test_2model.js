@@ -52,17 +52,9 @@
 
             {
                 "type" : "plummer",
-<<<<<<< HEAD
-                "mass" : 5000,
-                "nbody" : 1024,
-                "scale-radius" : 0.9,
-
-                "reverse-orbit" : true,
-=======
                 "mass" : 12,
                 "nbody" : 4096,
                 "scale-radius" : 0.5,
->>>>>>> e92fc06fec4b33b2f24ba67e02403d396cd16349
                 "ignore-final" : true,
 
                 "initial-conditions": {
