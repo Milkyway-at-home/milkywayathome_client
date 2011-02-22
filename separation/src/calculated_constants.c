@@ -82,6 +82,12 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
         return 1;
     }
 
+    if (ap->convolve == 0)
+    {
+        warn("convolve (%u) must be > 0\n", ap->convolve);
+        return 1;
+    }
+
     ap->coeff = 1.0 / (stdev * SQRT_2PI);
     ap->alpha_delta3 = 3.0 - ap->alpha + ap->delta;
 

@@ -370,12 +370,14 @@ static CALresult createConstantBuffer2D(MWMemRes* mr,
                                         MWCALInfo* ci,
                                         const CALdouble* dataPtr,
                                         CALformat format,
+                                        CALboolean linearBuffer,
                                         CALuint width,
                                         CALuint height)
 {
     CALresult err;
+    CALuint flags = linearBuffer ? CAL_RESALLOC_GLOBAL_BUFFER : 0;
 
-    err = calResAllocLocal2D(&mr->res, ci->dev, width, height, format, 0);
+    err = calResAllocLocal2D(&mr->res, ci->dev, width, height, format, flags);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create 2D constant resource", err);
@@ -543,7 +545,7 @@ static CALresult createRBuffers(MWCALInfo* ci,
 
     r_pts = precalculateRPts(ap, ia, sg, &rc, FALSE);
 
-    err = createConstantBuffer2D(&cm->rPts, ci, (CALdouble*) r_pts, formatReal2, ap->convolve, ia->r_steps);
+    err = createConstantBuffer2D(&cm->rPts, ci, (CALdouble*) r_pts, formatReal2, CAL_FALSE, ap->convolve, ia->r_steps);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create r_pts buffer", err);
@@ -617,14 +619,14 @@ static CALresult createLBTrigBuffers(MWCALInfo* ci,
 
     getSplitLBTrig(ap, ia, &lTrig, &bTrig);
 
-    err = createConstantBuffer2D(&cm->lTrig, ci, (CALdouble*) lTrig, formatReal2, ia->nu_steps, ia->mu_steps);
+    err = createConstantBuffer2D(&cm->lTrig, ci, (CALdouble*) lTrig, formatReal2, CAL_FALSE, ia->nu_steps, ia->mu_steps);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create l trig buffer", err);
         goto fail;
     }
 
-    err = createConstantBuffer2D(&cm->bTrig, ci, (CALdouble*) bTrig, formatReal1, ia->nu_steps, ia->mu_steps);
+    err = createConstantBuffer2D(&cm->bTrig, ci, (CALdouble*) bTrig, formatReal1, CAL_FALSE, ia->nu_steps, ia->mu_steps);
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to create b trig buffer", err);
 
@@ -768,7 +770,7 @@ static CALobject createCALBinary(const char* srcIL, CALtarget target)
     err = calclCompile(&obj, CAL_LANGUAGE_IL, srcIL, target);
     if (err != CAL_RESULT_OK)
     {
-        warn("Error compiling kernel (%d) : %s\n", err, calclGetErrorString());
+        cal_warn("Error compiling kernel for target '%s'", err, showCALtargetEnum(target));
         return NULL;
     }
 
@@ -835,7 +837,7 @@ static CALresult printISAToFile(const char* filename, CALimage img)
     return err;
 }
 
-static CALimage createCALImageFromGeneratedKernel(CALtarget target,
+static CALimage createCALImageFromGeneratedKernel(const MWCALInfo* ci,
                                                   const AstronomyParameters* ap,
                                                   const IntegralArea* ia,
                                                   const StreamConstants* sc)
@@ -847,10 +849,10 @@ static CALimage createCALImageFromGeneratedKernel(CALtarget target,
     const char* ilFile = "calpp_kernel.il";
     const char* isaFile = "calpp_kernel_Cypress.isa";
 
-    src = separationKernelSrc(ap, ia, sc);
+    src = separationKernelSrc(ap, ia, sc, ci->devID);
     mwWriteFile(ilFile, src);
 
-    img = createCALImage(src, target);
+    img = createCALImage(src, ci->devInfo.target);
     free(src);
 
     if (printISAToFile(isaFile, img) == CAL_RESULT_OK)
@@ -945,7 +947,7 @@ static CALresult separationSetupCAL(MWCALInfo* ci,
 {
     CALresult err;
 
-    ci->image = createCALImageFromGeneratedKernel(ci->devInfo.target, ap, ia, sc);
+    ci->image = createCALImageFromGeneratedKernel(ci, ap, ia, sc);
     if (!ci->image)
     {
         warn("Failed to load image\n");
