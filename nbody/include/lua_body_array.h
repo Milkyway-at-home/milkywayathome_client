@@ -17,19 +17,32 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _LUA_NBODYCTX_H_
-#define _LUA_NBODYCTX_H_
+#ifndef _LUA_BODY_ARRAY_H_
+#define _LUA_BODY_ARRAY_H_
 
 #include <lua.h>
 #include "nbody_types.h"
 
-int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* ctx);
-NBodyCtx* checkNBodyCtx(lua_State* luaSt, int index);
-int registerNBodyCtx(lua_State* luaSt);
+
+/* We don't want to use a regular table/array for the bodies to avoid
+ * building a massive list on the Lua stack just to have to copy
+ * everything back into a C array. We also don't want Lua managing
+ * it. */
+typedef struct
+{
+    int nBody;
+    body* bodies;
+} NBodyLuaBodyArray;
+
+#define NBODY_LUA_BODY_ARRAY_LIB "NBodyLuaBodyArray"
+#define NBODY_LUA_BODY_ARRAY "NBodyLuaBodyArray"
+
+NBodyLuaBodyArray* checkNBodyLuaBodyArray(lua_State* luaSt, int index);
+int registerNBodyLuaBodyArray(lua_State* luaSt);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _LUA_NBODYCTX_H_ */
+#endif /* _LUA_BODY_ARRAY_H_ */
 

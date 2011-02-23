@@ -17,19 +17,18 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _LUA_NBODYCTX_H_
-#define _LUA_NBODYCTX_H_
+#ifndef _LUA_VECTOR_H_
+#define _LUA_VECTOR_H_
 
 #include <lua.h>
 #include "nbody_types.h"
 
-int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* ctx);
-NBodyCtx* checkNBodyCtx(lua_State* luaSt, int index);
-int registerNBodyCtx(lua_State* luaSt);
+mwvector checkVector(lua_State* luaSt, int index);
+int pushVector(lua_State* luaSt, mwvector v);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _LUA_NBODYCTX_H_ */
+#endif /* _LUA_VECTOR_H_ */
 

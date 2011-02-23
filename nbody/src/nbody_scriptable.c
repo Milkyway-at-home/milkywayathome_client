@@ -29,50 +29,79 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "io.h"
 #include "lua_type_marshal.h"
 #include "lua_nbodyctx.h"
+#include "lua_body.h"
+#include "lua_body_array.h"
+#include "nbody_scriptable.h"
 
 #include "milkyway_util.h"
 
-#include "nbody_scriptable.h"
 
-static void passListTest(lua_State* luaSt)
+#define TOP_TYPE(st, msg) warn("%s: %s\n", msg, luaL_typename(st, -1));
+
+
+static void pushRealArray(lua_State* luaSt, const real* arr, int n)
 {
-/* C array to Lua */
+    int i, table;
 
-    warn("Pass list test\n");
-    real arst[15];
-
-    int table;
-    unsigned int i;
-
-    for (i = 0; i < 15; ++i)
-        arst[i] = (real) (i + drand48());
-
-    lua_getglobal(luaSt, "takeList");
-
-    lua_createtable(luaSt, 15, 0);
+    lua_createtable(luaSt, n, 0);
     table = lua_gettop(luaSt);
 
-    NBodyCtx* lotsOCtx;
-
-    lotsOCtx = mwCalloc(15, sizeof(NBodyCtx));
-
-    for (i = 0; i < 15; ++i)
+    for (i = 0; i < n; ++i)
     {
-        //lua_pushvalue(luaSt, arst[i]);
-        //lua_pushnumber(luaSt, arst[i]);
-        lotsOCtx[i].timestep = 1337.0;
-        NBodyCtx* tmp = pushNBodyCtx(luaSt);
-        int lol = -1;
-        warn("last type = %s\n", lua_typename(luaSt, lol));
-        *tmp = lotsOCtx[i];
-        lua_pushvalue(luaSt, lol);
+        lua_pushnumber(luaSt, (lua_Number) arr[i]);
         lua_rawseti(luaSt, table, i + 1);
+        lua_pop(luaSt, 1);
+    }
+}
 
+static int pushNBodyCtxArray(lua_State* luaSt, const NBodyCtx* ctxs, int n)
+{
+    int i, table;
+
+    lua_createtable(luaSt, n, 0);
+    table = lua_gettop(luaSt);
+
+    for (i = 0; i < n; ++i)
+    {
+        if (pushNBodyCtx(luaSt, &ctxs[i]))
+        {
+            warn("Pushing NBodyCtx %d of %d failed\n", i, n);
+            lua_pop(luaSt, 1); /* Cleanup table */
+            return 1;
+        }
+
+        lua_pushvalue(luaSt, -1);
+        lua_rawseti(luaSt, table, i + 1);
         lua_pop(luaSt, 1);
     }
 
-    if (lua_pcall(luaSt, 1, 0, 0))
-        warn("Calling takeList failed\n");
+    return 1;
+}
+
+static real* popRealArray(lua_State* luaSt, int* outN)
+{
+    real* arr;
+    int i, n, table;
+
+    table = lua_gettop(luaSt);
+    luaL_checktype(luaSt, table, LUA_TTABLE);
+    n = luaL_getn(luaSt, table);  /* get size of table */
+
+    arr = mwMalloc(sizeof(real) * n);
+    for (i = 0; i < n; ++i)
+    {
+        lua_rawgeti(luaSt, table, i + 1);  /* push t[i] */
+        luaL_checktype(luaSt, -1, LUA_TNUMBER);
+        arr[i] = lua_tonumber(luaSt, -1);
+        lua_pop(luaSt, 1);
+    }
+
+    lua_pop(luaSt, 1);
+
+    if (outN)
+        *outN = n;
+
+    return arr;
 }
 
 static void callTestLists(lua_State* luaSt)
@@ -162,6 +191,77 @@ static void callTestContext(lua_State* luaSt)
     warn("CONTEXT TEST %f\n", ctx->timestep);
 }
 
+static void callTakeContext(lua_State* luaSt)
+{
+    NBodyCtx ctx = EMPTY_CTX;
+
+    ctx.timestep = 934.0;
+    ctx.orbit_timestep = 12345.0;
+
+    warn("ini = %f, %f\n", ctx.timestep, ctx.orbit_timestep);
+
+    /* the function name */
+    lua_getglobal(luaSt, "takeContext");
+
+    if (pushNBodyCtx(luaSt, &ctx))
+    {
+        warn("Pushing NBodyCtx failed\n");
+        return;
+    }
+
+    if (lua_pcall(luaSt, 1, 1, 0))
+    {
+        warn("Calling takeContext failed\n");
+        return;
+    }
+
+    /* get the result */
+    NBodyCtx* ctxResult = checkNBodyCtx(luaSt, -1);
+    lua_pop(luaSt, 1);
+
+    /* print the result */
+    warn("context modified %f %f\n", ctxResult->timestep, ctxResult->orbit_timestep);
+}
+
+
+static int callProcessContext(lua_State* luaSt, NBodyCtx* ctx)
+{
+    NBodyCtx* ctxRead;
+
+    lua_getglobal(luaSt, "processContext");
+    pushNBodyCtx(luaSt, ctx);
+
+    ctxRead = checkNBodyCtx(luaSt, -1);
+    if (!ctxRead)
+        return 1;
+
+    *ctx = *ctxRead; /* CHECKME: Who owns this? */
+
+    return 0;
+}
+
+static void callTestBodies(lua_State* luaSt)
+{
+    NBodyLuaBodyArray* bodies = NULL;
+
+    TOP_TYPE(luaSt, "test bodies");
+
+    lua_getglobal(luaSt, "testBodyArray");
+    TOP_TYPE(luaSt, "got global");
+    lua_call(luaSt, 0, 1);
+    TOP_TYPE(luaSt, "call made");
+    real readi = lua_tonumber(luaSt, -1);
+    warn("lololol %f\n", readi);
+
+    /* get the result */
+    bodies = checkNBodyLuaBodyArray(luaSt, -1);
+    // lua_pop(luaSt, 1);
+
+    /* print the result */
+    if (bodies)
+        warn("WHEEEEE %u\n", bodies->nBody);
+}
+
 int scriptableArst()
 {
     lua_State* luaSt;
@@ -175,41 +275,44 @@ int scriptableArst()
 
     printf("initop = %d\n", lua_gettop(luaSt));
 
-    //lu_load(luaSt, reader
-
-    /* Load various Lua libraries */
-    //lua_baselibopen(luaSt);
-
-
     luaopen_base(luaSt);
     luaopen_table(luaSt);
-#if 0
-    luaopen_io(luaSt);
     luaopen_string(luaSt);
 
-    luaopen_math(luaSt);
-#endif
-
-    printf("arst top = %d\n", lua_gettop(luaSt));
-
     registerNBodyCtx(luaSt);
+    registerNBodyLuaBodyArray(luaSt);
 
     printf("nbody top = %d\n", lua_gettop(luaSt));
 
-    /* load the script */
+
 
     // luaL_dostring
     if (luaL_dofile(luaSt, "add.lua") != 0)
         warn("dofile failed\n");
+
+    callTestBodies(luaSt);
 
     printf("dofile top = %d\n", lua_gettop(luaSt));
     callAdd(luaSt);
     callTestContext(luaSt);
 
 
-    callTestLists(luaSt);
-    passListTest(luaSt);
 
+    //callTestLists(luaSt);
+
+    printf("soup top = %d\n", lua_gettop(luaSt));
+    lua_getglobal(luaSt, "testLists");
+    lua_pushnumber(luaSt, 9.0);
+    lua_call(luaSt, 1, 1);
+
+    printf("pre pop array top = %d\n", lua_gettop(luaSt));
+    real* arst = popRealArray(luaSt, NULL);
+    free(arst);
+
+
+    callTakeContext(luaSt);
+
+    printf("final top = %d\n", lua_gettop(luaSt));
     lua_close(luaSt);
 
     return 0;

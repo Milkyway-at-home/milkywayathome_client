@@ -137,6 +137,8 @@ typedef struct NBODY_ALIGN
     mwvector vel;               /* velocity of body */
  } body, *bodyptr;
 
+#define BODY_TYPE "Body"
+
 #define Body    body
 
 #define Vel(x)  (((bodyptr) (x))->vel)

@@ -12,26 +12,25 @@
 #include "lua_type_marshal.h"
 #include "lua_nbodyctx.h"
 
+#include "milkyway_util.h"
+
 #define NBODY_CTX "NBodyCtx"
 
 NBodyCtx* checkNBodyCtx(lua_State* luaSt, int index)
 {
     NBodyCtx* ctx;
 
-    luaL_checktype(luaSt, index, LUA_TUSERDATA);
-
     ctx = (NBodyCtx*) luaL_checkudata(luaSt, index, NBODY_CTX);
-    if (!ctx)
-        luaL_typerror(luaSt, index, NBODY_CTX);
+    luaL_argcheck(luaSt, ctx != NULL, 1, "`NBodyCtx' expected");
 
     return ctx;
 }
 
-static int positionNBodyCtx(lua_State *L)
+static int positionNBodyCtx(lua_State *L, int index)
 {
     NBodyCtx* ctx;
 
-    ctx = checkNBodyCtx(L, 1);
+    ctx = checkNBodyCtx(L, index);
 
     #if 0
     double   x = yd->x;
@@ -48,22 +47,30 @@ static int positionNBodyCtx(lua_State *L)
     return 2;
 }
 
-NBodyCtx* pushNBodyCtx(lua_State* luaSt)
+int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* ctx)
 {
-    NBodyCtx* ctx;
+    NBodyCtx* lctx;
 
-    ctx = (NBodyCtx*)lua_newuserdata(luaSt, sizeof(NBodyCtx));
+    lctx = (NBodyCtx*)lua_newuserdata(luaSt, sizeof(NBodyCtx));
+    if (!lctx)
+    {
+        warn("Creating NBodyCtx userdata failed\n");
+        return 1;
+    }
+
     luaL_getmetatable(luaSt, NBODY_CTX);
     lua_setmetatable(luaSt, -2);
 
-    return ctx;
+    *lctx = *ctx;
+
+    return 0;
 }
 
 static int createNBodyCtx(lua_State* luaSt)
 {
-    NBodyCtx* ctx;
+    NBodyCtx ctx = EMPTY_CTX;
 
-    ctx = pushNBodyCtx(luaSt);
+    pushNBodyCtx(luaSt, &ctx);
 
    #if 0
     size_t name_len;
@@ -108,34 +115,34 @@ static int test(lua_State* luaSt)
 
 static const luaL_reg metaMethodsNBodyCtx[] =
 {
-    {"__gc", destroyNBodyCtx },
-    {0, 0}
+    { "__gc", destroyNBodyCtx },
+    { NULL, NULL }
 };
 
 static const luaL_reg methodsNBodyCtx[] =
 {
-    {"create",   createNBodyCtx },
+    { "create",   createNBodyCtx },
 //    {"position", your_position},
-    {"test",     test},
-    {0, 0}
+    { "test",     test },
+    { NULL, NULL }
 };
 
 static const Xet_reg_pre gettersNBodyCtx[] =
 {
-    {"nbody",          getInt,    offsetof(NBodyCtx, nbody)          },
-    {"timestep",       getNumber, offsetof(NBodyCtx, timestep)       },
-    {"orbit_timestep", getNumber, offsetof(NBodyCtx, orbit_timestep) },
-    {"sunGCDist",      getNumber, offsetof(NBodyCtx, sunGCDist)      },
-    {0, 0, 0 }
+    { "nbody",          getInt,    offsetof(NBodyCtx, nbody)          },
+    { "timestep",       getNumber, offsetof(NBodyCtx, timestep)       },
+    { "orbit_timestep", getNumber, offsetof(NBodyCtx, orbit_timestep) },
+    { "sunGCDist",      getNumber, offsetof(NBodyCtx, sunGCDist)      },
+    { NULL, NULL, 0 }
 };
 
 static const Xet_reg_pre settersNBodyCtx[] =
 {
-    {"nbody",          setInt,    offsetof(NBodyCtx, nbody)          },
-    {"timestep",       setNumber, offsetof(NBodyCtx, timestep)       },
-    {"orbit_timestep", setNumber, offsetof(NBodyCtx, orbit_timestep) },
-    {"sunGCDist",      setNumber, offsetof(NBodyCtx, sunGCDist)      },
-    {0, 0, 0 }
+    { "nbody",          setInt,    offsetof(NBodyCtx, nbody)          },
+    { "timestep",       setNumber, offsetof(NBodyCtx, timestep)       },
+    { "orbit_timestep", setNumber, offsetof(NBodyCtx, orbit_timestep) },
+    { "sunGCDist",      setNumber, offsetof(NBodyCtx, sunGCDist)      },
+    { NULL, NULL, 0 }
 };
 
 
