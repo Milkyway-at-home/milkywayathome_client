@@ -25,7 +25,6 @@ set(nbody_MAJOR_VERSION 0)
 set(nbody_MINOR_VERSION 22)
 set(nbody_VERSION "${nbody_MAJOR_VERSION}.${nbody_MINOR_VERSION}")
 
-
 include(MaybeDlCheck)
 include(StaticBOINC)
 include(SpecialLibs)
@@ -38,8 +37,9 @@ include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 
 maybe_static()
 
+find_package(BOINC)
+
 if(BOINC_APPLICATION)
-  find_package(BOINC)
   include_directories(${BOINC_INCLUDE_DIR})
 endif()
 
@@ -72,7 +72,15 @@ mark_as_advanced(NBODY_CRLIBM)
 
 option(NBODY_OPENMP "Use OpenMP" OFF)
 
+option(NBODY_LUA "Scriptable initial distributions in LUA" OFF)
+mark_as_advanced(NBODY_LUA)
+
+find_package(Lua51)
 find_package(OpenMP)
+
+
+
+
 
 if(OPENMP_FOUND AND NBODY_OPENMP)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
@@ -123,6 +131,13 @@ if(BOINC_APPLICATION AND NOT BOINC_LIBRARIES)
   message(FATAL_ERROR "Trying to build as a BOINC application, but the BOINC library wasn't found")
 endif()
 
+if(NBODY_LUA AND NOT LUA51_FOUND)
+  set(NBODY_LUA OFF)
+  message(WARNING "Requested Nbody Lua, but Lua not found. Continuing without Lua")
+endif()
+
+
+
 
 
 #CHECKME: We don't actually need special number math
@@ -164,6 +179,15 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_types.h
                       ${NBODY_INCLUDE_DIR}/nbody_util.h)
 
+set(nbody_lua_src ${NBODY_SRC_DIR}/nbody_scriptable.c
+                  ${NBODY_SRC_DIR}/lua_type_marshal.c
+                  ${NBODY_SRC_DIR}/lua_nbodyctx.c)
+
+set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/nbody_scriptable.h
+                      ${NBODY_INCLUDE_DIR}/lua_type_marshal.h
+                      ${NBODY_INCLUDE_DIR}/lua_nbodyctx.h)
+
+
 if(BOINC_RELEASE OR NOT HAS_ASPRINTF)
   set(DEFAULT_NBODY_SHOW OFF)
 else()
@@ -178,15 +202,17 @@ if(NBODY_SHOW)
   list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/show.h)
 endif()
 
-
 if(BOINC_APPLICATION)
   list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/checkpoint.c)
   list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/checkpoint.h)
 endif()
 
+if(NBODY_LUA)
+  list(APPEND nbody_lib_src ${nbody_lua_src})
+  list(APPEND nbody_lib_headers ${nbody_lua_headers})
+endif()
+
 #TODO: The tests dSFMT has
-
-
 
 # Require SSE and SSE2 (needed for doubles) This avoids a host of
 # issues with x87, ranging from different intermediate precisions on
@@ -227,7 +253,6 @@ if(NBODY_OPENCL)
   list(APPEND nbody_link_libs ${OPENCL_LIBRARIES})
 endif()
 
-
 add_library(nbody_simulation STATIC ${nbody_lib_src} ${nbody_lib_headers})
 
 
@@ -245,10 +270,16 @@ endif()
 
 set(nbody_libs nbody_simulation)
 
+if(NBODY_LUA)
+  include_directories(${LUA_INCLUDE_DIR})
+  list(APPEND nbody_link_libs ${LUA_LIBRARIES})
+endif()
+
 set(exe_link_libs ${LIBM_LIBRARY}
                   ${POPT_LIBRARY}
                   ${nbody_libs}
                   ${nbody_link_libs})
+
 
 if(NBODY_CRLIBM)
   include_directories(${CRLIBM_INCLUDE_DIR})

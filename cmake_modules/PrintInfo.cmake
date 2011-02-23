@@ -25,6 +25,7 @@ macro(print_libs)
   message("   json-c Library     ${JSON_C_LIBRARY}")
   message("   POPT Library       ${POPT_LIBRARY}")
   message("   OpenCL Libraries   ${OPENCL_LIBRARIES}")
+  message("   Lua Libraries      ${LUA_LIBRARIES}")
 endmacro()
 
 macro(print_build_options)
