@@ -234,12 +234,6 @@ static SizeSolution findSolution(const IntegralArea* ia,
     return sol;
 }
 
-/* Straightforward division of area for fallback solution, round up */
-static size_t divChunks(size_t a, size_t b)
-{
-    return (a % b != 0) ? a / b + 1 : a / b;
-}
-
 /* FIXME: Depends on findGoodRunSizes first */
 /* Reset things if not setting local size manually */
 cl_bool fallbackDriverSolution(RunSizes* sizes)
@@ -249,8 +243,8 @@ cl_bool fallbackDriverSolution(RunSizes* sizes)
     sizes->extra = 0;
     sizes->effectiveArea = sizes->area;
 
-    /* round up number chunks */
-    sizes->numChunks = divChunks(sizes->area, sizes->blockSize);
+    /* Round up number chunks. Straightforward division of area for fallback solution, round up */
+    sizes->numChunks = mwDivRoundup(sizes->area, sizes->blockSize);
     sizes->letTheDriverDoIt = CL_TRUE;
     sizes->chunkSize = sizes->area / sizes->numChunks;
 

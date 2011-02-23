@@ -971,19 +971,15 @@ static CALresult separationSetupCAL(MWCALInfo* ci,
     return CAL_RESULT_OK;
 }
 
-static CALresult runKernel(MWCALInfo* ci, SeparationCALMem* cm, const IntegralArea* ia)
+static CALresult runKernel(MWCALInfo* ci, SeparationCALMem* cm, const CALdomain* domain)
 {
     CALresult err;
     CALevent ev = 0;
-    CALdomain domain = { 0, 0, ia->mu_steps, ia->r_steps };
 
-    err = calCtxRunProgram(&ev, ci->calctx, ci->func, &domain);
-
-#if 0
-    CALdomain3D global = { ia->mu_steps, ia->r_steps, 1 };
-    //CALdomain3D local = { 400, ia->r_steps, 1 };
-    //CALdomain3D local = { ia->mu_steps, 2, 1 };
-    //CALdomain3D local = { 400, ia->r_steps, 1 };
+#if 1
+    err = calCtxRunProgram(&ev, ci->calctx, ci->func, domain);
+#else
+    CALdomain3D global = { domain->width, domain->height, 1 };
     CALdomain3D local = { 64, 28, 1 };
     CALprogramGrid grid;
 
@@ -996,11 +992,13 @@ static CALresult runKernel(MWCALInfo* ci, SeparationCALMem* cm, const IntegralAr
     grid.gridSize.height = (global.height + local.height - 1) / local.height;
     grid.gridSize.depth  = (global.depth + local.depth - 1) / local.depth;
 
+    #if 0
     warn("arst %u %u %u -> { %u %u }\n", grid.gridSize.width, grid.gridSize.height, grid.gridSize.depth,
 
          grid.gridSize.width * local.width,
          grid.gridSize.height * local.height
         );
+    #endif
 
     err = calCtxRunProgramGrid(&ev, ci->calctx, &grid);
 #endif
@@ -1091,6 +1089,40 @@ static real readResults(MWCALInfo* ci,
     return result;
 }
 
+/* TODO: Actually do this */
+static CALuint findCALChunks(const MWCALInfo* ci, const IntegralArea* ia)
+{
+    return 1;
+}
+
+static inline CALuint runNuStep(MWCALInfo* ci,
+                                SeparationCALMem* cm,
+                                SeparationCALNames* cn,
+                                CALdomain* domain,
+                                const IntegralArea* ia,
+                                CALuint nChunks,
+                                CALuint chunkSize,
+                                CALuint nuStep)
+{
+    CALuint i;
+    CALresult err = CAL_RESULT_OK;
+
+    domain->x = 0;
+    for (i = 0; i < nChunks; ++i)
+    {
+        domain->x += i * chunkSize;
+
+        err = setNuKernelArgs(ci, cm, cn, ia, nuStep);
+        if (err != CAL_RESULT_OK)
+            break;
+
+        err = runKernel(ci, cm, domain);
+        if (err != CAL_RESULT_OK)
+            break;
+    }
+
+    return err;
+}
 
 static real runIntegral(MWCALInfo* ci,
                         SeparationCALMem* cm,
@@ -1101,6 +1133,20 @@ static real runIntegral(MWCALInfo* ci,
     unsigned int i;
     SeparationCALNames cn;
     double t1, t2;
+    CALuint nChunks, chunkSize;
+    CALdomain domain = { 0, 0, ia->mu_steps, ia->r_steps };
+
+    nChunks = findCALChunks(ci, ia);
+    if (nChunks == 0)
+        return NAN;
+
+    chunkSize = ia->mu_steps / nChunks;
+    warn("Using %u chunk(s) of size %u\n", nChunks, chunkSize);
+    if (ia->mu_steps % nChunks != 0)
+    {
+        warn("mu steps (%u) not divisible by n chunks (%u)\n", ia->mu_steps, nChunks);
+        return NAN;
+    }
 
     memset(&cn, 0, sizeof(SeparationCALNames));
     err = getModuleNames(ci, &cn, cm->numberStreams);
@@ -1118,20 +1164,15 @@ static real runIntegral(MWCALInfo* ci,
     }
 
     for (i = 0; i < ia->nu_steps; ++i)
-    //for (i = 0; i < 10; ++i)
     {
-        warn("Trying to run step: %u\n", i);
         t1 = mwGetTime();
-        err = setNuKernelArgs(ci, cm, &cn, ia, i);
-        if (err != CAL_RESULT_OK)
-            break;
 
-        err = runKernel(ci, cm, ia);
+        err = runNuStep(ci, cm, &cn, &domain, ia, nChunks, chunkSize, i);
         if (err != CAL_RESULT_OK)
             break;
 
         t2 = mwGetTime();
-        warn("Time = %fms\n", 1000.0 * (t2 - t1));
+        warn("Step %u: %fms\n", i, 1000.0 * (t2 - t1));
     }
 
     destroyModuleNames(&cn);
