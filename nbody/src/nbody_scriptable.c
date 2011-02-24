@@ -181,18 +181,20 @@ static void callTestContext(lua_State* luaSt)
     /* the function name */
     lua_getglobal(luaSt, "testContext");
 
+    lua_call(luaSt, 0, 1);
+
+    #if 0
     if (lua_pcall(luaSt, 0, 1, 0))
     {
         warn("Calling testContext failed\n");
         return;
     }
+    #endif
 
     /* get the result */
     ctx = checkNBodyCtx(luaSt, -1);
+    printContext(ctx);
     lua_pop(luaSt, 1);
-
-    /* print the result */
-    warn("CONTEXT TEST %f\n", ctx->timestep);
 }
 
 static void callTestHalo(lua_State* luaSt)
@@ -204,9 +206,8 @@ static void callTestHalo(lua_State* luaSt)
     lua_call(luaSt, 1, 1);
 
     h = checkHalo(luaSt, -1);
-
     printHalo(h);
-
+    lua_pop(luaSt, 1);
 }
 
 static void callTestDisk(lua_State* luaSt)
@@ -218,8 +219,8 @@ static void callTestDisk(lua_State* luaSt)
     lua_call(luaSt, 1, 1);
 
     d = checkDisk(luaSt, -1);
-
     printDisk(d);
+    lua_pop(luaSt, 1);
 }
 
 static void callTakeContext(lua_State* luaSt)
@@ -233,7 +234,6 @@ static void callTakeContext(lua_State* luaSt)
 
     /* the function name */
     lua_getglobal(luaSt, "takeContext");
-
     if (pushNBodyCtx(luaSt, &ctx))
     {
         warn("Pushing NBodyCtx failed\n");
@@ -247,11 +247,14 @@ static void callTakeContext(lua_State* luaSt)
     }
 
     /* get the result */
-    NBodyCtx* ctxResult = checkNBodyCtx(luaSt, -1);
-    lua_pop(luaSt, 1);
+    NBodyCtx* ctxResult;
 
+    ctxResult = checkNBodyCtx(luaSt, -1);
     /* print the result */
     warn("context modified %f %f\n", ctxResult->timestep, ctxResult->orbit_timestep);
+
+    lua_pop(luaSt, 1);
+
 }
 
 
@@ -263,10 +266,8 @@ static int callProcessContext(lua_State* luaSt, NBodyCtx* ctx)
     pushNBodyCtx(luaSt, ctx);
 
     ctxRead = checkNBodyCtx(luaSt, -1);
-    if (!ctxRead)
-        return 1;
-
     *ctx = *ctxRead; /* CHECKME: Who owns this? */
+    lua_pop(luaSt, 1);
 
     return 0;
 }
@@ -294,8 +295,8 @@ static void callTestBodies(lua_State* luaSt)
     //warn("arst = %f, %f, %f, %f\n", arstv.x, arstv.y, arstv.z, arstv.w);
 
     body* b = checkBody(luaSt, -1);
-
     printBody(b);
+    lua_pop(luaSt, 1);
 
 
     /* print the result */

@@ -62,8 +62,15 @@ int registerStruct(lua_State* luaSt,
                    const luaL_reg* regMetaMethods,
                    const luaL_reg* regMethods);
 
-int readEnumFromString(lua_State* luaSt, const MWEnumAssociation* table);
 int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val);
+int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int index);
+
+int mw_lua_checkboolean(lua_State* luaSt, int index);
+
+int getBool(lua_State* luaSt, void* v);
+int setBool(lua_State* luaSt, void* v);
+int getLong(lua_State* luaSt, void* v);
+int setLong(lua_State* luaSt, void* v);
 
 #ifdef __cplusplus
 }

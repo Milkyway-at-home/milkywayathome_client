@@ -79,13 +79,7 @@ static int createDisk(lua_State* luaSt)
 
     warn("Creating disk\n");
 
-    d.type = (disk_t) readEnumFromString(luaSt, diskOptions);
-    if (d.type == InvalidEnum)
-    {
-        luaL_argerror(luaSt, 1, "Expected 'exponential' or 'miyamoto-nagai' disk type");
-        return 0;
-    }
-
+    checkEnum(luaSt, diskOptions, -1);
     pushDisk(luaSt, &d);
     return 1;
 }

@@ -9,6 +9,17 @@
 
 #include "lua_type_marshal.h"
 #include "nbody_types.h"
+#include "milkyway_util.h"
+
+
+int mw_lua_checkboolean(lua_State* luaSt, int index)
+{
+    if (!lua_isboolean(luaSt, index))
+        luaL_typerror(luaSt, index, "Expected boolean");
+
+    return lua_toboolean(luaSt, index);
+}
+
 
 /* Mostly from example at http://lua-users.org/wiki/BindingWithMembersAndMethods */
 
@@ -25,6 +36,18 @@ int setInt(lua_State* luaSt, void* v)
     return 0;
 }
 
+int getLong(lua_State* luaSt, void* v)
+{
+    lua_pushinteger(luaSt, *(long*)v);
+    return 1;
+}
+
+int setLong(lua_State* luaSt, void* v)
+{
+    *(long*)v = luaL_checklong(luaSt, 3);
+    return 0;
+}
+
 int getNumber(lua_State* luaSt, void* v)
 {
     lua_pushnumber(luaSt, *(lua_Number*)v);
@@ -34,6 +57,18 @@ int getNumber(lua_State* luaSt, void* v)
 int setNumber(lua_State* luaSt, void* v)
 {
     *(lua_Number*)v = luaL_checknumber(luaSt, 3);
+    return 0;
+}
+
+int getBool(lua_State* luaSt, void* v)
+{
+    lua_pushboolean(luaSt, *(int*)v);
+    return 1;
+}
+
+int setBool(lua_State* luaSt, void* v)
+{
+    *(int*)v = mw_lua_checkboolean(luaSt, 3);
     return 0;
 }
 
@@ -146,20 +181,64 @@ int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val)
     return 1;
 }
 
-int readEnumFromString(lua_State* luaSt, const MWEnumAssociation* table)
+static void checkEnumError(lua_State* luaSt, const MWEnumAssociation* p, const char* badStr)
+{
+    size_t truncated;
+    const MWEnumAssociation* nextP;
+    char errBuf[2048] = "Expected enum value where options are: ";
+    char badOpt[1024] = "";
+
+    while (p->enumName)
+    {
+        nextP = &p[1];
+
+        if (nextP->enumName) /* If there is a next one, use a comma */
+        {
+            strncat(errBuf, p->enumName, sizeof(errBuf));
+            strncat(errBuf, ", ", sizeof(errBuf));
+        }
+        else
+        {
+            strncat(errBuf, "or ", sizeof(errBuf));
+            strncat(errBuf, p->enumName, sizeof(errBuf));
+            strncat(errBuf, ".", sizeof(errBuf));
+        }
+        p = nextP;
+    }
+
+    /* If there's extra space, might as well say what the bad option was */
+    truncated = snprintf(badOpt, sizeof(badOpt), " Invalid option '%s'", badStr);
+    if (   (truncated != sizeof(badOpt))
+        && (strnlen(badOpt, sizeof(badOpt))
+              < (sizeof(errBuf) - strnlen(errBuf, sizeof(errBuf)) + 3)
+            )
+        )
+        strncat(errBuf, badOpt, sizeof(errBuf));
+
+    luaL_argerror(luaSt, 1, errBuf);
+}
+
+int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int index)
 {
     const char* str;
     const MWEnumAssociation* p = table;
 
-    str = luaL_checklstring(luaSt, 1, NULL);
+    str = luaL_checklstring(luaSt, index, NULL);
+
     while (p->enumName)
     {
         if (!strcasecmp(p->enumName, str))
-            return p->enumVal;
+            break;
         ++p;
     }
 
-    return InvalidEnum;
+    if (!p->enumName)
+    {
+        checkEnumError(luaSt, table, str);
+        return InvalidEnum;
+    }
+
+    return p->enumVal;
 }
 
 

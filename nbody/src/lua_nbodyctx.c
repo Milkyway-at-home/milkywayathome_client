@@ -16,6 +16,28 @@
 
 #define NBODY_CTX "NBodyCtx"
 
+static const MWEnumAssociation criterionOptions[] =
+{
+    { "NewCriterion", NewCriterion },
+    { "Exact",        Exact        },
+    { "BH86",         BH86         },
+    { "SW93",         SW93         },
+    { NULL, -1 }
+};
+
+static int getCriterionT(lua_State* luaSt, void* v)
+{
+    return pushEnum(luaSt, criterionOptions, *(criterion_t*) v);
+}
+
+static int setCriterionT(lua_State* luaSt, void* v)
+{
+    warn("Set criterion\n");
+    *(criterion_t*) v = checkEnum(luaSt, criterionOptions, -1);
+    return 0;
+}
+
+
 NBodyCtx* checkNBodyCtx(lua_State* luaSt, int index)
 {
     NBodyCtx* ctx;
@@ -113,22 +135,46 @@ static const luaL_reg methodsNBodyCtx[] =
 
 static const Xet_reg_pre gettersNBodyCtx[] =
 {
-    { "nbody",          getInt,    offsetof(NBodyCtx, nbody)          },
-    { "timestep",       getNumber, offsetof(NBodyCtx, timestep)       },
-    { "orbit_timestep", getNumber, offsetof(NBodyCtx, orbit_timestep) },
-    { "sunGCDist",      getNumber, offsetof(NBodyCtx, sunGCDist)      },
+    { "nbody",           getInt,        offsetof(NBodyCtx, nbody)           },
+    { "timestep",        getNumber,     offsetof(NBodyCtx, timestep)        },
+    { "time_evolve",     getNumber,     offsetof(NBodyCtx, time_orbit)      },
+    { "orbit_timestep",  getNumber,     offsetof(NBodyCtx, orbit_timestep)  },
+    { "time_orbit",      getNumber,     offsetof(NBodyCtx, time_orbit)      },
+    { "freqOut",         getNumber,     offsetof(NBodyCtx, freqOut)         },
+    { "theta",           getNumber,     offsetof(NBodyCtx, theta)           },
+    { "eps2",            getNumber,     offsetof(NBodyCtx, eps2)            },
+    { "tree_rsize",      getNumber,     offsetof(NBodyCtx, tree_rsize)      },
+    { "sunGCDist",       getNumber,     offsetof(NBodyCtx, sunGCDist)       },
+    { "criterion",       getCriterionT, offsetof(NBodyCtx, criterion)       },
+    { "seed",            getLong,       offsetof(NBodyCtx, seed)            },
+    { "useQuad",         getBool,       offsetof(NBodyCtx, usequad)         },
+    { "allowIncest",     getBool,       offsetof(NBodyCtx, allowIncest)     },
+    { "outputCartesian", getBool,       offsetof(NBodyCtx, outputCartesian) },
+    { "outputBodies",    getBool,       offsetof(NBodyCtx, outputBodies)    },
+    { "outputHistogram", getBool,       offsetof(NBodyCtx, outputHistogram) },
     { NULL, NULL, 0 }
 };
 
 static const Xet_reg_pre settersNBodyCtx[] =
 {
-    { "nbody",          setInt,    offsetof(NBodyCtx, nbody)          },
-    { "timestep",       setNumber, offsetof(NBodyCtx, timestep)       },
-    { "orbit_timestep", setNumber, offsetof(NBodyCtx, orbit_timestep) },
-    { "sunGCDist",      setNumber, offsetof(NBodyCtx, sunGCDist)      },
+    { "timestep",        setNumber,     offsetof(NBodyCtx, timestep)        },
+    { "time_evolve",     setNumber,     offsetof(NBodyCtx, time_orbit)      },
+    { "orbit_timestep",  setNumber,     offsetof(NBodyCtx, orbit_timestep)  },
+    { "time_orbit",      setNumber,     offsetof(NBodyCtx, time_orbit)      },
+    { "freqOut",         setNumber,     offsetof(NBodyCtx, freqOut)         },
+    { "theta",           setNumber,     offsetof(NBodyCtx, theta)           },
+    { "eps2",            setNumber,     offsetof(NBodyCtx, eps2)            },
+    { "tree_rsize",      setNumber,     offsetof(NBodyCtx, tree_rsize)      },
+    { "sunGCDist",       setNumber,     offsetof(NBodyCtx, sunGCDist)       },
+    { "criterion",       setCriterionT, offsetof(NBodyCtx, criterion)       },
+    { "seed",            setLong,       offsetof(NBodyCtx, seed)            },
+    { "useQuad",         setBool,       offsetof(NBodyCtx, usequad)         },
+    { "allowIncest",     setBool,       offsetof(NBodyCtx, allowIncest)     },
+    { "outputCartesian", setBool,       offsetof(NBodyCtx, outputCartesian) },
+    { "outputBodies",    setBool,       offsetof(NBodyCtx, outputBodies)    },
+    { "outputHistogram", setBool,       offsetof(NBodyCtx, outputHistogram) },
     { NULL, NULL, 0 }
 };
-
 
 int registerNBodyCtx(lua_State* luaSt)
 {

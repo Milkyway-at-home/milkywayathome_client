@@ -79,13 +79,7 @@ static int createHalo(lua_State* luaSt)
 
     warn("Creating halo\n");
 
-    h.type = (halo_t) readEnumFromString(luaSt, haloOptions);
-    if (h.type == InvalidEnum)
-    {
-        luaL_argerror(luaSt, 1, "Expected 'logarithmic', 'nfw', or 'triaxial' for halo type");
-        return 0;
-    }
-
+    checkEnum(luaSt, haloOptions, -1);
     pushHalo(luaSt, &h);
     return 1;
 }
