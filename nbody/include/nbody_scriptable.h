@@ -22,9 +22,5 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 int scriptableArst();
 
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* _NBODY_SCRIPTABLE_H_ */
 

@@ -27,9 +27,5 @@ Halo* checkHalo(lua_State* luaSt, int index);
 int pushHalo(lua_State* luaSt, const Halo* h);
 int registerHalo(lua_State* luaSt);
 
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* _LUA_HALO_H_ */
 

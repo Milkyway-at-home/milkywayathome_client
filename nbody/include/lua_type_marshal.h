@@ -72,9 +72,5 @@ int setBool(lua_State* luaSt, void* v);
 int getLong(lua_State* luaSt, void* v);
 int setLong(lua_State* luaSt, void* v);
 
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* _LUA_TYPE_MARSHAL_H_ */
 

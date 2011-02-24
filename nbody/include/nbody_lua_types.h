@@ -17,19 +17,32 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if !defined(_NBODY_LUA_TYPES_H_INSIDE_) && !defined(NBODY_LUA_TYPES_COMPILATION)
-  #error "Only nbody_lua_types.h can be included directly."
+#ifndef _NBODY_LUA_TYPES_H_
+#define _NBODY_LUA_TYPES_H_
+
+#define _NBODY_LUA_TYPES_H_INSIDE_
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#ifndef _LUA_NBODYCTX_H_
-#define _LUA_NBODYCTX_H_
+#include "lua_body_array.h"
+#include "lua_disk.h"
+#include "lua_initial_conditions.h"
+#include "lua_type_marshal.h"
+#include "lua_body.h"
+#include "lua_halo.h"
+#include "lua_nbodyctx.h"
+#include "lua_vector.h"
 
 #include <lua.h>
 #include "nbody_types.h"
 
-int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* ctx);
-NBodyCtx* checkNBodyCtx(lua_State* luaSt, int index);
-int registerNBodyCtx(lua_State* luaSt);
+#ifdef __cplusplus
+}
+#endif
 
-#endif /* _LUA_NBODYCTX_H_ */
+#undef _NBODY_LUA_TYPES_H_INSIDE_
+
+#endif /* _NBODY_LUA_TYPES_H_ */
 

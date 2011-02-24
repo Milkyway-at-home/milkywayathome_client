@@ -27,15 +27,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_types.h"
 #include "io.h"
-#include "lua_type_marshal.h"
-#include "lua_nbodyctx.h"
-#include "lua_body.h"
-#include "lua_halo.h"
-#include "lua_disk.h"
-#include "lua_vector.h"
-#include "lua_body_array.h"
-#include "lua_initial_conditions.h"
 #include "nbody_scriptable.h"
+#include "nbody_lua_types.h"
 
 #include "milkyway_util.h"
 #include "show.h"

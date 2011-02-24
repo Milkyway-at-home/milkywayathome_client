@@ -179,25 +179,30 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_types.h
                       ${NBODY_INCLUDE_DIR}/nbody_util.h)
 
-set(nbody_lua_src ${NBODY_SRC_DIR}/nbody_scriptable.c
-                  ${NBODY_SRC_DIR}/lua_type_marshal.c
-                  ${NBODY_SRC_DIR}/lua_nbodyctx.c
-                  ${NBODY_SRC_DIR}/lua_body.c
-                  ${NBODY_SRC_DIR}/lua_body_array.c
-                  ${NBODY_SRC_DIR}/lua_vector.c
-                  ${NBODY_SRC_DIR}/lua_halo.c
-                  ${NBODY_SRC_DIR}/lua_disk.c
-                  ${NBODY_SRC_DIR}/lua_initial_conditions.c)
+set(nbody_lua_types_src ${NBODY_SRC_DIR}/lua_nbodyctx.c
+                        ${NBODY_SRC_DIR}/lua_body.c
+                        ${NBODY_SRC_DIR}/lua_body_array.c
+                        ${NBODY_SRC_DIR}/lua_vector.c
+                        ${NBODY_SRC_DIR}/lua_halo.c
+                        ${NBODY_SRC_DIR}/lua_disk.c
+                        ${NBODY_SRC_DIR}/lua_initial_conditions.c
+                        ${NBODY_SRC_DIR}/lua_type_marshal.c)
 
-set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/nbody_scriptable.h
-                      ${NBODY_INCLUDE_DIR}/lua_type_marshal.h
-                      ${NBODY_INCLUDE_DIR}/lua_body.h
-                      ${NBODY_INCLUDE_DIR}/lua_body_array.h
-                      ${NBODY_INCLUDE_DIR}/lua_vector.h
-                      ${NBODY_INCLUDE_DIR}/lua_nbodyctx.h
-                      ${NBODY_INCLUDE_DIR}/lua_halo.h
-                      ${NBODY_INCLUDE_DIR}/lua_disk.h
-                      ${NBODY_INCLUDE_DIR}/lua_initial_conditions.h)
+set(nbody_lua_types_headers ${NBODY_INCLUDE_DIR}/lua_body.h
+                            ${NBODY_INCLUDE_DIR}/lua_body_array.h
+                            ${NBODY_INCLUDE_DIR}/lua_vector.h
+                            ${NBODY_INCLUDE_DIR}/lua_nbodyctx.h
+                            ${NBODY_INCLUDE_DIR}/lua_halo.h
+                            ${NBODY_INCLUDE_DIR}/lua_disk.h
+                            ${NBODY_INCLUDE_DIR}/lua_initial_conditions.h
+                            ${NBODY_INCLUDE_DIR}/lua_type_marshal.h)
+
+
+set(nbody_lua_src ${NBODY_SRC_DIR}/nbody_scriptable.c)
+
+
+set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/nbody_scriptable.h)
+
 
 
 if(BOINC_RELEASE OR NOT HAS_ASPRINTF)
@@ -222,6 +227,10 @@ endif()
 if(NBODY_LUA)
   list(APPEND nbody_lib_src ${nbody_lua_src})
   list(APPEND nbody_lib_headers ${nbody_lua_headers})
+
+  add_library(nbody_lua_types STATIC ${nbody_lua_types_src} ${nbody_lua_types_headers})
+  set_target_properties(nbody_lua_types PROPERTIES
+                         COMPILE_DEFINITIONS "NBODY_LUA_TYPES_COMPILATION")
 endif()
 
 #TODO: The tests dSFMT has
@@ -284,14 +293,13 @@ set(nbody_libs nbody_simulation)
 
 if(NBODY_LUA)
   include_directories(${LUA_INCLUDE_DIR})
-  list(APPEND nbody_link_libs ${LUA_LIBRARIES})
+  list(APPEND nbody_link_libs ${LUA_LIBRARIES} nbody_lua_types)
 endif()
 
 set(exe_link_libs ${LIBM_LIBRARY}
                   ${POPT_LIBRARY}
                   ${nbody_libs}
                   ${nbody_link_libs})
-
 
 if(NBODY_CRLIBM)
   include_directories(${CRLIBM_INCLUDE_DIR})
