@@ -250,8 +250,9 @@ static void callTestBodies(lua_State* luaSt)
     TOP_TYPE(luaSt, "got global");
     lua_call(luaSt, 0, 1);
     TOP_TYPE(luaSt, "call made");
-    real readi = lua_tonumber(luaSt, -1);
-    warn("lololol %f\n", readi);
+    warn("EVERYTHING IS OK\n");
+
+
 
     /* get the result */
     bodies = checkNBodyLuaBodyArray(luaSt, -1);
@@ -278,6 +279,8 @@ int scriptableArst()
     luaopen_base(luaSt);
     luaopen_table(luaSt);
     luaopen_string(luaSt);
+    //luaopen_debug(luaSt);
+    //luaopen_io(luaSt);
 
     registerNBodyCtx(luaSt);
     registerNBodyLuaBodyArray(luaSt);

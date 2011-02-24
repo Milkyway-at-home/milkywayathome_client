@@ -130,16 +130,11 @@ static int stringFromNBodyLuaBodyArray(lua_State* luaSt)
 
 static const struct luaL_reg methodsNBodyLuaBodyArray [] =
 {
-    { "new", newNBodyLuaBodyArray },
-    { NULL, NULL }
-};
-
-static const struct luaL_reg instanceMethodsNBodyLuaBodyArray [] =
-{
-    { "__tostring", stringFromNBodyLuaBodyArray },
-    { "set",        setNBodyLuaBodyArray        },
     { "get",        getNBodyLuaBodyArray        },
+    { "set",        setNBodyLuaBodyArray        },
     { "size",       getSizeNBodyLuaBodyArray    },
+    { "new",        newNBodyLuaBodyArray        },
+    { "__tostring", stringFromNBodyLuaBodyArray },
     { NULL, NULL }
 };
 
@@ -172,15 +167,33 @@ static void setNBodyLuaBodyArrayIndexHandlers(lua_State* luaSt, int metatable, i
     #endif
 }
 
+/* Stack has metatable at index 1, type at index 2 */
+static void setMetaMethod(lua_State* luaSt,
+                          int metatable,
+                          int bodyArr,
+                          const char* metaName,
+                          const char* name)
+{
+    lua_pushstring(luaSt, metaName);
+    lua_pushstring(luaSt, name);
+    lua_gettable(luaSt, bodyArr);       /* e.g. get "get" */
+    lua_settable(luaSt, metatable);     /* e.g. metatable.__metaName = array.get */
+}
+
 static int openNBodyLuaBodyArray(lua_State* luaSt)
 {
-    luaL_newmetatable(luaSt, NBODY_LUA_BODY_ARRAY);
-    lua_pushstring(luaSt, "__index");
-    lua_pushvalue(luaSt, -2);   /* Pushes the metatable */
-    lua_settable(luaSt, -3);    /* metatable.__index = metatable */
+    int metatable, bodyArr;
 
-    luaL_openlib(luaSt, NULL, instanceMethodsNBodyLuaBodyArray, 0);
+    luaL_newmetatable(luaSt, NBODY_LUA_BODY_ARRAY);
+    metatable = lua_gettop(luaSt);
+
     luaL_openlib(luaSt, NBODY_LUA_BODY_ARRAY_LIB, methodsNBodyLuaBodyArray, 0);
+    bodyArr = lua_gettop(luaSt);
+
+    setMetaMethod(luaSt, metatable, bodyArr, "__index",    "get");
+    setMetaMethod(luaSt, metatable, bodyArr, "__newindex", "set");
+
+    lua_pop(luaSt, 1); /* Drop metatable */
 
     return 1;
 }
