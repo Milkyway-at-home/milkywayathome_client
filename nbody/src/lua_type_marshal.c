@@ -91,3 +91,42 @@ int newIndexHandler(lua_State* luaSt)
     return Xet_call(luaSt);                      /* call set function */
 }
 
+int registerStruct(lua_State* luaSt,
+                   const char* name,
+                   const Xet_reg_pre* getters,
+                   const Xet_reg_pre* setters,
+                   const luaL_reg* regMetaMethods,
+                   const luaL_reg* regMethods)
+{
+    int metatable, methods;
+
+    /* create methods table, & add it to the table of globals */
+    luaL_openlib(luaSt, name, regMethods, 0);
+    methods = lua_gettop(luaSt);
+
+    /* create metatable for NBodyCtx, & add it to the registry */
+    luaL_newmetatable(luaSt, name);
+    luaL_openlib(luaSt, 0, regMetaMethods, 0);  /* fill metatable */
+    metatable = lua_gettop(luaSt);
+
+    lua_pushliteral(luaSt, "__metatable");
+    lua_pushvalue(luaSt, methods);    /* dup methods table*/
+    lua_rawset(luaSt, metatable);     /* hide metatable:
+                                         metatable.__metatable = methods */
+    lua_pushliteral(luaSt, "__index");
+    lua_pushvalue(luaSt, metatable);     /* upvalue index 1 */
+    Xet_add(luaSt, getters);             /* fill metatable with getters */
+    lua_pushvalue(luaSt, methods);       /* upvalue index 2 */
+    lua_pushcclosure(luaSt, indexHandler, 2);
+    lua_rawset(luaSt, metatable);        /* metatable.__index = indexHandler */
+
+    lua_pushliteral(luaSt, "__newindex");
+    lua_newtable(luaSt);                 /* table for members you can set */
+    Xet_add(luaSt, setters);             /* fill with setters */
+    lua_pushcclosure(luaSt, newIndexHandler, 1);
+    lua_rawset(luaSt, metatable);     /* metatable.__newindex = newIndexHandler */
+
+    lua_pop(luaSt, 1);            /* drop metatable */
+    return 1;                     /* return methods on the stack */
+}
+

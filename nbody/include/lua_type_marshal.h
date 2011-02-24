@@ -49,6 +49,14 @@ int Xet_call(lua_State* luaSt);
 int indexHandler(lua_State* luaSt);
 int newIndexHandler(lua_State* luaSt);
 
+int registerStruct(lua_State* luaSt,
+                   const char* name,
+                   const Xet_reg_pre* getters,
+                   const Xet_reg_pre* setters,
+                   const luaL_reg* regMetaMethods,
+                   const luaL_reg* regMethods);
+
+
 #ifdef __cplusplus
 }
 #endif
