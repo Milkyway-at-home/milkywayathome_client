@@ -8,6 +8,7 @@
 #include <lauxlib.h>
 
 #include "lua_type_marshal.h"
+#include "nbody_types.h"
 
 /* Mostly from example at http://lua-users.org/wiki/BindingWithMembersAndMethods */
 
@@ -128,5 +129,36 @@ int registerStruct(lua_State* luaSt,
 
     lua_pop(luaSt, 1);            /* drop metatable */
     return 1;                     /* return methods on the stack */
+}
+
+int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val)
+{
+    const MWEnumAssociation* p = table;
+
+    while (p->enumVal != -1 && p->enumVal != val)
+        ++p;
+
+    if (p->enumVal == -1)
+        luaL_error(luaSt, "Got invalid enum value %d", val);
+
+    lua_pushstring(luaSt, p->enumName);
+
+    return 1;
+}
+
+int readEnumFromString(lua_State* luaSt, const MWEnumAssociation* table)
+{
+    const char* str;
+    const MWEnumAssociation* p = table;
+
+    str = luaL_checklstring(luaSt, 1, NULL);
+    while (p->enumName)
+    {
+        if (!strcasecmp(p->enumName, str))
+            return p->enumVal;
+        ++p;
+    }
+
+    return InvalidEnum;
 }
 

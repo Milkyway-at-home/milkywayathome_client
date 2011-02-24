@@ -43,8 +43,10 @@ static int positionNBodyCtx(lua_State *L, int index)
     lua_pushnumber(L,x);
     lua_pushnumber(L,y);
 
-    #endif
     return 2;
+
+    #endif
+    return 0;
 }
 
 int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* ctx)

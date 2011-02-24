@@ -243,6 +243,8 @@ typedef struct NBODY_ALIGN
     real c3;
 } Halo;
 
+#define HALO_TYPE "Halo"
+
 typedef struct NBODY_ALIGN
 {
     Spherical sphere[1];  /* 1 for now, flexibility can be added later */

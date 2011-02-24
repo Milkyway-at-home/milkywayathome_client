@@ -32,6 +32,12 @@ typedef const struct
 
 typedef Xet_reg_pre* Xet_reg;
 
+typedef struct
+{
+    const char* enumName;
+    int enumVal;
+} MWEnumAssociation;
+
 
 
 int getInt(lua_State* luaSt, void* v);
@@ -56,6 +62,8 @@ int registerStruct(lua_State* luaSt,
                    const luaL_reg* regMetaMethods,
                    const luaL_reg* regMethods);
 
+int readEnumFromString(lua_State* luaSt, const MWEnumAssociation* table);
+int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val);
 
 #ifdef __cplusplus
 }

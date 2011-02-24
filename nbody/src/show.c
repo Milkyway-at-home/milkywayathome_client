@@ -514,3 +514,17 @@ void printDwarfModel(const DwarfModel* p)
     free(buf);
 }
 
+void printHalo(const Halo* h)
+{
+    char* buf = showHalo(h);
+    puts(buf);
+    free(buf);
+}
+
+void printDisk(const Disk* d)
+{
+    char* buf = showDisk(d);
+    puts(buf);
+    free(buf);
+}
+

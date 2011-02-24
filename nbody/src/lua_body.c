@@ -26,27 +26,6 @@ body* checkBody(lua_State* luaSt, int index)
     return b;
 }
 
-static int positionBody(lua_State *L, int index)
-{
-    body* ctx;
-
-    ctx = checkBody(L, index);
-
-    #if 0
-    double   x = yd->x;
-    double   y = yd->y;
-    if (lua_gettop(L) > 1)
-    {
-        yd->x = luaL_checknumber(L, 2);
-        yd->y = luaL_checknumber(L, 3);
-    }
-    lua_pushnumber(L,x);
-    lua_pushnumber(L,y);
-
-    #endif
-    return 2;
-}
-
 int pushBody(lua_State* luaSt, const body* ctx)
 {
     body* lctx;

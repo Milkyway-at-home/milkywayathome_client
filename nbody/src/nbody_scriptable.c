@@ -30,11 +30,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "lua_type_marshal.h"
 #include "lua_nbodyctx.h"
 #include "lua_body.h"
+#include "lua_halo.h"
 #include "lua_vector.h"
 #include "lua_body_array.h"
 #include "nbody_scriptable.h"
 
 #include "milkyway_util.h"
+#include "show.h"
 
 
 #define TOP_TYPE(st, msg) warn("%s: %s\n", msg, luaL_typename(st, -1));
@@ -192,6 +194,22 @@ static void callTestContext(lua_State* luaSt)
     warn("CONTEXT TEST %f\n", ctx->timestep);
 }
 
+static void callTestEnum(lua_State* luaSt)
+{
+    Halo* h = NULL;
+
+    lua_getglobal(luaSt, "testEnum");
+    lua_pushliteral(luaSt, "logarithmic");
+    lua_call(luaSt, 1, 1);
+
+    h = checkHalo(luaSt, -1);
+
+    if (h)
+        printHalo(h);
+    else
+        warn("Null halo\n");
+}
+
 static void callTakeContext(lua_State* luaSt)
 {
     NBodyCtx ctx = EMPTY_CTX;
@@ -294,17 +312,18 @@ int scriptableArst()
 
     registerVector(luaSt);
     registerBody(luaSt);
+    registerHalo(luaSt);
     registerNBodyLuaBodyArray(luaSt);
     registerNBodyCtx(luaSt);
 
     printf("nbody top = %d\n", lua_gettop(luaSt));
 
 
-
     // luaL_dostring
     if (luaL_dofile(luaSt, "add.lua") != 0)
         warn("dofile failed\n");
 
+    callTestEnum(luaSt);
     callTestBodies(luaSt);
 
     printf("dofile top = %d\n", lua_gettop(luaSt));
