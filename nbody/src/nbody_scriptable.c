@@ -34,6 +34,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "lua_disk.h"
 #include "lua_vector.h"
 #include "lua_body_array.h"
+#include "lua_initial_conditions.h"
 #include "nbody_scriptable.h"
 
 #include "milkyway_util.h"
@@ -197,6 +198,18 @@ static void callTestContext(lua_State* luaSt)
     lua_pop(luaSt, 1);
 }
 
+static void callTestInitialConditions(lua_State* luaSt)
+{
+    InitialConditions* ic;
+
+    lua_getglobal(luaSt, "testInitialConditions");
+    lua_call(luaSt, 0, 1);
+
+    ic = checkInitialConditions(luaSt, -1);
+    printInitialConditions(ic);
+    lua_pop(luaSt, 1);
+}
+
 static void callTestHalo(lua_State* luaSt)
 {
     Halo* h = NULL;
@@ -327,6 +340,7 @@ int scriptableArst()
     registerBody(luaSt);
     registerHalo(luaSt);
     registerDisk(luaSt);
+    registerInitialConditions(luaSt);
     registerNBodyLuaBodyArray(luaSt);
     registerNBodyCtx(luaSt);
 
@@ -344,6 +358,8 @@ int scriptableArst()
     printf("dofile top = %d\n", lua_gettop(luaSt));
     callAdd(luaSt);
     callTestContext(luaSt);
+
+    callTestInitialConditions(luaSt);
 
 
 

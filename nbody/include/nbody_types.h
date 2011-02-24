@@ -281,6 +281,10 @@ typedef struct NBODY_ALIGN
     mwbool reverseOrbit;     /* Do a reverse orbit. Otherwise, take initial conditions as they are */
 } InitialConditions;
 
+#define EMPTY_INITIAL_CONDITIONS { EMPTY_MWVECTOR, EMPTY_MWVECTOR, FALSE, FALSE, FALSE }
+
+#define INITIAL_CONDITIONS_TYPE "InitialConditions"
+
 
 typedef struct NBODY_ALIGN
 {
