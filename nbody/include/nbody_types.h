@@ -124,6 +124,8 @@ typedef struct NBODY_ALIGN _node
     struct _node* next;     /* link to next force-calc */
 } node, *nodeptr;
 
+#define EMPTY_NODE { 0, NAN, EMPTY_MWVECTOR, NULL }
+
 #define Type(x) (((nodeptr) (x))->type)
 #define Mass(x) (((nodeptr) (x))->mass)
 #define Pos(x)  (((nodeptr) (x))->pos)
@@ -136,6 +138,8 @@ typedef struct NBODY_ALIGN
     node bodynode;              /* data common to all nodes */
     mwvector vel;               /* velocity of body */
  } body, *bodyptr;
+
+#define EMPTY_BODY { EMPTY_NODE, EMPTY_MWVECTOR }
 
 #define BODY_TYPE "Body"
 
@@ -433,7 +437,6 @@ typedef struct NBODY_ALIGN
 #define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
-#define EMPTY_VECTOR { NAN, NAN, NAN, NAN }
 #define EMPTY_CTX { EMPTY_POTENTIAL, NULL, 0, 0, NAN, NAN, NAN, NAN, \
                     NULL, NULL, NULL, NULL, NULL,                    \
                     NAN, NAN, NAN, NAN, NAN, 0, 0,                   \

@@ -23,8 +23,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lua.h>
 #include "nbody_types.h"
 
-mwvector checkVector(lua_State* luaSt, int index);
+mwvector* checkVector(lua_State* luaSt, int index);
 int pushVector(lua_State* luaSt, mwvector v);
+int registerVector(lua_State* luaSt);
+
+int setVector(lua_State* luaSt, void* v);
+int getVector(lua_State* luaSt, void* v);
 
 #ifdef __cplusplus
 }

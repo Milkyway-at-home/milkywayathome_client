@@ -25,6 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 body* checkBody(lua_State* luaSt, int index);
 int pushBody(lua_State* luaSt, const body* b);
+int registerBody(lua_State* luaSt);
 
 #ifdef __cplusplus
 }

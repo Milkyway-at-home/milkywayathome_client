@@ -79,8 +79,8 @@ static mwbool readInitialConditions(InitialConditions* ic, const char* pname, js
 {
     const InitialConditions defaultIC =
         {
-            /* .position     */ EMPTY_VECTOR,
-            /* .velocity     */ EMPTY_VECTOR,
+            /* .position     */ EMPTY_MWVECTOR,
+            /* .velocity     */ EMPTY_MWVECTOR,
             /* .useGalC      */ FALSE,
             /* .useRadians   */ FALSE,
             /* .reverseOrbit */ TRUE

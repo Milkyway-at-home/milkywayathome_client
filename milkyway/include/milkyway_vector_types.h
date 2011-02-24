@@ -108,7 +108,7 @@ typedef mwvector mwmatrix[NDIM];
 #define ZERO_MATRIX { ZERO_VECTOR, ZERO_VECTOR, ZERO_VECTOR }
 
 #define MWVECTOR "Vector"
-
+#define EMPTY_MWVECTOR { NAN, NAN, NAN, NAN }
 
 #endif /* _MILKYWAY_VECTOR_TYPES_H_ */
 

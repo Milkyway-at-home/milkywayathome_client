@@ -66,28 +66,11 @@ int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* ctx)
     return 0;
 }
 
+static const NBodyCtx _emptyCtx = EMPTY_CTX;
+
 static int createNBodyCtx(lua_State* luaSt)
 {
-    NBodyCtx ctx = EMPTY_CTX;
-
-    pushNBodyCtx(luaSt, &ctx);
-
-   #if 0
-    size_t name_len;
-    const char* name;
-
-    name = luaL_checklstring(luaSt, 1, &name_len);
-    if (name_len > 15)
-        luaL_error(luaSt, "name too long");
-
-    strcpy(yd->name, name);
-    yd->age = luaL_checkint(luaSt, 2);
-    yd->x   = luaL_checknumber(luaSt, 3);
-    yd->y   = luaL_checknumber(luaSt, 4);
-    yd->id  = ++id_counter;
-    #endif
-
-
+    pushNBodyCtx(luaSt, &_emptyCtx);
     return 1;
 }
 
@@ -111,7 +94,6 @@ static int test(lua_State* luaSt)
 
     return n;
 }
-
 
 static const luaL_reg metaMethodsNBodyCtx[] =
 {

@@ -30,6 +30,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "lua_type_marshal.h"
 #include "lua_nbodyctx.h"
 #include "lua_body.h"
+#include "lua_vector.h"
 #include "lua_body_array.h"
 #include "nbody_scriptable.h"
 
@@ -255,8 +256,17 @@ static void callTestBodies(lua_State* luaSt)
 
 
     /* get the result */
-    bodies = checkNBodyLuaBodyArray(luaSt, -1);
+    //bodies = checkNBodyLuaBodyArray(luaSt, -1);
     // lua_pop(luaSt, 1);
+
+
+    //mwvector arstv = *checkVector(luaSt, -1);
+    //warn("arst = %f, %f, %f, %f\n", arstv.x, arstv.y, arstv.z, arstv.w);
+
+    body* b = checkBody(luaSt, -1);
+
+    printBody(b);
+
 
     /* print the result */
     if (bodies)
@@ -282,8 +292,10 @@ int scriptableArst()
     //luaopen_debug(luaSt);
     //luaopen_io(luaSt);
 
-    registerNBodyCtx(luaSt);
+    registerVector(luaSt);
+    registerBody(luaSt);
     registerNBodyLuaBodyArray(luaSt);
+    registerNBodyCtx(luaSt);
 
     printf("nbody top = %d\n", lua_gettop(luaSt));
 
