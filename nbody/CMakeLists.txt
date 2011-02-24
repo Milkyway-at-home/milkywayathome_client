@@ -185,7 +185,8 @@ set(nbody_lua_src ${NBODY_SRC_DIR}/nbody_scriptable.c
                   ${NBODY_SRC_DIR}/lua_body.c
                   ${NBODY_SRC_DIR}/lua_body_array.c
                   ${NBODY_SRC_DIR}/lua_vector.c
-                  ${NBODY_SRC_DIR}/lua_halo.c)
+                  ${NBODY_SRC_DIR}/lua_halo.c
+                  ${NBODY_SRC_DIR}/lua_disk.c)
 
 set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/nbody_scriptable.h
                       ${NBODY_INCLUDE_DIR}/lua_type_marshal.h
@@ -193,7 +194,8 @@ set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/nbody_scriptable.h
                       ${NBODY_INCLUDE_DIR}/lua_body_array.h
                       ${NBODY_INCLUDE_DIR}/lua_vector.h
                       ${NBODY_INCLUDE_DIR}/lua_nbodyctx.h
-                      ${NBODY_INCLUDE_DIR}/lua_halo.h)
+                      ${NBODY_INCLUDE_DIR}/lua_halo.h
+                      ${NBODY_INCLUDE_DIR}/lua_disk.h)
 
 
 if(BOINC_RELEASE OR NOT HAS_ASPRINTF)

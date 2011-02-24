@@ -214,6 +214,8 @@ typedef struct NBODY_ALIGN
     real scale_height;  /* unused for exponential disk. "b" for Miyamoto-Nagai disk */
 } Disk;
 
+#define DISK_TYPE "Disk"
+
 /* Supported halo models */
 
 /* Can't get the enum value in preprocessor, so do this */

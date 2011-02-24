@@ -31,6 +31,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "lua_nbodyctx.h"
 #include "lua_body.h"
 #include "lua_halo.h"
+#include "lua_disk.h"
 #include "lua_vector.h"
 #include "lua_body_array.h"
 #include "nbody_scriptable.h"
@@ -194,20 +195,31 @@ static void callTestContext(lua_State* luaSt)
     warn("CONTEXT TEST %f\n", ctx->timestep);
 }
 
-static void callTestEnum(lua_State* luaSt)
+static void callTestHalo(lua_State* luaSt)
 {
     Halo* h = NULL;
 
-    lua_getglobal(luaSt, "testEnum");
-    lua_pushliteral(luaSt, "logarithmic");
+    lua_getglobal(luaSt, "testHalo");
+    lua_pushliteral(luaSt, "nfw");
     lua_call(luaSt, 1, 1);
 
     h = checkHalo(luaSt, -1);
 
-    if (h)
-        printHalo(h);
-    else
-        warn("Null halo\n");
+    printHalo(h);
+
+}
+
+static void callTestDisk(lua_State* luaSt)
+{
+    Disk* d = NULL;
+
+    lua_getglobal(luaSt, "testDisk");
+    lua_pushliteral(luaSt, "exponential");
+    lua_call(luaSt, 1, 1);
+
+    d = checkDisk(luaSt, -1);
+
+    printDisk(d);
 }
 
 static void callTakeContext(lua_State* luaSt)
@@ -313,6 +325,7 @@ int scriptableArst()
     registerVector(luaSt);
     registerBody(luaSt);
     registerHalo(luaSt);
+    registerDisk(luaSt);
     registerNBodyLuaBodyArray(luaSt);
     registerNBodyCtx(luaSt);
 
@@ -323,7 +336,8 @@ int scriptableArst()
     if (luaL_dofile(luaSt, "add.lua") != 0)
         warn("dofile failed\n");
 
-    callTestEnum(luaSt);
+    callTestHalo(luaSt);
+    callTestDisk(luaSt);
     callTestBodies(luaSt);
 
     printf("dofile top = %d\n", lua_gettop(luaSt));
