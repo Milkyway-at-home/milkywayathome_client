@@ -36,6 +36,27 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define TOP_TYPE(st, msg) warn("%s: %s\n", msg, luaL_typename(st, -1));
 
+    int l_map (lua_State *L) {
+      int i, n;
+
+      /* 1st argument must be a table (t) */
+      luaL_checktype(L, 1, LUA_TTABLE);
+
+      /* 2nd argument must be a function (f) */
+      luaL_checktype(L, 2, LUA_TFUNCTION);
+
+      n = luaL_getn(L, 1);  /* get size of table */
+
+      for (i=1; i<=n; i++) {
+        lua_pushvalue(L, 2);   /* push f */
+        lua_rawgeti(L, 1, i);  /* push t[i] */
+        lua_call(L, 1, 1);     /* call f(t[i]) */
+        lua_rawseti(L, 1, i);  /* t[i] = result */
+      }
+
+      return 0;  /* no results */
+    }
+
 
 static void pushRealArray(lua_State* luaSt, const real* arr, int n)
 {
@@ -61,13 +82,7 @@ static int pushNBodyCtxArray(lua_State* luaSt, const NBodyCtx* ctxs, int n)
 
     for (i = 0; i < n; ++i)
     {
-        if (pushNBodyCtx(luaSt, &ctxs[i]))
-        {
-            warn("Pushing NBodyCtx %d of %d failed\n", i, n);
-            lua_pop(luaSt, 1); /* Cleanup table */
-            return 1;
-        }
-
+        pushNBodyCtx(luaSt, &ctxs[i]);
         lua_pushvalue(luaSt, -1);
         lua_rawseti(luaSt, table, i + 1);
         lua_pop(luaSt, 1);
@@ -310,6 +325,19 @@ static void callTestBodies(lua_State* luaSt)
         warn("WHEEEEE %u\n", bodies->nBody);
 }
 
+static void callTestDSFMT(lua_State* luaSt)
+{
+    dsfmt_t* rSt = NULL;
+
+    TOP_TYPE(luaSt, "test dsfmt");
+
+    lua_getglobal(luaSt, "testDSFMT");
+    lua_call(luaSt, 0, 1);
+
+    rSt = checkDSFMT(luaSt, -1);
+    lua_pop(luaSt, 1);
+}
+
 int scriptableArst()
 {
     lua_State* luaSt;
@@ -336,6 +364,7 @@ int scriptableArst()
     registerInitialConditions(luaSt);
     registerNBodyLuaBodyArray(luaSt);
     registerNBodyCtx(luaSt);
+    registerDSFMT(luaSt);
 
     printf("nbody top = %d\n", lua_gettop(luaSt));
 
@@ -347,6 +376,8 @@ int scriptableArst()
     callTestHalo(luaSt);
     callTestDisk(luaSt);
     callTestBodies(luaSt);
+
+    callTestDSFMT(luaSt);
 
     printf("dofile top = %d\n", lua_gettop(luaSt));
     callAdd(luaSt);

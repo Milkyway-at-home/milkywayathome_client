@@ -100,7 +100,6 @@ static const luaL_reg methodsDisk[] =
     { NULL, NULL }
 };
 
-/* TODO Error when writing to fields a halo type doesn't have */
 static const Xet_reg_pre gettersDisk[] =
 {
     { "type",         getDiskT,  offsetof(Disk, type) },

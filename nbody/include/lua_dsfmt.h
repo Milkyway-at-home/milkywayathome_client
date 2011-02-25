@@ -21,15 +21,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #error "Only nbody_lua_types.h can be included directly."
 #endif
 
-#ifndef _LUA_HALO_H_
-#define _LUA_HALO_H_
+#ifndef _LUA_DSFMT_H_
+#define _LUA_DSFMT_H_
 
 #include <lua.h>
 #include "nbody_types.h"
+#include <dSFMT.h>
 
-Halo* checkHalo(lua_State* luaSt, int index);
-int pushHalo(lua_State* luaSt, const Halo* h);
-int registerHalo(lua_State* luaSt);
+dsfmt_t* checkDSFMT(lua_State* luaSt, int index);
+int pushDSFMT(lua_State* luaSt, const dsfmt_t* state);
+int registerDSFMT(lua_State* luaSt);
 
-#endif /* _LUA_HALO_H_ */
+#endif /* _LUA_DSFMT_H_ */
 

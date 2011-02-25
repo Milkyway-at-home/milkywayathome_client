@@ -76,11 +76,6 @@ int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* ctx)
     NBodyCtx* lctx;
 
     lctx = (NBodyCtx*)lua_newuserdata(luaSt, sizeof(NBodyCtx));
-    if (!lctx)
-    {
-        warn("Creating NBodyCtx userdata failed\n");
-        return 1;
-    }
 
     luaL_getmetatable(luaSt, NBODY_CTX);
     lua_setmetatable(luaSt, -2);

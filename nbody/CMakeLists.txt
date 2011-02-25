@@ -186,6 +186,7 @@ set(nbody_lua_types_src ${NBODY_SRC_DIR}/lua_nbodyctx.c
                         ${NBODY_SRC_DIR}/lua_halo.c
                         ${NBODY_SRC_DIR}/lua_disk.c
                         ${NBODY_SRC_DIR}/lua_initial_conditions.c
+                        ${NBODY_SRC_DIR}/lua_dsfmt.c
                         ${NBODY_SRC_DIR}/lua_type_marshal.c)
 
 set(nbody_lua_types_headers ${NBODY_INCLUDE_DIR}/lua_body.h
@@ -195,6 +196,7 @@ set(nbody_lua_types_headers ${NBODY_INCLUDE_DIR}/lua_body.h
                             ${NBODY_INCLUDE_DIR}/lua_halo.h
                             ${NBODY_INCLUDE_DIR}/lua_disk.h
                             ${NBODY_INCLUDE_DIR}/lua_initial_conditions.h
+                            ${NBODY_INCLUDE_DIR}/lua_dsfmt.h
                             ${NBODY_INCLUDE_DIR}/lua_type_marshal.h)
 
 

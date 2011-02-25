@@ -34,6 +34,7 @@ extern "C" {
 #include "lua_halo.h"
 #include "lua_nbodyctx.h"
 #include "lua_vector.h"
+#include "lua_dsfmt.h"
 
 #include <lua.h>
 #include "nbody_types.h"
