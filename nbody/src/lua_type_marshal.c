@@ -181,41 +181,45 @@ int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val)
     return 1;
 }
 
-static void checkEnumError(lua_State* luaSt, const MWEnumAssociation* p, const char* badStr)
+static int checkEnumError(lua_State* luaSt, const MWEnumAssociation* p, const char* badStr)
 {
-    size_t truncated;
     const MWEnumAssociation* nextP;
     char errBuf[2048] = "Expected enum value where options are: ";
     char badOpt[1024] = "";
+    size_t badSize, enumLen, errLen;
 
+    errLen = strlen(errBuf);
     while (p->enumName)
     {
         nextP = &p[1];
+        enumLen = strlen(p->enumName);
+        if (errLen + enumLen + 6 > sizeof(errBuf))  /* max possible */
+            mw_panic("Enum options too large for error string buffer!\n");
 
+        errLen += enumLen;
         if (nextP->enumName) /* If there is a next one, use a comma */
         {
-            strncat(errBuf, p->enumName, sizeof(errBuf));
-            strncat(errBuf, ", ", sizeof(errBuf));
+            strcat(strcat(errBuf, p->enumName), ", ");
+            errLen += 2;  /* ', ' */
         }
         else
         {
-            strncat(errBuf, "or ", sizeof(errBuf));
-            strncat(errBuf, p->enumName, sizeof(errBuf));
-            strncat(errBuf, ".", sizeof(errBuf));
+            strcat(strcat(strcat(errBuf, "or "), p->enumName), ".");
+            errLen += 4; /* 'or ' + '.' */
         }
+
         p = nextP;
     }
 
     /* If there's extra space, might as well say what the bad option was */
-    truncated = snprintf(badOpt, sizeof(badOpt), " Invalid option '%s'", badStr);
-    if (   (truncated != sizeof(badOpt))
-        && (strnlen(badOpt, sizeof(badOpt))
-              < (sizeof(errBuf) - strnlen(errBuf, sizeof(errBuf)) + 3)
-            )
-        )
+    badSize = snprintf(badOpt, sizeof(badOpt), " Invalid option '%s'", badStr);
+    if (   (badSize != sizeof(badOpt))
+        && (badSize < (sizeof(errBuf) - errLen + 3)))
+    {
         strncat(errBuf, badOpt, sizeof(errBuf));
+    }
 
-    luaL_argerror(luaSt, 1, errBuf);
+    return luaL_argerror(luaSt, 1, errBuf);
 }
 
 int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int index)

@@ -96,8 +96,23 @@ void* mwCallocA(size_t count, size_t size);
 #endif /* _WIN32 */
 
 #define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)
-#define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \
-                         mw_finish(EXIT_FAILURE); }
+
+/* Controlled, but lazy failure */
+#define fail(msg, ...)                              \
+    {                                               \
+        fprintf(stderr, msg, ##__VA_ARGS__);        \
+        mw_finish(EXIT_FAILURE);                    \
+    }
+
+/* Failure related to a known code limitation */
+#define mw_panic(msg, ...)                                              \
+    {                                                                   \
+        fprintf(stderr, "PANIC: in function '%s' %s(%d): " msg,         \
+                FUNC_NAME, __FILE__, __LINE__, ##__VA_ARGS__);          \
+        mw_finish(EXIT_FAILURE);                                        \
+    }
+
+
 
 /* If one of these options is null, use the default. */
 #define stringDefault(s, d) ((s) = (s) ? (s) : strdup((d)))
