@@ -108,6 +108,63 @@ static int processModel(NBodyCtx* ctx, DwarfModel* mod)
     return rc;
 }
 
+static real plummerTimestepIntegral(real smalla, real biga, real Ml, real Md)
+{
+    /* Use a combination of light and dark models to generate timestep
+       Assumes model 0 is light, model 1 is dark */
+
+    /* Calculate the enclosed mass of the big sphere within the little sphere's scale length */
+    const real step = 1.0e-5;
+    real encMass, val, r;
+
+    encMass = 0.0;
+    for (r = 0.0; r <= smalla; r += step)
+    {
+        val = sqr(r) / mw_pow(sqr(r) + sqr(biga), 2.5);
+        encMass += val * step;
+    }
+    encMass *= 3.0 * Md * sqr(biga);
+
+    return encMass;
+}
+
+static int compareModelRadii(const void* _a, const void* _b)
+{
+    const DwarfModel* a = (const DwarfModel*) _a;
+    const DwarfModel* b = (const DwarfModel*) _b;
+
+    return a->scale_radius < b->scale_radius;
+}
+
+static void sortModelsByRadii(NBodyCtx* ctx)
+{
+    qsort(ctx->models, ctx->modelNum, sizeof(DwarfModel), compareModelRadii);
+}
+
+static real findTimesteps(const NBodyCtx* ctx)
+{
+    real effMass, effRadius, encMass;
+
+    /* TODO: Check right model types */
+    switch (ctx->modelNum)
+    {
+        case 1:
+            return calculateTimestep(ctx->models[0].mass, ctx->models[0].scale_radius);
+        case 2:
+            encMass = plummerTimestepIntegral(ctx->models[0].scale_radius,
+                                              ctx->models[1].scale_radius,
+                                              ctx->models[0].mass,
+                                              ctx->models[1].mass);
+
+            effMass = ctx->models[0].mass + encMass;
+            effRadius = ctx->models[0].scale_radius;
+            return calculateTimestep(effMass, effRadius);
+        default:
+            warn("Unhandled model combination for timestep calculation\n");
+            return NAN;
+    }
+}
+
 static int processAllModels(NBodyCtx* ctx)
 {
     real eps2;
@@ -122,52 +179,16 @@ static int processAllModels(NBodyCtx* ctx)
         ctx->timestep = INFINITY;
     if (findOrbitTimestep)
         ctx->orbit_timestep = INFINITY;
-
     if (findEps2)      /* Setting this in the file overrides calculating it */
         ctx->eps2 = INFINITY;
 
+    sortModelsByRadii(ctx);
     for (i = 0; i < ctx->modelNum; ++i)
     {
         rc |= processModel(ctx, &ctx->models[i]);
 
         /* Find the total number of bodies */
         ctx->nbody += ctx->models[i].nbody;
-
-        /* Use a combination of light and dark models to generate timestep
-        Assumes model 0 is light, model 1 is dark */
-
-        /* Calculate the enclosed mass of the big sphere within the little sphere's scale length */
-        double val, encmass = 0.0, step=1e-5;
-        double smalla = ctx->models[0].scale_radius;
-        double biga = ctx->models[1].scale_radius;
-        double Ml = ctx->models[0].mass, Md = ctx->models[1].mass;
-        double r;
-	int intstep;
-
-        if (findTimestep) {
-           encmass = 0.0;
-           for(r=0.0; r<=smalla; r+=step) {
-                val = r*r / pow(r*r + biga*biga, 2.5);
-                encmass += val*step;
-           }
-           encmass *= 3*Md*biga*biga;
-
-           ctx->timestep = calculateTimestep(ctx->models[0].mass + encmass, ctx->models[0].scale_radius);
-           warn("i = %i smalla = %f biga = %f Ml = %f Md = %f integral value = %f combined timestep = %f\n", i, smalla, biga, Ml, Md, encmass/(3*Md*biga*biga), ctx->timestep);
-        }
-
-        if (findOrbitTimestep) {
-           encmass = 0.0;
-           for(r=0.0; r<=smalla; r+=step) {
-                val = r*r / pow(r*r + biga*biga, 2.5);
-                encmass += val*step;
-           }
-           encmass *= 3*Md*biga*biga;
-
-           /* Use 1/10th of the nbody timestep */ 
-           ctx->orbit_timestep = calculateTimestep(ctx->models[0].mass + encmass, ctx->models[0].scale_radius)/10.0;
-           warn("i = %i smalla = %f biga = %f Ml = %f Md = %f integral value = %f combined orbit timestep = %f\n", i, smalla, biga, Ml, Md, encmass/(3*Md*biga*biga), ctx->orbit_timestep);
-        }
 
         if (findEps2)
         {
@@ -177,6 +198,11 @@ static int processAllModels(NBodyCtx* ctx)
         }
 
     }
+
+    if (findTimestep)
+        ctx->timestep = findTimesteps(ctx);
+    if (findOrbitTimestep)
+        ctx->orbit_timestep = ctx->timestep / 10.0;
 
     return rc;
 }
@@ -264,7 +290,9 @@ static int hasAcceptableSteps(const NBodyCtx* ctx)
     int rc =    !isnormal(ctx->timestep)
              || !isnormal(ctx->orbit_timestep)
              || (ctx->timestep <= 0.0)
-             || (ctx->orbit_timestep <= 0.0);
+             || (ctx->orbit_timestep <= 0.0)
+             || (ctx->timestep <= REAL_EPSILON)
+             || (ctx->orbit_timestep <= REAL_EPSILON);
     if (rc)
         warn("Context has unacceptable timesteps\n");
 
