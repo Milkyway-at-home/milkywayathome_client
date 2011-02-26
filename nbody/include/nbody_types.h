@@ -269,14 +269,11 @@ typedef struct NBODY_ALIGN
 
 typedef struct NBODY_ALIGN
 {
-    mwvector position;     /* (x, y, z) if cartesian / useGalC, otherwise (l, b, r) */
+    mwvector position;
     mwvector velocity;
-    mwbool useGalC;
-    mwbool useRadians;
-    mwbool reverseOrbit;     /* Do a reverse orbit. Otherwise, take initial conditions as they are */
 } InitialConditions;
 
-#define EMPTY_INITIAL_CONDITIONS { EMPTY_MWVECTOR, EMPTY_MWVECTOR, FALSE, FALSE, FALSE }
+#define EMPTY_INITIAL_CONDITIONS { EMPTY_MWVECTOR, EMPTY_MWVECTOR }
 
 #define INITIAL_CONDITIONS_TYPE "InitialConditions"
 
@@ -425,6 +422,8 @@ typedef struct NBODY_ALIGN
     const char* cp_filename;
     char cp_resolved[1024];
 } NBodyCtx;
+
+#define NBODY_CTX "NBodyCtx"
 
 
 /* Note: 'type' should first field for all types. */

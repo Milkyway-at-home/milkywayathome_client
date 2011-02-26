@@ -23,6 +23,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lua.h>
 #include <lauxlib.h>
 
+#include "milkyway_extra.h"
+
 typedef int (*Xet_func) (lua_State* luaSt, void* v);
 
 /* member info for get and set handlers */
@@ -41,6 +43,16 @@ typedef struct
     int enumVal;
 } MWEnumAssociation;
 
+typedef struct
+{
+    const char* name;
+    int luaType;
+    const char* userDataTypeName;
+    mwbool required;
+    void* value;
+} MWNamedArg;
+
+#define END_MW_NAMED_ARG { NULL, -1, NULL, FALSE, NULL }
 
 
 int getInt(lua_State* luaSt, void* v);
@@ -75,6 +87,8 @@ int getBool(lua_State* luaSt, void* v);
 int setBool(lua_State* luaSt, void* v);
 int getLong(lua_State* luaSt, void* v);
 int setLong(lua_State* luaSt, void* v);
+
+void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int index);
 
 #endif /* _LUA_TYPE_MARSHAL_H_ */
 

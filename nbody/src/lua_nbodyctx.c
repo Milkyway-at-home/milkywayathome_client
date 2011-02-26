@@ -25,10 +25,46 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include "lua_type_marshal.h"
 #include "lua_nbodyctx.h"
+#include "show.h"
 
 #include "milkyway_util.h"
 
-#define NBODY_CTX "NBodyCtx"
+static const NBodyCtx defaultNBodyCtx =
+{
+    /* Grr lack of C99 named struct initializers in MSVC */
+    /* .pot             */  EMPTY_POTENTIAL,
+    /* .models          */  NULL,
+    /* .modelNum        */  0,
+    /* .nbody           */  0,
+    /* .timestep        */  0.0,
+    /* .time_evolve     */  0.0,
+    /* .orbit_timestep  */  0.0,
+    /* time_orbit       */  0.0,
+
+    /* .headline        */  NULL,
+    /* .outfilename     */  NULL,
+    /* .histogram       */  NULL,
+    /* .histout         */  NULL,
+    /* .outfile         */  NULL,
+
+    /* .freqout         */  0.0,
+    /* .theta           */  0.0,
+    /* .eps2            */  0.0,
+
+    /* .tree_rsize      */  4.0,
+    /* .sunGCDist       */  8.0,
+    /* .criterion       */  NewCriterion,
+    /* .seed            */  0,
+    /* .usequad         */  TRUE,
+    /* .allowIncest     */  FALSE,
+
+    /* .outputCartesian */  FALSE,
+    /* .outputBodies    */  FALSE,
+    /* .outputHistogram */  FALSE,
+    /* .cp_filename     */  NULL,
+    /* .cp_resolved     */  ""
+};
+
 
 static const MWEnumAssociation criterionOptions[] =
 {
@@ -93,11 +129,9 @@ int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* ctx)
     return 0;
 }
 
-static const NBodyCtx _emptyCtx = EMPTY_CTX;
-
 static int createNBodyCtx(lua_State* luaSt)
 {
-    pushNBodyCtx(luaSt, &_emptyCtx);
+    pushNBodyCtx(luaSt, &defaultNBodyCtx);
     return 1;
 }
 

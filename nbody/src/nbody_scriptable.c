@@ -390,6 +390,7 @@ int scriptableArst()
     registerNBodyCtx(luaSt);
     registerDSFMT(luaSt);
     registerPredefinedModelGenerators(luaSt);
+    registerUtilityFunctions(luaSt);
 
     //lua_pop(luaSt, 11);
 
@@ -422,9 +423,6 @@ int scriptableArst()
     WHEREAMI("callTestContext", luaSt);
     callTestContext(luaSt);
 
-    WHEREAMI("callTestInitialConditions", luaSt);
-    callTestInitialConditions(luaSt);
-
     WHEREAMI("callTestGeneratePlummer", luaSt);
     callTestGeneratePlummer(luaSt);
 
@@ -441,6 +439,8 @@ int scriptableArst()
     WHEREAMI("callTakeContext", luaSt);
     callTakeContext(luaSt);
 
+    WHEREAMI("callTestInitialConditions", luaSt);
+    callTestInitialConditions(luaSt);
 
     WHEREAMI("Final", luaSt);
     lua_close(luaSt);

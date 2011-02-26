@@ -299,15 +299,9 @@ char* showInitialConditions(const InitialConditions* ic)
     char* buf;
     if (0 > asprintf(&buf,
                      "{ \n"
-                     "          useGalC      = %s\n"
-                     "          useRadians   = %s\n"
-                     "          reverseOrbit = %s\n"
                      "          position     = { %g, %g, %g }\n"
                      "          velocity     = { %g, %g, %g }\n"
                      "        };\n",
-                     showBool(ic->useGalC),
-                     showBool(ic->useRadians),
-                     showBool(ic->reverseOrbit),
                      X(ic->position),
                      Y(ic->position),
                      Z(ic->position),

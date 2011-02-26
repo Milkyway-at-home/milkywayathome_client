@@ -25,7 +25,7 @@ void* mw_checknamedudata(lua_State* luaSt, int index, const char* typeName)
     char buf[128];
 
     if (snprintf(buf, sizeof(buf), "`%s' expected", typeName) == sizeof(buf))
-        mw_panic("Error message buffer too small for expected type name\n");
+         mw_panic("Error message buffer too small for expected type name\n");
 
     v = luaL_checkudata(luaSt, index, typeName);
     luaL_argcheck(luaSt, v != NULL, index, buf);
@@ -255,5 +255,95 @@ int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int index)
     }
 
     return p->enumVal;
+}
+
+
+static void setValueFromType(lua_State* luaSt, void* v, int type, const char* udataName, int index)
+{
+    switch (type)
+    {
+        case LUA_TNUMBER:
+            warn("Setting value of number\n");
+            //*(real*) v = (real) lua_tonumber(luaSt, index);
+            *(real*) v = (real) luaL_checknumber(luaSt, index);
+            break;
+
+        case LUA_TBOOLEAN:
+            warn("Setting value of bool\n");
+            //*(mwbool*) v = (mwbool) lua_toboolean(luaSt, index);
+            *(mwbool*) v = (mwbool) mw_lua_checkboolean(luaSt, index);
+            break;
+
+        case LUA_TSTRING:
+            warn("Setting value of string\n");
+            //*(char**) v = strdup(lua_tostring(luaSt, index));
+            *(char**) v = strdup(luaL_checkstring(luaSt, index));
+            break;
+
+        case LUA_TUSERDATA:
+            warn("Setting value of userdata '%s'\n", udataName);
+            //*(void**) v = luaL_checkudata(luaSt, index, udataName);
+            *(void**) v = mw_checknamedudata(luaSt, index, udataName);
+            warn("Got userdata\n");
+            break;
+
+        case LUA_TTABLE:
+        case LUA_TFUNCTION:
+
+        case LUA_TLIGHTUSERDATA:
+
+        case LUA_TTHREAD:
+        case LUA_TNIL:
+        default:
+            mw_panic("Unhandled type %s (%d)\n", luaL_typename(luaSt, type), type);
+    }
+}
+
+void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int index)
+{
+    const MWNamedArg* p;
+    int table;
+
+    p = args;
+    table = lua_gettop(luaSt);
+
+    warn("Table index = %d\n", table);
+
+    while (p->name)
+    {
+        warn("Trying %s\n", p->name);
+
+        lua_pushstring(luaSt, p->name);
+        warn("Name pushed, stack = %d\n", lua_gettop(luaSt));
+        lua_gettable(luaSt, table);
+        warn("Got table entry, stack = %d\n", lua_gettop(luaSt));
+
+        //warn("Checking type\n");
+        //FIXME: Confusing error message if wrong type bad argument #1 to create
+        //luaL_checktype(luaSt, 1, p->luaType);
+        //warn("Checked type\n");
+
+        setValueFromType(luaSt, p->value, p->luaType, p->userDataTypeName, -1);
+        warn("Set value from type\n");
+
+        lua_pop(luaSt, 1);
+
+        warn("popped, stack = %d\n", lua_gettop(luaSt));
+        ++p;
+    }
+}
+
+static void _handleNamedArgumentTable(lua_State* luaSt, int index)
+{
+    lua_pushnil(luaSt);  /* first key */
+    while (lua_next(luaSt, index) != 0)
+    {
+        warn("%s - %s\n",
+             luaL_checkstring(luaSt, -2),              /* Key   */
+             lua_typename(luaSt, lua_type(luaSt, -1))  /* Type of value */
+            );
+
+        lua_pop(luaSt, 1);  /* removes 'value'; keeps 'key' for next iteration */
+    }
 }
 

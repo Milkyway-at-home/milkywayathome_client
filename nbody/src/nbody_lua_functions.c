@@ -21,6 +21,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include "lua_type_marshal.h"
 #include "milkyway_util.h"
+#include "orbitintegrator.h"
 
 #include "nbody_lua_functions.h"
 
@@ -57,5 +58,31 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
 {
     registerLuaGeneratePlummer(luaSt);
 }
+
+
+static int luaReverseOrbit(lua_State* luaSt)
+{
+    int nArgs;
+
+    nArgs = lua_gettop(luaSt);
+
+    warn("Reverse orbit args = %d\n", nArgs);
+    return 0;
+}
+
+static void registerReverseOrbit(lua_State* luaSt)
+{
+    lua_pushcfunction(luaSt, luaReverseOrbit);
+    lua_setglobal(luaSt, "reverseOrbit");
+}
+
+void registerUtilityFunctions(lua_State* luaSt)
+{
+    registerReverseOrbit(luaSt);
+}
+
+
+
+
 
 

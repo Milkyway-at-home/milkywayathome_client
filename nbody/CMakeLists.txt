@@ -297,13 +297,18 @@ set(nbody_libs nbody_simulation)
 
 if(NBODY_LUA)
   include_directories(${LUA_INCLUDE_DIR})
-  list(APPEND nbody_link_libs ${LUA_LIBRARIES} nbody_lua_types)
+  list(APPEND nbody_link_libs nbody_lua_types ${LUA_LIBRARIES})
 endif()
 
 set(exe_link_libs ${LIBM_LIBRARY}
                   ${POPT_LIBRARY}
                   ${nbody_libs}
-                  ${nbody_link_libs})
+                  ${nbody_link_libs}
+                  nbody_simulation)  # FIXME: nbody_simulation and nbody_lua_types depend on linking to each other
+                                     # coordinate conversion functions in nbody_util.c
+
+
+
 
 if(NBODY_CRLIBM)
   include_directories(${CRLIBM_INCLUDE_DIR})

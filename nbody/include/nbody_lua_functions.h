@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 
 void registerPredefinedModelGenerators(lua_State* luaSt);
+void registerUtilityFunctions(lua_State* luaSt);
 
 #endif /* _NBODY_LUA_FUNCTIONS_H_ */
 

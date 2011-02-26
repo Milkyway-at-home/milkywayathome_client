@@ -57,11 +57,71 @@ int pushInitialConditions(lua_State* luaSt, const InitialConditions* ic)
     return 0;
 }
 
+
+/* Arguments: InitialConditions.create(NBodyCtx, position, velocity, [useGalacticCoordinates, useRadians])
+   or named arguments, e.g. InitialConditions.create{ context = ctx,
+                                                      position = x,
+                                                      velocity = v,
+                                                      useGalacticCoordinates = false,
+                                                      useRadians = false)
+ */
 static int createInitialConditions(lua_State* luaSt)
 {
+    int nArgs;
+    const NBodyCtx* ctx = NULL;
+    mwbool useGalacticCoordinates = FALSE;
+    mwbool useRadians = FALSE;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
 
+    const MWNamedArg argTable[] =
+        {
+            { "context",                LUA_TUSERDATA, NBODY_CTX, TRUE,  &ctx                    },
+            { "useGalacticCoordinates", LUA_TBOOLEAN,  NULL,      FALSE, &useGalacticCoordinates },
+            { "useRadians",             LUA_TBOOLEAN,  NULL,      FALSE, &useRadians             },
+            END_MW_NAMED_ARG
+        };
+
     warn("Creating initial conditions\n");
+
+    nArgs = lua_gettop(luaSt);
+    switch (nArgs)
+    {
+        case 1:  /* Table of named arguments */
+            /* TODO */
+            handleNamedArgumentTable(luaSt, argTable, 1);
+
+            //mw_panic("Implement me!\n");
+            break;
+
+        case 3:  /* (Context, Position, velocity) Use defaults for rest */
+            ctx = checkNBodyCtx(luaSt, 1);
+            ic.position = *checkVector(luaSt, 2);
+            ic.velocity = *checkVector(luaSt, 3);
+            break;
+
+        case 5: /* Everything */
+            ctx = checkNBodyCtx(luaSt, 1);
+            ic.position = *checkVector(luaSt, 2);
+            ic.velocity = *checkVector(luaSt, 3);
+            useGalacticCoordinates = mw_lua_checkboolean(luaSt, 4);
+            useRadians = mw_lua_checkboolean(luaSt, 5);
+            break;
+
+        default:
+            return luaL_argerror(luaSt, 1, "Expected 1, 3, or 5 arguments");
+
+    }
+
+
+    warn("SLURP\n");
+    printNBodyCtx(ctx);
+
+    /* We aren't given galactic coordinates, so convert them */
+    if (!useGalacticCoordinates)
+    {
+        ic.position = useRadians ? lbrToCartesian_rad(ctx, ic.position) : lbrToCartesian(ctx, ic.position);
+    }
+
     pushInitialConditions(luaSt, &ic);
     return 1;
 }
@@ -96,9 +156,6 @@ static const Xet_reg_pre gettersInitialConditions[] =
 {
     { "position",     getVector, offsetof(InitialConditions, position)     },
     { "velocity",     getVector, offsetof(InitialConditions, velocity)     },
-    { "useGalC",      getBool,   offsetof(InitialConditions, useGalC)      },
-    { "useRadians",   getBool,   offsetof(InitialConditions, useRadians)   },
-    { "reverseOrbit", getBool,   offsetof(InitialConditions, reverseOrbit) },
     { NULL, NULL, 0 }
 };
 
@@ -106,9 +163,6 @@ static const Xet_reg_pre settersInitialConditions[] =
 {
     { "position",     setVector, offsetof(InitialConditions, position)     },
     { "velocity",     setVector, offsetof(InitialConditions, velocity)     },
-    { "useGalC",      setBool,   offsetof(InitialConditions, useGalC)      },
-    { "useRadians",   setBool,   offsetof(InitialConditions, useRadians)   },
-    { "reverseOrbit", setBool,   offsetof(InitialConditions, reverseOrbit) },
     { NULL, NULL, 0 }
 };
 

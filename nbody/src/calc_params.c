@@ -67,6 +67,7 @@ static real calculateEps2(real nbody, real r0)
 
 static int processInitialConditions(const NBodyCtx* ctx, InitialConditions* ic)
 {
+    #if 0
     if (!ic->useGalC)
     {
         /* We aren't given galactic coordinates, so convert them */
@@ -76,6 +77,7 @@ static int processInitialConditions(const NBodyCtx* ctx, InitialConditions* ic)
             ic->position = lbrToCartesian(ctx, ic->position);
         ic->useGalC = TRUE;
     }
+    #endif
 
     return 0;
 }

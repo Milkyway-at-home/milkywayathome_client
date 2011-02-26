@@ -80,17 +80,11 @@ static mwbool readInitialConditions(InitialConditions* ic, const char* pname, js
     const InitialConditions defaultIC =
         {
             /* .position     */ EMPTY_MWVECTOR,
-            /* .velocity     */ EMPTY_MWVECTOR,
-            /* .useGalC      */ FALSE,
-            /* .useRadians   */ FALSE,
-            /* .reverseOrbit */ TRUE
+            /* .velocity     */ EMPTY_MWVECTOR
         };
 
     const MWParameter initialConditionParams[] =
         {
-            BOOL_PARAM("use-galactic-coordinates", &ic->useGalC),
-            BOOL_PARAM_DFLT("angle-use-radians", &ic->useRadians, &defaultIC.useRadians),
-            BOOL_PARAM_DFLT("reverse-orbit", &ic->reverseOrbit, &defaultIC.reverseOrbit),
             VEC_PARAM("position", &ic->position),
             VEC_PARAM("velocity", &ic->velocity),
             NULL_MWPARAMETER
