@@ -124,6 +124,9 @@ char* showSpherical(const Spherical* s)
 {
     char* buf;
 
+    if (!s)
+        return NULL;
+
     if (0 > asprintf(&buf,
                      "{\n"
                      "      type  = %s\n"
@@ -143,6 +146,9 @@ char* showSpherical(const Spherical* s)
 char* showHalo(const Halo* h)
 {
     char* buf;
+
+    if (!h)
+        return NULL;
 
     if (0 > asprintf(&buf,
                      "{ \n"
@@ -178,6 +184,9 @@ char* showDisk(const Disk* d)
 {
     char* buf;
 
+    if (!d)
+        return NULL;
+
     if (0 > asprintf(&buf,
                      "{ \n"
                      "      type         = %s\n"
@@ -199,9 +208,14 @@ char* showDisk(const Disk* d)
 char* showBody(const bodyptr p)
 {
     char* buf;
-    char* vel = showVector(Vel(p));
-    char* pos = showVector(Pos(p));
+    char* vel;
+    char* pos;
 
+    if (!p)
+        return NULL;
+
+    vel = showVector(Vel(p));
+    pos = showVector(Pos(p));
 
     if (0 > asprintf(&buf,
                      "body { \n"
@@ -233,6 +247,9 @@ char* showPotential(const Potential* p)
     char* diskBuf;
     char* haloBuf;
 
+    if (!p)
+        return NULL;
+
     sphBuf  = showSpherical(&p->sphere[0]);
     diskBuf = showDisk(&p->disk);
     haloBuf = showHalo(&p->halo);
@@ -263,6 +280,9 @@ char* showDwarfModel(const DwarfModel* d)
 {
     char* buf;
     char* icBuf;
+
+    if (!d)
+        return NULL;
 
     icBuf = showInitialConditions(&d->initialConditions);
 
@@ -297,6 +317,10 @@ char* showDwarfModel(const DwarfModel* d)
 char* showInitialConditions(const InitialConditions* ic)
 {
     char* buf;
+
+    if (!ic)
+        return NULL;
+
     if (0 > asprintf(&buf,
                      "{ \n"
                      "          position     = { %g, %g, %g }\n"
@@ -325,6 +349,10 @@ char* showNBodyCtx(const NBodyCtx* ctx)
     size_t totalLen = 0;
     char** allModels;
     unsigned int i;
+
+
+    if (!ctx)
+        return NULL;
 
     potBuf = showPotential(&ctx->pot);
 
