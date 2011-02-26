@@ -29,12 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 Halo* checkHalo(lua_State* luaSt, int index)
 {
-    Halo* b;
-
-    b = (Halo*) luaL_checkudata(luaSt, index, HALO_TYPE);
-    luaL_argcheck(luaSt, b != NULL, index, "`Halo' expected");
-
-    return b;
+    return (Halo*) mw_checknamedudata(luaSt, index, HALO_TYPE);
 }
 
 int pushHalo(lua_State* luaSt, const Halo* h)

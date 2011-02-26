@@ -30,12 +30,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 body* checkBody(lua_State* luaSt, int index)
 {
-    body* b;
-
-    b = (body*) luaL_checkudata(luaSt, index, BODY_TYPE);
-    luaL_argcheck(luaSt, b != NULL, index, "`Body' expected");
-
-    return b;
+    return (body*) mw_checknamedudata(luaSt, index, BODY_TYPE);
 }
 
 int pushBody(lua_State* luaSt, const body* ctx)

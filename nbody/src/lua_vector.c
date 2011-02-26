@@ -29,12 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 mwvector* checkVector(lua_State* luaSt, int index)
 {
-    mwvector* v;
-
-    v = (mwvector*) luaL_checkudata(luaSt, index, MWVECTOR);
-    luaL_argcheck(luaSt, v != NULL, index, "`Vector' expected");
-
-    return v;
+    return (mwvector*) mw_checknamedudata(luaSt, index, MWVECTOR);
 }
 
 int pushVector(lua_State* luaSt, mwvector vIn)

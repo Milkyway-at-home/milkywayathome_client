@@ -51,15 +51,9 @@ static int setCriterionT(lua_State* luaSt, void* v)
     return 0;
 }
 
-
 NBodyCtx* checkNBodyCtx(lua_State* luaSt, int index)
 {
-    NBodyCtx* ctx;
-
-    ctx = (NBodyCtx*) luaL_checkudata(luaSt, index, NBODY_CTX);
-    luaL_argcheck(luaSt, ctx != NULL, index, "`NBodyCtx' expected");
-
-    return ctx;
+    return (NBodyCtx*) mw_checknamedudata(luaSt, index, NBODY_CTX);
 }
 
 static int positionNBodyCtx(lua_State *L, int index)

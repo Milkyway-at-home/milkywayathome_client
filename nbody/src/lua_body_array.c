@@ -19,12 +19,7 @@
 
 NBodyLuaBodyArray* checkNBodyLuaBodyArray(lua_State* luaSt, int index)
 {
-    void* ud;
-
-    ud = (NBodyLuaBodyArray*) luaL_checkudata(luaSt, index, NBODY_LUA_BODY_ARRAY);
-    luaL_argcheck(luaSt, ud != NULL, index, "`NBodyLuaBodyArray' expected");
-
-    return ud;
+    return (NBodyLuaBodyArray*) mw_checknamedudata(luaSt, index, NBODY_LUA_BODY_ARRAY);
 }
 
 static int getSizeNBodyLuaBodyArray(lua_State* luaSt)

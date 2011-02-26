@@ -37,12 +37,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 dsfmt_t* checkDSFMT(lua_State* luaSt, int index)
 {
-    dsfmt_t* d;
-
-    d = (dsfmt_t*) luaL_checkudata(luaSt, index, DSFMT_TYPE);
-    luaL_argcheck(luaSt, d != NULL, index, "`DSFMT' expected");
-
-    return d;
+    return (dsfmt_t*) mw_checknamedudata(luaSt, index, DSFMT_TYPE);
 }
 
 int pushDSFMT(lua_State* luaSt, const dsfmt_t* d)

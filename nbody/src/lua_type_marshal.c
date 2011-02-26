@@ -11,7 +11,6 @@
 #include "nbody_types.h"
 #include "milkyway_util.h"
 
-
 int mw_lua_checkboolean(lua_State* luaSt, int index)
 {
     if (!lua_isboolean(luaSt, index))
@@ -20,6 +19,19 @@ int mw_lua_checkboolean(lua_State* luaSt, int index)
     return lua_toboolean(luaSt, index);
 }
 
+void* mw_checknamedudata(lua_State* luaSt, int index, const char* typeName)
+{
+    void* v;
+    char buf[128];
+
+    if (snprintf(buf, sizeof(buf), "`%s' expected", typeName) == sizeof(buf))
+        mw_panic("Error message buffer too small for expected type name\n");
+
+    v = luaL_checkudata(luaSt, index, typeName);
+    luaL_argcheck(luaSt, v != NULL, index, buf);
+
+    return v;
+}
 
 /* Mostly from example at http://lua-users.org/wiki/BindingWithMembersAndMethods */
 

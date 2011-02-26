@@ -30,12 +30,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 Disk* checkDisk(lua_State* luaSt, int index)
 {
-    Disk* d;
-
-    d = (Disk*) luaL_checkudata(luaSt, index, DISK_TYPE);
-    luaL_argcheck(luaSt, d != NULL, index, "`Disk' expected");
-
-    return d;
+    return (Disk*) mw_checknamedudata(luaSt, index, DISK_TYPE);
 }
 
 int pushDisk(lua_State* luaSt, const Disk* h)

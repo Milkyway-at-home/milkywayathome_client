@@ -27,17 +27,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "lua_type_marshal.h"
 #include "lua_vector.h"
 #include "lua_initial_conditions.h"
+#include "lua_nbodyctx.h"
 
 #include "milkyway_util.h"
+#include "nbody_util.h"
+
 
 InitialConditions* checkInitialConditions(lua_State* luaSt, int index)
 {
-    InitialConditions* ic;
-
-    ic = (InitialConditions*) luaL_checkudata(luaSt, index, INITIAL_CONDITIONS_TYPE);
-    luaL_argcheck(luaSt, ic != NULL, index, "`InitialConditions' expected");
-
-    return ic;
+    return (InitialConditions*) mw_checknamedudata(luaSt, index, INITIAL_CONDITIONS_TYPE);
 }
 
 int pushInitialConditions(lua_State* luaSt, const InitialConditions* ic)
