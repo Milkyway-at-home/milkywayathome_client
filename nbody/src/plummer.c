@@ -68,13 +68,13 @@ static void printPlummer(mwvector rshift, mwvector vshift)
  * etc).  See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
  * 183.
  */
-void generatePlummer(dsfmt_t* dsfmtState,
-                     body* bodies,
-                     unsigned int nbody,
-                     InitialConditions* ic,
-                     real mass,
-                     real scaleRadius,
-                     mwbool ignoreModel)
+mwbool generatePlummer(dsfmt_t* dsfmtState,
+                       body* bodies,
+                       unsigned int nbody,
+                       InitialConditions* ic,
+                       real mass,
+                       real scaleRadius,
+                       mwbool ignoreModel)
 {
     body* p;
     body* endp;
@@ -132,6 +132,8 @@ void generatePlummer(dsfmt_t* dsfmtState,
 
     mw_incdivs(cmr, rnbody);      /* normalize cm coords */
     mw_incdivs(cmv, rnbody);
+
+    return 0;
 }
 
 

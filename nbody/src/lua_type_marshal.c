@@ -245,21 +245,3 @@ int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int index)
     return p->enumVal;
 }
 
-
-#if 0
-/* FIXME: Source of seed, generator */
-static int luaGeneratePlummer(lua_State* luaSt)
-{
-    dsfmt_t dsfmtState;
-    long seed;
-
-    seed = luaL_checklong(luaSt, 1);
-
-    //dsfmt_init_gen_rand(&dsfmtState, seed);
-    //generatePlummer(&dsfmtState, );
-
-    return 1;
-}
-#endif
-
-

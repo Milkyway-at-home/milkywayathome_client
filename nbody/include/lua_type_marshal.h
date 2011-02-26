@@ -20,6 +20,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _LUA_TYPE_MARSHAL_H_
 #define _LUA_TYPE_MARSHAL_H_
 
+#include <lua.h>
+#include <lauxlib.h>
+
 typedef int (*Xet_func) (lua_State* luaSt, void* v);
 
 /* member info for get and set handlers */

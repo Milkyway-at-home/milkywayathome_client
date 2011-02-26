@@ -1,6 +1,5 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
+/*
+Copyright (C) 2011  Matthew Arsenault
 
 This file is part of Milkway@Home.
 
@@ -18,20 +17,13 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _PLUMMER_H_
-#define _PLUMMER_H_
+#ifndef _NBODY_LUA_FUNCTIONS_H_
+#define _NBODY_LUA_FUNCTIONS_H_
 
+#include <lua.h>
 #include "nbody_types.h"
-#include "milkyway_util.h"
 
-mwbool generatePlummer(dsfmt_t* dsfmtState,
-                       body* bodies,
-                       unsigned int nbody,
-                       InitialConditions* ic,
-                       real mass,
-                       real scaleRadius,
-                       mwbool ignoreModel);
+void registerPredefinedModelGenerators(lua_State* luaSt);
 
-
-#endif /* _PLUMMER_H_ */
+#endif /* _NBODY_LUA_FUNCTIONS_H_ */
 

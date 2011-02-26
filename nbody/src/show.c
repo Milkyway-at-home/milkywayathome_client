@@ -152,6 +152,9 @@ char* showHalo(const Halo* h)
                      "      flattenX     = %g\n"
                      "      flattenY     = %g\n"
                      "      flattenZ     = %g\n"
+                     "      c1           = %g\n"
+                     "      c2           = %g\n"
+                     "      c3           = %g\n"
                      "      triaxAngle   = %g\n"
                      "    };\n",
                      showHaloT(h->type),
@@ -160,6 +163,9 @@ char* showHalo(const Halo* h)
                      h->flattenX,
                      h->flattenY,
                      h->flattenZ,
+                     h->c1,
+                     h->c2,
+                     h->c3,
                      h->triaxAngle))
     {
         fail("asprintf() failed\n");

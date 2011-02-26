@@ -53,7 +53,7 @@ static int absVector(lua_State* luaSt)
 {
     mwvector* v;
 
-    v = checkVector(luaSt, -1);
+    v = checkVector(luaSt, 1);
     lua_pushnumber(luaSt, (lua_Number) mw_absv(*v));
 
     return 1;

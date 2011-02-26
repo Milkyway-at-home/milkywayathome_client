@@ -218,6 +218,14 @@ static void callTestInitialConditions(lua_State* luaSt)
     lua_pop(luaSt, 1);
 }
 
+static void callTestGeneratePlummer(lua_State* luaSt)
+{
+    //TOP_TYPE(luaSt, "Generate plummer call")
+    warn("Generate plummer call: %d\n", lua_gettop(luaSt));
+    lua_getglobal(luaSt, "testGeneratePlummer");
+    lua_call(luaSt, 0, 0);
+}
+
 static void callTestHalo(lua_State* luaSt)
 {
     Halo* h = NULL;
@@ -311,10 +319,6 @@ static void callTestBodies(lua_State* luaSt)
     //bodies = checkNBodyLuaBodyArray(luaSt, -1);
     // lua_pop(luaSt, 1);
 
-
-    //mwvector arstv = *checkVector(luaSt, -1);
-    //warn("arst = %f, %f, %f, %f\n", arstv.x, arstv.y, arstv.z, arstv.w);
-
     body* b = checkBody(luaSt, -1);
     printBody(b);
     lua_pop(luaSt, 1);
@@ -323,6 +327,16 @@ static void callTestBodies(lua_State* luaSt)
     /* print the result */
     if (bodies)
         warn("WHEEEEE %u\n", bodies->nBody);
+}
+
+static void callTestVector(lua_State* luaSt)
+{
+    lua_getglobal(luaSt, "testVector");
+    lua_call(luaSt, 0, 1);
+
+    mwvector arstv = *checkVector(luaSt, -1);
+    warn("arst = %f, %f, %f, %f\n", arstv.x, arstv.y, arstv.z, arstv.w);
+    lua_pop(luaSt, 1);
 }
 
 static void callTestDSFMT(lua_State* luaSt)
@@ -354,54 +368,76 @@ int scriptableArst()
     luaopen_base(luaSt);
     luaopen_table(luaSt);
     luaopen_string(luaSt);
+    lua_pop(luaSt, 3);
     //luaopen_debug(luaSt);
     //luaopen_io(luaSt);
+    WHEREAMI("opened standard libraries", luaSt);
+
+    TOP_TYPE(luaSt, "opened std libs");
 
     registerVector(luaSt);
     registerBody(luaSt);
     registerHalo(luaSt);
+    WHEREAMI("some registered", luaSt);
     registerDisk(luaSt);
     registerInitialConditions(luaSt);
     registerNBodyLuaBodyArray(luaSt);
     registerNBodyCtx(luaSt);
     registerDSFMT(luaSt);
+    registerPredefinedModelGenerators(luaSt);
 
-    printf("nbody top = %d\n", lua_gettop(luaSt));
+    //lua_pop(luaSt, 11);
 
+    WHEREAMI("Everything registered", luaSt);
 
     // luaL_dostring
     if (luaL_dofile(luaSt, "add.lua") != 0)
         warn("dofile failed\n");
 
     callTestHalo(luaSt);
+    WHEREAMI("callTestHalo", luaSt);
     callTestDisk(luaSt);
+    WHEREAMI("callTestDisk", luaSt);
     callTestBodies(luaSt);
+    WHEREAMI("callTestBodies", luaSt);
 
+    callTestGeneratePlummer(luaSt);
+    WHEREAMI("callTestGeneratePlummer A", luaSt);
+
+
+    WHEREAMI("callTestDSFMT", luaSt);
     callTestDSFMT(luaSt);
 
-    printf("dofile top = %d\n", lua_gettop(luaSt));
+    WHEREAMI("callAdd", luaSt);
     callAdd(luaSt);
+
+    WHEREAMI("callTestVector", luaSt);
+    callTestVector(luaSt);
+
+    WHEREAMI("callTestContext", luaSt);
     callTestContext(luaSt);
 
+    WHEREAMI("callTestInitialConditions", luaSt);
     callTestInitialConditions(luaSt);
 
+    WHEREAMI("callTestGeneratePlummer", luaSt);
+    callTestGeneratePlummer(luaSt);
 
 
-    //callTestLists(luaSt);
 
-    printf("soup top = %d\n", lua_gettop(luaSt));
-    lua_getglobal(luaSt, "testLists");
-    lua_pushnumber(luaSt, 9.0);
-    lua_call(luaSt, 1, 1);
 
-    printf("pre pop array top = %d\n", lua_gettop(luaSt));
+    WHEREAMI("call test lists", luaSt);
+    callTestLists(luaSt);
+
+    WHEREAMI("pre pop array top", luaSt);
     real* arst = popRealArray(luaSt, NULL);
     free(arst);
 
-
+    WHEREAMI("callTakeContext", luaSt);
     callTakeContext(luaSt);
 
-    printf("final top = %d\n", lua_gettop(luaSt));
+
+    WHEREAMI("Final", luaSt);
     lua_close(luaSt);
 
     return 0;
