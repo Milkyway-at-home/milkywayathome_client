@@ -193,7 +193,7 @@ static int openNBodyLuaBodyArray(lua_State* luaSt)
     setMetaMethod(luaSt, metatable, bodyArr, "__index",    "get");
     setMetaMethod(luaSt, metatable, bodyArr, "__newindex", "set");
 
-    lua_pop(luaSt, 1); /* Drop metatable */
+    lua_pop(luaSt, 2); /* Drop metatable, method table */
 
     return 1;
 }
@@ -217,6 +217,7 @@ int registerNBodyLuaBodyArray(lua_State* luaSt)
     //lua_pop(luaSt, 1);            /* drop metatable */
     return 1;                     /* return methods on the stack */
 }
+
 
 
 

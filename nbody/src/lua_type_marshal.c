@@ -162,8 +162,8 @@ int registerStruct(lua_State* luaSt,
     lua_pushcclosure(luaSt, newIndexHandler, 1);
     lua_rawset(luaSt, metatable);     /* metatable.__newindex = newIndexHandler */
 
-    lua_pop(luaSt, 1);            /* drop metatable */
-    return 1;                     /* return methods on the stack */
+    lua_pop(luaSt, 2);         /* drop metatable and methods */
+    return 0;
 }
 
 int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val)

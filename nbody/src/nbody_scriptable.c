@@ -29,33 +29,38 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "io.h"
 #include "nbody_scriptable.h"
 #include "nbody_lua_types.h"
+#include "nbody_lua_functions.h"
 
 #include "milkyway_util.h"
 #include "show.h"
 
 
 #define TOP_TYPE(st, msg) warn("%s: %s\n", msg, luaL_typename(st, -1));
+#define WHEREAMI(msg, st) warn("%s: %d\n", msg, lua_gettop(luaSt));
 
-    int l_map (lua_State *L) {
-      int i, n;
+#if 0
+int l_map(lua_State* L)
+{
+    int i, n;
 
-      /* 1st argument must be a table (t) */
-      luaL_checktype(L, 1, LUA_TTABLE);
+    /* 1st argument must be a table (t) */
+    luaL_checktype(L, 1, LUA_TTABLE);
 
-      /* 2nd argument must be a function (f) */
-      luaL_checktype(L, 2, LUA_TFUNCTION);
+    /* 2nd argument must be a function (f) */
+    luaL_checktype(L, 2, LUA_TFUNCTION);
 
-      n = luaL_getn(L, 1);  /* get size of table */
-
-      for (i=1; i<=n; i++) {
+    n = luaL_getn(L, 1);  /* get size of table */
+    for (i = 1; i <= n; ++i)
+    {
         lua_pushvalue(L, 2);   /* push f */
         lua_rawgeti(L, 1, i);  /* push t[i] */
         lua_call(L, 1, 1);     /* call f(t[i]) */
         lua_rawseti(L, 1, i);  /* t[i] = result */
-      }
-
-      return 0;  /* no results */
     }
+
+    return 0;  /* no results */
+}
+#endif
 
 
 static void pushRealArray(lua_State* luaSt, const real* arr, int n)
