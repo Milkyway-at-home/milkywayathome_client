@@ -82,7 +82,6 @@ static int createInitialConditions(lua_State* luaSt)
         };
 
     warn("Creating initial conditions\n");
-
     nArgs = lua_gettop(luaSt);
     switch (nArgs)
     {
@@ -112,9 +111,8 @@ static int createInitialConditions(lua_State* luaSt)
 
     }
 
-
-    warn("SLURP\n");
-    printNBodyCtx(ctx);
+    if (ctx)
+        printNBodyCtx(ctx);
 
     /* We aren't given galactic coordinates, so convert them */
     if (!useGalacticCoordinates)

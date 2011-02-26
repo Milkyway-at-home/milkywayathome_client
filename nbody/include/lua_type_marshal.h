@@ -82,6 +82,7 @@ int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int index);
 
 int mw_lua_checkboolean(lua_State* luaSt, int index);
 void* mw_checknamedudata(lua_State* luaSt, int index, const char* typeName);
+void* mw_tonamedudata(lua_State* luaSt, int ud, const char* typeName);
 
 int getBool(lua_State* luaSt, void* v);
 int setBool(lua_State* luaSt, void* v);
