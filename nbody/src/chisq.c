@@ -140,7 +140,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
     for (p = st->bodytab; p < endp; ++p)
     {
         /* Only include bodies in models we aren't ignoring */
-        if (ctx->models[bodyModel(p)].ignoreFinal)
+        if (ignoreBody(p))
             continue;
 
         // Convert to (l,b) (involves convert x to Sun-centered)

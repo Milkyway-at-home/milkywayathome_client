@@ -34,22 +34,29 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* make test model */
 static void generateModel(NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodies)
 {
-    dwarf_model_t type = ctx->models[modelIdx].type;
+    DwarfModel* model;
     dsfmt_t dsfmtState;
 
+    model = &ctx->models[modelIdx];
     dsfmt_init_gen_rand(&dsfmtState, ctx->seed);
 
-    switch (type)
+    switch (model->type)
     {
         case DwarfModelPlummer:
-            generatePlummer(&dsfmtState, ctx, modelIdx, bodies);
+            generatePlummer(&dsfmtState,
+                            bodies,
+                            model->nbody,
+                            &model->initialConditions,
+                            model->mass,
+                            model->scale_radius,
+                            model->ignoreFinal);
             break;
         case DwarfModelKing:
         case DwarfModelDehnen:
         case InvalidDwarfModel:
             fail("Trying to run with invalid dwarf model\n");
         default:
-            fail("Unsupported model: %d", type);
+            fail("Unsupported model: %d", model->type);
     }
 }
 

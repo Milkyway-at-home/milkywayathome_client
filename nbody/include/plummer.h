@@ -24,7 +24,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include "milkyway_util.h"
 
-void generatePlummer(dsfmt_t* dsfmtState, NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodytab);
+void generatePlummer(dsfmt_t* dsfmtState,
+                     body* bodies,
+                     unsigned int nbody,
+                     InitialConditions* ic,
+                     real mass,
+                     real scaleRadius,
+                     mwbool ignoreModel);
+
 
 #endif /* _PLUMMER_H_ */
 

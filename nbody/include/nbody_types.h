@@ -97,21 +97,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define NBODY_ALIGN
 #endif /* _MSC_VER */
 
-/* There are bodies and cells. Cells are 0. A body will be nonzero,
- * where this is the index of the model the body is in + 1.  This way
- * checking for a cell is a fast comparison with 0 which is usually
- * what needs to happen, while still being able to pick out which
- * bodies belong to each model. Actually since the bodies don't
- * actually move (for now at least, the GPU version will most likely
- * end up sorting) we could just not tag each body with its parent
- * model.
+/* There are bodies and cells. Cells are 0, bodies are nonzero. Bodies
+   will be set to 1 or -1 if the body is to be ignored in the final
+   likelihood calculation (i.e. a dark matter body)
  */
 #define CELL(x) (0)
-#define BODY(x) ((x) + 1)
+#define BODY(x) ((x) ? -1 : 1)
 
-#define bodyModel(x) (((nodeptr) (x))->type - 1)
 #define isBody(x) (((nodeptr) (x))->type != 0)
 #define isCell(x) (((nodeptr) (x))->type == 0)
+#define ignoreBody(x) (((nodeptr) (x))->type < 0)
 
 typedef unsigned short body_t;
 
@@ -309,7 +304,7 @@ typedef enum
 typedef struct NBODY_ALIGN
 {
     dwarf_model_t type;
-    int nbody;
+    unsigned int nbody;
 
     /* calculated depending on model */
     real timestep;
