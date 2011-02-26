@@ -323,18 +323,35 @@ static void namedArgumentError(lua_State* luaSt, const MWNamedArg* p, int arg, i
         );
 }
 
-void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int index)
+/* Check if any keys are left in the table and error if there are */
+static void checkExtraArguments(lua_State* luaSt, int table)
+{
+    unsigned int extraCount = 0;
+
+    lua_pushnil(luaSt);  /* first key */
+    while (lua_next(luaSt, table) != 0) /* Iterate remaining keys */
+    {
+        ++extraCount;
+        lua_pop(luaSt, 1);
+    }
+
+    /* TODO: Print bad keys, better message */
+    if (extraCount > 0)
+        luaL_error(luaSt, "%d unknown arguments found", extraCount);
+}
+
+void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int table)
 {
     const MWNamedArg* p;
     char buf[128];
-    int table, type, item;
+    int type, item;
 
     p = args;
-    table = lua_gettop(luaSt);
-
     while (p->name)
     {
         lua_pushstring(luaSt, p->name);
+        lua_pushvalue(luaSt, -1);  /* Copy the key since lua_gettable pops it */
+
         lua_gettable(luaSt, table);
         item = lua_gettop(luaSt);
 
@@ -345,6 +362,7 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int inde
 
             luaL_argerror(luaSt, 1, buf);
         }
+
 
         /* We do our own type checking and errors to avoid
            Confusing and innaccurate error messages, which suggest the use of the table is wrong. */
@@ -367,7 +385,14 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int inde
         setValueFromType(luaSt, p->value, p->luaType, item);
 
         lua_pop(luaSt, 1);
+
+        /* Top item, should now be at copy of key */
+        lua_pushnil(luaSt);
+        lua_rawset(luaSt, table); /* Wipe out this element so we can check for unknown arguments */
+
         ++p;
     }
+
+    checkExtraArguments(luaSt, table);
 }
 
