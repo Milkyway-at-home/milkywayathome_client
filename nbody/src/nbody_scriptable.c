@@ -207,7 +207,7 @@ static void callTestContext(lua_State* luaSt)
 
     /* get the result */
     ctx = checkNBodyCtx(luaSt, -1);
-    printContext(ctx);
+    printNBodyCtx(ctx);
     lua_pop(luaSt, 1);
 }
 

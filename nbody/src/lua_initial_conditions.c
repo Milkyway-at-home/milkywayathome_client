@@ -18,15 +18,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
-
 #include <lua.h>
-#include <lualib.h>
 #include <lauxlib.h>
 
 #include "nbody_types.h"
+#include "show.h"
+
 #include "lua_type_marshal.h"
 #include "lua_vector.h"
 #include "lua_initial_conditions.h"
@@ -71,8 +68,22 @@ static int createInitialConditions(lua_State* luaSt)
     return 1;
 }
 
+static int toStringInitialConditions(lua_State* luaSt)
+{
+    InitialConditions* ic;
+    char* str;
+
+    ic = checkInitialConditions(luaSt, 1);
+    str = showInitialConditions(ic);
+    lua_pushstring(luaSt, str);
+    free(str);
+
+    return 1;
+}
+
 static const luaL_reg metaMethodsInitialConditions[] =
 {
+    { "__tostring", toStringInitialConditions },
     { NULL, NULL }
 };
 

@@ -18,20 +18,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
-
 #include <lua.h>
-#include <lualib.h>
 #include <lauxlib.h>
 
 #include "nbody_types.h"
-#include "io.h"
+#include "show.h"
 #include "lua_type_marshal.h"
-#include "lua_nbodyctx.h"
-#include "lua_body.h"
-#include "lua_vector.h"
 #include "lua_disk.h"
 
 #include "milkyway_util.h"
@@ -89,8 +81,22 @@ int getDiskT(lua_State* luaSt, void* v)
     return pushEnum(luaSt, diskOptions, *(int*) v);
 }
 
+static int toStringDisk(lua_State* luaSt)
+{
+    Disk* d;
+    char* str;
+
+    d = checkDisk(luaSt, 1);
+    str = showDisk(d);
+    lua_pushstring(luaSt, str);
+    free(str);
+
+    return 1;
+}
+
 static const luaL_reg metaMethodsDisk[] =
 {
+    { "__tostring", toStringDisk },
     { NULL, NULL }
 };
 

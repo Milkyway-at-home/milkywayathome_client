@@ -41,9 +41,10 @@ char* showPotential(const Potential*);
 char* showDwarfModel(const DwarfModel*);
 void printDwarfModel(const DwarfModel*);
 char* showInitialConditions(const InitialConditions*);
-char* showContext(const NBodyCtx*);
+char* showNBodyCtx(const NBodyCtx* ctx);
+void printNBodyCtx(const NBodyCtx*);
 char* showVector(const mwvector v);
-void printContext(const NBodyCtx*);
+
 void printInitialConditions(const InitialConditions*);
 void printVector(const mwvector v);
 

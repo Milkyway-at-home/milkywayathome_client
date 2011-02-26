@@ -144,8 +144,21 @@ static int dsfmtRandomRange(lua_State* luaSt)
     return 1;
 }
 
+#include <stdio.h>
+#include <stddef.h>
+#include <string.h>
+
+
+static int toStringDSFMT(lua_State* luaSt)
+{
+    lua_pushstring(luaSt, "DSFMT");
+    return 1;
+}
+
+
 static const luaL_reg metaMethodsDSFMT[] =
 {
+    { "__tostring", toStringDSFMT },
     { NULL, NULL }
 };
 

@@ -214,7 +214,7 @@ static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
 
 static void verifyFile(const NBodyCtx* ctx, const HistogramParams* hp, int rc)
 {
-    printContext(ctx);
+    printNBodyCtx(ctx);
     printHistogramParams(hp);
 
     if (rc)

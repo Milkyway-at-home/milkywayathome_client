@@ -322,7 +322,7 @@ char* showInitialConditions(const InitialConditions* ic)
 }
 
 /* Most efficient function ever */
-char* showContext(const NBodyCtx* ctx)
+char* showNBodyCtx(const NBodyCtx* ctx)
 {
     char* buf;
     char* potBuf;
@@ -409,9 +409,9 @@ char* showContext(const NBodyCtx* ctx)
     return buf;
 }
 
-void printContext(const NBodyCtx* ctx)
+void printNBodyCtx(const NBodyCtx* ctx)
 {
-    char* buf = showContext(ctx);
+    char* buf = showNBodyCtx(ctx);
     puts(buf);
     free(buf);
 }

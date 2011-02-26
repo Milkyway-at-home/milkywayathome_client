@@ -17,21 +17,12 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
-
 #include <lua.h>
-#include <lualib.h>
 #include <lauxlib.h>
 
 #include "nbody_types.h"
-#include "io.h"
+#include "show.h"
 #include "lua_type_marshal.h"
-#include "lua_nbodyctx.h"
-#include "lua_body.h"
-#include "lua_vector.h"
 #include "lua_halo.h"
 
 #include "milkyway_util.h"
@@ -84,6 +75,19 @@ static int createHalo(lua_State* luaSt)
     return 1;
 }
 
+static int toStringHalo(lua_State* luaSt)
+{
+    Halo* h;
+    char* str;
+
+    h = checkHalo(luaSt, 1);
+    str = showHalo(h);
+    lua_pushstring(luaSt, str);
+    free(str);
+
+    return 1;
+}
+
 int getHaloT(lua_State* luaSt, void* v)
 {
     return pushEnum(luaSt, haloOptions, *(int*) v);
@@ -91,6 +95,7 @@ int getHaloT(lua_State* luaSt, void* v)
 
 static const luaL_reg metaMethodsHalo[] =
 {
+    { "__tostring", toStringHalo },
     { NULL, NULL }
 };
 
