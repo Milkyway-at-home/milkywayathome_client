@@ -23,7 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_types.h"
 
-mwvector acceleration(const NBodyCtx* ctx, const mwvector pos);
+mwvector acceleration(const Potential* pot, const mwvector pos);
 
 #endif /* _ACCELERATIONS_H_ */
 

@@ -41,7 +41,7 @@ static void reverseOrbit(NBodyCtx* ctx, DwarfModel* model)
     mw_incnegv(v);
 
     // Get the initial acceleration
-    acc = acceleration(ctx, x);
+    acc = acceleration(&ctx->pot, x);
 
     // Loop through time
     for (t = 0; t <= tstop; t += dt)

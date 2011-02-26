@@ -410,8 +410,8 @@ int main(int argc, const char* argv[])
     NBodyFlags nbf      = EMPTY_NBODY_FLAGS;
     FitParams fitParams = EMPTY_FIT_PARAMS;
 
-    scriptableArst();
-    return 0;
+    //scriptableArst();
+    //return 0;
 
     specialSetup();
 

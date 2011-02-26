@@ -121,34 +121,34 @@ static inline mwvector triaxialHaloAccel(const Halo* h, const mwvector pos)
     return acc;
 }
 
-mwvector acceleration(const NBodyCtx* ctx, const mwvector pos)
+mwvector acceleration(const Potential* pot, const mwvector pos)
 {
     mwvector acc, acctmp;
 
     /* GCC and clang both turn these into jump tables */
-    switch (ctx->pot.disk.type)
+    switch (pot->disk.type)
     {
         case ExponentialDisk:
-            acc = exponentialDiskAccel(&ctx->pot.disk, pos);
+            acc = exponentialDiskAccel(&pot->disk, pos);
             break;
         case MiyamotoNagaiDisk:
-            acc = miyamotoNagaiDiskAccel(&ctx->pot.disk, pos);
+            acc = miyamotoNagaiDiskAccel(&pot->disk, pos);
             break;
         case InvalidDisk:
         default:
             fail("Invalid disk type in acceleration()\n");
     }
 
-    switch (ctx->pot.halo.type)
+    switch (pot->halo.type)
     {
         case LogarithmicHalo:
-            acctmp = logHaloAccel(&ctx->pot.halo, pos);
+            acctmp = logHaloAccel(&pot->halo, pos);
             break;
         case NFWHalo:
-            acctmp = nfwHaloAccel(&ctx->pot.halo, pos);
+            acctmp = nfwHaloAccel(&pot->halo, pos);
             break;
         case TriaxialHalo:
-            acctmp = triaxialHaloAccel(&ctx->pot.halo, pos);
+            acctmp = triaxialHaloAccel(&pot->halo, pos);
             break;
         case InvalidHalo:
         default:
@@ -156,7 +156,7 @@ mwvector acceleration(const NBodyCtx* ctx, const mwvector pos)
     }
 
     mw_incaddv(acc, acctmp);
-    acctmp = sphericalAccel(&ctx->pot.sphere[0], pos);
+    acctmp = sphericalAccel(&pot->sphere[0], pos);
     mw_incaddv(acc, acctmp);
 
     return acc;

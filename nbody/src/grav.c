@@ -150,7 +150,7 @@ static inline mwvector hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p)
     }
 
     /* Adding the external potential */
-    externalacc = acceleration(ctx, Pos(p));
+    externalacc = acceleration(&ctx->pot, Pos(p));
 
     mw_incaddv(fest.acc0, externalacc);
 
