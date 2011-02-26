@@ -19,7 +19,7 @@ mwvector* checkVector(lua_State* luaSt, int index)
     mwvector* v;
 
     v = (mwvector*) luaL_checkudata(luaSt, index, MWVECTOR);
-    luaL_argcheck(luaSt, v != NULL, 1, "`Vector' expected");
+    luaL_argcheck(luaSt, v != NULL, index, "`Vector' expected");
 
     return v;
 }

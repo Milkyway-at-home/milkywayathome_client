@@ -41,7 +41,7 @@ Halo* checkHalo(lua_State* luaSt, int index)
     Halo* b;
 
     b = (Halo*) luaL_checkudata(luaSt, index, HALO_TYPE);
-    luaL_argcheck(luaSt, b != NULL, 1, "`Halo' expected");
+    luaL_argcheck(luaSt, b != NULL, index, "`Halo' expected");
 
     return b;
 }

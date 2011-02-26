@@ -35,12 +35,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 InitialConditions* checkInitialConditions(lua_State* luaSt, int index)
 {
-    InitialConditions* b;
+    InitialConditions* ic;
 
-    b = (InitialConditions*) luaL_checkudata(luaSt, index, INITIAL_CONDITIONS_TYPE);
-    luaL_argcheck(luaSt, b != NULL, 1, "`InitialConditions' expected");
+    ic = (InitialConditions*) luaL_checkudata(luaSt, index, INITIAL_CONDITIONS_TYPE);
+    luaL_argcheck(luaSt, ic != NULL, index, "`InitialConditions' expected");
 
-    return b;
+    return ic;
 }
 
 int pushInitialConditions(lua_State* luaSt, const InitialConditions* ic)

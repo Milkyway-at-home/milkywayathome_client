@@ -22,7 +22,7 @@ NBodyLuaBodyArray* checkNBodyLuaBodyArray(lua_State* luaSt, int index)
     void* ud;
 
     ud = (NBodyLuaBodyArray*) luaL_checkudata(luaSt, index, NBODY_LUA_BODY_ARRAY);
-    luaL_argcheck(luaSt, ud != NULL, 1, "`NBodyLuaBodyArray' expected");
+    luaL_argcheck(luaSt, ud != NULL, index, "`NBodyLuaBodyArray' expected");
 
     return ud;
 }

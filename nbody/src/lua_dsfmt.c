@@ -40,7 +40,7 @@ dsfmt_t* checkDSFMT(lua_State* luaSt, int index)
     dsfmt_t* d;
 
     d = (dsfmt_t*) luaL_checkudata(luaSt, index, DSFMT_TYPE);
-    luaL_argcheck(luaSt, d != NULL, 1, "`DSFMT' expected");
+    luaL_argcheck(luaSt, d != NULL, index, "`DSFMT' expected");
 
     return d;
 }

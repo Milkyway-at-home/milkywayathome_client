@@ -21,7 +21,7 @@ body* checkBody(lua_State* luaSt, int index)
     body* b;
 
     b = (body*) luaL_checkudata(luaSt, index, BODY_TYPE);
-    luaL_argcheck(luaSt, b != NULL, 1, "`Body' expected");
+    luaL_argcheck(luaSt, b != NULL, index, "`Body' expected");
 
     return b;
 }

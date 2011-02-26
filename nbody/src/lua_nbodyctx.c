@@ -43,7 +43,7 @@ NBodyCtx* checkNBodyCtx(lua_State* luaSt, int index)
     NBodyCtx* ctx;
 
     ctx = (NBodyCtx*) luaL_checkudata(luaSt, index, NBODY_CTX);
-    luaL_argcheck(luaSt, ctx != NULL, 1, "`NBodyCtx' expected");
+    luaL_argcheck(luaSt, ctx != NULL, index, "`NBodyCtx' expected");
 
     return ctx;
 }
