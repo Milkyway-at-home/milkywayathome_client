@@ -442,9 +442,9 @@ typedef struct NBODY_ALIGN
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 #define EMPTY_NBODYCTX { EMPTY_POTENTIAL, NULL, 0, 0, NAN, NAN, NAN, NAN, \
-                    NULL, NULL, NULL, NULL, NULL,                    \
-                    NAN, NAN, NAN, NAN, NAN, 0, 0,                   \
-                    FALSE, FALSE, FALSE, FALSE, FALSE, NULL, "" }
+                        NULL, NULL, NULL, NULL, NULL,                    \
+                        NAN, NAN, NAN, NAN, NAN, InvalidCriterion, 0, 0,  \
+                        FALSE, FALSE, FALSE, FALSE, FALSE, NULL, "" }
 
 
 typedef struct

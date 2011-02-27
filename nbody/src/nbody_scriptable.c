@@ -17,10 +17,6 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
-
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
@@ -61,66 +57,6 @@ int l_map(lua_State* L)
     return 0;  /* no results */
 }
 #endif
-
-
-static void pushRealArray(lua_State* luaSt, const real* arr, int n)
-{
-    int i, table;
-
-    lua_createtable(luaSt, n, 0);
-    table = lua_gettop(luaSt);
-
-    for (i = 0; i < n; ++i)
-    {
-        lua_pushnumber(luaSt, (lua_Number) arr[i]);
-        lua_rawseti(luaSt, table, i + 1);
-        lua_pop(luaSt, 1);
-    }
-}
-
-static int pushNBodyCtxArray(lua_State* luaSt, const NBodyCtx* ctxs, int n)
-{
-    int i, table;
-
-    lua_createtable(luaSt, n, 0);
-    table = lua_gettop(luaSt);
-
-    for (i = 0; i < n; ++i)
-    {
-        pushNBodyCtx(luaSt, &ctxs[i]);
-        lua_pushvalue(luaSt, -1);
-        lua_rawseti(luaSt, table, i + 1);
-        lua_pop(luaSt, 1);
-    }
-
-    return 1;
-}
-
-static real* popRealArray(lua_State* luaSt, int* outN)
-{
-    real* arr;
-    int i, n, table;
-
-    table = lua_gettop(luaSt);
-    luaL_checktype(luaSt, table, LUA_TTABLE);
-    n = luaL_getn(luaSt, table);  /* get size of table */
-
-    arr = mwMalloc(sizeof(real) * n);
-    for (i = 0; i < n; ++i)
-    {
-        lua_rawgeti(luaSt, table, i + 1);  /* push t[i] */
-        luaL_checktype(luaSt, -1, LUA_TNUMBER);
-        arr[i] = lua_tonumber(luaSt, -1);
-        lua_pop(luaSt, 1);
-    }
-
-    lua_pop(luaSt, 1);
-
-    if (outN)
-        *outN = n;
-
-    return arr;
-}
 
 static void callTestLists(lua_State* luaSt)
 {
@@ -480,6 +416,7 @@ int scriptableAoeu()
     if (luaL_dofile(luaSt, "closures.lua") != 0)
         warn("dofile failed\n");
 
+#if 0
     lua_getglobal(luaSt, "lolFunctions");
     TOP_TYPE(luaSt, "A FUNCTION?");
     lua_pushnumber(luaSt, 9.0);
@@ -491,19 +428,37 @@ int scriptableAoeu()
     lua_call(luaSt, 2, 0);
 
     warn("arst\n");
+#endif
+
 
 
     NBodyCtx arstctx = EMPTY_NBODYCTX;
+    mwvector inipos = mw_vec(3.0, 5.0, 999.0);
+    mwvector inivel = mw_vec(22000000.0, 500.0, 999.0);
     lua_getglobal(luaSt, "makeAModel");
-    //createNBodyCtx(luaSt);
     pushNBodyCtx(luaSt, &arstctx);
     lua_call(luaSt, 1, 1);
-    lua_pop(luaSt, 1);
 
-    lua_getglobal(luaSt, "goGoPowerRangers");
-    lua_call(luaSt, 0, 0);
+    DwarfModel* dm = checkDwarfModel(luaSt, -1);
 
-    lua_gc(luaSt, LUA_GCCOLLECT, 0);
+    InitialConditions ic;
+    ic.position = inipos;
+    ic.velocity = inivel;
+
+    dsfmt_t prng;
+    dsfmt_init_gen_rand(&prng, 234234);
+
+
+    lua_rawgeti(luaSt, LUA_REGISTRYINDEX, dm->generator);
+    pushDSFMT(luaSt, &prng);
+    pushInitialConditions(luaSt, &ic);
+    lua_pushboolean(luaSt, TRUE);
+    lua_pushnil(luaSt);
+    lua_call(luaSt, 4, 1);
+
+    warn("Usage = %d, %zu\n", lua_gc(luaSt, LUA_GCCOUNT, 0), sizeof(body));
+    popBodyArray(luaSt, NULL);
+    //lua_gc(luaSt, LUA_GCCOLLECT, 0);
 
 #if 0
     lua_getglobal(luaSt, "referenceTestA");

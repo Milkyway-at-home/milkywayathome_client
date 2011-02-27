@@ -79,12 +79,10 @@ static int createVector(lua_State* luaSt)
     switch (n)
     {
         case 0:
-            warn("Creating 0 arg vector\n");
             pushVector(luaSt, _emptyVector);
             return 1;
 
         case 3:
-            warn("Creating 3 arg vector\n");
             v.x = luaL_checknumber(luaSt, 1);
             v.y = luaL_checknumber(luaSt, 2);
             v.z = luaL_checknumber(luaSt, 3);
@@ -93,7 +91,6 @@ static int createVector(lua_State* luaSt)
             return 1;
 
         default:
-            warn("Vector constructor failure\n");
             luaL_argerror(luaSt, 3, "Expected 0 or 3 arguments to create vector");
             return 0;
     }

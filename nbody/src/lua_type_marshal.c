@@ -1,3 +1,21 @@
+/*
+Copyright (C) 2011  Matthew Arsenault
+
+This file is part of Milkway@Home.
+
+Milkyway@Home is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Milkyway@Home is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdio.h>
 #include <stddef.h>
@@ -7,7 +25,7 @@
 #include <lauxlib.h>
 
 #include "lua_type_marshal.h"
-#include "nbody_types.h"
+#include "nbody_lua_types.h"
 #include "milkyway_util.h"
 
 int mw_lua_checkboolean(lua_State* luaSt, int index)
@@ -476,5 +494,46 @@ int getLuaClosure(lua_State* luaSt, void* ref)
     lua_rawgeti(luaSt, LUA_REGISTRYINDEX, *(int*) ref);
 
     return 1;
+}
+
+void pushRealArray(lua_State* luaSt, const real* arr, int n)
+{
+    int i, table;
+
+    lua_createtable(luaSt, n, 0);
+    table = lua_gettop(luaSt);
+
+    for (i = 0; i < n; ++i)
+    {
+        lua_pushnumber(luaSt, (lua_Number) arr[i]);
+        lua_rawseti(luaSt, table, i + 1);
+        lua_pop(luaSt, 1);
+    }
+}
+
+real* popRealArray(lua_State* luaSt, int* outN)
+{
+    real* arr;
+    int i, n, table;
+
+    table = lua_gettop(luaSt);
+    luaL_checktype(luaSt, table, LUA_TTABLE);
+    n = luaL_getn(luaSt, table);  /* get size of table */
+
+    arr = mwMalloc(sizeof(real) * n);
+    for (i = 0; i < n; ++i)
+    {
+        lua_rawgeti(luaSt, table, i + 1);  /* push t[i] */
+        luaL_checktype(luaSt, -1, LUA_TNUMBER);
+        arr[i] = lua_tonumber(luaSt, -1);
+        lua_pop(luaSt, 1);
+    }
+
+    lua_pop(luaSt, 1);
+
+    if (outN)
+        *outN = n;
+
+    return arr;
 }
 

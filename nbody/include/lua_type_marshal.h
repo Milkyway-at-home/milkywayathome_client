@@ -24,6 +24,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lauxlib.h>
 
 #include "milkyway_extra.h"
+#include "milkyway_math.h"
+
+#include "nbody_types.h"
 
 typedef int (*Xet_func) (lua_State* luaSt, void* v);
 
@@ -108,6 +111,9 @@ void* mw_checknamedudata(lua_State* luaSt, int index, const char* typeName);
 void* mw_tonamedudata(lua_State* luaSt, int ud, const char* typeName);
 
 void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int table);
+
+void pushRealArray(lua_State* luaSt, const real* arr, int n);
+real* popRealArray(lua_State* luaSt, int* outN);
 
 #endif /* _LUA_TYPE_MARSHAL_H_ */
 

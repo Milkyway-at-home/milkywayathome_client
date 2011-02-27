@@ -411,7 +411,8 @@ int main(int argc, const char* argv[])
     FitParams fitParams = EMPTY_FIT_PARAMS;
 
     //scriptableArst();
-    //return 0;
+    scriptableAoeu();
+    return 0;
 
     specialSetup();
 
