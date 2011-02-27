@@ -92,29 +92,6 @@ NBodyCtx* checkNBodyCtx(lua_State* luaSt, int index)
     return (NBodyCtx*) mw_checknamedudata(luaSt, index, NBODY_CTX);
 }
 
-static int positionNBodyCtx(lua_State *L, int index)
-{
-    NBodyCtx* ctx;
-
-    ctx = checkNBodyCtx(L, index);
-
-    #if 0
-    double   x = yd->x;
-    double   y = yd->y;
-    if (lua_gettop(L) > 1)
-    {
-        yd->x = luaL_checknumber(L, 2);
-        yd->y = luaL_checknumber(L, 3);
-    }
-    lua_pushnumber(L,x);
-    lua_pushnumber(L,y);
-
-    return 2;
-
-    #endif
-    return 0;
-}
-
 int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* ctx)
 {
     NBodyCtx* lctx;
@@ -144,18 +121,6 @@ static int destroyNBodyCtx(lua_State* luaSt)
     return 0;
 }
 
-static int test(lua_State* luaSt)
-{
-    int n;
-
-    n = luaL_checknumber(luaSt, 1);
-    lua_pushnumber(luaSt, 66);
-    lua_pushnumber(luaSt, 67);
-    lua_pushnumber(luaSt, 68);
-
-    return n;
-}
-
 static int toStringNBodyCtx(lua_State* luaSt)
 {
     NBodyCtx* ctx;
@@ -179,8 +144,6 @@ static const luaL_reg metaMethodsNBodyCtx[] =
 static const luaL_reg methodsNBodyCtx[] =
 {
     { "create",   createNBodyCtx },
-//    {"position", your_position},
-    { "test",     test },
     { NULL, NULL }
 };
 

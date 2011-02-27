@@ -18,6 +18,11 @@ int mw_lua_checkboolean(lua_State* luaSt, int index)
     return lua_toboolean(luaSt, index);
 }
 
+mwbool mw_lua_optboolean(lua_State* luaSt, int nArg, mwbool def)
+{
+    return lua_isnoneornil(luaSt, nArg) ? def : mw_lua_checkboolean(luaSt, nArg);
+}
+
 lua_CFunction mw_lua_checkcclosure(lua_State* luaSt, int index)
 {
     if (!lua_iscfunction(luaSt, index))
@@ -38,6 +43,12 @@ int mw_lua_checkluaclosure(lua_State* luaSt, int index)
     /* Copy since luaL_ref pops and no other lua_check* functions change the stack */
     lua_pushvalue(luaSt, -1);
     return luaL_ref(luaSt, LUA_REGISTRYINDEX);
+}
+
+void mw_lua_pushluaclosure(lua_State* luaSt, int ref)
+{
+    lua_pushinteger(luaSt, ref);
+    lua_rawget(luaSt, LUA_REGISTRYINDEX);
 }
 
 void* mw_checknamedudata(lua_State* luaSt, int index, const char* typeName)

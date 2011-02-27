@@ -33,12 +33,12 @@ body* checkBody(lua_State* luaSt, int index)
     return (body*) mw_checknamedudata(luaSt, index, BODY_TYPE);
 }
 
-int pushBody(lua_State* luaSt, const body* ctx)
+int pushBody(lua_State* luaSt, const body* b)
 {
-    body* lctx;
+    body* lb;
 
-    lctx = (body*)lua_newuserdata(luaSt, sizeof(body));
-    if (!lctx)
+    lb = (body*) lua_newuserdata(luaSt, sizeof(body));
+    if (!lb)
     {
         warn("Creating Body userdata failed\n");
         return 1;
@@ -47,7 +47,7 @@ int pushBody(lua_State* luaSt, const body* ctx)
     luaL_getmetatable(luaSt, BODY_TYPE);
     lua_setmetatable(luaSt, -2);
 
-    *lctx = *ctx;
+    *lb = *b;
 
     return 0;
 }

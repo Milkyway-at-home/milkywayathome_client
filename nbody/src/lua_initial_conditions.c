@@ -37,23 +37,21 @@ InitialConditions* checkInitialConditions(lua_State* luaSt, int index)
     return (InitialConditions*) mw_checknamedudata(luaSt, index, INITIAL_CONDITIONS_TYPE);
 }
 
-int pushInitialConditions(lua_State* luaSt, const InitialConditions* ic)
+void pushInitialConditions(lua_State* luaSt, const InitialConditions* ic)
 {
     InitialConditions* lic;
 
-    lic = (InitialConditions*)lua_newuserdata(luaSt, sizeof(InitialConditions));
+    lic = (InitialConditions*) lua_newuserdata(luaSt, sizeof(InitialConditions));
     if (!lic)
     {
         warn("Creating InitialConditions userdata failed\n");
-        return 1;
+        return;
     }
 
     luaL_getmetatable(luaSt, INITIAL_CONDITIONS_TYPE);
     lua_setmetatable(luaSt, -2);
 
     *lic = *ic;
-
-    return 0;
 }
 
 
@@ -68,41 +66,37 @@ static int createInitialConditions(lua_State* luaSt)
 {
     int nArgs;
     const NBodyCtx* ctx = NULL;
+    const mwvector* x = NULL;
+    const mwvector* v = NULL;
     mwbool useGalacticCoordinates = FALSE;
     mwbool useRadians = FALSE;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
 
     const MWNamedArg argTable[] =
         {
-            { "context",                LUA_TUSERDATA, NBODY_CTX, TRUE,  &ctx                    },
+            { "context",                LUA_TUSERDATA, NBODY_CTX, TRUE,  &ctx,                   },
+            { "position",               LUA_TUSERDATA, MWVECTOR,  TRUE,  &x                      },
+            { "velocity",               LUA_TUSERDATA, MWVECTOR,  TRUE,  &v                      },
             { "useGalacticCoordinates", LUA_TBOOLEAN,  NULL,      FALSE, &useGalacticCoordinates },
-            { "useRadians",             LUA_TBOOLEAN,  NULL,      FALSE, &useRadians             },
+            { "useRadians",             LUA_TBOOLEAN,  NULL,      FALSE, &useRadians,            },
             END_MW_NAMED_ARG
         };
 
-    warn("Creating initial conditions\n");
     nArgs = lua_gettop(luaSt);
     switch (nArgs)
     {
         case 1:  /* Table of named arguments */
-            /* TODO */
             handleNamedArgumentTable(luaSt, argTable, 1);
-
-            //mw_panic("Implement me!\n");
             break;
 
         case 3:  /* (Context, Position, velocity) Use defaults for rest */
+        case 5:
             ctx = checkNBodyCtx(luaSt, 1);
-            ic.position = *checkVector(luaSt, 2);
-            ic.velocity = *checkVector(luaSt, 3);
-            break;
+            x = checkVector(luaSt, 2);
+            v = checkVector(luaSt, 3);
 
-        case 5: /* Everything */
-            ctx = checkNBodyCtx(luaSt, 1);
-            ic.position = *checkVector(luaSt, 2);
-            ic.velocity = *checkVector(luaSt, 3);
-            useGalacticCoordinates = mw_lua_checkboolean(luaSt, 4);
-            useRadians = mw_lua_checkboolean(luaSt, 5);
+            useGalacticCoordinates = mw_lua_optboolean(luaSt, 4, useGalacticCoordinates);
+            useRadians = mw_lua_optboolean(luaSt, 5, useRadians);
             break;
 
         default:
@@ -110,8 +104,8 @@ static int createInitialConditions(lua_State* luaSt)
 
     }
 
-    if (ctx)
-        printNBodyCtx(ctx);
+    ic.position = *x;
+    ic.velocity = *v;
 
     /* We aren't given galactic coordinates, so convert them */
     if (!useGalacticCoordinates)

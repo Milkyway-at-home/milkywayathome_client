@@ -98,14 +98,16 @@ int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val);
 int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int index);
 
 int mw_lua_checkboolean(lua_State* luaSt, int index);
+mwbool mw_lua_optboolean(lua_State* luaSt, int nArg, mwbool def);
+
 lua_CFunction mw_lua_checkcclosure(lua_State* luaSt, int index);
 int mw_lua_checkluaclosure(lua_State* luaSt, int index);
+void mw_lua_pushluaclosure(lua_State* luaSt, int ref);
 
 void* mw_checknamedudata(lua_State* luaSt, int index, const char* typeName);
 void* mw_tonamedudata(lua_State* luaSt, int ud, const char* typeName);
 
-
-void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int index);
+void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int table);
 
 #endif /* _LUA_TYPE_MARSHAL_H_ */
 

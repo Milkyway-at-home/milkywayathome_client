@@ -133,7 +133,7 @@ mwbool generatePlummer(dsfmt_t* dsfmtState,
     mw_incdivs(cmr, rnbody);      /* normalize cm coords */
     mw_incdivs(cmv, rnbody);
 
-    return 0;
+    return FALSE;
 }
 
 

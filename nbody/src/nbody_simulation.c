@@ -232,7 +232,7 @@ void runNBodySimulation(json_object* obj,            /* The main configuration *
                         const FitParams* fitParams,  /* For server's arguments */
                         const NBodyFlags* nbf)       /* Misc. parameters to control output */
 {
-    NBodyCtx ctx  = EMPTY_CTX;
+    NBodyCtx ctx  = EMPTY_NBODYCTX;
     NBodyState st = EMPTY_STATE;
     HistogramParams histParams;
 

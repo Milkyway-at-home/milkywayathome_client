@@ -99,12 +99,11 @@ static int toStringDwarfModel(lua_State* luaSt)
     return 1;
 }
 
-/* CHECKME: seems to not be happening? */
 static int gcDwarfModel(lua_State* luaSt)
 {
     DwarfModel* dm;
 
-    warn("GOODBYE: Collecting dwarf model\n");
+    printf("GOODBYE: Collecting dwarf model\n");
     dm = (DwarfModel*) lua_touserdata(luaSt, 1);
     luaL_unref(luaSt, LUA_REGISTRYINDEX, dm->generator);
 
