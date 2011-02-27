@@ -107,6 +107,8 @@ const char* showDwarfModelT(const dwarf_model_t x)
 {
     switch (x)
     {
+        case DwarfModelOther:
+            return "DwarfModelOther";
         case DwarfModelPlummer:
             return "DwarfModelPlummer";
         case DwarfModelKing:
@@ -291,18 +293,12 @@ char* showDwarfModel(const DwarfModel* d)
                      "      type              = %s\n"
                      "      nbody             = %d\n"
                      "      mass              = %g\n"
-                     "      scale_radius      = %g\n"
-                     "      timestep          = %g\n"
-                     "      orbit_timestep    = %g\n"
                      "      ignoreFinal       = %s\n"
                      "      initialConditions = %s\n"
                      "    };\n",
                      showDwarfModelT(d->type),
                      d->nbody,
                      d->mass,
-                     d->scale_radius,
-                     d->timestep,
-                     d->orbit_timestep,
                      showBool(d->ignoreFinal),
                      icBuf))
     {

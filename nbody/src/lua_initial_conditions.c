@@ -32,7 +32,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "nbody_util.h"
 
-
 InitialConditions* checkInitialConditions(lua_State* luaSt, int index)
 {
     return (InitialConditions*) mw_checknamedudata(luaSt, index, INITIAL_CONDITIONS_TYPE);
@@ -172,5 +171,17 @@ int registerInitialConditions(lua_State* luaSt)
                           settersInitialConditions,
                           metaMethodsInitialConditions,
                           methodsInitialConditions);
+}
+
+int getInitialConditions(lua_State* luaSt, void* v)
+{
+    pushInitialConditions(luaSt, (InitialConditions*) v);
+    return 1;
+}
+
+int setInitialConditions(lua_State* luaSt, void* v)
+{
+    *(InitialConditions*) v = *checkInitialConditions(luaSt, 3);
+    return 0;
 }
 

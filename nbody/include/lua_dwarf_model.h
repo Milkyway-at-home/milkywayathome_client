@@ -21,15 +21,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #error "Only nbody_lua_types.h can be included directly."
 #endif
 
-#ifndef _LUA_DISK_H_
-#define _LUA_DISK_H_
+#ifndef _LUA_DWARF_MODEL_H_
+#define _LUA_DWARF_MODEL_H_
 
 #include <lua.h>
 #include "nbody_types.h"
 
-Disk* checkDisk(lua_State* luaSt, int index);
-int pushDisk(lua_State* luaSt, const Disk* d);
-int registerDisk(lua_State* luaSt);
+DwarfModel* checkDwarfModel(lua_State* luaSt, int index);
+int pushDwarfModel(lua_State* luaSt, const DwarfModel* dm);
+int registerDwarfModel(lua_State* luaSt);
 
-#endif /* _LUA_DISK_H_ */
+#endif /* _LUA_DWARF_MODEL_H_ */
 

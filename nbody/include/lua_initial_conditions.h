@@ -31,5 +31,8 @@ InitialConditions* checkInitialConditions(lua_State* luaSt, int index);
 int pushInitialConditions(lua_State* luaSt, const InitialConditions* h);
 int registerInitialConditions(lua_State* luaSt);
 
+int getInitialConditions(lua_State* luaSt, void* v);
+int setInitialConditions(lua_State* luaSt, void* v);
+
 #endif /* _LUA_INITIAL_CONDITIONS_H_ */
 

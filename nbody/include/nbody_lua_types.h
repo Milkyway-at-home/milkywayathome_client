@@ -27,11 +27,12 @@ extern "C" {
 #endif
 
 #include "lua_body_array.h"
-#include "lua_disk.h"
 #include "lua_initial_conditions.h"
 #include "lua_type_marshal.h"
 #include "lua_body.h"
 #include "lua_halo.h"
+#include "lua_disk.h"
+#include "lua_dwarf_model.h"
 #include "lua_nbodyctx.h"
 #include "lua_vector.h"
 #include "lua_dsfmt.h"

@@ -56,7 +56,7 @@ static const MWEnumAssociation haloOptions[] =
     { "logarithmic", LogarithmicHalo },
     { "nfw",         NFWHalo,        },
     { "triaxial",    TriaxialHalo,   },
-    { NULL,         -1 }
+    END_MW_ENUM_ASSOCIATION
 };
 
 static int createHalo(lua_State* luaSt)
@@ -65,7 +65,7 @@ static int createHalo(lua_State* luaSt)
 
     warn("Creating halo\n");
 
-    checkEnum(luaSt, haloOptions, -1);
+    h.type = checkEnum(luaSt, haloOptions, -1);
     pushHalo(luaSt, &h);
     return 1;
 }

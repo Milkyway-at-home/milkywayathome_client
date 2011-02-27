@@ -293,6 +293,7 @@ typedef struct NBODY_ALIGN
 typedef enum
 {
     InvalidDwarfModel = InvalidEnum,
+    DwarfModelOther   = 0,
     DwarfModelPlummer,
     DwarfModelKing,
     DwarfModelDehnen
@@ -302,21 +303,16 @@ typedef struct NBODY_ALIGN
 {
     dwarf_model_t type;
     unsigned int nbody;
-
-    /* calculated depending on model */
-    real timestep;
-    real orbit_timestep;
-
-    /* model parameters */
     real mass;
-    real scale_radius;
-
-    real smallMass;
-    real smallRadius;
 
     mwbool ignoreFinal;
     InitialConditions initialConditions;
 } DwarfModel;
+
+#define EMPTY_DWARF_MODEL { InvalidDwarfModel, 0, NAN, FALSE, EMPTY_INITIAL_CONDITIONS }
+
+
+#define DWARF_MODEL_TYPE "DwarfModel"
 
 #ifndef _WIN32
 
@@ -436,7 +432,6 @@ typedef struct NBODY_ALIGN
 #define EMPTY_DISK { 0, NAN, NAN, NAN }
 #define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
-#define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 #define EMPTY_CTX { EMPTY_POTENTIAL, NULL, 0, 0, NAN, NAN, NAN, NAN, \

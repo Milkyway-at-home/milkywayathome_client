@@ -86,6 +86,8 @@ static int processModel(NBodyCtx* ctx, DwarfModel* mod)
 {
     int rc;
 
+    #if 0
+
     rc = processInitialConditions(ctx, &mod->initialConditions);
 
     switch (mod->type)
@@ -106,6 +108,7 @@ static int processModel(NBodyCtx* ctx, DwarfModel* mod)
             warn("Unhandled model type: %s\n", showDwarfModelT(mod->type));
             return 1;
     }
+    #endif
 
     return rc;
 }
@@ -130,6 +133,7 @@ static real plummerTimestepIntegral(real smalla, real biga, real Ml, real Md)
     return encMass;
 }
 
+#if 0
 static int compareModelRadii(const void* _a, const void* _b)
 {
     const DwarfModel* a = (const DwarfModel*) _a;
@@ -142,11 +146,13 @@ static void sortModelsByRadii(NBodyCtx* ctx)
 {
     qsort(ctx->models, ctx->modelNum, sizeof(DwarfModel), compareModelRadii);
 }
+#endif
 
 static real findTimesteps(const NBodyCtx* ctx)
 {
     real effMass, effRadius, encMass;
 
+#if 0
     /* TODO: Check right model types */
     switch (ctx->modelNum)
     {
@@ -165,6 +171,7 @@ static real findTimesteps(const NBodyCtx* ctx)
             warn("Unhandled model combination for timestep calculation\n");
             return NAN;
     }
+#endif
 }
 
 static int processAllModels(NBodyCtx* ctx)
@@ -184,7 +191,8 @@ static int processAllModels(NBodyCtx* ctx)
     if (findEps2)      /* Setting this in the file overrides calculating it */
         ctx->eps2 = INFINITY;
 
-    sortModelsByRadii(ctx);
+#if 0
+    //sortModelsByRadii(ctx);
     for (i = 0; i < ctx->modelNum; ++i)
     {
         rc |= processModel(ctx, &ctx->models[i]);
@@ -200,6 +208,7 @@ static int processAllModels(NBodyCtx* ctx)
         }
 
     }
+#endif
 
     if (findTimestep)
         ctx->timestep = findTimesteps(ctx);
@@ -334,12 +343,14 @@ int setCtxConsts(NBodyCtx* ctx,
     /* willeb: assumes the first model is the smaller, light model */
     if (fitParams->useFitParams)
     {
+#if 0
         ctx->models[0].mass         = fitParams->modelMass;
         ctx->models[0].scale_radius = fitParams->modelRadius;
 
         ctx->time_orbit  = fitParams->reverseOrbitTime;
         ctx->time_evolve = fitParams->simulationTime;
         ctx->seed        = setSeed;
+#endif
     }
 
     rc |= postProcess(ctx);

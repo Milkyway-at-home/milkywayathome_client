@@ -33,12 +33,12 @@ Disk* checkDisk(lua_State* luaSt, int index)
     return (Disk*) mw_checknamedudata(luaSt, index, DISK_TYPE);
 }
 
-int pushDisk(lua_State* luaSt, const Disk* h)
+int pushDisk(lua_State* luaSt, const Disk* d)
 {
-    Disk* lh;
+    Disk* ld;
 
-    lh = (Disk*) lua_newuserdata(luaSt, sizeof(Disk));
-    if (!lh)
+    ld = (Disk*) lua_newuserdata(luaSt, sizeof(Disk));
+    if (!ld)
     {
         warn("Creating Disk userdata failed\n");
         return 1;
@@ -47,7 +47,7 @@ int pushDisk(lua_State* luaSt, const Disk* h)
     luaL_getmetatable(luaSt, DISK_TYPE);
     lua_setmetatable(luaSt, -2);
 
-    *lh = *h;
+    *ld = *d;
 
     return 0;
 }
@@ -56,8 +56,7 @@ static const MWEnumAssociation diskOptions[] =
 {
     { "exponential",    ExponentialDisk   },
     { "miyamoto-nagai", MiyamotoNagaiDisk },
-    { NULL,             -1 }
-
+    END_MW_ENUM_ASSOCIATION
 };
 
 static int createDisk(lua_State* luaSt)
@@ -66,7 +65,7 @@ static int createDisk(lua_State* luaSt)
 
     warn("Creating disk\n");
 
-    checkEnum(luaSt, diskOptions, -1);
+    d.type = checkEnum(luaSt, diskOptions, -1);
     pushDisk(luaSt, &d);
     return 1;
 }

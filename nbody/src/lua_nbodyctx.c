@@ -72,7 +72,7 @@ static const MWEnumAssociation criterionOptions[] =
     { "Exact",        Exact        },
     { "BH86",         BH86         },
     { "SW93",         SW93         },
-    { NULL, -1 }
+    END_MW_ENUM_ASSOCIATION
 };
 
 static int getCriterionT(lua_State* luaSt, void* v)

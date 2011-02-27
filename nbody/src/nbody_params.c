@@ -136,6 +136,7 @@ static mwbool readDwarfModel(DwarfModel* model, const char* parentName, json_obj
 {
     const mwbool defaultIgnore = FALSE;
 
+#if 0
     /* The current different dwarf models all use the same parameters */
     const MWParameter dwarfModelParams[] =
         {
@@ -155,8 +156,10 @@ static mwbool readDwarfModel(DwarfModel* model, const char* parentName, json_obj
             OBJ_PARAM("initial-conditions",  &model->initialConditions, (MWReadFunc) readInitialConditions),
             NULL_MWPARAMETER
         };
+#endif
 
-    return mwReadParameterGroup(dwarfModelParams, obj, parentName);
+    return TRUE;
+    //return mwReadParameterGroup(dwarfModelParams, obj, parentName);
 }
 
 static mwbool readDiskParams(Disk* disk, const char* pname, json_object* obj)

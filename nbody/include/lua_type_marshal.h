@@ -43,6 +43,8 @@ typedef struct
     int enumVal;
 } MWEnumAssociation;
 
+#define END_MW_ENUM_ASSOCIATION { NULL, -1 }
+
 typedef struct
 {
     const char* name;

@@ -42,6 +42,7 @@ static void generateModel(NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodies)
 
     switch (model->type)
     {
+        #if 0
         case DwarfModelPlummer:
             generatePlummer(&dsfmtState,
                             bodies,
@@ -57,6 +58,7 @@ static void generateModel(NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodies)
             fail("Trying to run with invalid dwarf model\n");
         default:
             fail("Unsupported model: %d", model->type);
+            #endif
     }
 }
 
