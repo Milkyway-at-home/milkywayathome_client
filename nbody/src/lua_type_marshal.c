@@ -13,9 +13,31 @@
 int mw_lua_checkboolean(lua_State* luaSt, int index)
 {
     if (!lua_isboolean(luaSt, index))
-        luaL_typerror(luaSt, index, "Expected boolean");
+        luaL_typerror(luaSt, index, "boolean");
 
     return lua_toboolean(luaSt, index);
+}
+
+lua_CFunction mw_lua_checkcclosure(lua_State* luaSt, int index)
+{
+    if (!lua_iscfunction(luaSt, index))
+        luaL_typerror(luaSt, index, "cclosure");
+
+    return lua_tocfunction(luaSt, index);
+}
+
+/* Return reference to Lua closure at index */
+int mw_lua_checkluaclosure(lua_State* luaSt, int index)
+{
+    /* LUA_TFUNCTION can refer to either a C function from the API
+     * side, or a Lua closure. lua_tocfunction() returns NULL if it's a Lua function. */
+
+    if (lua_iscfunction(luaSt, index) && !lua_tocfunction(luaSt, index))
+        luaL_typerror(luaSt, index, "Lua closure");
+
+    /* Copy since luaL_ref pops and no other lua_check* functions change the stack */
+    lua_pushvalue(luaSt, -1);
+    return luaL_ref(luaSt, LUA_REGISTRYINDEX);
 }
 
 void* mw_checknamedudata(lua_State* luaSt, int index, const char* typeName)
@@ -394,5 +416,54 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int tabl
     }
 
     checkExtraArguments(luaSt, table);
+}
+
+static inline int getCClosureN(lua_State* luaSt, void* v, int n)
+{
+    lua_pushcclosure(luaSt, (lua_CFunction) v, n);
+    return 1;
+}
+
+int getCClosure0(lua_State* luaSt, void* v)
+{
+    return getCClosureN(luaSt, v, 0);
+}
+
+int getCClosure1(lua_State* luaSt, void* v)
+{
+    return getCClosureN(luaSt, v, 1);
+}
+
+int getCClosure2(lua_State* luaSt, void* v)
+{
+    return getCClosureN(luaSt, v, 2);
+}
+
+int setCClosure(lua_State* luaSt, void* v)
+{
+    warn("Setting closure\n");
+    *(lua_CFunction*) v = mw_lua_checkcclosure(luaSt, 3);
+    return 0;
+}
+
+int setLuaClosure(lua_State* luaSt, void* _ref)
+{
+    int* ref = (int*) _ref;
+
+    if (*ref != LUA_REFNIL && *ref != LUA_NOREF)
+        luaL_unref(luaSt, LUA_REGISTRYINDEX, *ref);
+
+    *ref = mw_lua_checkluaclosure(luaSt, 3);
+    assert(*ref != LUA_NOREF);
+
+    return 0;
+}
+
+int getLuaClosure(lua_State* luaSt, void* ref)
+{
+    warn("Getting lua closure\n");
+    lua_rawgeti(luaSt, LUA_REGISTRYINDEX, *(int*) ref);
+
+    return 1;
 }
 

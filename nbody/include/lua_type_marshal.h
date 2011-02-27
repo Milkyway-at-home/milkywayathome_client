@@ -56,14 +56,29 @@ typedef struct
 
 #define END_MW_NAMED_ARG { NULL, -1, NULL, FALSE, NULL }
 
-
 int getInt(lua_State* luaSt, void* v);
 int setInt(lua_State* luaSt, void* v);
+
+int getLong(lua_State* luaSt, void* v);
+int setLong(lua_State* luaSt, void* v);
+
+int getBool(lua_State* luaSt, void* v);
+int setBool(lua_State* luaSt, void* v);
 
 int getNumber(lua_State* luaSt, void* v);
 int setNumber(lua_State* luaSt, void* v);
 
 int getString(lua_State* luaSt, void* v);
+
+int getCClosure0(lua_State* luaSt, void* v);
+int getCClosure1(lua_State* luaSt, void* v);
+int getCClosure2(lua_State* luaSt, void* v);
+
+int setCClosure(lua_State* luaSt, void* v);
+
+int setLuaClosure(lua_State* luaSt, void* v);
+int getLuaClosure(lua_State* luaSt, void* ref);
+
 
 
 void Xet_add(lua_State* luaSt, Xet_reg l);
@@ -83,13 +98,12 @@ int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val);
 int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int index);
 
 int mw_lua_checkboolean(lua_State* luaSt, int index);
+lua_CFunction mw_lua_checkcclosure(lua_State* luaSt, int index);
+int mw_lua_checkluaclosure(lua_State* luaSt, int index);
+
 void* mw_checknamedudata(lua_State* luaSt, int index, const char* typeName);
 void* mw_tonamedudata(lua_State* luaSt, int ud, const char* typeName);
 
-int getBool(lua_State* luaSt, void* v);
-int setBool(lua_State* luaSt, void* v);
-int getLong(lua_State* luaSt, void* v);
-int setLong(lua_State* luaSt, void* v);
 
 void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int index);
 

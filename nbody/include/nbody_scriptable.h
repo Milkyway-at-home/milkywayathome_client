@@ -20,7 +20,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _NBODY_SCRIPTABLE_H_
 #define _NBODY_SCRIPTABLE_H_
 
+/* Type playing */
 int scriptableArst();
+
+/* Closures */
+int scriptableAoeu();
 
 #endif /* _NBODY_SCRIPTABLE_H_ */
 

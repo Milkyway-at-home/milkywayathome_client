@@ -271,7 +271,7 @@ static void callTestDisk(lua_State* luaSt)
 
 static void callTakeContext(lua_State* luaSt)
 {
-    NBodyCtx ctx = EMPTY_CTX;
+    NBodyCtx ctx = EMPTY_NBODYCTX;
 
     ctx.timestep = 934.0;
     ctx.orbit_timestep = 12345.0;
@@ -369,19 +369,8 @@ static void callTestDSFMT(lua_State* luaSt)
     lua_pop(luaSt, 1);
 }
 
-int scriptableArst()
+static void registerEverything(lua_State* luaSt)
 {
-    lua_State* luaSt;
-
-    luaSt = lua_open();
-    if (!luaSt)
-    {
-        warn("Opening Lua state failed\n");
-        return 1;
-    }
-
-    printf("initop = %d\n", lua_gettop(luaSt));
-
     luaopen_base(luaSt);
     luaopen_table(luaSt);
     luaopen_string(luaSt);
@@ -408,6 +397,23 @@ int scriptableArst()
     //lua_pop(luaSt, 11);
 
     WHEREAMI("Everything registered", luaSt);
+
+}
+
+int scriptableArst()
+{
+    lua_State* luaSt;
+
+    luaSt = lua_open();
+    if (!luaSt)
+    {
+        warn("Opening Lua state failed\n");
+        return 1;
+    }
+
+    registerEverything(luaSt);
+    printf("initop = %d\n", lua_gettop(luaSt));
+
 
     // luaL_dostring
     if (luaL_dofile(luaSt, "add.lua") != 0)
@@ -460,6 +466,70 @@ int scriptableArst()
 
     WHEREAMI("Final", luaSt);
     lua_close(luaSt);
+
+    return 0;
+}
+
+int scriptableAoeu()
+{
+    lua_State* luaSt;
+
+    luaSt = lua_open();
+    registerEverything(luaSt);
+
+    if (luaL_dofile(luaSt, "closures.lua") != 0)
+        warn("dofile failed\n");
+
+    lua_getglobal(luaSt, "lolFunctions");
+    TOP_TYPE(luaSt, "A FUNCTION?");
+    lua_pushnumber(luaSt, 9.0);
+    lua_call(luaSt, 1, 1);
+    TOP_TYPE(luaSt, "Hopefully a closure");
+
+    lua_pushstring(luaSt, "This is a string of some sort");
+    lua_pushnumber(luaSt, 34);
+    lua_call(luaSt, 2, 0);
+
+    warn("arst\n");
+
+
+    NBodyCtx arstctx = EMPTY_NBODYCTX;
+    lua_getglobal(luaSt, "makeAModel");
+    //createNBodyCtx(luaSt);
+    pushNBodyCtx(luaSt, &arstctx);
+    lua_call(luaSt, 1, 1);
+    lua_pop(luaSt, 1);
+
+    lua_getglobal(luaSt, "goGoPowerRangers");
+    lua_call(luaSt, 0, 0);
+
+    lua_gc(luaSt, LUA_GCCOLLECT, 0);
+
+#if 0
+    lua_getglobal(luaSt, "referenceTestA");
+    lua_call(luaSt, 0, 1);
+    int indexA = lua_gettop(luaSt);
+    body* ba = checkBody(luaSt, indexA);
+
+    lua_getglobal(luaSt, "referenceTestB");
+
+    //lua_pushlightuserdata(luaSt, ba);
+    pushBody(luaSt, ba);
+    //lua_pushvalue(luaSt, indexA);
+    lua_call(luaSt, 1, 1);
+    int indexB = lua_gettop(luaSt);
+
+
+
+    body* bb = checkBody(luaSt, indexB);
+
+    warn("ba = %p, bb = %p, %d\n", ba, bb, ba == bb);
+
+    printBody(ba);
+    printBody(bb);
+#endif
+
+
 
     return 0;
 }

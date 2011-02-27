@@ -69,6 +69,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_math.h"
 #include "milkyway_extra.h"
 
+#include <lua.h>
+
 #ifndef __OPENCL_VERSION__   /* Not compiling CL kernel */
   #if NBODY_OPENCL
     #include <OpenCL/cl.h>
@@ -307,9 +309,14 @@ typedef struct NBODY_ALIGN
 
     mwbool ignoreFinal;
     InitialConditions initialConditions;
+
+    body* bodies;
+
+    int objRef;
+    int generator;
 } DwarfModel;
 
-#define EMPTY_DWARF_MODEL { InvalidDwarfModel, 0, NAN, FALSE, EMPTY_INITIAL_CONDITIONS }
+#define EMPTY_DWARF_MODEL { InvalidDwarfModel, 0, NAN, FALSE, EMPTY_INITIAL_CONDITIONS, NULL, LUA_REFNIL, LUA_REFNIL }
 
 
 #define DWARF_MODEL_TYPE "DwarfModel"
@@ -434,7 +441,7 @@ typedef struct NBODY_ALIGN
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
-#define EMPTY_CTX { EMPTY_POTENTIAL, NULL, 0, 0, NAN, NAN, NAN, NAN, \
+#define EMPTY_NBODYCTX { EMPTY_POTENTIAL, NULL, 0, 0, NAN, NAN, NAN, NAN, \
                     NULL, NULL, NULL, NULL, NULL,                    \
                     NAN, NAN, NAN, NAN, NAN, 0, 0,                   \
                     FALSE, FALSE, FALSE, FALSE, FALSE, NULL, "" }

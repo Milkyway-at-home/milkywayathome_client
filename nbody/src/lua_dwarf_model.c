@@ -45,10 +45,18 @@ int pushDwarfModel(lua_State* luaSt, const DwarfModel* dm)
         return 1;
     }
 
+    *ldm = *dm;
+
+    lua_pushvalue(luaSt, -1); /* Copy since luaL_ref() pops */
+    ldm->objRef = luaL_ref(luaSt, LUA_REGISTRYINDEX);
+    ldm->generator = 0;
+
     luaL_getmetatable(luaSt, DWARF_MODEL_TYPE);
     lua_setmetatable(luaSt, -2);
 
-    *ldm = *dm;
+    /* Give this object a new function environment */
+    lua_newtable(luaSt);
+    lua_setfenv(luaSt, -2);
 
     return 0;
 }
@@ -91,9 +99,22 @@ static int toStringDwarfModel(lua_State* luaSt)
     return 1;
 }
 
+/* CHECKME: seems to not be happening? */
+static int gcDwarfModel(lua_State* luaSt)
+{
+    DwarfModel* dm;
+
+    warn("GOODBYE: Collecting dwarf model\n");
+    dm = (DwarfModel*) lua_touserdata(luaSt, 1);
+    luaL_unref(luaSt, LUA_REGISTRYINDEX, dm->generator);
+
+    return 0;
+}
+
 static const luaL_reg metaMethodsDwarfModel[] =
 {
     { "__tostring", toStringDwarfModel },
+    { "__gc",       gcDwarfModel       },
     { NULL, NULL }
 };
 
@@ -110,6 +131,7 @@ static const Xet_reg_pre gettersDwarfModel[] =
     { "mass" ,             getNumber,            offsetof(DwarfModel, mass)              },
     { "ignoreFinal",       getBool,              offsetof(DwarfModel, ignoreFinal)       },
     { "initialConditions", getInitialConditions, offsetof(DwarfModel, initialConditions) },
+    { "generator",         getLuaClosure,        offsetof(DwarfModel, generator)         },
     { NULL, NULL, 0 }
 };
 
@@ -120,6 +142,7 @@ static const Xet_reg_pre settersDwarfModel[] =
     { "mass" ,             setNumber,            offsetof(DwarfModel, mass)              },
     { "ignoreFinal",       setBool,              offsetof(DwarfModel, ignoreFinal)       },
     { "initialConditions", setInitialConditions, offsetof(DwarfModel, initialConditions) },
+    { "generator",         setLuaClosure,        offsetof(DwarfModel, generator)         },
     { NULL, NULL, 0 }
 };
 
