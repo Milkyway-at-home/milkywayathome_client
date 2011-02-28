@@ -63,21 +63,80 @@ static void printPlummer(const NBodyCtx* ctx, mwvector rshift, mwvector vshift)
             X(vshift), Y(vshift), Z(vshift));
 }
 
+static inline real plummerRandomR(dsfmt_t* dsfmtState)
+{
+    real rnd, r;
+
+    /* returns [0, 1) */
+    rnd = (real) dsfmt_genrand_close_open(dsfmtState);
+
+    /* pick r in struct units */
+    r = 1.0 / mw_sqrt(mw_pow(rnd, -2.0 / 3.0) - 1.0);
+
+    return r;
+}
+
+static inline real plummerSelectFromG(dsfmt_t* dsfmtState)
+{
+    real x, y;
+
+    do                      /* select from fn g(x) */
+    {
+        x = mwXrandom(dsfmtState, 0.0, 1.0);      /* for x in range 0:1 */
+        y = mwXrandom(dsfmtState, 0.0, 0.1);      /* max of g(x) is 0.092 */
+    }   /* using von Neumann tech */
+    while (y > -cube(x - 1.0) * sqr(x) * cube(x + 1.0) * mw_sqrt(1.0 - sqr(x)));
+
+    return x;
+}
+
+static inline real plummerRandomV(dsfmt_t* dsfmtState, real r)
+{
+    real x, v;
+
+    x = plummerSelectFromG(dsfmtState);
+    v = M_SQRT2 * x / mw_sqrt(mw_sqrt(1.0 + sqr(r)));   /* find v in struct units */
+
+    return v;
+}
+
+static inline mwvector plummerBodyPosition(dsfmt_t* dsfmtState, mwvector rshift, real rsc, real r)
+{
+    mwvector pos;
+
+    pos = pickshell(dsfmtState, rsc * r);  /* pick scaled position */
+    mw_incaddv(pos, rshift);               /* move the position */
+
+    return pos;
+}
+
+static inline mwvector plummerBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift, real vsc, real r)
+{
+    mwvector vel;
+    real v;
+
+    v = plummerRandomV(dsfmtState, r);
+    vel = pickshell(dsfmtState, vsc * v);   /* pick scaled velocity */
+    mw_incaddv(vel, vshift);                /* move the velocity */
+
+    return vel;
+}
+
+
 /* generatePlummer: generate Plummer model initial conditions for test
  * runs, scaled to units such that M = -4E = G = 1 (Henon, Hegge,
  * etc).  See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
  * 183.
  */
-void generatePlummer(dsfmt_t* dsfmtState, NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodytab)
+void generatePlummer(dsfmt_t* dsfmtState, NBodyCtx* ctx, unsigned int modelIdx, body* bodytab)
 {
-    bodyptr p, endp;
-    real rsc, vsc, r, v, x, y;
+    unsigned int i;
+    body* p;
+    real rsc, vsc, r;
     mwvector scaledrshift = ZERO_VECTOR;
     mwvector scaledvshift = ZERO_VECTOR;
     mwvector cmr          = ZERO_VECTOR;
     mwvector cmv          = ZERO_VECTOR;
-
-    real rnd;
 
     DwarfModel* model = &ctx->models[modelIdx];
     InitialConditions* ic = &model->initialConditions;
@@ -98,34 +157,19 @@ void generatePlummer(dsfmt_t* dsfmtState, NBodyCtx* ctx, unsigned int modelIdx, 
     scaledrshift = mw_mulvs(rshift, rsc);   /* Multiply shift by scale factor */
     scaledvshift = mw_mulvs(vshift, vsc);   /* Multiply shift by scale factor */
 
-    endp = bodytab + model->nbody;
-    for (p = bodytab; p < endp; ++p)   /* loop over particles */
+    for (i = 0; i < model->nbody; ++i)   /* loop over particles */
     {
+        p = &bodytab[i];
         Type(p) = BODY(modelIdx);    /* tag as a body belonging to this model */
         Mass(p) = mpp;               /* set masses equal */
 
-        /* returns [0, 1) */
-        rnd = (real) dsfmt_genrand_close_open(dsfmtState);
+        /* Find position and velocity */
+        r = plummerRandomR(dsfmtState);
+        Pos(p) = plummerBodyPosition(dsfmtState, rshift, rsc, r);
+        Vel(p) = plummerBodyVelocity(dsfmtState, vshift, vsc, r);
 
-        /* pick r in struct units */
-
-        r = 1.0 / mw_sqrt(mw_pow(rnd, -2.0 / 3.0) - 1.0);
-
-        Pos(p) = pickshell(dsfmtState, rsc * r);     /* pick scaled position */
-        mw_incaddv(Pos(p), rshift);      /* move the position */
-        mw_incaddv(cmr, Pos(p));         /* add to running sum */
-
-        do                      /* select from fn g(x) */
-        {
-            x = mwXrandom(dsfmtState, 0.0, 1.0);      /* for x in range 0:1 */
-            y = mwXrandom(dsfmtState, 0.0, 0.1);      /* max of g(x) is 0.092 */
-        }   /* using von Neumann tech */
-        while (y > -cube(x - 1.0) * sqr(x) * cube(x + 1.0) * mw_sqrt(1.0 - sqr(x)));
-
-        v = M_SQRT2 * x / mw_sqrt(mw_sqrt(1.0 + sqr(r)));   /* find v in struct units */
-        Vel(p) = pickshell(dsfmtState, vsc * v);        /* pick scaled velocity */
-        mw_incaddv(Vel(p), vshift);      /* move the velocity */
-        mw_incaddv(cmv, Vel(p));         /* add to running sum */
+        mw_incaddv(cmr, Pos(p));     /* add to running sum */
+        mw_incaddv(cmv, Vel(p));
     }
 
     mw_incdivs(cmr, rnbody);      /* normalize cm coords */
