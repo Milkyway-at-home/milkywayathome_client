@@ -138,11 +138,6 @@ mwbool generatePlummer(dsfmt_t* dsfmtState,
     body* b;
     real rsc, vsc, r;
 
-    mwvector scaledrshift = ZERO_VECTOR;
-    mwvector scaledvshift = ZERO_VECTOR;
-    mwvector cmr          = ZERO_VECTOR;
-    mwvector cmv          = ZERO_VECTOR;
-
     const real rnbody = (real) nbody;
     const real mpp    = mass / rnbody;     /* mass per particle */
 
@@ -155,9 +150,6 @@ mwbool generatePlummer(dsfmt_t* dsfmtState,
     rsc = scaleRadius;                /* set length scale factor */
     vsc = mw_sqrt(mass / rsc);        /* and recip. speed scale */
 
-    scaledrshift = mw_mulvs(rshift, rsc);   /* Multiply shift by scale factor */
-    scaledvshift = mw_mulvs(vshift, vsc);   /* Multiply shift by scale factor */
-
     for (i = 0; i < nbody; ++i)     /* loop over particles */
     {
         b = &bodies[i];
@@ -167,13 +159,7 @@ mwbool generatePlummer(dsfmt_t* dsfmtState,
         Mass(b) = mpp;                 /* set masses equal */
         Pos(b) = plummerBodyPosition(dsfmtState, rshift, rsc, r);
         Vel(b) = plummerBodyVelocity(dsfmtState, vshift, vsc, r);
-
-        mw_incaddv(cmr, Pos(b));     /* add to running sum */
-        mw_incaddv(cmv, Vel(b));
     }
-
-    mw_incdivs(cmr, rnbody);      /* normalize cm coords */
-    mw_incdivs(cmv, rnbody);
 
     return FALSE;
 }
