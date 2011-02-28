@@ -1,3 +1,4 @@
+
 /*
 Copyright (C) 2011  Matthew Arsenault
 
@@ -17,6 +18,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <lua.h>
+#include <lauxlib.h>
 
 #include "nbody_types.h"
 #include "lua_type_marshal.h"
@@ -81,6 +84,53 @@ void registerUtilityFunctions(lua_State* luaSt)
     registerReverseOrbit(luaSt);
 }
 
+static lua_State* openNBodyLuaState(const char* filename)
+{
+    char* script;
+    lua_State* luaSt = NULL;
+
+    script = mwReadFileResolved(filename);
+    if (!script)
+    {
+        perror("Opening Lua script");
+        return NULL;
+    }
+
+    luaSt = lua_open();
+    if (!luaSt)
+    {
+        warn("Failed to get Lua state\n");
+        free(script);
+        return NULL;
+    }
+
+    registerNBodyLua(luaSt);
+
+    if (luaL_dostring(luaSt, script))
+    {
+        /* TODO: Get error */
+        warn("dostring failed\n");
+        lua_close(luaSt);
+        luaSt = NULL;
+    }
+
+    free(script);
+    return luaSt;
+}
+
+
+mwbool setupNBody(const char* filename, NBodyCtx* ctx, NBodyState* st, HistogramParams* histParams)
+{
+    lua_State* luaSt;
+
+    luaSt = openNBodyLuaState(filename);
+    if (!luaSt)
+        return TRUE;
+
+    lua_close(luaSt);
+
+    return FALSE;
+}
 
 
 

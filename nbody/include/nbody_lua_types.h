@@ -42,6 +42,8 @@ extern "C" {
 #include <lua.h>
 #include "nbody_types.h"
 
+void registerNBodyLua(lua_State* luaSt);
+
 #ifdef __cplusplus
 }
 #endif

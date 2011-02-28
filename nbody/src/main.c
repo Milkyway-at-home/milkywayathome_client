@@ -411,7 +411,8 @@ int main(int argc, const char* argv[])
     FitParams fitParams = EMPTY_FIT_PARAMS;
 
     //scriptableArst();
-    scriptableAoeu();
+    //scriptableAoeu();
+    setupNBody("arst.lua", NULL, NULL, NULL);
     return 0;
 
     specialSetup();

@@ -26,5 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 void registerPredefinedModelGenerators(lua_State* luaSt);
 void registerUtilityFunctions(lua_State* luaSt);
 
+mwbool setupNBody(const char* filename, NBodyCtx* ctx, NBodyState* st, HistogramParams* histParams);
+
 #endif /* _NBODY_LUA_FUNCTIONS_H_ */
 

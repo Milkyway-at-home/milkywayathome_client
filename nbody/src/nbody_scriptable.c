@@ -323,10 +323,6 @@ static void callTestDSFMT(lua_State* luaSt)
 
 static void registerEverything(lua_State* luaSt)
 {
-    luaopen_base(luaSt);
-    luaopen_table(luaSt);
-    luaopen_string(luaSt);
-    lua_pop(luaSt, 3);
     //luaopen_debug(luaSt);
     //luaopen_io(luaSt);
     WHEREAMI("opened standard libraries", luaSt);
