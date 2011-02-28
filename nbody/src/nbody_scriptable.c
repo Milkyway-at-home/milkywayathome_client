@@ -26,6 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_scriptable.h"
 #include "nbody_lua_types.h"
 #include "nbody_lua_functions.h"
+#include "lua_milkyway_math.h"
 
 #include "milkyway_util.h"
 #include "show.h"
@@ -317,6 +318,7 @@ static void registerEverything(lua_State* luaSt)
 
     TOP_TYPE(luaSt, "opened std libs");
 
+    registerMilkywayMath(luaSt);
     registerVector(luaSt);
     registerBody(luaSt);
     registerHalo(luaSt);
@@ -449,15 +451,32 @@ int scriptableAoeu()
     dsfmt_init_gen_rand(&prng, 234234);
 
 
+    double t1 = mwGetTime();
+    int n = 1000000;
+    lua_createtable(luaSt, n, 0);
+    int table = lua_gettop(luaSt);
+
     lua_rawgeti(luaSt, LUA_REGISTRYINDEX, dm->generator);
+
+    lua_pushvalue(luaSt, table);
+
+
     pushDSFMT(luaSt, &prng);
     pushInitialConditions(luaSt, &ic);
     lua_pushboolean(luaSt, TRUE);
     lua_pushnil(luaSt);
-    lua_call(luaSt, 4, 1);
 
+    warn("Calling\n");
+
+
+    //lua_call(luaSt, 4, 1);
+    lua_call(luaSt, 5, 0);
+    //lua_call(luaSt, 5, 1);
+    double t2 = mwGetTime();
+
+    warn("Running time = %f\n", t2 - t1);
     warn("Usage = %d, %zu\n", lua_gc(luaSt, LUA_GCCOUNT, 0), sizeof(body));
-    popBodyArray(luaSt, NULL);
+    popBodyArray(luaSt, table, NULL);
     //lua_gc(luaSt, LUA_GCCOLLECT, 0);
 
 #if 0

@@ -27,15 +27,17 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_marshal.h"
 
 
-body* popBodyArray(lua_State* luaSt, int* outN)
+body* popBodyArray(lua_State* luaSt, int table, int* outN)
 {
     body* arr;
-    int i, n, table;
+    int i, n;
 
-    table = lua_gettop(luaSt);
+    warn("popping\n");
+
     luaL_checktype(luaSt, table, LUA_TTABLE);
     n = luaL_getn(luaSt, table);  /* get size of table */
 
+    warn("arsting\n");
     double t1 = mwGetTime();
 
     arr = (body*) mwMalloc(sizeof(body) * n);
@@ -47,8 +49,6 @@ body* popBodyArray(lua_State* luaSt, int* outN)
         lua_pop(luaSt, 1);
     }
 
-    lua_pop(luaSt, 1);
-
     double t2 = mwGetTime();
 
     warn("time to pop = %f\n", t2 - t1);
@@ -58,4 +58,10 @@ body* popBodyArray(lua_State* luaSt, int* outN)
 
     return arr;
 }
+
+void readReturnedModels()
+{
+
+}
+
 
