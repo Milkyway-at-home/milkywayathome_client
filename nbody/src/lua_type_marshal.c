@@ -411,7 +411,7 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int tabl
             if (snprintf(buf, sizeof(buf), "Missing required named argument '%s'", p->name) == sizeof(buf))
                 mw_panic("Error message buffer too small for key name '%s'\n", p->name);
 
-            luaL_argerror(luaSt, 1, buf);
+            luaL_argerror(luaSt, table, buf);
         }
 
 
@@ -420,13 +420,13 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int tabl
         type = lua_type(luaSt, -1);
         if (type != p->luaType)
         {
-            namedArgumentError(luaSt, p, 1, item);
+            namedArgumentError(luaSt, p, table, item);
         }
 
         if (type == LUA_TUSERDATA) /* We must do another level of checking for the actual type */
         {
             if (!mw_tonamedudata(luaSt, item, p->userDataTypeName))
-                namedArgumentError(luaSt, p, 1, -1);
+                namedArgumentError(luaSt, p, table, -1);
         }
         else if (type == LUA_TLIGHTUSERDATA)
         {
