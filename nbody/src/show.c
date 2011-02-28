@@ -221,13 +221,15 @@ char* showBody(const bodyptr p)
 
     if (0 > asprintf(&buf,
                      "body { \n"
-                     "      mass = %g\n"
-                     "      pos  = %s\n"
-                     "      vel  = %s\n"
+                     "      mass   = %g\n"
+                     "      pos    = %s\n"
+                     "      vel    = %s\n"
+                     "      ignore = %s\n"
                      "    };\n",
                      Mass(p),
                      pos,
-                     vel))
+                     vel,
+                     showBool(ignoreBody(p))))
 
     {
         fail("asprintf() failed\n");
