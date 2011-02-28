@@ -283,12 +283,9 @@ char* showPotential(const Potential* p)
 char* showDwarfModel(const DwarfModel* d)
 {
     char* buf;
-    char* icBuf;
 
     if (!d)
         return NULL;
-
-    icBuf = showInitialConditions(&d->initialConditions);
 
     if (0 > asprintf(&buf,
                      "  { \n"
@@ -296,18 +293,14 @@ char* showDwarfModel(const DwarfModel* d)
                      "      nbody             = %d\n"
                      "      mass              = %g\n"
                      "      ignoreFinal       = %s\n"
-                     "      initialConditions = %s\n"
                      "    };\n",
                      showDwarfModelT(d->type),
                      d->nbody,
                      d->mass,
-                     showBool(d->ignoreFinal),
-                     icBuf))
+                     showBool(d->ignoreFinal)))
     {
         fail("asprintf() failed\n");
     }
-
-    free(icBuf);
 
     return buf;
 }

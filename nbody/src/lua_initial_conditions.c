@@ -101,7 +101,6 @@ static int createInitialConditions(lua_State* luaSt)
 
         default:
             return luaL_argerror(luaSt, 1, "Expected 1, 3, or 5 arguments");
-
     }
 
     ic.position = *x;
@@ -138,22 +137,22 @@ static const luaL_reg metaMethodsInitialConditions[] =
 
 static const luaL_reg methodsInitialConditions[] =
 {
-    { "create",   createInitialConditions },
+    { "create", createInitialConditions },
     { NULL, NULL }
 };
 
 /* TODO Error when writing to fields a halo type doesn't have */
 static const Xet_reg_pre gettersInitialConditions[] =
 {
-    { "position",     getVector, offsetof(InitialConditions, position)     },
-    { "velocity",     getVector, offsetof(InitialConditions, velocity)     },
+    { "position", getVector, offsetof(InitialConditions, position) },
+    { "velocity", getVector, offsetof(InitialConditions, velocity) },
     { NULL, NULL, 0 }
 };
 
 static const Xet_reg_pre settersInitialConditions[] =
 {
-    { "position",     setVector, offsetof(InitialConditions, position)     },
-    { "velocity",     setVector, offsetof(InitialConditions, velocity)     },
+    { "position", setVector, offsetof(InitialConditions, position) },
+    { "velocity", setVector, offsetof(InitialConditions, velocity) },
     { NULL, NULL, 0 }
 };
 

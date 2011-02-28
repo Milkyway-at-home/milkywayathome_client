@@ -312,15 +312,13 @@ typedef struct NBODY_ALIGN
     real mass;
 
     mwbool ignoreFinal;
-    InitialConditions initialConditions;
 
     body* bodies;
 
-    int objRef;
     int generator;
 } DwarfModel;
 
-#define EMPTY_DWARF_MODEL { InvalidDwarfModel, 0, NAN, FALSE, EMPTY_INITIAL_CONDITIONS, NULL, LUA_REFNIL, LUA_REFNIL }
+#define EMPTY_DWARF_MODEL { InvalidDwarfModel, 0, NAN, FALSE, NULL, LUA_REFNIL }
 
 
 #define DWARF_MODEL_TYPE "DwarfModel"

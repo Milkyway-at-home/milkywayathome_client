@@ -47,8 +47,8 @@ int pushDwarfModel(lua_State* luaSt, const DwarfModel* dm)
 
     *ldm = *dm;
 
-    lua_pushvalue(luaSt, -1); /* Copy since luaL_ref() pops */
-    ldm->objRef = luaL_ref(luaSt, LUA_REGISTRYINDEX);
+    //lua_pushvalue(luaSt, -1); /* Copy since luaL_ref() pops */
+    //ldm->objRef = luaL_ref(luaSt, LUA_REGISTRYINDEX);
     ldm->generator = 0;
 
     luaL_getmetatable(luaSt, DWARF_MODEL_TYPE);
@@ -129,7 +129,6 @@ static const Xet_reg_pre gettersDwarfModel[] =
     { "nbody" ,            getInt,               offsetof(DwarfModel, nbody)             },
     { "mass" ,             getNumber,            offsetof(DwarfModel, mass)              },
     { "ignoreFinal",       getBool,              offsetof(DwarfModel, ignoreFinal)       },
-    { "initialConditions", getInitialConditions, offsetof(DwarfModel, initialConditions) },
     { "generator",         getLuaClosure,        offsetof(DwarfModel, generator)         },
     { NULL, NULL, 0 }
 };
@@ -140,7 +139,6 @@ static const Xet_reg_pre settersDwarfModel[] =
     { "nbody" ,            setInt,               offsetof(DwarfModel, nbody)             },
     { "mass" ,             setNumber,            offsetof(DwarfModel, mass)              },
     { "ignoreFinal",       setBool,              offsetof(DwarfModel, ignoreFinal)       },
-    { "initialConditions", setInitialConditions, offsetof(DwarfModel, initialConditions) },
     { "generator",         setLuaClosure,        offsetof(DwarfModel, generator)         },
     { NULL, NULL, 0 }
 };
