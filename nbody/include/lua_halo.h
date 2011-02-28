@@ -31,5 +31,8 @@ Halo* checkHalo(lua_State* luaSt, int index);
 int pushHalo(lua_State* luaSt, const Halo* h);
 int registerHalo(lua_State* luaSt);
 
+int getHalo(lua_State* luaSt, void* v);
+int setHalo(lua_State* luaSt, void* v);
+
 #endif /* _LUA_HALO_H_ */
 

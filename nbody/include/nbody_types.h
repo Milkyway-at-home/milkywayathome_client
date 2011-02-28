@@ -189,6 +189,8 @@ typedef struct NBODY_ALIGN
     real scale;
 } Spherical;
 
+#define SPHERICAL_TYPE "Spherical"
+
 
 /* Can't get the enum value in preprocessor, so do this */
 #define _MN_DISK 0
@@ -251,6 +253,8 @@ typedef struct NBODY_ALIGN
     Halo halo;
     void* rings;         /* reserved for future use */
 } Potential;
+
+#define POTENTIAL_TYPE "Potential"
 
 
 #define Rcrit2(x) (((cellptr) (x))->rcrit2)
@@ -416,6 +420,7 @@ typedef struct NBODY_ALIGN
     real sunGCDist;
     criterion_t criterion;
     long seed;                /* random number seed */
+
     mwbool usequad;           /* use quadrupole corrections */
     mwbool allowIncest;
     mwbool outputCartesian;   /* print (x,y,z) instead of (l, b, r) */
@@ -435,16 +440,18 @@ typedef struct NBODY_ALIGN
 
 
 /* Useful initializers */
-#define EMPTY_SPHERICAL { 0, NAN, NAN }
-#define EMPTY_DISK { 0, NAN, NAN, NAN }
-#define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
+#define EMPTY_SPHERICAL { InvalidSpherical, NAN, NAN }
+#define EMPTY_DISK { InvalidDisk, NAN, NAN, NAN }
+#define EMPTY_HALO { InvalidHalo, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 #define EMPTY_NBODYCTX { EMPTY_POTENTIAL, NULL, 0, 0, NAN, NAN, NAN, NAN, \
-                        NULL, NULL, NULL, NULL, NULL,                    \
-                        NAN, NAN, NAN, NAN, NAN, InvalidCriterion, 0, 0,  \
-                        FALSE, FALSE, FALSE, FALSE, FALSE, NULL, "" }
+                         NULL, NULL, NULL, NULL, NULL,                    \
+                         NAN, NAN, NAN,                                   \
+                         NAN, NAN, InvalidCriterion, 0, 0,                \
+                         FALSE, FALSE, FALSE, FALSE, FALSE,               \
+                         NULL, "" }
 
 
 typedef struct

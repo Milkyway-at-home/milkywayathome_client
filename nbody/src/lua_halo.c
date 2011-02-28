@@ -62,10 +62,67 @@ static const MWEnumAssociation haloOptions[] =
 static int createHalo(lua_State* luaSt)
 {
     Halo h = EMPTY_HALO;
+    halo_t type = InvalidHalo;
+    real vhalo = NAN, scaleLength = NAN;
+    real flattenX = NAN, flattenY = NAN, flattenZ = NAN, triaxAngle = NAN;
+
+    const MWNamedArg argTable[] =
+        {
+          //{ "type",         LUA_TNUMBER,  NULL, FALSE, &type        },
+            { "vhalo",        LUA_TNUMBER,  NULL, FALSE, &vhalo       },
+            { "scale_length", LUA_TNUMBER,  NULL, FALSE, &scaleLength },
+            { "flattenX",     LUA_TNUMBER,  NULL, FALSE, &flattenX    },
+            { "flattenY",     LUA_TNUMBER,  NULL, FALSE, &flattenY    },
+            { "flattenZ",     LUA_TNUMBER,  NULL, FALSE, &flattenZ    },
+            { "triaxAngle",   LUA_TNUMBER,  NULL, FALSE, &triaxAngle  },
+            END_MW_NAMED_ARG
+        };
 
     warn("Creating halo\n");
 
+    switch (lua_gettop(luaSt))
+    {
+        case 1:
+            if (lua_istable(luaSt, 1))
+            {
+                mw_panic("Implement me!\n");
+                //handleNamedArgumentTable(luaSt, argTable, 1);
+            }
+            else
+            {
+                type = checkEnum(luaSt, haloOptions, 1);
+            }
+            break;
+
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+            type = checkEnum(luaSt, haloOptions, 1);
+            vhalo = luaL_checknumber(luaSt, 2);
+            scaleLength = luaL_checknumber(luaSt, 3);
+            /* FIXME: Optional arguments for the triaxial halo don't really make sense */
+            flattenZ = luaL_optnumber(luaSt, 4, flattenZ);
+            flattenY = luaL_optnumber(luaSt, 5, flattenY);
+            flattenX = luaL_optnumber(luaSt, 6, flattenX);
+            triaxAngle = luaL_optnumber(luaSt, 7, triaxAngle);
+            break;
+
+        default:
+            return luaL_argerror(luaSt, 1, "Expected 1, 3 or 7 arguments");
+    }
+
+    /* TODO: Calculate c1, c2, c3 */
     h.type = checkEnum(luaSt, haloOptions, -1);
+    h.vhalo = vhalo;
+    h.scale_length = scaleLength;
+    h.flattenX = flattenX;
+    h.flattenY = flattenY;
+    h.flattenZ = flattenZ;
+    h.triaxAngle = triaxAngle;
+
     pushHalo(luaSt, &h);
     return 1;
 }
@@ -86,6 +143,18 @@ static int toStringHalo(lua_State* luaSt)
 int getHaloT(lua_State* luaSt, void* v)
 {
     return pushEnum(luaSt, haloOptions, *(int*) v);
+}
+
+int getHalo(lua_State* luaSt, void* v)
+{
+    pushHalo(luaSt, (Halo*) v);
+    return 1;
+}
+
+int setHalo(lua_State* luaSt, void* v)
+{
+    *(Halo*)v = *checkHalo(luaSt, 3);
+    return 0;
 }
 
 static const luaL_reg metaMethodsHalo[] =

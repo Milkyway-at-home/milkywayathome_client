@@ -61,11 +61,53 @@ static const MWEnumAssociation diskOptions[] =
 
 static int createDisk(lua_State* luaSt)
 {
-    Disk d = EMPTY_DISK;
+    Disk d;
+    disk_t type = InvalidDisk;
+    real mass = NAN;
+    real scaleHeight = NAN, scaleLength = NAN;
 
-    warn("Creating disk\n");
+    const MWNamedArg argTable[] =
+        {
+          //{ "type",         LUA_TNUMBER,  NULL, FALSE, &type        },
+            { "mass",         LUA_TNUMBER,  NULL, FALSE, &mass        },
+            { "scale_length", LUA_TNUMBER,  NULL, FALSE, &scaleLength },
+            { "scale_height", LUA_TNUMBER,  NULL, FALSE, &scaleHeight },
+            END_MW_NAMED_ARG
+        };
 
-    d.type = checkEnum(luaSt, diskOptions, -1);
+    switch (lua_gettop(luaSt))
+    {
+        case 1:
+            if (lua_istable(luaSt, 1))
+            {
+                mw_panic("Implement me!\n");
+                //handleNamedArgumentTable(luaSt, argTable, 1);
+            }
+            else
+            {
+                type = checkEnum(luaSt, diskOptions, 1);
+            }
+            break;
+
+        case 2:
+        case 3:
+        case 4:
+            /* TODO: We can check require / forbid using fields not available
+             * on models that don't use them etc. */
+            type = checkEnum(luaSt, diskOptions, 1);
+            mass = luaL_checknumber(luaSt, 2);
+            scaleLength = luaL_checknumber(luaSt, 3);
+            scaleHeight = luaL_optnumber(luaSt, 4, scaleHeight);
+            break;
+
+        default:
+            return luaL_argerror(luaSt, 1, "Expected 1 or 4 arguments");
+    }
+
+    d.type = type;
+    d.mass = mass;
+    d.scale_length = scaleLength;
+    d.scale_height = scaleHeight;
     pushDisk(luaSt, &d);
     return 1;
 }
@@ -88,6 +130,18 @@ static int toStringDisk(lua_State* luaSt)
     return 1;
 }
 
+int getDisk(lua_State* luaSt, void* v)
+{
+    pushDisk(luaSt, (Disk*) v);
+    return 1;
+}
+
+int setDisk(lua_State* luaSt, void* v)
+{
+    *(Disk*) v = *checkDisk(luaSt, 3);
+    return 0;
+}
+
 static const luaL_reg metaMethodsDisk[] =
 {
     { "__tostring", toStringDisk },
@@ -102,8 +156,8 @@ static const luaL_reg methodsDisk[] =
 
 static const Xet_reg_pre gettersDisk[] =
 {
-    { "type",         getDiskT,  offsetof(Disk, type) },
-    { "mass" ,        getNumber, offsetof(Disk, mass) },
+    { "type",         getDiskT,  offsetof(Disk, type)         },
+    { "mass" ,        getNumber, offsetof(Disk, mass)         },
     { "scale_length", getNumber, offsetof(Disk, scale_length) },
     { "scale_height", getNumber, offsetof(Disk, scale_height) },
     { NULL, NULL, 0 }
@@ -111,7 +165,7 @@ static const Xet_reg_pre gettersDisk[] =
 
 static const Xet_reg_pre settersDisk[] =
 {
-    { "mass",         setNumber, offsetof(Disk, mass) },
+    { "mass",         setNumber, offsetof(Disk, mass)         },
     { "scale_length", setNumber, offsetof(Disk, scale_length) },
     { "scale_height", setNumber, offsetof(Disk, scale_height) },
     { NULL, NULL, 0 }

@@ -554,3 +554,10 @@ void printDisk(const Disk* d)
     free(buf);
 }
 
+void printPotential(const Potential* p)
+{
+    char* buf = showPotential(p);
+    puts(buf);
+    free(buf);
+}
+

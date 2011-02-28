@@ -32,6 +32,8 @@ extern "C" {
 #include "lua_body.h"
 #include "lua_halo.h"
 #include "lua_disk.h"
+#include "lua_potential.h"
+#include "lua_spherical.h"
 #include "lua_dwarf_model.h"
 #include "lua_nbodyctx.h"
 #include "lua_vector.h"

@@ -34,25 +34,27 @@ const char* showHaloT(const halo_t);
 const char* showDwarfModelT(const dwarf_model_t);
 char* showSpherical(const Spherical*);
 char* showHalo(const Halo*);
-void printHalo(const Halo* h);
+void printHalo(const Halo*);
 char* showDisk(const Disk*);
-void printDisk(const Disk* d);
+void printDisk(const Disk*);
 char* showPotential(const Potential*);
+void printPotential(const Potential*);
+
 char* showDwarfModel(const DwarfModel*);
 void printDwarfModel(const DwarfModel*);
 char* showInitialConditions(const InitialConditions*);
-char* showNBodyCtx(const NBodyCtx* ctx);
+char* showNBodyCtx(const NBodyCtx*);
 void printNBodyCtx(const NBodyCtx*);
-char* showVector(const mwvector v);
+char* showVector(const mwvector);
 
 void printInitialConditions(const InitialConditions*);
 void printVector(const mwvector v);
 
-char* showFitParams(const FitParams* fp);
-void printFitParams(const FitParams* fp);
+char* showFitParams(const FitParams*);
+void printFitParams(const FitParams*);
 
-char* showHistogramParams(const HistogramParams* hp);
-void printHistogramParams(const HistogramParams* hp);
+char* showHistogramParams(const HistogramParams*);
+void printHistogramParams(const HistogramParams*);
 
 char* showBody(const bodyptr p);
 void printBody(const bodyptr p);

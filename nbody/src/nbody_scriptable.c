@@ -148,6 +148,21 @@ static void callTestContext(lua_State* luaSt)
     lua_pop(luaSt, 1);
 }
 
+static void callTestPotential(lua_State* luaSt)
+{
+    Potential* p;
+
+    /* the function name */
+    lua_getglobal(luaSt, "testPotential");
+
+    lua_call(luaSt, 0, 1);
+
+    /* get the result */
+    p = checkPotential(luaSt, -1);
+    printPotential(p);
+    lua_pop(luaSt, 1);
+}
+
 static void callTestInitialConditions(lua_State* luaSt)
 {
     InitialConditions* ic;
@@ -322,6 +337,9 @@ static void registerEverything(lua_State* luaSt)
     registerVector(luaSt);
     registerBody(luaSt);
     registerHalo(luaSt);
+    registerDisk(luaSt);
+    registerSpherical(luaSt);
+    registerPotential(luaSt);
     WHEREAMI("some registered", luaSt);
     registerDisk(luaSt);
     registerInitialConditions(luaSt);
@@ -356,6 +374,9 @@ int scriptableArst()
     // luaL_dostring
     if (luaL_dofile(luaSt, "add.lua") != 0)
         warn("dofile failed\n");
+
+    callTestPotential(luaSt);
+    WHEREAMI("callTestPotential", luaSt);
 
     callTestHalo(luaSt);
     WHEREAMI("callTestHalo", luaSt);
