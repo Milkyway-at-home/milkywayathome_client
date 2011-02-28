@@ -190,7 +190,8 @@ set(nbody_lua_types_src ${NBODY_SRC_DIR}/lua_nbodyctx.c
                         ${NBODY_SRC_DIR}/lua_dsfmt.c
                         ${NBODY_SRC_DIR}/lua_type_marshal.c
                         ${NBODY_SRC_DIR}/nbody_lua_marshal.c
-                        ${NBODY_SRC_DIR}/nbody_lua_functions.c)
+                        ${NBODY_SRC_DIR}/nbody_lua_functions.c
+                        ${NBODY_SRC_DIR}/lua_milkyway_math.c)
 
 set(nbody_lua_types_headers ${NBODY_INCLUDE_DIR}/lua_body.h
                             ${NBODY_INCLUDE_DIR}/lua_body_array.h
@@ -203,7 +204,8 @@ set(nbody_lua_types_headers ${NBODY_INCLUDE_DIR}/lua_body.h
                             ${NBODY_INCLUDE_DIR}/lua_dsfmt.h
                             ${NBODY_INCLUDE_DIR}/lua_type_marshal.h
                             ${NBODY_INCLUDE_DIR}/nbody_lua_marshal.h
-                            ${NBODY_INCLUDE_DIR}/nbody_lua_functions.h)
+                            ${NBODY_INCLUDE_DIR}/nbody_lua_functions.h
+                            ${NBODY_INCLUDE_DIR}/lua_milkyway_math.h)
 
 
 set(nbody_lua_src ${NBODY_SRC_DIR}/nbody_scriptable.c)

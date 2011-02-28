@@ -79,6 +79,8 @@ extern "C" {
 #define mw_ceil ceil
 #define mw_copysign copysign
 #define mw_cospi(x) mw_cos(M_PI * (x))
+#define mw_sinpi(x) mw_sin(M_PI * (x))
+#define mw_tanpi(x) (mw_tan(M_PI * (x)))
 #define mw_erfc erfc
 #define mw_erf erf
 #define mw_exp2 exp2
@@ -101,11 +103,11 @@ extern "C" {
 #define mw_fmod fmod
 
 /* CHECKME: mw_fract */
-#define mw_fract mw_fmin( (x) – mw_floor(x), 0x1.fffffep-1f)
+#define mw_fract(x) mw_fmin((x) – mw_floor(x), 0x1.fffffep-1f)
 
 #define mw_frexp frexp
 #define mw_hypot(x, y) mw_sqrt(sqr(x) + sqr(y))
-#define mw_ilogb mw_ilogb
+#define mw_ilogb ilogb
 #define mw_ldexp ldexp
 #define mw_tgamma tgamma
 #define mw_tgamma_r tgamma_r
@@ -147,9 +149,7 @@ extern "C" {
   #define mw_sincos(x, s, c) { *(s) = mw_sin(x); *(c) = mw_cos(x); }
 #endif /* HAVE_SINCOS */
 
-#define mw_sinpi sinpi
 #define mw_sqrt sqrt
-#define mw_tanpi(x) (mw_tan(M_PI * (x)))
 #define mw_tgamma tgamma
 #define mw_trunc trunc
 
