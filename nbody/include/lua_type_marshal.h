@@ -103,6 +103,8 @@ int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int index);
 int mw_lua_checkboolean(lua_State* luaSt, int index);
 mwbool mw_lua_optboolean(lua_State* luaSt, int nArg, mwbool def);
 
+int mw_lua_checktable(lua_State* luaSt, int index);
+
 lua_CFunction mw_lua_checkcclosure(lua_State* luaSt, int index);
 int mw_lua_checkluaclosure(lua_State* luaSt, int index);
 void mw_lua_pushluaclosure(lua_State* luaSt, int ref);

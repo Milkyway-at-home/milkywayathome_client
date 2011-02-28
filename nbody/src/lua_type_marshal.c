@@ -41,6 +41,12 @@ mwbool mw_lua_optboolean(lua_State* luaSt, int nArg, mwbool def)
     return lua_isnoneornil(luaSt, nArg) ? def : mw_lua_checkboolean(luaSt, nArg);
 }
 
+/* Check that argument at index is a table. Fails if not, returns the index if it is */
+int mw_lua_checktable(lua_State* luaSt, int index)
+{
+    return lua_istable(luaSt, index) ? index : luaL_typerror(luaSt, index, "table");
+}
+
 lua_CFunction mw_lua_checkcclosure(lua_State* luaSt, int index)
 {
     if (!lua_iscfunction(luaSt, index))
@@ -507,7 +513,6 @@ void pushRealArray(lua_State* luaSt, const real* arr, int n)
     {
         lua_pushnumber(luaSt, (lua_Number) arr[i]);
         lua_rawseti(luaSt, table, i + 1);
-        lua_pop(luaSt, 1);
     }
 }
 
