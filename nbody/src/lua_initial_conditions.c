@@ -64,7 +64,6 @@ void pushInitialConditions(lua_State* luaSt, const InitialConditions* ic)
  */
 static int createInitialConditions(lua_State* luaSt)
 {
-    int nArgs;
     const NBodyCtx* ctx = NULL;
     const mwvector* x = NULL;
     const mwvector* v = NULL;
@@ -82,8 +81,7 @@ static int createInitialConditions(lua_State* luaSt)
             END_MW_NAMED_ARG
         };
 
-    nArgs = lua_gettop(luaSt);
-    switch (nArgs)
+    switch (lua_gettop(luaSt))
     {
         case 1:  /* Table of named arguments */
             handleNamedArgumentTable(luaSt, argTable, 1);

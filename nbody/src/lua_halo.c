@@ -115,7 +115,7 @@ static int createHalo(lua_State* luaSt)
     }
 
     /* TODO: Calculate c1, c2, c3 */
-    h.type = checkEnum(luaSt, haloOptions, -1);
+    h.type = type;
     h.vhalo = vhalo;
     h.scale_length = scaleLength;
     h.flattenX = flattenX;

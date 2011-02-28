@@ -25,7 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* Simple orbit integrator in user-defined potential
     Written for BOINC Nbody
     willeb 10 May 2010 */
-InitialConditions reverseOrbit(Potential* pot, InitialConditions ic, real tstop, real dt)
+InitialConditions reverseOrbit(const Potential* pot, InitialConditions ic, real tstop, real dt)
 {
     mwvector acc, v, x;
     real t;
