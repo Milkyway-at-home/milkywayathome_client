@@ -360,9 +360,7 @@ static void setValueFromType(lua_State* luaSt, void* v, int type, int index)
 
         case LUA_TTABLE:
         case LUA_TFUNCTION:
-
         case LUA_TLIGHTUSERDATA:
-
         case LUA_TTHREAD:
         case LUA_TNIL:
         default:

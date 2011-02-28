@@ -21,6 +21,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_priv.h"
 #include "nbody_util.h"
+#include "lua_type_marshal.h"
+#include "nbody_lua_types.h"
 
 static mwvector randomVec(dsfmt_t* dsfmtState)
 {
@@ -126,42 +128,89 @@ static inline mwvector plummerBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift,
  * etc).  See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
  * 183.
  */
-mwbool generatePlummer(dsfmt_t* dsfmtState,
-                       body* bodies,
-                       unsigned int nbody,
-                       InitialConditions* ic,
-                       real mass,
-                       real scaleRadius,
-                       mwbool ignoreModel)
+static int createPlummerSphereTable(lua_State* luaSt,
+                                    dsfmt_t* prng,
+                                    unsigned int nbody,
+                                    real mass,
+
+                                    mwbool ignore,
+
+                                    mwvector rShift,
+                                    mwvector vShift,
+                                    real radiusScale,
+                                    real velScale)
 {
     unsigned int i;
-    body* b;
-    real rsc, vsc, r;
+    int table;
+    body b;
+    real r;
 
-    const real rnbody = (real) nbody;
-    const real mpp    = mass / rnbody;     /* mass per particle */
+    Type(&b) = BODY(ignore);    /* Same for all in the model */
+    Mass(&b) = mass / nbody;    /* Mass per particle */
 
-    /* The coordinates to shift the plummer sphere by */
-    mwvector rshift = ic->position;
-    mwvector vshift = ic->velocity;
-
-    printPlummer(rshift, vshift);
-
-    rsc = scaleRadius;                /* set length scale factor */
-    vsc = mw_sqrt(mass / rsc);        /* and recip. speed scale */
-
-    for (i = 0; i < nbody; ++i)     /* loop over particles */
+    lua_createtable(luaSt, nbody, 0);
+    table = lua_gettop(luaSt);
+    for (i = 0; i < nbody; ++i)
     {
-        b = &bodies[i];
-        r = plummerRandomR(dsfmtState);
+        r = plummerRandomR(prng);
 
-        Type(b) = BODY(ignoreModel);   /* tag as a body, and to ignore or not */
-        Mass(b) = mpp;                 /* set masses equal */
-        Pos(b) = plummerBodyPosition(dsfmtState, rshift, rsc, r);
-        Vel(b) = plummerBodyVelocity(dsfmtState, vshift, vsc, r);
+        Pos(&b) = plummerBodyPosition(prng, rShift, radiusScale, r);
+        Vel(&b) = plummerBodyVelocity(prng, vShift, velScale, r);
+
+        pushBody(luaSt, &b);
+        lua_rawseti(luaSt, table, i + 1);
     }
 
-    return FALSE;
+    return 1;
 }
+
+/* Model -> DSFMT -> InitialConditions -> Real (mass) -> Bool (ignore final) -> [UserData] -> [Body] */
+int generatePlummer(lua_State* luaSt)
+{
+    int nArgs, userDataIndex;
+    dsfmt_t* prng;
+    const DwarfModel* dm;
+    const InitialConditions* ic;
+    mwbool ignore;
+    real mass, velScale;
+    static real radiusScale = 0.0;
+
+    static const MWNamedArg udTable[] =
+        {
+            { "scaleRadius", LUA_TNUMBER, NULL, TRUE, &radiusScale },  /* length scale factor */
+            END_MW_NAMED_ARG
+        };
+
+    nArgs = lua_gettop(luaSt);
+
+    switch (nArgs)
+    {
+        case 6:
+            dm = checkDwarfModel(luaSt, 1);
+            prng = checkDSFMT(luaSt, 2);
+            ic = checkInitialConditions(luaSt, 3);
+            mass = luaL_checknumber(luaSt, 4);
+            ignore = mw_lua_checkboolean(luaSt, 5);
+            userDataIndex = mw_lua_checktable(luaSt, 6);
+
+            handleNamedArgumentTable(luaSt, udTable, userDataIndex);
+            break;
+
+        default:
+            return luaL_argerror(luaSt, 1, "Expected 6 arguments");
+    }
+
+    velScale = mw_sqrt(mass / radiusScale);     /* and recip. speed scale */
+
+    return createPlummerSphereTable(luaSt, prng, dm->nbody, mass, ignore,
+                                    ic->position, ic->velocity, radiusScale, velScale);
+}
+
+void registerGeneratePlummer(lua_State* luaSt)
+{
+    lua_pushcfunction(luaSt, generatePlummer);
+    lua_setglobal(luaSt, "generatePlummer");
+}
+
 
 

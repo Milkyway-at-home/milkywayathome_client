@@ -1,4 +1,3 @@
-
 /*
 Copyright (C) 2011  Matthew Arsenault
 
@@ -28,39 +27,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "lua_type_marshal.h"
 #include "nbody_lua_functions.h"
 #include "nbody_lua_types.h"
+#include "plummer.h"
 
-
-static int luaGeneratePlummer(lua_State* luaSt)
-{
-    int nArgs;
-
-    nArgs = lua_gettop(luaSt);
-
-    warn("PLUMMER TEST nArgs = %d\n", nArgs);
-    switch (nArgs)
-    {
-        case 1: /* Hopefully got table for fake named arguments */
-
-        case 6: /* ignore argument is optional */
-
-        case 7:
-
-        default:
-            warn("arst\n");
-    }
-
-    return 0;
-}
-
-static void registerLuaGeneratePlummer(lua_State* luaSt)
-{
-    lua_pushcfunction(luaSt, luaGeneratePlummer);
-    lua_setglobal(luaSt, "generatePlummer");
-}
 
 void registerPredefinedModelGenerators(lua_State* luaSt)
 {
-    registerLuaGeneratePlummer(luaSt);
+    registerGeneratePlummer(luaSt);
 }
 
 
