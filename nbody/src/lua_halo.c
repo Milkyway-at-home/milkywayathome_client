@@ -27,9 +27,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_util.h"
 
-Halo* checkHalo(lua_State* luaSt, int index)
+Halo* checkHalo(lua_State* luaSt, int idx)
 {
-    return (Halo*) mw_checknamedudata(luaSt, index, HALO_TYPE);
+    return (Halo*) mw_checknamedudata(luaSt, idx, HALO_TYPE);
 }
 
 int pushHalo(lua_State* luaSt, const Halo* h)

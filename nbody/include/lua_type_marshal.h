@@ -98,20 +98,20 @@ int registerStruct(lua_State* luaSt,
                    const luaL_reg* regMethods);
 
 int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val);
-int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int index);
+int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx);
 
 int mw_lua_checkglobal(lua_State* luaSt, const char* name);
 
-int mw_lua_checkboolean(lua_State* luaSt, int index);
+int mw_lua_checkboolean(lua_State* luaSt, int idx);
 mwbool mw_lua_optboolean(lua_State* luaSt, int nArg, mwbool def);
 
-int mw_lua_checktable(lua_State* luaSt, int index);
+int mw_lua_checktable(lua_State* luaSt, int idx);
 
-lua_CFunction mw_lua_checkcclosure(lua_State* luaSt, int index);
-int mw_lua_checkluaclosure(lua_State* luaSt, int index);
+lua_CFunction mw_lua_checkcclosure(lua_State* luaSt, int idx);
+int mw_lua_checkluaclosure(lua_State* luaSt, int idx);
 void mw_lua_pushluaclosure(lua_State* luaSt, int ref);
 
-void* mw_checknamedudata(lua_State* luaSt, int index, const char* typeName);
+void* mw_checknamedudata(lua_State* luaSt, int idx, const char* typeName);
 void* mw_tonamedudata(lua_State* luaSt, int ud, const char* typeName);
 
 void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int table);

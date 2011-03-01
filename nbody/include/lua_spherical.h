@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lua.h>
 #include "nbody_types.h"
 
-Spherical* checkSpherical(lua_State* luaSt, int index);
+Spherical* checkSpherical(lua_State* luaSt, int idx);
 int pushSpherical(lua_State* luaSt, const Spherical* d);
 int registerSpherical(lua_State* luaSt);
 

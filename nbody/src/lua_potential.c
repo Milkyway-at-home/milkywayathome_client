@@ -31,9 +31,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_util.h"
 
-Potential* checkPotential(lua_State* luaSt, int index)
+Potential* checkPotential(lua_State* luaSt, int idx)
 {
-    return (Potential*) mw_checknamedudata(luaSt, index, POTENTIAL_TYPE);
+    return (Potential*) mw_checknamedudata(luaSt, idx, POTENTIAL_TYPE);
 }
 
 int pushPotential(lua_State* luaSt, const Potential* p)

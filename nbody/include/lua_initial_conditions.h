@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lua.h>
 #include "nbody_types.h"
 
-InitialConditions* checkInitialConditions(lua_State* luaSt, int index);
+InitialConditions* checkInitialConditions(lua_State* luaSt, int idx);
 void pushInitialConditions(lua_State* luaSt, const InitialConditions* ic);
 int registerInitialConditions(lua_State* luaSt);
 

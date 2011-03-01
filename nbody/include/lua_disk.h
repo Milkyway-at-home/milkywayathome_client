@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lua.h>
 #include "nbody_types.h"
 
-Disk* checkDisk(lua_State* luaSt, int index);
+Disk* checkDisk(lua_State* luaSt, int idx);
 int pushDisk(lua_State* luaSt, const Disk* d);
 int registerDisk(lua_State* luaSt);
 

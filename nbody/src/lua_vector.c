@@ -27,9 +27,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_util.h"
 
-mwvector* checkVector(lua_State* luaSt, int index)
+mwvector* checkVector(lua_State* luaSt, int idx)
 {
-    return (mwvector*) mw_checknamedudata(luaSt, index, MWVECTOR);
+    return (mwvector*) mw_checknamedudata(luaSt, idx, MWVECTOR);
 }
 
 int pushVector(lua_State* luaSt, mwvector vIn)

@@ -28,9 +28,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_util.h"
 
-Disk* checkDisk(lua_State* luaSt, int index)
+Disk* checkDisk(lua_State* luaSt, int idx)
 {
-    return (Disk*) mw_checknamedudata(luaSt, index, DISK_TYPE);
+    return (Disk*) mw_checknamedudata(luaSt, idx, DISK_TYPE);
 }
 
 int pushDisk(lua_State* luaSt, const Disk* d)

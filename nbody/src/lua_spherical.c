@@ -28,9 +28,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_util.h"
 
-Spherical* checkSpherical(lua_State* luaSt, int index)
+Spherical* checkSpherical(lua_State* luaSt, int idx)
 {
-    return (Spherical*) mw_checknamedudata(luaSt, index, SPHERICAL_TYPE);
+    return (Spherical*) mw_checknamedudata(luaSt, idx, SPHERICAL_TYPE);
 }
 
 int pushSpherical(lua_State* luaSt, const Spherical* d)

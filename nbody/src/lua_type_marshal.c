@@ -34,12 +34,12 @@ int mw_lua_checkglobal(lua_State* luaSt, const char* name)
     return lua_isnil(luaSt, -1) ? luaL_error(luaSt, "Didn't find required global '%s'", name) : 1;
 }
 
-int mw_lua_checkboolean(lua_State* luaSt, int index)
+int mw_lua_checkboolean(lua_State* luaSt, int idx)
 {
-    if (!lua_isboolean(luaSt, index))
-        luaL_typerror(luaSt, index, "boolean");
+    if (!lua_isboolean(luaSt, idx))
+        luaL_typerror(luaSt, idx, "boolean");
 
-    return lua_toboolean(luaSt, index);
+    return lua_toboolean(luaSt, idx);
 }
 
 mwbool mw_lua_optboolean(lua_State* luaSt, int nArg, mwbool def)
@@ -48,27 +48,27 @@ mwbool mw_lua_optboolean(lua_State* luaSt, int nArg, mwbool def)
 }
 
 /* Check that argument at index is a table. Fails if not, returns the index if it is */
-int mw_lua_checktable(lua_State* luaSt, int index)
+int mw_lua_checktable(lua_State* luaSt, int idx)
 {
-    return lua_istable(luaSt, index) ? index : luaL_typerror(luaSt, index, "table");
+    return lua_istable(luaSt, idx) ? idx : luaL_typerror(luaSt, idx, "table");
 }
 
-lua_CFunction mw_lua_checkcclosure(lua_State* luaSt, int index)
+lua_CFunction mw_lua_checkcclosure(lua_State* luaSt, int idx)
 {
-    if (!lua_iscfunction(luaSt, index))
-        luaL_typerror(luaSt, index, "cclosure");
+    if (!lua_iscfunction(luaSt, idx))
+        luaL_typerror(luaSt, idx, "cclosure");
 
-    return lua_tocfunction(luaSt, index);
+    return lua_tocfunction(luaSt, idx);
 }
 
-/* Return reference to Lua closure at index */
-int mw_lua_checkluaclosure(lua_State* luaSt, int index)
+/* Return reference to Lua closure at idx */
+int mw_lua_checkluaclosure(lua_State* luaSt, int idx)
 {
     /* LUA_TFUNCTION can refer to either a C function from the API
      * side, or a Lua closure. lua_tocfunction() returns NULL if it's a Lua function. */
 
-    if (lua_iscfunction(luaSt, index) && !lua_tocfunction(luaSt, index))
-        luaL_typerror(luaSt, index, "Lua closure");
+    if (lua_iscfunction(luaSt, idx) && !lua_tocfunction(luaSt, idx))
+        luaL_typerror(luaSt, idx, "Lua closure");
 
     /* Copy since luaL_ref pops and no other lua_check* functions change the stack */
     lua_pushvalue(luaSt, -1);
@@ -81,7 +81,7 @@ void mw_lua_pushluaclosure(lua_State* luaSt, int ref)
     lua_rawget(luaSt, LUA_REGISTRYINDEX);
 }
 
-void* mw_checknamedudata(lua_State* luaSt, int index, const char* typeName)
+void* mw_checknamedudata(lua_State* luaSt, int idx, const char* typeName)
 {
     void* v;
     char buf[128];
@@ -89,8 +89,8 @@ void* mw_checknamedudata(lua_State* luaSt, int index, const char* typeName)
     if (snprintf(buf, sizeof(buf), "`%s' expected", typeName) == sizeof(buf))
          mw_panic("Error message buffer too small for expected type name\n");
 
-    v = luaL_checkudata(luaSt, index, typeName);
-    luaL_argcheck(luaSt, v != NULL, index, buf);
+    v = luaL_checkudata(luaSt, idx, typeName);
+    luaL_argcheck(luaSt, v != NULL, idx, buf);
 
     return v;
 }
@@ -320,12 +320,12 @@ static int checkEnumError(lua_State* luaSt, const MWEnumAssociation* p, const ch
     return luaL_argerror(luaSt, 1, errBuf);
 }
 
-int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int index)
+int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx)
 {
     const char* str;
     const MWEnumAssociation* p = table;
 
-    str = luaL_checklstring(luaSt, index, NULL);
+    str = luaL_checklstring(luaSt, idx, NULL);
 
     while (p->enumName)
     {
@@ -344,24 +344,24 @@ int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int index)
 }
 
 
-static void setValueFromType(lua_State* luaSt, void* v, int type, int index)
+static void setValueFromType(lua_State* luaSt, void* v, int type, int idx)
 {
     switch (type)
     {
         case LUA_TNUMBER:
-            *(real*) v = (real) lua_tonumber(luaSt, index);
+            *(real*) v = (real) lua_tonumber(luaSt, idx);
             break;
 
         case LUA_TBOOLEAN:
-            *(mwbool*) v = (mwbool) lua_toboolean(luaSt, index);
+            *(mwbool*) v = (mwbool) lua_toboolean(luaSt, idx);
             break;
 
         case LUA_TSTRING:
-            *(char**) v = strdup(lua_tostring(luaSt, index));
+            *(char**) v = strdup(lua_tostring(luaSt, idx));
             break;
 
         case LUA_TUSERDATA:
-            *(void**) v = lua_touserdata(luaSt, index);
+            *(void**) v = lua_touserdata(luaSt, idx);
             break;
 
         case LUA_TTABLE:
@@ -374,13 +374,13 @@ static void setValueFromType(lua_State* luaSt, void* v, int type, int index)
     }
 }
 
-static void namedArgumentError(lua_State* luaSt, const MWNamedArg* p, int arg, int index)
+static void namedArgumentError(lua_State* luaSt, const MWNamedArg* p, int arg, int idx)
 {
     luaL_error(luaSt, "Bad argument for key '%s' in argument #%d (`%s' expected, got %s)",
                p->name,
                arg,
                p->userDataTypeName ? p->userDataTypeName : lua_typename(luaSt, p->luaType),
-               lua_type(luaSt, index) == LUA_TUSERDATA ? "other userdata" : luaL_typename(luaSt, index)
+               lua_type(luaSt, idx) == LUA_TUSERDATA ? "other userdata" : luaL_typename(luaSt, idx)
         );
 }
 

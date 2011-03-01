@@ -28,9 +28,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_util.h"
 
-body* checkBody(lua_State* luaSt, int index)
+body* checkBody(lua_State* luaSt, int idx)
 {
-    return (body*) mw_checknamedudata(luaSt, index, BODY_TYPE);
+    return (body*) mw_checknamedudata(luaSt, idx, BODY_TYPE);
 }
 
 int pushBody(lua_State* luaSt, const body* b)

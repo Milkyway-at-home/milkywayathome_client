@@ -28,7 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 
 int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* ctx);
-NBodyCtx* checkNBodyCtx(lua_State* luaSt, int index);
+NBodyCtx* checkNBodyCtx(lua_State* luaSt, int idx);
 int registerNBodyCtx(lua_State* luaSt);
 
 #endif /* _LUA_NBODYCTX_H_ */

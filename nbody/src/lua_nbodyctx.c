@@ -82,9 +82,9 @@ static int setCriterionT(lua_State* luaSt, void* v)
     return 0;
 }
 
-NBodyCtx* checkNBodyCtx(lua_State* luaSt, int index)
+NBodyCtx* checkNBodyCtx(lua_State* luaSt, int idx)
 {
-    return (NBodyCtx*) mw_checknamedudata(luaSt, index, NBODY_CTX);
+    return (NBodyCtx*) mw_checknamedudata(luaSt, idx, NBODY_CTX);
 }
 
 int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* ctx)

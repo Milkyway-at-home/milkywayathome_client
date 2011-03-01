@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lua.h>
 #include "nbody_types.h"
 
-Halo* checkHalo(lua_State* luaSt, int index);
+Halo* checkHalo(lua_State* luaSt, int idx);
 int pushHalo(lua_State* luaSt, const Halo* h);
 int registerHalo(lua_State* luaSt);
 
