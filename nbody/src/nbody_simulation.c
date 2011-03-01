@@ -140,8 +140,7 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     if (rc && !nbf->verifyOnly)   /* Fail right away, unless we are diagnosing file problems */
         return warn1("Failed to read input parameters file\n");
 
-    //rc |= setCtxConsts(&ctx, fitParams, nbf->setSeed);
-    nbodySetCtxFromFlags(&ctx, nbf);
+    nbodySetCtxFromFlags(&ctx, nbf); /* These will get nuked by the checkpoint */
 
     if (nbf->verifyOnly)
         return verifyFile(&ctx, rc);
@@ -151,11 +150,11 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     if (resolveCheckpoint(nbf->checkpointFileName))
         return warn1("Failed to resolve checkpoint\n");
 
-    if (initOutput(&ctx, nbf))
-        return warn1("Failed to open output files\n");
-
     if (setupRun(&ctx, &st))
         return warn1("Failed to setup run\n");
+
+    if (initOutput(&ctx, nbf))
+        return warn1("Failed to open output files\n");
 
     if (nbf->printTiming)     /* Time the body of the calculation */
         ts = mwGetTime();

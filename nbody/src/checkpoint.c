@@ -254,6 +254,7 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     READ_INT(minorVersion, p);
 
     READ_CTX(ctx, p);
+    ctx->outfile = NULL; /* Clean up garbage pointer */
 
     READ_REAL(st->tnow, p);
     READ_REAL(st->tree.rsize, p);
