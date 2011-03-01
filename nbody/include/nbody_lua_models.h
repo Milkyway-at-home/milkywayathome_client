@@ -1,6 +1,5 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Dave Przybylo,
-Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
-Magdon-Ismail and Rensselaer Polytechnic Institute.
+/*
+Copyright (C) 2011  Matthew Arsenault
 
 This file is part of Milkway@Home.
 
@@ -18,22 +17,13 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_PARAMS_H_
-#define _NBODY_PARAMS_H_
-
-#ifdef __cplusplus
-extern "C"
-#endif
-
-#include <json/json.h>
+#ifndef _NBODY_LUA_MODELS_H_
+#define _NBODY_LUA_MODELS_H_
 
 #include "nbody_types.h"
 
-int nbodyGetParamsFromJSON(NBodyCtx* ctx, HistogramParams* hist, json_object* fileObj);
+void registerPredefinedModelGenerators(lua_State* luaSt);
+void registerModelUtilityFunctions(lua_State* luaSt);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _NBODY_PARAMS_H_ */
+#endif /* _NBODY_LUA_MODELS_H_ */
 

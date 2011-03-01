@@ -38,9 +38,9 @@ extern "C" {
 #include "lua_dsfmt.h"
 
 #include <lua.h>
-#include "nbody_types.h"
 
-void registerNBodyLua(lua_State* luaSt);
+void registerNBodyTypes(lua_State* luaSt);
+void registerOtherTypes(lua_State* luaSt);
 
 #ifdef __cplusplus
 }

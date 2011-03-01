@@ -17,14 +17,12 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_SCRIPTABLE_H_
-#define _NBODY_SCRIPTABLE_H_
+#ifndef _NBODY_LUA_H_
+#define _NBODY_LUA_H_
 
-/* Type playing */
-int scriptableArst();
+#include "nbody_types.h"
 
-/* Closures */
-int scriptableAoeu();
+mwbool setupNBody(const char* filename, NBodyCtx* ctx, NBodyState* st, HistogramParams* histParams);
 
-#endif /* _NBODY_SCRIPTABLE_H_ */
+#endif /* _NBODY_LUA_H_ */
 

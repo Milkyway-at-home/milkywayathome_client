@@ -23,10 +23,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_types.h"
 #include "nbody_lua_types.h"
-#include "nbody_lua_functions.h"
 #include "lua_milkyway_math.h"
 
-static void registerNBodyTypes(lua_State* luaSt)
+void registerNBodyTypes(lua_State* luaSt)
 {
     registerBody(luaSt);
 
@@ -40,33 +39,10 @@ static void registerNBodyTypes(lua_State* luaSt)
     registerNBodyCtx(luaSt);
 }
 
-static void registerOtherTypes(lua_State* luaSt)
+void registerOtherTypes(lua_State* luaSt)
 {
     registerMilkywayMath(luaSt);
     registerVector(luaSt);
     registerDSFMT(luaSt);
 }
-
-static void registerOtherStuff(lua_State* luaSt)
-{
-    registerPredefinedModelGenerators(luaSt);
-    registerUtilityFunctions(luaSt);
-}
-
-static void registerUsedStandardStuff(lua_State* luaSt)
-{
-    luaopen_base(luaSt);
-    luaopen_table(luaSt);
-    luaopen_string(luaSt);
-    lua_pop(luaSt, 3);
-}
-
-void registerNBodyLua(lua_State* luaSt)
-{
-    registerUsedStandardStuff(luaSt);
-    registerNBodyTypes(luaSt);
-    registerOtherTypes(luaSt);
-    registerOtherStuff(luaSt);
-}
-
 

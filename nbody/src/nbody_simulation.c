@@ -22,13 +22,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdlib.h>
 #include "nbody.h"
-#include "nbody_params.h"
 #include "nbody_priv.h"
 #include "milkyway_util.h"
 #include "nbody_step.h"
 #include "grav.h"
 #include "orbitintegrator.h"
 #include "show.h"
+#include "nbody_lua.h"
 
 static void initState(NBodyCtx* ctx, NBodyState* st)
 {
@@ -201,24 +201,25 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
         return warn("Failed to read input parameters file\n");
 
     //rc |= setCtxConsts(&ctx, fitParams, nbf->setSeed);
+    nbodySetCtxFromFlags(&ctx, nbf);
 
     if (nbf->verifyOnly)
         verifyFile(&ctx, &histParams, rc);
     if (rc)
         return warn("Failed to read input parameters file\n");
 
-    nbodySetCtxFromFlags(&ctx, nbf);
+
 
   #if BOINC_APPLICATION
     if (resolveCheckpoint(&ctx))
-        fail("Failed to resolve checkpoint\n");
+        return warn("Failed to resolve checkpoint\n");
   #endif /* BOINC_APPLICATION */m
 
     if (initOutput(&ctx))
-        fail("Failed to open output files\n");
+        return warn("Failed to open output files\n");
 
     if (setupRun(&ctx, &st))
-        fail("Failed to setup run\n");
+        return warn("Failed to setup run\n");
 
     if (nbf->printTiming)     /* Time the body of the calculation */
         ts = mwGetTime();

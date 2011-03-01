@@ -24,17 +24,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "orbitintegrator.h"
 
-#include "nbody_lua_functions.h"
+#include "nbody_lua.h"
 #include "nbody_lua_types.h"
 #include "lua_type_marshal.h"
 #include "plummer.h"
-#include "nbody_lua_marshal.h"
+#include "nbody_lua_models.h"
 
-
-void registerPredefinedModelGenerators(lua_State* luaSt)
-{
-    registerGeneratePlummer(luaSt);
-}
 
 /* For using a combination of light and dark models to generate timestep */
 static real plummerTimestepIntegral(real smalla, real biga, real Md, real step)
@@ -151,80 +146,16 @@ static void registerReverseOrbit(lua_State* luaSt)
     lua_setglobal(luaSt, "reverseOrbit");
 }
 
-void registerUtilityFunctions(lua_State* luaSt)
+void registerPredefinedModelGenerators(lua_State* luaSt)
+{
+    registerGeneratePlummer(luaSt);
+
+    /* TODO: Table with name of model */
+}
+
+void registerModelUtilityFunctions(lua_State* luaSt)
 {
     registerReverseOrbit(luaSt);
     registerPlummerTimestepIntegral(luaSt);
 }
-
-static int getNBodyCtxFunc(lua_State* luaSt)
-{
-    return mw_lua_checkglobal(luaSt, "makeContext");
-}
-
-static int getPotentialFunc(lua_State* luaSt)
-{
-    return mw_lua_checkglobal(luaSt, "makePotential");
-}
-
-static int getInitialConditionsFunc(lua_State* luaSt)
-{
-    return mw_lua_checkglobal(luaSt, "makeInitialConditions");
-}
-
-static lua_State* openNBodyLuaState(const char* filename)
-{
-    char* script;
-    lua_State* luaSt = NULL;
-
-    script = mwReadFileResolved(filename);
-    if (!script)
-    {
-        perror("Opening Lua script");
-        return NULL;
-    }
-
-    luaSt = lua_open();
-    if (!luaSt)
-    {
-        warn("Failed to get Lua state\n");
-        free(script);
-        return NULL;
-    }
-
-    registerNBodyLua(luaSt);
-
-    if (luaL_dostring(luaSt, script))
-    {
-        /* TODO: Get error */
-        warn("dostring failed\n");
-        lua_close(luaSt);
-        luaSt = NULL;
-    }
-
-    free(script);
-    return luaSt;
-}
-
-mwbool setupNBody(const char* filename, NBodyCtx* ctx, NBodyState* st, HistogramParams* histParams)
-{
-    lua_State* luaSt;
-
-    luaSt = openNBodyLuaState(filename);
-    if (!luaSt)
-        return TRUE;
-
-    getNBodyCtxFunc(luaSt);
-    getPotentialFunc(luaSt);
-    getInitialConditionsFunc(luaSt);
-
-    mw_lua_checkglobal(luaSt, "arst");
-    lua_call(luaSt, 0, 1);
-    readReturnedModels(luaSt, lua_gettop(luaSt));
-
-    lua_close(luaSt);
-
-    return FALSE;
-}
-
 

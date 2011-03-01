@@ -24,7 +24,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_util.h"
 #include "nbody.h"
-#include "nbody_scriptable.h"
 
 #ifdef _OPENMP
   #include <omp.h>

@@ -43,9 +43,6 @@ if(BOINC_APPLICATION)
   include_directories(${BOINC_INCLUDE_DIR})
 endif()
 
-find_package(JsonC REQUIRED)
-include_directories(${JSON_C_INCLUDE_DIR})
-
 check_function_exists(asprintf HAS_ASPRINTF)
 check_sse2()
 
@@ -72,13 +69,8 @@ mark_as_advanced(NBODY_CRLIBM)
 
 option(NBODY_OPENMP "Use OpenMP" OFF)
 
-option(NBODY_LUA "Scriptable initial distributions in LUA" OFF)
-mark_as_advanced(NBODY_LUA)
-
-find_package(Lua51)
+find_package(Lua51 REQUIRED)
 find_package(OpenMP)
-
-
 
 
 
@@ -131,13 +123,6 @@ if(BOINC_APPLICATION AND NOT BOINC_LIBRARIES)
   message(FATAL_ERROR "Trying to build as a BOINC application, but the BOINC library wasn't found")
 endif()
 
-if(NBODY_LUA AND NOT LUA51_FOUND)
-  set(NBODY_LUA OFF)
-  message(WARNING "Requested Nbody Lua, but Lua not found. Continuing without Lua")
-endif()
-
-
-
 
 
 #CHECKME: We don't actually need special number math
@@ -156,8 +141,6 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/chisq.c
                   ${NBODY_SRC_DIR}/orbitintegrator.c
                   ${NBODY_SRC_DIR}/accelerations.c
                   ${NBODY_SRC_DIR}/nbody_simulation.c
-                  ${NBODY_SRC_DIR}/json_params.c
-                  ${NBODY_SRC_DIR}/nbody_params.c
                   ${NBODY_SRC_DIR}/check_params.c
                   ${NBODY_SRC_DIR}/plummer.c
                   ${NBODY_SRC_DIR}/nbody_util.c
@@ -171,7 +154,6 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/chisq.h
                       ${NBODY_INCLUDE_DIR}/orbitintegrator.h
                       ${NBODY_INCLUDE_DIR}/accelerations.h
                       ${NBODY_INCLUDE_DIR}/json_params.h
-                      ${NBODY_INCLUDE_DIR}/nbody_params.h
                       ${NBODY_INCLUDE_DIR}/check_params.h
                       ${NBODY_INCLUDE_DIR}/plummer.h
                       ${NBODY_INCLUDE_DIR}/nbody.h
@@ -179,42 +161,37 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_types.h
                       ${NBODY_INCLUDE_DIR}/nbody_util.h)
 
-set(nbody_lua_types_src ${NBODY_SRC_DIR}/lua_nbodyctx.c
-                        ${NBODY_SRC_DIR}/lua_body.c
-                        ${NBODY_SRC_DIR}/lua_vector.c
-                        ${NBODY_SRC_DIR}/lua_halo.c
-                        ${NBODY_SRC_DIR}/lua_disk.c
-                        ${NBODY_SRC_DIR}/lua_spherical.c
-                        ${NBODY_SRC_DIR}/lua_potential.c
-                        ${NBODY_SRC_DIR}/lua_initial_conditions.c
-                        ${NBODY_SRC_DIR}/lua_dsfmt.c
-                        ${NBODY_SRC_DIR}/lua_type_marshal.c
-                        ${NBODY_SRC_DIR}/nbody_lua_marshal.c
-                        ${NBODY_SRC_DIR}/nbody_lua_types.c
-                        ${NBODY_SRC_DIR}/nbody_lua_functions.c
-                        ${NBODY_SRC_DIR}/lua_milkyway_math.c)
+set(nbody_lua_src ${NBODY_SRC_DIR}/lua_nbodyctx.c
+                  ${NBODY_SRC_DIR}/lua_body.c
+                  ${NBODY_SRC_DIR}/lua_vector.c
+                  ${NBODY_SRC_DIR}/lua_halo.c
+                  ${NBODY_SRC_DIR}/lua_disk.c
+                  ${NBODY_SRC_DIR}/lua_spherical.c
+                  ${NBODY_SRC_DIR}/lua_potential.c
+                  ${NBODY_SRC_DIR}/lua_initial_conditions.c
+                  ${NBODY_SRC_DIR}/lua_dsfmt.c
+                  ${NBODY_SRC_DIR}/lua_type_marshal.c
+                  ${NBODY_SRC_DIR}/nbody_lua_marshal.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types.c
+                  ${NBODY_SRC_DIR}/nbody_lua_models.c
+                  ${NBODY_SRC_DIR}/nbody_lua.c
+                  ${NBODY_SRC_DIR}/lua_milkyway_math.c)
 
-set(nbody_lua_types_headers ${NBODY_INCLUDE_DIR}/lua_body.h
-                            ${NBODY_INCLUDE_DIR}/lua_vector.h
-                            ${NBODY_INCLUDE_DIR}/lua_nbodyctx.h
-                            ${NBODY_INCLUDE_DIR}/lua_halo.h
-                            ${NBODY_INCLUDE_DIR}/lua_disk.h
-                            ${NBODY_INCLUDE_DIR}/lua_spherical.h
-                            ${NBODY_INCLUDE_DIR}/lua_potential.h
-                            ${NBODY_INCLUDE_DIR}/lua_initial_conditions.h
-                            ${NBODY_INCLUDE_DIR}/lua_dsfmt.h
-                            ${NBODY_INCLUDE_DIR}/lua_type_marshal.h
-                            ${NBODY_INCLUDE_DIR}/nbody_lua_marshal.h
-                            ${NBODY_INCLUDE_DIR}/nbody_lua_types.h
-                            ${NBODY_INCLUDE_DIR}/nbody_lua_functions.h
-                            ${NBODY_INCLUDE_DIR}/lua_milkyway_math.h)
-
-
-set(nbody_lua_src ${NBODY_SRC_DIR}/nbody_scriptable.c)
-
-
-set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/nbody_scriptable.h)
-
+set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/lua_body.h
+                      ${NBODY_INCLUDE_DIR}/lua_vector.h
+                      ${NBODY_INCLUDE_DIR}/lua_nbodyctx.h
+                      ${NBODY_INCLUDE_DIR}/lua_halo.h
+                      ${NBODY_INCLUDE_DIR}/lua_disk.h
+                      ${NBODY_INCLUDE_DIR}/lua_spherical.h
+                      ${NBODY_INCLUDE_DIR}/lua_potential.h
+                      ${NBODY_INCLUDE_DIR}/lua_initial_conditions.h
+                      ${NBODY_INCLUDE_DIR}/lua_dsfmt.h
+                      ${NBODY_INCLUDE_DIR}/lua_type_marshal.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_marshal.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_types.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_models.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua.h
+                      ${NBODY_INCLUDE_DIR}/lua_milkyway_math.h)
 
 
 if(BOINC_RELEASE OR NOT HAS_ASPRINTF)
@@ -236,14 +213,10 @@ if(BOINC_APPLICATION)
   list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/checkpoint.h)
 endif()
 
-if(NBODY_LUA)
-  list(APPEND nbody_lib_src ${nbody_lua_src})
-  list(APPEND nbody_lib_headers ${nbody_lua_headers})
+add_library(nbody_lua STATIC ${nbody_lua_src} ${nbody_lua_headers})
+set_target_properties(nbody_lua PROPERTIES
+                        COMPILE_DEFINITIONS "NBODY_LUA_TYPES_COMPILATION")
 
-  add_library(nbody_lua_types STATIC ${nbody_lua_types_src} ${nbody_lua_types_headers})
-  set_target_properties(nbody_lua_types PROPERTIES
-                         COMPILE_DEFINITIONS "NBODY_LUA_TYPES_COMPILATION")
-endif()
 
 #TODO: The tests dSFMT has
 
@@ -273,7 +246,7 @@ endif()
 
 set(CMAKE_C_FLAGS "-std=gnu99 ${SSE2_FLAGS} ${CMAKE_C_FLAGS}")
 
-list(APPEND nbody_link_libs ${JSON_C_LIBRARY} ${OS_SPECIFIC_LIBS} milkyway ${LIBM_LIBRARY})
+list(APPEND nbody_link_libs ${OS_SPECIFIC_LIBS} milkyway ${LIBM_LIBRARY})
 
 if(NBODY_OPENCL)
   set(c_kernel_dir "${CMAKE_CURRENT_SOURCE_DIR}/ckernels")
@@ -305,7 +278,7 @@ set(nbody_libs nbody_simulation)
 
 if(NBODY_LUA)
   include_directories(${LUA_INCLUDE_DIR})
-  list(APPEND nbody_link_libs nbody_lua_types ${LUA_LIBRARIES})
+  list(APPEND nbody_link_libs nbody_lua ${LUA_LIBRARIES})
 endif()
 
 set(exe_link_libs ${LIBM_LIBRARY}
