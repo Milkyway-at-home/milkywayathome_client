@@ -30,20 +30,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_models.h"
 #include "lua_type_marshal.h"
 #include "nbody_lua_marshal.h"
+#include "nbody_check_params.h"
 
 static int getNBodyCtxFunc(lua_State* luaSt)
 {
-    return mw_lua_checkglobal(luaSt, "makeContext");
+    return mw_lua_checkglobalfunction(luaSt, "makeContext");
 }
 
-static int getPotentialFunc(lua_State* luaSt)
+static int getModelsFunc(lua_State* luaSt)
 {
-    return mw_lua_checkglobal(luaSt, "makePotential");
-}
-
-static int getInitialConditionsFunc(lua_State* luaSt)
-{
-    return mw_lua_checkglobal(luaSt, "makeInitialConditions");
+    return mw_lua_checkglobalfunction(luaSt, "makeModels");
 }
 
 static void registerUsedStandardStuff(lua_State* luaSt)
@@ -82,8 +78,7 @@ static lua_State* openNBodyLuaState(const char* filename)
 
     if (luaL_dostring(luaSt, script))
     {
-        /* TODO: Get error */
-        warn("dostring failed\n");
+        mw_lua_pcall_warn(luaSt, "Error evaluating script");
         lua_close(luaSt);
         luaSt = NULL;
     }
@@ -92,25 +87,69 @@ static lua_State* openNBodyLuaState(const char* filename)
     return luaSt;
 }
 
-mwbool setupNBody(const char* filename, NBodyCtx* ctx, NBodyState* st, HistogramParams* histParams)
+static int evaluateContext(lua_State* luaSt, NBodyCtx* ctx)
 {
+    getNBodyCtxFunc(luaSt);
+    if (lua_pcall(luaSt, 0, 1, 0))
+    {
+        mw_lua_pcall_warn(luaSt, "Error evaluating NBodyCtx");
+        return 1;
+    }
+
+    *ctx = *checkNBodyCtx(luaSt, lua_gettop(luaSt));
+    lua_pop(luaSt, 1);
+
+    return contextSanityCheck(ctx);
+}
+
+static body* evaluateBodies(lua_State* luaSt, unsigned int* n)
+{
+    getModelsFunc(luaSt);
+    if (lua_pcall(luaSt, 0, 1, 0))
+    {
+        mw_lua_pcall_warn(luaSt, "Error evaluating bodies");
+        return NULL;
+    }
+
+    return readReturnedModels(luaSt, lua_gettop(luaSt), n);
+}
+
+static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* st)
+{
+    body* bodies;
+    unsigned int n;
+
+    if (evaluateContext(luaSt, ctx))
+        return 1;
+
+    bodies = evaluateBodies(luaSt, &n);
+    if (!bodies)
+        return 1;
+
+    ctx->nbody = n;
+
+    st->tree.rsize = ctx->treeRSize;
+    st->tnow = 0.0;
+
+    st->bodytab = bodies;
+    st->acctab = (mwvector*) mwMallocA(ctx->nbody * sizeof(mwvector));
+
+    return 0;
+}
+
+int setupNBody(const char* filename, NBodyCtx* ctx, NBodyState* st, HistogramParams* histParams)
+{
+    int rc;
     lua_State* luaSt;
 
     luaSt = openNBodyLuaState(filename);
     if (!luaSt)
-        return TRUE;
+        return 1;
 
-    getNBodyCtxFunc(luaSt);
-    getPotentialFunc(luaSt);
-    getInitialConditionsFunc(luaSt);
-
-    mw_lua_checkglobal(luaSt, "arst");
-    lua_call(luaSt, 0, 1);
-    readReturnedModels(luaSt, lua_gettop(luaSt));
-
+    rc = setupInitialNBodyState(luaSt, ctx, st);
     lua_close(luaSt);
 
-    return FALSE;
+    return rc;
 }
 
 

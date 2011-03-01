@@ -28,10 +28,21 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_types.h"
 #include "milkyway_util.h"
 
-int mw_lua_checkglobal(lua_State* luaSt, const char* name)
+/* Check if global function name exists.  Error if it doesn't or if
+   it's the wrong type. If OK, puts on stack and returns its index. */
+int mw_lua_checkglobalfunction(lua_State* luaSt, const char* name)
 {
     lua_getglobal(luaSt, name);
-    return lua_isnil(luaSt, -1) ? luaL_error(luaSt, "Didn't find required global '%s'", name) : 1;
+    if (lua_isnil(luaSt, -1))
+        return luaL_error(luaSt, "Didn't find required global '%s'", name);
+
+    if (!lua_isfunction(luaSt, -1))
+    {
+        return luaL_error(luaSt, "Expected required global '%s' to be %s, got %s",
+                          name, lua_typename(luaSt, LUA_TFUNCTION), luaL_typename(luaSt, -1));
+    }
+
+    return lua_gettop(luaSt);
 }
 
 int mw_lua_checkboolean(lua_State* luaSt, int idx)

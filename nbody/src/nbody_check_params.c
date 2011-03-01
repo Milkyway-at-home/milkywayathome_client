@@ -20,7 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_priv.h"
 #include "milkyway_util.h"
-#include "check_params.h"
+#include "nbody_check_params.h"
 
 static mwbool invalidHaloWarning(halo_t type)
 {
@@ -126,7 +126,7 @@ static int hasAcceptableNbody(const NBodyCtx* ctx)
     return rc;
 }
 
-mwbool contextSanityCheck(const NBodyCtx* ctx)
+int contextSanityCheck(const NBodyCtx* ctx)
 {
     int rc = 0;
 
@@ -135,6 +135,6 @@ mwbool contextSanityCheck(const NBodyCtx* ctx)
     rc |= hasAcceptableSteps(ctx);
     rc |= hasAcceptableEps2(ctx);
 
-    return (mwbool) rc;
+    return rc;
 }
 

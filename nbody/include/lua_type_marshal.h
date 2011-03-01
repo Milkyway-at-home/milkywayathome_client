@@ -61,6 +61,9 @@ typedef struct
 
 #define mw_lua_assert_top_type(luaSt, t) assert(lua_type((luaSt), -1) == t)
 
+/* Print the error from pcall assumed to be the top of the stack */
+#define mw_lua_pcall_warn(luaSt, msg, ...) fprintf(stderr, msg ": %s \n", ##__VA_ARGS__, lua_tostring(luaSt, -1))
+
 int getInt(lua_State* luaSt, void* v);
 int setInt(lua_State* luaSt, void* v);
 
@@ -102,7 +105,7 @@ int registerStruct(lua_State* luaSt,
 int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val);
 int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx);
 
-int mw_lua_checkglobal(lua_State* luaSt, const char* name);
+int mw_lua_checkglobalfunction(lua_State* luaSt, const char* name);
 
 int mw_lua_checkboolean(lua_State* luaSt, int idx);
 mwbool mw_lua_optboolean(lua_State* luaSt, int nArg, mwbool def);

@@ -158,8 +158,8 @@ void nbodyStateDestroy(NBodyState* st)
 {
     freeTree(&st->tree);
     freeFreeCells(st->freecell);
-    free(st->bodytab);
-    free(st->acctab);
+    mwFreeA(st->bodytab);
+    mwFreeA(st->acctab);
 
   #if NBODY_OPENCL
     cleanupNBodyCL(st);

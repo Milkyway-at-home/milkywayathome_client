@@ -54,7 +54,8 @@ static void readBodyArray(lua_State* luaSt, int table, body* bodies, int n)
     }
 }
 
-body* readReturnedModels(lua_State* luaSt, int modelTable)
+/* Read returned table of model components. Pops the table. */
+body* readReturnedModels(lua_State* luaSt, int modelTable, unsigned int* nOut)
 {
     int i, n, totalN, nModels, bodyTable;
     body* allBodies;
@@ -80,6 +81,9 @@ body* readReturnedModels(lua_State* luaSt, int modelTable)
 
     assert(lua_istable(luaSt, -1));
     lua_pop(luaSt, 1); /* No more model table */
+
+    if (nOut)
+        *nOut = (unsigned int) totalN;
 
     return allBodies;
 }

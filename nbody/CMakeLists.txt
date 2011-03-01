@@ -142,7 +142,7 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/chisq.c
                   ${NBODY_SRC_DIR}/orbitintegrator.c
                   ${NBODY_SRC_DIR}/accelerations.c
                   ${NBODY_SRC_DIR}/nbody_simulation.c
-                  ${NBODY_SRC_DIR}/check_params.c
+                  ${NBODY_SRC_DIR}/nbody_check_params.c
                   ${NBODY_SRC_DIR}/plummer.c
                   ${NBODY_SRC_DIR}/nbody_util.c
                   ${NBODY_SRC_DIR}/nbody_step.c)
@@ -155,7 +155,7 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/chisq.h
                       ${NBODY_INCLUDE_DIR}/orbitintegrator.h
                       ${NBODY_INCLUDE_DIR}/accelerations.h
                       ${NBODY_INCLUDE_DIR}/json_params.h
-                      ${NBODY_INCLUDE_DIR}/check_params.h
+                      ${NBODY_INCLUDE_DIR}/nbody_check_params.h
                       ${NBODY_INCLUDE_DIR}/plummer.h
                       ${NBODY_INCLUDE_DIR}/nbody.h
                       ${NBODY_INCLUDE_DIR}/nbody_priv.h

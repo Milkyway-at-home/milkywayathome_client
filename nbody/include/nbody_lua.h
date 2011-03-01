@@ -22,7 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_types.h"
 
-mwbool setupNBody(const char* filename, NBodyCtx* ctx, NBodyState* st, HistogramParams* histParams);
+int setupNBody(const char* filename, NBodyCtx* ctx, NBodyState* st, HistogramParams* histParams);
 
 #endif /* _NBODY_LUA_H_ */
 

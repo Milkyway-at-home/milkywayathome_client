@@ -18,21 +18,21 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _CHECK_PARAMS_H_
-#define _CHECK_PARAMS_H_
+#ifndef _NBODY_CHECK_PARAMS_H_
+#define _NBODY_CHECK_PARAMS_H_
+
+#include "nbody_types.h"
 
 #ifdef __cplusplus
 extern "C"
 #endif
 
-#include "nbody_types.h"
-
 mwbool checkHaloConstants(Halo* h);
-mwbool contextSanityCheck(const NBodyCtx* ctx);
+int contextSanityCheck(const NBodyCtx* ctx);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _CHECK_PARAMS_H_ */
+#endif /* _NBODY_CHECK_PARAMS_H_ */
 
