@@ -382,30 +382,6 @@ void printVector(const mwvector v)
     free(buf);
 }
 
-char* showFitParams(const FitParams* fp)
-{
-    char* buf;
-    if (0 > asprintf(&buf,
-                     "fit-params  = { \n"
-                     "  useFitParams     = %s\n"
-                     "  modelMass        = %g\n"
-                     "  modelRadius      = %g\n"
-                     "  reverseOrbitTime = %g\n"
-                     "  simulationTime   = %g\n"
-                     "};\n",
-                     showBool(fp->useFitParams),
-                     fp->modelMass,
-                     fp->modelRadius,
-                     fp->reverseOrbitTime,
-                     fp->simulationTime))
-
-    {
-        fail("asprintf() failed\n");
-    }
-
-    return buf;
-}
-
 char* showHistogramParams(const HistogramParams* hp)
 {
     char* buf;
@@ -432,13 +408,6 @@ char* showHistogramParams(const HistogramParams* hp)
     }
 
     return buf;
-}
-
-void printFitParams(const FitParams* fp)
-{
-    char* buf = showFitParams(fp);
-    puts(buf);
-    free(buf);
 }
 
 void printHistogramParams(const HistogramParams* hp)

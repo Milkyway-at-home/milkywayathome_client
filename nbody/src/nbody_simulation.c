@@ -171,7 +171,7 @@ static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
     ctx->cp_filename     = nbf->checkpointFileName;
 }
 
-static void verifyFile(const NBodyCtx* ctx, const HistogramParams* hp, int rc)
+static int verifyFile(const NBodyCtx* ctx, const HistogramParams* hp, int rc)
 {
     printNBodyCtx(ctx);
     printHistogramParams(hp);
@@ -180,41 +180,39 @@ static void verifyFile(const NBodyCtx* ctx, const HistogramParams* hp, int rc)
         warn("File failed\n");
     else
         warn("File is OK\n");
-    mw_finish(rc);
+
+    return rc;
 }
 
 /* Takes parsed json and run the simulation, using outFileName for
  * output. */
-void runNBodySimulation(json_object* obj,            /* The main configuration */
-                        const FitParams* fitParams,  /* For server's arguments */
-                        const NBodyFlags* nbf)       /* Misc. parameters to control output */
+int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to control output */
 {
     NBodyCtx ctx  = EMPTY_NBODYCTX;
     NBodyState st = EMPTY_STATE;
-    HistogramParams histParams;
+    HistogramParams histParams = EMPTY_HISTOGRAM_PARAMS;
 
     real chisq;
     double ts = 0.0, te = 0.0;
     int rc = 0;
 
-    rc |= nbodyGetParamsFromJSON(&ctx, &histParams, obj);
+    rc |= setupNBody(nbf->inputFile, &ctx, &st, &histParams);
     if (rc && !nbf->verifyOnly)   /* Fail right away, unless we are diagnosing file problems */
-        fail("Failed to read input parameters file\n");
+        return warn("Failed to read input parameters file\n");
 
-    rc |= setCtxConsts(&ctx, fitParams, nbf->setSeed);
+    //rc |= setCtxConsts(&ctx, fitParams, nbf->setSeed);
 
     if (nbf->verifyOnly)
         verifyFile(&ctx, &histParams, rc);
-
     if (rc)
-        fail("Failed to read input parameters file\n");
+        return warn("Failed to read input parameters file\n");
 
     nbodySetCtxFromFlags(&ctx, nbf);
 
   #if BOINC_APPLICATION
     if (resolveCheckpoint(&ctx))
         fail("Failed to resolve checkpoint\n");
-  #endif /* BOINC_APPLICATION */
+  #endif /* BOINC_APPLICATION */m
 
     if (initOutput(&ctx))
         fail("Failed to open output files\n");
@@ -240,5 +238,7 @@ void runNBodySimulation(json_object* obj,            /* The main configuration *
         warn("Failed to calculate chisq\n");
 
     endRun(&ctx, &st, chisq);
+
+    return 0;
 }
 

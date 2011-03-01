@@ -285,17 +285,6 @@ typedef struct NBODY_ALIGN
 #define INITIAL_CONDITIONS_TYPE "InitialConditions"
 
 
-typedef struct NBODY_ALIGN
-{
-    int useFitParams;
-    real modelMass;
-    real modelRadius;
-    real reverseOrbitTime;
-    real simulationTime;
-} FitParams;
-
-#define EMPTY_FIT_PARAMS { FALSE, NAN, NAN, NAN, NAN }
-
 #ifndef _WIN32
 
 typedef struct NBODY_ALIGN
@@ -384,8 +373,8 @@ typedef struct NBODY_ALIGN
     unsigned int freqOut;
     real theta;               /* accuracy parameter: 0.0 */
     real eps2;                /* (potential softening parameter)^2 */
-
     real tree_rsize;
+
     real sunGCDist;
     criterion_t criterion;
     long seed;                /* random number seed */
@@ -417,8 +406,8 @@ typedef struct NBODY_ALIGN
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 #define EMPTY_NBODYCTX { EMPTY_POTENTIAL, 0, NAN, NAN, NAN, NAN,          \
                          NULL, NULL, NULL, NULL, NULL,                    \
-                         NAN, NAN, NAN,                                   \
-                         NAN, NAN, InvalidCriterion, 0, 0,                \
+                         0, NAN, NAN, NAN,                                \
+                         NAN, InvalidCriterion, 0,                        \
                          FALSE, FALSE, FALSE, FALSE, FALSE,               \
                          NULL, "" }
 
@@ -433,6 +422,9 @@ typedef struct
     real binSize;
     real center;
 } HistogramParams;
+
+#define EMPTY_HISTOGRAM_PARAMS { NAN, NAN, NAN, NAN, NAN, NAN, NAN }
+#define HISTOGRAM_PARAMS_TYPE "HistogramParams"
 
 
 typedef struct

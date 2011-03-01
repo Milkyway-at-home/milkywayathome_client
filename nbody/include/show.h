@@ -47,9 +47,6 @@ char* showVector(const mwvector);
 void printInitialConditions(const InitialConditions*);
 void printVector(const mwvector v);
 
-char* showFitParams(const FitParams*);
-void printFitParams(const FitParams*);
-
 char* showHistogramParams(const HistogramParams*);
 void printHistogramParams(const HistogramParams*);
 

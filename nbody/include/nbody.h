@@ -34,10 +34,15 @@ extern "C" {
 /* Command line arguments */
 typedef struct
 {
+    char* inputFile;
     char* outFileName;
     char* checkpointFileName;
     char* histogramFileName;
     char* histoutFileName;
+
+    real* serverArgs;
+    unsigned int numServerArgs;
+
     long setSeed;         /* the PRNG uses a long for a seed, but int is more portable. */
     int outputCartesian;
     int printTiming;
@@ -49,9 +54,9 @@ typedef struct
     int numThreads;
 } NBodyFlags;
 
-#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 
-void runNBodySimulation(json_object* obj, const FitParams* fitParams, const NBodyFlags* nbf);
+int runNBodySimulation(const NBodyFlags* nbf);
 
 #ifdef _cplusplus
 }
