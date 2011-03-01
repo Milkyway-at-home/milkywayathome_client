@@ -151,6 +151,13 @@ void _mw_time_prefix(char* buf, size_t bufSize);
 
 size_t mwDivRoundup(size_t a, size_t b);
 
+/* Check for a timesteps etc. which will actually finish. */
+inline int mwCheckNormalPosNum(real n)
+{
+    return !isnormal(n) || n <= 0.0 || n <= REAL_EPSILON;
+}
+
+
 const char** mwFixArgv(int argc, const char** argv);
 
 /* Loop through all arguments and report bad arguments */
@@ -170,6 +177,7 @@ void mwSetConsistentx87FPUPrecision();
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif /* _MILKYWAY_UTIL_H_ */
 

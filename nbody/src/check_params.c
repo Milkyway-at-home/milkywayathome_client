@@ -86,24 +86,6 @@ static real calculateTimestep(real mass, real r0)
     return sqr(1/10.0) * mw_sqrt((PI_4_3 * cube(r0)) / mass);
 }
 
-/* For using a combination of light and dark models to generate timestep */
-static real plummerTimestepIntegral(real step, real smalla, real biga, real Ml, real Md)
-{
-    /* Calculate the enclosed mass of the big sphere within the little sphere's scale length */
-    //const real step = 1.0e-5;
-    real encMass, val, r;
-
-    encMass = 0.0;
-    for (r = 0.0; r <= smalla; r += step)
-    {
-        val = sqr(r) / mw_pow(sqr(r) + sqr(biga), 2.5);
-        encMass += val * step;
-    }
-    encMass *= 3.0 * Md * sqr(biga);
-
-    return encMass;
-}
-
 static real calculateEps2(real nbody, real r0)
 {
     real eps = r0 / (10.0 * mw_sqrt(nbody));
@@ -130,20 +112,9 @@ static int hasAcceptableEps2(const NBodyCtx* ctx)
     return rc;
 }
 
-static inline int checkNormalTime(real n)
-{
-    return !isnormal(n) || n <= 0.0;
-}
-
-/* Check for a timestep which will actually finish */
-static inline int checkNormalStep(real n)
-{
-    return !isnormal(n) || n <= 0.0 || n <= REAL_EPSILON;
-}
-
 static int hasAcceptableTimes(const NBodyCtx* ctx)
 {
-    int rc = checkNormalTime(ctx->time_evolve) || checkNormalTime(ctx->time_orbit);
+    int rc = mwCheckNormalPosNum(ctx->time_evolve) || mwCheckNormalPosNum(ctx->time_orbit);
     if (rc)
         warn("Got an unacceptable orbit or evolution time\n");
     return rc;
@@ -151,7 +122,7 @@ static int hasAcceptableTimes(const NBodyCtx* ctx)
 
 static int hasAcceptableSteps(const NBodyCtx* ctx)
 {
-    int rc = checkNormalStep(ctx->timestep) || checkNormalStep(ctx->orbit_timestep);
+    int rc = mwCheckNormalPosNum(ctx->timestep) || mwCheckNormalPosNum(ctx->orbit_timestep);
     if (rc)
         warn("Context has unacceptable timesteps\n");
 

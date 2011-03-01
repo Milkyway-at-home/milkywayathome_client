@@ -27,6 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "lua_type_marshal.h"
 #include "nbody_lua_functions.h"
 #include "nbody_lua_types.h"
+#include "lua_type_marshal.h"
 #include "plummer.h"
 
 
@@ -35,6 +36,75 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
     registerGeneratePlummer(luaSt);
 }
 
+/* For using a combination of light and dark models to generate timestep */
+static real plummerTimestepIntegral(real smalla, real biga, real Md, real step)
+{
+    /* Calculate the enclosed mass of the big sphere within the little sphere's scale length */
+    real encMass, val, r;
+
+    encMass = 0.0;
+    for (r = 0.0; r <= smalla; r += step)
+    {
+        val = sqr(r) / mw_pow(sqr(r) + sqr(biga), 2.5);
+        encMass += val * step;
+    }
+    encMass *= 3.0 * Md * sqr(biga);
+
+    return encMass;
+}
+
+static int luaPlummerTimestepIntegral(lua_State* luaSt)
+{
+    int nArgs;
+    static real smalla = 0.0, biga = 0.0, Md = 0.0, encMass = 0.0;
+    static real step = 1.0e-5;
+
+    static const MWNamedArg argTable[] =
+        {
+            { "smalla", LUA_TNUMBER, NULL, TRUE,  &smalla },
+            { "biga",   LUA_TNUMBER, NULL, TRUE,  &biga   },
+            { "Md",     LUA_TNUMBER, NULL, TRUE,  &Md     },
+            { "step",   LUA_TNUMBER, NULL, FALSE, &step   },
+            END_MW_NAMED_ARG
+        };
+
+    nArgs = lua_gettop(luaSt);
+    if (nArgs == 1 && lua_istable(luaSt, 1))
+    {
+        handleNamedArgumentTable(luaSt, argTable, 1);
+    }
+    else if (nArgs == 3 || nArgs == 4)
+    {
+        smalla = luaL_checknumber(luaSt, 1);
+        biga = luaL_checknumber(luaSt, 2);
+        Md = luaL_checknumber(luaSt, 3);
+        step = luaL_optnumber(luaSt, 4, step);
+    }
+    else
+    {
+        return luaL_argerror(luaSt, 1, "Expected 1, 3 or 4 arguments");
+    }
+
+
+    /* Make sure the bounds / step are OK so that this integral will be sure to complete */
+    if (mwCheckNormalPosNum(smalla))
+        return luaL_argerror(luaSt, 1, "Invalid small radius");
+    if (mwCheckNormalPosNum(biga))
+        return luaL_argerror(luaSt, 2, "Invalid big radius");
+    if (mwCheckNormalPosNum(step))
+        return luaL_argerror(luaSt, 4, "Invalid step argument");
+
+    encMass = plummerTimestepIntegral(smalla, biga, Md, step);
+    lua_pushnumber(luaSt, encMass);
+
+    return 1;
+}
+
+static void registerPlummerTimestepIntegral(lua_State* luaSt)
+{
+    lua_pushcfunction(luaSt, luaPlummerTimestepIntegral);
+    lua_setglobal(luaSt, "plummerTimestepIntegral");
+}
 
 static int luaReverseOrbit(lua_State* luaSt)
 {
@@ -84,6 +154,7 @@ static void registerReverseOrbit(lua_State* luaSt)
 void registerUtilityFunctions(lua_State* luaSt)
 {
     registerReverseOrbit(luaSt);
+    registerPlummerTimestepIntegral(luaSt);
 }
 
 static int getNBodyCtxFunc(lua_State* luaSt)
