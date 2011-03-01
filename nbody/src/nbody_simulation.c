@@ -37,7 +37,7 @@ static void initState(NBodyCtx* ctx, NBodyState* st)
     st->tree.rsize = ctx->treeRSize;
     st->tnow       = 0.0;            /* reset elapsed model time */
 
-    st->bodytab = (bodyptr) mwMalloc(ctx->nbody * sizeof(body));
+    st->bodytab = (body*) mwMalloc(ctx->nbody * sizeof(body));
     st->acctab  = (mwvector*) mwMalloc(ctx->nbody * sizeof(mwvector));
 
     //generateAllModels(ctx, st->bodytab);

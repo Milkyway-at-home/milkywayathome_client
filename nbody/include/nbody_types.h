@@ -106,9 +106,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define CELL(x) (0)
 #define BODY(x) ((x) ? -1 : 1)
 
-#define isBody(x) (((nodeptr) (x))->type != 0)
-#define isCell(x) (((nodeptr) (x))->type == 0)
-#define ignoreBody(x) (((nodeptr) (x))->type < 0)
+#define isBody(x) (((node*) (x))->type != 0)
+#define isCell(x) (((node*) (x))->type == 0)
+#define ignoreBody(x) (((node*) (x))->type < 0)
 #define bodyTypeIsIgnore(x) ((x) < 0)
 
 typedef short body_t;
@@ -120,14 +120,14 @@ typedef struct NBODY_ALIGN _node
     real mass;              /* total mass of node */
     mwvector pos;           /* position of node */
     struct _node* next;     /* link to next force-calc */
-} node, *nodeptr;
+} node;
 
 #define EMPTY_NODE { 0, NAN, EMPTY_MWVECTOR, NULL }
 
-#define Type(x) (((nodeptr) (x))->type)
-#define Mass(x) (((nodeptr) (x))->mass)
-#define Pos(x)  (((nodeptr) (x))->pos)
-#define Next(x) (((nodeptr) (x))->next)
+#define Type(x) (((node*) (x))->type)
+#define Mass(x) (((node*) (x))->mass)
+#define Pos(x)  (((node*) (x))->pos)
+#define Next(x) (((node*) (x))->next)
 
 /* BODY: data structure used to represent particles. */
 
@@ -135,7 +135,7 @@ typedef struct NBODY_ALIGN
 {
     node bodynode;              /* data common to all nodes */
     mwvector vel;               /* velocity of body */
- } body, *bodyptr;
+} body;
 
 #define EMPTY_BODY { EMPTY_NODE, EMPTY_MWVECTOR }
 
@@ -143,7 +143,7 @@ typedef struct NBODY_ALIGN
 
 #define Body    body
 
-#define Vel(x)  (((bodyptr) (x))->vel)
+#define Vel(x)  (((body*) (x))->vel)
 
 /* CELL: structure used to represent internal nodes of tree. */
 
@@ -153,13 +153,13 @@ typedef struct NBODY_ALIGN
 {
     node cellnode;              /* data common to all nodes */
     real rcrit2;                /* critical c-of-m radius^2 */
-    nodeptr more;               /* link to first descendent */
+    node* more;                 /* link to first descendent */
     union                       /* shared storage for... */
     {
-        nodeptr subp[NSUB];     /* descendents of cell */
+        node* subp[NSUB];       /* descendents of cell */
         mwmatrix quad;         /* quad. moment of cell */
     } stuff;
-} cell, *cellptr;
+} cell;
 
 #define InvalidEnum (-1)
 typedef int generic_enum_t;  /* A general enum type. */
@@ -258,16 +258,16 @@ typedef struct NBODY_ALIGN
 #define POTENTIAL_TYPE "Potential"
 
 
-#define Rcrit2(x) (((cellptr) (x))->rcrit2)
-#define More(x)   (((cellptr) (x))->more)
-#define Subp(x)   (((cellptr) (x))->stuff.subp)
-#define Quad(x)   (((cellptr) (x))->stuff.quad)
+#define Rcrit2(x) (((cell*) (x))->rcrit2)
+#define More(x)   (((cell*) (x))->more)
+#define Subp(x)   (((cell*) (x))->stuff.subp)
+#define Quad(x)   (((cell*) (x))->stuff.quad)
 
 /* Variables used in tree construction. */
 
 typedef struct NBODY_ALIGN
 {
-    cellptr root;   /* pointer to root cell */
+    cell* root;     /* pointer to root cell */
     real rsize;     /* side-length of root cell */
 
     unsigned int cellused;   /* count of cells in tree */
@@ -329,10 +329,10 @@ typedef struct
 typedef struct NBODY_ALIGN
 {
     Tree tree;
-    nodeptr freecell;   /* list of free cells */
+    node* freecell;   /* list of free cells */
     unsigned int outputTime;
     real tnow;
-    bodyptr bodytab;    /* points to array of bodies */
+    body* bodytab;      /* points to array of bodies */
     mwvector* acctab;   /* Corresponding accelerations of bodies */
 
   #if NBODY_OPENCL

@@ -279,7 +279,7 @@ static inline int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandl
     }
 
     /* Read the bodies */
-    st->bodytab = (bodyptr) mwMalloc(bodySize);
+    st->bodytab = (body*) mwMalloc(bodySize);
     memcpy(st->bodytab, p, bodySize);
     p += bodySize;
 
@@ -302,7 +302,7 @@ static inline int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandl
                                     Saved parts of the program state
    tnow         real     anything
    rsize        real     anything
-   bodytab      bodyptr  anything   Array of bodies
+   bodytab      body*    anything   Array of bodies
    ending       string   "end"      No null terminator
  */
 

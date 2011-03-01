@@ -188,7 +188,7 @@ char* showDisk(const Disk* d)
     return buf;
 }
 
-char* showBody(const bodyptr p)
+char* showBody(const body* p)
 {
     char* buf;
     char* vel;
@@ -411,7 +411,7 @@ void printHistogramParams(const HistogramParams* hp)
     free(buf);
 }
 
-void printBody(const bodyptr p)
+void printBody(const body* p)
 {
     char* buf = showBody(p);
     puts(buf);

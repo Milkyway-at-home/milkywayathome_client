@@ -32,8 +32,8 @@ typedef struct
 {
     mwvector pos0;    /* point to evaluate field */
     mwvector acc0;    /* resulting acceleration */
-    bodyptr pskip;    /* skip in force evaluation */
-    cellptr qmem;     /* data shared with gravsub */
+    body* pskip;      /* skip in force evaluation */
+    cell* qmem;     /* data shared with gravsub */
     mwvector dr;      /* vector from q to pos0 */
     real drsq;        /* squared distance to pos0 */
 } ForceEvalState;
@@ -44,7 +44,7 @@ typedef struct
 /* subdivp: decide if cell q is too close to accept as a single
  * term. Also sets qmem, dr, and drsq for use by gravsub.
  */
-static inline mwbool subdivp(ForceEvalState* fest, cellptr q)
+static inline mwbool subdivp(ForceEvalState* fest, cell* q)
 {
     fest->dr = mw_subv(Pos(q), fest->pos0);   /* compute displacement */
     fest->drsq = mw_sqrv(fest->dr);           /* and find dist squared */
@@ -52,8 +52,7 @@ static inline mwbool subdivp(ForceEvalState* fest, cellptr q)
     return (fest->drsq < Rcrit2(q));          /* apply standard rule */
 }
 
-
-static inline void cellQuadTerm(ForceEvalState* fest, const nodeptr q, const real drab)
+static inline void cellQuadTerm(ForceEvalState* fest, const node* q, const real drab)
 {
     real dr5inv, drquaddr, phiquad;
     mwvector ai, quaddr;
@@ -72,12 +71,12 @@ static inline void cellQuadTerm(ForceEvalState* fest, const nodeptr q, const rea
 /* gravsub: compute contribution of node q to gravitational field at
  * point pos0, and add to running totals phi0 and acc0.
  */
-static inline void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, const nodeptr q)
+static inline void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, const node* q)
 {
     real drab, phii, mor3;
     mwvector ai;
 
-    if (q != (nodeptr) fest->qmem)                    /* cant use memorized data? */
+    if (q != (node*) fest->qmem)                    /* cant use memorized data? */
     {
         fest->dr = mw_subv(Pos(q), fest->pos0);       /* then compute sep. */
         fest->drsq = mw_sqrv(fest->dr);               /* and sep. squared */
@@ -100,20 +99,20 @@ static inline void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, const node
  */
 static inline mwbool treescan(const NBodyCtx* ctx,
                             ForceEvalState* fest,
-                            nodeptr q)
+                            node* q)
 {
     mwbool skipself = FALSE;
 
     while (q != NULL)               /* while not at end of scan */
     {
         if (   isCell(q)                         /* is node a cell and... */
-            && subdivp(fest, (cellptr) q))       /* too close to accept? */
+            && subdivp(fest, (cell*) q))       /* too close to accept? */
         {
             q = More(q);            /* follow to next level */
         }
         else                    /* else accept this term */
         {
-            if (q == (nodeptr) fest->pskip)    /* self-interaction? */
+            if (q == (node*) fest->pskip)    /* self-interaction? */
                 skipself = TRUE;               /* then just skip it */
             else                               /* not self-interaction */
                 gravsub(ctx, fest, q);         /* so compute gravity */
@@ -127,7 +126,7 @@ static inline mwbool treescan(const NBodyCtx* ctx,
 /* hackGrav: evaluate gravitational field on body p; checks to be
  * sure self-interaction was handled correctly if intree is true.
  */
-static inline mwvector hackGrav(const NBodyCtx* ctx, nodeptr root, bodyptr p)
+static inline mwvector hackGrav(const NBodyCtx* ctx, node* root, body* p)
 {
     static mwbool treeincest = FALSE;     /* tree-incest occured */
     mwbool skipself          = FALSE;     /* self-interaction skipped */
@@ -170,7 +169,7 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
     for (i = 0; i < nbody; ++i)      /* get force on each body */
     {
         st->acctab[i] = hackGrav(ctx,
-                                 (nodeptr) st->tree.root,
+                                 (node*) st->tree.root,
                                  &st->bodytab[i]);
     }
 }

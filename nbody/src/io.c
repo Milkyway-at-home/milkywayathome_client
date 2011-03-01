@@ -46,9 +46,9 @@ static void out_2vectors(FILE* str, mwvector vec1, mwvector vec2)
 /* output: Print bodies */
 static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st)
 {
-    bodyptr p;
+    body* p;
     mwvector lbR;
-    const bodyptr endp = st->bodytab + ctx->nbody;
+    const body* endp = st->bodytab + ctx->nbody;
 
     for (p = st->bodytab; p < endp; p++)
     {
@@ -73,8 +73,8 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st)
 
 int outputBodyPositionBin(const NBodyCtx* ctx, const NBodyState* st)
 {
-    bodyptr p;
-    const bodyptr endp = st->bodytab + ctx->nbody;
+    body* p;
+    const body* endp = st->bodytab + ctx->nbody;
 
     for (p = st->bodytab; p < endp; p++)
         fwrite(&Pos(p), sizeof(mwvector), 1, ctx->outfile);
@@ -121,9 +121,10 @@ int nbodyCtxDestroy(NBodyCtx* ctx)
 
 static void freeTree(Tree* t)
 {
-    nodeptr p, tmp;
+    node* p;
+    node* tmp;
 
-    p = (nodeptr) t->root;
+    p = (node*) t->root;
     while (p != NULL)
     {
         if (isCell(p))
@@ -140,10 +141,10 @@ static void freeTree(Tree* t)
     t->cellused = 0;
 }
 
-static void freeFreeCells(nodeptr freecell)
+static void freeFreeCells(node* freecell)
 {
-    nodeptr p;
-    nodeptr tmp;
+    node* p;
+    node* tmp;
 
     p = freecell;
     while (p)
