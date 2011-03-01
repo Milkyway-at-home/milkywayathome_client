@@ -24,11 +24,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "orbitintegrator.h"
 
-#include "lua_type_marshal.h"
 #include "nbody_lua_functions.h"
 #include "nbody_lua_types.h"
 #include "lua_type_marshal.h"
 #include "plummer.h"
+#include "nbody_lua_marshal.h"
 
 
 void registerPredefinedModelGenerators(lua_State* luaSt)
@@ -220,6 +220,7 @@ mwbool setupNBody(const char* filename, NBodyCtx* ctx, NBodyState* st, Histogram
 
     mw_lua_checkglobal(luaSt, "arst");
     lua_call(luaSt, 0, 1);
+    readReturnedModels(luaSt, lua_gettop(luaSt));
 
     lua_close(luaSt);
 

@@ -27,41 +27,61 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_marshal.h"
 
 
-body* popBodyArray(lua_State* luaSt, int table, int* outN)
+static int totalBodies(lua_State* luaSt, int modelTable, int nModels)
 {
-    body* arr;
-    int i, n;
+    int i, n = 0;
 
-    warn("popping\n");
-
-    luaL_checktype(luaSt, table, LUA_TTABLE);
-    n = luaL_getn(luaSt, table);  /* get size of table */
-
-    warn("arsting\n");
-    double t1 = mwGetTime();
-
-    arr = (body*) mwMalloc(sizeof(body) * n);
-    for (i = 0; i < n; ++i)
+    for (i = 0; i < nModels; ++i)
     {
-        lua_rawgeti(luaSt, table, i + 1);  /* push t[i] */
-        arr[i] = *checkBody(luaSt, -1);
-        //printBody(&arr[i]);
+        lua_rawgeti(luaSt, modelTable, i + 1);
+        n += luaL_getn(luaSt, -1);
         lua_pop(luaSt, 1);
+        warn("arstarstarst %d\n", n);
     }
 
-    double t2 = mwGetTime();
-
-    warn("time to pop = %f\n", t2 - t1);
-
-    if (outN)
-        *outN = n;
-
-    return arr;
+    return n;
 }
 
-void readReturnedModels()
+static void readBodyArray(lua_State* luaSt, int table, body* bodies, int n)
 {
+    int i;
 
+    for (i = 0; i < n; ++i)
+    {
+        lua_rawgeti(luaSt, table, i + 1);
+        bodies[i] = *checkBody(luaSt, -1);
+        lua_pop(luaSt, 1);
+    }
+}
+
+body* readReturnedModels(lua_State* luaSt, int modelTable)
+{
+    int i, n, totalN, nModels, bodyTable;
+    body* allBodies;
+    body* bodies;
+
+    luaL_checktype(luaSt, modelTable, LUA_TTABLE);
+    nModels = luaL_getn(luaSt, modelTable);
+    totalN = totalBodies(luaSt, modelTable, nModels);
+
+    bodies = allBodies = (body*) mwMallocA(totalN * sizeof(body));
+
+    for (i = 0; i < nModels; ++i)
+    {
+        lua_rawgeti(luaSt, modelTable, i + 1);
+        bodyTable = lua_gettop(luaSt);
+        n = luaL_getn(luaSt, bodyTable);
+
+        readBodyArray(luaSt, bodyTable, bodies, n);
+        bodies = &bodies[n];
+
+        lua_pop(luaSt, 1);  /* No more body table */
+    }
+
+    assert(lua_istable(luaSt, -1));
+    lua_pop(luaSt, 1); /* No more model table */
+
+    return allBodies;
 }
 
 

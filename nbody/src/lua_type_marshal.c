@@ -529,7 +529,7 @@ real* popRealArray(lua_State* luaSt, int* outN)
     luaL_checktype(luaSt, table, LUA_TTABLE);
     n = luaL_getn(luaSt, table);  /* get size of table */
 
-    arr = mwMalloc(sizeof(real) * n);
+    arr = (real*) mwMalloc(sizeof(real) * n);
     for (i = 0; i < n; ++i)
     {
         lua_rawgeti(luaSt, table, i + 1);  /* push t[i] */
