@@ -100,6 +100,8 @@ int registerStruct(lua_State* luaSt,
 int pushEnum(lua_State* luaSt, const MWEnumAssociation* table, int val);
 int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int index);
 
+int mw_lua_checkglobal(lua_State* luaSt, const char* name);
+
 int mw_lua_checkboolean(lua_State* luaSt, int index);
 mwbool mw_lua_optboolean(lua_State* luaSt, int nArg, mwbool def);
 

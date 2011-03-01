@@ -23,7 +23,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include "nbody.h"
 #include "nbody_params.h"
-#include "calc_params.h"
 #include "nbody_priv.h"
 #include "milkyway_util.h"
 #include "nbody_step.h"

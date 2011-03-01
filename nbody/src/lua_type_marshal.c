@@ -28,6 +28,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_types.h"
 #include "milkyway_util.h"
 
+int mw_lua_checkglobal(lua_State* luaSt, const char* name)
+{
+    lua_getglobal(luaSt, name);
+    return lua_isnil(luaSt, -1) ? luaL_error(luaSt, "Didn't find required global '%s'", name) : 1;
+}
+
 int mw_lua_checkboolean(lua_State* luaSt, int index)
 {
     if (!lua_isboolean(luaSt, index))

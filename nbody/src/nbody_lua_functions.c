@@ -86,12 +86,6 @@ void registerUtilityFunctions(lua_State* luaSt)
     registerReverseOrbit(luaSt);
 }
 
-static int mw_lua_checkglobal(lua_State* luaSt, const char* name)
-{
-    lua_getglobal(luaSt, name);
-    return lua_isnil(luaSt, -1) ? luaL_error(luaSt, "Didn't find required global '%s'", name) : 1;
-}
-
 static int getNBodyCtxFunc(lua_State* luaSt)
 {
     return mw_lua_checkglobal(luaSt, "makeContext");

@@ -18,8 +18,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _CALC_PARAMS_H_
-#define _CALC_PARAMS_H_
+#ifndef _CHECK_PARAMS_H_
+#define _CHECK_PARAMS_H_
 
 #ifdef __cplusplus
 extern "C"
@@ -27,11 +27,11 @@ extern "C"
 
 #include "nbody_types.h"
 
-int setCtxConsts(NBodyCtx* ctx, const FitParams* fitParams, const long setSeed);
+mwbool checkHaloConstants(Halo* h);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _CALC_PARAMS_H_ */
+#endif /* _CHECK_PARAMS_H_ */
 

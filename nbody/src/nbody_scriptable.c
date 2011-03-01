@@ -299,7 +299,6 @@ static void registerEverything(lua_State* luaSt)
     WHEREAMI("some registered", luaSt);
     registerDisk(luaSt);
     registerInitialConditions(luaSt);
-    registerNBodyLuaBodyArray(luaSt);
     registerNBodyCtx(luaSt);
     registerDSFMT(luaSt);
     registerPredefinedModelGenerators(luaSt);
