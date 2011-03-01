@@ -347,6 +347,31 @@ typedef struct NBODY_ALIGN
   #define EMPTY_STATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL }
 #endif /* NBODY_OPENCL */
 
+
+typedef struct
+{
+    real phi;
+    real theta;
+    real psi;
+    real startRaw;
+    real endRaw;
+    real binSize;
+    real center;
+} HistogramParams;
+
+#define EMPTY_HISTOGRAM_PARAMS { NAN, NAN, NAN, NAN, NAN, NAN, NAN }
+#define HISTOGRAM_PARAMS_TYPE "HistogramParams"
+
+
+typedef struct
+{
+    int useBin;
+    real lambda;
+    real err;
+    real count;
+} HistData;
+
+
 #endif /* __OPENCL_VERSION__ */
 
 /* The context tracks settings of the simulation.  It should be set
@@ -377,6 +402,8 @@ typedef struct NBODY_ALIGN
     mwbool outputBodies;
     mwbool outputHistogram;
 
+    HistogramParams histogramParams;
+
     FILE* outfile;            /* file for snapshot output */
 } NBodyCtx;
 
@@ -399,31 +426,9 @@ typedef struct NBODY_ALIGN
                          0, NAN, NAN, NAN,                                \
                          NAN, InvalidCriterion, 0,                        \
                          FALSE, FALSE, FALSE, FALSE, FALSE,               \
+                         EMPTY_HISTOGRAM_PARAMS,                          \
                          NULL }
 
-
-typedef struct
-{
-    real phi;
-    real theta;
-    real psi;
-    real startRaw;
-    real endRaw;
-    real binSize;
-    real center;
-} HistogramParams;
-
-#define EMPTY_HISTOGRAM_PARAMS { NAN, NAN, NAN, NAN, NAN, NAN, NAN }
-#define HISTOGRAM_PARAMS_TYPE "HistogramParams"
-
-
-typedef struct
-{
-    int useBin;
-    real lambda;
-    real err;
-    real count;
-} HistData;
 
 
 #ifndef __OPENCL_VERSION__  /* No function pointers allowed in kernels */

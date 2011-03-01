@@ -135,7 +135,7 @@ static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* s
     return 0;
 }
 
-int setupNBody(const char* filename, NBodyCtx* ctx, NBodyState* st, HistogramParams* histParams)
+int setupNBody(const char* filename, NBodyCtx* ctx, NBodyState* st)
 {
     int rc;
     lua_State* luaSt;

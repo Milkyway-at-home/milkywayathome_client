@@ -52,6 +52,8 @@ static const NBodyCtx defaultNBodyCtx =
     /* .outputBodies    */  FALSE,
     /* .outputHistogram */  FALSE,
 
+    /* .histogramParams */  EMPTY_HISTOGRAM_PARAMS,
+
     /* .outfile         */  NULL
 };
 

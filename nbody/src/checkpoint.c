@@ -42,17 +42,22 @@ static const char hdr[] = "mwnbody";
 static const char tail[] = "end";
 
 /* Everything except the size of all the bodies */
-static const size_t hdrSize = sizeof(size_t)                                  /* size of real */
+static const size_t hdrSize = sizeof(size_t)                              /* size of real */
+                            + sizeof(void*)                               /* Check pointer size */
+                            + sizeof(NBodyCtx)
+                            + 2 * sizeof(unsigned int)  /* Major, minor version number */
                             + sizeof(char) * (sizeof(tail) + sizeof(hdr) - 2) /* error checking tags */
                             + 1 * sizeof(unsigned int)                        /* nbody count */
                             + 2 * sizeof(real);                               /* tnow, rsize */
 
 /* Macros to read/write the buffer and advance the pointer the correct size */
+#define DUMP_CTX(p, x) { *((NBodyCtx*) (p)) = *(x); (p) += sizeof(NBodyCtx); }
 #define DUMP_REAL(p, x) { *((real*) (p)) = (x); (p) += sizeof(real); }
 #define DUMP_INT(p, x) { *((int*) (p)) = (x); (p) += sizeof(int); }
 #define DUMP_SIZE_T(p, x) { *((size_t*) (p)) = (x); (p) += sizeof(size_t); }
 #define DUMP_STR(p, x, size) { memcpy((p), (x), (size)); (p) += (size); }
 
+#define READ_CTX(x, p) { *(x) = *((NBodyCtx*) (p)); (p) += sizeof(NBodyCtx); }
 #define READ_REAL(x, p) { (x) = *((real*) (p)); (p) += sizeof(real); }
 #define READ_INT(x, p) { (x) = *((int*) (p)); (p) += sizeof(int); }
 #define READ_SIZE_T(x, p) { (x) = *((size_t*) (p)); (p) += sizeof(size_t); }
@@ -227,10 +232,11 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
 #endif /* _WIN32 */
 
 /* Should be given the same context as the dump. Returns nonzero if the state failed to be thawed */
-static inline int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
+static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 {
     unsigned int nbody;
-    size_t realSize;
+    size_t realSize, ptrSize;
+    unsigned int majorVersion, minorVersion;
     char buf[sizeof(hdr)];
     char tailBuf[sizeof(tail)];
     const size_t bodySize = ctx->nbody * sizeof(body);
@@ -243,6 +249,11 @@ static inline int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandl
 
     READ_INT(nbody, p);
     READ_SIZE_T(realSize, p);
+    READ_SIZE_T(ptrSize, p);
+    READ_INT(majorVersion, p);
+    READ_INT(minorVersion, p);
+
+    READ_CTX(ctx, p);
 
     READ_REAL(st->tnow, p);
     READ_REAL(st->tree.rsize, p);
@@ -253,26 +264,31 @@ static inline int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandl
         failed = TRUE;
     }
 
-    if (ctx->nbody != nbody)
-    {
-        warn("Number of bodies in checkpoint file (%u) "
-             "does not match number expected by context (%u).\n",
-             nbody,
-             ctx->nbody);
-        failed = TRUE;
-    }
-
     if (realSize != sizeof(real))
     {
         warn("Got checkpoint file for wrong type. "
-             "Expected sizeof(real) = %lu, got %lu\n",
-             (long unsigned int) sizeof(real),
-             (long unsigned int) realSize);
+             "Expected sizeof(real) = "ZU", got "ZU"\n",
+             sizeof(real), realSize);
+        failed = TRUE;
+    }
+
+    if (ptrSize != sizeof(void*))
+    {
+        warn("Got checkpoint file for wrong architecture. "
+             "Expected sizeof(void*) = "ZU", got "ZU"\n", sizeof(void*), ptrSize);
+        failed = TRUE;
+    }
+
+    if (majorVersion != MILKYWAY_NBODY_VERSION_MAJOR || minorVersion != MILKYWAY_NBODY_VERSION_MAJOR)
+    {
+        warn("Version mismatch in checkpoint file. File is for %u.%u, But version is %u.%u\n",
+             majorVersion, minorVersion,
+             MILKYWAY_NBODY_VERSION_MAJOR, MILKYWAY_NBODY_VERSION_MINOR);
         failed = TRUE;
     }
 
     /* Read the bodies */
-    st->bodytab = (body*) mwMalloc(bodySize);
+    st->bodytab = (body*) mwMallocA(bodySize);
     memcpy(st->bodytab, p, bodySize);
     p += bodySize;
 
@@ -289,14 +305,18 @@ static inline int thawState(const NBodyCtx* ctx, NBodyState* st, CheckpointHandl
 /* Checkpoint file: Very simple binary "format"
    Name     Type    Values     Notes
 -------------------------------------------------------
-   header       string   "mwnbody"  No null terminator
-   nbody        uint     anything   Num. of bodies expected. Error if doesn't match nbody in context.
-   sizeof(real) size_t   4, 8       Does the checkpoint use float or double
-                                    Saved parts of the program state
-   tnow         real     anything
-   rsize        real     anything
-   bodytab      body*    anything   Array of bodies
-   ending       string   "end"      No null terminator
+   header        string   "mwnbody"  No null terminator
+   nbody         uint     anything   Num. of bodies expected. Error if doesn't match nbody in context.
+   sizeof(real)  size_t   4, 8       Does the checkpoint use float or double
+   sizeof(void*) size_t   4, 8
+   version major int      4
+   version minor int      4
+                                        Saved parts of the program state
+   ctx           NBodyCtx sizeof(NBodyCtx)
+   tnow          real     anything
+   rsize         real     anything
+   bodytab       body*    anything   Array of bodies
+   ending        string   "end"      No null terminator
  */
 
 /* Use a very simple flag to mark when writing the checkpoint file
@@ -316,8 +336,12 @@ static inline void freezeState(const NBodyCtx* ctx, const NBodyState* st, Checkp
     DUMP_STR(p, hdr, sizeof(hdr) - 1);  /* Simple marker for a checkpoint file */
     DUMP_INT(p, ctx->nbody);        /* Make sure we get the right number of bodies */
     DUMP_SIZE_T(p, sizeof(real));   /* Make sure we don't confuse double and float checkpoints */
+    DUMP_SIZE_T(p, sizeof(void*));
+    DUMP_INT(p, MILKYWAY_NBODY_VERSION_MAJOR);
+    DUMP_INT(p, MILKYWAY_NBODY_VERSION_MINOR);
 
     /* Now that we have some basic check stuff written, dump the state */
+    DUMP_CTX(p, ctx);
 
     /* Little state pieces */
     DUMP_REAL(p, st->tnow);
@@ -331,7 +355,7 @@ static inline void freezeState(const NBodyCtx* ctx, const NBodyState* st, Checkp
 }
 
 /* Open the temporary checkpoint file for writing */
-int resolveCheckpoint(NBodyCtx* ctx, const char* checkpointFileName)
+int resolveCheckpoint(const char* checkpointFileName)
 {
     int rc = 0;
     rc = mw_resolve_filename(checkpointFileName,
@@ -355,7 +379,7 @@ int resolvedCheckpointExists()
 
 
 /* Read the actual checkpoint file to resume */
-int readCheckpoint(const NBodyCtx* ctx, NBodyState* st)
+int readCheckpoint(NBodyCtx* ctx, NBodyState* st)
 {
     CheckpointHandle cp;
 

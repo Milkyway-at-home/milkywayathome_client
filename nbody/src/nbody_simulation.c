@@ -112,10 +112,10 @@ static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
     ctx->outputHistogram = nbf->printHistogram;
 }
 
-static int verifyFile(const NBodyCtx* ctx, const HistogramParams* hp, int rc)
+static int verifyFile(const NBodyCtx* ctx, int rc)
 {
     printNBodyCtx(ctx);
-    printHistogramParams(hp);
+    printHistogramParams(&ctx->histogramParams);
 
     if (rc)
         warn("File failed\n");
@@ -131,13 +131,12 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
 {
     NBodyCtx ctx  = EMPTY_NBODYCTX;
     NBodyState st = EMPTY_STATE;
-    HistogramParams histParams = EMPTY_HISTOGRAM_PARAMS;
 
     real chisq;
     double ts = 0.0, te = 0.0;
     int rc = 0;
 
-    rc |= setupNBody(nbf->inputFile, &ctx, &st, &histParams);
+    rc |= setupNBody(nbf->inputFile, &ctx, &st);
     if (rc && !nbf->verifyOnly)   /* Fail right away, unless we are diagnosing file problems */
         return warn1("Failed to read input parameters file\n");
 
@@ -145,11 +144,11 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     nbodySetCtxFromFlags(&ctx, nbf);
 
     if (nbf->verifyOnly)
-        return verifyFile(&ctx, &histParams, rc);
+        return verifyFile(&ctx, rc);
     if (rc)
         return warn1("Failed to read input parameters file\n");
 
-    if (resolveCheckpoint(&ctx, nbf->checkpointFileName))
+    if (resolveCheckpoint(nbf->checkpointFileName))
         return warn1("Failed to resolve checkpoint\n");
 
     if (initOutput(&ctx, nbf))
@@ -171,7 +170,7 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     }
 
     /* Get the likelihood */
-    chisq = nbodyChisq(&ctx, &st, nbf, &histParams);
+    chisq = nbodyChisq(&ctx, &st, nbf, &ctx.histogramParams);
     if (isnan(chisq))
         warn("Failed to calculate chisq\n");
 

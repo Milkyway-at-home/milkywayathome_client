@@ -21,9 +21,9 @@
 cmake_minimum_required (VERSION 2.6)
 project(milkyway_nbody)
 
-set(nbody_MAJOR_VERSION 0)
-set(nbody_MINOR_VERSION 30)
-set(nbody_VERSION "${nbody_MAJOR_VERSION}.${nbody_MINOR_VERSION}")
+set(nbody_VERSION_MAJOR 0)
+set(nbody_VERSION_MINOR 30)
+set(nbody_VERSION "${nbody_VERSION_MAJOR}.${nbody_VERSION_MINOR}")
 
 include(MaybeDlCheck)
 include(StaticBOINC)
