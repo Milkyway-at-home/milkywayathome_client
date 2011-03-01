@@ -90,7 +90,7 @@ static inline void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, const node
     ai = mw_mulvs(fest->dr, mor3);
     mw_incaddv(fest->acc0, ai);         /* ... and to total accel. */
 
-    if (ctx->usequad && isCell(q))      /* if cell, add quad term */
+    if (ctx->useQuad && isCell(q))      /* if cell, add quad term */
         cellQuadTerm(fest, q, drab);
 }
 

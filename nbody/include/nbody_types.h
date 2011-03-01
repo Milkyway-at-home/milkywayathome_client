@@ -360,7 +360,7 @@ typedef struct NBODY_ALIGN
     unsigned int nbody;       /* Total number of bodies in all models */
 
     real timestep;
-    real time_evolve;
+    real timeEvolve;
 
     const char* outfilename;  /* output */
     const char* histogram;
@@ -370,13 +370,13 @@ typedef struct NBODY_ALIGN
     unsigned int freqOut;
     real theta;               /* accuracy parameter: 0.0 */
     real eps2;                /* (potential softening parameter)^2 */
-    real tree_rsize;
+    real treeRSize;
 
     real sunGCDist;
     criterion_t criterion;
     long seed;                /* random number seed */
 
-    mwbool usequad;           /* use quadrupole corrections */
+    mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
     mwbool outputCartesian;   /* print (x,y,z) instead of (l, b, r) */
     mwbool outputBodies;

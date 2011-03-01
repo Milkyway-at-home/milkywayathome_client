@@ -34,7 +34,7 @@ static void initState(NBodyCtx* ctx, NBodyState* st)
 {
     mw_report("Starting nbody system\n");
 
-    st->tree.rsize = ctx->tree_rsize;
+    st->tree.rsize = ctx->treeRSize;
     st->tnow       = 0.0;            /* reset elapsed model time */
 
     st->bodytab = (bodyptr) mwMalloc(ctx->nbody * sizeof(body));
@@ -74,13 +74,13 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
         boinc_checkpoint_completed();
     }
 
-    boinc_fraction_done(st->tnow / ctx->time_evolve);
+    boinc_fraction_done(st->tnow / ctx->timeEvolve);
 }
 #endif /* BOINC_APPLICATION */
 
 static void runSystem(const NBodyCtx* ctx, NBodyState* st)
 {
-    const real tstop = ctx->time_evolve - ctx->timestep / 1024.0;
+    const real tstop = ctx->timeEvolve - ctx->timestep / 1024.0;
 
     while (st->tnow < tstop)
     {

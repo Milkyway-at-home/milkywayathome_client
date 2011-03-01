@@ -300,7 +300,7 @@ char* showNBodyCtx(const NBodyCtx* ctx)
     if (0 > asprintf(&buf,
                      "ctx = { \n"
                      "  pot = %s\n"
-                     "  time_evolve     = %g\n"
+                     "  timeEvolve      = %g\n"
                      "  timestep        = %g\n"
                      "  outfilename     = %s\n"
                      "  histogram       = %s\n"
@@ -308,18 +308,18 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      "  outfile         = %p\n"
                      "  sunGCDist       = %g\n"
                      "  criterion       = %s\n"
-                     "  usequad         = %s\n"
+                     "  useQuad         = %s\n"
                      "  allowIncest     = %s\n"
                      "  outputCartesian = %s\n"
                      "  seed            = %ld\n"
-                     "  tree_rsize      = %g\n"
+                     "  treeRSize       = %g\n"
                      "  theta           = %g\n"
                      "  eps2            = %g\n"
                      "  freqOut         = %u\n"
                      "  nbody           = %d\n"
                      "};\n",
                      potBuf,
-                     ctx->time_evolve,
+                     ctx->timeEvolve,
                      ctx->timestep,
                      ctx->outfilename,
                      ctx->histogram,
@@ -327,11 +327,11 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      ctx->outfile,
                      ctx->sunGCDist,
                      showCriterionT(ctx->criterion),
-                     showBool(ctx->usequad),
+                     showBool(ctx->useQuad),
                      showBool(ctx->allowIncest),
                      showBool(ctx->outputCartesian),
                      ctx->seed,
-                     ctx->tree_rsize,
+                     ctx->treeRSize,
                      ctx->theta,
                      ctx->eps2,
                      ctx->freqOut,

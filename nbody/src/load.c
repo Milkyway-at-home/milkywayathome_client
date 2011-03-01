@@ -377,7 +377,7 @@ void makeTree(const NBodyCtx* ctx, NBodyState* st)
 
     hackCofM(ctx, st, t->root, t->rsize);       /* find c-of-m coordinates */
     threadTree((nodeptr) t->root, NULL);        /* add Next and More links */
-    if (ctx->usequad)                           /* including quad moments? */
+    if (ctx->useQuad)                           /* including quad moments? */
         hackQuad(t->root);                      /* assign Quad moments */
 }
 

@@ -103,7 +103,7 @@ static int hasAcceptableEps2(const NBodyCtx* ctx)
 
 static int hasAcceptableTimes(const NBodyCtx* ctx)
 {
-    int rc = mwCheckNormalPosNum(ctx->time_evolve);
+    int rc = mwCheckNormalPosNum(ctx->timeEvolve);
     if (rc)
         warn("Got an unacceptable orbit or evolution time\n");
     return rc;
