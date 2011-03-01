@@ -135,13 +135,18 @@ char* mwFreadFile(FILE* f, const char* filename)
 
     fseek(f, 0, SEEK_END);  /* Find size of file */
     fsize = ftell(f);
+    if (fsize == -1)
+    {
+        perror("Getting file size");
+        return NULL;
+    }
 
     fseek(f, 0, SEEK_SET);
 
     buf = mwCalloc(fsize + 1, sizeof(char));
     readSize = fread(buf, sizeof(char), fsize, f);
 
-    if (readSize != fsize)
+    if (readSize != (size_t) fsize)
     {
         free(buf);
         warn("Failed to read file '%s': Expected to read %ld, but got "ZU"\n",
@@ -350,7 +355,7 @@ int mwReadArguments(poptContext context)
 
 /* Horrible function to find the -p -np arguments, and take anything
  * after them and move them to the front */
-const char** mwFixArgv(int argc, const char** argv)
+const char** mwFixArgv(unsigned long argc, const char** argv)
 {
     const char** argvCopy;
     const char** p;

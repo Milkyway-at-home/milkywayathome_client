@@ -158,7 +158,7 @@ inline int mwCheckNormalPosNum(real n)
 }
 
 
-const char** mwFixArgv(int argc, const char** argv);
+const char** mwFixArgv(unsigned long argc, const char** argv);
 
 /* Loop through all arguments and report bad arguments */
 int mwReadArguments(poptContext context);
