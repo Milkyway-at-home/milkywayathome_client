@@ -36,7 +36,6 @@ static int totalBodies(lua_State* luaSt, int modelTable, int nModels)
         lua_rawgeti(luaSt, modelTable, i + 1);
         n += luaL_getn(luaSt, -1);
         lua_pop(luaSt, 1);
-        warn("arstarstarst %d\n", n);
     }
 
     return n;
@@ -64,6 +63,12 @@ body* readReturnedModels(lua_State* luaSt, int modelTable, unsigned int* nOut)
     luaL_checktype(luaSt, modelTable, LUA_TTABLE);
     nModels = luaL_getn(luaSt, modelTable);
     totalN = totalBodies(luaSt, modelTable, nModels);
+
+    if (totalN == 0)
+    {
+        warn("Didn't get any bodies\n");
+        return NULL;
+    }
 
     bodies = allBodies = (body*) mwMallocA(totalN * sizeof(body));
 

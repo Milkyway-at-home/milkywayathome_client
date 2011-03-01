@@ -333,19 +333,16 @@ static inline void freezeState(const NBodyCtx* ctx, const NBodyState* st, Checkp
 /* Open the temporary checkpoint file for writing */
 int resolveCheckpoint(NBodyCtx* ctx, const char* checkpointFileName)
 {
-    int rc;
-    rc = boinc_resolve_filename(checkpointFileName,
-                                checkpointResolved,
-                                sizeof(checkpointResolved));
+    int rc = 0;
+    rc = mw_resolve_filename(checkpointFileName,
+                             checkpointResolved,
+                             sizeof(checkpointResolved));
     if (rc)
-    {
         warn("Failed to resolve checkpoint file '%s': %d\n", checkpointFileName, rc);
-        return rc;
-    }
+    else
+        checkpointHasBeenResolved = TRUE;
 
-    checkpointHasBeenResolved = TRUE;
-
-    return 0;
+    return rc;
 }
 
 int resolvedCheckpointExists()
@@ -353,7 +350,7 @@ int resolvedCheckpointExists()
     if (!checkpointHasBeenResolved)
         mw_panic("Checking if checkpoint exists, but haven't resolved yet\n");
 
-    return boinc_file_exists(checkpointResolved);
+    return mw_file_exists(checkpointResolved);
 }
 
 

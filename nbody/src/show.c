@@ -433,3 +433,11 @@ void printPotential(const Potential* p)
     free(buf);
 }
 
+void printBodies(const body* bs, unsigned int n)
+{
+    unsigned int i;
+
+    for (i = 0; i < n; ++i)
+        printBody(&bs[i]);
+}
+

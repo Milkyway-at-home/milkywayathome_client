@@ -105,7 +105,7 @@ static int hasAcceptableTimes(const NBodyCtx* ctx)
 {
     int rc = mwCheckNormalPosNum(ctx->timeEvolve);
     if (rc)
-        warn("Got an unacceptable orbit or evolution time\n");
+        warn("Got an unacceptable evolution time\n");
     return rc;
 }
 
@@ -118,19 +118,10 @@ static int hasAcceptableSteps(const NBodyCtx* ctx)
     return rc;
 }
 
-static int hasAcceptableNbody(const NBodyCtx* ctx)
-{
-    int rc = ctx->nbody < 1;
-    if (rc)
-        warn("nbody = %d is absurd\n", ctx->nbody);
-    return rc;
-}
-
 int contextSanityCheck(const NBodyCtx* ctx)
 {
     int rc = 0;
 
-    rc |= hasAcceptableNbody(ctx);
     rc |= hasAcceptableTimes(ctx);
     rc |= hasAcceptableSteps(ctx);
     rc |= hasAcceptableEps2(ctx);

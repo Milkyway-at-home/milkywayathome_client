@@ -329,6 +329,8 @@ static void hackCofM(const NBodyCtx* ctx, NBodyState* st, cell* p, real psize)
     node* q;
     mwvector cmpos = ZERO_VECTOR;                 /* init center of mass */
 
+    assert(psize >= REAL_EPSILON);
+
     Mass(p) = 0.0;                              /* init total mass... */
     for (i = 0; i < NSUB; ++i)                  /* loop over subnodes */
     {
@@ -367,6 +369,7 @@ void makeTree(const NBodyCtx* ctx, NBodyState* st)
     Tree* t = &st->tree;
 
     newTree(st, t);                                  /* flush existing tree, etc */
+
     t->root = makeCell(st, t);                       /* allocate the t.root cell */
     mw_zerov(Pos(t->root));                          /* initialize the midpoint */
     expandBox(t, st->bodytab, ctx->nbody);           /* and expand cell to fit */

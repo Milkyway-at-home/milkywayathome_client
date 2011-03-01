@@ -30,39 +30,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "show.h"
 #include "nbody_lua.h"
 
-static void initState(NBodyCtx* ctx, NBodyState* st)
-{
-    mw_report("Starting nbody system\n");
-
-    st->tree.rsize = ctx->treeRSize;
-    st->tnow       = 0.0;            /* reset elapsed model time */
-
-    st->bodytab = (body*) mwMalloc(ctx->nbody * sizeof(body));
-    st->acctab  = (mwvector*) mwMalloc(ctx->nbody * sizeof(mwvector));
-
-    //generateAllModels(ctx, st->bodytab);
-
-  #if NBODY_OPENCL
-    setupNBodyCL(ctx, st);
-  #endif /* NBODY_OPENCL */
-
-    /* CHECKME: Why does makeTree get used twice for the first step? */
-    /* Take 1st step */
-  #if !NBODY_OPENCL
-    gravMap(ctx, st);
-  #else
-    gravMapCL(ctx, st);
-  #endif /* !NBODY_OPENCL */
-
-}
-
-static void startRun(NBodyCtx* ctx, NBodyState* st)
-{
-    mw_report("Starting fresh nbody run\n");
-    //reverseModelOrbits(ctx);
-    initState(ctx, st);
-}
-
 #if BOINC_APPLICATION
 static inline void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
 {
@@ -111,9 +78,6 @@ static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
     nbodyStateDestroy(st);
 }
 
-#if BOINC_APPLICATION
-
-/* Setup the run, taking care of checkpointing things when using BOINC */
 static int setupRun(NBodyCtx* ctx, NBodyState* st)
 {
     /* If the checkpoint exists, try to use it */
@@ -129,35 +93,16 @@ static int setupRun(NBodyCtx* ctx, NBodyState* st)
         else
         {
             mw_report("Successfully read checkpoint\n");
-            /* We restored the useful state. Now still need to create
-             * the workspace where new accelerations are
-             * calculated. */
-            st->acctab  = (mwvector*) mwMalloc(ctx->nbody * sizeof(mwvector));
-          #if !NBODY_OPENCL
-            gravMap(ctx, st);
-          #else
-            gravMapCL(ctx, st);
-          #endif /* !NBODY_OPENCL */
         }
     }
-    else   /* Otherwise, just start a fresh run */
-    {
-        startRun(ctx, st);
-    }
+
+    /* Accelerations are scratch space */
+    st->acctab = (mwvector*) mwMallocA(ctx->nbody * sizeof(mwvector));
+
+    gravMap(ctx, st); /* Start 1st step */
 
     return 0;
 }
-
-#else
-
-/* When not using BOINC, we don't need to deal with the checkpointing */
-static int setupRun(NBodyCtx* ctx, NBodyState* st)
-{
-    startRun(ctx, st);
-    return 0;
-}
-
-#endif /* BOINC_APPLICATION */
 
 /* Set context fields read from command line flags */
 static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
@@ -200,16 +145,12 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     nbodySetCtxFromFlags(&ctx, nbf);
 
     if (nbf->verifyOnly)
-        verifyFile(&ctx, &histParams, rc);
+        return verifyFile(&ctx, &histParams, rc);
     if (rc)
         return warn1("Failed to read input parameters file\n");
 
-
-
-  #if BOINC_APPLICATION
     if (resolveCheckpoint(&ctx, nbf->checkpointFileName))
         return warn1("Failed to resolve checkpoint\n");
-  #endif /* BOINC_APPLICATION */
 
     if (initOutput(&ctx, nbf))
         return warn1("Failed to open output files\n");

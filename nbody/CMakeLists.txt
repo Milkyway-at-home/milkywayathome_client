@@ -209,10 +209,8 @@ if(NBODY_SHOW)
   list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/show.h)
 endif()
 
-if(BOINC_APPLICATION)
-  list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/checkpoint.c)
-  list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/checkpoint.h)
-endif()
+list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/checkpoint.c)
+list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/checkpoint.h)
 
 add_library(nbody_lua STATIC ${nbody_lua_src} ${nbody_lua_headers})
 set_target_properties(nbody_lua PROPERTIES

@@ -53,5 +53,7 @@ void printHistogramParams(const HistogramParams*);
 char* showBody(const body* p);
 void printBody(const body* p);
 
+void printBodies(const body* bs, unsigned int n);
+
 #endif /* _SHOW_H_ */
 

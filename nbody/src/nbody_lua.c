@@ -130,9 +130,7 @@ static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* s
 
     st->tree.rsize = ctx->treeRSize;
     st->tnow = 0.0;
-
     st->bodytab = bodies;
-    st->acctab = (mwvector*) mwMallocA(ctx->nbody * sizeof(mwvector));
 
     return 0;
 }
