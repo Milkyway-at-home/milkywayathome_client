@@ -181,7 +181,6 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/chisq.h
 
 set(nbody_lua_types_src ${NBODY_SRC_DIR}/lua_nbodyctx.c
                         ${NBODY_SRC_DIR}/lua_body.c
-                        ${NBODY_SRC_DIR}/lua_body_array.c
                         ${NBODY_SRC_DIR}/lua_vector.c
                         ${NBODY_SRC_DIR}/lua_halo.c
                         ${NBODY_SRC_DIR}/lua_disk.c
@@ -196,7 +195,6 @@ set(nbody_lua_types_src ${NBODY_SRC_DIR}/lua_nbodyctx.c
                         ${NBODY_SRC_DIR}/lua_milkyway_math.c)
 
 set(nbody_lua_types_headers ${NBODY_INCLUDE_DIR}/lua_body.h
-                            ${NBODY_INCLUDE_DIR}/lua_body_array.h
                             ${NBODY_INCLUDE_DIR}/lua_vector.h
                             ${NBODY_INCLUDE_DIR}/lua_nbodyctx.h
                             ${NBODY_INCLUDE_DIR}/lua_halo.h

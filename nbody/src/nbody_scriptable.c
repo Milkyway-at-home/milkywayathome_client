@@ -258,34 +258,6 @@ static int callProcessContext(lua_State* luaSt, NBodyCtx* ctx)
     return 0;
 }
 
-static void callTestBodies(lua_State* luaSt)
-{
-    NBodyLuaBodyArray* bodies = NULL;
-
-    TOP_TYPE(luaSt, "test bodies");
-
-    lua_getglobal(luaSt, "testBodyArray");
-    TOP_TYPE(luaSt, "got global");
-    lua_call(luaSt, 0, 1);
-    TOP_TYPE(luaSt, "call made");
-    warn("EVERYTHING IS OK\n");
-
-
-
-    /* get the result */
-    //bodies = checkNBodyLuaBodyArray(luaSt, -1);
-    // lua_pop(luaSt, 1);
-
-    body* b = checkBody(luaSt, -1);
-    printBody(b);
-    lua_pop(luaSt, 1);
-
-
-    /* print the result */
-    if (bodies)
-        warn("WHEEEEE %u\n", bodies->nBody);
-}
-
 static void callTestVector(lua_State* luaSt)
 {
     lua_getglobal(luaSt, "testVector");
@@ -365,8 +337,6 @@ int scriptableArst()
     WHEREAMI("callTestHalo", luaSt);
     callTestDisk(luaSt);
     WHEREAMI("callTestDisk", luaSt);
-    callTestBodies(luaSt);
-    WHEREAMI("callTestBodies", luaSt);
 
     callTestGeneratePlummer(luaSt);
     WHEREAMI("callTestGeneratePlummer A", luaSt);

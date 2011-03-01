@@ -292,9 +292,6 @@ char* showNBodyCtx(const NBodyCtx* ctx)
     char* buf;
     char* potBuf;
 
-    size_t totalLen = 0;
-    unsigned int i;
-
     if (!ctx)
         return NULL;
 

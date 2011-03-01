@@ -26,7 +26,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include "lua_body_array.h"
 #include "lua_initial_conditions.h"
 #include "lua_type_marshal.h"
 #include "lua_body.h"
