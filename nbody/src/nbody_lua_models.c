@@ -146,11 +146,31 @@ static void registerReverseOrbit(lua_State* luaSt)
     lua_setglobal(luaSt, "reverseOrbit");
 }
 
+static void setModelTableItem(lua_State* luaSt, int table, lua_CFunction generator, const char* name)
+{
+    lua_pushcfunction(luaSt, generator);
+    lua_setfield(luaSt, table, name);
+}
+
 void registerPredefinedModelGenerators(lua_State* luaSt)
 {
+    int table;
+
     registerGeneratePlummer(luaSt);
 
-    /* TODO: Table with name of model */
+    /* Create a table of predefined models, so we can use them like
+     * predefinedModels.plummer() etc. */
+    lua_newtable(luaSt);
+    table = lua_gettop(luaSt);
+
+    setModelTableItem(luaSt, table, generatePlummer, "plummer");
+
+    /*
+      setModelTableItem(luaSt, table, generateKing, "king");
+      setModelTableItem(luaSt, table, generateDehnen, "dehnen");
+    */
+
+    lua_setglobal(luaSt, "predefinedModels");
 }
 
 void registerModelUtilityFunctions(lua_State* luaSt)

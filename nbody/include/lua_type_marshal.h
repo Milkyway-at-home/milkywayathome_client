@@ -59,6 +59,8 @@ typedef struct
 
 #define END_MW_NAMED_ARG { NULL, -1, NULL, FALSE, NULL }
 
+#define mw_lua_assert_top_type(luaSt, t) assert(lua_type((luaSt), -1) == t)
+
 int getInt(lua_State* luaSt, void* v);
 int setInt(lua_State* luaSt, void* v);
 
