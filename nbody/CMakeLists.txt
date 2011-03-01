@@ -22,7 +22,7 @@ cmake_minimum_required (VERSION 2.6)
 project(milkyway_nbody)
 
 set(nbody_MAJOR_VERSION 0)
-set(nbody_MINOR_VERSION 22)
+set(nbody_MINOR_VERSION 30)
 set(nbody_VERSION "${nbody_MAJOR_VERSION}.${nbody_MINOR_VERSION}")
 
 include(MaybeDlCheck)
