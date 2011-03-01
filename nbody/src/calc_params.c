@@ -82,11 +82,10 @@ static int processInitialConditions(const NBodyCtx* ctx, InitialConditions* ic)
     return 0;
 }
 
+#if 0
 static int processModel(NBodyCtx* ctx, DwarfModel* mod)
 {
     int rc;
-
-    #if 0
 
     rc = processInitialConditions(ctx, &mod->initialConditions);
 
@@ -108,10 +107,10 @@ static int processModel(NBodyCtx* ctx, DwarfModel* mod)
             warn("Unhandled model type: %s\n", showDwarfModelT(mod->type));
             return 1;
     }
-    #endif
 
     return rc;
 }
+#endif
 
 static real plummerTimestepIntegral(real smalla, real biga, real Ml, real Md)
 {
@@ -241,38 +240,6 @@ static int postProcess(NBodyCtx* ctx)
     return rc;
 }
 
-/* Make sure we aren't ignoring all of the models */
-static int hasNonIgnorableModel(const NBodyCtx* ctx)
-{
-    unsigned int i;
-    unsigned int totalNonIgnorableModels = 0;
-    int rc;
-
-    if (ctx->modelNum == 0)
-    {
-        warn("Context has no models\n");
-        return 1;
-    }
-
-    if (ctx->modelNum > ((1 << 8 * sizeof(body_t)) - 1))
-    {
-        warn("Too many models: %u\n", ctx->modelNum);
-        return 1;
-    }
-
-    for (i = 0; i < ctx->modelNum; ++i)
-    {
-        if (!ctx->models[i].ignoreFinal)
-            ++totalNonIgnorableModels;
-    }
-
-    rc = (totalNonIgnorableModels == 0);
-    if (rc)
-        warn("Trying to ignore all of %u models\n", ctx->modelNum);
-
-    return rc;
-}
-
 static int hasAcceptableEps2(const NBodyCtx* ctx)
 {
     int rc = !isfinite(ctx->eps2) || ctx->eps2 <= 0.0;
@@ -322,7 +289,6 @@ static int contextSanityCheck(const NBodyCtx* ctx)
 {
     int rc = 0;
 
-    rc |= hasNonIgnorableModel(ctx);
     rc |= hasAcceptableNbody(ctx);
     rc |= hasAcceptableTimes(ctx);
     rc |= hasAcceptableSteps(ctx);

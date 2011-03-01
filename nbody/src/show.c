@@ -103,25 +103,6 @@ const char* showHaloT(const halo_t x)
     }
 }
 
-const char* showDwarfModelT(const dwarf_model_t x)
-{
-    switch (x)
-    {
-        case DwarfModelOther:
-            return "DwarfModelOther";
-        case DwarfModelPlummer:
-            return "DwarfModelPlummer";
-        case DwarfModelKing:
-            return "DwarfModelKing";
-        case DwarfModelDehnen:
-            return "DwarfModelDehnen";
-        case InvalidDwarfModel:
-            return "InvalidDwarfModel";
-        default:
-            return "Bad dwarf_model_t";
-    }
-}
-
 char* showSpherical(const Spherical* s)
 {
     char* buf;
@@ -280,31 +261,6 @@ char* showPotential(const Potential* p)
     return buf;
 }
 
-char* showDwarfModel(const DwarfModel* d)
-{
-    char* buf;
-
-    if (!d)
-        return NULL;
-
-    if (0 > asprintf(&buf,
-                     "  { \n"
-                     "      type              = %s\n"
-                     "      nbody             = %d\n"
-                     "      mass              = %g\n"
-                     "      ignoreFinal       = %s\n"
-                     "    };\n",
-                     showDwarfModelT(d->type),
-                     d->nbody,
-                     d->mass,
-                     showBool(d->ignoreFinal)))
-    {
-        fail("asprintf() failed\n");
-    }
-
-    return buf;
-}
-
 char* showInitialConditions(const InitialConditions* ic)
 {
     char* buf;
@@ -335,33 +291,14 @@ char* showNBodyCtx(const NBodyCtx* ctx)
 {
     char* buf;
     char* potBuf;
-    char* modelBuf;
 
     size_t totalLen = 0;
-    char** allModels;
     unsigned int i;
-
 
     if (!ctx)
         return NULL;
 
     potBuf = showPotential(&ctx->pot);
-
-    allModels = mwMalloc(sizeof(char*) * ctx->modelNum);
-
-    for (i = 0; i < ctx->modelNum; ++i)
-    {
-        allModels[i] = showDwarfModel(&ctx->models[i]);
-        totalLen += strlen(allModels[i]);
-    }
-
-    modelBuf = (char*) mwCalloc(totalLen + 1, sizeof(char));
-    for (i = 0; i < ctx->modelNum; ++i)
-    {
-        strcat(modelBuf, allModels[i]);
-        free(allModels[i]);
-    }
-    free(allModels);
 
     if (0 > asprintf(&buf,
                      "ctx = { \n"
@@ -386,8 +323,6 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      "  eps2            = %g\n"
                      "  freqOut         = %u\n"
                      "  nbody           = %d\n"
-                     "  modelNum        = %u\n"
-                     "  models          = %s\n"
                      "};\n",
                      potBuf,
                      ctx->time_evolve,
@@ -409,15 +344,12 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      ctx->theta,
                      ctx->eps2,
                      ctx->freqOut,
-                     ctx->nbody,
-                     ctx->modelNum,
-                     modelBuf))
+                     ctx->nbody))
     {
         fail("asprintf() failed\n");
     }
 
     free(potBuf);
-    free(modelBuf);
 
     return buf;
 }
@@ -522,13 +454,6 @@ void printHistogramParams(const HistogramParams* hp)
 void printBody(const bodyptr p)
 {
     char* buf = showBody(p);
-    puts(buf);
-    free(buf);
-}
-
-void printDwarfModel(const DwarfModel* p)
-{
-    char* buf = showDwarfModel(p);
     puts(buf);
     free(buf);
 }

@@ -60,21 +60,6 @@ static criterion_t readCriterion(const char* str)
     return -1;
 }
 
-static dwarf_model_t readDwarfModelT(const char* str)
-{
-    if (!strcasecmp(str, "plummer"))
-        return DwarfModelPlummer;
-    if (!strcasecmp(str, "king"))
-        return DwarfModelKing;
-    if (!strcasecmp(str, "dehnen"))
-        return DwarfModelDehnen;
-    else
-        warn("Invalid model %s: Model options are "
-             "'plummer', 'king', 'dehnen'\n", str);
-
-    return InvalidDwarfModel;
-}
-
 static mwbool readInitialConditions(InitialConditions* ic, const char* pname, json_object* obj)
 {
     const InitialConditions defaultIC =
@@ -130,36 +115,6 @@ static mwbool readHaloParams(Halo* halo, const char* pname, json_object* obj)
         };
 
     return mwReadTypedGroup(haloOptions, obj, pname, (generic_enum_t*) &halo->type);
-}
-
-static mwbool readDwarfModel(DwarfModel* model, const char* parentName, json_object* obj)
-{
-    const mwbool defaultIgnore = FALSE;
-
-#if 0
-    /* The current different dwarf models all use the same parameters */
-    const MWParameter dwarfModelParams[] =
-        {
-            /* FIXME: Hack: Defaulting on NAN's so we can ignore them
-             * in the file, to be filled in by the server sent
-             * FitParams. This will probably result in unfortunate
-             * things when using the file. */
-            ENUM_PARAM("type",               &model->type,           (MWReadFunc) readDwarfModelT),
-            INT_PARAM("nbody",               &model->nbody),
-            DBL_PARAM_DFLT("mass",           &model->mass,           &nanN),
-            DBL_PARAM_DFLT("small-mass",     &model->smallMass,      &nanN),
-            DBL_PARAM_DFLT("small-radius",   &model->smallRadius,    &nanN),
-            DBL_PARAM_DFLT("scale-radius",   &model->scale_radius,   &nanN),
-            DBL_PARAM_DFLT("timestep",       &model->timestep,       &nanN),
-            DBL_PARAM_DFLT("orbit-timestep", &model->orbit_timestep, &nanN),
-            BOOL_PARAM_DFLT("ignore-final",  &model->ignoreFinal, &defaultIgnore),
-            OBJ_PARAM("initial-conditions",  &model->initialConditions, (MWReadFunc) readInitialConditions),
-            NULL_MWPARAMETER
-        };
-#endif
-
-    return TRUE;
-    //return mwReadParameterGroup(dwarfModelParams, obj, parentName);
 }
 
 static mwbool readDiskParams(Disk* disk, const char* pname, json_object* obj)
@@ -228,8 +183,6 @@ static mwbool readNbodyContext(NBodyCtx* ctx, const char* pname, json_object* ob
         {
             /* Grr lack of C99 named struct initializers in MSVC */
             /* .pot             */  EMPTY_POTENTIAL,
-            /* .models          */  NULL,
-            /* .modelNum        */  0,
             /* .nbody           */  0,
             /* .timestep        */  0.0,
             /* .time_evolve     */  0.0,
@@ -279,7 +232,6 @@ static mwbool readNbodyContext(NBodyCtx* ctx, const char* pname, json_object* ob
             DBL_PARAM_DFLT("timestep",       &ctx->timestep,       &nanN),
             DBL_PARAM_DFLT("orbit_timestep", &ctx->orbit_timestep, &nanN),
 
-            ONE_OR_MANY_PARAM("dwarf-model", &ctx->models, sizeof(DwarfModel), &ctx->modelNum, (MWReadFunc) readDwarfModel),
             DBL_PARAM_DFLT("sun-gc-dist", &ctx->sunGCDist, &defaultCtx.sunGCDist),
             DBL_PARAM_DFLT("tree_rsize", &ctx->tree_rsize, &defaultCtx.tree_rsize),
             NULL_MWPARAMETER

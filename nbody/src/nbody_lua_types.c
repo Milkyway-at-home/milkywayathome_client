@@ -38,7 +38,6 @@ static void registerNBodyTypes(lua_State* luaSt)
     registerInitialConditions(luaSt);
 
     registerNBodyCtx(luaSt);
-    registerDwarfModel(luaSt);
 }
 
 static void registerOtherTypes(lua_State* luaSt)

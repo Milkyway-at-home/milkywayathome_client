@@ -31,48 +31,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "orbitintegrator.h"
 #include "show.h"
 
-/* make test model */
-static void generateModel(NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodies)
-{
-    DwarfModel* model;
-    dsfmt_t dsfmtState;
-
-    model = &ctx->models[modelIdx];
-    dsfmt_init_gen_rand(&dsfmtState, ctx->seed);
-
-    switch (model->type)
-    {
-        #if 0
-        case DwarfModelPlummer:
-            generatePlummer(&dsfmtState,
-                            bodies,
-                            model->nbody,
-                            &model->initialConditions,
-                            model->mass,
-                            model->scale_radius,
-                            model->ignoreFinal);
-            break;
-        case DwarfModelKing:
-        case DwarfModelDehnen:
-        case InvalidDwarfModel:
-            fail("Trying to run with invalid dwarf model\n");
-        default:
-            fail("Unsupported model: %d", model->type);
-            #endif
-    }
-}
-
-static void generateAllModels(NBodyCtx* ctx, bodyptr bodies)
-{
-    unsigned int i, bodyIdx;
-
-    for (i = 0, bodyIdx = 0; i < ctx->modelNum; ++i)
-    {
-        generateModel(ctx, i, &bodies[bodyIdx]);
-        bodyIdx += ctx->models[i].nbody;
-    }
-}
-
 static void initState(NBodyCtx* ctx, NBodyState* st)
 {
     mw_report("Starting nbody system\n");
@@ -83,7 +41,7 @@ static void initState(NBodyCtx* ctx, NBodyState* st)
     st->bodytab = (bodyptr) mwMalloc(ctx->nbody * sizeof(body));
     st->acctab  = (mwvector*) mwMalloc(ctx->nbody * sizeof(mwvector));
 
-    generateAllModels(ctx, st->bodytab);
+    //generateAllModels(ctx, st->bodytab);
 
   #if NBODY_OPENCL
     setupNBodyCL(ctx, st);
@@ -102,7 +60,7 @@ static void initState(NBodyCtx* ctx, NBodyState* st)
 static void startRun(NBodyCtx* ctx, NBodyState* st)
 {
     mw_report("Starting fresh nbody run\n");
-    reverseModelOrbits(ctx);
+    //reverseModelOrbits(ctx);
     initState(ctx, st);
 }
 

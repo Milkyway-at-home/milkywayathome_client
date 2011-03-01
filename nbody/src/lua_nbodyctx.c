@@ -33,8 +33,6 @@ static const NBodyCtx defaultNBodyCtx =
 {
     /* Grr lack of C99 named struct initializers in MSVC */
     /* .pot             */  EMPTY_POTENTIAL,
-    /* .models          */  NULL,
-    /* .modelNum        */  0,
     /* .nbody           */  0,
     /* .timestep        */  0.0,
     /* .time_evolve     */  0.0,

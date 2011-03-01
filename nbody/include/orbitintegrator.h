@@ -24,7 +24,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 
 InitialConditions reverseOrbit(const Potential* pot, InitialConditions ic, real tstop, real dt);
-void reverseModelOrbits(NBodyCtx* ctx);
 
 #endif /* _ORBITINTEGRATOR_H_ */
 

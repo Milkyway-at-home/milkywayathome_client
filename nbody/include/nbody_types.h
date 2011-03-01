@@ -295,34 +295,6 @@ typedef struct NBODY_ALIGN
 
 #define EMPTY_FIT_PARAMS { FALSE, NAN, NAN, NAN, NAN }
 
-
-typedef enum
-{
-    InvalidDwarfModel = InvalidEnum,
-    DwarfModelOther   = 0,
-    DwarfModelPlummer,
-    DwarfModelKing,
-    DwarfModelDehnen
-} dwarf_model_t;
-
-typedef struct NBODY_ALIGN
-{
-    dwarf_model_t type;
-    unsigned int nbody;
-    real mass;
-
-    mwbool ignoreFinal;
-
-    body* bodies;
-
-    int generator;
-} DwarfModel;
-
-#define EMPTY_DWARF_MODEL { InvalidDwarfModel, 0, NAN, FALSE, NULL, LUA_REFNIL }
-
-
-#define DWARF_MODEL_TYPE "DwarfModel"
-
 #ifndef _WIN32
 
 typedef struct NBODY_ALIGN
@@ -395,8 +367,6 @@ typedef struct NBODY_ALIGN
 {
     Potential pot;
 
-    DwarfModel* models;       /* dwarf models */
-    unsigned int modelNum;    /* Number of models */
     unsigned int nbody;       /* Total number of bodies in all models */
 
     real timestep;
@@ -444,7 +414,7 @@ typedef struct NBODY_ALIGN
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
-#define EMPTY_NBODYCTX { EMPTY_POTENTIAL, NULL, 0, 0, NAN, NAN, NAN, NAN, \
+#define EMPTY_NBODYCTX { EMPTY_POTENTIAL, 0, NAN, NAN, NAN, NAN,          \
                          NULL, NULL, NULL, NULL, NULL,                    \
                          NAN, NAN, NAN,                                   \
                          NAN, NAN, InvalidCriterion, 0, 0,                \

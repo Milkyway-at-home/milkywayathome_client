@@ -57,22 +57,3 @@ InitialConditions reverseOrbit(const Potential* pot, InitialConditions ic, real 
     return ic;
 }
 
-/* For each of the models, if its initial conditions needs to be reverse orbited, do it. */
-void reverseModelOrbits(NBodyCtx* ctx)
-{
-    unsigned int i;
-
-    for (i = 0; i < ctx->modelNum; ++i)
-    {
-        #if 0
-        if (ctx->models[i].initialConditions.reverseOrbit)
-        {
-            ctx->models[i].initialConditions = reverseOrbit(&ctx->pot,
-                                                            ctx->models[i].initialConditions,
-                                                            ctx->time_orbit,
-                                                            ctx->orbit_timestep);
-        }
-        #endif
-    }
-}
-

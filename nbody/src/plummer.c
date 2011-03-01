@@ -164,15 +164,15 @@ static int createPlummerSphereTable(lua_State* luaSt,
     return 1;
 }
 
-/* Model -> DSFMT -> InitialConditions -> Real (mass) -> Bool (ignore final) -> [UserData] -> [Body] */
+/* DSFMT -> InitialConditions -> Int (nbody) -> Real (mass) -> Bool (ignore final) -> [UserData] -> [Body] */
 int generatePlummer(lua_State* luaSt)
 {
     int nArgs, userDataIndex;
     dsfmt_t* prng;
-    const DwarfModel* dm;
     const InitialConditions* ic;
     mwbool ignore;
     real mass, velScale;
+    int nbody;
     static real radiusScale = 0.0;
 
     static const MWNamedArg udTable[] =
@@ -186,9 +186,9 @@ int generatePlummer(lua_State* luaSt)
     switch (nArgs)
     {
         case 6:
-            dm = checkDwarfModel(luaSt, 1);
-            prng = checkDSFMT(luaSt, 2);
-            ic = checkInitialConditions(luaSt, 3);
+            prng = checkDSFMT(luaSt, 1);
+            ic = checkInitialConditions(luaSt, 2);
+            nbody = luaL_checkinteger(luaSt, 3);
             mass = luaL_checknumber(luaSt, 4);
             ignore = mw_lua_checkboolean(luaSt, 5);
             userDataIndex = mw_lua_checktable(luaSt, 6);
@@ -202,7 +202,7 @@ int generatePlummer(lua_State* luaSt)
 
     velScale = mw_sqrt(mass / radiusScale);     /* and recip. speed scale */
 
-    return createPlummerSphereTable(luaSt, prng, dm->nbody, mass, ignore,
+    return createPlummerSphereTable(luaSt, prng, nbody, mass, ignore,
                                     ic->position, ic->velocity, radiusScale, velScale);
 }
 

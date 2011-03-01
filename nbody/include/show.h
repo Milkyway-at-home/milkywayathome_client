@@ -31,7 +31,6 @@ const char* showCriterionT(const criterion_t);
 const char* showSphericalT(const spherical_t);
 const char* showDiskT(const disk_t);
 const char* showHaloT(const halo_t);
-const char* showDwarfModelT(const dwarf_model_t);
 char* showSpherical(const Spherical*);
 char* showHalo(const Halo*);
 void printHalo(const Halo*);
@@ -40,8 +39,6 @@ void printDisk(const Disk*);
 char* showPotential(const Potential*);
 void printPotential(const Potential*);
 
-char* showDwarfModel(const DwarfModel*);
-void printDwarfModel(const DwarfModel*);
 char* showInitialConditions(const InitialConditions*);
 char* showNBodyCtx(const NBodyCtx*);
 void printNBodyCtx(const NBodyCtx*);

@@ -175,18 +175,6 @@ static void callTestInitialConditions(lua_State* luaSt)
     lua_pop(luaSt, 1);
 }
 
-static void callTestDwarfModel(lua_State* luaSt)
-{
-    DwarfModel* dm;
-
-    lua_getglobal(luaSt, "testDwarfModel");
-    lua_call(luaSt, 0, 1);
-
-    dm = checkDwarfModel(luaSt, -1);
-    printDwarfModel(dm);
-    lua_pop(luaSt, 1);
-}
-
 static void callTestGeneratePlummer(lua_State* luaSt)
 {
     //TOP_TYPE(luaSt, "Generate plummer call")
@@ -341,7 +329,6 @@ static void registerEverything(lua_State* luaSt)
     registerInitialConditions(luaSt);
     registerNBodyLuaBodyArray(luaSt);
     registerNBodyCtx(luaSt);
-    registerDwarfModel(luaSt);
     registerDSFMT(luaSt);
     registerPredefinedModelGenerators(luaSt);
     registerUtilityFunctions(luaSt);
@@ -416,9 +403,6 @@ int scriptableArst()
     WHEREAMI("callTestInitialConditions", luaSt);
     callTestInitialConditions(luaSt);
 
-    WHEREAMI("callTestDwarfModel", luaSt);
-    callTestDwarfModel(luaSt);
-
     WHEREAMI("Final", luaSt);
     lua_close(luaSt);
 
@@ -458,8 +442,6 @@ int scriptableAoeu()
     pushNBodyCtx(luaSt, &arstctx);
     lua_call(luaSt, 1, 1);
 
-    DwarfModel* dm = checkDwarfModel(luaSt, -1);
-
     InitialConditions ic;
     ic.position = inipos;
     ic.velocity = inivel;
@@ -473,9 +455,6 @@ int scriptableAoeu()
     lua_createtable(luaSt, n, 0);
     int table = lua_gettop(luaSt);
 
-    lua_rawgeti(luaSt, LUA_REGISTRYINDEX, dm->generator);
-
-    lua_pushvalue(luaSt, table);
 
 
     pushDSFMT(luaSt, &prng);
