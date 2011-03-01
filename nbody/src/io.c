@@ -20,15 +20,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <string.h>
-#include "nbody_priv.h"
 #include "io.h"
 #include "milkyway_util.h"
 
-int initOutput(NBodyCtx* ctx)
+int initOutput(NBodyCtx* ctx, const NBodyFlags* nbf)
 {
-    ctx->outfile = ctx->outfilename ? mwOpenResolved(ctx->outfilename, "w") : DEFAULT_OUTPUT_FILE;
+    ctx->outfile = nbf->outFileName ? mwOpenResolved(nbf->outFileName, "w") : DEFAULT_OUTPUT_FILE;
     if (ctx->outfile == NULL)
-        return warn1("initOutput: cannot open output file %s\n", ctx->outfilename);
+        return warn1("initOutput: cannot open output file %s\n", nbf->outFileName);
 
     return FALSE;
 }

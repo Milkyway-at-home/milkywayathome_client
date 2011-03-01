@@ -72,6 +72,7 @@ static inline void printHistogram(FILE* f,
 }
 
 static void writeHistogram(const NBodyCtx* ctx,
+                           const NBodyFlags* nbf,
                            const HistogramParams* hp,
                            const HistData* histData,      /* Read histogram data */
                            const unsigned int* histogram, /* Binned simulation data */
@@ -81,9 +82,9 @@ static void writeHistogram(const NBodyCtx* ctx,
 {
     FILE* f = ctx->outfile;
 
-    if (ctx->histout && strcmp(ctx->histout, ""))  /* If file specified, try to open it */
+    if (nbf->histoutFileName && strcmp(nbf->histoutFileName, ""))  /* If file specified, try to open it */
     {
-        f = mwOpenResolved(ctx->histout, "w");
+        f = mwOpenResolved(nbf->histoutFileName, "w");
         if (f == NULL)
         {
             perror("Writing histout. Using output file instead");
@@ -231,7 +232,7 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
 }
 
 /* Calculate the likelihood from the final state of the simulation */
-real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st, const HistogramParams* hp)
+real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf, const HistogramParams* hp)
 {
     real chisqval;
     unsigned int totalNum = 0;
@@ -246,7 +247,7 @@ real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st, const HistogramParams
 
     const real start = mw_ceil(hp->center - hp->binSize * (real) maxIdx / 2.0);
 
-    histData = readHistData(ctx->histogram, maxIdx);
+    histData = readHistData(nbf->histogramFileName, maxIdx);
     if (!histData)
     {
         warn("Failed to read histogram\n");
@@ -261,7 +262,7 @@ real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st, const HistogramParams
     }
 
     if (ctx->outputHistogram)
-        writeHistogram(ctx, hp, histData, histogram, maxIdx, start, (real) totalNum);
+        writeHistogram(ctx, nbf, hp, histData, histogram, maxIdx, start, (real) totalNum);
 
     if (totalNum != 0)
         chisqval = calcChisq(histData, histogram, maxIdx, (real) totalNum);

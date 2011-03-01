@@ -117,7 +117,7 @@ static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
 static int setupRun(NBodyCtx* ctx, NBodyState* st)
 {
     /* If the checkpoint exists, try to use it */
-    if (boinc_file_exists(ctx->cp_resolved))
+    if (resolvedCheckpointExists())
     {
         mw_report("Checkpoint exists. Attempting to resume from it.\n");
         if (readCheckpoint(ctx, st))
@@ -165,10 +165,6 @@ static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
     ctx->outputCartesian = nbf->outputCartesian;
     ctx->outputBodies    = nbf->printBodies;
     ctx->outputHistogram = nbf->printHistogram;
-    ctx->outfilename     = nbf->outFileName;
-    ctx->histogram       = nbf->histogramFileName;
-    ctx->histout         = nbf->histoutFileName;
-    ctx->cp_filename     = nbf->checkpointFileName;
 }
 
 static int verifyFile(const NBodyCtx* ctx, const HistogramParams* hp, int rc)
@@ -211,11 +207,11 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
 
 
   #if BOINC_APPLICATION
-    if (resolveCheckpoint(&ctx))
+    if (resolveCheckpoint(&ctx, nbf->checkpointFileName))
         return warn1("Failed to resolve checkpoint\n");
   #endif /* BOINC_APPLICATION */
 
-    if (initOutput(&ctx))
+    if (initOutput(&ctx, nbf))
         return warn1("Failed to open output files\n");
 
     if (setupRun(&ctx, &st))
@@ -234,7 +230,7 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     }
 
     /* Get the likelihood */
-    chisq = nbodyChisq(&ctx, &st, &histParams);
+    chisq = nbodyChisq(&ctx, &st, nbf, &histParams);
     if (isnan(chisq))
         warn("Failed to calculate chisq\n");
 

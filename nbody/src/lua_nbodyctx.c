@@ -37,11 +37,6 @@ static const NBodyCtx defaultNBodyCtx =
     /* .timestep        */  0.0,
     /* .timeEvolve      */  0.0,
 
-    /* .outfilename     */  NULL,
-    /* .histogram       */  NULL,
-    /* .histout         */  NULL,
-    /* .outfile         */  NULL,
-
     /* .freqout         */  0.0,
     /* .theta           */  0.0,
     /* .eps2            */  0.0,
@@ -56,8 +51,8 @@ static const NBodyCtx defaultNBodyCtx =
     /* .outputCartesian */  FALSE,
     /* .outputBodies    */  FALSE,
     /* .outputHistogram */  FALSE,
-    /* .cp_filename     */  NULL,
-    /* .cp_resolved     */  ""
+
+    /* .outfile         */  NULL
 };
 
 

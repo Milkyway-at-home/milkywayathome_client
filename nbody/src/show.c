@@ -300,12 +300,9 @@ char* showNBodyCtx(const NBodyCtx* ctx)
     if (0 > asprintf(&buf,
                      "ctx = { \n"
                      "  pot = %s\n"
+                     "  nbody           = %d\n"
                      "  timeEvolve      = %g\n"
                      "  timestep        = %g\n"
-                     "  outfilename     = %s\n"
-                     "  histogram       = %s\n"
-                     "  histout         = %s\n"
-                     "  outfile         = %p\n"
                      "  sunGCDist       = %g\n"
                      "  criterion       = %s\n"
                      "  useQuad         = %s\n"
@@ -316,15 +313,12 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      "  theta           = %g\n"
                      "  eps2            = %g\n"
                      "  freqOut         = %u\n"
-                     "  nbody           = %d\n"
+                     "  outfile         = %p\n"
                      "};\n",
                      potBuf,
+                     ctx->nbody,
                      ctx->timeEvolve,
                      ctx->timestep,
-                     ctx->outfilename,
-                     ctx->histogram,
-                     ctx->histout,
-                     ctx->outfile,
                      ctx->sunGCDist,
                      showCriterionT(ctx->criterion),
                      showBool(ctx->useQuad),
@@ -335,7 +329,7 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      ctx->theta,
                      ctx->eps2,
                      ctx->freqOut,
-                     ctx->nbody))
+                     ctx->outfile))
     {
         fail("asprintf() failed\n");
     }

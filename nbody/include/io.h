@@ -22,9 +22,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _IO_H_
 
 #include "nbody_types.h"
+#include "nbody.h"
+
 
 /* Basic IO and initialization */
-int initOutput(NBodyCtx*);
+int initOutput(NBodyCtx* ctx, const NBodyFlags* nbf);
 int finalOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq);
 
 int outputBodyPositionBin(const NBodyCtx* ctx, const NBodyState* st);

@@ -362,11 +362,6 @@ typedef struct NBODY_ALIGN
     real timestep;
     real timeEvolve;
 
-    const char* outfilename;  /* output */
-    const char* histogram;
-    const char* histout;
-    FILE* outfile;            /* file for snapshot output */
-
     unsigned int freqOut;
     real theta;               /* accuracy parameter: 0.0 */
     real eps2;                /* (potential softening parameter)^2 */
@@ -382,8 +377,7 @@ typedef struct NBODY_ALIGN
     mwbool outputBodies;
     mwbool outputHistogram;
 
-    const char* cp_filename;
-    char cp_resolved[1024];
+    FILE* outfile;            /* file for snapshot output */
 } NBodyCtx;
 
 #define NBODY_CTX "NBodyCtx"
@@ -402,11 +396,10 @@ typedef struct NBODY_ALIGN
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 #define EMPTY_NBODYCTX { EMPTY_POTENTIAL, 0, NAN, NAN,                    \
-                         NULL, NULL, NULL, NULL,                          \
                          0, NAN, NAN, NAN,                                \
                          NAN, InvalidCriterion, 0,                        \
                          FALSE, FALSE, FALSE, FALSE, FALSE,               \
-                         NULL, "" }
+                         NULL }
 
 
 typedef struct

@@ -25,7 +25,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #if BOINC_APPLICATION
 
-int resolveCheckpoint(NBodyCtx* ctx);
+int resolveCheckpoint(NBodyCtx* ctx, const char* checkpointFileName);
+int resolvedCheckpointExists();
 int readCheckpoint(const NBodyCtx* ctx, NBodyState* st);
 int writeCheckpoint(const NBodyCtx* ctx, const NBodyState* st);
 
