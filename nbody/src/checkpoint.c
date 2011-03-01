@@ -85,10 +85,7 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
     }
 
     if (!S_ISREG(sb.st_mode))
-    {
-        warn("checkpoint file is not a file\n");
-        return TRUE;
-    }
+        return warn("checkpoint file is not a file\n");
 
     cp->mptr = mmap(0, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, cp->fd, 0);
     if (cp->mptr == MAP_FAILED)
@@ -173,10 +170,7 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
     /* TODO: More filetype checking and stuff */
 
     if ( cp->file == INVALID_HANDLE_VALUE )
-    {
-        warn("Failed to open checkpoint file '%s': %ld\n", filename, GetLastError());
-        return TRUE;
-    }
+        return warn("Failed to open checkpoint file '%s': %ld\n", filename, GetLastError());
 
     GetSystemInfo(&si);
     sysGran = si.dwAllocationGranularity;
@@ -191,11 +185,10 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
                                     fileMapSize,
                                     NULL);
 
-    if ( cp->mapFile == NULL )
+    if (cp->mapFile == NULL)
     {
-        warn("Failed to create mapping for checkpoint file '%s': %ld\n",
-             filename, GetLastError());
-        return TRUE;
+        return warn("Failed to create mapping for checkpoint file '%s': %ld\n",
+                    filename, GetLastError());
     }
 
     cp->mptr = (char*) MapViewOfFile(cp->mapFile,
@@ -203,11 +196,10 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
                                      0,
                                      fileMapStart,
                                      mapViewSize);
-    if ( cp->mptr == NULL )
+    if (cp->mptr == NULL)
     {
-        warn("Failed to open checkpoint file view for file '%s': %ld\n",
-             filename, GetLastError());
-        return TRUE;
+        return warn("Failed to open checkpoint file view for file '%s': %ld\n",
+                    filename, GetLastError());
     }
 
     return FALSE;

@@ -95,7 +95,8 @@ void* mwCallocA(size_t count, size_t size);
   #define mwFreeA _aligned_free
 #endif /* _WIN32 */
 
-#define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)
+/* Have value of 1 so we can do a return warn("blah blah\n") */
+#define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__), 1
 
 /* Controlled, but lazy failure */
 #define fail(msg, ...)                              \

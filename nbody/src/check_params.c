@@ -75,8 +75,7 @@ mwbool checkHaloConstants(Halo* h)
 
         case InvalidHalo:
         default:
-            warn("Trying to use invalid halo type\n");
-            return TRUE;
+            return warn("Trying to use invalid halo type\n");
     }
 
     return FALSE;
