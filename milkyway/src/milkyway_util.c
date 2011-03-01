@@ -33,6 +33,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <xmmintrin.h>
 #endif /* __SSE__ */
 
+
 void* mwCalloc(size_t count, size_t size)
 {
     void* mem = (void*) calloc(count, size);
@@ -421,6 +422,4 @@ size_t mwDivRoundup(size_t a, size_t b)
 {
     return (a % b != 0) ? a / b + 1 : a / b;
 }
-
-extern inline int mwCheckNormalPosNum(real);
 

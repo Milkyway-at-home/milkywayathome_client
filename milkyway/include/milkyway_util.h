@@ -95,8 +95,11 @@ void* mwCallocA(size_t count, size_t size);
   #define mwFreeA _aligned_free
 #endif /* _WIN32 */
 
+
+#define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)
+
 /* Have value of 1 so we can do a return warn("blah blah\n") */
-#define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__), 1
+#define warn1(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__), 1
 
 /* Controlled, but lazy failure */
 #define fail(msg, ...)                              \
@@ -152,6 +155,8 @@ void _mw_time_prefix(char* buf, size_t bufSize);
 size_t mwDivRoundup(size_t a, size_t b);
 
 /* Check for a timesteps etc. which will actually finish. */
+/* FIXME: this shouldn't need ALWAYS_INLINE */
+ALWAYS_INLINE
 inline int mwCheckNormalPosNum(real n)
 {
     return !isnormal(n) || n <= 0.0 || n <= REAL_EPSILON;

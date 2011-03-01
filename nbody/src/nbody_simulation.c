@@ -198,7 +198,7 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
 
     rc |= setupNBody(nbf->inputFile, &ctx, &st, &histParams);
     if (rc && !nbf->verifyOnly)   /* Fail right away, unless we are diagnosing file problems */
-        return warn("Failed to read input parameters file\n");
+        return warn1("Failed to read input parameters file\n");
 
     //rc |= setCtxConsts(&ctx, fitParams, nbf->setSeed);
     nbodySetCtxFromFlags(&ctx, nbf);
@@ -206,20 +206,20 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     if (nbf->verifyOnly)
         verifyFile(&ctx, &histParams, rc);
     if (rc)
-        return warn("Failed to read input parameters file\n");
+        return warn1("Failed to read input parameters file\n");
 
 
 
   #if BOINC_APPLICATION
     if (resolveCheckpoint(&ctx))
-        return warn("Failed to resolve checkpoint\n");
-  #endif /* BOINC_APPLICATION */m
+        return warn1("Failed to resolve checkpoint\n");
+  #endif /* BOINC_APPLICATION */
 
     if (initOutput(&ctx))
-        return warn("Failed to open output files\n");
+        return warn1("Failed to open output files\n");
 
     if (setupRun(&ctx, &st))
-        return warn("Failed to setup run\n");
+        return warn1("Failed to setup run\n");
 
     if (nbf->printTiming)     /* Time the body of the calculation */
         ts = mwGetTime();

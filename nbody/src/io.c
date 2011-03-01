@@ -28,7 +28,7 @@ int initOutput(NBodyCtx* ctx)
 {
     ctx->outfile = ctx->outfilename ? mwOpenResolved(ctx->outfilename, "w") : DEFAULT_OUTPUT_FILE;
     if (ctx->outfile == NULL)
-        return warn("initOutput: cannot open output file %s\n", ctx->outfilename);
+        return warn1("initOutput: cannot open output file %s\n", ctx->outfilename);
 
     return FALSE;
 }

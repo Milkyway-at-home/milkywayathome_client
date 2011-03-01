@@ -85,7 +85,7 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
     }
 
     if (!S_ISREG(sb.st_mode))
-        return warn("checkpoint file is not a file\n");
+        return warn1("checkpoint file is not a file\n");
 
     cp->mptr = mmap(0, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, cp->fd, 0);
     if (cp->mptr == MAP_FAILED)
@@ -170,7 +170,7 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
     /* TODO: More filetype checking and stuff */
 
     if ( cp->file == INVALID_HANDLE_VALUE )
-        return warn("Failed to open checkpoint file '%s': %ld\n", filename, GetLastError());
+        return warn1("Failed to open checkpoint file '%s': %ld\n", filename, GetLastError());
 
     GetSystemInfo(&si);
     sysGran = si.dwAllocationGranularity;
@@ -187,8 +187,8 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
 
     if (cp->mapFile == NULL)
     {
-        return warn("Failed to create mapping for checkpoint file '%s': %ld\n",
-                    filename, GetLastError());
+        return warn1("Failed to create mapping for checkpoint file '%s': %ld\n",
+                     filename, GetLastError());
     }
 
     cp->mptr = (char*) MapViewOfFile(cp->mapFile,
@@ -198,8 +198,8 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
                                      mapViewSize);
     if (cp->mptr == NULL)
     {
-        return warn("Failed to open checkpoint file view for file '%s': %ld\n",
-                    filename, GetLastError());
+        return warn1("Failed to open checkpoint file view for file '%s': %ld\n",
+                     filename, GetLastError());
     }
 
     return FALSE;

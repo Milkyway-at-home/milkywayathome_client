@@ -54,6 +54,7 @@ endif()
 find_package(Popt REQUIRED)
 include_directories(${POPT_INCLUDE_DIR})
 
+
 set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 include_directories(${NBODY_INCLUDE_DIR})
 
@@ -72,7 +73,7 @@ option(NBODY_OPENMP "Use OpenMP" OFF)
 find_package(Lua51 REQUIRED)
 find_package(OpenMP)
 
-
+include_directories(${LUA_INCLUDE_DIR})
 
 if(OPENMP_FOUND AND NBODY_OPENMP)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
@@ -246,7 +247,7 @@ set_target_properties(nbody_lua PROPERTIES
 
 set(CMAKE_C_FLAGS "-std=gnu99 ${SSE2_FLAGS} ${CMAKE_C_FLAGS}")
 
-list(APPEND nbody_link_libs ${OS_SPECIFIC_LIBS} milkyway ${LIBM_LIBRARY})
+set(nbody_link_libs )
 
 if(NBODY_OPENCL)
   set(c_kernel_dir "${CMAKE_CURRENT_SOURCE_DIR}/ckernels")
@@ -274,18 +275,16 @@ else()
   endif()
 endif()
 
-set(nbody_libs nbody_simulation)
-
-if(NBODY_LUA)
-  include_directories(${LUA_INCLUDE_DIR})
-  list(APPEND nbody_link_libs nbody_lua ${LUA_LIBRARIES})
-endif()
-
-set(exe_link_libs ${LIBM_LIBRARY}
-                  ${POPT_LIBRARY}
-                  ${nbody_libs}
-                  ${nbody_link_libs}
-                  nbody_simulation)  # FIXME: nbody_simulation and nbody_lua_types depend on linking to each other
+set(exe_link_libs ${POPT_LIBRARY}
+                  nbody_simulation
+                  nbody_lua
+                  nbody_simulation
+                  milkyway
+                  ${LUA_LIBRARIES}
+                  ${LIBM_LIBRARY}
+                  ${OS_SPECIFIC_LIBS}
+                  ${nbody_link_libs})
+                  # FIXME: nbody_simulation and nbody_lua depend on linking to each other
                                      # coordinate conversion functions in nbody_util.c
 
 
