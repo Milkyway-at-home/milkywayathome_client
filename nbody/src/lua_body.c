@@ -79,6 +79,18 @@ static int createBody(lua_State* luaSt)
     return 1;
 }
 
+static int getBodyIgnore(lua_State* luaSt, void* v)
+{
+    lua_pushboolean(luaSt, bodyTypeIsIgnore(*(body_t*) v));
+    return 1;
+}
+
+static int setBodyIgnore(lua_State* luaSt, void* v)
+{
+    *(body_t*) v = BODY(mw_lua_checkboolean(luaSt, 3));
+    return 0;
+}
+
 static int toStringBody(lua_State* luaSt)
 {
     body* b;
@@ -106,17 +118,19 @@ static const luaL_reg methodsBody[] =
 
 static const Xet_reg_pre gettersBody[] =
 {
-    { "velocity", getVector, offsetof(body, vel) },
-    { "position", getVector, offsetof(body, bodynode.pos) },
-    { "mass",     getNumber, offsetof(body, bodynode.mass) },
+    { "velocity", getVector,     offsetof(body, vel)           },
+    { "position", getVector,     offsetof(body, bodynode.pos)  },
+    { "mass",     getNumber,     offsetof(body, bodynode.mass) },
+    { "ignore",   getBodyIgnore, offsetof(body, bodynode.type) },
     { NULL, NULL, 0 }
 };
 
 static const Xet_reg_pre settersBody[] =
 {
-    { "velocity", setVector, offsetof(body, vel) },
-    { "position", setVector, offsetof(body, bodynode.pos) },
-    { "mass",     setNumber, offsetof(body, bodynode.mass) },
+    { "velocity", setVector,     offsetof(body, vel)           },
+    { "position", setVector,     offsetof(body, bodynode.pos)  },
+    { "mass",     setNumber,     offsetof(body, bodynode.mass) },
+    { "ignore",   setBodyIgnore, offsetof(body, bodynode.type) },
     { NULL, NULL, 0 }
 };
 

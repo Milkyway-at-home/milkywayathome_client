@@ -109,6 +109,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define isBody(x) (((nodeptr) (x))->type != 0)
 #define isCell(x) (((nodeptr) (x))->type == 0)
 #define ignoreBody(x) (((nodeptr) (x))->type < 0)
+#define bodyTypeIsIgnore(x) ((x) < 0)
 
 typedef short body_t;
 
