@@ -301,10 +301,7 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      "ctx = { \n"
                      "  pot = %s\n"
                      "  time_evolve     = %g\n"
-                     "  time_orbit      = %g\n"
                      "  timestep        = %g\n"
-                     "  orbit_timestep  = %g\n"
-                     "  headline        = %s\n"
                      "  outfilename     = %s\n"
                      "  histogram       = %s\n"
                      "  histout         = %s\n"
@@ -323,10 +320,7 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      "};\n",
                      potBuf,
                      ctx->time_evolve,
-                     ctx->time_orbit,
                      ctx->timestep,
-                     ctx->orbit_timestep,
-                     ctx->headline,
                      ctx->outfilename,
                      ctx->histogram,
                      ctx->histout,

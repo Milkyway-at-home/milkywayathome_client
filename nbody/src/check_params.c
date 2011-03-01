@@ -92,20 +92,9 @@ static real calculateEps2(real nbody, real r0)
     return sqr(eps);
 }
 
-/* Calculate needed parameters from whatever we read in */
-static int checkValuesNBodyCtx(NBodyCtx* ctx)
-{
-    int rc = 0;
-
-    if (isnan(ctx->orbit_timestep))
-        ctx->orbit_timestep = ctx->timestep / 2.0;
-
-    return rc;
-}
-
 static int hasAcceptableEps2(const NBodyCtx* ctx)
 {
-    int rc = !isfinite(ctx->eps2) || ctx->eps2 <= 0.0 || ctx->eps2 < REAL_EPSILON;
+    int rc = mwCheckNormalPosNum(ctx->eps2);
     if (rc)
         warn("Got an absurd eps2\n");
 
@@ -114,7 +103,7 @@ static int hasAcceptableEps2(const NBodyCtx* ctx)
 
 static int hasAcceptableTimes(const NBodyCtx* ctx)
 {
-    int rc = mwCheckNormalPosNum(ctx->time_evolve) || mwCheckNormalPosNum(ctx->time_orbit);
+    int rc = mwCheckNormalPosNum(ctx->time_evolve);
     if (rc)
         warn("Got an unacceptable orbit or evolution time\n");
     return rc;
@@ -122,9 +111,9 @@ static int hasAcceptableTimes(const NBodyCtx* ctx)
 
 static int hasAcceptableSteps(const NBodyCtx* ctx)
 {
-    int rc = mwCheckNormalPosNum(ctx->timestep) || mwCheckNormalPosNum(ctx->orbit_timestep);
+    int rc = mwCheckNormalPosNum(ctx->timestep);
     if (rc)
-        warn("Context has unacceptable timesteps\n");
+        warn("Got an unacceptable timestep\n");
 
     return rc;
 }
@@ -137,7 +126,7 @@ static int hasAcceptableNbody(const NBodyCtx* ctx)
     return rc;
 }
 
-static int contextSanityCheck(const NBodyCtx* ctx)
+mwbool contextSanityCheck(const NBodyCtx* ctx)
 {
     int rc = 0;
 
@@ -146,6 +135,6 @@ static int contextSanityCheck(const NBodyCtx* ctx)
     rc |= hasAcceptableSteps(ctx);
     rc |= hasAcceptableEps2(ctx);
 
-    return rc;
+    return (mwbool) rc;
 }
 

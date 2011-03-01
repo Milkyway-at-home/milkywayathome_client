@@ -28,6 +28,7 @@ extern "C"
 #include "nbody_types.h"
 
 mwbool checkHaloConstants(Halo* h);
+mwbool contextSanityCheck(const NBodyCtx* ctx);
 
 #ifdef __cplusplus
 }

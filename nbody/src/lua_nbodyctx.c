@@ -36,10 +36,7 @@ static const NBodyCtx defaultNBodyCtx =
     /* .nbody           */  0,
     /* .timestep        */  0.0,
     /* .time_evolve     */  0.0,
-    /* .orbit_timestep  */  0.0,
-    /* time_orbit       */  0.0,
 
-    /* .headline        */  NULL,
     /* .outfilename     */  NULL,
     /* .histogram       */  NULL,
     /* .histout         */  NULL,
@@ -149,9 +146,7 @@ static const Xet_reg_pre gettersNBodyCtx[] =
 {
     { "nbody",           getInt,        offsetof(NBodyCtx, nbody)           },
     { "timestep",        getNumber,     offsetof(NBodyCtx, timestep)        },
-    { "time_evolve",     getNumber,     offsetof(NBodyCtx, time_orbit)      },
-    { "orbit_timestep",  getNumber,     offsetof(NBodyCtx, orbit_timestep)  },
-    { "time_orbit",      getNumber,     offsetof(NBodyCtx, time_orbit)      },
+    { "time_evolve",     getNumber,     offsetof(NBodyCtx, time_evolve)     },
     { "freqOut",         getNumber,     offsetof(NBodyCtx, freqOut)         },
     { "theta",           getNumber,     offsetof(NBodyCtx, theta)           },
     { "eps2",            getNumber,     offsetof(NBodyCtx, eps2)            },
@@ -170,9 +165,7 @@ static const Xet_reg_pre gettersNBodyCtx[] =
 static const Xet_reg_pre settersNBodyCtx[] =
 {
     { "timestep",        setNumber,     offsetof(NBodyCtx, timestep)        },
-    { "time_evolve",     setNumber,     offsetof(NBodyCtx, time_orbit)      },
-    { "orbit_timestep",  setNumber,     offsetof(NBodyCtx, orbit_timestep)  },
-    { "time_orbit",      setNumber,     offsetof(NBodyCtx, time_orbit)      },
+    { "time_evolve",     setNumber,     offsetof(NBodyCtx, time_evolve)     },
     { "freqOut",         setNumber,     offsetof(NBodyCtx, freqOut)         },
     { "theta",           setNumber,     offsetof(NBodyCtx, theta)           },
     { "eps2",            setNumber,     offsetof(NBodyCtx, eps2)            },

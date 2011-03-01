@@ -107,7 +107,6 @@ int finalOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq)
 
 int nbodyCtxDestroy(NBodyCtx* ctx)
 {
-    free(ctx->headline);
     if (ctx->outfile && ctx->outfile != DEFAULT_OUTPUT_FILE)
     {
         if (fclose(ctx->outfile))

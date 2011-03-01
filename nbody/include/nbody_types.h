@@ -361,10 +361,7 @@ typedef struct NBODY_ALIGN
 
     real timestep;
     real time_evolve;
-    real orbit_timestep;
-    real time_orbit;
 
-    char* headline;           /* message describing calculation */
     const char* outfilename;  /* output */
     const char* histogram;
     const char* histout;
@@ -404,8 +401,8 @@ typedef struct NBODY_ALIGN
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
-#define EMPTY_NBODYCTX { EMPTY_POTENTIAL, 0, NAN, NAN, NAN, NAN,          \
-                         NULL, NULL, NULL, NULL, NULL,                    \
+#define EMPTY_NBODYCTX { EMPTY_POTENTIAL, 0, NAN, NAN,                    \
+                         NULL, NULL, NULL, NULL,                          \
                          0, NAN, NAN, NAN,                                \
                          NAN, InvalidCriterion, 0,                        \
                          FALSE, FALSE, FALSE, FALSE, FALSE,               \
