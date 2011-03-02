@@ -27,15 +27,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_marshal.h"
 
 
-static int totalBodies(lua_State* luaSt, int modelTable, int nModels)
+static int totalBodies(lua_State* luaSt, int nModels)
 {
-    int i, n = 0;
+    int top, i, n = 0;
 
-    for (i = 0; i < nModels; ++i)
+    top = lua_gettop(luaSt);
+    for (i = top; i > top - nModels; --i)
     {
-        lua_rawgeti(luaSt, modelTable, i + 1);
-        n += luaL_getn(luaSt, -1);
-        lua_pop(luaSt, 1);
+        luaL_checktype(luaSt, i, LUA_TTABLE);
+        n += luaL_getn(luaSt, i);
     }
 
     return n;
@@ -53,17 +53,14 @@ static void readBodyArray(lua_State* luaSt, int table, body* bodies, int n)
     }
 }
 
-/* Read returned table of model components. Pops the table. */
-body* readReturnedModels(lua_State* luaSt, int modelTable, unsigned int* nOut)
+/* Read returned table of model components. Pops the n arguments */
+body* readReturnedModels(lua_State* luaSt, int nModels, unsigned int* nOut)
 {
-    int i, n, totalN, nModels, bodyTable;
+    int i, n, totalN, top;
     body* allBodies;
     body* bodies;
 
-    luaL_checktype(luaSt, modelTable, LUA_TTABLE);
-    nModels = luaL_getn(luaSt, modelTable);
-    totalN = totalBodies(luaSt, modelTable, nModels);
-
+    totalN = totalBodies(luaSt, nModels);
     if (totalN == 0)
     {
         warn("Didn't get any bodies\n");
@@ -74,18 +71,14 @@ body* readReturnedModels(lua_State* luaSt, int modelTable, unsigned int* nOut)
 
     for (i = 0; i < nModels; ++i)
     {
-        lua_rawgeti(luaSt, modelTable, i + 1);
-        bodyTable = lua_gettop(luaSt);
-        n = luaL_getn(luaSt, bodyTable);
+        top = lua_gettop(luaSt);
+        n = luaL_getn(luaSt, top);
 
-        readBodyArray(luaSt, bodyTable, bodies, n);
+        readBodyArray(luaSt, top, bodies, n);
         bodies = &bodies[n];
 
         lua_pop(luaSt, 1);  /* No more body table */
     }
-
-    assert(lua_istable(luaSt, -1));
-    lua_pop(luaSt, 1); /* No more model table */
 
     if (nOut)
         *nOut = (unsigned int) totalN;

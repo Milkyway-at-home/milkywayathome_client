@@ -125,16 +125,23 @@ static int evaluatePotential(lua_State* luaSt, Potential* pot)
 
 static body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, const Potential* pot, unsigned int* n)
 {
+    int level, nResults;
+
+    level = lua_gettop(luaSt);
+
     getBodiesFunc(luaSt);
     pushNBodyCtx(luaSt, ctx);
     pushPotential(luaSt, pot);
-    if (lua_pcall(luaSt, 2, 1, 0))
+
+    if (lua_pcall(luaSt, 2, LUA_MULTRET, 0))
     {
         mw_lua_pcall_warn(luaSt, "Error evaluating bodies");
         return NULL;
     }
 
-    return readReturnedModels(luaSt, lua_gettop(luaSt), n);
+    nResults = lua_gettop(luaSt) - level;
+
+    return readReturnedModels(luaSt, nResults, n);
 }
 
 static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* st)
