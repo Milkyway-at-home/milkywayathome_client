@@ -103,15 +103,6 @@ static int createNBodyCtx(lua_State* luaSt)
     return 1;
 }
 
-static int destroyNBodyCtx(lua_State* luaSt)
-{
-    NBodyCtx* ctx;
-
-    ctx = (NBodyCtx*) lua_touserdata(luaSt, 1);
-    printf("Goodbye: %f\n", ctx->timestep);
-    return 0;
-}
-
 static int toStringNBodyCtx(lua_State* luaSt)
 {
     NBodyCtx* ctx;
@@ -127,20 +118,18 @@ static int toStringNBodyCtx(lua_State* luaSt)
 
 static const luaL_reg metaMethodsNBodyCtx[] =
 {
-    { "__gc",       destroyNBodyCtx  },
     { "__tostring", toStringNBodyCtx },
     { NULL, NULL }
 };
 
 static const luaL_reg methodsNBodyCtx[] =
 {
-    { "create",   createNBodyCtx },
+    { "create", createNBodyCtx },
     { NULL, NULL }
 };
 
 static const Xet_reg_pre gettersNBodyCtx[] =
 {
-    { "nbody",           getInt,        offsetof(NBodyCtx, nbody)           },
     { "timestep",        getNumber,     offsetof(NBodyCtx, timestep)        },
     { "timeEvolve",      getNumber,     offsetof(NBodyCtx, timeEvolve)      },
     { "freqOut",         getNumber,     offsetof(NBodyCtx, freqOut)         },

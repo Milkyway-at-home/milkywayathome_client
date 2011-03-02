@@ -280,7 +280,7 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
         failed = TRUE;
     }
 
-    if (majorVersion != MILKYWAY_NBODY_VERSION_MAJOR || minorVersion != MILKYWAY_NBODY_VERSION_MAJOR)
+    if (majorVersion != MILKYWAY_NBODY_VERSION_MAJOR || minorVersion != MILKYWAY_NBODY_VERSION_MINOR)
     {
         warn("Version mismatch in checkpoint file. File is for %u.%u, But version is %u.%u\n",
              majorVersion, minorVersion,
