@@ -394,7 +394,6 @@ typedef struct NBODY_ALIGN
 
     real sunGCDist;
     criterion_t criterion;
-    long seed;                /* random number seed */
 
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
@@ -424,7 +423,7 @@ typedef struct NBODY_ALIGN
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
 #define EMPTY_NBODYCTX { EMPTY_POTENTIAL, 0, NAN, NAN,                    \
                          0, NAN, NAN, NAN,                                \
-                         NAN, InvalidCriterion, 0,                        \
+                         NAN, InvalidCriterion,                           \
                          FALSE, FALSE, FALSE, FALSE, FALSE,               \
                          EMPTY_HISTOGRAM_PARAMS,                          \
                          NULL }
