@@ -42,6 +42,11 @@ static int getNBodyPotentialFunc(lua_State* luaSt)
     return mw_lua_checkglobalfunction(luaSt, "makePotential");
 }
 
+static int getHistogramFunc(lua_State* luaSt)
+{
+    return mw_lua_checkglobalfunction(luaSt, "makeHistogram");
+}
+
 static int getBodiesFunc(lua_State* luaSt)
 {
     return mw_lua_checkglobalfunction(luaSt, "makeBodies");
@@ -122,6 +127,20 @@ static int evaluatePotential(lua_State* luaSt, Potential* pot)
     return potentialSanityCheck(pot);
 }
 
+static int evaluateHistogram(lua_State* luaSt, HistogramParams* hp)
+{
+    getHistogramFunc(luaSt);
+    if (lua_pcall(luaSt, 0, 1, 0))
+    {
+        mw_lua_pcall_warn(luaSt, "Error evaluating HistogramParams");
+        return 1;
+    }
+
+    *hp = *checkHistogramParams(luaSt, lua_gettop(luaSt));
+    lua_pop(luaSt, 1);
+
+    return 0;
+}
 
 static body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, const Potential* pot, unsigned int* n)
 {
@@ -153,6 +172,9 @@ static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* s
         return 1;
 
     if (evaluatePotential(luaSt, &ctx->pot))
+        return 1;
+
+    if (evaluateHistogram(luaSt, &ctx->histogramParams))
         return 1;
 
     bodies = evaluateBodies(luaSt, ctx, &ctx->pot, &n);

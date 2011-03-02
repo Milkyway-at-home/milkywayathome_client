@@ -170,6 +170,7 @@ set(nbody_lua_src ${NBODY_SRC_DIR}/lua_nbodyctx.c
                   ${NBODY_SRC_DIR}/lua_spherical.c
                   ${NBODY_SRC_DIR}/lua_potential.c
                   ${NBODY_SRC_DIR}/lua_initial_conditions.c
+                  ${NBODY_SRC_DIR}/lua_histogram_params.c
                   ${NBODY_SRC_DIR}/lua_dsfmt.c
                   ${NBODY_SRC_DIR}/lua_type_marshal.c
                   ${NBODY_SRC_DIR}/nbody_lua_marshal.c
@@ -186,6 +187,7 @@ set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/lua_body.h
                       ${NBODY_INCLUDE_DIR}/lua_spherical.h
                       ${NBODY_INCLUDE_DIR}/lua_potential.h
                       ${NBODY_INCLUDE_DIR}/lua_initial_conditions.h
+                      ${NBODY_INCLUDE_DIR}/lua_histogram_params.h
                       ${NBODY_INCLUDE_DIR}/lua_dsfmt.h
                       ${NBODY_INCLUDE_DIR}/lua_type_marshal.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_marshal.h

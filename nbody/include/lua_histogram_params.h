@@ -17,37 +17,22 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_LUA_TYPES_H_
-#define _NBODY_LUA_TYPES_H_
-
-#define _NBODY_LUA_TYPES_H_INSIDE_
-
-#ifdef __cplusplus
-extern "C" {
+#if !defined(_NBODY_LUA_TYPES_H_INSIDE_) && !defined(NBODY_LUA_TYPES_COMPILATION)
+  #error "Only nbody_lua_types.h can be included directly."
 #endif
 
-#include "lua_initial_conditions.h"
-#include "lua_histogram_params.h"
-#include "lua_type_marshal.h"
-#include "lua_body.h"
-#include "lua_halo.h"
-#include "lua_disk.h"
-#include "lua_potential.h"
-#include "lua_spherical.h"
-#include "lua_nbodyctx.h"
-#include "lua_vector.h"
-#include "lua_dsfmt.h"
+#ifndef _LUA_HISTOGRAM_PARAMS_H_
+#define _LUA_HISTOGRAM_PARAMS_H_
 
 #include <lua.h>
+#include "nbody_types.h"
 
-void registerNBodyTypes(lua_State* luaSt);
-void registerOtherTypes(lua_State* luaSt);
+HistogramParams* checkHistogramParams(lua_State* luaSt, int idx);
+int pushHistogramParams(lua_State* luaSt, const HistogramParams* d);
+int registerHistogramParams(lua_State* luaSt);
 
-#ifdef __cplusplus
-}
-#endif
+int setHistogramParams(lua_State* luaSt, void* v);
+int getHistogramParams(lua_State* luaSt, void* v);
 
-#undef _NBODY_LUA_TYPES_H_INSIDE_
-
-#endif /* _NBODY_LUA_TYPES_H_ */
+#endif /* _LUA_HISTOGRAM_PARAMS_H_ */
 
