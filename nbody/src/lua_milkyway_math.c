@@ -70,6 +70,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
          lua_setglobal(luaSt, #name);                                   \
      }
 
+DEFINE_LUA_MW_FUNC_1(sqr, sqr)
+DEFINE_LUA_MW_FUNC_1(cube, cube)
 
 DEFINE_LUA_MW_FUNC_1(mw_sin, sin)
 DEFINE_LUA_MW_FUNC_1(mw_cos, cos)
@@ -147,9 +149,35 @@ DEFINE_LUA_MW_FUNC_2(mw_atan2, atan2)
 //DEFINE_LUA_MW_FUNC_1(mw_remquo, remquo)
 // #define mw_sincos sincos
 
+static void registerConstant(lua_State* luaSt, const char* name, real val)
+{
+    lua_pushnumber(luaSt, val);
+    lua_setglobal(luaSt, name);
+}
+
+static void registerConstants(lua_State* luaSt)
+{
+    registerConstant(luaSt, "pi", M_PI);
+    registerConstant(luaSt, "pi_2", M_PI_2);
+    registerConstant(luaSt, "pi_4", M_PI_4);
+    registerConstant(luaSt, "pi_4_3", PI_4_3);
+    registerConstant(luaSt, "pi_2_3", PI_2_3);
+    registerConstant(luaSt, "pi_3_2", PI_3_2);
+    registerConstant(luaSt, "pi2", M_2PI);
+    registerConstant(luaSt, "sqrt_2pi", SQRT_2PI);
+    registerConstant(luaSt, "ee", M_E);
+    registerConstant(luaSt, "log2e", M_LOG2E);
+    registerConstant(luaSt, "log10e", M_LOG10E);
+    registerConstant(luaSt, "ln2", M_LN2);
+    registerConstant(luaSt, "ln10", M_LN10);
+
+}
+
 
 void registerMilkywayMath(lua_State* luaSt)
 {
+    registerConstants(luaSt);
+
     register_lua_mw_sin(luaSt);
     register_lua_mw_cos(luaSt);
     register_lua_mw_tan(luaSt);
@@ -200,6 +228,9 @@ void registerMilkywayMath(lua_State* luaSt)
     register_lua_mw_pow(luaSt);
     register_lua_mw_hypot(luaSt);
     register_lua_mw_atan2(luaSt);
+
+    register_lua_sqr(luaSt);
+    register_lua_cube(luaSt);
 }
 
 
