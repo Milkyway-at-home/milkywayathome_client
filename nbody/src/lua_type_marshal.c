@@ -427,8 +427,14 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int tabl
         lua_gettable(luaSt, table);
         item = lua_gettop(luaSt);
 
-        if (lua_isnil(luaSt, item) && p->required)
+        if (lua_isnil(luaSt, item))
         {
+            if (!p->required)
+            {
+                ++p;
+                continue;
+            }
+
             if (snprintf(buf, sizeof(buf), "Missing required named argument '%s'", p->name) == sizeof(buf))
                 mw_panic("Error message buffer too small for key name '%s'\n", p->name);
 

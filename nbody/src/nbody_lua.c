@@ -37,9 +37,14 @@ static int getNBodyCtxFunc(lua_State* luaSt)
     return mw_lua_checkglobalfunction(luaSt, "makeContext");
 }
 
-static int getModelsFunc(lua_State* luaSt)
+static int getNBodyPotentialFunc(lua_State* luaSt)
 {
-    return mw_lua_checkglobalfunction(luaSt, "makeModels");
+    return mw_lua_checkglobalfunction(luaSt, "makePotential");
+}
+
+static int getBodiesFunc(lua_State* luaSt)
+{
+    return mw_lua_checkglobalfunction(luaSt, "makeBodies");
 }
 
 static void registerUsedStandardStuff(lua_State* luaSt)
@@ -102,10 +107,28 @@ static int evaluateContext(lua_State* luaSt, NBodyCtx* ctx)
     return contextSanityCheck(ctx);
 }
 
-static body* evaluateBodies(lua_State* luaSt, unsigned int* n)
+static int evaluatePotential(lua_State* luaSt, Potential* pot)
 {
-    getModelsFunc(luaSt);
+    getNBodyPotentialFunc(luaSt);
     if (lua_pcall(luaSt, 0, 1, 0))
+    {
+        mw_lua_pcall_warn(luaSt, "Error evaluating Potential");
+        return 1;
+    }
+
+    *pot = *checkPotential(luaSt, lua_gettop(luaSt));
+    lua_pop(luaSt, 1);
+
+    return potentialSanityCheck(pot);
+}
+
+
+static body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, const Potential* pot, unsigned int* n)
+{
+    getBodiesFunc(luaSt);
+    pushNBodyCtx(luaSt, ctx);
+    pushPotential(luaSt, pot);
+    if (lua_pcall(luaSt, 2, 1, 0))
     {
         mw_lua_pcall_warn(luaSt, "Error evaluating bodies");
         return NULL;
@@ -122,7 +145,10 @@ static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* s
     if (evaluateContext(luaSt, ctx))
         return 1;
 
-    bodies = evaluateBodies(luaSt, &n);
+    if (evaluatePotential(luaSt, &ctx->pot))
+        return 1;
+
+    bodies = evaluateBodies(luaSt, ctx, &ctx->pot, &n);
     if (!bodies)
         return 1;
 

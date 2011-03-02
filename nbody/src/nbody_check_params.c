@@ -129,3 +129,10 @@ int contextSanityCheck(const NBodyCtx* ctx)
     return rc;
 }
 
+int potentialSanityCheck(const Potential* pot)
+{
+    int rc = 0;
+
+    return rc;
+}
+

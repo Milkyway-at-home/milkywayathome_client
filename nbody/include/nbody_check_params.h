@@ -29,6 +29,7 @@ extern "C"
 
 mwbool checkHaloConstants(Halo* h);
 int contextSanityCheck(const NBodyCtx* ctx);
+int potentialSanityCheck(const Potential* pot);
 
 #ifdef __cplusplus
 }
