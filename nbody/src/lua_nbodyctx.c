@@ -37,7 +37,6 @@ static const NBodyCtx defaultNBodyCtx =
     /* .timestep        */  0.0,
     /* .timeEvolve      */  0.0,
 
-    /* .freqout         */  0.0,
     /* .theta           */  0.0,
     /* .eps2            */  0.0,
 
@@ -53,6 +52,7 @@ static const NBodyCtx defaultNBodyCtx =
 
     /* .histogramParams */  EMPTY_HISTOGRAM_PARAMS,
 
+    /* .freqout         */  0,
     /* .outfile         */  NULL
 };
 
@@ -99,7 +99,46 @@ int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* ctx)
 
 static int createNBodyCtx(lua_State* luaSt)
 {
-    pushNBodyCtx(luaSt, &defaultNBodyCtx);
+    static NBodyCtx ctx;
+    static real freqOutf = 0.0;
+    static const char* criterionName = NULL;
+
+    static const MWNamedArg argTable[] =
+        {
+            { "timestep",    LUA_TNUMBER,  NULL, TRUE,  &ctx.timestep    },
+            { "timeEvolve",  LUA_TNUMBER,  NULL, TRUE,  &ctx.timeEvolve  },
+            { "freqOut",     LUA_TNUMBER,  NULL, FALSE, &freqOutf        },
+            { "theta",       LUA_TNUMBER,  NULL, TRUE,  &ctx.theta       },
+            { "eps2",        LUA_TNUMBER,  NULL, TRUE,  &ctx.eps2        },
+            { "treeRSize",   LUA_TNUMBER,  NULL, FALSE, &ctx.treeRSize   },
+            { "sunGCDist",   LUA_TNUMBER,  NULL, FALSE, &ctx.sunGCDist   },
+            { "criterion",   LUA_TSTRING,  NULL, FALSE, &criterionName   },
+            { "useQuad",     LUA_TBOOLEAN, NULL, FALSE, &ctx.useQuad     },
+            { "allowIncest", LUA_TBOOLEAN, NULL, FALSE, &ctx.allowIncest },
+            END_MW_NAMED_ARG
+        };
+
+    criterionName = NULL;
+    freqOutf = 0.0;
+    ctx = defaultNBodyCtx;
+
+    if (lua_gettop(luaSt) != 1)
+        return luaL_argerror(luaSt, 1, "Expected named argument table");
+
+    handleNamedArgumentTable(luaSt, argTable, 1);
+
+    ctx.freqOut = (unsigned int) freqOutf;
+
+    /* FIXME: Hacky handling of enum. Will result in not good error
+     * messages as well as not fitting in. */
+    if (criterionName) /* Not required */
+    {
+        lua_pushstring(luaSt, criterionName);
+        ctx.criterion = checkEnum(luaSt, criterionOptions, lua_gettop(luaSt));
+        lua_pop(luaSt, 1);
+    }
+
+    pushNBodyCtx(luaSt, &ctx);
     return 1;
 }
 
@@ -140,9 +179,6 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "criterion",       getCriterionT, offsetof(NBodyCtx, criterion)       },
     { "useQuad",         getBool,       offsetof(NBodyCtx, useQuad)         },
     { "allowIncest",     getBool,       offsetof(NBodyCtx, allowIncest)     },
-    { "outputCartesian", getBool,       offsetof(NBodyCtx, outputCartesian) },
-    { "outputBodies",    getBool,       offsetof(NBodyCtx, outputBodies)    },
-    { "outputHistogram", getBool,       offsetof(NBodyCtx, outputHistogram) },
     { NULL, NULL, 0 }
 };
 
@@ -158,9 +194,6 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "criterion",       setCriterionT, offsetof(NBodyCtx, criterion)       },
     { "useQuad",         setBool,       offsetof(NBodyCtx, useQuad)         },
     { "allowIncest",     setBool,       offsetof(NBodyCtx, allowIncest)     },
-    { "outputCartesian", setBool,       offsetof(NBodyCtx, outputCartesian) },
-    { "outputBodies",    setBool,       offsetof(NBodyCtx, outputBodies)    },
-    { "outputHistogram", setBool,       offsetof(NBodyCtx, outputHistogram) },
     { NULL, NULL, 0 }
 };
 

@@ -140,8 +140,6 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     if (rc && !nbf->verifyOnly)   /* Fail right away, unless we are diagnosing file problems */
         return warn1("Failed to read input parameters file\n");
 
-    nbodySetCtxFromFlags(&ctx, nbf); /* These will get nuked by the checkpoint */
-
     if (nbf->verifyOnly)
         return verifyFile(&ctx, rc);
     if (rc)

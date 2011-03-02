@@ -461,7 +461,6 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int tabl
         }
 
         setValueFromType(luaSt, p->value, p->luaType, item);
-
         lua_pop(luaSt, 1);
 
         /* Top item, should now be at copy of key */

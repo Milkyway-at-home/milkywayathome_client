@@ -64,14 +64,14 @@ void pushInitialConditions(lua_State* luaSt, const InitialConditions* ic)
  */
 static int createInitialConditions(lua_State* luaSt)
 {
-    const NBodyCtx* ctx = NULL;
-    const mwvector* x = NULL;
-    const mwvector* v = NULL;
-    mwbool useGalacticCoordinates = FALSE;
-    mwbool useRadians = FALSE;
+    static const NBodyCtx* ctx = NULL;
+    static const mwvector* x = NULL;
+    static const mwvector* v = NULL;
+    static mwbool useGalacticCoordinates = FALSE;
+    static mwbool useRadians = FALSE;
     InitialConditions ic = EMPTY_INITIAL_CONDITIONS;
 
-    const MWNamedArg argTable[] =
+    static const MWNamedArg argTable[] =
         {
             { "context",                LUA_TUSERDATA, NBODY_CTX, TRUE,  &ctx,                   },
             { "position",               LUA_TUSERDATA, MWVECTOR,  TRUE,  &x                      },
@@ -80,6 +80,10 @@ static int createInitialConditions(lua_State* luaSt)
             { "useRadians",             LUA_TBOOLEAN,  NULL,      FALSE, &useRadians,            },
             END_MW_NAMED_ARG
         };
+
+    useRadians = useGalacticCoordinates = FALSE;
+    ctx = NULL;
+    x = v = NULL;
 
     switch (lua_gettop(luaSt))
     {
