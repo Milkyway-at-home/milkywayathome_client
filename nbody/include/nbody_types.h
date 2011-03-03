@@ -70,6 +70,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_extra.h"
 
 #include <lua.h>
+#include <time.h>
 
 #ifndef __OPENCL_VERSION__   /* Not compiling CL kernel */
   #if NBODY_OPENCL
@@ -333,6 +334,7 @@ typedef struct NBODY_ALIGN
     Tree tree;
     node* freecell;   /* list of free cells */
     unsigned int outputTime;
+    time_t lastCheckpoint;
     real tnow;
     body* bodytab;      /* points to array of bodies */
     mwvector* acctab;   /* Corresponding accelerations of bodies */
@@ -346,7 +348,7 @@ typedef struct NBODY_ALIGN
 #if NBODY_OPENCL
   #define EMPTY_STATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
 #else
-  #define EMPTY_STATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL }
+  #define EMPTY_STATE { EMPTY_TREE, NULL, 0, 0, NAN, NULL, NULL }
 #endif /* NBODY_OPENCL */
 
 
@@ -404,6 +406,7 @@ typedef struct NBODY_ALIGN
 
     HistogramParams histogramParams;
 
+    time_t checkpointT;       /* Period to checkpoint when not using BOINC */
     unsigned int freqOut;
     FILE* outfile;            /* file for snapshot output */
 } NBodyCtx;
@@ -428,7 +431,7 @@ typedef struct NBODY_ALIGN
                          NAN, InvalidCriterion,                           \
                          FALSE, FALSE, FALSE, FALSE, FALSE,               \
                          EMPTY_HISTOGRAM_PARAMS,                          \
-                         0, NULL }
+                         0, 0, NULL }
 
 
 

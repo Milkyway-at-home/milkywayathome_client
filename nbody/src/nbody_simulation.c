@@ -30,20 +30,39 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "show.h"
 #include "nbody_lua.h"
 
-#if BOINC_APPLICATION
-static inline void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
+static inline int nbodyTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 {
-    if (boinc_time_to_checkpoint())
+  #if BOINC_APPLICATION
+    return boinc_time_to_checkpoint();
+  #else
+    time_t now;
+
+    if (ctx->checkpointT < 0 || ((now = time(NULL)) - st->lastCheckpoint) < ctx->checkpointT)
+        return FALSE;
+    else
+    {
+        st->lastCheckpoint = now;
+        return TRUE;
+    }
+  #endif /* BOINC_APPLICATION */
+}
+
+static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
+{
+    if (nbodyTimeToCheckpoint(ctx, st))
     {
         if (writeCheckpoint(ctx, st))
             fail("Failed to write checkpoint\n");
 
+      #if BOINC_APPLICATION
         boinc_checkpoint_completed();
+      #endif /* BOINC_APPLICATION */
     }
 
+  #if BOINC_APPLICATION
     boinc_fraction_done(st->tnow / ctx->timeEvolve);
+  #endif /* BOINC_APPLICATION */
 }
-#endif /* BOINC_APPLICATION */
 
 static void runSystem(const NBodyCtx* ctx, NBodyState* st)
 {
@@ -52,9 +71,7 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
     while (st->tnow < tstop)
     {
         stepSystem(ctx, st);   /* advance N-body system */
-      #if BOINC_APPLICATION
         nbodyCheckpoint(ctx, st);
-      #endif
 
       #if PERIODIC_OUTPUT
         st->outputTime = (st->outputTime + 1) % ctx->freqOut;
@@ -63,12 +80,9 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
       #endif /* PERIODIC_OUTPUT */
     }
 
-  #if BOINC_APPLICATION
     mw_report("Making final checkpoint\n");
     if (writeCheckpoint(ctx, st))
         fail("Failed to write final checkpoint\n");
-  #endif
-
 }
 
 static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
@@ -115,6 +129,7 @@ static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
     ctx->outputCartesian = nbf->outputCartesian;
     ctx->outputBodies    = nbf->printBodies;
     ctx->outputHistogram = nbf->printHistogram;
+    ctx->checkpointT     = nbf->checkpointPeriod;
 }
 
 static int verifyFile(const char* filename)
@@ -124,7 +139,6 @@ static int verifyFile(const char* filename)
     NBodyState st = EMPTY_STATE;
 
     rc = setupNBody(filename, &ctx, &st);
-
     if (rc)
         warn("File failed\n");
     else
@@ -159,6 +173,7 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     if (setupRun(&ctx, &st, nbf->inputFile))
         return warn1("Failed to setup run\n");
 
+    nbodySetCtxFromFlags(&ctx, nbf);
     if (initOutput(&ctx, nbf))
         return warn1("Failed to open output files\n");
 

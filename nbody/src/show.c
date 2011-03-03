@@ -311,6 +311,7 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      "  treeRSize       = %g\n"
                      "  theta           = %g\n"
                      "  eps2            = %g\n"
+                     "  checkpointT     = %u\n"
                      "  freqOut         = %u\n"
                      "  outfile         = %p\n"
                      "};\n",
@@ -326,6 +327,7 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      ctx->treeRSize,
                      ctx->theta,
                      ctx->eps2,
+                     ctx->checkpointT,
                      ctx->freqOut,
                      ctx->outfile))
     {

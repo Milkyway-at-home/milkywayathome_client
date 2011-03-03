@@ -32,6 +32,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
 #define DEFAULT_HISTOGRAM_FILE  "histogram"
+#define NOBOINC_DEFAULT_CHECKPOINT_PERIOD 10
 
 
 #if !BOINC_APPLICATION
@@ -140,6 +141,14 @@ static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
             POPT_ARG_NONE, &nbf->ignoreCheckpoint,
             0, "Ignore the checkpoint file", NULL
         },
+
+      #else
+        {
+            "checkpoint-interval", 'w',
+            POPT_ARG_INT, &nbf->checkpointPeriod,
+            0, "Period (in seconds) to checkpoint. -1 to disable", NULL
+        },
+
       #endif /* BOINC_APPLICATION */
 
         {
@@ -235,6 +244,8 @@ static void setDefaultFlags(NBodyFlags* nbf)
         nbf->printBodies = (nbf->outFileName != NULL);
     if (!nbf->printHistogram)
         nbf->printHistogram = (nbf->histoutFileName != NULL);
+    if (nbf->checkpointPeriod == 0)
+        nbf->checkpointPeriod = NOBOINC_DEFAULT_CHECKPOINT_PERIOD;
 }
 
 static void freeNBodyFlags(NBodyFlags* nbf)

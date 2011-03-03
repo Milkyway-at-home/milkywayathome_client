@@ -53,6 +53,7 @@ static const NBodyCtx defaultNBodyCtx =
     /* .histogramParams */  EMPTY_HISTOGRAM_PARAMS,
 
     /* .freqout         */  0,
+    /* .checkpointT     */  3600,
     /* .outfile         */  NULL
 };
 
