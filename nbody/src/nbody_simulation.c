@@ -80,9 +80,12 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
       #endif /* PERIODIC_OUTPUT */
     }
 
-    mw_report("Making final checkpoint\n");
-    if (writeCheckpoint(ctx, st))
-        fail("Failed to write final checkpoint\n");
+    if (BOINC_APPLICATION || ctx->checkpointT >= 0)
+    {
+        mw_report("Making final checkpoint\n");
+        if (writeCheckpoint(ctx, st))
+            fail("Failed to write final checkpoint\n");
+    }
 }
 
 static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)

@@ -32,7 +32,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
 #define DEFAULT_HISTOGRAM_FILE  "histogram"
-#define NOBOINC_DEFAULT_CHECKPOINT_PERIOD 10
+
+/* 15 minutes */
+#define NOBOINC_DEFAULT_CHECKPOINT_PERIOD 900
 
 
 #if !BOINC_APPLICATION
