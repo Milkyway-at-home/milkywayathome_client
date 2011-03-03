@@ -291,9 +291,10 @@ typedef struct NBODY_ALIGN
 {
     int fd;            /* File descriptor for checkpoint file */
     char* mptr;        /* mmap'd pointer for checkpoint file */
+    size_t cpFileSize; /* For checking how big the file should be for expected bodies */
 } CheckpointHandle;
 
-#define EMPTY_CHECKPOINT_HANDLE { -1, NULL }
+#define EMPTY_CHECKPOINT_HANDLE { -1, NULL, 0 }
 
 #else
 
@@ -302,9 +303,10 @@ typedef struct NBODY_ALIGN
     HANDLE file;
     HANDLE mapFile;
     char* mptr;
+    DWORD cpFileSize;
 } CheckpointHandle;
 
-#define EMPTY_CHECKPOINT_HANDLE { INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE, NULL }
+#define EMPTY_CHECKPOINT_HANDLE { INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE, NULL, 0 }
 
 #endif /* _WIN32 */
 

@@ -45,7 +45,7 @@ static const char tail[] = "end";
 static const size_t hdrSize = sizeof(size_t)                              /* size of real */
                             + sizeof(void*)                               /* Check pointer size */
                             + sizeof(NBodyCtx)
-                            + 2 * sizeof(unsigned int)  /* Major, minor version number */
+                            + 2 * sizeof(int)                    /* Major, minor version number */
                             + sizeof(char) * (sizeof(tail) + sizeof(hdr) - 2) /* error checking tags */
                             + 1 * sizeof(unsigned int)                        /* nbody count */
                             + 2 * sizeof(real);                               /* tnow, rsize */
@@ -66,10 +66,9 @@ static const size_t hdrSize = sizeof(size_t)                              /* siz
 
 #ifndef _WIN32
 
-static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const char* filename)
+static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const char* filename, int writing)
 {
     struct stat sb;
-    const size_t checkpointFileSize = hdrSize + ctx->nbody * sizeof(body);
 
     cp->fd = open(filename, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
     if (cp->fd == -1)
@@ -78,23 +77,33 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
         return TRUE;
     }
 
-    /* Make the file the right size in case it's a new file */
-    if (ftruncate(cp->fd, checkpointFileSize) < 0)
-    {
-        perror("ftruncate checkpoint");
-        return TRUE;
-    }
-
     if (fstat(cp->fd, &sb) == -1)
     {
-        perror("fstat");
+        perror("checkpoint fstat");
         return TRUE;
     }
 
     if (!S_ISREG(sb.st_mode))
         return warn1("checkpoint file is not a file\n");
 
-    cp->mptr = mmap(0, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, cp->fd, 0);
+    if (writing)
+    {
+        cp->cpFileSize = hdrSize + ctx->nbody * sizeof(body);
+        /* Make the file the right size in case it's a new file */
+        if (ftruncate(cp->fd, cp->cpFileSize) < 0)
+        {
+            perror("ftruncate checkpoint");
+            return TRUE;
+        }
+    }
+    else
+    {
+        cp->cpFileSize = sb.st_size;
+        if (cp->cpFileSize == 0)
+            return warn1("checkpoint file is empty\n");
+    }
+
+    cp->mptr = mmap(0, cp->cpFileSize, PROT_READ | PROT_WRITE, MAP_SHARED, cp->fd, 0);
     if (cp->mptr == MAP_FAILED)
     {
         perror("mmap: Failed to open checkpoint file for writing");
@@ -123,9 +132,9 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
             return TRUE;
         }
 
-        if (munmap(cp->mptr, sb.st_size) == -1)
+        if (cp->mptr && cp->mptr != MAP_FAILED && munmap(cp->mptr, sb.st_size) == -1)
         {
-            perror("munmap");
+            perror("munmap checkpoint");
             return TRUE;
         }
     }
@@ -144,14 +153,12 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
  */
 
 
-static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const char* filename)
+static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const char* filename, int writing)
 {
     SYSTEM_INFO si;
     DWORD sysGran;
-    DWORD mapViewSize;
-    DWORD fileMapStart;
-    DWORD fileMapSize;
-    const DWORD checkpointFileSize = hdrSize + ctx->nbody * sizeof(body);
+    DWORD fSize;
+    DWORD mapViewSize, fileMapStart, fileMapSize;
 
     /* Try to create a new file */
     cp->file = CreateFile(filename,
@@ -163,7 +170,7 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
                           NULL);
 
     /* If the checkpoint already exists, open it */
-    if ( GetLastError() == ERROR_FILE_EXISTS )
+    if (GetLastError() == ERROR_FILE_EXISTS)
     {
         cp->file = CreateFile(filename,
                               GENERIC_READ | GENERIC_WRITE,
@@ -176,14 +183,31 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
 
     /* TODO: More filetype checking and stuff */
 
-    if ( cp->file == INVALID_HANDLE_VALUE )
+    if (cp->file == INVALID_HANDLE_VALUE)
         return warn1("Failed to open checkpoint file '%s': %ld\n", filename, GetLastError());
+
+    if (writing)
+    {
+        cp->cpFileSize = hdrSize + ctx->nbody * sizeof(body);
+    }
+    else
+    {
+        /* We don't know how much to expect when reading the file */
+        cp->cpFileSize = GetFileSize(cp->file, NULL);
+        if (cp->cpFileSize == INVALID_FILE_SIZE || cp->cpFileSize == 0)
+        {
+            warn("Invalid checkpoint file size (%u) or empty checkpoint file '%s': %ld\n",
+                 cp->cpFileSize, filename, GetLastError());
+            CloseHandle(cp->file);
+            return TRUE;
+        }
+    }
 
     GetSystemInfo(&si);
     sysGran = si.dwAllocationGranularity;
     fileMapStart = 0;
-    mapViewSize = checkpointFileSize;
-    fileMapSize = checkpointFileSize;
+    mapViewSize = cp->cpFileSize;
+    fileMapSize = cp->cpFileSize;
 
     cp->mapFile = CreateFileMapping(cp->file,
                                     NULL,
@@ -191,7 +215,6 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
                                     0,
                                     fileMapSize,
                                     NULL);
-
     if (cp->mapFile == NULL)
     {
         return warn1("Failed to create mapping for checkpoint file '%s': %ld\n",
@@ -216,13 +239,13 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
 {
     if (cp->file != INVALID_HANDLE_VALUE)
     {
-        if (!UnmapViewOfFile((LPVOID) cp->mptr))
+        if (cp->mptr && !UnmapViewOfFile((LPVOID) cp->mptr))
             return warn1("Error %ld occurred unmapping the checkpoint view object!\n", GetLastError());
 
-        if (!CloseHandle(cp->mapFile))
+        if (cp->mapFile && !CloseHandle(cp->mapFile))
             return warn1("Error %ld occurred closing the checkpoint mapping!\n", GetLastError());
 
-        if (!CloseHandle(cp->file))
+        if (cp->file && !CloseHandle(cp->file))
             return warn1("Error %ld occurred closing checkpoint file\n", GetLastError());
     }
 
@@ -239,9 +262,8 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     unsigned int majorVersion, minorVersion;
     char buf[sizeof(hdr)];
     char tailBuf[sizeof(tail)];
-    const size_t bodySize = ctx->nbody * sizeof(body);
+    size_t bodySize, supposedCheckpointSize;
     char* p = cp->mptr;
-    int failed = FALSE;
 
     warn("Thawing state\n");
 
@@ -255,37 +277,52 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
     READ_CTX(ctx, p);
     ctx->outfile = NULL; /* Clean up garbage pointer */
+    bodySize = ctx->nbody * sizeof(body);
 
     READ_REAL(st->tnow, p);
     READ_REAL(st->tree.rsize, p);
 
     if (strncmp(hdr, buf, sizeof(hdr) - 1))
     {
-        warn("Didn't find header for checkpoint file.\n");
-        failed = TRUE;
+        return warn1("Didn't find header for checkpoint file.\n");
+    }
+
+    assert(cp->cpFileSize != 0);
+    /* Make sure the file isn't lying about how many bodies there are */
+    supposedCheckpointSize = hdrSize + ctx->nbody * sizeof(body);
+    if (supposedCheckpointSize != cp->cpFileSize)
+    {
+        return warn1("Expected checkpoint file size ("ZU") is incorrect for expected number of bodies "
+                     "(%u bodies, real size "ZU")\n",
+                     supposedCheckpointSize,
+                     ctx->nbody,
+                     cp->cpFileSize);
+    }
+
+    if (ctx->nbody != nbody)
+    {
+        return warn1("Checkpoint error: Expected number of bodies is inconsistent (%u vs %u)\n",
+                     ctx->nbody, nbody);
     }
 
     if (realSize != sizeof(real))
     {
-        warn("Got checkpoint file for wrong type. "
-             "Expected sizeof(real) = "ZU", got "ZU"\n",
-             sizeof(real), realSize);
-        failed = TRUE;
+        return warn1("Got checkpoint file for wrong type. "
+                     "Expected sizeof(real) = "ZU", got "ZU"\n",
+                     sizeof(real), realSize);
     }
 
     if (ptrSize != sizeof(void*))
     {
-        warn("Got checkpoint file for wrong architecture. "
-             "Expected sizeof(void*) = "ZU", got "ZU"\n", sizeof(void*), ptrSize);
-        failed = TRUE;
+        return warn1("Got checkpoint file for wrong architecture. "
+                     "Expected sizeof(void*) = "ZU", got "ZU"\n", sizeof(void*), ptrSize);
     }
 
     if (majorVersion != MILKYWAY_NBODY_VERSION_MAJOR || minorVersion != MILKYWAY_NBODY_VERSION_MINOR)
     {
-        warn("Version mismatch in checkpoint file. File is for %u.%u, But version is %u.%u\n",
-             majorVersion, minorVersion,
-             MILKYWAY_NBODY_VERSION_MAJOR, MILKYWAY_NBODY_VERSION_MINOR);
-        failed = TRUE;
+        return warn1("Version mismatch in checkpoint file. File is for %u.%u, But version is %u.%u\n",
+                     majorVersion, minorVersion,
+                     MILKYWAY_NBODY_VERSION_MAJOR, MILKYWAY_NBODY_VERSION_MINOR);
     }
 
     /* Read the bodies */
@@ -296,11 +333,13 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     READ_STR(tailBuf, p, sizeof(tailBuf) - 1);
     if (strncmp(tail, tailBuf, sizeof(tailBuf) - 1))
     {
-        warn("Failed to find end marker in checkpoint file.\n");
-        failed = TRUE;
+        free(st->bodytab);
+        st->bodytab = NULL;
+        return warn1("Failed to find end marker in checkpoint file.\n");
+
     }
 
-    return failed;
+    return FALSE;
 }
 
 /* Checkpoint file: Very simple binary "format"
@@ -382,11 +421,12 @@ int resolvedCheckpointExists()
 /* Read the actual checkpoint file to resume */
 int readCheckpoint(NBodyCtx* ctx, NBodyState* st)
 {
-    CheckpointHandle cp;
+    CheckpointHandle cp = EMPTY_CHECKPOINT_HANDLE;
 
-    if (openCheckpointHandle(ctx, &cp, checkpointResolved))
+    if (openCheckpointHandle(ctx, &cp, checkpointResolved, FALSE))
     {
         warn("Opening checkpoint for resuming failed\n");
+        closeCheckpointHandle(&cp);
         return TRUE;
     }
 
@@ -405,14 +445,14 @@ int readCheckpoint(NBodyCtx* ctx, NBodyState* st)
 int writeCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
 {
     int failed = FALSE;
-    CheckpointHandle cp;
+    CheckpointHandle cp = EMPTY_CHECKPOINT_HANDLE;
 
     assert(checkpointHasBeenResolved);
-    if (openCheckpointHandle(ctx, &cp, CHECKPOINT_TMP_FILE))
+    if (openCheckpointHandle(ctx, &cp, CHECKPOINT_TMP_FILE, TRUE))
     {
-        warn("Failed to open temporary checkpoint file\n"
-             "Failed to write checkpoint\n");
-        return TRUE;
+        closeCheckpointHandle(&cp);
+        return warn1("Failed to open temporary checkpoint file\n"
+                     "Failed to write checkpoint\n");
     }
 
     freezeState(ctx, st, &cp);

@@ -78,10 +78,15 @@ static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
     nbodyStateDestroy(st);
 }
 
-static int setupRun(NBodyCtx* ctx, NBodyState* st)
+static int setupRun(NBodyCtx* ctx, NBodyState* st, const char* inputFile)
 {
     /* If the checkpoint exists, try to use it */
-    if (resolvedCheckpointExists())
+    if (!resolvedCheckpointExists())
+    {
+        if (setupNBody(inputFile, ctx, st))
+            return warn1("Failed to read input parameters file\n");
+    }
+    else
     {
         mw_report("Checkpoint exists. Attempting to resume from it.\n");
         if (readCheckpoint(ctx, st))
@@ -112,15 +117,25 @@ static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
     ctx->outputHistogram = nbf->printHistogram;
 }
 
-static int verifyFile(const NBodyCtx* ctx, int rc)
+static int verifyFile(const char* filename)
 {
-    printNBodyCtx(ctx);
-    printHistogramParams(&ctx->histogramParams);
+    int rc;
+    NBodyCtx ctx  = EMPTY_NBODYCTX;
+    NBodyState st = EMPTY_STATE;
+
+    rc = setupNBody(filename, &ctx, &st);
 
     if (rc)
         warn("File failed\n");
     else
+    {
         warn("File is OK\n");
+        printNBodyCtx(&ctx);
+        printHistogramParams(&ctx.histogramParams);
+    }
+
+    nbodyCtxDestroy(&ctx);
+    nbodyStateDestroy(&st);
 
     return rc;
 }
@@ -134,21 +149,14 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
 
     real chisq;
     double ts = 0.0, te = 0.0;
-    int rc = 0;
-
-    rc |= setupNBody(nbf->inputFile, &ctx, &st);
-    if (rc && !nbf->verifyOnly)   /* Fail right away, unless we are diagnosing file problems */
-        return warn1("Failed to read input parameters file\n");
 
     if (nbf->verifyOnly)
-        return verifyFile(&ctx, rc);
-    if (rc)
-        return warn1("Failed to read input parameters file\n");
+        return verifyFile(nbf->inputFile);
 
     if (resolveCheckpoint(nbf->checkpointFileName))
         return warn1("Failed to resolve checkpoint\n");
 
-    if (setupRun(&ctx, &st))
+    if (setupRun(&ctx, &st, nbf->inputFile))
         return warn1("Failed to setup run\n");
 
     if (initOutput(&ctx, nbf))
