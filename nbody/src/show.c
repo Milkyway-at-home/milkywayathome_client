@@ -18,7 +18,12 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef _MSC_VER
+  #define _GNU_SOURCE
+#endif
+
 #include <string.h>
+#include <stdio.h>
 #include "nbody_util.h"
 #include "nbody_types.h"
 #include "milkyway_util.h"
@@ -328,7 +333,7 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      ctx->treeRSize,
                      ctx->theta,
                      ctx->eps2,
-                     ctx->checkpointT,
+                     (int) ctx->checkpointT,
                      ctx->freqOut,
                      ctx->outfile))
     {

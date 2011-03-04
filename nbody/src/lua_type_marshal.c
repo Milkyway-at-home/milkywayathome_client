@@ -377,7 +377,7 @@ static void setValueFromType(lua_State* luaSt, void* v, int type, int idx)
             break;
 
         case LUA_TSTRING:
-            *(char**) v = strdup(lua_tostring(luaSt, idx));
+            *(const char**) v = lua_tostring(luaSt, idx);
             break;
 
         case LUA_TUSERDATA:
@@ -449,7 +449,6 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int tabl
 
             luaL_argerror(luaSt, table, buf);
         }
-
 
         /* We do our own type checking and errors to avoid
            Confusing and innaccurate error messages, which suggest the use of the table is wrong. */

@@ -185,7 +185,7 @@ static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
             0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
         },
 
-        {  /* FIXME: Only used when using the server arguments. */
+        {
             "seed", 'e',
             POPT_ARG_INT, &nbf->setSeed,
             'e', "seed for PRNG", NULL
@@ -252,6 +252,7 @@ static void setDefaultFlags(NBodyFlags* nbf)
 
 static void freeNBodyFlags(NBodyFlags* nbf)
 {
+    free(nbf->inputFile);
     free(nbf->outFileName);
     free(nbf->checkpointFileName);
     free(nbf->histogramFileName);

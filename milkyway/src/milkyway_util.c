@@ -122,6 +122,14 @@ void* mwRealloc(void* ptr, size_t size)
     return mem;
 }
 
+static char* fcloseVerbose(FILE* f, const char* err)
+{
+    if (fclose(f))
+        perror(err);
+
+    return NULL;
+}
+
 char* mwFreadFile(FILE* f, const char* filename)
 {
     long fsize;
@@ -134,26 +142,29 @@ char* mwFreadFile(FILE* f, const char* filename)
         return NULL;
     }
 
-    fseek(f, 0, SEEK_END);  /* Find size of file */
+     /* Find size of file */
+    if (fseek(f, 0, SEEK_END) == -1)
+        return fcloseVerbose(f, "Seeking file end");
+
     fsize = ftell(f);
     if (fsize == -1)
-    {
-        perror("Getting file size");
-        return NULL;
-    }
+        return fcloseVerbose(f, "Getting file size");
 
     fseek(f, 0, SEEK_SET);
 
-    buf = mwCalloc(fsize + 1, sizeof(char));
-    readSize = fread(buf, sizeof(char), fsize, f);
+    buf = (char*) mwMalloc((fsize + 1) * sizeof(char));
+    buf[fsize] = '\0';
 
+    readSize = fread(buf, sizeof(char), fsize, f);
     if (readSize != (size_t) fsize)
     {
-        free(buf);
         warn("Failed to read file '%s': Expected to read %ld, but got "ZU"\n",
              filename, fsize, readSize);
-        return NULL;
+        free(buf);
+        buf = NULL;
     }
+
+    fcloseVerbose(f, "Closing read file");
 
     return buf;
 }
@@ -179,7 +190,7 @@ int mwWriteFile(const char* filename, const char* str)
     if (rc == EOF)
         warn("Error writing file '%s'\n", filename);
 
-    fclose(f);
+    fcloseVerbose(f, "Closing write file");
     return rc;
 }
 
