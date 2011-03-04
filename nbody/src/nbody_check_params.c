@@ -96,17 +96,6 @@ mwbool checkPotentialConstants(Potential* p)
     return checkSphericalConstants(&p->sphere[0]) || checkDiskConstants(&p->disk) || checkHaloConstants(&p->halo);
 }
 
-static real calculateTimestep(real mass, real r0)
-{
-    return sqr(1/10.0) * mw_sqrt((PI_4_3 * cube(r0)) / mass);
-}
-
-static real calculateEps2(real nbody, real r0)
-{
-    real eps = r0 / (10.0 * mw_sqrt(nbody));
-    return sqr(eps);
-}
-
 static int hasAcceptableEps2(const NBodyCtx* ctx)
 {
     int rc = mwCheckNormalPosNum(ctx->eps2);

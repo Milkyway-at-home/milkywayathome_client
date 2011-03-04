@@ -571,3 +571,9 @@ real* popRealArray(lua_State* luaSt, int* outN)
     return arr;
 }
 
+void registerFunction(lua_State* luaSt, lua_CFunction f, const char* name)
+{
+    lua_pushcfunction(luaSt, f);
+    lua_setglobal(luaSt, name);
+}
+

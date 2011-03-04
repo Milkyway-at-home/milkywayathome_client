@@ -81,7 +81,6 @@ static int luaPlummerTimestepIntegral(lua_State* luaSt)
         return luaL_argerror(luaSt, 1, "Expected 1, 3 or 4 arguments");
     }
 
-
     /* Make sure the bounds / step are OK so that this integral will be sure to complete */
     if (mwCheckNormalPosNum(smalla))
         return luaL_argerror(luaSt, 1, "Invalid small radius");
@@ -94,12 +93,6 @@ static int luaPlummerTimestepIntegral(lua_State* luaSt)
     lua_pushnumber(luaSt, encMass);
 
     return 1;
-}
-
-static void registerPlummerTimestepIntegral(lua_State* luaSt)
-{
-    lua_pushcfunction(luaSt, luaPlummerTimestepIntegral);
-    lua_setglobal(luaSt, "plummerTimestepIntegral");
 }
 
 static int luaReverseOrbit(lua_State* luaSt)
@@ -145,12 +138,6 @@ static int luaReverseOrbit(lua_State* luaSt)
     return 1;
 }
 
-static void registerReverseOrbit(lua_State* luaSt)
-{
-    lua_pushcfunction(luaSt, luaReverseOrbit);
-    lua_setglobal(luaSt, "reverseOrbit");
-}
-
 static void setModelTableItem(lua_State* luaSt, int table, lua_CFunction generator, const char* name)
 {
     lua_pushcfunction(luaSt, generator);
@@ -178,9 +165,52 @@ void registerPredefinedModelGenerators(lua_State* luaSt)
     lua_setglobal(luaSt, "predefinedModels");
 }
 
+static real calculateTimestep(real mass, real r0)
+{
+    return sqr(1/10.0) * mw_sqrt((PI_4_3 * cube(r0)) / mass);
+}
+
+static int luaCalculateTimestep(lua_State* luaSt)
+{
+    real mass, r0;
+
+    if (lua_gettop(luaSt) != 2)
+        return luaL_argerror(luaSt, 0, "Expected 2 arguments");
+
+    mass = luaL_checknumber(luaSt, 1);
+    r0 = luaL_checknumber(luaSt, 2);
+
+    lua_pushnumber(luaSt, calculateTimestep(mass, r0));
+    return 1;
+}
+
+static real calculateEps2(real nbody, real r0)
+{
+    real eps = r0 / (10.0 * mw_sqrt(nbody));
+    return sqr(eps);
+}
+
+static int luaCalculateEps2(lua_State* luaSt)
+{
+    int nbody;
+    real r0;
+
+    if (lua_gettop(luaSt) != 2)
+        return luaL_argerror(luaSt, 0, "Expected 2 arguments");
+
+    nbody = luaL_checkinteger(luaSt, 1);
+    r0 = luaL_checknumber(luaSt, 2);
+
+    lua_pushnumber(luaSt, calculateEps2((real) nbody, r0));
+
+    return 1;
+}
+
 void registerModelUtilityFunctions(lua_State* luaSt)
 {
-    registerReverseOrbit(luaSt);
-    registerPlummerTimestepIntegral(luaSt);
+    registerFunction(luaSt, luaPlummerTimestepIntegral, "plummerTimestepIntegral");
+    registerFunction(luaSt, luaReverseOrbit, "reverseOrbit");
+    registerFunction(luaSt, luaCalculateEps2, "calculateEps2");
+    registerFunction(luaSt, luaCalculateTimestep, "calculateTimestep");
 }
 

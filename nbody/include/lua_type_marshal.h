@@ -126,5 +126,7 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int tabl
 void pushRealArray(lua_State* luaSt, const real* arr, int n);
 real* popRealArray(lua_State* luaSt, int* outN);
 
+void registerFunction(lua_State* luaSt, lua_CFunction f, const char* name);
+
 #endif /* _LUA_TYPE_MARSHAL_H_ */
 

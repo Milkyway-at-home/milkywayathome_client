@@ -66,11 +66,12 @@ static int bindServerArguments(lua_State* luaSt, const NBodyFlags* nbf)
         pushRealArray(luaSt, nbf->serverArgs, nbf->numServerArgs);
     else
         lua_pushnil(luaSt);
-
-    mw_lua_assert_top_type(luaSt, LUA_TTABLE);
     lua_setglobal(luaSt, "serverArguments");
 
-    lua_pushinteger(luaSt, nbf->setSeed);
+    if (nbf->setSeed)
+        lua_pushinteger(luaSt, nbf->setSeed);
+    else
+        lua_pushnil(luaSt);
     lua_setglobal(luaSt, "serverSeed");
 
     return 0;

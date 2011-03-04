@@ -164,7 +164,6 @@ static int createPlummerSphereTable(lua_State* luaSt,
     return 1;
 }
 
-/* DSFMT -> InitialConditions -> Int (nbody) -> Real (mass) -> Bool (ignore final) -> [UserData] -> [Body] */
 int generatePlummer(lua_State* luaSt)
 {
     int nArgs, userDataIndex;
@@ -208,8 +207,7 @@ int generatePlummer(lua_State* luaSt)
 
 void registerGeneratePlummer(lua_State* luaSt)
 {
-    lua_pushcfunction(luaSt, generatePlummer);
-    lua_setglobal(luaSt, "generatePlummer");
+    registerFunction(luaSt, generatePlummer, "generatePlummer");
 }
 
 
