@@ -138,7 +138,7 @@ char* showHalo(const Halo* h)
                      "{ \n"
                      "      type         = %s\n"
                      "      vhalo        = %g\n"
-                     "      scale_length = %g\n"
+                     "      scaleLength  = %g\n"
                      "      flattenX     = %g\n"
                      "      flattenY     = %g\n"
                      "      flattenZ     = %g\n"
@@ -149,7 +149,7 @@ char* showHalo(const Halo* h)
                      "    };\n",
                      showHaloT(h->type),
                      h->vhalo,
-                     h->scale_length,
+                     h->scaleLength,
                      h->flattenX,
                      h->flattenY,
                      h->flattenZ,
@@ -173,15 +173,15 @@ char* showDisk(const Disk* d)
 
     if (0 > asprintf(&buf,
                      "{ \n"
-                     "      type         = %s\n"
-                     "      mass         = %g\n"
-                     "      scale_length = %g\n"
-                     "      scale_height = %g\n"
+                     "      type        = %s\n"
+                     "      mass        = %g\n"
+                     "      scaleLength = %g\n"
+                     "      scaleHeight = %g\n"
                      "    };\n",
                      showDiskT(d->type),
                      d->mass,
-                     d->scale_length,
-                     d->scale_height))
+                     d->scaleLength,
+                     d->scaleHeight))
     {
         fail("asprintf() failed\n");
     }

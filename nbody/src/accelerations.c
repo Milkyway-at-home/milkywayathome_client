@@ -40,8 +40,8 @@ static inline mwvector sphericalAccel(const Spherical* sph, const mwvector pos)
 static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, const mwvector pos)
 {
     mwvector acc;
-    const real a   = disk->scale_length;
-    const real b   = disk->scale_height;
+    const real a   = disk->scaleLength;
+    const real b   = disk->scaleHeight;
     const real zp  = mw_sqrt( sqr(Z(pos)) + sqr(b) );
     const real azp = a + zp;
 
@@ -57,7 +57,7 @@ static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, const mwvector p
 
 static inline mwvector exponentialDiskAccel(const Disk* disk, const mwvector pos)
 {
-    const real b = disk->scale_length;
+    const real b = disk->scaleLength;
     const real r = mw_absv(pos);
 
     const real expPiece = mw_exp(-r / b) * (r + b) / b;
@@ -72,7 +72,7 @@ static inline mwvector logHaloAccel(const Halo* halo, const mwvector pos)
 
     const real tvsqr = -2.0 * sqr(halo->vhalo);
     const real qsqr  = sqr(halo->flattenZ);
-    const real d     = halo->scale_length;
+    const real d     = halo->scaleLength;
     const real zsqr  = sqr(Z(pos));
 
     const real arst  = sqr(d) + sqr(X(pos)) + sqr(Y(pos));
@@ -88,7 +88,7 @@ static inline mwvector logHaloAccel(const Halo* halo, const mwvector pos)
 static inline mwvector nfwHaloAccel(const Halo* halo, const mwvector pos)
 {
     const real r  = mw_absv(pos);
-    const real a  = halo->scale_length;
+    const real a  = halo->scaleLength;
     const real ar = a + r;
     const real c  = a * sqr(halo->vhalo) * ((-ar * mw_log1p(r / a)) + r) / (0.2162165954 * cube(r) * ar);
 
@@ -102,7 +102,7 @@ static inline mwvector triaxialHaloAccel(const Halo* h, const mwvector pos)
 
     /* TODO: More things here can be cached */
     const real qzs      = sqr(h->flattenZ);
-    const real rhalosqr = sqr(h->scale_length);
+    const real rhalosqr = sqr(h->scaleLength);
     const real mvsqr    = -sqr(h->vhalo);
 
     const real xsqr = sqr(X(pos));

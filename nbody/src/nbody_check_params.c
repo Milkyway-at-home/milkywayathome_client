@@ -28,6 +28,16 @@ static mwbool invalidHaloWarning(halo_t type)
     return TRUE;
 }
 
+mwbool checkSphericalConstants(Spherical* s)
+{
+    return FALSE;
+}
+
+mwbool checkDiskConstants(Disk* d)
+{
+    return FALSE;
+}
+
 /* Check for valid halo values and calculate constants. Return true if error. */
 mwbool checkHaloConstants(Halo* h)
 {
@@ -35,7 +45,7 @@ mwbool checkHaloConstants(Halo* h)
     real qxs, qys;
 
     /* Common to all 3 models */
-    if (!isfinite(h->vhalo) || !isfinite(h->scale_length))
+    if (!isfinite(h->vhalo) || !isfinite(h->scaleLength))
         return invalidHaloWarning(h->type);
 
     switch (h->type)
@@ -79,6 +89,11 @@ mwbool checkHaloConstants(Halo* h)
     }
 
     return FALSE;
+}
+
+mwbool checkPotentialConstants(Potential* p)
+{
+    return checkSphericalConstants(&p->sphere[0]) || checkDiskConstants(&p->disk) || checkHaloConstants(&p->halo);
 }
 
 static real calculateTimestep(real mass, real r0)

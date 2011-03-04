@@ -60,38 +60,15 @@ static const MWEnumAssociation sphericalOptions[] =
 
 static int createSpherical(lua_State* luaSt)
 {
-    Spherical s;
-    int nArgs;
-    real mass = NAN, scale = NAN;
-    spherical_t type = SphericalPotential;
-
-    const MWNamedArg argTable[] =
+    static Spherical s = { SphericalPotential, 0.0, 0.0 };
+    static const MWNamedArg argTable[] =
         {
-          //{ "type",  ,  NULL, FALSE, &type  },
-            { "mass",  LUA_TNUMBER,  NULL, FALSE, &mass  },
-            { "scale", LUA_TNUMBER,  NULL, FALSE, &scale },
+            { "mass",  LUA_TNUMBER,  NULL, TRUE, &s.mass  },
+            { "scale", LUA_TNUMBER,  NULL, TRUE, &s.scale },
             END_MW_NAMED_ARG
         };
 
-    /* Enum option isn't useful now */
-    nArgs = lua_gettop(luaSt);
-    if (nArgs == 1 && lua_istable(luaSt, 1))
-    {
-        handleNamedArgumentTable(luaSt, argTable, 1);
-    }
-    else if (nArgs == 1 || nArgs == 2)
-    {
-        mass = luaL_optnumber(luaSt, 1, mass);
-        scale = luaL_optnumber(luaSt, 2, scale);
-    }
-    else
-    {
-        return luaL_argerror(luaSt, 1, "Expected 1 or 2 arguments");
-    }
-
-    s.type = type;
-    s.mass = mass;
-    s.scale = scale;
+    oneTableArgument(luaSt, argTable);
     pushSpherical(luaSt, &s);
 
     return 1;
@@ -135,7 +112,7 @@ static const luaL_reg metaMethodsSpherical[] =
 
 static const luaL_reg methodsSpherical[] =
 {
-    { "create", createSpherical },
+    { "spherical", createSpherical },
     { NULL, NULL }
 };
 
@@ -150,8 +127,8 @@ static const Xet_reg_pre gettersSpherical[] =
 static const Xet_reg_pre settersSpherical[] =
 {
     //{ "type",  setSphericalT, offsetof(Spherical, type) },
-    { "mass",  setNumber,     offsetof(Spherical, mass) },
-    { "scale", setNumber,     offsetof(Spherical, scale) },
+    { "mass",  setNumber, offsetof(Spherical, mass) },
+    { "scale", setNumber, offsetof(Spherical, scale) },
     { NULL, NULL, 0 }
 };
 

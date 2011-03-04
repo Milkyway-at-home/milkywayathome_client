@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "show.h"
 #include "lua_type_marshal.h"
 #include "lua_halo.h"
+#include "nbody_check_params.h"
 
 #include "milkyway_util.h"
 
@@ -59,72 +60,61 @@ static const MWEnumAssociation haloOptions[] =
     END_MW_ENUM_ASSOCIATION
 };
 
-static int createHalo(lua_State* luaSt)
+static int createHalo(lua_State* luaSt, const MWNamedArg* argTable, Halo* h)
 {
-    Halo h = EMPTY_HALO;
-    halo_t type = InvalidHalo;
-    real vhalo = NAN, scaleLength = NAN;
-    real flattenX = NAN, flattenY = NAN, flattenZ = NAN, triaxAngle = NAN;
+    oneTableArgument(luaSt, argTable);
+    if (checkHaloConstants(h))
+        luaL_error(luaSt, "Invalid halo encountered");
 
-    const MWNamedArg argTable[] =
+    pushHalo(luaSt, h);
+    return 1;
+}
+
+static int createLogarithmicHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
         {
-          //{ "type",         LUA_TNUMBER,  NULL, FALSE, &type        },
-            { "vhalo",        LUA_TNUMBER,  NULL, FALSE, &vhalo       },
-            { "scale_length", LUA_TNUMBER,  NULL, FALSE, &scaleLength },
-            { "flattenX",     LUA_TNUMBER,  NULL, FALSE, &flattenX    },
-            { "flattenY",     LUA_TNUMBER,  NULL, FALSE, &flattenY    },
-            { "flattenZ",     LUA_TNUMBER,  NULL, FALSE, &flattenZ    },
-            { "triaxAngle",   LUA_TNUMBER,  NULL, FALSE, &triaxAngle  },
+            { "vhalo",       LUA_TNUMBER, NULL, TRUE, &h.vhalo       },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength },
+            { "flattenZ",    LUA_TNUMBER, NULL, TRUE, &h.flattenZ    },
             END_MW_NAMED_ARG
         };
 
-    warn("Creating halo\n");
+    h.type = LogarithmicHalo;
+    return createHalo(luaSt, argTable, &h);
+}
 
-    switch (lua_gettop(luaSt))
-    {
-        case 1:
-            if (lua_istable(luaSt, 1))
-            {
-                mw_panic("Implement me!\n");
-                //handleNamedArgumentTable(luaSt, argTable, 1);
-            }
-            else
-            {
-                type = checkEnum(luaSt, haloOptions, 1);
-            }
-            break;
+static int createTriaxialHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
+        {
+            { "vhalo",       LUA_TNUMBER, NULL, TRUE, &h.vhalo       },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength },
+            { "flattenX",    LUA_TNUMBER, NULL, TRUE, &h.flattenX    },
+            { "flattenY",    LUA_TNUMBER, NULL, TRUE, &h.flattenY    },
+            { "flattenZ",    LUA_TNUMBER, NULL, TRUE, &h.flattenZ    },
+            { "triaxAngle",  LUA_TNUMBER, NULL, TRUE, &h.triaxAngle  },
+            END_MW_NAMED_ARG
+        };
 
-        case 2:
-        case 3:
-        case 4:
-        case 5:
-        case 6:
-        case 7:
-            type = checkEnum(luaSt, haloOptions, 1);
-            vhalo = luaL_checknumber(luaSt, 2);
-            scaleLength = luaL_checknumber(luaSt, 3);
-            /* FIXME: Optional arguments for the triaxial halo don't really make sense */
-            flattenZ = luaL_optnumber(luaSt, 4, flattenZ);
-            flattenY = luaL_optnumber(luaSt, 5, flattenY);
-            flattenX = luaL_optnumber(luaSt, 6, flattenX);
-            triaxAngle = luaL_optnumber(luaSt, 7, triaxAngle);
-            break;
+    h.type = TriaxialHalo;
+    return createHalo(luaSt, argTable, &h);
+}
 
-        default:
-            return luaL_argerror(luaSt, 1, "Expected 1, 3 or 7 arguments");
-    }
+static int createNFWHalo(lua_State* luaSt)
+{
+    static Halo h = EMPTY_HALO;
+    static const MWNamedArg argTable[] =
+        {
+            { "vhalo",       LUA_TNUMBER, NULL, TRUE, &h.vhalo       },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &h.scaleLength },
+            END_MW_NAMED_ARG
+        };
 
-    /* TODO: Calculate c1, c2, c3 */
-    h.type = type;
-    h.vhalo = vhalo;
-    h.scale_length = scaleLength;
-    h.flattenX = flattenX;
-    h.flattenY = flattenY;
-    h.flattenZ = flattenZ;
-    h.triaxAngle = triaxAngle;
-
-    pushHalo(luaSt, &h);
-    return 1;
+    h.type = NFWHalo;
+    return createHalo(luaSt, argTable, &h);
 }
 
 static int toStringHalo(lua_State* luaSt)
@@ -165,37 +155,39 @@ static const luaL_reg metaMethodsHalo[] =
 
 static const luaL_reg methodsHalo[] =
 {
-    { "create",   createHalo },
+    { "logarithmic", createLogarithmicHalo },
+    { "nfw",         createNFWHalo },
+    { "triaxial",    createTriaxialHalo },
     { NULL, NULL }
 };
 
 /* TODO Error when writing to fields a halo type doesn't have */
 static const Xet_reg_pre gettersHalo[] =
 {
-    { "type",         getHaloT,  offsetof(Halo, type) },
-    { "vhalo",        getNumber, offsetof(Halo, vhalo) },
-    { "scale_length", getNumber, offsetof(Halo, scale_length) },
-    { "flattenX",     getNumber, offsetof(Halo, flattenX) },
-    { "flattenY",     getNumber, offsetof(Halo, flattenY) },
-    { "flattenZ",     getNumber, offsetof(Halo, flattenZ) },
-    { "triaxAngle",   getNumber, offsetof(Halo, triaxAngle) },
-    { "c1",           getNumber, offsetof(Halo, c1) },
-    { "c2",           getNumber, offsetof(Halo, c2) },
-    { "c3",           getNumber, offsetof(Halo, c3) },
+    { "type",        getHaloT,  offsetof(Halo, type) },
+    { "vhalo",       getNumber, offsetof(Halo, vhalo) },
+    { "scaleLength", getNumber, offsetof(Halo, scaleLength) },
+    { "flattenX",    getNumber, offsetof(Halo, flattenX) },
+    { "flattenY",    getNumber, offsetof(Halo, flattenY) },
+    { "flattenZ",    getNumber, offsetof(Halo, flattenZ) },
+    { "triaxAngle",  getNumber, offsetof(Halo, triaxAngle) },
+    { "c1",          getNumber, offsetof(Halo, c1) },
+    { "c2",          getNumber, offsetof(Halo, c2) },
+    { "c3",          getNumber, offsetof(Halo, c3) },
     { NULL, NULL, 0 }
 };
 
 static const Xet_reg_pre settersHalo[] =
 {
-    { "vhalo",        setNumber, offsetof(Halo, vhalo) },
-    { "scale_length", setNumber, offsetof(Halo, scale_length) },
-    { "flattenX",     setNumber, offsetof(Halo, flattenX) },
-    { "flattenY",     setNumber, offsetof(Halo, flattenY) },
-    { "flattenZ",     setNumber, offsetof(Halo, flattenZ) },
-    { "triaxAngle",   setNumber, offsetof(Halo, triaxAngle) },
-    { "c1",           setNumber, offsetof(Halo, c1) },
-    { "c2",           setNumber, offsetof(Halo, c2) },
-    { "c3",           setNumber, offsetof(Halo, c3) },
+    { "vhalo",       setNumber, offsetof(Halo, vhalo) },
+    { "scaleLength", setNumber, offsetof(Halo, scaleLength) },
+    { "flattenX",    setNumber, offsetof(Halo, flattenX) },
+    { "flattenY",    setNumber, offsetof(Halo, flattenY) },
+    { "flattenZ",    setNumber, offsetof(Halo, flattenZ) },
+    { "triaxAngle",  setNumber, offsetof(Halo, triaxAngle) },
+    { "c1",          setNumber, offsetof(Halo, c1) },
+    { "c2",          setNumber, offsetof(Halo, c2) },
+    { "c3",          setNumber, offsetof(Halo, c3) },
     { NULL, NULL, 0 }
 };
 

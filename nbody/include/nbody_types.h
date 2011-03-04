@@ -210,9 +210,9 @@ typedef enum
 typedef struct NBODY_ALIGN
 {
     disk_t type;
-    real mass;          /* disk mass */
-    real scale_length;  /* "a" for M-N, "b" for exp disk */
-    real scale_height;  /* unused for exponential disk. "b" for Miyamoto-Nagai disk */
+    real mass;         /* disk mass */
+    real scaleLength;  /* "a" for M-N, "b" for exp disk */
+    real scaleHeight;  /* unused for exponential disk. "b" for Miyamoto-Nagai disk */
 } Disk;
 
 #define DISK_TYPE "Disk"
@@ -235,7 +235,7 @@ typedef struct NBODY_ALIGN
 {
     halo_t type;
     real vhalo;         /* common to all 3 halos */
-    real scale_length;  /* common to all 3 halos */
+    real scaleLength;   /* common to all 3 halos */
     real flattenZ;      /* used by logarithmic and triaxial */
     real flattenY;      /* used by triaxial */
     real flattenX;      /* used by triaxial */

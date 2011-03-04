@@ -59,57 +59,40 @@ static const MWEnumAssociation diskOptions[] =
     END_MW_ENUM_ASSOCIATION
 };
 
-static int createDisk(lua_State* luaSt)
+static int createDisk(lua_State* luaSt, const MWNamedArg* argTable, Disk* d)
 {
-    Disk d;
-    disk_t type = InvalidDisk;
-    real mass = NAN;
-    real scaleHeight = NAN, scaleLength = NAN;
+    oneTableArgument(luaSt, argTable);
+    pushDisk(luaSt, d);
+    return 1;
+}
 
-    const MWNamedArg argTable[] =
+static int createMiyamotoNagaiDisk(lua_State* luaSt)
+{
+    static Disk d = { MiyamotoNagaiDisk, 0.0, 0.0, 0.0 };
+
+    static const MWNamedArg argTable[] =
         {
-          //{ "type",         LUA_TNUMBER,  NULL, FALSE, &type        },
-            { "mass",         LUA_TNUMBER,  NULL, FALSE, &mass        },
-            { "scale_length", LUA_TNUMBER,  NULL, FALSE, &scaleLength },
-            { "scale_height", LUA_TNUMBER,  NULL, FALSE, &scaleHeight },
+            { "mass",        LUA_TNUMBER, NULL, TRUE, &d.mass        },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &d.scaleLength },
+            { "scaleHeight", LUA_TNUMBER, NULL, TRUE, &d.scaleHeight },
             END_MW_NAMED_ARG
         };
 
-    switch (lua_gettop(luaSt))
-    {
-        case 1:
-            if (lua_istable(luaSt, 1))
-            {
-                mw_panic("Implement me!\n");
-                //handleNamedArgumentTable(luaSt, argTable, 1);
-            }
-            else
-            {
-                type = checkEnum(luaSt, diskOptions, 1);
-            }
-            break;
+    return createDisk(luaSt, argTable, &d);
+}
 
-        case 2:
-        case 3:
-        case 4:
-            /* TODO: We can check require / forbid using fields not available
-             * on models that don't use them etc. */
-            type = checkEnum(luaSt, diskOptions, 1);
-            mass = luaL_checknumber(luaSt, 2);
-            scaleLength = luaL_checknumber(luaSt, 3);
-            scaleHeight = luaL_optnumber(luaSt, 4, scaleHeight);
-            break;
+static int createExponentialDisk(lua_State* luaSt)
+{
+    static Disk d = { ExponentialDisk, 0.0, 0.0, 0.0 };
 
-        default:
-            return luaL_argerror(luaSt, 1, "Expected 1 or 4 arguments");
-    }
+    static const MWNamedArg argTable[] =
+        {
+            { "mass",        LUA_TNUMBER, NULL, TRUE, &d.mass        },
+            { "scaleLength", LUA_TNUMBER, NULL, TRUE, &d.scaleLength },
+            END_MW_NAMED_ARG
+        };
 
-    d.type = type;
-    d.mass = mass;
-    d.scale_length = scaleLength;
-    d.scale_height = scaleHeight;
-    pushDisk(luaSt, &d);
-    return 1;
+    return createDisk(luaSt, argTable, &d);
 }
 
 int getDiskT(lua_State* luaSt, void* v)
@@ -150,24 +133,25 @@ static const luaL_reg metaMethodsDisk[] =
 
 static const luaL_reg methodsDisk[] =
 {
-    { "create",   createDisk },
+    { "miyamotoNagai", createMiyamotoNagaiDisk },
+    { "exponential",   createExponentialDisk   },
     { NULL, NULL }
 };
 
 static const Xet_reg_pre gettersDisk[] =
 {
-    { "type",         getDiskT,  offsetof(Disk, type)         },
-    { "mass" ,        getNumber, offsetof(Disk, mass)         },
-    { "scale_length", getNumber, offsetof(Disk, scale_length) },
-    { "scale_height", getNumber, offsetof(Disk, scale_height) },
+    { "type",        getDiskT,  offsetof(Disk, type)        },
+    { "mass" ,       getNumber, offsetof(Disk, mass)        },
+    { "scaleLength", getNumber, offsetof(Disk, scaleLength) },
+    { "scaleHeight", getNumber, offsetof(Disk, scaleHeight) },
     { NULL, NULL, 0 }
 };
 
 static const Xet_reg_pre settersDisk[] =
 {
-    { "mass",         setNumber, offsetof(Disk, mass)         },
-    { "scale_length", setNumber, offsetof(Disk, scale_length) },
-    { "scale_height", setNumber, offsetof(Disk, scale_height) },
+    { "mass",        setNumber, offsetof(Disk, mass)        },
+    { "scaleLength", setNumber, offsetof(Disk, scaleLength) },
+    { "scaleHeight", setNumber, offsetof(Disk, scaleHeight) },
     { NULL, NULL, 0 }
 };
 

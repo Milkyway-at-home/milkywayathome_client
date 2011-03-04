@@ -29,6 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "lua_type_marshal.h"
 #include "plummer.h"
 #include "nbody_lua_models.h"
+#include "nbody_check_params.h"
 
 
 /* For using a combination of light and dark models to generate timestep */
@@ -104,7 +105,7 @@ static void registerPlummerTimestepIntegral(lua_State* luaSt)
 static int luaReverseOrbit(lua_State* luaSt)
 {
     real dt, tstop;
-    const Potential* pot = NULL;
+    Potential* pot = NULL;
     const InitialConditions* ic = NULL;
     InitialConditions icNew;
 
@@ -133,6 +134,10 @@ static int luaReverseOrbit(lua_State* luaSt)
         default:
             return luaL_argerror(luaSt, 1, "Expected 1 or 4 arguments");
     }
+
+    /* Make sure precalculated constants ready for use */
+    if (checkPotentialConstants(pot))
+        luaL_error(luaSt, "Error with potential");
 
     icNew = reverseOrbit(pot, *ic, tstop, dt);
     pushInitialConditions(luaSt, &icNew);

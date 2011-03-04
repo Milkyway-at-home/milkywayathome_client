@@ -130,6 +130,15 @@ void* mw_tonamedudata(lua_State* luaSt, int ud, const char* typeName)
     return p;
 }
 
+int oneTableArgument(lua_State* luaSt, const MWNamedArg* argTable)
+{
+    if (lua_gettop(luaSt) != 1)
+        return luaL_argerror(luaSt, 1, "Expected 1 table argument");
+
+    handleNamedArgumentTable(luaSt, argTable, 1);
+    return 0;
+}
+
 /* Mostly from example at http://lua-users.org/wiki/BindingWithMembersAndMethods */
 
 

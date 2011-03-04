@@ -28,6 +28,10 @@ extern "C"
 #endif
 
 mwbool checkHaloConstants(Halo* h);
+mwbool checkSphericalConstants(Spherical* s);
+mwbool checkDiskConstants(Disk* d);
+mwbool checkPotentialConstants(Potential* p);
+
 int contextSanityCheck(const NBodyCtx* ctx);
 int potentialSanityCheck(const Potential* pot);
 
