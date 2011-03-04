@@ -95,12 +95,12 @@ static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
     nbodyStateDestroy(st);
 }
 
-static int setupRun(NBodyCtx* ctx, NBodyState* st, const char* inputFile)
+static int setupRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     /* If the checkpoint exists, try to use it */
     if (!resolvedCheckpointExists())
     {
-        if (setupNBody(inputFile, ctx, st))
+        if (setupNBody(ctx, st, nbf))
             return warn1("Failed to read input parameters file\n");
     }
     else
@@ -135,13 +135,13 @@ static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
     ctx->checkpointT     = nbf->checkpointPeriod;
 }
 
-static int verifyFile(const char* filename)
+static int verifyFile(const NBodyFlags* nbf)
 {
     int rc;
     NBodyCtx ctx  = EMPTY_NBODYCTX;
     NBodyState st = EMPTY_STATE;
 
-    rc = setupNBody(filename, &ctx, &st);
+    rc = setupNBody(&ctx, &st, nbf);
     if (rc)
         warn("File failed\n");
     else
@@ -168,12 +168,12 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     double ts = 0.0, te = 0.0;
 
     if (nbf->verifyOnly)
-        return verifyFile(nbf->inputFile);
+        return verifyFile(nbf);
 
     if (resolveCheckpoint(nbf->checkpointFileName))
         return warn1("Failed to resolve checkpoint\n");
 
-    if (setupRun(&ctx, &st, nbf->inputFile))
+    if (setupRun(&ctx, &st, nbf))
         return warn1("Failed to setup run\n");
 
     nbodySetCtxFromFlags(&ctx, nbf);

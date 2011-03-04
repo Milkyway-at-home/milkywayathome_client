@@ -20,9 +20,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _NBODY_LUA_H_
 #define _NBODY_LUA_H_
 
+#include "nbody.h"
 #include "nbody_types.h"
 
-int setupNBody(const char* filename, NBodyCtx* ctx, NBodyState* st);
+int setupNBody(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
 
 #endif /* _NBODY_LUA_H_ */
 

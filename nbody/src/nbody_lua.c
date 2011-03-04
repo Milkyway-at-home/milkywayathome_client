@@ -60,12 +60,28 @@ static void registerUsedStandardStuff(lua_State* luaSt)
     lua_pop(luaSt, 3);
 }
 
-static lua_State* openNBodyLuaState(const char* filename)
+static int bindServerArguments(lua_State* luaSt, const NBodyFlags* nbf)
+{
+    if (nbf->serverArgs)
+        pushRealArray(luaSt, nbf->serverArgs, nbf->numServerArgs);
+    else
+        lua_pushnil(luaSt);
+
+    mw_lua_assert_top_type(luaSt, LUA_TTABLE);
+    lua_setglobal(luaSt, "serverArguments");
+
+    lua_pushinteger(luaSt, nbf->setSeed);
+    lua_setglobal(luaSt, "serverSeed");
+
+    return 0;
+}
+
+static lua_State* openNBodyLuaState(const NBodyFlags* nbf)
 {
     char* script;
     lua_State* luaSt = NULL;
 
-    script = mwReadFileResolved(filename);
+    script = mwReadFileResolved(nbf->inputFile);
     if (!script)
     {
         perror("Opening Lua script");
@@ -85,6 +101,7 @@ static lua_State* openNBodyLuaState(const char* filename)
     registerOtherTypes(luaSt);
     registerPredefinedModelGenerators(luaSt);
     registerModelUtilityFunctions(luaSt);
+    bindServerArguments(luaSt, nbf);
 
     if (luaL_dostring(luaSt, script))
     {
@@ -190,12 +207,12 @@ static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* s
     return 0;
 }
 
-int setupNBody(const char* filename, NBodyCtx* ctx, NBodyState* st)
+int setupNBody(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     int rc;
     lua_State* luaSt;
 
-    luaSt = openNBodyLuaState(filename);
+    luaSt = openNBodyLuaState(nbf);
     if (!luaSt)
         return 1;
 
