@@ -32,9 +32,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_util.h"
 
-#define DSFMT_TYPE "DSFMT"
-
-
 dsfmt_t* checkDSFMT(lua_State* luaSt, int idx)
 {
     return (dsfmt_t*) mw_checknamedudata(luaSt, idx, DSFMT_TYPE);

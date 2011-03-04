@@ -28,6 +28,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include <dSFMT.h>
 
+#define DSFMT_TYPE "DSFMT"
+
+
 dsfmt_t* checkDSFMT(lua_State* luaSt, int idx);
 int pushDSFMT(lua_State* luaSt, const dsfmt_t* state);
 int registerDSFMT(lua_State* luaSt);

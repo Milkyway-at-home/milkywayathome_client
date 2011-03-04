@@ -166,38 +166,28 @@ static int createPlummerSphereTable(lua_State* luaSt,
 
 int generatePlummer(lua_State* luaSt)
 {
-    int nArgs, userDataIndex;
-    dsfmt_t* prng;
-    const InitialConditions* ic;
-    mwbool ignore;
-    real mass, velScale;
-    int nbody;
+    static dsfmt_t* prng;
+    static const InitialConditions* ic;
+    static mwbool ignore;
+    static real mass, velScale;
+    static int nbody;
     static real radiusScale = 0.0;
 
-    static const MWNamedArg udTable[] =
+    static const MWNamedArg argTable[] =
         {
-            { "scaleRadius", LUA_TNUMBER, NULL, TRUE, &radiusScale },  /* length scale factor */
+            { "prng",              LUA_TUSERDATA, DSFMT_TYPE,              TRUE,  &prng        },
+            { "initialConditions", LUA_TUSERDATA, INITIAL_CONDITIONS_TYPE, TRUE,  &ic          },
+            { "scaleRadius",       LUA_TNUMBER,   NULL,                    TRUE,  &radiusScale },
+            { "mass",              LUA_TNUMBER,   NULL,                    TRUE,  &mass        },
+            { "ignore",            LUA_TBOOLEAN,  NULL,                    FALSE, &ignore      },
             END_MW_NAMED_ARG
         };
 
-    nArgs = lua_gettop(luaSt);
+    if (lua_gettop(luaSt) != 2)
+        return luaL_argerror(luaSt, 1, "Expected 2 arguments");
 
-    switch (nArgs)
-    {
-        case 6:
-            prng = checkDSFMT(luaSt, 1);
-            ic = checkInitialConditions(luaSt, 2);
-            nbody = luaL_checkinteger(luaSt, 3);
-            mass = luaL_checknumber(luaSt, 4);
-            ignore = mw_lua_checkboolean(luaSt, 5);
-            userDataIndex = mw_lua_checktable(luaSt, 6);
-
-            handleNamedArgumentTable(luaSt, udTable, userDataIndex);
-            break;
-
-        default:
-            return luaL_argerror(luaSt, 1, "Expected 6 arguments");
-    }
+    nbody = luaL_checkinteger(luaSt, 1);
+    handleNamedArgumentTable(luaSt, argTable, 2);
 
     velScale = mw_sqrt(mass / radiusScale);     /* and recip. speed scale */
 
