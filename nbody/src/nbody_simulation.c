@@ -106,6 +106,10 @@ static int setupRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     else
     {
         mw_report("Checkpoint exists. Attempting to resume from it.\n");
+
+        if (nbf->inputFile && !BOINC_APPLICATION)
+            warn("Warning: input file '%s' unused\n", nbf->inputFile);
+
         if (readCheckpoint(ctx, st))
         {
             mw_report("Failed to read checkpoint\n");

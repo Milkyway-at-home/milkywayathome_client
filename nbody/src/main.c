@@ -125,7 +125,6 @@ static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
             0, "Check that the input file is valid only; perform no calculation.", NULL
         },
 
-      #if BOINC_APPLICATION
         {
             "checkpoint", 'c',
             POPT_ARG_STRING, &nbf->checkpointFileName,
@@ -138,7 +137,7 @@ static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
             0, "Cleanup checkpoint after finishing run", NULL
         },
 
-      #else
+      #if !BOINC_APPLICATION
         {
             "checkpoint-interval", 'w',
             POPT_ARG_INT, &nbf->checkpointPeriod,
@@ -205,8 +204,9 @@ static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
         mw_finish(EXIT_FAILURE);
     }
 
-    /* Check for invalid options, and must have the input file */
-    if (mwReadArguments(context) || !nbf->inputFile)
+    /* Check for invalid options, and must have the input file or a
+     * checkpoint to resume from */
+    if (mwReadArguments(context) || (!nbf->inputFile && !nbf->checkpointFileName))
     {
         poptPrintHelp(context, stderr, 0);
         failed = TRUE;
@@ -284,7 +284,6 @@ static void setNumThreads(int numThreads) { }
 #endif /* NDEBUG */
 
 
-/* main: toplevel routine for hierarchical N-body code. */
 int main(int argc, const char* argv[])
 {
     NBodyFlags nbf = EMPTY_NBODY_FLAGS;
