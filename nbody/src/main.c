@@ -138,12 +138,6 @@ static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
             0, "Cleanup checkpoint after finishing run", NULL
         },
 
-        {
-            "ignore-checkpoint", 'i',
-            POPT_ARG_NONE, &nbf->ignoreCheckpoint,
-            0, "Ignore the checkpoint file", NULL
-        },
-
       #else
         {
             "checkpoint-interval", 'w',
@@ -152,6 +146,12 @@ static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
         },
 
       #endif /* BOINC_APPLICATION */
+
+        {
+            "ignore-checkpoint", 'i',
+            POPT_ARG_NONE, &nbf->ignoreCheckpoint,
+            0, "Ignore the checkpoint file", NULL
+        },
 
         {
             "print-bodies", 'b',

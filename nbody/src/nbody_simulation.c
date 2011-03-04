@@ -98,7 +98,7 @@ static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
 static int setupRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     /* If the checkpoint exists, try to use it */
-    if (!resolvedCheckpointExists())
+    if (nbf->ignoreCheckpoint || !resolvedCheckpointExists())
     {
         if (setupNBody(ctx, st, nbf))
             return warn1("Failed to read input parameters file\n");
