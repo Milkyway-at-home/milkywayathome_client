@@ -60,6 +60,23 @@ static void registerUsedStandardStuff(lua_State* luaSt)
     lua_pop(luaSt, 3);
 }
 
+static int bindBOINCStatus(lua_State* luaSt)
+{
+    int isStandalone = TRUE;
+
+    lua_pushboolean(luaSt, BOINC_APPLICATION);
+    lua_setglobal(luaSt, "isBOINCApplication");
+
+    #if BOINC_APPLICATION
+    isStandalone = boinc_is_standalone();
+    #endif
+
+    lua_pushboolean(luaSt, isStandalone);
+    lua_setglobal(luaSt, "isStandalone");
+
+    return 0;
+}
+
 static int bindServerArguments(lua_State* luaSt, const NBodyFlags* nbf)
 {
     if (nbf->serverArgs)
@@ -103,6 +120,7 @@ static lua_State* openNBodyLuaState(const NBodyFlags* nbf)
     registerPredefinedModelGenerators(luaSt);
     registerModelUtilityFunctions(luaSt);
     bindServerArguments(luaSt, nbf);
+    bindBOINCStatus(luaSt);
 
     if (luaL_dostring(luaSt, script))
     {
