@@ -28,7 +28,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define MILKYWAY_NBODY_VERSION       ${nbody_VERSION}
 
 #cmakedefine01 NBODY_OPENCL
-#cmakedefine01 NBODY_SHOW
 #cmakedefine01 NBODY_CRLIBM
 
 #cmakedefine01 PERIODIC_OUTPUT

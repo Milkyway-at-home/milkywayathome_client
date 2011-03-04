@@ -30,6 +30,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 HAVE_EXP10
 #cmakedefine01 HAVE_SINCOS
 #cmakedefine01 HAVE_TGMATH_H
+#cmakedefine01 HAVE_ASPRINTF
 
 #if ENABLE_FDLIBM
 /* These actually aren't in crlibm. FIXME: Check function exists in specific math library */

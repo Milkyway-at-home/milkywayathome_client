@@ -43,7 +43,6 @@ if(BOINC_APPLICATION)
   include_directories(${BOINC_INCLUDE_DIR})
 endif()
 
-check_function_exists(asprintf HAS_ASPRINTF)
 check_sse2()
 
 if(NEED_POPT_DEPS)
@@ -177,7 +176,9 @@ set(nbody_lua_src ${NBODY_SRC_DIR}/lua_nbodyctx.c
                   ${NBODY_SRC_DIR}/nbody_lua_types.c
                   ${NBODY_SRC_DIR}/nbody_lua_models.c
                   ${NBODY_SRC_DIR}/nbody_lua.c
-                  ${NBODY_SRC_DIR}/lua_milkyway_math.c)
+                  ${NBODY_SRC_DIR}/lua_milkyway_math.c
+                  ${NBODY_SRC_DIR}/show.c)
+
 
 set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/lua_body.h
                       ${NBODY_INCLUDE_DIR}/lua_vector.h
@@ -194,22 +195,9 @@ set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/lua_body.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_types.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_models.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua.h
-                      ${NBODY_INCLUDE_DIR}/lua_milkyway_math.h)
+                      ${NBODY_INCLUDE_DIR}/lua_milkyway_math.h
+                      ${NBODY_INCLUDE_DIR}/show.h)
 
-
-if(BOINC_RELEASE OR NOT HAS_ASPRINTF)
-  set(DEFAULT_NBODY_SHOW OFF)
-else()
-  set(DEFAULT_NBODY_SHOW ON)
-endif()
-
-option(NBODY_SHOW "Build show type functions" ${DEFAULT_NBODY_SHOW})
-
-if(NBODY_SHOW)
-  #Uses asprintf extension
-  list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/show.c)
-  list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/show.h)
-endif()
 
 list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/checkpoint.c)
 list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/checkpoint.h)
