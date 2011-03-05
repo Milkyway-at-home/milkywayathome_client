@@ -6,6 +6,11 @@ end
 if serverArguments ~= nil then
    table.foreach(serverArguments, print)
 
+   if #serverArguments ~= 4 then
+      error("4 arguments expected")
+   end
+
+
    -- Use the arguments from the server. Tables are indexed from 1
    dwarfMass   = serverArguments[1]
    dwarfRadius = serverArguments[2]
