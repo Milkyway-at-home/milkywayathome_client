@@ -54,15 +54,13 @@ static void printPlummer(mwvector rshift, mwvector vshift)
 
 static inline real plummerRandomR(dsfmt_t* dsfmtState)
 {
-    real rnd, r;
+    real rnd;
 
     /* returns [0, 1) */
     rnd = (real) dsfmt_genrand_close_open(dsfmtState);
 
     /* pick r in struct units */
-    r = 1.0 / mw_sqrt(mw_pow(rnd, -2.0 / 3.0) - 1.0);
-
-    return r;
+    return 1.0 / mw_sqrt(mw_pow(rnd, -2.0 / 3.0) - 1.0);
 }
 
 static inline real plummerSelectFromG(dsfmt_t* dsfmtState)
@@ -74,7 +72,7 @@ static inline real plummerSelectFromG(dsfmt_t* dsfmtState)
         x = mwXrandom(dsfmtState, 0.0, 1.0);      /* for x in range 0:1 */
         y = mwXrandom(dsfmtState, 0.0, 0.1);      /* max of g(x) is 0.092 */
     }   /* using von Neumann tech */
-    while (y > -cube(x - 1.0) * sqr(x) * cube(x + 1.0) * mw_sqrt(1.0 - sqr(x)));
+    while (y > sqr(x) * mw_pow(1.0 - sqr(x), 3.5));
 
     return x;
 }

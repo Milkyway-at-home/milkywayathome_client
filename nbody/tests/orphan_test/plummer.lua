@@ -16,13 +16,13 @@ function myPlummer(prng, nbody, mass, ignore, rShift, vShift, radiusScale)
      repeat
         x = prng:random(0.0, 1.0)
         y = prng:random(0.0, 0.1)
-     until y <= -cube(x - 1.0) * sqr(x) * cube(x + 1.0) * sqrt(1.0 - sqr(x))
+     until y <= sqr(x) * pow(1.0 - sqr(x), 3.5)
      return x
   end
 
   local function randomVel(r)
      local x = selectG()
-     return sqrt2 * x / sqrt(sqrt(1.0 + sqr(r)))
+     return sqrt2 * x / pow(1.0 + sqr(r), 0.25);
   end
 
   local function pickShell(r)
