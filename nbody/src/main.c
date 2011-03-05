@@ -64,7 +64,7 @@ static void specialSetup()
      * defaults to printing 3 digits in the exponent. There are still
      * issues where the rounding of the last digit by printf on
      * windows in a small number of cases. */
-    _set_output_format(_TWO_DIGIT_EXPONENT);
+    //_set_output_format(_TWO_DIGIT_EXPONENT);
   #endif /* _WIN32 */
 }
 

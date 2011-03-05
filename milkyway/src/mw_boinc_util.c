@@ -79,8 +79,11 @@ char* mwReadFileResolved(const char* filename)
 
 int mw_resolve_filename(const char* filename, char* buf, size_t bufSize)
 {
+    int rc;
+
     assert(buf != filename);
-    return snprintf(buf, bufSize, "%s", filename) == bufSize;
+    rc = snprintf(buf, bufSize, "%s", filename);
+    return (rc == -1) || ((size_t) rc == bufSize);
 }
 
 int mw_file_exists(const char* file)

@@ -296,9 +296,9 @@ if(NOT SEPARATION AND NOT NBODY)
 endif()
 
 if(WIN32)
-  add_definitions(-D_WIN32_IE=0x0501)
   add_definitions(-D_WINDOWS)
-  add_definitions(-D_WIN32_WINDOWS=0x0501)
+  add_definitions(-D_WIN32_WINDOWS=0x0500)
+  add_definitions(-DWIN32_WINNT=0x0500)
 endif()
 
 # locally installed headers, and generated *_config.h

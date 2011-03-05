@@ -59,5 +59,13 @@ typedef short int mwbool;
 #endif /* _WIN32 */
 
 
+  #ifdef __MINGW32__
+    #include <stdlib.h>
+   /* I don't know why this doesn't work correctly with mingw */
+    extern void* _aligned_malloc(size_t size, size_t alignment);
+    extern void _aligned_free(void* memblock);
+  #endif
+
+
 #endif /* _MILKYWAY_EXTRA_H_ */
 

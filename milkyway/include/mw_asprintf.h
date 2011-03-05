@@ -25,7 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(_WIN32) && !HAVE_ASPRINTF
 int _mw_asprintf(char** buf, const char* format, ...);
-#define asprintf(buf, fmt, ...) mw_asprintf(buf, fmt, ##__VA_ARGS__)
+#define asprintf(buf, fmt, ...) _mw_asprintf(buf, fmt, ##__VA_ARGS__)
 
 #endif
 

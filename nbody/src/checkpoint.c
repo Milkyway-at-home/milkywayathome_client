@@ -196,7 +196,7 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
         cp->cpFileSize = GetFileSize(cp->file, NULL);
         if (cp->cpFileSize == INVALID_FILE_SIZE || cp->cpFileSize == 0)
         {
-            warn("Invalid checkpoint file size (%u) or empty checkpoint file '%s': %ld\n",
+            warn("Invalid checkpoint file size (%ld) or empty checkpoint file '%s': %ld\n",
                  cp->cpFileSize, filename, GetLastError());
             CloseHandle(cp->file);
             return TRUE;

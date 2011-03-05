@@ -18,12 +18,11 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "milkyway_util.h"
-#include "mw_boinc_util.h"
-
 #ifndef _WIN32
   #include <sys/time.h>
-#endif
+#else
+  #include <malloc.h>
+#endif /* _WIN32 */
 
 #include <time.h>
 #include <errno.h>
@@ -33,6 +32,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <xmmintrin.h>
 #endif /* __SSE__ */
 
+
+#include "milkyway_util.h"
+#include "mw_boinc_util.h"
 
 void* mwCalloc(size_t count, size_t size)
 {

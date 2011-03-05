@@ -93,7 +93,7 @@ set(mw_cl_lib_headers include/milkyway_cl.h
                       include/mw_cl_program.h
                       include/mw_cl_setup.h)
 
-if(MSVC AND NOT HAVE_ASPRINTF)
+if(WIN32 AND NOT HAVE_ASPRINTF)
     list(APPEND mw_lib_src src/mw_asprintf.c)
     list(APPEND mw_lib_headers include/mw_asprintf.h)
 endif()

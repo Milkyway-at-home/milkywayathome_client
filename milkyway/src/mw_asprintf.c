@@ -18,7 +18,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdlib.h>
-#include <string.h>
+#include <stdio.h>
 
 #include "mw_asprintf.h"
 
@@ -45,7 +45,13 @@ int _mw_asprintf(char** bufOut, const char* format, ...)
         return size;
     }
 
-    buf = mwMalloc((size + 1) * sizeof(char));  /* Include null terminator */
+    buf = (char*) malloc((size + 1) * sizeof(char));  /* Include null terminator */
+    if (!buf)
+    {
+        *bufOut = NULL;
+        return -1;
+    }
+
     rc = vsprintf(buf, format, args);
     va_end(args);
 

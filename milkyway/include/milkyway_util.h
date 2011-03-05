@@ -145,7 +145,7 @@ void _mw_time_prefix(char* buf, size_t bufSize);
 #ifndef _WIN32
   #define mw_win_perror perror
 #else
-  #define mw_win_perror(str) fprintf(stderr, str ": %d\n", GetLastError());
+  #define mw_win_perror(str) fprintf(stderr, str ": %ld\n", GetLastError());
 #endif
 
 /* mw_xrandom: generate floating-point random number */
