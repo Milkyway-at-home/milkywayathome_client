@@ -117,10 +117,118 @@ static int toStringVector(lua_State* luaSt)
     return 1;
 }
 
+/* Get a scalar and a vector argument in either order for mixed
+   vector/scalar maths.
+
+   Returns  0 if not a vector and a scalar.
+   Returns -1 if order is vector, scalar
+   Returns +1 if order is scalar, vector
+*/
+static int checkScalarVectorArgs(lua_State* luaSt, real* s, mwvector* v)
+{
+    if (lua_isnumber(luaSt, 1))
+    {
+        *s = lua_tonumber(luaSt, 1);
+        *v = *checkVector(luaSt, 2);
+        return 1;
+    }
+    else if (lua_isnumber(luaSt, 2))
+    {
+        *v = *checkVector(luaSt, 1);
+        *s = lua_tonumber(luaSt, 2);
+        return -1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+static inline void check2Vector(lua_State* luaSt, mwvector* v1, mwvector* v2)
+{
+    *v1 = *checkVector(luaSt, 1);
+    *v2 = *checkVector(luaSt, 2);
+}
+
+static int addVector(lua_State* luaSt)
+{
+    mwvector v1, v2;
+
+    check2Vector(luaSt, &v1, &v2);
+    pushVector(luaSt, mw_addv(v1, v2));
+    return 1;
+}
+
+static int subVector(lua_State* luaSt)
+{
+    mwvector v1, v2;
+
+    check2Vector(luaSt, &v1, &v2);
+    pushVector(luaSt, mw_subv(v1, v2));
+    return 1;
+}
+
+static int divVector(lua_State* luaSt)
+{
+    mwvector v1, v2;
+    real s;
+
+    /* What would it mean to divide a scalar by a vector? */
+    if (lua_isnumber(luaSt, 2))
+    {
+        v1 = *checkVector(luaSt, 1);
+        s = lua_tonumber(luaSt, 2);
+        pushVector(luaSt, mw_divvs(v1, s));
+    }
+    else
+    {
+        check2Vector(luaSt, &v1, &v2);
+        pushVector(luaSt, mw_divv(v1, v2));
+    }
+
+    return 1;
+}
+
+static int multVector(lua_State* luaSt)
+{
+    mwvector v1, v2;
+    real s;
+    int rc;
+
+    rc = checkScalarVectorArgs(luaSt, &s, &v1);
+    if (rc == 0)
+    {
+        /* Vector * Vector */
+        check2Vector(luaSt, &v1, &v2);
+        pushVector(luaSt, mw_mulv(v1, v2));
+    }
+    else
+    {
+        /* Vector * Scalar */
+        pushVector(luaSt, mw_mulvs(v1, s));
+    }
+
+    return 1;
+}
+
+static int negVector(lua_State* luaSt)
+{
+    mwvector v;
+
+    v = *checkVector(luaSt, 1);
+    pushVector(luaSt, mw_negv(v));
+
+    return 1;
+}
 
 static const luaL_reg metaMethodsVector[] =
 {
     { "__tostring", toStringVector },
+    { "__add",      addVector      },
+    { "__sub",      subVector      },
+    { "__mul",      multVector     },
+    { "__div",      divVector      },
+    { "__unm",      negVector      },
     { NULL, NULL }
 };
 
