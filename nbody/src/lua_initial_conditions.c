@@ -73,11 +73,11 @@ static int createInitialConditions(lua_State* luaSt)
 
     static const MWNamedArg argTable[] =
         {
-            { "context",                LUA_TUSERDATA, NBODY_CTX, TRUE,  &ctx,                   },
-            { "position",               LUA_TUSERDATA, MWVECTOR,  TRUE,  &x                      },
-            { "velocity",               LUA_TUSERDATA, MWVECTOR,  TRUE,  &v                      },
-            { "useGalacticCoordinates", LUA_TBOOLEAN,  NULL,      FALSE, &useGalacticCoordinates },
-            { "useRadians",             LUA_TBOOLEAN,  NULL,      FALSE, &useRadians,            },
+            { "context",                LUA_TUSERDATA, NBODY_CTX,     TRUE,  &ctx,                   },
+            { "position",               LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &x                      },
+            { "velocity",               LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &v                      },
+            { "useGalacticCoordinates", LUA_TBOOLEAN,  NULL,          FALSE, &useGalacticCoordinates },
+            { "useRadians",             LUA_TBOOLEAN,  NULL,          FALSE, &useRadians,            },
             END_MW_NAMED_ARG
         };
 

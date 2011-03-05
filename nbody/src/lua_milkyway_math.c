@@ -168,6 +168,7 @@ static void registerConstants(lua_State* luaSt)
     registerConstant(luaSt, "log10e", M_LOG10E);
     registerConstant(luaSt, "ln2", M_LN2);
     registerConstant(luaSt, "ln10", M_LN10);
+    registerConstant(luaSt, "sqrt2", M_SQRT2);
 
 }
 

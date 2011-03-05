@@ -29,7 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 mwvector* checkVector(lua_State* luaSt, int idx)
 {
-    return (mwvector*) mw_checknamedudata(luaSt, idx, MWVECTOR);
+    return (mwvector*) mw_checknamedudata(luaSt, idx, MWVECTOR_TYPE);
 }
 
 int pushVector(lua_State* luaSt, mwvector vIn)
@@ -39,7 +39,7 @@ int pushVector(lua_State* luaSt, mwvector vIn)
     vNew = (mwvector*) lua_newuserdata(luaSt, sizeof(mwvector));
     *vNew = vIn;
 
-    luaL_getmetatable(luaSt, MWVECTOR);
+    luaL_getmetatable(luaSt, MWVECTOR_TYPE);
     lua_setmetatable(luaSt, -2);
 
     return 1;
@@ -151,7 +151,7 @@ static const Xet_reg_pre settersVector[] =
 int registerVector(lua_State* luaSt)
 {
     return registerStruct(luaSt,
-                          MWVECTOR,
+                          MWVECTOR_TYPE,
                           gettersVector,
                           settersVector,
                           metaMethodsVector,

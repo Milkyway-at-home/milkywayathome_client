@@ -57,25 +57,43 @@ static const body _emptyBody = EMPTY_BODY;
 
 static int createBody(lua_State* luaSt)
 {
-    pushBody(luaSt, &_emptyBody);
+    static body b = EMPTY_BODY;
+    static mwvector* x = NULL;
+    static mwvector* v = NULL;
+    static mwbool ignore = FALSE;
+    static const MWNamedArg argTable[] =
+        {
+            { "mass",     LUA_TNUMBER,   NULL,          TRUE,  &Mass(&b) },
+            { "position", LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &x        },
+            { "velocity", LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &v        },
+            { "ignore",   LUA_TBOOLEAN,  NULL,          FALSE, &ignore   },
+            END_MW_NAMED_ARG
+        };
 
-    /* TODO: (mass, position, velocity) constructor */
+    ignore = FALSE; /* Set to default value for table */
+    switch (lua_gettop(luaSt))
+    {
+        case 1:
+            handleNamedArgumentTable(luaSt, argTable, 1);
+            break;
 
-   #if 0
-    size_t name_len;
-    const char* name;
+        case 3:
+        case 4:
+            Mass(&b) = luaL_checknumber(luaSt, 1);
+            x = checkVector(luaSt, 2);
+            v = checkVector(luaSt, 3);
+            ignore = mw_lua_optboolean(luaSt, 4, FALSE);
+            break;
 
-    name = luaL_checklstring(luaSt, 1, &name_len);
-    if (name_len > 15)
-        luaL_error(luaSt, "name too long");
+        default:
+            return luaL_argerror(luaSt, 1, "Expected 1, 3 or 4 arguments");
+    }
 
-    strcpy(yd->name, name);
-    yd->age = luaL_checkint(luaSt, 2);
-    yd->x   = luaL_checknumber(luaSt, 3);
-    yd->y   = luaL_checknumber(luaSt, 4);
-    yd->id  = ++id_counter;
-    #endif
+    Pos(&b) = *x;
+    Vel(&b) = *v;
+    Type(&b) = BODY(ignore);
 
+    pushBody(luaSt, &b);
     return 1;
 }
 
