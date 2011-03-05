@@ -3,7 +3,19 @@
 *.a
 *.rej
 *.orig
+*.vcproj
+*.vxcproj
+*.sln
+*.vcxproj.filters
+*.vcproj.filters
+*.vcxproj.user
+*.vcproj.user
+*.suo
+*.sdf
+*.opensdf
+Win32
 .DS_Store
+ipch
 config.h
 Makefile
 CMakeFiles
@@ -20,7 +32,6 @@ tests/astronomy_parameters.txt
 Testing/
 tools/GenerateTests
 tools/GenerateTests.hi
-
 nbody/include/nbody_config.h
 stderr.txt
 nbody/thirdparty/dSFMT*
@@ -32,3 +43,4 @@ nbody_checkpoint
 separation_checkpoint
 init_data.xml
 app_info.xml
+thirdparty
