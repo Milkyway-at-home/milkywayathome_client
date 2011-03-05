@@ -108,6 +108,12 @@ static int dsfmtGenrandOpenClose(lua_State* luaSt)
     return 1;
 }
 
+static int dsfmtRandomVector(lua_State* luaSt)
+{
+    pushVector(luaSt, mwRandomVector(checkDSFMT(luaSt, 1)));
+    return 1;
+}
+
 static int dsfmtRandomRange(lua_State* luaSt)
 {
     dsfmt_t* d;
@@ -165,7 +171,8 @@ static const luaL_reg methodsDSFMT[] =
     { "genrandOpenClose",   dsfmtGenrandOpenClose   },
 
     /* Nicer bindings */
-    { "random",             dsfmtRandomRange },
+    { "random",             dsfmtRandomRange  },
+    { "randomVector",       dsfmtRandomVector },
     { NULL, NULL }
 };
 

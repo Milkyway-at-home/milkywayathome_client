@@ -152,6 +152,8 @@ void _mw_time_prefix(char* buf, size_t bufSize);
 #define mwXrandom(st, xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * dsfmt_genrand_open_open((st)))
 #define mwUnitRandom(st) mwXrandom(st, -1.0, 1.0)
 
+mwvector mwRandomVector(dsfmt_t* dsfmtState);
+
 size_t mwDivRoundup(size_t a, size_t b);
 
 /* Check for a timesteps etc. which will actually finish. */

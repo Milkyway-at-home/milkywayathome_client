@@ -21,21 +21,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_priv.h"
 #include "nbody_util.h"
+#include "milkyway_util.h"
 #include "lua_type_marshal.h"
 #include "nbody_lua_types.h"
-
-static mwvector randomVec(dsfmt_t* dsfmtState)
-{
-    /* pick from unit cube */
-    mwvector vec;
-
-    X(vec) = mwUnitRandom(dsfmtState);
-    Y(vec) = mwUnitRandom(dsfmtState);
-    Z(vec) = mwUnitRandom(dsfmtState);
-    W(vec) = 0.0;
-
-    return vec;
-}
 
 /* pickshell: pick a random point on a sphere of specified radius. */
 static inline mwvector pickShell(dsfmt_t* dsfmtState, real rad)
@@ -45,7 +33,7 @@ static inline mwvector pickShell(dsfmt_t* dsfmtState, real rad)
 
     do                      /* pick point in NDIM-space */
     {
-        vec = randomVec(dsfmtState);
+        vec = mwRandomVector(dsfmtState);
         rsq = mw_sqrv(vec);         /* compute radius squared */
     }
     while (rsq > 1.0);              /* reject if outside sphere */
@@ -137,13 +125,14 @@ static int createPlummerSphereTable(lua_State* luaSt,
 
                                     mwvector rShift,
                                     mwvector vShift,
-                                    real radiusScale,
-                                    real velScale)
+                                    real radiusScale)
 {
     unsigned int i;
     int table;
     body b;
-    real r;
+    real r, velScale;
+
+    velScale = mw_sqrt(mass / radiusScale);     /* and recip. speed scale */
 
     Type(&b) = BODY(ignore);    /* Same for all in the model */
     Mass(&b) = mass / nbody;    /* Mass per particle */
@@ -169,7 +158,7 @@ int generatePlummer(lua_State* luaSt)
     static dsfmt_t* prng;
     static const InitialConditions* ic;
     static mwbool ignore;
-    static real mass, velScale;
+    static real mass;
     static int nbody;
     static real radiusScale = 0.0;
 
@@ -189,10 +178,8 @@ int generatePlummer(lua_State* luaSt)
     nbody = luaL_checkinteger(luaSt, 1);
     handleNamedArgumentTable(luaSt, argTable, 2);
 
-    velScale = mw_sqrt(mass / radiusScale);     /* and recip. speed scale */
-
     return createPlummerSphereTable(luaSt, prng, nbody, mass, ignore,
-                                    ic->position, ic->velocity, radiusScale, velScale);
+                                    ic->position, ic->velocity, radiusScale);
 }
 
 void registerGeneratePlummer(lua_State* luaSt)

@@ -67,6 +67,12 @@ static int absVector(lua_State* luaSt)
     return 1;
 }
 
+static int lengthVector(lua_State* luaSt)
+{
+    lua_pushnumber(luaSt, (lua_Number) mw_length(*checkVector(luaSt, 1)));
+    return 1;
+}
+
 static const mwvector _emptyVector = EMPTY_MWVECTOR;
 
 static int createVector(lua_State* luaSt)
@@ -159,12 +165,30 @@ static int addVector(lua_State* luaSt)
     return 1;
 }
 
+static int crossVector(lua_State* luaSt)
+{
+    mwvector v1, v2;
+
+    check2Vector(luaSt, &v1, &v2);
+    pushVector(luaSt, mw_crossv(v1, v2));
+    return 1;
+}
+
 static int subVector(lua_State* luaSt)
 {
     mwvector v1, v2;
 
     check2Vector(luaSt, &v1, &v2);
     pushVector(luaSt, mw_subv(v1, v2));
+    return 1;
+}
+
+static int distVector(lua_State* luaSt)
+{
+    mwvector v1, v2;
+
+    check2Vector(luaSt, &v1, &v2);
+    lua_pushnumber(luaSt, mw_distv(v1, v2));
     return 1;
 }
 
@@ -200,7 +224,7 @@ static int multVector(lua_State* luaSt)
     {
         /* Vector * Vector */
         check2Vector(luaSt, &v1, &v2);
-        pushVector(luaSt, mw_mulv(v1, v2));
+        lua_pushnumber(luaSt, mw_dotv(v1, v2));
     }
     else
     {
@@ -236,6 +260,9 @@ static const luaL_reg methodsVector[] =
 {
     { "create", createVector },
     { "abs",    absVector},
+    { "length", lengthVector},
+    { "cross",  crossVector},
+    { "dist",   distVector},
     { NULL, NULL }
 };
 

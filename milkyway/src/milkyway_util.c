@@ -434,3 +434,16 @@ size_t mwDivRoundup(size_t a, size_t b)
     return (a % b != 0) ? a / b + 1 : a / b;
 }
 
+mwvector mwRandomVector(dsfmt_t* dsfmtState)
+{
+    /* pick from unit cube */
+    mwvector vec;
+
+    X(vec) = mwUnitRandom(dsfmtState);
+    Y(vec) = mwUnitRandom(dsfmtState);
+    Z(vec) = mwUnitRandom(dsfmtState);
+    W(vec) = 0.0;
+
+    return vec;
+}
+
