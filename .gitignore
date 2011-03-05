@@ -4,7 +4,7 @@
 *.rej
 *.orig
 *.vcproj
-*.vxcproj
+*.vcxproj
 *.sln
 *.vcxproj.filters
 *.vcproj.filters
