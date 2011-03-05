@@ -83,13 +83,13 @@ static int bindServerArguments(lua_State* luaSt, const NBodyFlags* nbf)
         pushRealArray(luaSt, nbf->serverArgs, nbf->numServerArgs);
     else
         lua_pushnil(luaSt);
-    lua_setglobal(luaSt, "serverArguments");
+    lua_setglobal(luaSt, "argv");
 
     if (nbf->setSeed)
         lua_pushinteger(luaSt, nbf->setSeed);
     else
         lua_pushnil(luaSt);
-    lua_setglobal(luaSt, "serverSeed");
+    lua_setglobal(luaSt, "argSeed");
 
     return 0;
 }

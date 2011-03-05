@@ -1,6 +1,6 @@
 -- A copy of orphan_test with a plummer sphere implementation in Lua
 
-if isBOINCApplication and serverArguments == nil then
+if isBOINCApplication and argv == nil then
   error("Running as BOINC application, but no server arguments")
 end
 
@@ -49,25 +49,23 @@ function myPlummer(prng, nbody, mass, ignore, rShift, vShift, radiusScale)
   return bodies
 end
 
-if serverArguments ~= nil then
-   table.foreach(serverArguments, print)
+if argv ~= nil then
+   table.foreach(argv, print)
 
    -- Use the arguments from the server. Tables are indexed from 1
-   dwarfMass = serverArguments[1]
-   dwarfRadius= serverArguments[2]
-   reverseTime = serverArguments[3]
-   evolveTime = serverArguments[4]
-   seed = serverSeed
+   dwarfMass = argv[1]
+   dwarfRadius= argv[2]
+   reverseTime = argv[3]
+   evolveTime = argv[4]
 else
   dwarfMass = 16
   dwarfRadius = 0.2
   reverseTime = 4.0
   evolveTime = 3.945
-  seed = 0
 end
 
 -- Make sure to use the seed from the server
-prng = DSFMT.create(seed)
+prng = DSFMT.create(argSeed)
 nbody = 100
 
 

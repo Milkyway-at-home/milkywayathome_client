@@ -1,33 +1,13 @@
 
-if isBOINCApplication and serverArguments == nil then
-   error("Running as BOINC application, but no server arguments")
-end
 
-if serverArguments ~= nil then
-   table.foreach(serverArguments, print)
-
-   if #serverArguments ~= 4 then
-      error("4 arguments expected")
-   end
-
-
-   -- Use the arguments from the server. Tables are indexed from 1
-   dwarfMass   = serverArguments[1]
-   dwarfRadius = serverArguments[2]
-   reverseTime = serverArguments[3]
-   evolveTime  = serverArguments[4]
-   seed = serverSeed
-else
    -- Sample values
-   dwarfMass = 16
-   dwarfRadius = 0.2
-   reverseTime = 4.0
-   evolveTime = 3.945
-   seed = 0
-end
+dwarfMass = 16
+dwarfRadius = 0.2
+reverseTime = 4.0
+evolveTime = 3.945
 
 -- Make sure to use the seed from the server
-prng = DSFMT.create(seed)
+prng = DSFMT.create(argSeed)
 nbody = 100
 
 

@@ -18,17 +18,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
-#include <time.h>
-
 #include <lua.h>
-#include <lualib.h>
-#include <lauxlib.h>
 
 #include "lua_type_marshal.h"
 #include "lua_dsfmt.h"
+#include "lua_vector.h"
 
 #include "milkyway_util.h"
 
@@ -59,27 +53,16 @@ int pushDSFMT(lua_State* luaSt, const dsfmt_t* d)
 /* TODO: dsfmt_init_by_array */
 static int createDSFMT(lua_State* luaSt)
 {
-    int nArgs;
     dsfmt_t state;
     uint32_t seed;
 
-    nArgs = lua_gettop(luaSt);
+    if (lua_gettop(luaSt) > 1)
+        return luaL_argerror(luaSt, 1, "Expected 0 or 1 argument");
 
-    switch (nArgs)
-    {
-        case 0:
-            dsfmt_init_gen_rand(&state, (uint32_t) time(NULL));
-            break;
+    /* Omitted or nil argument, seed from clock */
+    seed = (uint32_t) luaL_optinteger(luaSt, 1, (uint32_t) time(NULL));
 
-        case 1:
-            seed = luaL_checkinteger(luaSt, 1);
-            dsfmt_init_gen_rand(&state, seed);
-            break;
-
-        default:
-            return luaL_argerror(luaSt, 1, "Expected seed argument");
-    }
-
+    dsfmt_init_gen_rand(&state, seed);
     pushDSFMT(luaSt, &state);
     return 1;
 }
@@ -141,11 +124,6 @@ static int dsfmtRandomRange(lua_State* luaSt)
     lua_pushnumber(luaSt, (lua_Number) randVal);
     return 1;
 }
-
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
-
 
 static int toStringDSFMT(lua_State* luaSt)
 {
