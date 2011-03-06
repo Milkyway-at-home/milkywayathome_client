@@ -172,6 +172,7 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_check_params.h
                       ${NBODY_INCLUDE_DIR}/plummer.h
                       ${NBODY_INCLUDE_DIR}/nbody.h
+                      ${NBODY_INCLUDE_DIR}/nbody_show.h
                       ${NBODY_INCLUDE_DIR}/nbody_priv.h
                       ${NBODY_INCLUDE_DIR}/nbody_types.h
                       ${NBODY_INCLUDE_DIR}/nbody_util.h)
@@ -192,7 +193,7 @@ set(nbody_lua_src ${NBODY_SRC_DIR}/lua_nbodyctx.c
                   ${NBODY_SRC_DIR}/nbody_lua_models.c
                   ${NBODY_SRC_DIR}/nbody_lua.c
                   ${NBODY_SRC_DIR}/lua_milkyway_math.c
-                  ${NBODY_SRC_DIR}/show.c)
+                  ${NBODY_SRC_DIR}/nbody_show.c)
 
 
 set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/lua_body.h
@@ -210,8 +211,7 @@ set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/lua_body.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_types.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_models.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua.h
-                      ${NBODY_INCLUDE_DIR}/lua_milkyway_math.h
-                      ${NBODY_INCLUDE_DIR}/show.h)
+                      ${NBODY_INCLUDE_DIR}/lua_milkyway_math.h)
 
 
 list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/checkpoint.c)

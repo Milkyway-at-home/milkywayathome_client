@@ -18,8 +18,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _SHOW_H_
-#define _SHOW_H_
+#ifndef _NBODY_SHOW_H_
+#define _NBODY_SHOW_H_
 
 #define _GNU_SOURCE
 
@@ -55,5 +55,5 @@ void printBody(const body* p);
 
 void printBodies(const body* bs, unsigned int n);
 
-#endif /* _SHOW_H_ */
+#endif /* _NBODY_SHOW_H_ */
 

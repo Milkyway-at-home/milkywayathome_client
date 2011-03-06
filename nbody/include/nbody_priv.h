@@ -40,7 +40,7 @@ extern "C" {
 #include "plummer.h"
 #include "nbody_util.h"
 #include "nbody_step.h"
-#include "show.h"
+#include "nbody_show.h"
 #include "io.h"
 #include "checkpoint.h"
 

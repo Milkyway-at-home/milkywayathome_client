@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_step.h"
 #include "grav.h"
 #include "orbitintegrator.h"
-#include "show.h"
+#include "nbody_show.h"
 #include "nbody_lua.h"
 
 static inline int nbodyTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)

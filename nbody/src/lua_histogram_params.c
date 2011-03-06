@@ -22,7 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lauxlib.h>
 
 #include "nbody_types.h"
-#include "show.h"
+#include "nbody_show.h"
 #include "lua_type_marshal.h"
 #include "lua_histogram_params.h"
 
