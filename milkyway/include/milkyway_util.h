@@ -27,19 +27,20 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "mw_boinc_util.h"
 #include "dSFMT.h"
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
 #ifndef _WIN32
   #include <unistd.h>
   #include <fcntl.h>
 #else
   #define _CRT_SECURE_NO_WARNINGS
   #define WIN32_LEAN_AND_MEAN
-  #define VC_EXTRALEAN
+  #define VC_EXTRALEAN 
+  #include <malloc.h>
   #include <windows.h>
 #endif /* _WIN32 */
-
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 
 #include <popt.h>
 
@@ -92,7 +93,11 @@ void* mwCallocA(size_t count, size_t size);
 #ifndef _WIN32
   #define mwFreeA free
 #else
-  #define mwFreeA _aligned_free
+  #if defined(_MSC_VER) || defined(__MINGW64__)
+    #define mwFreeA _aligned_free
+  #elif defined(__MINGW32__)
+    #define mwFreeA __mingw_aligned_free
+  #endif
 #endif /* _WIN32 */
 
 

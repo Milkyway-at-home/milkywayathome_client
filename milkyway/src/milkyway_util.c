@@ -21,7 +21,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _WIN32
   #include <sys/time.h>
 #else
+  #include <stdlib.h>
   #include <malloc.h>
+  #include <windows.h>
 #endif /* _WIN32 */
 
 #include <time.h>
@@ -103,6 +105,10 @@ void* mwMallocA(size_t size)
 }
 
 #else
+
+#if defined(__MINGW32__) && !defined(__MINGW64__)
+  #define _aligned_malloc __mingw_aligned_malloc
+#endif
 
 void* mwMallocA(size_t size)
 {
