@@ -24,9 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody.h"
 #include "nbody_priv.h"
 #include "milkyway_util.h"
-#include "nbody_step.h"
-#include "grav.h"
-#include "orbitintegrator.h"
+#include "nbody_grav.h"
 #include "nbody_show.h"
 #include "nbody_lua.h"
 
@@ -91,8 +89,8 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
 static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
 {
     finalOutput(ctx, st, chisq);
-    nbodyCtxDestroy(ctx);     /* finish up output */
-    nbodyStateDestroy(st);
+    destroyNBodyCtx(ctx);
+    destroyNBodyState(st);
 }
 
 static int setupRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
@@ -113,7 +111,7 @@ static int setupRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
         if (readCheckpoint(ctx, st))
         {
             mw_report("Failed to read checkpoint\n");
-            nbodyStateDestroy(st);
+            destroyNBodyState(st);
             return 1;
         }
         else
@@ -155,8 +153,8 @@ static int verifyFile(const NBodyFlags* nbf)
         printHistogramParams(&ctx.histogramParams);
     }
 
-    nbodyCtxDestroy(&ctx);
-    nbodyStateDestroy(&st);
+    destroyNBodyCtx(&ctx);
+    destroyNBodyState(&st);
 
     return rc;
 }

@@ -17,40 +17,27 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_LUA_TYPES_H_
-#define _NBODY_LUA_TYPES_H_
+#ifndef _MILKYWAY_LUA_H_
+#define _MILKYWAY_LUA_H_
 
-#define _NBODY_LUA_TYPES_H_INSIDE_
+#define _MILKYWAY_LUA_H_INSIDE_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#include "milkyway_lua_math.h"
 #include "milkyway_lua_vector.h"
 #include "milkyway_lua_dsfmt.h"
-
-#include "nbody_lua_type_marshal.h"
-
-#include "nbody_lua_nbodyctx.h"
-#include "nbody_lua_body.h"
-#include "nbody_lua_halo.h"
-#include "nbody_lua_disk.h"
-#include "nbody_lua_spherical.h"
-#include "nbody_lua_potential.h"
-#include "nbody_lua_initial_conditions.h"
-#include "nbody_lua_histogram_params.h"
-
+#include "milkyway_lua_marshal.h"
 
 #include <lua.h>
-
-void registerNBodyTypes(lua_State* luaSt);
-void registerOtherTypes(lua_State* luaSt);
 
 #ifdef __cplusplus
 }
 #endif
 
-#undef _NBODY_LUA_TYPES_H_INSIDE_
+#undef _MILKYWAY_LUA_H_INSIDE_
 
-#endif /* _NBODY_LUA_TYPES_H_ */
+#endif /* _MILKYWAY_LUA_H_ */
 

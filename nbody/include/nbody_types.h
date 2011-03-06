@@ -434,6 +434,9 @@ typedef struct NBODY_ALIGN
                          0, 0, NULL }
 
 
+int destroyNBodyCtx(NBodyCtx* ctx);
+void destroyNBodyState(NBodyState* st);
+
 
 #ifndef __OPENCL_VERSION__  /* No function pointers allowed in kernels */
 /* Acceleration functions for a given potential */

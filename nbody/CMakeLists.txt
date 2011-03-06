@@ -149,73 +149,83 @@ endif()
 
 set(NBODY_SRC_DIR "${PROJECT_SOURCE_DIR}/src/")
 set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include/")
-set(nbody_lib_src ${NBODY_SRC_DIR}/chisq.c
-                  ${NBODY_SRC_DIR}/grav.c
-                  ${NBODY_SRC_DIR}/io.c
-                  ${NBODY_SRC_DIR}/load.c
-                  ${NBODY_SRC_DIR}/orbitintegrator.c
-                  ${NBODY_SRC_DIR}/accelerations.c
+set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
+                  ${NBODY_SRC_DIR}/nbody_grav.c
+                  ${NBODY_SRC_DIR}/nbody_io.c
+                  ${NBODY_SRC_DIR}/nbody_types.c
+                  ${NBODY_SRC_DIR}/nbody_tree.c
+                  ${NBODY_SRC_DIR}/nbody_orbit_integrator.c
+                  ${NBODY_SRC_DIR}/nbody_potential.c
                   ${NBODY_SRC_DIR}/nbody_simulation.c
                   ${NBODY_SRC_DIR}/nbody_check_params.c
-                  ${NBODY_SRC_DIR}/plummer.c
+                  ${NBODY_SRC_DIR}/nbody_plummer.c
                   ${NBODY_SRC_DIR}/nbody_util.c
-                  ${NBODY_SRC_DIR}/nbody_step.c)
+                  ${NBODY_SRC_DIR}/nbody_step.c
+                  ${NBODY_SRC_DIR}/nbody_show.c
+                  ${NBODY_SRC_DIR}/nbody_checkpoint.c)
 
-set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/chisq.h
-                      ${NBODY_INCLUDE_DIR}/grav.h
+
+set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
+                      ${NBODY_INCLUDE_DIR}/nbody_grav.h
                       ${NBODY_INCLUDE_DIR}/nbody_config.h.in
-                      ${NBODY_INCLUDE_DIR}/io.h
-                      ${NBODY_INCLUDE_DIR}/load.h
-                      ${NBODY_INCLUDE_DIR}/orbitintegrator.h
-                      ${NBODY_INCLUDE_DIR}/accelerations.h
-                      ${NBODY_INCLUDE_DIR}/json_params.h
+                      ${NBODY_INCLUDE_DIR}/nbody_io.h
+                      ${NBODY_INCLUDE_DIR}/nbody_tree.h
+                      ${NBODY_INCLUDE_DIR}/nbody_orbit_integrator.h
+                      ${NBODY_INCLUDE_DIR}/nbody_potential.h
                       ${NBODY_INCLUDE_DIR}/nbody_check_params.h
-                      ${NBODY_INCLUDE_DIR}/plummer.h
+                      ${NBODY_INCLUDE_DIR}/nbody_plummer.h
                       ${NBODY_INCLUDE_DIR}/nbody.h
                       ${NBODY_INCLUDE_DIR}/nbody_show.h
                       ${NBODY_INCLUDE_DIR}/nbody_priv.h
                       ${NBODY_INCLUDE_DIR}/nbody_types.h
-                      ${NBODY_INCLUDE_DIR}/nbody_util.h)
+                      ${NBODY_INCLUDE_DIR}/nbody_util.h
+                      ${NBODY_INCLUDE_DIR}/nbody_checkpoint.h)
 
-set(nbody_lua_src ${NBODY_SRC_DIR}/lua_nbodyctx.c
-                  ${NBODY_SRC_DIR}/lua_body.c
-                  ${NBODY_SRC_DIR}/lua_vector.c
-                  ${NBODY_SRC_DIR}/lua_halo.c
-                  ${NBODY_SRC_DIR}/lua_disk.c
-                  ${NBODY_SRC_DIR}/lua_spherical.c
-                  ${NBODY_SRC_DIR}/lua_potential.c
-                  ${NBODY_SRC_DIR}/lua_initial_conditions.c
-                  ${NBODY_SRC_DIR}/lua_histogram_params.c
-                  ${NBODY_SRC_DIR}/lua_dsfmt.c
-                  ${NBODY_SRC_DIR}/lua_type_marshal.c
-                  ${NBODY_SRC_DIR}/nbody_lua_marshal.c
-                  ${NBODY_SRC_DIR}/nbody_lua_types.c
-                  ${NBODY_SRC_DIR}/nbody_lua_models.c
+set(nbody_lua_src ${NBODY_SRC_DIR}/milkyway_lua_marshal.c
+                  ${NBODY_SRC_DIR}/milkyway_lua_math.c
+                  ${NBODY_SRC_DIR}/milkyway_lua_vector.c
+                  ${NBODY_SRC_DIR}/milkyway_lua_dsfmt.c
+
                   ${NBODY_SRC_DIR}/nbody_lua.c
-                  ${NBODY_SRC_DIR}/lua_milkyway_math.c
-                  ${NBODY_SRC_DIR}/nbody_show.c)
+                  ${NBODY_SRC_DIR}/nbody_lua_models.c
 
 
-set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/lua_body.h
-                      ${NBODY_INCLUDE_DIR}/lua_vector.h
-                      ${NBODY_INCLUDE_DIR}/lua_nbodyctx.h
-                      ${NBODY_INCLUDE_DIR}/lua_halo.h
-                      ${NBODY_INCLUDE_DIR}/lua_disk.h
-                      ${NBODY_INCLUDE_DIR}/lua_spherical.h
-                      ${NBODY_INCLUDE_DIR}/lua_potential.h
-                      ${NBODY_INCLUDE_DIR}/lua_initial_conditions.h
-                      ${NBODY_INCLUDE_DIR}/lua_histogram_params.h
-                      ${NBODY_INCLUDE_DIR}/lua_dsfmt.h
-                      ${NBODY_INCLUDE_DIR}/lua_type_marshal.h
-                      ${NBODY_INCLUDE_DIR}/nbody_lua_marshal.h
-                      ${NBODY_INCLUDE_DIR}/nbody_lua_types.h
-                      ${NBODY_INCLUDE_DIR}/nbody_lua_models.h
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_types.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_type_marshal.c
+
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_nbodyctx.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_body.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_halo.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_disk.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_spherical.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_potential.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_initial_conditions.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_histogram_params.c)
+
+
+set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/milkyway_lua.h
+                      ${NBODY_INCLUDE_DIR}/milkyway_lua_marshal.h
+                      ${NBODY_INCLUDE_DIR}/milkyway_lua_math.h
+                      ${NBODY_INCLUDE_DIR}/milkyway_lua_vector.h
+                      ${NBODY_INCLUDE_DIR}/milkyway_lua_dsfmt.h
+
+
                       ${NBODY_INCLUDE_DIR}/nbody_lua.h
-                      ${NBODY_INCLUDE_DIR}/lua_milkyway_math.h)
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_models.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_types.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_type_marshal.h
 
 
-list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/checkpoint.c)
-list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/checkpoint.h)
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_nbodyctx.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_body.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_halo.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_disk.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_spherical.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_potential.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_initial_conditions.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_histogram_params.h)
+
+
 
 add_library(nbody_lua STATIC ${nbody_lua_src} ${nbody_lua_headers})
 set_target_properties(nbody_lua PROPERTIES

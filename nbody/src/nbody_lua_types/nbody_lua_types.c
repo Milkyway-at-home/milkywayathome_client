@@ -17,40 +17,33 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_LUA_TYPES_H_
-#define _NBODY_LUA_TYPES_H_
-
-#define _NBODY_LUA_TYPES_H_INSIDE_
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "milkyway_lua_vector.h"
-#include "milkyway_lua_dsfmt.h"
-
-#include "nbody_lua_type_marshal.h"
-
-#include "nbody_lua_nbodyctx.h"
-#include "nbody_lua_body.h"
-#include "nbody_lua_halo.h"
-#include "nbody_lua_disk.h"
-#include "nbody_lua_spherical.h"
-#include "nbody_lua_potential.h"
-#include "nbody_lua_initial_conditions.h"
-#include "nbody_lua_histogram_params.h"
-
-
 #include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
 
-void registerNBodyTypes(lua_State* luaSt);
-void registerOtherTypes(lua_State* luaSt);
+#include "nbody_types.h"
+#include "nbody_lua_types.h"
+#include "milkyway_lua.h"
 
-#ifdef __cplusplus
+void registerNBodyTypes(lua_State* luaSt)
+{
+    registerBody(luaSt);
+
+    registerHalo(luaSt);
+    registerDisk(luaSt);
+    registerSpherical(luaSt);
+
+    registerPotential(luaSt);
+    registerInitialConditions(luaSt);
+    registerHistogramParams(luaSt);
+
+    registerNBodyCtx(luaSt);
 }
-#endif
 
-#undef _NBODY_LUA_TYPES_H_INSIDE_
-
-#endif /* _NBODY_LUA_TYPES_H_ */
+void registerOtherTypes(lua_State* luaSt)
+{
+    registerMilkywayMath(luaSt);
+    registerVector(luaSt);
+    registerDSFMT(luaSt);
+}
 

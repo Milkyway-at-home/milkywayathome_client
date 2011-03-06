@@ -25,7 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif /* _OPENMP */
 
 #include "nbody_step.h"
-#include "grav.h"
+#include "nbody_grav.h"
 
 /* Advance velocity by half a timestep */
 ALWAYS_INLINE

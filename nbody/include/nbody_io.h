@@ -18,40 +18,18 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_PRIV_H_
-#define _NBODY_PRIV_H_
-
-#define _GNU_SOURCE
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "nbody_config.h" /* Must be included first */
-
-#include "milkyway_math.h"
+#ifndef _NBODY_IO_H_
+#define _NBODY_IO_H_
 
 #include "nbody_types.h"
-#include "nbody_grav.h"
-#include "nbody_chisq.h"
-#include "nbody_tree.h"
-#include "nbody_potential.h"
-#include "nbody_orbit_integrator.h"
-#include "nbody_util.h"
-#include "nbody_step.h"
-#include "nbody_show.h"
-#include "nbody_io.h"
-#include "nbody_checkpoint.h"
+#include "nbody.h"
 
 
-#if NBODY_OPENCL
-  #include "gravmap_opencl.h"
-#endif /* NBODY_OPENCL */
+/* Basic IO and initialization */
+int initOutput(NBodyCtx* ctx, const NBodyFlags* nbf);
+int finalOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq);
 
+int outputBodyPositionBin(const NBodyCtx* ctx, const NBodyState* st);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _NBODY_PRIV_H_ */
+#endif /* _NBODY_IO_H_ */
 
