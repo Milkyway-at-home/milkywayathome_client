@@ -132,8 +132,8 @@ static int createPlummerSphereTable(lua_State* luaSt,
 
     velScale = mw_sqrt(mass / radiusScale);     /* and recip. speed scale */
 
-    Type(&b) = BODY(ignore);    /* Same for all in the model */
-    Mass(&b) = mass / nbody;    /* Mass per particle */
+    b.bodynode.type = BODY(ignore);    /* Same for all in the model */
+    b.bodynode.mass = mass / nbody;    /* Mass per particle */
 
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);
@@ -141,8 +141,8 @@ static int createPlummerSphereTable(lua_State* luaSt,
     {
         r = plummerRandomR(prng);
 
-        Pos(&b) = plummerBodyPosition(prng, rShift, radiusScale, r);
-        Vel(&b) = plummerBodyVelocity(prng, vShift, velScale, r);
+        b.bodynode.pos = plummerBodyPosition(prng, rShift, radiusScale, r);
+        b.vel = plummerBodyVelocity(prng, vShift, velScale, r);
 
         pushBody(luaSt, &b);
         lua_rawseti(luaSt, table, i + 1);

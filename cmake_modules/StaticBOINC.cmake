@@ -24,7 +24,7 @@
 # We also have to link as C++ when we do this because of BOINC.
 
 function(correct_static_link client_bin_name partially_dynamic)
-  if(NOT MSVC AND (CMAKE_BUILD_TYPE STREQUAL Release))
+  if(NOT MSVC AND (CMAKE_BUILD_TYPE STREQUAL Release) AND NOT APPLE)
     set(strip_exe -s)
   endif()
   if(NOT APPLE)
