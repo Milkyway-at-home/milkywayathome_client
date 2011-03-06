@@ -67,11 +67,8 @@ Dependencies:
 
     Build BOINC libraries yourself
 
-MinGW32 dependency binaries can be found:
-  http://www.rpi.edu/~arsenm2/milkyway/milkyway_mingw_deps/
-  Extract them to the source directory, and they should be found and
-  used.
-  The crlibm binary has crlibm_init() removed, and is built with SSE2.
+MinGW:
+  build with -DCMAKE_INSTALL_PREFIX=/usr/local for some reason helps find things
 
 
 Notes:

@@ -115,6 +115,26 @@ inline mwvector mw_mulvs(mwvector a, real s)
 }
 
 CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
+inline mwvector mw_divvs(mwvector a, real s)
+{
+    mwvector v;
+    v.x = a.x / s;
+    v.y = a.y / s;
+    v.z = a.z / s;
+    return v;
+}
+
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
+inline mwvector mw_negv(mwvector a)
+{
+    mwvector v;
+    v.x = -a.x;
+    v.y = -a.y;
+    v.z = -a.z;
+    return v;
+}
+
+CONST_F ALWAYS_INLINE OLD_GCC_EXTERNINLINE
 inline mwvector mw_mulmv(const mwmatrix m, mwvector a)
 {
     mwvector tmp;

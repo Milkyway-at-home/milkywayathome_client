@@ -32,21 +32,16 @@ extern "C" {
 #include "milkyway_math.h"
 
 #include "nbody_types.h"
-#include "grav.h"
-#include "chisq.h"
-#include "load.h"
-#include "accelerations.h"
-#include "orbitintegrator.h"
-#include "plummer.h"
+#include "nbody_grav.h"
+#include "nbody_chisq.h"
+#include "nbody_tree.h"
+#include "nbody_potential.h"
+#include "nbody_orbit_integrator.h"
 #include "nbody_util.h"
 #include "nbody_step.h"
-
-#if NBODY_SHOW
-  #include "show.h"
-#endif
-
-#include "io.h"
-#include "checkpoint.h"
+#include "nbody_show.h"
+#include "nbody_io.h"
+#include "nbody_checkpoint.h"
 
 
 #if NBODY_OPENCL

@@ -69,6 +69,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_math.h"
 #include "milkyway_extra.h"
 
+#include <lua.h>
+#include <time.h>
+
 #ifndef __OPENCL_VERSION__   /* Not compiling CL kernel */
   #if NBODY_OPENCL
     #include <OpenCL/cl.h>
@@ -97,23 +100,19 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define NBODY_ALIGN
 #endif /* _MSC_VER */
 
-/* There are bodies and cells. Cells are 0. A body will be nonzero,
- * where this is the index of the model the body is in + 1.  This way
- * checking for a cell is a fast comparison with 0 which is usually
- * what needs to happen, while still being able to pick out which
- * bodies belong to each model. Actually since the bodies don't
- * actually move (for now at least, the GPU version will most likely
- * end up sorting) we could just not tag each body with its parent
- * model.
+/* There are bodies and cells. Cells are 0, bodies are nonzero. Bodies
+   will be set to 1 or -1 if the body is to be ignored in the final
+   likelihood calculation (i.e. a dark matter body)
  */
 #define CELL(x) (0)
-#define BODY(x) ((x) + 1)
+#define BODY(x) ((x) ? -1 : 1)
 
-#define bodyModel(x) (((nodeptr) (x))->type - 1)
-#define isBody(x) (((nodeptr) (x))->type != 0)
-#define isCell(x) (((nodeptr) (x))->type == 0)
+#define isBody(x) (((node*) (x))->type != 0)
+#define isCell(x) (((node*) (x))->type == 0)
+#define ignoreBody(x) (((node*) (x))->type < 0)
+#define bodyTypeIsIgnore(x) ((x) < 0)
 
-typedef unsigned short body_t;
+typedef short body_t;
 
 /* node: data common to BODY and CELL structures. */
 typedef struct NBODY_ALIGN _node
@@ -122,12 +121,14 @@ typedef struct NBODY_ALIGN _node
     real mass;              /* total mass of node */
     mwvector pos;           /* position of node */
     struct _node* next;     /* link to next force-calc */
-} node, *nodeptr;
+} node;
 
-#define Type(x) (((nodeptr) (x))->type)
-#define Mass(x) (((nodeptr) (x))->mass)
-#define Pos(x)  (((nodeptr) (x))->pos)
-#define Next(x) (((nodeptr) (x))->next)
+#define EMPTY_NODE { 0, NAN, EMPTY_MWVECTOR, NULL }
+
+#define Type(x) (((node*) (x))->type)
+#define Mass(x) (((node*) (x))->mass)
+#define Pos(x)  (((node*) (x))->pos)
+#define Next(x) (((node*) (x))->next)
 
 /* BODY: data structure used to represent particles. */
 
@@ -135,11 +136,15 @@ typedef struct NBODY_ALIGN
 {
     node bodynode;              /* data common to all nodes */
     mwvector vel;               /* velocity of body */
- } body, *bodyptr;
+} body;
+
+#define EMPTY_BODY { EMPTY_NODE, EMPTY_MWVECTOR }
+
+#define BODY_TYPE "Body"
 
 #define Body    body
 
-#define Vel(x)  (((bodyptr) (x))->vel)
+#define Vel(x)  (((body*) (x))->vel)
 
 /* CELL: structure used to represent internal nodes of tree. */
 
@@ -149,13 +154,13 @@ typedef struct NBODY_ALIGN
 {
     node cellnode;              /* data common to all nodes */
     real rcrit2;                /* critical c-of-m radius^2 */
-    nodeptr more;               /* link to first descendent */
+    node* more;                 /* link to first descendent */
     union                       /* shared storage for... */
     {
-        nodeptr subp[NSUB];     /* descendents of cell */
+        node* subp[NSUB];       /* descendents of cell */
         mwmatrix quad;         /* quad. moment of cell */
     } stuff;
-} cell, *cellptr;
+} cell;
 
 #define InvalidEnum (-1)
 typedef int generic_enum_t;  /* A general enum type. */
@@ -186,6 +191,8 @@ typedef struct NBODY_ALIGN
     real scale;
 } Spherical;
 
+#define SPHERICAL_TYPE "Spherical"
+
 
 /* Can't get the enum value in preprocessor, so do this */
 #define _MN_DISK 0
@@ -203,10 +210,12 @@ typedef enum
 typedef struct NBODY_ALIGN
 {
     disk_t type;
-    real mass;          /* disk mass */
-    real scale_length;  /* "a" for M-N, "b" for exp disk */
-    real scale_height;  /* unused for exponential disk. "b" for Miyamoto-Nagai disk */
+    real mass;         /* disk mass */
+    real scaleLength;  /* "a" for M-N, "b" for exp disk */
+    real scaleHeight;  /* unused for exponential disk. "b" for Miyamoto-Nagai disk */
 } Disk;
+
+#define DISK_TYPE "Disk"
 
 /* Supported halo models */
 
@@ -226,7 +235,7 @@ typedef struct NBODY_ALIGN
 {
     halo_t type;
     real vhalo;         /* common to all 3 halos */
-    real scale_length;  /* common to all 3 halos */
+    real scaleLength;   /* common to all 3 halos */
     real flattenZ;      /* used by logarithmic and triaxial */
     real flattenY;      /* used by triaxial */
     real flattenX;      /* used by triaxial */
@@ -237,6 +246,8 @@ typedef struct NBODY_ALIGN
     real c3;
 } Halo;
 
+#define HALO_TYPE "Halo"
+
 typedef struct NBODY_ALIGN
 {
     Spherical sphere[1];  /* 1 for now, flexibility can be added later */
@@ -245,17 +256,19 @@ typedef struct NBODY_ALIGN
     void* rings;         /* reserved for future use */
 } Potential;
 
+#define POTENTIAL_TYPE "Potential"
 
-#define Rcrit2(x) (((cellptr) (x))->rcrit2)
-#define More(x)   (((cellptr) (x))->more)
-#define Subp(x)   (((cellptr) (x))->stuff.subp)
-#define Quad(x)   (((cellptr) (x))->stuff.quad)
+
+#define Rcrit2(x) (((cell*) (x))->rcrit2)
+#define More(x)   (((cell*) (x))->more)
+#define Subp(x)   (((cell*) (x))->stuff.subp)
+#define Quad(x)   (((cell*) (x))->stuff.quad)
 
 /* Variables used in tree construction. */
 
 typedef struct NBODY_ALIGN
 {
-    cellptr root;   /* pointer to root cell */
+    cell* root;     /* pointer to root cell */
     real rsize;     /* side-length of root cell */
 
     unsigned int cellused;   /* count of cells in tree */
@@ -264,53 +277,14 @@ typedef struct NBODY_ALIGN
 
 typedef struct NBODY_ALIGN
 {
-    mwvector position;     /* (x, y, z) if cartesian / useGalC, otherwise (l, b, r) */
+    mwvector position;
     mwvector velocity;
-    mwbool useGalC;
-    mwbool useRadians;
-    mwbool reverseOrbit;     /* Do a reverse orbit. Otherwise, take initial conditions as they are */
 } InitialConditions;
 
+#define EMPTY_INITIAL_CONDITIONS { EMPTY_MWVECTOR, EMPTY_MWVECTOR }
 
-typedef struct NBODY_ALIGN
-{
-    int useFitParams;
-    real modelMass;
-    real modelRadius;
-    real reverseOrbitTime;
-    real simulationTime;
-} FitParams;
+#define INITIAL_CONDITIONS_TYPE "InitialConditions"
 
-#define EMPTY_FIT_PARAMS { FALSE, NAN, NAN, NAN, NAN }
-
-
-typedef enum
-{
-    InvalidDwarfModel = InvalidEnum,
-    DwarfModelPlummer,
-    DwarfModelKing,
-    DwarfModelDehnen
-} dwarf_model_t;
-
-typedef struct NBODY_ALIGN
-{
-    dwarf_model_t type;
-    int nbody;
-
-    /* calculated depending on model */
-    real timestep;
-    real orbit_timestep;
-
-    /* model parameters */
-    real mass;
-    real scale_radius;
-
-    real smallMass;
-    real smallRadius;
-
-    mwbool ignoreFinal;
-    InitialConditions initialConditions;
-} DwarfModel;
 
 #ifndef _WIN32
 
@@ -318,9 +292,10 @@ typedef struct NBODY_ALIGN
 {
     int fd;            /* File descriptor for checkpoint file */
     char* mptr;        /* mmap'd pointer for checkpoint file */
+    size_t cpFileSize; /* For checking how big the file should be for expected bodies */
 } CheckpointHandle;
 
-#define EMPTY_CHECKPOINT_HANDLE { -1, NULL }
+#define EMPTY_CHECKPOINT_HANDLE { -1, NULL, 0 }
 
 #else
 
@@ -329,9 +304,10 @@ typedef struct NBODY_ALIGN
     HANDLE file;
     HANDLE mapFile;
     char* mptr;
+    DWORD cpFileSize;
 } CheckpointHandle;
 
-#define EMPTY_CHECKPOINT_HANDLE { INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE, NULL }
+#define EMPTY_CHECKPOINT_HANDLE { INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE, NULL, 0 }
 
 #endif /* _WIN32 */
 
@@ -356,10 +332,11 @@ typedef struct
 typedef struct NBODY_ALIGN
 {
     Tree tree;
-    nodeptr freecell;   /* list of free cells */
+    node* freecell;   /* list of free cells */
     unsigned int outputTime;
+    time_t lastCheckpoint;
     real tnow;
-    bodyptr bodytab;    /* points to array of bodies */
+    body* bodytab;      /* points to array of bodies */
     mwvector* acctab;   /* Corresponding accelerations of bodies */
 
   #if NBODY_OPENCL
@@ -371,71 +348,8 @@ typedef struct NBODY_ALIGN
 #if NBODY_OPENCL
   #define EMPTY_STATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
 #else
-  #define EMPTY_STATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL }
+  #define EMPTY_STATE { EMPTY_TREE, NULL, 0, 0, NAN, NULL, NULL }
 #endif /* NBODY_OPENCL */
-
-#endif /* __OPENCL_VERSION__ */
-
-/* The context tracks settings of the simulation.  It should be set
-   once at the beginning of a simulation based on settings, and then
-   stays constant for the actual simulation.
- */
-typedef struct NBODY_ALIGN
-{
-    Potential pot;
-
-    DwarfModel* models;       /* dwarf models */
-    unsigned int modelNum;    /* Number of models */
-    unsigned int nbody;       /* Total number of bodies in all models */
-
-    real timestep;
-    real time_evolve;
-    real orbit_timestep;
-    real time_orbit;
-
-    char* headline;           /* message describing calculation */
-    const char* outfilename;  /* output */
-    const char* histogram;
-    const char* histout;
-    FILE* outfile;            /* file for snapshot output */
-
-    unsigned int freqOut;
-    real theta;               /* accuracy parameter: 0.0 */
-    real eps2;                /* (potential softening parameter)^2 */
-
-    real tree_rsize;
-    real sunGCDist;
-    criterion_t criterion;
-    long seed;                /* random number seed */
-    mwbool usequad;           /* use quadrupole corrections */
-    mwbool allowIncest;
-    mwbool outputCartesian;   /* print (x,y,z) instead of (l, b, r) */
-    mwbool outputBodies;
-    mwbool outputHistogram;
-
-    const char* cp_filename;
-    char cp_resolved[1024];
-} NBodyCtx;
-
-
-/* Note: 'type' should first field for all types. */
-#define SET_TYPE(x, y) (((Disk*)x)->type = y)
-#define NBODY_TYPEOF(x) (((Disk*)x)->type)
-
-
-/* Useful initializers */
-#define EMPTY_SPHERICAL { 0, NAN, NAN }
-#define EMPTY_DISK { 0, NAN, NAN, NAN }
-#define EMPTY_HALO { 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
-#define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
-#define EMPTY_MODEL { 0, 0, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
-
-#define EMPTY_TREE { NULL, NAN, 0, 0 }
-#define EMPTY_VECTOR { NAN, NAN, NAN, NAN }
-#define EMPTY_CTX { EMPTY_POTENTIAL, NULL, 0, 0, NAN, NAN, NAN, NAN, \
-                    NULL, NULL, NULL, NULL, NULL,                    \
-                    NAN, NAN, NAN, NAN, NAN, 0, 0,                   \
-                    FALSE, FALSE, FALSE, FALSE, FALSE, NULL, "" }
 
 
 typedef struct
@@ -449,6 +363,9 @@ typedef struct
     real center;
 } HistogramParams;
 
+#define EMPTY_HISTOGRAM_PARAMS { NAN, NAN, NAN, NAN, NAN, NAN, NAN }
+#define HISTOGRAM_PARAMS_TYPE "HistogramParams"
+
 
 typedef struct
 {
@@ -457,6 +374,68 @@ typedef struct
     real err;
     real count;
 } HistData;
+
+
+#endif /* __OPENCL_VERSION__ */
+
+/* The context tracks settings of the simulation.  It should be set
+   once at the beginning of a simulation based on settings, and then
+   stays constant for the actual simulation.
+ */
+typedef struct NBODY_ALIGN
+{
+    Potential pot;
+
+    unsigned int nbody;       /* Total number of bodies in all models */
+
+    real timestep;
+    real timeEvolve;
+
+    real theta;               /* accuracy parameter: 0.0 */
+    real eps2;                /* (potential softening parameter)^2 */
+    real treeRSize;
+
+    real sunGCDist;
+    criterion_t criterion;
+
+    mwbool useQuad;           /* use quadrupole corrections */
+    mwbool allowIncest;
+    mwbool outputCartesian;   /* print (x,y,z) instead of (l, b, r) */
+    mwbool outputBodies;
+    mwbool outputHistogram;
+
+    HistogramParams histogramParams;
+
+    time_t checkpointT;       /* Period to checkpoint when not using BOINC */
+    unsigned int freqOut;
+    FILE* outfile;            /* file for snapshot output */
+} NBodyCtx;
+
+#define NBODY_CTX "NBodyCtx"
+
+
+/* Note: 'type' should first field for all types. */
+#define SET_TYPE(x, y) (((Disk*)x)->type = y)
+#define NBODY_TYPEOF(x) (((Disk*)x)->type)
+
+
+/* Useful initializers */
+#define EMPTY_SPHERICAL { InvalidSpherical, NAN, NAN }
+#define EMPTY_DISK { InvalidDisk, NAN, NAN, NAN }
+#define EMPTY_HALO { InvalidHalo, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
+#define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
+
+#define EMPTY_TREE { NULL, NAN, 0, 0 }
+#define EMPTY_NBODYCTX { EMPTY_POTENTIAL, 0, NAN, NAN,                    \
+                         NAN, NAN, NAN,                                   \
+                         NAN, InvalidCriterion,                           \
+                         FALSE, FALSE, FALSE, FALSE, FALSE,               \
+                         EMPTY_HISTOGRAM_PARAMS,                          \
+                         0, 0, NULL }
+
+
+int destroyNBodyCtx(NBodyCtx* ctx);
+void destroyNBodyState(NBodyState* st);
 
 
 #ifndef __OPENCL_VERSION__  /* No function pointers allowed in kernels */

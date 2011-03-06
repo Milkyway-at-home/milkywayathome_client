@@ -22,106 +22,54 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdlib.h>
 #include "nbody.h"
-#include "nbody_params.h"
-#include "calc_params.h"
 #include "nbody_priv.h"
 #include "milkyway_util.h"
-#include "nbody_step.h"
-#include "grav.h"
-#include "orbitintegrator.h"
-#include "show.h"
+#include "nbody_grav.h"
+#include "nbody_show.h"
+#include "nbody_lua.h"
 
-/* make test model */
-static void generateModel(NBodyCtx* ctx, unsigned int modelIdx, bodyptr bodies)
+static inline int nbodyTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 {
-    dwarf_model_t type = ctx->models[modelIdx].type;
-    dsfmt_t dsfmtState;
-
-    dsfmt_init_gen_rand(&dsfmtState, ctx->seed);
-
-    switch (type)
-    {
-        case DwarfModelPlummer:
-            generatePlummer(&dsfmtState, ctx, modelIdx, bodies);
-            break;
-        case DwarfModelKing:
-        case DwarfModelDehnen:
-        case InvalidDwarfModel:
-            fail("Trying to run with invalid dwarf model\n");
-        default:
-            fail("Unsupported model: %d", type);
-    }
-}
-
-static void generateAllModels(NBodyCtx* ctx, bodyptr bodies)
-{
-    unsigned int i, bodyIdx;
-
-    for (i = 0, bodyIdx = 0; i < ctx->modelNum; ++i)
-    {
-        generateModel(ctx, i, &bodies[bodyIdx]);
-        bodyIdx += ctx->models[i].nbody;
-    }
-}
-
-static void initState(NBodyCtx* ctx, NBodyState* st)
-{
-    mw_report("Starting nbody system\n");
-
-    st->tree.rsize = ctx->tree_rsize;
-    st->tnow       = 0.0;            /* reset elapsed model time */
-
-    st->bodytab = (bodyptr) mwMalloc(ctx->nbody * sizeof(body));
-    st->acctab  = (mwvector*) mwMalloc(ctx->nbody * sizeof(mwvector));
-
-    generateAllModels(ctx, st->bodytab);
-
-  #if NBODY_OPENCL
-    setupNBodyCL(ctx, st);
-  #endif /* NBODY_OPENCL */
-
-    /* CHECKME: Why does makeTree get used twice for the first step? */
-    /* Take 1st step */
-  #if !NBODY_OPENCL
-    gravMap(ctx, st);
+  #if BOINC_APPLICATION
+    return boinc_time_to_checkpoint();
   #else
-    gravMapCL(ctx, st);
-  #endif /* !NBODY_OPENCL */
+    time_t now;
 
+    if (ctx->checkpointT < 0 || ((now = time(NULL)) - st->lastCheckpoint) < ctx->checkpointT)
+        return FALSE;
+    else
+    {
+        st->lastCheckpoint = now;
+        return TRUE;
+    }
+  #endif /* BOINC_APPLICATION */
 }
 
-static void startRun(NBodyCtx* ctx, NBodyState* st)
+static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 {
-    mw_report("Starting fresh nbody run\n");
-    reverseModelOrbits(ctx);
-    initState(ctx, st);
-}
-
-#if BOINC_APPLICATION
-static inline void nbodyCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
-{
-    if (boinc_time_to_checkpoint())
+    if (nbodyTimeToCheckpoint(ctx, st))
     {
         if (writeCheckpoint(ctx, st))
             fail("Failed to write checkpoint\n");
 
+      #if BOINC_APPLICATION
         boinc_checkpoint_completed();
+      #endif /* BOINC_APPLICATION */
     }
 
-    boinc_fraction_done(st->tnow / ctx->time_evolve);
+  #if BOINC_APPLICATION
+    boinc_fraction_done(st->tnow / ctx->timeEvolve);
+  #endif /* BOINC_APPLICATION */
 }
-#endif /* BOINC_APPLICATION */
 
 static void runSystem(const NBodyCtx* ctx, NBodyState* st)
 {
-    const real tstop = ctx->time_evolve - ctx->timestep / 1024.0;
+    const real tstop = ctx->timeEvolve - ctx->timestep / 1024.0;
 
     while (st->tnow < tstop)
     {
         stepSystem(ctx, st);   /* advance N-body system */
-      #if BOINC_APPLICATION
         nbodyCheckpoint(ctx, st);
-      #endif
 
       #if PERIODIC_OUTPUT
         st->outputTime = (st->outputTime + 1) % ctx->freqOut;
@@ -130,68 +78,55 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
       #endif /* PERIODIC_OUTPUT */
     }
 
-  #if BOINC_APPLICATION
-    mw_report("Making final checkpoint\n");
-    if (writeCheckpoint(ctx, st))
-        fail("Failed to write final checkpoint\n");
-  #endif
-
+    if (BOINC_APPLICATION || ctx->checkpointT >= 0)
+    {
+        mw_report("Making final checkpoint\n");
+        if (writeCheckpoint(ctx, st))
+            fail("Failed to write final checkpoint\n");
+    }
 }
 
 static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
 {
     finalOutput(ctx, st, chisq);
-    nbodyCtxDestroy(ctx);     /* finish up output */
-    nbodyStateDestroy(st);
+    destroyNBodyCtx(ctx);
+    destroyNBodyState(st);
 }
 
-#if BOINC_APPLICATION
-
-/* Setup the run, taking care of checkpointing things when using BOINC */
-static int setupRun(NBodyCtx* ctx, NBodyState* st)
+static int setupRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     /* If the checkpoint exists, try to use it */
-    if (boinc_file_exists(ctx->cp_resolved))
+    if (nbf->ignoreCheckpoint || !resolvedCheckpointExists())
+    {
+        if (setupNBody(ctx, st, nbf))
+            return warn1("Failed to read input parameters file\n");
+    }
+    else
     {
         mw_report("Checkpoint exists. Attempting to resume from it.\n");
+
+        if (nbf->inputFile && !BOINC_APPLICATION)
+            warn("Warning: input file '%s' unused\n", nbf->inputFile);
+
         if (readCheckpoint(ctx, st))
         {
             mw_report("Failed to read checkpoint\n");
-            nbodyStateDestroy(st);
+            destroyNBodyState(st);
             return 1;
         }
         else
         {
             mw_report("Successfully read checkpoint\n");
-            /* We restored the useful state. Now still need to create
-             * the workspace where new accelerations are
-             * calculated. */
-            st->acctab  = (mwvector*) mwMalloc(ctx->nbody * sizeof(mwvector));
-          #if !NBODY_OPENCL
-            gravMap(ctx, st);
-          #else
-            gravMapCL(ctx, st);
-          #endif /* !NBODY_OPENCL */
         }
     }
-    else   /* Otherwise, just start a fresh run */
-    {
-        startRun(ctx, st);
-    }
+
+    /* Accelerations are scratch space */
+    st->acctab = (mwvector*) mwMallocA(ctx->nbody * sizeof(mwvector));
+
+    gravMap(ctx, st); /* Start 1st step */
 
     return 0;
 }
-
-#else
-
-/* When not using BOINC, we don't need to deal with the checkpointing */
-static int setupRun(NBodyCtx* ctx, NBodyState* st)
-{
-    startRun(ctx, st);
-    return 0;
-}
-
-#endif /* BOINC_APPLICATION */
 
 /* Set context fields read from command line flags */
 static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
@@ -199,62 +134,53 @@ static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
     ctx->outputCartesian = nbf->outputCartesian;
     ctx->outputBodies    = nbf->printBodies;
     ctx->outputHistogram = nbf->printHistogram;
-    ctx->outfilename     = nbf->outFileName;
-    ctx->histogram       = nbf->histogramFileName;
-    ctx->histout         = nbf->histoutFileName;
-    ctx->cp_filename     = nbf->checkpointFileName;
+    ctx->checkpointT     = nbf->checkpointPeriod;
 }
 
-static void verifyFile(const NBodyCtx* ctx, const HistogramParams* hp, int rc)
+static int verifyFile(const NBodyFlags* nbf)
 {
-    printContext(ctx);
-    printHistogramParams(hp);
+    int rc;
+    NBodyCtx ctx  = EMPTY_NBODYCTX;
+    NBodyState st = EMPTY_STATE;
 
+    rc = setupNBody(&ctx, &st, nbf);
     if (rc)
         warn("File failed\n");
     else
+    {
         warn("File is OK\n");
-    mw_finish(rc);
+        printNBodyCtx(&ctx);
+        printHistogramParams(&ctx.histogramParams);
+    }
+
+    destroyNBodyCtx(&ctx);
+    destroyNBodyState(&st);
+
+    return rc;
 }
 
 /* Takes parsed json and run the simulation, using outFileName for
  * output. */
-void runNBodySimulation(json_object* obj,            /* The main configuration */
-                        const FitParams* fitParams,  /* For server's arguments */
-                        const NBodyFlags* nbf)       /* Misc. parameters to control output */
+int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to control output */
 {
-    NBodyCtx ctx  = EMPTY_CTX;
+    NBodyCtx ctx  = EMPTY_NBODYCTX;
     NBodyState st = EMPTY_STATE;
-    HistogramParams histParams;
 
     real chisq;
     double ts = 0.0, te = 0.0;
-    int rc = 0;
-
-    rc |= nbodyGetParamsFromJSON(&ctx, &histParams, obj);
-    if (rc && !nbf->verifyOnly)   /* Fail right away, unless we are diagnosing file problems */
-        fail("Failed to read input parameters file\n");
-
-    rc |= setCtxConsts(&ctx, fitParams, nbf->setSeed);
 
     if (nbf->verifyOnly)
-        verifyFile(&ctx, &histParams, rc);
+        return verifyFile(nbf);
 
-    if (rc)
-        fail("Failed to read input parameters file\n");
+    if (resolveCheckpoint(nbf->checkpointFileName))
+        return warn1("Failed to resolve checkpoint\n");
+
+    if (setupRun(&ctx, &st, nbf))
+        return warn1("Failed to setup run\n");
 
     nbodySetCtxFromFlags(&ctx, nbf);
-
-  #if BOINC_APPLICATION
-    if (resolveCheckpoint(&ctx))
-        fail("Failed to resolve checkpoint\n");
-  #endif /* BOINC_APPLICATION */
-
-    if (initOutput(&ctx))
-        fail("Failed to open output files\n");
-
-    if (setupRun(&ctx, &st))
-        fail("Failed to setup run\n");
+    if (initOutput(&ctx, nbf))
+        return warn1("Failed to open output files\n");
 
     if (nbf->printTiming)     /* Time the body of the calculation */
         ts = mwGetTime();
@@ -269,10 +195,12 @@ void runNBodySimulation(json_object* obj,            /* The main configuration *
     }
 
     /* Get the likelihood */
-    chisq = nbodyChisq(&ctx, &st, &histParams);
+    chisq = nbodyChisq(&ctx, &st, nbf, &ctx.histogramParams);
     if (isnan(chisq))
         warn("Failed to calculate chisq\n");
 
     endRun(&ctx, &st, chisq);
+
+    return 0;
 }
 

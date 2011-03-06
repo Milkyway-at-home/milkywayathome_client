@@ -24,13 +24,20 @@
 # We also have to link as C++ when we do this because of BOINC.
 
 function(correct_static_link client_bin_name partially_dynamic)
+  if(NOT MSVC AND (CMAKE_BUILD_TYPE STREQUAL Release) AND NOT APPLE)
+    set(strip_exe -s)
+  endif()
   if(NOT APPLE)
     #CHECKME: What about Windows?
     set(client_static_link_flags "-static-libgcc -static-libstdc++")
 
+    if(NOT WIN32)
+      set(client_static_link_flags "-static ${client_static_link_flags}")
+    endif()
+
     if(NOT partially_dynamic)
       # For dynamically linking to libOpenCL.so and dependencies
-      set(client_static_link_flags "-static ${client_static_link_flags}")
+      set(client_static_link_flags "${client_static_link_flags}")
     endif()
 
     if(UNIX AND NOT partially_dynamic)
@@ -43,13 +50,14 @@ function(correct_static_link client_bin_name partially_dynamic)
                             PROPERTIES
                               LINKER_LANGUAGE CXX
                               LINK_SEARCH_END_STATIC ON
-                              LINK_FLAGS ${client_static_link_flags})
+                              LINK_FLAGS "${client_static_link_flags} ${strip_exe}")
   else()
     set_target_properties(${client_bin_name}
                             PROPERTIES
                               LINKER_LANGUAGE CXX
-                              LINK_FLAGS "${osx_link_flags}"
-                              LINK_SEARCH_END_STATIC ON)
+                              LINK_SEARCH_END_STATIC ON
+                              LINK_FLAGS "${osx_link_flags} ${strip_exe}")
+
   endif()
 endfunction()
 
@@ -99,6 +107,10 @@ macro(maybe_static)
   if(STATIC_EVERYTHING)
     if(NOT APPLE)
       set(LIBM_USE_STATIC 1)
+    endif()
+
+    if(NOT WIN32)
+      set(LUA_USE_STATIC 1)
     endif()
 
     set(POPT_USE_STATIC 1)

@@ -151,10 +151,11 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         streamIntegrals.push_back(double1(0.0));
 
     /* Counting down seems to save 2 registers, but is slightly slower */
-    il_while (i.x() < float1((float) ap->convolve))
+    il_whileloop
     {
         double2 rPt = rPts[i.xy()];
         i.x() = i.x() + float1(1.0);
+        il_breakc(i.x() >= float1((float) ap->convolve));
 
         double1 x = mad(rPt.x(), lTrig.x(), double1(ap->m_sun_r0));
         double1 y = rPt.x() * lTrig.y();
@@ -254,7 +255,8 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
 
 std::string createSeparationKernel(const AstronomyParameters* ap,
                                    const IntegralArea* ia,
-                                   const StreamConstants* sc)
+                                   const StreamConstants* sc,
+                                   CALuint device)
 {
     unsigned int numRegSgDx;
     unsigned int sgdxSize;
@@ -279,7 +281,7 @@ std::string createSeparationKernel(const AstronomyParameters* ap,
 
     code << "dcl_input_position_interp(linear_noperspective) vWinCoord0.xy__\n";
 
-    Source::begin();
+    Source::begin(device);
 
     input2d<double2> rPts(0);
     input1d<double2> rConsts(1);
@@ -306,9 +308,10 @@ std::string createSeparationKernel(const AstronomyParameters* ap,
 
 char* separationKernelSrc(const AstronomyParameters* ap,
                           const IntegralArea* ia,
-                          const StreamConstants* sc)
+                          const StreamConstants* sc,
+                          CALuint device)
 {
-    std::string src = createSeparationKernel(ap, ia, sc);
+    std::string src = createSeparationKernel(ap, ia, sc, device);
     return strdup(src.c_str());
  }
 

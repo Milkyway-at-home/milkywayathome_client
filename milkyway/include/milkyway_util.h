@@ -27,19 +27,20 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "mw_boinc_util.h"
 #include "dSFMT.h"
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
 #ifndef _WIN32
   #include <unistd.h>
   #include <fcntl.h>
 #else
   #define _CRT_SECURE_NO_WARNINGS
   #define WIN32_LEAN_AND_MEAN
-  #define VC_EXTRALEAN
+  #define VC_EXTRALEAN 
+  #include <malloc.h>
   #include <windows.h>
 #endif /* _WIN32 */
-
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 
 #include <popt.h>
 
@@ -92,12 +93,35 @@ void* mwCallocA(size_t count, size_t size);
 #ifndef _WIN32
   #define mwFreeA free
 #else
-  #define mwFreeA _aligned_free
+  #if defined(_MSC_VER) || defined(__MINGW64__)
+    #define mwFreeA _aligned_free
+  #elif defined(__MINGW32__)
+    #define mwFreeA __mingw_aligned_free
+  #endif
 #endif /* _WIN32 */
 
+
 #define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)
-#define fail(msg, ...) { fprintf(stderr, msg, ##__VA_ARGS__);  \
-                         mw_finish(EXIT_FAILURE); }
+
+/* Have value of 1 so we can do a return warn("blah blah\n") */
+#define warn1(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__), 1
+
+/* Controlled, but lazy failure */
+#define fail(msg, ...)                              \
+    {                                               \
+        fprintf(stderr, msg, ##__VA_ARGS__);        \
+        mw_finish(EXIT_FAILURE);                    \
+    }
+
+/* Failure related to a known code limitation */
+#define mw_panic(msg, ...)                                              \
+    {                                                                   \
+        fprintf(stderr, "PANIC: in function '%s' %s(%d): " msg,         \
+                FUNC_NAME, __FILE__, __LINE__, ##__VA_ARGS__);          \
+        mw_finish(EXIT_FAILURE);                                        \
+    }
+
+
 
 /* If one of these options is null, use the default. */
 #define stringDefault(s, d) ((s) = (s) ? (s) : strdup((d)))
@@ -126,15 +150,27 @@ void _mw_time_prefix(char* buf, size_t bufSize);
 #ifndef _WIN32
   #define mw_win_perror perror
 #else
-  #define mw_win_perror(str) fprintf(stderr, str ": %d\n", GetLastError());
+  #define mw_win_perror(str) fprintf(stderr, str ": %ld\n", GetLastError());
 #endif
 
 /* mw_xrandom: generate floating-point random number */
 #define mwXrandom(st, xl, xh) ((real) (xl) + (real) ((xh) - (xl)) * dsfmt_genrand_open_open((st)))
 #define mwUnitRandom(st) mwXrandom(st, -1.0, 1.0)
 
+mwvector mwRandomVector(dsfmt_t* dsfmtState);
 
-const char** mwFixArgv(int argc, const char** argv);
+size_t mwDivRoundup(size_t a, size_t b);
+
+/* Check for a timesteps etc. which will actually finish. */
+/* FIXME: this shouldn't need ALWAYS_INLINE */
+ALWAYS_INLINE
+inline int mwCheckNormalPosNum(real n)
+{
+    return !isnormal(n) || n <= 0.0 || n <= REAL_EPSILON;
+}
+
+
+const char** mwFixArgv(unsigned long argc, const char** argv);
 
 /* Loop through all arguments and report bad arguments */
 int mwReadArguments(poptContext context);
@@ -153,6 +189,7 @@ void mwSetConsistentx87FPUPrecision();
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif /* _MILKYWAY_UTIL_H_ */
 

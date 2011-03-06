@@ -27,8 +27,7 @@ find_path(JSON_C_INCLUDE_DIR "json/json.h")
 find_library(JSON_C_LIBRARY json)
 
 if(JSON_C_USE_STATIC)
-  set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${__old_cmake_find_lib_suffixes})
 endif()
 
 

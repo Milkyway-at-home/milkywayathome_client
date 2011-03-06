@@ -30,6 +30,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <boinc/diagnostics.h>
 #endif
 
+#include <sys/stat.h>
+
 
 #if BOINC_APPLICATION
 
@@ -53,6 +55,16 @@ char* mwReadFileResolved(const char* filename)
     return mwFreadFile(mwOpenResolved(filename, "rb"), filename);
 }
 
+int mw_resolve_filename(const char* filename, char* buf, size_t bufSize)
+{
+    return boinc_resolve_filename(filename, buf, bufSize);
+}
+
+int mw_file_exists(const char* file)
+{
+    return boinc_file_exists(file);
+}
+
 #else
 
 FILE* mwOpenResolved(const char* filename, const char* mode)
@@ -63,6 +75,21 @@ FILE* mwOpenResolved(const char* filename, const char* mode)
 char* mwReadFileResolved(const char* filename)
 {
     return mwReadFile(filename);
+}
+
+int mw_resolve_filename(const char* filename, char* buf, size_t bufSize)
+{
+    int rc;
+
+    assert(buf != filename);
+    rc = snprintf(buf, bufSize, "%s", filename);
+    return (rc == -1) || ((size_t) rc == bufSize);
+}
+
+int mw_file_exists(const char* file)
+{
+    struct stat statBuf;
+    return !stat(file, &statBuf);
 }
 
 #endif /* BOINC_APPLICATION */

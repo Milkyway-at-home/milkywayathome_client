@@ -21,10 +21,9 @@
 cmake_minimum_required (VERSION 2.6)
 project(milkyway_nbody)
 
-set(nbody_MAJOR_VERSION 0)
-set(nbody_MINOR_VERSION 22)
-set(nbody_VERSION "${nbody_MAJOR_VERSION}.${nbody_MINOR_VERSION}")
-
+set(nbody_VERSION_MAJOR 0)
+set(nbody_VERSION_MINOR 30)
+set(nbody_VERSION "${nbody_VERSION_MAJOR}.${nbody_VERSION_MINOR}")
 
 include(MaybeDlCheck)
 include(StaticBOINC)
@@ -38,15 +37,12 @@ include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 
 maybe_static()
 
+find_package(BOINC)
+
 if(BOINC_APPLICATION)
-  find_package(BOINC)
   include_directories(${BOINC_INCLUDE_DIR})
 endif()
 
-find_package(JsonC REQUIRED)
-include_directories(${JSON_C_INCLUDE_DIR})
-
-check_function_exists(asprintf HAS_ASPRINTF)
 check_sse2()
 
 if(NEED_POPT_DEPS)
@@ -54,8 +50,10 @@ if(NEED_POPT_DEPS)
   find_package(Libintl REQUIRED)
   find_package(Libiconv REQUIRED)
 endif()
+
 find_package(Popt REQUIRED)
 include_directories(${POPT_INCLUDE_DIR})
+
 
 set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 include_directories(${NBODY_INCLUDE_DIR})
@@ -72,12 +70,29 @@ mark_as_advanced(NBODY_CRLIBM)
 
 option(NBODY_OPENMP "Use OpenMP" OFF)
 
+
+set(LUA_USE_STATIC 1)
+
+if(LUA_USE_STATIC)
+  set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
+endif()
+
+find_package(Lua51 REQUIRED)
+
+if(LUA_USE_STATIC)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${__old_cmake_find_lib_suffixes})
+endif()
+
+
 find_package(OpenMP)
+
+include_directories(${LUA_INCLUDE_DIR})
 
 if(OPENMP_FOUND AND NBODY_OPENMP)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-elseif(NOT OPENMP_POUND AND NBODY_OPENMP)
+elseif(NOT OPENMP_FOUND AND NBODY_OPENMP)
   message(WARNING "Did not find OpenMP support, but was enabled. Continuing without OpenMP")
 endif()
 
@@ -134,59 +149,90 @@ endif()
 
 set(NBODY_SRC_DIR "${PROJECT_SOURCE_DIR}/src/")
 set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include/")
-set(nbody_lib_src ${NBODY_SRC_DIR}/chisq.c
-                  ${NBODY_SRC_DIR}/grav.c
-                  ${NBODY_SRC_DIR}/io.c
-                  ${NBODY_SRC_DIR}/load.c
-                  ${NBODY_SRC_DIR}/orbitintegrator.c
-                  ${NBODY_SRC_DIR}/accelerations.c
+set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
+                  ${NBODY_SRC_DIR}/nbody_grav.c
+                  ${NBODY_SRC_DIR}/nbody_io.c
+                  ${NBODY_SRC_DIR}/nbody_types.c
+                  ${NBODY_SRC_DIR}/nbody_tree.c
+                  ${NBODY_SRC_DIR}/nbody_orbit_integrator.c
+                  ${NBODY_SRC_DIR}/nbody_potential.c
                   ${NBODY_SRC_DIR}/nbody_simulation.c
-                  ${NBODY_SRC_DIR}/json_params.c
-                  ${NBODY_SRC_DIR}/nbody_params.c
-                  ${NBODY_SRC_DIR}/calc_params.c
-                  ${NBODY_SRC_DIR}/plummer.c
+                  ${NBODY_SRC_DIR}/nbody_check_params.c
+                  ${NBODY_SRC_DIR}/nbody_plummer.c
                   ${NBODY_SRC_DIR}/nbody_util.c
-                  ${NBODY_SRC_DIR}/nbody_step.c)
+                  ${NBODY_SRC_DIR}/nbody_step.c
+                  ${NBODY_SRC_DIR}/nbody_show.c
+                  ${NBODY_SRC_DIR}/nbody_checkpoint.c)
 
-set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/chisq.h
-                      ${NBODY_INCLUDE_DIR}/grav.h
+
+set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
+                      ${NBODY_INCLUDE_DIR}/nbody_grav.h
                       ${NBODY_INCLUDE_DIR}/nbody_config.h.in
-                      ${NBODY_INCLUDE_DIR}/io.h
-                      ${NBODY_INCLUDE_DIR}/load.h
-                      ${NBODY_INCLUDE_DIR}/orbitintegrator.h
-                      ${NBODY_INCLUDE_DIR}/accelerations.h
-                      ${NBODY_INCLUDE_DIR}/json_params.h
-                      ${NBODY_INCLUDE_DIR}/nbody_params.h
-                      ${NBODY_INCLUDE_DIR}/calc_params.h
-                      ${NBODY_INCLUDE_DIR}/plummer.h
+                      ${NBODY_INCLUDE_DIR}/nbody_io.h
+                      ${NBODY_INCLUDE_DIR}/nbody_tree.h
+                      ${NBODY_INCLUDE_DIR}/nbody_orbit_integrator.h
+                      ${NBODY_INCLUDE_DIR}/nbody_potential.h
+                      ${NBODY_INCLUDE_DIR}/nbody_check_params.h
+                      ${NBODY_INCLUDE_DIR}/nbody_plummer.h
                       ${NBODY_INCLUDE_DIR}/nbody.h
+                      ${NBODY_INCLUDE_DIR}/nbody_show.h
                       ${NBODY_INCLUDE_DIR}/nbody_priv.h
                       ${NBODY_INCLUDE_DIR}/nbody_types.h
-                      ${NBODY_INCLUDE_DIR}/nbody_util.h)
+                      ${NBODY_INCLUDE_DIR}/nbody_util.h
+                      ${NBODY_INCLUDE_DIR}/nbody_checkpoint.h)
 
-if(BOINC_RELEASE OR NOT HAS_ASPRINTF)
-  set(DEFAULT_NBODY_SHOW OFF)
-else()
-  set(DEFAULT_NBODY_SHOW ON)
-endif()
+set(nbody_lua_src ${NBODY_SRC_DIR}/milkyway_lua_marshal.c
+                  ${NBODY_SRC_DIR}/milkyway_lua_math.c
+                  ${NBODY_SRC_DIR}/milkyway_lua_vector.c
+                  ${NBODY_SRC_DIR}/milkyway_lua_dsfmt.c
 
-option(NBODY_SHOW "Build show type functions" ${DEFAULT_NBODY_SHOW})
-
-if(NBODY_SHOW)
-  #Uses asprintf extension
-  list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/show.c)
-  list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/show.h)
-endif()
+                  ${NBODY_SRC_DIR}/nbody_lua.c
+                  ${NBODY_SRC_DIR}/nbody_lua_models.c
 
 
-if(BOINC_APPLICATION)
-  list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/checkpoint.c)
-  list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/checkpoint.h)
-endif()
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_types.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_type_marshal.c
+
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_nbodyctx.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_body.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_halo.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_disk.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_spherical.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_potential.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_initial_conditions.c
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_histogram_params.c)
+
+
+set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/milkyway_lua.h
+                      ${NBODY_INCLUDE_DIR}/milkyway_lua_marshal.h
+                      ${NBODY_INCLUDE_DIR}/milkyway_lua_math.h
+                      ${NBODY_INCLUDE_DIR}/milkyway_lua_vector.h
+                      ${NBODY_INCLUDE_DIR}/milkyway_lua_dsfmt.h
+
+
+                      ${NBODY_INCLUDE_DIR}/nbody_lua.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_models.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_types.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_type_marshal.h
+
+
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_nbodyctx.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_body.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_halo.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_disk.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_spherical.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_potential.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_initial_conditions.h
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_histogram_params.h)
+
+
+
+add_library(nbody_lua STATIC ${nbody_lua_src} ${nbody_lua_headers})
+set_target_properties(nbody_lua PROPERTIES
+                        COMPILE_DEFINITIONS "NBODY_LUA_TYPES_COMPILATION")
+
 
 #TODO: The tests dSFMT has
-
-
 
 # Require SSE and SSE2 (needed for doubles) This avoids a host of
 # issues with x87, ranging from different intermediate precisions on
@@ -214,7 +260,7 @@ endif()
 
 set(CMAKE_C_FLAGS "-std=gnu99 ${SSE2_FLAGS} ${CMAKE_C_FLAGS}")
 
-list(APPEND nbody_link_libs ${JSON_C_LIBRARY} ${OS_SPECIFIC_LIBS} milkyway ${LIBM_LIBRARY})
+set(nbody_link_libs )
 
 if(NBODY_OPENCL)
   set(c_kernel_dir "${CMAKE_CURRENT_SOURCE_DIR}/ckernels")
@@ -226,7 +272,6 @@ if(NBODY_OPENCL)
 
   list(APPEND nbody_link_libs ${OPENCL_LIBRARIES})
 endif()
-
 
 add_library(nbody_simulation STATIC ${nbody_lib_src} ${nbody_lib_headers})
 
@@ -243,12 +288,20 @@ else()
   endif()
 endif()
 
-set(nbody_libs nbody_simulation)
-
-set(exe_link_libs ${LIBM_LIBRARY}
-                  ${POPT_LIBRARY}
-                  ${nbody_libs}
+set(exe_link_libs ${POPT_LIBRARY}
+                  nbody_simulation
+                  nbody_lua
+                  nbody_simulation
+                  milkyway
+                  ${LUA_LIBRARIES}
+                  ${LIBM_LIBRARY}
+                  ${OS_SPECIFIC_LIBS}
                   ${nbody_link_libs})
+                  # FIXME: nbody_simulation and nbody_lua depend on linking to each other
+                                     # coordinate conversion functions in nbody_util.c
+
+
+
 
 if(NBODY_CRLIBM)
   include_directories(${CRLIBM_INCLUDE_DIR})
@@ -282,13 +335,12 @@ if(BOINC_RELEASE_NAME)
 else()
   set(nbody_bin_name "milkyway_nbody")
 endif()
-
-
 configure_file (
   "${NBODY_INCLUDE_DIR}/nbody_config.h.in"
   "${PROJECT_INCLUDE_DIR}/nbody_config.h")
 
 add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
+
 milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} 0 ${STATIC_EVERYTHING} "${exe_link_libs}")
 #add_subdirectory(tests EXCLUDE_FROM_ALL)
 

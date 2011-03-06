@@ -25,7 +25,7 @@ include(SpecialLibs)
 include(CheckFunctionExists)
 include(CheckIncludeFiles)
 
-
+check_function_exists(asprintf HAVE_ASPRINTF)
 check_include_files(tgmath.h HAVE_TGMATH_H)
 if(NOT DOUBLEPREC AND NOT HAVE_TGMATH_H)
   message(FATAL_ERROR "Float requires tgmath.h")
@@ -92,6 +92,11 @@ set(mw_cl_lib_headers include/milkyway_cl.h
                       include/mw_cl_device.h
                       include/mw_cl_program.h
                       include/mw_cl_setup.h)
+
+if(WIN32 AND NOT HAVE_ASPRINTF)
+    list(APPEND mw_lib_src src/mw_asprintf.c)
+    list(APPEND mw_lib_headers include/mw_asprintf.h)
+endif()
 
 if(MILKYWAY_OPENCL)
   list(APPEND mw_lib_src ${mw_cl_lib_src})

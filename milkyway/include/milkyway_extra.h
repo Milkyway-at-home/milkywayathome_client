@@ -37,6 +37,7 @@ typedef short int mwbool;
   #define access _access
   #define snprintf _snprintf
   #define getcwd _getcwd
+  #define stat _stat
   #define strncasecmp(a, b, n) _strnicmp(a, b, n)
   #define strcasecmp(a, b) _stricmp(a, b)
 #endif /* _MSC_VER */
@@ -56,7 +57,6 @@ typedef short int mwbool;
     #define LLU "%lu"
   #endif
 #endif /* _WIN32 */
-
 
 #endif /* _MILKYWAY_EXTRA_H_ */
 

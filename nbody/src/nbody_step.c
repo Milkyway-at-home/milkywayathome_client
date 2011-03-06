@@ -25,11 +25,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif /* _OPENMP */
 
 #include "nbody_step.h"
-#include "grav.h"
+#include "nbody_grav.h"
 
 /* Advance velocity by half a timestep */
 ALWAYS_INLINE
-static inline void bodyAdvanceVel(bodyptr p, const mwvector a, const real dt)
+static inline void bodyAdvanceVel(body* p, const mwvector a, const real dt)
 {
     mwvector dv;
 
@@ -39,7 +39,7 @@ static inline void bodyAdvanceVel(bodyptr p, const mwvector a, const real dt)
 
 
 /* Advance body position by 1 timestep */
-static inline void bodyAdvancePos(bodyptr p, const real dt)
+static inline void bodyAdvancePos(body* p, const real dt)
 {
     mwvector dr;
 

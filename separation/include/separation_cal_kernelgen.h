@@ -31,7 +31,8 @@ extern "C" {
 
 char* separationKernelSrc(const AstronomyParameters* ap,
                           const IntegralArea* ia,
-                          const StreamConstants* sc);
+                          const StreamConstants* sc,
+                          CALuint device);
 
 #ifdef __cplusplus
 }
@@ -41,7 +42,9 @@ char* separationKernelSrc(const AstronomyParameters* ap,
 #ifdef __cplusplus
 std::string createSeparationKernel(const AstronomyParameters* ap,
                                    const IntegralArea* ia,
-                                   const StreamConstants* sc);
+                                   const StreamConstants* sc,
+                                   CALuint device);
+
 #endif
 
 

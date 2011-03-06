@@ -64,6 +64,10 @@ char* mwReadFileResolved(const char* filename);
 FILE* mwOpenResolved(const char* filename, const char* mode);
 int mwRename(const char* oldf, const char* newf);
 
+int mw_resolve_filename(const char* filename, char* buf, size_t bufSize);
+int mw_file_exists(const char* file);
+
+
 
 #ifdef __cplusplus
 }

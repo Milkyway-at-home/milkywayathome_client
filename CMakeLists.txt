@@ -138,7 +138,7 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING
       "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
       FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(MW_ENABLE_DEBUG ON)
@@ -296,9 +296,9 @@ if(NOT SEPARATION AND NOT NBODY)
 endif()
 
 if(WIN32)
-  add_definitions(-D_WIN32_IE=0x0501)
   add_definitions(-D_WINDOWS)
-  add_definitions(-D_WIN32_WINDOWS=0x0501)
+  add_definitions(-D_WIN32_WINDOWS=0x0500)
+  add_definitions(-DWIN32_WINNT=0x0500)
 endif()
 
 # locally installed headers, and generated *_config.h

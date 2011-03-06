@@ -18,12 +18,13 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "milkyway_util.h"
-#include "mw_boinc_util.h"
-
 #ifndef _WIN32
   #include <sys/time.h>
-#endif
+#else
+  #include <stdlib.h>
+  #include <malloc.h>
+  #include <windows.h>
+#endif /* _WIN32 */
 
 #include <time.h>
 #include <errno.h>
@@ -32,6 +33,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef __SSE__
   #include <xmmintrin.h>
 #endif /* __SSE__ */
+
+
+#include "milkyway_util.h"
+#include "mw_boinc_util.h"
 
 void* mwCalloc(size_t count, size_t size)
 {
@@ -101,6 +106,10 @@ void* mwMallocA(size_t size)
 
 #else
 
+#if defined(__MINGW32__) && !defined(__MINGW64__)
+  #define _aligned_malloc __mingw_aligned_malloc
+#endif
+
 void* mwMallocA(size_t size)
 {
     void* p;
@@ -121,6 +130,14 @@ void* mwRealloc(void* ptr, size_t size)
     return mem;
 }
 
+static char* fcloseVerbose(FILE* f, const char* err)
+{
+    if (fclose(f))
+        perror(err);
+
+    return NULL;
+}
+
 char* mwFreadFile(FILE* f, const char* filename)
 {
     long fsize;
@@ -133,21 +150,29 @@ char* mwFreadFile(FILE* f, const char* filename)
         return NULL;
     }
 
-    fseek(f, 0, SEEK_END);  /* Find size of file */
+     /* Find size of file */
+    if (fseek(f, 0, SEEK_END) == -1)
+        return fcloseVerbose(f, "Seeking file end");
+
     fsize = ftell(f);
+    if (fsize == -1)
+        return fcloseVerbose(f, "Getting file size");
 
     fseek(f, 0, SEEK_SET);
 
-    buf = mwCalloc(fsize + 1, sizeof(char));
-    readSize = fread(buf, sizeof(char), fsize, f);
+    buf = (char*) mwMalloc((fsize + 1) * sizeof(char));
+    buf[fsize] = '\0';
 
-    if (readSize != fsize)
+    readSize = fread(buf, sizeof(char), fsize, f);
+    if (readSize != (size_t) fsize)
     {
-        free(buf);
         warn("Failed to read file '%s': Expected to read %ld, but got "ZU"\n",
              filename, fsize, readSize);
-        return NULL;
+        free(buf);
+        buf = NULL;
     }
+
+    fcloseVerbose(f, "Closing read file");
 
     return buf;
 }
@@ -173,7 +198,7 @@ int mwWriteFile(const char* filename, const char* str)
     if (rc == EOF)
         warn("Error writing file '%s'\n", filename);
 
-    fclose(f);
+    fcloseVerbose(f, "Closing write file");
     return rc;
 }
 
@@ -350,7 +375,7 @@ int mwReadArguments(poptContext context)
 
 /* Horrible function to find the -p -np arguments, and take anything
  * after them and move them to the front */
-const char** mwFixArgv(int argc, const char** argv)
+const char** mwFixArgv(unsigned long argc, const char** argv)
 {
     const char** argvCopy;
     const char** p;
@@ -410,5 +435,23 @@ const char** mwFixArgv(int argc, const char** argv)
         argvCopy[i++] = argv[j++];
 
     return argvCopy;
+}
+
+size_t mwDivRoundup(size_t a, size_t b)
+{
+    return (a % b != 0) ? a / b + 1 : a / b;
+}
+
+mwvector mwRandomVector(dsfmt_t* dsfmtState)
+{
+    /* pick from unit cube */
+    mwvector vec;
+
+    X(vec) = mwUnitRandom(dsfmtState);
+    Y(vec) = mwUnitRandom(dsfmtState);
+    Z(vec) = mwUnitRandom(dsfmtState);
+    W(vec) = 0.0;
+
+    return vec;
 }
 
