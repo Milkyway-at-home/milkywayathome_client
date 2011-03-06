@@ -22,10 +22,10 @@
 macro(print_libs)
   message("   BOINC Libraries    ${BOINC_LIBRARIES}")
   message("   Crlibm Library     ${CRLIBM_LIBRARY}")
-  message("   json-c Library     ${JSON_C_LIBRARY}")
   message("   POPT Library       ${POPT_LIBRARY}")
-  message("   OpenCL Libraries   ${OPENCL_LIBRARIES}")
   message("   Lua Libraries      ${LUA_LIBRARIES}")
+  message("   OpenCL Libraries   ${OPENCL_LIBRARIES}")
+  message("   CAL Libraries      ${ATICALCL_LIBRARY}")
 endmacro()
 
 macro(print_build_options)

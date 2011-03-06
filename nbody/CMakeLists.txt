@@ -50,6 +50,7 @@ if(NEED_POPT_DEPS)
   find_package(Libintl REQUIRED)
   find_package(Libiconv REQUIRED)
 endif()
+
 find_package(Popt REQUIRED)
 include_directories(${POPT_INCLUDE_DIR})
 
@@ -69,7 +70,21 @@ mark_as_advanced(NBODY_CRLIBM)
 
 option(NBODY_OPENMP "Use OpenMP" OFF)
 
+
+set(LUA_USE_STATIC 1)
+
+if(LUA_USE_STATIC)
+  set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
+endif()
+
 find_package(Lua51 REQUIRED)
+
+if(LUA_USE_STATIC)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${__old_cmake_find_lib_suffixes})
+endif()
+
+
 find_package(OpenMP)
 
 include_directories(${LUA_INCLUDE_DIR})
@@ -77,7 +92,7 @@ include_directories(${LUA_INCLUDE_DIR})
 if(OPENMP_FOUND AND NBODY_OPENMP)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-elseif(NOT OPENMP_POUND AND NBODY_OPENMP)
+elseif(NOT OPENMP_FOUND AND NBODY_OPENMP)
   message(WARNING "Did not find OpenMP support, but was enabled. Continuing without OpenMP")
 endif()
 
@@ -310,13 +325,12 @@ if(BOINC_RELEASE_NAME)
 else()
   set(nbody_bin_name "milkyway_nbody")
 endif()
-
-
 configure_file (
   "${NBODY_INCLUDE_DIR}/nbody_config.h.in"
   "${PROJECT_INCLUDE_DIR}/nbody_config.h")
 
 add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
+
 milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} 0 ${STATIC_EVERYTHING} "${exe_link_libs}")
 #add_subdirectory(tests EXCLUDE_FROM_ALL)
 

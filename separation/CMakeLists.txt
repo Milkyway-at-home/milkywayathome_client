@@ -48,7 +48,7 @@ if(SYSTEM_IS_PPC)
   set(CMAKE_C_FLAGS "-maltivec -mfused-madd -mhard-float -mabi=altivec ${CMAKE_C_FLAGS}")
 endif()
 
-option(SEPARATION_CAL "Use CAL++ voodoo" ON)
+option(SEPARATION_CAL "Use CAL++ voodoo" OFF)
 
 option(SEPARATION_INLINE_KERNEL
        "Inline the CL kernel" OFF)

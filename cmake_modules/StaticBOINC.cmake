@@ -101,6 +101,10 @@ macro(maybe_static)
       set(LIBM_USE_STATIC 1)
     endif()
 
+    if(NOT WIN32)
+      set(LUA_USE_STATIC 1)
+    endif()
+
     set(POPT_USE_STATIC 1)
     set(JSON_C_USE_STATIC 1)
     set(LIBINTL_USE_STATIC 1)
