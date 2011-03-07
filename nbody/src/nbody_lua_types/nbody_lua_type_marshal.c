@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_types.h"
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
+#include "nbody_show.h"
 
 static int totalBodies(lua_State* luaSt, int nModels)
 {
@@ -32,23 +33,38 @@ static int totalBodies(lua_State* luaSt, int nModels)
     top = lua_gettop(luaSt);
     for (i = top; i > top - nModels; --i)
     {
-        luaL_checktype(luaSt, i, LUA_TTABLE);
+        if (expectTable(luaSt, i))
+        {
+            warn("Error reading body table\n");
+            return 0;
+        }
+
         n += luaL_getn(luaSt, i);
     }
 
     return n;
 }
 
-static void readBodyArray(lua_State* luaSt, int table, body* bodies, int n)
+static int readBodyArray(lua_State* luaSt, int table, body* bodies, int n)
 {
     int i;
+    body* b;
 
     for (i = 0; i < n; ++i)
     {
         lua_rawgeti(luaSt, table, i + 1);
-        bodies[i] = *checkBody(luaSt, -1);
+        b = expectBody(luaSt, lua_gettop(luaSt));
+        if (!b)
+        {
+            warn("Error reading body %d\n", i);
+            break;
+        }
+
+        bodies[i] = *b;
         lua_pop(luaSt, 1);
     }
+
+    return i != n; /* Didn't read all bodies successfully */
 }
 
 /* Read returned table of model components. Pops the n arguments */
@@ -72,11 +88,19 @@ body* readReturnedModels(lua_State* luaSt, int nModels, unsigned int* nOut)
         top = lua_gettop(luaSt);
         n = luaL_getn(luaSt, top);
 
-        readBodyArray(luaSt, top, bodies, n);
-        bodies = &bodies[n];
+        if (readBodyArray(luaSt, top, bodies, n))
+        {
+            warn("Error reading body array %d\n", i);
+            free(allBodies);
+            allBodies = NULL;
+            totalN = 0;
+            break;
+        }
 
-        lua_pop(luaSt, 1);  /* No more body table */
+        bodies = &bodies[n];
     }
+
+    lua_pop(luaSt, nModels);  /* No more body tables */
 
     if (nOut)
         *nOut = (unsigned int) totalN;

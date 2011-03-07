@@ -26,9 +26,26 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
 
+body* toBody(lua_State* luaSt, int idx)
+{
+    return (body*) mw_tonamedudata(luaSt, idx, BODY_TYPE);
+}
+
 body* checkBody(lua_State* luaSt, int idx)
 {
     return (body*) mw_checknamedudata(luaSt, idx, BODY_TYPE);
+}
+
+/* Like checkBody() except for non-Lua called C functions */
+body* expectBody(lua_State* luaSt, int idx)
+{
+    body* b;
+
+    b = toBody(luaSt, idx);
+    if (!b)
+        mw_lua_typecheck(luaSt, idx, LUA_TUSERDATA, BODY_TYPE);
+
+    return b;
 }
 
 int pushBody(lua_State* luaSt, const body* b)

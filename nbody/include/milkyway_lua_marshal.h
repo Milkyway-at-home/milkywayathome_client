@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _LUA_TYPE_MARSHAL_H_
-#define _LUA_TYPE_MARSHAL_H_
+#ifndef _MILKYWAY_LUA_MARSHAL_H_
+#define _MILKYWAY_LUA_MARSHAL_H_
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -120,11 +120,14 @@ void mw_lua_pushluaclosure(lua_State* luaSt, int ref);
 
 void* mw_checknamedudata(lua_State* luaSt, int idx, const char* typeName);
 void* mw_tonamedudata(lua_State* luaSt, int ud, const char* typeName);
+int mw_lua_typecheck(lua_State* luaSt, int idx, int expectedType, const char* typeName);
 
 void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int table);
 
 void pushRealArray(lua_State* luaSt, const real* arr, int n);
 real* popRealArray(lua_State* luaSt, int* outN);
 
-#endif /* _LUA_TYPE_MARSHAL_H_ */
+int expectTable(lua_State* luaSt, int idx);
+
+#endif /* _MILKYWAY_LUA_MARSHAL_H_ */
 

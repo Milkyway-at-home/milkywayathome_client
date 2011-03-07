@@ -28,6 +28,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_types.h"
 #include "milkyway_util.h"
 
+
+
 /* Check if global function name exists.  Error if it doesn't or if
    it's the wrong type. If OK, puts on stack and returns its index. */
 int mw_lua_checkglobalfunction(lua_State* luaSt, const char* name)
@@ -106,6 +108,24 @@ void* mw_checknamedudata(lua_State* luaSt, int idx, const char* typeName)
     return v;
 }
 
+static int mw_lua_equal_userdata_name(lua_State* luaSt, int idx, const char* typeName)
+{
+    int equal;
+
+    lua_getfield(luaSt, LUA_REGISTRYINDEX, typeName);  /* get correct metatable */
+    if (!lua_getmetatable(luaSt, idx))
+    {
+        warn("Failed to get metatable from index %d\n", idx);
+        lua_pop(luaSt, 1);
+        return 0;
+    }
+
+    equal = lua_rawequal(luaSt, -1, -2);
+    lua_pop(luaSt, 2);
+
+    return equal;
+}
+
 /* Something between lua_touserdata and lua_checkudata. Checks that it's userdata and
  * of the correct name. Return NULL on failure, rather than erroring. */
 void* mw_tonamedudata(lua_State* luaSt, int ud, const char* typeName)
@@ -116,18 +136,39 @@ void* mw_tonamedudata(lua_State* luaSt, int ud, const char* typeName)
     if (!p)
         return NULL;
 
-    lua_getfield(luaSt, LUA_REGISTRYINDEX, typeName);  /* get correct metatable */
-    if (!lua_getmetatable(luaSt, ud))
+    return mw_lua_equal_userdata_name(luaSt, ud, typeName) ? p : NULL;
+}
+
+/* The luaL_check* family of functions are intended for use for Lua
+ * stuff written in the C api, not really getting results from
+ * lua. luaL_error() and co. abort the whole program, which are caught
+ * when running things with lua_pcall, but not what we want for
+ * getting what we want with within C side stuff.
+
+ This is for printing an error when manually checking values returned
+ to C stuff. Returns 1 if type problem, 0 otherwise and prints
+ appropriate error */
+int mw_lua_typecheck(lua_State* luaSt, int idx, int expectedType, const char* typeName)
+{
+    int type;
+
+    type = lua_type(luaSt, idx);
+    if (   type == expectedType  /* got userdata of wrong type */
+        && type == LUA_TUSERDATA
+        && !mw_lua_equal_userdata_name(luaSt, idx, typeName))
     {
-        lua_pop(luaSt, 1);
-        return NULL;
+        /* TODO: Get typename of wong userdata type, which is kind of the point of checking for this */
+        return warn1("Type error: userdata %s expected, got other userdata\n", typeName);
     }
-
-    if (!lua_rawequal(luaSt, -1, -2))
-        p = NULL;
-
-    lua_pop(luaSt, 2);
-    return p;
+    else if (type != expectedType) /* Anything else is wrong. */
+    {
+        return warn1("Type error: userdata %s expected, got %s\n",
+                     typeName, lua_typename(luaSt, type));
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 int oneTableArgument(lua_State* luaSt, const MWNamedArg* argTable)
@@ -566,6 +607,11 @@ real* popRealArray(lua_State* luaSt, int* outN)
         *outN = n;
 
     return arr;
+}
+
+int expectTable(lua_State* luaSt, int idx)
+{
+    return mw_lua_typecheck(luaSt, idx, LUA_TTABLE, NULL);
 }
 
 
