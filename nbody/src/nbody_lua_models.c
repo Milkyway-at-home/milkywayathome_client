@@ -208,9 +208,9 @@ static int luaCalculateEps2(lua_State* luaSt)
 
 void registerModelUtilityFunctions(lua_State* luaSt)
 {
-    registerFunction(luaSt, luaPlummerTimestepIntegral, "plummerTimestepIntegral");
-    registerFunction(luaSt, luaReverseOrbit, "reverseOrbit");
-    registerFunction(luaSt, luaCalculateEps2, "calculateEps2");
-    registerFunction(luaSt, luaCalculateTimestep, "calculateTimestep");
+    lua_register(luaSt, "plummerTimestepIntegral", luaPlummerTimestepIntegral);
+    lua_register(luaSt, "reverseOrbit", luaReverseOrbit);
+    lua_register(luaSt, "calculateEps2", luaCalculateEps2);
+    lua_register(luaSt, "calculateTimestep", luaCalculateTimestep);
 }
 

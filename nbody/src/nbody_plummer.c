@@ -183,7 +183,7 @@ int generatePlummer(lua_State* luaSt)
 
 void registerGeneratePlummer(lua_State* luaSt)
 {
-    registerFunction(luaSt, generatePlummer, "generatePlummer");
+    lua_register(luaSt, "generatePlummer", generatePlummer);
 }
 
 

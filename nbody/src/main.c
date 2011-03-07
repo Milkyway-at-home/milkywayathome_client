@@ -29,6 +29,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <omp.h>
 #endif /* _OPENMP */
 
+#if NBODY_CRLIBM
+  #include <crlibm.h>
+#endif /* NBODY_CRLIBM */
+
 
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
 #define DEFAULT_HISTOGRAM_FILE  "histogram"

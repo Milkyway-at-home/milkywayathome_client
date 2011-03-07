@@ -254,13 +254,13 @@ int registerStruct(lua_State* luaSt,
 {
     int metatable, methods;
 
-    /* create methods table, & add it to the table of globals */
-    luaL_openlib(luaSt, name, regMethods, 0);
+    /* create methods table, and add it to the table of globals */
+    luaL_register(luaSt, name, regMethods);
     methods = lua_gettop(luaSt);
 
-    /* create metatable for NBodyCtx, & add it to the registry */
+    /* create metatable for type, and add it to the registry */
     luaL_newmetatable(luaSt, name);
-    luaL_openlib(luaSt, 0, regMetaMethods, 0);  /* fill metatable */
+    luaL_register(luaSt, NULL, regMetaMethods);  /* fill metatable */
     metatable = lua_gettop(luaSt);
 
     lua_pushliteral(luaSt, "__metatable");
@@ -504,7 +504,6 @@ int getCClosure2(lua_State* luaSt, void* v)
 
 int setCClosure(lua_State* luaSt, void* v)
 {
-    warn("Setting closure\n");
     *(lua_CFunction*) v = mw_lua_checkcclosure(luaSt, 3);
     return 0;
 }
@@ -524,7 +523,6 @@ int setLuaClosure(lua_State* luaSt, void* _ref)
 
 int getLuaClosure(lua_State* luaSt, void* ref)
 {
-    warn("Getting lua closure\n");
     lua_rawgeti(luaSt, LUA_REGISTRYINDEX, *(int*) ref);
 
     return 1;
@@ -570,9 +568,4 @@ real* popRealArray(lua_State* luaSt, int* outN)
     return arr;
 }
 
-void registerFunction(lua_State* luaSt, lua_CFunction f, const char* name)
-{
-    lua_pushcfunction(luaSt, f);
-    lua_setglobal(luaSt, name);
-}
 

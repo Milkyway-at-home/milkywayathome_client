@@ -41,7 +41,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
                                                                         \
      static void register_lua_##cname(lua_State* luaSt)                 \
      {                                                                  \
-         registerFunction(luaSt, lua_##cname, #name);                   \
+         lua_register(luaSt, #name, lua_##cname);                       \
      }
 
 #define DEFINE_LUA_MW_FUNC_2(cname, name)                               \
@@ -65,7 +65,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
                                                                         \
      static void register_lua_##cname(lua_State* luaSt)                 \
      {                                                                  \
-         registerFunction(luaSt, lua_##cname, #name);                   \
+         lua_register(luaSt, #name, lua_##cname);                       \
      }
 
 DEFINE_LUA_MW_FUNC_1(sqr, sqr)
