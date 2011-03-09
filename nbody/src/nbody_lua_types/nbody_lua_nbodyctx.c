@@ -82,6 +82,16 @@ NBodyCtx* checkNBodyCtx(lua_State* luaSt, int idx)
     return (NBodyCtx*) mw_checknamedudata(luaSt, idx, NBODYCTX_TYPE);
 }
 
+NBodyCtx* toNBodyCtx(lua_State* luaSt, int idx)
+{
+    return (NBodyCtx*) mw_tonamedudata(luaSt, idx, NBODYCTX_TYPE);
+}
+
+NBodyCtx* expectNBodyCtx(lua_State* luaSt, int idx)
+{
+    return (NBodyCtx*) expectType(luaSt, idx, NBODYCTX_TYPE);
+}
+
 int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* p)
 {
     return pushType(luaSt, NBODYCTX_TYPE, sizeof(NBodyCtx), (void*) p);

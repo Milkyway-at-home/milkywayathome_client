@@ -37,6 +37,16 @@ int pushHistogramParams(lua_State* luaSt, const HistogramParams* p)
     return pushType(luaSt, HISTOGRAM_PARAMS_TYPE, sizeof(HistogramParams), (void*) p);
 }
 
+HistogramParams* toHistogramParams(lua_State* luaSt, int idx)
+{
+    return (HistogramParams*) mw_tonamedudata(luaSt, idx, HISTOGRAM_PARAMS_TYPE);
+}
+
+HistogramParams* expectHistogramParams(lua_State* luaSt, int idx)
+{
+    return (HistogramParams*) expectType(luaSt, idx, HISTOGRAM_PARAMS_TYPE);
+}
+
 #define histogramPhi 128.79
 #define histogramTheta 54.39
 #define histogramPsi 90.70

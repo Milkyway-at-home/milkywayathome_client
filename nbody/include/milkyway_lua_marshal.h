@@ -35,6 +35,7 @@ typedef char* (*StructShowFunc) (void*);
 typedef const char* (*EnumShowFunc) (int);
 typedef void* (*LuaTypeCheckFunc) (lua_State* luaSt, int idx);
 
+
 /* member info for get and set handlers */
 typedef const struct
 {
@@ -136,6 +137,7 @@ int expectTable(lua_State* luaSt, int idx);
 
 int toStringType(lua_State* luaSt, StructShowFunc show, LuaTypeCheckFunc checker);
 int pushType(lua_State* luaSt, const char* typeName, size_t typeSize, void* p);
+void* expectType(lua_State* luaSt, int idx, const char* typeName);
 
 #endif /* _MILKYWAY_LUA_MARSHAL_H_ */
 

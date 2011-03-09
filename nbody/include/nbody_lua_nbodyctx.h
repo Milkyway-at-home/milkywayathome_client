@@ -29,6 +29,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* ctx);
 NBodyCtx* checkNBodyCtx(lua_State* luaSt, int idx);
+NBodyCtx* toNBodyCtx(lua_State* luaSt, int idx);
+NBodyCtx* expectNBodyCtx(lua_State* luaSt, int idx);
 int registerNBodyCtx(lua_State* luaSt);
 
 #endif /* _NBODY_LUA_NBODYCTX_H_ */

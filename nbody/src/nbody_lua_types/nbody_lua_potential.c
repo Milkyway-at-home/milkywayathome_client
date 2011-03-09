@@ -47,13 +47,7 @@ Potential* toPotential(lua_State* luaSt, int idx)
 
 Potential* expectPotential(lua_State* luaSt, int idx)
 {
-    Potential* p;
-
-    p = toPotential(luaSt, idx);
-    if (!p)
-        mw_lua_typecheck(luaSt, idx, LUA_TUSERDATA, POTENTIAL_TYPE);
-
-    return p;
+    return (Potential*) expectType(luaSt, idx, POTENTIAL_TYPE);
 }
 
 static int createPotential(lua_State* luaSt)

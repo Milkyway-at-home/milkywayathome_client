@@ -28,6 +28,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 
 HistogramParams* checkHistogramParams(lua_State* luaSt, int idx);
+HistogramParams* toHistogramParams(lua_State* luaSt, int idx);
+HistogramParams* expectHistogramParams(lua_State* luaSt, int idx);
+
 int pushHistogramParams(lua_State* luaSt, const HistogramParams* d);
 int registerHistogramParams(lua_State* luaSt);
 

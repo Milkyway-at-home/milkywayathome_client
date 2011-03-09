@@ -657,3 +657,15 @@ int pushType(lua_State* luaSt, const char* typeName, size_t typeSize, void* p)
     return 0;
 }
 
+/* toType* functions with a bonus error message */
+void* expectType(lua_State* luaSt, int idx, const char* typeName)
+{
+    void* p;
+
+    p = mw_tonamedudata(luaSt, idx, typeName);
+    if (!p)
+        mw_lua_typecheck(luaSt, idx, LUA_TUSERDATA, typeName);
+
+    return p;
+}
+

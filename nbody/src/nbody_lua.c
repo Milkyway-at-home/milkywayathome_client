@@ -133,6 +133,8 @@ static lua_State* openNBodyLuaState(const NBodyFlags* nbf)
 
 static int evaluateContext(lua_State* luaSt, NBodyCtx* ctx)
 {
+    NBodyCtx* tmp;
+
     getNBodyCtxFunc(luaSt);
     if (lua_pcall(luaSt, 0, 1, 0))
     {
@@ -140,7 +142,14 @@ static int evaluateContext(lua_State* luaSt, NBodyCtx* ctx)
         return 1;
     }
 
-    *ctx = *checkNBodyCtx(luaSt, lua_gettop(luaSt));
+    tmp = expectNBodyCtx(luaSt, lua_gettop(luaSt));
+    if (!tmp)
+    {
+        lua_pop(luaSt, 1);
+        return 1;
+    }
+
+    *ctx = *tmp;
     lua_pop(luaSt, 1);
 
     return contextSanityCheck(ctx);
@@ -172,6 +181,9 @@ static int evaluatePotential(lua_State* luaSt, Potential* pot)
 
 static int evaluateHistogram(lua_State* luaSt, HistogramParams* hp)
 {
+    HistogramParams* tmp;
+    int rc = 0;
+
     getHistogramFunc(luaSt);
     if (lua_pcall(luaSt, 0, 1, 0))
     {
@@ -179,10 +191,13 @@ static int evaluateHistogram(lua_State* luaSt, HistogramParams* hp)
         return 1;
     }
 
-    *hp = *checkHistogramParams(luaSt, lua_gettop(luaSt));
+    tmp = expectHistogramParams(luaSt, lua_gettop(luaSt));
+    if (!tmp)
+        rc = 1;
+    else
+        *hp = *tmp;
     lua_pop(luaSt, 1);
-
-    return 0;
+    return rc;
 }
 
 static body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, const Potential* pot, unsigned int* n)
@@ -209,7 +224,6 @@ static body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, const Potenti
 static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* st)
 {
     body* bodies;
-    unsigned int n;
 
     if (evaluateContext(luaSt, ctx))
         return 1;
@@ -220,11 +234,9 @@ static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* s
     if (evaluateHistogram(luaSt, &ctx->histogramParams))
         return 1;
 
-    bodies = evaluateBodies(luaSt, ctx, &ctx->pot, &n);
+    bodies = evaluateBodies(luaSt, ctx, &ctx->pot, &ctx->nbody);
     if (!bodies)
         return 1;
-
-    ctx->nbody = n;
 
     st->tree.rsize = ctx->treeRSize;
     st->tnow = 0.0;
