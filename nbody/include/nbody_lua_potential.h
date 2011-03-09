@@ -28,6 +28,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 
 Potential* checkPotential(lua_State* luaSt, int idx);
+Potential* expectPotential(lua_State* luaSt, int idx);
+Potential* toPotential(lua_State* luaSt, int idx);
+
 int pushPotential(lua_State* luaSt, const Potential* d);
 int registerPotential(lua_State* luaSt);
 

@@ -98,8 +98,8 @@ static inline void gravsub(const NBodyCtx* ctx, ForceEvalState* fest, const node
  * incest.
  */
 static inline mwbool treescan(const NBodyCtx* ctx,
-                            ForceEvalState* fest,
-                            node* q)
+                              ForceEvalState* fest,
+                              node* q)
 {
     mwbool skipself = FALSE;
 

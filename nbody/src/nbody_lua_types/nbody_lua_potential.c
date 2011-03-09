@@ -54,6 +54,22 @@ int pushPotential(lua_State* luaSt, const Potential* p)
     return 0;
 }
 
+Potential* toPotential(lua_State* luaSt, int idx)
+{
+    return (Potential*) mw_tonamedudata(luaSt, idx, POTENTIAL_TYPE);
+}
+
+Potential* expectPotential(lua_State* luaSt, int idx)
+{
+    Potential* p;
+
+    p = toPotential(luaSt, idx);
+    if (!p)
+        mw_lua_typecheck(luaSt, idx, LUA_TUSERDATA, POTENTIAL_TYPE);
+
+    return p;
+}
+
 static int createPotential(lua_State* luaSt)
 {
     Potential p = EMPTY_POTENTIAL;

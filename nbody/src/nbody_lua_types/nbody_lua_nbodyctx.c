@@ -73,7 +73,6 @@ static int getCriterionT(lua_State* luaSt, void* v)
 
 static int setCriterionT(lua_State* luaSt, void* v)
 {
-    warn("Set criterion\n");
     *(criterion_t*) v = checkEnum(luaSt, criterionOptions, -1);
     return 0;
 }
@@ -87,7 +86,7 @@ int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* ctx)
 {
     NBodyCtx* lctx;
 
-    lctx = (NBodyCtx*)lua_newuserdata(luaSt, sizeof(NBodyCtx));
+    lctx = (NBodyCtx*) lua_newuserdata(luaSt, sizeof(NBodyCtx));
 
     luaL_getmetatable(luaSt, NBODY_CTX);
     lua_setmetatable(luaSt, -2);

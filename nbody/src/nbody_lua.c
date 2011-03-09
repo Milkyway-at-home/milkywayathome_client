@@ -148,6 +148,8 @@ static int evaluateContext(lua_State* luaSt, NBodyCtx* ctx)
 
 static int evaluatePotential(lua_State* luaSt, Potential* pot)
 {
+    Potential* tmp;
+
     getNBodyPotentialFunc(luaSt);
     if (lua_pcall(luaSt, 0, 1, 0))
     {
@@ -155,7 +157,14 @@ static int evaluatePotential(lua_State* luaSt, Potential* pot)
         return 1;
     }
 
-    *pot = *checkPotential(luaSt, lua_gettop(luaSt));
+    tmp = expectPotential(luaSt, lua_gettop(luaSt));
+    if (!tmp)
+    {
+        lua_pop(luaSt, 1);
+        return 1;
+    }
+
+    *pot = *tmp;
     lua_pop(luaSt, 1);
 
     return potentialSanityCheck(pot);
