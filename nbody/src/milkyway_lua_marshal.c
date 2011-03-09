@@ -569,7 +569,7 @@ int getLuaClosure(lua_State* luaSt, void* ref)
     return 1;
 }
 
-void pushRealArray(lua_State* luaSt, const real* arr, int n)
+int pushRealArray(lua_State* luaSt, const real* arr, int n)
 {
     int i, table;
 
@@ -581,6 +581,8 @@ void pushRealArray(lua_State* luaSt, const real* arr, int n)
         lua_pushnumber(luaSt, (lua_Number) arr[i]);
         lua_rawseti(luaSt, table, i + 1);
     }
+
+    return 0;
 }
 
 real* popRealArray(lua_State* luaSt, int* outN)
@@ -614,4 +616,44 @@ int expectTable(lua_State* luaSt, int idx)
     return mw_lua_typecheck(luaSt, idx, LUA_TTABLE, NULL);
 }
 
+/* Create a function for __tostring metamethods from show* functions */
+int toStringType(lua_State* luaSt, StructShowFunc show, LuaTypeCheckFunc checker)
+{
+    void* p;
+    char* str;
+
+    p = checker(luaSt, 1);
+    assert(p);
+    str = show(p);
+    lua_pushstring(luaSt, str);
+    free(str);
+
+    return 1;
+}
+
+int pushType(lua_State* luaSt, const char* typeName, size_t typeSize, void* p)
+{
+    void* lp;
+
+    lp = lua_newuserdata(luaSt, typeSize);
+    if (!lp)
+    {
+        warn("Creating userdata '%s' failed\n", typeName);
+        return 1;
+    }
+
+    luaL_getmetatable(luaSt, typeName);
+    lua_setmetatable(luaSt, -2);
+
+#if 0
+    /* Give this object a new function environment; for installing
+     * arbitrary lua functions into a type */
+    lua_newtable(luaSt);
+    lua_setfenv(luaSt, -2);
+#endif
+
+    memcpy(lp, p, typeSize);
+
+    return 0;
+}
 

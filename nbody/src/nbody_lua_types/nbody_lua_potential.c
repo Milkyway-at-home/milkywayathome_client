@@ -37,21 +37,7 @@ Potential* checkPotential(lua_State* luaSt, int idx)
 
 int pushPotential(lua_State* luaSt, const Potential* p)
 {
-    Potential* lp;
-
-    lp = (Potential*) lua_newuserdata(luaSt, sizeof(Potential));
-    if (!lp)
-    {
-        warn("Creating Potential userdata failed\n");
-        return 1;
-    }
-
-    luaL_getmetatable(luaSt, POTENTIAL_TYPE);
-    lua_setmetatable(luaSt, -2);
-
-    *lp = *p;
-
-    return 0;
+    return pushType(luaSt, POTENTIAL_TYPE, sizeof(Potential), (void*) p);
 }
 
 Potential* toPotential(lua_State* luaSt, int idx)
@@ -111,15 +97,7 @@ static int createPotential(lua_State* luaSt)
 
 static int toStringPotential(lua_State* luaSt)
 {
-    Potential* p;
-    char* str;
-
-    p = checkPotential(luaSt, 1);
-    str = showPotential(p);
-    lua_pushstring(luaSt, str);
-    free(str);
-
-    return 1;
+    return toStringType(luaSt, (StructShowFunc) showPotential, (LuaTypeCheckFunc) checkPotential);
 }
 
 static const luaL_reg metaMethodsPotential[] =

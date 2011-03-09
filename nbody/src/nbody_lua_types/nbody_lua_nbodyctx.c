@@ -79,21 +79,12 @@ static int setCriterionT(lua_State* luaSt, void* v)
 
 NBodyCtx* checkNBodyCtx(lua_State* luaSt, int idx)
 {
-    return (NBodyCtx*) mw_checknamedudata(luaSt, idx, NBODY_CTX);
+    return (NBodyCtx*) mw_checknamedudata(luaSt, idx, NBODYCTX_TYPE);
 }
 
-int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* ctx)
+int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* p)
 {
-    NBodyCtx* lctx;
-
-    lctx = (NBodyCtx*) lua_newuserdata(luaSt, sizeof(NBodyCtx));
-
-    luaL_getmetatable(luaSt, NBODY_CTX);
-    lua_setmetatable(luaSt, -2);
-
-    *lctx = *ctx;
-
-    return 0;
+    return pushType(luaSt, NBODYCTX_TYPE, sizeof(NBodyCtx), (void*) p);
 }
 
 static int createNBodyCtx(lua_State* luaSt)
@@ -143,15 +134,7 @@ static int createNBodyCtx(lua_State* luaSt)
 
 static int toStringNBodyCtx(lua_State* luaSt)
 {
-    NBodyCtx* ctx;
-    char* str;
-
-    ctx = checkNBodyCtx(luaSt, 1);
-    str = showNBodyCtx(ctx);
-    lua_pushstring(luaSt, str);
-    free(str);
-
-    return 1;
+    return toStringType(luaSt, (StructShowFunc) showNBodyCtx, (LuaTypeCheckFunc) checkNBodyCtx);
 }
 
 static const luaL_reg metaMethodsNBodyCtx[] =
@@ -199,7 +182,7 @@ static const Xet_reg_pre settersNBodyCtx[] =
 int registerNBodyCtx(lua_State* luaSt)
 {
     return registerStruct(luaSt,
-                          NBODY_CTX,
+                          NBODYCTX_TYPE,
                           gettersNBodyCtx,
                           settersNBodyCtx,
                           metaMethodsNBodyCtx,

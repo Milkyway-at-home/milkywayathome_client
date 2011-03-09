@@ -32,23 +32,9 @@ Spherical* checkSpherical(lua_State* luaSt, int idx)
     return (Spherical*) mw_checknamedudata(luaSt, idx, SPHERICAL_TYPE);
 }
 
-int pushSpherical(lua_State* luaSt, const Spherical* d)
+int pushSpherical(lua_State* luaSt, const Spherical* p)
 {
-    Spherical* ld;
-
-    ld = (Spherical*) lua_newuserdata(luaSt, sizeof(Spherical));
-    if (!ld)
-    {
-        warn("Creating Spherical userdata failed\n");
-        return 1;
-    }
-
-    luaL_getmetatable(luaSt, SPHERICAL_TYPE);
-    lua_setmetatable(luaSt, -2);
-
-    *ld = *d;
-
-    return 0;
+    return pushType(luaSt, SPHERICAL_TYPE, sizeof(Spherical), (void*) p);
 }
 
 static const MWEnumAssociation sphericalOptions[] =
@@ -80,15 +66,7 @@ int getSphericalT(lua_State* luaSt, void* v)
 
 static int toStringSpherical(lua_State* luaSt)
 {
-    Spherical* d;
-    char* str;
-
-    d = checkSpherical(luaSt, 1);
-    str = showSpherical(d);
-    lua_pushstring(luaSt, str);
-    free(str);
-
-    return 1;
+    return toStringType(luaSt, (StructShowFunc) showSpherical, (LuaTypeCheckFunc) checkSpherical);
 }
 
 int getSpherical(lua_State* luaSt, void* v)

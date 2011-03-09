@@ -32,23 +32,9 @@ HistogramParams* checkHistogramParams(lua_State* luaSt, int idx)
     return (HistogramParams*) mw_checknamedudata(luaSt, idx, HISTOGRAM_PARAMS_TYPE);
 }
 
-int pushHistogramParams(lua_State* luaSt, const HistogramParams* hp)
+int pushHistogramParams(lua_State* luaSt, const HistogramParams* p)
 {
-    HistogramParams* lhp;
-
-    lhp = (HistogramParams*) lua_newuserdata(luaSt, sizeof(HistogramParams));
-    if (!lhp)
-    {
-        warn("Creating HistogramParams userdata failed\n");
-        return 1;
-    }
-
-    luaL_getmetatable(luaSt, HISTOGRAM_PARAMS_TYPE);
-    lua_setmetatable(luaSt, -2);
-
-    *lhp = *hp;
-
-    return 0;
+    return pushType(luaSt, HISTOGRAM_PARAMS_TYPE, sizeof(HistogramParams), (void*) p);
 }
 
 #define histogramPhi 128.79
@@ -107,15 +93,7 @@ static int createHistogramParams(lua_State* luaSt)
 
 static int toStringHistogramParams(lua_State* luaSt)
 {
-    HistogramParams* d;
-    char* str;
-
-    d = checkHistogramParams(luaSt, 1);
-    str = showHistogramParams(d);
-    lua_pushstring(luaSt, str);
-    free(str);
-
-    return 1;
+    return toStringType(luaSt, (StructShowFunc) showHistogramParams, (LuaTypeCheckFunc) checkHistogramParams);
 }
 
 int getHistogramParams(lua_State* luaSt, void* v)

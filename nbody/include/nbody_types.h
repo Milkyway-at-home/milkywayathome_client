@@ -411,7 +411,7 @@ typedef struct NBODY_ALIGN
     FILE* outfile;            /* file for snapshot output */
 } NBodyCtx;
 
-#define NBODY_CTX "NBodyCtx"
+#define NBODYCTX_TYPE "NBodyCtx"
 
 
 /* Note: 'type' should first field for all types. */

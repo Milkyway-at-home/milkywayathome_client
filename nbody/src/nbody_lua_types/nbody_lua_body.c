@@ -48,23 +48,9 @@ body* expectBody(lua_State* luaSt, int idx)
     return b;
 }
 
-int pushBody(lua_State* luaSt, const body* b)
+int pushBody(lua_State* luaSt, const body* p)
 {
-    body* lb;
-
-    lb = (body*) lua_newuserdata(luaSt, sizeof(body));
-    if (!lb)
-    {
-        warn("Creating Body userdata failed\n");
-        return 1;
-    }
-
-    luaL_getmetatable(luaSt, BODY_TYPE);
-    lua_setmetatable(luaSt, -2);
-
-    *lb = *b;
-
-    return 0;
+    return pushType(luaSt, BODY_TYPE, sizeof(body), (void*) p);
 }
 
 static const body _emptyBody = EMPTY_BODY;
@@ -126,15 +112,7 @@ static int setBodyIgnore(lua_State* luaSt, void* v)
 
 static int toStringBody(lua_State* luaSt)
 {
-    body* b;
-    char* str;
-
-    b = checkBody(luaSt, 1);
-    str = showBody(b);
-    lua_pushstring(luaSt, str);
-    free(str);
-
-    return 1;
+    return toStringType(luaSt, (StructShowFunc) showBody, (LuaTypeCheckFunc) checkBody);
 }
 
 static const luaL_reg metaMethodsBody[] =

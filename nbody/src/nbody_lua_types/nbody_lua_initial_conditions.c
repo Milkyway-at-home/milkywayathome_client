@@ -35,23 +35,10 @@ InitialConditions* checkInitialConditions(lua_State* luaSt, int idx)
     return (InitialConditions*) mw_checknamedudata(luaSt, idx, INITIAL_CONDITIONS_TYPE);
 }
 
-void pushInitialConditions(lua_State* luaSt, const InitialConditions* ic)
+int pushInitialConditions(lua_State* luaSt, const InitialConditions* p)
 {
-    InitialConditions* lic;
-
-    lic = (InitialConditions*) lua_newuserdata(luaSt, sizeof(InitialConditions));
-    if (!lic)
-    {
-        warn("Creating InitialConditions userdata failed\n");
-        return;
-    }
-
-    luaL_getmetatable(luaSt, INITIAL_CONDITIONS_TYPE);
-    lua_setmetatable(luaSt, -2);
-
-    *lic = *ic;
+    return pushType(luaSt, INITIAL_CONDITIONS_TYPE, sizeof(InitialConditions), (void*) p);
 }
-
 
 /* Arguments: InitialConditions.create(NBodyCtx, position, velocity, [useGalacticCoordinates, useRadians])
    or named arguments, e.g. InitialConditions.create{ context = ctx,
@@ -71,7 +58,7 @@ static int createInitialConditions(lua_State* luaSt)
 
     static const MWNamedArg argTable[] =
         {
-            { "context",                LUA_TUSERDATA, NBODY_CTX,     TRUE,  &ctx,                   },
+            { "context",                LUA_TUSERDATA, NBODYCTX_TYPE, TRUE,  &ctx,                   },
             { "position",               LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &x                      },
             { "velocity",               LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &v                      },
             { "useGalacticCoordinates", LUA_TBOOLEAN,  NULL,          FALSE, &useGalacticCoordinates },
@@ -118,15 +105,7 @@ static int createInitialConditions(lua_State* luaSt)
 
 static int toStringInitialConditions(lua_State* luaSt)
 {
-    InitialConditions* ic;
-    char* str;
-
-    ic = checkInitialConditions(luaSt, 1);
-    str = showInitialConditions(ic);
-    lua_pushstring(luaSt, str);
-    free(str);
-
-    return 1;
+    return toStringType(luaSt, (StructShowFunc) showInitialConditions, (LuaTypeCheckFunc) checkInitialConditions);
 }
 
 static const luaL_reg metaMethodsInitialConditions[] =

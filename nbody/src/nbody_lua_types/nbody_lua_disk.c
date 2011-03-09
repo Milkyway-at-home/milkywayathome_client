@@ -32,23 +32,9 @@ Disk* checkDisk(lua_State* luaSt, int idx)
     return (Disk*) mw_checknamedudata(luaSt, idx, DISK_TYPE);
 }
 
-int pushDisk(lua_State* luaSt, const Disk* d)
+int pushDisk(lua_State* luaSt, const Disk* p)
 {
-    Disk* ld;
-
-    ld = (Disk*) lua_newuserdata(luaSt, sizeof(Disk));
-    if (!ld)
-    {
-        warn("Creating Disk userdata failed\n");
-        return 1;
-    }
-
-    luaL_getmetatable(luaSt, DISK_TYPE);
-    lua_setmetatable(luaSt, -2);
-
-    *ld = *d;
-
-    return 0;
+    return pushType(luaSt, DISK_TYPE, sizeof(Disk), (void*) p);
 }
 
 static const MWEnumAssociation diskOptions[] =
@@ -101,15 +87,7 @@ int getDiskT(lua_State* luaSt, void* v)
 
 static int toStringDisk(lua_State* luaSt)
 {
-    Disk* d;
-    char* str;
-
-    d = checkDisk(luaSt, 1);
-    str = showDisk(d);
-    lua_pushstring(luaSt, str);
-    free(str);
-
-    return 1;
+    return toStringType(luaSt, (StructShowFunc) showDisk, (LuaTypeCheckFunc) checkDisk);
 }
 
 int getDisk(lua_State* luaSt, void* v)

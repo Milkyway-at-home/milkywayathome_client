@@ -32,23 +32,9 @@ Halo* checkHalo(lua_State* luaSt, int idx)
     return (Halo*) mw_checknamedudata(luaSt, idx, HALO_TYPE);
 }
 
-int pushHalo(lua_State* luaSt, const Halo* h)
+int pushHalo(lua_State* luaSt, const Halo* p)
 {
-    Halo* lh;
-
-    lh = (Halo*)lua_newuserdata(luaSt, sizeof(Halo));
-    if (!lh)
-    {
-        warn("Creating Halo userdata failed\n");
-        return 1;
-    }
-
-    luaL_getmetatable(luaSt, HALO_TYPE);
-    lua_setmetatable(luaSt, -2);
-
-    *lh = *h;
-
-    return 0;
+    return pushType(luaSt, HALO_TYPE, sizeof(Halo), (void*) p);
 }
 
 static const MWEnumAssociation haloOptions[] =
@@ -118,15 +104,7 @@ static int createNFWHalo(lua_State* luaSt)
 
 static int toStringHalo(lua_State* luaSt)
 {
-    Halo* h;
-    char* str;
-
-    h = checkHalo(luaSt, 1);
-    str = showHalo(h);
-    lua_pushstring(luaSt, str);
-    free(str);
-
-    return 1;
+    return toStringType(luaSt, (StructShowFunc) showHalo, (LuaTypeCheckFunc) checkHalo);
 }
 
 int getHaloT(lua_State* luaSt, void* v)
