@@ -45,10 +45,10 @@ static int totalBodies(lua_State* luaSt, int nModels)
     return n;
 }
 
-static int readBodyArray(lua_State* luaSt, int table, body* bodies, int n)
+static int readBodyArray(lua_State* luaSt, int table, Body* bodies, int n)
 {
     int i;
-    body* b;
+    Body* b;
 
     for (i = 0; i < n; ++i)
     {
@@ -68,11 +68,11 @@ static int readBodyArray(lua_State* luaSt, int table, body* bodies, int n)
 }
 
 /* Read returned table of model components. Pops the n arguments */
-body* readReturnedModels(lua_State* luaSt, int nModels, unsigned int* nOut)
+Body* readReturnedModels(lua_State* luaSt, int nModels, unsigned int* nOut)
 {
     int i, n, totalN, top;
-    body* allBodies;
-    body* bodies;
+    Body* allBodies;
+    Body* bodies;
 
     totalN = totalBodies(luaSt, nModels);
     if (totalN == 0)
@@ -81,7 +81,7 @@ body* readReturnedModels(lua_State* luaSt, int nModels, unsigned int* nOut)
         return NULL;
     }
 
-    bodies = allBodies = (body*) mwMallocA(totalN * sizeof(body));
+    bodies = allBodies = (Body*) mwMallocA(totalN * sizeof(Body));
 
     for (i = 0; i < nModels; ++i)
     {

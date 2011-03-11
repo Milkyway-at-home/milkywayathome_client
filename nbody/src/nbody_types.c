@@ -39,10 +39,10 @@ int destroyNBodyCtx(NBodyCtx* ctx)
 
 static void freeTree(Tree* t)
 {
-    node* p;
-    node* tmp;
+    Node* p;
+    Node* tmp;
 
-    p = (node*) t->root;
+    p = (Node*) t->root;
     while (p != NULL)
     {
         if (isCell(p))
@@ -59,10 +59,10 @@ static void freeTree(Tree* t)
     t->cellused = 0;
 }
 
-static void freeFreeCells(node* freecell)
+static void freeFreeCells(Node* freecell)
 {
-    node* p;
-    node* tmp;
+    Node* p;
+    Node* tmp;
 
     p = freecell;
     while (p)

@@ -26,20 +26,20 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
 
-body* toBody(lua_State* luaSt, int idx)
+Body* toBody(lua_State* luaSt, int idx)
 {
-    return (body*) mw_tonamedudata(luaSt, idx, BODY_TYPE);
+    return (Body*) mw_tonamedudata(luaSt, idx, BODY_TYPE);
 }
 
-body* checkBody(lua_State* luaSt, int idx)
+Body* checkBody(lua_State* luaSt, int idx)
 {
-    return (body*) mw_checknamedudata(luaSt, idx, BODY_TYPE);
+    return (Body*) mw_checknamedudata(luaSt, idx, BODY_TYPE);
 }
 
 /* Like checkBody() except for non-Lua called C functions */
-body* expectBody(lua_State* luaSt, int idx)
+Body* expectBody(lua_State* luaSt, int idx)
 {
-    body* b;
+    Body* b;
 
     b = toBody(luaSt, idx);
     if (!b)
@@ -48,17 +48,18 @@ body* expectBody(lua_State* luaSt, int idx)
     return b;
 }
 
-int pushBody(lua_State* luaSt, const body* p)
+
+int pushBody(lua_State* luaSt, const Body* p)
 {
-    return pushType(luaSt, BODY_TYPE, sizeof(body), (void*) p);
+    return pushType(luaSt, BODY_TYPE, sizeof(Body), (void*) p);
 }
 
-static const body _emptyBody = EMPTY_BODY;
+static const Body _emptyBody = EMPTY_BODY;
 
 
 static int createBody(lua_State* luaSt)
 {
-    static body b = EMPTY_BODY;
+    static Body b = EMPTY_BODY;
     static mwvector* x = NULL;
     static mwvector* v = NULL;
     static mwbool ignore = FALSE;
@@ -129,19 +130,19 @@ static const luaL_reg methodsBody[] =
 
 static const Xet_reg_pre gettersBody[] =
 {
-    { "velocity", getVector,     offsetof(body, vel)           },
-    { "position", getVector,     offsetof(body, bodynode.pos)  },
-    { "mass",     getNumber,     offsetof(body, bodynode.mass) },
-    { "ignore",   getBodyIgnore, offsetof(body, bodynode.type) },
+    { "velocity", getVector,     offsetof(Body, vel)           },
+    { "position", getVector,     offsetof(Body, bodynode.pos)  },
+    { "mass",     getNumber,     offsetof(Body, bodynode.mass) },
+    { "ignore",   getBodyIgnore, offsetof(Body, bodynode.type) },
     { NULL, NULL, 0 }
 };
 
 static const Xet_reg_pre settersBody[] =
 {
-    { "velocity", setVector,     offsetof(body, vel)           },
-    { "position", setVector,     offsetof(body, bodynode.pos)  },
-    { "mass",     setNumber,     offsetof(body, bodynode.mass) },
-    { "ignore",   setBodyIgnore, offsetof(body, bodynode.type) },
+    { "velocity", setVector,     offsetof(Body, vel)           },
+    { "position", setVector,     offsetof(Body, bodynode.pos)  },
+    { "mass",     setNumber,     offsetof(Body, bodynode.mass) },
+    { "ignore",   setBodyIgnore, offsetof(Body, bodynode.type) },
     { NULL, NULL, 0 }
 };
 

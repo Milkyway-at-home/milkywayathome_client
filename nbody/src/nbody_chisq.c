@@ -121,7 +121,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
     mwvector lbr;
     unsigned int idx;
     unsigned int totalNum = 0;
-    body* p;
+    Body* p;
     unsigned int* histogram;
 
     real rphi = d2r(hp->phi);
@@ -135,7 +135,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
     const real costh  = mw_cos(rth);
     const real sinth  = mw_sin(rth);
 
-    const body* endp = st->bodytab + ctx->nbody;
+    const Body* endp = st->bodytab + ctx->nbody;
     histogram = (unsigned int*) mwCalloc(maxIdx, sizeof(unsigned int));
 
     for (p = st->bodytab; p < endp; ++p)

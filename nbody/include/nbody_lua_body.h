@@ -27,9 +27,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lua.h>
 #include "nbody_types.h"
 
-body* checkBody(lua_State* luaSt, int idx);
-body* expectBody(lua_State* luaSt, int idx);
-int pushBody(lua_State* luaSt, const body* b);
+Body* checkBody(lua_State* luaSt, int idx);
+Body* expectBody(lua_State* luaSt, int idx);
+int pushBody(lua_State* luaSt, const Body* b);
 int registerBody(lua_State* luaSt);
 
 #endif /* _NBODY_LUA_BODY_H_ */

@@ -128,7 +128,7 @@ static int createPlummerSphereTable(lua_State* luaSt,
 {
     unsigned int i;
     int table;
-    body b;
+    Body b;
     real r, velScale;
 
     velScale = mw_sqrt(mass / radiusScale);     /* and recip. speed scale */

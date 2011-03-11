@@ -44,9 +44,9 @@ static void out_2vectors(FILE* str, mwvector vec1, mwvector vec2)
 /* output: Print bodies */
 static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st)
 {
-    body* p;
+    Body* p;
     mwvector lbR;
-    const body* endp = st->bodytab + ctx->nbody;
+    const Body* endp = st->bodytab + ctx->nbody;
 
     for (p = st->bodytab; p < endp; p++)
     {
@@ -71,8 +71,8 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st)
 
 int outputBodyPositionBin(const NBodyCtx* ctx, const NBodyState* st)
 {
-    body* p;
-    const body* endp = st->bodytab + ctx->nbody;
+    Body* p;
+    const Body* endp = st->bodytab + ctx->nbody;
 
     for (p = st->bodytab; p < endp; p++)
         fwrite(&Pos(p), sizeof(mwvector), 1, ctx->outfile);

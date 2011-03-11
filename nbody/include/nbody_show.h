@@ -50,10 +50,10 @@ void printVector(const mwvector v);
 char* showHistogramParams(const HistogramParams*);
 void printHistogramParams(const HistogramParams*);
 
-char* showBody(const body* p);
-void printBody(const body* p);
+char* showBody(const Body* p);
+void printBody(const Body* p);
 
-void printBodies(const body* bs, unsigned int n);
+void printBodies(const Body* bs, unsigned int n);
 
 #endif /* _NBODY_SHOW_H_ */
 

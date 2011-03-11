@@ -88,7 +88,7 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
 
     if (writing)
     {
-        cp->cpFileSize = hdrSize + ctx->nbody * sizeof(body);
+        cp->cpFileSize = hdrSize + ctx->nbody * sizeof(Body);
         /* Make the file the right size in case it's a new file */
         if (ftruncate(cp->fd, cp->cpFileSize) < 0)
         {
@@ -277,7 +277,7 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
     READ_CTX(ctx, p);
     ctx->outfile = NULL; /* Clean up garbage pointer */
-    bodySize = ctx->nbody * sizeof(body);
+    bodySize = ctx->nbody * sizeof(Body);
 
     READ_REAL(st->tnow, p);
     READ_REAL(st->tree.rsize, p);
@@ -289,7 +289,7 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
     assert(cp->cpFileSize != 0);
     /* Make sure the file isn't lying about how many bodies there are */
-    supposedCheckpointSize = hdrSize + ctx->nbody * sizeof(body);
+    supposedCheckpointSize = hdrSize + ctx->nbody * sizeof(Body);
     if (supposedCheckpointSize != cp->cpFileSize)
     {
         return warn1("Expected checkpoint file size ("ZU") is incorrect for expected number of bodies "
@@ -326,7 +326,7 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     }
 
     /* Read the bodies */
-    st->bodytab = (body*) mwMallocA(bodySize);
+    st->bodytab = (Body*) mwMallocA(bodySize);
     memcpy(st->bodytab, p, bodySize);
     p += bodySize;
 
@@ -355,7 +355,7 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
    ctx           NBodyCtx sizeof(NBodyCtx)
    tnow          real     anything
    rsize         real     anything
-   bodytab       body*    anything   Array of bodies
+   bodytab       Body*    anything   Array of bodies
    ending        string   "end"      No null terminator
  */
 
@@ -367,7 +367,7 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
  */
 static inline void freezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHandle* cp)
 {
-    const size_t bodySize = sizeof(body) * ctx->nbody;
+    const size_t bodySize = sizeof(Body) * ctx->nbody;
     char* p = cp->mptr;
 
     /* -1 so we don't bother with the null terminator. It's slightly

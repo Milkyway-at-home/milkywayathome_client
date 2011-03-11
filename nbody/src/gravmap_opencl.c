@@ -86,7 +86,7 @@ static int createBuffers(CLInfo* ci,
      * for the cpu, in that it doesn't crash. */
     cm->root = clCreateBuffer(ci->clctx,
                               CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                              sizeof(node*),
+                              sizeof(Node*),
                               &st->tree.root,
                               &err);
     if (err != CL_SUCCESS)

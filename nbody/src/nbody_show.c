@@ -194,7 +194,7 @@ char* showDisk(const Disk* d)
     return buf;
 }
 
-char* showBody(const body* p)
+char* showBody(const Body* p)
 {
     char* buf;
     char* vel;
@@ -411,7 +411,7 @@ void printHistogramParams(const HistogramParams* hp)
     free(buf);
 }
 
-void printBody(const body* p)
+void printBody(const Body* p)
 {
     char* buf = showBody(p);
     puts(buf);
@@ -439,7 +439,7 @@ void printPotential(const Potential* p)
     free(buf);
 }
 
-void printBodies(const body* bs, unsigned int n)
+void printBodies(const Body* bs, unsigned int n)
 {
     unsigned int i;
 
