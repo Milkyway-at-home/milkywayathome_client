@@ -161,14 +161,8 @@ mwvector mwRandomVector(dsfmt_t* dsfmtState);
 
 size_t mwDivRoundup(size_t a, size_t b);
 
-/* Check for a timesteps etc. which will actually finish. */
-/* FIXME: this shouldn't need ALWAYS_INLINE */
-ALWAYS_INLINE
-inline int mwCheckNormalPosNum(real n)
-{
-    return !isnormal(n) || n <= 0.0 || n <= REAL_EPSILON;
-}
 
+int mwCheckNormalPosNum(real n);
 
 const char** mwFixArgv(unsigned long argc, const char** argv);
 

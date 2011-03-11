@@ -455,3 +455,9 @@ mwvector mwRandomVector(dsfmt_t* dsfmtState)
     return vec;
 }
 
+/* Check for a timesteps etc. which will actually finish. */
+int mwCheckNormalPosNum(real n)
+{
+    return !isnormal(n) || n <= 0.0 || n <= REAL_EPSILON;
+}
+
