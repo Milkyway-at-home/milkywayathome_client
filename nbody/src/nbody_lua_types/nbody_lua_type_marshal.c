@@ -98,9 +98,10 @@ Body* readReturnedModels(lua_State* luaSt, int nModels, unsigned int* nOut)
         }
 
         bodies = &bodies[n];
+        lua_pop(luaSt, 1);
     }
 
-    lua_pop(luaSt, nModels);  /* No more body tables */
+    lua_pop(luaSt, nModels - i);  /* No more body tables if error */
 
     if (nOut)
         *nOut = (unsigned int) totalN;
