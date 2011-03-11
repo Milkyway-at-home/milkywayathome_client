@@ -188,7 +188,7 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
 
     if (writing)
     {
-        cp->cpFileSize = hdrSize + ctx->nbody * sizeof(body);
+        cp->cpFileSize = hdrSize + ctx->nbody * sizeof(Body);
     }
     else
     {

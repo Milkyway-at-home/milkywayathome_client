@@ -82,9 +82,9 @@ static int luaPlummerTimestepIntegral(lua_State* luaSt)
     }
 
     /* Make sure the bounds / step are OK so that this integral will be sure to complete */
-    if (mwCheckNormalPosNumEps(smalla))
+    if (mwCheckNormalPosNum(smalla))
         return luaL_argerror(luaSt, 1, "Invalid small radius");
-    if (mwCheckNormalPosNumEps(biga))
+    if (mwCheckNormalPosNum(biga))
         return luaL_argerror(luaSt, 2, "Invalid big radius");
     if (mwCheckNormalPosNumEps(step))
         return luaL_argerror(luaSt, 4, "Invalid step argument");
