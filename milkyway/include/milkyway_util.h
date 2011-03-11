@@ -163,6 +163,7 @@ size_t mwDivRoundup(size_t a, size_t b);
 
 
 int mwCheckNormalPosNum(real n);
+int mwCheckNormalPosNumEps(real n);
 
 const char** mwFixArgv(unsigned long argc, const char** argv);
 

@@ -152,7 +152,7 @@ static int evaluateContext(lua_State* luaSt, NBodyCtx* ctx)
     *ctx = *tmp;
     lua_pop(luaSt, 1);
 
-    return contextSanityCheck(ctx);
+    return checkNBodyCtxConstants(ctx);
 }
 
 static int evaluatePotential(lua_State* luaSt, Potential* pot)
@@ -176,7 +176,7 @@ static int evaluatePotential(lua_State* luaSt, Potential* pot)
     *pot = *tmp;
     lua_pop(luaSt, 1);
 
-    return potentialSanityCheck(pot);
+    return checkPotentialConstants(pot);
 }
 
 static int evaluateHistogram(lua_State* luaSt, HistogramParams* hp)
@@ -224,7 +224,6 @@ static Body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, const Potenti
 static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* st)
 {
     Body* bodies;
-    unsigned int n;
 
     if (evaluateContext(luaSt, ctx))
         return 1;

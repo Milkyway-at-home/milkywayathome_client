@@ -82,11 +82,11 @@ static int luaPlummerTimestepIntegral(lua_State* luaSt)
     }
 
     /* Make sure the bounds / step are OK so that this integral will be sure to complete */
-    if (mwCheckNormalPosNum(smalla))
+    if (mwCheckNormalPosNumEps(smalla))
         return luaL_argerror(luaSt, 1, "Invalid small radius");
-    if (mwCheckNormalPosNum(biga))
+    if (mwCheckNormalPosNumEps(biga))
         return luaL_argerror(luaSt, 2, "Invalid big radius");
-    if (mwCheckNormalPosNum(step))
+    if (mwCheckNormalPosNumEps(step))
         return luaL_argerror(luaSt, 4, "Invalid step argument");
 
     encMass = plummerTimestepIntegral(smalla, biga, Md, step);

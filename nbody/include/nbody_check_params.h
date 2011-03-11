@@ -32,8 +32,7 @@ mwbool checkSphericalConstants(Spherical* s);
 mwbool checkDiskConstants(Disk* d);
 mwbool checkPotentialConstants(Potential* p);
 
-int contextSanityCheck(const NBodyCtx* ctx);
-int potentialSanityCheck(const Potential* pot);
+mwbool checkNBodyCtxConstants(const NBodyCtx* ctx);
 
 #ifdef __cplusplus
 }

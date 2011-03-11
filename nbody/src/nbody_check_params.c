@@ -22,20 +22,70 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "nbody_check_params.h"
 
-static mwbool invalidHaloWarning(halo_t type)
-{
-    warn("Got non-finite required field for halo type '%s'\n", showHaloT(type));
-    return TRUE;
-}
-
 mwbool checkSphericalConstants(Spherical* s)
 {
+    if (mwCheckNormalPosNum(s->mass) || mwCheckNormalPosNum(s->scale))
+    {
+        warn("Invalid parameters for '%s': mass = %.15f, scale = %.15f\n",
+             showSphericalT(s->type), s->mass, s->scale);
+        return TRUE;
+    }
+
     return FALSE;
 }
 
 mwbool checkDiskConstants(Disk* d)
 {
-    return FALSE;
+    mwbool badDisk = FALSE;
+
+    if (mwCheckNormalPosNum(d->mass))
+    {
+        warn("Invalid disk mass (%.15f)\n", d->mass);
+        badDisk = TRUE;
+    }
+
+    switch (d->type)
+    {
+        case MiyamotoNagaiDisk:
+            if (mwCheckNormalPosNum(d->scaleLength) || mwCheckNormalPosNum(d->scaleHeight))
+            {
+                warn("Invalid parameters for disk type '%s': scaleLength = %.15f, scaleHeight = %.15f\n",
+                     showDiskT(d->type),
+                     d->scaleLength,
+                     d->scaleHeight);
+                badDisk = TRUE;
+            }
+            break;
+
+        case ExponentialDisk:
+            if (isnormal(d->scaleHeight))
+            {
+                warn("Scale height unused for disk type '%s'\n", showDiskT(d->type));
+                badDisk = TRUE;
+            }
+
+            if (mwCheckNormalPosNum(d->scaleLength))
+            {
+                warn("Invalid parameter for disk type '%s': scaleLength = %.15f\n",
+                     showDiskT(d->type),
+                     d->scaleLength);
+                badDisk = TRUE;
+            }
+
+            break;
+
+        case InvalidDisk:
+        default:
+            return warn1("Invalid disk type: %s (%d)\n", showDiskT(d->type), d->type);
+    }
+
+    return badDisk;
+}
+
+static mwbool invalidHaloWarning(halo_t type)
+{
+    warn("Got non-finite required field for halo type '%s'\n", showHaloT(type));
+    return TRUE;
 }
 
 /* Check for valid halo values and calculate constants. Return true if error. */
@@ -45,9 +95,10 @@ mwbool checkHaloConstants(Halo* h)
     real qxs, qys;
 
     /* Common to all 3 models */
-    if (!isfinite(h->vhalo) || !isfinite(h->scaleLength))
+    if (!isfinite(h->vhalo) || mwCheckNormalPosNum(h->scaleLength))
         return invalidHaloWarning(h->type);
 
+    /* TODO: Check for set things which don't match the model? */
     switch (h->type)
     {
         case LogarithmicHalo:
@@ -85,7 +136,7 @@ mwbool checkHaloConstants(Halo* h)
 
         case InvalidHalo:
         default:
-            return warn1("Trying to use invalid halo type\n");
+            return warn1("Trying to use invalid halo type: %s (%d)\n", showHaloT(h->type), h->type);
     }
 
     return FALSE;
@@ -98,45 +149,32 @@ mwbool checkPotentialConstants(Potential* p)
 
 static int hasAcceptableEps2(const NBodyCtx* ctx)
 {
-    int rc = mwCheckNormalPosNum(ctx->eps2);
+    int rc = mwCheckNormalPosNumEps(ctx->eps2);
     if (rc)
-        warn("Got an absurd eps2\n");
+        warn("Got an absurd eps2 (%.15f)\n", ctx->eps2);
 
     return rc;
 }
 
 static int hasAcceptableTimes(const NBodyCtx* ctx)
 {
-    int rc = mwCheckNormalPosNum(ctx->timeEvolve);
+    int rc = mwCheckNormalPosNumEps(ctx->timeEvolve);
     if (rc)
-        warn("Got an unacceptable evolution time\n");
+        warn("Got an unacceptable evolution time (%.15f)\n", ctx->timeEvolve);
     return rc;
 }
 
 static int hasAcceptableSteps(const NBodyCtx* ctx)
 {
-    int rc = mwCheckNormalPosNum(ctx->timestep);
+    int rc = mwCheckNormalPosNumEps(ctx->timestep);
     if (rc)
-        warn("Got an unacceptable timestep\n");
+        warn("Got an unacceptable timestep (%.15f)\n", ctx->timestep);
 
     return rc;
 }
 
-int contextSanityCheck(const NBodyCtx* ctx)
+mwbool checkNBodyCtxConstants(const NBodyCtx* ctx)
 {
-    int rc = 0;
-
-    rc |= hasAcceptableTimes(ctx);
-    rc |= hasAcceptableSteps(ctx);
-    rc |= hasAcceptableEps2(ctx);
-
-    return rc;
-}
-
-int potentialSanityCheck(const Potential* pot)
-{
-    int rc = 0;
-
-    return rc;
+    return hasAcceptableTimes(ctx) || hasAcceptableSteps(ctx) || hasAcceptableEps2(ctx);
 }
 
