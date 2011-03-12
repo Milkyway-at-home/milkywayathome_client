@@ -23,6 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 #include "nbody_lua_types.h"
 #include "milkyway_lua_marshal.h"
+#include "nbody_plummer.h"
 
 static char* showHash(const unsigned char* hash, int initializer)
 {
@@ -102,75 +103,6 @@ unsigned char* getBodyHash(const NBodyState* st, unsigned int nbody)
     return bodyHash;
 }
 
-Body* generateTestPlummer(uint32_t seed,
-                          unsigned int nbody,
-                          real mass,
-                          mwbool ignore,
-                          mwvector rShift,
-                          mwvector vShift,
-                          real scaleRadius)
-{
-    dsfmt_t prng;
-    int argTable;
-    lua_State* luaSt;
-    InitialConditions ic;
-    unsigned int readNBody;
-    Body* bodies;
-
-    luaSt = nbodyLuaOpen();
-    if (!luaSt)
-        return NULL;
-
-    lua_getglobal(luaSt, "predefinedModels");
-    mw_lua_checktable(luaSt, -1);
-
-    lua_getfield(luaSt, -1, "plummer");
-    mw_lua_checkcclosure(luaSt, -1);
-    mw_lua_assert_top_type(luaSt, LUA_TFUNCTION);
-
-    /* 1st argument is number of bodies */
-    lua_pushinteger(luaSt, nbody);
-
-    /* Prepare argument table */
-    lua_createtable(luaSt, 0, 5);
-    argTable = lua_gettop(luaSt);
-
-    /* Set named arguments */
-    lua_pushnumber(luaSt, mass);
-    lua_setfield(luaSt, argTable, "mass");
-
-    lua_pushnumber(luaSt, scaleRadius);
-    lua_setfield(luaSt, argTable, "scaleRadius");
-
-    ic.position = rShift;
-    ic.velocity = vShift;
-    pushInitialConditions(luaSt, &ic);
-    lua_setfield(luaSt, argTable, "initialConditions");
-
-    lua_pushboolean(luaSt, ignore);
-    lua_setfield(luaSt, argTable, "ignore");
-
-    dsfmt_init_gen_rand(&prng, seed);
-    pushDSFMT(luaSt, &prng);
-    lua_setfield(luaSt, argTable, "prng");
-
-    /* Generate test model */
-    if (lua_pcall(luaSt, 2, 1, 0))
-    {
-        mw_lua_pcall_warn(luaSt, "Error evaluating test Plummer");
-        lua_close(luaSt);
-        return NULL;
-    }
-
-    mw_lua_assert_top_type(luaSt, LUA_TTABLE);
-    bodies = readReturnedModels(luaSt, 1, &readNBody);
-    assert(readNBody == nbody);
-
-    lua_close(luaSt);
-
-    return bodies;
-}
-
 static Body* testPlummer_1_1()
 {
     uint32_t seed = 99;
@@ -180,14 +112,23 @@ static Body* testPlummer_1_1()
     mwvector rShift = ZERO_VECTOR;
     mwvector vShift = ZERO_VECTOR;
     real scaleRadius = 1.0;
+    dsfmt_t prng;
 
-    return generateTestPlummer(seed,
-                               nbody,
-                               mass,
-                               ignore,
-                               rShift,
-                               vShift,
-                               scaleRadius);
+    Body* bodies;
+
+    dsfmt_init_gen_rand(&prng, seed);
+
+    bodies = (Body*) mwMalloc(sizeof(Body) * nbody);
+
+    if (generatePlummerC(bodies, &prng, nbody,
+                         mass, ignore, rShift, vShift, scaleRadius))
+    {
+        warn("Error generating Plummer test\n");
+        free(bodies);
+        return NULL;
+    }
+
+    return bodies;
 }
 
 int main(int argc, const char* argv[])
