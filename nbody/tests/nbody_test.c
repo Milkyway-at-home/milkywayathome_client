@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <openssl/evp.h>
 #include <openssl/sha.h>
 
 #include "milkyway_util.h"
@@ -32,6 +33,8 @@ static char* showHash(const unsigned char* hash, int initializer)
 
     if (!hash)
         return NULL;
+
+    assert(SHA_DIGEST_LENGTH / sizeof(uint32_t) == 5);
 
     buf = (char*) mwMalloc(2 * SHA_DIGEST_LENGTH + 1);
     buf[2 * SHA_DIGEST_LENGTH] = '\0';
@@ -53,40 +56,99 @@ static void printHash(const unsigned char* hash, int initializer)
     free(buf);
 }
 
+static int compareVectors(mwvector a, mwvector b)
+{
+    return X(a) < X(b) || Y(a) < Y(b) || Z(a) < Z(b);
+}
+
+/* Function for sorting bodies */
+static int compareBodies(const void* _a, const void* _b)
+{
+    const Body* a = (const Body*) _a;
+    const Body* b = (const Body*) _b;
+
+    return Mass(a) < Mass(b) || compareVectors(Pos(a), Pos(b)) || compareVectors(Vel(a), Vel(b));
+}
+
+/* Sort the bodies. The actual order doesn't matter, it just needs to
+ * be consistent when we hash. This is so when if we end up shifting
+ * bodies around for the GPU, the tests will still work as
+ * expected. */
+static void sortBodies(Body* bodies, unsigned int nbody)
+{
+    qsort(bodies, nbody, sizeof(Body), compareBodies);
+}
+
 
 /* Hash of just the bodies masses, positions and velocities */
-int hashBodies(unsigned char* hash, const Body* bodies, unsigned int nbody)
+static int hashBodiesRaw(EVP_MD_CTX* hashCtx, unsigned char* hash, const Body* bodies, unsigned int nbody)
 {
-    SHA_CTX shaCtx;
-    unsigned int i;
+    unsigned int i, mdLen;
     const Body* b;
     struct
     {
-        real mass;
         mwvector pos, vel;
+        real mass;
+        body_t type;
+        /* Padding happens */
     } hashableBody;
 
     if (nbody == 0)
         return warn1("Can't hash 0 bodies\n");
 
-    if (!SHA1_Init(&shaCtx))
-        return warn1("Initializing SHA1 context failed\n");
+    if (!EVP_DigestInit_ex(hashCtx, EVP_sha1(), NULL))
+        return warn1("Initializing hash digest failed\n");
+
+    /* Prevent random garbage from getting hashed. The struct will be
+     * padded and won't be the same size as 2 * sizeof(mwvector) +
+     * sizeof(real) so bad things happen when hashing sizeof(hashableBody) */
+    memset(&hashableBody, 0, sizeof(hashableBody));
 
     for (i = 0; i < nbody; ++i)
     {
         b = &bodies[i];
-        hashableBody.mass = Mass(b);
+
         hashableBody.pos  = Pos(b);
         hashableBody.vel  = Vel(b);
+        hashableBody.mass = Mass(b);
+        hashableBody.type = Type(b);
 
-        if (!SHA1_Update(&shaCtx, &hashableBody, sizeof(hashableBody)))
-            return warn1("Error updating SHA1 hash for body %u\n", i);
+        if (!EVP_DigestUpdate(hashCtx, &hashableBody, sizeof(hashableBody)))
+            return warn1("Error updating hash for body %u\n", i);
     }
 
-    if (!SHA1_Final(hash, &shaCtx))
-        return warn1("Error finalizing SHA1 hash\n");
+    if (!EVP_DigestFinal_ex(hashCtx, hash, &mdLen))
+        return warn1("Error finalizing hash\n");
+
+    assert(mdLen == SHA_DIGEST_LENGTH);
+
+    if (!EVP_MD_CTX_cleanup(hashCtx))
+        return warn1("Error cleaning up hash context\n");
 
     return 0;
+}
+
+int hashBodies(unsigned char* hash, const Body* bodies, unsigned int nbody)
+{
+    EVP_MD_CTX hashCtx;
+    int failed = 0;
+
+    OpenSSL_add_all_digests();
+    EVP_MD_CTX_init(&hashCtx);
+
+    failed = hashBodiesRaw(&hashCtx, hash, bodies, nbody);
+
+    if (!EVP_MD_CTX_cleanup(&hashCtx))
+        failed |= warn1("Error cleaning up hash context\n");
+    EVP_cleanup();
+
+    return failed;
+}
+
+int hashSortBodies(unsigned char* hash, Body* bodies, unsigned int nbody)
+{
+    sortBodies(bodies, nbody);
+    return hashBodies(hash, bodies, nbody);
 }
 
 unsigned char* getBodyHash(const NBodyState* st, unsigned int nbody)
@@ -101,6 +163,11 @@ unsigned char* getBodyHash(const NBodyState* st, unsigned int nbody)
     }
 
     return bodyHash;
+}
+
+static int compareHash(const unsigned char* a, const unsigned char* b)
+{
+    return memcmp(a, b, sizeof(unsigned char) * SHA_DIGEST_LENGTH);
 }
 
 static Body* testPlummer_1_1()
@@ -133,21 +200,20 @@ static Body* testPlummer_1_1()
 
 int main(int argc, const char* argv[])
 {
-    Body* b;
+    Body* bs;
 
-    b = testPlummer_1_1();
-    if (!b)
+    bs = testPlummer_1_1();
+    if (!bs)
         return warn1("Error creating test\n");
 
     unsigned char hash[SHA_DIGEST_LENGTH];
 
 
-    //printBodies(b, 100);
-    hashBodies(hash, b, 100);
+    //printBodies(bs, 100);
+    hashSortBodies(hash, bs, 100);
     printHash(hash, 0);
 
-
-    free(b);
+    free(bs);
 
     return 0;
 }
