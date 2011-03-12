@@ -42,7 +42,7 @@ static void out_2vectors(FILE* str, mwvector vec1, mwvector vec2)
 }
 
 /* output: Print bodies */
-static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st)
+static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf)
 {
     Body* p;
     mwvector lbR;
@@ -51,7 +51,7 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st)
     for (p = st->bodytab; p < endp; p++)
     {
         fprintf(f, "%d ", ignoreBody(p));  /* Print if model it belongs to is ignored */
-        if (ctx->outputCartesian)     /* Probably useful for making movies and such */
+        if (nbf->outputCartesian)     /* Probably useful for making movies and such */
             out_2vectors(f, Pos(p), Vel(p));
         else
         {
@@ -86,19 +86,19 @@ int outputBodyPositionBin(const NBodyCtx* ctx, const NBodyState* st)
     return FALSE;
 }
 
-int finalOutput(const NBodyCtx* ctx, const NBodyState* st, const real chisq)
+int finalOutput(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf, const real chisq)
 {
     int rc = 0;
 
     /* Printing out the bodies will food the server. */
-    if (ctx->outputBodies)
+    if (nbf->printBodies)
     {
         mw_boinc_print(ctx->outfile, "<bodies>\n");
-        rc = outputBodies(ctx->outfile, ctx, st);
+        rc = outputBodies(ctx->outfile, ctx, st, nbf);
         mw_boinc_print(ctx->outfile, "</bodies>\n");
     }
 
-    fprintf(ctx->outfile, "<search_likelihood>%.20g</search_likelihood>\n", chisq);
+    fprintf(ctx->outfile, "<search_likelihood>%.15g</search_likelihood>\n", chisq);
 
     return rc;
 }

@@ -25,7 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lua.h>
 
 lua_State* nbodyLuaOpen();
-int setupNBody(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
+int setupNBody(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf);
 
 #endif /* _NBODY_LUA_H_ */
 

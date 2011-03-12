@@ -261,7 +261,7 @@ real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf
         return NAN;
     }
 
-    if (ctx->outputHistogram)
+    if (nbf->printHistogram)
         writeHistogram(ctx, nbf, hp, histData, histogram, maxIdx, start, (real) totalNum);
 
     if (totalNum != 0)

@@ -86,19 +86,19 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
     }
 }
 
-static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
+static void endRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, const real chisq)
 {
-    finalOutput(ctx, st, chisq);
+    finalOutput(ctx, st, nbf, chisq);
     destroyNBodyCtx(ctx);
     destroyNBodyState(st);
 }
 
-static int setupRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
+static int setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
 {
     /* If the checkpoint exists, try to use it */
     if (nbf->ignoreCheckpoint || !resolvedCheckpointExists())
     {
-        if (setupNBody(ctx, st, nbf))
+        if (setupNBody(ctx, st, hp, nbf))
             return warn1("Failed to read input parameters file\n");
     }
     else
@@ -131,10 +131,7 @@ static int setupRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 /* Set context fields read from command line flags */
 static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
 {
-    ctx->outputCartesian = nbf->outputCartesian;
-    ctx->outputBodies    = nbf->printBodies;
-    ctx->outputHistogram = nbf->printHistogram;
-    ctx->checkpointT     = nbf->checkpointPeriod;
+    ctx->checkpointT = nbf->checkpointPeriod;
 }
 
 static int verifyFile(const NBodyFlags* nbf)
@@ -143,7 +140,7 @@ static int verifyFile(const NBodyFlags* nbf)
     NBodyCtx ctx  = EMPTY_NBODYCTX;
     NBodyState st = EMPTY_STATE;
 
-    rc = setupNBody(&ctx, &st, nbf);
+    rc = setupNBody(&ctx, &st, &ctx.histogramParams, nbf);
     if (rc)
         warn("File failed\n");
     else
@@ -175,7 +172,7 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     if (resolveCheckpoint(nbf->checkpointFileName))
         return warn1("Failed to resolve checkpoint\n");
 
-    if (setupRun(&ctx, &st, nbf))
+    if (setupRun(&ctx, &st, &ctx.histogramParams, nbf))
         return warn1("Failed to setup run\n");
 
     nbodySetCtxFromFlags(&ctx, nbf);
@@ -199,7 +196,7 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     if (isnan(chisq))
         warn("Failed to calculate chisq\n");
 
-    endRun(&ctx, &st, chisq);
+    endRun(&ctx, &st, nbf, chisq);
 
     return 0;
 }

@@ -236,7 +236,7 @@ static Body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, const Potenti
     return readReturnedModels(luaSt, nResults, n);
 }
 
-static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* st)
+static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* st, HistogramParams* hp)
 {
     Body* bodies;
 
@@ -246,7 +246,7 @@ static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* s
     if (evaluatePotential(luaSt, &ctx->pot))
         return 1;
 
-    if (evaluateHistogram(luaSt, &ctx->histogramParams))
+    if (evaluateHistogram(luaSt, hp))
         return 1;
 
     bodies = evaluateBodies(luaSt, ctx, &ctx->pot, &ctx->nbody);
@@ -260,7 +260,7 @@ static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* s
     return 0;
 }
 
-int setupNBody(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
+int setupNBody(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
 {
     int rc;
     lua_State* luaSt;
@@ -269,7 +269,7 @@ int setupNBody(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     if (!luaSt)
         return 1;
 
-    rc = setupInitialNBodyState(luaSt, ctx, st);
+    rc = setupInitialNBodyState(luaSt, ctx, st, hp);
     lua_close(luaSt);
 
     return rc;

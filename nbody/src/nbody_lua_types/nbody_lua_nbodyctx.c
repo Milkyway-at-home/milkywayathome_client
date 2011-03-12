@@ -45,15 +45,10 @@ static const NBodyCtx defaultNBodyCtx =
     /* .useQuad         */  TRUE,
     /* .allowIncest     */  FALSE,
 
-    /* .outputCartesian */  FALSE,
-    /* .outputBodies    */  FALSE,
-    /* .outputHistogram */  FALSE,
-
-    /* .histogramParams */  EMPTY_HISTOGRAM_PARAMS,
-
     /* .freqout         */  0,
     /* .checkpointT     */  3600,
-    /* .outfile         */  NULL
+    /* .outfile         */  NULL,
+    /* .histogramParams */  EMPTY_HISTOGRAM_PARAMS
 };
 
 

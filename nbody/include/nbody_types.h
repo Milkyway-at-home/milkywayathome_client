@@ -398,15 +398,11 @@ typedef struct NBODY_ALIGN
 
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
-    mwbool outputCartesian;   /* print (x,y,z) instead of (l, b, r) */
-    mwbool outputBodies;
-    mwbool outputHistogram;
-
-    HistogramParams histogramParams;
 
     time_t checkpointT;       /* Period to checkpoint when not using BOINC */
     unsigned int freqOut;
     FILE* outfile;            /* file for snapshot output */
+    HistogramParams histogramParams;
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
@@ -427,9 +423,8 @@ typedef struct NBODY_ALIGN
 #define EMPTY_NBODYCTX { EMPTY_POTENTIAL, 0, NAN, NAN,                    \
                          NAN, NAN, NAN,                                   \
                          NAN, InvalidCriterion,                           \
-                         FALSE, FALSE, FALSE, FALSE, FALSE,               \
-                         EMPTY_HISTOGRAM_PARAMS,                          \
-                         0, 0, NULL }
+                         FALSE, FALSE,                                    \
+                         0, 0, NULL, EMPTY_HISTOGRAM_PARAMS }
 
 
 int destroyNBodyCtx(NBodyCtx* ctx);

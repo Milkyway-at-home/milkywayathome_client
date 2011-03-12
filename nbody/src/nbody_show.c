@@ -313,7 +313,6 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      "  criterion       = %s\n"
                      "  useQuad         = %s\n"
                      "  allowIncest     = %s\n"
-                     "  outputCartesian = %s\n"
                      "  treeRSize       = %g\n"
                      "  theta           = %g\n"
                      "  eps2            = %g\n"
@@ -329,7 +328,6 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      showCriterionT(ctx->criterion),
                      showBool(ctx->useQuad),
                      showBool(ctx->allowIncest),
-                     showBool(ctx->outputCartesian),
                      ctx->treeRSize,
                      ctx->theta,
                      ctx->eps2,
