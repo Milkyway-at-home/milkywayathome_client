@@ -38,6 +38,7 @@ include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 maybe_static()
 
 find_package(BOINC)
+find_package(OpenSSL)
 
 if(BOINC_APPLICATION)
   include_directories(${BOINC_INCLUDE_DIR})
@@ -343,5 +344,11 @@ add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
 
 milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} 0 ${STATIC_EVERYTHING} "${exe_link_libs}")
 #add_subdirectory(tests EXCLUDE_FROM_ALL)
+
+
+include_directories(${OPENSSL_INCLUDE_DIR})
+add_executable(nbody_test ${PROJECT_SOURCE_DIR}/tests/nbody_test.c)
+target_link_libraries(nbody_test ${OPENSSL_LIBRARIES} ${exe_link_libs})
+add_test(nbody_test nbody_test)
 
 

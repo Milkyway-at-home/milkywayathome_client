@@ -163,11 +163,11 @@ int generatePlummer(lua_State* luaSt)
 
     static const MWNamedArg argTable[] =
         {
-            { "prng",              LUA_TUSERDATA, DSFMT_TYPE,              TRUE,  &prng        },
-            { "initialConditions", LUA_TUSERDATA, INITIAL_CONDITIONS_TYPE, TRUE,  &ic          },
-            { "scaleRadius",       LUA_TNUMBER,   NULL,                    TRUE,  &radiusScale },
             { "mass",              LUA_TNUMBER,   NULL,                    TRUE,  &mass        },
+            { "scaleRadius",       LUA_TNUMBER,   NULL,                    TRUE,  &radiusScale },
+            { "initialConditions", LUA_TUSERDATA, INITIAL_CONDITIONS_TYPE, TRUE,  &ic          },
             { "ignore",            LUA_TBOOLEAN,  NULL,                    FALSE, &ignore      },
+            { "prng",              LUA_TUSERDATA, DSFMT_TYPE,              TRUE,  &prng        },
             END_MW_NAMED_ARG
         };
 
@@ -185,6 +185,4 @@ void registerGeneratePlummer(lua_State* luaSt)
 {
     lua_register(luaSt, "generatePlummer", generatePlummer);
 }
-
-
 

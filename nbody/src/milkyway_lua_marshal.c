@@ -185,55 +185,55 @@ int oneTableArgument(lua_State* luaSt, const MWNamedArg* argTable)
 
 int getInt(lua_State* luaSt, void* v)
 {
-    lua_pushnumber(luaSt, *(int*)v);
+    lua_pushnumber(luaSt, *(int*) v);
     return 1;
 }
 
 int setInt(lua_State* luaSt, void* v)
 {
-    *(int*)v = luaL_checkint(luaSt, 3);
+    *(int*) v = luaL_checkint(luaSt, 3);
     return 0;
 }
 
 int getLong(lua_State* luaSt, void* v)
 {
-    lua_pushinteger(luaSt, *(long*)v);
+    lua_pushinteger(luaSt, *(long*) v);
     return 1;
 }
 
 int setLong(lua_State* luaSt, void* v)
 {
-    *(long*)v = luaL_checklong(luaSt, 3);
+    *(long*) v = luaL_checklong(luaSt, 3);
     return 0;
 }
 
 int getNumber(lua_State* luaSt, void* v)
 {
-    lua_pushnumber(luaSt, *(lua_Number*)v);
+    lua_pushnumber(luaSt, *(lua_Number*) v);
     return 1;
 }
 
 int setNumber(lua_State* luaSt, void* v)
 {
-    *(lua_Number*)v = luaL_checknumber(luaSt, 3);
+    *(lua_Number*) v = luaL_checknumber(luaSt, 3);
     return 0;
 }
 
 int getBool(lua_State* luaSt, void* v)
 {
-    lua_pushboolean(luaSt, *(int*)v);
+    lua_pushboolean(luaSt, *(int*) v);
     return 1;
 }
 
 int setBool(lua_State* luaSt, void* v)
 {
-    *(int*)v = mw_lua_checkboolean(luaSt, 3);
+    *(int*) v = mw_lua_checkboolean(luaSt, 3);
     return 0;
 }
 
 int getString(lua_State* luaSt, void* v)
 {
-    lua_pushstring(luaSt, (char*)v );
+    lua_pushstring(luaSt, (char*) v);
     return 1;
 }
 

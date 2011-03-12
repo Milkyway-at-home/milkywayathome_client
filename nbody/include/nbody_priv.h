@@ -21,8 +21,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _NBODY_PRIV_H_
 #define _NBODY_PRIV_H_
 
-#define _GNU_SOURCE
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -42,6 +40,7 @@ extern "C" {
 #include "nbody_show.h"
 #include "nbody_io.h"
 #include "nbody_checkpoint.h"
+#include "nbody_lua.h"
 
 
 #if NBODY_OPENCL

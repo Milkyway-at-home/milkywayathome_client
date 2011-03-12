@@ -31,23 +31,9 @@ dsfmt_t* checkDSFMT(lua_State* luaSt, int idx)
     return (dsfmt_t*) mw_checknamedudata(luaSt, idx, DSFMT_TYPE);
 }
 
-int pushDSFMT(lua_State* luaSt, const dsfmt_t* d)
+int pushDSFMT(lua_State* luaSt, const dsfmt_t* p)
 {
-    dsfmt_t* ld;
-
-    ld = (dsfmt_t*) lua_newuserdata(luaSt, sizeof(dsfmt_t));
-    if (!ld)
-    {
-        warn("Creating DSFMT userdata failed\n");
-        return 1;
-    }
-
-    luaL_getmetatable(luaSt, DSFMT_TYPE);
-    lua_setmetatable(luaSt, -2);
-
-    *ld = *d;
-
-    return 0;
+    return pushType(luaSt, DSFMT_TYPE, sizeof(dsfmt_t), (void*) p);
 }
 
 /* TODO: dsfmt_init_by_array */
