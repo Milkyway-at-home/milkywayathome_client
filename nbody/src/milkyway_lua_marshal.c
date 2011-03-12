@@ -468,6 +468,16 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int tabl
     char buf[128];
     int type, item;
 
+    int iniTop = lua_gettop(luaSt);
+
+    /* Copy the table. We want to wipe elements from it for better
+       errors, but if we wipe out the table and it's the only place
+       things are referenced our userdatas could get GC'd
+     */
+
+    //lua_pushvalue(luaSt, table);
+    //table = lua_gettop(luaSt);
+
     p = args;
     while (p->name)
     {
@@ -513,13 +523,18 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int tabl
         lua_pop(luaSt, 1);
 
         /* Top item, should now be at copy of key */
-        lua_pushnil(luaSt);
-        lua_rawset(luaSt, table); /* Wipe out this element so we can check for unknown arguments */
+        //lua_pushnil(luaSt);
+        //lua_rawset(luaSt, table); /* Wipe out this element so we can check for unknown arguments */
 
         ++p;
     }
 
-    checkExtraArguments(luaSt, table);
+    //checkExtraArguments(luaSt, table);
+    //lua_pop(luaSt, 1);
+
+    int finTop = lua_gettop(luaSt);
+
+    warn("CHange in handling = %d -> %d\n", iniTop, finTop);
 }
 
 static inline int getCClosureN(lua_State* luaSt, void* v, int n)
