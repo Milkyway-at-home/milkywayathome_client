@@ -445,15 +445,32 @@ static void namedArgumentError(lua_State* luaSt, const MWNamedArg* p, int arg, i
         );
 }
 
-/* Check if any keys are left in the table and error if there are */
-static void checkExtraArguments(lua_State* luaSt, int table)
+/* Lazy search of the names table */
+static mwbool nameInArgTable(const MWNamedArg* p, const char* key)
+{
+    assert(key); /* CHECKME: Is this supposed to not happen? */
+
+    while (p->name)
+    {
+        if (!strcmp(p->name, key))
+            return TRUE;
+        ++p;
+    }
+
+    return FALSE;
+}
+
+
+/* Check if any keys in the table aren't in the expected table, and error if there are */
+static void checkExtraArguments(lua_State* luaSt, const MWNamedArg* args, int table)
 {
     unsigned int extraCount = 0;
 
     lua_pushnil(luaSt);  /* first key */
-    while (lua_next(luaSt, table) != 0) /* Iterate remaining keys */
+    while (lua_next(luaSt, table) != 0) /* Iterate keys in table */
     {
-        ++extraCount;
+        if (!nameInArgTable(args, lua_tostring(luaSt, -2)))
+            ++extraCount;
         lua_pop(luaSt, 1);
     }
 
@@ -468,16 +485,6 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int tabl
     char buf[128];
     int type, item;
 
-    int iniTop = lua_gettop(luaSt);
-
-    /* Copy the table. We want to wipe elements from it for better
-       errors, but if we wipe out the table and it's the only place
-       things are referenced our userdatas could get GC'd
-     */
-
-    //lua_pushvalue(luaSt, table);
-    //table = lua_gettop(luaSt);
-
     p = args;
     while (p->name)
     {
@@ -491,6 +498,7 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int tabl
         {
             if (!p->required)
             {
+                lua_pop(luaSt, 2);
                 ++p;
                 continue;
             }
@@ -520,21 +528,11 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int tabl
         }
 
         setValueFromType(luaSt, p->value, p->luaType, item);
-        lua_pop(luaSt, 1);
-
-        /* Top item, should now be at copy of key */
-        //lua_pushnil(luaSt);
-        //lua_rawset(luaSt, table); /* Wipe out this element so we can check for unknown arguments */
-
+        lua_pop(luaSt, 2);
         ++p;
     }
 
-    //checkExtraArguments(luaSt, table);
-    //lua_pop(luaSt, 1);
-
-    int finTop = lua_gettop(luaSt);
-
-    warn("CHange in handling = %d -> %d\n", iniTop, finTop);
+    checkExtraArguments(luaSt, args, table);
 }
 
 static inline int getCClosureN(lua_State* luaSt, void* v, int n)

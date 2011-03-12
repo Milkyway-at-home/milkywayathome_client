@@ -124,8 +124,6 @@ static lua_State* nbodyOpenLuaStateWithScript(const NBodyFlags* nbf)
     if (!luaSt)
         return NULL;
 
-    warn("Top after opening everything = %d\n", lua_gettop(luaSt));
-
     bindServerArguments(luaSt, nbf);
     bindBOINCStatus(luaSt);
 

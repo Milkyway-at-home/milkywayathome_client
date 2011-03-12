@@ -75,7 +75,7 @@ function makeBodies(ctx, potential)
                          initialConditions = finalPosition,
                          mass = dwarfMass,
                          ignore = false,
-                         scaleRadius =dwarfRadius
+                         scaleRadius = dwarfRadius
                        }
    local bodies = predefinedModels.plummer(nbody, plummerArgs)
 
