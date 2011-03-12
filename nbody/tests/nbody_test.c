@@ -26,28 +26,101 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_lua_marshal.h"
 #include "nbody_plummer.h"
 
-static char* showHash(const unsigned char* hash, int initializer)
+/* things in NBodyCtx which influence individual steps that aren't the potential. */
+typedef struct
+{
+    real theta;
+    real eps2;
+    real treeRSize;
+    criterion_t criterion;
+
+    mwbool useQuad;
+    mwbool allowIncest;
+} NBodyCtxRaw;
+
+#define EMPTY_NBODYCTXRAW { 0.0, 0.0, 0.0, InvalidCriterion, FALSE, FALSE }
+
+typedef union
+{
+    uint32_t mdi[5];
+    unsigned char md[SHA_DIGEST_LENGTH];
+} BodyHash;
+
+#define EMPTY_BODY_HASH { .mdi = { 0x0, 0x0, 0x0, 0x0, 0x0 } }
+
+
+typedef struct
+{
+    const char* modelName;       /* Identifier for initial distribution used */
+    const Potential* potential;
+    NBodyCtxRaw ctx;             /* Simulation configuration */
+    uint32_t seed;               /* Seed used in for each result */
+    unsigned int nbody;
+    unsigned int numberSteps;    /* Steps taken for each result */
+    BodyHash hash;               /* Final hash of bodies */
+} NBodyResult;
+
+#define END_NBODYRESULT { NULL, NULL, EMPTY_NBODYCTXRAW, 0, 0, 0, EMPTY_BODY_HASH }
+
+typedef struct
+{
+    const NBodyResult* results;
+} NBodyResultSet;
+
+static void setNBodyCtxFromNBodyCtxRaw(NBodyCtx* ctx, const NBodyCtxRaw* ctxRaw)
+{
+    /* Tested, varied fields */
+    ctx->theta       = ctxRaw->theta;                // 5
+    ctx->eps2        = ctxRaw->eps2;                 // 5
+    ctx->treeRSize   = ctxRaw->treeRSize;            // 5
+    ctx->criterion   = ctxRaw->criterion;            // 4
+    ctx->useQuad     = ctxRaw->useQuad;              // 2
+    ctx->allowIncest = ctxRaw->allowIncest;          // 2
+}
+
+static void generateTestSet()
+{
+    const NBodyResultSet smallSet[] =
+        {
+            //{ .seed = 43, .nbody = 100, .numberSteps = 10,
+
+        };
+
+#if 0
+    for (i = 0; i < numberSeeds; ++i)
+    {
+        for (j = 0; j < numberBodyTests; ++j)
+        {
+            for (k = 0; k < numberStepTests; ++k)
+            {
+
+            }
+        }
+    }
+#endif
+
+}
+
+
+static char* showHash(const BodyHash* hash, int initializer)
 {
     char* buf;
-    const uint32_t* hashi = (const uint32_t*) hash;
 
     if (!hash)
         return NULL;
 
-    assert(SHA_DIGEST_LENGTH / sizeof(uint32_t) == 5);
-
-    buf = (char*) mwMalloc(2 * SHA_DIGEST_LENGTH + 1);
-    buf[2 * SHA_DIGEST_LENGTH] = '\0';
+    buf = (char*) mwMalloc(2 * sizeof(BodyHash) + 1);
+    buf[2 * sizeof(BodyHash)] = '\0';
 
     if (initializer)
-        sprintf(buf, "{ 0x%x, 0x%x, 0x%x, 0x%x, 0x%x }", hashi[0], hashi[1], hashi[2], hashi[3], hashi[4]);
+        sprintf(buf, "{ 0x%x, 0x%x, 0x%x, 0x%x, 0x%x }", hash->mdi[0], hash->mdi[1], hash->mdi[2], hash->mdi[3], hash->mdi[4]);
     else
-        sprintf(buf, "%08x%08x%08x%08x%08x", hashi[0], hashi[1], hashi[2], hashi[3], hashi[4]);
+        sprintf(buf, "%08x%08x%08x%08x%08x", hash->mdi[0], hash->mdi[1], hash->mdi[2], hash->mdi[3], hash->mdi[4]);
 
     return buf;
 }
 
-static void printHash(const unsigned char* hash, int initializer)
+static void printHash(const BodyHash* hash, int initializer)
 {
     char* buf;
 
@@ -81,7 +154,7 @@ static void sortBodies(Body* bodies, unsigned int nbody)
 
 
 /* Hash of just the bodies masses, positions and velocities */
-static int hashBodiesRaw(EVP_MD_CTX* hashCtx, unsigned char* hash, const Body* bodies, unsigned int nbody)
+static int hashBodiesRaw(EVP_MD_CTX* hashCtx, BodyHash* hash, const Body* bodies, unsigned int nbody)
 {
     unsigned int i, mdLen;
     const Body* b;
@@ -117,7 +190,7 @@ static int hashBodiesRaw(EVP_MD_CTX* hashCtx, unsigned char* hash, const Body* b
             return warn1("Error updating hash for body %u\n", i);
     }
 
-    if (!EVP_DigestFinal_ex(hashCtx, hash, &mdLen))
+    if (!EVP_DigestFinal_ex(hashCtx, hash->md, &mdLen))
         return warn1("Error finalizing hash\n");
 
     assert(mdLen == SHA_DIGEST_LENGTH);
@@ -128,7 +201,7 @@ static int hashBodiesRaw(EVP_MD_CTX* hashCtx, unsigned char* hash, const Body* b
     return 0;
 }
 
-int hashBodies(unsigned char* hash, const Body* bodies, unsigned int nbody)
+int hashBodies(BodyHash* hash, const Body* bodies, unsigned int nbody)
 {
     EVP_MD_CTX hashCtx;
     int failed = 0;
@@ -145,17 +218,17 @@ int hashBodies(unsigned char* hash, const Body* bodies, unsigned int nbody)
     return failed;
 }
 
-int hashSortBodies(unsigned char* hash, Body* bodies, unsigned int nbody)
+int hashSortBodies(BodyHash* hash, Body* bodies, unsigned int nbody)
 {
     sortBodies(bodies, nbody);
     return hashBodies(hash, bodies, nbody);
 }
 
-unsigned char* getBodyHash(const NBodyState* st, unsigned int nbody)
+BodyHash* getBodyHash(const NBodyState* st, unsigned int nbody)
 {
-    unsigned char* bodyHash;
+    BodyHash* bodyHash;
 
-    bodyHash = (unsigned char*) mwCalloc(SHA_DIGEST_LENGTH, sizeof(unsigned char));
+    bodyHash = (BodyHash*) mwCalloc(1, sizeof(BodyHash));
     if (hashBodies(bodyHash, st->bodytab, nbody))
     {
         free(bodyHash);
@@ -165,9 +238,9 @@ unsigned char* getBodyHash(const NBodyState* st, unsigned int nbody)
     return bodyHash;
 }
 
-static int compareHash(const unsigned char* a, const unsigned char* b)
+static int compareHash(const BodyHash* a, const BodyHash* b)
 {
-    return memcmp(a, b, sizeof(unsigned char) * SHA_DIGEST_LENGTH);
+    return memcmp(a, b, sizeof(BodyHash));
 }
 
 static Body* testPlummer_1_1()
@@ -206,12 +279,12 @@ int main(int argc, const char* argv[])
     if (!bs)
         return warn1("Error creating test\n");
 
-    unsigned char hash[SHA_DIGEST_LENGTH];
+    BodyHash hash;
 
 
     //printBodies(bs, 100);
-    hashSortBodies(hash, bs, 100);
-    printHash(hash, 0);
+    hashSortBodies(&hash, bs, 100);
+    printHash(&hash, 0);
 
     free(bs);
 

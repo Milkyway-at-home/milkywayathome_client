@@ -429,7 +429,7 @@ typedef struct NBODY_ALIGN
 
 int destroyNBodyCtx(NBodyCtx* ctx);
 void destroyNBodyState(NBodyState* st);
-
+void cloneNBodyState(NBodyState* st, const NBodyState* oldSt, const unsigned int nbody);
 
 #ifndef __OPENCL_VERSION__  /* No function pointers allowed in kernels */
 /* Acceleration functions for a given potential */

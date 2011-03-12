@@ -85,4 +85,23 @@ void destroyNBodyState(NBodyState* st)
   #endif /* NBODY_OPENCL */
 }
 
+/* TODO: Doesn't clone tree */
+void cloneNBodyState(NBodyState* st, const NBodyState* oldSt, const unsigned int nbody)
+{
+    static const Tree emptyTree = EMPTY_TREE;
+
+    st->tree = emptyTree;
+    st->freecell = NULL;
+
+    st->outputTime = oldSt->outputTime;
+    st->lastCheckpoint = oldSt->lastCheckpoint;
+    st->tnow = oldSt->tnow;
+
+    st->bodytab = (Body*) mwMallocA(sizeof(Body) * nbody);
+    memcpy(st->bodytab, oldSt->bodytab, sizeof(Body) * nbody);
+
+    st->acctab = (mwvector*) mwMallocA(sizeof(mwvector) * nbody);
+    memcpy(st->acctab, oldSt->acctab, sizeof(mwvector) * nbody);
+}
+
 
