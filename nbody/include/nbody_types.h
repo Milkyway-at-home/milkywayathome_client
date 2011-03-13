@@ -271,7 +271,6 @@ typedef struct NBODY_ALIGN
 
     unsigned int cellused;   /* count of cells in tree */
     unsigned int maxlevel;   /* count of levels in tree */
-    mwbool firstcall;
 } Tree;
 
 typedef struct NBODY_ALIGN
@@ -421,7 +420,7 @@ typedef struct NBODY_ALIGN
 #define EMPTY_HALO { InvalidHalo, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 
-#define EMPTY_TREE { NULL, NAN, 0, 0, TRUE }
+#define EMPTY_TREE { NULL, NAN, 0, 0 }
 #define EMPTY_NBODYCTX { EMPTY_POTENTIAL, NAN, NAN,                       \
                          NAN, NAN, NAN,                                   \
                          NAN, InvalidCriterion,                           \

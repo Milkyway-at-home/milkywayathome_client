@@ -146,25 +146,18 @@ static void newTree(NBodyState* st, Tree* t)
 {
     Node* p;
 
-    if (!t->firstcall)                         /* tree data to reclaim? */
+    p = (Node*) t->root;                    /* start with the t.root */
+    while (p != NULL)                       /* loop scanning tree */
     {
-        p = (Node*) t->root;                    /* start with the t.root */
-        while (p != NULL)                       /* loop scanning tree */
+        if (isCell(p))                      /* found cell to free? */
         {
-            if (isCell(p))                      /* found cell to free? */
-            {
-                Next(p) = st->freecell;         /* link to front of */
-                st->freecell = p;               /* ...existing list */
-                p = More(p);                    /* scan down tree */
-            }
-            else                                /* skip over bodies */
-                p = Next(p);                    /* go on to next */
+            Next(p) = st->freecell;         /* link to front of */
+            st->freecell = p;               /* ...existing list */
+            p = More(p);                    /* scan down tree */
         }
+        else                                /* skip over bodies */
+            p = Next(p);                    /* go on to next */
     }
-    else                                        /* first time through */
-        t->firstcall = FALSE;                   /* so just note it */
-    t->root = NULL;                             /* flush existing tree */
-    t->cellused = 0;                            /* reset cell count */
 }
 
 /* makecell: return pointer to free cell. */
