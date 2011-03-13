@@ -93,7 +93,7 @@ static int bindServerArguments(lua_State* luaSt, const NBodyFlags* nbf)
 }
 
 /* Open a lua_State and load the stuff we define, but do not run anything */
-lua_State* nbodyLuaOpen()
+lua_State* nbodyLuaOpen(mwbool debug)
 {
     lua_State* luaSt;
 
@@ -105,6 +105,14 @@ lua_State* nbodyLuaOpen()
     }
 
     registerUsedStandardStuff(luaSt);
+
+    if (debug)
+    {
+        luaopen_io(luaSt);
+        luaopen_os(luaSt);
+        lua_pop(luaSt, 2);
+    }
+
     registerNBodyTypes(luaSt);
     registerOtherTypes(luaSt);
     registerPredefinedModelGenerators(luaSt);
@@ -120,7 +128,7 @@ static lua_State* nbodyOpenLuaStateWithScript(const NBodyFlags* nbf)
     char* script;
     lua_State* luaSt;
 
-    luaSt = nbodyLuaOpen();
+    luaSt = nbodyLuaOpen(FALSE);
     if (!luaSt)
         return NULL;
 
