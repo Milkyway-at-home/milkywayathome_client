@@ -18,7 +18,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <lua.h>
-#include <lauxlib.h>
+#include <lualib.h>
 
 #include "milkyway_lua_marshal.h"
 #include "nbody_lua_types.h"
@@ -112,5 +112,42 @@ int registerUtilityFunctions(lua_State* luaSt)
     lua_register(luaSt, "zipWith", luaZipWith);
 
     return 0;
+}
+
+static const luaL_Reg normalLibs[] =
+{
+    { "",              luaopen_base   },
+    { LUA_TABLIBNAME,  luaopen_table  },
+    { LUA_STRLIBNAME,  luaopen_string },
+ // { LUA_MATHLIBNAME, luaopen_math   },  We replace math with bindings to whatever math we're using
+    { NULL, NULL}
+};
+
+static const luaL_Reg debugOnlyLibs[] =
+{
+    { LUA_LOADLIBNAME, luaopen_package },
+    { LUA_IOLIBNAME,   luaopen_io      },
+    { LUA_OSLIBNAME,   luaopen_os      },
+    { LUA_DBLIBNAME,   luaopen_debug   },
+    { NULL, NULL}
+};
+
+static void mw_luaL_register(lua_State* luaSt, const luaL_Reg* libs)
+{
+    while (libs->name)
+    {
+        lua_pushcfunction(luaSt, libs->func);
+        lua_pushstring(luaSt, libs->name);
+        lua_call(luaSt, 1, 0);
+        ++libs;
+    }
+}
+
+/* Finer control over which standard libraries are opened for sandboxing */
+void mw_lua_openlibs(lua_State* luaSt, mwbool debug)
+{
+    mw_luaL_register(luaSt, normalLibs);
+    if (debug)
+        mw_luaL_register(luaSt, debugOnlyLibs);
 }
 

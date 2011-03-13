@@ -23,6 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lua.h>
 
 int registerUtilityFunctions(lua_State* luaSt);
+void mw_lua_openlibs(lua_State *L, mwbool debug);
 
 #endif /* _MILKYWAY_LUA_UTIL_H_ */
 

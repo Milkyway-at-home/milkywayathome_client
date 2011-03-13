@@ -51,14 +51,6 @@ static int getBodiesFunc(lua_State* luaSt)
     return mw_lua_checkglobalfunction(luaSt, "makeBodies");
 }
 
-static void registerUsedStandardStuff(lua_State* luaSt)
-{
-    luaopen_base(luaSt);
-    luaopen_table(luaSt);
-    luaopen_string(luaSt);
-    lua_pop(luaSt, 3);
-}
-
 static int bindBOINCStatus(lua_State* luaSt)
 {
     int isStandalone = TRUE;
@@ -105,14 +97,7 @@ lua_State* nbodyLuaOpen(mwbool debug)
         return NULL;
     }
 
-    registerUsedStandardStuff(luaSt);
-
-    if (debug)
-    {
-        luaopen_io(luaSt);
-        luaopen_os(luaSt);
-        lua_pop(luaSt, 2);
-    }
+    mw_lua_openlibs(luaSt, debug);
 
     registerNBodyTypes(luaSt);
     registerOtherTypes(luaSt);
