@@ -161,7 +161,7 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
 {
 
     unsigned int i;
-    const unsigned int nbody = ctx->nbody;
+    const unsigned int nbody = st->nbody;
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i) schedule(dynamic)

@@ -81,7 +81,7 @@ void stepSystem(const NBodyCtx* ctx, NBodyState* st)
 {
     const real dt = ctx->timestep;
 
-    advancePosVel(st, ctx->nbody, dt);
+    advancePosVel(st, st->nbody, dt);
 
   #if !NBODY_OPENCL
     gravMap(ctx, st);
@@ -89,7 +89,7 @@ void stepSystem(const NBodyCtx* ctx, NBodyState* st)
     gravMapCL(ctx, st);
   #endif /* !NBODY_OPENCL */
 
-    advanceVelocities(st, ctx->nbody, dt);
+    advanceVelocities(st, st->nbody, dt);
 
     st->tnow += dt;                           /* finally, advance time */
 }

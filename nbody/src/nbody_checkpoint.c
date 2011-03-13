@@ -66,7 +66,9 @@ static const size_t hdrSize = sizeof(size_t)                              /* siz
 
 #ifndef _WIN32
 
-static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const char* filename, int writing)
+static int openCheckpointHandle(const NBodyState* st,
+                                CheckpointHandle* cp,
+                                const char* filename, int writing)
 {
     struct stat sb;
 
@@ -88,7 +90,7 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
 
     if (writing)
     {
-        cp->cpFileSize = hdrSize + ctx->nbody * sizeof(Body);
+        cp->cpFileSize = hdrSize + st->nbody * sizeof(Body);
         /* Make the file the right size in case it's a new file */
         if (ftruncate(cp->fd, cp->cpFileSize) < 0)
         {
@@ -188,7 +190,7 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
 
     if (writing)
     {
-        cp->cpFileSize = hdrSize + ctx->nbody * sizeof(Body);
+        cp->cpFileSize = hdrSize + nbody * sizeof(Body);
     }
     else
     {
@@ -257,7 +259,6 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
 /* Should be given the same context as the dump. Returns nonzero if the state failed to be thawed */
 static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 {
-    unsigned int nbody;
     size_t realSize, ptrSize;
     unsigned int majorVersion, minorVersion;
     char buf[sizeof(hdr)];
@@ -269,7 +270,6 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
     READ_STR(buf, p, sizeof(hdr) - 1);
 
-    READ_INT(nbody, p);
     READ_SIZE_T(realSize, p);
     READ_SIZE_T(ptrSize, p);
     READ_INT(majorVersion, p);
@@ -277,7 +277,9 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
     READ_CTX(ctx, p);
     ctx->outfile = NULL; /* Clean up garbage pointer */
-    bodySize = ctx->nbody * sizeof(Body);
+
+    READ_INT(st->nbody, p);
+    bodySize = st->nbody * sizeof(Body);
 
     READ_REAL(st->tnow, p);
     READ_REAL(st->tree.rsize, p);
@@ -289,20 +291,14 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
     assert(cp->cpFileSize != 0);
     /* Make sure the file isn't lying about how many bodies there are */
-    supposedCheckpointSize = hdrSize + ctx->nbody * sizeof(Body);
+    supposedCheckpointSize = hdrSize + st->nbody * sizeof(Body);
     if (supposedCheckpointSize != cp->cpFileSize)
     {
         return warn1("Expected checkpoint file size ("ZU") is incorrect for expected number of bodies "
                      "(%u bodies, real size "ZU")\n",
                      supposedCheckpointSize,
-                     ctx->nbody,
+                     st->nbody,
                      cp->cpFileSize);
-    }
-
-    if (ctx->nbody != nbody)
-    {
-        return warn1("Checkpoint error: Expected number of bodies is inconsistent (%u vs %u)\n",
-                     ctx->nbody, nbody);
     }
 
     if (realSize != sizeof(real))
@@ -346,13 +342,13 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
    Name     Type    Values     Notes
 -------------------------------------------------------
    header        string   "mwnbody"  No null terminator
-   nbody         uint     anything   Num. of bodies expected. Error if doesn't match nbody in context.
    sizeof(real)  size_t   4, 8       Does the checkpoint use float or double
    sizeof(void*) size_t   4, 8
    version major int      4
    version minor int      4
                                         Saved parts of the program state
    ctx           NBodyCtx sizeof(NBodyCtx)
+   nbody         uint     anything   Num. of bodies expected. Error if doesn't match nbody in context.
    tnow          real     anything
    rsize         real     anything
    bodytab       Body*    anything   Array of bodies
@@ -367,14 +363,13 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
  */
 static inline void freezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHandle* cp)
 {
-    const size_t bodySize = sizeof(Body) * ctx->nbody;
+    const size_t bodySize = sizeof(Body) * st->nbody;
     char* p = cp->mptr;
 
     /* -1 so we don't bother with the null terminator. It's slightly
         annoying since the strcmps use it, but memcpy doesn't. We
         don't need it anyway  */
     DUMP_STR(p, hdr, sizeof(hdr) - 1);  /* Simple marker for a checkpoint file */
-    DUMP_INT(p, ctx->nbody);        /* Make sure we get the right number of bodies */
     DUMP_SIZE_T(p, sizeof(real));   /* Make sure we don't confuse double and float checkpoints */
     DUMP_SIZE_T(p, sizeof(void*));
     DUMP_INT(p, MILKYWAY_NBODY_VERSION_MAJOR);
@@ -384,6 +379,7 @@ static inline void freezeState(const NBodyCtx* ctx, const NBodyState* st, Checkp
     DUMP_CTX(p, ctx);
 
     /* Little state pieces */
+    DUMP_INT(p, st->nbody);         /* Make sure we get the right number of bodies */
     DUMP_REAL(p, st->tnow);
     DUMP_REAL(p, st->tree.rsize);
 
@@ -423,7 +419,7 @@ int readCheckpoint(NBodyCtx* ctx, NBodyState* st)
 {
     CheckpointHandle cp = EMPTY_CHECKPOINT_HANDLE;
 
-    if (openCheckpointHandle(ctx, &cp, checkpointResolved, FALSE))
+    if (openCheckpointHandle(st, &cp, checkpointResolved, FALSE))
     {
         warn("Opening checkpoint for resuming failed\n");
         closeCheckpointHandle(&cp);
@@ -448,7 +444,7 @@ int writeCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
     CheckpointHandle cp = EMPTY_CHECKPOINT_HANDLE;
 
     assert(checkpointHasBeenResolved);
-    if (openCheckpointHandle(ctx, &cp, CHECKPOINT_TMP_FILE, TRUE))
+    if (openCheckpointHandle(st, &cp, CHECKPOINT_TMP_FILE, TRUE))
     {
         closeCheckpointHandle(&cp);
         return warn1("Failed to open temporary checkpoint file\n"

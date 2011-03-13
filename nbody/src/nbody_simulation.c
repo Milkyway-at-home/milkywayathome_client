@@ -121,7 +121,7 @@ static int setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NB
     }
 
     /* Accelerations are scratch space */
-    st->acctab = (mwvector*) mwMallocA(ctx->nbody * sizeof(mwvector));
+    st->acctab = (mwvector*) mwMallocA(st->nbody * sizeof(mwvector));
 
     gravMap(ctx, st); /* Start 1st step */
 

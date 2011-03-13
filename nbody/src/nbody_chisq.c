@@ -135,7 +135,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
     const real costh  = mw_cos(rth);
     const real sinth  = mw_sin(rth);
 
-    const Body* endp = st->bodytab + ctx->nbody;
+    const Body* endp = st->bodytab + st->nbody;
     histogram = (unsigned int*) mwCalloc(maxIdx, sizeof(unsigned int));
 
     for (p = st->bodytab; p < endp; ++p)

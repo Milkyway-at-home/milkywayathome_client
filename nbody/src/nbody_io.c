@@ -46,7 +46,7 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, cons
 {
     Body* p;
     mwvector lbR;
-    const Body* endp = st->bodytab + ctx->nbody;
+    const Body* endp = st->bodytab + st->nbody;
 
     for (p = st->bodytab; p < endp; p++)
     {
@@ -72,7 +72,7 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, cons
 int outputBodyPositionBin(const NBodyCtx* ctx, const NBodyState* st)
 {
     Body* p;
-    const Body* endp = st->bodytab + ctx->nbody;
+    const Body* endp = st->bodytab + st->nbody;
 
     for (p = st->bodytab; p < endp; p++)
         fwrite(&Pos(p), sizeof(mwvector), 1, ctx->outfile);

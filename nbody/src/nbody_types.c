@@ -85,7 +85,7 @@ void destroyNBodyState(NBodyState* st)
   #endif /* NBODY_OPENCL */
 }
 
-void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies)
+void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, unsigned int nbody)
 {
     static const Tree emptyTree = EMPTY_TREE;
 
@@ -94,8 +94,9 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies)
 
     st->tree.rsize = ctx->treeRSize;
     st->tnow = 0.0;
+    st->nbody = nbody;
     st->bodytab = bodies;
-    st->acctab = (mwvector*) mwMallocA(sizeof(mwvector) * ctx->nbody);
+    st->acctab = (mwvector*) mwMallocA(sizeof(mwvector) * nbody);
 }
 
 NBodyState* newNBodyState()

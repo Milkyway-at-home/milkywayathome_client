@@ -306,7 +306,6 @@ char* showNBodyCtx(const NBodyCtx* ctx)
     if (0 > asprintf(&buf,
                      "ctx = { \n"
                      "  pot = %s\n"
-                     "  nbody           = %d\n"
                      "  timeEvolve      = %g\n"
                      "  timestep        = %g\n"
                      "  sunGCDist       = %g\n"
@@ -321,7 +320,6 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      "  outfile         = %p\n"
                      "};\n",
                      potBuf,
-                     ctx->nbody,
                      ctx->timeEvolve,
                      ctx->timestep,
                      ctx->sunGCDist,

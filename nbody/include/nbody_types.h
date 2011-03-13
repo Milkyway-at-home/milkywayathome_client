@@ -334,6 +334,7 @@ typedef struct NBODY_ALIGN
     unsigned int outputTime;
     time_t lastCheckpoint;
     real tnow;
+    unsigned int nbody;
     Body* bodytab;      /* points to array of bodies */
     mwvector* acctab;   /* Corresponding accelerations of bodies */
 
@@ -348,7 +349,7 @@ typedef struct NBODY_ALIGN
 #if NBODY_OPENCL
   #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
 #else
-  #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0, NAN, NULL, NULL }
+  #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0, NAN, 0, NULL, NULL }
 #endif /* NBODY_OPENCL */
 
 
@@ -386,8 +387,6 @@ typedef struct NBODY_ALIGN
 {
     Potential pot;
 
-    unsigned int nbody;       /* Total number of bodies in all models */
-
     real timestep;
     real timeEvolve;
 
@@ -422,7 +421,7 @@ typedef struct NBODY_ALIGN
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
-#define EMPTY_NBODYCTX { EMPTY_POTENTIAL, 0, NAN, NAN,                    \
+#define EMPTY_NBODYCTX { EMPTY_POTENTIAL, NAN, NAN,                       \
                          NAN, NAN, NAN,                                   \
                          NAN, InvalidCriterion,                           \
                          FALSE, FALSE,                                    \
@@ -431,7 +430,7 @@ typedef struct NBODY_ALIGN
 
 int destroyNBodyCtx(NBodyCtx* ctx);
 void destroyNBodyState(NBodyState* st);
-void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies);
+void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, unsigned int nbody);
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt, const unsigned int nbody);
 
 #ifndef __OPENCL_VERSION__  /* No function pointers allowed in kernels */

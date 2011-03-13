@@ -74,17 +74,18 @@ static int createNBodyState(lua_State* luaSt)
     Body* bodies;
     NBodyCtx* ctx;
     Potential* pot;
+    unsigned int nbody;
     NBodyState st = EMPTY_NBODYSTATE;
 
     ctx = checkNBodyCtx(luaSt, 1);
     pot = checkPotential(luaSt, 2);
-    bodies = readModels(luaSt, lua_gettop(luaSt) - 2, &ctx->nbody);
+    bodies = readModels(luaSt, lua_gettop(luaSt) - 2, &nbody);
     if (!bodies)
         luaL_argerror(luaSt, 3, "Expected model tables");
 
     ctx->pot = *pot;
 
-    setInitialNBodyState(&st, ctx, bodies);
+    setInitialNBodyState(&st, ctx, bodies, nbody);
     pushNBodyState(luaSt, &st);
 
     return 1;
