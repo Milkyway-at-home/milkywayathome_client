@@ -124,6 +124,8 @@ lua_CFunction mw_lua_checkcclosure(lua_State* luaSt, int idx);
 int mw_lua_checkluaclosure(lua_State* luaSt, int idx);
 void mw_lua_pushluaclosure(lua_State* luaSt, int ref);
 
+int mw_lua_checkfunction(lua_State* luaSt, int idx);
+
 void* mw_checknamedudata(lua_State* luaSt, int idx, const char* typeName);
 void* mw_tonamedudata(lua_State* luaSt, int ud, const char* typeName);
 int mw_lua_typecheck(lua_State* luaSt, int idx, int expectedType, const char* typeName);

@@ -280,7 +280,7 @@ static void testState()
 {
     lua_State* luaSt;
 
-    luaSt = nbodyLuaOpen(TRUE);
+    luaSt = nbodyLuaOpen(FALSE);
     if (!luaSt)
         return;
 

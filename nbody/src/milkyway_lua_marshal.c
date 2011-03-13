@@ -74,13 +74,19 @@ lua_CFunction mw_lua_checkcclosure(lua_State* luaSt, int idx)
     return lua_tocfunction(luaSt, idx);
 }
 
+int mw_lua_checkfunction(lua_State* luaSt, int idx)
+{
+    if (!lua_isfunction(luaSt, idx))
+        return luaL_typerror(luaSt, idx, "function");
+
+    return 0;
+}
+
 /* Return reference to Lua closure at idx */
 int mw_lua_checkluaclosure(lua_State* luaSt, int idx)
 {
-    /* LUA_TFUNCTION can refer to either a C function from the API
-     * side, or a Lua closure. lua_tocfunction() returns NULL if it's a Lua function. */
-
-    if (lua_iscfunction(luaSt, idx) && !lua_tocfunction(luaSt, idx))
+    /* LUA_TFUNCTION can refer to a cclosure or a Lua closure */
+    if (!lua_isfunction(luaSt, idx) || lua_iscfunction(luaSt, idx))
         luaL_typerror(luaSt, idx, "Lua closure");
 
     /* Copy since luaL_ref pops and no other lua_check* functions change the stack */

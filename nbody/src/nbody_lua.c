@@ -28,6 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_types.h"
 #include "nbody_lua_models.h"
 #include "milkyway_lua_marshal.h"
+#include "milkyway_lua_util.h"
 #include "nbody_check_params.h"
 
 static int getNBodyCtxFunc(lua_State* luaSt)
@@ -117,6 +118,7 @@ lua_State* nbodyLuaOpen(mwbool debug)
     registerOtherTypes(luaSt);
     registerPredefinedModelGenerators(luaSt);
     registerModelUtilityFunctions(luaSt);
+    registerUtilityFunctions(luaSt);
 
     return luaSt;
 }

@@ -183,6 +183,7 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_checkpoint.h)
 
 set(nbody_lua_src ${NBODY_SRC_DIR}/milkyway_lua_marshal.c
+                  ${NBODY_SRC_DIR}/milkyway_lua_util.c
                   ${NBODY_SRC_DIR}/milkyway_lua_math.c
                   ${NBODY_SRC_DIR}/milkyway_lua_vector.c
                   ${NBODY_SRC_DIR}/milkyway_lua_dsfmt.c
@@ -208,6 +209,7 @@ set(nbody_lua_src ${NBODY_SRC_DIR}/milkyway_lua_marshal.c
 
 set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/milkyway_lua.h
                       ${NBODY_INCLUDE_DIR}/milkyway_lua_marshal.h
+                      ${NBODY_INCLUDE_DIR}/milkyway_lua_util.h
                       ${NBODY_INCLUDE_DIR}/milkyway_lua_math.h
                       ${NBODY_INCLUDE_DIR}/milkyway_lua_vector.h
                       ${NBODY_INCLUDE_DIR}/milkyway_lua_dsfmt.h
