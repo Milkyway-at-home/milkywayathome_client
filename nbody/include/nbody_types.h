@@ -343,10 +343,12 @@ typedef struct NBODY_ALIGN
   #endif /* NBODY_OPENCL */
 } NBodyState;
 
+#define NBODYSTATE_TYPE "NBodyState"
+
 #if NBODY_OPENCL
-  #define EMPTY_STATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
+  #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
 #else
-  #define EMPTY_STATE { EMPTY_TREE, NULL, 0, 0, NAN, NULL, NULL }
+  #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0, NAN, NULL, NULL }
 #endif /* NBODY_OPENCL */
 
 
@@ -429,6 +431,7 @@ typedef struct NBODY_ALIGN
 
 int destroyNBodyCtx(NBodyCtx* ctx);
 void destroyNBodyState(NBodyState* st);
+void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies);
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt, const unsigned int nbody);
 
 #ifndef __OPENCL_VERSION__  /* No function pointers allowed in kernels */

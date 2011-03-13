@@ -26,6 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_lua_marshal.h"
 #include "nbody_plummer.h"
 
+
 /* things in NBodyCtx which influence individual steps that aren't the potential. */
 typedef struct
 {
@@ -271,6 +272,56 @@ static Body* testPlummer_1_1()
     return bodies;
 }
 
+static int luaHashBodies(lua_State* luaSt)
+{
+    NBodyState* st;
+    BodyHash hash;
+
+    if (lua_gettop(luaSt) != 1)
+        luaL_argerror(luaSt, 1, "Expected 1 argument");
+
+    st = checkNBodyState(luaSt, 1);
+    //hashBodies(&hash, st->bodies,
+
+    warn("arstarstats %p\n", st->bodytab);
+
+
+    return 0;
+}
+
+static int installHashFunctions(lua_State* luaSt)
+{
+    static const luaL_reg hashMethods[] =
+        {
+            { "hashBodies", luaHashBodies },
+            { NULL, NULL }
+        };
+
+    warn("Installing hash functions\n");
+    luaL_register(luaSt, NBODYSTATE_TYPE, hashMethods);
+    lua_pop(luaSt, 1);
+
+    return 0;
+}
+
+
+static void testState()
+{
+    lua_State* luaSt;
+
+    luaSt = nbodyLuaOpen();
+    if (!luaSt)
+        return;
+
+    registerNBodyState(luaSt);
+    installHashFunctions(luaSt);
+
+    if (luaL_dofile(luaSt, "teststate.lua"))
+        mw_lua_pcall_warn(luaSt, "Error evaluating script");
+
+    lua_close(luaSt);
+}
+
 int main(int argc, const char* argv[])
 {
     Body* bs;
@@ -287,6 +338,8 @@ int main(int argc, const char* argv[])
     printHash(&hash, 0);
 
     free(bs);
+
+    testState();
 
     return 0;
 }

@@ -138,7 +138,7 @@ static int verifyFile(const NBodyFlags* nbf)
 {
     int rc;
     NBodyCtx ctx  = EMPTY_NBODYCTX;
-    NBodyState st = EMPTY_STATE;
+    NBodyState st = EMPTY_NBODYSTATE;
 
     rc = setupNBody(&ctx, &st, &ctx.histogramParams, nbf);
     if (rc)
@@ -161,7 +161,7 @@ static int verifyFile(const NBodyFlags* nbf)
 int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to control output */
 {
     NBodyCtx ctx  = EMPTY_NBODYCTX;
-    NBodyState st = EMPTY_STATE;
+    NBodyState st = EMPTY_NBODYSTATE;
 
     real chisq;
     double ts = 0.0, te = 0.0;

@@ -194,6 +194,8 @@ set(nbody_lua_src ${NBODY_SRC_DIR}/milkyway_lua_marshal.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_types.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_type_marshal.c
 
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_nbodystate.c
+
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_nbodyctx.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_body.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_halo.c
@@ -216,6 +218,7 @@ set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/milkyway_lua.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_types.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_type_marshal.h
 
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_nbodystate.h
 
                       ${NBODY_INCLUDE_DIR}/nbody_lua_nbodyctx.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_body.h

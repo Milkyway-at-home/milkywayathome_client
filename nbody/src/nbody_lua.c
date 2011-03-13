@@ -233,10 +233,10 @@ static Body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, const Potenti
 
     nResults = lua_gettop(luaSt) - level;
 
-    return readReturnedModels(luaSt, nResults, n);
+    return readModels(luaSt, nResults, n);
 }
 
-static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* st, HistogramParams* hp)
+static int evaluateInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* st, HistogramParams* hp)
 {
     Body* bodies;
 
@@ -253,9 +253,7 @@ static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* s
     if (!bodies)
         return 1;
 
-    st->tree.rsize = ctx->treeRSize;
-    st->tnow = 0.0;
-    st->bodytab = bodies;
+    setInitialNBodyState(st, ctx, bodies);
 
     return 0;
 }
@@ -269,7 +267,7 @@ int setupNBody(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFl
     if (!luaSt)
         return 1;
 
-    rc = setupInitialNBodyState(luaSt, ctx, st, hp);
+    rc = evaluateInitialNBodyState(luaSt, ctx, st, hp);
     lua_close(luaSt);
 
     return rc;
