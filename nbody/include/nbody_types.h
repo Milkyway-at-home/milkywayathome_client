@@ -433,6 +433,8 @@ void destroyNBodyState(NBodyState* st);
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, unsigned int nbody);
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt, const unsigned int nbody);
 
+void sortBodies(Body* bodies, unsigned int nbody);
+
 #ifndef __OPENCL_VERSION__  /* No function pointers allowed in kernels */
 /* Acceleration functions for a given potential */
 typedef mwvector (*SphericalAccel) (const Spherical*, const mwvector);

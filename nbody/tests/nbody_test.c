@@ -103,56 +103,11 @@ static void generateTestSet()
 }
 
 
-static char* showHash(const BodyHash* hash, int initializer)
+static void showHash(char* buf, const BodyHash* hash)
 {
-    char* buf;
+    sprintf(buf, "%08x%08x%08x%08x%08x", hash->mdi[0], hash->mdi[1], hash->mdi[2], hash->mdi[3], hash->mdi[4]);
 
-    if (!hash)
-        return NULL;
-
-    buf = (char*) mwMalloc(2 * sizeof(BodyHash) + 1);
-    buf[2 * sizeof(BodyHash)] = '\0';
-
-    if (initializer)
-        sprintf(buf, "{ 0x%x, 0x%x, 0x%x, 0x%x, 0x%x }", hash->mdi[0], hash->mdi[1], hash->mdi[2], hash->mdi[3], hash->mdi[4]);
-    else
-        sprintf(buf, "%08x%08x%08x%08x%08x", hash->mdi[0], hash->mdi[1], hash->mdi[2], hash->mdi[3], hash->mdi[4]);
-
-    return buf;
 }
-
-static void printHash(const BodyHash* hash, int initializer)
-{
-    char* buf;
-
-    buf = showHash(hash, initializer);
-    puts(buf);
-    free(buf);
-}
-
-static int compareVectors(mwvector a, mwvector b)
-{
-    return X(a) < X(b) || Y(a) < Y(b) || Z(a) < Z(b);
-}
-
-/* Function for sorting bodies */
-static int compareBodies(const void* _a, const void* _b)
-{
-    const Body* a = (const Body*) _a;
-    const Body* b = (const Body*) _b;
-
-    return Mass(a) < Mass(b) || compareVectors(Pos(a), Pos(b)) || compareVectors(Vel(a), Vel(b));
-}
-
-/* Sort the bodies. The actual order doesn't matter, it just needs to
- * be consistent when we hash. This is so when if we end up shifting
- * bodies around for the GPU, the tests will still work as
- * expected. */
-static void sortBodies(Body* bodies, unsigned int nbody)
-{
-    qsort(bodies, nbody, sizeof(Body), compareBodies);
-}
-
 
 /* Hash of just the bodies masses, positions and velocities */
 static int hashBodiesRaw(EVP_MD_CTX* hashCtx, BodyHash* hash, const Body* bodies, unsigned int nbody)
@@ -272,32 +227,48 @@ static Body* testPlummer_1_1()
     return bodies;
 }
 
-static int luaHashBodies(lua_State* luaSt)
+
+static int luaHashOrHashSortBodies(lua_State* luaSt, int sort)
 {
     NBodyState* st;
     BodyHash hash;
+    char hashBuf[2 * sizeof(BodyHash) + 1] = "";
 
     if (lua_gettop(luaSt) != 1)
         luaL_argerror(luaSt, 1, "Expected 1 argument");
 
     st = checkNBodyState(luaSt, 1);
-    //hashBodies(&hash, st->bodies,
 
-    warn("arstarstats %p\n", st->bodytab);
+    if (sort)
+        sortBodies(st->bodytab, st->nbody);
 
+    hashBodies(&hash, st->bodytab, st->nbody);
 
-    return 0;
+    showHash(hashBuf, &hash);
+    lua_pushstring(luaSt, hashBuf);
+
+    return 1;
+}
+
+static int luaHashBodies(lua_State* luaSt)
+{
+    return luaHashOrHashSortBodies(luaSt, 0);
+}
+
+static int luaHashSortBodies(lua_State* luaSt)
+{
+    return luaHashOrHashSortBodies(luaSt, 1);
 }
 
 static int installHashFunctions(lua_State* luaSt)
 {
     static const luaL_reg hashMethods[] =
         {
-            { "hashBodies", luaHashBodies },
+            { "hashBodies",     luaHashBodies     },
+            { "hashSortBodies", luaHashSortBodies },
             { NULL, NULL }
         };
 
-    warn("Installing hash functions\n");
     luaL_register(luaSt, NBODYSTATE_TYPE, hashMethods);
     lua_pop(luaSt, 1);
 
@@ -335,7 +306,6 @@ int main(int argc, const char* argv[])
 
     //printBodies(bs, 100);
     hashSortBodies(&hash, bs, 100);
-    printHash(&hash, 0);
 
     free(bs);
 

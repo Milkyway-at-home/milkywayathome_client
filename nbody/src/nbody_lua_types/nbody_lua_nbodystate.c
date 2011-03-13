@@ -58,12 +58,7 @@ static int stepNBodyState(lua_State* luaSt)
 
 static int gcNBodyState(lua_State* luaSt)
 {
-    NBodyState* st;
-
-    warn("GC state\n");
-    st = checkNBodyState(luaSt, -1);
-    destroyNBodyState(st);
-
+    destroyNBodyState(checkNBodyState(luaSt, -1));
     return 0;
 }
 
@@ -91,6 +86,19 @@ static int createNBodyState(lua_State* luaSt)
     return 1;
 }
 
+static int sortBodiesNBodyState(lua_State* luaSt)
+{
+    NBodyState* st;
+
+    if (lua_gettop(luaSt) != 1)
+        luaL_argerror(luaSt, 1, "Expected 1 argument");
+
+    st = checkNBodyState(luaSt, 1);
+    sortBodies(st->bodytab, st->nbody);
+
+    return 0;
+}
+
 
 static const luaL_reg metaMethodsNBodyState[] =
 {
@@ -100,8 +108,9 @@ static const luaL_reg metaMethodsNBodyState[] =
 
 static const luaL_reg methodsNBodyState[] =
 {
-    { "create", createNBodyState },
-    { "step",   stepNBodyState   },
+    { "create",     createNBodyState     },
+    { "step",       stepNBodyState       },
+    { "sortBodies", sortBodiesNBodyState },
     { NULL, NULL }
 };
 

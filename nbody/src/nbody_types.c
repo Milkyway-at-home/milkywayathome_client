@@ -21,7 +21,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_util.h"
 #include "nbody_types.h"
-
+#include "nbody_show.h"
 
 int destroyNBodyCtx(NBodyCtx* ctx)
 {
@@ -123,4 +123,77 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt, const unsigned int
     memcpy(st->acctab, oldSt->acctab, sizeof(mwvector) * nbody);
 }
 
+
+static inline int compareComponents(real a, real b)
+{
+    if (a > b)
+        return 1;
+    if (a < b)
+        return -1;
+
+    return 0;
+}
+
+static int compareVectors(mwvector a, mwvector b)
+{
+    int rc;
+    real ar, br;
+
+    ar = mw_absv(a);
+    br = mw_absv(b);
+
+    if (ar > br)
+        return 1;
+    else if (ar < br)
+        return -1;
+    else
+    {
+        /* Resort to comparing by each component */
+        if ((rc = compareComponents(X(a), X(b))))
+            return rc;
+
+        if ((rc = compareComponents(Y(a), Y(b))))
+            return rc;
+
+        if ((rc = compareComponents(Z(a), Z(b))))
+            return rc;
+    }
+
+    return 0;  /* Equal */
+}
+
+/* Function for sorting bodies */
+static int compareBodies(const void* _a, const void* _b)
+{
+    const Body* a = (const Body*) _a;
+    const Body* b = (const Body*) _b;
+    int rc;
+    char* bufA;
+    char* bufB;
+
+    if ((rc = compareComponents(Mass(a), Mass(b))))
+        return rc;
+
+    /* Masses equal, compare positions */
+    rc = compareVectors(Pos(a), Pos(b));
+    if (rc == 0)
+    {
+        bufA = showBody(a);
+        bufB = showBody(b);
+        mw_panic("Comparing bodies with equal positions: %s, %s\n", bufA, bufB);
+        free(bufA);  /* Never reached */
+        free(bufB);
+    }
+
+    return rc;
+}
+
+/* Sort the bodies. The actual order doesn't matter, it just needs to
+ * be consistent when we hash. This is so when if we end up shifting
+ * bodies around for the GPU, the tests will still work as
+ * expected. */
+void sortBodies(Body* bodies, unsigned int nbody)
+{
+    qsort(bodies, (size_t) nbody, sizeof(Body), compareBodies);
+}
 
