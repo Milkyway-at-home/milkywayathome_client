@@ -144,12 +144,11 @@ static void expandBox(Tree* t, Body* btab, unsigned int nbody)
 /* newTree: reclaim cells in tree, prepare to build new one. */
 static void newTree(NBodyState* st, Tree* t)
 {
-    static mwbool firstcall = TRUE;
     Node* p;
 
-    if (!firstcall)                             /* tree data to reclaim? */
+    if (!t->firstcall)                         /* tree data to reclaim? */
     {
-        p = (Node*) t->root;                  /* start with the t.root */
+        p = (Node*) t->root;                    /* start with the t.root */
         while (p != NULL)                       /* loop scanning tree */
         {
             if (isCell(p))                      /* found cell to free? */
@@ -163,7 +162,7 @@ static void newTree(NBodyState* st, Tree* t)
         }
     }
     else                                        /* first time through */
-        firstcall = FALSE;                      /* so just note it */
+        t->firstcall = FALSE;                   /* so just note it */
     t->root = NULL;                             /* flush existing tree */
     t->cellused = 0;                            /* reset cell count */
 }
@@ -372,7 +371,8 @@ void makeTree(const NBodyCtx* ctx, NBodyState* st)
 
     t->root = makeCell(st, t);                       /* allocate the t.root cell */
     mw_zerov(Pos(t->root));                          /* initialize the midpoint */
-    expandBox(t, st->bodytab, st->nbody);            /* and expand cell to fit */
+    expandBox(t, st->bodytab, st->nbody);
+    /* and expand cell to fit */
     t->maxlevel = 0;                                 /* init count of levels */
     for (p = st->bodytab; p < endp; p++)             /* loop over bodies... */
     {
