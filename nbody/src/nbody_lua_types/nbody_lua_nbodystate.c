@@ -29,6 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_nbodyctx.h"
 #include "nbody_lua_potential.h"
 #include "nbody_lua_type_marshal.h"
+#include "nbody_step.h"
 
 
 NBodyState* checkNBodyState(lua_State* luaSt, int idx)
@@ -53,6 +54,10 @@ int pushNBodyState(lua_State* luaSt, const NBodyState* p)
 
 static int stepNBodyState(lua_State* luaSt)
 {
+    if (lua_gettop(luaSt) != 2)
+        return luaL_argerror(luaSt, 3, "Expected 2 arguments");
+
+    stepSystem(checkNBodyCtx(luaSt, 1), checkNBodyState(luaSt, 2));
     return 0;
 }
 
@@ -99,10 +104,17 @@ static int sortBodiesNBodyState(lua_State* luaSt)
     return 0;
 }
 
+static int eqNBodyState(lua_State* luaSt)
+{
+    lua_pushboolean(luaSt, equalNBodyState(checkNBodyState(luaSt, 1), checkNBodyState(luaSt, 2)));
+    return 1;
+}
+
 
 static const luaL_reg metaMethodsNBodyState[] =
 {
     { "__gc", gcNBodyState },
+    { "__eq", eqNBodyState },
     { NULL, NULL }
 };
 

@@ -104,6 +104,39 @@ NBodyState* newNBodyState()
     return mwCalloc(1, sizeof(NBodyState));
 }
 
+static int equalMaybeArray(const void* a, const void* b, size_t n)
+{
+    if (!a && !b)  /* Both not set, equal */
+        return 1;
+
+    if (!a || !b)  /* One is not set, not equal */
+        return 0;
+
+    assert(a && b);
+    return memcmp(a, b, n);  /* Compare actual values */
+}
+
+
+/* TODO: Doesn't handle tree */
+/* Returns nonzero if states are equal, 0 otherwise */
+int equalNBodyState(const NBodyState* st1, const NBodyState* st2)
+{
+    assert(st1 && st2);
+
+    if (   st1->tnow != st2->tnow
+        || st1->outputTime != st2->outputTime
+        || st1->lastCheckpoint != st2->lastCheckpoint
+        || st1->nbody != st2->nbody)
+    {
+        return 0;
+    }
+
+    if (!equalMaybeArray(st1->bodytab, st2->bodytab, st1->nbody * sizeof(Body)))
+        return 1;
+
+    return equalMaybeArray(st1->acctab, st2->acctab, st1->nbody * sizeof(mwvector));
+}
+
 /* TODO: Doesn't clone tree */
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt, const unsigned int nbody)
 {

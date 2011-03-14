@@ -432,6 +432,7 @@ int destroyNBodyCtx(NBodyCtx* ctx);
 void destroyNBodyState(NBodyState* st);
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, unsigned int nbody);
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt, const unsigned int nbody);
+int equalNBodyState(const NBodyState* st1, const NBodyState* st2);
 
 void sortBodies(Body* bodies, unsigned int nbody);
 
