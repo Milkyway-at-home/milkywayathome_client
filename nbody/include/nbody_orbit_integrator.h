@@ -23,7 +23,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_types.h"
 
-InitialConditions reverseOrbit(const Potential* pot, InitialConditions ic, real tstop, real dt);
+void reverseOrbit(mwvector* finalPos,
+                  mwvector* finalVel,
+                  const Potential* pot,
+                  mwvector pos,
+                  mwvector vel,
+                  real tstop,
+                  real dt);
 
 #endif /* _NBODY_ORBIT_INTEGRATOR_H_ */
 

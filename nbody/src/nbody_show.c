@@ -267,31 +267,6 @@ char* showPotential(const Potential* p)
     return buf;
 }
 
-char* showInitialConditions(const InitialConditions* ic)
-{
-    char* buf;
-
-    if (!ic)
-        return NULL;
-
-    if (0 > asprintf(&buf,
-                     "{ \n"
-                     "          position     = { %g, %g, %g }\n"
-                     "          velocity     = { %g, %g, %g }\n"
-                     "        };\n",
-                     X(ic->position),
-                     Y(ic->position),
-                     Z(ic->position),
-                     X(ic->velocity),
-                     Y(ic->velocity),
-                     Z(ic->velocity)))
-    {
-        fail("asprintf() failed\n");
-    }
-
-    return buf;
-}
-
 /* Most efficient function ever */
 char* showNBodyCtx(const NBodyCtx* ctx)
 {
@@ -344,13 +319,6 @@ char* showNBodyCtx(const NBodyCtx* ctx)
 void printNBodyCtx(const NBodyCtx* ctx)
 {
     char* buf = showNBodyCtx(ctx);
-    puts(buf);
-    free(buf);
-}
-
-void printInitialConditions(const InitialConditions* ic)
-{
-    char* buf = showInitialConditions(ic);
     puts(buf);
     free(buf);
 }

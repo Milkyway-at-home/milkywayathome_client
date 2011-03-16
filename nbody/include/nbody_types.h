@@ -273,16 +273,6 @@ typedef struct NBODY_ALIGN
     unsigned int maxlevel;   /* count of levels in tree */
 } Tree;
 
-typedef struct NBODY_ALIGN
-{
-    mwvector position;
-    mwvector velocity;
-} InitialConditions;
-
-#define EMPTY_INITIAL_CONDITIONS { EMPTY_MWVECTOR, EMPTY_MWVECTOR }
-
-#define INITIAL_CONDITIONS_TYPE "InitialConditions"
-
 
 #ifndef _WIN32
 

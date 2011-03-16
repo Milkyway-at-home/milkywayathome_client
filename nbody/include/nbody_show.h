@@ -39,12 +39,10 @@ void printDisk(const Disk*);
 char* showPotential(const Potential*);
 void printPotential(const Potential*);
 
-char* showInitialConditions(const InitialConditions*);
 char* showNBodyCtx(const NBodyCtx*);
 void printNBodyCtx(const NBodyCtx*);
 char* showVector(const mwvector);
 
-void printInitialConditions(const InitialConditions*);
 void printVector(const mwvector v);
 
 char* showHistogramParams(const HistogramParams*);

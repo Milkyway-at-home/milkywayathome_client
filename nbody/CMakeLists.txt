@@ -203,7 +203,6 @@ set(nbody_lua_src ${NBODY_SRC_DIR}/milkyway_lua_marshal.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_disk.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_spherical.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_potential.c
-                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_initial_conditions.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_histogram_params.c)
 
 
@@ -228,7 +227,6 @@ set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/milkyway_lua.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_disk.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_spherical.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_potential.h
-                      ${NBODY_INCLUDE_DIR}/nbody_lua_initial_conditions.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_histogram_params.h)
 
 

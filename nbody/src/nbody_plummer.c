@@ -172,7 +172,8 @@ static int generatePlummerCore(lua_State* luaSt,
 int generatePlummer(lua_State* luaSt)
 {
     static dsfmt_t* prng;
-    static const InitialConditions* ic;
+    static const mwvector* position = NULL;
+    static const mwvector* velocity = NULL;
     static mwbool ignore;
     static real mass;
     static int nbody;
@@ -180,11 +181,12 @@ int generatePlummer(lua_State* luaSt)
 
     static const MWNamedArg argTable[] =
         {
-            { "mass",              LUA_TNUMBER,   NULL,                    TRUE,  &mass        },
-            { "scaleRadius",       LUA_TNUMBER,   NULL,                    TRUE,  &radiusScale },
-            { "initialConditions", LUA_TUSERDATA, INITIAL_CONDITIONS_TYPE, TRUE,  &ic          },
-            { "ignore",            LUA_TBOOLEAN,  NULL,                    FALSE, &ignore      },
-            { "prng",              LUA_TUSERDATA, DSFMT_TYPE,              TRUE,  &prng        },
+            { "mass",         LUA_TNUMBER,   NULL,          TRUE,  &mass        },
+            { "scaleRadius",  LUA_TNUMBER,   NULL,          TRUE,  &radiusScale },
+            { "position",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &position    },
+            { "velocity",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &velocity    },
+            { "ignore",       LUA_TBOOLEAN,  NULL,          FALSE, &ignore      },
+            { "prng",         LUA_TUSERDATA, DSFMT_TYPE,    TRUE,  &prng        },
             END_MW_NAMED_ARG
         };
 
@@ -195,7 +197,7 @@ int generatePlummer(lua_State* luaSt)
     handleNamedArgumentTable(luaSt, argTable, 2);
 
     return generatePlummerCore(luaSt, NULL, prng, nbody, mass, ignore,
-                               ic->position, ic->velocity, radiusScale);
+                               *position, *velocity, radiusScale);
 }
 
 void registerGeneratePlummer(lua_State* luaSt)
