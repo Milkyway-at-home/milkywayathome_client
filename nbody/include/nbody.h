@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 #include "nbody_config.h"
-#include "nbody_util.h"
+#include "nbody_types.h"
 
 #include <time.h>
 

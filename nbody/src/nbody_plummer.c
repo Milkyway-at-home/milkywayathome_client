@@ -20,7 +20,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "nbody_priv.h"
-#include "nbody_util.h"
 #include "milkyway_util.h"
 #include "milkyway_lua_marshal.h"
 #include "nbody_lua_types.h"

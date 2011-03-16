@@ -160,7 +160,6 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_simulation.c
                   ${NBODY_SRC_DIR}/nbody_check_params.c
                   ${NBODY_SRC_DIR}/nbody_plummer.c
-                  ${NBODY_SRC_DIR}/nbody_util.c
                   ${NBODY_SRC_DIR}/nbody_step.c
                   ${NBODY_SRC_DIR}/nbody_show.c
                   ${NBODY_SRC_DIR}/nbody_checkpoint.c
@@ -180,7 +179,6 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_show.h
                       ${NBODY_INCLUDE_DIR}/nbody_priv.h
                       ${NBODY_INCLUDE_DIR}/nbody_types.h
-                      ${NBODY_INCLUDE_DIR}/nbody_util.h
                       ${NBODY_INCLUDE_DIR}/nbody_checkpoint.h
                       ${NBODY_INCLUDE_DIR}/nbody_defaults.h)
 
@@ -297,16 +295,11 @@ endif()
 set(exe_link_libs ${POPT_LIBRARY}
                   nbody_simulation
                   nbody_lua
-                  nbody_simulation
                   milkyway
                   ${LUA_LIBRARIES}
                   ${LIBM_LIBRARY}
                   ${OS_SPECIFIC_LIBS}
                   ${nbody_link_libs})
-                  # FIXME: nbody_simulation and nbody_lua depend on linking to each other
-                                     # coordinate conversion functions in nbody_util.c
-
-
 
 
 if(NBODY_CRLIBM)

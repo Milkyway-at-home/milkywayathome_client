@@ -112,3 +112,47 @@ function getKeyAnswerPair(rawCtx)
 end
 
 
+function makePotentialA()
+      local disk = Disk.miyamotoNagai{ mass = 4.45865888e5,
+                                    scaleLength = 6.5,
+                                    scaleHeight = 0.26
+                                  }
+
+   local halo = Halo.logarithmic{ vhalo = 73,
+                                  scaleLength = 12.0,
+                                  flattenZ = 1.0
+                                }
+
+   local spherical = Spherical.spherical{ mass = 1.52954402e5,
+                                          scale = 0.7
+                                        }
+
+   local pot = Potential.create{ disk = disk,
+                                 halo = halo,
+                                 spherical = spherical
+                               }
+   return pot
+end
+
+function makePotentialB()
+   local potA = makePotentialA()
+   -- Replace disk with exponential disk
+   potA.disk = Disk.exponential{ scaleLength = 7,
+                                 mass = 5.0e5
+                              }
+   return potA
+end
+
+function makeModelA(nbody, seed)
+   predefinedModels.plummer(nbody, { prng = DSFMT.create(seed) })
+
+
+end
+
+function makeModelB()
+
+end
+
+testPotenials = { potentialA = makePotentialA(), potentialB = makePotentialB() }
+
+

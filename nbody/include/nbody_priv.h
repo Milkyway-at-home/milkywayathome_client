@@ -35,7 +35,6 @@ extern "C" {
 #include "nbody_tree.h"
 #include "nbody_potential.h"
 #include "nbody_orbit_integrator.h"
-#include "nbody_util.h"
 #include "nbody_step.h"
 #include "nbody_show.h"
 #include "nbody_io.h"
