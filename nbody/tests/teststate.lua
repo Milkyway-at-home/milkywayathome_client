@@ -132,45 +132,50 @@ testModels = {
    modelA =
       function(nbody, seed)
          local mod, eps2, dt
-         mod = predefinedModels.plummer(nbody, {
-                                           prng = DSFMT.create(seed),
-                                           position = Vector.create(-22.0415, -3.35444, 19.9539),
-                                           velocity = Vector.create(118.444, 168.874, -67.6378),
-                                           mass = 16,
-                                           scaleRadius = 0.2
-                                        })
-         eps2 = 0.01
-         dt = 0.01
-         return mod, eps2, dt
+         local r0, mass = 0.2, 16
+         mod = predefinedModels.plummer{
+            nbody = nbody,
+            prng = DSFMT.create(seed),
+            position = Vector.create(-22.0415, -3.35444, 19.9539),
+            velocity = Vector.create(118.444, 168.874, -67.6378),
+            mass = mass,
+            scaleRadius = r0
+         }
+
+         return mod, calculateEps2(nbody, r0), calculateTimestep(mass, r0)
       end,
 
    modelB =
       function(nbody, seed)
          local eps2, pos, vel, prng, m1, m2
+         local smallR0, bigR0 = 0.2, 0.5
+         local smallMass, bigMass = 12, 12
          pos = Vector.create(-22.0415, -3.35444, 19.9539)
          vel = Vector.create(118.444, 168.874, -67.6378)
          prng = DSFMT.create(seed)
 
-         m1 = predefinedModels.plummer(nbody / 5, {
-                                          prng = prng,
-                                          position = pos,
-                                          velocity = vel,
-                                          mass = 12,
-                                          scaleRadius = 0.2,
-                                          ignore = true
-                                       })
+         m1 = predefinedModels.plummer{
+            nbody = nbody / 5,
+            prng = prng,
+            position = pos,
+            velocity = vel,
+            mass = smallMass,
+            scaleRadius = smallR0,
+            ignore = true
+         }
 
-         m2 = predefinedModels.plummer(4 * nbody / 5, {
-                                          prng = prng,
-                                          position = pos,
-                                          velocity = vel,
-                                          mass = 12,
-                                          scaleRadius = 0.5,
-                                          ignore = true
-                                       })
+         m2 = predefinedModels.plummer{
+            nbody = 4 * nbody / 5,
+            prng = prng,
+            position = pos,
+            velocity = vel,
+            mass = bigMass,
+            scaleRadius = bigR0,
+            ignore = true
+         }
 
-         eps2 = 0.01
-         dt = 0.01
+         eps2 = calculateEps2(nbody, smallR0)
+         dt   = calculateTimestep(smallMass + bigMass, smallR0)
          return mergeModels(m1, m2), eps2, dt
       end
 }
@@ -196,21 +201,33 @@ function getTestNBodyState(t)
 end
 
 function runTest(t)
-   local st, ctx, i
+   local st, ctx
+   local err = false
    ctx, st = getTestNBodyState(t)
-   print("initial hash", st:hashBodies())
 
    for i = 1, t.nSteps do
       if st:step(ctx) then
-         print("Error running step")
+         err = true
          break
       end
-      print("hash step", i, st:hashBodies())
    end
 
-   print("Final hash", st:hashBodies())
+   return st:hashBodies(), err
 end
 
+function generateTestResults(resultTable)
+   resultTable.hashtable = { }
+
+   for _, t in ipairs(tests) do
+      local resultHash, err = runTest(t)
+      local testHash = hashNBodyTest(t)
+      resultTable.hashtable[testHash] = t
+      resultTable.hashtable[testHash].result = resultHash
+      resultTable.hashtable[testHash].err = err
+   end
+
+   return resultTable
+end
 
 
 resultTable = { potentials   = getKeyNames(testPotentials),
@@ -253,11 +270,6 @@ tests = buildAllCombinations(
    resultTable.allowIncests)
 
 
-resultTable.hashtable = { }
-for _, v in ipairs(tests) do
-   resultTable.hashtable[hashNBodyTest(v)] = v
-end
-
 --table.foreach(hashTestTable, function(_, a) table.foreach(a, print) end)
 --table.foreach(hashTestTable, function(k, _) print(k) end)
 
@@ -276,6 +288,21 @@ end
 -- table.foreach(loaded.hashtable[lookupKey], print)
 
 print("There are lots", #tests)
-runTest(tests[9003])
+
+smallerList = { }
+j = 1
+for i = 0, 38000, 1000 do
+   smallerList[j] = tests[i]
+   j = j + 1
+end
+
+print("There are fewer", #smallerList)
+smallResults = generateTestResults(smallerList)
+
+print("Results are", #smallResults)
+for k, v in pairs(smallResults) do
+   print("results", k)
+end
+
 
 
