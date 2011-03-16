@@ -27,7 +27,7 @@ extern "C" {
 
 #include "nbody_types.h"
 
-void stepSystem(const NBodyCtx* ctx, NBodyState* st);
+int stepSystem(const NBodyCtx* ctx, NBodyState* st);
 
 #ifdef _cplusplus
 }

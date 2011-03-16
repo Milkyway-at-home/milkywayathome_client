@@ -23,7 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_types.h"
 
-void makeTree(const NBodyCtx*, NBodyState*);    /* construct tree structure */
+int makeTree(const NBodyCtx*, NBodyState*);    /* construct tree structure */
 
 #endif /* _NBODY_TREE_H_ */
 

@@ -201,10 +201,11 @@ function runTest(t)
    print("initial hash", st:hashBodies())
 
    for i = 1, t.nSteps do
-      print("Stepping", i)
-      st:step(ctx)
-      print("hash here", st:hashBodies())
-
+      if st:step(ctx) then
+         print("Error running step")
+         break
+      end
+      print("hash step", i, st:hashBodies())
    end
 
    print("Final hash", st:hashBodies())

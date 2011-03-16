@@ -62,13 +62,15 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
   #endif /* BOINC_APPLICATION */
 }
 
-static void runSystem(const NBodyCtx* ctx, NBodyState* st)
+static int runSystem(const NBodyCtx* ctx, NBodyState* st)
 {
     const real tstop = ctx->timeEvolve - ctx->timestep / 1024.0;
 
     while (st->tnow < tstop)
     {
-        stepSystem(ctx, st);   /* advance N-body system */
+        if (stepSystem(ctx, st))   /* advance N-body system */
+            return 1;
+
         nbodyCheckpoint(ctx, st);
 
       #if PERIODIC_OUTPUT
@@ -82,8 +84,10 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
     {
         mw_report("Making final checkpoint\n");
         if (writeCheckpoint(ctx, st))
-            fail("Failed to write final checkpoint\n");
+            return warn1("Failed to write final checkpoint\n");
     }
+
+    return 0;
 }
 
 static void endRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, const real chisq)
@@ -182,7 +186,8 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     if (nbf->printTiming)     /* Time the body of the calculation */
         ts = mwGetTime();
 
-    runSystem(&ctx, &st);
+    if (runSystem(&ctx, &st))
+        return warn1("Error running system\n");
     mw_report("Simulation complete\n");
 
     if (nbf->printTiming)

@@ -54,11 +54,14 @@ int pushNBodyState(lua_State* luaSt, const NBodyState* p)
 
 static int stepNBodyState(lua_State* luaSt)
 {
+    int rc;
+
     if (lua_gettop(luaSt) != 2)
         return luaL_argerror(luaSt, 3, "Expected 2 arguments");
 
-    stepSystem(checkNBodyCtx(luaSt, 2), checkNBodyState(luaSt, 1));
-    return 0;
+    rc = stepSystem(checkNBodyCtx(luaSt, 2), checkNBodyState(luaSt, 1));
+    lua_pushboolean(luaSt, rc);
+    return 1;
 }
 
 static int gcNBodyState(lua_State* luaSt)

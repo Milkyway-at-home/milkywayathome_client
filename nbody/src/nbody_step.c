@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <omp.h>
 #endif /* _OPENMP */
 
+#include "milkyway_util.h"
 #include "nbody_step.h"
 #include "nbody_grav.h"
 
@@ -77,14 +78,15 @@ static inline void advanceVelocities(NBodyState* st, const unsigned int nbody, c
 
 
 /* stepSystem: advance N-body system one time-step. */
-void stepSystem(const NBodyCtx* ctx, NBodyState* st)
+int stepSystem(const NBodyCtx* ctx, NBodyState* st)
 {
+    int rc;
     const real dt = ctx->timestep;
 
     advancePosVel(st, st->nbody, dt);
 
   #if !NBODY_OPENCL
-    gravMap(ctx, st);
+    rc = gravMap(ctx, st);
   #else
     gravMapCL(ctx, st);
   #endif /* !NBODY_OPENCL */
@@ -92,5 +94,7 @@ void stepSystem(const NBodyCtx* ctx, NBodyState* st)
     advanceVelocities(st, st->nbody, dt);
 
     st->tnow += dt;                           /* finally, advance time */
+
+    return rc;
 }
 

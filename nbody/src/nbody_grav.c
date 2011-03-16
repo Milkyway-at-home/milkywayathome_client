@@ -174,9 +174,13 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
     }
 }
 
-void gravMap(const NBodyCtx* ctx, NBodyState* st)
+int gravMap(const NBodyCtx* ctx, NBodyState* st)
 {
-    makeTree(ctx, st);
+    if (makeTree(ctx, st))
+        return 1;
+
     mapForceBody(ctx, st);
+
+    return 0;
 }
 
