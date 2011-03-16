@@ -126,9 +126,8 @@ static inline mwbool treescan(const NBodyCtx* ctx,
 /* hackGrav: evaluate gravitational field on body p; checks to be
  * sure self-interaction was handled correctly if intree is true.
  */
-static inline mwvector hackGrav(const NBodyCtx* ctx, Node* root, Body* p)
+static inline mwvector hackGrav(const NBodyCtx* ctx, NBodyState* st, Node* root, Body* p)
 {
-    static mwbool treeincest = FALSE;     /* tree-incest occured */
     mwbool skipself          = FALSE;     /* self-interaction skipped */
     ForceEvalState fest = EMPTY_FORCE_EVAL_STATE;
     mwvector externalacc;
@@ -140,13 +139,7 @@ static inline mwvector hackGrav(const NBodyCtx* ctx, Node* root, Body* p)
                   /* watch for tree-incest */
     skipself = treescan(ctx, &fest, root);         /* scan tree from t.root */
     if (intree && !skipself)            /* did tree-incest occur? */
-    {
-        if (!ctx->allowIncest) /* treat as catastrophic? */
-            fail("hackgrav: tree-incest detected\n");
-        if (!treeincest)           /* for the first time? */
-            warn("\n[hackgrav: tree-incest detected]\n");
-        treeincest = TRUE;          /* don't repeat warning */
-    }
+        st->treeIncest = TRUE;          /* don't repeat warning */
 
     /* Adding the external potential */
     externalacc = acceleration(&ctx->pot, Pos(p));
@@ -169,9 +162,27 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
     for (i = 0; i < nbody; ++i)      /* get force on each body */
     {
         st->acctab[i] = hackGrav(ctx,
+                                 st,
                                  (Node*) st->tree.root,
                                  &st->bodytab[i]);
     }
+}
+
+static int incestStatusCheck(const NBodyCtx* ctx, NBodyState* st)
+{
+    if (st->treeIncest)
+    {
+        if (!ctx->allowIncest)  /* treat as catastrophic? */
+            return warn1("hackGrav: tree-incest detected\n");
+
+        if (!st->incestReported)   /* Don't repeat warning */
+        {
+            warn("[hackGrav: tree-incest detected]\n");
+            st->incestReported = TRUE;
+        }
+    }
+
+    return 0;
 }
 
 int gravMap(const NBodyCtx* ctx, NBodyState* st)
@@ -181,6 +192,6 @@ int gravMap(const NBodyCtx* ctx, NBodyState* st)
 
     mapForceBody(ctx, st);
 
-    return 0;
+    return incestStatusCheck(ctx, st); /* Check if incest occured during step */
 }
 

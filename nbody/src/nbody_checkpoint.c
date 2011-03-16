@@ -48,7 +48,8 @@ static const size_t hdrSize = sizeof(size_t)                              /* siz
                             + 2 * sizeof(int)                    /* Major, minor version number */
                             + sizeof(char) * (sizeof(tail) + sizeof(hdr) - 2) /* error checking tags */
                             + 1 * sizeof(unsigned int)                        /* nbody count */
-                            + 2 * sizeof(real);                               /* tnow, rsize */
+                            + 2 * sizeof(real)                                /* tnow, rsize */
+                            + sizeof(int);                                    /* tree incest */
 
 /* Macros to read/write the buffer and advance the pointer the correct size */
 #define DUMP_CTX(p, x) { *((NBodyCtx*) (p)) = *(x); (p) += sizeof(NBodyCtx); }
@@ -283,6 +284,7 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
     READ_REAL(st->tnow, p);
     READ_REAL(st->tree.rsize, p);
+    READ_INT(st->treeIncest, p);
 
     if (strncmp(hdr, buf, sizeof(hdr) - 1))
     {
@@ -351,6 +353,7 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
    nbody         uint     anything   Num. of bodies expected. Error if doesn't match nbody in context.
    tnow          real     anything
    rsize         real     anything
+   treeIncest    int      0, 1       If incest has occured
    bodytab       Body*    anything   Array of bodies
    ending        string   "end"      No null terminator
  */
@@ -382,6 +385,7 @@ static inline void freezeState(const NBodyCtx* ctx, const NBodyState* st, Checkp
     DUMP_INT(p, st->nbody);         /* Make sure we get the right number of bodies */
     DUMP_REAL(p, st->tnow);
     DUMP_REAL(p, st->tree.rsize);
+    DUMP_INT(p, st->treeIncest);
 
     /* The main piece of state*/
     memcpy(p, st->bodytab, bodySize);
