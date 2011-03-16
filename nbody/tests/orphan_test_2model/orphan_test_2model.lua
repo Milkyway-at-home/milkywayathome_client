@@ -32,7 +32,7 @@ function makePotential()
    return pot
 end
 
-model1Bodies = 10000 
+model1Bodies = 50000 
 model2Bodies = 10000 
 totalBodies = model1Bodies + model2Bodies
 
