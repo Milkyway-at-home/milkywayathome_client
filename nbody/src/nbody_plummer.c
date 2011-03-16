@@ -114,13 +114,7 @@ static inline mwvector plummerBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift,
  * etc).  See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
  * 183.
  */
-
-/* For packing into a Lua table, pass a valid lua_State.
-   For packing into a C array, pass an array to write bodies to.
-   Can do both at the same time.
- */
 static int generatePlummerCore(lua_State* luaSt,
-                               Body* outBodies,
 
                                dsfmt_t* prng,
                                unsigned int nbody,
@@ -142,11 +136,8 @@ static int generatePlummerCore(lua_State* luaSt,
     b.bodynode.type = BODY(ignore);    /* Same for all in the model */
     b.bodynode.mass = mass / nbody;    /* Mass per particle */
 
-    if (luaSt)
-    {
-        lua_createtable(luaSt, nbody, 0);
-        table = lua_gettop(luaSt);
-    }
+    lua_createtable(luaSt, nbody, 0);
+    table = lua_gettop(luaSt);
 
     for (i = 0; i < nbody; ++i)
     {
@@ -155,14 +146,8 @@ static int generatePlummerCore(lua_State* luaSt,
         b.bodynode.pos = plummerBodyPosition(prng, rShift, radiusScale, r);
         b.vel = plummerBodyVelocity(prng, vShift, velScale, r);
 
-        if (luaSt)
-        {
-            pushBody(luaSt, &b);
-            lua_rawseti(luaSt, table, i + 1);
-        }
-
-        if (outBodies)
-            outBodies[i] = b;
+        pushBody(luaSt, &b);
+        lua_rawseti(luaSt, table, i + 1);
     }
 
     return 1;
@@ -195,7 +180,7 @@ int generatePlummer(lua_State* luaSt)
     nbody = luaL_checkinteger(luaSt, 1);
     handleNamedArgumentTable(luaSt, argTable, 2);
 
-    return generatePlummerCore(luaSt, NULL, prng, nbody, mass, ignore,
+    return generatePlummerCore(luaSt, prng, nbody, mass, ignore,
                                *position, *velocity, radiusScale);
 }
 
@@ -204,17 +189,3 @@ void registerGeneratePlummer(lua_State* luaSt)
     lua_register(luaSt, "generatePlummer", generatePlummer);
 }
 
-int generatePlummerC(Body* outBodies,
-                     dsfmt_t* prng,
-                     unsigned int nbody,
-                     real mass,
-
-                     mwbool ignore,
-
-                     mwvector rShift,
-                     mwvector vShift,
-                     real radiusScale)
-{
-    return generatePlummerCore(NULL, outBodies, prng, nbody, mass, ignore,
-                               rShift, vShift, radiusScale) != 1;
-}

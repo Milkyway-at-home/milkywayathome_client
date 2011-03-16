@@ -26,16 +26,5 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 int generatePlummer(lua_State* luaSt);
 void registerGeneratePlummer(lua_State* luaSt);
 
-int generatePlummerC(Body* outBodies,
-                     dsfmt_t* prng,
-                     unsigned int nbody,
-                     real mass,
-
-                     mwbool ignore,
-
-                     mwvector rShift,
-                     mwvector vShift,
-                     real radiusScale);
-
 #endif /* _NBODY_PLUMMER_H_ */
 

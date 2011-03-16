@@ -315,34 +315,6 @@ static int compareHash(const MWHash* a, const MWHash* b)
     return memcmp(a, b, sizeof(MWHash));
 }
 
-static Body* testPlummer_1_1()
-{
-    uint32_t seed = 99;
-    unsigned int nbody = 100;
-    real mass = 20;
-    mwbool ignore = FALSE;
-    mwvector rShift = ZERO_VECTOR;
-    mwvector vShift = ZERO_VECTOR;
-    real scaleRadius = 1.0;
-    dsfmt_t prng;
-
-    Body* bodies;
-
-    dsfmt_init_gen_rand(&prng, seed);
-
-    bodies = (Body*) mwMalloc(sizeof(Body) * nbody);
-
-    if (generatePlummerC(bodies, &prng, nbody,
-                         mass, ignore, rShift, vShift, scaleRadius))
-    {
-        warn("Error generating Plummer test\n");
-        free(bodies);
-        return NULL;
-    }
-
-    return bodies;
-}
-
 
 static int luaHashOrHashSortBodies(lua_State* luaSt, int sort)
 {
@@ -412,21 +384,7 @@ static void testState()
 
 int main(int argc, const char* argv[])
 {
-    Body* bs;
-
     nbodyTestInit();
-
-    bs = testPlummer_1_1();
-    if (!bs)
-        return warn1("Error creating test\n");
-
-    MWHash hash;
-
-
-    //printBodies(bs, 100);
-    hashSortBodies(&hash, bs, 100);
-
-    free(bs);
 
     testState();
 
