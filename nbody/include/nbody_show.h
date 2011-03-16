@@ -53,5 +53,13 @@ void printBody(const Body* p);
 
 void printBodies(const Body* bs, unsigned int n);
 
+char* showNBodyState(const NBodyState*);
+void printNBodyState(const NBodyState*);
+
+char* showTree(const Tree*);
+void printTree(const Tree*);
+
+
+
 #endif /* _NBODY_SHOW_H_ */
 
