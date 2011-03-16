@@ -30,7 +30,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_priv.h"
 #include "nbody_tree.h"
-#include "milkyway_util.h"
+
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wfloat-equal".
+#endif
+
 
 /* subIndex: compute subcell index for body p in cell q. */
 static int subIndex(Body* p, Cell* q)
@@ -57,7 +61,7 @@ static int subIndex(Body* p, Cell* q)
  */
 
 /* TODO: Incremental matrix operations */
-static inline void hackQuad(Cell* p)
+static void hackQuad(Cell* p)
 {
     unsigned int ndesc, i;
     Node* desc[NSUB];
@@ -252,7 +256,7 @@ static inline real calcSW93MaxDist2(const Cell* p, const mwvector cmpos, real ps
 
 /* setRCrit: assign critical radius for cell p, using center-of-mass
  * position cmpos and cell size psize. */
-static void setRCrit(const NBodyCtx* ctx, NBodyState* st, Cell* p, mwvector cmpos, real psize)
+static inline real setRCrit(const NBodyCtx* ctx, const NBodyState* st, const Cell* p, mwvector cmpos, real psize)
 {
     real rc, bmax2;
 
@@ -262,23 +266,27 @@ static void setRCrit(const NBodyCtx* ctx, NBodyState* st, Cell* p, mwvector cmpo
             rc = psize / ctx->theta + mw_distv(cmpos, Pos(p));
             /* use size plus offset */
             break;
-        case Exact:                         /* exact force calculation? */
-            rc = 2.0 * st->tree.rsize;      /* always open cells */
-            break;
-        case BH86:                          /* use old BH criterion? */
-            rc = psize / ctx->theta;        /* using size of cell */
-            break;
         case SW93:                           /* use S&W's criterion? */
             /* compute max distance^2 */
             bmax2 = calcSW93MaxDist2(p, cmpos, psize);
             rc = mw_sqrt(bmax2) / ctx->theta;      /* using max dist from cm */
             break;
+
+        case BH86:                          /* use old BH criterion? */
+            rc = psize / ctx->theta;        /* using size of cell */
+            break;
+
+        case Exact:                         /* exact force calculation? */
+            rc = 2.0 * st->tree.rsize;      /* always open cells */
+            break;
+
+        case InvalidCriterion:
         default:
             rc = 0.0; /* Stop clang static analysis warning */
             fail("Bad criterion: %d\n", ctx->criterion);
     }
 
-    Rcrit2(p) = sqr(rc);           /* store square of radius */
+    return sqr(rc);          /* store square of radius */
 }
 
 static inline int checkTreeDim(const real pPos, const real cmPos, const real halfPsize)
@@ -324,7 +332,7 @@ static int hackCofM(const NBodyCtx* ctx, NBodyState* st, Cell* p, real psize)
 {
     int i, rc;
     Node* q;
-    mwvector cmpos = ZERO_VECTOR;                 /* init center of mass */
+    mwvector cmpos = ZERO_VECTOR;                /* init center of mass */
 
     assert(psize >= REAL_EPSILON);
 
@@ -357,7 +365,7 @@ static int hackCofM(const NBodyCtx* ctx, NBodyState* st, Cell* p, real psize)
 
     rc = checkTreeStructure(Pos(p), cmpos, psize);
 
-    setRCrit(ctx, st, p, cmpos, psize);            /* set critical radius */
+    Rcrit2(p) = setRCrit(ctx, st, p, cmpos, psize);            /* set critical radius */
     Pos(p) = cmpos;             /* and center-of-mass pos */
 
     return rc;

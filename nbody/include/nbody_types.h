@@ -168,9 +168,9 @@ typedef enum
 {
     InvalidCriterion = InvalidEnum,
     NewCriterion,  /* FIXME: What is this exactly? Rename it. */
-    Exact,
+    SW93,
     BH86,
-    SW93
+    Exact
 } criterion_t;
 
 #define _SPHERICAL 0
