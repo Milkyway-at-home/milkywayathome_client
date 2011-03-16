@@ -61,23 +61,26 @@ function makeBodies(ctx, potential)
       dt        = ctx.timestep / 10.0
    }
 
-   firstModel = predefinedModels.plummer(model1Bodies, {
-                                            prng        = prng,
-                                            position    = finalPosition,
-                                            velocity    = finalVelocity,
-                                            mass        = dwarfMass,
-                                            scaleRadius = r0,
-                                            ignore      = false
-                                         })
+   firstModel = predefinedModels.plummer{
+      nbody       = model1Bodies,
+      prng        = prng,
+      position    = finalPosition,
+      velocity    = finalVelocity,
+      mass        = dwarfMass,
+      scaleRadius = r0,
+      ignore      = false
+   }
 
-   secondModel = predefinedModels.plummer(model2Bodies, {
-                                             prng        = prng,
-                                             position    = finalPosition,
-                                             velocity    = finalVelocity,
-                                             mass        = 5000,
-                                             scaleRadius = 0.9,
-                                             ignore      = true
-                                          })
+   secondModel = predefinedModels.plummer{
+      nbody      = model2Bodies,
+      prng        = prng,
+      position    = finalPosition,
+      velocity    = finalVelocity,
+      mass        = 5000,
+      scaleRadius = 0.9,
+      ignore      = true
+   }
+
    return firstModel, secondModel
 end
 

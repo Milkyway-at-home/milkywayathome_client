@@ -70,6 +70,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 DEFINE_LUA_MW_FUNC_1(sqr, sqr)
 DEFINE_LUA_MW_FUNC_1(cube, cube)
+DEFINE_LUA_MW_FUNC_1(d2r, d2r)
+DEFINE_LUA_MW_FUNC_1(r2d, r2d)
 
 DEFINE_LUA_MW_FUNC_1(mw_sin, sin)
 DEFINE_LUA_MW_FUNC_1(mw_cos, cos)
@@ -230,6 +232,8 @@ void registerMilkywayMath(lua_State* luaSt)
 
     register_lua_sqr(luaSt);
     register_lua_cube(luaSt);
+    register_lua_r2d(luaSt);
+    register_lua_d2r(luaSt);
 }
 
 

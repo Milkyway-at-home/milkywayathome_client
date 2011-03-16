@@ -159,12 +159,11 @@ int generatePlummer(lua_State* luaSt)
     static const mwvector* position = NULL;
     static const mwvector* velocity = NULL;
     static mwbool ignore;
-    static real mass;
-    static int nbody;
-    static real radiusScale = 0.0;
+    static real mass = 0.0, nbodyf = 0.0, radiusScale = 0.0;
 
     static const MWNamedArg argTable[] =
         {
+            { "nbody",        LUA_TNUMBER,   NULL,          TRUE,  &nbodyf      },
             { "mass",         LUA_TNUMBER,   NULL,          TRUE,  &mass        },
             { "scaleRadius",  LUA_TNUMBER,   NULL,          TRUE,  &radiusScale },
             { "position",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &position    },
@@ -174,13 +173,12 @@ int generatePlummer(lua_State* luaSt)
             END_MW_NAMED_ARG
         };
 
-    if (lua_gettop(luaSt) != 2)
-        return luaL_argerror(luaSt, 1, "Expected 2 arguments");
+    if (lua_gettop(luaSt) != 1)
+        return luaL_argerror(luaSt, 1, "Expected 1 arguments");
 
-    nbody = luaL_checkinteger(luaSt, 1);
-    handleNamedArgumentTable(luaSt, argTable, 2);
+    handleNamedArgumentTable(luaSt, argTable, 1);
 
-    return generatePlummerCore(luaSt, prng, nbody, mass, ignore,
+    return generatePlummerCore(luaSt, prng, (unsigned int) nbodyf, mass, ignore,
                                *position, *velocity, radiusScale);
 }
 
