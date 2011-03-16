@@ -11,72 +11,63 @@ prng = DSFMT.create(argSeed)
 nbody = 100
 
 
--- This is a required function. You get the defaults with no arguments
 function makeHistogram()
    return HistogramParams.create()
 end
 
--- This is a required function
 function makePotential()
-   local disk = Disk.miyamotoNagai{ mass = 4.45865888e5,
-                                    scaleLength = 6.5,
-                                    scaleHeight = 0.26
-                                  }
+   local disk, halo, spherical
+   disk = Disk.miyamotoNagai{
+      mass        = 4.45865888e5,
+      scaleLength = 6.5,
+      scaleHeight = 0.26
+   }
 
-   local halo = Halo.logarithmic{ vhalo = 73,
-                                  scaleLength = 12.0,
-                                  flattenZ = 1.0
-                                }
+   halo = Halo.logarithmic{
+      vhalo       = 73,
+      scaleLength = 12.0,
+      flattenZ    = 1.0
+   }
 
-   local spherical = Spherical.spherical{ mass = 1.52954402e5,
-                                          scale = 0.7
-                                        }
+   spherical = Spherical.spherical{
+      mass  = 1.52954402e5,
+      scale = 0.7
+   }
 
-   local pot = Potential.create{ disk = disk,
-                                 halo = halo,
-                                 spherical = spherical
-                               }
-   return pot
+   return Potential.create{
+      disk      = disk,
+      halo      = halo,
+      spherical = spherical
+   }
 end
 
--- This is also required
 function makeContext()
-   local r0 = dwarfRadius
-   local eps = r0 / (10.0 * sqrt(nbody))
-   local dt = sqr(1/10.0) * sqrt((pi_4_3 * cube(r0)) / dwarfMass)
-   local ctx = NBodyCtx.create{ criterion = "sw93",
-                                useQuad = true,
-                                theta = 1.0,
-                                timeEvolve = evolveTime,
-                                eps2 = eps * eps,
-                                timestep = dt
-                              }
-   return ctx
+   return NBodyCtx.create{
+      timestep   = calculateTimestep(dwarfMass, dwarfRadius),
+      timeEvolve = evolveTime,
+      eps2       = calculateEps2(nbody, dwarfRadius),
+      criterion  = "sw93",
+      useQuad    = true,
+      theta      = 1.0
+   }
 end
 
--- Also required
 function makeBodies(ctx, potential)
-   local iniVel = Vector.create(-156, 79, 107)
-   local iniPos = lbrToCartesian(ctx, Vector.create(218, 53.5, 28.6))
+   local finalPosition, finalVelocity = reverseOrbit{
+      potential = potential,
+      position  = lbrToCartesian(ctx, Vector.create(218, 53.5, 28.6)),
+      velocity  = Vector.create(-156, 79, 107),
+      tstop     = reverseTime,
+      dt        = ctx.timestep / 10.0
+   }
 
-   local orbitTimestep = ctx.timestep / 10.0
-   local finalPosition, finalVelocity = reverseOrbit{ potential = potential,
-                                                      position = iniPos,
-                                                      velocity = iniVel,
-                                                      tstop = reverseTime,
-                                                      dt = orbitTimestep
-                                                   }
-
-   print("after orbit", finalPosition, finalVelocity)
-   local plummerArgs = { prng = prng,
-                         position = finalPosition,
-                         velocity = finalVelocity,
-                         mass = dwarfMass,
-                         ignore = false,
-                         scaleRadius = dwarfRadius
-                       }
-   local bodies = predefinedModels.plummer(nbody, plummerArgs)
-
-   return bodies
+   return predefinedModels.plummer(nbody, {
+                                      prng        = prng,
+                                      position    = finalPosition,
+                                      velocity    = finalVelocity,
+                                      mass        = dwarfMass,
+                                      scaleRadius = dwarfRadius,
+                                      ignore      = false
+                                   })
 end
 
