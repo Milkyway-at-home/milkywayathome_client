@@ -27,29 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_nbodyctx.h"
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
-
-static const NBodyCtx defaultNBodyCtx =
-{
-    /* Grr lack of C99 named struct initializers in MSVC */
-    /* .pot             */  EMPTY_POTENTIAL,
-    /* .timestep        */  0.0,
-    /* .timeEvolve      */  0.0,
-
-    /* .theta           */  0.0,
-    /* .eps2            */  0.0,
-
-    /* .treeRSize       */  4.0,
-    /* .sunGCDist       */  8.0,
-    /* .criterion       */  NewCriterion,
-    /* .useQuad         */  TRUE,
-    /* .allowIncest     */  FALSE,
-
-    /* .freqout         */  0,
-    /* .checkpointT     */  3600,
-    /* .outfile         */  NULL,
-    /* .histogramParams */  EMPTY_HISTOGRAM_PARAMS
-};
-
+#include "nbody_defaults.h"
 
 static const MWEnumAssociation criterionOptions[] =
 {
