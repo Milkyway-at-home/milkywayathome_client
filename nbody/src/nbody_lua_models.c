@@ -30,6 +30,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_plummer.h"
 #include "nbody_lua_models.h"
 #include "nbody_check_params.h"
+#include "nbody_defaults.h"
 
 
 /* For using a combination of light and dark models to generate timestep */
@@ -98,8 +99,9 @@ static int luaPlummerTimestepIntegral(lua_State* luaSt)
 
 static int luaLbrToCartesian(lua_State* luaSt)
 {
-    mwbool useRadians, useGalacticCoordinates;
-    const NBodyCtx* ctx;
+    mwbool useRadians = FALSE, useGalacticCoordinates = FALSE;
+    real sunGCDist = DEFAULT_SUN_GC_DISTANCE;
+    const NBodyCtx* ctx = NULL;
     mwvector v;
 
     if (lua_gettop(luaSt) > 4)
@@ -107,11 +109,17 @@ static int luaLbrToCartesian(lua_State* luaSt)
 
     ctx = checkNBodyCtx(luaSt, 1);
     v = *checkVector(luaSt, 2);
+
+
+    /* ctx = toNBodyCtx(luaSt, 2);
+       sunGCDist = ctx != NULL ? ctx->sunGCDist : luaL_optnumber(luaSt, 2, DEFAULT_SUN_GC_DISTANCE);
+    */
+
     useGalacticCoordinates = mw_lua_optboolean(luaSt, 3, FALSE);
     useRadians = mw_lua_optboolean(luaSt, 4, FALSE);
 
     if (!useGalacticCoordinates)
-        v = useRadians ? lbrToCartesian_rad(ctx, v) : lbrToCartesian(ctx, v);
+        v = useRadians ? lbrToCartesian_rad(v, sunGCDist) : lbrToCartesian(v, sunGCDist);
 
     pushVector(luaSt, v);
 

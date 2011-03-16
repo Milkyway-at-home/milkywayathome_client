@@ -21,11 +21,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 #include "milkyway_util.h"
 
-mwvector cartesianToLbr_rad(const NBodyCtx* ctx, const mwvector r)
+mwvector cartesianToLbr_rad(mwvector r, real sunGCDist)
 {
     mwvector lbR;
 
-    const real xp = X(r) + ctx->sunGCDist;
+    const real xp = X(r) + sunGCDist;
 
     L(lbR) = mw_atan2(Y(r), xp);
     B(lbR) = mw_atan2( Z(r), mw_sqrt( sqr(xp) + sqr(Y(r)) ) );
@@ -38,10 +38,10 @@ mwvector cartesianToLbr_rad(const NBodyCtx* ctx, const mwvector r)
     return lbR;
 }
 
-mwvector cartesianToLbr(const NBodyCtx* ctx, const mwvector r)
+mwvector cartesianToLbr(mwvector r, real sunGCDist)
 {
     mwvector lbR;
-    lbR = cartesianToLbr_rad(ctx, r);
+    lbR = cartesianToLbr_rad(r, sunGCDist);
     L(lbR) = r2d(L(lbR));
     B(lbR) = r2d(B(lbR));
 
@@ -60,13 +60,13 @@ static inline mwvector _lbrToCartesian(const real l, const real b, const real r,
     return cart;
 }
 
-mwvector lbrToCartesian_rad(const NBodyCtx* ctx, const mwvector lbr)
+mwvector lbrToCartesian_rad(mwvector lbr, real sunGCDist)
 {
-    return _lbrToCartesian(L(lbr), B(lbr), R(lbr), ctx->sunGCDist);
+    return _lbrToCartesian(L(lbr), B(lbr), R(lbr), sunGCDist);
 }
 
-mwvector lbrToCartesian(const NBodyCtx* ctx, const mwvector lbr)
+mwvector lbrToCartesian(mwvector lbr, real sunGCDist)
 {
-    return _lbrToCartesian(d2r(L(lbr)), d2r(B(lbr)), R(lbr), ctx->sunGCDist);
+    return _lbrToCartesian(d2r(L(lbr)), d2r(B(lbr)), R(lbr), sunGCDist);
 }
 

@@ -146,7 +146,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
 
         // Convert to (l,b) (involves convert x to Sun-centered)
         // Leave in radians to make rotation easier
-        lbr = cartesianToLbr_rad(ctx, Pos(p));
+        lbr = cartesianToLbr_rad(Pos(p), ctx->sunGCDist);
 
         // Convert to (lambda, beta) (involves a rotation using the
         // Newberg et al (2009) rotation matrices)

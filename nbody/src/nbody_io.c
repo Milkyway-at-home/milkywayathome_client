@@ -55,7 +55,7 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, cons
             out_2vectors(f, Pos(p), Vel(p));
         else
         {
-            lbR = cartesianToLbr(ctx, Pos(p));
+            lbR = cartesianToLbr(Pos(p), ctx->sunGCDist);
             out_2vectors(f, lbR, Vel(p));
         }
     }

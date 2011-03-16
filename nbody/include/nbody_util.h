@@ -28,10 +28,10 @@ extern "C" {
 #include "nbody_types.h"
 
 /* Coordinate conversion */
-mwvector cartesianToLbr(const NBodyCtx* ctx, const mwvector r);
-mwvector cartesianToLbr_rad(const NBodyCtx* ctx, const mwvector r);
-mwvector lbrToCartesian(const NBodyCtx* ctx, const mwvector lbr);
-mwvector lbrToCartesian_rad(const NBodyCtx* ctx, const mwvector lbr);
+mwvector cartesianToLbr(mwvector r, real sunGCDist);
+mwvector cartesianToLbr_rad(mwvector r, real sunGCDist);
+mwvector lbrToCartesian(mwvector lbr, real sunGCDist);
+mwvector lbrToCartesian_rad(mwvector lbr, real sunGCDist);
 
 #ifdef __cplusplus
 }
