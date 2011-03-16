@@ -350,7 +350,7 @@ static int checkEnumError(lua_State* luaSt, const MWEnumAssociation* p, const ch
 {
     const MWEnumAssociation* nextP;
     char errBuf[2048] = "Expected enum value where options are: ";
-    char badOpt[1024] = "";
+    char badOpt[1024];
     size_t badSize, enumLen, errLen;
 
     errLen = strlen(errBuf);

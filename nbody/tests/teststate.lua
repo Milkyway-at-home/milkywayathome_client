@@ -102,5 +102,13 @@ testE = buildAllCombinations(testF3, { "a", "b" }, { "c", "d" }, { "e", "f", "g"
 print("arstarstarst", #testE, testE)
 map(whee, testE)
 
+print("Derp1", rawCtxHash(everything[1]))
+print("Derp2", rawCtxHash(everything[1]))
+
+function getKeyAnswerPair(rawCtx)
+   local hash = rawCtxHash(rawCtx)
+   rawCtx.result = "I am a sample result"
+   return { hash, rawCtx }
+end
 
 

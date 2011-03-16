@@ -91,6 +91,17 @@ int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* p)
     return pushType(luaSt, NBODYCTX_TYPE, sizeof(NBodyCtx), (void*) p);
 }
 
+criterion_t readCriterion(lua_State* luaSt, const char* name)
+{
+    criterion_t t;
+
+    assert(name);
+    lua_pushstring(luaSt, name);
+    t = checkEnum(luaSt, criterionOptions, lua_gettop(luaSt));
+    lua_pop(luaSt, 1);
+    return t;
+}
+
 static int createNBodyCtx(lua_State* luaSt)
 {
     static NBodyCtx ctx;
@@ -126,11 +137,7 @@ static int createNBodyCtx(lua_State* luaSt)
     /* FIXME: Hacky handling of enum. Will result in not good error
      * messages as well as not fitting in. */
     if (criterionName) /* Not required */
-    {
-        lua_pushstring(luaSt, criterionName);
-        ctx.criterion = checkEnum(luaSt, criterionOptions, lua_gettop(luaSt));
-        lua_pop(luaSt, 1);
-    }
+        ctx.criterion = readCriterion(luaSt, criterionName);
 
     pushNBodyCtx(luaSt, &ctx);
     return 1;
