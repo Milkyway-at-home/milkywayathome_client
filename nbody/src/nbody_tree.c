@@ -148,9 +148,8 @@ static void expandBox(Tree* t, Body* btab, unsigned int nbody)
 /* newTree: reclaim cells in tree, prepare to build new one. */
 static void newTree(NBodyState* st, Tree* t)
 {
-    Node* p;
+    Node* p = (Node*) t->root;              /* start with the t.root */
 
-    p = (Node*) t->root;                    /* start with the t.root */
     while (p != NULL)                       /* loop scanning tree */
     {
         if (isCell(p))                      /* found cell to free? */
@@ -162,6 +161,9 @@ static void newTree(NBodyState* st, Tree* t)
         else                                /* skip over bodies */
             p = Next(p);                    /* go on to next */
     }
+
+    t->root = NULL;
+    t->cellused = 0;
 }
 
 /* makecell: return pointer to free cell. */
@@ -170,12 +172,12 @@ static Cell* makeCell(NBodyState* st, Tree* t)
     Cell* c;
     size_t i;
 
-    if (st->freecell == NULL)                    /* no free cells left? */
+    if (st->freecell == NULL)                  /* no free cells left? */
         c = (Cell*) mwMalloc(sizeof(Cell));    /* allocate a new one */
-    else                                         /* use existing free cell */
+    else                                       /* use existing free cell */
     {
         c = (Cell*) st->freecell;             /* take one on front */
-        st->freecell = Next(c);                 /* go on to next one */
+        st->freecell = Next(c);               /* go on to next one */
     }
     Type(c) = CELL(0);                          /* initialize cell type */
     for (i = 0; i < NSUB; i++)                  /* loop over subcells */
