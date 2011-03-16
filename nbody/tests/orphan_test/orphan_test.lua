@@ -57,9 +57,7 @@ end
 -- Also required
 function makeBodies(ctx, potential)
    local iniVel = Vector.create(-156, 79, 107)
-   local iniPos = Vector.create(218, 53.5, 28.6)
-
-   iniPos = lbrToCartesian(ctx, iniPos)
+   local iniPos = lbrToCartesian(ctx, Vector.create(218, 53.5, 28.6))
 
    local orbitTimestep = ctx.timestep / 10.0
    local finalPosition, finalVelocity = reverseOrbit{ potential = potential,
@@ -69,6 +67,7 @@ function makeBodies(ctx, potential)
                                                       dt = orbitTimestep
                                                    }
 
+   print("after orbit", finalPosition, finalVelocity)
    local plummerArgs = { prng = prng,
                          position = finalPosition,
                          velocity = finalVelocity,

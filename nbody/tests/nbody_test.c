@@ -36,17 +36,21 @@ typedef struct
 
     mwbool useQuad;
     mwbool allowIncest;
-} NBodyCtxRaw;
+} NBodyCtxTest;
 
-#define EMPTY_NBODYCTXRAW { 0.0, 0.0, 0.0, InvalidCriterion, FALSE, FALSE }
+#define EMPTY_NBODYCTXTEST { 0.0, 0.0, InvalidCriterion, FALSE, FALSE }
 
 typedef struct
 {
     const char* potentialName;
     const char* modelName;
+    unsigned int nSteps;
+    unsigned int nbody;
     uint32_t seed;
-    NBodyCtxRaw ctx;
+    NBodyCtxTest ctx;
 } NBodyTest;
+
+#define EMPTY_NBODYTEST { NULL, NULL, 0, 0, 0, EMPTY_NBODYCTXTEST }
 
 typedef union
 {
@@ -57,25 +61,6 @@ typedef union
 #define EMPTY_BODY_HASH { .mdi = { 0x0, 0x0, 0x0, 0x0, 0x0 } }
 
 
-typedef struct
-{
-    const char* modelName;       /* Identifier for initial distribution used */
-    const Potential* potential;
-    NBodyCtxRaw ctx;             /* Simulation configuration */
-    uint32_t seed;               /* Seed used in for each result */
-    unsigned int nbody;
-    unsigned int numberSteps;    /* Steps taken for each result */
-    MWHash hash;               /* Final hash of bodies */
-} NBodyResult;
-
-#define END_NBODYRESULT { NULL, NULL, EMPTY_NBODYCTXRAW, 0, 0, 0, EMPTY_BODY_HASH }
-
-typedef struct
-{
-    const NBodyResult* results;
-} NBodyResultSet;
-
-
 static void showHash(char* buf, const MWHash* hash)
 {
     sprintf(buf, "%08x%08x%08x%08x%08x", hash->mdi[0], hash->mdi[1], hash->mdi[2], hash->mdi[3], hash->mdi[4]);
@@ -84,37 +69,13 @@ static void showHash(char* buf, const MWHash* hash)
 
 
 
-static void setNBodyCtxFromNBodyCtxRaw(NBodyCtx* ctx, const NBodyCtxRaw* ctxRaw)
+static void setNBodyCtxFromNBodyCtxTest(NBodyCtx* ctx, const NBodyCtxTest* ctxRaw)
 {
-    /* Tested, varied fields */
-    ctx->theta       = ctxRaw->theta;                // 5
-    ctx->treeRSize   = ctxRaw->treeRSize;            // 5
-    ctx->criterion   = ctxRaw->criterion;            // 4
-    ctx->useQuad     = ctxRaw->useQuad;              // 2
-    ctx->allowIncest = ctxRaw->allowIncest;          // 2
-}
-
-static void generateTestSet()
-{
-    const NBodyResultSet smallSet[] =
-        {
-            //{ .seed = 43, .nbody = 100, .numberSteps = 10,
-
-        };
-
-#if 0
-    for (i = 0; i < numberSeeds; ++i)
-    {
-        for (j = 0; j < numberBodyTests; ++j)
-        {
-            for (k = 0; k < numberStepTests; ++k)
-            {
-
-            }
-        }
-    }
-#endif
-
+    ctx->theta       = ctxRaw->theta;
+    ctx->treeRSize   = ctxRaw->treeRSize;
+    ctx->criterion   = ctxRaw->criterion;
+    ctx->useQuad     = ctxRaw->useQuad;
+    ctx->allowIncest = ctxRaw->allowIncest;
 }
 
 static int hashValueFromType(lua_State* luaSt, EVP_MD_CTX* hashCtx, int type, int idx)
@@ -157,17 +118,25 @@ static int hashValueFromType(lua_State* luaSt, EVP_MD_CTX* hashCtx, int type, in
     return 0;
 }
 
-static int checkNBodyCtxRawTable(lua_State* luaSt, int idx, NBodyCtxRaw* ctxRawOut)
+static int checkNBodyTestTable(lua_State* luaSt, int idx, NBodyTest* testOut)
 {
-    static NBodyCtxRaw ctxRaw;
-    static char* criterionName;
+    static NBodyTest test = EMPTY_NBODYTEST;
+    static const char* criterionName = NULL;
+    static real seedf = 0.0;
+    static real nStepsf = 0.0;
+    static real nbodyf = 0.0;
     static const MWNamedArg argTable[] =
         {
-            { "theta",       LUA_TNUMBER,  NULL, TRUE, &ctxRaw.theta       },
-            { "treeRSize",   LUA_TNUMBER,  NULL, TRUE, &ctxRaw.treeRSize   },
-            { "criterion",   LUA_TSTRING,  NULL, TRUE, &criterionName      },
-            { "useQuad",     LUA_TBOOLEAN, NULL, TRUE, &ctxRaw.useQuad     },
-            { "allowIncest", LUA_TBOOLEAN, NULL, TRUE, &ctxRaw.allowIncest },
+            { "potential",   LUA_TSTRING,  NULL, TRUE, &test.potentialName   },
+            { "model",       LUA_TSTRING,  NULL, TRUE, &test.modelName       },
+            { "nbody",       LUA_TNUMBER,  NULL, TRUE, &nbodyf               },
+            { "nSteps",      LUA_TNUMBER,  NULL, TRUE, &nStepsf              },
+            { "seed",        LUA_TNUMBER,  NULL, TRUE, &seedf                },
+            { "theta",       LUA_TNUMBER,  NULL, TRUE, &test.ctx.theta       },
+            { "treeRSize",   LUA_TNUMBER,  NULL, TRUE, &test.ctx.treeRSize   },
+            { "criterion",   LUA_TSTRING,  NULL, TRUE, &criterionName        },
+            { "useQuad",     LUA_TBOOLEAN, NULL, TRUE, &test.ctx.useQuad     },
+            { "allowIncest", LUA_TBOOLEAN, NULL, TRUE, &test.ctx.allowIncest },
             END_MW_NAMED_ARG
         };
 
@@ -175,62 +144,72 @@ static int checkNBodyCtxRawTable(lua_State* luaSt, int idx, NBodyCtxRaw* ctxRawO
      * that we want. Just run type checking on it. */
     handleNamedArgumentTable(luaSt, argTable, idx);
 
-    ctxRaw.criterion = readCriterion(luaSt, criterionName);
+    test.seed = (uint32_t) seedf;
+    test.nSteps = (unsigned int) nStepsf;
+    test.nbody = (unsigned int) nbodyf;
+
+    test.ctx.criterion = readCriterion(luaSt, criterionName);
     lua_pushvalue(luaSt, lua_gettop(luaSt));
 
-    if (ctxRawOut)
-        *ctxRawOut = ctxRaw;
+    if (testOut)
+        *testOut = test;
 
     return 1;
 }
 
-static int hashNBodyCtxRawCore(EVP_MD_CTX* hashCtx, MWHash* hash, const NBodyCtxRaw* rawCtx)
+static int hashNBodyTestCore(EVP_MD_CTX* hashCtx, MWHash* hash, const NBodyTest* t)
 {
     int rc = 0;
 
     if (!EVP_DigestInit_ex(hashCtx, EVP_sha1(), NULL))
         return warn1("Initializing hash digest failed\n");
 
-    rc |= !EVP_DigestUpdate(hashCtx, &rawCtx->theta,       sizeof(rawCtx->theta));
-    rc |= !EVP_DigestUpdate(hashCtx, &rawCtx->treeRSize,   sizeof(rawCtx->treeRSize));
-    rc |= !EVP_DigestUpdate(hashCtx, &rawCtx->criterion,   sizeof(rawCtx->criterion));
-    rc |= !EVP_DigestUpdate(hashCtx, &rawCtx->useQuad,     sizeof(rawCtx->useQuad));
-    rc |= !EVP_DigestUpdate(hashCtx, &rawCtx->allowIncest, sizeof(rawCtx->allowIncest));
+    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.theta,       sizeof(t->ctx.theta));
+    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.treeRSize,   sizeof(t->ctx.treeRSize));
+    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.criterion,   sizeof(t->ctx.criterion));
+    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.useQuad,     sizeof(t->ctx.useQuad));
+    rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.allowIncest, sizeof(t->ctx.allowIncest));
+
+    rc |= !EVP_DigestUpdate(hashCtx, &t->seed,            sizeof(t->seed));
+    rc |= !EVP_DigestUpdate(hashCtx, &t->nSteps,          sizeof(t->nSteps));
+    rc |= !EVP_DigestUpdate(hashCtx, &t->nbody,           sizeof(t->nbody));
+    rc |= !EVP_DigestUpdate(hashCtx, t->modelName,        strlen(t->modelName));
+    rc |= !EVP_DigestUpdate(hashCtx, t->potentialName,    strlen(t->potentialName));
 
     if (rc)
-        return warn1("Error updating hashing for NBodyCtxRaw\n");
+        return warn1("Error updating hashing for NBodyTest\n");
 
     if (!EVP_DigestFinal_ex(hashCtx, hash->md, NULL))
-        return warn1("Error finalizing hash for NBodyCtxRaw\n");
+        return warn1("Error finalizing hash for NBodyTest\n");
 
     if (!EVP_MD_CTX_cleanup(hashCtx))
-        return warn1("Error cleaning up hash context for NBodyCtxRaw\n");
+        return warn1("Error cleaning up hash context for NBodyCtxTest\n");
 
     return 0;
 }
 
-int hashNBodyCtxRaw(MWHash* hash, NBodyCtxRaw* rawCtx)
+int hashNBodyTest(MWHash* hash, NBodyTest* test)
 {
     EVP_MD_CTX hashCtx;
     int failed = 0;
 
     EVP_MD_CTX_init(&hashCtx);
-    failed = hashNBodyCtxRawCore(&hashCtx, hash, rawCtx);
+    failed = hashNBodyTestCore(&hashCtx, hash, test);
     if (!EVP_MD_CTX_cleanup(&hashCtx))
         return warn1("Error cleaning up hash context\n");
 
     return failed;
 }
 
-/* Return the hash of NBodyCtxRaw table to Lua */
-static int hashNBodyCtxRawTable(lua_State* luaSt)
+/* Return the hash of NBodyCtxTest table to Lua */
+static int hashNBodyTestTable(lua_State* luaSt)
 {
-    NBodyCtxRaw rawCtx;
+    NBodyTest test;
     MWHash hash;
     char buf[SHA_DIGEST_LENGTH];
 
-    checkNBodyCtxRawTable(luaSt, lua_gettop(luaSt), &rawCtx);
-    hashNBodyCtxRaw(&hash, &rawCtx);
+    checkNBodyTestTable(luaSt, lua_gettop(luaSt), &test);
+    hashNBodyTest(&hash, &test);
 
     showHash(buf, &hash);
     lua_pushstring(luaSt, buf);
@@ -238,9 +217,9 @@ static int hashNBodyCtxRawTable(lua_State* luaSt)
     return 1;
 }
 
-static void registerNBodyCtxRawFunctions(lua_State* luaSt)
+static void registerNBodyTestFunctions(lua_State* luaSt)
 {
-    lua_register(luaSt, "rawCtxHash", hashNBodyCtxRawTable);
+    lua_register(luaSt, "hashNBodyTest", hashNBodyTestTable);
 }
 
 /* Hash of just the bodies masses, positions and velocities */
@@ -423,7 +402,7 @@ static void testState()
 
     registerNBodyState(luaSt);
     installHashFunctions(luaSt);
-    registerNBodyCtxRawFunctions(luaSt);
+    registerNBodyTestFunctions(luaSt);
 
     if (luaL_dofile(luaSt, "teststate.lua"))
         mw_lua_pcall_warn(luaSt, "Error evaluating script");

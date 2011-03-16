@@ -57,7 +57,7 @@ static int stepNBodyState(lua_State* luaSt)
     if (lua_gettop(luaSt) != 2)
         return luaL_argerror(luaSt, 3, "Expected 2 arguments");
 
-    stepSystem(checkNBodyCtx(luaSt, 1), checkNBodyState(luaSt, 2));
+    stepSystem(checkNBodyCtx(luaSt, 2), checkNBodyState(luaSt, 1));
     return 0;
 }
 

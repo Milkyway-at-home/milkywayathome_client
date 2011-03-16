@@ -289,11 +289,11 @@ static inline void checkTreeDim(const real pPos, const real cmPos, const real ha
     {
         warn("hackCofM: tree structure error.\n"
              "\tcmpos out of bounds\n"
-             "\tPos(p)           = %e\n"
-             "\tpsize/2          = %e\n"
-             "\tPos(p) + psize/2 = %e\n"
-             "\tcmpos            = %e\n"
-             "\tPos(p) - psize/2 = %e\n",
+             "\tPos(p)           = %.15e\n"
+             "\tpsize/2          = %.15e\n"
+             "\tPos(p) + psize/2 = %.15e\n"
+             "\tcmpos            = %.15e\n"
+             "\tPos(p) - psize/2 = %.15e\n",
              pPos,
              halfPsize,
              pPos + halfPsize,
