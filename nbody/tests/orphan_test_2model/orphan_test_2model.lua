@@ -32,8 +32,8 @@ function makePotential()
    return pot
 end
 
-model1Bodies = 100
-model2Bodies = 40
+model1Bodies = 10000 
+model2Bodies = 10000 
 totalBodies = model1Bodies + model2Bodies
 
 r0 = 0.2
@@ -47,7 +47,7 @@ function makeContext()
    local ctx = NBodyCtx.create{ criterion = "NewCriterion",
                                 useQuad = true,
                                 theta = 1.0,
-                                timeEvolve = 3.945,
+                                timeEvolve = 5.945,
                                 eps2 = eps * eps,
                                 timestep = dt
                               }
@@ -67,7 +67,7 @@ function makeBodies(ctx, potential)
    local orbitTimestep = ctx.timestep / 10.0
    local finalPosition = reverseOrbit{ potential = potential,
                                        initialConditions = ic,
-                                       tstop = 4.0,
+                                       tstop = 6.0,
                                        dt = orbitTimestep
                                      }
 
@@ -80,8 +80,8 @@ function makeBodies(ctx, potential)
 
    local secondModelArgs = { prng = prng,
                              initialConditions = finalPosition,
-                             mass = 12,
-                             scaleRadius = 0.5,
+                             mass = 5000,
+                             scaleRadius = 0.9,
                              ignore = true
                            }
 
