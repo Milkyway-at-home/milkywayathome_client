@@ -57,6 +57,7 @@ static void freeTree(Tree* t)
 
     t->root = NULL;
     t->cellused = 0;
+    t->maxlevel = 0;
 }
 
 static void freeFreeCells(Node* freecell)
