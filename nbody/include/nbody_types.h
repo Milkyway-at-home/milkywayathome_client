@@ -271,6 +271,7 @@ typedef struct NBODY_ALIGN
 
     unsigned int cellused;   /* count of cells in tree */
     unsigned int maxlevel;   /* count of levels in tree */
+    int structureError;
 } Tree;
 
 
@@ -328,7 +329,6 @@ typedef struct NBODY_ALIGN
     Body* bodytab;      /* points to array of bodies */
     mwvector* acctab;   /* Corresponding accelerations of bodies */
     int treeIncest;     /* Tree incest has occured */
-    int incestReported;
 
   #if NBODY_OPENCL
     CLInfo ci;
@@ -341,7 +341,7 @@ typedef struct NBODY_ALIGN
 #if NBODY_OPENCL
   #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
 #else
-  #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0, NAN, 0, NULL, NULL, FALSE, FALSE }
+  #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0, NAN, 0, NULL, NULL, FALSE }
 #endif /* NBODY_OPENCL */
 
 
@@ -412,7 +412,7 @@ typedef struct NBODY_ALIGN
 #define EMPTY_HALO { InvalidHalo, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 
-#define EMPTY_TREE { NULL, NAN, 0, 0 }
+#define EMPTY_TREE { NULL, NAN, 0, 0, FALSE }
 #define EMPTY_NBODYCTX { EMPTY_POTENTIAL, NAN, NAN,                       \
                          NAN, NAN, NAN,                                   \
                          NAN, InvalidCriterion,                           \

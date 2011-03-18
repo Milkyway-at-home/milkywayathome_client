@@ -163,7 +163,7 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt, const unsigned int
     memcpy(st->acctab, oldSt->acctab, sizeof(mwvector) * nbody);
 
     st->treeIncest = oldSt->treeIncest;
-    st->incestReported = oldSt->incestReported;
+    st->tree.structureError = oldSt->tree.structureError;
 }
 
 
