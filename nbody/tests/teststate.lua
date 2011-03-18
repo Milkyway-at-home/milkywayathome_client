@@ -53,6 +53,44 @@ function getKeyNames(t)
    return keys
 end
 
+function printTable(tbl)
+   io.stderr:write("------------------------------\n" .. tostring(tbl) .. "\n")
+   local function printTableMain(t, level)
+      for k, v in pairs(t) do
+         local prefix = ""
+         for i = 0, level do
+            prefix = prefix .. "  "
+         end
+
+         io.stderr:write(prefix .. tostring(k) .. " = " .. tostring(v) .. "\n")
+         if type(v) == "table" then
+            printTableMain(v, level + 1)
+            io.stderr:write("\n")
+         end
+      end
+   end
+   printTableMain(tbl, 0)
+   io.stderr:write("------------------------------\n")
+end
+
+function deepcopy(object)
+   local lookup_table = {}
+   local function _copy(object)
+      if type(object) ~= "table" then
+         return object
+      elseif lookup_table[object] then
+         return lookup_table[object]
+      end
+      local new_table = {}
+      lookup_table[object] = new_table
+      for index, value in pairs(object) do
+         new_table[_copy(index)] = _copy(value)
+      end
+      return setmetatable(new_table, getmetatable(object))
+   end
+   return _copy(object)
+end
+
 --------------------------------------------------------------------------------
 
 function getKeyAnswerPair(rawCtx)
@@ -187,26 +225,26 @@ function getTestNBodyState(t)
    model = testModels[t.model]
    bodies, eps2, dt = model(t.nbody, t.seed)
 
-   ctx = NBodyCtx.create{ timestep = dt,
-                       -- Irrelevant, tests aren't run by the C stuff but avoid the safety check
-                          timeEvolve = 42.0,
-                          theta = t.theta,
-                          eps2 = eps2,
-                          treeRSize = t.treeRSize,
-                          criterion = t.criterion,
-                          useQuad = t.useQuad,
-                          allowIncest = t.allowIncest,
-                       }
-   return ctx, NBodyState.create(ctx, pot, bodies)
+   ctx = NBodyCtx.create{
+      timestep    = dt,
+      timeEvolve  = 42.0,     -- Irrelevant, tests aren't run by the C stuff but avoid the safety check
+      theta       = t.theta,
+      eps2        = eps2,
+      treeRSize   = t.treeRSize,
+      criterion   = t.criterion,
+      useQuad     = t.useQuad,
+      allowIncest = t.allowIncest,
+   }
+   return ctx, pot, NBodyState.create(ctx, pot, bodies)
 end
 
 function runTest(t)
-   local st, ctx
+   local st, ctx, pot
    local err = false
-   ctx, st = getTestNBodyState(t)
+   ctx, pot, st = getTestNBodyState(t)
 
    for i = 1, t.nSteps do
-      if st:step(ctx) then
+      if st:step(ctx, pot) then
          err = true
          break
       end
@@ -215,7 +253,7 @@ function runTest(t)
    return st:hashBodies(), err
 end
 
-function generateTestResults(resultTable)
+function generateTestResults(tests, resultTable)
    resultTable.hashtable = { }
 
    for _, t in ipairs(tests) do
@@ -270,39 +308,43 @@ tests = buildAllCombinations(
    resultTable.allowIncests)
 
 
---table.foreach(hashTestTable, function(_, a) table.foreach(a, print) end)
---table.foreach(hashTestTable, function(k, _) print(k) end)
 
+io.stderr:write("There are lots ", tostring(#tests), "\n")
 
--- --persistence.store("result_table", resultTable)
--- loaded = persistence.load("result_table")
--- assert(loaded ~= nil, "Failed to load result_table")
+-- brokenTest = {
+--    theta = 0.7,
+--    treeRSize = 4,
+--    allowIncest = true,
+--    useQuad = true,
+--    criterion = "NewCriterion",
+--    model = "modelB",
+--    nSteps = 1,
+--    nbody = 100,
+--    potential = "potentialA",
+--    seed = 609746760
+-- }
 
--- print("arstarstarstarstrast")
--- table.foreach(tests[45], print)
-
--- lookupKey = hashNBodyTest(tests[45])
--- print("Lookup", lookupKey)
--- print("looked up", loaded.hashtable[lookupKey])
-
--- table.foreach(loaded.hashtable[lookupKey], print)
-
-print("There are lots", #tests)
 
 smallerList = { }
 j = 1
-for i = 0, 38000, 1000 do
+for i = 1, 38000, 1000 do
    smallerList[j] = tests[i]
    j = j + 1
 end
 
-print("There are fewer", #smallerList)
-smallResults = generateTestResults(smallerList)
+io.stderr:write("There are fewer ", tostring(#smallerList), "\n")
 
-print("Results are", #smallResults)
-for k, v in pairs(smallResults) do
-   print("results", k)
-end
+smallResults = generateTestResults(smallerList, { })
+printTable(smallResults)
 
+persistence.store("result_table", smallResults)
+loaded = persistence.load("result_table")
+assert(loaded ~= nil, "Failed to load result_table")
 
+printTable(smallerList[12])
+lookupKey = hashNBodyTest(smallerList[12])
+ print("Lookup", lookupKey)
+ print("looked up", loaded.hashtable[lookupKey])
+
+-- table.foreach(loaded.hashtable[lookupKey], print)
 

@@ -55,11 +55,17 @@ int pushNBodyState(lua_State* luaSt, const NBodyState* p)
 static int stepNBodyState(lua_State* luaSt)
 {
     int rc;
+    NBodyState* st;
+    NBodyCtx ctx;
 
-    if (lua_gettop(luaSt) != 2)
-        return luaL_argerror(luaSt, 3, "Expected 2 arguments");
+    if (lua_gettop(luaSt) != 3)
+        return luaL_argerror(luaSt, 3, "Expected 3 arguments");
 
-    rc = stepSystem(checkNBodyCtx(luaSt, 2), checkNBodyState(luaSt, 1));
+    st = checkNBodyState(luaSt, 1);
+    ctx = *checkNBodyCtx(luaSt, 2);
+    ctx.pot = *checkPotential(luaSt, 3);
+
+    rc = stepSystem(&ctx, st);
     lua_pushboolean(luaSt, rc);
     return 1;
 }
@@ -75,20 +81,17 @@ static int gcNBodyState(lua_State* luaSt)
 static int createNBodyState(lua_State* luaSt)
 {
     Body* bodies;
-    NBodyCtx* ctx;
-    Potential* pot;
+    NBodyCtx ctx;
     unsigned int nbody;
     NBodyState st = EMPTY_NBODYSTATE;
 
-    ctx = checkNBodyCtx(luaSt, 1);
-    pot = checkPotential(luaSt, 2);
+    ctx = *checkNBodyCtx(luaSt, 1);
+    ctx.pot = *checkPotential(luaSt, 2);
     bodies = readModels(luaSt, lua_gettop(luaSt) - 2, &nbody);
     if (!bodies)
         luaL_argerror(luaSt, 3, "Expected model tables");
 
-    ctx->pot = *pot;
-
-    setInitialNBodyState(&st, ctx, bodies, nbody);
+    setInitialNBodyState(&st, &ctx, bodies, nbody);
     pushNBodyState(luaSt, &st);
 
     return 1;

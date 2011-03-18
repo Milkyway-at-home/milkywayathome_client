@@ -97,7 +97,9 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, uns
     st->tnow = 0.0;
     st->nbody = nbody;
     st->bodytab = bodies;
-    st->acctab = (mwvector*) mwMallocA(sizeof(mwvector) * nbody);
+
+    /* The tests may step the system from an arbitrary place, so make sure this is 0'ed */
+    st->acctab = (mwvector*) mwCallocA(nbody, sizeof(mwvector));
 }
 
 NBodyState* newNBodyState()
@@ -159,6 +161,9 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt, const unsigned int
 
     st->acctab = (mwvector*) mwMallocA(sizeof(mwvector) * nbody);
     memcpy(st->acctab, oldSt->acctab, sizeof(mwvector) * nbody);
+
+    st->treeIncest = oldSt->treeIncest;
+    st->incestReported = oldSt->incestReported;
 }
 
 
