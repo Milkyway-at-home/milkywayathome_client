@@ -122,14 +122,14 @@ static void threadTree(Node* p, Node* n)
     }
 }
 
-/* expandBox: find range of coordinate values (with respect to t.root)
- * and expand t.root cell to fit.  The size is doubled at each step to
+/* expandBox: find range of coordinate values (with respect to root)
+ * and expand root cell to fit. The size is doubled at each step to
  * take advantage of exact representation of powers of two.
  */
-static void expandBox(Tree* t, Body* btab, unsigned int nbody)
+static void expandBox(Tree* t, const Body* btab, unsigned int nbody)
 {
     real xyzmax;
-    Body* p;
+    const Body* p;
 
     const Cell* root = t->root;
 
@@ -145,12 +145,31 @@ static void expandBox(Tree* t, Body* btab, unsigned int nbody)
         t->rsize *= 2.0;
 }
 
+/* makecell: return pointer to free cell. */
+static Cell* makeCell(NBodyState* st, Tree* t)
+{
+    Cell* c;
+    size_t i;
+
+    if (st->freecell == NULL)                  /* no free cells left? */
+        c = (Cell*) mwMalloc(sizeof(Cell));    /* allocate a new one */
+    else                                       /* use existing free cell */
+    {
+        c = (Cell*) st->freecell;             /* take one on front */
+        st->freecell = Next(c);               /* go on to next one */
+    }
+    Type(c) = CELL(0);                          /* initialize cell type */
+    for (i = 0; i < NSUB; i++)                  /* loop over subcells */
+        Subp(c)[i] = NULL;                      /* and empty each one */
+    t->cellused++;                              /* count one more cell */
+    return c;
+}
+
 /* newTree: reclaim cells in tree, prepare to build new one. */
 static void newTree(NBodyState* st, Tree* t)
 {
-    Node* p;
+    Node* p = (Node*) t->root;              /* start with the root */
 
-    p = (Node*) t->root;                    /* start with the t.root */
     while (p != NULL)                       /* loop scanning tree */
     {
         if (isCell(p))                      /* found cell to free? */
@@ -162,27 +181,14 @@ static void newTree(NBodyState* st, Tree* t)
         else                                /* skip over bodies */
             p = Next(p);                    /* go on to next */
     }
+
+    t->cellused = 0;   /* init count of cells, levels */
+    t->maxlevel = 0;
+
+    t->root = makeCell(st, t);    /* allocate the root cell */
+    mw_zerov(Pos(t->root));                          /* initialize the midpoint */
 }
 
-/* makecell: return pointer to free cell. */
-static Cell* makeCell(NBodyState* st, Tree* t)
-{
-    Cell* c;
-    size_t i;
-
-    if (st->freecell == NULL)                    /* no free cells left? */
-        c = (Cell*) mwMalloc(sizeof(Cell));    /* allocate a new one */
-    else                                         /* use existing free cell */
-    {
-        c = (Cell*) st->freecell;             /* take one on front */
-        st->freecell = Next(c);                 /* go on to next one */
-    }
-    Type(c) = CELL(0);                          /* initialize cell type */
-    for (i = 0; i < NSUB; i++)                  /* loop over subcells */
-        Subp(c)[i] = NULL;                      /* and empty each one */
-    t->cellused++;                              /* count one more cell */
-    return c;
-}
 
 ALWAYS_INLINE
 static inline real calcOffset(real pPos, real qPos, real qsize)
@@ -382,11 +388,7 @@ int makeTree(const NBodyCtx* ctx, NBodyState* st)
 
     newTree(st, t);                                  /* flush existing tree, etc */
 
-    t->root = makeCell(st, t);                       /* allocate the t.root cell */
-    mw_zerov(Pos(t->root));                          /* initialize the midpoint */
-    expandBox(t, st->bodytab, st->nbody);
-    /* and expand cell to fit */
-    t->maxlevel = 0;                                 /* init count of levels */
+    expandBox(t, st->bodytab, st->nbody);            /* and expand cell to fit */
     for (p = st->bodytab; p < endp; p++)             /* loop over bodies... */
     {
         if (Mass(p) != 0.0)                  /* exclude test particles */

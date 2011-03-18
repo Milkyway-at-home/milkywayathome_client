@@ -406,3 +406,81 @@ void printBodies(const Body* bs, unsigned int n)
         printBody(&bs[i]);
 }
 
+char* showTree(const Tree* t)
+{
+    char* buf;
+
+    if (0 > asprintf(&buf,
+                     "  Tree %p = {\n"
+                     "    root     = %p\n"
+                     "    rsize    = %g\n"
+                     "    cellused = %u\n"
+                     "    maxlevel = %u\n"
+                     "  };\n",
+                     t,
+                     t->root,
+                     t->rsize,
+                     t->cellused,
+                     t->maxlevel))
+    {
+        fail("asprintf() failed\n");
+    }
+
+    return buf;
+}
+
+void printTree(const Tree* t)
+{
+    char* buf = showTree(t);
+    puts(buf);
+    free(buf);
+}
+
+char* showNBodyState(const NBodyState* st)
+{
+    char* buf;
+    char* treeBuf;
+
+    treeBuf = showTree(&st->tree);
+
+    if (0 > asprintf(&buf,
+                     "NBodyState %p = {\n"
+                     "  tree           = %s\n"
+                     "  freecell       = %p\n"
+                     "  outputTime     = %u\n"
+                     "  lastCheckpoint = %d\n"
+                     "  tnow           = %.15g\n"
+                     "  nbody          = %u\n"
+                     "  bodytab        = %p\n"
+                     "  acctab         = %p\n"
+                     "  treeIncest     = %s\n"
+                     "  incestReported = %s\n"
+                     "};\n",
+                     st,
+                     treeBuf,
+                     st->freecell,
+                     st->outputTime,
+                     (int) st->lastCheckpoint,
+                     st->tnow,
+                     st->nbody,
+                     st->bodytab,
+                     st->acctab,
+                     showBool(st->treeIncest),
+                     showBool(st->incestReported)))
+    {
+        fail("asprintf() failed\n");
+    }
+
+    free(treeBuf);
+
+    return buf;
+
+}
+
+void printNBodyState(const NBodyState* st)
+{
+    char* buf = showNBodyState(st);
+    puts(buf);
+    free(buf);
+}
+

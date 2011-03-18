@@ -120,12 +120,11 @@ static int setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NB
         }
         else
         {
+            /* Accelerations are scratch space */
+            st->acctab = (mwvector*) mwMallocA(st->nbody * sizeof(mwvector));
             mw_report("Successfully read checkpoint\n");
         }
     }
-
-    /* Accelerations are scratch space */
-    st->acctab = (mwvector*) mwMallocA(st->nbody * sizeof(mwvector));
 
     gravMap(ctx, st); /* Start 1st step */
 
