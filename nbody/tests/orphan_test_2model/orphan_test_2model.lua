@@ -32,7 +32,7 @@ function makePotential()
    return pot
 end
 
-model1Bodies = 50000 
+model1Bodies = 10000 
 model2Bodies = 10000 
 totalBodies = model1Bodies + model2Bodies
 
@@ -43,7 +43,8 @@ dwarfMass = 12
 function makeContext()
    -- You can change the eps and timestep calculation however you want
    local eps = r0 / (10.0 * sqrt(totalBodies))
-   local dt = sqr(1/10.0) * sqrt((pi_4_3 * cube(r0)) / dwarfMass)
+   local encMass = plummerTimestepIntegral(r0, 0.9, 5000, 1e-7)
+   local dt = sqr(1/10.0) * sqrt((pi_4_3 * cube(r0)) / (encMass + dwarfMass))
    local ctx = NBodyCtx.create{ criterion = "NewCriterion",
                                 useQuad = true,
                                 theta = 1.0,
@@ -80,8 +81,8 @@ function makeBodies(ctx, potential)
 
    local secondModelArgs = { prng = prng,
                              initialConditions = finalPosition,
-                             mass = 5000,
-                             scaleRadius = 0.9,
+                             mass = 190,
+                             scaleRadius = 0.5,
                              ignore = true
                            }
 
