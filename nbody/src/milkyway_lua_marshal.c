@@ -454,7 +454,8 @@ static void namedArgumentError(lua_State* luaSt, const MWNamedArg* p, int arg, i
 /* Lazy search of the names table */
 static mwbool nameInArgTable(const MWNamedArg* p, const char* key)
 {
-    assert(key); /* CHECKME: Is this supposed to not happen? */
+    if (!key)
+        return FALSE;
 
     while (p->name)
     {
@@ -466,23 +467,83 @@ static mwbool nameInArgTable(const MWNamedArg* p, const char* key)
     return FALSE;
 }
 
+static int pushUnknownNamedArgumentError(lua_State* luaSt, int keyIdx, mwbool typeError)
+{
+    if (typeError)
+    {
+        lua_pushfstring(luaSt,
+                        "  Unexpected named argument of non-string type '%s'\n",
+                        luaL_typename(luaSt, keyIdx));
+    }
+    else
+    {
+        lua_pushfstring(luaSt, "  Unknown named argument '%s'\n", lua_tostring(luaSt, keyIdx));
+    }
+
+    return 1;
+}
+
+static int pushMultilineErrorPrefix(lua_State* luaSt)
+{
+    luaL_where(luaSt, 1);
+    lua_pushliteral(luaSt, "\n");
+    lua_concat(luaSt, 2);
+
+    return 1;
+}
 
 /* Check if any keys in the table aren't in the expected table, and error if there are */
 static void checkExtraArguments(lua_State* luaSt, const MWNamedArg* args, int table)
 {
-    unsigned int extraCount = 0;
+    int iniTop, keyIdx, extraCount;
+    const char* key = NULL;
+    mwbool badFound = FALSE, keyIsString = FALSE, keyIsInTable = FALSE;
+
+    iniTop = lua_gettop(luaSt);
 
     lua_pushnil(luaSt);  /* first key */
     while (lua_next(luaSt, table) != 0) /* Iterate keys in table */
     {
-        if (!nameInArgTable(args, lua_tostring(luaSt, -2)))
-            ++extraCount;
-        lua_pop(luaSt, 1);
+        lua_pop(luaSt, 1);    /* Get rid of value, keep key on top  */
+        keyIdx = lua_gettop(luaSt);
+
+        /* Named arguments can only be strings */
+        keyIsString = lua_isstring(luaSt, keyIdx) && !lua_isnumber(luaSt, keyIdx);
+
+        /* Avoid automatic conversions from numbers to string */
+        key = keyIsString ? lua_tostring(luaSt, keyIdx) : NULL;
+
+        /* Only look for the key if it's actually a string */
+        keyIsInTable = nameInArgTable(args, key);
+
+        if (!keyIsString || !keyIsInTable)  /* Bad argument */
+        {
+            if (!badFound)  /* Add prefix of filename, line number for first error */
+            {
+                badFound = TRUE;
+                pushMultilineErrorPrefix(luaSt);
+
+                lua_insert(luaSt, iniTop + 1); /* Save this at the bottom of the extra errors for later */
+                ++keyIdx; /* The insert just shifted this up 1 place */
+            }
+
+            /* Generate appropriate error message depending on whether it's actually a string */
+            pushUnknownNamedArgumentError(luaSt, keyIdx, !keyIsString);
+
+            /* Make sure key is still on top for iterating over the table */
+            lua_insert(luaSt, keyIdx);
+        }
     }
 
-    /* TODO: Print bad keys, better message */
+    extraCount = lua_gettop(luaSt) - iniTop - 1; /* One line for each argument + prefix */
     if (extraCount > 0)
-        luaL_error(luaSt, "%d unknown arguments found", extraCount);
+    {
+        lua_pushfstring(luaSt, "  %d bad named arguments found", extraCount);
+        lua_concat(luaSt, extraCount + 2); /* + 1 for total argument count line, + 1 for prefix line */
+        lua_error(luaSt);
+    }
+
+    assert(iniTop == lua_gettop(luaSt));
 }
 
 void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int table)
