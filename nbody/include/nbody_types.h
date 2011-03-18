@@ -168,9 +168,9 @@ typedef enum
 {
     InvalidCriterion = InvalidEnum,
     NewCriterion,  /* FIXME: What is this exactly? Rename it. */
-    Exact,
+    SW93,
     BH86,
-    SW93
+    Exact
 } criterion_t;
 
 #define _SPHERICAL 0
@@ -273,16 +273,6 @@ typedef struct NBODY_ALIGN
     unsigned int maxlevel;   /* count of levels in tree */
 } Tree;
 
-typedef struct NBODY_ALIGN
-{
-    mwvector position;
-    mwvector velocity;
-} InitialConditions;
-
-#define EMPTY_INITIAL_CONDITIONS { EMPTY_MWVECTOR, EMPTY_MWVECTOR }
-
-#define INITIAL_CONDITIONS_TYPE "InitialConditions"
-
 
 #ifndef _WIN32
 
@@ -334,8 +324,11 @@ typedef struct NBODY_ALIGN
     unsigned int outputTime;
     time_t lastCheckpoint;
     real tnow;
+    unsigned int nbody;
     Body* bodytab;      /* points to array of bodies */
     mwvector* acctab;   /* Corresponding accelerations of bodies */
+    int treeIncest;     /* Tree incest has occured */
+    int incestReported;
 
   #if NBODY_OPENCL
     CLInfo ci;
@@ -343,10 +336,12 @@ typedef struct NBODY_ALIGN
   #endif /* NBODY_OPENCL */
 } NBodyState;
 
+#define NBODYSTATE_TYPE "NBodyState"
+
 #if NBODY_OPENCL
-  #define EMPTY_STATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
+  #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
 #else
-  #define EMPTY_STATE { EMPTY_TREE, NULL, 0, 0, NAN, NULL, NULL }
+  #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0, NAN, 0, NULL, NULL, FALSE, FALSE }
 #endif /* NBODY_OPENCL */
 
 
@@ -384,8 +379,6 @@ typedef struct NBODY_ALIGN
 {
     Potential pot;
 
-    unsigned int nbody;       /* Total number of bodies in all models */
-
     real timestep;
     real timeEvolve;
 
@@ -398,15 +391,11 @@ typedef struct NBODY_ALIGN
 
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
-    mwbool outputCartesian;   /* print (x,y,z) instead of (l, b, r) */
-    mwbool outputBodies;
-    mwbool outputHistogram;
-
-    HistogramParams histogramParams;
 
     time_t checkpointT;       /* Period to checkpoint when not using BOINC */
     unsigned int freqOut;
     FILE* outfile;            /* file for snapshot output */
+    HistogramParams histogramParams;
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
@@ -424,17 +413,20 @@ typedef struct NBODY_ALIGN
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 
 #define EMPTY_TREE { NULL, NAN, 0, 0 }
-#define EMPTY_NBODYCTX { EMPTY_POTENTIAL, 0, NAN, NAN,                    \
+#define EMPTY_NBODYCTX { EMPTY_POTENTIAL, NAN, NAN,                       \
                          NAN, NAN, NAN,                                   \
                          NAN, InvalidCriterion,                           \
-                         FALSE, FALSE, FALSE, FALSE, FALSE,               \
-                         EMPTY_HISTOGRAM_PARAMS,                          \
-                         0, 0, NULL }
+                         FALSE, FALSE,                                    \
+                         0, 0, NULL, EMPTY_HISTOGRAM_PARAMS }
 
 
 int destroyNBodyCtx(NBodyCtx* ctx);
 void destroyNBodyState(NBodyState* st);
+void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, unsigned int nbody);
+void cloneNBodyState(NBodyState* st, const NBodyState* oldSt, const unsigned int nbody);
+int equalNBodyState(const NBodyState* st1, const NBodyState* st2);
 
+void sortBodies(Body* bodies, unsigned int nbody);
 
 #ifndef __OPENCL_VERSION__  /* No function pointers allowed in kernels */
 /* Acceleration functions for a given potential */

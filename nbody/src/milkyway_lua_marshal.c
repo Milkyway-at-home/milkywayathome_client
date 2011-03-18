@@ -74,13 +74,19 @@ lua_CFunction mw_lua_checkcclosure(lua_State* luaSt, int idx)
     return lua_tocfunction(luaSt, idx);
 }
 
+int mw_lua_checkfunction(lua_State* luaSt, int idx)
+{
+    if (!lua_isfunction(luaSt, idx))
+        return luaL_typerror(luaSt, idx, "function");
+
+    return 0;
+}
+
 /* Return reference to Lua closure at idx */
 int mw_lua_checkluaclosure(lua_State* luaSt, int idx)
 {
-    /* LUA_TFUNCTION can refer to either a C function from the API
-     * side, or a Lua closure. lua_tocfunction() returns NULL if it's a Lua function. */
-
-    if (lua_iscfunction(luaSt, idx) && !lua_tocfunction(luaSt, idx))
+    /* LUA_TFUNCTION can refer to a cclosure or a Lua closure */
+    if (!lua_isfunction(luaSt, idx) || lua_iscfunction(luaSt, idx))
         luaL_typerror(luaSt, idx, "Lua closure");
 
     /* Copy since luaL_ref pops and no other lua_check* functions change the stack */
@@ -185,55 +191,55 @@ int oneTableArgument(lua_State* luaSt, const MWNamedArg* argTable)
 
 int getInt(lua_State* luaSt, void* v)
 {
-    lua_pushnumber(luaSt, *(int*)v);
+    lua_pushnumber(luaSt, *(int*) v);
     return 1;
 }
 
 int setInt(lua_State* luaSt, void* v)
 {
-    *(int*)v = luaL_checkint(luaSt, 3);
+    *(int*) v = luaL_checkint(luaSt, 3);
     return 0;
 }
 
 int getLong(lua_State* luaSt, void* v)
 {
-    lua_pushinteger(luaSt, *(long*)v);
+    lua_pushinteger(luaSt, *(long*) v);
     return 1;
 }
 
 int setLong(lua_State* luaSt, void* v)
 {
-    *(long*)v = luaL_checklong(luaSt, 3);
+    *(long*) v = luaL_checklong(luaSt, 3);
     return 0;
 }
 
 int getNumber(lua_State* luaSt, void* v)
 {
-    lua_pushnumber(luaSt, *(lua_Number*)v);
+    lua_pushnumber(luaSt, *(lua_Number*) v);
     return 1;
 }
 
 int setNumber(lua_State* luaSt, void* v)
 {
-    *(lua_Number*)v = luaL_checknumber(luaSt, 3);
+    *(lua_Number*) v = luaL_checknumber(luaSt, 3);
     return 0;
 }
 
 int getBool(lua_State* luaSt, void* v)
 {
-    lua_pushboolean(luaSt, *(int*)v);
+    lua_pushboolean(luaSt, *(int*) v);
     return 1;
 }
 
 int setBool(lua_State* luaSt, void* v)
 {
-    *(int*)v = mw_lua_checkboolean(luaSt, 3);
+    *(int*) v = mw_lua_checkboolean(luaSt, 3);
     return 0;
 }
 
 int getString(lua_State* luaSt, void* v)
 {
-    lua_pushstring(luaSt, (char*)v );
+    lua_pushstring(luaSt, (char*) v);
     return 1;
 }
 
@@ -344,7 +350,7 @@ static int checkEnumError(lua_State* luaSt, const MWEnumAssociation* p, const ch
 {
     const MWEnumAssociation* nextP;
     char errBuf[2048] = "Expected enum value where options are: ";
-    char badOpt[1024] = "";
+    char badOpt[1024];
     size_t badSize, enumLen, errLen;
 
     errLen = strlen(errBuf);
@@ -445,15 +451,32 @@ static void namedArgumentError(lua_State* luaSt, const MWNamedArg* p, int arg, i
         );
 }
 
-/* Check if any keys are left in the table and error if there are */
-static void checkExtraArguments(lua_State* luaSt, int table)
+/* Lazy search of the names table */
+static mwbool nameInArgTable(const MWNamedArg* p, const char* key)
+{
+    assert(key); /* CHECKME: Is this supposed to not happen? */
+
+    while (p->name)
+    {
+        if (!strcmp(p->name, key))
+            return TRUE;
+        ++p;
+    }
+
+    return FALSE;
+}
+
+
+/* Check if any keys in the table aren't in the expected table, and error if there are */
+static void checkExtraArguments(lua_State* luaSt, const MWNamedArg* args, int table)
 {
     unsigned int extraCount = 0;
 
     lua_pushnil(luaSt);  /* first key */
-    while (lua_next(luaSt, table) != 0) /* Iterate remaining keys */
+    while (lua_next(luaSt, table) != 0) /* Iterate keys in table */
     {
-        ++extraCount;
+        if (!nameInArgTable(args, lua_tostring(luaSt, -2)))
+            ++extraCount;
         lua_pop(luaSt, 1);
     }
 
@@ -481,6 +504,7 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int tabl
         {
             if (!p->required)
             {
+                lua_pop(luaSt, 2);
                 ++p;
                 continue;
             }
@@ -510,16 +534,11 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int tabl
         }
 
         setValueFromType(luaSt, p->value, p->luaType, item);
-        lua_pop(luaSt, 1);
-
-        /* Top item, should now be at copy of key */
-        lua_pushnil(luaSt);
-        lua_rawset(luaSt, table); /* Wipe out this element so we can check for unknown arguments */
-
+        lua_pop(luaSt, 2);
         ++p;
     }
 
-    checkExtraArguments(luaSt, table);
+    checkExtraArguments(luaSt, args, table);
 }
 
 static inline int getCClosureN(lua_State* luaSt, void* v, int n)

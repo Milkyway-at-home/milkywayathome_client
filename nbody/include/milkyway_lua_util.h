@@ -17,22 +17,13 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if !defined(_NBODY_LUA_TYPES_H_INSIDE_) && !defined(NBODY_LUA_TYPES_COMPILATION)
-  #error "Only nbody_lua_types.h can be included directly."
-#endif
-
-#ifndef _NBODY_LUA_INITIAL_CONDITIONS_H_
-#define _NBODY_LUA_INITIAL_CONDITIONS_H_
+#ifndef _MILKYWAY_LUA_UTIL_H_
+#define _MILKYWAY_LUA_UTIL_H_
 
 #include <lua.h>
-#include "nbody_types.h"
 
-InitialConditions* checkInitialConditions(lua_State* luaSt, int idx);
-int pushInitialConditions(lua_State* luaSt, const InitialConditions* ic);
-int registerInitialConditions(lua_State* luaSt);
+int registerUtilityFunctions(lua_State* luaSt);
+void mw_lua_openlibs(lua_State *L, mwbool debug);
 
-int getInitialConditions(lua_State* luaSt, void* v);
-int setInitialConditions(lua_State* luaSt, void* v);
-
-#endif /* _NBODY_LUA_INITIAL_CONDITIONS_H_ */
+#endif /* _MILKYWAY_LUA_UTIL_H_ */
 

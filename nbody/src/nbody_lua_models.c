@@ -30,6 +30,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_plummer.h"
 #include "nbody_lua_models.h"
 #include "nbody_check_params.h"
+#include "nbody_defaults.h"
 
 
 /* For using a combination of light and dark models to generate timestep */
@@ -95,19 +96,52 @@ static int luaPlummerTimestepIntegral(lua_State* luaSt)
     return 1;
 }
 
+
+static int luaLbrToCartesian(lua_State* luaSt)
+{
+    mwbool useRadians = FALSE, useGalacticCoordinates = FALSE;
+    real sunGCDist = DEFAULT_SUN_GC_DISTANCE;
+    const NBodyCtx* ctx = NULL;
+    mwvector v;
+
+    if (lua_gettop(luaSt) > 4)
+        luaL_argerror(luaSt, 4, "Expected 1, 2, 3 or 4 arguments");
+
+    ctx = checkNBodyCtx(luaSt, 1);
+    v = *checkVector(luaSt, 2);
+
+
+    /* ctx = toNBodyCtx(luaSt, 2);
+       sunGCDist = ctx != NULL ? ctx->sunGCDist : luaL_optnumber(luaSt, 2, DEFAULT_SUN_GC_DISTANCE);
+    */
+
+    useGalacticCoordinates = mw_lua_optboolean(luaSt, 3, FALSE);
+    useRadians = mw_lua_optboolean(luaSt, 4, FALSE);
+
+    if (!useGalacticCoordinates)
+        v = useRadians ? lbrToCartesian_rad(v, sunGCDist) : lbrToCartesian(v, sunGCDist);
+
+    pushVector(luaSt, v);
+
+    return 1;
+}
+
+
 static int luaReverseOrbit(lua_State* luaSt)
 {
-    real dt, tstop;
-    Potential* pot = NULL;
-    const InitialConditions* ic = NULL;
-    InitialConditions icNew;
+    mwvector finalPos, finalVel;
+    static real dt, tstop;
+    static Potential* pot = NULL;
+    static const mwvector* pos = NULL;
+    static const mwvector* vel = NULL;
 
-    const MWNamedArg argTable[] =
+    static const MWNamedArg argTable[] =
         {
-            { "potential",         LUA_TUSERDATA, POTENTIAL_TYPE,          TRUE, &pot   },
-            { "initialConditions", LUA_TUSERDATA, INITIAL_CONDITIONS_TYPE, TRUE, &ic    },
-            { "tstop",             LUA_TNUMBER,   NULL,                    TRUE, &tstop },
-            { "dt",                LUA_TNUMBER,   NULL,                    TRUE, &dt    },
+            { "potential",         LUA_TUSERDATA, POTENTIAL_TYPE, TRUE, &pot   },
+            { "position",          LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &pos   },
+            { "velocity",          LUA_TUSERDATA, MWVECTOR_TYPE,  TRUE, &vel   },
+            { "tstop",             LUA_TNUMBER,   NULL,           TRUE, &tstop },
+            { "dt",                LUA_TNUMBER,   NULL,           TRUE, &dt    },
             END_MW_NAMED_ARG
         };
 
@@ -117,25 +151,27 @@ static int luaReverseOrbit(lua_State* luaSt)
             handleNamedArgumentTable(luaSt, argTable, 1);
             break;
 
-        case 4:
+        case 5:
             pot = checkPotential(luaSt, 1);
-            ic = checkInitialConditions(luaSt, 2);
-            tstop = luaL_checknumber(luaSt, 3);
-            dt = luaL_checknumber(luaSt, 4);
+            pos = checkVector(luaSt, 2);
+            vel = checkVector(luaSt, 3);
+            tstop = luaL_checknumber(luaSt, 4);
+            dt = luaL_checknumber(luaSt, 5);
             break;
 
         default:
-            return luaL_argerror(luaSt, 1, "Expected 1 or 4 arguments");
+            return luaL_argerror(luaSt, 1, "Expected 1 or 5 arguments");
     }
 
     /* Make sure precalculated constants ready for use */
     if (checkPotentialConstants(pot))
         luaL_error(luaSt, "Error with potential");
 
-    icNew = reverseOrbit(pot, *ic, tstop, dt);
-    pushInitialConditions(luaSt, &icNew);
+    reverseOrbit(&finalPos, &finalVel, pot, *pos, *vel, tstop, dt);
+    pushVector(luaSt, finalPos);
+    pushVector(luaSt, finalVel);
 
-    return 1;
+    return 2;
 }
 
 static void setModelTableItem(lua_State* luaSt, int table, lua_CFunction generator, const char* name)
@@ -212,5 +248,6 @@ void registerModelUtilityFunctions(lua_State* luaSt)
     lua_register(luaSt, "reverseOrbit", luaReverseOrbit);
     lua_register(luaSt, "calculateEps2", luaCalculateEps2);
     lua_register(luaSt, "calculateTimestep", luaCalculateTimestep);
+    lua_register(luaSt, "lbrToCartesian", luaLbrToCartesian);
 }
 

@@ -20,7 +20,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "nbody_priv.h"
-#include "nbody_util.h"
 #include "milkyway_util.h"
 #include "milkyway_lua_marshal.h"
 #include "nbody_lua_types.h"
@@ -115,16 +114,17 @@ static inline mwvector plummerBodyVelocity(dsfmt_t* dsfmtState, mwvector vshift,
  * etc).  See Aarseth, SJ, Henon, M, & Wielen, R (1974) Astr & Ap, 37,
  * 183.
  */
-static int createPlummerSphereTable(lua_State* luaSt,
-                                    dsfmt_t* prng,
-                                    unsigned int nbody,
-                                    real mass,
+static int generatePlummerCore(lua_State* luaSt,
 
-                                    mwbool ignore,
+                               dsfmt_t* prng,
+                               unsigned int nbody,
+                               real mass,
 
-                                    mwvector rShift,
-                                    mwvector vShift,
-                                    real radiusScale)
+                               mwbool ignore,
+
+                               mwvector rShift,
+                               mwvector vShift,
+                               real radiusScale)
 {
     unsigned int i;
     int table;
@@ -138,6 +138,7 @@ static int createPlummerSphereTable(lua_State* luaSt,
 
     lua_createtable(luaSt, nbody, 0);
     table = lua_gettop(luaSt);
+
     for (i = 0; i < nbody; ++i)
     {
         r = plummerRandomR(prng);
@@ -155,36 +156,34 @@ static int createPlummerSphereTable(lua_State* luaSt,
 int generatePlummer(lua_State* luaSt)
 {
     static dsfmt_t* prng;
-    static const InitialConditions* ic;
+    static const mwvector* position = NULL;
+    static const mwvector* velocity = NULL;
     static mwbool ignore;
-    static real mass;
-    static int nbody;
-    static real radiusScale = 0.0;
+    static real mass = 0.0, nbodyf = 0.0, radiusScale = 0.0;
 
     static const MWNamedArg argTable[] =
         {
-            { "prng",              LUA_TUSERDATA, DSFMT_TYPE,              TRUE,  &prng        },
-            { "initialConditions", LUA_TUSERDATA, INITIAL_CONDITIONS_TYPE, TRUE,  &ic          },
-            { "scaleRadius",       LUA_TNUMBER,   NULL,                    TRUE,  &radiusScale },
-            { "mass",              LUA_TNUMBER,   NULL,                    TRUE,  &mass        },
-            { "ignore",            LUA_TBOOLEAN,  NULL,                    FALSE, &ignore      },
+            { "nbody",        LUA_TNUMBER,   NULL,          TRUE,  &nbodyf      },
+            { "mass",         LUA_TNUMBER,   NULL,          TRUE,  &mass        },
+            { "scaleRadius",  LUA_TNUMBER,   NULL,          TRUE,  &radiusScale },
+            { "position",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &position    },
+            { "velocity",     LUA_TUSERDATA, MWVECTOR_TYPE, TRUE,  &velocity    },
+            { "ignore",       LUA_TBOOLEAN,  NULL,          FALSE, &ignore      },
+            { "prng",         LUA_TUSERDATA, DSFMT_TYPE,    TRUE,  &prng        },
             END_MW_NAMED_ARG
         };
 
-    if (lua_gettop(luaSt) != 2)
-        return luaL_argerror(luaSt, 1, "Expected 2 arguments");
+    if (lua_gettop(luaSt) != 1)
+        return luaL_argerror(luaSt, 1, "Expected 1 arguments");
 
-    nbody = luaL_checkinteger(luaSt, 1);
-    handleNamedArgumentTable(luaSt, argTable, 2);
+    handleNamedArgumentTable(luaSt, argTable, 1);
 
-    return createPlummerSphereTable(luaSt, prng, nbody, mass, ignore,
-                                    ic->position, ic->velocity, radiusScale);
+    return generatePlummerCore(luaSt, prng, (unsigned int) nbodyf, mass, ignore,
+                               *position, *velocity, radiusScale);
 }
 
 void registerGeneratePlummer(lua_State* luaSt)
 {
     lua_register(luaSt, "generatePlummer", generatePlummer);
 }
-
-
 

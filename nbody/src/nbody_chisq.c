@@ -135,7 +135,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
     const real costh  = mw_cos(rth);
     const real sinth  = mw_sin(rth);
 
-    const Body* endp = st->bodytab + ctx->nbody;
+    const Body* endp = st->bodytab + st->nbody;
     histogram = (unsigned int*) mwCalloc(maxIdx, sizeof(unsigned int));
 
     for (p = st->bodytab; p < endp; ++p)
@@ -146,7 +146,7 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
 
         // Convert to (l,b) (involves convert x to Sun-centered)
         // Leave in radians to make rotation easier
-        lbr = cartesianToLbr_rad(ctx, Pos(p));
+        lbr = cartesianToLbr_rad(Pos(p), ctx->sunGCDist);
 
         // Convert to (lambda, beta) (involves a rotation using the
         // Newberg et al (2009) rotation matrices)
@@ -261,7 +261,7 @@ real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf
         return NAN;
     }
 
-    if (ctx->outputHistogram)
+    if (nbf->printHistogram)
         writeHistogram(ctx, nbf, hp, histData, histogram, maxIdx, start, (real) totalNum);
 
     if (totalNum != 0)

@@ -28,6 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_types.h"
 #include "nbody_lua_models.h"
 #include "milkyway_lua_marshal.h"
+#include "milkyway_lua_util.h"
 #include "nbody_check_params.h"
 
 static int getNBodyCtxFunc(lua_State* luaSt)
@@ -48,14 +49,6 @@ static int getHistogramFunc(lua_State* luaSt)
 static int getBodiesFunc(lua_State* luaSt)
 {
     return mw_lua_checkglobalfunction(luaSt, "makeBodies");
-}
-
-static void registerUsedStandardStuff(lua_State* luaSt)
-{
-    luaopen_base(luaSt);
-    luaopen_table(luaSt);
-    luaopen_string(luaSt);
-    lua_pop(luaSt, 3);
 }
 
 static int bindBOINCStatus(lua_State* luaSt)
@@ -92,33 +85,50 @@ static int bindServerArguments(lua_State* luaSt, const NBodyFlags* nbf)
     return 0;
 }
 
-static lua_State* openNBodyLuaState(const NBodyFlags* nbf)
+/* Open a lua_State and load the stuff we define, but do not run anything */
+lua_State* nbodyLuaOpen(mwbool debug)
 {
-    char* script;
-    lua_State* luaSt = NULL;
-
-    script = mwReadFileResolved(nbf->inputFile);
-    if (!script)
-    {
-        perror("Opening Lua script");
-        return NULL;
-    }
+    lua_State* luaSt;
 
     luaSt = lua_open();
     if (!luaSt)
     {
         warn("Failed to get Lua state\n");
-        free(script);
         return NULL;
     }
 
-    registerUsedStandardStuff(luaSt);
+    mw_lua_openlibs(luaSt, debug);
+
     registerNBodyTypes(luaSt);
     registerOtherTypes(luaSt);
     registerPredefinedModelGenerators(luaSt);
     registerModelUtilityFunctions(luaSt);
+    registerUtilityFunctions(luaSt);
+
+    return luaSt;
+}
+
+/* Open a lua_State, bind run information such as server arguments and
+ * BOINC status, and evaluate input script. */
+static lua_State* nbodyOpenLuaStateWithScript(const NBodyFlags* nbf)
+{
+    char* script;
+    lua_State* luaSt;
+
+    luaSt = nbodyLuaOpen(FALSE);
+    if (!luaSt)
+        return NULL;
+
     bindServerArguments(luaSt, nbf);
     bindBOINCStatus(luaSt);
+
+    script = mwReadFileResolved(nbf->inputFile);
+    if (!script)
+    {
+        perror("Opening Lua script");
+        lua_close(luaSt);
+        return NULL;
+    }
 
     if (luaL_dostring(luaSt, script))
     {
@@ -218,12 +228,13 @@ static Body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, const Potenti
 
     nResults = lua_gettop(luaSt) - level;
 
-    return readReturnedModels(luaSt, nResults, n);
+    return readModels(luaSt, nResults, n);
 }
 
-static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* st)
+static int evaluateInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* st, HistogramParams* hp)
 {
     Body* bodies;
+    unsigned int nbody;
 
     if (evaluateContext(luaSt, ctx))
         return 1;
@@ -231,30 +242,28 @@ static int setupInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* s
     if (evaluatePotential(luaSt, &ctx->pot))
         return 1;
 
-    if (evaluateHistogram(luaSt, &ctx->histogramParams))
+    if (evaluateHistogram(luaSt, hp))
         return 1;
 
-    bodies = evaluateBodies(luaSt, ctx, &ctx->pot, &ctx->nbody);
+    bodies = evaluateBodies(luaSt, ctx, &ctx->pot, &nbody);
     if (!bodies)
         return 1;
 
-    st->tree.rsize = ctx->treeRSize;
-    st->tnow = 0.0;
-    st->bodytab = bodies;
+    setInitialNBodyState(st, ctx, bodies, nbody);
 
     return 0;
 }
 
-int setupNBody(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
+int setupNBody(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
 {
     int rc;
     lua_State* luaSt;
 
-    luaSt = openNBodyLuaState(nbf);
+    luaSt = nbodyOpenLuaStateWithScript(nbf);
     if (!luaSt)
         return 1;
 
-    rc = setupInitialNBodyState(luaSt, ctx, st);
+    rc = evaluateInitialNBodyState(luaSt, ctx, st, hp);
     lua_close(luaSt);
 
     return rc;

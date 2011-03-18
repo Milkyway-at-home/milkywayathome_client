@@ -33,5 +33,7 @@ NBodyCtx* toNBodyCtx(lua_State* luaSt, int idx);
 NBodyCtx* expectNBodyCtx(lua_State* luaSt, int idx);
 int registerNBodyCtx(lua_State* luaSt);
 
+criterion_t readCriterion(lua_State* luaSt, const char* name);
+
 #endif /* _NBODY_LUA_NBODYCTX_H_ */
 

@@ -34,7 +34,6 @@ void registerNBodyTypes(lua_State* luaSt)
     registerSpherical(luaSt);
 
     registerPotential(luaSt);
-    registerInitialConditions(luaSt);
     registerHistogramParams(luaSt);
 
     registerNBodyCtx(luaSt);

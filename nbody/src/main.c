@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_util.h"
 #include "nbody.h"
+#include "nbody_defaults.h"
 
 #ifdef _OPENMP
   #include <omp.h>
@@ -32,13 +33,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #if NBODY_CRLIBM
   #include <crlibm.h>
 #endif /* NBODY_CRLIBM */
-
-
-#define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
-#define DEFAULT_HISTOGRAM_FILE  "histogram"
-
-/* 15 minutes */
-#define NOBOINC_DEFAULT_CHECKPOINT_PERIOD 900
 
 
 #if !BOINC_APPLICATION

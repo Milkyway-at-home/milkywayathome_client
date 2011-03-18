@@ -32,12 +32,12 @@ extern "C" {
 #include "nbody_lua_type_marshal.h"
 
 #include "nbody_lua_nbodyctx.h"
+#include "nbody_lua_nbodystate.h"
 #include "nbody_lua_body.h"
 #include "nbody_lua_halo.h"
 #include "nbody_lua_disk.h"
 #include "nbody_lua_spherical.h"
 #include "nbody_lua_potential.h"
-#include "nbody_lua_initial_conditions.h"
 #include "nbody_lua_histogram_params.h"
 
 

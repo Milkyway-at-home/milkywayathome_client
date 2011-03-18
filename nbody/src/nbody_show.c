@@ -18,13 +18,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _MSC_VER
-  #define _GNU_SOURCE
-#endif
-
 #include <string.h>
 #include <stdio.h>
-#include "nbody_util.h"
 #include "nbody_types.h"
 #include "milkyway_util.h"
 #include "nbody_show.h"
@@ -267,31 +262,6 @@ char* showPotential(const Potential* p)
     return buf;
 }
 
-char* showInitialConditions(const InitialConditions* ic)
-{
-    char* buf;
-
-    if (!ic)
-        return NULL;
-
-    if (0 > asprintf(&buf,
-                     "{ \n"
-                     "          position     = { %g, %g, %g }\n"
-                     "          velocity     = { %g, %g, %g }\n"
-                     "        };\n",
-                     X(ic->position),
-                     Y(ic->position),
-                     Z(ic->position),
-                     X(ic->velocity),
-                     Y(ic->velocity),
-                     Z(ic->velocity)))
-    {
-        fail("asprintf() failed\n");
-    }
-
-    return buf;
-}
-
 /* Most efficient function ever */
 char* showNBodyCtx(const NBodyCtx* ctx)
 {
@@ -306,14 +276,12 @@ char* showNBodyCtx(const NBodyCtx* ctx)
     if (0 > asprintf(&buf,
                      "ctx = { \n"
                      "  pot = %s\n"
-                     "  nbody           = %d\n"
                      "  timeEvolve      = %g\n"
                      "  timestep        = %g\n"
                      "  sunGCDist       = %g\n"
                      "  criterion       = %s\n"
                      "  useQuad         = %s\n"
                      "  allowIncest     = %s\n"
-                     "  outputCartesian = %s\n"
                      "  treeRSize       = %g\n"
                      "  theta           = %g\n"
                      "  eps2            = %g\n"
@@ -322,14 +290,12 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      "  outfile         = %p\n"
                      "};\n",
                      potBuf,
-                     ctx->nbody,
                      ctx->timeEvolve,
                      ctx->timestep,
                      ctx->sunGCDist,
                      showCriterionT(ctx->criterion),
                      showBool(ctx->useQuad),
                      showBool(ctx->allowIncest),
-                     showBool(ctx->outputCartesian),
                      ctx->treeRSize,
                      ctx->theta,
                      ctx->eps2,
@@ -348,13 +314,6 @@ char* showNBodyCtx(const NBodyCtx* ctx)
 void printNBodyCtx(const NBodyCtx* ctx)
 {
     char* buf = showNBodyCtx(ctx);
-    puts(buf);
-    free(buf);
-}
-
-void printInitialConditions(const InitialConditions* ic)
-{
-    char* buf = showInitialConditions(ic);
     puts(buf);
     free(buf);
 }

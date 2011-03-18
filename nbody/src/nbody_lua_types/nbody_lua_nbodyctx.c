@@ -27,35 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_nbodyctx.h"
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
-
-static const NBodyCtx defaultNBodyCtx =
-{
-    /* Grr lack of C99 named struct initializers in MSVC */
-    /* .pot             */  EMPTY_POTENTIAL,
-    /* .nbody           */  0,
-    /* .timestep        */  0.0,
-    /* .timeEvolve      */  0.0,
-
-    /* .theta           */  0.0,
-    /* .eps2            */  0.0,
-
-    /* .treeRSize       */  4.0,
-    /* .sunGCDist       */  8.0,
-    /* .criterion       */  NewCriterion,
-    /* .useQuad         */  TRUE,
-    /* .allowIncest     */  FALSE,
-
-    /* .outputCartesian */  FALSE,
-    /* .outputBodies    */  FALSE,
-    /* .outputHistogram */  FALSE,
-
-    /* .histogramParams */  EMPTY_HISTOGRAM_PARAMS,
-
-    /* .freqout         */  0,
-    /* .checkpointT     */  3600,
-    /* .outfile         */  NULL
-};
-
+#include "nbody_defaults.h"
 
 static const MWEnumAssociation criterionOptions[] =
 {
@@ -97,6 +69,17 @@ int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* p)
     return pushType(luaSt, NBODYCTX_TYPE, sizeof(NBodyCtx), (void*) p);
 }
 
+criterion_t readCriterion(lua_State* luaSt, const char* name)
+{
+    criterion_t t;
+
+    assert(name);
+    lua_pushstring(luaSt, name);
+    t = checkEnum(luaSt, criterionOptions, lua_gettop(luaSt));
+    lua_pop(luaSt, 1);
+    return t;
+}
+
 static int createNBodyCtx(lua_State* luaSt)
 {
     static NBodyCtx ctx;
@@ -132,11 +115,7 @@ static int createNBodyCtx(lua_State* luaSt)
     /* FIXME: Hacky handling of enum. Will result in not good error
      * messages as well as not fitting in. */
     if (criterionName) /* Not required */
-    {
-        lua_pushstring(luaSt, criterionName);
-        ctx.criterion = checkEnum(luaSt, criterionOptions, lua_gettop(luaSt));
-        lua_pop(luaSt, 1);
-    }
+        ctx.criterion = readCriterion(luaSt, criterionName);
 
     pushNBodyCtx(luaSt, &ctx);
     return 1;

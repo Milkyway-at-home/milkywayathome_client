@@ -38,6 +38,7 @@ include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 maybe_static()
 
 find_package(BOINC)
+find_package(OpenSSL)
 
 if(BOINC_APPLICATION)
   include_directories(${BOINC_INCLUDE_DIR})
@@ -159,10 +160,10 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_simulation.c
                   ${NBODY_SRC_DIR}/nbody_check_params.c
                   ${NBODY_SRC_DIR}/nbody_plummer.c
-                  ${NBODY_SRC_DIR}/nbody_util.c
                   ${NBODY_SRC_DIR}/nbody_step.c
                   ${NBODY_SRC_DIR}/nbody_show.c
-                  ${NBODY_SRC_DIR}/nbody_checkpoint.c)
+                  ${NBODY_SRC_DIR}/nbody_checkpoint.c
+                  ${NBODY_SRC_DIR}/nbody_defaults.c)
 
 
 set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
@@ -178,10 +179,11 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_show.h
                       ${NBODY_INCLUDE_DIR}/nbody_priv.h
                       ${NBODY_INCLUDE_DIR}/nbody_types.h
-                      ${NBODY_INCLUDE_DIR}/nbody_util.h
-                      ${NBODY_INCLUDE_DIR}/nbody_checkpoint.h)
+                      ${NBODY_INCLUDE_DIR}/nbody_checkpoint.h
+                      ${NBODY_INCLUDE_DIR}/nbody_defaults.h)
 
 set(nbody_lua_src ${NBODY_SRC_DIR}/milkyway_lua_marshal.c
+                  ${NBODY_SRC_DIR}/milkyway_lua_util.c
                   ${NBODY_SRC_DIR}/milkyway_lua_math.c
                   ${NBODY_SRC_DIR}/milkyway_lua_vector.c
                   ${NBODY_SRC_DIR}/milkyway_lua_dsfmt.c
@@ -193,18 +195,20 @@ set(nbody_lua_src ${NBODY_SRC_DIR}/milkyway_lua_marshal.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_types.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_type_marshal.c
 
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_nbodystate.c
+
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_nbodyctx.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_body.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_halo.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_disk.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_spherical.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_potential.c
-                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_initial_conditions.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_histogram_params.c)
 
 
 set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/milkyway_lua.h
                       ${NBODY_INCLUDE_DIR}/milkyway_lua_marshal.h
+                      ${NBODY_INCLUDE_DIR}/milkyway_lua_util.h
                       ${NBODY_INCLUDE_DIR}/milkyway_lua_math.h
                       ${NBODY_INCLUDE_DIR}/milkyway_lua_vector.h
                       ${NBODY_INCLUDE_DIR}/milkyway_lua_dsfmt.h
@@ -215,6 +219,7 @@ set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/milkyway_lua.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_types.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_type_marshal.h
 
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_nbodystate.h
 
                       ${NBODY_INCLUDE_DIR}/nbody_lua_nbodyctx.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_body.h
@@ -222,7 +227,6 @@ set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/milkyway_lua.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_disk.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_spherical.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_potential.h
-                      ${NBODY_INCLUDE_DIR}/nbody_lua_initial_conditions.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_histogram_params.h)
 
 
@@ -291,16 +295,11 @@ endif()
 set(exe_link_libs ${POPT_LIBRARY}
                   nbody_simulation
                   nbody_lua
-                  nbody_simulation
                   milkyway
                   ${LUA_LIBRARIES}
                   ${LIBM_LIBRARY}
                   ${OS_SPECIFIC_LIBS}
                   ${nbody_link_libs})
-                  # FIXME: nbody_simulation and nbody_lua depend on linking to each other
-                                     # coordinate conversion functions in nbody_util.c
-
-
 
 
 if(NBODY_CRLIBM)
@@ -343,5 +342,11 @@ add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
 
 milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} 0 ${STATIC_EVERYTHING} "${exe_link_libs}")
 #add_subdirectory(tests EXCLUDE_FROM_ALL)
+
+
+include_directories(${OPENSSL_INCLUDE_DIR})
+add_executable(nbody_test ${PROJECT_SOURCE_DIR}/tests/nbody_test.c)
+target_link_libraries(nbody_test ${OPENSSL_LIBRARIES} ${exe_link_libs})
+add_test(nbody_test nbody_test)
 
 

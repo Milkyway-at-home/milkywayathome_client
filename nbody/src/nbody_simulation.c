@@ -62,13 +62,15 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
   #endif /* BOINC_APPLICATION */
 }
 
-static void runSystem(const NBodyCtx* ctx, NBodyState* st)
+static int runSystem(const NBodyCtx* ctx, NBodyState* st)
 {
     const real tstop = ctx->timeEvolve - ctx->timestep / 1024.0;
 
     while (st->tnow < tstop)
     {
-        stepSystem(ctx, st);   /* advance N-body system */
+        if (stepSystem(ctx, st))   /* advance N-body system */
+            return 1;
+
         nbodyCheckpoint(ctx, st);
 
       #if PERIODIC_OUTPUT
@@ -82,23 +84,25 @@ static void runSystem(const NBodyCtx* ctx, NBodyState* st)
     {
         mw_report("Making final checkpoint\n");
         if (writeCheckpoint(ctx, st))
-            fail("Failed to write final checkpoint\n");
+            return warn1("Failed to write final checkpoint\n");
     }
+
+    return 0;
 }
 
-static void endRun(NBodyCtx* ctx, NBodyState* st, const real chisq)
+static void endRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, const real chisq)
 {
-    finalOutput(ctx, st, chisq);
+    finalOutput(ctx, st, nbf, chisq);
     destroyNBodyCtx(ctx);
     destroyNBodyState(st);
 }
 
-static int setupRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
+static int setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
 {
     /* If the checkpoint exists, try to use it */
     if (nbf->ignoreCheckpoint || !resolvedCheckpointExists())
     {
-        if (setupNBody(ctx, st, nbf))
+        if (setupNBody(ctx, st, hp, nbf))
             return warn1("Failed to read input parameters file\n");
     }
     else
@@ -121,7 +125,7 @@ static int setupRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     }
 
     /* Accelerations are scratch space */
-    st->acctab = (mwvector*) mwMallocA(ctx->nbody * sizeof(mwvector));
+    st->acctab = (mwvector*) mwMallocA(st->nbody * sizeof(mwvector));
 
     gravMap(ctx, st); /* Start 1st step */
 
@@ -131,19 +135,16 @@ static int setupRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 /* Set context fields read from command line flags */
 static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
 {
-    ctx->outputCartesian = nbf->outputCartesian;
-    ctx->outputBodies    = nbf->printBodies;
-    ctx->outputHistogram = nbf->printHistogram;
-    ctx->checkpointT     = nbf->checkpointPeriod;
+    ctx->checkpointT = nbf->checkpointPeriod;
 }
 
 static int verifyFile(const NBodyFlags* nbf)
 {
     int rc;
     NBodyCtx ctx  = EMPTY_NBODYCTX;
-    NBodyState st = EMPTY_STATE;
+    NBodyState st = EMPTY_NBODYSTATE;
 
-    rc = setupNBody(&ctx, &st, nbf);
+    rc = setupNBody(&ctx, &st, &ctx.histogramParams, nbf);
     if (rc)
         warn("File failed\n");
     else
@@ -164,7 +165,7 @@ static int verifyFile(const NBodyFlags* nbf)
 int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to control output */
 {
     NBodyCtx ctx  = EMPTY_NBODYCTX;
-    NBodyState st = EMPTY_STATE;
+    NBodyState st = EMPTY_NBODYSTATE;
 
     real chisq;
     double ts = 0.0, te = 0.0;
@@ -175,7 +176,7 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     if (resolveCheckpoint(nbf->checkpointFileName))
         return warn1("Failed to resolve checkpoint\n");
 
-    if (setupRun(&ctx, &st, nbf))
+    if (setupRun(&ctx, &st, &ctx.histogramParams, nbf))
         return warn1("Failed to setup run\n");
 
     nbodySetCtxFromFlags(&ctx, nbf);
@@ -185,7 +186,8 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     if (nbf->printTiming)     /* Time the body of the calculation */
         ts = mwGetTime();
 
-    runSystem(&ctx, &st);
+    if (runSystem(&ctx, &st))
+        return warn1("Error running system\n");
     mw_report("Simulation complete\n");
 
     if (nbf->printTiming)
@@ -199,7 +201,7 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     if (isnan(chisq))
         warn("Failed to calculate chisq\n");
 
-    endRun(&ctx, &st, chisq);
+    endRun(&ctx, &st, nbf, chisq);
 
     return 0;
 }

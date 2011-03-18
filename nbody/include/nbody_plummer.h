@@ -26,6 +26,5 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 int generatePlummer(lua_State* luaSt);
 void registerGeneratePlummer(lua_State* luaSt);
 
-
 #endif /* _NBODY_PLUMMER_H_ */
 

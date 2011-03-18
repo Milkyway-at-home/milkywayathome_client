@@ -26,6 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_histogram_params.h"
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
+#include "nbody_defaults.h"
 
 HistogramParams* checkHistogramParams(lua_State* luaSt, int idx)
 {
@@ -46,25 +47,6 @@ HistogramParams* expectHistogramParams(lua_State* luaSt, int idx)
 {
     return (HistogramParams*) expectType(luaSt, idx, HISTOGRAM_PARAMS_TYPE);
 }
-
-#define histogramPhi 128.79
-#define histogramTheta 54.39
-#define histogramPsi 90.70
-#define histogramStartRaw ((real) -50.0)
-#define histogramEndRaw ((real) 50.0)
-#define histogramBinSize ((real) 2.9411764705882355)
-#define histogramCenter ((real) 0.0)
-
-static const HistogramParams defaultHistogramParams =
-{
-    /* .phi      */  histogramPhi,
-    /* .theta    */  histogramTheta,
-    /* .psi      */  histogramPsi,
-    /* .startRaw */  histogramStartRaw,
-    /* .endRaw   */  histogramEndRaw,
-    /* .binSize  */  histogramBinSize,
-    /* .center   */  histogramCenter
-};
 
 
 static int createHistogramParams(lua_State* luaSt)

@@ -68,7 +68,7 @@ static int readBodyArray(lua_State* luaSt, int table, Body* bodies, int n)
 }
 
 /* Read returned table of model components. Pops the n arguments */
-Body* readReturnedModels(lua_State* luaSt, int nModels, unsigned int* nOut)
+Body* readModels(lua_State* luaSt, int nModels, unsigned int* nOut)
 {
     int i, n, totalN, top;
     Body* allBodies;

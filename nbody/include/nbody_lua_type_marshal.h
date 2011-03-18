@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_types.h"
 
-Body* readReturnedModels(lua_State* luaSt, int nModels, unsigned int* nOut);
+Body* readModels(lua_State* luaSt, int nModels, unsigned int* nOut);
 
 #endif /* _NBODY_LUA_TYPE_MARSHAL_H_ */
 

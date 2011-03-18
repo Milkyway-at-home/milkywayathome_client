@@ -1,6 +1,5 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
+/*
+Copyright (C) 2011  Matthew Arsenault
 
 This file is part of Milkway@Home.
 
@@ -18,24 +17,21 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_UTIL_H_
-#define _NBODY_UTIL_H_
-
-#ifdef __cplusplus
-extern "C" {
+#if !defined(_NBODY_LUA_TYPES_H_INSIDE_) && !defined(NBODY_LUA_TYPES_COMPILATION)
+  #error "Only nbody_lua_types.h can be included directly."
 #endif
 
+#ifndef _NBODY_LUA_NBODYSTATE_H_
+#define _NBODY_LUA_NBODYSTATE_H_
+
+#include <lua.h>
 #include "nbody_types.h"
 
-/* Coordinate conversion */
-mwvector cartesianToLbr(const NBodyCtx* ctx, const mwvector r);
-mwvector cartesianToLbr_rad(const NBodyCtx* ctx, const mwvector r);
-mwvector lbrToCartesian(const NBodyCtx* ctx, const mwvector lbr);
-mwvector lbrToCartesian_rad(const NBodyCtx* ctx, const mwvector lbr);
+int pushNBodyState(lua_State* luaSt, const NBodyState* st);
+NBodyState* checkNBodyState(lua_State* luaSt, int idx);
+NBodyState* toNBodyState(lua_State* luaSt, int idx);
+NBodyState* expectNBodyState(lua_State* luaSt, int idx);
+int registerNBodyState(lua_State* luaSt);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _NBODY_UTIL_H_ */
+#endif /* _NBODY_LUA_NBODYSTATE_H_ */
 
