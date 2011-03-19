@@ -121,33 +121,38 @@ end
 
 
 function makePotentialA()
-      local disk = Disk.miyamotoNagai{ mass = 4.45865888e5,
-                                    scaleLength = 6.5,
-                                    scaleHeight = 0.26
-                                  }
+   local disk, halo, spherical
+   disk = Disk.miyamotoNagai{
+      mass        = 4.45865888e5,
+      scaleLength = 6.5,
+      scaleHeight = 0.26
+   }
 
-   local halo = Halo.logarithmic{ vhalo = 73,
-                                  scaleLength = 12.0,
-                                  flattenZ = 1.0
-                                }
+   halo = Halo.logarithmic{
+      vhalo       = 73,
+      scaleLength = 12.0,
+      flattenZ    = 1.0
+   }
 
-   local spherical = Spherical.spherical{ mass = 1.52954402e5,
-                                          scale = 0.7
-                                        }
+   spherical = Spherical.spherical{
+      mass  = 1.52954402e5,
+      scale = 0.7
+   }
 
-   local pot = Potential.create{ disk = disk,
-                                 halo = halo,
-                                 spherical = spherical
-                               }
-   return pot
+   return Potential.create{
+      disk      = disk,
+      halo      = halo,
+      spherical = spherical
+   }
 end
 
 function makePotentialB()
-   local potA = makePotentialA()
+   local potA = deepcopy(makePotentialA())
    -- Replace disk with exponential disk
-   potA.disk = Disk.exponential{ scaleLength = 7,
-                                 mass = 5.0e5
-                              }
+   potA.disk = Disk.exponential{
+      scaleLength = 7,
+      mass        = 5.0e5
+   }
    return potA
 end
 
@@ -324,6 +329,10 @@ io.stderr:write("There are lots ", tostring(#tests), "\n")
 --    seed = 609746760
 -- }
 
+resultTable = generateTestResults(tests, resultTable)
+printTable(resultTable)
+
+
 
 smallerList = { }
 j = 1
@@ -332,19 +341,19 @@ for i = 1, 38000, 1000 do
    j = j + 1
 end
 
-io.stderr:write("There are fewer ", tostring(#smallerList), "\n")
+-- io.stderr:write("There are fewer ", tostring(#smallerList), "\n")
 
-smallResults = generateTestResults(smallerList, { })
-printTable(smallResults)
+-- smallResults = generateTestResults(smallerList, { })
+-- printTable(smallResults)
 
-persistence.store("result_table", smallResults)
-loaded = persistence.load("result_table")
-assert(loaded ~= nil, "Failed to load result_table")
+-- persistence.store("result_table", smallResults)
+-- loaded = persistence.load("result_table")
+-- assert(loaded ~= nil, "Failed to load result_table")
 
-printTable(smallerList[12])
-lookupKey = hashNBodyTest(smallerList[12])
- print("Lookup", lookupKey)
- print("looked up", loaded.hashtable[lookupKey])
+-- printTable(smallerList[12])
+-- lookupKey = hashNBodyTest(smallerList[12])
+--  print("Lookup", lookupKey)
+--  print("looked up", loaded.hashtable[lookupKey])
 
--- table.foreach(loaded.hashtable[lookupKey], print)
+-- -- table.foreach(loaded.hashtable[lookupKey], print)
 
