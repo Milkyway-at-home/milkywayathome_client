@@ -31,9 +31,9 @@ function(correct_static_link client_bin_name partially_dynamic)
     #CHECKME: What about Windows?
     set(client_static_link_flags "-static-libgcc -static-libstdc++")
 
-    if(NOT WIN32)
-      set(client_static_link_flags "-static ${client_static_link_flags}")
-    endif()
+    # if(NOT WIN32)
+    #   set(client_static_link_flags "-static ${client_static_link_flags}")
+    # endif()
 
     if(NOT partially_dynamic)
       # For dynamically linking to libOpenCL.so and dependencies

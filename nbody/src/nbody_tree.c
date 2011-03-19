@@ -262,7 +262,7 @@ static inline real calcSW93MaxDist2(const Cell* p, const mwvector cmpos, real ps
 
 /* setRCrit: assign critical radius for cell p, using center-of-mass
  * position cmpos and cell size psize. */
-static inline real setRCrit(const NBodyCtx* ctx, const NBodyState* st, const Cell* p, mwvector cmpos, real psize)
+static inline real setRCrit(const NBodyCtx* ctx, const Tree* tree, const Cell* p, mwvector cmpos, real psize)
 {
     real rc, bmax2;
 
@@ -283,7 +283,7 @@ static inline real setRCrit(const NBodyCtx* ctx, const NBodyState* st, const Cel
             break;
 
         case Exact:                         /* exact force calculation? */
-            rc = 2.0 * st->tree.rsize;      /* always open cells */
+            rc = 2.0 * tree->rsize;         /* always open cells */
             break;
 
         case InvalidCriterion:
@@ -295,48 +295,50 @@ static inline real setRCrit(const NBodyCtx* ctx, const NBodyState* st, const Cel
     return sqr(rc);          /* store square of radius */
 }
 
-static inline int checkTreeDim(const real pPos, const real cmPos, const real halfPsize)
+static inline void checkTreeDim(Tree* tree, const real pPos, const real cmPos, const real halfPsize)
 {
     /* CHECKME: Precision: This gets angry as N gets big, and the divisions get small */
     if (   cmPos < pPos - halfPsize       /* if out of bounds */
         || cmPos > pPos + halfPsize)      /* in either direction */
     {
-        return warn1("hackCofM: tree structure error.\n"
-                     "\tcmpos out of bounds\n"
-                     "\tPos(p)           = %.15e\n"
-                     "\tpsize/2          = %.15e\n"
-                     "\tPos(p) + psize/2 = %.15e\n"
-                     "\tcmpos            = %.15e\n"
-                     "\tPos(p) - psize/2 = %.15e\n",
-                     pPos,
-                     halfPsize,
-                     pPos + halfPsize,
-                     cmPos,
-                     pPos - halfPsize);
+        if (!tree->structureError)
+        {
+            /* Only print if we don't know about the error
+             * already. The error will be caught later and this
+             * otherwise could print a lot of noise */
+            tree->structureError = TRUE;
+            warn("hackCofM: tree structure error.\n"
+                 "    cmPos out of bounds\n"
+                 "    Pos(p)           = %.15e\n"
+                 "    tpsize/2          = %.15e\n"
+                 "    Pos(p) + psize/2 = %.15e\n"
+                 "    cmpos            = %.15e\n"
+                 "    Pos(p) - psize/2 = %.15e\n",
+                 pPos,
+                 halfPsize,
+                 pPos + halfPsize,
+                 cmPos,
+                 pPos - halfPsize);
+        }
     }
-
-    return 0;
 }
 
-static inline int checkTreeStructure(const mwvector pPos, const mwvector cmPos, const real psize)
+static inline void checkTreeStructure(Tree* tree, const mwvector pPos, const mwvector cmPos, const real psize)
 {
-    int rc = 0;
     real halfPsize = 0.5 * psize;
 
-    rc |= checkTreeDim(X(pPos), X(cmPos), halfPsize);
-    rc |= checkTreeDim(Y(pPos), Y(cmPos), halfPsize);
-    rc |= checkTreeDim(Z(pPos), Z(cmPos), halfPsize);
-
-    return rc;
+    checkTreeDim(tree, X(pPos), X(cmPos), halfPsize);
+    checkTreeDim(tree, Y(pPos), Y(cmPos), halfPsize);
+    checkTreeDim(tree, Z(pPos), Z(cmPos), halfPsize);
 }
 
 
 /* hackCofM: descend tree finding center-of-mass coordinates and
  * setting critical cell radii.
  */
-static int hackCofM(const NBodyCtx* ctx, NBodyState* st, Cell* p, real psize)
+static void hackCofM(const NBodyCtx* ctx, Tree* tree, Cell* p, real psize)
 {
-    int i, rc;
+    int i;
     Node* q;
     mwvector cmpos = ZERO_VECTOR;                /* init center of mass */
 
@@ -349,8 +351,7 @@ static int hackCofM(const NBodyCtx* ctx, NBodyState* st, Cell* p, real psize)
         {
             if (isCell(q))                     /* and is it a cell? */
             {
-                if (hackCofM(ctx, st, (Cell*) q, 0.5 * psize)) /* find subcell cm */
-                    return 1;
+                hackCofM(ctx, tree, (Cell*) q, 0.5 * psize); /* find subcell cm */
             }
 
             Mass(p) += Mass(q);                       /* sum total mass */
@@ -369,12 +370,10 @@ static int hackCofM(const NBodyCtx* ctx, NBodyState* st, Cell* p, real psize)
         cmpos = Pos(p);                /* use geo. center for now  */
     }
 
-    rc = checkTreeStructure(Pos(p), cmpos, psize);
+    checkTreeStructure(tree, Pos(p), cmpos, psize);
 
-    Rcrit2(p) = setRCrit(ctx, st, p, cmpos, psize);            /* set critical radius */
+    Rcrit2(p) = setRCrit(ctx, tree, p, cmpos, psize);            /* set critical radius */
     Pos(p) = cmpos;             /* and center-of-mass pos */
-
-    return rc;
 }
 
 /* makeTree: initialize tree structure for hierarchical force calculation
@@ -395,7 +394,10 @@ int makeTree(const NBodyCtx* ctx, NBodyState* st)
             loadBody(st, t, p);              /* and insert into tree */
     }
 
-    if (hackCofM(ctx, st, t->root, t->rsize))   /* find c-of-m coordinates */
+    hackCofM(ctx, &st->tree, t->root, t->rsize);   /* find c-of-m coordinates */
+
+    /* Check if tree structure error occured */
+    if (st->tree.structureError)
         return 1;
 
     threadTree((Node*) t->root, NULL);        /* add Next and More links */

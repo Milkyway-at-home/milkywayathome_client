@@ -454,7 +454,6 @@ char* showNBodyState(const NBodyState* st)
                      "  bodytab        = %p\n"
                      "  acctab         = %p\n"
                      "  treeIncest     = %s\n"
-                     "  incestReported = %s\n"
                      "};\n",
                      st,
                      treeBuf,
@@ -465,8 +464,7 @@ char* showNBodyState(const NBodyState* st)
                      st->nbody,
                      st->bodytab,
                      st->acctab,
-                     showBool(st->treeIncest),
-                     showBool(st->incestReported)))
+                     showBool(st->treeIncest)))
     {
         fail("asprintf() failed\n");
     }
