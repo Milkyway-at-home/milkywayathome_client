@@ -106,17 +106,18 @@ function mergeTables(m1, ...)
 end
 
 function runTest(t)
-   local st, ctx, pot, status
+   local status, fatal = "NBODY_SUCCESS", false  -- 0 steps is OK
 
-   ctx, pot, st = getTestNBodyState(t)
+   local ctx, pot, st = getTestNBodyState(t)
    for i = 1, t.nSteps do
       status = st:step(ctx, pot)
-      if statusIsFatal(status) then
+      fatal = statusIsFatal(status)
+      if fatal then
          break
       end
    end
 
-   return st:hashSortBodies(), status
+   return st:hashSortBodies(), status, fatal
 end
 
 
@@ -124,11 +125,12 @@ function generateTestResults(tests, resultTable)
    resultTable.hashtable = { }
 
    for _, t in ipairs(tests) do
-      local resultHash, err = runTest(t)
+      local resultHash, status, failed = runTest(t)
       local testHash = hashNBodyTest(t)
       resultTable.hashtable[testHash] = t
       resultTable.hashtable[testHash].result = resultHash
-      resultTable.hashtable[testHash].err = err
+      resultTable.hashtable[testHash].status = status
+      resultTable.hashtable[testHash].failed = failed
    end
 
    return resultTable
@@ -196,14 +198,54 @@ function printResult(t)
 [[
 
    result      = "%s",
-   err         = "%s"
+   status      = "%s",
+   failed      = "%s"
 ]]
 
    if (t.result ~= nil) then
-      str = str .. string.format(resultFmt, t.result, t.err)
+      str = str .. string.format(resultFmt, t.result, tostring(t.status), tostring(t.failed))
    end
 
    str = str .. "}\n"
 
    print(str)
 end
+
+function checkTestResult(test, resultTable)
+   local expected = findTestResult(test, resultTable)
+   if expected == nil then
+      error("Test result not in result table")
+   end
+
+   assert(expected.result ~= nil, "Hash missing from expected result")
+   assert(expected.status ~= nil, "Status missing from expected result")
+   assert(expected.failed ~= nil, "Failed status missing from expected result")
+
+   local doesNotMatch = false
+   local hash, status, failed = runTest(test)
+
+   if hash ~= expected.result then
+      io.stderr:write("Hash does not match expected:\n")
+      doesNotMatch = true
+   end
+
+   if status ~= expected.status then
+      io.stderr:write("Status does not match expected:\n")
+      doesNotMatch = true
+   end
+
+   if failed ~= expected.failed then
+      io.stderr:write("Failed status does not match expected:\n")
+      doesNotMatch = true
+   end
+
+   if doesNotMatch then
+      io.stderr:write("Failing test:\n")
+      io.stderr:write(string.format("Got hash = %s, status = %s, failed = %s\nExpected:\n",
+                                    hash, status, tostring(failed)))
+      printResult(test)
+   end
+
+   return doesNotMatch
+end
+

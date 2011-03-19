@@ -97,7 +97,6 @@ end
 --resultTable = generateTestResults(tests, resultTable)
 --printTable(resultTable)
 
-
 generateResultsToFile(smallerList, { }, "small_results")
 smallLoad = loadResultsFromFile("small_results")
 printTable(smallLoad)

@@ -20,71 +20,80 @@
 
 require "nbody_testing"
 
-sphericals = buildAllCombinations(
-   function(m, s)
-      return Spherical.spherical{ mass = m, scale = s }
-   end,
-   { 1.52954402e5, 1.7e6, 1.1e4 },
-   { 0.7, 1.1, 0.4 }
-)
+function buildAllDisks()
+   local miyamotoNagaiDisks, exponentialDisks
+   miyamotoNagaiDisks = buildAllCombinations(
+      function(m, a, b)
+         return Disk.miyamotoNagai{ mass = m, scaleLength = a, scaleHeight = b }
+      end,
+      { 4.5e5, 5.0e6, 3.0e4 },
+      { 6.5, 9.0, 3.0 },
+      { 0.26, 0.5, 0.1 }
+   )
+
+   exponentialDisks = buildAllCombinations(
+      function(m, b)
+         return Disk.exponential{ mass = m, scaleLength = b }
+      end,
+      { 2.24933e5, 3.0e6, 1.5e4 },
+      { 4, 7, 3 }
+   )
+
+   return mergeTables(miyamotoNagaiDisks, exponentialDisks)
+end
+
+function buildAllSphericals()
+   return buildAllCombinations(
+      function(m, s)
+         return Spherical.spherical{ mass = m, scale = s }
+      end,
+      { 1.52954402e5, 1.7e6, 1.1e4 },
+      { 0.7, 1.1, 0.4 }
+   )
+end
 
 
-miyamotoNagaiDisks = buildAllCombinations(
-   function(m, a, b)
-      return Disk.miyamotoNagai{ mass = m, scaleLength = a, scaleHeight = b }
-   end,
-   { 4.5e5, 5.0e6, 3.0e4 },
-   { 6.5, 9.0, 3.0 },
-   { 0.26, 0.5, 0.1 }
-)
+function buildAllHalos()
+   local logHalos, nfwHalos, triaxialHalos
 
-exponentialDisks = buildAllCombinations(
-   function(m, b)
-      return Disk.exponential{ mass = m, scaleLength = b }
-   end,
-   { 2.24933e5, 3.0e6, 1.5e4 },
-   { 4, 7, 3 }
-)
+   logHalos = buildAllCombinations(
+      function(vhalo, scaleLength, flattenZ)
+         return Halo.logarithmic{ vhalo = vhalo, scaleLength = scaleLength, flattenZ = flattenZ }
+      end,
+      { 73, 100, 50 },
+      { 12, 20, 6 },
+      { 1, 1.4, 0.7 }
+   )
 
-logHalos = buildAllCombinations(
-   function(vhalo, scaleLength, flattenZ)
-      return Halo.logarithmic{ vhalo = vhalo, scaleLength = scaleLength, flattenZ = flattenZ }
-   end,
-   { 73, 100, 50 },
-   { 12, 20, 6 },
-   { 1, 1.4, 0.7 }
-)
+   nfwHalos = buildAllCombinations(
+      function(vhalo, scaleLength)
+         return Halo.nfw{ vhalo = vhalo, scaleLength = scaleLength }
+      end,
+      { 155, 200, 120 },
+      { 22.25, 30, 14 }
+   )
 
-nfwHalos = buildAllCombinations(
-   function(vhalo, scaleLength)
-      return Halo.nfw{ vhalo = vhalo, scaleLength = scaleLength }
-   end,
-   { 155, 200, 120 },
-   { 22.25, 30, 14 }
-)
+   triaxialHalos = buildAllCombinations(
+      function(vhalo, scaleLength, flattenZ, flattenX, flattenY, triaxAngle)
+         return Halo.triaxial{ vhalo = vhalo, scaleLength = scaleLength,
+                               flattenZ = flattenZ, flattenX = flattenX, flattenY = flattenY,
+                               triaxAngle = triaxAngle
+                            }
+      end,
+      { 116, 150, 87 },
+      { 16.3, 20, 12 },
+      { 1.43, 1.7, 1.2 },
+      { 1.26, 1.5, 1.1 },
+      { 1.0, 1.2, 0.7 },
+      { 96, 120, 66 }
+   )
 
-triaxialHalos = buildAllCombinations(
-   function(vhalo, scaleLength, flattenZ, flattenX, flattenY, triaxAngle)
-      return Halo.triaxial{ vhalo = vhalo, scaleLength = scaleLength,
-                            flattenZ = flattenZ, flattenX = flattenX, flattenY = flattenY,
-                            triaxAngle = triaxAngle
-                         }
-   end,
-   { 116, 150, 87 },
-   { 16.3, 20, 12 },
-   { 1.43, 1.7, 1.2 },
-   { 1.26, 1.5, 1.1 },
-   { 1.0, 1.2, 0.7 },
-   { 96, 120, 66 }
-)
+   return mergeTables(logHalos, nfwHalos, traixialHalos)
+end
 
-allHalos = mergeTables(logHalos, nfwHalos, traixialHalos)
-allDisks = mergeTables(miyamotoNagaiDisks, exponentialDisks)
-allSphericals = sphericals
-
-allPotentials = buildAllCombinations(Potential.create, allSphericals, allDisks, allHalos)
-
-
+function makeAllPotentials()
+   return buildAllCombinations(Potential.create, allSphericals, allDisks, allHalos)
+end
 
 
 function makePotentialA()

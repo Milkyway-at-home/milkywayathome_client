@@ -126,6 +126,7 @@ static int checkNBodyTestTable(lua_State* luaSt, int idx, NBodyTest* testOut)
     static real seedf = 0.0;
     static real nStepsf = 0.0;
     static real nbodyf = 0.0;
+    static mwbool failed = FALSE;
     static const char* resultHash = NULL;
     static const char* resultName = NULL;
     static const MWNamedArg argTable[] =
@@ -144,9 +145,9 @@ static int checkNBodyTestTable(lua_State* luaSt, int idx, NBodyTest* testOut)
             { "doublePrec",  LUA_TBOOLEAN, NULL, FALSE, &test.doublePrec      },
 
             /* Unused in hash; these ones may or may not exist, just don't error if there */
-
             { "result",     LUA_TSTRING,   NULL,  FALSE, &resultHash          },
             { "err",        LUA_TSTRING,   NULL,  FALSE, &resultName          },
+            { "failed",     LUA_TBOOLEAN,  NULL,  FALSE, &failed              },
             END_MW_NAMED_ARG
         };
 
