@@ -295,6 +295,14 @@ int main(int argc, const char* argv[])
         exit(EXIT_FAILURE);
     }
 
+    warn("arst %d   %d   %d   %d    %d   %d\n",
+         NBODY_TREE_INCEST_NONFATAL,
+         NBODY_SUCCESS,
+         NBODY_ERROR,
+         NBODY_TREE_STRUCTURE_ERROR,
+         NBODY_TREE_INCEST_FATAL,
+         NBODY_CHECKPOINT_ERROR);
+
     nbodyPrintVersion();
 
     if (readParameters(argc, argv, &nbf))

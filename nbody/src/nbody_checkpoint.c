@@ -32,11 +32,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include "nbody_checkpoint.h"
 #include "milkyway_util.h"
-
-#define CHECKPOINT_TMP_FILE "nbody_checkpoint_tmp"
-
-static mwbool checkpointHasBeenResolved = FALSE;
-static char checkpointResolved[1024] = "";
+#include "nbody_defaults.h"
 
 static const char hdr[] = "mwnbody";
 static const char tail[] = "end";
@@ -277,7 +273,6 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     READ_INT(minorVersion, p);
 
     READ_CTX(ctx, p);
-    ctx->outfile = NULL; /* Clean up garbage pointer */
 
     READ_INT(st->nbody, p);
     bodySize = st->nbody * sizeof(Body);
@@ -395,26 +390,29 @@ static inline void freezeState(const NBodyCtx* ctx, const NBodyState* st, Checkp
 }
 
 /* Open the temporary checkpoint file for writing */
-int resolveCheckpoint(const char* checkpointFileName)
+int resolveCheckpoint(NBodyState* st, const char* checkpointFileName)
 {
     int rc = 0;
-    rc = mw_resolve_filename(checkpointFileName,
-                             checkpointResolved,
-                             sizeof(checkpointResolved));
+
+    st->checkpointResolved = (char*) mwCalloc(2048, sizeof(char));
+
+    rc = mw_resolve_filename(checkpointFileName, st->checkpointResolved, 2048 * sizeof(char));
     if (rc)
+    {
         warn("Failed to resolve checkpoint file '%s': %d\n", checkpointFileName, rc);
-    else
-        checkpointHasBeenResolved = TRUE;
+        free(st->checkpointResolved);
+        st->checkpointResolved = NULL;
+    }
 
     return rc;
 }
 
-int resolvedCheckpointExists()
+int resolvedCheckpointExists(const NBodyState* st)
 {
-    if (!checkpointHasBeenResolved)
+    if (!st->checkpointResolved)
         mw_panic("Checking if checkpoint exists, but haven't resolved yet\n");
 
-    return mw_file_exists(checkpointResolved);
+    return mw_file_exists(st->checkpointResolved);
 }
 
 
@@ -423,7 +421,7 @@ int readCheckpoint(NBodyCtx* ctx, NBodyState* st)
 {
     CheckpointHandle cp = EMPTY_CHECKPOINT_HANDLE;
 
-    if (openCheckpointHandle(st, &cp, checkpointResolved, FALSE))
+    if (openCheckpointHandle(st, &cp, st->checkpointResolved, FALSE))
     {
         warn("Opening checkpoint for resuming failed\n");
         closeCheckpointHandle(&cp);
@@ -447,7 +445,7 @@ int writeCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
     int failed = FALSE;
     CheckpointHandle cp = EMPTY_CHECKPOINT_HANDLE;
 
-    assert(checkpointHasBeenResolved);
+    assert(st->checkpointResolved);
     if (openCheckpointHandle(st, &cp, CHECKPOINT_TMP_FILE, TRUE))
     {
         closeCheckpointHandle(&cp);
@@ -467,7 +465,7 @@ int writeCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
      * should avoid corruption in the event the file write is
      * interrupted. */
     /* Don't update if the file was not closed properly; it can't be trusted. */
-    if (!failed && mw_rename(CHECKPOINT_TMP_FILE, checkpointResolved))
+    if (!failed && mw_rename(CHECKPOINT_TMP_FILE, st->checkpointResolved))
     {
         mw_win_perror("Failed to update checkpoint with temporary");
         failed = TRUE;

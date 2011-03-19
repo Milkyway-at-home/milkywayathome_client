@@ -93,14 +93,13 @@ static int runSystem(const NBodyCtx* ctx, NBodyState* st)
 static void endRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, const real chisq)
 {
     finalOutput(ctx, st, nbf, chisq);
-    destroyNBodyCtx(ctx);
     destroyNBodyState(st);
 }
 
-static int setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
+static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
 {
     /* If the checkpoint exists, try to use it */
-    if (nbf->ignoreCheckpoint || !resolvedCheckpointExists())
+    if (nbf->ignoreCheckpoint || !resolvedCheckpointExists(st))
     {
         if (setupNBody(ctx, st, hp, nbf))
             return warn1("Failed to read input parameters file\n");
@@ -116,7 +115,7 @@ static int setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NB
         {
             mw_report("Failed to read checkpoint\n");
             destroyNBodyState(st);
-            return 1;
+            return NBODY_CHECKPOINT_ERROR;
         }
         else
         {
@@ -150,14 +149,11 @@ static int verifyFile(const NBodyFlags* nbf)
         printHistogramParams(&ctx.histogramParams);
     }
 
-    destroyNBodyCtx(&ctx);
     destroyNBodyState(&st);
 
     return rc;
 }
 
-/* Takes parsed json and run the simulation, using outFileName for
- * output. */
 int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to control output */
 {
     NBodyCtx ctx  = EMPTY_NBODYCTX;
@@ -169,14 +165,14 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     if (nbf->verifyOnly)
         return verifyFile(nbf);
 
-    if (resolveCheckpoint(nbf->checkpointFileName))
+    if (resolveCheckpoint(&st, nbf->checkpointFileName))
         return warn1("Failed to resolve checkpoint\n");
 
     if (setupRun(&ctx, &st, &ctx.histogramParams, nbf))
         return warn1("Failed to setup run\n");
 
     nbodySetCtxFromFlags(&ctx, nbf);
-    if (initOutput(&ctx, nbf))
+    if (initOutput(&st, nbf))
         return warn1("Failed to open output files\n");
 
     if (nbf->printTiming)     /* Time the body of the calculation */

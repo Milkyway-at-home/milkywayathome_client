@@ -35,10 +35,10 @@ const NBodyCtx defaultNBodyCtx =
     /* .criterion       */  DEFAULT_CRITERION,
     /* .useQuad         */  DEFAULT_USE_QUADRUPOLE_MOMENTS,
     /* .allowIncest     */  DEFAULT_ALLOW_INCEST,
+    /* .quietErrors     */  DEFAULT_QUIET_ERRORS,
 
     /* .freqout         */  DEFAULT_OUTPUT_FREQUENCY,
     /* .checkpointT     */  NOBOINC_DEFAULT_CHECKPOINT_PERIOD,
-    /* .outfile         */  NULL,
     /* .histogramParams */  EMPTY_HISTOGRAM_PARAMS
 };
 

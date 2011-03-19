@@ -47,10 +47,11 @@ typedef struct
     unsigned int nSteps;
     unsigned int nbody;
     uint32_t seed;
+    mwbool doublePrec;
     NBodyCtxTest ctx;
 } NBodyTest;
 
-#define EMPTY_NBODYTEST { NULL, NULL, 0, 0, 0, EMPTY_NBODYCTXTEST }
+#define EMPTY_NBODYTEST { NULL, NULL, 0, 0, 0, DOUBLEPREC, EMPTY_NBODYCTXTEST }
 
 typedef union
 {
@@ -125,18 +126,27 @@ static int checkNBodyTestTable(lua_State* luaSt, int idx, NBodyTest* testOut)
     static real seedf = 0.0;
     static real nStepsf = 0.0;
     static real nbodyf = 0.0;
+    static const char* resultHash = NULL;
+    static const char* resultName = NULL;
     static const MWNamedArg argTable[] =
         {
-            { "potential",   LUA_TSTRING,  NULL, TRUE, &test.potentialName   },
-            { "model",       LUA_TSTRING,  NULL, TRUE, &test.modelName       },
-            { "nbody",       LUA_TNUMBER,  NULL, TRUE, &nbodyf               },
-            { "nSteps",      LUA_TNUMBER,  NULL, TRUE, &nStepsf              },
-            { "seed",        LUA_TNUMBER,  NULL, TRUE, &seedf                },
-            { "theta",       LUA_TNUMBER,  NULL, TRUE, &test.ctx.theta       },
-            { "treeRSize",   LUA_TNUMBER,  NULL, TRUE, &test.ctx.treeRSize   },
-            { "criterion",   LUA_TSTRING,  NULL, TRUE, &criterionName        },
-            { "useQuad",     LUA_TBOOLEAN, NULL, TRUE, &test.ctx.useQuad     },
-            { "allowIncest", LUA_TBOOLEAN, NULL, TRUE, &test.ctx.allowIncest },
+            { "potential",   LUA_TSTRING,  NULL, TRUE,  &test.potentialName   },
+            { "model",       LUA_TSTRING,  NULL, TRUE,  &test.modelName       },
+            { "nbody",       LUA_TNUMBER,  NULL, TRUE,  &nbodyf               },
+            { "nSteps",      LUA_TNUMBER,  NULL, TRUE,  &nStepsf              },
+            { "seed",        LUA_TNUMBER,  NULL, TRUE,  &seedf                },
+            { "theta",       LUA_TNUMBER,  NULL, TRUE,  &test.ctx.theta       },
+            { "treeRSize",   LUA_TNUMBER,  NULL, TRUE,  &test.ctx.treeRSize   },
+            { "criterion",   LUA_TSTRING,  NULL, TRUE,  &criterionName        },
+            { "useQuad",     LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.useQuad     },
+            { "allowIncest", LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.allowIncest },
+
+            { "doublePrec",  LUA_TBOOLEAN, NULL, FALSE, &test.doublePrec      },
+
+            /* Unused in hash; these ones may or may not exist, just don't error if there */
+
+            { "result",     LUA_TSTRING,   NULL,  FALSE, &resultHash          },
+            { "err",        LUA_TSTRING,   NULL,  FALSE, &resultName          },
             END_MW_NAMED_ARG
         };
 
@@ -175,6 +185,8 @@ static int hashNBodyTestCore(EVP_MD_CTX* hashCtx, MWHash* hash, const NBodyTest*
     rc |= !EVP_DigestUpdate(hashCtx, &t->nbody,           sizeof(t->nbody));
     rc |= !EVP_DigestUpdate(hashCtx, t->modelName,        strlen(t->modelName));
     rc |= !EVP_DigestUpdate(hashCtx, t->potentialName,    strlen(t->potentialName));
+
+    rc |= !EVP_DigestUpdate(hashCtx, &t->doublePrec,      sizeof(t->doublePrec));
 
     if (rc)
         return warn1("Error updating hashing for NBodyTest\n");
@@ -217,9 +229,17 @@ static int hashNBodyTestTable(lua_State* luaSt)
     return 1;
 }
 
+static int statusIsFatal(lua_State* luaSt)
+{
+    NBodyStatus rc = readNBodyStatus(luaSt, lua_tostring(luaSt, 1));
+    lua_pushboolean(luaSt, nbodyStatusIsFatal(rc));
+    return 1;
+}
+
 static void registerNBodyTestFunctions(lua_State* luaSt)
 {
     lua_register(luaSt, "hashNBodyTest", hashNBodyTestTable);
+    lua_register(luaSt, "statusIsFatal", statusIsFatal);
 }
 
 /* Hash of just the bodies masses, positions and velocities */

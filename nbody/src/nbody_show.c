@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* A bunch of boilerplate for debug printing */
 
-const char* showBool(const mwbool x)
+const char* showBool(mwbool x)
 {
     switch (x)
     {
@@ -40,7 +40,7 @@ const char* showBool(const mwbool x)
     }
 }
 
-const char* showCriterionT(const criterion_t x)
+const char* showCriterionT(criterion_t x)
 {
     switch (x)
     {
@@ -59,7 +59,7 @@ const char* showCriterionT(const criterion_t x)
     }
 }
 
-const char* showSphericalT(const spherical_t x)
+const char* showSphericalT(spherical_t x)
 {
     switch (x)
     {
@@ -72,7 +72,7 @@ const char* showSphericalT(const spherical_t x)
     }
 }
 
-const char* showDiskT(const disk_t x)
+const char* showDiskT(disk_t x)
 {
     switch (x)
     {
@@ -87,7 +87,7 @@ const char* showDiskT(const disk_t x)
     }
 }
 
-const char* showHaloT(const halo_t x)
+const char* showHaloT(halo_t x)
 {
     switch (x)
     {
@@ -101,6 +101,29 @@ const char* showHaloT(const halo_t x)
             return "InvalidHalo";
         default:
             return "Bad halo_t";
+    }
+}
+
+const char* showNBodyStatus(NBodyStatus x)
+{
+    switch (x)
+    {
+        case NBODY_TREE_INCEST_NONFATAL:
+            return "NBODY_TREE_INCEST_NONFATAL";
+        case NBODY_SUCCESS:
+            return "NBODY_SUCCESS";
+        case NBODY_ERROR:
+            return "NBODY_ERROR";
+        case NBODY_TREE_STRUCTURE_ERROR:
+            return "NBODY_TREE_STRUCTURE_ERROR";
+        case NBODY_TREE_INCEST_FATAL:
+            return "NBODY_TREE_INCEST_FATAL";
+        case NBODY_IO_ERROR:
+            return "NBODY_IO_ERROR";
+        case NBODY_CHECKPOINT_ERROR:
+            return "NBODY_CHECKPOINT_ERROR";
+        default:
+            return "Invalid NBodyStatus";
     }
 }
 
@@ -287,7 +310,6 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      "  eps2            = %g\n"
                      "  checkpointT     = %u\n"
                      "  freqOut         = %u\n"
-                     "  outfile         = %p\n"
                      "};\n",
                      potBuf,
                      ctx->timeEvolve,
@@ -300,8 +322,7 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      ctx->theta,
                      ctx->eps2,
                      (int) ctx->checkpointT,
-                     ctx->freqOut,
-                     ctx->outfile))
+                     ctx->freqOut))
     {
         fail("asprintf() failed\n");
     }
@@ -454,6 +475,7 @@ char* showNBodyState(const NBodyState* st)
                      "  bodytab        = %p\n"
                      "  acctab         = %p\n"
                      "  treeIncest     = %s\n"
+                     "  outFile        = %p\n"
                      "};\n",
                      st,
                      treeBuf,
@@ -464,7 +486,8 @@ char* showNBodyState(const NBodyState* st)
                      st->nbody,
                      st->bodytab,
                      st->acctab,
-                     showBool(st->treeIncest)))
+                     showBool(st->treeIncest),
+                     st->outFile))
     {
         fail("asprintf() failed\n");
     }

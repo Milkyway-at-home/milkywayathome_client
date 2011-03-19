@@ -330,6 +330,8 @@ typedef struct NBODY_ALIGN
     mwvector* acctab;   /* Corresponding accelerations of bodies */
     int treeIncest;     /* Tree incest has occured */
 
+    FILE* outFile;            /* file for snapshot output */
+    char* checkpointResolved;
   #if NBODY_OPENCL
     CLInfo ci;
     NBodyCLMem cm;
@@ -341,7 +343,7 @@ typedef struct NBODY_ALIGN
 #if NBODY_OPENCL
   #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
 #else
-  #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0, NAN, 0, NULL, NULL, FALSE }
+  #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0, NAN, 0, NULL, NULL, FALSE, NULL, NULL }
 #endif /* NBODY_OPENCL */
 
 
@@ -391,14 +393,30 @@ typedef struct NBODY_ALIGN
 
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
+    mwbool quietErrors;
 
     time_t checkpointT;       /* Period to checkpoint when not using BOINC */
     unsigned int freqOut;
-    FILE* outfile;            /* file for snapshot output */
     HistogramParams histogramParams;
 } NBodyCtx;
 
 #define NBODYCTX_TYPE "NBodyCtx"
+
+/* Negative codes can be nonfatal but useful return statuses.
+   Positive can be different hard failures.
+ */
+typedef enum
+{
+    NBODY_TREE_INCEST_NONFATAL = -(1 << 3), /* Negative of NBODY_TREE_INCEST */
+    NBODY_SUCCESS              = 0 << 0,
+    NBODY_ERROR                = 1 << 1,
+    NBODY_TREE_STRUCTURE_ERROR = 1 << 2,
+    NBODY_TREE_INCEST_FATAL    = 1 << 3,
+    NBODY_IO_ERROR             = 1 << 4,
+    NBODY_CHECKPOINT_ERROR     = 1 << 5
+} NBodyStatus;
+
+#define nbodyStatusIsFatal(x) ((x) > 0)
 
 
 /* Note: 'type' should first field for all types. */
@@ -416,28 +434,16 @@ typedef struct NBODY_ALIGN
 #define EMPTY_NBODYCTX { EMPTY_POTENTIAL, NAN, NAN,                       \
                          NAN, NAN, NAN,                                   \
                          NAN, InvalidCriterion,                           \
-                         FALSE, FALSE,                                    \
-                         0, 0, NULL, EMPTY_HISTOGRAM_PARAMS }
+                         FALSE, FALSE, FALSE,                             \
+                         0, 0, EMPTY_HISTOGRAM_PARAMS }
 
 
-int destroyNBodyCtx(NBodyCtx* ctx);
-void destroyNBodyState(NBodyState* st);
+int destroyNBodyState(NBodyState* st);
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, unsigned int nbody);
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt, const unsigned int nbody);
 int equalNBodyState(const NBodyState* st1, const NBodyState* st2);
 
 void sortBodies(Body* bodies, unsigned int nbody);
-
-#ifndef __OPENCL_VERSION__  /* No function pointers allowed in kernels */
-/* Acceleration functions for a given potential */
-typedef mwvector (*SphericalAccel) (const Spherical*, const mwvector);
-typedef mwvector (*HaloAccel) (const Halo*, const mwvector);
-typedef mwvector (*DiskAccel) (const Disk*, const mwvector);
-
-/* Generic potential function */
-typedef mwvector (*AccelFunc) (const void*, const mwvector);
-
-#endif /* __OPENCL_VERSION__ */
 
 #endif /* _NBODY_TYPES_H_ */
 

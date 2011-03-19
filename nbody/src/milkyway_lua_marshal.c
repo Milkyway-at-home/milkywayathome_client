@@ -410,6 +410,16 @@ int checkEnum(lua_State* luaSt, const MWEnumAssociation* table, int idx)
     return p->enumVal;
 }
 
+int readEnum(lua_State* luaSt, const MWEnumAssociation* options, const char* name)
+{
+    int rc;
+
+    assert(name);
+    lua_pushstring(luaSt, name);
+    rc = checkEnum(luaSt, options, lua_gettop(luaSt));
+    lua_pop(luaSt, 1);
+    return rc;
+}
 
 static void setValueFromType(lua_State* luaSt, void* v, int type, int idx)
 {

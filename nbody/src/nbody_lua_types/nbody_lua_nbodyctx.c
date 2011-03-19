@@ -71,13 +71,7 @@ int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* p)
 
 criterion_t readCriterion(lua_State* luaSt, const char* name)
 {
-    criterion_t t;
-
-    assert(name);
-    lua_pushstring(luaSt, name);
-    t = checkEnum(luaSt, criterionOptions, lua_gettop(luaSt));
-    lua_pop(luaSt, 1);
-    return t;
+    return (criterion_t) readEnum(luaSt, criterionOptions, name);
 }
 
 static int createNBodyCtx(lua_State* luaSt)
@@ -98,6 +92,7 @@ static int createNBodyCtx(lua_State* luaSt)
             { "criterion",   LUA_TSTRING,  NULL, FALSE, &criterionName   },
             { "useQuad",     LUA_TBOOLEAN, NULL, FALSE, &ctx.useQuad     },
             { "allowIncest", LUA_TBOOLEAN, NULL, FALSE, &ctx.allowIncest },
+            { "quietErrors", LUA_TBOOLEAN, NULL, FALSE, &ctx.quietErrors },
             END_MW_NAMED_ARG
         };
 
@@ -150,6 +145,7 @@ static const Xet_reg_pre gettersNBodyCtx[] =
     { "criterion",       getCriterionT, offsetof(NBodyCtx, criterion)       },
     { "useQuad",         getBool,       offsetof(NBodyCtx, useQuad)         },
     { "allowIncest",     getBool,       offsetof(NBodyCtx, allowIncest)     },
+    { "quietErrors",     getBool,       offsetof(NBodyCtx, quietErrors)     },
     { NULL, NULL, 0 }
 };
 
@@ -165,6 +161,7 @@ static const Xet_reg_pre settersNBodyCtx[] =
     { "criterion",       setCriterionT, offsetof(NBodyCtx, criterion)       },
     { "useQuad",         setBool,       offsetof(NBodyCtx, useQuad)         },
     { "allowIncest",     setBool,       offsetof(NBodyCtx, allowIncest)     },
+    { "quietErrors",     setBool,       offsetof(NBodyCtx, quietErrors)     },
     { NULL, NULL, 0 }
 };
 

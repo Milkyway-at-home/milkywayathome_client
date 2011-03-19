@@ -118,7 +118,7 @@ mwbool checkHaloConstants(Halo* h)
                 return invalidHaloWarning(h->type);
             }
 
-            phi = h->triaxAngle;
+            phi = d2r(h->triaxAngle);
             cp  = mw_cos(phi);
             cps = sqr(cp);
             sp  = mw_sin(phi);

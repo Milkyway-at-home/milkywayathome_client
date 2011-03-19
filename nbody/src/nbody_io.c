@@ -22,10 +22,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_io.h"
 #include "milkyway_util.h"
 
-int initOutput(NBodyCtx* ctx, const NBodyFlags* nbf)
+int initOutput(NBodyState* st, const NBodyFlags* nbf)
 {
-    ctx->outfile = nbf->outFileName ? mwOpenResolved(nbf->outFileName, "w") : DEFAULT_OUTPUT_FILE;
-    if (ctx->outfile == NULL)
+    st->outFile = nbf->outFileName ? mwOpenResolved(nbf->outFileName, "w") : DEFAULT_OUTPUT_FILE;
+    if (st->outFile == NULL)
         return warn1("initOutput: cannot open output file %s\n", nbf->outFileName);
 
     return FALSE;
@@ -69,15 +69,15 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, cons
     return FALSE;
 }
 
-int outputBodyPositionBin(const NBodyCtx* ctx, const NBodyState* st)
+int outputBodyPositionBin(NBodyState* st)
 {
     Body* p;
     const Body* endp = st->bodytab + st->nbody;
 
     for (p = st->bodytab; p < endp; p++)
-        fwrite(&Pos(p), sizeof(mwvector), 1, ctx->outfile);
+        fwrite(&Pos(p), sizeof(mwvector), 1, st->outFile);
 
-    if (fflush(ctx->outfile))
+    if (fflush(st->outFile))
     {
         perror("Body output flush");
         return TRUE;
@@ -86,19 +86,19 @@ int outputBodyPositionBin(const NBodyCtx* ctx, const NBodyState* st)
     return FALSE;
 }
 
-int finalOutput(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf, const real chisq)
+int finalOutput(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, real chisq)
 {
     int rc = 0;
 
     /* Printing out the bodies will food the server. */
     if (nbf->printBodies)
     {
-        mw_boinc_print(ctx->outfile, "<bodies>\n");
-        rc = outputBodies(ctx->outfile, ctx, st, nbf);
-        mw_boinc_print(ctx->outfile, "</bodies>\n");
+        mw_boinc_print(st->outFile, "<bodies>\n");
+        rc = outputBodies(st->outFile, ctx, st, nbf);
+        mw_boinc_print(st->outFile, "</bodies>\n");
     }
 
-    fprintf(ctx->outfile, "<search_likelihood>%.15g</search_likelihood>\n", chisq);
+    fprintf(st->outFile, "<search_likelihood>%.15g</search_likelihood>\n", chisq);
 
     return rc;
 }

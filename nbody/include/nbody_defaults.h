@@ -27,7 +27,9 @@ extern "C" {
 #endif
 
 #define DEFAULT_CHECKPOINT_FILE "nbody_checkpoint"
+#define CHECKPOINT_TMP_FILE     "nbody_checkpoint_tmp"
 #define DEFAULT_HISTOGRAM_FILE  "histogram"
+
 
 /* 15 minutes */
 #define NOBOINC_DEFAULT_CHECKPOINT_PERIOD 900
@@ -40,6 +42,7 @@ extern "C" {
 #define DEFAULT_USE_QUADRUPOLE_MOMENTS TRUE
 #define DEFAULT_ALLOW_INCEST FALSE
 #define DEFAULT_OUTPUT_FREQUENCY 0
+#define DEFAULT_QUIET_ERRORS FALSE
 
 #define histogramPhi 128.79
 #define histogramTheta 54.39
