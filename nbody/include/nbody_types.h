@@ -331,6 +331,7 @@ typedef struct NBODY_ALIGN
     int treeIncest;     /* Tree incest has occured */
 
     FILE* outFile;            /* file for snapshot output */
+    char* checkpointResolved;
   #if NBODY_OPENCL
     CLInfo ci;
     NBodyCLMem cm;
@@ -342,7 +343,7 @@ typedef struct NBODY_ALIGN
 #if NBODY_OPENCL
   #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
 #else
-  #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0, NAN, 0, NULL, NULL, FALSE, NULL }
+  #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0, NAN, 0, NULL, NULL, FALSE, NULL, NULL }
 #endif /* NBODY_OPENCL */
 
 

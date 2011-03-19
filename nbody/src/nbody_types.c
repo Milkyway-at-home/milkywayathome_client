@@ -67,7 +67,7 @@ int destroyNBodyState(NBodyState* st)
     mwFreeA(st->bodytab);
     mwFreeA(st->acctab);
 
-
+    free(st->checkpointResolved);
 
   #if NBODY_OPENCL
     cleanupNBodyCL(st);

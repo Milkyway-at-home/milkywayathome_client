@@ -99,7 +99,7 @@ static void endRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, const r
 static int setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
 {
     /* If the checkpoint exists, try to use it */
-    if (nbf->ignoreCheckpoint || !resolvedCheckpointExists())
+    if (nbf->ignoreCheckpoint || !resolvedCheckpointExists(st))
     {
         if (setupNBody(ctx, st, hp, nbf))
             return warn1("Failed to read input parameters file\n");
@@ -165,7 +165,7 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     if (nbf->verifyOnly)
         return verifyFile(nbf);
 
-    if (resolveCheckpoint(nbf->checkpointFileName))
+    if (resolveCheckpoint(&st, nbf->checkpointFileName))
         return warn1("Failed to resolve checkpoint\n");
 
     if (setupRun(&ctx, &st, &ctx.histogramParams, nbf))
