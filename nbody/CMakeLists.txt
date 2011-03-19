@@ -182,15 +182,8 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_checkpoint.h
                       ${NBODY_INCLUDE_DIR}/nbody_defaults.h)
 
-set(nbody_lua_src ${NBODY_SRC_DIR}/milkyway_lua_marshal.c
-                  ${NBODY_SRC_DIR}/milkyway_lua_util.c
-                  ${NBODY_SRC_DIR}/milkyway_lua_math.c
-                  ${NBODY_SRC_DIR}/milkyway_lua_vector.c
-                  ${NBODY_SRC_DIR}/milkyway_lua_dsfmt.c
-
-                  ${NBODY_SRC_DIR}/nbody_lua.c
+set(nbody_lua_src ${NBODY_SRC_DIR}/nbody_lua.c
                   ${NBODY_SRC_DIR}/nbody_lua_models.c
-
 
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_types.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_type_marshal.c
@@ -203,18 +196,17 @@ set(nbody_lua_src ${NBODY_SRC_DIR}/milkyway_lua_marshal.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_disk.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_spherical.c
                   ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_potential.c
-                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_histogram_params.c)
+                  ${NBODY_SRC_DIR}/nbody_lua_types/nbody_lua_histogram_params.c
+
+                  ${NBODY_SRC_DIR}/milkyway_lua_marshal.c
+                  ${NBODY_SRC_DIR}/milkyway_lua_util.c
+                  ${NBODY_SRC_DIR}/milkyway_lua_math.c
+                  ${NBODY_SRC_DIR}/milkyway_lua_vector.c
+                  ${NBODY_SRC_DIR}/milkyway_lua_dsfmt.c)
 
 
-set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/milkyway_lua.h
-                      ${NBODY_INCLUDE_DIR}/milkyway_lua_marshal.h
-                      ${NBODY_INCLUDE_DIR}/milkyway_lua_util.h
-                      ${NBODY_INCLUDE_DIR}/milkyway_lua_math.h
-                      ${NBODY_INCLUDE_DIR}/milkyway_lua_vector.h
-                      ${NBODY_INCLUDE_DIR}/milkyway_lua_dsfmt.h
 
-
-                      ${NBODY_INCLUDE_DIR}/nbody_lua.h
+set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/nbody_lua.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_models.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_types.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_type_marshal.h
@@ -227,8 +219,14 @@ set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/milkyway_lua.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_disk.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_spherical.h
                       ${NBODY_INCLUDE_DIR}/nbody_lua_potential.h
-                      ${NBODY_INCLUDE_DIR}/nbody_lua_histogram_params.h)
+                      ${NBODY_INCLUDE_DIR}/nbody_lua_histogram_params.h
 
+                      ${NBODY_INCLUDE_DIR}/milkyway_lua.h
+                      ${NBODY_INCLUDE_DIR}/milkyway_lua_marshal.h
+                      ${NBODY_INCLUDE_DIR}/milkyway_lua_util.h
+                      ${NBODY_INCLUDE_DIR}/milkyway_lua_math.h
+                      ${NBODY_INCLUDE_DIR}/milkyway_lua_vector.h
+                      ${NBODY_INCLUDE_DIR}/milkyway_lua_dsfmt.h)
 
 
 add_library(nbody_lua STATIC ${nbody_lua_src} ${nbody_lua_headers})
@@ -292,10 +290,15 @@ else()
   endif()
 endif()
 
-set(exe_link_libs ${POPT_LIBRARY}
-                  nbody_simulation
+if(NOT WIN32)
+  list(APPEND LUA_LIBRARIES dl)
+endif()
+
+set(exe_link_libs nbody_simulation
                   nbody_lua
+                  nbody_simulation
                   milkyway
+                  ${POPT_LIBRARY}
                   ${LUA_LIBRARIES}
                   ${LIBM_LIBRARY}
                   ${OS_SPECIFIC_LIBS}
