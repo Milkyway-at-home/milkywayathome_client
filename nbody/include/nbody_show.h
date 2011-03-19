@@ -26,11 +26,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 
 /* Types -> String */
-const char* showBool(const mwbool);
-const char* showCriterionT(const criterion_t);
-const char* showSphericalT(const spherical_t);
-const char* showDiskT(const disk_t);
-const char* showHaloT(const halo_t);
+const char* showBool(mwbool);
+const char* showCriterionT(criterion_t);
+const char* showSphericalT(spherical_t);
+const char* showDiskT(disk_t);
+const char* showHaloT(halo_t);
+const char* showNBodyStatus(NBodyStatus);
+
 char* showSpherical(const Spherical*);
 char* showHalo(const Halo*);
 void printHalo(const Halo*);
@@ -58,7 +60,6 @@ void printNBodyState(const NBodyState*);
 
 char* showTree(const Tree*);
 void printTree(const Tree*);
-
 
 
 #endif /* _NBODY_SHOW_H_ */

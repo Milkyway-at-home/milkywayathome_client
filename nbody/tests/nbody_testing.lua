@@ -94,7 +94,7 @@ function deepcopy(object)
    return _copy(object)
 end
 
-function mergeModels(m1, ...)
+function mergeTables(m1, ...)
    local i = #m1
    for _, m in ipairs({...}) do
       for _, v in ipairs(m) do
@@ -103,6 +103,20 @@ function mergeModels(m1, ...)
       end
    end
    return m1
+end
+
+function runTest(t)
+   local st, ctx, pot, status
+
+   ctx, pot, st = getTestNBodyState(t)
+   for i = 1, t.nSteps do
+      status = st:step(ctx, pot)
+      if statusIsFatal(status) then
+         break
+      end
+   end
+
+   return st:hashSortBodies(), status
 end
 
 
@@ -146,3 +160,50 @@ function findTestResult(result, resultTable)
    return foundResult
 end
 
+
+function printResult(t)
+   local fmt =
+[[
+{
+   theta       = %.15f,
+   treeRSize   = %.15f,
+   seed        = %u,
+   nbody       = %u,
+   allowIncest = %s,
+   nSteps      = %u,
+   criterion   = "%s",
+   potential   = "%s",
+   doublePrec  = %s,
+   model       = "%s",
+   useQuad     = %s
+]]
+
+   local str
+   str = string.format(fmt,
+                       t.theta,
+                       t.treeRSize,
+                       t.seed,
+                       t.nbody,
+                       tostring(t.allowIncest),
+                       t.nSteps,
+                       t.criterion,
+                       t.potential,
+                       tostring(t.doublePrec),
+                       t.model,
+                       tostring(t.useQuad))
+
+   local resultFmt =
+[[
+
+   result      = "%s",
+   err         = "%s"
+]]
+
+   if (t.result ~= nil) then
+      str = str .. string.format(resultFmt, t.result, t.err)
+   end
+
+   str = str .. "}\n"
+
+   print(str)
+end

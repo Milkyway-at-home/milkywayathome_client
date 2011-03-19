@@ -46,6 +46,8 @@ extern "C" {
 void registerNBodyTypes(lua_State* luaSt);
 void registerOtherTypes(lua_State* luaSt);
 
+NBodyStatus readNBodyStatus(lua_State* luaSt, const char* name);
+
 #ifdef __cplusplus
 }
 #endif

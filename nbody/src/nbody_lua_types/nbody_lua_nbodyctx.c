@@ -71,13 +71,7 @@ int pushNBodyCtx(lua_State* luaSt, const NBodyCtx* p)
 
 criterion_t readCriterion(lua_State* luaSt, const char* name)
 {
-    criterion_t t;
-
-    assert(name);
-    lua_pushstring(luaSt, name);
-    t = checkEnum(luaSt, criterionOptions, lua_gettop(luaSt));
-    lua_pop(luaSt, 1);
-    return t;
+    return (criterion_t) readEnum(luaSt, criterionOptions, name);
 }
 
 static int createNBodyCtx(lua_State* luaSt)

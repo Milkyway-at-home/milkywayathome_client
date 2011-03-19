@@ -54,7 +54,7 @@ int pushNBodyState(lua_State* luaSt, const NBodyState* p)
 
 static int stepNBodyState(lua_State* luaSt)
 {
-    int rc;
+    NBodyStatus rc;
     NBodyState* st;
     NBodyCtx ctx;
 
@@ -66,7 +66,7 @@ static int stepNBodyState(lua_State* luaSt)
     ctx.pot = *checkPotential(luaSt, 3);
 
     rc = stepSystem(&ctx, st);
-    lua_pushboolean(luaSt, rc);
+    lua_pushstring(luaSt, showNBodyStatus(rc));
     return 1;
 }
 

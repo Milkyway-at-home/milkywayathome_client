@@ -78,9 +78,9 @@ static inline void advanceVelocities(NBodyState* st, const unsigned int nbody, c
 
 
 /* stepSystem: advance N-body system one time-step. */
-int stepSystem(const NBodyCtx* ctx, NBodyState* st)
+NBodyStatus stepSystem(const NBodyCtx* ctx, NBodyState* st)
 {
-    int rc;
+    NBodyStatus rc;
     const real dt = ctx->timestep;
 
     advancePosVel(st, st->nbody, dt);

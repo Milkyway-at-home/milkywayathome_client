@@ -126,8 +126,8 @@ static int checkNBodyTestTable(lua_State* luaSt, int idx, NBodyTest* testOut)
     static real seedf = 0.0;
     static real nStepsf = 0.0;
     static real nbodyf = 0.0;
-    static int resultErr = 0;
     static const char* resultHash = NULL;
+    static const char* resultName = NULL;
     static const MWNamedArg argTable[] =
         {
             { "potential",   LUA_TSTRING,  NULL, TRUE,  &test.potentialName   },
@@ -141,12 +141,12 @@ static int checkNBodyTestTable(lua_State* luaSt, int idx, NBodyTest* testOut)
             { "useQuad",     LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.useQuad     },
             { "allowIncest", LUA_TBOOLEAN, NULL, TRUE,  &test.ctx.allowIncest },
 
-            { "doublePrec", LUA_TBOOLEAN, NULL,  FALSE, &test.doublePrec      },
+            { "doublePrec",  LUA_TBOOLEAN, NULL, FALSE, &test.doublePrec      },
 
             /* Unused in hash; these ones may or may not exist, just don't error if there */
 
-            { "result",     LUA_TSTRING,  NULL,  FALSE, &resultHash           },
-            { "err",        LUA_TBOOLEAN, NULL,  FALSE, &resultErr            },
+            { "result",     LUA_TSTRING,   NULL,  FALSE, &resultHash          },
+            { "err",        LUA_TSTRING,   NULL,  FALSE, &resultName          },
             END_MW_NAMED_ARG
         };
 
@@ -229,9 +229,17 @@ static int hashNBodyTestTable(lua_State* luaSt)
     return 1;
 }
 
+static int statusIsFatal(lua_State* luaSt)
+{
+    NBodyStatus rc = readNBodyStatus(luaSt, lua_tostring(luaSt, 1));
+    lua_pushboolean(luaSt, nbodyStatusIsFatal(rc));
+    return 1;
+}
+
 static void registerNBodyTestFunctions(lua_State* luaSt)
 {
     lua_register(luaSt, "hashNBodyTest", hashNBodyTestTable);
+    lua_register(luaSt, "statusIsFatal", statusIsFatal);
 }
 
 /* Hash of just the bodies masses, positions and velocities */

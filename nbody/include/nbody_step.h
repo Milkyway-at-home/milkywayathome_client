@@ -21,13 +21,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _NBODY_STEP_H_
 #define _NBODY_STEP_H_
 
+#include "nbody_types.h"
+
 #ifdef _cplusplus
 extern "C" {
 #endif
 
-#include "nbody_types.h"
-
-int stepSystem(const NBodyCtx* ctx, NBodyState* st);
+NBodyStatus stepSystem(const NBodyCtx* ctx, NBodyState* st);
 
 #ifdef _cplusplus
 }

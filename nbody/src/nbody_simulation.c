@@ -96,7 +96,7 @@ static void endRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, const r
     destroyNBodyState(st);
 }
 
-static int setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
+static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
 {
     /* If the checkpoint exists, try to use it */
     if (nbf->ignoreCheckpoint || !resolvedCheckpointExists(st))
@@ -115,7 +115,7 @@ static int setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NB
         {
             mw_report("Failed to read checkpoint\n");
             destroyNBodyState(st);
-            return 1;
+            return NBODY_CHECKPOINT_ERROR;
         }
         else
         {

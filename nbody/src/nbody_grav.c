@@ -184,15 +184,21 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
     }
 }
 
-static inline int incestStatusCheck(const NBodyCtx* ctx, const NBodyState* st)
+static inline NBodyStatus incestStatusCheck(const NBodyCtx* ctx, const NBodyState* st)
 {
-    return st->treeIncest && !ctx->allowIncest;
+    if (st->treeIncest)
+        return ctx->allowIncest ? NBODY_TREE_INCEST_NONFATAL : NBODY_TREE_INCEST_FATAL;
+
+    return NBODY_SUCCESS;
 }
 
-int gravMap(const NBodyCtx* ctx, NBodyState* st)
+NBodyStatus gravMap(const NBodyCtx* ctx, NBodyState* st)
 {
-    if (makeTree(ctx, st))
-        return 1;
+    NBodyStatus rc;
+
+    rc = makeTree(ctx, st);
+    if (nbodyStatusIsFatal(rc))
+        return rc;
 
     mapForceBody(ctx, st);
 

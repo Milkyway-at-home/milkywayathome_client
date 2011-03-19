@@ -46,3 +46,21 @@ void registerOtherTypes(lua_State* luaSt)
     registerDSFMT(luaSt);
 }
 
+static const MWEnumAssociation nbodyStatusOptions[] =
+{
+    { "NBODY_TREE_INCEST_NONFATAL", NBODY_TREE_INCEST_NONFATAL },
+    { "NBODY_SUCCESS",              NBODY_SUCCESS              },
+    { "NBODY_ERROR",                NBODY_ERROR                },
+    { "NBODY_TREE_STRUCTURE_ERROR", NBODY_TREE_STRUCTURE_ERROR },
+    { "NBODY_TREE_INCEST_FATAL",    NBODY_TREE_INCEST_FATAL    },
+    { "NBODY_IO_ERROR",             NBODY_IO_ERROR             },
+    { "NBODY_CHECKPOINT_ERROR",     NBODY_CHECKPOINT_ERROR     },
+    END_MW_ENUM_ASSOCIATION
+};
+
+NBodyStatus readNBodyStatus(lua_State* luaSt, const char* name)
+{
+    return (NBodyStatus) readEnum(luaSt, nbodyStatusOptions, name);
+}
+
+

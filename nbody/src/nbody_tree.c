@@ -379,7 +379,7 @@ static void hackCofM(const NBodyCtx* ctx, Tree* tree, Cell* p, real psize)
 /* makeTree: initialize tree structure for hierarchical force calculation
  * from body array btab, which contains ctx.nbody bodies.
  */
-int makeTree(const NBodyCtx* ctx, NBodyState* st)
+NBodyStatus makeTree(const NBodyCtx* ctx, NBodyState* st)
 {
     Body* p;
     const Body* endp = st->bodytab + st->nbody;
@@ -398,12 +398,12 @@ int makeTree(const NBodyCtx* ctx, NBodyState* st)
 
     /* Check if tree structure error occured */
     if (st->tree.structureError)
-        return 1;
+        return NBODY_TREE_STRUCTURE_ERROR;
 
     threadTree((Node*) t->root, NULL);        /* add Next and More links */
     if (ctx->useQuad)                           /* including quad moments? */
         hackQuad(t->root);                      /* assign Quad moments */
 
-    return 0;
+    return NBODY_SUCCESS;
 }
 
