@@ -23,6 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_types.h"
 #include "nbody_show.h"
+#include "nbody_potential.h"
 #include "nbody_lua_potential.h"
 #include "nbody_lua_disk.h"
 #include "nbody_lua_halo.h"
@@ -89,6 +90,18 @@ static int createPotential(lua_State* luaSt)
     return 1;
 }
 
+static int luaAcceleration(lua_State* luaSt)
+{
+    const Potential* pot;
+    const mwvector* r;
+
+    pot = checkPotential(luaSt, 1);
+    r = checkVector(luaSt, 2);
+
+    pushVector(luaSt, acceleration(pot, *r));
+    return 1;
+}
+
 static int toStringPotential(lua_State* luaSt)
 {
     return toStringType(luaSt, (StructShowFunc) showPotential, (LuaTypeCheckFunc) checkPotential);
@@ -102,7 +115,8 @@ static const luaL_reg metaMethodsPotential[] =
 
 static const luaL_reg methodsPotential[] =
 {
-    { "create",   createPotential },
+    { "create",       createPotential },
+    { "acceleration", luaAcceleration },
     { NULL, NULL }
 };
 

@@ -18,107 +18,7 @@
 --
 --
 
-require "persistence"
-require "curry"
-
--- Given a function of an arbitrary number of arguments, and a number
--- of lists corresponding to that number of arguments, returns that
--- function applied to every combination of arguments from the lists.
-function buildAllCombinations(f, ...)
-   -- Apply each function in fs to each value in tbl
-   local function mapApply(fs, tbl)
-      return foldl(function(acc, f)
-                      return foldl(function(acc, v)
-                                      acc[#acc + 1] = f(v)
-                                      return acc
-                                   end,
-                                   acc,
-                                   tbl)
-                   end,
-                   { },
-                   fs)
-   end
-
-   return foldl(mapApply, { curry(f, #{...}) }, {...})
-end
-
-
-function getKeyNames(t)
-   local keys = { }
-   local i = 1
-   for k, _ in pairs(t) do
-      keys[i] = k
-      i = i + 1
-   end
-   return keys
-end
-
-function printTable(tbl)
-   io.stderr:write("------------------------------\n" .. tostring(tbl) .. "\n")
-   local function printTableMain(t, level)
-      for k, v in pairs(t) do
-         local prefix = ""
-         for i = 0, level do
-            prefix = prefix .. "  "
-         end
-
-         io.stderr:write(prefix .. tostring(k) .. " = " .. tostring(v) .. "\n")
-         if type(v) == "table" then
-            printTableMain(v, level + 1)
-            io.stderr:write("\n")
-         end
-      end
-   end
-   printTableMain(tbl, 0)
-   io.stderr:write("------------------------------\n")
-end
-
-function deepcopy(object)
-   local lookup_table = {}
-   local function _copy(object)
-      if type(object) ~= "table" then
-         return object
-      elseif lookup_table[object] then
-         return lookup_table[object]
-      end
-      local new_table = {}
-      lookup_table[object] = new_table
-      for index, value in pairs(object) do
-         new_table[_copy(index)] = _copy(value)
-      end
-      return setmetatable(new_table, getmetatable(object))
-   end
-   return _copy(object)
-end
-
---------------------------------------------------------------------------------
-
-function getKeyAnswerPair(rawCtx)
-   local hash = rawCtxHash(rawCtx)
-   rawCtx.result = "I am a sample result"
-   return { hash, rawCtx }
-end
-
--- contextCombinations = buildAllCombinations(
---    function (theta, rsize, crit, useQuad, allowIncest)
---       local c = { }
---       c.theta = theta
---       c.treeRSize = rsize
---       c.criterion = crit
---       c.useQuad = useQuad
---       c.allowIncest = allowIncest
---       return c
---    end,
---    resultTable.thetas,
---    resultTable.treeRSizes,
---    resultTable.allCriterion,
---    resultTable.useQuads,
---    resultTable.allowIncests)
-
-
-
-
-
+require "nbody_testing"
 
 function makePotentialA()
    local disk, halo, spherical
@@ -157,18 +57,6 @@ function makePotentialB()
 end
 
 testPotentials = { potentialA = makePotentialA(), potentialB = makePotentialB() }
-
-function mergeModels(m1, ...)
-   local i = #m1
-   for _, m in ipairs({...}) do
-      for _, v in ipairs(m) do
-         i = i + 1
-         m1[i] = v
-      end
-   end
-   return m1
-end
-
 
 -- Each model returns (model, eps2, timestep)
 testModels = {
@@ -258,21 +146,6 @@ function runTest(t)
    return st:hashBodies(), err
 end
 
-function generateTestResults(tests, resultTable)
-   resultTable.hashtable = { }
-
-   for _, t in ipairs(tests) do
-      local resultHash, err = runTest(t)
-      local testHash = hashNBodyTest(t)
-      resultTable.hashtable[testHash] = t
-      resultTable.hashtable[testHash].result = resultHash
-      resultTable.hashtable[testHash].err = err
-   end
-
-   return resultTable
-end
-
-
 resultTable = { potentials   = getKeyNames(testPotentials),
                 models       = getKeyNames(testModels),
                 nbody        = { 100, 200 },
@@ -289,6 +162,7 @@ resultTable = { potentials   = getKeyNames(testPotentials),
 tests = buildAllCombinations(
    function(potential, model, nbody, nSteps, seed, theta, rsize, crit, useQuad, allowIncest)
       local c = { }
+      c.doublePrec  = true
       c.potential   = potential
       c.model       = model
       c.nbody       = nbody
@@ -314,26 +188,6 @@ tests = buildAllCombinations(
 
 
 
-io.stderr:write("There are lots ", tostring(#tests), "\n")
-
--- brokenTest = {
---    theta = 0.7,
---    treeRSize = 4,
---    allowIncest = true,
---    useQuad = true,
---    criterion = "NewCriterion",
---    model = "modelB",
---    nSteps = 1,
---    nbody = 100,
---    potential = "potentialA",
---    seed = 609746760
--- }
-
-resultTable = generateTestResults(tests, resultTable)
-printTable(resultTable)
-
-
-
 smallerList = { }
 j = 1
 for i = 1, 38000, 1000 do
@@ -341,19 +195,44 @@ for i = 1, 38000, 1000 do
    j = j + 1
 end
 
--- io.stderr:write("There are fewer ", tostring(#smallerList), "\n")
+--resultTable = generateTestResults(tests, resultTable)
+--printTable(resultTable)
 
--- smallResults = generateTestResults(smallerList, { })
--- printTable(smallResults)
 
--- persistence.store("result_table", smallResults)
--- loaded = persistence.load("result_table")
--- assert(loaded ~= nil, "Failed to load result_table")
+generateResultsToFile(smallerList, { }, "small_results")
 
--- printTable(smallerList[12])
--- lookupKey = hashNBodyTest(smallerList[12])
---  print("Lookup", lookupKey)
---  print("looked up", loaded.hashtable[lookupKey])
+smallLoad = loadResultsFromFile("small_results")
 
--- -- table.foreach(loaded.hashtable[lookupKey], print)
+printTable(smallLoad)
+
+
+
+brokenTest = {
+   theta = 0.7,
+   treeRSize = 4,
+   allowIncest = true,
+   useQuad = true,
+   criterion = "NewCriterion",
+   model = "modelB",
+   nSteps = 1,
+   nbody = 100,
+   potential = "potentialA",
+   seed = 609746760
+}
+
+sampleLookup = {
+   theta = 1,
+      treeRSize = 2,
+      seed = 1234567890,
+      nbody = 100,
+      model = "modelB",
+      allowIncest = true,
+      nSteps = 1,
+      criterion = "BH86",
+      potential = "potentialA",
+      doublePrec = true,
+      useQuad = true
+}
+
+printTable(findTestResult(sampleLookup, smallLoad))
 
