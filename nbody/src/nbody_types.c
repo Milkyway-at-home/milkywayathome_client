@@ -23,20 +23,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include "nbody_show.h"
 
-int destroyNBodyCtx(NBodyCtx* ctx)
-{
-    if (ctx->outfile && ctx->outfile != DEFAULT_OUTPUT_FILE)
-    {
-        if (fclose(ctx->outfile))
-        {
-            perror("closing output\n");
-            return TRUE;
-        }
-    }
-
-    return FALSE;
-}
-
 static void freeTree(Tree* t)
 {
     Node* p;
@@ -74,16 +60,29 @@ static void freeFreeCells(Node* freecell)
     }
 }
 
-void destroyNBodyState(NBodyState* st)
+int destroyNBodyState(NBodyState* st)
 {
     freeTree(&st->tree);
     freeFreeCells(st->freecell);
     mwFreeA(st->bodytab);
     mwFreeA(st->acctab);
 
+
+
   #if NBODY_OPENCL
     cleanupNBodyCL(st);
   #endif /* NBODY_OPENCL */
+
+    if (st->outFile && st->outFile != DEFAULT_OUTPUT_FILE)
+    {
+        if (fclose(st->outFile))
+        {
+            perror("closing output\n");
+            return TRUE;
+        }
+    }
+
+    return FALSE;
 }
 
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, unsigned int nbody)

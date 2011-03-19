@@ -93,7 +93,6 @@ static int runSystem(const NBodyCtx* ctx, NBodyState* st)
 static void endRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, const real chisq)
 {
     finalOutput(ctx, st, nbf, chisq);
-    destroyNBodyCtx(ctx);
     destroyNBodyState(st);
 }
 
@@ -150,14 +149,11 @@ static int verifyFile(const NBodyFlags* nbf)
         printHistogramParams(&ctx.histogramParams);
     }
 
-    destroyNBodyCtx(&ctx);
     destroyNBodyState(&st);
 
     return rc;
 }
 
-/* Takes parsed json and run the simulation, using outFileName for
- * output. */
 int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to control output */
 {
     NBodyCtx ctx  = EMPTY_NBODYCTX;
@@ -176,7 +172,7 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
         return warn1("Failed to setup run\n");
 
     nbodySetCtxFromFlags(&ctx, nbf);
-    if (initOutput(&ctx, nbf))
+    if (initOutput(&st, nbf))
         return warn1("Failed to open output files\n");
 
     if (nbf->printTiming)     /* Time the body of the calculation */

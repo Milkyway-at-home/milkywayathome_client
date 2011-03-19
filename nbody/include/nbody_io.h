@@ -26,11 +26,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 /* Basic IO and initialization */
-int initOutput(NBodyCtx* ctx, const NBodyFlags* nbf);
+int initOutput(NBodyState* st, const NBodyFlags* nbf);
+int finalOutput(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, real chisq);
 
-int finalOutput(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf, const real chisq);
-
-int outputBodyPositionBin(const NBodyCtx* ctx, const NBodyState* st);
+int outputBodyPositionBin(NBodyState* st);
 
 #endif /* _NBODY_IO_H_ */
 

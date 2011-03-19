@@ -330,6 +330,7 @@ typedef struct NBODY_ALIGN
     mwvector* acctab;   /* Corresponding accelerations of bodies */
     int treeIncest;     /* Tree incest has occured */
 
+    FILE* outFile;            /* file for snapshot output */
   #if NBODY_OPENCL
     CLInfo ci;
     NBodyCLMem cm;
@@ -341,7 +342,7 @@ typedef struct NBODY_ALIGN
 #if NBODY_OPENCL
   #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
 #else
-  #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0, NAN, 0, NULL, NULL, FALSE }
+  #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0, NAN, 0, NULL, NULL, FALSE, NULL }
 #endif /* NBODY_OPENCL */
 
 
@@ -395,7 +396,6 @@ typedef struct NBODY_ALIGN
 
     time_t checkpointT;       /* Period to checkpoint when not using BOINC */
     unsigned int freqOut;
-    FILE* outfile;            /* file for snapshot output */
     HistogramParams histogramParams;
 } NBodyCtx;
 
@@ -418,27 +418,15 @@ typedef struct NBODY_ALIGN
                          NAN, NAN, NAN,                                   \
                          NAN, InvalidCriterion,                           \
                          FALSE, FALSE, FALSE,                             \
-                         0, 0, NULL, EMPTY_HISTOGRAM_PARAMS }
+                         0, 0, EMPTY_HISTOGRAM_PARAMS }
 
 
-int destroyNBodyCtx(NBodyCtx* ctx);
-void destroyNBodyState(NBodyState* st);
+int destroyNBodyState(NBodyState* st);
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, unsigned int nbody);
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt, const unsigned int nbody);
 int equalNBodyState(const NBodyState* st1, const NBodyState* st2);
 
 void sortBodies(Body* bodies, unsigned int nbody);
-
-#ifndef __OPENCL_VERSION__  /* No function pointers allowed in kernels */
-/* Acceleration functions for a given potential */
-typedef mwvector (*SphericalAccel) (const Spherical*, const mwvector);
-typedef mwvector (*HaloAccel) (const Halo*, const mwvector);
-typedef mwvector (*DiskAccel) (const Disk*, const mwvector);
-
-/* Generic potential function */
-typedef mwvector (*AccelFunc) (const void*, const mwvector);
-
-#endif /* __OPENCL_VERSION__ */
 
 #endif /* _NBODY_TYPES_H_ */
 

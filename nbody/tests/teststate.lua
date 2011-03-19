@@ -127,6 +127,7 @@ function getTestNBodyState(t)
       criterion   = t.criterion,
       useQuad     = t.useQuad,
       allowIncest = t.allowIncest,
+      quietErrors = true
    }
    return ctx, pot, NBodyState.create(ctx, pot, bodies)
 end
@@ -195,15 +196,15 @@ for i = 1, 38000, 1000 do
    j = j + 1
 end
 
---resultTable = generateTestResults(tests, resultTable)
---printTable(resultTable)
+resultTable = generateTestResults(tests, resultTable)
+printTable(resultTable)
 
 
-generateResultsToFile(smallerList, { }, "small_results")
+--generateResultsToFile(smallerList, { }, "small_results")
 
-smallLoad = loadResultsFromFile("small_results")
+--smallLoad = loadResultsFromFile("small_results")
 
-printTable(smallLoad)
+--printTable(smallLoad)
 
 
 

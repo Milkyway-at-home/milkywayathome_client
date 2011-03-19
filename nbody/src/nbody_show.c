@@ -287,7 +287,6 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      "  eps2            = %g\n"
                      "  checkpointT     = %u\n"
                      "  freqOut         = %u\n"
-                     "  outfile         = %p\n"
                      "};\n",
                      potBuf,
                      ctx->timeEvolve,
@@ -300,8 +299,7 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      ctx->theta,
                      ctx->eps2,
                      (int) ctx->checkpointT,
-                     ctx->freqOut,
-                     ctx->outfile))
+                     ctx->freqOut))
     {
         fail("asprintf() failed\n");
     }
@@ -454,6 +452,7 @@ char* showNBodyState(const NBodyState* st)
                      "  bodytab        = %p\n"
                      "  acctab         = %p\n"
                      "  treeIncest     = %s\n"
+                     "  outFile        = %p\n"
                      "};\n",
                      st,
                      treeBuf,
@@ -464,7 +463,8 @@ char* showNBodyState(const NBodyState* st)
                      st->nbody,
                      st->bodytab,
                      st->acctab,
-                     showBool(st->treeIncest)))
+                     showBool(st->treeIncest),
+                     st->outFile))
     {
         fail("asprintf() failed\n");
     }

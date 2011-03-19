@@ -71,7 +71,7 @@ static inline void printHistogram(FILE* f,
     mw_boinc_print(f, "</histogram>\n");
 }
 
-static void writeHistogram(const NBodyCtx* ctx,
+static void writeHistogram(NBodyState* st,
                            const NBodyFlags* nbf,
                            const HistogramParams* hp,
                            const HistData* histData,      /* Read histogram data */
@@ -80,7 +80,7 @@ static void writeHistogram(const NBodyCtx* ctx,
                            const real start,              /* Calculated low point of bin range */
                            const real totalNum)           /* Total number in range */
 {
-    FILE* f = ctx->outfile;
+    FILE* f = st->outFile;
 
     if (nbf->histoutFileName && strcmp(nbf->histoutFileName, ""))  /* If file specified, try to open it */
     {
@@ -88,13 +88,13 @@ static void writeHistogram(const NBodyCtx* ctx,
         if (f == NULL)
         {
             perror("Writing histout. Using output file instead");
-            f = ctx->outfile;
+            f = st->outFile;
         }
     }
 
     printHistogram(f, hp, histData, histogram, maxIdx, start, totalNum);
 
-    if (f != ctx->outfile)
+    if (f != st->outFile)
         fclose(f);
 }
 
@@ -232,7 +232,7 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
 }
 
 /* Calculate the likelihood from the final state of the simulation */
-real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf, const HistogramParams* hp)
+real nbodyChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, const HistogramParams* hp)
 {
     real chisqval;
     unsigned int totalNum = 0;
@@ -262,7 +262,7 @@ real nbodyChisq(const NBodyCtx* ctx, const NBodyState* st, const NBodyFlags* nbf
     }
 
     if (nbf->printHistogram)
-        writeHistogram(ctx, nbf, hp, histData, histogram, maxIdx, start, (real) totalNum);
+        writeHistogram(st, nbf, hp, histData, histogram, maxIdx, start, (real) totalNum);
 
     if (totalNum != 0)
         chisqval = calcChisq(histData, histogram, maxIdx, (real) totalNum);

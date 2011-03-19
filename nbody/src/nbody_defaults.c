@@ -39,7 +39,6 @@ const NBodyCtx defaultNBodyCtx =
 
     /* .freqout         */  DEFAULT_OUTPUT_FREQUENCY,
     /* .checkpointT     */  NOBOINC_DEFAULT_CHECKPOINT_PERIOD,
-    /* .outfile         */  NULL,
     /* .histogramParams */  EMPTY_HISTOGRAM_PARAMS
 };
 
