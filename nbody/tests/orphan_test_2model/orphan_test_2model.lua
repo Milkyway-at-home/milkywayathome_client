@@ -31,13 +31,16 @@ function makePotential()
    }
 end
 
-model1Bodies = 10000 
-model2Bodies = 10000 
+model1Bodies = 20000 
+model2Bodies = 20000 
 totalBodies = model1Bodies + model2Bodies
 
 r0 = 0.2
 dwarfMass = 12
-encMass    = plummerTimestepIntegral(r0, 0.9, 5000, 1e-7)
+r02 = 0.5;
+dwarfMass2 = 190;
+
+encMass    = plummerTimestepIntegral(r0, r02, dwarfMass2, 1e-7)
 
 -- This is also required
 function makeContext()
@@ -77,8 +80,8 @@ function makeBodies(ctx, potential)
       prng        = prng,
       position    = finalPosition,
       velocity    = finalVelocity,
-      mass        = 190,
-      scaleRadius = 0.5,
+      mass        = dwarfMass2,
+      scaleRadius = r02,
       ignore      = true
    }
    return firstModel, secondModel
