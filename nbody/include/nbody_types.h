@@ -391,6 +391,7 @@ typedef struct NBODY_ALIGN
 
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
+    mwbool quietErrors;
 
     time_t checkpointT;       /* Period to checkpoint when not using BOINC */
     unsigned int freqOut;
@@ -416,7 +417,7 @@ typedef struct NBODY_ALIGN
 #define EMPTY_NBODYCTX { EMPTY_POTENTIAL, NAN, NAN,                       \
                          NAN, NAN, NAN,                                   \
                          NAN, InvalidCriterion,                           \
-                         FALSE, FALSE,                                    \
+                         FALSE, FALSE, FALSE,                             \
                          0, 0, NULL, EMPTY_HISTOGRAM_PARAMS }
 
 
