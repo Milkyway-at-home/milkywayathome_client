@@ -28,68 +28,27 @@ set(test_list t_vectors
               t_nfw_halo
               t_triaxial_halo)
 
-if(!WIN32)
-  list(APPEND test_list t_checkpoint)
-endif()
 
-foreach(test ${test_list})
-	add_executable(${test} ${test}.c ${nbody_lib_src})
-	add_test(${test} ${EXECUTABLE_OUTPUT_PATH}/${test})
-    add_dependencies(check ${test})
-    target_link_libraries(${test} ${nbody_link_libs})
+set(body_counts 100 1024 2048)
+#set(seeds       670828913 886885833 715144259 430281807 543966758)
+set(seeds       670828913)
+
+set(test_names orphan_model_1
+               orphan_model_2
+               orphan_model_3
+               orphan_model_4
+               orphan_model_5
+               orphan_model_6
+               orphan_model_7)
+
+find_program(LUA_INTERPRETER lua)
+
+set(nbody_test_driver "RunTestUnits.lua")
+set(nbody_bin "${EXECUTABLE_OUTPUT_PATH}/${nbody_bin_name}")
+
+foreach(seed ${seeds})
+  foreach(model_name ${test_names})
+         add_test(${model_name}__${seed}_100 ${LUA_INTERPRETER} ${nbody_test_driver} ${nbody_bin} ${model_name} ${seed} 100)
+       endforeach()
 endforeach()
-
-
-#Run the whole simulation with the test inputs, and compare the results.
-#Use both double and single precision if available.
-
-set(nbody_bin ${EXECUTABLE_OUTPUT_PATH}/milkyway_nbody)
-
-set(result_dir /tmp/test_results)
-set(nbody_test_dir ${CMAKE_CURRENT_SOURCE_DIR})
-
-function(nbody_sample_test test_set test_set_name)
-  set(double_out_dir ${result_dir}/${test_set_name}/double)
-  set(float_out_dir ${result_dir}/${test_set_name}/float)
-  file(MAKE_DIRECTORY ${double_out_dir} ${float_out_dir})
-
-  foreach(i ${test_set})
-    get_filename_component(fname ${i} NAME)
-    get_filename_component(testname ${fname} NAME_WE)
-
-    function(add_double_tests arg)
-      set(outfile_double ${double_out_dir}/${testname}_results)
-      set(reference_double ${nbody_test_dir}/${test_set_name}/double/${testname}_results)
-
-      add_test(double_${testname} ${nbody_bin} ${arg} -f ${i} -o ${outfile_double})
-      add_test(compare_double_${testname} ${CMAKE_COMMAND} -E compare_files ${reference_double} ${outfile_double})
-    endfunction()
-
-    function(add_float_tests)
-      set(outfile_float ${float_out_dir}/${testname}_results)
-      set(reference_float  ${nbody_test_dir}/${test_set_name}/float/${testname}_results)
-
-      add_test(float_${testname} ${nbody_bin} -f ${i} -o ${outfile_float})
-      add_test(compare_float_${testname} ${CMAKE_COMMAND} -E compare_files ${reference_float} ${outfile_float})
-    endfunction()
-
-    if(DYNAMIC_PRECISION)
-      add_double_tests("-d")
-      add_float_tests()
-    else()
-      if(DOUBLEPREC)
-        add_double_tests("")
-      else()
-        add_float_tests()
-      endif()
-    endif()
-
-  endforeach()
-endfunction()
-
-file(GLOB test_set1 "test_set1/*.js")
-file(GLOB test_set2 "test_set2/*.js")
-
-#nbody_sample_test("${test_set1}" "test_set1")
-#nbody_sample_test("${test_set2}" "test_set2")
 

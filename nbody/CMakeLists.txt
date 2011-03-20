@@ -344,12 +344,12 @@ configure_file (
 add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
 
 milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} 0 ${STATIC_EVERYTHING} "${exe_link_libs}")
-#add_subdirectory(tests EXCLUDE_FROM_ALL)
+add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 
 include_directories(${OPENSSL_INCLUDE_DIR})
 add_executable(nbody_test ${PROJECT_SOURCE_DIR}/tests/nbody_test.c)
 target_link_libraries(nbody_test ${OPENSSL_LIBRARIES} ${exe_link_libs})
-add_test(nbody_test nbody_test)
+#add_test(nbody_test nbody_test)
 
 
