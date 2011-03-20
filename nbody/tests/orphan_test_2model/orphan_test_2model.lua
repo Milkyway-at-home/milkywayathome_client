@@ -1,46 +1,30 @@
 
-prng = DSFMT.create(3845024)
+arg = { ... }
 
-function makeHistogram()
-   return HistogramParams.create()
-end
+--prng = DSFMT.create(3845024)
+prng = DSFMT.create(argSeed)
+nbody = arg[1]
+
+assert(nbody ~= nil, "Number of bodies not set for test unit")
+
 
 function makePotential()
-   local disk, halo, spherical
-   disk = Disk.miyamotoNagai{
-      mass        = 4.45865888e5,
-      scaleLength = 6.5,
-      scaleHeight = 0.26
-   }
-
-   halo = Halo.logarithmic{
-      vhalo       = 73,
-      scaleLength = 12.0,
-      flattenZ    = 1.0
-   }
-
-   spherical = Spherical.spherical{
-      mass  = 1.52954402e5,
-      scale = 0.7
-   }
-
    return Potential.create{
-      disk      = disk,
-      halo      = halo,
-      spherical = spherical
+      spherical = Spherical.spherical{ mass  = 1.52954402e5, scale = 0.7 },
+      disk      = Disk.miyamotoNagai{ mass = 4.45865888e5, scaleLength = 6.5, scaleHeight = 0.26 },
+      halo      = Halo.logarithmic{ vhalo = 73, scaleLength = 12.0, flattenZ = 1.0 }
    }
 end
 
-model1Bodies = 20000 
-model2Bodies = 20000 
+model1Bodies = nbody / 2
+model2Bodies = nbody / 2
+
 totalBodies = model1Bodies + model2Bodies
 
-r0 = 0.2
-dwarfMass = 12
-r02 = 0.5;
-dwarfMass2 = 190;
+r0, r02 = 0.2, 0.5
+dwarfMass, dwarfMass2 = 12, 190
 
-encMass    = plummerTimestepIntegral(r0, r02, dwarfMass2, 1e-7)
+encMass = plummerTimestepIntegral(r0, r02, dwarfMass2, 1e-7)
 
 -- This is also required
 function makeContext()
@@ -85,5 +69,9 @@ function makeBodies(ctx, potential)
       ignore      = true
    }
    return firstModel, secondModel
+end
+
+function makeHistogram()
+   return HistogramParams.create()
 end
 
