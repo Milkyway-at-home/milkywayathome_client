@@ -159,6 +159,7 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     NBodyCtx ctx  = EMPTY_NBODYCTX;
     NBodyState st = EMPTY_NBODYSTATE;
 
+    int rc = 0;
     real chisq;
     double ts = 0.0, te = 0.0;
 
@@ -191,10 +192,13 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     /* Get the likelihood */
     chisq = nbodyChisq(&ctx, &st, nbf, &ctx.histogramParams);
     if (isnan(chisq))
+    {
         warn("Failed to calculate chisq\n");
+        rc = 1;
+    }
 
     endRun(&ctx, &st, nbf, chisq);
 
-    return 0;
+    return rc;
 }
 
