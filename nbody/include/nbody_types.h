@@ -407,13 +407,13 @@ typedef struct NBODY_ALIGN
  */
 typedef enum
 {
-    NBODY_TREE_INCEST_NONFATAL = -(1 << 3), /* Negative of NBODY_TREE_INCEST */
+    NBODY_TREE_INCEST_NONFATAL = -(1 << 2), /* Negative of NBODY_TREE_INCEST */
     NBODY_SUCCESS              = 0 << 0,
-    NBODY_ERROR                = 1 << 1,
-    NBODY_TREE_STRUCTURE_ERROR = 1 << 2,
-    NBODY_TREE_INCEST_FATAL    = 1 << 3,
-    NBODY_IO_ERROR             = 1 << 4,
-    NBODY_CHECKPOINT_ERROR     = 1 << 5
+    NBODY_ERROR                = 1 << 0,
+    NBODY_TREE_STRUCTURE_ERROR = 1 << 1,
+    NBODY_TREE_INCEST_FATAL    = 1 << 2,
+    NBODY_IO_ERROR             = 1 << 3,
+    NBODY_CHECKPOINT_ERROR     = 1 << 4
 } NBodyStatus;
 
 #define nbodyStatusIsFatal(x) ((x) > 0)

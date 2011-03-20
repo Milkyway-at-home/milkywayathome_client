@@ -1,14 +1,11 @@
 
+prng = DSFMT.create(argSeed)
+nbody = 100
 
-   -- Sample values
 dwarfMass = 16
 dwarfRadius = 0.2
 reverseTime = 4.0
 evolveTime = 3.945
-
--- Make sure to use the seed from the server
-prng = DSFMT.create(argSeed)
-nbody = 100
 
 
 function makeHistogram()

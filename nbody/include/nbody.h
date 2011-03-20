@@ -41,8 +41,8 @@ typedef struct
     char* histogramFileName;
     char* histoutFileName;
 
-    real* serverArgs;
-    unsigned int numServerArgs;
+    const char** forwardedArgs;
+    unsigned int numForwardedArgs;
 
     uint32_t setSeed;
     int outputCartesian;

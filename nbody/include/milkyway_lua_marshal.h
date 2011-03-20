@@ -57,7 +57,7 @@ typedef struct
 typedef struct
 {
     const char* name;
-    int luaType;
+    int type;
     const char* userDataTypeName;
     mwbool required;
     void* value;

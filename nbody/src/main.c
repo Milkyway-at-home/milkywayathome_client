@@ -66,6 +66,27 @@ static void specialSetup()
   #endif /* _WIN32 */
 }
 
+/* For automated testing, pass extra arguments on to Lua script */
+static void setForwardedArguments(NBodyFlags* nbf, const char** args)
+{
+    unsigned int i, argCount = 0;
+
+    if (!args)
+    {
+        nbf->numForwardedArgs = 0;
+        nbf->forwardedArgs = NULL;
+        return;
+    }
+
+    while (args[++argCount]);  /* Count number of parameters */
+
+    nbf->numForwardedArgs = argCount;
+    nbf->forwardedArgs = (const char**) mwMalloc(sizeof(const char*) * argCount);
+
+    for (i = 0; i < argCount; ++i)
+        nbf->forwardedArgs[i] = args[i];
+}
+
 /* Read the command line arguments, and do the inital parsing of the parameter file. */
 static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
 {
@@ -210,22 +231,15 @@ static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
         failed = TRUE;
     }
 
-    if (params || numParams)
+    rest = poptGetArgs(context);
+    if ((params || numParams) && !rest)
     {
-        rest = poptGetArgs(context);
-        if (!rest)
-        {
-            warn("Expected arguments to follow, got 0\n");
-            failed = TRUE;
-        }
-
-        nbf->serverArgs = mwReadRestArgs(rest, numParams, &nbf->numServerArgs);
-        if (!nbf->serverArgs)
-        {
-            warn("Failed to read server arguments\n");
-            poptPrintHelp(context, stderr, 0);
-            failed = TRUE;
-        }
+        warn("Expected arguments to follow, got 0\n");
+        failed = TRUE;
+    }
+    else
+    {
+        setForwardedArguments(nbf, rest);
     }
 
     poptFreeContext(context);
@@ -255,7 +269,7 @@ static void freeNBodyFlags(NBodyFlags* nbf)
     free(nbf->checkpointFileName);
     free(nbf->histogramFileName);
     free(nbf->histoutFileName);
-    free(nbf->serverArgs);
+    free(nbf->forwardedArgs);
 }
 
 #ifdef _OPENMP
@@ -294,14 +308,6 @@ int main(int argc, const char* argv[])
         warn("Failed to init BOINC\n");
         exit(EXIT_FAILURE);
     }
-
-    warn("arst %d   %d   %d   %d    %d   %d\n",
-         NBODY_TREE_INCEST_NONFATAL,
-         NBODY_SUCCESS,
-         NBODY_ERROR,
-         NBODY_TREE_STRUCTURE_ERROR,
-         NBODY_TREE_INCEST_FATAL,
-         NBODY_CHECKPOINT_ERROR);
 
     nbodyPrintVersion();
 

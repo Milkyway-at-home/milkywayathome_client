@@ -456,7 +456,7 @@ static void namedArgumentError(lua_State* luaSt, const MWNamedArg* p, int arg, i
     luaL_error(luaSt, "Bad argument for key '%s' in argument #%d (`%s' expected, got %s)",
                p->name,
                arg,
-               p->userDataTypeName ? p->userDataTypeName : lua_typename(luaSt, p->luaType),
+               p->userDataTypeName ? p->userDataTypeName : lua_typename(luaSt, p->type),
                lua_type(luaSt, idx) == LUA_TUSERDATA ? "other userdata" : luaL_typename(luaSt, idx)
         );
 }
@@ -556,11 +556,29 @@ static void checkExtraArguments(lua_State* luaSt, const MWNamedArg* args, int ta
     assert(iniTop == lua_gettop(luaSt));
 }
 
+/* Some of the automatic type conversions are acceptable, others are
+ * not.
+ * Allowing numbers as strings to work lets us simply give the
+ * extra arguments to the script, so we can have non-number
+ * arguments.*/
+static int typeEqualOrConversionOK(lua_State* luaSt, int type, int idx)
+{
+    int luaType = lua_type(luaSt, idx);
+
+    if (type == luaType)
+        return TRUE;
+
+    if (type == LUA_TNUMBER && lua_isnumber(luaSt, idx))
+        return TRUE;
+
+    return FALSE;
+}
+
 void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int table)
 {
     const MWNamedArg* p;
     char buf[128];
-    int type, item;
+    int item;
 
     p = args;
     while (p->name)
@@ -588,23 +606,22 @@ void handleNamedArgumentTable(lua_State* luaSt, const MWNamedArg* args, int tabl
 
         /* We do our own type checking and errors to avoid
            Confusing and innaccurate error messages, which suggest the use of the table is wrong. */
-        type = lua_type(luaSt, -1);
-        if (type != p->luaType)
+        if (!typeEqualOrConversionOK(luaSt, p->type, -1))
         {
             namedArgumentError(luaSt, p, table, item);
         }
 
-        if (type == LUA_TUSERDATA) /* We must do another level of checking for the actual type */
+        if (p->type == LUA_TUSERDATA) /* We must do another level of checking for the actual type */
         {
             if (!mw_tonamedudata(luaSt, item, p->userDataTypeName))
                 namedArgumentError(luaSt, p, table, -1);
         }
-        else if (type == LUA_TLIGHTUSERDATA)
+        else if (p->type == LUA_TLIGHTUSERDATA)
         {
             mw_panic("Unhandled named argument type lightuserdata\n");
         }
 
-        setValueFromType(luaSt, p->value, p->luaType, item);
+        setValueFromType(luaSt, p->value, p->type, item);
         lua_pop(luaSt, 2);
         ++p;
     }
