@@ -1,19 +1,23 @@
 
 arg = {...}
 
-assert(#arg == 4, "Test driver expected 4 arguments got " .. #arg)
+assert(#arg == 6, "Test driver expected 4 arguments got " .. #arg)
 
-nbodyBinary  = arg[1]
-testName = arg[2]
-testSeed = arg[3]
-testBodies = arg[4]
+nbodyBinary = arg[1]
+testDir = arg[2]
+testName = arg[3]
+histogramName = arg[4]
+testSeed = arg[5]
+testBodies = arg[6]
 
 
 --testDir = "tests"
-testDir = "."
+--testDir = "orphan_models"
+
+-- Name of test is testName+histogramName
 
 refResults = {
-   ["orphan_model_1"] = {
+   ["model_1"] = {
       ["100"] = {
          ["670828913"] = -13833.731309987899294,
          ["886885833"] = 4,
@@ -31,41 +35,37 @@ refResults = {
       }
    },
 
-   ["orphan_model_2"] = {
+   ["model_2"] = {
 
    },
 
-   ["orphan_model_3"] = {
+   ["model_3"] = {
 
    },
 
-   ["orphan_model_4"] = {
+   ["model_4"] = {
 
    },
 
-   ["orphan_model_5"] = {
+   ["model_5"] = {
 
    },
 
-   ["orphan_model_6"] = {
+   ["model_6"] = {
 
    },
 
-   ["orphan_model_7"] = {
+   ["model_7"] = {
 
    }
 }
 
-function getTestDir(baseName)
-   return testDir .. "/" .. baseName .. "/"
+function getTestFilePath(baseName)
+   return testDir .. "/" .. baseName .. ".lua"
 end
 
-function getTestFileName(baseName)
-   return getTestDir(baseName) .. baseName .. ".lua"
-end
-
-function getTestHistogramName(baseName)
-   return getTestDir(baseName) .. "histogram"
+function getHistogramFilePath(histogramFileName)
+   return testDir .. "/" .. histogramFileName
 end
 
 function os.readProcess(bin, ...)
@@ -85,8 +85,8 @@ function runFullTest(testName, seed, ...)
                          "-i",
                          "--checkpoint-interval=-1",
                          "-t",
-                         "-f", getTestFileName(testName),
-                         "-h", getTestHistogramName(testName),
+                         "-f", getTestFilePath(testName),
+                         "-h", getHistogramFilePath(histogramName),
                          "--seed", seed,
                          table.concat({...}, " ")
                       )
@@ -129,18 +129,12 @@ function runCheckTest(testName, seed, nbody, ...)
    local close = resultCloseEnough(refResult, result)
    if not close then
       io.stderr:write(string.format(errFmtStr, refResult, result, math.abs(result - refResult)))
-   else
-      print("close enough")
    end
 
    return close
 end
 
-if runCheckTest(testName, testSeed, testBodies) then
-   os.exit(0)
-else
-   os.exit(1)
-end
+os.exit(tonumber(runCheckTest(testName, testSeed, testBodies)))
 
 
 

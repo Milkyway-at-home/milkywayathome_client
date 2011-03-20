@@ -33,22 +33,31 @@ set(body_counts 100 1024 2048)
 #set(seeds       670828913 886885833 715144259 430281807 543966758)
 set(seeds       670828913)
 
-set(test_names orphan_model_1
-               orphan_model_2
-               orphan_model_3
-               orphan_model_4
-               orphan_model_5
-               orphan_model_6
-               orphan_model_7)
+set(orphan_model_names model_1
+                       model_2
+                       model_3
+                       model_4
+                       model_5
+                       model_5_bounds_test
+                       model_6
+                       model_7
+                       model_triaxial)
 
 find_program(LUA_INTERPRETER lua)
 
 set(nbody_test_driver "RunTestUnits.lua")
 set(nbody_bin "${EXECUTABLE_OUTPUT_PATH}/${nbody_bin_name}")
+set(test_histogram_name )
 
 foreach(seed ${seeds})
-  foreach(model_name ${test_names})
-         add_test(${model_name}__${seed}_100 ${LUA_INTERPRETER} ${nbody_test_driver} ${nbody_bin} ${model_name} ${seed} 100)
+  foreach(model_name ${orphan_model_names})
+         add_test(${model_name}__${seed}_100 ${LUA_INTERPRETER}
+                    ${nbody_test_driver} ${nbody_bin}
+                                         "orphan_models"
+                                         ${model_name}
+                                         "orphan_model_histogram"
+                                         ${seed}
+                                         100)
        endforeach()
 endforeach()
 

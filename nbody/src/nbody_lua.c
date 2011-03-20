@@ -107,7 +107,10 @@ static int dostringWithArgs(lua_State* luaSt, const char* str, const NBodyFlags*
     unsigned int i;
 
     if (luaL_loadstring(luaSt, str))
-        return warn1("Error loading Lua string\n");
+    {
+        mw_lua_pcall_warn(luaSt, "Error loading Lua script");
+        return 1;
+    }
 
     if (nbf->forwardedArgs)
     {
