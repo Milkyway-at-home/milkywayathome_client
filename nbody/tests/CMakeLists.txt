@@ -18,16 +18,6 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# List of tests to run.
-# Test sources should be named <testname>.c .
-set(test_list t_vectors
-              t_spherical
-              t_miyamoto_nagai_disk
-              t_exponential_disk
-              t_log_halo
-              t_nfw_halo
-              t_triaxial_halo)
-
 
 set(body_counts 100 1024 2048)
 #set(seeds       670828913 886885833 715144259 430281807 543966758)
