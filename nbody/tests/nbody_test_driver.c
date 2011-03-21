@@ -385,34 +385,42 @@ static int installHashFunctions(lua_State* luaSt)
 }
 
 
-static void testState()
+static int runNBodyTest(const char* file)
 {
+    int rc;
     lua_State* luaSt;
 
     luaSt = nbodyLuaOpen(TRUE);
     if (!luaSt)
-        return;
+        return 1;
 
     registerNBodyState(luaSt);
     installHashFunctions(luaSt);
     registerNBodyTestFunctions(luaSt);
 
-    //if (luaL_dofile(luaSt, "teststate.lua"))
-    if (luaL_dofile(luaSt, "CheckpointTest.lua"))
+    rc = luaL_dofile(luaSt, file);
+    if (rc)
         mw_lua_pcall_warn(luaSt, "Error evaluating script");
 
     lua_close(luaSt);
+
+    return rc;
 }
 
 int main(int argc, const char* argv[])
 {
+    int rc;
+    const char* testScript;
+
+    testScript = argc > 1 ? argv[1] : NULL;
+
     nbodyTestInit();
 
-    testState();
+    rc = runNBodyTest(testScript);
 
     nbodyTestCleanup();
 
-    return 0;
+    return rc;
 }
 
 

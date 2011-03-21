@@ -18,6 +18,18 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+find_package(OpenSSL)
+include_directories(${OPENSSL_INCLUDE_DIR})
+
+find_program(LUA_INTERPRETER lua)
+
+add_executable(nbody_test_driver nbody_test_driver.c)
+target_link_libraries(nbody_test_driver ${OPENSSL_LIBRARIES} ${nbody_exe_link_libs})
+
+
+add_test(checkpoint_test "${EXECUTABLE_OUTPUT_PATH}/nbody_test_driver" "CheckpointTest.lua")
+
+
 
 set(body_counts 100 1024 2048)
 #set(seeds       670828913 886885833 715144259 430281807 543966758)
@@ -33,11 +45,11 @@ set(orphan_model_names model_1
                        model_7
                        model_triaxial)
 
-find_program(LUA_INTERPRETER lua)
 
-set(nbody_test_driver "RunTestUnits.lua")
+
+set(nbody_test_units_driver "RunTestUnits.lua")
 set(nbody_bin "${EXECUTABLE_OUTPUT_PATH}/${nbody_bin_name}")
-set(test_histogram_name )
+
 
 foreach(seed ${seeds})
   foreach(model_name ${orphan_model_names})

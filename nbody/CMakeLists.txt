@@ -38,7 +38,6 @@ include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 maybe_static()
 
 find_package(BOINC)
-find_package(OpenSSL)
 
 if(BOINC_APPLICATION)
   include_directories(${BOINC_INCLUDE_DIR})
@@ -294,20 +293,20 @@ if(NOT WIN32)
   list(APPEND LUA_LIBRARIES dl)
 endif()
 
-set(exe_link_libs nbody_simulation
-                  nbody_lua
-                  nbody_simulation
-                  milkyway
-                  ${POPT_LIBRARY}
-                  ${LUA_LIBRARIES}
-                  ${LIBM_LIBRARY}
-                  ${OS_SPECIFIC_LIBS}
-                  ${nbody_link_libs})
+set(nbody_exe_link_libs nbody_simulation
+                        nbody_lua
+                        nbody_simulation
+                        milkyway
+                        ${POPT_LIBRARY}
+                        ${LUA_LIBRARIES}
+                        ${LIBM_LIBRARY}
+                        ${OS_SPECIFIC_LIBS}
+                        ${nbody_link_libs})
 
 
 if(NBODY_CRLIBM)
   include_directories(${CRLIBM_INCLUDE_DIR})
-  list(APPEND exe_link_libs ${CRLIBM_LIBRARY})
+  list(APPEND nbody_exe_link_libs ${CRLIBM_LIBRARY})
 endif()
 
 find_package(Libm REQUIRED)
@@ -315,8 +314,8 @@ find_package(Libm REQUIRED)
 if(NEED_POPT_DEPS)
   # Popt dependencies for static linking For some reason, on OS X /
   # windows you need these dependencies but not Linux.
-  list(APPEND exe_link_libs ${LIBICONV_LIBRARY}
-                            ${LIBINTL_LIBRARY})
+  list(APPEND nbody_exe_link_libs ${LIBICONV_LIBRARY}
+                                  ${LIBINTL_LIBRARY})
 endif()
 
 if(NOT HAVE_SSE2 AND SYSTEM_IS_x86)
@@ -343,13 +342,9 @@ configure_file (
 
 add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
 
-milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} 0 ${STATIC_EVERYTHING} "${exe_link_libs}")
+milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} 0 ${STATIC_EVERYTHING} "${nbody_exe_link_libs}")
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 
-include_directories(${OPENSSL_INCLUDE_DIR})
-add_executable(nbody_test ${PROJECT_SOURCE_DIR}/tests/nbody_test.c)
-target_link_libraries(nbody_test ${OPENSSL_LIBRARIES} ${exe_link_libs})
-#add_test(nbody_test nbody_test)
 
 
