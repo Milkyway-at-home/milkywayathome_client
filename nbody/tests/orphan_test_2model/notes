@@ -1,1 +1,1 @@
-( nohup ../../../bin/milkyway_nbody -f orphan_test_2model.js -z histout -o orphan_test_2model.out ) > & err &
+( nohup ../../../bin/milkyway_nbody -f orphan_test_2model.lua -z histout -o orphan_test_2model.out --seed 4234234 20000 ) > & err &
