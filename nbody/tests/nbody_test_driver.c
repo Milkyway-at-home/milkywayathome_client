@@ -26,6 +26,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_lua_marshal.h"
 #include "milkyway_lua_util.h"
 #include "nbody_plummer.h"
+#include "nbody_defaults.h"
+#include "nbody_tree.h"
 
 
 /* things in NBodyCtx which influence individual steps that aren't the potential. */
@@ -386,6 +388,24 @@ static int installHashFunctions(lua_State* luaSt)
 }
 
 
+/* Create a context with everything unset, useful for testing but
+ * undesirable for actual work. */
+static int createTestNBodyCtx(lua_State* luaSt)
+{
+    return pushNBodyCtx(luaSt, &defaultNBodyCtx);
+}
+
+static void registerNBodyCtxTestMethods(lua_State* luaSt)
+{
+    static const luaL_reg testMethodsNBodyCtx[] =
+        {
+            { "createTestCtx", createTestNBodyCtx },
+            { NULL, NULL }
+        };
+
+    luaL_register(luaSt, NBODYCTX_TYPE, testMethodsNBodyCtx);
+}
+
 static int runNBodyTest(const char* file, const char** args, unsigned int nArgs)
 {
     int rc;
@@ -395,9 +415,15 @@ static int runNBodyTest(const char* file, const char** args, unsigned int nArgs)
     if (!luaSt)
         return 1;
 
+    /* Register special functions used by tests but not in real things
+     * for various reasons, such as avoiding depending on openssl and
+     * to not include useless / and or less safe versions of
+     * functions. */
     registerNBodyState(luaSt);
     installHashFunctions(luaSt);
     registerNBodyTestFunctions(luaSt);
+    registerNBodyCtxTestMethods(luaSt);
+    registerFindRCrit(luaSt);
 
     rc = dofileWithArgs(luaSt, file, args, nArgs);
     if (rc)

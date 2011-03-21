@@ -31,6 +31,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 #include "nbody_tree.h"
 
+#include <lua.h>
+#include <lauxlib.h>
+#include "nbody_lua_types.h"
+
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wfloat-equal".
 #endif
@@ -262,7 +266,7 @@ static inline real calcSW93MaxDist2(const Cell* p, const mwvector cmpos, real ps
 
 /* setRCrit: assign critical radius for cell p, using center-of-mass
  * position cmpos and cell size psize. */
-static inline real setRCrit(const NBodyCtx* ctx, const Tree* tree, const Cell* p, mwvector cmpos, real psize)
+static inline real findRCrit(const NBodyCtx* ctx, const Cell* p, real treeRSize, mwvector cmpos, real psize)
 {
     real rc, bmax2;
 
@@ -272,6 +276,7 @@ static inline real setRCrit(const NBodyCtx* ctx, const Tree* tree, const Cell* p
             rc = psize / ctx->theta + mw_distv(cmpos, Pos(p));
             /* use size plus offset */
             break;
+
         case SW93:                           /* use S&W's criterion? */
             /* compute max distance^2 */
             bmax2 = calcSW93MaxDist2(p, cmpos, psize);
@@ -282,8 +287,8 @@ static inline real setRCrit(const NBodyCtx* ctx, const Tree* tree, const Cell* p
             rc = psize / ctx->theta;        /* using size of cell */
             break;
 
-        case Exact:                         /* exact force calculation? */
-            rc = 2.0 * tree->rsize;         /* always open cells */
+        case Exact:                       /* exact force calculation? */
+            rc = 2.0 * treeRSize;         /* always open cells */
             break;
 
         case InvalidCriterion:
@@ -372,7 +377,7 @@ static void hackCofM(const NBodyCtx* ctx, Tree* tree, Cell* p, real psize)
 
     checkTreeStructure(tree, Pos(p), cmpos, psize);
 
-    Rcrit2(p) = setRCrit(ctx, tree, p, cmpos, psize);            /* set critical radius */
+    Rcrit2(p) = findRCrit(ctx, p, tree->rsize, cmpos, psize);            /* set critical radius */
     Pos(p) = cmpos;             /* and center-of-mass pos */
 }
 
@@ -406,4 +411,29 @@ NBodyStatus makeTree(const NBodyCtx* ctx, NBodyState* st)
 
     return NBODY_SUCCESS;
 }
+
+/* For testing */
+static int luaFindRCrit(lua_State* luaSt)
+{
+    const NBodyCtx* ctx;
+    Cell p;  /* Test cell, just need a set position */
+    real rSize, pSize;
+    mwvector cmPos;
+
+    ctx = checkNBodyCtx(luaSt, 1);
+    Pos(&p) = *checkVector(luaSt, 2);
+    rSize = luaL_checknumber(luaSt, 3);
+    cmPos = *checkVector(luaSt, 4);
+    pSize = luaL_checknumber(luaSt, 5);
+
+    lua_pushnumber(luaSt, findRCrit(ctx, &p, rSize, cmPos, pSize));
+
+    return 1;
+}
+
+void registerFindRCrit(lua_State* luaSt)
+{
+    lua_register(luaSt, "findRCrit", luaFindRCrit);
+}
+
 

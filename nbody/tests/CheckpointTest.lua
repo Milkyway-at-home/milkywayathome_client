@@ -63,7 +63,7 @@ function runInterruptedSteps(st, totalSteps, ctx, pot, prng)
    return ctx, st
 end
 
-nTests = 2
+local nTests = 2
 
 for i = 1, nTests do
    local testSteps, st, stCopy

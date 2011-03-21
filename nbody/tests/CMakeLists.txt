@@ -30,11 +30,13 @@ target_link_libraries(nbody_test_driver ${OPENSSL_LIBRARIES} ${nbody_exe_link_li
 add_test(NAME checkpoint_test
          COMMAND nbody_test_driver "CheckpointTest.lua")
 
+add_test(NAME criterion_test
+         COMMAND nbody_test_driver "CriterionTest.lua")
+
 
 
 set(body_counts 100 1024 2048)
-#set(seeds       670828913 886885833 715144259 430281807 543966758)
-set(seeds       670828913 886885833 715144259)
+set(seeds       670828913 886885833 715144259 430281807 543966758)
 
 set(orphan_model_names model_1
                        model_2
