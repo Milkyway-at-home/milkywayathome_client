@@ -776,3 +776,9 @@ void* expectType(lua_State* luaSt, int idx, const char* typeName)
     return p;
 }
 
+void setModelTableItem(lua_State* luaSt, int table, lua_CFunction generator, const char* name)
+{
+    lua_pushcfunction(luaSt, generator);
+    lua_setfield(luaSt, table, name);
+}
+

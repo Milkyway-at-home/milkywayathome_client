@@ -33,7 +33,7 @@ static inline mwvector pickShell(dsfmt_t* dsfmtState, real rad)
 
     do                      /* pick point in NDIM-space */
     {
-        vec = mwRandomVector(dsfmtState);
+        vec = mwRandomUnitPoint(dsfmtState);
         rsq = mw_sqrv(vec);         /* compute radius squared */
     }
     while (rsq > 1.0);              /* reject if outside sphere */

@@ -119,7 +119,6 @@ static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, 
         }
         else
         {
-            st->acctab = (mwvector*) mwCallocA(st->nbody, sizeof(mwvector));
             mw_report("Successfully read checkpoint\n");
         }
     }

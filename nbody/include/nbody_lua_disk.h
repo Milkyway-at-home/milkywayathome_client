@@ -34,5 +34,7 @@ int registerDisk(lua_State* luaSt);
 int setDisk(lua_State* luaSt, void* v);
 int getDisk(lua_State* luaSt, void* v);
 
+int registerDiskKinds(lua_State* luaSt);
+
 #endif /* _NBODY_LUA_DISK_H_ */
 

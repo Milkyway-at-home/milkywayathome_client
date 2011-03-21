@@ -88,6 +88,12 @@ static int toStringHistogramParams(lua_State* luaSt)
     return toStringType(luaSt, (StructShowFunc) showHistogramParams, (LuaTypeCheckFunc) checkHistogramParams);
 }
 
+static int eqHistogramParams(lua_State* luaSt)
+{
+    lua_pushboolean(luaSt, equalHistogramParams(checkHistogramParams(luaSt, 1), checkHistogramParams(luaSt, 2)));
+    return 1;
+}
+
 int getHistogramParams(lua_State* luaSt, void* v)
 {
     pushHistogramParams(luaSt, (HistogramParams*) v);
@@ -103,6 +109,7 @@ int setHistogramParams(lua_State* luaSt, void* v)
 static const luaL_reg metaMethodsHistogramParams[] =
 {
     { "__tostring", toStringHistogramParams },
+    { "__eq",       eqHistogramParams       },
     { NULL, NULL }
 };
 

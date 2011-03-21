@@ -76,3 +76,23 @@ sampleModels = {
 
 sampleModelNames = getKeyNames(sampleModels)
 
+function randomPlummer(prng, maxN)
+   if prng == nil then
+      prng = DSFMT.create()
+   end
+
+   if maxN == nil then
+      maxN = 10000
+   end
+
+   return predefinedModels.plummer{
+      nbody       = prng:random(10, maxN),
+      prng        = prng,
+      position    = prng:randomVector(10),
+      velocity    = prng:randomVector(100),
+      mass        = prng:random(0.1, 50),
+      scaleRadius = prng:random(0.01, 10),
+      ignore      = prng:randomBool()
+   }
+end
+

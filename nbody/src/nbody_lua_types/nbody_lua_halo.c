@@ -107,6 +107,12 @@ static int toStringHalo(lua_State* luaSt)
     return toStringType(luaSt, (StructShowFunc) showHalo, (LuaTypeCheckFunc) checkHalo);
 }
 
+static int eqHalo(lua_State* luaSt)
+{
+    lua_pushboolean(luaSt, equalHalo(checkHalo(luaSt, 1), checkHalo(luaSt, 2)));
+    return 1;
+}
+
 int getHaloT(lua_State* luaSt, void* v)
 {
     return pushEnum(luaSt, haloOptions, *(int*) v);
@@ -120,13 +126,14 @@ int getHalo(lua_State* luaSt, void* v)
 
 int setHalo(lua_State* luaSt, void* v)
 {
-    *(Halo*)v = *checkHalo(luaSt, 3);
+    *(Halo*) v = *checkHalo(luaSt, 3);
     return 0;
 }
 
 static const luaL_reg metaMethodsHalo[] =
 {
     { "__tostring", toStringHalo },
+    { "__eq",       eqHalo       },
     { NULL, NULL }
 };
 
@@ -176,5 +183,26 @@ int registerHalo(lua_State* luaSt)
                           settersHalo,
                           metaMethodsHalo,
                           methodsHalo);
+}
+
+/* Add a table with available halo models */
+int registerHaloKinds(lua_State* luaSt)
+{
+    int table;
+
+    lua_newtable(luaSt);
+    table = lua_gettop(luaSt);
+
+    setModelTableItem(luaSt, table, createLogarithmicHalo, "logarithmic");
+    setModelTableItem(luaSt, table, createNFWHalo, "nfw");
+    setModelTableItem(luaSt, table, createTriaxialHalo, "triaxial");
+
+    /* Getting the number of keys in a table is a pain */
+    lua_pushnumber(luaSt, 3);
+    lua_setfield(luaSt, table, "_count");
+
+    lua_setglobal(luaSt, "haloModels");
+
+    return 0;
 }
 

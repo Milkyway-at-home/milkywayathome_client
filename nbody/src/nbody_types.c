@@ -144,25 +144,32 @@ int equalNBodyState(const NBodyState* st1, const NBodyState* st2)
 }
 
 /* TODO: Doesn't clone tree */
-void cloneNBodyState(NBodyState* st, const NBodyState* oldSt, const unsigned int nbody)
+void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
 {
     static const Tree emptyTree = EMPTY_TREE;
+    unsigned int nbody = oldSt->nbody;
 
     st->tree = emptyTree;
+    st->tree.rsize = oldSt->tree.rsize;
+
     st->freecell = NULL;
 
-    st->outputTime = oldSt->outputTime;
+    st->outputTime     = oldSt->outputTime;
     st->lastCheckpoint = oldSt->lastCheckpoint;
-    st->tnow = oldSt->tnow;
+    st->tnow           = oldSt->tnow;
+    st->nbody          = oldSt->nbody;
+
+    st->treeIncest = oldSt->treeIncest;
+    st->tree.structureError = oldSt->tree.structureError;
+
+    assert(nbody > 0);
+    assert(st->bodytab == NULL && st->acctab == NULL);
 
     st->bodytab = (Body*) mwMallocA(sizeof(Body) * nbody);
     memcpy(st->bodytab, oldSt->bodytab, sizeof(Body) * nbody);
 
     st->acctab = (mwvector*) mwMallocA(sizeof(mwvector) * nbody);
     memcpy(st->acctab, oldSt->acctab, sizeof(mwvector) * nbody);
-
-    st->treeIncest = oldSt->treeIncest;
-    st->tree.structureError = oldSt->tree.structureError;
 }
 
 
@@ -237,5 +244,77 @@ static int compareBodies(const void* _a, const void* _b)
 void sortBodies(Body* bodies, unsigned int nbody)
 {
     qsort(bodies, (size_t) nbody, sizeof(Body), compareBodies);
+}
+
+/* Floating point comparison where nan compares equal */
+static inline int feqWithNan(real a, real b)
+{
+    return (isnan(a) && isnan(b)) ? TRUE : (a == b);
+}
+
+
+int equalDisk(const Disk* d1, const Disk* d2)
+{
+    return (d1->type == d2->type)
+        && feqWithNan(d1->mass,d2->mass)
+        && feqWithNan(d1->scaleLength, d1->scaleLength)
+        && feqWithNan(d1->scaleHeight, d1->scaleHeight);
+}
+
+int equalHalo(const Halo* h1, const Halo* h2)
+{
+    return (h1->type == h2->type)
+        && feqWithNan(h1->vhalo, h2->vhalo)
+        && feqWithNan(h1->scaleLength, h2->scaleLength)
+        && feqWithNan(h1->flattenZ, h2->flattenZ)
+        && feqWithNan(h1->flattenY, h2->flattenY)
+        && feqWithNan(h1->flattenX, h2->flattenX)
+        && feqWithNan(h1->triaxAngle, h2->triaxAngle)
+        && feqWithNan(h1->c1, h2->c1)
+        && feqWithNan(h1->c2, h2->c2)
+        && feqWithNan(h1->c3, h2->c3);
+}
+
+int equalSpherical(const Spherical* s1, const Spherical* s2)
+{
+    return (s1->type == s2->type)
+        && feqWithNan(s1->mass, s2->mass)
+        && feqWithNan(s1->scale, s2->scale);
+}
+
+int equalPotential(const Potential* p1, const Potential* p2)
+{
+    return equalSpherical(&p1->sphere[0], &p2->sphere[0])
+        && equalDisk(&p1->disk, &p2->disk)
+        && equalHalo(&p1->halo, &p2->halo);
+}
+
+int equalHistogramParams(const HistogramParams* hp1, const HistogramParams* hp2)
+{
+    return feqWithNan(hp1->phi, hp2->phi)
+        && feqWithNan(hp1->theta, hp2->theta)
+        && feqWithNan(hp1->psi, hp2->psi)
+        && feqWithNan(hp1->startRaw, hp2->startRaw)
+        && feqWithNan(hp1->endRaw, hp2->endRaw)
+        && feqWithNan(hp1->binSize, hp2->binSize)
+        && feqWithNan(hp1->center, hp2->center);
+}
+
+int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
+{
+    return feqWithNan(ctx1->timestep, ctx2->timestep)
+        && feqWithNan(ctx1->timeEvolve, ctx2->timeEvolve)
+        && feqWithNan(ctx1->theta, ctx2->theta)
+        && feqWithNan(ctx1->eps2, ctx2->eps2)
+        && feqWithNan(ctx1->treeRSize, ctx2->treeRSize)
+        && feqWithNan(ctx1->sunGCDist, ctx2->sunGCDist)
+        && feqWithNan(ctx1->criterion, ctx2->criterion)
+        && feqWithNan(ctx1->useQuad, ctx2->useQuad)
+        && feqWithNan(ctx1->allowIncest, ctx2->allowIncest)
+        && feqWithNan(ctx1->quietErrors, ctx2->quietErrors)
+        && feqWithNan(ctx1->checkpointT, ctx2->checkpointT)
+        && feqWithNan(ctx1->freqOut, ctx2->freqOut)
+        && equalHistogramParams(&ctx1->histogramParams, &ctx2->histogramParams)
+        && equalPotential(&ctx1->pot, &ctx2->pot);
 }
 

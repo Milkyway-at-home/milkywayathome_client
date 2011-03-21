@@ -437,16 +437,21 @@ int readCheckpoint(NBodyCtx* ctx, NBodyState* st)
     if (closeCheckpointHandle(&cp))
         warn("Failed to close checkpoint properly\n");
 
+    /* Make sure state is ready to use */
+    st->acctab = (mwvector*) mwCallocA(st->nbody, sizeof(mwvector));
+
     return FALSE;
 }
 
-int writeCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
+/* Use specified temporary file to avoid bad things happening if
+ * multiple tests running at a time */
+int writeCheckpointWithTmpFile(const NBodyCtx* ctx, const NBodyState* st, const char* tmpFile)
 {
     int failed = FALSE;
     CheckpointHandle cp = EMPTY_CHECKPOINT_HANDLE;
 
     assert(st->checkpointResolved);
-    if (openCheckpointHandle(st, &cp, CHECKPOINT_TMP_FILE, TRUE))
+    if (openCheckpointHandle(st, &cp, tmpFile, TRUE))
     {
         closeCheckpointHandle(&cp);
         return warn1("Failed to open temporary checkpoint file\n"
@@ -465,7 +470,7 @@ int writeCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
      * should avoid corruption in the event the file write is
      * interrupted. */
     /* Don't update if the file was not closed properly; it can't be trusted. */
-    if (!failed && mw_rename(CHECKPOINT_TMP_FILE, st->checkpointResolved))
+    if (!failed && mw_rename(tmpFile, st->checkpointResolved))
     {
         mw_win_perror("Failed to update checkpoint with temporary");
         failed = TRUE;
@@ -475,5 +480,10 @@ int writeCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
         warn("Failed to write checkpoint\n");
 
     return failed;
+}
+
+int writeCheckpoint(const NBodyCtx* ctx, const NBodyState* st)
+{
+    return writeCheckpointWithTmpFile(ctx, st, CHECKPOINT_TMP_FILE);
 }
 

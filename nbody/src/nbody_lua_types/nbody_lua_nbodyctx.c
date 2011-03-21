@@ -25,9 +25,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include "nbody_show.h"
 #include "nbody_lua_nbodyctx.h"
+#include "nbody_lua_potential.h"
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
 #include "nbody_defaults.h"
+
 
 static const MWEnumAssociation criterionOptions[] =
 {
@@ -121,9 +123,16 @@ static int toStringNBodyCtx(lua_State* luaSt)
     return toStringType(luaSt, (StructShowFunc) showNBodyCtx, (LuaTypeCheckFunc) checkNBodyCtx);
 }
 
+static int eqNBodyCtx(lua_State* luaSt)
+{
+    lua_pushboolean(luaSt, equalNBodyCtx(checkNBodyCtx(luaSt, 1), checkNBodyCtx(luaSt, 2)));
+    return 1;
+}
+
 static const luaL_reg metaMethodsNBodyCtx[] =
 {
     { "__tostring", toStringNBodyCtx },
+    { "__eq",       eqNBodyCtx       },
     { NULL, NULL }
 };
 
@@ -135,33 +144,35 @@ static const luaL_reg methodsNBodyCtx[] =
 
 static const Xet_reg_pre gettersNBodyCtx[] =
 {
-    { "timestep",        getNumber,     offsetof(NBodyCtx, timestep)        },
-    { "timeEvolve",      getNumber,     offsetof(NBodyCtx, timeEvolve)      },
-    { "freqOut",         getNumber,     offsetof(NBodyCtx, freqOut)         },
-    { "theta",           getNumber,     offsetof(NBodyCtx, theta)           },
-    { "eps2",            getNumber,     offsetof(NBodyCtx, eps2)            },
-    { "treeRSize",       getNumber,     offsetof(NBodyCtx, treeRSize)       },
-    { "sunGCDist",       getNumber,     offsetof(NBodyCtx, sunGCDist)       },
-    { "criterion",       getCriterionT, offsetof(NBodyCtx, criterion)       },
-    { "useQuad",         getBool,       offsetof(NBodyCtx, useQuad)         },
-    { "allowIncest",     getBool,       offsetof(NBodyCtx, allowIncest)     },
-    { "quietErrors",     getBool,       offsetof(NBodyCtx, quietErrors)     },
+    { "timestep",        getNumber,     offsetof(NBodyCtx, timestep)    },
+    { "timeEvolve",      getNumber,     offsetof(NBodyCtx, timeEvolve)  },
+    { "freqOut",         getNumber,     offsetof(NBodyCtx, freqOut)     },
+    { "theta",           getNumber,     offsetof(NBodyCtx, theta)       },
+    { "eps2",            getNumber,     offsetof(NBodyCtx, eps2)        },
+    { "treeRSize",       getNumber,     offsetof(NBodyCtx, treeRSize)   },
+    { "sunGCDist",       getNumber,     offsetof(NBodyCtx, sunGCDist)   },
+    { "criterion",       getCriterionT, offsetof(NBodyCtx, criterion)   },
+    { "useQuad",         getBool,       offsetof(NBodyCtx, useQuad)     },
+    { "allowIncest",     getBool,       offsetof(NBodyCtx, allowIncest) },
+    { "quietErrors",     getBool,       offsetof(NBodyCtx, quietErrors) },
+    { "potential",       getPotential,  offsetof(NBodyCtx, pot)         },
     { NULL, NULL, 0 }
 };
 
 static const Xet_reg_pre settersNBodyCtx[] =
 {
-    { "timestep",        setNumber,     offsetof(NBodyCtx, timestep)        },
-    { "timeEvolve",      setNumber,     offsetof(NBodyCtx, timeEvolve)      },
-    { "freqOut",         setNumber,     offsetof(NBodyCtx, freqOut)         },
-    { "theta",           setNumber,     offsetof(NBodyCtx, theta)           },
-    { "eps2",            setNumber,     offsetof(NBodyCtx, eps2)            },
-    { "treeRSize",       setNumber,     offsetof(NBodyCtx, treeRSize)       },
-    { "sunGCDist",       setNumber,     offsetof(NBodyCtx, sunGCDist)       },
-    { "criterion",       setCriterionT, offsetof(NBodyCtx, criterion)       },
-    { "useQuad",         setBool,       offsetof(NBodyCtx, useQuad)         },
-    { "allowIncest",     setBool,       offsetof(NBodyCtx, allowIncest)     },
-    { "quietErrors",     setBool,       offsetof(NBodyCtx, quietErrors)     },
+    { "timestep",        setNumber,     offsetof(NBodyCtx, timestep)    },
+    { "timeEvolve",      setNumber,     offsetof(NBodyCtx, timeEvolve)  },
+    { "freqOut",         setNumber,     offsetof(NBodyCtx, freqOut)     },
+    { "theta",           setNumber,     offsetof(NBodyCtx, theta)       },
+    { "eps2",            setNumber,     offsetof(NBodyCtx, eps2)        },
+    { "treeRSize",       setNumber,     offsetof(NBodyCtx, treeRSize)   },
+    { "sunGCDist",       setNumber,     offsetof(NBodyCtx, sunGCDist)   },
+    { "criterion",       setCriterionT, offsetof(NBodyCtx, criterion)   },
+    { "useQuad",         setBool,       offsetof(NBodyCtx, useQuad)     },
+    { "allowIncest",     setBool,       offsetof(NBodyCtx, allowIncest) },
+    { "quietErrors",     setBool,       offsetof(NBodyCtx, quietErrors) },
+    { "potential",       setPotential,  offsetof(NBodyCtx, pot)         },
     { NULL, NULL, 0 }
 };
 

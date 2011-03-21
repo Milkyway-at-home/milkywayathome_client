@@ -69,6 +69,12 @@ static int toStringSpherical(lua_State* luaSt)
     return toStringType(luaSt, (StructShowFunc) showSpherical, (LuaTypeCheckFunc) checkSpherical);
 }
 
+static int eqSpherical(lua_State* luaSt)
+{
+    lua_pushboolean(luaSt, equalSpherical(checkSpherical(luaSt, 1), checkSpherical(luaSt, 2)));
+    return 1;
+}
+
 int getSpherical(lua_State* luaSt, void* v)
 {
     pushSpherical(luaSt, (Spherical*) v);
@@ -84,6 +90,7 @@ int setSpherical(lua_State* luaSt, void* v)
 static const luaL_reg metaMethodsSpherical[] =
 {
     { "__tostring", toStringSpherical },
+    { "__eq",       eqSpherical       },
     { NULL, NULL }
 };
 
@@ -117,5 +124,19 @@ int registerSpherical(lua_State* luaSt)
                           settersSpherical,
                           metaMethodsSpherical,
                           methodsSpherical);
+}
+
+int registerSphericalKinds(lua_State* luaSt)
+{
+    int table;
+
+    lua_newtable(luaSt);
+    table = lua_gettop(luaSt);
+
+    setModelTableItem(luaSt, table, createSpherical, "spherical");
+
+    lua_setglobal(luaSt, "sphericalModels");
+
+    return 0;
 }
 

@@ -136,3 +136,79 @@ samplePotentials = { potentialA = makePotentialA(), potentialB = makePotentialB(
 
 samplePotentialNames = getKeyNames(samplePotentials)
 
+function randomHalo(prng)
+   if prng == nil then
+      prng = DSFMT.create()
+   end
+
+   local type = round(prng:random(0, 2))
+
+   if type == 0 then
+      return Halo.logarithmic{
+         vhalo       = prng:random(),
+         scaleLength = prng:random(),
+         flattenZ    = prng:random()
+      }
+   elseif type == 1 then
+      return Halo.nfw{
+         vhalo       = prng:random(),
+         scaleLength = prng:random()
+      }
+   elseif type == 2 then
+      return Halo.triaxial{
+         vhalo       = prng:random(),
+         scaleLength = prng:random(),
+         flattenX    = prng:random(),
+         flattenY    = prng:random(),
+         flattenZ    = prng:random(),
+         triaxAngle  = prng:random()
+      }
+   else
+      assert(false)
+   end
+end
+
+function randomDisk(prng)
+   if prng == nil then
+      prng = DSFMT.create()
+   end
+
+   local type = round(prng:random(0, 1))
+
+   if type == 0 then
+      return Disk.miyamotoNagai{
+         mass        = prng:random(),
+         scaleLength = prng:random(),
+         scaleHeight = prng:random()
+      }
+   elseif type == 1 then
+      return Disk.exponential{
+         mass        = prng:random(),
+         scaleLength = prng:random()
+      }
+   else
+      assert(false)
+   end
+end
+
+function randomSpherical(prng)
+   if prng == nil then
+      prng = DSFMT.create()
+   end
+
+   return Spherical.spherical{
+      mass  = prng:random(),
+      scale = prng:random()
+   }
+end
+
+function randomPotential(prng)
+   return Potential.create{
+      spherical = randomSpherical(prng),
+      disk      = randomDisk(prng),
+      halo      = randomHalo(prng)
+   }
+end
+
+
+

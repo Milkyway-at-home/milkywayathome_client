@@ -397,7 +397,8 @@ static void testState()
     installHashFunctions(luaSt);
     registerNBodyTestFunctions(luaSt);
 
-    if (luaL_dofile(luaSt, "teststate.lua"))
+    //if (luaL_dofile(luaSt, "teststate.lua"))
+    if (luaL_dofile(luaSt, "CheckpointTest.lua"))
         mw_lua_pcall_warn(luaSt, "Error evaluating script");
 
     lua_close(luaSt);

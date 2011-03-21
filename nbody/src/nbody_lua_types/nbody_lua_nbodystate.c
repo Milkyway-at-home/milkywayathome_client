@@ -30,6 +30,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_potential.h"
 #include "nbody_lua_type_marshal.h"
 #include "nbody_step.h"
+#include "nbody_defaults.h"
+#include "nbody_checkpoint.h"
 
 
 NBodyState* checkNBodyState(lua_State* luaSt, int idx)
@@ -110,25 +112,95 @@ static int sortBodiesNBodyState(lua_State* luaSt)
     return 0;
 }
 
+static int luaWriteCheckpoint(lua_State* luaSt)
+{
+    NBodyState* st;
+    const NBodyCtx* ctx;
+    const char* tmpFile;
+
+    st = checkNBodyState(luaSt, 1);
+    ctx = checkNBodyCtx(luaSt, 2);
+
+    assert(st->checkpointResolved == NULL);
+
+    st->checkpointResolved = strdup(luaL_optstring(luaSt, 3, DEFAULT_CHECKPOINT_FILE));
+    tmpFile = luaL_optstring(luaSt, 4, CHECKPOINT_TMP_FILE);
+
+    if (writeCheckpointWithTmpFile(ctx, st, tmpFile))
+        luaL_error(luaSt, "Error writing checkpoint");
+
+    free(st->checkpointResolved);
+    st->checkpointResolved = NULL;
+
+    return 0;
+}
+
+static int luaCloneNBodyState(lua_State* luaSt)
+{
+    const NBodyState* oldSt;
+    NBodyState newSt = EMPTY_NBODYSTATE;
+
+    oldSt = checkNBodyState(luaSt, 1);
+    cloneNBodyState(&newSt, oldSt);
+    pushNBodyState(luaSt, &newSt);
+    return 1;
+}
+
+/* Returns resumed context and state */
+static int luaReadCheckpoint(lua_State* luaSt)
+{
+    NBodyCtx ctx = EMPTY_NBODYCTX;
+    NBodyState st = EMPTY_NBODYSTATE;
+
+    st.checkpointResolved = strdup(luaL_optstring(luaSt, 1, DEFAULT_CHECKPOINT_FILE));
+    if (readCheckpoint(&ctx, &st))
+        luaL_error(luaSt, "Error reading checkpoint '%s'", st.checkpointResolved);
+
+    free(st.checkpointResolved);
+    st.checkpointResolved = NULL;
+
+    pushNBodyCtx(luaSt, &ctx);
+    pushNBodyState(luaSt, &st);
+
+    return 2;
+}
+
 static int eqNBodyState(lua_State* luaSt)
 {
     lua_pushboolean(luaSt, equalNBodyState(checkNBodyState(luaSt, 1), checkNBodyState(luaSt, 2)));
     return 1;
 }
 
+static int toStringNBodyState(lua_State* luaSt)
+{
+    const NBodyState* st;
+    char* buf;
+
+    st = checkNBodyState(luaSt, 1);
+    buf = showNBodyState(st);
+    lua_pushstring(luaSt, buf);
+    free(buf);
+
+    return 1;
+}
+
 
 static const luaL_reg metaMethodsNBodyState[] =
 {
-    { "__gc", gcNBodyState },
-    { "__eq", eqNBodyState },
+    { "__gc",       gcNBodyState       },
+    { "__eq",       eqNBodyState       },
+    { "__tostring", toStringNBodyState },
     { NULL, NULL }
 };
 
 static const luaL_reg methodsNBodyState[] =
 {
-    { "create",     createNBodyState     },
-    { "step",       stepNBodyState       },
-    { "sortBodies", sortBodiesNBodyState },
+    { "create",          createNBodyState     },
+    { "step",            stepNBodyState       },
+    { "sortBodies",      sortBodiesNBodyState },
+    { "clone",           luaCloneNBodyState   },
+    { "writeCheckpoint", luaWriteCheckpoint   },
+    { "readCheckpoint",  luaReadCheckpoint    },
     { NULL, NULL }
 };
 

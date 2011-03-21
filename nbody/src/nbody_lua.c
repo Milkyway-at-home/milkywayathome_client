@@ -95,7 +95,12 @@ lua_State* nbodyLuaOpen(mwbool debug)
 
     registerNBodyTypes(luaSt);
     registerOtherTypes(luaSt);
+
     registerPredefinedModelGenerators(luaSt);
+    registerSphericalKinds(luaSt);
+    registerDiskKinds(luaSt);
+    registerHaloKinds(luaSt);
+
     registerModelUtilityFunctions(luaSt);
     registerUtilityFunctions(luaSt);
 

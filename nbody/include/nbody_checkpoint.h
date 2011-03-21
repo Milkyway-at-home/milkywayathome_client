@@ -27,6 +27,7 @@ int resolveCheckpoint(NBodyState* st, const char* checkpointFileName);
 int resolvedCheckpointExists(const NBodyState* st);
 int readCheckpoint(NBodyCtx* ctx, NBodyState* st);
 int writeCheckpoint(const NBodyCtx* ctx, const NBodyState* st);
+int writeCheckpointWithTmpFile(const NBodyCtx* ctx, const NBodyState* st, const char* tmpFile);
 
 #endif /* _NBODY_CHECKPOINT_H_ */
 

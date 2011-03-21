@@ -90,6 +90,12 @@ static int toStringDisk(lua_State* luaSt)
     return toStringType(luaSt, (StructShowFunc) showDisk, (LuaTypeCheckFunc) checkDisk);
 }
 
+static int eqDisk(lua_State* luaSt)
+{
+    lua_pushboolean(luaSt, equalDisk(checkDisk(luaSt, 1), checkDisk(luaSt, 2)));
+    return 1;
+}
+
 int getDisk(lua_State* luaSt, void* v)
 {
     pushDisk(luaSt, (Disk*) v);
@@ -105,6 +111,7 @@ int setDisk(lua_State* luaSt, void* v)
 static const luaL_reg metaMethodsDisk[] =
 {
     { "__tostring", toStringDisk },
+    { "__eq",       eqDisk       },
     { NULL, NULL }
 };
 
@@ -140,5 +147,20 @@ int registerDisk(lua_State* luaSt)
                           settersDisk,
                           metaMethodsDisk,
                           methodsDisk);
+}
+
+int registerDiskKinds(lua_State* luaSt)
+{
+    int table;
+
+    lua_newtable(luaSt);
+    table = lua_gettop(luaSt);
+
+    setModelTableItem(luaSt, table, createMiyamotoNagaiDisk, "miyamotoNagai");
+    setModelTableItem(luaSt, table, createExponentialDisk, "exponential");
+
+    lua_setglobal(luaSt, "diskModels");
+
+    return 0;
 }
 

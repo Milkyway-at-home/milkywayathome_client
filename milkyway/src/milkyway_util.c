@@ -442,9 +442,9 @@ size_t mwDivRoundup(size_t a, size_t b)
     return (a % b != 0) ? a / b + 1 : a / b;
 }
 
-mwvector mwRandomVector(dsfmt_t* dsfmtState)
+/* Pick from unit cube. i.e. not normalized */
+mwvector mwRandomUnitPoint(dsfmt_t* dsfmtState)
 {
-    /* pick from unit cube */
     mwvector vec;
 
     X(vec) = mwUnitRandom(dsfmtState);
@@ -454,6 +454,29 @@ mwvector mwRandomVector(dsfmt_t* dsfmtState)
 
     return vec;
 }
+
+mwvector mwRandomPoint(dsfmt_t* dsfmtState, real s)
+{
+    mwvector v = mwRandomUnitPoint(dsfmtState);
+    mw_incmulvs(v, s);
+    return v;
+}
+
+/* Random direction */
+mwvector mwRandomUnitVector(dsfmt_t* dsfmtState)
+{
+    mwvector v = mwRandomUnitPoint(dsfmtState);
+    mw_normalize(v);
+    return v;
+}
+
+mwvector mwRandomVector(dsfmt_t* dsfmtState, real r)
+{
+    mwvector v = mwRandomUnitVector(dsfmtState);
+    mw_incmulvs(v, r);
+    return v;
+}
+
 
 /* Check for a timesteps etc. which will actually finish. */
 int mwCheckNormalPosNumEps(real n)

@@ -51,6 +51,17 @@ Potential* expectPotential(lua_State* luaSt, int idx)
     return (Potential*) expectType(luaSt, idx, POTENTIAL_TYPE);
 }
 
+int getPotential(lua_State* luaSt, void* v)
+{
+    return pushPotential(luaSt, (Potential*) v);
+}
+
+int setPotential(lua_State* luaSt, void* v)
+{
+    *(Potential*) v = *checkPotential(luaSt, -1);
+    return 0;
+}
+
 static int createPotential(lua_State* luaSt)
 {
     Potential p = EMPTY_POTENTIAL;

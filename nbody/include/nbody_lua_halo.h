@@ -34,5 +34,7 @@ int registerHalo(lua_State* luaSt);
 int getHalo(lua_State* luaSt, void* v);
 int setHalo(lua_State* luaSt, void* v);
 
+int registerHaloKinds(lua_State* luaSt);
+
 #endif /* _NBODY_LUA_HALO_H_ */
 

@@ -77,10 +77,63 @@ static int dsfmtGenrandOpenClose(lua_State* luaSt)
     return 1;
 }
 
+static int dsfmtRandomUnitPoint(lua_State* luaSt)
+{
+    pushVector(luaSt, mwRandomUnitPoint(checkDSFMT(luaSt, 1)));
+    return 1;
+}
+
+static int dsfmtRandomUnitVector(lua_State* luaSt)
+{
+    pushVector(luaSt, mwRandomUnitVector(checkDSFMT(luaSt, 1)));
+    return 1;
+}
+
+static int dsfmtRandomBool(lua_State* luaSt)
+{
+    dsfmt_t* d = checkDSFMT(luaSt, 1);
+    lua_pushboolean(luaSt, (int) mw_round(dsfmt_genrand_open_open(d)));
+    return 1;
+}
+
+static int dsfmtRandomListItem(lua_State* luaSt)
+{
+    dsfmt_t* d;
+    int table, n, i;
+
+    d = checkDSFMT(luaSt, 1);
+    table = mw_lua_checktable(luaSt, 2);
+
+    n = luaL_getn(luaSt, table);
+    i = mw_round(mwXrandom(d, 0, n));
+
+    lua_rawgeti(luaSt, table, i + 1);
+
+    return 1;
+}
+
+
 static int dsfmtRandomVector(lua_State* luaSt)
 {
-    pushVector(luaSt, mwRandomVector(checkDSFMT(luaSt, 1)));
-    return 1;
+    dsfmt_t* dsfmtState;
+    real r;
+    int nArgs;
+
+    nArgs = lua_gettop(luaSt);
+
+    if (nArgs == 1)
+        return dsfmtRandomUnitVector(luaSt);
+    else if (nArgs == 2)
+    {
+        dsfmtState = checkDSFMT(luaSt, 1);
+        r = luaL_checknumber(luaSt, 2);
+        pushVector(luaSt, mwRandomVector(dsfmtState, r));
+        return 1;
+    }
+    else
+    {
+        return luaL_argerror(luaSt, 3, "Expected 1 or 2 arguments");
+    }
 }
 
 static int dsfmtRandomRange(lua_State* luaSt)
@@ -135,8 +188,12 @@ static const luaL_reg methodsDSFMT[] =
     { "genrandOpenClose",   dsfmtGenrandOpenClose   },
 
     /* Nicer bindings */
-    { "random",             dsfmtRandomRange  },
-    { "randomVector",       dsfmtRandomVector },
+    { "random",             dsfmtRandomRange        },
+    { "randomUnitPoint",    dsfmtRandomUnitPoint    },
+    { "randomUnitVector",   dsfmtRandomUnitVector   },
+    { "randomVector",       dsfmtRandomVector       },
+    { "randomBool",         dsfmtRandomBool         },
+    { "randomListItem",     dsfmtRandomListItem     },
     { NULL, NULL }
 };
 

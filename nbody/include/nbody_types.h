@@ -440,10 +440,19 @@ typedef enum
 
 int destroyNBodyState(NBodyState* st);
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, unsigned int nbody);
-void cloneNBodyState(NBodyState* st, const NBodyState* oldSt, const unsigned int nbody);
+void cloneNBodyState(NBodyState* st, const NBodyState* oldSt);
 int equalNBodyState(const NBodyState* st1, const NBodyState* st2);
 
 void sortBodies(Body* bodies, unsigned int nbody);
+
+int equalSpherical(const Spherical* s1, const Spherical* s2);
+int equalHalo(const Halo* h1, const Halo* h2);
+int equalDisk(const Disk* d1, const Disk* d2);
+int equalPotential(const Potential* p1, const Potential* p2);
+
+int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2);
+
+int equalHistogramParams(const HistogramParams* hp1, const HistogramParams* hp2);
 
 #endif /* _NBODY_TYPES_H_ */
 

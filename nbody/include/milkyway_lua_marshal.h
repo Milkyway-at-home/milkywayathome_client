@@ -145,5 +145,7 @@ int pushLightType(lua_State* luaSt, const char* typeName, void* p);
 
 void* expectType(lua_State* luaSt, int idx, const char* typeName);
 
+void setModelTableItem(lua_State* luaSt, int table, lua_CFunction generator, const char* name);
+
 #endif /* _MILKYWAY_LUA_MARSHAL_H_ */
 

@@ -34,6 +34,7 @@ int registerSpherical(lua_State* luaSt);
 int setSpherical(lua_State* luaSt, void* v);
 int getSpherical(lua_State* luaSt, void* v);
 
+int registerSphericalKinds(lua_State* luaSt);
 
 #endif /* _NBODY_LUA_SPHERICAL_H_ */
 

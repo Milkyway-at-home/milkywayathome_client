@@ -54,7 +54,7 @@ static int luaPlummerTimestepIntegral(lua_State* luaSt)
 {
     int nArgs;
     static real smalla = 0.0, biga = 0.0, Md = 0.0, encMass = 0.0;
-    static real step = 1.0e-5;
+    static real step = 0.0;
 
     static const MWNamedArg argTable[] =
         {
@@ -65,6 +65,7 @@ static int luaPlummerTimestepIntegral(lua_State* luaSt)
             END_MW_NAMED_ARG
         };
 
+    step = 1.0e-5;  /* Reset default step */
     nArgs = lua_gettop(luaSt);
     if (nArgs == 1 && lua_istable(luaSt, 1))
     {
@@ -174,11 +175,6 @@ static int luaReverseOrbit(lua_State* luaSt)
     return 2;
 }
 
-static void setModelTableItem(lua_State* luaSt, int table, lua_CFunction generator, const char* name)
-{
-    lua_pushcfunction(luaSt, generator);
-    lua_setfield(luaSt, table, name);
-}
 
 void registerPredefinedModelGenerators(lua_State* luaSt)
 {
