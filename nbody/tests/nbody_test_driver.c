@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_priv.h"
 #include "nbody_lua_types.h"
 #include "milkyway_lua_marshal.h"
+#include "milkyway_lua_util.h"
 #include "nbody_plummer.h"
 
 
@@ -385,7 +386,7 @@ static int installHashFunctions(lua_State* luaSt)
 }
 
 
-static int runNBodyTest(const char* file)
+static int runNBodyTest(const char* file, const char** args, unsigned int nArgs)
 {
     int rc;
     lua_State* luaSt;
@@ -398,7 +399,7 @@ static int runNBodyTest(const char* file)
     installHashFunctions(luaSt);
     registerNBodyTestFunctions(luaSt);
 
-    rc = luaL_dofile(luaSt, file);
+    rc = dofileWithArgs(luaSt, file, args, nArgs);
     if (rc)
         mw_lua_pcall_warn(luaSt, "Error evaluating script");
 
@@ -416,7 +417,7 @@ int main(int argc, const char* argv[])
 
     nbodyTestInit();
 
-    rc = runNBodyTest(testScript);
+    rc = runNBodyTest(testScript, &argv[2], argc - 2);
 
     nbodyTestCleanup();
 

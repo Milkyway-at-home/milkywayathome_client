@@ -27,13 +27,14 @@ add_executable(nbody_test_driver nbody_test_driver.c)
 target_link_libraries(nbody_test_driver ${OPENSSL_LIBRARIES} ${nbody_exe_link_libs})
 
 
-add_test(checkpoint_test "${EXECUTABLE_OUTPUT_PATH}/nbody_test_driver" "CheckpointTest.lua")
+add_test(NAME checkpoint_test
+         COMMAND nbody_test_driver "CheckpointTest.lua")
 
 
 
 set(body_counts 100 1024 2048)
 #set(seeds       670828913 886885833 715144259 430281807 543966758)
-set(seeds       670828913)
+set(seeds       670828913 886885833 715144259)
 
 set(orphan_model_names model_1
                        model_2
@@ -46,20 +47,31 @@ set(orphan_model_names model_1
                        model_triaxial)
 
 
-
-set(nbody_test_units_driver "RunTestUnits.lua")
-set(nbody_bin "${EXECUTABLE_OUTPUT_PATH}/${nbody_bin_name}")
-
-
-foreach(seed ${seeds})
-  foreach(model_name ${orphan_model_names})
-         add_test(${model_name}__${seed}_100 ${LUA_INTERPRETER}
-                    ${nbody_test_driver} ${nbody_bin}
-                                         "orphan_models"
-                                         ${model_name}
-                                         "orphan_model_histogram"
-                                         ${seed}
-                                         100)
-       endforeach()
+foreach(n ${body_counts})
+  foreach(seed ${seeds})
+    foreach(model_name ${orphan_model_names})
+      add_test(NAME ${model_name}__${seed}_${n}
+                 COMMAND ${LUA_INTERPRETER} "RunTestUnits.lua"
+                                            $<TARGET_FILE:${nbody_bin_name}>
+                                            "orphan_models"
+                                            ${model_name}
+                                            "orphan_model_histogram"
+                                            ${n}
+                                            ${seed})
+    endforeach()
+  endforeach()
 endforeach()
+
+function(make_bodycount_test_set n)
+  add_custom_target(test_${n} COMMAND ${CMAKE_CTEST_COMMAND} -R "model_.*_${n}"
+                              DEPENDS ${nbody_bin_name}
+                              COMMENT "Running model tests with ${n} bodies")
+endfunction()
+
+foreach(n ${body_counts})
+  make_bodycount_test_set(${n})
+endforeach()
+
+add_custom_target(quick_test COMMAND ${CMAKE_CTEST_COMMAND} -R "model_.*__670828913_100"
+                             DEPENDS ${nbody_bin_name})
 

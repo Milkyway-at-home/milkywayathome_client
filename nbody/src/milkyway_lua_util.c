@@ -151,3 +151,51 @@ void mw_lua_openlibs(lua_State* luaSt, mwbool debug)
         mw_luaL_register(luaSt, debugOnlyLibs);
 }
 
+static int doWithArgs(lua_State* luaSt, const char** args, unsigned int nArgs)
+{
+    unsigned int i;
+
+    if (args)
+    {
+        for (i = 0; i < nArgs; ++i)
+            lua_pushstring(luaSt, args[i]);
+    }
+
+    if (lua_pcall(luaSt, nArgs, 0, 0))
+    {
+        mw_lua_pcall_warn(luaSt, "Error evaluating script");
+        return 1;
+    }
+
+    return 0;
+}
+
+
+int dostringWithArgs(lua_State* luaSt,
+                     const char* str,
+                     const char** args,
+                     unsigned int nArgs)
+{
+    if (luaL_loadstring(luaSt, str))
+    {
+        mw_lua_pcall_warn(luaSt, "Error loading Lua script");
+        return 1;
+    }
+
+    return doWithArgs(luaSt, args, nArgs);
+}
+
+int dofileWithArgs(lua_State* luaSt,
+                   const char* filename,
+                   const char** args,
+                   unsigned int nArgs)
+{
+    if (luaL_loadfile(luaSt, filename))
+    {
+        mw_lua_pcall_warn(luaSt, "Error loading Lua script");
+        return 1;
+    }
+
+    return doWithArgs(luaSt, args, nArgs);
+}
+

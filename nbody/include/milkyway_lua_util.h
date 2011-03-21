@@ -25,5 +25,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 int registerUtilityFunctions(lua_State* luaSt);
 void mw_lua_openlibs(lua_State *L, mwbool debug);
 
+int dostringWithArgs(lua_State* luaSt, const char* str, const char** args, unsigned int nArgs);
+int dofileWithArgs(lua_State* luaSt, const char* filename, const char** args, unsigned int nArgs);
+
 #endif /* _MILKYWAY_LUA_UTIL_H_ */
 

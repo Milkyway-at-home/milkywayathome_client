@@ -107,31 +107,6 @@ lua_State* nbodyLuaOpen(mwbool debug)
     return luaSt;
 }
 
-static int dostringWithArgs(lua_State* luaSt, const char* str, const NBodyFlags* nbf)
-{
-    unsigned int i;
-
-    if (luaL_loadstring(luaSt, str))
-    {
-        mw_lua_pcall_warn(luaSt, "Error loading Lua script");
-        return 1;
-    }
-
-    if (nbf->forwardedArgs)
-    {
-        for (i = 0; i < nbf->numForwardedArgs; ++i)
-            lua_pushstring(luaSt, nbf->forwardedArgs[i]);
-    }
-
-    if (lua_pcall(luaSt, nbf->numForwardedArgs, 0, 0))
-    {
-        mw_lua_pcall_warn(luaSt, "Error evaluating script");
-        return 1;
-    }
-
-    return 0;
-}
-
 /* Open a lua_State, bind run information such as server arguments and
  * BOINC status, and evaluate input script. */
 static lua_State* nbodyOpenLuaStateWithScript(const NBodyFlags* nbf)
@@ -154,7 +129,7 @@ static lua_State* nbodyOpenLuaStateWithScript(const NBodyFlags* nbf)
         return NULL;
     }
 
-    if (dostringWithArgs(luaSt, script, nbf))
+    if (dostringWithArgs(luaSt, script, nbf->forwardedArgs, nbf->numForwardedArgs))
     {
         lua_close(luaSt);
         luaSt = NULL;

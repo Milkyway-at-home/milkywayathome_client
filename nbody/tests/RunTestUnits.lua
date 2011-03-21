@@ -1,20 +1,14 @@
 
 arg = {...}
 
-assert(#arg == 6, "Test driver expected 4 arguments got " .. #arg)
+assert(#arg == 6, "Test driver expected 6 arguments got " .. #arg)
 
 nbodyBinary = arg[1]
 testDir = arg[2]
 testName = arg[3]
 histogramName = arg[4]
-testSeed = arg[5]
-testBodies = arg[6]
-
-
---testDir = "tests"
---testDir = "orphan_models"
-
--- Name of test is testName+histogramName
+testBodies = arg[5]
+testSeed = arg[6]
 
 refResults = {
    ["model_1"] = {
@@ -133,6 +127,7 @@ function runCheckTest(testName, seed, nbody, ...)
 
    return close
 end
+
 
 os.exit(tonumber(runCheckTest(testName, testSeed, testBodies)))
 
