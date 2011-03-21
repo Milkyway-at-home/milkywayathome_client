@@ -746,7 +746,7 @@ int pushType(lua_State* luaSt, const char* typeName, size_t typeSize, void* p)
     if (!lp)
     {
         warn("Creating userdata '%s' failed\n", typeName);
-        return 1;
+        return 0;
     }
 
     luaL_getmetatable(luaSt, typeName);
@@ -761,7 +761,7 @@ int pushType(lua_State* luaSt, const char* typeName, size_t typeSize, void* p)
 
     memcpy(lp, p, typeSize);
 
-    return 0;
+    return 1;
 }
 
 /* toType* functions with a bonus error message */
