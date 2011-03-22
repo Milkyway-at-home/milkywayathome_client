@@ -18,11 +18,13 @@
 --
 --
 
-require "nbody_testing"
+require "NBodyTesting"
+
+local SampleModels = { }
 
 
 -- Each model returns (model, eps2, timestep)
-sampleModels = {
+SampleModels.sampleModels = {
    modelA =
       function(nbody, seed)
          local mod, eps2, dt
@@ -74,9 +76,9 @@ sampleModels = {
       end
 }
 
-sampleModelNames = getKeyNames(sampleModels)
+SampleModels.sampleModelNames = getKeyNames(SampleModels.sampleModels)
 
-function randomPlummer(prng, maxN)
+SampleModels.randomPlummer = function(prng, maxN)
    if prng == nil then
       prng = DSFMT.create()
    end
@@ -95,4 +97,8 @@ function randomPlummer(prng, maxN)
       ignore      = prng:randomBool()
    }
 end
+
+
+return SampleModels
+
 

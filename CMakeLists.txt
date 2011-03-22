@@ -176,10 +176,6 @@ if(APPLE AND BOINC_APPLICATION)
   endif()
 endif()
 
-#Some kind of workaround for a popular cmake bug where make test
-#doesn't behave as anyone would ever expect.
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-
 option(SEPARATION_OPENCL
         "Build the OpenCL separation" OFF)
 

@@ -18,9 +18,9 @@
 --
 --
 
-require "nbody_testing"
-require "sample_models"
-require "sample_potentials"
+require "NBodyTesting"
+SM = require "SampleModels"
+SP = require "SamplePotentials"
 
 function randomNBodyCtx(prng)
    if prng == nil then
@@ -70,11 +70,10 @@ for i = 1, nTests do
    local ctx, pot, m
    local prng = DSFMT.create()
 
-
    ctx = randomNBodyCtx(prng)
-   pot = randomPotential(prng)
+   pot = SP.randomPotential(prng)
    ctx.potential = pot  -- Kind of dumb hack so I don't have to fix separate potential in everything else
-   m = randomPlummer(prng, 500)
+   m = SM.randomPlummer(prng, 500)
 
    st = NBodyState.create(ctx, pot, m)
 

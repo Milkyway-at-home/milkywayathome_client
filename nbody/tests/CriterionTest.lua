@@ -18,9 +18,9 @@
 --
 --
 
-require "nbody_testing"
-require "sample_models"
-require "sample_potentials"
+require "NBodyTesting"
+require "SampleModels"
+require "SamplePotentials"
 
 
 local function createTestCritCtx(crit)

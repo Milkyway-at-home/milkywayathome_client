@@ -18,18 +18,15 @@
 --
 --
 
-require "nbody_testing"
-require "sample_potentials"
-require "sample_models"
-
-testModels = sampleModels  -- FIXME
-testPotentials = samplePotentials
+require "NBodyTesting"
+SP = require "SamplePotentials"
+SM = require "SampleModels"
 
 -- returns (ctx, potential, st)
 function getTestNBodyState(t)
    local ctx, pot, model, bodies
-   pot = testPotentials[t.potential]
-   model = testModels[t.model]
+   pot = SP.samplePotentials[t.potential]
+   model = SM.sampleModels[t.model]
    bodies, eps2, dt = model(t.nbody, t.seed)
 
    ctx = NBodyCtx.create{
@@ -47,8 +44,8 @@ function getTestNBodyState(t)
 end
 
 local resultTable = {
-   potentials   = samplePotentialNames,
-   models       = sampleModelNames,
+   potentials   = SP.samplePotentialNames,
+   models       = SM.sampleModelNames,
    nbody        = { 100, 1024, 2048 },
    nSteps       = { 0, 1, 3, 10 },
    seeds        = { 1234567890, 609746760, 1000198000 },
@@ -89,20 +86,9 @@ local tests = buildAllCombinations(
 
 
 
-smallerList = { }
-j = 1
-for i = 1, 38000, 1000 do
-   smallerList[j] = tests[i]
-   j = j + 1
-end
 
---resultTable = generateTestResults(tests, resultTable)
---printTable(resultTable)
-
-generateResultsToFile(smallerList, { }, "small_results")
-smallLoad = loadResultsFromFile("small_results")
-printTable(smallLoad)
-
+resultTable = generateTestResults(tests, resultTable)
+printTable(resultTable)
 
 
 brokenTest = {

@@ -36,6 +36,9 @@ add_test(NAME criterion_test
 add_test(NAME context_test
          COMMAND nbody_test_driver "ContextTest.lua")
 
+# Run these first 3 tests
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -I 1,3,1)
+
 
 
 set(body_counts 100 1024 10000)

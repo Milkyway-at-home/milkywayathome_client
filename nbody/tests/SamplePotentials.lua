@@ -18,9 +18,11 @@
 --
 --
 
-require "nbody_testing"
+require "NBodyTesting"
 
-function buildAllDisks()
+local SamplePotentials = { }
+
+SamplePotentials.buildAllDisks = function()
    local miyamotoNagaiDisks, exponentialDisks
    miyamotoNagaiDisks = buildAllCombinations(
       function(m, a, b)
@@ -42,7 +44,7 @@ function buildAllDisks()
    return mergeTables(miyamotoNagaiDisks, exponentialDisks)
 end
 
-function buildAllSphericals()
+SamplePotentials.buildAllSphericals = function()
    return buildAllCombinations(
       function(m, s)
          return Spherical.spherical{ mass = m, scale = s }
@@ -53,7 +55,7 @@ function buildAllSphericals()
 end
 
 
-function buildAllHalos()
+SamplePotentials.buildAllHalos = function()
    local logHalos, nfwHalos, triaxialHalos
 
    logHalos = buildAllCombinations(
@@ -91,13 +93,13 @@ function buildAllHalos()
    return mergeTables(logHalos, nfwHalos, triaxialHalos)
 end
 
-function makeAllPotentials()
+SamplePotentials.makeAllPotentials = function()
    return buildAllCombinations(Potential.create, allSphericals, allDisks, allHalos)
 end
 
 -- Artificial tests, should have at least every combination of
 -- spherical, disk, halo component types.
-samplePotentials = {
+SamplePotentials.samplePotentials = {
    potentialA = Potential.create{
       spherical = Spherical.spherical{
          mass  = 1.5e5,
@@ -214,9 +216,9 @@ samplePotentials = {
    }
 }
 
-samplePotentialNames = getKeyNames(samplePotentials)
+SamplePotentials.samplePotentialNames = getKeyNames(SamplePotentials.samplePotentials)
 
-function randomHalo(prng)
+SamplePotentials.randomHalo = function(prng)
    if prng == nil then
       prng = DSFMT.create()
    end
@@ -248,7 +250,7 @@ function randomHalo(prng)
    end
 end
 
-function randomDisk(prng)
+SamplePotentials.randomDisk = function(prng)
    if prng == nil then
       prng = DSFMT.create()
    end
@@ -271,7 +273,7 @@ function randomDisk(prng)
    end
 end
 
-function randomSpherical(prng)
+SamplePotentials.randomSpherical = function(prng)
    if prng == nil then
       prng = DSFMT.create()
    end
@@ -282,13 +284,15 @@ function randomSpherical(prng)
    }
 end
 
-function randomPotential(prng)
+SamplePotentials.randomPotential = function(prng)
    return Potential.create{
-      spherical = randomSpherical(prng),
-      disk      = randomDisk(prng),
-      halo      = randomHalo(prng)
+      spherical = SamplePotentials.randomSpherical(prng),
+      disk      = SamplePotentials.randomDisk(prng),
+      halo      = SamplePotentials.randomHalo(prng)
    }
 end
 
+
+return SamplePotentials
 
 
