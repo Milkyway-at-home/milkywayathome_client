@@ -22,6 +22,8 @@ require "NBodyTesting"
 SP = require "SamplePotentials"
 SM = require "SampleModels"
 
+local generatingResults = true
+
 -- returns (ctx, potential, st)
 function getTestNBodyState(t)
    local ctx, pot, model, bodies
@@ -46,84 +48,62 @@ end
 local resultTable = {
    potentials   = SP.samplePotentialNames,
    models       = SM.sampleModelNames,
-   nbody        = { 100, 1024, 2048 },
-   nSteps       = { 0, 1, 3, 10 },
+   nbody        = { 100, 1024 },
+   nSteps       = { 1, 3, 8 },
    seeds        = { 1234567890, 609746760, 1000198000 },
-   thetas       = { 1.0, 0.9, 0.7, 0.5, 0.3 },
+   thetas       = { 1.0, 0.9, 0.5, 0.3 },
    treeRSizes   = { 8.0, 4.0, 2.0, 1.0 },
    criterion    = { "SW93", "NewCriterion", "BH86", "Exact" },
    useQuads     = { true, false },
-   allowIncests = { true, false }
+   allowIncests = { true }  -- Might as well allow it for the tests.
 }
 
+-- Get list of all tests
+local function generateFullTestSet()
+   return buildAllCombinations(
+      function(potential, model, nbody, nSteps, seed, theta, rsize, crit, useQuad, allowIncest)
+         local c = { }
+         c.doublePrec  = true
+         c.potential   = potential
+         c.model       = model
+         c.nbody       = nbody
+         c.nSteps      = nSteps
+         c.seed        = seed
+         c.theta       = theta
+         c.treeRSize   = rsize
+         c.criterion   = crit
+         c.useQuad     = useQuad
+         c.allowIncest = allowIncest
+         return c
+      end,
+      resultTable.potentials,
+      resultTable.models,
+      resultTable.nbody,
+      resultTable.nSteps,
+      resultTable.seeds,
+      resultTable.thetas,
+      resultTable.treeRSizes,
+      resultTable.criterion,
+      resultTable.useQuads,
+      resultTable.allowIncests)
+end
 
-local tests = buildAllCombinations(
-   function(potential, model, nbody, nSteps, seed, theta, rsize, crit, useQuad, allowIncest)
-      local c = { }
-      c.doublePrec  = true
-      c.potential   = potential
-      c.model       = model
-      c.nbody       = nbody
-      c.nSteps      = nSteps
-      c.seed        = seed
-      c.theta       = theta
-      c.treeRSize   = rsize
-      c.criterion   = crit
-      c.useQuad     = useQuad
-      c.allowIncest = allowIncest
-      return c
-   end,
-   resultTable.potentials,
-   resultTable.models,
-   resultTable.nbody,
-   resultTable.nSteps,
-   resultTable.seeds,
-   resultTable.thetas,
-   resultTable.treeRSizes,
-   resultTable.criterion,
-   resultTable.useQuads,
-   resultTable.allowIncests)
+if generatingResults then
+   local fullTests = generateFullTestSet()
+   print("Running ", #fullTests)
+   generateResultsToFile(fullTests, resultTable, "context_test_results")
+else
+   local set = generateFullTestSet()
+   local refTable = loadResultsFromFile("context_test_results")
 
+   local i, n = 1, #set
+   for _, t in ipairs(set) do
+      print(100 * i / n)
+      checkTestResult(t, refTable)
+      i = i + 1
+   end
+end
 
-
-
-resultTable = generateTestResults(tests, resultTable)
-printTable(resultTable)
-
-
-brokenTest = {
-   theta = 0.7,
-   treeRSize = 4,
-   allowIncest = true,
-   useQuad = true,
-   criterion = "NewCriterion",
-   model = "modelB",
-   nSteps = 1,
-   nbody = 100,
-   potential = "potentialA",
-   seed = 609746760
-}
-
-sampleLookup = {
-   theta = 1,
-   treeRSize = 2,
-   seed = 1234567890,
-   nbody = 100,
-   model = "modelB",
-   allowIncest = true,
-   nSteps = 1,
-   criterion = "BH86",
-   potential = "potentialA",
-   doublePrec = true,
-   useQuad = true
-}
-
-printTable(findTestResult(sampleLookup, smallLoad))
-
-printResult(sampleLookup)
-
-print("-------------")
-printResult(findTestResult(sampleLookup, smallLoad))
 
 
 

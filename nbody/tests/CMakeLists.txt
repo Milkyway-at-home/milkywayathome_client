@@ -39,6 +39,7 @@ add_test(NAME context_test
 # Run these first 3 tests
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -I 1,3,1)
 
+# TODO: Test with known tree incest to check return status right
 
 
 set(body_counts 100 1024 10000)
@@ -77,6 +78,12 @@ foreach(n ${body_counts})
 endforeach()
 
 
-add_custom_target(context_test COMMAND ${CMAKE_CTEST_COMMAND} -R "context_test"
-                               DEPENDS ${nbody_bin_name})
+# compress: ${CMAKE_COMMAND} -E tar cvfj test_output.tar.bz2 test_output
+#execute_process(COMMAND ${CMAKE_COMMAND} -E tar xvfj "context_test_results.tar.bz2"
+#                  WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests")
+
+
+add_custom_target(context_test COMMAND ${CMAKE_CTEST_COMMAND} -R "context_test")
+
+
 

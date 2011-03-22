@@ -121,30 +121,34 @@ function runTest(t)
 end
 
 
-function generateTestResults(tests, resultTable)
+function runTestSet(tests, resultTable)
    resultTable.hashtable = { }
 
+   local i = 1
+
    for _, t in ipairs(tests) do
+      print("Running test ", i, 100 * i / #tests)
+      printResult(t)
       local resultHash, status, failed = runTest(t)
       local testHash = hashNBodyTest(t)
       resultTable.hashtable[testHash] = t
       resultTable.hashtable[testHash].result = resultHash
       resultTable.hashtable[testHash].status = status
       resultTable.hashtable[testHash].failed = failed
+      i = i + 1
+
    end
 
    return resultTable
 end
 
 function generateResultsToFile(tests, resultTable, file)
-   resultTable = generateTestResults(tests, resultTable)
+   resultTable = runTestSet(tests, resultTable)
    persistence.store(file, resultTable)
 end
 
 function loadResultsFromFile(file)
-   local loaded = persistence.load(file)
-   assert(loaded ~= nil, "Failed to load results from file " .. file)
-   return loaded
+   return assert(persistence.load(file), "Failed to load results from file " .. file)
 end
 
 function findTestResult(result, resultTable)
@@ -199,7 +203,7 @@ function printResult(t)
 
    result      = "%s",
    status      = "%s",
-   failed      = "%s"
+   failed      = %s
 ]]
 
    if (t.result ~= nil) then
