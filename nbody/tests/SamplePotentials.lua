@@ -94,7 +94,11 @@ SamplePotentials.buildAllHalos = function()
 end
 
 SamplePotentials.makeAllPotentials = function()
-   return buildAllCombinations(Potential.create, allSphericals, allDisks, allHalos)
+  return buildAllCombinations(Potential.create,
+                              SamplePotentials.buildAllSphericals(),
+                              SamplePotentials.buildAllDisks(),
+                              SamplePotentials.buildAllHalos())
+
 end
 
 -- Artificial tests, should have at least every combination of
@@ -227,23 +231,23 @@ SamplePotentials.randomHalo = function(prng)
 
    if type == 0 then
       return Halo.logarithmic{
-         vhalo       = prng:random(),
-         scaleLength = prng:random(),
-         flattenZ    = prng:random()
+         vhalo       = prng:random(10, 200),
+         scaleLength = prng:random(3, 100),
+         flattenZ    = prng:random(0, 3)
       }
    elseif type == 1 then
       return Halo.nfw{
-         vhalo       = prng:random(),
-         scaleLength = prng:random()
+         vhalo       = prng:random(1, 300),
+         scaleLength = prng:random(0.1, 40)
       }
    elseif type == 2 then
       return Halo.triaxial{
-         vhalo       = prng:random(),
-         scaleLength = prng:random(),
-         flattenX    = prng:random(),
-         flattenY    = prng:random(),
-         flattenZ    = prng:random(),
-         triaxAngle  = prng:random()
+         vhalo       = prng:random(1, 200),
+         scaleLength = prng:random(0.1, 30),
+         flattenX    = prng:random(0, 4),
+         flattenY    = prng:random(0, 3),
+         flattenZ    = prng:random(0, 4),
+         triaxAngle  = prng:random(0, 180)
       }
    else
       assert(false)
@@ -259,14 +263,14 @@ SamplePotentials.randomDisk = function(prng)
 
    if type == 0 then
       return Disk.miyamotoNagai{
-         mass        = prng:random(),
-         scaleLength = prng:random(),
-         scaleHeight = prng:random()
+         mass        = prng:random(1.0e4, 5.0e7),
+         scaleLength = prng:random(1, 10),
+         scaleHeight = prng:random(1, 10)
       }
    elseif type == 1 then
       return Disk.exponential{
-         mass        = prng:random(),
-         scaleLength = prng:random()
+         mass        = prng:random(1.0e4, 5.0e7),
+         scaleLength = prng:random(1, 12)
       }
    else
       assert(false)
@@ -279,8 +283,8 @@ SamplePotentials.randomSpherical = function(prng)
    end
 
    return Spherical.spherical{
-      mass  = prng:random(),
-      scale = prng:random()
+      mass  = prng:random(1.0e4, 9e7),
+      scale = prng:random(0, 4)
    }
 end
 
