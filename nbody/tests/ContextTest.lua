@@ -24,7 +24,8 @@ require "sample_models"
 
 testModels = sampleModels  -- FIXME
 testPotentials = samplePotentials
--- returns (ctx, st)
+
+-- returns (ctx, potential, st)
 function getTestNBodyState(t)
    local ctx, pot, model, bodies
    pot = testPotentials[t.potential]
@@ -45,20 +46,21 @@ function getTestNBodyState(t)
    return ctx, pot, NBodyState.create(ctx, pot, bodies)
 end
 
-resultTable = { potentials   = samplePotentialNames,
-                models       = sampleModelNames,
-                nbody        = { 100, 200 },
-                nSteps       = { 0, 1, 3, 10 },
-                seeds        = { 1234567890, 609746760, 1000198000 },
-                thetas       = { 1.0, 0.9, 0.7, 0.5, 0.3 },
-                treeRSizes   = { 4.0, 8.0, 2.0, 1.0 },
-                criterion    = { "sw93", "NewCriterion", "BH86", "Exact" },
-                useQuads     = { true, false },
-                allowIncests = { true, false }
-             }
+local resultTable = {
+   potentials   = samplePotentialNames,
+   models       = sampleModelNames,
+   nbody        = { 100, 1024, 2048 },
+   nSteps       = { 0, 1, 3, 10 },
+   seeds        = { 1234567890, 609746760, 1000198000 },
+   thetas       = { 1.0, 0.9, 0.7, 0.5, 0.3 },
+   treeRSizes   = { 8.0, 4.0, 2.0, 1.0 },
+   criterion    = { "SW93", "NewCriterion", "BH86", "Exact" },
+   useQuads     = { true, false },
+   allowIncests = { true, false }
+}
 
 
-tests = buildAllCombinations(
+local tests = buildAllCombinations(
    function(potential, model, nbody, nSteps, seed, theta, rsize, crit, useQuad, allowIncest)
       local c = { }
       c.doublePrec  = true

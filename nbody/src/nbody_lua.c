@@ -131,6 +131,7 @@ static lua_State* nbodyOpenLuaStateWithScript(const NBodyFlags* nbf)
 
     if (dostringWithArgs(luaSt, script, nbf->forwardedArgs, nbf->numForwardedArgs))
     {
+        mw_lua_pcall_warn(luaSt, "Error loading Lua script '%s'", nbf->inputFile);
         lua_close(luaSt);
         luaSt = NULL;
     }

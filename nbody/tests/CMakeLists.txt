@@ -33,10 +33,12 @@ add_test(NAME checkpoint_test
 add_test(NAME criterion_test
          COMMAND nbody_test_driver "CriterionTest.lua")
 
+add_test(NAME context_test
+         COMMAND nbody_test_driver "ContextTest.lua")
 
 
-set(body_counts 100 1024 2048)
-set(seeds       670828913 886885833 715144259 430281807 543966758)
+
+set(body_counts 100 1024 10000)
 
 set(orphan_model_names model_1
                        model_2
@@ -49,23 +51,20 @@ set(orphan_model_names model_1
                        model_triaxial)
 
 
-foreach(n ${body_counts})
-  foreach(seed ${seeds})
-    foreach(model_name ${orphan_model_names})
-      add_test(NAME ${model_name}__${seed}_${n}
-                 COMMAND ${LUA_INTERPRETER} "RunTestUnits.lua"
-                                            $<TARGET_FILE:${nbody_bin_name}>
-                                            "orphan_models"
-                                            ${model_name}
-                                            "orphan_model_histogram"
-                                            ${n}
-                                            ${seed})
-    endforeach()
+foreach(model_name ${orphan_model_names})
+  foreach(n ${body_counts})
+    add_test(NAME ${model_name}__${n}_test
+               COMMAND ${LUA_INTERPRETER} "RunTestUnits.lua"
+                                          $<TARGET_FILE:${nbody_bin_name}>
+                                          "orphan_models"
+                                          ${model_name}
+                                          "orphan_model_histogram"
+                                          ${n})
   endforeach()
 endforeach()
 
 function(make_bodycount_test_set n)
-  add_custom_target(test_${n} COMMAND ${CMAKE_CTEST_COMMAND} -R "model_.*_${n}"
+  add_custom_target(test_${n} COMMAND ${CMAKE_CTEST_COMMAND} -R "model_.*__${n}_test$"
                               DEPENDS ${nbody_bin_name}
                               COMMENT "Running model tests with ${n} bodies")
 endfunction()
@@ -74,6 +73,7 @@ foreach(n ${body_counts})
   make_bodycount_test_set(${n})
 endforeach()
 
-add_custom_target(quick_test COMMAND ${CMAKE_CTEST_COMMAND} -R "model_.*__670828913_100"
-                             DEPENDS ${nbody_bin_name})
+
+add_custom_target(context_test COMMAND ${CMAKE_CTEST_COMMAND} -R "context_test"
+                               DEPENDS ${nbody_bin_name})
 

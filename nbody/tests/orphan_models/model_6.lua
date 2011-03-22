@@ -14,7 +14,7 @@ dwarfRadius = 0.2
 
 function makePotential()
    return Potential.create{
-      spherical = Spherical.spherical{ mass = 1.52954402E5, scale = 0.7 }
+      spherical = Spherical.spherical{ mass = 1.52954402E5, scale = 0.7 },
       disk      = Disk.miyamotoNagai{ mass = 4.45865888E5, scaleLength = 6.5, scaleHeight = 0.26 },
       halo      = Halo.nfw{ vhalo = 155, scaleLength = 22.25 }
    }

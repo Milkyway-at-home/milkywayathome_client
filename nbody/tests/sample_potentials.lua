@@ -88,51 +88,131 @@ function buildAllHalos()
       { 96, 120, 66 }
    )
 
-   return mergeTables(logHalos, nfwHalos, traixialHalos)
+   return mergeTables(logHalos, nfwHalos, triaxialHalos)
 end
 
 function makeAllPotentials()
    return buildAllCombinations(Potential.create, allSphericals, allDisks, allHalos)
 end
 
+-- Artificial tests, should have at least every combination of
+-- spherical, disk, halo component types.
+samplePotentials = {
+   potentialA = Potential.create{
+      spherical = Spherical.spherical{
+         mass  = 1.5e5,
+         scale = 0.7
+      },
 
-function makePotentialA()
-   local disk, halo, spherical
-   disk = Disk.miyamotoNagai{
-      mass        = 4.45865888e5,
-      scaleLength = 6.5,
-      scaleHeight = 0.26
+      disk = Disk.miyamotoNagai{
+         mass        = 4.5e5,
+         scaleLength = 6.0,
+         scaleHeight = 0.3
+      },
+
+      halo = Halo.logarithmic{
+         vhalo       = 80,
+         scaleLength = 15,
+         flattenZ    = 1.0
+      }
+   },
+
+   potentialB = Potential.create{
+      spherical = Spherical.spherical{
+         mass  = 2.0e5,
+         scale = 0.7
+      },
+
+      disk = Disk.exponential{
+         mass        = 9.0e5,
+         scaleLength = 6
+      },
+
+      halo = Halo.logarithmic{
+         vhalo       = 60,
+         scaleLength = 10.0,
+         flattenZ    = 1.1
+      }
+   },
+
+   potentialC = Potential.create{
+      spherical = Spherical.spherical{
+         mass  = 2.0e6,
+         scale = 1.0
+      },
+
+      disk = Disk.exponential{
+         scaleLength = 9,
+         mass        = 9.0e5
+      },
+
+      halo = Halo.nfw{
+         vhalo       = 150,
+         scaleLength = 25
+      }
+   },
+
+   potentialD = Potential.create{
+      spherical = Spherical.spherical{
+         mass  = 2.0e6,
+         scale = 1.0
+      },
+
+      disk = Disk.miyamotoNagai{
+         mass        = 2e6,
+         scaleLength = 7.0,
+         scaleHeight = 0.2
+      },
+
+      halo = Halo.triaxial{
+         vhalo       = 120,
+         scaleLength = 18,
+         flattenZ = 1.45,
+         flattenX = 1.3,
+         flattenY = 1.0,
+         triaxAngle = 96
+      }
+   },
+
+   potentialE = Potential.create{
+      spherical = Spherical.spherical{
+         mass  = 2e5,
+         scale = 0.4
+      },
+
+      disk = Disk.miyamotoNagai{
+         mass        = 7e5,
+         scaleLength = 9.0,
+         scaleHeight = 0.5
+      },
+
+      halo = Halo.nfw{
+         vhalo       = 120,
+         scaleLength = 18,
+      }
+   },
+
+   potentialF = Potential.create{
+      spherical = Spherical.spherical{
+         mass  = 2.0e6,
+         scale = 1.0
+      },
+
+      disk = Disk.exponential{
+         mass        = 3.0e7,
+         scaleLength = 8,
+      },
+
+      halo = Halo.triaxial{
+         vhalo       = 140,
+         scaleLength = 25,
+         flattenZ = 1.3,
+         flattenX = 1.4,
+         flattenY = 1.1,
+         triaxAngle = 112
+      }
    }
-
-   halo = Halo.logarithmic{
-      vhalo       = 73,
-      scaleLength = 12.0,
-      flattenZ    = 1.0
-   }
-
-   spherical = Spherical.spherical{
-      mass  = 1.52954402e5,
-      scale = 0.7
-   }
-
-   return Potential.create{
-      disk      = disk,
-      halo      = halo,
-      spherical = spherical
-   }
-end
-
-function makePotentialB()
-   local potA = deepcopy(makePotentialA())
-   -- Replace disk with exponential disk
-   potA.disk = Disk.exponential{
-      scaleLength = 7,
-      mass        = 5.0e5
-   }
-   return potA
-end
-
-samplePotentials = { potentialA = makePotentialA(), potentialB = makePotentialB() }
+}
 
 samplePotentialNames = getKeyNames(samplePotentials)
 

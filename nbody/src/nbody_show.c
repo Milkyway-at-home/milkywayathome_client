@@ -18,6 +18,7 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define _GNU_SOURCE
 #include <string.h>
 #include <stdio.h>
 #include "nbody_types.h"

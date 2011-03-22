@@ -177,10 +177,7 @@ int dostringWithArgs(lua_State* luaSt,
                      unsigned int nArgs)
 {
     if (luaL_loadstring(luaSt, str))
-    {
-        mw_lua_pcall_warn(luaSt, "Error loading Lua script");
         return 1;
-    }
 
     return doWithArgs(luaSt, args, nArgs);
 }
@@ -191,10 +188,7 @@ int dofileWithArgs(lua_State* luaSt,
                    unsigned int nArgs)
 {
     if (luaL_loadfile(luaSt, filename))
-    {
-        mw_lua_pcall_warn(luaSt, "Error loading Lua script");
         return 1;
-    }
 
     return doWithArgs(luaSt, args, nArgs);
 }
