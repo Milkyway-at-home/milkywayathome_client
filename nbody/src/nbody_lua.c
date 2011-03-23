@@ -164,8 +164,9 @@ static int evaluateContext(lua_State* luaSt, NBodyCtx* ctx)
     return checkNBodyCtxConstants(ctx);
 }
 
-static int evaluatePotential(lua_State* luaSt, Potential* pot)
+static int evaluatePotential(lua_State* luaSt, NBodyCtx* ctx)
 {
+    int top;
     Potential* tmp;
 
     getNBodyPotentialFunc(luaSt);
@@ -175,17 +176,32 @@ static int evaluatePotential(lua_State* luaSt, Potential* pot)
         return 1;
     }
 
-    tmp = expectPotential(luaSt, lua_gettop(luaSt));
-    if (!tmp)
+    top = lua_gettop(luaSt);
+    if (lua_isnoneornil(luaSt, top))
     {
+        ctx->potentialType = EXTERNAL_POTENTIAL_NONE;
         lua_pop(luaSt, 1);
-        return 1;
+        return FALSE;
     }
+    else if (lua_isfunction(luaSt, top))
+    {
+        mw_panic("Feature not implemented\n");
+    }
+    else
+    {
+        tmp = expectPotential(luaSt, top);
+        if (!tmp)
+        {
+            lua_pop(luaSt, 1);
+            return 1;
+        }
 
-    *pot = *tmp;
-    lua_pop(luaSt, 1);
+        ctx->potentialType = EXTERNAL_POTENTIAL_DEFAULT;
+        ctx->pot = *tmp;
 
-    return checkPotentialConstants(pot);
+        lua_pop(luaSt, 1);
+        return checkPotentialConstants(&ctx->pot);
+    }
 }
 
 static int evaluateHistogram(lua_State* luaSt, HistogramParams* hp)
@@ -209,7 +225,7 @@ static int evaluateHistogram(lua_State* luaSt, HistogramParams* hp)
     return rc;
 }
 
-static Body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, const Potential* pot, unsigned int* n)
+static Body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, unsigned int* n)
 {
     int level, nResults;
 
@@ -217,7 +233,11 @@ static Body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, const Potenti
 
     getBodiesFunc(luaSt);
     pushNBodyCtx(luaSt, ctx);
-    pushPotential(luaSt, pot);
+
+    if (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT)
+        pushPotential(luaSt, &ctx->pot);
+    else
+        lua_pushnil(luaSt);
 
     if (lua_pcall(luaSt, 2, LUA_MULTRET, 0))
     {
@@ -238,13 +258,13 @@ static int evaluateInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState
     if (evaluateContext(luaSt, ctx))
         return 1;
 
-    if (evaluatePotential(luaSt, &ctx->pot))
+    if (evaluatePotential(luaSt, ctx))
         return 1;
 
     if (evaluateHistogram(luaSt, hp))
         return 1;
 
-    bodies = evaluateBodies(luaSt, ctx, &ctx->pot, &nbody);
+    bodies = evaluateBodies(luaSt, ctx, &nbody);
     if (!bodies)
         return 1;
 

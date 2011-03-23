@@ -248,13 +248,20 @@ typedef struct NBODY_ALIGN
 
 typedef struct NBODY_ALIGN
 {
-    Spherical sphere[1];  /* 1 for now, flexibility can be added later */
+    Spherical sphere[1];
     Disk disk;
     Halo halo;
-    void* rings;         /* reserved for future use */
+    void* rings;       /* currently unused */
 } Potential;
 
 #define POTENTIAL_TYPE "Potential"
+
+typedef enum
+{
+    EXTERNAL_POTENTIAL_DEFAULT,
+    EXTERNAL_POTENTIAL_NONE,
+    EXTERNAL_POTENTIAL_CUSTOM_LUA
+} ExternalPotentialType;
 
 
 #define Rcrit2(x) (((Cell*) (x))->rcrit2)
@@ -380,6 +387,7 @@ typedef struct
 typedef struct NBODY_ALIGN
 {
     Potential pot;
+    ExternalPotentialType potentialType;
 
     real timestep;
     real timeEvolve;
@@ -431,10 +439,10 @@ typedef enum
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 
 #define EMPTY_TREE { NULL, NAN, 0, 0, FALSE }
-#define EMPTY_NBODYCTX { EMPTY_POTENTIAL, NAN, NAN,                       \
-                         NAN, NAN, NAN,                                   \
-                         NAN, InvalidCriterion,                           \
-                         FALSE, FALSE, FALSE,                             \
+#define EMPTY_NBODYCTX { EMPTY_POTENTIAL, EXTERNAL_POTENTIAL_DEFAULT, NAN, \
+                         NAN, NAN, NAN, NAN,                               \
+                         NAN, InvalidCriterion,                            \
+                         FALSE, FALSE, FALSE,                              \
                          0, 0, EMPTY_HISTOGRAM_PARAMS }
 
 

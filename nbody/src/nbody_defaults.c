@@ -24,6 +24,7 @@ const NBodyCtx defaultNBodyCtx =
 {
     /* Grr lack of C99 named struct initializers in MSVC */
     /* .pot             */  EMPTY_POTENTIAL,
+    /* .potentialType   */  EXTERNAL_POTENTIAL_DEFAULT,
     /* .timestep        */  0.0,
     /* .timeEvolve      */  0.0,
 

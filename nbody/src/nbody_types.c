@@ -302,7 +302,8 @@ int equalHistogramParams(const HistogramParams* hp1, const HistogramParams* hp2)
 
 int equalNBodyCtx(const NBodyCtx* ctx1, const NBodyCtx* ctx2)
 {
-    return feqWithNan(ctx1->timestep, ctx2->timestep)
+    return (ctx1->potentialType == ctx2->potentialType)
+        && feqWithNan(ctx1->timestep, ctx2->timestep)
         && feqWithNan(ctx1->timeEvolve, ctx2->timeEvolve)
         && feqWithNan(ctx1->theta, ctx2->theta)
         && feqWithNan(ctx1->eps2, ctx2->eps2)

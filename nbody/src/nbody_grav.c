@@ -145,7 +145,10 @@ static void reportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
 /* hackGrav: evaluate gravitational field on body p; checks to be
  * sure self-interaction was handled correctly if intree is true.
  */
-HOT
+
+/* Not inlined without inline from multiple calls in
+ * mapForceBody(). Measurably better with the inline, but only
+ * slightly. */
 static inline mwvector hackGrav(const NBodyCtx* ctx, NBodyState* st, const Node* root, const Body* p)
 {
     ForceEvalState fest = EMPTY_FORCE_EVAL_STATE(p);
@@ -160,9 +163,8 @@ static inline mwvector hackGrav(const NBodyCtx* ctx, NBodyState* st, const Node*
 
 static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
 {
-
     unsigned int i;
-    const unsigned int nbody = st->nbody;
+    const unsigned int nbody = st->nbody;  /* Prevent reload on each loop */
     mwvector a, externAcc;
     const Body* b;
 
@@ -171,13 +173,32 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
   #endif
     for (i = 0; i < nbody; ++i)      /* get force on each body */
     {
-        b = &st->bodytab[i];
-        a = hackGrav(ctx, st, (Node*) st->tree.root, b);
+        /* Repeat the base hackGrav part in each case or else GCC's
+         * -funswitch-loops doesn't happen. Without that this constant
+         * gets checked on every body on every step which is dumb.  */
+        switch (ctx->potentialType)
+        {
+            case EXTERNAL_POTENTIAL_DEFAULT:
+                /* Include the external potential */
+                b = &st->bodytab[i];
+                a = hackGrav(ctx, st, (Node*) st->tree.root, b);
 
-        /* Adding the external potential */
-        externAcc = acceleration(&ctx->pot, Pos(b));
-        st->acctab[i] = mw_addv(a, externAcc);
+                externAcc = acceleration(&ctx->pot, Pos(b));
+                st->acctab[i] = mw_addv(a, externAcc);
+                break;
+
+            case EXTERNAL_POTENTIAL_NONE:
+                st->acctab[i] = hackGrav(ctx, st, (Node*) st->tree.root, &st->bodytab[i]);
+                break;
+
+            case EXTERNAL_POTENTIAL_CUSTOM_LUA:
+                mw_panic("Implement me!\n");
+
+            default:
+                fail("Bad external potential type: %d\n", ctx->potentialType);
+        }
     }
+
 }
 
 static inline NBodyStatus incestStatusCheck(const NBodyCtx* ctx, const NBodyState* st)

@@ -203,6 +203,7 @@ if(APPLE AND SYSTEM_IS_X86)
   set(CMAKE_CXX_FLAGS "-msse -msse2 -msse3 ${CMAKE_C_FLAGS}")
 endif()
 
+
 set(gcc_warnings "-Wall"
                  "-Wextra"
                  "-Wshadow"
@@ -225,7 +226,7 @@ set(gcc_warnings "-Wall"
                )
 
 
-set(gcc_extra_flags "-fno-common")
+set(gcc_extra_flags "-fno-common -funswitch-loops")
 
 if(SYSTEM_IS_X86)
   list(APPEND gcc_extra_flags "-maccumulate-outgoing-args")
