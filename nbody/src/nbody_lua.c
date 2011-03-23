@@ -202,6 +202,9 @@ static int evaluatePotential(lua_State* luaSt, NBodyCtx* ctx)
         lua_pop(luaSt, 1);
         return checkPotentialConstants(&ctx->pot);
     }
+
+    assert(0);
+    return 0;
 }
 
 static int evaluateHistogram(lua_State* luaSt, HistogramParams* hp)

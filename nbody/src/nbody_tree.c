@@ -41,7 +41,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 /* subIndex: compute subcell index for body p in cell q. */
-static int subIndex(Body* p, Cell* q)
+static int subIndex(Body* p, NBodyCell* q)
 {
     int ind = 0;
 
@@ -65,11 +65,11 @@ static int subIndex(Body* p, Cell* q)
  */
 
 /* TODO: Incremental matrix operations */
-static void hackQuad(Cell* p)
+static void hackQuad(NBodyCell* p)
 {
     unsigned int ndesc, i;
-    Node* desc[NSUB];
-    Node* q;
+    NBodyNode* desc[NSUB];
+    NBodyNode* q;
     mwvector dr;
     real drsq;
     mwmatrix drdr, Idrsq, tmpm;
@@ -86,7 +86,7 @@ static void hackQuad(Cell* p)
     {
         q = desc[i];                            /* access each one in turn  */
         if (isCell(q))                          /* if it's also a cell      */
-            hackQuad((Cell*) q);                /* then process it first    */
+            hackQuad((NBodyCell*) q);                /* then process it first    */
         dr = mw_subv(Pos(q), Pos(p));           /* find displacement vect.  */
         mw_outv(drdr, dr, dr);                  /* form outer prod. of dr   */
         drsq = mw_sqrv(dr);                     /* and dot prod. dr * dr    */
@@ -105,10 +105,10 @@ static void hackQuad(Cell* p)
 /* threadTree: do a recursive treewalk starting from node p,
  * with next stop n, installing Next and More links.
  */
-static void threadTree(Node* p, Node* n)
+static void threadTree(NBodyNode* p, NBodyNode* n)
 {
     unsigned int ndesc, i;
-    Node* desc[NSUB+1];
+    NBodyNode* desc[NSUB+1];
 
     Next(p) = n;                                /* link to next node */
     if (isCell(p))                              /* any children to thread? */
@@ -130,12 +130,12 @@ static void threadTree(Node* p, Node* n)
  * and expand root cell to fit. The size is doubled at each step to
  * take advantage of exact representation of powers of two.
  */
-static void expandBox(Tree* t, const Body* btab, unsigned int nbody)
+static void expandBox(NBodyTree* t, const Body* btab, unsigned int nbody)
 {
     real xyzmax;
     const Body* p;
 
-    const Cell* root = t->root;
+    const NBodyCell* root = t->root;
 
     xyzmax = 0.0;
     for (p = btab; p < btab + nbody; ++p)
@@ -150,16 +150,16 @@ static void expandBox(Tree* t, const Body* btab, unsigned int nbody)
 }
 
 /* makecell: return pointer to free cell. */
-static Cell* makeCell(NBodyState* st, Tree* t)
+static NBodyCell* makeCell(NBodyState* st, NBodyTree* t)
 {
-    Cell* c;
+    NBodyCell* c;
     size_t i;
 
     if (st->freecell == NULL)                  /* no free cells left? */
-        c = (Cell*) mwMalloc(sizeof(Cell));    /* allocate a new one */
+        c = (NBodyCell*) mwMalloc(sizeof(*c)); /* allocate a new one */
     else                                       /* use existing free cell */
     {
-        c = (Cell*) st->freecell;             /* take one on front */
+        c = (NBodyCell*) st->freecell;             /* take one on front */
         st->freecell = Next(c);               /* go on to next one */
     }
     Type(c) = CELL(0);                          /* initialize cell type */
@@ -170,9 +170,9 @@ static Cell* makeCell(NBodyState* st, Tree* t)
 }
 
 /* newTree: reclaim cells in tree, prepare to build new one. */
-static void newTree(NBodyState* st, Tree* t)
+static void newTree(NBodyState* st, NBodyTree* t)
 {
-    Node* p = (Node*) t->root;              /* start with the root */
+    NBodyNode* p = (NBodyNode*) t->root;              /* start with the root */
 
     while (p != NULL)                       /* loop scanning tree */
     {
@@ -202,7 +202,7 @@ static inline real calcOffset(real pPos, real qPos, real qsize)
 }
 
 ALWAYS_INLINE
-static inline void initMidpoint(Cell* c, const Body* p, const Cell* q, real qsize)
+static inline void initMidpoint(NBodyCell* c, const Body* p, const NBodyCell* q, real qsize)
 {
     X(Pos(c)) = calcOffset(X(Pos(p)), X(Pos(q)), qsize);
     Y(Pos(c)) = calcOffset(Y(Pos(p)), Y(Pos(q)), qsize);
@@ -210,10 +210,10 @@ static inline void initMidpoint(Cell* c, const Body* p, const Cell* q, real qsiz
 }
 
 /* loadBody: descend tree and insert body p in appropriate place. */
-static void loadBody(NBodyState* st, Tree* t, Body* p)
+static void loadBody(NBodyState* st, NBodyTree* t, Body* p)
 {
-    Cell* q;
-    Cell* c;
+    NBodyCell* q;
+    NBodyCell* c;
     size_t qind;
     unsigned int lev;
     real qsize;
@@ -231,14 +231,14 @@ static void loadBody(NBodyState* st, Tree* t, Body* p)
 
             Subp(c)[subIndex((Body*) Subp(q)[qind], c)] = Subp(q)[qind];
             /* put body in cell */
-            Subp(q)[qind] = (Node*) c;    /* link cell in tree */
+            Subp(q)[qind] = (NBodyNode*) c;    /* link cell in tree */
         }
-        q = (Cell*) Subp(q)[qind];        /* advance to next level */
+        q = (NBodyCell*) Subp(q)[qind];        /* advance to next level */
         qind = subIndex(p, q);            /* get index to examine */
         qsize *= 0.5;                     /* shrink current cell */
         ++lev;                            /* count another level */
     }
-    Subp(q)[qind] = (Node*) p;            /* found place, store p */
+    Subp(q)[qind] = (NBodyNode*) p;            /* found place, store p */
     t->maxlevel = MAX(t->maxlevel, lev);  /* remember maximum level */
 }
 
@@ -251,7 +251,7 @@ static inline real bmax2Inc(real cmPos, real pPos, real psize)
 }
 
 ALWAYS_INLINE
-static inline real calcSW93MaxDist2(const Cell* p, const mwvector cmpos, real psize)
+static inline real calcSW93MaxDist2(const NBodyCell* p, const mwvector cmpos, real psize)
 {
     real bmax2;
 
@@ -266,7 +266,7 @@ static inline real calcSW93MaxDist2(const Cell* p, const mwvector cmpos, real ps
 
 /* setRCrit: assign critical radius for cell p, using center-of-mass
  * position cmpos and cell size psize. */
-static inline real findRCrit(const NBodyCtx* ctx, const Cell* p, real treeRSize, mwvector cmpos, real psize)
+static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeRSize, mwvector cmpos, real psize)
 {
     real rc, bmax2;
 
@@ -300,7 +300,7 @@ static inline real findRCrit(const NBodyCtx* ctx, const Cell* p, real treeRSize,
     return sqr(rc);          /* store square of radius */
 }
 
-static inline void checkTreeDim(Tree* tree, const real pPos, const real cmPos, const real halfPsize)
+static inline void checkTreeDim(NBodyTree* tree, const real pPos, const real cmPos, const real halfPsize)
 {
     /* CHECKME: Precision: This gets angry as N gets big, and the divisions get small */
     if (   cmPos < pPos - halfPsize       /* if out of bounds */
@@ -328,7 +328,7 @@ static inline void checkTreeDim(Tree* tree, const real pPos, const real cmPos, c
     }
 }
 
-static inline void checkTreeStructure(Tree* tree, const mwvector pPos, const mwvector cmPos, const real psize)
+static inline void checkTreeStructure(NBodyTree* tree, const mwvector pPos, const mwvector cmPos, const real psize)
 {
     real halfPsize = 0.5 * psize;
 
@@ -341,10 +341,10 @@ static inline void checkTreeStructure(Tree* tree, const mwvector pPos, const mwv
 /* hackCofM: descend tree finding center-of-mass coordinates and
  * setting critical cell radii.
  */
-static void hackCofM(const NBodyCtx* ctx, Tree* tree, Cell* p, real psize)
+static void hackCofM(const NBodyCtx* ctx, NBodyTree* tree, NBodyCell* p, real psize)
 {
     int i;
-    Node* q;
+    NBodyNode* q;
     mwvector cmpos = ZERO_VECTOR;                /* init center of mass */
 
     assert(psize >= REAL_EPSILON);
@@ -356,7 +356,7 @@ static void hackCofM(const NBodyCtx* ctx, Tree* tree, Cell* p, real psize)
         {
             if (isCell(q))                     /* and is it a cell? */
             {
-                hackCofM(ctx, tree, (Cell*) q, 0.5 * psize); /* find subcell cm */
+                hackCofM(ctx, tree, (NBodyCell*) q, 0.5 * psize); /* find subcell cm */
             }
 
             Mass(p) += Mass(q);                       /* sum total mass */
@@ -388,7 +388,7 @@ NBodyStatus makeTree(const NBodyCtx* ctx, NBodyState* st)
 {
     Body* p;
     const Body* endp = st->bodytab + st->nbody;
-    Tree* t = &st->tree;
+    NBodyTree* t = &st->tree;
 
     newTree(st, t);                                  /* flush existing tree, etc */
 
@@ -405,18 +405,19 @@ NBodyStatus makeTree(const NBodyCtx* ctx, NBodyState* st)
     if (st->tree.structureError)
         return NBODY_TREE_STRUCTURE_ERROR;
 
-    threadTree((Node*) t->root, NULL);        /* add Next and More links */
+    threadTree((NBodyNode*) t->root, NULL);        /* add Next and More links */
     if (ctx->useQuad)                           /* including quad moments? */
         hackQuad(t->root);                      /* assign Quad moments */
 
     return NBODY_SUCCESS;
 }
 
+#if 0
 /* For testing */
 static int luaFindRCrit(lua_State* luaSt)
 {
     const NBodyCtx* ctx;
-    Cell p;  /* Test cell, just need a set position */
+    NBodyCell p;  /* Test cell, just need a set position */
     real rSize, pSize;
     mwvector cmPos;
 
@@ -435,5 +436,5 @@ void registerFindRCrit(lua_State* luaSt)
 {
     lua_register(luaSt, "findRCrit", luaFindRCrit);
 }
-
+#endif
 

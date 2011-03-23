@@ -34,7 +34,7 @@ typedef struct
     mwvector acc0;      /* resulting acceleration */
     mwvector dr;        /* vector from q to pos0 */
     const Body* pskip;  /* skip in force evaluation */
-    Cell* qmem;         /* data shared with gravSub */
+    NBodyCell* qmem;         /* data shared with gravSub */
     real drsq;          /* squared distance to pos0 */
 } ForceEvalState;
 
@@ -45,7 +45,7 @@ typedef struct
  * term. Also sets qmem, dr, and drsq for use by gravsub.
  */
 HOT
-static inline mwbool subDivP(ForceEvalState* fest, Cell* q)
+static inline mwbool subDivP(ForceEvalState* fest, NBodyCell* q)
 {
     fest->dr = mw_subv(Pos(q), fest->pos0);   /* compute displacement */
     fest->drsq = mw_sqrv(fest->dr);           /* and find dist squared */
@@ -54,7 +54,7 @@ static inline mwbool subDivP(ForceEvalState* fest, Cell* q)
 }
 
 HOT
-static inline void cellQuadTerm(ForceEvalState* fest, const Node* q, const real drab)
+static inline void cellQuadTerm(ForceEvalState* fest, const NBodyNode* q, const real drab)
 {
     real dr5inv, drquaddr, phiquad;
     mwvector ai, quaddr;
@@ -74,12 +74,12 @@ static inline void cellQuadTerm(ForceEvalState* fest, const Node* q, const real 
  * point pos0, and add to running totals phi0 and acc0.
  */
 HOT
-static inline void gravSub(const NBodyCtx* ctx, ForceEvalState* fest, const Node* q)
+static inline void gravSub(const NBodyCtx* ctx, ForceEvalState* fest, const NBodyNode* q)
 {
     real drab, phii, mor3;
     mwvector ai;
 
-    if (q != (Node*) fest->qmem)                    /* cant use memorized data? */
+    if (q != (NBodyNode*) fest->qmem)                    /* cant use memorized data? */
     {
         fest->dr = mw_subv(Pos(q), fest->pos0);       /* then compute sep. */
         fest->drsq = mw_sqrv(fest->dr);               /* and sep. squared */
@@ -102,20 +102,20 @@ static inline void gravSub(const NBodyCtx* ctx, ForceEvalState* fest, const Node
  */
 static inline mwbool treeScan(const NBodyCtx* ctx,
                               ForceEvalState* fest,
-                              const Node* q)
+                              const NBodyNode* q)
 {
     mwbool skipself = FALSE;
 
     while (q != NULL)               /* while not at end of scan */
     {
         if (   isCell(q)                       /* is node a cell and... */
-            && subDivP(fest, (Cell*) q))       /* too close to accept? */
+            && subDivP(fest, (NBodyCell*) q))       /* too close to accept? */
         {
             q = More(q);            /* follow to next level */
         }
         else                    /* else accept this term */
         {
-            if (q == (Node*) fest->pskip)    /* self-interaction? */
+            if (q == (NBodyNode*) fest->pskip)    /* self-interaction? */
                 skipself = TRUE;             /* then just skip it */
             else                             /* not self-interaction */
                 gravSub(ctx, fest, q);       /* so compute gravity */
@@ -149,7 +149,7 @@ static void reportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
 /* Not inlined without inline from multiple calls in
  * mapForceBody(). Measurably better with the inline, but only
  * slightly. */
-static inline mwvector hackGrav(const NBodyCtx* ctx, NBodyState* st, const Node* root, const Body* p)
+static inline mwvector hackGrav(const NBodyCtx* ctx, NBodyState* st, const NBodyNode* root, const Body* p)
 {
     ForceEvalState fest = EMPTY_FORCE_EVAL_STATE(p);
     mwbool intree = Mass(p) > 0.0;
@@ -181,14 +181,14 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
             case EXTERNAL_POTENTIAL_DEFAULT:
                 /* Include the external potential */
                 b = &st->bodytab[i];
-                a = hackGrav(ctx, st, (Node*) st->tree.root, b);
+                a = hackGrav(ctx, st, (NBodyNode*) st->tree.root, b);
 
                 externAcc = acceleration(&ctx->pot, Pos(b));
                 st->acctab[i] = mw_addv(a, externAcc);
                 break;
 
             case EXTERNAL_POTENTIAL_NONE:
-                st->acctab[i] = hackGrav(ctx, st, (Node*) st->tree.root, &st->bodytab[i]);
+                st->acctab[i] = hackGrav(ctx, st, (NBodyNode*) st->tree.root, &st->bodytab[i]);
                 break;
 
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:

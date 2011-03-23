@@ -212,7 +212,7 @@ int writeCheckpoint(const EvaluationState* es)
     writeState(f, es);
     fclose(f);
 
-    if (mwRename(CHECKPOINT_FILE_TMP, resolvedCheckpointPath))
+    if (mw_rename(CHECKPOINT_FILE_TMP, resolvedCheckpointPath))
     {
         perror("Failed to update checkpoint file");
         return 1;

@@ -58,8 +58,8 @@ void printBodies(const Body* bs, unsigned int n);
 char* showNBodyState(const NBodyState*);
 void printNBodyState(const NBodyState*);
 
-char* showTree(const Tree*);
-void printTree(const Tree*);
+char* showNBodyTree(const NBodyTree*);
+void printNBodyTree(const NBodyTree*);
 
 
 #endif /* _NBODY_SHOW_H_ */

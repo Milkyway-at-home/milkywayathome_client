@@ -24,7 +24,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 
 NBodyStatus makeTree(const NBodyCtx*, NBodyState*);    /* construct tree structure */
+
+#if 0
 void registerFindRCrit(lua_State* luaSt);
+#endif
 
 #endif /* _NBODY_TREE_H_ */
 

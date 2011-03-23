@@ -23,12 +23,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include "nbody_show.h"
 
-static void freeTree(Tree* t)
+static void freeNBodyTree(NBodyTree* t)
 {
-    Node* p;
-    Node* tmp;
+    NBodyNode* p;
+    NBodyNode* tmp;
 
-    p = (Node*) t->root;
+    p = (NBodyNode*) t->root;
     while (p != NULL)
     {
         if (isCell(p))
@@ -46,10 +46,10 @@ static void freeTree(Tree* t)
     t->maxlevel = 0;
 }
 
-static void freeFreeCells(Node* freecell)
+static void freeFreeCells(NBodyNode* freecell)
 {
-    Node* p;
-    Node* tmp;
+    NBodyNode* p;
+    NBodyNode* tmp;
 
     p = freecell;
     while (p)
@@ -62,7 +62,7 @@ static void freeFreeCells(Node* freecell)
 
 int destroyNBodyState(NBodyState* st)
 {
-    freeTree(&st->tree);
+    freeNBodyTree(&st->tree);
     freeFreeCells(st->freecell);
     mwFreeA(st->bodytab);
     mwFreeA(st->acctab);
@@ -87,7 +87,7 @@ int destroyNBodyState(NBodyState* st)
 
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, unsigned int nbody)
 {
-    static const Tree emptyTree = EMPTY_TREE;
+    static const NBodyTree emptyTree = EMPTY_TREE;
 
     st->tree = emptyTree;
     st->freecell = NULL;
@@ -146,7 +146,7 @@ int equalNBodyState(const NBodyState* st1, const NBodyState* st2)
 /* TODO: Doesn't clone tree */
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
 {
-    static const Tree emptyTree = EMPTY_TREE;
+    static const NBodyTree emptyTree = EMPTY_TREE;
     unsigned int nbody = oldSt->nbody;
 
     st->tree = emptyTree;

@@ -428,7 +428,7 @@ void printBodies(const Body* bs, unsigned int n)
         printBody(&bs[i]);
 }
 
-char* showTree(const Tree* t)
+char* showNBodyTree(const NBodyTree* t)
 {
     char* buf;
 
@@ -451,9 +451,9 @@ char* showTree(const Tree* t)
     return buf;
 }
 
-void printTree(const Tree* t)
+void printNBodyTree(const NBodyTree* t)
 {
-    char* buf = showTree(t);
+    char* buf = showNBodyTree(t);
     puts(buf);
     free(buf);
 }
@@ -463,7 +463,7 @@ char* showNBodyState(const NBodyState* st)
     char* buf;
     char* treeBuf;
 
-    treeBuf = showTree(&st->tree);
+    treeBuf = showNBodyTree(&st->tree);
 
     if (0 > asprintf(&buf,
                      "NBodyState %p = {\n"

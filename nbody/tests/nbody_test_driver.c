@@ -423,7 +423,7 @@ static int runNBodyTest(const char* file, const char** args, unsigned int nArgs)
     installHashFunctions(luaSt);
     registerNBodyTestFunctions(luaSt);
     registerNBodyCtxTestMethods(luaSt);
-    registerFindRCrit(luaSt);
+    //registerFindRCrit(luaSt);
 
     rc = dofileWithArgs(luaSt, file, args, nArgs);
     if (rc)

@@ -107,34 +107,34 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define CELL(x) (0)
 #define BODY(x) ((x) ? -1 : 1)
 
-#define isBody(x) (((Node*) (x))->type != 0)
-#define isCell(x) (((Node*) (x))->type == 0)
-#define ignoreBody(x) (((Node*) (x))->type < 0)
+#define isBody(x) (((NBodyNode*) (x))->type != 0)
+#define isCell(x) (((NBodyNode*) (x))->type == 0)
+#define ignoreBody(x) (((NBodyNode*) (x))->type < 0)
 #define bodyTypeIsIgnore(x) ((x) < 0)
 
 typedef short body_t;
 
 /* node: data common to BODY and CELL structures. */
-typedef struct NBODY_ALIGN _Node
+typedef struct NBODY_ALIGN _NBodyNode
 {
-    body_t type;            /* code for node type */
-    real mass;              /* total mass of node */
-    mwvector pos;           /* position of node */
-    struct _Node* next;     /* link to next force-calc */
-} Node;
+    body_t type;              /* code for node type */
+    real mass;                /* total mass of node */
+    mwvector pos;             /* position of node */
+    struct _NBodyNode* next;  /* link to next force-calc */
+} NBodyNode;
 
 #define EMPTY_NODE { 0, NAN, EMPTY_MWVECTOR, NULL }
 
-#define Type(x) (((Node*) (x))->type)
-#define Mass(x) (((Node*) (x))->mass)
-#define Pos(x)  (((Node*) (x))->pos)
-#define Next(x) (((Node*) (x))->next)
+#define Type(x) (((NBodyNode*) (x))->type)
+#define Mass(x) (((NBodyNode*) (x))->mass)
+#define Pos(x)  (((NBodyNode*) (x))->pos)
+#define Next(x) (((NBodyNode*) (x))->next)
 
 /* BODY: data structure used to represent particles. */
 
 typedef struct NBODY_ALIGN
 {
-    Node bodynode;              /* data common to all nodes */
+    NBodyNode bodynode;         /* data common to all nodes */
     mwvector vel;               /* velocity of body */
 } Body;
 
@@ -150,15 +150,15 @@ typedef struct NBODY_ALIGN
 
 typedef struct NBODY_ALIGN
 {
-    Node cellnode;              /* data common to all nodes */
+    NBodyNode cellnode;         /* data common to all nodes */
     real rcrit2;                /* critical c-of-m radius^2 */
-    Node* more;                 /* link to first descendent */
+    NBodyNode* more;            /* link to first descendent */
     union                       /* shared storage for... */
     {
-        Node* subp[NSUB];       /* descendents of cell */
-        mwmatrix quad;         /* quad. moment of cell */
+        NBodyNode* subp[NSUB];  /* descendents of cell */
+        mwmatrix quad;          /* quad. moment of cell */
     } stuff;
-} Cell;
+} NBodyCell;
 
 #define InvalidEnum (-1)
 typedef int generic_enum_t;  /* A general enum type. */
@@ -240,7 +240,7 @@ typedef struct NBODY_ALIGN
     real triaxAngle;    /* used by triaxial */
 
     real c1;           /* Constants calculated for triaxial from other params */
-    real c2;        /* TODO: Lots more stuff could be cached, but should be done less stupidly */
+    real c2;           /* TODO: Lots more stuff could be cached, but should be done less stupidly */
     real c3;
 } Halo;
 
@@ -264,22 +264,22 @@ typedef enum
 } ExternalPotentialType;
 
 
-#define Rcrit2(x) (((Cell*) (x))->rcrit2)
-#define More(x)   (((Cell*) (x))->more)
-#define Subp(x)   (((Cell*) (x))->stuff.subp)
-#define Quad(x)   (((Cell*) (x))->stuff.quad)
+#define Rcrit2(x) (((NBodyCell*) (x))->rcrit2)
+#define More(x)   (((NBodyCell*) (x))->more)
+#define Subp(x)   (((NBodyCell*) (x))->stuff.subp)
+#define Quad(x)   (((NBodyCell*) (x))->stuff.quad)
 
 /* Variables used in tree construction. */
 
 typedef struct NBODY_ALIGN
 {
-    Cell* root;     /* pointer to root cell */
-    real rsize;     /* side-length of root cell */
+    NBodyCell* root;         /* pointer to root cell */
+    real rsize;              /* side-length of root cell */
 
     unsigned int cellused;   /* count of cells in tree */
     unsigned int maxlevel;   /* count of levels in tree */
     int structureError;
-} Tree;
+} NBodyTree;
 
 
 #ifndef _WIN32
@@ -327,8 +327,8 @@ typedef struct
 /* Mutable state used during an evaluation */
 typedef struct NBODY_ALIGN
 {
-    Tree tree;
-    Node* freecell;   /* list of free cells */
+    NBodyTree tree;
+    NBodyNode* freecell;   /* list of free cells */
     unsigned int outputTime;
     time_t lastCheckpoint;
     real tnow;

@@ -153,22 +153,7 @@ else()
   set(NEED_POPT_DEPS 0)
 endif()
 
-#FIXME: Somehow test for and require the Apple gcc. The macports gccs
-#seem to not work when you try to link against frameworks,
-#CoreFoundation etc. There's probably a better way to check and handle
-#this.
 if(APPLE AND BOINC_APPLICATION)
-  include(CheckAppleGCC)
-  check_apple_gcc()
-  if(NOT HAVE_APPLE_GCC)
-
-    message(WARNING
-            "You should specify a compiler by setting the CC environment variable or "
-            "with -DCMAKE_C_COMPILER=/path/to/compiler. This should be /usr/bin/gcc usually."
-            "Latest clang also works")
-    message(FATAL_ERROR "Attempting to use a non-Apple GCC. An Apple compiler is required on OS X.")
-  endif()
-
   if(BOINC_RELEASE)
     # We don't want to bother compiling twice until we need the universal binary for releases
     #set(CMAKE_OSX_ARCHITECTURES i386;x86_64)
