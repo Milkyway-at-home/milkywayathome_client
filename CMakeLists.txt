@@ -207,11 +207,26 @@ set(gcc_warnings "-Wall"
                  "-Wfloat-equal"
                  "-Wwrite-strings"
                  "-Wcomment"
-                 "-warn-uninit-values"
                # "-Wstrict-overflow=5"
                # "-Wmissing-declarations"
                # "-Wunreachable-code"
                )
+
+# set(clang_analyzer "--analyze"
+#                    -Xanalyzer -analyzer-eagerly-assume
+#                    -Xanalyzer -analyzer-check-dead-stores
+#                    -Xanalyzer -analyzer-check-llvm-conventions
+#                    -Xanalyzer -analyzer-check-security-syntactic
+#                    -Xanalyzer -analyzer-opt-analyze-nested-blocks
+#                    -Xanalyzer -warn-uninit-values
+#                    -Xanalyzer -warn-sizeof-pointer
+#                    #-Xanalyzer -analyzer-check-buffer-overflows
+#                    -Xanalyzer -analyzer-opt-analyze-headers
+#                    -Xanalyzer -analyzer-experimental-checks
+#                    #-Xanalyzer -analyzer-display-progress
+#                    -Xanalyzer -analyzer-no-purge-dead)
+
+
 
 
 set(gcc_extra_flags "-fno-common -funswitch-loops")
@@ -257,6 +272,15 @@ if(CMAKE_COMPILER_IS_GNUCC OR CXX_COMPILER_IS_CLANG)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
   endforeach()
 endif()
+
+
+if(C_COMPILER_IS_CLANG)
+  foreach(flag ${clang_warnings})
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${flag}")
+  endforeach()
+endif()
+
+
 
 # Clang currently missing many of the gcc warnings and options, so
 # shut up the warnings about them

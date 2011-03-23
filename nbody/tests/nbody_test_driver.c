@@ -68,23 +68,11 @@ typedef union
 static void showHash(char* buf, const MWHash* hash)
 {
     sprintf(buf, "%08x%08x%08x%08x%08x", hash->mdi[0], hash->mdi[1], hash->mdi[2], hash->mdi[3], hash->mdi[4]);
-
-}
-
-
-
-static void setNBodyCtxFromNBodyCtxTest(NBodyCtx* ctx, const NBodyCtxTest* ctxRaw)
-{
-    ctx->theta       = ctxRaw->theta;
-    ctx->treeRSize   = ctxRaw->treeRSize;
-    ctx->criterion   = ctxRaw->criterion;
-    ctx->useQuad     = ctxRaw->useQuad;
-    ctx->allowIncest = ctxRaw->allowIncest;
 }
 
 static int hashValueFromType(lua_State* luaSt, EVP_MD_CTX* hashCtx, int type, int idx)
 {
-    int rc;
+    int rc = 1;
     real n;
     int b;
     const char* str;

@@ -44,14 +44,6 @@ static inline mwvector pickShell(dsfmt_t* dsfmtState, real rad)
     return vec;
 }
 
-static void printPlummer(mwvector rshift, mwvector vshift)
-{
-    warn("<plummer_r> %.14g %.14g %.14g </plummer_r>\n"
-         "<plummer_v> %.14g %.14g %.14g </plummer_v>\n",
-         X(rshift), Y(rshift), Z(rshift),
-         X(vshift), Y(vshift), Z(vshift));
-}
-
 static inline real plummerRandomR(dsfmt_t* dsfmtState)
 {
     real rnd;

@@ -97,17 +97,10 @@ static int createVector(lua_State* luaSt)
             return 1;
 
         default:
-            luaL_argerror(luaSt, 3, "Expected 0 or 3 arguments to create vector");
-            return 0;
+            return luaL_argerror(luaSt, 3, "Expected 0 or 3 arguments to create vector");
     }
 
-    if (n == 0)
-    {
-    }
-
-    // pushVector(luaSt, _emptyVector);
-
-    return 3;
+    return 1;
 }
 
 static int toStringVector(lua_State* luaSt)

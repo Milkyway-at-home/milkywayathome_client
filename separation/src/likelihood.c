@@ -268,7 +268,7 @@ static void setSeparationConstants(const AstronomyParameters* ap,
                                    mwmatrix cmatrix)
 {
     unsigned int i;
-    mwvector dnormal;
+    mwvector dnormal = ZERO_VECTOR;
     const mwvector dortho = mw_vec(0.0, 0.0, 1.0);
 
     if (!ap->sgr_coordinates)

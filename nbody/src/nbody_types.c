@@ -120,7 +120,7 @@ static int equalMaybeArray(const void* a, const void* b, size_t n)
 
 
 #ifdef __GNUC__
-#pragma GCC diagnostic ignored "-Wfloat-equal".
+#pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
 
 /* TODO: Doesn't handle tree */
