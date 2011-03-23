@@ -43,8 +43,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define EXTRAVER
 #endif /* defined(_OPENMP) */
 
+#if ENABLE_CRLIBM
+  #define EXTRALIB " Crlibm"
+#else
+  #define EXTRALIB
+#endif
 
-#define BOINC_NBODY_APP_VERSION "milkywayathome nbody ${nbody_VERSION} ${CMAKE_SYSTEM_NAME} " ARCH_STRING " " PRECSTRING EXTRAVER
+
+#define BOINC_NBODY_APP_VERSION "milkywayathome nbody ${nbody_VERSION} ${CMAKE_SYSTEM_NAME} " ARCH_STRING " " PRECSTRING EXTRAVER EXTRALIB
 
 #define DEFAULT_OUTPUT_FILE stderr
 

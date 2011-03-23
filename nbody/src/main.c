@@ -157,14 +157,17 @@ static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
             0, "Cleanup checkpoint after finishing run", NULL
         },
 
-      #if !BOINC_APPLICATION
         {
             "checkpoint-interval", 'w',
             POPT_ARG_INT, &nbf->checkpointPeriod,
             0, "Period (in seconds) to checkpoint. -1 to disable", NULL
         },
 
-      #endif /* BOINC_APPLICATION */
+        {
+            "debug-boinc", 'd',
+            POPT_ARG_NONE, &nbf->debugBOINC,
+            0, "Init BOINC with debugging. No effect if not built with BOINC_APPLICATION", NULL
+        },
 
         {
             "ignore-checkpoint", 'i',
@@ -221,7 +224,7 @@ static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
     {
         poptPrintUsage(context, stderr, 0);
         poptFreeContext(context);
-        mw_finish(EXIT_FAILURE);
+        return TRUE;
     }
 
     /* Check for invalid options, and must have the input file or a
@@ -290,12 +293,6 @@ static void setNumThreads(int numThreads) { }
 
 #endif /* _OPENMP */
 
-#ifdef NDEBUG
-  #define useBoincDebug 0
-#else
-  #define useBoincDebug 1
-#endif /* NDEBUG */
-
 
 int main(int argc, const char* argv[])
 {
@@ -304,16 +301,16 @@ int main(int argc, const char* argv[])
 
     specialSetup();
 
-    if (mwBoincInit(argv[0], useBoincDebug))
+    if (readParameters(argc, argv, &nbf))
+        exit(EXIT_FAILURE);
+
+    if (mwBoincInit(argv[0], nbf.debugBOINC))
     {
         warn("Failed to init BOINC\n");
         exit(EXIT_FAILURE);
     }
 
     nbodyPrintVersion();
-
-    if (readParameters(argc, argv, &nbf))
-        mw_finish(EXIT_FAILURE);
 
     setNumThreads(nbf.numThreads);
     setDefaultFlags(&nbf);

@@ -45,6 +45,7 @@ typedef struct
     unsigned int numForwardedArgs;
 
     uint32_t setSeed;
+    int debugBOINC;
     int outputCartesian;
     int printTiming;
     int verifyOnly;
@@ -56,7 +57,7 @@ typedef struct
     time_t checkpointPeriod;
 } NBodyFlags;
 
-#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 
 int runNBodySimulation(const NBodyFlags* nbf);
 
