@@ -30,14 +30,11 @@ target_link_libraries(nbody_test_driver ${OPENSSL_LIBRARIES} ${nbody_exe_link_li
 add_test(NAME checkpoint_test
          COMMAND nbody_test_driver "CheckpointTest.lua")
 
-add_test(NAME criterion_test
-         COMMAND nbody_test_driver "CriterionTest.lua")
-
-add_test(NAME context_test
-         COMMAND nbody_test_driver "ContextTest.lua")
+# add_test(NAME context_test
+#          COMMAND nbody_test_driver "ContextTest.lua")
 
 # Run these first 3 tests
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -I 1,3,1)
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -I 1,2,1)
 
 # TODO: Test with known tree incest to check return status right
 

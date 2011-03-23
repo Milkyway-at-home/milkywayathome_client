@@ -253,3 +253,17 @@ function checkTestResult(test, resultTable)
    return doesNotMatch
 end
 
+-- Marshal between a table with "x" "y" and "z" and the userdata
+-- Vector type since persistence can't handle userdata
+function vectorToTable(v)
+   local vTable = { }
+   vTable.x = v.x
+   vTable.y = v.y
+   vTable.z = v.z
+   return vTable
+end
+
+function tableToVector(vTable)
+   return Vector.create(vTable.x, vTable.y, vTable.z)
+end
+
