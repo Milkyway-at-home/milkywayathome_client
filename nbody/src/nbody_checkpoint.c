@@ -262,8 +262,6 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     size_t bodySize, supposedCheckpointSize;
     char* p = cp->mptr;
 
-    warn("Thawing state\n");
-
     READ_STR(buf, p, sizeof(hdr) - 1);
 
     READ_SIZE_T(realSize, p);
@@ -291,7 +289,7 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     if (supposedCheckpointSize != cp->cpFileSize)
     {
         return warn1("Expected checkpoint file size ("ZU") is incorrect for expected number of bodies "
-                     "(%u bodies, real size "ZU")\n",
+                     "(%u bodies, real size %lu)\n",
                      supposedCheckpointSize,
                      st->nbody,
                      cp->cpFileSize);

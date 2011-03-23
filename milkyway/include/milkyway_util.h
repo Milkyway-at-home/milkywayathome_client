@@ -21,12 +21,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_UTIL_H_
 #define _MILKYWAY_UTIL_H_
 
-#include "milkyway_config.h"
-#include "milkyway_extra.h"
-#include "milkyway_math.h"
-#include "mw_boinc_util.h"
-#include "dSFMT.h"
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -38,11 +32,18 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define _CRT_SECURE_NO_WARNINGS
   #define WIN32_LEAN_AND_MEAN
   #define VC_EXTRALEAN
+  #include <intrin.h>
   #include <malloc.h>
   #include <windows.h>
 #endif /* _WIN32 */
 
 #include <popt.h>
+
+#include "milkyway_config.h"
+#include "milkyway_extra.h"
+#include "milkyway_math.h"
+#include "mw_boinc_util.h"
+#include "dSFMT.h"
 
 
 #ifdef __cplusplus

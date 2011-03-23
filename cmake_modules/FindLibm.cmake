@@ -19,12 +19,6 @@
 #
 
 
-if(NOT MSVC)
-  find_path(LIBM_INCLUDE_DIR math.h)
-else()
-  set(LIBM_INCLUDE_DIR ${CMAKE_INCLUDE_PATH})
-endif()
-
 if(APPLE)
   find_library(LIBM_LIBRARY m)
 elseif(WIN32)
@@ -40,7 +34,7 @@ else()
     set(CMAKE_FIND_LIBRARY_SUFFIXES ${__old_cmake_find_lib_suffixes})
   endif()
 
-  if(LIBM_INCLUDE_DIR AND LIBM_LIBRARY)
+  if(LIBM_LIBRARY)
     set(LIBM_FOUND TRUE)
   endif()
 

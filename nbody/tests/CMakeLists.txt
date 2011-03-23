@@ -19,6 +19,7 @@
 #
 
 find_package(OpenSSL)
+message("   OpenSSL Libraries  ${OPENSSL_LIBRARIES}")
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 find_program(LUA_INTERPRETER lua)

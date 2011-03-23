@@ -20,6 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "separation.h"
+#include "milkyway_util.h"
 #include "milkyway_cpp_util.h"
 #include "io_util.h"
 #include <popt.h>

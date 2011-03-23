@@ -100,7 +100,7 @@ maybe_static()
 
 if(NOT SEPARATION_FDLIBM)
   find_package(Libm REQUIRED)
-  include_directories(${LIBM_INCLUDE_DIR})
+#  include_directories(${LIBM_INCLUDE_DIR})
   set(SEPARATION_LIBM_LIBRARY ${LIBM_LIBRARY})
 else()
   # Replace standard libm with Fdlibm

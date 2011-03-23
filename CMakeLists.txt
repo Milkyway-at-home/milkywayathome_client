@@ -147,8 +147,11 @@ endif()
 
 maybe_static()
 
-if(APPLE OR MINGW)
+if(APPLE)
   set(NEED_POPT_DEPS 1)
+elseif(MSYS)
+  # Seem to be necessary if you use the prebuilt ones
+  #set(NEED_POPT_DEPS 1)
 else()
   set(NEED_POPT_DEPS 0)
 endif()
