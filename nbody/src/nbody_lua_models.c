@@ -112,10 +112,11 @@ static int luaLbrToCartesian(lua_State* luaSt)
     ctx = checkNBodyCtx(luaSt, 1);
     v = *checkVector(luaSt, 2);
 
-
     /* ctx = toNBodyCtx(luaSt, 2);
        sunGCDist = ctx != NULL ? ctx->sunGCDist : luaL_optnumber(luaSt, 2, DEFAULT_SUN_GC_DISTANCE);
     */
+
+    sunGCDist = ctx->sunGCDist;
 
     useGalacticCoordinates = mw_lua_optboolean(luaSt, 3, FALSE);
     useRadians = mw_lua_optboolean(luaSt, 4, FALSE);
