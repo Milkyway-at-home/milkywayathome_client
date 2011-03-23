@@ -50,19 +50,20 @@ static void nbodyPrintVersion()
 /* Maybe set up some platform specific issues */
 static void specialSetup()
 {
-  #if !defined(__SSE2__) && ENABLE_CRLIBM
+  #if ENABLE_CRLIBM
     /* Try to handle inconsistencies with x87. We shouldn't use
      * this. This helps, but there can still be some problems for some
      * values. Sticking with SSE2 is the way to go. */
     crlibm_init();
   #endif
 
-  #ifdef _WIN32
+  #ifdef _MSC_VER
+    /* FIXME: Also for mingw, but seems to be missing */
     /* Make windows printing be more consistent. For some reason it
      * defaults to printing 3 digits in the exponent. There are still
      * issues where the rounding of the last digit by printf on
      * windows in a small number of cases. */
-    //_set_output_format(_TWO_DIGIT_EXPONENT);
+    _set_output_format(_TWO_DIGIT_EXPONENT);
   #endif /* _WIN32 */
 }
 

@@ -152,7 +152,7 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
  */
 
 
-static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const char* filename, int writing)
+static int openCheckpointHandle(const NBodyState* st, CheckpointHandle* cp, const char* filename, int writing)
 {
     SYSTEM_INFO si;
     DWORD sysGran;
@@ -187,7 +187,7 @@ static int openCheckpointHandle(const NBodyCtx* ctx, CheckpointHandle* cp, const
 
     if (writing)
     {
-        cp->cpFileSize = hdrSize + nbody * sizeof(Body);
+        cp->cpFileSize = hdrSize + st->nbody * sizeof(Body);
     }
     else
     {

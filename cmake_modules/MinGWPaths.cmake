@@ -20,10 +20,19 @@
 
 if(MINGW)
   if(NOT MINGW_ROOT)
- #   set(MINGW_ROOT "C:/MinGW/msys/1.0")
     set(MINGW_ROOT "C:/MinGW/")
   endif()
 
-  set(CMAKE_FIND_ROOT_PATH "${MINGW_ROOT}")
-endif(MINGW)
+  if(MSYS)
+    if(NOT MSYS_ROOT)
+      set(MSYS_ROOT "C:/MinGW/msys/1.0")
+    endif()
+    set(CMAKE_LIBRARY_PATH "${MSYS_ROOT}/local/lib"
+                           "${MSYS_ROOT}/lib"
+                           "${MINGW_ROOT}/lib")
+    set(CMAKE_INCLUDE_PATH "${MSYS_ROOT}/local/include"
+                           "${MSYS_ROOT}/include"
+                           "${MINGW_ROOT}/include")
+  endif()
+endif()
 

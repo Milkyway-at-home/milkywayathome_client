@@ -303,6 +303,10 @@ set(nbody_exe_link_libs nbody_simulation
                         ${OS_SPECIFIC_LIBS}
                         ${nbody_link_libs})
 
+if(BOINC_APPLICATION)
+  list(INSERT nbody_exe_link_libs 5 ${BOINC_LIBRARIES})
+endif()
+
 
 if(NBODY_CRLIBM)
   include_directories(${CRLIBM_INCLUDE_DIR})
