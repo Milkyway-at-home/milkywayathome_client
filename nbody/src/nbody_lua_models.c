@@ -23,6 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include "milkyway_util.h"
 #include "nbody_orbit_integrator.h"
+#include "nbody_coordinates.h"
 
 #include "nbody_lua.h"
 #include "nbody_lua_types.h"

@@ -59,6 +59,9 @@ configure_file (
 
 include_directories(${MILKYWAY_INCLUDE_DIR})
 
+# Careful with adding math functions here Right now the crlibm setting
+# is individual for separation vs. nbody. Math here won't be compiled
+# with crlibm, leading to unexpected results
 set(mw_lib_src src/milkyway_util.c
                src/mw_boinc_util.c
                src/milkyway_cpp_util.cc)

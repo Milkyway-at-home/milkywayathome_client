@@ -21,6 +21,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_io.h"
 #include "milkyway_util.h"
+#include "nbody_coordinates.h"
 
 int initOutput(NBodyState* st, const NBodyFlags* nbf)
 {

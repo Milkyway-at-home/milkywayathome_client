@@ -170,13 +170,6 @@ size_t mwDivRoundup(size_t a, size_t b);
 int mwCheckNormalPosNum(real n);
 int mwCheckNormalPosNumEps(real n);
 
-/* Coordinate conversion */
-mwvector cartesianToLbr(mwvector r, real sunGCDist);
-mwvector cartesianToLbr_rad(mwvector r, real sunGCDist);
-mwvector lbrToCartesian(mwvector lbr, real sunGCDist);
-mwvector lbrToCartesian_rad(mwvector lbr, real sunGCDist);
-
-
 const char** mwFixArgv(unsigned long argc, const char** argv);
 
 /* Loop through all arguments and report bad arguments */

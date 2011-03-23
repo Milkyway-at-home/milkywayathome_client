@@ -247,7 +247,7 @@ void sortBodies(Body* bodies, unsigned int nbody)
 }
 
 /* Floating point comparison where nan compares equal */
-static inline int feqWithNan(real a, real b)
+static int feqWithNan(real a, real b)
 {
     return (isnan(a) && isnan(b)) ? TRUE : (a == b);
 }

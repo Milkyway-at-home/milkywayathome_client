@@ -162,7 +162,8 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_step.c
                   ${NBODY_SRC_DIR}/nbody_show.c
                   ${NBODY_SRC_DIR}/nbody_checkpoint.c
-                  ${NBODY_SRC_DIR}/nbody_defaults.c)
+                  ${NBODY_SRC_DIR}/nbody_defaults.c
+                  ${NBODY_SRC_DIR}/nbody_coordinates.c)
 
 
 set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
@@ -179,7 +180,8 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_priv.h
                       ${NBODY_INCLUDE_DIR}/nbody_types.h
                       ${NBODY_INCLUDE_DIR}/nbody_checkpoint.h
-                      ${NBODY_INCLUDE_DIR}/nbody_defaults.h)
+                      ${NBODY_INCLUDE_DIR}/nbody_defaults.h
+                      ${NBODY_INCLUDE_DIR}/nbody_coordinates.h)
 
 set(nbody_lua_src ${NBODY_SRC_DIR}/nbody_lua.c
                   ${NBODY_SRC_DIR}/nbody_lua_models.c
