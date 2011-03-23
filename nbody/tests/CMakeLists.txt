@@ -26,6 +26,12 @@ find_program(LUA_INTERPRETER lua)
 add_executable(nbody_test_driver nbody_test_driver.c)
 target_link_libraries(nbody_test_driver ${OPENSSL_LIBRARIES} ${nbody_exe_link_libs})
 
+if(BOINC_APPLICATION)
+  if(UNIX)
+    target_link_libraries(nbody_test_driver pthread)
+  endif()
+endif()
+
 
 add_test(NAME checkpoint_test
          COMMAND nbody_test_driver "CheckpointTest.lua")

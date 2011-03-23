@@ -50,23 +50,20 @@ extern "C" {
   #define mw_finish(x) boinc_finish(x)
   #define mw_fopen(x,y) boinc_fopen((x),(y))
   #define mw_remove(x) boinc_delete_file((x))
-  #define mw_rename(x, y) boinc_rename((x), (y))
 #else
   #define mw_boinc_print(f, msg, ...)
   #define mw_finish(x) exit(x)
   #define mw_fopen(x,y) fopen((x),(y))
   #define mw_remove(x) remove((x))
-  #define mw_rename(x, y) rename((x), (y))
 #endif /* BOINC_APPLICATION */
 
 int mwBoincInit(const char* appname, int useDebug);
 char* mwReadFileResolved(const char* filename);
 FILE* mwOpenResolved(const char* filename, const char* mode);
-int mwRename(const char* oldf, const char* newf);
+int mw_rename(const char* oldf, const char* newf);
 
 int mw_resolve_filename(const char* filename, char* buf, size_t bufSize);
 int mw_file_exists(const char* file);
-
 
 
 #ifdef __cplusplus

@@ -156,7 +156,6 @@ static int openCheckpointHandle(const NBodyState* st, CheckpointHandle* cp, cons
 {
     SYSTEM_INFO si;
     DWORD sysGran;
-    DWORD fSize;
     DWORD mapViewSize, fileMapStart, fileMapSize;
 
     /* Try to create a new file */

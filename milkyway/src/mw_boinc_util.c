@@ -35,6 +35,31 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #if BOINC_APPLICATION
 
+int mwBoincInit(const char* appname, int useDebug)
+{
+    int rc;
+    BOINC_OPTIONS options;
+
+    if (useDebug)
+    {
+        rc = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
+                                    | BOINC_DIAG_HEAPCHECKENABLED
+                                    | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
+    }
+    else
+    {
+      #if MILKYWAY_OPENCL
+        mwGetBoincOptionsDefault(&options);
+        options.normal_thread_priority = 1;
+        rc = boinc_init_options(&options);
+      #else
+        rc = boinc_init();
+      #endif /* MILKYWAY_OPENCL */
+    }
+
+    return rc;
+}
+
 FILE* mwOpenResolved(const char* filename, const char* mode)
 {
     int ret;
@@ -65,7 +90,17 @@ int mw_file_exists(const char* file)
     return boinc_file_exists(file);
 }
 
-#else
+int mw_rename(const char* oldf, const char* newf)
+{
+    return boinc_rename(oldf, newf);
+}
+
+#else /* !BOINC_APPLICATION */
+
+int mwBoincInit(const char* appname, int useDebug)
+{
+    return 0;
+}
 
 FILE* mwOpenResolved(const char* filename, const char* mode)
 {
@@ -92,93 +127,27 @@ int mw_file_exists(const char* file)
     return !stat(file, &statBuf);
 }
 
-#endif /* BOINC_APPLICATION */
+#ifndef _WIN32
 
-
-/* Modified from boinc_rename, which doesn't use MoveFileEx on
- * windows, which is more atomic. */
-static inline int _mwRename(const char* oldf, const char* newf)
+int mw_rename(const char* oldf, const char* newf)
 {
-  #ifdef _WIN32
-    if (MoveFileEx(oldf, newf, MOVEFILE_REPLACE_EXISTING))
+    return rename(oldf, newf);
+}
+
+#else
+
+/* It turns out that rename() does exist although it doesn't behave
+properly and errors if the destination file already exists which is
+wrong. This isn't quite atomic like it's supposed to be. */
+
+int mw_rename(const char* oldf, const char* newf)
+{
+    if (MoveFileExA(oldf, newf, MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH))
         return 0;
     return GetLastError();
-  #else
-    return rename(oldf, newf);
-  #endif
 }
-
-
-#if BOINC_APPLICATION
-
-int mwRename(const char* oldf, const char* newf)
-{
-    int rc;
-    unsigned int i;
-
-    /* FIXME: BOINC has random timing for retries. Fix boinc rename on
-     * windows, then we can just get rid of this. */
-    rc = _mwRename(oldf, newf);
-    if (rc)
-    {
-        for (i = 0; i < 5; ++i)
-        {
-          #ifndef _WIN32
-            sleep(1);       /* sleep 1 second, avoid lockstep */
-          #else
-	    Sleep(1);
-          #endif /* _WIN32 */
-            rc = _mwRename(oldf, newf);
-            if (!rc)
-                break;
-        }
-    }
-
-    return rc;
-}
-
-#else
-
-int mwRename(const char* oldf, const char* newf)
-{
-    return _mwRename(oldf, newf);
-}
-
-#endif /* BOINC_APPLICATION*/
-
-#if BOINC_APPLICATION
-
-int mwBoincInit(const char* appname, int useDebug)
-{
-    int rc;
-    BOINC_OPTIONS options;
-
-    if (useDebug)
-    {
-        rc = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
-                                    | BOINC_DIAG_HEAPCHECKENABLED
-                                    | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
-    }
-    else
-    {
-      #if MILKYWAY_OPENCL
-        mwGetBoincOptionsDefault(&options);
-        options.normal_thread_priority = 1;
-        rc = boinc_init_options(&options);
-      #else
-        rc = boinc_init();
-      #endif /* MILKYWAY_OPENCL */
-    }
-
-    return rc;
-}
-
-#else
-
-int mwBoincInit(const char* appname, int useDebug)
-{
-    return 0;
-}
+#endif /* _WIN32 */
 
 #endif /* BOINC_APPLICATION */
+
 

@@ -74,7 +74,7 @@ static int stepNBodyState(lua_State* luaSt)
 
 static int gcNBodyState(lua_State* luaSt)
 {
-    destroyNBodyState(checkNBodyState(luaSt, -1));
+    destroyNBodyState(checkNBodyState(luaSt, 1));
     return 0;
 }
 
