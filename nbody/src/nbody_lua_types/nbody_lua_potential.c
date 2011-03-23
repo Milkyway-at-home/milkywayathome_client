@@ -58,7 +58,7 @@ int getPotential(lua_State* luaSt, void* v)
 
 int setPotential(lua_State* luaSt, void* v)
 {
-    *(Potential*) v = *checkPotential(luaSt, -1);
+    *(Potential*) v = *checkPotential(luaSt, 3);
     return 0;
 }
 

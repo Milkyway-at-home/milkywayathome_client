@@ -47,7 +47,7 @@ static int getCriterionT(lua_State* luaSt, void* v)
 
 static int setCriterionT(lua_State* luaSt, void* v)
 {
-    *(criterion_t*) v = checkEnum(luaSt, criterionOptions, -1);
+    *(criterion_t*) v = checkEnum(luaSt, criterionOptions, 3);
     return 0;
 }
 
