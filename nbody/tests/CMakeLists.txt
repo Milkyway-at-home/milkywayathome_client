@@ -22,8 +22,6 @@ find_package(OpenSSL)
 message("   OpenSSL Libraries  ${OPENSSL_LIBRARIES}")
 include_directories(${OPENSSL_INCLUDE_DIR})
 
-find_program(LUA_INTERPRETER lua)
-
 add_executable(nbody_test_driver nbody_test_driver.c)
 target_link_libraries(nbody_test_driver ${OPENSSL_LIBRARIES} ${nbody_exe_link_libs})
 
@@ -62,7 +60,7 @@ set(orphan_model_names model_1
 foreach(model_name ${orphan_model_names})
   foreach(n ${body_counts})
     add_test(NAME ${model_name}__${n}_test
-               COMMAND ${LUA_INTERPRETER} "RunTestUnits.lua"
+               COMMAND nbody_test_driver "RunTestUnits.lua"
                                           $<TARGET_FILE:${nbody_bin_name}>
                                           "orphan_models"
                                           ${model_name}

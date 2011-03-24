@@ -129,6 +129,7 @@ static const luaL_Reg debugOnlyLibs[] =
     { LUA_IOLIBNAME,   luaopen_io      },
     { LUA_OSLIBNAME,   luaopen_os      },
     { LUA_DBLIBNAME,   luaopen_debug   },
+    { LUA_MATHLIBNAME, luaopen_math    },
     { NULL, NULL}
 };
 
