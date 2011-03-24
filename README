@@ -27,40 +27,26 @@ Common ON/OFF options:
   STATIC_EVERYTHING: Statically link everything.
   BOINC_RELEASE_NAME: Use the long names BOINC uses which include
   version and system information
-  DOUBLEPREC: Use doubles (on by default)
-
-
-
-Semi-broken options:
-  DOWNLOAD_CRLIBM: Will download, build and install crlibm with the
-  checkout as a prefix. Sort of broken right now; you're probably
-  better off installing crlibm yourself. I think it works with some
-  series of turning it on and off again, or else it rebuilds crlibm
-  constantly or something.
+  DOUBLEPREC: Use doubles (on by default, and quite likely to not work)
+  NBODY_OPENMP: Use OpenMP for multithreaded nbody
 
 
 Notes:
-
-On OS X, Apple's gcc is required since macports gcc seems to not work
-when you try linking against frameworks. Note you need to delete
-CMakeCache.txt when you change compilers. I'm trying to take care of
-this automatically but it only sort of works. Specify the Apple gcc
-with -DCMAKE_C_COMPILER=/usr/bin/gcc, for it's usual location.
 
 Recommended compilers:
   separation: clang
   nbody: gcc
 
-  MSVC should work with separation
+  MSVC should work with separation, and won't with N-body
   A popt which builds with MSVC: https://github.com/arsenm/POPT
 
 Dependencies:
   () = optional for a functioning build
   separation: popt, (boinc)
-  nbody: popt, json-c, (boinc) (crlibm)
+  nbody: popt, lua, (boinc) (crlibm) (libssl)
 
   On Ubuntu / Debian:
-    $ apt-get install cmake libpopt-dev libjson0-dev boinc-dev
+    $ apt-get install cmake libpopt-dev boinc-dev liblua5.1-0-dev libssl-dev
 
   Macports:
     $ port install cmake popt json-c
@@ -79,4 +65,27 @@ Notes:
 
   - separation will do a separation after the integration if given an
     output file. There is also an argument to set the random number seed.
+
+  - Returning nil from makePotential() for N-body will run the
+    simulation without an external potential
+
+
+
+--------------------------------------------------------------------------------
+Nbody:
+
+Tests can be run by running:
+  $ make test
+
+  However this runs all of the tests, which takes forever. You can run
+  (from the tests directory) some core functionality tests with:
+  $ make check
+
+  Other tests  can be run with a certain number of bodies depending on
+  how long you want to wait with:
+
+  $ make test_${n}
+
+  Currently n = 100, 1024, 10000 are available.
+
 
