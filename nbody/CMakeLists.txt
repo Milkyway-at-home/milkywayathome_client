@@ -18,7 +18,7 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required(VERSION 2.6)
 project(milkyway_nbody)
 
 set(nbody_VERSION_MAJOR 0)
@@ -35,15 +35,10 @@ include(CheckSSE2)
 include_directories(${MILKYWAY_INCLUDE_DIR})
 include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 
-maybe_static()
+option(NBODY_STATIC "Build Nbody as fully static binary" ON)
+mark_as_advanced(NBODY_STATIC)
 
-find_package(BOINC)
-
-if(BOINC_APPLICATION)
-  include_directories(${BOINC_INCLUDE_DIR})
-endif()
-
-check_sse2()
+maybe_static(${NBODY_STATIC})
 
 if(NEED_POPT_DEPS)
     #These are only dependencies of popt needed for static linking
@@ -51,15 +46,9 @@ if(NEED_POPT_DEPS)
   find_package(Libiconv REQUIRED)
 endif()
 
-find_package(Popt REQUIRED)
-include_directories(${POPT_INCLUDE_DIR})
-
 
 set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 include_directories(${NBODY_INCLUDE_DIR})
-
-option(BOINC_APPLICATION
-  "Build as a BOINC Application" ON)
 
 option(NBODY_OPENCL
        "Use OpenCL" OFF)
@@ -71,8 +60,6 @@ mark_as_advanced(NBODY_CRLIBM)
 option(NBODY_OPENMP "Use OpenMP" OFF)
 
 
-set(LUA_USE_STATIC 1)
-
 if(LUA_USE_STATIC)
   set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
   set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
@@ -83,9 +70,6 @@ find_package(Lua51 REQUIRED)
 if(LUA_USE_STATIC)
   set(CMAKE_FIND_LIBRARY_SUFFIXES ${__old_cmake_find_lib_suffixes})
 endif()
-
-
-find_package(OpenMP)
 
 include_directories(${LUA_INCLUDE_DIR})
 
@@ -101,7 +85,6 @@ option(PERIODIC_OUTPUT
 mark_as_advanced(PERIODIC_OUTPUT)
 
 
-
 if(BOINC_RELEASE)
   set(NBODY_CRLIBM ON)
 endif()
@@ -112,7 +95,6 @@ if(NOT DOUBLEPREC AND NBODY_CRLIBM)
 endif()
 
 if(NBODY_OPENCL)
-  find_package(OpenCL)
   if(NOT OPENCL_FOUND)
     message(WARNING "N-body OpenCL was requested, but OpenCL not found. Disabling OpenCL.")
     set(NBODY_OPENCL OFF)
@@ -120,8 +102,6 @@ if(NBODY_OPENCL)
     include_directories(${OPENCL_DIRECTORIES})
   endif()
 endif()
-
-set_os_specific_libs(${NBODY_OPENCL})
 
 # Handle downloading, extracting and building dSFMT
 
@@ -284,15 +264,13 @@ if(DOWNLOAD_CRLIBM)
   set(CRLIBM_INCLUDE_DIR "${MILKYWAY_ROOT}/include"})
   set(CRLIBM_LIBRARY "${LIBRARY_OUTPUT_PATH}/libcrlibm${CMAKE_STATIC_LIBRARY_SUFFIX}")
 else()
-  if(BOINC_RELEASE)
-    find_package(Crlibm REQUIRED)
-  else()
-    find_package(Crlibm)
+  if(BOINC_RELEASE AND NOT CRLIBM_FOUND)
+    message(FATAL "Trying to release without crlibm")
   endif()
 endif()
 
-if(NOT WIN32)
-  list(APPEND LUA_LIBRARIES dl)
+if(NOT WIN32 AND LUA_HAS_DYLOAD)
+#  list(APPEND LUA_LIBRARIES dl)
 endif()
 
 set(nbody_exe_link_libs nbody_simulation
@@ -301,7 +279,7 @@ set(nbody_exe_link_libs nbody_simulation
                         milkyway
                         ${POPT_LIBRARY}
                         ${LUA_LIBRARIES}
-                        ${LIBM_LIBRARY}
+                        m
                         ${OS_SPECIFIC_LIBS}
                         ${nbody_link_libs})
 
@@ -314,8 +292,6 @@ if(NBODY_CRLIBM)
   include_directories(${CRLIBM_INCLUDE_DIR})
   list(APPEND nbody_exe_link_libs ${CRLIBM_LIBRARY})
 endif()
-
-find_package(Libm REQUIRED)
 
 if(NEED_POPT_DEPS)
   # Popt dependencies for static linking For some reason, on OS X /
@@ -348,7 +324,7 @@ configure_file (
 
 add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
 
-milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} 0 ${STATIC_EVERYTHING} "${nbody_exe_link_libs}")
+milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} ${NBODY_STATIC} "${nbody_exe_link_libs}")
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 

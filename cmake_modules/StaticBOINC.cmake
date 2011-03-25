@@ -23,61 +23,62 @@
 # doesn't like you trying to statically link the standard libraries.
 # We also have to link as C++ when we do this because of BOINC.
 
-function(correct_static_link client_bin_name partially_dynamic)
-  if(NOT MSVC AND (CMAKE_BUILD_TYPE STREQUAL Release) AND NOT APPLE)
-    set(strip_exe -s)
+
+set(POPT_USE_STATIC 1)
+set(LIBINTL_USE_STATIC 1)
+set(LIBICONV_USE_STATIC 1)
+set(BOINC_USE_STATIC 1)
+
+# if(NOT WIN32)
+#   set(LUA_USE_STATIC 1)
+# endif()
+
+set(LUA_USE_STATIC 1)
+
+macro(unset_cmake_default_dynamic)
+  set(CMAKE_EXE_LINK_DYNAMIC_C_FLAGS)
+  set(CMAKE_EXE_LINK_DYNAMIC_CXX_FLAGS)
+  set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS)
+  set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS)
+endmacro()
+
+if(NOT MSVC AND (CMAKE_BUILD_TYPE STREQUAL Release) AND NOT APPLE)
+  set(strip_exe -s)
+endif()
+
+macro(maybe_static use_static)
+  if(${use_static} MATCHES "ON")
+    unset_cmake_default_dynamic()
   endif()
-  if(NOT APPLE)
-    #CHECKME: What about Windows?
+endmacro()
+
+
+function(correct_static_link client_bin_name)
+  if(UNIX AND NOT APPLE)
+    set(client_static_link_flags "-static -static-libgcc -static-libstdc++ -pthread")
+  elseif(MINGW)
+    set(client_static_link_flags "-static -static-libgcc -static-libstdc++")
+  elseif(UNIX AND APPLE) # OS X
+    # No static
     set(client_static_link_flags "-static-libgcc -static-libstdc++")
-
-    # if(NOT WIN32)
-    #   set(client_static_link_flags "-static ${client_static_link_flags}")
-    # endif()
-
-    if(NOT partially_dynamic)
-      # For dynamically linking to libOpenCL.so and dependencies
-      set(client_static_link_flags "${client_static_link_flags}")
-    endif()
-
-    if(UNIX AND NOT partially_dynamic)
-      #We need to do this to statically link pthreads. Otherwise really
-      #bizarre things happen.
-      set(client_static_link_flags "-pthread ${client_static_link_flags}")
-    endif()
-
-    set_target_properties(${client_bin_name}
-                            PROPERTIES
-                              LINKER_LANGUAGE CXX
-                              LINK_SEARCH_END_STATIC ON
-                              LINK_FLAGS "${client_static_link_flags} ${strip_exe}")
-  else()
-    set_target_properties(${client_bin_name}
-                            PROPERTIES
-                              LINKER_LANGUAGE CXX
-                              LINK_SEARCH_END_STATIC ON
-                              LINK_FLAGS "${osx_link_flags} ${strip_exe}")
-
   endif()
+
+
+  set_target_properties(${client_bin_name}
+                          PROPERTIES
+                            LINKER_LANGUAGE CXX
+                            LINK_FLAGS "${client_static_link_flags} ${strip_exe}"
+                            LINK_SEARCH_END_STATIC ON)
 endfunction()
 
-function(milkyway_link client_bin_name use_boinc use_opencl use_static link_libs)
-  if (UNIX AND NOT APPLE AND use_opencl)
-    #Avoid weird linking conflict when trying to dynamically link
-    #against opencl library, and avoid dynamically linking libc unless
-    #we need to
-    list(INSERT link_libs 0 c)
-  endif()
-
+function(milkyway_link client_bin_name use_boinc use_static link_libs)
   if(use_static)
-    #Static linking tends to interfere with debugging with
-    #valgrind/gdb in annoying ways
-
     # On Linux, you must dynamically link against libOpenCL.so, and
     #then pthreads, libc etc. to avoid conflicts. On Windows, you
     #statically link against libOpenCL.lib, which then links to a dll
     #at runtime.
-    correct_static_link(${client_bin_name} ${use_opencl})
+
+    correct_static_link(${client_bin_name})
   else()
     if(use_boinc)
       list(APPEND link_libs "stdc++")
@@ -85,39 +86,13 @@ function(milkyway_link client_bin_name use_boinc use_opencl use_static link_libs
         list(APPEND link_libs "pthread")
       endif()
     endif()
-  endif()
 
-  if(use_boinc)
-    #Something dumb is happening with linking order and I'm sick of
-    #fighting with it right now (Sep. 2010)
-    list(APPEND link_libs ${BOINC_LIBRARIES})
-    list(INSERT link_libs 0 ${BOINC_LIBRARIES})
+    set_target_properties(${client_bin_name}
+                           PROPERTIES
+                             LINKER_LANGUAGE CXX
+                             LINK_FLAGS "${strip_exe}")
   endif()
-
-  #Include libm first before anything else. I can't seem to make cmake
-  #always give a static executable, and only try to use static
-  #libraries. When statically linking, by explicitly finding libm.a,
-  #and linking to that first, it avoids trying to dynamically link
-  #libm
 
   target_link_libraries(${client_bin_name} ${link_libs})
 endfunction()
-
-macro(maybe_static)
-  if(STATIC_EVERYTHING)
-    if(NOT APPLE)
-      set(LIBM_USE_STATIC 1)
-    endif()
-
-    if(NOT WIN32)
-      set(LUA_USE_STATIC 1)
-    endif()
-
-    set(POPT_USE_STATIC 1)
-    set(LIBINTL_USE_STATIC 1)
-    set(LIBICONV_USE_STATIC 1)
-    set(BOINC_USE_STATIC 1)
-  endif()
-endmacro()
-
 

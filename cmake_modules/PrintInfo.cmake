@@ -38,7 +38,6 @@ macro(print_build_options)
   message("   BOINC application: ${BOINC_APPLICATION}")
   message("   BOINC graphics:    ${BOINC_APP_GRAPHICS}")
   message("   BOINC release:     ${BOINC_RELEASE}")
-  message("   BOINC debug:       ${BOINC_DEBUG}")
   message("   ----")
 endmacro()
 

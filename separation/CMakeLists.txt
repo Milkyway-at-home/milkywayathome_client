@@ -18,7 +18,7 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.6)
 project(milkyway_separation)
 
 enable_testing()
@@ -35,8 +35,6 @@ set(separation_VERSION_MAJOR 0)
 set(separation_VERSION_MINOR 55)
 set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}")
 
-get_info_from_processor_name()
-
 include_directories(${MILKYWAY_INCLUDE_DIR})
 include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 
@@ -48,6 +46,9 @@ if(SYSTEM_IS_PPC)
   set(CMAKE_C_FLAGS "-maltivec -mfused-madd -mhard-float -mabi=altivec ${CMAKE_C_FLAGS}")
 endif()
 
+option(SEPARATION_STATIC "Build separation as fully static binary" ON)
+mark_as_advanced(SEPARATION_STATIC)
+
 option(SEPARATION_CAL "Use CAL++ voodoo" OFF)
 
 option(SEPARATION_INLINE_KERNEL
@@ -57,18 +58,6 @@ mark_as_advanced(SEPARATION_INLINE_KERNEL)
 option(ALL_OF_THE_SSES
        "All of them" OFF)
 mark_as_advanced(ALL_OF_THE_SSES)
-
-option(SMALL_TESTS
-       "Run small tests" ON)
-
-option(LARGE_TESTS
-       "Run large tests" OFF)
-
-option(AUX_LARGE_TESTS
-       "Run large aux tests" OFF)
-
-option(AUX_SMALL_TESTS
-       "Run small aux tests" OFF)
 
 option(SEPARATION_GRAPHICS
        "Use Separation Graphics" OFF)
@@ -96,31 +85,8 @@ if(NOT BOINC_APPLICATION AND SEPARATION_GRAPHICS)
   set(SEPARATION_GRAPHICS OFF)
 endif()
 
-maybe_static()
-
-if(NOT SEPARATION_FDLIBM)
-  find_package(Libm REQUIRED)
-#  include_directories(${LIBM_INCLUDE_DIR})
-  set(SEPARATION_LIBM_LIBRARY ${LIBM_LIBRARY})
-else()
-  # Replace standard libm with Fdlibm
-  find_package(Fdlibm REQUIRED)
-  include_directories(${FDLIBM_INCLUDE_DIR})
-  set(SEPARATION_LIBM_LIBRARY ${FDLIBM_LIBRARY})
-endif()
-
-find_package(CAL)
-find_package(CAL++)
-find_package(BOINC)
-
-if(BOINC_APPLICATION)
-  include_directories(${BOINC_INCLUDE_DIR})
-endif()
-
-find_package(OpenCL)
-
-if(SEPARATION_CAL AND NOT CAL++_FOUND)
-  message(WARNING "Separation CAL was requested, but CAL++ not found. Disabling CAL.")
+if(SEPARATION_CAL AND (NOT CAL++_FOUND OR NOT CAL_FOUND))
+  message(WARNING "Separation CAL was requested, but CAL or CAL++ not found. Disabling CAL.")
   set(SEPARATION_CAL OFF)
 endif()
 
@@ -135,7 +101,39 @@ if(SEPARATION_OPENCL AND SEPARATION_CAL)
   message(FATAL_ERROR "Can only choose one of OpenCL or CAL at a time")
 endif()
 
-set_os_specific_libs(${SEPARATION_OPENCL})
+
+if(SEPARATION_CAL OR SEPARATION_OPENCL)
+  set(SEPARATION_GPU 1)
+endif()
+
+if(SEPARATION_GPU)
+  message(AUTHOR_WARNING "Using GPU, so unsetting static separation")
+  set(SEPARATION_STATIC 0)
+endif()
+
+maybe_static(${SEPARATION_STATIC})
+
+
+if(NOT FDLIBM_FOUND AND SEPARATION_FDLIBM)
+  message(WARNING "Separation Fdlibm was requested, but Fdlibm found. Disabling Fdlibm.")
+  set(SEPARATION_FDLIBM OFF)
+endif()
+
+if(NOT SEPARATION_FDLIBM)
+  set(SEPARATION_LIBM_LIBRARY m)
+else()
+  # Replace standard libm with Fdlibm
+  include_directories(${FDLIBM_INCLUDE_DIR})
+  set(SEPARATION_LIBM_LIBRARY ${FDLIBM_LIBRARY})
+endif()
+
+
+
+if(BOINC_APPLICATION)
+  include_directories(${BOINC_INCLUDE_DIR})
+endif()
+
+include_directories(${POPT_INCLUDE_DIR})
 
 
 if(NEED_POPT_DEPS)
@@ -144,8 +142,6 @@ if(NEED_POPT_DEPS)
   find_package(Libiconv REQUIRED)
 endif()
 
-find_package(Popt REQUIRED)
-include_directories(${POPT_INCLUDE_DIR})
 
 print_separator()
 message("Separation build:")
@@ -270,7 +266,15 @@ elseif(SEPARATION_CAL)
   list(APPEND separation_headers ${separation_cal_headers})
 endif()
 
-list(APPEND separation_link_libs ${OS_SPECIFIC_LIBS} milkyway ${SEPARATION_LIBM_LIBRARY})
+list(APPEND separation_link_libs milkyway)
+
+if(BOINC_APPLICATION)
+  list(APPEND separation_link_libs ${BOINC_LIBRARIES})
+endif()
+
+list(APPEND separation_link_libs ${OS_SPECIFIC_LIBS}
+                                 ${SEPARATION_LIBM_LIBRARY})
+
 
 set(exe_link_libs ${POPT_LIBRARY}
                   ${separation_link_libs})
@@ -281,8 +285,6 @@ if(NEED_POPT_DEPS)
   list(APPEND exe_link_libs ${LIBICONV_LIBRARY}
                             ${LIBINTL_LIBRARY})
 endif()
-
-find_package(Crlibm)
 
 if(CRLIBM_FOUND AND SEPARATION_CRLIBM)
   include_directories(${CRLIBM_INCLUDE_DIR})
@@ -333,10 +335,9 @@ endif()
 
 add_library("${separation_base_lib_name}" STATIC ${lib_source_file_list} ${separation_headers})
 add_executable("${separation_base_bin_name}" ${separation_main_src})
-#target_link_libraries("${separation_base_bin_name} ${separation_base_lib_name}")
+
 milkyway_link("${separation_base_bin_name}" ${BOINC_APPLICATION}
-                                            ${SEPARATION_OPENCL}
-                                            ${STATIC_EVERYTHING}
+                                            ${SEPARATION_STATIC}
                                             "${separation_base_lib_name};${exe_link_libs}")
 
 
@@ -352,8 +353,7 @@ if(ALL_OF_THE_SSES)
     add_sseX_library("${separation_base_lib_name}" "${i}" "${lib_source_file_list}" "${separation_headers}")
     add_sseX_executable("${sse_base_bin_name}" "${i}" "${separation_main_src}")
     milkyway_link(${SSE_EXE_NAME} ${BOINC_APPLICATION}
-                                  ${SEPARATION_OPENCL}
-                                  ${STATIC_EVERYTHING}
+                                  ${SEPARATION_STATIC}
                                   "${separation_base_lib_name};${exe_link_libs}")
   endforeach()
 endif()

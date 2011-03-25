@@ -24,6 +24,7 @@ project(milkyway)
 include(SpecialLibs)
 include(CheckFunctionExists)
 include(CheckIncludeFiles)
+include(StaticBOINC)
 
 check_function_exists(asprintf HAVE_ASPRINTF)
 check_include_files(tgmath.h HAVE_TGMATH_H)
@@ -35,20 +36,12 @@ endif()
 set(MILKYWAY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "libmilkyway headers")
 include_directories(${MILKYWAY_INCLUDE_DIR})
 
-find_package(Popt REQUIRED)
-include_directories(${POPT_INCLUDE_DIR})
 
-if(BOINC_APPLICATION)
-  find_package(BOINC)
-  include_directories(${BOINC_INCLUDE_DIR})
-endif()
+
 
 if(${MILKYWAY_OPENCL} MATCHES "ON")
-  find_package(OpenCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
 endif()
-
-set_os_specific_libs(${MILKYWAY_OPENCL})
 
 check_function_exists(exp10 HAVE_EXP10)
 check_function_exists(sincos HAVE_SINCOS)

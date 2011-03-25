@@ -18,7 +18,7 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required(VERSION 2.6)
 project(milkywayathome)
 
 enable_testing()
@@ -74,14 +74,10 @@ option(OPENCL_ATI "Using ATI OpenCL")
 mark_as_advanced(OPENCL_ATI)
 
 
-# 'Secret' options
+
 option(DISABLE_DENORMALS
        "Disable denormal handling with SSE" OFF)
 mark_as_advanced(DISABLE_DENORMALS)
-
-option(STATIC_EVERYTHING
-       "Prefer static libraries" ON)
-mark_as_advanced(STATIC_EVERYTHING)
 
 option(BOINC_RELEASE_NAMES
        "Use BOINC platform binary names" OFF)
@@ -125,7 +121,6 @@ if(DISABLE_DENORMALS)
 endif()
 
 if(BOINC_RELEASE)
-  set(STATIC_EVERYTHING ON)
   set(BOINC_RELEASE_NAMES ON)
   set(BOINC_APPLICATION ON)
   set(DOUBLEPREC ON)
@@ -144,8 +139,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(MW_ENABLE_DEBUG ON)
 endif()
 
-
-maybe_static()
 
 if(APPLE)
   set(NEED_POPT_DEPS 1)
@@ -312,6 +305,29 @@ endif()
 
 # locally installed headers, and generated *_config.h
 set(MILKYWAY_INSTALL_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "Locally installed headers")
+
+
+
+
+# Look for GPU things first. This way we can continue normally if not found.
+find_package(CAL)
+find_package(CAL++)
+find_package(OpenCL)
+find_package(OpenMP)
+find_package(Crlibm)
+find_package(Fdlibm)
+find_package(BOINC)
+
+find_package(Popt REQUIRED)
+include_directories(${POPT_INCLUDE_DIR})
+
+
+if(BOINC_APPLICATION)
+  include_directories(${BOINC_INCLUDE_DIR})
+endif()
+
+
+include(SpecialLibs)
 
 add_subdirectory(milkyway)
 

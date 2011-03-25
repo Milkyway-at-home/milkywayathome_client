@@ -20,8 +20,6 @@
 
 include(CPUNameTest)
 
-get_info_from_processor_name()
-
 if(NOT SYSTEM_IS_PPC)
   if(NOT MSVC)
     set(SSE2_FLAGS "-mfpmath=sse -msse -msse2")
@@ -30,20 +28,20 @@ if(NOT SYSTEM_IS_PPC)
   endif()
 endif()
 
-function(check_sse2)
-    message(STATUS "Checking for SSE2")
 
-    try_compile(SSE2_CHECK ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH}/sse2_check.c
-                CMAKE_FLAGS "${SSE2_FLAGS}")
+message(STATUS "Checking for SSE2")
 
-    if(SSE2_CHECK)
-        set(HAVE_SSE2 1 CACHE STRING "Status of SSE2")
-        message(STATUS "Checking if SSE2 is available - yes")
-    else()
-        set(HAVE_SSE2 0 CACHE STRING "Status of SSE2")
-        message(STATUS "Checking if SSE2 is available - no")
-    endif()
+try_compile(SSE2_CHECK ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH}/sse2_check.c
+             CMAKE_FLAGS "${SSE2_FLAGS}")
 
-    mark_as_advanced(HAVE_SSE2)
-endfunction()
+if(SSE2_CHECK)
+  set(HAVE_SSE2 1 CACHE STRING "Status of SSE2")
+  message(STATUS "Checking if SSE2 is available - yes")
+else()
+  set(HAVE_SSE2 0 CACHE STRING "Status of SSE2")
+  message(STATUS "Checking if SSE2 is available - no")
+endif()
+
+mark_as_advanced(HAVE_SSE2)
+
 

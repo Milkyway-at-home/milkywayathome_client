@@ -21,8 +21,6 @@
 include(MaybeDlCheck)
 include(CheckSSE2)
 
-check_sse2()
-
 macro(download_build_crlibm)
   set(crlibmVer "1.0beta4")
   set(crlibmMD5 "8ecabd55d4a2d08030eb770ae2a5670a")
