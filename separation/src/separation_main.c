@@ -35,6 +35,7 @@ typedef struct
     char* ap_file;  /* astronomy parameters */
     char* separation_outfile;
     char* referenceFile;
+    int debugBOINC;
     int do_separation;
     int separationSeed;
     int cleanup_checkpoint;
@@ -44,7 +45,7 @@ typedef struct
     unsigned int numChunk;
 } SeparationFlags;
 
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0 }
 
 static void freeSeparationFlags(SeparationFlags* sf)
 {
@@ -77,7 +78,7 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 
 
 /* Returns the newly allocated array of parameters */
-static real* parseParameters(int argc, const char** argv, unsigned int* paramnOut, SeparationFlags* sf)
+static real* parseParameters(int argc, const char** argv, unsigned int* paramnOut, SeparationFlags* sfOut)
 {
     poptContext context;
     real* parameters = NULL;
@@ -85,67 +86,74 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
     static int server_params = 0;
     static const char** rest;
     const char** argvCopy;
+    static SeparationFlags sf;
 
-    const struct poptOption options[] =
+    static const struct poptOption options[] =
     {
         {
             "astronomy-parameter-file", 'a',
-            POPT_ARG_STRING, &sf->ap_file,
+            POPT_ARG_STRING, &sf.ap_file,
             0, "Astronomy parameter file", NULL
         },
 
         {
             "star-points-file", 's',
-            POPT_ARG_STRING, &sf->star_points_file,
+            POPT_ARG_STRING, &sf.star_points_file,
             0, "Star points files", NULL
         },
 
         {
             "output", 'o',
-            POPT_ARG_STRING, &sf->separation_outfile,
+            POPT_ARG_STRING, &sf.separation_outfile,
             0, "Output file for separation (enables separation)", NULL
         },
 
         {
             "separation-seed", 'e',
-            POPT_ARG_INT, &sf->separationSeed,
+            POPT_ARG_INT, &sf.separationSeed,
             0, "Seed for random number generator", NULL
         },
 
         {
             "cleanup-checkpoint", 'c',
-            POPT_ARG_NONE, &sf->cleanup_checkpoint,
+            POPT_ARG_NONE, &sf.cleanup_checkpoint,
             0, "Delete checkpoint on successful", NULL
         },
 
         {
             "verify", 'v',
-            POPT_ARG_STRING, &sf->referenceFile,
+            POPT_ARG_STRING, &sf.referenceFile,
             0, "Verify against result file", NULL
+        },
+
+        {
+            "debug-boinc", 'g',
+            POPT_ARG_NONE, &sf.debugBOINC,
+            0, "Init BOINC with debugging. No effect if not built with BOINC_APPLICATION", NULL
         },
 
       #if SEPARATION_OPENCL
         {
             "device", 'd',
-            POPT_ARG_INT, &sf->useDevNumber,
+            POPT_ARG_INT, &sf.useDevNumber,
             0, "Device number passed by boinc to use", NULL
         },
 
         {
             "platform", 'l',
-            POPT_ARG_INT, &sf->usePlatform,
+            POPT_ARG_INT, &sf.usePlatform,
             0, "CL Platform to use", NULL
         },
 
         {
             "non-responsive", 'r',
-            POPT_ARG_NONE, &sf->nonResponsive,
+            POPT_ARG_NONE, &sf.nonResponsive,
             0, "Don't care about responsiveness on GPU", NULL
         },
 
         {
             "num-chunk", 'u',
-            POPT_ARG_INT, &sf->numChunk,
+            POPT_ARG_INT, &sf.numChunk,
             0, "Manually set number of chunks per GPU iteration", NULL
         },
       #endif /* SEPARATION_OPENCL */
@@ -174,40 +182,41 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
     {
         poptPrintUsage(context, stderr, 0);
         poptFreeContext(context);
-        mw_finish(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     }
 
     if (mwReadArguments(context))
     {
         poptPrintHelp(context, stderr, 0);
         poptFreeContext(context);
-        freeSeparationFlags(sf);
+        freeSeparationFlags(&sf);
         free(argvCopy);
-        mw_finish(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     }
 
-    sf->do_separation = (sf->separation_outfile && strcmp(sf->separation_outfile, ""));
-    if (!sf->do_separation) /* Skip server arguments for just running separation */
+    sf.do_separation = (sf.separation_outfile && strcmp(sf.separation_outfile, ""));
+    if (!sf.do_separation) /* Skip server arguments for just running separation */
     {
         rest = poptGetArgs(context);
         parameters = mwReadRestArgs(rest, numParams, paramnOut);
         if (!parameters)
         {
             warn("Failed to read server arguments\n");
-            freeSeparationFlags(sf);
+            freeSeparationFlags(&sf);
             poptFreeContext(context);
             free(argvCopy);
-            mw_finish(EXIT_FAILURE);
+            exit(EXIT_FAILURE);
         }
     }
 
     free(argvCopy);
     poptFreeContext(context);
-    setDefaultFiles(sf);
+    setDefaultFiles(&sf);
 
-    if (sf->do_separation)
-        prob_ok_init(sf->separationSeed);
+    if (sf.do_separation)
+        prob_ok_init(sf.separationSeed);
 
+    *sfOut = sf;
     return parameters;
 }
 
@@ -340,12 +349,6 @@ static void printVersion() { }
 
 #endif /* BOINC_APPLICATION */
 
-#ifdef NDEBUG
-  #define useBoincDebug 0
-#else
-  #define useBoincDebug 1
-#endif /* NDEBUG */
-
 int main(int argc, const char* argv[])
 {
     int rc;
@@ -353,24 +356,19 @@ int main(int argc, const char* argv[])
     real* parameters;
     unsigned int number_parameters;
 
-    rc = mwBoincInit(argv[0], useBoincDebug);
-    if (rc)
-        exit(rc);
-
-    printVersion();
-
     parameters = parseParameters(argc, argv, &number_parameters, &sf);
     if (!parameters && !sf.do_separation)
     {
         warn("Could not parse parameters from the command line\n");
-        rc = 1;
+        exit(EXIT_FAILURE);
     }
-    else
-    {
-        rc = worker(&sf, parameters, number_parameters);
-        if (rc)
-            warn("Worker failed\n");
-    }
+
+    rc = mwBoincInit(argv[0], sf.debugBOINC);
+    if (rc)
+        exit(rc);
+
+    printVersion();
+    rc = worker(&sf, parameters, number_parameters);
 
     freeSeparationFlags(&sf);
     free(parameters);

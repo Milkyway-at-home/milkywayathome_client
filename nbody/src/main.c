@@ -164,7 +164,7 @@ static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
         },
 
         {
-            "debug-boinc", 'd',
+            "debug-boinc", 'g',
             POPT_ARG_NONE, &nbf->debugBOINC,
             0, "Init BOINC with debugging. No effect if not built with BOINC_APPLICATION", NULL
         },

@@ -276,7 +276,7 @@ end
 function runFullTest(testName, seed, ...)
    return os.readProcess(nbodyBinary,
                          "-i", "--checkpoint-interval=-1", -- Disable checkpointing
-                         "-d", -- Prevent stderr from getting consumed with BOINC
+                         "-g", -- Prevent stderr from getting consumed with BOINC
                          "-t",
                          "-f", getTestFilePath(testName),
                          "-h", getHistogramFilePath(histogramName),
