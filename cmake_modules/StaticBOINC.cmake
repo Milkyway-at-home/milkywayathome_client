@@ -57,7 +57,7 @@ function(correct_static_link client_bin_name)
   if(UNIX AND NOT APPLE)
     set(client_static_link_flags "-static -static-libgcc -static-libstdc++ -pthread")
   elseif(MINGW)
-    set(client_static_link_flags "-static -static-libgcc -static-libstdc++")
+    set(client_static_link_flags "-static-libgcc -static-libstdc++")
   elseif(UNIX AND APPLE) # OS X
     # No static
     set(client_static_link_flags "-static-libgcc -static-libstdc++")
