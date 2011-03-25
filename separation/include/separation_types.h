@@ -132,7 +132,7 @@ typedef struct
     real lCosBCos, lSinBCos;
 } LTrigPair;
 
-typedef struct SEPARATION_ALIGN(2 * sizeof(real))
+typedef struct
 {
     real nu;
     real id;

@@ -120,7 +120,9 @@ if(NOT FDLIBM_FOUND AND SEPARATION_FDLIBM)
 endif()
 
 if(NOT SEPARATION_FDLIBM)
-  set(SEPARATION_LIBM_LIBRARY m)
+  if(NOT WIN32)
+    set(SEPARATION_LIBM_LIBRARY m)
+  endif()
 else()
   # Replace standard libm with Fdlibm
   include_directories(${FDLIBM_INCLUDE_DIR})
