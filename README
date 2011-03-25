@@ -89,3 +89,10 @@ Tests can be run by running:
   Currently n = 100, 1024, 10000 are available.
 
 
+--------------------------------------------------------------------------------
+
+Random notes:
+
+make nbody_release and make separation_release will produce release
+tarballs if git and xz are installed and found.
+

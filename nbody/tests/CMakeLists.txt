@@ -56,12 +56,18 @@ set(orphan_model_names model_1
                        model_7
                        model_triaxial)
 
+#FIXME: Workaround for some kind of cmake broken when using the release names
+if(BOINC_RELEASE_NAMES)
+  set(nbody_bin_path "${EXECUTABLE_OUTPUT_PATH}/${nbody_bin_name}")
+else()
+  set(nbody_bin_path $<TARGET_FILE:${nbody_bin_name}>)
+endif()
 
 foreach(model_name ${orphan_model_names})
   foreach(n ${body_counts})
     add_test(NAME ${model_name}__${n}_test
                COMMAND nbody_test_driver "RunTestUnits.lua"
-                                          $<TARGET_FILE:${nbody_bin_name}>
+                                          ${nbody_bin_path}
                                           "orphan_models"
                                           ${model_name}
                                           "orphan_model_histogram"

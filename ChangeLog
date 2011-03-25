@@ -1,0 +1,17 @@
+
+
+nbody 0.40:
+	- Replace JSON config file with Lua
+	- Support for arbitrary initial distributions with Lua
+	- Bindings to old utility functions for Plummer sphere, timestep calculation, eps2 etc.
+	- Simulation can now be run with no background potential
+	- Fix "No error" message for some checkpointing failures on Windows
+	- Improved partial automated testing (mostly incomplete)
+	- Add option to silence tree structure errors
+	- No longer immediately aborts on tree structure errors
+	- Add argument to prevent BOINC from eating stderr
+	- Fix conflicts with Apple headers when using Macports GCC
+	- Checkpointing no longer requires initial config file (likely to change again)
+	- Checkpointing now works without BOINC
+
+

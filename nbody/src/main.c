@@ -214,8 +214,7 @@ static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
         },
 
         POPT_AUTOHELP
-
-        { NULL, 0, 0, NULL, 0, NULL, NULL }
+        POPT_TABLEEND
     };
 
     context = poptGetContext(argv[0], argc, argv, options, 0);

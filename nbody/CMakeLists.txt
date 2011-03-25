@@ -21,9 +21,12 @@
 cmake_minimum_required(VERSION 2.6)
 project(milkyway_nbody)
 
-set(nbody_VERSION_MAJOR 0)
-set(nbody_VERSION_MINOR 30)
-set(nbody_VERSION "${nbody_VERSION_MAJOR}.${nbody_VERSION_MINOR}")
+set(nbody_VERSION_MAJOR 0
+          CACHE INTERNAL "N-body version number")
+set(nbody_VERSION_MINOR 30
+          CACHE INTERNAL "N-body version number")
+set(nbody_VERSION "${nbody_VERSION_MAJOR}.${nbody_VERSION_MINOR}"
+          CACHE INTERNAL "N-body version number")
 
 include(MaybeDlCheck)
 include(StaticBOINC)
@@ -57,7 +60,7 @@ option(NBODY_CRLIBM
       "Use crlibm double" ON)
 mark_as_advanced(NBODY_CRLIBM)
 
-option(NBODY_OPENMP "Use OpenMP" OFF)
+option(NBODY_OPENMP "Use OpenMP" ON)
 
 
 if(LUA_USE_STATIC)
@@ -304,7 +307,7 @@ if(NOT HAVE_SSE2 AND SYSTEM_IS_x86)
   message(FATAL_ERROR "SSE2 is required for x86 systems")
 endif()
 
-if(BOINC_RELEASE_NAME)
+if(BOINC_RELEASE_NAMES)
   if(NBODY_OPENMP)
     set(NBODY_PLAN "mt")
   else()

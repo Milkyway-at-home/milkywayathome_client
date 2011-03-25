@@ -19,13 +19,13 @@
 #
 
 cmake_minimum_required(VERSION 2.6)
-project(milkywayathome)
+project(milkywayathome_client)
 
 enable_testing()
 
 # Find custom cmake modules
-set(CMAKE_MODULE_PATH "${milkywayathome_SOURCE_DIR}/cmake_modules")
-set(PROJECT_TOOL_DIR "${milkywayathome_SOURCE_DIR}/tools")
+set(CMAKE_MODULE_PATH "${milkywayathome_client_SOURCE_DIR}/cmake_modules")
+set(PROJECT_TOOL_DIR "${milkywayathome_client_SOURCE_DIR}/tools")
 
 include(MinGWPaths)
 include(StaticBOINC)
@@ -338,4 +338,19 @@ endif()
 if(NBODY)
   add_subdirectory(nbody)
 endif()
+
+
+find_package(Git)
+find_program(XZ_COMMAND xz)
+
+macro(make_release_tarball targetname releasename)
+  add_custom_target(${targetname} COMMAND ${GIT_EXECUTABLE} archive --prefix="${releasename}/" --format=tar HEAD | ${XZ_COMMAND} -9 > "${releasename}.tar.xz")
+endmacro()
+
+
+if(GIT_FOUND AND XZ_COMMAND)
+  make_release_tarball("nbody_release" "milkyway_nbody_${nbody_VERSION}")
+  make_release_tarball("separation_release" "milkyway_separation_${separation_VERSION}")
+endif()
+
 

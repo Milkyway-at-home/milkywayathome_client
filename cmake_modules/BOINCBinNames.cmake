@@ -26,8 +26,6 @@ endmacro()
 include(CPUNameTest)
 
 function(get_boinc_bin_name basename version plan)
-  get_info_from_processor_name()
-
   if(WIN32)
     if(SYSTEM_IS_64)
       set(boinc_sys_name "windows_x86_64")
