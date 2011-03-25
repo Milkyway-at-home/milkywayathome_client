@@ -269,8 +269,8 @@ else()
   endif()
 endif()
 
-if(NOT WIN32 AND LUA_HAS_DYLOAD)
-#  list(APPEND LUA_LIBRARIES dl)
+if(NOT WIN32)
+  list(APPEND LUA_LIBRARIES dl)
 endif()
 
 set(nbody_exe_link_libs nbody_simulation

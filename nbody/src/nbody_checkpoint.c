@@ -289,10 +289,10 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     if (supposedCheckpointSize != cp->cpFileSize)
     {
         return warn1("Expected checkpoint file size ("ZU") is incorrect for expected number of bodies "
-                     "(%u bodies, real size %lu)\n",
+                     "(%u bodies, real size "ZU")\n",
                      supposedCheckpointSize,
                      st->nbody,
-                     cp->cpFileSize);
+                     (size_t) cp->cpFileSize);
     }
 
     if (realSize != sizeof(real))

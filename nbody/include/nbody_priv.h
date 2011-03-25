@@ -21,10 +21,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _NBODY_PRIV_H_
 #define _NBODY_PRIV_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "nbody_config.h" /* Must be included first */
 
 #include "milkyway_math.h"
@@ -46,11 +42,6 @@ extern "C" {
 #if NBODY_OPENCL
   #include "gravmap_opencl.h"
 #endif /* NBODY_OPENCL */
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* _NBODY_PRIV_H_ */
 

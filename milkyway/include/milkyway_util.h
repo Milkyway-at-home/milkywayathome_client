@@ -32,7 +32,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define _CRT_SECURE_NO_WARNINGS
   #define WIN32_LEAN_AND_MEAN
   #define VC_EXTRALEAN
-  #include <intrin.h>
   #include <malloc.h>
   #include <windows.h>
 #endif /* _WIN32 */
