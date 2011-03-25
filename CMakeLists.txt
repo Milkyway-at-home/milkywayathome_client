@@ -90,7 +90,7 @@ mark_as_advanced(DOWNLOAD_CRLIBM)
 
 # Find libraries installed to this prefix. This way we can just dump
 # dependencies here on windows where everything is painful.
-set(MILKYWAY_ROOT ${PROJECT_SOURCE_DIR})
+set(MILKYWAY_ROOT ${PROJECT_BINARY_DIR})
 list(INSERT CMAKE_PREFIX_PATH 0 ${MILKYWAY_ROOT})
 
 # Stuff which the build will download and use from there.
