@@ -34,31 +34,104 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "nbody_defaults.h"
 
+
+
+/* Checkpoint file: Very simple binary "format"
+   Name     Type    Values     Notes
+-------------------------------------------------------
+   NBodyCheckpointHeader
+   bodytab       Body*    anything   Array of bodies
+   ending        string   "end"      Kind of dumb and pointless
+ */
+
 static const char hdr[] = "mwnbody";
 static const char tail[] = "end";
 
-/* Everything except the size of all the bodies */
-static const size_t hdrSize = sizeof(size_t)                              /* size of real */
-                            + sizeof(void*)                               /* Check pointer size */
-                            + sizeof(NBodyCtx)
-                            + 2 * sizeof(int)                    /* Major, minor version number */
-                            + sizeof(char) * (sizeof(tail) + sizeof(hdr) - 2) /* error checking tags */
-                            + 1 * sizeof(unsigned int)                        /* nbody count */
-                            + 2 * sizeof(real)                                /* tnow, rsize */
-                            + sizeof(int);                                    /* tree incest */
+typedef struct __attribute__((packed, aligned(512)))
+{
+    char header[sizeof(hdr)];        /* "mwnbody" */
+    size_t realSize;                 /* Does the checkpoint use float or double */
+    size_t ptrSize;
+    int majorVersion, minorVersion;  /* Version check */
+    unsigned int nbody;              /* Saved copies of state */
+    real tnow;
+    real rsize;
+    int treeIncest;
+    NBodyCtx ctx;
+} NBodyCheckpointHeader;
 
-/* Macros to read/write the buffer and advance the pointer the correct size */
-#define DUMP_CTX(p, x) { *((NBodyCtx*) (p)) = *(x); (p) += sizeof(NBodyCtx); }
-#define DUMP_REAL(p, x) { *((real*) (p)) = (x); (p) += sizeof(real); }
-#define DUMP_INT(p, x) { *((int*) (p)) = (x); (p) += sizeof(int); }
-#define DUMP_SIZE_T(p, x) { *((size_t*) (p)) = (x); (p) += sizeof(size_t); }
-#define DUMP_STR(p, x, size) { memcpy((p), (x), (size)); (p) += (size); }
+static const size_t hdrSize = sizeof(NBodyCheckpointHeader) + sizeof(tail);
 
-#define READ_CTX(x, p) { *(x) = *((NBodyCtx*) (p)); (p) += sizeof(NBodyCtx); }
-#define READ_REAL(x, p) { (x) = *((real*) (p)); (p) += sizeof(real); }
-#define READ_INT(x, p) { (x) = *((int*) (p)); (p) += sizeof(int); }
-#define READ_SIZE_T(x, p) { (x) = *((size_t*) (p)); (p) += sizeof(size_t); }
-#define READ_STR(x, p, size) { memcpy((x), (p), (size)); (p) += (size); }
+
+
+static void prepareWriteCheckpointHeader(NBodyCheckpointHeader* cp, const NBodyCtx* ctx, const NBodyState* st)
+{
+    strcpy(cp->header, hdr);
+    cp->realSize = sizeof(real);
+    cp->ptrSize = sizeof(void*);
+
+    cp->majorVersion = MILKYWAY_NBODY_VERSION_MAJOR;
+    cp->minorVersion= MILKYWAY_NBODY_VERSION_MINOR;
+
+    memcpy(&cp->ctx, ctx, sizeof(cp->ctx));
+    cp->nbody = st->nbody;
+    cp->tnow = st->tnow;
+    cp->rsize = st->tree.rsize;
+    cp->treeIncest = st->treeIncest;
+}
+
+static void readCheckpointHeader(NBodyCheckpointHeader* cp, NBodyCtx* ctx, NBodyState* st)
+{
+    memcpy(ctx, &cp->ctx, sizeof(*ctx));
+    st->nbody = cp->nbody;
+    st->tnow = cp->tnow;
+    st->tree.rsize = cp->rsize;
+    st->treeIncest = cp->treeIncest;
+}
+
+static int verifyCheckpointHeader(const NBodyCheckpointHeader* cpHdr,
+                                  const CheckpointHandle* cp,
+                                  const NBodyState* st,
+                                  size_t supposedCheckpointSize)
+{
+    if (strncmp(cpHdr->header, hdr, sizeof(cpHdr->header)))
+    {
+        return warn1("Didn't find header for checkpoint file.\n");
+    }
+
+    /* Make sure the file isn't lying about how many bodies there are */
+    if (supposedCheckpointSize != cp->cpFileSize)
+    {
+        return warn1("Expected checkpoint file size ("ZU") is incorrect for expected number of bodies "
+                     "(%u bodies, real size "ZU")\n",
+                     supposedCheckpointSize,
+                     st->nbody,
+                     (size_t) cp->cpFileSize);
+    }
+
+    if (cpHdr->realSize != sizeof(real))
+    {
+        return warn1("Got checkpoint file for wrong type. "
+                     "Expected sizeof(real) = "ZU", got "ZU"\n",
+                     sizeof(real), cpHdr->realSize);
+    }
+
+    if (cpHdr->ptrSize != sizeof(void*))
+    {
+        return warn1("Got checkpoint file for wrong architecture. "
+                     "Expected sizeof(void*) = "ZU", got "ZU"\n", sizeof(void*), cpHdr->ptrSize);
+    }
+
+    if (   cpHdr->majorVersion != MILKYWAY_NBODY_VERSION_MAJOR
+        || cpHdr->minorVersion != MILKYWAY_NBODY_VERSION_MINOR)
+    {
+        return warn1("Version mismatch in checkpoint file. File is for %u.%u, But version is %u.%u\n",
+                     cpHdr->majorVersion, cpHdr->minorVersion,
+                     MILKYWAY_NBODY_VERSION_MAJOR, MILKYWAY_NBODY_VERSION_MINOR);
+    }
+
+    return 0;
+}
 
 
 #ifndef _WIN32
@@ -150,8 +223,6 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
              Flushing:
              http://msdn.microsoft.com/en-us/library/aa366563(v=VS.85).aspx
  */
-
-
 static int openCheckpointHandle(const NBodyState* st, CheckpointHandle* cp, const char* filename, int writing)
 {
     SYSTEM_INFO si;
@@ -255,135 +326,54 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
 /* Should be given the same context as the dump. Returns nonzero if the state failed to be thawed */
 static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 {
-    size_t realSize, ptrSize;
-    unsigned int majorVersion, minorVersion;
-    char buf[sizeof(hdr)];
-    char tailBuf[sizeof(tail)];
     size_t bodySize, supposedCheckpointSize;
+    NBodyCheckpointHeader cpHdr;
     char* p = cp->mptr;
 
-    READ_STR(buf, p, sizeof(hdr) - 1);
+    memset(&cpHdr, 0, sizeof(cpHdr));
+    memcpy(&cpHdr, p, sizeof(cpHdr));
+    p += sizeof(cpHdr);
 
-    READ_SIZE_T(realSize, p);
-    READ_SIZE_T(ptrSize, p);
-    READ_INT(majorVersion, p);
-    READ_INT(minorVersion, p);
-
-    READ_CTX(ctx, p);
-
-    READ_INT(st->nbody, p);
-    bodySize = st->nbody * sizeof(Body);
-
-    READ_REAL(st->tnow, p);
-    READ_REAL(st->tree.rsize, p);
-    READ_INT(st->treeIncest, p);
-
-    if (strncmp(hdr, buf, sizeof(hdr) - 1))
-    {
-        return warn1("Didn't find header for checkpoint file.\n");
-    }
+    readCheckpointHeader(&cpHdr, ctx, st);
 
     assert(cp->cpFileSize != 0);
-    /* Make sure the file isn't lying about how many bodies there are */
-    supposedCheckpointSize = hdrSize + st->nbody * sizeof(Body);
-    if (supposedCheckpointSize != cp->cpFileSize)
-    {
-        return warn1("Expected checkpoint file size ("ZU") is incorrect for expected number of bodies "
-                     "(%u bodies, real size "ZU")\n",
-                     supposedCheckpointSize,
-                     st->nbody,
-                     (size_t) cp->cpFileSize);
-    }
+    bodySize = st->nbody * sizeof(Body);
+    supposedCheckpointSize = hdrSize + bodySize;
 
-    if (realSize != sizeof(real))
-    {
-        return warn1("Got checkpoint file for wrong type. "
-                     "Expected sizeof(real) = "ZU", got "ZU"\n",
-                     sizeof(real), realSize);
-    }
-
-    if (ptrSize != sizeof(void*))
-    {
-        return warn1("Got checkpoint file for wrong architecture. "
-                     "Expected sizeof(void*) = "ZU", got "ZU"\n", sizeof(void*), ptrSize);
-    }
-
-    if (majorVersion != MILKYWAY_NBODY_VERSION_MAJOR || minorVersion != MILKYWAY_NBODY_VERSION_MINOR)
-    {
-        return warn1("Version mismatch in checkpoint file. File is for %u.%u, But version is %u.%u\n",
-                     majorVersion, minorVersion,
-                     MILKYWAY_NBODY_VERSION_MAJOR, MILKYWAY_NBODY_VERSION_MINOR);
-    }
+    verifyCheckpointHeader(&cpHdr, cp, st, supposedCheckpointSize);
 
     /* Read the bodies */
     st->bodytab = (Body*) mwMallocA(bodySize);
     memcpy(st->bodytab, p, bodySize);
     p += bodySize;
 
-    READ_STR(tailBuf, p, sizeof(tailBuf) - 1);
-    if (strncmp(tail, tailBuf, sizeof(tailBuf) - 1))
+    if (strncmp(p, tail, sizeof(tail)))
     {
         free(st->bodytab);
         st->bodytab = NULL;
         return warn1("Failed to find end marker in checkpoint file.\n");
-
     }
 
     return FALSE;
 }
 
-/* Checkpoint file: Very simple binary "format"
-   Name     Type    Values     Notes
--------------------------------------------------------
-   header        string   "mwnbody"  No null terminator
-   sizeof(real)  size_t   4, 8       Does the checkpoint use float or double
-   sizeof(void*) size_t   4, 8
-   version major int      4
-   version minor int      4
-                                        Saved parts of the program state
-   ctx           NBodyCtx sizeof(NBodyCtx)
-   nbody         uint     anything   Num. of bodies expected. Error if doesn't match nbody in context.
-   tnow          real     anything
-   rsize         real     anything
-   treeIncest    int      0, 1       If incest has occured
-   bodytab       Body*    anything   Array of bodies
-   ending        string   "end"      No null terminator
- */
-
-/* Use a very simple flag to mark when writing the checkpoint file
- * begins and ends. I think this should always be good enough, unless
- * something really weird happens. If the read is interrupted, the
- * checkpoint file is garbage and we lose everything. Uses the boinc
- * critical sections, so it hopefully won't be interrupted.
- */
 static inline void freezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHandle* cp)
 {
     const size_t bodySize = sizeof(Body) * st->nbody;
     char* p = cp->mptr;
+    NBodyCheckpointHeader cpHdr;
 
-    /* -1 so we don't bother with the null terminator. It's slightly
-        annoying since the strcmps use it, but memcpy doesn't. We
-        don't need it anyway  */
-    DUMP_STR(p, hdr, sizeof(hdr) - 1);  /* Simple marker for a checkpoint file */
-    DUMP_SIZE_T(p, sizeof(real));   /* Make sure we don't confuse double and float checkpoints */
-    DUMP_SIZE_T(p, sizeof(void*));
-    DUMP_INT(p, MILKYWAY_NBODY_VERSION_MAJOR);
-    DUMP_INT(p, MILKYWAY_NBODY_VERSION_MINOR);
+    memset(&cpHdr, 0, sizeof(cpHdr));
+    prepareWriteCheckpointHeader(&cpHdr, ctx, st);
 
-    /* Now that we have some basic check stuff written, dump the state */
-    DUMP_CTX(p, ctx);
-
-    /* Little state pieces */
-    DUMP_INT(p, st->nbody);         /* Make sure we get the right number of bodies */
-    DUMP_REAL(p, st->tnow);
-    DUMP_REAL(p, st->tree.rsize);
-    DUMP_INT(p, st->treeIncest);
+    memcpy(p, &cpHdr, sizeof(cpHdr));
+    p += sizeof(cpHdr);
 
     /* The main piece of state*/
     memcpy(p, st->bodytab, bodySize);
     p += bodySize;
 
-    DUMP_STR(p, tail, sizeof(tail) - 1);
+    strcpy(p, tail);
 }
 
 /* Open the temporary checkpoint file for writing */
