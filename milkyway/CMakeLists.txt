@@ -107,3 +107,8 @@ set_target_properties(milkyway PROPERTIES
                       COMPILE_DEFINITIONS "MILKYWAY_MATH_COMPILATION")
 
 
+install(TARGETS milkyway
+        ARCHIVE       DESTINATION lib
+        PUBLIC_HEADER DESTINATION include)
+
+

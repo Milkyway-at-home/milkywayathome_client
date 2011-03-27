@@ -331,4 +331,8 @@ milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} ${NBODY_STATIC} "${nbody_ex
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 
+install(TARGETS ${nbody_bin_name} nbody_simulation nbody_lua
+          RUNTIME       DESTINATION bin
+          ARCHIVE       DESTINATION lib
+          PUBLIC_HEADER DESTINATION include)
 

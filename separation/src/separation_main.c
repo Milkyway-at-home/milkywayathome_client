@@ -349,6 +349,11 @@ static void printVersion() { }
 
 #endif /* BOINC_APPLICATION */
 
+
+#ifdef MILKYWAY_IPHONE_APP
+  #define main _iphone_main
+#endif
+
 int main(int argc, const char* argv[])
 {
     int rc;
@@ -365,7 +370,7 @@ int main(int argc, const char* argv[])
 
     rc = mwBoincInit(argv[0], sf.debugBOINC);
     if (rc)
-        exit(rc);
+        return rc;
 
     printVersion();
     rc = worker(&sf, parameters, number_parameters);
@@ -373,7 +378,7 @@ int main(int argc, const char* argv[])
     freeSeparationFlags(&sf);
     free(parameters);
 
-  #if BOINC_APPLICATION && !SEPARATION_OPENCL
+  #if !SEPARATION_OPENCL
     if (sf.cleanup_checkpoint && rc == 0)
     {
         mw_report("Removing checkpoint file '%s'\n", CHECKPOINT_FILE);
@@ -381,7 +386,9 @@ int main(int argc, const char* argv[])
     }
   #endif
 
+  #if BOINC_APPLICATION
     mw_finish(rc);
+  #endif
 
     return rc;
 }

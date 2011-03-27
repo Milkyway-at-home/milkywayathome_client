@@ -33,7 +33,7 @@ include(BuildSSELevels)
 
 set(separation_VERSION_MAJOR 0
                CACHE INTERNAL "Separation version number")
-set(separation_VERSION_MINOR 55
+set(separation_VERSION_MINOR 56
                CACHE INTERNAL "Separation version number")
 set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}"
                CACHE INTERNAL "Separation version number")
@@ -339,7 +339,13 @@ else()
 endif()
 
 add_library("${separation_base_lib_name}" STATIC ${lib_source_file_list} ${separation_headers})
-add_executable("${separation_base_bin_name}" ${separation_main_src})
+
+if(NOT MILKYWAY_IPHONE_APP)
+  add_executable("${separation_base_bin_name}" ${separation_main_src})
+else()
+  add_library("${separation_base_bin_name}" STATIC ${separation_main_src})
+endif()
+
 
 milkyway_link("${separation_base_bin_name}" ${BOINC_APPLICATION}
                                             ${SEPARATION_STATIC}
@@ -363,6 +369,10 @@ if(ALL_OF_THE_SSES)
   endforeach()
 endif()
 
-
 add_subdirectory(tests EXCLUDE_FROM_ALL)
+
+install(TARGETS ${separation_base_bin_name} ${separation_base_lib_name}
+          RUNTIME       DESTINATION bin
+          ARCHIVE       DESTINATION lib
+          PUBLIC_HEADER DESTINATION include)
 

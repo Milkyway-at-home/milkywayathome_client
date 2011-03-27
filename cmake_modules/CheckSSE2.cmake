@@ -20,7 +20,7 @@
 
 include(CPUNameTest)
 
-if(NOT SYSTEM_IS_PPC)
+if(SYSTEM_IS_X86)
   if(NOT MSVC)
     set(SSE2_FLAGS "-mfpmath=sse -msse -msse2")
   else()

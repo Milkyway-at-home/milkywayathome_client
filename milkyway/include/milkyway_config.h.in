@@ -111,6 +111,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define ARCH_STRING "x86_64"
 #elif defined(__ppc64__)
   #define ARCH_STRING "PPC64"
+#elif defined(__arm__) || defined(__arm)
+  #define ARCH_STRING "ARM"
 #else
   #define ARCH_STRING "Unknown architecture"
   #warning "Unknown architecture!"

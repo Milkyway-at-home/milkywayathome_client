@@ -184,6 +184,12 @@ if(APPLE AND SYSTEM_IS_X86)
   set(CMAKE_CXX_FLAGS "-msse -msse2 -msse3 ${CMAKE_C_FLAGS}")
 endif()
 
+option(MILKYWAY_IPHONE_APP "April fools?" OFF)
+mark_as_advanced(MILKYWAY_IPHONE_APP)
+if(MILKYWAY_IPHONE_APP)
+  add_definitions("-DMILKYWAY_IPHONE_APP")
+endif()
+
 
 set(gcc_warnings "-Wall"
                  "-Wextra"
@@ -234,8 +240,7 @@ endif()
 
 #Set math assumptions that we can make. We don't ever use the error
 #checking, or the other rounding modes.
-set(extra_gcc_math_flags "-mhard-float"
-                         "-fno-rounding-math"
+set(extra_gcc_math_flags "-fno-rounding-math"
                          "-fno-math-errno")
 
 if(NOT DOUBLEPREC)
@@ -304,7 +309,7 @@ if(WIN32)
 endif()
 
 # locally installed headers, and generated *_config.h
-set(MILKYWAY_INSTALL_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "Locally installed headers")
+set(MILKYWAY_INSTALL_INCLUDE_DIR "${MILKYWAY_ROOT}/include" CACHE INTERNAL "Locally installed headers")
 
 
 

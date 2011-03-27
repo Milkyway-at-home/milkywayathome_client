@@ -26,7 +26,7 @@
 include(CPUNameTest)
 
 if(APPLE)
-  if(${cl_required} MATCHES "ON")
+  if(MILKYWAY_OPENCL)
     set(CMAKE_OSX_DEPLOYMENT_TARGET 10.6)
     set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.6.sdk")
 

@@ -24,7 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "evaluation_state.h"
 
 
-static char resolvedCheckpointPath[1024];
+static char resolvedCheckpointPath[2048];
 
 
 void initializeIntegral(Integral* integral, unsigned int number_streams)
@@ -84,8 +84,6 @@ void freeEvaluationState(EvaluationState* es)
     free(es->integrals);
     free(es);
 }
-
-#if BOINC_APPLICATION
 
 void printEvaluationState(const EvaluationState* es)
 {
@@ -198,6 +196,20 @@ static inline void writeState(FILE* f, const EvaluationState* es)
     fwrite(checkpoint_tail, sizeof(checkpoint_tail), 1, f);
 }
 
+
+
+#if !SEPARATION_OPENCL
+
+int resolveCheckpoint()
+{
+    int rc;
+
+    rc = mw_resolve_filename(CHECKPOINT_FILE, resolvedCheckpointPath, sizeof(resolvedCheckpointPath));
+    if (rc)
+        warn("Error resolving checkpoint file '%s': %d\n", CHECKPOINT_FILE, rc);
+    return rc;
+}
+
 int writeCheckpoint(const EvaluationState* es)
 {
     FILE* f;
@@ -222,23 +234,9 @@ int writeCheckpoint(const EvaluationState* es)
     return 0;
 }
 
-#endif /* BOINC_APPLICATION */
-
-#if BOINC_APPLICATION && !SEPARATION_OPENCL
-
-int resolveCheckpoint()
-{
-    int rc;
-
-    rc = boinc_resolve_filename(CHECKPOINT_FILE, resolvedCheckpointPath, sizeof(resolvedCheckpointPath));
-    if (rc)
-        warn("Error resolving checkpoint file '%s': %d\n", CHECKPOINT_FILE, rc);
-    return rc;
-}
-
 int maybeResume(EvaluationState* es)
 {
-    if (boinc_file_exists(resolvedCheckpointPath))
+    if (mw_file_exists(resolvedCheckpointPath))
     {
         mw_report("Checkpoint exists. Attempting to resume from it\n");
 
@@ -255,9 +253,14 @@ int maybeResume(EvaluationState* es)
     return 0;
 }
 
-#else
+#else /* SEPARATION_OPENCL */
 
 int resolveCheckpoint()
+{
+    return 0;
+}
+
+int writeCheckpoint(const EvaluationState* es)
 {
     return 0;
 }
@@ -267,6 +270,6 @@ int maybeResume(EvaluationState* es)
     return 0;
 }
 
-#endif /* BOINC_APPLICATION && !SEPARATION_OPENCL */
+#endif /* !SEPARATION_OPENCL */
 
 

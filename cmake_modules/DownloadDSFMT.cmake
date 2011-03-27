@@ -55,9 +55,8 @@ macro(install_dsfmt)
   set_property(SOURCE ${dsmft_src}
                PROPERTY COMPILE_FLAGS "${dsmft_flags}")
 
-
-
-  #file(INSTALL ${dsmft_hdr} DESTINATION include)
-  #file(INSTALL dsfmt DESTINATION lib)
+install(TARGETS dsfmt
+          ARCHIVE       DESTINATION lib
+          PUBLIC_HEADER DESTINATION include)
 endmacro()
 

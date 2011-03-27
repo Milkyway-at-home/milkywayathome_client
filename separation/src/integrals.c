@@ -27,10 +27,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "calculated_constants.h"
 
+#include <time.h>
 
-#if BOINC_APPLICATION
+#ifdef MILKYWAY_IPHONE_APP
 
-ALWAYS_INLINE
+double _milkywaySeparationGlobalProgress = 0.0;
+#endif
+
+
 static inline real progress(const EvaluationState* es,
                             const IntegralArea* ia,
                             real total_calc_probs)
@@ -43,7 +47,9 @@ static inline real progress(const EvaluationState* es,
     return (real)(i_prog + es->current_calc_probs) / total_calc_probs;
 }
 
-ALWAYS_INLINE
+
+#if BOINC_APPLICATION
+
 static inline void doBoincCheckpoint(const EvaluationState* es,
                                      const IntegralArea* ia,
                                      real total_calc_probs)
@@ -58,7 +64,27 @@ static inline void doBoincCheckpoint(const EvaluationState* es,
     boinc_fraction_done(progress(es, ia, total_calc_probs));
 }
 
-#else
+#elif MILKYWAY_IPHONE_APP
+
+static inline void doBoincCheckpoint(const EvaluationState* es,
+                                     const IntegralArea* ia,
+                                     real total_calc_probs)
+{
+    static time_t lastCheckpoint = 0;
+    static const time_t checkpointPeriod = 60;
+    time_t now;
+
+    if ((now = time(NULL)) - lastCheckpoint > checkpointPeriod)
+    {
+        lastCheckpoint = now;
+        if (writeCheckpoint(es))
+            fail("Write checkpoint failed\n");
+    }
+
+    _milkywaySeparationGlobalProgress = progress(es, ia, total_calc_probs);
+}
+
+#else /* Plain */
 
 #define doBoincCheckpoint(es, ia, total_calc_probs)
 
@@ -284,6 +310,10 @@ real integrate(const AstronomyParameters* ap,
     mwFreeA(st_probs);
     mwFreeA(r_pts);
     mwFreeA(rc);
+
+  #ifdef MILKYWAY_IPHONE_APP
+    _milkywaySeparationGlobalProgress = 1.0;
+  #endif
 
     return result;
 }
