@@ -37,8 +37,7 @@ using namespace cal::il;
 static double1 div_custom(double1 x, double1 y)
 {
     emit_comment("div_custom");
-    float1 yf = cast_type<float1>(y);
-    double1 tmp = cast_type<double1>(reciprocal(yf));
+    double1 tmp = native_reciprocal(y);
 
     double1 tmp2 = mad(-y, tmp, 1.0);
     double1 tmp3 = mad(tmp, tmp2, tmp);
@@ -101,9 +100,6 @@ static double2 kahanAdd(double2 kSum, double1 x)
     tc.y() = (tc.x() - kSum.x()) - y;
     return tc;
 }
-
-
-/* Slightly faster if true, but 7 more registers */
 
 
 /* For reference: ATI application register usage in 1, 2, 3 stream cases: 13, 19, 25 respectively */
