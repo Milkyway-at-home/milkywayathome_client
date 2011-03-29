@@ -154,8 +154,6 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     il_whileloop
     {
         double2 rPt = rPts[i.xy()];
-        i.x() = i.x() + float1(1.0);
-        il_breakc(i.x() >= float1((float) ap->convolve));
 
         double1 x = mad(rPt.x(), lTrig.x(), double1(ap->m_sun_r0));
         double1 y = rPt.x() * lTrig.y();
@@ -216,6 +214,9 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
             bg_int = mad(tmp, rPt.y(), bg_int);
         }
         #endif
+
+        i.x() = i.x() + float1(1.0);
+        il_breakc(i.x() >= float1((float) ap->convolve));
     }
     il_endloop
 
