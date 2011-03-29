@@ -40,7 +40,7 @@ static double1 div_custom(double1 x, double1 y)
     float1 yf = cast_type<float1>(y);
     double1 tmp = cast_type<double1>(reciprocal(yf));
 
-    double1 tmp2 = mad(-y, tmp, double1(1.0));
+    double1 tmp2 = mad(-y, tmp, 1.0);
     double1 tmp3 = mad(tmp, tmp2, tmp);
     double1 tmp4 = x * tmp3;
     double1 tmp5 = mad(-y, tmp4, x);
@@ -56,13 +56,13 @@ static double1 sqrt_custom(double1 x)
     double1 y = cast_type<double1>(-fx);
 
     double1 tmp = y * y;
-    tmp = mad(x, tmp, double1(-3.0));
+    tmp = mad(x, tmp, -3.0);
     y *= tmp;
 
     tmp = x * y;
     y *= tmp;
 
-    y = mad(y, double1(-0.0625), double1(0.75));
+    y = mad(y, -0.0625, 0.75);
     return y * tmp;
 }
 
@@ -73,22 +73,22 @@ static double1 exp_custom(double1 x)
 {
     emit_comment("exp");
 
-    double1 xx = x * double1(1.0 / log(2.0));
+    double1 xx = x * (1.0 / log(2.0));
     double1 xxFract = fract(xx);
     float1 expif = cast_type<float1>(xx - xxFract);
 
-    double1 tmp = xxFract + double1(-0.5);
+    double1 tmp = xxFract - 0.5;
     double1 dtmp = tmp * tmp;
-    double1 y = mad(dtmp, double1(0x1.52b5c4d1f00b9p-16), double1(0x1.4aa4eb649a98fp-7));
-    double1 z = tmp * mad(dtmp, y, double1(0x1.62e42fefa39efp-1));
+    double1 y = mad(dtmp, 0x1.52b5c4d1f00b9p-16, 0x1.4aa4eb649a98fp-7);
+    double1 z = tmp * mad(dtmp, y, 0x1.62e42fefa39efp-1);
 
-    double1 tmp3 = mad(dtmp, double1(0x1.657cdd06316dcp-23), double1(0x1.3185f478ff1ebp-12));
-    tmp3 = mad(dtmp, tmp3, double1(0x1.bf3e7389ceff9p-5));
-    tmp3 = mad(dtmp, tmp3, double1(1.0));
+    double1 tmp3 = mad(dtmp, 0x1.657cdd06316dcp-23, 0x1.3185f478ff1ebp-12);
+    tmp3 = mad(dtmp, tmp3, 0x1.bf3e7389ceff9p-5);
+    tmp3 = mad(dtmp, tmp3, 1.0);
 
-    double1 tmp4 = mad(z, double1(-0.5), tmp3);
+    double1 tmp4 = mad(z, -0.5, tmp3);
     double1 divRes = div_custom(z, tmp4);
-    divRes = mad(divRes, double1(sqrt(2.0)), double1(sqrt(2.0)));
+    divRes = mad(divRes, sqrt(2.0), sqrt(2.0));
 
     return ldexp(divRes, cast_type<int1>(expif));
 }
@@ -155,7 +155,7 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     {
         double2 rPt = rPts[i.xy()];
 
-        double1 x = mad(rPt.x(), lTrig.x(), double1(ap->m_sun_r0));
+        double1 x = mad(rPt.x(), lTrig.x(), ap->m_sun_r0);
         double1 y = rPt.x() * lTrig.y();
         double1 z = rPt.x() * bSin;
 
@@ -164,24 +164,24 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         for (j = 0; j < number_streams; ++j)
         {
             emit_comment("begin stream");
-            double1 xs = x + double1(-X(sc[j].c));
-            double1 ys = y + double1(-Y(sc[j].c));
-            double1 zs = z + double1(-Z(sc[j].c));
+            double1 xs = x - X(sc[j].c);
+            double1 ys = y - Y(sc[j].c);
+            double1 zs = z - Z(sc[j].c);
 
             /* Dot product */
-            double1 dotted = double1(X(sc[j].a)) * xs;
-            dotted = mad(double1(Y(sc[j].a)), ys, dotted);
-            dotted = mad(double1(Z(sc[j].a)), zs, dotted);
+            double1 dotted = X(sc[j].a) * xs;
+            dotted = mad(Y(sc[j].a), ys, dotted);
+            dotted = mad(Z(sc[j].a), zs, dotted);
 
-            xs = mad(dotted, double1(-X(sc[j].a)), xs);
-            ys = mad(dotted, double1(-Y(sc[j].a)), ys);
-            zs = mad(dotted, double1(-Z(sc[j].a)), zs);
+            xs = mad(dotted, -X(sc[j].a), xs);
+            ys = mad(dotted, -Y(sc[j].a), ys);
+            zs = mad(dotted, -Z(sc[j].a), zs);
 
             double1 sqrv = xs * xs;
             sqrv = mad(ys, ys, sqrv);
             sqrv = mad(zs, zs, sqrv);
 
-            streamSqrv.push_back(sqrv * double1(-sc[j].sigma_sq2_inv));
+            streamSqrv.push_back(sqrv * -sc[j].sigma_sq2_inv);
             emit_comment("End stream exp");
         }
         emit_comment("End streams phase 1");
@@ -192,10 +192,10 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         double1 tmp1 = x * x;
         double1 tmp3 = mad(y, y, tmp1);
         double1 tmp2 = z * z;
-        double1 tmp4 = mad(double1(ap->q_inv_sqr), tmp2, tmp3);
+        double1 tmp4 = mad(ap->q_inv_sqr, tmp2, tmp3);
 
         double1 rg = sqrt_custom(tmp4);
-        double1 rs = rg + double1(ap->r0);
+        double1 rs = rg + ap->r0;
 
         emit_comment("Streams phase 2");
         for (j = 0; j < number_streams; ++j)
@@ -209,13 +209,13 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         if (ap->aux_bg_profile)
         {
             r_in_mag = sg_dx[i] + gPrime(rcs[pos.y()]);
-            tmp = mad(double1(ap->bg_b), r_in_mag, double1(ap->bg_c));
-            tmp = mad(double1(ap->bg_a, r_in_mag * r_in_mag, tmp));
+            tmp = mad(ap->bg_b, r_in_mag, ap->bg_c);
+            tmp = mad(ap->bg_a, r_in_mag * r_in_mag, tmp);
             bg_int = mad(tmp, rPt.y(), bg_int);
         }
         #endif
 
-        i.x() = i.x() + float1(1.0);
+        i.x() = i.x() + 1.0f;
         il_breakc(i.x() >= float1((float) ap->convolve));
     }
     il_endloop
