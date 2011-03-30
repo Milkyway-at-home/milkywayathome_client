@@ -461,8 +461,10 @@ static CALresult zeroBuffer(MWMemRes* mr, CALuint numberElements, CALuint width,
 static CALresult createOutputBuffer2D(MWMemRes* mr, MWCALInfo* ci, CALuint width, CALuint height)
 {
     CALresult err;
+    CALuint flags = 0;
+    //CALuint flags = CAL_RESALLOC_GLOBAL_BUFFER;
 
-    err = calResAllocLocal2D(&mr->res, ci->dev, width, height, formatReal2, 0);
+    err = calResAllocLocal2D(&mr->res, ci->dev, width, height, formatReal2, flags);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create output resource", err);
@@ -494,7 +496,7 @@ static CALresult createOutMuBuffer(MWCALInfo* ci,
 {
     CALresult err;
 
-    err = createOutputBuffer2D(&cm->outBg, ci, sizes->muSteps, sizes->rSteps);
+    err = createOutputBuffer2D(&cm->outBg, ci, sizes->rSteps, sizes->muSteps);
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to create output buffer", err);
 
@@ -512,7 +514,7 @@ static CALresult createOutStreamBuffers(MWCALInfo* ci,
     cm->outStreams = (MWMemRes*) mwCalloc(cm->numberStreams, sizeof(MWMemRes));
     for (i = 0; i < cm->numberStreams; ++i)
     {
-        err = createOutputBuffer2D(&cm->outStreams[i], ci, sizes->muSteps, sizes->rSteps);
+        err = createOutputBuffer2D(&cm->outStreams[i], ci, sizes->rSteps, sizes->muSteps);
         if (err != CAL_RESULT_OK)
         {
             cal_warn("Failed to create out streams buffer", err);
@@ -543,9 +545,9 @@ static CALresult createRBuffers(MWCALInfo* ci,
     RConsts* rc;
     CALresult err = CAL_RESULT_OK;
 
-    r_pts = precalculateRPts(ap, ia, sg, &rc, FALSE);
+    r_pts = precalculateRPts(ap, ia, sg, &rc, TRUE);
 
-    err = createConstantBuffer2D(&cm->rPts, ci, (CALdouble*) r_pts, formatReal2, CAL_FALSE, ap->convolve, ia->r_steps);
+    err = createConstantBuffer2D(&cm->rPts, ci, (CALdouble*) r_pts, formatReal2, CAL_FALSE, ia->r_steps, ap->convolve);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create r_pts buffer", err);
@@ -619,14 +621,14 @@ static CALresult createLBTrigBuffers(MWCALInfo* ci,
 
     getSplitLBTrig(ap, ia, &lTrig, &bTrig);
 
-    err = createConstantBuffer2D(&cm->lTrig, ci, (CALdouble*) lTrig, formatReal2, CAL_FALSE, ia->nu_steps, ia->mu_steps);
+    err = createConstantBuffer2D(&cm->lTrig, ci, (CALdouble*) lTrig, formatReal2, CAL_TRUE, ia->nu_steps, ia->mu_steps);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create l trig buffer", err);
         goto fail;
     }
 
-    err = createConstantBuffer2D(&cm->bTrig, ci, (CALdouble*) bTrig, formatReal1, CAL_FALSE, ia->nu_steps, ia->mu_steps);
+    err = createConstantBuffer2D(&cm->bTrig, ci, (CALdouble*) bTrig, formatReal1, CAL_TRUE, ia->nu_steps, ia->mu_steps);
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to create b trig buffer", err);
 
@@ -1054,10 +1056,10 @@ static real sumResults(MWMemRes* mr, const IntegralArea* ia)
     if (err != CAL_RESULT_OK)
         return NAN;
 
-    for (i = 0; i < ia->r_steps; ++i)
+    for (i = 0; i < ia->mu_steps; ++i)
     {
         tmp = &bufPtr[i * pitch];
-        for (j = 0; j < ia->mu_steps; ++j)
+        for (j = 0; j < ia->r_steps; ++j)
         {
             KAHAN_ADD(ksum, tmp[j].sum);
         }
@@ -1134,7 +1136,7 @@ static real runIntegral(MWCALInfo* ci,
     SeparationCALNames cn;
     double t1, t2;
     CALuint nChunks, chunkSize;
-    CALdomain domain = { 0, 0, ia->mu_steps, ia->r_steps };
+    CALdomain domain = { 0, 0, ia->r_steps, ia->mu_steps };
 
     nChunks = findCALChunks(ci, ia);
     if (nChunks == 0)

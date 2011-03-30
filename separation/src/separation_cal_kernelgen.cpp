@@ -117,7 +117,7 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     indexed_register<double1> sg_dx("cb0");
     named_variable<float1> nu_step("cb1[0].x");
     named_variable<double1> nu_id("cb1[0].zw");
-    named_variable<float2> pos("vWinCoord0"); /* .x() = mu, .y() = r */
+    named_variable<float2> pos("vWinCoord0"); /* .x() = r, .y() = mu */
 
     named_variable<double2> bgOut("o0");
     std::vector< named_variable<double2> > streamOutputRegisters;
@@ -130,10 +130,10 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         streamOutputRegisters.push_back(regName.str());
     }
 
-    double2 lTrig = lTrigBuf(nu_step, pos.x());
-    double1 bSin = bTrigBuf(nu_step, pos.x());
+    double2 lTrig = lTrigBuf(nu_step, pos.y());
+    double1 bSin = bTrigBuf(nu_step, pos.y());
 
-    float2 i = float2(0.0, pos.y());
+    float2 i = float2(pos.x(), 0.0);
 
     /* 0 integrals and get stream constants */
     double1 bg_int = double1(0.0);
@@ -144,7 +144,7 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     /* Counting down seems to save 2 registers, but is slightly slower */
     il_whileloop
     {
-        double2 rPt = rPts[i.xy()];
+        double2 rPt = rPts[i];
 
         double1 x = mad(rPt.x(), lTrig.x(), ap->m_sun_r0);
         double1 y = rPt.x() * lTrig.y();
@@ -198,12 +198,12 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         }
         emit_comment("End streams");
 
-        i.x() = i.x() + 1.0f;
-        il_breakc(i.x() >= float1((float) ap->convolve));
+        i.y() = i.y() + 1.0f;
+        il_breakc(i.y() >= float1((float) ap->convolve));
     }
     il_endloop
 
-    double1 V_reff_xr_rp3 = nu_id * rConsts(pos.y()).x();
+    double1 V_reff_xr_rp3 = nu_id * rConsts(pos.x()).x();
     std::vector<double2> streamRead;
     double2 bgRead = bgInput[pos];
     for (j = 0; j < number_streams; ++j)
