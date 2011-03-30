@@ -50,9 +50,9 @@ static double1 div_custom(double1 x, double1 y)
 static double1 sqrt_custom(double1 x)
 {
     emit_comment("sqrt");
+
     float1 fx = cast_type<float1>(x);
-    fx = rsqrt(fx);
-    double1 y = cast_type<double1>(-fx);
+    double1 y = cast_type<double1>(-rsqrt(fx));
 
     double1 tmp = y * y;
     tmp = mad(x, tmp, -3.0);
@@ -61,12 +61,10 @@ static double1 sqrt_custom(double1 x)
     tmp = x * y;
     y *= tmp;
 
-    y = mad(y, -0.0625, 0.75);
-    return y * tmp;
+    return tmp * mad(y, -0.0625, 0.75);
 }
 
 
-/* exp which uses fewer registers and is accurate enough. CHECKME: Destroys x? */
 /* FIXME: Quality variable names */
 static double1 exp_custom(double1 x)
 {
@@ -74,7 +72,7 @@ static double1 exp_custom(double1 x)
 
     double1 xx = x * (1.0 / log(2.0));
     double1 xxFract = fract(xx);
-    float1 expif = cast_type<float1>(xx - xxFract);
+    int1 expi = cast_type<int1>(xx - xxFract);
 
     double1 tmp = xxFract - 0.5;
     double1 dtmp = tmp * tmp;
@@ -89,7 +87,7 @@ static double1 exp_custom(double1 x)
     double1 divRes = div_custom(z, tmp4);
     divRes = mad(divRes, sqrt(2.0), sqrt(2.0));
 
-    return ldexp(divRes, cast_type<int1>(expif));
+    return ldexp(divRes, expi);
 }
 
 static double2 kahanAdd(double2 kSum, double1 x)
@@ -103,9 +101,6 @@ static double2 kahanAdd(double2 kSum, double1 x)
 
 
 /* For reference: ATI application register usage in 1, 2, 3 stream cases: 13, 19, 25 respectively */
-/* With R_PT_SWAP = 0: 12, 14, 16 */
-/* With R_PT_SWAP = 1: 12, 15, 17 */
-
 static void createSeparationKernelCore(input2d<double2>& bgInput,
                                        std::vector< input2d<double2> >& streamInput,
                                        input2d<double2>& rPts,
@@ -155,35 +150,6 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         double1 y = rPt.x() * lTrig.y();
         double1 z = rPt.x() * bSin;
 
-        emit_comment("stream loops");
-        std::vector<double1> streamSqrv;
-        for (j = 0; j < number_streams; ++j)
-        {
-            emit_comment("begin stream");
-            double1 xs = x - X(sc[j].c);
-            double1 ys = y - Y(sc[j].c);
-            double1 zs = z - Z(sc[j].c);
-
-            /* Dot product */
-            double1 dotted = X(sc[j].a) * xs;
-            dotted = mad(Y(sc[j].a), ys, dotted);
-            dotted = mad(Z(sc[j].a), zs, dotted);
-
-            xs = mad(dotted, -X(sc[j].a), xs);
-            ys = mad(dotted, -Y(sc[j].a), ys);
-            zs = mad(dotted, -Z(sc[j].a), zs);
-
-            double1 sqrv = xs * xs;
-            sqrv = mad(ys, ys, sqrv);
-            sqrv = mad(zs, zs, sqrv);
-
-            streamSqrv.push_back(sqrv * -sc[j].sigma_sq2_inv);
-            emit_comment("End stream exp");
-        }
-        emit_comment("End streams phase 1");
-
-        /* Moving this down here and splitting where bg_int gets
-         * incremented saves registers */
 
         double1 tmp1 = x * x;
         double1 tmp3 = mad(y, y, tmp1);
@@ -193,15 +159,9 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         double1 rg = sqrt_custom(tmp4);
         double1 rs = rg + ap->r0;
 
-        emit_comment("Streams phase 2");
-        for (j = 0; j < number_streams; ++j)
-            streamIntegrals[j] = mad(rPt.y(), exp_custom(streamSqrv[j]), streamIntegrals[j]);
-        emit_comment("End streams");
-
-        emit_comment("bg_int increment");
         bg_int += div_custom(rPt.y(), rg * rs * rs * rs);
 
-       #if 0
+        #if 0
         if (ap->aux_bg_profile)
         {
             r_in_mag = sg_dx[i] + gPrime(rcs[pos.y()]);
@@ -210,6 +170,33 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
             bg_int = mad(tmp, rPt.y(), bg_int);
         }
         #endif
+
+        emit_comment("stream loops");
+        for (j = 0; j < number_streams; ++j)
+        {
+            emit_comment("begin stream");
+            double1 xs = x - X(sc[j].c);
+            double1 ys = y - Y(sc[j].c);
+            double1 zs = z - Z(sc[j].c);
+
+            /* Dot product */
+            double1 dotted = X(sc[j].a) * xs;
+            dotted = mad(Y(sc[j].a), ys.x(), dotted);
+            dotted = mad(Z(sc[j].a), zs.x(), dotted);
+
+            xs = mad(dotted, -X(sc[j].a), xs);
+            ys = mad(dotted, -Y(sc[j].a), ys);
+            zs = mad(dotted, -Z(sc[j].a), zs);
+
+            double1 sqrv = xs * xs;
+            sqrv = mad(ys, ys, sqrv);
+            sqrv = mad(zs, zs, sqrv);
+
+            sqrv *= -sc[j].sigma_sq2_inv;
+
+            streamIntegrals[j] = mad(rPt.y(), exp_custom(sqrv), streamIntegrals[j]);
+        }
+        emit_comment("End streams");
 
         i.x() = i.x() + 1.0f;
         il_breakc(i.x() >= float1((float) ap->convolve));
