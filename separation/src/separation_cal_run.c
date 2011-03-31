@@ -181,13 +181,29 @@ static inline CALuint runNuStep(MWCALInfo* ci,
     return err;
 }
 
-static real runIntegral(MWCALInfo* ci,
-                        SeparationCALMem* cm,
+static inline void reportProgress(const AstronomyParameters* ap,
+                                  const IntegralArea* ia,
+                                  EvaluationState* es,
+                                  CALuint step,
+                                  double dt)
+{
+  #if BOINC_APPLICATION
+    CALuint prog;
+    prog = es->current_calc_probs + ia->mu_steps * ia->r_steps * step;
+    boinc_fraction_done((double) prog / ap->total_calc_probs);
+  #else
+    printf("Step %u: %fms\n", step, dt);
+  #endif /* BOINC_APPLICATION */
+}
+
+static real runIntegral(const AstronomyParameters* ap,
                         const IntegralArea* ia,
+                        EvaluationState* es,
+                        MWCALInfo* ci,
+                        SeparationCALMem* cm,
                         real* probs_results)
 {
     CALresult err;
-    unsigned int i;
     SeparationCALNames cn;
     double t1, t2;
     CALuint nChunks, chunkSize;
@@ -220,16 +236,16 @@ static real runIntegral(MWCALInfo* ci,
         return NAN;
     }
 
-    for (i = 0; i < ia->nu_steps; ++i)
+    for (es->nu_step = 0; es->nu_step < ia->nu_steps; es->nu_step++)
     {
         t1 = mwGetTime();
 
-        err = runNuStep(ci, cm, &cn, &domain, ia, nChunks, chunkSize, i);
+        err = runNuStep(ci, cm, &cn, &domain, ia, nChunks, chunkSize, es->nu_step);
         if (err != CAL_RESULT_OK)
             break;
 
         t2 = mwGetTime();
-        warn("Step %u: %fms\n", i, 1000.0 * (t2 - t1));
+        reportProgress(ap, ia, es, es->nu_step + 1, 1000.0 * (t2 - t1));
     }
 
     destroyModuleNames(&cn);
@@ -276,7 +292,7 @@ real integrateCAL(const AstronomyParameters* ap,
     if (err != CAL_RESULT_OK)
         return NAN;
 
-    result = runIntegral(ci, &cm, ia, st_probs);
+    result = runIntegral(ap, ia, es, ci, &cm, st_probs);
 
     err = releaseSeparationBuffers(ci, &cm);
     if (err != CAL_RESULT_OK)

@@ -285,8 +285,6 @@ std::string createSeparationKernel(const AstronomyParameters* ap,
     Source::emitHeader(code);
     Source::emitCode(code);
 
-    code << "end\n";
-
     return code.str();
 }
 

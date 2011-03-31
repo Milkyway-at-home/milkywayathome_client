@@ -488,7 +488,7 @@ static CALresult createOutputBuffer2D(MWMemRes* mr, MWCALInfo* ci, CALuint width
     return CAL_RESULT_OK;
 }
 
-static CALresult createOutMuBuffer(MWCALInfo* ci,
+static CALresult createOutBgBuffer(MWCALInfo* ci,
                                    SeparationCALMem* cm,
                                    const CALSeparationSizes* sizes)
 {
@@ -685,7 +685,7 @@ CALresult createSeparationBuffers(MWCALInfo* ci,
 
     cm->numberStreams = ap->number_streams;
 
-    err |= createOutMuBuffer(ci, cm, sizes);
+    err |= createOutBgBuffer(ci, cm, sizes);
     err |= createOutStreamBuffers(ci, cm, sizes);
 
     err |= createRBuffers(ci, cm, ap, ia, sg, sizes);
