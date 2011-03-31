@@ -27,7 +27,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include "setup_cl.h"
 #elif SEPARATION_CAL
   #include "separation_cal_types.h"
-  #include "cal_binary.h"
+  #include "separation_cal_setup.h"
+  #include "separation_cal_run.h"
 #endif /* SEPARATION_OPENCL */
 
 #if SEPARATION_GRAPHICS

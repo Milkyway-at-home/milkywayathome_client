@@ -22,12 +22,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "calculated_constants.h"
 #include "r_points.h"
 #include "show_cal_types.h"
-#include "cal_binary.h"
+#include "separation_cal_setup.h"
 #include "separation_cal_types.h"
 #include "separation_cal_kernelgen.h"
 
-
-#define cal_warn(msg, err, ...) fprintf(stderr, msg ": %s (%s)\n", ##__VA_ARGS__, calGetErrorString(), showCALresult(err))
 
 static FILE* _isaLogFunctionFile = NULL;
 
@@ -228,7 +226,7 @@ static CALresult getMemoryHandle(MWMemRes* mr, MWCALInfo* ci)
 }
 
 /* Try to map the resource and free it on failure */
-static CALresult mapMWMemRes(MWMemRes* mr, CALvoid** pPtr, CALuint* pitch)
+CALresult mapMWMemRes(MWMemRes* mr, CALvoid** pPtr, CALuint* pitch)
 {
     CALresult err;
 
@@ -246,7 +244,7 @@ static CALresult mapMWMemRes(MWMemRes* mr, CALvoid** pPtr, CALuint* pitch)
 }
 
 /* Try to unmap resource and free it on failure */
-static CALresult unmapMWMemRes(MWMemRes* mr)
+CALresult unmapMWMemRes(MWMemRes* mr)
 {
     CALresult err;
 
@@ -675,13 +673,13 @@ CALresult releaseSeparationBuffers(MWCALInfo* ci, SeparationCALMem* cm)
     return err;
 }
 
-static CALresult createSeparationBuffers(MWCALInfo* ci,
-                                         SeparationCALMem* cm,
-                                         const AstronomyParameters* ap,
-                                         const IntegralArea* ia,
-                                         const StreamConstants* sc,
-                                         const StreamGauss sg,
-                                         const CALSeparationSizes* sizes)
+CALresult createSeparationBuffers(MWCALInfo* ci,
+                                  SeparationCALMem* cm,
+                                  const AstronomyParameters* ap,
+                                  const IntegralArea* ia,
+                                  const StreamConstants* sc,
+                                  const StreamGauss sg,
+                                  const CALSeparationSizes* sizes)
 {
     CALresult err = CAL_RESULT_OK;
 
@@ -872,7 +870,7 @@ static inline CALresult getNameMWCALInfo(MWCALInfo* ci, CALname* name, const CAL
     return calModuleGetName(name, ci->calctx, ci->module, varName);
 }
 
-static void destroyModuleNames(SeparationCALNames* cn)
+void destroyModuleNames(SeparationCALNames* cn)
 {
     free(cn->outStreams);
     cn->outStreams = NULL;
@@ -881,7 +879,7 @@ static void destroyModuleNames(SeparationCALNames* cn)
     cn->inStreams = NULL;
 }
 
-static CALresult getModuleNames(MWCALInfo* ci, SeparationCALNames* cn, CALuint numberStreams)
+CALresult getModuleNames(MWCALInfo* ci, SeparationCALNames* cn, CALuint numberStreams)
 {
     CALresult err = CAL_RESULT_OK;
     CALuint i;
@@ -915,7 +913,7 @@ static CALresult getModuleNames(MWCALInfo* ci, SeparationCALNames* cn, CALuint n
     return err;
 }
 
-static CALresult setKernelArguments(MWCALInfo* ci, SeparationCALMem* cm, SeparationCALNames* cn)
+CALresult setKernelArguments(MWCALInfo* ci, SeparationCALMem* cm, SeparationCALNames* cn)
 {
     CALresult err = CAL_RESULT_OK;
     CALuint i;
@@ -973,213 +971,10 @@ static CALresult separationSetupCAL(MWCALInfo* ci,
     return CAL_RESULT_OK;
 }
 
-static CALresult runKernel(MWCALInfo* ci, SeparationCALMem* cm, const CALdomain* domain)
-{
-    CALresult err;
-    CALevent ev = 0;
-
-#if 1
-    err = calCtxRunProgram(&ev, ci->calctx, ci->func, domain);
-#else
-    CALdomain3D global = { domain->width, domain->height, 1 };
-    CALdomain3D local = { 64, 28, 1 };
-    CALprogramGrid grid;
-
-    grid.func = ci->func;
-    grid.flags = 0;
-
-    grid.gridBlock = local;
-
-    grid.gridSize.width  = (global.width + local.width - 1) / local.width;
-    grid.gridSize.height = (global.height + local.height - 1) / local.height;
-    grid.gridSize.depth  = (global.depth + local.depth - 1) / local.depth;
-
-    #if 0
-    warn("arst %u %u %u -> { %u %u }\n", grid.gridSize.width, grid.gridSize.height, grid.gridSize.depth,
-
-         grid.gridSize.width * local.width,
-         grid.gridSize.height * local.height
-        );
-    #endif
-
-    err = calCtxRunProgramGrid(&ev, ci->calctx, &grid);
-#endif
-
-    if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Error running kernel", err);
-        return err;
-    }
-
-    while (calCtxIsEventDone(ci->calctx, ev) == CAL_RESULT_PENDING);
-
-    return CAL_RESULT_OK;
-}
-static CALresult setNuKernelArgs(MWCALInfo* ci,
-                                 SeparationCALMem* cm,
-                                 SeparationCALNames* cn,
-                                 const IntegralArea* ia,
-                                 CALuint nuStep)
-{
-    CALresult err;
-    CALdouble* nuBufPtr;
-    CALfloat* nuStepPtr;
-    CALuint pitch = 0;
-    NuId nuid;
-
-    err = mapMWMemRes(&cm->nuBuf, (CALvoid**) &nuBufPtr, &pitch);
-    if (err != CAL_RESULT_OK)
-        return err;
-
-    nuid = calcNuStep(ia, nuStep);
-
-    nuStepPtr = (CALfloat*) nuBufPtr;
-    *nuStepPtr = (CALfloat) nuStep;
-    nuBufPtr[1] = nuid.id;
-
-    err = unmapMWMemRes(&cm->nuBuf);
-    if (err != CAL_RESULT_OK)
-        return err;
-
-    return CAL_RESULT_OK;
-}
-
-static real sumResults(MWMemRes* mr, const IntegralArea* ia)
-{
-    CALuint i, j, pitch;
-    Kahan* bufPtr;
-    Kahan* tmp;
-    Kahan ksum = ZERO_KAHAN;
-    CALresult err = CAL_RESULT_OK;
-
-    err = mapMWMemRes(mr, (CALvoid**) &bufPtr, &pitch);
-    if (err != CAL_RESULT_OK)
-        return NAN;
-
-    for (i = 0; i < ia->mu_steps; ++i)
-    {
-        tmp = &bufPtr[i * pitch];
-        for (j = 0; j < ia->r_steps; ++j)
-        {
-            KAHAN_ADD(ksum, tmp[j].sum);
-        }
-    }
-
-    err = unmapMWMemRes(mr);
-    if (err != CAL_RESULT_OK)
-        return NAN;
-
-    return ksum.sum + ksum.correction;
-}
-
-static real readResults(MWCALInfo* ci,
-                        SeparationCALMem* cm,
-                        const IntegralArea* ia,
-                        real* probs_results,
-                        CALuint numberStreams)
-{
-    CALuint i;
-    real result;
-
-    result = sumResults(&cm->outBg, ia);
-
-    #if 1
-    for (i = 0; i < numberStreams; ++i)
-        probs_results[i] = sumResults(&cm->outStreams[i], ia);
-    #endif
-
-    return result;
-}
-
 /* TODO: Actually do this */
 static CALuint findCALChunks(const MWCALInfo* ci, const IntegralArea* ia)
 {
     return 1;
-}
-
-static inline CALuint runNuStep(MWCALInfo* ci,
-                                SeparationCALMem* cm,
-                                SeparationCALNames* cn,
-                                CALdomain* domain,
-                                const IntegralArea* ia,
-                                CALuint nChunks,
-                                CALuint chunkSize,
-                                CALuint nuStep)
-{
-    CALuint i;
-    CALresult err = CAL_RESULT_OK;
-
-    domain->x = 0;
-    for (i = 0; i < nChunks; ++i)
-    {
-        domain->x += i * chunkSize;
-
-        err = setNuKernelArgs(ci, cm, cn, ia, nuStep);
-        if (err != CAL_RESULT_OK)
-            break;
-
-        err = runKernel(ci, cm, domain);
-        if (err != CAL_RESULT_OK)
-            break;
-    }
-
-    return err;
-}
-
-static real runIntegral(MWCALInfo* ci,
-                        SeparationCALMem* cm,
-                        const IntegralArea* ia,
-                        real* probs_results)
-{
-    CALresult err;
-    unsigned int i;
-    SeparationCALNames cn;
-    double t1, t2;
-    CALuint nChunks, chunkSize;
-    CALdomain domain = { 0, 0, ia->r_steps, ia->mu_steps };
-
-    nChunks = findCALChunks(ci, ia);
-    if (nChunks == 0)
-        return NAN;
-
-    chunkSize = ia->mu_steps / nChunks;
-    warn("Using %u chunk(s) of size %u\n", nChunks, chunkSize);
-    if (ia->mu_steps % nChunks != 0)
-    {
-        warn("mu steps (%u) not divisible by n chunks (%u)\n", ia->mu_steps, nChunks);
-        return NAN;
-    }
-
-    memset(&cn, 0, sizeof(SeparationCALNames));
-    err = getModuleNames(ci, &cn, cm->numberStreams);
-    if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Failed to get module names", err);
-        return NAN;
-    }
-
-    err = setKernelArguments(ci, cm, &cn);
-    if (err != CAL_RESULT_OK)
-    {
-        destroyModuleNames(&cn);
-        return NAN;
-    }
-
-    for (i = 0; i < ia->nu_steps; ++i)
-    {
-        t1 = mwGetTime();
-
-        err = runNuStep(ci, cm, &cn, &domain, ia, nChunks, chunkSize, i);
-        if (err != CAL_RESULT_OK)
-            break;
-
-        t2 = mwGetTime();
-        warn("Step %u: %fms\n", i, 1000.0 * (t2 - t1));
-    }
-
-    destroyModuleNames(&cn);
-
-    return (err != CAL_RESULT_OK) ? NAN : readResults(ci, cm, ia, probs_results, cm->numberStreams);
 }
 
 static void calculateCALSeparationSizes(CALSeparationSizes* sizes,
@@ -1198,6 +993,7 @@ static void calculateCALSeparationSizes(CALSeparationSizes* sizes,
     sizes->muSteps = ia->mu_steps;
     sizes->rSteps = ia->r_steps;
 }
+
 
 /* Init CAL, and prepare separation kernel from workunit parameters */
 CALresult separationCALInit(MWCALInfo* ci,
@@ -1246,33 +1042,4 @@ CALresult mwCALShutdown(MWCALInfo* ci)
     return err;
 }
 
-real integrateCAL(const AstronomyParameters* ap,
-                  const IntegralArea* ia,
-                  const StreamConstants* sc,
-                  const StreamGauss sg,
-                  real* st_probs,
-                  EvaluationState* es,
-                  const CLRequest* clr,
-                  MWCALInfo* ci)
-{
-    CALresult err;
-    SeparationCALMem cm;
-    CALSeparationSizes sizes;
-    real result = NAN;
-
-    calculateCALSeparationSizes(&sizes, ap, ia);
-
-    memset(&cm, 0, sizeof(SeparationCALMem));
-    err = createSeparationBuffers(ci, &cm, ap, ia, sc, sg, &sizes);
-    if (err != CAL_RESULT_OK)
-        return NAN;
-
-    result = runIntegral(ci, &cm, ia, st_probs);
-
-    err = releaseSeparationBuffers(ci, &cm);
-    if (err != CAL_RESULT_OK)
-        result = NAN;
-
-    return result;
-}
 

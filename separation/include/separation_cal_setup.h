@@ -18,8 +18,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _CAL_BINARY_H_
-#define _CAL_BINARY_H_
+#ifndef _SEPARATION_CAL_SETUP_H_
+#define _SEPARATION_CAL_SETUP_H_
 
 #include "milkyway_util.h"
 #include "separation_types.h"
@@ -30,6 +30,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
+#define cal_warn(msg, err, ...) fprintf(stderr, msg ": %s (%s)\n", ##__VA_ARGS__, calGetErrorString(), showCALresult(err))
+
 CALresult separationCALInit(MWCALInfo* ci,
                             const AstronomyParameters* ap,
                             const IntegralArea* ia,
@@ -37,19 +39,27 @@ CALresult separationCALInit(MWCALInfo* ci,
 
 CALresult mwCALShutdown(MWCALInfo* ci);
 
-real integrateCAL(const AstronomyParameters* ap,
-                  const IntegralArea* ia,
-                  const StreamConstants* sc,
-                  const StreamGauss sg,
-                  real* st_probs,
-                  EvaluationState* es,
-                  const CLRequest* clr,
-                  MWCALInfo* ci);
+CALresult getModuleNames(MWCALInfo* ci, SeparationCALNames* cn, CALuint numberStreams);
+void destroyModuleNames(SeparationCALNames* cn);
 
+CALresult mapMWMemRes(MWMemRes* mr, CALvoid** pPtr, CALuint* pitch);
+CALresult unmapMWMemRes(MWMemRes* mr);
+
+CALresult setKernelArguments(MWCALInfo* ci, SeparationCALMem* cm, SeparationCALNames* cn);
+
+CALresult createSeparationBuffers(MWCALInfo* ci,
+                                  SeparationCALMem* cm,
+                                  const AstronomyParameters* ap,
+                                  const IntegralArea* ia,
+                                  const StreamConstants* sc,
+                                  const StreamGauss sg,
+                                  const CALSeparationSizes* sizes);
+
+CALresult releaseSeparationBuffers(MWCALInfo* ci, SeparationCALMem* cm);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _CAL_BINARY_H_ */
+#endif /* _SEPARATION_CAL_SETUP_H_ */
 

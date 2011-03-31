@@ -166,7 +166,8 @@ set(cl_source_list src/separation_cl_buffers.c
 
 set(cal_source_list #src/separation_cal.cpp
                     src/separation_cal_kernelgen.cpp
-                    src/cal_binary.c
+                    src/separation_cal_setup.c
+                    src/separation_cal_run.c
                     src/show_cal_types.c)
 
 
@@ -212,7 +213,8 @@ set(separation_cl_headers include/setup_cl.h
 set(separation_cal_headers include/separation_cal.h
                            include/separation_cal_kernelgen.h
                            include/separation_cal_types.h
-                           include/cal_binary.h
+                           include/separation_cal_setup.h
+                           include/separation_cal_run.h
                            include/show_cal_types.h)
 
 if(SEPARATION_GRAPHICS)
