@@ -180,7 +180,7 @@ int evaluate(SeparationResults* results,
              const int do_separation,
              const char* separation_outfile)
 {
-    int rc;
+    int rc = 0;
     EvaluationState* es;
     StreamGauss sg;
     StarPoints sp = EMPTY_STAR_POINTS;
@@ -211,7 +211,10 @@ int evaluate(SeparationResults* results,
     freeEvaluationState(es);
 
     if (readStarPoints(&sp, star_points_file))
+    {
+        rc = 1;
         warn("Failed to read star points file\n");
+    }
     else
     {
         rc = likelihood(results, ap, &sp, sc, streams, sg, do_separation, separation_outfile);
