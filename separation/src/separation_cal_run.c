@@ -146,37 +146,88 @@ static real readResults(MWCALInfo* ci,
     return result;
 }
 
-/* TODO: Actually do this */
-static CALuint findCALChunks(const MWCALInfo* ci, const IntegralArea* ia)
+static CALresult chunkDivCheck(const char* name, CALuint dim, CALuint nChunk)
 {
-    return 1;
+    if (!mwDivisible(dim, nChunk))
+    {
+        warn("%s (%u) not divisible by n chunks (%u)\n", name, dim, nChunk);
+        return CAL_RESULT_ERROR;
+    }
+
+    return CAL_RESULT_OK;
+}
+
+static void printChunks(const SeparationCALChunks* chunks)
+{
+    warn("Using { %u, %u } chunk(s) of size { %u, %u }\n",
+         chunks->nChunkR, chunks->nChunkMu,
+         chunks->chunkSizeR, chunks->chunkSizeMu);
+}
+
+/* TODO: Actually do this */
+static CALresult findCALChunks(const MWCALInfo* ci, const IntegralArea* ia, SeparationCALChunks* chunks)
+{
+    CALresult err = CAL_RESULT_OK;
+    CALuint nChunk = 1;
+
+    if (!mwEven(nChunk) && nChunk != 1)
+    {
+        warn("Number of chunks (%u) not even (or 1)\n", nChunk);
+        return CAL_RESULT_ERROR;
+    }
+
+    if (nChunk == 1)
+    {
+        chunks->nChunkR = 1;
+        chunks->nChunkMu = 1;
+    }
+    else
+    {
+        chunks->nChunkR = nChunk / 2;
+        chunks->nChunkMu = nChunk / 2;
+    }
+
+    chunks->chunkSizeR = ia->r_steps / chunks->nChunkR;
+    chunks->chunkSizeMu = ia->mu_steps / chunks->nChunkMu;
+
+    printChunks(chunks);
+    err |= chunkDivCheck("r steps", ia->r_steps, chunks->nChunkR);
+    err |= chunkDivCheck("mu steps", ia->mu_steps, chunks->nChunkMu);
+
+    return err;
 }
 
 static inline CALuint runNuStep(MWCALInfo* ci,
                                 SeparationCALMem* cm,
                                 SeparationCALNames* cn,
-                                CALdomain* domain,
                                 const IntegralArea* ia,
-                                CALuint nChunks,
-                                CALuint chunkSize,
+                                const SeparationCALChunks* chunks,
                                 CALuint nuStep)
 {
-    CALuint i;
+    CALdomain domain;
     CALresult err = CAL_RESULT_OK;
 
-    domain->x = 0;
-    for (i = 0; i < nChunks; ++i)
+    /* It's much faster to do chunking in both dimensions when using
+     * images in tiled format */
+
+    domain.width = chunks->chunkSizeR;
+    domain.height = chunks->chunkSizeMu;
+
+    for (domain.x = 0; domain.x < ia->r_steps; domain.x += chunks->chunkSizeR)
     {
-        domain->x += i * chunkSize;
+        for (domain.y = 0; domain.y < ia->mu_steps; domain.y += chunks->chunkSizeMu)
+        {
+            err = setNuKernelArgs(ci, cm, cn, ia, nuStep);
+            if (err != CAL_RESULT_OK)
+                break;
 
-        err = setNuKernelArgs(ci, cm, cn, ia, nuStep);
-        if (err != CAL_RESULT_OK)
-            break;
-
-        err = runKernel(ci, cm, domain);
-        if (err != CAL_RESULT_OK)
-            break;
+            err = runKernel(ci, cm, &domain);
+            if (err != CAL_RESULT_OK)
+                goto run_step_exit;
+        }
     }
+
+run_step_exit:
 
     return err;
 }
@@ -206,20 +257,10 @@ static real runIntegral(const AstronomyParameters* ap,
     CALresult err;
     SeparationCALNames cn;
     double t1, t2;
-    CALuint nChunks, chunkSize;
-    CALdomain domain = { 0, 0, ia->r_steps, ia->mu_steps };
+    SeparationCALChunks chunks;
 
-    nChunks = findCALChunks(ci, ia);
-    if (nChunks == 0)
+    if (findCALChunks(ci, ia, &chunks) != CAL_RESULT_OK)
         return NAN;
-
-    chunkSize = ia->mu_steps / nChunks;
-    warn("Using %u chunk(s) of size %u\n", nChunks, chunkSize);
-    if (ia->mu_steps % nChunks != 0)
-    {
-        warn("mu steps (%u) not divisible by n chunks (%u)\n", ia->mu_steps, nChunks);
-        return NAN;
-    }
 
     memset(&cn, 0, sizeof(SeparationCALNames));
     err = getModuleNames(ci, &cn, cm->numberStreams);
@@ -240,7 +281,7 @@ static real runIntegral(const AstronomyParameters* ap,
     {
         t1 = mwGetTime();
 
-        err = runNuStep(ci, cm, &cn, &domain, ia, nChunks, chunkSize, es->nu_step);
+        err = runNuStep(ci, cm, &cn, ia, &chunks, es->nu_step);
         if (err != CAL_RESULT_OK)
             break;
 

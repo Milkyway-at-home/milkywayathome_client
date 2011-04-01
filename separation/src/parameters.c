@@ -59,6 +59,27 @@ static void calcIntegralStepSizes(IntegralArea* i)
     i->nu_step_size = (i->nu_max - i->nu_min) / (real)i->nu_steps;
 }
 
+static int checkIntegralAreasOK(const IntegralArea* ias, unsigned int n)
+{
+    unsigned int i;
+    const IntegralArea* ia;
+
+    for (i = 0; i < n; ++i)
+    {
+        ia = &ias[i];
+
+        if (!mwEven(ia->nu_steps) || !mwEven(ia->r_steps) || !mwEven(ia->mu_steps))
+        {
+            warn("Integral area dimensions must be even: cut %u: "
+                 "{ nu_steps = %u, mu_steps = %u, r_steps = %u }\n",
+                 i, ia->nu_steps, ia->mu_steps, ia->r_steps);
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 static IntegralArea* freadParameters(FILE* file,
                                      AstronomyParameters* ap,
                                      BackgroundParameters* bgp,
@@ -221,6 +242,13 @@ static IntegralArea* freadParameters(FILE* file,
     }
 
     ap->total_calc_probs = (real) total_calc_probs;
+
+    if (checkIntegralAreasOK(integrals, ap->number_integrals))
+    {
+        free(integrals);
+        return NULL;
+    }
+
     return integrals;
 }
 

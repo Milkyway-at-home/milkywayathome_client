@@ -111,6 +111,15 @@ typedef struct
     CALuint numberStreams;
 } SeparationCALMem;
 
+typedef struct
+{
+    CALuint nChunkMu;
+    CALuint nChunkR;
+
+    CALuint chunkSizeMu;
+    CALuint chunkSizeR;
+} SeparationCALChunks;
+
 
 #ifdef __cplusplus
 }

@@ -885,8 +885,8 @@ CALresult getModuleNames(MWCALInfo* ci, SeparationCALNames* cn, CALuint numberSt
     CALuint i;
     char buf[20] = "";
 
-    cn->outStreams = mwCalloc(numberStreams, sizeof(CALname));
-    cn->inStreams = mwCalloc(numberStreams, sizeof(CALname));
+    cn->outStreams = (CALname*) mwCalloc(numberStreams, sizeof(CALname));
+    cn->inStreams = (CALname*) mwCalloc(numberStreams, sizeof(CALname));
 
     err |= getNameMWCALInfo(ci, &cn->sg_dx, "cb0");
     err |= getNameMWCALInfo(ci, &cn->nuBuf, "cb1");
@@ -969,12 +969,6 @@ static CALresult separationSetupCAL(MWCALInfo* ci,
     }
 
     return CAL_RESULT_OK;
-}
-
-/* TODO: Actually do this */
-static CALuint findCALChunks(const MWCALInfo* ci, const IntegralArea* ia)
-{
-    return 1;
 }
 
 static void calculateCALSeparationSizes(CALSeparationSizes* sizes,
