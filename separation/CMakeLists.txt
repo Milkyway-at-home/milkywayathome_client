@@ -30,6 +30,7 @@ include(BOINCBinNames)
 include(PrintInfo)
 include(CPUNameTest)
 include(BuildSSELevels)
+include(CMakeDependentOption)
 
 set(separation_VERSION_MAJOR 0
                CACHE INTERNAL "Separation version number")
@@ -65,12 +66,12 @@ mark_as_advanced(ALL_OF_THE_SSES)
 option(SEPARATION_GRAPHICS
        "Use Separation Graphics" OFF)
 
-option(SEPARATION_CRLIBM
-      "Use crlibm double" OFF)
+cmake_dependent_option(SEPARATION_CRLIBM "Use crlibm for separation maths" OFF
+                       "DOUBLEPREC" OFF)
 mark_as_advanced(SEPARATION_CRLIBM)
 
-option(SEPARATION_FDLIBM
-      "Use fdlibm double" OFF)
+cmake_dependent_option(SEPARATION_FDLIBM "Use fdlibm for separation maths" OFF
+                       "DOUBLEPREC" OFF)
 mark_as_advanced(SEPARATION_FDLIBM)
 
 if(NOT DOUBLEPREC AND SEPARATION_CRLIBM)

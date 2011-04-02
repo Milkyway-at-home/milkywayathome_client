@@ -292,7 +292,6 @@ static void setNumThreads(int numThreads) { }
 
 #endif /* _OPENMP */
 
-
 int main(int argc, const char* argv[])
 {
     NBodyFlags nbf = EMPTY_NBODY_FLAGS;
@@ -324,5 +323,7 @@ int main(int argc, const char* argv[])
     freeNBodyFlags(&nbf);
 
     mw_finish(rc);
+
+    return rc;
 }
 

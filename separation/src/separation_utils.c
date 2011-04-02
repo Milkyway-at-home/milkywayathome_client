@@ -274,7 +274,7 @@ int verifySeparationResults(const char* refFile, const SeparationResults* result
   #if DOUBLEPREC
     const real epsResults = 1.0e-12;
   #else
-    const real epsResulst = 1.0e-7;
+    const real epsResults = 1.0e-7;
   #endif /* DOUBLEPREC */
 
     ref = readReferenceResults(refFile, nStreams);
