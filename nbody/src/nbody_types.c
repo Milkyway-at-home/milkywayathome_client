@@ -69,10 +69,6 @@ int destroyNBodyState(NBodyState* st)
 
     free(st->checkpointResolved);
 
-  #if NBODY_OPENCL
-    cleanupNBodyCL(st);
-  #endif /* NBODY_OPENCL */
-
     if (st->outFile && st->outFile != DEFAULT_OUTPUT_FILE)
     {
         if (fclose(st->outFile))

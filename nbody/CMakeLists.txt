@@ -250,14 +250,14 @@ set(CMAKE_C_FLAGS "-std=gnu99 ${SSE2_FLAGS} ${CMAKE_C_FLAGS}")
 set(nbody_link_libs )
 
 if(NBODY_OPENCL)
-  set(c_kernel_dir "${CMAKE_CURRENT_SOURCE_DIR}/ckernels")
-  list(APPEND nbody_lib_src "${PROJECT_SOURCE_DIR}/src/gravmap_opencl.c")
+  # set(c_kernel_dir "${CMAKE_CURRENT_SOURCE_DIR}/ckernels")
+  # list(APPEND nbody_lib_src "${PROJECT_SOURCE_DIR}/src/gravmap_opencl.c")
 
-  list(APPEND nbody_lib_src "${c_kernel_dir}/cl_gravmap.c")
-  set_source_files_properties("${c_kernel_dir}/cl_gravmap.c"
-                              PROPERTIES GENERATED TRUE)
+  # list(APPEND nbody_lib_src "${c_kernel_dir}/cl_gravmap.c")
+  # set_source_files_properties("${c_kernel_dir}/cl_gravmap.c"
+  #                             PROPERTIES GENERATED TRUE)
 
-  list(APPEND nbody_link_libs ${OPENCL_LIBRARIES})
+  # list(APPEND nbody_link_libs ${OPENCL_LIBRARIES})
 endif()
 
 add_library(nbody_simulation STATIC ${nbody_lib_src} ${nbody_lib_headers})

@@ -38,10 +38,5 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua.h"
 #include "nbody_coordinates.h"
 
-
-#if NBODY_OPENCL
-  #include "gravmap_opencl.h"
-#endif /* NBODY_OPENCL */
-
 #endif /* _NBODY_PRIV_H_ */
 

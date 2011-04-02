@@ -68,34 +68,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_config.h"
 #include "milkyway_math.h"
 #include "milkyway_extra.h"
+#include "milkyway_util.h"
 
 #include <lua.h>
 #include <time.h>
 
-#ifndef __OPENCL_VERSION__   /* Not compiling CL kernel */
-  #if NBODY_OPENCL
-    #include <OpenCL/cl.h>
-    #include <OpenCL/cl_platform.h>
-    #include "build_cl.h"
-  #endif /* NBODY_OPENCL */
-
-  #include <stdio.h>
-  #ifdef _WIN32
-    #define WIN32_LEAN_AND_MEAN
-	#define VC_EXTRALEAN
-    #include <windows.h>
-  #endif /* _WIN32 */
-
-#else
-  /* FIXME: Remove IO from context?
-  These aren't allowed in the kernels, so make these go away with same size type.
-  CHECKME: type of HANDLE on windows = ? */
-  #define FILE void
-  #define HANDLE void*
-#endif
 
 #ifndef _MSC_VER
-  #define NBODY_ALIGN __attribute__((packed))
+  #define NBODY_ALIGN __attribute__((aligned))
 #else
   #define NBODY_ALIGN
 #endif /* _MSC_VER */
@@ -307,22 +287,6 @@ typedef struct NBODY_ALIGN
 
 #endif /* _WIN32 */
 
-#if NBODY_OPENCL && !defined(__OPENCL_VERSION__)
-
-typedef struct
-{
-    cl_mem acc;
-    cl_mem bodies;
-    cl_mem nbctx;
-    cl_mem root;
-} NBodyCLMem;
-
-#define EMPTY_NBODY_CL_MEM { NULL, NULL, NULL, NULL }
-
-#endif /* NBODY_OPENCL && !defined(__OPENCL_VERSION__)) */
-
-
-#ifndef __OPENCL_VERSION__
 
 /* Mutable state used during an evaluation */
 typedef struct NBODY_ALIGN
@@ -339,19 +303,11 @@ typedef struct NBODY_ALIGN
 
     FILE* outFile;            /* file for snapshot output */
     char* checkpointResolved;
-  #if NBODY_OPENCL
-    CLInfo ci;
-    NBodyCLMem cm;
-  #endif /* NBODY_OPENCL */
 } NBodyState;
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#if NBODY_OPENCL
-  #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, NAN, NULL, NULL, EMPTY_CL_INFO, EMPTY_NBODY_CL_MEM }
-#else
-  #define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0, NAN, 0, NULL, NULL, FALSE, NULL, NULL }
-#endif /* NBODY_OPENCL */
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0, NAN, 0, NULL, NULL, FALSE, NULL, NULL }
 
 
 typedef struct
@@ -377,8 +333,6 @@ typedef struct
     real count;
 } HistData;
 
-
-#endif /* __OPENCL_VERSION__ */
 
 /* The context tracks settings of the simulation.  It should be set
    once at the beginning of a simulation based on settings, and then

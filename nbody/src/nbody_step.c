@@ -85,12 +85,7 @@ NBodyStatus stepSystem(const NBodyCtx* ctx, NBodyState* st)
 
     advancePosVel(st, st->nbody, dt);
 
-  #if !NBODY_OPENCL
     rc = gravMap(ctx, st);
-  #else
-    gravMapCL(ctx, st);
-  #endif /* !NBODY_OPENCL */
-
     advanceVelocities(st, st->nbody, dt);
 
     st->tnow += dt;                           /* finally, advance time */
