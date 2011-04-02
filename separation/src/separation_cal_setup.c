@@ -321,7 +321,7 @@ static CALresult createNuCB(MWMemRes* mr, MWCALInfo* ci)
 {
     CALresult err;
 
-    err = calResAllocRemote1D(&mr->res, &ci->dev, 1, 1, constantFormatReal2, 0);
+    err = calResAllocRemote1D(&mr->res, &ci->dev, 1, 1, constantFormatReal2, CAL_RESALLOC_CACHEABLE);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to allocate constant buffer", err);
