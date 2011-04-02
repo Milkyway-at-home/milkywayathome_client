@@ -226,7 +226,8 @@ double mwGetTime()
     struct timeval t;
     struct timezone tzp;
     gettimeofday(&t, &tzp);
-    return t.tv_sec + t.tv_usec*1e-6;
+    /* Prevent weird breakage when building with -fsingle-precision-constant */
+    return t.tv_sec + t.tv_usec * (double) 1.0e-6;
 }
 
 /* Get time in microseconds */

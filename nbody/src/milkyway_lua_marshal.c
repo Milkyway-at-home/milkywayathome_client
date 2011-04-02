@@ -215,13 +215,13 @@ int setLong(lua_State* luaSt, void* v)
 
 int getNumber(lua_State* luaSt, void* v)
 {
-    lua_pushnumber(luaSt, *(lua_Number*) v);
+    lua_pushnumber(luaSt, (lua_Number) *(real*) v);
     return 1;
 }
 
 int setNumber(lua_State* luaSt, void* v)
 {
-    *(lua_Number*) v = luaL_checknumber(luaSt, 3);
+    *(real*) v = (real) luaL_checknumber(luaSt, 3);
     return 0;
 }
 
