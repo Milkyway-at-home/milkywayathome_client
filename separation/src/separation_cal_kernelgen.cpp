@@ -187,15 +187,14 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
 
         bg_int += div_custom(rPt.y(), rg * rs * rs * rs);
 
-        #if 0
         if (ap->aux_bg_profile)
         {
-            r_in_mag = sg_dx[i] + gPrime(rcs[pos.y()]);
-            tmp = mad(ap->bg_b, r_in_mag, ap->bg_c);
+            /* TODO: Checkme */
+            double1 r_in_mag = sg_dx[cast_type<int1>(i.y())] + rConsts[pos.x()].y();
+            double1 tmp = mad(ap->bg_b, r_in_mag, ap->bg_c);
             tmp = mad(ap->bg_a, r_in_mag * r_in_mag, tmp);
             bg_int = mad(tmp, rPt.y(), bg_int);
         }
-        #endif
 
         emit_comment("stream loops");
         for (j = 0; j < number_streams; ++j)
