@@ -118,14 +118,6 @@ Be prepared for pain.
        TortoiseSVN or whatever if all else fails.
        $ svn co http://boinc.berkeley.edu/svn/trunk/boinc
 
-  3.2 Patch BOINC
-
-      To get the BOINC libraries to compile, you right now need a
-      patch that I wrote. Get it somehow, and apply it
-
-      $ patch -p1 < /path/to/the.patch
-      (if this fails, try replacing -p1 with -p0. I never get it right)
-
 
   3.3 Compile the BOINC libraries
 
@@ -219,5 +211,101 @@ MinGW64:
 
   $ cmake . -G "MinGW Makefiles"
   $ mingw32-make
+
+
+--------------------------------------------------------------------------------
+
+New MinGW directions to install everything:
+
+To build 32 bit version, add -m32 to the CFLAGS when building
+anything. For the builds using cmake, add -DCMAKE_C_FLAGS="-m32"
+-DCMAKE_CXX_FLAGS="-m32" to the cmake build line.
+
+1. Install TDM GCC, the 64 bit full version.
+2. Install SlikSVN
+3. Install msys-git
+
+Make sure all the installers add themselves to the PATH.
+
+4. Start the MinGW64 shell
+
+5. Get milkywayathome_client
+    > git clone git://github.com/Milkyway-at-home/milkywayathome_client.git
+
+6. Decide if you're going to do an in or out of source build. If
+    you're doing an in source build, PATH_TO_MILKYWAY_BUILD_OUTPUT will be
+    the same as where your checkout is. Otherwise it's wherever you're building.
+
+6.Get BOINC:
+    > svn co http://boinc.berkeley.edu/svn/tags/<some version here>
+     or if necessary (right now you need trunk for mingw build to work)
+    > svn co http://boinc.berkeley.edu/svn/trunk/boinc
+
+7. Build BOINC
+    > cd boinc\lib
+    > mingw32-make -f Makefile.mingw
+
+8. Install BOINC somewhere useful.
+
+  If you're feeling inspired to do something useful, you can fix "make
+  install" for BOINC with the MinGW makefile. It can be made to work
+  with MSYS, but these directions aren't using it.
+
+  Actually much better, replace the 5 or so build systems which BOINC
+  currently has with a single cmake one.
+
+  There are 3 static libraries you need:
+    boinc\lib\libboinc.a
+    boinc\lib\libboinc_api.a
+    boinc\lib\libboinc_graphics2.a
+
+    Copy the librariesto ${PATH_TO_MILKYWAY_BUILD_OUTPUT}/lib
+    Copy the headers to ${PATH_TO_MILKYWAY_BUILD_OUTPUT}/include/boinc
+
+    The headers should be the ones listed in Makefile.mingw as install
+    headers. If you're lazy like me you can just copy all of the
+    headers in boinc\lib and in boinc\api
+
+
+9. Get POPT:
+    My fork should build with MinGW32/MinGW64 and MSVC
+        > git clone git://github.com/arsenm/POPT.git
+        > cmake ${PATH_TO_POPT} -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX=${PATH_TO_MILKYWAY_BUILD_OUTPUT}
+        > mingw32-make
+        > mingw32-make install
+
+10. Get Lua.
+     Notes:
+         a. If you want to do a 32 bit build, add the -m32 to MYCFLAGS in ${LUA_SRC_DIR}/src/Makefile
+
+         b. If want static liblua.a to not need to ship a separate DLL, (and losing the ability to load packages which we
+             don't need) you need to change ${LUA_SRC_DIR}/src/Makefile to not build as a DLL.
+
+   > mingw32-make mingw
+
+    Again make install doesn't really work, so manually copy stuff again:
+    Copy src/liblua.a (and maybe ALSO lua51.dll depending on what you did) to ${PATH_TO_MILKYWAY_BUILD_OUTPUT}/lib
+    Copy these headers from src/ to ${PATH_TO_MILKYWAY_BUILD_OUTPUT}/include
+        lauxlib.h
+        lua.h
+        luaconf.h
+        lualib.h
+
+
+11. Get crlibm
+    > git clone git://github.com/Milkyway-at-home/crlibm.git
+    > cd crlibm
+    > cmake -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX=${PATH_TO_MILKYWAY_BUILD_OUTPUT}
+    > mingw32-make
+    > mingw32-make install
+
+12. Try building it
+      > cd ${PATH_TO_MILKYWAY_BUILD_OUTPUT}
+      > cmake -G "MinGW Makefiles" ${PATH_TO_MILKYWAY_SOURCE}
+
+      For an in source build that would probably be
+      > cmake -G "MinGW Makefiles" .
+      > mingw32-make
+
 
 
