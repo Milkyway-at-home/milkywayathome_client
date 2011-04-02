@@ -36,58 +36,84 @@ using namespace cal::il;
 /* Doesn't give correct inf results when dividing by 0 */
 static double1 div_custom(double1 x, double1 y)
 {
-    emit_comment("div_custom");
-    double1 tmp = native_reciprocal(y);
+    double1 result;
 
-    double1 tmp2 = mad(-y, tmp, 1.0);
-    double1 tmp3 = mad(tmp, tmp2, tmp);
-    double1 tmp4 = x * tmp3;
-    double1 tmp5 = mad(-y, tmp4, x);
+    il_func(_out(result), x, y)
+    {
+        emit_comment("div_custom");
+        //float1 yf = cast_type<float1>(y);
+        //double1 tmp = cast_type<double1>(reciprocal(yf));
 
-    return mad(tmp5, tmp3, tmp4);
+        double1 tmp = native_reciprocal(y);
+
+        double1 tmp2 = mad(-y, tmp, 1.0);
+        double1 tmp3 = mad(tmp, tmp2, tmp);
+        double1 tmp4 = x * tmp3;
+        double1 tmp5 = mad(-y, tmp4, x);
+        result = mad(tmp5, tmp3, tmp4);
+    }
+    il_endfunc
+
+    return result;
 }
 
 static double1 sqrt_custom(double1 x)
 {
-    emit_comment("sqrt");
+    double1 result;
 
-    float1 fx = cast_type<float1>(x);
-    double1 y = cast_type<double1>(-rsqrt(fx));
+    il_func(_out(result), x)
+    {
+        emit_comment("sqrt_custom");
 
-    double1 tmp = y * y;
-    tmp = mad(x, tmp, -3.0);
-    y *= tmp;
+        float1 fx = cast_type<float1>(x);
+        double1 y = cast_type<double1>(-native_rsqrt(fx));
 
-    tmp = x * y;
-    y *= tmp;
+        double1 tmp = y * y;
+        tmp = mad(x, tmp, -3.0);
+        y *= tmp;
 
-    return tmp * mad(y, -0.0625, 0.75);
+        tmp = x * y;
+        y *= tmp;
+
+        result = tmp * mad(y, -0.0625, 0.75);
+    }
+    il_endfunc
+
+    return result;
 }
 
 
 /* FIXME: Quality variable names */
 static double1 exp_custom(double1 x)
 {
-    emit_comment("exp");
+    double1 result;
 
-    double1 xx = x * (1.0 / log(2.0));
-    double1 xxFract = fract(xx);
-    int1 expi = cast_type<int1>(xx - xxFract);
+    il_func(_out(result), x)
+    {
+        emit_comment("exp_custom");
 
-    double1 tmp = xxFract - 0.5;
-    double1 dtmp = tmp * tmp;
-    double1 y = mad(dtmp, 0x1.52b5c4d1f00b9p-16, 0x1.4aa4eb649a98fp-7);
-    double1 z = tmp * mad(dtmp, y, 0x1.62e42fefa39efp-1);
+        double1 xx = x * (1.0 / log(2.0));
+        double1 xxFract = fract(xx);
+        int1 expi = cast_type<int1>(xx - xxFract);
 
-    double1 tmp3 = mad(dtmp, 0x1.657cdd06316dcp-23, 0x1.3185f478ff1ebp-12);
-    tmp3 = mad(dtmp, tmp3, 0x1.bf3e7389ceff9p-5);
-    tmp3 = mad(dtmp, tmp3, 1.0);
+        double1 tmp = xxFract - 0.5;
+        double1 dtmp = tmp * tmp;
+        double1 y = mad(dtmp, 0x1.52b5c4d1f00b9p-16, 0x1.4aa4eb649a98fp-7);
+        double1 z = tmp * mad(dtmp, y, 0x1.62e42fefa39efp-1);
 
-    double1 tmp4 = mad(z, -0.5, tmp3);
-    double1 divRes = div_custom(z, tmp4);
-    divRes = mad(divRes, sqrt(2.0), sqrt(2.0));
+        double1 tmp3 = mad(dtmp, 0x1.657cdd06316dcp-23, 0x1.3185f478ff1ebp-12);
+        tmp3 = mad(dtmp, tmp3, 0x1.bf3e7389ceff9p-5);
+        tmp3 = mad(dtmp, tmp3, 1.0);
 
-    return ldexp(divRes, expi);
+        double1 tmp4 = mad(z, -0.5, tmp3);
+        double1 divRes = div_custom(z, tmp4);
+        divRes = mad(divRes, sqrt(2.0), sqrt(2.0));
+
+        result = ldexp(divRes, expi);
+    }
+    il_endfunc
+
+    return result;
 }
 
 static double2 kahanAdd(double2 kSum, double1 x)
