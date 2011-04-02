@@ -18,8 +18,6 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-find_package(OpenSSL)
-message("   OpenSSL Libraries  ${OPENSSL_LIBRARIES}")
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_executable(nbody_test_driver nbody_test_driver.c)

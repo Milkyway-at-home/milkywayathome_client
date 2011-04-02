@@ -328,11 +328,19 @@ configure_file (
 add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
 
 milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} ${NBODY_STATIC} "${nbody_exe_link_libs}")
-add_subdirectory(tests EXCLUDE_FROM_ALL)
-
 
 install(TARGETS ${nbody_bin_name} nbody_simulation nbody_lua
           RUNTIME       DESTINATION bin
           ARCHIVE       DESTINATION lib
           PUBLIC_HEADER DESTINATION include)
+
+find_package(OpenSSL)
+message("   OpenSSL Libraries  ${OPENSSL_LIBRARIES}")
+
+if(NOT OPENSSL_FOUND)
+  message(WARNING "OpenSSL not found, not using N-body tests")
+else()
+  add_subdirectory(tests EXCLUDE_FROM_ALL)
+endif()
+
 

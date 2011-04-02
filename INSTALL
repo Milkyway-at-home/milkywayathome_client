@@ -307,5 +307,12 @@ Make sure all the installers add themselves to the PATH.
       > cmake -G "MinGW Makefiles" .
       > mingw32-make
 
+13. If you want to build CAL++ separation, you will also need CAL and CAL++. CAL should be included with the AMD APP/Stream SDK. You should checkout CAL++ from
+
+   > svn co https://calpp.svn.sourceforge.net/svnroot/calpp calpp
+
+14. CAL++ depends on Boost, so now you need that. I'll come up with instructions once I figure this out. Right now it looks like it will be easier to get CAL stuff working with MSVC.
+
+
 
 

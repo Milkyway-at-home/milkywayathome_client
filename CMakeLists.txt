@@ -322,6 +322,7 @@ find_package(OpenMP)
 find_package(Crlibm)
 find_package(Fdlibm)
 find_package(BOINC)
+find_package(Boost)
 
 find_package(Popt REQUIRED)
 include_directories(${POPT_INCLUDE_DIR})

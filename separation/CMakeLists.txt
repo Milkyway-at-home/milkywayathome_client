@@ -309,6 +309,7 @@ if(SEPARATION_OPENCL)
 elseif(SEPARATION_CAL)
   include_directories(${ATICAL_INCLUDE_DIR})
   include_directories(${CAL++_INCLUDE_DIR})
+  include_directories(${Boost_INCLUDE_DIR})
   list(APPEND exe_link_libs ${ATICALCL_LIBRARY} ${ATICALRT_LIBRARY})
 endif()
 
