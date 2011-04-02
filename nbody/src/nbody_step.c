@@ -29,7 +29,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_grav.h"
 
 /* Advance velocity by half a timestep */
-ALWAYS_INLINE
 static inline void bodyAdvanceVel(Body* p, const mwvector a, const real dt)
 {
     mwvector dv;
@@ -37,7 +36,6 @@ static inline void bodyAdvanceVel(Body* p, const mwvector a, const real dt)
     dv = mw_mulvs(a, 0.5 * dt);   /* get velocity increment */
     mw_incaddv(Vel(p), dv);       /* advance v by 1/2 step */
 }
-
 
 /* Advance body position by 1 timestep */
 static inline void bodyAdvancePos(Body* p, const real dt)
@@ -48,7 +46,6 @@ static inline void bodyAdvancePos(Body* p, const real dt)
     mw_incaddv(Pos(p), dr);     /* advance r by 1 step */
 }
 
-ALWAYS_INLINE
 static inline void advancePosVel(NBodyState* st, const unsigned int nbody, const real dt)
 {
     unsigned int i;
@@ -61,10 +58,8 @@ static inline void advancePosVel(NBodyState* st, const unsigned int nbody, const
         bodyAdvanceVel(&st->bodytab[i], st->acctab[i], dt);
         bodyAdvancePos(&st->bodytab[i], dt);
     }
-
 }
 
-ALWAYS_INLINE
 static inline void advanceVelocities(NBodyState* st, const unsigned int nbody, const real dt)
 {
     unsigned int i;
@@ -75,7 +70,6 @@ static inline void advanceVelocities(NBodyState* st, const unsigned int nbody, c
     for (i = 0; i < nbody; ++i)      /* loop over all bodies */
         bodyAdvanceVel(&st->bodytab[i], st->acctab[i], dt);
 }
-
 
 /* stepSystem: advance N-body system one time-step. */
 NBodyStatus stepSystem(const NBodyCtx* ctx, NBodyState* st)

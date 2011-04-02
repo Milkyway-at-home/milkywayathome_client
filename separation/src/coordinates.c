@@ -146,28 +146,28 @@ static inline mwvector lbToXyz(LB lb)
     return xyz;
 }
 
-static inline RADec xyzToRADec(real x1, real y1, real z1)
+static inline RADec xyzToRADec(real x, real y, real z)
 {
     RADec raDec;
 
-    raDec.ra  = mw_atan2(y1, x1) + NODE_GC_COORDS_RAD;
-    raDec.dec = mw_asin(z1);
+    raDec.ra  = mw_atan2(y, x) + NODE_GC_COORDS_RAD;
+    raDec.dec = mw_asin(z);
 
     return raDec;
 }
 
 static RADec surveyToRADec(real slong, real slat)
 {
-    real x1, y1, z1;
+    real x, y, z;
 
     const real etaPole = surveyCenterDec_rad;
 
     /* Rotation */
-    x1 = -mw_sin(slong);
-    y1 = mw_cos(slat + etaPole) * mw_cos(slong);
-    z1 = mw_sin(slat + etaPole) * mw_cos(slong);
+    x = -mw_sin(slong);
+    y = mw_cos(slat + etaPole) * mw_cos(slong);
+    z = mw_sin(slat + etaPole) * mw_cos(slong);
 
-    return xyzToRADec(x1, y1, z1);
+    return xyzToRADec(x, y, z);
 }
 
 static LB surveyToLB(real slong, real slat)
@@ -221,7 +221,7 @@ static inline LB lbr2d(LB lb)
 
 /* Convert GC coordinates (mu, nu) into l and b for the given wedge. */
 HOT CONST_F
-LB gc2lb(const int wedge, const real mu, const real nu)
+LB gc2lb(const int wedge, real mu, real nu)
 {
     LB lb;
     real sinmunode, cosmunode;
@@ -230,7 +230,7 @@ LB gc2lb(const int wedge, const real mu, const real nu)
     real sininc, cosinc;
     real sinra, cosra;
 
-    real x12, y2, y1, z1;
+    real x_1_2, y_2, y_1, z_1;
     real wedge_eta, wedge_incl;
     real cosdec;
     mwvector v1, v2;
@@ -242,8 +242,8 @@ LB gc2lb(const int wedge, const real mu, const real nu)
     munode = mu - NODE_GC_COORDS;
     mw_sincos(d2r(munode), &sinmunode, &cosmunode);
 
-    x12 = cosmunode * cosnu;  /* x1 = x2 */
-    y2 = sinmunode * cosnu;
+    x_1_2 = cosmunode * cosnu;  /* x1 = x2 */
+    y_2 = sinmunode * cosnu;
     /* z2 = sin(nu) */
 
     wedge_eta = atEtaFromStripeNumber_rad(wedge);
@@ -253,10 +253,10 @@ LB gc2lb(const int wedge, const real mu, const real nu)
 
     mw_sincos(wedge_incl, &sininc, &cosinc);
 
-    y1 = y2 * cosinc - sinnu * sininc;
-    z1 = y2 * sininc + sinnu * cosinc;
+    y_1 = y_2 * cosinc - sinnu * sininc;
+    z_1 = y_2 * sininc + sinnu * cosinc;
 
-    raDec = xyzToRADec(x12, y1, z1);
+    raDec = xyzToRADec(x_1_2, y_1, z_1);
 
     /* Spherical to Cartesian */
     mw_sincos(raDec.ra, &sinra, &cosra);
@@ -265,7 +265,7 @@ LB gc2lb(const int wedge, const real mu, const real nu)
     SET_VECTOR(v1,
                cosra * cosdec,
                sinra * cosdec,
-               z1         /* mw_sin(asin(z1)) == z1 */
+               z_1         /* mw_sin(asin(z1)) == z1 */
               );
 
     /* Equatorial to Galactic */
