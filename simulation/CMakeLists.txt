@@ -18,7 +18,7 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.6)
 project(simulation)
 
 find_package(SDL REQUIRED)
@@ -31,8 +31,8 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 set(test_list mwdemo_fullscreen)
 
-add_executable(nbody_demo bin/nbody.cpp)
-add_executable(mwdemo     bin/mwdemo.cpp)
+add_executable(nbody_demo src/nbody.cpp)
+add_executable(mwdemo     src/mwdemo.cpp)
 
 target_link_libraries(nbody_demo lmodl ${SDL_LIBRARY})
 target_link_libraries(mwdemo lmodl ${SDL_LIBRARY})

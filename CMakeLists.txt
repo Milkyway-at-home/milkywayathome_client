@@ -358,4 +358,9 @@ if(GIT_FOUND AND XZ_COMMAND)
   make_release_tarball("separation_release" "milkyway_separation_${separation_VERSION}")
 endif()
 
+if(0)
+  add_subdirectory(LModL EXCLUDE_FROM_ALL)
+  add_subdirectory(simulation EXCLUDE_FROM_ALL)
+endif()
+
 

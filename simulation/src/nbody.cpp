@@ -30,85 +30,81 @@
 #include "imgplot.hpp"
 #include "demofile.hpp"
 
-using namespace std;
-
 const int STEP_TOTAL = 400;
 const int MOVIE_FRAMES = 1500;
 
-int main( int args, char **argv )
+int main(int argc, const char* argv[])
 {
-
-    cout << "Initializing draw routines\n" << flush;
+    std::cout << "Initializing draw routines" << std::endl;
     initDraw();
 
-    float diameter = 3.;
-    float fps = 60.;
+    float diameter = 3.0f;
+    float fps = 60.0f;
     int bpp = 32;
-    float lum = .5;
+    float lum = 0.5f;
 
     int totalNBody = 3;
 
     //string fileName[totalNBody];
-    string fileName[3];
+    std::string fileName[3];
     fileName[0] = "gd1.stoa";
     fileName[1] = "orphan.stoa";
     fileName[2] = "sgrsim.stoa";
 
     // Read in files
-    cout << "Reading N-body files.\n" << flush;
+    std::cout << "Reading N-body files." << std::endl;
 
     bool binary = false;
 
     NBodyFile* nBody[totalNBody];
-    for( int i = 0; i<totalNBody; i++ )
+    for (int i = 0; i < totalNBody; i++)
         nBody[i] = new NBodyFile(fileName[i], binary);
 
     int totalStars = nBody[0]->getStarTotal();
     HaloField* field[totalNBody];
-    for( int i = 0; i<totalNBody; i++ )
+    for (int i = 0; i < totalNBody; i++)
         field[i] = new HaloField(totalStars);
 
-    for( int i = 0; i<totalNBody; i++ )
+    for (int i = 0; i < totalNBody; i++)
         nBody[i]->readStars(*field[i], lum);
 
     // Create display
     bool fullScreen = false;
-    cout << "Setting up window\n" << flush;
+    std::cout << "Setting up window" << std::endl;
     FieldAnimation sim(bpp, fps, fullScreen, "GD-1 + Orphan + Sgr Stream Disruption", "nbody.bmp");
 
     // Read in galaxy
-    cout << "Reading/generating galaxy\n" << flush;
-    ImagePlot imagePlot("eso32.bmp", 5000, 30.*1.18, .3);
+    std::cout << "Reading/generating galaxy" << std::endl;
+    ImagePlot imagePlot("eso32.bmp", 5000, 30.0 * 1.18, 0.3);
 
-    cout << "Adding galaxy to field...\n" << flush;
-    sim.add(imagePlot.getField(), 20.);
+    std::cout << "Adding galaxy to field..." << std::endl;
+    sim.add(imagePlot.getField(), 20.0);
 
-    for( int i = 0; i<totalNBody; i++ )
+    for (int i = 0; i<totalNBody; i++)
         sim.add(field[i], diameter);
 
     // Setup
     sim.showCamera();
     sim.showAxes();
-    sim.cv->moveToPoint(Vector3d(0., -500., 0.), 0., 0.);
+    sim.cv->moveToPoint(Vector3d(0.0, -500.0, 0.0), 0.0, 0.0);
 
 //    double currentTime = 0.;
 //    double masterTimeStep = ;
 
-    while( true )
+    while (true)
     {
-
-        if( sim.pollEvent() ) {
-//            if( field.getTimeStep()>currentTimeStep)
-            for( int i = 0; i<totalNBody; i++ ) {
+        if (sim.pollEvent())
+        {
+//          if( field.getTimeStep()>currentTimeStep)
+            for (int i = 0; i<totalNBody; i++)
+            {
                 field[i]->clearField();
                 nBody[i]->readStars(*field[i], lum);
             }
         }
-
     }
 
     return 0;
-
 }
 
 /*
@@ -191,3 +187,5 @@ int main( int args, char **argv )
 
 }
 */
+
+

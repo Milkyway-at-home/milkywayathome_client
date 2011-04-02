@@ -30,7 +30,7 @@ void initDraw()
 {
     atexit(SDL_Quit);
     if( SDL_Init(SDL_INIT_VIDEO)==-1 ) {
-        cerr << "Unable to set up SDL.\n";
+        std::cerr << "Unable to set up SDL." << std::endl;
         exit(1);
     }
 }

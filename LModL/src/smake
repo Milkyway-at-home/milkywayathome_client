@@ -1,1 +1,0 @@
-g++ -c $1.cpp -I../include -L../include -I../../milkywayathome_client/simulation/include -I../../../../SDL-1.2.14/include/SDL -L../../../../SDL-1.2.14/lib -lmingw32 -lSDLmain -lSDL -mwindows -O3 -Wall

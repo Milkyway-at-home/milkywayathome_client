@@ -31,9 +31,6 @@
 #include "imgplot.hpp"
 
 
-using namespace std;
-
-
 HaloField* getLastFrameNBody()
 {
     NBodyFile nb("plummer1.bin");
@@ -42,51 +39,43 @@ HaloField* getLastFrameNBody()
     return stream;
 }
 
-
-int main( int args, char **argv )
+int main(int argc, const char* argv[])
 {
-/*
-    if( args<2 ){
-        printf("Usage: ./mwdemo wedge_file_name\n");
-        return 1;
-    }
-*/
-
-    cout << "Initializing draw routines\n" << flush;
+    std::cout << "Initializing draw routines" << std::endl;
 
     initDraw();
 
-    float diameter = 7.;
-    float fps = 30.;
+    float diameter = 7.0f;
+    float fps = 30.0f;
     int bpp = 32;
 
-    string fileName = "stars_82.txt";
-    if( args>1 )
+    std::string fileName = "stars_82.txt";
+    if (argc > 1)
         fileName = argv[1];
 
     // Read in wedge
-    cout << "Reading wedge file\n" << flush;
+    std::cout << "Reading wedge file" << std::endl;
     WedgeFile wf;
     int totalStars = wf.getStarTotal(fileName);
     HaloField wedge(totalStars);
     wf.readStars(fileName, wedge);
 
     // Create display
-    cout << "Setting up window\n" << flush;
+    std::cout << "Setting up window" << std::endl;
     FieldAnimation sim(bpp, fps, false, "MilkyWay@Home Screensaver Demo", "milkyway.bmp");
 
     // Read in galaxy
-    cout << "Reading/generating galaxy\n" << flush;
-    ImagePlot imagePlot("eso32.bmp", 25000, 30.*1.18, .3);
+    std::cout << "Reading/generating galaxy" << std::endl;
+    ImagePlot imagePlot("eso32.bmp", 25000, 30.0 * 1.18, .3);
 
-    cout << "Adding stars to field...\n" << flush;
+    std::cout << "Adding stars to field..." << std::endl;
     sim.add(&wedge, diameter);
     sim.add(getLastFrameNBody(), diameter);
     sim.add(imagePlot.getField(), 20.);
 
-    cout << "Changing settings...\n" << flush;
+    std::cout << "Changing settings..." << std::endl;
     sim.showCamera();
-    sim.cv->setFocusPoint(sim.cv->getFocusPoint(100., 45., 30.), 0.);
+    sim.cv->setFocusPoint(sim.cv->getFocusPoint(100.0, 45.0, 30.0), 0.0);
 
 //setFocusPoint(Vector3d{-8, 0, 0});
 //moveTo(Vector3d{-8, 0, 0}, 0.);
@@ -116,19 +105,20 @@ setFocusAngle(RandomAngle);   /// TODO /// Buffered with fade-in
 
 /////////    while( sim.pollDemo() ) ;
 
-    cout << "Entering event loop\n" << flush;
+    std::cout << "Entering event loop\n" << flush;
 
-    while( true )
+    while (true)
     {
-
-        if( sim.pollEvent() ) {
-            ;
+        if (sim.pollEvent())
+        {
         }
 
     }
 
-    cout << "Done\n" << flush;
+    std::cout << "Done" << std::endl;
 
     return 0;
 
 }
+
+
