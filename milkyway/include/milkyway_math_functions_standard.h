@@ -66,6 +66,7 @@ extern "C" {
 
 #define mw_abs   fabs
 #define mw_max   fmax
+#define mw_min   fmin
 
 #define mw_acosh acosh
 #define mw_acospi(x) (mw_acos(x) / M_PI))
