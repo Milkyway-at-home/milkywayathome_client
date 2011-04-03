@@ -142,8 +142,6 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
                                        const StreamConstants* sc)
 {
     unsigned int j;
-    unsigned int number_streams = 3;  /* FIXME: Temporary to compare against old things */
-
     indexed_register<double1> sg_dx("cb0");
     named_variable<float1> nu_step("cb1[0].x");
     named_variable<double1> nu_id("cb1[0].zw");
@@ -153,7 +151,7 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     std::vector< named_variable<double2> > streamOutputRegisters;
 
     std::stringstream regName;
-    for (j = 0; j < number_streams; ++j)
+    for (j = 0; j < ap->number_streams; ++j)
     {
         regName.seekp(0);
         regName << 'o' << (j + 1);
@@ -168,10 +166,9 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     /* 0 integrals and get stream constants */
     double1 bg_int = double1(0.0);
     std::vector<double1> streamIntegrals;
-    for (j = 0; j < number_streams; ++j)
+    for (j = 0; j < ap->number_streams; ++j)
         streamIntegrals.push_back(double1(0.0));
 
-    /* Counting down seems to save 2 registers, but is slightly slower */
     il_whileloop
     {
         double2 rPt = rPts[i];
@@ -201,7 +198,7 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         }
 
         emit_comment("stream loops");
-        for (j = 0; j < number_streams; ++j)
+        for (j = 0; j < ap->number_streams; ++j)
         {
             emit_comment("begin stream");
             double1 xs = x - X(sc[j].c);
@@ -235,31 +232,30 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     double1 V_reff_xr_rp3 = nu_id * rConsts(pos.x()).x();
     std::vector<double2> streamRead;
     double2 bgRead = bgInput[pos];
-    for (j = 0; j < number_streams; ++j)
+    for (j = 0; j < ap->number_streams; ++j)
         streamRead.push_back(streamInput[j][pos]);
 
     /* Put these multiplies together */
     bg_int *= V_reff_xr_rp3;
-    for (j = 0; j < number_streams; ++j)
+    for (j = 0; j < ap->number_streams; ++j)
         streamIntegrals[j] *= V_reff_xr_rp3;
 
 #define KAHAN 0
 
 #if KAHAN
     bgOut = kahanAdd(bgRead, bg_int);
-    for (j = 0; j < number_streams; ++j)
+    for (j = 0; j < ap->number_streams; ++j)
         streamOutputRegisters[j] = kahanAdd(streamRead[j], streamIntegrals[j]);
 #else
     bg_int += bgRead.x();
-    for (j = 0; j < number_streams; ++j)
+    for (j = 0; j < ap->number_streams; ++j)
         streamIntegrals[j] += streamRead[j].x();
 
     emit_comment("Output");
     bgOut.x() = bg_int;
 
     emit_comment("Stream output");
-    //for (j = 0; j < ap->number_streams; ++j)
-    for (j = 0; j < number_streams; ++j)
+    for (j = 0; j < ap->number_streams; ++j)
         streamOutputRegisters[j].x() = streamIntegrals[j];
 #endif /* KAHAN */
 

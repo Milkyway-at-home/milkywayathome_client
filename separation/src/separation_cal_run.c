@@ -138,10 +138,8 @@ static real readResults(MWCALInfo* ci,
 
     result = sumResults(&cm->outBg, ia);
 
-    #if 1
     for (i = 0; i < numberStreams; ++i)
         probs_results[i] = sumResults(&cm->outStreams[i], ia);
-    #endif
 
     return result;
 }
@@ -186,6 +184,19 @@ static CALresult findCALChunks(const MWCALInfo* ci, const IntegralArea* ia, Sepa
         chunks->nChunkR = nChunk / 2;
         chunks->nChunkMu = nChunk / 2;
     }
+
+
+    warn("HERPY: %u \n",
+         8 * ci->devAttribs.wavefrontSize * ci->devAttribs.numberOfSIMD
+        );
+
+    warn("DERP %u\n", ia->mu_steps * ia->r_steps / (128 * ci->devAttribs.wavefrontSize * ci->devAttribs.numberOfSIMD));
+
+    //chunks->nChunkR = 2;
+    //chunks->nChunkMu = 8;
+
+    //chunks->nChunkR = 10;
+    //chunks->nChunkMu = 10;
 
     chunks->chunkSizeR = ia->r_steps / chunks->nChunkR;
     chunks->chunkSizeMu = ia->mu_steps / chunks->nChunkMu;

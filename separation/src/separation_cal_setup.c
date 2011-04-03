@@ -918,7 +918,6 @@ CALresult setKernelArguments(MWCALInfo* ci, SeparationCALMem* cm, SeparationCALN
     CALresult err = CAL_RESULT_OK;
     CALuint i;
 
-    /* CHECKME: Bind the same output buffer to the input OK? */
     err |= calCtxSetMem(ci->calctx, cn->outBg, cm->outBg.mem);
     err |= calCtxSetMem(ci->calctx, cn->inMu, cm->outBg.mem);
     for (i = 0; i < cm->numberStreams; ++i)
@@ -969,23 +968,6 @@ static CALresult separationSetupCAL(MWCALInfo* ci,
     }
 
     return CAL_RESULT_OK;
-}
-
-static void calculateCALSeparationSizes(CALSeparationSizes* sizes,
-                                        const AstronomyParameters* ap,
-                                        const IntegralArea* ia)
-{
-    sizes->outBg = sizeof(Kahan) * ia->mu_steps * ia->r_steps;
-    sizes->outStreams = sizeof(Kahan) * ia->mu_steps * ia->r_steps * ap->number_streams;
-    sizes->rPts = sizeof(RPoints) * ap->convolve * ia->r_steps;
-    sizes->rc = sizeof(RConsts) * ia->r_steps;
-    sizes->sg_dx = sizeof(real) * ap->convolve;
-    sizes->lTrig = sizeof(LTrigPair) * ia->mu_steps * ia->nu_steps;
-    sizes->bTrig = sizeof(real) * ia->mu_steps * ia->nu_steps;
-
-    sizes->nuSteps = ia->nu_steps;
-    sizes->muSteps = ia->mu_steps;
-    sizes->rSteps = ia->r_steps;
 }
 
 
