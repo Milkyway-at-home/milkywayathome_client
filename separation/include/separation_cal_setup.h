@@ -34,8 +34,8 @@ extern "C" {
 
 CALresult separationCALInit(MWCALInfo* ci,
                             const AstronomyParameters* ap,
-                            const IntegralArea* ia,
-                            const StreamConstants* sc);
+                            const StreamConstants* sc,
+                            const CLRequest* clr);
 
 CALresult mwCALShutdown(MWCALInfo* ci);
 
@@ -51,7 +51,6 @@ CALresult createSeparationBuffers(MWCALInfo* ci,
                                   SeparationCALMem* cm,
                                   const AstronomyParameters* ap,
                                   const IntegralArea* ia,
-                                  const StreamConstants* sc,
                                   const StreamGauss sg,
                                   const CALSeparationSizes* sizes);
 

@@ -32,11 +32,9 @@ extern "C" {
 
 real integrateCAL(const AstronomyParameters* ap,
                   const IntegralArea* ia,
-                  const StreamConstants* sc,
                   const StreamGauss sg,
                   real* st_probs,
                   EvaluationState* es,
-                  const CLRequest* clr,
                   MWCALInfo* ci);
 
 

@@ -42,9 +42,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #if SEPARATION_OPENCL
-  #define SEPARATION_OPENCL_STR " OpenCL"
+  #define SEPARATION_SPECIAL_STR " OpenCL"
+#elif SEPARATION_CAL
+  #define SEPARATION_SPECIAL_STR " CAL++"
 #else
-  #define SEPARATION_OPENCL_STR ""
+  #define SEPARATION_SPECIAL_STR ""
 #endif
 
 #if SEPARATION_CRLIBM

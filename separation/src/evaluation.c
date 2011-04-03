@@ -128,7 +128,7 @@ static void calculateIntegrals(const AstronomyParameters* ap,
 
   #elif SEPARATION_CAL
     memset(&ci, 0, sizeof(MWCALInfo));
-    if (separationCALInit(&ci, ap, ia, sc) != CAL_RESULT_OK)
+    if (separationCALInit(&ci, ap, sc, clr) != CAL_RESULT_OK)
         fail("Failed to setup CAL\n");
 
   #endif /* SEPARATION_OPENCL */
@@ -145,9 +145,8 @@ static void calculateIntegrals(const AstronomyParameters* ap,
                                                     integral->stream_integrals, es,
                                                     clr, &ci, &di, useImages);
       #elif SEPARATION_CAL
-        integral->background_integral = integrateCAL(ap, ia, sc, sg,
-                                                     integral->stream_integrals, es,
-                                                     clr, &ci);
+        integral->background_integral = integrateCAL(ap, ia, sg,
+                                                     integral->stream_integrals, es, &ci);
       #else
         integral->background_integral = integrate(ap, ia, sc, sg,
                                                   integral->stream_integrals, integral->probs, es);

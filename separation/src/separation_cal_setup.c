@@ -287,8 +287,7 @@ static CALresult writeConstantBufferDouble(MWMemRes* mr,
     return unmapMWMemRes(mr);
 }
 
-static CALresult printBufferDouble(const char* name,
-                                   MWMemRes* mr,
+static CALresult printBufferDouble(MWMemRes* mr,
                                    CALuint numberElements,
                                    CALuint width,
                                    CALuint height)
@@ -397,7 +396,6 @@ static CALresult createConstantBuffer2D(MWMemRes* mr,
 
 static CALresult createConstantBuffer1D(MWMemRes* mr,
                                         MWCALInfo* ci,
-                                        SeparationCALMem* cm,
                                         const CALvoid* src,
                                         CALformat format,
                                         CALuint width)
@@ -536,8 +534,7 @@ static CALresult createRBuffers(MWCALInfo* ci,
                                 SeparationCALMem* cm,
                                 const AstronomyParameters* ap,
                                 const IntegralArea* ia,
-                                const StreamGauss sg,
-                                const CALSeparationSizes* sizes)
+                                const StreamGauss sg)
 {
     RPoints* r_pts;
     RConsts* rc;
@@ -552,14 +549,14 @@ static CALresult createRBuffers(MWCALInfo* ci,
         goto fail;
     }
 
-    err = createConstantBuffer1D(&cm->rc, ci, cm, (CALdouble*) rc, formatReal2, ia->r_steps);
+    err = createConstantBuffer1D(&cm->rc, ci, (CALdouble*) rc, formatReal2, ia->r_steps);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create rc buffer", err);
         goto fail;
     }
 
-    err = createConstantBuffer1D(&cm->sg_dx, ci, cm, sg.dx, constantFormatReal1, ap->convolve);
+    err = createConstantBuffer1D(&cm->sg_dx, ci, sg.dx, constantFormatReal1, ap->convolve);
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to create sg_dx buffer", err);
 
@@ -610,8 +607,7 @@ static void getSplitLBTrig(const AstronomyParameters* ap,
 static CALresult createLBTrigBuffers(MWCALInfo* ci,
                                      SeparationCALMem* cm,
                                      const AstronomyParameters* ap,
-                                     const IntegralArea* ia,
-                                     const CALSeparationSizes* sizes)
+                                     const IntegralArea* ia)
 {
     CALresult err = CAL_RESULT_OK;
     LTrigPair* lTrig;
@@ -677,7 +673,6 @@ CALresult createSeparationBuffers(MWCALInfo* ci,
                                   SeparationCALMem* cm,
                                   const AstronomyParameters* ap,
                                   const IntegralArea* ia,
-                                  const StreamConstants* sc,
                                   const StreamGauss sg,
                                   const CALSeparationSizes* sizes)
 {
@@ -688,8 +683,8 @@ CALresult createSeparationBuffers(MWCALInfo* ci,
     err |= createOutBgBuffer(ci, cm, sizes);
     err |= createOutStreamBuffers(ci, cm, sizes);
 
-    err |= createRBuffers(ci, cm, ap, ia, sg, sizes);
-    err |= createLBTrigBuffers(ci, cm, ap, ia, sizes);
+    err |= createRBuffers(ci, cm, ap, ia, sg);
+    err |= createLBTrigBuffers(ci, cm, ap, ia);
 
     err |= createNuCB(&cm->nuBuf, ci);
 
@@ -705,6 +700,7 @@ CALresult createSeparationBuffers(MWCALInfo* ci,
 
 static CALboolean checkDeviceCapabilities(const struct CALdeviceattribsRec* attrs)
 {
+
   #if DOUBLEPREC
     if (!attrs->doublePrecision)
     {
@@ -839,7 +835,6 @@ static CALresult printISAToFile(const char* filename, CALimage img)
 
 static CALimage createCALImageFromGeneratedKernel(const MWCALInfo* ci,
                                                   const AstronomyParameters* ap,
-                                                  const IntegralArea* ia,
                                                   const StreamConstants* sc)
 
 {
@@ -849,7 +844,7 @@ static CALimage createCALImageFromGeneratedKernel(const MWCALInfo* ci,
     const char* ilFile = "calpp_kernel.il";
     const char* isaFile = "calpp_kernel_Cypress.isa";
 
-    src = separationKernelSrc(ap, ia, sc, ci->devID);
+    src = separationKernelSrc(ap, sc, ci->devID);
     mwWriteFile(ilFile, src);
 
     img = createCALImage(src, ci->devInfo.target);
@@ -941,12 +936,11 @@ CALresult setKernelArguments(MWCALInfo* ci, SeparationCALMem* cm, SeparationCALN
 
 static CALresult separationSetupCAL(MWCALInfo* ci,
                                     const AstronomyParameters* ap,
-                                    const IntegralArea* ia,
                                     const StreamConstants* sc)
 {
     CALresult err;
 
-    ci->image = createCALImageFromGeneratedKernel(ci, ap, ia, sc);
+    ci->image = createCALImageFromGeneratedKernel(ci, ap, sc);
     if (!ci->image)
     {
         warn("Failed to load image\n");
@@ -971,41 +965,6 @@ static CALresult separationSetupCAL(MWCALInfo* ci,
 }
 
 
-/* Init CAL, and prepare separation kernel from workunit parameters */
-CALresult separationCALInit(MWCALInfo* ci,
-                            const AstronomyParameters* ap,
-                            const IntegralArea* ia,
-                            const StreamConstants* sc)
-{
-    CALresult err;
-
-    err = calInit();
-    if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Failed to init CAL", err);
-        return err;
-    }
-
-    err = mwGetCALInfo(ci, 0);
-    if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Failed to get CAL info", err);
-        return err;
-    }
-
-    printCALInfo(ci);
-
-    err = separationSetupCAL(ci, ap, ia, sc);
-    if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Failed to setup CAL", err);
-        mwDestroyCALInfo(ci);
-        return err;
-    }
-
-    return CAL_RESULT_OK;
-}
-
 CALresult mwCALShutdown(MWCALInfo* ci)
 {
     CALresult err = CAL_RESULT_OK;
@@ -1018,4 +977,47 @@ CALresult mwCALShutdown(MWCALInfo* ci)
     return err;
 }
 
+
+/* Init CAL, check device capabilities, and prepare new kernel from workunit parameters */
+CALresult separationCALInit(MWCALInfo* ci,
+                            const AstronomyParameters* ap,
+                            const StreamConstants* sc,
+                            const CLRequest* clr)
+{
+    CALresult err;
+
+    err = calInit();
+    if (err != CAL_RESULT_OK)
+    {
+        cal_warn("Failed to init CAL", err);
+        return err;
+    }
+
+    err = mwGetCALInfo(ci, clr->devNum);
+    if (err != CAL_RESULT_OK)
+    {
+        cal_warn("Failed to get CAL info", err);
+        calShutdown();
+        return err;
+    }
+
+    printCALInfo(ci);
+
+    if (!checkDeviceCapabilities(&ci->devAttribs))
+    {
+        warn("Device failed capability check\n");
+        mwCALShutdown(ci);
+        return CAL_RESULT_ERROR;
+    }
+
+    err = separationSetupCAL(ci, ap, sc);
+    if (err != CAL_RESULT_OK)
+    {
+        cal_warn("Failed to setup CAL", err);
+        mwCALShutdown(ci);
+        return err;
+    }
+
+    return CAL_RESULT_OK;
+}
 

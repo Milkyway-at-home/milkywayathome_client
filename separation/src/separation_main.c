@@ -72,6 +72,14 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->numChunk = sf->numChunk;
 }
 
+#elif SEPARATION_CAL
+
+static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
+{
+    clr->devNum = sf->useDevNumber;
+    clr->nonResponsive = sf->nonResponsive;
+}
+
 #else
   #define getCLReqFromFlags(clr, sf)
 #endif /* SEFPARATION_OPENCL */
@@ -330,7 +338,7 @@ static void printVersion()
          ARCH_STRING,
          PRECSTRING,
          DENORMAL_STRING,
-         SEPARATION_OPENCL_STR,
+         SEPARATION_SPECIAL_STR,
          SEPARATION_SPECIAL_LIBM_STR);
 }
 

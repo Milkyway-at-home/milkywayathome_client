@@ -44,7 +44,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "mw_boinc_util.h"
 #include "dSFMT.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -63,9 +62,11 @@ typedef struct
 
 #else
 
+/* CAL or nothing */
 typedef struct
 {
-    int _useless;
+    unsigned int devNum;
+    int nonResponsive;
 } CLRequest;
 
 #endif /* MILKYWAY_OPENCL */

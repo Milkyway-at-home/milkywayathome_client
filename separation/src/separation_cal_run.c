@@ -28,7 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_cal_kernelgen.h"
 
 
-static CALresult runKernel(MWCALInfo* ci, SeparationCALMem* cm, const CALdomain* domain)
+static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain)
 {
     CALresult err;
     CALevent ev = 0;
@@ -72,7 +72,6 @@ static CALresult runKernel(MWCALInfo* ci, SeparationCALMem* cm, const CALdomain*
 }
 static CALresult setNuKernelArgs(MWCALInfo* ci,
                                  SeparationCALMem* cm,
-                                 SeparationCALNames* cn,
                                  const IntegralArea* ia,
                                  CALuint nuStep)
 {
@@ -127,8 +126,7 @@ static real sumResults(MWMemRes* mr, const IntegralArea* ia)
     return ksum.sum + ksum.correction;
 }
 
-static real readResults(MWCALInfo* ci,
-                        SeparationCALMem* cm,
+static real readResults(SeparationCALMem* cm,
                         const IntegralArea* ia,
                         real* probs_results,
                         CALuint numberStreams)
@@ -185,19 +183,6 @@ static CALresult findCALChunks(const MWCALInfo* ci, const IntegralArea* ia, Sepa
         chunks->nChunkMu = nChunk / 2;
     }
 
-
-    warn("HERPY: %u \n",
-         8 * ci->devAttribs.wavefrontSize * ci->devAttribs.numberOfSIMD
-        );
-
-    warn("DERP %u\n", ia->mu_steps * ia->r_steps / (128 * ci->devAttribs.wavefrontSize * ci->devAttribs.numberOfSIMD));
-
-    //chunks->nChunkR = 2;
-    //chunks->nChunkMu = 8;
-
-    //chunks->nChunkR = 10;
-    //chunks->nChunkMu = 10;
-
     chunks->chunkSizeR = ia->r_steps / chunks->nChunkR;
     chunks->chunkSizeMu = ia->mu_steps / chunks->nChunkMu;
 
@@ -210,7 +195,6 @@ static CALresult findCALChunks(const MWCALInfo* ci, const IntegralArea* ia, Sepa
 
 static inline CALuint runNuStep(MWCALInfo* ci,
                                 SeparationCALMem* cm,
-                                SeparationCALNames* cn,
                                 const IntegralArea* ia,
                                 const SeparationCALChunks* chunks,
                                 CALuint nuStep)
@@ -228,11 +212,11 @@ static inline CALuint runNuStep(MWCALInfo* ci,
     {
         for (domain.y = 0; domain.y < ia->mu_steps; domain.y += chunks->chunkSizeMu)
         {
-            err = setNuKernelArgs(ci, cm, cn, ia, nuStep);
+            err = setNuKernelArgs(ci, cm, ia, nuStep);
             if (err != CAL_RESULT_OK)
                 break;
 
-            err = runKernel(ci, cm, &domain);
+            err = runKernel(ci, &domain);
             if (err != CAL_RESULT_OK)
                 goto run_step_exit;
         }
@@ -292,7 +276,7 @@ static real runIntegral(const AstronomyParameters* ap,
     {
         t1 = mwGetTime();
 
-        err = runNuStep(ci, cm, &cn, ia, &chunks, es->nu_step);
+        err = runNuStep(ci, cm, ia, &chunks, es->nu_step);
         if (err != CAL_RESULT_OK)
             break;
 
@@ -302,7 +286,7 @@ static real runIntegral(const AstronomyParameters* ap,
 
     destroyModuleNames(&cn);
 
-    return (err != CAL_RESULT_OK) ? NAN : readResults(ci, cm, ia, probs_results, cm->numberStreams);
+    return (err != CAL_RESULT_OK) ? NAN : readResults(cm, ia, probs_results, cm->numberStreams);
 }
 
 static void calculateCALSeparationSizes(CALSeparationSizes* sizes,
@@ -325,11 +309,9 @@ static void calculateCALSeparationSizes(CALSeparationSizes* sizes,
 
 real integrateCAL(const AstronomyParameters* ap,
                   const IntegralArea* ia,
-                  const StreamConstants* sc,
                   const StreamGauss sg,
                   real* st_probs,
                   EvaluationState* es,
-                  const CLRequest* clr,
                   MWCALInfo* ci)
 {
     CALresult err;
@@ -340,7 +322,7 @@ real integrateCAL(const AstronomyParameters* ap,
     calculateCALSeparationSizes(&sizes, ap, ia);
 
     memset(&cm, 0, sizeof(SeparationCALMem));
-    err = createSeparationBuffers(ci, &cm, ap, ia, sc, sg, &sizes);
+    err = createSeparationBuffers(ci, &cm, ap, ia, sg, &sizes);
     if (err != CAL_RESULT_OK)
         return NAN;
 

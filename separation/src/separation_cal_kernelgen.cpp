@@ -138,7 +138,6 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
                                        input2d<double2>& lTrigBuf,
                                        input2d<double1>& bTrigBuf,
                                        const AstronomyParameters* ap,
-                                       const IntegralArea* ia,
                                        const StreamConstants* sc)
 {
     unsigned int j;
@@ -263,7 +262,6 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
 }
 
 std::string createSeparationKernel(const AstronomyParameters* ap,
-                                   const IntegralArea* ia,
                                    const StreamConstants* sc,
                                    CALuint device)
 {
@@ -303,7 +301,7 @@ std::string createSeparationKernel(const AstronomyParameters* ap,
     for (i = 0; i < ap->number_streams; ++i)
         streamInputs.push_back(input2d<double2>(5 + i));
 
-    createSeparationKernelCore(bgInput, streamInputs, rPts, rConsts, lTrig, bTrig, ap, ia, sc);
+    createSeparationKernelCore(bgInput, streamInputs, rPts, rConsts, lTrig, bTrig, ap, sc);
 
     Source::end();
 
@@ -314,11 +312,10 @@ std::string createSeparationKernel(const AstronomyParameters* ap,
 }
 
 char* separationKernelSrc(const AstronomyParameters* ap,
-                          const IntegralArea* ia,
                           const StreamConstants* sc,
                           CALuint device)
 {
-    std::string src = createSeparationKernel(ap, ia, sc, device);
+    std::string src = createSeparationKernel(ap, sc, device);
     return strdup(src.c_str());
  }
 

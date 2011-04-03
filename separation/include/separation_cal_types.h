@@ -85,7 +85,7 @@ typedef struct
     CALimage image;
     CALfunc func;
 } MWCALInfo;
-//#define EMPTY_CAL_INFO { EMPTY_CAL_VERSION, 0, 0, 0, { 0, }, { 0 }, 0, 0, 0, 0, NULL, 0 }
+
 
 /* Pair of resource and associated CALmem */
 typedef struct
