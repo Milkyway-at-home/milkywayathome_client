@@ -29,12 +29,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_grav.h"
 
 /* Advance velocity by half a timestep */
-static inline void bodyAdvanceVel(Body* p, const mwvector a, const real dt)
+static inline void bodyAdvanceVel(Body* p, const mwvector a, const real dtHalf)
 {
     mwvector dv;
 
-    dv = mw_mulvs(a, 0.5 * dt);   /* get velocity increment */
-    mw_incaddv(Vel(p), dv);       /* advance v by 1/2 step */
+    dv = mw_mulvs(a, dtHalf);   /* get velocity increment */
+    mw_incaddv(Vel(p), dv);     /* advance v by 1/2 step */
 }
 
 /* Advance body position by 1 timestep */
@@ -49,13 +49,14 @@ static inline void bodyAdvancePos(Body* p, const real dt)
 static inline void advancePosVel(NBodyState* st, const unsigned int nbody, const real dt)
 {
     unsigned int i;
+    real dtHalf = 0.5 * dt;
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i) schedule(static)
   #endif
     for (i = 0; i < nbody; ++i)
     {
-        bodyAdvanceVel(&st->bodytab[i], st->acctab[i], dt);
+        bodyAdvanceVel(&st->bodytab[i], st->acctab[i], dtHalf);
         bodyAdvancePos(&st->bodytab[i], dt);
     }
 }
@@ -63,12 +64,13 @@ static inline void advancePosVel(NBodyState* st, const unsigned int nbody, const
 static inline void advanceVelocities(NBodyState* st, const unsigned int nbody, const real dt)
 {
     unsigned int i;
+    real dtHalf = 0.5 * dt;
 
   #ifdef _OPENMP
     #pragma omp parallel for private(i) schedule(static)
   #endif
     for (i = 0; i < nbody; ++i)      /* loop over all bodies */
-        bodyAdvanceVel(&st->bodytab[i], st->acctab[i], dt);
+        bodyAdvanceVel(&st->bodytab[i], st->acctab[i], dtHalf);
 }
 
 /* stepSystem: advance N-body system one time-step. */
