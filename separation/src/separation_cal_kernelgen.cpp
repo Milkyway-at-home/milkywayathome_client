@@ -17,6 +17,10 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifdef _MSC_VER
+  #pragma warning( disable : 4522 )
+#endif
+
 #include <boost/format.hpp>
 #include <cal/cal.hpp>
 #include <cal/cal_il.hpp>
@@ -98,11 +102,11 @@ static double1 exp_custom(double1 x)
 
         double1 tmp = xxFract - 0.5;
         double1 dtmp = tmp * tmp;
-        double1 y = mad(dtmp, 0x1.52b5c4d1f00b9p-16, 0x1.4aa4eb649a98fp-7);
-        double1 z = tmp * mad(dtmp, y, 0x1.62e42fefa39efp-1);
+        double1 y = mad(dtmp, 0.000020188691287, 0.010090460718136);
+        double1 z = tmp * mad(dtmp, y, 0.693147180559945);
 
-        double1 tmp3 = mad(dtmp, 0x1.657cdd06316dcp-23, 0x1.3185f478ff1ebp-12);
-        tmp3 = mad(dtmp, tmp3, 0x1.bf3e7389ceff9p-5);
+        double1 tmp3 = mad(dtmp, 0.000000166468205, 0.000291369687659);
+        tmp3 = mad(dtmp, tmp3, 0.054595208798190);
         tmp3 = mad(dtmp, tmp3, 1.0);
 
         double1 tmp4 = mad(z, -0.5, tmp3);
