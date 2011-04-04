@@ -64,8 +64,13 @@ if(APPLE)
   endif()
 endif()
 
-if(MINGW)
-  set(OS_SPECIFIC_LIBS msvcrt)
+if(WIN32)
+  if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    set(OS_SPECIFIC_LIBS msvcrtd)
+  else()
+    set(OS_SPECIFIC_LIBS msvcrt)
+  endif()
 endif()
+
 
 

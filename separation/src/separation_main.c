@@ -140,17 +140,11 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
             0, "Init BOINC with debugging. No effect if not built with BOINC_APPLICATION", NULL
         },
 
-      #if SEPARATION_OPENCL
+      #if SEPARATION_OPENCL || SEPARATION_CAL
         {
             "device", 'd',
             POPT_ARG_INT, &sf.useDevNumber,
             0, "Device number passed by boinc to use", NULL
-        },
-
-        {
-            "platform", 'l',
-            POPT_ARG_INT, &sf.usePlatform,
-            0, "CL Platform to use", NULL
         },
 
         {
@@ -163,6 +157,14 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
             "num-chunk", 'u',
             POPT_ARG_INT, &sf.numChunk,
             0, "Manually set number of chunks per GPU iteration", NULL
+        },
+      #endif /* SEPARATION_OPENCL */
+
+      #if SEPARATION_OPENCL
+		{
+            "platform", 'l',
+            POPT_ARG_INT, &sf.usePlatform,
+            0, "CL Platform to use", NULL
         },
       #endif /* SEPARATION_OPENCL */
 

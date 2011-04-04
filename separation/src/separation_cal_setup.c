@@ -944,7 +944,7 @@ static CALresult separationSetupCAL(MWCALInfo* ci,
     if (!ci->image)
     {
         warn("Failed to load image\n");
-        return -1;
+        return CAL_RESULT_ERROR;
     }
 
     err = calModuleLoad(&ci->module, ci->calctx, ci->image);

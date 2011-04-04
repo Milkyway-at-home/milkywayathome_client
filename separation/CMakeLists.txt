@@ -270,6 +270,8 @@ if(SEPARATION_OPENCL)
     list(APPEND separation_link_libs all_in_one_library)
   endif()
 elseif(SEPARATION_CAL)
+  include_directories(${Boost_INCLUDE_DIR})
+
   list(APPEND lib_source_file_list ${cal_source_list})
   list(APPEND separation_headers ${separation_cal_headers})
 endif()
