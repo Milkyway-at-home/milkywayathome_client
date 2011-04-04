@@ -149,13 +149,8 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     named_variable<double2> bgOut("o0");
     std::vector< named_variable<double2> > streamOutputRegisters;
 
-    std::stringstream regName;
     for (j = 0; j < ap->number_streams; ++j)
-    {
-        regName.seekp(0);
-        regName << 'o' << (j + 1);
-        streamOutputRegisters.push_back(regName.str());
-    }
+        streamOutputRegisters.push_back(str(format("o%u") % (j + 1)));
 
     double2 lTrig = lTrigBuf(nu_step, pos.y());
     double1 bSin = bTrigBuf(nu_step, pos.y());
@@ -175,7 +170,6 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         double1 x = mad(rPt.x(), lTrig.x(), ap->m_sun_r0);
         double1 y = rPt.x() * lTrig.y();
         double1 z = rPt.x() * bSin;
-
 
         double1 tmp1 = x * x;
         double1 tmp3 = mad(y, y, tmp1);
