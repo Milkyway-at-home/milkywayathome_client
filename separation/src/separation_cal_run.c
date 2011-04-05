@@ -164,7 +164,7 @@ static void printChunks(const SeparationCALChunks* chunks)
 static CALresult findCALChunks(const MWCALInfo* ci, const IntegralArea* ia, SeparationCALChunks* chunks)
 {
     CALresult err = CAL_RESULT_OK;
-    CALuint nChunk = 1;
+    CALuint nChunk = 4;
 
     if (!mwEven(nChunk) && nChunk != 1)
     {

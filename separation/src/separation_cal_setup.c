@@ -721,6 +721,7 @@ static void printCALInfo(const MWCALInfo* ci)
          "\n"
          "Device target:         %s\n"
          "Revision:              %u\n"
+         "CAL Version:           %u.%u.%u\n"
          "Compute shader:        %s\n"
          "Engine clock:          %u Mhz\n"
          "Memory clock:          %u Mhz\n"
@@ -739,8 +740,8 @@ static void printCALInfo(const MWCALInfo* ci)
          ci->devID,
          showCALtargetEnum(ci->devInfo.target),
          ci->devAttribs.targetRevision,
+         ci->version.major, ci->version.minor, ci->version.patchLevel,
          showCALboolean(ci->devAttribs.computeShader),
-
          ci->devAttribs.engineClock,
          ci->devAttribs.memoryClock,
          ci->devAttribs.localRAM,
