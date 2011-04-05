@@ -146,7 +146,7 @@ static void calculateIntegrals(const AstronomyParameters* ap,
                                                     clr, &ci, &di, useImages);
       #elif SEPARATION_CAL
         integral->background_integral = integrateCAL(ap, ia, sg,
-                                                     integral->stream_integrals, es, &ci);
+                                                     integral->stream_integrals, es, clr, &ci);
       #else
         integral->background_integral = integrate(ap, ia, sc, sg,
                                                   integral->stream_integrals, integral->probs, es);

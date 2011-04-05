@@ -158,7 +158,7 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
             POPT_ARG_INT, &sf.numChunk,
             0, "Manually set number of chunks per GPU iteration", NULL
         },
-      #endif /* SEPARATION_OPENCL */
+      #endif /* SEPARATION_OPENCL || SEPARATION_CAL */
 
       #if SEPARATION_OPENCL
 		{

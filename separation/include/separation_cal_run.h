@@ -35,6 +35,7 @@ real integrateCAL(const AstronomyParameters* ap,
                   const StreamGauss sg,
                   real* st_probs,
                   EvaluationState* es,
+                  const CLRequest* clr,
                   MWCALInfo* ci);
 
 
