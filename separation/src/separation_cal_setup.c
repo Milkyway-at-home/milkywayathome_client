@@ -122,15 +122,14 @@ static CALresult mwGetDevice(MWCALInfo* ci, CALuint devID)
     if (ci->numDevices == 0)
     {
         warn("Didn't find any CAL devices\n");
-        return -1;
+        return CAL_RESULT_ERROR;
     }
 
-    if (devID > ci->numDevices)
+    if (devID + 1 > ci->numDevices)
     {
         warn("Requested device ID %u > found number of devices (%u)\n",
-             devID,
-             ci->numDevices);
-        return -1;
+             devID, ci->numDevices);
+        return CAL_RESULT_ERROR;
     }
 
     ci->devID = devID;
