@@ -44,3 +44,8 @@ separation_checkpoint
 init_data.xml
 app_info.xml
 thirdparty
+*.il
+*.isa
+a.out
+*.diff
+

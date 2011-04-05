@@ -833,6 +833,9 @@ static CALresult printISAToFile(const char* filename, CALimage img)
     return err;
 }
 
+#define IL_OUT_FILE "calpp_kernel.il"
+#define ISA_OUT_FILE "calpp_kernel.isa"
+
 static CALimage createCALImageFromGeneratedKernel(const MWCALInfo* ci,
                                                   const AstronomyParameters* ap,
                                                   const StreamConstants* sc)
@@ -840,21 +843,16 @@ static CALimage createCALImageFromGeneratedKernel(const MWCALInfo* ci,
 {
     CALimage img;
     char* src;
-    char buf[512];
-    const char* ilFile = "calpp_kernel.il";
-    const char* isaFile = "calpp_kernel_Cypress.isa";
 
     src = separationKernelSrc(ap, sc, ci->devID);
-    mwWriteFile(ilFile, src);
-
     img = createCALImage(src, ci->devInfo.target);
     free(src);
 
-    if (printISAToFile(isaFile, img) == CAL_RESULT_OK)
-    {
-        sprintf(buf, "grep GPR %s", isaFile);
-        system(buf);
-    }
+ #ifndef NDEBUG
+    mwWriteFile(IL_OUT_FILE, src);
+    if (printISAToFile(ISA_OUT_FILE, img) == CAL_RESULT_OK)
+        system("grep GPR " ISA_OUT_FILE);
+  #endif /* NDEBUG */
 
     return img;
 }
