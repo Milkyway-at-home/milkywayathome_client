@@ -430,6 +430,7 @@ int likelihood(SeparationResults* results,
     real exp_background_weight;
     FILE* f = NULL;
     int rc = 0;
+    double t1, t2;
 
     if (do_separation)
     {
@@ -451,6 +452,7 @@ int likelihood(SeparationResults* results,
     exp_background_weight = mw_exp(ap->background_weight);
     sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);
 
+    t1 = mwGetTime();
     rc = likelihood_sum(results,
                         ap, sp, sc, streams,
                         sg, r_pts,
@@ -461,6 +463,8 @@ int likelihood(SeparationResults* results,
                         ss,
                         do_separation,
                         f);
+    t2 = mwGetTime();
+    warn("Likelihood time = %f s\n", t2 - t1);
 
     getStreamOnlyLikelihood(results, st_sum, sp->number_stars, streams->number_streams);
 
