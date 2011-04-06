@@ -50,12 +50,17 @@ macro(maybe_static use_static)
   if(${use_static} MATCHES "ON")
     unset_cmake_default_dynamic()
   endif()
+
+  if(NOT MSVC)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -static-libgcc -static-libstdc++")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -static-libgcc -static-libstdc++")
+  endif()
 endmacro()
 
 
 function(correct_static_link client_bin_name)
   if(UNIX AND NOT APPLE)
-    set(client_static_link_flags "-static -static-libgcc -static-libstdc++ -pthread")
+    set(client_static_link_flags "-static -static-libgcc -static-libstdc++")
   elseif(MINGW)
     set(client_static_link_flags "-static-libgcc -static-libstdc++")
   elseif(UNIX AND APPLE) # OS X
@@ -77,13 +82,11 @@ function(milkyway_link client_bin_name use_boinc use_static link_libs)
     #then pthreads, libc etc. to avoid conflicts. On Windows, you
     #statically link against libOpenCL.lib, which then links to a dll
     #at runtime.
-
     correct_static_link(${client_bin_name})
   else()
     if(use_boinc)
-      list(APPEND link_libs "stdc++")
-      if(UNIX)
-        list(APPEND link_libs "pthread")
+      if(NOT WIN32)
+        list(APPEND link_libs "stdc++")
       endif()
     endif()
 

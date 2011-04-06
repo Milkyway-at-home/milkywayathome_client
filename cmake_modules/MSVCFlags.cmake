@@ -60,9 +60,11 @@ macro(set_msvc_find_paths)
   set(MSVC_ARCH "Win32")
   set(MSVC_BUILD "Release")
 
-  if(MSVC)
-    list(APPEND CMAKE_LIBRARY_PATH "${MSVC_FIND_ROOT}/lib/${MSVC_BUILD}/${MSVC_ARCH}/${MT_OR_MD}")
-    list(APPEND CMAKE_INCLUDE_PATH "${MSVC_FIND_ROOT}/include")
-  endif()
+  list(APPEND CMAKE_LIBRARY_PATH ${CMAKE_BINARY_DIR}/lib/${MSVC_BUILD})
+  list(APPEND CMAKE_INCLUDE_PATH ${CMAKE_BINARY_DIR}/include)
+
+  list(APPEND CMAKE_LIBRARY_PATH "${MSVC_FIND_ROOT}/lib/${MSVC_BUILD}/${MSVC_ARCH}/${MT_OR_MD}")
+  list(APPEND CMAKE_INCLUDE_PATH "${MSVC_FIND_ROOT}/include")
 endmacro()
+
 
