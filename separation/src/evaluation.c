@@ -153,7 +153,7 @@ static void calculateIntegrals(const AstronomyParameters* ap,
       #endif /* SEPARATION_CL */
 
         t2 = mwGetTime();
-        warn("Integral %u time = %f\n", es->current_integral, t2 - t1);
+        warn("Integral %u time = %f s\n", es->current_integral, t2 - t1);
 
         if (isnan(integral->background_integral))
             fail("Failed to calculate integral %u\n", es->current_integral);

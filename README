@@ -96,3 +96,7 @@ Random notes:
 make nbody_release and make separation_release will produce release
 tarballs if git and xz are installed and found.
 
+- Make sure when building with MSVC to set built to use Multithreaded
+  (/MT) for the builds of the various libraries
+
+

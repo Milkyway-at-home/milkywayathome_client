@@ -64,13 +64,13 @@ if(APPLE)
   endif()
 endif()
 
-if(WIN32)
-  if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
-    set(OS_SPECIFIC_LIBS msvcrtd)
-  else()
-    set(OS_SPECIFIC_LIBS msvcrt)
-  endif()
-endif()
+#if(WIN32)
+#  if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+#    set(OS_SPECIFIC_LIBS msvcrtd)
+#  else()
+#    set(OS_SPECIFIC_LIBS msvcrt)
+#  endif()
+#endif()
 
 
 
