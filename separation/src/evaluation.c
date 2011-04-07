@@ -46,15 +46,15 @@ static void getFinalIntegrals(SeparationResults* results,
 {
     unsigned int i, j;
 
-    results->backgroundIntegral = es->integrals[0].background_integral;
+    results->backgroundIntegral = es->cuts[0].bgIntegral;
     for (i = 0; i < number_streams; ++i)
-        results->streamIntegrals[i] = es->integrals[0].stream_integrals[i];
+        results->streamIntegrals[i] = es->cuts[0].streamIntegrals[i];
 
     for (i = 1; i < number_integrals; ++i)
     {
-        results->backgroundIntegral -= es->integrals[i].background_integral;
+        results->backgroundIntegral -= es->cuts[i].bgIntegral;
         for (j = 0; j < number_streams; j++)
-            results->streamIntegrals[j] -= es->integrals[i].stream_integrals[j];
+            results->streamIntegrals[j] -= es->cuts[i].streamIntegrals[j];
     }
 }
 
@@ -65,7 +65,7 @@ static void printStreamIntegrals(const FinalStreamIntegrals* fsi, const unsigned
     fprintf(stderr, "<background_integral> %.20lf </background_integral>\n", fsi->background_integral);
     fprintf(stderr, "<stream_integrals>");
     for (i = 0; i < number_streams; i++)
-        fprintf(stderr, " %.20lf", fsi->stream_integrals[i]);
+        fprintf(stderr, " %.20lf", fsi->streamIntegrals[i]);
     fprintf(stderr, " </stream_integrals>\n");
 }
 #endif
@@ -76,7 +76,7 @@ static inline unsigned int completedIntegralProgress(const IntegralArea* ias, co
     const IntegralArea* ia;
     unsigned int i, current_calc_probs = 0;
 
-    for (i = 0; i < es->current_integral; ++i)
+    for (i = 0; i < es->currentCut; ++i)
     {
         ia = &ias[i];
         current_calc_probs += ia->r_steps * ia->mu_steps * ia->nu_steps;
@@ -108,7 +108,6 @@ static void calculateIntegrals(const AstronomyParameters* ap,
                                EvaluationState* es,
                                const CLRequest* clr)
 {
-    Integral* integral;
     const IntegralArea* ia;
     double t1, t2;
 
@@ -133,34 +132,30 @@ static void calculateIntegrals(const AstronomyParameters* ap,
 
   #endif /* SEPARATION_OPENCL */
 
-    for (; es->current_integral < ap->number_integrals; es->current_integral++)
+    for (; es->currentCut < es->numberCuts; es->currentCut++)
     {
-        integral = &es->integrals[es->current_integral];
-        ia = &ias[es->current_integral];
+        es->cut = &es->cuts[es->currentCut];
+        ia = &ias[es->currentCut];
         es->current_calc_probs = completedIntegralProgress(ias, es);
 
         t1 = mwGetTime();
       #if SEPARATION_OPENCL
-        integral->background_integral = integrateCL(ap, ia, sc, sg,
-                                                    integral->stream_integrals, es,
-                                                    clr, &ci, &di, useImages);
+        integrateCL(ap, ia, sc, sg, es, clr, &ci, &di, useImages);
       #elif SEPARATION_CAL
-        integral->background_integral = integrateCAL(ap, ia, sg,
-                                                     integral->stream_integrals, es, clr, &ci);
+        integrateCAL(ap, ia, sg, es, clr, &ci);
       #else
-        integral->background_integral = integrate(ap, ia, sc, sg,
-                                                  integral->stream_integrals, integral->probs, es);
-      #endif /* SEPARATION_CL */
+        integrate(ap, ia, sc, sg, es);
+      #endif /* SEPARATION_OPENCL */
 
         t2 = mwGetTime();
-        warn("Integral %u time = %f s\n", es->current_integral, t2 - t1);
+        warn("Integral %u time = %f s\n", es->currentCut, t2 - t1);
 
-        if (isnan(integral->background_integral))
-            fail("Failed to calculate integral %u\n", es->current_integral);
+        if (isnan(es->cut->bgIntegral))
+            fail("Failed to calculate integral %u\n", es->currentCut);
 
-        cleanStreamIntegrals(integral->stream_integrals, sc, ap->number_streams);
+        cleanStreamIntegrals(es->cut->streamIntegrals, sc, ap->number_streams);
 
-        CLEAR_KAHAN(es->sum);
+        CLEAR_KAHAN(es->bgSum);
     }
 
   #if SEPARATION_OPENCL

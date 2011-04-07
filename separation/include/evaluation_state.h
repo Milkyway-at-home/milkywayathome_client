@@ -33,24 +33,25 @@ extern "C" {
 /* Completed integral state */
 typedef struct
 {
-    real background_integral;
-    real* stream_integrals;
-    Kahan* probs;
-} Integral;
+    real bgIntegral;       /* Background integral */
+    real* streamIntegrals;
+} Cut;
 
 typedef struct
 {
     /* State for integral calculation. */
-    Integral* integrals;
+    Cut* cuts;
+    Cut* cut;                        /* es->cuts[es->currentCut] */
     unsigned int nu_step, mu_step;   /* r_steps aren't checkpointed */
-    Kahan sum;
+    Kahan bgSum;
+    Kahan* streamSums;
 
-    unsigned int current_calc_probs; /* progress of completed integrals */
+    unsigned int current_calc_probs; /* progress of completed cuts */
 
-    unsigned int current_integral;
+    unsigned int currentCut;
 
-    unsigned int number_integrals;
-    unsigned int number_streams;
+    unsigned int numberCuts;
+    unsigned int numberStreams;
 } EvaluationState;
 
 EvaluationState* newEvaluationState(const AstronomyParameters* ap);

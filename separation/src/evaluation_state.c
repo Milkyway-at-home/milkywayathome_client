@@ -27,32 +27,33 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 static char resolvedCheckpointPath[2048];
 
 
-void initializeIntegral(Integral* integral, unsigned int number_streams)
+void initializeCut(Cut* integral, unsigned int number_streams)
 {
-    integral->background_integral = 0.0;
-    integral->stream_integrals = (real*) mwCallocA(number_streams, sizeof(real));
-    integral->probs = (Kahan*) mwCallocA(number_streams, sizeof(Kahan));
+    integral->bgIntegral = 0.0;
+    integral->streamIntegrals = (real*) mwCallocA(number_streams, sizeof(real));
 }
 
 static void initializeState(const AstronomyParameters* ap, EvaluationState* es)
 {
     unsigned int i;
 
-    es->current_integral = 0;
-    es->number_streams = ap->number_streams;
+    es->currentCut = 0;
+    es->cut = &es->cuts[0];
+    es->numberStreams = ap->number_streams;
 
-    es->number_integrals = ap->number_integrals;
-    es->integrals = (Integral*) mwMalloc(sizeof(Integral) * ap->number_integrals);
+    es->numberCuts = ap->number_integrals;
+    es->cuts = (Cut*) mwCallocA(ap->number_integrals, sizeof(Cut));
+    es->streamSums = (Kahan*) mwCallocA(ap->number_streams, sizeof(Kahan));
 
     for (i = 0; i < ap->number_integrals; i++)
-        initializeIntegral(&es->integrals[i], ap->number_streams);
+        initializeCut(&es->cuts[i], ap->number_streams);
 }
 
 EvaluationState* newEvaluationState(const AstronomyParameters* ap)
 {
     EvaluationState* es;
 
-    es = mwCalloc(1, sizeof(EvaluationState));
+    es = mwCallocA(1, sizeof(EvaluationState));
     initializeState(ap, es);
 
     return es;
@@ -65,52 +66,45 @@ void copyEvaluationState(EvaluationState* esDest, const EvaluationState* esSrc)
     assert(esDest && esSrc);
 
     *esDest = *esSrc;
-    for (i = 0; i < esSrc->number_integrals; ++i)
-        esDest->integrals[i] = esSrc->integrals[i];
+    for (i = 0; i < esSrc->numberCuts; ++i)
+        esDest->cuts[i] = esSrc->cuts[i];
 }
 
-static void freeIntegral(Integral* i)
+static void freeCut(Cut* i)
 {
-    mwFreeA(i->stream_integrals);
-    mwFreeA(i->probs);
+    mwFreeA(i->streamIntegrals);
 }
 
 void freeEvaluationState(EvaluationState* es)
 {
     unsigned int i;
 
-    for (i = 0; i < es->number_integrals; ++i)
-        freeIntegral(&es->integrals[i]);
-    free(es->integrals);
-    free(es);
+    for (i = 0; i < es->numberCuts; ++i)
+        freeCut(&es->cuts[i]);
+    mwFreeA(es->cuts);
+    mwFreeA(es->streamSums);
+    mwFreeA(es);
 }
 
 void printEvaluationState(const EvaluationState* es)
 {
-    Integral* i;
+    Cut* c;
     unsigned int j;
 
     printf("evaluation-state {\n"
-           "  nu_step           = %u\n"
+           "  nu_step          = %u\n"
            "  mu_step          = %u\n"
-           "  current_integral = %u\n"
-           "  sum              = { %.20g, %.20g }\n",
+           "  currentCut       = %u\n",
            es->nu_step,
            es->mu_step,
-           es->current_integral,
-           es->sum.sum,
-           es->sum.correction);
+           es->currentCut);
 
-    for (i = es->integrals; i < es->integrals + es->number_integrals; ++i)
+    for (c = es->cuts; c < es->cuts + es->numberCuts; ++c)
     {
-        printf("integral: background_integral = %g\n", i->background_integral);
+        printf("integral: bgIntegral = %g\n", c->bgIntegral);
         printf("Stream integrals = ");
-        for (j = 0; j < es->number_streams; ++j)
-            printf("  %g, ", i->stream_integrals[j]);
-        printf("Probs = ");
-        for (j = 0; j < es->number_streams; ++j)
-            printf(" { %g, %g },", i->probs[j].sum, i->probs[j].correction);
-        printf("\n");
+        for (j = 0; j < es->numberCuts; ++j)
+            printf("  %g, ", c->streamIntegrals[j]);
     }
     printf("\n");
 }
@@ -121,7 +115,7 @@ static const char checkpoint_tail[] = "end_checkpoint";
 
 static int readState(FILE* f, EvaluationState* es)
 {
-    Integral* i;
+    Cut* c;
     char str_buf[sizeof(checkpoint_header) + 1];
 
     fread(str_buf, sizeof(checkpoint_header), 1, f);
@@ -131,16 +125,16 @@ static int readState(FILE* f, EvaluationState* es)
         return 1;
     }
 
-    fread(&es->current_integral, sizeof(es->current_integral), 1, f);
+    fread(&es->currentCut, sizeof(es->currentCut), 1, f);
     fread(&es->nu_step, sizeof(es->nu_step), 1, f);
     fread(&es->mu_step, sizeof(es->mu_step), 1, f);
-    fread(&es->sum, sizeof(es->sum), 1, f);
+    fread(&es->bgSum, sizeof(es->bgSum), 1, f);
+    fread(es->streamSums, sizeof(es->streamSums[0]), es->numberStreams, f);
 
-    for (i = es->integrals; i < es->integrals + es->number_integrals; ++i)
+    for (c = es->cuts; c < es->cuts + es->numberCuts; ++c)
     {
-        fread(&i->background_integral, sizeof(i->background_integral), 1, f);
-        fread(i->stream_integrals, sizeof(real), es->number_streams, f);
-        fread(i->probs, sizeof(Kahan), es->number_streams, f);
+        fread(&c->bgIntegral, sizeof(c->bgIntegral), 1, f);
+        fread(c->streamIntegrals, sizeof(c->streamIntegrals[0]), es->numberStreams, f);
     }
 
     fread(str_buf, sizeof(checkpoint_tail), 1, f);
@@ -176,21 +170,21 @@ int readCheckpoint(EvaluationState* es)
 
 static inline void writeState(FILE* f, const EvaluationState* es)
 {
-    Integral* i;
-    const Integral* endi = es->integrals + es->number_integrals;
+    Cut* c;
+    const Cut* endc = es->cuts + es->numberCuts;
 
     fwrite(checkpoint_header, sizeof(checkpoint_header), 1, f);
 
-    fwrite(&es->current_integral, sizeof(es->current_integral), 1, f);
+    fwrite(&es->currentCut, sizeof(es->currentCut), 1, f);
     fwrite(&es->nu_step, sizeof(es->nu_step), 1, f);
     fwrite(&es->mu_step, sizeof(es->mu_step), 1, f);
-    fwrite(&es->sum, sizeof(es->sum), 1, f);
+    fwrite(&es->bgSum, sizeof(es->bgSum), 1, f);
+    fwrite(es->streamSums, sizeof(es->streamSums[0]), es->numberStreams, f);
 
-    for (i = es->integrals; i < endi; ++i)
+    for (c = es->cuts; c < endc; ++c)
     {
-        fwrite(&i->background_integral, sizeof(i->background_integral), 1, f);
-        fwrite(i->stream_integrals, sizeof(real), es->number_streams, f);
-        fwrite(i->probs, sizeof(Kahan), es->number_streams, f);
+        fwrite(&c->bgIntegral, sizeof(c->bgIntegral), 1, f);
+        fwrite(c->streamIntegrals, sizeof(c->streamIntegrals[0]), es->numberStreams, f);
     }
 
     fwrite(checkpoint_tail, sizeof(checkpoint_tail), 1, f);

@@ -49,12 +49,10 @@ real bg_probability_slow_hprob(const AstronomyParameters* ap,
                                const unsigned int convolve,
                                real* st_probs);
 
-real integrate(const AstronomyParameters* ap,
+void integrate(const AstronomyParameters* ap,
                const IntegralArea* ia,
                const StreamConstants* sc,
                const StreamGauss sg,
-               real* probs,
-               Kahan* probs_sum,
                EvaluationState* es);
 
 #ifdef __cplusplus

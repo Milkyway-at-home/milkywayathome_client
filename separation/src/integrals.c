@@ -216,7 +216,7 @@ static inline void r_sum(const AstronomyParameters* ap,
         bg_prob *= V_reff_xr_rp3;
         sum_probs(probs, st_probs, V_reff_xr_rp3, ap->number_streams);
 
-        KAHAN_ADD(es->sum, bg_prob);
+        KAHAN_ADD(es->bgSum, bg_prob);
     }
 }
 
@@ -272,50 +272,50 @@ static void nuSum(const AstronomyParameters* ap,
 
         mu_sum(ap, ia, sc, rc, r_pts, sg_dx, nuid, st_probs, probs, es);
     }
+
+    es->nu_step = 0;
 }
 
+static void integralApplyCorrection(EvaluationState* es)
+{
+    unsigned int i;
+
+    es->cut->bgIntegral = es->bgSum.sum + es->bgSum.correction;
+    for (i  = 0; i < es->numberStreams; ++i)
+        es->cut->streamIntegrals[i] = es->streamSums[i].sum + es->streamSums[i].correction;
+}
+
+
 /* returns background integral */
-real integrate(const AstronomyParameters* ap,
+void integrate(const AstronomyParameters* ap,
                const IntegralArea* ia,
                const StreamConstants* sc,
                const StreamGauss sg,
-               real* probs,
-               Kahan* probs_sum,
                EvaluationState* es)
 {
-    real result;
-    real* st_probs;
     RPoints* r_pts;
     RConsts* rc;
-    unsigned int i;
 
     if (ap->q == 0.0)
     {
         /* if q is 0, there is no probability */
         /* Short circuit the entire integral rather than add up -1 many times. */
         warn("q is 0.0\n");
-        return -1.0 * ia->nu_steps * ia->mu_steps * ia->r_steps;
+        es->cut->bgIntegral = -1.0 * ia->nu_steps * ia->mu_steps * ia->r_steps;
+        return;
     }
 
-    st_probs = (real*) mwMallocA(sizeof(real) * ap->number_streams);
     r_pts = precalculateRPts(ap, ia, sg, &rc, 0);
 
-    nuSum(ap, ia, sc, rc, r_pts, sg.dx, st_probs, probs_sum, es);
-    es->nu_step = 0;
+    nuSum(ap, ia, sc, rc, r_pts, sg.dx, es->cut->streamIntegrals, es->streamSums, es);
+    integralApplyCorrection(es);
 
-    result = es->sum.sum + es->sum.correction;
-    for (i  = 0; i < ap->number_streams; ++i)
-        probs[i] = probs_sum[i].sum + probs_sum[i].correction;
-
-    mwFreeA(st_probs);
     mwFreeA(r_pts);
     mwFreeA(rc);
 
   #ifdef MILKYWAY_IPHONE_APP
     _milkywaySeparationGlobalProgress = 1.0;
   #endif
-
-    return result;
 }
 
 
