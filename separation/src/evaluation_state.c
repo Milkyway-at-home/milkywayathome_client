@@ -44,6 +44,7 @@ static void initializeState(const AstronomyParameters* ap, EvaluationState* es)
     es->numberCuts = ap->number_integrals;
     es->cuts = (Cut*) mwCallocA(ap->number_integrals, sizeof(Cut));
     es->streamSums = (Kahan*) mwCallocA(ap->number_streams, sizeof(Kahan));
+    es->streamTmps = (real*) mwCallocA(ap->number_streams, sizeof(real));
 
     for (i = 0; i < ap->number_integrals; i++)
         initializeCut(&es->cuts[i], ap->number_streams);
@@ -83,7 +84,17 @@ void freeEvaluationState(EvaluationState* es)
         freeCut(&es->cuts[i]);
     mwFreeA(es->cuts);
     mwFreeA(es->streamSums);
+    mwFreeA(es->streamTmps);
     mwFreeA(es);
+}
+
+void clearEvaluationStateTmpSums(EvaluationState* es)
+{
+    unsigned int i;
+
+    CLEAR_KAHAN(es->bgSum);
+    for (i = 0; i < es->numberStreams; ++i)
+        CLEAR_KAHAN(es->streamSums[i]);
 }
 
 void printEvaluationState(const EvaluationState* es)
@@ -265,5 +276,4 @@ int maybeResume(EvaluationState* es)
 }
 
 #endif /* !SEPARATION_OPENCL */
-
 

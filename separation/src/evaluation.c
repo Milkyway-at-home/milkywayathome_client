@@ -101,6 +101,7 @@ static void cleanStreamIntegrals(real* stream_integrals,
     }
 }
 
+
 static void calculateIntegrals(const AstronomyParameters* ap,
                                const IntegralArea* ias,
                                const StreamConstants* sc,
@@ -154,8 +155,7 @@ static void calculateIntegrals(const AstronomyParameters* ap,
             fail("Failed to calculate integral %u\n", es->currentCut);
 
         cleanStreamIntegrals(es->cut->streamIntegrals, sc, ap->number_streams);
-
-        CLEAR_KAHAN(es->bgSum);
+        clearEvaluationStateTmpSums(es);
     }
 
   #if SEPARATION_OPENCL
