@@ -30,6 +30,7 @@ extern "C" {
 StreamConstants* getStreamConstants(const AstronomyParameters* ap, const Streams* streams);
 
 int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* bgp);
+void setExpStreamWeights(const AstronomyParameters* ap, Streams* streams);
 
 StreamGauss getStreamGauss(const unsigned int convolve);
 void freeStreamGauss(StreamGauss sg);

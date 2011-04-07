@@ -50,6 +50,7 @@ void freeStreams(Streams* streams)
         freeStreamParameters(&streams->parameters[i]);
     free(streams->parameters);
     free(streams->stream_weight);
+    free(streams->expStreamWeights);
 }
 
 static void calcIntegralStepSizes(IntegralArea* i)
@@ -114,8 +115,9 @@ static IntegralArea* freadParameters(FILE* file,
 
     ap->number_streams = streams->number_streams;
 
-    streams->stream_weight = (StreamWeight*) mwMalloc(sizeof(StreamWeight) * streams->number_streams);
-    streams->parameters = (StreamParameters*) mwMalloc(sizeof(StreamParameters) * streams->number_streams);
+    streams->stream_weight = (StreamWeight*) mwCalloc(streams->number_streams, sizeof(StreamWeight));
+    streams->parameters = (StreamParameters*) mwCalloc(streams->number_streams, sizeof(StreamParameters));
+    streams->expStreamWeights = (real*) mwCalloc(streams->number_streams, sizeof(real));
 
     for (i = 0; i < streams->number_streams; ++i)
     {

@@ -100,6 +100,20 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
     return 0;
 }
 
+void setExpStreamWeights(const AstronomyParameters* ap, Streams* streams)
+{
+    unsigned int i;
+
+    streams->sumExpWeights = ap->exp_background_weight;
+    for (i = 0; i < streams->number_streams; i++)
+    {
+        streams->expStreamWeights[i] = mw_exp(streams->stream_weight[i].weight);
+        streams->sumExpWeights += streams->expStreamWeights[i];
+    }
+
+    streams->sumExpWeights *= 0.001;
+}
+
 StreamConstants* getStreamConstants(const AstronomyParameters* ap, const Streams* streams)
 
 {

@@ -182,11 +182,13 @@ typedef struct
     StreamWeight* stream_weight;
     StreamParameters* parameters;
 
+    real* expStreamWeights;
+    real sumExpWeights;
     unsigned int number_streams;
     unsigned int number_stream_parameters;
 } Streams;
 
-#define EMPTY_STREAMS { NULL, NULL, 0, 0 }
+#define EMPTY_STREAMS { NULL, NULL, NULL, 0.0, 0, 0 }
 
 typedef struct
 {

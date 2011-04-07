@@ -89,24 +89,6 @@ static real stream_sum(SeparationResults* results,
     return star_prob;
 }
 
-/* Populates exp_stream_weights, and returns the sum */
-real get_exp_stream_weights(real* exp_stream_weights,
-                            const Streams* streams,
-                            real exp_background_weight)
-{
-    unsigned int i;
-    real sum_exp_weights = exp_background_weight;
-    for (i = 0; i < streams->number_streams; i++)
-    {
-        exp_stream_weights[i] = mw_exp(streams->stream_weight[i].weight);
-        sum_exp_weights += exp_stream_weights[i];
-    }
-
-    sum_exp_weights *= 0.001;
-
-    return sum_exp_weights;
-}
-
 void getStreamOnlyLikelihood(SeparationResults* results,
                              Kahan* st_only_sum,
                              const unsigned int number_stars,
@@ -383,8 +365,6 @@ int likelihood(SeparationResults* results,
     RPoints* r_pts;
     EvaluationState* es;
     StreamStats* ss = NULL;
-    real* exp_stream_weights;
-    real sum_exp_weights;
     FILE* f = NULL;
 
     int rc = 0;
@@ -407,17 +387,14 @@ int likelihood(SeparationResults* results,
     es = newEvaluationState(ap);
 
     r_pts = (RPoints*) mwMallocA(sizeof(RPoints) * ap->convolve);
-    exp_stream_weights = (real*) mwMallocA(sizeof(real) * streams->number_streams);
-
-    sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, ap->exp_background_weight);
 
     t1 = mwGetTime();
     rc = likelihood_sum(results,
                         ap, sp, sc, streams,
                         sg, r_pts,
                         es,
-                        exp_stream_weights,
-                        sum_exp_weights,
+                        streams->expStreamWeights,
+                        streams->sumExpWeights,
                         ss,
                         do_separation,
                         f);
@@ -427,7 +404,6 @@ int likelihood(SeparationResults* results,
     getStreamOnlyLikelihood(results, es->streamSums, sp->number_stars, streams->number_streams);
 
     mwFreeA(r_pts);
-    mwFreeA(exp_stream_weights);
     mwFreeA(ss);
     freeEvaluationState(es);
 

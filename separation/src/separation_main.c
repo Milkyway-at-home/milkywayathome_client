@@ -301,6 +301,7 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
         return 1;
     }
 
+    setExpStreamWeights(&ap, &streams);
     sc = getStreamConstants(&ap, &streams);
     if (!sc)
     {
