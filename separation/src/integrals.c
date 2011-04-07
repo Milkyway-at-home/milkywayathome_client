@@ -111,7 +111,6 @@ static inline real bg_probability_fast_hprob(const AstronomyParameters* ap,
     for (i = 0; i < convolve; ++i)
     {
         xyz = lbr2xyz_2(ap, r_pts[i].r_point, lbt);
-
         rg = rg_calc(ap, xyz);
 
         h_prob = h_prob_fast(ap, r_pts[i].qw_r3_N, rg);
@@ -122,8 +121,8 @@ static inline real bg_probability_fast_hprob(const AstronomyParameters* ap,
             g = gPrime + sg_dx[i];
             h_prob += aux_prob(ap, r_pts[i].qw_r3_N, g);
         }
-        bg_prob += h_prob;
 
+        bg_prob += h_prob;
         stream_sums(streamTmps, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
     }
 
@@ -167,14 +166,14 @@ static inline real bg_probability_slow_hprob(const AstronomyParameters* ap,
     return bg_prob;
 }
 
-HOT
-static inline void bg_probability(const AstronomyParameters* ap,
-                                  const StreamConstants* sc,
-                                  const RPoints* r_pts,
-                                  const real* sg_dx,
-                                  const real gPrime,
-                                  const LBTrig lbt, /* integral point */
-                                  EvaluationState* es)
+HOT ALWAYS_INLINE
+inline void bg_probability(const AstronomyParameters* ap,
+                           const StreamConstants* sc,
+                           const RPoints* r_pts,
+                           const real* sg_dx,
+                           const real gPrime,
+                           const LBTrig lbt, /* integral point */
+                           EvaluationState* es)
 {
     if (ap->fast_h_prob)
         es->bgTmp = bg_probability_fast_hprob(ap, sc, r_pts, sg_dx, lbt, gPrime, es->streamTmps);
@@ -182,7 +181,8 @@ static inline void bg_probability(const AstronomyParameters* ap,
         es->bgTmp = bg_probability_slow_hprob(ap, sc, r_pts, sg_dx, lbt, gPrime, es->streamTmps);
 }
 
-static inline void multSumProbs(EvaluationState* es, real V_reff_xr_rp3)
+HOT ALWAYS_INLINE
+inline void multSumProbs(EvaluationState* es, real V_reff_xr_rp3)
 {
     unsigned int i;
 

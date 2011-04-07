@@ -24,55 +24,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_types.h"
 #include "likelihood.h"
+#include "integrals.h"
 #include "integrals_common.h"
 #include "r_points.h"
 #include "calculated_constants.h"
 #include "milkyway_util.h"
 #include "separation_utils.h"
+#include "evaluation_state.h"
 
-/* FIXME: Excessive duplication with stuff used in integrals which I
- * was too lazy to also fix here */
-
-static inline real likelihood_bg_probability_main(const AstronomyParameters* ap,
-                                                  const StreamConstants* sc,
-                                                  const RPoints* r_pts,
-                                                  const real* sg_dx,
-                                                  const LBTrig lbt,
-                                                  const RConsts rc,
-                                                  const unsigned int convolve,
-                                                  real* st_probs)
-{
-    unsigned int i;
-    real h_prob, g, rg;
-    mwvector xyz;
-    real bg_prob = 0.0;
-
-    zero_st_probs(st_probs, ap->number_streams);
-
-    for (i = 0; i < convolve; ++i)
-    {
-        xyz = lbr2xyz_2(ap, r_pts[i].r_point, lbt);
-        rg = rg_calc(ap, xyz);
-
-        if (ap->fast_h_prob)
-            h_prob = h_prob_fast(ap, r_pts[i].qw_r3_N, rg);
-        else
-            h_prob = h_prob_slow(ap, r_pts[i].qw_r3_N, rg);
-
-        /* add a quadratic term in g to the Hernquist profile */
-        if (ap->aux_bg_profile)
-        {
-            g = rc.gPrime + sg_dx[i];
-            h_prob += aux_prob(ap, r_pts[i].qw_r3_N, g);
-        }
-
-        stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
-
-        bg_prob += h_prob;
-    }
-
-    return bg_prob;
-}
 
 real likelihood_bg_probability(const AstronomyParameters* ap,
                                const StreamConstants* sc,
@@ -81,20 +40,23 @@ real likelihood_bg_probability(const AstronomyParameters* ap,
                                const LBTrig lbt,
                                const RConsts rc,
                                const real reff_xr_rp3,
-                               real* st_probs)
+                               EvaluationState* es)
 {
-    real bg_prob;
-
     /* if q is 0, there is no probability */
     if (ap->q == 0.0)
         return -1.0;
 
-    bg_prob = likelihood_bg_probability_main(ap, sc, r_pts, sg_dx, lbt, rc, ap->convolve, st_probs);
-    bg_prob *= reff_xr_rp3;
+    bg_probability(ap, sc, r_pts, sg_dx, rc.gPrime, lbt, es);
+    //multSumProbs(es, reff_xr_rp3);
 
-    mult_probs(st_probs, reff_xr_rp3, ap->number_streams);
+    #if 1
+    es->bgTmp *= reff_xr_rp3;
+    for (unsigned int i = 0; i < ap->number_streams; ++i)
+        es->streamTmps[i] *= reff_xr_rp3;
+    #endif
 
-    return bg_prob;
+
+    return es->bgTmp;
 }
 
 /* CHECKME: What is this? */
@@ -317,11 +279,9 @@ static int likelihood_sum(SeparationResults* results,
                           const Streams* streams,
                           const StreamGauss sg,
                           RPoints* r_pts,
-                          Kahan* st_sum,
-                          real* st_prob,
+                          EvaluationState* es,
                           const real* exp_stream_weights,
                           const real sum_exp_weights,
-                          const real exp_background_weight,
                           StreamStats* ss,
                           const int do_separation,
                           FILE* f)
@@ -361,14 +321,13 @@ static int likelihood_sum(SeparationResults* results,
 
         lbt = lb_trig(lb);
 
-        bg_prob = likelihood_bg_probability(ap, sc, r_pts, sg.dx, lbt, rc, reff_xr_rp3, st_prob);
-
-        bg = (bg_prob / results->backgroundIntegral) * exp_background_weight;
+        bg_prob = likelihood_bg_probability(ap, sc, r_pts, sg.dx, lbt, rc, reff_xr_rp3, es);
+        bg = (bg_prob / results->backgroundIntegral) * ap->exp_background_weight;
 
         star_prob = stream_sum(results,
                                streams->number_streams,
-                               st_prob,
-                               st_sum,
+                               es->streamTmps,
+                               es->streamSums,
                                exp_stream_weights,
                                sum_exp_weights,
                                bg);
@@ -388,7 +347,7 @@ static int likelihood_sum(SeparationResults* results,
         KAHAN_ADD(bg_only, bg);
 
         if (do_separation)
-            separation(f, ap, results, cmatrix, ss, st_prob, bg_prob, epsilon_b, point);
+            separation(f, ap, results, cmatrix, ss, es->streamTmps, bg_prob, epsilon_b, point);
     }
 
     prob.sum += prob.correction;
@@ -409,7 +368,7 @@ static int likelihood_sum(SeparationResults* results,
 
 StreamStats* newStreamStats(const unsigned int number_streams)
 {
-    return (StreamStats*) mwCalloc(number_streams, sizeof(StreamStats));
+    return (StreamStats*) mwCallocA(number_streams, sizeof(StreamStats));
 }
 
 int likelihood(SeparationResults* results,
@@ -421,16 +380,16 @@ int likelihood(SeparationResults* results,
                const int do_separation,
                const char* separation_outfile)
 {
-    real* st_prob;
     RPoints* r_pts;
-    Kahan* st_sum;
+    EvaluationState* es;
     StreamStats* ss = NULL;
     real* exp_stream_weights;
     real sum_exp_weights;
-    real exp_background_weight;
     FILE* f = NULL;
+
     int rc = 0;
     double t1, t2;
+
 
     if (do_separation)
     {
@@ -444,35 +403,33 @@ int likelihood(SeparationResults* results,
         ss = newStreamStats(streams->number_streams);
     }
 
-    st_prob = (real*) mwMallocA(sizeof(real) * streams->number_streams);
+    /* New state for this sum */
+    es = newEvaluationState(ap);
+
     r_pts = (RPoints*) mwMallocA(sizeof(RPoints) * ap->convolve);
-    st_sum = (Kahan*) mwCallocA(sizeof(Kahan), streams->number_streams);
     exp_stream_weights = (real*) mwMallocA(sizeof(real) * streams->number_streams);
 
-    exp_background_weight = mw_exp(ap->background_weight);
-    sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, exp_background_weight);
+    sum_exp_weights = get_exp_stream_weights(exp_stream_weights, streams, ap->exp_background_weight);
 
     t1 = mwGetTime();
     rc = likelihood_sum(results,
                         ap, sp, sc, streams,
                         sg, r_pts,
-                        st_sum, st_prob,
+                        es,
                         exp_stream_weights,
                         sum_exp_weights,
-                        exp_background_weight,
                         ss,
                         do_separation,
                         f);
     t2 = mwGetTime();
     warn("Likelihood time = %f s\n", t2 - t1);
 
-    getStreamOnlyLikelihood(results, st_sum, sp->number_stars, streams->number_streams);
+    getStreamOnlyLikelihood(results, es->streamSums, sp->number_stars, streams->number_streams);
 
-    mwFreeA(st_prob);
     mwFreeA(r_pts);
-    mwFreeA(st_sum);
     mwFreeA(exp_stream_weights);
-    free(ss);
+    mwFreeA(ss);
+    freeEvaluationState(es);
 
     if (f && fclose(f))
         perror("Closing separation output file");

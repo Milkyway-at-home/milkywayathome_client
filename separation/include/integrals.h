@@ -28,6 +28,16 @@ extern "C" {
 #include "separation_types.h"
 #include "evaluation_state.h"
 
+void bg_probability(const AstronomyParameters* ap,
+                    const StreamConstants* sc,
+                    const RPoints* r_pts,
+                    const real* sg_dx,
+                    const real gPrime,
+                    const LBTrig lbt, /* integral point */
+                    EvaluationState* es);
+
+void multSumProbs(EvaluationState* es, real V_reff_xr_rp3);
+
 void integrate(const AstronomyParameters* ap,
                const IntegralArea* ia,
                const StreamConstants* sc,

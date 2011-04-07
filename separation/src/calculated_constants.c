@@ -91,6 +91,7 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
     ap->coeff = 1.0 / (stdev * SQRT_2PI);
     ap->alpha_delta3 = 3.0 - ap->alpha + ap->delta;
 
+    ap->exp_background_weight = mw_exp(ap->background_weight);
     ap->fast_h_prob = (ap->alpha == 1 && ap->delta == 1);
 
     ap->sun_r0 = const_sun_r0;

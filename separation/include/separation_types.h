@@ -236,6 +236,7 @@ typedef struct SEPARATION_ALIGN(128) _AstronomyParameters
     unsigned int number_background_parameters;
 
     real background_weight;
+    real exp_background_weight;
     int fast_h_prob;
 } AstronomyParameters;
 
@@ -244,7 +245,7 @@ typedef struct SEPARATION_ALIGN(128) _AstronomyParameters
                                      0.0, 0.0, 0.0, 0.0, 0, 0, \
                                      0, 0, 0.0, 0.0,        \
                                      0, 0, 0.0, 0.0, 0, 0, 0, \
-                                     0, 0.0, 0 }
+                                     0, 0.0, 0.0, 0 }
 
 typedef struct SEPARATION_ALIGN(16)
 {

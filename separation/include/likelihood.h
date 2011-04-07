@@ -27,15 +27,6 @@ extern "C" {
 
 #include "separation_types.h"
 
-real likelihood_bg_probability(const AstronomyParameters* ap,
-                               const StreamConstants* sc,
-                               const RPoints* r_pts,
-                               const real* sg_dx,
-                               const LBTrig lbt,
-                               const RConsts rc,
-                               const real reff_xr_rp3,
-                               real* st_probs);
-
 int likelihood(SeparationResults* results,
                const AstronomyParameters* ap,
                const StarPoints* sp,
