@@ -96,10 +96,6 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
     ap->sun_r0 = const_sun_r0;
     ap->m_sun_r0 = -ap->sun_r0;
 
-  #if !SEPARATION_OPENCL
-    ap->bg_prob_func = ap->fast_h_prob ? bg_probability_fast_hprob : bg_probability_slow_hprob;
-  #endif /* !SEPARATION_OPENCL */
-
     return 0;
 }
 

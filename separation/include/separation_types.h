@@ -237,46 +237,14 @@ typedef struct SEPARATION_ALIGN(128) _AstronomyParameters
 
     real background_weight;
     int fast_h_prob;
-
-    /* really should be BGProbabilityFunc bg_prob_func, but need to
-     * refer to pointer to this struct before  */
-  #ifndef __OPENCL_VERSION__
-    /* Function pointer only used by CPU version.
-       As the last element, just ignore it's existence in the kernel.
-     */
-    real (*bg_prob_func) (const struct _AstronomyParameters*,
-                          const StreamConstants*,
-                          const RPoints*,
-                          const real*,
-                          const LBTrig,
-                          const real,
-                          const int,
-                          const unsigned int,
-                          real*);
-   #endif
 } AstronomyParameters;
-
-#ifndef __OPENCL_VERSION__
-typedef real (*BGProbabilityFunc) (const AstronomyParameters*,
-                                   const StreamConstants*,
-                                   const RPoints*,
-                                   const real*,
-                                   const LBTrig,
-                                   const real,
-                                   const int,
-                                   const unsigned int,
-                                   real*);
-#endif /* __OPENCL_VERSION__ */
-
-
-
 
 #define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0.0, \
                                      0.0, 0.0,   \
                                      0.0, 0.0, 0.0, 0.0, 0, 0, \
                                      0, 0, 0.0, 0.0,        \
                                      0, 0, 0.0, 0.0, 0, 0, 0, \
-                                     0, 0.0, 0, NULL }
+                                     0, 0.0, 0 }
 
 typedef struct SEPARATION_ALIGN(16)
 {

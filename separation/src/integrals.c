@@ -92,21 +92,22 @@ static inline void doBoincCheckpoint(const EvaluationState* es,
 
 
 HOT
-real bg_probability_fast_hprob(const AstronomyParameters* ap,
-                               const StreamConstants* sc,
-                               const RPoints* r_pts,
-                               const real* sg_dx,
-                               const LBTrig lbt,
-                               const real gPrime,
-                               const int aux_bg_profile,
-                               const unsigned int convolve,
-                               real* st_probs)
+static inline real bg_probability_fast_hprob(const AstronomyParameters* ap,
+                                             const StreamConstants* sc,
+                                             const RPoints* r_pts,
+                                             const real* sg_dx,
+                                             const LBTrig lbt,
+                                             const real gPrime,
+                                             real* streamTmps)
 {
     unsigned int i;
     real h_prob, g, rg;
     mwvector xyz;
     real bg_prob = 0.0;
+    unsigned int convolve = ap->convolve;
+    int aux_bg_profile = ap->aux_bg_profile;
 
+    zero_st_probs(streamTmps, ap->number_streams);
     for (i = 0; i < convolve; ++i)
     {
         xyz = lbr2xyz_2(ap, r_pts[i].r_point, lbt);
@@ -123,28 +124,29 @@ real bg_probability_fast_hprob(const AstronomyParameters* ap,
         }
         bg_prob += h_prob;
 
-        stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
+        stream_sums(streamTmps, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
     }
 
     return bg_prob;
 }
 
-
 HOT
-real bg_probability_slow_hprob(const AstronomyParameters* ap,
-                               const StreamConstants* sc,
-                               const RPoints* r_pts,
-                               const real* sg_dx,
-                               const LBTrig lbt,
-                               const real gPrime,
-                               const int aux_bg_profile,
-                               const unsigned int convolve,
-                               real* st_probs)
+static inline real bg_probability_slow_hprob(const AstronomyParameters* ap,
+                                             const StreamConstants* sc,
+                                             const RPoints* r_pts,
+                                             const real* sg_dx,
+                                             const LBTrig lbt,
+                                             const real gPrime,
+                                             real* streamTmps)
 {
     unsigned int i;
     real rg, g;
     mwvector xyz;
     real bg_prob = 0.0;
+    unsigned int convolve = ap->convolve;
+    int aux_bg_profile = ap->aux_bg_profile;
+
+    zero_st_probs(streamTmps, ap->number_streams);
 
     for (i = 0; i < convolve; ++i)
     {
@@ -159,14 +161,14 @@ real bg_probability_slow_hprob(const AstronomyParameters* ap,
             bg_prob += aux_prob(ap, r_pts[i].qw_r3_N, g);
         }
 
-        stream_sums(st_probs, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
+        stream_sums(streamTmps, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
     }
 
     return bg_prob;
 }
 
 HOT
-static inline real bg_probability(const AstronomyParameters* ap,
+static inline void bg_probability(const AstronomyParameters* ap,
                                   const StreamConstants* sc,
                                   const RPoints* r_pts,
                                   const real* sg_dx,
@@ -174,50 +176,49 @@ static inline real bg_probability(const AstronomyParameters* ap,
                                   const LBTrig lbt, /* integral point */
                                   EvaluationState* es)
 {
-    real bg_prob;
-
-    zero_st_probs(es->streamTmps, ap->number_streams);
-
-    bg_prob = ap->bg_prob_func(ap, sc, r_pts, sg_dx,
-                               lbt,
-                               gPrime,
-                               ap->aux_bg_profile,
-                               ap->convolve,
-                               es->streamTmps);
-
-    return bg_prob;
+    if (ap->fast_h_prob)
+        es->bgTmp = bg_probability_fast_hprob(ap, sc, r_pts, sg_dx, lbt, gPrime, es->streamTmps);
+    else
+        es->bgTmp = bg_probability_slow_hprob(ap, sc, r_pts, sg_dx, lbt, gPrime, es->streamTmps);
 }
+
+static inline void multSumProbs(EvaluationState* es, real V_reff_xr_rp3)
+{
+    unsigned int i;
+
+    KAHAN_ADD(es->bgSum, V_reff_xr_rp3 * es->bgTmp);
+    for (i = 0; i < es->numberStreams; ++i)
+        KAHAN_ADD(es->streamSums[i], V_reff_xr_rp3 * es->streamTmps[i]);
+}
+
 
 HOT
 static inline void r_sum(const AstronomyParameters* ap,
                          const StreamConstants* sc,
                          const real* sg_dx,
-                         const LBTrig lbt,
-                         const real id,
+                         LBTrig lbt,
+                         real id,
                          EvaluationState* es,
                          const RPoints* r_pts,
                          const RConsts* rc,
-                         const unsigned int r_steps)
+                         unsigned int r_steps)
 {
     unsigned int r_step;
     real V_reff_xr_rp3;
-    real bg_prob;
 
     for (r_step = 0; r_step < r_steps; ++r_step)
     {
-        bg_prob = bg_probability(ap, sc,
-                                 &r_pts[r_step * ap->convolve], sg_dx,
-                                 rc[r_step].gPrime, lbt, es);
-
+        bg_probability(ap, sc,
+                       &r_pts[r_step * ap->convolve],
+                       sg_dx,
+                       rc[r_step].gPrime, lbt, es);
         V_reff_xr_rp3 = id * rc[r_step].irv_reff_xr_rp3;
-        bg_prob *= V_reff_xr_rp3;
-        sum_probs(es->streamSums, es->streamTmps, V_reff_xr_rp3, ap->number_streams);
 
-        KAHAN_ADD(es->bgSum, bg_prob);
+        multSumProbs(es, V_reff_xr_rp3);
     }
 }
 
-ALWAYS_INLINE HOT
+HOT
 static inline void mu_sum(const AstronomyParameters* ap,
                           const IntegralArea* ia,
                           const StreamConstants* sc,

@@ -28,27 +28,6 @@ extern "C" {
 #include "separation_types.h"
 #include "evaluation_state.h"
 
-real bg_probability_fast_hprob(const AstronomyParameters* ap,
-                               const StreamConstants* sc,
-                               const RPoints* r_pts,
-                               const real* sg_dx,
-                               const LBTrig lbt,
-                               const real gPrime,
-                               const int aux_bg_profile,
-                               const unsigned int convolve,
-
-                               real* st_probs);
-
-real bg_probability_slow_hprob(const AstronomyParameters* ap,
-                               const StreamConstants* sc,
-                               const RPoints* r_pts,
-                               const real* sg_dx,
-                               const LBTrig lbt,
-                               const real gPrime,
-                               const int aux_bg_profile,
-                               const unsigned int convolve,
-                               real* st_probs);
-
 void integrate(const AstronomyParameters* ap,
                const IntegralArea* ia,
                const StreamConstants* sc,
