@@ -405,32 +405,31 @@ static void calculateCALSeparationSizes(CALSeparationSizes* sizes,
 }
 
 
-real integrateCAL(const AstronomyParameters* ap,
-                  const IntegralArea* ia,
-                  const StreamGauss sg,
-                  real* st_probs,
-                  EvaluationState* es,
-                  const CLRequest* clr,
-                  MWCALInfo* ci)
+CALresult integrateCAL(const AstronomyParameters* ap,
+                       const IntegralArea* ia,
+                       const StreamGauss sg,
+                       real* st_probs,
+                       EvaluationState* es,
+                       const CLRequest* clr,
+                       MWCALInfo* ci)
 {
     CALresult err;
     SeparationCALMem cm;
     CALSeparationSizes sizes;
-    real result = NAN;
 
     calculateCALSeparationSizes(&sizes, ap, ia);
 
     memset(&cm, 0, sizeof(SeparationCALMem));
     err = createSeparationBuffers(ci, &cm, ap, ia, sg, &sizes);
     if (err != CAL_RESULT_OK)
-        return NAN;
+        return err;
 
-    result = runIntegral(ap, ia, es, clr, ci, &cm, st_probs);
+    es->cut->bgIntegral = runIntegral(ap, ia, es, clr, ci, &cm, st_probs);
 
     err = releaseSeparationBuffers(ci, &cm);
     if (err != CAL_RESULT_OK)
-        result = NAN;
+        return err;
 
-    return result;
+    return CAL_RESULT_OK;
 }
 

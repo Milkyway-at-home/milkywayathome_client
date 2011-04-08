@@ -338,6 +338,7 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
       #endif /* AUX_BG_PROFILE */
     }
 
+
     real V_reff_xr_rp3 = nu_id * IRV_REFF_XR_RP3(rcs[r_step]);
     size_t idx = mu_step * ia->r_steps + r_step; /* Index into output buffers */
 

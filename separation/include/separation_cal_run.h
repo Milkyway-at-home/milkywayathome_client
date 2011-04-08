@@ -30,13 +30,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-real integrateCAL(const AstronomyParameters* ap,
-                  const IntegralArea* ia,
-                  const StreamGauss sg,
-                  real* st_probs,
-                  EvaluationState* es,
-                  const CLRequest* clr,
-                  MWCALInfo* ci);
+CALresult integrateCAL(const AstronomyParameters* ap,
+                       const IntegralArea* ia,
+                       const StreamGauss sg,
+                       EvaluationState* es,
+                       const CLRequest* clr,
+                       MWCALInfo* ci);
 
 
 #ifdef __cplusplus

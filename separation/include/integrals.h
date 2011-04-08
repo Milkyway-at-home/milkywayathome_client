@@ -36,11 +36,11 @@ void bg_probability(const AstronomyParameters* ap,
                     const LBTrig lbt, /* integral point */
                     EvaluationState* es);
 
-void integrate(const AstronomyParameters* ap,
-               const IntegralArea* ia,
-               const StreamConstants* sc,
-               const StreamGauss sg,
-               EvaluationState* es);
+int integrate(const AstronomyParameters* ap,
+              const IntegralArea* ia,
+              const StreamConstants* sc,
+              const StreamGauss sg,
+              EvaluationState* es);
 
 #ifdef __cplusplus
 }

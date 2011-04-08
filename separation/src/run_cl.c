@@ -285,16 +285,15 @@ static real runIntegral(CLInfo* ci,
     return result;
 }
 
-real integrateCL(const AstronomyParameters* ap,
-                 const IntegralArea* ia,
-                 const StreamConstants* sc,
-                 const StreamGauss sg,
-                 real* probs_results,
-                 EvaluationState* es,
-                 const CLRequest* clr,
-                 CLInfo* ci,
-                 DevInfo* di,
-                 cl_bool useImages)
+cl_int integrateCL(const AstronomyParameters* ap,
+                   const IntegralArea* ia,
+                   const StreamConstants* sc,
+                   const StreamGauss sg,
+                   EvaluationState* es,
+                   const CLRequest* clr,
+                   CLInfo* ci,
+                   DevInfo* di,
+                   cl_bool useImages)
 {
     real result;
     cl_int err;
@@ -310,34 +309,34 @@ real integrateCL(const AstronomyParameters* ap,
         if (fallbackDriverSolution(&runSizes))
         {
             warn("Fallback solution failed\n");
-            return NAN;
+            return MW_CL_ERROR;
         }
     }
 
     if (!separationCheckDevCapabilities(di, &sizes))
     {
         warn("Device failed capability check\n");
-        return NAN;
+        return MW_CL_ERROR;
     }
 
     err = createSeparationBuffers(ci, &cm, ap, ia, sc, sg, &sizes, useImages);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Failed to create CL buffers", err);
-        return NAN;
+        return err;
     }
 
     err = separationSetKernelArgs(ci, &cm, &runSizes);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Failed to set integral kernel arguments", err);
-        return NAN;
+        return err;
     }
 
-    result = runIntegral(ci, &cm, &runSizes, probs_results, es, clr, ap, ia);
+    es->cut->bgIntegral = runIntegral(ci, &cm, &runSizes, es->cut->streamIntegrals, es, clr, ap, ia);
 
     releaseSeparationBuffers(&cm);
 
-    return result;
+    return CL_SUCCESS;
 }
 

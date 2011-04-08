@@ -91,6 +91,20 @@ static inline void doBoincCheckpoint(const EvaluationState* es,
 #endif /* BOINC_APPLICATION */
 
 
+ALWAYS_INLINE HOT
+static inline void streamSums(real* st_probs,
+                              const StreamConstants* sc,
+                              const mwvector xyz,
+                              const real qw_r3_N,
+                              const unsigned int nstreams)
+{
+    unsigned int i;
+
+    for (i = 0; i < nstreams; ++i)
+        st_probs[i] += qw_r3_N * calc_st_prob_inc(&sc[i], xyz);
+}
+
+
 HOT
 static inline real bg_probability_fast_hprob(const AstronomyParameters* ap,
                                              const StreamConstants* sc,
@@ -123,7 +137,7 @@ static inline real bg_probability_fast_hprob(const AstronomyParameters* ap,
         }
 
         bg_prob += h_prob;
-        stream_sums(streamTmps, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
+        streamSums(streamTmps, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
     }
 
     return bg_prob;
@@ -160,7 +174,7 @@ static inline real bg_probability_slow_hprob(const AstronomyParameters* ap,
             bg_prob += aux_prob(ap, r_pts[i].qw_r3_N, g);
         }
 
-        stream_sums(streamTmps, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
+        streamSums(streamTmps, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
     }
 
     return bg_prob;
@@ -281,11 +295,11 @@ static void integralApplyCorrection(EvaluationState* es)
 
 
 /* returns background integral */
-void integrate(const AstronomyParameters* ap,
-               const IntegralArea* ia,
-               const StreamConstants* sc,
-               const StreamGauss sg,
-               EvaluationState* es)
+int integrate(const AstronomyParameters* ap,
+              const IntegralArea* ia,
+              const StreamConstants* sc,
+              const StreamGauss sg,
+              EvaluationState* es)
 {
     RPoints* r_pts;
     RConsts* rc;
@@ -296,7 +310,7 @@ void integrate(const AstronomyParameters* ap,
         /* Short circuit the entire integral rather than add up -1 many times. */
         warn("q is 0.0\n");
         es->cut->bgIntegral = -1.0 * ia->nu_steps * ia->mu_steps * ia->r_steps;
-        return;
+        return 1;
     }
 
     r_pts = precalculateRPts(ap, ia, sg, &rc, 0);
@@ -310,6 +324,8 @@ void integrate(const AstronomyParameters* ap,
   #ifdef MILKYWAY_IPHONE_APP
     _milkywaySeparationGlobalProgress = 1.0;
   #endif
+
+    return 0;
 }
 
 

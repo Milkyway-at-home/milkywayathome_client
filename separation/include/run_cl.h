@@ -29,16 +29,15 @@ extern "C" {
 #include "mw_cl.h"
 #include "evaluation_state.h"
 
-real integrateCL(const AstronomyParameters* ap,
-                 const IntegralArea* ia,
-                 const StreamConstants* sc,
-                 const StreamGauss sg,
-                 real* st_probs,
-                 EvaluationState* es,
-                 const CLRequest* clr,
-                 CLInfo* ci,
-                 DevInfo* di,
-                 cl_bool useImages);
+cl_int integrateCL(const AstronomyParameters* ap,
+                   const IntegralArea* ia,
+                   const StreamConstants* sc,
+                   const StreamGauss sg,
+                   EvaluationState* es,
+                   const CLRequest* clr,
+                   CLInfo* ci,
+                   DevInfo* di,
+                   cl_bool useImages);
 
 #ifdef __cplusplus
 }

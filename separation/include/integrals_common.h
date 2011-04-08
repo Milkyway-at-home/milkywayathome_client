@@ -133,18 +133,6 @@ inline void mult_probs(real* st_probs, const real V_reff_xr_rp3, const unsigned 
 }
 
 #ifndef __OPENCL_VERSION__
-ALWAYS_INLINE HOT OLD_GCC_EXTERNINLINE
-inline void stream_sums(real* st_probs,
-                        __MW_CONSTANT StreamConstants* sc,
-                        const mwvector xyz,
-                        const real qw_r3_N,
-                        const unsigned int nstreams)
-{
-    unsigned int i;
-
-    for (i = 0; i < nstreams; ++i)
-        st_probs[i] += qw_r3_N * calc_st_prob_inc(&sc[i], xyz);
-}
 
 ALWAYS_INLINE HOT CONST_F OLD_GCC_EXTERNINLINE
 inline LBTrig lb_trig(LB lb)

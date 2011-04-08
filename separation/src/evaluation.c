@@ -111,6 +111,7 @@ static void calculateIntegrals(const AstronomyParameters* ap,
 {
     const IntegralArea* ia;
     double t1, t2;
+    int rc;
 
   #if SEPARATION_OPENCL
     DevInfo di;
@@ -141,17 +142,17 @@ static void calculateIntegrals(const AstronomyParameters* ap,
 
         t1 = mwGetTime();
       #if SEPARATION_OPENCL
-        integrateCL(ap, ia, sc, sg, es, clr, &ci, &di, useImages);
+        rc = integrateCL(ap, ia, sc, sg, es, clr, &ci, &di, useImages);
       #elif SEPARATION_CAL
-        integrateCAL(ap, ia, sg, es, clr, &ci);
+        rc = integrateCAL(ap, ia, sg, es, clr, &ci);
       #else
-        integrate(ap, ia, sc, sg, es);
+        rc = integrate(ap, ia, sc, sg, es);
       #endif /* SEPARATION_OPENCL */
 
         t2 = mwGetTime();
         warn("Integral %u time = %f s\n", es->currentCut, t2 - t1);
 
-        if (isnan(es->cut->bgIntegral))
+        if (rc || isnan(es->cut->bgIntegral))
             fail("Failed to calculate integral %u\n", es->currentCut);
 
         cleanStreamIntegrals(es->cut->streamIntegrals, sc, ap->number_streams);
