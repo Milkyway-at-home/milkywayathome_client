@@ -32,40 +32,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_utils.h"
 #include "evaluation_state.h"
 
-
-real likelihood_bg_probability(const AstronomyParameters* ap,
-                               const StreamConstants* sc,
-                               const RPoints* r_pts,
-                               const real* sg_dx,
-                               const LBTrig lbt,
-                               const RConsts rc,
-                               const real reff_xr_rp3,
-                               EvaluationState* es)
-{
-    /* if q is 0, there is no probability */
-    if (ap->q == 0.0)
-        return -1.0;
-
-    bg_probability(ap, sc, r_pts, sg_dx, rc.gPrime, lbt, es);
-    //multSumProbs(es, reff_xr_rp3);
-
-    #if 1
-    es->bgTmp *= reff_xr_rp3;
-    for (unsigned int i = 0; i < ap->number_streams; ++i)
-        es->streamTmps[i] *= reff_xr_rp3;
-    #endif
-
-
-    return es->bgTmp;
-}
-
 /* CHECKME: What is this? */
 static real probability_log(real bg, real sum_exp_weights)
 {
     return mw_cmpzero_eps(bg, SEPARATION_EPS) ? -238.0 : mw_log10(bg / sum_exp_weights);
 }
 
-static real stream_sum(SeparationResults* results,
+static real stream_sum(const SeparationResults* results,
                        const unsigned int number_streams,
                        const real* st_prob,
                        Kahan* st_only_sum,
@@ -87,23 +60,6 @@ static real stream_sum(SeparationResults* results,
     star_prob /= sum_exp_weights;
 
     return star_prob;
-}
-
-void getStreamOnlyLikelihood(SeparationResults* results,
-                             Kahan* st_only_sum,
-                             const unsigned int number_stars,
-                             const unsigned int number_streams)
-{
-    unsigned int i;
-
-    for (i = 0; i < number_streams; i++)
-    {
-        st_only_sum[i].sum += st_only_sum[i].correction;
-        st_only_sum[i].sum /= number_stars;
-        st_only_sum[i].sum -= 3.0;
-
-        results->streamLikelihoods[i] = st_only_sum[i].sum;
-    }
 }
 
 static const int calculateSeparation = 1;
@@ -206,6 +162,83 @@ static void separation(FILE* f,
     }
 }
 
+static real likelihood_probability(const AstronomyParameters* ap,
+                                   const StreamConstants* sc,
+                                   const Streams* streams,
+                                   const RPoints* r_pts,
+                                   const real* sg_dx,
+                                   const LBTrig lbt,
+                                   const RConsts rc,
+                                   const real reff_xr_rp3,
+                                   const SeparationResults* results,
+                                   EvaluationState* es,
+
+                                   const int do_separation,
+                                   FILE* f,
+                                   StreamStats* ss,
+                                   const real epsilon_b,
+                                   mwvector point,
+                                   const mwmatrix cmatrix)
+{
+    real bg, bg_prob, starProb;
+
+    /* if q is 0, there is no probability */
+    if (ap->q == 0.0)
+    {
+        bg_prob = -1.0;
+    }
+    else
+    {
+        bg_probability(ap, sc, r_pts, sg_dx, rc.gPrime, lbt, es);
+        //multSumProbs(es, reff_xr_rp3);
+
+#if 1
+        es->bgTmp *= reff_xr_rp3;
+        for (unsigned int i = 0; i < ap->number_streams; ++i)
+            es->streamTmps[i] *= reff_xr_rp3;
+#endif
+
+        bg_prob = es->bgTmp;
+    }
+
+    bg = (bg_prob / results->backgroundIntegral) * ap->exp_background_weight;
+
+    starProb = stream_sum(results,
+                          streams->number_streams,
+                          es->streamTmps,
+                          es->streamSums,
+                          streams->expStreamWeights,
+                          streams->sumExpWeights,
+                          bg);
+
+    bg = probability_log(bg, streams->sumExpWeights);
+    KAHAN_ADD(es->bgSum, bg);
+
+
+    if (do_separation)
+        separation(f, ap, results, cmatrix, ss, es->streamTmps, bg_prob, epsilon_b, point);
+
+
+    return starProb;
+}
+
+void getStreamOnlyLikelihood(SeparationResults* results,
+                             Kahan* st_only_sum,
+                             const unsigned int number_stars,
+                             const unsigned int number_streams)
+{
+    unsigned int i;
+
+    for (i = 0; i < number_streams; i++)
+    {
+        st_only_sum[i].sum += st_only_sum[i].correction;
+        st_only_sum[i].sum /= number_stars;
+        st_only_sum[i].sum -= 3.0;
+
+        results->streamLikelihoods[i] = st_only_sum[i].sum;
+    }
+}
+
 /* separation init stuffs */
 static void setSeparationConstants(const AstronomyParameters* ap,
                                    const SeparationResults* results,
@@ -264,8 +297,9 @@ static int likelihood_sum(SeparationResults* results,
                           EvaluationState* es,
                           const real* exp_stream_weights,
                           const real sum_exp_weights,
-                          StreamStats* ss,
+
                           const int do_separation,
+                          StreamStats* ss,
                           FILE* f)
 {
     Kahan prob = ZERO_KAHAN;
@@ -274,7 +308,6 @@ static int likelihood_sum(SeparationResults* results,
     unsigned int current_star_point;
     mwvector point;
     real star_prob;
-    real bg_prob, bg;
     LB lb;
     LBTrig lbt;
     real reff_xr_rp3;
@@ -303,17 +336,9 @@ static int likelihood_sum(SeparationResults* results,
 
         lbt = lb_trig(lb);
 
-        bg_prob = likelihood_bg_probability(ap, sc, r_pts, sg.dx, lbt, rc, reff_xr_rp3, es);
-        bg = (bg_prob / results->backgroundIntegral) * ap->exp_background_weight;
-
-        star_prob = stream_sum(results,
-                               streams->number_streams,
-                               es->streamTmps,
-                               es->streamSums,
-                               exp_stream_weights,
-                               sum_exp_weights,
-                               bg);
-
+        star_prob = likelihood_probability(ap, sc, streams, r_pts, sg.dx, lbt, rc,
+                                           reff_xr_rp3, results, es,
+                                           do_separation, f, ss, epsilon_b, point, cmatrix);
         if (mw_cmpnzero_muleps(star_prob, SEPARATION_EPS))
         {
             star_prob = mw_log10(star_prob);
@@ -325,12 +350,9 @@ static int likelihood_sum(SeparationResults* results,
             prob.sum -= 238.0;
         }
 
-        bg = probability_log(bg, sum_exp_weights);
-        KAHAN_ADD(bg_only, bg);
-
-        if (do_separation)
-            separation(f, ap, results, cmatrix, ss, es->streamTmps, bg_prob, epsilon_b, point);
     }
+
+    bg_only = es->bgSum;
 
     prob.sum += prob.correction;
     bg_only.sum += bg_only.correction;
@@ -395,8 +417,9 @@ int likelihood(SeparationResults* results,
                         es,
                         streams->expStreamWeights,
                         streams->sumExpWeights,
-                        ss,
+
                         do_separation,
+                        ss,
                         f);
     t2 = mwGetTime();
     warn("Likelihood time = %f s\n", t2 - t1);
