@@ -180,12 +180,12 @@ static real likelihood_probability(const AstronomyParameters* ap,
                                    mwvector point,
                                    const mwmatrix cmatrix)
 {
-    real bg, bg_prob, starProb;
+    real starProb;
 
     /* if q is 0, there is no probability */
     if (ap->q == 0.0)
     {
-        bg_prob = -1.0;
+        es->bgTmp = -1.0;
     }
     else
     {
@@ -193,15 +193,14 @@ static real likelihood_probability(const AstronomyParameters* ap,
         //multSumProbs(es, reff_xr_rp3);
 
 #if 1
-        es->bgTmp *= reff_xr_rp3;
+        es->bgTmp *= reff_xr_rp3;  /* bg only */
         for (unsigned int i = 0; i < ap->number_streams; ++i)
             es->streamTmps[i] *= reff_xr_rp3;
 #endif
 
-        bg_prob = es->bgTmp;
     }
 
-    bg = (bg_prob / results->backgroundIntegral) * ap->exp_background_weight;
+    es->bgTmp = (es->bgTmp / results->backgroundIntegral) * ap->exp_background_weight;
 
     starProb = stream_sum(results,
                           streams->number_streams,
@@ -209,34 +208,49 @@ static real likelihood_probability(const AstronomyParameters* ap,
                           es->streamSums,
                           streams->expStreamWeights,
                           streams->sumExpWeights,
-                          bg);
+                          es->bgTmp);
 
-    bg = probability_log(bg, streams->sumExpWeights);
-    KAHAN_ADD(es->bgSum, bg);
+    es->bgTmp = probability_log(es->bgTmp, streams->sumExpWeights);
+    KAHAN_ADD(es->bgSum, es->bgTmp);
 
 
     if (do_separation)
-        separation(f, ap, results, cmatrix, ss, es->streamTmps, bg_prob, epsilon_b, point);
+        separation(f, ap, results, cmatrix, ss, es->streamTmps, es->bgTmp, epsilon_b, point);
 
 
     return starProb;
 }
 
-void getStreamOnlyLikelihood(SeparationResults* results,
-                             Kahan* st_only_sum,
-                             const unsigned int number_stars,
-                             const unsigned int number_streams)
+static real calculateLikelihood(const Kahan* ksum, unsigned int nStars, unsigned int badJacobians)
+{
+    real sum;
+
+    /*  log10(x * 0.001) = log10(x) - 3.0 */
+    sum = ksum->sum + ksum->correction;
+    sum /= (nStars - badJacobians);
+    sum -= 3.0;
+
+    return sum;
+}
+
+static void calculateLikelihoods(SeparationResults* results,
+                                 Kahan* prob,
+                                 Kahan* bgOnly,
+                                 Kahan* streamOnly,
+                                 unsigned int nStars,
+                                 unsigned int nStreams,
+                                 unsigned badJacobians)
 {
     unsigned int i;
 
-    for (i = 0; i < number_streams; i++)
+    /* CHECKME: badJacobians supposed to only be for final? */
+    results->backgroundLikelihood = calculateLikelihood(bgOnly, nStars, 0);
+    for (i = 0; i < nStreams; i++)
     {
-        st_only_sum[i].sum += st_only_sum[i].correction;
-        st_only_sum[i].sum /= number_stars;
-        st_only_sum[i].sum -= 3.0;
-
-        results->streamLikelihoods[i] = st_only_sum[i].sum;
+        results->streamLikelihoods[i] = calculateLikelihood(&streamOnly[i], nStars, 0);
     }
+
+    results->likelihood = calculateLikelihood(prob, nStars, badJacobians);
 }
 
 /* separation init stuffs */
@@ -295,15 +309,12 @@ static int likelihood_sum(SeparationResults* results,
                           const StreamGauss sg,
                           RPoints* r_pts,
                           EvaluationState* es,
-                          const real* exp_stream_weights,
-                          const real sum_exp_weights,
 
                           const int do_separation,
                           StreamStats* ss,
                           FILE* f)
 {
     Kahan prob = ZERO_KAHAN;
-    Kahan bg_only = ZERO_KAHAN;
 
     unsigned int current_star_point;
     mwvector point;
@@ -316,7 +327,7 @@ static int likelihood_sum(SeparationResults* results,
     real epsilon_b = 0.0;
     mwmatrix cmatrix;
     unsigned int num_zero = 0;
-    unsigned int bad_jacobians = 0;
+    unsigned int badJacobians = 0;  /* CHECKME: Seems like this never changes */
 
     if (do_separation)
     {
@@ -352,20 +363,12 @@ static int likelihood_sum(SeparationResults* results,
 
     }
 
-    bg_only = es->bgSum;
+    calculateLikelihoods(results, &prob, &es->bgSum, es->streamSums,
+                         sp->number_stars, streams->number_streams, badJacobians);
 
-    prob.sum += prob.correction;
-    bg_only.sum += bg_only.correction;
-    bg_only.sum /= sp->number_stars;
-    bg_only.sum -= 3.0;
-
-    results->backgroundLikelihood = bg_only.sum;
 
     if (do_separation)
         printSeparationStats(ss, sp->number_stars, ap->number_streams);
-
-    /*  log10(x * 0.001) = log10(x) - 3.0 */
-    results->likelihood = (prob.sum / (sp->number_stars - bad_jacobians)) - 3.0;
 
     return 0;
 }
@@ -415,16 +418,12 @@ int likelihood(SeparationResults* results,
                         ap, sp, sc, streams,
                         sg, r_pts,
                         es,
-                        streams->expStreamWeights,
-                        streams->sumExpWeights,
 
                         do_separation,
                         ss,
                         f);
     t2 = mwGetTime();
     warn("Likelihood time = %f s\n", t2 - t1);
-
-    getStreamOnlyLikelihood(results, es->streamSums, sp->number_stars, streams->number_streams);
 
     mwFreeA(r_pts);
     mwFreeA(ss);
