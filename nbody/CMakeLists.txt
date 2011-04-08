@@ -54,14 +54,6 @@ endif()
 set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 include_directories(${NBODY_INCLUDE_DIR})
 
-option(NBODY_OPENCL
-       "Use OpenCL" OFF)
-
-cmake_dependent_option(NBODY_CRLIBM "Use crlibm for maths" ON
-                       "DOUBLEPREC" ON)
-mark_as_advanced(NBODY_CRLIBM)
-
-option(NBODY_OPENMP "Use OpenMP" ON)
 
 
 if(LUA_USE_STATIC)

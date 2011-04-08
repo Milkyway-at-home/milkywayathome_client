@@ -34,6 +34,7 @@ include(DownloadCrlibm)
 include(DownloadDSFMT)
 include(CheckCFlag)
 include(MSVCFlags)
+include(CMakeDependentOption)
 
 option(MSVC_USE_STATIC_CRT "Use static CRT" ON)
 mark_as_advanced(MSVC_USE_STATIC_CRT)
@@ -157,6 +158,9 @@ if(APPLE AND BOINC_APPLICATION)
   endif()
 endif()
 
+option(BOINC_APP_GRAPHICS
+       "BOINC app graphics" OFF)
+
 option(SEPARATION_OPENCL
         "Build the OpenCL separation" OFF)
 
@@ -173,10 +177,31 @@ if(NBODY_OPENCL OR SEPARATION_OPENCL)
 endif()
 
 option(NBODY
-    "Build the n-body code" ON)
+        "Build the n-body code" ON)
 
-option(BOINC_APP_GRAPHICS
-       "BOINC app graphics" OFF)
+option(NBODY_OPENMP
+         "Use OpenMP" ON)
+
+option(NBODY_OPENCL
+         "Use OpenCL" OFF)
+
+
+cmake_dependent_option(NBODY_CRLIBM "Use crlibm for maths" ON
+                         "DOUBLEPREC" ON)
+mark_as_advanced(NBODY_CRLIBM)
+
+
+
+option(MILKYWAY_IPHONE_APP "April fools?" OFF)
+mark_as_advanced(MILKYWAY_IPHONE_APP)
+if(MILKYWAY_IPHONE_APP)
+  add_definitions("-DMILKYWAY_IPHONE_APP")
+endif()
+
+
+################################################################################
+
+
 
 if(APPLE AND SYSTEM_IS_X86)
   # Any OS X system will surely have sse3
@@ -184,11 +209,6 @@ if(APPLE AND SYSTEM_IS_X86)
   set(CMAKE_CXX_FLAGS "-msse -msse2 -msse3 ${CMAKE_C_FLAGS}")
 endif()
 
-option(MILKYWAY_IPHONE_APP "April fools?" OFF)
-mark_as_advanced(MILKYWAY_IPHONE_APP)
-if(MILKYWAY_IPHONE_APP)
-  add_definitions("-DMILKYWAY_IPHONE_APP")
-endif()
 
 
 set(gcc_warnings "-Wall"
@@ -327,11 +347,15 @@ find_package(Boost)
 find_package(Popt REQUIRED)
 include_directories(${POPT_INCLUDE_DIR})
 
+if(NBODY_CRLIBM AND NOT CRLIBM_FOUND)
+  message(WARNING "N-body Crlibm requested, but Crlibm not found. Disabling N-body.")
+  set(NBODY OFF)
+endif()
+
 
 if(BOINC_APPLICATION)
   include_directories(${BOINC_INCLUDE_DIR})
 endif()
-
 
 include(SpecialLibs)
 
