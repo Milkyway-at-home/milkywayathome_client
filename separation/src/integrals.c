@@ -181,8 +181,8 @@ inline void bg_probability(const AstronomyParameters* ap,
         es->bgTmp = bg_probability_slow_hprob(ap, sc, r_pts, sg_dx, lbt, gPrime, es->streamTmps);
 }
 
-HOT ALWAYS_INLINE
-inline void multSumProbs(EvaluationState* es, real V_reff_xr_rp3)
+HOT
+static inline void multSumProbs(EvaluationState* es, real V_reff_xr_rp3)
 {
     unsigned int i;
 

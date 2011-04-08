@@ -36,8 +36,6 @@ void bg_probability(const AstronomyParameters* ap,
                     const LBTrig lbt, /* integral point */
                     EvaluationState* es);
 
-void multSumProbs(EvaluationState* es, real V_reff_xr_rp3);
-
 void integrate(const AstronomyParameters* ap,
                const IntegralArea* ia,
                const StreamConstants* sc,

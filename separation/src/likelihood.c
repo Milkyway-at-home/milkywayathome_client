@@ -38,30 +38,6 @@ static real probability_log(real bg, real sum_exp_weights)
     return mw_cmpzero_eps(bg, SEPARATION_EPS) ? -238.0 : mw_log10(bg / sum_exp_weights);
 }
 
-static real stream_sum(const SeparationResults* results,
-                       const unsigned int number_streams,
-                       const real* st_prob,
-                       Kahan* st_only_sum,
-                       const real* exp_stream_weights,
-                       const real sum_exp_weights,
-                       real bg_only)
-{
-    unsigned int i;
-    real st_only;
-    real star_prob = bg_only;
-
-    for (i = 0; i < number_streams; ++i)
-    {
-        st_only = st_prob[i] / results->streamIntegrals[i] * exp_stream_weights[i];
-        star_prob += st_only;
-        st_only = probability_log(st_only, sum_exp_weights);
-        KAHAN_ADD(st_only_sum[i], st_only);
-    }
-    star_prob /= sum_exp_weights;
-
-    return star_prob;
-}
-
 static const int calculateSeparation = 1;
 static const int twoPanel = 1;
 
@@ -180,7 +156,8 @@ static real likelihood_probability(const AstronomyParameters* ap,
                                    mwvector point,
                                    const mwmatrix cmatrix)
 {
-    real starProb;
+    unsigned int i;
+    real starProb, streamOnly;
 
     /* if q is 0, there is no probability */
     if (ap->q == 0.0)
@@ -190,33 +167,29 @@ static real likelihood_probability(const AstronomyParameters* ap,
     else
     {
         bg_probability(ap, sc, r_pts, sg_dx, rc.gPrime, lbt, es);
-        //multSumProbs(es, reff_xr_rp3);
 
-#if 1
         es->bgTmp *= reff_xr_rp3;  /* bg only */
-        for (unsigned int i = 0; i < ap->number_streams; ++i)
+        for (i = 0; i < ap->number_streams; ++i)
             es->streamTmps[i] *= reff_xr_rp3;
-#endif
-
     }
 
     es->bgTmp = (es->bgTmp / results->backgroundIntegral) * ap->exp_background_weight;
 
-    starProb = stream_sum(results,
-                          streams->number_streams,
-                          es->streamTmps,
-                          es->streamSums,
-                          streams->expStreamWeights,
-                          streams->sumExpWeights,
-                          es->bgTmp);
+    starProb = es->bgTmp; /* bg only */
+    for (i = 0; i < ap->number_streams; ++i)
+    {
+        streamOnly = es->streamTmps[i] / results->streamIntegrals[i] * streams->expStreamWeights[i];
+        starProb += streamOnly;
+        streamOnly = probability_log(streamOnly, streams->sumExpWeights);
+        KAHAN_ADD(es->streamSums[i], streamOnly);
+    }
+    starProb /= streams->sumExpWeights;
 
     es->bgTmp = probability_log(es->bgTmp, streams->sumExpWeights);
     KAHAN_ADD(es->bgSum, es->bgTmp);
 
-
     if (do_separation)
         separation(f, ap, results, cmatrix, ss, es->streamTmps, es->bgTmp, epsilon_b, point);
-
 
     return starProb;
 }
