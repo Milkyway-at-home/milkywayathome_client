@@ -26,6 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_cal_types.h"
 #include "separation_cal_kernelgen.h"
 
+PFNCALCTXWAITFOREVENTS mw_calCtxWaitForEvents = NULL;
 
 static FILE* _isaLogFunctionFile = NULL;
 
@@ -988,6 +989,20 @@ CALresult separationCALInit(MWCALInfo* ci,
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to init CAL", err);
+        return err;
+    }
+
+    err = calExtSupported(0x8009);
+    if (err != CAL_RESULT_OK)
+    {
+        cal_warn("calCtxWaitForEvents not supported\n", err);
+        return err;
+    }
+
+    err = calExtGetProc((CALextproc*) &mw_calCtxWaitForEvents, 0x8009, "calCtxWaitForEvents");
+    if (err != CAL_RESULT_OK)
+    {
+        cal_warn("Error getting calCtxWaitForEvents", err);
         return err;
     }
 

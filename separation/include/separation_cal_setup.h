@@ -26,6 +26,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "evaluation_state.h"
 #include "separation_cal_types.h"
 
+#include <cal.h>
+#include <cal_ext.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -55,6 +58,10 @@ CALresult createSeparationBuffers(MWCALInfo* ci,
                                   const CALSeparationSizes* sizes);
 
 CALresult releaseSeparationBuffers(MWCALInfo* ci, SeparationCALMem* cm);
+
+typedef CALresult (CALAPIENTRYP PFNCALCTXWAITFOREVENTS)(CALcontext ctx, CALevent *event, CALuint num, CALuint flags);
+CALAPI PFNCALCTXWAITFOREVENTS mw_calCtxWaitForEvents;
+
 
 #ifdef __cplusplus
 }

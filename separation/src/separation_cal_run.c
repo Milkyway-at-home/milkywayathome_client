@@ -28,6 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_cal_kernelgen.h"
 
 
+
 static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain)
 {
     CALresult err;
@@ -66,7 +67,12 @@ static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain)
         return err;
     }
 
-    while (calCtxIsEventDone(ci->calctx, ev) == CAL_RESULT_PENDING);
+    err = mw_calCtxWaitForEvents(ci->calctx, &ev, 1, 0);
+    if (err != CAL_RESULT_OK)
+    {
+        cal_warn("Error waiting for kernel", err);
+        return err;
+    }
 
     return CAL_RESULT_OK;
 }
