@@ -231,11 +231,17 @@ static CALuint64 deviceFlopsEstimate(const CALdeviceattribs* d)
 /* Milliseconds */
 #define TIME_PER_ITER (100.0 / 3.0)
 
-static CALuint deviceChunkEstimate(const AstronomyParameters* ap, const IntegralArea* ia, const CALdeviceattribs* devAttribs)
+static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
+                                   const IntegralArea* ia,
+                                   const CALdeviceattribs* devAttribs,
+                                   CALdouble responsivenessFactor)
 {
     CALuint64 flops, iterFlops;
     CALdouble effFlops, estIterTime;
     CALuint nChunk;
+
+    if (responsivenessFactor <= 0.01)
+        return 1;
 
     flops = deviceFlopsEstimate(devAttribs);
     effFlops = 0.8 * (CALdouble) flops;
@@ -244,14 +250,18 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap, const Integral
     estIterTime = 1000.0 * (CALdouble) iterFlops / effFlops; /* milliseconds */
 
     nChunk = (CALuint) (estIterTime / TIME_PER_ITER);
+    nChunk = (CALdouble) nChunk * responsivenessFactor;
     if (nChunk <= 0)
         nChunk = 1;
 
+    if (nChunk >= ia->mu_steps)
+        return ia->mu_steps;
+
     /* Round up to next evenly divisible integer */
-    while (!mwDivisible(ia->mu_steps, nChunk) && nChunk < ia->mu_steps / 2)
+    while (!mwDivisible(ia->mu_steps, nChunk) && nChunk <= ia->mu_steps)
         ++nChunk;
 
-    warn("Estimated iteration time %f ms. Dividing into %u chunks\n", estIterTime, nChunk);
+    warn("Estimated iteration time %f ms. Dividing into %u chunks using a responsiveness factor of %f\n", estIterTime, nChunk, responsivenessFactor);
 
     return nChunk;
 }
@@ -265,7 +275,7 @@ static CALresult findCALChunks(const AstronomyParameters* ap,
     CALresult err = CAL_RESULT_OK;
     CALuint nChunk;
 
-    nChunk = clr->nonResponsive ? 1 : deviceChunkEstimate(ap, ia, &ci->devAttribs);
+    nChunk = deviceChunkEstimate(ap, ia, &ci->devAttribs, clr->responsivenessFactor);
     if (nChunk == 0)
     {
         warn("Invalid number of chunks: %u\n", nChunk);

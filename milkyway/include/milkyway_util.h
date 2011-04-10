@@ -58,6 +58,7 @@ typedef struct
     cl_uint devNum;
     cl_bool nonResponsive;  /* If screen redraws aren't important. Either don't care or something like an outputless Tesla */
     cl_uint numChunk;
+    cl_double responsivenessFactor;
 } CLRequest;
 
 #else
@@ -67,6 +68,7 @@ typedef struct
 {
     unsigned int devNum;
     int nonResponsive;
+    double responsivenessFactor;
 } CLRequest;
 
 #endif /* MILKYWAY_OPENCL */

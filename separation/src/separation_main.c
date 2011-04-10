@@ -41,11 +41,13 @@ typedef struct
     int cleanup_checkpoint;
     int usePlatform;
     int useDevNumber;  /* Choose CL platform and device */
-    int nonResponsive;
-    unsigned int numChunk;
+    int nonResponsive;  /* FIXME: Make this go away */
+    unsigned int numChunk;  /* Also this */
+    double responsivenessFactor;
 } SeparationFlags;
 
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0 }
+/* Default responsiveness factor 1.0 */
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 1.0 }
 
 static void freeSeparationFlags(SeparationFlags* sf)
 {
@@ -77,7 +79,7 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 {
     clr->devNum = sf->useDevNumber;
-    clr->nonResponsive = sf->nonResponsive;
+    clr->responsivenessFactor = sf->responsivenessFactor;
 }
 
 #else
@@ -94,7 +96,7 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
     static int server_params = 0;
     static const char** rest;
     const char** argvCopy;
-    static SeparationFlags sf;
+    static SeparationFlags sf = EMPTY_SEPARATION_FLAGS;
 
     static const struct poptOption options[] =
     {
@@ -148,15 +150,15 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
         },
 
         {
-            "non-responsive", 'r',
-            POPT_ARG_NONE, &sf.nonResponsive,
-            0, "Don't care about responsiveness on GPU", NULL
-        },
-
-        {
             "num-chunk", 'u',
             POPT_ARG_INT, &sf.numChunk,
             0, "Manually set number of chunks per GPU iteration", NULL
+        },
+
+        {
+            "responsiveness-factor", 'r',
+            POPT_ARG_DOUBLE, &sf.responsivenessFactor,
+            0, "Responsiveness factor for GPU", NULL
         },
       #endif /* SEPARATION_OPENCL || SEPARATION_CAL */
 
