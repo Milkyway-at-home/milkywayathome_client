@@ -266,13 +266,12 @@ static CALresult findCALChunks(const AstronomyParameters* ap,
     CALuint nChunk;
 
     nChunk = clr->nonResponsive ? 1 : deviceChunkEstimate(ap, ia, &ci->devAttribs);
-    if (nChunk == 0 || (!mwEven(nChunk) && nChunk != 1))
+    if (nChunk == 0)
     {
         warn("Invalid number of chunks: %u\n", nChunk);
         return CAL_RESULT_ERROR;
     }
-
-    if (nChunk == 1)
+    else if (nChunk == 1)
     {
         chunks->nChunkR = 1;
         chunks->nChunkMu = 1;
