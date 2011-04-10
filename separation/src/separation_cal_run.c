@@ -248,9 +248,9 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
     iterFlops = estimateWUFLOPsPerIter(ap, ia);
 
     estIterTime = 1000.0 * (CALdouble) iterFlops / effFlops; /* milliseconds */
+    estIterTime *= responsivenessFactor;
 
     nChunk = (CALuint) (estIterTime / TIME_PER_ITER);
-    nChunk = (CALdouble) nChunk * responsivenessFactor;
     if (nChunk <= 0)
         nChunk = 1;
 
