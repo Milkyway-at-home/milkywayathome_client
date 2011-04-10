@@ -408,7 +408,6 @@ static void calculateCALSeparationSizes(CALSeparationSizes* sizes,
 CALresult integrateCAL(const AstronomyParameters* ap,
                        const IntegralArea* ia,
                        const StreamGauss sg,
-                       real* st_probs,
                        EvaluationState* es,
                        const CLRequest* clr,
                        MWCALInfo* ci)
@@ -424,7 +423,7 @@ CALresult integrateCAL(const AstronomyParameters* ap,
     if (err != CAL_RESULT_OK)
         return err;
 
-    es->cut->bgIntegral = runIntegral(ap, ia, es, clr, ci, &cm, st_probs);
+    es->cut->bgIntegral = runIntegral(ap, ia, es, clr, ci, &cm, es->cut->streamIntegrals);
 
     err = releaseSeparationBuffers(ci, &cm);
     if (err != CAL_RESULT_OK)
