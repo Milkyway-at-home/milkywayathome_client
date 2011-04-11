@@ -103,6 +103,12 @@ static CALresult mwDestroyCALInfo(MWCALInfo* ci)
         err |= erri;
     }
 
+    if (ci->image)
+    {
+        calImageFree(ci->image);
+        ci->image = 0;
+    }
+
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to cleanup CAL info", err);
 
