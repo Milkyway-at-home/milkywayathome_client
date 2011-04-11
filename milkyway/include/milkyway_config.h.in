@@ -26,6 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 DOUBLEPREC
 #cmakedefine01 MW_ENABLE_DEBUG
 #cmakedefine01 MILKYWAY_OPENCL
+#cmakedefine01 MILKYWAY_CAL
 
 #cmakedefine01 HAVE_EXP10
 #cmakedefine01 HAVE_SINCOS

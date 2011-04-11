@@ -48,7 +48,7 @@ int mwBoincInit(const char* appname, int useDebug)
     }
     else
     {
-      #if MILKYWAY_OPENCL
+      #if MILKYWAY_OPENCL || MILKYWAY_CAL
         mwGetBoincOptionsDefault(&options);
         options.normal_thread_priority = 1;
         rc = boinc_init_options(&options);

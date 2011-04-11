@@ -176,6 +176,10 @@ if(NBODY_OPENCL OR SEPARATION_OPENCL)
   set(MILKYWAY_OPENCL ON)
 endif()
 
+if(SEPARATION_CAL)
+  set(MILKYWAY_CAL ON)
+endif()
+
 option(NBODY
         "Build the n-body code" ON)
 
