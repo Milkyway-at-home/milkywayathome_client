@@ -42,7 +42,7 @@ static double1 div_custom(double1 x, double1 y)
 {
     double1 result;
 
-    //il_func(_out(result), x, y)
+    il_func(_out(result), x, y)
     {
         emit_comment("div_custom");
         //float1 yf = cast_type<float1>(y);
@@ -56,7 +56,7 @@ static double1 div_custom(double1 x, double1 y)
         double1 tmp5 = mad(-y, tmp4, x);
         result = mad(tmp5, tmp3, tmp4);
     }
-    //il_endfunc
+    il_endfunc
 
     return result;
 }
@@ -65,7 +65,7 @@ static double1 sqrt_custom(double1 x)
 {
     double1 result;
 
-    //il_func(_out(result), x)
+    il_func(_out(result), x)
     {
         emit_comment("sqrt_custom");
 
@@ -81,7 +81,7 @@ static double1 sqrt_custom(double1 x)
 
         result = tmp * mad(y, -0.0625, 0.75);
     }
-    //il_endfunc
+    il_endfunc
 
     return result;
 }
@@ -92,7 +92,7 @@ static double1 exp_custom(double1 x)
 {
     double1 result;
 
-    //il_func(_out(result), x)
+    il_func(_out(result), x)
     {
         emit_comment("exp_custom");
 
@@ -115,7 +115,7 @@ static double1 exp_custom(double1 x)
 
         result = ldexp(divRes, expi);
     }
-    //il_endfunc
+    il_endfunc
 
     return result;
 }
