@@ -287,7 +287,7 @@ static CALresult writeConstantBufferDouble(MWMemRes* mr,
     for (i = 0; i < height; ++i)
     {
         memcpy(&bufPtr[i * numberElements * pitch],
-               &dataPtr[i * width * numberElements],
+               &dataPtr[i * numberElements * width],
                rowWidth);
     }
 
@@ -442,16 +442,13 @@ static CALresult zeroBuffer(MWMemRes* mr, CALuint numberElements, CALuint width,
 {
     CALresult err;
     CALdouble* ptr;
-    size_t rowWidth;
-    CALuint i, pitch;
+    CALuint pitch;
 
     err = mapMWMemRes(mr, (CALvoid**) &ptr, &pitch);
     if (err != CAL_RESULT_OK)
         return err;
 
-    rowWidth = sizeof(real) * width * numberElements;
-    for (i = 0; i < height; ++i)
-        memset(&ptr[i * numberElements * pitch], 0, rowWidth);
+    memset(ptr, 0, height * pitch * numberElements * sizeof(real));
 
     err = unmapMWMemRes(mr);
     if (err != CAL_RESULT_OK)
@@ -475,18 +472,18 @@ static CALresult createOutputBuffer2D(MWMemRes* mr, MWCALInfo* ci, CALuint width
         return err;
     }
 
+    err = zeroBuffer(mr, 2, width, height);
+    if (err != CAL_RESULT_OK)
+    {
+        cal_warn("Failed to zero output buffer", err);
+        return err;
+    }
+
     /* Get the handle for the context */
     err = getMemoryHandle(mr, ci);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create handle for output buffer", err);
-        return err;
-    }
-
-    err = zeroBuffer(mr, 2, width, height);
-    if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Failed to zero output buffer", err);
         return err;
     }
 
@@ -622,14 +619,14 @@ static CALresult createLBTrigBuffers(MWCALInfo* ci,
 
     getSplitLBTrig(ap, ia, &lTrig, &bTrig);
 
-    err = createConstantBuffer2D(&cm->lTrig, ci, (CALdouble*) lTrig, formatReal2, CAL_TRUE, ia->nu_steps, ia->mu_steps);
+    err = createConstantBuffer2D(&cm->lTrig, ci, (CALdouble*) lTrig, formatReal2, CAL_FALSE, ia->nu_steps, ia->mu_steps);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create l trig buffer", err);
         goto fail;
     }
 
-    err = createConstantBuffer2D(&cm->bTrig, ci, (CALdouble*) bTrig, formatReal1, CAL_TRUE, ia->nu_steps, ia->mu_steps);
+    err = createConstantBuffer2D(&cm->bTrig, ci, (CALdouble*) bTrig, formatReal1, CAL_FALSE, ia->nu_steps, ia->mu_steps);
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to create b trig buffer", err);
 
