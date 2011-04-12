@@ -273,7 +273,7 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
         ++nChunk;
 
     warn("Estimated iteration time %f ms\n"
-         "Target frequency %f ms, polling mode %d, using responsiveness factor of %f\n"
+         "Target frequency %f Hz, polling mode %d, using responsiveness factor of %f\n"
          "Dividing into %u chunks\n",
          estIterTime, clr->targetFrequency, clr->pollingMode, clr->responsivenessFactor, nChunk);
 
