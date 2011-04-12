@@ -269,26 +269,29 @@ CALresult unmapMWMemRes(MWMemRes* mr)
 }
 
 static CALresult writeConstantBufferDouble(MWMemRes* mr,
-                                           const CALdouble* dataPtr,
+                                           const CALdouble* _dataPtr,
                                            CALuint numberElements,
                                            CALuint width,
                                            CALuint height)
 {
-    CALuint i, pitch;
-    CALdouble* bufPtr;
+    CALuint i, pitch, elemSize;
     size_t rowWidth;
+    CALchar* dataPtr;
+    CALchar* bufPtr;
     CALresult err = CAL_RESULT_OK;
 
     err = mapMWMemRes(mr, (CALvoid**) &bufPtr, &pitch);
     if (err != CAL_RESULT_OK)
         return err;
 
-    rowWidth = sizeof(real) * numberElements * width;
+    elemSize = numberElements * sizeof(CALdouble);
+    rowWidth = width * elemSize;
+    dataPtr = (CALchar*) _dataPtr;
     for (i = 0; i < height; ++i)
     {
-        memcpy(&bufPtr[i * numberElements * pitch],
-               &dataPtr[i * width * numberElements],
-               rowWidth);
+        memcpy(bufPtr, dataPtr, rowWidth);
+        dataPtr += width * elemSize;
+        bufPtr += pitch * elemSize;
     }
 
     return unmapMWMemRes(mr);
@@ -441,17 +444,22 @@ static CALresult createConstantBuffer1D(MWMemRes* mr,
 static CALresult zeroBuffer(MWMemRes* mr, CALuint numberElements, CALuint width, CALuint height)
 {
     CALresult err;
-    CALdouble* ptr;
+    CALchar* ptr;
     size_t rowWidth;
     CALuint i, pitch;
+    CALuint elemSize;
 
     err = mapMWMemRes(mr, (CALvoid**) &ptr, &pitch);
     if (err != CAL_RESULT_OK)
         return err;
 
-    rowWidth = sizeof(real) * width * numberElements;
+    elemSize = sizeof(CALdouble) * numberElements;
+    rowWidth = elemSize * width;
     for (i = 0; i < height; ++i)
-        memset(&ptr[i * numberElements * pitch], 0, rowWidth);
+    {
+        memset(ptr, 0, rowWidth);
+        ptr += elemSize * pitch;
+    }
 
     err = unmapMWMemRes(mr);
     if (err != CAL_RESULT_OK)
