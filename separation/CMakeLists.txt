@@ -34,7 +34,7 @@ include(CMakeDependentOption)
 
 set(separation_VERSION_MAJOR 0
                CACHE INTERNAL "Separation version number")
-set(separation_VERSION_MINOR 61
+set(separation_VERSION_MINOR 62
                CACHE INTERNAL "Separation version number")
 set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}"
                CACHE INTERNAL "Separation version number")
