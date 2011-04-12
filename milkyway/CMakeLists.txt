@@ -102,6 +102,10 @@ endif()
 add_library(milkyway STATIC ${mw_lib_src} ${mw_lib_headers})
 target_link_libraries(milkyway dsfmt)
 
+if(WIN32)
+  target_link_libraries(milkyway winmm)
+endif()
+
 
 set_target_properties(milkyway PROPERTIES
                       COMPILE_DEFINITIONS "MILKYWAY_MATH_COMPILATION")

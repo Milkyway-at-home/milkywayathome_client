@@ -59,6 +59,8 @@ typedef struct
     cl_bool nonResponsive;  /* If screen redraws aren't important. Either don't care or something like an outputless Tesla */
     cl_uint numChunk;
     cl_double responsivenessFactor;
+    cl_double targetFrequency;
+    cl_int pollingMode;
 } CLRequest;
 
 #else
@@ -69,6 +71,8 @@ typedef struct
     unsigned int devNum;
     int nonResponsive;
     double responsivenessFactor;
+    double targetFrequency;
+    int pollingMode;
 } CLRequest;
 
 #endif /* MILKYWAY_OPENCL */
@@ -135,6 +139,15 @@ int mwWriteFile(const char* filename, const char* str);
 
 double mwGetTime();
 double mwGetTimeMilli();
+
+#ifdef _WIN32
+  #define mwMilliSleep(x) Sleep((x))
+#else
+#define mwMilliSleep(x) usleep(1000 * (x))
+#endif /* _WIN32 */
+
+int mwSetTimerMinResolution();
+int mwResetTimerResolution();
 
 #ifndef _WIN32
 long mwGetTimeMicro();

@@ -29,7 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 
-static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain)
+static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain, CALint pollingMode)
 {
     CALresult err;
     CALevent ev = 0;
@@ -67,11 +67,23 @@ static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain)
         return err;
     }
 
-    err = mw_calCtxWaitForEvents(ci->calctx, &ev, 1, 0);
-    if (err != CAL_RESULT_OK)
+    if (pollingMode > 0)
     {
-        cal_warn("Error waiting for kernel", err);
-        return err;
+        while (calCtxIsEventDone(ci->calctx, ev) == CAL_RESULT_PENDING)
+            mwMilliSleep(pollingMode);
+    }
+    else if (pollingMode == 0)
+    {
+        err = mw_calCtxWaitForEvents(ci->calctx, &ev, 1, 0);
+        if (err != CAL_RESULT_OK)
+        {
+            cal_warn("Error waiting for kernel", err);
+            return err;
+        }
+    }
+    else /* Busy wait */
+    {
+        while (calCtxIsEventDone(ci->calctx, ev) == CAL_RESULT_PENDING);
     }
 
     return CAL_RESULT_OK;
@@ -228,19 +240,16 @@ static CALuint64 deviceFlopsEstimate(const CALdeviceattribs* d)
     return flops;
 }
 
-/* Milliseconds */
-#define TIME_PER_ITER (100.0 / 3.0)
-
 static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
                                    const IntegralArea* ia,
                                    const CALdeviceattribs* devAttribs,
-                                   CALdouble responsivenessFactor)
+                                   const CLRequest* clr)
 {
     CALuint64 flops, iterFlops;
-    CALdouble effFlops, estIterTime;
+    CALdouble effFlops, estIterTime, timePerIter;
     CALuint nChunk;
 
-    if (responsivenessFactor <= 0.01)
+    if (clr->responsivenessFactor <= 0.01)
         return 1;
 
     flops = deviceFlopsEstimate(devAttribs);
@@ -248,9 +257,11 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
     iterFlops = estimateWUFLOPsPerIter(ap, ia);
 
     estIterTime = 1000.0 * (CALdouble) iterFlops / effFlops; /* milliseconds */
-    estIterTime *= responsivenessFactor;
+    estIterTime *= clr->responsivenessFactor;
 
-    nChunk = (CALuint) (estIterTime / TIME_PER_ITER);
+    timePerIter = 1000.0 / clr->targetFrequency;
+
+    nChunk = (CALuint) (estIterTime / timePerIter);
     if (nChunk <= 0)
         nChunk = 1;
 
@@ -261,7 +272,10 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
     while (!mwDivisible(ia->mu_steps, nChunk) && nChunk <= ia->mu_steps)
         ++nChunk;
 
-    warn("Estimated iteration time %f ms. Dividing into %u chunks using a responsiveness factor of %f\n", estIterTime, nChunk, responsivenessFactor);
+    warn("Estimated iteration time %f ms\n"
+         "Target frequency %f ms, polling mode %d, using responsiveness factor of %f\n"
+         "Dividing into %u chunks\n",
+         estIterTime, clr->targetFrequency, clr->pollingMode, clr->responsivenessFactor, nChunk);
 
     return nChunk;
 }
@@ -275,7 +289,7 @@ static CALresult findCALChunks(const AstronomyParameters* ap,
     CALresult err = CAL_RESULT_OK;
     CALuint nChunk;
 
-    nChunk = deviceChunkEstimate(ap, ia, &ci->devAttribs, clr->responsivenessFactor);
+    nChunk = deviceChunkEstimate(ap, ia, &ci->devAttribs, clr);
     if (nChunk == 0)
     {
         warn("Invalid number of chunks: %u\n", nChunk);
@@ -306,6 +320,7 @@ static inline CALuint runNuStep(MWCALInfo* ci,
                                 SeparationCALMem* cm,
                                 const IntegralArea* ia,
                                 const SeparationCALChunks* chunks,
+                                CALint pollingMode,
                                 CALuint nuStep)
 {
     CALdomain domain;
@@ -325,7 +340,7 @@ static inline CALuint runNuStep(MWCALInfo* ci,
             if (err != CAL_RESULT_OK)
                 break;
 
-            err = runKernel(ci, &domain);
+            err = runKernel(ci, &domain, pollingMode);
             if (err != CAL_RESULT_OK)
                 goto run_step_exit;
         }
@@ -386,7 +401,7 @@ static real runIntegral(const AstronomyParameters* ap,
     {
         t1 = mwGetTimeMilli();
 
-        err = runNuStep(ci, cm, ia, &chunks, es->nu_step);
+        err = runNuStep(ci, cm, ia, &chunks, clr->pollingMode, es->nu_step);
         if (err != CAL_RESULT_OK)
             break;
         t2 = mwGetTimeMilli();

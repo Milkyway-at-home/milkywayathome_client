@@ -26,6 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_cal_types.h"
 #include "separation_cal_kernelgen.h"
 
+
 PFNCALCTXWAITFOREVENTS mw_calCtxWaitForEvents = NULL;
 
 static FILE* _isaLogFunctionFile = NULL;
@@ -943,6 +944,10 @@ static CALresult separationSetupCAL(MWCALInfo* ci,
 {
     CALresult err;
 
+	/* We need to increase timer resolution to prevent big slowdown on windows when CPU is loaded. */
+    if (mwSetTimerMinResolution())
+        return CAL_RESULT_ERROR;
+
     ci->image = createCALImageFromGeneratedKernel(ci, ap, sc);
     if (!ci->image)
     {
@@ -977,6 +982,7 @@ CALresult mwCALShutdown(MWCALInfo* ci)
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to shutdown CAL", err);
 
+    mwResetTimerResolution();
     return err;
 }
 

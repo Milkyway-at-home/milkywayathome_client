@@ -44,10 +44,19 @@ typedef struct
     int nonResponsive;  /* FIXME: Make this go away */
     unsigned int numChunk;  /* Also this */
     double responsivenessFactor;
+    double targetFrequency;
+    int pollingMode;
 } SeparationFlags;
 
-/* Default responsiveness factor 1.0 */
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 1.0 }
+#define DEFAULT_POLLING_MODE 1
+#define DEFAULT_RESPONSIVENESS_FACTOR 1.0
+#define DEFAULT_TARGET_FREQUENCY 30.0
+
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, \
+                                 DEFAULT_RESPONSIVENESS_FACTOR,                  \
+                                 DEFAULT_TARGET_FREQUENCY,                       \
+                                 DEFAULT_POLLING_MODE                            \
+                               }
 
 static void freeSeparationFlags(SeparationFlags* sf)
 {
@@ -80,6 +89,8 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 {
     clr->devNum = sf->useDevNumber;
     clr->responsivenessFactor = sf->responsivenessFactor;
+    clr->targetFrequency = clr->targetFrequency <= 0.01 ? DEFAULT_TARGET_FREQUENCY : clr->targetFrequency;
+    clr->pollingMode = sf->pollingMode;
 }
 
 #else
@@ -159,6 +170,18 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
             "responsiveness-factor", 'r',
             POPT_ARG_DOUBLE, &sf.responsivenessFactor,
             0, "Responsiveness factor for GPU", NULL
+        },
+
+        {
+            "gpu-target-frequency", 'q',
+            POPT_ARG_DOUBLE, &sf.targetFrequency,
+            0, "Target frequency for taks" , NULL
+        },
+
+        {
+            "gpu-polling-mode", 'm',
+            POPT_ARG_INT, &sf.pollingMode,
+            0, "Interval for polling GPU (< 0 for busy wait, 0 for calCtxWaitForEvents(), > 1 sets interval in ms)" , NULL
         },
       #endif /* SEPARATION_OPENCL || SEPARATION_CAL */
 

@@ -218,6 +218,34 @@ double mwGetTimeMilli()
     return 1.0e3 * mwGetTime();
 }
 
+static UINT mwGetMinTimerResolution()
+{
+    TIMECAPS tc;
+
+    if (timeGetDevCaps(&tc, sizeof(tc)) != TIMERR_NOERROR)
+    {
+        warn("Failed to get timer resolution\n");
+        return 0;
+    }
+
+	/* target 1-millisecond target resolution */
+    return min(max(tc.wPeriodMin, 1), tc.wPeriodMax);
+}
+
+int mwSetTimerMinResolution()
+{
+    if (timeBeginPeriod(mwGetMinTimerResolution()) != TIMERR_NOERROR)
+        return warn1("Failed to set timer resolution\n");
+    return 0;
+}
+
+int mwResetTimerResolution()
+{
+    if (timeEndPeriod(mwGetMinTimerResolution()) != TIMERR_NOERROR)
+        return warn1("Failed to end timer resolution\n");
+    return 0;
+}
+
 #else
 
 /* Seconds */
@@ -242,6 +270,16 @@ long mwGetTimeMicro()
 double mwGetTimeMilli()
 {
     return (double) mwGetTimeMicro() / 1.0e3;
+}
+
+int mwSetTimerMinResolution()
+{
+	return 0;
+}
+
+int mwResetTimerResolution()
+{
+    return 0;
 }
 
 #endif
