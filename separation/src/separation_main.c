@@ -89,7 +89,7 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 {
     clr->devNum = sf->useDevNumber;
     clr->responsivenessFactor = sf->responsivenessFactor;
-    clr->targetFrequency = clr->targetFrequency <= 0.01 ? DEFAULT_TARGET_FREQUENCY : clr->targetFrequency;
+    clr->targetFrequency = sf->targetFrequency <= 0.01 ? DEFAULT_TARGET_FREQUENCY : sf->targetFrequency;
     clr->pollingMode = sf->pollingMode;
 }
 
@@ -175,7 +175,7 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
         {
             "gpu-target-frequency", 'q',
             POPT_ARG_DOUBLE, &sf.targetFrequency,
-            0, "Target frequency for taks" , NULL
+            0, "Target frequency for GPU tasks" , NULL
         },
 
         {
