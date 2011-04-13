@@ -378,12 +378,28 @@ static int separationInit(const char* appname)
     mwDisableDenormalsSSE();
   #endif
 
+  #if SEPARATION_CAL && defined(_WIN32)
+    /* We need to increase timer resolution to prevent big slowdown on windows when CPU is loaded. */
+    if (mwSetTimerMinResolution())
+        return 1;
+  #endif /* SEPARATION_CAL && defined(_WIN32) */
+
     return 0;
 }
 
 static void printVersion() { }
 
 #endif /* BOINC_APPLICATION */
+
+
+static int separationSpecialCleanup()
+{
+  #if SEPARATION_CAL && defined(_WIN32)
+    mwResetTimerResolution();
+  #endif /* SEPARATION_CAL && defined(_WIN32) */
+
+    return 0;
+}
 
 
 #ifdef MILKYWAY_IPHONE_APP
@@ -425,6 +441,8 @@ int main(int argc, const char* argv[])
   #if BOINC_APPLICATION
     mw_finish(rc);
   #endif
+
+    separationSpecialCleanup();
 
     return rc;
 }

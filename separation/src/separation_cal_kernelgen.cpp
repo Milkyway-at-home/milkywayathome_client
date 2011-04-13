@@ -131,19 +131,32 @@ static double2 kahanAdd(double2 kSum, double1 x)
 
 
 /* For reference: ATI application register usage in 1, 2, 3 stream cases: 13, 19, 25 respectively */
-static void createSeparationKernelCore(input2d<double2>& bgInput,
-                                       std::vector< input2d<double2> >& streamInput,
-                                       input2d<double2>& rPts,
-                                       input1d<double2>& rConsts,
-                                       input2d<double2>& lTrigBuf,
-                                       input2d<double1>& bTrigBuf,
-                                       const AstronomyParameters* ap,
-                                       const StreamConstants* sc)
+static void createSeparationKernelCore(const AstronomyParameters* ap,
+                                       const StreamConstants* sc,
+
+                                       bool likelihoodKernel,  /* integral kernel or likelihood? */
+
+                                       /* Arguments used by integral kernel */
+                                       input2d<double2>* rPts,
+                                       input1d<double2>* rConsts,
+                                       input2d<double2>* lTrigBuf,
+                                       input2d<double1>* bTrigBuf,
+                                       named_variable<float1>* nuStep,
+                                       named_variable<double1>* nu_id,
+
+                                       /* Arguments used by likelihood kernel */
+                                       input2d<double2>* starsXY,
+                                       input2d<double1>* starsZ)
 {
     unsigned int j;
+
+    input2d<double2> bgInput(4);
+    std::vector< input2d<double2> > streamInputs;
+
+    for (j = 0; j < ap->number_streams; ++j)
+        streamInputs.push_back(input2d<double2>(5 + j));
+
     indexed_register<double1> sg_dx("cb0");
-    named_variable<float1> nu_step("cb1[0].x");
-    named_variable<double1> nu_id("cb1[0].zw");
     named_variable<float2> pos("vWinCoord0"); /* .x() = r, .y() = mu */
 
     named_variable<double2> bgOut("o0");
@@ -152,8 +165,8 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     for (j = 0; j < ap->number_streams; ++j)
         streamOutputRegisters.push_back(str(format("o%u") % (j + 1)));
 
-    double2 lTrig = lTrigBuf(nu_step, pos.y());
-    double1 bSin = bTrigBuf(nu_step, pos.y());
+    double2 lTrig = (*lTrigBuf)(*nuStep, pos.y());
+    double1 bSin = (*bTrigBuf)(*nuStep, pos.y());
 
     float2 i = float2(pos.x(), 0.0);
 
@@ -165,7 +178,7 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
 
     il_whileloop
     {
-        double2 rPt = rPts[i];
+        double2 rPt = (*rPts)[i];
 
         double1 x = mad(rPt.x(), lTrig.x(), ap->m_sun_r0);
         double1 y = rPt.x() * lTrig.y();
@@ -184,7 +197,7 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
         if (ap->aux_bg_profile)
         {
             /* TODO: Checkme */
-            double1 r_in_mag = sg_dx[cast_type<int1>(i.y())] + rConsts[pos.x()].y();
+            double1 r_in_mag = sg_dx[cast_type<int1>(i.y())] + (*rConsts)[pos.x()].y();
             double1 tmp = mad(ap->bg_b, r_in_mag, ap->bg_c);
             tmp = mad(ap->bg_a, r_in_mag * r_in_mag, tmp);
             bg_int = mad(tmp, rPt.y(), bg_int);
@@ -222,11 +235,11 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     }
     il_endloop
 
-    double1 V_reff_xr_rp3 = nu_id * rConsts(pos.x()).x();
+    double1 V_reff_xr_rp3 = (*nu_id) * (*rConsts)(pos.x()).x();
     std::vector<double2> streamRead;
     double2 bgRead = bgInput[pos];
     for (j = 0; j < ap->number_streams; ++j)
-        streamRead.push_back(streamInput[j][pos]);
+        streamRead.push_back(streamInputs[j][pos]);
 
     /* Put these multiplies together */
     bg_int *= V_reff_xr_rp3;
@@ -255,21 +268,17 @@ static void createSeparationKernelCore(input2d<double2>& bgInput,
     streamIntegrals.clear();
 }
 
-std::string createSeparationKernel(const AstronomyParameters* ap,
-                                   const StreamConstants* sc,
-                                   CALuint device)
+static int separationKernelHeader(const AstronomyParameters* ap,
+                                  std::stringstream& code)
 {
-    unsigned int numRegSgDx;
-    unsigned int sgdxSize;
-    unsigned int i;
-    std::stringstream code;
+    CALuint i, numRegSgDx, sgdxSize;
 
     sgdxSize = sizeof(real) * ap->convolve;
     numRegSgDx = sgdxSize / 16;
     if (sgdxSize % 16 != 0)
     {
         warn("sg_dx size not divisible by register size\n");
-        return "";
+        return 1;
     }
 
     code << "il_ps_2_0\n";
@@ -282,6 +291,18 @@ std::string createSeparationKernel(const AstronomyParameters* ap,
 
     code << "dcl_input_position_interp(linear_noperspective) vWinCoord0.xy__\n";
 
+    return 0;
+}
+
+std::string createSeparationIntegralKernel(const AstronomyParameters* ap,
+                                           const StreamConstants* sc,
+                                           CALuint device)
+{
+    std::stringstream code;
+
+    if (separationKernelHeader(ap, code))
+        return "";
+
     Source::begin(device);
 
     input2d<double2> rPts(0);
@@ -289,13 +310,12 @@ std::string createSeparationKernel(const AstronomyParameters* ap,
     input2d<double2> lTrig(2);
     input2d<double1> bTrig(3);
 
-    input2d<double2> bgInput(4);
-    std::vector< input2d<double2> > streamInputs;
+    named_variable<float1> nuStep("cb1[0].x");
+    named_variable<double1> nuId("cb1[0].zw");
 
-    for (i = 0; i < ap->number_streams; ++i)
-        streamInputs.push_back(input2d<double2>(5 + i));
-
-    createSeparationKernelCore(bgInput, streamInputs, rPts, rConsts, lTrig, bTrig, ap, sc);
+    createSeparationKernelCore(ap, sc, false,
+                               &rPts, &rConsts, &lTrig, &bTrig, &nuStep, &nuId,
+                               NULL, NULL);
 
     Source::end();
 
@@ -305,11 +325,47 @@ std::string createSeparationKernel(const AstronomyParameters* ap,
     return code.str();
 }
 
-char* separationKernelSrc(const AstronomyParameters* ap,
-                          const StreamConstants* sc,
-                          CALuint device)
+
+std::string createSeparationLikelihoodKernel(const AstronomyParameters* ap,
+                                             const StreamConstants* sc,
+                                             CALuint device)
 {
-    std::string src = createSeparationKernel(ap, sc, device);
+    std::stringstream code;
+
+    if (separationKernelHeader(ap, code))
+        return "";
+
+    Source::begin(device);
+
+    input2d<double2> starsXY(0);
+    input2d<double1> starsZ(1);
+
+    createSeparationKernelCore(ap, sc, true,
+                               NULL, NULL, NULL, NULL, NULL, NULL,
+                               &starsXY, &starsZ);
+
+    Source::end();
+
+    Source::emitHeader(code);
+    Source::emitCode(code);
+
+    return code.str();
+}
+
+char* separationIntegralKernelSrc(const AstronomyParameters* ap,
+                                  const StreamConstants* sc,
+                                  CALuint device)
+{
+    std::string src = createSeparationIntegralKernel(ap, sc, device);
+    return strdup(src.c_str());
+ }
+
+
+char* separationLikelihoodKernelSrc(const AstronomyParameters* ap,
+                                    const StreamConstants* sc,
+                                    CALuint device)
+{
+    std::string src = createSeparationLikelihoodKernel(ap, sc, device);
     return strdup(src.c_str());
  }
 

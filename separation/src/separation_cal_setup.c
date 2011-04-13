@@ -86,6 +86,12 @@ static CALresult mwDestroyCALInfo(MWCALInfo* ci)
         err |= erri;
     }
 
+    if (ci->image)
+    {
+        calImageFree(ci->image);
+        ci->image = 0;
+    }
+
     if (ci->calctx)
     {
         erri = calCtxDestroy(ci->calctx);
@@ -102,12 +108,6 @@ static CALresult mwDestroyCALInfo(MWCALInfo* ci)
             cal_warn("Failed to close device", erri);
         ci->dev = 0;
         err |= erri;
-    }
-
-    if (ci->image)
-    {
-        calImageFree(ci->image);
-        ci->image = 0;
     }
 
     if (err != CAL_RESULT_OK)
@@ -836,25 +836,57 @@ static CALresult printISAToFile(const char* filename, CALimage img)
     return err;
 }
 
-#define IL_OUT_FILE "calpp_kernel.il"
-#define ISA_OUT_FILE "calpp_kernel.isa"
+#define IL_INTEGRAL_OUT_FILE "calpp_integral_kernel.il"
+#define ISA_INTEGRAL_OUT_FILE "calpp_integral_kernel.isa"
+
+#define IL_LIKELIHOOD_OUT_FILE "calpp_likelihood_kernel.il"
+#define ISA_LIKELIHOOD_OUT_FILE "calpp_likelihood_kernel.isa"
+
+#ifndef NDEBUG
+static void writeDebugKernels(const char* src, CALimage img, const char* ilOut, const char* isaOut)
+{
+    char buf[1024];
+
+    mwWriteFile(ilOut, src);
+    if (printISAToFile(isaOut, img) == CAL_RESULT_OK)
+    {
+        sprintf(buf, "grep GPR \"%s\"", isaOut);
+        system(buf);
+    }
+}
+#endif /* NDEBUG */
+
 
 static CALimage createCALImageFromGeneratedKernel(const MWCALInfo* ci,
                                                   const AstronomyParameters* ap,
-                                                  const StreamConstants* sc)
+                                                  const StreamConstants* sc,
+                                                  CALboolean likelihoodKernel)
 
 {
     CALimage img;
     char* src;
 
-    src = separationKernelSrc(ap, sc, ci->devID);
+    if (!likelihoodKernel)
+    {
+        src = separationIntegralKernelSrc(ap, sc, ci->devID);
+    }
+    else
+    {
+        src = separationLikelihoodKernelSrc(ap, sc, ci->devID);
+    }
+
     img = createCALImage(src, ci->devInfo.target);
     free(src);
 
- #ifndef NDEBUG
-    mwWriteFile(IL_OUT_FILE, src);
-    if (printISAToFile(ISA_OUT_FILE, img) == CAL_RESULT_OK)
-        system("grep GPR " ISA_OUT_FILE);
+  #ifndef NDEBUG
+    if (!likelihoodKernel)
+    {
+        writeDebugKernels(src, img, IL_INTEGRAL_OUT_FILE, ISA_INTEGRAL_OUT_FILE);
+    }
+    else
+    {
+        writeDebugKernels(src, img, IL_LIKELIHOOD_OUT_FILE, ISA_LIKELIHOOD_OUT_FILE);
+    }
   #endif /* NDEBUG */
 
     return img;
@@ -941,11 +973,7 @@ static CALresult separationSetupCAL(MWCALInfo* ci,
 {
     CALresult err;
 
-	/* We need to increase timer resolution to prevent big slowdown on windows when CPU is loaded. */
-    if (mwSetTimerMinResolution())
-        return CAL_RESULT_ERROR;
-
-    ci->image = createCALImageFromGeneratedKernel(ci, ap, sc);
+    ci->image = createCALImageFromGeneratedKernel(ci, ap, sc, CAL_TRUE);
     if (!ci->image)
     {
         warn("Failed to load image\n");
@@ -979,7 +1007,6 @@ CALresult mwCALShutdown(MWCALInfo* ci)
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to shutdown CAL", err);
 
-    mwResetTimerResolution();
     return err;
 }
 
