@@ -148,12 +148,8 @@ static real likelihood_probability(const AstronomyParameters* ap,
                                    const SeparationResults* results,
                                    EvaluationState* es,
 
-                                   const int do_separation,
-                                   FILE* f,
-                                   StreamStats* ss,
-                                   const real epsilon_b,
-                                   mwvector point,
-                                   const mwmatrix cmatrix)
+                                   real* bgProb) /* Out argument for thing needed by separation */
+
 {
     unsigned int i;
     real starProb, streamOnly;
@@ -172,6 +168,9 @@ static real likelihood_probability(const AstronomyParameters* ap,
             es->streamTmps[i] *= reff_xr_rp3;
     }
 
+    if (bgProb)
+        *bgProb = es->bgTmp;
+
     es->bgTmp = (es->bgTmp / results->backgroundIntegral) * ap->exp_background_weight;
 
     starProb = es->bgTmp; /* bg only */
@@ -186,9 +185,6 @@ static real likelihood_probability(const AstronomyParameters* ap,
 
     es->bgTmp = probability_log(es->bgTmp, streams->sumExpWeights);
     KAHAN_ADD(es->bgSum, es->bgTmp);
-
-    if (do_separation)
-        separation(f, ap, results, cmatrix, ss, es->streamTmps, es->bgTmp, epsilon_b, point);
 
     return starProb;
 }
@@ -296,6 +292,7 @@ static int likelihood_sum(SeparationResults* results,
     real reff_xr_rp3;
     RConsts rc = { 0.0, 0.0 };
 
+    real bgProb = 0.0;
     real epsilon_b = 0.0;
     mwmatrix cmatrix;
     unsigned int num_zero = 0;
@@ -320,8 +317,8 @@ static int likelihood_sum(SeparationResults* results,
         lbt = lb_trig(lb);
 
         star_prob = likelihood_probability(ap, sc, streams, r_pts, sg.dx, lbt, rc,
-                                           reff_xr_rp3, results, es,
-                                           do_separation, f, ss, epsilon_b, point, cmatrix);
+                                           reff_xr_rp3, results, es, &bgProb);
+
         if (mw_cmpnzero_muleps(star_prob, SEPARATION_EPS))
         {
             star_prob = mw_log10(star_prob);
@@ -333,6 +330,8 @@ static int likelihood_sum(SeparationResults* results,
             prob.sum -= 238.0;
         }
 
+        if (do_separation)
+            separation(f, ap, results, cmatrix, ss, es->streamTmps, bgProb, epsilon_b, point);
     }
 
     calculateLikelihoods(results, &prob, &es->bgSum, es->streamSums,
