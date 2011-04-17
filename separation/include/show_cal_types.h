@@ -20,8 +20,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _SHOW_CAL_TYPES_H_
 #define _SHOW_CAL_TYPES_H_
 
-#include <cal.h>
-#include <calcl.h>
+#include <CAL/cal.h>
+#include <CAL/calcl.h>
 
 #ifdef __cplusplus
 extern "C" {

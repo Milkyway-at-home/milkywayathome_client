@@ -26,8 +26,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "evaluation_state.h"
 #include "separation_cal_types.h"
 
-#include <cal.h>
-#include <cal_ext.h>
+#include <CAL/cal.h>
+#include <CAL/cal_ext.h>
 
 #ifdef __cplusplus
 extern "C" {
