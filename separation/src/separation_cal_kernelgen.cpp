@@ -213,8 +213,8 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
 
             /* Dot product */
             double1 dotted = X(sc[j].a) * xs;
-            dotted = mad(Y(sc[j].a), ys.x(), dotted);
-            dotted = mad(Z(sc[j].a), zs.x(), dotted);
+            dotted = mad(Y(sc[j].a), ys, dotted);
+            dotted = mad(Z(sc[j].a), zs, dotted);
 
             xs = mad(dotted, -X(sc[j].a), xs);
             ys = mad(dotted, -Y(sc[j].a), ys);

@@ -98,45 +98,6 @@ inline RPoints readRPts(__global const RPoints* r_pts, __constant AstronomyParam
 
 #endif /* USE_IMAGES */
 
-inline real streamIncrement(__SC_CONSTANT StreamConstants* sc, mwvector xyz)
-{
-    real xyz_norm, dotted;
-    mwvector xyzs;
-
-    xyzs = mw_subv(xyz, sc->c);
-    dotted = mw_dotv(sc->a, xyzs);
-    mw_incsubv_s(xyzs, sc->a, dotted);
-
-    xyz_norm = mw_sqrv(xyzs);
-
-    return mw_exp(-xyz_norm * sc->sigma_sq2_inv);
-}
-
-inline void stream_sums_cl(real* st_probs,
-                           __SC_CONSTANT StreamConstants* sc,
-                           const mwvector xyz,
-                           const RPoints r_pt)
-{
-    unsigned int i;
-
-    #pragma unroll NSTREAM
-    for (i = 0; i < NSTREAM; ++i)
-    {
-        st_probs[i] = mw_mad(QW_R3_N(r_pt), streamIncrement(&sc[i], xyz), st_probs[i]);
-    }
-}
-
-inline void write_mult_st_probs(__global real* probs_out, real V_reff_xr_rp3, const real* st_probs)
-{
-    unsigned int i;
-
-    #pragma unroll NSTREAM
-    for (i = 0; i < NSTREAM; ++i)
-    {
-        probs_out[i] += V_reff_xr_rp3 * st_probs[i];
-    }
-}
-
 #if LOAD_STREAM_CONSTANTS
 
 inline void set_sc_priv(StreamConstants* sc, __constant StreamConstants* sc_c)
@@ -259,46 +220,30 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     real q_inv_sqr = ap->q_inv_sqr;
     real r0 = ap->r0;
 
-    unsigned int i;
+    unsigned int i, j;
     unsigned int convolve = ap->convolve; /* Faster to load this into register first */
+
     for (i = 0; i < convolve; ++i)
     {
         RPoints r_pt = readRPts(r_pts, ap, (int2) (r_step, i));
 
-        mwvector xyz;
-        {
-            // This mad for some reason increases GPR usage by 1 pushing into next level of unhappy
-            xyz.x = mw_mad(R_POINT(r_pt), LCOS_BCOS(lbt), m_sun_r0);
-            xyz.y = R_POINT(r_pt) * LSIN_BCOS(lbt);
-            xyz.z = R_POINT(r_pt) * BSIN(lbt);
-        }
+        real x = mad(R_POINT(r_pt), LCOS_BCOS(lbt), m_sun_r0);
+        real y = R_POINT(r_pt) * LSIN_BCOS(lbt);
+        real z = R_POINT(r_pt) * BSIN(lbt);
 
-        {
-            /* sqrt(x^2 + y^2 + q_inv_sqr * z^2) */
-            real rg, tmp;
+        /* sqrt(x^2 + y^2 + q_inv_sqr * z^2) */
+        real tmp = x * x;
+        tmp = mad(y, y, tmp);           /* x^2 + y^2 */
+        tmp = mad(q_inv_sqr, z * z, tmp);   /* (q_invsqr * z^2) + (x^2 + y^2) */
 
-            tmp = sqr(X(xyz));
-            tmp = mw_mad(Y(xyz), Y(xyz), tmp);           /* x^2 + y^2 */
-            tmp = mw_mad(q_inv_sqr, sqr(Z(xyz)), tmp);   /* (q_invsqr * z^2) + (x^2 + y^2) */
+        real rg = mw_fsqrt(tmp);
+        real rs = rg + r0;
 
-            //rg = mw_sqrt(tmp);
-            rg = mw_fsqrt(tmp);
-
-            real rs = rg + r0;
-          #if FAST_H_PROB
-            bg_prob += mw_div(QW_R3_N(r_pt), (rg * cube(rs)));
-          #else
-            bg_prob += mw_div(qw_r3_N, mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
-          #endif /* FAST_H_PROB */
-        }
-
-        stream_sums_cl(st_probs, sc, xyz, r_pt);
-
-        /* Moving stream_sums up from here reduces GPR usage by 2, but also
-         * for some reason gets slightly slower. */
-
-        /* Using stream_sums_cl twice (while giving a nonsense result)
-         * somehow ends up using fewer registers */
+      #if FAST_H_PROB
+        bg_prob += mw_div(QW_R3_N(r_pt), (rg * cube(rs)));
+      #else
+        bg_prob += mw_div(qw_r3_N, mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
+      #endif /* FAST_H_PROB */
 
       #if AUX_BG_PROFILE
         /* Currently not used */
@@ -306,8 +251,31 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
         real g = GPRIME(rcs[r_step]) + sg_dx[i];
         bg_prob += aux_prob(ap, QW_R3_N(r_pt), g);
       #endif /* AUX_BG_PROFILE */
-    }
 
+        #pragma unroll NSTREAM
+        for (j = 0; j < NSTREAM; ++j)
+        {
+            real xs = x - X(sc[j].c);
+            real ys = y - Y(sc[j].c);
+            real zs = z - Z(sc[j].c);
+
+            real dotted = X(sc[j].a) * xs;
+            dotted = mad(Y(sc[j].a), ys, dotted);
+            dotted = mad(Z(sc[j].a), zs, dotted);
+
+            xs = mad(dotted, -X(sc[j].a), xs);
+            ys = mad(dotted, -Y(sc[j].a), ys);
+            zs = mad(dotted, -Z(sc[j].a), zs);
+
+            real sqrv = xs * xs;
+            sqrv = mad(ys, ys, sqrv);
+            sqrv = mad(zs, zs, sqrv);
+
+            real tmp = mw_exp(-sqrv * sc[j].sigma_sq2_inv);
+
+            st_probs[j] = mw_mad(QW_R3_N(r_pt), tmp, st_probs[j]);
+        }
+    }
 
     real V_reff_xr_rp3 = nu_id * IRV_REFF_XR_RP3(rcs[r_step]);
     size_t idx = mu_step * ia->r_steps + r_step; /* Index into output buffers */
@@ -315,7 +283,12 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     bg_prob *= V_reff_xr_rp3;
     mu_out[idx] += bg_prob;
 
-    write_mult_st_probs(&probs_out[NSTREAM * idx], V_reff_xr_rp3, st_probs);
+    #pragma unroll NSTREAM
+    for (j = 0; j < NSTREAM; ++j)
+    {
+        probs_out[NSTREAM * idx + j] += V_reff_xr_rp3 * st_probs[j];
+    }
+
 }
 
 
