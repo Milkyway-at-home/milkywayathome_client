@@ -27,7 +27,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "coordinates.h"
 #include "gauss_legendre.h"
 #include "integrals.h"
-#include "integrals_common.h"
 
 static inline mwvector streamA(real* parameters)
 {

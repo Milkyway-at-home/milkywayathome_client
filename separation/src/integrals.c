@@ -21,7 +21,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "evaluation_state.h"
 #include "integrals.h"
-#include "integrals_common.h"
 #include "coordinates.h"
 #include "r_points.h"
 #include "milkyway_util.h"
@@ -30,7 +29,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <time.h>
 
 #ifdef MILKYWAY_IPHONE_APP
-
 double _milkywaySeparationGlobalProgress = 0.0;
 #endif
 
@@ -90,8 +88,50 @@ static inline void doBoincCheckpoint(const EvaluationState* es,
 
 #endif /* BOINC_APPLICATION */
 
+HOT
+inline LBTrig lb_trig(LB lb)
+{
+    LBTrig lbt;
+    real bCos;
 
-ALWAYS_INLINE HOT
+    mw_sincos(d2r(LB_L(lb)), &lbt.lSinBCos, &lbt.lCosBCos);
+    mw_sincos(d2r(LB_B(lb)), &lbt.bSin, &bCos);
+
+    lbt.lCosBCos *= bCos;
+    lbt.lSinBCos *= bCos;
+
+    return lbt;
+}
+
+static inline mwvector lbr2xyz_2(const AstronomyParameters* ap,
+                                 const real rPoint,
+                                 const LBTrig lbt)
+{
+    mwvector xyz;
+
+    // This mad for some reason increases GPR usage by 1 pushing into next level of unhappy
+    xyz.x = mw_mad(rPoint, LCOS_BCOS(lbt), ap->m_sun_r0);
+    xyz.y = rPoint * LSIN_BCOS(lbt);
+    xyz.z = rPoint * BSIN(lbt);
+
+    return xyz;
+}
+
+static inline real streamIncrement(const StreamConstants* sc, mwvector xyz)
+{
+    real xyz_norm, dotted;
+    mwvector xyzs;
+
+    xyzs = mw_subv(xyz, sc->c);
+    dotted = mw_dotv(sc->a, xyzs);
+    mw_incsubv_s(xyzs, sc->a, dotted);
+
+    xyz_norm = mw_sqrv(xyzs);
+
+    return mw_exp(-xyz_norm * sc->sigma_sq2_inv);
+}
+
+HOT
 static inline void streamSums(real* st_probs,
                               const StreamConstants* sc,
                               const mwvector xyz,
@@ -101,7 +141,72 @@ static inline void streamSums(real* st_probs,
     unsigned int i;
 
     for (i = 0; i < nstreams; ++i)
-        st_probs[i] += qw_r3_N * calc_st_prob_inc(&sc[i], xyz);
+        st_probs[i] += qw_r3_N * streamIncrement(&sc[i], xyz);
+}
+
+HOT
+static inline real h_prob_fast(const AstronomyParameters* ap, real qw_r3_N, real rg)
+{
+    const real rs = rg + ap->r0;
+    return qw_r3_N / (rg * cube(rs));
+}
+
+HOT
+static inline real h_prob_slow(const AstronomyParameters* ap, real qw_r3_N, real rg)
+{
+    const real rs = rg + ap->r0;
+    return qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
+}
+
+HOT
+static inline real rg_calc(const AstronomyParameters* ap, const mwvector xyz)
+{
+    /* sqrt(x^2 + y^2 + q_inv_sqr * z^2) */
+
+    real tmp;
+
+    tmp = sqr(X(xyz));
+    tmp = mw_mad(Y(xyz), Y(xyz), tmp);               /* x^2 + y^2 */
+    tmp = mw_mad(ap->q_inv_sqr, sqr(Z(xyz)), tmp);   /* (q_invsqr * z^2) + (x^2 + y^2) */
+
+    return mw_sqrt(tmp);
+}
+
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
+inline void zero_st_probs(real* st_probs, const unsigned int nstream)
+{
+    unsigned int i;
+
+    for (i = 0; i < nstream; ++i)
+        st_probs[i] = 0.0;
+}
+
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
+inline void sum_probs(Kahan* probs,
+                      const real* st_probs,
+                      const real V_reff_xr_rp3,
+                      const unsigned int nstream)
+{
+    unsigned int i;
+
+    for (i = 0; i < nstream; ++i)
+        KAHAN_ADD(probs[i], V_reff_xr_rp3 * st_probs[i]);
+}
+
+ALWAYS_INLINE OLD_GCC_EXTERNINLINE
+inline void mult_probs(real* st_probs, const real V_reff_xr_rp3, const unsigned int n_stream)
+{
+    unsigned int i;
+
+    for (i = 0; i < n_stream; ++i)
+        st_probs[i] *= V_reff_xr_rp3;
+}
+
+static inline real aux_prob(const AstronomyParameters* ap,
+                            const real qw_r3_N,
+                            const real r_in_mag)
+{
+    return qw_r3_N * (ap->bg_a * sqr(r_in_mag) + ap->bg_b * r_in_mag + ap->bg_c);
 }
 
 
