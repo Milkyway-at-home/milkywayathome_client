@@ -25,7 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <time.h>
 
 #include "separation.h"
-#include "integrals_common.h"
 #include "milkyway_math.h"
 #include "separation_utils.h"
 #include "milkyway_util.h"

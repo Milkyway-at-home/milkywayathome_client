@@ -189,7 +189,6 @@ set(lib_source_file_list src/evaluation_state.c
                          src/r_points.c)
 
 set(separation_headers include/calculated_constants.h
-                       include/integrals_common.h
                        include/separation_types.h
                        include/coordinates.h
                        include/separation.h

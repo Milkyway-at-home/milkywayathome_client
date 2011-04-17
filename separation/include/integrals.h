@@ -28,6 +28,8 @@ extern "C" {
 #include "separation_types.h"
 #include "evaluation_state.h"
 
+LBTrig lb_trig(LB lb);
+
 void bg_probability(const AstronomyParameters* ap,
                     const StreamConstants* sc,
                     const RPoints* r_pts,

@@ -33,7 +33,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_types.h"
 #include "milkyway_cl.h"
 #include "milkyway_extra.h"
-#include "integrals_common.h"
+
 
 #if FAST_H_PROB
   #define h_prob_f h_prob_fast
@@ -64,6 +64,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
    * much slower on ATI though. */
   #define LOAD_STREAM_CONSTANTS 1
 #endif
+
 
 #if LOAD_STREAM_CONSTANTS
   #define __SC_CONSTANT __private
@@ -115,34 +116,46 @@ inline RPoints readRPts(__global const RPoints* r_pts, __constant AstronomyParam
 
 #endif /* USE_IMAGES */
 
-__attribute__ ((always_inline))
+inline real streamIncrement(__SC_CONSTANT StreamConstants* sc, mwvector xyz)
+{
+    real xyz_norm, dotted;
+    mwvector xyzs;
+
+    xyzs = mw_subv(xyz, sc->c);
+    dotted = mw_dotv(sc->a, xyzs);
+    mw_incsubv_s(xyzs, sc->a, dotted);
+
+    xyz_norm = mw_sqrv(xyzs);
+
+    return mw_exp(-xyz_norm * sc->sigma_sq2_inv);
+}
+
 inline void stream_sums_cl(real* st_probs,
                            __SC_CONSTANT StreamConstants* sc,
                            const mwvector xyz,
                            const RPoints r_pt)
 {
   #if NSTREAM >= 1
-    st_probs[0] = mw_mad(QW_R3_N(r_pt), calc_st_prob_inc(&sc[0], xyz), st_probs[0]);
+    st_probs[0] = mw_mad(QW_R3_N(r_pt), streamIncrement(&sc[0], xyz), st_probs[0]);
   #endif
 
   #if NSTREAM >= 2
-    st_probs[1] = mw_mad(QW_R3_N(r_pt), calc_st_prob_inc(&sc[1], xyz), st_probs[1]);
+    st_probs[1] = mw_mad(QW_R3_N(r_pt), streamIncrement(&sc[1], xyz), st_probs[1]);
   #endif
 
   #if NSTREAM >= 3
-    st_probs[2] = mw_mad(QW_R3_N(r_pt), calc_st_prob_inc(&sc[2], xyz), st_probs[2]);
+    st_probs[2] = mw_mad(QW_R3_N(r_pt), streamIncrement(&sc[2], xyz), st_probs[2]);
   #endif
 
   #if NSTREAM >= 4
-    st_probs[3] = mw_mad(QW_R3_N(r_pt), calc_st_prob_inc(&sc[3], xyz), st_probs[3]);
+    st_probs[3] = mw_mad(QW_R3_N(r_pt), streamIncrement(&sc[3], xyz), st_probs[3]);
   #endif
 
   #if NSTREAM >= 5
-    st_probs[4] = mw_mad(QW_R3_N(r_pt), calc_st_prob_inc(&sc[4], xyz), st_probs[4]);
+    st_probs[4] = mw_mad(QW_R3_N(r_pt), streamIncrement(&sc[4], xyz), st_probs[4]);
   #endif
 }
 
-__attribute__ ((always_inline))
 inline void write_mult_st_probs(__global real* probs_out, real V_reff_xr_rp3, const real* st_probs)
 {
   #if NSTREAM >= 1
@@ -167,7 +180,7 @@ inline void write_mult_st_probs(__global real* probs_out, real V_reff_xr_rp3, co
 }
 
 #if LOAD_STREAM_CONSTANTS
-__attribute__ ((always_inline))
+
 inline void set_sc_priv(StreamConstants* sc, __constant StreamConstants* sc_c)
 {
   #if NSTREAM >= 1
@@ -246,6 +259,19 @@ double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double 
 #endif /* LOAD_STREAM_CONSTANTS */
 
 
+inline real aux_prob(__constant AstronomyParameters* ap,
+                     const real qw_r3_N,
+                     const real r_in_mag)
+{
+    real tmp;
+
+    tmp = mw_mad(ap->bg_b, r_in_mag, ap->bg_c); /* bg_b * r_in_mag + bg_c */
+    tmp = mw_mad(ap->bg_a, sqr(r_in_mag), tmp); /* bg_a * r_in_mag2 + (bg_b * r_in_mag + bg_c)*/
+
+    return qw_r3_N * tmp;
+}
+
+
 __kernel void mu_sum_kernel(__global real* restrict mu_out,
                             __global real* restrict probs_out,
 
@@ -308,19 +334,19 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
             real rg, tmp;
 
             tmp = sqr(X(xyz));
-            tmp = mw_mad(Y(xyz), Y(xyz), tmp);               /* x^2 + y^2 */
+            tmp = mw_mad(Y(xyz), Y(xyz), tmp);           /* x^2 + y^2 */
             tmp = mw_mad(q_inv_sqr, sqr(Z(xyz)), tmp);   /* (q_invsqr * z^2) + (x^2 + y^2) */
 
             //rg = mw_sqrt(tmp);
             rg = mw_fsqrt(tmp);
 
-            //bg_prob += h_prob_f(ap, QW_R3_N(r_pt), rg);
-
-            real rs = rg + r0;
-            //bg_prob += QW_R3_N(r_pt) / (rg * cube(rs));
+            real rs = rg + ap->r0;
+          #if FAST_H_PROB
             bg_prob += mw_div(QW_R3_N(r_pt), (rg * cube(rs)));
+          #else
+            bg_prob += mw_div(qw_r3_N, mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
+          #endif /* FAST_H_PROB */
         }
-
 
         stream_sums_cl(st_probs, sc, xyz, r_pt);
 

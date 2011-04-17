@@ -32,7 +32,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "calculated_constants.h"
 #include "run_cl.h"
 #include "r_points.h"
-#include "integrals_common.h"
 
 
 static void sumStreamResults(Kahan* probs_results,
