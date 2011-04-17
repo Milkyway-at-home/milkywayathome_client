@@ -34,24 +34,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_cl.h"
 #include "milkyway_extra.h"
 
-
-#if FAST_H_PROB
-  #define h_prob_f h_prob_fast
-#else
-  #define h_prob_f h_prob_slow
-#endif /* FAST_H_PROB */
-
-/* Compiler apparently can't unroll the loops over the streams if we
- * loop over NStreams (as of Stream SDK 2.2), so we have to manually
- * expand. A macro to expand an arbitrary number of times is also
- * quite terrible. Not unrolling these loops murders the
- * performance. */
-#if NSTREAM > 5
-  #error "Requested number of streams greater than supported maximum (5)"
-#elif NSTREAM <= 0
-  #error "Requested number of streams is absurd"
-#endif
-
 #define USE_CUSTOM_SQRT 1
 
 #define USE_CUSTOM_DIVISION 1
@@ -135,73 +117,37 @@ inline void stream_sums_cl(real* st_probs,
                            const mwvector xyz,
                            const RPoints r_pt)
 {
-  #if NSTREAM >= 1
-    st_probs[0] = mw_mad(QW_R3_N(r_pt), streamIncrement(&sc[0], xyz), st_probs[0]);
-  #endif
+    unsigned int i;
 
-  #if NSTREAM >= 2
-    st_probs[1] = mw_mad(QW_R3_N(r_pt), streamIncrement(&sc[1], xyz), st_probs[1]);
-  #endif
-
-  #if NSTREAM >= 3
-    st_probs[2] = mw_mad(QW_R3_N(r_pt), streamIncrement(&sc[2], xyz), st_probs[2]);
-  #endif
-
-  #if NSTREAM >= 4
-    st_probs[3] = mw_mad(QW_R3_N(r_pt), streamIncrement(&sc[3], xyz), st_probs[3]);
-  #endif
-
-  #if NSTREAM >= 5
-    st_probs[4] = mw_mad(QW_R3_N(r_pt), streamIncrement(&sc[4], xyz), st_probs[4]);
-  #endif
+    #pragma unroll NSTREAM
+    for (i = 0; i < NSTREAM; ++i)
+    {
+        st_probs[i] = mw_mad(QW_R3_N(r_pt), streamIncrement(&sc[i], xyz), st_probs[i]);
+    }
 }
 
 inline void write_mult_st_probs(__global real* probs_out, real V_reff_xr_rp3, const real* st_probs)
 {
-  #if NSTREAM >= 1
-    probs_out[0] += V_reff_xr_rp3 * st_probs[0];
-  #endif
+    unsigned int i;
 
-  #if NSTREAM >=2
-    probs_out[1] += V_reff_xr_rp3 * st_probs[1];
-  #endif
-
-  #if NSTREAM >= 3
-    probs_out[2] += V_reff_xr_rp3 * st_probs[2];
-  #endif
-
-  #if NSTREAM >= 4
-    probs_out[3] += V_reff_xr_rp3 * st_probs[3];
-  #endif
-
-  #if NSTREAM >= 5
-     probs_out[4] += V_reff_xr_rp3 * st_probs[4];
-  #endif
+    #pragma unroll NSTREAM
+    for (i = 0; i < NSTREAM; ++i)
+    {
+        probs_out[i] += V_reff_xr_rp3 * st_probs[i];
+    }
 }
 
 #if LOAD_STREAM_CONSTANTS
 
 inline void set_sc_priv(StreamConstants* sc, __constant StreamConstants* sc_c)
 {
-  #if NSTREAM >= 1
-    sc[0] = sc_c[0];
-  #endif
+    unsigned int i;
 
-  #if NSTREAM >=2
-    sc[1] = sc_c[1];
-  #endif
-
-  #if NSTREAM >= 3
-    sc[2] = sc_c[2];
-  #endif
-
-  #if NSTREAM >= 4
-    sc[3] = sc_c[3];
-  #endif
-
-  #if NSTREAM >= 5
-    sc[4] = sc_c[4];
-  #endif
+    #pragma unroll NSTREAM
+    for (i = 0; i < NSTREAM; ++i)
+    {
+        sc[i] = sc_c[i];
+    }
 }
 
 #endif /* LOAD_STREAM_CONSTANTS */
@@ -319,8 +265,6 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     {
         RPoints r_pt = readRPts(r_pts, ap, (int2) (r_step, i));
 
-        //mwvector xyz = lbr2xyz_2(ap, R_POINT(r_pt), lbt);
-        //real rg = rg_calc(ap, xyz);
         mwvector xyz;
         {
             // This mad for some reason increases GPR usage by 1 pushing into next level of unhappy
@@ -340,7 +284,7 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
             //rg = mw_sqrt(tmp);
             rg = mw_fsqrt(tmp);
 
-            real rs = rg + ap->r0;
+            real rs = rg + r0;
           #if FAST_H_PROB
             bg_prob += mw_div(QW_R3_N(r_pt), (rg * cube(rs)));
           #else
