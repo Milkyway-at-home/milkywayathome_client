@@ -686,12 +686,29 @@ cl_int setupSeparationCL(CLInfo* ci,
     char* compileFlags;
     char* kernelSrc;
 
-    err = mwSetupCL(ci, di, clr);
+    err = mwSetupCL(ci, clr);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error getting device and context", err);
         return err;
     }
+
+    err = mwGetDevInfo(di, ci->dev);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to get device info\n");
+        return err;
+    }
+
+    mwPrintDevInfo(di);
+
+  #if DOUBLEPREC
+    if (!mwSupportsDoubles(di))
+    {
+        warn("Device doesn't support double precision\n");
+        return MW_CL_ERROR;
+    }
+  #endif
 
     compileFlags = getCompilerFlags(ap, di, useImages);
     if (!compileFlags)
