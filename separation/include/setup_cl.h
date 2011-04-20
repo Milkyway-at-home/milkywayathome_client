@@ -81,10 +81,12 @@ typedef struct
 cl_int setupSeparationCL(CLInfo* ci,
                          DevInfo* di,
                          const AstronomyParameters* ap,
+                         const IntegralArea* ias,
                          const CLRequest* clr,
-                         cl_bool useImages);
+                         cl_bool* useImages);
 
-cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes* sizes);
+cl_bool separationCheckDevCapabilities(const DevInfo* di, const AstronomyParameters* ap, const IntegralArea* ias);
+
 cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* runSizes);
 
 cl_bool findGoodRunSizes(RunSizes* sizes,

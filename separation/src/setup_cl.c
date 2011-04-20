@@ -441,11 +441,11 @@ void freeKernelSrc(char* src)
 #define NUM_CONST_BUF_ARGS 5
 
 /* Check that the device has the necessary resources */
-cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes* sizes)
+static cl_bool separationCheckDevMemory(const DevInfo* di, const SeparationSizes* sizes)
 {
-    size_t totalOut;
     size_t totalConstBuf;
     size_t totalGlobalConst;
+    size_t totalOut;
     size_t totalMem;
 
     totalOut = 2 * sizes->outMu + 2 * sizes->outProbs; /* 2 buffers for double buffering */
@@ -490,6 +490,33 @@ cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes*
     {
         warn("Device doesn't have enough constant buffer space\n");
         return CL_FALSE;
+    }
+
+    return CL_TRUE;
+}
+
+/* TODO: Should probably check for likelihood also */
+cl_bool separationCheckDevCapabilities(const DevInfo* di, const AstronomyParameters* ap, const IntegralArea* ias)
+{
+    cl_uint i;
+    SeparationSizes sizes;
+
+  #if DOUBLEPREC
+    if (!mwSupportsDoubles(di))
+    {
+        warn("Device doesn't support double precision\n");
+        return MW_CL_ERROR;
+    }
+  #endif /* DOUBLEPREC */
+
+    for (i = 0; i < ap->number_integrals; ++i)
+    {
+        calculateSizes(&sizes, ap, &ias[i]);
+        if (!separationCheckDevMemory(di, &sizes))
+        {
+            warn("Capability check failed for cut %u\n", i);
+            return CL_FALSE;
+        }
     }
 
     return CL_TRUE;
@@ -679,8 +706,9 @@ cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_dou
 cl_int setupSeparationCL(CLInfo* ci,
                          DevInfo* di,
                          const AstronomyParameters* ap,
+                         const IntegralArea* ias,
                          const CLRequest* clr,
-                         cl_bool useImages)
+                         cl_bool* useImages)
 {
     cl_int err;
     char* compileFlags;
@@ -701,16 +729,15 @@ cl_int setupSeparationCL(CLInfo* ci,
     }
 
     mwPrintDevInfo(di);
-
-  #if DOUBLEPREC
-    if (!mwSupportsDoubles(di))
+    if (!separationCheckDevCapabilities(di, ap, ias))
     {
-        warn("Device doesn't support double precision\n");
+        warn("Device failed capability check\n");
         return MW_CL_ERROR;
     }
-  #endif
 
-    compileFlags = getCompilerFlags(ap, di, useImages);
+    *useImages = *useImages && di->imgSupport;
+
+    compileFlags = getCompilerFlags(ap, di, *useImages);
     if (!compileFlags)
     {
         warn("Failed to get compiler flags\n");

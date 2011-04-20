@@ -122,10 +122,8 @@ static void calculateIntegrals(const AstronomyParameters* ap,
   #endif
 
   #if SEPARATION_OPENCL
-    if (setupSeparationCL(&ci, &di, ap, clr, useImages) != CL_SUCCESS)
+    if (setupSeparationCL(&ci, &di, ap, ias, clr, &useImages) != CL_SUCCESS)
         fail("Failed to setup CL\n");
-
-    useImages = useImages && di.imgSupport;
 
   #elif SEPARATION_CAL
     memset(&ci, 0, sizeof(MWCALInfo));

@@ -224,15 +224,19 @@ static cl_int createLBTrigBuffer(CLInfo* ci,
 
 void calculateSizes(SeparationSizes* sizes, const AstronomyParameters* ap, const IntegralArea* ia)
 {
+    /* globals */
     sizes->outMu = sizeof(real) * ia->mu_steps * ia->r_steps;
     sizes->outProbs = sizeof(real) * ia->mu_steps * ia->r_steps * ap->number_streams;
+
+    sizes->rPts = sizeof(RPoints) * ap->convolve * ia->r_steps;
+    sizes->lbts = sizeof(LBTrig) * ia->mu_steps * ia->nu_steps;
+
+    /* Constant buffer things */
     sizes->ap = sizeof(AstronomyParameters);
     sizes->ia = sizeof(IntegralArea);
     sizes->sc = sizeof(StreamConstants) * ap->number_streams;
-    sizes->rPts = sizeof(RPoints) * ap->convolve * ia->r_steps;
     sizes->rc = sizeof(RConsts) * ia->r_steps;
     sizes->sg_dx = sizeof(real) * ap->convolve;
-    sizes->lbts = sizeof(LBTrig) * ia->mu_steps * ia->nu_steps;
 }
 
 cl_int createSeparationBuffers(CLInfo* ci,

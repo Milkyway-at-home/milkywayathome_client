@@ -294,10 +294,9 @@ cl_int integrateCL(const AstronomyParameters* ap,
                    DevInfo* di,
                    cl_bool useImages)
 {
-    real result;
     cl_int err;
-    SeparationSizes sizes;
     RunSizes runSizes;
+    SeparationSizes sizes;
     SeparationCLMem cm = EMPTY_SEPARATION_CL_MEM;
 
     /* Need to test sizes for each integral, since the area size can change */
@@ -310,12 +309,6 @@ cl_int integrateCL(const AstronomyParameters* ap,
             warn("Fallback solution failed\n");
             return MW_CL_ERROR;
         }
-    }
-
-    if (!separationCheckDevCapabilities(di, &sizes))
-    {
-        warn("Device failed capability check\n");
-        return MW_CL_ERROR;
     }
 
     err = createSeparationBuffers(ci, &cm, ap, ia, sc, sg, &sizes, useImages);
