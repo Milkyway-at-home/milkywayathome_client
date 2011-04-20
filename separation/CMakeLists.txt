@@ -191,6 +191,7 @@ set(lib_source_file_list src/evaluation_state.c
 
 set(separation_headers include/calculated_constants.h
                        include/separation_types.h
+                       include/separation_kernel_types.h
                        include/coordinates.h
                        include/separation.h
                        include/evaluation.h
@@ -235,28 +236,9 @@ if(SEPARATION_OPENCL)
     # is to include some other files in the kernel, so we have to exclude
     # those ones.
     set(all_cl_files
-      ${MILKYWAY_INSTALL_INCLUDE_DIR}/milkyway_config.h
-      ${MILKYWAY_INSTALL_INCLUDE_DIR}/separation_config.h
+          ${SEPARATION_INCLUDE_DIR}/separation_kernel_types.h
+          ${SEPARATION_KERNEL_DIR}/integrals.cl)
 
-      ${MILKYWAY_INCLUDE_DIR}/milkyway_extra.h
-      # This one not used in kernel
-      #${MILKYWAY_INCLUDE_DIR}/milkyway_math_functions_standard.h
-
-      ${MILKYWAY_INCLUDE_DIR}/milkyway_math_functions.h
-      ${MILKYWAY_INCLUDE_DIR}/milkyway_math_functions_cl.h
-
-      ${MILKYWAY_INCLUDE_DIR}/milkyway_math.h
-
-      ${MILKYWAY_INCLUDE_DIR}/real.h
-      ${MILKYWAY_INCLUDE_DIR}/milkyway_vector_types.h
-      ${MILKYWAY_INCLUDE_DIR}/milkyway_vectors_func.h
-      ${MILKYWAY_INCLUDE_DIR}/milkyway_vectors.h
-      ${MILKYWAY_INCLUDE_DIR}/milkyway_cl.h
-
-      ${SEPARATION_INCLUDE_DIR}/separation_types.h
-      ${SEPARATION_INCLUDE_DIR}/integrals_common.h
-
-      ${SEPARATION_KERNEL_DIR}/integrals.cl)
 
     set(SEPARATION_INLINE_KERNEL_FILE "${LIBRARY_OUTPUT_PATH}/AllInOneFile.c")
     set(SEPARATION_INLINE_SCRIPT "${CMAKE_MODULE_PATH}/InlineSeparation.cmake")

@@ -34,11 +34,11 @@ extern "C" {
 real calcG(const real coords);
 real calcReffXrRp3(const real coords, const real gPrime);
 
-void setRPoints(__MW_CONSTANT AstronomyParameters* ap,
+void setRPoints(const AstronomyParameters* ap,
                 const StreamGauss sg,
                 const unsigned int n_convolve,
                 const real coords,
-                __MW_LOCAL RPoints* r_pts);
+                RPoints* r_pts);
 
 RPoints* precalculateRPts(const AstronomyParameters* ap,
                           const IntegralArea* ia,

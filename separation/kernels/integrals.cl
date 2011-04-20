@@ -1,5 +1,5 @@
 /*
-Copyright 2008-2010 Matthew Arsenault, Travis Desell, Dave Przybylo,
+Copyright 2010, 2011 Matthew Arsenault, Travis Desell, Dave Przybylo,
 Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
 Magdon-Ismail and Rensselaer Polytechnic Institute.
 
@@ -19,7 +19,6 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #if I_DONT_KNOW_WHY_THIS_DOESNT_WORK_HERE
   /* Using constant mysteriously doesn't work on Fermi */
   #define __constant __global
@@ -29,13 +28,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #error "Bad bad bad bad bad"
 #endif /* __FAST_RELAXED_MATH__ */
 
-#include "milkyway_math.h"
-#include "separation_types.h"
-#include "milkyway_cl.h"
-#include "milkyway_extra.h"
+#define cube(x) ((x) * (x) * (x))
+#define sqr(x) ((x) * (x))
+
+#include "separation_kernel_types.h"
 
 #define USE_CUSTOM_SQRT 1
-
 #define USE_CUSTOM_DIVISION 1
 
 #if !defined(__Cypress__) && !defined(__ATI_RV770__) && !defined(__CPU__)
@@ -172,8 +170,8 @@ inline real aux_prob(__constant AstronomyParameters* ap,
 {
     real tmp;
 
-    tmp = mw_mad(ap->bg_b, r_in_mag, ap->bg_c); /* bg_b * r_in_mag + bg_c */
-    tmp = mw_mad(ap->bg_a, sqr(r_in_mag), tmp); /* bg_a * r_in_mag2 + (bg_b * r_in_mag + bg_c)*/
+    tmp = mad(ap->bg_b, r_in_mag, ap->bg_c); /* bg_b * r_in_mag + bg_c */
+    tmp = mad(ap->bg_a, sqr(r_in_mag), tmp); /* bg_a * r_in_mag2 + (bg_b * r_in_mag + bg_c)*/
 
     return qw_r3_N * tmp;
 }
@@ -271,9 +269,9 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
             sqrv = mad(ys, ys, sqrv);
             sqrv = mad(zs, zs, sqrv);
 
-            real tmp = mw_exp(-sqrv * sc[j].sigma_sq2_inv);
+            real tmp = exp(-sqrv * sc[j].sigma_sq2_inv);
 
-            st_probs[j] = mw_mad(QW_R3_N(r_pt), tmp, st_probs[j]);
+            st_probs[j] = mad(QW_R3_N(r_pt), tmp, st_probs[j]);
         }
     }
 
@@ -290,5 +288,4 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     }
 
 }
-
 

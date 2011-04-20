@@ -23,17 +23,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_config.h"
 #include "milkyway_math.h"
+#include "separation_kernel_types.h"
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#ifndef _MSC_VER
-  #define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(x)))
-#else
-  #define SEPARATION_ALIGN(x) __declspec(align(x))
-#endif /* _MSC_VER */
 
 typedef struct
 {
@@ -45,24 +40,6 @@ typedef struct
 #define LB_B(x) ((x).b)
 
 
-
-
-#ifndef __OPENCL_VERSION__
-typedef struct
-{
-    real irv_reff_xr_rp3;
-    real gPrime;
-} RConsts;
-
-  #define IRV_REFF_XR_RP3(r) ((r).irv_reff_xr_rp3)
-  #define GPRIME(r) ((r).gPrime)
-#else
-
-typedef real2 RConsts;
-
-  #define IRV_REFF_XR_RP3(r) ((r).x)
-  #define GPRIME(r) ((r).y)
-#endif
 
 typedef struct
 {
@@ -79,52 +56,6 @@ typedef struct
 
 #define EMPTY_STAR_POINTS { 0, NULL }
 
-typedef struct SEPARATION_ALIGN(128)
-{
-    mwvector a;
-    mwvector c;
-    real sigma_sq2_inv;
-    int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
-} StreamConstants;
-
-#ifndef __OPENCL_VERSION__
-typedef struct
-{
-    real r_point;
-    real qw_r3_N;
-} RPoints;
-
-#define R_POINT(r) ((r).r_point)
-#define QW_R3_N(r) ((r).qw_r3_N)
-
-typedef struct
-{
-    real lCosBCos;
-    real lSinBCos;
-    real bSin;
-    real _pad;
-} LBTrig;
-
-#define LCOS_BCOS(x) ((x).lCosBCos)
-#define LSIN_BCOS(x) ((x).lSinBCos)
-#define BSIN(x) ((x).bSin)
-
-#else
-
-/* x = r_point; y = qw_r3_N */
-typedef real2 RPoints;
-
-#define R_POINT(r) ((r).x)
-#define QW_R3_N(r) ((r).y)
-
-
-typedef real4 LBTrig;
-
-#define LCOS_BCOS(l) ((l).x)
-#define LSIN_BCOS(l) ((l).y)
-#define BSIN(l) ((l).z)
-
-#endif /* __OPENCL_VERSION__ */
 
 /* Convenience structure for passing mess of LBTrig to CAL kernel in 2 parts */
 typedef struct
@@ -146,14 +77,6 @@ typedef struct
 
 
 /* Parameter related types */
-
-typedef struct SEPARATION_ALIGN(128)
-{
-    real r_min, r_max, r_step_size;
-    real nu_min, nu_max, nu_step_size;
-    real mu_min, mu_max, mu_step_size;
-    unsigned int r_steps, nu_steps, mu_steps;
-} IntegralArea;
 
 typedef struct
 {
@@ -209,55 +132,6 @@ typedef struct
 
 
 
-typedef struct SEPARATION_ALIGN(128) _AstronomyParameters
-{
-    /* Constants determined by other parameters */
-    real m_sun_r0;
-    real q_inv_sqr;  /* 1 / q^2 */
-    real r0;
-    real alpha;
-
-    real alpha_delta3;
-    real bg_a, bg_b, bg_c;
-
-    unsigned int convolve;
-    unsigned int number_streams;
-
-    int wedge;
-    int aux_bg_profile;
-    real sun_r0;
-    real delta;
-    real q;
-    real sn;
-    real coeff;
-
-    real parameters_version;
-    real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
-    int sgr_coordinates;
-    unsigned int number_integrals;
-    unsigned int number_background_parameters;
-
-    real background_weight;
-    real exp_background_weight;
-    int fast_h_prob;
-} AstronomyParameters;
-
-#define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0.0, \
-                                     0.0, 0.0,   \
-                                     0.0, 0.0, 0.0, 0.0, 0, 0, \
-                                     0, 0, 0.0, 0.0,        \
-                                     0, 0, 0.0, 0.0, 0, 0, 0, \
-                                     0, 0.0, 0.0, 0 }
-
-typedef struct SEPARATION_ALIGN(16)
-{
-    real sum;
-    real correction;
-} Kahan;
-
-#define ZERO_KAHAN { 0.0, 0.0 }
-
-#define CLEAR_KAHAN(k) { (k).sum = 0.0; (k).correction = 0.0; }
 
 typedef struct
 {

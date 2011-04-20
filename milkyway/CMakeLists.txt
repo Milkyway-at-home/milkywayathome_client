@@ -69,14 +69,10 @@ set(mw_lib_headers include/milkyway_config.h.in
                    include/milkyway_extra.h
                    include/milkyway_math.h
                    include/milkyway_math_functions.h
-                   include/milkyway_math_functions_cl.h
-                   include/milkyway_vectors_cl.h
-                   include/milkyway_math_functions_standard.h
                    include/milkyway_util.h
                    include/mw_boinc_util.h
                    include/milkyway_cpp_util.h
                    include/milkyway_vectors.h
-                   include/milkyway_vectors_func.h
                    include/milkyway_vector_types.h
                    include/real.h)
 
