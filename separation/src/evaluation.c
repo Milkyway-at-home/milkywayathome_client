@@ -29,6 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include "separation_cal_types.h"
   #include "separation_cal_setup.h"
   #include "separation_cal_run.h"
+  #include "cal_likelihood.h"
 #endif /* SEPARATION_OPENCL */
 
 #if SEPARATION_GRAPHICS
@@ -37,6 +38,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdlib.h>
 #include <stdio.h>
+
+/* FIXME: deal with this correctly */
+#if SEPARATION_CAL
+typedef MWCALInfo GPUInfo;
+#elif SEPARATION_OPENCL
+typedef CLInfo GPUInfo;
+#else
+typedef int GPUInfo;
+#endif
 
 
 static void getFinalIntegrals(SeparationResults* results,
@@ -107,29 +117,26 @@ static void calculateIntegrals(const AstronomyParameters* ap,
                                const StreamConstants* sc,
                                const StreamGauss sg,
                                EvaluationState* es,
-                               const CLRequest* clr)
+                               const CLRequest* clr,
+                               GPUInfo* ci)
 {
     const IntegralArea* ia;
     double t1, t2;
     int rc;
 
   #if SEPARATION_OPENCL
-    DevInfo di;
-    CLInfo ci = EMPTY_CL_INFO;
-    cl_bool useImages = CL_TRUE;
-  #elif SEPARATION_CAL
-    MWCALInfo ci;
-  #endif
+    cl_bool useImages = TRUE;
+  #endif /* SEPARATION_OPENCL */
 
   #if SEPARATION_OPENCL
-    if (setupSeparationCL(&ci, &di, ap, ias, clr, &useImages) != CL_SUCCESS)
+    if (setupSeparationCL(ci, ap, ias, clr, &useImages) != CL_SUCCESS)
         fail("Failed to setup CL\n");
-
   #elif SEPARATION_CAL
-    memset(&ci, 0, sizeof(MWCALInfo));
-    if (separationCALInit(&ci, ap, sc, clr) != CAL_RESULT_OK)
+    if (separationCALInit(ci, clr) != CAL_RESULT_OK)
         fail("Failed to setup CAL\n");
 
+    if (separationLoadKernel(ci, ap, sc, CAL_FALSE) != CAL_RESULT_OK)
+        fail("Failed to load integral kernel");
   #endif /* SEPARATION_OPENCL */
 
     for (; es->currentCut < es->numberCuts; es->currentCut++)
@@ -140,9 +147,9 @@ static void calculateIntegrals(const AstronomyParameters* ap,
 
         t1 = mwGetTime();
       #if SEPARATION_OPENCL
-        rc = integrateCL(ap, ia, sc, sg, es, clr, &ci, &di, useImages);
+        rc = integrateCL(ap, ia, sc, sg, es, clr, ci, useImages);
       #elif SEPARATION_CAL
-        rc = integrateCAL(ap, ia, sg, es, clr, &ci);
+        rc = integrateCAL(ap, ia, sg, es, clr, ci);
       #else
         rc = integrate(ap, ia, sc, sg, es);
       #endif /* SEPARATION_OPENCL */
@@ -157,11 +164,9 @@ static void calculateIntegrals(const AstronomyParameters* ap,
         clearEvaluationStateTmpSums(es);
     }
 
-  #if SEPARATION_OPENCL
-    mwDestroyCLInfo(&ci);
-  #elif SEPARATION_CAL
-    mwCALShutdown(&ci);
-  #endif
+  #if SEPARATION_CAL
+    mwUnloadKernel(ci);
+  #endif /* SEPARATION_CAL */
 }
 
 int evaluate(SeparationResults* results,
@@ -177,7 +182,10 @@ int evaluate(SeparationResults* results,
     int rc = 0;
     EvaluationState* es;
     StreamGauss sg;
+    GPUInfo ci;
     StarPoints sp = EMPTY_STAR_POINTS;
+
+    memset(&ci, 0, sizeof(ci));
 
     es = newEvaluationState(ap);
     sg = getStreamGauss(ap->convolve);
@@ -193,7 +201,7 @@ int evaluate(SeparationResults* results,
     if (maybeResume(es))
         fail("Failed to resume checkpoint\n");
 
-    calculateIntegrals(ap, ias, sc, sg, es, clr);
+    calculateIntegrals(ap, ias, sc, sg, es, clr, &ci);
 
   #if BOINC_APPLICATION && !SEPARATION_OPENCL && !SEPARATION_CAL
     /* Final checkpoint. */
@@ -211,14 +219,37 @@ int evaluate(SeparationResults* results,
     }
     else
     {
+        /* TODO: likelihood on GPU with OpenCL. Make this less of a
+         * mess. The different versions should appear to be the
+         * same. */
+
+      #if SEPARATION_CAL
+        if (do_separation)
+        {
+            /* No separation on GPU */
+            rc = likelihood(results, ap, &sp, sc, streams, sg, do_separation, separation_outfile);
+        }
+        else
+        {
+            //rc = likelihoodCAL(results, ap, &sp, sc, streams, sg, clr, &ci);
+            rc = likelihood(results, ap, &sp, sc, streams, sg, do_separation, separation_outfile);
+        }
+      #else
         rc = likelihood(results, ap, &sp, sc, streams, sg, do_separation, separation_outfile);
+      #endif /* SEPARATION_CAL */
+
         rc |= checkSeparationResults(results, ap->number_streams);
     }
 
     freeStarPoints(&sp);
     freeStreamGauss(sg);
 
+  #if SEPARATION_OPENCL
+    mwDestroyCLInfo(&ci);
+  #elif SEPARATION_CAL
+    mwCALShutdown(&ci);
+  #endif
+
     return rc;
 }
-
 

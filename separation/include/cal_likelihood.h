@@ -1,6 +1,5 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
+/*
+Copyright (C) 2011  Matthew Arsenault
 
 This file is part of Milkway@Home.
 
@@ -18,29 +17,32 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _RUN_CL_H_
-#define _RUN_CL_H_
+#ifndef _CAL_LIKELIHOOD_H_
+#define _CAL_LIKELIHOOD_H_
+
+#include "milkyway_util.h"
+#include "separation_types.h"
+#include "evaluation_state.h"
+#include "separation_cal_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "separation_types.h"
-#include "mw_cl.h"
-#include "evaluation_state.h"
 
-cl_int integrateCL(const AstronomyParameters* ap,
-                   const IntegralArea* ia,
-                   const StreamConstants* sc,
-                   const StreamGauss sg,
-                   EvaluationState* es,
-                   const CLRequest* clr,
-                   CLInfo* ci,
-                   cl_bool useImages);
+CALresult likelihoodCAL(SeparationResults* results,
+                        const AstronomyParameters* ap,
+                        const StarPoints* sp,
+                        const StreamConstants* sc,
+                        const Streams* streams,
+                        const StreamGauss sg,
+                        const CLRequest* clr,
+                        MWCALInfo* ci);
+
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _RUN_CL_H_ */
+#endif /* _CAL_LIKELIHOOD_H_ */
 

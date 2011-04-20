@@ -704,7 +704,6 @@ cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_dou
 }
 
 cl_int setupSeparationCL(CLInfo* ci,
-                         DevInfo* di,
                          const AstronomyParameters* ap,
                          const IntegralArea* ias,
                          const CLRequest* clr,
@@ -721,23 +720,23 @@ cl_int setupSeparationCL(CLInfo* ci,
         return err;
     }
 
-    err = mwGetDevInfo(di, ci->dev);
+    err = mwGetDevInfo(&ci->di, ci->dev);
     if (err != CL_SUCCESS)
     {
         warn("Failed to get device info\n");
         return err;
     }
 
-    mwPrintDevInfo(di);
-    if (!separationCheckDevCapabilities(di, ap, ias))
+    mwPrintDevInfo(&ci->di);
+    if (!separationCheckDevCapabilities(&ci->di, ap, ias))
     {
         warn("Device failed capability check\n");
         return MW_CL_ERROR;
     }
 
-    *useImages = *useImages && di->imgSupport;
+    *useImages = *useImages && ci->di.imgSupport;
 
-    compileFlags = getCompilerFlags(ap, di, *useImages);
+    compileFlags = getCompilerFlags(ap, &ci->di, *useImages);
     if (!compileFlags)
     {
         warn("Failed to get compiler flags\n");

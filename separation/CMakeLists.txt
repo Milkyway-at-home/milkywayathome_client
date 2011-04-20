@@ -169,6 +169,7 @@ set(cal_source_list #src/separation_cal.cpp
                     src/separation_cal_kernelgen.cpp
                     src/separation_cal_setup.c
                     src/separation_cal_run.c
+                    src/cal_likelihood.c
                     src/show_cal_types.c)
 
 
@@ -215,6 +216,7 @@ set(separation_cal_headers include/separation_cal.h
                            include/separation_cal_types.h
                            include/separation_cal_setup.h
                            include/separation_cal_run.h
+                           include/cal_likelihood.h
                            include/show_cal_types.h)
 
 if(SEPARATION_GRAPHICS)
@@ -310,6 +312,7 @@ if(SEPARATION_OPENCL)
   list(APPEND exe_link_libs ${OPENCL_LIBRARIES})
 elseif(SEPARATION_CAL)
   include_directories(${ATICAL_INCLUDE_DIR})
+  include_directories(${ATICAL_INCLUDE_DIR}/CAL)
   include_directories(${CAL++_INCLUDE_DIR})
   include_directories(${Boost_INCLUDE_DIR})
   list(APPEND exe_link_libs ${ATICALCL_LIBRARY} ${ATICALRT_LIBRARY})

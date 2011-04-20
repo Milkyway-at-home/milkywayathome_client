@@ -36,6 +36,10 @@ using namespace boost;
 using namespace cal;
 using namespace cal::il;
 
+static double1 log10_custom(double1 x)
+{
+    return log(x) / log(10.0);
+}
 
 /* Doesn't give correct inf results when dividing by 0 */
 static double1 div_custom(double1 x, double1 y)
@@ -120,6 +124,24 @@ static double1 exp_custom(double1 x)
     return result;
 }
 
+static double1 calcReffXrRp3(const double1 coords, const double1 gPrime)
+{
+    const real sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
+
+    /* REFF */
+    double1 exp_result = exp_custom(double1(sigmoid_curve_params[1]) * (gPrime - double1(sigmoid_curve_params[2])));
+    double1 reff_value = double1(sigmoid_curve_params[0]) / (exp_result + 1.0);
+    double1 rPrime3 = cube(coords);
+    double1 reff_xr_rp3 = reff_value * xr / rPrime3;
+    return reff_xr_rp3;
+}
+
+static double1 calcG(const double1 coords)
+{
+    return 5.0 * (log10_custom(1000.0 * coords) - 1.0) + absm;
+}
+
+
 static double2 kahanAdd(double2 kSum, double1 x)
 {
     double1 y = x - kSum.y();
@@ -157,6 +179,7 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
         streamInputs.push_back(input2d<double2>(5 + j));
 
     indexed_register<double1> sg_dx("cb0");
+    //indexed_register<double1> sg_qgaus_W("cb1");
     named_variable<float2> pos("vWinCoord0"); /* .x() = r, .y() = mu */
 
     named_variable<double2> bgOut("o0");
@@ -165,8 +188,14 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
     for (j = 0; j < ap->number_streams; ++j)
         streamOutputRegisters.push_back(str(format("o%u") % (j + 1)));
 
-    double2 lTrig = (*lTrigBuf)(*nuStep, pos.y());
-    double1 bSin = (*bTrigBuf)(*nuStep, pos.y());
+    double2 lTrig;
+    double1 bSin;
+
+    if (!likelihoodKernel)
+    {
+        lTrig = (*lTrigBuf)(*nuStep, pos.y());
+        bSin = (*bTrigBuf)(*nuStep, pos.y());
+    }
 
     float2 i = float2(pos.x(), 0.0);
 
@@ -178,7 +207,18 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
 
     il_whileloop
     {
-        double2 rPt = (*rPts)[i];
+        double2 rPt;
+
+        if (!likelihoodKernel)
+        {
+            rPt = (*rPts)[i];
+        }
+        else
+        {
+            int1 idx = cast_type<int1>(i.y());
+            //sg_dx[idx],             sg_qgaus_W[idx]
+            /* calc_r_point */
+        }
 
         double1 x = mad(rPt.x(), lTrig.x(), ap->m_sun_r0);
         double1 y = rPt.x() * lTrig.y();
@@ -235,7 +275,10 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
     }
     il_endloop
 
-    double1 V_reff_xr_rp3 = (*nu_id) * (*rConsts)(pos.x()).x();
+    double1 V_reff_xr_rp3;
+    if (!likelihoodKernel)
+        V_reff_xr_rp3 = (*nu_id) * (*rConsts)(pos.x()).x();
+
     std::vector<double2> streamRead;
     double2 bgRead = bgInput[pos];
     for (j = 0; j < ap->number_streams; ++j)
@@ -282,8 +325,9 @@ static int separationKernelHeader(const AstronomyParameters* ap,
     }
 
     code << "il_ps_2_0\n";
-    code << format("dcl_cb cb0[%u]\n") % numRegSgDx;
-    code << "dcl_cb cb1[1]\n";
+    code << "dcl_cb cb0[1]\n";
+    code << format("dcl_cb cb1[%u]\n") % numRegSgDx;
+
 
     code << "dcl_output_usage(generic) o0\n";
     for (i = 0; i < ap->number_streams; ++i)
@@ -310,8 +354,8 @@ std::string createSeparationIntegralKernel(const AstronomyParameters* ap,
     input2d<double2> lTrig(2);
     input2d<double1> bTrig(3);
 
-    named_variable<float1> nuStep("cb1[0].x");
-    named_variable<double1> nuId("cb1[0].zw");
+    named_variable<float1> nuStep("cb0[0].x");
+    named_variable<double1> nuId("cb0[0].zw");
 
     createSeparationKernelCore(ap, sc, false,
                                &rPts, &rConsts, &lTrig, &bTrig, &nuStep, &nuId,
@@ -330,10 +374,16 @@ std::string createSeparationLikelihoodKernel(const AstronomyParameters* ap,
                                              const StreamConstants* sc,
                                              CALuint device)
 {
+    CALuint numRegSgDx, sgdxSize;
     std::stringstream code;
+
+    sgdxSize = sizeof(real) * ap->convolve;
+    numRegSgDx = sgdxSize / 16;
 
     if (separationKernelHeader(ap, code))
         return "";
+
+    code << format("dcl_cb cb2[%u]\n") % numRegSgDx;
 
     Source::begin(device);
 

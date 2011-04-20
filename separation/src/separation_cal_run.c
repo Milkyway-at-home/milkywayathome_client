@@ -448,7 +448,7 @@ CALresult integrateCAL(const AstronomyParameters* ap,
 
     calculateCALSeparationSizes(&sizes, ap, ia);
 
-    memset(&cm, 0, sizeof(SeparationCALMem));
+    memset(&cm, 0, sizeof(cm));
     err = createSeparationBuffers(ci, &cm, ap, ia, sg, &sizes);
     if (err != CAL_RESULT_OK)
         return err;

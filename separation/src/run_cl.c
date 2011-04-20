@@ -291,7 +291,6 @@ cl_int integrateCL(const AstronomyParameters* ap,
                    EvaluationState* es,
                    const CLRequest* clr,
                    CLInfo* ci,
-                   DevInfo* di,
                    cl_bool useImages)
 {
     cl_int err;
@@ -301,7 +300,7 @@ cl_int integrateCL(const AstronomyParameters* ap,
 
     /* Need to test sizes for each integral, since the area size can change */
     calculateSizes(&sizes, ap, ia);
-    if (findGoodRunSizes(&runSizes, ci, di, ia, clr))
+    if (findGoodRunSizes(&runSizes, ci, &ci->di, ia, clr))
     {
         warn("Failed to find good run sizes\n");
         if (fallbackDriverSolution(&runSizes))

@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2010  Matthew Arsenault
+Copyright (C) 2010, 2011  Matthew Arsenault
 
 This file is part of Milkway@Home.
 
@@ -72,7 +72,7 @@ static CALresult releaseMWMemRes(CALcontext ctx, MWMemRes* mr)
     return err;
 }
 
-static CALresult mwDestroyCALInfo(MWCALInfo* ci)
+CALresult mwUnloadKernel(MWCALInfo* ci)
 {
     CALresult err = CAL_RESULT_OK;
     CALresult erri;
@@ -88,10 +88,21 @@ static CALresult mwDestroyCALInfo(MWCALInfo* ci)
 
     if (ci->image)
     {
-        calImageFree(ci->image);
+        erri = calImageFree(ci->image);
+        if (erri != CAL_RESULT_OK)
+            cal_warn("Failed free image", erri);
         ci->image = 0;
     }
 
+    return err;
+}
+
+static CALresult mwDestroyCALInfo(MWCALInfo* ci)
+{
+    CALresult err = CAL_RESULT_OK;
+    CALresult erri;
+
+    err |= mwUnloadKernel(ci);
     if (ci->calctx)
     {
         erri = calCtxDestroy(ci->calctx);
@@ -194,25 +205,6 @@ static CALresult mwGetCALInfo(MWCALInfo* ci, CALuint devID)
 
     return CAL_RESULT_OK;
 }
-
-#if DOUBLEPREC
-  /* VERY IMPORTANT:
-     http://developer.amd.com/support/KnowledgeBase/Lists/KnowledgeBase/DispForm.aspx?ID=92
-   */
-  /* For some reason it doesn't work if you try to use the uint32 ones
-   * with a cb[]. */
-  #define constantFormatReal1 CAL_FORMAT_FLOAT_2
-  #define constantFormatReal2 CAL_FORMAT_FLOAT_4
-
-  #define formatReal1 CAL_FORMAT_UNSIGNED_INT32_2
-  #define formatReal2 CAL_FORMAT_UNSIGNED_INT32_4
-#else
-  #define constantFormatReal1 CAL_FORMAT_FLOAT_2
-  #define constantFormatReal2 CAL_FORMAT_FLOAT_4
-
-  #define formatReal1 CAL_FORMAT_UNSIGNED_INT32_1
-  #define formatReal2 CAL_FORMAT_UNSIGNED_INT32_2
-#endif /* DOUBLEPREC */
 
 /* Try to get memory handle and cleanup resource if that fails */
 static CALresult getMemoryHandle(MWMemRes* mr, MWCALInfo* ci)
@@ -401,11 +393,11 @@ static CALresult createConstantBuffer2D(MWMemRes* mr,
 }
 
 
-static CALresult createConstantBuffer1D(MWMemRes* mr,
-                                        MWCALInfo* ci,
-                                        const CALvoid* src,
-                                        CALformat format,
-                                        CALuint width)
+CALresult createConstantBuffer1D(MWMemRes* mr,
+                                 MWCALInfo* ci,
+                                 const CALvoid* src,
+                                 CALformat format,
+                                 CALuint width)
 {
     CALresult err;
     CALvoid* bufPtr;
@@ -667,6 +659,10 @@ CALresult releaseSeparationBuffers(MWCALInfo* ci, SeparationCALMem* cm)
     err |= releaseMWMemRes(ci->calctx, &cm->bTrig);
     err |= releaseMWMemRes(ci->calctx, &cm->nuBuf);
 
+    err |= releaseMWMemRes(ci->calctx, &cm->sg_qgauss_W);
+    err |= releaseMWMemRes(ci->calctx, &cm->starsXY);
+    err |= releaseMWMemRes(ci->calctx, &cm->starsZ);
+
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to release buffers", err);
 
@@ -916,8 +912,8 @@ CALresult getModuleNames(MWCALInfo* ci, SeparationCALNames* cn, CALuint numberSt
     cn->outStreams = (CALname*) mwCalloc(numberStreams, sizeof(CALname));
     cn->inStreams = (CALname*) mwCalloc(numberStreams, sizeof(CALname));
 
-    err |= getNameMWCALInfo(ci, &cn->sg_dx, "cb0");
-    err |= getNameMWCALInfo(ci, &cn->nuBuf, "cb1");
+    err |= getNameMWCALInfo(ci, &cn->nuBuf, "cb0");
+    err |= getNameMWCALInfo(ci, &cn->sg_dx, "cb1");
 
     err |= getNameMWCALInfo(ci, &cn->rPts,  "i0");
     err |= getNameMWCALInfo(ci, &cn->rc,    "i1");
@@ -967,13 +963,14 @@ CALresult setKernelArguments(MWCALInfo* ci, SeparationCALMem* cm, SeparationCALN
     return err;
 }
 
-static CALresult separationSetupCAL(MWCALInfo* ci,
-                                    const AstronomyParameters* ap,
-                                    const StreamConstants* sc)
+CALresult separationLoadKernel(MWCALInfo* ci,
+                               const AstronomyParameters* ap,
+                               const StreamConstants* sc,
+                               CALboolean likelihoodKernel)
 {
     CALresult err;
 
-    ci->image = createCALImageFromGeneratedKernel(ci, ap, sc, CAL_TRUE);
+    ci->image = createCALImageFromGeneratedKernel(ci, ap, sc, likelihoodKernel);
     if (!ci->image)
     {
         warn("Failed to load image\n");
@@ -1012,10 +1009,7 @@ CALresult mwCALShutdown(MWCALInfo* ci)
 
 
 /* Init CAL, check device capabilities, and prepare new kernel from workunit parameters */
-CALresult separationCALInit(MWCALInfo* ci,
-                            const AstronomyParameters* ap,
-                            const StreamConstants* sc,
-                            const CLRequest* clr)
+CALresult separationCALInit(MWCALInfo* ci, const CLRequest* clr)
 {
     CALresult err;
 
@@ -1055,14 +1049,6 @@ CALresult separationCALInit(MWCALInfo* ci,
         warn("Device failed capability check\n");
         mwCALShutdown(ci);
         return CAL_RESULT_ERROR;
-    }
-
-    err = separationSetupCAL(ci, ap, sc);
-    if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Failed to setup CAL", err);
-        mwCALShutdown(ci);
-        return err;
     }
 
     return CAL_RESULT_OK;

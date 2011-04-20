@@ -79,7 +79,6 @@ typedef struct
 
 
 cl_int setupSeparationCL(CLInfo* ci,
-                         DevInfo* di,
                          const AstronomyParameters* ap,
                          const IntegralArea* ias,
                          const CLRequest* clr,

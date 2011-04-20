@@ -35,11 +35,21 @@ extern "C" {
 
 #define cal_warn(msg, err, ...) fprintf(stderr, msg ": %s (%s)\n", ##__VA_ARGS__, calGetErrorString(), showCALresult(err))
 
-CALresult separationCALInit(MWCALInfo* ci,
-                            const AstronomyParameters* ap,
-                            const StreamConstants* sc,
-                            const CLRequest* clr);
+CALresult separationCALInit(MWCALInfo* ci, const CLRequest* clr);
 
+CALresult separationLoadKernel(MWCALInfo* ci,
+                               const AstronomyParameters* ap,
+                               const StreamConstants* sc,
+                               CALboolean likelihoodKernel);
+
+
+CALresult createConstantBuffer1D(MWMemRes* mr,
+                                 MWCALInfo* ci,
+                                 const CALvoid* src,
+                                 CALformat format,
+                                 CALuint width);
+
+CALresult mwUnloadKernel(MWCALInfo* ci);
 CALresult mwCALShutdown(MWCALInfo* ci);
 
 CALresult getModuleNames(MWCALInfo* ci, SeparationCALNames* cn, CALuint numberStreams);
