@@ -46,6 +46,7 @@ typedef struct
     double responsivenessFactor;
     double targetFrequency;
     int pollingMode;
+    int printVersion;
 } SeparationFlags;
 
 #define DEFAULT_POLLING_MODE 1
@@ -55,8 +56,33 @@ typedef struct
 #define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, \
                                  DEFAULT_RESPONSIVENESS_FACTOR,                  \
                                  DEFAULT_TARGET_FREQUENCY,                       \
-                                 DEFAULT_POLLING_MODE                            \
+                                 DEFAULT_POLLING_MODE,                           \
+                                 0                                               \
                                }
+
+static void printVersion(int boincTag)
+{
+    char versionStr[2048];
+
+    snprintf(versionStr, sizeof(versionStr), "%s %u.%u %s %s %s%s%s%s",
+             SEPARATION_APP_NAME,
+             SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR,
+             SEPARATION_SYSTEM_NAME,
+             ARCH_STRING,
+             PRECSTRING,
+             DENORMAL_STRING,
+             SEPARATION_SPECIAL_STR,
+             SEPARATION_SPECIAL_LIBM_STR);
+
+    if (boincTag)
+        warn("<search_application> %s </search_application>\n", versionStr);
+    else
+    {
+        warn("%s %s\n",
+             versionStr,
+             BOINC_APPLICATION ? "BOINC" : "");
+    }
+}
 
 static void freeSeparationFlags(SeparationFlags* sf)
 {
@@ -142,12 +168,6 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
         },
 
         {
-            "verify", 'v',
-            POPT_ARG_STRING, &sf.referenceFile,
-            0, "Verify against result file", NULL
-        },
-
-        {
             "debug-boinc", 'g',
             POPT_ARG_NONE, &sf.debugBOINC,
             0, "Init BOINC with debugging. No effect if not built with BOINC_APPLICATION", NULL
@@ -194,6 +214,12 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
       #endif /* SEPARATION_OPENCL */
 
         {
+            "version", 'v',
+            POPT_ARG_NONE, &sf.printVersion,
+            0, "Print version information", NULL
+        },
+
+        {
             "p", 'p',
             POPT_ARG_NONE, &server_params,
             0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
@@ -227,6 +253,12 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
         freeSeparationFlags(&sf);
         free(argvCopy);
         exit(EXIT_FAILURE);
+    }
+
+    if (sf.printVersion)
+    {
+        printVersion(FALSE);
+        exit(EXIT_SUCCESS);
     }
 
     sf.do_separation = (sf.separation_outfile && strcmp(sf.separation_outfile, ""));
@@ -355,25 +387,11 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     return rc;
 }
 
-#if BOINC_APPLICATION
-
-static void printVersion()
+static int separationInit(const char* appname, int boincDebug)
 {
-    warn("<search_application> %s %u.%u %s %s %s%s%s%s </search_application>\n",
-         SEPARATION_APP_NAME,
-         SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR,
-         SEPARATION_SYSTEM_NAME,
-         ARCH_STRING,
-         PRECSTRING,
-         DENORMAL_STRING,
-         SEPARATION_SPECIAL_STR,
-         SEPARATION_SPECIAL_LIBM_STR);
-}
+    if (mwBoincInit(appname, boincDebug))
+        return 1;
 
-#else
-
-static int separationInit(const char* appname)
-{
   #if DISABLE_DENORMALS
     mwDisableDenormalsSSE();
   #endif
@@ -386,10 +404,6 @@ static int separationInit(const char* appname)
 
     return 0;
 }
-
-static void printVersion() { }
-
-#endif /* BOINC_APPLICATION */
 
 
 static int separationSpecialCleanup()
@@ -420,11 +434,9 @@ int main(int argc, const char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    rc = mwBoincInit(argv[0], sf.debugBOINC);
-    if (rc)
-        return rc;
+    if (separationInit(argv[0], sf.debugBOINC))
+        exit(EXIT_FAILURE);
 
-    printVersion();
     rc = worker(&sf, parameters, number_parameters);
 
     freeSeparationFlags(&sf);
@@ -439,6 +451,7 @@ int main(int argc, const char* argv[])
   #endif
 
   #if BOINC_APPLICATION
+    printVersion(TRUE);
     mw_finish(rc);
   #endif
 
