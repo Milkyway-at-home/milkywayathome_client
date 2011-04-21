@@ -110,12 +110,26 @@ void printEvaluationState(const EvaluationState* es)
            es->mu_step,
            es->currentCut);
 
+    printf("  bgSum = { %25.15f, %25.15f }\n"
+           "  bgTmp = %25.15f\n",
+           es->bgSum.sum,
+           es->bgSum.correction,
+           es->bgTmp);
+
+    for (j = 0; j < es->numberStreams; ++j)
+    {
+        printf("  streamSums[%u] = { %25.15f, %25.15f }\n"
+               "  streamTmps[%u] = %25.15f\n",
+               j, es->streamSums[j].sum, es->streamSums[j].correction,
+               j, es->streamTmps[j]);
+    }
+
     for (c = es->cuts; c < es->cuts + es->numberCuts; ++c)
     {
-        printf("integral: bgIntegral = %g\n", c->bgIntegral);
+        printf("integral: bgIntegral = %20.15f\n", c->bgIntegral);
         printf("Stream integrals = ");
         for (j = 0; j < es->numberCuts; ++j)
-            printf("  %g, ", c->streamIntegrals[j]);
+            printf("  %20.15f, ", c->streamIntegrals[j]);
     }
     printf("\n");
 }
@@ -123,9 +137,41 @@ void printEvaluationState(const EvaluationState* es)
 static const char checkpoint_header[] = "separation_checkpoint";
 static const char checkpoint_tail[] = "end_checkpoint";
 
+typedef struct
+{
+    int major, minor, cl, cal;
+} SeparationVersionHeader;
+
+static const SeparationVersionHeader versionHeader =
+{
+    SEPARATION_VERSION_MAJOR,
+    SEPARATION_VERSION_MINOR,
+    SEPARATION_OPENCL,
+    SEPARATION_CAL
+};
+
+
+static int versionMismatch(const SeparationVersionHeader* v)
+{
+    if (   v->major != SEPARATION_VERSION_MAJOR
+        || v->minor != SEPARATION_VERSION_MINOR
+        || v->cl    != SEPARATION_OPENCL
+        || v->cal   != SEPARATION_CAL)
+    {
+        warn("Checkpoint version does not match:\n"
+             "  Expected %d.%d, OpenCL = %d, CAL++ = %d,\n"
+             "  Got %d.%d, OpenCL = %d, CAL++ = %d\n",
+             SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR, SEPARATION_OPENCL, SEPARATION_CAL,
+             v->major, v->minor, v->cl, v->cal);
+        return 1;
+    }
+
+    return 0;
+}
 
 static int readState(FILE* f, EvaluationState* es)
 {
+    SeparationVersionHeader version;
     Cut* c;
     char str_buf[sizeof(checkpoint_header) + 1];
 
@@ -135,6 +181,10 @@ static int readState(FILE* f, EvaluationState* es)
         warn("Failed to find header in checkpoint file\n");
         return 1;
     }
+
+    fread(&version, sizeof(version), 1, f);
+    if (versionMismatch(&version))
+        return 1;
 
     fread(&es->currentCut, sizeof(es->currentCut), 1, f);
     fread(&es->nu_step, sizeof(es->nu_step), 1, f);
@@ -185,6 +235,7 @@ static inline void writeState(FILE* f, const EvaluationState* es)
     const Cut* endc = es->cuts + es->numberCuts;
 
     fwrite(checkpoint_header, sizeof(checkpoint_header), 1, f);
+    fwrite(&versionHeader, sizeof(versionHeader), 1, f);
 
     fwrite(&es->currentCut, sizeof(es->currentCut), 1, f);
     fwrite(&es->nu_step, sizeof(es->nu_step), 1, f);
