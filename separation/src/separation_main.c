@@ -47,16 +47,19 @@ typedef struct
     double targetFrequency;
     int pollingMode;
     int printVersion;
+    int disableGPUCheckpointing;
 } SeparationFlags;
 
 #define DEFAULT_POLLING_MODE 1
 #define DEFAULT_RESPONSIVENESS_FACTOR 1.0
 #define DEFAULT_TARGET_FREQUENCY 30.0
+#define DEFAULT_DISABLE_GPU_CHECKPOINTING 0
 
 #define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, \
                                  DEFAULT_RESPONSIVENESS_FACTOR,                  \
                                  DEFAULT_TARGET_FREQUENCY,                       \
                                  DEFAULT_POLLING_MODE,                           \
+                                 DEFAULT_DISABLE_GPU_CHECKPOINTING,              \
                                  0                                               \
                                }
 
@@ -107,6 +110,7 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->devNum = sf->useDevNumber;
     clr->nonResponsive = sf->nonResponsive;
     clr->numChunk = sf->numChunk;
+    clr->enableCheckpointing = !sf->disableGPUCheckpointing;
 }
 
 #elif SEPARATION_CAL
@@ -117,6 +121,7 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->responsivenessFactor = sf->responsivenessFactor;
     clr->targetFrequency = sf->targetFrequency <= 0.01 ? DEFAULT_TARGET_FREQUENCY : sf->targetFrequency;
     clr->pollingMode = sf->pollingMode;
+    clr->enableCheckpointing = !sf->disableGPUCheckpointing;
 }
 
 #else
@@ -203,6 +208,13 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
             POPT_ARG_INT, &sf.pollingMode,
             0, "Interval for polling GPU (< 0 for busy wait, 0 for calCtxWaitForEvents(), > 1 sets interval in ms)" , NULL
         },
+
+        {
+            "gpu-disable-checkpointing", 'k',
+            POPT_ARG_NONE, &sf.disableGPUCheckpointing,
+            0, "Disable checkpointing with GPUs (CAL only for now)" , NULL
+        },
+
       #endif /* SEPARATION_OPENCL || SEPARATION_CAL */
 
       #if SEPARATION_OPENCL

@@ -21,13 +21,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_types.h"
 #include "calculated_constants.h"
 #include "r_points.h"
+#include "integrals.h"
 #include "show_cal_types.h"
 #include "separation_cal_run.h"
 #include "separation_cal_setup.h"
 #include "separation_cal_types.h"
 #include "separation_cal_kernelgen.h"
-
-
 
 static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain, CALint pollingMode)
 {
@@ -88,10 +87,7 @@ static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain, CALint pollin
 
     return CAL_RESULT_OK;
 }
-static CALresult setNuKernelArgs(MWCALInfo* ci,
-                                 SeparationCALMem* cm,
-                                 const IntegralArea* ia,
-                                 CALuint nuStep)
+static CALresult setNuKernelArgs(SeparationCALMem* cm, const IntegralArea* ia, CALuint nuStep)
 {
     CALresult err;
     CALdouble* nuBufPtr;
@@ -144,20 +140,16 @@ static real sumResults(MWMemRes* mr, const IntegralArea* ia)
     return ksum.sum + ksum.correction;
 }
 
-static real readResults(SeparationCALMem* cm,
-                        const IntegralArea* ia,
-                        real* probs_results,
-                        CALuint numberStreams)
+static void readResults(SeparationCALMem* cm, const IntegralArea* ia, EvaluationState* es)
 {
     CALuint i;
-    real result;
 
-    result = sumResults(&cm->outBg, ia);
+    es->bgTmp = sumResults(&cm->outBg, ia);
 
-    for (i = 0; i < numberStreams; ++i)
-        probs_results[i] = sumResults(&cm->outStreams[i], ia);
-
-    return result;
+    for (i = 0; i < es->numberStreams; ++i)
+    {
+        es->streamTmps[i] = sumResults(&cm->outStreams[i], ia);
+    }
 }
 
 static CALresult chunkDivCheck(const char* name, CALuint dim, CALuint nChunk)
@@ -227,6 +219,7 @@ static CALuint64 deviceFlopsEstimate(const CALdeviceattribs* d)
         case CAL_TARGET_RESERVED1:
         case CAL_TARGET_RESERVED2:
         default:
+            doubleFrac = 5;
             vliw = 5;
             warn("Unknown target type: %s (%d)\n", showCALtargetEnum(d->target), d->target);
     }
@@ -336,7 +329,7 @@ static inline CALuint runNuStep(MWCALInfo* ci,
     {
         for (domain.y = 0; domain.y < ia->mu_steps; domain.y += chunks->chunkSizeMu)
         {
-            err = setNuKernelArgs(ci, cm, ia, nuStep);
+            err = setNuKernelArgs(cm, ia, nuStep);
             if (err != CAL_RESULT_OK)
                 break;
 
@@ -366,13 +359,51 @@ static inline void reportProgress(const AstronomyParameters* ap,
   #endif /* BOINC_APPLICATION */
 }
 
-static real runIntegral(const AstronomyParameters* ap,
-                        const IntegralArea* ia,
-                        EvaluationState* es,
-                        const CLRequest* clr,
-                        MWCALInfo* ci,
-                        SeparationCALMem* cm,
-                        real* probs_results)
+static CALresult checkpointCAL(SeparationCALMem* cm, const IntegralArea* ia, EvaluationState* es)
+{
+    CALresult err;
+
+    readResults(cm, ia, es);
+    es->lastCheckpointNuStep = es->nu_step;
+    err = writeCheckpoint(es) ? CAL_RESULT_ERROR : CAL_RESULT_OK;
+
+  #if BOINC_APPLICATION
+    boinc_checkpoint_completed();
+  #endif
+
+    return err;
+}
+
+#if BOINC_APPLICATION
+
+/* Each checkpoint we introduce more errors from summing the entire
+ * buffer. If we didn't we would have checkpoints hundreds of
+ * megabytes in size. Make sure at least 10% has progressed (limiting
+ * to ~10 max checkpoints over the summation). This keeps the
+ * introduced error below acceptable levels. Additionally this
+ * checkpointing isn't exactly cheap (a checkpoint is taking nearly as
+ * long as an entire step on the 5870 for me), so we really want to
+ * avoid doing it too often.*/
+static CALboolean timeToCheckpointCAL(const EvaluationState* es, const IntegralArea* ia)
+{
+    return (es->nu_step - es->lastCheckpointNuStep >= ia->nu_steps / 10) && boinc_time_to_checkpoint();
+}
+
+#else
+
+    static CALboolean timeToCheckpointCAL(const EvaluationState* es, const IntegralArea* ia)
+{
+    return CAL_FALSE;
+}
+
+#endif /* BOINC_APPLICATION */
+
+static CALresult runIntegral(const AstronomyParameters* ap,
+                             const IntegralArea* ia,
+                             EvaluationState* es,
+                             const CLRequest* clr,
+                             MWCALInfo* ci,
+                             SeparationCALMem* cm)
 {
     CALresult err;
     SeparationCALNames cn;
@@ -380,33 +411,42 @@ static real runIntegral(const AstronomyParameters* ap,
     SeparationCALChunks chunks;
 
     if (findCALChunks(ap, ci, clr, ia, &chunks) != CAL_RESULT_OK)
-        return NAN;
+        return CAL_RESULT_ERROR;
 
     memset(&cn, 0, sizeof(SeparationCALNames));
     err = getModuleNames(ci, &cn, cm->numberStreams);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to get module names", err);
-        return NAN;
+        return err;
     }
 
     err = setKernelArguments(ci, cm, &cn);
     if (err != CAL_RESULT_OK)
     {
         destroyModuleNames(&cn);
-        return NAN;
+        return err;
     }
 
-    for (es->nu_step = 0; es->nu_step < ia->nu_steps; es->nu_step++)
+    for (; es->nu_step < ia->nu_steps; es->nu_step++)
     {
+        if (clr->enableCheckpointing && timeToCheckpointCAL(es, ia))
+        {
+            err = checkpointCAL(cm, ia, es);
+            if (err != CAL_RESULT_OK)
+                break;
+        }
+
         t1 = mwGetTimeMilli();
 
         err = runNuStep(ci, cm, ia, &chunks, clr->pollingMode, es->nu_step);
         if (err != CAL_RESULT_OK)
             break;
+
         t2 = mwGetTimeMilli();
         dt = t2 - t1;
         tAcc += dt;
+
         reportProgress(ap, ia, es, es->nu_step + 1, dt);
     }
 
@@ -414,7 +454,13 @@ static real runIntegral(const AstronomyParameters* ap,
 
     destroyModuleNames(&cn);
 
-    return (err != CAL_RESULT_OK) ? NAN : readResults(cm, ia, probs_results, cm->numberStreams);
+    if (err == CAL_RESULT_OK)
+    {
+        readResults(cm, ia, es);
+        addTmpSums(es); /* Add final episode to running totals */
+    }
+
+    return err;
 }
 
 static void calculateCALSeparationSizes(CALSeparationSizes* sizes,
@@ -453,11 +499,13 @@ CALresult integrateCAL(const AstronomyParameters* ap,
     if (err != CAL_RESULT_OK)
         return err;
 
-    es->cut->bgIntegral = runIntegral(ap, ia, es, clr, ci, &cm, es->cut->streamIntegrals);
+    err = runIntegral(ap, ia, es, clr, ci, &cm);
 
-    err = releaseSeparationBuffers(ci, &cm);
+    err |= releaseSeparationBuffers(ci, &cm);
     if (err != CAL_RESULT_OK)
         return err;
+
+    separationIntegralApplyCorrection(es);
 
     return CAL_RESULT_OK;
 }

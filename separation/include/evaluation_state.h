@@ -49,6 +49,7 @@ typedef struct
     real bgTmp;
     real* streamTmps;
 
+    unsigned int lastCheckpointNuStep; /* Nu step of last checkpointed (only used by GPU) */
     unsigned int current_calc_probs; /* progress of completed cuts */
 
     unsigned int currentCut;
@@ -62,6 +63,8 @@ void freeEvaluationState(EvaluationState* es);
 void copyEvaluationState(EvaluationState* esDest, const EvaluationState* esSrc);
 void clearEvaluationStateTmpSums(EvaluationState* es);
 void printEvaluationState(const EvaluationState* es);
+
+void addTmpSums(EvaluationState* es);
 
 int writeCheckpoint(const EvaluationState* es);
 int readCheckpoint(EvaluationState* es);

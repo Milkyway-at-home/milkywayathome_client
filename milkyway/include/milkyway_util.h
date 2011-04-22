@@ -61,6 +61,7 @@ typedef struct
     cl_double responsivenessFactor;
     cl_double targetFrequency;
     cl_int pollingMode;
+    cl_bool enableCheckpointing;
 } CLRequest;
 
 #else
@@ -73,6 +74,7 @@ typedef struct
     double responsivenessFactor;
     double targetFrequency;
     int pollingMode;
+    int enableCheckpointing;
 } CLRequest;
 
 #endif /* MILKYWAY_OPENCL */

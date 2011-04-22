@@ -189,8 +189,13 @@ static int readState(FILE* f, EvaluationState* es)
     fread(&es->currentCut, sizeof(es->currentCut), 1, f);
     fread(&es->nu_step, sizeof(es->nu_step), 1, f);
     fread(&es->mu_step, sizeof(es->mu_step), 1, f);
+    fread(&es->lastCheckpointNuStep, sizeof(es->lastCheckpointNuStep), 1, f);
+
     fread(&es->bgSum, sizeof(es->bgSum), 1, f);
     fread(es->streamSums, sizeof(es->streamSums[0]), es->numberStreams, f);
+
+    fread(&es->bgTmp, sizeof(es->bgTmp), 1, f);
+    fread(es->streamTmps, sizeof(es->streamTmps[0]), es->numberStreams, f);
 
     for (c = es->cuts; c < es->cuts + es->numberCuts; ++c)
     {
@@ -206,6 +211,23 @@ static int readState(FILE* f, EvaluationState* es)
     }
 
     return 0;
+}
+
+
+/* The GPU checkpointing saves the sum of all resumes in the real integral.
+   The temporary area holds the checkpointed sum of the last episode.
+   Update the real integral from the results of the last episode.
+*/
+void addTmpSums(EvaluationState* es)
+{
+    unsigned int i;
+
+    KAHAN_ADD(es->bgSum, es->bgTmp);
+    for (i = 0; i < es->numberStreams; ++i)
+        KAHAN_ADD(es->streamSums[i], es->streamTmps[i]);
+
+    es->bgTmp = 0.0;
+    memset(es->streamTmps, 0, sizeof(es->streamTmps[0]) * es->numberStreams);
 }
 
 int readCheckpoint(EvaluationState* es)
@@ -226,6 +248,10 @@ int readCheckpoint(EvaluationState* es)
 
     fclose(f);
 
+    /* The GPU checkpoint saved the last checkpoint results in temporaries.
+       Add to the total from previous episodes. */
+    addTmpSums(es);
+
     return rc;
 }
 
@@ -240,8 +266,14 @@ static inline void writeState(FILE* f, const EvaluationState* es)
     fwrite(&es->currentCut, sizeof(es->currentCut), 1, f);
     fwrite(&es->nu_step, sizeof(es->nu_step), 1, f);
     fwrite(&es->mu_step, sizeof(es->mu_step), 1, f);
+    fwrite(&es->lastCheckpointNuStep, sizeof(es->lastCheckpointNuStep), 1, f);
+
     fwrite(&es->bgSum, sizeof(es->bgSum), 1, f);
     fwrite(es->streamSums, sizeof(es->streamSums[0]), es->numberStreams, f);
+
+    /* Really only needs to be saved for GPU checkpointing */
+    fwrite(&es->bgTmp, sizeof(es->bgTmp), 1, f);
+    fwrite(es->streamTmps, sizeof(es->streamTmps[0]), es->numberStreams, f);
 
     for (c = es->cuts; c < endc; ++c)
     {

@@ -389,7 +389,7 @@ static void nuSum(const AstronomyParameters* ap,
     es->nu_step = 0;
 }
 
-static void integralApplyCorrection(EvaluationState* es)
+void separationIntegralApplyCorrection(EvaluationState* es)
 {
     unsigned int i;
 
@@ -421,7 +421,7 @@ int integrate(const AstronomyParameters* ap,
     r_pts = precalculateRPts(ap, ia, sg, &rc, 0);
 
     nuSum(ap, ia, sc, rc, r_pts, sg.dx, es);
-    integralApplyCorrection(es);
+    separationIntegralApplyCorrection(es);
 
     mwFreeA(r_pts);
     mwFreeA(rc);

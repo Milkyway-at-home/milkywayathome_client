@@ -44,6 +44,8 @@ int integrate(const AstronomyParameters* ap,
               const StreamGauss sg,
               EvaluationState* es);
 
+void separationIntegralApplyCorrection(EvaluationState* es);
+
 #ifdef __cplusplus
 }
 #endif
