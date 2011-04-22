@@ -212,7 +212,7 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
         {
             "gpu-disable-checkpointing", 'k',
             POPT_ARG_NONE, &sf.disableGPUCheckpointing,
-            0, "Disable checkpointing with GPUs (CAL only for now)" , NULL
+            0, "Disable checkpointing with GPUs" , NULL
         },
 
       #endif /* SEPARATION_OPENCL || SEPARATION_CAL */

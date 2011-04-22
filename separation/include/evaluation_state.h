@@ -66,10 +66,11 @@ void printEvaluationState(const EvaluationState* es);
 
 void addTmpSums(EvaluationState* es);
 
-int writeCheckpoint(const EvaluationState* es);
+int writeCheckpoint(EvaluationState* es);
 int readCheckpoint(EvaluationState* es);
 int resolveCheckpoint();
 int maybeResume(EvaluationState* es);
+int timeToCheckpointGPU(const EvaluationState* es, const IntegralArea* ia);
 
 #ifdef __cplusplus
 }

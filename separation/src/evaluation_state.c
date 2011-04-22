@@ -285,8 +285,30 @@ static inline void writeState(FILE* f, const EvaluationState* es)
 }
 
 
+#if BOINC_APPLICATION
 
-#if !SEPARATION_OPENCL
+/* Each checkpoint we introduce more errors from summing the entire
+ * buffer. If we didn't we would have checkpoints hundreds of
+ * megabytes in size. Make sure at least 10% has progressed (limiting
+ * to ~10 max checkpoints over the summation). This keeps the
+ * introduced error below acceptable levels. Additionally this
+ * checkpointing isn't exactly cheap (a checkpoint is taking nearly as
+ * long as an entire step on the 5870 for me), so we really want to
+ * avoid doing it too often.*/
+int timeToCheckpointGPU(const EvaluationState* es, const IntegralArea* ia)
+{
+    return (es->nu_step - es->lastCheckpointNuStep >= ia->nu_steps / 10) && boinc_time_to_checkpoint();
+}
+
+#else
+
+int timeToCheckpointGPU(const EvaluationState* es, const IntegralArea* ia)
+{
+    return FALSE;
+}
+
+#endif /* BOINC_APPLICATION */
+
 
 int resolveCheckpoint()
 {
@@ -298,7 +320,7 @@ int resolveCheckpoint()
     return rc;
 }
 
-int writeCheckpoint(const EvaluationState* es)
+int writeCheckpoint(EvaluationState* es)
 {
     FILE* f;
 
@@ -310,6 +332,7 @@ int writeCheckpoint(const EvaluationState* es)
         return 1;
     }
 
+    es->lastCheckpointNuStep = es->nu_step;
     writeState(f, es);
     fclose(f);
 
@@ -340,23 +363,4 @@ int maybeResume(EvaluationState* es)
 
     return 0;
 }
-
-#else /* SEPARATION_OPENCL */
-
-int resolveCheckpoint()
-{
-    return 0;
-}
-
-int writeCheckpoint(const EvaluationState* es)
-{
-    return 0;
-}
-
-int maybeResume(EvaluationState* es)
-{
-    return 0;
-}
-
-#endif /* !SEPARATION_OPENCL */
 

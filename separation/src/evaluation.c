@@ -117,7 +117,6 @@ static void finalCheckpoint(EvaluationState* es)
     boinc_begin_critical_section();
   #endif
 
-    warn("Writing final checkpoint\n");
     if (writeCheckpoint(es))
         fail("Failed to write final checkpoint\n");
 
@@ -217,9 +216,7 @@ int evaluate(SeparationResults* results,
 
     calculateIntegrals(ap, ias, sc, sg, es, clr, &ci);
 
-  #if BOINC_APPLICATION && !SEPARATION_OPENCL
     finalCheckpoint(es);
-  #endif
 
     getFinalIntegrals(results, es, ap->number_streams, ap->number_integrals);
     freeEvaluationState(es);

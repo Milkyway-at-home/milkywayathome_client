@@ -364,7 +364,6 @@ static CALresult checkpointCAL(SeparationCALMem* cm, const IntegralArea* ia, Eva
     CALresult err;
 
     readResults(cm, ia, es);
-    es->lastCheckpointNuStep = es->nu_step;
     err = writeCheckpoint(es) ? CAL_RESULT_ERROR : CAL_RESULT_OK;
 
   #if BOINC_APPLICATION
@@ -374,29 +373,6 @@ static CALresult checkpointCAL(SeparationCALMem* cm, const IntegralArea* ia, Eva
     return err;
 }
 
-#if BOINC_APPLICATION
-
-/* Each checkpoint we introduce more errors from summing the entire
- * buffer. If we didn't we would have checkpoints hundreds of
- * megabytes in size. Make sure at least 10% has progressed (limiting
- * to ~10 max checkpoints over the summation). This keeps the
- * introduced error below acceptable levels. Additionally this
- * checkpointing isn't exactly cheap (a checkpoint is taking nearly as
- * long as an entire step on the 5870 for me), so we really want to
- * avoid doing it too often.*/
-static CALboolean timeToCheckpointCAL(const EvaluationState* es, const IntegralArea* ia)
-{
-    return (es->nu_step - es->lastCheckpointNuStep >= ia->nu_steps / 10) && boinc_time_to_checkpoint();
-}
-
-#else
-
-    static CALboolean timeToCheckpointCAL(const EvaluationState* es, const IntegralArea* ia)
-{
-    return CAL_FALSE;
-}
-
-#endif /* BOINC_APPLICATION */
 
 static CALresult runIntegral(const AstronomyParameters* ap,
                              const IntegralArea* ia,
@@ -430,7 +406,7 @@ static CALresult runIntegral(const AstronomyParameters* ap,
 
     for (; es->nu_step < ia->nu_steps; es->nu_step++)
     {
-        if (clr->enableCheckpointing && timeToCheckpointCAL(es, ia))
+        if (clr->enableCheckpointing && timeToCheckpointGPU(es, ia))
         {
             err = checkpointCAL(cm, ia, es);
             if (err != CAL_RESULT_OK)
