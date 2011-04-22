@@ -148,7 +148,7 @@ double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double 
 }   // same precision as division (1 ulp)
 
 #else
-  #define mw_fsqrt mw_sqrt
+  #define mw_fsqrt sqrt
 #endif /* USE_CUSTOM_SQRT && DOUBLEPREC */
 
 #if 0
