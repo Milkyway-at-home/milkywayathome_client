@@ -426,6 +426,8 @@ static CALresult runIntegral(const AstronomyParameters* ap,
         reportProgress(ap, ia, es, es->nu_step + 1, dt);
     }
 
+    es->nu_step = 0;
+
     warn("Integration time = %f s, average per iteration = %f ms\n", 1.0e-3 * tAcc, tAcc / ia->nu_steps);
 
     destroyModuleNames(&cn);

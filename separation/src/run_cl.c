@@ -284,6 +284,8 @@ static cl_int runIntegral(CLInfo* ci,
         reportProgress(ap, ia, es, es->nu_step + 1, dt);
     }
 
+    es->nu_step = 0;
+
     warn("Integration time: %f s. Average time per iteration = %f ms\n",
          tAcc / 1000.0, tAcc / (double) ia->nu_steps);
 
