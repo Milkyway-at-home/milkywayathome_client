@@ -58,13 +58,18 @@
   #if ENABLE_FDLIBM
     #include <fdlibm.h>
   #else
-    #if HAVE_TGMATH_H && !HAVE_BROKEN_TGMATH
-      #include <tgmath.h>
+
+    #ifndef __cplusplus
+      #if HAVE_TGMATH_H && !HAVE_BROKEN_TGMATH
+        #include <tgmath.h>
+      #else
+        #include <math.h>
+      #endif /* HAVE_TGMATH_H && !HAVE_BROKEN_TGMATH */
     #else
-      #include <math.h>
-    #endif
+      #include <cmath>
+    #endif /* __cplusplus */
   #endif /* ENABLE_FDLIBM */
-	#include <math.h>
+
 
   /* crlibm is a math.h supplement. fdlibm is a replacement.*/
   #if ENABLE_CRLIBM
