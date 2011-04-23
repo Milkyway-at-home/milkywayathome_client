@@ -177,8 +177,8 @@ inline real aux_prob(__constant AstronomyParameters* ap,
 }
 
 
-__kernel void mu_sum_kernel(__global real* restrict mu_out,
-                            __global real* restrict probs_out,
+__kernel void mu_sum_kernel(__global real* restrict bgOut,
+                            __global real* restrict streamsOut,
 
                             __constant AstronomyParameters* ap MAX_CONST(1, AstronomyParameters),
                             __constant IntegralArea* ia MAX_CONST(1, IntegralArea),
@@ -279,12 +279,12 @@ __kernel void mu_sum_kernel(__global real* restrict mu_out,
     size_t idx = mu_step * ia->r_steps + r_step; /* Index into output buffers */
 
     bg_prob *= V_reff_xr_rp3;
-    mu_out[idx] += bg_prob;
+    bgOut[idx] += bg_prob;
 
     #pragma unroll NSTREAM
     for (j = 0; j < NSTREAM; ++j)
     {
-        probs_out[NSTREAM * idx + j] += V_reff_xr_rp3 * st_probs[j];
+        streamsOut[NSTREAM * idx + j] += V_reff_xr_rp3 * st_probs[j];
     }
 
 }

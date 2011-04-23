@@ -32,8 +32,8 @@ extern "C" {
 
 typedef struct
 {
-    size_t outMu;
-    size_t outProbs;
+    size_t outBg;
+    size_t outStreams;
 
     size_t ap;        /* Constants */
     size_t sc;
@@ -61,9 +61,8 @@ typedef struct
 /* The various buffers needed by the integrate function. */
 typedef struct
 {
-    /* Write only buffers */
-    cl_mem outMu;     /* Output from each mu_sum done in parallel */
-    cl_mem outProbs;  /* st_probs * V * reff_xr_rp3 */
+    cl_mem outBg;
+    cl_mem outStreams;  /* stream_probs * V * reff_xr_rp3 */
 
     /* constant, read only buffers */
     cl_mem ap;

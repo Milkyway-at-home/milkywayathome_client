@@ -381,8 +381,8 @@ cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* 
     cl_int err = CL_SUCCESS;
 
     /* Set output buffer arguments */
-    err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outMu);
-    err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->outProbs);
+    err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outBg);
+    err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->outStreams);
 
     /* The constant arguments */
     err |= clSetKernelArg(ci->kern, 2, sizeof(cl_mem), &cm->ap);
@@ -448,7 +448,7 @@ static cl_bool separationCheckDevMemory(const DevInfo* di, const SeparationSizes
     size_t totalOut;
     size_t totalMem;
 
-    totalOut = 2 * sizes->outMu + 2 * sizes->outProbs; /* 2 buffers for double buffering */
+    totalOut = sizes->outBg + sizes->outStreams;
     totalConstBuf = sizes->ap + sizes->ia + sizes->sc + sizes->rc + sizes->sg_dx;
     totalGlobalConst = sizes->lbts + sizes->rPts;
 
@@ -468,7 +468,7 @@ static cl_bool separationCheckDevMemory(const DevInfo* di, const SeparationSizes
         return CL_FALSE;
     }
 
-    if (sizes->outMu > di->maxMemAlloc || sizes->outProbs > di->maxMemAlloc)
+    if (sizes->outBg > di->maxMemAlloc || sizes->outStreams > di->maxMemAlloc)
     {
         warn("An output buffer would exceed CL_DEVICE_MAX_MEM_ALLOC_SIZE\n");
         return CL_FALSE;

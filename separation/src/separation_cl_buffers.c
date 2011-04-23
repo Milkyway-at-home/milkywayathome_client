@@ -35,6 +35,7 @@ static cl_mem createZeroReadWriteBuffer(CLInfo* ci, size_t size, cl_int* errOut)
     cl_mem mem = NULL;
     cl_int err = CL_SUCCESS;
 
+    warn("Creating 0 buffer: %zu\n", size);
     mem = clCreateBuffer(ci->clctx, CL_MEM_READ_WRITE, size, NULL, &err);
     if (err != CL_SUCCESS)
     {
@@ -61,32 +62,30 @@ fail:
     return mem;
 }
 
-static cl_int createOutMuBuffer(CLInfo* ci,
+static cl_int createOutBgBuffer(CLInfo* ci,
                                 SeparationCLMem* cm,
                                 const SeparationSizes* sizes)
 {
     cl_int err;
 
-    cm->outMu = createZeroReadWriteBuffer(ci, sizes->outMu, &err);
+    cm->outBg = createZeroReadWriteBuffer(ci, sizes->outBg, &err);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Error creating out mu buffer of size "ZU, err, sizes->outMu);
+        mwCLWarn("Error creating out bg buffer of size "ZU, err, sizes->outBg);
         return err;
     }
 
     return CL_SUCCESS;
 }
 
-static cl_int createOutProbsBuffer(CLInfo* ci,
-                                   SeparationCLMem* cm,
-                                   const SeparationSizes* sizes)
+static cl_int createOutStreamsBuffer(CLInfo* ci, SeparationCLMem* cm, const SeparationSizes* sizes)
 {
     cl_int err;
 
-    cm->outProbs = createZeroReadWriteBuffer(ci, sizes->outProbs, &err);
+    cm->outStreams = createZeroReadWriteBuffer(ci, sizes->outStreams, &err);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Error creating out probs buffer of size "ZU, err, sizes->outProbs);
+        mwCLWarn("Error creating out probs buffer of size "ZU, err, sizes->outStreams);
         return err;
     }
 
@@ -225,8 +224,8 @@ static cl_int createLBTrigBuffer(CLInfo* ci,
 void calculateSizes(SeparationSizes* sizes, const AstronomyParameters* ap, const IntegralArea* ia)
 {
     /* globals */
-    sizes->outMu = sizeof(real) * ia->mu_steps * ia->r_steps;
-    sizes->outProbs = sizeof(real) * ia->mu_steps * ia->r_steps * ap->number_streams;
+    sizes->outBg = sizeof(real) * ia->mu_steps * ia->r_steps;
+    sizes->outStreams = sizeof(real) * ia->mu_steps * ia->r_steps * ap->number_streams;
 
     sizes->rPts = sizeof(RPoints) * ap->convolve * ia->r_steps;
     sizes->lbts = sizeof(LBTrig) * ia->mu_steps * ia->nu_steps;
@@ -251,8 +250,8 @@ cl_int createSeparationBuffers(CLInfo* ci,
     cl_int err = CL_SUCCESS;
     cl_mem_flags constBufFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
 
-    err |= createOutMuBuffer(ci, cm, sizes);
-    err |= createOutProbsBuffer(ci, cm, sizes);
+    err |= createOutBgBuffer(ci, cm, sizes);
+    err |= createOutStreamsBuffer(ci, cm, sizes);
     err |= createAPBuffer(ci, cm, ap, sizes, constBufFlags);
     err |= createIABuffer(ci, cm, ia, sizes, constBufFlags);
     err |= createSCBuffer(ci, cm, sc, sizes, constBufFlags);
@@ -264,8 +263,8 @@ cl_int createSeparationBuffers(CLInfo* ci,
 
 void releaseSeparationBuffers(SeparationCLMem* cm)
 {
-    clReleaseMemObject(cm->outProbs);
-    clReleaseMemObject(cm->outMu);
+    clReleaseMemObject(cm->outStreams);
+    clReleaseMemObject(cm->outBg);
 
     clReleaseMemObject(cm->ap);
     clReleaseMemObject(cm->ia);
@@ -279,10 +278,10 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
 real* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSize)
 {
     cl_int err;
-    real* mapOutMu;
+    real* mapOutBg;
 
-    mapOutMu = (real*) clEnqueueMapBuffer(ci->queue,
-                                          cm->outMu,
+    mapOutBg = (real*) clEnqueueMapBuffer(ci->queue,
+                                          cm->outBg,
                                           CL_TRUE, CL_MAP_READ,
                                           0, resultsSize,
                                           0, NULL,
@@ -291,24 +290,24 @@ real* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSize)
     if (err != CL_SUCCESS)
         mwCLWarn("Error mapping integral result buffer", err);
 
-    return mapOutMu;
+    return mapOutBg;
 }
 
-real* mapProbsResults(CLInfo* ci, SeparationCLMem* cm, size_t probsResultsSize)
+real* mapStreamsResults(CLInfo* ci, SeparationCLMem* cm, size_t streamsResultsSize)
 {
     cl_int err;
-    real* mapOutProbs;
+    real* mapOutStreams;
 
-    mapOutProbs = (real*) clEnqueueMapBuffer(ci->queue,
-                                             cm->outProbs,
-                                             CL_TRUE, CL_MAP_READ,
-                                             0, probsResultsSize,
-                                             0, NULL,
-                                             NULL,
-                                             &err);
+    mapOutStreams = (real*) clEnqueueMapBuffer(ci->queue,
+                                               cm->outStreams,
+                                               CL_TRUE, CL_MAP_READ,
+                                               0, streamsResultsSize,
+                                               0, NULL,
+                                               NULL,
+                                               &err);
     if (err != CL_SUCCESS)
-        mwCLWarn("Error mapping probs result buffer", err);
+        mwCLWarn("Error mapping stream result buffer", err);
 
-    return mapOutProbs;
+    return mapOutStreams;
 }
 

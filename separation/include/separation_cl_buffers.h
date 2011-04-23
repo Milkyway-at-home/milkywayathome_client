@@ -21,15 +21,15 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _SEPARATION_CL_BUFFERS_H_
 #define _SEPARATION_CL_BUFFERS_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "milkyway_cl.h"
 #include "mw_cl.h"
 #include "separation_types.h"
 #include "setup_cl.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 cl_int createSeparationBuffers(CLInfo* ci,
                                SeparationCLMem* cm,
@@ -46,7 +46,7 @@ void calculateSizes(SeparationSizes* sizes, const AstronomyParameters* ap, const
 
 real* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSize);
 
-real* mapProbsResults(CLInfo* ci, SeparationCLMem* cm, size_t probsResultsSize);
+real* mapStreamsResults(CLInfo* ci, SeparationCLMem* cm, size_t streamsResultsSize);
 
 
 #ifdef __cplusplus

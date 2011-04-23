@@ -23,6 +23,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Should only be directly included by CL kernel */
 
+#ifndef _MSC_VER
+  #define SEPARATION_ALIGN(x) __attribute__ ((aligned(x)))
+#else
+  #define SEPARATION_ALIGN(x) __declspec(align(x))
+#endif /* _MSC_VER */
+
+
 #ifdef __OPENCL_VERSION__
 
 #ifdef cl_amd_fp64
@@ -53,16 +60,6 @@ typedef struct
 #define W(v) ((v).w)
 #endif /* __OPENCL_VERSION__ */
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifndef _MSC_VER
-  #define SEPARATION_ALIGN(x) __attribute__ ((packed, aligned(x)))
-#else
-  #define SEPARATION_ALIGN(x) __declspec(align(x))
-#endif /* _MSC_VER */
 
 
 #ifndef __OPENCL_VERSION__
@@ -143,7 +140,7 @@ typedef struct SEPARATION_ALIGN(128)
 } IntegralArea;
 
 
-typedef struct SEPARATION_ALIGN(128) _AstronomyParameters
+typedef struct SEPARATION_ALIGN(128)
 {
     /* Constants determined by other parameters */
     real m_sun_r0;
@@ -193,10 +190,6 @@ typedef struct SEPARATION_ALIGN(16)
 
 #define CLEAR_KAHAN(k) { (k).sum = 0.0; (k).correction = 0.0; }
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* _SEPARATION_KERNEL_TYPES_H_ */
 

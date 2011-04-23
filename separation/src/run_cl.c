@@ -134,41 +134,41 @@ static cl_int readKernelResults(CLInfo* ci,
                                 const cl_uint number_streams)
 {
     cl_int err;
-    real* mu_results;
-    real* probs_tmp;
-    size_t resultSize, probsSize;
+    real* bgResults;
+    real* streamsTmp;
+    size_t resultSize, streamsSize;
 
     resultSize = sizeof(real) * ia->mu_steps * ia->r_steps;
-    mu_results = mapIntegralResults(ci, cm, resultSize);
-    if (!mu_results)
+    bgResults = mapIntegralResults(ci, cm, resultSize);
+    if (!bgResults)
     {
         warn("Failed to map integral results\n");
         return MW_CL_ERROR;
     }
 
-    es->bgTmp = sumBgResults(mu_results, ia->mu_steps, ia->r_steps);
+    es->bgTmp = sumBgResults(bgResults, ia->mu_steps, ia->r_steps);
 
-    err = clEnqueueUnmapMemObject(ci->queue, cm->outMu, mu_results, 0, NULL, NULL);
+    err = clEnqueueUnmapMemObject(ci->queue, cm->outBg, bgResults, 0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Failed to unmap results buffer", err);
         return err;
     }
 
-    probsSize = sizeof(real) * ia->mu_steps * ia->r_steps * number_streams;
-    probs_tmp = mapProbsResults(ci, cm, probsSize);
-    if (!probs_tmp)
+    streamsSize = sizeof(real) * ia->mu_steps * ia->r_steps * number_streams;
+    streamsTmp = mapStreamsResults(ci, cm, streamsSize);
+    if (!streamsTmp)
     {
-        warn("Failed to map probs results\n");
+        warn("Failed to map stream results\n");
         return MW_CL_ERROR;
     }
 
-    sumStreamResults(es->streamTmps, probs_tmp, ia->mu_steps, ia->r_steps, number_streams);
+    sumStreamResults(es->streamTmps, streamsTmp, ia->mu_steps, ia->r_steps, number_streams);
 
-    err = clEnqueueUnmapMemObject(ci->queue, cm->outProbs, probs_tmp, 0, NULL, NULL);
+    err = clEnqueueUnmapMemObject(ci->queue, cm->outStreams, streamsTmp, 0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to unmap probs buffer", err);
+        mwCLWarn("Failed to unmap streams buffer", err);
         return err;
     }
 
