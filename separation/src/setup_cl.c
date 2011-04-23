@@ -545,11 +545,11 @@ static const char* getNvidiaRegCount(const DevInfo* di)
 static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, cl_bool useImages)
 {
     char* compileFlags = NULL;
-    char cwd[1024];
-    char extraFlags[1024];
-    char includeFlags[1024];
-    char precBuf[1024];
-    char kernelDefBuf[1024];
+    char cwd[1024] = "";
+    char extraFlags[1024] = "";
+    char includeFlags[1024] = "";
+    char precBuf[1024] = "";
+    char kernelDefBuf[1024] = "";
 
     /* Math options for CL compiler */
     const char mathFlags[] = "-cl-mad-enable "
@@ -582,7 +582,6 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
         warn("Error getting kernel constant definitions\n");
         return NULL;
     }
-
 
     snprintf(precBuf, sizeof(precBuf), "-DDOUBLEPREC=%d %s ",
              DOUBLEPREC, DOUBLEPREC ? "" : "-cl-single-precision-constant");
