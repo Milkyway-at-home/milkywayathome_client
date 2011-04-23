@@ -583,6 +583,7 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
         return NULL;
     }
 
+
     snprintf(precBuf, sizeof(precBuf), "-DDOUBLEPREC=%d %s ",
              DOUBLEPREC, DOUBLEPREC ? "" : "-cl-single-precision-constant");
 

@@ -27,6 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_cal_types.h"
 #include "separation_cal_kernelgen.h"
 #include "cal_likelihood.h"
+#include "integrals.h"
 
 static CALresult createSGBuffers(const AstronomyParameters* ap, MWCALInfo* ci, SeparationCALMem* cm, StreamGauss sg)
 {
@@ -45,36 +46,49 @@ static CALresult createSGBuffers(const AstronomyParameters* ap, MWCALInfo* ci, S
 
 }
 
+
 static CALresult createStarsBuffers(const StarPoints* sp, MWCALInfo* ci, SeparationCALMem* cm)
 {
-    real* starsXY;
-    real* starsZ;
+    real* starsLTrig;
+    real* starsRBTrig;
+    LB lb;
+    LBTrig lbt;
     CALuint i;
     CALresult err = CAL_RESULT_OK;
 
-    starsXY = mwMallocA(2 * sizeof(real) * sp->number_stars);
-    starsZ = mwMallocA(sizeof(real) * sp->number_stars);
+    starsLTrig = mwMallocA(2 * sizeof(real) * sp->number_stars);
+    starsRBTrig = mwMallocA(2 * sizeof(real) * sp->number_stars);
 
     for (i = 0; i < sp->number_stars; ++i)
     {
-        starsXY[2 * i + 0] = X(sp->stars[i]);
-        starsXY[2 * i + 1] = Y(sp->stars[i]);
-        starsZ[i] = Z(sp->stars[i]);
+        LB_L(lb) = L(sp->stars[i]);
+        LB_B(lb) = B(sp->stars[i]);
+        lbt = lb_trig(lb);
+
+        starsLTrig[2 * i + 0] = lbt.lCosBCos;
+        starsLTrig[2 * i + 1] = lbt.lSinBCos;
+        starsRBTrig[2 * i + 0] = R(sp->stars[i]);
+        starsRBTrig[2 * i + 1] = lbt.bSin;
     }
 
-    err |= createConstantBuffer1D(&cm->starsXY, ci, starsXY, formatReal2, sp->number_stars);
+    #if 0
+    err |= createConstantBuffer1D(&cm->starsLTrig, ci, starsLTrig, formatReal2, sp->number_stars);
     if (err != CAL_RESULT_OK)
-        cal_warn("Failed to create starsXY buffer", err);
+        cal_warn("Failed to create starsLTrig buffer", err);
 
-    err |= createConstantBuffer1D(&cm->starsZ, ci, starsZ, formatReal1, sp->number_stars);
+    err |= createConstantBuffer1D(&cm->starsRBTrig, ci, starsRBTrig, formatReal2, sp->number_stars);
     if (err != CAL_RESULT_OK)
-        cal_warn("Failed to create starsZ buffer", err);
+        cal_warn("Failed to create starsRBTrig buffer", err);
+    #endif
 
-    mwFreeA(starsXY);
-    mwFreeA(starsZ);
+    mwFreeA(starsLTrig);
+    mwFreeA(starsRBTrig);
 
     return err;
 }
+
+
+
 
 static CALresult createLikelihoodBuffers(const AstronomyParameters* ap,
                                          const StreamGauss sg,
@@ -84,9 +98,33 @@ static CALresult createLikelihoodBuffers(const AstronomyParameters* ap,
 {
     CALresult err = CAL_RESULT_OK;
 
+    err |= createStarsBuffers(sp, ci, cm);
+    err |= createSGBuffers(ap, ci, cm, sg);
+
     return err;
 }
 
+static CALresult getLikelihoodModuleNames(MWCALInfo* ci, SeparationCALNames* cn, CALuint numberStreams)
+{
+    CALresult err = CAL_RESULT_OK;
+
+
+    if (err != CAL_RESULT_OK)
+        cal_warn("Failed to get module names", err);
+
+    return err;
+}
+
+static CALresult setLikelihoodKernelArguments(MWCALInfo* ci, SeparationCALMem* cm, SeparationCALNames* cn)
+{
+    CALresult err = CAL_RESULT_OK;
+
+
+    if (err != CAL_RESULT_OK)
+        cal_warn("Failed to set kernel arguments", err);
+
+    return err;
+}
 
 CALresult likelihoodCAL(SeparationResults* results,
                         const AstronomyParameters* ap,
@@ -99,6 +137,7 @@ CALresult likelihoodCAL(SeparationResults* results,
 {
     CALresult err;
     SeparationCALMem cm;
+    SeparationCALNames cn;
 
     memset(&cm, 0, sizeof(cm));
     if (separationLoadKernel(ci, ap, sc, CAL_TRUE) != CAL_RESULT_OK)
@@ -106,7 +145,19 @@ CALresult likelihoodCAL(SeparationResults* results,
 
 
 
+    err = createLikelihoodBuffers(ap, sg, sp, ci, &cm);
+    if (err != CAL_RESULT_OK)
+        return err;
 
+    err = getLikelihoodModuleNames(ci, &cn, ap->number_streams);
+    if (err != CAL_RESULT_OK)
+        return err;
+
+    err = setLikelihoodKernelArguments(ci, &cm, &cn);
+    if (err != CAL_RESULT_OK)
+        return err;
+
+    /* Run kernel */
 
     err = releaseSeparationBuffers(ci, &cm);
     if (err != CAL_RESULT_OK)
