@@ -131,23 +131,14 @@ static void calculateIntegrals(const AstronomyParameters* ap,
                                const StreamGauss sg,
                                EvaluationState* es,
                                const CLRequest* clr,
-                               GPUInfo* ci)
+                               GPUInfo* ci,
+                               int useImages)
 {
     const IntegralArea* ia;
     double t1, t2;
     int rc;
 
-  #if SEPARATION_OPENCL
-    cl_bool useImages = TRUE;
-  #endif /* SEPARATION_OPENCL */
-
-  #if SEPARATION_OPENCL
-    if (setupSeparationCL(ci, ap, ias, clr, &useImages) != CL_SUCCESS)
-        fail("Failed to setup CL\n");
-  #elif SEPARATION_CAL
-    if (separationCALInit(ci, clr) != CAL_RESULT_OK)
-        fail("Failed to setup CAL\n");
-
+  #if SEPARATION_CAL
     if (separationLoadKernel(ci, ap, sc, CAL_FALSE) != CAL_RESULT_OK)
         fail("Failed to load integral kernel");
   #endif /* SEPARATION_OPENCL */
@@ -160,7 +151,7 @@ static void calculateIntegrals(const AstronomyParameters* ap,
 
         t1 = mwGetTime();
       #if SEPARATION_OPENCL
-        rc = integrateCL(ap, ia, sc, sg, es, clr, ci, useImages);
+        rc = integrateCL(ap, ia, sc, sg, es, clr, ci, (cl_bool) useImages);
       #elif SEPARATION_CAL
         rc = integrateCAL(ap, ia, sg, es, clr, ci);
       #else
@@ -197,6 +188,7 @@ int evaluate(SeparationResults* results,
     StreamGauss sg;
     GPUInfo ci;
     StarPoints sp = EMPTY_STAR_POINTS;
+    int useImages = TRUE; /* Only applies to CL version */
 
     memset(&ci, 0, sizeof(ci));
 
@@ -214,7 +206,15 @@ int evaluate(SeparationResults* results,
     if (maybeResume(es))
         fail("Failed to resume checkpoint\n");
 
-    calculateIntegrals(ap, ias, sc, sg, es, clr, &ci);
+  #if SEPARATION_OPENCL
+    if (setupSeparationCL(&ci, ap, ias, clr, &useImages) != CL_SUCCESS)
+        fail("Failed to setup CL\n");
+  #elif SEPARATION_CAL
+    if (separationCALInit(&ci, clr) != CAL_RESULT_OK)
+        fail("Failed to setup CAL\n");
+  #endif
+
+    calculateIntegrals(ap, ias, sc, sg, es, clr, &ci, useImages);
 
     finalCheckpoint(es);
 

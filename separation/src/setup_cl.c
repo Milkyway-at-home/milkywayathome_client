@@ -707,7 +707,7 @@ cl_int setupSeparationCL(CLInfo* ci,
                          const AstronomyParameters* ap,
                          const IntegralArea* ias,
                          const CLRequest* clr,
-                         cl_bool* useImages)
+                         cl_int* useImages)
 {
     cl_int err;
     char* compileFlags;
