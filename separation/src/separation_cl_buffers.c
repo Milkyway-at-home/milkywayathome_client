@@ -35,7 +35,6 @@ static cl_mem createZeroReadWriteBuffer(CLInfo* ci, size_t size, cl_int* errOut)
     cl_mem mem = NULL;
     cl_int err = CL_SUCCESS;
 
-    warn("Creating 0 buffer: %zu\n", size);
     mem = clCreateBuffer(ci->clctx, CL_MEM_READ_WRITE, size, NULL, &err);
     if (err != CL_SUCCESS)
     {

@@ -545,9 +545,11 @@ static const char* getNvidiaRegCount(const DevInfo* di)
 static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, cl_bool useImages)
 {
     char* compileFlags = NULL;
-    char cwd[1024] = "";
-    char extraFlags[1024] = "";
-    char includeFlags[4096] = "";
+    char cwd[1024];
+    char extraFlags[1024];
+    char includeFlags[1024];
+    char precBuf[1024];
+    char kernelDefBuf[1024];
 
     /* Math options for CL compiler */
     const char mathFlags[] = "-cl-mad-enable "
@@ -555,48 +557,18 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
                              "-cl-strict-aliasing "
                              "-cl-finite-math-only ";
 
-    /* Build options used by milkyway_math stuff */
-    const char mathOptions[] = "-DUSE_CL_MATH_TYPES=0 "
-                               "-DUSE_MAD=1 "
-                               "-DUSE_FMA=0 ";
-
     /* Extra flags for different compilers */
     const char nvidiaOptFlags[] = "-cl-nv-verbose ";
     const char atiOptFlags[]    = "";
 
-  #if DOUBLEPREC
-    const char precDefStr[]   = "-DDOUBLEPREC=1 ";
-  #else
-    const char precDefStr[] = "-DDOUBLEPREC=0 ";
-    const char clPrecStr[]  = "-cl-single-precision-constant ";
-  #endif
-
-    /* Constants compiled into kernel. We need to define
-     * MILKYWAY_MATH_COMPILATION since the header inclusion protection
-     * doesn't really matter and doesn't work when everything is
-     * dumped together. */
-    const char kernelDefStr[] = "-DMILKYWAY_MATH_COMPILATION "
-                                "-DNSTREAM=%u "
+    const char kernelDefStr[] = "-DNSTREAM=%u "
                                 "-DFAST_H_PROB=%d "
                                 "-DAUX_BG_PROFILE=%d "
                                 "-DUSE_IMAGES=%d "
                                 "-DI_DONT_KNOW_WHY_THIS_DOESNT_WORK_HERE=%d ";
 
     const char includeStr[] = "-I%s "
-                              "-I%s/../include "
-                              "-I%s/../../include "
-                              "-I%s/../../milkyway/include ";
-
-    /* Big enough. Also make sure to count for the extra characters of the format specifiers */
-    char kernelDefBuf[sizeof(kernelDefStr) + 5 * 12 + 8];
-    char precDefBuf[sizeof(precDefStr)];
-
-    size_t totalSize = 4 * sizeof(cwd) + (sizeof(includeStr) + 8)
-                     + sizeof(mathFlags)
-                     + sizeof(precDefBuf)
-                     + sizeof(kernelDefBuf)
-                     + sizeof(mathOptions)
-                     + sizeof(extraFlags);
+                              "-I%s/../include ";
 
     cl_bool isFermi = minComputeCapabilityCheck(di, 2, 0);
 
@@ -611,15 +583,10 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
         return NULL;
     }
 
-    /* Always use this flag */
-    strncpy(precDefBuf, precDefStr, sizeof(precDefBuf));
+    snprintf(precBuf, sizeof(precBuf), "-DDOUBLEPREC=%d %s ",
+             DOUBLEPREC, DOUBLEPREC ? "" : "-cl-single-precision-constant");
 
-  #if !DOUBLEPREC
-    /* The ATI compiler rejects the one you're supposed to use, in
-     * favor of a totally undocumented flag. */
-    strcat(precDefBuf, di->vendorID != MW_AMD_ATI ? clPrecStr : "");
-  #endif /* !DOUBLEPREC */
-
+    /* FIXME: Device vendor not necessarily the platform vendor */
     if (di->vendorID == MW_NVIDIA)
     {
         if (snprintf(extraFlags, sizeof(extraFlags),
@@ -649,24 +616,21 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
             return NULL;
         }
 
-        if (snprintf(includeFlags, sizeof(includeFlags), includeStr, cwd, cwd, cwd, cwd) < 0)
+        if (snprintf(includeFlags, sizeof(includeFlags), includeStr, cwd, cwd) < 0)
         {
             warn("Failed to get include flags\n");
             return NULL;
         }
     }
 
-    compileFlags = mwMalloc(totalSize);
-    if (snprintf(compileFlags, totalSize, "%s%s%s%s%s%s ",
+    if (asprintf(&compileFlags, "%s%s%s%s%s ",
                  includeFlags,
                  mathFlags,
-                 mathOptions,
                  extraFlags,
-                 precDefBuf,
+                 precBuf,
                  kernelDefBuf) < 0)
     {
         warn("Failed to get compile flags\n");
-        free(compileFlags);
         return NULL;
     }
 
