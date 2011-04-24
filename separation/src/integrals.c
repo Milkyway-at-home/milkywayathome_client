@@ -193,15 +193,6 @@ inline void sum_probs(Kahan* probs,
         KAHAN_ADD(probs[i], V_reff_xr_rp3 * st_probs[i]);
 }
 
-ALWAYS_INLINE OLD_GCC_EXTERNINLINE
-inline void mult_probs(real* st_probs, const real V_reff_xr_rp3, const unsigned int n_stream)
-{
-    unsigned int i;
-
-    for (i = 0; i < n_stream; ++i)
-        st_probs[i] *= V_reff_xr_rp3;
-}
-
 static inline real aux_prob(const AstronomyParameters* ap,
                             const real qw_r3_N,
                             const real r_in_mag)
@@ -209,14 +200,23 @@ static inline real aux_prob(const AstronomyParameters* ap,
     return qw_r3_N * (ap->bg_a * sqr(r_in_mag) + ap->bg_b * r_in_mag + ap->bg_c);
 }
 
+HOT
+static inline void multProbs(EvaluationState* es, real V_reff_xr_rp3)
+{
+    unsigned int i;
+
+    es->bgTmp *= V_reff_xr_rp3;
+    for (i = 0; i < es->numberStreams; ++i)
+        es->streamTmps[i] *= V_reff_xr_rp3;
+}
 
 HOT
 static inline real bg_probability_fast_hprob(const AstronomyParameters* ap,
                                              const StreamConstants* sc,
                                              const RPoints* r_pts,
                                              const real* sg_dx,
-                                             const LBTrig lbt,
-                                             const real gPrime,
+                                             LBTrig lbt,
+                                             real gPrime,
                                              real* streamTmps)
 {
     unsigned int i;
@@ -253,8 +253,8 @@ static inline real bg_probability_slow_hprob(const AstronomyParameters* ap,
                                              const StreamConstants* sc,
                                              const RPoints* r_pts,
                                              const real* sg_dx,
-                                             const LBTrig lbt,
-                                             const real gPrime,
+                                             LBTrig lbt,
+                                             real gPrime,
                                              real* streamTmps)
 {
     unsigned int i;
@@ -285,29 +285,33 @@ static inline real bg_probability_slow_hprob(const AstronomyParameters* ap,
     return bg_prob;
 }
 
+HOT
+static inline void sumProbs(EvaluationState* es)
+{
+    unsigned int i;
+
+    KAHAN_ADD(es->bgSum, es->bgTmp);
+    for (i = 0; i < es->numberStreams; ++i)
+        KAHAN_ADD(es->streamSums[i], es->streamTmps[i]);
+}
+
+
 HOT ALWAYS_INLINE
 inline void bg_probability(const AstronomyParameters* ap,
                            const StreamConstants* sc,
                            const RPoints* r_pts,
                            const real* sg_dx,
-                           const real gPrime,
-                           const LBTrig lbt, /* integral point */
+                           real gPrime,
+                           real reff_xr_rp3,
+                           LBTrig lbt, /* integral point */
                            EvaluationState* es)
 {
     if (ap->fast_h_prob)
         es->bgTmp = bg_probability_fast_hprob(ap, sc, r_pts, sg_dx, lbt, gPrime, es->streamTmps);
     else
         es->bgTmp = bg_probability_slow_hprob(ap, sc, r_pts, sg_dx, lbt, gPrime, es->streamTmps);
-}
 
-HOT
-static inline void multSumProbs(EvaluationState* es, real V_reff_xr_rp3)
-{
-    unsigned int i;
-
-    KAHAN_ADD(es->bgSum, V_reff_xr_rp3 * es->bgTmp);
-    for (i = 0; i < es->numberStreams; ++i)
-        KAHAN_ADD(es->streamSums[i], V_reff_xr_rp3 * es->streamTmps[i]);
+    multProbs(es, reff_xr_rp3);
 }
 
 
@@ -323,17 +327,16 @@ static inline void r_sum(const AstronomyParameters* ap,
                          unsigned int r_steps)
 {
     unsigned int r_step;
-    real V_reff_xr_rp3;
+    real reff_xr_rp3;
 
     for (r_step = 0; r_step < r_steps; ++r_step)
     {
+        reff_xr_rp3 = id * rc[r_step].irv_reff_xr_rp3;
         bg_probability(ap, sc,
                        &r_pts[r_step * ap->convolve],
                        sg_dx,
-                       rc[r_step].gPrime, lbt, es);
-        V_reff_xr_rp3 = id * rc[r_step].irv_reff_xr_rp3;
-
-        multSumProbs(es, V_reff_xr_rp3);
+                       rc[r_step].gPrime, reff_xr_rp3, lbt, es);
+        sumProbs(es);
     }
 }
 

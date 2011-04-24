@@ -34,8 +34,9 @@ void bg_probability(const AstronomyParameters* ap,
                     const StreamConstants* sc,
                     const RPoints* r_pts,
                     const real* sg_dx,
-                    const real gPrime,
-                    const LBTrig lbt, /* integral point */
+                    real gPrime,
+                    real reff_xr_rp3,
+                    LBTrig lbt, /* integral point */
                     EvaluationState* es);
 
 int integrate(const AstronomyParameters* ap,

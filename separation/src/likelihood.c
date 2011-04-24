@@ -161,11 +161,7 @@ static real likelihood_probability(const AstronomyParameters* ap,
     }
     else
     {
-        bg_probability(ap, sc, r_pts, sg_dx, rc.gPrime, lbt, es);
-
-        es->bgTmp *= reff_xr_rp3;  /* bg only */
-        for (i = 0; i < ap->number_streams; ++i)
-            es->streamTmps[i] *= reff_xr_rp3;
+        bg_probability(ap, sc, r_pts, sg_dx, rc.gPrime, reff_xr_rp3, lbt, es);
     }
 
     if (bgProb)
