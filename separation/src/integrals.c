@@ -418,17 +418,17 @@ static real probabilities_SSE2(const AstronomyParameters* ap,
 
         xyz0.d = _mm_sub_pd(_mm_mul_pd(RI, COSBL), SUNR0);
 
-        _mm_storel_pd((double*) &X(xyz[i]), xyz0.d);
-        _mm_storeh_pd((double*) &X(xyz[i + 1]), xyz0.d);
+        _mm_storel_pd(&X(xyz[i]), xyz0.d);
+        _mm_storeh_pd(&X(xyz[i + 1]), xyz0.d);
 
         xyz1.d = _mm_mul_pd(RI, SINCOSBL);
-        _mm_storel_pd((double*) &Y(xyz[i]), xyz1.d);
-        _mm_storeh_pd((double*) &Y(xyz[i + 1]), xyz1.d);
+        _mm_storel_pd(&Y(xyz[i]), xyz1.d);
+        _mm_storeh_pd(&Y(xyz[i + 1]), xyz1.d);
 
         xyz2.d = _mm_mul_pd(RI, SINB);
         tmp0.d = _mm_mul_pd(xyz2.d, QV_RECIP);
-        _mm_storel_pd((double*) &Z(xyz[i]), xyz2.d);
-        _mm_storeh_pd((double*) &Z(xyz[i + 1]), xyz2.d);
+        _mm_storel_pd(&Z(xyz[i]), xyz2.d);
+        _mm_storeh_pd(&Z(xyz[i + 1]), xyz2.d);
 
         xyz0.d = _mm_mul_pd(xyz0.d, xyz0.d);
         xyz1.d = _mm_mul_pd(xyz1.d, xyz1.d);
