@@ -66,6 +66,10 @@ mark_as_advanced(ALL_OF_THE_SSES)
 option(SEPARATION_GRAPHICS
        "Use Separation Graphics" OFF)
 
+cmake_dependent_option(SEPARATION_USE_CUSTOM_MATH "Use custom SSE2/SSE3" ON
+                       "DOUBLEPREC" OFF)
+mark_as_advanced(SEPARATION_USE_CUSTOM_MATH)
+
 cmake_dependent_option(SEPARATION_CRLIBM "Use crlibm for separation maths" OFF
                        "DOUBLEPREC" OFF)
 mark_as_advanced(SEPARATION_CRLIBM)

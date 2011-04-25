@@ -32,8 +32,9 @@ LBTrig lb_trig(LB lb);
 
 void bg_probability(const AstronomyParameters* ap,
                     const StreamConstants* sc,
-                    const RPoints* r_pts,
-                    const real* sg_dx,
+                    const real* restrict sg_dx,
+                    const real* restrict r_point,
+                    const real* restrict qw_r3_N,
                     real gPrime,
                     real reff_xr_rp3,
                     LBTrig lbt, /* integral point */

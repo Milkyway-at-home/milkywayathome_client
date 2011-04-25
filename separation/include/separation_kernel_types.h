@@ -144,6 +144,7 @@ typedef struct SEPARATION_ALIGN(128)
 {
     /* Constants determined by other parameters */
     real m_sun_r0;
+    real q_inv;
     real q_inv_sqr;  /* 1 / q^2 */
     real r0;
     real alpha;
@@ -174,7 +175,7 @@ typedef struct SEPARATION_ALIGN(128)
 } AstronomyParameters;
 
 #define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0.0, \
-                                     0.0, 0.0,   \
+                                     0.0, 0.0, 0.0,           \
                                      0.0, 0.0, 0.0, 0.0, 0, 0, \
                                      0, 0, 0.0, 0.0,        \
                                      0, 0, 0.0, 0.0, 0, 0, 0, \

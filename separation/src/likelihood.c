@@ -15,7 +15,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
+You should have reciveed a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
@@ -140,15 +140,18 @@ static void separation(FILE* f,
 static real likelihood_probability(const AstronomyParameters* ap,
                                    const StreamConstants* sc,
                                    const Streams* streams,
-                                   const RPoints* r_pts,
-                                   const real* sg_dx,
+
+                                   const real* restrict sg_dx,
+                                   const real* restrict r_points,
+                                   const real* restrict qw_r3_N,
+
                                    const LBTrig lbt,
                                    const RConsts rc,
-                                   const real reff_xr_rp3,
+                                   real reff_xr_rp3,
                                    const SeparationResults* results,
                                    EvaluationState* es,
 
-                                   real* bgProb) /* Out argument for thing needed by separation */
+                                   real* restrict bgProb) /* Out argument for thing needed by separation */
 
 {
     unsigned int i;
@@ -161,7 +164,7 @@ static real likelihood_probability(const AstronomyParameters* ap,
     }
     else
     {
-        bg_probability(ap, sc, r_pts, sg_dx, rc.gPrime, reff_xr_rp3, lbt, es);
+        bg_probability(ap, sc, sg_dx, r_points, qw_r3_N, rc.gPrime, reff_xr_rp3, lbt, es);
     }
 
     if (bgProb)
@@ -271,8 +274,12 @@ static int likelihood_sum(SeparationResults* results,
                           const StreamConstants* sc,
                           const Streams* streams,
                           const StreamGauss sg,
-                          RPoints* r_pts,
+
                           EvaluationState* es,
+
+                          real* restrict r_points,
+                          real* restrict qw_r3_N,
+
 
                           const int do_separation,
                           StreamStats* ss,
@@ -304,7 +311,7 @@ static int likelihood_sum(SeparationResults* results,
     {
         point = sp->stars[current_star_point];
         rc.gPrime = calcG(Z(point));
-        setRPoints(ap, sg, ap->convolve, rc.gPrime, r_pts);
+        setSplitRPoints(ap, sg, ap->convolve, rc.gPrime, r_points, qw_r3_N);
         reff_xr_rp3 = calcReffXrRp3(Z(point), rc.gPrime);
 
         LB_L(lb) = L(point);
@@ -312,7 +319,7 @@ static int likelihood_sum(SeparationResults* results,
 
         lbt = lb_trig(lb);
 
-        star_prob = likelihood_probability(ap, sc, streams, r_pts, sg.dx, lbt, rc,
+        star_prob = likelihood_probability(ap, sc, streams, sg.dx, r_points, qw_r3_N, lbt, rc,
                                            reff_xr_rp3, results, es, &bgProb);
 
         if (mw_cmpnzero_muleps(star_prob, SEPARATION_EPS))
@@ -354,14 +361,14 @@ int likelihood(SeparationResults* results,
                const int do_separation,
                const char* separation_outfile)
 {
-    RPoints* r_pts;
+    real* r_points;
+    real* qw_r3_N;
     EvaluationState* es;
     StreamStats* ss = NULL;
     FILE* f = NULL;
 
     int rc = 0;
     double t1, t2;
-
 
     if (do_separation)
     {
@@ -378,21 +385,24 @@ int likelihood(SeparationResults* results,
     /* New state for this sum */
     es = newEvaluationState(ap);
 
-    r_pts = (RPoints*) mwMallocA(sizeof(RPoints) * ap->convolve);
+    r_points = (real*) mwMallocA(sizeof(real) * ap->convolve);
+    qw_r3_N = (real*) mwMallocA(sizeof(real) * ap->convolve);
 
     t1 = mwGetTime();
     rc = likelihood_sum(results,
                         ap, sp, sc, streams,
-                        sg, r_pts,
+                        sg,
                         es,
-
+                        r_points,
+                        qw_r3_N,
                         do_separation,
                         ss,
                         f);
     t2 = mwGetTime();
     warn("Likelihood time = %f s\n", t2 - t1);
 
-    mwFreeA(r_pts);
+    mwFreeA(r_points);
+    mwFreeA(qw_r3_N);
     mwFreeA(ss);
     freeEvaluationState(es);
 

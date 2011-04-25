@@ -60,6 +60,7 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
     ap->r0    = bgp->parameters[2];
     ap->delta = bgp->parameters[3];
 
+    ap->q_inv = inv(ap->q);
     ap->q_inv_sqr = inv(sqr(ap->q));
 
     if (ap->aux_bg_profile)
@@ -81,9 +82,9 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
         return 1;
     }
 
-    if (ap->convolve == 0)
+    if (ap->convolve == 0 || ap->convolve > 256 || !mwEven(ap->convolve))
     {
-        warn("convolve (%u) must be > 0\n", ap->convolve);
+        warn("convolve (%u) must be > 0, <= 256 and even\n", ap->convolve);
         return 1;
     }
 

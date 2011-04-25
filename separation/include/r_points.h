@@ -31,14 +31,21 @@ extern "C" {
 #include "milkyway_cl.h"
 #include "milkyway_extra.h"
 
-real calcG(const real coords);
-real calcReffXrRp3(const real coords, const real gPrime);
+real calcG(real coords);
+real calcReffXrRp3(real coords, real gPrime);
 
 void setRPoints(const AstronomyParameters* ap,
                 const StreamGauss sg,
-                const unsigned int n_convolve,
-                const real coords,
+                unsigned int n_convolve,
+                real coords,
                 RPoints* r_pts);
+
+void setSplitRPoints(const AstronomyParameters* ap,
+                     const StreamGauss sg,
+                     unsigned int n_convolve,
+                     real gPrime,
+                     real* restrict r_points,
+                     real* restrict qw_r3_N);
 
 RPoints* precalculateRPts(const AstronomyParameters* ap,
                           const IntegralArea* ia,
