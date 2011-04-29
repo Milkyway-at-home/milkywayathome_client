@@ -44,7 +44,7 @@ function(separation_test test_app suffix)
   foreach(i ${test_list})
     if(SMALL_TESTS)
       set(small_test_${i}_args -c -s stars-${i}.txt -a astronomy_parameters-${i}-small.txt ${test_${i}_params})
-      add_test(small_test_${i}-${suffix} COMMAND ${test_app} ${small_test_${i}_args})
+      add_test(small_test_${i}-${suffix} ${test_app}/milkyway_separation ${small_test_${i}_args})
     endif()
 
     if(LARGE_TESTS)

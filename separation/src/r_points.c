@@ -46,6 +46,8 @@ static RPrime calcRPrime(const IntegralArea* ia, const unsigned int r_step)
     return ret;
 }
 
+//This applies a sigmoid to account for the falloff in the SDSS data. Heidi
+//Described it in 2002. Check Nates MW Bible -clr
 real calcReffXrRp3(const real coords, const real gPrime)
 {
     static const real sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
@@ -66,16 +68,39 @@ real calcG(const real coords)
 static inline RPoints calc_r_point(const real dx, const real qgaus_W, const real gPrime, const real coeff)
 {
     RPoints r_pt;
-    real g, exponent, r3, N;
+    real g, exponent, r3, N, stddev_l, stddev_r, stddev_i, A;
 
     g = gPrime + dx;
-
+    
     /* MAG2R */
     r_pt.r_point = 0.001 * mw_exp10(0.2 * (g - absm) + 1.0);
 
     r3 = cube(r_pt.r_point);
-    exponent = sqr(g - gPrime) * inv(2.0 * sqr(stdev));
-    N = coeff * mw_exp(-exponent);
+
+    //Reimplemented to account for matt newbys f_turnoff distribution insights
+    stddev_l = 0.315;
+    //Function from MATT
+    //\alpha = .52, \beta=12.0 \gamma=0.76
+    //Get d_eff, I assumed it was r_pt.r_point given the simularities
+    stddev_r = 0.52* inv(1+mw_exp(12.0-r_pt.r_point))+ 0.76;
+    //if g <= \mu = 4.2 we use a constant
+    //however is gPrime equal to \mu? It seems to be used in the same way
+    if(g <= 4.2){ 
+        
+	stddev_i = stddev_l;
+    }
+    else {
+        
+        stddev_i = stddev_r;
+
+    }
+    //Note see previous uncertainty about gPrime versus \mu
+    exponent = sqr(g - gPrime) * inv(2.0 * sqr(stddev_i));
+    //New coefficient Could be a little more efficient if I pushed all these values to a header
+    //However I can't find the file
+    A = inv(2*3.1415926535*(stddev_l+stddev_r)*inv(2));
+    N = A * mw_exp(-exponent);
+    
     r_pt.qw_r3_N = qgaus_W * r3 * N;
 
     return r_pt;
