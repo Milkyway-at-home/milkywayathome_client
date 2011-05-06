@@ -91,6 +91,7 @@ static void setForwardedArguments(NBodyFlags* nbf, const char** args)
 /* Read the command line arguments, and do the inital parsing of the parameter file. */
 static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
 {
+    int argRead;
     poptContext context;
     const char** rest = NULL;   /* Leftover arguments */
     mwbool failed = FALSE;
@@ -99,8 +100,7 @@ static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
 
     /* FIXME: There's a small leak of the inputFile from use of
        poptGetNextOpt(). Some mailing list post suggestst that this
-       is some kind of semi-intended bug to work around something or
-       other while maintaining ABI compatability */
+       is some kind of semi-intended bug to work around something or other */
     const struct poptOption options[] =
     {
         {
@@ -228,7 +228,8 @@ static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
 
     /* Check for invalid options, and must have the input file or a
      * checkpoint to resume from */
-    if (mwReadArguments(context) || (!nbf->inputFile && !nbf->checkpointFileName))
+    argRead = mwReadArguments(context)
+    if (argRead < 0 || (!nbf->inputFile && !nbf->checkpointFileName))
     {
         poptPrintHelp(context, stderr, 0);
         failed = TRUE;

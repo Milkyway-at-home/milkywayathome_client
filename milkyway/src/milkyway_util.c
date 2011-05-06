@@ -20,6 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _WIN32
   #include <sys/time.h>
+  #include <sys/resource.h>
 #else
   #include <stdlib.h>
   #include <malloc.h>
@@ -381,23 +382,28 @@ void _mw_time_prefix(char* buf, size_t bufSize)
         buf[0] = '\0';
 }
 
-
+/* Returns < 0 on error, otherwise bitwise or'd val flags from arguments encountered.
+   We want to be able to some behaviour without the flag, but simply using some default value for the flag is undesirable.
+*/
 int mwReadArguments(poptContext context)
 {
     int o;
+    int rc = 0;
 
-    while ( ( o = poptGetNextOpt(context)) >= 0 );
+    while ((o = poptGetNextOpt(context)) >= 0)
+    {
+         rc |= o;
+    }
 
     if (o < -1)
     {
         warn("Argument parsing error: %s: %s\n",
              poptBadOption(context, 0),
              poptStrerror(o));
-
-        return 1;
+        return -1;
     }
 
-    return 0;
+    return rc;
 }
 
 
@@ -528,4 +534,66 @@ int mwCheckNormalPosNum(real n)
 {
     return !isfinite(n) || n <= 0.0;
 }
+
+
+
+#ifdef _WIN32
+
+static DWORD mwPriorityToPriorityClass(MWPriority x)
+{
+    switch (x)
+    {
+        case MW_PRIORITY_IDLE:
+            return IDLE_PRIORITY_CLASS;
+        case MW_PRIORITY_BELOW_NORMAL:
+            return BELOW_NORMAL_PRIORITY_CLASS;
+        case MW_PRIORITY_NORMAL:
+            return NORMAL_PRIORITY_CLASS;
+        case MW_PRIORITY_ABOVE_NORMAL:
+            return ABOVE_NORMAL_PRIORITY_CLASS;
+        case MW_PRIORITY_HIGH:
+            return HIGH_PRIORITY_CLASS;
+        default:
+            warn("Invalid priority: %d. Using default.\n", (int) x);
+            return mwPriorityToPriorityClass(MW_PRIORITY_DEFAULT);
+    }
+}
+
+
+int mwSetProcessPriority(MWPriority priority)
+{
+    HANDLE handle;
+
+    if (!DuplicateHandle(GetCurrentProcess(),
+                         GetCurrentProcess(),
+                         GetCurrentProcess(),
+                         &handle,
+                         0,
+                         FALSE,
+                         DUPLICATE_SAME_ACCESS))
+    {
+        return warn1("Failed to get process handle: %ld\n", GetLastError());
+    }
+
+    if (!SetPriorityClass(handle, mwPriorityToPriorityClass(priority)))
+    {
+        return warn1("Failed to set process priority class: %ld\n", GetLastError());
+    }
+
+    return 0;
+}
+#else
+
+int mwSetProcessPriority(MWPriority priority)
+{
+    if (setpriority(PRIO_PROCESS, getpid(), priority))
+    {
+        perror("Setting process priority");
+        return 1;
+    }
+
+    return 0;
+}
+
+#endif /* _WIN32 */
 

@@ -81,11 +81,10 @@ mwvector transform_point(const AstronomyParameters* ap,
 
 static dsfmt_t dsfmtState;
 
-/* Initialize seed for prob_ok; time based seed if 0 */
-void prob_ok_init(long seed)
+/* Initialize seed for prob_ok; time based seed */
+void prob_ok_init(uint32_t seed, int setSeed)
 {
-    if (!seed)
-        seed = (long) time(NULL);
+    seed = setSeed ? seed : (uint32_t) time(NULL);
 
     dsfmt_init_gen_rand(&dsfmtState, seed);
 }

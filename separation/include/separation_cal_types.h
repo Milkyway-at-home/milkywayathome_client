@@ -124,6 +124,8 @@ typedef struct
 
     CALuint chunkSizeMu;
     CALuint chunkSizeR;
+
+    CALuint chunkWaitTime;   /* Estimated time (ms) per chunk for waiting */
 } SeparationCALChunks;
 
 #if DOUBLEPREC

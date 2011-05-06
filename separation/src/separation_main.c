@@ -37,6 +37,7 @@ typedef struct
     char* referenceFile;
     int debugBOINC;
     int do_separation;
+    int setSeed;
     int separationSeed;
     int cleanup_checkpoint;
     int usePlatform;
@@ -48,20 +49,34 @@ typedef struct
     int pollingMode;
     int printVersion;
     int disableGPUCheckpointing;
+
+    MWPriority processPriority;
+    int setPriority;
 } SeparationFlags;
+
+/* Process priority to use for GPU version */
+#ifndef _WIN32
+  #define DEFAULT_GPU_PRIORITY 0
+#else
+  #define DEFAULT_GPU_PRIORITY MW_PRIORITY_NORMAL
+#endif /* _WIN32 */
 
 #define DEFAULT_POLLING_MODE 1
 #define DEFAULT_RESPONSIVENESS_FACTOR 1.0
 #define DEFAULT_TARGET_FREQUENCY 30.0
 #define DEFAULT_DISABLE_GPU_CHECKPOINTING 0
 
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, \
-                                 DEFAULT_RESPONSIVENESS_FACTOR,                  \
-                                 DEFAULT_TARGET_FREQUENCY,                       \
-                                 DEFAULT_POLLING_MODE,                           \
-                                 DEFAULT_DISABLE_GPU_CHECKPOINTING,              \
-                                 0                                               \
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, FALSE, FALSE, FALSE,  \
+                                 0, FALSE, FALSE, 0, 0, 0,                     \
+                                 DEFAULT_RESPONSIVENESS_FACTOR,                \
+                                 DEFAULT_TARGET_FREQUENCY,                     \
+                                 DEFAULT_POLLING_MODE,                         \
+                                 DEFAULT_DISABLE_GPU_CHECKPOINTING,            \
+                                 0, 0, FALSE                                   \
                                }
+#define SEED_ARGUMENT (1 << 1)
+#define PRIORITY_ARGUMENT (1 << 2)
+
 
 static void printVersion(int boincTag)
 {
@@ -133,6 +148,7 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 static real* parseParameters(int argc, const char** argv, unsigned int* paramnOut, SeparationFlags* sfOut)
 {
     poptContext context;
+    int argRead;
     real* parameters = NULL;
     static unsigned int numParams;
     static int server_params = 0;
@@ -161,9 +177,9 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
         },
 
         {
-            "separation-seed", 'e',
+            "seed", 'e',
             POPT_ARG_INT, &sf.separationSeed,
-            0, "Seed for random number generator", NULL
+            SEED_ARGUMENT, "Seed for random number generator", NULL
         },
 
         {
@@ -176,6 +192,16 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
             "debug-boinc", 'g',
             POPT_ARG_NONE, &sf.debugBOINC,
             0, "Init BOINC with debugging. No effect if not built with BOINC_APPLICATION", NULL
+        },
+
+        {
+            "process-priority", 'i',
+            POPT_ARG_INT, &sf.processPriority,
+         #ifndef _WIN32
+            PRIORITY_ARGUMENT, "Set process nice value (-20 to 20)", NULL
+         #else
+            PRIORITY_ARGUMENT, "Set process priority class. Set priority class 0 (lowest) to 4 (highest)", NULL
+         #endif /* _WIN32 */
         },
 
       #if SEPARATION_OPENCL || SEPARATION_CAL
@@ -258,7 +284,8 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
         exit(EXIT_FAILURE);
     }
 
-    if (mwReadArguments(context))
+    argRead = mwReadArguments(context);
+    if (argRead < 0)
     {
         poptPrintHelp(context, stderr, 0);
         poptFreeContext(context);
@@ -272,6 +299,9 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
         printVersion(FALSE);
         exit(EXIT_SUCCESS);
     }
+
+    sf.setSeed = argRead & SEED_ARGUMENT; /* Check if these flags were used */
+    sf.setPriority = argRead & PRIORITY_ARGUMENT;
 
     sf.do_separation = (sf.separation_outfile && strcmp(sf.separation_outfile, ""));
     if (!sf.do_separation) /* Skip server arguments for just running separation */
@@ -293,7 +323,7 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
     setDefaultFiles(&sf);
 
     if (sf.do_separation)
-        prob_ok_init(sf.separationSeed);
+        prob_ok_init(sf.separationSeed, sf.setSeed);
 
     *sfOut = sf;
     return parameters;
@@ -399,16 +429,29 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     return rc;
 }
 
-static int separationInit(const char* appname, int boincDebug)
+static int separationInit(const char* appName, int debugBOINC, MWPriority priority, int setPriority)
 {
-    if (mwBoincInit(appname, boincDebug))
-        return 1;
+    int rc;
 
   #if DISABLE_DENORMALS
     mwDisableDenormalsSSE();
   #endif
 
-  #if SEPARATION_CAL && defined(_WIN32)
+    rc = mwBoincInit(appName, debugBOINC);
+    if (rc)
+        return rc;
+
+    /* For GPU versions, default to using a higher process priority if not set */
+  #if SEPARATION_OPENCL || SEPARATION_CAL
+    if (!setPriority && mwSetProcessPriority(DEFAULT_GPU_PRIORITY))
+        return 1;
+  #endif
+
+    /* If a  priority was specified, use that */
+    if (setPriority && mwSetProcessPriority(priority))
+        return 1;
+
+  #if (SEPARATION_CAL || SEPARATION_OPENCL) && defined(_WIN32)
     /* We need to increase timer resolution to prevent big slowdown on windows when CPU is loaded. */
     if (mwSetTimerMinResolution())
         return 1;
@@ -446,8 +489,9 @@ int main(int argc, const char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (separationInit(argv[0], sf.debugBOINC))
-        exit(EXIT_FAILURE);
+    rc = separationInit(argv[0], sf.debugBOINC, sf.processPriority, sf.setPriority);
+    if (rc)
+        return rc;
 
     rc = worker(&sf, parameters, number_parameters);
 

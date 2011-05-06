@@ -21,15 +21,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _R_POINTS_H_
 #define _R_POINTS_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "separation_types.h"
 #include "separation_constants.h"
 #include "coordinates.h"
 #include "milkyway_cl.h"
 #include "milkyway_extra.h"
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 real calcG(real coords);
 real calcReffXrRp3(real coords, real gPrime);
@@ -44,8 +45,8 @@ void setSplitRPoints(const AstronomyParameters* ap,
                      const StreamGauss sg,
                      unsigned int n_convolve,
                      real gPrime,
-                     real* restrict r_points,
-                     real* restrict qw_r3_N);
+                     real* RESTRICT r_points,
+                     real* RESTRICT qw_r3_N);
 
 RPoints* precalculateRPts(const AstronomyParameters* ap,
                           const IntegralArea* ia,

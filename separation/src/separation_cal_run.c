@@ -28,7 +28,35 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_cal_types.h"
 #include "separation_cal_kernelgen.h"
 
-static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain, CALint pollingMode)
+static CALresult waitForKernel(MWCALInfo* ci, CALevent ev, CALuint initialWait, CALint pollingMode)
+{
+    CALresult err;
+
+    mwMilliSleep(initialWait);  /* Sleep for initial estimate before polling */
+
+    if (pollingMode > 0)
+    {
+        while (calCtxIsEventDone(ci->calctx, ev) == CAL_RESULT_PENDING)
+            mwMilliSleep(pollingMode);
+    }
+    else if (pollingMode == 0)
+    {
+        err = mw_calCtxWaitForEvents(ci->calctx, &ev, 1, 0);
+        if (err != CAL_RESULT_OK)
+        {
+            cal_warn("Error waiting for kernel", err);
+            return err;
+        }
+    }
+    else /* Busy wait */
+    {
+        while (calCtxIsEventDone(ci->calctx, ev) == CAL_RESULT_PENDING);
+    }
+
+    return CAL_RESULT_OK;
+}
+
+static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain, CALint pollingMode, CALuint initialWait)
 {
     CALresult err;
     CALevent ev = 0;
@@ -66,26 +94,7 @@ static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain, CALint pollin
         return err;
     }
 
-    if (pollingMode > 0)
-    {
-        while (calCtxIsEventDone(ci->calctx, ev) == CAL_RESULT_PENDING)
-            mwMilliSleep(pollingMode);
-    }
-    else if (pollingMode == 0)
-    {
-        err = mw_calCtxWaitForEvents(ci->calctx, &ev, 1, 0);
-        if (err != CAL_RESULT_OK)
-        {
-            cal_warn("Error waiting for kernel", err);
-            return err;
-        }
-    }
-    else /* Busy wait */
-    {
-        while (calCtxIsEventDone(ci->calctx, ev) == CAL_RESULT_PENDING);
-    }
-
-    return CAL_RESULT_OK;
+    return waitForKernel(ci, ev, initialWait, pollingMode);
 }
 static CALresult setNuKernelArgs(SeparationCALMem* cm, const IntegralArea* ia, CALuint nuStep)
 {
@@ -236,7 +245,8 @@ static CALuint64 deviceFlopsEstimate(const CALdeviceattribs* d)
 static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
                                    const IntegralArea* ia,
                                    const CALdeviceattribs* devAttribs,
-                                   const CLRequest* clr)
+                                   const CLRequest* clr,
+                                   CALuint* chunkWaitEstimate)
 {
     CALuint64 flops, iterFlops;
     CALdouble effFlops, estIterTime, timePerIter;
@@ -265,10 +275,12 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
     while (!mwDivisible(ia->mu_steps, nChunk) && nChunk <= ia->mu_steps)
         ++nChunk;
 
+    //*chunkWaitEstimate = (CALuint) (0.1 * estIterTime / nChunk); /* Sleep for 50% of estimated time before polling */
+    *chunkWaitEstimate = 0;
     warn("Estimated iteration time %f ms\n"
          "Target frequency %f Hz, polling mode %d, using responsiveness factor of %f\n"
-         "Dividing into %u chunks\n",
-         estIterTime, clr->targetFrequency, clr->pollingMode, clr->responsivenessFactor, nChunk);
+         "Dividing into %u chunks, initially sleeping for %u ms\n",
+         estIterTime, clr->targetFrequency, clr->pollingMode, clr->responsivenessFactor, nChunk, *chunkWaitEstimate);
 
     return nChunk;
 }
@@ -282,7 +294,7 @@ static CALresult findCALChunks(const AstronomyParameters* ap,
     CALresult err = CAL_RESULT_OK;
     CALuint nChunk;
 
-    nChunk = deviceChunkEstimate(ap, ia, &ci->devAttribs, clr);
+    nChunk = deviceChunkEstimate(ap, ia, &ci->devAttribs, clr, &chunks->chunkWaitTime);
     if (nChunk == 0)
     {
         warn("Invalid number of chunks: %u\n", nChunk);
@@ -333,7 +345,7 @@ static inline CALuint runNuStep(MWCALInfo* ci,
             if (err != CAL_RESULT_OK)
                 break;
 
-            err = runKernel(ci, &domain, pollingMode);
+            err = runKernel(ci, &domain, pollingMode, chunks->chunkWaitTime);
             if (err != CAL_RESULT_OK)
                 goto run_step_exit;
         }

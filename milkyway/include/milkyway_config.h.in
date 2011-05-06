@@ -51,7 +51,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define FUNC_NAME __FUNCTION__
   #define inline __inline
 #else
-  #define RESTRICT restrict
+  #ifdef __cplusplus
+    #define RESTRICT __restrict__
+  #else
+    #define RESTRICT restrict
+  #endif /* __cplusplus */
   #define FUNC_NAME __func__
 #endif /* _MSC_VER */
 

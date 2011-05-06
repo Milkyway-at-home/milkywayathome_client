@@ -255,7 +255,7 @@ static cl_int runIntegral(CLInfo* ci,
                           const AstronomyParameters* ap,
                           const IntegralArea* ia)
 {
-    cl_int err;
+    cl_int err = CL_SUCCESS;
     double t1, t2, dt;
     double tAcc = 0.0;
 
