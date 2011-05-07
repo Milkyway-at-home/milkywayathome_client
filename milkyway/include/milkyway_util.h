@@ -203,6 +203,7 @@ int mwDisableDenormalsSSE();
 #endif /* defined(__SSE__) && DISABLE_DENORMALS */
 
 void mwSetConsistentx87FPUPrecision();
+void mwDisableErrorBoxes();
 
 #ifdef __cplusplus
 }

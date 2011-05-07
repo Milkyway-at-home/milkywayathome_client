@@ -529,3 +529,24 @@ int mwCheckNormalPosNum(real n)
     return !isfinite(n) || n <= 0.0;
 }
 
+#ifdef _WIN32
+/* Disable the stupid "Windows is checking for a solution to the
+ * problem" boxes from showing up if this crashes */
+void mwDisableErrorBoxes()
+{
+    DWORD mode, setMode;
+
+    setMode = SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX
+    mode = SetErrorMode(setMode);
+    SetErrorMode(mode | setMode);
+}
+
+#else
+
+void mwDisableErrorBoxes()
+{
+
+}
+
+#endif /* _WIN32 */
+

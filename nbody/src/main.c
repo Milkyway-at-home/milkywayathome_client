@@ -50,6 +50,8 @@ static void nbodyPrintVersion()
 /* Maybe set up some platform specific issues */
 static void specialSetup()
 {
+    mwDisableErrorBoxes();
+
   #if ENABLE_CRLIBM
     /* Try to handle inconsistencies with x87. We shouldn't use
      * this. This helps, but there can still be some problems for some

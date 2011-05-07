@@ -397,6 +397,7 @@ int main(int argc, const char* argv[])
     real* parameters;
     unsigned int number_parameters;
 
+    mwDisableErrorBoxes();
     parameters = parseParameters(argc, argv, &number_parameters, &sf);
     if (!parameters && !sf.do_separation)
     {
