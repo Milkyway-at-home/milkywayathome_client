@@ -1,8 +1,9 @@
 /*
   Copyright (c) 1993, 2001 Joshua E. Barnes, Honolulu, HI.
-  Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
+  Copyright (c) 2010 Matthew Arsenault, Travis Desell, Boleslaw
+    Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
+    Rensselaer Polytechnic Institute.
+  Copyright (c) 2002-2006 John M. Fregeau, Richard Campbell, Jeff Molofee
 
 This file is part of Milkway@Home.
 
@@ -27,6 +28,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_grav.h"
 #include "nbody_show.h"
 #include "nbody_lua.h"
+
+#if NBODY_GL
+  #include "nbody_gl.h"
+#endif /* NBODY_GL */
 
 static inline int nbodyTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 {
@@ -62,12 +67,17 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
   #endif /* BOINC_APPLICATION */
 }
 
-static int runSystem(const NBodyCtx* ctx, NBodyState* st)
+static int runSystem(const NBodyCtx* ctx, NBodyState* st, int visualizer)
 {
     const real tstop = ctx->timeEvolve - ctx->timestep / 1024.0;
 
     while (st->tnow < tstop)
     {
+      #if NBODY_GL
+        if (visualizer)
+            updateDisplayedBodies();
+      #endif /* NBODY_GL */
+
         if (stepSystem(ctx, st))   /* advance N-body system */
             return 1;
 
@@ -93,7 +103,11 @@ static int runSystem(const NBodyCtx* ctx, NBodyState* st)
 static void endRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, const real chisq)
 {
     finalOutput(ctx, st, nbf, chisq);
-    destroyNBodyState(st);
+
+    if (!NBODY_GL && nbf->visualizer)  /* Drawing thread never dies */
+    {
+        destroyNBodyState(st);
+    }
 }
 
 static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
@@ -153,10 +167,14 @@ static int verifyFile(const NBodyFlags* nbf)
     return rc;
 }
 
-int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to control output */
+/* FIXME */
+static NBodyCtx _ctx = EMPTY_NBODYCTX;
+static NBodyState _st = EMPTY_NBODYSTATE;
+
+int runNBodySimulation(const NBodyFlags* nbf)
 {
-    NBodyCtx ctx  = EMPTY_NBODYCTX;
-    NBodyState st = EMPTY_NBODYSTATE;
+    NBodyCtx* ctx = &_ctx;
+    NBodyState* st = &_st;
 
     int rc = 0;
     real chisq;
@@ -165,21 +183,28 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     if (nbf->verifyOnly)
         return verifyFile(nbf);
 
-    if (resolveCheckpoint(&st, nbf->checkpointFileName))
+    if (resolveCheckpoint(st, nbf->checkpointFileName))
         return warn1("Failed to resolve checkpoint\n");
 
-    if (setupRun(&ctx, &st, &ctx.histogramParams, nbf))
+    if (setupRun(ctx, st, &ctx->histogramParams, nbf))
         return warn1("Failed to setup run\n");
 
-    nbodySetCtxFromFlags(&ctx, nbf);
-    if (initOutput(&st, nbf))
+    nbodySetCtxFromFlags(ctx, nbf);
+    if (initOutput(st, nbf))
         return warn1("Failed to open output files\n");
+
+  #if NBODY_GL
+    if (nbf->visualizer)
+        nbodyInitDrawState(st);
+  #endif /* NBODY_GL */
 
     if (nbf->printTiming)     /* Time the body of the calculation */
         ts = mwGetTime();
 
-    if (runSystem(&ctx, &st))
+    rc = runSystem(ctx, st, nbf->visualizer);
+    if (rc)
         return warn1("Error running system\n");
+
     mw_report("Simulation complete\n");
 
     if (nbf->printTiming)
@@ -189,14 +214,14 @@ int runNBodySimulation(const NBodyFlags* nbf)       /* Misc. parameters to contr
     }
 
     /* Get the likelihood */
-    chisq = nbodyChisq(&ctx, &st, nbf, &ctx.histogramParams);
+    chisq = nbodyChisq(ctx, st, nbf, &ctx->histogramParams);
     if (isnan(chisq))
     {
         warn("Failed to calculate chisq\n");
         rc = 1;
     }
 
-    endRun(&ctx, &st, nbf, chisq);
+    endRun(ctx, st, nbf, chisq);
 
     return rc;
 }

@@ -36,6 +36,16 @@ include(CheckFunctionExists)
 include(CheckSSE2)
 include(CMakeDependentOption)
 
+option(NBODY_GL "Lots of pixels" OFF)
+
+find_package(OpenGL)
+find_package(GLUT)
+
+if(NBODY_GL)
+  include_directories(${OPENGL_INCLUDE_DIR})
+  include_directories(${GLUT_INCLUDE_PATH})
+endif()
+
 include_directories(${MILKYWAY_INCLUDE_DIR})
 include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 
@@ -205,10 +215,17 @@ set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/nbody_lua.h
                       ${NBODY_INCLUDE_DIR}/milkyway_lua_vector.h
                       ${NBODY_INCLUDE_DIR}/milkyway_lua_dsfmt.h)
 
-
 add_library(nbody_lua STATIC ${nbody_lua_src} ${nbody_lua_headers})
 set_target_properties(nbody_lua PROPERTIES
                         COMPILE_DEFINITIONS "NBODY_LUA_TYPES_COMPILATION")
+
+
+if(NBODY_GL)
+  list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/nbody_gl.c)
+  list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_gl.h)
+endif()
+
+
 
 
 #TODO: The tests dSFMT has
@@ -284,6 +301,11 @@ if(BOINC_APPLICATION)
 endif()
 
 
+if(NBODY_GL)
+  list(APPEND nbody_exe_link_libs ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})
+endif()
+
+
 if(NBODY_CRLIBM)
   include_directories(${CRLIBM_INCLUDE_DIR})
   list(APPEND nbody_exe_link_libs ${CRLIBM_LIBRARY})
@@ -314,6 +336,7 @@ if(BOINC_RELEASE_NAMES)
 else()
   set(nbody_bin_name "milkyway_nbody")
 endif()
+
 configure_file (
   "${NBODY_INCLUDE_DIR}/nbody_config.h.in"
   "${PROJECT_INCLUDE_DIR}/nbody_config.h")

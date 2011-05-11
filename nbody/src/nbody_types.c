@@ -99,7 +99,7 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, uns
 
 NBodyState* newNBodyState()
 {
-    return mwCalloc(1, sizeof(NBodyState));
+    return mwCallocA(1, sizeof(NBodyState));
 }
 
 static int equalMaybeArray(const void* a, const void* b, size_t n)

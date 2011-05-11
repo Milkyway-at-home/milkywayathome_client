@@ -34,6 +34,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <crlibm.h>
 #endif /* NBODY_CRLIBM */
 
+#if NBODY_GL
+  #include "nbody_gl.h"
+#endif /* NBODY_GL */
+
 
 #if !BOINC_APPLICATION
 static void nbodyPrintVersion() { }
@@ -91,7 +95,7 @@ static void setForwardedArguments(NBodyFlags* nbf, const char** args)
 }
 
 /* Read the command line arguments, and do the inital parsing of the parameter file. */
-static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
+static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf)
 {
     poptContext context;
     const char** rest = NULL;   /* Leftover arguments */
@@ -169,6 +173,12 @@ static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
             "debug-boinc", 'g',
             POPT_ARG_NONE, &nbf->debugBOINC,
             0, "Init BOINC with debugging. No effect if not built with BOINC_APPLICATION", NULL
+        },
+
+        {
+            "visualizer", 'u',
+            POPT_ARG_NONE, &nbf->visualizer,
+            0, "Show simple N-body visualization. No effect if not built with NBODY_GL", NULL
         },
 
         {
@@ -294,7 +304,29 @@ static void setNumThreads(int numThreads) { }
 
 #endif /* _OPENMP */
 
-int main(int argc, const char* argv[])
+static int nbodyMain(NBodyFlags* nbf)
+{
+  #if !NBODY_GL
+    return runNBodySimulation(nbf);
+  #else
+    int rc;
+    NBodyThreadID tid;
+
+    if (!nbf->visualizer)
+        return runNBodySimulation(nbf);
+
+    rc = runNBodySimulationInThread(nbf, &tid);
+    if (!rc)
+    {
+        nbodyRunDisplayWhenReady();
+        rc = nbodyWaitForSimThread(tid);
+    }
+
+    return rc;
+  #endif /* NBODY_GL */
+}
+
+int main(int argc, char* argv[])
 {
     NBodyFlags nbf = EMPTY_NBODY_FLAGS;
     int rc = 0;
@@ -310,12 +342,24 @@ int main(int argc, const char* argv[])
         exit(EXIT_FAILURE);
     }
 
+  #if NBODY_GL
+    if (nbf.visualizer)
+    {
+        rc = nbodyGLSetup(&argc, argv);
+        if (rc)
+        {
+            warn("Failed to setup GL\n");
+            freeNBodyFlags(&nbf);
+            mw_finish(rc);
+        }
+    }
+  #endif /* NBODY_GL */
+
     nbodyPrintVersion();
-
-    setNumThreads(nbf.numThreads);
     setDefaultFlags(&nbf);
+    setNumThreads(nbf.numThreads);
 
-    rc = runNBodySimulation(&nbf);
+    rc = nbodyMain(&nbf);
     if (nbf.cleanCheckpoint)
     {
         mw_report("Removing checkpoint file '%s'\n", nbf.checkpointFileName);

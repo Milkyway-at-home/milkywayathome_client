@@ -399,7 +399,6 @@ typedef enum
                          FALSE, FALSE, FALSE,                              \
                          0, 0, EMPTY_HISTOGRAM_PARAMS }
 
-
 int destroyNBodyState(NBodyState* st);
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, unsigned int nbody);
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt);
