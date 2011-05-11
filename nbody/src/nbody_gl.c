@@ -44,7 +44,7 @@
 #define RIGHT_ARROW 77
 
 /* other stuff */
-#define STARSIZE 0.02f
+#define STARSIZE 0.01f
 #define NTRI 8
 
 #define DELTAXROT 15.0f
@@ -258,6 +258,7 @@ static void drawGLScene()
 
             glTranslatef(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
             glColor3f(color[i].x, color[i].y, color[i].z);
+            //glColor3f(1.0f, 1.0f, 1.0f);
             /* glutSolidSphere(scene.starsize, scene.ntri, scene.ntri); */
             gluSphere(quadratic, scene.starsize, scene.ntri, scene.ntri);
             /* glTranslatef(-r[i].x/SCALE, -r[i].y/SCALE, -r[i].z/SCALE); */
