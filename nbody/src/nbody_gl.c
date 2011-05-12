@@ -56,6 +56,8 @@
 #define ROTSCALE 1.0
 #define ZOOMSCALE 0.2
 
+#define USE_GL_POINTS 0
+
 /* the scene structure */
 typedef struct
 {
@@ -133,7 +135,7 @@ static void initGL(int w, int h)
 
     glClearDepth(1.0);
     glDepthFunc(GL_LESS);
-    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST | GL_POINT_SMOOTH);
 
     glShadeModel(GL_SMOOTH);
 
@@ -248,9 +250,11 @@ static void drawGLScene()
         }
 
         /* draw stars */
+    #if !USE_GL_POINTS
         /* FIXME: Use modern OpenGL stuff */
         for (i = 0; i < st->nbody; ++i)
         {
+
             glLoadIdentity();
             glTranslatef(0.0f, 0.0f, scene.z);
             glRotatef(scene.xrot, 1.0f, 0.0f, 0.0f);
@@ -258,11 +262,20 @@ static void drawGLScene()
 
             glTranslatef(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
             glColor3f(color[i].x, color[i].y, color[i].z);
-            //glColor3f(1.0f, 1.0f, 1.0f);
             /* glutSolidSphere(scene.starsize, scene.ntri, scene.ntri); */
             gluSphere(quadratic, scene.starsize, scene.ntri, scene.ntri);
             /* glTranslatef(-r[i].x/SCALE, -r[i].y/SCALE, -r[i].z/SCALE); */
         }
+    #else
+        glPointSize(scene.starsize);  /* Is this actually working? */
+        glBegin(GL_POINTS);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        for (i = 0; i < st->nbody; ++i)
+        {
+            glVertex3f(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
+        }
+        glEnd();
+    #endif /* !USE_GL_POINTS */
 
         glutSwapBuffers();
     }
