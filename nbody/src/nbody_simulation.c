@@ -137,6 +137,11 @@ static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, 
         }
     }
 
+  #if NBODY_GL
+    if (nbf->visualizer)
+        nbodyInitDrawState(st);
+  #endif /* NBODY_GL */
+
     return gravMap(ctx, st); /* Start 1st step */
 }
 
@@ -192,11 +197,6 @@ int runNBodySimulation(const NBodyFlags* nbf)
     nbodySetCtxFromFlags(ctx, nbf);
     if (initOutput(st, nbf))
         return warn1("Failed to open output files\n");
-
-  #if NBODY_GL
-    if (nbf->visualizer)
-        nbodyInitDrawState(st);
-  #endif /* NBODY_GL */
 
     if (nbf->printTiming)     /* Time the body of the calculation */
         ts = mwGetTime();

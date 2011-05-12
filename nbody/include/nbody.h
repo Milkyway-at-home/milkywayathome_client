@@ -55,11 +55,13 @@ typedef struct
     int cleanCheckpoint;
     int ignoreCheckpoint;
     int numThreads;
+    int debugLuaLibs;   /* Open IO libraries etc. */
     time_t checkpointPeriod;
 } NBodyFlags;
 
-#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 
+void createSpoon(NBodyState* st);
 int runNBodySimulation(const NBodyFlags* nbf);
 
 #ifdef _cplusplus

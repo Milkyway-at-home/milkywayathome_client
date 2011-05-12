@@ -114,7 +114,7 @@ static lua_State* nbodyOpenLuaStateWithScript(const NBodyFlags* nbf)
     char* script;
     lua_State* luaSt;
 
-    luaSt = nbodyLuaOpen(FALSE);
+    luaSt = nbodyLuaOpen(nbf->debugLuaLibs);
     if (!luaSt)
         return NULL;
 

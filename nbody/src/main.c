@@ -176,6 +176,12 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
         },
 
         {
+            "lua-debug-libraries", 'a',
+            POPT_ARG_NONE, &nbf->debugLuaLibs,
+            0, "Load extra Lua libraries not normally allowed (e.g. io) ", NULL
+        },
+
+        {
             "visualizer", 'u',
             POPT_ARG_NONE, &nbf->visualizer,
             0, "Show simple N-body visualization. No effect if not built with NBODY_GL", NULL
