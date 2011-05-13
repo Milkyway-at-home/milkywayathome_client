@@ -287,79 +287,82 @@ static void keyPressed(unsigned char key, int x, int y)
     /* avoid thrashing this call */
     usleep(100);
 
-    if (key == ESCAPE || key == 'q')
+    switch (key)
     {
-        glutDestroyWindow(window);
-        mw_finish(EXIT_SUCCESS);
-    }
-    else if (key == 'h')
-    {
-        print_bindings(stderr);
-    }
-    else if (key == 'p')
-    {
-        scene.paused = !scene.paused;
-    }
-    else if (key == ' ')
-    {
-        scene.step = 1;
-    }
-    else if (key == 'b')
-    {
-        scene.starsize *= 1.5;
-        if (scene.starsize > 100.0)
-        {
-            scene.starsize = 100.0;
-        }
-        scene.changed = 1;
-    }
-    else if (key == 's')
-    {
-        scene.starsize /= 1.5;
-        if (scene.starsize < 1.0e-3)
-        {
-            scene.starsize = 1.0e-3;
-        }
-        scene.changed = 1;
-    }
-    else if (key == 'm')
-    {
-        scene.ntri *= 2;
-        if (scene.ntri > 24)
-        {
-            scene.ntri = 24;
-        }
-        scene.changed = 1;
-    }
-    else if (key == 'f')
-    {
-        scene.ntri /= 2;
-        if (scene.ntri < 4)
-        {
-            scene.ntri = 4;
-        }
-        scene.changed = 1;
-    }
-    else if (key == 'a')
-    {
-        scene.drawaxes = !scene.drawaxes;
-        scene.changed = 1;
-    }
-    else if (key == '>')
-    {
-        scene.dt /= 2.0;
-        if (scene.dt < 10.0)
-        {
-            scene.dt = 10.0;
-        }
-    }
-    else if (key == '<')
-    {
-        scene.dt *= 2.0;
-        if (scene.dt > 1.0e6)
-        {
-            scene.dt = 1.0e6;
-        }
+        case ESCAPE:
+        case 'q':
+            glutDestroyWindow(window);
+            mw_finish(EXIT_SUCCESS);
+
+        case 'h':
+            print_bindings(stderr);
+            break;
+
+        case 'p':
+            scene.paused = !scene.paused;
+            break;
+
+        case ' ':
+            scene.step = 1;
+            break;
+
+        case 'b':
+            scene.starsize *= 1.1;
+            if (scene.starsize > 100.0)
+            {
+                scene.starsize = 100.0;
+            }
+            scene.changed = 1;
+            break;
+
+        case 's':
+            scene.starsize *= 0.9;
+            if (scene.starsize < 1.0e-3)
+            {
+                scene.starsize = 1.0e-3;
+            }
+            scene.changed = 1;
+            break;
+
+        case 'm':
+            scene.ntri *= 2;
+            if (scene.ntri > 24)
+            {
+                scene.ntri = 24;
+            }
+            scene.changed = 1;
+            break;
+
+        case 'f':
+            scene.ntri /= 2;
+            if (scene.ntri < 4)
+            {
+                scene.ntri = 4;
+            }
+            scene.changed = 1;
+            break;
+
+        case 'a':
+            scene.drawaxes = !scene.drawaxes;
+            scene.changed = 1;
+            break;
+        case '>':
+            scene.dt /= 2.0;
+            if (scene.dt < 10.0)
+            {
+                scene.dt = 10.0;
+            }
+            break;
+        case '<':
+            scene.dt *= 2.0;
+            if (scene.dt > 1.0e6)
+            {
+                scene.dt = 1.0e6;
+            }
+            break;
+
+        default:
+            break;
     }
 }
 
