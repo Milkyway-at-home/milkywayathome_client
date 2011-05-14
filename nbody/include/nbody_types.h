@@ -293,7 +293,6 @@ typedef struct NBODY_ALIGN
 {
     NBodyTree tree;
     NBodyNode* freecell;   /* list of free cells */
-    unsigned int outputTime;
     time_t lastCheckpoint;
     real tnow;
     unsigned int nbody;
@@ -307,7 +306,7 @@ typedef struct NBODY_ALIGN
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0, NAN, 0, NULL, NULL, FALSE, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, NAN, 0, NULL, NULL, FALSE, NULL, NULL }
 
 
 typedef struct

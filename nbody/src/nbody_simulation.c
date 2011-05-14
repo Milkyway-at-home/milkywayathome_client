@@ -82,12 +82,6 @@ static int runSystem(const NBodyCtx* ctx, NBodyState* st, int visualizer)
             return 1;
 
         nbodyCheckpoint(ctx, st);
-
-      #if PERIODIC_OUTPUT
-        st->outputTime = (st->outputTime + 1) % ctx->freqOut;
-        if (st->outputTime == 0)
-            outputBodyPositionBin(ctx, st);
-      #endif /* PERIODIC_OUTPUT */
     }
 
     if (BOINC_APPLICATION || ctx->checkpointT >= 0)

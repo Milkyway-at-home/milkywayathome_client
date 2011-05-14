@@ -469,7 +469,6 @@ char* showNBodyState(const NBodyState* st)
                      "NBodyState %p = {\n"
                      "  tree           = %s\n"
                      "  freecell       = %p\n"
-                     "  outputTime     = %u\n"
                      "  lastCheckpoint = %d\n"
                      "  tnow           = %.15g\n"
                      "  nbody          = %u\n"
@@ -481,7 +480,6 @@ char* showNBodyState(const NBodyState* st)
                      st,
                      treeBuf,
                      st->freecell,
-                     st->outputTime,
                      (int) st->lastCheckpoint,
                      st->tnow,
                      st->nbody,

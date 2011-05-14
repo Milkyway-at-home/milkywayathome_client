@@ -126,7 +126,6 @@ int equalNBodyState(const NBodyState* st1, const NBodyState* st2)
     assert(st1 && st2);
 
     if (   st1->tnow != st2->tnow
-        || st1->outputTime != st2->outputTime
         || st1->lastCheckpoint != st2->lastCheckpoint
         || st1->nbody != st2->nbody)
     {
@@ -150,7 +149,6 @@ void cloneNBodyState(NBodyState* st, const NBodyState* oldSt)
 
     st->freecell = NULL;
 
-    st->outputTime     = oldSt->outputTime;
     st->lastCheckpoint = oldSt->lastCheckpoint;
     st->tnow           = oldSt->tnow;
     st->nbody          = oldSt->nbody;

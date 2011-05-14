@@ -86,11 +86,6 @@ elseif(NOT OPENMP_FOUND AND NBODY_OPENMP)
   message(WARNING "Did not find OpenMP support, but was enabled. Continuing without OpenMP")
 endif()
 
-option(PERIODIC_OUTPUT
-      "Write out body positions periodically" OFF)
-mark_as_advanced(PERIODIC_OUTPUT)
-
-
 if(BOINC_RELEASE)
   set(NBODY_CRLIBM ON)
 endif()

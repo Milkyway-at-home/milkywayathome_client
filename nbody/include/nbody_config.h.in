@@ -31,8 +31,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 NBODY_CRLIBM
 #cmakedefine01 NBODY_GL
 
-#cmakedefine01 PERIODIC_OUTPUT
-
 #define ENABLE_CRLIBM NBODY_CRLIBM
 #define ENABLE_OPENCL NBODY_OPENCL
 
