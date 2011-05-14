@@ -160,7 +160,7 @@ void _mw_time_prefix(char* buf, size_t bufSize);
     {                                                   \
         char _buf[256];                                 \
         _mw_time_prefix(_buf, sizeof(_buf));            \
-        fprintf(stderr, "%s: " msg, _buf, ##__VA_ARGS__);   \
+        fprintf(stdout, "%s: " msg, _buf, ##__VA_ARGS__);   \
     }
 
 #ifndef _WIN32

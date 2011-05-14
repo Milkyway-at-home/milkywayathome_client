@@ -199,8 +199,6 @@ int runNBodySimulation(const NBodyFlags* nbf)
     if (rc)
         return warn1("Error running system\n");
 
-    mw_report("Simulation complete\n");
-
     if (nbf->printTiming)
     {
         te = mwGetTime();
