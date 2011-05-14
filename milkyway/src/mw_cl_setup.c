@@ -78,6 +78,12 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
     mwPrintPlatforms(ids, n_platform);
     warn("Using device %u on platform %u\n", clr->devNum, clr->platform);
 
+    if (clr->platform >= n_platform)
+    {
+        warn("Requested platform is out of range of number of found platforms\n");
+        return MW_CL_ERROR;
+    }
+
     devs = mwGetAllDevices(ids[clr->platform], &nDev);
     if (!devs)
     {
