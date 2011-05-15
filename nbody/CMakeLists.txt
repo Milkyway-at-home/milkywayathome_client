@@ -36,10 +36,12 @@ include(CheckFunctionExists)
 include(CheckSSE2)
 include(CMakeDependentOption)
 
-option(NBODY_GL "Lots of pixels" OFF)
+cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" ON
+                                      "NOT NBODY_GL" OFF
+                                      "NOT NBODY_OPENCL" OFF)
+mark_as_advanced(NBODY_STATIC)
 
-find_package(OpenGL)
-find_package(GLUT)
+maybe_static(${NBODY_STATIC})
 
 if(NBODY_GL)
   include_directories(${OPENGL_INCLUDE_DIR})
@@ -49,10 +51,6 @@ endif()
 include_directories(${MILKYWAY_INCLUDE_DIR})
 include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 
-option(NBODY_STATIC "Build Nbody as fully static binary" ON)
-mark_as_advanced(NBODY_STATIC)
-
-maybe_static(${NBODY_STATIC})
 
 if(NEED_POPT_DEPS)
     #These are only dependencies of popt needed for static linking

@@ -189,11 +189,11 @@ option(NBODY_OPENMP
 option(NBODY_OPENCL
          "Use OpenCL" OFF)
 
+option(NBODY_GL "Lots of pixels" OFF)
 
 cmake_dependent_option(NBODY_CRLIBM "Use crlibm for maths" ON
                          "DOUBLEPREC" ON)
 mark_as_advanced(NBODY_CRLIBM)
-
 
 
 option(MILKYWAY_IPHONE_APP "April fools?" OFF)
@@ -347,6 +347,10 @@ find_package(Crlibm)
 find_package(Fdlibm)
 find_package(BOINC)
 find_package(Boost)
+find_package(OpenGL)
+find_package(GLUT)
+
+
 
 find_package(Popt REQUIRED)
 include_directories(${POPT_INCLUDE_DIR})

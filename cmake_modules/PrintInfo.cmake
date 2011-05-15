@@ -26,6 +26,8 @@ macro(print_libs)
   message("   Lua Libraries      ${LUA_LIBRARIES}")
   message("   OpenCL Libraries   ${OPENCL_LIBRARIES}")
   message("   CAL Libraries      ${ATICALCL_LIBRARY}")
+  message("   OpenGL Libraries   ${OPENGL_LIBRARIES}")
+  message("   GLUT Libraries     ${GLUT_LIBRARY}")
 endmacro()
 
 macro(print_build_options)
