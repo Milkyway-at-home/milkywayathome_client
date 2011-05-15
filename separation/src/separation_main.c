@@ -397,7 +397,9 @@ int main(int argc, const char* argv[])
     real* parameters;
     unsigned int number_parameters;
 
+  #ifdef NDEBUG
     mwDisableErrorBoxes();
+  #endif /* NDEBUG */
     parameters = parseParameters(argc, argv, &number_parameters, &sf);
     if (!parameters && !sf.do_separation)
     {

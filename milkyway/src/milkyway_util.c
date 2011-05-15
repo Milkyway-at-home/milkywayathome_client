@@ -536,7 +536,7 @@ void mwDisableErrorBoxes()
 {
     DWORD mode, setMode;
 
-    setMode = SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX
+    setMode = SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX;
     mode = SetErrorMode(setMode);
     SetErrorMode(mode | setMode);
 }
