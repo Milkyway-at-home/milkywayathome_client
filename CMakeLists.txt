@@ -1,14 +1,14 @@
 # Copyright 2010 Matthew Arsenault, Travis Desell, Dave Przybylo,
 # Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
 # Magdon-Ismail and Rensselaer Polytechnic Institute.
-
+#
 # This file is part of Milkway@Home.
-
+#
 # Milkyway@Home is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-
+#
 # Milkyway@Home is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -31,7 +31,6 @@ include(MinGWPaths)
 include(StaticBOINC)
 include(PrintInfo)
 include(DownloadCrlibm)
-include(DownloadDSFMT)
 include(CheckCFlag)
 include(MSVCFlags)
 include(CMakeDependentOption)
@@ -100,8 +99,6 @@ set(MILKYWAY_THIRDPARTY "${MILKYWAY_ROOT}/thirdparty")
 if(DOWNLOAD_CRLIBM)
   download_build_crlibm()
 endif()
-
-install_dsfmt()
 
 # Set output to be in this root
 set(EXECUTABLE_OUTPUT_PATH ${MILKYWAY_ROOT}/bin)
@@ -367,6 +364,8 @@ endif()
 
 include(SpecialLibs)
 
+add_subdirectory(dSFMT)
+add_definitions("${DSFMT_FLAGS}")
 add_subdirectory(milkyway)
 
 if(SEPARATION)

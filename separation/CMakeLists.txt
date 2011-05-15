@@ -41,6 +41,7 @@ set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}"
 
 include_directories(${MILKYWAY_INCLUDE_DIR})
 include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
+include_directories(${DSFMT_INCLUDE_DIR})
 
 set(SEPARATION_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "Sepaation includes")
 set(SEPARATION_KERNEL_DIR "${PROJECT_SOURCE_DIR}/kernels" CACHE INTERNAL "Separation kernels")

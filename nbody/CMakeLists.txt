@@ -50,6 +50,7 @@ endif()
 
 include_directories(${MILKYWAY_INCLUDE_DIR})
 include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
+include_directories(${DSFMT_INCLUDE_DIR})
 
 
 if(NEED_POPT_DEPS)
