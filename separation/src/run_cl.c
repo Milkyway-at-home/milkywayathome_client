@@ -177,7 +177,7 @@ static cl_int readKernelResults(CLInfo* ci,
 
 static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runSizes, const cl_uint nu_step)
 {
-    cl_int err;
+    cl_int err = CL_SUCCESS;
     size_t offset[2];
     unsigned int i;
 
@@ -189,27 +189,28 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
     }
 
     offset[1] = nu_step;
-    for (i = 0; i < runSizes->numChunks; ++i)
+    for (i = 0; i < runSizes->numChunks && err == CL_SUCCESS; ++i)
     {
         offset[0] = i * runSizes->chunkSize;
 
+        mw_begin_critical_section();
         err = enqueueIntegralKernel(ci, runSizes->letTheDriverDoIt, offset, runSizes->global, runSizes->local);
-        if (err != CL_SUCCESS)
+        if (err == CL_SUCCESS)
+        {
+            /* Give the screen a chance to redraw */
+            err = clFinish(ci->queue);
+            if (err != CL_SUCCESS)
+                mwCLWarn("Failed to finish", err);
+        }
+        else
         {
             mwCLWarn("Failed to enqueue integral kernel", err);
-            return err;
         }
 
-        /* Give the screen a chance to redraw */
-        err = clFinish(ci->queue);
-        if (err != CL_SUCCESS)
-        {
-            mwCLWarn("Failed to finish", err);
-            return err;
-        }
+        mw_end_critical_section();
     }
 
-    return CL_SUCCESS;
+    return err;
 }
 
 static inline void reportProgress(const AstronomyParameters* ap,

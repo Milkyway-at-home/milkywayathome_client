@@ -345,7 +345,9 @@ static inline CALuint runNuStep(MWCALInfo* ci,
             if (err != CAL_RESULT_OK)
                 break;
 
+            mw_begin_critical_section();
             err = runKernel(ci, &domain, pollingMode, chunks->chunkWaitTime);
+            mw_end_critical_section();
             if (err != CAL_RESULT_OK)
                 goto run_step_exit;
         }
