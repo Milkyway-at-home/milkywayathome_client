@@ -177,7 +177,7 @@ static void printChunks(const IntegralArea* ia, const SeparationCALChunks* chunk
     CALuint i;
 
     warn("Integration range: { nu_steps = %u, mu_steps = %u, r_steps = %u }\n"
-         "Using %u chunk(s) with sizes: ",
+         "Using %u chunk(s) with sizes:",
          ia->nu_steps, ia->mu_steps, ia->r_steps,
          chunks->nChunkMu);
 
@@ -209,6 +209,41 @@ static CALuint64 estimateWUFLOPsPerIter(const AstronomyParameters* ap, const Int
     perIter = perItem * ia->mu_steps * ia->r_steps;
 
     return perIter;
+}
+
+static CALuint64 deviceFlopsEstimateFallback(CALtarget target)
+{
+    switch (target)
+    {
+        case CAL_TARGET_600:
+        case CAL_TARGET_610:
+        case CAL_TARGET_630:
+        case CAL_TARGET_670:
+            return 85000000000;  /* 8.5e10 */
+
+        case CAL_TARGET_7XX:
+        case CAL_TARGET_770:
+        case CAL_TARGET_710:
+        case CAL_TARGET_730:
+            return 140000000000;  /* 1.4e11 */
+
+        case CAL_TARGET_CYPRESS:
+        case CAL_TARGET_JUNIPER:
+        case CAL_TARGET_REDWOOD:
+        case CAL_TARGET_CEDAR:
+            return 350000000000;  /* 3.5e11 */
+
+        case CAL_TARGET_WRESTLER:
+        case CAL_TARGET_CAYMAN:
+        case CAL_TARGET_BARTS:
+            return 560000000000;  /* 5.6e11 */
+
+        case CAL_TARGET_RESERVED0:
+        case CAL_TARGET_RESERVED1:
+        case CAL_TARGET_RESERVED2:
+        default:
+            return 10000000000; /* 1e10 */
+    }
 }
 
 static CALuint64 deviceFlopsEstimate(const CALdeviceattribs* d)
@@ -254,6 +289,16 @@ static CALuint64 deviceFlopsEstimate(const CALdeviceattribs* d)
   #if DOUBLEPREC
     flops /= doubleFrac;
   #endif
+
+    /* Radeon 3850 is probably slowerst we can expect, which is ~1e10 double */
+    if (flops < 10000000000)
+    {
+        /* Catalyst drivers seem to occasionally have a bug where the
+         * device clock comes back as 0 and it breaks everything.
+         */
+        flops = deviceFlopsEstimateFallback(d->target);
+        warn("Flops estimate too low, using fallback estimate based on target\n");
+    }
 
     return flops;
 }
