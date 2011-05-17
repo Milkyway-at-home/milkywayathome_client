@@ -78,18 +78,16 @@
 #endif
 
 
-static real* _rPoints = NULL;
-static real* _qw_r3_N = NULL;
-
 /* Marshaling into split r_points and qw_r3_N which helps with vectorization */
-static RConsts* initRPoints(const AstronomyParameters* ap, const IntegralArea* ia, const StreamGauss sg)
+static RConsts* initRPoints(const AstronomyParameters* ap,
+                            const IntegralArea* ia,
+                            const StreamGauss sg,
+                            real* restrict rPoints,
+                            real* restrict qw_r3_N)
 {
     unsigned int i, j, idx;
     RPoints* rPts;
     RConsts* rc;
-
-    _rPoints = (real*) mwMallocA(sizeof(real) * ia->r_steps * ap->convolve);
-    _qw_r3_N = (real*) mwMallocA(sizeof(real) * ia->r_steps * ap->convolve);
 
     rPts = precalculateRPts(ap, ia, sg, &rc, FALSE);
 
@@ -98,20 +96,12 @@ static RConsts* initRPoints(const AstronomyParameters* ap, const IntegralArea* i
         for (j = 0; j < ap->convolve; ++j)
         {
             idx = i * ap->convolve + j;
-            _rPoints[idx] = rPts[idx].r_point;
-            _qw_r3_N[idx] = rPts[idx].qw_r3_N;
+            rPoints[idx] = rPts[idx].r_point;
+            qw_r3_N[idx] = rPts[idx].qw_r3_N;
         }
     }
 
-    return rc;
-}
-
-static void freeRPoints()
-{
-    mwFreeA(_rPoints);
-    mwFreeA(_qw_r3_N);
-    _rPoints = NULL;
-    _qw_r3_N = NULL;
+    return rc;;
 }
 
 #ifdef __SSE2__
@@ -764,7 +754,9 @@ inline void bg_probability(const AstronomyParameters* ap,
 HOT
 static inline void r_sum(const AstronomyParameters* ap,
                          const StreamConstants* sc,
-                         const real* sg_dx,
+                         const real* restrict sg_dx,
+                         const real* restrict rPoints,
+                         const real* restrict qw_r3_N,
                          LBTrig lbt,
                          real id,
                          EvaluationState* es,
@@ -778,8 +770,8 @@ static inline void r_sum(const AstronomyParameters* ap,
     {
         reff_xr_rp3 = id * rc[r_step].irv_reff_xr_rp3;
         bg_probability(ap, sc, sg_dx,
-                       &_rPoints[r_step * ap->convolve],
-                       &_qw_r3_N[r_step * ap->convolve],
+                       &rPoints[r_step * ap->convolve],
+                       &qw_r3_N[r_step * ap->convolve],
                        rc[r_step].gPrime, reff_xr_rp3, lbt, es);
         sumProbs(es);
     }
@@ -805,7 +797,9 @@ static inline void mu_sum(const AstronomyParameters* ap,
                           const IntegralArea* ia,
                           const StreamConstants* sc,
                           const RConsts* rc,
-                          const real* sg_dx,
+                          const real* restrict sg_dx,
+                          const real* restrict rPoints,
+                          const real* restrict qw_r3_N,
                           const NuId nuid,
                           EvaluationState* es)
 {
@@ -825,7 +819,7 @@ static inline void mu_sum(const AstronomyParameters* ap,
         lb = gc2lb(ap->wedge, mu, nuid.nu); /* integral point */
         lbt = lb_trig(lb);
 
-        r_sum(ap, sc, sg_dx, lbt, nuid.id, es, rc, ia->r_steps);
+        r_sum(ap, sc, sg_dx, rPoints, qw_r3_N, lbt, nuid.id, es, rc, ia->r_steps);
     }
 
     es->mu_step = 0;
@@ -835,7 +829,9 @@ static void nuSum(const AstronomyParameters* ap,
                   const IntegralArea* ia,
                   const StreamConstants* sc,
                   const RConsts* rc,
-                  const real* sg_dx,
+                  const real* restrict sg_dx,
+                  const real* restrict rPoints,
+                  const real* restrict qw_r3_N,
                   EvaluationState* es)
 {
     NuId nuid;
@@ -844,7 +840,7 @@ static void nuSum(const AstronomyParameters* ap,
     {
         nuid = calcNuStep(ia, es->nu_step);
 
-        mu_sum(ap, ia, sc, rc, sg_dx, nuid, es);
+        mu_sum(ap, ia, sc, rc, sg_dx, rPoints, qw_r3_N, nuid, es);
     }
 
     es->nu_step = 0;
@@ -868,6 +864,8 @@ int integrate(const AstronomyParameters* ap,
               EvaluationState* es)
 {
     RConsts* rc;
+    real* restrict rPoints;
+    real* restrict qw_r3_N;
 
     if (ap->q == 0.0)
     {
@@ -880,13 +878,16 @@ int integrate(const AstronomyParameters* ap,
 
     initExpTable();
 
-    rc = initRPoints(ap, ia, sg);
+    rPoints = mwMallocA(sizeof(real) * ia->r_steps * ap->convolve);
+    qw_r3_N = mwMallocA(sizeof(real) * ia->r_steps * ap->convolve);
+    rc = initRPoints(ap, ia, sg, rPoints, qw_r3_N);
 
-    nuSum(ap, ia, sc, rc, sg.dx, es);
+    nuSum(ap, ia, sc, rc, sg.dx, rPoints, qw_r3_N, es);
     separationIntegralApplyCorrection(es);
 
     mwFreeA(rc);
-    freeRPoints();
+    mwFreeA(rPoints);
+    mwFreeA(qw_r3_N);
 
   #ifdef MILKYWAY_IPHONE_APP
     _milkywaySeparationGlobalProgress = 1.0;
