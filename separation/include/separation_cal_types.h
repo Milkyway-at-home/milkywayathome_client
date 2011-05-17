@@ -120,12 +120,12 @@ typedef struct
 typedef struct
 {
     CALuint nChunkMu;
-    CALuint nChunkR;
-
-    CALuint chunkSizeMu;
-    CALuint chunkSizeR;
+    //CALuint nChunkR;
 
     CALuint chunkWaitTime;   /* Estimated time (ms) per chunk for waiting */
+
+    CALuint* chunkMuBorders;
+    //CALuint* chunkRBorders;
 } SeparationCALChunks;
 
 #if DOUBLEPREC

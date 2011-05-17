@@ -174,11 +174,27 @@ static CALresult chunkDivCheck(const char* name, CALuint dim, CALuint nChunk)
 
 static void printChunks(const IntegralArea* ia, const SeparationCALChunks* chunks)
 {
+    CALuint i;
+
     warn("Integration range: { nu_steps = %u, mu_steps = %u, r_steps = %u }\n"
-         "Using { %u, %u } chunk(s) of size { %u, %u }\n",
+         "Using %u chunk(s) with sizes: ",
          ia->nu_steps, ia->mu_steps, ia->r_steps,
-         chunks->nChunkR, chunks->nChunkMu,
-         chunks->chunkSizeR, chunks->chunkSizeMu);
+         chunks->nChunkMu);
+
+    for (i = 0; i < chunks->nChunkMu; ++i)
+    {
+        warn("%5u", chunks->chunkMuBorders[i + 1] - chunks->chunkMuBorders[i]);
+    }
+    warn("\n");
+
+#if 0
+    warn("Borders: ");
+    for (i = 0; i <= chunks->nChunkMu; ++i)
+    {
+        warn("%5u", chunks->chunkMuBorders[i]);
+    }
+    warn("\n");
+#endif
 }
 
 static CALuint64 estimateWUFLOPsPerIter(const AstronomyParameters* ap, const IntegralArea* ia)
@@ -285,6 +301,13 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
     return nChunk;
 }
 
+static void freeCALChunks(SeparationCALChunks* chunks)
+{
+    free(chunks->chunkMuBorders);
+    //free(chunks->chunkRBorders);
+}
+
+
 static CALresult findCALChunks(const AstronomyParameters* ap,
                                const MWCALInfo* ci,
                                const CLRequest* clr,
@@ -292,7 +315,9 @@ static CALresult findCALChunks(const AstronomyParameters* ap,
                                SeparationCALChunks* chunks)
 {
     CALresult err = CAL_RESULT_OK;
-    CALuint nChunk;
+    CALuint i, nChunk;
+    CALuint sum = 0;
+    const CALuint nMod = 16; /* Keep chunks in sizes divisible by nMod */
 
     nChunk = deviceChunkEstimate(ap, ia, &ci->devAttribs, clr, &chunks->chunkWaitTime);
     if (nChunk == 0)
@@ -300,60 +325,70 @@ static CALresult findCALChunks(const AstronomyParameters* ap,
         warn("Invalid number of chunks: %u\n", nChunk);
         return CAL_RESULT_ERROR;
     }
-    else if (nChunk == 1)
+    else if (ia->mu_steps / nChunk < nMod)
     {
-        chunks->nChunkR = 1;
-        chunks->nChunkMu = 1;
+        chunks->nChunkMu = ia->mu_steps / nMod;
+        warn("Warning: Estimated number of chunks (%u) too large. Using %u\n", nChunk, chunks->nChunkMu);
     }
     else
     {
-        chunks->nChunkR = 1;
         chunks->nChunkMu = nChunk;
     }
 
-    chunks->chunkSizeR = ia->r_steps / chunks->nChunkR;
-    chunks->chunkSizeMu = ia->mu_steps / chunks->nChunkMu;
+    chunks->chunkMuBorders = mwCalloc((chunks->nChunkMu + 1), sizeof(CALuint));
+    //chunks->chunkRBorders = mwCalloc((chunks->nChunkR + 1), sizeof(CALuint));
+
+    for (i = 0; i <= chunks->nChunkMu; ++i)
+    {
+
+        chunks->chunkMuBorders[i] = (i * ia->mu_steps + chunks->nChunkMu) / (chunks->nChunkMu * nMod);
+        chunks->chunkMuBorders[i] *= nMod;
+        if (chunks->chunkMuBorders[i] > ia->mu_steps)
+            chunks->chunkMuBorders[i] = ia->mu_steps;
+
+        if (i > 0)
+            sum += chunks->chunkMuBorders[i] - chunks->chunkMuBorders[i - 1];
+    }
 
     printChunks(ia, chunks);
-    err |= chunkDivCheck("r steps", ia->r_steps, chunks->nChunkR);
-    err |= chunkDivCheck("mu steps", ia->mu_steps, chunks->nChunkMu);
+
+    if (sum != ia->mu_steps)  /* Assert that the divisions aren't broken */
+    {
+        warn("Chunk mu steps does not match: %u != %u\n", sum, ia->mu_steps);
+        free(chunks->chunkMuBorders);
+        return CAL_RESULT_ERROR;
+    }
 
     return err;
 }
 
-static inline CALuint runNuStep(MWCALInfo* ci,
-                                SeparationCALMem* cm,
-                                const IntegralArea* ia,
-                                const SeparationCALChunks* chunks,
-                                CALint pollingMode,
-                                CALuint nuStep)
+static CALresult runNuStep(MWCALInfo* ci,
+                           SeparationCALMem* cm,
+                           const IntegralArea* ia,
+                           const SeparationCALChunks* chunks,
+                           CALint pollingMode,
+                           CALuint nuStep)
 {
     CALdomain domain;
+    CALuint i;
     CALresult err = CAL_RESULT_OK;
 
-    /* It's much faster to do chunking in both dimensions when using
-     * images in tiled format */
+    err = setNuKernelArgs(cm, ia, nuStep);
+    if (err != CAL_RESULT_OK)
+        return err;
 
-    domain.width = chunks->chunkSizeR;
-    domain.height = chunks->chunkSizeMu;
+    domain.x = 0;
+    domain.width = ia->r_steps;
 
-    for (domain.x = 0; domain.x < ia->r_steps; domain.x += chunks->chunkSizeR)
+    for (i = 0; i < chunks->nChunkMu && err == CAL_RESULT_OK; ++i)
     {
-        for (domain.y = 0; domain.y < ia->mu_steps; domain.y += chunks->chunkSizeMu)
-        {
-            err = setNuKernelArgs(cm, ia, nuStep);
-            if (err != CAL_RESULT_OK)
-                break;
+        domain.y = chunks->chunkMuBorders[i];
+        domain.height = chunks->chunkMuBorders[i + 1] - chunks->chunkMuBorders[i];
 
-            mw_begin_critical_section();
-            err = runKernel(ci, &domain, pollingMode, chunks->chunkWaitTime);
-            mw_end_critical_section();
-            if (err != CAL_RESULT_OK)
-                goto run_step_exit;
-        }
+        mw_begin_critical_section();
+        err = runKernel(ci, &domain, pollingMode, chunks->chunkWaitTime);
+        mw_end_critical_section();
     }
-
-run_step_exit:
 
     return err;
 }
@@ -400,9 +435,6 @@ static CALresult runIntegral(const AstronomyParameters* ap,
     double t1, t2, dt, tAcc = 0.0;
     SeparationCALChunks chunks;
 
-    if (findCALChunks(ap, ci, clr, ia, &chunks) != CAL_RESULT_OK)
-        return CAL_RESULT_ERROR;
-
     memset(&cn, 0, sizeof(SeparationCALNames));
     err = getModuleNames(ci, &cn, cm->numberStreams);
     if (err != CAL_RESULT_OK)
@@ -417,6 +449,10 @@ static CALresult runIntegral(const AstronomyParameters* ap,
         destroyModuleNames(&cn);
         return err;
     }
+
+
+    if (findCALChunks(ap, ci, clr, ia, &chunks) != CAL_RESULT_OK)
+        return CAL_RESULT_ERROR;
 
     for (; es->nu_step < ia->nu_steps; es->nu_step++)
     {
@@ -439,12 +475,12 @@ static CALresult runIntegral(const AstronomyParameters* ap,
 
         reportProgress(ap, ia, es, es->nu_step + 1, dt);
     }
-
     es->nu_step = 0;
 
     warn("Integration time = %f s, average per iteration = %f ms\n", 1.0e-3 * tAcc, tAcc / ia->nu_steps);
 
     destroyModuleNames(&cn);
+    freeCALChunks(&chunks);
 
     if (err == CAL_RESULT_OK)
     {
