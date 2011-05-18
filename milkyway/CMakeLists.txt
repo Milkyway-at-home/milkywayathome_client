@@ -102,9 +102,18 @@ if(WIN32)
   target_link_libraries(milkyway winmm)
 endif()
 
+# No math should happen here, but just in case. Clang defaults to
+# using SSE stuffs
+if(NOT MSVC AND SYSTEM_IS_X86_32)
+  set(milkyway_flags "${DISABLE_SSE2_FLAGS}")
+endif()
 
 set_target_properties(milkyway PROPERTIES
-                      COMPILE_DEFINITIONS "MILKYWAY_MATH_COMPILATION")
+                      COMPILE_DEFINITIONS "MILKYWAY_MATH_COMPILATION"
+                      COMPILE_FLAGS "${milkyway_flags}")
+
+
+
 
 
 install(TARGETS milkyway

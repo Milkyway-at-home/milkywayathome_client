@@ -144,6 +144,7 @@ typedef struct
     real* streamLikelihoods;
 } SeparationResults;
 
+
 #ifdef __cplusplus
 }
 #endif

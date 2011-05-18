@@ -59,10 +59,6 @@ option(SEPARATION_INLINE_KERNEL
        "Inline the CL kernel" OFF)
 mark_as_advanced(SEPARATION_INLINE_KERNEL)
 
-option(ALL_OF_THE_SSES
-       "All of them" OFF)
-mark_as_advanced(ALL_OF_THE_SSES)
-
 option(SEPARATION_GRAPHICS
        "Use Separation Graphics" OFF)
 
@@ -189,7 +185,6 @@ set(lib_source_file_list src/evaluation_state.c
                          src/likelihood.c
                          src/coordinates.c
                          src/integrals.c
-                         src/probabilities.c
                          src/calculated_constants.c
                          src/separation_utils.c
                          src/r_points.c)
@@ -208,7 +203,6 @@ set(separation_headers include/calculated_constants.h
                        include/parameters.h
                        include/separation_config.h.in
                        include/integrals.h
-                       include/probabilities.h
                        include/r_points.h
                        include/separation_utils.h
                        include/separation_constants.h)
@@ -336,6 +330,34 @@ endif()
 
 add_library("${separation_base_lib_name}" STATIC ${lib_source_file_list} ${separation_headers})
 
+# Build the critical area separately for SSE2, SSE3, no SSE2
+add_library(separation_core STATIC src/probabilities.c include/probabilities.h)
+set(separation_core_libs separation_core)
+
+if(SYSTEM_IS_X86_64)
+  set_target_properties(separation_core PROPERTIES
+                          COMPILE_FLAGS "${SSE2_FLAGS} ${DISABLE_SSE3_FLAGS}")
+endif()
+
+
+# Don't build redundant library on x86_64 or OS X where we know we have SSE3
+if(SYSTEM_IS_X86_32 AND HAVE_SSE2)
+    add_library(separation_core_sse2 STATIC src/probabilities.c include/probabilities.h)
+    #list(APPEND separation_core_libs separation_core_sse2)
+    set_target_properties(separation_core_sse2 PROPERTIES
+                            COMPILE_FLAGS "${SSE2_FLAGS} ${DISABLE_SSE3_FLAGS}")
+endif()
+if(SYSTEM_IS_X86 AND HAVE_SSE3)
+    add_library(separation_core_sse3 STATIC src/probabilities.c include/probabilities.h)
+    list(APPEND separation_core_libs separation_core_sse3)
+    set_target_properties(separation_core_sse3 PROPERTIES
+                            COMPILE_FLAGS "${SSE3_FLAGS}")
+endif()
+
+
+
+
+
 if(NOT MILKYWAY_IPHONE_APP)
   add_executable("${separation_base_bin_name}" ${separation_main_src})
 else()
@@ -345,25 +367,9 @@ endif()
 
 milkyway_link("${separation_base_bin_name}" ${BOINC_APPLICATION}
                                             ${SEPARATION_STATIC}
-                                            "${separation_base_lib_name};${exe_link_libs}")
+                                            "${separation_base_lib_name};${separation_core_libs};${exe_link_libs}")
 
 
-if(ALL_OF_THE_SSES)
-  if(BOINC_RELEASE_NAMES)
-    get_boinc_bin_name("${separation_base_bin_name}" "${separation_VERSION}" "${i}")
-    set(sse_base_bin_name "${BOINC_BIN_NAME}")
-  else()
-    set(sse_base_bin_name "${separation_base_bin_name}")
-  endif()
-
-  foreach(i ${AVAILABLE_SSE_LEVELS})
-    add_sseX_library("${separation_base_lib_name}" "${i}" "${lib_source_file_list}" "${separation_headers}")
-    add_sseX_executable("${sse_base_bin_name}" "${i}" "${separation_main_src}")
-    milkyway_link(${SSE_EXE_NAME} ${BOINC_APPLICATION}
-                                  ${SEPARATION_STATIC}
-                                  "${separation_base_lib_name};${exe_link_libs}")
-  endforeach()
-endif()
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 

@@ -147,7 +147,7 @@ static real likelihood_probability(const AstronomyParameters* ap,
                                    const real* restrict qw_r3_N,
 
                                    const LBTrig lbt,
-                                   const RConsts rc,
+                                   real gPrime,
                                    real reff_xr_rp3,
                                    const SeparationResults* results,
                                    EvaluationState* es,
@@ -165,7 +165,7 @@ static real likelihood_probability(const AstronomyParameters* ap,
     }
     else
     {
-        bg_probability(ap, sc, sg_dx, r_points, qw_r3_N, rc.gPrime, reff_xr_rp3, lbt, es);
+        es->bgTmp = probabilityFunc(ap, sc, sg_dx, r_points, qw_r3_N, lbt, gPrime, reff_xr_rp3, es->streamTmps);
     }
 
     if (bgProb)
@@ -320,7 +320,7 @@ static int likelihood_sum(SeparationResults* results,
 
         lbt = lb_trig(lb);
 
-        star_prob = likelihood_probability(ap, sc, streams, sg.dx, r_points, qw_r3_N, lbt, rc,
+        star_prob = likelihood_probability(ap, sc, streams, sg.dx, r_points, qw_r3_N, lbt, rc.gPrime,
                                            reff_xr_rp3, results, es, &bgProb);
 
         if (mw_cmpnzero_muleps(star_prob, SEPARATION_EPS))

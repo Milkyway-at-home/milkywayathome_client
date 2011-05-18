@@ -27,8 +27,7 @@
 #include "r_points.h"
 #include "milkyway_util.h"
 #include "calculated_constants.h"
-#include "probabilities.h"
-#include "probabilities.h"
+#include "evaluation.h"
 
 #include <time.h>
 
@@ -149,10 +148,15 @@ static inline void r_sum(const AstronomyParameters* ap,
     for (r_step = 0; r_step < r_steps; ++r_step)
     {
         reff_xr_rp3 = id * rc[r_step].irv_reff_xr_rp3;
-        bg_probability(ap, sc, sg_dx,
-                       &rPoints[r_step * ap->convolve],
-                       &qw_r3_N[r_step * ap->convolve],
-                       rc[r_step].gPrime, reff_xr_rp3, lbt, es);
+        es->bgTmp = probabilityFunc(ap,
+                                    sc,
+                                    sg_dx,
+                                    &rPoints[r_step * ap->convolve],
+                                    &qw_r3_N[r_step * ap->convolve],
+                                    lbt,
+                                    rc[r_step].gPrime,
+                                    reff_xr_rp3,
+                                    es->streamTmps);
         sumProbs(es);
     }
 }
@@ -241,7 +245,8 @@ int integrate(const AstronomyParameters* ap,
               const IntegralArea* ia,
               const StreamConstants* sc,
               const StreamGauss sg,
-              EvaluationState* es)
+              EvaluationState* es,
+              const CLRequest* clr)
 {
     RConsts* rc;
     real* restrict rPoints;
@@ -255,10 +260,6 @@ int integrate(const AstronomyParameters* ap,
         es->cut->bgIntegral = -1.0 * ia->nu_steps * ia->mu_steps * ia->r_steps;
         return 1;
     }
-
-  #if MW_IS_X86
-    initExpTable();
-  #endif
 
     rPoints = mwMallocA(sizeof(real) * ia->r_steps * ap->convolve);
     qw_r3_N = mwMallocA(sizeof(real) * ia->r_steps * ap->convolve);

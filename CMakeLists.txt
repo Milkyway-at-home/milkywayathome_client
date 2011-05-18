@@ -207,14 +207,6 @@ endif()
 
 
 
-if(APPLE AND SYSTEM_IS_X86)
-  # Any OS X system will surely have sse3
-  set(CMAKE_C_FLAGS "-msse -msse2 -msse3 ${CMAKE_C_FLAGS}")
-  set(CMAKE_CXX_FLAGS "-msse -msse2 -msse3 ${CMAKE_C_FLAGS}")
-endif()
-
-
-
 set(gcc_warnings "-Wall"
                  "-Wextra"
                  "-Wshadow"

@@ -62,6 +62,11 @@ typedef struct
     cl_double targetFrequency;
     cl_int pollingMode;
     cl_bool enableCheckpointing;
+
+    cl_bool forceNoIntrinsics;
+    cl_bool forceX87;
+    cl_bool forceSSE2;
+    cl_bool forceSSE3;
 } CLRequest;
 
 #else
@@ -75,6 +80,11 @@ typedef struct
     double targetFrequency;
     int pollingMode;
     int enableCheckpointing;
+
+    int forceNoIntrinsics;
+    int forceX87;
+    int forceSSE2;
+    int forceSSE3;
 } CLRequest;
 
 #endif /* MILKYWAY_OPENCL */
@@ -128,6 +138,13 @@ void* mwCallocA(size_t count, size_t size);
         fprintf(stderr, "PANIC: in function '%s' %s(%d): " msg,         \
                 FUNC_NAME, __FILE__, __LINE__, ##__VA_ARGS__);          \
         mw_finish(EXIT_FAILURE);                                        \
+    }
+
+#define mw_unreachable()                                                               \
+    {                                                                                  \
+        fprintf(stderr, "PANIC: Unreachable point reached in function '%s' %s(%d)\n",  \
+                FUNC_NAME, __FILE__, __LINE__);                                        \
+        mw_finish(EXIT_FAILURE);                                                       \
     }
 
 

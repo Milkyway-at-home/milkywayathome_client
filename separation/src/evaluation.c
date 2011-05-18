@@ -21,6 +21,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation.h"
 #include "separation_utils.h"
+#include "probabilities.h"
 
 #if SEPARATION_OPENCL
   #include "run_cl.h"
@@ -47,6 +48,133 @@ typedef CLInfo GPUInfo;
 #else
 typedef int GPUInfo;
 #endif
+
+
+#if MW_IS_X86
+
+ProbabilityFunc probabilityFunc = NULL;
+
+#ifndef _WIN32
+  #define bit_CMPXCHG8B (1 << 8 )
+  #define bit_CMOV (1 << 15)
+  #define bit_MMX (1 << 23)
+  #define bit_SSE (1 << 25)
+  #define bit_SSE2 (1 << 26)
+  #define bit_SSE3 (1 << 0)
+  #define bit_CMPXCHG16B (1 << 13)
+  #define bit_3DNOW (1 << 31)
+  #define bit_3DNOWP (1 << 30)
+  #define bit_LM (1 << 29)
+
+  #if defined(__i386__) && defined(__PIC__)
+    /* %ebx may be the PIC register.  */
+    #define cpuid(level, a, b, c, d) __asm__ ("xchglt%%ebx, %1nt"                        \
+                                              "cpuid"                                    \
+                                              "xchglt%%ebx, %1nt"                        \
+                                              : "=a" (a), "=r" (b), "=c" (c), "=d" (d)   \
+                                              : "0" (level))
+  #else
+    #define cpuid(level, a, b, c, d) __asm__ ("cpuid"                                    \
+                                              : "=a" (a), "=b" (b), "=c" (c), "=d" (d)   \
+                                              : "0" (level))
+  #endif /* defined(__i386__) && defined(__PIC__) */
+
+static void getSSELevelSupport(int* hasSSE2, int* hasSSE3)
+{
+    /* http://peter.kuscsik.com/drupal/?q=node/10 */
+    unsigned int eax, ebx, ecx, edx;
+    cpuid(1, eax, ebx, ecx, edx);
+
+    *hasSSE2 = !!(edx & bit_SSE2);
+    *hasSSE3 = !!(ecx & bit_SSE3);
+}
+
+
+
+#else
+
+static void getSSELevelSupport(int* hasSSE2_out, int* hasSSE3_out)
+{
+    *hasSSE2_out = (int) IsProcessorFeaturePresent(PF_XMMI64_INSTRUCTIONS_AVAILABLE);
+    *hasSSE3_out = (int) IsProcessorFeaturePresent(PF_SSE3_INSTRUCTIONS_AVAILABLE);
+}
+#endif /* _WIN32 */
+
+
+/* Use one of the faster functions if available */
+static void probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* clr)
+{
+    int hasSSE2 = FALSE, hasSSE3 = FALSE;
+    int useSSE2 = FALSE, useSSE3 = FALSE;
+
+    getSSELevelSupport(&hasSSE2, &hasSSE3);
+
+    if (!clr->forceSSE2 && !clr->forceSSE3 && !clr->forceX87)
+    {
+        /* Default to using highest capability if not forcing anything */
+        useSSE3 = hasSSE3;
+        useSSE2 = hasSSE2;
+    }
+    else if (clr->forceSSE2)
+    {
+        useSSE2 = TRUE;
+    }
+    else if (clr->forceSSE3)
+    {
+        useSSE3 = TRUE;
+    }
+    else if (clr->forceX87)
+    {
+      #if MW_IS_X86_32
+        useSSE2 = useSSE3 = FALSE;
+      #elif MW_IS_X86_64
+        useSSE2 = TRUE;  /* Ignore flag */
+      #endif
+    }
+
+    if (useSSE3)  /* Precedence to higher level */
+    {
+        warn("Using SSE3 path\n");
+        probabilityFunc = initProbabilities_SSE3(ap, clr->forceNoIntrinsics);
+    }
+    else if (useSSE2)
+    {
+        warn("Using SSE2 path\n");
+        probabilityFunc = initProbabilities_SSE2(ap, clr->forceNoIntrinsics);
+    }
+    else
+    {
+      #if !MW_IS_X86_64
+        warn("Using x87 path\n");
+        probabilityFunc = initProbabilities(ap, clr->forceNoIntrinsics);
+      #else
+        mw_unreachable();
+      #endif
+    }
+
+    if (!probabilityFunc)
+    {
+        mw_panic("Probability function not set!:\n"
+                 "  Has SSE2             = %d\n"
+                 "  Has SSE3             = %d\n"
+                 "  Forced SSE3          = %d\n"
+                 "  Forced SSE2          = %d\n"
+                 "  Forced x87           = %d\n"
+                 "  Forced no intrinsics = %d\n"
+                 "  Arch                 = %s\n",
+                 hasSSE2, hasSSE3,
+                 clr->forceSSE3, clr->forceSSE2, clr->forceX87, clr->forceNoIntrinsics,
+                 ARCH_STRING);
+    }
+}
+
+
+#else
+static void probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* clr)
+{
+    probabilityFunc = initProbabilities(ap, clr->forceNoIntrinsics);
+}
+#endif /* MW_IS_X86 */
 
 
 static void getFinalIntegrals(SeparationResults* results,
@@ -155,7 +283,7 @@ static void calculateIntegrals(const AstronomyParameters* ap,
       #elif SEPARATION_CAL
         rc = integrateCAL(ap, ia, sg, es, clr, ci);
       #else
-        rc = integrate(ap, ia, sc, sg, es);
+        rc = integrate(ap, ia, sc, sg, es, clr);
       #endif /* SEPARATION_OPENCL */
 
         t2 = mwGetTime();
@@ -191,6 +319,8 @@ int evaluate(SeparationResults* results,
     int useImages = TRUE; /* Only applies to CL version */
 
     memset(&ci, 0, sizeof(ci));
+
+    probabilityFunctionDispatch(ap, clr);
 
     es = newEvaluationState(ap);
     sg = getStreamGauss(ap->convolve);

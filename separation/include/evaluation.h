@@ -23,6 +23,25 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define _EVALUATION_H_
 
 #include "separation_types.h"
+#include "milkyway_util.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef real (*ProbabilityFunc)(const AstronomyParameters* ap,
+                                const StreamConstants* sc,
+                                const real* restrict sg_dx,
+                                const real* restrict r_point,
+                                const real* restrict qw_r3_N,
+                                LBTrig lbt,
+                                real gPrime,
+                                real reff_xr_rp3,
+                                real* restrict streamTmps);
+
+
+extern ProbabilityFunc probabilityFunc;
+
 
 int evaluate(SeparationResults* results,
              const AstronomyParameters* ap,
@@ -33,6 +52,10 @@ int evaluate(SeparationResults* results,
              const CLRequest* clr,
              const int do_separation,
              const char* separation_outfile);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _EVALUATION_H_ */
 

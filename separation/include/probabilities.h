@@ -23,24 +23,33 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_types.h"
 #include "evaluation_state.h"
+#include "evaluation.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* probabilities will be rebuilt for each SSE level */
 #if MW_IS_X86
-void initExpTable();
-#endif
+  #if defined(__SSE3__)
+    #define INIT_PROBABILITIES initProbabilities_SSE3
+  #elif defined(__SSE2__)
+    #define INIT_PROBABILITIES initProbabilities_SSE2
+  #else
+    #define INIT_PROBABILITIES initProbabilities
+  #endif
+#else
+  #define INIT_PROBABILITIES initProbabilities
+#endif /* MW_IS_X86 */
 
-void bg_probability(const AstronomyParameters* ap,
-                    const StreamConstants* sc,
-                    const real* restrict sg_dx,
-                    const real* restrict r_point,
-                    const real* restrict qw_r3_N,
-                    real gPrime,
-                    real reff_xr_rp3,
-                    LBTrig lbt, /* integral point */
-                    EvaluationState* es);
+
+#define DEFINE_INIT_PROBABILITIES(level) ProbabilityFunc initProbabilities##level(const AstronomyParameters* ap, int useIntrinsics)
+
+#if MW_IS_X86
+DEFINE_INIT_PROBABILITIES();
+DEFINE_INIT_PROBABILITIES(_SSE2);
+DEFINE_INIT_PROBABILITIES(_SSE3);
+#endif /* MW_IS_X86 */
 
 
 #ifdef __cplusplus

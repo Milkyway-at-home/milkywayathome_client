@@ -24,6 +24,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_types.h"
 #include "evaluation_state.h"
+#include "milkyway_util.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +36,8 @@ int integrate(const AstronomyParameters* ap,
               const IntegralArea* ia,
               const StreamConstants* sc,
               const StreamGauss sg,
-              EvaluationState* es);
+              EvaluationState* es,
+              const CLRequest* clr);
 
 void separationIntegralApplyCorrection(EvaluationState* es);
 

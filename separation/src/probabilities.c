@@ -53,7 +53,7 @@
  */
 
 #include "evaluation_state.h"
-#include "integrals.h"
+#include "evaluation.h"
 #include "coordinates.h"
 #include "r_points.h"
 #include "milkyway_util.h"
@@ -76,6 +76,15 @@
 
 #if defined(__SSE2__) && DOUBLEPREC && !ENABLE_CRLIBM
   #define USE_CUSTOM_MATH 1
+#endif
+
+
+#if defined(__SSE3__)
+  #define INIT_PROBABILITIES initProbabilities_SSE3
+#elif defined(__SSE2__)
+  #define INIT_PROBABILITIES initProbabilities_SSE2
+#else
+  #define INIT_PROBABILITIES initProbabilities
 #endif
 
 
@@ -125,17 +134,6 @@ typedef union
 /* 2^x, for x in [-1.0, 1.0[ */
 SEPARATION_ALIGN(16) static double exp2_table[2 * EXP2_TABLE_SIZE];
 
-void initExpTable()
-{
-    unsigned int i;
-
-    #pragma ivdep
-    #pragma vector always
-    for (i = 0; i < EXP2_TABLE_SIZE; ++i)
-    {
-        exp2_table[i] = (double) mw_exp2((i - EXP2_TABLE_OFFSET) / EXP2_TABLE_SCALE);
-    }
-}
 
 union d2
 {
@@ -502,25 +500,12 @@ static inline real rg_calc(const AstronomyParameters* ap, const mwvector xyz)
     return mw_sqrt(tmp);
 }
 
-ALWAYS_INLINE OLD_GCC_EXTERNINLINE
-inline void zero_st_probs(real* st_probs, const unsigned int nstream)
+static inline void zero_st_probs(real* st_probs, const unsigned int nstream)
 {
     unsigned int i;
 
     for (i = 0; i < nstream; ++i)
         st_probs[i] = 0.0;
-}
-
-ALWAYS_INLINE OLD_GCC_EXTERNINLINE
-inline void sum_probs(Kahan* probs,
-                      const real* st_probs,
-                      const real V_reff_xr_rp3,
-                      const unsigned int nstream)
-{
-    unsigned int i;
-
-    for (i = 0; i < nstream; ++i)
-        KAHAN_ADD(probs[i], V_reff_xr_rp3 * st_probs[i]);
 }
 
 static inline real aux_prob(const AstronomyParameters* ap,
@@ -530,25 +515,16 @@ static inline real aux_prob(const AstronomyParameters* ap,
     return qw_r3_N * (ap->bg_a * sqr(r_in_mag) + ap->bg_b * r_in_mag + ap->bg_c);
 }
 
-static inline void multProbs(EvaluationState* es, real V_reff_xr_rp3)
-{
-    unsigned int i;
-
-    es->bgTmp *= V_reff_xr_rp3;
-    for (i = 0; i < es->numberStreams; ++i)
-        es->streamTmps[i] *= V_reff_xr_rp3;
-}
-
 HOT
-static inline real bg_probability_fast_hprob(const AstronomyParameters* ap,
-                                             const StreamConstants* sc,
-                                             const real* restrict sg_dx,
-                                             const real* restrict r_point,
-                                             const real* restrict qw_r3_N,
-
-                                             LBTrig lbt,
-                                             real gPrime,
-                                             real* restrict streamTmps)
+static real bg_probability_fast_hprob(const AstronomyParameters* ap,
+                                      const StreamConstants* sc,
+                                      const real* restrict sg_dx,
+                                      const real* restrict r_point,
+                                      const real* restrict qw_r3_N,
+                                      LBTrig lbt,
+                                      real gPrime,
+                                      real reff_xr_rp3,
+                                      real* restrict streamTmps)
 {
     unsigned int i;
     real h_prob, g, rg;
@@ -576,18 +552,23 @@ static inline real bg_probability_fast_hprob(const AstronomyParameters* ap,
         streamSums(streamTmps, sc, xyz, qw_r3_N[i], ap->number_streams);
     }
 
+    bg_prob *= reff_xr_rp3;
+    for (i = 0; i < ap->number_streams; ++i)
+        streamTmps[i] *= reff_xr_rp3;
+
     return bg_prob;
 }
 
 HOT
-static inline real bg_probability_slow_hprob(const AstronomyParameters* ap,
-                                             const StreamConstants* sc,
-                                             const real* restrict sg_dx,
-                                             const real* restrict r_point,
-                                             const real* restrict qw_r3_N,
-                                             LBTrig lbt,
-                                             real gPrime,
-                                             real* restrict streamTmps)
+static real bg_probability_slow_hprob(const AstronomyParameters* ap,
+                                      const StreamConstants* sc,
+                                      const real* restrict sg_dx,
+                                      const real* restrict r_point,
+                                      const real* restrict qw_r3_N,
+                                      LBTrig lbt,
+                                      real gPrime,
+                                      real reff_xr_rp3,
+                                      real* restrict streamTmps)
 {
     unsigned int i;
     real rg, g;
@@ -614,43 +595,52 @@ static inline real bg_probability_slow_hprob(const AstronomyParameters* ap,
         streamSums(streamTmps, sc, xyz, qw_r3_N[i], ap->number_streams);
     }
 
+    bg_prob *= reff_xr_rp3;
+    for (i = 0; i < ap->number_streams; ++i)
+        streamTmps[i] *= reff_xr_rp3;
+
     return bg_prob;
 }
 
-void bg_probability(const AstronomyParameters* ap,
-                    const StreamConstants* sc,
-                    const real* restrict sg_dx,
-                    const real* restrict r_point,
-                    const real* restrict qw_r3_N,
-                    real gPrime,
-                    real reff_xr_rp3,
-                    LBTrig lbt, /* integral point */
-                    EvaluationState* es)
+static void initExpTable()
 {
-    if (ap->fast_h_prob)
+    unsigned int i;
+
+    #pragma ivdep
+    #pragma vector always
+    for (i = 0; i < EXP2_TABLE_SIZE; ++i)
     {
-      #ifdef __SSE2__
+        exp2_table[i] = (double) mw_exp2((i - EXP2_TABLE_OFFSET) / EXP2_TABLE_SCALE);
+    }
+}
+
+
+/* We have some more deciding on which function to use for whatever SSE level */
+
+ProbabilityFunc INIT_PROBABILITIES(const AstronomyParameters* ap, int forceNoIntrinsics)
+{
+  #ifndef __SSE2__
+    return ap->fast_h_prob ? bg_probability_fast_hprob : bg_probability_slow_hprob;
+  #else
+
+    initExpTable();
+
+    if (ap->fast_h_prob && !ap->aux_bg_profile && !forceNoIntrinsics && USE_CUSTOM_MATH)
+    {
         /* TODO: add aux_bg_profile in SSE2 stuff */
-
-        if (!ap->aux_bg_profile && SEPARATION_USE_CUSTOM_MATH)
-        {
-            es->bgTmp = probabilities_SSE2(ap, sc, sg_dx, r_point, qw_r3_N, lbt, gPrime, reff_xr_rp3, es->streamTmps);
-        }
-        else
-        {
-            es->bgTmp = bg_probability_fast_hprob(ap, sc, sg_dx, r_point, qw_r3_N, lbt, gPrime, es->streamTmps);
-            multProbs(es, reff_xr_rp3); /* Multiplying reff_xr_rp3 done in SSE2/3 stuff */
-        }
-
-      #else
-        es->bgTmp = bg_probability_fast_hprob(ap, sc, sg_dx, r_point, qw_r3_N, lbt, gPrime, es->streamTmps);
-        multProbs(es, reff_xr_rp3);
-      #endif /* __SSE2__ */
+        return probabilities_SSE2;
+    }
+    else if (ap->fast_h_prob)
+    {
+        return bg_probability_fast_hprob;
     }
     else
     {
-        es->bgTmp = bg_probability_slow_hprob(ap, sc, sg_dx, r_point, qw_r3_N, lbt, gPrime, es->streamTmps);
-        multProbs(es, reff_xr_rp3);
+        return bg_probability_slow_hprob;
     }
+
+    mw_unreachable();
+    return NULL;
+  #endif /* __SSE2__ */
 }
 
