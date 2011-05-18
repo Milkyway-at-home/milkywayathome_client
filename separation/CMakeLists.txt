@@ -189,6 +189,7 @@ set(lib_source_file_list src/evaluation_state.c
                          src/likelihood.c
                          src/coordinates.c
                          src/integrals.c
+                         src/probabilities.c
                          src/calculated_constants.c
                          src/separation_utils.c
                          src/r_points.c)
@@ -207,6 +208,7 @@ set(separation_headers include/calculated_constants.h
                        include/parameters.h
                        include/separation_config.h.in
                        include/integrals.h
+                       include/probabilities.h
                        include/r_points.h
                        include/separation_utils.h
                        include/separation_constants.h)

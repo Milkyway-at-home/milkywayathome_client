@@ -18,9 +18,8 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _INTEGRALS_H_
-#define _INTEGRALS_H_
-
+#ifndef _PROBABILITIES_H_
+#define _PROBABILITIES_H_
 
 #include "separation_types.h"
 #include "evaluation_state.h"
@@ -29,19 +28,24 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-LBTrig lb_trig(LB lb);
+#if MW_IS_X86
+void initExpTable();
+#endif
 
-int integrate(const AstronomyParameters* ap,
-              const IntegralArea* ia,
-              const StreamConstants* sc,
-              const StreamGauss sg,
-              EvaluationState* es);
+void bg_probability(const AstronomyParameters* ap,
+                    const StreamConstants* sc,
+                    const real* restrict sg_dx,
+                    const real* restrict r_point,
+                    const real* restrict qw_r3_N,
+                    real gPrime,
+                    real reff_xr_rp3,
+                    LBTrig lbt, /* integral point */
+                    EvaluationState* es);
 
-void separationIntegralApplyCorrection(EvaluationState* es);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _INTEGRALS_H_ */
+#endif /* _PROBABILITIES_H_ */
 
