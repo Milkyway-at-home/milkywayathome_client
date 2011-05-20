@@ -34,7 +34,7 @@ if(SYSTEM_IS_X86)
     set(DISABLE_SSE3_FLAGS "")
     set(DISABLE_SSE2_FLAGS "")
     # MSVC doesn't generate SSE3 itself, and doesn't define this
-    set(SSE3_FLAGS "/D__SSE3__=1")
+    set(SSE3_FLAGS "/D__SSE2__=1 /D__SSE3__=1")
   endif()
 endif()
 
