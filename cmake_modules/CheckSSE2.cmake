@@ -30,7 +30,7 @@ if(SYSTEM_IS_X86)
     set(SSE3_FLAGS "-msse3")
     set(SSE4_FLAGS "-msse4")
   else()
-    set(SSE2_FLAGS "${CMAKE_C_FLAGS} /arch:SSE2")
+    set(SSE2_FLAGS "${CMAKE_C_FLAGS} /arch:SSE2 /D__SSE2__=1")
     set(DISABLE_SSE3_FLAGS "")
     set(DISABLE_SSE2_FLAGS "")
     # MSVC doesn't generate SSE3 itself, and doesn't define this

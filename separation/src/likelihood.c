@@ -142,9 +142,9 @@ static real likelihood_probability(const AstronomyParameters* ap,
                                    const StreamConstants* sc,
                                    const Streams* streams,
 
-                                   const real* restrict sg_dx,
-                                   const real* restrict r_points,
-                                   const real* restrict qw_r3_N,
+                                   const real* RESTRICT sg_dx,
+                                   const real* RESTRICT r_points,
+                                   const real* RESTRICT qw_r3_N,
 
                                    const LBTrig lbt,
                                    real gPrime,
@@ -152,7 +152,7 @@ static real likelihood_probability(const AstronomyParameters* ap,
                                    const SeparationResults* results,
                                    EvaluationState* es,
 
-                                   real* restrict bgProb) /* Out argument for thing needed by separation */
+                                   real* RESTRICT bgProb) /* Out argument for thing needed by separation */
 
 {
     unsigned int i;
@@ -278,8 +278,8 @@ static int likelihood_sum(SeparationResults* results,
 
                           EvaluationState* es,
 
-                          real* restrict r_points,
-                          real* restrict qw_r3_N,
+                          real* RESTRICT r_points,
+                          real* RESTRICT qw_r3_N,
 
 
                           const int do_separation,

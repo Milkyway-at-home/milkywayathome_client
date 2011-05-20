@@ -44,6 +44,7 @@ if(${MILKYWAY_OPENCL} MATCHES "ON")
 endif()
 
 check_function_exists(exp10 HAVE_EXP10)
+check_function_exists(exp2 HAVE_EXP2)
 check_function_exists(sincos HAVE_SINCOS)
 
 configure_file (

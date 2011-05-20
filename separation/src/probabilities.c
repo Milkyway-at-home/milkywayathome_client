@@ -68,8 +68,10 @@
   #include <emmintrin.h>
 #endif /* __SSE3__ */
 
-#ifdef __GNUC__
+#if defined(__GNUC__)
   #pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#elif defined(_MSC_VER)
+#pragma warning( disable : 4068 )
 #endif /* __GNUC__ */
 
 
@@ -134,6 +136,17 @@ typedef union
 /* 2^x, for x in [-1.0, 1.0[ */
 SEPARATION_ALIGN(16) static double exp2_table[2 * EXP2_TABLE_SIZE];
 
+static void initExpTable()
+{
+    unsigned int i;
+
+    #pragma ivdep
+    #pragma vector always
+    for (i = 0; i < EXP2_TABLE_SIZE; ++i)
+    {
+        exp2_table[i] = (double) mw_exp2((i - EXP2_TABLE_OFFSET) / EXP2_TABLE_SCALE);
+    }
+}
 
 union d2
 {
@@ -314,13 +327,13 @@ static inline __m128d _mm_muladd_pd(__m128d x, __m128d y, __m128d z)
 
 static real probabilities_SSE2(const AstronomyParameters* ap,
                                const StreamConstants* sc,
-                               const real* restrict sg_dx,
-                               const real* restrict r_point,
-                               const real* restrict qw_r3_N,
+                               const real* RESTRICT sg_dx,
+                               const real* RESTRICT r_point,
+                               const real* RESTRICT qw_r3_N,
                                LBTrig lbt,
                                real gPrime,
                                real reff_xr_rp3,
-                               real* restrict streamTmps)
+                               real* RESTRICT streamTmps)
 {
     double bg_prob, dotted, xyz_norm;
     unsigned int i, j, k, convolve, nStreams;
@@ -518,13 +531,13 @@ static inline real aux_prob(const AstronomyParameters* ap,
 HOT
 static real bg_probability_fast_hprob(const AstronomyParameters* ap,
                                       const StreamConstants* sc,
-                                      const real* restrict sg_dx,
-                                      const real* restrict r_point,
-                                      const real* restrict qw_r3_N,
+                                      const real* RESTRICT sg_dx,
+                                      const real* RESTRICT r_point,
+                                      const real* RESTRICT qw_r3_N,
                                       LBTrig lbt,
                                       real gPrime,
                                       real reff_xr_rp3,
-                                      real* restrict streamTmps)
+                                      real* RESTRICT streamTmps)
 {
     unsigned int i;
     real h_prob, g, rg;
@@ -562,13 +575,13 @@ static real bg_probability_fast_hprob(const AstronomyParameters* ap,
 HOT
 static real bg_probability_slow_hprob(const AstronomyParameters* ap,
                                       const StreamConstants* sc,
-                                      const real* restrict sg_dx,
-                                      const real* restrict r_point,
-                                      const real* restrict qw_r3_N,
+                                      const real* RESTRICT sg_dx,
+                                      const real* RESTRICT r_point,
+                                      const real* RESTRICT qw_r3_N,
                                       LBTrig lbt,
                                       real gPrime,
                                       real reff_xr_rp3,
-                                      real* restrict streamTmps)
+                                      real* RESTRICT streamTmps)
 {
     unsigned int i;
     real rg, g;
@@ -600,18 +613,6 @@ static real bg_probability_slow_hprob(const AstronomyParameters* ap,
         streamTmps[i] *= reff_xr_rp3;
 
     return bg_prob;
-}
-
-static void initExpTable()
-{
-    unsigned int i;
-
-    #pragma ivdep
-    #pragma vector always
-    for (i = 0; i < EXP2_TABLE_SIZE; ++i)
-    {
-        exp2_table[i] = (double) mw_exp2((i - EXP2_TABLE_OFFSET) / EXP2_TABLE_SCALE);
-    }
 }
 
 

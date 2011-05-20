@@ -35,8 +35,8 @@
 static RConsts* initRPoints(const AstronomyParameters* ap,
                             const IntegralArea* ia,
                             const StreamGauss sg,
-                            real* restrict rPoints,
-                            real* restrict qw_r3_N)
+                            real* RESTRICT rPoints,
+                            real* RESTRICT qw_r3_N)
 {
     unsigned int i, j, idx;
     RPoints* rPts;
@@ -133,9 +133,9 @@ static inline void sumProbs(EvaluationState* es)
 HOT
 static inline void r_sum(const AstronomyParameters* ap,
                          const StreamConstants* sc,
-                         const real* restrict sg_dx,
-                         const real* restrict rPoints,
-                         const real* restrict qw_r3_N,
+                         const real* RESTRICT sg_dx,
+                         const real* RESTRICT rPoints,
+                         const real* RESTRICT qw_r3_N,
                          LBTrig lbt,
                          real id,
                          EvaluationState* es,
@@ -181,9 +181,9 @@ static inline void mu_sum(const AstronomyParameters* ap,
                           const IntegralArea* ia,
                           const StreamConstants* sc,
                           const RConsts* rc,
-                          const real* restrict sg_dx,
-                          const real* restrict rPoints,
-                          const real* restrict qw_r3_N,
+                          const real* RESTRICT sg_dx,
+                          const real* RESTRICT rPoints,
+                          const real* RESTRICT qw_r3_N,
                           const NuId nuid,
                           EvaluationState* es)
 {
@@ -213,9 +213,9 @@ static void nuSum(const AstronomyParameters* ap,
                   const IntegralArea* ia,
                   const StreamConstants* sc,
                   const RConsts* rc,
-                  const real* restrict sg_dx,
-                  const real* restrict rPoints,
-                  const real* restrict qw_r3_N,
+                  const real* RESTRICT sg_dx,
+                  const real* RESTRICT rPoints,
+                  const real* RESTRICT qw_r3_N,
                   EvaluationState* es)
 {
     NuId nuid;
@@ -249,8 +249,8 @@ int integrate(const AstronomyParameters* ap,
               const CLRequest* clr)
 {
     RConsts* rc;
-    real* restrict rPoints;
-    real* restrict qw_r3_N;
+    real* RESTRICT rPoints;
+    real* RESTRICT qw_r3_N;
 
     if (ap->q == 0.0)
     {

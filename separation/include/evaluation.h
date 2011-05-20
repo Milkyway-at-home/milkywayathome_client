@@ -31,13 +31,13 @@ extern "C" {
 
 typedef real (*ProbabilityFunc)(const AstronomyParameters* ap,
                                 const StreamConstants* sc,
-                                const real* restrict sg_dx,
-                                const real* restrict r_point,
-                                const real* restrict qw_r3_N,
+                                const real* RESTRICT sg_dx,
+                                const real* RESTRICT r_point,
+                                const real* RESTRICT qw_r3_N,
                                 LBTrig lbt,
                                 real gPrime,
                                 real reff_xr_rp3,
-                                real* restrict streamTmps);
+                                real* RESTRICT streamTmps);
 
 
 extern ProbabilityFunc probabilityFunc;

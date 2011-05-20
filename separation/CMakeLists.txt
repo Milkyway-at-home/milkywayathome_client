@@ -334,16 +334,15 @@ add_library("${separation_base_lib_name}" STATIC ${lib_source_file_list} ${separ
 add_library(separation_core STATIC src/probabilities.c include/probabilities.h)
 set(separation_core_libs separation_core)
 
-if(SYSTEM_IS_X86_64)
+if(SYSTEM_IS_X86)
   set_target_properties(separation_core PROPERTIES
-                          COMPILE_FLAGS "${SSE2_FLAGS} ${DISABLE_SSE3_FLAGS}")
+                          COMPILE_FLAGS "${DISABLE_SSE3_FLAGS}")
 endif()
-
 
 # Don't build redundant library on x86_64 or OS X where we know we have SSE3
 if(SYSTEM_IS_X86_32 AND HAVE_SSE2)
     add_library(separation_core_sse2 STATIC src/probabilities.c include/probabilities.h)
-    #list(APPEND separation_core_libs separation_core_sse2)
+    list(APPEND separation_core_libs separation_core_sse2)
     set_target_properties(separation_core_sse2 PROPERTIES
                             COMPILE_FLAGS "${SSE2_FLAGS} ${DISABLE_SSE3_FLAGS}")
 endif()

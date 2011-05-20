@@ -108,8 +108,8 @@ void setSplitRPoints(const AstronomyParameters* ap,
                      const StreamGauss sg,
                      unsigned int n_convolve,
                      real gPrime,
-                     real* restrict r_points,
-                     real* restrict qw_r3_N)
+                     real* RESTRICT r_points,
+                     real* RESTRICT qw_r3_N)
 {
     unsigned int i;
     RPoints rPt;

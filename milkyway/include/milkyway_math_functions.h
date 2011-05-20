@@ -85,7 +85,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define mw_tanpi(x) (mw_tan(M_PI * (x)))
 #define mw_erfc erfc
 #define mw_erf erf
-#define mw_exp2 exp2
+
+#if HAVE_EXP2
+  #define mw_exp2 exp2
+#else
+  #define mw_exp2(x) mw_pow(2.0, (x))
+#endif /* HAVE_EXP2 */
 
 #if HAVE_EXP10
   #define mw_exp10 exp10
