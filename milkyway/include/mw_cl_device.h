@@ -41,6 +41,11 @@ cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut);
 cl_platform_id* mwGetAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out);
 
 
+size_t mwFindGroupSize(const DevInfo* di);
+cl_uint mwFindGroupsPerCU(const DevInfo* di);
+cl_uint mwBlockSize(const DevInfo* di);
+
+
 /* Nvidia specific functions */
 cl_bool minComputeCapabilityCheck(const DevInfo* di, cl_uint major, cl_uint minor);
 cl_bool computeCapabilityIs(const DevInfo* di, cl_uint major, cl_uint minor);

@@ -98,7 +98,6 @@ cl_bool findRunSizes(RunSizes* sizes,
                      const IntegralArea* ia,
                      const CLRequest* clr);
 
-cl_double estimateWUFLOPsPerIter(const AstronomyParameters* ap, const IntegralArea* ia);
 cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_double flops);
 
 #ifdef __cplusplus

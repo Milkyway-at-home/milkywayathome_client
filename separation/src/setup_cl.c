@@ -28,9 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_cl_defs.h"
 #include "separation_binaries.h"
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+
 #include <assert.h>
 
 #ifdef _WIN32
@@ -45,25 +43,12 @@ static char* inlinedIntegralKernelSrc = NULL;
 #endif /* SEPARATION_INLINE_KERNEL */
 
 
-static size_t findGroupSize(const DevInfo* di)
+/* Find an optimum block size to use and use that as the basis for the chunk estimate. Smaller number of chunks on a non-block size can be quite a bit slower. */
+static cl_uint nvidiaNumChunks(const IntegralArea* ia, const DevInfo* di)
 {
-    return di->devType == CL_DEVICE_TYPE_CPU ? 1 : 64;
-}
+    cl_uint n;
 
-static cl_uint findGroupsPerCU(const DevInfo* di)
-{
-    if (di->devType == CL_DEVICE_TYPE_CPU)
-        return 1;
-
-    if (di->vendorID == MW_NVIDIA)
-        return cudaCoresPerComputeUnit(di);
-
-    return 1; /* TODO: ATI, etc. */
-}
-
-static cl_uint nvidiaNumChunks(const IntegralArea* ia, const DevInfo* di, cl_uint nthread)
-{
-    cl_uint n = (ia->mu_steps * ia->r_steps) / (nthread * di->maxCompUnits);
+    n = (ia->mu_steps * ia->r_steps) / mwBlockSize(di);
 
     /* The 480 seems to be fine with half, although this doesn't help that much. */
     if (minComputeCapabilityCheck(di, 2, 0))
@@ -71,10 +56,10 @@ static cl_uint nvidiaNumChunks(const IntegralArea* ia, const DevInfo* di, cl_uin
 
     n += 1;  /* ceil, avoid 0 in tiny cases like the small tests */
 
-    return n;
+    return (cl_uint) n;
 }
 
-static cl_uint chooseNumChunk(const IntegralArea* ia, const CLRequest* clr, const DevInfo* di, cl_uint nthread)
+static cl_uint chooseNumChunk(const IntegralArea* ia, const CLRequest* clr, const DevInfo* di)
 {
     /* If not being used for output, 1 has the least overhead */
     if (di->nonOutput || clr->nonResponsive)
@@ -84,7 +69,7 @@ static cl_uint chooseNumChunk(const IntegralArea* ia, const CLRequest* clr, cons
         return clr->numChunk;
 
     if (di->vendorID == MW_NVIDIA)
-        return nvidiaNumChunks(ia, di, nthread);
+        return nvidiaNumChunks(ia, di);
 
     return 1; /* FIXME: others */
 }
@@ -133,7 +118,7 @@ cl_bool findRunSizes(RunSizes* sizes,
 {
     WGInfo wgi;
     cl_int err;
-    cl_uint groupSize, groupsPerCU, threadsPerCU;
+    cl_uint groupSize;
     size_t i, nMod;
     size_t sum = 0;
 
@@ -145,18 +130,25 @@ cl_bool findRunSizes(RunSizes* sizes,
     }
 
     mwPrintWorkGroupInfo(&wgi);
+    groupSize = mwFindGroupSize(di);
 
-    groupSize   = findGroupSize(di);
-    groupsPerCU = findGroupsPerCU(di);
-    threadsPerCU = groupSize * groupsPerCU;
+    sizes->local[0] = groupSize;
+    sizes->local[1] = 1;
 
-    sizes->nChunkEstimate = chooseNumChunk(ia, clr, di, threadsPerCU);
+    sizes->nChunkEstimate = chooseNumChunk(ia, clr, di);
     sizes->nChunk = sizes->nChunkEstimate;
-    nMod = groupSize * di->maxCompUnits;
+
+    /* Best for performance.
+       Be a bit more flexible if chunking.
+       Using the whole block size seems a bit better when attacking everything at once.
+    */
+    nMod = sizes->nChunk == 1 ? mwBlockSize(di) : groupSize * di->maxCompUnits;
 
     sizes->area = ia->r_steps * ia->mu_steps;
     sizes->effectiveArea = nMod * mwDivRoundup(sizes->area, nMod);
     sizes->extra = sizes->effectiveArea - sizes->area;
+
+    warn("Keeping chunk boundaries as multiples of %zu\n", nMod);
 
     if (sizes->effectiveArea / sizes->nChunk < nMod)
     {
@@ -178,11 +170,7 @@ cl_bool findRunSizes(RunSizes* sizes,
             sum += sizes->chunkBorders[i] - sizes->chunkBorders[i - 1];
             assert(sizes->chunkBorders[i] - sizes->chunkBorders[i - 1] > 0);
         }
-
     }
-
-    sizes->local[0] = groupSize;
-    sizes->local[1] = 1;
 
     printRunSizes(sizes, ia, clr->verbose);
 
@@ -192,7 +180,6 @@ cl_bool findRunSizes(RunSizes* sizes,
         free(sizes->chunkBorders);
         return CL_TRUE;
     }
-
 
     return CL_FALSE;
 }
@@ -458,21 +445,6 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
     }
 
     return compileFlags;
-}
-
-/* Bad estimate */
-cl_double estimateWUFLOPsPerIter(const AstronomyParameters* ap, const IntegralArea* ia)
-{
-    cl_ulong perItem, perIter; /* Needs 64 bit int */
-
-    perItem = 4
-            + 28 * ap->convolve
-            + 4  * ap->number_streams
-            + 51 * ap->convolve * ap->number_streams;
-
-    perIter = perItem * ia->mu_steps * ia->r_steps;
-
-    return (cl_double) perIter;
 }
 
 /* Estimate time for a nu step in milliseconds */

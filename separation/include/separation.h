@@ -25,10 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#ifndef _MSC_VER
-  #define _GNU_SOURCE
-#endif
-
 #include "separation_config.h"
 #include "separation_types.h"
 #include "milkyway_util.h"

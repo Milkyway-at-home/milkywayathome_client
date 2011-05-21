@@ -130,6 +130,34 @@ cl_uint cudaCoresPerComputeUnit(const DevInfo* di)
     return 8;     /* 1.x is 8 */
 }
 
+size_t mwFindGroupSize(const DevInfo* di)
+{
+    return di->devType == CL_DEVICE_TYPE_CPU ? 1 : 64;
+}
+
+cl_uint mwFindGroupsPerCU(const DevInfo* di)
+{
+    if (di->devType == CL_DEVICE_TYPE_CPU)
+        return 1;
+
+    if (di->vendorID == MW_NVIDIA)
+        return cudaCoresPerComputeUnit(di);
+
+    return 1; /* TODO: ATI, etc. */
+}
+
+cl_uint mwBlockSize(const DevInfo* di)
+{
+    cl_uint groupSize, groupsPerCU, threadsPerCU;
+
+    groupSize   = mwFindGroupSize(di);
+    groupsPerCU = mwFindGroupsPerCU(di);
+    threadsPerCU = groupSize * groupsPerCU;
+
+    return threadsPerCU * di->maxCompUnits;
+}
+
+
 /* approximate ratio of float : double flops */
 cl_uint cudaEstimateDoubleFrac(const DevInfo* di)
 {
