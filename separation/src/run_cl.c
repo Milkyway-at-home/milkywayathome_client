@@ -177,9 +177,10 @@ static cl_int readKernelResults(CLInfo* ci,
 
 static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runSizes, const cl_uint nu_step)
 {
+    cl_uint i;
     cl_int err = CL_SUCCESS;
     size_t offset[2];
-    unsigned int i;
+    size_t global[2];
 
     err = setNuKernelArgs(ci, ia, nu_step);
     if (err != CL_SUCCESS)
@@ -189,22 +190,21 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
     }
 
     offset[1] = nu_step;
-    for (i = 0; i < runSizes->numChunks && err == CL_SUCCESS; ++i)
+    global[1] = 1;
+    for (i = 0; i < runSizes->nChunk && err == CL_SUCCESS; ++i)
     {
-        offset[0] = i * runSizes->chunkSize;
+        offset[0] = runSizes->chunkBorders[i];
+        global[0] = runSizes->chunkBorders[i + 1] - runSizes->chunkBorders[i];
 
         mw_begin_critical_section();
-        err = enqueueIntegralKernel(ci, runSizes->letTheDriverDoIt, offset, runSizes->global, runSizes->local);
+        err = enqueueIntegralKernel(ci, mwDivisible(global[0], runSizes->local[0]) ,
+                                    offset, global, runSizes->local);
         if (err == CL_SUCCESS)
         {
             /* Give the screen a chance to redraw */
             err = clFinish(ci->queue);
             if (err != CL_SUCCESS)
                 mwCLWarn("Failed to finish", err);
-        }
-        else
-        {
-            mwCLWarn("Failed to enqueue integral kernel", err);
         }
 
         mw_end_critical_section();
@@ -231,9 +231,6 @@ static inline void reportProgress(const AstronomyParameters* ap,
 static cl_int checkpointCL(CLInfo* ci, SeparationCLMem* cm, const IntegralArea* ia, EvaluationState* es)
 {
     cl_int err;
-
-    warn("Writing checkpoitn on step %u\n", es->nu_step);
-
 
     err = readKernelResults(ci, cm, es, ia, es->numberStreams);
     if (err != CL_SUCCESS)
@@ -264,7 +261,6 @@ static cl_int runIntegral(CLInfo* ci,
     {
         if (clr->enableCheckpointing && timeToCheckpointGPU(es, ia))
         {
-            warn("Writing checkpoint on step %u\n", es->nu_step);
             err = checkpointCL(ci, cm, ia, es);
             if (err != CL_SUCCESS)
                 break;
@@ -318,14 +314,11 @@ cl_int integrateCL(const AstronomyParameters* ap,
 
     /* Need to test sizes for each integral, since the area size can change */
     calculateSizes(&sizes, ap, ia);
-    if (findGoodRunSizes(&runSizes, ci, &ci->di, ia, clr))
+
+    if (findRunSizes(&runSizes, ci, &ci->di, ia, clr))
     {
         warn("Failed to find good run sizes\n");
-        if (fallbackDriverSolution(&runSizes))
-        {
-            warn("Fallback solution failed\n");
-            return MW_CL_ERROR;
-        }
+        return MW_CL_ERROR;
     }
 
     err = createSeparationBuffers(ci, &cm, ap, ia, sc, sg, &sizes, useImages);

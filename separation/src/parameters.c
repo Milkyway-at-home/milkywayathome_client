@@ -55,9 +55,9 @@ void freeStreams(Streams* streams)
 
 static void calcIntegralStepSizes(IntegralArea* i)
 {
-    i->r_step_size = (i->r_max - i->r_min) / (real)i->r_steps;
-    i->mu_step_size = (i->mu_max - i->mu_min) / (real)i->mu_steps;
-    i->nu_step_size = (i->nu_max - i->nu_min) / (real)i->nu_steps;
+    i->r_step_size = (i->r_max - i->r_min) / (real) i->r_steps;
+    i->mu_step_size = (i->mu_max - i->mu_min) / (real) i->mu_steps;
+    i->nu_step_size = (i->nu_max - i->nu_min) / (real) i->nu_steps;
 }
 
 static int checkIntegralAreasOK(const IntegralArea* ias, unsigned int n)
@@ -68,6 +68,12 @@ static int checkIntegralAreasOK(const IntegralArea* ias, unsigned int n)
     for (i = 0; i < n; ++i)
     {
         ia = &ias[i];
+
+        if (ia->nu_steps == 0 || ia->r_steps == 0 || ia->mu_steps == 0)
+        {
+            warn("Integral area dimensions cannot be 0\n");
+            return 1;
+        }
 
         if (!mwEven(ia->nu_steps) || !mwEven(ia->r_steps) || !mwEven(ia->mu_steps))
         {
