@@ -359,7 +359,7 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
     char extraFlags[1024] = "";
     char includeFlags[1024] = "";
     char precBuf[1024] = "";
-    char kernelDefBuf[1024] = "";
+    char kernelDefBuf[4096] = "";
 
     /* Math options for CL compiler */
     const char mathFlags[] = "-cl-mad-enable "
@@ -371,9 +371,15 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
     const char nvidiaOptFlags[] = "-cl-nv-verbose ";
     const char atiOptFlags[]    = "";
 
-    const char kernelDefStr[] = "-DNSTREAM=%u "
-                                "-DFAST_H_PROB=%d "
+    const char kernelDefStr[] = "-DFAST_H_PROB=%d "
                                 "-DAUX_BG_PROFILE=%d "
+
+                                "-DNSTREAM=%u "
+                                "-DCONVOLVE=%u "
+
+                                "-DR0=%.15f "
+                                "-DSUN_R0=%.15f "
+                                "-DQ_INV_SQR=%.15f "
                                 "-DUSE_IMAGES=%d "
                                 "-DI_DONT_KNOW_WHY_THIS_DOESNT_WORK_HERE=%d ";
 
@@ -383,9 +389,16 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
     cl_bool isFermi = minComputeCapabilityCheck(di, 2, 0);
 
     if (snprintf(kernelDefBuf, sizeof(kernelDefBuf), kernelDefStr,
-                 ap->number_streams,
                  ap->fast_h_prob,
                  ap->aux_bg_profile,
+
+                 ap->number_streams,
+                 ap->convolve,
+
+                 ap->r0,
+                 ap->sun_r0,
+                 ap->q_inv_sqr,
+
                  useImages,
                  isFermi) < 0)
     {

@@ -58,16 +58,16 @@ const sampler_t sample = CLK_ADDRESS_NONE
                        | CLK_NORMALIZED_COORDS_FALSE
                        | CLK_FILTER_NEAREST;
 
-inline RPoints readRPts(__read_only image2d_t r_pts, __constant AstronomyParameters* ap, int2 i)
+inline RPoints readRPts(__read_only image2d_t r_pts, int2 i)
 {
     return as_double2((read_imageui(r_pts, sample, i)));
 }
 
 #else
 
-inline RPoints readRPts(__global const RPoints* r_pts, __constant AstronomyParameters* ap, int2 i)
+inline RPoints readRPts(__global const RPoints* r_pts, int2 i)
 {
-    return r_pts[i.x * ap->convolve + i.y];
+    return r_pts[i.x * CONVOLVE + i.y];
 }
 
 #endif /* USE_IMAGES */
@@ -190,28 +190,23 @@ __kernel void mu_sum_kernel(__global real* restrict bgOut,
     set_sc_priv(sc, sc_c);
   #endif /* LOAD_STREAM_CONSTANTS */
 
-    real m_sun_r0 = ap->m_sun_r0;
-    real q_inv_sqr = ap->q_inv_sqr;
-    real r0 = ap->r0;
-
     unsigned int i, j;
-    unsigned int convolve = ap->convolve; /* Faster to load this into register first */
 
-    for (i = 0; i < convolve; ++i)
+    for (i = 0; i < CONVOLVE; ++i)
     {
-        RPoints r_pt = readRPts(r_pts, ap, (int2) (r_step, i));
+        RPoints r_pt = readRPts(r_pts, (int2) (r_step, i));
 
-        real x = mad(R_POINT(r_pt), LCOS_BCOS(lbt), m_sun_r0);
+        real x = mad(R_POINT(r_pt), LCOS_BCOS(lbt), -SUN_R0);
         real y = R_POINT(r_pt) * LSIN_BCOS(lbt);
         real z = R_POINT(r_pt) * BSIN(lbt);
 
         /* sqrt(x^2 + y^2 + q_inv_sqr * z^2) */
         real tmp = x * x;
         tmp = mad(y, y, tmp);           /* x^2 + y^2 */
-        tmp = mad(q_inv_sqr, z * z, tmp);   /* (q_invsqr * z^2) + (x^2 + y^2) */
+        tmp = mad(Q_INV_SQR, z * z, tmp);   /* (q_invsqr * z^2) + (x^2 + y^2) */
 
         real rg = mw_fsqrt(tmp);
-        real rs = rg + r0;
+        real rs = rg + R0;
 
       #if FAST_H_PROB
         bg_prob += mw_div(QW_R3_N(r_pt), (rg * cube(rs)));
