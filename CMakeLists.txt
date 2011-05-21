@@ -292,6 +292,10 @@ if(C_COMPILER_IS_CLANG)
   foreach(flag ${clang_warnings})
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${flag}")
   endforeach()
+
+  if(MW_ENABLE_DEBUG)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftrapv -fcatch-undefined-behavior")
+  endif()
 endif()
 
 
