@@ -350,7 +350,10 @@ int evaluate(SeparationResults* results,
 
     calculateIntegrals(ap, ias, sc, sg, es, clr, &ci, useImages);
 
-    finalCheckpoint(es);
+    if (!ignoreCheckpoint)
+    {
+        finalCheckpoint(es);
+    }
 
     getFinalIntegrals(results, es, ap->number_streams, ap->number_integrals);
     freeEvaluationState(es);

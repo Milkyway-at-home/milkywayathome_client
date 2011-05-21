@@ -40,7 +40,7 @@ typedef struct
     int setSeed;
     int separationSeed;
     int cleanupCheckpoint;
-    int ignoreCheckpoint;
+    int ignoreCheckpoint;  /* Ignoring checkpoint is not the same as disabling GPU checkpoints */
     int usePlatform;
     int useDevNumber;  /* Choose CL platform and device */
     int nonResponsive;  /* FIXME: Make this go away */
@@ -564,7 +564,7 @@ int main(int argc, const char* argv[])
     free(parameters);
 
   #if !SEPARATION_OPENCL
-    if (sf.cleanupCheckpoint && rc == 0)
+    if (!sf.ignoreCheckpoint && sf.cleanupCheckpoint && rc == 0)
     {
         mw_report("Removing checkpoint file '%s'\n", CHECKPOINT_FILE);
         mw_remove(CHECKPOINT_FILE);
