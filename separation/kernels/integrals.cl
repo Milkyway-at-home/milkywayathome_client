@@ -54,37 +54,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #if USE_IMAGES
 
-#if 0
-/* This breaks Nvidia compiler */
-RPoints readImageDouble(uint4 a)
-{
-    union {
-        uint4 i;
-        RPoints d;
-    } arst;
-    arst.i = a;
-    return arst.d;
-}
-#endif
-
-inline RPoints readImageDouble(uint4 a)
-{
-    union {
-        uint2 i[2];
-        RPoints d;
-    } arst;
-    arst.i[0] = a.lo;
-    arst.i[1] = a.hi;
-    return arst.d;
-}
-
 const sampler_t sample = CLK_ADDRESS_NONE
                        | CLK_NORMALIZED_COORDS_FALSE
                        | CLK_FILTER_NEAREST;
 
 inline RPoints readRPts(__read_only image2d_t r_pts, __constant AstronomyParameters* ap, int2 i)
 {
-    return readImageDouble(read_imageui(r_pts, sample, i));
+    return as_double2((read_imageui(r_pts, sample, i)));
 }
 
 #else
@@ -184,16 +160,16 @@ __kernel void mu_sum_kernel(__global real* restrict bgOut,
                             __constant IntegralArea* ia MAX_CONST(1, IntegralArea),
 
                             __constant StreamConstants* SC_ARG MAX_CONST(NSTREAM, StreamConstants),
-                            __constant RConsts* rcs MAX_CONST(200, RConsts),
-                            __constant real* restrict sg_dx MAX_CONST(200, real),
+                            __constant RConsts* rcs,
+                            __constant real* restrict sg_dx MAX_CONST(256, real),
 
                           #if USE_IMAGES
                             __read_only image2d_t r_pts,
                           #else
-                            __global const RPoints* r_pts,
+                            __global const __read_only RPoints* r_pts,
                           #endif
 
-                            __global const LBTrig* lbts,
+                            __global const __read_only LBTrig* lbts,
                             const unsigned int extra,
                             const real nu_id)
 {
