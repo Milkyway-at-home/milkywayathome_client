@@ -39,7 +39,8 @@ typedef struct
     int do_separation;
     int setSeed;
     int separationSeed;
-    int cleanup_checkpoint;
+    int cleanupCheckpoint;
+    int ignoreCheckpoint;
     int usePlatform;
     int useDevNumber;  /* Choose CL platform and device */
     int nonResponsive;  /* FIXME: Make this go away */
@@ -74,7 +75,7 @@ typedef struct
 
 
 #define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, FALSE, FALSE, FALSE,  \
-                                 0, FALSE, FALSE, 0, 0, 0,                     \
+                                 0, FALSE, FALSE, 0, 0, 0, 0,                  \
                                  DEFAULT_RESPONSIVENESS_FACTOR,                \
                                  DEFAULT_TARGET_FREQUENCY,                     \
                                  DEFAULT_POLLING_MODE,                         \
@@ -208,8 +209,14 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
         },
 
         {
+            "ignore-checkpoint", 'i',
+            POPT_ARG_NONE, &sf.ignoreCheckpoint,
+            0, "Ignore the checkpoint file", NULL
+        },
+
+        {
             "cleanup-checkpoint", 'c',
-            POPT_ARG_NONE, &sf.cleanup_checkpoint,
+            POPT_ARG_NONE, &sf.cleanupCheckpoint,
             0, "Delete checkpoint on successful", NULL
         },
 
@@ -220,7 +227,7 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
         },
 
         {
-            "process-priority", 'i',
+            "process-priority", 'b',
             POPT_ARG_INT, &sf.processPriority,
          #ifndef _WIN32
             PRIORITY_ARGUMENT, "Set process nice value (-20 to 20)", NULL
@@ -269,7 +276,7 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
       #endif /* SEPARATION_OPENCL || SEPARATION_CAL */
 
       #if SEPARATION_OPENCL
-		{
+        {
             "platform", 'l',
             POPT_ARG_INT, &sf.usePlatform,
             0, "CL Platform to use", NULL
@@ -461,7 +468,7 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
 
     results = newSeparationResults(ap.number_streams);
     rc = evaluate(results, &ap, ias, &streams, sc, sf->star_points_file,
-                  &clr, sf->do_separation, sf->separation_outfile);
+                  &clr, sf->do_separation, sf->ignoreCheckpoint, sf->separation_outfile);
     if (rc)
         warn("Failed to calculate likelihood\n");
 
@@ -548,7 +555,7 @@ int main(int argc, const char* argv[])
     free(parameters);
 
   #if !SEPARATION_OPENCL
-    if (sf.cleanup_checkpoint && rc == 0)
+    if (sf.cleanupCheckpoint && rc == 0)
     {
         mw_report("Removing checkpoint file '%s'\n", CHECKPOINT_FILE);
         mw_remove(CHECKPOINT_FILE);

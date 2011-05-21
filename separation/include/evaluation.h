@@ -50,7 +50,8 @@ int evaluate(SeparationResults* results,
              const StreamConstants* sc,
              const char* star_points_file,
              const CLRequest* clr,
-             const int do_separation,
+             int do_separation,
+             int ignoreCheckpoint,
              const char* separation_outfile);
 
 #ifdef __cplusplus

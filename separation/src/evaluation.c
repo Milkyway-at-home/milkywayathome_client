@@ -308,7 +308,8 @@ int evaluate(SeparationResults* results,
              const StreamConstants* sc,
              const char* star_points_file,
              const CLRequest* clr,
-             const int do_separation,
+             int do_separation,
+             int ignoreCheckpoint,
              const char* separation_outfile)
 {
     int rc = 0;
@@ -330,11 +331,14 @@ int evaluate(SeparationResults* results,
         warn("Failed to initialize shared evaluation state\n");
   #endif /* SEPARATION_GRAPHICS */
 
-    if (resolveCheckpoint())
-        fail("Failed to resolve checkpoint file '%s'\n", CHECKPOINT_FILE);
+    if (!ignoreCheckpoint)
+    {
+        if (resolveCheckpoint())
+            fail("Failed to resolve checkpoint file '%s'\n", CHECKPOINT_FILE);
 
-    if (maybeResume(es))
-        fail("Failed to resume checkpoint\n");
+        if (maybeResume(es))
+            fail("Failed to resume checkpoint\n");
+    }
 
   #if SEPARATION_OPENCL
     if (setupSeparationCL(&ci, ap, ias, clr, &useImages) != CL_SUCCESS)
