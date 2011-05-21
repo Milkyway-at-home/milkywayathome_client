@@ -185,8 +185,7 @@ cl_double referenceGFLOPsRadeon5870(cl_bool doubleprec)
 
 void mwPrintDevInfo(const DevInfo* di)
 {
-    warn("Device %s (%s:0x%x)\n"
-         "Type:                %s\n"
+    warn("Device %s (%s:0x%x) (%s)\n"
          "Driver version:      %s\n"
          "Version:             %s\n"
          "Compute capability:  %u.%u\n"
@@ -247,6 +246,35 @@ void mwPrintDevInfo(const DevInfo* di)
         );
 }
 
+void mwPrintDevInfoShort(const DevInfo* di)
+{
+    warn("Device %s (%s:0x%x) (%s)\n"
+         "Driver version:      %s\n"
+         "Version:             %s\n"
+         "Compute capability:  %u.%u\n"
+         "Image support:       %s\n"
+         "Max compute units:   %u\n"
+         "Clock frequency:     %u Mhz\n"
+         "Global mem size:     "LLU"\n"
+         "Local mem size:      "LLU"\n"
+         "Max const buf size:  "LLU"\n"
+         "Double extension:    %s\n",
+         di->devName,
+         di->vendor, di->vendorID,
+         showCLDeviceType(di->devType),
+         di->driver,
+         di->version,
+         di->computeCapabilityMajor, di->computeCapabilityMinor,
+         showCLBool(di->imgSupport),
+         di->maxCompUnits,
+         di->clockFreq,
+         di->memSize,
+         di->localMemSize,
+         di->maxConstBufSize,
+         showMWDoubleExts(di->doubleExts)
+        );
+}
+
 static void mwGetPlatformInfo(PlatformInfo* pi, cl_platform_id platform)
 {
 	cl_int err;
@@ -279,11 +307,11 @@ static void mwGetPlatformInfo(PlatformInfo* pi, cl_platform_id platform)
 static void mwPrintPlatformInfo(PlatformInfo* pi, cl_uint n)
 {
 	warn("Platform %u information:\n"
-	     "  Platform name:       %s\n"
-	     "  Platform version:    %s\n"
-	     "  Platform vendor:     %s\n"
-	     "  Platform profile:    %s\n"
-	     "  Platform extensions: %s\n",
+	     "  Name:       %s\n"
+	     "  Version:    %s\n"
+	     "  Vendor:     %s\n"
+	     "  Profile:    %s\n"
+	     "  Extensions: %s\n",
 	     n,
 	     pi->name,
 	     pi->version,
@@ -326,7 +354,7 @@ cl_platform_id* mwGetAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out)
         return NULL;
     }
 
-    warn("Found %u platforms\n", n_platform);
+    warn("Found %u platform(s)\n", n_platform);
 
     *n_platforms_out = n_platform;
     return ids;
@@ -351,7 +379,7 @@ cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut)
         return NULL;
     }
 
-    warn("Found %u CL devices\n", numDev);
+    warn("Found %u CL device(s)\n", numDev);
 
     devs = (cl_device_id*) mwMalloc(sizeof(cl_device_id) * numDev);
     err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, numDev, devs, &numDev);

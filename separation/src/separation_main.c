@@ -59,6 +59,8 @@ typedef struct
     int forceX87;
     int forceSSE2;
     int forceSSE3;
+
+    int verbose;
 } SeparationFlags;
 
 /* Process priority to use for GPU version */
@@ -81,7 +83,7 @@ typedef struct
                                  DEFAULT_POLLING_MODE,                         \
                                  DEFAULT_DISABLE_GPU_CHECKPOINTING,            \
                                  0, 0, FALSE,                                  \
-                                 FALSE, FALSE, FALSE, FALSE                    \
+                                 FALSE, FALSE, FALSE, FALSE, FALSE             \
                                }
 #define SEED_ARGUMENT (1 << 1)
 #define PRIORITY_ARGUMENT (1 << 2)
@@ -126,6 +128,15 @@ static void setDefaultFiles(SeparationFlags* sf)
     stringDefault(sf->ap_file, DEFAULT_ASTRONOMY_PARAMETERS);
 }
 
+static void setCommonFlags(CLRequest* clr, const SeparationFlags* sf)
+{
+    clr->forceNoIntrinsics = sf->forceNoIntrinsics;
+    clr->forceX87 = sf->forceX87;
+    clr->forceSSE2 = sf->forceSSE2;
+    clr->forceSSE3 = sf->forceSSE3;
+    clr->verbose = sf->verbose;
+}
+
 #if SEPARATION_OPENCL
 
 static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
@@ -135,10 +146,7 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->nonResponsive = sf->nonResponsive;
     clr->numChunk = sf->numChunk;
     clr->enableCheckpointing = !sf->disableGPUCheckpointing;
-    clr->forceNoIntrinsics = sf->forceNoIntrinsics;
-    clr->forceX87 = sf->forceX87;
-    clr->forceSSE2 = sf->forceSSE2;
-    clr->forceSSE3 = sf->forceSSE3;
+    setCommonFlags(clr, sf);
 }
 
 #elif SEPARATION_CAL
@@ -151,20 +159,14 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->pollingMode = sf->pollingMode;
     clr->enableCheckpointing = !sf->disableGPUCheckpointing;
 
-    clr->forceNoIntrinsics = sf->forceNoIntrinsics;
-    clr->forceX87 = sf->forceX87;
-    clr->forceSSE2 = sf->forceSSE2;
-    clr->forceSSE3 = sf->forceSSE3;
+    setCommonFlags(clr, sf);
 }
 
 #else
 
 static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 {
-    clr->forceNoIntrinsics = sf->forceNoIntrinsics;
-    clr->forceX87 = sf->forceX87;
-    clr->forceSSE2 = sf->forceSSE2;
-    clr->forceSSE3 = sf->forceSSE3;
+    setCommonFlags(clr, sf);
 }
 
 #endif /* SEFPARATION_OPENCL */
@@ -281,6 +283,13 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
             POPT_ARG_INT, &sf.usePlatform,
             0, "CL Platform to use", NULL
         },
+
+        {
+            "verbose", '\0',
+            POPT_ARG_NONE, &sf.verbose,
+            0, "Print some extra debugging information", NULL
+        },
+
       #endif /* SEPARATION_OPENCL */
 
         {

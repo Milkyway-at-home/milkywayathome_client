@@ -67,6 +67,7 @@ typedef struct
     cl_bool forceX87;
     cl_bool forceSSE2;
     cl_bool forceSSE3;
+    cl_bool verbose;
 } CLRequest;
 
 #else
@@ -85,6 +86,7 @@ typedef struct
     int forceX87;
     int forceSSE2;
     int forceSSE3;
+    int verbose;
 } CLRequest;
 
 #endif /* MILKYWAY_OPENCL */
