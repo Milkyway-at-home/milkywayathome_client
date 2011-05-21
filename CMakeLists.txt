@@ -244,7 +244,8 @@ set(gcc_warnings "-Wall"
 
 
 
-set(gcc_extra_flags "-fno-common -funswitch-loops")
+set(gcc_extra_flags "-fno-common -funswitch-loops ")
+set(gcc_only_extra_flags "-freg-struct-return ")
 
 if(SYSTEM_IS_X86)
   list(APPEND gcc_extra_flags "-maccumulate-outgoing-args")
@@ -277,6 +278,12 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCC OR C_COMPILER_IS_CLANG)
   foreach(flag ${gcc_extra_flags} ${gcc_warnings} ${extra_gcc_math_flags})
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${flag}")
+  endforeach()
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCC AND NOT C_COMPILER_IS_CLANG)
+    foreach(flag ${gcc_only_extra_flags})
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${flag}")
   endforeach()
 endif()
