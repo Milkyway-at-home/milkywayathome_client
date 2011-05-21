@@ -317,7 +317,7 @@ int evaluate(SeparationResults* results,
     StreamGauss sg;
     GPUInfo ci;
     StarPoints sp = EMPTY_STAR_POINTS;
-    int useImages = TRUE; /* Only applies to CL version */
+    int useImages = FALSE; /* Only applies to CL version */
 
     memset(&ci, 0, sizeof(ci));
 
