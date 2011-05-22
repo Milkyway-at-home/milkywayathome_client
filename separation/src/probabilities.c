@@ -626,7 +626,7 @@ ProbabilityFunc INIT_PROBABILITIES(const AstronomyParameters* ap, int forceNoInt
 
     initExpTable();
 
-    if (ap->fast_h_prob && !ap->aux_bg_profile && !forceNoIntrinsics && USE_CUSTOM_MATH)
+    if (ap->fast_h_prob && !ap->aux_bg_profile && !forceNoIntrinsics)
     {
         /* TODO: add aux_bg_profile in SSE2 stuff */
         return probabilities_SSE2;
