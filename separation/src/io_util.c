@@ -219,21 +219,21 @@ void printSeparationResults(const SeparationResults* results, unsigned int numbe
     unsigned int i;
 
     /* Print integrals */
-    warn("<background_integral> %.15lf </background_integral>\n", results->backgroundIntegral);
+    warn("<background_integral> %.15f </background_integral>\n", results->backgroundIntegral);
     warn("<stream_integral> ");
     for (i = 0; i < numberStreams; ++i)
-        warn(" %.15lf ", results->streamIntegrals[i]);
+        warn(" %.15f ", results->streamIntegrals[i]);
     warn("</stream_integral>\n");
 
     /* Print individual likelihoods */
-    warn("<background_likelihood> %.15lf </background_likelihood>\n", results->backgroundLikelihood);
+    warn("<background_likelihood> %.15f </background_likelihood>\n", results->backgroundLikelihood);
     warn("<stream_only_likelihood> ");
     for (i = 0; i < numberStreams; ++i)
-        warn(" %.15lf ", results->streamLikelihoods[i]);
+        warn(" %.15f ", results->streamLikelihoods[i]);
     warn("</stream_only_likelihood>\n");
 
     /* Print overall likelihood */
-    warn("<search_likelihood> %0.15lf </search_likelihood>\n", results->likelihood);
+    warn("<search_likelihood> %.15f </search_likelihood>\n", results->likelihood);
 }
 
 /* FIXME: Kill this with fire when we switch to JSON everything for separation */
