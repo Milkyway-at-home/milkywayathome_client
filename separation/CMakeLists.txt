@@ -365,8 +365,13 @@ milkyway_link("${separation_base_bin_name}" ${BOINC_APPLICATION}
                                             "${separation_base_lib_name};${separation_core_libs};${exe_link_libs}")
 
 
+find_program(LUA_INTERPRETER lua)
 
-add_subdirectory(tests EXCLUDE_FROM_ALL)
+if(LUA_INTERPRETER)
+  add_subdirectory(tests EXCLUDE_FROM_ALL)
+else()
+  message(WARNING "Didn't find Lua. Disabling Separation tests")
+endif()
 
 install(TARGETS ${separation_base_bin_name} ${separation_base_lib_name}
           RUNTIME       DESTINATION bin
