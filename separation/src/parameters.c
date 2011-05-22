@@ -27,18 +27,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 void freeBackgroundParameters(BackgroundParameters* bgp)
 {
     free(bgp->parameters);
-    free(bgp->step);
-    free(bgp->min);
-    free(bgp->max);
     free(bgp->optimize);
 }
 
 void freeStreamParameters(StreamParameters* p)
 {
     free(p->stream_parameters);
-    free(p->stream_step);
-    free(p->stream_min);
-    free(p->stream_max);
     free(p->stream_optimize);
 }
 
@@ -50,6 +44,7 @@ void freeStreams(Streams* streams)
         freeStreamParameters(&streams->parameters[i]);
     free(streams->parameters);
     free(streams->stream_weight);
+    free(streams->optimize);
     free(streams->expStreamWeights);
 }
 
@@ -111,17 +106,20 @@ static IntegralArea* freadParameters(FILE* file,
     ap->background_weight = (real) tmp1;
 
     bgp->parameters = fread_double_array(file, "background_parameters", NULL);
-    bgp->step       = fread_double_array(file, "background_step", NULL);
-    bgp->min        = fread_double_array(file, "background_min", NULL);
-    bgp->max        = fread_double_array(file, "background_max", NULL);
-    bgp->optimize   = fread_int_array(file, "optimize_parameter", NULL);
+
+    free(fread_double_array(file, "background_step", NULL));
+    free(fread_double_array(file, "background_min", NULL));
+    free(fread_double_array(file, "background_max", NULL));
+
+    bgp->optimize = fread_int_array(file, "optimize_parameter", NULL);
 
     if (fscanf(file, "number_streams: %u, %u\n", &streams->number_streams, &streams->number_stream_parameters) < 2)
         warn("Error reading number_streams\n");
 
     ap->number_streams = streams->number_streams;
 
-    streams->stream_weight = (StreamWeight*) mwCalloc(streams->number_streams, sizeof(StreamWeight));
+    streams->stream_weight = (real*) mwCalloc(streams->number_streams, sizeof(real));
+    streams->optimize = (int*) mwCalloc(streams->number_streams, sizeof(int));
     streams->parameters = (StreamParameters*) mwCalloc(streams->number_streams, sizeof(StreamParameters));
     streams->expStreamWeights = (real*) mwCalloc(streams->number_streams, sizeof(real));
 
@@ -129,28 +127,25 @@ static IntegralArea* freadParameters(FILE* file,
     {
         if (fscanf(file, "stream_weight: %lf\n", &tmp1) < 1)
             warn("Error reading stream_weight for stream %u\n", i);
-        streams->stream_weight[i].weight = (real) tmp1;
+        streams->stream_weight[i] = (real) tmp1;
 
         if (fscanf(file, "stream_weight_step: %lf\n", &tmp1) < 1)
             warn("Error reading stream_weight_step for stream %u\n", i);
-        streams->stream_weight[i].step = (real) tmp1;
 
         if (fscanf(file, "stream_weight_min: %lf\n", &tmp1) < 1)
             warn("Error reading stream_weight_min for stream %u\n", i);
-        streams->stream_weight[i].min = (real) tmp1;
 
         if (fscanf(file, "stream_weight_max: %lf\n", &tmp1) < 1)
             warn("Error reading stream_weight_max for stream %u\n", i);
-        streams->stream_weight[i].max = (real) tmp1;
 
-        if (fscanf(file, "optimize_weight: %d\n", &streams->stream_weight[i].optimize) < 1)
+        if (fscanf(file, "optimize_weight: %d\n", &streams->optimize[i]) < 1)
             warn("Error reading optimize_weight for stream %u\n", i);
 
         streams->parameters[i].stream_parameters = fread_double_array(file, "stream_parameters", NULL);
-        streams->parameters[i].stream_step       = fread_double_array(file, "stream_step", NULL);
-        streams->parameters[i].stream_min        = fread_double_array(file, "stream_min", NULL);
-        streams->parameters[i].stream_max        = fread_double_array(file, "stream_max", NULL);
-        streams->parameters[i].stream_optimize   = fread_int_array(file, "optimize_parameter", NULL);
+        free(fread_double_array(file, "stream_step", NULL));
+        free(fread_double_array(file, "stream_min", NULL));
+        free(fread_double_array(file, "stream_max", NULL));
+        streams->parameters[i].stream_optimize = fread_int_array(file, "optimize_parameter", NULL);
     }
 
     if (fscanf(file, "convolve: %u\n", &ap->convolve) < 1)
@@ -283,113 +278,6 @@ IntegralArea* readParameters(const char* filename,
     return integral;
 }
 
-static void fwriteParameters(FILE* file,
-                             AstronomyParameters* ap,
-                             IntegralArea* integral,
-                             BackgroundParameters* bgp,
-                             Streams* streams)
-{
-    unsigned int i;
-
-    fprintf(file, "parameters_version: %lf\n", ap->parameters_version);
-
-    fprintf(file, "number_parameters: %u\n", ap->number_background_parameters);
-    fprintf(file, "background_weight: %lf\n", ap->background_weight);
-    fwrite_double_array(file, "background_parameters", bgp->parameters, ap->number_background_parameters);
-    fwrite_double_array(file, "background_step", bgp->step, ap->number_background_parameters);
-    fwrite_double_array(file, "background_min", bgp->min, ap->number_background_parameters);
-    fwrite_double_array(file, "background_max", bgp->max, ap->number_background_parameters);
-    fwrite_int_array(file, "optimize_parameter", bgp->optimize, ap->number_background_parameters);
-
-    fprintf(file, "number_streams: %u, %u\n", streams->number_streams, streams->number_stream_parameters);
-    for (i = 0; i < streams->number_streams; i++)
-    {
-        fprintf(file, "stream_weight: %lf\n", streams->stream_weight[i].weight);
-        fprintf(file, "stream_weight_step: %lf\n", streams->stream_weight[i].step);
-        fprintf(file, "stream_weight_min: %lf\n", streams->stream_weight[i].min);
-        fprintf(file, "stream_weight_max: %lf\n", streams->stream_weight[i].max);
-        fprintf(file, "optimize_weight: %d\n", streams->stream_weight[i].optimize);
-
-        fwrite_double_array(file, "stream_parameters",
-                            streams->parameters[i].stream_parameters, streams->number_stream_parameters);
-        fwrite_double_array(file, "stream_step",
-                            streams->parameters[i].stream_step, streams->number_stream_parameters);
-        fwrite_double_array(file, "stream_min",
-                            streams->parameters[i].stream_min, streams->number_stream_parameters);
-        fwrite_double_array(file, "stream_max",
-                            streams->parameters[i].stream_max, streams->number_stream_parameters);
-        fwrite_int_array(file, "optimize_parameter",
-                         streams->parameters[i].stream_optimize, streams->number_stream_parameters);
-    }
-
-    fprintf(file, "convolve: %d\n", ap->convolve);
-    fprintf(file, "sgr_coordinates: %d\n", ap->sgr_coordinates);
-    fprintf(file, "aux_bg_profile: %d\n", ap->aux_bg_profile);
-    fprintf(file, "wedge: %d\n", ap->wedge);
-
-    fprintf(file,
-            "r[min,max,steps]: %lf, %lf, %u\n",
-            integral[0].r_min,
-            integral[0].r_max,
-            integral[0].r_steps);
-
-    fprintf(file,
-            "mu[min,max,steps]: %lf, %lf, %u\n",
-            integral[0].mu_min,
-            integral[0].mu_max,
-            integral[0].mu_steps);
-
-    fprintf(file,
-            "nu[min,max,steps]: %lf, %lf, %u\n",
-            integral[0].nu_min,
-            integral[0].nu_max,
-            integral[0].nu_steps);
-
-    fprintf(file, "number_cuts: %u\n", ap->number_integrals - 1);
-
-    for (i = 1; i < ap->number_integrals; i++)
-    {
-        fprintf(file,
-                "r_cut[min,max,steps][3]: %lf, %lf, %u\n",
-                integral[i].r_min,
-                integral[i].r_max,
-                integral[i].r_steps);
-
-        fprintf(file,
-                "mu_cut[min,max,steps][3]: %lf, %lf, %u\n",
-                integral[i].mu_min,
-                integral[i].mu_max,
-                integral[i].mu_steps);
-
-        fprintf(file,
-                "nu_cut[min,max,steps][3]: %lf, %lf, %u\n",
-                integral[i].nu_min,
-                integral[i].nu_max,
-                integral[i].nu_steps);
-    }
-}
-
-int writeParameters(const char* filename,
-                    AstronomyParameters* ap,
-                    IntegralArea* ias,
-                    BackgroundParameters* bgp,
-                    Streams* streams)
-{
-    FILE* f;
-
-    f = mw_fopen(filename, "w");
-    if (!f)
-    {
-        perror("Opening parameter file for writing");
-        warn("Couldn't write output file '%s' to write astronomy parameters.\n", filename);
-        return 1;
-    }
-
-    fwriteParameters(f, ap, ias, bgp, streams);
-    fclose(f);
-
-    return 0;
-}
 
 unsigned int getOptimizedParameterCount(AstronomyParameters* ap,
                                         BackgroundParameters* bgp,
@@ -405,7 +293,7 @@ unsigned int getOptimizedParameterCount(AstronomyParameters* ap,
 
     for (i = 0; i < streams->number_streams; i++)
     {
-        if (streams->stream_weight[i].optimize)
+        if (streams->optimize[i])
             ++count;
 
         for (j = 0; j < streams->number_stream_parameters; j++)
@@ -437,9 +325,9 @@ void setParameters(AstronomyParameters* ap,
 
     for (i = 0; i < ap->number_streams; i++)
     {
-        if (streams->stream_weight[i].optimize)
+        if (streams->optimize[i])
         {
-            streams->stream_weight[i].weight = parameters[current];
+            streams->stream_weight[i] = parameters[current];
             ++current;
         }
 

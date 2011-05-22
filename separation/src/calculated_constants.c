@@ -107,7 +107,7 @@ void setExpStreamWeights(const AstronomyParameters* ap, Streams* streams)
     streams->sumExpWeights = ap->exp_background_weight;
     for (i = 0; i < streams->number_streams; i++)
     {
-        streams->expStreamWeights[i] = mw_exp(streams->stream_weight[i].weight);
+        streams->expStreamWeights[i] = mw_exp(streams->stream_weight[i]);
         streams->sumExpWeights += streams->expStreamWeights[i];
     }
 

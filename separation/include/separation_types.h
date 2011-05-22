@@ -78,23 +78,10 @@ typedef struct
 
 /* Parameter related types */
 
-typedef struct
-{
-    real weight;
-    real step;
-    real min;
-    real max;
-    int optimize;
-} StreamWeight;
-
-#define EMPTY_STREAM_WEIGHT { 0.0, 0.0, 0.0, 0.0, 0 }
 
 typedef struct
 {
     real* stream_parameters;
-    real* stream_step;
-    real* stream_min;
-    real* stream_max;
     int* stream_optimize;
 } StreamParameters;
 
@@ -102,27 +89,25 @@ typedef struct
 
 typedef struct
 {
-    StreamWeight* stream_weight;
-    StreamParameters* parameters;
+    real* stream_weight;
+    int* optimize;
 
+    StreamParameters* parameters;
     real* expStreamWeights;
     real sumExpWeights;
     unsigned int number_streams;
     unsigned int number_stream_parameters;
 } Streams;
 
-#define EMPTY_STREAMS { NULL, NULL, NULL, 0.0, 0, 0 }
+#define EMPTY_STREAMS { NULL, NULL, NULL, NULL, 0.0, 0, 0 }
 
 typedef struct
 {
     real* parameters;
-    real* step;
-    real* min;
-    real* max;
     int* optimize;
 } BackgroundParameters;
 
-#define EMPTY_BACKGROUND_PARAMETERS { NULL, NULL, NULL, NULL, NULL }
+#define EMPTY_BACKGROUND_PARAMETERS { NULL, NULL }
 
 typedef struct
 {
@@ -141,6 +126,7 @@ typedef struct
     real backgroundLikelihood;
 
     real* streamIntegrals;
+
     real* streamLikelihoods;
 } SeparationResults;
 

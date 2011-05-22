@@ -49,11 +49,11 @@ static real get_stream_bg_weight_consts(StreamStats* ss, const Streams* streams)
     real denom = 1.0;
 
     for (i = 0; i < streams->number_streams; i++)
-        denom += mw_exp(streams->stream_weight[i].weight);
+        denom += mw_exp(streams->stream_weight[i]);
 
     for (i = 0; i < streams->number_streams; i++)
     {
-        ss[i].epsilon_s = mw_exp(streams->stream_weight[i].weight) / denom;
+        ss[i].epsilon_s = mw_exp(streams->stream_weight[i]) / denom;
         printf("epsilon_s[%d]: %lf\n", i, ss[i].epsilon_s);
     }
 

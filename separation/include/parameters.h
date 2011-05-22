@@ -37,12 +37,6 @@ IntegralArea* readParameters(const char* file,
                              BackgroundParameters* bgp,
                              Streams* streams);
 
-int writeParameters(const char* file,
-                    AstronomyParameters* ap,
-                    IntegralArea* integral,
-                    BackgroundParameters* bgp,
-                    Streams* streams);
-
 void setParameters(AstronomyParameters* ap,
                    BackgroundParameters* bgp,
                    Streams* streams,
