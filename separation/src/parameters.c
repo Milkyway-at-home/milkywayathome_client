@@ -77,6 +77,7 @@ static IntegralArea* freadParameters(FILE* file,
     unsigned int total_calc_probs;
     unsigned int integralNumTmp;
     int iTmp;
+    int sgr_coordinates = 0;
     real* tmpArr = NULL;
 
     parametersVersion = (fscanf(file, "parameters_version: %lf\n", &tmp1) < 1) ? 0.01 : (real) tmp1;
@@ -143,8 +144,14 @@ static IntegralArea* freadParameters(FILE* file,
     if (fscanf(file, "convolve: %u\n", &ap->convolve) < 1)
         warn("Error reading convolve\n");
 
-    if (fscanf(file, "sgr_coordinates: %d\n", &ap->sgr_coordinates) < 1)
+    if (fscanf(file, "sgr_coordinates: %d\n", &sgr_coordinates) < 1)
         warn("Error reading sgr_coordinates\n");
+
+    if (sgr_coordinates)
+    {
+        fail("sgr_coordinates unimplemented\n");
+    }
+
     if (parametersVersion > 0.01)
     {
         if (fscanf(file, "aux_bg_profile: %d\n", &ap->aux_bg_profile) < 1)

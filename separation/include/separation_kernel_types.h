@@ -148,30 +148,27 @@ typedef struct SEPARATION_ALIGN(128)
     real q_inv;
     real q_inv_sqr;  /* 1 / q^2 */
     real r0;
-    real alpha;
 
     unsigned int convolve;
     unsigned int number_streams;
+    int fast_h_prob;
+    int aux_bg_profile;
 
+    real alpha;
+    real delta;
     real alpha_delta3;
     real bg_a, bg_b, bg_c;
 
     int wedge;
-    int aux_bg_profile;
     real sun_r0;
-
-    real delta;
     real q;
-    real sn;
     real coeff;
 
     real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
-    int sgr_coordinates;
     unsigned int number_integrals;
 
     real background_weight;
     real exp_background_weight;
-    int fast_h_prob;
 } AstronomyParameters;
 
 typedef struct SEPARATION_ALIGN(16)

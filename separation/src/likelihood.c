@@ -230,11 +230,7 @@ static void setSeparationConstants(const AstronomyParameters* ap,
     mwvector dnormal = ZERO_VECTOR;
     const mwvector dortho = mw_vec(0.0, 0.0, 1.0);
 
-    if (!ap->sgr_coordinates)
-        dnormal = stripe_normal(ap->wedge);
-    else
-        fail("sgr coordinates not implemented\n");
-
+    dnormal = stripe_normal(ap->wedge);
     get_transform(cmatrix, dnormal, dortho);
 
     printf("\nTransformation matrix:\n"

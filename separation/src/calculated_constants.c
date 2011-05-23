@@ -95,12 +95,6 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
         ap->bg_c = 0.0;
     }
 
-    if (ap->sgr_coordinates)
-    {
-        warn("gc2sgr not implemented\n");
-        return 1;
-    }
-
     if (ap->convolve == 0 || ap->convolve > 256 || !mwEven(ap->convolve))
     {
         warn("convolve (%u) must be > 0, <= 256 and even\n", ap->convolve);

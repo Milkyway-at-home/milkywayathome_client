@@ -182,14 +182,12 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            "  background_weight            = %g\n"
            "  number_streams               = %u\n"
            "  convolve                     = %u\n"
-           "  sgr_coordinates              = %u\n"
            "  aux_bg_profile               = %d\n"
            "  wedge                        = %d\n"
            "  number_integrals             = %u\n"
            "  alpha                        = %g\n"
            "  q                            = %g\n"
            "  q_inv_sqr                    = %g\n"
-           "  sn                           = %g\n"
            "  r0                           = %g\n"
            "  delta                        = %g\n"
            "  coeff                        = %g\n"
@@ -201,12 +199,11 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            ap->background_weight,
            ap->number_streams,
            ap->convolve,
-           ap->sgr_coordinates,
            ap->aux_bg_profile,
            ap->wedge,
            ap->number_integrals,
            ap->alpha, ap->q, ap->q_inv_sqr,
-           ap->sn, ap->r0, ap->delta, ap->coeff, ap->alpha_delta3,
+           ap->r0, ap->delta, ap->coeff, ap->alpha_delta3,
            ap->bg_a, ap->bg_b, ap->bg_c);
 }
 
