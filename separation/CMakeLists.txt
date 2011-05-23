@@ -1,19 +1,19 @@
 # Copyright 2010 Matthew Arsenault, Travis Desell, Dave Przybylo,
 # Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
 # Magdon-Ismail and Rensselaer Polytechnic Institute.
-
+#
 # This file is part of Milkway@Home.
-
+#
 # Milkyway@Home is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-
+#
 # Milkyway@Home is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-
+#
 # You should have received a copy of the GNU General Public License
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -183,7 +183,8 @@ set(lib_source_file_list src/evaluation_state.c
                          src/integrals.c
                          src/calculated_constants.c
                          src/separation_utils.c
-                         src/r_points.c)
+                         src/r_points.c
+                         src/separation_lua.c)
 
 set(separation_headers include/calculated_constants.h
                        include/separation_types.h
@@ -201,7 +202,8 @@ set(separation_headers include/calculated_constants.h
                        include/integrals.h
                        include/r_points.h
                        include/separation_utils.h
-                       include/separation_constants.h)
+                       include/separation_constants.h
+                       include/separation_lua.h)
 
 set(separation_cl_headers include/setup_cl.h
                           include/run_cl.h
@@ -255,13 +257,14 @@ elseif(SEPARATION_CAL)
   list(APPEND separation_headers ${separation_cal_headers})
 endif()
 
-list(APPEND separation_link_libs milkyway)
+list(APPEND separation_link_libs milkyway milkyway_lua)
 
 if(BOINC_APPLICATION)
   list(APPEND separation_link_libs ${BOINC_LIBRARIES})
 endif()
 
 list(APPEND separation_link_libs ${OS_SPECIFIC_LIBS}
+                                 ${LUA_LIBRARY}
                                  ${SEPARATION_LIBM_LIBRARY})
 
 

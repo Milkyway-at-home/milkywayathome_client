@@ -82,18 +82,10 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
     ap->q_inv = inv(ap->q);
     ap->q_inv_sqr = inv(sqr(ap->q));
 
-    if (ap->aux_bg_profile)
-    {
-        ap->bg_a = bgp->a;
-        ap->bg_b = bgp->b;
-        ap->bg_c = bgp->c;
-    }
-    else
-    {
-        ap->bg_a = 0.0;
-        ap->bg_b = 0.0;
-        ap->bg_c = 0.0;
-    }
+    ap->aux_bg_profile = (bgp->a != 0.0) || (bgp->b != 0.0) || (bgp->c != 0.0);
+    ap->bg_a = bgp->a;
+    ap->bg_b = bgp->b;
+    ap->bg_c = bgp->c;
 
     if (ap->convolve == 0 || ap->convolve > 256 || !mwEven(ap->convolve))
     {
@@ -104,7 +96,7 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
     ap->coeff = 1.0 / (stdev * SQRT_2PI);
     ap->alpha_delta3 = 3.0 - ap->alpha + ap->delta;
 
-    ap->exp_background_weight = mw_exp(ap->background_weight);
+    ap->exp_background_weight = mw_exp(bgp->epsilon);
     ap->fast_h_prob = (ap->alpha == 1.0 && ap->delta == 1.0);
 
     ap->sun_r0 = const_sun_r0;

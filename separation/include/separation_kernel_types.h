@@ -167,7 +167,6 @@ typedef struct SEPARATION_ALIGN(128)
     real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
     unsigned int number_integrals;
 
-    real background_weight;
     real exp_background_weight;
 } AstronomyParameters;
 

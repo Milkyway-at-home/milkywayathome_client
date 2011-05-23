@@ -109,10 +109,12 @@ typedef struct
     real q;
     real delta;
 
+    real epsilon;
+
     real a, b, c;
 } BackgroundParameters;
 
-#define EMPTY_BACKGROUND_PARAMETERS { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
+#define EMPTY_BACKGROUND_PARAMETERS { 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0 }
 
 typedef struct
 {

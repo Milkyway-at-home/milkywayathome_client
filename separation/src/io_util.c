@@ -139,7 +139,8 @@ void printIntegralArea(const IntegralArea* ia)
            "  mu_step_size = %g\n"
            "  r_steps      = %u\n"
            "  nu_steps     = %u\n"
-           "  mu_steps     = %u\n",
+           "  mu_steps     = %u\n"
+           "}\n",
            ia->r_min, ia->r_max, ia->r_step_size,
            ia->nu_min, ia->nu_max, ia->nu_step_size,
            ia->mu_min, ia->mu_max, ia->mu_step_size,
@@ -178,33 +179,46 @@ void printStreamConstants(const StreamConstants* c, unsigned int n)
 void printAstronomyParameters(const AstronomyParameters* ap)
 {
     printf("astronomy-parameters {\n"
-           "  total_calc_probs             = %g\n"
-           "  background_weight            = %g\n"
-           "  number_streams               = %u\n"
-           "  convolve                     = %u\n"
-           "  aux_bg_profile               = %d\n"
-           "  wedge                        = %d\n"
-           "  number_integrals             = %u\n"
-           "  alpha                        = %g\n"
-           "  q                            = %g\n"
-           "  q_inv_sqr                    = %g\n"
-           "  r0                           = %g\n"
-           "  delta                        = %g\n"
-           "  coeff                        = %g\n"
-           "  alpha_delta                  = %g\n"
-           "  bg_a                         = %g\n"
-           "  bg_b                         = %g\n"
-           "  bg_c                         = %g\n",
-           ap->total_calc_probs,
-           ap->background_weight,
-           ap->number_streams,
+           "  m_sun_r0              = %f\n"
+           "  q_inv                 = %f\n"
+           "  q_inv_sqr             = %f\n"
+           "  r0                    = %f\n"
+           "  convolve              = %u\n"
+           "  number_streams        = %u\n"
+           "  fast_h_prob           = %d\n"
+           "  aux_bg_profile        = %d\n"
+           "  alpha                 = %f\n"
+           "  delta                 = %f\n"
+           "  alpha_delta           = %f\n"
+           "  bg_a                  = %f\n"
+           "  bg_b                  = %f\n"
+           "  bg_c                  = %f\n"
+           "  wedge                 = %d\n"
+           "  sun_r0                = %f\n"
+           "  q                     = %f\n"
+           "  coeff                 = %f\n"
+           "  total_calc_probs      = %f\n"
+           "  number_integrals      = %u\n"
+           "  exp_background_weight = %f\n",
+           ap->m_sun_r0,
+           ap->q_inv,
+           ap->q_inv_sqr,
+           ap->r0,
            ap->convolve,
+           ap->number_streams,
+           ap->fast_h_prob,
            ap->aux_bg_profile,
+           ap->alpha,
+           ap->delta,
+           ap->alpha_delta3,
+           ap->bg_a, ap->bg_b, ap->bg_c,
            ap->wedge,
+           ap->sun_r0,
+           ap->q,
+           ap->coeff,
+           ap->total_calc_probs,
            ap->number_integrals,
-           ap->alpha, ap->q, ap->q_inv_sqr,
-           ap->r0, ap->delta, ap->coeff, ap->alpha_delta3,
-           ap->bg_a, ap->bg_b, ap->bg_c);
+           ap->exp_background_weight);
 }
 
 void printSeparationResults(const SeparationResults* results, unsigned int numberStreams)

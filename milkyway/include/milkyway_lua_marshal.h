@@ -67,7 +67,7 @@ typedef struct
 
 #define END_MW_NAMED_ARG { NULL, -1, NULL, FALSE, NULL }
 
-#define mw_lua_assert_top_type(luaSt, t) assert(lua_type((luaSt), -1) == t)
+#define mw_lua_assert_top_type(luaSt, t) assert(lua_type((luaSt), -1) == (t))
 
 /* Print the error from pcall assumed to be the top of the stack */
 #define mw_lua_pcall_warn(luaSt, msg, ...) fprintf(stderr, msg ": %s \n", ##__VA_ARGS__, lua_tostring(luaSt, -1))

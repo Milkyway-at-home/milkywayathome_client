@@ -20,6 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "separation.h"
+#include "separation_lua.h"
 #include "milkyway_util.h"
 #include "milkyway_cpp_util.h"
 #include "io_util.h"
@@ -29,62 +30,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define DEFAULT_ASTRONOMY_PARAMETERS "astronomy_parameters.txt"
 #define DEFAULT_STAR_POINTS "stars.txt"
 
-typedef struct
-{
-    char* star_points_file;
-    char* ap_file;  /* astronomy parameters */
-    char* separation_outfile;
-    char* referenceFile;
-    int debugBOINC;
-    int do_separation;
-    int setSeed;
-    int separationSeed;
-    int cleanupCheckpoint;
-    int ignoreCheckpoint;  /* Ignoring checkpoint is not the same as disabling GPU checkpoints */
-    int usePlatform;
-    int useDevNumber;  /* Choose CL platform and device */
-    int nonResponsive;  /* FIXME: Make this go away */
-    unsigned int numChunk;  /* Also this */
-    double responsivenessFactor;
-    double targetFrequency;
-    int pollingMode;
-    int printVersion;
-    int disableGPUCheckpointing;
-
-    MWPriority processPriority;
-    int setPriority;
-
-    /* Force between normal, SSE2, SSE3 paths */
-    int forceNoIntrinsics;
-    int forceX87;
-    int forceSSE2;
-    int forceSSE3;
-
-    int verbose;
-} SeparationFlags;
-
-/* Process priority to use for GPU version */
-#ifndef _WIN32
-  #define DEFAULT_GPU_PRIORITY 0
-#else
-  #define DEFAULT_GPU_PRIORITY MW_PRIORITY_NORMAL
-#endif /* _WIN32 */
-
-#define DEFAULT_POLLING_MODE 1
-#define DEFAULT_RESPONSIVENESS_FACTOR 1.0
-#define DEFAULT_TARGET_FREQUENCY 30.0
-#define DEFAULT_DISABLE_GPU_CHECKPOINTING 0
-
-
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, FALSE, FALSE, FALSE,  \
-                                 0, FALSE, FALSE, 0, 0, 0, 0,                  \
-                                 DEFAULT_RESPONSIVENESS_FACTOR,                \
-                                 DEFAULT_TARGET_FREQUENCY,                     \
-                                 DEFAULT_POLLING_MODE,                         \
-                                 DEFAULT_DISABLE_GPU_CHECKPOINTING,            \
-                                 0, 0, FALSE,                                  \
-                                 FALSE, FALSE, FALSE, FALSE, FALSE             \
-                               }
 #define SEED_ARGUMENT (1 << 1)
 #define PRIORITY_ARGUMENT (1 << 2)
 
@@ -118,7 +63,6 @@ static void freeSeparationFlags(SeparationFlags* sf)
     free(sf->star_points_file);
     free(sf->ap_file);
     free(sf->separation_outfile);
-    free(sf->referenceFile);
 }
 
 /* Use hardcoded names if files not specified */
@@ -404,10 +348,18 @@ static IntegralArea* prepareParameters(const SeparationFlags* sf,
     IntegralArea* ias;
     int badNumberParameters;
 
-    ias = readParameters(sf->ap_file, ap, bgp, streams);
+    ias = setupSeparation(ap, bgp, streams, sf);
+    /* Try the new file first. If that doesn't work, try the old one. */
     if (!ias)
     {
-        warn("Error reading astronomy parameters from file '%s'\n", sf->ap_file);
+        warn("Error reading astronomy parameters from file '%s'\n"
+             "  Trying old parameters file\n", sf->ap_file);
+        ias = readParameters(sf->ap_file, ap, bgp, streams);
+    }
+
+    if (!ias)
+    {
+        warn("Failed to read parameters file\n");
         return NULL;
     }
 
@@ -475,15 +427,15 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     }
 
     results = newSeparationResults(ap.number_streams);
+
+    printAstronomyParameters(&ap);
+
     rc = evaluate(results, &ap, ias, &streams, sc, sf->star_points_file,
                   &clr, sf->do_separation, sf->ignoreCheckpoint, sf->separation_outfile);
     if (rc)
         warn("Failed to calculate likelihood\n");
 
     printSeparationResults(results, ap.number_streams);
-
-    if (sf->referenceFile)
-        rc |= verifySeparationResults(sf->referenceFile, results, ap.number_streams);
 
     mwFreeA(ias);
     mwFreeA(sc);

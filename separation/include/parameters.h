@@ -26,6 +26,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 void freeStreams(Streams* streams);
 
+void calcIntegralStepSizes(IntegralArea* i);
+
 IntegralArea* readParameters(const char* file,
                              AstronomyParameters* ap,
                              BackgroundParameters* bgp,

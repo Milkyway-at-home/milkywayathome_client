@@ -29,7 +29,7 @@ void freeStreams(Streams* streams)
     free(streams->parameters);
 }
 
-static void calcIntegralStepSizes(IntegralArea* i)
+void calcIntegralStepSizes(IntegralArea* i)
 {
     i->r_step_size = (i->r_max - i->r_min) / (real) i->r_steps;
     i->mu_step_size = (i->mu_max - i->mu_min) / (real) i->mu_steps;
@@ -88,7 +88,7 @@ static IntegralArea* freadParameters(FILE* file,
     if (fscanf(file, "background_weight: %lf\n", &tmp1) < 1)
         warn("Error reading background_weight\n");
 
-    ap->background_weight = (real) tmp1;
+    bgp->epsilon = (real) tmp1;
 
     tmpArr = fread_double_array(file, "background_parameters", NULL);
     bgp->alpha = tmpArr[0];
