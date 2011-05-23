@@ -54,6 +54,7 @@ static RConsts* initRPoints(const AstronomyParameters* ap,
         }
     }
 
+    mwFreeA(rPts);
     return rc;
 }
 
