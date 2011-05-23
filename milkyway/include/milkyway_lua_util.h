@@ -17,10 +17,15 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if !defined(_MILKYWAY_LUA_H_INSIDE_) && !defined(MILKYWAY_LUA_COMPILATION)
+  #error "Only milkyway_lua.h can be included directly."
+#endif
+
 #ifndef _MILKYWAY_LUA_UTIL_H_
 #define _MILKYWAY_LUA_UTIL_H_
 
 #include <lua.h>
+#include "milkyway_util.h"
 
 int registerUtilityFunctions(lua_State* luaSt);
 void mw_lua_openlibs(lua_State *L, mwbool debug);

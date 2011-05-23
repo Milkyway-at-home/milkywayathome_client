@@ -25,7 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#include "milkyway_lua_util.h"
 #include "milkyway_lua_math.h"
 #include "milkyway_lua_vector.h"
 #include "milkyway_lua_dsfmt.h"
