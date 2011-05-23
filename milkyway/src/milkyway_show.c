@@ -17,39 +17,23 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_LUA_TYPES_H_
-#define _NBODY_LUA_TYPES_H_
+#include "milkyway_show.h"
+#include "milkyway_util.h"
 
-#define _NBODY_LUA_TYPES_H_INSIDE_
+char* showVector(mwvector v)
+{
+    char* buf;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+    if (asprintf(&buf, "{ %g, %g, %g }", X(v), Y(v), Z(v)) < 0)
+        fail("asprintf() failed\n");
 
-#include "milkyway_lua.h"
-
-#include "nbody_lua_type_marshal.h"
-
-#include "nbody_lua_nbodyctx.h"
-#include "nbody_lua_nbodystate.h"
-#include "nbody_lua_body.h"
-#include "nbody_lua_halo.h"
-#include "nbody_lua_disk.h"
-#include "nbody_lua_spherical.h"
-#include "nbody_lua_potential.h"
-#include "nbody_lua_histogram_params.h"
-
-
-#include <lua.h>
-
-void registerNBodyTypes(lua_State* luaSt);
-NBodyStatus readNBodyStatus(lua_State* luaSt, const char* name);
-
-#ifdef __cplusplus
+    return buf;
 }
-#endif
 
-#undef _NBODY_LUA_TYPES_H_INSIDE_
-
-#endif /* _NBODY_LUA_TYPES_H_ */
+void printVector(mwvector v)
+{
+    char* buf = showVector(v);
+    puts(buf);
+    free(buf);
+}
 

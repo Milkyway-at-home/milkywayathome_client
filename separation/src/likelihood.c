@@ -49,11 +49,11 @@ static real get_stream_bg_weight_consts(StreamStats* ss, const Streams* streams)
     real denom = 1.0;
 
     for (i = 0; i < streams->number_streams; i++)
-        denom += mw_exp(streams->stream_weight[i]);
+        denom += mw_exp(streams->parameters[i].epsilon);
 
     for (i = 0; i < streams->number_streams; i++)
     {
-        ss[i].epsilon_s = mw_exp(streams->stream_weight[i]) / denom;
+        ss[i].epsilon_s = mw_exp(streams->parameters[i].epsilon) / denom;
         printf("epsilon_s[%d]: %lf\n", i, ss[i].epsilon_s);
     }
 
@@ -176,7 +176,7 @@ static real likelihood_probability(const AstronomyParameters* ap,
     starProb = es->bgTmp; /* bg only */
     for (i = 0; i < ap->number_streams; ++i)
     {
-        streamOnly = es->streamTmps[i] / results->streamIntegrals[i] * streams->expStreamWeights[i];
+        streamOnly = es->streamTmps[i] / results->streamIntegrals[i] * streams->parameters[i].epsilonExp;
         starProb += streamOnly;
         streamOnly = probability_log(streamOnly, streams->sumExpWeights);
         KAHAN_ADD(es->streamSums[i], streamOnly);

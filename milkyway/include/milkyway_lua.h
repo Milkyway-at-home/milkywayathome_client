@@ -17,16 +17,28 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _MILKYWAY_LUA_UTIL_H_
-#define _MILKYWAY_LUA_UTIL_H_
+#ifndef _MILKYWAY_LUA_H_
+#define _MILKYWAY_LUA_H_
+
+#define _MILKYWAY_LUA_H_INSIDE_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "milkyway_lua_math.h"
+#include "milkyway_lua_vector.h"
+#include "milkyway_lua_dsfmt.h"
+#include "milkyway_lua_marshal.h"
+#include "milkyway_lua_types.h"
 
 #include <lua.h>
 
-int registerUtilityFunctions(lua_State* luaSt);
-void mw_lua_openlibs(lua_State *L, mwbool debug);
+#ifdef __cplusplus
+}
+#endif
 
-int dostringWithArgs(lua_State* luaSt, const char* str, const char** args, unsigned int nArgs);
-int dofileWithArgs(lua_State* luaSt, const char* filename, const char** args, unsigned int nArgs);
+#undef _MILKYWAY_LUA_H_INSIDE_
 
-#endif /* _MILKYWAY_LUA_UTIL_H_ */
+#endif /* _MILKYWAY_LUA_H_ */
 

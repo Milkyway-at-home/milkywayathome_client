@@ -401,7 +401,6 @@ static IntegralArea* prepareParameters(const SeparationFlags* sf,
                                        const real* parameters,
                                        const int number_parameters)
 {
-    int ap_number_parameters;
     IntegralArea* ias;
     int badNumberParameters;
 
@@ -412,32 +411,31 @@ static IntegralArea* prepareParameters(const SeparationFlags* sf,
         return NULL;
     }
 
-    ap_number_parameters = getOptimizedParameterCount(ap, bgp, streams);
-    badNumberParameters = number_parameters < 1 || number_parameters != ap_number_parameters;
+    badNumberParameters = number_parameters < 1;
     if (badNumberParameters && !sf->do_separation)
     {
-        warn("Error reading parameters: number of parameters from the "
-             "command line (%d) does not match the number of parameters "
-             "to be optimized in %s (%d)\n",
-             number_parameters,
-             sf->ap_file,
-             ap_number_parameters);
-
+        warn("Error reading parameters: Bad number of parameters from the command line\n");
         mwFreeA(ias);
         freeStreams(streams);
-        freeBackgroundParameters(bgp);
         return NULL;
     }
 
     if (!sf->do_separation)
-        setParameters(ap, bgp, streams, parameters);
+    {
+        if (setParameters(ap, bgp, streams, parameters, number_parameters))
+        {
+            mwFreeA(ias);
+            freeStreams(streams);
+            return NULL;
+        }
+    }
 
     return ias;
 }
 
 static int worker(const SeparationFlags* sf, const real* parameters, const int number_parameters)
 {
-    AstronomyParameters ap = EMPTY_ASTRONOMY_PARAMETERS;
+    AstronomyParameters ap;
     BackgroundParameters bgp = EMPTY_BACKGROUND_PARAMETERS;
     Streams streams = EMPTY_STREAMS;
     IntegralArea* ias = NULL;
@@ -445,6 +443,8 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     SeparationResults* results = NULL;
     int rc;
     CLRequest clr;
+
+    memset(&ap, 0, sizeof(ap));
 
     getCLReqFromFlags(&clr, sf);
 
@@ -456,7 +456,6 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     }
 
     rc = setAstronomyParameters(&ap, &bgp);
-    freeBackgroundParameters(&bgp);
     if (rc)
     {
         warn("Failed to set astronomy parameters\n");

@@ -26,8 +26,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_extra.h"
 #include "milkyway_math.h"
 
-#include "nbody_types.h"
-
 typedef int (*Xet_func) (lua_State* luaSt, void* v);
 
 
@@ -41,7 +39,7 @@ typedef const struct
 {
     const char* name;  /* member name */
     Xet_func func;     /* get or set function for type of member */
-    size_t offset;     /* offset of member within NBodyCtx */
+    size_t offset;     /* offset of member within a struct */
 }  Xet_reg_pre;
 
 typedef Xet_reg_pre* Xet_reg;

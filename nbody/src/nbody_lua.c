@@ -51,23 +51,6 @@ static int getBodiesFunc(lua_State* luaSt)
     return mw_lua_checkglobalfunction(luaSt, "makeBodies");
 }
 
-static int bindBOINCStatus(lua_State* luaSt)
-{
-    int isStandalone = TRUE;
-
-    lua_pushboolean(luaSt, BOINC_APPLICATION);
-    lua_setglobal(luaSt, "isBOINCApplication");
-
-    #if BOINC_APPLICATION
-    isStandalone = boinc_is_standalone();
-    #endif
-
-    lua_pushboolean(luaSt, isStandalone);
-    lua_setglobal(luaSt, "isStandalone");
-
-    return 0;
-}
-
 static int bindArgSeed(lua_State* luaSt, const NBodyFlags* nbf)
 {
     if (nbf->setSeed)
@@ -94,7 +77,7 @@ lua_State* nbodyLuaOpen(mwbool debug)
     mw_lua_openlibs(luaSt, debug);
 
     registerNBodyTypes(luaSt);
-    registerOtherTypes(luaSt);
+    mwRegisterTypes(luaSt);
 
     registerPredefinedModelGenerators(luaSt);
     registerSphericalKinds(luaSt);
@@ -119,7 +102,7 @@ static lua_State* nbodyOpenLuaStateWithScript(const NBodyFlags* nbf)
         return NULL;
 
     bindArgSeed(luaSt, nbf);
-    bindBOINCStatus(luaSt);
+    mwBindBOINCStatus(luaSt);
 
     script = mwReadFileResolved(nbf->inputFile);
     if (!script)

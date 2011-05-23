@@ -25,7 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lauxlib.h>
 
 #include "milkyway_lua_marshal.h"
-#include "nbody_lua_types.h"
 #include "milkyway_util.h"
 
 

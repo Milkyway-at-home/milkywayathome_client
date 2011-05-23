@@ -42,12 +42,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_extra.h"
 #include "milkyway_math.h"
+#include "milkyway_show.h"
 #include "mw_boinc_util.h"
 #include "dSFMT.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define MWInvalidEnum (-1)
+#define InvalidEnum MWInvalidEnum
 
 
 #if MILKYWAY_OPENCL

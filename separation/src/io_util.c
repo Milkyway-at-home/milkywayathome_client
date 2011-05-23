@@ -178,9 +178,7 @@ void printStreamConstants(const StreamConstants* c, unsigned int n)
 void printAstronomyParameters(const AstronomyParameters* ap)
 {
     printf("astronomy-parameters {\n"
-           "  parameters_version           = %g\n"
            "  total_calc_probs             = %g\n"
-           "  number_background_parameters = %u\n"
            "  background_weight            = %g\n"
            "  number_streams               = %u\n"
            "  convolve                     = %u\n"
@@ -199,9 +197,7 @@ void printAstronomyParameters(const AstronomyParameters* ap)
            "  bg_a                         = %g\n"
            "  bg_b                         = %g\n"
            "  bg_c                         = %g\n",
-           ap->parameters_version,
            ap->total_calc_probs,
-           ap->number_background_parameters,
            ap->background_weight,
            ap->number_streams,
            ap->convolve,

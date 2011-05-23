@@ -19,6 +19,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include <lua.h>
+#include <time.h>
 
 #include "milkyway_lua_marshal.h"
 #include "milkyway_lua_dsfmt.h"

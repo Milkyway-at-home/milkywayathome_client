@@ -228,7 +228,7 @@ static mwbool readParameters(const int argc, const char** argv, NBodyFlags* nbf)
 
     /* Check for invalid options, and must have the input file or a
      * checkpoint to resume from */
-    argRead = mwReadArguments(context)
+    argRead = mwReadArguments(context);
     if (argRead < 0 || (!nbf->inputFile && !nbf->checkpointFileName))
     {
         poptPrintHelp(context, stderr, 0);

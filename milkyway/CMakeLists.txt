@@ -58,7 +58,15 @@ include_directories(${MILKYWAY_INCLUDE_DIR})
 # with crlibm, leading to unexpected results
 set(mw_lib_src src/milkyway_util.c
                src/mw_boinc_util.c
-               src/milkyway_cpp_util.cc)
+               src/milkyway_cpp_util.cc
+               src/milkyway_show.c)
+
+set(milkyway_lua_src src/milkyway_lua_marshal.c
+                     src/milkyway_lua_util.c
+                     src/milkyway_lua_math.c
+                     src/milkyway_lua_vector.c
+                     src/milkyway_lua_dsfmt.c
+                     src/milkyway_lua_types.c)
 
 set(mw_cl_lib_src src/mw_cl_show_types.c
                   src/mw_cl_device.c
@@ -75,7 +83,16 @@ set(mw_lib_headers include/milkyway_config.h.in
                    include/milkyway_cpp_util.h
                    include/milkyway_vectors.h
                    include/milkyway_vector_types.h
-                   include/real.h)
+                   include/real.h
+                   include/milkyway_show.h)
+
+set(milkyway_lua_headers include/milkyway_lua.h
+                         include/milkyway_lua_marshal.h
+                         include/milkyway_lua_util.h
+                         include/milkyway_lua_math.h
+                         include/milkyway_lua_vector.h
+                         include/milkyway_lua_dsfmt.h
+                         include/milkyway_lua_types.h)
 
 set(mw_cl_lib_headers include/milkyway_cl.h
                       include/mw_cl.h
@@ -95,6 +112,11 @@ if(MILKYWAY_OPENCL)
   list(APPEND mw_lib_src ${mw_cl_lib_src})
   list(APPEND mw_lib_headers ${mw_cl_lib_headers})
 endif()
+
+add_library(milkyway_lua STATIC ${milkyway_lua_src} ${milkyway_lua_headers})
+set_target_properties(milkyway_lua PROPERTIES
+                        COMPILE_DEFINITIONS "MILKYWAY_LUA_COMPILATION")
+target_link_libraries(milkyway_lua milkyway dsfmt)
 
 add_library(milkyway STATIC ${mw_lib_src} ${mw_lib_headers})
 target_link_libraries(milkyway dsfmt)

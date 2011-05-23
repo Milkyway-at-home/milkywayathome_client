@@ -21,9 +21,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _NBODY_SHOW_H_
 #define _NBODY_SHOW_H_
 
-#define _GNU_SOURCE
-
 #include "nbody_types.h"
+#include "milkyway_show.h"
 
 /* Types -> String */
 const char* showBool(mwbool);
@@ -43,9 +42,6 @@ void printPotential(const Potential*);
 
 char* showNBodyCtx(const NBodyCtx*);
 void printNBodyCtx(const NBodyCtx*);
-char* showVector(const mwvector);
-
-void printVector(const mwvector v);
 
 char* showHistogramParams(const HistogramParams*);
 void printHistogramParams(const HistogramParams*);

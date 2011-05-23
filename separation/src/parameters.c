@@ -24,28 +24,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "io_util.h"
 #include "milkyway_util.h"
 
-void freeBackgroundParameters(BackgroundParameters* bgp)
-{
-    free(bgp->parameters);
-    free(bgp->optimize);
-}
-
-void freeStreamParameters(StreamParameters* p)
-{
-    free(p->stream_parameters);
-    free(p->stream_optimize);
-}
-
 void freeStreams(Streams* streams)
 {
-    unsigned int i;
-
-    for (i = 0; i < streams->number_streams; ++i)
-        freeStreamParameters(&streams->parameters[i]);
     free(streams->parameters);
-    free(streams->stream_weight);
-    free(streams->optimize);
-    free(streams->expStreamWeights);
 }
 
 static void calcIntegralStepSizes(IntegralArea* i)
@@ -89,15 +70,18 @@ static IntegralArea* freadParameters(FILE* file,
 {
     unsigned int i, temp;
     double tmp1, tmp2;
+    double parametersVersion;
     IntegralArea integralTmp;
     IntegralArea* integrals;
     const IntegralArea* ia;
     unsigned int total_calc_probs;
     unsigned int integralNumTmp;
+    int iTmp;
+    real* tmpArr = NULL;
 
-    ap->parameters_version = (fscanf(file, "parameters_version: %lf\n", &tmp1) < 1) ? 0.01 : (real) tmp1;
+    parametersVersion = (fscanf(file, "parameters_version: %lf\n", &tmp1) < 1) ? 0.01 : (real) tmp1;
 
-    if (fscanf(file, "number_parameters: %u\n", &ap->number_background_parameters) < 1)
+    if (fscanf(file, "number_parameters: %u\n", &temp) < 1)
         warn("Error reading number_parameters\n");
 
     if (fscanf(file, "background_weight: %lf\n", &tmp1) < 1)
@@ -105,29 +89,30 @@ static IntegralArea* freadParameters(FILE* file,
 
     ap->background_weight = (real) tmp1;
 
-    bgp->parameters = fread_double_array(file, "background_parameters", NULL);
+    tmpArr = fread_double_array(file, "background_parameters", NULL);
+    bgp->alpha = tmpArr[0];
+    bgp->q     = tmpArr[1];
+    bgp->r0    = tmpArr[2];
+    bgp->delta = tmpArr[3];
+    free(tmpArr);
 
     free(fread_double_array(file, "background_step", NULL));
     free(fread_double_array(file, "background_min", NULL));
     free(fread_double_array(file, "background_max", NULL));
+    free(fread_int_array(file, "optimize_parameter", NULL));
 
-    bgp->optimize = fread_int_array(file, "optimize_parameter", NULL);
-
-    if (fscanf(file, "number_streams: %u, %u\n", &streams->number_streams, &streams->number_stream_parameters) < 2)
+    if (fscanf(file, "number_streams: %u, %u\n", &streams->number_streams, &temp) < 2)
         warn("Error reading number_streams\n");
 
     ap->number_streams = streams->number_streams;
 
-    streams->stream_weight = (real*) mwCalloc(streams->number_streams, sizeof(real));
-    streams->optimize = (int*) mwCalloc(streams->number_streams, sizeof(int));
     streams->parameters = (StreamParameters*) mwCalloc(streams->number_streams, sizeof(StreamParameters));
-    streams->expStreamWeights = (real*) mwCalloc(streams->number_streams, sizeof(real));
 
     for (i = 0; i < streams->number_streams; ++i)
     {
         if (fscanf(file, "stream_weight: %lf\n", &tmp1) < 1)
             warn("Error reading stream_weight for stream %u\n", i);
-        streams->stream_weight[i] = (real) tmp1;
+        streams->parameters[i].epsilon = (real) tmp1;
 
         if (fscanf(file, "stream_weight_step: %lf\n", &tmp1) < 1)
             warn("Error reading stream_weight_step for stream %u\n", i);
@@ -138,14 +123,21 @@ static IntegralArea* freadParameters(FILE* file,
         if (fscanf(file, "stream_weight_max: %lf\n", &tmp1) < 1)
             warn("Error reading stream_weight_max for stream %u\n", i);
 
-        if (fscanf(file, "optimize_weight: %d\n", &streams->optimize[i]) < 1)
+        if (fscanf(file, "optimize_weight: %d\n", &iTmp) < 1)
             warn("Error reading optimize_weight for stream %u\n", i);
 
-        streams->parameters[i].stream_parameters = fread_double_array(file, "stream_parameters", NULL);
+        tmpArr = fread_double_array(file, "stream_parameters", NULL);
+        streams->parameters[i].mu    = tmpArr[0];
+        streams->parameters[i].r     = tmpArr[1];
+        streams->parameters[i].theta = tmpArr[2];
+        streams->parameters[i].phi   = tmpArr[3];
+        streams->parameters[i].sigma = tmpArr[4];
+        free(tmpArr);
+
         free(fread_double_array(file, "stream_step", NULL));
         free(fread_double_array(file, "stream_min", NULL));
         free(fread_double_array(file, "stream_max", NULL));
-        streams->parameters[i].stream_optimize = fread_int_array(file, "optimize_parameter", NULL);
+        free(fread_int_array(file, "optimize_parameter", NULL));
     }
 
     if (fscanf(file, "convolve: %u\n", &ap->convolve) < 1)
@@ -153,7 +145,7 @@ static IntegralArea* freadParameters(FILE* file,
 
     if (fscanf(file, "sgr_coordinates: %d\n", &ap->sgr_coordinates) < 1)
         warn("Error reading sgr_coordinates\n");
-    if (ap->parameters_version > 0.01)
+    if (parametersVersion > 0.01)
     {
         if (fscanf(file, "aux_bg_profile: %d\n", &ap->aux_bg_profile) < 1)
             warn("Error reading aux_bg_profile\n");
@@ -279,66 +271,44 @@ IntegralArea* readParameters(const char* filename,
 }
 
 
-unsigned int getOptimizedParameterCount(AstronomyParameters* ap,
-                                        BackgroundParameters* bgp,
-                                        Streams* streams)
+int setParameters(AstronomyParameters* ap,
+                  BackgroundParameters* bgp,
+                  Streams* streams,
+                  const real* parameters,
+                  unsigned int numberParameters)
 {
-    unsigned int i, j, count = 0;
+    unsigned int i, idx;
+    const unsigned int nBGParams = 2;
+    const unsigned int nStreamParams = 6;
+    unsigned int nStream = (numberParameters - nBGParams) / nStreamParams;
 
-    for (i = 0; i < ap->number_background_parameters; i++)
+    if (nStream != ap->number_streams)
     {
-        if (bgp->optimize[i])
-            ++count;
+        warn("Number of streams does not match\n");
+        return 1;
     }
 
-    for (i = 0; i < streams->number_streams; i++)
+    if (!mwDivisible(numberParameters - nBGParams, nStreamParams))
     {
-        if (streams->optimize[i])
-            ++count;
-
-        for (j = 0; j < streams->number_stream_parameters; j++)
-        {
-            if (streams->parameters[i].stream_optimize[j])
-                ++count;
-        }
+        warn("Number of parameters doesn't make sense\n");
+        return 1;
     }
 
-    return count;
-}
+    bgp->q = parameters[0];
+    bgp->r0 = parameters[1];
 
-void setParameters(AstronomyParameters* ap,
-                   BackgroundParameters* bgp,
-                   Streams* streams,
-                   const real* parameters)
-{
-    unsigned int i, j;
-    unsigned int current = 0;
-
-    for (i = 0; i < ap->number_background_parameters; i++)
+    for (i = 0; i < nStream; ++i)
     {
-        if (bgp->optimize[i])
-        {
-            bgp->parameters[i] = parameters[current];
-            current++;
-        }
+        idx = nBGParams + i * nStreamParams;
+
+        streams->parameters[i].epsilon = parameters[idx + 0];
+        streams->parameters[i].mu      = parameters[idx + 1];
+        streams->parameters[i].r       = parameters[idx + 2];
+        streams->parameters[i].theta   = parameters[idx + 3];
+        streams->parameters[i].phi     = parameters[idx + 4];
+        streams->parameters[i].sigma   = parameters[idx + 5];
     }
 
-    for (i = 0; i < ap->number_streams; i++)
-    {
-        if (streams->optimize[i])
-        {
-            streams->stream_weight[i] = parameters[current];
-            ++current;
-        }
-
-        for (j = 0; j < streams->number_stream_parameters; j++)
-        {
-            if (streams->parameters[i].stream_optimize[j])
-            {
-                streams->parameters[i].stream_parameters[j] = parameters[current];
-                ++current;
-            }
-        }
-    }
+    return 0;
 }
 

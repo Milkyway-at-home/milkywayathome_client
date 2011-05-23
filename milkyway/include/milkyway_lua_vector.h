@@ -17,27 +17,22 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _MILKYWAY_LUA_H_
-#define _MILKYWAY_LUA_H_
-
-#define _MILKYWAY_LUA_H_INSIDE_
-
-#ifdef __cplusplus
-extern "C" {
+#if !defined(_MILKYWAY_LUA_H_INSIDE_) && !defined(MILKYWAY_LUA_COMPILATION)
+  #error "Only milkyway_lua.h can be included directly."
 #endif
 
-#include "milkyway_lua_math.h"
-#include "milkyway_lua_vector.h"
-#include "milkyway_lua_dsfmt.h"
-#include "milkyway_lua_marshal.h"
+#ifndef _MILKYAY_LUA_VECTOR_H_
+#define _MILKYAY_LUA_VECTOR_H_
 
 #include <lua.h>
+#include "milkyway_math.h"
 
-#ifdef __cplusplus
-}
-#endif
+mwvector* checkVector(lua_State* luaSt, int idx);
+int pushVector(lua_State* luaSt, mwvector v);
+int registerVector(lua_State* luaSt);
 
-#undef _MILKYWAY_LUA_H_INSIDE_
+int setVector(lua_State* luaSt, void* v);
+int getVector(lua_State* luaSt, void* v);
 
-#endif /* _MILKYWAY_LUA_H_ */
+#endif /* _MILKYWAY_LUA_VECTOR_H_ */
 

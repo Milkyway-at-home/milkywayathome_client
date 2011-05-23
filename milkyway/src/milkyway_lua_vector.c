@@ -20,12 +20,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lua.h>
 #include <lauxlib.h>
 
-#include "nbody_types.h"
-#include "nbody_show.h"
 #include "milkyway_lua_marshal.h"
 #include "milkyway_lua_vector.h"
-
 #include "milkyway_util.h"
+
 
 mwvector* checkVector(lua_State* luaSt, int idx)
 {

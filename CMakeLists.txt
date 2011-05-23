@@ -354,6 +354,20 @@ find_package(Boost)
 find_package(Popt REQUIRED)
 include_directories(${POPT_INCLUDE_DIR})
 
+if(LUA_USE_STATIC)
+  set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
+endif()
+
+find_package(Lua51 REQUIRED)
+
+if(LUA_USE_STATIC)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${__old_cmake_find_lib_suffixes})
+endif()
+
+include_directories(${LUA_INCLUDE_DIR})
+
+
 if(NBODY_CRLIBM AND NOT CRLIBM_FOUND)
   message(WARNING "N-body Crlibm requested, but Crlibm not found. Disabling N-body.")
   set(NBODY OFF)

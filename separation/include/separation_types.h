@@ -81,33 +81,38 @@ typedef struct
 
 typedef struct
 {
-    real* stream_parameters;
-    int* stream_optimize;
+    real epsilon;    /* Stream weight */
+    real mu;         /* mu, angular position */
+    real r;          /* r, radial distance from the sun in kpc */
+    real theta;      /* theta, zenith angle from Z-axis */
+    real phi;        /* phi, azimuthal angle from X-axis */
+    real sigma;      /* sigma, standard deviation of the Gaussian defining the stream falloff in kpc */
+
+    real epsilonExp; /* exp(epsilon) */
 } StreamParameters;
 
-#define EMPTY_STREAM_PARAMETERS { NULL, NULL, NULL, NULL, NULL }
+#define EMPTY_STREAM_PARAMETERS { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
 
 typedef struct
 {
-    real* stream_weight;
-    int* optimize;
-
     StreamParameters* parameters;
-    real* expStreamWeights;
     real sumExpWeights;
     unsigned int number_streams;
-    unsigned int number_stream_parameters;
 } Streams;
 
-#define EMPTY_STREAMS { NULL, NULL, NULL, NULL, 0.0, 0, 0 }
+#define EMPTY_STREAMS { NULL, 0.0, 0 }
 
 typedef struct
 {
-    real* parameters;
-    int* optimize;
+    real alpha;
+    real r0;
+    real q;
+    real delta;
+
+    real a, b, c;
 } BackgroundParameters;
 
-#define EMPTY_BACKGROUND_PARAMETERS { NULL, NULL }
+#define EMPTY_BACKGROUND_PARAMETERS { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
 
 typedef struct
 {

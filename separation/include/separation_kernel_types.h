@@ -140,6 +140,7 @@ typedef struct SEPARATION_ALIGN(128)
 } IntegralArea;
 
 
+/* Kitchen sink of constants, etc. */
 typedef struct SEPARATION_ALIGN(128)
 {
     /* Constants determined by other parameters */
@@ -149,37 +150,29 @@ typedef struct SEPARATION_ALIGN(128)
     real r0;
     real alpha;
 
-    real alpha_delta3;
-    real bg_a, bg_b, bg_c;
-
     unsigned int convolve;
     unsigned int number_streams;
+
+    real alpha_delta3;
+    real bg_a, bg_b, bg_c;
 
     int wedge;
     int aux_bg_profile;
     real sun_r0;
+
     real delta;
     real q;
     real sn;
     real coeff;
 
-    real parameters_version;
     real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
     int sgr_coordinates;
     unsigned int number_integrals;
-    unsigned int number_background_parameters;
 
     real background_weight;
     real exp_background_weight;
     int fast_h_prob;
 } AstronomyParameters;
-
-#define EMPTY_ASTRONOMY_PARAMETERS { 0.0, 0.0, \
-                                     0.0, 0.0, 0.0,           \
-                                     0.0, 0.0, 0.0, 0.0, 0, 0, \
-                                     0, 0, 0.0, 0.0,        \
-                                     0, 0, 0.0, 0.0, 0, 0, 0, \
-                                     0, 0.0, 0.0, 0 }
 
 typedef struct SEPARATION_ALIGN(16)
 {

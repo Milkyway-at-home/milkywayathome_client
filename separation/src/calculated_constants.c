@@ -28,12 +28,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "gauss_legendre.h"
 #include "integrals.h"
 
-static inline mwvector streamA(real* parameters)
+static inline mwvector streamA(const StreamParameters* parameters)
 {
     mwvector a;
-    X(a) = mw_sin(parameters[2]) * mw_cos(parameters[3]);
-    Y(a) = mw_sin(parameters[2]) * mw_sin(parameters[3]);
-    Z(a) = mw_cos(parameters[2]);
+    X(a) = mw_sin(parameters->theta) * mw_cos(parameters->phi);
+    Y(a) = mw_sin(parameters->theta) * mw_sin(parameters->phi);
+    Z(a) = mw_cos(parameters->theta);
     W(a) = 0.0;
     return a;
 }
@@ -51,23 +51,42 @@ static inline mwvector streamC(const AstronomyParameters* ap, int wedge, real mu
     W(lbr) = 0.0;
     return lbr2xyz(ap, lbr);
 }
+
+/*
+
+  background_parameters[0] = alpha = 1.0
+  background_parameters[3] = delta = 1.0
+
+
+  background_parameters[1] = q
+  background_parameters[2] = r0
+
+  stream_weight = epsilon
+
+  stream_parameters[0] = mu
+  stream_parameters[1] = r
+  stream_parameters[2] = theta
+  stream_parameters[3] = phi
+  stream_parameters[4] = sigma
+
+ */
+
 int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* bgp)
-
 {
-    ap->alpha = bgp->parameters[0];
-    ap->q     = bgp->parameters[1];
+    ap->alpha = bgp->alpha;
+    ap->q     = bgp->q;
 
-    ap->r0    = bgp->parameters[2];
-    ap->delta = bgp->parameters[3];
+    ap->r0    = bgp->r0;
+    ap->delta = bgp->delta;
 
     ap->q_inv = inv(ap->q);
     ap->q_inv_sqr = inv(sqr(ap->q));
 
     if (ap->aux_bg_profile)
     {
-        ap->bg_a = bgp->parameters[4];
-        ap->bg_b = bgp->parameters[5];
-        ap->bg_c = bgp->parameters[6];
+        ap->bg_a = bgp->a;
+        ap->bg_b = bgp->b;
+        ap->bg_c = bgp->c;
     }
     else
     {
@@ -92,7 +111,7 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
     ap->alpha_delta3 = 3.0 - ap->alpha + ap->delta;
 
     ap->exp_background_weight = mw_exp(ap->background_weight);
-    ap->fast_h_prob = (ap->alpha == 1 && ap->delta == 1);
+    ap->fast_h_prob = (ap->alpha == 1.0 && ap->delta == 1.0);
 
     ap->sun_r0 = const_sun_r0;
     ap->m_sun_r0 = -ap->sun_r0;
@@ -107,8 +126,8 @@ void setExpStreamWeights(const AstronomyParameters* ap, Streams* streams)
     streams->sumExpWeights = ap->exp_background_weight;
     for (i = 0; i < streams->number_streams; i++)
     {
-        streams->expStreamWeights[i] = mw_exp(streams->stream_weight[i]);
-        streams->sumExpWeights += streams->expStreamWeights[i];
+        streams->parameters[i].epsilonExp = mw_exp(streams->parameters[i].epsilon);
+        streams->sumExpWeights += streams->parameters[i].epsilonExp;
     }
 
     streams->sumExpWeights *= 0.001;
@@ -126,16 +145,16 @@ StreamConstants* getStreamConstants(const AstronomyParameters* ap, const Streams
 
     for (i = 0; i < streams->number_streams; i++)
     {
-        stream_sigma = streams->parameters[i].stream_parameters[4];
+        stream_sigma = streams->parameters[i].sigma;
         sc[i].large_sigma = (stream_sigma > SIGMA_LIMIT || stream_sigma < -SIGMA_LIMIT);
         sigma_sq2 = 2.0 * sqr(stream_sigma);
         sc[i].sigma_sq2_inv = 1.0 / sigma_sq2;
 
-        sc[i].a = streamA(streams->parameters[i].stream_parameters);
+        sc[i].a = streamA(&streams->parameters[i]);
         sc[i].c = streamC(ap,
                           ap->wedge,
-                          streams->parameters[i].stream_parameters[0],
-                          streams->parameters[i].stream_parameters[1]);
+                          streams->parameters[i].mu,
+                          streams->parameters[i].r);
     }
 
     return sc;

@@ -17,15 +17,14 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if !defined(_NBODY_LUA_TYPES_H_INSIDE_) && !defined(NBODY_LUA_TYPES_COMPILATION)
-  #error "Only nbody_lua_types.h can be included directly."
+#if !defined(_MILKYWAY_LUA_H_INSIDE_) && !defined(MILKYWAY_LUA_COMPILATION)
+  #error "Only milkyway_lua.h can be included directly."
 #endif
 
-#ifndef _LUA_DSFMT_H_
-#define _LUA_DSFMT_H_
+#ifndef _MILKYWAY_LUA_DSFMT_H_
+#define _MILKYWAY_LUA_DSFMT_H_
 
 #include <lua.h>
-#include "nbody_types.h"
 #include <dSFMT.h>
 
 #define DSFMT_TYPE "DSFMT"
@@ -35,5 +34,5 @@ dsfmt_t* checkDSFMT(lua_State* luaSt, int idx);
 int pushDSFMT(lua_State* luaSt, const dsfmt_t* state);
 int registerDSFMT(lua_State* luaSt);
 
-#endif /* _LUA_DSFMT_H_ */
+#endif /* _MILKYWAY_LUA_DSFMT_H_ */
 

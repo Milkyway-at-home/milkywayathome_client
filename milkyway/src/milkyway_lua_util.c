@@ -21,7 +21,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <lualib.h>
 
 #include "milkyway_lua_marshal.h"
-#include "nbody_lua_types.h"
 #include "milkyway_util.h"
 #include "milkyway_lua_util.h"
 
@@ -192,5 +191,22 @@ int dofileWithArgs(lua_State* luaSt,
         return 1;
 
     return doWithArgs(luaSt, args, nArgs);
+}
+
+int mwBindBOINCStatus(lua_State* luaSt)
+{
+    int isStandalone = TRUE;
+
+    lua_pushboolean(luaSt, BOINC_APPLICATION);
+    lua_setglobal(luaSt, "isBOINCApplication");
+
+    #if BOINC_APPLICATION
+    isStandalone = boinc_is_standalone();
+    #endif
+
+    lua_pushboolean(luaSt, isStandalone);
+    lua_setglobal(luaSt, "isStandalone");
+
+    return 0;
 }
 

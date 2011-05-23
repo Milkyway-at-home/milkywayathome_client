@@ -17,22 +17,18 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if !defined(_NBODY_LUA_TYPES_H_INSIDE_) && !defined(NBODY_LUA_TYPES_COMPILATION)
-  #error "Only nbody_lua_types.h can be included directly."
-#endif
-
-#ifndef _LUA_VECTOR_H_
-#define _LUA_VECTOR_H_
+#ifndef _MILKYWAY_LUA_UTIL_H_
+#define _MILKYWAY_LUA_UTIL_H_
 
 #include <lua.h>
-#include "nbody_types.h"
 
-mwvector* checkVector(lua_State* luaSt, int idx);
-int pushVector(lua_State* luaSt, mwvector v);
-int registerVector(lua_State* luaSt);
+int registerUtilityFunctions(lua_State* luaSt);
+void mw_lua_openlibs(lua_State *L, mwbool debug);
 
-int setVector(lua_State* luaSt, void* v);
-int getVector(lua_State* luaSt, void* v);
+int dostringWithArgs(lua_State* luaSt, const char* str, const char** args, unsigned int nArgs);
+int dofileWithArgs(lua_State* luaSt, const char* filename, const char** args, unsigned int nArgs);
 
-#endif /* _LUA_VECTOR_H_ */
+int mwBindBOINCStatus(lua_State* luaSt);
+
+#endif /* _MILKYWAY_LUA_UTIL_H_ */
 
