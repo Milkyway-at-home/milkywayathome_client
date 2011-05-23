@@ -167,8 +167,7 @@ int mw_lua_typecheck(lua_State* luaSt, int idx, int expectedType, const char* ty
     }
     else if (type != expectedType) /* Anything else is wrong. */
     {
-        return warn1("Type error: userdata %s expected, got %s\n",
-                     typeName, lua_typename(luaSt, type));
+        return warn1("Type error: %s expected, got %s\n", typeName, lua_typename(luaSt, type));
     }
     else
     {
