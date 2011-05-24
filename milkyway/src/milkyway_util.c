@@ -443,67 +443,73 @@ int mwReadArguments(poptContext context)
  * POPT_CONTEXT_POSIXMEHARDER, which results in them being
  * interpreted as wrong options and then erroring.
  */
-
-/* Horrible function to find the -p -np arguments, and take anything
- * after them and move them to the front */
-const char** mwFixArgv(unsigned long argc, const char** argv)
+const char** mwFixArgv(int argc, const char** argv)
 {
     const char** argvCopy;
     const char** p;
-    char* endP;
+    mwbool* taken;
+    int i, j;
+    static const char* boincSpecialArguments[] = { "--device", "--nthreads", NULL };
 
-    unsigned long i, j;
-    unsigned long np, remaining, appendedCount;
-    unsigned long npCheck = 0;
-
-    p = argv;
-    while (*p && strncmp(*p, "-np", 3)) /* Find how many numbers we're expected to find */
-        ++p, ++npCheck;
-
-    if (!*p)  /* Probably not using the server arguments */
-        return NULL;
-
-    if (!*(++p)) /* Go to the actual value of np */
-        return NULL;
-
-    /* The next argument after np should be the number */
-    np = strtoul(*p, &endP, 10);
-    if (*endP != '\0')
-    {
-        perror("Reading np");
-        return NULL;
-    }
-
-    /* -2: -1 from argv[0], -1 from -p arg, -1 from np value */
-    remaining = (argc - 3) - npCheck;  /* All remaining arguments */
-    if (np > remaining || np >= argc)  /* Careful of underflow */
-        return NULL;
-
-    ++p;   /* Move on to the p argument */
-    if (*p && strncmp(*p, "-p", 2))
-    {
-        warn("Didn't find expected p argument\n");
-        return NULL;
-    }
-
-    if (!*(++p))  /* Should be first actual number argument */
-        return NULL;
-
-    /* FIXME: Have no dependence on np. FIXME: BOINC really, really,
-     * really shouldn't ever append arguments ever (should prepend)
-     * and it should be fixed. */
+    /* These arguments may or may not be at the end, but we don't
+       really care. There might even be multiple copies.
+       We can just move them all to the front.
+     */
 
     argvCopy = (const char**) mwCalloc(argc, sizeof(const char*));
-    i = j = 0;  /* Index into copy argv, original argv */
-    argvCopy[i++] = argv[j++];
-    p += np;  /* Skip the arguments */
+    argvCopy[0] = argv[0];      /* Don't touch argv[0] */
 
-    appendedCount = remaining - np;  /* Extras added by BOINC */
-    while (*p && i <= appendedCount)
-        argvCopy[i++] = *p++;
+    /* Mark which arguments we've moved already */
+    taken = mwCalloc(argc, sizeof(mwbool));  /* 0th element ignored */
 
-    while (i < argc && j < argc)  /* Copy the rest of the arguments into an appropriate order */
-        argvCopy[i++] = argv[j++];
+    i = j = 1; /* i = index over original argv, j = current position in copy */
+
+    while (i < argc)
+    {
+        p = boincSpecialArguments;
+        while (*p)
+        {
+            if (!strcmp(*p, argv[i]))  /* This argument matches */
+            {
+                /* These arguments take one argument, so make sure it
+                 * exists and we aren't trying to take past the end */
+
+                if (i + 1 >= argc)
+                {
+                    warn("Error: argument must be missing from trailing special argument '%s'\n", *p);
+                    free(argvCopy);
+                    free(taken);
+                    return NULL;
+                }
+                else
+                {
+                    argvCopy[j++] = argv[i];       /* Move this argument to current copy position */
+                    argvCopy[j++] = argv[i + 1];   /* Take and next argument */
+
+                    taken[i] = taken[i + 1] = TRUE;
+                }
+
+                ++i;    /* Skip checking next, taken argument */
+                break;  /* Avoid possibly strange behaviour with perverse inputs such as --nthread --device */
+            }
+
+            ++p;
+        }
+
+        ++i;
+    }
+
+    /* Now copy whatever arguments weren't moved after those that were */
+    for (i = 1; i < argc; ++i)  /* Still skipping argv[0] */
+    {
+        assert(j < argc);
+        if (!taken[i])
+        {
+            argvCopy[j++] = argv[i];
+        }
+    }
+
+    free(taken);
 
     return argvCopy;
 }

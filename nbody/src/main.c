@@ -282,17 +282,19 @@ int main(int argc, const char* argv[])
 {
     NBodyFlags nbf = EMPTY_NBODY_FLAGS;
     int rc = 0;
+    const char** argvCopy = mwFixArgv(argc, argv);
 
     specialSetup();
 
-    if (readParameters(argc, argv, &nbf))
+    if (readParameters(argc, argvCopy, &nbf))
         exit(EXIT_FAILURE);
 
-    if (mwBoincInit(argv[0], nbf.debugBOINC))
+    if (mwBoincInit(argvCopy[0], nbf.debugBOINC))
     {
         warn("Failed to init BOINC\n");
         exit(EXIT_FAILURE);
     }
+    free(argvCopy);
 
     nbodyPrintVersion();
 

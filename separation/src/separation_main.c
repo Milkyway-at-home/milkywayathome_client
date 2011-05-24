@@ -282,9 +282,7 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
         POPT_TABLEEND
     };
 
-    /* Workaround for BOINC arguments being appended */
-    argvCopy = mwFixArgv(argc, argv);
-    context = poptGetContext(argv[0], argc, argvCopy ? argvCopy : argv, options, POPT_CONTEXT_POSIXMEHARDER);
+    context = poptGetContext(argv[0], argc, argv, options, POPT_CONTEXT_POSIXMEHARDER);
 
     if (argc < 2)
     {
@@ -497,15 +495,18 @@ int main(int argc, const char* argv[])
     SeparationFlags sf = EMPTY_SEPARATION_FLAGS;
     real* parameters;
     unsigned int number_parameters;
+    const char** argvCopy = mwFixArgv(argc, argv);
 
-    parameters = parseParameters(argc, argv, &number_parameters, &sf);
+    parameters = parseParameters(argc, argvCopy, &number_parameters, &sf);
+    free(argvCopy);
+
     if (!parameters && !sf.do_separation)
     {
         warn("Could not parse parameters from the command line\n");
         exit(EXIT_FAILURE);
     }
 
-    rc = separationInit(argv[0], sf.debugBOINC, sf.processPriority, sf.setPriority);
+    rc = separationInit(argvCopy[0], sf.debugBOINC, sf.processPriority, sf.setPriority);
     if (rc)
         return rc;
 
