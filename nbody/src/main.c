@@ -70,22 +70,7 @@ static void specialSetup()
 /* For automated testing, pass extra arguments on to Lua script */
 static void setForwardedArguments(NBodyFlags* nbf, const char** args)
 {
-    unsigned int i, argCount = 0;
-
-    if (!args)
-    {
-        nbf->numForwardedArgs = 0;
-        nbf->forwardedArgs = NULL;
-        return;
-    }
-
-    while (args[++argCount]);  /* Count number of parameters */
-
-    nbf->numForwardedArgs = argCount;
-    nbf->forwardedArgs = (const char**) mwMalloc(sizeof(const char*) * argCount);
-
-    for (i = 0; i < argCount; ++i)
-        nbf->forwardedArgs[i] = args[i];
+    nbf->forwardedArgs = mwGetForwardedArguments(args, &nbf->numForwardedArgs);
 }
 
 /* Read the command line arguments, and do the inital parsing of the parameter file. */

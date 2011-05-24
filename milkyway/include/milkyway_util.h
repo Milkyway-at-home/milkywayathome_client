@@ -256,6 +256,8 @@ real* mwReadRestArgs(const char** rest,            /* String array as returned b
                      const unsigned int numParams, /* Expected number of parameters */
                      unsigned int* paramCountOut); /* (Optional) return count of actual number parameters that could have been read */
 
+const char** mwGetForwardedArguments(const char** args, unsigned int* nForwardedArgs);
+
 #if defined(__SSE__) && DISABLE_DENORMALS
 int mwDisableDenormalsSSE();
 #endif /* defined(__SSE__) && DISABLE_DENORMALS */

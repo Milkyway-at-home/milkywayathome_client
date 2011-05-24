@@ -374,6 +374,32 @@ real* mwReadRestArgs(const char** rest, const unsigned int numParams, unsigned i
     return parameters;
 }
 
+/* Take subset of argv not used by the application to forward on to the Lua scripts.
+   Need to free return value.
+ */
+const char** mwGetForwardedArguments(const char** args, unsigned int* nForwardedArgs)
+{
+    unsigned int i, argCount = 0;
+    const char** forwardedArgs;
+
+    if (!args)
+    {
+        *nForwardedArgs = 0;
+        return NULL;
+    }
+
+    while (args[++argCount]);  /* Count number of parameters */
+
+    forwardedArgs = (const char**) mwMalloc(sizeof(const char*) * argCount);
+
+    for (i = 0; i < argCount; ++i)
+        forwardedArgs[i] = args[i];
+
+    *nForwardedArgs = argCount;
+
+    return forwardedArgs;
+}
+
 void _mw_time_prefix(char* buf, size_t bufSize)
 {
     time_t x = time(NULL);
