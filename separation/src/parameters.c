@@ -83,14 +83,17 @@ static IntegralArea* freadParameters(FILE* file,
     parametersVersion = (fscanf(file, "parameters_version: %lf\n", &tmp1) < 1) ? 0.01 : (real) tmp1;
 
     if (fscanf(file, "number_parameters: %u\n", &temp) < 1)
-        warn("Error reading number_parameters\n");
+        fail("Error reading number_parameters\n");
 
     if (fscanf(file, "background_weight: %lf\n", &tmp1) < 1)
-        warn("Error reading background_weight\n");
+        fail("Error reading background_weight\n");
 
     bgp->epsilon = (real) tmp1;
 
     tmpArr = fread_double_array(file, "background_parameters", NULL);
+    if (!tmpArr)
+        return NULL;
+
     bgp->alpha = tmpArr[0];
     bgp->q     = tmpArr[1];
     bgp->r0    = tmpArr[2];
@@ -103,7 +106,7 @@ static IntegralArea* freadParameters(FILE* file,
     free(fread_int_array(file, "optimize_parameter", NULL));
 
     if (fscanf(file, "number_streams: %u, %u\n", &streams->number_streams, &temp) < 2)
-        warn("Error reading number_streams\n");
+        fail("Error reading number_streams\n");
 
     ap->number_streams = streams->number_streams;
 
@@ -112,22 +115,24 @@ static IntegralArea* freadParameters(FILE* file,
     for (i = 0; i < streams->number_streams; ++i)
     {
         if (fscanf(file, "stream_weight: %lf\n", &tmp1) < 1)
-            warn("Error reading stream_weight for stream %u\n", i);
+            fail("Error reading stream_weight for stream %u\n", i);
         streams->parameters[i].epsilon = (real) tmp1;
 
         if (fscanf(file, "stream_weight_step: %lf\n", &tmp1) < 1)
-            warn("Error reading stream_weight_step for stream %u\n", i);
+            fail("Error reading stream_weight_step for stream %u\n", i);
 
         if (fscanf(file, "stream_weight_min: %lf\n", &tmp1) < 1)
-            warn("Error reading stream_weight_min for stream %u\n", i);
+            fail("Error reading stream_weight_min for stream %u\n", i);
 
         if (fscanf(file, "stream_weight_max: %lf\n", &tmp1) < 1)
-            warn("Error reading stream_weight_max for stream %u\n", i);
+            fail("Error reading stream_weight_max for stream %u\n", i);
 
         if (fscanf(file, "optimize_weight: %d\n", &iTmp) < 1)
-            warn("Error reading optimize_weight for stream %u\n", i);
+            fail("Error reading optimize_weight for stream %u\n", i);
 
         tmpArr = fread_double_array(file, "stream_parameters", NULL);
+        if (!tmpArr)
+            return NULL;
         streams->parameters[i].mu    = tmpArr[0];
         streams->parameters[i].r     = tmpArr[1];
         streams->parameters[i].theta = tmpArr[2];
@@ -142,10 +147,10 @@ static IntegralArea* freadParameters(FILE* file,
     }
 
     if (fscanf(file, "convolve: %u\n", &ap->convolve) < 1)
-        warn("Error reading convolve\n");
+        fail("Error reading convolve\n");
 
     if (fscanf(file, "sgr_coordinates: %d\n", &sgr_coordinates) < 1)
-        warn("Error reading sgr_coordinates\n");
+        fail("Error reading sgr_coordinates\n");
 
     if (sgr_coordinates)
     {
@@ -155,16 +160,16 @@ static IntegralArea* freadParameters(FILE* file,
     if (parametersVersion > 0.01)
     {
         if (fscanf(file, "aux_bg_profile: %d\n", &ap->aux_bg_profile) < 1)
-            warn("Error reading aux_bg_profile\n");
+            fail("Error reading aux_bg_profile\n");
     }
 
     if (fscanf(file, "wedge: %d\n", &ap->wedge) < 1)
-        warn("Error reading wedge\n");
+        fail("Error reading wedge\n");
 
     if (fscanf(file,
                "r[min,max,steps]: %lf, %lf, %u\n",
                &tmp1, &tmp2, &integralTmp.r_steps) < 3)
-        warn("Error reading r\n");
+        fail("Error reading r\n");
 
     integralTmp.r_min = (real) tmp1;
     integralTmp.r_max = (real) tmp2;
@@ -172,7 +177,7 @@ static IntegralArea* freadParameters(FILE* file,
     if (fscanf(file,
                "mu[min,max,steps]: %lf, %lf, %u\n",
                &tmp1, &tmp2, &integralTmp.mu_steps) < 3)
-        warn("Error reading mu\n");
+        fail("Error reading mu\n");
 
     integralTmp.mu_min = (real) tmp1;
     integralTmp.mu_max = (real) tmp2;
@@ -180,7 +185,7 @@ static IntegralArea* freadParameters(FILE* file,
     if (fscanf(file,
                "nu[min,max,steps]: %lf, %lf, %u\n",
                &tmp1, &tmp2, &integralTmp.nu_steps) < 3)
-        warn("Error reading nu\n");
+        fail("Error reading nu\n");
 
     integralTmp.nu_min = (real) tmp1;
     integralTmp.nu_max = (real) tmp2;
@@ -189,7 +194,7 @@ static IntegralArea* freadParameters(FILE* file,
 
     ap->number_integrals = 1;
     if (fscanf(file, "number_cuts: %u\n", &integralNumTmp) < 1)
-        warn("Error reading number_cuts\n");
+        fail("Error reading number_cuts\n");
     ap->number_integrals += integralNumTmp;
 
     integrals = (IntegralArea*) mwMallocA(ap->number_integrals * sizeof(IntegralArea));
@@ -204,7 +209,7 @@ static IntegralArea* freadParameters(FILE* file,
                        "r_cut[min,max,steps][%u]: %lf, %lf, %u\n",
                        &temp, &tmp1, &tmp2, &integrals[i].r_steps) < 3)
             {
-                warn("Error reading r for integral %u\n", i);
+                fail("Error reading r for integral %u\n", i);
             }
 
             integrals[i].r_min = (real) tmp1;
@@ -214,7 +219,7 @@ static IntegralArea* freadParameters(FILE* file,
                        "mu_cut[min,max,steps][%u]: %lf, %lf, %u\n",
                        &temp, &tmp1, &tmp2, &integrals[i].mu_steps) < 3)
             {
-                warn("Error reading mu for integral %u\n", i);
+                fail("Error reading mu for integral %u\n", i);
             }
 
 
@@ -225,7 +230,7 @@ static IntegralArea* freadParameters(FILE* file,
                        "nu_cut[min,max,steps][%u]: %lf, %lf, %u\n",
                        &temp, &tmp1, &tmp2, &integrals[i].nu_steps) < 3)
             {
-                warn("Error reading nu for integral %u\n", i);
+                fail("Error reading nu for integral %u\n", i);
             }
 
             integrals[i].nu_min = (real) tmp1;

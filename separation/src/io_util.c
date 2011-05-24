@@ -81,7 +81,7 @@ real* fread_double_array(FILE* file, const char* array_name, unsigned int* sizeO
         {
             warn("Error reading into %s\n", array_name);
             free(arr);
-            return arr;
+            return NULL;
         }
 
         if (i < size - 1)
