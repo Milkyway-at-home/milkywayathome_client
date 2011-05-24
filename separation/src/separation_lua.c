@@ -192,7 +192,7 @@ static int evaluateStreams(lua_State* luaSt)
     int table;
     int i, n;
 
-    lua_getglobal(luaSt, "streams");
+    lua_getglobal(luaSt, STREAMS_NAME);
 
     table = lua_gettop(luaSt);
     mw_lua_checktable(luaSt, table);
@@ -308,6 +308,92 @@ static int evaluateGlobalName(lua_State* luaSt, lua_CFunction func, const char* 
     return 0;
 }
 
+#define NUMBER_FIT_BG_PARAMETERS 2
+#define NUMBER_FIT_STREAM_PARAMETERS 6
+
+/* Set arguments using the same fit parameters as have been used */
+static int luaDefaultSetBGStreamParametersFromArguments(lua_State* luaSt)
+{
+    int i, ptable, bgTable, streamTable, n, nStream, idx, thisStream;
+
+    ptable = mw_lua_checktable(luaSt, lua_gettop(luaSt));
+    n = luaL_getn(luaSt, ptable);  /* Number parameters */
+
+    /* Set background parameters */
+    lua_newtable(luaSt);
+    bgTable = lua_gettop(luaSt);
+    lua_pushvalue(luaSt, bgTable);
+    lua_setglobal(luaSt, BACKGROUND_NAME);
+
+    bgTable = lua_gettop(luaSt);
+
+    lua_rawgeti(luaSt, ptable, 1);
+    lua_setfield(luaSt, bgTable, "q");
+
+    lua_rawgeti(luaSt, ptable, 2);
+    lua_setfield(luaSt, bgTable, "r0");
+
+    /* Not included in fit */
+    lua_pushnumber(luaSt, 0.0);
+    lua_setfield(luaSt, bgTable, "epsilon");
+
+    lua_pushnumber(luaSt, 1.0);
+    lua_setfield(luaSt, bgTable, "alpha");
+
+    lua_pushnumber(luaSt, 1.0);
+    lua_setfield(luaSt, bgTable, "delta");
+
+    lua_pop(luaSt, 1);
+
+
+    /* Set stream parameters */
+    lua_newtable(luaSt);
+    streamTable = lua_gettop(luaSt);
+    lua_pushvalue(luaSt, streamTable);
+    lua_setglobal(luaSt, STREAMS_NAME);
+
+    streamTable = lua_gettop(luaSt);
+
+    if (!mwDivisible(n - NUMBER_FIT_BG_PARAMETERS, NUMBER_FIT_STREAM_PARAMETERS))
+    {
+        return luaL_error(luaSt, "Parameter count (%d) inconsistent with default argument mapping\n", n);
+    }
+
+    nStream = (n - NUMBER_FIT_BG_PARAMETERS) / NUMBER_FIT_STREAM_PARAMETERS;
+
+    for (i = 0; i < nStream; ++i)
+    {
+        lua_newtable(luaSt);
+        thisStream = lua_gettop(luaSt);
+        idx = NUMBER_FIT_BG_PARAMETERS + i * NUMBER_FIT_STREAM_PARAMETERS;
+
+        lua_rawgeti(luaSt, ptable, idx + 1);
+        lua_setfield(luaSt, thisStream, "epsilon");
+
+        lua_rawgeti(luaSt, ptable, idx + 2);
+        lua_setfield(luaSt, thisStream, "mu");
+
+        lua_rawgeti(luaSt, ptable, idx + 3);
+        lua_setfield(luaSt, thisStream, "r");
+
+        lua_rawgeti(luaSt, ptable, idx + 4);
+        lua_setfield(luaSt, thisStream, "theta");
+
+        lua_rawgeti(luaSt, ptable, idx + 5);
+        lua_setfield(luaSt, thisStream, "phi");
+
+        lua_rawgeti(luaSt, ptable, idx + 6);
+        lua_setfield(luaSt, thisStream, "sigma");
+
+        mw_lua_assert_top_type(luaSt, LUA_TTABLE);
+
+        lua_rawseti(luaSt, streamTable, i + 1);
+    }
+
+    lua_pop(luaSt, 1);
+    return 0;
+}
+
 /* Open a lua_State and load the stuff we define, but do not run anything */
 lua_State* separationLuaOpen(mwbool debug)
 {
@@ -324,6 +410,8 @@ lua_State* separationLuaOpen(mwbool debug)
 
     mwRegisterTypes(luaSt);
     pushConstants(luaSt);
+
+    lua_register(luaSt, "defaultArgMapping", luaDefaultSetBGStreamParametersFromArguments);
 
     return luaSt;
 }
@@ -346,11 +434,10 @@ IntegralArea* setupSeparation(AstronomyParameters* ap,
     _bg = bg;
     _streams = streams;
 
-    /* These are always necessary */
     rc |= evaluateGlobalName(luaSt, evaluateConstants, CONSTANTS_NAME);
     rc |= evaluateGlobalName(luaSt, evaluateIntegralAreas, AREAS_NAME);
-    rc |= evaluateGlobalName(luaSt, evaluateStreams, STREAMS_NAME);
     rc |= evaluateGlobalName(luaSt, evaluateBackground, BACKGROUND_NAME);
+    rc |= evaluateGlobalName(luaSt, evaluateStreams, STREAMS_NAME);
 
     lua_close(luaSt);
 
