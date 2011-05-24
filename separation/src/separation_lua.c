@@ -193,9 +193,11 @@ static int evaluateStreams(lua_State* luaSt)
     int i, n;
 
     lua_getglobal(luaSt, STREAMS_NAME);
-
     table = lua_gettop(luaSt);
-    mw_lua_checktable(luaSt, table);
+
+    if (expectTable(luaSt, table))
+        luaL_error(luaSt, "Expected '%s' to be a table", STREAMS_NAME);
+
 
     n = luaL_getn(luaSt, table);
 
@@ -224,7 +226,7 @@ static int evaluateIntegralAreas(lua_State* luaSt)
 {
     int i, table;
 
-    lua_getglobal(luaSt, "areas");
+    lua_getglobal(luaSt, AREAS_NAME);
 
     table = lua_gettop(luaSt);
     mw_lua_checktable(luaSt, table);
@@ -258,7 +260,9 @@ static int evaluateConstants(lua_State* luaSt)
     {
         lua_getglobal(luaSt, p->name);
         if (mw_lua_typecheck(luaSt, -1, LUA_TNUMBER, NULL))
-            return 1;
+        {
+            return luaL_error(luaSt, "Expected constant '%s' to be a number\n", p->name);
+        }
 
         *p->value = lua_tonumber(luaSt, -1);
         ++p;
@@ -266,6 +270,18 @@ static int evaluateConstants(lua_State* luaSt)
 
     return 0;
 }
+
+static const BackgroundParameters defaultBG =
+{
+    /* .alpha   */   1.0,
+    /* .r0      */   0.0,
+    /* .q       */   0.0,
+    /* .delta   */   1.0,
+    /* .epsilon */   0.0,
+    /* .a       */   0.0,
+    /* .b       */   0.0,
+    /* .c       */   0.0
+};
 
 static int evaluateBackground(lua_State* luaSt)
 {
@@ -278,7 +294,7 @@ static int evaluateBackground(lua_State* luaSt)
             { "q",       LUA_TNUMBER, NULL, TRUE,  &bg.q       },
             { "delta",   LUA_TNUMBER, NULL, FALSE, &bg.delta   },
 
-            { "epsilon", LUA_TNUMBER, NULL, TRUE,  &bg.epsilon },
+            { "epsilon", LUA_TNUMBER, NULL, FALSE, &bg.epsilon },
 
             { "a",       LUA_TNUMBER, NULL, FALSE, &bg.a       },
             { "b",       LUA_TNUMBER, NULL, FALSE, &bg.b       },
@@ -290,6 +306,7 @@ static int evaluateBackground(lua_State* luaSt)
     table = lua_gettop(luaSt);
     mw_lua_checktable(luaSt, table);
 
+    bg = defaultBG;
     handleNamedArgumentTable(luaSt, bgArgTable, table);
     *_bg = bg;
 
