@@ -18,22 +18,22 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-function(maybe_dl_check name version md5Hash url srcPath srcTar)
-  if(NOT EXISTS "${srcPath}/${srcTar}")
+function(maybe_dl_check name md5Hash url tarName)
+  if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/${name}")
     message(STATUS "Downloading ${name}")
-    file(DOWNLOAD ${url} "${srcPath}/${srcTar}"
+    # Download somewhere you don't see
+    file(DOWNLOAD ${url} "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/${tarName}"
          TIMEOUT 60
          EXPECTED_MD5 ${md5Hash}
          LOG "Downloading ${name}"
          SHOW_PROGRESS)
+     message(STATUS "Extracting ${name}")
+     execute_process(COMMAND
+                      "${CMAKE_COMMAND}" -E tar xvjf "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/${tarName}"
+                      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
   else()
     message(STATUS "Already have ${name}")
   endif()
-
-  message(STATUS "Extracting ${name} source")
-  execute_process(
-    COMMAND "${CMAKE_COMMAND}" -E tar xzf "${srcPath}/${srcTar}" "${name}"
-    WORKING_DIRECTORY "${srcPath}")
 endfunction()
 
 

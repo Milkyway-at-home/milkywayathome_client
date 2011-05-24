@@ -25,12 +25,6 @@ macro(install_dsfmt)
   set(randSrcMD5 "b3a38dac7fd8996a70d02edc4432dd75")
   set(randSrcPath "${MILKYWAY_THIRDPARTY}")
   set(dsfmtTar "dSFMT-src-${dsfmtVer}.tar.gz")
-  maybe_dl_check("dSFMT"
-    "${dsfmtVer}"
-    "${randSrcMD5}"
-    "http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/${dsfmtTar}"
-    "${randSrcPath}"
-    "${dsfmtTar}")
 
   set(dsfmt_mexp "19937") #Value it assumes if you don't specify it; stops warning
   add_definitions("-DDSFMT_MEXP=${dsfmt_mexp}")
