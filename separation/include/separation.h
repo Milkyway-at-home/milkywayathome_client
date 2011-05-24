@@ -54,6 +54,7 @@ typedef struct
     char* ap_file;  /* astronomy parameters */
     char* separation_outfile;
     const char** forwardedArgs;
+    real* numArgs;   /* Temporary */
     unsigned int nForwardedArgs;
     int debugBOINC;
     int do_separation;
@@ -96,7 +97,7 @@ typedef struct
 #define DEFAULT_DISABLE_GPU_CHECKPOINTING 0
 
 
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, 0, FALSE,             \
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, NULL, 0, FALSE,       \
                                  FALSE, FALSE, 0, FALSE, FALSE, 0, 0, 0, 0,    \
                                  DEFAULT_RESPONSIVENESS_FACTOR,                \
                                  DEFAULT_TARGET_FREQUENCY,                     \

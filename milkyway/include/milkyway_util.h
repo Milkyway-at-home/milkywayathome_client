@@ -252,9 +252,7 @@ const char** mwFixArgv(int argc, const char** argv);
 int mwReadArguments(poptContext context);
 
 /* Read array of strings into doubles. Returns NULL on failure. */
-real* mwReadRestArgs(const char** rest,            /* String array as returned by poptGetArgs() */
-                     const unsigned int numParams, /* Expected number of parameters */
-                     unsigned int* paramCountOut); /* (Optional) return count of actual number parameters that could have been read */
+real* mwReadRestArgs(const char** rest, unsigned int n);
 
 const char** mwGetForwardedArguments(const char** args, unsigned int* nForwardedArgs);
 

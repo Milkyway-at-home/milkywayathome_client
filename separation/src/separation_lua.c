@@ -123,8 +123,7 @@ static lua_State* separationOpenLuaStateWithScript(const SeparationFlags* sf)
         return NULL;
     }
 
-    //if (dostringWithArgs(luaSt, script, sf->forwardedArgs, sf->numForwardedArgs))
-    if (dostringWithArgs(luaSt, script, NULL, 0))
+    if (dostringWithArgs(luaSt, script, sf->forwardedArgs, sf->nForwardedArgs))
     {
         mw_lua_pcall_warn(luaSt, "Error loading Lua script '%s'", sf->ap_file);
         lua_close(luaSt);

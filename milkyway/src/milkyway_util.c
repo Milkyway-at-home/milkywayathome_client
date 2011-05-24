@@ -322,42 +322,18 @@ void mwSetConsistentx87FPUPrecision() { }
 #endif
 
 /* From the extra parameters, read them as doubles */
-real* mwReadRestArgs(const char** rest, const unsigned int numParams, unsigned int* pCountOut)
+real* mwReadRestArgs(const char** rest, unsigned int n)
 {
     unsigned int i;
     real* parameters = NULL;
-    unsigned int paramCount = 0;
-
-    /* Read through all the server arguments, and make sure we can
-     * read everything and have the right number before trying to
-     * do anything with them */
-
-    if (numParams == 0)
-    {
-        warn("numParams = 0 makes no sense\n");
-        return NULL;
-    }
 
     if (!rest)
-    {
-        warn("%s: got rest == NULL\n", FUNC_NAME);
         return NULL;
-    }
 
-    while (rest[++paramCount]);  /* Count number of parameters */
-
-    /* Make sure the number of extra parameters matches the number
-     * we were told to expect. */
-    if (numParams != paramCount)
-    {
-        warn("Parameter count mismatch: Expected %u, got %u\n", numParams, paramCount);
-        return NULL;
-    }
-
-    parameters = (real*) mwMalloc(sizeof(real) * numParams);
+    parameters = (real*) mwMalloc(n * sizeof(real));
 
     errno = 0;
-    for (i = 0; i < numParams; ++i)
+    for (i = 0; i < n; ++i)
     {
         parameters[i] = (real) strtod(rest[i], NULL);
         if (errno)
@@ -367,9 +343,6 @@ real* mwReadRestArgs(const char** rest, const unsigned int numParams, unsigned i
             return NULL;
         }
     }
-
-    if (pCountOut)
-        *pCountOut = paramCount;
 
     return parameters;
 }

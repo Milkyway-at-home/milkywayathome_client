@@ -63,6 +63,8 @@ static void freeSeparationFlags(SeparationFlags* sf)
     free(sf->star_points_file);
     free(sf->ap_file);
     free(sf->separation_outfile);
+    free(sf->forwardedArgs);
+    free(sf->numArgs);
 }
 
 /* Use hardcoded names if files not specified */
@@ -117,15 +119,13 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 
 
 /* Returns the newly allocated array of parameters */
-static real* parseParameters(int argc, const char** argv, unsigned int* paramnOut, SeparationFlags* sfOut)
+static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
 {
     poptContext context;
     int argRead;
-    real* parameters = NULL;
-    static unsigned int numParams;
+    static unsigned int numParams = 0;
     static int server_params = 0;
     static const char** rest;
-    const char** argvCopy;
     static SeparationFlags sf = EMPTY_SEPARATION_FLAGS;
 
     static const struct poptOption options[] =
@@ -297,7 +297,6 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
         poptPrintHelp(context, stderr, 0);
         poptFreeContext(context);
         freeSeparationFlags(&sf);
-        free(argvCopy);
         exit(EXIT_FAILURE);
     }
 
@@ -311,40 +310,26 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
     sf.setPriority = argRead & PRIORITY_ARGUMENT;
 
     sf.do_separation = (sf.separation_outfile && strcmp(sf.separation_outfile, ""));
-    if (!sf.do_separation) /* Skip server arguments for just running separation */
-    {
-        rest = poptGetArgs(context);
-        parameters = mwReadRestArgs(rest, numParams, paramnOut);
-        if (!parameters)
-        {
-            warn("Failed to read server arguments\n");
-            freeSeparationFlags(&sf);
-            poptFreeContext(context);
-            free(argvCopy);
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    free(argvCopy);
-    poptFreeContext(context);
-    setDefaultFiles(&sf);
-
     if (sf.do_separation)
         prob_ok_init(sf.separationSeed, sf.setSeed);
 
+    rest = poptGetArgs(context);
+    sf.forwardedArgs = mwGetForwardedArguments(rest, &sf.nForwardedArgs);
+    sf.numArgs = mwReadRestArgs(rest, sf.nForwardedArgs); /* Temporary */
+
+    poptFreeContext(context);
+    setDefaultFiles(&sf);
+
     *sfOut = sf;
-    return parameters;
+    return 0;
 }
 
 static IntegralArea* prepareParameters(const SeparationFlags* sf,
                                        AstronomyParameters* ap,
                                        BackgroundParameters* bgp,
-                                       Streams* streams,
-                                       const real* parameters,
-                                       const int number_parameters)
+                                       Streams* streams)
 {
     IntegralArea* ias;
-    int badNumberParameters;
 
     ias = setupSeparation(ap, bgp, streams, sf);
     /* Try the new file first. If that doesn't work, try the old one. */
@@ -361,29 +346,17 @@ static IntegralArea* prepareParameters(const SeparationFlags* sf,
         return NULL;
     }
 
-    badNumberParameters = number_parameters < 1;
-    if (badNumberParameters && !sf->do_separation)
+    if (sf->numArgs && setParameters(ap, bgp, streams, sf->numArgs, sf->nForwardedArgs))
     {
-        warn("Error reading parameters: Bad number of parameters from the command line\n");
         mwFreeA(ias);
         freeStreams(streams);
         return NULL;
     }
 
-    if (!sf->do_separation)
-    {
-        if (setParameters(ap, bgp, streams, parameters, number_parameters))
-        {
-            mwFreeA(ias);
-            freeStreams(streams);
-            return NULL;
-        }
-    }
-
     return ias;
 }
 
-static int worker(const SeparationFlags* sf, const real* parameters, const int number_parameters)
+static int worker(const SeparationFlags* sf)
 {
     AstronomyParameters ap;
     BackgroundParameters bgp = EMPTY_BACKGROUND_PARAMETERS;
@@ -398,17 +371,13 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
 
     getCLReqFromFlags(&clr, sf);
 
-    ias = prepareParameters(sf, &ap, &bgp, &streams, parameters, number_parameters);
+    ias = prepareParameters(sf, &ap, &bgp, &streams);
     if (!ias)
-    {
-        warn("Failed to read parameters\n");
         return 1;
-    }
 
     rc = setAstronomyParameters(&ap, &bgp);
     if (rc)
     {
-        warn("Failed to set astronomy parameters\n");
         mwFreeA(ias);
         freeStreams(&streams);
         return 1;
@@ -425,8 +394,6 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     }
 
     results = newSeparationResults(ap.number_streams);
-
-    printAstronomyParameters(&ap);
 
     rc = evaluate(results, &ap, ias, &streams, sc, sf->star_points_file,
                   &clr, sf->do_separation, sf->ignoreCheckpoint, sf->separation_outfile);
@@ -493,27 +460,24 @@ int main(int argc, const char* argv[])
 {
     int rc;
     SeparationFlags sf = EMPTY_SEPARATION_FLAGS;
-    real* parameters;
-    unsigned int number_parameters;
     const char** argvCopy = mwFixArgv(argc, argv);
 
-    parameters = parseParameters(argc, argvCopy, &number_parameters, &sf);
-    free(argvCopy);
-
-    if (!parameters && !sf.do_separation)
+    rc = parseParameters(argc, argvCopy, &sf);
+    if (rc)
     {
-        warn("Could not parse parameters from the command line\n");
+        warn("Failed to parse parameters\n");
+        free(argvCopy);
         exit(EXIT_FAILURE);
     }
 
     rc = separationInit(argvCopy[0], sf.debugBOINC, sf.processPriority, sf.setPriority);
+    free(argvCopy);
     if (rc)
         return rc;
 
-    rc = worker(&sf, parameters, number_parameters);
+    rc = worker(&sf);
 
     freeSeparationFlags(&sf);
-    free(parameters);
 
   #if !SEPARATION_OPENCL
     if (!sf.ignoreCheckpoint && sf.cleanupCheckpoint && rc == 0)
