@@ -26,6 +26,7 @@ maybe_dl_check("stars" "9832cf1dd6e1e11083f9594fd4bf657b"
 # TODO: Test different paths
 add_test(NAME tests
            COMMAND ${LUA_INTERPRETER} "SeparationTests.lua"
-                                      "${EXECUTABLE_OUTPUT_PATH}/${separation_base_bin_name}")
+                                      "${EXECUTABLE_OUTPUT_PATH}/${separation_base_bin_name}"
+                                      "")
 
 

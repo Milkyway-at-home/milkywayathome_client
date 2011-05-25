@@ -17,69 +17,18 @@
 -- along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 --
 
+require "ResultSets"
 
 argv = {...}
 
 binName = argv[1]
-testName = argv[2]
+extraFlags = argv[2] -- Extra flags to pass, such as choosing which SSE path to use
+testName = argv[3]
 
 assert(binName, "Binary name not set")
 
 
-param_set1 = { 0.571713, 12.312119, -3.305187, 148.010257, 22.453902, 0.42035,
-               -0.468858, 0.760579, -1.361644, 177.884238, 23.882892, 1.210639,
-               -1.611974, 8.534378, -1.361644, 177.884238, 10.882892, 1.210639,
-               -1.611974, 8.534378
-         }
 
-
-param_set2 = { 0.571713, 12.312119, -3.305187, 148.010257, 22.453902, 0.42035, -0.468858,
-               0.760520, -1.361644, 177.884238, 23.882892, 1.210639, -1.611974, 8.534378
-         }
-
-
-
-param_set3 = { 0.34217373320392042, 25.9517910846623, -2.1709414738826602, 38.272511356953906,
-               30.225190442596112, 2.2149060013372885, 0.32316169064291655, 2.7740244716285285
-            }
-
-param_set4 = { 0.40587961154742185, 17.529961843393409, -1.8575145272144837, 29.360893891378243,
-               31.228263575178566, -1.551741065334, 0.064096152599308373, 2.55428209912781
-            }
-
-
-param_set5 = { 0.73317163557524425, 14.657212876628332, -1.7054653473950408, 16.911711745343633,
-               28.077212666463502, -1.2032908515814611, 3.5273606439247287, 2.2248214505875008
-            }
-
-
-
-testSet = {
-   ["small_test11"] = {
-      file       = "astronomy_parameters-11-small.txt",
-      stars      = "stars-11.txt",
-      parameters = param_set1,
-
-      results = {
-         background_integral = 0.000344404677767,
-         stream_integral     = { 34.162598012270841, 667.258968797279977, 336.167834127368394 },
-
-         background_likelihood  = -3.308234992702566,
-         stream_only_likelihood = { -160.798151443575989, -4.185806766566943, -4.119821303303995 },
-
-         search_likelihood = -3.125097883803232
-      }
-   },
-
-   ["test12"] = {
-      file       = "astronomy_parameters-12.txt",
-      stars      = "stars-12.txt",
-      parameters = param_set1,
-
-      results = nil
-   }
-
-}
 
 function os.readProcess(bin, ...)
    local args, cmd
@@ -210,27 +159,29 @@ function checkSeparationResults(results, reference)
    return correct
 end
 
-function runTest(testName, checkResults)
-   local test = testSet[testName]
-   assert(test, "Test " .. testName .. " not found!")
+function runTest(test, checkResults)
+   assert(test, "No test found!")
+   local output
 
-   io.stderr:write(string.rep("-", 80) .. "\n")
-   io.stderr:write(string.format("Beginning test %s:\n", testName))
+   if test.parameters ~= nil then
+      output = os.readProcess(binName,
+                              extraFlags,
+                              "-i", -- FIXME: Avoid stale checkpoints a better way?
+                              "-g",
+                              "-a", test.file,
+                              "-s", test.stars,
+                              "-np", #test.parameters,
+                              "-p", table.concat(test.parameters, " ")
+                           )
+   else
+      output = os.readProcess(binName, extraFlags, "-i", "-g", "-a", test.file, "-s", test.stars)
+   end
 
-   local output = os.readProcess(binName,
-                                 "-i", -- FIXME: Avoid stale checkpoints a better way?
-                                 "-g",
-                                 "-a", test.file,
-                                 "-s", test.stars,
-                                 "-np", #test.parameters,
-                                 "-p", table.concat(test.parameters, " ")
-                              )
+   print(output)
 
    -- If we aren't checking the reference results, then just print the
    -- output of the process.
    if not checkResults then
-      print(string.format("Test %s output:", testName))
-      print(output)
       return false
    end
 
@@ -239,16 +190,22 @@ function runTest(testName, checkResults)
 
    local check = checkSeparationResults(results, test.results)
 
-   io.stderr:write(string.format("Test %s completed:\n", testName))
-   io.stderr:write(string.rep("-", 80) .. "\n")
-
    return check
 end
 
+rc = 0
+for name, test in pairs(testSet) do
+   io.stdout:write(string.rep("-", 80) .. "\n")
+   io.stdout:write(string.format("Beginning test %s:\n\n", name))
 
-if not runTest("small_test11", true) then
-   os.exit(1)
+   if runTest(test, false) then
+      rc = 1
+   end
+   io.stdout:write(string.format("Test %s completed:\n", name))
+   io.stdout:write(string.rep("-", 80) .. "\n")
 end
+
+os.exit(rc)
 
 
 
