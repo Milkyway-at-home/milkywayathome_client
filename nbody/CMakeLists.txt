@@ -37,7 +37,6 @@ include(CheckSSE2)
 include(CMakeDependentOption)
 
 cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" ON
-                                      "NOT NBODY_GL" OFF
                                       "NOT NBODY_OPENCL" OFF)
 mark_as_advanced(NBODY_STATIC)
 
@@ -214,13 +213,6 @@ set_target_properties(nbody_lua PROPERTIES
                         COMPILE_DEFINITIONS "NBODY_LUA_TYPES_COMPILATION")
 
 
-if(NBODY_GL)
-  list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/nbody_gl.c)
-  list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_gl.h)
-endif()
-
-
-
 
 #TODO: The tests dSFMT has
 
@@ -295,11 +287,6 @@ if(BOINC_APPLICATION)
 endif()
 
 
-if(NBODY_GL)
-  list(APPEND nbody_exe_link_libs ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})
-endif()
-
-
 if(NBODY_CRLIBM)
   include_directories(${CRLIBM_INCLUDE_DIR})
   list(APPEND nbody_exe_link_libs ${CRLIBM_LIBRARY})
@@ -338,6 +325,31 @@ configure_file (
 add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
 
 milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} ${NBODY_STATIC} "${nbody_exe_link_libs}")
+
+if(NBODY_GL AND WIN32 AND BOINC_APPLICATION)
+  message(FATAL "N-body visualizer unsupported on Windows without BOINC")
+elseif(NBODY_GL AND BOINC_APPLICATION AND NOT BOINC_GRAPHICS_FOUND)
+  message(FATAL "BOINC graphics library not found")
+endif()
+
+if(NBODY_GL)
+  list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_graphics.h)
+
+  set(nbody_screensaver_src ${NBODY_SRC_DIR}/nbody_gl.c
+                            ${NBODY_SRC_DIR}/graphics_main.c)
+  set(nbody_screensaver_headers ${NBODY_INCLUDE_DIR}/nbody_gl.h
+                                ${NBODY_INCLUDE_DIR}/nbody_graphics.h)
+
+  set(vis_link_libs ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${nbody_exe_link_libs})
+  if(BOINC_APPLICATION)
+    list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY} ${BOINC_LIBRARIES} )
+  endif()
+
+  add_executable(nbody_visualizer ${nbody_screensaver_src} ${nbody_screensaver_headers})
+  target_link_libraries(nbody_visualizer ${vis_link_libs})
+endif()
+
+
 
 install(TARGETS ${nbody_bin_name} nbody_simulation nbody_lua
           RUNTIME       DESTINATION bin

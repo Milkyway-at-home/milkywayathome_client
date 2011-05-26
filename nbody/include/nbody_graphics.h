@@ -18,23 +18,47 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NBODY_GL_H_
-#define _NBODY_GL_H_
+#ifndef _NBODY_GRAPHICS_H_
+#define _NBODY_GRAPHICS_H_
 
 #include <GL/glut.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 
-#include "nbody_graphics.h"
+#include "nbody.h"
+#include "nbody_types.h"
 
-int nbodyGLSetup(int* argc, char** argv);
-int nbodyInitDrawState();
-void nbodyGLCleanup();
+/* "mw_nbody" */
+#define DEFAULT_SHMEM_KEY ((key_t) 0x6d775f6e626f6479)
 
-#ifndef _WIN32
-int nbodyInitShmemKey(const char* progName);
-#endif
+typedef struct
+{
+    float x, y, z;
+} FloatPos;
 
-#endif /* _NBODY_GL_H_ */
+/* the scene structure */
+typedef struct
+{
+    int nbody;
+    GLfloat z;
+    GLfloat xrot;
+    GLfloat yrot;
+    GLfloat starsize;
+    int fullscreen;
+    int drawaxes;
+    int ntri;
+    int paused;
+    int step;
+    int mousemode;
+    int changed;
+    double t;
+    double dt;
+    double usleepcount;
+    double usleepdt;
+
+    FloatPos r[];
+} scene_t;
+
+#endif /* _NBODY_GRAPHICS_H_ */
 
 

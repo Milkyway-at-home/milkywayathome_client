@@ -36,7 +36,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #if NBODY_GL
   #include "nbody_gl.h"
-#endif /* NBODY_GL */
+#endif
 
 
 #if !BOINC_APPLICATION
@@ -310,34 +310,16 @@ static void setNumThreads(int numThreads) { }
 
 #endif /* _OPENMP */
 
-static int nbodyMain(NBodyFlags* nbf)
-{
-  #if !NBODY_GL
-    return runNBodySimulation(nbf);
-  #else
-    int rc;
-    NBodyThreadID tid;
-
-    if (!nbf->visualizer)
-        return runNBodySimulation(nbf);
-
-    rc = runNBodySimulationInThread(nbf, &tid);
-    if (!rc)
-    {
-        nbodyRunDisplayWhenReady();
-        rc = nbodyWaitForSimThread(tid);
-    }
-
-    return rc;
-  #endif /* NBODY_GL */
-}
-
 int main(int argc, char* argv[])
 {
     NBodyFlags nbf = EMPTY_NBODY_FLAGS;
     int rc = 0;
 
     specialSetup();
+
+  #if NBODY_GL
+    nbodyInitShmemKey(argv[0]);
+  #endif
 
     if (readParameters(argc, argv, &nbf))
         exit(EXIT_FAILURE);
@@ -349,23 +331,14 @@ int main(int argc, char* argv[])
     }
 
   #if NBODY_GL
-    if (nbf.visualizer)
-    {
-        rc = nbodyGLSetup(&argc, argv);
-        if (rc)
-        {
-            warn("Failed to setup GL\n");
-            freeNBodyFlags(&nbf);
-            mw_finish(rc);
-        }
-    }
+    /* share things */
   #endif /* NBODY_GL */
 
     nbodyPrintVersion();
     setDefaultFlags(&nbf);
     setNumThreads(nbf.numThreads);
 
-    rc = nbodyMain(&nbf);
+    rc = runNBodySimulation(&nbf);
     if (nbf.cleanCheckpoint)
     {
         mw_report("Removing checkpoint file '%s'\n", nbf.checkpointFileName);

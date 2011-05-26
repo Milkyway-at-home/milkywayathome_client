@@ -34,6 +34,12 @@
 #include "nbody_types.h"
 #include "nbody_priv.h"
 
+#if !BOINC_APPLICATION
+  #include <sys/shm.h>
+#endif /* !BOINC_APPLICATION */
+
+
+
 /* ASCII keycodes */
 #define ESCAPE 27
 #define PAGE_UP 73
@@ -56,76 +62,44 @@
 #define ROTSCALE 1.0
 #define ZOOMSCALE 0.2
 
+#define USLEEPDT 100.0
+
 #define USE_GL_POINTS 0
 
-/* the scene structure */
-typedef struct
-{
-    int nstar;
-    GLfloat z;
-    GLfloat xrot;
-    GLfloat yrot;
-    GLfloat starsize;
-    int fullscreen;
-    int drawaxes;
-    int ntri;
-    int paused;
-    int step;
-    int mousemode;
-    int changed;
-    double t;
-    char tstring[128];
-    char log[3500];
-    double dt;
-} scene_t;
-
-static const NBodyState* _drawState = NULL;
-
-/* Set this when colors and everything ready. I'm pretty sure we don't
- * need to lock around this. We just need to wait for it to be nonzero
- * in the drawing thread. */
-static volatile int drawStateReady = FALSE;
-
-typedef struct
-{
-    float x, y, z;
-} FloatPos;
 
 
-static FloatPos* r = NULL;
 static FloatPos* color = NULL;
 
-
-/* So many global variables... */
 static int window, xlast = 0, ylast = 0, debug = 0, width = 1024, height = 768;
-static const double usleepdt = 100.0;
-static GLUquadricObj* quadratic;
-static scene_t scene;
+
+static GLUquadricObj* quadratic = NULL;
+static scene_t* scene = NULL;
 
 
 /* print the bindings */
-static void print_bindings(FILE* stream)
+static void print_bindings(FILE* f)
 {
-    fprintf(stream, "KEYBINDINGS:\n");
-    fprintf(stream, "  PAGE (UP/DOWN) : zoom (out/in)\n");
-    fprintf(stream, "  ARROW KEYS     : rotate\n");
-    fprintf(stream, "  h              : print this help text\n");
-    fprintf(stream, "  q, ESCAPE      : quit\n");
-    fprintf(stream, "  p              : pause/unpause\n");
-    fprintf(stream, "  SPACE          : step through frames (while paused)\n");
-    fprintf(stream, "  b              : make stars bigger\n");
-    fprintf(stream, "  s              : make stars smaller\n");
-    fprintf(stream, "  m              : use more polygons to render stars\n");
-    fprintf(stream, "  f              : use fewer polygons to render stars\n");
-    fprintf(stream, "  a              : toggle axes\n");
-    fprintf(stream, "  t              : toggle time printout\n");
-    fprintf(stream, "  l              : toggle log printout\n");
-    fprintf(stream, "  <              : slow down animation\n");
-    fprintf(stream, "  >              : speed up animation\n");
-    fprintf(stream, "\n");
-    fprintf(stream, "MOUSEBINDINGS:\n");
-    fprintf(stream, "  DRAG                   : rotate\n");
-    fprintf(stream, "  [SHIFT] DRAG (up/down) : zoom (in/out)\n");
+    fprintf(f,
+            "KEYBINDINGS:\n"
+            "  PAGE (UP/DOWN) : zoom (out/in)\n"
+            "  ARROW KEYS     : rotate\n"
+            "  h              : print this help text\n"
+            "  q, ESCAPE      : quit\n"
+            "  p              : pause/unpause\n"
+            "  SPACE          : step through frames (while paused)\n"
+            "  b              : make stars bigger\n"
+            "  s              : make stars smaller\n"
+            "  m              : use more polygons to render stars\n"
+            "  f              : use fewer polygons to render stars\n"
+            "  a              : toggle axes\n"
+            "  t              : toggle time printout\n"
+            "  l              : toggle log printout\n"
+            "  <              : slow down animation\n"
+            "  >              : speed up animation\n"
+            "\n"
+            "MOUSEBINDINGS:\n"
+            "  DRAG                   : rotate\n"
+            "  [SHIFT] DRAG (up/down) : zoom (in/out)\n");
 }
 
 /* A general OpenGL initialization function.  Sets all of the initial parameters. */
@@ -171,66 +145,39 @@ static void resizeGLScene(int w, int h)
     gluPerspective(45.0f, (GLfloat)w / (GLfloat)h, 0.1f, 1000.0f);
     glMatrixMode(GL_MODELVIEW);
 
-    scene.changed = 1;
-}
-
-void updateDisplayedBodies()
-{
-    const Body* b;
-    const NBodyState* st = _drawState;
-    static double usleepcount = 0.0;
-    unsigned int i = 0;
-    const unsigned int nbody = st->nbody;
-
-    usleepcount += usleepdt;
-
-    /* read data if not paused */
-    if (usleepcount >= scene.dt && (scene.paused == 0 || scene.step == 1))
-    {
-        usleepcount = 0.0;
-        scene.step = 0;
-
-      #ifdef _OPENMP
-        #pragma omp parallel for private(i, b) schedule(static)
-      #endif
-        for (i = 0; i < nbody; ++i)
-        {
-            b = &st->bodytab[i];
-            r[i].x = (float) X(Pos(b));
-            r[i].y = (float) Y(Pos(b));
-            r[i].z = (float) Z(Pos(b));
-        }
-    }
-
-    scene.changed = 1;
+    scene->changed = TRUE;
 }
 
 /* The main drawing function */
 static void drawGLScene()
 {
     unsigned int i = 0;
-    const NBodyState* st = _drawState;
+    int nbody = scene->nbody;
+    FloatPos* r;
 
-    usleep(usleepdt);
+    if (!scene)
+        return;
+
+    usleep(scene->usleepdt);
 
     /* draw scene if necessary */
-    if (scene.changed)
+    if (scene->changed)
     {
-        scene.changed = 0;
+        scene->changed = FALSE;
 
         /* erase scene */
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
         glLoadIdentity();
 
         /* get ready to render 3D objects */
-        glTranslatef(0.0f, 0.0f, scene.z + 0.1);
+        glTranslatef(0.0f, 0.0f, scene->z + 0.1);
 
         /* rotate view--I know these two rotation matrices don't commute */
-        glRotatef(scene.xrot, 1.0f, 0.0f, 0.0f);
-        glRotatef(scene.yrot, 0.0f, 1.0f, 0.0f);
+        glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
+        glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
 
         /* draw axes */
-        if (scene.drawaxes)
+        if (scene->drawaxes)
         {
             glColor3f(1.0, 0.0, 0.0);
             glBegin(GL_LINES);
@@ -249,28 +196,28 @@ static void drawGLScene()
             glEnd();
         }
 
+        r = &scene->r[0];
         /* draw stars */
     #if !USE_GL_POINTS
         /* FIXME: Use modern OpenGL stuff */
-        for (i = 0; i < st->nbody; ++i)
+        for (i = 0; i < nbody; ++i)
         {
-
             glLoadIdentity();
-            glTranslatef(0.0f, 0.0f, scene.z);
-            glRotatef(scene.xrot, 1.0f, 0.0f, 0.0f);
-            glRotatef(scene.yrot, 0.0f, 1.0f, 0.0f);
+            glTranslatef(0.0f, 0.0f, scene->z);
+            glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
+            glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
 
             glTranslatef(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
             glColor3f(color[i].x, color[i].y, color[i].z);
-            /* glutSolidSphere(scene.starsize, scene.ntri, scene.ntri); */
-            gluSphere(quadratic, scene.starsize, scene.ntri, scene.ntri);
+            /* glutSolidSphere(scene->starsize, scene->ntri, scene->ntri); */
+            gluSphere(quadratic, scene->starsize, scene->ntri, scene->ntri);
             /* glTranslatef(-r[i].x/SCALE, -r[i].y/SCALE, -r[i].z/SCALE); */
         }
     #else
-        glPointSize(scene.starsize);  /* Is this actually working? */
+        glPointSize(scene->starsize);  /* Is this actually working? */
         glBegin(GL_POINTS);
         glColor3f(1.0f, 1.0f, 1.0f);
-        for (i = 0; i < st->nbody; ++i)
+        for (i = 0; i < nbody; ++i)
         {
             glVertex3f(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
         }
@@ -299,65 +246,65 @@ static void keyPressed(unsigned char key, int x, int y)
             break;
 
         case 'p':
-            scene.paused = !scene.paused;
+            scene->paused = !scene->paused;
             break;
 
         case ' ':
-            scene.step = 1;
+            scene->step = 1;
             break;
 
         case 'b':
-            scene.starsize *= 1.1;
-            if (scene.starsize > 100.0)
+            scene->starsize *= 1.1;
+            if (scene->starsize > 100.0)
             {
-                scene.starsize = 100.0;
+                scene->starsize = 100.0;
             }
-            scene.changed = 1;
+            scene->changed = TRUE;
             break;
 
         case 's':
-            scene.starsize *= 0.9;
-            if (scene.starsize < 1.0e-3)
+            scene->starsize *= 0.9;
+            if (scene->starsize < 1.0e-3)
             {
-                scene.starsize = 1.0e-3;
+                scene->starsize = 1.0e-3;
             }
-            scene.changed = 1;
+            scene->changed = TRUE;
             break;
 
         case 'm':
-            scene.ntri *= 2;
-            if (scene.ntri > 24)
+            scene->ntri *= 2;
+            if (scene->ntri > 24)
             {
-                scene.ntri = 24;
+                scene->ntri = 24;
             }
-            scene.changed = 1;
+            scene->changed = TRUE;
             break;
 
         case 'f':
-            scene.ntri /= 2;
-            if (scene.ntri < 4)
+            scene->ntri /= 2;
+            if (scene->ntri < 4)
             {
-                scene.ntri = 4;
+                scene->ntri = 4;
             }
-            scene.changed = 1;
+            scene->changed = TRUE;
             break;
 
         case 'a':
-            scene.drawaxes = !scene.drawaxes;
-            scene.changed = 1;
+            scene->drawaxes = !scene->drawaxes;
+            scene->changed = TRUE;
             break;
         case '>':
-            scene.dt /= 2.0;
-            if (scene.dt < 10.0)
+            scene->dt /= 2.0;
+            if (scene->dt < 10.0)
             {
-                scene.dt = 10.0;
+                scene->dt = 10.0;
             }
             break;
         case '<':
-            scene.dt *= 2.0;
-            if (scene.dt > 1.0e6)
+            scene->dt *= 2.0;
+            if (scene->dt > 1.0e6)
             {
-                scene.dt = 1.0e6;
+                scene->dt = 1.0e6;
             }
             break;
 
@@ -375,28 +322,28 @@ static void specialKeyPressed(int key, int x, int y)
     switch (key)
     {
         case GLUT_KEY_PAGE_UP:
-            scene.z -= DELTAZ;
-            scene.changed = 1;
+            scene->z -= DELTAZ;
+            scene->changed = TRUE;
             break;
         case GLUT_KEY_PAGE_DOWN:
-            scene.z += DELTAZ;
-            scene.changed = 1;
+            scene->z += DELTAZ;
+            scene->changed = TRUE;
             break;
         case GLUT_KEY_UP:
-            scene.xrot -= DELTAXROT;
-            scene.changed = 1;
+            scene->xrot -= DELTAXROT;
+            scene->changed = TRUE;
             break;
         case GLUT_KEY_DOWN:
-            scene.xrot += DELTAXROT;
-            scene.changed = 1;
+            scene->xrot += DELTAXROT;
+            scene->changed = TRUE;
             break;
         case GLUT_KEY_LEFT:
-            scene.yrot -= DELTAYROT;
-            scene.changed = 1;
+            scene->yrot -= DELTAYROT;
+            scene->changed = TRUE;
             break;
         case GLUT_KEY_RIGHT:
-            scene.yrot += DELTAYROT;
-            scene.changed = 1;
+            scene->yrot += DELTAYROT;
+            scene->changed = TRUE;
             break;
         default:
             break;
@@ -412,11 +359,11 @@ static void mouseFunc(int button, int state, int x, int y)
 
         if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
         {
-            scene.mousemode = 2;
+            scene->mousemode = 2;
         }
         else
         {
-            scene.mousemode = 1;
+            scene->mousemode = 1;
         }
     }
 }
@@ -431,16 +378,16 @@ static void motionFunc(int x, int y)
     xlast = x;
     ylast = y;
 
-    if (scene.mousemode == 1)
+    if (scene->mousemode == 1)
     {
-        scene.xrot += ROTSCALE * dy;
-        scene.yrot += ROTSCALE * dx;
-        scene.changed = 1;
+        scene->xrot += ROTSCALE * dy;
+        scene->yrot += ROTSCALE * dx;
+        scene->changed = TRUE;
     }
-    else if (scene.mousemode == 2)
+    else if (scene->mousemode == 2)
     {
-        scene.z -= ZOOMSCALE * dy;
-        scene.changed = 1;
+        scene->z -= ZOOMSCALE * dy;
+        scene->changed = TRUE;
     }
 }
 
@@ -449,7 +396,7 @@ static void assignParticleColors(unsigned int nbody)
     int i;
     double R, G, B, scale;
 
-    /* assign particle colors */
+    /* assign random particle colors */
     srand((unsigned int) time(NULL));
 
     color[0].x = 1.0;
@@ -498,77 +445,101 @@ static void assignParticleColors(unsigned int nbody)
         color[i].y = G * scale;
         color[i].z = B * scale;
     }
-
 }
 
-int nbodyInitDrawState(const NBodyState* st)
+int nbodyInitDrawState()
 {
-    _drawState = st;
-
-    r = (FloatPos*) mwCallocA(st->nbody, sizeof(FloatPos));
-    color = (FloatPos*) mwCallocA(st->nbody, sizeof(FloatPos));
-
-    assignParticleColors(st->nbody);
-
-    drawStateReady = TRUE;
+    color = (FloatPos*) mwCallocA(scene->nbody, sizeof(FloatPos));
+    assignParticleColors(scene->nbody);
 
     return 0;
 }
 
-int nbodyGLSetup(int* argc, char** argv)
+#if !BOINC_APPLICATION
+
+static int key = -1;
+
+static int setShmemKey()
 {
-#if 0
+    /* TODO: pid of simulation, etc. */
+    key = DEFAULT_SHMEM_KEY;
 
-    const char* short_opts = "fpatldVh";
-    const struct option long_opts[] =
+    return 0;
+}
+
+static int connectSharedScene()
+{
+    int shmId;
+    struct shmid_ds buf;
+
+    setShmemKey();
+
+    shmId = shmget(key, 0, 0);
+    if (shmId < 0)
     {
-        {"fullscreen", no_argument, NULL, 'f'},
-        {"paused", no_argument, NULL, 'p'},
-        {"noaxes", no_argument, NULL, 'a'},
-        {"time", no_argument, NULL, 't'},
-        {"debug", no_argument, NULL, 'd'},
-        {"version", no_argument, NULL, 'V'},
-        {"help", no_argument, NULL, 'h'},
-        {NULL, 0, NULL, 0}
-    };
-#endif
-
-    /* set a few initial variables */
-    scene.nstar = 0;
-    scene.xrot = 0.0f;
-    scene.yrot = 0.0f;
-    scene.z = -6.0f;
-    scene.starsize = STARSIZE;
-    scene.fullscreen = 0;
-    scene.drawaxes = 1;
-    scene.ntri = NTRI;
-    scene.paused = 0;
-    scene.step = 0;
-    scene.mousemode = 1;
-    scene.changed = 0;
-    scene.dt = 300;
-
-    if (0)
-    {
-        switch (0)
-        {
-            case 'f':
-                scene.fullscreen = 1;
-                break;
-            case 'p':
-                scene.paused = 1;
-                break;
-            case 'a':
-                scene.drawaxes = 0;
-                break;
-            case 'd':
-                debug = 1;
-                break;
-            default:
-                break;
-        }
+        perror("Error getting shared memory");
+        return 1;
     }
 
+    if (shmctl(shmId, IPC_STAT, &buf) < 0)
+    {
+        perror("Finding shared scene");
+        return 0;
+    }
+
+    if (buf.shm_nattch > 1)
+    {
+        perror("Screensaver already attached to segment");
+        return 1;
+    }
+    else if (buf.shm_nattch <= 0)
+    {
+        perror("Simulation not running");
+        return 1;
+    }
+
+    scene = (scene_t*) shmat(shmId, NULL, 0);
+    if (!scene || scene == (scene_t*) -1)
+    {
+        perror("Attaching to shared memory");
+        return 1;
+    }
+
+    return 0;
+}
+
+#else
+
+static int connectSharedScene()
+{
+    return 0;
+}
+
+#endif /* !BOINC_APPLICATION */
+
+static void sceneInit()
+{
+    scene->xrot = 0.0f;
+    scene->yrot = 0.0f;
+    scene->z = -6.0f;
+    scene->starsize = STARSIZE;
+    scene->fullscreen = FALSE;
+    scene->drawaxes = TRUE;
+    scene->ntri = NTRI;
+    scene->paused = FALSE;
+    scene->step = 0;
+    scene->mousemode = 1;
+    scene->changed = FALSE;
+    scene->dt = 300;
+    scene->usleepdt = USLEEPDT;
+}
+
+int nbodyGLSetup(int* argc, char** argv)
+{
+    if (connectSharedScene())
+        return 1;
+
+    sceneInit();
     glutInit(argc, argv);
 
     /* prepare rendering */
@@ -578,7 +549,7 @@ int nbodyGLSetup(int* argc, char** argv)
     window = glutCreateWindow("Milkyway@Home N-body");
     glutDisplayFunc(drawGLScene);
 
-    if (scene.fullscreen)
+    if (scene->fullscreen)
     {
         glutFullScreen();
     }
@@ -598,95 +569,7 @@ int nbodyGLSetup(int* argc, char** argv)
 /* glut main loop never quits, so actually freeing these is a bad idea */
 void nbodyGLCleanup()
 {
-    mwFreeA(r);
-    r = NULL;
-
     mwFreeA(color);
     color = NULL;
-
-    _drawState = NULL;
-    drawStateReady = FALSE;  /* If we were to actually use this again, probably should use a lock */
 }
-
-/* Wait for it to be safe to draw and then run graphics loop */
-void nbodyRunDisplayWhenReady()
-{
-    while (!drawStateReady);
-    glutMainLoop();
-}
-
-
-#ifndef _WIN32
-
-/* Launch main simulation as separate worker thread */
-
-static void* runNBodySimulationInThreadWorker(void* nbf)
-{
-    /* Just return something non-null if error */
-    return runNBodySimulation((const NBodyFlags*) nbf) ? nbf : NULL;
-}
-
-int runNBodySimulationInThread(NBodyFlags* nbf, NBodyThreadID* tid)
-{
-    if (pthread_create(tid, NULL, runNBodySimulationInThreadWorker, nbf))
-    {
-        perror("Creating worker thread");
-        return 1;
-    }
-
-    return 0;
-}
-
-int nbodyWaitForSimThread(NBodyThreadID tid)
-{
-    void* ret;
-
-    if (pthread_join(tid, &ret) != 0)
-    {
-        perror("Joining worker thread");
-        return 1;
-    }
-
-    return ret != NULL;
-}
-
-#else
-
-static DWORD __stdcall runNBodySimulationInThreadWorker(LPVOID nbf)
-{
-    return (DWORD) runNBodySimulation((const NBodyFlags*) nbf);
-}
-
-int runNBodySimulationInThread(NBodyFlags* nbf, NBodyThreadID* tid)
-{
-    *tid = CreateThread(NULL, 0, runNBodySimulationInThreadWorker, NULL, 0, nbf))
-    if (!(*tid))
-    {
-        warn("Error creating display thread: %ld\n", GetLastError());
-        return 1;
-    }
-
-    return 0;
-}
-
-int nbodyWaitForSimThread(NBodyThreadID tid)
-{
-    DWORD rc;
-
-    if (WaitForSingleObject(tid, INFINITE) != WAIT_OBJECT_0)
-    {
-        warn("Error waiting for worker thread: %ld\n", GetLastError());
-        return 1;
-    }
-
-    if (!GetExitCodeThread(tid, &rc))
-    {
-        warn("Failed to get worker thread exit status: %ld\n", GetLastError());
-        return 1;
-    }
-
-    return (int) rc;
-}
-
-#endif /* _WIN32 */
 

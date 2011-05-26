@@ -31,6 +31,151 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #if NBODY_GL
   #include "nbody_gl.h"
+
+  #if !BOINC_APPLICATION && defined(_WIN32)
+    #error Windows N-body visualizer not supported without BOINC
+  #elif !BOINC_APPLICATION
+    #include <sys/shm.h>
+  #else
+    // FIXME: More broken boinc headers requiring C++ for no reason
+    // extern void boinc_graphics_loop(int argc, char** argv, const char* title=0);
+
+    //#include <boinc/graphics2.h>
+    extern void* boinc_graphics_make_shmem(const char*, int);
+    extern void* boinc_graphics_get_shmem(const char*);
+  #endif
+#endif
+
+
+#if NBODY_GL
+
+static scene_t* scene = NULL;
+static int shmId = -1;
+static key_t key = -1;
+
+#endif
+
+#if NBODY_GL && !BOINC_APPLICATION
+
+int nbodyInitShmemKey(const char* progName)
+{
+    key = DEFAULT_SHMEM_KEY;
+    //key = ftok(progName, getpid());
+    if (key < 0)
+    {
+        key = DEFAULT_SHMEM_KEY;
+        perror("Error getting key");
+        return 1;
+    }
+
+    return 0;
+}
+
+static int createSharedScene(const NBodyState* st)
+{
+    size_t size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
+
+    shmId = shmget(key, size, IPC_CREAT | SHM_W | SHM_R);
+    if (shmId < 0)
+    {
+        perror("Error getting shared memory");
+        return 1;
+    }
+
+    scene = (scene_t*) shmat(shmId, NULL, 0);
+    if (!scene || scene == (scene_t*) -1)
+    {
+        perror("Getting shared scene");
+        return 1;
+    }
+
+    memset(scene, 0, size);
+    scene->nbody = st->nbody;
+
+    return 0;
+}
+
+static int visualizerIsAttached()
+{
+    struct shmid_ds buf;
+
+    if (shmctl(shmId, IPC_STAT, &buf) < 0)
+    {
+        perror("Finding attached visualizers");
+        return 0;
+    }
+    return buf.shm_nattch > 1;
+}
+
+#elif NBODY_GL && BOINC_APPLICATION
+
+int nbodyInitShmemKey(const char* progName)
+{
+    return 0;
+}
+
+static int createSharedScene(const NBodyState* st)
+{
+    int size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
+
+    scene = (scene_t*) boinc_graphics_make_shmem("milkyway_nbody", size);
+    if (!scene)
+    {
+        warn("Failed to get shmem of size %d\n", size);
+        return 1;
+    }
+
+    memset(scene, 0, (size_t) size);
+    scene->nbody = st->nbody;
+
+    return 0;
+}
+
+static int visualizerIsAttached()
+{
+    /* TODO */
+    return 1;
+}
+
+#endif /* NBODY_GL && !BOINC_APPLICATION */
+
+
+#if NBODY_GL
+
+static void updateDisplayedBodies(const NBodyState* st)
+{
+    const Body* b;
+    FloatPos* r;
+    unsigned int i = 0;
+    const unsigned int nbody = st->nbody;
+
+    if (!scene)
+        return;
+
+    r = scene->r;
+    scene->usleepcount += scene->usleepdt;
+
+    /* read data if not paused */
+    if (scene->usleepcount >= scene->dt && (!scene->paused || scene->step == 1))
+    {
+        scene->usleepcount = 0.0;
+        scene->step = 0;
+
+      #ifdef _OPENMP
+        #pragma omp parallel for private(i, b) schedule(static)
+      #endif
+        for (i = 0; i < nbody; ++i)
+        {
+            b = &st->bodytab[i];
+            r[i].x = (float) X(Pos(b));
+            r[i].y = (float) Y(Pos(b));
+            r[i].z = (float) Z(Pos(b));
+        }
+    }
+
+    scene->changed = TRUE;
+}
+
 #endif /* NBODY_GL */
 
 static inline int nbodyTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
@@ -74,8 +219,10 @@ static int runSystem(const NBodyCtx* ctx, NBodyState* st, int visualizer)
     while (st->tnow < tstop)
     {
       #if NBODY_GL
-        if (visualizer)
-            updateDisplayedBodies();
+        if (visualizerIsAttached())
+        {
+            updateDisplayedBodies(st);
+        }
       #endif /* NBODY_GL */
 
         if (stepSystem(ctx, st))   /* advance N-body system */
@@ -97,11 +244,7 @@ static int runSystem(const NBodyCtx* ctx, NBodyState* st, int visualizer)
 static void endRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, const real chisq)
 {
     finalOutput(ctx, st, nbf, chisq);
-
-    if (!NBODY_GL && nbf->visualizer)  /* Drawing thread never dies */
-    {
-        destroyNBodyState(st);
-    }
+    destroyNBodyState(st);
 }
 
 static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
@@ -130,11 +273,6 @@ static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, 
             mw_report("Successfully read checkpoint\n");
         }
     }
-
-  #if NBODY_GL
-    if (nbf->visualizer)
-        nbodyInitDrawState(st);
-  #endif /* NBODY_GL */
 
     return gravMap(ctx, st); /* Start 1st step */
 }
@@ -194,6 +332,12 @@ int runNBodySimulation(const NBodyFlags* nbf)
 
     if (nbf->printTiming)     /* Time the body of the calculation */
         ts = mwGetTime();
+
+
+    if (createSharedScene(st))
+    {
+        return warn1("Failed to create shared scene\n");
+    }
 
     rc = runSystem(ctx, st, nbf->visualizer);
     if (rc)
