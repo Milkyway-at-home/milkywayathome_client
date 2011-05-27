@@ -212,9 +212,40 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
   #endif /* BOINC_APPLICATION */
 }
 
+#if NBODY_GL && !BOINC_APPLICATION
+static void launchVisualizer()
+{
+    pid_t pid;
+    const char* const argv[] = { "../bin/nbody_visualizer", NULL };
+    const char* const envp[] = { NULL };
+
+    pid = fork();
+    if (pid != 0)  /* Parent */
+        return;
+
+    /* Child */
+    if (shmdt(scene) < 0)
+    {
+        /* Hack to close the shared memory access we inherit so we
+         * don't count it when the visualizer actually opens it again */
+        perror("Detaching child from shared");
+    }
+
+    if (execve(argv[0], argv, envp) < 0)
+    {
+        perror("Failed to launch visualizer");
+    }
+}
+#endif /* NBODY_GL && !BOINC_APPLICATION */
+
 static int runSystem(const NBodyCtx* ctx, NBodyState* st, int visualizer)
 {
     const real tstop = ctx->timeEvolve - ctx->timestep / 1024.0;
+
+   #if NBODY_GL && !BOINC_APPLICATION
+    if (visualizer)
+        launchVisualizer();
+   #endif
 
     while (st->tnow < tstop)
     {

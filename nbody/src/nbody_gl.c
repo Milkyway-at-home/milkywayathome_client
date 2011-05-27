@@ -152,7 +152,11 @@ static void resizeGLScene(int w, int h)
     scene->changed = TRUE;
 }
 
-/* The main drawing function */
+/* The main drawing function.  Technically there's a race condition
+   between drawing and writing new values from the simulation for the
+   body positions. I'm lazy and It doesn't need to be displayed 100%
+   accurately so this should be good enough.
+ */
 static void drawGLScene()
 {
     unsigned int i = 0;
@@ -494,7 +498,7 @@ static int nbodyInitDrawState()
 
 #if !BOINC_APPLICATION
 
-static int key = -1;
+static key_t key = -1;
 
 static int setShmemKey()
 {
