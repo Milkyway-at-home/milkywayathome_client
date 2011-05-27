@@ -560,8 +560,8 @@ int connectSharedScene()
 
 static void sceneInit(const VisArgs* args)
 {
-    width = args->width == 0 ? 1024 : args->width;
-    height = args->height == 0 ? 768 : args->height;
+    width = args->width == 0 ? glutGet(GLUT_SCREEN_WIDTH) / 2 : args->width;
+    height = args->height == 0 ? glutGet(GLUT_SCREEN_HEIGHT) / 2 : args->height;
     monochromatic = args->monochrome;
     useGLPoints = args->useGLPoints;
 
