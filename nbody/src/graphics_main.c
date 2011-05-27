@@ -18,20 +18,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "nbody_gl.h"
+#include "nbody_graphics.h"
 #include "milkyway_util.h"
 
-typedef struct
-{
-    int fullscreen;
-    int width;
-    int height;
-
-    /* pid_t pid */
-    /* char* nbody bin */
-
-} VisArgs;
-
-static int handleVisArguments(int argc, const char* argv[], VisArgs* visOut)
+static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
 {
     poptContext context;
     int failed = FALSE;
@@ -57,6 +47,18 @@ static int handleVisArguments(int argc, const char* argv[], VisArgs* visOut)
             0, "Starting height of window", NULL
         },
 
+        {
+            "monochromatic", 'm',
+            POPT_ARG_NONE, &visArgs.monochrome,
+            0, "All particles have same color", NULL
+        },
+
+        {
+            "use-gl-points", 'p',
+            POPT_ARG_NONE, &visArgs.useGLPoints,
+            0, "Use faster but possibly uglier drawing", NULL
+        },
+
         POPT_AUTOHELP
         POPT_TABLEEND
     };
@@ -64,13 +66,6 @@ static int handleVisArguments(int argc, const char* argv[], VisArgs* visOut)
     /* TODO: Check project prefs */
 
     context = poptGetContext(argv[0], argc, argv, options, 0);
-
-    if (argc < 2)
-    {
-        poptPrintUsage(context, stderr, 0);
-        poptFreeContext(context);
-        return TRUE;
-    }
 
     if (mwReadArguments(context))
     {
@@ -84,18 +79,26 @@ static int handleVisArguments(int argc, const char* argv[], VisArgs* visOut)
     return failed;
 }
 
-int main(int argc, const char* argv[])
+int main(int argc, char* argv[])
 {
     int rc;
+    VisArgs flags;
 
-    rc = nbodyGLSetup(&argc, argv);
+    if (connectSharedScene())
+        return 1;
+
+    glutInit(&argc, argv);
+
+    if (handleVisArguments(argc, argv, &flags))
+        return 1;
+
+    rc = nbodyGLSetup(&flags);
     if (rc)
     {
         warn("Failed to setup GL\n");
         mw_finish(rc);
     }
 
-    nbodyInitDrawState();
     glutMainLoop();
 
     return 0;

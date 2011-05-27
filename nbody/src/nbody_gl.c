@@ -31,8 +31,8 @@
 
 #include "milkyway_util.h"
 #include "nbody_gl.h"
+#include "nbody_graphics.h"
 #include "nbody_types.h"
-#include "nbody_priv.h"
 
 #if !BOINC_APPLICATION
   #include <sys/shm.h>
@@ -64,13 +64,17 @@
 
 #define USLEEPDT 100.0
 
-#define USE_GL_POINTS 0
-
 
 
 static FloatPos* color = NULL;
 
-static int window, xlast = 0, ylast = 0, debug = 0, width = 1024, height = 768;
+static const FloatPos white = { 1.0f, 1.0f, 1.0f };
+
+static int window = 0;
+static int xlast = 0, ylast = 0;
+static int width = 0, height = 0;
+static int monochromatic = FALSE;
+static int useGLPoints = FALSE;
 
 static GLUquadricObj* quadratic = NULL;
 static scene_t* scene = NULL;
@@ -198,31 +202,43 @@ static void drawGLScene()
 
         r = &scene->r[0];
         /* draw stars */
-    #if !USE_GL_POINTS
-        /* FIXME: Use modern OpenGL stuff */
-        for (i = 0; i < nbody; ++i)
-        {
-            glLoadIdentity();
-            glTranslatef(0.0f, 0.0f, scene->z);
-            glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
-            glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
 
-            glTranslatef(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
-            glColor3f(color[i].x, color[i].y, color[i].z);
-            /* glutSolidSphere(scene->starsize, scene->ntri, scene->ntri); */
-            gluSphere(quadratic, scene->starsize, scene->ntri, scene->ntri);
-            /* glTranslatef(-r[i].x/SCALE, -r[i].y/SCALE, -r[i].z/SCALE); */
-        }
-    #else
-        glPointSize(scene->starsize);  /* Is this actually working? */
-        glBegin(GL_POINTS);
-        glColor3f(1.0f, 1.0f, 1.0f);
-        for (i = 0; i < nbody; ++i)
+        if (useGLPoints)
         {
-            glVertex3f(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
+            glPointSize(scene->starsize);  /* Is this actually working? */
+            glBegin(GL_POINTS);
+            glColor3f(1.0f, 1.0f, 1.0f);
+            for (i = 0; i < nbody; ++i)
+            {
+                glVertex3f(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
+            }
+            glEnd();
         }
-        glEnd();
-    #endif /* !USE_GL_POINTS */
+        else
+        {
+            /* FIXME: Use modern OpenGL stuff */
+            for (i = 0; i < nbody; ++i)
+            {
+                glLoadIdentity();
+                glTranslatef(0.0f, 0.0f, scene->z);
+                glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
+                glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
+
+                glTranslatef(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
+
+                if (monochromatic)
+                {
+                    glColor3f(white.x, white.y, white.z);
+                }
+                else
+                {
+                    glColor3f(color[i].x, color[i].y, color[i].z);
+                }
+                /* glutSolidSphere(scene->starsize, scene->ntri, scene->ntri); */
+                gluSphere(quadratic, scene->starsize, scene->ntri, scene->ntri);
+                /* glTranslatef(-r[i].x/SCALE, -r[i].y/SCALE, -r[i].z/SCALE); */
+            }
+        }
 
         glutSwapBuffers();
     }
@@ -233,6 +249,11 @@ static void keyPressed(unsigned char key, int x, int y)
 {
     /* avoid thrashing this call */
     usleep(100);
+
+    if (scene->fullscreen)
+    {
+        mw_finish(EXIT_SUCCESS);
+    }
 
     switch (key)
     {
@@ -352,6 +373,11 @@ static void specialKeyPressed(int key, int x, int y)
 
 static void mouseFunc(int button, int state, int x, int y)
 {
+    if (scene->fullscreen)
+    {
+        mw_finish(EXIT_SUCCESS);
+    }
+
     if (state == GLUT_DOWN)
     {
         xlast = x;
@@ -372,8 +398,8 @@ static void motionFunc(int x, int y)
 {
     double dx, dy;
 
-    dx = ((double) x) - ((double) xlast);
-    dy = ((double) y) - ((double) ylast);
+    dx = (double) x - (double) xlast;
+    dy = (double) y - (double) ylast;
 
     xlast = x;
     ylast = y;
@@ -388,6 +414,14 @@ static void motionFunc(int x, int y)
     {
         scene->z -= ZOOMSCALE * dy;
         scene->changed = TRUE;
+    }
+}
+
+static void passiveMotionFunc(int x, int y)
+{
+    if (scene->fullscreen)
+    {
+        mw_finish(EXIT_SUCCESS);
     }
 }
 
@@ -447,10 +481,13 @@ static void assignParticleColors(unsigned int nbody)
     }
 }
 
-int nbodyInitDrawState()
+static int nbodyInitDrawState()
 {
-    color = (FloatPos*) mwCallocA(scene->nbody, sizeof(FloatPos));
-    assignParticleColors(scene->nbody);
+    if (!monochromatic)
+    {
+        color = (FloatPos*) mwCallocA(scene->nbody, sizeof(FloatPos));
+        assignParticleColors(scene->nbody);
+    }
 
     return 0;
 }
@@ -467,7 +504,7 @@ static int setShmemKey()
     return 0;
 }
 
-static int connectSharedScene()
+int connectSharedScene()
 {
     int shmId;
     struct shmid_ds buf;
@@ -510,20 +547,25 @@ static int connectSharedScene()
 
 #else
 
-static int connectSharedScene()
+int connectSharedScene()
 {
     return 0;
 }
 
 #endif /* !BOINC_APPLICATION */
 
-static void sceneInit()
+static void sceneInit(const VisArgs* args)
 {
+    width = args->width == 0 ? 1024 : args->width;
+    height = args->height == 0 ? 768 : args->height;
+    monochromatic = args->monochrome;
+    useGLPoints = args->useGLPoints;
+
     scene->xrot = 0.0f;
     scene->yrot = 0.0f;
     scene->z = -6.0f;
     scene->starsize = STARSIZE;
-    scene->fullscreen = FALSE;
+    scene->fullscreen = args->fullscreen;
     scene->drawaxes = TRUE;
     scene->ntri = NTRI;
     scene->paused = FALSE;
@@ -534,24 +576,24 @@ static void sceneInit()
     scene->usleepdt = USLEEPDT;
 }
 
-int nbodyGLSetup(int* argc, char** argv)
+int nbodyGLSetup(const VisArgs* args)
 {
-    if (connectSharedScene())
-        return 1;
-
-    sceneInit();
-    glutInit(argc, argv);
+    sceneInit(args);
+    nbodyInitDrawState();
 
     /* prepare rendering */
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
+
     glutInitWindowSize(width, height);
     glutInitWindowPosition(0, 0);
+
     window = glutCreateWindow("Milkyway@Home N-body");
     glutDisplayFunc(drawGLScene);
 
     if (scene->fullscreen)
     {
         glutFullScreen();
+        glutPassiveMotionFunc(passiveMotionFunc);
     }
 
     glutIdleFunc(drawGLScene);

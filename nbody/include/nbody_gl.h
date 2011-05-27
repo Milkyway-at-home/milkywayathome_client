@@ -27,8 +27,25 @@
 
 #include "nbody_graphics.h"
 
-int nbodyGLSetup(int* argc, char** argv);
-int nbodyInitDrawState();
+typedef struct
+{
+    int fullscreen;
+    int width;
+    int height;
+
+    int monochrome;
+    int useGLPoints;
+
+    /* pid_t pid */
+    /* char* nbody bin */
+
+} VisArgs;
+
+#define EMPTY_VIS_ARGS { FALSE, 0, 0, FALSE, FALSE }
+
+
+int connectSharedScene();
+int nbodyGLSetup(const VisArgs* args);
 void nbodyGLCleanup();
 
 #ifndef _WIN32

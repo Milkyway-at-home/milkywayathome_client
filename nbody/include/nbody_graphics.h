@@ -25,9 +25,6 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
-#include "nbody.h"
-#include "nbody_types.h"
-
 /* "mw_nbody" */
 #define DEFAULT_SHMEM_KEY ((key_t) 0x6d775f6e626f6479)
 
