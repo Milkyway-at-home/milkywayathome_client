@@ -215,9 +215,10 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 #if NBODY_GL && !BOINC_APPLICATION
 static void launchVisualizer()
 {
+    static const char* const argv[] = { NBODY_GRAPHICS_NAME, NULL };
     pid_t pid;
-    const char* const argv[] = { "../bin/nbody_visualizer", NULL };
-    const char* const envp[] = { NULL };
+    char* path = NULL;
+    char* newPath = NULL;
 
     pid = fork();
     if (pid != 0)  /* Parent */
@@ -229,9 +230,33 @@ static void launchVisualizer()
         /* Hack to close the shared memory access we inherit so we
          * don't count it when the visualizer actually opens it again */
         perror("Detaching child from shared");
+        return;
     }
 
-    if (execve(argv[0], argv, envp) < 0)
+    /* Put places convenient for testing. Not essential, failure of
+     * any of these is OK */
+    path = getenv("PATH");
+    if (!path)
+    {
+        perror("Error getting PATH");
+    }
+    else
+    {
+        if (asprintf(&newPath, ".:../bin/:%s", path) < 0)
+        {
+            perror("Appending to path");
+        }
+        else
+        {
+            if (setenv("PATH", newPath, TRUE) < 0)
+            {
+                perror("Error setting PATH");
+            }
+            free(newPath);
+        }
+    }
+
+    if (execvp(argv[0], argv) < 0)
     {
         perror("Failed to launch visualizer");
     }

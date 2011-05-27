@@ -27,6 +27,7 @@
 
 /* "mw_nbody" */
 #define DEFAULT_SHMEM_KEY ((key_t) 0x6d775f6e626f6479)
+#define NBODY_GRAPHICS_NAME "nbody_visualizer"
 
 typedef struct
 {
