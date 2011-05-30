@@ -34,10 +34,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <crlibm.h>
 #endif /* NBODY_CRLIBM */
 
-#if NBODY_GL
-  #include "nbody_gl.h"
-#endif
-
 
 #if !BOINC_APPLICATION
 static void nbodyPrintVersion() { }
@@ -317,10 +313,6 @@ int main(int argc, char* argv[])
 
     specialSetup();
 
-  #if NBODY_GL
-    nbodyInitShmemKey(argv[0]);
-  #endif
-
     if (readParameters(argc, argv, &nbf))
         exit(EXIT_FAILURE);
 
@@ -329,10 +321,6 @@ int main(int argc, char* argv[])
         warn("Failed to init BOINC\n");
         exit(EXIT_FAILURE);
     }
-
-  #if NBODY_GL
-    /* share things */
-  #endif /* NBODY_GL */
 
     nbodyPrintVersion();
     setDefaultFlags(&nbf);

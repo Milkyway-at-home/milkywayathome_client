@@ -21,41 +21,56 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdlib.h>
 #include "nbody.h"
 #include "nbody_priv.h"
 #include "milkyway_util.h"
 #include "nbody_grav.h"
 #include "nbody_show.h"
 #include "nbody_lua.h"
+#include "milkyway_cpp_util.h"
 
-#if NBODY_GL
-  #include "nbody_gl.h"
-
-  #if !BOINC_APPLICATION && defined(_WIN32)
-    #error Windows N-body visualizer not supported without BOINC
-  #elif !BOINC_APPLICATION
-    #include <sys/shm.h>
-  #else
-    #include "milkyway_cpp_util.h"
-  #endif
+#if USE_SHMEM
+  #include <sys/shm.h>
 #endif
 
+#if USE_SHMEM
 
-#if NBODY_GL
-
-static scene_t* scene = NULL;
-static int shmId = -1;
-static key_t key = -1;
-
-#endif
-
-#if NBODY_GL && !BOINC_APPLICATION
-
-int nbodyInitShmemKey(const char* progName)
+static void* createSharedMemory(key_t key, size_t size, int* shmIdOut)
 {
+    int shmId;
+    void* p;
+
+    shmId = shmget(key, size, IPC_CREAT | SHM_W | SHM_R);
+    if (shmId < 0)
+    {
+        perror("Error getting shared memory");
+        return NULL;
+    }
+
+    p = shmat(shmId, NULL, 0);
+    if (!p || p == (void*) -1)
+    {
+        perror("Getting shared memory");
+        return NULL;
+    }
+
+    memset(p, 0, size);
+
+    if (shmIdOut)
+        *shmIdOut = shmId;
+
+    return p;
+}
+
+static int createSharedScene(NBodyState* st, const char* inputFile)
+{
+    key_t key;
+    size_t size;
+    int shmId = -1;
+
+    size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
     key = DEFAULT_SHMEM_KEY;
-    //key = ftok(progName, getpid());
+    //key = ftok(inputFile, getpid());
     if (key < 0)
     {
         key = DEFAULT_SHMEM_KEY;
@@ -63,86 +78,71 @@ int nbodyInitShmemKey(const char* progName)
         return 1;
     }
 
-    return 0;
-}
-
-static int createSharedScene(const NBodyState* st)
-{
-    size_t size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
-
-    shmId = shmget(key, size, IPC_CREAT | SHM_W | SHM_R);
-    if (shmId < 0)
-    {
-        perror("Error getting shared memory");
+    st->scene = (scene_t*) createSharedMemory(key, size, &shmId);
+    if (!st->scene)
         return 1;
-    }
 
-    scene = (scene_t*) shmat(shmId, NULL, 0);
-    if (!scene || scene == (scene_t*) -1)
-    {
-        perror("Getting shared scene");
-        return 1;
-    }
-
-    memset(scene, 0, size);
-    scene->nbody = st->nbody;
+    st->shmId = shmId;
+    st->scene->nbody = st->nbody;
 
     return 0;
 }
 
-static int visualizerIsAttached()
+static int visualizerIsAttached(const NBodyState* st)
 {
     struct shmid_ds buf;
 
-    if (shmctl(shmId, IPC_STAT, &buf) < 0)
+    if (shmctl(st->shmId, IPC_STAT, &buf) < 0)
     {
         perror("Finding attached visualizers");
         return 0;
     }
+
     return buf.shm_nattch > 1;
 }
 
-#elif NBODY_GL && BOINC_APPLICATION
+#elif USE_BOINC_SHMEM
 
-int nbodyInitShmemKey(const char* progName)
+static int createSharedScene(NBodyState* st, const char* inputFile)
 {
-    return 0;
-}
+    size_t size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
 
-static int createSharedScene(const NBodyState* st)
-{
-    int size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
-
-    scene = (scene_t*) boinc_graphics_make_shmem("milkyway_nbody", size);
-    if (!scene)
+    st->scene = (scene_t*) boinc_graphics_make_shmem("milkyway_nbody", (int) size);
+    if (!st->scene)
     {
         warn("Failed to get shmem of size %d\n", size);
         return 1;
     }
 
-    memset(scene, 0, (size_t) size);
-    scene->nbody = st->nbody;
+    memset(scene, 0, size);
+    st->scene->nbody = st->nbody;
 
     return 0;
 }
 
-static int visualizerIsAttached()
+static int visualizerIsAttached(const NBodyState* st)
 {
     /* TODO */
     return 1;
 }
 
-#endif /* NBODY_GL && !BOINC_APPLICATION */
+#else
+
+static int visualizerIsAttached(const NBodyState* st)
+{
+    return 0;
+}
+
+#endif /* USE_BOINC_SHMEM */
 
 
-#if NBODY_GL
-
-static void updateDisplayedBodies(const NBodyState* st)
+static void updateDisplayedBodies(NBodyState* st)
 {
     const Body* b;
     FloatPos* r;
     unsigned int i = 0;
     const unsigned int nbody = st->nbody;
+    scene_t* scene = st->scene;
 
     if (!scene)
         return;
@@ -170,8 +170,6 @@ static void updateDisplayedBodies(const NBodyState* st)
 
     scene->changed = TRUE;
 }
-
-#endif /* NBODY_GL */
 
 static inline int nbodyTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 {
@@ -207,8 +205,8 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
   #endif /* BOINC_APPLICATION */
 }
 
-#if NBODY_GL && !BOINC_APPLICATION
-static void launchVisualizer()
+#ifndef _WIN32
+static void launchVisualizer(NBodyState* st)
 {
     static const char* const argv[] = { NBODY_GRAPHICS_NAME, NULL };
     pid_t pid;
@@ -220,7 +218,7 @@ static void launchVisualizer()
         return;
 
     /* Child */
-    if (shmdt(scene) < 0)
+    if (shmdt(st->scene) < 0)
     {
         /* Hack to close the shared memory access we inherit so we
          * don't count it when the visualizer actually opens it again */
@@ -256,25 +254,29 @@ static void launchVisualizer()
         perror("Failed to launch visualizer");
     }
 }
-#endif /* NBODY_GL && !BOINC_APPLICATION */
+
+#else
+
+static void launchVisualizer(NBodyState* st)
+{
+    warn("Launching visualizer from main application not unimplemented on Windows\n");
+}
+
+#endif /* _WIN32 */
 
 static int runSystem(const NBodyCtx* ctx, NBodyState* st, int visualizer)
 {
     const real tstop = ctx->timeEvolve - ctx->timestep / 1024.0;
 
-   #if NBODY_GL && !BOINC_APPLICATION
     if (visualizer)
-        launchVisualizer();
-   #endif
+        launchVisualizer(st);
 
     while (st->tnow < tstop)
     {
-      #if NBODY_GL
-        if (visualizerIsAttached())
+        if (visualizerIsAttached(st))
         {
             updateDisplayedBodies(st);
         }
-      #endif /* NBODY_GL */
 
         if (stepSystem(ctx, st))   /* advance N-body system */
             return 1;
@@ -385,7 +387,7 @@ int runNBodySimulation(const NBodyFlags* nbf)
         ts = mwGetTime();
 
 
-    if (createSharedScene(st))
+    if (createSharedScene(st, nbf->inputFile))
     {
         return warn1("Failed to create shared scene\n");
     }

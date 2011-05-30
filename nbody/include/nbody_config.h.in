@@ -48,6 +48,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define EXTRALIB
 #endif
 
+#if !BOINC_APPLICATION && !defined(_WIN32)
+  #define USE_SHMEM 1
+#elif BOINC_APPLICATION
+  #define USE_BOINC_SHMEM 1
+#endif
+
+
 
 #define BOINC_NBODY_APP_VERSION "milkywayathome nbody ${nbody_VERSION} ${CMAKE_SYSTEM_NAME} " ARCH_STRING " " PRECSTRING EXTRAVER EXTRALIB
 

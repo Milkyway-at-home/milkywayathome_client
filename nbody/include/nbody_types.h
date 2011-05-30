@@ -69,6 +69,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_math.h"
 #include "milkyway_extra.h"
 #include "milkyway_util.h"
+#include "nbody_graphics.h"
 
 #include <lua.h>
 #include <time.h>
@@ -302,11 +303,14 @@ typedef struct NBODY_ALIGN
 
     FILE* outFile;            /* file for snapshot output */
     char* checkpointResolved;
+
+    scene_t* scene;
+    int shmId;
 } NBodyState;
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, NAN, 0, NULL, NULL, FALSE, NULL, NULL }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, NAN, 0, NULL, NULL, FALSE, NULL, NULL, NULL, -1 }
 
 
 typedef struct

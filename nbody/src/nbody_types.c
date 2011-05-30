@@ -74,9 +74,18 @@ int destroyNBodyState(NBodyState* st)
         if (fclose(st->outFile))
         {
             perror("closing output\n");
-            return TRUE;
         }
     }
+
+  #if USE_SHMEM
+    if (st->scene)
+    {
+        if (shmdt(st->scene) < 0)
+            perror("Closing shared memory");
+        st->shmId = -1;
+        st->scene = NULL;
+    }
+  #endif /* _WIN32 */
 
     return FALSE;
 }
