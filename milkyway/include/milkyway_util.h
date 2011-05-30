@@ -21,6 +21,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_UTIL_H_
 #define _MILKYWAY_UTIL_H_
 
+#include "milkyway_config.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -38,7 +40,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <popt.h>
 
-#include "milkyway_config.h"
 #include "milkyway_extra.h"
 #include "milkyway_math.h"
 #include "mw_boinc_util.h"
