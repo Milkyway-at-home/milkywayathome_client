@@ -403,6 +403,7 @@ typedef enum
                          0, 0, EMPTY_HISTOGRAM_PARAMS }
 
 int destroyNBodyState(NBodyState* st);
+int detachSharedScene(NBodyState* st);
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, unsigned int nbody);
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt);
 int equalNBodyState(const NBodyState* st1, const NBodyState* st2);

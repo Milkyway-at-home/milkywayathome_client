@@ -60,8 +60,29 @@ static void freeFreeCells(NBodyNode* freecell)
     }
 }
 
+int detachSharedScene(NBodyState* st)
+{
+ #if USE_SHMEM
+    if (st->scene)
+    {
+        if (shmdt(st->scene) < 0)
+        {
+            perror("Closing shared memory");
+            return 1;
+        }
+
+        st->shmId = -1;
+        st->scene = NULL;
+    }
+  #endif /* _WIN32 */
+
+    return 0;
+}
+
 int destroyNBodyState(NBodyState* st)
 {
+    int failed = FALSE;
+
     freeNBodyTree(&st->tree);
     freeFreeCells(st->freecell);
     mwFreeA(st->bodytab);
@@ -74,20 +95,13 @@ int destroyNBodyState(NBodyState* st)
         if (fclose(st->outFile))
         {
             perror("closing output\n");
+            failed = TRUE;
         }
     }
 
-  #if USE_SHMEM
-    if (st->scene)
-    {
-        if (shmdt(st->scene) < 0)
-            perror("Closing shared memory");
-        st->shmId = -1;
-        st->scene = NULL;
-    }
-  #endif /* _WIN32 */
+    failed |= detachSharedScene(st);
 
-    return FALSE;
+    return failed;
 }
 
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, unsigned int nbody)

@@ -48,6 +48,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define EXTRALIB
 #endif
 
+
 #if !BOINC_APPLICATION && !defined(_WIN32)
   #define USE_SHMEM 1
 #elif BOINC_APPLICATION
