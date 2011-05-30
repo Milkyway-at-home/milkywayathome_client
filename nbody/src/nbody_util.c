@@ -1,6 +1,6 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
+/*
+Copyright (C) 2011  Matthew Arsenault
+Copyright (c) 2011 Rensselaer Polytechnic Institute.
 
 This file is part of Milkway@Home.
 
@@ -18,26 +18,28 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_PRIV_H_
-#define _NBODY_PRIV_H_
-
-#include "nbody_config.h" /* Must be included first */
-
+#include "nbody_util.h"
 #include "milkyway_math.h"
 
-#include "nbody_types.h"
-#include "nbody_grav.h"
-#include "nbody_chisq.h"
-#include "nbody_tree.h"
-#include "nbody_potential.h"
-#include "nbody_orbit_integrator.h"
-#include "nbody_step.h"
-#include "nbody_show.h"
-#include "nbody_io.h"
-#include "nbody_checkpoint.h"
-#include "nbody_lua.h"
-#include "nbody_coordinates.h"
-#include "nbody_util.h"
+mwvector nbodyCenterOfMass(const NBodyState* st)
+{
+    unsigned int i;
+    const Body* b;
+    mwvector cm = ZERO_VECTOR;
+    mwvector tmp;
+    real mass = 0.0;
 
-#endif /* _NBODY_PRIV_H_ */
+    for (i = 0; i < st->nbody; ++i)
+    {
+        b = &st->bodytab[i];
+
+        tmp = mw_mulvs(Pos(b), Mass(b));
+        mass += Mass(b);
+        mw_incaddv(cm, tmp);
+    }
+
+    mw_incdivs(cm, mass);
+
+    return cm;
+}
 

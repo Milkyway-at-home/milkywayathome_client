@@ -239,3 +239,4 @@ void updateDisplayedBodies(NBodyState* st)
     scene->changed = TRUE;
 }
 
+
