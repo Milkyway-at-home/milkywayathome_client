@@ -33,6 +33,7 @@
 #include "nbody_gl.h"
 #include "nbody_graphics.h"
 #include "nbody_types.h"
+#include "milkyway_cpp_util.h"
 
 #if !BOINC_APPLICATION
   #include <sys/shm.h>
@@ -551,9 +552,35 @@ int connectSharedScene()
 
 #else
 
+static int attemptConnectSharedScene()
+{
+    scene = (scene_t*) mw_graphics_get_shmem(NBODY_BIN_NAME);
+    return (scene != NULL);
+}
+
+#define MAX_TRIES 5
+#define RETRY_INTERVAL 250
+
+/* In case the main application isn't ready yet, try and wait for a while */
 int connectSharedScene()
 {
-    return 0;
+    int tries = 0;
+
+    while (tries < MAX_TRIES)
+    {
+        if (attemptConnectSharedScene())
+        {
+            return 0;
+        }
+
+        mwMilliSleep(RETRY_INTERVAL);
+
+        ++tries;
+    }
+
+    warn("Could not attach to simulation after %d attempts\n", MAX_TRIES);
+
+    return 1;
 }
 
 #endif /* !BOINC_APPLICATION */

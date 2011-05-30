@@ -24,6 +24,7 @@ CTestTestfile.cmake
 cmake_install.cmake
 boinc_finish_called
 boinc_lockfile
+boinc_milkyway_*
 tests/init_data.xml
 tests/out
 tests/stars.txt

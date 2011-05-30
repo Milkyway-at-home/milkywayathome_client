@@ -104,7 +104,7 @@ int createSharedScene(NBodyState* st, const char* inputFile)
 {
     size_t size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
 
-    st->scene = (scene_t*) boinc_graphics_make_shmem("milkyway_nbody", (int) size);
+    st->scene = (scene_t*) mw_graphics_make_shmem(NBODY_BIN_NAME, (int) size);
     if (!st->scene)
     {
         warn("Failed to get shmem of size %d\n", (int) size);
@@ -159,7 +159,6 @@ void launchVisualizer(NBodyState* st)
 
     /* Hack to close the shared memory access we inherit so we
      * don't count it when the visualizer actually opens it again */
-
     if (detachSharedScene(st))
     {
         warn("Error detaching child from shared");

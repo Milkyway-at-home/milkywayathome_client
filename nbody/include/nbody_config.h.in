@@ -55,7 +55,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define USE_BOINC_SHMEM 1
 #endif
 
-
+#define NBODY_BIN_NAME "${nbody_bin_name}"
 
 #define BOINC_NBODY_APP_VERSION "milkywayathome nbody ${nbody_VERSION} ${CMAKE_SYSTEM_NAME} " ARCH_STRING " " PRECSTRING EXTRAVER EXTRALIB
 
