@@ -37,12 +37,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #elif !BOINC_APPLICATION
     #include <sys/shm.h>
   #else
-    // FIXME: More broken boinc headers requiring C++ for no reason
-    // extern void boinc_graphics_loop(int argc, char** argv, const char* title=0);
-
-    //#include <boinc/graphics2.h>
-    extern void* boinc_graphics_make_shmem(const char*, int);
-    extern void* boinc_graphics_get_shmem(const char*);
+    #include "milkyway_cpp_util.h"
   #endif
 #endif
 

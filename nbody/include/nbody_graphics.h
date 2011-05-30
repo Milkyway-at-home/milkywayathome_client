@@ -21,10 +21,6 @@
 #ifndef _NBODY_GRAPHICS_H_
 #define _NBODY_GRAPHICS_H_
 
-#include <GL/glut.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-
 /* "mw_nbody" */
 #define DEFAULT_SHMEM_KEY ((key_t) 0x6d775f6e626f6479)
 #define NBODY_GRAPHICS_NAME "nbody_visualizer"
@@ -38,10 +34,10 @@ typedef struct
 typedef struct
 {
     int nbody;
-    GLfloat z;
-    GLfloat xrot;
-    GLfloat yrot;
-    GLfloat starsize;
+    float z;
+    float xrot;
+    float yrot;
+    float starsize;
     int fullscreen;
     int drawaxes;
     int ntri;
