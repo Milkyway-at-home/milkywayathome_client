@@ -64,12 +64,12 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
   #endif /* BOINC_APPLICATION */
 }
 
-static int runSystem(const NBodyCtx* ctx, NBodyState* st, int visualizer)
+static int runSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     const real tstop = ctx->timeEvolve - ctx->timestep / 1024.0;
 
-    if (visualizer)
-        launchVisualizer(st);
+    if (nbf->visualizer)
+        launchVisualizer(st, nbf->visArgs);
 
     while (st->tnow < tstop)
     {
@@ -191,7 +191,7 @@ int runNBodySimulation(const NBodyFlags* nbf)
 
 
     ts = mwGetTime();
-    rc = runSystem(ctx, st, nbf->visualizer);
+    rc = runSystem(ctx, st, nbf);
     if (rc)
         return warn1("Error running system\n");
     te = mwGetTime();

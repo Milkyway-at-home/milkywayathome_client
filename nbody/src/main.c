@@ -184,6 +184,12 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
         },
 
         {
+            "visualizer-args", '\0',
+            POPT_ARG_STRING, &nbf->visArgs,
+            0, "Command line to pass on to visualizer", NULL
+        },
+
+        {
             "ignore-checkpoint", 'i',
             POPT_ARG_NONE, &nbf->ignoreCheckpoint,
             0, "Ignore the checkpoint file", NULL
@@ -287,6 +293,7 @@ static void freeNBodyFlags(NBodyFlags* nbf)
     free(nbf->histogramFileName);
     free(nbf->histoutFileName);
     free(nbf->forwardedArgs);
+    free(nbf->visArgs);
 }
 
 #ifdef _OPENMP

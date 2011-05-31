@@ -40,6 +40,7 @@ typedef struct
     char* checkpointFileName;
     char* histogramFileName;
     char* histoutFileName;
+    char* visArgs;
 
     const char** forwardedArgs;
     unsigned int numForwardedArgs;
@@ -59,7 +60,7 @@ typedef struct
     time_t checkpointPeriod;
 } NBodyFlags;
 
-#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 
 int verifyFile(const NBodyFlags* nbf);
 int runNBodySimulation(const NBodyFlags* nbf);

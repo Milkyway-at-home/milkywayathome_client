@@ -150,12 +150,17 @@ int visualizerIsAttached(const NBodyState* st)
 
 #ifndef _WIN32
 
-void launchVisualizer(NBodyState* st)
+void launchVisualizer(NBodyState* st, const char* visArgs)
 {
-    static const char* const argv[] = { NBODY_GRAPHICS_NAME, NULL };
     pid_t pid;
     char* path = NULL;
     char* newPath = NULL;
+    int argc = 0;
+    char* buf = NULL;
+    char** argv = NULL;
+    size_t argvSize = 0;
+    size_t visArgsLen = 0;
+    static const char visName[] = NBODY_GRAPHICS_NAME;
 
     if (!st->scene) /* If there's no scene to share, there's no point */
         return;
@@ -197,10 +202,35 @@ void launchVisualizer(NBodyState* st)
         }
     }
 
+    /* Stick the program name at the head of the arguments passed in */
+    visArgsLen = visArgs ? strlen(visArgs) : 0;
+    argvSize = visArgsLen + sizeof(visName) + 2; /* arguments + program name + space + null */
+    buf = mwCalloc(argvSize, sizeof(char));
+
+    strcat(buf, visName);
+    strcat(buf, " ");
+    if (visArgs)
+    {
+        strcat(buf, visArgs);
+    }
+
+    if (poptParseArgvString(buf, &argc, (const char***) &argv))
+    {
+        free(buf);
+        free(path);
+        warn("Error parsing arguments for visualizer '%s'\n", visArgs);
+        return;
+    }
+
     if (execvp(argv[0], argv) < 0)
     {
         perror("Failed to launch visualizer");
     }
+
+    free(buf);
+    free(argv);
+
+    mw_finish(EXIT_SUCCESS);  /* Unnecessary */
 }
 
 #else
