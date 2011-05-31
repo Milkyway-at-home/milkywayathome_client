@@ -94,19 +94,22 @@ static int runSystem(const NBodyCtx* ctx, NBodyState* st, int visualizer)
     return 0;
 }
 
-static void endRun(NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, const real chisq)
-{
-    finalOutput(ctx, st, nbf, chisq);
-    destroyNBodyState(st);
-}
-
 static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
 {
+    if (resolveCheckpoint(st, nbf->checkpointFileName))
+    {
+        warn("Failed to resolve checkpoint\n");
+        return NBODY_ERROR;
+    }
+
     /* If the checkpoint exists, try to use it */
     if (nbf->ignoreCheckpoint || !resolvedCheckpointExists(st))
     {
         if (setupNBody(ctx, st, hp, nbf))
-            return warn1("Failed to read input parameters file\n");
+        {
+            warn("Failed to read input parameters file\n");
+            return NBODY_ERROR;
+        }
     }
     else
     {
@@ -136,7 +139,7 @@ static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
     ctx->checkpointT = nbf->checkpointPeriod;
 }
 
-static int verifyFile(const NBodyFlags* nbf)
+int verifyFile(const NBodyFlags* nbf)
 {
     int rc;
     NBodyCtx ctx  = EMPTY_NBODYCTX;
@@ -170,35 +173,32 @@ int runNBodySimulation(const NBodyFlags* nbf)
     real chisq;
     double ts = 0.0, te = 0.0;
 
-    if (nbf->verifyOnly)
-        return verifyFile(nbf);
-
-    if (resolveCheckpoint(st, nbf->checkpointFileName))
-        return warn1("Failed to resolve checkpoint\n");
-
-    if (setupRun(ctx, st, &ctx->histogramParams, nbf))
-        return warn1("Failed to setup run\n");
-
     nbodySetCtxFromFlags(ctx, nbf);
-    if (initOutput(st, nbf))
-        return warn1("Failed to open output files\n");
+    if (setupRun(ctx, st, &ctx->histogramParams, nbf))
+    {
+        return warn1("Failed to setup run\n");
+    }
 
-    if (nbf->printTiming)     /* Time the body of the calculation */
-        ts = mwGetTime();
+    if (initOutput(st, nbf))
+    {
+        return warn1("Failed to open output files\n");
+    }
 
     if (createSharedScene(st, ctx, nbf->inputFile))
     {
         return warn1("Failed to create shared scene\n");
     }
 
+
+    ts = mwGetTime();
     rc = runSystem(ctx, st, nbf->visualizer);
     if (rc)
         return warn1("Error running system\n");
+    te = mwGetTime();
 
     if (nbf->printTiming)
     {
-        te = mwGetTime();
-        printf("<run_time> %g </run_time>\n", te - ts);
+        printf("<run_time> %f </run_time>\n", te - ts);
     }
 
     /* Get the likelihood */
@@ -209,7 +209,8 @@ int runNBodySimulation(const NBodyFlags* nbf)
         rc = 1;
     }
 
-    endRun(ctx, st, nbf, chisq);
+    finalOutput(ctx, st, nbf, chisq);
+    destroyNBodyState(st);
 
     return rc;
 }

@@ -326,11 +326,18 @@ int main(int argc, char* argv[])
     setDefaultFlags(&nbf);
     setNumThreads(nbf.numThreads);
 
-    rc = runNBodySimulation(&nbf);
-    if (nbf.cleanCheckpoint)
+    if (nbf.verifyOnly)
     {
-        mw_report("Removing checkpoint file '%s'\n", nbf.checkpointFileName);
-        mw_remove(nbf.checkpointFileName);
+        rc = verifyFile(&nbf);
+    }
+    else
+    {
+        rc = runNBodySimulation(&nbf);
+        if (nbf.cleanCheckpoint)
+        {
+            mw_report("Removing checkpoint file '%s'\n", nbf.checkpointFileName);
+            mw_remove(nbf.checkpointFileName);
+        }
     }
 
     freeNBodyFlags(&nbf);

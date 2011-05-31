@@ -61,7 +61,7 @@ typedef struct
 
 #define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 
-void createSpoon(NBodyState* st);
+int verifyFile(const NBodyFlags* nbf);
 int runNBodySimulation(const NBodyFlags* nbf);
 
 #ifdef _cplusplus
