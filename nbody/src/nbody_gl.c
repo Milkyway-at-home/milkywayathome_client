@@ -114,7 +114,9 @@ static void initGL(int w, int h)
 
     glClearDepth(1.0);
     glDepthFunc(GL_LESS);
-    glEnable(GL_DEPTH_TEST | GL_POINT_SMOOTH);
+    glEnable(GL_DEPTH_TEST | GL_POINT_SMOOTH | GL_BLEND | GL_ALPHA_TEST);
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glShadeModel(GL_SMOOTH);
 
@@ -153,6 +155,99 @@ static void resizeGLScene(int w, int h)
     scene->changed = TRUE;
 }
 
+#define GALACTIC_RADIUS 15.33f
+#define GALACTIC_BULGE_RADIUS 1.5f
+#define GALACTIC_DISK_THICKNESS 0.66f
+
+#define AXES_LENGTH (1.25f * GALACTIC_RADIUS / SCALE)
+
+static void drawSimpleGalaxy()
+{
+    glColor4f(0.643f, 0.706f, 0.867f, 0.85f);
+    gluCylinder(quadratic,
+                GALACTIC_RADIUS / SCALE,
+                GALACTIC_RADIUS / SCALE,
+                GALACTIC_DISK_THICKNESS / SCALE,
+                100,
+                20);
+
+    /* Put caps on the disk */
+    glTranslatef(0.0f, 0.5f * GALACTIC_DISK_THICKNESS / SCALE, 0.0f);
+    gluDisk(quadratic, 0.0, (GLdouble) GALACTIC_RADIUS / SCALE, 100, 50);
+    glTranslatef(0.0f, -0.5f * GALACTIC_DISK_THICKNESS / SCALE, 0.0f);
+    gluDisk(quadratic, 0.0, (GLdouble) GALACTIC_RADIUS / SCALE, 100, 50);
+
+
+    glColor4f(0.98f, 0.835f, 0.714f, 0.85f);
+    gluSphere(quadratic, GALACTIC_BULGE_RADIUS / SCALE, 50, 50);
+}
+
+static void drawAxes()
+{
+    glColor3f(1.0, 0.0, 0.0);  /* x axis */
+    glBegin(GL_LINES);
+    glVertex3f(0.0, 0.0, 0.0);
+    glVertex3f(AXES_LENGTH, 0.0, 0.0);
+    glEnd();
+
+    glColor3f(0.0, 1.0, 0.0);  /* y axis */
+    glBegin(GL_LINES);
+    glVertex3f(0.0, 0.0, 0.0);
+    glVertex3f(0.0, AXES_LENGTH, 0.0);
+    glEnd();
+
+    glColor3f(0.0, 0.0, 1.0); /* z axis */
+    glBegin(GL_LINES);
+    glVertex3f(0.0, 0.0, 0.0);
+    glVertex3f(0.0, 0.0, AXES_LENGTH);
+    glEnd();
+}
+
+/* draw stars */
+static void drawPoints()
+{
+    int i;
+    int nbody = scene->nbody;
+    FloatPos* r = &scene->r[0];
+
+    if (useGLPoints)
+    {
+        glPointSize(scene->starsize);  /* Is this actually working? */
+        glBegin(GL_POINTS);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        for (i = 0; i < nbody; ++i)
+        {
+            glVertex3f(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
+        }
+        glEnd();
+    }
+    else
+    {
+        /* FIXME: Use modern OpenGL stuff */
+        for (i = 0; i < nbody; ++i)
+        {
+            glLoadIdentity();
+            glTranslatef(0.0f, 0.0f, scene->z);
+            glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
+            glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
+
+            glTranslatef(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
+
+            if (monochromatic)
+            {
+                glColor3f(white.x, white.y, white.z);
+            }
+            else
+            {
+                glColor3f(color[i].x, color[i].y, color[i].z);
+            }
+            /* glutSolidSphere(scene->starsize, scene->ntri, scene->ntri); */
+            gluSphere(quadratic, scene->starsize, scene->ntri, scene->ntri);
+            /* glTranslatef(-r[i].x/SCALE, -r[i].y/SCALE, -r[i].z/SCALE); */
+        }
+    }
+}
+
 /* The main drawing function.  Technically there's a race condition
    between drawing and writing new values from the simulation for the
    body positions. I'm lazy and It doesn't need to be displayed 100%
@@ -160,10 +255,6 @@ static void resizeGLScene(int w, int h)
  */
 static void drawGLScene()
 {
-    unsigned int i = 0;
-    int nbody = scene->nbody;
-    FloatPos* r;
-
     if (!scene)
         return;
 
@@ -179,72 +270,24 @@ static void drawGLScene()
         glLoadIdentity();
 
         /* get ready to render 3D objects */
-        glTranslatef(0.0f, 0.0f, scene->z + 0.1);
+        glTranslatef(0.0f, 0.0f, scene->z + 0.1f);
 
         /* rotate view--I know these two rotation matrices don't commute */
         glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
         glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
 
+        if (scene->drawGalaxy)
+        {
+            drawSimpleGalaxy();
+        }
+
         /* draw axes */
         if (scene->drawaxes)
         {
-            glColor3f(1.0, 0.0, 0.0);
-            glBegin(GL_LINES);
-            glVertex3f(0.0, 0.0, 0.0);
-            glVertex3f(1.0, 0.0, 0.0);
-            glEnd();
-            glColor3f(0.0, 1.0, 0.0);
-            glBegin(GL_LINES);
-            glVertex3f(0.0, 0.0, 0.0);
-            glVertex3f(0.0, 1.0, 0.0);
-            glEnd();
-            glColor3f(0.0, 0.0, 1.0);
-            glBegin(GL_LINES);
-            glVertex3f(0.0, 0.0, 0.0);
-            glVertex3f(0.0, 0.0, 1.0);
-            glEnd();
+            drawAxes();
         }
 
-        r = &scene->r[0];
-        /* draw stars */
-
-        if (useGLPoints)
-        {
-            glPointSize(scene->starsize);  /* Is this actually working? */
-            glBegin(GL_POINTS);
-            glColor3f(1.0f, 1.0f, 1.0f);
-            for (i = 0; i < nbody; ++i)
-            {
-                glVertex3f(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
-            }
-            glEnd();
-        }
-        else
-        {
-            /* FIXME: Use modern OpenGL stuff */
-            for (i = 0; i < nbody; ++i)
-            {
-                glLoadIdentity();
-                glTranslatef(0.0f, 0.0f, scene->z);
-                glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
-                glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
-
-                glTranslatef(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
-
-                if (monochromatic)
-                {
-                    glColor3f(white.x, white.y, white.z);
-                }
-                else
-                {
-                    glColor3f(color[i].x, color[i].y, color[i].z);
-                }
-                /* glutSolidSphere(scene->starsize, scene->ntri, scene->ntri); */
-                gluSphere(quadratic, scene->starsize, scene->ntri, scene->ntri);
-                /* glTranslatef(-r[i].x/SCALE, -r[i].y/SCALE, -r[i].z/SCALE); */
-            }
-        }
-
+        drawPoints();
         glutSwapBuffers();
     }
 }
@@ -592,9 +635,9 @@ static void sceneInit(const VisArgs* args)
     monochromatic = args->monochrome;
     useGLPoints = args->useGLPoints;
 
-    scene->xrot = 0.0f;
-    scene->yrot = 0.0f;
-    scene->z = -6.0f;
+    scene->xrot = -60.0f;
+    scene->yrot = -15.0f;
+    scene->z = -8.0f;
     scene->starsize = STARSIZE;
     scene->fullscreen = args->fullscreen;
     scene->drawaxes = TRUE;

@@ -25,6 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_show.h"
 #include "nbody_lua.h"
 #include "milkyway_cpp_util.h"
+#include "nbody_shmem.h"
 
 #if USE_SHMEM
   #include <sys/shm.h>
@@ -59,7 +60,7 @@ static void* createSharedMemory(key_t key, size_t size, int* shmIdOut)
     return p;
 }
 
-int createSharedScene(NBodyState* st, const char* inputFile)
+int createSharedScene(NBodyState* st, const NBodyCtx* ctx, const char* inputFile)
 {
     key_t key;
     size_t size;
@@ -81,6 +82,7 @@ int createSharedScene(NBodyState* st, const char* inputFile)
 
     st->shmId = shmId;
     st->scene->nbody = st->nbody;
+    st->scene->drawGalaxy = (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT);
 
     return 0;
 }
@@ -100,7 +102,7 @@ int visualizerIsAttached(const NBodyState* st)
 
 #elif USE_BOINC_SHMEM
 
-int createSharedScene(NBodyState* st, const char* inputFile)
+int createSharedScene(NBodyState* st, const NBodyCtx* ctx, const char* inputFile)
 {
     size_t size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
 
@@ -113,6 +115,7 @@ int createSharedScene(NBodyState* st, const char* inputFile)
 
     memset(st->scene, 0, size);
     st->scene->nbody = st->nbody;
+    st->scene->drawGalaxy = (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT);
 
     return 0;
 }
@@ -202,7 +205,6 @@ void launchVisualizer(NBodyState* st)
 }
 
 #endif /* _WIN32 */
-
 
 void updateDisplayedBodies(NBodyState* st)
 {

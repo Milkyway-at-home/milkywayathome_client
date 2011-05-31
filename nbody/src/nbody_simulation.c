@@ -186,8 +186,7 @@ int runNBodySimulation(const NBodyFlags* nbf)
     if (nbf->printTiming)     /* Time the body of the calculation */
         ts = mwGetTime();
 
-
-    if (createSharedScene(st, nbf->inputFile))
+    if (createSharedScene(st, ctx, nbf->inputFile))
     {
         return warn1("Failed to create shared scene\n");
     }

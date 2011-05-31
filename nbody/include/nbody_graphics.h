@@ -34,6 +34,7 @@ typedef struct
 typedef struct
 {
     int nbody;
+    int drawGalaxy;
     float z;
     float xrot;
     float yrot;
@@ -50,6 +51,8 @@ typedef struct
     double usleepcount;
     double usleepdt;
 
+    float startingPositionHint[3];
+    float startingAngleHint[3];
     FloatPos r[];
 } scene_t;
 

@@ -22,7 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nbody_types.h"
 
-int createSharedScene(NBodyState* st, const char* inputFile);
+int createSharedScene(NBodyState* st, const NBodyCtx* ctx, const char* inputFile);
 
 int visualizerIsAttached(const NBodyState* st);
 void launchVisualizer(NBodyState* st);
