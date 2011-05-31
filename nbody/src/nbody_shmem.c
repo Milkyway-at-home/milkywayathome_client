@@ -31,6 +31,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <sys/shm.h>
 #endif
 
+static void prepareSceneFromState(const NBodyCtx* ctx, const NBodyState* st)
+{
+    st->scene->nbody = st->nbody;
+    st->scene->info.timeEvolve = (float) ctx->timeEvolve;
+    st->scene->drawGalaxy = (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT);
+}
+
+
 #if USE_SHMEM
 
 static void* createSharedMemory(key_t key, size_t size, int* shmIdOut)
@@ -81,8 +89,7 @@ int createSharedScene(NBodyState* st, const NBodyCtx* ctx, const char* inputFile
         return 1;
 
     st->shmId = shmId;
-    st->scene->nbody = st->nbody;
-    st->scene->drawGalaxy = (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT);
+    prepareSceneFromState(ctx, st);
 
     return 0;
 }
@@ -114,8 +121,7 @@ int createSharedScene(NBodyState* st, const NBodyCtx* ctx, const char* inputFile
     }
 
     memset(st->scene, 0, size);
-    st->scene->nbody = st->nbody;
-    st->scene->drawGalaxy = (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT);
+    prepareSceneFromState(ctx, st);
 
     return 0;
 }
@@ -219,6 +225,7 @@ void updateDisplayedBodies(NBodyState* st)
 
     r = scene->r;
     scene->usleepcount += scene->usleepdt;
+    scene->info.currentTime = (float) st->tnow;
 
     /* read data if not paused */
     if (scene->usleepcount >= scene->dt && (!scene->paused || scene->step == 1))

@@ -30,6 +30,13 @@ typedef struct
     float x, y, z;
 } FloatPos;
 
+/* Mostly for progress information */
+typedef struct
+{
+    float currentTime;
+    float timeEvolve;
+} SceneInfo;
+
 /* the scene structure */
 typedef struct
 {
@@ -53,6 +60,7 @@ typedef struct
 
     float startingPositionHint[3];
     float startingAngleHint[3];
+    SceneInfo info;
     FloatPos r[];
 } scene_t;
 

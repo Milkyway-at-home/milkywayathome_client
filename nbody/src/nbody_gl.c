@@ -248,6 +248,49 @@ static void drawPoints()
     }
 }
 
+
+static void setOrthographicProjection()
+{
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, width, height, 0);
+    glMatrixMode(GL_MODELVIEW);
+}
+
+static void restorePerspectiveProjection()
+{
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+}
+
+/* http://www.lighthouse3d.com/tutorials/glut-tutorial/bitmap-fonts-and-orthogonal-projections/ */
+static void drawInfo()
+{
+    setOrthographicProjection();
+    glPushMatrix();
+    glLoadIdentity();
+
+
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glRasterPos2i(20, 20);
+
+    char buf[1024];
+
+    snprintf(buf, sizeof(buf),
+             "Time: %4.3f / %4.3f Gyr (%4.3f %%)\n",
+             scene->info.currentTime,
+             scene->info.timeEvolve,
+             100.0f * scene->info.currentTime / scene->info.timeEvolve
+        );
+    glutBitmapString(GLUT_BITMAP_HELVETICA_12, buf);
+
+
+    glPopMatrix();
+    restorePerspectiveProjection();
+}
+
 /* The main drawing function.  Technically there's a race condition
    between drawing and writing new values from the simulation for the
    body positions. I'm lazy and It doesn't need to be displayed 100%
@@ -267,9 +310,9 @@ static void drawGLScene()
 
         /* erase scene */
         glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-        glLoadIdentity();
 
         /* get ready to render 3D objects */
+        glLoadIdentity();
         glTranslatef(0.0f, 0.0f, scene->z + 0.1f);
 
         /* rotate view--I know these two rotation matrices don't commute */
@@ -281,13 +324,14 @@ static void drawGLScene()
             drawSimpleGalaxy();
         }
 
-        /* draw axes */
         if (scene->drawaxes)
         {
             drawAxes();
         }
 
         drawPoints();
+        drawInfo();
+
         glutSwapBuffers();
     }
 }
