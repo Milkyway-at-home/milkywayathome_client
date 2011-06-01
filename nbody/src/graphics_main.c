@@ -95,12 +95,17 @@ int main(int argc, char* argv[])
     int rc;
     VisArgs flags;
 
+    if (mwBoincInit(FALSE, TRUE))
+    {
+        exit(EXIT_FAILURE);
+    }
+
     if (connectSharedScene())
         return 1;
 
     glutInit(&argc, argv);
 
-    if (handleVisArguments(argc, argv, &flags))
+    if (handleVisArguments(argc, (const char**) argv, &flags))
         return 1;
 
     rc = nbodyGLSetup(&flags);
@@ -114,5 +119,4 @@ int main(int argc, char* argv[])
 
     return 0;
 }
-
 

@@ -310,9 +310,8 @@ int main(int argc, char* argv[])
     if (readParameters(argc, argvCopy, &nbf))
         exit(EXIT_FAILURE);
 
-    if (mwBoincInit(argvCopy[0], nbf.debugBOINC))
+    if (mwBoincInit(nbf.debugBOINC, FALSE))
     {
-        warn("Failed to init BOINC\n");
         exit(EXIT_FAILURE);
     }
     free(argvCopy);

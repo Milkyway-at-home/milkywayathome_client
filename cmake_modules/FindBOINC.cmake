@@ -78,4 +78,3 @@ else(BOINC_FOUND)
    endif(Boinc_FIND_REQUIRED)
 endif()
 
-

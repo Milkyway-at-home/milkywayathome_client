@@ -652,10 +652,17 @@ int connectSharedScene()
 
 #else
 
+/* Returns TRUE if connection succeeds */
 static int attemptConnectSharedScene()
 {
     scene = (scene_t*) mw_graphics_get_shmem(NBODY_BIN_NAME);
-    return (scene != NULL);
+    if (!scene)
+    {
+        warn("Failed to connect to shared scene\n");
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 #define MAX_TRIES 5

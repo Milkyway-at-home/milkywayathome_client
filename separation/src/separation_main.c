@@ -410,7 +410,7 @@ static int worker(const SeparationFlags* sf)
     return rc;
 }
 
-static int separationInit(const char* appName, int debugBOINC, MWPriority priority, int setPriority)
+static int separationInit(int debugBOINC, MWPriority priority, int setPriority)
 {
     int rc;
 
@@ -418,7 +418,7 @@ static int separationInit(const char* appName, int debugBOINC, MWPriority priori
     mwDisableDenormalsSSE();
   #endif
 
-    rc = mwBoincInit(appName, debugBOINC);
+    rc = mwBoincInit(debugBOINC, FALSE);
     if (rc)
         return rc;
 
@@ -475,7 +475,7 @@ int main(int argc, const char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    rc = separationInit(argvCopy[0], sf.debugBOINC, sf.processPriority, sf.setPriority);
+    rc = separationInit(sf.debugBOINC, sf.processPriority, sf.setPriority);
     free(argvCopy);
     if (rc)
         return rc;

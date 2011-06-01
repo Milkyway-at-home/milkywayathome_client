@@ -35,16 +35,23 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #if BOINC_APPLICATION
 
-int mwBoincInit(const char* appname, int useDebug)
+static const int debugOptions = BOINC_DIAG_DUMPCALLSTACKENABLED
+                              | BOINC_DIAG_HEAPCHECKENABLED
+                              | BOINC_DIAG_MEMORYLEAKCHECKENABLED;
+
+static int mwBoincInitGraphics(int useDebug)
+{
+    return boinc_init_graphics_diagnostics(useDebug ? debugOptions : BOINC_DIAG_DEFAULTS);
+}
+
+static int mwBoincInitNormal(int useDebug)
 {
     int rc;
     BOINC_OPTIONS options;
 
     if (useDebug)
     {
-        rc = boinc_init_diagnostics(  BOINC_DIAG_DUMPCALLSTACKENABLED
-                                    | BOINC_DIAG_HEAPCHECKENABLED
-                                    | BOINC_DIAG_MEMORYLEAKCHECKENABLED);
+        rc = boinc_init_diagnostics(debugOptions);
     }
     else
     {
@@ -56,6 +63,26 @@ int mwBoincInit(const char* appname, int useDebug)
         rc = boinc_init();
       #endif /* MILKYWAY_OPENCL */
     }
+
+    return rc;
+}
+
+
+int mwBoincInit(int useDebug, int useGraphics)
+{
+    int rc = 0;
+
+    if (useGraphics)
+    {
+        rc = mwBoincInitGraphics(useDebug);
+    }
+    else
+    {
+        rc = mwBoincInitNormal(useDebug);
+    }
+
+    if (rc)
+        warn("Failed to init BOINC\n");
 
     return rc;
 }
@@ -97,7 +124,7 @@ int mw_rename(const char* oldf, const char* newf)
 
 #else /* !BOINC_APPLICATION */
 
-int mwBoincInit(const char* appname, int useDebug)
+int mwBoincInit(int useDebug, int useGraphics)
 {
     return 0;
 }

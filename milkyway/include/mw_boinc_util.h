@@ -59,7 +59,7 @@ extern "C" {
   #define mw_end_critical_section()
 #endif /* BOINC_APPLICATION */
 
-int mwBoincInit(const char* appname, int useDebug);
+int mwBoincInit(int useDebug, int useGraphics);
 char* mwReadFileResolved(const char* filename);
 FILE* mwOpenResolved(const char* filename, const char* mode);
 int mw_rename(const char* oldf, const char* newf);
