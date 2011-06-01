@@ -296,8 +296,12 @@ if(BOINC_RELEASE_NAMES)
 
   get_boinc_bin_name("milkyway_nbody" "${nbody_VERSION}" "${NBODY_PLAN}")
   set(nbody_bin_name "${BOINC_BIN_NAME}")
+
+  get_boinc_bin_name("milkyway_nbody_graphics" "${nbody_VERSION}" "")
+  set(nbody_graphics_bin_name "${BOINC_BIN_NAME}")
 else()
   set(nbody_bin_name "milkyway_nbody")
+  set(nbody_graphics_bin_name "milkyway_nbody_graphics")
 endif()
 
 configure_file (
@@ -325,8 +329,8 @@ if(NBODY_GL)
     list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY} ${BOINC_LIBRARIES})
   endif()
 
-  add_executable(nbody_visualizer ${nbody_screensaver_src} ${nbody_screensaver_headers})
-  target_link_libraries(nbody_visualizer ${vis_link_libs})
+  add_executable(${nbody_graphics_bin_name} ${nbody_screensaver_src} ${nbody_screensaver_headers})
+  target_link_libraries(${nbody_graphics_bin_name} ${vis_link_libs})
 endif()
 
 
