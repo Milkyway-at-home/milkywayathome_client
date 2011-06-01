@@ -19,19 +19,16 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "separation_kernel_types.h"
+
+
 #if I_DONT_KNOW_WHY_THIS_DOESNT_WORK_HERE
   /* Using constant mysteriously doesn't work on Fermi */
   #define __constant __global
 #endif
 
-#ifdef __FAST_RELAXED_MATH__
-  #error "Bad bad bad bad bad"
-#endif /* __FAST_RELAXED_MATH__ */
-
 #define cube(x) ((x) * (x) * (x))
 #define sqr(x) ((x) * (x))
-
-#include "separation_kernel_types.h"
 
 #define USE_CUSTOM_SQRT 1
 #define USE_CUSTOM_DIVISION 1
@@ -257,6 +254,5 @@ __kernel void mu_sum_kernel(__global real* restrict bgOut,
     {
         streamsOut[NSTREAM * idx + j] += V_reff_xr_rp3 * st_probs[j];
     }
-
 }
 
