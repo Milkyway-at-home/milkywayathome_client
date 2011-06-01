@@ -263,7 +263,7 @@ if(BOINC_APPLICATION)
 endif()
 
 list(APPEND separation_link_libs ${OS_SPECIFIC_LIBS}
-                                 ${LUA_LIBRARY}
+                                 ${LUA_LIBRARIES}
                                  ${SEPARATION_LIBM_LIBRARY})
 
 
@@ -367,13 +367,7 @@ milkyway_link("${separation_base_bin_name}" ${BOINC_APPLICATION}
                                             "${separation_base_lib_name};${separation_core_libs};${exe_link_libs}")
 
 
-find_program(LUA_INTERPRETER lua)
-
-if(LUA_INTERPRETER)
-  add_subdirectory(tests EXCLUDE_FROM_ALL)
-else()
-  message(WARNING "Didn't find Lua. Disabling Separation tests")
-endif()
+add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 install(TARGETS ${separation_base_bin_name} ${separation_base_lib_name}
           RUNTIME       DESTINATION bin

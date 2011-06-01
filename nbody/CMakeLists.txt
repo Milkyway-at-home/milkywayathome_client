@@ -58,8 +58,8 @@ include_directories(${DSFMT_INCLUDE_DIR})
 
 if(NEED_POPT_DEPS)
     #These are only dependencies of popt needed for static linking
-  find_package(Libintl REQUIRED)
-  find_package(Libiconv REQUIRED)
+  find_package_static(Libintl REQUIRED)
+  find_package_static(Libiconv REQUIRED)
 endif()
 
 
@@ -250,10 +250,6 @@ else()
   if(BOINC_RELEASE AND NOT CRLIBM_FOUND)
     message(FATAL "Trying to release without crlibm")
   endif()
-endif()
-
-if(NOT WIN32)
-  list(APPEND LUA_LIBRARIES dl)
 endif()
 
 set(nbody_exe_link_libs nbody_simulation

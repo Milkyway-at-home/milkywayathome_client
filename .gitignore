@@ -49,4 +49,7 @@ thirdparty
 *.isa
 a.out
 *.diff
+bin/
+build
+include/
 

@@ -27,9 +27,6 @@ if(LIBICONV_USE_STATIC)
 endif()
 
 find_library(LIBICONV_LIBRARY iconv)
-if(LIBICONV_USE_STATIC)
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ${__old_cmake_find_lib_suffixes})
-endif()
 
 if(LIBICONV_INCLUDE_DIR AND LIBICONV_LIBRARY)
    set(LIBICONV_FOUND TRUE)

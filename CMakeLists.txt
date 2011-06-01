@@ -33,7 +33,10 @@ include(PrintInfo)
 include(DownloadCrlibm)
 include(CheckCFlag)
 include(MSVCFlags)
+include(PreferStatic)
+include(SpecialLibs)
 include(CMakeDependentOption)
+
 
 option(MSVC_USE_STATIC_CRT "Use static CRT" ON)
 mark_as_advanced(MSVC_USE_STATIC_CRT)
@@ -343,30 +346,16 @@ find_package(CAL)
 find_package(CAL++)
 find_package(OpenCL)
 find_package(OpenMP)
-find_package(Crlibm)
-find_package(Fdlibm)
-find_package(BOINC)
+find_package_static(Crlibm)
+find_package_static(Fdlibm)
+find_package_static(BOINC)
 find_package(Boost)
 find_package(OpenGL)
 find_package(GLUT)
 
 
-
-find_package(Popt REQUIRED)
+find_package_static(Popt REQUIRED)
 include_directories(${POPT_INCLUDE_DIR})
-
-if(LUA_USE_STATIC)
-  set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
-endif()
-
-find_package(Lua51 REQUIRED)
-
-if(LUA_USE_STATIC)
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ${__old_cmake_find_lib_suffixes})
-endif()
-
-include_directories(${LUA_INCLUDE_DIR})
 
 
 if(NBODY_CRLIBM AND NOT CRLIBM_FOUND)
@@ -379,7 +368,8 @@ if(BOINC_APPLICATION)
   include_directories(${BOINC_INCLUDE_DIR})
 endif()
 
-include(SpecialLibs)
+add_subdirectory(lua)
+include_directories(${LUA_INCLUDE_DIR})
 
 add_subdirectory(dSFMT)
 add_definitions("${DSFMT_FLAGS}")

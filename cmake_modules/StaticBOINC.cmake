@@ -24,17 +24,6 @@
 # We also have to link as C++ when we do this because of BOINC.
 
 
-set(POPT_USE_STATIC 1)
-set(LIBINTL_USE_STATIC 1)
-set(LIBICONV_USE_STATIC 1)
-set(BOINC_USE_STATIC 1)
-
-# if(NOT WIN32)
-#   set(LUA_USE_STATIC 1)
-# endif()
-
-set(LUA_USE_STATIC 1)
-
 macro(unset_cmake_default_dynamic)
   set(CMAKE_EXE_LINK_DYNAMIC_C_FLAGS)
   set(CMAKE_EXE_LINK_DYNAMIC_CXX_FLAGS)

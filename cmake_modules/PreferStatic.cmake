@@ -1,4 +1,4 @@
-# Copyright 2010 Matthew Arsenault, Travis Desell, Dave Przybylo,
+# Copyright 2011 Matthew Arsenault, Travis Desell, Dave Przybylo,
 # Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
 # Magdon-Ismail and Rensselaer Polytechnic Institute.
 
@@ -18,22 +18,19 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+macro(set_find_static_lib_suffix)
+  set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
+endmacro()
 
-find_path(LIBINTL_INCLUDE_DIR libintl.h)
+macro(restore_find_lib_suffix)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${__old_cmake_find_lib_suffixes})
+endmacro()
 
-find_library(LIBINTL_LIBRARY intl)
+macro(find_package_static)
+  set_find_static_lib_suffix()
+  find_package(${ARGV})
+  restore_find_lib_suffix()
+endmacro()
 
-if(LIBINTL_INCLUDE_DIR AND LIBINTL_LIBRARY)
-   set(LIBINTL_FOUND TRUE)
-endif(LIBINTL_INCLUDE_DIR AND LIBINTL_LIBRARY)
-
-if(LIBINTL_FOUND)
-   if(NOT Libintl_FIND_QUIETLY)
-      message(STATUS "Found LIBINTL Library: ${LIBINTL_LIBRARY}")
-   endif(NOT Libintl_FIND_QUIETLY)
-else(LIBINTL_FOUND)
-   if(Libintl_FIND_REQUIRED)
-      message(FATAL_ERROR "Could not find LIBINTL Library")
-   endif(Libintl_FIND_REQUIRED)
-endif(LIBINTL_FOUND)
 

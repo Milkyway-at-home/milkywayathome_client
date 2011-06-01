@@ -18,18 +18,9 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-
 find_path(POPT_INCLUDE_DIR popt.h)
 
-if(POPT_USE_STATIC)
-  set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
-endif()
-
 find_library(POPT_LIBRARY popt)
-if(POPT_USE_STATIC)
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ${__old_cmake_find_lib_suffixes})
-endif()
 
 if(POPT_INCLUDE_DIR AND POPT_LIBRARY)
    set(POPT_FOUND TRUE)

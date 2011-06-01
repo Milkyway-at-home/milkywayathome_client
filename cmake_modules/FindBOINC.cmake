@@ -31,11 +31,6 @@ if(MINGW)
   set(BOINC_LIB_SEARCH_PATH ${TAKEOFFGW_ROOT}/local/lib)
 endif(MINGW)
 
-if(BOINC_USE_STATIC)
-  set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
-endif()
-
 find_path(BOINC_INCLUDE_DIR boinc/boinc_api.h ${BOINC_INCLUDE_SEARCH_PATH})
 
 if(NOT MSVC)
@@ -52,10 +47,6 @@ else()
     find_library(BOINC_API_LIBRARY libboincapi_staticcrt ${BOINC_LIB_SEARCH_PATH})
     find_library(BOINC_GRAPHICS_LIBRARY boinc_graphics2 ${BOINC_LIB_SEARCH_PATH})
   endif()
-endif()
-
-if(BOINC_USE_STATIC)
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ${__old_cmake_find_lib_suffixes})
 endif()
 
 set(BOINC_LIBRARIES ${BOINC_LIBRARY})
