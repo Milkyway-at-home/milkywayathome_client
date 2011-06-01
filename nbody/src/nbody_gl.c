@@ -214,11 +214,24 @@ static void drawPoints()
     {
         glPointSize(scene->starsize);  /* Is this actually working? */
         glBegin(GL_POINTS);
-        glColor3f(1.0f, 1.0f, 1.0f);
-        for (i = 0; i < nbody; ++i)
+
+        if (monochromatic)
         {
-            glVertex3f(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
+            glColor3f(1.0f, 1.0f, 1.0f);
+            for (i = 0; i < nbody; ++i)
+            {
+                glVertex3f(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
+            }
         }
+        else
+        {
+            for (i = 0; i < nbody; ++i)
+            {
+                glColor3f(color[i].x, color[i].y, color[i].z);
+                glVertex3f(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
+            }
+        }
+
         glEnd();
     }
     else
