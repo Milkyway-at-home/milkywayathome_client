@@ -36,6 +36,7 @@ include(MSVCFlags)
 include(PreferStatic)
 include(SpecialLibs)
 include(CMakeDependentOption)
+include(Profiling)
 
 
 option(MSVC_USE_STATIC_CRT "Use static CRT" ON)
@@ -132,7 +133,7 @@ endif()
 #choose release build type by default
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-      "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
+      "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel Profile."
       FORCE)
 endif()
 

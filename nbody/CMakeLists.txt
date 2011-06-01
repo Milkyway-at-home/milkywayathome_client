@@ -334,7 +334,6 @@ if(NBODY_GL)
 endif()
 
 
-
 install(TARGETS ${nbody_bin_name} nbody_simulation nbody_lua
           RUNTIME       DESTINATION bin
           ARCHIVE       DESTINATION lib

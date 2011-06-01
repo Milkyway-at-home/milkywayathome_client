@@ -33,7 +33,7 @@ set(DSFMT_MEXP "19937" CACHE STRING "dSFMT mexp")
 mark_as_advanced(DSFMT_MMEXP)
 
 if(NOT MSVC)
-  set(dsmft_flags "-O3 -DNDEBUG -finline-functions -fomit-frame-pointer -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99 ${SSE2_FLAGS}")
+  set(dsmft_flags "-O3 -DNDEBUG -finline-functions -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99 ${SSE2_FLAGS}")
 else()
   set(dsmft_flags "${SSE2_FLAGS}")
 endif()
