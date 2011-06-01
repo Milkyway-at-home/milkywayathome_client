@@ -39,8 +39,7 @@ CALresult separationCALInit(MWCALInfo* ci, const CLRequest* clr);
 
 CALresult separationLoadKernel(MWCALInfo* ci,
                                const AstronomyParameters* ap,
-                               const StreamConstants* sc,
-                               CALboolean likelihoodKernel);
+                               const StreamConstants* sc);
 
 
 CALresult createConstantBuffer1D(MWMemRes* mr,

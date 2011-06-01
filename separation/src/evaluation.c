@@ -30,7 +30,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include "separation_cal_types.h"
   #include "separation_cal_setup.h"
   #include "separation_cal_run.h"
-  #include "cal_likelihood.h"
 #endif /* SEPARATION_OPENCL */
 
 #if SEPARATION_GRAPHICS
@@ -267,7 +266,7 @@ static void calculateIntegrals(const AstronomyParameters* ap,
     int rc;
 
   #if SEPARATION_CAL
-    if (separationLoadKernel(ci, ap, sc, CAL_FALSE) != CAL_RESULT_OK)
+    if (separationLoadKernel(ci, ap, sc) != CAL_RESULT_OK)
         fail("Failed to load integral kernel");
   #endif /* SEPARATION_OPENCL */
 

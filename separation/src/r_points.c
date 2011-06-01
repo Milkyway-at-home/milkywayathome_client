@@ -107,7 +107,7 @@ static inline RPoints calc_r_point(real dx, real qgaus_W, real gPrime, real coef
     return r_pt;
 }
 
-static inline RConsts calcRConsts(RPrime rp)
+static RConsts calcRConsts(RPrime rp)
 {
     RConsts rc;
 

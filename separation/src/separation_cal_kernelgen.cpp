@@ -29,17 +29,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_cal.h"
 #include "separation_cal_kernelgen.h"
-#include "calculated_constants.h"
-#include "r_points.h"
 
 using namespace boost;
 using namespace cal;
 using namespace cal::il;
-
-static double1 log10_custom(double1 x)
-{
-    return log(x) / log(10.0);
-}
 
 /* Doesn't give correct inf results when dividing by 0 */
 static double1 div_custom(double1 x, double1 y)
@@ -90,18 +83,6 @@ static double1 sqrt_custom(double1 x)
     return result;
 }
 
-static double1 pow_custom(double1 a, double1 b)
-{
-    /* TODO: Should really be using 2 instead of e, but that's more
-     * work right now since exp and log exist already in CAL++. */
-    return exp(log(a) * b);
-}
-
-static double1 exp10_custom(double1 x)
-{
-    return pow_custom(double1(10.0), x);
-}
-
 /* FIXME: Quality variable names */
 static double1 exp_custom(double1 x)
 {
@@ -135,41 +116,6 @@ static double1 exp_custom(double1 x)
     return result;
 }
 
-static double1 calcReffXrRp3(const double1 coords, const double1 gPrime)
-{
-    const real sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
-
-    /* REFF */
-    double1 exp_result = exp_custom(double1(sigmoid_curve_params[1]) * (gPrime - double1(sigmoid_curve_params[2])));
-    double1 reff_value = double1(sigmoid_curve_params[0]) / (exp_result + 1.0);
-    double1 rPrime3 = cube(coords);
-    double1 reff_xr_rp3 = reff_value * xr / rPrime3;
-    return reff_xr_rp3;
-}
-
-static double1 calcG(const double1 coords)
-{
-    return 5.0 * (log10_custom(1000.0 * coords) - 1.0) + absm;
-}
-
-static double2 calcRPoint(const AstronomyParameters* ap, const double1 dx, const double1 qgaus_W, const double1 gPrime)
-{
-    double2 r_pt;
-
-    double1 g = gPrime + dx;
-
-    /* MAG2R */
-    r_pt.x() = 0.001 * exp10_custom(0.2 * (g - absm) + 1.0);
-
-    double1 r3 = cube(r_pt.x());
-    double1 exponent = sqr(g - gPrime) * inv(2.0 * sqr(stdev));
-    double1 N = ap->coeff * exp(-exponent);
-    r_pt.y() = qgaus_W * r3 * N;
-
-    return r_pt;
-}
-
-
 static double2 kahanAdd(double2 kSum, double1 x)
 {
     double1 y = x - kSum.y();
@@ -184,19 +130,10 @@ static double2 kahanAdd(double2 kSum, double1 x)
 static void createSeparationKernelCore(const AstronomyParameters* ap,
                                        const StreamConstants* sc,
 
-                                       bool likelihoodKernel,  /* integral kernel or likelihood? */
-
-                                       /* Arguments used by integral kernel */
-                                       input2d<double2>* rPts,
-                                       input1d<double2>* rConsts,
-                                       input2d<double2>* lTrigBuf,
-                                       input2d<double1>* bTrigBuf,
-                                       named_variable<float1>* nuStep,
-                                       named_variable<double1>* nu_id,
-
-                                       /* Arguments used by likelihood kernel */
-                                       input1d<double2>* starsXYBuf,
-                                       input1d<double1>* starsZBuf)
+                                       input2d<double2>& rPts,
+                                       input1d<double2>& rConsts,
+                                       input2d<double2>& lTrigBuf,
+                                       input2d<double1>& bTrigBuf)
 {
     unsigned int j;
 
@@ -208,6 +145,8 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
 
     indexed_register<double1> sg_dx("cb0");
     indexed_register<double1> sg_qgaus_W("cb1");
+    named_variable<float1> nuStep("cb0[0].x");
+    named_variable<double1> nuId("cb0[0].zw");
     named_variable<float2> pos("vWinCoord0"); /* .x() = r, .y() = mu in integral kernel */
 
     named_variable<double2> bgOut("o0");
@@ -216,29 +155,10 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
     for (j = 0; j < ap->number_streams; ++j)
         streamOutputRegisters.push_back(str(format("o%u") % (j + 1)));
 
-    double2 lTrig;
-    double1 bSin;
-
-    double2 starXY;
-    double1 starZ;
-
-    if (!likelihoodKernel)
-    {
-        lTrig = (*lTrigBuf)(*nuStep, pos.y());
-        bSin = (*bTrigBuf)(*nuStep, pos.y());
-    }
-    else
-    {
-        starXY = (*starsXYBuf)[pos.x()];
-        starZ = (*starsZBuf)[pos.x()];
-
-        //double1 lSin = sin(
-        //lTrig = starXY.x() /* l */
-    }
+    double2 lTrig = lTrigBuf(nuStep, pos.y());
+    double1 bSin = bTrigBuf(nuStep, pos.y());
 
     float2 i = float2(pos.x(), 0.0);
-
-    double1 gPrime = calcG(starZ);
 
     /* 0 integrals and get stream constants */
     double1 bg_int = double1(0.0);
@@ -248,19 +168,7 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
 
     il_whileloop
     {
-        double2 rPt;
-
-        if (!likelihoodKernel)
-        {
-            rPt = (*rPts)[i];
-        }
-        else
-        {
-            int1 idx = cast_type<int1>(i.y());
-
-            /* calc_r_point */
-            rPt = calcRPoint(ap, sg_dx[idx], sg_qgaus_W[idx], gPrime);
-        }
+        double2 rPt = rPts[i];
 
         double1 x = mad(rPt.x(), lTrig.x(), ap->m_sun_r0);
         double1 y = rPt.x() * lTrig.y();
@@ -279,7 +187,7 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
         if (ap->aux_bg_profile)
         {
             /* TODO: Checkme */
-            double1 r_in_mag = sg_dx[cast_type<int1>(i.y())] + (*rConsts)[pos.x()].y();
+            double1 r_in_mag = sg_dx[cast_type<int1>(i.y())] + rConsts[pos.x()].y();
             double1 tmp = mad(ap->bg_b, r_in_mag, ap->bg_c);
             tmp = mad(ap->bg_a, r_in_mag * r_in_mag, tmp);
             bg_int = mad(tmp, rPt.y(), bg_int);
@@ -317,11 +225,7 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
     }
     il_endloop
 
-    double1 V_reff_xr_rp3;
-    if (!likelihoodKernel)
-        V_reff_xr_rp3 = (*nu_id) * (*rConsts)(pos.x()).x();
-    else
-        V_reff_xr_rp3 = calcReffXrRp3(starZ, gPrime);
+    double1 V_reff_xr_rp3 = nuId * rConsts(pos.x()).x();
 
     std::vector<double2> streamRead;
     double2 bgRead = bgInput[pos];
@@ -398,12 +302,7 @@ std::string createSeparationIntegralKernel(const AstronomyParameters* ap,
     input2d<double2> lTrig(2);
     input2d<double1> bTrig(3);
 
-    named_variable<float1> nuStep("cb0[0].x");
-    named_variable<double1> nuId("cb0[0].zw");
-
-    createSeparationKernelCore(ap, sc, false,
-                               &rPts, &rConsts, &lTrig, &bTrig, &nuStep, &nuId,
-                               NULL, NULL);
+    createSeparationKernelCore(ap, sc, rPts, rConsts, lTrig, bTrig);
 
     Source::end();
 
@@ -413,53 +312,12 @@ std::string createSeparationIntegralKernel(const AstronomyParameters* ap,
     return code.str();
 }
 
-
-std::string createSeparationLikelihoodKernel(const AstronomyParameters* ap,
-                                             const StreamConstants* sc,
-                                             CALuint device)
-{
-    CALuint numRegSgDx, sgdxSize;
-    std::stringstream code;
-
-    sgdxSize = sizeof(real) * ap->convolve;
-    numRegSgDx = sgdxSize / 16;
-
-    if (separationKernelHeader(ap, code))
-        return "";
-
-    code << format("dcl_cb cb2[%u]\n") % numRegSgDx;
-
-    Source::begin(device);
-
-    input1d<double2> starsXY(0);
-    input1d<double1> starsZ(1);
-
-    createSeparationKernelCore(ap, sc, true,
-                               NULL, NULL, NULL, NULL, NULL, NULL,
-                               &starsXY, &starsZ);
-
-    Source::end();
-
-    Source::emitHeader(code);
-    Source::emitCode(code);
-
-    return code.str();
-}
 
 char* separationIntegralKernelSrc(const AstronomyParameters* ap,
                                   const StreamConstants* sc,
                                   CALuint device)
 {
     std::string src = createSeparationIntegralKernel(ap, sc, device);
-    return strdup(src.c_str());
- }
-
-
-char* separationLikelihoodKernelSrc(const AstronomyParameters* ap,
-                                    const StreamConstants* sc,
-                                    CALuint device)
-{
-    std::string src = createSeparationLikelihoodKernel(ap, sc, device);
     return strdup(src.c_str());
  }
 

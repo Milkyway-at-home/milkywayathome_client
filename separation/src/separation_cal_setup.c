@@ -835,9 +835,6 @@ static CALresult printISAToFile(const char* filename, CALimage img)
 #define IL_INTEGRAL_OUT_FILE "calpp_integral_kernel.il"
 #define ISA_INTEGRAL_OUT_FILE "calpp_integral_kernel.isa"
 
-#define IL_LIKELIHOOD_OUT_FILE "calpp_likelihood_kernel.il"
-#define ISA_LIKELIHOOD_OUT_FILE "calpp_likelihood_kernel.isa"
-
 #ifndef NDEBUG
 static void writeDebugKernels(const char* src, CALimage img, const char* ilOut, const char* isaOut)
 {
@@ -855,34 +852,18 @@ static void writeDebugKernels(const char* src, CALimage img, const char* ilOut, 
 
 static CALimage createCALImageFromGeneratedKernel(const MWCALInfo* ci,
                                                   const AstronomyParameters* ap,
-                                                  const StreamConstants* sc,
-                                                  CALboolean likelihoodKernel)
+                                                  const StreamConstants* sc)
 
 {
     CALimage img;
     char* src;
 
-    if (!likelihoodKernel)
-    {
-        src = separationIntegralKernelSrc(ap, sc, ci->devID);
-    }
-    else
-    {
-        src = separationLikelihoodKernelSrc(ap, sc, ci->devID);
-    }
-
+    src = separationIntegralKernelSrc(ap, sc, ci->devID);
     img = createCALImage(src, ci->devInfo.target);
     free(src);
 
   #ifndef NDEBUG
-    if (!likelihoodKernel)
-    {
-        writeDebugKernels(src, img, IL_INTEGRAL_OUT_FILE, ISA_INTEGRAL_OUT_FILE);
-    }
-    else
-    {
-        writeDebugKernels(src, img, IL_LIKELIHOOD_OUT_FILE, ISA_LIKELIHOOD_OUT_FILE);
-    }
+    writeDebugKernels(src, img, IL_INTEGRAL_OUT_FILE, ISA_INTEGRAL_OUT_FILE);
   #endif /* NDEBUG */
 
     return img;
@@ -965,12 +946,11 @@ CALresult setKernelArguments(MWCALInfo* ci, SeparationCALMem* cm, SeparationCALN
 
 CALresult separationLoadKernel(MWCALInfo* ci,
                                const AstronomyParameters* ap,
-                               const StreamConstants* sc,
-                               CALboolean likelihoodKernel)
+                               const StreamConstants* sc)
 {
     CALresult err;
 
-    ci->image = createCALImageFromGeneratedKernel(ci, ap, sc, likelihoodKernel);
+    ci->image = createCALImageFromGeneratedKernel(ci, ap, sc);
     if (!ci->image)
     {
         warn("Failed to load image\n");
