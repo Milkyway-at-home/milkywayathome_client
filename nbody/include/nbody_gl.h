@@ -34,7 +34,7 @@ typedef struct
     int height;
 
     int monochrome;
-    int useGLPoints;
+    int notUseGLPoints;
 
     /* pid_t pid */
     /* char* nbody bin */

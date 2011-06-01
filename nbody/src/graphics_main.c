@@ -21,6 +21,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_graphics.h"
 #include "milkyway_util.h"
 
+static const VisArgs defaultVisArgs =
+{
+    /* .fullscreen */     FALSE,
+    /* .width      */     0,
+    /* .height     */     0,
+    /* .monochrome */     FALSE,
+    /* .notUseGLPoints */ FALSE
+};
+
+
 static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
 {
     poptContext context;
@@ -54,8 +64,8 @@ static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
         },
 
         {
-            "use-gl-points", 'p',
-            POPT_ARG_NONE, &visArgs.useGLPoints,
+            "not-use-gl-points", 'p',
+            POPT_ARG_NONE, &visArgs.notUseGLPoints,
             0, "Use faster but possibly uglier drawing", NULL
         },
 
@@ -65,6 +75,7 @@ static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
 
     /* TODO: Check project prefs */
 
+    visArgs = defaultVisArgs;
     context = poptGetContext(argv[0], argc, argv, options, 0);
 
     if (mwReadArguments(context))

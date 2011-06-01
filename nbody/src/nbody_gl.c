@@ -690,7 +690,7 @@ static void sceneInit(const VisArgs* args)
     width = args->width == 0 ? glutGet(GLUT_SCREEN_WIDTH) / 2 : args->width;
     height = args->height == 0 ? glutGet(GLUT_SCREEN_HEIGHT) / 2 : args->height;
     monochromatic = args->monochrome;
-    useGLPoints = args->useGLPoints;
+    useGLPoints = !args->notUseGLPoints;
 
     scene->xrot = -60.0f;
     scene->yrot = -15.0f;
