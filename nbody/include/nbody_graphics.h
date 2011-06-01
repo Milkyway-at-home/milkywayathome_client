@@ -27,6 +27,7 @@
 typedef struct
 {
     float x, y, z;
+    int ignore;
 } FloatPos;
 
 /* Mostly for progress information */

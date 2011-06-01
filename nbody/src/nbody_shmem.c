@@ -272,6 +272,7 @@ void updateDisplayedBodies(NBodyState* st)
             r[i].x = (float) X(Pos(b));
             r[i].y = (float) Y(Pos(b));
             r[i].z = (float) Z(Pos(b));
+            r[i].ignore = ignoreBody(b);
         }
     }
 

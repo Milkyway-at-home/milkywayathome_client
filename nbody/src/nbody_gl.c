@@ -69,7 +69,8 @@
 
 static FloatPos* color = NULL;
 
-static const FloatPos white = { 1.0f, 1.0f, 1.0f };
+static const FloatPos white = { 1.0f, 1.0f, 1.0f, 0 };
+static const FloatPos grey = { 0.3294f, 0.3294f, 0.3294f, 1 };
 
 static int window = 0;
 static int xlast = 0, ylast = 0;
@@ -203,6 +204,18 @@ static void drawAxes()
     glEnd();
 }
 
+static inline void setIgnoredColor(int ignore)
+{
+    if (ignore)
+    {
+        glColor3f(grey.x, grey.y, grey.z);
+    }
+    else
+    {
+        glColor3f(white.x, white.y, white.z);
+    }
+}
+
 /* draw stars */
 static void drawPoints()
 {
@@ -217,9 +230,9 @@ static void drawPoints()
 
         if (monochromatic)
         {
-            glColor3f(1.0f, 1.0f, 1.0f);
             for (i = 0; i < nbody; ++i)
             {
+                setIgnoredColor(r[i].ignore);
                 glVertex3f(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
             }
         }
@@ -248,7 +261,7 @@ static void drawPoints()
 
             if (monochromatic)
             {
-                glColor3f(white.x, white.y, white.z);
+                setIgnoredColor(r[i].ignore);
             }
             else
             {
@@ -534,39 +547,26 @@ static void assignParticleColors(unsigned int nbody)
 {
     int i;
     double R, G, B, scale;
+    const FloatPos* r = scene->r;
 
     /* assign random particle colors */
     srand((unsigned int) time(NULL));
 
-    color[0].x = 1.0;
-    color[0].y = 0.0;
-    color[0].z = 0.0;
-
-    color[1].x = 0.0;
-    color[1].y = 1.0;
-    color[1].z = 0.0;
-
-    color[2].x = 0.0;
-    color[2].y = 0.0;
-    color[2].z = 1.0;
-
-    color[3].x = 1.0;
-    color[3].y = 1.0;
-    color[3].z = 0.0;
-
-    color[4].x = 1.0;
-    color[4].y = 0.0;
-    color[4].z = 1.0;
-
-    color[5].x = 0.0;
-    color[5].y = 1.0;
-    color[5].z = 1.0;
-
-    for (i = 6; i < nbody; ++i)
+    for (i = 0; i < nbody; ++i)
     {
-        R = ((double) rand()) / ((double) RAND_MAX);
-        G = ((double) rand()) / ((double) RAND_MAX) * (1.0 - R);
-        B = 1.0 - R - G;
+        if (r[i].ignore)
+        {
+            R = grey.x;  /* TODO: Random greyish color? */
+            G = grey.z;
+            B = grey.y;
+        }
+        else
+        {
+            R = ((double) rand()) / ((double) RAND_MAX);
+            G = ((double) rand()) / ((double) RAND_MAX) * (1.0 - R);
+            B = 1.0 - R - G;
+        }
+
         if (R >= G && R >= B)
         {
             scale = 1.0 + ((double) rand()) / ((double) RAND_MAX) * (MIN(2.0, 1.0 / R) - 1.0);
@@ -580,6 +580,7 @@ static void assignParticleColors(unsigned int nbody)
             scale = 1.0 + ((double) rand()) / ((double) RAND_MAX) * (MIN(2.0, 1.0 / B) - 1.0);
         }
 
+        color[i].ignore = r[i].ignore;
         color[i].x = R * scale;
         color[i].y = G * scale;
         color[i].z = B * scale;
