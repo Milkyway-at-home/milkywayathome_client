@@ -90,15 +90,26 @@ static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
     return failed;
 }
 
+static int nbodyGraphicsInit()
+{
+#if BOINC_APPLICATION
+    if (boinc_parse_init_data_file())
+        return 1;
+
+    if (mwBoincInit(MW_GRAPHICS))
+        return 1;
+#endif /* BOINC_APPLICATION */
+
+    return 0;
+}
+
 int main(int argc, char* argv[])
 {
     int rc;
     VisArgs flags;
 
-    if (mwBoincInit(FALSE, TRUE))
-    {
-        exit(EXIT_FAILURE);
-    }
+    if (nbodyGraphicsInit())
+        return 1;
 
     if (connectSharedScene())
         return 1;

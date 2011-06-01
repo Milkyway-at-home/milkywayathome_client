@@ -39,46 +39,45 @@ static const int debugOptions = BOINC_DIAG_DUMPCALLSTACKENABLED
                               | BOINC_DIAG_HEAPCHECKENABLED
                               | BOINC_DIAG_MEMORYLEAKCHECKENABLED;
 
+/* I don't understand why the graphics have a separate debug with
+ * diagnostics API type stuff. */
 static int mwBoincInitGraphics(int useDebug)
 {
     return boinc_init_graphics_diagnostics(useDebug ? debugOptions : BOINC_DIAG_DEFAULTS);
 }
 
-static int mwBoincInitNormal(int useDebug)
+static int mwBoincInitNormal(MWInitType type)
 {
-    int rc;
+    int rc = 0;
     BOINC_OPTIONS options;
 
-    if (useDebug)
+    if (type & MW_DEBUG)
     {
-        rc = boinc_init_diagnostics(debugOptions);
+        rc |= boinc_init_diagnostics(debugOptions);
     }
-    else
-    {
-      #if MILKYWAY_OPENCL || MILKYWAY_CAL
-        mwGetBoincOptionsDefault(&options);
-        options.normal_thread_priority = 1;
-        rc = boinc_init_options(&options);
-      #else
-        rc = boinc_init();
-      #endif /* MILKYWAY_OPENCL */
-    }
+
+    mwGetBoincOptionsDefault(&options);
+
+    options.multi_thread = (type & MW_MULTITHREAD) > 0;
+    options.normal_thread_priority = ((type & MW_CAL) || (type & MW_OPENCL)) > 0;
+
+    rc |= boinc_init_options(&options);
 
     return rc;
 }
 
 
-int mwBoincInit(int useDebug, int useGraphics)
+int mwBoincInit(MWInitType type)
 {
     int rc = 0;
 
-    if (useGraphics)
+    if (type & MW_GRAPHICS)
     {
-        rc = mwBoincInitGraphics(useDebug);
+        rc = mwBoincInitGraphics(type);
     }
     else
     {
-        rc = mwBoincInitNormal(useDebug);
+        rc = mwBoincInitNormal(type);
     }
 
     if (rc)
@@ -124,7 +123,7 @@ int mw_rename(const char* oldf, const char* newf)
 
 #else /* !BOINC_APPLICATION */
 
-int mwBoincInit(int useDebug, int useGraphics)
+int mwBoincInit(MWInitType type)
 {
     return 0;
 }

@@ -59,7 +59,17 @@ extern "C" {
   #define mw_end_critical_section()
 #endif /* BOINC_APPLICATION */
 
-int mwBoincInit(int useDebug, int useGraphics);
+typedef enum
+{
+    MW_PLAIN       = 1 << 0,
+    MW_MULTITHREAD = 1 << 1,
+    MW_CAL         = 1 << 2,
+    MW_OPENCL      = 1 << 3,
+    MW_DEBUG       = 1 << 4,
+    MW_GRAPHICS    = 1 << 5
+} MWInitType;
+
+int mwBoincInit(MWInitType type);
 char* mwReadFileResolved(const char* filename);
 FILE* mwOpenResolved(const char* filename, const char* mode);
 int mw_rename(const char* oldf, const char* newf);

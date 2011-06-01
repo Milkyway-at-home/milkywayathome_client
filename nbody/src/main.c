@@ -37,11 +37,28 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #if !BOINC_APPLICATION
 static void nbodyPrintVersion() { }
+
+static int nbodyInit(const NBodyFlags* nbf) { }
+
 #else
 
 static void nbodyPrintVersion()
 {
     warn("<search_application>" BOINC_NBODY_APP_VERSION "</search_application>\n");
+}
+
+static int nbodyInit(const NBodyFlags* nbf)
+{
+    MWInitType initType = 0;
+
+  #ifdef _OPENMP
+    initType |= MW_MULTITHREAD;
+  #endif
+
+    if (nbf->debugBOINC)
+        initType |= MW_DEBUG;
+
+    return mwBoincInit(initType);
 }
 
 #endif
@@ -309,12 +326,12 @@ int main(int argc, char* argv[])
 
     if (readParameters(argc, argvCopy, &nbf))
         exit(EXIT_FAILURE);
+    free(argvCopy);
 
-    if (mwBoincInit(nbf.debugBOINC, FALSE))
+    if (nbodyInit(&nbf))
     {
         exit(EXIT_FAILURE);
     }
-    free(argvCopy);
 
     nbodyPrintVersion();
     setDefaultFlags(&nbf);
@@ -335,7 +352,6 @@ int main(int argc, char* argv[])
     }
 
     freeNBodyFlags(&nbf);
-
     mw_finish(rc);
 
     return rc;
