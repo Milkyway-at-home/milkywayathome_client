@@ -165,7 +165,7 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
         {
             "visualizer", 'u',
             POPT_ARG_NONE, &nbf->visualizer,
-            0, "Show simple N-body visualization. No effect if not built with NBODY_GL", NULL
+            0, "Try to run N-body visualization", NULL
         },
 
         {
