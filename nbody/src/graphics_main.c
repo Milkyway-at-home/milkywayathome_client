@@ -94,7 +94,9 @@ static int nbodyGraphicsInit()
 {
 #if BOINC_APPLICATION
     if (boinc_parse_init_data_file())
-        return 1;
+    {
+        warn("Error parsing init data file\n");
+    }
 
     if (mwBoincInit(MW_GRAPHICS))
         return 1;
