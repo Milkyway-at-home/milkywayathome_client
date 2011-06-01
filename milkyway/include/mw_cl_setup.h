@@ -28,9 +28,7 @@ extern "C" {
 #include "milkyway_cl.h"
 #include "mw_cl_types.h"
 
-cl_int mwSetupCL(CLInfo* ci,
-                 DevInfo* di,
-                 const CLRequest* clr);
+cl_int mwSetupCL(CLInfo* ci, const CLRequest* clr);
 
 cl_int mwDestroyCLInfo(CLInfo* ci);
 

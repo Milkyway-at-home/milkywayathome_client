@@ -32,8 +32,8 @@ extern "C" {
 
 typedef struct
 {
-    size_t outMu;
-    size_t outProbs;
+    size_t outBg;
+    size_t outStreams;
 
     size_t ap;        /* Constants */
     size_t sc;
@@ -46,24 +46,26 @@ typedef struct
 
 typedef struct
 {
+
+    size_t* chunkBorders;
+
     size_t global[2];
+
     size_t local[2];
     size_t groupSize;
-    size_t numChunks;   /* Number of chunks to divide each iteration into */
-    cl_uint extra;      /* Extra area added */
+    size_t nChunkEstimate;  /* Target number of chunks to use */
+    size_t nChunk;     /* Number of chunks to divide each iteration into */
+    size_t extra;      /* Extra area added */
     size_t area;
     size_t effectiveArea;
     size_t chunkSize;   /* effectiveArea / numChunks */
-    cl_bool letTheDriverDoIt;  /* Failed to find something nice, let the driver do what it wants */
-    cl_uint blockSize;         /* Threads Per CU * Number CU used by fallback */
 } RunSizes;
 
 /* The various buffers needed by the integrate function. */
 typedef struct
 {
-    /* Write only buffers */
-    cl_mem outMu;     /* Output from each mu_sum done in parallel */
-    cl_mem outProbs;  /* st_probs * V * reff_xr_rp3 */
+    cl_mem outBg;
+    cl_mem outStreams;  /* stream_probs * V * reff_xr_rp3 */
 
     /* constant, read only buffers */
     cl_mem ap;
@@ -79,23 +81,23 @@ typedef struct
 
 
 cl_int setupSeparationCL(CLInfo* ci,
-                         DevInfo* di,
                          const AstronomyParameters* ap,
+                         const IntegralArea* ias,
                          const CLRequest* clr,
-                         cl_bool useImages);
+                         cl_int* useImages);
 
-cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes* sizes);
+cl_bool separationCheckDevCapabilities(const DevInfo* di, const AstronomyParameters* ap, const IntegralArea* ias);
+
 cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* runSizes);
 
-cl_bool findGoodRunSizes(RunSizes* sizes,
-                         const CLInfo* ci,
-                         const DevInfo* di,
-                         const IntegralArea* ia,
-                         const CLRequest* clr);
+void freeRunSizes(RunSizes* sizes);
 
-cl_bool fallbackDriverSolution(RunSizes* sizes);
+cl_bool findRunSizes(RunSizes* sizes,
+                     const CLInfo* ci,
+                     const DevInfo* di,
+                     const IntegralArea* ia,
+                     const CLRequest* clr);
 
-cl_double estimateWUFLOPsPerIter(const AstronomyParameters* ap, const IntegralArea* ia);
 cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_double flops);
 
 #ifdef __cplusplus

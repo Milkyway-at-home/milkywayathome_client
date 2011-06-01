@@ -20,6 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _WIN32
   #include <sys/time.h>
+  #include <sys/resource.h>
 #else
   #include <stdlib.h>
   #include <malloc.h>
@@ -321,42 +322,18 @@ void mwSetConsistentx87FPUPrecision() { }
 #endif
 
 /* From the extra parameters, read them as doubles */
-real* mwReadRestArgs(const char** rest, const unsigned int numParams, unsigned int* pCountOut)
+real* mwReadRestArgs(const char** rest, unsigned int n)
 {
     unsigned int i;
     real* parameters = NULL;
-    unsigned int paramCount = 0;
-
-    /* Read through all the server arguments, and make sure we can
-     * read everything and have the right number before trying to
-     * do anything with them */
-
-    if (numParams == 0)
-    {
-        warn("numParams = 0 makes no sense\n");
-        return NULL;
-    }
 
     if (!rest)
-    {
-        warn("%s: got rest == NULL\n", FUNC_NAME);
         return NULL;
-    }
 
-    while (rest[++paramCount]);  /* Count number of parameters */
-
-    /* Make sure the number of extra parameters matches the number
-     * we were told to expect. */
-    if (numParams != paramCount)
-    {
-        warn("Parameter count mismatch: Expected %u, got %u\n", numParams, paramCount);
-        return NULL;
-    }
-
-    parameters = (real*) mwMalloc(sizeof(real) * numParams);
+    parameters = (real*) mwMalloc(n * sizeof(real));
 
     errno = 0;
-    for (i = 0; i < numParams; ++i)
+    for (i = 0; i < n; ++i)
     {
         parameters[i] = (real) strtod(rest[i], NULL);
         if (errno)
@@ -367,10 +344,33 @@ real* mwReadRestArgs(const char** rest, const unsigned int numParams, unsigned i
         }
     }
 
-    if (pCountOut)
-        *pCountOut = paramCount;
-
     return parameters;
+}
+
+/* Take subset of argv not used by the application to forward on to the Lua scripts.
+   Need to free return value.
+ */
+const char** mwGetForwardedArguments(const char** args, unsigned int* nForwardedArgs)
+{
+    unsigned int i, argCount = 0;
+    const char** forwardedArgs;
+
+    if (!args)
+    {
+        *nForwardedArgs = 0;
+        return NULL;
+    }
+
+    while (args[++argCount]);  /* Count number of parameters */
+
+    forwardedArgs = (const char**) mwMalloc(sizeof(const char*) * argCount);
+
+    for (i = 0; i < argCount; ++i)
+        forwardedArgs[i] = args[i];
+
+    *nForwardedArgs = argCount;
+
+    return forwardedArgs;
 }
 
 void _mw_time_prefix(char* buf, size_t bufSize)
@@ -381,23 +381,28 @@ void _mw_time_prefix(char* buf, size_t bufSize)
         buf[0] = '\0';
 }
 
-
+/* Returns < 0 on error, otherwise bitwise or'd val flags from arguments encountered.
+   We want to be able to some behaviour without the flag, but simply using some default value for the flag is undesirable.
+*/
 int mwReadArguments(poptContext context)
 {
     int o;
+    int rc = 0;
 
-    while ( ( o = poptGetNextOpt(context)) >= 0 );
+    while ((o = poptGetNextOpt(context)) >= 0)
+    {
+         rc |= o;
+    }
 
     if (o < -1)
     {
         warn("Argument parsing error: %s: %s\n",
              poptBadOption(context, 0),
              poptStrerror(o));
-
-        return 1;
+        return -1;
     }
 
-    return 0;
+    return rc;
 }
 
 
@@ -411,67 +416,73 @@ int mwReadArguments(poptContext context)
  * POPT_CONTEXT_POSIXMEHARDER, which results in them being
  * interpreted as wrong options and then erroring.
  */
-
-/* Horrible function to find the -p -np arguments, and take anything
- * after them and move them to the front */
-const char** mwFixArgv(unsigned long argc, const char** argv)
+const char** mwFixArgv(int argc, const char** argv)
 {
     const char** argvCopy;
     const char** p;
-    char* endP;
+    mwbool* taken;
+    int i, j;
+    static const char* boincSpecialArguments[] = { "--device", "--nthreads", NULL };
 
-    unsigned long i, j;
-    unsigned long np, remaining, appendedCount;
-    unsigned long npCheck = 0;
-
-    p = argv;
-    while (*p && strncmp(*p, "-np", 3)) /* Find how many numbers we're expected to find */
-        ++p, ++npCheck;
-
-    if (!*p)  /* Probably not using the server arguments */
-        return NULL;
-
-    if (!*(++p)) /* Go to the actual value of np */
-        return NULL;
-
-    /* The next argument after np should be the number */
-    np = strtoul(*p, &endP, 10);
-    if (*endP != '\0')
-    {
-        perror("Reading np");
-        return NULL;
-    }
-
-    /* -2: -1 from argv[0], -1 from -p arg, -1 from np value */
-    remaining = (argc - 3) - npCheck;  /* All remaining arguments */
-    if (np > remaining || np >= argc)  /* Careful of underflow */
-        return NULL;
-
-    ++p;   /* Move on to the p argument */
-    if (*p && strncmp(*p, "-p", 2))
-    {
-        warn("Didn't find expected p argument\n");
-        return NULL;
-    }
-
-    if (!*(++p))  /* Should be first actual number argument */
-        return NULL;
-
-    /* FIXME: Have no dependence on np. FIXME: BOINC really, really,
-     * really shouldn't ever append arguments ever (should prepend)
-     * and it should be fixed. */
+    /* These arguments may or may not be at the end, but we don't
+       really care. There might even be multiple copies.
+       We can just move them all to the front.
+     */
 
     argvCopy = (const char**) mwCalloc(argc, sizeof(const char*));
-    i = j = 0;  /* Index into copy argv, original argv */
-    argvCopy[i++] = argv[j++];
-    p += np;  /* Skip the arguments */
+    argvCopy[0] = argv[0];      /* Don't touch argv[0] */
 
-    appendedCount = remaining - np;  /* Extras added by BOINC */
-    while (*p && i <= appendedCount)
-        argvCopy[i++] = *p++;
+    /* Mark which arguments we've moved already */
+    taken = mwCalloc(argc, sizeof(mwbool));  /* 0th element ignored */
 
-    while (i < argc && j < argc)  /* Copy the rest of the arguments into an appropriate order */
-        argvCopy[i++] = argv[j++];
+    i = j = 1; /* i = index over original argv, j = current position in copy */
+
+    while (i < argc)
+    {
+        p = boincSpecialArguments;
+        while (*p)
+        {
+            if (!strcmp(*p, argv[i]))  /* This argument matches */
+            {
+                /* These arguments take one argument, so make sure it
+                 * exists and we aren't trying to take past the end */
+
+                if (i + 1 >= argc)
+                {
+                    warn("Error: argument must be missing from trailing special argument '%s'\n", *p);
+                    free(argvCopy);
+                    free(taken);
+                    return NULL;
+                }
+                else
+                {
+                    argvCopy[j++] = argv[i];       /* Move this argument to current copy position */
+                    argvCopy[j++] = argv[i + 1];   /* Take and next argument */
+
+                    taken[i] = taken[i + 1] = TRUE;
+                }
+
+                ++i;    /* Skip checking next, taken argument */
+                break;  /* Avoid possibly strange behaviour with perverse inputs such as --nthread --device */
+            }
+
+            ++p;
+        }
+
+        ++i;
+    }
+
+    /* Now copy whatever arguments weren't moved after those that were */
+    for (i = 1; i < argc; ++i)  /* Still skipping argv[0] */
+    {
+        assert(j < argc);
+        if (!taken[i])
+        {
+            argvCopy[j++] = argv[i];
+        }
+    }
+
+    free(taken);
 
     return argvCopy;
 }
@@ -529,25 +540,76 @@ int mwCheckNormalPosNum(real n)
     return !isfinite(n) || n <= 0.0;
 }
 
-#ifdef _WIN32
 /* Disable the stupid "Windows is checking for a solution to the
  * problem" boxes from showing up if this crashes */
 void mwDisableErrorBoxes()
 {
+  #ifdef _WIN32
+
     DWORD mode, setMode;
 
     setMode = SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX;
     mode = SetErrorMode(setMode);
     SetErrorMode(mode | setMode);
+  #endif /* _WIN32 */
 }
 
+
+#ifdef _WIN32
+
+static DWORD mwPriorityToPriorityClass(MWPriority x)
+{
+    switch (x)
+    {
+        case MW_PRIORITY_IDLE:
+            return IDLE_PRIORITY_CLASS;
+        case MW_PRIORITY_BELOW_NORMAL:
+            return BELOW_NORMAL_PRIORITY_CLASS;
+        case MW_PRIORITY_NORMAL:
+            return NORMAL_PRIORITY_CLASS;
+        case MW_PRIORITY_ABOVE_NORMAL:
+            return ABOVE_NORMAL_PRIORITY_CLASS;
+        case MW_PRIORITY_HIGH:
+            return HIGH_PRIORITY_CLASS;
+        default:
+            warn("Invalid priority: %d. Using default.\n", (int) x);
+            return mwPriorityToPriorityClass(MW_PRIORITY_DEFAULT);
+    }
+}
+
+int mwSetProcessPriority(MWPriority priority)
+{
+    HANDLE handle;
+
+    if (!DuplicateHandle(GetCurrentProcess(),
+                         GetCurrentProcess(),
+                         GetCurrentProcess(),
+                         &handle,
+                         0,
+                         FALSE,
+                         DUPLICATE_SAME_ACCESS))
+    {
+        return warn1("Failed to get process handle: %ld\n", GetLastError());
+    }
+
+    if (!SetPriorityClass(handle, mwPriorityToPriorityClass(priority)))
+    {
+        return warn1("Failed to set process priority class: %ld\n", GetLastError());
+    }
+
+    return 0;
+}
 #else
 
-void mwDisableErrorBoxes()
+int mwSetProcessPriority(MWPriority priority)
 {
+    if (setpriority(PRIO_PROCESS, getpid(), priority))
+    {
+        perror("Setting process priority");
+        return 1;
+    }
 
+    return 0;
 }
 
 #endif /* _WIN32 */
-
-

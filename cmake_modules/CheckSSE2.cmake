@@ -19,29 +19,35 @@
 #
 
 include(CPUNameTest)
+include(CheckIncludeFiles)
+
 
 if(SYSTEM_IS_X86)
   if(NOT MSVC)
-    set(SSE2_FLAGS "-mfpmath=sse -msse -msse2")
+    set(DISABLE_SSE2_FLAGS "-mfpmath=sse -msse -msse2")
+    set(DISABLE_SSE3_FLAGS "-mno-sse3")
+    set(NO_SSE2_FLAGS "-mno-sse -mno-sse2 -mfpmath=387")
+    set(SSE3_FLAGS "-msse3")
+    set(SSE4_FLAGS "-msse4")
   else()
-    set(SSE2_FLAGS "${CMAKE_C_FLAGS} /arch:SSE2")
+    set(SSE2_FLAGS "${CMAKE_C_FLAGS} /arch:SSE2 /D__SSE2__=1")
+    set(DISABLE_SSE3_FLAGS "")
+    set(DISABLE_SSE2_FLAGS "")
+    # MSVC doesn't generate SSE3 itself, and doesn't define this
+    set(SSE3_FLAGS "/D__SSE2__=1 /D__SSE3__=1")
   endif()
 endif()
 
+# Assume if these headers exist the compiler can use them
 
-message(STATUS "Checking for SSE2")
+set(CMAKE_REQUIRED_FLAGS "${SSE3_FLAGS}")
+check_include_files(pmmintrin.h HAVE_SSE3)
+mark_as_advanced(HAVE_SSE3 )
 
-try_compile(SSE2_CHECK ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH}/sse2_check.c
-             CMAKE_FLAGS "${SSE2_FLAGS}")
-
-if(SSE2_CHECK)
-  set(HAVE_SSE2 1 CACHE STRING "Status of SSE2")
-  message(STATUS "Checking if SSE2 is available - yes")
-else()
-  set(HAVE_SSE2 0 CACHE STRING "Status of SSE2")
-  message(STATUS "Checking if SSE2 is available - no")
-endif()
-
+set(CMAKE_REQUIRED_FLAGS "${SSE2_FLAGS}")
+check_include_files(emmintrin.h HAVE_SSE2)
 mark_as_advanced(HAVE_SSE2)
+
+set(CMAKE_REQUIRED_FLAGS "")
 
 

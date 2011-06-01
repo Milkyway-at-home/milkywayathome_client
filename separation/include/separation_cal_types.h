@@ -20,8 +20,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _SEPARATION_CAL_TYPES_H_
 #define _SEPARATION_CAL_TYPES_H_
 
-#include <cal.h>
-#include <calcl.h>
+#include <CAL/cal.h>
+#include <CAL/calcl.h>
 
 
 #include "milkyway_util.h"
@@ -104,7 +104,13 @@ typedef struct
     /* constant, read only buffers */
     MWMemRes rc;        /* r constants */
     MWMemRes rPts;
+
     MWMemRes sg_dx;
+    MWMemRes sg_qgauss_W;
+
+    MWMemRes starsXY;
+    MWMemRes starsZ;
+
     MWMemRes lTrig;      /* sin, cos of l */
     MWMemRes bTrig;      /* sin, cos of b */
     MWMemRes nuBuf;
@@ -114,11 +120,32 @@ typedef struct
 typedef struct
 {
     CALuint nChunkMu;
-    CALuint nChunkR;
+    //CALuint nChunkR;
 
-    CALuint chunkSizeMu;
-    CALuint chunkSizeR;
+    CALuint chunkWaitTime;   /* Estimated time (ms) per chunk for waiting */
+
+    CALuint* chunkMuBorders;
+    //CALuint* chunkRBorders;
 } SeparationCALChunks;
+
+#if DOUBLEPREC
+  /* VERY IMPORTANT:
+     http://developer.amd.com/support/KnowledgeBase/Lists/KnowledgeBase/DispForm.aspx?ID=92
+   */
+  /* For some reason it doesn't work if you try to use the uint32 ones
+   * with a cb[]. */
+  #define constantFormatReal1 CAL_FORMAT_FLOAT_2
+  #define constantFormatReal2 CAL_FORMAT_FLOAT_4
+
+  #define formatReal1 CAL_FORMAT_UNSIGNED_INT32_2
+  #define formatReal2 CAL_FORMAT_UNSIGNED_INT32_4
+#else
+  #define constantFormatReal1 CAL_FORMAT_FLOAT_2
+  #define constantFormatReal2 CAL_FORMAT_FLOAT_4
+
+  #define formatReal1 CAL_FORMAT_UNSIGNED_INT32_1
+  #define formatReal2 CAL_FORMAT_UNSIGNED_INT32_2
+#endif /* DOUBLEPREC */
 
 
 #ifdef __cplusplus

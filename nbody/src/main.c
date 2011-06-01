@@ -72,27 +72,13 @@ static void specialSetup()
 /* For automated testing, pass extra arguments on to Lua script */
 static void setForwardedArguments(NBodyFlags* nbf, const char** args)
 {
-    unsigned int i, argCount = 0;
-
-    if (!args)
-    {
-        nbf->numForwardedArgs = 0;
-        nbf->forwardedArgs = NULL;
-        return;
-    }
-
-    while (args[++argCount]);  /* Count number of parameters */
-
-    nbf->numForwardedArgs = argCount;
-    nbf->forwardedArgs = (const char**) mwMalloc(sizeof(const char*) * argCount);
-
-    for (i = 0; i < argCount; ++i)
-        nbf->forwardedArgs[i] = args[i];
+    nbf->forwardedArgs = mwGetForwardedArguments(args, &nbf->numForwardedArgs);
 }
 
 /* Read the command line arguments, and do the inital parsing of the parameter file. */
 static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf)
 {
+    int argRead;
     poptContext context;
     const char** rest = NULL;   /* Leftover arguments */
     mwbool failed = FALSE;
@@ -101,8 +87,7 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
 
     /* FIXME: There's a small leak of the inputFile from use of
        poptGetNextOpt(). Some mailing list post suggestst that this
-       is some kind of semi-intended bug to work around something or
-       other while maintaining ABI compatability */
+       is some kind of semi-intended bug to work around something or other */
     const struct poptOption options[] =
     {
         {
@@ -248,7 +233,8 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
 
     /* Check for invalid options, and must have the input file or a
      * checkpoint to resume from */
-    if (mwReadArguments(context) || (!nbf->inputFile && !nbf->checkpointFileName))
+    argRead = mwReadArguments(context);
+    if (argRead < 0 || (!nbf->inputFile && !nbf->checkpointFileName))
     {
         poptPrintHelp(context, stderr, 0);
         failed = TRUE;
@@ -317,17 +303,19 @@ int main(int argc, char* argv[])
 {
     NBodyFlags nbf = EMPTY_NBODY_FLAGS;
     int rc = 0;
+    const char** argvCopy = mwFixArgv(argc, argv);
 
     specialSetup();
 
-    if (readParameters(argc, argv, &nbf))
+    if (readParameters(argc, argvCopy, &nbf))
         exit(EXIT_FAILURE);
 
-    if (mwBoincInit(argv[0], nbf.debugBOINC))
+    if (mwBoincInit(argvCopy[0], nbf.debugBOINC))
     {
         warn("Failed to init BOINC\n");
         exit(EXIT_FAILURE);
     }
+    free(argvCopy);
 
     nbodyPrintVersion();
     setDefaultFlags(&nbf);

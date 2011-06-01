@@ -21,15 +21,42 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_types.h"
 #include "calculated_constants.h"
 #include "r_points.h"
+#include "integrals.h"
 #include "show_cal_types.h"
 #include "separation_cal_run.h"
 #include "separation_cal_setup.h"
 #include "separation_cal_types.h"
 #include "separation_cal_kernelgen.h"
 
+static CALresult waitForKernel(MWCALInfo* ci, CALevent ev, CALuint initialWait, CALint pollingMode)
+{
+    CALresult err;
 
+    mwMilliSleep(initialWait);  /* Sleep for initial estimate before polling */
 
-static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain, CALint pollingMode)
+    if (pollingMode > 0)
+    {
+        while (calCtxIsEventDone(ci->calctx, ev) == CAL_RESULT_PENDING)
+            mwMilliSleep(pollingMode);
+    }
+    else if (pollingMode == 0)
+    {
+        err = mw_calCtxWaitForEvents(ci->calctx, &ev, 1, 0);
+        if (err != CAL_RESULT_OK)
+        {
+            cal_warn("Error waiting for kernel", err);
+            return err;
+        }
+    }
+    else /* Busy wait */
+    {
+        while (calCtxIsEventDone(ci->calctx, ev) == CAL_RESULT_PENDING);
+    }
+
+    return CAL_RESULT_OK;
+}
+
+static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain, CALint pollingMode, CALuint initialWait)
 {
     CALresult err;
     CALevent ev = 0;
@@ -67,31 +94,9 @@ static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain, CALint pollin
         return err;
     }
 
-    if (pollingMode > 0)
-    {
-        while (calCtxIsEventDone(ci->calctx, ev) == CAL_RESULT_PENDING)
-            mwMilliSleep(pollingMode);
-    }
-    else if (pollingMode == 0)
-    {
-        err = mw_calCtxWaitForEvents(ci->calctx, &ev, 1, 0);
-        if (err != CAL_RESULT_OK)
-        {
-            cal_warn("Error waiting for kernel", err);
-            return err;
-        }
-    }
-    else /* Busy wait */
-    {
-        while (calCtxIsEventDone(ci->calctx, ev) == CAL_RESULT_PENDING);
-    }
-
-    return CAL_RESULT_OK;
+    return waitForKernel(ci, ev, initialWait, pollingMode);
 }
-static CALresult setNuKernelArgs(MWCALInfo* ci,
-                                 SeparationCALMem* cm,
-                                 const IntegralArea* ia,
-                                 CALuint nuStep)
+static CALresult setNuKernelArgs(SeparationCALMem* cm, const IntegralArea* ia, CALuint nuStep)
 {
     CALresult err;
     CALdouble* nuBufPtr;
@@ -144,20 +149,16 @@ static real sumResults(MWMemRes* mr, const IntegralArea* ia)
     return ksum.sum + ksum.correction;
 }
 
-static real readResults(SeparationCALMem* cm,
-                        const IntegralArea* ia,
-                        real* probs_results,
-                        CALuint numberStreams)
+static void readResults(SeparationCALMem* cm, const IntegralArea* ia, EvaluationState* es)
 {
     CALuint i;
-    real result;
 
-    result = sumResults(&cm->outBg, ia);
+    es->bgTmp = sumResults(&cm->outBg, ia);
 
-    for (i = 0; i < numberStreams; ++i)
-        probs_results[i] = sumResults(&cm->outStreams[i], ia);
-
-    return result;
+    for (i = 0; i < es->numberStreams; ++i)
+    {
+        es->streamTmps[i] = sumResults(&cm->outStreams[i], ia);
+    }
 }
 
 static CALresult chunkDivCheck(const char* name, CALuint dim, CALuint nChunk)
@@ -173,11 +174,27 @@ static CALresult chunkDivCheck(const char* name, CALuint dim, CALuint nChunk)
 
 static void printChunks(const IntegralArea* ia, const SeparationCALChunks* chunks)
 {
+    CALuint i;
+
     warn("Integration range: { nu_steps = %u, mu_steps = %u, r_steps = %u }\n"
-         "Using { %u, %u } chunk(s) of size { %u, %u }\n",
+         "Using %u chunk(s) with sizes:",
          ia->nu_steps, ia->mu_steps, ia->r_steps,
-         chunks->nChunkR, chunks->nChunkMu,
-         chunks->chunkSizeR, chunks->chunkSizeMu);
+         chunks->nChunkMu);
+
+    for (i = 0; i < chunks->nChunkMu; ++i)
+    {
+        warn("%5u", chunks->chunkMuBorders[i + 1] - chunks->chunkMuBorders[i]);
+    }
+    warn("\n");
+
+#if 0
+    warn("Borders: ");
+    for (i = 0; i <= chunks->nChunkMu; ++i)
+    {
+        warn("%5u", chunks->chunkMuBorders[i]);
+    }
+    warn("\n");
+#endif
 }
 
 static CALuint64 estimateWUFLOPsPerIter(const AstronomyParameters* ap, const IntegralArea* ia)
@@ -192,6 +209,41 @@ static CALuint64 estimateWUFLOPsPerIter(const AstronomyParameters* ap, const Int
     perIter = perItem * ia->mu_steps * ia->r_steps;
 
     return perIter;
+}
+
+static CALuint64 deviceFlopsEstimateFallback(CALtarget target)
+{
+    switch (target)
+    {
+        case CAL_TARGET_600:
+        case CAL_TARGET_610:
+        case CAL_TARGET_630:
+        case CAL_TARGET_670:
+            return 85000000000;  /* 8.5e10 */
+
+        case CAL_TARGET_7XX:
+        case CAL_TARGET_770:
+        case CAL_TARGET_710:
+        case CAL_TARGET_730:
+            return 140000000000;  /* 1.4e11 */
+
+        case CAL_TARGET_CYPRESS:
+        case CAL_TARGET_JUNIPER:
+        case CAL_TARGET_REDWOOD:
+        case CAL_TARGET_CEDAR:
+            return 350000000000;  /* 3.5e11 */
+
+        case CAL_TARGET_WRESTLER:
+        case CAL_TARGET_CAYMAN:
+        case CAL_TARGET_BARTS:
+            return 560000000000;  /* 5.6e11 */
+
+        case CAL_TARGET_RESERVED0:
+        case CAL_TARGET_RESERVED1:
+        case CAL_TARGET_RESERVED2:
+        default:
+            return 10000000000; /* 1e10 */
+    }
 }
 
 static CALuint64 deviceFlopsEstimate(const CALdeviceattribs* d)
@@ -227,6 +279,7 @@ static CALuint64 deviceFlopsEstimate(const CALdeviceattribs* d)
         case CAL_TARGET_RESERVED1:
         case CAL_TARGET_RESERVED2:
         default:
+            doubleFrac = 5;
             vliw = 5;
             warn("Unknown target type: %s (%d)\n", showCALtargetEnum(d->target), d->target);
     }
@@ -237,13 +290,24 @@ static CALuint64 deviceFlopsEstimate(const CALdeviceattribs* d)
     flops /= doubleFrac;
   #endif
 
+    /* Radeon 3850 is probably slowerst we can expect, which is ~1e10 double */
+    if (flops < 10000000000)
+    {
+        /* Catalyst drivers seem to occasionally have a bug where the
+         * device clock comes back as 0 and it breaks everything.
+         */
+        flops = deviceFlopsEstimateFallback(d->target);
+        warn("Flops estimate too low, using fallback estimate based on target\n");
+    }
+
     return flops;
 }
 
 static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
                                    const IntegralArea* ia,
                                    const CALdeviceattribs* devAttribs,
-                                   const CLRequest* clr)
+                                   const CLRequest* clr,
+                                   CALuint* chunkWaitEstimate)
 {
     CALuint64 flops, iterFlops;
     CALdouble effFlops, estIterTime, timePerIter;
@@ -272,13 +336,22 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
     while (!mwDivisible(ia->mu_steps, nChunk) && nChunk <= ia->mu_steps)
         ++nChunk;
 
+    //*chunkWaitEstimate = (CALuint) (0.1 * estIterTime / nChunk); /* Sleep for 50% of estimated time before polling */
+    *chunkWaitEstimate = 0;
     warn("Estimated iteration time %f ms\n"
          "Target frequency %f Hz, polling mode %d, using responsiveness factor of %f\n"
-         "Dividing into %u chunks\n",
-         estIterTime, clr->targetFrequency, clr->pollingMode, clr->responsivenessFactor, nChunk);
+         "Dividing into %u chunks, initially sleeping for %u ms\n",
+         estIterTime, clr->targetFrequency, clr->pollingMode, clr->responsivenessFactor, nChunk, *chunkWaitEstimate);
 
     return nChunk;
 }
+
+static void freeCALChunks(SeparationCALChunks* chunks)
+{
+    free(chunks->chunkMuBorders);
+    //free(chunks->chunkRBorders);
+}
+
 
 static CALresult findCALChunks(const AstronomyParameters* ap,
                                const MWCALInfo* ci,
@@ -287,66 +360,80 @@ static CALresult findCALChunks(const AstronomyParameters* ap,
                                SeparationCALChunks* chunks)
 {
     CALresult err = CAL_RESULT_OK;
-    CALuint nChunk;
+    CALuint i, nChunk;
+    CALuint sum = 0;
+    const CALuint nMod = 16; /* Keep chunks in sizes divisible by nMod */
 
-    nChunk = deviceChunkEstimate(ap, ia, &ci->devAttribs, clr);
+    nChunk = deviceChunkEstimate(ap, ia, &ci->devAttribs, clr, &chunks->chunkWaitTime);
     if (nChunk == 0)
     {
         warn("Invalid number of chunks: %u\n", nChunk);
         return CAL_RESULT_ERROR;
     }
-    else if (nChunk == 1)
+    else if (ia->mu_steps / nChunk < nMod)
     {
-        chunks->nChunkR = 1;
-        chunks->nChunkMu = 1;
+        chunks->nChunkMu = ia->mu_steps / nMod;
+        warn("Warning: Estimated number of chunks (%u) too large. Using %u\n", nChunk, chunks->nChunkMu);
     }
     else
     {
-        chunks->nChunkR = 1;
         chunks->nChunkMu = nChunk;
     }
 
-    chunks->chunkSizeR = ia->r_steps / chunks->nChunkR;
-    chunks->chunkSizeMu = ia->mu_steps / chunks->nChunkMu;
+    chunks->chunkMuBorders = mwCalloc((chunks->nChunkMu + 1), sizeof(CALuint));
+    //chunks->chunkRBorders = mwCalloc((chunks->nChunkR + 1), sizeof(CALuint));
+
+    for (i = 0; i <= chunks->nChunkMu; ++i)
+    {
+
+        chunks->chunkMuBorders[i] = (i * ia->mu_steps + chunks->nChunkMu) / (chunks->nChunkMu * nMod);
+        chunks->chunkMuBorders[i] *= nMod;
+        if (chunks->chunkMuBorders[i] > ia->mu_steps)
+            chunks->chunkMuBorders[i] = ia->mu_steps;
+
+        if (i > 0)
+            sum += chunks->chunkMuBorders[i] - chunks->chunkMuBorders[i - 1];
+    }
 
     printChunks(ia, chunks);
-    err |= chunkDivCheck("r steps", ia->r_steps, chunks->nChunkR);
-    err |= chunkDivCheck("mu steps", ia->mu_steps, chunks->nChunkMu);
+
+    if (sum != ia->mu_steps)  /* Assert that the divisions aren't broken */
+    {
+        warn("Chunk mu steps does not match: %u != %u\n", sum, ia->mu_steps);
+        free(chunks->chunkMuBorders);
+        return CAL_RESULT_ERROR;
+    }
 
     return err;
 }
 
-static inline CALuint runNuStep(MWCALInfo* ci,
-                                SeparationCALMem* cm,
-                                const IntegralArea* ia,
-                                const SeparationCALChunks* chunks,
-                                CALint pollingMode,
-                                CALuint nuStep)
+static CALresult runNuStep(MWCALInfo* ci,
+                           SeparationCALMem* cm,
+                           const IntegralArea* ia,
+                           const SeparationCALChunks* chunks,
+                           CALint pollingMode,
+                           CALuint nuStep)
 {
     CALdomain domain;
+    CALuint i;
     CALresult err = CAL_RESULT_OK;
 
-    /* It's much faster to do chunking in both dimensions when using
-     * images in tiled format */
+    err = setNuKernelArgs(cm, ia, nuStep);
+    if (err != CAL_RESULT_OK)
+        return err;
 
-    domain.width = chunks->chunkSizeR;
-    domain.height = chunks->chunkSizeMu;
+    domain.x = 0;
+    domain.width = ia->r_steps;
 
-    for (domain.x = 0; domain.x < ia->r_steps; domain.x += chunks->chunkSizeR)
+    for (i = 0; i < chunks->nChunkMu && err == CAL_RESULT_OK; ++i)
     {
-        for (domain.y = 0; domain.y < ia->mu_steps; domain.y += chunks->chunkSizeMu)
-        {
-            err = setNuKernelArgs(ci, cm, ia, nuStep);
-            if (err != CAL_RESULT_OK)
-                break;
+        domain.y = chunks->chunkMuBorders[i];
+        domain.height = chunks->chunkMuBorders[i + 1] - chunks->chunkMuBorders[i];
 
-            err = runKernel(ci, &domain, pollingMode);
-            if (err != CAL_RESULT_OK)
-                goto run_step_exit;
-        }
+        mw_begin_critical_section();
+        err = runKernel(ci, &domain, pollingMode, chunks->chunkWaitTime);
+        mw_end_critical_section();
     }
-
-run_step_exit:
 
     return err;
 }
@@ -366,55 +453,87 @@ static inline void reportProgress(const AstronomyParameters* ap,
   #endif /* BOINC_APPLICATION */
 }
 
-static real runIntegral(const AstronomyParameters* ap,
-                        const IntegralArea* ia,
-                        EvaluationState* es,
-                        const CLRequest* clr,
-                        MWCALInfo* ci,
-                        SeparationCALMem* cm,
-                        real* probs_results)
+static CALresult checkpointCAL(SeparationCALMem* cm, const IntegralArea* ia, EvaluationState* es)
+{
+    CALresult err;
+
+    readResults(cm, ia, es);
+    err = writeCheckpoint(es) ? CAL_RESULT_ERROR : CAL_RESULT_OK;
+
+  #if BOINC_APPLICATION
+    boinc_checkpoint_completed();
+  #endif
+
+    return err;
+}
+
+
+static CALresult runIntegral(const AstronomyParameters* ap,
+                             const IntegralArea* ia,
+                             EvaluationState* es,
+                             const CLRequest* clr,
+                             MWCALInfo* ci,
+                             SeparationCALMem* cm)
 {
     CALresult err;
     SeparationCALNames cn;
     double t1, t2, dt, tAcc = 0.0;
     SeparationCALChunks chunks;
 
-    if (findCALChunks(ap, ci, clr, ia, &chunks) != CAL_RESULT_OK)
-        return NAN;
-
     memset(&cn, 0, sizeof(SeparationCALNames));
     err = getModuleNames(ci, &cn, cm->numberStreams);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to get module names", err);
-        return NAN;
+        return err;
     }
 
     err = setKernelArguments(ci, cm, &cn);
     if (err != CAL_RESULT_OK)
     {
         destroyModuleNames(&cn);
-        return NAN;
+        return err;
     }
 
-    for (es->nu_step = 0; es->nu_step < ia->nu_steps; es->nu_step++)
+
+    if (findCALChunks(ap, ci, clr, ia, &chunks) != CAL_RESULT_OK)
+        return CAL_RESULT_ERROR;
+
+    for (; es->nu_step < ia->nu_steps; es->nu_step++)
     {
+        if (clr->enableCheckpointing && timeToCheckpointGPU(es, ia))
+        {
+            err = checkpointCAL(cm, ia, es);
+            if (err != CAL_RESULT_OK)
+                break;
+        }
+
         t1 = mwGetTimeMilli();
 
         err = runNuStep(ci, cm, ia, &chunks, clr->pollingMode, es->nu_step);
         if (err != CAL_RESULT_OK)
             break;
+
         t2 = mwGetTimeMilli();
         dt = t2 - t1;
         tAcc += dt;
+
         reportProgress(ap, ia, es, es->nu_step + 1, dt);
     }
+    es->nu_step = 0;
 
     warn("Integration time = %f s, average per iteration = %f ms\n", 1.0e-3 * tAcc, tAcc / ia->nu_steps);
 
     destroyModuleNames(&cn);
+    freeCALChunks(&chunks);
 
-    return (err != CAL_RESULT_OK) ? NAN : readResults(cm, ia, probs_results, cm->numberStreams);
+    if (err == CAL_RESULT_OK)
+    {
+        readResults(cm, ia, es);
+        addTmpSums(es); /* Add final episode to running totals */
+    }
+
+    return err;
 }
 
 static void calculateCALSeparationSizes(CALSeparationSizes* sizes,
@@ -448,16 +567,18 @@ CALresult integrateCAL(const AstronomyParameters* ap,
 
     calculateCALSeparationSizes(&sizes, ap, ia);
 
-    memset(&cm, 0, sizeof(SeparationCALMem));
+    memset(&cm, 0, sizeof(cm));
     err = createSeparationBuffers(ci, &cm, ap, ia, sg, &sizes);
     if (err != CAL_RESULT_OK)
         return err;
 
-    es->cut->bgIntegral = runIntegral(ap, ia, es, clr, ci, &cm, es->cut->streamIntegrals);
+    err = runIntegral(ap, ia, es, clr, ci, &cm);
 
-    err = releaseSeparationBuffers(ci, &cm);
+    err |= releaseSeparationBuffers(ci, &cm);
     if (err != CAL_RESULT_OK)
         return err;
+
+    separationIntegralApplyCorrection(es);
 
     return CAL_RESULT_OK;
 }

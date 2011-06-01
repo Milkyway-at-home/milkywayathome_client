@@ -32,42 +32,35 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "calculated_constants.h"
 #include "run_cl.h"
 #include "r_points.h"
+#include "integrals.h"
 
-
-static void sumStreamResults(Kahan* probs_results,
-                             const real* probs_V_reff_xr_rp3,
+static void sumStreamResults(real* streamResults,
+                             const real* mappedResults,
+                             const cl_uint mu_steps,
+                             const cl_uint r_steps,
                              const cl_uint number_streams)
 {
-    cl_uint i;
+    cl_uint i, j, k, idx;
+    Kahan* streamSums;
 
-    for (i = 0; i < number_streams; ++i)
-        KAHAN_ADD(probs_results[i], probs_V_reff_xr_rp3[i]);
-}
-
-static void sumProbsResults(real* probs_results,
-                            const real* st_probs_V_reff_xr_rp3_mu_r,
-                            const cl_uint mu_steps,
-                            const cl_uint r_steps,
-                            const cl_uint number_streams)
-{
-    cl_uint i, j, idx;
-    Kahan* probs_sum;
-
-    probs_sum = (Kahan*) mwCalloc(number_streams, sizeof(Kahan));
+    streamSums = (Kahan*) mwCallocA(number_streams, sizeof(Kahan));
 
     for (i = 0; i < mu_steps; ++i)
     {
         for (j = 0; j < r_steps; ++j)
         {
             idx = (i * r_steps * number_streams) + (j * number_streams);
-            sumStreamResults(probs_sum, &st_probs_V_reff_xr_rp3_mu_r[idx], number_streams);
+            for (k = 0; k < number_streams; ++k)
+            {
+                KAHAN_ADD(streamSums[k], mappedResults[idx + k]);
+            }
         }
     }
 
     for (i = 0; i < number_streams; ++i)
-        probs_results[i] = probs_sum[i].sum + probs_sum[i].correction;
+        streamResults[i] = streamSums[i].sum + streamSums[i].correction;
 
-    free(probs_sum);
+    mwFreeA(streamSums);
 }
 
 static cl_int enqueueIntegralKernel(CLInfo* ci,
@@ -95,7 +88,7 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
 /* The mu and r steps for a nu step were done in parallel. After that
  * we need to add the result to the running total + correction from
  * all the nu steps */
-static real sumMuResults(const real* mu_results,
+static real sumBgResults(const real* bgResults,
                          const cl_uint mu_steps,
                          const cl_uint r_steps)
 {
@@ -106,7 +99,7 @@ static real sumMuResults(const real* mu_results,
     {
         for (j = 0; j < r_steps; ++j)
         {
-            KAHAN_ADD(bg_prob, mu_results[r_steps * i + j]);
+            KAHAN_ADD(bg_prob, bgResults[r_steps * i + j]);
         }
     }
 
@@ -134,67 +127,60 @@ static cl_int setNuKernelArgs(CLInfo* ci, const IntegralArea* ia, const cl_uint 
     return CL_SUCCESS;
 }
 
-static inline real readKernelResults(CLInfo* ci,
-                                     SeparationCLMem* cm,
-                                     real* probs_results,
-                                     const cl_uint mu_steps,
-                                     const cl_uint r_steps,
-                                     const cl_uint number_streams)
+static cl_int readKernelResults(CLInfo* ci,
+                                SeparationCLMem* cm,
+                                EvaluationState* es,
+                                const IntegralArea* ia,
+                                const cl_uint number_streams)
 {
     cl_int err;
-    real* mu_results;
-    real* probs_tmp;
-    real result;
-    size_t resultSize, probsSize;
+    real* bgResults;
+    real* streamsTmp;
+    size_t resultSize, streamsSize;
 
-    resultSize = sizeof(real) * mu_steps * r_steps;
-    mu_results = mapIntegralResults(ci, cm, resultSize);
-    if (!mu_results)
+    resultSize = sizeof(real) * ia->mu_steps * ia->r_steps;
+    bgResults = mapIntegralResults(ci, cm, resultSize);
+    if (!bgResults)
     {
         warn("Failed to map integral results\n");
-        return NAN;
+        return MW_CL_ERROR;
     }
 
-    result = sumMuResults(mu_results, mu_steps, r_steps);
+    es->bgTmp = sumBgResults(bgResults, ia->mu_steps, ia->r_steps);
 
-    err = clEnqueueUnmapMemObject(ci->queue, cm->outMu, mu_results, 0, NULL, NULL);
+    err = clEnqueueUnmapMemObject(ci->queue, cm->outBg, bgResults, 0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Failed to unmap results buffer", err);
-        return NAN;
+        return err;
     }
 
-    probsSize = sizeof(real) * mu_steps * r_steps * number_streams;
-    probs_tmp = mapProbsResults(ci, cm, probsSize);
-    if (!probs_tmp)
+    streamsSize = sizeof(real) * ia->mu_steps * ia->r_steps * number_streams;
+    streamsTmp = mapStreamsResults(ci, cm, streamsSize);
+    if (!streamsTmp)
     {
-        warn("Failed to map probs results\n");
-        return NAN;
+        warn("Failed to map stream results\n");
+        return MW_CL_ERROR;
     }
 
-    sumProbsResults(probs_results, probs_tmp, mu_steps, r_steps, number_streams);
+    sumStreamResults(es->streamTmps, streamsTmp, ia->mu_steps, ia->r_steps, number_streams);
 
-    err = clEnqueueUnmapMemObject(ci->queue, cm->outProbs, probs_tmp, 0, NULL, NULL);
+    err = clEnqueueUnmapMemObject(ci->queue, cm->outStreams, streamsTmp, 0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to unmap probs buffer", err);
-        return NAN;
+        mwCLWarn("Failed to unmap streams buffer", err);
+        return err;
     }
 
-    return result;
+    return CL_SUCCESS;
 }
 
-static cl_int runNuStep(CLInfo* ci,
-                        SeparationCLMem* cm,
-
-                        const IntegralArea* ia,
-                        const RunSizes* runSizes,
-                        const cl_uint number_streams,
-                        const cl_uint nu_step)
+static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runSizes, const cl_uint nu_step)
 {
-    cl_int err;
+    cl_uint i;
+    cl_int err = CL_SUCCESS;
     size_t offset[2];
-    unsigned int i;
+    size_t global[2];
 
     err = setNuKernelArgs(ci, ia, nu_step);
     if (err != CL_SUCCESS)
@@ -204,27 +190,27 @@ static cl_int runNuStep(CLInfo* ci,
     }
 
     offset[1] = nu_step;
-    for (i = 0; i < runSizes->numChunks; ++i)
+    global[1] = 1;
+    for (i = 0; i < runSizes->nChunk && err == CL_SUCCESS; ++i)
     {
-        offset[0] = i * runSizes->chunkSize;
+        offset[0] = runSizes->chunkBorders[i];
+        global[0] = runSizes->chunkBorders[i + 1] - runSizes->chunkBorders[i];
 
-        err = enqueueIntegralKernel(ci, runSizes->letTheDriverDoIt, offset, runSizes->global, runSizes->local);
-        if (err != CL_SUCCESS)
+        mw_begin_critical_section();
+        err = enqueueIntegralKernel(ci, mwDivisible(global[0], runSizes->local[0]) ,
+                                    offset, global, runSizes->local);
+        if (err == CL_SUCCESS)
         {
-            mwCLWarn("Failed to enqueue integral kernel", err);
-            return err;
+            /* Give the screen a chance to redraw */
+            err = clFinish(ci->queue);
+            if (err != CL_SUCCESS)
+                mwCLWarn("Failed to finish", err);
         }
 
-        /* Give the screen a chance to redraw */
-        err = clFinish(ci->queue);
-        if (err != CL_SUCCESS)
-        {
-            mwCLWarn("Failed to finish", err);
-            return err;
-        }
+        mw_end_critical_section();
     }
 
-    return CL_SUCCESS;
+    return err;
 }
 
 static inline void reportProgress(const AstronomyParameters* ap,
@@ -242,28 +228,50 @@ static inline void reportProgress(const AstronomyParameters* ap,
   #endif /* BOINC_APPLICATION */
 }
 
-static real runIntegral(CLInfo* ci,
-                        SeparationCLMem* cm,
-                        RunSizes* runSizes,
-                        real* probs_results,
-                        EvaluationState* es,
-                        const CLRequest* clr,
-                        const AstronomyParameters* ap,
-                        const IntegralArea* ia)
+static cl_int checkpointCL(CLInfo* ci, SeparationCLMem* cm, const IntegralArea* ia, EvaluationState* es)
 {
     cl_int err;
-    real result;
+
+    err = readKernelResults(ci, cm, es, ia, es->numberStreams);
+    if (err != CL_SUCCESS)
+        return err;
+
+    err = writeCheckpoint(es) ? MW_CL_ERROR : CL_SUCCESS;
+
+  #if BOINC_APPLICATION
+    boinc_checkpoint_completed();
+  #endif
+
+    return err;
+}
+
+static cl_int runIntegral(CLInfo* ci,
+                          SeparationCLMem* cm,
+                          RunSizes* runSizes,
+                          EvaluationState* es,
+                          const CLRequest* clr,
+                          const AstronomyParameters* ap,
+                          const IntegralArea* ia)
+{
+    cl_int err = CL_SUCCESS;
     double t1, t2, dt;
     double tAcc = 0.0;
 
-    for (es->nu_step = 0; es->nu_step < ia->nu_steps; es->nu_step++)
+    for (; es->nu_step < ia->nu_steps; es->nu_step++)
     {
+        if (clr->enableCheckpointing && timeToCheckpointGPU(es, ia))
+        {
+            err = checkpointCL(ci, cm, ia, es);
+            if (err != CL_SUCCESS)
+                break;
+        }
+
         t1 = mwGetTimeMilli();
-        err = runNuStep(ci, cm, ia, runSizes, ap->number_streams, es->nu_step);
+        err = runNuStep(ci, ia, runSizes, es->nu_step);
         if (err != CL_SUCCESS)
         {
             mwCLWarn("Failed to run nu step", err);
-            return NAN;
+            return err;
         }
         t2 = mwGetTimeMilli();
 
@@ -273,15 +281,21 @@ static real runIntegral(CLInfo* ci,
         reportProgress(ap, ia, es, es->nu_step + 1, dt);
     }
 
+    es->nu_step = 0;
+
     warn("Integration time: %f s. Average time per iteration = %f ms\n",
          tAcc / 1000.0, tAcc / (double) ia->nu_steps);
 
-    /* Read results from final step */
-    result = readKernelResults(ci, cm, probs_results, ia->mu_steps, ia->r_steps, ap->number_streams);
-    if (isnan(result))
-        warn("Failed to read final kernel results\n");
+    if (err == CL_SUCCESS)
+    {
+        err = readKernelResults(ci, cm, es, ia, ap->number_streams);
+        if (err != CL_SUCCESS)
+            warn("Failed to read final kernel results\n");
 
-    return result;
+        addTmpSums(es); /* Add final episode to running totals */
+    }
+
+    return err;
 }
 
 cl_int integrateCL(const AstronomyParameters* ap,
@@ -291,30 +305,19 @@ cl_int integrateCL(const AstronomyParameters* ap,
                    EvaluationState* es,
                    const CLRequest* clr,
                    CLInfo* ci,
-                   DevInfo* di,
                    cl_bool useImages)
 {
-    real result;
     cl_int err;
-    SeparationSizes sizes;
     RunSizes runSizes;
+    SeparationSizes sizes;
     SeparationCLMem cm = EMPTY_SEPARATION_CL_MEM;
 
     /* Need to test sizes for each integral, since the area size can change */
     calculateSizes(&sizes, ap, ia);
-    if (findGoodRunSizes(&runSizes, ci, di, ia, clr))
+
+    if (findRunSizes(&runSizes, ci, &ci->di, ia, clr))
     {
         warn("Failed to find good run sizes\n");
-        if (fallbackDriverSolution(&runSizes))
-        {
-            warn("Fallback solution failed\n");
-            return MW_CL_ERROR;
-        }
-    }
-
-    if (!separationCheckDevCapabilities(di, &sizes))
-    {
-        warn("Device failed capability check\n");
         return MW_CL_ERROR;
     }
 
@@ -332,10 +335,12 @@ cl_int integrateCL(const AstronomyParameters* ap,
         return err;
     }
 
-    es->cut->bgIntegral = runIntegral(ci, &cm, &runSizes, es->cut->streamIntegrals, es, clr, ap, ia);
+    err = runIntegral(ci, &cm, &runSizes, es, clr, ap, ia);
 
     releaseSeparationBuffers(&cm);
 
-    return CL_SUCCESS;
+    separationIntegralApplyCorrection(es);
+
+    return err;
 }
 

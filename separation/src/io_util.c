@@ -81,7 +81,7 @@ real* fread_double_array(FILE* file, const char* array_name, unsigned int* sizeO
         {
             warn("Error reading into %s\n", array_name);
             free(arr);
-            return arr;
+            return NULL;
         }
 
         if (i < size - 1)
@@ -139,7 +139,8 @@ void printIntegralArea(const IntegralArea* ia)
            "  mu_step_size = %g\n"
            "  r_steps      = %u\n"
            "  nu_steps     = %u\n"
-           "  mu_steps     = %u\n",
+           "  mu_steps     = %u\n"
+           "}\n",
            ia->r_min, ia->r_max, ia->r_step_size,
            ia->nu_min, ia->nu_max, ia->nu_step_size,
            ia->mu_min, ia->mu_max, ia->mu_step_size,
@@ -178,40 +179,46 @@ void printStreamConstants(const StreamConstants* c, unsigned int n)
 void printAstronomyParameters(const AstronomyParameters* ap)
 {
     printf("astronomy-parameters {\n"
-           "  parameters_version           = %g\n"
-           "  total_calc_probs             = %g\n"
-           "  number_background_parameters = %u\n"
-           "  background_weight            = %g\n"
-           "  number_streams               = %u\n"
-           "  convolve                     = %u\n"
-           "  sgr_coordinates              = %u\n"
-           "  aux_bg_profile               = %d\n"
-           "  wedge                        = %d\n"
-           "  number_integrals             = %u\n"
-           "  alpha                        = %g\n"
-           "  q                            = %g\n"
-           "  q_inv_sqr                    = %g\n"
-           "  sn                           = %g\n"
-           "  r0                           = %g\n"
-           "  delta                        = %g\n"
-           "  coeff                        = %g\n"
-           "  alpha_delta                  = %g\n"
-           "  bg_a                         = %g\n"
-           "  bg_b                         = %g\n"
-           "  bg_c                         = %g\n",
-           ap->parameters_version,
-           ap->total_calc_probs,
-           ap->number_background_parameters,
-           ap->background_weight,
-           ap->number_streams,
+           "  m_sun_r0              = %f\n"
+           "  q_inv                 = %f\n"
+           "  q_inv_sqr             = %f\n"
+           "  r0                    = %f\n"
+           "  convolve              = %u\n"
+           "  number_streams        = %u\n"
+           "  fast_h_prob           = %d\n"
+           "  aux_bg_profile        = %d\n"
+           "  alpha                 = %f\n"
+           "  delta                 = %f\n"
+           "  alpha_delta           = %f\n"
+           "  bg_a                  = %f\n"
+           "  bg_b                  = %f\n"
+           "  bg_c                  = %f\n"
+           "  wedge                 = %d\n"
+           "  sun_r0                = %f\n"
+           "  q                     = %f\n"
+           "  coeff                 = %f\n"
+           "  total_calc_probs      = %f\n"
+           "  number_integrals      = %u\n"
+           "  exp_background_weight = %f\n",
+           ap->m_sun_r0,
+           ap->q_inv,
+           ap->q_inv_sqr,
+           ap->r0,
            ap->convolve,
-           ap->sgr_coordinates,
+           ap->number_streams,
+           ap->fast_h_prob,
            ap->aux_bg_profile,
+           ap->alpha,
+           ap->delta,
+           ap->alpha_delta3,
+           ap->bg_a, ap->bg_b, ap->bg_c,
            ap->wedge,
+           ap->sun_r0,
+           ap->q,
+           ap->coeff,
+           ap->total_calc_probs,
            ap->number_integrals,
-           ap->alpha, ap->q, ap->q_inv_sqr,
-           ap->sn, ap->r0, ap->delta, ap->coeff, ap->alpha_delta3,
-           ap->bg_a, ap->bg_b, ap->bg_c);
+           ap->exp_background_weight);
 }
 
 void printSeparationResults(const SeparationResults* results, unsigned int numberStreams)
@@ -219,21 +226,21 @@ void printSeparationResults(const SeparationResults* results, unsigned int numbe
     unsigned int i;
 
     /* Print integrals */
-    warn("<background_integral> %.15lf </background_integral>\n", results->backgroundIntegral);
+    warn("<background_integral> %.15f </background_integral>\n", results->backgroundIntegral);
     warn("<stream_integral> ");
     for (i = 0; i < numberStreams; ++i)
-        warn(" %.15lf ", results->streamIntegrals[i]);
+        warn(" %.15f ", results->streamIntegrals[i]);
     warn("</stream_integral>\n");
 
     /* Print individual likelihoods */
-    warn("<background_likelihood> %.15lf </background_likelihood>\n", results->backgroundLikelihood);
+    warn("<background_likelihood> %.15f </background_likelihood>\n", results->backgroundLikelihood);
     warn("<stream_only_likelihood> ");
     for (i = 0; i < numberStreams; ++i)
-        warn(" %.15lf ", results->streamLikelihoods[i]);
+        warn(" %.15f ", results->streamLikelihoods[i]);
     warn("</stream_only_likelihood>\n");
 
     /* Print overall likelihood */
-    warn("<search_likelihood> %0.15lf </search_likelihood>\n", results->likelihood);
+    warn("<search_likelihood> %.15f </search_likelihood>\n", results->likelihood);
 }
 
 /* FIXME: Kill this with fire when we switch to JSON everything for separation */

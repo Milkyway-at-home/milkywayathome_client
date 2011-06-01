@@ -141,9 +141,6 @@ typedef struct NBODY_ALIGN
     } stuff;
 } NBodyCell;
 
-#define InvalidEnum (-1)
-typedef int generic_enum_t;  /* A general enum type. */
-
 /* use alternate criteria */
 typedef enum
 {

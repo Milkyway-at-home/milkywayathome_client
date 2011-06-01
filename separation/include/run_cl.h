@@ -36,7 +36,6 @@ cl_int integrateCL(const AstronomyParameters* ap,
                    EvaluationState* es,
                    const CLRequest* clr,
                    CLInfo* ci,
-                   DevInfo* di,
                    cl_bool useImages);
 
 #ifdef __cplusplus

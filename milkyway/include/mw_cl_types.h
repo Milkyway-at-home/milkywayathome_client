@@ -29,20 +29,6 @@ extern "C" {
 
 #define MW_CL_ERROR ((cl_int) 1)
 
-typedef struct
-{
-    cl_device_id dev;
-    cl_device_type devType;
-    cl_uint devCount;
-    cl_context clctx;
-    cl_command_queue queue;
-    cl_command_queue bufQueue; /* Queue for buffer ops when double buffering */
-    cl_program prog;
-    cl_kernel kern;
-} CLInfo;
-
-#define EMPTY_CL_INFO { NULL, -1, 0, NULL, NULL, NULL, NULL, NULL }
-
 
 typedef enum
 {
@@ -96,6 +82,22 @@ typedef struct
     MWDoubleExts doubleExts;
     char exts[1024];
 } DevInfo;
+
+
+typedef struct
+{
+    cl_device_id dev;
+    cl_device_type devType;
+    cl_uint devCount;
+    cl_context clctx;
+    cl_command_queue queue;
+    cl_command_queue bufQueue; /* Queue for buffer ops when double buffering */
+    cl_program prog;
+    cl_kernel kern;
+
+    DevInfo di;
+} CLInfo;
+
 
 typedef struct
 {

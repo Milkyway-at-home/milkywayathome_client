@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define _GNU_SOURCE
+
 #include <string.h>
 #include <stdio.h>
 #include "nbody_types.h"
@@ -336,23 +336,6 @@ char* showNBodyCtx(const NBodyCtx* ctx)
 void printNBodyCtx(const NBodyCtx* ctx)
 {
     char* buf = showNBodyCtx(ctx);
-    puts(buf);
-    free(buf);
-}
-
-char* showVector(const mwvector v)
-{
-    char* buf;
-
-    if (asprintf(&buf, "{ %g, %g, %g }", X(v), Y(v), Z(v)) < 0)
-        fail("asprintf() failed\n");
-
-    return buf;
-}
-
-void printVector(const mwvector v)
-{
-    char* buf = showVector(v);
     puts(buf);
     free(buf);
 }

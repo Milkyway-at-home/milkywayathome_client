@@ -25,10 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#ifndef _MSC_VER
-  #define _GNU_SOURCE
-#endif
-
 #include "separation_config.h"
 #include "separation_types.h"
 #include "milkyway_util.h"
@@ -50,6 +46,66 @@ extern "C" {
 #if SEPARATION_OPENCL
   #include "run_cl.h"
 #endif /* SEPARATION_OPENCL */
+
+
+typedef struct
+{
+    char* star_points_file;
+    char* ap_file;  /* astronomy parameters */
+    char* separation_outfile;
+    const char** forwardedArgs;
+    real* numArgs;   /* Temporary */
+    unsigned int nForwardedArgs;
+    int debugBOINC;
+    int do_separation;
+    int setSeed;
+    int separationSeed;
+    int cleanupCheckpoint;
+    int ignoreCheckpoint;  /* Ignoring checkpoint is not the same as disabling GPU checkpoints */
+    int usePlatform;
+    int useDevNumber;  /* Choose CL platform and device */
+    int nonResponsive;  /* FIXME: Make this go away */
+    unsigned int numChunk;  /* Also this */
+    double responsivenessFactor;
+    double targetFrequency;
+    int pollingMode;
+    int printVersion;
+    int disableGPUCheckpointing;
+
+    MWPriority processPriority;
+    int setPriority;
+
+    /* Force between normal, SSE2, SSE3 paths */
+    int forceNoIntrinsics;
+    int forceX87;
+    int forceSSE2;
+    int forceSSE3;
+
+    int verbose;
+} SeparationFlags;
+
+/* Process priority to use for GPU version */
+#ifndef _WIN32
+  #define DEFAULT_GPU_PRIORITY 0
+#else
+  #define DEFAULT_GPU_PRIORITY MW_PRIORITY_NORMAL
+#endif /* _WIN32 */
+
+#define DEFAULT_POLLING_MODE 1
+#define DEFAULT_RESPONSIVENESS_FACTOR 1.0
+#define DEFAULT_TARGET_FREQUENCY 30.0
+#define DEFAULT_DISABLE_GPU_CHECKPOINTING 0
+
+
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, NULL, 0, FALSE,       \
+                                 FALSE, FALSE, 0, FALSE, FALSE, 0, 0, 0, 0,    \
+                                 DEFAULT_RESPONSIVENESS_FACTOR,                \
+                                 DEFAULT_TARGET_FREQUENCY,                     \
+                                 DEFAULT_POLLING_MODE,                         \
+                                 DEFAULT_DISABLE_GPU_CHECKPOINTING,            \
+                                 0, 0, FALSE,                                  \
+                                 FALSE, FALSE, FALSE, FALSE, FALSE             \
+                               }
 
 #ifdef __cplusplus
 }

@@ -78,6 +78,12 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
     mwPrintPlatforms(ids, n_platform);
     warn("Using device %u on platform %u\n", clr->devNum, clr->platform);
 
+    if (clr->platform >= n_platform)
+    {
+        warn("Requested platform is out of range of number of found platforms\n");
+        return MW_CL_ERROR;
+    }
+
     devs = mwGetAllDevices(ids[clr->platform], &nDev);
     if (!devs)
     {
@@ -103,9 +109,7 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
 /* Query one device specified by type, create a context and command
  * queue, as well as retrieve device information
  */
-cl_int mwSetupCL(CLInfo* ci,
-                 DevInfo* di,   /* get detailed device information for selected device */
-                 const CLRequest* clr)
+cl_int mwSetupCL(CLInfo* ci, const CLRequest* clr)
 {
     cl_int err;
 
@@ -115,23 +119,6 @@ cl_int mwSetupCL(CLInfo* ci,
         warn("Failed to get information about device\n");
         return err;
     }
-
-    err = mwGetDevInfo(di, ci->dev);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to get device info\n");
-        return err;
-    }
-
-    mwPrintDevInfo(di);
-
-  #if DOUBLEPREC
-    if (!mwSupportsDoubles(di))
-    {
-        warn("Device doesn't support double precision\n");
-        return MW_CL_ERROR;
-    }
-  #endif
 
     err = mwCreateCtxQueue(ci, CL_FALSE);
     if (err != CL_SUCCESS)

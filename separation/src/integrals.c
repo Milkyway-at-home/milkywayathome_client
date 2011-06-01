@@ -1,23 +1,25 @@
 /*
-Copyright 2008-2010 Travis Desell, Dave Przybylo, Nathan Cole, Matthew
-Arsenault, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
-Magdon-Ismail and Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Boleslaw
+ * Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
+ * Rensselaer Polytechnic Institute.
+ * Copyright (c) 2010-2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 
 #include "evaluation_state.h"
 #include "integrals.h"
@@ -25,8 +27,37 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "r_points.h"
 #include "milkyway_util.h"
 #include "calculated_constants.h"
+#include "evaluation.h"
 
 #include <time.h>
+
+/* Marshaling into split r_points and qw_r3_N which helps with vectorization */
+static RConsts* initRPoints(const AstronomyParameters* ap,
+                            const IntegralArea* ia,
+                            const StreamGauss sg,
+                            real* RESTRICT rPoints,
+                            real* RESTRICT qw_r3_N)
+{
+    unsigned int i, j, idx;
+    RPoints* rPts;
+    RConsts* rc;
+
+    rPts = precalculateRPts(ap, ia, sg, &rc, FALSE);
+
+    for (i = 0; i < ia->r_steps; ++i)
+    {
+        for (j = 0; j < ap->convolve; ++j)
+        {
+            idx = i * ap->convolve + j;
+            rPoints[idx] = rPts[idx].r_point;
+            qw_r3_N[idx] = rPts[idx].qw_r3_N;
+        }
+    }
+
+    mwFreeA(rPts);
+    return rc;
+}
+
 
 #ifdef MILKYWAY_IPHONE_APP
 double _milkywaySeparationGlobalProgress = 0.0;
@@ -89,6 +120,48 @@ static inline void doBoincCheckpoint(const EvaluationState* es,
 #endif /* BOINC_APPLICATION */
 
 HOT
+static inline void sumProbs(EvaluationState* es)
+{
+    unsigned int i;
+
+    KAHAN_ADD(es->bgSum, es->bgTmp);
+    for (i = 0; i < es->numberStreams; ++i)
+        KAHAN_ADD(es->streamSums[i], es->streamTmps[i]);
+}
+
+
+HOT
+static inline void r_sum(const AstronomyParameters* ap,
+                         const StreamConstants* sc,
+                         const real* RESTRICT sg_dx,
+                         const real* RESTRICT rPoints,
+                         const real* RESTRICT qw_r3_N,
+                         LBTrig lbt,
+                         real id,
+                         EvaluationState* es,
+                         const RConsts* rc,
+                         unsigned int r_steps)
+{
+    unsigned int r_step;
+    real reff_xr_rp3;
+
+    for (r_step = 0; r_step < r_steps; ++r_step)
+    {
+        reff_xr_rp3 = id * rc[r_step].irv_reff_xr_rp3;
+        es->bgTmp = probabilityFunc(ap,
+                                    sc,
+                                    sg_dx,
+                                    &rPoints[r_step * ap->convolve],
+                                    &qw_r3_N[r_step * ap->convolve],
+                                    lbt,
+                                    rc[r_step].gPrime,
+                                    reff_xr_rp3,
+                                    es->streamTmps);
+        sumProbs(es);
+    }
+}
+
+HOT
 inline LBTrig lb_trig(LB lb)
 {
     LBTrig lbt;
@@ -103,247 +176,14 @@ inline LBTrig lb_trig(LB lb)
     return lbt;
 }
 
-static inline mwvector lbr2xyz_2(const AstronomyParameters* ap,
-                                 const real rPoint,
-                                 const LBTrig lbt)
-{
-    mwvector xyz;
-
-    // This mad for some reason increases GPR usage by 1 pushing into next level of unhappy
-    xyz.x = mw_mad(rPoint, LCOS_BCOS(lbt), ap->m_sun_r0);
-    xyz.y = rPoint * LSIN_BCOS(lbt);
-    xyz.z = rPoint * BSIN(lbt);
-
-    return xyz;
-}
-
-static inline real streamIncrement(const StreamConstants* sc, mwvector xyz)
-{
-    real xyz_norm, dotted;
-    mwvector xyzs;
-
-    xyzs = mw_subv(xyz, sc->c);
-    dotted = mw_dotv(sc->a, xyzs);
-    mw_incsubv_s(xyzs, sc->a, dotted);
-
-    xyz_norm = mw_sqrv(xyzs);
-
-    return mw_exp(-xyz_norm * sc->sigma_sq2_inv);
-}
-
-HOT
-static inline void streamSums(real* st_probs,
-                              const StreamConstants* sc,
-                              const mwvector xyz,
-                              const real qw_r3_N,
-                              const unsigned int nstreams)
-{
-    unsigned int i;
-
-    for (i = 0; i < nstreams; ++i)
-        st_probs[i] += qw_r3_N * streamIncrement(&sc[i], xyz);
-}
-
-HOT
-static inline real h_prob_fast(const AstronomyParameters* ap, real qw_r3_N, real rg)
-{
-    const real rs = rg + ap->r0;
-    return qw_r3_N / (rg * cube(rs));
-}
-
-HOT
-static inline real h_prob_slow(const AstronomyParameters* ap, real qw_r3_N, real rg)
-{
-    const real rs = rg + ap->r0;
-    return qw_r3_N / (mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
-}
-
-HOT
-static inline real rg_calc(const AstronomyParameters* ap, const mwvector xyz)
-{
-    /* sqrt(x^2 + y^2 + q_inv_sqr * z^2) */
-
-    real tmp;
-
-    tmp = sqr(X(xyz));
-    tmp = mw_mad(Y(xyz), Y(xyz), tmp);               /* x^2 + y^2 */
-    tmp = mw_mad(ap->q_inv_sqr, sqr(Z(xyz)), tmp);   /* (q_invsqr * z^2) + (x^2 + y^2) */
-
-    return mw_sqrt(tmp);
-}
-
-ALWAYS_INLINE OLD_GCC_EXTERNINLINE
-inline void zero_st_probs(real* st_probs, const unsigned int nstream)
-{
-    unsigned int i;
-
-    for (i = 0; i < nstream; ++i)
-        st_probs[i] = 0.0;
-}
-
-ALWAYS_INLINE OLD_GCC_EXTERNINLINE
-inline void sum_probs(Kahan* probs,
-                      const real* st_probs,
-                      const real V_reff_xr_rp3,
-                      const unsigned int nstream)
-{
-    unsigned int i;
-
-    for (i = 0; i < nstream; ++i)
-        KAHAN_ADD(probs[i], V_reff_xr_rp3 * st_probs[i]);
-}
-
-ALWAYS_INLINE OLD_GCC_EXTERNINLINE
-inline void mult_probs(real* st_probs, const real V_reff_xr_rp3, const unsigned int n_stream)
-{
-    unsigned int i;
-
-    for (i = 0; i < n_stream; ++i)
-        st_probs[i] *= V_reff_xr_rp3;
-}
-
-static inline real aux_prob(const AstronomyParameters* ap,
-                            const real qw_r3_N,
-                            const real r_in_mag)
-{
-    return qw_r3_N * (ap->bg_a * sqr(r_in_mag) + ap->bg_b * r_in_mag + ap->bg_c);
-}
-
-
-HOT
-static inline real bg_probability_fast_hprob(const AstronomyParameters* ap,
-                                             const StreamConstants* sc,
-                                             const RPoints* r_pts,
-                                             const real* sg_dx,
-                                             const LBTrig lbt,
-                                             const real gPrime,
-                                             real* streamTmps)
-{
-    unsigned int i;
-    real h_prob, g, rg;
-    mwvector xyz;
-    real bg_prob = 0.0;
-    unsigned int convolve = ap->convolve;
-    int aux_bg_profile = ap->aux_bg_profile;
-
-    zero_st_probs(streamTmps, ap->number_streams);
-    for (i = 0; i < convolve; ++i)
-    {
-        xyz = lbr2xyz_2(ap, r_pts[i].r_point, lbt);
-        rg = rg_calc(ap, xyz);
-
-        h_prob = h_prob_fast(ap, r_pts[i].qw_r3_N, rg);
-
-        /* Add a quadratic term in g to the the Hernquist profile */
-        if (aux_bg_profile)
-        {
-            g = gPrime + sg_dx[i];
-            h_prob += aux_prob(ap, r_pts[i].qw_r3_N, g);
-        }
-
-        bg_prob += h_prob;
-        streamSums(streamTmps, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
-    }
-
-    return bg_prob;
-}
-
-HOT
-static inline real bg_probability_slow_hprob(const AstronomyParameters* ap,
-                                             const StreamConstants* sc,
-                                             const RPoints* r_pts,
-                                             const real* sg_dx,
-                                             const LBTrig lbt,
-                                             const real gPrime,
-                                             real* streamTmps)
-{
-    unsigned int i;
-    real rg, g;
-    mwvector xyz;
-    real bg_prob = 0.0;
-    unsigned int convolve = ap->convolve;
-    int aux_bg_profile = ap->aux_bg_profile;
-
-    zero_st_probs(streamTmps, ap->number_streams);
-
-    for (i = 0; i < convolve; ++i)
-    {
-        xyz = lbr2xyz_2(ap, r_pts[i].r_point, lbt);
-
-        rg = rg_calc(ap, xyz);
-
-        bg_prob += h_prob_slow(ap, r_pts[i].qw_r3_N, rg);
-        if (aux_bg_profile)
-        {
-            g = gPrime + sg_dx[i];
-            bg_prob += aux_prob(ap, r_pts[i].qw_r3_N, g);
-        }
-
-        streamSums(streamTmps, sc, xyz, r_pts[i].qw_r3_N, ap->number_streams);
-    }
-
-    return bg_prob;
-}
-
-HOT ALWAYS_INLINE
-inline void bg_probability(const AstronomyParameters* ap,
-                           const StreamConstants* sc,
-                           const RPoints* r_pts,
-                           const real* sg_dx,
-                           const real gPrime,
-                           const LBTrig lbt, /* integral point */
-                           EvaluationState* es)
-{
-    if (ap->fast_h_prob)
-        es->bgTmp = bg_probability_fast_hprob(ap, sc, r_pts, sg_dx, lbt, gPrime, es->streamTmps);
-    else
-        es->bgTmp = bg_probability_slow_hprob(ap, sc, r_pts, sg_dx, lbt, gPrime, es->streamTmps);
-}
-
-HOT
-static inline void multSumProbs(EvaluationState* es, real V_reff_xr_rp3)
-{
-    unsigned int i;
-
-    KAHAN_ADD(es->bgSum, V_reff_xr_rp3 * es->bgTmp);
-    for (i = 0; i < es->numberStreams; ++i)
-        KAHAN_ADD(es->streamSums[i], V_reff_xr_rp3 * es->streamTmps[i]);
-}
-
-
-HOT
-static inline void r_sum(const AstronomyParameters* ap,
-                         const StreamConstants* sc,
-                         const real* sg_dx,
-                         LBTrig lbt,
-                         real id,
-                         EvaluationState* es,
-                         const RPoints* r_pts,
-                         const RConsts* rc,
-                         unsigned int r_steps)
-{
-    unsigned int r_step;
-    real V_reff_xr_rp3;
-
-    for (r_step = 0; r_step < r_steps; ++r_step)
-    {
-        bg_probability(ap, sc,
-                       &r_pts[r_step * ap->convolve],
-                       sg_dx,
-                       rc[r_step].gPrime, lbt, es);
-        V_reff_xr_rp3 = id * rc[r_step].irv_reff_xr_rp3;
-
-        multSumProbs(es, V_reff_xr_rp3);
-    }
-}
-
 HOT
 static inline void mu_sum(const AstronomyParameters* ap,
                           const IntegralArea* ia,
                           const StreamConstants* sc,
                           const RConsts* rc,
-                          const RPoints* r_pts,
-                          const real* sg_dx,
+                          const real* RESTRICT sg_dx,
+                          const real* RESTRICT rPoints,
+                          const real* RESTRICT qw_r3_N,
                           const NuId nuid,
                           EvaluationState* es)
 {
@@ -363,7 +203,7 @@ static inline void mu_sum(const AstronomyParameters* ap,
         lb = gc2lb(ap->wedge, mu, nuid.nu); /* integral point */
         lbt = lb_trig(lb);
 
-        r_sum(ap, sc, sg_dx, lbt, nuid.id, es, r_pts, rc, ia->r_steps);
+        r_sum(ap, sc, sg_dx, rPoints, qw_r3_N, lbt, nuid.id, es, rc, ia->r_steps);
     }
 
     es->mu_step = 0;
@@ -373,8 +213,9 @@ static void nuSum(const AstronomyParameters* ap,
                   const IntegralArea* ia,
                   const StreamConstants* sc,
                   const RConsts* rc,
-                  const RPoints* r_pts,
-                  const real* sg_dx,
+                  const real* RESTRICT sg_dx,
+                  const real* RESTRICT rPoints,
+                  const real* RESTRICT qw_r3_N,
                   EvaluationState* es)
 {
     NuId nuid;
@@ -383,13 +224,13 @@ static void nuSum(const AstronomyParameters* ap,
     {
         nuid = calcNuStep(ia, es->nu_step);
 
-        mu_sum(ap, ia, sc, rc, r_pts, sg_dx, nuid, es);
+        mu_sum(ap, ia, sc, rc, sg_dx, rPoints, qw_r3_N, nuid, es);
     }
 
     es->nu_step = 0;
 }
 
-static void integralApplyCorrection(EvaluationState* es)
+void separationIntegralApplyCorrection(EvaluationState* es)
 {
     unsigned int i;
 
@@ -404,10 +245,12 @@ int integrate(const AstronomyParameters* ap,
               const IntegralArea* ia,
               const StreamConstants* sc,
               const StreamGauss sg,
-              EvaluationState* es)
+              EvaluationState* es,
+              const CLRequest* clr)
 {
-    RPoints* r_pts;
     RConsts* rc;
+    real* RESTRICT rPoints;
+    real* RESTRICT qw_r3_N;
 
     if (ap->q == 0.0)
     {
@@ -418,13 +261,16 @@ int integrate(const AstronomyParameters* ap,
         return 1;
     }
 
-    r_pts = precalculateRPts(ap, ia, sg, &rc, 0);
+    rPoints = mwMallocA(sizeof(real) * ia->r_steps * ap->convolve);
+    qw_r3_N = mwMallocA(sizeof(real) * ia->r_steps * ap->convolve);
+    rc = initRPoints(ap, ia, sg, rPoints, qw_r3_N);
 
-    nuSum(ap, ia, sc, rc, r_pts, sg.dx, es);
-    integralApplyCorrection(es);
+    nuSum(ap, ia, sc, rc, sg.dx, rPoints, qw_r3_N, es);
+    separationIntegralApplyCorrection(es);
 
-    mwFreeA(r_pts);
     mwFreeA(rc);
+    mwFreeA(rPoints);
+    mwFreeA(qw_r3_N);
 
   #ifdef MILKYWAY_IPHONE_APP
     _milkywaySeparationGlobalProgress = 1.0;
@@ -432,5 +278,4 @@ int integrate(const AstronomyParameters* ap,
 
     return 0;
 }
-
 

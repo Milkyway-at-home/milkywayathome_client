@@ -26,8 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
-#include "milkyway_lua_vector.h"
-#include "milkyway_lua_dsfmt.h"
+#include "milkyway_lua.h"
 
 #include "nbody_lua_type_marshal.h"
 
@@ -44,8 +43,6 @@ extern "C" {
 #include <lua.h>
 
 void registerNBodyTypes(lua_State* luaSt);
-void registerOtherTypes(lua_State* luaSt);
-
 NBodyStatus readNBodyStatus(lua_State* luaSt, const char* name);
 
 #ifdef __cplusplus

@@ -21,28 +21,25 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _INTEGRALS_H_
 #define _INTEGRALS_H_
 
+
+#include "separation_types.h"
+#include "evaluation_state.h"
+#include "milkyway_util.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "separation_types.h"
-#include "evaluation_state.h"
-
 LBTrig lb_trig(LB lb);
-
-void bg_probability(const AstronomyParameters* ap,
-                    const StreamConstants* sc,
-                    const RPoints* r_pts,
-                    const real* sg_dx,
-                    const real gPrime,
-                    const LBTrig lbt, /* integral point */
-                    EvaluationState* es);
 
 int integrate(const AstronomyParameters* ap,
               const IntegralArea* ia,
               const StreamConstants* sc,
               const StreamGauss sg,
-              EvaluationState* es);
+              EvaluationState* es,
+              const CLRequest* clr);
+
+void separationIntegralApplyCorrection(EvaluationState* es);
 
 #ifdef __cplusplus
 }

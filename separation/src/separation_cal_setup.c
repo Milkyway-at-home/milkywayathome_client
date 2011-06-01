@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2010  Matthew Arsenault
+Copyright (C) 2010, 2011  Matthew Arsenault
 
 This file is part of Milkway@Home.
 
@@ -72,7 +72,7 @@ static CALresult releaseMWMemRes(CALcontext ctx, MWMemRes* mr)
     return err;
 }
 
-static CALresult mwDestroyCALInfo(MWCALInfo* ci)
+CALresult mwUnloadKernel(MWCALInfo* ci)
 {
     CALresult err = CAL_RESULT_OK;
     CALresult erri;
@@ -86,6 +86,23 @@ static CALresult mwDestroyCALInfo(MWCALInfo* ci)
         err |= erri;
     }
 
+    if (ci->image)
+    {
+        erri = calImageFree(ci->image);
+        if (erri != CAL_RESULT_OK)
+            cal_warn("Failed free image", erri);
+        ci->image = 0;
+    }
+
+    return err;
+}
+
+static CALresult mwDestroyCALInfo(MWCALInfo* ci)
+{
+    CALresult err = CAL_RESULT_OK;
+    CALresult erri;
+
+    err |= mwUnloadKernel(ci);
     if (ci->calctx)
     {
         erri = calCtxDestroy(ci->calctx);
@@ -102,12 +119,6 @@ static CALresult mwDestroyCALInfo(MWCALInfo* ci)
             cal_warn("Failed to close device", erri);
         ci->dev = 0;
         err |= erri;
-    }
-
-    if (ci->image)
-    {
-        calImageFree(ci->image);
-        ci->image = 0;
     }
 
     if (err != CAL_RESULT_OK)
@@ -194,25 +205,6 @@ static CALresult mwGetCALInfo(MWCALInfo* ci, CALuint devID)
 
     return CAL_RESULT_OK;
 }
-
-#if DOUBLEPREC
-  /* VERY IMPORTANT:
-     http://developer.amd.com/support/KnowledgeBase/Lists/KnowledgeBase/DispForm.aspx?ID=92
-   */
-  /* For some reason it doesn't work if you try to use the uint32 ones
-   * with a cb[]. */
-  #define constantFormatReal1 CAL_FORMAT_FLOAT_2
-  #define constantFormatReal2 CAL_FORMAT_FLOAT_4
-
-  #define formatReal1 CAL_FORMAT_UNSIGNED_INT32_2
-  #define formatReal2 CAL_FORMAT_UNSIGNED_INT32_4
-#else
-  #define constantFormatReal1 CAL_FORMAT_FLOAT_2
-  #define constantFormatReal2 CAL_FORMAT_FLOAT_4
-
-  #define formatReal1 CAL_FORMAT_UNSIGNED_INT32_1
-  #define formatReal2 CAL_FORMAT_UNSIGNED_INT32_2
-#endif /* DOUBLEPREC */
 
 /* Try to get memory handle and cleanup resource if that fails */
 static CALresult getMemoryHandle(MWMemRes* mr, MWCALInfo* ci)
@@ -401,11 +393,11 @@ static CALresult createConstantBuffer2D(MWMemRes* mr,
 }
 
 
-static CALresult createConstantBuffer1D(MWMemRes* mr,
-                                        MWCALInfo* ci,
-                                        const CALvoid* src,
-                                        CALformat format,
-                                        CALuint width)
+CALresult createConstantBuffer1D(MWMemRes* mr,
+                                 MWCALInfo* ci,
+                                 const CALvoid* src,
+                                 CALformat format,
+                                 CALuint width)
 {
     CALresult err;
     CALvoid* bufPtr;
@@ -667,6 +659,10 @@ CALresult releaseSeparationBuffers(MWCALInfo* ci, SeparationCALMem* cm)
     err |= releaseMWMemRes(ci->calctx, &cm->bTrig);
     err |= releaseMWMemRes(ci->calctx, &cm->nuBuf);
 
+    err |= releaseMWMemRes(ci->calctx, &cm->sg_qgauss_W);
+    err |= releaseMWMemRes(ci->calctx, &cm->starsXY);
+    err |= releaseMWMemRes(ci->calctx, &cm->starsZ);
+
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to release buffers", err);
 
@@ -836,25 +832,57 @@ static CALresult printISAToFile(const char* filename, CALimage img)
     return err;
 }
 
-#define IL_OUT_FILE "calpp_kernel.il"
-#define ISA_OUT_FILE "calpp_kernel.isa"
+#define IL_INTEGRAL_OUT_FILE "calpp_integral_kernel.il"
+#define ISA_INTEGRAL_OUT_FILE "calpp_integral_kernel.isa"
+
+#define IL_LIKELIHOOD_OUT_FILE "calpp_likelihood_kernel.il"
+#define ISA_LIKELIHOOD_OUT_FILE "calpp_likelihood_kernel.isa"
+
+#ifndef NDEBUG
+static void writeDebugKernels(const char* src, CALimage img, const char* ilOut, const char* isaOut)
+{
+    char buf[1024];
+
+    mwWriteFile(ilOut, src);
+    if (printISAToFile(isaOut, img) == CAL_RESULT_OK)
+    {
+        sprintf(buf, "grep GPR \"%s\"", isaOut);
+        system(buf);
+    }
+}
+#endif /* NDEBUG */
+
 
 static CALimage createCALImageFromGeneratedKernel(const MWCALInfo* ci,
                                                   const AstronomyParameters* ap,
-                                                  const StreamConstants* sc)
+                                                  const StreamConstants* sc,
+                                                  CALboolean likelihoodKernel)
 
 {
     CALimage img;
     char* src;
 
-    src = separationKernelSrc(ap, sc, ci->devID);
+    if (!likelihoodKernel)
+    {
+        src = separationIntegralKernelSrc(ap, sc, ci->devID);
+    }
+    else
+    {
+        src = separationLikelihoodKernelSrc(ap, sc, ci->devID);
+    }
+
     img = createCALImage(src, ci->devInfo.target);
     free(src);
 
- #ifndef NDEBUG
-    mwWriteFile(IL_OUT_FILE, src);
-    if (printISAToFile(ISA_OUT_FILE, img) == CAL_RESULT_OK)
-        system("grep GPR " ISA_OUT_FILE);
+  #ifndef NDEBUG
+    if (!likelihoodKernel)
+    {
+        writeDebugKernels(src, img, IL_INTEGRAL_OUT_FILE, ISA_INTEGRAL_OUT_FILE);
+    }
+    else
+    {
+        writeDebugKernels(src, img, IL_LIKELIHOOD_OUT_FILE, ISA_LIKELIHOOD_OUT_FILE);
+    }
   #endif /* NDEBUG */
 
     return img;
@@ -884,8 +912,8 @@ CALresult getModuleNames(MWCALInfo* ci, SeparationCALNames* cn, CALuint numberSt
     cn->outStreams = (CALname*) mwCalloc(numberStreams, sizeof(CALname));
     cn->inStreams = (CALname*) mwCalloc(numberStreams, sizeof(CALname));
 
-    err |= getNameMWCALInfo(ci, &cn->sg_dx, "cb0");
-    err |= getNameMWCALInfo(ci, &cn->nuBuf, "cb1");
+    err |= getNameMWCALInfo(ci, &cn->nuBuf, "cb0");
+    err |= getNameMWCALInfo(ci, &cn->sg_dx, "cb1");
 
     err |= getNameMWCALInfo(ci, &cn->rPts,  "i0");
     err |= getNameMWCALInfo(ci, &cn->rc,    "i1");
@@ -935,17 +963,14 @@ CALresult setKernelArguments(MWCALInfo* ci, SeparationCALMem* cm, SeparationCALN
     return err;
 }
 
-static CALresult separationSetupCAL(MWCALInfo* ci,
-                                    const AstronomyParameters* ap,
-                                    const StreamConstants* sc)
+CALresult separationLoadKernel(MWCALInfo* ci,
+                               const AstronomyParameters* ap,
+                               const StreamConstants* sc,
+                               CALboolean likelihoodKernel)
 {
     CALresult err;
 
-	/* We need to increase timer resolution to prevent big slowdown on windows when CPU is loaded. */
-    if (mwSetTimerMinResolution())
-        return CAL_RESULT_ERROR;
-
-    ci->image = createCALImageFromGeneratedKernel(ci, ap, sc);
+    ci->image = createCALImageFromGeneratedKernel(ci, ap, sc, likelihoodKernel);
     if (!ci->image)
     {
         warn("Failed to load image\n");
@@ -979,16 +1004,12 @@ CALresult mwCALShutdown(MWCALInfo* ci)
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to shutdown CAL", err);
 
-    mwResetTimerResolution();
     return err;
 }
 
 
 /* Init CAL, check device capabilities, and prepare new kernel from workunit parameters */
-CALresult separationCALInit(MWCALInfo* ci,
-                            const AstronomyParameters* ap,
-                            const StreamConstants* sc,
-                            const CLRequest* clr)
+CALresult separationCALInit(MWCALInfo* ci, const CLRequest* clr)
 {
     CALresult err;
 
@@ -1028,14 +1049,6 @@ CALresult separationCALInit(MWCALInfo* ci,
         warn("Device failed capability check\n");
         mwCALShutdown(ci);
         return CAL_RESULT_ERROR;
-    }
-
-    err = separationSetupCAL(ci, ap, sc);
-    if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Failed to setup CAL", err);
-        mwCALShutdown(ci);
-        return err;
     }
 
     return CAL_RESULT_OK;

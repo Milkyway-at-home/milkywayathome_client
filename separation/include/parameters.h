@@ -24,29 +24,20 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_types.h"
 
-void freeBackgroundParameters(BackgroundParameters* bgp);
 void freeStreams(Streams* streams);
-void freeStreamParameters(StreamParameters* p);
 
-unsigned int getOptimizedParameterCount(AstronomyParameters* ap,
-                                        BackgroundParameters* bgp,
-                                        Streams* streams);
+void calcIntegralStepSizes(IntegralArea* i);
 
 IntegralArea* readParameters(const char* file,
                              AstronomyParameters* ap,
                              BackgroundParameters* bgp,
                              Streams* streams);
 
-int writeParameters(const char* file,
-                    AstronomyParameters* ap,
-                    IntegralArea* integral,
-                    BackgroundParameters* bgp,
-                    Streams* streams);
-
-void setParameters(AstronomyParameters* ap,
-                   BackgroundParameters* bgp,
-                   Streams* streams,
-                   const real* parameters);
+int setParameters(AstronomyParameters* ap,
+                  BackgroundParameters* bgp,
+                  Streams* streams,
+                  const real* parameters,
+                  unsigned int numberParameters);
 
 
 #endif /* _PARAMETERS_H_ */

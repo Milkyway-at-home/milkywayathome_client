@@ -39,30 +39,6 @@ extern "C" {
   #endif /* __APPLE__ */
 #endif  /* !defined(__OPENCL_VERSION__) && MILKYWAY_OPENCL */
 
-#ifdef __OPENCL_VERSION__
-  #define __MW_LOCAL __local
-  #define __MW_PRIVATE __private
-  #define __MW_GLOBAL __global
-  #define __MW_CONSTANT __constant
-#else
-  #define __MW_LOCAL
-  #define __MW_PRIVATE
-  #define __MW_GLOBAL
-  #define __MW_CONSTANT const
-#endif /* __OPENCL_VERSION__ */
-
-/* The ATI CL compiler is horribly broken, especially when using
- * doubles on the GPU. */
-#if defined(__ATI_CL__) && !defined(__CPU__)
-  #define BROKEN_CL_MATH 1
-#else
-  #define BROKEN_CL_MATH 0
-#endif
-
-#if defined(__ATI_RV770__) || defined(__ATI_RV730__) || defined(__ATI_RV710__)
-  #define MW_RADEON_4XXX 1
-#endif
-
 #ifdef __cplusplus
 }
 #endif

@@ -29,6 +29,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 MILKYWAY_CAL
 
 #cmakedefine01 HAVE_EXP10
+#cmakedefine01 HAVE_EXP2
 #cmakedefine01 HAVE_SINCOS
 #cmakedefine01 HAVE_TGMATH_H
 #cmakedefine01 HAVE_ASPRINTF
@@ -51,7 +52,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define FUNC_NAME __FUNCTION__
   #define inline __inline
 #else
-  #define RESTRICT restrict
+  #ifdef __cplusplus
+    #define RESTRICT __restrict__
+  #else
+    #define RESTRICT restrict
+  #endif /* __cplusplus */
   #define FUNC_NAME __func__
 #endif /* _MSC_VER */
 
@@ -65,12 +70,22 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
   #define CONST_F __attribute__((const))
   #define ALWAYS_INLINE __attribute__((always_inline))
+  #define INTERNAL __attribute__((visibility("internal")))
+  #define WEAK __attribute__((weak))
 #else
   #define HOT
   #define CONST_F
   #define ALWAYS_INLINE
+  #define INTERNAL
+
+  /* Only sort of */
+  #define WEAK __declspec(selectany)
 #endif /* _MSC_VER */
 
+
+#ifndef _MSC_VER
+  #define _GNU_SOURCE 1
+#endif
 
 /* Apple's GCC 4.2 has many features backported, so it counts as a newer GCC even though it isn't. */
 #if defined(__APPLE__) && (__GNUC__ >= 4 && __GNUC_MINOR__ >= 2)
@@ -102,14 +117,17 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* ${CMAKE_SYSTEM_PROCESSOR} seems to always give i386 even on OS X 64 */
 
-#ifndef __OPENCL_VERSION__
 /* FIXME: This would be totally wrong when using a universal binary */
 #if defined(__i386__) || defined(_M_IX86)
   #define ARCH_STRING "x86"
+  #define MW_IS_X86_32 1
+  #define MW_IS_X86 1
 #elif defined(__powerpc__) || defined(__ppc__) || defined(_M_PPC)
   #define ARCH_STRING "PPC"
 #elif defined(__x86_64__) || defined(_M_X64)
   #define ARCH_STRING "x86_64"
+  #define MW_IS_X86_64 1
+  #define MW_IS_X86 1
 #elif defined(__ppc64__)
   #define ARCH_STRING "PPC64"
 #elif defined(__arm__) || defined(__arm)
@@ -134,8 +152,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   /* 32 bit Windows without SSE2 */
   #define WINDOWS_USES_X87 1
 #endif
-
-#endif /* __OPENCL_VERSION__ */
 
 #endif /* _MILKYWAY_CONFIG_H_ */
 

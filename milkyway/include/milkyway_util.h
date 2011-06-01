@@ -42,12 +42,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "milkyway_extra.h"
 #include "milkyway_math.h"
+#include "milkyway_show.h"
 #include "mw_boinc_util.h"
 #include "dSFMT.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define MWInvalidEnum (-1)
+#define InvalidEnum MWInvalidEnum
 
 
 #if MILKYWAY_OPENCL
@@ -62,6 +66,13 @@ typedef struct
     cl_double responsivenessFactor;
     cl_double targetFrequency;
     cl_int pollingMode;
+    cl_bool enableCheckpointing;
+
+    cl_bool forceNoIntrinsics;
+    cl_bool forceX87;
+    cl_bool forceSSE2;
+    cl_bool forceSSE3;
+    cl_bool verbose;
 } CLRequest;
 
 #else
@@ -74,6 +85,13 @@ typedef struct
     double responsivenessFactor;
     double targetFrequency;
     int pollingMode;
+    int enableCheckpointing;
+
+    int forceNoIntrinsics;
+    int forceX87;
+    int forceSSE2;
+    int forceSSE3;
+    int verbose;
 } CLRequest;
 
 #endif /* MILKYWAY_OPENCL */
@@ -129,6 +147,13 @@ void* mwCallocA(size_t count, size_t size);
         mw_finish(EXIT_FAILURE);                                        \
     }
 
+#define mw_unreachable()                                                               \
+    {                                                                                  \
+        fprintf(stderr, "PANIC: Unreachable point reached in function '%s' %s(%d)\n",  \
+                FUNC_NAME, __FILE__, __LINE__);                                        \
+        mw_finish(EXIT_FAILURE);                                                       \
+    }
+
 
 
 /* If one of these options is null, use the default. */
@@ -149,6 +174,38 @@ double mwGetTimeMilli();
 
 int mwSetTimerMinResolution();
 int mwResetTimerResolution();
+
+#ifndef _WIN32
+
+/* Just use nice value */
+typedef int MWPriority;
+
+#define MW_PRIORITY_DEFAULT 0
+
+#else
+
+/* The numbers these correspond to aren't usable */
+typedef enum
+{
+    MW_PRIORITY_IDLE         = 0,
+    MW_PRIORITY_BELOW_NORMAL = 1,
+    MW_PRIORITY_NORMAL       = 2,
+    MW_PRIORITY_ABOVE_NORMAL = 3,
+    MW_PRIORITY_HIGH         = 4
+} MWPriority;
+
+#define MW_PRIORITY_DEFAULT MW_PRIORITY_NORMAL
+
+#endif /* _WIN32 */
+
+/* Default priority in case of invalid priority */
+#ifndef _WIN32
+#else
+
+#endif /* _WIN32 */
+
+
+int mwSetProcessPriority(MWPriority priority);
 
 #ifndef _WIN32
 long mwGetTimeMicro();
@@ -189,15 +246,15 @@ size_t mwDivRoundup(size_t a, size_t b);
 int mwCheckNormalPosNum(real n);
 int mwCheckNormalPosNumEps(real n);
 
-const char** mwFixArgv(unsigned long argc, const char** argv);
+const char** mwFixArgv(int argc, const char** argv);
 
 /* Loop through all arguments and report bad arguments */
 int mwReadArguments(poptContext context);
 
 /* Read array of strings into doubles. Returns NULL on failure. */
-real* mwReadRestArgs(const char** rest,            /* String array as returned by poptGetArgs() */
-                     const unsigned int numParams, /* Expected number of parameters */
-                     unsigned int* paramCountOut); /* (Optional) return count of actual number parameters that could have been read */
+real* mwReadRestArgs(const char** rest, unsigned int n);
+
+const char** mwGetForwardedArguments(const char** args, unsigned int* nForwardedArgs);
 
 #if defined(__SSE__) && DISABLE_DENORMALS
 int mwDisableDenormalsSSE();

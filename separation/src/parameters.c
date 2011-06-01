@@ -24,40 +24,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "io_util.h"
 #include "milkyway_util.h"
 
-void freeBackgroundParameters(BackgroundParameters* bgp)
-{
-    free(bgp->parameters);
-    free(bgp->step);
-    free(bgp->min);
-    free(bgp->max);
-    free(bgp->optimize);
-}
-
-void freeStreamParameters(StreamParameters* p)
-{
-    free(p->stream_parameters);
-    free(p->stream_step);
-    free(p->stream_min);
-    free(p->stream_max);
-    free(p->stream_optimize);
-}
-
 void freeStreams(Streams* streams)
 {
-    unsigned int i;
-
-    for (i = 0; i < streams->number_streams; ++i)
-        freeStreamParameters(&streams->parameters[i]);
     free(streams->parameters);
-    free(streams->stream_weight);
-    free(streams->expStreamWeights);
 }
 
-static void calcIntegralStepSizes(IntegralArea* i)
+void calcIntegralStepSizes(IntegralArea* i)
 {
-    i->r_step_size = (i->r_max - i->r_min) / (real)i->r_steps;
-    i->mu_step_size = (i->mu_max - i->mu_min) / (real)i->mu_steps;
-    i->nu_step_size = (i->nu_max - i->nu_min) / (real)i->nu_steps;
+    i->r_step_size = (i->r_max - i->r_min) / (real) i->r_steps;
+    i->mu_step_size = (i->mu_max - i->mu_min) / (real) i->mu_steps;
+    i->nu_step_size = (i->nu_max - i->nu_min) / (real) i->nu_steps;
 }
 
 static int checkIntegralAreasOK(const IntegralArea* ias, unsigned int n)
@@ -68,6 +44,12 @@ static int checkIntegralAreasOK(const IntegralArea* ias, unsigned int n)
     for (i = 0; i < n; ++i)
     {
         ia = &ias[i];
+
+        if (ia->nu_steps == 0 || ia->r_steps == 0 || ia->mu_steps == 0)
+        {
+            warn("Integral area dimensions cannot be 0\n");
+            return 1;
+        }
 
         if (!mwEven(ia->nu_steps) || !mwEven(ia->r_steps) || !mwEven(ia->mu_steps))
         {
@@ -88,83 +70,106 @@ static IntegralArea* freadParameters(FILE* file,
 {
     unsigned int i, temp;
     double tmp1, tmp2;
+    double parametersVersion;
     IntegralArea integralTmp;
     IntegralArea* integrals;
     const IntegralArea* ia;
     unsigned int total_calc_probs;
     unsigned int integralNumTmp;
+    int iTmp;
+    int sgr_coordinates = 0;
+    real* tmpArr = NULL;
 
-    ap->parameters_version = (fscanf(file, "parameters_version: %lf\n", &tmp1) < 1) ? 0.01 : (real) tmp1;
+    parametersVersion = (fscanf(file, "parameters_version: %lf\n", &tmp1) < 1) ? 0.01 : (real) tmp1;
 
-    if (fscanf(file, "number_parameters: %u\n", &ap->number_background_parameters) < 1)
-        warn("Error reading number_parameters\n");
+    if (fscanf(file, "number_parameters: %u\n", &temp) < 1)
+        fail("Error reading number_parameters\n");
 
     if (fscanf(file, "background_weight: %lf\n", &tmp1) < 1)
-        warn("Error reading background_weight\n");
+        fail("Error reading background_weight\n");
 
-    ap->background_weight = (real) tmp1;
+    bgp->epsilon = (real) tmp1;
 
-    bgp->parameters = fread_double_array(file, "background_parameters", NULL);
-    bgp->step       = fread_double_array(file, "background_step", NULL);
-    bgp->min        = fread_double_array(file, "background_min", NULL);
-    bgp->max        = fread_double_array(file, "background_max", NULL);
-    bgp->optimize   = fread_int_array(file, "optimize_parameter", NULL);
+    tmpArr = fread_double_array(file, "background_parameters", NULL);
+    if (!tmpArr)
+        return NULL;
 
-    if (fscanf(file, "number_streams: %u, %u\n", &streams->number_streams, &streams->number_stream_parameters) < 2)
-        warn("Error reading number_streams\n");
+    bgp->alpha = tmpArr[0];
+    bgp->q     = tmpArr[1];
+    bgp->r0    = tmpArr[2];
+    bgp->delta = tmpArr[3];
+    free(tmpArr);
+
+    free(fread_double_array(file, "background_step", NULL));
+    free(fread_double_array(file, "background_min", NULL));
+    free(fread_double_array(file, "background_max", NULL));
+    free(fread_int_array(file, "optimize_parameter", NULL));
+
+    if (fscanf(file, "number_streams: %u, %u\n", &streams->number_streams, &temp) < 2)
+        fail("Error reading number_streams\n");
 
     ap->number_streams = streams->number_streams;
 
-    streams->stream_weight = (StreamWeight*) mwCalloc(streams->number_streams, sizeof(StreamWeight));
     streams->parameters = (StreamParameters*) mwCalloc(streams->number_streams, sizeof(StreamParameters));
-    streams->expStreamWeights = (real*) mwCalloc(streams->number_streams, sizeof(real));
 
     for (i = 0; i < streams->number_streams; ++i)
     {
         if (fscanf(file, "stream_weight: %lf\n", &tmp1) < 1)
-            warn("Error reading stream_weight for stream %u\n", i);
-        streams->stream_weight[i].weight = (real) tmp1;
+            fail("Error reading stream_weight for stream %u\n", i);
+        streams->parameters[i].epsilon = (real) tmp1;
 
         if (fscanf(file, "stream_weight_step: %lf\n", &tmp1) < 1)
-            warn("Error reading stream_weight_step for stream %u\n", i);
-        streams->stream_weight[i].step = (real) tmp1;
+            fail("Error reading stream_weight_step for stream %u\n", i);
 
         if (fscanf(file, "stream_weight_min: %lf\n", &tmp1) < 1)
-            warn("Error reading stream_weight_min for stream %u\n", i);
-        streams->stream_weight[i].min = (real) tmp1;
+            fail("Error reading stream_weight_min for stream %u\n", i);
 
         if (fscanf(file, "stream_weight_max: %lf\n", &tmp1) < 1)
-            warn("Error reading stream_weight_max for stream %u\n", i);
-        streams->stream_weight[i].max = (real) tmp1;
+            fail("Error reading stream_weight_max for stream %u\n", i);
 
-        if (fscanf(file, "optimize_weight: %d\n", &streams->stream_weight[i].optimize) < 1)
-            warn("Error reading optimize_weight for stream %u\n", i);
+        if (fscanf(file, "optimize_weight: %d\n", &iTmp) < 1)
+            fail("Error reading optimize_weight for stream %u\n", i);
 
-        streams->parameters[i].stream_parameters = fread_double_array(file, "stream_parameters", NULL);
-        streams->parameters[i].stream_step       = fread_double_array(file, "stream_step", NULL);
-        streams->parameters[i].stream_min        = fread_double_array(file, "stream_min", NULL);
-        streams->parameters[i].stream_max        = fread_double_array(file, "stream_max", NULL);
-        streams->parameters[i].stream_optimize   = fread_int_array(file, "optimize_parameter", NULL);
+        tmpArr = fread_double_array(file, "stream_parameters", NULL);
+        if (!tmpArr)
+            return NULL;
+        streams->parameters[i].mu    = tmpArr[0];
+        streams->parameters[i].r     = tmpArr[1];
+        streams->parameters[i].theta = tmpArr[2];
+        streams->parameters[i].phi   = tmpArr[3];
+        streams->parameters[i].sigma = tmpArr[4];
+        free(tmpArr);
+
+        free(fread_double_array(file, "stream_step", NULL));
+        free(fread_double_array(file, "stream_min", NULL));
+        free(fread_double_array(file, "stream_max", NULL));
+        free(fread_int_array(file, "optimize_parameter", NULL));
     }
 
     if (fscanf(file, "convolve: %u\n", &ap->convolve) < 1)
-        warn("Error reading convolve\n");
+        fail("Error reading convolve\n");
 
-    if (fscanf(file, "sgr_coordinates: %d\n", &ap->sgr_coordinates) < 1)
-        warn("Error reading sgr_coordinates\n");
-    if (ap->parameters_version > 0.01)
+    if (fscanf(file, "sgr_coordinates: %d\n", &sgr_coordinates) < 1)
+        fail("Error reading sgr_coordinates\n");
+
+    if (sgr_coordinates)
+    {
+        fail("sgr_coordinates unimplemented\n");
+    }
+
+    if (parametersVersion > 0.01)
     {
         if (fscanf(file, "aux_bg_profile: %d\n", &ap->aux_bg_profile) < 1)
-            warn("Error reading aux_bg_profile\n");
+            fail("Error reading aux_bg_profile\n");
     }
 
     if (fscanf(file, "wedge: %d\n", &ap->wedge) < 1)
-        warn("Error reading wedge\n");
+        fail("Error reading wedge\n");
 
     if (fscanf(file,
                "r[min,max,steps]: %lf, %lf, %u\n",
                &tmp1, &tmp2, &integralTmp.r_steps) < 3)
-        warn("Error reading r\n");
+        fail("Error reading r\n");
 
     integralTmp.r_min = (real) tmp1;
     integralTmp.r_max = (real) tmp2;
@@ -172,7 +177,7 @@ static IntegralArea* freadParameters(FILE* file,
     if (fscanf(file,
                "mu[min,max,steps]: %lf, %lf, %u\n",
                &tmp1, &tmp2, &integralTmp.mu_steps) < 3)
-        warn("Error reading mu\n");
+        fail("Error reading mu\n");
 
     integralTmp.mu_min = (real) tmp1;
     integralTmp.mu_max = (real) tmp2;
@@ -180,7 +185,7 @@ static IntegralArea* freadParameters(FILE* file,
     if (fscanf(file,
                "nu[min,max,steps]: %lf, %lf, %u\n",
                &tmp1, &tmp2, &integralTmp.nu_steps) < 3)
-        warn("Error reading nu\n");
+        fail("Error reading nu\n");
 
     integralTmp.nu_min = (real) tmp1;
     integralTmp.nu_max = (real) tmp2;
@@ -189,7 +194,7 @@ static IntegralArea* freadParameters(FILE* file,
 
     ap->number_integrals = 1;
     if (fscanf(file, "number_cuts: %u\n", &integralNumTmp) < 1)
-        warn("Error reading number_cuts\n");
+        fail("Error reading number_cuts\n");
     ap->number_integrals += integralNumTmp;
 
     integrals = (IntegralArea*) mwMallocA(ap->number_integrals * sizeof(IntegralArea));
@@ -204,7 +209,7 @@ static IntegralArea* freadParameters(FILE* file,
                        "r_cut[min,max,steps][%u]: %lf, %lf, %u\n",
                        &temp, &tmp1, &tmp2, &integrals[i].r_steps) < 3)
             {
-                warn("Error reading r for integral %u\n", i);
+                fail("Error reading r for integral %u\n", i);
             }
 
             integrals[i].r_min = (real) tmp1;
@@ -214,7 +219,7 @@ static IntegralArea* freadParameters(FILE* file,
                        "mu_cut[min,max,steps][%u]: %lf, %lf, %u\n",
                        &temp, &tmp1, &tmp2, &integrals[i].mu_steps) < 3)
             {
-                warn("Error reading mu for integral %u\n", i);
+                fail("Error reading mu for integral %u\n", i);
             }
 
 
@@ -225,7 +230,7 @@ static IntegralArea* freadParameters(FILE* file,
                        "nu_cut[min,max,steps][%u]: %lf, %lf, %u\n",
                        &temp, &tmp1, &tmp2, &integrals[i].nu_steps) < 3)
             {
-                warn("Error reading nu for integral %u\n", i);
+                fail("Error reading nu for integral %u\n", i);
             }
 
             integrals[i].nu_min = (real) tmp1;
@@ -277,174 +282,45 @@ IntegralArea* readParameters(const char* filename,
     return integral;
 }
 
-static void fwriteParameters(FILE* file,
-                             AstronomyParameters* ap,
-                             IntegralArea* integral,
-                             BackgroundParameters* bgp,
-                             Streams* streams)
+
+int setParameters(AstronomyParameters* ap,
+                  BackgroundParameters* bgp,
+                  Streams* streams,
+                  const real* parameters,
+                  unsigned int numberParameters)
 {
-    unsigned int i;
+    unsigned int i, idx;
+    const unsigned int nBGParams = 2;
+    const unsigned int nStreamParams = 6;
+    unsigned int nStream = (numberParameters - nBGParams) / nStreamParams;
 
-    fprintf(file, "parameters_version: %lf\n", ap->parameters_version);
-
-    fprintf(file, "number_parameters: %u\n", ap->number_background_parameters);
-    fprintf(file, "background_weight: %lf\n", ap->background_weight);
-    fwrite_double_array(file, "background_parameters", bgp->parameters, ap->number_background_parameters);
-    fwrite_double_array(file, "background_step", bgp->step, ap->number_background_parameters);
-    fwrite_double_array(file, "background_min", bgp->min, ap->number_background_parameters);
-    fwrite_double_array(file, "background_max", bgp->max, ap->number_background_parameters);
-    fwrite_int_array(file, "optimize_parameter", bgp->optimize, ap->number_background_parameters);
-
-    fprintf(file, "number_streams: %u, %u\n", streams->number_streams, streams->number_stream_parameters);
-    for (i = 0; i < streams->number_streams; i++)
+    if (nStream != ap->number_streams)
     {
-        fprintf(file, "stream_weight: %lf\n", streams->stream_weight[i].weight);
-        fprintf(file, "stream_weight_step: %lf\n", streams->stream_weight[i].step);
-        fprintf(file, "stream_weight_min: %lf\n", streams->stream_weight[i].min);
-        fprintf(file, "stream_weight_max: %lf\n", streams->stream_weight[i].max);
-        fprintf(file, "optimize_weight: %d\n", streams->stream_weight[i].optimize);
-
-        fwrite_double_array(file, "stream_parameters",
-                            streams->parameters[i].stream_parameters, streams->number_stream_parameters);
-        fwrite_double_array(file, "stream_step",
-                            streams->parameters[i].stream_step, streams->number_stream_parameters);
-        fwrite_double_array(file, "stream_min",
-                            streams->parameters[i].stream_min, streams->number_stream_parameters);
-        fwrite_double_array(file, "stream_max",
-                            streams->parameters[i].stream_max, streams->number_stream_parameters);
-        fwrite_int_array(file, "optimize_parameter",
-                         streams->parameters[i].stream_optimize, streams->number_stream_parameters);
-    }
-
-    fprintf(file, "convolve: %d\n", ap->convolve);
-    fprintf(file, "sgr_coordinates: %d\n", ap->sgr_coordinates);
-    fprintf(file, "aux_bg_profile: %d\n", ap->aux_bg_profile);
-    fprintf(file, "wedge: %d\n", ap->wedge);
-
-    fprintf(file,
-            "r[min,max,steps]: %lf, %lf, %u\n",
-            integral[0].r_min,
-            integral[0].r_max,
-            integral[0].r_steps);
-
-    fprintf(file,
-            "mu[min,max,steps]: %lf, %lf, %u\n",
-            integral[0].mu_min,
-            integral[0].mu_max,
-            integral[0].mu_steps);
-
-    fprintf(file,
-            "nu[min,max,steps]: %lf, %lf, %u\n",
-            integral[0].nu_min,
-            integral[0].nu_max,
-            integral[0].nu_steps);
-
-    fprintf(file, "number_cuts: %u\n", ap->number_integrals - 1);
-
-    for (i = 1; i < ap->number_integrals; i++)
-    {
-        fprintf(file,
-                "r_cut[min,max,steps][3]: %lf, %lf, %u\n",
-                integral[i].r_min,
-                integral[i].r_max,
-                integral[i].r_steps);
-
-        fprintf(file,
-                "mu_cut[min,max,steps][3]: %lf, %lf, %u\n",
-                integral[i].mu_min,
-                integral[i].mu_max,
-                integral[i].mu_steps);
-
-        fprintf(file,
-                "nu_cut[min,max,steps][3]: %lf, %lf, %u\n",
-                integral[i].nu_min,
-                integral[i].nu_max,
-                integral[i].nu_steps);
-    }
-}
-
-int writeParameters(const char* filename,
-                    AstronomyParameters* ap,
-                    IntegralArea* ias,
-                    BackgroundParameters* bgp,
-                    Streams* streams)
-{
-    FILE* f;
-
-    f = mw_fopen(filename, "w");
-    if (!f)
-    {
-        perror("Opening parameter file for writing");
-        warn("Couldn't write output file '%s' to write astronomy parameters.\n", filename);
+        warn("Number of streams does not match\n");
         return 1;
     }
 
-    fwriteParameters(f, ap, ias, bgp, streams);
-    fclose(f);
+    if (!mwDivisible(numberParameters - nBGParams, nStreamParams))
+    {
+        warn("Number of parameters doesn't make sense\n");
+        return 1;
+    }
+
+    bgp->q = parameters[0];
+    bgp->r0 = parameters[1];
+
+    for (i = 0; i < nStream; ++i)
+    {
+        idx = nBGParams + i * nStreamParams;
+
+        streams->parameters[i].epsilon = parameters[idx + 0];
+        streams->parameters[i].mu      = parameters[idx + 1];
+        streams->parameters[i].r       = parameters[idx + 2];
+        streams->parameters[i].theta   = parameters[idx + 3];
+        streams->parameters[i].phi     = parameters[idx + 4];
+        streams->parameters[i].sigma   = parameters[idx + 5];
+    }
 
     return 0;
-}
-
-unsigned int getOptimizedParameterCount(AstronomyParameters* ap,
-                                        BackgroundParameters* bgp,
-                                        Streams* streams)
-{
-    unsigned int i, j, count = 0;
-
-    for (i = 0; i < ap->number_background_parameters; i++)
-    {
-        if (bgp->optimize[i])
-            ++count;
-    }
-
-    for (i = 0; i < streams->number_streams; i++)
-    {
-        if (streams->stream_weight[i].optimize)
-            ++count;
-
-        for (j = 0; j < streams->number_stream_parameters; j++)
-        {
-            if (streams->parameters[i].stream_optimize[j])
-                ++count;
-        }
-    }
-
-    return count;
-}
-
-void setParameters(AstronomyParameters* ap,
-                   BackgroundParameters* bgp,
-                   Streams* streams,
-                   const real* parameters)
-{
-    unsigned int i, j;
-    unsigned int current = 0;
-
-    for (i = 0; i < ap->number_background_parameters; i++)
-    {
-        if (bgp->optimize[i])
-        {
-            bgp->parameters[i] = parameters[current];
-            current++;
-        }
-    }
-
-    for (i = 0; i < ap->number_streams; i++)
-    {
-        if (streams->stream_weight[i].optimize)
-        {
-            streams->stream_weight[i].weight = parameters[current];
-            ++current;
-        }
-
-        for (j = 0; j < streams->number_stream_parameters; j++)
-        {
-            if (streams->parameters[i].stream_optimize[j])
-            {
-                streams->parameters[i].stream_parameters[j] = parameters[current];
-                ++current;
-            }
-        }
-    }
 }
 

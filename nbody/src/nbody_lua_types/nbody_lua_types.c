@@ -39,13 +39,6 @@ void registerNBodyTypes(lua_State* luaSt)
     registerNBodyCtx(luaSt);
 }
 
-void registerOtherTypes(lua_State* luaSt)
-{
-    registerMilkywayMath(luaSt);
-    registerVector(luaSt);
-    registerDSFMT(luaSt);
-}
-
 static const MWEnumAssociation nbodyStatusOptions[] =
 {
     { "NBODY_TREE_INCEST_NONFATAL", NBODY_TREE_INCEST_NONFATAL },

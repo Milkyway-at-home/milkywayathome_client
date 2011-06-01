@@ -30,6 +30,7 @@ extern "C" {
 
 cl_int mwSelectDevice(CLInfo* ci, const cl_device_id* devs, const CLRequest* clr, const cl_uint nDev);
 cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev);
+void mwPrintDevInfoShort(const DevInfo* di);
 void mwPrintDevInfo(const DevInfo* di);
 void mwPrintPlatforms(cl_platform_id* platforms, cl_uint n_platforms);
 
@@ -38,6 +39,11 @@ cl_bool mwSupportsDoubles(const DevInfo* di);
 
 cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut);
 cl_platform_id* mwGetAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out);
+
+
+size_t mwFindGroupSize(const DevInfo* di);
+cl_uint mwFindGroupsPerCU(const DevInfo* di);
+cl_uint mwBlockSize(const DevInfo* di);
 
 
 /* Nvidia specific functions */

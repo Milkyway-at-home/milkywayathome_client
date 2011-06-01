@@ -28,9 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_cl_defs.h"
 #include "separation_binaries.h"
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+
 #include <assert.h>
 
 #ifdef _WIN32
@@ -45,31 +43,12 @@ static char* inlinedIntegralKernelSrc = NULL;
 #endif /* SEPARATION_INLINE_KERNEL */
 
 
-typedef struct
+/* Find an optimum block size to use and use that as the basis for the chunk estimate. Smaller number of chunks on a non-block size can be quite a bit slower. */
+static cl_uint nvidiaNumChunks(const IntegralArea* ia, const DevInfo* di)
 {
-    cl_uint x;  /* Extra area */
-    cl_uint n;  /* Number chunks */
-} SizeSolution;
+    cl_uint n;
 
-static size_t findGroupSize(const DevInfo* di)
-{
-    return di->devType == CL_DEVICE_TYPE_CPU ? 1 : 64;
-}
-
-static cl_uint findGroupsPerCU(const DevInfo* di)
-{
-    if (di->devType == CL_DEVICE_TYPE_CPU)
-        return 1;
-
-    if (di->vendorID == MW_NVIDIA)
-        return cudaCoresPerComputeUnit(di);
-
-    return 1; /* TODO: ATI, etc. */
-}
-
-static cl_uint nvidiaNumChunks(const IntegralArea* ia, const DevInfo* di, cl_uint nthread)
-{
-    cl_uint n = (ia->mu_steps * ia->r_steps) / (nthread * di->maxCompUnits);
+    n = (ia->mu_steps * ia->r_steps) / mwBlockSize(di);
 
     /* The 480 seems to be fine with half, although this doesn't help that much. */
     if (minComputeCapabilityCheck(di, 2, 0))
@@ -77,10 +56,10 @@ static cl_uint nvidiaNumChunks(const IntegralArea* ia, const DevInfo* di, cl_uin
 
     n += 1;  /* ceil, avoid 0 in tiny cases like the small tests */
 
-    return n;
+    return (cl_uint) n;
 }
 
-static cl_uint chooseNumChunk(const IntegralArea* ia, const CLRequest* clr, const DevInfo* di, cl_uint nthread)
+static cl_uint chooseNumChunk(const IntegralArea* ia, const CLRequest* clr, const DevInfo* di)
 {
     /* If not being used for output, 1 has the least overhead */
     if (di->nonOutput || clr->nonResponsive)
@@ -90,210 +69,58 @@ static cl_uint chooseNumChunk(const IntegralArea* ia, const CLRequest* clr, cons
         return clr->numChunk;
 
     if (di->vendorID == MW_NVIDIA)
-        return nvidiaNumChunks(ia, di, nthread);
+        return nvidiaNumChunks(ia, di);
 
     return 1; /* FIXME: others */
 }
 
-static cl_bool checkSolution(cl_uint area, cl_uint block, cl_uint n, cl_uint x)
+void freeRunSizes(RunSizes* sizes)
 {
-    return (area + x) % (block * n) == 0;
+    mwFreeA(sizes->chunkBorders);
 }
 
-/* Find the extra area added */
-static cl_bool findMinWorkN(SizeSolution* sol, cl_uint tolerance, cl_uint area, cl_uint block, cl_uint n, cl_uint nThread)
+static void printRunSizes(const RunSizes* sizes, const IntegralArea* ia, cl_bool verbose)
 {
-    cl_uint x = 0;
-    cl_bool isSolution = CL_FALSE;
+    size_t i;
 
-    while (!isSolution && x < tolerance)
+    warn("Range:          { nu_steps = %u, mu_steps = %u, r_steps = %u }\n"
+         "Iteration area: "ZU"\n"
+         "Chunk estimate: "ZU"\n"
+         "Num chunks:     "ZU"\n"
+         "Added area:     "ZU"\n"
+         "Effective area: "ZU"\n",
+         ia->nu_steps, ia->mu_steps, ia->r_steps,
+         sizes->area,
+         sizes->nChunkEstimate,
+         sizes->nChunk,
+         sizes->extra,
+         sizes->effectiveArea);
+
+    if (!verbose)
+        return;
+
+
+    warn("Using "ZU" chunks with size(s): ", sizes->nChunk);
+    for (i = 0; i < sizes->nChunk; ++i)
     {
-      /* If we found a solution, it's the minimum amount of work already.
-         Don't care about ones with the same n and more extra work. */
-        isSolution = checkSolution(area, block, n, x);
-        if (isSolution)
-        {
-            sol->x = x;
-            sol->n = n;
-        }
-
-        x += nThread; /* x will be a multiple of the local size */
+        warn(" "ZU" ", sizes->chunkBorders[i + 1] - sizes->chunkBorders[i]);
     }
+    warn("\n");
 
-    return isSolution;
-}
-
-/* Finds number of chunks that will divide the area if all else fails */
-static cl_uint findFallbackSolution(const IntegralArea* ia, cl_uint area, cl_uint desiredChunkNum)
-{
-    cl_bool minCloser;
-    cl_uint nMin, nMax;
-
-    nMin = nMax = desiredChunkNum;
-
-    while (nMin > 1 && (area % nMin != 0))
-        --nMin;
-
-    while (nMax < ia->r_steps && (area % nMax != 0))
-        ++nMax;
-
-    /* Choose the closer one, unless the max is the max possible, which doesn't work very well */
-    minCloser = desiredChunkNum - nMin <= nMax - desiredChunkNum;
-    return (minCloser || nMax == ia->r_steps) ? nMin : nMax;
-}
-
-static SizeSolution chooseLowerOrHigher(SizeSolution max, SizeSolution min, cl_uint desiredChunkNum)
-{
-    cl_bool minCloser;
-
-    /* Pick the direction to go. First try choosing the closest one */
-    minCloser = max.n - desiredChunkNum >= desiredChunkNum - min.n;
-    if (minCloser)
-        return min;
-
-    /* If the max solution adds many more chunks, prefer the lower one anyway. */
-    if (max.n >= 3 * min.n / 2)
-    {
-        warn("Next highest solution has many more, prefering smaller solution\n");
-        return min;
-    }
-
-    return max;
-}
-
-/* Brute force possible solutions */
-static SizeSolution findSolution(const IntegralArea* ia,
-                                 cl_uint desiredChunkNum,
-                                 cl_uint nThread,
-                                 cl_uint groupSize,
-                                 cl_uint nCU)
-{
-    cl_uint n, maxN;
-    cl_uint area, block, tolerance;
-
-    SizeSolution min, max;
-    SizeSolution sol = { 0, 1 }; /* Minimum possible */
-
-    cl_bool haveSolution = CL_FALSE;
-    cl_bool minSolution = CL_FALSE;
-    cl_bool maxSolution = CL_FALSE;
-
-    min = max = sol;
-
-    area = ia->r_steps * ia->mu_steps;
-    tolerance = area / 40; /* Solutions can only add max. ~2.5% more work */
-    block = nThread * nCU;
-
-    warn("Block size = %u\n", block);
-
-    if (nCU == 0 || nCU == 1 || desiredChunkNum == 0 || desiredChunkNum == 1)
-        return sol;
-
-    warn("Desired = %u\n", desiredChunkNum);
-    /* Find the closest one with a smaller n */
-    n = desiredChunkNum;
-    while (!minSolution && n > 1)
-    {
-        minSolution = findMinWorkN(&min, tolerance, area, block, n, groupSize);
-        warn("Min sol: %u %u\n", min.n, min.x);
-
-        --n;
-    }
-
-    /* Find the closest one with a larger n */
-    n = desiredChunkNum;
-    maxN = ia->r_steps / 2;
-    while (!maxSolution && n < maxN)
-    {
-        maxSolution = findMinWorkN(&max, tolerance, area, block, n, groupSize);
-        ++n;
-    }
-
-    if (minSolution)
-        warn("Lower n solution: n = %u, x = %u\n", min.n, min.x);
-
-    if (maxSolution)
-        warn("Higher n solution: n = %u, x = %u\n", max.n, max.x);
-
-    haveSolution = minSolution || maxSolution;
-    if (!haveSolution)
-    {
-        /* This really shouldn't happen, but if it does we give up on
-           adding extra work. Find the closest n which will divide the
-           total area */
-        sol.n = findFallbackSolution(ia, area, desiredChunkNum);
-        sol.x = 0;
-        warn("Didn't find a solution. Using fallback solution n = %u, x = %u\n", sol.n, sol.x);
-        /* TODO: Try a bigger tolerance */
-    }
-    else
-    {
-        sol = chooseLowerOrHigher(max, min, desiredChunkNum);
-    }
-
-    return sol;
-}
-
-/* FIXME: Depends on findGoodRunSizes first */
-/* Reset things if not setting local size manually */
-cl_bool fallbackDriverSolution(RunSizes* sizes)
-{
-    size_t integrationArea;
-
-    sizes->extra = 0;
-    sizes->effectiveArea = sizes->area;
-
-    /* Round up number chunks. Straightforward division of area for fallback solution, round up */
-    sizes->numChunks = mwDivRoundup(sizes->area, sizes->blockSize);
-    sizes->letTheDriverDoIt = CL_TRUE;
-    sizes->chunkSize = sizes->area / sizes->numChunks;
-
-    sizes->local[0] = 0;
-    sizes->local[1] = 0;
-    sizes->global[0] = sizes->chunkSize;
-    sizes->global[1] = 1;
-
-    /* Just be sure nothing bad happened with division */
-    integrationArea = sizes->chunkSize * sizes->area;
-    if (integrationArea < sizes->area)
-    {
-        warn("Integration area ("ZU") less than actual area ("ZU")\n", integrationArea, sizes->area);
-        return CL_TRUE;
-    }
-
-    return CL_FALSE;
 }
 
 /* Returns CL_TRUE on error */
-cl_bool findGoodRunSizes(RunSizes* sizes,
-                         const CLInfo* ci,
-                         const DevInfo* di,
-                         const IntegralArea* ia,
-                         const CLRequest* clr)
+cl_bool findRunSizes(RunSizes* sizes,
+                     const CLInfo* ci,
+                     const DevInfo* di,
+                     const IntegralArea* ia,
+                     const CLRequest* clr)
 {
-    /* To avoid lots of idle compute units near the end of each iteration, it helps to round the area up so that the total area is evenly divisible by the number of threads times the number of compute units when chunked.
-
-       We can ensure this by finding solutions to this this equation:
-
-       There exists some integers m and x such that:
-
-       m == (mu_steps * r_steps + x) / (n_chunk * n_thread * n_cu)
-
-       where n_chunk = number of chunks the iteration is divided into
-             n_thread = number of threads used for local size, i.e 64
-             n_cu = number of compute units of the GPU
-
-        Good numbers of chunks have solutions for m and n, of which we only care what x is. Otherwise there will be more idle time.
-
-        groupSize = nthreads
-     */
-
-    SizeSolution solution;
-    cl_uint desiredNumChunk;
     WGInfo wgi;
-    size_t localSize;
     cl_int err;
-    cl_uint groupSize, groupsPerCU, threadsPerCU;
+    cl_uint groupSize;
+    size_t i, nMod;
+    size_t sum = 0;
 
     err = mwGetWorkGroupInfo(ci, &wgi);
     if (err != CL_SUCCESS)
@@ -301,73 +128,56 @@ cl_bool findGoodRunSizes(RunSizes* sizes,
         mwCLWarn("Failed to get work group info", err);
         return CL_TRUE;
     }
-    else
-        mwPrintWorkGroupInfo(&wgi);
 
-    groupSize   = findGroupSize(di);
-    groupsPerCU = findGroupsPerCU(di);
-    threadsPerCU = groupSize * groupsPerCU;
+    mwPrintWorkGroupInfo(&wgi);
+    groupSize = mwFindGroupSize(di);
 
-    warn("Group size = %u, per CU = %u, threads per CU = %u\n",
-         groupSize, groupsPerCU, threadsPerCU);
-
-    desiredNumChunk = chooseNumChunk(ia, clr, di, threadsPerCU);
-    solution = findSolution(ia,
-                            desiredNumChunk,
-                            threadsPerCU,
-                            groupSize,
-                            di->maxCompUnits);
-    warn("Using solution: n = %u, x = %u\n", solution.n, solution.x);
-
-    sizes->letTheDriverDoIt = CL_FALSE;
-    sizes->groupSize     = groupSize;
-    sizes->area          = ia->mu_steps * ia->r_steps;
-    sizes->numChunks     = solution.n;
-    sizes->extra         = solution.x;
-    sizes->effectiveArea = sizes->area + sizes->extra;
-    sizes->chunkSize     = sizes->effectiveArea / sizes->numChunks;
-    sizes->blockSize = threadsPerCU * di->maxCompUnits;
-
-    sizes->global[0] = sizes->chunkSize;
-    sizes->global[1] = 1;
-
-    sizes->local[0] = sizes->groupSize;
+    sizes->local[0] = groupSize;
     sizes->local[1] = 1;
 
-    warn("Range:          { nu_steps = %u, mu_steps = %u, r_steps = %u }\n"
-         "Iteration area: "ZU"\n"
-         "Chunk estimate: %u\n"
-         "Num chunks:     "ZU"\n"
-         "Added area:     %u\n"
-         "Effective area: "ZU"\n"
-         "Block size:     %u\n",
-         ia->nu_steps, ia->mu_steps, ia->r_steps,
-         sizes->area,
-         desiredNumChunk,
-         sizes->numChunks,
-         sizes->extra,
-         sizes->effectiveArea,
-         sizes->blockSize);
+    sizes->nChunkEstimate = chooseNumChunk(ia, clr, di);
+    sizes->nChunk = sizes->nChunkEstimate;
 
-    /* Check for error in solution just in case */
-    if (sizes->effectiveArea % sizes->chunkSize != 0)
+    /* Best for performance.
+       Be a bit more flexible if chunking.
+       Using the whole block size seems a bit better when attacking everything at once.
+    */
+    nMod = sizes->nChunk == 1 ? mwBlockSize(di) : groupSize * di->maxCompUnits;
+
+    sizes->area = ia->r_steps * ia->mu_steps;
+    sizes->effectiveArea = nMod * mwDivRoundup(sizes->area, nMod);
+    sizes->extra = sizes->effectiveArea - sizes->area;
+
+    warn("Keeping chunk boundaries as multiples of %zu\n", nMod);
+
+    if (sizes->effectiveArea / sizes->nChunk < nMod)
     {
-        warn("Effective area ("ZU") not divisible by chunk size ("ZU")\n",
-             sizes->effectiveArea, sizes->chunkSize);
-        return CL_TRUE;
+        sizes->nChunk = sizes->effectiveArea / nMod;
+        warn("Warning: Estimated number of chunks ("ZU") too large. Using "ZU"\n", sizes->nChunkEstimate, sizes->nChunk);
     }
 
-    /* TODO: also check against CL_DEVICE_MAX_WORK_ITEM_SIZES */
-    if (sizes->global[0] % sizes->local[0] || sizes->global[1] % sizes->local[1])
+    sizes->chunkBorders = mwCallocA((sizes->nChunk + 1), sizeof(size_t));
+
+    for (i = 0; i <= sizes->nChunk; ++i)
     {
-        warn("Global dimensions not divisible by local\n");
-        return CL_TRUE;
+        sizes->chunkBorders[i] = (i * sizes->effectiveArea + sizes->nChunk) / (sizes->nChunk * nMod);
+        sizes->chunkBorders[i] *= nMod;
+        if (sizes->chunkBorders[i] > sizes->effectiveArea)
+            sizes->chunkBorders[i] = sizes->effectiveArea;
+
+        if (i > 0)
+        {
+            sum += sizes->chunkBorders[i] - sizes->chunkBorders[i - 1];
+            assert(sizes->chunkBorders[i] - sizes->chunkBorders[i - 1] > 0);
+        }
     }
 
-    localSize = sizes->local[0] * sizes->local[1];
-    if (localSize > wgi.wgs)
+    printRunSizes(sizes, ia, clr->verbose);
+
+    if (sum != sizes->effectiveArea)  /* Assert that the divisions aren't broken */
     {
-        warn("Local size ("ZU") > maximum work group size ("ZU")\n", localSize, wgi.wgs);
+        warn("Chunk total does not match: "ZU" != "ZU"\n", sum, sizes->effectiveArea);
+        free(sizes->chunkBorders);
         return CL_TRUE;
     }
 
@@ -381,8 +191,8 @@ cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* 
     cl_int err = CL_SUCCESS;
 
     /* Set output buffer arguments */
-    err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outMu);
-    err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->outProbs);
+    err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outBg);
+    err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->outStreams);
 
     /* The constant arguments */
     err |= clSetKernelArg(ci->kern, 2, sizeof(cl_mem), &cm->ap);
@@ -441,14 +251,14 @@ void freeKernelSrc(char* src)
 #define NUM_CONST_BUF_ARGS 5
 
 /* Check that the device has the necessary resources */
-cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes* sizes)
+static cl_bool separationCheckDevMemory(const DevInfo* di, const SeparationSizes* sizes)
 {
-    size_t totalOut;
     size_t totalConstBuf;
     size_t totalGlobalConst;
+    size_t totalOut;
     size_t totalMem;
 
-    totalOut = 2 * sizes->outMu + 2 * sizes->outProbs; /* 2 buffers for double buffering */
+    totalOut = sizes->outBg + sizes->outStreams;
     totalConstBuf = sizes->ap + sizes->ia + sizes->sc + sizes->rc + sizes->sg_dx;
     totalGlobalConst = sizes->lbts + sizes->rPts;
 
@@ -468,7 +278,7 @@ cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes*
         return CL_FALSE;
     }
 
-    if (sizes->outMu > di->maxMemAlloc || sizes->outProbs > di->maxMemAlloc)
+    if (sizes->outBg > di->maxMemAlloc || sizes->outStreams > di->maxMemAlloc)
     {
         warn("An output buffer would exceed CL_DEVICE_MAX_MEM_ALLOC_SIZE\n");
         return CL_FALSE;
@@ -490,6 +300,33 @@ cl_bool separationCheckDevCapabilities(const DevInfo* di, const SeparationSizes*
     {
         warn("Device doesn't have enough constant buffer space\n");
         return CL_FALSE;
+    }
+
+    return CL_TRUE;
+}
+
+/* TODO: Should probably check for likelihood also */
+cl_bool separationCheckDevCapabilities(const DevInfo* di, const AstronomyParameters* ap, const IntegralArea* ias)
+{
+    cl_uint i;
+    SeparationSizes sizes;
+
+  #if DOUBLEPREC
+    if (!mwSupportsDoubles(di))
+    {
+        warn("Device doesn't support double precision\n");
+        return MW_CL_ERROR;
+    }
+  #endif /* DOUBLEPREC */
+
+    for (i = 0; i < ap->number_integrals; ++i)
+    {
+        calculateSizes(&sizes, ap, &ias[i]);
+        if (!separationCheckDevMemory(di, &sizes))
+        {
+            warn("Capability check failed for cut %u\n", i);
+            return CL_FALSE;
+        }
     }
 
     return CL_TRUE;
@@ -520,7 +357,9 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
     char* compileFlags = NULL;
     char cwd[1024] = "";
     char extraFlags[1024] = "";
-    char includeFlags[4096] = "";
+    char includeFlags[1024] = "";
+    char precBuf[1024] = "";
+    char kernelDefBuf[4096] = "";
 
     /* Math options for CL compiler */
     const char mathFlags[] = "-cl-mad-enable "
@@ -528,55 +367,38 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
                              "-cl-strict-aliasing "
                              "-cl-finite-math-only ";
 
-    /* Build options used by milkyway_math stuff */
-    const char mathOptions[] = "-DUSE_CL_MATH_TYPES=0 "
-                               "-DUSE_MAD=1 "
-                               "-DUSE_FMA=0 ";
-
     /* Extra flags for different compilers */
     const char nvidiaOptFlags[] = "-cl-nv-verbose ";
     const char atiOptFlags[]    = "";
 
-  #if DOUBLEPREC
-    const char precDefStr[]   = "-DDOUBLEPREC=1 ";
-  #else
-    const char precDefStr[] = "-DDOUBLEPREC=0 ";
-    const char clPrecStr[]  = "-cl-single-precision-constant ";
-  #endif
-
-    /* Constants compiled into kernel. We need to define
-     * MILKYWAY_MATH_COMPILATION since the header inclusion protection
-     * doesn't really matter and doesn't work when everything is
-     * dumped together. */
-    const char kernelDefStr[] = "-DMILKYWAY_MATH_COMPILATION "
-                                "-DNSTREAM=%u "
-                                "-DFAST_H_PROB=%d "
+    const char kernelDefStr[] = "-DFAST_H_PROB=%d "
                                 "-DAUX_BG_PROFILE=%d "
+
+                                "-DNSTREAM=%u "
+                                "-DCONVOLVE=%u "
+
+                                "-DR0=%.15f "
+                                "-DSUN_R0=%.15f "
+                                "-DQ_INV_SQR=%.15f "
                                 "-DUSE_IMAGES=%d "
                                 "-DI_DONT_KNOW_WHY_THIS_DOESNT_WORK_HERE=%d ";
 
     const char includeStr[] = "-I%s "
-                              "-I%s/../include "
-                              "-I%s/../../include "
-                              "-I%s/../../milkyway/include ";
-
-    /* Big enough. Also make sure to count for the extra characters of the format specifiers */
-    char kernelDefBuf[sizeof(kernelDefStr) + 5 * 12 + 8];
-    char precDefBuf[sizeof(precDefStr)];
-
-    size_t totalSize = 4 * sizeof(cwd) + (sizeof(includeStr) + 8)
-                     + sizeof(mathFlags)
-                     + sizeof(precDefBuf)
-                     + sizeof(kernelDefBuf)
-                     + sizeof(mathOptions)
-                     + sizeof(extraFlags);
+                              "-I%s/../include ";
 
     cl_bool isFermi = minComputeCapabilityCheck(di, 2, 0);
 
     if (snprintf(kernelDefBuf, sizeof(kernelDefBuf), kernelDefStr,
-                 ap->number_streams,
                  ap->fast_h_prob,
                  ap->aux_bg_profile,
+
+                 ap->number_streams,
+                 ap->convolve,
+
+                 ap->r0,
+                 ap->sun_r0,
+                 ap->q_inv_sqr,
+
                  useImages,
                  isFermi) < 0)
     {
@@ -584,15 +406,10 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
         return NULL;
     }
 
-    /* Always use this flag */
-    strncpy(precDefBuf, precDefStr, sizeof(precDefBuf));
+    snprintf(precBuf, sizeof(precBuf), "-DDOUBLEPREC=%d %s ",
+             DOUBLEPREC, DOUBLEPREC ? "" : "-cl-single-precision-constant");
 
-  #if !DOUBLEPREC
-    /* The ATI compiler rejects the one you're supposed to use, in
-     * favor of a totally undocumented flag. */
-    strcat(precDefBuf, di->vendorID != MW_AMD_ATI ? clPrecStr : "");
-  #endif /* !DOUBLEPREC */
-
+    /* FIXME: Device vendor not necessarily the platform vendor */
     if (di->vendorID == MW_NVIDIA)
     {
         if (snprintf(extraFlags, sizeof(extraFlags),
@@ -622,43 +439,25 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
             return NULL;
         }
 
-        if (snprintf(includeFlags, sizeof(includeFlags), includeStr, cwd, cwd, cwd, cwd) < 0)
+        if (snprintf(includeFlags, sizeof(includeFlags), includeStr, cwd, cwd) < 0)
         {
             warn("Failed to get include flags\n");
             return NULL;
         }
     }
 
-    compileFlags = mwMalloc(totalSize);
-    if (snprintf(compileFlags, totalSize, "%s%s%s%s%s%s ",
+    if (asprintf(&compileFlags, "%s%s%s%s%s ",
                  includeFlags,
                  mathFlags,
-                 mathOptions,
                  extraFlags,
-                 precDefBuf,
+                 precBuf,
                  kernelDefBuf) < 0)
     {
         warn("Failed to get compile flags\n");
-        free(compileFlags);
         return NULL;
     }
 
     return compileFlags;
-}
-
-/* Bad estimate */
-cl_double estimateWUFLOPsPerIter(const AstronomyParameters* ap, const IntegralArea* ia)
-{
-    cl_ulong perItem, perIter; /* Needs 64 bit int */
-
-    perItem = 4
-            + 28 * ap->convolve
-            + 4  * ap->number_streams
-            + 51 * ap->convolve * ap->number_streams;
-
-    perIter = perItem * ia->mu_steps * ia->r_steps;
-
-    return (cl_double) perIter;
 }
 
 /* Estimate time for a nu step in milliseconds */
@@ -677,23 +476,47 @@ cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_dou
 }
 
 cl_int setupSeparationCL(CLInfo* ci,
-                         DevInfo* di,
                          const AstronomyParameters* ap,
+                         const IntegralArea* ias,
                          const CLRequest* clr,
-                         cl_bool useImages)
+                         cl_int* useImages)
 {
     cl_int err;
     char* compileFlags;
     char* kernelSrc;
 
-    err = mwSetupCL(ci, di, clr);
+    err = mwSetupCL(ci, clr);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error getting device and context", err);
         return err;
     }
 
-    compileFlags = getCompilerFlags(ap, di, useImages);
+    err = mwGetDevInfo(&ci->di, ci->dev);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed to get device info\n");
+        return err;
+    }
+
+    if (clr->verbose)
+    {
+        mwPrintDevInfo(&ci->di);
+    }
+    else
+    {
+        mwPrintDevInfoShort(&ci->di);
+    }
+
+    if (!separationCheckDevCapabilities(&ci->di, ap, ias))
+    {
+        warn("Device failed capability check\n");
+        return MW_CL_ERROR;
+    }
+
+    *useImages = *useImages && ci->di.imgSupport;
+
+    compileFlags = getCompilerFlags(ap, &ci->di, *useImages);
     if (!compileFlags)
     {
         warn("Failed to get compiler flags\n");

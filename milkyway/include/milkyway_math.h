@@ -88,10 +88,10 @@ extern "C" {
     }
 
 #if 0
-#define KAHAN_ADD(sum, item)                        \
+#define KAHAN_ADD(k, item)                          \
     {                                               \
         real _y = (item) - (k).correction;          \
-        real _t = (k).sum + (y);                    \
+        real _t = (k).sum + (_y);                   \
         (k).correction = (_t - (k).sum) - (_y);     \
         (k).sum = _t;                               \
     }

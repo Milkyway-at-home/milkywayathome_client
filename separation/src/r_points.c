@@ -31,7 +31,7 @@ static inline real distance_magnitude(const real m)
     return mw_exp10((m - (real) 14.2) * 0.2);
 }
 
-static RPrime calcRPrime(const IntegralArea* ia, const unsigned int r_step)
+static RPrime calcRPrime(const IntegralArea* ia, unsigned int r_step)
 {
     real r, next_r, log_r;
     RPrime ret;
@@ -48,7 +48,7 @@ static RPrime calcRPrime(const IntegralArea* ia, const unsigned int r_step)
 
 /* This applies a sigmoid to account for the falloff in the SDSS data. Heidi
    Described it in 2002. Check Nates MW Bible */
-real calcReffXrRp3(const real coords, const real gPrime)
+real calcReffXrRp3(real coords, real gPrime)
 {
     static const real sigmoid_curve_params[3] = { 0.9402, 1.6171, 23.5877 };
 
@@ -65,18 +65,23 @@ real calcG(const real coords)
     return 5.0 * (mw_log10(1000.0 * coords) - 1.0) + absm;
 }
 
-static inline RPoints calc_r_point(const real dx, const real qgaus_W, const real gPrime, const real coeff)
+static inline RPoints calc_r_point(real dx, real qgaus_W, real gPrime, real coeff)
 {
     RPoints r_pt;
+
     real g, exponent, r3, N, stddev_l, stddev_r, stddev_i, A;
 
     g = gPrime + dx;
 
     /* MAG2R */
     r_pt.r_point = 0.001 * mw_exp10(0.2 * (g - absm) + 1.0);
-
     r3 = cube(r_pt.r_point);
 
+    exponent = sqr(g - gPrime) * inv(2.0 * sqr(stdev));
+    N = coeff * mw_exp(-exponent);
+    r_pt.qw_r3_N = qgaus_W * r3 * N;
+
+#if 0
     /* Reimplemented to account for matt newbys f_turnoff distribution insights */
     stddev_l = 0.315;
 
@@ -97,8 +102,7 @@ static inline RPoints calc_r_point(const real dx, const real qgaus_W, const real
 
     A = inv(2.0 * M_PI * (stddev_l + stddev_r) * inv(2.0));
     N = A * mw_exp(-exponent);
-
-    r_pt.qw_r3_N = qgaus_W * r3 * N;
+#endif /* 0 */
 
     return r_pt;
 }
@@ -116,14 +120,32 @@ static inline RConsts calcRConsts(RPrime rp)
 
 void setRPoints(const AstronomyParameters* ap,
                 const StreamGauss sg,
-                const unsigned int n_convolve,
-                const real gPrime,
+                unsigned int n_convolve,
+                real gPrime,
                 RPoints* r_pts)
 {
     unsigned int i;
 
     for (i = 0; i < n_convolve; ++i)
         r_pts[i] = calc_r_point(sg.dx[i], sg.qgaus_W[i], gPrime, ap->coeff);
+}
+
+void setSplitRPoints(const AstronomyParameters* ap,
+                     const StreamGauss sg,
+                     unsigned int n_convolve,
+                     real gPrime,
+                     real* RESTRICT r_points,
+                     real* RESTRICT qw_r3_N)
+{
+    unsigned int i;
+    RPoints rPt;
+
+    for (i = 0; i < n_convolve; ++i)
+    {
+        rPt = calc_r_point(sg.dx[i], sg.qgaus_W[i], gPrime, ap->coeff);
+        r_points[i] = rPt.r_point;
+        qw_r3_N[i] = rPt.qw_r3_N;
+    }
 }
 
 RPoints* precalculateRPts(const AstronomyParameters* ap,

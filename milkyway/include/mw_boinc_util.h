@@ -48,11 +48,15 @@ extern "C" {
   #define mw_finish(x) boinc_finish(x)
   #define mw_fopen(x,y) boinc_fopen((x),(y))
   #define mw_remove(x) boinc_delete_file((x))
+  #define mw_begin_critical_section() boinc_begin_critical_section()
+  #define mw_end_critical_section() boinc_end_critical_section()
 #else
   #define mw_boinc_print(f, msg, ...)
   #define mw_finish(x) exit(x)
   #define mw_fopen(x,y) fopen((x),(y))
   #define mw_remove(x) remove((x))
+  #define mw_begin_critical_section()
+  #define mw_end_critical_section()
 #endif /* BOINC_APPLICATION */
 
 int mwBoincInit(const char* appname, int useDebug);

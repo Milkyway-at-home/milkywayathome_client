@@ -1,19 +1,19 @@
 # Copyright 2010 Matthew Arsenault, Travis Desell, Dave Przybylo,
 # Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
 # Magdon-Ismail and Rensselaer Polytechnic Institute.
-
+#
 # This file is part of Milkway@Home.
-
+#
 # Milkyway@Home is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-
+#
 # Milkyway@Home is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-
+#
 # You should have received a copy of the GNU General Public License
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -34,7 +34,7 @@ include(CMakeDependentOption)
 
 set(separation_VERSION_MAJOR 0
                CACHE INTERNAL "Separation version number")
-set(separation_VERSION_MINOR 63
+set(separation_VERSION_MINOR 71
                CACHE INTERNAL "Separation version number")
 set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}"
                CACHE INTERNAL "Separation version number")
@@ -59,10 +59,6 @@ option(SEPARATION_CAL "Use CAL++ voodoo" OFF)
 option(SEPARATION_INLINE_KERNEL
        "Inline the CL kernel" OFF)
 mark_as_advanced(SEPARATION_INLINE_KERNEL)
-
-option(ALL_OF_THE_SSES
-       "All of them" OFF)
-mark_as_advanced(ALL_OF_THE_SSES)
 
 option(SEPARATION_GRAPHICS
        "Use Separation Graphics" OFF)
@@ -170,6 +166,7 @@ set(cal_source_list #src/separation_cal.cpp
                     src/separation_cal_kernelgen.cpp
                     src/separation_cal_setup.c
                     src/separation_cal_run.c
+                    src/cal_likelihood.c
                     src/show_cal_types.c)
 
 
@@ -187,10 +184,12 @@ set(lib_source_file_list src/evaluation_state.c
                          src/integrals.c
                          src/calculated_constants.c
                          src/separation_utils.c
-                         src/r_points.c)
+                         src/r_points.c
+                         src/separation_lua.c)
 
 set(separation_headers include/calculated_constants.h
                        include/separation_types.h
+                       include/separation_kernel_types.h
                        include/coordinates.h
                        include/separation.h
                        include/evaluation.h
@@ -204,7 +203,8 @@ set(separation_headers include/calculated_constants.h
                        include/integrals.h
                        include/r_points.h
                        include/separation_utils.h
-                       include/separation_constants.h)
+                       include/separation_constants.h
+                       include/separation_lua.h)
 
 set(separation_cl_headers include/setup_cl.h
                           include/run_cl.h
@@ -216,6 +216,7 @@ set(separation_cal_headers include/separation_cal.h
                            include/separation_cal_types.h
                            include/separation_cal_setup.h
                            include/separation_cal_run.h
+                           include/cal_likelihood.h
                            include/show_cal_types.h)
 
 if(SEPARATION_GRAPHICS)
@@ -234,28 +235,9 @@ if(SEPARATION_OPENCL)
     # is to include some other files in the kernel, so we have to exclude
     # those ones.
     set(all_cl_files
-      ${MILKYWAY_INSTALL_INCLUDE_DIR}/milkyway_config.h
-      ${MILKYWAY_INSTALL_INCLUDE_DIR}/separation_config.h
+          ${SEPARATION_INCLUDE_DIR}/separation_kernel_types.h
+          ${SEPARATION_KERNEL_DIR}/integrals.cl)
 
-      ${MILKYWAY_INCLUDE_DIR}/milkyway_extra.h
-      # This one not used in kernel
-      #${MILKYWAY_INCLUDE_DIR}/milkyway_math_functions_standard.h
-
-      ${MILKYWAY_INCLUDE_DIR}/milkyway_math_functions.h
-      ${MILKYWAY_INCLUDE_DIR}/milkyway_math_functions_cl.h
-
-      ${MILKYWAY_INCLUDE_DIR}/milkyway_math.h
-
-      ${MILKYWAY_INCLUDE_DIR}/real.h
-      ${MILKYWAY_INCLUDE_DIR}/milkyway_vector_types.h
-      ${MILKYWAY_INCLUDE_DIR}/milkyway_vectors_func.h
-      ${MILKYWAY_INCLUDE_DIR}/milkyway_vectors.h
-      ${MILKYWAY_INCLUDE_DIR}/milkyway_cl.h
-
-      ${SEPARATION_INCLUDE_DIR}/separation_types.h
-      ${SEPARATION_INCLUDE_DIR}/integrals_common.h
-
-      ${SEPARATION_KERNEL_DIR}/integrals.cl)
 
     set(SEPARATION_INLINE_KERNEL_FILE "${LIBRARY_OUTPUT_PATH}/AllInOneFile.c")
     set(SEPARATION_INLINE_SCRIPT "${CMAKE_MODULE_PATH}/InlineSeparation.cmake")
@@ -276,13 +258,14 @@ elseif(SEPARATION_CAL)
   list(APPEND separation_headers ${separation_cal_headers})
 endif()
 
-list(APPEND separation_link_libs milkyway)
+list(APPEND separation_link_libs milkyway milkyway_lua)
 
 if(BOINC_APPLICATION)
   list(APPEND separation_link_libs ${BOINC_LIBRARIES})
 endif()
 
 list(APPEND separation_link_libs ${OS_SPECIFIC_LIBS}
+                                 ${LUA_LIBRARY}
                                  ${SEPARATION_LIBM_LIBRARY})
 
 
@@ -311,6 +294,7 @@ if(SEPARATION_OPENCL)
   list(APPEND exe_link_libs ${OPENCL_LIBRARIES})
 elseif(SEPARATION_CAL)
   include_directories(${ATICAL_INCLUDE_DIR})
+  include_directories(${ATICAL_INCLUDE_DIR}/CAL)
   include_directories(${CAL++_INCLUDE_DIR})
   include_directories(${Boost_INCLUDE_DIR})
   list(APPEND exe_link_libs ${ATICALCL_LIBRARY} ${ATICALRT_LIBRARY})
@@ -346,6 +330,33 @@ endif()
 
 add_library("${separation_base_lib_name}" STATIC ${lib_source_file_list} ${separation_headers})
 
+# Build the critical area separately for SSE2, SSE3, no SSE2
+add_library(separation_core STATIC src/probabilities.c include/probabilities.h)
+set(separation_core_libs separation_core)
+
+if(SYSTEM_IS_X86)
+  set_target_properties(separation_core PROPERTIES
+                          COMPILE_FLAGS "${DISABLE_SSE3_FLAGS}")
+endif()
+
+# Don't build redundant library on x86_64 or OS X where we know we have SSE3
+if(SYSTEM_IS_X86_32 AND HAVE_SSE2)
+    add_library(separation_core_sse2 STATIC src/probabilities.c include/probabilities.h)
+    list(APPEND separation_core_libs separation_core_sse2)
+    set_target_properties(separation_core_sse2 PROPERTIES
+                            COMPILE_FLAGS "${SSE2_FLAGS} ${DISABLE_SSE3_FLAGS}")
+endif()
+if(SYSTEM_IS_X86 AND HAVE_SSE3)
+    add_library(separation_core_sse3 STATIC src/probabilities.c include/probabilities.h)
+    list(APPEND separation_core_libs separation_core_sse3)
+    set_target_properties(separation_core_sse3 PROPERTIES
+                            COMPILE_FLAGS "${SSE3_FLAGS}")
+endif()
+
+
+
+
+
 if(NOT MILKYWAY_IPHONE_APP)
   add_executable("${separation_base_bin_name}" ${separation_main_src})
 else()
@@ -355,27 +366,16 @@ endif()
 
 milkyway_link("${separation_base_bin_name}" ${BOINC_APPLICATION}
                                             ${SEPARATION_STATIC}
-                                            "${separation_base_lib_name};${exe_link_libs}")
+                                            "${separation_base_lib_name};${separation_core_libs};${exe_link_libs}")
 
 
-if(ALL_OF_THE_SSES)
-  if(BOINC_RELEASE_NAMES)
-    get_boinc_bin_name("${separation_base_bin_name}" "${separation_VERSION}" "${i}")
-    set(sse_base_bin_name "${BOINC_BIN_NAME}")
-  else()
-    set(sse_base_bin_name "${separation_base_bin_name}")
-  endif()
+find_program(LUA_INTERPRETER lua)
 
-  foreach(i ${AVAILABLE_SSE_LEVELS})
-    add_sseX_library("${separation_base_lib_name}" "${i}" "${lib_source_file_list}" "${separation_headers}")
-    add_sseX_executable("${sse_base_bin_name}" "${i}" "${separation_main_src}")
-    milkyway_link(${SSE_EXE_NAME} ${BOINC_APPLICATION}
-                                  ${SEPARATION_STATIC}
-                                  "${separation_base_lib_name};${exe_link_libs}")
-  endforeach()
+if(LUA_INTERPRETER)
+  add_subdirectory(tests EXCLUDE_FROM_ALL)
+else()
+  message(WARNING "Didn't find Lua. Disabling Separation tests")
 endif()
-
-add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 install(TARGETS ${separation_base_bin_name} ${separation_base_lib_name}
           RUNTIME       DESTINATION bin

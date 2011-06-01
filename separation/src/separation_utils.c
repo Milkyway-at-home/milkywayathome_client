@@ -81,11 +81,10 @@ mwvector transform_point(const AstronomyParameters* ap,
 
 static dsfmt_t dsfmtState;
 
-/* Initialize seed for prob_ok; time based seed if 0 */
-void prob_ok_init(long seed)
+/* Initialize seed for prob_ok; time based seed */
+void prob_ok_init(uint32_t seed, int setSeed)
 {
-    if (!seed)
-        seed = (long) time(NULL);
+    seed = setSeed ? seed : (uint32_t) time(NULL);
 
     dsfmt_init_gen_rand(&dsfmtState, seed);
 }
@@ -199,97 +198,6 @@ int checkSeparationResults(const SeparationResults* results, unsigned int number
 
     if (rc)
         warn("Non-finite result\n");
-
-    return rc;
-}
-
-static void printDifference(const char* name, real a, real b)
-{
-    warn("%21s: | %20.15lf - %20.15lf | = %20.15lf\n", name, a, b, mw_fabs(a - b));
-}
-
-static void printDifferences(const SeparationResults* a,
-                             const SeparationResults* b,
-                             unsigned int numberStreams)
-{
-    unsigned int i;
-    char buf[128] = "";
-
-    warn("\n%21s    %20s   %20s    %20s\n"
-         "-----------------------------------------------"
-         "-----------------------------------------------\n",
-         "Field", "Expected", "Result", "Difference");
-
-    printDifference("background integral", a->backgroundIntegral, b->backgroundIntegral);
-    for (i = 0; i < numberStreams; ++i)
-    {
-        sprintf(buf, "stream_integral[%u]", i);
-        printDifference(buf, a->streamIntegrals[i], b->streamIntegrals[i]);
-    }
-
-    warn("\n");
-    printDifference("background likelihood", a->backgroundLikelihood, b->backgroundLikelihood);
-    for (i = 0; i < numberStreams; ++i)
-    {
-        sprintf(buf, "stream likelihood[%u]", i);
-        printDifference(buf, a->streamLikelihoods[i], b->streamLikelihoods[i]);
-    }
-
-    printDifference("likelihood", a->likelihood, b->likelihood);
-}
-
-static inline int notCloseEnough(real a, real b, real eps)
-{
-    return mw_fabs(a - b) >= eps;
-}
-
-/* Return non-zero if all components are within eps */
-static int compareSeparationResults(const SeparationResults* a,
-                                    const SeparationResults* b,
-                                    unsigned int numberStreams,
-                                    real eps)
-{
-    unsigned int i;
-    int rc = 0;
-
-    rc |= notCloseEnough(a->likelihood, b->likelihood, eps);
-    rc |= notCloseEnough(a->backgroundIntegral, b->backgroundIntegral, eps);
-    rc |= notCloseEnough(a->backgroundLikelihood, b->backgroundLikelihood, eps);
-
-    for (i = 0; i < numberStreams; ++i)
-    {
-        rc |= notCloseEnough(a->streamIntegrals[i], b->streamIntegrals[i], eps);
-        rc |= notCloseEnough(a->streamLikelihoods[i], b->streamLikelihoods[i], eps);
-    }
-
-    return rc;
-}
-
-int verifySeparationResults(const char* refFile, const SeparationResults* results, unsigned int nStreams)
-{
-    SeparationResults* ref;
-    int rc;
-
-  #if DOUBLEPREC
-    const real epsResults = 1.0e-12;
-  #else
-    const real epsResults = 1.0e-7;
-  #endif /* DOUBLEPREC */
-
-    ref = readReferenceResults(refFile, nStreams);
-    if (!ref)
-    {
-        warn("Failed to read reference results\n");
-        return 1;
-    }
-
-    rc = compareSeparationResults(ref, results, nStreams, epsResults);
-    if (rc)
-        warn("\n\nResults differ from expected\n");
-
-    printDifferences(ref, results, nStreams);
-
-    free(ref);
 
     return rc;
 }

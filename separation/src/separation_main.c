@@ -20,6 +20,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "separation.h"
+#include "separation_lua.h"
 #include "milkyway_util.h"
 #include "milkyway_cpp_util.h"
 #include "io_util.h"
@@ -29,41 +30,41 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define DEFAULT_ASTRONOMY_PARAMETERS "astronomy_parameters.txt"
 #define DEFAULT_STAR_POINTS "stars.txt"
 
-typedef struct
+#define SEED_ARGUMENT (1 << 1)
+#define PRIORITY_ARGUMENT (1 << 2)
+
+
+static void printVersion(int boincTag)
 {
-    char* star_points_file;
-    char* ap_file;  /* astronomy parameters */
-    char* separation_outfile;
-    char* referenceFile;
-    int debugBOINC;
-    int do_separation;
-    int separationSeed;
-    int cleanup_checkpoint;
-    int usePlatform;
-    int useDevNumber;  /* Choose CL platform and device */
-    int nonResponsive;  /* FIXME: Make this go away */
-    unsigned int numChunk;  /* Also this */
-    double responsivenessFactor;
-    double targetFrequency;
-    int pollingMode;
-} SeparationFlags;
+    char versionStr[2048];
 
-#define DEFAULT_POLLING_MODE 1
-#define DEFAULT_RESPONSIVENESS_FACTOR 1.0
-#define DEFAULT_TARGET_FREQUENCY 30.0
+    snprintf(versionStr, sizeof(versionStr), "%s %u.%u %s %s %s%s%s%s",
+             SEPARATION_APP_NAME,
+             SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR,
+             SEPARATION_SYSTEM_NAME,
+             ARCH_STRING,
+             PRECSTRING,
+             DENORMAL_STRING,
+             SEPARATION_SPECIAL_STR,
+             SEPARATION_SPECIAL_LIBM_STR);
 
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, \
-                                 DEFAULT_RESPONSIVENESS_FACTOR,                  \
-                                 DEFAULT_TARGET_FREQUENCY,                       \
-                                 DEFAULT_POLLING_MODE                            \
-                               }
+    if (boincTag)
+        warn("<search_application> %s </search_application>\n", versionStr);
+    else
+    {
+        warn("%s %s\n",
+             versionStr,
+             BOINC_APPLICATION ? "BOINC" : "");
+    }
+}
 
 static void freeSeparationFlags(SeparationFlags* sf)
 {
     free(sf->star_points_file);
     free(sf->ap_file);
     free(sf->separation_outfile);
-    free(sf->referenceFile);
+    free(sf->forwardedArgs);
+    free(sf->numArgs);
 }
 
 /* Use hardcoded names if files not specified */
@@ -71,6 +72,15 @@ static void setDefaultFiles(SeparationFlags* sf)
 {
     stringDefault(sf->star_points_file, DEFAULT_STAR_POINTS);
     stringDefault(sf->ap_file, DEFAULT_ASTRONOMY_PARAMETERS);
+}
+
+static void setCommonFlags(CLRequest* clr, const SeparationFlags* sf)
+{
+    clr->forceNoIntrinsics = sf->forceNoIntrinsics;
+    clr->forceX87 = sf->forceX87;
+    clr->forceSSE2 = sf->forceSSE2;
+    clr->forceSSE3 = sf->forceSSE3;
+    clr->verbose = sf->verbose;
 }
 
 #if SEPARATION_OPENCL
@@ -81,6 +91,8 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->devNum = sf->useDevNumber;
     clr->nonResponsive = sf->nonResponsive;
     clr->numChunk = sf->numChunk;
+    clr->enableCheckpointing = !sf->disableGPUCheckpointing;
+    setCommonFlags(clr, sf);
 }
 
 #elif SEPARATION_CAL
@@ -91,22 +103,29 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->responsivenessFactor = sf->responsivenessFactor;
     clr->targetFrequency = sf->targetFrequency <= 0.01 ? DEFAULT_TARGET_FREQUENCY : sf->targetFrequency;
     clr->pollingMode = sf->pollingMode;
+    clr->enableCheckpointing = !sf->disableGPUCheckpointing;
+
+    setCommonFlags(clr, sf);
 }
 
 #else
-  #define getCLReqFromFlags(clr, sf)
+
+static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
+{
+    setCommonFlags(clr, sf);
+}
+
 #endif /* SEFPARATION_OPENCL */
 
 
 /* Returns the newly allocated array of parameters */
-static real* parseParameters(int argc, const char** argv, unsigned int* paramnOut, SeparationFlags* sfOut)
+static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
 {
     poptContext context;
-    real* parameters = NULL;
-    static unsigned int numParams;
+    int argRead;
+    static unsigned int numParams = 0;
     static int server_params = 0;
     static const char** rest;
-    const char** argvCopy;
     static SeparationFlags sf = EMPTY_SEPARATION_FLAGS;
 
     static const struct poptOption options[] =
@@ -130,27 +149,37 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
         },
 
         {
-            "separation-seed", 'e',
+            "seed", 'e',
             POPT_ARG_INT, &sf.separationSeed,
-            0, "Seed for random number generator", NULL
+            SEED_ARGUMENT, "Seed for random number generator", NULL
+        },
+
+        {
+            "ignore-checkpoint", 'i',
+            POPT_ARG_NONE, &sf.ignoreCheckpoint,
+            0, "Ignore the checkpoint file", NULL
         },
 
         {
             "cleanup-checkpoint", 'c',
-            POPT_ARG_NONE, &sf.cleanup_checkpoint,
+            POPT_ARG_NONE, &sf.cleanupCheckpoint,
             0, "Delete checkpoint on successful", NULL
-        },
-
-        {
-            "verify", 'v',
-            POPT_ARG_STRING, &sf.referenceFile,
-            0, "Verify against result file", NULL
         },
 
         {
             "debug-boinc", 'g',
             POPT_ARG_NONE, &sf.debugBOINC,
             0, "Init BOINC with debugging. No effect if not built with BOINC_APPLICATION", NULL
+        },
+
+        {
+            "process-priority", 'b',
+            POPT_ARG_INT, &sf.processPriority,
+         #ifndef _WIN32
+            PRIORITY_ARGUMENT, "Set process nice value (-20 to 20)", NULL
+         #else
+            PRIORITY_ARGUMENT, "Set process priority class. Set priority class 0 (lowest) to 4 (highest)", NULL
+         #endif /* _WIN32 */
         },
 
       #if SEPARATION_OPENCL || SEPARATION_CAL
@@ -183,15 +212,59 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
             POPT_ARG_INT, &sf.pollingMode,
             0, "Interval for polling GPU (< 0 for busy wait, 0 for calCtxWaitForEvents(), > 1 sets interval in ms)" , NULL
         },
+
+        {
+            "gpu-disable-checkpointing", 'k',
+            POPT_ARG_NONE, &sf.disableGPUCheckpointing,
+            0, "Disable checkpointing with GPUs" , NULL
+        },
+
       #endif /* SEPARATION_OPENCL || SEPARATION_CAL */
 
       #if SEPARATION_OPENCL
-		{
+        {
             "platform", 'l',
             POPT_ARG_INT, &sf.usePlatform,
             0, "CL Platform to use", NULL
         },
+
+        {
+            "verbose", '\0',
+            POPT_ARG_NONE, &sf.verbose,
+            0, "Print some extra debugging information", NULL
+        },
+
       #endif /* SEPARATION_OPENCL */
+
+        {
+            "force-no-intrinsics", '\0',
+            POPT_ARG_NONE, &sf.forceNoIntrinsics,
+            0, "Use old default path", NULL
+        },
+
+        {
+            "force-x87", '\0',
+            POPT_ARG_NONE, &sf.forceX87,
+            0, "Force to use x87 path (ignored if x86_64)", NULL
+        },
+
+        {
+            "force-sse2", '\0',
+            POPT_ARG_NONE, &sf.forceSSE2,
+            0, "Force to use SSE2 path", NULL
+        },
+
+        {
+            "force-sse3", '\0',
+            POPT_ARG_NONE, &sf.forceSSE3,
+            0, "Force to use SSE3 path", NULL
+        },
+
+        {
+            "version", 'v',
+            POPT_ARG_NONE, &sf.printVersion,
+            0, "Print version information", NULL
+        },
 
         {
             "p", 'p',
@@ -209,9 +282,7 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
         POPT_TABLEEND
     };
 
-    /* Workaround for BOINC arguments being appended */
-    argvCopy = mwFixArgv(argc, argv);
-    context = poptGetContext(argv[0], argc, argvCopy ? argvCopy : argv, options, POPT_CONTEXT_POSIXMEHARDER);
+    context = poptGetContext(argv[0], argc, argv, options, POPT_CONTEXT_POSIXMEHARDER);
 
     if (argc < 2)
     {
@@ -220,85 +291,74 @@ static real* parseParameters(int argc, const char** argv, unsigned int* paramnOu
         exit(EXIT_FAILURE);
     }
 
-    if (mwReadArguments(context))
+    argRead = mwReadArguments(context);
+    if (argRead < 0)
     {
         poptPrintHelp(context, stderr, 0);
         poptFreeContext(context);
         freeSeparationFlags(&sf);
-        free(argvCopy);
         exit(EXIT_FAILURE);
     }
 
-    sf.do_separation = (sf.separation_outfile && strcmp(sf.separation_outfile, ""));
-    if (!sf.do_separation) /* Skip server arguments for just running separation */
+    if (sf.printVersion)
     {
-        rest = poptGetArgs(context);
-        parameters = mwReadRestArgs(rest, numParams, paramnOut);
-        if (!parameters)
-        {
-            warn("Failed to read server arguments\n");
-            freeSeparationFlags(&sf);
-            poptFreeContext(context);
-            free(argvCopy);
-            exit(EXIT_FAILURE);
-        }
+        printVersion(FALSE);
+        exit(EXIT_SUCCESS);
     }
 
-    free(argvCopy);
+    sf.setSeed = argRead & SEED_ARGUMENT; /* Check if these flags were used */
+    sf.setPriority = argRead & PRIORITY_ARGUMENT;
+
+    sf.do_separation = (sf.separation_outfile && strcmp(sf.separation_outfile, ""));
+    if (sf.do_separation)
+        prob_ok_init(sf.separationSeed, sf.setSeed);
+
+    rest = poptGetArgs(context);
+    sf.forwardedArgs = mwGetForwardedArguments(rest, &sf.nForwardedArgs);
+    sf.numArgs = mwReadRestArgs(rest, sf.nForwardedArgs); /* Temporary */
+
     poptFreeContext(context);
     setDefaultFiles(&sf);
 
-    if (sf.do_separation)
-        prob_ok_init(sf.separationSeed);
-
     *sfOut = sf;
-    return parameters;
+    return 0;
 }
 
 static IntegralArea* prepareParameters(const SeparationFlags* sf,
                                        AstronomyParameters* ap,
                                        BackgroundParameters* bgp,
-                                       Streams* streams,
-                                       const real* parameters,
-                                       const int number_parameters)
+                                       Streams* streams)
 {
-    int ap_number_parameters;
     IntegralArea* ias;
-    int badNumberParameters;
 
-    ias = readParameters(sf->ap_file, ap, bgp, streams);
+    ias = setupSeparation(ap, bgp, streams, sf);
+    /* Try the new file first. If that doesn't work, try the old one. */
     if (!ias)
     {
-        warn("Error reading astronomy parameters from file '%s'\n", sf->ap_file);
+        warn("Error reading astronomy parameters from file '%s'\n"
+             "  Trying old parameters file\n", sf->ap_file);
+        ias = readParameters(sf->ap_file, ap, bgp, streams);
+    }
+
+    if (!ias)
+    {
+        warn("Failed to read parameters file\n");
         return NULL;
     }
 
-    ap_number_parameters = getOptimizedParameterCount(ap, bgp, streams);
-    badNumberParameters = number_parameters < 1 || number_parameters != ap_number_parameters;
-    if (badNumberParameters && !sf->do_separation)
+    if (sf->numArgs && setParameters(ap, bgp, streams, sf->numArgs, sf->nForwardedArgs))
     {
-        warn("Error reading parameters: number of parameters from the "
-             "command line (%d) does not match the number of parameters "
-             "to be optimized in %s (%d)\n",
-             number_parameters,
-             sf->ap_file,
-             ap_number_parameters);
-
         mwFreeA(ias);
         freeStreams(streams);
-        freeBackgroundParameters(bgp);
         return NULL;
     }
-
-    if (!sf->do_separation)
-        setParameters(ap, bgp, streams, parameters);
 
     return ias;
 }
 
-static int worker(const SeparationFlags* sf, const real* parameters, const int number_parameters)
+static int worker(const SeparationFlags* sf)
 {
-    AstronomyParameters ap = EMPTY_ASTRONOMY_PARAMETERS;
+    AstronomyParameters ap;
     BackgroundParameters bgp = EMPTY_BACKGROUND_PARAMETERS;
     Streams streams = EMPTY_STREAMS;
     IntegralArea* ias = NULL;
@@ -307,20 +367,17 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     int rc;
     CLRequest clr;
 
+    memset(&ap, 0, sizeof(ap));
+
     getCLReqFromFlags(&clr, sf);
 
-    ias = prepareParameters(sf, &ap, &bgp, &streams, parameters, number_parameters);
+    ias = prepareParameters(sf, &ap, &bgp, &streams);
     if (!ias)
-    {
-        warn("Failed to read parameters\n");
         return 1;
-    }
 
     rc = setAstronomyParameters(&ap, &bgp);
-    freeBackgroundParameters(&bgp);
     if (rc)
     {
-        warn("Failed to set astronomy parameters\n");
         mwFreeA(ias);
         freeStreams(&streams);
         return 1;
@@ -337,15 +394,13 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     }
 
     results = newSeparationResults(ap.number_streams);
+
     rc = evaluate(results, &ap, ias, &streams, sc, sf->star_points_file,
-                  &clr, sf->do_separation, sf->separation_outfile);
+                  &clr, sf->do_separation, sf->ignoreCheckpoint, sf->separation_outfile);
     if (rc)
         warn("Failed to calculate likelihood\n");
 
     printSeparationResults(results, ap.number_streams);
-
-    if (sf->referenceFile)
-        rc |= verifySeparationResults(sf->referenceFile, results, ap.number_streams);
 
     mwFreeA(ias);
     mwFreeA(sc);
@@ -355,35 +410,46 @@ static int worker(const SeparationFlags* sf, const real* parameters, const int n
     return rc;
 }
 
-#if BOINC_APPLICATION
-
-static void printVersion()
+static int separationInit(const char* appName, int debugBOINC, MWPriority priority, int setPriority)
 {
-    warn("<search_application> %s %u.%u %s %s %s%s%s%s </search_application>\n",
-         SEPARATION_APP_NAME,
-         SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR,
-         SEPARATION_SYSTEM_NAME,
-         ARCH_STRING,
-         PRECSTRING,
-         DENORMAL_STRING,
-         SEPARATION_SPECIAL_STR,
-         SEPARATION_SPECIAL_LIBM_STR);
-}
+    int rc;
 
-#else
-
-static int separationInit(const char* appname)
-{
   #if DISABLE_DENORMALS
     mwDisableDenormalsSSE();
   #endif
 
+    rc = mwBoincInit(appName, debugBOINC);
+    if (rc)
+        return rc;
+
+    /* For GPU versions, default to using a higher process priority if not set */
+  #if SEPARATION_OPENCL || SEPARATION_CAL
+    if (!setPriority && mwSetProcessPriority(DEFAULT_GPU_PRIORITY))
+        return 1;
+  #endif
+
+    /* If a  priority was specified, use that */
+    if (setPriority && mwSetProcessPriority(priority))
+        return 1;
+
+  #if (SEPARATION_CAL || SEPARATION_OPENCL) && defined(_WIN32)
+    /* We need to increase timer resolution to prevent big slowdown on windows when CPU is loaded. */
+    if (mwSetTimerMinResolution())
+        return 1;
+  #endif /* SEPARATION_CAL && defined(_WIN32) */
+
     return 0;
 }
 
-static void printVersion() { }
 
-#endif /* BOINC_APPLICATION */
+static int separationSpecialCleanup()
+{
+  #if SEPARATION_CAL && defined(_WIN32)
+    mwResetTimerResolution();
+  #endif /* SEPARATION_CAL && defined(_WIN32) */
+
+    return 0;
+}
 
 
 #ifdef MILKYWAY_IPHONE_APP
@@ -394,31 +460,32 @@ int main(int argc, const char* argv[])
 {
     int rc;
     SeparationFlags sf = EMPTY_SEPARATION_FLAGS;
-    real* parameters;
-    unsigned int number_parameters;
+    const char** argvCopy;
 
   #ifdef NDEBUG
     mwDisableErrorBoxes();
   #endif /* NDEBUG */
-    parameters = parseParameters(argc, argv, &number_parameters, &sf);
-    if (!parameters && !sf.do_separation)
+
+    argvCopy = mwFixArgv(argc, argv);
+    rc = parseParameters(argc, argvCopy, &sf);
+    if (rc)
     {
-        warn("Could not parse parameters from the command line\n");
+        warn("Failed to parse parameters\n");
+        free(argvCopy);
         exit(EXIT_FAILURE);
     }
 
-    rc = mwBoincInit(argv[0], sf.debugBOINC);
+    rc = separationInit(argvCopy[0], sf.debugBOINC, sf.processPriority, sf.setPriority);
+    free(argvCopy);
     if (rc)
         return rc;
 
-    printVersion();
-    rc = worker(&sf, parameters, number_parameters);
+    rc = worker(&sf);
 
     freeSeparationFlags(&sf);
-    free(parameters);
 
   #if !SEPARATION_OPENCL
-    if (sf.cleanup_checkpoint && rc == 0)
+    if (!sf.ignoreCheckpoint && sf.cleanupCheckpoint && rc == 0)
     {
         mw_report("Removing checkpoint file '%s'\n", CHECKPOINT_FILE);
         mw_remove(CHECKPOINT_FILE);
@@ -426,8 +493,11 @@ int main(int argc, const char* argv[])
   #endif
 
   #if BOINC_APPLICATION
+    printVersion(TRUE);
     mw_finish(rc);
   #endif
+
+    separationSpecialCleanup();
 
     return rc;
 }

@@ -43,13 +43,11 @@ mwvector transform_point(const AstronomyParameters* ap,
 
 void get_transform(mwmatrix mat, const mwvector f, const mwvector t);
 int prob_ok(StreamStats* ss, int n);
-void prob_ok_init(long seed);
+void prob_ok_init(uint32_t seed, int setSeed);
 
 SeparationResults* newSeparationResults(unsigned int numberStreams);
 void freeSeparationResults(SeparationResults* p);
 int checkSeparationResults(const SeparationResults* results, unsigned int numberStreams);
-
-int verifySeparationResults(const char* refFile, const SeparationResults* results, unsigned int nStreams);
 
 #ifdef __cplusplus
 }

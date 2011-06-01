@@ -204,14 +204,6 @@ endif()
 
 
 
-if(APPLE AND SYSTEM_IS_X86)
-  # Any OS X system will surely have sse3
-  set(CMAKE_C_FLAGS "-msse -msse2 -msse3 ${CMAKE_C_FLAGS}")
-  set(CMAKE_CXX_FLAGS "-msse -msse2 -msse3 ${CMAKE_C_FLAGS}")
-endif()
-
-
-
 set(gcc_warnings "-Wall"
                  "-Wextra"
                  "-Wshadow"
@@ -249,7 +241,8 @@ set(gcc_warnings "-Wall"
 
 
 
-set(gcc_extra_flags "-fno-common -funswitch-loops")
+set(gcc_extra_flags "-fno-common -funswitch-loops ")
+set(gcc_only_extra_flags "-freg-struct-return ")
 
 if(SYSTEM_IS_X86)
   list(APPEND gcc_extra_flags "-maccumulate-outgoing-args")
@@ -286,6 +279,12 @@ if(CMAKE_COMPILER_IS_GNUCC OR C_COMPILER_IS_CLANG)
   endforeach()
 endif()
 
+if(CMAKE_COMPILER_IS_GNUCC AND NOT C_COMPILER_IS_CLANG)
+    foreach(flag ${gcc_only_extra_flags})
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${flag}")
+  endforeach()
+endif()
+
 if(CMAKE_COMPILER_IS_GNUCC OR CXX_COMPILER_IS_CLANG)
   foreach(flag ${gcc_extra_flags} ${gcc_warnings} ${extra_gcc_math_flags})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
@@ -297,6 +296,10 @@ if(C_COMPILER_IS_CLANG)
   foreach(flag ${clang_warnings})
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${flag}")
   endforeach()
+
+  if(MW_ENABLE_DEBUG)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftrapv -fcatch-undefined-behavior")
+  endif()
 endif()
 
 
@@ -351,6 +354,20 @@ find_package(GLUT)
 
 find_package(Popt REQUIRED)
 include_directories(${POPT_INCLUDE_DIR})
+
+if(LUA_USE_STATIC)
+  set(__old_cmake_find_lib_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
+endif()
+
+find_package(Lua51 REQUIRED)
+
+if(LUA_USE_STATIC)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${__old_cmake_find_lib_suffixes})
+endif()
+
+include_directories(${LUA_INCLUDE_DIR})
+
 
 if(NBODY_CRLIBM AND NOT CRLIBM_FOUND)
   message(WARNING "N-body Crlibm requested, but Crlibm not found. Disabling N-body.")
