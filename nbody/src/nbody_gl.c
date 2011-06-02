@@ -332,6 +332,7 @@ static void drawGLScene()
     /* draw scene if necessary */
     if (scene->changed)
     {
+        nbodyGraphicsSetOn(&scene->attached);
         scene->changed = FALSE;
 
         /* erase scene */
@@ -598,6 +599,23 @@ static int nbodyInitDrawState()
     return 0;
 }
 
+/* Only one screensaver can be allowed since we do touch some things
+ * from the simulation although we probably shouldn't */
+static int alreadyAttached()
+{
+    int oldVal;
+
+    oldVal = nbodyGraphicsTestVal(&scene->attached);
+    if (oldVal != 0)
+    {
+        warn("Screensaver already attached\n");
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+
 #if !BOINC_APPLICATION
 
 static key_t key = -1;
@@ -678,16 +696,14 @@ int connectSharedScene()
     {
         if (attemptConnectSharedScene())
         {
-            return 0;
+            return alreadyAttached(); /* Error if something already attached */
         }
 
         mwMilliSleep(RETRY_INTERVAL);
-
         ++tries;
     }
 
     warn("Could not attach to simulation after %d attempts\n", MAX_TRIES);
-
     return 1;
 }
 

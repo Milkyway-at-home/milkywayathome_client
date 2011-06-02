@@ -94,19 +94,6 @@ int createSharedScene(NBodyState* st, const NBodyCtx* ctx, const char* inputFile
     return 0;
 }
 
-int visualizerIsAttached(const NBodyState* st)
-{
-    struct shmid_ds buf;
-
-    if (shmctl(st->shmId, IPC_STAT, &buf) < 0)
-    {
-        perror("Finding attached visualizers");
-        return 0;
-    }
-
-    return buf.shm_nattch > 1;
-}
-
 #elif USE_BOINC_SHMEM
 
 int createSharedScene(NBodyState* st, const NBodyCtx* ctx, const char* inputFile)
@@ -124,12 +111,6 @@ int createSharedScene(NBodyState* st, const NBodyCtx* ctx, const char* inputFile
     prepareSceneFromState(ctx, st);
 
     return 0;
-}
-
-int visualizerIsAttached(const NBodyState* st)
-{
-    /* TODO */
-    return 1;
 }
 
 #else
@@ -257,8 +238,8 @@ void updateDisplayedBodies(NBodyState* st)
     scene->usleepcount += scene->usleepdt;
     scene->info.currentTime = (float) st->tnow;
 
-    /* read data if not paused */
-    if (scene->usleepcount >= scene->dt && (!scene->paused || scene->step == 1))
+    /* Read data if not paused. No copying when no screensaver attached */
+    if (scene->attached && scene->usleepcount > scene->dt && (!scene->paused || scene->step == 1))
     {
         scene->usleepcount = 0.0;
         scene->step = 0;
@@ -274,6 +255,8 @@ void updateDisplayedBodies(NBodyState* st)
             r[i].z = (float) Z(Pos(b));
             r[i].ignore = ignoreBody(b);
         }
+
+        nbodyGraphicsSetOff(&scene->attached);
     }
 
     scene->changed = TRUE;

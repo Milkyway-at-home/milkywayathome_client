@@ -46,6 +46,20 @@ typedef struct
     float xrot;
     float yrot;
     float starsize;
+
+    /* Terrible way of checking that a screensaver is attached.  It
+       avoids copying all of the bodies if it isn't running. Also only
+       semi-functional way of making sure only one screensaver is
+       attached at a time to the simulation. There's a small window
+       where you can end up with multiple at a time which could
+       potentially break, but it shouldn't matter that much.
+     */
+  #ifndef _MSC_VER
+    volatile int attached;
+  #else
+    volatile LONG attached;
+  #endif /* _MSC_VER */
+
     int fullscreen;
     int drawaxes;
     int ntri;
@@ -63,6 +77,24 @@ typedef struct
     SceneInfo info;
     FloatPos r[];
 } scene_t;
+
+#if defined(__GNUC__)
+  // #define nbodyGraphicsAtomicIncrement(x) __sync_fetch_and_add((x), 1)
+  // #define nbodyGraphicsAtomicDecrement(x) __sync_fetch_and_sub((x), 1)
+
+  #define nbodyGraphicsSetOn(x) __sync_fetch_and_or((x), 1)
+  #define nbodyGraphicsSetOff(x) __sync_fetch_and_and((x), 0)
+  #define nbodyGraphicsTestVal(x) __sync_add_and_fetch((x), 0)
+#elif defined(_MSC_VER)
+  // #define nbodyGraphicsAtomicIncrement(x) InterlockedIncrement((x))
+  // #define nbodyGraphicsAtomicDecrement(x) InterlockedDecrement((x))
+
+  #define nbodyGraphicsSetOn(x) InterlockedBitTestAndSet((x), 1) // 1st bit
+  #define nbodyGraphicsSetOff(x) InterlockedBitTestAndReset((x), 1)
+  #define nbodyGraphicsTestVal(x) InterlockedOr((x), 0);
+#else
+  #error Need atomics for compiler
+#endif /* defined(__GNUC__) */
 
 #endif /* _NBODY_GRAPHICS_H_ */
 

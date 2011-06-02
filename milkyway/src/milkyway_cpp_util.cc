@@ -71,4 +71,3 @@ void* mw_graphics_get_shmem(const char* x)
 
 #endif /* BOINC_APPLICATION */
 
-

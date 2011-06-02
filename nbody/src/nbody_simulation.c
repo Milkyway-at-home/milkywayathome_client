@@ -64,19 +64,19 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
   #endif /* BOINC_APPLICATION */
 }
 
+
 static int runSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     const real tstop = ctx->timeEvolve - ctx->timestep / 1024.0;
 
     if (nbf->visualizer)
+    {
         launchVisualizer(st, nbf->visArgs);
+    }
 
     while (st->tnow < tstop)
     {
-        if (visualizerIsAttached(st))
-        {
-            updateDisplayedBodies(st);
-        }
+        updateDisplayedBodies(st);
 
         if (stepSystem(ctx, st))   /* advance N-body system */
             return 1;
@@ -164,6 +164,7 @@ int verifyFile(const NBodyFlags* nbf)
 static NBodyCtx _ctx = EMPTY_NBODYCTX;
 static NBodyState _st = EMPTY_NBODYSTATE;
 
+
 int runNBodySimulation(const NBodyFlags* nbf)
 {
     NBodyCtx* ctx = &_ctx;
@@ -188,7 +189,6 @@ int runNBodySimulation(const NBodyFlags* nbf)
     {
         return warn1("Failed to create shared scene\n");
     }
-
 
     ts = mwGetTime();
     rc = runSystem(ctx, st, nbf);
