@@ -23,7 +23,7 @@ function(maybe_dl_check name md5Hash url tarName)
     message(STATUS "Downloading ${name}")
     # Download somewhere you don't see
     file(DOWNLOAD ${url} "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/${tarName}"
-         TIMEOUT 60
+         TIMEOUT 300
          EXPECTED_MD5 ${md5Hash}
          LOG "Downloading ${name}"
          SHOW_PROGRESS)
