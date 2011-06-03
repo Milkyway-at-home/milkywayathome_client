@@ -216,7 +216,7 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
 
 #else
 
-void launchVisualizer(NBodyState* st)
+void launchVisualizer(NBodyState* st, const char* visArgs)
 {
     warn("Launching visualizer from main application not unimplemented on Windows\n");
 }

@@ -44,6 +44,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_math.h"
 #include "milkyway_show.h"
 #include "mw_boinc_util.h"
+#include "mw_asprintf.h"
 #include "dSFMT.h"
 
 #ifdef __cplusplus

@@ -230,7 +230,7 @@ static UINT mwGetMinTimerResolution()
     }
 
 	/* target 1-millisecond target resolution */
-    return min(max(tc.wPeriodMin, 1), tc.wPeriodMax);
+    return MIN(MAX(tc.wPeriodMin, 1), tc.wPeriodMax);
 }
 
 int mwSetTimerMinResolution()

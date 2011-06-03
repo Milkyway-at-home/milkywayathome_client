@@ -23,11 +23,21 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdarg.h>
 #include "milkyway_config.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #if defined(_WIN32) && !HAVE_ASPRINTF
 int _mw_asprintf(char** buf, const char* format, ...);
 #define asprintf(buf, fmt, ...) _mw_asprintf(buf, fmt, ##__VA_ARGS__)
 
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif /* _MW_ASPRINTF_H_ */
 

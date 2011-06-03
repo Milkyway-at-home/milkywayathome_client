@@ -84,7 +84,9 @@ set(mw_lib_headers include/milkyway_config.h.in
                    include/milkyway_vectors.h
                    include/milkyway_vector_types.h
                    include/real.h
-                   include/milkyway_show.h)
+                   include/milkyway_show.h
+                   include/mw_asprintf.h)
+
 
 set(milkyway_lua_headers include/milkyway_lua.h
                          include/milkyway_lua_marshal.h
@@ -105,7 +107,6 @@ set(mw_cl_lib_headers include/milkyway_cl.h
 
 if(WIN32 AND NOT HAVE_ASPRINTF)
     list(APPEND mw_lib_src src/mw_asprintf.c)
-    list(APPEND mw_lib_headers include/mw_asprintf.h)
 endif()
 
 if(MILKYWAY_OPENCL)
