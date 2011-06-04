@@ -31,6 +31,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <sys/shm.h>
 #endif
 
+
+static const char nbodyGraphicsName[] = NBODY_GRAPHICS_NAME;
+
 static void prepareSceneFromState(const NBodyCtx* ctx, const NBodyState* st)
 {
     st->scene->nbody = st->nbody;
@@ -141,7 +144,6 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
     char** argv = NULL;
     size_t argvSize = 0;
     size_t visArgsLen = 0;
-    static const char visName[] = NBODY_GRAPHICS_NAME;
 
     if (!st->scene) /* If there's no scene to share, there's no point */
         return;
@@ -185,10 +187,10 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
 
     /* Stick the program name at the head of the arguments passed in */
     visArgsLen = visArgs ? strlen(visArgs) : 0;
-    argvSize = visArgsLen + sizeof(visName) + 2; /* arguments + program name + space + null */
+    argvSize = visArgsLen + sizeof(nbodyGraphicsName) + 2; /* arguments + program name + space + null */
     buf = mwCalloc(argvSize, sizeof(char));
 
-    strcat(buf, visName);
+    strcat(buf, nbodyGraphicsName);
     strcat(buf, " ");
     if (visArgs)
     {
@@ -218,7 +220,41 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
 
 void launchVisualizer(NBodyState* st, const char* visArgs)
 {
-    warn("Launching visualizer from main application not unimplemented on Windows\n");
+    PROCESS_INFORMATION pInfo;
+    STARTUPINFO startInfo;
+    size_t visArgsLen, argvSize;
+    char* buf;
+
+    memset(&pInfo, 0, sizeof(pInfo));
+    memset(&startInfo, 0, sizeof(startInfo));
+    startInfo.cb = sizeof(startInfo);
+
+    visArgsLen = visArgs ? strlen(visArgs) : 0;
+    argvSize = visArgsLen + sizeof(nbodyGraphicsName) + 2; /* arguments + program name + space + null */
+    buf = mwCalloc(argvSize, sizeof(char));
+
+    strcat(buf, nbodyGraphicsName);
+    strcat(buf, " ");
+    if (visArgs)
+    {
+        strcat(buf, visArgs);
+    }
+
+    if (!CreateProcess(NULL,
+                       buf,
+                       NULL,
+                       NULL,
+                       FALSE,
+                       NORMAL_PRIORITY_CLASS,
+                       NULL,
+                       NULL,
+                       &startInfo,
+                       &pInfo))
+    {
+        warn("Error creating visualizer process: %ld\n", GetLastError());
+    }
+
+    free(buf);
 }
 
 #endif /* _WIN32 */
