@@ -168,9 +168,12 @@ double mwGetTime();
 double mwGetTimeMilli();
 
 #ifdef _WIN32
-  #define mwMilliSleep(x) Sleep((x))
+  #define mwMilliSleep(x) Sleep((DWORD) (x))
+  /* The usleep() in MinGW tries to round up to avoid sleeping for 0 */
+  #define mwMicroSleep(x) Sleep(((DWORD) (x) + 999) / 1000)
 #else
-#define mwMilliSleep(x) usleep(1000 * (x))
+  #define mwMilliSleep(x) usleep((useconds_t) 1000 * (x))
+  #define mwMicroSleep(x) usleep((useconds_t)(x))
 #endif /* _WIN32 */
 
 int mwSetTimerMinResolution();

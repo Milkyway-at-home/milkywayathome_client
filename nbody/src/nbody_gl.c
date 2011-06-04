@@ -63,7 +63,11 @@
 #define ROTSCALE 1.0
 #define ZOOMSCALE 0.2
 
-#define USLEEPDT 100.0
+/* microseconds */
+#define USLEEPDT 10000.0
+
+/* Milliseconds */
+#define THRASH_SLEEP_INTERVAL 15
 
 
 
@@ -327,7 +331,7 @@ static void drawGLScene()
     if (!scene)
         return;
 
-    usleep(scene->usleepdt);
+    mwMicroSleep(scene->usleepdt);
 
     /* draw scene if necessary */
     if (scene->changed)
@@ -367,7 +371,7 @@ static void drawGLScene()
 static void keyPressed(unsigned char key, int x, int y)
 {
     /* avoid thrashing this call */
-    usleep(100);
+    mwMilliSleep(THRASH_SLEEP_INTERVAL);
 
     if (scene->fullscreen)
     {
@@ -456,8 +460,7 @@ static void keyPressed(unsigned char key, int x, int y)
 /* The function called whenever a normal key is pressed. */
 static void specialKeyPressed(int key, int x, int y)
 {
-    /* avoid thrashing this procedure */
-    usleep(100);
+    mwMilliSleep(THRASH_SLEEP_INTERVAL);
 
     switch (key)
     {
