@@ -142,15 +142,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 
-if(APPLE)
-  set(NEED_POPT_DEPS 1)
-elseif(MSYS)
-  # Seem to be necessary if you use the prebuilt ones
-  #set(NEED_POPT_DEPS 1)
-else()
-  set(NEED_POPT_DEPS 0)
-endif()
-
 if(APPLE AND BOINC_APPLICATION)
   if(BOINC_RELEASE)
     # We don't want to bother compiling twice until we need the universal binary for releases
@@ -357,6 +348,22 @@ find_package(GLUT)
 
 find_package_static(Popt REQUIRED)
 include_directories(${POPT_INCLUDE_DIR})
+
+if(APPLE)
+  set(NEED_POPT_DEPS 1)
+elseif(MSYS)
+  # Seem to be necessary if you use the prebuilt ones
+  #set(NEED_POPT_DEPS 1)
+else()
+  set(NEED_POPT_DEPS 0)
+endif()
+
+if(NEED_POPT_DEPS)
+    #These are only dependencies of popt needed for static linking
+  find_package_static(Libintl REQUIRED)
+  find_package_static(Libiconv REQUIRED)
+endif()
+
 
 
 if(NBODY_CRLIBM AND NOT CRLIBM_FOUND)

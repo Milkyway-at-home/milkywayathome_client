@@ -56,13 +56,6 @@ include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 include_directories(${DSFMT_INCLUDE_DIR})
 
 
-if(NEED_POPT_DEPS)
-    #These are only dependencies of popt needed for static linking
-  find_package_static(Libintl REQUIRED)
-  find_package_static(Libiconv REQUIRED)
-endif()
-
-
 set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
 include_directories(${NBODY_INCLUDE_DIR})
 
@@ -312,9 +305,10 @@ add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
 
 milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} ${NBODY_STATIC} "${nbody_exe_link_libs}")
 
-if(NBODY_GL AND WIN32 AND BOINC_APPLICATION)
+if(NBODY_GL AND WIN32 AND NOT BOINC_APPLICATION)
   message(FATAL "N-body visualizer unsupported on Windows without BOINC")
-elseif(NBODY_GL AND BOINC_APPLICATION AND NOT BOINC_GRAPHICS_FOUND)
+endif()
+if(NBODY_GL AND BOINC_APPLICATION AND NOT BOINC_GRAPHICS_FOUND)
   message(FATAL "BOINC graphics library not found")
 endif()
 
@@ -324,10 +318,18 @@ if(NBODY_GL)
   set(nbody_screensaver_headers ${NBODY_INCLUDE_DIR}/nbody_gl.h
                                 ${NBODY_INCLUDE_DIR}/nbody_graphics.h)
 
-  set(vis_link_libs ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${nbody_exe_link_libs})
+  set(vis_link_libs)
   if(BOINC_APPLICATION)
     list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY} ${BOINC_LIBRARIES})
   endif()
+
+  list(APPEND vis_link_libs milkyway ${POPT_LIBRARY} ${OS_SPECIFIC_LIBS} ${GLUT_LIBRARY} ${OPENGL_LIBRARIES} m)
+
+  if(NEED_POPT_DEPS)
+    list(APPEND vis_link_libs ${LIBICONV_LIBRARY} ${LIBINTL_LIBRARY})
+  endif()
+
+
 
   add_executable(${nbody_graphics_bin_name} ${nbody_screensaver_src} ${nbody_screensaver_headers})
   target_link_libraries(${nbody_graphics_bin_name} ${vis_link_libs})
