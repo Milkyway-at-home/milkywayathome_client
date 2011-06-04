@@ -318,18 +318,15 @@ if(NBODY_GL)
   set(nbody_screensaver_headers ${NBODY_INCLUDE_DIR}/nbody_gl.h
                                 ${NBODY_INCLUDE_DIR}/nbody_graphics.h)
 
-  set(vis_link_libs)
+  set(vis_link_libs milkyway ${POPT_LIBRARY} ${GLUT_LIBRARY} ${OPENGL_LIBRARIES})
   if(BOINC_APPLICATION)
     list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY} ${BOINC_LIBRARIES})
   endif()
 
-  list(APPEND vis_link_libs milkyway ${POPT_LIBRARY} ${OS_SPECIFIC_LIBS} ${GLUT_LIBRARY} ${OPENGL_LIBRARIES} m)
-
   if(NEED_POPT_DEPS)
     list(APPEND vis_link_libs ${LIBICONV_LIBRARY} ${LIBINTL_LIBRARY})
   endif()
-
-
+  list(APPEND vis_link_libs ${OS_SPECIFIC_LIBS} m)
 
   add_executable(${nbody_graphics_bin_name} ${nbody_screensaver_src} ${nbody_screensaver_headers})
   target_link_libraries(${nbody_graphics_bin_name} ${vis_link_libs})
