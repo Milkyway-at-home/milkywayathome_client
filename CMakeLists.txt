@@ -347,27 +347,6 @@ find_package(Boost)
 find_package(OpenGL)
 find_package(GLUT)
 
-
-find_package_static(Popt REQUIRED)
-include_directories(${POPT_INCLUDE_DIR})
-
-if(APPLE)
-  set(NEED_POPT_DEPS 1)
-elseif(MSYS)
-  # Seem to be necessary if you use the prebuilt ones
-  #set(NEED_POPT_DEPS 1)
-else()
-  set(NEED_POPT_DEPS 0)
-endif()
-
-if(NEED_POPT_DEPS)
-    #These are only dependencies of popt needed for static linking
-  find_package_static(Libintl REQUIRED)
-  find_package_static(Libiconv REQUIRED)
-endif()
-
-
-
 if(NBODY_CRLIBM AND NOT CRLIBM_FOUND)
   message(WARNING "N-body Crlibm requested, but Crlibm not found. Disabling N-body.")
   set(NBODY OFF)
@@ -377,6 +356,33 @@ endif()
 if(BOINC_APPLICATION)
   include_directories(${BOINC_INCLUDE_DIR})
 endif()
+
+option(USE_SYSTEM_POPT "Try to find and use system popt instead of building it" OFF)
+mark_as_advanced(USE_SYSTEM_POPT)
+
+if(USE_SYSTEM_POPT)
+  find_package(Popt REQUIRED)
+  if(APPLE)
+    set(NEED_POPT_DEPS TRUE)
+  elseif(MSYS)
+    # Seem to be necessary if you use the prebuilt ones
+    #set(NEED_POPT_DEPS TRUE)
+  else()
+    set(NEED_POPT_DEPS FALSE)
+  endif()
+
+  if(NEED_POPT_DEPS)
+    #These are only dependencies of popt needed for static linking
+    find_package_static(Libintl REQUIRED)
+    find_package_static(Libiconv REQUIRED)
+  endif()
+else()
+  add_subdirectory(popt)
+  set(NEED_POPT_DEPS FALSE)
+endif()
+include_directories(${POPT_INCLUDE_DIR})
+
+
 
 add_subdirectory(lua)
 include_directories(${LUA_INCLUDE_DIR})

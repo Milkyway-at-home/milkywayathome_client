@@ -8,6 +8,7 @@ project ( lua C )
 cmake_minimum_required ( VERSION 2.6 )
 
 include(PreferStatic)
+include(IgnoreWarningFlags)
 
 ## CONFIGURATION
 # Default configuration (we assume POSIX by default)
@@ -120,15 +121,8 @@ add_library ( lua51 STATIC ${SRC_LIB} )
 add_executable ( lua ${SRC_LUA} )
 target_link_libraries ( lua lua51 ${LIBS})
 
-# Disable all warnings
-if(MSVC)
-  set(disable_warnings_flag "/w")
-else()
-  set(disable_warnings_flag "-w")
-endif()
-
-set_target_properties(lua51 PROPERTIES COMPILE_FLAGS "${disable_warnings_flag}")
-set_target_properties(lua PROPERTIES COMPILE_FLAGS "${disable_warnings_flag}")
+set_target_properties(lua51 PROPERTIES COMPILE_FLAGS "${DISABLE_WARNINGS_FLAG}")
+set_target_properties(lua PROPERTIES COMPILE_FLAGS "${DISABLE_WARNINGS_FLAG}")
 
 set(LUA_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "lua headers")
 set(LUA_INTERPRETER lua CACHE INTERNAL "Lua interpreter")

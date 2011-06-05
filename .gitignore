@@ -52,4 +52,5 @@ a.out
 bin/
 build
 include/
+popt/configmake.h
 
