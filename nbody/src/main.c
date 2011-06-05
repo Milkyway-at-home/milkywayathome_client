@@ -38,7 +38,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #if !BOINC_APPLICATION
 static void nbodyPrintVersion() { }
 
-static int nbodyInit(const NBodyFlags* nbf) { }
+static int nbodyInit(const NBodyFlags* nbf) { return 0; }
 
 #else
 
