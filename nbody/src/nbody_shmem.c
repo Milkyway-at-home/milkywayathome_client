@@ -141,6 +141,7 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
     char* newPath = NULL;
     int argc = 0;
     char* buf = NULL;
+    char* p = NULL;
     char** argv = NULL;
     size_t argvSize = 0;
     size_t visArgsLen = 0;
@@ -190,11 +191,11 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
     argvSize = visArgsLen + sizeof(nbodyGraphicsName) + 2; /* arguments + program name + space + null */
     buf = mwCalloc(argvSize, sizeof(char));
 
-    strcat(buf, nbodyGraphicsName);
-    strcat(buf, " ");
+    p = stpcpy(buf, nbodyGraphicsName);
+    p = stpcpy(p, " ");
     if (visArgs)
     {
-        strcat(buf, visArgs);
+        stpcpy(p, visArgs);
     }
 
     if (poptParseArgvString(buf, &argc, (const char***) &argv))
@@ -275,10 +276,10 @@ void updateDisplayedBodies(NBodyState* st)
     scene->info.currentTime = (float) st->tnow;
 
     /* Read data if not paused. No copying when no screensaver attached */
-    if (scene->attached && scene->usleepcount >= scene->dt && (!scene->paused || scene->step == 1))
+    if (scene->attached && scene->usleepcount >= scene->dt && (!scene->paused || scene->step))
     {
         scene->usleepcount = 0.0;
-        scene->step = 0;
+        scene->step = FALSE;
 
       #ifdef _OPENMP
         #pragma omp parallel for private(i, b) schedule(static)

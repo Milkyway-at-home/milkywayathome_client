@@ -32,7 +32,6 @@ include(MaybeDlCheck)
 include(StaticBOINC)
 include(SpecialLibs)
 include(PrintInfo)
-include(CheckFunctionExists)
 include(CheckSSE2)
 include(CMakeDependentOption)
 

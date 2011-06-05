@@ -36,8 +36,10 @@ include(MSVCFlags)
 include(PreferStatic)
 include(SpecialLibs)
 include(CMakeDependentOption)
+include(CheckFunctionExists)
 include(Profiling)
 
+check_function_exists(stpcpy HAVE_STPCPY)
 
 option(MSVC_USE_STATIC_CRT "Use static CRT" ON)
 mark_as_advanced(MSVC_USE_STATIC_CRT)

@@ -394,7 +394,7 @@ static void keyPressed(unsigned char key, int x, int y)
             break;
 
         case ' ':
-            scene->step = 1;
+            scene->step = TRUE;
             break;
 
         case 'b':
@@ -727,7 +727,7 @@ static void sceneInit(const VisArgs* args)
     scene->drawaxes = TRUE;
     scene->ntri = NTRI;
     scene->paused = FALSE;
-    scene->step = 0;
+    scene->step = FALSE;
     scene->mousemode = 1;
     scene->changed = FALSE;
     scene->dt = 300;
