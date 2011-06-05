@@ -30,11 +30,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #endif
   #include <boinc/boinc_api.h>
   #include <boinc/filesys.h>
-
-  #if BOINC_APP_GRAPHICS
-    #include <boinc/graphics_api.h>
-    #include <boinc/graphics_lib.h>
-  #endif /* BOINC_APP_GRAPHICS */
 #endif /* BOINC_APPLICATION */
 
 #include <stdio.h>

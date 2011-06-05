@@ -152,9 +152,6 @@ if(APPLE AND BOINC_APPLICATION)
   endif()
 endif()
 
-option(BOINC_APP_GRAPHICS
-       "BOINC app graphics" OFF)
-
 option(SEPARATION_OPENCL
         "Build the OpenCL separation" OFF)
 
