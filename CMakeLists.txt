@@ -357,29 +357,8 @@ endif()
 option(USE_SYSTEM_POPT "Try to find and use system popt instead of building it" OFF)
 mark_as_advanced(USE_SYSTEM_POPT)
 
-if(USE_SYSTEM_POPT)
-  find_package(Popt REQUIRED)
-  if(APPLE)
-    set(NEED_POPT_DEPS TRUE)
-  elseif(MSYS)
-    # Seem to be necessary if you use the prebuilt ones
-    #set(NEED_POPT_DEPS TRUE)
-  else()
-    set(NEED_POPT_DEPS FALSE)
-  endif()
-
-  if(NEED_POPT_DEPS)
-    #These are only dependencies of popt needed for static linking
-    find_package_static(Libintl REQUIRED)
-    find_package_static(Libiconv REQUIRED)
-  endif()
-else()
-  add_subdirectory(popt)
-  set(NEED_POPT_DEPS FALSE)
-endif()
+add_subdirectory(popt)
 include_directories(${POPT_INCLUDE_DIR})
-
-
 
 add_subdirectory(lua)
 include_directories(${LUA_INCLUDE_DIR})

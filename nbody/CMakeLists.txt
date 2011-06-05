@@ -266,13 +266,6 @@ if(NBODY_CRLIBM)
   list(APPEND nbody_exe_link_libs ${CRLIBM_LIBRARY})
 endif()
 
-if(NEED_POPT_DEPS)
-  # Popt dependencies for static linking For some reason, on OS X /
-  # windows you need these dependencies but not Linux.
-  list(APPEND nbody_exe_link_libs ${LIBICONV_LIBRARY}
-                                  ${LIBINTL_LIBRARY})
-endif()
-
 if(NOT HAVE_SSE2 AND SYSTEM_IS_x86)
   message(FATAL_ERROR "SSE2 is required for x86 systems")
 endif()
@@ -320,10 +313,6 @@ if(NBODY_GL)
   set(vis_link_libs milkyway ${POPT_LIBRARY} ${GLUT_LIBRARY} ${OPENGL_LIBRARIES})
   if(BOINC_APPLICATION)
     list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY} ${BOINC_LIBRARIES})
-  endif()
-
-  if(NEED_POPT_DEPS)
-    list(APPEND vis_link_libs ${LIBICONV_LIBRARY} ${LIBINTL_LIBRARY})
   endif()
   list(APPEND vis_link_libs ${OS_SPECIFIC_LIBS} m)
 

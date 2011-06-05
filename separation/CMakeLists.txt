@@ -139,13 +139,6 @@ endif()
 include_directories(${POPT_INCLUDE_DIR})
 
 
-if(NEED_POPT_DEPS)
-    #These are only dependencies of popt needed for static linking
-  find_package(Libintl REQUIRED)
-  find_package(Libiconv REQUIRED)
-endif()
-
-
 print_separator()
 message("Separation build:")
 message("   Double precision:    ${DOUBLEPREC}")
@@ -269,13 +262,6 @@ list(APPEND separation_link_libs ${OS_SPECIFIC_LIBS}
 
 set(exe_link_libs ${POPT_LIBRARY}
                   ${separation_link_libs})
-
-if(NEED_POPT_DEPS)
-  # Popt dependencies for static linking For some reason, on OS X /
-  # windows you need these dependencies but not Linux.
-  list(APPEND exe_link_libs ${LIBICONV_LIBRARY}
-                            ${LIBINTL_LIBRARY})
-endif()
 
 if(CRLIBM_FOUND AND SEPARATION_CRLIBM)
   include_directories(${CRLIBM_INCLUDE_DIR})
