@@ -1,0 +1,3 @@
+[submodule "popt/popt"]
+	path = popt/popt
+	url = git@github.com:arsenm/POPT.git
