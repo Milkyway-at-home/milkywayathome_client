@@ -76,11 +76,12 @@ static FloatPos* color = NULL;
 static const FloatPos white = { 1.0f, 1.0f, 1.0f, 0 };
 static const FloatPos grey = { 0.3294f, 0.3294f, 0.3294f, 1 };
 
-static int window = 0;
 static int xlast = 0, ylast = 0;
 static int width = 0, height = 0;
 static int monochromatic = FALSE;
 static int useGLPoints = FALSE;
+
+static GLboolean running = GL_TRUE;
 
 static GLUquadricObj* quadratic = NULL;
 static scene_t* scene = NULL;
@@ -110,54 +111,6 @@ static void print_bindings(FILE* f)
             "MOUSEBINDINGS:\n"
             "  DRAG                   : rotate\n"
             "  [SHIFT] DRAG (up/down) : zoom (in/out)\n");
-}
-
-/* A general OpenGL initialization function.  Sets all of the initial parameters. */
-static void initGL(int w, int h)
-{
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-
-    glClearDepth(1.0);
-    glDepthFunc(GL_LESS);
-    glEnable(GL_DEPTH_TEST | GL_POINT_SMOOTH | GL_BLEND | GL_ALPHA_TEST);
-
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glShadeModel(GL_SMOOTH);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-
-    quadratic = gluNewQuadric();
-    gluQuadricNormals(quadratic, GLU_SMOOTH);
-    gluQuadricTexture(quadratic, GL_TRUE);
-
-    gluPerspective(45.0f, (GLfloat)w / (GLfloat)h, 0.1f, 1000.0f);
-
-    glMatrixMode(GL_MODELVIEW);
-}
-
-/* The function called when our window is resized */
-static void resizeGLScene(int w, int h)
-{
-    /* Prevent A Divide By Zero If The Window Is Too Small */
-    if (h == 0)
-    {
-        h = 1;
-    }
-
-    width = w;
-    height = h;
-
-    glViewport(0, 0, w, h);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-
-    gluPerspective(45.0f, (GLfloat)w / (GLfloat)h, 0.1f, 1000.0f);
-    glMatrixMode(GL_MODELVIEW);
-
-    scene->changed = TRUE;
 }
 
 #define GALACTIC_RADIUS 15.33f
@@ -314,7 +267,7 @@ static void drawInfo()
              scene->info.timeEvolve,
              100.0f * scene->info.currentTime / scene->info.timeEvolve
         );
-    glutBitmapString(GLUT_BITMAP_HELVETICA_12, buf);
+    //glutBitmapString(GLUT_BITMAP_HELVETICA_12, buf);
 
 
     glPopMatrix();
@@ -328,14 +281,14 @@ static void drawInfo()
  */
 static void drawGLScene()
 {
-    if (!scene)
-        return;
+    //mwMicroSleep(scene->usleepdt);
 
-    mwMicroSleep(scene->usleepdt);
+    //warn("Draw draw draw draw\n");
 
     /* draw scene if necessary */
     if (scene->changed)
     {
+        //warn("Really draw\n");
         nbodyGraphicsSetOn(&scene->attached);
         scene->changed = FALSE;
 
@@ -362,28 +315,26 @@ static void drawGLScene()
 
         drawPoints();
         drawInfo();
-
-        glutSwapBuffers();
     }
 }
 
 /* The function called whenever a key is pressed. */
-static void keyPressed(unsigned char key, int x, int y)
+static void keyPressed(int key, int state)
 {
     /* avoid thrashing this call */
     mwMilliSleep(THRASH_SLEEP_INTERVAL);
 
     if (scene->fullscreen)
     {
-        mw_finish(EXIT_SUCCESS);
+        running = GL_FALSE;
     }
 
     switch (key)
     {
         case ESCAPE:
         case 'q':
-            glutDestroyWindow(window);
-            mw_finish(EXIT_SUCCESS);
+            running = GL_FALSE;
+            break;
 
         case 'h':
             print_bindings(stderr);
@@ -394,7 +345,7 @@ static void keyPressed(unsigned char key, int x, int y)
             break;
 
         case ' ':
-            scene->step = 1;
+            scene->step = TRUE;
             break;
 
         case 'b':
@@ -437,6 +388,7 @@ static void keyPressed(unsigned char key, int x, int y)
             scene->drawaxes = !scene->drawaxes;
             scene->changed = TRUE;
             break;
+
         case '>':
             scene->dt /= 2.0;
             if (scene->dt < 10.0)
@@ -444,6 +396,7 @@ static void keyPressed(unsigned char key, int x, int y)
                 scene->dt = 10.0;
             }
             break;
+
         case '<':
             scene->dt *= 2.0;
             if (scene->dt > 1.0e6)
@@ -452,73 +405,86 @@ static void keyPressed(unsigned char key, int x, int y)
             }
             break;
 
-        default:
-            break;
-    }
-}
-
-/* The function called whenever a normal key is pressed. */
-static void specialKeyPressed(int key, int x, int y)
-{
-    mwMilliSleep(THRASH_SLEEP_INTERVAL);
-
-    switch (key)
-    {
-        case GLUT_KEY_PAGE_UP:
+        case GLFW_KEY_PAGEUP:
             scene->z -= DELTAZ;
             scene->changed = TRUE;
             break;
-        case GLUT_KEY_PAGE_DOWN:
+
+        case GLFW_KEY_PAGEDOWN:
             scene->z += DELTAZ;
             scene->changed = TRUE;
             break;
-        case GLUT_KEY_UP:
+
+        case GLFW_KEY_UP:
             scene->xrot -= DELTAXROT;
             scene->changed = TRUE;
             break;
-        case GLUT_KEY_DOWN:
+
+        case GLFW_KEY_DOWN:
             scene->xrot += DELTAXROT;
             scene->changed = TRUE;
             break;
-        case GLUT_KEY_LEFT:
+
+        case GLFW_KEY_LEFT:
             scene->yrot -= DELTAYROT;
             scene->changed = TRUE;
             break;
-        case GLUT_KEY_RIGHT:
+
+        case GLFW_KEY_RIGHT:
             scene->yrot += DELTAYROT;
             scene->changed = TRUE;
             break;
+
         default:
             break;
     }
 }
 
-static void mouseFunc(int button, int state, int x, int y)
+static void mouseFunc(int button, int state)
 {
+    if (state != GLFW_PRESS)
+        return;
+
     if (scene->fullscreen)
     {
-        mw_finish(EXIT_SUCCESS);
+        running = GL_FALSE;
     }
 
-    if (state == GLUT_DOWN)
-    {
-        xlast = x;
-        ylast = y;
+    glfwGetMousePos(&xlast, &ylast);
 
-        if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
-        {
-            scene->mousemode = 2;
-        }
-        else
-        {
-            scene->mousemode = 1;
-        }
+    if (glfwGetKey(GLFW_KEY_LSHIFT) == GLFW_PRESS || glfwGetKey(GLFW_KEY_RSHIFT) == GLFW_PRESS)
+    {
+        scene->mousemode = 2;
+    }
+    else
+    {
+        scene->mousemode = 1;
     }
 }
 
 static void motionFunc(int x, int y)
 {
+    int w, h;
     double dx, dy;
+
+    if (scene->fullscreen)
+    {
+        /* In fullscreen mode the cursor seems to start at the corner
+         * and get constantly reset to the midpoint */
+        glfwGetWindowSize(&w, &h);
+
+        if (    (x != w / 2 || y != h / 2)  /* Not midpoint */
+             && !(x == 0 && y == 0))        /* Not corner */
+        {
+
+            warn("Quitting from motion\n");
+            running = GL_FALSE;
+            return;
+        }
+    }
+
+    if (glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT) != GLFW_PRESS)
+        return;
 
     dx = (double) x - (double) xlast;
     dy = (double) y - (double) ylast;
@@ -539,12 +505,32 @@ static void motionFunc(int x, int y)
     }
 }
 
-static void passiveMotionFunc(int x, int y)
+/* The function called when our window is resized */
+static void resizeGLScene(int w, int h)
 {
-    if (scene->fullscreen)
+    /* Prevent A Divide By Zero If The Window Is Too Small */
+    if (h == 0)
     {
-        mw_finish(EXIT_SUCCESS);
+        h = 1;
     }
+
+    warn("Resize %d %d\n", w, h);
+
+    width = w;
+    height = h;
+
+    glViewport(0, 0, w, h);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    gluPerspective(45.0f, (GLfloat)w / (GLfloat)h, 0.1f, 1000.0f);
+    glMatrixMode(GL_MODELVIEW);
+
+    scene->changed = TRUE;
+
+    drawGLScene();
+    glfwSwapBuffers();
 }
 
 static void assignParticleColors(unsigned int nbody)
@@ -714,8 +700,8 @@ int connectSharedScene()
 
 static void sceneInit(const VisArgs* args)
 {
-    width = args->width == 0 ? glutGet(GLUT_SCREEN_WIDTH) / 2 : args->width;
-    height = args->height == 0 ? glutGet(GLUT_SCREEN_HEIGHT) / 2 : args->height;
+    //width = args->width == 0 ? glutGet(GLUT_SCREEN_WIDTH) / 2 : args->width;
+    //height = args->height == 0 ? glutGet(GLUT_SCREEN_HEIGHT) / 2 : args->height;
     monochromatic = args->monochrome;
     useGLPoints = !args->notUseGLPoints;
 
@@ -727,41 +713,83 @@ static void sceneInit(const VisArgs* args)
     scene->drawaxes = TRUE;
     scene->ntri = NTRI;
     scene->paused = FALSE;
-    scene->step = 0;
+    scene->step = FALSE;
     scene->mousemode = 1;
-    scene->changed = FALSE;
+    scene->changed = TRUE;
     scene->dt = 300;
     scene->usleepdt = USLEEPDT;
 }
 
-int nbodyGLSetup(const VisArgs* args)
+int nbodyGraphicsLoop()
 {
-    sceneInit(args);
-    nbodyInitDrawState();
-
-    /* prepare rendering */
-    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
-
-    glutInitWindowSize(width, height);
-    glutInitWindowPosition(0, 0);
-
-    window = glutCreateWindow("Milkyway@Home N-body");
-    glutDisplayFunc(drawGLScene);
-
-    if (scene->fullscreen)
+    while (running)
     {
-        glutFullScreen();
-        glutPassiveMotionFunc(passiveMotionFunc);
+        drawGLScene();
+        glfwSwapBuffers();
     }
 
-    glutIdleFunc(drawGLScene);
-    glutReshapeFunc(resizeGLScene);
-    glutKeyboardFunc(keyPressed);
-    glutSpecialFunc(specialKeyPressed);
-    glutMouseFunc(mouseFunc);
-    glutMotionFunc(motionFunc);
+    return 0;
+}
 
-    initGL(width, height);
+/* A general OpenGL initialization function.  Sets all of the initial parameters. */
+static void initGL()
+{
+    int w, h;
+
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+    glClearDepth(1.0);
+    glDepthFunc(GL_LESS);
+    glEnable(GL_DEPTH_TEST | GL_POINT_SMOOTH | GL_BLEND | GL_ALPHA_TEST);
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glShadeModel(GL_SMOOTH);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    quadratic = gluNewQuadric();
+    gluQuadricNormals(quadratic, GLU_SMOOTH);
+    gluQuadricTexture(quadratic, GL_TRUE);
+
+    glfwGetWindowSize(&w, &h);
+    gluPerspective(45.0f, (GLfloat) w / (GLfloat) h, 0.1f, 1000.0f);
+
+    glMatrixMode(GL_MODELVIEW);
+}
+
+int nbodyGLSetup(const VisArgs* args)
+{
+    GLFWvidmode vidMode;
+    int winMode;
+
+    sceneInit(args);
+    nbodyInitDrawState();
+    glfwSwapInterval(1);
+
+    glfwGetDesktopMode(&vidMode);
+
+    width = vidMode.Width / 2;
+    height = vidMode.Height / 2;
+
+    glfwOpenWindowHint(GLFW_FSAA_SAMPLES, 4);
+    winMode = scene->fullscreen ? GLFW_FULLSCREEN : GLFW_WINDOW;
+    if (!glfwOpenWindow(width, height, 0, 0, 0, 0, 8, 0, winMode))
+    {
+        warn("Failed to open window\n");
+        return 1;
+    }
+    glfwSetWindowTitle("Milkyway@Home N-body");
+
+    initGL();
+
+    glfwSetWindowSizeCallback(resizeGLScene);
+    glfwSetKeyCallback(keyPressed);
+    glfwSetMouseButtonCallback(mouseFunc);
+    glfwSetMousePosCallback(motionFunc);
+
+    //glfwSetMouseWheelCallback();
 
     return 0;
 }

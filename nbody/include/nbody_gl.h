@@ -21,9 +21,9 @@
 #ifndef _NBODY_GL_H_
 #define _NBODY_GL_H_
 
-#include <GL/glut.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
+#include <GL/glfw.h>
 
 #include "nbody_graphics.h"
 
@@ -46,6 +46,7 @@ typedef struct
 int connectSharedScene();
 int nbodyGLSetup(const VisArgs* args);
 void nbodyGLCleanup();
+int nbodyGraphicsLoop();
 
 #ifndef _WIN32
 int nbodyInitShmemKey(const char* progName);

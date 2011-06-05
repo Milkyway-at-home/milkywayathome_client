@@ -275,7 +275,7 @@ void updateDisplayedBodies(NBodyState* st)
     scene->info.currentTime = (float) st->tnow;
 
     /* Read data if not paused. No copying when no screensaver attached */
-    if (scene->attached && scene->usleepcount >= scene->dt && (!scene->paused || scene->step == 1))
+    if (scene->attached && scene->usleepcount >= scene->dt && (!scene->paused || scene->step))
     {
         scene->usleepcount = 0.0;
         scene->step = 0;

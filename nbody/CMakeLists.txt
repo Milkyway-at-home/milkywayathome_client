@@ -42,13 +42,13 @@ mark_as_advanced(NBODY_STATIC)
 
 maybe_static(${NBODY_STATIC})
 
-if(OPENGL_FOUND AND OPENGL_GLU_FOUND AND GLUT_FOUND)
+if(OPENGL_FOUND AND OPENGL_GLU_FOUND AND GLFW_FOUND)
   set(NBODY_GL ON CACHE INTERNAL "Build N-body graphics")
 endif()
 
 if(NBODY_GL)
   include_directories(${OPENGL_INCLUDE_DIR})
-  include_directories(${GLUT_INCLUDE_PATH})
+  include_directories(${GLFW_INCLUDE_PATH})
 endif()
 
 include_directories(${MILKYWAY_INCLUDE_DIR})
@@ -318,7 +318,9 @@ if(NBODY_GL)
   set(nbody_screensaver_headers ${NBODY_INCLUDE_DIR}/nbody_gl.h
                                 ${NBODY_INCLUDE_DIR}/nbody_graphics.h)
 
-  set(vis_link_libs milkyway ${POPT_LIBRARY} ${GLUT_LIBRARY} ${OPENGL_LIBRARIES})
+  find_library(COCOA_LIB Cocoa)
+#  find_library(CG_LIB CoreGraphics)
+  set(vis_link_libs milkyway ${POPT_LIBRARY} ${GLFW_LIBRARIES} ${OPENGL_LIBRARIES} ${COCOA_LIB})
   if(BOINC_APPLICATION)
     list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY} ${BOINC_LIBRARIES})
   endif()

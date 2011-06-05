@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
     if (connectSharedScene())
         return 1;
 
-    glutInit(&argc, argv);
+    glfwInit();
 
     if (handleVisArguments(argc, (const char**) argv, &flags))
         return 1;
@@ -128,8 +128,10 @@ int main(int argc, char* argv[])
         mw_finish(rc);
     }
 
-    glutMainLoop();
+    rc = nbodyGraphicsLoop();
+    glfwTerminate();
+    mw_finish(rc);
 
-    return 0;
+    return rc;
 }
 

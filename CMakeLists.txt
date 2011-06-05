@@ -343,7 +343,7 @@ find_package_static(Fdlibm)
 find_package_static(BOINC)
 find_package(Boost)
 find_package(OpenGL)
-find_package(GLUT)
+find_Package(GLFW)
 
 
 find_package_static(Popt REQUIRED)
