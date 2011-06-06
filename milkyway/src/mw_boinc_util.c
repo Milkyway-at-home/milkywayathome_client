@@ -27,7 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #if BOINC_APPLICATION
-  #include <boinc/diagnostics.h>
+  #include <diagnostics.h>
 #endif
 
 #include <sys/stat.h>

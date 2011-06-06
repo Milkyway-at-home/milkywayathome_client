@@ -26,8 +26,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <assert.h>
 
 /* There's more broken in graphics2 header which makes this be C++ */
-#include <boinc/boinc_api.h>
-#include <boinc/graphics2.h>
+#include <boinc_api.h>
+#include <graphics2.h>
 
 /* Work around lack of user_data in callback function used by BOINC */
 

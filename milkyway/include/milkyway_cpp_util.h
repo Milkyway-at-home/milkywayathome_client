@@ -23,7 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #if BOINC_APPLICATION
-  #include <boinc/boinc_api.h>
+  #include <boinc_api.h>
 #endif /* BOINC_APPLICATION */
 
 #ifdef __cplusplus

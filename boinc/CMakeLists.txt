@@ -149,8 +149,16 @@ add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/svn_version.h
 ################################################################################
 # Libraries
 
-set(BOINC_LIB_SRC_DIR boinc/lib)
-set(BOINC_API_SRC_DIR boinc/api)
+set(BOINC_LIB_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boinc/lib)
+set(BOINC_API_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boinc/api)
+set(BOINC_CLIENT_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/boinc/client)
+
+
+include_directories(${BOINC_API_SRC_DIR})
+include_directories(${BOINC_LIB_SRC_DIR})
+
+# FIXME: Things in libraries should not depend on things from here but they do
+include_directories(${BOINC_CLIENT_SRC_DIR})
 
 set(boinc_api_src ${BOINC_API_SRC_DIR}/boinc_api.cpp)
 set(boinc_api_headers ${BOINC_API_SRC_DIR}/boinc_api.h)
@@ -160,25 +168,26 @@ set(boinc_api_headers ${BOINC_API_SRC_DIR}/boinc_api.h)
 set(boinc_lib_headers boinc/version.h
                       ${BOINC_LIB_SRC_DIR}/app_ipc.h
                       ${BOINC_LIB_SRC_DIR}/boinc_win.h
-	                  ${BOINC_LIB_SRC_DIR}/url.h
-	                  ${BOINC_LIB_SRC_DIR}/common_defs.h
-	                  ${BOINC_LIB_SRC_DIR}/diagnostics.h
-	                  ${BOINC_LIB_SRC_DIR}/diagnostics_win.h
-	                  ${BOINC_LIB_SRC_DIR}/filesys.h
-	                  ${BOINC_LIB_SRC_DIR}/hostinfo.h
+                      ${BOINC_LIB_SRC_DIR}/url.h
+                      ${BOINC_LIB_SRC_DIR}/common_defs.h
+                      ${BOINC_LIB_SRC_DIR}/diagnostics.h
+                      ${BOINC_LIB_SRC_DIR}/diagnostics_win.h
+                      ${BOINC_LIB_SRC_DIR}/filesys.h
+                      ${BOINC_LIB_SRC_DIR}/hostinfo.h
                       ${BOINC_LIB_SRC_DIR}/md5_file.h
-	                  ${BOINC_LIB_SRC_DIR}/proxy_info.h
-	                  ${BOINC_LIB_SRC_DIR}/prefs.h
-	                  ${BOINC_LIB_SRC_DIR}/miofile.h
-	                  ${BOINC_LIB_SRC_DIR}/mfile.h
-	                  ${BOINC_LIB_SRC_DIR}/parse.h
-	                  ${BOINC_LIB_SRC_DIR}/util.h
-	                  ${BOINC_LIB_SRC_DIR}/coproc.h
-	                  ${BOINC_LIB_SRC_DIR}/cal_boinc.h
+                      ${BOINC_LIB_SRC_DIR}/proxy_info.h
+                      ${BOINC_LIB_SRC_DIR}/prefs.h
+                      ${BOINC_LIB_SRC_DIR}/miofile.h
+                      ${BOINC_LIB_SRC_DIR}/mfile.h
+                      ${BOINC_LIB_SRC_DIR}/parse.h
+                      ${BOINC_LIB_SRC_DIR}/util.h
+                      ${BOINC_LIB_SRC_DIR}/coproc.h
+                      ${BOINC_LIB_SRC_DIR}/cal_boinc.h
 	                  ${BOINC_LIB_SRC_DIR}/cl_boinc.h
-	                  boinc/svn_version.h
-	                  boinc/win_build/config.h
-	                  ${BOINC_LIB_SRC_DIR}/str_util.h)
+                      boinc/svn_version.h
+                      boinc/win_build/config.h
+                      ${BOINC_LIB_SRC_DIR}/str_util.h
+                      ${BOINC_LIB_SRC_DIR}/procinfo.h)
 
 set(boinc_lib_src ${BOINC_LIB_SRC_DIR}/util.cpp
                   ${BOINC_LIB_SRC_DIR}/app_ipc.cpp
@@ -197,12 +206,22 @@ set(boinc_lib_src ${BOINC_LIB_SRC_DIR}/util.cpp
                   ${BOINC_LIB_SRC_DIR}/shmem.cpp
                   ${BOINC_LIB_SRC_DIR}/base64.cpp
                   ${BOINC_LIB_SRC_DIR}/url.cpp
-                  ${BOINC_LIB_SRC_DIR}/coproc.cpp)
+                  ${BOINC_LIB_SRC_DIR}/coproc.cpp
+                  ${BOINC_LIB_SRC_DIR}/procinfo.cpp)
 
 if(WIN32)
   list(APPEND boinc_lib_src ${BOINC_LIB_SRC_DIR}/win_util.cpp
                             ${BOINC_LIB_SRC_DIR}/diagnostics_win.cpp
-                            ${BOINC_LIB_SRC_DIR}/stackwalker_win.cpp)
+                            ${BOINC_LIB_SRC_DIR}/stackwalker_win.cpp
+                            ${BOINC_LIB_SRC_DIR}/procinfo_win.cpp)
+endif()
+
+if(UNIX)
+  list(APPEND boinc_lib_src ${BOINC_LIB_SRC_DIR}/procinfo_unix.cpp)
+endif()
+
+if(APPLE)
+  list(APPEND boinc_lib_src ${BOINC_LIB_SRC_DIR}/procinfo_mac.cpp)
 endif()
 
 
@@ -240,8 +259,10 @@ add_library(boinc_crypt STATIC ${BOINC_LIB_SRC_DIR}/crypt.cpp ${BOINC_LIB_SRC_DI
 
 
 
-set(BOINC_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/boinc/lib" CACHE INTERNAL "BOINC headers")
+set(BOINC_INCLUDE_DIR "${BOINC_API_SRC_DIR};${BOINC_LIB_SRC_DIR}" CACHE INTERNAL "BOINC headers")
 set(BOINC_LIBRARIES boinc boinc_api boinc_graphics2 CACHE INTERNAL "BOINC libraries")
+
+set(BOINC_GRAPHICS_FOUND TRUE CACHE INTERNAL "Built BOINC libraries")
 
 install(TARGETS boinc boinc_api boinc_graphics2 boinc_crypt
         ARCHIVE       DESTINATION lib
@@ -273,8 +294,6 @@ install(TARGETS boinc boinc_api boinc_graphics2 boinc_crypt
 
 ################################################################################
 # Client
-
-set(BOINC_CLIENT_SRC_DIR boinc/client)
 
 set(boinc_client_src ${BOINC_CLIENT_SRC_DIR}/acct_mgr.cpp
                      ${BOINC_CLIENT_SRC_DIR}/acct_setup.cpp

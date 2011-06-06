@@ -28,8 +28,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
     /* Workaround: Old version of BOINC libraries missed including this */
     #include <sys/types.h>
   #endif
-  #include <boinc/boinc_api.h>
-  #include <boinc/filesys.h>
+  #include <boinc_api.h>
+  #include <filesys.h>
 #endif /* BOINC_APPLICATION */
 
 #include <stdio.h>
