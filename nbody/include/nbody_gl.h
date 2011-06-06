@@ -21,9 +21,15 @@
 #ifndef _NBODY_GL_H_
 #define _NBODY_GL_H_
 
-#include <GL/glut.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
+#ifndef __APPLE__
+  #include <GL/glut.h>
+  #include <GL/gl.h>
+  #include <GL/glu.h>
+#else
+  #include <GLUT/glut.h>
+  #include <OpenGL/gl.h>
+  #include <OpenGL/glu.h>
+#endif /* __APPLE */
 
 #include "nbody_graphics.h"
 

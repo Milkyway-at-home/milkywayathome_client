@@ -45,11 +45,6 @@ if(OPENGL_FOUND AND OPENGL_GLU_FOUND AND GLUT_FOUND)
   set(NBODY_GL ON CACHE INTERNAL "Build N-body graphics")
 endif()
 
-if(NBODY_GL)
-  include_directories(${OPENGL_INCLUDE_DIR})
-  include_directories(${GLUT_INCLUDE_PATH})
-endif()
-
 include_directories(${MILKYWAY_INCLUDE_DIR})
 include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 include_directories(${DSFMT_INCLUDE_DIR})
@@ -305,6 +300,9 @@ if(NBODY_GL AND BOINC_APPLICATION AND NOT BOINC_GRAPHICS_FOUND)
 endif()
 
 if(NBODY_GL)
+  include_directories(${OPENGL_INCLUDE_DIR})
+  include_directories(${GLUT_INCLUDE_PATH})
+
   set(nbody_screensaver_src ${NBODY_SRC_DIR}/nbody_gl.c
                             ${NBODY_SRC_DIR}/graphics_main.c)
   set(nbody_screensaver_headers ${NBODY_INCLUDE_DIR}/nbody_gl.h
