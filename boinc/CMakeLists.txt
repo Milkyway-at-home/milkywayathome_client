@@ -121,7 +121,7 @@ check_struct_has_member("struct tm" "tm_zone" "time.h" HAVE_STRUCT_TM_TM_ZONE)
 # Check libraries
 find_package(Threads)
 set(HAVE_PTHREAD ${CMAKE_USE_PTHREADS_INIT})
-check_library_exists("xss" "XScreenSaverRegister" "/usr/lib" HAVE_XSS)
+check_library_exists("Xss" "XScreenSaverRegister" "/usr/lib" HAVE_XSS)
 
 
 # CHECKME: Is there a better way to check this?
