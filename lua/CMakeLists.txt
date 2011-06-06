@@ -67,12 +67,12 @@ endif ()
 find_package_static ( Readline )
 
 if ( READLINE_FOUND )
-  option ( LUA_USE_READLINE "Use readline in the Lua CLI." ON )
+  option ( LUA_USE_READLINE "Use readline in the Lua CLI." OFF )
 endif ()
 
 find_package ( Curses )
 if ( CURSES_FOUND )
-  option ( LUA_USE_CURSES "Use curses in the Lua CLI." ON )
+  option ( LUA_USE_CURSES "Use curses in the Lua CLI." OFF )
 endif ()
 
 # Setup needed variables and libraries
