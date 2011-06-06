@@ -133,71 +133,87 @@ if(EXISTS "/proc/self/stat")
   set(HAVE__PROC_SELF_STAT TRUE)
 endif()
 
+execute_process(COMMAND ${PROJECT_SOURCE_DIR}/config.guess
+                 OUTPUT_VARIABLE CANONICAL_SYSTEM_NAME
+                 OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+# Generate configuration headers
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake.in ${CMAKE_CURRENT_SOURCE_DIR}/boinc/config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.cmake.in ${CMAKE_CURRENT_SOURCE_DIR}/boinc/version.h)
+
+# CHECKME: What about windows?
+add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/svn_version.h
+                   COMMAND ${PROJECT_SOURCE_DIR}/boinc/generate_svn_version.sh
+                   COMMENT "Creates/updates header SVN Revision Header")
 
 ################################################################################
+# Libraries
 
-set(boinc_api_src boinc/api/boinc_api.cpp)
-set(boinc_api_headers boinc/api/boinc_api.h)
+set(BOINC_LIB_SRC_DIR boinc/lib)
+set(BOINC_API_SRC_DIR boinc/api)
+
+set(boinc_api_src ${BOINC_API_SRC_DIR}/boinc_api.cpp)
+set(boinc_api_headers ${BOINC_API_SRC_DIR}/boinc_api.h)
+
 
 
 set(boinc_lib_headers boinc/version.h
-                      boinc/lib/app_ipc.h
-                      boinc/lib/boinc_win.h
-	                  boinc/lib/url.h
-	                  boinc/lib/common_defs.h
-	                  boinc/lib/diagnostics.h
-	                  boinc/lib/diagnostics_win.h
-	                  boinc/lib/filesys.h
-	                  boinc/lib/hostinfo.h
-	                  boinc/lib/proxy_info.h
-	                  boinc/lib/prefs.h
-	                  boinc/lib/miofile.h
-	                  boinc/lib/mfile.h
-	                  boinc/lib/parse.h
-	                  boinc/lib/util.h
-	                  boinc/lib/coproc.h
-	                  boinc/lib/cal_boinc.h
-	                  boinc/lib/cl_boinc.h
+                      ${BOINC_LIB_SRC_DIR}/app_ipc.h
+                      ${BOINC_LIB_SRC_DIR}/boinc_win.h
+	                  ${BOINC_LIB_SRC_DIR}/url.h
+	                  ${BOINC_LIB_SRC_DIR}/common_defs.h
+	                  ${BOINC_LIB_SRC_DIR}/diagnostics.h
+	                  ${BOINC_LIB_SRC_DIR}/diagnostics_win.h
+	                  ${BOINC_LIB_SRC_DIR}/filesys.h
+	                  ${BOINC_LIB_SRC_DIR}/hostinfo.h
+                      ${BOINC_LIB_SRC_DIR}/md5_file.h
+	                  ${BOINC_LIB_SRC_DIR}/proxy_info.h
+	                  ${BOINC_LIB_SRC_DIR}/prefs.h
+	                  ${BOINC_LIB_SRC_DIR}/miofile.h
+	                  ${BOINC_LIB_SRC_DIR}/mfile.h
+	                  ${BOINC_LIB_SRC_DIR}/parse.h
+	                  ${BOINC_LIB_SRC_DIR}/util.h
+	                  ${BOINC_LIB_SRC_DIR}/coproc.h
+	                  ${BOINC_LIB_SRC_DIR}/cal_boinc.h
+	                  ${BOINC_LIB_SRC_DIR}/cl_boinc.h
 	                  boinc/svn_version.h
 	                  boinc/win_build/config.h
-	                  boinc/lib/str_util.h)
+	                  ${BOINC_LIB_SRC_DIR}/str_util.h)
 
-set(boinc_lib_src boinc/lib/util.cpp
-                  boinc/lib/app_ipc.cpp
-                  boinc/lib/diagnostics.cpp
-                  boinc/lib/filesys.cpp
-	              boinc/lib/hostinfo.cpp
-                  boinc/lib/md5.c
-                  boinc/lib/md5_file.cpp
-                  boinc/lib/mem_usage.cpp
-                  boinc/lib/mfile.cpp
-                  boinc/lib/miofile.cpp
-                  boinc/lib/parse.cpp
-                  boinc/lib/prefs.cpp
-	              boinc/lib/proxy_info.cpp
-                  boinc/lib/str_util.cpp
-                  boinc/lib/shmem.cpp
-                  boinc/lib/base64.cpp
-                  boinc/lib/url.cpp
-                  boinc/lib/coproc.cpp)
+set(boinc_lib_src ${BOINC_LIB_SRC_DIR}/util.cpp
+                  ${BOINC_LIB_SRC_DIR}/app_ipc.cpp
+                  ${BOINC_LIB_SRC_DIR}/diagnostics.cpp
+                  ${BOINC_LIB_SRC_DIR}/filesys.cpp
+	              ${BOINC_LIB_SRC_DIR}/hostinfo.cpp
+                  ${BOINC_LIB_SRC_DIR}/md5.c
+                  ${BOINC_LIB_SRC_DIR}/md5_file.cpp
+                  ${BOINC_LIB_SRC_DIR}/mem_usage.cpp
+                  ${BOINC_LIB_SRC_DIR}/mfile.cpp
+                  ${BOINC_LIB_SRC_DIR}/miofile.cpp
+                  ${BOINC_LIB_SRC_DIR}/parse.cpp
+                  ${BOINC_LIB_SRC_DIR}/prefs.cpp
+	              ${BOINC_LIB_SRC_DIR}/proxy_info.cpp
+                  ${BOINC_LIB_SRC_DIR}/str_util.cpp
+                  ${BOINC_LIB_SRC_DIR}/shmem.cpp
+                  ${BOINC_LIB_SRC_DIR}/base64.cpp
+                  ${BOINC_LIB_SRC_DIR}/url.cpp
+                  ${BOINC_LIB_SRC_DIR}/coproc.cpp)
 
 if(WIN32)
-  list(APPEND boinc_lib_src boinc/lib/win_util.cpp
-                            boinc/lib/diagnostics_win.cpp
-                            boinc/lib/stackwalker_win.cpp)
+  list(APPEND boinc_lib_src ${BOINC_LIB_SRC_DIR}/win_util.cpp
+                            ${BOINC_LIB_SRC_DIR}/diagnostics_win.cpp
+                            ${BOINC_LIB_SRC_DIR}/stackwalker_win.cpp)
 endif()
 
 
-set(boinc_graphics_src boinc/api/graphics2.cpp boinc/api/graphics2_util.cpp)
-set(boinc_graphics_headers boinc/api/graphics2.h)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake.in ${CMAKE_CURRENT_SOURCE_DIR}/boinc/config.h)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.cmake.in ${CMAKE_CURRENT_SOURCE_DIR}/boinc/version.h)
+set(boinc_graphics_src ${BOINC_API_SRC_DIR}/graphics2.cpp
+                       ${BOINC_API_SRC_DIR}/graphics2_util.cpp)
+set(boinc_graphics_headers ${BOINC_API_SRC_DIR}/graphics2.h)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/boinc)
 
 if(APPLE)
-  set(MAC_LIB_SRC_DIR boinc/lib/mac)
+  set(MAC_LIB_SRC_DIR ${BOINC_LIB_SRC_DIR}/mac)
   include_directories(${MAC_LIB_SRC_DIR})
   list(APPEND boinc_lib_src ${MAC_LIB_SRC_DIR}/mac_backtrace.cpp
                             ${MAC_LIB_SRC_DIR}/QBacktrace.c
@@ -220,18 +236,133 @@ endif()
 add_library(boinc STATIC ${boinc_lib_src} ${boinc_lib_headers})
 add_library(boinc_api STATIC ${boinc_api_src} ${boinc_api_headers})
 add_library(boinc_graphics2 STATIC ${boinc_graphics_src} ${boinc_graphics_headers})
+add_library(boinc_crypt STATIC ${BOINC_LIB_SRC_DIR}/crypt.cpp ${BOINC_LIB_SRC_DIR}/crypt.h)
+
+
 
 set(BOINC_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/boinc/lib" CACHE INTERNAL "BOINC headers")
 set(BOINC_LIBRARIES boinc boinc_api boinc_graphics2 CACHE INTERNAL "BOINC libraries")
 
-add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/svn_version.h
-                   COMMAND ${PROJECT_SOURCE_DIR}/boinc/generate_svn_version.sh
-                   COMMENT "Creates/updates header SVN Revision Header")
-
-install(TARGETS boinc boinc_api boinc_graphics2
+install(TARGETS boinc boinc_api boinc_graphics2 boinc_crypt
         ARCHIVE       DESTINATION lib
         PUBLIC_HEADER DESTINATION include/boinc)
 
 #export(TARGETS boinc boinc_api boinc_graphics2 FILE boinc-exports.cmake)
+#export(PACKAGE BOINC)
 
+# These random utilities do not belong in 'lib'
+# add_executable(md5_test ${BOINC_LIB_SRC_DIR}/md5_test.cpp)
+# target_link_libraries(md5_test boinc)
+
+# # add_executable(shmem_test ${BOINC_LIB_SRC_DIR}/shmem_test.cpp)
+# # target_link_libraries(shmem_test boinc)
+
+
+# set(msg_test_src ${BOINC_LIB_SRC_DIR}/msg_test.cpp
+#                  ${BOINC_LIB_SRC_DIR}/msg_queue.cpp)
+# set(msg_test_headers ${BOINC_LIB_SRC_DIR}/msg_queue.h)
+# add_executable(msg_test ${msg_test_src} ${msg_test_headers})
+# target_link_libraries(msg_test boinc)
+
+# find_package(OpenSSL)
+# include_directories(${OPENSSL_INCLUDE_DIR})
+# add_executable(crypt_prog ${BOINC_LIB_SRC_DIR}/crypt_prog.cpp)
+# target_link_libraries(crypt_prog boinc boinc_crypt ${OPENSSL_LIBRARIES})
+
+
+
+################################################################################
+# Client
+
+set(BOINC_CLIENT_SRC_DIR boinc/client)
+
+set(boinc_client_src ${BOINC_CLIENT_SRC_DIR}/acct_mgr.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/acct_setup.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/app.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/app_control.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/app_graphics.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/app_start.cpp
+                     # auto_update.cpp # Not in original Makefile.am
+                     ${BOINC_CLIENT_SRC_DIR}/check_state.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/client_msgs.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/client_state.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/client_types.cpp
+	                 ${BOINC_CLIENT_SRC_DIR}/coproc_detect.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/cpu_sched.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/cs_account.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/cs_apps.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/cs_benchmark.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/cs_cmdline.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/cs_files.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/cs_notice.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/cs_platforms.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/cs_prefs.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/cs_proxy.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/cs_scheduler.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/cs_statefile.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/cs_trickle.cpp
+	                 ${BOINC_CLIENT_SRC_DIR}/current_version.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/dhrystone.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/dhrystone2.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/file_names.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/file_xfer.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/gui_http.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/gui_rpc_server.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/gui_rpc_server_ops.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/hostinfo_network.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/hostinfo_unix.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/http_curl.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/log_flags.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/main.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/net_stats.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/pers_file_xfer.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/rr_sim.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/sandbox.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/scheduler_op.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/time_stats.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/whetstone.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/work_fetch.cpp)
+
+# app_stats_mac.cpp
+
+set(boinc_client_headers ${BOINC_CLIENT_SRC_DIR}/acct_mgr.h
+                         ${BOINC_CLIENT_SRC_DIR}/client_types.h
+                         ${BOINC_CLIENT_SRC_DIR}/dhrystone.h
+                         ${BOINC_CLIENT_SRC_DIR}/http_curl.h
+                         ${BOINC_CLIENT_SRC_DIR}/sandbox.h
+                         ${BOINC_CLIENT_SRC_DIR}/acct_setup.h
+                         ${BOINC_CLIENT_SRC_DIR}/cpp.h
+                         ${BOINC_CLIENT_SRC_DIR}/file_names.h
+                         ${BOINC_CLIENT_SRC_DIR}/log_flags.h
+                         ${BOINC_CLIENT_SRC_DIR}/scheduler_op.h
+                         ${BOINC_CLIENT_SRC_DIR}/app.h
+                         ${BOINC_CLIENT_SRC_DIR}/cpu_benchmark.h
+                         ${BOINC_CLIENT_SRC_DIR}/file_xfer.h
+                         ${BOINC_CLIENT_SRC_DIR}/main.h
+                         ${BOINC_CLIENT_SRC_DIR}/sim.h
+                         ${BOINC_CLIENT_SRC_DIR}/auto_update.h
+                         ${BOINC_CLIENT_SRC_DIR}/cs_notice.h
+                         ${BOINC_CLIENT_SRC_DIR}/gui_http.h
+                         ${BOINC_CLIENT_SRC_DIR}/net_stats.h
+                         ${BOINC_CLIENT_SRC_DIR}/sysmon_win.h
+                         ${BOINC_CLIENT_SRC_DIR}/client_msgs.h
+                         ${BOINC_CLIENT_SRC_DIR}/cs_proxy.h
+                         ${BOINC_CLIENT_SRC_DIR}/gui_rpc_server.h
+                         ${BOINC_CLIENT_SRC_DIR}/pers_file_xfer.h
+                         ${BOINC_CLIENT_SRC_DIR}/time_stats.h
+                         ${BOINC_CLIENT_SRC_DIR}/client_state.h
+                         ${BOINC_CLIENT_SRC_DIR}/current_version.h
+                         ${BOINC_CLIENT_SRC_DIR}/hostinfo_network.h
+                         ${BOINC_CLIENT_SRC_DIR}/rr_sim.h
+                         ${BOINC_CLIENT_SRC_DIR}/work_fetch.h)
+
+
+set(switcher_src ${BOINC_CLIENT_SRC_DIR}/switcher.cpp)
+
+
+# add_executable(boinc_client ${boinc_client_src} ${boinc_client_headers})
+# target_link_libraries(boinc_client boinc)
+
+# install(TARGETS boinc_client
+#           RUNTIME DESTINATION bin)
 

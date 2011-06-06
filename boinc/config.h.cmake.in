@@ -4,6 +4,11 @@
 /* Version defines are now in version.h */
 #include "version.h"
 
+#ifdef __APPLE__
+  /* Needed for socklen_t */
+  #include <sys/socket.h>
+#endif /* __APPLE__ */
+
 
 /* Directory where BOINC executables will be installed */
 #define BOINC_EXECPREFIX "${CMAKE_INSTALL_PREFIX}/bin"
@@ -14,7 +19,7 @@
 /* Directory tree where BOINC will be installed */
 #define BOINC_PREFIX "${CMAKE_INSTALL_PREFIX}"
 
-#cmakedefine HAVE_SOCKLEN_T
+#cmakedefine01 HAVE_SOCKLEN_T
 
 /* Define to 1 if you have the `alloca' function. */
 #cmakedefine HAVE_ALLOCA
@@ -23,7 +28,7 @@
 #cmakedefine HAVE_ALLOCA_H
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
-#cmakedefine HAVE_ARPA_INET_H
+#cmakedefine01 HAVE_ARPA_INET_H
 
 /* Define to 1 if you have the `daemon' function. */
 #cmakedefine HAVE_DAEMON
@@ -38,7 +43,7 @@
 #cmakedefine HAVE_ETHER_NTOA
 
 /* Define to 1 if you have the <fcntl.h> header file. */
-#cmakedefine HAVE_FCNTL_H
+#cmakedefine01 HAVE_FCNTL_H
 
 /* Define to 1 if you have the `getutent' function. */
 #cmakedefine HAVE_GETUTENT
@@ -83,7 +88,7 @@
 #cmakedefine HAVE_MALLOC_H
 
 /* Define to 1 if you have the <netdb.h> header file. */
-#cmakedefine HAVE_NETDB_H
+#cmakedefine01 HAVE_NETDB_H
 
 /* Define to 1 if you have the <netinet/ether.h> header file. */
 #cmakedefine HAVE_NETINET_ETHER_H
@@ -92,7 +97,7 @@
 #cmakedefine HAVE_NETINET_IF_ETHER_H
 
 /* Define to 1 if you have the <netinet/in.h> header file. */
-#cmakedefine HAVE_NETINET_IN_H
+#cmakedefine01 HAVE_NETINET_IN_H
 
 /* Define to 1 if you have the <netinet/tcp.h> header file. */
 #cmakedefine HAVE_NETINET_TCP_H
@@ -215,7 +220,7 @@
 #cmakedefine HAVE_SYS_PARAM_H
 
 /* Define to 1 if you have the <sys/resource.h> header file. */
-#cmakedefine HAVE_SYS_RESOURCE_H
+#cmakedefine01 HAVE_SYS_RESOURCE_H
 
 /* Define to 1 if you have the <sys/shm.h> header file. */
 #cmakedefine01 HAVE_SYS_SHM_H
@@ -233,34 +238,34 @@
 #cmakedefine HAVE_SYS_STATVFS_H
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
-#cmakedefine HAVE_SYS_STAT_H
+#cmakedefine01 HAVE_SYS_STAT_H
 
 /* Define to 1 if you have the <sys/swap.h> header file. */
-#cmakedefine HAVE_SYS_SWAP_H
+#cmakedefine01 HAVE_SYS_SWAP_H
 
 /* Define to 1 if you have the <sys/sysctl.h> header file. */
-#cmakedefine HAVE_SYS_SYSCTL_H
+#cmakedefine01 HAVE_SYS_SYSCTL_H
 
 /* Define to 1 if you have the <sys/systeminfo.h> header file. */
-#cmakedefine HAVE_SYS_SYSTEMINFO_H
+#cmakedefine01 HAVE_SYS_SYSTEMINFO_H
 
 /* Define to 1 if you have the <sys/time.h> header file. */
-#cmakedefine HAVE_SYS_TIME_H
+#cmakedefine01 HAVE_SYS_TIME_H
 
 /* Define to 1 if you have the <sys/types.h> header file. */
-#cmakedefine HAVE_SYS_TYPES_H
+#cmakedefine01 HAVE_SYS_TYPES_H
 
 /* Define to 1 if you have the <sys/un.h> header file. */
 #cmakedefine HAVE_SYS_UN_H
 
 /* Define to 1 if you have the <sys/utsname.h> header file. */
-#cmakedefine HAVE_SYS_UTSNAME_H
+#cmakedefine01 HAVE_SYS_UTSNAME_H
 
 /* Define to 1 if you have the <sys/vmmeter.h> header file. */
 #cmakedefine HAVE_SYS_VMMETER_H
 
 /* Define to 1 if you have the <sys/wait.h> header file. */
-#cmakedefine HAVE_SYS_WAIT_H
+#cmakedefine01 HAVE_SYS_WAIT_H
 
 /* Define to 1 if you don't have `tm_zone' but do have the external array
    `tzname'. */
@@ -270,7 +275,7 @@
 #cmakedefine01 HAVE_UNISTD_H
 
 /* Define to 1 if you have the <utmp.h> header file. */
-#cmakedefine HAVE_UTMP_H
+#cmakedefine01 HAVE_UTMP_H
 
 
 /* Define to 1 if you have xss library */
@@ -288,7 +293,7 @@
 
 /* Platform identification used to identify applications for this BOINC core
    client */
-#cmakedefine HOSTTYPE
+#define HOSTTYPE "${CANONICAL_SYSTEM_NAME}"
 
 /* Alternate identification used to identify applications for this BOINC core
    client */
@@ -312,8 +317,8 @@
 /* Define for large files, on AIX-style hosts. */
 #cmakedefine _LARGE_FILES
 
-#ifndef HAVE_SOCKLEN_T
-typedef BOINC_SOCKLEN_T socklen_t;
+#if HAVE_SOCKLEN_T
+typedef socklen_t BOINC_SOCKLEN_T;
 #endif
 
 
