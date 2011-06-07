@@ -31,6 +31,7 @@
 
 #include "milkyway_util.h"
 #include "nbody_gl.h"
+#include "nbody_gl_util.h"
 #include "nbody_graphics.h"
 #include "nbody_types.h"
 #include "milkyway_cpp_util.h"
@@ -298,15 +299,14 @@ static void restorePerspectiveProjection()
 /* http://www.lighthouse3d.com/tutorials/glut-tutorial/bitmap-fonts-and-orthogonal-projections/ */
 static void drawInfo()
 {
+    char buf[1024];
+
     setOrthographicProjection();
     glPushMatrix();
     glLoadIdentity();
 
-
     glColor3f(1.0f, 1.0f, 1.0f);
     glRasterPos2i(20, 20);
-
-    char buf[1024];
 
     snprintf(buf, sizeof(buf),
              "Time: %4.3f / %4.3f Gyr (%4.3f %%)\n",
@@ -314,8 +314,7 @@ static void drawInfo()
              scene->info.timeEvolve,
              100.0f * scene->info.currentTime / scene->info.timeEvolve
         );
-    glutBitmapString(GLUT_BITMAP_HELVETICA_12, buf);
-
+    nbody_glutBitmapStringHelvetica(buf);
 
     glPopMatrix();
     restorePerspectiveProjection();
