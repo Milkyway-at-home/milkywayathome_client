@@ -54,3 +54,4 @@ build
 include/
 popt/configmake.h
 separation/tests/stars/
+.#*
