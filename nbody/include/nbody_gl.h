@@ -29,7 +29,7 @@
   #include <GLUT/glut.h>
   #include <OpenGL/gl.h>
   #include <OpenGL/glu.h>
-#endif /* __APPLE */
+#endif /* __APPLE__ */
 
 #include "nbody_graphics.h"
 

@@ -304,8 +304,10 @@ if(NBODY_GL)
   include_directories(${GLUT_INCLUDE_PATH})
 
   set(nbody_screensaver_src ${NBODY_SRC_DIR}/nbody_gl.c
+                            ${NBODY_SRC_DIR}/nbody_gl_util.c
                             ${NBODY_SRC_DIR}/graphics_main.c)
   set(nbody_screensaver_headers ${NBODY_INCLUDE_DIR}/nbody_gl.h
+                                ${NBODY_INCLUDE_DIR}/nbody_gl_util.h
                                 ${NBODY_INCLUDE_DIR}/nbody_graphics.h)
 
   set(vis_link_libs milkyway ${POPT_LIBRARY} ${GLUT_LIBRARY} ${OPENGL_LIBRARIES})
