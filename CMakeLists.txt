@@ -339,17 +339,9 @@ find_package(CAL++)
 find_package(OpenCL)
 find_package(OpenMP)
 find_package_static(Fdlibm)
-#find_package_static(BOINC)
 find_package(Boost)
 find_package(OpenGL)
 find_package(GLUT)
-
-if(BOINC_APPLICATION)
-  include_directories(${BOINC_INCLUDE_DIR})
-endif()
-
-option(USE_SYSTEM_POPT "Try to find and use system popt instead of building it" OFF)
-mark_as_advanced(USE_SYSTEM_POPT)
 
 add_subdirectory(popt)
 add_subdirectory(lua)
@@ -358,7 +350,14 @@ add_subdirectory(dSFMT)
 add_definitions("${DSFMT_FLAGS}")
 
 if(BOINC_APPLICATION)
-  add_subdirectory(boinc)
+  if(EXISTS ${PROJECT_SOURCE_DIR}/boinc/boinc/api/boinc_api.cpp)  # The submodule is there
+    message(STATUS "Using BOINC from submodule")
+    add_subdirectory(boinc)
+  else()
+    message(STATUS "Trying to find BOINC")
+    find_package_static(BOINC REQUIRED)
+  endif()
+
   include_directories(${BOINC_INCLUDE_DIR})
 endif()
 
