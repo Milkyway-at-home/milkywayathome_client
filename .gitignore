@@ -51,7 +51,7 @@ a.out
 *.diff
 bin/
 build
-include/
 popt/configmake.h
 separation/tests/stars/
 .#*
+popt/include/popt_config.h
