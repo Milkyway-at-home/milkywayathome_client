@@ -141,10 +141,12 @@ execute_process(COMMAND ${PROJECT_SOURCE_DIR}/config.guess
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake.in ${CMAKE_CURRENT_SOURCE_DIR}/boinc/config.h)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.cmake.in ${CMAKE_CURRENT_SOURCE_DIR}/boinc/version.h)
 
-# CHECKME: What about windows?
-add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/svn_version.h
-                   COMMAND ${PROJECT_SOURCE_DIR}/boinc/generate_svn_version.sh
-                   COMMENT "Creates/updates header SVN Revision Header")
+add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/boinc/svn_version.h
+                     COMMAND ${CMAKE_COMMAND}
+                       ARGS -DHEADER_BASENAME:STRING="svn_version"
+                            -P ${MILKYWAYATHOME_CLIENT_CMAKE_MODULES}/FindGitVersion.cmake
+                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/boinc/
+                     COMMENT "Creates/updates header SVN Revision Header")
 
 ################################################################################
 # Libraries

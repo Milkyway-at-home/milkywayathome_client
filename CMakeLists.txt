@@ -24,7 +24,8 @@ project(milkywayathome_client)
 enable_testing()
 
 # Find custom cmake modules
-set(CMAKE_MODULE_PATH "${milkywayathome_client_SOURCE_DIR}/cmake_modules")
+set(MILKYWAYATHOME_CLIENT_CMAKE_MODULES "${milkywayathome_client_SOURCE_DIR}/cmake_modules")
+list(APPEND CMAKE_MODULE_PATH ${MILKYWAYATHOME_CLIENT_CMAKE_MODULES})
 set(PROJECT_TOOL_DIR "${milkywayathome_client_SOURCE_DIR}/tools")
 
 include(MinGWPaths)
