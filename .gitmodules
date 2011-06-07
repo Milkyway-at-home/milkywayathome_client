@@ -1,9 +1,9 @@
 [submodule "popt/popt"]
 	path = popt/popt
-	url = git@github.com:arsenm/POPT.git
+	url = git://ithub.com:arsenm/POPT.git
 [submodule "crlibm"]
 	path = crlibm
-	url = git@github.com:Milkyway-at-home/crlibm.git
+	url = git://github.com:Milkyway-at-home/crlibm.git
 [submodule "boinc/boinc"]
 	path = boinc/boinc
-	url = git@github.com:Milkyway-at-home/BOINC.git
+	url = git://github.com:Milkyway-at-home/BOINC.git
