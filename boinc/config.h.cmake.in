@@ -85,7 +85,7 @@
 #cmakedefine HAVE_LIBPTHREAD
 
 /* Define to 1 if you have the <malloc.h> header file. */
-#cmakedefine HAVE_MALLOC_H
+#cmakedefine01 HAVE_MALLOC_H
 
 /* Define to 1 if you have the <netdb.h> header file. */
 #cmakedefine01 HAVE_NETDB_H

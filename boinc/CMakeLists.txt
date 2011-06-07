@@ -262,7 +262,7 @@ add_library(boinc_crypt STATIC ${BOINC_LIB_SRC_DIR}/crypt.cpp ${BOINC_LIB_SRC_DI
 
 
 set(BOINC_INCLUDE_DIR "${BOINC_API_SRC_DIR};${BOINC_LIB_SRC_DIR}" CACHE INTERNAL "BOINC headers")
-set(BOINC_LIBRARIES boinc boinc_api boinc_graphics2 CACHE INTERNAL "BOINC libraries")
+set(BOINC_LIBRARIES boinc_api boinc boinc_graphics2 CACHE INTERNAL "BOINC libraries")
 
 set(BOINC_GRAPHICS_FOUND TRUE CACHE INTERNAL "Built BOINC libraries")
 

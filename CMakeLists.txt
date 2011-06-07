@@ -352,19 +352,19 @@ option(USE_SYSTEM_POPT "Try to find and use system popt instead of building it" 
 mark_as_advanced(USE_SYSTEM_POPT)
 
 add_subdirectory(popt)
-include_directories(${POPT_INCLUDE_DIR})
-
 add_subdirectory(lua)
-include_directories(${LUA_INCLUDE_DIR})
 
 add_subdirectory(dSFMT)
 add_definitions("${DSFMT_FLAGS}")
-add_subdirectory(milkyway)
 
 if(BOINC_APPLICATION)
   add_subdirectory(boinc)
   include_directories(${BOINC_INCLUDE_DIR})
 endif()
+
+include_directories(${POPT_INCLUDE_DIR})
+include_directories(${LUA_INCLUDE_DIR})
+add_subdirectory(milkyway)
 
 if(SEPARATION)
   add_subdirectory(separation)

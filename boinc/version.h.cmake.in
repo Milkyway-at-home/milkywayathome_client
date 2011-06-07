@@ -18,7 +18,6 @@
 /* Package is a pre-release (Alpha/Beta) package */
 #cmakedefine01 BOINC_PRERELEASE
 
-#if (defined(_WIN32) || defined(__APPLE__))
 /* Name of package */
 #define PACKAGE "${PROJECT_NAME}"
 
@@ -35,9 +34,7 @@
 #define PACKAGE_TARNAME "${PROJECT_NAME}"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "${BOINC_VERSION_STRING}"
-
-#endif /* #if (defined(_WIN32) || defined(__APPLE__)) */
+#define PACKAGE_VERSION  "${BOINC_MAJOR_VERSION}.${BOINC_MINOR_VERSION}.${BOINC_RELEASE}"
 
 #endif /* #ifndef BOINC_VERSION_H */
 
