@@ -1,6 +1,6 @@
 [submodule "popt/popt"]
 	path = popt/popt
-	url = git://ithub.com:arsenm/POPT.git
+	url = git://github.com:arsenm/POPT.git
 [submodule "crlibm"]
 	path = crlibm
 	url = git://github.com:Milkyway-at-home/crlibm.git
