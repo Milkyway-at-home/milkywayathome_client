@@ -1,0 +1,12 @@
+
+#ifndef _CRLIBM_CONFIG_H_
+#define _CRLIBM_CONFIG_H_
+
+#cmakedefine HAVE_FENV_H
+#cmakedefine HAVE_FLOAT_H
+#cmakedefine HAVE_FPU_CONTROL_H
+#cmakedefine HAVE_INTTYPES_H
+
+#endif /* _CRLIBM_CONFIG_H_ */
+
+
