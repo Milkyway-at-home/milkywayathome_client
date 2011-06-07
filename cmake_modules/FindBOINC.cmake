@@ -1,37 +1,39 @@
 # Copyright 2010 Matthew Arsenault, Travis Desell, Dave Przybylo,
 # Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
 # Magdon-Ismail and Rensselaer Polytechnic Institute.
-
+#
 # This file is part of Milkway@Home.
-
+#
 # Milkyway@Home is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-
+#
 # Milkyway@Home is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-
+#
 # You should have received a copy of the GNU General Public License
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#FIXME: This isn't really good.
+include(CheckStructHasMember)
+
 if(UNIX)
   set(BOINC_INCLUDE_SEARCH_PATH /usr/local/include/boinc
+                                /usr/local/include
                                 /usr/include/boinc)
 endif(UNIX)
 
 if(MINGW)
-  set(BOINC_INCLUDE_SEARCH_PATH ${TAKEOFFGW_ROOT}/local/include
-                                ${TAKEOFFGW_ROOT}/local/include/boinc)
+  set(BOINC_INCLUDE_SEARCH_PATH /local/include
+                                /local/include/boinc)
 
-  set(BOINC_LIB_SEARCH_PATH ${TAKEOFFGW_ROOT}/local/lib)
+  set(BOINC_LIB_SEARCH_PATH /local/lib)
 endif(MINGW)
 
-find_path(BOINC_INCLUDE_DIR boinc/boinc_api.h ${BOINC_INCLUDE_SEARCH_PATH})
+find_path(BOINC_INCLUDE_DIR boinc_api.h ${BOINC_INCLUDE_SEARCH_PATH})
 
 if(NOT MSVC)
   find_library(BOINC_LIBRARY boinc ${BOINC_LIB_SEARCH_PATH})
@@ -77,4 +79,11 @@ else(BOINC_FOUND)
       message(FATAL_ERROR "Could not find BOINC Libraries")
    endif(Boinc_FIND_REQUIRED)
 endif()
+
+set(CMAKE_REQUIRED_INCLUDES ${BOINC_INCLUDE_DIR})
+check_struct_has_member("BOINC_OPTIONS" "multi_thread" "boinc_api.h" HAVE_BOINC_OPTIONS_MULTI_THREAD)
+if(NOT HAVE_BOINC_OPTIONS_MULTI_THREAD)
+  message(FATAL_ERROR "Found BOINC libraries too old")
+endif()
+set(CMAKE_REQUIRED_INCLUDES)
 
