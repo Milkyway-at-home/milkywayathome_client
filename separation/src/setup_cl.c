@@ -65,9 +65,6 @@ static cl_uint chooseNumChunk(const IntegralArea* ia, const CLRequest* clr, cons
     if (di->nonOutput || clr->nonResponsive)
         return 1;
 
-    if (clr->numChunk != 0)   /* Use manual override */
-        return clr->numChunk;
-
     if (di->vendorID == MW_NVIDIA)
         return nvidiaNumChunks(ia, di);
 

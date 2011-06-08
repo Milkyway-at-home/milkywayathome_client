@@ -90,7 +90,6 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->platform = sf->usePlatform;
     clr->devNum = sf->useDevNumber;
     clr->nonResponsive = sf->nonResponsive;
-    clr->numChunk = sf->numChunk;
     clr->enableCheckpointing = !sf->disableGPUCheckpointing;
     setCommonFlags(clr, sf);
 }
@@ -187,12 +186,6 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
             "device", 'd',
             POPT_ARG_INT, &sf.useDevNumber,
             0, "Device number passed by boinc to use", NULL
-        },
-
-        {
-            "num-chunk", 'u',
-            POPT_ARG_INT, &sf.numChunk,
-            0, "Manually set number of chunks per GPU iteration", NULL
         },
 
         {
