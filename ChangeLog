@@ -1,3 +1,14 @@
+separation 0.80:
+	- GPU checkpointing for CAL and OpenCL builds
+	- New arguments to disable GPU checkpointing: --gpu-disable-checkpointing
+	- SSE2 intrinsics
+	- Different SSE levels all in one binary
+	- New optional Lua parameters file
+	- Better chunking for CAL and OpenCL builds
+	- Better automated tests
+	- Argument --responsiveness-factor removed
+	- Argument --non-responsive added (use with caution)
+	- Arguments for controlling which path is used (--force-x87, --force-sse2, --force-sse3, --force-no-intrinsics)
 
 
 nbody 0.40:
