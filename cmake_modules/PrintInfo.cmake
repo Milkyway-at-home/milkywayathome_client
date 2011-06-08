@@ -21,7 +21,6 @@
 
 macro(print_libs)
   message("   BOINC Libraries    ${BOINC_LIBRARIES}")
-  message("   BOINC Graphics     ${BOINC_GRAPHICS_LIBRARY}")
   message("   Crlibm Library     ${CRLIBM_LIBRARY}")
   message("   Lua Libraries      ${LUA_LIBRARIES}")
   message("   OpenCL Libraries   ${OPENCL_LIBRARIES}")

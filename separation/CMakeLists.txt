@@ -143,6 +143,8 @@ print_separator()
 message("Separation build:")
 message("   Double precision:    ${DOUBLEPREC}")
 message("   Separation crlibm:   ${SEPARATION_CRLIBM}")
+message("   Separation OpenCL:   ${SEPARATION_OPENCL}")
+message("   Separation CAL:      ${SEPARATION_CAL}")
 print_libs()
 print_separator()
 
