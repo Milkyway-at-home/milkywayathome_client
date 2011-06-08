@@ -109,11 +109,6 @@ if(WIN32 AND NOT HAVE_ASPRINTF)
     list(APPEND mw_lib_src src/mw_asprintf.c)
 endif()
 
-if(MILKYWAY_OPENCL)
-  list(APPEND mw_lib_src ${mw_cl_lib_src})
-  list(APPEND mw_lib_headers ${mw_cl_lib_headers})
-endif()
-
 add_library(milkyway_lua STATIC ${milkyway_lua_src} ${milkyway_lua_headers})
 set_target_properties(milkyway_lua PROPERTIES
                         COMPILE_DEFINITIONS "MILKYWAY_LUA_COMPILATION")
@@ -121,6 +116,13 @@ target_link_libraries(milkyway_lua milkyway dsfmt)
 
 add_library(milkyway STATIC ${mw_lib_src} ${mw_lib_headers})
 target_link_libraries(milkyway dsfmt)
+
+if(MILKYWAY_OPENCL)
+  add_library(milkyway_cl STATIC ${mw_cl_lib_src} ${mw_cl_lib_headers})
+  target_link_libraries(milkyway_cl milkyway)
+endif()
+
+
 
 if(WIN32)
   target_link_libraries(milkyway winmm)

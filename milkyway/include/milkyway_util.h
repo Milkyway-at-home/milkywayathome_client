@@ -55,34 +55,12 @@ extern "C" {
 #define InvalidEnum MWInvalidEnum
 
 
-#if MILKYWAY_OPENCL
-
 typedef struct
 {
-    cl_device_type devType;
-    cl_uint platform;
-    cl_uint devNum;
-    cl_bool nonResponsive;  /* If screen redraws aren't important. Either don't care or something like an outputless Tesla */
-    cl_uint numChunk;
-    cl_double responsivenessFactor;
-    cl_double targetFrequency;
-    cl_int pollingMode;
-    cl_bool enableCheckpointing;
-
-    cl_bool forceNoIntrinsics;
-    cl_bool forceX87;
-    cl_bool forceSSE2;
-    cl_bool forceSSE3;
-    cl_bool verbose;
-} CLRequest;
-
-#else
-
-/* CAL or nothing */
-typedef struct
-{
+    unsigned int platform;
     unsigned int devNum;
-    int nonResponsive;
+
+    int nonResponsive;    /* If screen redraws aren't important. Either don't care or something like an outputless Tesla */
     double responsivenessFactor;
     double targetFrequency;
     int pollingMode;
@@ -94,9 +72,6 @@ typedef struct
     int forceSSE3;
     int verbose;
 } CLRequest;
-
-#endif /* MILKYWAY_OPENCL */
-
 
 #if MW_ENABLE_DEBUG
     /* convenient functions for printing debugging stuffs */

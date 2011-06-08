@@ -152,5 +152,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define WINDOWS_USES_X87 1
 #endif
 
+#ifdef _MSC_VER
+  #define MW_ALIGN(x) __declspec(align(x))
+#else
+  #define MW_ALIGN(x) __attribute__((aligned(x)))
+#endif /* _MSC_VER */
+
 #endif /* _MILKYWAY_CONFIG_H_ */
 

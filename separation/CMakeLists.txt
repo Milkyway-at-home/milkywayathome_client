@@ -275,7 +275,7 @@ list(APPEND exe_link_libs ${SEPARATION_LIBM_LIBRARY})
 
 if(SEPARATION_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
-  list(APPEND exe_link_libs ${OPENCL_LIBRARIES})
+  list(APPEND exe_link_libs milkyway_cl ${OPENCL_LIBRARIES})
 elseif(SEPARATION_CAL)
   include_directories(${ATICAL_INCLUDE_DIR})
   include_directories(${ATICAL_INCLUDE_DIR}/CAL)

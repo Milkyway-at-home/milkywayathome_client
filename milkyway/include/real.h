@@ -22,60 +22,44 @@
 #ifndef _REAL_H_
 #define _REAL_H_
 
-#include "milkyway_cl.h"
-
-#if !ENABLE_OPENCL || defined(__OPENCL_VERSION__)
-  /* No opencl, or in the kernel */
-  #if DOUBLEPREC
-    typedef double real;
-  #else
-    typedef float real;
-  #endif /* DOUBLEPREC */
+#if DOUBLEPREC
+  typedef double real MW_ALIGN(sizeof(double));
 #else
-  /* Should use correctly aligned cl_types for the host */
-  #if DOUBLEPREC
-    typedef cl_double real;
-  #else
-    typedef cl_float real;
-  #endif /* DOUBLEPREC */
-#endif
+  typedef float real MW_ALIGN(sizeof(float));
+#endif /* DOUBLEPREC */
 
-#ifndef __OPENCL_VERSION__
 
-  /* FIXME: This happens to work with MSVC with double since the
-     functions.  MSVC is stupid and doesn't support C99 or anything,
-     so we'll have to do work to make float work to not have horrible
-     casting everywhere
-   */
+/* FIXME: This happens to work with MSVC with double since the
+   functions.  MSVC is stupid and doesn't support C99 or anything,
+   so we'll have to do work to make float work to not have horrible
+   casting everywhere
+*/
 
-  #if __GLIBC__ <= 2 && __GLIBC_MINOR__ < 7 && defined(__GLIBC__)
-    #define HAVE_BROKEN_TGMATH 1
-    #if !DOUBLEPREC
-      #warning "Old Glibc tgmath.h doesn't work, so float doesn't really work"
-    #endif
-  #endif /* __GLIBC__ <= 2 && __GLIBC_MINOR__ < 7 */
+#if __GLIBC__ <= 2 && __GLIBC_MINOR__ < 7 && defined(__GLIBC__)
+  #define HAVE_BROKEN_TGMATH 1
+  #if !DOUBLEPREC
+    #warning "Old Glibc tgmath.h doesn't work, so float doesn't really work"
+  #endif
+#endif /* __GLIBC__ <= 2 && __GLIBC_MINOR__ < 7 */
 
-  #if ENABLE_FDLIBM
-    #include <fdlibm.h>
-  #else
-
-    #ifndef __cplusplus
-      #if HAVE_TGMATH_H && !HAVE_BROKEN_TGMATH
-        #include <tgmath.h>
-      #else
-        #include <math.h>
-      #endif /* HAVE_TGMATH_H && !HAVE_BROKEN_TGMATH */
+#if ENABLE_FDLIBM
+  #include <fdlibm.h>
+#else
+  #ifndef __cplusplus
+    #if HAVE_TGMATH_H && !HAVE_BROKEN_TGMATH
+      #include <tgmath.h>
     #else
-      #include <cmath>
-    #endif /* __cplusplus */
-  #endif /* ENABLE_FDLIBM */
+      #include <math.h>
+    #endif /* HAVE_TGMATH_H && !HAVE_BROKEN_TGMATH */
+  #else
+    #include <cmath>
+  #endif /* __cplusplus */
+#endif /* ENABLE_FDLIBM */
 
-
-  /* crlibm is a math.h supplement. fdlibm is a replacement.*/
-  #if ENABLE_CRLIBM
-    #include <crlibm.h>
-  #endif /* ENABLE_CRLIBM */
-#endif /* __OPENCL_VERSION__ */
+/* crlibm is a math.h supplement. fdlibm is a replacement.*/
+#if ENABLE_CRLIBM
+  #include <crlibm.h>
+#endif /* ENABLE_CRLIBM */
 
 #endif /* _REAL_H_ */
 
