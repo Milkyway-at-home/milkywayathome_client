@@ -1,3 +1,0 @@
-[submodule "boinc/boinc"]
-	path = boinc/boinc
-	url = git://github.com/Milkyway-at-home/milkywayathome_client.git
