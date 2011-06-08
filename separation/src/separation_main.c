@@ -81,6 +81,7 @@ static void setCommonFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->forceSSE2 = sf->forceSSE2;
     clr->forceSSE3 = sf->forceSSE3;
     clr->verbose = sf->verbose;
+    clr->nonResponsive = sf->nonResponsive;
 }
 
 #if SEPARATION_OPENCL
@@ -89,7 +90,6 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 {
     clr->platform = sf->usePlatform;
     clr->devNum = sf->useDevNumber;
-    clr->nonResponsive = sf->nonResponsive;
     clr->enableCheckpointing = !sf->disableGPUCheckpointing;
     setCommonFlags(clr, sf);
 }
@@ -99,7 +99,6 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 {
     clr->devNum = sf->useDevNumber;
-    clr->responsivenessFactor = sf->responsivenessFactor;
     clr->targetFrequency = sf->targetFrequency <= 0.01 ? DEFAULT_TARGET_FREQUENCY : sf->targetFrequency;
     clr->pollingMode = sf->pollingMode;
     clr->enableCheckpointing = !sf->disableGPUCheckpointing;
@@ -185,13 +184,13 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
         {
             "device", 'd',
             POPT_ARG_INT, &sf.useDevNumber,
-            0, "Device number passed by boinc to use", NULL
+            0, "Device number passed by BOINC to use", NULL
         },
 
         {
-            "responsiveness-factor", 'r',
-            POPT_ARG_DOUBLE, &sf.responsivenessFactor,
-            0, "Responsiveness factor for GPU", NULL
+            "non-responsive", 'r',
+            POPT_ARG_NONE, &sf.nonResponsive,
+            0, "Do not care about display responsiveness (use with caution)", NULL
         },
 
         {

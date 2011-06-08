@@ -58,7 +58,6 @@ typedef struct
     unsigned int devNum;
 
     int nonResponsive;    /* If screen redraws aren't important. Either don't care or something like an outputless Tesla */
-    double responsivenessFactor;
     double targetFrequency;
     int pollingMode;
     int enableCheckpointing;

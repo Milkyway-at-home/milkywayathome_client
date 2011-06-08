@@ -64,12 +64,9 @@ typedef struct
     int ignoreCheckpoint;  /* Ignoring checkpoint is not the same as disabling GPU checkpoints */
     int usePlatform;
     int useDevNumber;  /* Choose CL platform and device */
-    int nonResponsive;  /* FIXME: Make this go away */
-    unsigned int numChunk;  /* Also this */
-    double responsivenessFactor;
+    int nonResponsive;
     double targetFrequency;
     int pollingMode;
-    int printVersion;
     int disableGPUCheckpointing;
 
     MWPriority processPriority;
@@ -82,6 +79,7 @@ typedef struct
     int forceSSE3;
 
     int verbose;
+    int printVersion;
 } SeparationFlags;
 
 /* Process priority to use for GPU version */
@@ -92,19 +90,18 @@ typedef struct
 #endif /* _WIN32 */
 
 #define DEFAULT_POLLING_MODE 1
-#define DEFAULT_RESPONSIVENESS_FACTOR 1.0
 #define DEFAULT_TARGET_FREQUENCY 30.0
 #define DEFAULT_DISABLE_GPU_CHECKPOINTING 0
 
 
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, NULL, 0, FALSE,       \
-                                 FALSE, FALSE, 0, FALSE, FALSE, 0, 0, 0, 0,    \
-                                 DEFAULT_RESPONSIVENESS_FACTOR,                \
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, NULL,                 \
+                                 0, FALSE, FALSE, FALSE, 0, FALSE, FALSE,      \
+                                 0, 0, FALSE,                                  \
                                  DEFAULT_TARGET_FREQUENCY,                     \
                                  DEFAULT_POLLING_MODE,                         \
                                  DEFAULT_DISABLE_GPU_CHECKPOINTING,            \
-                                 0, 0, FALSE,                                  \
-                                 FALSE, FALSE, FALSE, FALSE, FALSE             \
+                                 0, FALSE,                                     \
+                                 FALSE, FALSE, FALSE, FALSE, FALSE, FALSE      \
                                }
 
 #ifdef __cplusplus

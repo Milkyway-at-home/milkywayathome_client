@@ -161,17 +161,6 @@ static void readResults(SeparationCALMem* cm, const IntegralArea* ia, Evaluation
     }
 }
 
-static CALresult chunkDivCheck(const char* name, CALuint dim, CALuint nChunk)
-{
-    if (!mwDivisible(dim, nChunk))
-    {
-        warn("%s (%u) not divisible by n chunks (%u)\n", name, dim, nChunk);
-        return CAL_RESULT_ERROR;
-    }
-
-    return CAL_RESULT_OK;
-}
-
 static void printChunks(const IntegralArea* ia, const SeparationCALChunks* chunks)
 {
     CALuint i;
@@ -313,7 +302,7 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
     CALdouble effFlops, estIterTime, timePerIter;
     CALuint nChunk;
 
-    if (clr->responsivenessFactor <= 0.01)
+    if (clr->nonResponsive)
         return 1;
 
     flops = deviceFlopsEstimate(devAttribs);
@@ -321,7 +310,6 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
     iterFlops = estimateWUFLOPsPerIter(ap, ia);
 
     estIterTime = 1000.0 * (CALdouble) iterFlops / effFlops; /* milliseconds */
-    estIterTime *= clr->responsivenessFactor;
 
     timePerIter = 1000.0 / clr->targetFrequency;
 
@@ -339,9 +327,9 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
     //*chunkWaitEstimate = (CALuint) (0.1 * estIterTime / nChunk); /* Sleep for 50% of estimated time before polling */
     *chunkWaitEstimate = 0;
     warn("Estimated iteration time %f ms\n"
-         "Target frequency %f Hz, polling mode %d, using responsiveness factor of %f\n"
+         "Target frequency %f Hz, polling mode %d\n"
          "Dividing into %u chunks, initially sleeping for %u ms\n",
-         estIterTime, clr->targetFrequency, clr->pollingMode, clr->responsivenessFactor, nChunk, *chunkWaitEstimate);
+         estIterTime, clr->targetFrequency, clr->pollingMode, nChunk, *chunkWaitEstimate);
 
     return nChunk;
 }
