@@ -320,10 +320,6 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
     if (nChunk >= ia->mu_steps)
         return ia->mu_steps;
 
-    /* Round up to next evenly divisible integer */
-    while (!mwDivisible(ia->mu_steps, nChunk) && nChunk <= ia->mu_steps)
-        ++nChunk;
-
     //*chunkWaitEstimate = (CALuint) (0.1 * estIterTime / nChunk); /* Sleep for 50% of estimated time before polling */
     *chunkWaitEstimate = 0;
     warn("Estimated iteration time %f ms\n"
