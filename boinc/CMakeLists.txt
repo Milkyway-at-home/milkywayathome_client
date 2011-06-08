@@ -20,6 +20,9 @@ set(BOINC_RELEASE 0)
 set(BOINC_PRERELEASE TRUE)
 set(BOINC_BUGREPORT "")
 
+find_package(OpenSSL)
+
+
 # Check headers
 check_include_files(alloca.h HAVE_ALLOCA_H)
 check_include_files(arpa/inet.h HAVE_ARPA_INET_H)
@@ -257,7 +260,19 @@ endif()
 add_library(boinc STATIC ${boinc_lib_src} ${boinc_lib_headers})
 add_library(boinc_api STATIC ${boinc_api_src} ${boinc_api_headers})
 add_library(boinc_graphics2 STATIC ${boinc_graphics_src} ${boinc_graphics_headers})
-add_library(boinc_crypt STATIC ${BOINC_LIB_SRC_DIR}/crypt.cpp ${BOINC_LIB_SRC_DIR}/crypt.h)
+
+install(TARGETS boinc boinc_api boinc_graphics2
+        ARCHIVE       DESTINATION lib
+        PUBLIC_HEADER DESTINATION include/boinc)
+
+if(OPENSSL_FOUND)
+  add_library(boinc_crypt STATIC ${BOINC_LIB_SRC_DIR}/crypt.cpp ${BOINC_LIB_SRC_DIR}/crypt.h)
+  install(TARGETS boinc_crypt
+            ARCHIVE       DESTINATION lib
+            PUBLIC_HEADER DESTINATION include/boinc)
+else()
+  message(WARNING "OpenSSL not found. Not building libboinc_crypt")
+endif()
 
 
 
@@ -266,9 +281,6 @@ set(BOINC_LIBRARIES boinc_api boinc boinc_graphics2 CACHE INTERNAL "BOINC librar
 
 set(BOINC_GRAPHICS_FOUND TRUE CACHE INTERNAL "Built BOINC libraries")
 
-install(TARGETS boinc boinc_api boinc_graphics2 boinc_crypt
-        ARCHIVE       DESTINATION lib
-        PUBLIC_HEADER DESTINATION include/boinc)
 
 #export(TARGETS boinc boinc_api boinc_graphics2 FILE boinc-exports.cmake)
 #export(PACKAGE BOINC)
@@ -287,7 +299,6 @@ install(TARGETS boinc boinc_api boinc_graphics2 boinc_crypt
 # add_executable(msg_test ${msg_test_src} ${msg_test_headers})
 # target_link_libraries(msg_test boinc)
 
-# find_package(OpenSSL)
 # include_directories(${OPENSSL_INCLUDE_DIR})
 # add_executable(crypt_prog ${BOINC_LIB_SRC_DIR}/crypt_prog.cpp)
 # target_link_libraries(crypt_prog boinc boinc_crypt ${OPENSSL_LIBRARIES})
