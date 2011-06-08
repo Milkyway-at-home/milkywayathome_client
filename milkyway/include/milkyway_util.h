@@ -31,9 +31,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <unistd.h>
   #include <fcntl.h>
 #else
-  #define _CRT_SECURE_NO_WARNINGS
-  #define WIN32_LEAN_AND_MEAN
-  #define VC_EXTRALEAN
   #include <malloc.h>
   #include <windows.h>
 #endif /* _WIN32 */
@@ -176,13 +173,6 @@ typedef enum
 #define MW_PRIORITY_DEFAULT MW_PRIORITY_NORMAL
 
 #endif /* _WIN32 */
-
-/* Default priority in case of invalid priority */
-#ifndef _WIN32
-#else
-
-#endif /* _WIN32 */
-
 
 int mwSetProcessPriority(MWPriority priority);
 

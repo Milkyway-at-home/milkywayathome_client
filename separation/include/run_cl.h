@@ -26,8 +26,8 @@ extern "C" {
 #endif
 
 #include "separation_types.h"
-#include "mw_cl.h"
 #include "evaluation_state.h"
+#include "milkyway_cl.h"
 
 cl_int integrateCL(const AstronomyParameters* ap,
                    const IntegralArea* ia,
