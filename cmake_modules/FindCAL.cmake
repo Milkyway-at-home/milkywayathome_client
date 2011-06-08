@@ -18,9 +18,9 @@
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-find_library(ATICALCL_LIBRARY aticalcl PATHS "$ENV{AMDSTREAMSDKROOT}/lib")
-find_library(ATICALRT_LIBRARY aticalrt PATHS "$ENV{AMDSTREAMSDKROOT}/lib")
-find_path(ATICAL_INCLUDE_DIR NAMES CAL/cal.h CAL/calcl.h PATHS "$ENV{AMDSTREAMSDKROOT}/include")
+find_library(ATICALCL_LIBRARY aticalcl PATHS "$ENV{AMDAPPSDKROOT}/lib")
+find_library(ATICALRT_LIBRARY aticalrt PATHS "$ENV{AMDAPPSDKROOT}/lib")
+find_path(ATICAL_INCLUDE_DIR NAMES CAL/cal.h CAL/calcl.h PATHS "$ENV{AMDAPPSDKROOT}/include")
 
 if(ATICAL_INCLUDE_DIR AND ATICALCL_LIBRARY AND ATICALRT_LIBRARY)
    set(CAL_FOUND TRUE)
