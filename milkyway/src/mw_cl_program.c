@@ -20,7 +20,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 
-#include "milkyway_cl.h"
 #include "milkyway_util.h"
 #include "mw_cl_show_types.h"
 #include "mw_cl_program.h"

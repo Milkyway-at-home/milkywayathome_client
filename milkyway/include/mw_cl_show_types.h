@@ -18,15 +18,19 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if !defined(_MILKYWAY_CL_H_INSIDE_) && !defined(MILKYWAY_CL_COMPILATION)
+  #error "Only milkyway_cl.h can be included directly."
+#endif
+
+
 #ifndef _MW_CL_SHOW_TYPES_H_
 #define _MW_CL_SHOW_TYPES_H_
+
+#include "mw_cl_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "milkyway_cl.h"
-#include "mw_cl_device.h"
 
 /* TODO: clint and memflags are usually or'd, so most of the time these won't work right */
 const char* showCLDeviceType(const cl_device_type x) CONST_F;

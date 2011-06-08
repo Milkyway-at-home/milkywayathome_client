@@ -21,21 +21,17 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MW_CL_H_
 #define _MW_CL_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "milkyway_config.h"
 
-#include "milkyway_cl.h"
-#include "mw_cl_types.h"
-#include "mw_cl_show_types.h"
-#include "mw_cl_util.h"
-#include "mw_cl_setup.h"
-#include "mw_cl_device.h"
-#include "mw_cl_program.h"
-
-#ifdef __cplusplus
-}
-#endif
+#ifdef __APPLE__
+  #include <OpenCL/cl.h>
+  #include <OpenCL/cl_platform.h>
+  #include <OpenCL/cl_ext.h>
+#else
+  #include <CL/cl.h>
+  #include <CL/cl_platform.h>
+  #include <CL/cl_ext.h>
+#endif /* __APPLE__ */
 
 #endif /* _MW_CL_H_ */
 

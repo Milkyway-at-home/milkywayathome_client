@@ -25,7 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_VECTOR_TYPES_H_
 #define _MILKYWAY_VECTOR_TYPES_H_
 
-#include "milkyway_cl.h"
 #include "real.h"
 
 typedef struct MW_ALIGN(4 * sizeof(real))

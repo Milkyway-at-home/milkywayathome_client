@@ -21,12 +21,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MW_CL_UTIL_H_
 #define _MW_CL_UTIL_H_
 
+#include "mw_cl_setup.h"
+#include "mw_cl_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "milkyway_cl.h"
-#include "mw_cl_setup.h"
 
 
 cl_int mwGetWorkGroupInfo(const CLInfo* ci, WGInfo* wgi);

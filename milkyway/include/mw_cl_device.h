@@ -18,15 +18,21 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if !defined(_MILKYWAY_CL_H_INSIDE_) && !defined(MILKYWAY_CL_COMPILATION)
+  #error "Only milkyway_cl.h can be included directly."
+#endif
+
+
 #ifndef _MW_CL_DEVICE_H_
 #define _MW_CL_DEVICE_H_
+
+#include "mw_cl_types.h"
+#include "milkyway_util.h"
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "milkyway_cl.h"
-#include "mw_cl_types.h"
 
 cl_int mwSelectDevice(CLInfo* ci, const cl_device_id* devs, const CLRequest* clr, const cl_uint nDev);
 cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev);
