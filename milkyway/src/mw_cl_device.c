@@ -303,59 +303,62 @@ void mwPrintDevInfoShort(const DevInfo* di)
 
 static void mwGetPlatformInfo(PlatformInfo* pi, cl_platform_id platform)
 {
-	cl_int err;
-	size_t readSize;
+    cl_int err;
+    size_t readSize;
 
-	err = clGetPlatformInfo(platform, CL_PLATFORM_PROFILE,
+    err = clGetPlatformInfo(platform, CL_PLATFORM_NAME,
                             sizeof(pi->name), pi->name, &readSize);
-	if (readSize > sizeof(pi->name))
-		mwCLWarn("Failed to read platform profile", err);
+    if (readSize > sizeof(pi->name))
+        mwCLWarn("Failed to read platform name", err);
 
+    err = clGetPlatformInfo(platform, CL_PLATFORM_VENDOR,
+                            sizeof(pi->vendor), pi->vendor, &readSize);
+    if (readSize > sizeof(pi->vendor))
+        mwCLWarn("Failed to read platform vendor", err);
 
-	err = clGetPlatformInfo(platform, CL_PLATFORM_VERSION,
+    err = clGetPlatformInfo(platform, CL_PLATFORM_VERSION,
                             sizeof(pi->version), pi->version, &readSize);
-	if (readSize > sizeof(pi->version))
-		mwCLWarn("Failed to read platform version", err);
+    if (readSize > sizeof(pi->version))
+        mwCLWarn("Failed to read platform version", err);
 
-
-	err = clGetPlatformInfo(platform, CL_PLATFORM_NAME,
-                            sizeof(pi->name), pi->name, &readSize);
-	if (readSize > sizeof(pi->name))
-		mwCLWarn("Failed to read platform name", err);
-
-
-	err = clGetPlatformInfo(platform, CL_PLATFORM_EXTENSIONS,
+    err = clGetPlatformInfo(platform, CL_PLATFORM_EXTENSIONS,
                             sizeof(pi->extensions), pi->extensions, &readSize);
-	if (readSize > sizeof(pi->extensions))
-		mwCLWarn("Failed to read platform extensions", err);
+    if (readSize > sizeof(pi->extensions))
+        mwCLWarn("Failed to read platform extensions", err);
+
+    err = clGetPlatformInfo(platform, CL_PLATFORM_PROFILE,
+                            sizeof(pi->profile), pi->profile, &readSize);
+    if (readSize > sizeof(pi->profile))
+        mwCLWarn("Failed to read platform profile", err);
 }
 
 static void mwPrintPlatformInfo(PlatformInfo* pi, cl_uint n)
 {
-	warn("Platform %u information:\n"
-	     "  Name:       %s\n"
-	     "  Version:    %s\n"
-	     "  Vendor:     %s\n"
-	     "  Profile:    %s\n"
-	     "  Extensions: %s\n",
-	     n,
-	     pi->name,
-	     pi->version,
-	     pi->vendor,
-	     pi->profile,
-	     pi->extensions);
+    warn("Platform %u information:\n"
+         "  Name:       %s\n"
+         "  Version:    %s\n"
+         "  Vendor:     %s\n"
+         "  Extensions: %s\n"
+         "  Profile:    %s\n",
+         n,
+         pi->name,
+         pi->version,
+         pi->vendor,
+         pi->extensions,
+         pi->profile
+        );
 }
 
 void mwPrintPlatforms(cl_platform_id* platforms, cl_uint n_platforms)
 {
-	cl_uint i;
-	PlatformInfo pi = EMPTY_PLATFORM_INFO;
+    cl_uint i;
+    PlatformInfo pi = EMPTY_PLATFORM_INFO;
 
-	for (i = 0; i < n_platforms; ++i)
-	{
-		mwGetPlatformInfo(&pi, platforms[i]);
-		mwPrintPlatformInfo(&pi, i);
-	}
+    for (i = 0; i < n_platforms; ++i)
+    {
+        mwGetPlatformInfo(&pi, platforms[i]);
+        mwPrintPlatformInfo(&pi, i);
+    }
 }
 
 cl_platform_id* mwGetAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out)
@@ -368,6 +371,12 @@ cl_platform_id* mwGetAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out)
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error getting number of platform", err);
+        return NULL;
+    }
+
+    if (n_platform == 0)
+    {
+        warn("No CL platforms found\n");
         return NULL;
     }
 

@@ -54,6 +54,7 @@ extern "C" {
 
 typedef struct
 {
+    const char* preferredPlatformVendor;
     unsigned int platform;
     unsigned int devNum;
 

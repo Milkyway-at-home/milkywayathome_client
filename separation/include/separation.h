@@ -47,12 +47,14 @@ extern "C" {
   #include "run_cl.h"
 #endif /* SEPARATION_OPENCL */
 
+#include <limits.h>
 
 typedef struct
 {
     char* star_points_file;
     char* ap_file;  /* astronomy parameters */
     char* separation_outfile;
+    char* preferredPlatformVendor;
     const char** forwardedArgs;
     real* numArgs;   /* Temporary */
     unsigned int nForwardedArgs;
@@ -62,8 +64,8 @@ typedef struct
     int separationSeed;
     int cleanupCheckpoint;
     int ignoreCheckpoint;  /* Ignoring checkpoint is not the same as disabling GPU checkpoints */
-    int usePlatform;
-    int useDevNumber;  /* Choose CL platform and device */
+    unsigned int usePlatform;
+    unsigned int useDevNumber;  /* Choose CL platform and device */
     int nonResponsive;
     double targetFrequency;
     int pollingMode;
@@ -94,9 +96,9 @@ typedef struct
 #define DEFAULT_DISABLE_GPU_CHECKPOINTING 0
 
 
-#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, NULL,                 \
+#define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL,           \
                                  0, FALSE, FALSE, FALSE, 0, FALSE, FALSE,      \
-                                 0, 0, FALSE,                                  \
+                                 UINT_MAX, 0, FALSE,                           \
                                  DEFAULT_TARGET_FREQUENCY,                     \
                                  DEFAULT_POLLING_MODE,                         \
                                  DEFAULT_DISABLE_GPU_CHECKPOINTING,            \

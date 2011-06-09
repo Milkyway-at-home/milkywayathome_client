@@ -30,6 +30,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define DEFAULT_ASTRONOMY_PARAMETERS "astronomy_parameters.txt"
 #define DEFAULT_STAR_POINTS "stars.txt"
 
+#if OPENCL_NVIDIA
+  #define DEFAULT_PREFERRED_PLATFORM_VENDOR "NVIDIA Corporation"
+#elif OPENCL_AMD
+  #define DEFAULT_PREFERRED_PLATFORM_VENDOR "Advanced Micro Devices, Inc."
+#elif defined(__APPLE__)
+  #define DEFAULT_PREFERRED_PLATFORM_VENDOR "Apple"
+#else
+  #define DEFAULT_PREFERRED_PLATFORM_VENDOR ""
+#endif
+
 #define SEED_ARGUMENT (1 << 1)
 #define PRIORITY_ARGUMENT (1 << 2)
 
@@ -65,6 +75,7 @@ static void freeSeparationFlags(SeparationFlags* sf)
     free(sf->separation_outfile);
     free(sf->forwardedArgs);
     free(sf->numArgs);
+    free(sf->preferredPlatformVendor);
 }
 
 /* Use hardcoded names if files not specified */
@@ -72,6 +83,7 @@ static void setDefaultFiles(SeparationFlags* sf)
 {
     stringDefault(sf->star_points_file, DEFAULT_STAR_POINTS);
     stringDefault(sf->ap_file, DEFAULT_ASTRONOMY_PARAMETERS);
+    stringDefault(sf->preferredPlatformVendor, DEFAULT_PREFERRED_PLATFORM_VENDOR);
 }
 
 static void setCommonFlags(CLRequest* clr, const SeparationFlags* sf)
@@ -88,6 +100,7 @@ static void setCommonFlags(CLRequest* clr, const SeparationFlags* sf)
 
 static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
 {
+    clr->preferredPlatformVendor = sf->preferredPlatformVendor;
     clr->platform = sf->usePlatform;
     clr->devNum = sf->useDevNumber;
     clr->enableCheckpointing = !sf->disableGPUCheckpointing;
@@ -217,7 +230,13 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
         {
             "platform", 'l',
             POPT_ARG_INT, &sf.usePlatform,
-            0, "CL Platform to use", NULL
+            0, "CL platform index to use", NULL
+        },
+
+        {
+            "platform-vendor", '\0',
+            POPT_ARG_STRING, &sf.preferredPlatformVendor,
+            0, "CL Platform vendor name to try to use", NULL
         },
 
         {

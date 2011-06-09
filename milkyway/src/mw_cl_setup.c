@@ -57,31 +57,84 @@ static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useBufQueue)
     return CL_SUCCESS;
 }
 
+/* Return CL_UINT_MAX if it doesn't find one */
+static cl_uint choosePlatform(const char* prefVendor, const cl_platform_id* platforms, cl_uint nPlatform)
+{
+    cl_uint i;
+    char platVendor[256];
+    char prefBuf[256];
+    cl_int err;
+
+    if (!platforms || nPlatform == 0)
+        return CL_UINT_MAX;
+
+    /* No strnstr() on Windows, also be paranoid */
+    memset(prefBuf, 0, sizeof(prefBuf));
+    strncpy(prefBuf, prefVendor, sizeof(prefBuf));
+    prefBuf[sizeof(prefBuf) - 1] = '\0';
+
+    /* Out of the available platforms, see if one has a matching vendor */
+    for (i = 0; i < nPlatform; ++i)
+    {
+        err = clGetPlatformInfo(platforms[i],
+                                CL_PLATFORM_VENDOR,
+                                sizeof(platVendor),
+                                platVendor,
+                                NULL);
+        if (err != CL_SUCCESS)
+        {
+            mwCLWarn("Error getting platform vendor", err);
+            return CL_UINT_MAX;
+        }
+
+        if (strstr(platVendor, prefBuf))
+        {
+            return i;
+        }
+    }
+
+    return CL_UINT_MAX;
+}
+
 static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
 {
     cl_int err = CL_SUCCESS;
-    cl_uint n_platform;
+    cl_uint nPlatform = 0;
+    cl_uint nDev = 0;
     cl_platform_id* ids;
     cl_device_id* devs;
-    cl_uint nDev;
+    cl_uint platformChoice;
 
-    ids = mwGetAllPlatformIDs(ci, &n_platform);
+    ids = mwGetAllPlatformIDs(ci, &nPlatform);
     if (!ids)
-    {
-        warn("Failed to get any platforms\n");
         return MW_CL_ERROR;
+
+    mwPrintPlatforms(ids, nPlatform);
+
+    /* We have this set by default to UINT_MAX, so if it's in a
+     * legitimate range, it was specified */
+    if (clr->platform < nPlatform)
+    {
+        platformChoice = clr->platform;
+    }
+    else if (strcmp(clr->preferredPlatformVendor, "")) /* Didn't specify platform by index, try picking one by name */
+    {
+        platformChoice = choosePlatform(clr->preferredPlatformVendor, ids, nPlatform);
+    }
+    else
+    {
+        platformChoice = 0;
     }
 
-    mwPrintPlatforms(ids, n_platform);
-    warn("Using device %u on platform %u\n", clr->devNum, clr->platform);
-
-    if (clr->platform >= n_platform)
+    if (platformChoice >= nPlatform)
     {
-        warn("Requested platform is out of range of number of found platforms\n");
-        return MW_CL_ERROR;
+        warn("Didn't find preferred platform\n");
+        platformChoice = 0;
     }
 
-    devs = mwGetAllDevices(ids[clr->platform], &nDev);
+    warn("Using device %u on platform %u\n", clr->devNum, platformChoice);
+
+    devs = mwGetAllDevices(ids[platformChoice], &nDev);
     if (!devs)
     {
         warn("Error getting devices\n");

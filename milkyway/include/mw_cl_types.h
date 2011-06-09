@@ -105,11 +105,11 @@ typedef struct
 
 typedef struct
 {
-	char name[128];
-	char vendor[128];
-	char version[128];
-	char profile[128];
-	char extensions[512];
+    char name[128];
+    char vendor[128];
+    char version[128];
+    char extensions[512];
+    char profile[128];
 } PlatformInfo;
 
 #define EMPTY_PLATFORM_INFO { "", "", "", "", "" }

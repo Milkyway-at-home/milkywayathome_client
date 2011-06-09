@@ -77,8 +77,8 @@ option(DOUBLEPREC
 option(OPENCL_NVIDIA "Using Nvidia OpenCL")
 mark_as_advanced(OPENCL_NVIDIA)
 
-option(OPENCL_ATI "Using ATI OpenCL")
-mark_as_advanced(OPENCL_ATI)
+option(OPENCL_AMD "Using AMD OpenCL")
+mark_as_advanced(OPENCL_AMD)
 
 
 
