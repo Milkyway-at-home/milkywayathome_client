@@ -94,7 +94,7 @@ void prob_ok_init(uint32_t seed, int setSeed)
 /* determines if star with prob p should be separrated into stream */
 int prob_ok(StreamStats* ss, int n)
 {
-    int ok;
+    int ok = 0;
     real r;
     real step1, step2, step3;
 
@@ -146,9 +146,9 @@ int prob_ok(StreamStats* ss, int n)
                 ok = 4;
             break;
         default:
-            fail("ERROR:  Too many streams to separate using current code; "
-                 "please update the switch statement in prob_ok to handle %d streams", n);
+            mw_panic("Too many streams (%d > %d) to separate using current code\n", n, 4);
     }
+
     return ok;
 }
 

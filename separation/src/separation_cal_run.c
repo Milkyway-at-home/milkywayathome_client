@@ -99,20 +99,23 @@ static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain, CALint pollin
 static CALresult setNuKernelArgs(SeparationCALMem* cm, const IntegralArea* ia, CALuint nuStep)
 {
     CALresult err;
-    CALdouble* nuBufPtr;
+    CALvoid* nuBufPtr;
     CALfloat* nuStepPtr;
+    CALdouble* nuIdPtr;
     CALuint pitch = 0;
     NuId nuid;
 
-    err = mapMWMemRes(&cm->nuBuf, (CALvoid**) &nuBufPtr, &pitch);
+    err = mapMWMemRes(&cm->nuBuf, &nuBufPtr, &pitch);
     if (err != CAL_RESULT_OK)
         return err;
 
     nuid = calcNuStep(ia, nuStep);
 
     nuStepPtr = (CALfloat*) nuBufPtr;
-    *nuStepPtr = (CALfloat) nuStep;
-    nuBufPtr[1] = nuid.id;
+    nuIdPtr = (CALdouble*) nuBufPtr;
+
+    nuStepPtr[0] = (CALfloat) nuStep;
+    nuIdPtr[1] = nuid.id;
 
     err = unmapMWMemRes(&cm->nuBuf);
     if (err != CAL_RESULT_OK)

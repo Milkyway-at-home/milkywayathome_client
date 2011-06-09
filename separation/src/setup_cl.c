@@ -96,7 +96,6 @@ static void printRunSizes(const RunSizes* sizes, const IntegralArea* ia, cl_bool
     if (!verbose)
         return;
 
-
     warn("Using "ZU" chunks with size(s): ", sizes->nChunk);
     for (i = 0; i < sizes->nChunk; ++i)
     {

@@ -26,6 +26,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_cal_types.h"
 #include "separation_cal_kernelgen.h"
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wswitch-enum"
+#endif
+
 
 PFNCALCTXWAITFOREVENTS mw_calCtxWaitForEvents = NULL;
 

@@ -101,6 +101,12 @@ const char* showCALtargetEnum(enum CALtargetEnum x)
             return "CAL_TARGET_CAYMAN";
         case CAL_TARGET_BARTS:
             return "CAL_TARGET_BARTS";
+        case CAL_TARGET_RESERVED0:
+            return "CAL_TARGET_RESERVED0";
+        case CAL_TARGET_RESERVED1:
+            return "CAL_TARGET_RESERVED1";
+        case CAL_TARGET_RESERVED2:
+            return "CAL_TARGET_RESERVED2";
         default:
             warn("Trying to show unhandled CALenumTarget: %d\n", x);
             return "Unknown CALtargetEnum";
