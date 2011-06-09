@@ -342,13 +342,11 @@ endif()
 
 
 
-
 if(NOT MILKYWAY_IPHONE_APP)
   add_executable("${separation_base_bin_name}" ${separation_main_src})
 else()
   add_library("${separation_base_bin_name}" STATIC ${separation_main_src})
 endif()
-
 
 milkyway_link("${separation_base_bin_name}" ${BOINC_APPLICATION}
                                             ${SEPARATION_STATIC}
