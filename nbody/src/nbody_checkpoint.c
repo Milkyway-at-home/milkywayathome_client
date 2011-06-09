@@ -324,7 +324,7 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
 #endif /* _WIN32 */
 
 /* Should be given the same context as the dump. Returns nonzero if the state failed to be thawed */
-static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
+static int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 {
     size_t bodySize, supposedCheckpointSize;
     NBodyCheckpointHeader cpHdr;
@@ -357,7 +357,7 @@ static inline int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     return FALSE;
 }
 
-static inline void freezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHandle* cp)
+static void freezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHandle* cp)
 {
     const size_t bodySize = sizeof(Body) * st->nbody;
     char* p = cp->mptr;
