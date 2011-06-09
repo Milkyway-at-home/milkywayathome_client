@@ -83,6 +83,7 @@ set(libpopt_public_headers include/popt.h)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/popt_config.h.in ${PROJECT_BINARY_DIR}/include/popt_config.h)
 
+include_directories(${PROJECT_BINARY_DIR}/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_definitions("-DHAVE_CONFIG_H")
