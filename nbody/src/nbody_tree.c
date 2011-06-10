@@ -36,7 +36,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua_types.h"
 
 #ifdef __GNUC__
-#pragma GCC diagnostic ignored "-Wfloat-equal".
+#pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
 
 
