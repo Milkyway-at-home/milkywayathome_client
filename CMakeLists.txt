@@ -74,11 +74,11 @@ option(BOINC_RELEASE
 option(DOUBLEPREC
        "Build with double precision" ON)
 
-option(OPENCL_NVIDIA "Using Nvidia OpenCL")
-mark_as_advanced(OPENCL_NVIDIA)
+option(NVIDIA_OPENCL "Using Nvidia OpenCL" ON)
+mark_as_advanced(NVIDIA_OPENCL)
 
-option(OPENCL_AMD "Using AMD OpenCL")
-mark_as_advanced(OPENCL_AMD)
+option(AMD_OPENCL "Using AMD OpenCL" OFF)
+mark_as_advanced(AMD_OPENCL)
 
 
 

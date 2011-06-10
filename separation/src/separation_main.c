@@ -30,9 +30,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define DEFAULT_ASTRONOMY_PARAMETERS "astronomy_parameters.txt"
 #define DEFAULT_STAR_POINTS "stars.txt"
 
-#if OPENCL_NVIDIA
+#if NVIDIA_OPENCL
   #define DEFAULT_PREFERRED_PLATFORM_VENDOR "NVIDIA Corporation"
-#elif OPENCL_AMD
+#elif AMD_OPENCL
   #define DEFAULT_PREFERRED_PLATFORM_VENDOR "Advanced Micro Devices, Inc."
 #elif defined(__APPLE__)
   #define DEFAULT_PREFERRED_PLATFORM_VENDOR "Apple"

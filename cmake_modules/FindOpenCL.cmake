@@ -28,64 +28,65 @@ IF (APPLE)
 
 ELSE (APPLE)
 
-        IF (WIN32)
+  IF (WIN32)
+    FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h)
+    FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp)
 
-message("SLURP ${CMAKE_SYSTEM_PROCESSOR}")
-            FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h)
-            FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp)
+    IF(NVIDIA_OPENCL)
+      SET(OPENCL_LIB_DIR "$ENV{CUDA_LIB_PATH}")
+      SET(_OPENCL_INC_CAND "$ENV{CUDA_INC_PATH}")
+    ELSE() # AMD_OPENCL
+      # The AMD SDK currently installs both x86 and x86_64 libraries
+      IF(SYSTEM_IS_64)
+        SET(OPENCL_LIB_DIR "$ENV{AMDAPPSDKROOT}/lib/x86_64")
+      ELSE()
+        SET(OPENCL_LIB_DIR "$ENV{AMDAPPSDKROOT}/lib/x86")
+      ENDIF()
+      GET_FILENAME_COMPONENT(_OPENCL_INC_CAND ${OPENCL_LIB_DIR}/../../include ABSOLUTE)
+    ENDIF()
 
-            # The AMD SDK currently installs both x86 and x86_64 libraries
-            # This is only a hack to find out architecture
-            IF(SYSTEM_IS_64)
-              SET(OPENCL_LIB_DIR "$ENV{AMDAPPSDKROOT}/lib/x86_64")
-            ELSE()
-              SET(OPENCL_LIB_DIR "$ENV{AMDAPPSDKROOT}/lib/x86")
-            ENDIF()
+    FIND_LIBRARY(OPENCL_LIBRARIES OpenCL.lib ${OPENCL_LIB_DIR})
 
-            FIND_LIBRARY(OPENCL_LIBRARIES OpenCL.lib ${OPENCL_LIB_DIR})
+    # On Win32 search relative to the library
+    FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h PATHS "${_OPENCL_INC_CAND}")
+    FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp PATHS "${_OPENCL_INC_CAND}")
 
-            GET_FILENAME_COMPONENT(_OPENCL_INC_CAND ${OPENCL_LIB_DIR}/../../include ABSOLUTE)
+  ELSE (WIN32)
+    # Unix style platforms
+    FIND_LIBRARY(OPENCL_LIBRARIES OpenCL
+      $ENV{AMDAPPSDKROOT}/lib/x86_64
+      $ENV{AMDAPPSDKROOT}/lib/x86
+      /usr/local/cuda
+      )
+    GET_FILENAME_COMPONENT(OPENCL_LIB_DIR ${OPENCL_LIBRARIES} PATH)
+    GET_FILENAME_COMPONENT(_OPENCL_INC_CAND ${OPENCL_LIB_DIR}/../../include ABSOLUTE)
 
-            # On Win32 search relative to the library
-            FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h PATHS "${_OPENCL_INC_CAND}")
-            FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp PATHS "${_OPENCL_INC_CAND}")
-
-        ELSE (WIN32)
-            # Unix style platforms
-            FIND_LIBRARY(OPENCL_LIBRARIES OpenCL
-              $ENV{AMDAPPSDKROOT}/lib/x86_64
-              $ENV{AMDAPPSDKROOT}/lib/x86
-              /usr/local/cuda
-            )
-            GET_FILENAME_COMPONENT(OPENCL_LIB_DIR ${OPENCL_LIBRARIES} PATH)
-            GET_FILENAME_COMPONENT(_OPENCL_INC_CAND ${OPENCL_LIB_DIR}/../../include ABSOLUTE)
-
-            # The AMD SDK currently does not place its headers
-            # in /usr/include, therefore also search relative
-            # to the library
-            FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h PATHS ${_OPENCL_INC_CAND}
-              $ENV{AMDAPPSDKROOT}/include
-              /usr/local/cuda/include)
-            FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp PATHS ${_OPENCL_INC_CAND})
-        ENDIF (WIN32)
+    # The AMD SDK currently does not place its headers
+    # in /usr/include, therefore also search relative
+    # to the library
+    FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h PATHS ${_OPENCL_INC_CAND}
+      $ENV{AMDAPPSDKROOT}/include
+      /usr/local/cuda/include)
+    FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp PATHS ${_OPENCL_INC_CAND})
+  ENDIF (WIN32)
 
 ENDIF (APPLE)
 
 FIND_PACKAGE_HANDLE_STANDARD_ARGS( OpenCL DEFAULT_MSG OPENCL_LIBRARIES OPENCL_INCLUDE_DIRS )
 
 IF( _OPENCL_CPP_INCLUDE_DIRS )
-        SET( OPENCL_HAS_CPP_BINDINGS TRUE )
-        LIST( APPEND OPENCL_INCLUDE_DIRS ${_OPENCL_CPP_INCLUDE_DIRS} )
-        # This is often the same, so clean up
-        LIST( REMOVE_DUPLICATES OPENCL_INCLUDE_DIRS )
+  SET( OPENCL_HAS_CPP_BINDINGS TRUE )
+  LIST( APPEND OPENCL_INCLUDE_DIRS ${_OPENCL_CPP_INCLUDE_DIRS} )
+  # This is often the same, so clean up
+  LIST( REMOVE_DUPLICATES OPENCL_INCLUDE_DIRS )
 ENDIF( _OPENCL_CPP_INCLUDE_DIRS )
 
 MARK_AS_ADVANCED(
   OPENCL_INCLUDE_DIRS
-)
+  )
 
 IF(OPENCL_INCLUDE_DIRS AND OPENCL_LIBRARIES)
-   SET(OPENCL_FOUND TRUE)
+  SET(OPENCL_FOUND TRUE)
 ENDIF()
 
 
