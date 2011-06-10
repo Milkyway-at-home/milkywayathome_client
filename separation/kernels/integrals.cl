@@ -188,14 +188,14 @@ __kernel void mu_sum_kernel(__global real* restrict bgOut,
     {
         RPoints r_pt = readRPts(r_pts, (int2) (r_step, i));
 
-        real x = mad(R_POINT(r_pt), LCOS_BCOS(lbt), -SUN_R0);
+        real x = mad(R_POINT(r_pt), LCOS_BCOS(lbt), (real) -SUN_R0);
         real y = R_POINT(r_pt) * LSIN_BCOS(lbt);
         real z = R_POINT(r_pt) * BSIN(lbt);
 
         /* sqrt(x^2 + y^2 + q_inv_sqr * z^2) */
         real tmp = x * x;
         tmp = mad(y, y, tmp);           /* x^2 + y^2 */
-        tmp = mad(Q_INV_SQR, z * z, tmp);   /* (q_invsqr * z^2) + (x^2 + y^2) */
+        tmp = mad((real) Q_INV_SQR, z * z, tmp);   /* (q_invsqr * z^2) + (x^2 + y^2) */
 
         real rg = mw_fsqrt(tmp);
         real rs = rg + R0;
