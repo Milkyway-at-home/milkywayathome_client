@@ -93,7 +93,7 @@ static int dsfmtRandomUnitVector(lua_State* luaSt)
 static int dsfmtRandomBool(lua_State* luaSt)
 {
     dsfmt_t* d = checkDSFMT(luaSt, 1);
-    lua_pushboolean(luaSt, (int) mw_round(dsfmt_genrand_open_open(d)));
+    lua_pushboolean(luaSt, dsfmt_genrand_open_open(d) > 0.5);
     return 1;
 }
 
@@ -106,8 +106,10 @@ static int dsfmtRandomListItem(lua_State* luaSt)
     table = mw_lua_checktable(luaSt, 2);
 
     n = luaL_getn(luaSt, table);
-    i = mw_round(mwXrandom(d, 0, n));
 
+    /* + 1 so we can get the last item sometimes with floor */
+    i = (int) mwXrandom(d, 0, n + 1);
+    assert(i < n);
     lua_rawgeti(luaSt, table, i + 1);
 
     return 1;

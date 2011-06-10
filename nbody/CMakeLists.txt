@@ -265,32 +265,8 @@ if(NOT HAVE_SSE2 AND SYSTEM_IS_x86)
   message(FATAL_ERROR "SSE2 is required for x86 systems")
 endif()
 
-if(BOINC_RELEASE_NAMES)
-  if(NBODY_OPENMP)
-    set(NBODY_PLAN "mt")
-  else()
-    if(HAVE_SSE2)
-      set(NBODY_PLAN "sse2")
-    endif()
-  endif()
-
-  get_boinc_bin_name("milkyway_nbody" "${nbody_VERSION}" "${NBODY_PLAN}")
-  set(nbody_bin_name "${BOINC_BIN_NAME}")
-
-  get_boinc_bin_name("milkyway_nbody_graphics" "${nbody_VERSION}" "")
-  set(nbody_graphics_bin_name "${BOINC_BIN_NAME}")
-else()
-  set(nbody_bin_name "milkyway_nbody")
-  set(nbody_graphics_bin_name "milkyway_nbody_graphics")
-endif()
-
-configure_file (
-  "${NBODY_INCLUDE_DIR}/nbody_config.h.in"
-  "${PROJECT_INCLUDE_DIR}/nbody_config.h")
-
-add_executable(${nbody_bin_name} ${NBODY_SRC_DIR}/main.c)
-
-milkyway_link(${nbody_bin_name} ${BOINC_APPLICATION} ${NBODY_STATIC} "${nbody_exe_link_libs}")
+add_executable(milkyway_nbody ${NBODY_SRC_DIR}/main.c)
+milkyway_link(milkyway_nbody ${BOINC_APPLICATION} ${NBODY_STATIC} "${nbody_exe_link_libs}")
 
 if(NBODY_GL AND WIN32 AND NOT BOINC_APPLICATION)
   message(FATAL "N-body visualizer unsupported on Windows without BOINC")
@@ -316,15 +292,45 @@ if(NBODY_GL)
   endif()
   list(APPEND vis_link_libs ${OS_SPECIFIC_LIBS} m)
 
-  add_executable(${nbody_graphics_bin_name} ${nbody_screensaver_src} ${nbody_screensaver_headers})
-  target_link_libraries(${nbody_graphics_bin_name} ${vis_link_libs})
+  add_executable(milkyway_nbody_graphics ${nbody_screensaver_src} ${nbody_screensaver_headers})
+  target_link_libraries(milkyway_nbody_graphics ${vis_link_libs})
 endif()
 
 
-install(TARGETS ${nbody_bin_name} nbody_simulation nbody_lua
+if(BOINC_RELEASE_NAMES)
+  if(NBODY_OPENMP)
+    set(NBODY_PLAN "mt")
+  else()
+    if(HAVE_SSE2)
+
+      set(NBODY_PLAN "sse2")
+    endif()
+  endif()
+
+  get_boinc_bin_name("milkyway_nbody" "${nbody_VERSION}" "${NBODY_PLAN}")
+  set_target_properties(milkyway_nbody
+                          PROPERTIES
+						    OUTPUT_NAME ${BOINC_BIN_NAME})
+
+  get_boinc_bin_name("milkyway_nbody_graphics" "${nbody_VERSION}" "")
+  set_target_properties(milkyway_nbody_graphics
+                          PROPERTIES
+						    OUTPUT_NAME ${BOINC_BIN_NAME})
+endif()
+
+
+
+install(TARGETS milkyway_nbody nbody_simulation nbody_lua
           RUNTIME       DESTINATION bin
           ARCHIVE       DESTINATION lib
           PUBLIC_HEADER DESTINATION include)
+
+
+
+configure_file (
+  "${NBODY_INCLUDE_DIR}/nbody_config.h.in"
+  "${PROJECT_INCLUDE_DIR}/nbody_config.h")
+
 
 find_package(OpenSSL)
 message("   OpenSSL Libraries  ${OPENSSL_LIBRARIES}")

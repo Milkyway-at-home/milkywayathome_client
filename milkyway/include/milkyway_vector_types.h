@@ -27,10 +27,21 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "real.h"
 
+#ifndef _MSC_VER
+
 typedef struct MW_ALIGN(4 * sizeof(real))
 {
     real x, y, z, w;
 } mwvector;
+
+#else
+
+typedef struct
+{
+    real x, y, z, w;
+} mwvector;
+
+#endif /* _MSC_VER */
 
 
 #define L(v) ((v).x)

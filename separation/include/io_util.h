@@ -22,7 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _IO_UTIL_H_
 #define _IO_UTIL_H_
 
-#include <stdio.h>
+#include "milkyway_util.h"
 #include "separation_types.h"
 
 void fwrite_double_array(FILE* file, const char* array_name, real* array_t, size_t size);

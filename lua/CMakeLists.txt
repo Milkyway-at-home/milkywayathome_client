@@ -125,8 +125,8 @@ set_target_properties(lua51 PROPERTIES COMPILE_FLAGS "${DISABLE_WARNINGS_FLAG}")
 set_target_properties(lua PROPERTIES COMPILE_FLAGS "${DISABLE_WARNINGS_FLAG}")
 
 set(LUA_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "lua headers")
-set(LUA_INTERPRETER lua CACHE INTERNAL "Lua interpreter")
-set(LUA_LIBRARIES lua51 ${LIBS} CACHE INTERnAL "Lua libraries")
+set(LUA_INTERPRETER $<TARGET_FILE:lua> CACHE INTERNAL "Lua interpreter")
+set(LUA_LIBRARIES lua51 ${LIBS} CACHE INTERNAL "Lua libraries")
 
 install(TARGETS lua lua51
           RUNTIME       DESTINATION bin

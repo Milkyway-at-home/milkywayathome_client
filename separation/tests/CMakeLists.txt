@@ -23,10 +23,14 @@ maybe_dl_check("stars" "9832cf1dd6e1e11083f9594fd4bf657b"
                        "http://milkyway.cs.rpi.edu/milkyway/download/stars.tar.bz2"
                        "stars.tar.bz2")
 
-# TODO: Test different paths
+# TODO: Test different paths, such as no intrinsics etc.
 add_test(NAME tests
-           COMMAND ${LUA_INTERPRETER} "SeparationTests.lua"
-                                      "${EXECUTABLE_OUTPUT_PATH}/${separation_base_bin_name}"
-                                      "")
+           #WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+           COMMAND $<TARGET_FILE:lua> "${PROJECT_SOURCE_DIR}/tests/SeparationTests.lua"
+                                       $<TARGET_FILE:milkyway_separation>
+                                       "${PROJECT_SOURCE_DIR}/tests"
+                                       "")
 
-
+#FIXME: Stars file broken for out of source build
+set_tests_properties(tests PROPERTIES
+                             ENVIRONMENT "LUA_PATH=${PROJECT_SOURCE_DIR}/tests/?.lua;?.lua")

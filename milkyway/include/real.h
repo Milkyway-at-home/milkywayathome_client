@@ -23,11 +23,19 @@
 #ifndef _REAL_H_
 #define _REAL_H_
 
-#if DOUBLEPREC
-  typedef double real MW_ALIGN(sizeof(double));
+#if (defined (_WIN32) && defined(_MSC_VER))
+  #if DOUBLEPREC
+    typedef double real;
+  #else
+    typedef float real;
+  #endif /* DOUBLEPREC */
 #else
-  typedef float real MW_ALIGN(sizeof(float));
-#endif /* DOUBLEPREC */
+  #if DOUBLEPREC
+    typedef double real MW_ALIGN(sizeof(double));
+  #else
+    typedef float real MW_ALIGN(sizeof(float));
+  #endif /* DOUBLEPREC */
+#endif /* (defined (_WIN32) && defined(_MSC_VER)) */
 
 
 /* FIXME: This happens to work with MSVC with double since the

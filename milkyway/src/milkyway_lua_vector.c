@@ -71,7 +71,7 @@ static int lengthVector(lua_State* luaSt)
     return 1;
 }
 
-static const mwvector _emptyVector = EMPTY_MWVECTOR;
+static const mwvector _zeroVector = ZERO_VECTOR;
 
 static int createVector(lua_State* luaSt)
 {
@@ -83,7 +83,7 @@ static int createVector(lua_State* luaSt)
     switch (n)
     {
         case 0:
-            pushVector(luaSt, _emptyVector);
+            pushVector(luaSt, _zeroVector);
             return 1;
 
         case 3:

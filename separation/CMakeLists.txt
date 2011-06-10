@@ -307,13 +307,6 @@ else()
 endif()
 
 set(separation_base_lib_name "separation")
-if(BOINC_RELEASE_NAMES)
-  get_boinc_bin_name("milkyway_separation" "${separation_VERSION}" "${CL_PLAN_CLASS}")
-  set(separation_base_bin_name "${BOINC_BIN_NAME}")
-else()
-  set(separation_base_bin_name "milkyway_separation")
-endif()
-
 add_library("${separation_base_lib_name}" STATIC ${lib_source_file_list} ${separation_headers})
 
 # Build the critical area separately for SSE2, SSE3, no SSE2
@@ -343,14 +336,21 @@ endif()
 
 
 if(NOT MILKYWAY_IPHONE_APP)
-  add_executable("${separation_base_bin_name}" ${separation_main_src})
+  add_executable(milkyway_separation ${separation_main_src})
 else()
-  add_library("${separation_base_bin_name}" STATIC ${separation_main_src})
+  add_library(milkyway_separation STATIC ${separation_main_src})
 endif()
 
-milkyway_link("${separation_base_bin_name}" ${BOINC_APPLICATION}
-                                            ${SEPARATION_STATIC}
-                                            "${separation_base_lib_name};${separation_core_libs};${exe_link_libs}")
+if(BOINC_RELEASE_NAMES)
+  get_boinc_bin_name("milkyway_separation" "${separation_VERSION}" "${CL_PLAN_CLASS}")
+  set_target_properties(milkyway_separation
+                          PROPERTIES
+						    OUTPUT_NAME "${BOINC_BIN_NAME}")
+endif()
+
+milkyway_link(milkyway_separation ${BOINC_APPLICATION}
+                                  ${SEPARATION_STATIC}
+                                  "${separation_base_lib_name};${separation_core_libs};${exe_link_libs}")
 
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
