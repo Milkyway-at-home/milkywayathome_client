@@ -241,6 +241,7 @@ if(SEPARATION_OPENCL)
       COMMAND ${CMAKE_COMMAND} "-DOUTFILE=${SEPARATION_INLINE_KERNEL_FILE}"
                                "-DSOURCEFILES=\"${all_cl_files}\""
                                "-DSTRNAME=${SEPARATION_OUT_STR_NAME}"
+                               "-DCMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}"
                                -P ${SEPARATION_INLINE_SCRIPT})
     add_library(all_in_one_library STATIC "${SEPARATION_INLINE_KERNEL_FILE}")
     list(APPEND separation_link_libs all_in_one_library)
