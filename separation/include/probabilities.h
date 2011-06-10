@@ -45,8 +45,9 @@ extern "C" {
 
 #define DEFINE_INIT_PROBABILITIES(level) ProbabilityFunc initProbabilities##level(const AstronomyParameters* ap, int useIntrinsics)
 
-#if MW_IS_X86
 DEFINE_INIT_PROBABILITIES();
+
+#if MW_IS_X86
 DEFINE_INIT_PROBABILITIES(_SSE2);
 DEFINE_INIT_PROBABILITIES(_SSE3);
 #endif /* MW_IS_X86 */

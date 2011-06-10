@@ -49,9 +49,10 @@ typedef int GPUInfo;
 #endif
 
 
-#if MW_IS_X86
-
 ProbabilityFunc probabilityFunc = NULL;
+
+
+#if MW_IS_X86
 
 #ifndef _WIN32
   #define bit_CMPXCHG8B (1 << 8 )
