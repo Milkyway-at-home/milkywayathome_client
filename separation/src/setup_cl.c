@@ -376,13 +376,10 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
                                 "-DR0=%.15f "
                                 "-DSUN_R0=%.15f "
                                 "-DQ_INV_SQR=%.15f "
-                                "-DUSE_IMAGES=%d "
-                                "-DI_DONT_KNOW_WHY_THIS_DOESNT_WORK_HERE=%d ";
+                                "-DUSE_IMAGES=%d ";
 
     const char includeStr[] = "-I%s "
                               "-I%s/../include ";
-
-    cl_bool isFermi = minComputeCapabilityCheck(di, 2, 0);
 
     if (snprintf(kernelDefBuf, sizeof(kernelDefBuf), kernelDefStr,
                  ap->fast_h_prob,
@@ -395,8 +392,7 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
                  ap->sun_r0,
                  ap->q_inv_sqr,
 
-                 useImages,
-                 isFermi) < 0)
+                 useImages) < 0)
     {
         warn("Error getting kernel constant definitions\n");
         return NULL;

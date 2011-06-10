@@ -22,11 +22,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_kernel_types.h"
 
 
-#if I_DONT_KNOW_WHY_THIS_DOESNT_WORK_HERE
-  /* Using constant mysteriously doesn't work on Fermi */
-  #define __constant __global
-#endif
-
 #define cube(x) ((x) * (x) * (x))
 #define sqr(x) ((x) * (x))
 
