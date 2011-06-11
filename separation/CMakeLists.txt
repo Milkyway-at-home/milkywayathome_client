@@ -57,8 +57,8 @@ mark_as_advanced(SEPARATION_STATIC)
 option(SEPARATION_CAL "Use CAL++ voodoo" OFF)
 
 #FIXME: Still need to make it re-inline if kernel changed
-option(SEPARATION_INLINE_KERNEL
-        "Inline the CL kernel" ON)
+cmake_dependent_option(SEPARATION_INLINE_KERNEL "Inline the CL kernel" ON
+                         "SEPARATION_OPENCL" OFF)
 mark_as_advanced(SEPARATION_INLINE_KERNEL)
 
 option(SEPARATION_GRAPHICS

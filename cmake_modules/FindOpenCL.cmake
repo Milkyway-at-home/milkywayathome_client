@@ -33,7 +33,13 @@ ELSE (APPLE)
     FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp)
 
     IF(NVIDIA_OPENCL)
-      SET(OPENCL_LIB_DIR "$ENV{CUDA_LIB_PATH}")
+      # We could use CUDA_LIB_PATH, but this breaks when compiling 32 on 64
+      IF(SYSTEM_IS_64)
+        SET(OPENCL_LIB_DIR "$ENV{CUDA_PATH}/lib/x64/")
+      ELSE()
+        SET(OPENCL_LIB_DIR "$ENV{CUDA_LIB_PATH}/lib/Win32")
+      ENDIF()
+
       SET(_OPENCL_INC_CAND "$ENV{CUDA_INC_PATH}")
     ELSE() # AMD_OPENCL
       # The AMD SDK currently installs both x86 and x86_64 libraries
