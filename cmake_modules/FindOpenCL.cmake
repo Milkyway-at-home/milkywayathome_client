@@ -37,7 +37,7 @@ ELSE (APPLE)
       IF(SYSTEM_IS_64)
         SET(OPENCL_LIB_DIR "$ENV{CUDA_PATH}/lib/x64/")
       ELSE()
-        SET(OPENCL_LIB_DIR "$ENV{CUDA_LIB_PATH}/lib/Win32")
+        SET(OPENCL_LIB_DIR "$ENV{CUDA_PATH}/lib/Win32")
       ENDIF()
 
       SET(_OPENCL_INC_CAND "$ENV{CUDA_INC_PATH}")
