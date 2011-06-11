@@ -312,10 +312,12 @@ if(BOINC_RELEASE_NAMES)
                           PROPERTIES
 						    OUTPUT_NAME ${BOINC_BIN_NAME})
 
-  get_boinc_bin_name("milkyway_nbody_graphics" "${nbody_VERSION}" "")
-  set_target_properties(milkyway_nbody_graphics
-                          PROPERTIES
-						    OUTPUT_NAME ${BOINC_BIN_NAME})
+  if(NBODY_GL)
+    get_boinc_bin_name("milkyway_nbody_graphics" "${nbody_VERSION}" "")
+    set_target_properties(milkyway_nbody_graphics
+                            PROPERTIES
+                              OUTPUT_NAME ${BOINC_BIN_NAME})
+  endif()
 endif()
 
 
