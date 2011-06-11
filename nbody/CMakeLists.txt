@@ -1,19 +1,19 @@
-# Copyright 2010 Matthew Arsenault, Travis Desell, Dave Przybylo,
+# Copyright 2010-2011 Matthew Arsenault, Travis Desell, Dave Przybylo,
 # Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
 # Magdon-Ismail and Rensselaer Polytechnic Institute.
-
+#
 # This file is part of Milkway@Home.
-
+#
 # Milkyway@Home is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-
+#
 # Milkyway@Home is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-
+#
 # You should have received a copy of the GNU General Public License
 # along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -33,6 +33,7 @@ include(StaticBOINC)
 include(SpecialLibs)
 include(PrintInfo)
 include(CheckSSE2)
+include(BOINCPaths)
 include(CMakeDependentOption)
 
 cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" ON
@@ -302,7 +303,6 @@ if(BOINC_RELEASE_NAMES)
     set(NBODY_PLAN "mt")
   else()
     if(HAVE_SSE2)
-
       set(NBODY_PLAN "sse2")
     endif()
   endif()
@@ -320,13 +320,15 @@ if(BOINC_RELEASE_NAMES)
   endif()
 endif()
 
+install(TARGETS milkyway_nbody
+          RUNTIME DESTINATION ${MILKYWAY_PROJECT_DIRECTORY})
 
-
-install(TARGETS milkyway_nbody nbody_simulation nbody_lua
-          RUNTIME       DESTINATION bin
-          ARCHIVE       DESTINATION lib
-          PUBLIC_HEADER DESTINATION include)
-
+if(NBODY_GL)
+  install(TARGETS milkyway_nbody_graphics
+          RUNTIME DESTINATION ${MILKYWAY_PROJECT_DIRECTORY})
+  get_target_property(NBODY_GRAPHICS_BIN_NAME milkyway_nbody_graphics OUTPUT_NAME)
+  set(NBODY_GRAPHICS_BIN_NAME ${NBODY_GRAPHICS_BIN_NAME} PARENT_SCOPE)
+endif()
 
 
 configure_file (

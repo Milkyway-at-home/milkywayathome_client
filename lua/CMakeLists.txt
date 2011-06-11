@@ -138,8 +138,8 @@ set(LUA_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "lua headers"
 set(LUA_INTERPRETER $<TARGET_FILE:lua> CACHE INTERNAL "Lua interpreter")
 set(LUA_LIBRARIES lua51 ${LIBS} CACHE INTERNAL "Lua libraries")
 
-install(TARGETS lua lua51
-          RUNTIME       DESTINATION bin
-          ARCHIVE       DESTINATION lib
-          PUBLIC_HEADER DESTINATION include)
+# install(TARGETS lua lua51
+#           RUNTIME       DESTINATION bin
+#           ARCHIVE       DESTINATION lib
+#           PUBLIC_HEADER DESTINATION include)
 

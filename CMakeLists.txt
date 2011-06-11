@@ -39,6 +39,7 @@ include(SpecialLibs)
 include(CMakeDependentOption)
 include(CheckFunctionExists)
 include(Profiling)
+include(BOINCPaths)
 
 check_function_exists(stpcpy HAVE_STPCPY)
 
@@ -399,5 +400,27 @@ if(0)
   add_subdirectory(LModL EXCLUDE_FROM_ALL)
   add_subdirectory(simulation EXCLUDE_FROM_ALL)
 endif()
+
+# Getting OUTPUT_NAME property seems to not be working
+get_target_property(SEPARATION_BIN_NAME milkyway_separation LOCATION)
+get_target_property(NBODY_BIN_NAME milkyway_nbody LOCATION)
+get_target_property(NBODY_GRAPHICS_BIN_NAME milkyway_nbody_graphics LOCATION)
+
+get_filename_component(SEPARATION_BIN_NAME ${SEPARATION_BIN_NAME} NAME)
+get_filename_component(NBODY_BIN_NAME ${NBODY_BIN_NAME} NAME)
+get_filename_component(NBODY_GRAPHICS_BIN_NAME ${NBODY_GRAPHICS_BIN_NAME} NAME)
+
+add_custom_command(OUTPUT "${PROJECT_BINARY_DIR}/tools/app_info.xml"
+                    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/tools"
+                    COMMAND ${LUA_INTERPRETER} "${PROJECT_SOURCE_DIR}/tools/GenerateAppInfo.lua"
+                                               "${SEPARATION_BIN_NAME}"
+                                               "${NBODY_BIN_NAME}"
+                                               "${NBODY_GRAPHICS_BIN_NAME}")
+
+
+
+add_custom_target(app_info DEPENDS "${PROJECT_BINARY_DIR}/tools/app_info.xml")
+
+install(FILES "${PROJECT_BINARY_DIR}/tools/app_info.xml" DESTINATION ${MILKYWAY_PROJECT_DIRECTORY})
 
 

@@ -247,29 +247,33 @@ if(APPLE)
                             ${MAC_LIB_SRC_DIR}/QSymbols.c
                             ${MAC_LIB_SRC_DIR}/QTaskMemory.c)
 
-  list(APPEND boinc_headers ${MAC_LIB_SRC_DIR}/dyld_gdb.h
-                            ${MAC_LIB_SRC_DIR}/mac_backtrace.h
-                            ${MAC_LIB_SRC_DIR}/QBacktrace.h
-                            ${MAC_LIB_SRC_DIR}/QCrashReport.h
-                            ${MAC_LIB_SRC_DIR}/QMachOImage.h
-                            ${MAC_LIB_SRC_DIR}/QMachOImageList.h
-                            ${MAC_LIB_SRC_DIR}/QSymbols.h
-                            ${MAC_LIB_SRC_DIR}/QTaskMemory.h)
+  list(APPEND boinc_lib_headers ${MAC_LIB_SRC_DIR}/dyld_gdb.h
+                                ${MAC_LIB_SRC_DIR}/mac_backtrace.h
+                                ${MAC_LIB_SRC_DIR}/QBacktrace.h
+                                ${MAC_LIB_SRC_DIR}/QCrashReport.h
+                                ${MAC_LIB_SRC_DIR}/QMachOImage.h
+                                ${MAC_LIB_SRC_DIR}/QMachOImageList.h
+                                ${MAC_LIB_SRC_DIR}/QSymbols.h
+                                ${MAC_LIB_SRC_DIR}/QTaskMemory.h)
 endif()
 
 add_library(boinc STATIC ${boinc_lib_src} ${boinc_lib_headers})
 add_library(boinc_api STATIC ${boinc_api_src} ${boinc_api_headers})
 add_library(boinc_graphics2 STATIC ${boinc_graphics_src} ${boinc_graphics_headers})
 
-install(TARGETS boinc boinc_api boinc_graphics2
-        ARCHIVE       DESTINATION lib
-        PUBLIC_HEADER DESTINATION include/boinc)
+# install(TARGETS boinc boinc_api boinc_graphics2
+#         ARCHIVE       DESTINATION lib
+#         PUBLIC_HEADER DESTINATION include/boinc)
+
+# install(FILES ${boinc_lib_headers} ${boinc_api_headers} ${boinc_graphics_headers}
+#         DESTINATION include/boinc)
 
 if(OPENSSL_FOUND)
   add_library(boinc_crypt STATIC ${BOINC_LIB_SRC_DIR}/crypt.cpp ${BOINC_LIB_SRC_DIR}/crypt.h)
-  install(TARGETS boinc_crypt
-            ARCHIVE       DESTINATION lib
-            PUBLIC_HEADER DESTINATION include/boinc)
+  set_target_properties(boinc_crypt PROPERTIES PUBLIC_HEADER ${BOINC_LIB_SRC_DIR}/crypt.h)
+  # install(TARGETS boinc_crypt
+  #           ARCHIVE       DESTINATION lib
+  #           PUBLIC_HEADER DESTINATION include/boinc)
 else()
   message(WARNING "OpenSSL not found. Not building libboinc_crypt")
 endif()

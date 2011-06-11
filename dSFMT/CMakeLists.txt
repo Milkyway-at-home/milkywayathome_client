@@ -49,8 +49,8 @@ add_definitions("${DSFMT_FLAGS}")
 set_property(SOURCE ${dsmft_src}
                PROPERTY COMPILE_FLAGS "${dsmft_flags}")
 
-install(TARGETS dsfmt
-          ARCHIVE       DESTINATION lib
-          PUBLIC_HEADER DESTINATION include)
+# install(TARGETS dsfmt
+#           ARCHIVE       DESTINATION lib
+#           PUBLIC_HEADER DESTINATION include)
 
 

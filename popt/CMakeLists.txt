@@ -100,9 +100,9 @@ set(POPT_LIBRARY popt CACHE INTERNAL "popt library")
 
 ########### install files ###############
 
-install(TARGETS popt
-          ARCHIVE       DESTINATION lib
-          PUBLIC_HEADER DESTINATION include)
+# install(TARGETS popt
+#           ARCHIVE       DESTINATION lib
+#           PUBLIC_HEADER DESTINATION include)
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 

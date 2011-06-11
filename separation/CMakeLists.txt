@@ -31,6 +31,7 @@ include(PrintInfo)
 include(CPUNameTest)
 include(BuildSSELevels)
 include(CMakeDependentOption)
+include(BOINCPaths)
 
 set(separation_VERSION_MAJOR 0
                CACHE INTERNAL "Separation version number")
@@ -362,8 +363,6 @@ milkyway_link(milkyway_separation ${BOINC_APPLICATION}
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 
-install(TARGETS ${separation_base_bin_name} ${separation_base_lib_name}
-          RUNTIME       DESTINATION bin
-          ARCHIVE       DESTINATION lib
-          PUBLIC_HEADER DESTINATION include)
+install(TARGETS milkyway_separation
+          RUNTIME DESTINATION ${MILKYWAY_PROJECT_DIRECTORY})
 

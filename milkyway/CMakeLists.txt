@@ -128,9 +128,9 @@ set_target_properties(milkyway PROPERTIES
                         COMPILE_DEFINITIONS "MILKYWAY_MATH_COMPILATION"
                         COMPILE_FLAGS "${milkyway_flags}")
 
-install(TARGETS milkyway milkyway_lua
-        ARCHIVE       DESTINATION lib
-        PUBLIC_HEADER DESTINATION include)
+# install(TARGETS milkyway milkyway_lua
+#         ARCHIVE       DESTINATION lib
+#         PUBLIC_HEADER DESTINATION include)
 
 
 if(MILKYWAY_OPENCL)
@@ -140,9 +140,9 @@ if(MILKYWAY_OPENCL)
                           COMPILE_DEFINITIONS "MILKYWAY_CL_COMPILATION"
                           COMPILE_FLAGS "${milkyway_flags}")
 
-install(TARGETS milkyway_cl
-        ARCHIVE       DESTINATION lib
-        PUBLIC_HEADER DESTINATION include)
+# install(TARGETS milkyway_cl
+#         ARCHIVE       DESTINATION lib
+#         PUBLIC_HEADER DESTINATION include)
 endif()
 
 

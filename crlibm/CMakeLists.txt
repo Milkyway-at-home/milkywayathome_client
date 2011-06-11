@@ -275,7 +275,7 @@ if(CRLIBM_QUIET_BUILD)
   set_target_properties(crlibm PROPERTIES COMPILE_FLAGS "-w")
 endif()
 
-install(TARGETS crlibm
-        ARCHIVE       DESTINATION lib
-        PUBLIC_HEADER DESTINATION include)
+# install(TARGETS crlibm
+#         ARCHIVE       DESTINATION lib
+#         PUBLIC_HEADER DESTINATION include)
 

@@ -55,3 +55,6 @@ popt/configmake.h
 separation/tests/stars/
 .#*
 popt/include/popt_config.h
+var/app_info.xml
+tools/app_info.xml
+
