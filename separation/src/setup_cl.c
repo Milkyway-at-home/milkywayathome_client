@@ -144,7 +144,7 @@ cl_bool findRunSizes(RunSizes* sizes,
     sizes->effectiveArea = nMod * mwDivRoundup(sizes->area, nMod);
     sizes->extra = sizes->effectiveArea - sizes->area;
 
-    warn("Keeping chunk boundaries as multiples of %zu\n", nMod);
+    warn("Keeping chunk boundaries as multiples of "ZU"\n", nMod);
 
     if (sizes->effectiveArea / sizes->nChunk < nMod)
     {
