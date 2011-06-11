@@ -33,8 +33,11 @@ tests/astronomy_parameters.txt
 Testing/
 tools/GenerateTests
 tools/GenerateTests.hi
-nbody/include/nbody_config.h
+nbody_config.h
+milkyway_config.h
+separation_config.h
 stderr.txt
+stderrgfx.txt
 nbody/thirdparty/dSFMT*
 nbody/include/crlibm.h
 nbody/include/crlibm_config.h
@@ -57,4 +60,7 @@ separation/tests/stars/
 popt/include/popt_config.h
 var/app_info.xml
 tools/app_info.xml
-
+install_manifest.txt
+include/luaconf.h
+boinc/boinc
+AllInOneFile.c

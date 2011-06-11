@@ -1,78 +1,18 @@
-
-Build instructions:
-
-basic build:
-    $ cmake path/to/source
-    $ make
-
-Tests can be run with:
-    $ make check
-
-Default build type is release. To enable debugging
-    $ cmake /path/to/source/checkout -DCMAKE_BUILD_TYPE=Debug
-
-    e.g, in the checkout directory,
-    $ cmake .
-
-Options can be passed to cmake with -D. cmake will walk you through
-various options if you run it with -i, such as
-
-  $ cmake -i .
-
- Example options:
-    $ cmake . -DBOINC_APPLICATION=OFF -DCMAKE_C_COMPILER=/usr/bin/clang
-
-Common ON/OFF options:
-  BOINC_APPLICATION: Build with BOINC or not. More convenient to not use BOINC for general use, testing
-  STATIC_EVERYTHING: Statically link everything.
-  BOINC_RELEASE_NAME: Use the long names BOINC uses which include
-  version and system information
-  DOUBLEPREC: Use doubles (on by default, and quite likely to not work)
-  NBODY_OPENMP: Use OpenMP for multithreaded nbody
-
-
-Notes:
-
-Recommended compilers:
-  separation: clang
-  nbody: gcc
-
-  MSVC should work with separation, and won't with N-body
-  A popt which builds with MSVC: https://github.com/arsenm/POPT
-
-Dependencies:
-  () = optional for a functioning build
-  separation: popt, (boinc)
-  nbody: popt, lua, (boinc) (crlibm) (libssl)
-
-  On Ubuntu / Debian:
-    $ apt-get install cmake libpopt-dev boinc-dev liblua5.1-0-dev libssl-dev
-
-  Macports:
-    $ port install cmake popt json-c
-
-    Build BOINC libraries yourself
-
-MinGW:
-  build with -DCMAKE_INSTALL_PREFIX=/usr/local for some reason helps find things
-
-
-Notes:
-  - Consistent N-body results between different systems require crlibm
-  and SSE2 (at least on x86, not sure about other architectures)
-
-  - All give usage with --help/-? arguments
+--------------------------------------------------------------------------------
+Separation:
 
   - separation will do a separation after the integration if given an
     output file. There is also an argument to set the random number seed.
 
-  - Returning nil from makePotential() for N-body will run the
-    simulation without an external potential
-
-
 
 --------------------------------------------------------------------------------
 Nbody:
+
+  - Consistent N-body results between different systems require crlibm
+  and SSE2 (at least on x86, not sure about other architectures)
+
+  - Returning nil from makePotential() for N-body will run the
+    simulation without an external potential
 
 Tests can be run by running:
   $ make test
@@ -88,10 +28,11 @@ Tests can be run by running:
 
   Currently n = 100, 1024, 10000 are available.
 
-
 --------------------------------------------------------------------------------
 
 Random notes:
+
+ - All give usage with --help/-? arguments
 
 make nbody_release and make separation_release will produce release
 tarballs if git and xz are installed and found.
