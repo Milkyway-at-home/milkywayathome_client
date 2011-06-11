@@ -320,6 +320,11 @@ if(SYSTEM_IS_X86)
                           COMPILE_FLAGS "${DISABLE_SSE3_FLAGS}")
 endif()
 
+if(SYSTEM_IS_X86_64)  # We must set SSE2 flags for MSVC since it doesn't define __SSE2__ on its own
+    set_target_properties(separation_core PROPERTIES
+                            COMPILE_FLAGS "${SSE2_FLAGS} ${DISABLE_SSE3_FLAGS}")
+endif()
+
 # Don't build redundant library on x86_64 or OS X where we know we have SSE3
 if(SYSTEM_IS_X86_32 AND HAVE_SSE2)
     add_library(separation_core_sse2 STATIC src/probabilities.c include/probabilities.h)

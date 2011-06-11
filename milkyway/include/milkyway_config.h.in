@@ -114,17 +114,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* ${CMAKE_SYSTEM_PROCESSOR} seems to always give i386 even on OS X 64 */
 
-/* FIXME: This would be totally wrong when using a universal binary */
-#if defined(__i386__) || defined(_M_IX86)
+#if defined(__x86_64__) || defined(_M_X64)
+  #define ARCH_STRING "x86_64"
+  #define MW_IS_X86_64 1
+  #define MW_IS_X86 1
+#elif defined(__i386__) || defined(_M_IX86)
   #define ARCH_STRING "x86"
   #define MW_IS_X86_32 1
   #define MW_IS_X86 1
 #elif defined(__powerpc__) || defined(__ppc__) || defined(_M_PPC)
   #define ARCH_STRING "PPC"
-#elif defined(__x86_64__) || defined(_M_X64)
-  #define ARCH_STRING "x86_64"
-  #define MW_IS_X86_64 1
-  #define MW_IS_X86 1
 #elif defined(__ppc64__)
   #define ARCH_STRING "PPC64"
 #elif defined(__arm__) || defined(__arm)
