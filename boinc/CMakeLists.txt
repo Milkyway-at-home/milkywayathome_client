@@ -188,7 +188,7 @@ set(boinc_lib_headers boinc/version.h
                       ${BOINC_LIB_SRC_DIR}/util.h
                       ${BOINC_LIB_SRC_DIR}/coproc.h
                       ${BOINC_LIB_SRC_DIR}/cal_boinc.h
-	                  ${BOINC_LIB_SRC_DIR}/cl_boinc.h
+                      ${BOINC_LIB_SRC_DIR}/cl_boinc.h
                       boinc/svn_version.h
                       boinc/win_build/config.h
                       ${BOINC_LIB_SRC_DIR}/str_util.h
@@ -198,7 +198,7 @@ set(boinc_lib_src ${BOINC_LIB_SRC_DIR}/util.cpp
                   ${BOINC_LIB_SRC_DIR}/app_ipc.cpp
                   ${BOINC_LIB_SRC_DIR}/diagnostics.cpp
                   ${BOINC_LIB_SRC_DIR}/filesys.cpp
-	              ${BOINC_LIB_SRC_DIR}/hostinfo.cpp
+                  ${BOINC_LIB_SRC_DIR}/hostinfo.cpp
                   ${BOINC_LIB_SRC_DIR}/md5.c
                   ${BOINC_LIB_SRC_DIR}/md5_file.cpp
                   ${BOINC_LIB_SRC_DIR}/mem_usage.cpp
@@ -206,7 +206,7 @@ set(boinc_lib_src ${BOINC_LIB_SRC_DIR}/util.cpp
                   ${BOINC_LIB_SRC_DIR}/miofile.cpp
                   ${BOINC_LIB_SRC_DIR}/parse.cpp
                   ${BOINC_LIB_SRC_DIR}/prefs.cpp
-	              ${BOINC_LIB_SRC_DIR}/proxy_info.cpp
+                  ${BOINC_LIB_SRC_DIR}/proxy_info.cpp
                   ${BOINC_LIB_SRC_DIR}/str_util.cpp
                   ${BOINC_LIB_SRC_DIR}/shmem.cpp
                   ${BOINC_LIB_SRC_DIR}/base64.cpp
@@ -319,7 +319,7 @@ set(boinc_client_src ${BOINC_CLIENT_SRC_DIR}/acct_mgr.cpp
                      ${BOINC_CLIENT_SRC_DIR}/client_msgs.cpp
                      ${BOINC_CLIENT_SRC_DIR}/client_state.cpp
                      ${BOINC_CLIENT_SRC_DIR}/client_types.cpp
-	                 ${BOINC_CLIENT_SRC_DIR}/coproc_detect.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/coproc_detect.cpp
                      ${BOINC_CLIENT_SRC_DIR}/cpu_sched.cpp
                      ${BOINC_CLIENT_SRC_DIR}/cs_account.cpp
                      ${BOINC_CLIENT_SRC_DIR}/cs_apps.cpp
@@ -333,7 +333,7 @@ set(boinc_client_src ${BOINC_CLIENT_SRC_DIR}/acct_mgr.cpp
                      ${BOINC_CLIENT_SRC_DIR}/cs_scheduler.cpp
                      ${BOINC_CLIENT_SRC_DIR}/cs_statefile.cpp
                      ${BOINC_CLIENT_SRC_DIR}/cs_trickle.cpp
-	                 ${BOINC_CLIENT_SRC_DIR}/current_version.cpp
+                     ${BOINC_CLIENT_SRC_DIR}/current_version.cpp
                      ${BOINC_CLIENT_SRC_DIR}/dhrystone.cpp
                      ${BOINC_CLIENT_SRC_DIR}/dhrystone2.cpp
                      ${BOINC_CLIENT_SRC_DIR}/file_names.cpp

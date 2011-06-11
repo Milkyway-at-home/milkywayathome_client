@@ -6,6 +6,7 @@
 
 #ifdef __APPLE__
   /* Needed for socklen_t */
+  #include <sys/types.h>
   #include <sys/socket.h>
 #endif /* __APPLE__ */
 

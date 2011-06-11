@@ -10,6 +10,16 @@ cmake_minimum_required ( VERSION 2.6 )
 include(PreferStatic)
 include(IgnoreWarningFlags)
 
+if(APPLE)
+    # Apple GCC extension that breaks with macports GCC on PowerPC
+    # It is the same as __attribute__((visibility("hidden")))
+    try_compile(HAVE_PRIVATE_EXTERN ${PROJECT_SOURCE_DIR}/cmake_modules ${PROJECT_SOURCE_DIR}/cmake_modules/test_private_extern.c)
+    if(NOT HAVE_PRIVATE_EXTERN)
+      add_definitions("-D__private_extern__=__attribute__((visibility(\"hidden\")))")
+    endif()
+endif()
+
+
 ## CONFIGURATION
 # Default configuration (we assume POSIX by default)
 set ( LUA_PATH "LUA_PATH" CACHE STRING "Environment variable to use as package.path." )
