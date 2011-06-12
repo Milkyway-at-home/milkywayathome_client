@@ -229,8 +229,10 @@ const char** mwGetForwardedArguments(const char** args, unsigned int* nForwarded
 int mwDisableDenormalsSSE();
 #endif /* defined(__SSE__) && DISABLE_DENORMALS */
 
-void mwSetConsistentx87FPUPrecision();
+unsigned long long mwFixFPUPrecision();
 void mwDisableErrorBoxes();
+
+
 
 #ifdef __cplusplus
 }

@@ -144,11 +144,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #endif
 #endif /* DOUBLEPREC */
 
-#if !HAVE_SSE_MATHS && defined(_WIN32) && !defined(_WIN64)
-  /* 32 bit Windows without SSE2 */
-  #define WINDOWS_USES_X87 1
-#endif
-
 #ifdef _MSC_VER
   #define MW_ALIGN(x) __declspec(align(x))
 #else

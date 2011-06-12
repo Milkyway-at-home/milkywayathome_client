@@ -39,6 +39,19 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "mw_boinc_util.h"
 
+#if MW_IS_X86
+  #if HAVE_FPU_CONTROL_H
+    #include <fpu_control.h>
+  #endif
+  #ifndef _FPU_SETCW
+    #define _FPU_SETCW(cw) __asm__ ("fldcw %0" : : "m" (*&cw))
+  #endif
+  #ifndef _FPU_GETCW
+    #define _FPU_GETCW(cw) __asm__ ("fnstcw %0" : "=m" (*&cw))
+  #endif
+#endif /* MW_IS_X86 */
+
+
 void* mwCalloc(size_t count, size_t size)
 {
     void* mem = (void*) calloc(count, size);
@@ -299,27 +312,6 @@ int mwDisableDenormalsSSE()
 
 #endif /* defined(__SSE__) && DISABLE_DENORMALS */
 
-
-#if WINDOWS_USES_X87
-
-void mwSetConsistentx87FPUPrecision()
-{
-#if defined(_WIN32) && defined(_MSC_VER)
-    //unsigned int control_word_x87;
-    //control_word_x87 = __control87_2(_PC_64
-    /* Set x87 intermediate rounding precision to 64 bits */
-    warn("Setting FPU precision\n");
-    _controlfp(_MCW_PC, _PC_64);
-#else
-  #warning Setting FPU flags with MinGW broken
-#endif
-}
-
-#else
-
-void mwSetConsistentx87FPUPrecision() { }
-
-#endif
 
 /* From the extra parameters, read them as doubles */
 real* mwReadRestArgs(const char** rest, unsigned int n)
@@ -613,4 +605,42 @@ int mwSetProcessPriority(MWPriority priority)
 }
 
 #endif /* _WIN32 */
+
+
+/*  From crlibm */
+unsigned long long mwFixFPUPrecision()
+{
+#if defined(HAVE_FPU_CONTROL_H) && MW_IS_X86
+
+  #if defined(_MSC_VER) || defined(__MINGW32__)
+  unsigned int oldcw, cw;
+
+  /* CHECKME */
+  oldcw = _controlfp(0, 0);
+  _controlfp(_PC_53, MCW_PC);
+
+  return (unsigned long long) oldcw;
+
+  #elif defined(__SUNPRO_C)  /* Sun Studio  */
+  unsigned short oldcw, cw;
+
+  __asm__ ("movw    $639, -22(%ebp)");
+  __asm__ ("fldcw -22(%ebp)");
+
+  return (unsigned long long) oldcw;
+  #else /* GCC, clang */
+  unsigned short oldcw, cw;
+
+    /* save old state */
+  _FPU_GETCW(oldcw);
+  /* Set FPU flags to use double, not double extended,
+     with rounding to nearest */
+  cw = (_FPU_DEFAULT & ~_FPU_EXTENDED)|_FPU_DOUBLE;
+  _FPU_SETCW(cw);
+  return (unsigned long long) oldcw;
+  #endif /* defined(_MSC_VER) || defined(__MINGW32__) */
+#else /* */
+  return 0;
+#endif /* defined(HAVE_FPU_CONTROL_H) && MW_IS_X86 */
+}
 

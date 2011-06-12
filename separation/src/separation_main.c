@@ -126,7 +126,7 @@ static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
     setCommonFlags(clr, sf);
 }
 
-#endif /* SEFPARATION_OPENCL */
+#endif /* SEPARATION_OPENCL */
 
 
 /* Returns the newly allocated array of parameters */
@@ -429,6 +429,8 @@ static int separationInit(int debugBOINC, MWPriority priority, int setPriority)
   #if DISABLE_DENORMALS
     mwDisableDenormalsSSE();
   #endif
+
+    mwFixFPUPrecision();
 
     if (debugBOINC)
         initType |= MW_DEBUG;

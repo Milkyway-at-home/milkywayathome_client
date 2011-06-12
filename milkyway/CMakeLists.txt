@@ -28,6 +28,7 @@ include(StaticBOINC)
 
 check_function_exists(asprintf HAVE_ASPRINTF)
 check_include_files(tgmath.h HAVE_TGMATH_H)
+check_include_files(fpu_control.h HAVE_FPU_CONTROL_H)
 if(NOT DOUBLEPREC AND NOT HAVE_TGMATH_H)
   message(FATAL_ERROR "Float requires tgmath.h")
 endif()
