@@ -23,6 +23,13 @@
 #ifndef _REAL_H_
 #define _REAL_H_
 
+
+/* We need to pull in the __GLIBC__ macros for our lazy check of
+ * broken tgmath, and this is the recommended header to use for that
+ * purpose
+ */
+#include <limits.h>
+
 #if (defined (_WIN32) && defined(_MSC_VER))
   #if DOUBLEPREC
     typedef double real;
