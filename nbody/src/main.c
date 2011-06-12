@@ -316,7 +316,7 @@ static void setNumThreads(int numThreads) { }
 
 #endif /* _OPENMP */
 
-int main(int argc, char* argv[])
+int main(int argc, const char* argv[])
 {
     NBodyFlags nbf = EMPTY_NBODY_FLAGS;
     int rc = 0;

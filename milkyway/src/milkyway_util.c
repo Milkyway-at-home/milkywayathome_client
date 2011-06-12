@@ -416,7 +416,7 @@ int mwReadArguments(poptContext context)
  * POPT_CONTEXT_POSIXMEHARDER, which results in them being
  * interpreted as wrong options and then erroring.
  */
-const char** mwFixArgv(int argc, const char** argv)
+const char** mwFixArgv(int argc, const char* argv[])
 {
     const char** argvCopy;
     const char** p;

@@ -91,10 +91,10 @@ void prob_ok_init(uint32_t seed, int setSeed)
 
 /* FIXME: WTF? */
 /* FIXME: lack of else leads to possibility of returned garbage */
-/* determines if star with prob p should be separrated into stream */
+/* determines if star with prob p should be separated into stream */
 int prob_ok(StreamStats* ss, int n)
 {
-    int ok = 0;
+    int s_ok = 0;
     real r;
     real step1, step2, step3;
 
@@ -104,30 +104,30 @@ int prob_ok(StreamStats* ss, int n)
     {
         case 1:
             if (r > ss[0].sprob)
-                ok = 0;
+                s_ok = 0;
             else
-                ok = 1;
+                s_ok = 1;
             break;
         case 2:
             step1 = ss[0].sprob + ss[1].sprob;
             if (r > step1)
-                ok = 0;
+                s_ok = 0;
             else if (r < ss[0].sprob)
-                ok = 1;
+                s_ok = 1;
             else if (r > ss[0].sprob && r <= step1)
-                ok = 2;
+                s_ok = 2;
             break;
         case 3:
             step1 = ss[0].sprob + ss[1].sprob;
             step2 = ss[0].sprob + ss[1].sprob + ss[2].sprob;
             if (r > step2)
-                ok = 0;
+                s_ok = 0;
             else if (r < ss[0].sprob)
-                ok = 1;
+                s_ok = 1;
             else if (r > ss[0].sprob && r <= step1)
-                ok = 2;
+                s_ok = 2;
             else if (r > step1 && r <= step2)
-                ok = 3;
+                s_ok = 3;
             /* CHECKME: else? */
             break;
         case 4:
@@ -135,21 +135,21 @@ int prob_ok(StreamStats* ss, int n)
             step2 = ss[0].sprob + ss[1].sprob + ss[2].sprob;
             step3 = ss[0].sprob + ss[1].sprob + ss[2].sprob + ss[3].sprob;
             if (r > step3)
-                ok = 0;
+                s_ok = 0;
             else if (r <= ss[0].sprob)
-                ok = 1;
+                s_ok = 1;
             else if (r > ss[0].sprob && r <= step1)
-                ok = 2;
+                s_ok = 2;
             else if (r > step1 && r <= step2)
-                ok = 3;
+                s_ok = 3;
             else if (r > step2 && r <= step3)
-                ok = 4;
+                s_ok = 4;
             break;
         default:
             mw_panic("Too many streams (%d > %d) to separate using current code\n", n, 4);
     }
 
-    return ok;
+    return s_ok;
 }
 
 SeparationResults* newSeparationResults(unsigned int numberStreams)
