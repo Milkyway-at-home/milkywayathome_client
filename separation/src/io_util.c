@@ -225,6 +225,8 @@ void printSeparationResults(const SeparationResults* results, unsigned int numbe
 {
     unsigned int i;
 
+    mw_begin_critical_section();
+
     /* Print integrals */
     warn("<background_integral> %.15f </background_integral>\n", results->backgroundIntegral);
     warn("<stream_integral> ");
@@ -241,6 +243,8 @@ void printSeparationResults(const SeparationResults* results, unsigned int numbe
 
     /* Print overall likelihood */
     warn("<search_likelihood> %.15f </search_likelihood>\n", results->likelihood);
+
+    mw_end_critical_section();
 }
 
 /* FIXME: Kill this with fire when we switch to JSON everything for separation */
