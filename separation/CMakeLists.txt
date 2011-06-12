@@ -327,6 +327,7 @@ if(SYSTEM_IS_X86_64)  # We must set SSE2 flags for MSVC since it doesn't define 
 endif()
 
 # Don't build redundant library on x86_64 or OS X where we know we have SSE3
+# FIXME?: If compiler doesn't support SSE2 this will fail. I don't think I care.
 if(SYSTEM_IS_X86_32 AND HAVE_SSE2)
     add_library(separation_core_sse2 STATIC src/probabilities.c include/probabilities.h)
     list(APPEND separation_core_libs separation_core_sse2)
@@ -339,7 +340,6 @@ if(SYSTEM_IS_X86 AND HAVE_SSE3)
     set_target_properties(separation_core_sse3 PROPERTIES
                             COMPILE_FLAGS "${SSE3_FLAGS}")
 endif()
-
 
 
 
