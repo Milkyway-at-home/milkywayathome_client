@@ -29,8 +29,8 @@ Dependency Installation Notes:
 
                 $ port install cmake git-core
 
-                - To build as 32 bit, or as a universal binary, set CMAKE_OSX_ARCHITECTURES
-
+                - To build as 32 bit, or as a universal binary (no PPC), build with
+                  -DBUILD_OSX_32=ON or -DBUILD_OSX_UNIVERSAL=ON
 
     Windows:
         - Visual Studio 2010 should work for Separation, but not N-body

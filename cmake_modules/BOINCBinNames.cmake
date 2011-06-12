@@ -34,6 +34,8 @@ function(get_boinc_bin_name basename version plan)
     endif()
   elseif(UNIX)
     if(APPLE)
+      # FIXME: Does not work correctly when using CMAKE_OSX_ARCHITECTURES
+      # for some reason, and you get the 64 bit one anyway
       if(SYSTEM_IS_64 AND SYSTEM_IS_X86)
         set(boinc_sys_name "x86_64-apple-darwin")
       elseif(NOT SYSTEM_IS_64 AND SYSTEM_IS_x86)

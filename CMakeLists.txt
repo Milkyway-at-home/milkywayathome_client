@@ -145,8 +145,19 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(MW_ENABLE_DEBUG ON)
 endif()
 
-#set(CMAKE_OSX_ARCHITECTURES i386;x86_64)
-#set(CMAKE_OSX_ARCHITECTURES i386)
+if(APPLE)
+  option(BUILD_OSX_32 "32 bit build on OS X" OFF)
+  option(BUILD_OSX_UNIVERSAL "32-64 bit x86 universal build on OS X" OFF)
+
+  # TODO: If using this, it seems only the Apple GCC works
+  if(BUILD_OSX_32)
+    set(CMAKE_OSX_ARCHITECTURES i386)
+  endif()
+  if(BUILD_OSX_UNIVERSAL)
+    set(CMAKE_OSX_ARCHITECTURES i386;x86_64)
+  endif()
+endif()
+
 
 option(SEPARATION_OPENCL
         "Build the OpenCL separation" OFF)
