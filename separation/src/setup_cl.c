@@ -152,12 +152,31 @@ cl_bool findRunSizes(RunSizes* sizes,
         warn("Warning: Estimated number of chunks ("ZU") too large. Using "ZU"\n", sizes->nChunkEstimate, sizes->nChunk);
     }
 
-    sizes->chunkBorders = mwCallocA((sizes->nChunk + 1), sizeof(size_t));
+    if (nMod == 1)
+    {
+        /* When nMod = 1 we need to avoid losing pieces at the
+         * beginning and end; the normal method doesn't quite work. */
+        while (sizes->nChunk * (sizes->effectiveArea / sizes->nChunk) < sizes->effectiveArea)
+        {
+            sizes->nChunk++;
+        }
+        warn("Need to use "ZU" chunks to cover area using multiples of 1\n", sizes->nChunk);
+    }
 
+    sizes->chunkBorders = mwCallocA((sizes->nChunk + 1), sizeof(size_t));
     for (i = 0; i <= sizes->nChunk; ++i)
     {
-        sizes->chunkBorders[i] = (i * sizes->effectiveArea + sizes->nChunk) / (sizes->nChunk * nMod);
-        sizes->chunkBorders[i] *= nMod;
+        if (nMod == 1)
+        {
+            /* Avoid losing out the 0 border */
+            sizes->chunkBorders[i] = i * (sizes->effectiveArea / sizes->nChunk);
+        }
+        else
+        {
+            sizes->chunkBorders[i] = (i * sizes->effectiveArea + sizes->nChunk) / (sizes->nChunk * nMod);
+            sizes->chunkBorders[i] *= nMod;
+        }
+
         if (sizes->chunkBorders[i] > sizes->effectiveArea)
             sizes->chunkBorders[i] = sizes->effectiveArea;
 
