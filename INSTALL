@@ -29,6 +29,9 @@ Dependency Installation Notes:
 
                 $ port install cmake git-core
 
+                - To build as 32 bit, or as a universal binary, set CMAKE_OSX_ARCHITECTURES
+
+
     Windows:
         - Visual Studio 2010 should work for Separation, but not N-body
         - MinGW: Try using TDM-GCC http://tdm-gcc.tdragon.net/

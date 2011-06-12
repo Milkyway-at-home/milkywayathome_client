@@ -81,14 +81,20 @@ ProbabilityFunc probabilityFunc = NULL;
 
 static void getSSELevelSupport(int* hasSSE2, int* hasSSE3)
 {
+#ifndef __APPLE__
     /* http://peter.kuscsik.com/drupal/?q=node/10 */
     unsigned int eax, ebx, ecx, edx;
     cpuid(1, eax, ebx, ecx, edx);
 
     *hasSSE2 = !!(edx & bit_SSE2);
     *hasSSE3 = !!(ecx & bit_SSE3);
+#else
+    /* Something weird happens with this inline asm in Apple GCC that I
+     * don't feel like figuring out now */
+    *hasSSE2 = TRUE;
+    *hasSSE3 = TRUE;
+#endif /* __APPLE__ */
 }
-
 
 
 #else
@@ -144,7 +150,7 @@ static void probabilityFunctionDispatch(const AstronomyParameters* ap, const CLR
     }
     else
     {
-      #if !MW_IS_X86_64
+      #if !MW_NO_X87_EVER
         warn("Using x87 path\n");
         probabilityFunc = initProbabilities(ap, clr->forceNoIntrinsics);
       #else

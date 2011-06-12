@@ -338,7 +338,7 @@ if(SYSTEM_IS_X86 AND HAVE_SSE3)
     add_library(separation_core_sse3 STATIC src/probabilities.c include/probabilities.h)
     list(APPEND separation_core_libs separation_core_sse3)
     set_target_properties(separation_core_sse3 PROPERTIES
-                            COMPILE_FLAGS "${SSE3_FLAGS}")
+                            COMPILE_FLAGS "${SSE2_FLAGS} ${SSE3_FLAGS}")
 endif()
 
 

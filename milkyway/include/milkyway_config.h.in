@@ -161,6 +161,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define VC_EXTRALEAN
 #endif /* _WIN32 */
 
+#if defined(__APPLE__) || MW_IS_X86_64
+  #define MW_NO_X87_EVER 1
+#endif
 
 #endif /* _MILKYWAY_CONFIG_H_ */
 
