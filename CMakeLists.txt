@@ -70,7 +70,7 @@ option(BOINC_APPLICATION
        "Run as BOINC application or independently" ON)
 
 option(BOINC_RELEASE
-       "Build with all options for making an actual release" OFF)
+       "Build with all options for making an actual release" ON)
 
 option(DOUBLEPREC
        "Build with double precision" ON)
@@ -88,7 +88,7 @@ option(DISABLE_DENORMALS
 mark_as_advanced(DISABLE_DENORMALS)
 
 option(BOINC_RELEASE_NAMES
-       "Use BOINC platform binary names" OFF)
+       "Use BOINC platform binary names" ON)
 mark_as_advanced(BOINC_RELEASE_NAMES)
 
 
