@@ -115,6 +115,14 @@ static void probabilityFunctionDispatch(const AstronomyParameters* ap, const CLR
 
     getSSELevelSupport(&hasSSE2, &hasSSE3);
 
+    if (clr->verbose)
+    {
+        warn("CPU features: SSE2 = %d, SSE3 = %d\n"
+             "Forcing: SSE2 = %d, SSE3 = %d, x87 = %d\n",
+             hasSSE2, hasSSE3,
+             clr->forceSSE2, clr->forceSSE3, clr->forceX87);
+    }
+
     if (!clr->forceSSE2 && !clr->forceSSE3 && !clr->forceX87)
     {
         /* Default to using highest capability if not forcing anything */

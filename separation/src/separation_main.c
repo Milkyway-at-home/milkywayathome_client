@@ -239,13 +239,13 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
             0, "CL Platform vendor name to try to use", NULL
         },
 
+      #endif /* SEPARATION_OPENCL */
+
         {
             "verbose", '\0',
             POPT_ARG_NONE, &sf.verbose,
             0, "Print some extra debugging information", NULL
         },
-
-      #endif /* SEPARATION_OPENCL */
 
         {
             "force-no-intrinsics", '\0',
