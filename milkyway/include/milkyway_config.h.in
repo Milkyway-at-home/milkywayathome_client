@@ -85,7 +85,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 /* Apple's GCC 4.2 has many features backported, so it counts as a newer GCC even though it isn't. */
-#if defined(__APPLE__) && (__GNUC__ >= 4 && __GNUC_MINOR__ >= 2)
+#if defined(__APPLE__) && (__GNUC__ >= 4 && __GNUC_MINOR__ >= 0)
   #define _MW_NEW_APPLE_GCC
 #endif
 
