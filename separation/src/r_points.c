@@ -59,7 +59,7 @@ real calcReffXrRp3(real coords, real gPrime)
     return reff_xr_rp3;
 }
 
-real calcG(const real coords)
+real calcG(real coords)
 {
     return 5.0 * (mw_log10(1000.0 * coords) - 1.0) + absm;
 }
