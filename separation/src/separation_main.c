@@ -475,6 +475,63 @@ static int separationSpecialCleanup()
     return 0;
 }
 
+#if BOINC_APPLICATION
+/* If using BOINC try readinga few of the settings from the project
+ * preferences. If command line arguments are used, those will
+ * override the preferences. The command line arguments will also
+ * still work without BOINC */
+static void separationReadPreferences(SeparationFlags* sf)
+{
+    MWAppInitData aid;
+
+    static struct
+    {
+        double gpuTargetFrequency;
+        int gpuNonResponsive;
+        int gpuProcessPriority;
+        int gpuPollingMode;
+        int gpuDisableCheckpoint;
+    } prefs;
+
+    static MWProjectPrefs sepPrefs[] =
+        {
+            { "gpu_target_frequency", MW_PREF_DOUBLE, FALSE, &prefs.gpuTargetFrequency   },
+            { "gpu_non_responsive",   MW_PREF_BOOL,   FALSE, &prefs.gpuNonResponsive     },
+            { "gpu_process_priority", MW_PREF_BOOL,   FALSE, &prefs.gpuProcessPriority   },
+            { "gpu_polling_mode",     MW_PREF_INT,    FALSE, &prefs.gpuPollingMode       },
+            { "no_gpu_checkpoint",    MW_PREF_BOOL,   FALSE, &prefs.gpuDisableCheckpoint },
+            END_MW_PROJECT_PREFS
+        };
+
+    prefs.gpuTargetFrequency   = DEFAULT_TARGET_FREQUENCY;
+    prefs.gpuNonResponsive     = DEFAULT_NON_RESPONSIVE;
+    prefs.gpuProcessPriority   = DEFAULT_GPU_PRIORITY;
+    prefs.gpuPollingMode       = DEFAULT_POLLING_MODE;
+    prefs.gpuDisableCheckpoint = DEFAULT_DISABLE_GPU_CHECKPOINTING;
+
+    if (mwGetMWAppInitData(&aid))
+    {
+        warn("Error reading app init data. Project preferences will not be used\n");
+    }
+    else
+    {
+        char* sample = mwReadFile("/home/matt/src/milkywayathome_client/separation/account_milkyway.cs.rpi.edu_milkyway.xml");
+        warn("project prefs:\n'%s'\n", aid.projectPrefs);
+        mwReadProjectPrefs(sepPrefs, sample);
+
+        free(sample);
+    }
+
+    /* Any successfully found setting will be used; otherwise it will get the default */
+    sf->targetFrequency = prefs.gpuTargetFrequency;
+    sf->nonResponsive = prefs.gpuNonResponsive;
+    sf->processPriority = prefs.gpuProcessPriority;
+    sf->pollingMode = prefs.gpuPollingMode;
+    sf->disableGPUCheckpointing = prefs.gpuDisableCheckpoint;
+}
+
+#endif /* BOINC_APPLICATION */
+
 
 #ifdef MILKYWAY_IPHONE_APP
   #define main _iphone_main
@@ -483,12 +540,16 @@ static int separationSpecialCleanup()
 int main(int argc, const char* argv[])
 {
     int rc;
-    SeparationFlags sf = EMPTY_SEPARATION_FLAGS;
+    static SeparationFlags sf = EMPTY_SEPARATION_FLAGS;
     const char** argvCopy;
 
   #ifdef NDEBUG
     mwDisableErrorBoxes();
   #endif /* NDEBUG */
+
+  #if BOINC_APPLICATION
+    separationReadPreferences(&sf);
+  #endif /* BOINC_APPLICATION */
 
     argvCopy = mwFixArgv(argc, argv);
     rc = parseParameters(argc, argvCopy, &sf);

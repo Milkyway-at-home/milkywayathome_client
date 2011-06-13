@@ -177,3 +177,129 @@ int mw_rename(const char* oldf, const char* newf)
 #endif /* BOINC_APPLICATION */
 
 
+
+#define MAX_TAG_NAME_LENGTH 256
+
+static char* matchTagName(const char* prefs, const char* name)
+{
+    int rcOpen, rcClose;
+    char openTag[MAX_TAG_NAME_LENGTH];
+    char closeTag[MAX_TAG_NAME_LENGTH];
+
+    const char* openPos = NULL;
+    const char* closePos = NULL;
+    const char* beginItem = NULL;
+    size_t itemSize = 0;
+    char* item = NULL;
+
+    if (!prefs || !name)
+        return NULL;
+
+    rcOpen = snprintf(openTag, sizeof(openTag), "<%s>", name);
+    rcClose = snprintf(closeTag, sizeof(closeTag), "</%s>", name);
+    if ((size_t) rcOpen == sizeof(openTag) || (size_t) rcClose == sizeof(closeTag))
+    {
+        mw_panic("Tag buffers too small\n");
+    }
+
+    openPos = strstr(prefs, openTag);
+    if (!openPos)
+    {
+        warn("Didn't find opening tag for preference '%s'\n", name);
+        return NULL;
+    }
+
+    beginItem = openPos + rcOpen;
+    closePos = strstr(beginItem, closeTag);
+    if (!closePos)
+    {
+        warn("Didn't find close tag for preference '%s'\n", name);
+        return NULL;
+    }
+
+    itemSize = closePos - beginItem;
+    item = mwMalloc(itemSize + 1);
+    item[itemSize] = '\0';
+
+    /* no strndup() on windows */
+    strncpy(item, beginItem, itemSize);
+
+    warn("item size = %zu\n", itemSize);
+    warn("item = '%s'\n", item);
+
+    return item;
+}
+
+static int mwReadPref(MWProjectPrefs* pref, const char* prefConfig)
+{
+    char* item = NULL;
+    char* endP = NULL;
+    double d = 0.0;
+    int i = 0;
+    int rc = 0;
+
+    item = matchTagName(prefConfig, pref->name);
+    if (!item)
+    {
+        return 1;
+    }
+
+    switch (pref->type)
+    {
+        case MW_PREF_DOUBLE:
+            d = strtod(item, &endP);
+            if (item == endP)
+            {
+                rc = 1;
+                warn("Error parsing double at '%s'\n", item);
+            }
+            else
+            {
+                pref->found = TRUE;
+                *(double*) pref->value = d;
+            }
+            break;
+
+        case MW_PREF_BOOL:
+        case MW_PREF_INT:
+            i = (int) strtol(item, &endP, 10);
+            if (item == endP)
+            {
+                rc = 1;
+                warn("Error parsing int at '%s'\n", item);
+            }
+            else
+            {
+                pref->found = TRUE;
+                *(int*) pref->value = i;
+            }
+            break;
+
+        case MW_PREF_STRING:
+        case MW_PREF_NONE:
+        default:
+            mw_panic("Implement me\n");
+    }
+
+    free(item);
+
+    return rc;
+}
+
+int mwReadProjectPrefs(MWProjectPrefs* prefs, const char* prefConfig)
+{
+    int rc = 0;
+    MWProjectPrefs* p = prefs;
+
+    if (!p || !prefConfig)
+        return 1;
+
+    while (p->name)
+    {
+        rc |= mwReadPref(p, prefConfig);
+        ++p;
+    }
+
+    return rc;
+}
+

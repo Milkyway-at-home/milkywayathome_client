@@ -22,6 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_config.h"
 #include "milkyway_extra.h"
 #include "milkyway_cpp_util.h"
+#include "milkyway_util.h"
 #include <string.h>
 
 #if BOINC_APPLICATION
@@ -30,6 +31,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Work around areas broken in the BOINC libraries which make you use
  * C++ */
+
+
+void freeMWAppInitData(MWAppInitData* mwaid)
+{
+    free(mwaid->projectPrefs);
+}
 
 #if BOINC_APPLICATION
 
@@ -50,7 +57,7 @@ int mwGetMWAppInitData(MWAppInitData* mwaid)
     strncpy(mwaid->wuName, aid.wu_name, sizeof(mwaid->wuName));
     strncpy(mwaid->projectDir, aid.project_dir, sizeof(mwaid->projectDir));
     strncpy(mwaid->boincDir, aid.boinc_dir, sizeof(mwaid->boincDir));
-    strncpy(mwaid->projectPrefs, aid.project_preferences, sizeof(mwaid->projectPrefs));
+    mwaid->projectPrefs = aid.project_preferences ? strdup(aid.project_preferences) : NULL;
 
     return 0;
 }
