@@ -446,19 +446,20 @@ static int separationInit(int debugBOINC, MWPriority priority, int setPriority)
         return rc;
 
     /* For GPU versions, default to using a higher process priority if not set */
-  #if SEPARATION_OPENCL || SEPARATION_CAL
-    if (!setPriority && mwSetProcessPriority(DEFAULT_GPU_PRIORITY))
-        return 1;
-  #endif
 
     /* If a  priority was specified, use that */
-    if (setPriority && mwSetProcessPriority(priority))
-        return 1;
+    if (setPriority)
+    {
+        mwSetProcessPriority(priority);
+    }
+    else if (SEPARATION_OPENCL || SEPARATION_CAL)
+    {
+        mwSetProcessPriority(DEFAULT_GPU_PRIORITY);
+    }
 
   #if (SEPARATION_CAL || SEPARATION_OPENCL) && defined(_WIN32)
     /* We need to increase timer resolution to prevent big slowdown on windows when CPU is loaded. */
-    if (mwSetTimerMinResolution())
-        return 1;
+    mwSetTimerMinResolution();
   #endif /* SEPARATION_CAL && defined(_WIN32) */
 
     return 0;
