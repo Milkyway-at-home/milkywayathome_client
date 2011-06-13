@@ -21,6 +21,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _MILKYWAY_EXTRA_H_
 #define _MILKYWAY_EXTRA_H_
 
+#ifndef _WIN32
+  #include <inttypes.h>
+#endif
+
 /* FIXME: OpenCL bool size */
 typedef short int mwbool;
 
@@ -50,13 +54,7 @@ typedef short int mwbool;
   #define LLU "%I64u"
 #else
   #define ZU "%zu"
-
-  /* FIXME: Should correctly check sizes */
-  #ifdef __APPLE__
-    #define LLU "%llu"
-  #else
-    #define LLU "%lu"
-  #endif
+  #define LLU "%"PRIu64
 #endif /* _WIN32 */
 
 #endif /* _MILKYWAY_EXTRA_H_ */
