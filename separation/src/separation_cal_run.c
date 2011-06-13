@@ -192,8 +192,7 @@ static void printChunks(const IntegralArea* ia, const SeparationCALChunks* chunk
 static CALuint64 estimateWUFLOPsPerIter(const AstronomyParameters* ap, const IntegralArea* ia)
 {
     CALuint64 perItem, perIter;
-
-    CALuint64 tmp = 32 + ap->number_streams * 57;
+    CALuint64 tmp = 32 + ap->number_streams * 68;
     if (ap->aux_bg_profile)
         tmp += 8;
 
