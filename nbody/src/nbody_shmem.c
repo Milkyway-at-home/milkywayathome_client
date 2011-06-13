@@ -137,7 +137,7 @@ int visualizerIsAttached(const NBodyState* st)
 void launchVisualizer(NBodyState* st, const char* visArgs)
 {
     pid_t pid;
-    char* path = NULL;
+    const char* path = NULL;
     char* newPath = NULL;
     int argc = 0;
     char* buf = NULL;
@@ -200,9 +200,8 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
 
     if (poptParseArgvString(buf, &argc, (const char***) &argv))
     {
-        free(buf);
-        free(path);
         warn("Error parsing arguments for visualizer '%s'\n", visArgs);
+        free(buf);
         return;
     }
 
@@ -213,7 +212,6 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
 
     free(buf);
     free(argv);
-
     mw_finish(EXIT_SUCCESS);  /* Unnecessary */
 }
 

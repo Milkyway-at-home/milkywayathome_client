@@ -322,14 +322,17 @@ endif()
 
 install(TARGETS milkyway_nbody
           RUNTIME DESTINATION ${MILKYWAY_PROJECT_DIRECTORY})
+get_target_property(NBODY_BIN_NAME milkyway_nbody LOCATION)
+get_filename_component(NBODY_BIN_NAME ${NBODY_BIN_NAME} NAME)
+
 
 if(NBODY_GL)
   install(TARGETS milkyway_nbody_graphics
           RUNTIME DESTINATION ${MILKYWAY_PROJECT_DIRECTORY})
-  get_target_property(NBODY_GRAPHICS_BIN_NAME milkyway_nbody_graphics OUTPUT_NAME)
-  set(NBODY_GRAPHICS_BIN_NAME ${NBODY_GRAPHICS_BIN_NAME} PARENT_SCOPE)
-endif()
+  get_target_property(NBODY_GRAPHICS_BIN_NAME milkyway_nbody_graphics LOCATION)
+  get_filename_component(NBODY_GRAPHICS_BIN_NAME ${NBODY_GRAPHICS_BIN_NAME} NAME)
 
+endif()
 
 configure_file (
   "${NBODY_INCLUDE_DIR}/nbody_config.h.in"
