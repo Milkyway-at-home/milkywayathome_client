@@ -75,7 +75,7 @@ endif()
 
 # Project build selection
 option(SEPARATION "Build separation" ON)
-option(NBODY "Build nbody" ON)
+option(NBODY "Build nbody" OFF)
 
 # Normal options
 option(BOINC_APPLICATION

@@ -300,6 +300,7 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
         POPT_TABLEEND
     };
 
+    /* Workaround for BOINC arguments being appended */
     context = poptGetContext(argv[0], argc, argv, options, POPT_CONTEXT_POSIXMEHARDER);
 
     if (argc < 2)
@@ -507,12 +508,12 @@ int main(int argc, const char* argv[])
     }
 
     rc = separationInit(sf.debugBOINC, sf.processPriority, sf.setPriority);
-    free(argvCopy);
     if (rc)
         return rc;
 
     rc = worker(&sf);
 
+    free(argvCopy);
     freeSeparationFlags(&sf);
 
   #if !SEPARATION_OPENCL

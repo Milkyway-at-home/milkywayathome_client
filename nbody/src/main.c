@@ -320,11 +320,10 @@ int main(int argc, const char* argv[])
 {
     NBodyFlags nbf = EMPTY_NBODY_FLAGS;
     int rc = 0;
-    const char** argvCopy = mwFixArgv(argc, argv);
 
     specialSetup();
 
-    if (readParameters(argc, argvCopy, &nbf))
+    if (readParameters(argc, argv, &nbf))
         exit(EXIT_FAILURE);
     free(argvCopy);
 

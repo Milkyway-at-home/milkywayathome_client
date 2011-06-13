@@ -220,7 +220,7 @@ size_t mwDivRoundup(size_t a, size_t b);
 int mwCheckNormalPosNum(real n);
 int mwCheckNormalPosNumEps(real n);
 
-const char** mwFixArgv(int argc, const char* argv[]);
+const char** mwFixArgv(unsigned long argc, const char** argv);
 
 /* Loop through all arguments and report bad arguments */
 int mwReadArguments(poptContext context);
