@@ -51,8 +51,8 @@ if(APPLE)
     else()
       # Try to avoid the dyld: unknown required load command 0x80000022
       # runtime error on Leopard for binaries built on 10.6
-      set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5)
-      set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.5.sdk")
+      set(CMAKE_OSX_DEPLOYMENT_TARGET 10.4)
+      set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.4u.sdk")
 
       find_library(COREFOUNDATION_LIBRARY CoreFoundation)
       list(APPEND OS_SPECIFIC_LIBS ${COREFOUNDATION_LIBRARY})

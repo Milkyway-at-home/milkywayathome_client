@@ -112,7 +112,7 @@ endif()
 
 # No math should happen here, but just in case. Clang defaults to
 # using SSE stuffs
-if(NOT MSVC AND SYSTEM_IS_X86_32)
+if(NOT MSVC AND SYSTEM_IS_X86_32 AND NOT APPLE)
   set(milkyway_flags "${DISABLE_SSE2_FLAGS}")
 endif()
 
