@@ -57,7 +57,7 @@ endif()
 
 # Project build selection
 option(SEPARATION "Build separation" ON)
-option(NBODY "Build nbody" ON)
+option(NBODY "Build nbody" OFF)
 
 if(MSVC)
   set(NBODY OFF)
