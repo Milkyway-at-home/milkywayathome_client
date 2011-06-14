@@ -104,7 +104,7 @@ typedef struct NBODY_ALIGN _NBodyNode
     struct _NBodyNode* next;  /* link to next force-calc */
 } NBodyNode;
 
-#define EMPTY_NODE { 0, NAN, EMPTY_MWVECTOR, NULL }
+#define EMPTY_NODE { 0, 0.0, ZERO_VECTOR, NULL }
 
 #define Type(x) (((NBodyNode*) (x))->type)
 #define Mass(x) (((NBodyNode*) (x))->mass)
@@ -119,7 +119,7 @@ typedef struct NBODY_ALIGN
     mwvector vel;               /* velocity of body */
 } Body;
 
-#define EMPTY_BODY { EMPTY_NODE, EMPTY_MWVECTOR }
+#define EMPTY_BODY { EMPTY_NODE, ZERO_VECTOR }
 
 #define BODY_TYPE "Body"
 
@@ -307,7 +307,7 @@ typedef struct NBODY_ALIGN
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, NAN, 0, NULL, NULL, FALSE, NULL, NULL, NULL, -1 }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0.0, 0, NULL, NULL, FALSE, NULL, NULL, NULL, -1 }
 
 
 typedef struct
@@ -321,7 +321,7 @@ typedef struct
     real center;
 } HistogramParams;
 
-#define EMPTY_HISTOGRAM_PARAMS { NAN, NAN, NAN, NAN, NAN, NAN, NAN }
+#define EMPTY_HISTOGRAM_PARAMS { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define HISTOGRAM_PARAMS_TYPE "HistogramParams"
 
 
@@ -387,15 +387,15 @@ typedef enum
 
 
 /* Useful initializers */
-#define EMPTY_SPHERICAL { InvalidSpherical, NAN, NAN }
-#define EMPTY_DISK { InvalidDisk, NAN, NAN, NAN }
-#define EMPTY_HALO { InvalidHalo, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN }
+#define EMPTY_SPHERICAL { InvalidSpherical, 0.0, 0.0 }
+#define EMPTY_DISK { InvalidDisk, 0.0, 0.0, 0.0 }
+#define EMPTY_HALO { InvalidHalo, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 
-#define EMPTY_TREE { NULL, NAN, 0, 0, FALSE }
-#define EMPTY_NBODYCTX { EMPTY_POTENTIAL, EXTERNAL_POTENTIAL_DEFAULT, NAN, \
-                         NAN, NAN, NAN, NAN,                               \
-                         NAN, InvalidCriterion,                            \
+#define EMPTY_TREE { NULL, 0.0, 0, 0, FALSE }
+#define EMPTY_NBODYCTX { EMPTY_POTENTIAL, EXTERNAL_POTENTIAL_DEFAULT, 0.0, \
+                         0.0, 0.0, 0.0, 0.0,                               \
+                         0.0, InvalidCriterion,                            \
                          FALSE, FALSE, FALSE,                              \
                          0, 0, EMPTY_HISTOGRAM_PARAMS }
 
