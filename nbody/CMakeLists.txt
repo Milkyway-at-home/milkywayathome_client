@@ -230,16 +230,6 @@ endif()
 add_library(nbody_simulation STATIC ${nbody_lib_src} ${nbody_lib_headers})
 
 
-if(DOWNLOAD_CRLIBM)
-  add_dependencies(nbody_simulation crlibm_build)
-  set(CRLIBM_INCLUDE_DIR "${MILKYWAY_ROOT}/include"})
-  set(CRLIBM_LIBRARY "${LIBRARY_OUTPUT_PATH}/libcrlibm${CMAKE_STATIC_LIBRARY_SUFFIX}")
-else()
-  if(BOINC_RELEASE AND NOT CRLIBM_FOUND)
-    message(FATAL "Trying to release without crlibm")
-  endif()
-endif()
-
 set(nbody_exe_link_libs nbody_simulation
                         nbody_lua
                         milkyway_lua

@@ -31,7 +31,6 @@ set(PROJECT_TOOL_DIR "${milkywayathome_client_SOURCE_DIR}/tools")
 include(MinGWPaths)
 include(StaticBOINC)
 include(PrintInfo)
-include(DownloadCrlibm)
 include(CheckCFlag)
 include(MSVCFlags)
 include(PreferStatic)
@@ -99,10 +98,6 @@ list(INSERT CMAKE_PREFIX_PATH 0 ${MILKYWAY_ROOT})
 
 # Stuff which the build will download and use from there.
 set(MILKYWAY_THIRDPARTY "${MILKYWAY_ROOT}/thirdparty")
-
-if(DOWNLOAD_CRLIBM)
-  download_build_crlibm()
-endif()
 
 # Set output to be in this root
 set(EXECUTABLE_OUTPUT_PATH ${MILKYWAY_ROOT}/bin)
@@ -379,10 +374,12 @@ if(SEPARATION)
 endif()
 
 if(NBODY)
-  set(CRLIBM_QUIET_BUILD TRUE)
-  add_subdirectory(crlibm)
-  include_directories(crlibm)
-  set(CRLIBM_LIBRARY crlibm)
+  if(NBODY_CRLIBM)
+    set(CRLIBM_QUIET_BUILD TRUE)
+    add_subdirectory(crlibm)
+    set(CRLIBM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/crlibm)
+    set(CRLIBM_LIBRARY crlibm)
+  endif()
   add_subdirectory(nbody)
 endif()
 
