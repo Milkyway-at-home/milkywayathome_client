@@ -29,13 +29,13 @@ include(SpecialLibs)
 include(BOINCBinNames)
 include(PrintInfo)
 include(CPUNameTest)
-include(BuildSSELevels)
+include(CheckSSE2)
 include(CMakeDependentOption)
 include(BOINCPaths)
 
 set(separation_VERSION_MAJOR 0
                CACHE INTERNAL "Separation version number")
-set(separation_VERSION_MINOR 81
+set(separation_VERSION_MINOR 85
                CACHE INTERNAL "Separation version number")
 set(separation_VERSION "${separation_VERSION_MAJOR}.${separation_VERSION_MINOR}"
                CACHE INTERNAL "Separation version number")
@@ -325,6 +325,7 @@ if(SYSTEM_IS_X86_64)  # We must set SSE2 flags for MSVC since it doesn't define 
     set_target_properties(separation_core PROPERTIES
                             COMPILE_FLAGS "${SSE2_FLAGS} ${DISABLE_SSE3_FLAGS}")
 endif()
+
 
 # Don't build redundant library on x86_64 or OS X where we know we have SSE3
 # FIXME?: If compiler doesn't support SSE2 this will fail. I don't think I care.

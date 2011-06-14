@@ -21,7 +21,6 @@
 include(CPUNameTest)
 include(CheckIncludeFiles)
 
-
 if(SYSTEM_IS_X86)
   if(NOT MSVC)
     set(SSE2_FLAGS "-mfpmath=sse -msse -msse2")
