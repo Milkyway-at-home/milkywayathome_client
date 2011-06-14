@@ -328,9 +328,12 @@ if(NOT SEPARATION AND NOT NBODY)
 endif()
 
 if(WIN32)
+  set(windows_version 0x0500) # Windows 2000
   add_definitions(-D_WINDOWS)
-  add_definitions(-D_WIN32_WINDOWS=0x0500)
-  add_definitions(-DWIN32_WINNT=0x0500)
+  add_definitions(-D_WIN32_WINDOWS=${windows_version})
+  add_definitions(-D_WIN32_WINNT=${windows_version})
+  add_definitions(-DWIN32_WINNT=${windows_version})
+  add_definitions(-DWINVER=${windows_version})
 endif()
 
 # locally installed headers, and generated *_config.h
