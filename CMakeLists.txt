@@ -58,12 +58,6 @@ endif()
 option(SEPARATION "Build separation" ON)
 option(NBODY "Build nbody" ON)
 
-if(MSVC)
-  set(NBODY OFF)
-  message("NBody doesn't work with MSVC, disabling")
-endif()
-
-
 # Normal options
 option(BOINC_APPLICATION
        "Run as BOINC application or independently" ON)
@@ -180,7 +174,7 @@ option(NBODY_OPENCL
 
 option(NBODY_GL "Lots of pixels" OFF)
 
-cmake_dependent_option(NBODY_CRLIBM "Use crlibm for maths" ON
+cmake_dependent_option(NBODY_CRLIBM "Use crlibm for maths" OFF
                          "DOUBLEPREC" ON)
 mark_as_advanced(NBODY_CRLIBM)
 

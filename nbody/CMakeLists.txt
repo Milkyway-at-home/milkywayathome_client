@@ -212,8 +212,6 @@ set_target_properties(nbody_lua PROPERTIES
 # hardware.
 #
 
-set(CMAKE_C_FLAGS "-std=gnu99 ${SSE2_FLAGS} ${CMAKE_C_FLAGS}")
-
 set(nbody_link_libs )
 
 if(NBODY_OPENCL)
@@ -238,7 +236,6 @@ set(nbody_exe_link_libs nbody_simulation
 
                         ${POPT_LIBRARY}
                         ${LUA_LIBRARIES}
-                        m
                         ${OS_SPECIFIC_LIBS}
                         ${nbody_link_libs})
 

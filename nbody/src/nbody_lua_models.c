@@ -232,7 +232,7 @@ static int luaCalculateEps2(lua_State* luaSt)
     if (lua_gettop(luaSt) != 2)
         return luaL_argerror(luaSt, 0, "Expected 2 arguments");
 
-    nbody = luaL_checkinteger(luaSt, 1);
+    nbody = (int) luaL_checkinteger(luaSt, 1);
     r0 = luaL_checknumber(luaSt, 2);
 
     lua_pushnumber(luaSt, calculateEps2((real) nbody, r0));

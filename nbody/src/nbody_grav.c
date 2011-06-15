@@ -19,7 +19,6 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include "nbody_priv.h"
 #include "milkyway_util.h"
 #include "nbody_grav.h"
@@ -34,11 +33,23 @@ typedef struct
     mwvector acc0;      /* resulting acceleration */
     mwvector dr;        /* vector from q to pos0 */
     const Body* pskip;  /* skip in force evaluation */
-    NBodyCell* qmem;         /* data shared with gravSub */
+    NBodyCell* qmem;    /* data shared with gravSub */
     real drsq;          /* squared distance to pos0 */
 } ForceEvalState;
 
-#define EMPTY_FORCE_EVAL_STATE(p) { Pos(p), ZERO_VECTOR, ZERO_VECTOR, p, NULL, 0.0 }
+#define EMPTY_FORCE_EVAL_STATE(p) { Pos((p)), ZERO_VECTOR, ZERO_VECTOR, p, NULL, 0.0 }
+
+static const mwvector _zeroVector = ZERO_VECTOR;
+
+static inline void initForceEvalState(ForceEvalState* fest, const Body* p)
+{
+    fest->pos0 = Pos(p);
+    fest->acc0 = _zeroVector;
+    fest->dr = _zeroVector;
+    fest->pskip = p;
+    fest->qmem = NULL;
+    fest->drsq = 0.0;
+}
 
 
 /* subDivP: decide if cell q is too close to accept as a single
@@ -151,8 +162,10 @@ static void reportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
  * slightly. */
 static inline mwvector hackGrav(const NBodyCtx* ctx, NBodyState* st, const NBodyNode* root, const Body* p)
 {
-    ForceEvalState fest = EMPTY_FORCE_EVAL_STATE(p);
+    ForceEvalState fest;
     mwbool intree = Mass(p) > 0.0;
+
+    initForceEvalState(&fest, p);
 
     /* scan tree from root, watch for tree incest */
     if (intree && !treeScan(ctx, &fest, root))
