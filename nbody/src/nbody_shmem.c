@@ -262,8 +262,8 @@ void updateDisplayedBodies(NBodyState* st)
 {
     const Body* b;
     FloatPos* r;
-    unsigned int i = 0;
-    const unsigned int nbody = st->nbody;
+    int i = 0;
+    const int nbody = st->nbody;
     scene_t* scene = st->scene;
 
     if (!scene)

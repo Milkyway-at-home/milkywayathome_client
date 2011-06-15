@@ -53,7 +53,7 @@ typedef struct __attribute__((packed, aligned(512)))
     size_t realSize;                 /* Does the checkpoint use float or double */
     size_t ptrSize;
     int majorVersion, minorVersion;  /* Version check */
-    unsigned int nbody;              /* Saved copies of state */
+    int nbody;                       /* Saved copies of state */
     real tnow;
     real rsize;
     int treeIncest;

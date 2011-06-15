@@ -104,7 +104,7 @@ int destroyNBodyState(NBodyState* st)
     return failed;
 }
 
-void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, unsigned int nbody)
+void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int nbody)
 {
     static const NBodyTree emptyTree = EMPTY_TREE;
 
@@ -258,7 +258,7 @@ static int compareBodies(const void* _a, const void* _b)
  * be consistent when we hash. This is so when if we end up shifting
  * bodies around for the GPU, the tests will still work as
  * expected. */
-void sortBodies(Body* bodies, unsigned int nbody)
+void sortBodies(Body* bodies, int nbody)
 {
     qsort(bodies, (size_t) nbody, sizeof(Body), compareBodies);
 }

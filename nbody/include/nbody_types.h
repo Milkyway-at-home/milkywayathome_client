@@ -293,7 +293,7 @@ typedef struct NBODY_ALIGN
     NBodyNode* freecell;   /* list of free cells */
     time_t lastCheckpoint;
     real tnow;
-    unsigned int nbody;
+    int nbody;
     Body* bodytab;      /* points to array of bodies */
     mwvector* acctab;   /* Corresponding accelerations of bodies */
     int treeIncest;     /* Tree incest has occured */
@@ -401,11 +401,11 @@ typedef enum
 
 int destroyNBodyState(NBodyState* st);
 int detachSharedScene(NBodyState* st);
-void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, unsigned int nbody);
+void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int nbody);
 void cloneNBodyState(NBodyState* st, const NBodyState* oldSt);
 int equalNBodyState(const NBodyState* st1, const NBodyState* st2);
 
-void sortBodies(Body* bodies, unsigned int nbody);
+void sortBodies(Body* bodies, int nbody);
 
 int equalSpherical(const Spherical* s1, const Spherical* s2);
 int equalHalo(const Halo* h1, const Halo* h2);

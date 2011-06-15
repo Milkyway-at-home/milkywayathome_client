@@ -46,9 +46,9 @@ static inline void bodyAdvancePos(Body* p, const real dt)
     mw_incaddv(Pos(p), dr);     /* advance r by 1 step */
 }
 
-static inline void advancePosVel(NBodyState* st, const unsigned int nbody, const real dt)
+static inline void advancePosVel(NBodyState* st, const int nbody, const real dt)
 {
-    unsigned int i;
+    int i;
     real dtHalf = 0.5 * dt;
 
   #ifdef _OPENMP
@@ -61,9 +61,9 @@ static inline void advancePosVel(NBodyState* st, const unsigned int nbody, const
     }
 }
 
-static inline void advanceVelocities(NBodyState* st, const unsigned int nbody, const real dt)
+static inline void advanceVelocities(NBodyState* st, const int nbody, const real dt)
 {
-    unsigned int i;
+    int i;
     real dtHalf = 0.5 * dt;
 
   #ifdef _OPENMP

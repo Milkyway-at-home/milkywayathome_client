@@ -210,7 +210,7 @@ static int evaluateHistogram(lua_State* luaSt, HistogramParams* hp)
     return rc;
 }
 
-static Body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, unsigned int* n)
+static Body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, int* n)
 {
     int level, nResults;
 
@@ -238,7 +238,7 @@ static Body* evaluateBodies(lua_State* luaSt, const NBodyCtx* ctx, unsigned int*
 static int evaluateInitialNBodyState(lua_State* luaSt, NBodyCtx* ctx, NBodyState* st, HistogramParams* hp)
 {
     Body* bodies;
-    unsigned int nbody;
+    int nbody;
 
     if (evaluateContext(luaSt, ctx))
         return 1;

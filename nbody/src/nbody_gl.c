@@ -314,7 +314,7 @@ static void drawInfo()
              scene->info.timeEvolve,
              100.0f * scene->info.currentTime / scene->info.timeEvolve
         );
-    nbody_glutBitmapStringHelvetica(buf);
+    nbody_glutBitmapStringHelvetica((unsigned char*) buf);
 
     glPopMatrix();
     restorePerspectiveProjection();
@@ -546,7 +546,7 @@ static void passiveMotionFunc(int x, int y)
     }
 }
 
-static void assignParticleColors(unsigned int nbody)
+static void assignParticleColors(int nbody)
 {
     int i;
     double R, G, B, scale;

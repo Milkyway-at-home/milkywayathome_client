@@ -163,8 +163,8 @@ static inline mwvector hackGrav(const NBodyCtx* ctx, NBodyState* st, const NBody
 
 static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
 {
-    unsigned int i;
-    const unsigned int nbody = st->nbody;  /* Prevent reload on each loop */
+    int i;
+    const int nbody = st->nbody;  /* Prevent reload on each loop */
     mwvector a, externAcc;
     const Body* b;
 

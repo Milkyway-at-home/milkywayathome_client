@@ -130,7 +130,7 @@ static void threadTree(NBodyNode* p, NBodyNode* n)
  * and expand root cell to fit. The size is doubled at each step to
  * take advantage of exact representation of powers of two.
  */
-static void expandBox(NBodyTree* t, const Body* btab, unsigned int nbody)
+static void expandBox(NBodyTree* t, const Body* btab, int nbody)
 {
     real xyzmax;
     const Body* p;
