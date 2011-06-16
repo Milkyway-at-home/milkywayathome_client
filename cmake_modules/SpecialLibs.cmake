@@ -49,7 +49,7 @@ if(APPLE)
         STD_C_LIBRARY)
       list(APPEND OS_SPECIFIC_LIBS ${CARBON_LIBRARY} ${SYSTEM_STUBS} ${STD_C_LIBRARY})
     else()
-      if(CMAKE_OSX_ARCHITECTURES STREQUAL "i386")
+      if(CMAKE_OSX_ARCHITECTURES MATCHES "i386")
         # When building for 32 bit, seem to need the 10.4 SDK
         set(CMAKE_OSX_DEPLOYMENT_TARGET 10.4)
         set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.4u.sdk")

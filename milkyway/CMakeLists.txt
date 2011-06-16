@@ -25,6 +25,7 @@ include(SpecialLibs)
 include(CheckFunctionExists)
 include(CheckIncludeFiles)
 include(StaticBOINC)
+include(CheckSSE2)
 
 check_function_exists(asprintf HAVE_ASPRINTF)
 check_include_files(tgmath.h HAVE_TGMATH_H)
@@ -110,24 +111,18 @@ if(WIN32 AND NOT HAVE_ASPRINTF)
     list(APPEND mw_lib_src src/mw_asprintf.c)
 endif()
 
-# No math should happen here, but just in case. Clang defaults to
-# using SSE stuffs
-if(NOT MSVC AND SYSTEM_IS_X86_32 AND NOT APPLE)
-  set(milkyway_flags "${DISABLE_SSE2_FLAGS}")
-endif()
 
 
 add_library(milkyway_lua STATIC ${milkyway_lua_src} ${milkyway_lua_headers})
 set_target_properties(milkyway_lua PROPERTIES
-                        COMPILE_DEFINITIONS "MILKYWAY_LUA_COMPILATION"
-                        COMPILE_FLAGS "${milkyway_flags}")
+                        COMPILE_DEFINITIONS "MILKYWAY_LUA_COMPILATION")
+
 target_link_libraries(milkyway_lua milkyway dsfmt)
 
 add_library(milkyway STATIC ${mw_lib_src} ${mw_lib_headers})
 target_link_libraries(milkyway dsfmt)
 set_target_properties(milkyway PROPERTIES
-                        COMPILE_DEFINITIONS "MILKYWAY_MATH_COMPILATION"
-                        COMPILE_FLAGS "${milkyway_flags}")
+                        COMPILE_DEFINITIONS "MILKYWAY_MATH_COMPILATION")
 
 # install(TARGETS milkyway milkyway_lua
 #         ARCHIVE       DESTINATION lib
@@ -138,8 +133,8 @@ if(MILKYWAY_OPENCL)
   add_library(milkyway_cl STATIC ${mw_cl_lib_src} ${mw_cl_lib_headers})
   target_link_libraries(milkyway_cl milkyway)
   set_target_properties(milkyway_cl PROPERTIES
-                          COMPILE_DEFINITIONS "MILKYWAY_CL_COMPILATION"
-                          COMPILE_FLAGS "${milkyway_flags}")
+                          COMPILE_DEFINITIONS "MILKYWAY_CL_COMPILATION")
+
 
 # install(TARGETS milkyway_cl
 #         ARCHIVE       DESTINATION lib
@@ -152,4 +147,8 @@ if(WIN32)
   target_link_libraries(milkyway winmm)
 endif()
 
+maybe_disable_ssen(milkyway milkyway_lua)
+if(MILKYWAY_OPENCL)
+    maybe_disable_ssen(milkyway_cl)
+endif()
 

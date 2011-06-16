@@ -12,6 +12,7 @@ include(CheckFunctionExists)
 include(IgnoreWarningFlags)
 include(CheckTypeSize)
 include(CheckStructHasMember)
+include(CheckSSE2)
 
 set(BOINC_MAJOR_VERSION 6)
 set(BOINC_MINOR_VERSION 13)
@@ -278,6 +279,7 @@ else()
   message(WARNING "OpenSSL not found. Not building libboinc_crypt")
 endif()
 
+maybe_disable_ssen(boinc_api boinc boinc_graphics)
 
 
 set(BOINC_INCLUDE_DIR "${BOINC_API_SRC_DIR};${BOINC_LIB_SRC_DIR}" CACHE INTERNAL "BOINC headers" FORCE)
@@ -394,7 +396,6 @@ set(boinc_client_headers ${BOINC_CLIENT_SRC_DIR}/acct_mgr.h
 
 
 set(switcher_src ${BOINC_CLIENT_SRC_DIR}/switcher.cpp)
-
 
 # add_executable(boinc_client ${boinc_client_src} ${boinc_client_headers})
 # target_link_libraries(boinc_client boinc)

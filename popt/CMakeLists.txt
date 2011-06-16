@@ -19,6 +19,7 @@ include(CheckIncludeFiles)
 include(CheckLibraryExists)
 include(CheckFunctionExists)
 include(IgnoreWarningFlags)
+include(CheckSSE2)
 
 # We want this to be small, so use -Os unless we're debugging
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -106,3 +107,4 @@ set(POPT_LIBRARY popt CACHE INTERNAL "popt library")
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 
+maybe_disable_ssen(popt)

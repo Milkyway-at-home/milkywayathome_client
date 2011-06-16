@@ -87,7 +87,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* Apple's GCC 4.2 has many features backported, so it counts as a newer GCC even though it isn't.
    Apple GCC 4.0 on x86 seems to do this, but not the one one PPC
  */
-#if defined(__APPLE__) && (__GNUC__ >= 4 && __GNUC_MINOR__ >= 0) && MW_IS_X86
+#if defined(__APPLE__) && (__GNUC__ >= 4 && __GNUC_MINOR__ >= 0)
   #define _MW_NEW_APPLE_GCC
 #endif
 

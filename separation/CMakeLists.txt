@@ -309,43 +309,38 @@ else()
   set(CL_PLAN_CLASS "")
 endif()
 
-set(separation_base_lib_name "separation")
-add_library("${separation_base_lib_name}" STATIC ${lib_source_file_list} ${separation_headers})
+add_library(separation STATIC ${lib_source_file_list} ${separation_headers})
+maybe_disable_ssen(separation)
+
+
+
+if(NOT ALWAYS_HAVE_SSE2)
+  add_library(separation_core STATIC src/probabilities.c include/probabilities.h)
+  if(SYSTEM_IS_X86)
+    disable_sse2(separation_core)
+    disable_sse3(separation_core)
+  endif()
+  set(separation_core_libs separation_core)
+endif()
+
 
 # Build the critical area separately for SSE2, SSE3, no SSE2
-add_library(separation_core STATIC src/probabilities.c include/probabilities.h)
-set(separation_core_libs separation_core)
-
 if(SYSTEM_IS_X86)
-  set_target_properties(separation_core PROPERTIES
-                          COMPILE_FLAGS "${DISABLE_SSE3_FLAGS}")
-endif()
+  add_library(separation_core_sse2 STATIC src/probabilities.c include/probabilities.h)
+  list(APPEND separation_core_libs separation_core_sse2)
+  enable_sse2(separation_core_sse2)
+  disable_sse3(separation_core_sse2)
 
-if(SYSTEM_IS_X86_64)  # We must set SSE2 flags for MSVC since it doesn't define __SSE2__ on its own
-    set_target_properties(separation_core PROPERTIES
-                            COMPILE_FLAGS "${SSE2_FLAGS} ${DISABLE_SSE3_FLAGS}")
+  add_library(separation_core_sse3 STATIC src/probabilities.c include/probabilities.h)
+  enable_sse2(separation_core_sse3)
+  enable_sse3(separation_core_sse3)
+  list(APPEND separation_core_libs separation_core_sse3)
 endif()
-
-
-# Don't build redundant library on x86_64 or OS X where we know we have SSE3
-# FIXME?: If compiler doesn't support SSE2 this will fail. I don't think I care.
-if(SYSTEM_IS_X86_32 AND HAVE_SSE2)
-    add_library(separation_core_sse2 STATIC src/probabilities.c include/probabilities.h)
-    list(APPEND separation_core_libs separation_core_sse2)
-    set_target_properties(separation_core_sse2 PROPERTIES
-                            COMPILE_FLAGS "${SSE2_FLAGS} ${DISABLE_SSE3_FLAGS}")
-endif()
-if(SYSTEM_IS_X86 AND HAVE_SSE3)
-    add_library(separation_core_sse3 STATIC src/probabilities.c include/probabilities.h)
-    list(APPEND separation_core_libs separation_core_sse3)
-    set_target_properties(separation_core_sse3 PROPERTIES
-                            COMPILE_FLAGS "${SSE2_FLAGS} ${SSE3_FLAGS}")
-endif()
-
 
 
 if(NOT MILKYWAY_IPHONE_APP)
   add_executable(milkyway_separation ${separation_main_src})
+  maybe_disable_ssen(milkyway_separation)
 else()
   add_library(milkyway_separation STATIC ${separation_main_src})
 endif()
@@ -354,16 +349,17 @@ if(BOINC_RELEASE_NAMES)
   get_boinc_bin_name("milkyway_separation" "${separation_VERSION}" "${CL_PLAN_CLASS}")
   set_target_properties(milkyway_separation
                           PROPERTIES
-						    OUTPUT_NAME "${BOINC_BIN_NAME}")
+                            OUTPUT_NAME "${BOINC_BIN_NAME}")
 endif()
 
 milkyway_link(milkyway_separation ${BOINC_APPLICATION}
                                   ${SEPARATION_STATIC}
-                                  "${separation_base_lib_name};${separation_core_libs};${exe_link_libs}")
+                                  "separation;${separation_core_libs};${exe_link_libs}")
 
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 install(TARGETS milkyway_separation
           RUNTIME DESTINATION ${MILKYWAY_PROJECT_DIRECTORY})
+
 

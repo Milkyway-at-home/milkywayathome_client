@@ -20,13 +20,28 @@
 
 cmake_minimum_required(VERSION 2.8)
 project(milkywayathome_client)
-
 enable_testing()
+
 
 # Find custom cmake modules
 set(MILKYWAYATHOME_CLIENT_CMAKE_MODULES "${milkywayathome_client_SOURCE_DIR}/cmake_modules")
 list(APPEND CMAKE_MODULE_PATH ${MILKYWAYATHOME_CLIENT_CMAKE_MODULES})
 set(PROJECT_TOOL_DIR "${milkywayathome_client_SOURCE_DIR}/tools")
+
+
+if(APPLE)
+  option(BUILD_OSX_32 "32 bit build on OS X" OFF)
+  option(BUILD_OSX_UNIVERSAL "32-64 bit x86 universal build on OS X" OFF)
+
+  # TODO: If using this, it seems only the Apple GCC works
+  if(BUILD_OSX_32)
+    set(CMAKE_OSX_ARCHITECTURES i386)
+  endif()
+  if(BUILD_OSX_UNIVERSAL)
+    set(CMAKE_OSX_ARCHITECTURES i386;x86_64)
+  endif()
+endif()
+
 
 include(MinGWPaths)
 include(StaticBOINC)
@@ -118,7 +133,6 @@ if(BOINC_RELEASE)
 endif()
 
 
-
 #choose release build type by default
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING
@@ -129,20 +143,6 @@ endif()
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(MW_ENABLE_DEBUG ON)
 endif()
-
-if(APPLE)
-  option(BUILD_OSX_32 "32 bit build on OS X" OFF)
-  option(BUILD_OSX_UNIVERSAL "32-64 bit x86 universal build on OS X" OFF)
-
-  # TODO: If using this, it seems only the Apple GCC works
-  if(BUILD_OSX_32)
-    set(CMAKE_OSX_ARCHITECTURES i386)
-  endif()
-  if(BUILD_OSX_UNIVERSAL)
-    set(CMAKE_OSX_ARCHITECTURES i386;x86_64)
-  endif()
-endif()
-
 
 option(SEPARATION_OPENCL
         "Build the OpenCL separation" OFF)
@@ -227,8 +227,6 @@ set(gcc_warnings "-Wall"
 #                    -Xanalyzer -analyzer-experimental-checks
 #                    #-Xanalyzer -analyzer-display-progress
 #                    -Xanalyzer -analyzer-no-purge-dead)
-
-
 
 
 set(gcc_extra_flags "-fno-common -funswitch-loops ")
