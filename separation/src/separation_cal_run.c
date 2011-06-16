@@ -41,7 +41,7 @@ static CALresult waitForKernel(MWCALInfo* ci, CALevent ev, CALuint initialWait, 
         while (calCtxIsEventDone(ci->calctx, ev) == CAL_RESULT_PENDING)
             mwMilliSleep(pollingMode);
     }
-    else if (pollingMode == 0)
+    else if (pollingMode == 0 && mw_calCtxWaitForEvents)
     {
         err = mw_calCtxWaitForEvents(ci->calctx, &ev, 1, 0);
         if (err != CAL_RESULT_OK)
@@ -353,6 +353,11 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
          pollingModeDescription(clr->pollingMode),
          clr->gpuWaitFactor, nChunk,
          estIterTime / nChunk, *chunkWaitEstimate);
+
+    if (clr->pollingMode == 0 && !mw_calCtxWaitForEvents)
+    {
+        warn("Trying to use polling mode 0, but failed to get calCtxWaitForEvents. Falling back to busy waiting\n");
+    }
 
     return nChunk;
 }

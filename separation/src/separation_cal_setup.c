@@ -1008,14 +1008,14 @@ CALresult separationCALInit(MWCALInfo* ci, const CLRequest* clr)
     if (err != CAL_RESULT_OK)
     {
         cal_warn("calCtxWaitForEvents not supported\n", err);
-        return err;
     }
-
-    err = calExtGetProc((CALextproc*) &mw_calCtxWaitForEvents, 0x8009, "calCtxWaitForEvents");
-    if (err != CAL_RESULT_OK)
+    else
     {
-        cal_warn("Error getting calCtxWaitForEvents", err);
-        return err;
+        err = calExtGetProc((CALextproc*) &mw_calCtxWaitForEvents, 0x8009, "calCtxWaitForEvents");
+        if (err != CAL_RESULT_OK)
+        {
+            cal_warn("Error getting calCtxWaitForEvents", err);
+        }
     }
 
     err = mwGetCALInfo(ci, clr->devNum);
