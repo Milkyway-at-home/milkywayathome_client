@@ -262,6 +262,10 @@ add_library(boinc STATIC ${boinc_lib_src} ${boinc_lib_headers})
 add_library(boinc_api STATIC ${boinc_api_src} ${boinc_api_headers})
 add_library(boinc_graphics2 STATIC ${boinc_graphics_src} ${boinc_graphics_headers})
 
+maybe_disable_ssen(boinc_api boinc boinc_graphics2)
+
+
+
 # install(TARGETS boinc boinc_api boinc_graphics2
 #         ARCHIVE       DESTINATION lib
 #         PUBLIC_HEADER DESTINATION include/boinc)
@@ -278,9 +282,6 @@ if(OPENSSL_FOUND)
 else()
   message(WARNING "OpenSSL not found. Not building libboinc_crypt")
 endif()
-
-maybe_disable_ssen(boinc_api boinc boinc_graphics)
-
 
 set(BOINC_INCLUDE_DIR "${BOINC_API_SRC_DIR};${BOINC_LIB_SRC_DIR}" CACHE INTERNAL "BOINC headers" FORCE)
 set(BOINC_LIBRARIES boinc_api boinc boinc_graphics2 CACHE INTERNAL "BOINC libraries" FORCE)
