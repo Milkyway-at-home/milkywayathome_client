@@ -63,6 +63,7 @@ typedef struct
     double targetFrequency;
     int pollingMode;
     int enableCheckpointing;
+    double gpuWaitFactor;
 
     int forceNoIntrinsics;
     int forceX87;

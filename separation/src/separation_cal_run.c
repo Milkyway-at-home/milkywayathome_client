@@ -32,6 +32,8 @@ static CALresult waitForKernel(MWCALInfo* ci, CALevent ev, CALuint initialWait, 
 {
     CALresult err;
 
+    calCtxIsEventDone(ci->calctx, ev);  /* Force kernel to actually run */
+
     mwMilliSleep(initialWait);  /* Sleep for initial estimate before polling */
 
     if (pollingMode > 0)
@@ -294,6 +296,25 @@ static CALuint64 deviceFlopsEstimate(const CALdeviceattribs* d)
     return flops;
 }
 
+static const char* pollingModeDescription(int pollingMode)
+{
+    if (pollingMode == 0)
+    {
+        return "calCtxWaitForEvents()";
+    }
+    else if (pollingMode < 0)
+    {
+        return "Busy waiting";
+    }
+    else
+    {
+        return "Polling period (ms)";
+    }
+
+    mw_unreachable();
+    return NULL;
+}
+
 static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
                                    const IntegralArea* ia,
                                    const CALdeviceattribs* devAttribs,
@@ -322,12 +343,16 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
     if (nChunk >= ia->mu_steps)
         return ia->mu_steps;
 
-    //*chunkWaitEstimate = (CALuint) (0.1 * estIterTime / nChunk); /* Sleep for 50% of estimated time before polling */
-    *chunkWaitEstimate = 0;
-    warn("Estimated iteration time %f ms\n"
-         "Target frequency %f Hz, polling mode %d\n"
-         "Dividing into %u chunks, initially sleeping for %u ms\n",
-         estIterTime, clr->targetFrequency, clr->pollingMode, nChunk, *chunkWaitEstimate);
+    /* Sleep for some fraction of estimated time before polling */
+    *chunkWaitEstimate = (CALuint) (clr->gpuWaitFactor * estIterTime / nChunk);
+    warn("Estimated iteration time %.3f ms\n"
+         "Target frequency %.3f Hz\n"
+         "Using polling mode %d (%s) using a wait factor of %.3f\n"
+         "Dividing into %u chunks (~%.3f ms / chunk), initially sleeping for %u ms\n",
+         estIterTime, clr->targetFrequency, clr->pollingMode,
+         pollingModeDescription(clr->pollingMode),
+         clr->gpuWaitFactor, nChunk,
+         estIterTime / nChunk, *chunkWaitEstimate);
 
     return nChunk;
 }

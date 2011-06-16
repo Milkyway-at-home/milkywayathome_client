@@ -94,6 +94,7 @@ static void setCommonFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->forceSSE3 = sf->forceSSE3;
     clr->verbose = sf->verbose;
     clr->nonResponsive = sf->nonResponsive;
+    clr->gpuWaitFactor = sf->waitFactor;
 }
 
 #if SEPARATION_OPENCL
@@ -216,6 +217,12 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
             "gpu-polling-mode", 'm',
             POPT_ARG_INT, &sf.pollingMode,
             0, "Interval for polling GPU (< 0 for busy wait, 0 for calCtxWaitForEvents(), > 1 sets interval in ms)" , NULL
+        },
+
+        {
+            "gpu-wait-factor", 'w',
+            POPT_ARG_DOUBLE, &sf.waitFactor,
+            0, "Factor applied to initial wait before polling GPU (CAL only)" , NULL
         },
 
         {

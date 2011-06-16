@@ -70,6 +70,7 @@ typedef struct
     double targetFrequency;
     int pollingMode;
     int disableGPUCheckpointing;
+    double waitFactor;
 
     MWPriority processPriority;
     int setPriority;
@@ -94,6 +95,7 @@ typedef struct
 #define DEFAULT_POLLING_MODE 1
 #define DEFAULT_TARGET_FREQUENCY 30.0
 #define DEFAULT_DISABLE_GPU_CHECKPOINTING 0
+#define DEFAULT_GPU_WAIT_FACTOR 0.8
 
 
 #define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL,           \
@@ -102,6 +104,7 @@ typedef struct
                                  DEFAULT_TARGET_FREQUENCY,                     \
                                  DEFAULT_POLLING_MODE,                         \
                                  DEFAULT_DISABLE_GPU_CHECKPOINTING,            \
+                                 DEFAULT_GPU_WAIT_FACTOR,                      \
                                  0, FALSE,                                     \
                                  FALSE, FALSE, FALSE, FALSE, FALSE, FALSE      \
                                }
