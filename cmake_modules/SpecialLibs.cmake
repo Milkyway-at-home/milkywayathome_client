@@ -49,11 +49,16 @@ if(APPLE)
         STD_C_LIBRARY)
       list(APPEND OS_SPECIFIC_LIBS ${CARBON_LIBRARY} ${SYSTEM_STUBS} ${STD_C_LIBRARY})
     else()
-      # Try to avoid the dyld: unknown required load command 0x80000022
-      # runtime error on Leopard for binaries built on 10.6
-      set(CMAKE_OSX_DEPLOYMENT_TARGET 10.4)
-      set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.4u.sdk")
-
+      if(CMAKE_OSX_ARCHITECTURES MATCHES "i386")
+        # When building for 32 bit, seem to need the 10.4 SDK
+        set(CMAKE_OSX_DEPLOYMENT_TARGET 10.4)
+        set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.4u.sdk")
+      else()
+        # Try to avoid the dyld: unknown required load command 0x80000022
+        # runtime error on Leopard for binaries built on 10.6
+        set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5)
+        set(CMAKE_OSX_SYSROOT "/Developer/SDKs/MacOSX10.5.sdk")
+      endif()
       find_library(COREFOUNDATION_LIBRARY CoreFoundation)
       list(APPEND OS_SPECIFIC_LIBS ${COREFOUNDATION_LIBRARY})
     endif()
