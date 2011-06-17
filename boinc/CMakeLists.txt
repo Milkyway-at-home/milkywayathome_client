@@ -274,6 +274,7 @@ maybe_disable_ssen(boinc_api boinc boinc_graphics2)
 #         DESTINATION include/boinc)
 
 if(OPENSSL_FOUND)
+  include_directories(${OPENSSL_INCLUDE_DIR})
   add_library(boinc_crypt STATIC ${BOINC_LIB_SRC_DIR}/crypt.cpp ${BOINC_LIB_SRC_DIR}/crypt.h)
   set_target_properties(boinc_crypt PROPERTIES PUBLIC_HEADER ${BOINC_LIB_SRC_DIR}/crypt.h)
   # install(TARGETS boinc_crypt
