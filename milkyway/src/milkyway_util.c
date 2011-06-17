@@ -643,7 +643,8 @@ unsigned long long mwFixFPUPrecision()
   __asm__ ("fldcw -22(%ebp)");
 
   return (unsigned long long) oldcw;
-  #else /* GCC, clang */
+  #elif !defined(__APPLE__) /* GCC, clang */
+  /* x87 FPU never used on OS X */
   unsigned short oldcw, cw;
 
     /* save old state */
@@ -653,6 +654,8 @@ unsigned long long mwFixFPUPrecision()
   cw = (_FPU_DEFAULT & ~_FPU_EXTENDED)|_FPU_DOUBLE;
   _FPU_SETCW(cw);
   return (unsigned long long) oldcw;
+  #else
+  return 0;
   #endif /* defined(_MSC_VER) || defined(__MINGW32__) */
 #else /* */
   return 0;
