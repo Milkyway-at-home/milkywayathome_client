@@ -182,7 +182,9 @@ set(nbody_lua_headers ${NBODY_INCLUDE_DIR}/nbody_lua.h
 add_library(nbody_lua STATIC ${nbody_lua_src} ${nbody_lua_headers})
 set_target_properties(nbody_lua PROPERTIES
                         COMPILE_DEFINITIONS "NBODY_LUA_TYPES_COMPILATION")
-
+if(SYSTEM_IS_X86)
+  enable_sse2(nbody_lua)
+endif()
 
 
 #TODO: The tests dSFMT has
