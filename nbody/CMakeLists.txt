@@ -225,6 +225,9 @@ if(NBODY_OPENCL)
 endif()
 
 add_library(nbody_simulation STATIC ${nbody_lib_src} ${nbody_lib_headers})
+if(SYSTEM_IS_X86)
+  enable_sse2(nbody_simulation)
+endif()
 
 
 set(nbody_exe_link_libs nbody_simulation
@@ -310,6 +313,10 @@ install(TARGETS milkyway_nbody
           RUNTIME DESTINATION ${MILKYWAY_PROJECT_DIRECTORY})
 get_target_property(NBODY_BIN_NAME milkyway_nbody LOCATION)
 get_filename_component(NBODY_BIN_NAME ${NBODY_BIN_NAME} NAME)
+
+if(SYSTEM_IS_X86)
+  enable_sse2(milkyway_nbody)
+endif()
 
 
 if(NBODY_GL)
