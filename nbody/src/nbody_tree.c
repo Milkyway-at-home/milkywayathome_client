@@ -155,12 +155,12 @@ static NBodyCell* makeCell(NBodyState* st, NBodyTree* t)
     NBodyCell* c;
     size_t i;
 
-    if (st->freecell == NULL)                  /* no free cells left? */
-        c = (NBodyCell*) mwMalloc(sizeof(*c)); /* allocate a new one */
-    else                                       /* use existing free cell */
+    if (st->freecell == NULL)                   /* no free cells left? */
+        c = (NBodyCell*) mwMallocA(sizeof(*c)); /* allocate a new one */
+    else                                        /* use existing free cell */
     {
         c = (NBodyCell*) st->freecell;             /* take one on front */
-        st->freecell = Next(c);               /* go on to next one */
+        st->freecell = Next(c);                   /* go on to next one */
     }
     Type(c) = CELL(0);                          /* initialize cell type */
     for (i = 0; i < NSUB; i++)                  /* loop over subcells */

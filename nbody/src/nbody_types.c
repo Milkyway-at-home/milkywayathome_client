@@ -34,7 +34,7 @@ static void freeNBodyTree(NBodyTree* t)
         if (isCell(p))
         {
             tmp = More(p);
-            free(p);
+            mwFreeA(p);
             p = tmp;
         }
         else                        /* skip over bodies */
@@ -46,16 +46,16 @@ static void freeNBodyTree(NBodyTree* t)
     t->maxlevel = 0;
 }
 
-static void freeFreeCells(NBodyNode* freecell)
+static void freeFreeCells(NBodyNode* freeCell)
 {
     NBodyNode* p;
     NBodyNode* tmp;
 
-    p = freecell;
+    p = freeCell;
     while (p)
     {
         tmp = Next(p);
-        free(p);
+        mwFreeA(p);
         p = tmp;
     }
 }
