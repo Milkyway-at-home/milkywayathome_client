@@ -78,7 +78,7 @@ for i = 1, nTests do
    st = NBodyState.create(ctx, pot, m)
 
    stClone = st:clone()
-   testSteps = round(prng:random(0, 50))
+   testSteps = floor(prng:random(0, 51))
 
    ctx, st = runNSteps(st, testSteps, ctx, pot)
    ctxClone, stClone = runInterruptedSteps(stClone, testSteps, ctx, pot, prng)

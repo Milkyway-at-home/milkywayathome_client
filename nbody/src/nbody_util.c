@@ -23,7 +23,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 mwvector nbodyCenterOfMass(const NBodyState* st)
 {
-    unsigned int i;
+    int i;
     const Body* b;
     mwvector cm = ZERO_VECTOR;
     mwvector tmp;
