@@ -620,14 +620,19 @@ int mwSetProcessPriority(MWPriority priority)
 /*  From crlibm */
 unsigned long long mwFixFPUPrecision()
 {
-#if defined(HAVE_FPU_CONTROL_H) && MW_IS_X86
+#if MW_IS_X86
 
   #if defined(_MSC_VER) || defined(__MINGW32__)
   unsigned int oldcw, cw;
 
   /* CHECKME */
   oldcw = _controlfp(0, 0);
+
+  #ifdef __MINGW32__
+  _controlfp(_PC_53, _MCW_PC);
+  #else
   _controlfp(_PC_53, MCW_PC);
+  #endif
 
   return (unsigned long long) oldcw;
 
@@ -651,6 +656,6 @@ unsigned long long mwFixFPUPrecision()
   #endif /* defined(_MSC_VER) || defined(__MINGW32__) */
 #else /* */
   return 0;
-#endif /* defined(HAVE_FPU_CONTROL_H) && MW_IS_X86 */
+#endif /* MW_IS_X86 */
 }
 
