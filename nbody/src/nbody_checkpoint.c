@@ -96,38 +96,43 @@ static int verifyCheckpointHeader(const NBodyCheckpointHeader* cpHdr,
 {
     if (strncmp(cpHdr->header, hdr, sizeof(cpHdr->header)))
     {
-        return warn1("Didn't find header for checkpoint file.\n");
+        warn("Didn't find header for checkpoint file.\n");
+        return 1;
     }
 
     /* Make sure the file isn't lying about how many bodies there are */
     if (supposedCheckpointSize != cp->cpFileSize)
     {
-        return warn1("Expected checkpoint file size ("ZU") is incorrect for expected number of bodies "
-                     "(%u bodies, real size "ZU")\n",
-                     supposedCheckpointSize,
-                     st->nbody,
-                     (size_t) cp->cpFileSize);
+        warn("Expected checkpoint file size ("ZU") is incorrect for expected number of bodies "
+             "(%u bodies, real size "ZU")\n",
+             supposedCheckpointSize,
+             st->nbody,
+             (size_t) cp->cpFileSize);
+        return 1;
     }
 
     if (cpHdr->realSize != sizeof(real))
     {
-        return warn1("Got checkpoint file for wrong type. "
-                     "Expected sizeof(real) = "ZU", got "ZU"\n",
-                     sizeof(real), cpHdr->realSize);
+        warn("Got checkpoint file for wrong type. "
+             "Expected sizeof(real) = "ZU", got "ZU"\n",
+             sizeof(real), cpHdr->realSize);
+        return 1;
     }
 
     if (cpHdr->ptrSize != sizeof(void*))
     {
-        return warn1("Got checkpoint file for wrong architecture. "
-                     "Expected sizeof(void*) = "ZU", got "ZU"\n", sizeof(void*), cpHdr->ptrSize);
+        warn("Got checkpoint file for wrong architecture. "
+             "Expected sizeof(void*) = "ZU", got "ZU"\n", sizeof(void*), cpHdr->ptrSize);
+        return 1;
     }
 
     if (   cpHdr->majorVersion != MILKYWAY_NBODY_VERSION_MAJOR
         || cpHdr->minorVersion != MILKYWAY_NBODY_VERSION_MINOR)
     {
-        return warn1("Version mismatch in checkpoint file. File is for %u.%u, But version is %u.%u\n",
-                     cpHdr->majorVersion, cpHdr->minorVersion,
-                     MILKYWAY_NBODY_VERSION_MAJOR, MILKYWAY_NBODY_VERSION_MINOR);
+        warn("Version mismatch in checkpoint file. File is for %u.%u, But version is %u.%u\n",
+             cpHdr->majorVersion, cpHdr->minorVersion,
+             MILKYWAY_NBODY_VERSION_MAJOR, MILKYWAY_NBODY_VERSION_MINOR);
+        return 1;
     }
 
     return 0;
@@ -156,7 +161,10 @@ static int openCheckpointHandle(const NBodyState* st,
     }
 
     if (!S_ISREG(sb.st_mode))
-        return warn1("checkpoint file is not a file\n");
+    {
+        warn("checkpoint file is not a file\n");
+        return TRUE;
+    }
 
     if (writing)
     {
@@ -172,7 +180,10 @@ static int openCheckpointHandle(const NBodyState* st,
     {
         cp->cpFileSize = sb.st_size;
         if (cp->cpFileSize == 0)
-            return warn1("checkpoint file is empty\n");
+        {
+            warn("checkpoint file is empty\n");
+            return 1;
+        }
     }
 
     cp->mptr = mmap(0, cp->cpFileSize, PROT_READ | PROT_WRITE, MAP_SHARED, cp->fd, 0);
@@ -253,7 +264,10 @@ static int openCheckpointHandle(const NBodyState* st, CheckpointHandle* cp, cons
     /* TODO: More filetype checking and stuff */
 
     if (cp->file == INVALID_HANDLE_VALUE)
-        return warn1("Failed to open checkpoint file '%s': %ld\n", filename, GetLastError());
+    {
+        warn("Failed to open checkpoint file '%s': %ld\n", filename, GetLastError());
+        return TRUE;
+    }
 
     if (writing)
     {
@@ -286,8 +300,9 @@ static int openCheckpointHandle(const NBodyState* st, CheckpointHandle* cp, cons
                                     NULL);
     if (cp->mapFile == NULL)
     {
-        return warn1("Failed to create mapping for checkpoint file '%s': %ld\n",
-                     filename, GetLastError());
+        warn("Failed to create mapping for checkpoint file '%s': %ld\n",
+             filename, GetLastError());
+        return TRUE;
     }
 
     cp->mptr = (char*) MapViewOfFile(cp->mapFile,
@@ -297,8 +312,9 @@ static int openCheckpointHandle(const NBodyState* st, CheckpointHandle* cp, cons
                                      mapViewSize);
     if (cp->mptr == NULL)
     {
-        return warn1("Failed to open checkpoint file view for file '%s': %ld\n",
-                     filename, GetLastError());
+        warn("Failed to open checkpoint file view for file '%s': %ld\n",
+             filename, GetLastError());
+        return TRUE;
     }
 
     return FALSE;
@@ -309,13 +325,22 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
     if (cp->file != INVALID_HANDLE_VALUE)
     {
         if (cp->mptr && !UnmapViewOfFile((LPVOID) cp->mptr))
-            return warn1("Error %ld occurred unmapping the checkpoint view object!\n", GetLastError());
+        {
+            warn("Error %ld occurred unmapping the checkpoint view object!\n", GetLastError());
+            return TRUE;
+        }
 
         if (cp->mapFile && !CloseHandle(cp->mapFile))
-            return warn1("Error %ld occurred closing the checkpoint mapping!\n", GetLastError());
+        {
+            warn("Error %ld occurred closing the checkpoint mapping!\n", GetLastError());
+            return TRUE;
+        }
 
         if (cp->file && !CloseHandle(cp->file))
-            return warn1("Error %ld occurred closing checkpoint file\n", GetLastError());
+        {
+            warn("Error %ld occurred closing checkpoint file\n", GetLastError());
+            return TRUE;
+        }
     }
 
     return FALSE;
@@ -351,7 +376,8 @@ static int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     {
         free(st->bodytab);
         st->bodytab = NULL;
-        return warn1("Failed to find end marker in checkpoint file.\n");
+        warn("Failed to find end marker in checkpoint file.\n");
+        return TRUE;
     }
 
     return FALSE;
@@ -441,8 +467,9 @@ int writeCheckpointWithTmpFile(const NBodyCtx* ctx, const NBodyState* st, const 
     if (openCheckpointHandle(st, &cp, tmpFile, TRUE))
     {
         closeCheckpointHandle(&cp);
-        return warn1("Failed to open temporary checkpoint file\n"
-                     "Failed to write checkpoint\n");
+        warn("Failed to open temporary checkpoint file\n"
+             "Failed to write checkpoint\n");
+        return TRUE;
     }
 
     freezeState(ctx, st, &cp);

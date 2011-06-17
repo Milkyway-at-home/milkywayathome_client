@@ -76,7 +76,8 @@ mwbool checkDiskConstants(Disk* d)
 
         case InvalidDisk:
         default:
-            return warn1("Invalid disk type: %s (%d)\n", showDiskT(d->type), d->type);
+            warn("Invalid disk type: %s (%d)\n", showDiskT(d->type), d->type);
+            return 1;
     }
 
     return badDisk;
@@ -136,7 +137,8 @@ mwbool checkHaloConstants(Halo* h)
 
         case InvalidHalo:
         default:
-            return warn1("Trying to use invalid halo type: %s (%d)\n", showHaloT(h->type), h->type);
+            warn("Trying to use invalid halo type: %s (%d)\n", showHaloT(h->type), h->type);
+            return TRUE;
     }
 
     return FALSE;

@@ -249,14 +249,22 @@ static UINT mwGetMinTimerResolution()
 int mwSetTimerMinResolution()
 {
     if (timeBeginPeriod(mwGetMinTimerResolution()) != TIMERR_NOERROR)
-        return warn1("Failed to set timer resolution\n");
+    {
+        warn("Failed to set timer resolution\n");
+        return 1;
+    }
+
     return 0;
 }
 
 int mwResetTimerResolution()
 {
     if (timeEndPeriod(mwGetMinTimerResolution()) != TIMERR_NOERROR)
-        return warn1("Failed to end timer resolution\n");
+    {
+        warn("Failed to end timer resolution\n");
+        return 1;
+    }
+
     return 0;
 }
 
@@ -581,12 +589,14 @@ int mwSetProcessPriority(MWPriority priority)
                          FALSE,
                          DUPLICATE_SAME_ACCESS))
     {
-        return warn1("Failed to get process handle: %ld\n", GetLastError());
+        warn("Failed to get process handle: %ld\n", GetLastError());
+        return 1;
     }
 
     if (!SetPriorityClass(handle, mwPriorityToPriorityClass(priority)))
     {
-        return warn1("Failed to set process priority class: %ld\n", GetLastError());
+        warn("Failed to set process priority class: %ld\n", GetLastError());
+        return 1;
     }
 
     return 0;

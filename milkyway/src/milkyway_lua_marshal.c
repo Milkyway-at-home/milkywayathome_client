@@ -159,11 +159,13 @@ int mw_lua_typecheck(lua_State* luaSt, int idx, int expectedType, const char* ty
         && !mw_lua_equal_userdata_name(luaSt, idx, typeName))
     {
         /* TODO: Get typename of wong userdata type, which is kind of the point of checking for this */
-        return warn1("Type error: userdata %s expected, got other userdata\n", typeName);
+        warn("Type error: userdata %s expected, got other userdata\n", typeName);
+        return 1;
     }
     else if (type != expectedType) /* Anything else is wrong. */
     {
-        return warn1("Type error: %s expected, got %s\n", typeName, lua_typename(luaSt, type));
+        warn("Type error: %s expected, got %s\n", typeName, lua_typename(luaSt, type));
+        return 1;
     }
     else
     {

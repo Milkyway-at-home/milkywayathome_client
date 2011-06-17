@@ -88,7 +88,10 @@ static int runSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     {
         mw_report("Making final checkpoint\n");
         if (writeCheckpoint(ctx, st))
-            return warn1("Failed to write final checkpoint\n");
+        {
+            warn("Failed to write final checkpoint\n");
+            return 1;
+        }
     }
 
     return 0;
@@ -177,23 +180,29 @@ int runNBodySimulation(const NBodyFlags* nbf)
     nbodySetCtxFromFlags(ctx, nbf);
     if (setupRun(ctx, st, &ctx->histogramParams, nbf))
     {
-        return warn1("Failed to setup run\n");
+        warn("Failed to setup run\n");
+        return 1;
     }
 
     if (initOutput(st, nbf))
     {
-        return warn1("Failed to open output files\n");
+        warn("Failed to open output files\n");
+        return 1;
     }
 
     if (createSharedScene(st, ctx, nbf->inputFile))
     {
-        return warn1("Failed to create shared scene\n");
+        warn("Failed to create shared scene\n");
+        return 1;
     }
 
     ts = mwGetTime();
     rc = runSystem(ctx, st, nbf);
     if (rc)
-        return warn1("Error running system\n");
+    {
+        warn("Error running system\n");
+        return rc;
+    }
     te = mwGetTime();
 
     if (nbf->printTiming)

@@ -104,7 +104,10 @@ static int hashValueFromType(lua_State* luaSt, EVP_MD_CTX* hashCtx, int type, in
     }
 
     if (rc == 0)
-        return warn1("Error updating hash of type\n");
+    {
+        warn("Error updating hash of type\n");
+        return 1;
+    }
 
     return 0;
 }
@@ -163,7 +166,10 @@ static int hashNBodyTestCore(EVP_MD_CTX* hashCtx, MWHash* hash, const NBodyTest*
     int rc = 0;
 
     if (!EVP_DigestInit_ex(hashCtx, EVP_sha1(), NULL))
-        return warn1("Initializing hash digest failed\n");
+    {
+        warn("Initializing hash digest failed\n");
+        return 1;
+    }
 
     rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.theta,       sizeof(t->ctx.theta));
     rc |= !EVP_DigestUpdate(hashCtx, &t->ctx.treeRSize,   sizeof(t->ctx.treeRSize));
@@ -180,13 +186,22 @@ static int hashNBodyTestCore(EVP_MD_CTX* hashCtx, MWHash* hash, const NBodyTest*
     rc |= !EVP_DigestUpdate(hashCtx, &t->doublePrec,      sizeof(t->doublePrec));
 
     if (rc)
-        return warn1("Error updating hashing for NBodyTest\n");
+    {
+        warn("Error updating hashing for NBodyTest\n");
+        return 1;
+    }
 
     if (!EVP_DigestFinal_ex(hashCtx, hash->md, NULL))
-        return warn1("Error finalizing hash for NBodyTest\n");
+    {
+        warn("Error finalizing hash for NBodyTest\n");
+        return 1;
+    }
 
     if (!EVP_MD_CTX_cleanup(hashCtx))
-        return warn1("Error cleaning up hash context for NBodyCtxTest\n");
+    {
+        warn("Error cleaning up hash context for NBodyCtxTest\n");
+        return 1;
+    }
 
     return 0;
 }
@@ -199,7 +214,10 @@ int hashNBodyTest(MWHash* hash, NBodyTest* test)
     EVP_MD_CTX_init(&hashCtx);
     failed = hashNBodyTestCore(&hashCtx, hash, test);
     if (!EVP_MD_CTX_cleanup(&hashCtx))
-        return warn1("Error cleaning up hash context\n");
+    {
+        warn("Error cleaning up hash context\n");
+        return 1;
+    }
 
     return failed;
 }
@@ -234,9 +252,10 @@ static void registerNBodyTestFunctions(lua_State* luaSt)
 }
 
 /* Hash of just the bodies masses, positions and velocities */
-static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies, unsigned int nbody)
+static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies, int nbody)
 {
-    unsigned int i, mdLen;
+    int i;
+    unsigned int mdLen;
     const Body* b;
     struct
     {
@@ -247,10 +266,16 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
     } hashableBody;
 
     if (nbody == 0)
-        return warn1("Can't hash 0 bodies\n");
+    {
+        warn("Can't hash 0 bodies\n");
+        return 1;
+    }
 
     if (!EVP_DigestInit_ex(hashCtx, EVP_sha1(), NULL))
-        return warn1("Initializing hash digest failed\n");
+    {
+        warn("Initializing hash digest failed\n");
+        return 1;
+    }
 
     /* Prevent random garbage from getting hashed. The struct will be
      * padded and won't be the same size as 2 * sizeof(mwvector) +
@@ -267,11 +292,17 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
         hashableBody.type = Type(b);
 
         if (!EVP_DigestUpdate(hashCtx, &hashableBody, sizeof(hashableBody)))
-            return warn1("Error updating hash for body %u\n", i);
+        {
+            warn("Error updating hash for body %u\n", i);
+            return 1;
+        }
     }
 
     if (!EVP_DigestFinal_ex(hashCtx, hash->md, &mdLen))
-        return warn1("Error finalizing hash\n");
+    {
+        warn("Error finalizing hash\n");
+        return 1;
+    }
 
     assert(mdLen == SHA_DIGEST_LENGTH);
 
@@ -296,7 +327,10 @@ int hashBodies(MWHash* hash, const Body* bodies, unsigned int nbody)
     EVP_MD_CTX_init(&hashCtx);
     failed = hashBodiesCore(&hashCtx, hash, bodies, nbody);
     if (!EVP_MD_CTX_cleanup(&hashCtx))
-        return warn1("Error cleaning up hash context\n");
+    {
+        warn("Error cleaning up hash context\n");
+        return 1;
+    }
 
     return failed;
 }

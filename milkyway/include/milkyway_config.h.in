@@ -29,6 +29,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 HAVE_EXP2
 #cmakedefine01 HAVE_SINCOS
 #cmakedefine01 HAVE_TGMATH_H
+#cmakedefine01 HAVE_FPU_CONTROL_H
+#cmakedefine01 HAVE_ERR_H
 #cmakedefine01 HAVE_ASPRINTF
 
 #if ENABLE_FDLIBM

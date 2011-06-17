@@ -27,7 +27,10 @@ int initOutput(NBodyState* st, const NBodyFlags* nbf)
 {
     st->outFile = nbf->outFileName ? mwOpenResolved(nbf->outFileName, "w") : DEFAULT_OUTPUT_FILE;
     if (st->outFile == NULL)
-        return warn1("initOutput: cannot open output file %s\n", nbf->outFileName);
+    {
+        warn("initOutput: cannot open output file %s\n", nbf->outFileName);
+        return TRUE;
+    }
 
     return FALSE;
 }

@@ -38,6 +38,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <popt.h>
 
+#if HAVE_ERR_H
+  #include <err.h>
+#endif
+
 #include "milkyway_extra.h"
 #include "milkyway_math.h"
 #include "milkyway_show.h"
@@ -102,10 +106,9 @@ void* mwCallocA(size_t count, size_t size);
 #endif /* _WIN32 */
 
 
-#define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)
-
-/* Have value of 1 so we can do a return warn("blah blah\n") */
-#define warn1(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__), 1
+#if !HAVE_ERR_H
+  #define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)
+#endif
 
 /* Controlled, but lazy failure */
 #define fail(msg, ...)                              \
