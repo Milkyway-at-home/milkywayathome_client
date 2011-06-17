@@ -50,6 +50,7 @@ typedef struct
 
 
 int connectSharedScene();
+int checkConnectedVersion();
 int nbodyGLSetup(const VisArgs* args);
 void nbodyGLCleanup();
 

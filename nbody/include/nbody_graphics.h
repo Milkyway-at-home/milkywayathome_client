@@ -40,6 +40,9 @@ typedef struct
 /* the scene structure */
 typedef struct
 {
+    int nbodyMajorVersion;
+    int nbodyMinorVersion;
+
     int nbody;
     int drawGalaxy;
     float z;

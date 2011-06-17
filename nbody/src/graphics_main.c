@@ -116,6 +116,9 @@ int main(int argc, char* argv[])
     if (connectSharedScene())
         return 1;
 
+    if (checkConnectedVersion())
+        return 1;
+
     glutInit(&argc, argv);
 
     if (handleVisArguments(argc, (const char**) argv, &flags))
