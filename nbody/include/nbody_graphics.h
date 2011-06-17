@@ -81,13 +81,12 @@ typedef struct
     FloatPos r[];
 } scene_t;
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && (__GNUC__ >= 4 && __GNUC_MINOR__ >= 1)
   // #define nbodyGraphicsAtomicIncrement(x) __sync_fetch_and_add((x), 1)
   // #define nbodyGraphicsAtomicDecrement(x) __sync_fetch_and_sub((x), 1)
-
-  #define nbodyGraphicsSetOn(x) __sync_fetch_and_or((x), 1)
-  #define nbodyGraphicsSetOff(x) __sync_fetch_and_and((x), 0)
-  #define nbodyGraphicsTestVal(x) __sync_add_and_fetch((x), 0)
+    #define nbodyGraphicsSetOn(x) __sync_fetch_and_or((x), 1)
+    #define nbodyGraphicsSetOff(x) __sync_fetch_and_and((x), 0)
+    #define nbodyGraphicsTestVal(x) __sync_add_and_fetch((x), 0)
 #elif defined(_MSC_VER)
   // #define nbodyGraphicsAtomicIncrement(x) InterlockedIncrement((x))
   // #define nbodyGraphicsAtomicDecrement(x) InterlockedDecrement((x))
