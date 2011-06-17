@@ -333,7 +333,6 @@ int main(int argc, const char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    nbodyPrintVersion();
     setDefaultFlags(&nbf);
     setNumThreads(nbf.numThreads);
 
@@ -352,6 +351,8 @@ int main(int argc, const char* argv[])
     }
 
     freeNBodyFlags(&nbf);
+
+    nbodyPrintVersion();
     mw_finish(rc);
 
     return rc;
