@@ -298,10 +298,8 @@ function findLikelihood(str)
    end
 end
 
-maxError = 1.0e-9
-
 function resultCloseEnough(a, b)
-   return math.abs(a - b) < maxError
+   return math.abs(a - b) < 1.0e-12
 end
 
 errFmtStr = [[
