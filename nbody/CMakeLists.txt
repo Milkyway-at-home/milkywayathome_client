@@ -23,7 +23,7 @@ project(milkyway_nbody)
 
 set(nbody_VERSION_MAJOR 0
           CACHE INTERNAL "N-body version number")
-set(nbody_VERSION_MINOR 51
+set(nbody_VERSION_MINOR 60
           CACHE INTERNAL "N-body version number")
 set(nbody_VERSION "${nbody_VERSION_MAJOR}.${nbody_VERSION_MINOR}"
           CACHE INTERNAL "N-body version number")
