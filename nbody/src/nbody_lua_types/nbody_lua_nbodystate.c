@@ -84,7 +84,7 @@ static int createNBodyState(lua_State* luaSt)
 {
     Body* bodies;
     NBodyCtx ctx;
-    unsigned int nbody;
+    int nbody;
     NBodyState st = EMPTY_NBODYSTATE;
 
     ctx = *checkNBodyCtx(luaSt, 1);

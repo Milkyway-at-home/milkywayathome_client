@@ -174,7 +174,7 @@ option(NBODY_OPENCL
 
 option(NBODY_GL "Lots of pixels" OFF)
 
-cmake_dependent_option(NBODY_CRLIBM "Use crlibm for maths" OFF
+cmake_dependent_option(NBODY_CRLIBM "Use crlibm for maths" ON
                          "DOUBLEPREC" ON)
 mark_as_advanced(NBODY_CRLIBM)
 
