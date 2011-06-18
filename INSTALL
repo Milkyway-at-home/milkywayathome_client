@@ -59,6 +59,10 @@ Dependency Installation Notes:
                to milkywayathome_client\lib directory to avoid finding
                the 32 bit libraries.
 
+          - For MSVC 32 bit, either use VS 2008 or at least install
+            it, and set the platform toolset to v90 for all targets
+            (for now at least it can't be set from cmake) or else it
+            won't run on Windows 2000 (anything before XP SP2)
 
 BOINC:
     If building from git, you can build BOINC along with everything else

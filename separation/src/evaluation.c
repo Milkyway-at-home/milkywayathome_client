@@ -54,18 +54,19 @@ ProbabilityFunc probabilityFunc = NULL;
 
 #if MW_IS_X86
 
-#ifndef _WIN32
-  #define bit_CMPXCHG8B (1 << 8 )
-  #define bit_CMOV (1 << 15)
-  #define bit_MMX (1 << 23)
-  #define bit_SSE (1 << 25)
-  #define bit_SSE2 (1 << 26)
-  #define bit_SSE3 (1 << 0)
-  #define bit_CMPXCHG16B (1 << 13)
-  #define bit_3DNOW (1 << 31)
-  #define bit_3DNOWP (1 << 30)
-  #define bit_LM (1 << 29)
+#define bit_CMPXCHG8B (1 << 8)
+#define bit_CMOV (1 << 15)
+#define bit_MMX (1 << 23)
+#define bit_SSE (1 << 25)
+#define bit_SSE2 (1 << 26)
+#define bit_SSE3 (1 << 0)
+#define bit_CMPXCHG16B (1 << 13)
+#define bit_3DNOW (1 << 31)
+#define bit_3DNOWP (1 << 30)
+#define bit_LM (1 << 29)
 
+
+#ifndef _WIN32
   #if defined(__i386__) && defined(__PIC__)
     /* %ebx may be the PIC register.  */
     #define cpuid(level, a, b, c, d) __asm__ ("xchglt%%ebx, %1nt"                        \
@@ -101,8 +102,23 @@ static void getSSELevelSupport(int* hasSSE2, int* hasSSE3)
 
 static void getSSELevelSupport(int* hasSSE2_out, int* hasSSE3_out)
 {
-    *hasSSE2_out = (int) IsProcessorFeaturePresent(PF_XMMI64_INSTRUCTIONS_AVAILABLE);
-    *hasSSE3_out = (int) IsProcessorFeaturePresent(PF_SSE3_INSTRUCTIONS_AVAILABLE);
+    int nIds = 0;
+    int cpuInfo[4] = { 0, 0, 0, 0 };
+    int hasSSE2 = FALSE;
+    int hasSSE3 = FALSE;
+
+    __cpuid(cpuInfo, 0);
+    nIds = cpuInfo[0];
+
+    if (nIds >= 1)
+    {
+        __cpuid(cpuInfo, 1);
+        hasSSE2 = !!(cpuInfo[3] & bit_SSE2);
+        hasSSE3 = !!(cpuInfo[2] & bit_SSE3);
+    }
+
+    *hasSSE2_out = hasSSE2;
+    *hasSSE3_out = hasSSE3;
 }
 #endif /* _WIN32 */
 
