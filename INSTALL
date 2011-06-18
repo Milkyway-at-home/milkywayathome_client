@@ -29,10 +29,16 @@ Dependency Installation Notes:
 
                 $ port install cmake git-core
 
-                - To build as 32 bit, or as a universal binary (no PPC), build with
-                  -DBUILD_OSX_32=ON or -DBUILD_OSX_UNIVERSAL=ON
+                To build as 32 bit, there are 2 options.
 
-                  - 32 bit OS X  build may require Apple GCC 4.0 and the 10.4u SDK
+                If using Apple GCC,
+               - To build as 32 bit, or as a universal binary (no PPC), build with
+                  -DBUILD_OSX_32=ON or -DBUILD_OSX_UNIVERSAL=ON
+                 - 32 bit OS X  build may require Apple GCC 4.0 and  the 10.4u SDK
+
+               -If using Macports GCC, make sure you've installed the
+                +universal variant. Then build normally with the addition of -DCMAKE_C_FLAG="-m32" -DCMAKE_CXX_FLAGS="-m32" This however won't work on 10.4
+
 
     Windows:
         - Visual Studio 2010 should work for Separation, but not N-body
@@ -53,6 +59,10 @@ Dependency Installation Notes:
                to milkywayathome_client\lib directory to avoid finding
                the 32 bit libraries.
 
+          - For MSVC 32 bit, either use VS 2008 or at least install
+            it, and set the platform toolset to v90 for all targets
+            (for now at least it can't be set from cmake) or else it
+            won't run on Windows 2000 (anything before XP SP2)
 
 BOINC:
     If building from git, you can build BOINC along with everything else
