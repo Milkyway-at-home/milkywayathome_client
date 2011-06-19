@@ -42,9 +42,14 @@ if(APPLE)
   endif()
 endif()
 
+if(NOT MSVC)
+  set(CMAKE_C_FLAGS "-pthread -static-libgcc ${CMAKE_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "-pthread -static-libgcc -static-libstdc++ ${CMAKE_CXX_FLAGS}")
+endif()
+
 
 include(MinGWPaths)
-include(StaticBOINC)
+include(MWLink)
 include(PrintInfo)
 include(CheckCFlag)
 include(MSVCFlags)

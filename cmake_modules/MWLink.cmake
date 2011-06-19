@@ -31,59 +31,29 @@ macro(unset_cmake_default_dynamic)
   set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS)
 endmacro()
 
-if(NOT MSVC AND (CMAKE_BUILD_TYPE STREQUAL Release) AND NOT APPLE)
-  set(strip_exe -s)
-endif()
-
 macro(maybe_static use_static)
   if(${use_static} MATCHES "ON")
     unset_cmake_default_dynamic()
-    if(NOT MSVC)
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -static-libgcc -static-libstdc++")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -static-libgcc -static-libstdc++")
-    endif()
-
-  endif()
-  if(NOT MSVC)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
   endif()
 endmacro()
 
 
-function(correct_static_link client_bin_name)
-  if(UNIX AND NOT APPLE)
-    set(client_static_link_flags "-static -static-libgcc -static-libstdc++")
-  elseif(MINGW)
-    set(client_static_link_flags "-static-libgcc -static-libstdc++")
-  elseif(UNIX AND APPLE) # OS X
-    #  No static
-    set(client_static_link_flags "-static-libgcc -static-libstdc++")
+function(milkyway_link client_bin_name use_boinc use_static link_libs)
+  if(NOT MSVC AND (CMAKE_BUILD_TYPE STREQUAL Release) AND NOT APPLE)
+    set(strip_exe -s)
   endif()
 
+  if(use_static)
+    if(use_static AND UNIX AND NOT APPLE)
+      set(link_flags "-static ${link_flags}")
+    endif()
+  endif()
 
   set_target_properties(${client_bin_name}
-                          PROPERTIES
-                            LINKER_LANGUAGE CXX
-                            LINK_FLAGS "${client_static_link_flags} ${strip_exe}"
-                            LINK_SEARCH_END_STATIC ON)
-endfunction()
-
-function(milkyway_link client_bin_name use_boinc use_static link_libs)
-  if(use_static)
-    correct_static_link(${client_bin_name})
-  else()
-    if(use_boinc)
-      if(NOT WIN32)
-        list(APPEND link_libs "stdc++")
-      endif()
-    endif()
-
-    set_target_properties(${client_bin_name}
                            PROPERTIES
                              LINKER_LANGUAGE CXX
-                             LINK_FLAGS "${strip_exe}")
-  endif()
+                             LINK_FLAGS "${strip_exe} ${link_flags}"
+                             LINK_SEARCH_END_STATIC ${use_static})
 
   target_link_libraries(${client_bin_name} ${link_libs})
 endfunction()

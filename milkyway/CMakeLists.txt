@@ -24,7 +24,7 @@ project(milkyway)
 include(SpecialLibs)
 include(CheckFunctionExists)
 include(CheckIncludeFiles)
-include(StaticBOINC)
+include(MWLink)
 include(CheckSSE2)
 
 check_function_exists(asprintf HAVE_ASPRINTF)

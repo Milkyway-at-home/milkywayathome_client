@@ -23,7 +23,7 @@ project(milkyway_separation)
 
 enable_testing()
 
-include(StaticBOINC)
+include(MWLink)
 include(CLKernelInline)
 include(SpecialLibs)
 include(BOINCBinNames)
@@ -52,7 +52,7 @@ if(SYSTEM_IS_PPC)
   set(CMAKE_C_FLAGS "-maltivec -mfused-madd -mhard-float -mabi=altivec ${CMAKE_C_FLAGS}")
 endif()
 
-option(SEPARATION_STATIC "Build separation as fully static binary" ON)
+option(SEPARATION_STATIC "Build separation as fully static binary" OFF)
 mark_as_advanced(SEPARATION_STATIC)
 
 option(SEPARATION_CAL "Use CAL++ voodoo" OFF)
