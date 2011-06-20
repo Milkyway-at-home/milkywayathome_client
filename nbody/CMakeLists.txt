@@ -36,7 +36,7 @@ include(CheckSSE2)
 include(BOINCPaths)
 include(CMakeDependentOption)
 
-cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" ON
+cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" OFF
                                       "NOT NBODY_OPENCL" OFF)
 mark_as_advanced(NBODY_STATIC)
 maybe_static(${NBODY_STATIC})
