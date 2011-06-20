@@ -686,23 +686,6 @@ static int attemptConnectSharedScene()
     return TRUE;
 }
 
-int checkConnectedVersion()
-{
-    if (   scene->nbodyMajorVersion != MILKYWAY_NBODY_VERSION_MAJOR
-        || scene->nbodyMinorVersion != MILKYWAY_NBODY_VERSION_MINOR)
-    {
-        warn("Graphics version (%d.%d) does not match application version (%d.%d)\n",
-             MILKYWAY_NBODY_VERSION_MAJOR,
-             MILKYWAY_NBODY_VERSION_MINOR,
-             scene->nbodyMajorVersion,
-             scene->nbodyMinorVersion);
-        return 1;
-    }
-
-    return 0;
-}
-
-
 #define MAX_TRIES 5
 #define RETRY_INTERVAL 250
 
@@ -787,5 +770,21 @@ void nbodyGLCleanup()
 {
     mwFreeA(color);
     color = NULL;
+}
+
+int checkConnectedVersion()
+{
+    if (   scene->nbodyMajorVersion != MILKYWAY_NBODY_VERSION_MAJOR
+        || scene->nbodyMinorVersion != MILKYWAY_NBODY_VERSION_MINOR)
+    {
+        warn("Graphics version (%d.%d) does not match application version (%d.%d)\n",
+             MILKYWAY_NBODY_VERSION_MAJOR,
+             MILKYWAY_NBODY_VERSION_MINOR,
+             scene->nbodyMajorVersion,
+             scene->nbodyMinorVersion);
+        return 1;
+    }
+
+    return 0;
 }
 
