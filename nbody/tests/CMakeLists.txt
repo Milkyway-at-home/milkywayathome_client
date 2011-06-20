@@ -31,7 +31,9 @@ endif()
 
 
 add_test(NAME checkpoint_test
-         COMMAND nbody_test_driver "CheckpointTest.lua")
+           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+           COMMAND nbody_test_driver "CheckpointTest.lua")
+
 
 # add_test(NAME context_test
 #          COMMAND nbody_test_driver "ContextTest.lua")
@@ -57,6 +59,7 @@ set(orphan_model_names model_1
 foreach(model_name ${orphan_model_names})
   foreach(n ${body_counts})
     add_test(NAME ${model_name}__${n}_test
+               WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
                COMMAND nbody_test_driver "RunTestUnits.lua"
                                           $<TARGET_FILE:milkyway_nbody>
                                           "orphan_models"
