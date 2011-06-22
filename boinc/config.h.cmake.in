@@ -77,7 +77,10 @@
 #cmakedefine HAVE_GL_H
 
 /* Define to 1 if you have the <ieeefp.h> header file. */
-#cmakedefine HAVE_IEEEFP_H
+// #cmakedefine01 HAVE_IEEEFP_H
+/* workaround. BOINC is broken with it use of #if HAVE_BLAH and #ifdef HAVE_BLAH */
+#cmakedefine ${HAVE_IEEEFP_H}
+
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #cmakedefine HAVE_INTTYPES_H

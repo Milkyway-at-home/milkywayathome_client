@@ -51,10 +51,10 @@
    casting everywhere
 */
 
-#if __GLIBC__ <= 2 && __GLIBC_MINOR__ < 7 && defined(__GLIBC__)
+#if (__GLIBC__ <= 2 && __GLIBC_MINOR__ < 7 && defined(__GLIBC__)) || defined(__FreeBSD__)
   #define HAVE_BROKEN_TGMATH 1
   #if !DOUBLEPREC
-    #warning "Old Glibc tgmath.h doesn't work, so float doesn't really work"
+    #warning "This tgmath.h doesn't work, so float doesn't really work"
   #endif
 #endif /* __GLIBC__ <= 2 && __GLIBC_MINOR__ < 7 */
 

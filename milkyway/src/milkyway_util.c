@@ -49,6 +49,17 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #ifndef _FPU_GETCW
     #define _FPU_GETCW(cw) __asm__ ("fnstcw %0" : "=m" (*&cw))
   #endif
+
+  #ifndef _FPU_EXTENDED
+    #define _FPU_EXTENDED 0x300
+  #endif
+  #ifndef _FPU_DOUBLE
+    #define _FPU_DOUBLE 0x200
+  #endif
+  #if defined(__FreeBSD__) && !defined(_FPU_DEFAULT)
+    #include <machine/fpu.h>
+    #define _FPU_DEFAULT __INITIAL_FPUCW__
+  #endif
 #endif /* MW_IS_X86 */
 
 

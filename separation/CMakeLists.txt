@@ -310,8 +310,6 @@ endif()
 add_library(separation STATIC ${lib_source_file_list} ${separation_headers})
 maybe_disable_ssen(separation)
 
-
-
 if(NOT ALWAYS_HAVE_SSE2)
   add_library(separation_core STATIC src/probabilities.c include/probabilities.h)
   if(SYSTEM_IS_X86)

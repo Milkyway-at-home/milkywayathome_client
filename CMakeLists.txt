@@ -22,7 +22,6 @@ cmake_minimum_required(VERSION 2.8)
 project(milkywayathome_client)
 enable_testing()
 
-
 # Find custom cmake modules
 set(MILKYWAYATHOME_CLIENT_CMAKE_MODULES "${milkywayathome_client_SOURCE_DIR}/cmake_modules")
 list(APPEND CMAKE_MODULE_PATH ${MILKYWAYATHOME_CLIENT_CMAKE_MODULES})
