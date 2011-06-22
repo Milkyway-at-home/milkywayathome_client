@@ -107,10 +107,10 @@ static int dsfmtRandomListItem(lua_State* luaSt)
 
     n = luaL_getn(luaSt, table);
 
-    /* + 1 so we can get the last item sometimes with floor */
-    i = (int) mwXrandom(d, 0, n + 1);
-    assert(i < n);
-    lua_rawgeti(luaSt, table, i + 1);
+    i = (int) mwXrandom(d, 1, n + 1);
+    assert(i <= n && i >= 1);
+    lua_rawgeti(luaSt, table, i);
+    assert(!lua_isnoneornil(luaSt, -1));
 
     return 1;
 }
