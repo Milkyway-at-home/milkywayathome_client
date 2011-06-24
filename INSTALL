@@ -64,6 +64,14 @@ Dependency Installation Notes:
             (for now at least it can't be set from cmake) or else it
             won't run on Windows 2000 (anything before XP SP2)
 
+     FreeBSD:
+       - Building 32 bit is sort of broken on 64 bit, so in addition
+            to -m32, you need to add -B/usr/lib32 to your flags
+     - /proc must be mounted for Lua to work which seems to not happen
+          by default
+     - Undefined reference from BOINC stuff on 32 bit I'm too lasy to figure out now
+
+
 BOINC:
     If building from git, you can build BOINC along with everything else
     using a submodule:
