@@ -9,6 +9,7 @@ cmake_minimum_required ( VERSION 2.6 )
 
 include(PreferStatic)
 include(IgnoreWarningFlags)
+include(CPUNameTest)
 
 if(APPLE)
     # Apple GCC extension that breaks with macports GCC on PowerPC
@@ -135,6 +136,11 @@ target_link_libraries ( lua lua51 ${LIBS})
 
 set_target_properties(lua51 PROPERTIES COMPILE_FLAGS "${DISABLE_WARNINGS_FLAG}")
 set_target_properties(lua PROPERTIES COMPILE_FLAGS "${DISABLE_WARNINGS_FLAG}")
+
+if(NOT ALWAYS_HAVE_SSE2)
+  disable_sse2(lua51)
+endif()
+
 
 set(LUA_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "lua headers")
 set(LUA_INTERPRETER $<TARGET_FILE:lua> CACHE INTERNAL "Lua interpreter")
