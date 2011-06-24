@@ -92,7 +92,7 @@ if(SEPARATION_CAL AND (NOT CAL++_FOUND OR NOT CAL_FOUND))
   message(FATAL_ERROR "Separation CAL was requested, but CAL or CAL++ not found.")
 endif()
 
-if(SEPARATION_OPENCL)
+if(SEPARATION_OPENCL AND NOT OPENCL_FOUND)
   message(FATAL_ERROR "Separation OpenCL was requested, but OpenCL not found.")
 else()
   include_directories(${OPENCL_DIRECTORIES})
