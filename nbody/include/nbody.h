@@ -57,10 +57,14 @@ typedef struct
     int ignoreCheckpoint;
     int numThreads;
     int debugLuaLibs;   /* Open IO libraries etc. */
+    int noCL;
     time_t checkpointPeriod;
+
+    unsigned int platform;
+    unsigned int devNum;
 } NBodyFlags;
 
-#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 
 int verifyFile(const NBodyFlags* nbf);
 int runNBodySimulation(const NBodyFlags* nbf);

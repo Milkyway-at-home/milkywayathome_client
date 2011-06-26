@@ -235,6 +235,25 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
             'e', "seed for PRNG", NULL
         },
 
+        {
+            "device", 'd',
+            POPT_ARG_INT, &nbf->devNum,
+            0, "OpenCL device number", NULL
+        },
+
+
+        {
+            "platform", 'p',
+            POPT_ARG_INT, &nbf->platform,
+            0, "OpenCL platform", NULL
+        },
+
+        {
+            "disable-opencl", '\0',
+            POPT_ARG_NONE, &nbf->noCL,
+            0, "Use normal CPU path instead of OpenCL", NULL
+        },
+
         POPT_AUTOHELP
         POPT_TABLEEND
     };

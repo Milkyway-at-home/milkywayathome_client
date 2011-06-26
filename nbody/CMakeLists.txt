@@ -23,7 +23,7 @@ project(milkyway_nbody)
 
 set(nbody_VERSION_MAJOR 0
           CACHE INTERNAL "N-body version number")
-set(nbody_VERSION_MINOR 69
+set(nbody_VERSION_MINOR 71
           CACHE INTERNAL "N-body version number")
 set(nbody_VERSION "${nbody_VERSION_MAJOR}.${nbody_VERSION_MINOR}"
           CACHE INTERNAL "N-body version number")
@@ -123,7 +123,6 @@ set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_shmem.c
                   ${NBODY_SRC_DIR}/nbody_util.c)
 
-
 set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_grav.h
                       ${NBODY_INCLUDE_DIR}/nbody_config.h.in
@@ -143,6 +142,13 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_shmem.h
                       ${NBODY_INCLUDE_DIR}/nbody_util.h
                       ${NBODY_INCLUDE_DIR}/nbody_graphics.h)
+
+
+if(NBODY_OPENCL)
+  list(APPEND nbody_lib_src ${NBODY_SRC_DIR}/nbody_cl.c)
+  list(APPEND nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_cl.h)
+endif()
+
 
 
 set(nbody_lua_src ${NBODY_SRC_DIR}/nbody_lua.c
@@ -216,14 +222,7 @@ endif()
 set(nbody_link_libs )
 
 if(NBODY_OPENCL)
-  # set(c_kernel_dir "${CMAKE_CURRENT_SOURCE_DIR}/ckernels")
-  # list(APPEND nbody_lib_src "${PROJECT_SOURCE_DIR}/src/gravmap_opencl.c")
-
-  # list(APPEND nbody_lib_src "${c_kernel_dir}/cl_gravmap.c")
-  # set_source_files_properties("${c_kernel_dir}/cl_gravmap.c"
-  #                             PROPERTIES GENERATED TRUE)
-
-  # list(APPEND nbody_link_libs ${OPENCL_LIBRARIES})
+  list(APPEND nbody_link_libs ${OPENCL_LIBRARIES})
 endif()
 
 add_library(nbody_simulation STATIC ${nbody_lib_src} ${nbody_lib_headers})
@@ -246,6 +245,11 @@ set(nbody_exe_link_libs nbody_simulation
 if(BOINC_APPLICATION)
   list(INSERT nbody_exe_link_libs 5 ${BOINC_LIBRARIES})
 endif()
+
+if(NBODY_OPENCL)
+  list(INSERT nbody_exe_link_libs 5 milkyway_cl)
+endif()
+
 
 
 if(NBODY_CRLIBM)
