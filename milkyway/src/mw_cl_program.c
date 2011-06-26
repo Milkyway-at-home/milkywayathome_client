@@ -91,7 +91,6 @@ static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
                                     sizeof(stat),
                                     &stat,
                                     NULL);
-
     if (infoErr != CL_SUCCESS)
         mwCLWarn("Get build status failed", infoErr);
     else
@@ -104,20 +103,13 @@ static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
 }
 
 /* Build program and create kernel */
-cl_int mwBuildProgram(CLInfo* ci, const char* options, const char* kernName)
+cl_int mwBuildProgram(CLInfo* ci, const char* options)
 {
     cl_int err = CL_SUCCESS;
 
     err = clBuildProgram(ci->prog, 1, &ci->dev, options, milkywayBuildCB, ci);
     if (err != CL_SUCCESS)
         mwCLWarn("clBuildProgram: Build failure", err);
-
-    ci->kern = clCreateKernel(ci->prog, kernName, &err);
-    if (err != CL_SUCCESS)
-    {
-        mwCLWarn("Error creating kernel '%s'", err, kernName);
-        return err;
-    }
 
     return err;
 }
@@ -151,7 +143,7 @@ unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
 }
 
 
-cl_int mwSetProgramFromBin(CLInfo* ci, const char* kernName, const unsigned char* bin, size_t binSize)
+cl_int mwSetProgramFromBin(CLInfo* ci,const unsigned char* bin, size_t binSize)
 {
     cl_int err;
     cl_int binStatus;
@@ -170,7 +162,7 @@ cl_int mwSetProgramFromBin(CLInfo* ci, const char* kernName, const unsigned char
         return binStatus;
     }
 
-    err = mwBuildProgram(ci, NULL, kernName);
+    err = mwBuildProgram(ci, NULL);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error building program from binary", err);
@@ -181,7 +173,6 @@ cl_int mwSetProgramFromBin(CLInfo* ci, const char* kernName, const unsigned char
 }
 
 cl_int mwSetProgramFromSrc(CLInfo* ci,
-                           const char* kernName,
                            const char** src,
                            const cl_uint srcCount,
                            const char* compileDefs)
@@ -195,17 +186,10 @@ cl_int mwSetProgramFromSrc(CLInfo* ci,
         return err;
     }
 
-    err = mwBuildProgram(ci, compileDefs, kernName);
+    err = mwBuildProgram(ci, compileDefs);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error building program from source", err);
-        return err;
-    }
-
-    ci->kern = clCreateKernel(ci->prog, kernName, &err);
-    if (err != CL_SUCCESS)
-    {
-        mwCLWarn("Error creating kernel '%s'", err, kernName);
         return err;
     }
 

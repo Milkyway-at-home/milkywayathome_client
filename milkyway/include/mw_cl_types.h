@@ -97,8 +97,6 @@ typedef struct
     cl_command_queue queue;
     cl_command_queue bufQueue; /* Queue for buffer ops when double buffering */
     cl_program prog;
-    cl_kernel kern;
-
     DevInfo di;
 } CLInfo;
 

@@ -42,6 +42,31 @@ extern char* inlinedIntegralKernelSrc;
 static char* inlinedIntegralKernelSrc = NULL;
 #endif /* SEPARATION_INLINE_KERNEL */
 
+cl_kernel _separationKernel = NULL;
+
+static cl_int createSeparationKernel(const CLInfo* ci)
+{
+    cl_int err;
+
+    _separationKernel = clCreateKernel(ci->prog, "mu_sum_kernel", &err);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Error creating kernel '%s'", err, "mu_sum_kernel");
+    }
+
+    return err;
+}
+
+cl_int releaseSeparationKernel()
+{
+    cl_int err = CL_SUCCESS;
+
+    if (_separationKernel)
+        err = clReleaseKernel(_separationKernel);
+
+    return err;
+}
+
 
 /* Find an optimum block size to use and use that as the basis for the chunk estimate. Smaller number of chunks on a non-block size can be quite a bit slower. */
 static cl_uint nvidiaNumChunks(const IntegralArea* ia, const DevInfo* di)
@@ -118,7 +143,7 @@ cl_bool findRunSizes(RunSizes* sizes,
     size_t i, nMod;
     size_t sum = 0;
 
-    err = mwGetWorkGroupInfo(ci, &wgi);
+    err = mwGetWorkGroupInfo(_separationKernel, ci, &wgi);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Failed to get work group info", err);
@@ -206,18 +231,18 @@ cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* 
     cl_int err = CL_SUCCESS;
 
     /* Set output buffer arguments */
-    err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outBg);
-    err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->outStreams);
+    err |= clSetKernelArg(_separationKernel, 0, sizeof(cl_mem), &cm->outBg);
+    err |= clSetKernelArg(_separationKernel, 1, sizeof(cl_mem), &cm->outStreams);
 
     /* The constant arguments */
-    err |= clSetKernelArg(ci->kern, 2, sizeof(cl_mem), &cm->ap);
-    err |= clSetKernelArg(ci->kern, 3, sizeof(cl_mem), &cm->ia);
-    err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->sc);
-    err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->rc);
-    err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->sg_dx);
-    err |= clSetKernelArg(ci->kern, 7, sizeof(cl_mem), &cm->rPts);
-    err |= clSetKernelArg(ci->kern, 8, sizeof(cl_mem), &cm->lbts);
-    err |= clSetKernelArg(ci->kern, 9, sizeof(cl_uint), &runSizes->extra);
+    err |= clSetKernelArg(_separationKernel, 2, sizeof(cl_mem), &cm->ap);
+    err |= clSetKernelArg(_separationKernel, 3, sizeof(cl_mem), &cm->ia);
+    err |= clSetKernelArg(_separationKernel, 4, sizeof(cl_mem), &cm->sc);
+    err |= clSetKernelArg(_separationKernel, 5, sizeof(cl_mem), &cm->rc);
+    err |= clSetKernelArg(_separationKernel, 6, sizeof(cl_mem), &cm->sg_dx);
+    err |= clSetKernelArg(_separationKernel, 7, sizeof(cl_mem), &cm->rPts);
+    err |= clSetKernelArg(_separationKernel, 8, sizeof(cl_mem), &cm->lbts);
+    err |= clSetKernelArg(_separationKernel, 9, sizeof(cl_uint), &runSizes->extra);
 
     if (err != CL_SUCCESS)
     {
@@ -542,7 +567,7 @@ cl_int setupSeparationCL(CLInfo* ci,
     }
 
     warn("\nCompiler flags:\n%s\n\n", compileFlags);
-    err = mwSetProgramFromSrc(ci, "mu_sum_kernel", (const char**) &kernelSrc, 1, compileFlags);
+    err = mwSetProgramFromSrc(ci, (const char**) &kernelSrc, 1, compileFlags);
 
     freeKernelSrc(kernelSrc);
     free(compileFlags);
@@ -553,6 +578,6 @@ cl_int setupSeparationCL(CLInfo* ci,
         return err;
     }
 
-    return CL_SUCCESS;
+    return createSeparationKernel(ci);
 }
 

@@ -72,7 +72,7 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
     cl_int err;
 
     err = clEnqueueNDRangeKernel(ci->queue,
-                                 ci->kern,
+                                 _separationKernel,
                                  2,
                                  offset, global, useDefault ? NULL : local,
                                  0, NULL, NULL);
@@ -117,7 +117,7 @@ static cl_int setNuKernelArgs(CLInfo* ci, const IntegralArea* ia, const cl_uint 
      * enough threads to hide the horrible latency of the other
      * required reads. */
     nuid = calcNuStep(ia, nu_step);
-    err = clSetKernelArg(ci->kern, 10, sizeof(real), &nuid.id);
+    err = clSetKernelArg(_separationKernel, 10, sizeof(real), &nuid.id);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error setting nu_id argument for step %u", err, nu_step);

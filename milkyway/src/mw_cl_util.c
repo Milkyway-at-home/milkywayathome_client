@@ -111,25 +111,25 @@ cl_int mwFinishEvent(cl_event ev)
 
 #endif /* CL_VERSION_1_1 */
 
-cl_int mwGetWorkGroupInfo(const CLInfo* ci, WGInfo* wgi)
+cl_int mwGetWorkGroupInfo(cl_kernel kern, const CLInfo* ci, WGInfo* wgi)
 {
     cl_int err = CL_SUCCESS;
 
-    err |= clGetKernelWorkGroupInfo(ci->kern,
+    err |= clGetKernelWorkGroupInfo(kern,
                                     ci->dev,
                                     CL_KERNEL_COMPILE_WORK_GROUP_SIZE,
                                     sizeof(wgi->cwgs),
                                     wgi->cwgs,
                                     NULL);
 
-    err |= clGetKernelWorkGroupInfo(ci->kern,
+    err |= clGetKernelWorkGroupInfo(kern,
                                     ci->dev,
                                     CL_KERNEL_WORK_GROUP_SIZE,
                                     sizeof(size_t),
                                     &wgi->wgs,
                                     NULL);
 
-    err |= clGetKernelWorkGroupInfo(ci->kern,
+    err |= clGetKernelWorkGroupInfo(kern,
                                     ci->dev,
                                     CL_KERNEL_LOCAL_MEM_SIZE,
                                     sizeof(cl_ulong),

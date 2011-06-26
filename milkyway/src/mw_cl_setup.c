@@ -170,14 +170,23 @@ cl_int mwSetupCL(CLInfo* ci, const CLRequest* clr)
         return err;
     }
 
-    err = mwCreateCtxQueue(ci, CL_FALSE);
+    err = mwGetDevInfo(&ci->di, ci->dev);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Error creating CL context and command queue", err);
+        warn("Failed to get device info\n");
         return err;
     }
 
-    return CL_SUCCESS;
+    if (clr->verbose)
+    {
+        mwPrintDevInfo(&ci->di);
+    }
+    else
+    {
+        mwPrintDevInfoShort(&ci->di);
+    }
+
+    return mwCreateCtxQueue(ci, CL_FALSE);
 }
 
 cl_int mwDestroyCLInfo(CLInfo* ci)
@@ -191,8 +200,6 @@ cl_int mwDestroyCLInfo(CLInfo* ci)
         err |= clReleaseCommandQueue(ci->bufQueue);
     if (ci->prog)
         err |= clReleaseProgram(ci->prog);
-    if (ci->kern)
-        err |= clReleaseKernel(ci->kern);
     if (ci->clctx)
         err |= clReleaseContext(ci->clctx);
 

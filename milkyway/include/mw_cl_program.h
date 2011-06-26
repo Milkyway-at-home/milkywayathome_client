@@ -33,13 +33,12 @@ extern "C" {
 
 unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut);
 
-cl_int mwSetProgramFromBin(CLInfo* ci, const char* kernName, const unsigned char* bin, size_t binSize);
+cl_int mwSetProgramFromBin(CLInfo* ci, const unsigned char* bin, size_t binSize);
 cl_int mwSetProgramFromSrc(CLInfo* ci,
-                           const char* kernName,
                            const char** src,
                            const cl_uint srcCount,
                            const char* compileDefs);
-cl_int mwBuildProgram(CLInfo* ci, const char* options, const char* kernName);
+cl_int mwBuildProgram(CLInfo* ci, const char* options);
 
 #ifdef __cplusplus
 }

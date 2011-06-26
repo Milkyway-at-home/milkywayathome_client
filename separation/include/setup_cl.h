@@ -100,6 +100,10 @@ cl_bool findRunSizes(RunSizes* sizes,
 
 cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_double flops);
 
+extern cl_kernel _separationKernel;
+
+cl_int releaseSeparationKernel();
+
 #ifdef __cplusplus
 }
 #endif
