@@ -486,9 +486,9 @@ const char** mwFixArgv(int argc, const char* argv[])
     /* Now copy whatever arguments weren't moved after those that were */
     for (i = 1; i < argc; ++i)  /* Still skipping argv[0] */
     {
-        assert(j < argc);
         if (!taken[i])
         {
+            assert(j < argc);
             argvCopy[j++] = argv[i];
         }
     }
