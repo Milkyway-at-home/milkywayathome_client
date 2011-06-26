@@ -109,7 +109,7 @@ static void printRunSizes(const RunSizes* sizes, const IntegralArea* ia, cl_bool
          "Iteration area: "ZU"\n"
          "Chunk estimate: "ZU"\n"
          "Num chunks:     "ZU"\n"
-         "Added area:     "ZU"\n"
+         "Added area:      %u\n"
          "Effective area: "ZU"\n",
          ia->nu_steps, ia->mu_steps, ia->r_steps,
          sizes->area,
@@ -167,7 +167,7 @@ cl_bool findRunSizes(RunSizes* sizes,
 
     sizes->area = ia->r_steps * ia->mu_steps;
     sizes->effectiveArea = nMod * mwDivRoundup(sizes->area, nMod);
-    sizes->extra = sizes->effectiveArea - sizes->area;
+    sizes->extra = (cl_uint) (sizes->effectiveArea - sizes->area);
 
     warn("Keeping chunk boundaries as multiples of "ZU"\n", nMod);
 
@@ -526,22 +526,6 @@ cl_int setupSeparationCL(CLInfo* ci,
     {
         mwCLWarn("Error getting device and context", err);
         return err;
-    }
-
-    err = mwGetDevInfo(&ci->di, ci->dev);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failed to get device info\n");
-        return err;
-    }
-
-    if (clr->verbose)
-    {
-        mwPrintDevInfo(&ci->di);
-    }
-    else
-    {
-        mwPrintDevInfoShort(&ci->di);
     }
 
     if (!separationCheckDevCapabilities(&ci->di, ap, ias))

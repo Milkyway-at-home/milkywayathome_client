@@ -45,6 +45,7 @@ cl_int mwFinishEvent(cl_event ev);
 /* Print a message with the name of a cl_int error the end of the line */
 #define mwCLWarn(msg, err, ...) fprintf(stderr, msg ": %s\n", ##__VA_ARGS__, showCLInt(err))
 
+cl_mem mwCreateZeroReadWriteBuffer(CLInfo* ci, size_t size);
 
 #ifdef __cplusplus
 }

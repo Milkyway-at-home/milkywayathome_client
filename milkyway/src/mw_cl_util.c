@@ -152,3 +152,34 @@ void mwPrintWorkGroupInfo(const WGInfo* wgi)
          wgi->cwgs[0], wgi->cwgs[1], wgi->cwgs[2]);
 }
 
+cl_mem mwCreateZeroReadWriteBuffer(CLInfo* ci, size_t size)
+{
+    void* p;
+    cl_mem mem = NULL;
+    cl_int err = CL_SUCCESS;
+
+    mem = clCreateBuffer(ci->clctx, CL_MEM_READ_WRITE, size, NULL, &err);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Failed to create zero buffer", err);
+        goto fail;
+    }
+
+    p = clEnqueueMapBuffer(ci->queue, mem, CL_TRUE, CL_MAP_WRITE,
+                           0, size, 0, NULL, NULL, &err);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Error mapping zero buffer", err);
+        goto fail;
+    }
+
+    memset(p, 0, size);
+
+    err = clEnqueueUnmapMemObject(ci->queue, mem, p, 0, NULL, NULL);
+    if (err != CL_SUCCESS)
+        mwCLWarn("Failed to unmap zero buffer", err);
+fail:
+    return mem;
+}
+
+
