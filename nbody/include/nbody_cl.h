@@ -21,6 +21,9 @@
 #ifndef _NBODY_CL_H_
 #define _NBODY_CL_H_
 
+#include "nbody.h"
+
+cl_int runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
 
 #endif /* _NBODY_CL_H_ */
 

@@ -293,6 +293,7 @@ typedef struct NBODY_ALIGN
     NBodyNode* freecell;   /* list of free cells */
     time_t lastCheckpoint;
     real tnow;
+    int step;
     int nbody;
     Body* bodytab;      /* points to array of bodies */
     mwvector* acctab;   /* Corresponding accelerations of bodies */
@@ -307,7 +308,7 @@ typedef struct NBODY_ALIGN
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0.0, 0, NULL, NULL, FALSE, NULL, NULL, NULL, -1 }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0.0, 0, 0, NULL, NULL, FALSE, NULL, NULL, NULL, -1 }
 
 
 typedef struct

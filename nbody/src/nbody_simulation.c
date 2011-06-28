@@ -197,7 +197,21 @@ int runNBodySimulation(const NBodyFlags* nbf)
     }
 
     ts = mwGetTime();
+
+  #if NBODY_OPENCL
+    if (nbf->noCL)
+    {
+        rc = runSystem(ctx, st, nbf);
+    }
+    else
+    {
+        rc = runSystemCL(ctx, st, nbf);
+    }
+
+  #else
     rc = runSystem(ctx, st, nbf);
+  #endif /* NBODY_OPENCL */
+
     if (rc)
     {
         warn("Error running system\n");
