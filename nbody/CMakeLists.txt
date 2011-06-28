@@ -217,7 +217,7 @@ endif()
 set(nbody_link_libs )
 
 if(NBODY_OPENCL)
-  include_directories(${OPENCL_DIRECTORIES})
+  include_directories(${OPENCL_INCLUDE_DIRS})
   list(APPEND nbody_link_libs ${OPENCL_LIBRARIES})
 endif()
 

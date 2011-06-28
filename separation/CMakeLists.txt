@@ -95,7 +95,7 @@ endif()
 if(SEPARATION_OPENCL AND NOT OPENCL_FOUND)
   message(FATAL_ERROR "Separation OpenCL was requested, but OpenCL not found.")
 else()
-  include_directories(${OPENCL_DIRECTORIES})
+  include_directories(${OPENCL_INCLUDE_DIRS})
 endif()
 
 if(SEPARATION_OPENCL AND SEPARATION_CAL)

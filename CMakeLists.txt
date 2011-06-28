@@ -155,10 +155,9 @@ option(NBODY_OPENCL
         "Build the OpenCL nbody" OFF)
 
 option(MILKYWAY_OPENCL
-        "Build the OpenCL nbody" OFF)
+        "Build the OpenCL parts of milkyway" OFF)
 mark_as_advanced(MILKYWAY_OPENCL)
 
-#FIXME: Be able to build one with / without openl
 if(NBODY_OPENCL OR SEPARATION_OPENCL)
   set(MILKYWAY_OPENCL ON CACHE INTERNAL "Need to build milkyway_cl")
 endif()
