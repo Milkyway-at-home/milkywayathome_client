@@ -70,13 +70,8 @@ if(NOT DOUBLEPREC AND NBODY_CRLIBM)
   set(NBODY_CRLIBM OFF)
 endif()
 
-if(NBODY_OPENCL)
-  if(NOT OPENCL_FOUND)
-    message(WARNING "N-body OpenCL was requested, but OpenCL not found. Disabling OpenCL.")
-    set(NBODY_OPENCL OFF)
-  else()
-    include_directories(${OPENCL_DIRECTORIES})
-  endif()
+if(NBODY_OPENCL AND NOT OPENCL_FOUND)
+  message(FATAL "N-body OpenCL was requested, but OpenCL not found. Disabling OpenCL.")
 endif()
 
 # Handle downloading, extracting and building dSFMT
@@ -222,6 +217,7 @@ endif()
 set(nbody_link_libs )
 
 if(NBODY_OPENCL)
+  include_directories(${OPENCL_DIRECTORIES})
   list(APPEND nbody_link_libs ${OPENCL_LIBRARIES})
 endif()
 
