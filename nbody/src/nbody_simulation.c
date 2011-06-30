@@ -37,13 +37,17 @@ static inline int nbodyTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
   #else
     time_t now;
 
-    if (ctx->checkpointT < 0 || ((now = time(NULL)) - st->lastCheckpoint) < ctx->checkpointT)
+    if (ctx->checkpointT < 0)
         return FALSE;
-    else
+
+    now = time(NULL);
+    if ((now - st->lastCheckpoint) > ctx->checkpointT)
     {
         st->lastCheckpoint = now;
         return TRUE;
     }
+
+    return FALSE;
   #endif /* BOINC_APPLICATION */
 }
 
@@ -177,13 +181,13 @@ int runNBodySimulation(const NBodyFlags* nbf)
     real chisq;
     double ts = 0.0, te = 0.0;
 
-    nbodySetCtxFromFlags(ctx, nbf);
     if (setupRun(ctx, st, &ctx->histogramParams, nbf))
     {
         warn("Failed to setup run\n");
         return 1;
     }
 
+    nbodySetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
     if (initOutput(st, nbf))
     {
         warn("Failed to open output files\n");
