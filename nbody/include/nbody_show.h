@@ -49,7 +49,7 @@ void printHistogramParams(const HistogramParams*);
 char* showBody(const Body* p);
 void printBody(const Body* p);
 
-void printBodies(const Body* bs, unsigned int n);
+void printBodies(const Body* bs, int n);
 
 char* showNBodyState(const NBodyState*);
 void printNBodyState(const NBodyState*);

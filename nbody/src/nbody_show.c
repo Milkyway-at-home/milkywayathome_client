@@ -401,9 +401,9 @@ void printPotential(const Potential* p)
     free(buf);
 }
 
-void printBodies(const Body* bs, unsigned int n)
+void printBodies(const Body* bs, int n)
 {
-    unsigned int i;
+    int i;
 
     for (i = 0; i < n; ++i)
         printBody(&bs[i]);
