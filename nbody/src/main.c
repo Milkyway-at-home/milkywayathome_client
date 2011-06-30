@@ -324,9 +324,9 @@ static void setNumThreads(int numThreads)
     if (numThreads != 0)
     {
         omp_set_num_threads(numThreads);
-        mw_report("Using OpenMP %d max threads on a system with %d processors\n",
-                  omp_get_max_threads(),
-                  omp_get_num_procs());
+        warn("Using OpenMP %d max threads on a system with %d processors\n",
+             omp_get_max_threads(),
+             omp_get_num_procs());
     }
 }
 #else
