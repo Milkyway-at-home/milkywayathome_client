@@ -257,8 +257,6 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
                  "-cl-single-precision-constant"
                #endif
 
-                 "-cl-nv-verbose "
-
                  "-D NBODY=%d "
                  "-D NNODE=%u "
                  "-D WARPSIZE=%u "
@@ -278,7 +276,9 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
                  "-D NEWCRITERION=%d "
                  "-D SW93=%d "
                  "-D BH86=%d "
-                 "-D EXACT=%d ",
+                 "-D EXACT=%d "
+
+                 "%s ",
                  DOUBLEPREC,
 
                  st->nbody,
@@ -300,7 +300,9 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
                  ctx->criterion == NewCriterion,
                  ctx->criterion == SW93,
                  ctx->criterion == BH86,
-                 ctx->criterion == Exact
+                 ctx->criterion == Exact,
+                 hasNvidiaCompilerFlags(di) ? "-cl-nv-verbose" : ""
+
             ) < 1)
     {
         warn("Error getting compile flags\n");

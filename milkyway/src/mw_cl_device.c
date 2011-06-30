@@ -209,6 +209,11 @@ cl_double referenceGFLOPsRadeon5870(cl_bool doubleprec)
     return doubleprec ? 544.0 : 2720.0;
 }
 
+cl_bool hasNvidiaCompilerFlags(const DevInfo* di)
+{
+    return strstr(di->exts, "cl_nv_compiler_options") != NULL;
+}
+
 void mwPrintDevInfo(const DevInfo* di)
 {
     warn("Device %s (%s:0x%x) (%s)\n"
