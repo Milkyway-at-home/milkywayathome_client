@@ -501,9 +501,16 @@ int main(int argc, const char* argv[])
     rc = parseParameters(argc, argvCopy, &sf);
     if (rc)
     {
+        if (BOINC_APPLICATION)
+        {
+            freeSeparationFlags(&sf);
+            mwBoincInit(MW_PLAIN);
+            parseParameters(argc, argvCopy, &sf);
+        }
+
         warn("Failed to parse parameters\n");
         free(argvCopy);
-        exit(EXIT_FAILURE);
+        mw_finish(EXIT_FAILURE);
     }
 
     rc = separationInit(sf.debugBOINC, sf.processPriority, sf.setPriority);
