@@ -29,7 +29,7 @@
 #endif
 
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
-
+#pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
 
 #if DOUBLEPREC
 typedef double real;
@@ -37,17 +37,27 @@ typedef double real;
 typedef float real;
 #endif /* DOUBLEPREC */
 
+
 /* FIXME: This needs to be the same as on the host */
 typedef struct __attribute__((aligned))
 {
-    real radius;
-    int bottom;
-    int maxDepth;
-    int errorCode;
-    unsigned int blkCnt;
+    volatile real radius;
+    volatile int bottom;
+    volatile int maxDepth;
+    volatile int errorCode;
+    volatile unsigned int blkCnt;
 } TreeStatus;
 
 #define NSUB 8
+
+typedef struct
+{
+    volatile real f[16];
+    volatile int i[16];
+} Debug;
+
+
+
 
 /* All kernels will use the same parameters for now */
 
@@ -64,7 +74,8 @@ typedef struct __attribute__((aligned))
     __global int* restrict _sort,                                                                \
     __global TreeStatus* restrict _treeStatus,                                                   \
                                                                                                  \
-    int step                                                                                     \
+    int step,                                                                                    \
+    __global volatile Debug* _debug                                                              \
     )
 
 __kernel void NBODY_KERNEL(boundingBox)
@@ -113,13 +124,13 @@ __kernel void NBODY_KERNEL(boundingBox)
         barrier(CLK_LOCAL_MEM_FENCE);
         if (i < j)
         {
-            minX[i] = min(minX[i], minZ[i + j]);
-            minY[i] = min(minY[i], minZ[i + j]);
+            minX[i] = min(minX[i], minX[i + j]);
+            minY[i] = min(minY[i], minY[i + j]);
             minZ[i] = min(minZ[i], minZ[i + j]);
 
             maxX[i] = max(maxX[i], maxX[i + j]);
-            maxX[i] = max(maxY[i], maxY[i + j]);
-            maxX[i] = max(maxZ[i], maxZ[i + j]);
+            maxY[i] = max(maxY[i], maxY[i + j]);
+            maxZ[i] = max(maxZ[i], maxZ[i + j]);
         }
 
         j >>= 1;
@@ -142,8 +153,7 @@ __kernel void NBODY_KERNEL(boundingBox)
 
         inc = get_num_groups(0) - 1;
 
-        /* CHECKME: CUDA atomicInc seems to have different behaviour when old >= val */
-        if (inc == atom_add(&_treeStatus->blkCnt, inc))
+        if (inc == atom_inc(&_treeStatus->blkCnt))
         {
             /* I'm the last block so combine all block results */
             for (j = 0; j <= inc; ++j)
@@ -191,7 +201,7 @@ __kernel void NBODY_KERNEL(buildTree)
         rootY = _posY[NNODE];
         rootZ = _posZ[NNODE];
     }
-    barrier(CLK_LOCAL_MEM_FENCE);
+    barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
 
     int localMaxDepth = 1;
     int skip = 1;
@@ -269,7 +279,7 @@ __kernel void NBODY_KERNEL(buildTree)
                     {
                         ++depth;
 
-                        int cell = atom_sub(&_treeStatus->bottom, 1) - 1;
+                        int cell = atom_dec(&_treeStatus->bottom) - 1;
                         if (cell <= NBODY)
                         {
                             _treeStatus->errorCode = 1;
@@ -292,19 +302,21 @@ __kernel void NBODY_KERNEL(buildTree)
                         #pragma unroll NSUB
                         for (int k = 0; k < NSUB; ++k)
                         {
+                            _child[NSUB * cell + k] = -1;
+                        }
+
+                        if (patch != cell)
+                        {
                             _child[NSUB * n + j] = cell;
                         }
 
                         j = 0;
                         if (x < _posX[ch])
                             j = 1;
-
                         if (y < _posY[ch])
                             j += 2;
-
                         if (z < _posZ[ch])
                             j += 4;
-
                         _child[NSUB * cell + j] = ch;
 
                         n = cell;
@@ -447,7 +459,7 @@ __kernel void NBODY_KERNEL(summarization)
             _posZ[k] = m * pz;
             mem_fence(CLK_GLOBAL_MEM_FENCE); /* CHECKME: equivalent to CUDA's __threadfence()? */
             _mass[k] = cm;
-            k += inc;
+            k += inc;  /* Move on to next cell */
         }
     }
 }

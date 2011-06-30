@@ -21,6 +21,23 @@
 #include "milkyway_cl.h"
 #include "milkyway_util.h"
 #include "nbody_cl.h"
+#include "nbody_show.h"
+
+#define FACTOR1 1
+#define FACTOR2 2
+#define FACTOR3 1
+#define FACTOR4 1
+#define FACTOR5 2
+#define FACTOR6 1
+
+#define THREADS1 256
+#define THREADS2 288
+#define THREADS3 256
+#define THREADS4 512
+#define THREADS5 256
+#define THREADS6 512
+
+#define MAXDEPTH 26
 
 /* FIXME: Need a way to track which bodies are ignored when they are
  * shuffled around by sorting
@@ -39,6 +56,8 @@ typedef struct
     cl_mem count;
     cl_mem child;
     cl_mem sort;
+
+    cl_mem debug;
 } NBodyBuffers;
 
 /* CHECKME: Padding between these fields might be a good idea */
@@ -50,6 +69,26 @@ typedef struct NBODY_ALIGN
     int errorCode;
     unsigned int blkCnt;
 } TreeStatus;
+
+typedef struct
+{
+    real f[16];
+    int i[16];
+} Debug;
+
+static void printDebug(const Debug* d)
+{
+    int i;
+    for (i = 0; i < 16; ++i)
+    {
+        warn("Debug.int[%d] = %d\n", i, d->i[i]);
+    }
+
+    for (i = 0; i < 16; ++i)
+    {
+        warn("Debug.float[%d] = %.15f\n", i, d->f[i]);
+    }
+}
 
 static void printTreeStatus(const TreeStatus* tc)
 {
@@ -118,6 +157,8 @@ static cl_int setKernelArguments(cl_kernel kern, CLInfo* ci, NBodyBuffers* nbb)
     /* Set the step to be 0 here. Only the force calculation kernel
      * actually cares. We'll set it before then. */
     err |= clSetKernelArg(kern, 21, sizeof(cl_int), &step);
+
+    err |= clSetKernelArg(kern, 22, sizeof(cl_mem), &nbb->debug);
 
     return err;
 }
@@ -191,13 +232,13 @@ static cl_int releaseKernels()
 static cl_uint findNNode(const DevInfo* di, cl_int nbody)
 {
     cl_uint nNode = 2 * nbody;
-    //cl_uint warpSize = 32;
-    cl_uint warpSize = 1;
+    cl_uint warpSize = 32;
+    //cl_uint warpSize = 1;
 
     if (nNode < 1024 * di->maxCompUnits)
         nNode = 1024 * di->maxCompUnits;
     while ((nNode & (warpSize - 1)) != 0)
-        nNode++;
+        ++nNode;
 
     return nNode - 1;
 }
@@ -205,7 +246,7 @@ static cl_uint findNNode(const DevInfo* di, cl_int nbody)
 static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const DevInfo* di)
 {
     char* buf;
-    cl_uint warpSize = 1;
+    cl_uint warpSize = 32;
 
     /* Put a space between the -D. if the thing begins with D, there's
      * an Apple OpenCL compiler bug where the D will be
@@ -216,17 +257,19 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
                  "-cl-single-precision-constant"
                #endif
 
+                 "-cl-nv-verbose "
+
                  "-D NBODY=%d "
                  "-D NNODE=%u "
                  "-D WARPSIZE=%u "
 
-                 "-D MAXDEPTH=%u "
                  "-D THREADS1=%u "
                  "-D THREADS2=%u "
                  "-D THREADS3=%u "
                  "-D THREADS4=%u "
                  "-D THREADS5=%u "
                  "-D THREADS6=%u "
+                 "-D MAXDEPTH=%u "
 
                  "-D TIMESTEP=%a "
                  "-D EPS2=%a "
@@ -242,13 +285,13 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
                  findNNode(di, st->nbody),
                  warpSize,
 
-                 512, /* THREADS1 */
-                 288,
-                 256,
-                 512,
-                 384,
-                 512,
-                 26,  /* MAXDEPTH */
+                 THREADS1,
+                 THREADS2,
+                 THREADS3,
+                 THREADS4,
+                 THREADS5,
+                 THREADS6,
+                 MAXDEPTH,
 
                  ctx->timestep,
                  ctx->eps2,
@@ -293,6 +336,24 @@ static cl_bool nbodyCheckDevCapabilities(const DevInfo* di, const NBodyCtx* ctx,
     return CL_TRUE;
 }
 
+static cl_int debug(CLInfo* ci, NBodyBuffers* nbb)
+{
+    cl_int err;
+    Debug d;
+
+    memset(&d, 0, sizeof(d));
+
+    err = clEnqueueReadBuffer(ci->queue,
+                              nbb->debug,
+                              CL_TRUE,
+                              0, sizeof(d), &d,
+                              0, NULL, NULL);
+
+    warn("Debug:\n");
+    printDebug(&d);
+    return err;
+}
+
 static cl_int readTreeStatus(TreeStatus* tc, CLInfo* ci, NBodyBuffers* nbb)
 {
     assert(tc);
@@ -307,21 +368,109 @@ static cl_int readTreeStatus(TreeStatus* tc, CLInfo* ci, NBodyBuffers* nbb)
 static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err;
-    size_t global[1] = { st->nbody };
-    size_t* local = NULL;
+    size_t global[1];
+    size_t local[1];
+    size_t warpSize = 32;
+    //size_t local[1] = { warpSize };
+    //size_t local[1] = { 512 };
+    cl_uint blocks = ci->di.maxCompUnits;
 
     err = clSetKernelArg(kernels.forceCalculation, 21, sizeof(int), &st->step);
     if (err != CL_SUCCESS)
         return err;
 
+
+    warn("Bounding box kernel\n");
+    global[0] = THREADS1 * FACTOR1 * blocks;
+    local[0] = THREADS1;
     err = clEnqueueNDRangeKernel(ci->queue, kernels.boundingBox, 1,
                                  NULL, global, local,
                                  0, NULL, NULL);
     if (err != CL_SUCCESS)
         return err;
 
+    warn("Tree build kernel\n");
+    global[0] = THREADS2 * FACTOR2 * blocks;
+    local[0] = THREADS2;
+    err = clEnqueueNDRangeKernel(ci->queue, kernels.buildTree, 1,
+                                 NULL, global, local,
+                                 0, NULL, NULL);
+    if (err != CL_SUCCESS)
+        return err;
+
+    err = clFinish(ci->queue);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failure on build tree kernel\n");
+        return err;
+    }
+
     st->tnow += ctx->timestep;
     st->step++;
+
+    return err;
+
+    warn("Summarization kernel\n");
+
+    global[0] = THREADS3 * FACTOR3 * blocks;
+    local[0] = THREADS3;
+    err = clEnqueueNDRangeKernel(ci->queue, kernels.summarization, 1,
+                                 NULL, global, local,
+                                 0, NULL, NULL);
+    if (err != CL_SUCCESS)
+        return err;
+
+
+    err = clFinish(ci->queue);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failure on summarization kernel\n");
+        return err;
+    }
+
+
+    warn("Sort kernel\n");
+    global[0] = THREADS4 * FACTOR4 * blocks;
+    local[0] = THREADS4;
+    err = clEnqueueNDRangeKernel(ci->queue, kernels.sort, 1,
+                                 NULL, global, local,
+                                 0, NULL, NULL);
+    if (err != CL_SUCCESS)
+        return err;
+    err = clFinish(ci->queue);
+    if (err != CL_SUCCESS)
+        return err;
+
+
+
+
+
+
+    warn("Force kernel\n");
+    global[0] = THREADS5 * FACTOR5 * blocks;
+    local[0] = THREADS5;
+    err = clEnqueueNDRangeKernel(ci->queue, kernels.forceCalculation, 1,
+                                 NULL, global, local,
+                                 0, NULL, NULL);
+    if (err != CL_SUCCESS)
+        return err;
+
+    err = clFinish(ci->queue);
+    if (err != CL_SUCCESS)
+        return err;
+
+    warn("Integration kernel\n");
+    global[0] = THREADS6 * FACTOR6 * blocks;
+    local[0] = THREADS6;
+    err = clEnqueueNDRangeKernel(ci->queue, kernels.integration, 1,
+                                 NULL, global, local,
+                                 0, NULL, NULL);
+    if (err != CL_SUCCESS)
+        return err;
+    clFinish(ci->queue);
+
+    //st->tnow += ctx->timestep;
+    //st->step++;
 
     return clFinish(ci->queue);
 }
@@ -334,9 +483,14 @@ static cl_int nbodyMainLoop(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     st->step = -1;
 
     //while (err == CL_SUCCESS && st->tnow < tstop)
+    //for (int i = 0; i < 3; ++i)
     {
+        warn("Runing step %d (%f%%)\n",
+             st->step,
+             100.0 * st->tnow / tstop);
         err = stepSystemCL(ci, ctx, st);
     }
+    warn("Broke on step %d\n", st->step);
 
     return err;
 }
@@ -404,9 +558,14 @@ static cl_int createBuffers(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st)
     cl_uint nNode;
     cl_int err = CL_SUCCESS;
 
+    nNode = findNNode(&ci->di, st->nbody);
+    warn("NNODE = %u, nbody = %d\n", nNode + 1, st->nbody);
+
+    int warpsize = 32;
+    warn("inc %d\n", (st->nbody + warpsize - 1) & (-warpsize));
     for (i = 0; i < 3; ++i)
     {
-        nbb->pos[i] = mwCreateZeroReadWriteBuffer(ci, st->nbody * sizeof(real));
+        nbb->pos[i] = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
         nbb->vel[i] = mwCreateZeroReadWriteBuffer(ci, st->nbody * sizeof(real));
         nbb->acc[i] = mwCreateZeroReadWriteBuffer(ci, st->nbody * sizeof(real));
         nbb->min[i] = mwCreateZeroReadWriteBuffer(ci, ci->di.maxCompUnits * sizeof(real));
@@ -419,17 +578,18 @@ static cl_int createBuffers(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st)
         }
     }
 
-    nbb->masses = mwCreateZeroReadWriteBuffer(ci, st->nbody * sizeof(real));
+    nbb->masses = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
     nbb->treeControl = mwCreateZeroReadWriteBuffer(ci, sizeof(TreeStatus));
 
-    nNode = findNNode(&ci->di, st->nbody);
     nbb->start = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(int));
     nbb->count = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(int));
-    nbb->sort = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(int));
-    nbb->child = mwCreateZeroReadWriteBuffer(ci, (NSUB * nNode + 1) * sizeof(int));
+    nbb->sort = mwCreateZeroReadWriteBuffer(ci, 2 * st->nbody * sizeof(int)); /* CHECKME */
+    nbb->child = mwCreateZeroReadWriteBuffer(ci, NSUB * (nNode + 1) * sizeof(int));
+
+    nbb->debug = mwCreateZeroReadWriteBuffer(ci, sizeof(Debug));
 
 
-    if (!nbb->masses || !nbb->treeControl || !nbb->start)
+    if (!nbb->masses || !nbb->treeControl || !nbb->start || !nbb->count || !nbb->sort || !nbb->child)
         err = MW_CL_ERROR;
 
     if (err != CL_SUCCESS)
@@ -442,22 +602,22 @@ static cl_int createBuffers(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st)
     return setInitialTreeStatus(ci, nbb);
 }
 
-static real* mapRealBuffer(CLInfo* ci, cl_mem mem, size_t nElement)
+static void* mapBuffer(CLInfo* ci, cl_mem mem, cl_map_flags flags, size_t size)
 {
-    return (real*) clEnqueueMapBuffer(ci->queue, mem, CL_TRUE, CL_MAP_READ, 0,
-                                      nElement * sizeof(real),
-                                      0, NULL, NULL, NULL);
+    return clEnqueueMapBuffer(ci->queue, mem, CL_TRUE, flags, 0,
+                              size,
+                              0, NULL, NULL, NULL);
 
 }
 
-static cl_int mapBodies(real* pos[3], real* vel[3], NBodyBuffers* nbb, CLInfo* ci, NBodyState* st)
+static cl_int mapBodies(real* pos[3], real* vel[3], NBodyBuffers* nbb, CLInfo* ci, cl_map_flags flags, NBodyState* st)
 {
     cl_uint i;
 
     for (i = 0; i < 3; ++i)
     {
-        pos[i] = mapRealBuffer(ci, nbb->pos[i], (size_t) st->nbody);
-        vel[i] = mapRealBuffer(ci, nbb->vel[i], (size_t) st->nbody);
+        pos[i] = (real*) mapBuffer(ci, nbb->pos[i], flags, st->nbody * sizeof(real));
+        vel[i] = (real*) mapBuffer(ci, nbb->vel[i], flags, st->nbody * sizeof(real));
         if (!pos[i] || !vel[i])
         {
             return MW_CL_ERROR;
@@ -492,8 +652,9 @@ static cl_int marshalBodies(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st, cl_bo
     const Body* b;
     real* pos[3] = { NULL, NULL, NULL };
     real* vel[3] = { NULL, NULL, NULL };
+    cl_map_flags flags = marshalIn ? CL_MAP_WRITE : CL_MAP_READ;
 
-    err = mapBodies(pos, vel, nbb, ci, st);
+    err = mapBodies(pos, vel, nbb, ci, flags, st);
     if (err != CL_SUCCESS)
     {
         unmapBodies(pos, vel, nbb, ci);
@@ -530,18 +691,30 @@ static cl_int marshalBodies(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st, cl_bo
     return unmapBodies(pos, vel, nbb, ci);
 }
 
-static cl_int printRealBuffer(CLInfo* ci, cl_mem mem, size_t n, const char* name)
+static cl_int printBuffer(CLInfo* ci, cl_mem mem, size_t n, const char* name, int type)
 {
     size_t i;
-    real* p;
+    void* p;
 
-    p = mapRealBuffer(ci, mem, n);
+    p = mapBuffer(ci, mem, CL_MAP_READ, n * (type == 0 ? sizeof(real) : sizeof(int)));
     if (!p)
         return MW_CL_ERROR;
 
-    for (i = 0; i < n; ++i)
+    if (type == 0)
     {
-        warn("%s["ZU"] = %.15f\n", name, i, p[i]);
+        const real* pr = (const real*) p;
+        for (i = 0; i < n; ++i)
+        {
+            warn("%s["ZU"] = %.15f\n", name, i, pr[i]);
+        }
+    }
+    else
+    {
+        const int* pi = (const int*) p;
+        for (i = 0; i < n; ++i)
+        {
+            warn("%s["ZU"] = %d\n", name, i, pi[i]);
+        }
     }
 
     return clEnqueueUnmapMemObject(ci->queue, mem, p, 0, NULL, NULL);
@@ -608,11 +781,17 @@ cl_int runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
         printTreeStatus(&tc);
     }
 
+
+
     err = marshalBodies(&nbb, &ci, st, CL_FALSE);
     if (err != CL_SUCCESS)
         goto fail;
 
+    //printBodies(st->bodytab, st->nbody);
+
 fail:
+    debug(&ci, &nbb);
+
     mwDestroyCLInfo(&ci);
     releaseKernels();
     releaseBuffers(&nbb);
