@@ -324,8 +324,18 @@ int main(int argc, const char* argv[])
 
     specialSetup();
 
-    if (readParameters(argc, argvCopy, &nbf))
-        exit(EXIT_FAILURE);
+    rc = readParameters(argc, argvCopy, &nbf);
+    if (rc)
+    {
+        if (BOINC_APPLICATION)
+        {
+            freeNBodyFlags(&nbf);
+            mwBoincInit(MW_PLAIN);
+            readParameters(argc, argvCopy, &nbf);
+        }
+
+        mw_finish(EXIT_FAILURE);
+    }
     free(argvCopy);
 
     if (nbodyInit(&nbf))
