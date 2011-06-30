@@ -26,11 +26,25 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "mw_cl_device.h"
 #include "mw_cl_util.h"
 
+static void CL_CALLBACK contextCallback(const char* errInfo,
+                                        const void* privateInfo,
+                                        size_t cb,
+                                        void* userData)
+{
+    warn("CL context error: %s\n", errInfo);
+}
+
+#if defined(cl_APPLE_ContextLoggingFunctions) && defined(__APPLE__)
+  #define MW_CONTEXT_LOGGER clLogMessagesToStderrAPPLE
+#else
+  #define MW_CONTEXT_LOGGER contextCallback
+#endif /* cl_APPLE_ContextLoggingFunctions */
+
 static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useBufQueue)
 {
     cl_int err = CL_SUCCESS;
 
-    ci->clctx = clCreateContext(NULL, 1, &ci->dev, NULL, NULL, &err);
+    ci->clctx = clCreateContext(NULL, 1, &ci->dev, MW_CONTEXT_LOGGER, NULL, &err);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error creating context", err);
