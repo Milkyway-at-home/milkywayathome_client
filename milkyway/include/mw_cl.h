@@ -33,5 +33,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <CL/cl_ext.h>
 #endif /* __APPLE__ */
 
+/* This doesn't seem to exist on OS X, but the callback on ATI on
+ * Linux/Windows dies without it */
+#ifndef CL_CALLBACK
+  #define CL_CALLBACK
+#endif
+
 #endif /* _MW_CL_H_ */
 
