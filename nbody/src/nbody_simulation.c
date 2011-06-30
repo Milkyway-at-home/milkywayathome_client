@@ -78,6 +78,9 @@ static int runSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
         launchVisualizer(st, nbf->visArgs);
     }
 
+    if (gravMap(ctx, st)) /* Start 1st step */
+        return 1;
+
     while (st->tnow < tstop)
     {
         updateDisplayedBodies(st);
@@ -137,7 +140,7 @@ static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, 
         }
     }
 
-    return gravMap(ctx, st); /* Start 1st step */
+    return NBODY_SUCCESS;
 }
 
 /* Set context fields read from command line flags */
