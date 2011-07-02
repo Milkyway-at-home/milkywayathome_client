@@ -50,7 +50,7 @@ typedef struct
     cl_mem max[3];
     cl_mem min[3];
     cl_mem masses;
-    cl_mem treeControl;
+    cl_mem treeStatus;
 
     cl_mem start; /* TODO: We can reuse other buffers with this later to save memory */
     cl_mem count;
@@ -90,7 +90,7 @@ static void printDebug(const Debug* d)
     }
 }
 
-static void printTreeStatus(const TreeStatus* tc)
+static void printTreeStatus(const TreeStatus* ts)
 {
     warn("TreeStatus = {\n"
          "  radius    = %.15f\n"
@@ -99,11 +99,11 @@ static void printTreeStatus(const TreeStatus* tc)
          "  errorCode = %d\n"
          "  blckCnt   = %u\n"
          "}\n",
-         tc->radius,
-         tc->bottom,
-         tc->maxDepth,
-         tc->errorCode,
-         tc->blkCnt);
+         ts->radius,
+         ts->bottom,
+         ts->maxDepth,
+         ts->errorCode,
+         ts->blkCnt);
 }
 
 
@@ -151,7 +151,7 @@ static cl_int setKernelArguments(cl_kernel kern, CLInfo* ci, NBodyBuffers* nbb)
     err |= clSetKernelArg(kern, 17, sizeof(cl_mem), &nbb->count);
     err |= clSetKernelArg(kern, 18, sizeof(cl_mem), &nbb->child);
     err |= clSetKernelArg(kern, 19, sizeof(cl_mem), &nbb->sort);
-    err |= clSetKernelArg(kern, 20, sizeof(cl_mem), &nbb->treeControl);
+    err |= clSetKernelArg(kern, 20, sizeof(cl_mem), &nbb->treeStatus);
 
 
     /* Set the step to be 0 here. Only the force calculation kernel
@@ -302,7 +302,6 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
                  ctx->criterion == BH86,
                  ctx->criterion == Exact,
                  hasNvidiaCompilerFlags(di) ? "-cl-nv-verbose" : ""
-
             ) < 1)
     {
         warn("Error getting compile flags\n");
@@ -361,7 +360,7 @@ static cl_int readTreeStatus(TreeStatus* tc, CLInfo* ci, NBodyBuffers* nbb)
     assert(tc);
 
     return clEnqueueReadBuffer(ci->queue,
-                               nbb->treeControl,
+                               nbb->treeStatus,
                                CL_TRUE,
                                0, sizeof(*tc), tc,
                                0, NULL, NULL);
@@ -521,7 +520,7 @@ static cl_int releaseBuffers(NBodyBuffers* nbb)
     }
 
     err |= clReleaseMemObject_quiet(nbb->masses);
-    err |= clReleaseMemObject_quiet(nbb->treeControl);
+    err |= clReleaseMemObject_quiet(nbb->treeStatus);
     err |= clReleaseMemObject_quiet(nbb->start);
     err |= clReleaseMemObject_quiet(nbb->count);
     err |= clReleaseMemObject_quiet(nbb->child);
@@ -548,7 +547,7 @@ static cl_int setInitialTreeStatus(CLInfo* ci, NBodyBuffers* nbb)
     printTreeStatus(&iniTreeStatus);
 
     return clEnqueueWriteBuffer(ci->queue,
-                                nbb->treeControl,
+                                nbb->treeStatus,
                                 CL_TRUE,
                                 0, sizeof(TreeStatus), &iniTreeStatus,
                                 0, NULL, NULL);
@@ -581,7 +580,7 @@ static cl_int createBuffers(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st)
     }
 
     nbb->masses = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
-    nbb->treeControl = mwCreateZeroReadWriteBuffer(ci, sizeof(TreeStatus));
+    nbb->treeStatus = mwCreateZeroReadWriteBuffer(ci, sizeof(TreeStatus));
 
     nbb->start = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(int));
     nbb->count = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(int));
@@ -591,7 +590,7 @@ static cl_int createBuffers(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st)
     nbb->debug = mwCreateZeroReadWriteBuffer(ci, sizeof(Debug));
 
 
-    if (!nbb->masses || !nbb->treeControl || !nbb->start || !nbb->count || !nbb->sort || !nbb->child)
+    if (!nbb->masses || !nbb->treeStatus || !nbb->start || !nbb->count || !nbb->sort || !nbb->child)
         err = MW_CL_ERROR;
 
     if (err != CL_SUCCESS)
@@ -612,7 +611,7 @@ static void* mapBuffer(CLInfo* ci, cl_mem mem, cl_map_flags flags, size_t size)
 
 }
 
-static cl_int mapBodies(real* pos[3], real* vel[3], NBodyBuffers* nbb, CLInfo* ci, cl_map_flags flags, NBodyState* st)
+static cl_int mapBodies(real* pos[3], real* vel[3], real** mass, NBodyBuffers* nbb, CLInfo* ci, cl_map_flags flags, NBodyState* st)
 {
     cl_uint i;
 
@@ -626,10 +625,12 @@ static cl_int mapBodies(real* pos[3], real* vel[3], NBodyBuffers* nbb, CLInfo* c
         }
     }
 
+    *mass = (real*) mapBuffer(ci, nbb->masses, flags, st->nbody * sizeof(real));
+
     return CL_SUCCESS;
 }
 
-static cl_int unmapBodies(real* pos[3], real* vel[3], NBodyBuffers* nbb, CLInfo* ci)
+static cl_int unmapBodies(real* pos[3], real* vel[3], real* mass, NBodyBuffers* nbb, CLInfo* ci)
 {
     cl_uint i;
     cl_int err = CL_SUCCESS;
@@ -643,6 +644,9 @@ static cl_int unmapBodies(real* pos[3], real* vel[3], NBodyBuffers* nbb, CLInfo*
             err |= clEnqueueUnmapMemObject(ci->queue, nbb->vel[i], vel[i], 0, NULL, NULL);
     }
 
+    if (mass)
+        err |= clEnqueueUnmapMemObject(ci->queue, nbb->masses, mass, 0, NULL, NULL);
+
     return err;
 }
 
@@ -654,12 +658,13 @@ static cl_int marshalBodies(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st, cl_bo
     const Body* b;
     real* pos[3] = { NULL, NULL, NULL };
     real* vel[3] = { NULL, NULL, NULL };
+    real* mass = NULL;
     cl_map_flags flags = marshalIn ? CL_MAP_WRITE : CL_MAP_READ;
 
-    err = mapBodies(pos, vel, nbb, ci, flags, st);
+    err = mapBodies(pos, vel, &mass, nbb, ci, flags, st);
     if (err != CL_SUCCESS)
     {
-        unmapBodies(pos, vel, nbb, ci);
+        unmapBodies(pos, vel, mass, nbb, ci);
         return err;
     }
 
@@ -674,6 +679,8 @@ static cl_int marshalBodies(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st, cl_bo
             vel[0][i] = X(Vel(b));
             vel[1][i] = Y(Vel(b));
             vel[2][i] = Z(Vel(b));
+
+            mass[i] = Mass(b);
         }
     }
     else
@@ -687,10 +694,12 @@ static cl_int marshalBodies(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st, cl_bo
             X(Vel(b)) = vel[0][i];
             Y(Vel(b)) = vel[1][i];
             Z(Vel(b)) = vel[2][i];
+
+            Mass(b) = mass[i];
         }
     }
 
-    return unmapBodies(pos, vel, nbb, ci);
+    return unmapBodies(pos, vel, mass, nbb, ci);
 }
 
 static cl_int printBuffer(CLInfo* ci, cl_mem mem, size_t n, const char* name, int type)
@@ -773,15 +782,6 @@ cl_int runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     err = nbodyMainLoop(&ci, ctx, st);
     if (err != CL_SUCCESS)
         goto fail;
-
-    {
-        TreeStatus tc;
-        memset(&tc, 0, sizeof(tc));
-        err = readTreeStatus(&tc, &ci, &nbb);
-        if (err != CL_SUCCESS)
-            goto fail;
-        printTreeStatus(&tc);
-    }
 
 
 
