@@ -25,11 +25,28 @@
 #endif
 
 #if DOUBLEPREC
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+//  #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 #endif
+  #pragma OPENCL EXTENSION cl_amd_fp64 : enable
+
 
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
+
+
+#if 0
+#define assert(x) if (!(x)) { printf("Assertion failed[%d]: %s\n", __LINE__, #x); }
+#define dprintf(fmt, ...) printf("Line %d: " fmt, __LINE__, __VA_ARGS__)
+#define __BARRIER(type) \
+    dprintf("\t__BARRIER[%d] hit by thread %d\n", __LINE__, get_local_id(0)); \
+  barrier(type);
+
+#else
+#define assert(x)
+#define dprintf(fmt, ...)
+#define __BARRIER(type) barrier((type))
+#endif
+
 
 #if DOUBLEPREC
 typedef double real;
@@ -90,7 +107,7 @@ __kernel void NBODY_KERNEL(boundingBox)
         minY[0] = _posY[0];
         minZ[0] = _posZ[0];
     }
-    barrier(CLK_LOCAL_MEM_FENCE);
+    barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
     /* initialize with valid data (in case #bodies < #threads) */
     minX[i] = maxX[i] = minX[0];
@@ -98,8 +115,7 @@ __kernel void NBODY_KERNEL(boundingBox)
     minZ[i] = maxZ[i] = minZ[0];
 
     int inc = get_local_size(0) * get_num_groups(0);
-    int j = i + get_group_id(0) * get_local_size(0);
-
+    int j = get_global_id(0);
     while (j < NBODY) /* Scan bodies */
     {
         real tmp = _posX[j];
@@ -121,7 +137,7 @@ __kernel void NBODY_KERNEL(boundingBox)
     j = get_local_size(0) >> 1;
     while (j > 0)
     {
-        barrier(CLK_LOCAL_MEM_FENCE);
+        barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
         if (i < j)
         {
             minX[i] = min(minX[i], minX[i + j]);
@@ -140,7 +156,6 @@ __kernel void NBODY_KERNEL(boundingBox)
     {
         /* Write block result to global memory */
         j = get_group_id(0);
-
         _minX[j] = minX[0];
         _minY[j] = minY[0];
         _minZ[j] = minZ[0];
@@ -148,14 +163,12 @@ __kernel void NBODY_KERNEL(boundingBox)
         _maxX[j] = maxX[0];
         _maxY[j] = maxY[0];
         _maxZ[j] = maxZ[0];
-
-        mem_fence(CLK_GLOBAL_MEM_FENCE); /* CHECKME: equivalent to CUDA's __threadfence()? */
+        mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
         inc = get_num_groups(0) - 1;
-
-        if (inc == atom_inc(&_treeStatus->blkCnt))
+        if (inc == atomic_inc(&_treeStatus->blkCnt))
         {
-            /* I'm the last block so combine all block results */
+            /* I'm the last block, so combine all block results */
             for (j = 0; j <= inc; ++j)
             {
                 minX[0] = min(minX[0], _minX[j]);
@@ -168,22 +181,22 @@ __kernel void NBODY_KERNEL(boundingBox)
             }
 
             /* Compute radius */
-            real tmp = max(maxX[0] - minX[0], maxY[0] - minY[0]);
-            _treeStatus->radius = 0.5 * max(tmp, maxZ[0] - minZ[0]);
+            real tmpR = max(maxX[0] - minX[0], maxY[0] - minY[0]);
+            _treeStatus->radius = 0.5 * max(tmpR, maxZ[0] - minZ[0]);
 
             /* Create root node */
-            j = NNODE;
-            _mass[j] = -1.0;
-            _start[j] = 0;
-            _posX[j] = 0.5 * (minX[0] + maxX[0]);
-            _posY[j] = 0.5 * (minY[0] + maxY[0]);
-            _posZ[j] = 0.5 * (minZ[0] + maxZ[0]);
+            _mass[NNODE] = -1.0;
+            _start[NNODE] = 0;
+            _posX[NNODE] = 0.5 * (minX[0] + maxX[0]);
+            _posY[NNODE] = 0.5 * (minY[0] + maxY[0]);
+            _posZ[NNODE] = 0.5 * (minZ[0] + maxZ[0]);
 
             #pragma unroll NSUB
-            for (i = 0; i < NSUB; i++)
-                _child[NSUB * j + i] = -1;
+            for (int k = 0; k < NSUB; ++k)
+                _child[NSUB * NNODE + k] = -1;
 
-            _treeStatus->bottom = j;
+            _treeStatus->bottom = NNODE;
+            _treeStatus->blkCnt = 0;  /* If this isn't 0'd for next time, everything explodes */
         }
     }
 }
@@ -192,8 +205,7 @@ __kernel void NBODY_KERNEL(buildTree)
 {
     __local real radius, rootX, rootY, rootZ;
 
-    int i = (int) get_local_id(0);
-    if (i == 0)
+    if (get_local_id(0) == 0)
     {
         /* Cache root data */
         radius = _treeStatus->radius;
@@ -205,10 +217,8 @@ __kernel void NBODY_KERNEL(buildTree)
 
     int localMaxDepth = 1;
     int skip = 1;
-
     int inc = get_local_size(0) * get_num_groups(0);
-    i += get_group_id(0) * get_local_size(0);
-
+    int i = get_global_id(0);
     while (i < NBODY) /* Iterate over all bodies assigned to thread */
     {
         real r;
@@ -226,9 +236,9 @@ __kernel void NBODY_KERNEL(buildTree)
             n = NNODE;
             depth = 1;
             r = radius;
-            j = 0;
 
             /* Determine which child to follow */
+            j = 0;
             if (rootX < px)
                 j = 1;
             if (rootY < py)
@@ -238,42 +248,36 @@ __kernel void NBODY_KERNEL(buildTree)
         }
 
         int ch = _child[NSUB * n + j];
-
-        /* Follow path to leaf cell */
-        while (ch >= NBODY)
+        while (ch >= NBODY)  /* Follow path to leaf cell */
         {
             n = ch;
             ++depth;
             r *= 0.5;
-            j = 0;
 
             /* Determine which child to follow */
-            if (rootX < px)
+            j = 0;
+            if (_posX[n] < px)
                 j = 1;
-            if (rootY < py)
+            if (_posY[n] < py)
                 j += 2;
-            if (rootZ < pz)
+            if (_posZ[n] < pz)
                 j += 4;
-
             ch = _child[NSUB * n + j];
         }
 
         if (ch != -2) /* Skip if child pointer is locked and try again later */
         {
             int locked = NSUB * n + j;
-
-            /* Try to lock */
-            if (ch == atom_cmpxchg(&_child[locked], ch, -2))
+            if (ch == atom_cmpxchg(&_child[locked], ch, -2)) /* Try to lock */
             {
                 if (ch == -1)
                 {
-                    /* If null, just insert the new menu */
+                    /* If null, just insert the new body */
                     _child[locked] = i;
                 }
-                else  /* There is already a body in this position */
+                else  /* There already is a body in this position */
                 {
                     int patch = -1;
-
                     /* Create new cell(s) and insert the old and new body */
                     do
                     {
@@ -317,75 +321,69 @@ __kernel void NBODY_KERNEL(buildTree)
                             j += 2;
                         if (z < _posZ[ch])
                             j += 4;
+
                         _child[NSUB * cell + j] = ch;
 
                         n = cell;
                         j = 0;
-                        if (rootX < px)
+                        if (x < px)
                             j = 1;
-                        if (rootY < py)
+                        if (y < py)
                             j += 2;
-                        if (rootZ < pz)
+                        if (z < pz)
                             j += 4;
 
                         ch = _child[NSUB * n + j];
                         /* Repeat until the two bodies are different children */
                     }
                     while (ch >= 0);
-
                     _child[NSUB * n + j] = i;
-                    mem_fence(CLK_GLOBAL_MEM_FENCE); /* CHECKME: same as __threadfence()? */
+                    mem_fence(CLK_GLOBAL_MEM_FENCE);
                     _child[locked] = patch;
                 }
                 mem_fence(CLK_GLOBAL_MEM_FENCE);
-
                 localMaxDepth = max(depth, localMaxDepth);
-                i += inc; /* Move on to next body */
+                i += inc;  /* move on to next body */
                 skip = 1;
             }
         }
-
-        barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+        //barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
     }
-
     atom_max(&_treeStatus->maxDepth, localMaxDepth);
 }
 
 __kernel void NBODY_KERNEL(summarization)
 {
     __local int bottom;
-    __local int child[NSUB * THREADS3];
+    __local volatile int child[NSUB * THREADS3];
 
-    int i = (int) get_local_id(0);
-    if (i == 0)
+    if (get_local_id(0) == 0)
     {
         bottom = _treeStatus->bottom;
     }
     barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
     int inc = get_local_size(0) * get_num_groups(0);
-    int k = (bottom & (-WARPSIZE)) + get_global_id(0);  /* align to warp size */
+    int k = (bottom & (-WARPSIZE)) + get_global_id(0);  /* Align to warp size */
     if (k < bottom)
         k += inc;
 
     int missing = 0;
     while (k <= NNODE) /* Iterate over all cells assigned to thread */
     {
-        real cm, px, py, pz;
-        real m;
-        int j;
-        int cnt;
+        real m, cm, px, py, pz;
+        int cnt, ch;
 
         if (missing == 0)
         {
             /* New cell, so initialize */
             cm = px = py = pz = 0.0;
-            cnt = j = 0;
-
+            cnt = 0;
+            int j = 0;
             #pragma unroll NSUB
-            for (i = 0; i < NSUB; ++i)
+            for (int i = 0; i < NSUB; ++i)
             {
-                int ch = _child[NSUB * k + i];
+                ch = _child[NSUB * k + i];
                 if (ch >= 0)
                 {
                     if (i != j)
@@ -394,15 +392,13 @@ __kernel void NBODY_KERNEL(summarization)
                         _child[NSUB * k + i] = -1;
                         _child[NSUB * k + j] = ch;
                     }
-                    child[missing * THREADS3 + get_local_id(0)] = ch; /* Cache missing children */
+                    child[THREADS3 * missing + get_local_id(0)] = ch; /* Cache missing children */
                     m = _mass[ch];
                     ++missing;
-
                     if (m >= 0.0)
                     {
                         /* Child is ready */
                         --missing;
-
                         if (ch >= NBODY) /* Count bodies (needed later) */
                         {
                             cnt += _count[ch] - 1;
@@ -416,7 +412,6 @@ __kernel void NBODY_KERNEL(summarization)
                     }
                     ++j;
                 }
-
             }
             cnt += j;
         }
@@ -425,41 +420,41 @@ __kernel void NBODY_KERNEL(summarization)
         {
             do
             {
-                /* Poll missing children */
-                int ch = child[(missing - 1) * THREADS3 + get_local_id(0)];
+                /* poll missing child */
+                ch = child[THREADS3 * (missing - 1) + get_local_id(0)];
                 m = _mass[ch];
                 if (m >= 0.0)
                 {
-                    /* Child is now ready */
+                    /* child is now ready */
                     --missing;
                     if (ch >= NBODY)
                     {
-                        /* Count bodies (needed later) */
+                        /* count bodies (needed later) */
                         cnt += _count[ch] - 1;
                     }
-
-                    /* Add child's contribution */
+                    /* add child's contribution */
                     cm += m;
                     px += _posX[ch] * m;
                     py += _posY[ch] * m;
                     pz += _posZ[ch] * m;
                 }
-                /* Repeat until we are done or child is not ready */
+                /* repeat until we are done or child is not ready */
             }
             while ((m >= 0.0) && (missing != 0));
         }
 
         if (missing == 0)
         {
-            /* All children are ready, so store computed information */
+            /* all children are ready, so store computed information */
             _count[k] = cnt;
             m = 1.0 / cm;
-            _posX[k] = m * px;
-            _posY[k] = m * py;
-            _posZ[k] = m * pz;
-            mem_fence(CLK_GLOBAL_MEM_FENCE); /* CHECKME: equivalent to CUDA's __threadfence()? */
+            _posX[k] = px * m;
+            _posY[k] = py * m;
+            _posZ[k] = pz * m;
+            mem_fence(CLK_GLOBAL_MEM_FENCE);
             _mass[k] = cm;
-            k += inc;  /* Move on to next cell */
+            mem_fence(CLK_GLOBAL_MEM_FENCE);
+            k += inc;  /* move on to next cell */
         }
     }
 }
@@ -473,13 +468,11 @@ __kernel void NBODY_KERNEL(sort)
         bottoms = _treeStatus->bottom;
     }
     barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-    int bottom = bottoms;
 
+    int bottom = bottoms;
     int dec = get_local_size(0) * get_num_groups(0);
     int k = NNODE + 1 - dec + get_global_id(0);
-
-    /* Iterate over all cells assigned to thread */
-    while (k >= bottom)
+    while (k >= bottom) /* Iterate over all cells assigned to thread */
     {
         int start = _start[k];
         if (start >= 0)
@@ -488,39 +481,48 @@ __kernel void NBODY_KERNEL(sort)
             for (int i = 0; i < NSUB; ++i)
             {
                 int ch = _child[NSUB * k + i];
-                if (ch >= NBODY)
+                if (ch >= NBODY)         /* Child is a cell */
                 {
-                    /* Child is a cell */
-                    _start[ch] = start; /* Set start ID of child */
+                    _start[ch] = start;  /* Set start ID of child */
                     start += _count[ch]; /* Add #bodies in subtree */
                 }
-                else if (ch >= 0)
+                else if (ch >= 0)        /* Child is a body */
                 {
-                    /* Child is a body */
-                    _sort[start] = ch; /* Record body in sorted array */
+                    _sort[start] = ch;  /* Record body in sorted array */
                     ++start;
                 }
             }
-            k -= dec; /* Next cell */
+            k -= dec;  /* Move on to next cell */
         }
-        barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
     }
 }
 
+#if WARPSIZE <= 0
+  #error Invalid warp size
+#endif
+
+/* These were problems when being lazy and writing it */
+#if (THREADS5 / WARPSIZE) <= 0
+  #error (THREADS5 / WARPSIZE) must be > 0
+#elif (MAXDEPTH * THREADS5 / WARPSIZE) <= 0
+  #error (MAXDEPTH * THREADS5 / WARPSIZE) must be > 0
+#endif
+
 __kernel void NBODY_KERNEL(forceCalculation)
 {
+    int i, j, k, n, depth, base, sbase;
+    real px, py, pz, ax, ay, az, dx, dy, dz, tmp;
     __local int maxDepth;
     __local int ch[THREADS5 / WARPSIZE];
-    __local int pos[MAXDEPTH * THREADS5 / WARPSIZE];
-    __local int node[MAXDEPTH * THREADS5 / WARPSIZE];
+    __local int pos[MAXDEPTH * THREADS5 / WARPSIZE], node[MAXDEPTH * THREADS5 / WARPSIZE];
     __local real dq[MAXDEPTH * THREADS5 / WARPSIZE];
     __local real nx[THREADS5 / WARPSIZE], ny[THREADS5 / WARPSIZE], nz[THREADS5 / WARPSIZE];
     __local real nm[THREADS5 / WARPSIZE];
 
     if (get_local_id(0) == 0)
     {
-        /* Precompute values that only depend on tree level */
         maxDepth = _treeStatus->maxDepth;
+
         real rootSize = _treeStatus->radius;
 
         real rc;
@@ -536,8 +538,9 @@ __kernel void NBODY_KERNEL(forceCalculation)
         #error No opening criterion defined
       #endif /* BH86 */
 
+        /* Precompute values that depend only on tree level */
         dq[0] = rc * rc;
-        for (int i = 1; i < maxDepth; ++i)
+        for (i = 1; i < maxDepth; ++i)
         {
             dq[i] = 0.25 * dq[i - 1];
         }
@@ -551,12 +554,12 @@ __kernel void NBODY_KERNEL(forceCalculation)
 
     if (maxDepth <= MAXDEPTH)
     {
-        int base = get_local_id(0) / WARPSIZE;
-        int sbase = base * WARPSIZE;
-        int j = base * MAXDEPTH;
+        /* Figure out first thread in each warp */
+        base = get_local_id(0) / WARPSIZE;
+        sbase = base * WARPSIZE;
+        j = base * MAXDEPTH;
 
         int diff = get_local_id(0) - sbase;
-
         /* Make multiple copies to avoid index calculations later */
         if (diff < MAXDEPTH)
         {
@@ -564,24 +567,21 @@ __kernel void NBODY_KERNEL(forceCalculation)
         }
         barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
-        /* Iterate ove all bodies assigned to thread */
-        for (int k = get_global_id(0); k < NBODY; k += get_local_size(0) * get_num_groups(0))
+        /* iterate over all bodies assigned to thread */
+        for (k = get_global_id(0); k < NBODY; k += get_local_size(0) * get_num_groups(0))
         {
-            int i = _sort[k]; /* Get permuted index */
+            i = _sort[k];  /* Get permuted index */
 
             /* Cache position info */
-            real px = _posX[i];
-            real py = _posY[i];
-            real pz = _posZ[i];
+            px = _posX[i];
+            py = _posY[i];
+            pz = _posZ[i];
 
-            real ax = 0.0;
-            real ay = 0.0;
-            real az = 0.0;
+            ax = ay = az = 0.0;
 
-            /* Initialize iteration stack, i.e. push root node onto stack */
-            int depth = j;
-
-            if (sbase == get_local_id(0))
+            /* Initialize iteration stack, i.e., push root node onto stack */
+            depth = j;
+            if (get_local_id(0) == sbase)
             {
                 node[j] = NNODE;
                 pos[j] = 0;
@@ -593,9 +593,8 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 /* Stack is not empty */
                 while (pos[depth] < 8)
                 {
-                    int n;
                     /* Node on top of stack has more children to process */
-                    if (sbase == get_local_id(0))
+                    if (get_local_id(0) == sbase)
                     {
                         /* I'm the first thread in the warp */
                         n = _child[NSUB * node[depth] + pos[depth]]; /* Load child pointer */
@@ -603,6 +602,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         ch[base] = n; /* Cache child pointer */
                         if (n >= 0)
                         {
+                            /* Cache position and mass */
                             nx[base] = _posX[n];
                             ny[base] = _posY[n];
                             nz[base] = _posZ[n];
@@ -615,36 +615,32 @@ __kernel void NBODY_KERNEL(forceCalculation)
                     n = ch[base];
                     if (n >= 0)
                     {
-                        real dx = nx[base] - px;
-                        real dy = ny[base] - py;
-                        real dz = nz[base] - pz;
+                        dx = nx[base] - px;
+                        dy = ny[base] - py;
+                        dz = nz[base] - pz;
+                        tmp = (dx * dx) + (dy * dy) + (dz * dz); /* Compute distance squared */
 
-                        /* Compute distance squared */
-                        real tmp = (dx * dx) + (dy * dy) + (dz * dz);
-
-                        /* check if all threads agree that cell is far enough away (or is a body) */
-                        /* if ((n < nbodiesd) || __all(tmp >= dq[depth])) */
-                        /* CHECKME: What exactly is the purpose of the __all here?
-                           OpenCL is missing thread voting functions
-                         */
-                        if (n < NBODY)
+                        /* Check if all threads agree that cell is far enough away (or is a body) */
+                        /* FIXME: OpenCL is missing thread voting functions
+                           if ((n < nbodiesd) || __all(tmp >= dq[depth]))
+                        */
+                        if (n < NBODY || tmp >= dq[depth])
                         {
                             if (n != i)
                             {
-                                tmp = sqrt(tmp + EPS2);
+                                tmp = sqrt(tmp + EPS2);  /* Compute distance */
                                 tmp = tmp * tmp * tmp;
-
                                 tmp = nm[base] / tmp;
-                                ax = tmp * dx;
-                                ay = tmp * dy;
-                                az = tmp * dz;
+                                ax += tmp * dx;
+                                ay += tmp * dy;
+                                az += tmp * dz;
                             }
                         }
                         else
                         {
                             /* Push cell onto stack */
                             ++depth;
-                            if (sbase == get_local_id(0))
+                            if (get_local_id(0) == sbase)
                             {
                                 node[depth] = n;
                                 pos[depth] = 0;
@@ -657,21 +653,21 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         /* Early out because all remaining children are also zero */
                         depth = max(j, depth - 1);
                     }
-                    --depth; /* Done with this level */
                 }
-
-                if (step > 0)
-                {
-                    _velX[i] += (ax - _accX[i]) * (0.5 * TIMESTEP);
-                    _velY[i] += (ay - _accY[i]) * (0.5 * TIMESTEP);
-                    _velZ[i] += (az - _accZ[i]) * (0.5 * TIMESTEP);
-                }
-
-                /* Save computed acceleration */
-                _accX[i] = ax;
-                _accY[i] = ay;
-                _accZ[i] = az;
+                --depth;  /* Done with this level */
             }
+
+            if (step > 0)
+            {
+                _velX[i] += (ax - _accX[i]) * (0.5 * TIMESTEP);
+                _velY[i] += (ay - _accY[i]) * (0.5 * TIMESTEP);
+                _velZ[i] += (az - _accZ[i]) * (0.5 * TIMESTEP);
+            }
+
+            /* Save computed acceleration */
+            _accX[i] = ax;
+            _accY[i] = ay;
+            _accZ[i] = az;
         }
     }
 }

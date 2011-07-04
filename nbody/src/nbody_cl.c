@@ -76,6 +76,17 @@ typedef struct
     int i[16];
 } Debug;
 
+static NBodyBuffers* _nbb = NULL;
+static cl_uint _nNode = 0;
+
+static void* mapBuffer(CLInfo* ci, cl_mem mem, cl_map_flags flags, size_t size)
+{
+    return clEnqueueMapBuffer(ci->queue, mem, CL_TRUE, flags, 0,
+                              size,
+                              0, NULL, NULL, NULL);
+
+}
+
 static void printDebug(const Debug* d)
 {
     int i;
@@ -366,33 +377,132 @@ static cl_int readTreeStatus(TreeStatus* tc, CLInfo* ci, NBodyBuffers* nbb)
                                0, NULL, NULL);
 }
 
+static cl_int printBuffer(CLInfo* ci, cl_mem mem, size_t n, const char* name, int type)
+{
+    size_t i;
+    void* p;
+
+    p = mapBuffer(ci, mem, CL_MAP_READ, n * (type == 0 ? sizeof(real) : sizeof(int)));
+    if (!p)
+        return MW_CL_ERROR;
+
+    if (type == 0)
+    {
+        const real* pr = (const real*) p;
+        for (i = 0; i < n; ++i)
+        {
+            warn("%s["ZU"] = %.15f\n", name, i, pr[i]);
+        }
+    }
+    else
+    {
+        const int* pi = (const int*) p;
+        for (i = 0; i < n; ++i)
+        {
+            warn("%s["ZU"] = %d\n", name, i, pi[i]);
+        }
+    }
+
+    return clEnqueueUnmapMemObject(ci->queue, mem, p, 0, NULL, NULL);
+}
+
+static void stdDebugPrint(CLInfo* ci, NBodyState* st)
+{
+    warn("--------------------------------------------------------------------------------\n");
+    cl_int err;
+    cl_uint nNode = findNNode(&ci->di, st->nbody);
+    warn("BEGIN CHILD\n");
+    printBuffer(ci, _nbb->child, NSUB * (nNode + 1), "child", 1);
+    warn("BEGIN START\n");
+    printBuffer(ci, _nbb->start, nNode, "start", 1);
+
+    warn("BEGIN MASS\n");
+    printBuffer(ci, _nbb->masses, nNode + 1, "mass", 0);
+
+    {
+        TreeStatus tc;
+        memset(&tc, 0, sizeof(tc));
+        err = readTreeStatus(&tc, ci, _nbb);
+        if (err != CL_SUCCESS)
+            mwCLWarn("Reading tree status failed\n", err);
+        else
+            printTreeStatus(&tc);
+    }
+
+    debug(ci, _nbb);
+    warn("--------------------------------------------------------------------------------\n");
+}
+
+/* Check the error code and reset the block count */
+static cl_bool checkKernelErrorCode(CLInfo* ci, NBodyBuffers* nbb)
+{
+    cl_int err;
+    TreeStatus* ts;
+    cl_bool rc = CL_FALSE;
+
+    warn("Checking tree status\n");
+
+    ts = clEnqueueMapBuffer(ci->queue,
+                            nbb->treeStatus,
+                            CL_TRUE,
+                            CL_MAP_READ | CL_MAP_WRITE,
+                            0,
+                            sizeof(TreeStatus),
+                            0, NULL, NULL,
+                            &err);
+    if (!ts)
+    {
+        mwCLWarn("Failed to map tree status", err);
+        return CL_TRUE;
+    }
+
+    ts->blkCnt = 0;
+    if (ts->errorCode != 0)
+    {
+        warn("Kernel reported error: %d\n", ts->errorCode);
+        rc = CL_TRUE;
+    }
+
+    err = clEnqueueUnmapMemObject(ci->queue, nbb->treeStatus, ts, 0, NULL, NULL);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Failed to unmap tree status", err);
+        return CL_TRUE;
+    }
+
+    return rc;
+}
+
+
 static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err;
     size_t global[1];
     size_t local[1];
-    size_t warpSize = 32;
-    //size_t local[1] = { warpSize };
-    //size_t local[1] = { 512 };
+    size_t warpSize = 64;
     cl_uint blocks = ci->di.maxCompUnits;
+
 
     err = clSetKernelArg(kernels.forceCalculation, 21, sizeof(int), &st->step);
     if (err != CL_SUCCESS)
         return err;
 
 
-    warn("Bounding box kernel\n");
     global[0] = THREADS1 * FACTOR1 * blocks;
     local[0] = THREADS1;
+    warn("Bounding box kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.boundingBox, 1,
                                  NULL, global, local,
                                  0, NULL, NULL);
     if (err != CL_SUCCESS)
         return err;
 
-    warn("Tree build kernel\n");
+    st->tnow += ctx->timestep;
+    st->step++;
+
     global[0] = THREADS2 * FACTOR2 * blocks;
     local[0] = THREADS2;
+    warn("Tree build kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.buildTree, 1,
                                  NULL, global, local,
                                  0, NULL, NULL);
@@ -406,21 +516,15 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
         return err;
     }
 
-    st->tnow += ctx->timestep;
-    st->step++;
-
-    return err;
-
-    warn("Summarization kernel\n");
 
     global[0] = THREADS3 * FACTOR3 * blocks;
     local[0] = THREADS3;
+    warn("Summarization kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.summarization, 1,
                                  NULL, global, local,
                                  0, NULL, NULL);
     if (err != CL_SUCCESS)
         return err;
-
 
     err = clFinish(ci->queue);
     if (err != CL_SUCCESS)
@@ -429,10 +533,12 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
         return err;
     }
 
+    //return err;
 
-    warn("Sort kernel\n");
+#if 1
     global[0] = THREADS4 * FACTOR4 * blocks;
     local[0] = THREADS4;
+    warn("Sort kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.sort, 1,
                                  NULL, global, local,
                                  0, NULL, NULL);
@@ -441,15 +547,11 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     err = clFinish(ci->queue);
     if (err != CL_SUCCESS)
         return err;
+#endif
 
-
-
-
-
-
-    warn("Force kernel\n");
     global[0] = THREADS5 * FACTOR5 * blocks;
     local[0] = THREADS5;
+    warn("Force kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.forceCalculation, 1,
                                  NULL, global, local,
                                  0, NULL, NULL);
@@ -460,9 +562,9 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     if (err != CL_SUCCESS)
         return err;
 
-    warn("Integration kernel\n");
     global[0] = THREADS6 * FACTOR6 * blocks;
     local[0] = THREADS6;
+    warn("Integration kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.integration, 1,
                                  NULL, global, local,
                                  0, NULL, NULL);
@@ -470,13 +572,10 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
         return err;
     clFinish(ci->queue);
 
-    //st->tnow += ctx->timestep;
-    //st->step++;
-
     return clFinish(ci->queue);
 }
 
-static cl_int nbodyMainLoop(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
+static cl_int nbodyMainLoop(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st, NBodyBuffers* nbb)
 {
     cl_int err = CL_SUCCESS;
     const real tstop = ctx->timeEvolve - ctx->timestep / 1024.0;
@@ -484,14 +583,22 @@ static cl_int nbodyMainLoop(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     st->step = -1;
 
     //while (err == CL_SUCCESS && st->tnow < tstop)
-    //for (int i = 0; i < 3; ++i)
+    for (int i = 0; i < 20; ++i)
     {
-        warn("Runing step %d (%f%%)\n",
+        if (checkKernelErrorCode(ci, nbb))
+        {
+            err = MW_CL_ERROR;
+            break;
+        }
+
+        warn("Running step %d (%f%%)\n",
              st->step,
              100.0 * st->tnow / tstop);
         err = stepSystemCL(ci, ctx, st);
+
+        //stdDebugPrint(ci, st);
     }
-    warn("Broke on step %d\n", st->step);
+    warn("Broke on step %d, %s\n", st->step, showCLInt(err));
 
     return err;
 }
@@ -560,9 +667,12 @@ static cl_int createBuffers(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st)
     cl_int err = CL_SUCCESS;
 
     nNode = findNNode(&ci->di, st->nbody);
+    _nNode = nNode;
     warn("NNODE = %u, nbody = %d\n", nNode + 1, st->nbody);
 
-    int warpsize = 32;
+    warn("(NNODE + 1) * NSUB = %u\n", (nNode + 1) * NSUB);
+
+    int warpsize = 64;
     warn("inc %d\n", (st->nbody + warpsize - 1) & (-warpsize));
     for (i = 0; i < 3; ++i)
     {
@@ -601,14 +711,6 @@ static cl_int createBuffers(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st)
     }
 
     return setInitialTreeStatus(ci, nbb);
-}
-
-static void* mapBuffer(CLInfo* ci, cl_mem mem, cl_map_flags flags, size_t size)
-{
-    return clEnqueueMapBuffer(ci->queue, mem, CL_TRUE, flags, 0,
-                              size,
-                              0, NULL, NULL, NULL);
-
 }
 
 static cl_int mapBodies(real* pos[3], real* vel[3], real** mass, NBodyBuffers* nbb, CLInfo* ci, cl_map_flags flags, NBodyState* st)
@@ -702,35 +804,6 @@ static cl_int marshalBodies(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st, cl_bo
     return unmapBodies(pos, vel, mass, nbb, ci);
 }
 
-static cl_int printBuffer(CLInfo* ci, cl_mem mem, size_t n, const char* name, int type)
-{
-    size_t i;
-    void* p;
-
-    p = mapBuffer(ci, mem, CL_MAP_READ, n * (type == 0 ? sizeof(real) : sizeof(int)));
-    if (!p)
-        return MW_CL_ERROR;
-
-    if (type == 0)
-    {
-        const real* pr = (const real*) p;
-        for (i = 0; i < n; ++i)
-        {
-            warn("%s["ZU"] = %.15f\n", name, i, pr[i]);
-        }
-    }
-    else
-    {
-        const int* pi = (const int*) p;
-        for (i = 0; i < n; ++i)
-        {
-            warn("%s["ZU"] = %d\n", name, i, pi[i]);
-        }
-    }
-
-    return clEnqueueUnmapMemObject(ci->queue, mem, p, 0, NULL, NULL);
-}
-
 static void setCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
 {
     clr->platform = nbf->platform;
@@ -779,7 +852,7 @@ cl_int runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     if (err != CL_SUCCESS)
         goto fail;
 
-    err = nbodyMainLoop(&ci, ctx, st);
+    err = nbodyMainLoop(&ci, ctx, st, &nbb);
     if (err != CL_SUCCESS)
         goto fail;
 
