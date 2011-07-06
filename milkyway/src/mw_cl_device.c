@@ -23,6 +23,17 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "mw_cl_show_types.h"
 
+/* These are missing from the current OS X headers */
+#ifndef CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV
+  #define CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV 0x4000
+#endif
+#ifndef CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV
+  #define CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV 0x4001
+#endif
+#ifndef CL_DEVICE_WARP_SIZE_NV
+  #define CL_DEVICE_WARP_SIZE_NV 0x4003
+#endif
+
 
 /* Read the double supported extensions; i.e. AMD's subset or the actual Khronos one. */
 MWDoubleExts mwGetDoubleExts(const char* exts)
@@ -81,20 +92,42 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
     err |= clGetDeviceInfo(dev, CL_DEVICE_PROFILING_TIMER_RESOLUTION, sizeof(size_t), &di->timerRes, NULL);
     err |= clGetDeviceInfo(dev, CL_DEVICE_EXTENSIONS, sizeof(di->exts), &di->exts, NULL);
 
+    di->computeCapabilityMajor = di->computeCapabilityMinor = 0;
+    di->warpSize = 0;
+    if (err == CL_SUCCESS)
+    {
+        if (strstr(di->exts, "cl_nv_device_attribute_query") != NULL)
+        {
+            err |= clGetDeviceInfo(dev, CL_DEVICE_WARP_SIZE_NV,
+                                   sizeof(di->warpSize), &di->warpSize, NULL);
+            err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV,
+                                   sizeof(cl_uint), &di->computeCapabilityMajor, NULL);
+            err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV,
+                                   sizeof(cl_uint), &di->computeCapabilityMinor, NULL);
+        }
+        else
+        {
+            if (di->devType == CL_DEVICE_TYPE_CPU)
+            {
+                di->warpSize = 1;
+            }
+            else if (di->devType == CL_DEVICE_TYPE_GPU)
+            {
+                /* FIXME: How do I get this on AMD? It's 64 for all of
+                 * the high end stuff, but 32 for lower. I think it's
+                 * 64 for all the GPUs that do have doubles */
+                di->warpSize = 64;
+            }
+            else
+            {
+                warn("Unknown device type, using warp size = 1\n");
+                di->warpSize = 1;
+            }
+        }
+    }
+
     /* TODO: Check for Tesla or similar */
     di->nonOutput = (di->devType != CL_DEVICE_TYPE_GPU);
-
-    di->computeCapabilityMajor = di->computeCapabilityMinor = 0;
-  #ifndef __APPLE__
-    if (di->vendorID == MW_NVIDIA)
-    {
-        /* Nvidia extension stuff missing from OS X headers, but not ATI's */
-        err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV,
-                               sizeof(cl_uint), &di->computeCapabilityMajor, NULL);
-        err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV,
-                               sizeof(cl_uint), &di->computeCapabilityMinor, NULL);
-    }
-  #endif /* __APPLE__ */
 
     if (err)
         mwCLWarn("Error getting device information", err);
@@ -236,6 +269,7 @@ void mwPrintDevInfo(const DevInfo* di)
          "Mem base addr align: %u\n"
          "Min type align size: %u\n"
          "Timer resolution:    "ZU" ns\n"
+         "Warp size:           %u\n"
          "Double extension:    %s\n"
          "Extensions:          %s\n" ,
          di->devName,
@@ -267,6 +301,7 @@ void mwPrintDevInfo(const DevInfo* di)
          di->memBaseAddrAlign,
          di->minAlignSize,
          di->timerRes,
+         di->warpSize,
          showMWDoubleExts(di->doubleExts),
          di->exts
         );
