@@ -63,6 +63,7 @@ typedef struct
     size_t maxWorkGroupSize;
     size_t maxParamSize;
     size_t timerRes;
+    cl_uint warpSize;
     cl_uint maxWorkItemDim;
     cl_uint memBaseAddrAlign;
     cl_uint minAlignSize;

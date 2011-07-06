@@ -23,21 +23,61 @@
 #include "nbody_cl.h"
 #include "nbody_show.h"
 
-#define FACTOR1 1
-#define FACTOR2 2
-#define FACTOR3 1
-#define FACTOR4 1
-#define FACTOR5 2
-#define FACTOR6 1
-
-#define THREADS1 256
-#define THREADS2 288
-#define THREADS3 256
-#define THREADS4 512
-#define THREADS5 256
-#define THREADS6 512
 
 #define MAXDEPTH 26
+
+static size_t threads[6];
+static size_t factors[6];
+
+/* Return CL_TRUE if some error */
+static cl_bool setThreadCounts(const DevInfo* di)
+{
+    factors[0] = 1;
+    factors[1] = 2;
+    factors[2] = 1;
+    factors[3] = 1;
+    factors[4] = 2;
+    factors[5] = 1;
+
+    if (di->devType == CL_DEVICE_TYPE_CPU)
+    {
+        threads[0] = 1;
+        threads[1] = 1;
+        threads[2] = 1;
+        threads[3] = 1;
+        threads[4] = 1;
+        threads[5] = 1;
+    }
+    else if (computeCapabilityIs(di, 1, 3))
+    {
+        threads[0] = 512;
+        threads[1] = 288;
+        threads[2] = 256;
+        threads[3] = 512;
+        threads[4] = 384;
+        threads[5] = 512;
+    }
+    else if (minComputeCapabilityCheck(di, 2, 0))
+    {
+        threads[0] = 512;
+        threads[1] = 1024;
+        threads[2] = 1024;
+        threads[3] = 256;
+        threads[4] = 256;
+        threads[5] = 512;
+    }
+    else
+    {
+        threads[0] = 256;
+        threads[1] = 256;
+        threads[2] = 256;
+        threads[3] = 256;
+        threads[4] = 256;
+        threads[5] = 256;
+    }
+
+    return CL_FALSE;
+}
 
 /* FIXME: Need a way to track which bodies are ignored when they are
  * shuffled around by sorting
@@ -243,12 +283,10 @@ static cl_int releaseKernels()
 static cl_uint findNNode(const DevInfo* di, cl_int nbody)
 {
     cl_uint nNode = 2 * nbody;
-    cl_uint warpSize = 32;
-    //cl_uint warpSize = 1;
 
     if (nNode < 1024 * di->maxCompUnits)
         nNode = 1024 * di->maxCompUnits;
-    while ((nNode & (warpSize - 1)) != 0)
+    while ((nNode & (di->warpSize - 1)) != 0)
         ++nNode;
 
     return nNode - 1;
@@ -257,7 +295,6 @@ static cl_uint findNNode(const DevInfo* di, cl_int nbody)
 static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const DevInfo* di)
 {
     char* buf;
-    cl_uint warpSize = 32;
 
     /* Put a space between the -D. if the thing begins with D, there's
      * an Apple OpenCL compiler bug where the D will be
@@ -272,12 +309,12 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
                  "-D NNODE=%u "
                  "-D WARPSIZE=%u "
 
-                 "-D THREADS1=%u "
-                 "-D THREADS2=%u "
-                 "-D THREADS3=%u "
-                 "-D THREADS4=%u "
-                 "-D THREADS5=%u "
-                 "-D THREADS6=%u "
+                 "-D THREADS1="ZU" "
+                 "-D THREADS2="ZU" "
+                 "-D THREADS3="ZU" "
+                 "-D THREADS4="ZU" "
+                 "-D THREADS5="ZU" "
+                 "-D THREADS6="ZU" "
                  "-D MAXDEPTH=%u "
 
                  "-D TIMESTEP=%a "
@@ -294,14 +331,14 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
 
                  st->nbody,
                  findNNode(di, st->nbody),
-                 warpSize,
+                 di->warpSize,
 
-                 THREADS1,
-                 THREADS2,
-                 THREADS3,
-                 THREADS4,
-                 THREADS5,
-                 THREADS6,
+                 threads[0],
+                 threads[1],
+                 threads[2],
+                 threads[3],
+                 threads[4],
+                 threads[5],
                  MAXDEPTH,
 
                  ctx->timestep,
@@ -479,7 +516,6 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     cl_uint i;
     size_t global[1];
     size_t local[1];
-    size_t warpSize = 64;
     cl_uint blocks = ci->di.maxCompUnits;
     cl_event events[6];
     cl_uint curEvent = 0;
@@ -490,8 +526,8 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     if (err != CL_SUCCESS)
         return err;
 
-    global[0] = THREADS1 * FACTOR1 * blocks;
-    local[0] = THREADS1;
+    global[0] = threads[0] * factors[0] * blocks;
+    local[0] = threads[0];
     warn("Bounding box kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.boundingBox, 1,
                                  NULL, global, local,
@@ -499,8 +535,8 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     if (err != CL_SUCCESS)
         return err;
 
-    global[0] = THREADS2 * FACTOR2 * blocks;
-    local[0] = THREADS2;
+    global[0] = threads[1] * factors[1] * blocks;
+    local[0] = threads[1];
     warn("Tree build kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.buildTree, 1,
                                  NULL, global, local,
@@ -508,8 +544,8 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     if (err != CL_SUCCESS)
         return err;
 
-    global[0] = THREADS3 * FACTOR3 * blocks;
-    local[0] = THREADS3;
+    global[0] = threads[2] * factors[2] * blocks;
+    local[0] = threads[2];
     warn("Summarization kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.summarization, 1,
                                  NULL, global, local,
@@ -523,8 +559,8 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
          * launched at once. This may be bad when we need
          * responsiveness. This also means it will always hang with
          * CPUs */
-        global[0] = THREADS4 * FACTOR4 * blocks;
-        local[0] = THREADS4;
+        global[0] = threads[3] * factors[3] * blocks;
+        local[0] = threads[3];
         warn("Sort kernel: %zu, %zu\n", global[0], local[0]);
         err = clEnqueueNDRangeKernel(ci->queue, kernels.sort, 1,
                                      NULL, global, local,
@@ -533,8 +569,8 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
             return err;
     }
 
-    global[0] = THREADS5 * FACTOR5 * blocks;
-    local[0] = THREADS5;
+    global[0] = threads[4] * factors[4] * blocks;
+    local[0] = threads[4];
     warn("Force kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.forceCalculation, 1,
                                  NULL, global, local,
@@ -542,8 +578,8 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     if (err != CL_SUCCESS)
         return err;
 
-    global[0] = THREADS6 * FACTOR6 * blocks;
-    local[0] = THREADS6;
+    global[0] = threads[5] * factors[5] * blocks;
+    local[0] = threads[5];
     warn("Integration kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.integration, 1,
                                  NULL, global, local,
@@ -607,7 +643,6 @@ static cl_int nbodyMainLoop(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st, NBo
     st->tnow = 0;
     st->step = 0;
     while (err == CL_SUCCESS && st->tnow < tstop)
-    //for (int i = 0; i < 3; ++i)
     {
         if (checkKernelErrorCode(ci, nbb))
         {
@@ -688,16 +723,16 @@ static cl_int createBuffers(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st)
 {
     cl_uint i;
     cl_uint nNode;
+    cl_uint warpSize = ci->di.warpSize;
     cl_int err = CL_SUCCESS;
 
     nNode = findNNode(&ci->di, st->nbody);
     _nNode = nNode;
-    warn("NNODE = %u, nbody = %d\n", nNode + 1, st->nbody);
-
-    warn("(NNODE + 1) * NSUB = %u\n", (nNode + 1) * NSUB);
-
-    int warpsize = 64;
-    warn("inc %d\n", (st->nbody + warpsize - 1) & (-warpsize));
+    warn("NNODE = %u, nbody = %d\n"
+         "(NNODE + 1) * NSUB = %u\n"
+         "inc %d\n",
+         nNode + 1, st->nbody, (nNode + 1) * NSUB,
+         (st->nbody + warpSize - 1) & (-warpSize));
     for (i = 0; i < 3; ++i)
     {
         nbb->pos[i] = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
@@ -855,6 +890,9 @@ cl_int runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
         return err;
 
     if (!nbodyCheckDevCapabilities(&ci.di, ctx, st))
+        return MW_CL_ERROR;
+
+    if (setThreadCounts(&ci.di))
         return MW_CL_ERROR;
 
     err = loadKernels(&ci, ctx, st);
