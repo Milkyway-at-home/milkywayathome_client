@@ -33,6 +33,7 @@ cl_int mwGetWorkGroupInfo(cl_kernel kern, const CLInfo* ci, WGInfo* wgi);
 void mwPrintWorkGroupInfo(const WGInfo* wgi);
 
 cl_ulong mwEventTimeNS(cl_event ev);
+double mwEventTimeMS(cl_event ev);
 double mwEventTime(cl_event ev);
 
 cl_int mwWaitReleaseEvent(cl_event* ev);

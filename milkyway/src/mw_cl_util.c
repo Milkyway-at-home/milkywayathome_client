@@ -54,7 +54,12 @@ cl_ulong mwEventTimeNS(cl_event ev)
 /* Timing in seconds */
 double mwEventTime(cl_event ev)
 {
-    return (double) mwEventTimeNS(ev) / 1.0e9;
+    return (double) mwEventTimeNS(ev) * 1.0e-9;
+}
+
+double mwEventTimeMS(cl_event ev)
+{
+    return (double) mwEventTimeNS(ev) * 1.0e-6;
 }
 
 /* Wait for an event then release it */

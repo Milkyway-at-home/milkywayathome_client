@@ -74,6 +74,7 @@ typedef struct
     int forceSSE2;
     int forceSSE3;
     int verbose;
+    int enableProfiling;
 } CLRequest;
 
 #if MW_ENABLE_DEBUG

@@ -40,9 +40,10 @@ static void CL_CALLBACK contextCallback(const char* errInfo,
   #define MW_CONTEXT_LOGGER contextCallback
 #endif /* cl_APPLE_ContextLoggingFunctions */
 
-static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useBufQueue)
+static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useBufQueue, cl_bool enableProfiling)
 {
     cl_int err = CL_SUCCESS;
+    cl_command_queue_properties props = enableProfiling ? CL_QUEUE_PROFILING_ENABLE : 0;
 
     ci->clctx = clCreateContext(NULL, 1, &ci->dev, MW_CONTEXT_LOGGER, NULL, &err);
     if (err != CL_SUCCESS)
@@ -51,7 +52,7 @@ static cl_int mwCreateCtxQueue(CLInfo* ci, cl_bool useBufQueue)
         return err;
     }
 
-    ci->queue = clCreateCommandQueue(ci->clctx, ci->dev, 0, &err);
+    ci->queue = clCreateCommandQueue(ci->clctx, ci->dev, props, &err);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error creating command queue", err);
@@ -200,7 +201,7 @@ cl_int mwSetupCL(CLInfo* ci, const CLRequest* clr)
         mwPrintDevInfoShort(&ci->di);
     }
 
-    return mwCreateCtxQueue(ci, CL_FALSE);
+    return mwCreateCtxQueue(ci, CL_FALSE, clr->enableProfiling);
 }
 
 cl_int mwDestroyCLInfo(CLInfo* ci)

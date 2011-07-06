@@ -445,7 +445,7 @@ static cl_bool checkKernelErrorCode(CLInfo* ci, NBodyBuffers* nbb)
     ts = clEnqueueMapBuffer(ci->queue,
                             nbb->treeStatus,
                             CL_TRUE,
-                            CL_MAP_READ | CL_MAP_WRITE,
+                            CL_MAP_READ,
                             0,
                             sizeof(TreeStatus),
                             0, NULL, NULL,
@@ -456,7 +456,6 @@ static cl_bool checkKernelErrorCode(CLInfo* ci, NBodyBuffers* nbb)
         return CL_TRUE;
     }
 
-    ts->blkCnt = 0;
     if (ts->errorCode != 0)
     {
         warn("Kernel reported error: %d\n", ts->errorCode);
@@ -477,88 +476,69 @@ static cl_bool checkKernelErrorCode(CLInfo* ci, NBodyBuffers* nbb)
 static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err;
+    cl_uint i;
     size_t global[1];
     size_t local[1];
     size_t warpSize = 64;
     cl_uint blocks = ci->di.maxCompUnits;
+    cl_event events[6];
+    cl_uint curEvent = 0;
 
+    memset(events, 0, sizeof(events));
 
     err = clSetKernelArg(kernels.forceCalculation, 21, sizeof(int), &st->step);
     if (err != CL_SUCCESS)
         return err;
-
 
     global[0] = THREADS1 * FACTOR1 * blocks;
     local[0] = THREADS1;
     warn("Bounding box kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.boundingBox, 1,
                                  NULL, global, local,
-                                 0, NULL, NULL);
+                                 0, NULL, &events[curEvent++]);
     if (err != CL_SUCCESS)
         return err;
-
-    st->tnow += ctx->timestep;
-    st->step++;
 
     global[0] = THREADS2 * FACTOR2 * blocks;
     local[0] = THREADS2;
     warn("Tree build kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.buildTree, 1,
                                  NULL, global, local,
-                                 0, NULL, NULL);
+                                 0, NULL, &events[curEvent++]);
     if (err != CL_SUCCESS)
         return err;
-
-    err = clFinish(ci->queue);
-    if (err != CL_SUCCESS)
-    {
-        warn("Failure on build tree kernel\n");
-        return err;
-    }
-
 
     global[0] = THREADS3 * FACTOR3 * blocks;
     local[0] = THREADS3;
     warn("Summarization kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.summarization, 1,
                                  NULL, global, local,
-                                 0, NULL, NULL);
+                                 0, NULL, &events[curEvent++]);
     if (err != CL_SUCCESS)
         return err;
 
-    err = clFinish(ci->queue);
-    if (err != CL_SUCCESS)
+    if (ci->di.devType == CL_DEVICE_TYPE_GPU)
     {
-        warn("Failure on summarization kernel\n");
-        return err;
+        /* FIXME: This does not work unless ALL of the threads are
+         * launched at once. This may be bad when we need
+         * responsiveness. This also means it will always hang with
+         * CPUs */
+        global[0] = THREADS4 * FACTOR4 * blocks;
+        local[0] = THREADS4;
+        warn("Sort kernel: %zu, %zu\n", global[0], local[0]);
+        err = clEnqueueNDRangeKernel(ci->queue, kernels.sort, 1,
+                                     NULL, global, local,
+                                     0, NULL, &events[curEvent++]);
+        if (err != CL_SUCCESS)
+            return err;
     }
-
-    //return err;
-
-#if 1
-    global[0] = THREADS4 * FACTOR4 * blocks;
-    local[0] = THREADS4;
-    warn("Sort kernel: %zu, %zu\n", global[0], local[0]);
-    err = clEnqueueNDRangeKernel(ci->queue, kernels.sort, 1,
-                                 NULL, global, local,
-                                 0, NULL, NULL);
-    if (err != CL_SUCCESS)
-        return err;
-    err = clFinish(ci->queue);
-    if (err != CL_SUCCESS)
-        return err;
-#endif
 
     global[0] = THREADS5 * FACTOR5 * blocks;
     local[0] = THREADS5;
     warn("Force kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.forceCalculation, 1,
                                  NULL, global, local,
-                                 0, NULL, NULL);
-    if (err != CL_SUCCESS)
-        return err;
-
-    err = clFinish(ci->queue);
+                                 0, NULL, &events[curEvent++]);
     if (err != CL_SUCCESS)
         return err;
 
@@ -567,12 +547,56 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     warn("Integration kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.integration, 1,
                                  NULL, global, local,
-                                 0, NULL, NULL);
+                                 0, NULL, &events[curEvent++]);
     if (err != CL_SUCCESS)
         return err;
-    clFinish(ci->queue);
 
-    return clFinish(ci->queue);
+    err = clWaitForEvents(curEvent, events);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Failed to wait for events", err);
+    }
+
+    if (ci->di.devType == CL_DEVICE_TYPE_GPU)
+    {
+        warn("Step %d:\n"
+             "  boundingBox:      %f ms\n"
+             "  buildTree:        %f ms\n"
+             "  summarization:    %f ms\n"
+             "  sort:             %f ms\n"
+             "  forceCalculation: %f ms\n"
+             "  integration:      %f ms\n"
+             "\n",
+             st->step,
+             mwEventTimeMS(events[0]),
+             mwEventTimeMS(events[1]),
+             mwEventTimeMS(events[2]),
+             mwEventTimeMS(events[3]),
+             mwEventTimeMS(events[4]),
+             mwEventTimeMS(events[5]));
+    }
+    else
+    {
+        warn("Step %d:\n"
+             "  boundingBox:      %f ms\n"
+             "  buildTree:        %f ms\n"
+             "  summarization:    %f ms\n"
+             "  forceCalculation: %f ms\n"
+             "  integration:      %f ms\n"
+             "\n",
+             st->step,
+             mwEventTimeMS(events[0]),
+             mwEventTimeMS(events[1]),
+             mwEventTimeMS(events[2]),
+             mwEventTimeMS(events[3]),
+             mwEventTimeMS(events[4]));
+
+    }
+
+    for (i = 0; i < 6; ++i)
+        clReleaseEvent(events[i]);
+
+    return err;
 }
 
 static cl_int nbodyMainLoop(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st, NBodyBuffers* nbb)
@@ -580,10 +604,10 @@ static cl_int nbodyMainLoop(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st, NBo
     cl_int err = CL_SUCCESS;
     const real tstop = ctx->timeEvolve - ctx->timestep / 1024.0;
 
-    st->step = -1;
-
-    //while (err == CL_SUCCESS && st->tnow < tstop)
-    for (int i = 0; i < 20; ++i)
+    st->tnow = 0;
+    st->step = 0;
+    while (err == CL_SUCCESS && st->tnow < tstop)
+    //for (int i = 0; i < 3; ++i)
     {
         if (checkKernelErrorCode(ci, nbb))
         {
@@ -595,10 +619,10 @@ static cl_int nbodyMainLoop(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st, NBo
              st->step,
              100.0 * st->tnow / tstop);
         err = stepSystemCL(ci, ctx, st);
-
-        //stdDebugPrint(ci, st);
+        st->tnow += ctx->timestep;
+        st->step++;
     }
-    warn("Broke on step %d, %s\n", st->step, showCLInt(err));
+    warn("Broke on step %d, %s\n", st->step - 1, showCLInt(err));
 
     return err;
 }
@@ -824,6 +848,7 @@ cl_int runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     memset(&nbb, 0, sizeof(nbb));
 
     setCLRequestFromFlags(&clr, nbf);
+    clr.enableProfiling = TRUE;
 
     err = mwSetupCL(&ci, &clr);
     if (err != CL_SUCCESS)
