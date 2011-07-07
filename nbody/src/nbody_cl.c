@@ -29,6 +29,8 @@
 static size_t threads[6];
 static size_t factors[6];
 
+static double kernelTimings[6] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
 /* Return CL_TRUE if some error */
 static cl_bool setThreadCounts(const DevInfo* di)
 {
@@ -497,6 +499,7 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     size_t local[1];
     cl_uint blocks = ci->di.maxCompUnits;
     cl_event events[6];
+    cl_double timings[6];
     cl_uint curEvent = 0;
 
     memset(events, 0, sizeof(events));
@@ -572,6 +575,12 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
         mwCLWarn("Failed to wait for events", err);
     }
 
+    for (i = 0; i < curEvent; ++i)
+    {
+        timings[i] = mwEventTimeMS(events[i]);
+        kernelTimings[i] += timings[i];
+    }
+
     if (ci->di.devType == CL_DEVICE_TYPE_GPU)
     {
         warn("Step %d:\n"
@@ -583,12 +592,12 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
              "  integration:      %f ms\n"
              "\n",
              st->step,
-             mwEventTimeMS(events[0]),
-             mwEventTimeMS(events[1]),
-             mwEventTimeMS(events[2]),
-             mwEventTimeMS(events[3]),
-             mwEventTimeMS(events[4]),
-             mwEventTimeMS(events[5]));
+             timings[0],
+             timings[1],
+             timings[2],
+             timings[3],
+             timings[4],
+             timings[5]);
     }
     else
     {
@@ -600,16 +609,17 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
              "  integration:      %f ms\n"
              "\n",
              st->step,
-             mwEventTimeMS(events[0]),
-             mwEventTimeMS(events[1]),
-             mwEventTimeMS(events[2]),
-             mwEventTimeMS(events[3]),
-             mwEventTimeMS(events[4]));
-
+             timings[0],
+             timings[1],
+             timings[2],
+             timings[3],
+             timings[4]);
     }
 
-    for (i = 0; i < 6; ++i)
+    for (i = 0; i < curEvent; ++i)
+    {
         clReleaseEvent(events[i]);
+    }
 
     return err;
 }
@@ -842,6 +852,65 @@ static cl_int marshalBodies(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st, cl_bo
     return unmapBodies(pos, vel, mass, nbb, ci);
 }
 
+static void printKernelTimings(const DevInfo* di, const NBodyState* st)
+{
+
+    double totalTime = 0.0;
+    cl_uint i;
+    double nStep = (double) st->step;
+
+    for (i = 0; i < 6; ++i)
+    {
+        totalTime += kernelTimings[i];
+    }
+
+    if (di->devType == CL_DEVICE_TYPE_GPU)
+    {
+
+        warn("\n--------------------------------------------------------------------------------\n"
+             "Total timing over %d steps:\n"
+             "                         Average             Total            Fraction\n"
+             "                    ----------------   ----------------   ----------------\n"
+             "  boundingBox:      %16f   %16f   %15.4f%%\n"
+             "  buildTree:        %16f   %16f   %15.4f%%\n"
+             "  summarization:    %16f   %16f   %15.4f%%\n"
+             "  sort:             %16f   %16f   %15.4f%%\n"
+             "  forceCalculation: %16f   %16f   %15.4f%%\n"
+             "  integration:      %16f   %16f   %15.4f%%\n"
+             "\n--------------------------------------------------------------------------------\n"
+             "\n",
+             st->step,
+             kernelTimings[0] / nStep, kernelTimings[0], 100.0 * kernelTimings[0] / totalTime,
+             kernelTimings[1] / nStep, kernelTimings[1], 100.0 * kernelTimings[1] / totalTime,
+             kernelTimings[2] / nStep, kernelTimings[2], 100.0 * kernelTimings[2] / totalTime,
+             kernelTimings[3] / nStep, kernelTimings[3], 100.0 * kernelTimings[3] / totalTime,
+             kernelTimings[4] / nStep, kernelTimings[4], 100.0 * kernelTimings[4] / totalTime,
+             kernelTimings[5] / nStep, kernelTimings[5], 100.0 * kernelTimings[5] / totalTime
+            );
+    }
+    else
+    {
+        warn("\n--------------------------------------------------------------------------------\n"
+             "Total timing over %d steps:\n"
+             "                         Average             Total            Fraction\n"
+             "                    ----------------   ----------------   ----------------\n"
+             "  boundingBox:      %16f   %16f   %15.4f%%\n"
+             "  buildTree:        %16f   %16f   %15.4f%%\n"
+             "  summarization:    %16f   %16f   %15.4f%%\n"
+             "  forceCalculation: %16f   %16f   %15.4f%%\n"
+             "  integration:      %16f   %16f   %15.4f%%\n"
+             "\n--------------------------------------------------------------------------------\n"
+             "\n",
+             st->step,
+             kernelTimings[0] / nStep, kernelTimings[0], 100.0 * kernelTimings[0] / totalTime,
+             kernelTimings[1] / nStep, kernelTimings[1], 100.0 * kernelTimings[1] / totalTime,
+             kernelTimings[2] / nStep, kernelTimings[2], 100.0 * kernelTimings[2] / totalTime,
+             kernelTimings[3] / nStep, kernelTimings[3], 100.0 * kernelTimings[3] / totalTime,
+             kernelTimings[4] / nStep, kernelTimings[4], 100.0 * kernelTimings[4] / totalTime);
+
+    }
+}
+
 static void setCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
 {
     clr->platform = nbf->platform;
@@ -898,13 +967,13 @@ cl_int runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     if (err != CL_SUCCESS)
         goto fail;
 
-
-
     err = marshalBodies(&nbb, &ci, st, CL_FALSE);
     if (err != CL_SUCCESS)
         goto fail;
 
     //printBodies(st->bodytab, st->nbody);
+
+    printKernelTimings(&ci.di, st);
 
 fail:
     debug(&ci, &nbb);
