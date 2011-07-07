@@ -470,45 +470,24 @@ static void stdDebugPrint(CLInfo* ci, NBodyState* st)
     warn("--------------------------------------------------------------------------------\n");
 }
 
-/* Check the error code and reset the block count */
+/* Check the error code */
 static cl_bool checkKernelErrorCode(CLInfo* ci, NBodyBuffers* nbb)
 {
     cl_int err;
-    TreeStatus* ts;
-    cl_bool rc = CL_FALSE;
+    TreeStatus ts;
 
-    warn("Checking tree status\n");
-
-    ts = clEnqueueMapBuffer(ci->queue,
-                            nbb->treeStatus,
-                            CL_TRUE,
-                            CL_MAP_READ,
-                            0,
-                            sizeof(TreeStatus),
-                            0, NULL, NULL,
-                            &err);
-    if (!ts)
-    {
-        mwCLWarn("Failed to map tree status", err);
-        return CL_TRUE;
-    }
-
-    if (ts->errorCode != 0)
-    {
-        warn("Kernel reported error: %d\n", ts->errorCode);
-        rc = CL_TRUE;
-    }
-
-    err = clEnqueueUnmapMemObject(ci->queue, nbb->treeStatus, ts, 0, NULL, NULL);
+    err = readTreeStatus(&ts, ci, nbb);
     if (err != CL_SUCCESS)
+        return CL_TRUE;
+
+    if (ts.errorCode != 0)
     {
-        mwCLWarn("Failed to unmap tree status", err);
+        warn("Kernel reported error: %d\n", ts.errorCode);
         return CL_TRUE;
     }
 
-    return rc;
+    return CL_FALSE;
 }
-
 
 static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
 {
