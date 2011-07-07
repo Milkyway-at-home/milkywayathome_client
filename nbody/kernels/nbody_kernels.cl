@@ -166,7 +166,7 @@ __kernel void NBODY_KERNEL(boundingBox)
         mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
         inc = get_num_groups(0) - 1;
-        if (inc == atomic_inc(&_treeStatus->blkCnt))
+        if (inc == atom_inc(&_treeStatus->blkCnt))
         {
             /* I'm the last block, so combine all block results */
             for (j = 0; j <= inc; ++j)
@@ -508,6 +508,7 @@ __kernel void NBODY_KERNEL(sort)
   #error (MAXDEPTH * THREADS5 / WARPSIZE) must be > 0
 #endif
 
+
 __kernel void NBODY_KERNEL(forceCalculation)
 {
     int i, j, k, n, depth, base, sbase;
@@ -518,6 +519,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
     __local real dq[MAXDEPTH * THREADS5 / WARPSIZE];
     __local real nx[THREADS5 / WARPSIZE], ny[THREADS5 / WARPSIZE], nz[THREADS5 / WARPSIZE];
     __local real nm[THREADS5 / WARPSIZE];
+    __local volatile char allBlock[THREADS5 / WARPSIZE][WARPSIZE];
 
     if (get_local_id(0) == 0)
     {
@@ -620,11 +622,23 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         dz = nz[base] - pz;
                         tmp = (dx * dx) + (dy * dy) + (dz * dz); /* Compute distance squared */
 
+                        /* OpenCL is missing thread voting functions. This should be equivalent to CUDA's __all()
+                         * A barrier should be unnecessary here since
+                         * all the threads in a wavefront should be
+                         * forced to run simulatenously. This is not
+                         * over the workgroup, but the actual
+                         * wavefront.
+                         * CHECKME: I'm not entirely sure if separate ones needed for each wavefront in a workgroup
+                         */
+                        char predicate = 0;
+                        allBlock[base][diff] = (tmp >= dq[depth]);
+                        for (int x = 0; x < WARPSIZE; ++x)
+                        {
+                            predicate &= allBlock[base][x];
+                        }
+
                         /* Check if all threads agree that cell is far enough away (or is a body) */
-                        /* FIXME: OpenCL is missing thread voting functions
-                           if ((n < nbodiesd) || __all(tmp >= dq[depth]))
-                        */
-                        if (n < NBODY || tmp >= dq[depth])
+                        if (n < NBODY || predicate)
                         {
                             if (n != i)
                             {
