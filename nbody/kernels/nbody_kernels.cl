@@ -25,10 +25,12 @@
 #endif
 
 #if DOUBLEPREC
-//  #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+  #if cl_amd_fp64
+    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
+  #else
+    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+  #endif
 #endif
-  #pragma OPENCL EXTENSION cl_amd_fp64 : enable
-
 
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
