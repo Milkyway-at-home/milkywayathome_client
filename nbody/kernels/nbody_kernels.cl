@@ -513,8 +513,6 @@ __kernel void NBODY_KERNEL(sort)
 
 __kernel void NBODY_KERNEL(forceCalculation)
 {
-    int i, j, k, n, depth, base, sbase;
-    real px, py, pz, ax, ay, az, dx, dy, dz, tmp;
     __local int maxDepth;
     __local int ch[THREADS5 / WARPSIZE];
     __local int pos[MAXDEPTH * THREADS5 / WARPSIZE], node[MAXDEPTH * THREADS5 / WARPSIZE];
@@ -544,7 +542,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
 
         /* Precompute values that depend only on tree level */
         dq[0] = rc * rc;
-        for (i = 1; i < maxDepth; ++i)
+        for (int i = 1; i < maxDepth; ++i)
         {
             dq[i] = 0.25 * dq[i - 1];
         }
@@ -559,9 +557,9 @@ __kernel void NBODY_KERNEL(forceCalculation)
     if (maxDepth <= MAXDEPTH)
     {
         /* Figure out first thread in each warp */
-        base = get_local_id(0) / WARPSIZE;
-        sbase = base * WARPSIZE;
-        j = base * MAXDEPTH;
+        int base = get_local_id(0) / WARPSIZE;
+        int sbase = base * WARPSIZE;
+        int j = base * MAXDEPTH;
 
         int diff = get_local_id(0) - sbase;
         /* Make multiple copies to avoid index calculations later */
@@ -572,19 +570,21 @@ __kernel void NBODY_KERNEL(forceCalculation)
         barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
         /* iterate over all bodies assigned to thread */
-        for (k = get_global_id(0); k < NBODY; k += get_local_size(0) * get_num_groups(0))
+        for (int k = get_global_id(0); k < NBODY; k += get_local_size(0) * get_num_groups(0))
         {
-            i = _sort[k];  /* Get permuted index */
+            int i = _sort[k];  /* Get permuted index */
 
             /* Cache position info */
-            px = _posX[i];
-            py = _posY[i];
-            pz = _posZ[i];
+            real px = _posX[i];
+            real py = _posY[i];
+            real pz = _posZ[i];
 
-            ax = ay = az = 0.0;
+            real ax = 0.0;
+            real ay = 0.0;
+            real az = 0.0;
 
             /* Initialize iteration stack, i.e., push root node onto stack */
-            depth = j;
+            int depth = j;
             if (get_local_id(0) == sbase)
             {
                 node[j] = NNODE;
@@ -597,6 +597,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 /* Stack is not empty */
                 while (pos[depth] < 8)
                 {
+                    int n;
                     /* Node on top of stack has more children to process */
                     if (get_local_id(0) == sbase)
                     {
@@ -619,10 +620,10 @@ __kernel void NBODY_KERNEL(forceCalculation)
                     n = ch[base];
                     if (n >= 0)
                     {
-                        dx = nx[base] - px;
-                        dy = ny[base] - py;
-                        dz = nz[base] - pz;
-                        tmp = (dx * dx) + (dy * dy) + (dz * dz); /* Compute distance squared */
+                        real dx = nx[base] - px;
+                        real dy = ny[base] - py;
+                        real dz = nz[base] - pz;
+                        real tmp = (dx * dx) + (dy * dy) + (dz * dz); /* Compute distance squared */
 
                         /* OpenCL is missing thread voting functions. This should be equivalent to CUDA's __all()
                          * A barrier should be unnecessary here since
