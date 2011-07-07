@@ -61,7 +61,7 @@ static void* createSharedMemory(key_t key, size_t size, int* shmIdOut)
     p = shmat(shmId, NULL, 0);
     if (!p || p == (void*) -1)
     {
-        perror("Getting shared memory");
+        perror("Attaching new shared memory");
         return NULL;
     }
 
@@ -73,20 +73,26 @@ static void* createSharedMemory(key_t key, size_t size, int* shmIdOut)
     return p;
 }
 
-int createSharedScene(NBodyState* st, const NBodyCtx* ctx, const char* inputFile)
+/* Use keyHint for the key if valid (> 0). Otherwise, use inputFile
+ * along with the PID to generate a new key */
+int createSharedScene(NBodyState* st, const NBodyCtx* ctx, int keyHint, const char* inputFile)
 {
-    key_t key;
-    size_t size;
+    key_t key = -1;
     int shmId = -1;
+    size_t size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
 
-    size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
-    key = DEFAULT_SHMEM_KEY;
-    //key = ftok(inputFile, getpid());
-    if (key < 0)
+    if (keyHint > 0)
     {
-        key = DEFAULT_SHMEM_KEY;
-        perror("Error getting key");
-        return 1;
+        key = (key_t) keyHint;
+    }
+    else
+    {
+        key = ftok(inputFile, getpid());
+        if (key < 0)
+        {
+            key = DEFAULT_SHMEM_KEY;
+            perror("Error getting key");
+        }
     }
 
     st->scene = (scene_t*) createSharedMemory(key, size, &shmId);
@@ -94,6 +100,7 @@ int createSharedScene(NBodyState* st, const NBodyCtx* ctx, const char* inputFile
         return 1;
 
     st->shmId = shmId;
+    st->key = key;
     prepareSceneFromState(ctx, st);
 
     return 0;
@@ -147,6 +154,7 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
     char** argv = NULL;
     size_t argvSize = 0;
     size_t visArgsLen = 0;
+    char keyArg[128];
 
     if (!st->scene) /* If there's no scene to share, there's no point */
         return;
@@ -188,13 +196,16 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
         }
     }
 
+    snprintf(keyArg, sizeof(keyArg), "--key=%d", st->key);
+
     /* Stick the program name at the head of the arguments passed in */
     visArgsLen = visArgs ? strlen(visArgs) : 0;
-    argvSize = visArgsLen + sizeof(nbodyGraphicsName) + 2; /* arguments + program name + space + null */
+    argvSize = visArgsLen + sizeof(keyArg) + sizeof(nbodyGraphicsName) + 2; /* arguments + program name + space + null */
     buf = mwCalloc(argvSize, sizeof(char));
 
     p = stpcpy(buf, nbodyGraphicsName);
     p = stpcpy(p, " ");
+    p = stpcpy(p, keyArg);
     if (visArgs)
     {
         stpcpy(p, visArgs);

@@ -302,12 +302,13 @@ typedef struct NBODY_ALIGN
     char* checkpointResolved;
 
     scene_t* scene;
-    int shmId;
+    int shmId; /* shmid, key when using shmem */
+    int key;
 } NBodyState;
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0.0, 0, NULL, NULL, FALSE, NULL, NULL, NULL, -1 }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0.0, 0, NULL, NULL, FALSE, NULL, NULL, NULL, -1, -1 }
 
 
 typedef struct

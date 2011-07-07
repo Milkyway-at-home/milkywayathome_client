@@ -42,13 +42,15 @@ typedef struct
     int monochrome;
     int notUseGLPoints;
 
-    /* pid_t pid */
-    /* char* nbody bin */
+    int pid;
+    char* file;
+    int key;
 } VisArgs;
 
-#define EMPTY_VIS_ARGS { FALSE, 0, 0, FALSE, FALSE }
+#define EMPTY_VIS_ARGS { FALSE, 0, 0, FALSE, FALSE, 0, NULL, 0 }
 
 
+int setShmemKey(const VisArgs* args);
 int connectSharedScene();
 int checkConnectedVersion();
 int nbodyGLSetup(const VisArgs* args);

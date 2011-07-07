@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2011  Matthew Arsenault
+Copyright (C) 2011 Matthew Arsenault
 
 This file is part of Milkway@Home.
 
@@ -23,12 +23,20 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 static const VisArgs defaultVisArgs =
 {
-    /* .fullscreen */     FALSE,
-    /* .width      */     0,
-    /* .height     */     0,
-    /* .monochrome */     FALSE,
-    /* .notUseGLPoints */ FALSE
+    /* .fullscreen     */ FALSE,
+    /* .width          */ 0,
+    /* .height         */ 0,
+    /* .monochrome     */ FALSE,
+    /* .notUseGLPoints */ FALSE,
+    /* .pid            */ 0,
+    /* .file           */ NULL,
+    /* .key            */ -1
 };
+
+static void freeVisArgs(VisArgs* args)
+{
+    free(args->file);
+}
 
 
 static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
@@ -64,9 +72,28 @@ static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
         },
 
         {
-            "not-use-gl-points", 'p',
+            "not-use-gl-points", 'n',
             POPT_ARG_NONE, &visArgs.notUseGLPoints,
             0, "Use faster but possibly uglier drawing", NULL
+        },
+
+        {
+            "pid", 'p',
+            POPT_ARG_INT, &visArgs.pid,
+            0, "PID of graphics process to attach to", NULL
+        },
+
+        {
+            "input-file", 'i',
+            POPT_ARG_STRING, &visArgs.file,
+            0, "Input file to accompany pid (input file of main process)", NULL
+        },
+
+
+        {
+            "key", 'k',
+            POPT_ARG_INT, &visArgs.key,
+            0, "shm key to attach to", NULL
         },
 
         POPT_AUTOHELP
@@ -78,13 +105,24 @@ static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
     visArgs = defaultVisArgs;
     context = poptGetContext(argv[0], argc, argv, options, 0);
 
-    if (mwReadArguments(context))
+    if (mwReadArguments(context) < 0)
     {
         poptPrintHelp(context, stderr, 0);
         failed = TRUE;
     }
-
     poptFreeContext(context);
+
+    if ((visArgs.pid != 0) && (visArgs.key > 0))
+    {
+        /* Both pid and key specified, only want one */
+        warn("Can only specify either pid or shm key\n");
+        failed = TRUE;
+    }
+
+    if (visArgs.pid != 0 && !visArgs.file)
+    {
+        failed = TRUE;
+    }
 
     *visOut = visArgs;
     return failed;
@@ -113,25 +151,33 @@ int main(int argc, char* argv[])
     if (nbodyGraphicsInit())
         return 1;
 
+    glutInit(&argc, argv);
+
+    if (handleVisArguments(argc, (const char**) argv, &flags))
+    {
+        freeVisArgs(&flags);
+        return 1;
+    }
+
+    if (setShmemKey(&flags))
+        return 1;
+
     if (connectSharedScene())
         return 1;
 
     if (checkConnectedVersion())
         return 1;
 
-    glutInit(&argc, argv);
-
-    if (handleVisArguments(argc, (const char**) argv, &flags))
-        return 1;
-
     rc = nbodyGLSetup(&flags);
     if (rc)
     {
-        warn("Failed to setup GL\n");
+        warn("Failed to setup nbody graphics\n");
+        freeVisArgs(&flags);
         mw_finish(rc);
     }
 
     glutMainLoop();
+    freeVisArgs(&flags);
 
     return 0;
 }

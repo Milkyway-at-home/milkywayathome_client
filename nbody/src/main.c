@@ -156,7 +156,7 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
         },
 
         {
-            "clean-checkpoint", 'k',
+            "clean-checkpoint", '\0',
             POPT_ARG_NONE, &nbf->cleanCheckpoint,
             0, "Cleanup checkpoint after finishing run", NULL
         },
@@ -189,6 +189,12 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
             "visualizer-args", '\0',
             POPT_ARG_STRING, &nbf->visArgs,
             0, "Command line to pass on to visualizer", NULL
+        },
+
+        {
+            "key", 'k',
+            POPT_ARG_INT, &nbf->key,
+            0, "Optional shared memory key to use for visualizer", NULL
         },
 
         {

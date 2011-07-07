@@ -622,11 +622,28 @@ static int alreadyAttached()
 
 static key_t key = -1;
 
-static int setShmemKey()
+int setShmemKey(const VisArgs* args)
 {
-    /* TODO: pid of simulation, etc. */
-    key = DEFAULT_SHMEM_KEY;
+    if (args->key > 0)
+    {
+        warn("Using set key\n");
+        key = args->key;
+        return 0;
+    }
 
+    if (args->pid != 0 && args->file)
+    {
+        key = ftok(args->file, args->pid);
+        if (key < 0)
+        {
+            perror("Failed to get key from pid and file");
+            return 1;
+        }
+
+        return 0;
+    }
+
+    key = DEFAULT_SHMEM_KEY;
     return 0;
 }
 
@@ -634,8 +651,6 @@ int connectSharedScene()
 {
     int shmId;
     struct shmid_ds buf;
-
-    setShmemKey();
 
     shmId = shmget(key, 0, 0);
     if (shmId < 0)

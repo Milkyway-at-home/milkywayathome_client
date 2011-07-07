@@ -58,9 +58,11 @@ typedef struct
     int numThreads;
     int debugLuaLibs;   /* Open IO libraries etc. */
     time_t checkpointPeriod;
+
+    int key;
 } NBodyFlags;
 
-#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1 }
 
 int verifyFile(const NBodyFlags* nbf);
 int runNBodySimulation(const NBodyFlags* nbf);
