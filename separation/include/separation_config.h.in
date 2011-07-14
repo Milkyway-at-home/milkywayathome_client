@@ -38,6 +38,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #cmakedefine01 SEPARATION_INLINE_KERNEL
 #cmakedefine01 SEPARATION_GRAPHICS
 
+#cmakedefine01 HAVE_SSE2
+#cmakedefine01 HAVE_SSE3
+#cmakedefine01 HAVE_SSE4
+#cmakedefine01 HAVE_SSE41
+
 
 
 

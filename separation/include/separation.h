@@ -80,6 +80,7 @@ typedef struct
     int forceX87;
     int forceSSE2;
     int forceSSE3;
+    int forceSSE41;
 
     int verbose;
     int printVersion;
@@ -106,7 +107,8 @@ typedef struct
                                  DEFAULT_DISABLE_GPU_CHECKPOINTING,            \
                                  DEFAULT_GPU_WAIT_FACTOR,                      \
                                  0, FALSE,                                     \
-                                 FALSE, FALSE, FALSE, FALSE, FALSE, FALSE      \
+                                 FALSE, FALSE, FALSE, FALSE, FALSE,            \
+                                 FALSE, FALSE                                  \
                                }
 
 #ifdef __cplusplus

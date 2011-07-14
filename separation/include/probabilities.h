@@ -31,7 +31,9 @@ extern "C" {
 
 /* probabilities will be rebuilt for each SSE level */
 #if MW_IS_X86
-  #if defined(__SSE3__)
+  #if defined(__SSE4_1__)
+    #define INIT_PROBABILITIES initProbabilities_SSE41
+  #elif defined(__SSE3__)
     #define INIT_PROBABILITIES initProbabilities_SSE3
   #elif defined(__SSE2__)
     #define INIT_PROBABILITIES initProbabilities_SSE2
@@ -42,6 +44,7 @@ extern "C" {
   #define INIT_PROBABILITIES initProbabilities
 #endif /* MW_IS_X86 */
 
+typedef ProbabilityFunc (*ProbInitFunc)(const AstronomyParameters*, int);
 
 #define DEFINE_INIT_PROBABILITIES(level) ProbabilityFunc initProbabilities##level(const AstronomyParameters* ap, int useIntrinsics)
 
@@ -50,6 +53,7 @@ DEFINE_INIT_PROBABILITIES();
 #if MW_IS_X86
 DEFINE_INIT_PROBABILITIES(_SSE2);
 DEFINE_INIT_PROBABILITIES(_SSE3);
+DEFINE_INIT_PROBABILITIES(_SSE41);
 #endif /* MW_IS_X86 */
 
 

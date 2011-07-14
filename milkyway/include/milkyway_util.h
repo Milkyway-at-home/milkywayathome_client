@@ -73,6 +73,7 @@ typedef struct
     int forceX87;
     int forceSSE2;
     int forceSSE3;
+    int forceSSE41;
     int verbose;
 } CLRequest;
 

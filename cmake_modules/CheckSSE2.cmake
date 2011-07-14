@@ -23,12 +23,15 @@ include(CheckIncludeFiles)
 
 if(SYSTEM_IS_X86)
   if(NOT MSVC)
-    set(SSE2_FLAGS "-mfpmath=sse -msse -msse2")
-    set(SSE3_FLAGS "-msse3")
-    set(SSE4_FLAGS "-msse4")
+    set(BASE_SSE_FLAGS "-mfpmath=sse -msse")
+    set(SSE2_FLAGS "${BASE_SSE_FLAGS} -msse2")
+    set(SSE3_FLAGS "${SSE2_FLAGS} -msse3")
+    set(SSE4_FLAGS "${SSE3_FLAGS} -msse4")
+    set(SSE41_FLAGS "${SSE4_FLAGS} -msse4.1")
 
     set(DISABLE_SSE2_FLAGS "-mno-sse2")
     set(DISABLE_SSE3_FLAGS "-mno-sse3")
+    set(DISABLE_SSE41_FLAGS "-mno-sse4.1")
     set(DISABLE_SSE2_FLAGS "-mfpmath=387 -mno-sse ${DISABLE_SSE2_FLAGS}")
   else()
     set(SSE2_FLAGS "/arch:SSE2 /D__SSE2__=1")
@@ -36,14 +39,19 @@ if(SYSTEM_IS_X86)
     set(DISABLE_SSE2_FLAGS "")
     # MSVC doesn't generate SSE3 itself, and doesn't define this
     set(SSE3_FLAGS "${SSE2_FLAGS} /D__SSE3__=1")
+    set(SSE41_FLAGS"${SSE3_FLAGS} /D__SSE4_1__=1")
   endif()
 endif()
 
 # Assume if these headers exist the compiler can use them
 
+set(CMAKE_REQUIRED_FLAGS "${SSE41_FLAGS}")
+check_include_files(smmintrin.h HAVE_SSE41 CACHE INTERNAL "Compiler has SSE4.1 headers")
+mark_as_advanced(HAVE_SSE41)
+
 set(CMAKE_REQUIRED_FLAGS "${SSE3_FLAGS}")
 check_include_files(pmmintrin.h HAVE_SSE3 CACHE INTERNAL "Compiler has SSE3 headers")
-mark_as_advanced(HAVE_SSE3 )
+mark_as_advanced(HAVE_SSE3)
 
 set(CMAKE_REQUIRED_FLAGS "${SSE2_FLAGS}")
 check_include_files(emmintrin.h HAVE_SSE2 CACHE INTERNAL "Compiler has SSE2 headers")
@@ -65,6 +73,16 @@ else()
   set(ALWAYS_HAVE_SSE3 FALSE CACHE INTERNAL "System always has SSE3")
 endif()
 
+function(disable_sse41 target)
+  get_target_property(comp_flags ${target} COMPILE_FLAGS)
+  if(comp_flags STREQUAL "comp_flags-NOTFOUND")
+    set(comp_flags "")
+  endif()
+  set_target_properties(${target}
+                          PROPERTIES
+                            COMPILE_FLAGS "${comp_flags} ${DISABLE_SSE4_FLAGS}")
+endfunction()
+
 function(disable_sse3 target)
   get_target_property(comp_flags ${target} COMPILE_FLAGS)
   if(comp_flags STREQUAL "comp_flags-NOTFOUND")
@@ -83,6 +101,18 @@ function(disable_sse2 target)
   set_target_properties(${target}
                           PROPERTIES
                             COMPILE_FLAGS "${comp_flags} ${DISABLE_SSE2_FLAGS}")
+endfunction()
+
+function(enable_sse41 target)
+  get_target_property(comp_flags ${target} COMPILE_FLAGS)
+  if(comp_flags STREQUAL "comp_flags-NOTFOUND")
+    set(comp_flags "")
+  endif()
+
+  set_target_properties(${target}
+                          PROPERTIES
+                            COMPILE_FLAGS "${comp_flags} ${SSE41_FLAGS}")
+  get_target_property(new_comp_flags ${target} COMPILE_FLAGS)
 endfunction()
 
 function(enable_sse3 target)
