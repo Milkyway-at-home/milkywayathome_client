@@ -330,19 +330,18 @@ int main(int argc, const char* argv[])
 
     specialSetup();
 
-    rc = readParameters(argc, argvCopy, &nbf);
+    rc = readParameters(argc, argvCopy ? argvCopy : argv, &nbf);
     if (rc)
     {
         if (BOINC_APPLICATION)
         {
             freeNBodyFlags(&nbf);
             mwBoincInit(MW_PLAIN);
-            readParameters(argc, argvCopy, &nbf);
+            readParameters(argc, argvCopy ? argvCopy : argv, &nbf);
         }
 
         mw_finish(EXIT_FAILURE);
     }
-    free(argvCopy);
 
     if (nbodyInit(&nbf))
     {

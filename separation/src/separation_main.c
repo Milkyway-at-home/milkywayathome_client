@@ -308,7 +308,6 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
     };
 
     context = poptGetContext(argv[0], argc, argv, options, POPT_CONTEXT_POSIXMEHARDER);
-
     if (argc < 2)
     {
         poptPrintUsage(context, stderr, 0);
@@ -498,14 +497,14 @@ int main(int argc, const char* argv[])
 {
     int rc;
     SeparationFlags sf = EMPTY_SEPARATION_FLAGS;
-    const char** argvCopy;
+    const char** argvCopy = NULL;
 
   #ifdef NDEBUG
     mwDisableErrorBoxes();
   #endif /* NDEBUG */
 
     argvCopy = mwFixArgv(argc, argv);
-    rc = parseParameters(argc, argvCopy, &sf);
+    rc = parseParameters(argc, argvCopy ? argvCopy : argv, &sf);
     if (rc)
     {
         if (BOINC_APPLICATION)
