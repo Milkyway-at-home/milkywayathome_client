@@ -21,6 +21,8 @@
 #ifndef _NBODY_GRAPHICS_H_
 #define _NBODY_GRAPHICS_H_
 
+#define MAX_DRAW_TRACE_POINTS 256
+
 /* "mw_nbody" */
 #define DEFAULT_SHMEM_KEY ((key_t) 0x6d775f6e626f6479)
 
@@ -64,7 +66,13 @@ typedef struct
   #endif /* _MSC_VER */
 
     int fullscreen;
-    int drawaxes;
+    int monochromatic;
+    int drawAxes;
+    int drawOrbitTrace;
+    int drawInfo;
+    int drawParticles;
+    int useGLPoints;
+
     int ntri;
     int paused;
     int step;
@@ -75,9 +83,13 @@ typedef struct
     double usleepcount;
     double usleepdt;
 
+    float rootCenterOfMass[3];     /* Center of mass of the system  */
     float startingPositionHint[3];
     float startingAngleHint[3];
     SceneInfo info;
+
+    int currentTracePoint;
+    FloatPos orbitTrace[MAX_DRAW_TRACE_POINTS];
     FloatPos r[];
 } scene_t;
 

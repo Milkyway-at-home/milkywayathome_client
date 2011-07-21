@@ -52,6 +52,8 @@ extern "C" {
 #define histogramBinSize ((real) 2.9411764705882355)
 #define histogramCenter ((real) 0.0)
 
+#define N_ORBIT_TRACE_POINTS 50
+
 
 extern const NBodyCtx defaultNBodyCtx;
 extern const HistogramParams defaultHistogramParams;

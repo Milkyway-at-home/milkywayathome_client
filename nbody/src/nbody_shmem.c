@@ -26,6 +26,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua.h"
 #include "milkyway_cpp_util.h"
 #include "nbody_shmem.h"
+#include "nbody_defaults.h"
 
 #if USE_SHMEM
   #include <sys/shm.h>
@@ -108,7 +109,7 @@ int createSharedScene(NBodyState* st, const NBodyCtx* ctx, int keyHint, const ch
 
 #elif USE_BOINC_SHMEM
 
-int createSharedScene(NBodyState* st, const NBodyCtx* ctx, const char* inputFile)
+int createSharedScene(NBodyState* st, const NBodyCtx* ctx, int keyHint, const char* inputFile)
 {
     size_t size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
 
@@ -196,7 +197,7 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
         }
     }
 
-    snprintf(keyArg, sizeof(keyArg), "--key=%d", st->key);
+    snprintf(keyArg, sizeof(keyArg), "--key=%d ", st->key);
 
     /* Stick the program name at the head of the arguments passed in */
     visArgsLen = visArgs ? strlen(visArgs) : 0;
@@ -278,6 +279,7 @@ void updateDisplayedBodies(NBodyState* st)
     int i = 0;
     const int nbody = st->nbody;
     scene_t* scene = st->scene;
+    mwvector cmPos = Pos(st->tree.root);
 
     if (!scene)
         return;
@@ -285,6 +287,23 @@ void updateDisplayedBodies(NBodyState* st)
     r = scene->r;
     scene->usleepcount += scene->usleepdt;
     scene->info.currentTime = (float) st->tnow;
+    scene->rootCenterOfMass[0] = (float) X(cmPos);
+    scene->rootCenterOfMass[1] = (float) Y(cmPos);
+    scene->rootCenterOfMass[2] = (float) Z(cmPos);
+
+    /* Tell the graphics about the orbit's history */
+    i = scene->currentTracePoint;
+    if (i < N_ORBIT_TRACE_POINTS && i < MAX_DRAW_TRACE_POINTS)
+    {
+        if (X(st->orbitTrace[i]) < DBL_MAX)
+        {
+            scene->orbitTrace[i].x = (float) X(st->orbitTrace[i]);
+            scene->orbitTrace[i].y = (float) Y(st->orbitTrace[i]);
+            scene->orbitTrace[i].z = (float) Z(st->orbitTrace[i]);
+
+            scene->currentTracePoint++;
+        }
+    }
 
     /* Read data if not paused. No copying when no screensaver attached */
     if (scene->attached && scene->usleepcount >= scene->dt && (!scene->paused || scene->step))

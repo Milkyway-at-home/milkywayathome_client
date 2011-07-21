@@ -54,6 +54,7 @@
 /* other stuff */
 #define STARSIZE 0.01f
 #define NTRI 8
+#define ORBIT_TRACE_POINT_SIZE 0.03f
 
 #define DELTAXROT 15.0f
 #define DELTAYROT 15.0f
@@ -80,11 +81,10 @@ static const FloatPos grey = { 0.3294f, 0.3294f, 0.3294f, 1 };
 static int window = 0;
 static int xlast = 0, ylast = 0;
 static int width = 0, height = 0;
-static int monochromatic = FALSE;
-static int useGLPoints = FALSE;
 
 static GLUquadricObj* quadratic = NULL;
 static scene_t* scene = NULL;
+static dsfmt_t rndState;
 
 
 /* print the bindings */
@@ -102,8 +102,12 @@ static void print_bindings(FILE* f)
             "  s              : make stars smaller\n"
             "  m              : use more polygons to render stars\n"
             "  f              : use fewer polygons to render stars\n"
+            "  l              : toggle using GL points or spheres\n"
+            "  c              : toggle particle color scheme\n"
             "  a              : toggle axes\n"
-            "  t              : toggle time printout\n"
+            "  n              : toggle showing individual particles (can be used to only view CM orbit)\n"
+            "  t              : toggle orbit trace\n"
+            "  i              : toggle info printout\n"
             "  l              : toggle log printout\n"
             "  <              : slow down animation\n"
             "  >              : speed up animation\n"
@@ -180,9 +184,9 @@ static void drawSimpleGalaxy()
     /* Put caps on the disk */
     glTranslatef(0.0f, 0.5f * GALACTIC_DISK_THICKNESS / SCALE, 0.0f);
     gluDisk(quadratic, 0.0, (GLdouble) GALACTIC_RADIUS / SCALE, 100, 50);
+
     glTranslatef(0.0f, -0.5f * GALACTIC_DISK_THICKNESS / SCALE, 0.0f);
     gluDisk(quadratic, 0.0, (GLdouble) GALACTIC_RADIUS / SCALE, 100, 50);
-
 
     glColor4f(0.98f, 0.835f, 0.714f, 0.85f);
     gluSphere(quadratic, GALACTIC_BULGE_RADIUS / SCALE, 50, 50);
@@ -209,6 +213,26 @@ static void drawAxes()
     glEnd();
 }
 
+static void drawOrbitTrace()
+{
+    int i;
+    const int n = scene->currentTracePoint;
+    const FloatPos* trace = &scene->orbitTrace[0];
+
+    glColor3f(0.0f, 1.0f, 0.0f); /* Draw starting point as different color */
+    for (i = 0; i < n; ++i)
+    {
+        glPushMatrix();
+
+        glTranslatef(trace[i].x / SCALE, trace[i].y / SCALE, trace[i].z / SCALE);
+
+        gluSphere(quadratic, ORBIT_TRACE_POINT_SIZE, scene->ntri, scene->ntri);
+        glColor3f(white.x, white.y, white.z);
+
+        glPopMatrix();
+    }
+}
+
 static inline void setIgnoredColor(int ignore)
 {
     if (ignore)
@@ -226,14 +250,14 @@ static void drawPoints()
 {
     int i;
     int nbody = scene->nbody;
-    FloatPos* r = &scene->r[0];
+    const FloatPos* r = &scene->r[0];
 
-    if (useGLPoints)
+    if (scene->useGLPoints)
     {
         glPointSize(scene->starsize);  /* Is this actually working? */
         glBegin(GL_POINTS);
 
-        if (monochromatic)
+        if (scene->monochromatic)
         {
             for (i = 0; i < nbody; ++i)
             {
@@ -257,14 +281,10 @@ static void drawPoints()
         /* FIXME: Use modern OpenGL stuff */
         for (i = 0; i < nbody; ++i)
         {
-            glLoadIdentity();
-            glTranslatef(0.0f, 0.0f, scene->z);
-            glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
-            glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
-
+            glPushMatrix();
             glTranslatef(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
 
-            if (monochromatic)
+            if (scene->monochromatic)
             {
                 setIgnoredColor(r[i].ignore);
             }
@@ -275,6 +295,8 @@ static void drawPoints()
             /* glutSolidSphere(scene->starsize, scene->ntri, scene->ntri); */
             gluSphere(quadratic, scene->starsize, scene->ntri, scene->ntri);
             /* glTranslatef(-r[i].x/SCALE, -r[i].y/SCALE, -r[i].z/SCALE); */
+
+            glPopMatrix();
         }
     }
 }
@@ -354,13 +376,25 @@ static void drawGLScene()
             drawSimpleGalaxy();
         }
 
-        if (scene->drawaxes)
+        if (scene->drawAxes)
         {
             drawAxes();
         }
 
-        drawPoints();
-        drawInfo();
+        if (scene->drawParticles)
+        {
+            drawPoints();
+        }
+
+        if (scene->drawOrbitTrace)
+        {
+            drawOrbitTrace();
+        }
+
+        if (scene->drawInfo)
+        {
+            drawInfo();
+        }
 
         glutSwapBuffers();
     }
@@ -423,6 +457,16 @@ static void keyPressed(unsigned char key, int x, int y)
             scene->changed = TRUE;
             break;
 
+        case 'n':
+            scene->drawParticles = !scene->drawParticles;
+            scene->changed = TRUE;
+            break;
+
+        case 'l':
+            scene->useGLPoints = !scene->useGLPoints;
+            scene->changed = TRUE;
+            break;
+
         case 'f':
             scene->ntri /= 2;
             if (scene->ntri < 4)
@@ -433,9 +477,25 @@ static void keyPressed(unsigned char key, int x, int y)
             break;
 
         case 'a':
-            scene->drawaxes = !scene->drawaxes;
+            scene->drawAxes = !scene->drawAxes;
             scene->changed = TRUE;
             break;
+
+        case 't':
+            scene->drawOrbitTrace = !scene->drawOrbitTrace;
+            scene->changed = TRUE;
+            break;
+
+        case 'i':
+            scene->drawInfo = !scene->drawInfo;
+            scene->changed = TRUE;
+            break;
+
+        case 'c':
+            scene->monochromatic = !scene->monochromatic;
+            scene->changed = TRUE;
+            break;
+
         case '>':
             scene->dt /= 2.0;
             if (scene->dt < 10.0)
@@ -443,6 +503,7 @@ static void keyPressed(unsigned char key, int x, int y)
                 scene->dt = 10.0;
             }
             break;
+
         case '<':
             scene->dt *= 2.0;
             if (scene->dt > 1.0e6)
@@ -592,11 +653,8 @@ static void assignParticleColors(int nbody)
 
 static int nbodyInitDrawState()
 {
-    if (!monochromatic)
-    {
-        color = (FloatPos*) mwCallocA(scene->nbody, sizeof(FloatPos));
-        assignParticleColors(scene->nbody);
-    }
+    color = (FloatPos*) mwCallocA(scene->nbody, sizeof(FloatPos));
+    assignParticleColors(scene->nbody);
 
     return 0;
 }
@@ -688,6 +746,11 @@ int connectSharedScene()
 
 #else
 
+int setShmemKey(const VisArgs* args)
+{
+    return 0;
+}
+
 /* Returns TRUE if connection succeeds */
 static int attemptConnectSharedScene()
 {
@@ -730,15 +793,18 @@ static void sceneInit(const VisArgs* args)
 {
     width = args->width == 0 ? glutGet(GLUT_SCREEN_WIDTH) / 2 : args->width;
     height = args->height == 0 ? glutGet(GLUT_SCREEN_HEIGHT) / 2 : args->height;
-    monochromatic = args->monochrome;
-    useGLPoints = !args->notUseGLPoints;
+    scene->monochromatic = args->monochrome;
+    scene->useGLPoints = !args->notUseGLPoints;
 
     scene->xrot = -60.0f;
     scene->yrot = -15.0f;
     scene->z = -8.0f;
     scene->starsize = STARSIZE;
     scene->fullscreen = args->fullscreen;
-    scene->drawaxes = TRUE;
+    scene->drawInfo = TRUE;
+    scene->drawAxes = TRUE;
+    scene->drawParticles = TRUE;
+    scene->drawOrbitTrace = TRUE;
     scene->ntri = NTRI;
     scene->paused = FALSE;
     scene->step = FALSE;
@@ -746,6 +812,8 @@ static void sceneInit(const VisArgs* args)
     scene->changed = FALSE;
     scene->dt = 300;
     scene->usleepdt = USLEEPDT;
+
+    dsfmt_init_gen_rand(&rndState, (uint32_t) time(NULL));
 }
 
 int nbodyGLSetup(const VisArgs* args)

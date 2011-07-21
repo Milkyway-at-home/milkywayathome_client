@@ -22,6 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "nbody_types.h"
 #include "nbody_show.h"
+#include "nbody_defaults.h"
 
 static void freeNBodyTree(NBodyTree* t)
 {
@@ -87,6 +88,7 @@ int destroyNBodyState(NBodyState* st)
     freeFreeCells(st->freecell);
     mwFreeA(st->bodytab);
     mwFreeA(st->acctab);
+    mwFreeA(st->orbitTrace);
 
     free(st->checkpointResolved);
 
@@ -107,6 +109,8 @@ int destroyNBodyState(NBodyState* st)
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int nbody)
 {
     static const NBodyTree emptyTree = EMPTY_TREE;
+    static const mwvector maxV = mw_vec(DBL_MAX, DBL_MAX, DBL_MAX);
+    int i;
 
     st->tree = emptyTree;
     st->freecell = NULL;
@@ -115,6 +119,13 @@ void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int
     st->tnow = 0.0;
     st->nbody = nbody;
     st->bodytab = bodies;
+
+    st->orbitTrace = (mwvector*) mwMallocA(N_ORBIT_TRACE_POINTS * sizeof(mwvector));
+    for (i = 0; i < N_ORBIT_TRACE_POINTS; ++i)
+    {
+        st->orbitTrace[i] = maxV;
+    }
+
 
     /* The tests may step the system from an arbitrary place, so make sure this is 0'ed */
     st->acctab = (mwvector*) mwCallocA(nbody, sizeof(mwvector));

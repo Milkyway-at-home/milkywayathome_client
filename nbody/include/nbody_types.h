@@ -301,6 +301,7 @@ typedef struct NBODY_ALIGN
     FILE* outFile;            /* file for snapshot output */
     char* checkpointResolved;
 
+    mwvector* orbitTrace;  /* Trail of center of masses for display purposes */
     scene_t* scene;
     int shmId; /* shmid, key when using shmem */
     int key;
@@ -308,7 +309,7 @@ typedef struct NBODY_ALIGN
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0.0, 0, NULL, NULL, FALSE, NULL, NULL, NULL, -1, -1 }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0.0, 0, NULL, NULL, FALSE, NULL, NULL, NULL, NULL, -1, -1 }
 
 
 typedef struct

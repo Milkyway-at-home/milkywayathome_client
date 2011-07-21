@@ -28,6 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_show.h"
 #include "nbody_lua.h"
 #include "nbody_shmem.h"
+#include "nbody_defaults.h"
 
 
 static inline int nbodyTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
@@ -68,6 +69,19 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
   #endif /* BOINC_APPLICATION */
 }
 
+/* If enough time has passed, record the next center of mass position */
+static void addTracePoint(const NBodyCtx* ctx, NBodyState* st)
+{
+    int i = (st->tnow / ctx->timeEvolve) * N_ORBIT_TRACE_POINTS;
+
+    if (i >= N_ORBIT_TRACE_POINTS) /* Just in case */
+        return;
+
+    if (X(st->orbitTrace[i]) < DBL_MAX)
+        return;
+
+    st->orbitTrace[i] = Pos(st->tree.root);
+}
 
 static int runSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
@@ -80,6 +94,7 @@ static int runSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 
     while (st->tnow < tstop)
     {
+        addTracePoint(ctx, st);
         updateDisplayedBodies(st);
 
         if (stepSystem(ctx, st))   /* advance N-body system */
