@@ -62,7 +62,9 @@ include_directories(${MILKYWAY_INCLUDE_DIR})
 set(mw_lib_src src/milkyway_util.c
                src/mw_boinc_util.c
                src/milkyway_cpp_util.cc
-               src/milkyway_show.c)
+               src/milkyway_show.c
+               src/mw_cpuid.c)
+
 
 set(milkyway_lua_src src/milkyway_lua_marshal.c
                      src/milkyway_lua_util.c
@@ -88,6 +90,7 @@ set(mw_lib_headers include/milkyway_config.h.in
                    include/milkyway_vector_types.h
                    include/real.h
                    include/milkyway_show.h
+                   include/mw_cpuid.h
                    include/mw_asprintf.h)
 
 

@@ -22,6 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation.h"
 #include "separation_utils.h"
 #include "probabilities.h"
+#include "mw_cpuid.h"
 
 #if SEPARATION_OPENCL
   #include "run_cl.h"
@@ -74,85 +75,28 @@ static ProbInitFunc initSSE3 = initProbabilities_SSE3;
 static ProbInitFunc initSSE2 = initProbabilities_SSE2;
 static ProbInitFunc initOther = initProbabilities;
 
-
 #if MW_IS_X86
-
-#define bit_CMPXCHG8B (1 << 8)
-#define bit_CMOV (1 << 15)
-#define bit_MMX (1 << 23)
-#define bit_SSE (1 << 25)
-#define bit_SSE2 (1 << 26)
-#define bit_SSE3 (1 << 0)
-#define bit_SSE41 (1 << 19)
-#define bit_CMPXCHG16B (1 << 13)
-#define bit_3DNOW (1 << 31)
-#define bit_3DNOWP (1 << 30)
-#define bit_LM (1 << 29)
-
-
-#ifndef _WIN32
-  #if defined(__i386__) && defined(__PIC__)
-    /* %ebx may be the PIC register.  */
-    #define cpuid(level, a, b, c, d) __asm__ ("xchglt%%ebx, %1nt"                        \
-                                              "cpuid"                                    \
-                                              "xchglt%%ebx, %1nt"                        \
-                                              : "=a" (a), "=r" (b), "=c" (c), "=d" (d)   \
-                                              : "0" (level))
-  #else
-    #define cpuid(level, a, b, c, d) __asm__ ("cpuid"                                    \
-                                              : "=a" (a), "=b" (b), "=c" (c), "=d" (d)   \
-                                              : "0" (level))
-  #endif /* defined(__i386__) && defined(__PIC__) */
-
-static void getSSELevelSupport(int* hasSSE2, int* hasSSE3, int* hasSSE41)
-{
-    /* http://peter.kuscsik.com/drupal/?q=node/10 */
-    unsigned int eax, ebx, ecx, edx;
-    cpuid(1, eax, ebx, ecx, edx);
-
-    *hasSSE2 = !!(edx & bit_SSE2);
-    *hasSSE3 = !!(ecx & bit_SSE3);
-    *hasSSE41 = !!(ecx & bit_SSE41);
-}
-
-
-#else
-
-static void getSSELevelSupport(int* hasSSE2, int* hasSSE3, int* hasSSE41)
-{
-    int nIds = 0;
-    int cpuInfo[4] = { 0, 0, 0, 0 };
-
-    __cpuid(cpuInfo, 0);
-    nIds = cpuInfo[0];
-
-    *hasSSE2 = *hasSSE3 = *hasSSE41 = FALSE;
-    if (nIds >= 1)
-    {
-        __cpuid(cpuInfo, 1);
-        *hasSSE2 = !!(cpuInfo[3] & bit_SSE2);
-        *hasSSE3 = !!(cpuInfo[2] & bit_SSE3);
-        *hasSSE41 = !!(cpuInfo[2] & bit_SSE41);
-    }
-}
-#endif /* _WIN32 */
-
 
 /* Use one of the faster functions if available, or use something forced */
 static int probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* clr)
 {
-    int hasSSE2 = FALSE, hasSSE3 = FALSE, hasSSE41 = FALSE;
-    int useSSE2 = FALSE, useSSE3 = FALSE, useSSE41 = FALSE;
-
+    int hasSSE2, hasSSE3, hasSSE41;
     int forcingInstructions = clr->forceSSE41 || clr->forceSSE3 || clr->forceSSE2 || clr->forceX87;
+    int abcd[4];
 
-    getSSELevelSupport(&hasSSE2, &hasSSE3, &hasSSE41);
+    mw_cpuid(abcd, 1, 0);
+
+    hasSSE41 = mwHasSSE41(abcd);
+    hasSSE3 = mwHasSSE3(abcd);
+    hasSSE2 = mwHasSSE2(abcd);
 
     if (clr->verbose)
     {
-        warn("CPU features: SSE2 = %d, SSE3 = %d, SSE4.1 = %d\n"
-             "Forcing: SSE2 = %d, SSE3 = %d, SSE4.1 = %d, x87 = %d\n",
+        warn("CPU features:        SSE2 = %d, SSE3 = %d, SSE4.1 = %d\n"
+             "Available functions: SSE2 = %d, SSE3 = %d, SSE4.1 = %d, x87 = %d\n"
+             "Forcing:             SSE2 = %d, SSE3 = %d, SSE4.1 = %d, x87 = %d\n",
              hasSSE2, hasSSE3, hasSSE41,
+             initSSE2 != NULL, initSSE3 != NULL, initSSE41 != NULL, initProbabilities != NULL,
              clr->forceSSE2, clr->forceSSE3, clr->forceSSE41, clr->forceX87);
     }
 
