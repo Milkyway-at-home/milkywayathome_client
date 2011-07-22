@@ -38,6 +38,28 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
+
+typedef enum
+{
+    MW_PREF_NONE,
+    MW_PREF_DOUBLE,
+    MW_PREF_BOOL,
+    MW_PREF_INT,
+    MW_PREF_STRING
+} MWPrefType;
+
+typedef struct
+{
+    const char* name;
+    MWPrefType type;
+    int found;
+    void* value;
+}  MWProjectPrefs;
+
+#define END_MW_PROJECT_PREFS { NULL, MW_PREF_NONE, FALSE, NULL }
+
+
+
 #if BOINC_APPLICATION
   #define mw_boinc_print(f, msg, ...) fprintf(f, msg, ##__VA_ARGS__)
   #define mw_finish(x) boinc_finish(x)
@@ -72,6 +94,7 @@ int mw_rename(const char* oldf, const char* newf);
 int mw_resolve_filename(const char* filename, char* buf, size_t bufSize);
 int mw_file_exists(const char* file);
 
+int mwReadProjectPrefs(MWProjectPrefs* prefs, const char* prefConfig);
 
 #ifdef __cplusplus
 }
