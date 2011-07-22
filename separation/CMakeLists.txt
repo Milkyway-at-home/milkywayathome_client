@@ -339,7 +339,7 @@ if(SYSTEM_IS_X86)
     list(APPEND separation_core_libs separation_core)
   endif()
 else()
-  add_library(separation_core_sse STATIC src/probabilities.c)
+  add_library(separation_core STATIC src/probabilities.c)
   list(APPEND separation_core_libs separation_core)
 endif()
 

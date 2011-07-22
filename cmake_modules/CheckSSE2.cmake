@@ -39,11 +39,9 @@ if(SYSTEM_IS_X86)
     set(DISABLE_SSE2_FLAGS "")
     # MSVC doesn't generate SSE3 itself, and doesn't define this
     set(SSE3_FLAGS "${SSE2_FLAGS} /D__SSE3__=1")
-    set(SSE41_FLAGS"${SSE3_FLAGS} /D__SSE4_1__=1")
+    set(SSE41_FLAGS "${SSE3_FLAGS} /D__SSE4_1__=1")
   endif()
 endif()
-
-# Assume if these headers exist the compiler can use them
 
 set(CMAKE_REQUIRED_FLAGS "${SSE41_FLAGS}")
 check_include_files(smmintrin.h HAVE_SSE41 CACHE INTERNAL "Compiler has SSE4.1 headers")
