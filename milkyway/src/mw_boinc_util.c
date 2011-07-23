@@ -223,10 +223,6 @@ static char* matchTagName(const char* prefs, const char* name)
 
     /* no strndup() on windows */
     strncpy(item, beginItem, itemSize);
-
-    warn("item size = %zu\n", itemSize);
-    warn("item = '%s'\n", item);
-
     return item;
 }
 
@@ -244,14 +240,15 @@ static int mwReadPref(MWProjectPrefs* pref, const char* prefConfig)
         return 1;
     }
 
+    errno = 0;
     switch (pref->type)
     {
         case MW_PREF_DOUBLE:
             d = strtod(item, &endP);
-            if (item == endP)
+            if (item == endP || errno != 0)
             {
                 rc = 1;
-                warn("Error parsing double at '%s'\n", item);
+                perror("Error parsing preference double");
             }
             else
             {
@@ -263,10 +260,11 @@ static int mwReadPref(MWProjectPrefs* pref, const char* prefConfig)
         case MW_PREF_BOOL:
         case MW_PREF_INT:
             i = (int) strtol(item, &endP, 10);
-            if (item == endP)
+            if (item == endP || errno != 0)
             {
                 rc = 1;
-                warn("Error parsing int at '%s'\n", item);
+                perror("Error parsing preference int or bool");
+
             }
             else
             {

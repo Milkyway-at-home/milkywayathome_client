@@ -86,7 +86,7 @@ static void setDefaultFiles(SeparationFlags* sf)
     stringDefault(sf->preferredPlatformVendor, DEFAULT_PREFERRED_PLATFORM_VENDOR);
 }
 
-static void setCommonFlags(CLRequest* clr, const SeparationFlags* sf)
+static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)
 {
     clr->forceNoIntrinsics = sf->forceNoIntrinsics;
     clr->forceX87 = sf->forceX87;
@@ -95,217 +95,261 @@ static void setCommonFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->forceSSE41 = sf->forceSSE41;
     clr->verbose = sf->verbose;
     clr->nonResponsive = sf->nonResponsive;
+    clr->enableCheckpointing = !sf->disableGPUCheckpointing;
+
+
+    clr->devNum = sf->useDevNumber;
+    clr->platform = sf->usePlatform;
+    clr->preferredPlatformVendor = sf->preferredPlatformVendor;
+
+    /* Used by CAL only */
+    clr->targetFrequency = sf->targetFrequency <= 0.01 ? DEFAULT_TARGET_FREQUENCY : sf->targetFrequency;
+    clr->pollingMode = sf->pollingMode;
     clr->gpuWaitFactor = sf->waitFactor;
 }
 
-#if SEPARATION_OPENCL
+#if BOINC_APPLICATION
 
-static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
-{
-    clr->preferredPlatformVendor = sf->preferredPlatformVendor;
-    clr->platform = sf->usePlatform;
-    clr->devNum = sf->useDevNumber;
-    clr->enableCheckpointing = !sf->disableGPUCheckpointing;
-    setCommonFlags(clr, sf);
-}
-
-#elif SEPARATION_CAL
-
-static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
-{
-    clr->devNum = sf->useDevNumber;
-    clr->targetFrequency = sf->targetFrequency <= 0.01 ? DEFAULT_TARGET_FREQUENCY : sf->targetFrequency;
-    clr->pollingMode = sf->pollingMode;
-    clr->enableCheckpointing = !sf->disableGPUCheckpointing;
-
-    setCommonFlags(clr, sf);
-}
-
+/* If someone has mixed Windows and non-Windows they can set for each*/
+#ifdef _WIN32
+  #define GPU_PRIORITY_SETTING "gpu_process_priority"
 #else
+  #define GPU_PRIORITY_SETTING "gpu_process_nice"
+#endif /* _WIN32 */
 
-static void getCLReqFromFlags(CLRequest* clr, const SeparationFlags* sf)
+/* If using BOINC try reading a few of the settings from the project
+ * preferences. If command line arguments are used, those will
+ * override the preferences. The command line arguments will also
+ * still work without BOINC */
+static void separationReadPreferences(SeparationFlags* sf)
 {
-    setCommonFlags(clr, sf);
+    MWAppInitData aid;
+
+    static struct
+    {
+        double gpuTargetFrequency;
+        double gpuWaitFactor;
+        int gpuNonResponsive;
+        int gpuProcessPriority;
+        int gpuPollingMode;
+        int gpuDisableCheckpoint;
+    } prefs;
+
+    static MWProjectPrefs sepPrefs[] =
+        {
+            { "gpu_target_frequency", MW_PREF_DOUBLE, FALSE, &prefs.gpuTargetFrequency   },
+            { "gpu_wait_factor",      MW_PREF_DOUBLE, FALSE, &prefs.gpuWaitFactor        },
+            { "gpu_non_responsive",   MW_PREF_BOOL,   FALSE, &prefs.gpuNonResponsive     },
+            { GPU_PRIORITY_SETTING,   MW_PREF_INT,    FALSE, &prefs.gpuProcessPriority   },
+            { "gpu_polling_mode",     MW_PREF_INT,    FALSE, &prefs.gpuPollingMode       },
+            { "no_gpu_checkpoint",    MW_PREF_BOOL,   FALSE, &prefs.gpuDisableCheckpoint },
+            END_MW_PROJECT_PREFS
+        };
+
+    prefs.gpuTargetFrequency   = DEFAULT_TARGET_FREQUENCY;
+    prefs.gpuWaitFactor        = DEFAULT_GPU_WAIT_FACTOR;
+    prefs.gpuNonResponsive     = DEFAULT_NON_RESPONSIVE;
+    prefs.gpuProcessPriority   = DEFAULT_GPU_PRIORITY;
+    prefs.gpuPollingMode       = DEFAULT_POLLING_MODE;
+    prefs.gpuDisableCheckpoint = DEFAULT_DISABLE_GPU_CHECKPOINTING;
+
+    if (mwGetMWAppInitData(&aid))
+    {
+        warn("Error reading app init data. Project preferences will not be used\n");
+    }
+    else
+    {
+        if (aid.projectPrefs)
+        {
+            mwReadProjectPrefs(sepPrefs, aid.projectPrefs);
+        }
+    }
+
+    /* Any successfully found setting will be used; otherwise it will get the default */
+    sf->targetFrequency = prefs.gpuTargetFrequency;
+    sf->waitFactor = prefs.gpuWaitFactor;
+    sf->nonResponsive = prefs.gpuNonResponsive;
+    sf->processPriority = prefs.gpuProcessPriority;
+    sf->pollingMode = prefs.gpuPollingMode;
+    sf->disableGPUCheckpointing = prefs.gpuDisableCheckpoint;
 }
 
-#endif /* SEPARATION_OPENCL */
+#endif /* BOINC_APPLICATION */
 
 
-/* Returns the newly allocated array of parameters */
+/* Read project preferences and command line arguments */
 static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
 {
     poptContext context;
     int argRead;
     static unsigned int numParams = 0;
-    static int server_params = 0;
-    static const char** rest;
+    static int serverParams = 0;
+    static const char** rest = NULL;
     static SeparationFlags sf = EMPTY_SEPARATION_FLAGS;
 
     static const struct poptOption options[] =
-    {
         {
-            "astronomy-parameter-file", 'a',
-            POPT_ARG_STRING, &sf.ap_file,
-            0, "Astronomy parameter file", NULL
-        },
+            {
+                "astronomy-parameter-file", 'a',
+                POPT_ARG_STRING, &sf.ap_file,
+                0, "Astronomy parameter file", NULL
+            },
 
-        {
-            "star-points-file", 's',
-            POPT_ARG_STRING, &sf.star_points_file,
-            0, "Star points files", NULL
-        },
+            {
+                "star-points-file", 's',
+                POPT_ARG_STRING, &sf.star_points_file,
+                0, "Star points files", NULL
+            },
 
-        {
-            "output", 'o',
-            POPT_ARG_STRING, &sf.separation_outfile,
-            0, "Output file for separation (enables separation)", NULL
-        },
+            {
+                "output", 'o',
+                POPT_ARG_STRING, &sf.separation_outfile,
+                0, "Output file for separation (enables separation)", NULL
+            },
 
-        {
-            "seed", 'e',
-            POPT_ARG_INT, &sf.separationSeed,
-            SEED_ARGUMENT, "Seed for random number generator", NULL
-        },
+            {
+                "seed", 'e',
+                POPT_ARG_INT, &sf.separationSeed,
+                SEED_ARGUMENT, "Seed for random number generator", NULL
+            },
 
-        {
-            "ignore-checkpoint", 'i',
-            POPT_ARG_NONE, &sf.ignoreCheckpoint,
-            0, "Ignore the checkpoint file", NULL
-        },
+            {
+                "ignore-checkpoint", 'i',
+                POPT_ARG_NONE, &sf.ignoreCheckpoint,
+                0, "Ignore the checkpoint file", NULL
+            },
 
-        {
-            "cleanup-checkpoint", 'c',
-            POPT_ARG_NONE, &sf.cleanupCheckpoint,
-            0, "Delete checkpoint on successful", NULL
-        },
+            {
+                "cleanup-checkpoint", 'c',
+                POPT_ARG_NONE, &sf.cleanupCheckpoint,
+                0, "Delete checkpoint on successful", NULL
+            },
 
-        {
-            "debug-boinc", 'g',
-            POPT_ARG_NONE, &sf.debugBOINC,
-            0, "Init BOINC with debugging. No effect if not built with BOINC_APPLICATION", NULL
-        },
+            {
+                "debug-boinc", 'g',
+                POPT_ARG_NONE, &sf.debugBOINC,
+                0, "Init BOINC with debugging. No effect if not built with BOINC_APPLICATION", NULL
+            },
 
-        {
-            "process-priority", 'b',
-            POPT_ARG_INT, &sf.processPriority,
-         #ifndef _WIN32
-            PRIORITY_ARGUMENT, "Set process nice value (-20 to 20)", NULL
-         #else
-            PRIORITY_ARGUMENT, "Set process priority class. Set priority class 0 (lowest) to 4 (highest)", NULL
-         #endif /* _WIN32 */
-        },
+            {
+                "process-priority", 'b',
+                POPT_ARG_INT, &sf.processPriority,
+              #ifndef _WIN32
+                PRIORITY_ARGUMENT, "Set process nice value (-20 to 20)", NULL
+              #else
+                PRIORITY_ARGUMENT, "Set process priority class. Set priority class 0 (lowest) to 4 (highest)", NULL
+              #endif /* _WIN32 */
+            },
 
-      #if SEPARATION_OPENCL || SEPARATION_CAL
-        {
-            "device", 'd',
-            POPT_ARG_INT, &sf.useDevNumber,
-            0, "Device number passed by BOINC to use", NULL
-        },
+            {
+                "device", 'd',
+                POPT_ARG_INT, &sf.useDevNumber,
+                0, "Device number passed by BOINC to use", NULL
+            },
 
-        {
-            "non-responsive", 'r',
-            POPT_ARG_NONE, &sf.nonResponsive,
-            0, "Do not care about display responsiveness (use with caution)", NULL
-        },
+            {
+                "non-responsive", 'r',
+                POPT_ARG_NONE, &sf.nonResponsive,
+                0, "Do not care about display responsiveness (use with caution)", NULL
+            },
 
-        {
-            "gpu-target-frequency", 'q',
-            POPT_ARG_DOUBLE, &sf.targetFrequency,
-            0, "Target frequency for GPU tasks" , NULL
-        },
+            {
+                "gpu-target-frequency", 'q',
+                POPT_ARG_DOUBLE, &sf.targetFrequency,
+                0, "Target frequency for GPU tasks" , NULL
+            },
 
-        {
-            "gpu-polling-mode", 'm',
-            POPT_ARG_INT, &sf.pollingMode,
-            0, "Interval for polling GPU (< 0 for busy wait, 0 for calCtxWaitForEvents(), > 1 sets interval in ms)" , NULL
-        },
+            {
+                "gpu-polling-mode", 'm',
+                POPT_ARG_INT, &sf.pollingMode,
+                0, "Interval for polling GPU (< 0 for busy wait, 0 for calCtxWaitForEvents(), > 1 sets interval in ms)" , NULL
+            },
 
-        {
-            "gpu-wait-factor", 'w',
-            POPT_ARG_DOUBLE, &sf.waitFactor,
-            0, "Factor applied to initial wait before polling GPU (CAL only)" , NULL
-        },
+            {
+                "gpu-wait-factor", 'w',
+                POPT_ARG_DOUBLE, &sf.waitFactor,
+                0, "Factor applied to initial wait before polling GPU (CAL only)" , NULL
+            },
 
-        {
-            "gpu-disable-checkpointing", 'k',
-            POPT_ARG_NONE, &sf.disableGPUCheckpointing,
-            0, "Disable checkpointing with GPUs" , NULL
-        },
+            {
+                "gpu-disable-checkpointing", 'k',
+                POPT_ARG_NONE, &sf.disableGPUCheckpointing,
+                0, "Disable checkpointing with GPUs" , NULL
+            },
 
-      #endif /* SEPARATION_OPENCL || SEPARATION_CAL */
+            {
+                "platform", 'l',
+                POPT_ARG_INT, &sf.usePlatform,
+                0, "CL platform index to use", NULL
+            },
 
-      #if SEPARATION_OPENCL
-        {
-            "platform", 'l',
-            POPT_ARG_INT, &sf.usePlatform,
-            0, "CL platform index to use", NULL
-        },
+            {
+                "platform-vendor", '\0',
+                POPT_ARG_STRING, &sf.preferredPlatformVendor,
+                0, "CL Platform vendor name to try to use", NULL
+            },
 
-        {
-            "platform-vendor", '\0',
-            POPT_ARG_STRING, &sf.preferredPlatformVendor,
-            0, "CL Platform vendor name to try to use", NULL
-        },
+            {
+                "verbose", '\0',
+                POPT_ARG_NONE, &sf.verbose,
+                0, "Print some extra debugging information", NULL
+            },
 
-      #endif /* SEPARATION_OPENCL */
+            {
+                "force-no-intrinsics", '\0',
+                POPT_ARG_NONE, &sf.forceNoIntrinsics,
+                0, "Use old default path", NULL
+            },
 
-        {
-            "verbose", '\0',
-            POPT_ARG_NONE, &sf.verbose,
-            0, "Print some extra debugging information", NULL
-        },
+            {
+                "force-x87", '\0',
+                POPT_ARG_NONE, &sf.forceX87,
+                0, "Force to use x87 path (ignored if x86_64)", NULL
+            },
 
-        {
-            "force-no-intrinsics", '\0',
-            POPT_ARG_NONE, &sf.forceNoIntrinsics,
-            0, "Use old default path", NULL
-        },
+            {
+                "force-sse2", '\0',
+                POPT_ARG_NONE, &sf.forceSSE2,
+                0, "Force to use SSE2 path", NULL
+            },
 
-        {
-            "force-x87", '\0',
-            POPT_ARG_NONE, &sf.forceX87,
-            0, "Force to use x87 path (ignored if x86_64)", NULL
-        },
+            {
+                "force-sse3", '\0',
+                POPT_ARG_NONE, &sf.forceSSE3,
+                0, "Force to use SSE3 path", NULL
+            },
 
-        {
-            "force-sse2", '\0',
-            POPT_ARG_NONE, &sf.forceSSE2,
-            0, "Force to use SSE2 path", NULL
-        },
+            {
+                "force-sse4.1", '\0',
+                POPT_ARG_NONE, &sf.forceSSE41,
+                0, "Force to use SSE4.1 path", NULL
+            },
 
-        {
-            "force-sse3", '\0',
-            POPT_ARG_NONE, &sf.forceSSE3,
-            0, "Force to use SSE3 path", NULL
-        },
+            {
+                "version", 'v',
+                POPT_ARG_NONE, &sf.printVersion,
+                0, "Print version information", NULL
+            },
 
-        {
-            "force-sse4.1", '\0',
-            POPT_ARG_NONE, &sf.forceSSE41,
-            0, "Force to use SSE4.1 path", NULL
-        },
+            {
+                "p", 'p',
+                POPT_ARG_NONE, &serverParams,
+                0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
+            },
 
-        {
-            "version", 'v',
-            POPT_ARG_NONE, &sf.printVersion,
-            0, "Print version information", NULL
-        },
+            {
+                "np", '\0',
+                POPT_ARG_INT | POPT_ARGFLAG_ONEDASH, &numParams,
+                0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
+            },
 
-        {
-            "p", 'p',
-            POPT_ARG_NONE, &server_params,
-            0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
-        },
+            POPT_AUTOHELP
+            POPT_TABLEEND
+        };
 
-        {
-            "np", '\0',
-            POPT_ARG_INT | POPT_ARGFLAG_ONEDASH, &numParams,
-            0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
-        },
-
-        POPT_AUTOHELP
-        POPT_TABLEEND
-    };
+  #if BOINC_APPLICATION
+    separationReadPreferences(&sf);
+  #endif /* BOINC_APPLICATION */
 
     context = poptGetContext(argv[0], argc, argv, options, POPT_CONTEXT_POSIXMEHARDER);
     if (argc < 2)
@@ -343,8 +387,8 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
 
     poptFreeContext(context);
     setDefaultFiles(&sf);
-
     *sfOut = sf;
+
     return 0;
 }
 
@@ -393,8 +437,7 @@ static int worker(const SeparationFlags* sf)
 
     memset(&ap, 0, sizeof(ap));
 
-    getCLReqFromFlags(&clr, sf);
-
+    setCLReqFlags(&clr, sf);
     ias = prepareParameters(sf, &ap, &bgp, &streams);
     if (!ias)
         return 1;
@@ -488,63 +531,6 @@ static int separationSpecialCleanup()
     return 0;
 }
 
-#if BOINC_APPLICATION
-/* If using BOINC try readinga few of the settings from the project
- * preferences. If command line arguments are used, those will
- * override the preferences. The command line arguments will also
- * still work without BOINC */
-static void separationReadPreferences(SeparationFlags* sf)
-{
-    MWAppInitData aid;
-
-    static struct
-    {
-        double gpuTargetFrequency;
-        int gpuNonResponsive;
-        int gpuProcessPriority;
-        int gpuPollingMode;
-        int gpuDisableCheckpoint;
-    } prefs;
-
-    static MWProjectPrefs sepPrefs[] =
-        {
-            { "gpu_target_frequency", MW_PREF_DOUBLE, FALSE, &prefs.gpuTargetFrequency   },
-            { "gpu_non_responsive",   MW_PREF_BOOL,   FALSE, &prefs.gpuNonResponsive     },
-            { "gpu_process_priority", MW_PREF_BOOL,   FALSE, &prefs.gpuProcessPriority   },
-            { "gpu_polling_mode",     MW_PREF_INT,    FALSE, &prefs.gpuPollingMode       },
-            { "no_gpu_checkpoint",    MW_PREF_BOOL,   FALSE, &prefs.gpuDisableCheckpoint },
-            END_MW_PROJECT_PREFS
-        };
-
-    prefs.gpuTargetFrequency   = DEFAULT_TARGET_FREQUENCY;
-    prefs.gpuNonResponsive     = DEFAULT_NON_RESPONSIVE;
-    prefs.gpuProcessPriority   = DEFAULT_GPU_PRIORITY;
-    prefs.gpuPollingMode       = DEFAULT_POLLING_MODE;
-    prefs.gpuDisableCheckpoint = DEFAULT_DISABLE_GPU_CHECKPOINTING;
-
-    if (mwGetMWAppInitData(&aid))
-    {
-        warn("Error reading app init data. Project preferences will not be used\n");
-    }
-    else
-    {
-        char* sample = mwReadFile("/home/matt/src/milkywayathome_client/separation/account_milkyway.cs.rpi.edu_milkyway.xml");
-        warn("project prefs:\n'%s'\n", aid.projectPrefs);
-        mwReadProjectPrefs(sepPrefs, sample);
-
-        free(sample);
-    }
-
-    /* Any successfully found setting will be used; otherwise it will get the default */
-    sf->targetFrequency = prefs.gpuTargetFrequency;
-    sf->nonResponsive = prefs.gpuNonResponsive;
-    sf->processPriority = prefs.gpuProcessPriority;
-    sf->pollingMode = prefs.gpuPollingMode;
-    sf->disableGPUCheckpointing = prefs.gpuDisableCheckpoint;
-}
-
-#endif /* BOINC_APPLICATION */
-
 
 #ifdef MILKYWAY_IPHONE_APP
   #define main _iphone_main
@@ -559,10 +545,6 @@ int main(int argc, const char* argv[])
   #ifdef NDEBUG
     mwDisableErrorBoxes();
   #endif /* NDEBUG */
-
-  #if BOINC_APPLICATION
-    separationReadPreferences(&sf);
-  #endif /* BOINC_APPLICATION */
 
     argvCopy = mwFixArgv(argc, argv);
     rc = parseParameters(argc, argvCopy ? argvCopy : argv, &sf);
