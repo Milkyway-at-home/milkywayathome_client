@@ -56,8 +56,8 @@
 #define NTRI 8
 #define ORBIT_TRACE_POINT_SIZE 0.03f
 
-#define DELTAXROT 15.0f
-#define DELTAYROT 15.0f
+#define DELTAXROT 5.0f
+#define DELTAYROT 5.0f
 #define DELTAZ 3.0f
 
 #define SCALE 15.0
@@ -85,6 +85,14 @@ static int width = 0, height = 0;
 static GLUquadricObj* quadratic = NULL;
 static scene_t* scene = NULL;
 static dsfmt_t rndState;
+
+/* Max/min time in seconds between changing directions when randomly moving */
+#define MIN_CHANGE_INTERVAL 10
+#define MAX_CHANGE_INTERVAL 60
+
+#define MAX_FLOAT_RATE 0.3f
+#define MIN_FLOAT_RATE 0.3f
+
 
 
 /* print the bindings */
@@ -342,6 +350,12 @@ static void drawInfo()
     restorePerspectiveProjection();
 }
 
+/* Center of mass to center of galaxy */
+static float centerOfMassDistance()
+{
+    return sqrtf(sqr(scene->rootCenterOfMass[0]) + sqr(scene->rootCenterOfMass[1]) + sqr(scene->rootCenterOfMass[2]));
+}
+
 /* The main drawing function.  Technically there's a race condition
    between drawing and writing new values from the simulation for the
    body positions. I'm lazy and It doesn't need to be displayed 100%
@@ -365,11 +379,71 @@ static void drawGLScene()
 
         /* get ready to render 3D objects */
         glLoadIdentity();
-        glTranslatef(0.0f, 0.0f, scene->z + 0.1f);
 
-        /* rotate view--I know these two rotation matrices don't commute */
-        glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
-        glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
+        if (!scene->fullscreen)
+        {
+            glTranslatef(0.0f, 0.0f, scene->z + 0.1f);
+
+            /* rotate view--I know these two rotation matrices don't commute */
+            glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
+            glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
+        }
+        else /* Spin around mostly randomly. This should be smarter than it is, and always try to look at something interesting */
+        {
+            /* Select a random angle that is a multiple of 45 degrees */
+            static float floatRate = 0.0f;
+            static float thetaFloatRate = 0.1f; /* Movement rates when moving on its own */
+            static float phiFloatRate = 0.1f;
+            static float zFloatRate = 0.1f; /* Zoom */
+
+            static float destZ = 0.0f;
+            static time_t changeInterval = 0;
+            static time_t lastChange = 0;
+            time_t curT;
+
+            curT = time(NULL);
+            if (curT - lastChange >= changeInterval)
+            {
+                float rCM = centerOfMassDistance();
+                lastChange = curT;
+                changeInterval = rand() % MAX_CHANGE_INTERVAL; /* Move in one direction between 10 and 60 seconds */
+                if (changeInterval < MIN_CHANGE_INTERVAL)
+                    changeInterval = MIN_CHANGE_INTERVAL;
+
+                floatRate = mwXrandom(&rndState, MIN_FLOAT_RATE, MAX_FLOAT_RATE);
+
+                thetaFloatRate = mwXrandom(&rndState, 0.0, floatRate);
+                phiFloatRate = sqrtf(sqr(floatRate) - sqr(thetaFloatRate));
+
+                destZ = mwXrandom(&rndState, 1.1f * rCM, 1.5f * rCM);
+            }
+
+            if (fabsf(scene->z) - destZ >= 0.1f) /* Not at correct altitude */
+            {
+                if (fabsf(scene->z) > destZ) /* Farther than destination altitude */
+                {
+                    if (scene->z < 0.0)
+                        scene->z += zFloatRate;
+                    else
+                        scene->z -= zFloatRate;
+                }
+                else if (fabsf(scene->z) < destZ) /* Closer than destination altitude */
+                {
+                    if (scene->z > 0.0)
+                        scene->z += zFloatRate;
+                    else
+                        scene->z -= zFloatRate;
+                }
+            }
+
+            glTranslatef(0.0f, 0.0f, scene->z + 0.1f);
+
+            scene->xrot += thetaFloatRate;
+            scene->yrot += phiFloatRate;
+
+            glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
+            glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
+        }
 
         if (scene->drawGalaxy)
         {
@@ -684,7 +758,6 @@ int setShmemKey(const VisArgs* args)
 {
     if (args->key > 0)
     {
-        warn("Using set key\n");
         key = args->key;
         return 0;
     }
@@ -796,9 +869,26 @@ static void sceneInit(const VisArgs* args)
     scene->monochromatic = args->monochrome;
     scene->useGLPoints = !args->notUseGLPoints;
 
+#if 0
+    phi = atanf(scene->rootCenterOfMass[1] / scene->rootCenterOfMass[0]);
+    theta = atanf(sqrtf(sqr(scene->rootCenterOfMass[0]) + sqr(scene->rootCenterOfMass[1])) / scene->rootCenterOfMass[2]);
+    rho = centerOfMassDistance();
+
+    /* This doesn't actually quite work as intended but that's OK */
+    scene->xrot = r2d(theta);
+    scene->yrot = -r2d(phi);
+    scene->z = -2.0f * rho / SCALE;
+
+    if (scene->z - scene->rootCenterOfMass[2] < 0.0f)
+    {
+        scene->z = -5.0f * rho / SCALE;
+    }
+#endif
+
     scene->xrot = -60.0f;
     scene->yrot = -15.0f;
     scene->z = -8.0f;
+
     scene->starsize = STARSIZE;
     scene->fullscreen = args->fullscreen;
     scene->drawInfo = TRUE;
