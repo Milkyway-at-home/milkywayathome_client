@@ -39,6 +39,13 @@ typedef struct
     float timeEvolve;
 } SceneInfo;
 
+typedef enum
+{
+    MOUSE_MODE_NONE,
+    MOUSE_MODE_MOVE,
+    MOUSE_MODE_ZOOM
+} NBodyMouseMode;
+
 /* the scene structure */
 typedef struct
 {
@@ -80,7 +87,7 @@ typedef struct
     int ntri;
     int paused;
     int step;
-    int mousemode;
+    NBodyMouseMode mouseMode;
     int changed;
     double t;
     double dt;

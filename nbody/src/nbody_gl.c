@@ -642,6 +642,8 @@ static void specialKeyPressed(int key, int x, int y)
 
 static void mouseFunc(int button, int state, int x, int y)
 {
+    int mods;
+
     if (scene->screensaverMode)
     {
         mw_finish(EXIT_SUCCESS);
@@ -651,14 +653,15 @@ static void mouseFunc(int button, int state, int x, int y)
     {
         xlast = x;
         ylast = y;
+        mods = glutGetModifiers();
 
-        if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
+        if ((button == GLUT_RIGHT_BUTTON) || (mods == GLUT_ACTIVE_SHIFT))
         {
-            scene->mousemode = 2;
+            scene->mouseMode = MOUSE_MODE_ZOOM;
         }
         else
         {
-            scene->mousemode = 1;
+            scene->mouseMode = MOUSE_MODE_MOVE;
         }
     }
 }
@@ -673,16 +676,24 @@ static void motionFunc(int x, int y)
     xlast = x;
     ylast = y;
 
-    if (scene->mousemode == 1)
+    switch (scene->mouseMode)
     {
-        scene->xrot += ROTSCALE * dy;
-        scene->yrot += ROTSCALE * dx;
-        scene->changed = TRUE;
-    }
-    else if (scene->mousemode == 2)
-    {
-        scene->r -= ZOOMSCALE * dy;
-        scene->changed = TRUE;
+        case MOUSE_MODE_MOVE:
+            scene->xrot += ROTSCALE * dy;
+            scene->yrot += ROTSCALE * dx;
+            scene->changed = TRUE;
+            break;
+
+        case MOUSE_MODE_ZOOM:
+            scene->r -= ZOOMSCALE * dy;
+            scene->changed = TRUE;
+            break;
+
+        case MOUSE_MODE_NONE:
+            break;
+
+        default:
+            mw_unreachable();
     }
 }
 
@@ -915,7 +926,7 @@ static void sceneInit(const VisArgs* args)
     scene->ntri = NTRI;
     scene->paused = FALSE;
     scene->step = FALSE;
-    scene->mousemode = 1;
+    scene->mouseMode = MOUSE_MODE_MOVE;
     scene->changed = FALSE;
     scene->dt = 300;
     scene->usleepdt = USLEEPDT;
