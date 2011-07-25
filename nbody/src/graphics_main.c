@@ -23,16 +23,17 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 static const VisArgs defaultVisArgs =
 {
-    /* .fullscreen     */ FALSE,
-    /* .width          */ 0,
-    /* .height         */ 0,
-    /* .monochrome     */ FALSE,
-    /* .notUseGLPoints */ FALSE,
-    /* .originCenter   */ FALSE,
-    /* .noFloat        */ FALSE,
-    /* .pid            */ 0,
-    /* .file           */ NULL,
-    /* .key            */ -1
+    /* .fullscreen      */ FALSE,
+    /* .plainFullscreen */ FALSE,
+    /* .width           */ 0,
+    /* .height          */ 0,
+    /* .monochrome      */ FALSE,
+    /* .notUseGLPoints  */ FALSE,
+    /* .originCenter    */ FALSE,
+    /* .noFloat         */ FALSE,
+    /* .pid             */ 0,
+    /* .file            */ NULL,
+    /* .key             */ -1
 };
 
 static void freeVisArgs(VisArgs* args)
@@ -52,7 +53,16 @@ static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
         {
             "fullscreen", 'f',
             POPT_ARG_NONE, &visArgs.fullscreen,
-            0, "Start in fullscreen mode", NULL
+            0, "Start in screensaver mode", NULL
+        },
+
+        /* Since BOINC passes --fullscreen to start as a screensaver,
+         * and we might want to start as fullscreen but without any
+         * keys/moving quitting */
+        {
+            "plain-fullscreen", '\0',
+            POPT_ARG_NONE, &visArgs.plainFullscreen,
+            0, "Start as fullscreen, but without quitting on any motion", NULL
         },
 
         {

@@ -58,7 +58,7 @@
 
 #define DELTAXROT 5.0f
 #define DELTAYROT 5.0f
-#define DELTAZ 3.0f
+#define DELTAR 3.0f
 
 #define SCALE 15.0
 
@@ -84,12 +84,6 @@ static int width = 0, height = 0;
 static GLUquadricObj* quadratic = NULL;
 static scene_t* scene = NULL;
 static dsfmt_t rndState;
-
-/* If true, center on the center of mass.
-   Otherwise, camera focuses on galactic center
- */
-static GLboolean cmCentered = GL_TRUE;
-static GLboolean floatMode = GL_TRUE;
 
 /* Max/min time in seconds between changing directions when randomly moving */
 #define MIN_CHANGE_INTERVAL 10
@@ -184,12 +178,6 @@ static void resizeGLScene(int w, int h)
 #define MILKYWAY_BULGE_RADIUS 1.5f
 #define MILKYWAY_DISK_THICKNESS 0.66f
 
-#define ANDROMEDA_RADIUS 33.5f
-
-/* I just sort of made these ones up since I can't seem to find any numbers */
-#define ANDROMEDA_BULGE_RADIUS 3.0f
-#define ANDROMEDA_DISK_THICKNESS 0.66f
-
 #define AXES_LENGTH (1.25f * MILKYWAY_RADIUS / SCALE)
 
 static void drawSimpleGalaxy(float galacticRadius, float galacticBulgeRadius, float galacticDiskThickness)
@@ -271,7 +259,7 @@ static void drawPoints()
 {
     int i;
     int nbody = scene->nbody;
-    const FloatPos* r = &scene->r[0];
+    const FloatPos* r = &scene->rTrace[0];
 
     if (scene->useGLPoints)
     {
@@ -369,62 +357,6 @@ static float centerOfMassDistance()
     return sqrtf(sqr(scene->rootCenterOfMass[0]) + sqr(scene->rootCenterOfMass[1]) + sqr(scene->rootCenterOfMass[2]));
 }
 
-static void drawAndromeda()
-{
-    static const float andromeda[3] = { -386.595f, 624.309f, -288.978f }; /* x, y, z */
-
-    glPushMatrix();
-
-    /* Origin is milkyway center, so vector towards mw is -position.
-       Andromeda is 77.5 degree inclined to us
-    */
-    glRotatef(77.5f, -andromeda[0], -andromeda[1], -andromeda[2]);
-
-    glTranslatef(andromeda[0] / SCALE, andromeda[1] / SCALE, andromeda[2] / SCALE);
-
-    drawSimpleGalaxy(ANDROMEDA_RADIUS, ANDROMEDA_BULGE_RADIUS, ANDROMEDA_DISK_THICKNESS);
-    glTranslatef(andromeda[0] / SCALE, andromeda[1] / SCALE, andromeda[2] / SCALE);
-
-    glPopMatrix();
-}
-
-static void drawSphereAt(const float pos[3], float radius)
-{
-    glPushMatrix();
-
-    glTranslatef(pos[0] / SCALE, pos[1] / SCALE, pos[2] / SCALE);
-
-    glColor4f(0.98f, 0.835f, 0.714f, 0.85f);
-    gluSphere(quadratic, radius / SCALE, 50, 50);
-
-    glPopMatrix();
-}
-
-static void drawSMC()
-{
-    static const float smc[3] = { 14.761791f, -36.095249f, -41.904915f };
-    static const float smcRadius = 1.07f;
-    drawSphereAt(smc, smcRadius);
-}
-
-static void drawLMC()
-{
-    static const float lmc[3] = { -1.002584f, -40.452457f, -26.615547f };
-    static const float lmcRadius = 2.15f;
-    drawSphereAt(lmc, lmcRadius);
-}
-
-/* Draw some neighboring galaxies, i.e. Andromeda.
-   They should be moving around too, so it doesn't really make sense to actually use this
- */
-static void drawNeighbors()
-{
-    drawAndromeda();
-    drawSMC();
-    drawLMC();
-}
-
-
 /* The main drawing function.  Technically there's a race condition
    between drawing and writing new values from the simulation for the
    body positions. I'm lazy and It doesn't need to be displayed 100%
@@ -452,7 +384,7 @@ static void drawGLScene()
         /* Spin around mostly randomly when fullscreen.
            This should be smarter than it is, and always try to look at something interesting
         */
-        if (floatMode)
+        if (scene->floatMode)
         {
             /* Select a random angle that is a multiple of 45 degrees */
             static float floatRate = 0.0f;
@@ -460,7 +392,7 @@ static void drawGLScene()
             static float phiFloatRate = 0.1f;
             static float zFloatRate = 0.1f; /* Zoom */
 
-            static float destZ = 0.0f;
+            static float destR = 0.0f;
             static time_t changeInterval = 0;
             static time_t lastChange = 0;
             time_t curT;
@@ -479,24 +411,24 @@ static void drawGLScene()
                 thetaFloatRate = mwXrandom(&rndState, 0.0, floatRate);
                 phiFloatRate = sqrtf(sqr(floatRate) - sqr(thetaFloatRate));
 
-                destZ = mwXrandom(&rndState, 1.1f * rCM, 1.5f * rCM);
+                destR = mwXrandom(&rndState, 1.1f * rCM, 1.5f * rCM);
             }
 
-            if (fabsf(scene->z) - destZ >= 0.1f) /* Not at correct altitude */
+            if (fabsf(scene->r) - destR >= 0.1f) /* Not at correct altitude */
             {
-                if (fabsf(scene->z) > destZ) /* Farther than destination altitude */
+                if (fabsf(scene->r) > destR) /* Farther than destination altitude */
                 {
-                    if (scene->z < 0.0)
-                        scene->z += zFloatRate;
+                    if (scene->r < 0.0)
+                        scene->r += zFloatRate;
                     else
-                        scene->z -= zFloatRate;
+                        scene->r -= zFloatRate;
                 }
-                else if (fabsf(scene->z) < destZ) /* Closer than destination altitude */
+                else if (fabsf(scene->r) < destR) /* Closer than destination altitude */
                 {
-                    if (scene->z > 0.0)
-                        scene->z += zFloatRate;
+                    if (scene->r > 0.0)
+                        scene->r += zFloatRate;
                     else
-                        scene->z -= zFloatRate;
+                        scene->r -= zFloatRate;
                 }
             }
 
@@ -504,14 +436,14 @@ static void drawGLScene()
             scene->yrot += phiFloatRate;
         }
 
-        glTranslatef(0.0f, 0.0f, scene->z + 0.1f);
+        glTranslatef(0.0f, 0.0f, scene->r + 0.1f);
 
         /* rotate view--I know these two rotation matrices don't commute */
         glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
         glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
 
         /* Focus on the center of mass */
-        if (cmCentered)
+        if (scene->cmCentered)
         {
             glTranslatef(-scene->rootCenterOfMass[0] / SCALE,
                          -scene->rootCenterOfMass[1] / SCALE,
@@ -553,7 +485,7 @@ static void keyPressed(unsigned char key, int x, int y)
     /* avoid thrashing this call */
     mwMilliSleep(THRASH_SLEEP_INTERVAL);
 
-    if (scene->fullscreen)
+    if (scene->screensaverMode)
     {
         mw_finish(EXIT_SUCCESS);
     }
@@ -570,11 +502,11 @@ static void keyPressed(unsigned char key, int x, int y)
             break;
 
         case 'o': /* Toggle camera following CM or on milkyway center */
-            cmCentered = !cmCentered;
+            scene->cmCentered = !scene->cmCentered;
             break;
 
         case 'r': /* Toggle floating */
-            floatMode = !floatMode;
+            scene->floatMode = !scene->floatMode;
             break;
 
         case 'p':
@@ -680,11 +612,11 @@ static void specialKeyPressed(int key, int x, int y)
     switch (key)
     {
         case GLUT_KEY_PAGE_UP:
-            scene->z -= DELTAZ;
+            scene->r -= DELTAR;
             scene->changed = TRUE;
             break;
         case GLUT_KEY_PAGE_DOWN:
-            scene->z += DELTAZ;
+            scene->r += DELTAR;
             scene->changed = TRUE;
             break;
         case GLUT_KEY_UP:
@@ -710,7 +642,7 @@ static void specialKeyPressed(int key, int x, int y)
 
 static void mouseFunc(int button, int state, int x, int y)
 {
-    if (scene->fullscreen)
+    if (scene->screensaverMode)
     {
         mw_finish(EXIT_SUCCESS);
     }
@@ -749,14 +681,14 @@ static void motionFunc(int x, int y)
     }
     else if (scene->mousemode == 2)
     {
-        scene->z -= ZOOMSCALE * dy;
+        scene->r -= ZOOMSCALE * dy;
         scene->changed = TRUE;
     }
 }
 
 static void passiveMotionFunc(int x, int y)
 {
-    if (scene->fullscreen)
+    if (scene->screensaverMode)
     {
         mw_finish(EXIT_SUCCESS);
     }
@@ -766,7 +698,7 @@ static void assignParticleColors(int nbody)
 {
     int i;
     double R, G, B, scale;
-    const FloatPos* r = scene->r;
+    const FloatPos* r = scene->rTrace;
 
     /* assign random particle colors */
     srand((unsigned int) time(NULL));
@@ -950,8 +882,8 @@ static void sceneInit(const VisArgs* args)
     scene->monochromatic = args->monochrome;
     scene->useGLPoints = !args->notUseGLPoints;
 
-    cmCentered = !args->originCenter;
-    floatMode = !args->noFloat;
+    scene->cmCentered = !args->originCenter;
+    scene->floatMode = !args->noFloat;
 
 #if 0
     phi = atanf(scene->rootCenterOfMass[1] / scene->rootCenterOfMass[0]);
@@ -961,20 +893,21 @@ static void sceneInit(const VisArgs* args)
     /* This doesn't actually quite work as intended but that's OK */
     scene->xrot = r2d(theta);
     scene->yrot = -r2d(phi);
-    scene->z = -2.0f * rho / SCALE;
+    scene->r = -2.0f * rho / SCALE;
 
-    if (scene->z - scene->rootCenterOfMass[2] < 0.0f)
+    if (scene->r - scene->rootCenterOfMass[2] < 0.0f)
     {
-        scene->z = -5.0f * rho / SCALE;
+        scene->r = -5.0f * rho / SCALE;
     }
 #endif
 
     scene->xrot = -60.0f;
     scene->yrot = -15.0f;
-    scene->z = -8.0f;
+    scene->r = -8.0f;
 
     scene->starsize = STARSIZE;
-    scene->fullscreen = args->fullscreen;
+    scene->fullscreen = args->fullscreen || args->plainFullscreen;
+    scene->screensaverMode = scene->fullscreen && !args->plainFullscreen;
     scene->drawInfo = TRUE;
     scene->drawAxes = TRUE;
     scene->drawParticles = TRUE;

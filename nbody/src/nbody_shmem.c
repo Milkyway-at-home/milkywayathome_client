@@ -284,7 +284,7 @@ void updateDisplayedBodies(NBodyState* st)
     if (!scene)
         return;
 
-    r = scene->r;
+    r = scene->rTrace;
     scene->usleepcount += scene->usleepdt;
     scene->info.currentTime = (float) st->tnow;
     scene->rootCenterOfMass[0] = (float) X(cmPos);

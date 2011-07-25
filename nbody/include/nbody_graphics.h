@@ -47,7 +47,10 @@ typedef struct
 
     int nbody;
     int drawGalaxy;
-    float z;
+    int cmCentered; /* Center on the center of mass. Otherwise, on galactic center */
+
+    int floatMode;
+    float r;       /* Distance from center point. Maps to OpenGL z axis so often negative */
     float xrot;
     float yrot;
     float starsize;
@@ -66,6 +69,7 @@ typedef struct
   #endif /* _MSC_VER */
 
     int fullscreen;
+    int screensaverMode;
     int monochromatic;
     int drawAxes;
     int drawOrbitTrace;
@@ -90,7 +94,7 @@ typedef struct
 
     int currentTracePoint;
     FloatPos orbitTrace[MAX_DRAW_TRACE_POINTS];
-    FloatPos r[];
+    FloatPos rTrace[];
 } scene_t;
 
 #if defined(__GNUC__) && (__GNUC__ >= 4 && __GNUC_MINOR__ >= 1)

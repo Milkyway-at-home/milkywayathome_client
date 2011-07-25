@@ -36,6 +36,7 @@
 typedef struct
 {
     int fullscreen;
+    int plainFullscreen;
     int width;
     int height;
 
@@ -49,7 +50,7 @@ typedef struct
     int key;
 } VisArgs;
 
-#define EMPTY_VIS_ARGS { FALSE, 0, 0, FALSE, FALSE, FALSE, FALSE, 0, NULL, 0 }
+#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, FALSE, FALSE, 0, NULL, 0 }
 
 
 int setShmemKey(const VisArgs* args);
