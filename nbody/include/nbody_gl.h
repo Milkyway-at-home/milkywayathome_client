@@ -42,13 +42,14 @@ typedef struct
     int monochrome;
     int notUseGLPoints;
     int originCenter;
+    int noFloat;
 
     int pid;
     char* file;
     int key;
 } VisArgs;
 
-#define EMPTY_VIS_ARGS { FALSE, 0, 0, FALSE, FALSE, FALSE, 0, NULL, 0 }
+#define EMPTY_VIS_ARGS { FALSE, 0, 0, FALSE, FALSE, FALSE, FALSE, 0, NULL, 0 }
 
 
 int setShmemKey(const VisArgs* args);

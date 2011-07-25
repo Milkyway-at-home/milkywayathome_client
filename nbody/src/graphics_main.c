@@ -29,6 +29,7 @@ static const VisArgs defaultVisArgs =
     /* .monochrome     */ FALSE,
     /* .notUseGLPoints */ FALSE,
     /* .originCenter   */ FALSE,
+    /* .noFloat        */ FALSE,
     /* .pid            */ 0,
     /* .file           */ NULL,
     /* .key            */ -1
@@ -82,6 +83,12 @@ static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
             "origin-center", 'o',
             POPT_ARG_NONE, &visArgs.originCenter,
             0, "Focus on the galactic center instead of system's center of mass", NULL
+        },
+
+        {
+            "no-float", 'r',
+            POPT_ARG_NONE, &visArgs.noFloat,
+            0, "By default do not float view around randomly", NULL
         },
 
         {

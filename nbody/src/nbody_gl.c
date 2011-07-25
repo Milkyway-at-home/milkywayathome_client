@@ -89,6 +89,7 @@ static dsfmt_t rndState;
    Otherwise, camera focuses on galactic center
  */
 static GLboolean cmCentered = GL_TRUE;
+static GLboolean floatMode = GL_TRUE;
 
 /* Max/min time in seconds between changing directions when randomly moving */
 #define MIN_CHANGE_INTERVAL 10
@@ -110,18 +111,19 @@ static void print_bindings(FILE* f)
             "  q, ESCAPE      : quit\n"
             "  p              : pause/unpause\n"
             "  SPACE          : step through frames (while paused)\n"
-            "  b              : make stars bigger\n"
-            "  s              : make stars smaller\n"
-            "  m              : use more polygons to render stars\n"
-            "  f              : use fewer polygons to render stars\n"
+            "  b              : (bigger) make stars bigger\n"
+            "  s              : (smaller) make stars smaller\n"
+            "  m              : (more) use more polygons to render stars\n"
+            "  f              : (fewer) use fewer polygons to render stars\n"
             "  l              : toggle using GL points or spheres\n"
-            "  c              : toggle particle color scheme\n"
-            "  a              : toggle axes\n"
-            "  o              : toggle origin of visualization\n"
+            "  c              : (color) toggle particle color scheme\n"
+            "  a              : (axes) toggle axes\n"
+            "  o              : (origin) toggle origin of visualization\n"
+            "  r              : (rotate) when idle, float view around randomly\n"
             "  n              : toggle showing individual particles (can be used to only view CM orbit)\n"
-            "  t              : toggle orbit trace\n"
-            "  i              : toggle info printout\n"
-            "  l              : toggle log printout\n"
+            "  t              : (trace) toggle orbit trace\n"
+            "  i              : (info) toggle info printout\n"
+            "  l              : (log) toggle log printout\n"
             "  <              : slow down animation\n"
             "  >              : speed up animation\n"
             "\n"
@@ -450,7 +452,7 @@ static void drawGLScene()
         /* Spin around mostly randomly when fullscreen.
            This should be smarter than it is, and always try to look at something interesting
         */
-        if (scene->fullscreen)
+        if (floatMode)
         {
             /* Select a random angle that is a multiple of 45 degrees */
             static float floatRate = 0.0f;
@@ -569,6 +571,10 @@ static void keyPressed(unsigned char key, int x, int y)
 
         case 'o': /* Toggle camera following CM or on milkyway center */
             cmCentered = !cmCentered;
+            break;
+
+        case 'r': /* Toggle floating */
+            floatMode = !floatMode;
             break;
 
         case 'p':
@@ -945,6 +951,7 @@ static void sceneInit(const VisArgs* args)
     scene->useGLPoints = !args->notUseGLPoints;
 
     cmCentered = !args->originCenter;
+    floatMode = !args->noFloat;
 
 #if 0
     phi = atanf(scene->rootCenterOfMass[1] / scene->rootCenterOfMass[0]);
