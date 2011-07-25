@@ -72,7 +72,6 @@
 #define THRASH_SLEEP_INTERVAL 15
 
 
-
 static FloatPos* color = NULL;
 
 static const FloatPos white = { 1.0f, 1.0f, 1.0f, 0 };
@@ -85,6 +84,11 @@ static int width = 0, height = 0;
 static GLUquadricObj* quadratic = NULL;
 static scene_t* scene = NULL;
 static dsfmt_t rndState;
+
+/* If true, center on the center of mass.
+   Otherwise, camera focuses on galactic center
+ */
+static GLboolean cmCentered = GL_TRUE;
 
 /* Max/min time in seconds between changing directions when randomly moving */
 #define MIN_CHANGE_INTERVAL 10
@@ -113,6 +117,7 @@ static void print_bindings(FILE* f)
             "  l              : toggle using GL points or spheres\n"
             "  c              : toggle particle color scheme\n"
             "  a              : toggle axes\n"
+            "  o              : toggle origin of visualization\n"
             "  n              : toggle showing individual particles (can be used to only view CM orbit)\n"
             "  t              : toggle orbit trace\n"
             "  i              : toggle info printout\n"
@@ -173,31 +178,37 @@ static void resizeGLScene(int w, int h)
     scene->changed = TRUE;
 }
 
-#define GALACTIC_RADIUS 15.33f
-#define GALACTIC_BULGE_RADIUS 1.5f
-#define GALACTIC_DISK_THICKNESS 0.66f
+#define MILKYWAY_RADIUS 15.33f
+#define MILKYWAY_BULGE_RADIUS 1.5f
+#define MILKYWAY_DISK_THICKNESS 0.66f
 
-#define AXES_LENGTH (1.25f * GALACTIC_RADIUS / SCALE)
+#define ANDROMEDA_RADIUS 33.5f
 
-static void drawSimpleGalaxy()
+/* I just sort of made these ones up since I can't seem to find any numbers */
+#define ANDROMEDA_BULGE_RADIUS 3.0f
+#define ANDROMEDA_DISK_THICKNESS 0.66f
+
+#define AXES_LENGTH (1.25f * MILKYWAY_RADIUS / SCALE)
+
+static void drawSimpleGalaxy(float galacticRadius, float galacticBulgeRadius, float galacticDiskThickness)
 {
     glColor4f(0.643f, 0.706f, 0.867f, 0.85f);
     gluCylinder(quadratic,
-                GALACTIC_RADIUS / SCALE,
-                GALACTIC_RADIUS / SCALE,
-                GALACTIC_DISK_THICKNESS / SCALE,
+                galacticRadius / SCALE,
+                galacticRadius / SCALE,
+                galacticDiskThickness / SCALE,
                 100,
                 20);
 
     /* Put caps on the disk */
-    glTranslatef(0.0f, 0.5f * GALACTIC_DISK_THICKNESS / SCALE, 0.0f);
-    gluDisk(quadratic, 0.0, (GLdouble) GALACTIC_RADIUS / SCALE, 100, 50);
+    glTranslatef(0.0f, 0.5f * galacticDiskThickness / SCALE, 0.0f);
+    gluDisk(quadratic, 0.0, (GLdouble) galacticRadius / SCALE, 100, 50);
 
-    glTranslatef(0.0f, -0.5f * GALACTIC_DISK_THICKNESS / SCALE, 0.0f);
-    gluDisk(quadratic, 0.0, (GLdouble) GALACTIC_RADIUS / SCALE, 100, 50);
+    glTranslatef(0.0f, -0.5f * galacticDiskThickness / SCALE, 0.0f);
+    gluDisk(quadratic, 0.0, (GLdouble) galacticRadius / SCALE, 100, 50);
 
     glColor4f(0.98f, 0.835f, 0.714f, 0.85f);
-    gluSphere(quadratic, GALACTIC_BULGE_RADIUS / SCALE, 50, 50);
+    gluSphere(quadratic, galacticBulgeRadius / SCALE, 50, 50);
 }
 
 static void drawAxes()
@@ -356,6 +367,62 @@ static float centerOfMassDistance()
     return sqrtf(sqr(scene->rootCenterOfMass[0]) + sqr(scene->rootCenterOfMass[1]) + sqr(scene->rootCenterOfMass[2]));
 }
 
+static void drawAndromeda()
+{
+    static const float andromeda[3] = { -386.595f, 624.309f, -288.978f }; /* x, y, z */
+
+    glPushMatrix();
+
+    /* Origin is milkyway center, so vector towards mw is -position.
+       Andromeda is 77.5 degree inclined to us
+    */
+    glRotatef(77.5f, -andromeda[0], -andromeda[1], -andromeda[2]);
+
+    glTranslatef(andromeda[0] / SCALE, andromeda[1] / SCALE, andromeda[2] / SCALE);
+
+    drawSimpleGalaxy(ANDROMEDA_RADIUS, ANDROMEDA_BULGE_RADIUS, ANDROMEDA_DISK_THICKNESS);
+    glTranslatef(andromeda[0] / SCALE, andromeda[1] / SCALE, andromeda[2] / SCALE);
+
+    glPopMatrix();
+}
+
+static void drawSphereAt(const float pos[3], float radius)
+{
+    glPushMatrix();
+
+    glTranslatef(pos[0] / SCALE, pos[1] / SCALE, pos[2] / SCALE);
+
+    glColor4f(0.98f, 0.835f, 0.714f, 0.85f);
+    gluSphere(quadratic, radius / SCALE, 50, 50);
+
+    glPopMatrix();
+}
+
+static void drawSMC()
+{
+    static const float smc[3] = { 14.761791f, -36.095249f, -41.904915f };
+    static const float smcRadius = 1.07f;
+    drawSphereAt(smc, smcRadius);
+}
+
+static void drawLMC()
+{
+    static const float lmc[3] = { -1.002584f, -40.452457f, -26.615547f };
+    static const float lmcRadius = 2.15f;
+    drawSphereAt(lmc, lmcRadius);
+}
+
+/* Draw some neighboring galaxies, i.e. Andromeda.
+   They should be moving around too, so it doesn't really make sense to actually use this
+ */
+static void drawNeighbors()
+{
+    drawAndromeda();
+    drawSMC();
+    drawLMC();
+}
+
+
 /* The main drawing function.  Technically there's a race condition
    between drawing and writing new values from the simulation for the
    body positions. I'm lazy and It doesn't need to be displayed 100%
@@ -380,15 +447,10 @@ static void drawGLScene()
         /* get ready to render 3D objects */
         glLoadIdentity();
 
-        if (!scene->fullscreen)
-        {
-            glTranslatef(0.0f, 0.0f, scene->z + 0.1f);
-
-            /* rotate view--I know these two rotation matrices don't commute */
-            glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
-            glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
-        }
-        else /* Spin around mostly randomly. This should be smarter than it is, and always try to look at something interesting */
+        /* Spin around mostly randomly when fullscreen.
+           This should be smarter than it is, and always try to look at something interesting
+        */
+        if (scene->fullscreen)
         {
             /* Select a random angle that is a multiple of 45 degrees */
             static float floatRate = 0.0f;
@@ -436,18 +498,27 @@ static void drawGLScene()
                 }
             }
 
-            glTranslatef(0.0f, 0.0f, scene->z + 0.1f);
-
             scene->xrot += thetaFloatRate;
             scene->yrot += phiFloatRate;
+        }
 
-            glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
-            glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
+        glTranslatef(0.0f, 0.0f, scene->z + 0.1f);
+
+        /* rotate view--I know these two rotation matrices don't commute */
+        glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
+        glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
+
+        /* Focus on the center of mass */
+        if (cmCentered)
+        {
+            glTranslatef(-scene->rootCenterOfMass[0] / SCALE,
+                         -scene->rootCenterOfMass[1] / SCALE,
+                         -scene->rootCenterOfMass[2] / SCALE);
         }
 
         if (scene->drawGalaxy)
         {
-            drawSimpleGalaxy();
+            drawSimpleGalaxy(MILKYWAY_RADIUS, MILKYWAY_BULGE_RADIUS, MILKYWAY_DISK_THICKNESS);
         }
 
         if (scene->drawAxes)
@@ -494,6 +565,10 @@ static void keyPressed(unsigned char key, int x, int y)
 
         case 'h':
             print_bindings(stderr);
+            break;
+
+        case 'o': /* Toggle camera following CM or on milkyway center */
+            cmCentered = !cmCentered;
             break;
 
         case 'p':
@@ -868,6 +943,8 @@ static void sceneInit(const VisArgs* args)
     height = args->height == 0 ? glutGet(GLUT_SCREEN_HEIGHT) / 2 : args->height;
     scene->monochromatic = args->monochrome;
     scene->useGLPoints = !args->notUseGLPoints;
+
+    cmCentered = !args->originCenter;
 
 #if 0
     phi = atanf(scene->rootCenterOfMass[1] / scene->rootCenterOfMass[0]);

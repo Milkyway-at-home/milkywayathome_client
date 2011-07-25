@@ -28,6 +28,7 @@ static const VisArgs defaultVisArgs =
     /* .height         */ 0,
     /* .monochrome     */ FALSE,
     /* .notUseGLPoints */ FALSE,
+    /* .originCenter   */ FALSE,
     /* .pid            */ 0,
     /* .file           */ NULL,
     /* .key            */ -1
@@ -75,6 +76,12 @@ static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
             "not-use-gl-points", 'n',
             POPT_ARG_NONE, &visArgs.notUseGLPoints,
             0, "Use faster but possibly uglier drawing", NULL
+        },
+
+        {
+            "origin-center", 'o',
+            POPT_ARG_NONE, &visArgs.originCenter,
+            0, "Focus on the galactic center instead of system's center of mass", NULL
         },
 
         {
