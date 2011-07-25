@@ -103,6 +103,7 @@ option(BOINC_RELEASE_NAMES
        "Use BOINC platform binary names" OFF)
 mark_as_advanced(BOINC_RELEASE_NAMES)
 
+# -fno-errno-math
 
 # Find libraries installed to this prefix. This way we can just dump
 # dependencies here on windows where everything is painful.

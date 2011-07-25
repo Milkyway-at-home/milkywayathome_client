@@ -327,6 +327,8 @@ if(NBODY_GL)
   get_target_property(NBODY_GRAPHICS_BIN_NAME milkyway_nbody_graphics LOCATION)
   get_filename_component(NBODY_GRAPHICS_BIN_NAME ${NBODY_GRAPHICS_BIN_NAME} NAME)
 
+  set_target_properties(milkyway_nbody_graphics PROPERTIES
+                          COMPILE_FLAGS "${FAST_MATH_FLAGS}")
 endif()
 
 configure_file (

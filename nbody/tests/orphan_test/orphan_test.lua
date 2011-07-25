@@ -1,10 +1,10 @@
 
 prng = DSFMT.create(argSeed)
-nbody = 100
+nbody = 4096
 
 dwarfMass = 16
 dwarfRadius = 0.2
-reverseTime = 4.0
+reverseTime = 2.0
 evolveTime = 3.945
 
 

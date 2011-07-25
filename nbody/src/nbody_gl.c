@@ -92,39 +92,34 @@ static dsfmt_t rndState;
 #define MAX_FLOAT_RATE 0.3f
 #define MIN_FLOAT_RATE 0.3f
 
+static const char* helpBindings =
+    "KEYBINDINGS:\n"
+    "  PAGE (UP/DOWN) : zoom (out/in)\n"
+    "  ARROW KEYS     : rotate\n"
+    "  h or ?         : display this help text\n"
+    "  q, ESCAPE      : quit\n"
+    "  p              : pause/unpause\n"
+    "  SPACE          : step through frames (while paused)\n"
+    "  a              : (axes) toggle axes\n"
+    "  o              : (origin) toggle origin of visualization\n"
+    "  r              : (rotate) when idle, float view around randomly\n"
+    "  t              : (trace) toggle orbit trace\n"
+    "  i              : (info) toggle info printout\n"
+    "  n              : toggle showing individual particles (can be used to only view CM orbit)\n"
+    "  c              : (color) toggle particle color scheme\n"
+    "  l              : toggle using GL points (default, faster) or spheres\n"
+    "  b              : (bigger) make stars bigger\n"
+    "  s              : (smaller) make stars smaller\n"
+    "  m              : (more) use more polygons to render stars\n"
+    "  f              : (fewer) use fewer polygons to render stars\n"
+    "  <              : slow down animation\n"
+    "  >              : speed up animation\n"
+    "\n"
+    "MOUSEBINDINGS:\n"
+    "  DRAG                        : rotate\n"
+    "  [SHIFT] DRAG (up/down)      : zoom (in/out)\n"
+    "  [RIGHTCLICK] DRAG (up/down) : zoom (in/out)\n";
 
-
-/* print the bindings */
-static void print_bindings(FILE* f)
-{
-    fprintf(f,
-            "KEYBINDINGS:\n"
-            "  PAGE (UP/DOWN) : zoom (out/in)\n"
-            "  ARROW KEYS     : rotate\n"
-            "  h              : print this help text\n"
-            "  q, ESCAPE      : quit\n"
-            "  p              : pause/unpause\n"
-            "  SPACE          : step through frames (while paused)\n"
-            "  b              : (bigger) make stars bigger\n"
-            "  s              : (smaller) make stars smaller\n"
-            "  m              : (more) use more polygons to render stars\n"
-            "  f              : (fewer) use fewer polygons to render stars\n"
-            "  l              : toggle using GL points or spheres\n"
-            "  c              : (color) toggle particle color scheme\n"
-            "  a              : (axes) toggle axes\n"
-            "  o              : (origin) toggle origin of visualization\n"
-            "  r              : (rotate) when idle, float view around randomly\n"
-            "  n              : toggle showing individual particles (can be used to only view CM orbit)\n"
-            "  t              : (trace) toggle orbit trace\n"
-            "  i              : (info) toggle info printout\n"
-            "  l              : (log) toggle log printout\n"
-            "  <              : slow down animation\n"
-            "  >              : speed up animation\n"
-            "\n"
-            "MOUSEBINDINGS:\n"
-            "  DRAG                   : rotate\n"
-            "  [SHIFT] DRAG (up/down) : zoom (in/out)\n");
-}
 
 /* A general OpenGL initialization function.  Sets all of the initial parameters. */
 static void initGL(int w, int h)
@@ -177,6 +172,7 @@ static void resizeGLScene(int w, int h)
 #define MILKYWAY_RADIUS 15.33f
 #define MILKYWAY_BULGE_RADIUS 1.5f
 #define MILKYWAY_DISK_THICKNESS 0.66f
+
 
 #define AXES_LENGTH (1.25f * MILKYWAY_RADIUS / SCALE)
 
@@ -328,16 +324,29 @@ static void restorePerspectiveProjection()
 }
 
 /* http://www.lighthouse3d.com/tutorials/glut-tutorial/bitmap-fonts-and-orthogonal-projections/ */
-static void drawInfo()
+static void drawWords(const char* str, int x, int y)
 {
-    char buf[1024];
-
     setOrthographicProjection();
     glPushMatrix();
     glLoadIdentity();
 
     glColor3f(1.0f, 1.0f, 1.0f);
-    glRasterPos2i(20, 20);
+    glRasterPos2i(x, y);
+    nbody_glutBitmapStringHelvetica((unsigned char*) str);
+
+    glPopMatrix();
+    restorePerspectiveProjection();
+}
+
+static void drawHelp()
+{
+    /* FIXME: Things don't line up since not using monospace font */
+    drawWords(helpBindings, width - 500, 20);
+}
+
+static void drawInfo()
+{
+    char buf[1024];
 
     snprintf(buf, sizeof(buf),
              "Time: %4.3f / %4.3f Gyr (%4.3f %%)\n",
@@ -345,10 +354,8 @@ static void drawInfo()
              scene->info.timeEvolve,
              100.0f * scene->info.currentTime / scene->info.timeEvolve
         );
-    nbody_glutBitmapStringHelvetica((unsigned char*) buf);
 
-    glPopMatrix();
-    restorePerspectiveProjection();
+    drawWords(buf, 20, 20);
 }
 
 /* Center of mass to center of galaxy */
@@ -470,6 +477,11 @@ static void drawGLScene()
             drawOrbitTrace();
         }
 
+        if (scene->drawHelp)
+        {
+            drawHelp();
+        }
+
         if (scene->drawInfo)
         {
             drawInfo();
@@ -498,7 +510,9 @@ static void keyPressed(unsigned char key, int x, int y)
             mw_finish(EXIT_SUCCESS);
 
         case 'h':
-            print_bindings(stderr);
+        case '?':
+            scene->drawHelp = !scene->drawHelp;
+            scene->changed = TRUE;
             break;
 
         case 'o': /* Toggle camera following CM or on milkyway center */
@@ -920,6 +934,7 @@ static void sceneInit(const VisArgs* args)
     scene->fullscreen = args->fullscreen || args->plainFullscreen;
     scene->screensaverMode = scene->fullscreen && !args->plainFullscreen;
     scene->drawInfo = TRUE;
+    scene->drawHelp = FALSE;
     scene->drawAxes = TRUE;
     scene->drawParticles = TRUE;
     scene->drawOrbitTrace = TRUE;

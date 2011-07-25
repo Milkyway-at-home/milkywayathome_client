@@ -316,8 +316,6 @@ static const GLubyte* Helvetica12_Character_Map[] = {Helvetica12_Character_032,H
 /* The font structure: */
 static const NBody_SFG_Font nbody_fgFontHelvetica12 = { "-adobe-helvetica-medium-r-normal--12-120-75-75-p-67-iso8859-1", 256, 16, Helvetica12_Character_Map, 0, 4 };
 
-
-
 void nbody_glutBitmapStringHelvetica(const unsigned char* string)
 {
     unsigned char c;

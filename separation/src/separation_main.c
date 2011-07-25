@@ -59,7 +59,9 @@ static void printVersion(int boincTag)
              SEPARATION_SPECIAL_LIBM_STR);
 
     if (boincTag)
+    {
         warn("<search_application> %s </search_application>\n", versionStr);
+    }
     else
     {
         warn("%s %s\n",

@@ -80,6 +80,7 @@ typedef struct
     int monochromatic;
     int drawAxes;
     int drawOrbitTrace;
+    int drawHelp;
     int drawInfo;
     int drawParticles;
     int useGLPoints;

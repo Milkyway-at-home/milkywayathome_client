@@ -36,3 +36,9 @@ function(append_supported_flags flags)
   endforeach()
 endfunction()
 
+if(CMAKE_COMPILER_IS_GNUCC OR C_COMPILER_IS_CLANG)
+  set(FAST_MATH_FLAGS "-ffast-math")
+elseif(MSVC)
+  set(FAST_MATH_FLAGS "/fp:fast")
+endif()
+
