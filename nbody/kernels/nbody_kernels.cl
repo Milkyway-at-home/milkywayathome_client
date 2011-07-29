@@ -623,7 +623,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         real dx = nx[base] - px;
                         real dy = ny[base] - py;
                         real dz = nz[base] - pz;
-                        real tmp = (dx * dx) + (dy * dy) + (dz * dz); /* Compute distance squared */
+                        real rSq = (dx * dx) + (dy * dy) + (dz * dz); /* Compute distance squared */
 
                         /* OpenCL is missing thread voting functions. This should be equivalent to CUDA's __all()
                          * A barrier should be unnecessary here since
@@ -634,7 +634,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                          * CHECKME: I'm not entirely sure if separate ones needed for each wavefront in a workgroup
                          */
                         char predicate = 0;
-                        allBlock[base][diff] = (tmp >= dq[depth]);
+                        allBlock[base][diff] = (rSq >= dq[depth]);
                         for (int x = 0; x < WARPSIZE; ++x)
                         {
                             predicate &= allBlock[base][x];
@@ -645,12 +645,11 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         {
                             if (n != i)
                             {
-                                tmp = sqrt(tmp + EPS2);  /* Compute distance */
-                                tmp = tmp * tmp * tmp;
-                                tmp = nm[base] / tmp;
-                                ax += tmp * dx;
-                                ay += tmp * dy;
-                                az += tmp * dz;
+                                real r = sqrt(rSq + EPS2); /* Compute distance with softening */
+                                real ai = nm[base] / (r * r * r);
+                                ax += ai * dx;
+                                ay += ai * dy;
+                                az += ai * dz;
                             }
                         }
                         else
