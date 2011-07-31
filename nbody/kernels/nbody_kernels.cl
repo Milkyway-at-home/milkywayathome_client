@@ -481,8 +481,7 @@ __kernel void NBODY_KERNEL(summarization)
             real bmax2 = bmax2Inc(px, _posX[k], psize);
             bmax2 += bmax2Inc(py, _posY[k], psize);
             bmax2 += bmax2Inc(pz, _posZ[k], psize);
-            real rc = sqrt(bmax2) / THETA;
-            _critRadii[k] = rc * rc;
+            _critRadii[k] = bmax2 / (THETA * THETA);;
           #elif NEWCRITERION
             real dx = px - _posX[k];
             real dy = py - _posY[k];

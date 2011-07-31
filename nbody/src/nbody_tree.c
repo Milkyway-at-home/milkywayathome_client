@@ -270,34 +270,32 @@ static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeR
 {
     real rc, bmax2;
 
+    /* return square of radius */
     switch (ctx->criterion)
     {
         case NewCriterion:
-            rc = psize / ctx->theta + mw_distv(cmpos, Pos(p));
             /* use size plus offset */
-            break;
+            rc = psize / ctx->theta + mw_distv(cmpos, Pos(p));
+            return sqr(rc);
 
         case SW93:                           /* use S&W's criterion? */
             /* compute max distance^2 */
             bmax2 = calcSW93MaxDist2(p, cmpos, psize);
-            rc = mw_sqrt(bmax2) / ctx->theta;      /* using max dist from cm */
-            break;
+            return bmax2 / sqr(ctx->theta);      /* using max dist from cm */
 
         case BH86:                          /* use old BH criterion? */
             rc = psize / ctx->theta;        /* using size of cell */
-            break;
+            return sqr(rc);
 
         case Exact:                       /* exact force calculation? */
             rc = 2.0 * treeRSize;         /* always open cells */
-            break;
+            return sqr(rc);
 
         case InvalidCriterion:
         default:
             rc = 0.0; /* Stop clang static analysis warning */
             fail("Bad criterion: %d\n", ctx->criterion);
     }
-
-    return sqr(rc);          /* store square of radius */
 }
 
 static inline void checkTreeDim(NBodyTree* tree, const real pPos, const real cmPos, const real halfPsize)
