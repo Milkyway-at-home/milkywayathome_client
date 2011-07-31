@@ -22,6 +22,7 @@
 #define _NBODY_CL_H_
 
 #include "nbody.h"
+#include "mw_cl.h"
 
 cl_int runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
 

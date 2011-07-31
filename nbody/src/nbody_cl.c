@@ -99,6 +99,11 @@ typedef struct
     cl_mem child;
     cl_mem sort;
 
+    cl_mem critRadii; /* Used by the alternative cell opening criterion.
+                         Unnecessary for BH86.
+                         BH86 will be the fastest option since it won't need to load from this
+                       */
+
     cl_mem debug;
 } NBodyBuffers;
 
@@ -211,7 +216,18 @@ static cl_int setKernelArguments(cl_kernel kern, CLInfo* ci, NBodyBuffers* nbb)
      * actually cares. We'll set it before then. */
     err |= clSetKernelArg(kern, 21, sizeof(cl_int), &step);
 
-    err |= clSetKernelArg(kern, 22, sizeof(cl_mem), &nbb->debug);
+
+    if (nbb->critRadii)
+    {
+        err |= clSetKernelArg(kern, 22, sizeof(cl_mem), &nbb->critRadii);
+    }
+    else
+    {
+        /* Just be anything. Won't be used, it just needs to be not null to not error */
+        err |= clSetKernelArg(kern, 22, sizeof(cl_mem), &nbb->treeStatus);
+    }
+
+    err |= clSetKernelArg(kern, 23, sizeof(cl_mem), &nbb->debug);
 
     return err;
 }
@@ -708,7 +724,7 @@ static cl_int setInitialTreeStatus(CLInfo* ci, NBodyBuffers* nbb)
                                 0, NULL, NULL);
 }
 
-static cl_int createBuffers(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st)
+static cl_int createBuffers(const NBodyCtx* ctx, NBodyState* st, CLInfo* ci, NBodyBuffers* nbb)
 {
     cl_uint i;
     cl_uint nNode;
@@ -747,9 +763,16 @@ static cl_int createBuffers(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st)
 
     nbb->debug = mwCreateZeroReadWriteBuffer(ci, sizeof(Debug));
 
-
     if (!nbb->masses || !nbb->treeStatus || !nbb->start || !nbb->count || !nbb->sort || !nbb->child)
         err = MW_CL_ERROR;
+
+    if (ctx->criterion == SW93 || ctx->criterion == NewCriterion)
+    {
+        /* This only is for cells, so we could subtract nbody if we wanted */
+        nbb->critRadii = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
+        if (!nbb->critRadii)
+            err = MW_CL_ERROR;
+    }
 
     if (err != CL_SUCCESS)
     {

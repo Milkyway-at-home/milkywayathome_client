@@ -75,6 +75,8 @@ typedef struct
     volatile int i[16];
 } Debug;
 
+#define isBody(n) ((n) < NBODY)
+#define isCell(n) ((n) >= NBODY)
 
 
 
@@ -94,6 +96,7 @@ typedef struct
     __global TreeStatus* restrict _treeStatus,                                                   \
                                                                                                  \
     int step,                                                                                    \
+    __global real* restrict _critRadii,                                                          \
     __global volatile Debug* _debug                                                              \
     )
 
@@ -117,7 +120,7 @@ __kernel void NBODY_KERNEL(boundingBox)
     minZ[i] = maxZ[i] = minZ[0];
 
     int inc = get_local_size(0) * get_num_groups(0);
-    int j = get_global_id(0);
+    int j = i + get_group_id(0) * get_local_size(0); // = get_global_id(0);
     while (j < NBODY) /* Scan bodies */
     {
         real tmp = _posX[j];
@@ -158,6 +161,7 @@ __kernel void NBODY_KERNEL(boundingBox)
     {
         /* Write block result to global memory */
         j = get_group_id(0);
+
         _minX[j] = minX[0];
         _minY[j] = minY[0];
         _minZ[j] = minZ[0];
@@ -184,7 +188,14 @@ __kernel void NBODY_KERNEL(boundingBox)
 
             /* Compute radius */
             real tmpR = max(maxX[0] - minX[0], maxY[0] - minY[0]);
-            _treeStatus->radius = 0.5 * max(tmpR, maxZ[0] - minZ[0]);
+            real radius = 0.5 * max(tmpR, maxZ[0] - minZ[0]);
+
+            _treeStatus->radius = radius;
+
+          #if NEWCRITERION || SW93
+            _critRadii[NNODE] = radius;
+          #endif
+
 
             /* Create root node */
             _mass[NNODE] = -1.0;
@@ -301,6 +312,10 @@ __kernel void NBODY_KERNEL(buildTree)
                         _mass[cell] = -1.0;
                         _start[cell] = -1;
 
+                      #if SW93 || NEWCRITERION
+                        _critRadii[cell] = r;
+                      #endif /* SW93 || NEWCRITERION */
+
                         x = _posX[cell] = _posX[n] - r + x;
                         y = _posY[cell] = _posY[n] - r + y;
                         z = _posZ[cell] = _posZ[n] - r + z;
@@ -352,6 +367,14 @@ __kernel void NBODY_KERNEL(buildTree)
         //barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
     }
     atom_max(&_treeStatus->maxDepth, localMaxDepth);
+}
+
+/* Used by sw93 */
+inline real bmax2Inc(real cmPos, real pPos, real psize)
+{
+    real dmin = cmPos - (pPos - 0.5 * psize);         /* dist from 1st corner */
+    real tmp = max(dmin, psize - dmin);
+    return tmp * tmp;      /* sum max distance^2 */
 }
 
 __kernel void NBODY_KERNEL(summarization)
@@ -450,6 +473,25 @@ __kernel void NBODY_KERNEL(summarization)
             /* all children are ready, so store computed information */
             _count[k] = cnt;
             m = 1.0 / cm;
+
+            /* Calculate opening criterion if necessary */
+            /* FIXME: Opening criterion need better testing for correctness */
+          #if SW93
+            real psize = _critRadii[k]; /* Get saved size */
+            real bmax2 = bmax2Inc(px, _posX[k], psize);
+            bmax2 += bmax2Inc(py, _posY[k], psize);
+            bmax2 += bmax2Inc(pz, _posZ[k], psize);
+            real rc = sqrt(bmax2) / THETA;
+            _critRadii[k] = rc * rc;
+          #elif NEWCRITERION
+            real dx = px - _posX[k];
+            real dy = py - _posY[k];
+            real dz = pz - _posZ[k];
+            real psize = _critRadii[k]; /* Get saved size */
+            real rc = psize / THETA + sqrt((dx * dx) + (dy * dy) + (dz * dz));
+            _critRadii[k] = rc * rc;
+          #endif /* SW93 */
+
             _posX[k] = px * m;
             _posY[k] = py * m;
             _posZ[k] = pz * m;
@@ -511,15 +553,53 @@ __kernel void NBODY_KERNEL(sort)
 #endif
 
 
+/* OpenCL is missing thread voting functions.
+   This should be equivalent roughtly to CUDA's __all() with the conditions
+ * A barrier should be unnecessary here since
+ * all the threads in a wavefront should be
+ * forced to run simulatenously. This is not
+ * over the workgroup, but the actual
+ * wavefront.
+ * CHECKME: I'm not entirely sure if separate ones needed for each wavefront in a workgroup
+ */
+inline int forceAllPredicate(__local volatile int allBlock[THREADS5 / WARPSIZE][WARPSIZE],
+                             int base, /* thread indexing */
+                             int diff,
+
+                             real rSq,
+
+                             __global const real* _critRadii, /* SW93 and NewCriterion */
+                             int n,
+
+                             real dq) /* BH86 and exact */
+{
+  #if BH86 || EXACT
+    allBlock[base][diff] = (rSq >= dq);
+  #else
+    allBlock[base][diff] = (rSq >= _critRadii[n]);
+  #endif
+
+    int predicate = 1;
+    for (int x = 0; x < WARPSIZE; ++x)
+    {
+        predicate &= allBlock[base][x];
+    }
+
+    return predicate;
+}
+
+
 __kernel void NBODY_KERNEL(forceCalculation)
 {
     __local int maxDepth;
     __local int ch[THREADS5 / WARPSIZE];
     __local int pos[MAXDEPTH * THREADS5 / WARPSIZE], node[MAXDEPTH * THREADS5 / WARPSIZE];
-    __local real dq[MAXDEPTH * THREADS5 / WARPSIZE];
     __local real nx[THREADS5 / WARPSIZE], ny[THREADS5 / WARPSIZE], nz[THREADS5 / WARPSIZE];
     __local real nm[THREADS5 / WARPSIZE];
-    __local volatile char allBlock[THREADS5 / WARPSIZE][WARPSIZE];
+
+    __local real dq[MAXDEPTH * THREADS5 / WARPSIZE]; /* Used by BH86 and Exact */
+    __local volatile int allBlock[THREADS5 / WARPSIZE][WARPSIZE];
+
 
     if (get_local_id(0) == 0)
     {
@@ -527,25 +607,23 @@ __kernel void NBODY_KERNEL(forceCalculation)
 
         real rootSize = _treeStatus->radius;
 
-        real rc;
       #if BH86
-        rc = rootSize / THETA;
-      #elif SW93
-        #error SW93 unimplemented
-      #elif NEWCRITERION
-        #error NewCriterion unimplemented
-      #elif EXACT
-        rc = 2.0 * rootSize;
-      #else
-        #error No opening criterion defined
-      #endif /* BH86 */
-
+        real rc = rootSize / THETA;
         /* Precompute values that depend only on tree level */
         dq[0] = rc * rc;
         for (int i = 1; i < maxDepth; ++i)
         {
             dq[i] = 0.25 * dq[i - 1];
         }
+      #elif EXACT
+        real rc = 2.0 * rootSize;
+        /* Just fill dq to simplify things. This shouldn't really ever be used anyway */
+        for (int i = 0; i < maxDepth; ++i)
+        {
+            dq[i] = rc * rc;
+        }
+      #endif /* BH86 */
+
 
         if (maxDepth > MAXDEPTH)
         {
@@ -560,14 +638,16 @@ __kernel void NBODY_KERNEL(forceCalculation)
         int base = get_local_id(0) / WARPSIZE;
         int sbase = base * WARPSIZE;
         int j = base * MAXDEPTH;
-
         int diff = get_local_id(0) - sbase;
+
+      #if BH86 || EXACT
         /* Make multiple copies to avoid index calculations later */
         if (diff < MAXDEPTH)
         {
             dq[diff + j] = dq[diff];
         }
         barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+      #endif /* BH86 || EXACT */
 
         /* iterate over all bodies assigned to thread */
         for (int k = get_global_id(0); k < NBODY; k += get_local_size(0) * get_num_groups(0))
@@ -625,23 +705,8 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         real dz = nz[base] - pz;
                         real rSq = (dx * dx) + (dy * dy) + (dz * dz); /* Compute distance squared */
 
-                        /* OpenCL is missing thread voting functions. This should be equivalent to CUDA's __all()
-                         * A barrier should be unnecessary here since
-                         * all the threads in a wavefront should be
-                         * forced to run simulatenously. This is not
-                         * over the workgroup, but the actual
-                         * wavefront.
-                         * CHECKME: I'm not entirely sure if separate ones needed for each wavefront in a workgroup
-                         */
-                        char predicate = 0;
-                        allBlock[base][diff] = (rSq >= dq[depth]);
-                        for (int x = 0; x < WARPSIZE; ++x)
-                        {
-                            predicate &= allBlock[base][x];
-                        }
-
                         /* Check if all threads agree that cell is far enough away (or is a body) */
-                        if (n < NBODY || predicate)
+                        if (n < NBODY || forceAllPredicate(allBlock, base, diff, rSq, _critRadii, n, dq[depth]))
                         {
                             if (n != i)
                             {
@@ -693,7 +758,7 @@ __kernel void NBODY_KERNEL(integration)
     int inc = get_local_size(0) * get_num_groups(0);
 
     /* Iterate over all bodies assigned to thread */
-    for (int i = get_global_id(0); i < NBODY; i += inc)
+    for (int i = (int) get_global_id(0); i < NBODY; i += inc)
     {
         real dvx = _accX[i] * (0.5 * TIMESTEP);
         real dvy = _accY[i] * (0.5 * TIMESTEP);
