@@ -22,7 +22,7 @@
 #include "milkyway_util.h"
 #include "nbody_cl.h"
 #include "nbody_show.h"
-
+#include "nbody_util.h"
 
 #define MAXDEPTH 26
 
@@ -875,6 +875,27 @@ static cl_int marshalBodies(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st, cl_bo
     return unmapBodies(pos, vel, mass, nbb, ci);
 }
 
+/* Fill the sorted array with the unsorted indices.
+   This is useful for debugging the sort / running with too few threads
+ */
+static cl_int notSort(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st)
+{
+    int i;
+    int* p;
+
+    p = mapBuffer(ci, nbb->sort, CL_MAP_WRITE, st->nbody * sizeof(int));
+    if (!p)
+        return MW_CL_ERROR;
+
+    for (i = 0; i < st->nbody; ++i)
+    {
+        p[i] = i;
+    }
+
+    return clEnqueueUnmapMemObject(ci->queue, nbb->sort, p, 0, NULL, NULL);
+}
+
+
 static void printKernelTimings(const DevInfo* di, const NBodyState* st)
 {
 
@@ -974,9 +995,16 @@ cl_int runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
     if (err != CL_SUCCESS)
         goto fail;
 
-    err = createBuffers(&nbb, &ci, st);
+    err = createBuffers(ctx, st, &ci, &nbb);
     if (err != CL_SUCCESS)
         goto fail;
+
+    if (ci.di.devType == CL_DEVICE_TYPE_CPU)
+    {
+        err = notSort(&nbb, &ci, st);
+        if (err != CL_SUCCESS)
+            goto fail;
+    }
 
     err = marshalBodies(&nbb, &ci, st, CL_TRUE);
     if (err != CL_SUCCESS)
