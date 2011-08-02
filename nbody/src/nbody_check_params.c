@@ -149,6 +149,19 @@ mwbool checkPotentialConstants(Potential* p)
     return checkSphericalConstants(&p->sphere[0]) || checkDiskConstants(&p->disk) || checkHaloConstants(&p->halo);
 }
 
+static int hasAcceptableTheta(const NBodyCtx* ctx)
+{
+    if (ctx->theta < 0.0 || ctx->theta > 1.0)
+    {
+        warn("Opening angle must be 0.0 <= theta <= 1.0 (theta = %f)\n", ctx->theta);
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
+    }
+}
+
 static int hasAcceptableEps2(const NBodyCtx* ctx)
 {
     int rc = mwCheckNormalPosNumEps(ctx->eps2);
@@ -177,6 +190,6 @@ static int hasAcceptableSteps(const NBodyCtx* ctx)
 
 mwbool checkNBodyCtxConstants(const NBodyCtx* ctx)
 {
-    return hasAcceptableTimes(ctx) || hasAcceptableSteps(ctx) || hasAcceptableEps2(ctx);
+    return hasAcceptableTimes(ctx) || hasAcceptableSteps(ctx) || hasAcceptableEps2(ctx) || hasAcceptableTheta(ctx);
 }
 
