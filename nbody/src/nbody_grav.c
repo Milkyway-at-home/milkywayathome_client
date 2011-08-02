@@ -146,9 +146,21 @@ static void reportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
         if (!ctx->quietErrors) /* Avoid massive printing of tests causing incest */
         {
             if (ctx->allowIncest)
-                warn("[hackGrav: tree-incest detected]\n");
+            {
+                warn("[hackGrav: tree-incest detected at time %f / %f (%f%%)]\n",
+                     st->tnow,
+                     ctx->timeEvolve,
+                     100.0 * st->tnow / ctx->timeEvolve
+                    );
+            }
             else
-                warn("hackGrav: tree-incest detected (fatal)\n");
+            {
+                warn("hackGrav: tree-incest detected (fatal) at time %f / %f (%f%%)\n",
+                     st->tnow,
+                     ctx->timeEvolve,
+                     100.0 * st->tnow / ctx->timeEvolve
+                    );
+            }
         }
     }
 }

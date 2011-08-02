@@ -122,7 +122,7 @@ const char* showNBodyStatus(NBodyStatus x)
         case NBODY_CHECKPOINT_ERROR:
             return "NBODY_CHECKPOINT_ERROR";
         default:
-            return "Invalid NBodyStatus";
+            return "Unknown NBodyStatus";
     }
 }
 

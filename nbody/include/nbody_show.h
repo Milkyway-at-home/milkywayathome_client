@@ -57,6 +57,5 @@ void printNBodyState(const NBodyState*);
 char* showNBodyTree(const NBodyTree*);
 void printNBodyTree(const NBodyTree*);
 
-
 #endif /* _NBODY_SHOW_H_ */
 

@@ -380,6 +380,8 @@ typedef enum
 } NBodyStatus;
 
 #define nbodyStatusIsFatal(x) ((x) > 0)
+#define nbodyStatusIsOK(x) ((x) <= 0)
+#define nbodyStatusIsWarning(x) ((x) < 0)
 
 
 /* Note: 'type' should first field for all types. */

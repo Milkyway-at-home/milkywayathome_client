@@ -29,6 +29,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_lua.h"
 #include "nbody_shmem.h"
 
+#if NBODY_OPENCL
+  #include "nbody_cl.h"
+#endif
+
 
 static inline int nbodyTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 {
@@ -69,24 +73,26 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 }
 
 
-static int runSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
+static NBodyStatus runSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     const real tstop = ctx->timeEvolve - ctx->timestep / 1024.0;
+    NBodyStatus rc = NBODY_SUCCESS;
 
     if (nbf->visualizer)
     {
         launchVisualizer(st, nbf->visArgs);
     }
 
-    if (gravMap(ctx, st)) /* Start 1st step */
-        return 1;
+    rc |= gravMap(ctx, st); /* Calculate accelerations for 1st step this episode */
+    if (nbodyStatusIsFatal(rc))
+        return rc;
 
     while (st->tnow < tstop)
     {
         updateDisplayedBodies(st);
-
-        if (stepSystem(ctx, st))   /* advance N-body system */
-            return 1;
+        rc |= stepSystem(ctx, st);
+        if (nbodyStatusIsFatal(rc))   /* advance N-body system */
+            return rc;
 
         nbodyCheckpoint(ctx, st);
     }
@@ -97,11 +103,11 @@ static int runSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
         if (writeCheckpoint(ctx, st))
         {
             warn("Failed to write final checkpoint\n");
-            return 1;
+            return NBODY_CHECKPOINT_ERROR;
         }
     }
 
-    return 0;
+    return rc;
 }
 
 static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, const NBodyFlags* nbf)
@@ -180,27 +186,29 @@ int runNBodySimulation(const NBodyFlags* nbf)
     NBodyCtx* ctx = &_ctx;
     NBodyState* st = &_st;
 
-    int rc = 0;
+    NBodyStatus rc = NBODY_SUCCESS;
     real chisq;
     double ts = 0.0, te = 0.0;
 
     if (setupRun(ctx, st, &ctx->histogramParams, nbf))
     {
         warn("Failed to setup run\n");
-        return 1;
+        return NBODY_ERROR;
     }
 
     nbodySetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
     if (initOutput(st, nbf))
     {
         warn("Failed to open output files\n");
-        return 1;
+        return NBODY_ERROR;
     }
+
+    warn("allow incest = %d\n", ctx->allowIncest);
 
     if (createSharedScene(st, ctx, nbf->inputFile))
     {
         warn("Failed to create shared scene\n");
-        return 1;
+        return NBODY_ERROR;
     }
 
     ts = mwGetTime();
@@ -219,10 +227,14 @@ int runNBodySimulation(const NBodyFlags* nbf)
     rc = runSystem(ctx, st, nbf);
   #endif /* NBODY_OPENCL */
 
-    if (rc)
+    if (nbodyStatusIsFatal(rc))
     {
-        warn("Error running system\n");
+        warn("Error running system: %s (%d)\n", showNBodyStatus(rc), rc);
         return rc;
+    }
+    else if (nbodyStatusIsWarning(rc))
+    {
+        warn("System complete with warnings: %s (%d)\n", showNBodyStatus(rc), rc);
     }
     te = mwGetTime();
 
@@ -236,7 +248,7 @@ int runNBodySimulation(const NBodyFlags* nbf)
     if (isnan(chisq))
     {
         warn("Failed to calculate chisq\n");
-        rc = 1;
+        rc = NBODY_ERROR;
     }
 
     finalOutput(ctx, st, nbf, chisq);

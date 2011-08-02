@@ -320,7 +320,7 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
     if (asprintf(&buf,
                  "-D DOUBLEPREC=%d "
                #if !DOUBLEPREC
-                 "-cl-single-precision-constant"
+                 "-cl-single-precision-constant "
                #endif
 
                  "-D NBODY=%d "
@@ -390,6 +390,10 @@ static cl_int loadKernels(CLInfo* ci, const NBodyCtx* ctx, const NBodyState* st)
     compileFlags = getCompileFlags(ctx, st, &ci->di);
     assert(compileFlags);
     err = mwSetProgramFromSrc(ci, (const char**) &src, 1, compileFlags);
+    if (err != CL_SUCCESS)
+    {
+        warn("Failed build flags: %s\n", compileFlags);
+    }
 
     free(src);
     free(compileFlags);
@@ -963,7 +967,7 @@ static void setCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
     clr->enableCheckpointing = FALSE;
 }
 
-cl_int runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
+NBodyStatus runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     cl_int err = CL_SUCCESS;
     CLInfo ci;
@@ -1033,6 +1037,6 @@ fail:
     releaseKernels();
     releaseBuffers(&nbb);
 
-    return err;
+    return (err == CL_SUCCESS) ? NBODY_SUCCESS : NBODY_ERROR;
 }
 
