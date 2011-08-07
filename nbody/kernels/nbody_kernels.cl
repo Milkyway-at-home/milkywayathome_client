@@ -24,6 +24,16 @@
   #error Precision not defined
 #endif
 
+/* Reserve positive numbers for reporting depth > MAXDEPTH */
+typedef enum
+{
+    NBODY_KERNEL_OK                   = 0,
+    NBODY_KERNEL_CELL_LEQ_NBODY       = -1,
+    NBODY_KERNEL_TREE_INCEST          = -2,
+    NBODY_KERNEL_TREE_STRUCTURE_ERROR = -3,
+    NBODY_KERNEL_ERROR_OTHER          = -4
+} NBodyKernelError;
+
 #if DOUBLEPREC
   #if cl_amd_fp64
     #pragma OPENCL EXTENSION cl_amd_fp64 : enable
@@ -37,8 +47,11 @@
 
 
 #if 0
+#pragma OPENCL EXTENSION cl_amd_printf : enable
 #define assert(x) if (!(x)) { printf("Assertion failed[%d]: %s\n", __LINE__, #x); }
 #define dprintf(fmt, ...) printf("Line %d: " fmt, __LINE__, __VA_ARGS__)
+
+#define ddprintf(fmt, ...) printf("[%d][%d][%d]: Line %d: " fmt, (int) get_global_id(0), (int) get_group_id(0), (int) get_local_id(0),__LINE__, __VA_ARGS__)
 #define __BARRIER(type) \
     dprintf("\t__BARRIER[%d] hit by thread %d\n", __LINE__, get_local_id(0)); \
   barrier(type);
@@ -47,6 +60,7 @@
 #define assert(x)
 #define dprintf(fmt, ...)
 #define __BARRIER(type) barrier((type))
+#define ddprintf(fmt, ...)
 #endif
 
 
@@ -71,8 +85,8 @@ typedef struct __attribute__((aligned))
 
 typedef struct
 {
-    volatile real f[16];
-    volatile int i[16];
+    volatile real f[32];
+    volatile int i[64];
 } Debug;
 
 #define isBody(n) ((n) < NBODY)
@@ -102,8 +116,8 @@ typedef struct
 
 __kernel void NBODY_KERNEL(boundingBox)
 {
-    __local real minX[THREADS1], minY[THREADS1], minZ[THREADS1];
-    __local real maxX[THREADS1], maxY[THREADS1], maxZ[THREADS1];
+    __local volatile real minX[THREADS1], minY[THREADS1], minZ[THREADS1];
+    __local volatile real maxX[THREADS1], maxY[THREADS1], maxZ[THREADS1];
 
     int i = (int) get_local_id(0);
     if (i == 0)
@@ -299,7 +313,7 @@ __kernel void NBODY_KERNEL(buildTree)
                         int cell = atom_dec(&_treeStatus->bottom) - 1;
                         if (cell <= NBODY)
                         {
-                            _treeStatus->errorCode = 1;
+                            _treeStatus->errorCode = NBODY_KERNEL_CELL_LEQ_NBODY;
                             _treeStatus->bottom = NNODE;
                         }
                         patch = max(patch, cell);
@@ -341,6 +355,12 @@ __kernel void NBODY_KERNEL(buildTree)
 
                         _child[NSUB * cell + j] = ch;
 
+                        /* The AMD compiler reorders the next read
+                         * from _child, which then reads the old/wrong
+                         * value when the children are the same without this.
+                         */
+                        mem_fence(CLK_GLOBAL_MEM_FENCE);
+
                         n = cell;
                         j = 0;
                         if (x < px)
@@ -354,6 +374,7 @@ __kernel void NBODY_KERNEL(buildTree)
                         /* Repeat until the two bodies are different children */
                     }
                     while (ch >= 0);
+
                     _child[NSUB * n + j] = i;
                     mem_fence(CLK_GLOBAL_MEM_FENCE);
                     _child[locked] = patch;
@@ -364,8 +385,11 @@ __kernel void NBODY_KERNEL(buildTree)
                 skip = 1;
             }
         }
+
+        /* Wait for other wavefronts to finish loading */
         //barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
     }
+
     atom_max(&_treeStatus->maxDepth, localMaxDepth);
 }
 
@@ -438,6 +462,7 @@ __kernel void NBODY_KERNEL(summarization)
                     ++j;
                 }
             }
+            mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); /* Only for performance */
             cnt += j;
         }
 
@@ -470,7 +495,7 @@ __kernel void NBODY_KERNEL(summarization)
 
         if (missing == 0)
         {
-            /* all children are ready, so store computed information */
+            /* All children are ready, so store computed information */
             _count[k] = cnt;
             m = 1.0 / cm;
 
@@ -494,10 +519,10 @@ __kernel void NBODY_KERNEL(summarization)
             _posX[k] = px * m;
             _posY[k] = py * m;
             _posZ[k] = pz * m;
-            mem_fence(CLK_GLOBAL_MEM_FENCE);
+            write_mem_fence(CLK_GLOBAL_MEM_FENCE); /* Make sure data is visible before setting mass */
             _mass[k] = cm;
-            mem_fence(CLK_GLOBAL_MEM_FENCE);
-            k += inc;  /* move on to next cell */
+            write_mem_fence(CLK_GLOBAL_MEM_FENCE);
+            k += inc;  /* Move on to next cell */
         }
     }
 }
@@ -515,6 +540,7 @@ __kernel void NBODY_KERNEL(sort)
     int bottom = bottoms;
     int dec = get_local_size(0) * get_num_groups(0);
     int k = NNODE + 1 - dec + get_global_id(0);
+
     while (k >= bottom) /* Iterate over all cells assigned to thread */
     {
         int start = _start[k];
@@ -637,7 +663,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
         int base = get_local_id(0) / WARPSIZE;
         int sbase = base * WARPSIZE;
         int j = base * MAXDEPTH;
-        int diff = get_local_id(0) - sbase;
+        int diff = get_local_id(0) - sbase; /* Index in warp */
 
       #if BH86 || EXACT
         /* Make multiple copies to avoid index calculations later */
@@ -671,6 +697,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
             }
             mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
+            bool skipSelf = false;
             while (depth >= j)
             {
                 /* Stack is not empty */
@@ -707,13 +734,24 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         /* Check if all threads agree that cell is far enough away (or is a body) */
                         if (n < NBODY || forceAllPredicate(allBlock, base, diff, rSq, _critRadii, n, dq[depth]))
                         {
-                            if (n != i)
+                            if (n != i) /* Skip self interaction */
                             {
                                 real r = sqrt(rSq + EPS2); /* Compute distance with softening */
                                 real ai = nm[base] / (r * r * r);
                                 ax += ai * dx;
                                 ay += ai * dy;
                                 az += ai * dz;
+                            }
+
+                            if (isBody(n) && n == i) /* Watch for tree incest */
+                            {
+                                /*
+                                if (step < 16)
+                                {
+                                    atom_inc(&_debug->i[0]);
+                                }
+                                */
+                                skipSelf = true;
                             }
                         }
                         else
@@ -744,10 +782,16 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 _velZ[i] += (az - _accZ[i]) * (0.5 * TIMESTEP);
             }
 
+
             /* Save computed acceleration */
             _accX[i] = ax;
             _accY[i] = ay;
             _accZ[i] = az;
+
+            if (!skipSelf)
+            {
+                _treeStatus->errorCode = NBODY_KERNEL_TREE_INCEST;
+            }
         }
     }
 }

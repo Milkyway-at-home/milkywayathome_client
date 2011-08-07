@@ -48,6 +48,8 @@ cl_ulong mwEventTimeNS(cl_event ev)
         return 0;
     }
 
+    assert(te >= ts);
+
     return te - ts;
 }
 
