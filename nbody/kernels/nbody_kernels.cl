@@ -44,6 +44,8 @@ typedef enum
 
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
+#pragma OPENCL EXTENSION cl_khr_local_int32_base_atomics : enable
+
 
 
 #if 0
@@ -231,6 +233,7 @@ __kernel void NBODY_KERNEL(boundingBox)
 __kernel void NBODY_KERNEL(buildTree)
 {
     __local real radius, rootX, rootY, rootZ;
+    __local volatile int deadCount;
 
     if (get_local_id(0) == 0)
     {
@@ -239,15 +242,36 @@ __kernel void NBODY_KERNEL(buildTree)
         rootX = _posX[NNODE];
         rootY = _posY[NNODE];
         rootZ = _posZ[NNODE];
+
+        deadCount = 0;
     }
     barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
-
     int localMaxDepth = 1;
     int skip = 1;
     int inc = get_local_size(0) * get_num_groups(0);
     int i = get_global_id(0);
-    while (i < NBODY) /* Iterate over all bodies assigned to thread */
+
+
+    bool dead = false;
+    while (1)  /* while (i < NBODY) */
     {
+        /* Wait for other wavefronts to finish loading */
+        barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+
+        /* Ugly hackery to prevent conditional barrier() for when some
+         * items have another body and others don't */
+        if (i >= NBODY && !dead)
+        {
+            dead = true;
+            (void) atom_inc(&deadCount);
+        }
+
+        if (deadCount == THREADS1)
+            break;
+
+        if (dead)
+            continue;
+
         real r;
         real px, py, pz;
         int j, n, depth;
@@ -385,9 +409,6 @@ __kernel void NBODY_KERNEL(buildTree)
                 skip = 1;
             }
         }
-
-        /* Wait for other wavefronts to finish loading */
-        //barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
     }
 
     atom_max(&_treeStatus->maxDepth, localMaxDepth);

@@ -465,30 +465,30 @@ static cl_int printBuffer(CLInfo* ci, cl_mem mem, size_t n, const char* name, in
     return clEnqueueUnmapMemObject(ci->queue, mem, p, 0, NULL, NULL);
 }
 
-static void stdDebugPrint(CLInfo* ci, NBodyState* st)
+static void stdDebugPrint(CLInfo* ci, NBodyState* st, NBodyBuffers* nbb)
 {
     warn("--------------------------------------------------------------------------------\n");
     cl_int err;
     cl_uint nNode = findNNode(&ci->di, st->nbody);
     warn("BEGIN CHILD\n");
-    printBuffer(ci, _nbb->child, NSUB * (nNode + 1), "child", 1);
+    printBuffer(ci, nbb->child, NSUB * (nNode + 1), "child", 1);
     warn("BEGIN START\n");
-    printBuffer(ci, _nbb->start, nNode, "start", 1);
+    printBuffer(ci, nbb->start, nNode, "start", 1);
 
     warn("BEGIN MASS\n");
-    printBuffer(ci, _nbb->masses, nNode + 1, "mass", 0);
+    printBuffer(ci, nbb->masses, nNode + 1, "mass", 0);
 
     {
         TreeStatus tc;
         memset(&tc, 0, sizeof(tc));
-        err = readTreeStatus(&tc, ci, _nbb);
+        err = readTreeStatus(&tc, ci, nbb);
         if (err != CL_SUCCESS)
             mwCLWarn("Reading tree status failed\n", err);
         else
             printTreeStatus(&tc);
     }
 
-    debug(ci, _nbb);
+    debug(ci, nbb);
     warn("--------------------------------------------------------------------------------\n");
 }
 
@@ -736,7 +736,7 @@ static cl_int createBuffers(const NBodyCtx* ctx, NBodyState* st, CLInfo* ci, NBo
     cl_int err = CL_SUCCESS;
 
     nNode = findNNode(&ci->di, st->nbody);
-    _nNode = nNode;
+
     warn("NNODE = %u, nbody = %d\n"
          "(NNODE + 1) * NSUB = %u\n"
          "inc %d\n",
