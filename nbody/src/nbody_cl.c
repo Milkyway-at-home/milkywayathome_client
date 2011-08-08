@@ -26,6 +26,46 @@
 
 #define MAXDEPTH 26
 
+typedef struct
+{
+    cl_mem pos[3];
+    cl_mem vel[3];
+    cl_mem acc[3];
+    cl_mem max[3];
+    cl_mem min[3];
+    cl_mem masses;
+    cl_mem treeStatus;
+
+    cl_mem start; /* TODO: We can reuse other buffers with this later to save memory */
+    cl_mem count;
+    cl_mem child;
+    cl_mem sort;
+
+    cl_mem critRadii; /* Used by the alternative cell opening criterion.
+                         Unnecessary for BH86.
+                         BH86 will be the fastest option since it won't need to load from this
+                       */
+
+    cl_mem debug;
+} NBodyBuffers;
+
+/* CHECKME: Padding between these fields might be a good idea */
+typedef struct NBODY_ALIGN
+{
+    real radius;
+    int bottom;
+    int maxDepth;
+    int errorCode;
+    unsigned int blkCnt;
+} TreeStatus;
+
+typedef struct
+{
+    real f[32];
+    int i[64];
+} Debug;
+
+
 static size_t threads[6];
 static size_t factors[6];
 
@@ -70,61 +110,28 @@ static cl_bool setThreadCounts(const DevInfo* di)
     }
     else
     {
+        /*
         threads[0] = 256;
         threads[1] = 256;
         threads[2] = 256;
         threads[3] = 256;
         threads[4] = 256;
         threads[5] = 256;
+        */
+
+        warn("This is what happens\n");
+        threads[0] = 64;
+        threads[1] = 64;
+        threads[2] = 256;
+        threads[3] = 256;
+        threads[4] = 256;
+        threads[5] = 256;
+
     }
 
     return CL_FALSE;
 }
 
-/* FIXME: Need a way to track which bodies are ignored when they are
- * shuffled around by sorting
- */
-typedef struct
-{
-    cl_mem pos[3];
-    cl_mem vel[3];
-    cl_mem acc[3];
-    cl_mem max[3];
-    cl_mem min[3];
-    cl_mem masses;
-    cl_mem treeStatus;
-
-    cl_mem start; /* TODO: We can reuse other buffers with this later to save memory */
-    cl_mem count;
-    cl_mem child;
-    cl_mem sort;
-
-    cl_mem critRadii; /* Used by the alternative cell opening criterion.
-                         Unnecessary for BH86.
-                         BH86 will be the fastest option since it won't need to load from this
-                       */
-
-    cl_mem debug;
-} NBodyBuffers;
-
-/* CHECKME: Padding between these fields might be a good idea */
-typedef struct NBODY_ALIGN
-{
-    real radius;
-    int bottom;
-    int maxDepth;
-    int errorCode;
-    unsigned int blkCnt;
-} TreeStatus;
-
-typedef struct
-{
-    real f[16];
-    int i[16];
-} Debug;
-
-static NBodyBuffers* _nbb = NULL;
-static cl_uint _nNode = 0;
 
 static void* mapBuffer(CLInfo* ci, cl_mem mem, cl_map_flags flags, size_t size)
 {
@@ -137,12 +144,12 @@ static void* mapBuffer(CLInfo* ci, cl_mem mem, cl_map_flags flags, size_t size)
 static void printDebug(const Debug* d)
 {
     int i;
-    for (i = 0; i < 16; ++i)
+    for (i = 0; i < 32; ++i)
     {
         warn("Debug.int[%d] = %d\n", i, d->i[i]);
     }
 
-    for (i = 0; i < 16; ++i)
+    for (i = 0; i < 32; ++i)
     {
         warn("Debug.float[%d] = %.15f\n", i, d->f[i]);
     }
@@ -253,7 +260,10 @@ static cl_int createKernel(cl_kernel* kern, CLInfo* ci, const char* name)
 
     *kern = clCreateKernel(ci->prog, name, &err);
     if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Failed to create kernel '%s'", err, name);
         return err;
+    }
 
     return err;
 }
