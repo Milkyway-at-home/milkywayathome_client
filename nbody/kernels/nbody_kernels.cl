@@ -608,28 +608,30 @@ __kernel void NBODY_KERNEL(sort)
  * wavefront.
  * CHECKME: I'm not entirely sure if separate ones needed for each wavefront in a workgroup
  */
-inline int forceAllPredicate(__local volatile int allBlock[THREADS5 / WARPSIZE][WARPSIZE],
-                             int base, /* thread indexing */
-                             int diff,
-
+inline int forceAllPredicate(__local volatile int allBlock[THREADS1],
+                             int warpId,
                              real rSq,
-
-                             __global const real* _critRadii, /* SW93 and NewCriterion */
+                             __global const volatile real* _critRadii, /* SW93 and NewCriterion */
                              int n,
-
                              real dq) /* BH86 and exact */
 {
+
   #if BH86 || EXACT
-    allBlock[base][diff] = (rSq >= dq);
+    allBlock[get_local_id(0)] = (rSq >= dq);
   #else
-    allBlock[base][diff] = (rSq >= _critRadii[n]);
+    allBlock[get_local_id(0)] = (rSq >= _critRadii[n]);
   #endif
+
+    /* Relies on underlying wavefronts (not whole workgroup)
+       executing in lockstep to not require barrier */
 
     int predicate = 1;
     for (int x = 0; x < WARPSIZE; ++x)
     {
-        predicate &= allBlock[base][x];
+        predicate &= allBlock[WARPSIZE * warpId + x];
     }
+
+    /* For exact, this could always just return false */
 
     return predicate;
 }
@@ -638,14 +640,27 @@ inline int forceAllPredicate(__local volatile int allBlock[THREADS5 / WARPSIZE][
 __kernel void NBODY_KERNEL(forceCalculation)
 {
     __local int maxDepth;
-    __local int ch[THREADS5 / WARPSIZE];
-    __local int pos[MAXDEPTH * THREADS5 / WARPSIZE], node[MAXDEPTH * THREADS5 / WARPSIZE];
-    __local real nx[THREADS5 / WARPSIZE], ny[THREADS5 / WARPSIZE], nz[THREADS5 / WARPSIZE];
-    __local real nm[THREADS5 / WARPSIZE];
+    __local int volatile ch[THREADS5 / WARPSIZE];
+    __local int volatile pos[MAXDEPTH * THREADS5 / WARPSIZE], node[MAXDEPTH * THREADS5 / WARPSIZE];
+    __local volatile real nx[THREADS5 / WARPSIZE], ny[THREADS5 / WARPSIZE], nz[THREADS5 / WARPSIZE];
+    __local volatile real nm[THREADS5 / WARPSIZE];
 
     __local real dq[MAXDEPTH * THREADS5 / WARPSIZE]; /* Used by BH86 and Exact */
-    __local volatile int allBlock[THREADS5 / WARPSIZE][WARPSIZE];
 
+    /* Used by the fake thread voting function.
+       We rely on the lockstep behaviour of warps/wavefronts to avoid using a barrier
+     */
+    __local volatile int allBlock[THREADS5];
+
+    /* Excess threads will "die", however their slots in the
+     * fake warp vote are still counted, but not set,
+     * resulting in garbage in the last few votes. Make sure
+     * that dead threads can't prevent a successful vote.
+     *
+     * Barrier should not be necessary when used, since
+     * communication should happen on wavefront/warp level
+     */
+    allBlock[get_local_id(0)] = 1;
 
     if (get_local_id(0) == 0)
     {
@@ -753,7 +768,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         real rSq = (dx * dx) + (dy * dy) + (dz * dz); /* Compute distance squared */
 
                         /* Check if all threads agree that cell is far enough away (or is a body) */
-                        if (n < NBODY || forceAllPredicate(allBlock, base, diff, rSq, _critRadii, n, dq[depth]))
+                        if (isBody(n) || forceAllPredicate(allBlock, base, rSq, _critRadii, n, dq[depth]))
                         {
                             if (n != i) /* Skip self interaction */
                             {
@@ -766,12 +781,6 @@ __kernel void NBODY_KERNEL(forceCalculation)
 
                             if (isBody(n) && n == i) /* Watch for tree incest */
                             {
-                                /*
-                                if (step < 16)
-                                {
-                                    atom_inc(&_debug->i[0]);
-                                }
-                                */
                                 skipSelf = true;
                             }
                         }
@@ -813,8 +822,13 @@ __kernel void NBODY_KERNEL(forceCalculation)
             {
                 _treeStatus->errorCode = NBODY_KERNEL_TREE_INCEST;
             }
+
+
+            /* In case this thread is done with bodies and others in the wavefront aren't */
+            allBlock[get_local_id(0)] = 1;
         }
     }
+
 }
 
 __kernel void NBODY_KERNEL(integration)
