@@ -24,6 +24,11 @@
   #error Precision not defined
 #endif
 
+
+#if !BH86 && !SW93 && !NEWCRITERION && !EXACT
+  #error Opening criterion not set
+#endif
+
 /* Reserve positive numbers for reporting depth > MAXDEPTH */
 typedef enum
 {
@@ -37,10 +42,12 @@ typedef enum
 #if DOUBLEPREC
   #if cl_amd_fp64
     #pragma OPENCL EXTENSION cl_amd_fp64 : enable
-  #else
+  #elif cl_khr_fp64
     #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+  #else
+    #error Missing double precision extension
   #endif
-#endif
+#endif /* DOUBLEPREC */
 
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
