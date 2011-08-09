@@ -102,26 +102,32 @@ typedef struct
 #define isCell(n) ((n) >= NBODY)
 
 
+typedef __global volatile real* restrict RVPtr;
+typedef __global volatile int* restrict IVPtr;
+
+//typedef __global real* restrict RVPtr;
+//typedef __global int* restrict IVPtr;
+
 
 /* All kernels will use the same parameters for now */
-
-#define NBODY_KERNEL(name) name(                                                                 \
-    __global real* restrict _posX, __global real* restrict _posY, __global real* restrict _posZ, \
-    __global real* restrict _velX, __global real* restrict _velY, __global real* restrict _velZ, \
-    __global real* restrict _accX, __global real* restrict _accY, __global real* restrict _accZ, \
-                                                                                                 \
-    __global real* restrict _maxX, __global real* restrict _maxY, __global real* restrict _maxZ, \
-    __global real* restrict _minX, __global real* restrict _minY, __global real* restrict _minZ, \
-                                                                                                 \
-    __global real* restrict _mass,                                                               \
-    __global int* restrict _start, __global int* restrict _count, __global int* restrict _child, \
-    __global int* restrict _sort,                                                                \
-    __global TreeStatus* restrict _treeStatus,                                                   \
-                                                                                                 \
-    int step,                                                                                    \
-    __global real* restrict _critRadii,                                                          \
-    __global volatile Debug* _debug                                                              \
+#define NBODY_KERNEL(name) name(                        \
+    RVPtr _posX, RVPtr _posY, RVPtr _posZ,              \
+    RVPtr _velX, RVPtr _velY, RVPtr _velZ,              \
+    RVPtr _accX, RVPtr _accY, RVPtr _accZ,              \
+                                                        \
+    RVPtr _maxX, RVPtr _maxY, RVPtr _maxZ,              \
+    RVPtr _minX, RVPtr _minY, RVPtr _minZ,              \
+                                                        \
+    RVPtr _mass,                                        \
+    IVPtr _start, IVPtr _count,                         \
+    IVPtr _child, IVPtr _sort,                          \
+    __global volatile TreeStatus* restrict _treeStatus, \
+                                                        \
+    int step,                                           \
+    RVPtr _critRadii,                                   \
+    __global volatile Debug* _debug                     \
     )
+
 
 __kernel void NBODY_KERNEL(boundingBox)
 {
