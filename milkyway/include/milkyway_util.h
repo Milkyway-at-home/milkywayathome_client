@@ -216,6 +216,7 @@ mwvector mwRandomPoint(dsfmt_t* dsfmtState, real r);
 size_t mwDivRoundup(size_t a, size_t b);
 #define mwEven(x) ((x) % 2 == 0)
 #define mwDivisible(x, n) ((x) % (n) == 0)
+#define mwIsPowerOfTwo(x) (((x) != 0) && (((x) & (~(x) + 1)) == (x)));
 
 
 int mwCheckNormalPosNum(real n);
