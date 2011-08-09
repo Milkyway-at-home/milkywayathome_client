@@ -534,7 +534,7 @@ __kernel void NBODY_KERNEL(summarization)
             real bmax2 = bmax2Inc(px, _posX[k], psize);
             bmax2 += bmax2Inc(py, _posY[k], psize);
             bmax2 += bmax2Inc(pz, _posZ[k], psize);
-            _critRadii[k] = bmax2 / (THETA * THETA);;
+            _critRadii[k] = bmax2 / (THETA * THETA);
           #elif NEWCRITERION
             real dx = px - _posX[k];
             real dy = py - _posY[k];
@@ -616,18 +616,14 @@ __kernel void NBODY_KERNEL(sort)
  * CHECKME: I'm not entirely sure if separate ones needed for each wavefront in a workgroup
  */
 inline int forceAllPredicate(__local volatile int allBlock[THREADS1],
+                             int n,
+                             int depth,
                              int warpId,
                              real rSq,
-                             __global const volatile real* _critRadii, /* SW93 and NewCriterion */
-                             int n,
                              real dq) /* BH86 and exact */
 {
 
-  #if BH86 || EXACT
     allBlock[get_local_id(0)] = (rSq >= dq);
-  #else
-    allBlock[get_local_id(0)] = (rSq >= _critRadii[n]);
-  #endif
 
     /* Relies on underlying wavefronts (not whole workgroup)
        executing in lockstep to not require barrier */
@@ -647,6 +643,7 @@ inline int forceAllPredicate(__local volatile int allBlock[THREADS1],
 __kernel void NBODY_KERNEL(forceCalculation)
 {
     __local int maxDepth;
+    __local real rootCritRadius;
     __local int volatile ch[THREADS5 / WARPSIZE];
     __local int volatile pos[MAXDEPTH * THREADS5 / WARPSIZE], node[MAXDEPTH * THREADS5 / WARPSIZE];
     __local volatile real nx[THREADS5 / WARPSIZE], ny[THREADS5 / WARPSIZE], nz[THREADS5 / WARPSIZE];
@@ -672,8 +669,12 @@ __kernel void NBODY_KERNEL(forceCalculation)
     if (get_local_id(0) == 0)
     {
         maxDepth = _treeStatus->maxDepth;
-
         real rootSize = _treeStatus->radius;
+
+      #if SW93 || NEWCRITERION
+        rootCritRadius = _critRadii[NNODE];
+      #endif
+
 
       #if BH86
         real rc = rootSize / THETA;
@@ -737,6 +738,9 @@ __kernel void NBODY_KERNEL(forceCalculation)
             {
                 node[j] = NNODE;
                 pos[j] = 0;
+               #if SW93 || NEWCRITERION
+                dq[j] = rootCritRadius;
+              #endif
             }
             mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
@@ -775,7 +779,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         real rSq = (dx * dx) + (dy * dy) + (dz * dz); /* Compute distance squared */
 
                         /* Check if all threads agree that cell is far enough away (or is a body) */
-                        if (isBody(n) || forceAllPredicate(allBlock, base, rSq, _critRadii, n, dq[depth]))
+                        if (isBody(n) || forceAllPredicate(allBlock, n, depth, base, rSq, dq[depth]))
                         {
                             if (n != i) /* Skip self interaction */
                             {
@@ -799,6 +803,10 @@ __kernel void NBODY_KERNEL(forceCalculation)
                             {
                                 node[depth] = n;
                                 pos[depth] = 0;
+
+                              #if SW93 || NEWCRITERION
+                                dq[depth] = _critRadii[n];
+                              #endif
                             }
                             mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
                         }
