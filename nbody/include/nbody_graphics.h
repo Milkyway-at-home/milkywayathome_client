@@ -46,9 +46,15 @@ typedef enum
     MOUSE_MODE_ZOOM
 } NBodyMouseMode;
 
+#ifndef NAME_MAX
+  #define NAME_MAX 255
+#endif
+
 /* the scene structure */
 typedef struct
 {
+    char shmemName[NAME_MAX + 1];
+    int instanceId;
     int nbodyMajorVersion;
     int nbodyMinorVersion;
 

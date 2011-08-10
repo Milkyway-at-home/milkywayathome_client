@@ -29,8 +29,17 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_defaults.h"
 
 #if USE_SHMEM
-  #include <sys/shm.h>
+  #include <sys/mman.h>
+  #include <sys/stat.h>
+  #include <fcntl.h>
+  #include <errno.h>
+  #include <err.h>
 #endif
+
+
+/* Not actually necessary, but checking the next available one too
+ * many times will take forever */
+#define MAX_INSTANCES 128
 
 
 static const char nbodyGraphicsName[] = NBODY_GRAPHICS_NAME;
@@ -44,64 +53,67 @@ static void prepareSceneFromState(const NBodyCtx* ctx, const NBodyState* st)
     st->scene->drawGalaxy = (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT);
 }
 
-
 #if USE_SHMEM
 
-static void* createSharedMemory(key_t key, size_t size, int* shmIdOut)
+/* Create the next available segment of the form /milkyway_nbody_n n = 0 .. 127*/
+int createSharedScene(NBodyState* st, const NBodyCtx* ctx)
 {
-    int shmId;
-    void* p;
-
-    shmId = shmget(key, size, IPC_CREAT | SHM_W | SHM_R);
-    if (shmId < 0)
-    {
-        perror("Error getting shared memory");
-        return NULL;
-    }
-
-    p = shmat(shmId, NULL, 0);
-    if (!p || p == (void*) -1)
-    {
-        perror("Attaching new shared memory");
-        return NULL;
-    }
-
-    memset(p, 0, size);
-
-    if (shmIdOut)
-        *shmIdOut = shmId;
-
-    return p;
-}
-
-/* Use keyHint for the key if valid (> 0). Otherwise, use inputFile
- * along with the PID to generate a new key */
-int createSharedScene(NBodyState* st, const NBodyCtx* ctx, int keyHint, const char* inputFile)
-{
-    key_t key = -1;
-    int shmId = -1;
     size_t size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
+    int shmId = -1;
+    const int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+    void* p = NULL;
+    int instanceId = -1;
+    char name[128];
 
-    if (keyHint > 0)
+    /* Try looking for the next available segment of the form /milkyway_nbody_<n> */
+    while (shmId < 0 && instanceId < MAX_INSTANCES)
     {
-        key = (key_t) keyHint;
-    }
-    else
-    {
-        key = ftok(inputFile, getpid());
-        if (key < 0)
+        ++instanceId;
+
+        if (snprintf(name, sizeof(name), "/milkyway_nbody_%d", instanceId) == sizeof(name))
+            mw_panic("Buffer too small for scared memory name\n");
+
+        shmId = shm_open(name, O_CREAT | O_RDWR | O_EXCL, mode); /* Try to open exclusively */
+        if (shmId < 0 && errno != EEXIST) /* Only failed if */
         {
-            key = DEFAULT_SHMEM_KEY;
-            perror("Error getting key");
+            perror("Error creating shared memory");
+            return 1;
         }
     }
 
-    st->scene = (scene_t*) createSharedMemory(key, size, &shmId);
-    if (!st->scene)
+    if (instanceId >= MAX_INSTANCES)
+    {
+        warn("Could not open new shm segment in %d tries\n", MAX_INSTANCES);
         return 1;
+    }
 
+    if (ftruncate(shmId, size) < 0) /* Make the segment the correct size */
+    {
+        perror("ftruncate shared mmory");
+        if (shm_unlink(name) < 0)
+        {
+            perror("Unlink shared memory");
+        }
+
+        return 1;
+    }
+
+    p = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, shmId, 0);
+    if (p == MAP_FAILED)
+    {
+        perror("mmap: Failed to mmap shared memory");
+        if (shm_unlink(name) < 0)
+        {
+            perror("Unlink shared memory");
+        }
+
+        return 1;
+    }
+
+    st->scene = (scene_t*) p;
     st->shmId = shmId;
-    st->key = key;
+    st->scene->instanceId = instanceId;
+    strncpy(st->scene->shmemName, name, sizeof(st->scene->shmemName));
     prepareSceneFromState(ctx, st);
 
     return 0;
@@ -109,7 +121,7 @@ int createSharedScene(NBodyState* st, const NBodyCtx* ctx, int keyHint, const ch
 
 #elif USE_BOINC_SHMEM
 
-int createSharedScene(NBodyState* st, const NBodyCtx* ctx, int keyHint, const char* inputFile)
+int createSharedScene(NBodyState* st, const NBodyCtx* ctx)
 {
     size_t size = sizeof(scene_t) + st->nbody * sizeof(FloatPos);
 
@@ -128,7 +140,7 @@ int createSharedScene(NBodyState* st, const NBodyCtx* ctx, int keyHint, const ch
 
 #else
 
-int createSharedScene(NBodyState* st, const char* inputFile)
+int createSharedScene(NBodyState* st, const NBodyCtx* ctx)
 {
     warn("Creating shared scene unimplemented for this system\n");
     return 0;
@@ -155,7 +167,7 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
     char** argv = NULL;
     size_t argvSize = 0;
     size_t visArgsLen = 0;
-    char keyArg[128];
+    char idArg[128];
 
     if (!st->scene) /* If there's no scene to share, there's no point */
         return;
@@ -165,14 +177,6 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
         return;
 
     /* Child */
-
-    /* Hack to close the shared memory access we inherit so we
-     * don't count it when the visualizer actually opens it again */
-    if (detachSharedScene(st))
-    {
-        warn("Error detaching child from shared");
-        return;
-    }
 
     /* Put places convenient for testing. Not essential, failure of
      * any of these is OK */
@@ -197,16 +201,17 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
         }
     }
 
-    snprintf(keyArg, sizeof(keyArg), "--key=%d ", st->key);
+    if (snprintf(idArg, sizeof(idArg), "--instance-id=%d ", st->scene->instanceId) == sizeof(idArg))
+        mw_panic("Buffer too small for --instance-id visualizer argument\n");
 
     /* Stick the program name at the head of the arguments passed in */
     visArgsLen = visArgs ? strlen(visArgs) : 0;
-    argvSize = visArgsLen + sizeof(keyArg) + sizeof(nbodyGraphicsName) + 2; /* arguments + program name + space + null */
+    argvSize = visArgsLen + sizeof(idArg) + sizeof(nbodyGraphicsName) + 2; /* arguments + program name + space + null */
     buf = mwCalloc(argvSize, sizeof(char));
 
     p = stpcpy(buf, nbodyGraphicsName);
     p = stpcpy(p, " ");
-    p = stpcpy(p, keyArg);
+    p = stpcpy(p, idArg);
     if (visArgs)
     {
         stpcpy(p, visArgs);

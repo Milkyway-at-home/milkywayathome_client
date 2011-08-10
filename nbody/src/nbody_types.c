@@ -66,9 +66,9 @@ int detachSharedScene(NBodyState* st)
  #if USE_SHMEM
     if (st->scene)
     {
-        if (shmdt(st->scene) < 0)
+        if (shm_unlink(st->scene->shmemName) < 0)
         {
-            perror("Closing shared memory");
+            perror("Closing shared scene memory");
             return 1;
         }
 

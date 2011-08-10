@@ -37,7 +37,10 @@
 #include "milkyway_cpp_util.h"
 
 #if !BOINC_APPLICATION
-  #include <sys/shm.h>
+  #include <sys/mman.h>
+  #include <sys/stat.h>
+  #include <fcntl.h>
+  #include <errno.h>
 #endif /* !BOINC_APPLICATION */
 
 
@@ -790,65 +793,38 @@ static int alreadyAttached()
 
 #if !BOINC_APPLICATION
 
-static key_t key = -1;
-
-int setShmemKey(const VisArgs* args)
-{
-    if (args->key > 0)
-    {
-        key = args->key;
-        return 0;
-    }
-
-    if (args->pid != 0 && args->file)
-    {
-        key = ftok(args->file, args->pid);
-        if (key < 0)
-        {
-            perror("Failed to get key from pid and file");
-            return 1;
-        }
-
-        return 0;
-    }
-
-    key = DEFAULT_SHMEM_KEY;
-    return 0;
-}
-
-int connectSharedScene()
+int connectSharedScene(int instanceId)
 {
     int shmId;
-    struct shmid_ds buf;
+    const int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+    struct stat sb;
+    char name[128];
 
-    shmId = shmget(key, 0, 0);
+    if (snprintf(name, sizeof(name), "/milkyway_nbody_%d", instanceId) == sizeof(name))
+        mw_panic("name buffer too small for shared memory name\n");
+
+    shmId = shm_open(name, O_RDWR, mode);
     if (shmId < 0)
     {
         perror("Error getting shared memory");
-        return 1;
+        return errno;
     }
 
-    if (shmctl(shmId, IPC_STAT, &buf) < 0)
+    if (fstat(shmId, &sb) < 0)
     {
-        perror("Finding shared scene");
-        return 0;
+        perror("shmem fstat");
+        return errno;
     }
 
-    if (buf.shm_nattch > 1)
+    scene = (scene_t*) mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, shmId, 0);
+    if (scene == MAP_FAILED)
     {
-        perror("Screensaver already attached to segment");
-        return 1;
-    }
-    else if (buf.shm_nattch <= 0)
-    {
-        perror("Simulation not running");
-        return 1;
-    }
+        perror("mmap: Failed to mmap shared memory");
+        if (shm_unlink(name) < 0)
+        {
+            perror("Unlink shared memory");
+        }
 
-    scene = (scene_t*) shmat(shmId, NULL, 0);
-    if (!scene || scene == (scene_t*) -1)
-    {
-        perror("Attaching to shared memory");
         return 1;
     }
 
@@ -856,11 +832,6 @@ int connectSharedScene()
 }
 
 #else
-
-int setShmemKey(const VisArgs* args)
-{
-    return 0;
-}
 
 /* Returns TRUE if connection succeeds */
 static int attemptConnectSharedScene()
@@ -879,7 +850,7 @@ static int attemptConnectSharedScene()
 #define RETRY_INTERVAL 250
 
 /* In case the main application isn't ready yet, try and wait for a while */
-int connectSharedScene()
+int connectSharedScene(int instanceId)
 {
     int tries = 0;
 

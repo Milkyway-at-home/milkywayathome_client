@@ -209,10 +209,9 @@ int runNBodySimulation(const NBodyFlags* nbf)
         return 1;
     }
 
-    if (createSharedScene(st, ctx, nbf->key, nbf->inputFile))
+    if (createSharedScene(st, ctx))
     {
         warn("Failed to create shared scene\n");
-        return 1;
     }
 
     ts = mwGetTime();

@@ -33,12 +33,13 @@ static const VisArgs defaultVisArgs =
     /* .noFloat         */ FALSE,
     /* .pid             */ 0,
     /* .file            */ NULL,
-    /* .key             */ -1
+    /* .instanceId      */ -1
 };
 
 static void freeVisArgs(VisArgs* args)
 {
     free(args->file);
+    args->file = NULL;
 }
 
 
@@ -102,22 +103,9 @@ static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
         },
 
         {
-            "pid", 'p',
-            POPT_ARG_INT, &visArgs.pid,
-            0, "PID of graphics process to attach to", NULL
-        },
-
-        {
-            "input-file", 'i',
-            POPT_ARG_STRING, &visArgs.file,
-            0, "Input file to accompany pid (input file of main process)", NULL
-        },
-
-
-        {
-            "key", 'k',
-            POPT_ARG_INT, &visArgs.key,
-            0, "shm key to attach to", NULL
+            "instance-id", 'i',
+            POPT_ARG_INT, &visArgs.instanceId,
+            0, "Instance id of main process to attach", NULL
         },
 
         POPT_AUTOHELP
@@ -136,16 +124,9 @@ static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
     }
     poptFreeContext(context);
 
-    if ((visArgs.pid != 0) && (visArgs.key > 0))
+    if (visArgs.instanceId < 0) /* Default to first */
     {
-        /* Both pid and key specified, only want one */
-        warn("Can only specify either pid or shm key\n");
-        failed = TRUE;
-    }
-
-    if (visArgs.pid != 0 && !visArgs.file)
-    {
-        failed = TRUE;
+        visArgs.instanceId = 0;
     }
 
     *visOut = visArgs;
@@ -183,10 +164,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    if (setShmemKey(&flags))
-        return 1;
-
-    if (connectSharedScene())
+    if (connectSharedScene(flags.instanceId))
         return 1;
 
     if (checkConnectedVersion())

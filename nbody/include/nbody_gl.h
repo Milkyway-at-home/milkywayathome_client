@@ -47,14 +47,13 @@ typedef struct
 
     int pid;
     char* file;
-    int key;
+    int instanceId;
 } VisArgs;
 
-#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, FALSE, FALSE, 0, NULL, 0 }
+#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
 
 
-int setShmemKey(const VisArgs* args);
-int connectSharedScene();
+int connectSharedScene(int instanceId);
 int checkConnectedVersion();
 int nbodyGLSetup(const VisArgs* args);
 void nbodyGLCleanup();

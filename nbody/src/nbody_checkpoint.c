@@ -188,7 +188,7 @@ static int openCheckpointHandle(const NBodyState* st,
         }
     }
 
-    cp->mptr = mmap(0, cp->cpFileSize, PROT_READ | PROT_WRITE, MAP_SHARED, cp->fd, 0);
+    cp->mptr = mmap(NULL, cp->cpFileSize, PROT_READ | PROT_WRITE, MAP_SHARED, cp->fd, 0);
     if (cp->mptr == MAP_FAILED)
     {
         perror("mmap: Failed to open checkpoint file for writing");
