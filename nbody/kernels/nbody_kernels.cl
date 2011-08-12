@@ -568,8 +568,8 @@ __kernel void NBODY_KERNEL(summarization)
             real rc2 = rc * rc;
           #endif /* SW93 */
 
-
           #if SW93 || NEWCRITERION
+            /* We don't have the size of the cell for the others, but really still should check */
             bool xTest = checkTreeDim(px, cx, psize);
             bool yTest = checkTreeDim(py, cy, psize);
             bool zTest = checkTreeDim(pz, cz, psize);
@@ -579,7 +579,6 @@ __kernel void NBODY_KERNEL(summarization)
                 _treeStatus->errorCode = NBODY_KERNEL_TREE_STRUCTURE_ERROR;
             }
           #endif /* SW93 || NEWCRITERION */
-            mem_fence(CLK_GLOBAL_MEM_FENCE);
 
             _posX[k] = px;
             _posY[k] = py;
@@ -658,19 +657,13 @@ __kernel void NBODY_KERNEL(sort)
  * wavefront.
  * CHECKME: I'm not entirely sure if separate ones needed for each wavefront in a workgroup
  */
-inline int forceAllPredicate(__local volatile int allBlock[THREADS1],
-                             int n,
-                             int depth,
-                             int warpId,
-                             real rSq,
-                             real dq) /* BH86 and exact */
+inline int forceAllPredicate(__local volatile int allBlock[THREADS1], int warpId, int cond)
 {
 
-    allBlock[get_local_id(0)] = (rSq >= dq);
+    allBlock[get_local_id(0)] = cond;
 
     /* Relies on underlying wavefronts (not whole workgroup)
        executing in lockstep to not require barrier */
-
     int predicate = 1;
     for (int x = 0; x < WARPSIZE; ++x)
     {
@@ -683,10 +676,37 @@ inline int forceAllPredicate(__local volatile int allBlock[THREADS1],
 }
 
 
+__kernel void NBODY_KERNEL(velocityIntegration)
+{
+    int inc = get_local_size(0) * get_num_groups(0);
+
+    /* Iterate over all bodies assigned to thread */
+    for (int i = (int) get_global_id(0); i < NBODY; i += inc)
+    {
+        real dvx = _accX[i] * (0.5 * TIMESTEP);
+        real dvy = _accY[i] * (0.5 * TIMESTEP);
+        real dvz = _accZ[i] * (0.5 * TIMESTEP);
+
+        real vhx = _velX[i] + dvx;
+        real vhy = _velY[i] + dvy;
+        real vhz = _velZ[i] + dvz;
+
+        _posX[i] += vhx * TIMESTEP;
+        _posY[i] += vhy * TIMESTEP;
+        _posZ[i] += vhz * TIMESTEP;
+
+        mem_fence(CLK_GLOBAL_MEM_FENCE);
+
+        _velX[i] = vhx;
+        _velY[i] = vhy;
+        _velZ[i] = vhz;
+    }
+}
+
+
 __kernel void NBODY_KERNEL(forceCalculation)
 {
     __local int maxDepth;
-    __local real rootCritRadius;
     __local int volatile ch[THREADS5 / WARPSIZE];
     __local int volatile pos[MAXDEPTH * THREADS5 / WARPSIZE], node[MAXDEPTH * THREADS5 / WARPSIZE];
     __local volatile real nx[THREADS5 / WARPSIZE], ny[THREADS5 / WARPSIZE], nz[THREADS5 / WARPSIZE];
@@ -822,7 +842,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
                         real rSq = (dx * dx) + (dy * dy) + (dz * dz); /* Compute distance squared */
 
                         /* Check if all threads agree that cell is far enough away (or is a body) */
-                        if (isBody(n) || forceAllPredicate(allBlock, n, depth, base, rSq, dq[depth]))
+                        if (isBody(n) || forceAllPredicate(allBlock, base, rSq >= dq[depth]))
                         {
                             if (n != i) /* Skip self interaction */
                             {
