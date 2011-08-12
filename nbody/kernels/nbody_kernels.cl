@@ -435,6 +435,13 @@ inline real bmax2Inc(real cmPos, real pPos, real psize)
     return tmp * tmp;      /* sum max distance^2 */
 }
 
+inline bool checkTreeDim(real cmPos, real pPos, real halfPsize)
+{
+    return (cmPos < pPos - halfPsize || cmPos > pPos + halfPsize);
+}
+
+
+
 __kernel void NBODY_KERNEL(summarization)
 {
     __local int bottom;
@@ -511,7 +518,7 @@ __kernel void NBODY_KERNEL(summarization)
                 {
                     /* child is now ready */
                     --missing;
-                    if (ch >= NBODY)
+                    if (ch >= NBODY) /* Is a cell */
                     {
                         /* count bodies (needed later) */
                         cnt += _count[ch] - 1;
@@ -531,31 +538,61 @@ __kernel void NBODY_KERNEL(summarization)
         {
             /* All children are ready, so store computed information */
             _count[k] = cnt;
+            real cx = _posX[k];  /* Load geometric center */
+            real cy = _posY[k];
+            real cz = _posZ[k];
+
+          #if SW93 || NEWCRITERION
+            real psize = _critRadii[k]; /* Get saved size (half cell = radius) */
+          #endif
+
             m = 1.0 / cm;
+            px *= m; /* Scale up to position */
+            py *= m;
+            pz *= m;
 
             /* Calculate opening criterion if necessary */
-            /* FIXME: Opening criterion need better testing for correctness */
           #if SW93
-            real psize = _critRadii[k]; /* Get saved size */
-            real bmax2 = bmax2Inc(px, _posX[k], psize);
-            bmax2 += bmax2Inc(py, _posY[k], psize);
-            bmax2 += bmax2Inc(pz, _posZ[k], psize);
-            _critRadii[k] = bmax2 / (THETA * THETA);
+            real bmax2 = bmax2Inc(px, cx, psize);
+            bmax2 += bmax2Inc(py, cy, psize);
+            bmax2 += bmax2Inc(pz, cz, psize);
+            real rc2 = bmax2 / (THETA * THETA);
           #elif NEWCRITERION
-            real dx = px - _posX[k];
-            real dy = py - _posY[k];
-            real dz = pz - _posZ[k];
-            real psize = _critRadii[k]; /* Get saved size */
-            real rc = psize / THETA + sqrt((dx * dx) + (dy * dy) + (dz * dz));
-            _critRadii[k] = rc * rc;
+            real dx = px - cx;  /* Find distance from center of mass to geometric center */
+            real dy = py - cy;
+            real dz = pz - cz;
+            real dr = sqrt((dx * dx) + (dy * dy) + (dz * dz));
+
+            real rc = (psize / THETA) + dr;
+
+            real rc2 = rc * rc;
           #endif /* SW93 */
 
-            _posX[k] = px * m;
-            _posY[k] = py * m;
-            _posZ[k] = pz * m;
+
+          #if SW93 || NEWCRITERION
+            bool xTest = checkTreeDim(px, cx, psize);
+            bool yTest = checkTreeDim(py, cy, psize);
+            bool zTest = checkTreeDim(pz, cz, psize);
+            bool structureCheck = xTest || yTest || zTest;
+            if (structureCheck)
+            {
+                _treeStatus->errorCode = NBODY_KERNEL_TREE_STRUCTURE_ERROR;
+            }
+          #endif /* SW93 || NEWCRITERION */
+            mem_fence(CLK_GLOBAL_MEM_FENCE);
+
+            _posX[k] = px;
+            _posY[k] = py;
+            _posZ[k] = pz;
+
+          #if SW93 || NEWCRITERION
+            _critRadii[k] = rc2;
+          #endif
+
             write_mem_fence(CLK_GLOBAL_MEM_FENCE); /* Make sure data is visible before setting mass */
             _mass[k] = cm;
             write_mem_fence(CLK_GLOBAL_MEM_FENCE);
+
             k += inc;  /* Move on to next cell */
         }
     }
