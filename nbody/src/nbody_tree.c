@@ -224,6 +224,16 @@ static void loadBody(NBodyState* st, NBodyTree* t, Body* p)
     lev = 0;                                    /* count levels descended */
     while (Subp(q)[qind] != NULL)               /* loop descending tree */
     {
+        if (qsize <= REAL_EPSILON)
+        {
+            if (!t->structureError)
+            {
+                warn("qsize (= %.15f) <= epsilon at level %u (initial root = %.15f)\n", qsize, lev, t->rsize);
+                t->structureError = TRUE; /* FIXME: Not quite the same as the other structure error */
+            }
+            return;
+        }
+
         if (isBody(Subp(q)[qind]))              /* reached a "leaf"? */
         {
             c = makeCell(st, t);               /* allocate new cell */
@@ -298,7 +308,7 @@ static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeR
     }
 }
 
-static inline void checkTreeDim(NBodyTree* tree, const real pPos, const real cmPos, const real halfPsize)
+static inline void checkTreeDim(NBodyTree* tree, real pPos, real cmPos, real halfPsize)
 {
     /* CHECKME: Precision: This gets angry as N gets big, and the divisions get small */
     if (   cmPos < pPos - halfPsize       /* if out of bounds */
@@ -313,7 +323,7 @@ static inline void checkTreeDim(NBodyTree* tree, const real pPos, const real cmP
             warn("hackCofM: tree structure error.\n"
                  "    cmPos out of bounds\n"
                  "    Pos(p)           = %.15e\n"
-                 "    tpsize/2          = %.15e\n"
+                 "    psize/2          = %.15e\n"
                  "    Pos(p) + psize/2 = %.15e\n"
                  "    cmpos            = %.15e\n"
                  "    Pos(p) - psize/2 = %.15e\n",
@@ -396,6 +406,11 @@ NBodyStatus makeTree(const NBodyCtx* ctx, NBodyState* st)
         if (Mass(p) != 0.0)                  /* exclude test particles */
             loadBody(st, t, p);              /* and insert into tree */
     }
+
+    /* Check if tree structure error occured */
+    if (st->tree.structureError)
+        return NBODY_TREE_STRUCTURE_ERROR;
+
 
     hackCofM(ctx, &st->tree, t->root, t->rsize);   /* find c-of-m coordinates */
 
