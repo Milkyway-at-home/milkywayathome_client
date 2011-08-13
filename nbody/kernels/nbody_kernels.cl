@@ -268,8 +268,6 @@ __kernel void NBODY_KERNEL(buildTree)
     bool dead = false;
     while (1)  /* while (i < NBODY) */
     {
-        /* Wait for other wavefronts to finish loading */
-        barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
 
         /* Ugly hackery to prevent conditional barrier() for when some
          * items have another body and others don't */
@@ -279,7 +277,10 @@ __kernel void NBODY_KERNEL(buildTree)
             (void) atom_inc(&deadCount);
         }
 
-        if (deadCount == THREADS1)
+        /* Wait for other wavefronts to finish loading */
+        barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+
+        if (deadCount == THREADS2)
             break;
 
         if (dead)
@@ -439,8 +440,6 @@ inline bool checkTreeDim(real cmPos, real pPos, real halfPsize)
 {
     return (cmPos < pPos - halfPsize || cmPos > pPos + halfPsize);
 }
-
-
 
 __kernel void NBODY_KERNEL(summarization)
 {
