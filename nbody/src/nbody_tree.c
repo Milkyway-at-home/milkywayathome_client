@@ -48,13 +48,13 @@ static int subIndex(Body* p, NBodyCell* q)
     /* accumulate subcell index */
     /* loop over dimensions */
     if (X(Pos(q)) <= X(Pos(p)))     /* if beyond midpoint */
-        ind += NSUB >> (0 + 1);     /* skip over subcells */
+        ind += NSUB >> (2 + 1);     /* skip over subcells */
 
     if (Y(Pos(q)) <= Y(Pos(p)))
         ind += NSUB >> (1 + 1);
 
     if (Z(Pos(q)) <= Z(Pos(p)))
-        ind += NSUB >> (2 + 1);
+        ind += NSUB >> (0 + 1);
 
     return ind;
 }

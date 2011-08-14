@@ -304,11 +304,11 @@ __kernel void NBODY_KERNEL(buildTree)
 
             /* Determine which child to follow */
             j = 0;
-            if (rootX < px)
+            if (rootX <= px)
                 j = 1;
-            if (rootY < py)
+            if (rootY <= py)
                 j += 2;
-            if (rootZ < pz)
+            if (rootZ <= pz)
                 j += 4;
         }
 
@@ -321,11 +321,11 @@ __kernel void NBODY_KERNEL(buildTree)
 
             /* Determine which child to follow */
             j = 0;
-            if (_posX[n] < px)
+            if (_posX[n] <= px)
                 j = 1;
-            if (_posY[n] < py)
+            if (_posY[n] <= py)
                 j += 2;
-            if (_posZ[n] < pz)
+            if (_posZ[n] <= pz)
                 j += 4;
             ch = _child[NSUB * n + j];
         }
@@ -356,21 +356,27 @@ __kernel void NBODY_KERNEL(buildTree)
                         }
                         patch = max(patch, cell);
 
-                        real x = (j & 1) * r;
-                        real y = ((j >> 1) & 1) * r;
-                        real z = ((j >> 2) & 1) * r;
-                        r *= 0.5;
-
                         _mass[cell] = -1.0;
                         _start[cell] = -1;
 
                       #if SW93 || NEWCRITERION
-                        _critRadii[cell] = r;
+                        _critRadii[cell] = r;  /* Save cell size */
                       #endif /* SW93 || NEWCRITERION */
 
-                        x = _posX[cell] = _posX[n] - r + x;
-                        y = _posY[cell] = _posY[n] - r + y;
-                        z = _posZ[cell] = _posZ[n] - r + z;
+
+                        real nx = _posX[n];
+                        real ny = _posY[n];
+                        real nz = _posZ[n];
+
+                        r *= 0.5;
+
+                        real x = nx + (px < nx ? -r : r);
+                        real y = ny + (py < ny ? -r : r);
+                        real z = nz + (pz < nz ? -r : r);
+
+                        _posX[cell] = x;
+                        _posY[cell] = y;
+                        _posZ[cell] = z;
 
                         #pragma unroll NSUB
                         for (int k = 0; k < NSUB; ++k)
@@ -384,11 +390,11 @@ __kernel void NBODY_KERNEL(buildTree)
                         }
 
                         j = 0;
-                        if (x < _posX[ch])
+                        if (x <= _posX[ch])
                             j = 1;
-                        if (y < _posY[ch])
+                        if (y <= _posY[ch])
                             j += 2;
-                        if (z < _posZ[ch])
+                        if (z <= _posZ[ch])
                             j += 4;
 
                         _child[NSUB * cell + j] = ch;
@@ -401,11 +407,11 @@ __kernel void NBODY_KERNEL(buildTree)
 
                         n = cell;
                         j = 0;
-                        if (x < px)
+                        if (x <= px)
                             j = 1;
-                        if (y < py)
+                        if (y <= py)
                             j += 2;
-                        if (z < pz)
+                        if (z <= pz)
                             j += 4;
 
                         ch = _child[NSUB * n + j];
