@@ -129,6 +129,7 @@ typedef __global volatile int* restrict IVPtr;
     )
 
 
+__attribute__ ((reqd_work_group_size(THREADS1, 1, 1)))
 __kernel void NBODY_KERNEL(boundingBox)
 {
     __local volatile real minX[THREADS1], minY[THREADS1], minZ[THREADS1];
@@ -243,6 +244,7 @@ __kernel void NBODY_KERNEL(boundingBox)
     }
 }
 
+__attribute__ ((reqd_work_group_size(THREADS2, 1, 1)))
 __kernel void NBODY_KERNEL(buildTree)
 {
     __local real radius, rootX, rootY, rootZ;
@@ -447,6 +449,7 @@ inline bool checkTreeDim(real cmPos, real pPos, real halfPsize)
     return (cmPos < pPos - halfPsize || cmPos > pPos + halfPsize);
 }
 
+__attribute__ ((reqd_work_group_size(THREADS3, 1, 1)))
 __kernel void NBODY_KERNEL(summarization)
 {
     __local int bottom;
@@ -602,6 +605,7 @@ __kernel void NBODY_KERNEL(summarization)
     }
 }
 
+__attribute__ ((reqd_work_group_size(THREADS4, 1, 1)))
 __kernel void NBODY_KERNEL(sort)
 {
     __local int bottoms;
@@ -681,6 +685,7 @@ inline int forceAllPredicate(__local volatile int allBlock[THREADS1], int warpId
 }
 
 
+__attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
 __kernel void NBODY_KERNEL(velocityIntegration)
 {
     int inc = get_local_size(0) * get_num_groups(0);
@@ -708,7 +713,7 @@ __kernel void NBODY_KERNEL(velocityIntegration)
     }
 }
 
-
+__attribute__ ((reqd_work_group_size(THREADS5, 1, 1)))
 __kernel void NBODY_KERNEL(forceCalculation)
 {
     __local int maxDepth;
@@ -914,6 +919,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
 
 }
 
+__attribute__ ((reqd_work_group_size(THREADS6, 1, 1)))
 __kernel void NBODY_KERNEL(integration)
 {
     int inc = get_local_size(0) * get_num_groups(0);
