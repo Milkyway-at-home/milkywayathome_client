@@ -717,6 +717,7 @@ __attribute__ ((reqd_work_group_size(THREADS5, 1, 1)))
 __kernel void NBODY_KERNEL(forceCalculation)
 {
     __local int maxDepth;
+    __local real rootCritRadius;
     __local int volatile ch[THREADS5 / WARPSIZE];
     __local int volatile pos[MAXDEPTH * THREADS5 / WARPSIZE], node[MAXDEPTH * THREADS5 / WARPSIZE];
     __local volatile real nx[THREADS5 / WARPSIZE], ny[THREADS5 / WARPSIZE], nz[THREADS5 / WARPSIZE];
@@ -811,7 +812,8 @@ __kernel void NBODY_KERNEL(forceCalculation)
             {
                 node[j] = NNODE;
                 pos[j] = 0;
-               #if SW93 || NEWCRITERION
+
+              #if SW93 || NEWCRITERION
                 dq[j] = rootCritRadius;
               #endif
             }
