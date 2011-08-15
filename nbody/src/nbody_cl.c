@@ -738,20 +738,22 @@ static cl_int setInitialTreeStatus(CLInfo* ci, NBodyBuffers* nbb)
                                 0, NULL, NULL);
 }
 
+static cl_uint findInc(cl_uint warpSize, cl_uint nbody)
+{
+    return (nbody + warpSize - 1) & (-warpSize);
+}
+
 static cl_int createBuffers(const NBodyCtx* ctx, NBodyState* st, CLInfo* ci, NBodyBuffers* nbb)
 {
     cl_uint i;
-    cl_uint nNode;
-    cl_uint warpSize = ci->di.warpSize;
-    cl_int err = CL_SUCCESS;
-
-    nNode = findNNode(&ci->di, st->nbody);
+    cl_uint nNode = findNNode(&ci->di, st->nbody);
+    cl_uint inc = findInc(ci->di.warpSize, st->nbody);
 
     warn("NNODE = %u, nbody = %d\n"
          "(NNODE + 1) * NSUB = %u\n"
-         "inc %d\n",
-         nNode + 1, st->nbody, (nNode + 1) * NSUB,
-         (st->nbody + warpSize - 1) & (-warpSize));
+         "inc %u\n",
+         nNode, st->nbody, NSUB * (nNode + 1), inc);
+
     for (i = 0; i < 3; ++i)
     {
         nbb->pos[i] = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
@@ -762,40 +764,32 @@ static cl_int createBuffers(const NBodyCtx* ctx, NBodyState* st, CLInfo* ci, NBo
 
         if (!nbb->pos[i] || !nbb->vel[i] || !nbb->acc[i] || !nbb->min[i] || !nbb->max[i])
         {
-            err = MW_CL_ERROR;
-            break;
+            return MW_CL_ERROR;
         }
     }
 
     nbb->masses = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
     nbb->treeStatus = mwCreateZeroReadWriteBuffer(ci, sizeof(TreeStatus));
 
-    nbb->start = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(int));
-    nbb->count = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(int));
-    nbb->sort = mwCreateZeroReadWriteBuffer(ci, 2 * st->nbody * sizeof(int)); /* CHECKME */
-    nbb->child = mwCreateZeroReadWriteBuffer(ci, NSUB * (nNode + 1) * sizeof(int));
+    nbb->start = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(cl_int));
+    nbb->count = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(cl_int));
+    nbb->sort = mwCreateZeroReadWriteBuffer(ci, st->nbody * sizeof(cl_int));
+    nbb->child = mwCreateZeroReadWriteBuffer(ci, NSUB * (nNode + 1) * sizeof(cl_int));
 
     nbb->debug = mwCreateZeroReadWriteBuffer(ci, sizeof(Debug));
 
     if (!nbb->masses || !nbb->treeStatus || !nbb->start || !nbb->count || !nbb->sort || !nbb->child)
-        err = MW_CL_ERROR;
+        return MW_CL_ERROR;
 
     if (ctx->criterion == SW93 || ctx->criterion == NewCriterion)
     {
         /* This only is for cells, so we could subtract nbody if we wanted */
         nbb->critRadii = mwCreateZeroReadWriteBuffer(ci, (nNode + 1) * sizeof(real));
         if (!nbb->critRadii)
-            err = MW_CL_ERROR;
+            return MW_CL_ERROR;
     }
 
-    if (err != CL_SUCCESS)
-    {
-        warn("Error creating NBody Buffers\n");
-        releaseBuffers(nbb);
-        return err;
-    }
-
-    return setInitialTreeStatus(ci, nbb);
+    return CL_SUCCESS;
 }
 
 static cl_int mapBodies(real* pos[3], real* vel[3], real** mass, NBodyBuffers* nbb, CLInfo* ci, cl_map_flags flags, NBodyState* st)
@@ -977,6 +971,34 @@ static void setCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
     clr->enableCheckpointing = FALSE;
 }
 
+/* Setup kernels and buffers */
+static cl_int setupExec(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st, NBodyBuffers* nbb)
+{
+    cl_int err;
+
+    err = loadKernels(ci, ctx, st);
+    if (err != CL_SUCCESS)
+        return err;
+
+    err = createKernels(ci);
+    if (err != CL_SUCCESS)
+        return err;
+
+    err = createBuffers(ctx, st, ci, nbb);
+    if (err != CL_SUCCESS)
+        return err;
+
+    err = setInitialTreeStatus(ci, nbb);
+    if (err != CL_SUCCESS)
+        return err;
+
+    err = setAllKernelArguments(ci, nbb);
+    if (err != CL_SUCCESS)
+        return err;
+
+    return CL_SUCCESS;
+}
+
 NBodyStatus runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf)
 {
     cl_int err = CL_SUCCESS;
@@ -1001,15 +1023,7 @@ NBodyStatus runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* n
     if (setThreadCounts(&ci.di))
         return MW_CL_ERROR;
 
-    err = loadKernels(&ci, ctx, st);
-    if (err != CL_SUCCESS)
-        goto fail;
-
-    err = createKernels(&ci);
-    if (err != CL_SUCCESS)
-        goto fail;
-
-    err = createBuffers(ctx, st, &ci, &nbb);
+    err = setupExec(&ci, ctx, st, &nbb);
     if (err != CL_SUCCESS)
         goto fail;
 
@@ -1021,10 +1035,6 @@ NBodyStatus runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* n
     }
 
     err = marshalBodies(&nbb, &ci, st, CL_TRUE);
-    if (err != CL_SUCCESS)
-        goto fail;
-
-    err = setAllKernelArguments(&ci, &nbb);
     if (err != CL_SUCCESS)
         goto fail;
 
