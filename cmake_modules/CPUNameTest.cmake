@@ -41,18 +41,23 @@ endif()
 
 # FIXME: This seems to not be set on windows
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-  set(SYSTEM_IS_64 TRUE CACHE INTERNAL "Is 32 bit")
+  set(SYSTEM_IS_64 TRUE CACHE INTERNAL "Is 64 bit")
+  set(SYSTEM_IS_32 FALSE CACHE INTERNAL "Is 32 bit")
 elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
   set(SYSTEM_IS_64 FALSE CACHE INTERNAL "Is 64 bit")
+  set(SYSTEM_IS_32 TRUE CACHE INTERNAL "Is 32 bit")
 else()
   message(FATAL_ERROR "sizeof(void*) != 4, 8. What is this crazy system?")
 endif()
 
-if(SYSTEM_IS_X86 AND NOT SYSTEM_IS_64)
-  set(SYSTEM_IS_X86_32 1 CACHE INTERNAL "Is 32-bit x86")
-elseif(SYSTEM_IS_X86 AND SYSTEM_IS_64)
-  set(SYSTEM_IS_X86_64 1 CACHE INTERNAL "Is 64-bit x86")
+if(SYSTEM_IS_X86 AND SYSTEM_IS_64)
+  set(SYSTEM_IS_X86_64 TRUE CACHE INTERNAL "Is 64-bit x86")
 endif()
+
+if(SYSTEM_IS_X86 AND SYSTEM_IS_32)
+  set(SYSTEM_IS_X86_32 TRUE CACHE INTERNAL "Is 32-bit x86")
+endif()
+
 
 
 

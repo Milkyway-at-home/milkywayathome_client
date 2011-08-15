@@ -57,6 +57,7 @@ typedef struct __attribute__((packed, aligned(512)))
     real tnow;
     real rsize;
     int treeIncest;
+    int nOrbitTrace;
     NBodyCtx ctx;
 } NBodyCheckpointHeader;
 
@@ -78,6 +79,7 @@ static void prepareWriteCheckpointHeader(NBodyCheckpointHeader* cp, const NBodyC
     cp->tnow = st->tnow;
     cp->rsize = st->tree.rsize;
     cp->treeIncest = st->treeIncest;
+    cp->nOrbitTrace = N_ORBIT_TRACE_POINTS;
 }
 
 static void readCheckpointHeader(NBodyCheckpointHeader* cp, NBodyCtx* ctx, NBodyState* st)
@@ -168,7 +170,7 @@ static int openCheckpointHandle(const NBodyState* st,
 
     if (writing)
     {
-        cp->cpFileSize = hdrSize + st->nbody * sizeof(Body);
+        cp->cpFileSize = hdrSize + st->nbody * sizeof(Body) + N_ORBIT_TRACE_POINTS * sizeof(mwvector);
         /* Make the file the right size in case it's a new file */
         if (ftruncate(cp->fd, cp->cpFileSize) < 0)
         {
@@ -186,7 +188,7 @@ static int openCheckpointHandle(const NBodyState* st,
         }
     }
 
-    cp->mptr = mmap(0, cp->cpFileSize, PROT_READ | PROT_WRITE, MAP_SHARED, cp->fd, 0);
+    cp->mptr = mmap(NULL, cp->cpFileSize, PROT_READ | PROT_WRITE, MAP_SHARED, cp->fd, 0);
     if (cp->mptr == MAP_FAILED)
     {
         perror("mmap: Failed to open checkpoint file for writing");
@@ -271,7 +273,7 @@ static int openCheckpointHandle(const NBodyState* st, CheckpointHandle* cp, cons
 
     if (writing)
     {
-        cp->cpFileSize = hdrSize + st->nbody * sizeof(Body);
+        cp->cpFileSize = hdrSize + st->nbody * sizeof(Body) + N_ORBIT_TRACE_POINTS * sizeof(mwvector);
     }
     else
     {
@@ -351,7 +353,7 @@ static int closeCheckpointHandle(CheckpointHandle* cp)
 /* Should be given the same context as the dump. Returns nonzero if the state failed to be thawed */
 static int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 {
-    size_t bodySize, supposedCheckpointSize;
+    size_t bodySize, traceSize, supposedCheckpointSize;
     NBodyCheckpointHeader cpHdr;
     char* p = cp->mptr;
 
@@ -363,7 +365,8 @@ static int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 
     assert(cp->cpFileSize != 0);
     bodySize = st->nbody * sizeof(Body);
-    supposedCheckpointSize = hdrSize + bodySize;
+    traceSize = cpHdr.nOrbitTrace * sizeof(mwvector);
+    supposedCheckpointSize = hdrSize + bodySize + traceSize;
 
     verifyCheckpointHeader(&cpHdr, cp, st, supposedCheckpointSize);
 
@@ -372,10 +375,18 @@ static int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
     memcpy(st->bodytab, p, bodySize);
     p += bodySize;
 
+    st->orbitTrace = (mwvector*) mwMallocA(traceSize);
+    memcpy(st->orbitTrace, p, traceSize);
+    p += traceSize;
+
     if (strncmp(p, tail, sizeof(tail)))
     {
         free(st->bodytab);
         st->bodytab = NULL;
+
+        free(st->orbitTrace);
+        st->orbitTrace = NULL;
+
         warn("Failed to find end marker in checkpoint file.\n");
         return TRUE;
     }
@@ -386,6 +397,7 @@ static int thawState(NBodyCtx* ctx, NBodyState* st, CheckpointHandle* cp)
 static void freezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHandle* cp)
 {
     const size_t bodySize = sizeof(Body) * st->nbody;
+    const size_t traceSize = sizeof(mwvector) * N_ORBIT_TRACE_POINTS;
     char* p = cp->mptr;
     NBodyCheckpointHeader cpHdr;
 
@@ -398,6 +410,9 @@ static void freezeState(const NBodyCtx* ctx, const NBodyState* st, CheckpointHan
     /* The main piece of state*/
     memcpy(p, st->bodytab, bodySize);
     p += bodySize;
+
+    memcpy(p, st->orbitTrace, traceSize);
+    p += traceSize;
 
     strcpy(p, tail);
 }

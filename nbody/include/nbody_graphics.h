@@ -21,6 +21,8 @@
 #ifndef _NBODY_GRAPHICS_H_
 #define _NBODY_GRAPHICS_H_
 
+#define MAX_DRAW_TRACE_POINTS 256
+
 /* "mw_nbody" */
 #define DEFAULT_SHMEM_KEY ((key_t) 0x6d775f6e626f6479)
 
@@ -37,15 +39,31 @@ typedef struct
     float timeEvolve;
 } SceneInfo;
 
+typedef enum
+{
+    MOUSE_MODE_NONE,
+    MOUSE_MODE_MOVE,
+    MOUSE_MODE_ZOOM
+} NBodyMouseMode;
+
+#ifndef NAME_MAX
+  #define NAME_MAX 255
+#endif
+
 /* the scene structure */
 typedef struct
 {
+    char shmemName[NAME_MAX + 1];
+    int instanceId;
     int nbodyMajorVersion;
     int nbodyMinorVersion;
 
     int nbody;
     int drawGalaxy;
-    float z;
+    int cmCentered; /* Center on the center of mass. Otherwise, on galactic center */
+
+    int floatMode;
+    float r;       /* Distance from center point. Maps to OpenGL z axis so often negative */
     float xrot;
     float yrot;
     float starsize;
@@ -64,21 +82,33 @@ typedef struct
   #endif /* _MSC_VER */
 
     int fullscreen;
-    int drawaxes;
+    int screensaverMode;
+    int monochromatic;
+    int drawAxes;
+    int drawOrbitTrace;
+    int drawHelp;
+    int drawInfo;
+    int drawParticles;
+    int useGLPoints;
+
     int ntri;
     int paused;
     int step;
-    int mousemode;
+    NBodyMouseMode mouseMode;
     int changed;
     double t;
     double dt;
     double usleepcount;
     double usleepdt;
 
+    float rootCenterOfMass[3];     /* Center of mass of the system  */
     float startingPositionHint[3];
     float startingAngleHint[3];
     SceneInfo info;
-    FloatPos r[];
+
+    int currentTracePoint;
+    FloatPos orbitTrace[MAX_DRAW_TRACE_POINTS];
+    FloatPos rTrace[];
 } scene_t;
 
 #if defined(__GNUC__) && (__GNUC__ >= 4 && __GNUC_MINOR__ >= 1)

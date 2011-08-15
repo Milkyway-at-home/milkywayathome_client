@@ -209,7 +209,7 @@ static int evaluateStreams(lua_State* luaSt)
     }
 
     _streams->number_streams = n;
-    _streams->parameters = mwMallocA(n * sizeof(StreamParameters));
+    _streams->parameters = mwMalloc(n * sizeof(StreamParameters));
 
     for (i = 0; i < n; ++i)
     {

@@ -36,20 +36,24 @@
 typedef struct
 {
     int fullscreen;
+    int plainFullscreen;
     int width;
     int height;
 
     int monochrome;
     int notUseGLPoints;
+    int originCenter;
+    int noFloat;
 
-    /* pid_t pid */
-    /* char* nbody bin */
+    int pid;
+    char* file;
+    int instanceId;
 } VisArgs;
 
-#define EMPTY_VIS_ARGS { FALSE, 0, 0, FALSE, FALSE }
+#define EMPTY_VIS_ARGS { FALSE, FALSE, 0, 0, FALSE, FALSE, FALSE, FALSE, 0, NULL, -1 }
 
 
-int connectSharedScene();
+int connectSharedScene(int instanceId);
 int checkConnectedVersion();
 int nbodyGLSetup(const VisArgs* args);
 void nbodyGLCleanup();

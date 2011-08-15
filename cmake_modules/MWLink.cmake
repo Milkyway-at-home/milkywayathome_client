@@ -39,8 +39,8 @@ endmacro()
 
 
 function(milkyway_link client_bin_name use_boinc use_static link_libs)
-  if(NOT MSVC AND (CMAKE_BUILD_TYPE STREQUAL Release) AND NOT APPLE)
-    set(strip_exe -s)
+  if(NOT MSVC AND (CMAKE_BUILD_TYPE STREQUAL "Release") AND NOT APPLE)
+    set(strip_exe "-s")
   endif()
 
   if(use_static)

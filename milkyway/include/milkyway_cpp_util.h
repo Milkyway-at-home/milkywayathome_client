@@ -41,10 +41,13 @@ typedef struct
     char wuName[256];
     char projectDir[256];
     char boincDir[256];
-    char projectPrefs[4096];
+    char* projectPrefs;
 } MWAppInitData;
 
+void freeMWAppInitData(MWAppInitData* mwaid);
+
 #if BOINC_APPLICATION
+
 int mwGetMWAppInitData(MWAppInitData* mwaid);
 void mwGetBoincOptionsDefault(BOINC_OPTIONS* options);
 void* mw_graphics_make_shmem(const char* x, int y);

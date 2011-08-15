@@ -3,6 +3,8 @@
  * Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
  * Rensselaer Polytechnic Institute.
  * Copyright (c) 2010-2011 Matthew Arsenault
+ * Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+ * Copyright (c) 2001-2009, The GROMACS Development Team
  *
  *  This file is part of Milkway@Home.
  *
@@ -62,31 +64,24 @@
 
 #include <time.h>
 
-#ifdef __SSE3__
+#if defined(__SSE4_1__)
+  #include <smmintrin.h>
+#elif defined(__SSE3__)
   #include <pmmintrin.h>
-#elif __SSE2__
+#elif defined(__SSE2__)
   #include <emmintrin.h>
 #endif /* __SSE3__ */
 
 #if defined(__GNUC__)
   #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #elif defined(_MSC_VER)
-#pragma warning( disable : 4068 )
+  #pragma warning( disable : 4068 )
 #endif /* __GNUC__ */
 
-
+#define SSE2_EXP_LUT 0
 
 #if defined(__SSE2__) && DOUBLEPREC && !ENABLE_CRLIBM
   #define USE_CUSTOM_MATH 1
-#endif
-
-
-#if defined(__SSE3__)
-  #define INIT_PROBABILITIES initProbabilities_SSE3
-#elif defined(__SSE2__)
-  #define INIT_PROBABILITIES initProbabilities_SSE2
-#else
-  #define INIT_PROBABILITIES initProbabilities
 #endif
 
 
@@ -138,7 +133,7 @@ SEPARATION_ALIGN(16) static double exp2_table[2 * EXP2_TABLE_SIZE];
 
 static void initExpTable()
 {
-    unsigned int i;
+    int i;
 
     #pragma ivdep
     #pragma vector always
@@ -240,7 +235,129 @@ static inline __m128d _mm_fexpd_lut_pd(__m128d x)
 
     return _mm_mul_pd(expipart, expfpart.m);
 }
+static inline __m128d gmx_mm_exp_pd(__m128d x)
+{
+    const __m128d argscale = _mm_set1_pd(1.442695040888963387);
+    /* Lower bound: We do not allow numbers that would lead to an IEEE fp representation exponent smaller than -126. */
+    const __m128d arglimit = _mm_set1_pd(-1022.0/1.442695040888963387);
+    const __m128i expbase  = _mm_set1_epi32(1023);
 
+    const __m128d CA0       = _mm_set1_pd(7.0372789822689374920e-9);
+    const __m128d CB0       = _mm_set1_pd(89.491964762085371);
+    const __m128d CB1       = _mm_set1_pd(-9.7373870675164587);
+    const __m128d CC0       = _mm_set1_pd(51.247261867992408);
+    const __m128d CC1       = _mm_set1_pd(-0.184020268133945);
+    const __m128d CD0       = _mm_set1_pd(36.82070153762337);
+    const __m128d CD1       = _mm_set1_pd(5.416849282638991);
+    const __m128d CE0       = _mm_set1_pd(30.34003452248759);
+    const __m128d CE1       = _mm_set1_pd(8.726173289493301);
+    const __m128d CF0       = _mm_set1_pd(27.73526969472330);
+    const __m128d CF1       = _mm_set1_pd(10.284755658866532);
+
+    __m128d valuemask;
+    __m128i iexppart;
+    __m128d fexppart;
+    __m128d intpart;
+    __m128d z,z2;
+    __m128d factB,factC,factD,factE,factF;
+
+      z       = _mm_mul_pd(x,argscale);
+    iexppart  = _mm_cvtpd_epi32(z);
+
+#if defined __SSE4_1__
+    /* This reduces latency and speeds up the code by roughly 5% when supported */
+    intpart   = _mm_round_pd(z,0);
+#else
+    intpart   = _mm_cvtepi32_pd(iexppart);
+#endif
+    /* The two lowest elements of iexppart now contains 32-bit numbers with a correctly biased exponent.
+     * To be able to shift it into the exponent for a double precision number we first need to
+     * shuffle so that the lower half contains the first element, and the upper half the second.
+     * This should really be done as a zero-extension, but since the next instructions will shift
+     * the registers left by 52 bits it doesn't matter what we put there - it will be shifted out.
+     * (thus we just use element 2 from iexppart).
+     */
+    iexppart  = _mm_shuffle_epi32(iexppart,_MM_SHUFFLE(2,1,2,0));
+
+    /* Do the shift operation on the 64-bit registers */
+    iexppart  = _mm_add_epi32(iexppart,expbase);
+    iexppart  = _mm_slli_epi64(iexppart,52);
+    valuemask = _mm_cmpgt_pd(x,arglimit);
+
+      z         = _mm_sub_pd(z,intpart);
+    z2        = _mm_mul_pd(z,z);
+
+    fexppart  = _mm_and_pd(valuemask,_mm_castsi128_pd(iexppart));
+
+    /* Since SSE doubleing-point has relatively high latency it is faster to do
+     * factorized polynomial summation with independent terms than using alternating add/multiply, i.e.
+     * p(z) = A0 * (B0 + z) * (C0 + C1*z + z^2) * (D0 + D1*z + z^2) * (E0 + E1*z + z^2) * (F0 + F1*z + z^2)
+     */
+
+    factB     = _mm_add_pd(CB0,_mm_mul_pd(CB1,z) );
+    factB     = _mm_add_pd(factB,z2);
+    factC     = _mm_add_pd(CC0,_mm_mul_pd(CC1,z) );
+    factC     = _mm_add_pd(factC,z2);
+    factD     = _mm_add_pd(CD0,_mm_mul_pd(CD1,z) );
+    factD     = _mm_add_pd(factD,z2);
+    factE     = _mm_add_pd(CE0,_mm_mul_pd(CE1,z) );
+    factE     = _mm_add_pd(factE,z2);
+    factF     = _mm_add_pd(CF0,_mm_mul_pd(CF1,z) );
+    factF     = _mm_add_pd(factF,z2);
+
+    z         = _mm_mul_pd(CA0,fexppart);
+    factB     = _mm_mul_pd(factB,factC);
+    factD     = _mm_mul_pd(factD,factE);
+    z         = _mm_mul_pd(z,factF);
+    factB     = _mm_mul_pd(factB,factD);
+    z         = _mm_mul_pd(z,factB);
+
+      /* Currently uses 32 actual (real, not including casts) SSE instructions */
+      return  z;
+}
+static inline __m128d _mm_invsqrt_pd(__m128d x)
+{
+    const __m128d half  = _mm_set1_pd(0.5);
+    const __m128d three = _mm_set1_pd(3.0);
+
+    /* Lookup instruction only exists in single precision, convert back and forth... */
+    __m128d xmm0 = _mm_cvtps_pd(_mm_rsqrt_ps( _mm_cvtpd_ps(x)));
+
+    xmm0 = _mm_mul_pd(half,_mm_mul_pd(_mm_sub_pd(three,_mm_mul_pd(_mm_mul_pd(xmm0,xmm0),x)),xmm0));
+    return _mm_mul_pd(half,_mm_mul_pd(_mm_sub_pd(three,_mm_mul_pd(_mm_mul_pd(xmm0,xmm0),x)),xmm0));
+}
+
+static inline __m128d _mm_fsqrt_pd(__m128d y)  // accurate to 1 ulp, i.e the last bit of the double precision number
+{
+    // cuts some corners on the numbers range but is significantly faster, employs "faithful rounding"
+    __m128d x, res;
+	const __m128d C0  = _mm_set1_pd(0.75);
+	const __m128d C1  = _mm_set1_pd(0.0625);
+    x = _mm_cvtps_pd(_mm_rsqrt_ps( _mm_cvtpd_ps(y))); // 22bit estimate for reciprocal square root, limits range to float range, but spares the exponent extraction
+    x = _mm_mul_pd(x,_mm_sub_pd(DTHREE,_mm_mul_pd(y,_mm_mul_pd(x,x)))); // first Newton iteration (44bit accurate)
+    res = _mm_mul_pd(x, y);  // do final iteration directly on sqrt(y) and not on the inverse
+    return(_mm_mul_pd(res,_mm_sub_pd(C0,_mm_mul_pd(C1,_mm_mul_pd(res , x)))));
+}
+
+static inline __m128d _mm_fdiv_pd(__m128d a, __m128d b) // fasted on P4 compared to _mm_div_pd !!!
+{
+    __m128d r,y,c;
+
+    y = _mm_cvtps_pd(_mm_rcp_ps( _mm_cvtpd_ps(b)));
+    c = _mm_sub_pd(DONE,_mm_mul_pd(b,y));
+    y = _mm_add_pd(y,_mm_mul_pd(y,c));
+    r = _mm_mul_pd(a,y);
+    c = _mm_sub_pd(a,_mm_mul_pd(b,r));
+    return _mm_add_pd(r,_mm_mul_pd(y,c));
+}
+
+static inline __m128d _mm_rcp_pd(__m128d x)
+{
+    __m128d xmm0 = _mm_cvtps_pd(_mm_rcp_ps( _mm_cvtpd_ps(x)));
+    /* Newton Raphson */
+    xmm0 = _mm_mul_pd(xmm0,_mm_sub_pd(DTWO,_mm_mul_pd(x,xmm0)));
+    return _mm_mul_pd(xmm0,_mm_sub_pd(DTWO,_mm_mul_pd(x,xmm0)));
+}
 
 static inline __m128d _mm_fexp_poly_pd(__m128d x1) // precise,but slower than _mm_exp_pd
 {
@@ -320,35 +437,31 @@ static inline __m128d _mm_fexp_poly_pd(__m128d x1) // precise,but slower than _m
     return  _mm_mul_pd(a1, p1);
 }
 
-static inline __m128d _mm_muladd_pd(__m128d x, __m128d y, __m128d z)
-{
-    return _mm_add_pd(_mm_mul_pd(x, y), z);
-}
 
-static real probabilities_SSE2(const AstronomyParameters* ap,
-                               const StreamConstants* sc,
-                               const real* RESTRICT sg_dx,
-                               const real* RESTRICT r_point,
-                               const real* RESTRICT qw_r3_N,
-                               LBTrig lbt,
-                               real gPrime,
-                               real reff_xr_rp3,
-                               real* RESTRICT streamTmps)
+static real probabilities_intrinsics(const AstronomyParameters* ap,
+                                     const StreamConstants* sc,
+                                     const real* RESTRICT sg_dx,
+                                     const real* RESTRICT r_point,
+                                     const real* RESTRICT qw_r3_N,
+                                     LBTrig lbt,
+                                     real gPrime,
+                                     real reff_xr_rp3,
+                                     real* RESTRICT streamTmps)
 {
     double bg_prob, dotted, xyz_norm;
-    unsigned int i, j, k, convolve, nStreams;
-    SEPARATION_ALIGN(16) double psgt[1024], psgf[1024], xyzstr[1024];
+    int i, j, k, convolve, nStreams;
+    SEPARATION_ALIGN(16) double psgt[256], psgf[256], xyzstr[256];
     SEPARATION_ALIGN(16) mwvector xyz[256];
 
-    __m128d REF_XR = _mm_set1_pd(reff_xr_rp3);
+    const __m128d REF_XR = _mm_set1_pd(reff_xr_rp3);
 
     //__m128d ALPHAV = _mm_set1_pd(alpha);
-    __m128d COSBL    = _mm_set1_pd(lbt.lCosBCos);
-    __m128d SINB     = _mm_set1_pd(lbt.bSin);
-    __m128d SINCOSBL = _mm_set1_pd(lbt.lSinBCos);
-    __m128d SUNR0    = _mm_set1_pd(ap->sun_r0);
-    __m128d R0       = _mm_set1_pd(ap->r0);
-    __m128d QV_RECIP = _mm_set1_pd(ap->q_inv);
+    const __m128d COSBL    = _mm_set1_pd(lbt.lCosBCos);
+    const __m128d SINB     = _mm_set1_pd(lbt.bSin);
+    const __m128d SINCOSBL = _mm_set1_pd(lbt.lSinBCos);
+    const __m128d SUNR0    = _mm_set1_pd(ap->sun_r0);
+    const __m128d R0       = _mm_set1_pd(ap->r0);
+    const __m128d QV_RECIP = _mm_set1_pd(ap->q_inv);
     __m128d RI, QI;
     ssp_m128 xyz0, xyz1, xyz2, tmp0, tmp1, PROD, PBXV, BGP;
 
@@ -357,8 +470,6 @@ static real probabilities_SSE2(const AstronomyParameters* ap,
     convolve = ap->convolve;
     nStreams = ap->number_streams;
 
-    #pragma ivdep
-    #pragma vector always
     for (i = 0; i < convolve; i += 2)
     {
         RI = _mm_load_pd(&r_point[i]);
@@ -381,31 +492,31 @@ static real probabilities_SSE2(const AstronomyParameters* ap,
         xyz0.d = _mm_mul_pd(xyz0.d, xyz0.d);
         xyz1.d = _mm_mul_pd(xyz1.d, xyz1.d);
         tmp0.d = _mm_mul_pd(tmp0.d, tmp0.d);
-     // PROD.d = _mm_fsqrt_pd(_mm_add_pd(xyz0.d, _mm_add_pd(xyz1.d, tmp0.d))); // slower
-        PROD.d = _mm_sqrt_pd(_mm_add_pd(xyz0.d, _mm_add_pd(xyz1.d, tmp0.d)));
+
+		//PROD.d = _mm_sqrt_pd(_mm_add_pd(xyz0.d, _mm_add_pd(xyz1.d, tmp0.d)));
+		PROD.d = _mm_fsqrt_pd(_mm_add_pd(xyz0.d, _mm_add_pd(xyz1.d, tmp0.d)));
         tmp1.d = _mm_add_pd(PROD.d, R0);
-     // PBXV.d = _mm_rcp_pd(_mm_mul_pd(PROD.d, _mm_mul_pd(tmp1.d, _mm_mul_pd(tmp1.d,tmp1.d))));  // slower
+		//PBXV.d = _mm_fdiv_pd(DONE, _mm_mul_pd(PROD.d, _mm_mul_pd(tmp1.d, _mm_mul_pd(tmp1.d, tmp1.d)))); FASTEST on P4 but slower on Core2 i7 etc!!!
+        //PBXV.d = _mm_rcp_pd(_mm_mul_pd(PROD.d, _mm_mul_pd(tmp1.d, _mm_mul_pd(tmp1.d,tmp1.d))));
         PBXV.d = _mm_div_pd(DONE, _mm_mul_pd(PROD.d, _mm_mul_pd(tmp1.d, _mm_mul_pd(tmp1.d, tmp1.d))));
         BGP.d  = _mm_add_pd(BGP.d, _mm_mul_pd(QI, PBXV.d));
+
     }
 
     BGP.d = _mm_mul_pd(BGP.d, REF_XR);
 
-  #ifdef __SSE3__
+  #if defined(__SSE3__) || defined(__SSE4_1__)
+	  #pragma message("Using SSE3 Native HADD")
     BGP.d = _mm_hadd_pd(BGP.d, BGP.d);
   #else // SSE2 emu hadd_pd
-    #pragma message("USING SSE2 HADD")
+    #pragma message("Using SSE2 Emulated HADD")
     BGP.d = hadd_pd_SSE2(BGP.d, BGP.d);
   #endif
     _mm_store_sd(&bg_prob, BGP.d);
 
-    #pragma ivdep
-    #pragma vector always
-    for (i = 0; i < nStreams; ++i)
+    for (i = 0; i < nStreams; i++)
     {
-        #pragma ivdep
-        #pragma vector always
-        for (j = 0; j < convolve; ++j)
+        for (j = 0; j < convolve; j++)
         {
             xyzstr[0] = X(xyz[j]) - X(sc[i].c);
             xyzstr[1] = Y(xyz[j]) - Y(sc[i].c);
@@ -423,20 +534,28 @@ static real probabilities_SSE2(const AstronomyParameters* ap,
 
         for (k = 0; k < convolve; k += 2)
         {
-            //_mm_store_pd(&psgf[k], _mm_mul_pd(_mm_load_pd(&qw_r3_N[k]), _mm_fexpd_lut_pd(Vneg(_mm_load_pd(&psgt[k])))));
-
-            // arst
-            //_mm_store_pd(&psgf[k], _mm_mul_pd(_mm_load_pd(&qw_r3_N[k]), _mm_exp_pd(Vneg(_mm_load_pd(&psgt[k])))));
-
+          #if SSE2_EXP_LUT
+            #error "SSE2 EXP LUT is broken ATM !!!"
+            _mm_store_pd(&psgf[k], _mm_mul_pd(_mm_load_pd(&qw_r3_N[k]), _mm_fexpd_lut_pd(Vneg(_mm_load_pd(&psgt[k])))));
+          #elif defined(__INTEL_COMPILER) && defined(__INTEL_MATH) && defined(__SSE2__)
+            #pragma message("Using Intel Math EXP")
+            _mm_store_pd(&psgf[k], _mm_mul_pd(_mm_load_pd(&qw_r3_N[k]), _mm_exp_pd(Vneg(_mm_load_pd(&psgt[k])))));
+          #elif defined(__SSE4_1__) || defined(__SSE3__) || defined(__SSE2__) // SSE2 mod is faster than _mm_fexp_poly_pd ! If SSE4.1 is available it gains an additinal 5% speedup!
+            #pragma message("Using GMX Polynomal EXP")
+            _mm_store_pd(&psgf[k], _mm_mul_pd(_mm_load_pd(&qw_r3_N[k]), gmx_mm_exp_pd(Vneg(_mm_load_pd(&psgt[k])))));
+           /* http://gromacs.sourcearchive.com/documentation/4.5.3-1/gmx__sse2__double_8h-source.html */
+          #else
+             #pragma message("Using Polynomal EXP")
             _mm_store_pd(&psgf[k], _mm_mul_pd(_mm_load_pd(&qw_r3_N[k]), _mm_fexp_poly_pd(Vneg(_mm_load_pd(&psgt[k])))));
-        }
+          #endif
+		}
 
         streamTmps[i] = 0.0;
         #pragma ivdep
         #pragma vector always
-        for (k = 0; k < convolve; ++k)
+        for (j = 0; j < convolve; j++)
         {
-            streamTmps[i] += psgf[k];
+            streamTmps[i] += psgf[j];
         }
         streamTmps[i] *= reff_xr_rp3;
     }
@@ -539,11 +658,11 @@ static real bg_probability_fast_hprob(const AstronomyParameters* ap,
                                       real reff_xr_rp3,
                                       real* RESTRICT streamTmps)
 {
-    unsigned int i;
+    int i;
     real h_prob, g, rg;
     mwvector xyz;
     real bg_prob = 0.0;
-    unsigned int convolve = ap->convolve;
+    int convolve = ap->convolve;
     int aux_bg_profile = ap->aux_bg_profile;
 
     zero_st_probs(streamTmps, ap->number_streams);
@@ -616,8 +735,6 @@ static real bg_probability_slow_hprob(const AstronomyParameters* ap,
 }
 
 
-/* We have some more deciding on which function to use for whatever SSE level */
-
 ProbabilityFunc INIT_PROBABILITIES(const AstronomyParameters* ap, int forceNoIntrinsics)
 {
   #ifndef __SSE2__
@@ -633,8 +750,8 @@ ProbabilityFunc INIT_PROBABILITIES(const AstronomyParameters* ap, int forceNoInt
 
     if (ap->fast_h_prob && !ap->aux_bg_profile && !forceNoIntrinsics)
     {
-        /* TODO: add aux_bg_profile in SSE2 stuff */
-        return probabilities_SSE2;
+        /* TODO: add aux_bg_profile in intrinsics stuff */
+        return probabilities_intrinsics;
     }
     else if (ap->fast_h_prob)
     {

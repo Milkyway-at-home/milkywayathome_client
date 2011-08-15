@@ -156,7 +156,7 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
         },
 
         {
-            "clean-checkpoint", 'k',
+            "clean-checkpoint", '\0',
             POPT_ARG_NONE, &nbf->cleanCheckpoint,
             0, "Cleanup checkpoint after finishing run", NULL
         },
@@ -343,9 +343,18 @@ int main(int argc, const char* argv[])
 
     specialSetup();
 
-    if (readParameters(argc, argvCopy, &nbf))
-        exit(EXIT_FAILURE);
-    free(argvCopy);
+    rc = readParameters(argc, argvCopy ? argvCopy : argv, &nbf);
+    if (rc)
+    {
+        if (BOINC_APPLICATION)
+        {
+            freeNBodyFlags(&nbf);
+            mwBoincInit(MW_PLAIN);
+            readParameters(argc, argvCopy ? argvCopy : argv, &nbf);
+        }
+
+        mw_finish(EXIT_FAILURE);
+    }
 
     if (nbodyInit(&nbf))
     {

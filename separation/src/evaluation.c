@@ -22,6 +22,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation.h"
 #include "separation_utils.h"
 #include "probabilities.h"
+#include "mw_cpuid.h"
 
 #if SEPARATION_OPENCL
   #include "run_cl.h"
@@ -51,158 +52,140 @@ typedef int GPUInfo;
 
 ProbabilityFunc probabilityFunc = NULL;
 
+/* MSVC can't do weak imports */
+#if !HAVE_SSE41
+#define initProbabilities_SSE41 NULL
+#endif
+
+#if !HAVE_SSE3
+#define initProbabilities_SSE3 NULL
+#endif
+
+#if !HAVE_SSE2
+#define initProbabilities_SSE2 NULL
+#endif
+
+#if !HAVE_OTHER_MATH_X87
+  #define initProbabilities NULL
+#endif
+
+/* Can't use the functions themselves if defined to NULL */
+static ProbInitFunc initSSE41 = initProbabilities_SSE41;
+static ProbInitFunc initSSE3 = initProbabilities_SSE3;
+static ProbInitFunc initSSE2 = initProbabilities_SSE2;
+static ProbInitFunc initOther = initProbabilities;
 
 #if MW_IS_X86
 
-#define bit_CMPXCHG8B (1 << 8)
-#define bit_CMOV (1 << 15)
-#define bit_MMX (1 << 23)
-#define bit_SSE (1 << 25)
-#define bit_SSE2 (1 << 26)
-#define bit_SSE3 (1 << 0)
-#define bit_CMPXCHG16B (1 << 13)
-#define bit_3DNOW (1 << 31)
-#define bit_3DNOWP (1 << 30)
-#define bit_LM (1 << 29)
-
-
-#ifndef _WIN32
-  #if defined(__i386__) && defined(__PIC__)
-    /* %ebx may be the PIC register.  */
-    #define cpuid(level, a, b, c, d) __asm__ ("xchglt%%ebx, %1nt"                        \
-                                              "cpuid"                                    \
-                                              "xchglt%%ebx, %1nt"                        \
-                                              : "=a" (a), "=r" (b), "=c" (c), "=d" (d)   \
-                                              : "0" (level))
-  #else
-    #define cpuid(level, a, b, c, d) __asm__ ("cpuid"                                    \
-                                              : "=a" (a), "=b" (b), "=c" (c), "=d" (d)   \
-                                              : "0" (level))
-  #endif /* defined(__i386__) && defined(__PIC__) */
-
-static void getSSELevelSupport(int* hasSSE2, int* hasSSE3)
+/* Use one of the faster functions if available, or use something forced */
+static int probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* clr)
 {
-#ifndef __APPLE__
-    /* http://peter.kuscsik.com/drupal/?q=node/10 */
-    unsigned int eax, ebx, ecx, edx;
-    cpuid(1, eax, ebx, ecx, edx);
+    int hasSSE2, hasSSE3, hasSSE41;
+    int forcingInstructions = clr->forceSSE41 || clr->forceSSE3 || clr->forceSSE2 || clr->forceX87;
+    int abcd[4];
 
-    *hasSSE2 = !!(edx & bit_SSE2);
-    *hasSSE3 = !!(ecx & bit_SSE3);
-#else
-    /* Something weird happens with this inline asm in Apple GCC that I
-     * don't feel like figuring out now */
-    *hasSSE2 = TRUE;
-    *hasSSE3 = TRUE;
-#endif /* __APPLE__ */
-}
+    mw_cpuid(abcd, 1, 0);
 
-
-#else
-
-static void getSSELevelSupport(int* hasSSE2_out, int* hasSSE3_out)
-{
-    int nIds = 0;
-    int cpuInfo[4] = { 0, 0, 0, 0 };
-    int hasSSE2 = FALSE;
-    int hasSSE3 = FALSE;
-
-    __cpuid(cpuInfo, 0);
-    nIds = cpuInfo[0];
-
-    if (nIds >= 1)
-    {
-        __cpuid(cpuInfo, 1);
-        hasSSE2 = !!(cpuInfo[3] & bit_SSE2);
-        hasSSE3 = !!(cpuInfo[2] & bit_SSE3);
-    }
-
-    *hasSSE2_out = hasSSE2;
-    *hasSSE3_out = hasSSE3;
-}
-#endif /* _WIN32 */
-
-
-/* Use one of the faster functions if available */
-static void probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* clr)
-{
-    int hasSSE2 = FALSE, hasSSE3 = FALSE;
-    int useSSE2 = FALSE, useSSE3 = FALSE;
-
-    getSSELevelSupport(&hasSSE2, &hasSSE3);
+    hasSSE41 = mwHasSSE41(abcd);
+    hasSSE3 = mwHasSSE3(abcd);
+    hasSSE2 = mwHasSSE2(abcd);
 
     if (clr->verbose)
     {
-        warn("CPU features: SSE2 = %d, SSE3 = %d\n"
-             "Forcing: SSE2 = %d, SSE3 = %d, x87 = %d\n",
-             hasSSE2, hasSSE3,
-             clr->forceSSE2, clr->forceSSE3, clr->forceX87);
+        warn("CPU features:        SSE2 = %d, SSE3 = %d, SSE4.1 = %d\n"
+             "Available functions: SSE2 = %d, SSE3 = %d, SSE4.1 = %d, x87 = %d\n"
+             "Forcing:             SSE2 = %d, SSE3 = %d, SSE4.1 = %d, x87 = %d\n",
+             hasSSE2, hasSSE3, hasSSE41,
+             initSSE2 != NULL, initSSE3 != NULL, initSSE41 != NULL, initProbabilities != NULL,
+             clr->forceSSE2, clr->forceSSE3, clr->forceSSE41, clr->forceX87);
     }
 
-    if (!clr->forceSSE2 && !clr->forceSSE3 && !clr->forceX87)
+    /* If multiple instructions are forced, the highest will take precedence */
+    if (forcingInstructions)
     {
-        /* Default to using highest capability if not forcing anything */
-        useSSE3 = hasSSE3;
-        useSSE2 = hasSSE2;
-    }
-    else if (clr->forceSSE2)
-    {
-        useSSE2 = TRUE;
-    }
-    else if (clr->forceSSE3)
-    {
-        useSSE3 = TRUE;
-    }
-    else if (clr->forceX87)
-    {
-      #if MW_IS_X86_32
-        useSSE2 = useSSE3 = FALSE;
-      #elif MW_IS_X86_64
-        useSSE2 = TRUE;  /* Ignore flag */
-      #endif
-    }
-
-    if (useSSE3)  /* Precedence to higher level */
-    {
-        warn("Using SSE3 path\n");
-        probabilityFunc = initProbabilities_SSE3(ap, clr->forceNoIntrinsics);
-    }
-    else if (useSSE2)
-    {
-        warn("Using SSE2 path\n");
-        probabilityFunc = initProbabilities_SSE2(ap, clr->forceNoIntrinsics);
+        if (clr->forceSSE41 && hasSSE41 && initSSE41)
+        {
+            warn("Using SSE4.1 path\n");
+            probabilityFunc = initSSE41(ap, clr->forceNoIntrinsics);
+        }
+        else if (clr->forceSSE3 && hasSSE3 && initSSE3)
+        {
+            warn("Using SSE3 path\n");
+            probabilityFunc = initSSE3(ap, clr->forceNoIntrinsics);
+        }
+        else if (clr->forceSSE2 && hasSSE2 && initSSE2)
+        {
+            warn("Using SSE2 path\n");
+            probabilityFunc = initSSE2(ap, clr->forceNoIntrinsics);
+        }
+        else if (clr->forceX87 && initOther)
+        {
+            warn("Using other path\n");
+            probabilityFunc = initOther(ap, clr->forceNoIntrinsics);
+        }
+        else
+        {
+            warn("Tried to force an unusable path\n");
+            return 1;
+        }
     }
     else
     {
-      #if !MW_NO_X87_EVER
-        warn("Using x87 path\n");
-        probabilityFunc = initProbabilities(ap, clr->forceNoIntrinsics);
-      #else
-        mw_unreachable();
-      #endif
+        /* Choose the highest level with available function and instructions */
+        if (hasSSE41 && initSSE41)
+        {
+            warn("Using SSE4.1 path\n");
+            probabilityFunc = initSSE41(ap, clr->forceNoIntrinsics);
+        }
+        else if (hasSSE3 && initSSE3)
+        {
+            warn("Using SSE3 path\n");
+            probabilityFunc = initSSE3(ap, clr->forceNoIntrinsics);
+        }
+        else if (hasSSE2 && initSSE2)
+        {
+            warn("Using SSE2 path\n");
+            probabilityFunc = initSSE2(ap, clr->forceNoIntrinsics);
+        }
+        else if (initOther)
+        {
+            warn("Using other path\n");
+            probabilityFunc = initOther(ap, clr->forceNoIntrinsics);
+        }
+        else
+        {
+            warn("No paths usable\n");
+            return 1;
+        }
     }
 
     if (!probabilityFunc)
     {
         mw_panic("Probability function not set!:\n"
-                 "  Has SSE2             = %d\n"
+                 "  Has SSE4.1           = %d\n"
                  "  Has SSE3             = %d\n"
+                 "  Has SSE2             = %d\n"
+                 "  Forced SSE4.1        = %d\n"
                  "  Forced SSE3          = %d\n"
                  "  Forced SSE2          = %d\n"
                  "  Forced x87           = %d\n"
                  "  Forced no intrinsics = %d\n"
                  "  Arch                 = %s\n",
-                 hasSSE2, hasSSE3,
-                 clr->forceSSE3, clr->forceSSE2, clr->forceX87, clr->forceNoIntrinsics,
+                 hasSSE41, hasSSE3, hasSSE2,
+                 clr->forceSSE41, clr->forceSSE3, clr->forceSSE2,
+                 clr->forceX87, clr->forceNoIntrinsics,
                  ARCH_STRING);
     }
+
+    return 0;
 }
 
 
 #else
-static void probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* clr)
+static int probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* clr)
 {
     probabilityFunc = initProbabilities(ap, clr->forceNoIntrinsics);
+    return 0;
 }
 #endif /* MW_IS_X86 */
 
@@ -351,7 +334,8 @@ int evaluate(SeparationResults* results,
 
     memset(&ci, 0, sizeof(ci));
 
-    probabilityFunctionDispatch(ap, clr);
+    if (probabilityFunctionDispatch(ap, clr))
+        return 1;
 
     es = newEvaluationState(ap);
     sg = getStreamGauss(ap->convolve);

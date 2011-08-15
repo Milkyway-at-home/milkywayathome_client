@@ -1,5 +1,6 @@
 /*
 Copyright (C) 2011  Matthew Arsenault
+Copyright (C) 2011  Rensselaer Polytechnic Institute
 
 This file is part of Milkway@Home.
 
@@ -17,15 +18,16 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _NBODY_SHMEM_H_
-#define _NBODY_SHMEM_H_
+#ifndef _MW_CPUID_H_
+#define _MW_CPUID_H_
+/* returns eax, ebx, ecx, edx in abcd[], using a = eax, c = ecx as input */
+void mw_cpuid(int abcd[4], int a, int c);
 
-#include "nbody_types.h"
+/* Takes populated array from mw_cpuid() and tests for different instructions */
+int mwHasSSE41(const int abcd[4]);
+int mwHasSSE3(const int abcd[4]);
+int mwHasSSE2(const int abcd[4]);
 
-int createSharedScene(NBodyState* st, const NBodyCtx* ctx);
-void launchVisualizer(NBodyState* st, const char* visArgs);
-void updateDisplayedBodies(NBodyState* st);
+#endif /* _MW_CPUID_H_ */
 
-
-#endif /* _NBODY_SHMEM_H_ */
 

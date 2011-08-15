@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2011  Matthew Arsenault
+Copyright (C) 2011 Matthew Arsenault
 
 This file is part of Milkway@Home.
 
@@ -23,12 +23,24 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 static const VisArgs defaultVisArgs =
 {
-    /* .fullscreen */     FALSE,
-    /* .width      */     0,
-    /* .height     */     0,
-    /* .monochrome */     FALSE,
-    /* .notUseGLPoints */ FALSE
+    /* .fullscreen      */ FALSE,
+    /* .plainFullscreen */ FALSE,
+    /* .width           */ 0,
+    /* .height          */ 0,
+    /* .monochrome      */ FALSE,
+    /* .notUseGLPoints  */ FALSE,
+    /* .originCenter    */ FALSE,
+    /* .noFloat         */ FALSE,
+    /* .pid             */ 0,
+    /* .file            */ NULL,
+    /* .instanceId      */ -1
 };
+
+static void freeVisArgs(VisArgs* args)
+{
+    free(args->file);
+    args->file = NULL;
+}
 
 
 static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
@@ -42,7 +54,16 @@ static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
         {
             "fullscreen", 'f',
             POPT_ARG_NONE, &visArgs.fullscreen,
-            0, "Start in fullscreen mode", NULL
+            0, "Start in screensaver mode", NULL
+        },
+
+        /* Since BOINC passes --fullscreen to start as a screensaver,
+         * and we might want to start as fullscreen but without any
+         * keys/moving quitting */
+        {
+            "plain-fullscreen", '\0',
+            POPT_ARG_NONE, &visArgs.plainFullscreen,
+            0, "Start as fullscreen, but without quitting on any motion", NULL
         },
 
         {
@@ -64,9 +85,27 @@ static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
         },
 
         {
-            "not-use-gl-points", 'p',
+            "not-use-gl-points", 'n',
             POPT_ARG_NONE, &visArgs.notUseGLPoints,
             0, "Use faster but possibly uglier drawing", NULL
+        },
+
+        {
+            "origin-center", 'o',
+            POPT_ARG_NONE, &visArgs.originCenter,
+            0, "Focus on the galactic center instead of system's center of mass", NULL
+        },
+
+        {
+            "no-float", 'r',
+            POPT_ARG_NONE, &visArgs.noFloat,
+            0, "By default do not float view around randomly", NULL
+        },
+
+        {
+            "instance-id", 'i',
+            POPT_ARG_INT, &visArgs.instanceId,
+            0, "Instance id of main process to attach", NULL
         },
 
         POPT_AUTOHELP
@@ -78,13 +117,17 @@ static int handleVisArguments(int argc, const char** argv, VisArgs* visOut)
     visArgs = defaultVisArgs;
     context = poptGetContext(argv[0], argc, argv, options, 0);
 
-    if (mwReadArguments(context))
+    if (mwReadArguments(context) < 0)
     {
         poptPrintHelp(context, stderr, 0);
         failed = TRUE;
     }
-
     poptFreeContext(context);
+
+    if (visArgs.instanceId < 0) /* Default to first */
+    {
+        visArgs.instanceId = 0;
+    }
 
     *visOut = visArgs;
     return failed;
@@ -113,25 +156,30 @@ int main(int argc, char* argv[])
     if (nbodyGraphicsInit())
         return 1;
 
-    if (connectSharedScene())
+    glutInit(&argc, argv);
+
+    if (handleVisArguments(argc, (const char**) argv, &flags))
+    {
+        freeVisArgs(&flags);
+        return 1;
+    }
+
+    if (connectSharedScene(flags.instanceId))
         return 1;
 
     if (checkConnectedVersion())
         return 1;
 
-    glutInit(&argc, argv);
-
-    if (handleVisArguments(argc, (const char**) argv, &flags))
-        return 1;
-
     rc = nbodyGLSetup(&flags);
     if (rc)
     {
-        warn("Failed to setup GL\n");
+        warn("Failed to setup nbody graphics\n");
+        freeVisArgs(&flags);
         mw_finish(rc);
     }
 
     glutMainLoop();
+    freeVisArgs(&flags);
 
     return 0;
 }

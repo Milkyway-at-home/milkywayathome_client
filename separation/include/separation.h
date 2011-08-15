@@ -80,6 +80,7 @@ typedef struct
     int forceX87;
     int forceSSE2;
     int forceSSE3;
+    int forceSSE41;
 
     int verbose;
     int printVersion;
@@ -92,6 +93,7 @@ typedef struct
   #define DEFAULT_GPU_PRIORITY MW_PRIORITY_NORMAL
 #endif /* _WIN32 */
 
+#define DEFAULT_NON_RESPONSIVE FALSE
 #define DEFAULT_POLLING_MODE 0
 #define DEFAULT_TARGET_FREQUENCY 30.0
 #define DEFAULT_DISABLE_GPU_CHECKPOINTING 0
@@ -100,13 +102,14 @@ typedef struct
 
 #define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL,           \
                                  0, FALSE, FALSE, FALSE, 0, FALSE, FALSE,      \
-                                 UINT_MAX, 0, FALSE,                           \
+                                 UINT_MAX, 0, DEFAULT_NON_RESPONSIVE,          \
                                  DEFAULT_TARGET_FREQUENCY,                     \
                                  DEFAULT_POLLING_MODE,                         \
                                  DEFAULT_DISABLE_GPU_CHECKPOINTING,            \
                                  DEFAULT_GPU_WAIT_FACTOR,                      \
                                  0, FALSE,                                     \
-                                 FALSE, FALSE, FALSE, FALSE, FALSE, FALSE      \
+                                 FALSE, FALSE, FALSE, FALSE, FALSE,            \
+                                 FALSE, FALSE                                  \
                                }
 
 #ifdef __cplusplus

@@ -37,7 +37,10 @@
 #include "milkyway_cpp_util.h"
 
 #if !BOINC_APPLICATION
-  #include <sys/shm.h>
+  #include <sys/mman.h>
+  #include <sys/stat.h>
+  #include <fcntl.h>
+  #include <errno.h>
 #endif /* !BOINC_APPLICATION */
 
 
@@ -54,10 +57,11 @@
 /* other stuff */
 #define STARSIZE 0.01f
 #define NTRI 8
+#define ORBIT_TRACE_POINT_SIZE 0.03f
 
-#define DELTAXROT 15.0f
-#define DELTAYROT 15.0f
-#define DELTAZ 3.0f
+#define DELTAXROT 5.0f
+#define DELTAYROT 5.0f
+#define DELTAR 3.0f
 
 #define SCALE 15.0
 
@@ -71,7 +75,6 @@
 #define THRASH_SLEEP_INTERVAL 15
 
 
-
 static FloatPos* color = NULL;
 
 static const FloatPos white = { 1.0f, 1.0f, 1.0f, 0 };
@@ -80,38 +83,46 @@ static const FloatPos grey = { 0.3294f, 0.3294f, 0.3294f, 1 };
 static int window = 0;
 static int xlast = 0, ylast = 0;
 static int width = 0, height = 0;
-static int monochromatic = FALSE;
-static int useGLPoints = FALSE;
 
 static GLUquadricObj* quadratic = NULL;
 static scene_t* scene = NULL;
+static dsfmt_t rndState;
 
+/* Max/min time in seconds between changing directions when randomly moving */
+#define MIN_CHANGE_INTERVAL 10
+#define MAX_CHANGE_INTERVAL 60
 
-/* print the bindings */
-static void print_bindings(FILE* f)
-{
-    fprintf(f,
-            "KEYBINDINGS:\n"
-            "  PAGE (UP/DOWN) : zoom (out/in)\n"
-            "  ARROW KEYS     : rotate\n"
-            "  h              : print this help text\n"
-            "  q, ESCAPE      : quit\n"
-            "  p              : pause/unpause\n"
-            "  SPACE          : step through frames (while paused)\n"
-            "  b              : make stars bigger\n"
-            "  s              : make stars smaller\n"
-            "  m              : use more polygons to render stars\n"
-            "  f              : use fewer polygons to render stars\n"
-            "  a              : toggle axes\n"
-            "  t              : toggle time printout\n"
-            "  l              : toggle log printout\n"
-            "  <              : slow down animation\n"
-            "  >              : speed up animation\n"
-            "\n"
-            "MOUSEBINDINGS:\n"
-            "  DRAG                   : rotate\n"
-            "  [SHIFT] DRAG (up/down) : zoom (in/out)\n");
-}
+#define MAX_FLOAT_RATE 0.3f
+#define MIN_FLOAT_RATE 0.3f
+
+static const char* helpBindings =
+    "KEYBINDINGS:\n"
+    "  PAGE (UP/DOWN) : zoom (out/in)\n"
+    "  ARROW KEYS     : rotate\n"
+    "  h or ?         : display this help text\n"
+    "  q, ESCAPE      : quit\n"
+    "  p              : pause/unpause\n"
+    "  SPACE          : step through frames (while paused)\n"
+    "  a              : (axes) toggle axes\n"
+    "  o              : (origin) toggle origin of visualization\n"
+    "  r              : (rotate) when idle, float view around randomly\n"
+    "  t              : (trace) toggle orbit trace\n"
+    "  i              : (info) toggle info printout\n"
+    "  n              : toggle showing individual particles (can be used to only view CM orbit)\n"
+    "  c              : (color) toggle particle color scheme\n"
+    "  l              : toggle using GL points (default, faster) or spheres\n"
+    "  b              : (bigger) make stars bigger\n"
+    "  s              : (smaller) make stars smaller\n"
+    "  m              : (more) use more polygons to render stars\n"
+    "  f              : (fewer) use fewer polygons to render stars\n"
+    "  <              : slow down animation\n"
+    "  >              : speed up animation\n"
+    "\n"
+    "MOUSEBINDINGS:\n"
+    "  DRAG                        : rotate\n"
+    "  [SHIFT] DRAG (up/down)      : zoom (in/out)\n"
+    "  [RIGHTCLICK] DRAG (up/down) : zoom (in/out)\n";
+
 
 /* A general OpenGL initialization function.  Sets all of the initial parameters. */
 static void initGL(int w, int h)
@@ -161,31 +172,32 @@ static void resizeGLScene(int w, int h)
     scene->changed = TRUE;
 }
 
-#define GALACTIC_RADIUS 15.33f
-#define GALACTIC_BULGE_RADIUS 1.5f
-#define GALACTIC_DISK_THICKNESS 0.66f
+#define MILKYWAY_RADIUS 15.33f
+#define MILKYWAY_BULGE_RADIUS 1.5f
+#define MILKYWAY_DISK_THICKNESS 0.66f
 
-#define AXES_LENGTH (1.25f * GALACTIC_RADIUS / SCALE)
 
-static void drawSimpleGalaxy()
+#define AXES_LENGTH (1.25f * MILKYWAY_RADIUS / SCALE)
+
+static void drawSimpleGalaxy(float galacticRadius, float galacticBulgeRadius, float galacticDiskThickness)
 {
     glColor4f(0.643f, 0.706f, 0.867f, 0.85f);
     gluCylinder(quadratic,
-                GALACTIC_RADIUS / SCALE,
-                GALACTIC_RADIUS / SCALE,
-                GALACTIC_DISK_THICKNESS / SCALE,
+                galacticRadius / SCALE,
+                galacticRadius / SCALE,
+                galacticDiskThickness / SCALE,
                 100,
                 20);
 
     /* Put caps on the disk */
-    glTranslatef(0.0f, 0.5f * GALACTIC_DISK_THICKNESS / SCALE, 0.0f);
-    gluDisk(quadratic, 0.0, (GLdouble) GALACTIC_RADIUS / SCALE, 100, 50);
-    glTranslatef(0.0f, -0.5f * GALACTIC_DISK_THICKNESS / SCALE, 0.0f);
-    gluDisk(quadratic, 0.0, (GLdouble) GALACTIC_RADIUS / SCALE, 100, 50);
+    glTranslatef(0.0f, 0.5f * galacticDiskThickness / SCALE, 0.0f);
+    gluDisk(quadratic, 0.0, (GLdouble) galacticRadius / SCALE, 100, 50);
 
+    glTranslatef(0.0f, -0.5f * galacticDiskThickness / SCALE, 0.0f);
+    gluDisk(quadratic, 0.0, (GLdouble) galacticRadius / SCALE, 100, 50);
 
     glColor4f(0.98f, 0.835f, 0.714f, 0.85f);
-    gluSphere(quadratic, GALACTIC_BULGE_RADIUS / SCALE, 50, 50);
+    gluSphere(quadratic, galacticBulgeRadius / SCALE, 50, 50);
 }
 
 static void drawAxes()
@@ -209,6 +221,26 @@ static void drawAxes()
     glEnd();
 }
 
+static void drawOrbitTrace()
+{
+    int i;
+    const int n = scene->currentTracePoint;
+    const FloatPos* trace = &scene->orbitTrace[0];
+
+    glColor3f(0.0f, 1.0f, 0.0f); /* Draw starting point as different color */
+    for (i = 0; i < n; ++i)
+    {
+        glPushMatrix();
+
+        glTranslatef(trace[i].x / SCALE, trace[i].y / SCALE, trace[i].z / SCALE);
+
+        gluSphere(quadratic, ORBIT_TRACE_POINT_SIZE, scene->ntri, scene->ntri);
+        glColor3f(white.x, white.y, white.z);
+
+        glPopMatrix();
+    }
+}
+
 static inline void setIgnoredColor(int ignore)
 {
     if (ignore)
@@ -226,14 +258,14 @@ static void drawPoints()
 {
     int i;
     int nbody = scene->nbody;
-    FloatPos* r = &scene->r[0];
+    const FloatPos* r = &scene->rTrace[0];
 
-    if (useGLPoints)
+    if (scene->useGLPoints)
     {
         glPointSize(scene->starsize);  /* Is this actually working? */
         glBegin(GL_POINTS);
 
-        if (monochromatic)
+        if (scene->monochromatic)
         {
             for (i = 0; i < nbody; ++i)
             {
@@ -257,14 +289,10 @@ static void drawPoints()
         /* FIXME: Use modern OpenGL stuff */
         for (i = 0; i < nbody; ++i)
         {
-            glLoadIdentity();
-            glTranslatef(0.0f, 0.0f, scene->z);
-            glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
-            glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
-
+            glPushMatrix();
             glTranslatef(r[i].x / SCALE, r[i].y / SCALE, r[i].z / SCALE);
 
-            if (monochromatic)
+            if (scene->monochromatic)
             {
                 setIgnoredColor(r[i].ignore);
             }
@@ -275,6 +303,8 @@ static void drawPoints()
             /* glutSolidSphere(scene->starsize, scene->ntri, scene->ntri); */
             gluSphere(quadratic, scene->starsize, scene->ntri, scene->ntri);
             /* glTranslatef(-r[i].x/SCALE, -r[i].y/SCALE, -r[i].z/SCALE); */
+
+            glPopMatrix();
         }
     }
 }
@@ -297,16 +327,29 @@ static void restorePerspectiveProjection()
 }
 
 /* http://www.lighthouse3d.com/tutorials/glut-tutorial/bitmap-fonts-and-orthogonal-projections/ */
-static void drawInfo()
+static void drawWords(const char* str, int x, int y)
 {
-    char buf[1024];
-
     setOrthographicProjection();
     glPushMatrix();
     glLoadIdentity();
 
     glColor3f(1.0f, 1.0f, 1.0f);
-    glRasterPos2i(20, 20);
+    glRasterPos2i(x, y);
+    nbody_glutBitmapStringHelvetica((unsigned char*) str);
+
+    glPopMatrix();
+    restorePerspectiveProjection();
+}
+
+static void drawHelp()
+{
+    /* FIXME: Things don't line up since not using monospace font */
+    drawWords(helpBindings, width - 500, 20);
+}
+
+static void drawInfo()
+{
+    char buf[1024];
 
     snprintf(buf, sizeof(buf),
              "Time: %4.3f / %4.3f Gyr (%4.3f %%)\n",
@@ -314,10 +357,14 @@ static void drawInfo()
              scene->info.timeEvolve,
              100.0f * scene->info.currentTime / scene->info.timeEvolve
         );
-    nbody_glutBitmapStringHelvetica((unsigned char*) buf);
 
-    glPopMatrix();
-    restorePerspectiveProjection();
+    drawWords(buf, 20, 20);
+}
+
+/* Center of mass to center of galaxy */
+static float centerOfMassDistance()
+{
+    return sqrtf(sqr(scene->rootCenterOfMass[0]) + sqr(scene->rootCenterOfMass[1]) + sqr(scene->rootCenterOfMass[2]));
 }
 
 /* The main drawing function.  Technically there's a race condition
@@ -343,24 +390,105 @@ static void drawGLScene()
 
         /* get ready to render 3D objects */
         glLoadIdentity();
-        glTranslatef(0.0f, 0.0f, scene->z + 0.1f);
+
+        /* Spin around mostly randomly when fullscreen.
+           This should be smarter than it is, and always try to look at something interesting
+        */
+        if (scene->floatMode)
+        {
+            /* Select a random angle that is a multiple of 45 degrees */
+            static float floatRate = 0.0f;
+            static float thetaFloatRate = 0.1f; /* Movement rates when moving on its own */
+            static float phiFloatRate = 0.1f;
+            static float zFloatRate = 0.1f; /* Zoom */
+
+            static float destR = 0.0f;
+            static time_t changeInterval = 0;
+            static time_t lastChange = 0;
+            time_t curT;
+
+            curT = time(NULL);
+            if (curT - lastChange >= changeInterval)
+            {
+                float rCM = centerOfMassDistance();
+                lastChange = curT;
+                changeInterval = rand() % MAX_CHANGE_INTERVAL; /* Move in one direction between 10 and 60 seconds */
+                if (changeInterval < MIN_CHANGE_INTERVAL)
+                    changeInterval = MIN_CHANGE_INTERVAL;
+
+                floatRate = mwXrandom(&rndState, MIN_FLOAT_RATE, MAX_FLOAT_RATE);
+
+                thetaFloatRate = mwXrandom(&rndState, 0.0, floatRate);
+                phiFloatRate = sqrtf(sqr(floatRate) - sqr(thetaFloatRate));
+
+                destR = mwXrandom(&rndState, 1.1f * rCM, 1.5f * rCM);
+            }
+
+            if (fabsf(scene->r) - destR >= 0.1f) /* Not at correct altitude */
+            {
+                if (fabsf(scene->r) > destR) /* Farther than destination altitude */
+                {
+                    if (scene->r < 0.0)
+                        scene->r += zFloatRate;
+                    else
+                        scene->r -= zFloatRate;
+                }
+                else if (fabsf(scene->r) < destR) /* Closer than destination altitude */
+                {
+                    if (scene->r > 0.0)
+                        scene->r += zFloatRate;
+                    else
+                        scene->r -= zFloatRate;
+                }
+            }
+
+            scene->xrot += thetaFloatRate;
+            scene->yrot += phiFloatRate;
+        }
+
+        glTranslatef(0.0f, 0.0f, scene->r + 0.1f);
 
         /* rotate view--I know these two rotation matrices don't commute */
-        glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
         glRotatef(scene->yrot, 0.0f, 1.0f, 0.0f);
+        glRotatef(scene->xrot, 1.0f, 0.0f, 0.0f);
+
+        /* Focus on the center of mass */
+        if (scene->cmCentered)
+        {
+            glTranslatef(-scene->rootCenterOfMass[0] / SCALE,
+                         -scene->rootCenterOfMass[1] / SCALE,
+                         -scene->rootCenterOfMass[2] / SCALE);
+        }
 
         if (scene->drawGalaxy)
         {
-            drawSimpleGalaxy();
+            drawSimpleGalaxy(MILKYWAY_RADIUS, MILKYWAY_BULGE_RADIUS, MILKYWAY_DISK_THICKNESS);
         }
 
-        if (scene->drawaxes)
+        if (scene->drawAxes)
         {
             drawAxes();
         }
 
-        drawPoints();
-        drawInfo();
+        if (scene->drawParticles)
+        {
+            drawPoints();
+        }
+
+        if (scene->drawOrbitTrace)
+        {
+            drawOrbitTrace();
+        }
+
+        if (scene->drawHelp)
+        {
+            drawHelp();
+        }
+
+        if (scene->drawInfo)
+        {
+            drawInfo();
+        }
 
         glutSwapBuffers();
     }
@@ -372,7 +500,7 @@ static void keyPressed(unsigned char key, int x, int y)
     /* avoid thrashing this call */
     mwMilliSleep(THRASH_SLEEP_INTERVAL);
 
-    if (scene->fullscreen)
+    if (scene->screensaverMode)
     {
         mw_finish(EXIT_SUCCESS);
     }
@@ -385,7 +513,17 @@ static void keyPressed(unsigned char key, int x, int y)
             mw_finish(EXIT_SUCCESS);
 
         case 'h':
-            print_bindings(stderr);
+        case '?':
+            scene->drawHelp = !scene->drawHelp;
+            scene->changed = TRUE;
+            break;
+
+        case 'o': /* Toggle camera following CM or on milkyway center */
+            scene->cmCentered = !scene->cmCentered;
+            break;
+
+        case 'r': /* Toggle floating */
+            scene->floatMode = !scene->floatMode;
             break;
 
         case 'p':
@@ -423,6 +561,16 @@ static void keyPressed(unsigned char key, int x, int y)
             scene->changed = TRUE;
             break;
 
+        case 'n':
+            scene->drawParticles = !scene->drawParticles;
+            scene->changed = TRUE;
+            break;
+
+        case 'l':
+            scene->useGLPoints = !scene->useGLPoints;
+            scene->changed = TRUE;
+            break;
+
         case 'f':
             scene->ntri /= 2;
             if (scene->ntri < 4)
@@ -433,9 +581,25 @@ static void keyPressed(unsigned char key, int x, int y)
             break;
 
         case 'a':
-            scene->drawaxes = !scene->drawaxes;
+            scene->drawAxes = !scene->drawAxes;
             scene->changed = TRUE;
             break;
+
+        case 't':
+            scene->drawOrbitTrace = !scene->drawOrbitTrace;
+            scene->changed = TRUE;
+            break;
+
+        case 'i':
+            scene->drawInfo = !scene->drawInfo;
+            scene->changed = TRUE;
+            break;
+
+        case 'c':
+            scene->monochromatic = !scene->monochromatic;
+            scene->changed = TRUE;
+            break;
+
         case '>':
             scene->dt /= 2.0;
             if (scene->dt < 10.0)
@@ -443,6 +607,7 @@ static void keyPressed(unsigned char key, int x, int y)
                 scene->dt = 10.0;
             }
             break;
+
         case '<':
             scene->dt *= 2.0;
             if (scene->dt > 1.0e6)
@@ -464,11 +629,11 @@ static void specialKeyPressed(int key, int x, int y)
     switch (key)
     {
         case GLUT_KEY_PAGE_UP:
-            scene->z -= DELTAZ;
+            scene->r -= DELTAR;
             scene->changed = TRUE;
             break;
         case GLUT_KEY_PAGE_DOWN:
-            scene->z += DELTAZ;
+            scene->r += DELTAR;
             scene->changed = TRUE;
             break;
         case GLUT_KEY_UP:
@@ -494,7 +659,9 @@ static void specialKeyPressed(int key, int x, int y)
 
 static void mouseFunc(int button, int state, int x, int y)
 {
-    if (scene->fullscreen)
+    int mods;
+
+    if (scene->screensaverMode)
     {
         mw_finish(EXIT_SUCCESS);
     }
@@ -503,14 +670,15 @@ static void mouseFunc(int button, int state, int x, int y)
     {
         xlast = x;
         ylast = y;
+        mods = glutGetModifiers();
 
-        if (glutGetModifiers() == GLUT_ACTIVE_SHIFT)
+        if ((button == GLUT_RIGHT_BUTTON) || (mods == GLUT_ACTIVE_SHIFT))
         {
-            scene->mousemode = 2;
+            scene->mouseMode = MOUSE_MODE_ZOOM;
         }
         else
         {
-            scene->mousemode = 1;
+            scene->mouseMode = MOUSE_MODE_MOVE;
         }
     }
 }
@@ -525,22 +693,30 @@ static void motionFunc(int x, int y)
     xlast = x;
     ylast = y;
 
-    if (scene->mousemode == 1)
+    switch (scene->mouseMode)
     {
-        scene->xrot += ROTSCALE * dy;
-        scene->yrot += ROTSCALE * dx;
-        scene->changed = TRUE;
-    }
-    else if (scene->mousemode == 2)
-    {
-        scene->z -= ZOOMSCALE * dy;
-        scene->changed = TRUE;
+        case MOUSE_MODE_MOVE:
+            scene->xrot += ROTSCALE * dy;
+            scene->yrot += ROTSCALE * dx;
+            scene->changed = TRUE;
+            break;
+
+        case MOUSE_MODE_ZOOM:
+            scene->r -= ZOOMSCALE * dy;
+            scene->changed = TRUE;
+            break;
+
+        case MOUSE_MODE_NONE:
+            break;
+
+        default:
+            mw_unreachable();
     }
 }
 
 static void passiveMotionFunc(int x, int y)
 {
-    if (scene->fullscreen)
+    if (scene->screensaverMode)
     {
         mw_finish(EXIT_SUCCESS);
     }
@@ -550,7 +726,7 @@ static void assignParticleColors(int nbody)
 {
     int i;
     double R, G, B, scale;
-    const FloatPos* r = scene->r;
+    const FloatPos* r = scene->rTrace;
 
     /* assign random particle colors */
     srand((unsigned int) time(NULL));
@@ -592,11 +768,8 @@ static void assignParticleColors(int nbody)
 
 static int nbodyInitDrawState()
 {
-    if (!monochromatic)
-    {
-        color = (FloatPos*) mwCallocA(scene->nbody, sizeof(FloatPos));
-        assignParticleColors(scene->nbody);
-    }
+    color = (FloatPos*) mwCallocA(scene->nbody, sizeof(FloatPos));
+    assignParticleColors(scene->nbody);
 
     return 0;
 }
@@ -620,51 +793,38 @@ static int alreadyAttached()
 
 #if !BOINC_APPLICATION
 
-static key_t key = -1;
-
-static int setShmemKey()
-{
-    /* TODO: pid of simulation, etc. */
-    key = DEFAULT_SHMEM_KEY;
-
-    return 0;
-}
-
-int connectSharedScene()
+int connectSharedScene(int instanceId)
 {
     int shmId;
-    struct shmid_ds buf;
+    const int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+    struct stat sb;
+    char name[128];
 
-    setShmemKey();
+    if (snprintf(name, sizeof(name), "/milkyway_nbody_%d", instanceId) == sizeof(name))
+        mw_panic("name buffer too small for shared memory name\n");
 
-    shmId = shmget(key, 0, 0);
+    shmId = shm_open(name, O_RDWR, mode);
     if (shmId < 0)
     {
         perror("Error getting shared memory");
-        return 1;
+        return errno;
     }
 
-    if (shmctl(shmId, IPC_STAT, &buf) < 0)
+    if (fstat(shmId, &sb) < 0)
     {
-        perror("Finding shared scene");
-        return 0;
+        perror("shmem fstat");
+        return errno;
     }
 
-    if (buf.shm_nattch > 1)
+    scene = (scene_t*) mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, shmId, 0);
+    if (scene == MAP_FAILED)
     {
-        perror("Screensaver already attached to segment");
-        return 1;
-    }
-    else if (buf.shm_nattch <= 0)
-    {
-        perror("Simulation not running");
-        return 1;
-    }
+        perror("mmap: Failed to mmap shared memory");
+        if (shm_unlink(name) < 0)
+        {
+            perror("Unlink shared memory");
+        }
 
-    scene = (scene_t*) shmat(shmId, NULL, 0);
-    if (!scene || scene == (scene_t*) -1)
-    {
-        perror("Attaching to shared memory");
         return 1;
     }
 
@@ -690,7 +850,7 @@ static int attemptConnectSharedScene()
 #define RETRY_INTERVAL 250
 
 /* In case the main application isn't ready yet, try and wait for a while */
-int connectSharedScene()
+int connectSharedScene(int instanceId)
 {
     int tries = 0;
 
@@ -715,22 +875,49 @@ static void sceneInit(const VisArgs* args)
 {
     width = args->width == 0 ? glutGet(GLUT_SCREEN_WIDTH) / 2 : args->width;
     height = args->height == 0 ? glutGet(GLUT_SCREEN_HEIGHT) / 2 : args->height;
-    monochromatic = args->monochrome;
-    useGLPoints = !args->notUseGLPoints;
+    scene->monochromatic = args->monochrome;
+    scene->useGLPoints = !args->notUseGLPoints;
+
+    scene->cmCentered = !args->originCenter;
+    scene->floatMode = !args->noFloat;
+
+#if 0
+    phi = atanf(scene->rootCenterOfMass[1] / scene->rootCenterOfMass[0]);
+    theta = atanf(sqrtf(sqr(scene->rootCenterOfMass[0]) + sqr(scene->rootCenterOfMass[1])) / scene->rootCenterOfMass[2]);
+    rho = centerOfMassDistance();
+
+    /* This doesn't actually quite work as intended but that's OK */
+    scene->xrot = r2d(theta);
+    scene->yrot = -r2d(phi);
+    scene->r = -2.0f * rho / SCALE;
+
+    if (scene->r - scene->rootCenterOfMass[2] < 0.0f)
+    {
+        scene->r = -5.0f * rho / SCALE;
+    }
+#endif
 
     scene->xrot = -60.0f;
     scene->yrot = -15.0f;
-    scene->z = -8.0f;
+    scene->r = -8.0f;
+
     scene->starsize = STARSIZE;
-    scene->fullscreen = args->fullscreen;
-    scene->drawaxes = TRUE;
+    scene->fullscreen = args->fullscreen || args->plainFullscreen;
+    scene->screensaverMode = scene->fullscreen && !args->plainFullscreen;
+    scene->drawInfo = TRUE;
+    scene->drawHelp = FALSE;
+    scene->drawAxes = TRUE;
+    scene->drawParticles = TRUE;
+    scene->drawOrbitTrace = TRUE;
     scene->ntri = NTRI;
     scene->paused = FALSE;
     scene->step = FALSE;
-    scene->mousemode = 1;
+    scene->mouseMode = MOUSE_MODE_MOVE;
     scene->changed = FALSE;
     scene->dt = 300;
     scene->usleepdt = USLEEPDT;
+
+    dsfmt_init_gen_rand(&rndState, (uint32_t) time(NULL));
 }
 
 int nbodyGLSetup(const VisArgs* args)
