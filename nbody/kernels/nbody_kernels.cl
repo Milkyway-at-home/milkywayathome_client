@@ -55,7 +55,7 @@ typedef enum
 
 
 
-#if 0
+#if 1
 #pragma OPENCL EXTENSION cl_amd_printf : enable
 #define assert(x) if (!(x)) { printf("Assertion failed[%d]: %s\n", __LINE__, #x); }
 #define dprintf(fmt, ...) printf("Line %d: " fmt, __LINE__, __VA_ARGS__)
@@ -605,6 +605,34 @@ __kernel void NBODY_KERNEL(summarization)
     }
 }
 
+#if NOSORT
+#warning "CORRECT KERNL"
+/* Debugging */
+__attribute__ ((reqd_work_group_size(THREADS4, 1, 1)))
+__kernel void NBODY_KERNEL(sort)
+{
+    __local int bottoms;
+
+    if (get_local_id(0) == 0)
+    {
+        bottoms = _treeStatus->bottom;
+    }
+    barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+
+    int bottom = bottoms;
+    int dec = get_local_size(0) * get_num_groups(0);
+    int k = NNODE + 1 - dec + get_global_id(0);
+
+    while (k >= bottom)
+    {
+        _sort[k] = k;
+        k -= dec;  /* Move on to next cell */
+    }
+}
+
+#else
+
+/* Real sort kernel, will never finish unless all threads can be launched at once */
 __attribute__ ((reqd_work_group_size(THREADS4, 1, 1)))
 __kernel void NBODY_KERNEL(sort)
 {
@@ -644,6 +672,8 @@ __kernel void NBODY_KERNEL(sort)
         }
     }
 }
+
+#endif /* NOSORT */
 
 #if WARPSIZE <= 0
   #error Invalid warp size

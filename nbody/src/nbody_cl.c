@@ -337,6 +337,8 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
                  "-D NNODE=%u "
                  "-D WARPSIZE=%u "
 
+                 "-D NOSORT=%d "
+
                  "-D THREADS1="ZU" "
                  "-D THREADS2="ZU" "
                  "-D THREADS3="ZU" "
@@ -360,6 +362,8 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
                  st->nbody,
                  findNNode(di, st->nbody),
                  di->warpSize,
+
+                 (di->devType == CL_DEVICE_TYPE_CPU),
 
                  threads[0],
                  threads[1],
@@ -530,7 +534,6 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     cl_uint blocks = ci->di.maxCompUnits;
     cl_event events[6];
     cl_double timings[6];
-    cl_uint curEvent = 0;
 
     memset(events, 0, sizeof(events));
 
@@ -543,7 +546,7 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     warn("Bounding box kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.boundingBox, 1,
                                  NULL, global, local,
-                                 0, NULL, &events[curEvent++]);
+                                 0, NULL, &events[0]);
     if (err != CL_SUCCESS)
         return err;
 
@@ -552,7 +555,7 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     warn("Tree build kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.buildTree, 1,
                                  NULL, global, local,
-                                 0, NULL, &events[curEvent++]);
+                                 0, NULL, &events[1]);
     if (err != CL_SUCCESS)
         return err;
 
@@ -561,32 +564,31 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     warn("Summarization kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.summarization, 1,
                                  NULL, global, local,
-                                 0, NULL, &events[curEvent++]);
+                                 0, NULL, &events[2]);
     if (err != CL_SUCCESS)
         return err;
 
-    if (ci->di.devType == CL_DEVICE_TYPE_GPU)
-    {
-        /* FIXME: This does not work unless ALL of the threads are
-         * launched at once. This may be bad when we need
-         * responsiveness. This also means it will always hang with
-         * CPUs */
-        global[0] = threads[3] * factors[3] * blocks;
-        local[0] = threads[3];
-        warn("Sort kernel: %zu, %zu\n", global[0], local[0]);
-        err = clEnqueueNDRangeKernel(ci->queue, kernels.sort, 1,
-                                     NULL, global, local,
-                                     0, NULL, &events[curEvent++]);
-        if (err != CL_SUCCESS)
-            return err;
-    }
+
+    /* FIXME: This does not work unless ALL of the threads are
+     * launched at once. This may be bad when we need
+     * responsiveness. This also means it will always hang with
+     * CPUs */
+    global[0] = threads[3] * factors[3] * blocks;
+    local[0] = threads[3];
+    warn("Sort kernel: %zu, %zu\n", global[0], local[0]);
+    err = clEnqueueNDRangeKernel(ci->queue, kernels.sort, 1,
+                                 NULL, global, local,
+                                 0, NULL, &events[3]);
+    if (err != CL_SUCCESS)
+        return err;
+
 
     global[0] = threads[4] * factors[4] * blocks;
     local[0] = threads[4];
     warn("Force kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.forceCalculation, 1,
                                  NULL, global, local,
-                                 0, NULL, &events[curEvent++]);
+                                 0, NULL, &events[4]);
     if (err != CL_SUCCESS)
         return err;
 
@@ -595,58 +597,39 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     warn("Integration kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.integration, 1,
                                  NULL, global, local,
-                                 0, NULL, &events[curEvent++]);
+                                 0, NULL, &events[5]);
     if (err != CL_SUCCESS)
         return err;
 
-    err = clWaitForEvents(curEvent, events);
+    err = clWaitForEvents(6, events);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Failed to wait for events", err);
     }
 
-    for (i = 0; i < curEvent; ++i)
+    for (i = 0; i < 6; ++i)
     {
         timings[i] = mwEventTimeMS(events[i]);
         kernelTimings[i] += timings[i];
     }
 
-    if (ci->di.devType == CL_DEVICE_TYPE_GPU)
-    {
-        warn("Step %d:\n"
-             "  boundingBox:      %f ms\n"
-             "  buildTree:        %f ms\n"
-             "  summarization:    %f ms\n"
-             "  sort:             %f ms\n"
-             "  forceCalculation: %f ms\n"
-             "  integration:      %f ms\n"
-             "\n",
-             st->step,
-             timings[0],
-             timings[1],
-             timings[2],
-             timings[3],
-             timings[4],
-             timings[5]);
-    }
-    else
-    {
-        warn("Step %d:\n"
-             "  boundingBox:      %f ms\n"
-             "  buildTree:        %f ms\n"
-             "  summarization:    %f ms\n"
-             "  forceCalculation: %f ms\n"
-             "  integration:      %f ms\n"
-             "\n",
-             st->step,
-             timings[0],
-             timings[1],
-             timings[2],
-             timings[3],
-             timings[4]);
-    }
+    warn("Step %d:\n"
+         "  boundingBox:      %f ms\n"
+         "  buildTree:        %f ms\n"
+         "  summarization:    %f ms\n"
+         "  sort:             %f ms\n"
+         "  forceCalculation: %f ms\n"
+         "  integration:      %f ms\n"
+         "\n",
+         st->step,
+         timings[0],
+         timings[1],
+         timings[2],
+         timings[3],
+         timings[4],
+         timings[5]);
 
-    for (i = 0; i < curEvent; ++i)
+    for (i = 0; i < 6; ++i)
     {
         clReleaseEvent(events[i]);
     }
@@ -883,27 +866,6 @@ static cl_int marshalBodies(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st, cl_bo
     return unmapBodies(pos, vel, mass, nbb, ci);
 }
 
-/* Fill the sorted array with the unsorted indices.
-   This is useful for debugging the sort / running with too few threads
- */
-static cl_int notSort(NBodyBuffers* nbb, CLInfo* ci, NBodyState* st)
-{
-    int i;
-    int* p;
-
-    p = mapBuffer(ci, nbb->sort, CL_MAP_WRITE, st->nbody * sizeof(int));
-    if (!p)
-        return MW_CL_ERROR;
-
-    for (i = 0; i < st->nbody; ++i)
-    {
-        p[i] = i;
-    }
-
-    return clEnqueueUnmapMemObject(ci->queue, nbb->sort, p, 0, NULL, NULL);
-}
-
-
 static void printKernelTimings(const DevInfo* di, const NBodyState* st)
 {
 
@@ -916,51 +878,26 @@ static void printKernelTimings(const DevInfo* di, const NBodyState* st)
         totalTime += kernelTimings[i];
     }
 
-    if (di->devType == CL_DEVICE_TYPE_GPU)
-    {
-
-        warn("\n--------------------------------------------------------------------------------\n"
-             "Total timing over %d steps:\n"
-             "                         Average             Total            Fraction\n"
-             "                    ----------------   ----------------   ----------------\n"
-             "  boundingBox:      %16f   %16f   %15.4f%%\n"
-             "  buildTree:        %16f   %16f   %15.4f%%\n"
-             "  summarization:    %16f   %16f   %15.4f%%\n"
-             "  sort:             %16f   %16f   %15.4f%%\n"
-             "  forceCalculation: %16f   %16f   %15.4f%%\n"
-             "  integration:      %16f   %16f   %15.4f%%\n"
-             "\n--------------------------------------------------------------------------------\n"
-             "\n",
-             st->step,
-             kernelTimings[0] / nStep, kernelTimings[0], 100.0 * kernelTimings[0] / totalTime,
-             kernelTimings[1] / nStep, kernelTimings[1], 100.0 * kernelTimings[1] / totalTime,
-             kernelTimings[2] / nStep, kernelTimings[2], 100.0 * kernelTimings[2] / totalTime,
-             kernelTimings[3] / nStep, kernelTimings[3], 100.0 * kernelTimings[3] / totalTime,
-             kernelTimings[4] / nStep, kernelTimings[4], 100.0 * kernelTimings[4] / totalTime,
-             kernelTimings[5] / nStep, kernelTimings[5], 100.0 * kernelTimings[5] / totalTime
-            );
-    }
-    else
-    {
-        warn("\n--------------------------------------------------------------------------------\n"
-             "Total timing over %d steps:\n"
-             "                         Average             Total            Fraction\n"
-             "                    ----------------   ----------------   ----------------\n"
-             "  boundingBox:      %16f   %16f   %15.4f%%\n"
-             "  buildTree:        %16f   %16f   %15.4f%%\n"
-             "  summarization:    %16f   %16f   %15.4f%%\n"
-             "  forceCalculation: %16f   %16f   %15.4f%%\n"
-             "  integration:      %16f   %16f   %15.4f%%\n"
-             "\n--------------------------------------------------------------------------------\n"
-             "\n",
-             st->step,
-             kernelTimings[0] / nStep, kernelTimings[0], 100.0 * kernelTimings[0] / totalTime,
-             kernelTimings[1] / nStep, kernelTimings[1], 100.0 * kernelTimings[1] / totalTime,
-             kernelTimings[2] / nStep, kernelTimings[2], 100.0 * kernelTimings[2] / totalTime,
-             kernelTimings[3] / nStep, kernelTimings[3], 100.0 * kernelTimings[3] / totalTime,
-             kernelTimings[4] / nStep, kernelTimings[4], 100.0 * kernelTimings[4] / totalTime);
-
-    }
+    warn("\n--------------------------------------------------------------------------------\n"
+         "Total timing over %d steps:\n"
+         "                         Average             Total            Fraction\n"
+         "                    ----------------   ----------------   ----------------\n"
+         "  boundingBox:      %16f   %16f   %15.4f%%\n"
+         "  buildTree:        %16f   %16f   %15.4f%%\n"
+         "  summarization:    %16f   %16f   %15.4f%%\n"
+         "  sort:             %16f   %16f   %15.4f%%\n"
+         "  forceCalculation: %16f   %16f   %15.4f%%\n"
+         "  integration:      %16f   %16f   %15.4f%%\n"
+         "\n--------------------------------------------------------------------------------\n"
+         "\n",
+         st->step,
+         kernelTimings[0] / nStep, kernelTimings[0], 100.0 * kernelTimings[0] / totalTime,
+         kernelTimings[1] / nStep, kernelTimings[1], 100.0 * kernelTimings[1] / totalTime,
+         kernelTimings[2] / nStep, kernelTimings[2], 100.0 * kernelTimings[2] / totalTime,
+         kernelTimings[3] / nStep, kernelTimings[3], 100.0 * kernelTimings[3] / totalTime,
+         kernelTimings[4] / nStep, kernelTimings[4], 100.0 * kernelTimings[4] / totalTime,
+         kernelTimings[5] / nStep, kernelTimings[5], 100.0 * kernelTimings[5] / totalTime
+        );
 }
 
 static void setCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
@@ -1026,13 +963,6 @@ NBodyStatus runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* n
     err = setupExec(&ci, ctx, st, &nbb);
     if (err != CL_SUCCESS)
         goto fail;
-
-    if (ci.di.devType == CL_DEVICE_TYPE_CPU)
-    {
-        err = notSort(&nbb, &ci, st);
-        if (err != CL_SUCCESS)
-            goto fail;
-    }
 
     err = marshalBodies(&nbb, &ci, st, CL_TRUE);
     if (err != CL_SUCCESS)
