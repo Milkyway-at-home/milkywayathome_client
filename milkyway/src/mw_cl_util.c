@@ -168,7 +168,7 @@ cl_mem mwCreateZeroReadWriteBuffer(CLInfo* ci, size_t size)
     mem = clCreateBuffer(ci->clctx, CL_MEM_READ_WRITE, size, NULL, &err);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Failed to create zero buffer", err);
+        mwCLWarn("Failed to create zero buffer of size "ZU, err, size);
         goto fail;
     }
 
