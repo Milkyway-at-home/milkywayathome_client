@@ -53,7 +53,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
     commandLine = GetCommandLine();
     if (poptParseArgvString(commandLine, &argc, &argv))
     {
-        warn("Failed to parse command line into argv\n");
+        mw_printf("Failed to parse command line into argv\n");
         return 1;
     }
 

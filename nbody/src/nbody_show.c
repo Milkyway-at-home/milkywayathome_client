@@ -143,7 +143,7 @@ char* showSpherical(const Spherical* s)
                      s->mass,
                      s->scale))
     {
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
     }
 
     return buf;
@@ -180,7 +180,7 @@ char* showHalo(const Halo* h)
                      h->c3,
                      h->triaxAngle))
     {
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
     }
 
     return buf;
@@ -205,7 +205,7 @@ char* showDisk(const Disk* d)
                      d->scaleLength,
                      d->scaleHeight))
     {
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
     }
 
     return buf;
@@ -236,7 +236,7 @@ char* showBody(const Body* p)
                      showBool(ignoreBody(p))))
 
     {
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
     }
 
     free(vel);
@@ -275,7 +275,7 @@ char* showPotential(const Potential* p)
                   p->rings);
 
     if (rc < 0)
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
 
     free(sphBuf);
     free(diskBuf);
@@ -323,7 +323,7 @@ char* showNBodyCtx(const NBodyCtx* ctx)
                      (int) ctx->checkpointT,
                      ctx->freqOut))
     {
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
     }
 
     free(potBuf);
@@ -360,7 +360,7 @@ char* showHistogramParams(const HistogramParams* hp)
                      hp->center))
 
     {
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
     }
 
     return buf;
@@ -426,7 +426,7 @@ char* showNBodyTree(const NBodyTree* t)
                      t->cellused,
                      t->maxlevel))
     {
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
     }
 
     return buf;
@@ -469,7 +469,7 @@ char* showNBodyState(const NBodyState* st)
                      showBool(st->treeIncest),
                      st->outFile))
     {
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
     }
 
     free(treeBuf);

@@ -220,10 +220,10 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
 
     if (fileCount != maxIdx)
     {
-        warn("Number of bins does not match those in histogram file. "
-             "Expected %u, got %u\n",
-             maxIdx,
-             fileCount);
+        mw_printf("Number of bins does not match those in histogram file. "
+                  "Expected %u, got %u\n",
+                  maxIdx,
+                  fileCount);
         free(histData);
         return NULL;
     }
@@ -250,14 +250,14 @@ real nbodyChisq(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, cons
     histData = readHistData(nbf->histogramFileName, maxIdx);
     if (!histData)
     {
-        warn("Failed to read histogram\n");
+        mw_printf("Failed to read histogram\n");
         return NAN;
     }
 
     histogram = createHistogram(ctx, st, maxIdx, start, hp, histData, &totalNum);
     if (!histogram)
     {
-        warn("Failed to create histogram\n");
+        mw_printf("Failed to create histogram\n");
         return NAN;
     }
 

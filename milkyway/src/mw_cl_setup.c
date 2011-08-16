@@ -31,7 +31,7 @@ static void CL_CALLBACK contextCallback(const char* errInfo,
                                         size_t cb,
                                         void* userData)
 {
-    warn("CL context error: %s\n", errInfo);
+    mw_printf("CL context error: %s\n", errInfo);
 }
 
 #if defined(cl_APPLE_ContextLoggingFunctions) && defined(__APPLE__)
@@ -143,16 +143,16 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
 
     if (platformChoice >= nPlatform)
     {
-        warn("Didn't find preferred platform\n");
+        mw_printf("Didn't find preferred platform\n");
         platformChoice = 0;
     }
 
-    warn("Using device %u on platform %u\n", clr->devNum, platformChoice);
+    mw_printf("Using device %u on platform %u\n", clr->devNum, platformChoice);
 
     devs = mwGetAllDevices(ids[platformChoice], &nDev);
     if (!devs)
     {
-        warn("Error getting devices\n");
+        mw_printf("Error getting devices\n");
         free(ids);
         return MW_CL_ERROR;
     }
@@ -181,14 +181,14 @@ cl_int mwSetupCL(CLInfo* ci, const CLRequest* clr)
     err = mwGetCLInfo(ci, clr);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to get information about device\n");
+        mw_printf("Failed to get information about device\n");
         return err;
     }
 
     err = mwGetDevInfo(&ci->di, ci->dev);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to get device info\n");
+        mw_printf("Failed to get device info\n");
         return err;
     }
 

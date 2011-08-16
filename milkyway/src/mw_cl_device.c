@@ -120,7 +120,7 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
             }
             else
             {
-                warn("Unknown device type, using warp size = 1\n");
+                mw_printf("Unknown device type, using warp size = 1\n");
                 di->warpSize = 1;
             }
         }
@@ -221,8 +221,8 @@ cl_double cudaEstimateGFLOPs(const DevInfo* di)
     flopsFloat *= 1.0e-9;  /* FLOPS -> GFLOPS */
     flopsDouble *= 1.0e-9;
 
-    warn("Estimated Nvidia device GFLOP/s: %.0f SP GFLOP/s, %.0f DP FLOP/s\n",
-         flopsFloat, flopsDouble);
+    mw_printf("Estimated Nvidia device GFLOP/s: %.0f SP GFLOP/s, %.0f DP FLOP/s\n",
+              flopsFloat, flopsDouble);
 
     return floor(gflops);
 }
@@ -249,95 +249,95 @@ cl_bool hasNvidiaCompilerFlags(const DevInfo* di)
 
 void mwPrintDevInfo(const DevInfo* di)
 {
-    warn("Device %s (%s:0x%x) (%s)\n"
-         "Driver version:      %s\n"
-         "Version:             %s\n"
-         "Compute capability:  %u.%u\n"
-         "Little endian:       %s\n"
-         "Error correction:    %s\n"
-         "Image support:       %s\n"
-         "Address bits:        %u\n"
-         "Max compute units:   %u\n"
-         "Clock frequency:     %u Mhz\n"
-         "Global mem size:     "LLU"\n"
-         "Max mem alloc:       "LLU"\n"
-         "Global mem cache:    "LLU"\n"
-         "Cacheline size:      %u\n"
-         "Local mem type:      %s\n"
-         "Local mem size:      "LLU"\n"
-         "Max const args:      %u\n"
-         "Max const buf size:  "LLU"\n"
-         "Max parameter size:  "ZU"\n"
-         "Max work group size: "ZU"\n"
-         "Max work item dim:   %u\n"
-         "Max work item sizes: { "ZU", "ZU", "ZU" }\n"
-         "Mem base addr align: %u\n"
-         "Min type align size: %u\n"
-         "Timer resolution:    "ZU" ns\n"
-         "Warp size:           %u\n"
-         "Double extension:    %s\n"
-         "Extensions:          %s\n" ,
-         di->devName,
-         di->vendor,
-         di->vendorID,
-         showCLDeviceType(di->devType),
-         di->driver,
-         di->version,
-         di->computeCapabilityMajor, di->computeCapabilityMinor,
-         showCLBool(di->littleEndian),
-         showCLBool(di->errCorrect),
-         showCLBool(di->imgSupport),
-         di->addrBits,
-         di->maxCompUnits,
-         di->clockFreq,
-         di->memSize,
-         di->maxMemAlloc,
-         di->gMemCache,
-         di->cachelineSize,
-         //di->showBool(unifiedMem),
-         showCLDeviceLocalMemType(di->localMemType),
-         di->localMemSize,
-         di->maxConstArgs,
-         di->maxConstBufSize,
-         di->maxParamSize,
-         di->maxWorkGroupSize,
-         di->maxWorkItemDim,
-         di->maxWorkItemSizes[0], di->maxWorkItemSizes[1], di->maxWorkItemSizes[2],
-         di->memBaseAddrAlign,
-         di->minAlignSize,
-         di->timerRes,
-         di->warpSize,
-         showMWDoubleExts(di->doubleExts),
-         di->exts
+    mw_printf("Device %s (%s:0x%x) (%s)\n"
+              "Driver version:      %s\n"
+              "Version:             %s\n"
+              "Compute capability:  %u.%u\n"
+              "Little endian:       %s\n"
+              "Error correction:    %s\n"
+              "Image support:       %s\n"
+              "Address bits:        %u\n"
+              "Max compute units:   %u\n"
+              "Clock frequency:     %u Mhz\n"
+              "Global mem size:     "LLU"\n"
+              "Max mem alloc:       "LLU"\n"
+              "Global mem cache:    "LLU"\n"
+              "Cacheline size:      %u\n"
+              "Local mem type:      %s\n"
+              "Local mem size:      "LLU"\n"
+              "Max const args:      %u\n"
+              "Max const buf size:  "LLU"\n"
+              "Max parameter size:  "ZU"\n"
+              "Max work group size: "ZU"\n"
+              "Max work item dim:   %u\n"
+              "Max work item sizes: { "ZU", "ZU", "ZU" }\n"
+              "Mem base addr align: %u\n"
+              "Min type align size: %u\n"
+              "Timer resolution:    "ZU" ns\n"
+              "Warp size:           %u\n"
+              "Double extension:    %s\n"
+              "Extensions:          %s\n" ,
+              di->devName,
+              di->vendor,
+              di->vendorID,
+              showCLDeviceType(di->devType),
+              di->driver,
+              di->version,
+              di->computeCapabilityMajor, di->computeCapabilityMinor,
+              showCLBool(di->littleEndian),
+              showCLBool(di->errCorrect),
+              showCLBool(di->imgSupport),
+              di->addrBits,
+              di->maxCompUnits,
+              di->clockFreq,
+              di->memSize,
+              di->maxMemAlloc,
+              di->gMemCache,
+              di->cachelineSize,
+              //di->showBool(unifiedMem),
+              showCLDeviceLocalMemType(di->localMemType),
+              di->localMemSize,
+              di->maxConstArgs,
+              di->maxConstBufSize,
+              di->maxParamSize,
+              di->maxWorkGroupSize,
+              di->maxWorkItemDim,
+              di->maxWorkItemSizes[0], di->maxWorkItemSizes[1], di->maxWorkItemSizes[2],
+              di->memBaseAddrAlign,
+              di->minAlignSize,
+              di->timerRes,
+              di->warpSize,
+              showMWDoubleExts(di->doubleExts),
+              di->exts
         );
 }
 
 void mwPrintDevInfoShort(const DevInfo* di)
 {
-    warn("Device %s (%s:0x%x) (%s)\n"
-         "Driver version:      %s\n"
-         "Version:             %s\n"
-         "Compute capability:  %u.%u\n"
-         "Image support:       %s\n"
-         "Max compute units:   %u\n"
-         "Clock frequency:     %u Mhz\n"
-         "Global mem size:     "LLU"\n"
-         "Local mem size:      "LLU"\n"
-         "Max const buf size:  "LLU"\n"
-         "Double extension:    %s\n",
-         di->devName,
-         di->vendor, di->vendorID,
-         showCLDeviceType(di->devType),
-         di->driver,
-         di->version,
-         di->computeCapabilityMajor, di->computeCapabilityMinor,
-         showCLBool(di->imgSupport),
-         di->maxCompUnits,
-         di->clockFreq,
-         di->memSize,
-         di->localMemSize,
-         di->maxConstBufSize,
-         showMWDoubleExts(di->doubleExts)
+    mw_printf("Device %s (%s:0x%x) (%s)\n"
+              "Driver version:      %s\n"
+              "Version:             %s\n"
+              "Compute capability:  %u.%u\n"
+              "Image support:       %s\n"
+              "Max compute units:   %u\n"
+              "Clock frequency:     %u Mhz\n"
+              "Global mem size:     "LLU"\n"
+              "Local mem size:      "LLU"\n"
+              "Max const buf size:  "LLU"\n"
+              "Double extension:    %s\n",
+              di->devName,
+              di->vendor, di->vendorID,
+              showCLDeviceType(di->devType),
+              di->driver,
+              di->version,
+              di->computeCapabilityMajor, di->computeCapabilityMinor,
+              showCLBool(di->imgSupport),
+              di->maxCompUnits,
+              di->clockFreq,
+              di->memSize,
+              di->localMemSize,
+              di->maxConstBufSize,
+              showMWDoubleExts(di->doubleExts)
         );
 }
 
@@ -374,18 +374,18 @@ static void mwGetPlatformInfo(PlatformInfo* pi, cl_platform_id platform)
 
 static void mwPrintPlatformInfo(PlatformInfo* pi, cl_uint n)
 {
-    warn("Platform %u information:\n"
-         "  Name:       %s\n"
-         "  Version:    %s\n"
-         "  Vendor:     %s\n"
-         "  Extensions: %s\n"
-         "  Profile:    %s\n",
-         n,
-         pi->name,
-         pi->version,
-         pi->vendor,
-         pi->extensions,
-         pi->profile
+    mw_printf("Platform %u information:\n"
+              "  Name:       %s\n"
+              "  Version:    %s\n"
+              "  Vendor:     %s\n"
+              "  Extensions: %s\n"
+              "  Profile:    %s\n",
+              n,
+              pi->name,
+              pi->version,
+              pi->vendor,
+              pi->extensions,
+              pi->profile
         );
 }
 
@@ -416,7 +416,7 @@ cl_platform_id* mwGetAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out)
 
     if (n_platform == 0)
     {
-        warn("No CL platforms found\n");
+        mw_printf("No CL platforms found\n");
         return NULL;
     }
 
@@ -429,7 +429,7 @@ cl_platform_id* mwGetAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out)
         return NULL;
     }
 
-    warn("Found %u platform(s)\n", n_platform);
+    mw_printf("Found %u platform(s)\n", n_platform);
 
     *n_platforms_out = n_platform;
     return ids;
@@ -450,11 +450,11 @@ cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut)
 
     if (numDev == 0)
     {
-        warn("Didn't find any CL devices\n");
+        mw_printf("Didn't find any CL devices\n");
         return NULL;
     }
 
-    warn("Found %u CL device(s)\n", numDev);
+    mw_printf("Found %u CL device(s)\n", numDev);
 
     devs = (cl_device_id*) mwMalloc(sizeof(cl_device_id) * numDev);
     err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, numDev, devs, &numDev);
@@ -485,14 +485,14 @@ cl_int mwSelectDevice(CLInfo* ci, const cl_device_id* devs, const CLRequest* clr
 
     if (clr->devNum >= nDev)
     {
-        warn("Requested device is out of range of number found devices\n");
+        mw_printf("Requested device is out of range of number found devices\n");
         return MW_CL_ERROR;
     }
 
     ci->dev = devs[clr->devNum];
     err = mwGetDeviceType(ci->dev, &ci->devType);
     if (err != CL_SUCCESS)
-        warn("Failed to find type of device %u\n", clr->devNum);
+        mw_printf("Failed to find type of device %u\n", clr->devNum);
 
     return err;
 }

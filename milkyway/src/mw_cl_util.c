@@ -150,13 +150,13 @@ cl_int mwGetWorkGroupInfo(cl_kernel kern, const CLInfo* ci, WGInfo* wgi)
 
 void mwPrintWorkGroupInfo(const WGInfo* wgi)
 {
-    warn("Kernel work group info:\n"
-         "  Work group size = "ZU"\n"
-         "  Kernel local mem size = "LLU"\n"
-         "  Compile work group size = { "ZU", "ZU", "ZU" }\n",
-         wgi->wgs,
-         wgi->lms,
-         wgi->cwgs[0], wgi->cwgs[1], wgi->cwgs[2]);
+    mw_printf("Kernel work group info:\n"
+              "  Work group size = "ZU"\n"
+              "  Kernel local mem size = "LLU"\n"
+              "  Compile work group size = { "ZU", "ZU", "ZU" }\n",
+              wgi->wgs,
+              wgi->lms,
+              wgi->cwgs[0], wgi->cwgs[1], wgi->cwgs[2]);
 }
 
 cl_mem mwCreateZeroReadWriteBuffer(CLInfo* ci, size_t size)

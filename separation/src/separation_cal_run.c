@@ -80,10 +80,10 @@ static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain, CALint pollin
     grid.gridSize.depth  = (global.depth + local.depth - 1) / local.depth;
 
     #if 0
-    warn("arst %u %u %u -> { %u %u }\n", grid.gridSize.width, grid.gridSize.height, grid.gridSize.depth,
-
-         grid.gridSize.width * local.width,
-         grid.gridSize.height * local.height
+    mw_printf("arst %u %u %u -> { %u %u }\n",
+              grid.gridSize.width, grid.gridSize.height, grid.gridSize.depth,
+              grid.gridSize.width * local.width,
+              grid.gridSize.height * local.height
         );
     #endif
 
@@ -170,24 +170,24 @@ static void printChunks(const IntegralArea* ia, const SeparationCALChunks* chunk
 {
     CALuint i;
 
-    warn("Integration range: { nu_steps = %u, mu_steps = %u, r_steps = %u }\n"
-         "Using %u chunk(s) with sizes:",
-         ia->nu_steps, ia->mu_steps, ia->r_steps,
-         chunks->nChunkMu);
+    mw_printf("Integration range: { nu_steps = %u, mu_steps = %u, r_steps = %u }\n"
+              "Using %u chunk(s) with sizes:",
+              ia->nu_steps, ia->mu_steps, ia->r_steps,
+              chunks->nChunkMu);
 
     for (i = 0; i < chunks->nChunkMu; ++i)
     {
-        warn("%5u", chunks->chunkMuBorders[i + 1] - chunks->chunkMuBorders[i]);
+        mw_printf("%5u", chunks->chunkMuBorders[i + 1] - chunks->chunkMuBorders[i]);
     }
-    warn("\n");
+    mw_printf("\n");
 
 #if 0
-    warn("Borders: ");
+    mw_printf("Borders: ");
     for (i = 0; i <= chunks->nChunkMu; ++i)
     {
-        warn("%5u", chunks->chunkMuBorders[i]);
+        mw_printf("%5u", chunks->chunkMuBorders[i]);
     }
-    warn("\n");
+    mw_printf("\n");
 #endif
 }
 
@@ -274,7 +274,7 @@ static CALuint64 deviceFlopsEstimate(const CALdeviceattribs* d)
         default:
             doubleFrac = 5;
             vliw = 5;
-            warn("Unknown target type: %s (%d)\n", showCALtargetEnum(d->target), d->target);
+            mw_printf("Unknown target type: %s (%d)\n", showCALtargetEnum(d->target), d->target);
     }
 
     flops = 2 * (d->numberOfSIMD * vliw * 16) * d->engineClock * 1000000;
@@ -290,7 +290,7 @@ static CALuint64 deviceFlopsEstimate(const CALdeviceattribs* d)
          * device clock comes back as 0 and it breaks everything.
          */
         flops = deviceFlopsEstimateFallback(d->target);
-        warn("Flops estimate too low, using fallback estimate based on target\n");
+        mw_printf("Flops estimate too low, using fallback estimate based on target\n");
     }
 
     return flops;
@@ -345,18 +345,18 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
 
     /* Sleep for some fraction of estimated time before polling */
     *chunkWaitEstimate = (CALuint) (clr->gpuWaitFactor * estIterTime / nChunk);
-    warn("Estimated iteration time %.3f ms\n"
-         "Target frequency %.3f Hz\n"
-         "Using polling mode %d (%s) using a wait factor of %.3f\n"
-         "Dividing into %u chunks (~%.3f ms / chunk), initially sleeping for %u ms\n",
-         estIterTime, clr->targetFrequency, clr->pollingMode,
-         pollingModeDescription(clr->pollingMode),
-         clr->gpuWaitFactor, nChunk,
-         estIterTime / nChunk, *chunkWaitEstimate);
+    mw_printf("Estimated iteration time %.3f ms\n"
+              "Target frequency %.3f Hz\n"
+              "Using polling mode %d (%s) using a wait factor of %.3f\n"
+              "Dividing into %u chunks (~%.3f ms / chunk), initially sleeping for %u ms\n",
+              estIterTime, clr->targetFrequency, clr->pollingMode,
+              pollingModeDescription(clr->pollingMode),
+              clr->gpuWaitFactor, nChunk,
+              estIterTime / nChunk, *chunkWaitEstimate);
 
     if (clr->pollingMode == 0 && !mw_calCtxWaitForEvents)
     {
-        warn("Trying to use polling mode 0, but failed to get calCtxWaitForEvents. Falling back to busy waiting\n");
+        mw_printf("Trying to use polling mode 0, but failed to get calCtxWaitForEvents. Falling back to busy waiting\n");
     }
 
     return nChunk;
@@ -383,13 +383,13 @@ static CALresult findCALChunks(const AstronomyParameters* ap,
     nChunk = deviceChunkEstimate(ap, ia, &ci->devAttribs, clr, &chunks->chunkWaitTime);
     if (nChunk == 0)
     {
-        warn("Invalid number of chunks: %u\n", nChunk);
+        mw_printf("Invalid number of chunks: %u\n", nChunk);
         return CAL_RESULT_ERROR;
     }
     else if (ia->mu_steps / nChunk < nMod)
     {
         chunks->nChunkMu = ia->mu_steps / nMod;
-        warn("Warning: Estimated number of chunks (%u) too large. Using %u\n", nChunk, chunks->nChunkMu);
+        mw_printf("Warning: Estimated number of chunks (%u) too large. Using %u\n", nChunk, chunks->nChunkMu);
     }
     else
     {
@@ -415,7 +415,7 @@ static CALresult findCALChunks(const AstronomyParameters* ap,
 
     if (sum != ia->mu_steps)  /* Assert that the divisions aren't broken */
     {
-        warn("Chunk mu steps does not match: %u != %u\n", sum, ia->mu_steps);
+        mw_printf("Chunk mu steps does not match: %u != %u\n", sum, ia->mu_steps);
         free(chunks->chunkMuBorders);
         return CAL_RESULT_ERROR;
     }
@@ -538,7 +538,7 @@ static CALresult runIntegral(const AstronomyParameters* ap,
     }
     es->nu_step = 0;
 
-    warn("Integration time = %f s, average per iteration = %f ms\n", 1.0e-3 * tAcc, tAcc / ia->nu_steps);
+    mw_printf("Integration time = %f s, average per iteration = %f ms\n", 1.0e-3 * tAcc, tAcc / ia->nu_steps);
 
     destroyModuleNames(&cn);
     freeCALChunks(&chunks);

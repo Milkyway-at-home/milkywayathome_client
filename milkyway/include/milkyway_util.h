@@ -108,12 +108,11 @@ void* mwCallocA(size_t count, size_t size);
 #endif /* _WIN32 */
 
 
-#if !HAVE_ERR_H
-  #define warn(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)
-#endif
+/* BOINC likes things on stderr */
+#define mw_printf(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)
 
 /* Controlled, but lazy failure */
-#define fail(msg, ...)                              \
+#define mw_fail(msg, ...)                           \
     {                                               \
         fprintf(stderr, msg, ##__VA_ARGS__);        \
         mw_finish(EXIT_FAILURE);                    \

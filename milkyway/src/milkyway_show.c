@@ -25,7 +25,7 @@ char* showVector(mwvector v)
     char* buf;
 
     if (asprintf(&buf, "{ %g, %g, %g }", X(v), Y(v), Z(v)) < 0)
-        fail("asprintf() failed\n");
+        mw_fail("asprintf() failed\n");
 
     return buf;
 }

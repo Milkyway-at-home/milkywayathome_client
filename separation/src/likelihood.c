@@ -395,7 +395,7 @@ int likelihood(SeparationResults* results,
                         ss,
                         f);
     t2 = mwGetTime();
-    warn("Likelihood time = %f s\n", t2 - t1);
+    mw_printf("Likelihood time = %f s\n", t2 - t1);
 
     mwFreeA(r_points);
     mwFreeA(qw_r3_N);

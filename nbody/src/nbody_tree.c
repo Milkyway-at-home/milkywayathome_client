@@ -228,7 +228,7 @@ static void loadBody(NBodyState* st, NBodyTree* t, Body* p)
         {
             if (!t->structureError)
             {
-                warn("qsize (= %.15f) <= epsilon at level %u (initial root = %.15f)\n", qsize, lev, t->rsize);
+                mw_printf("qsize (= %.15f) <= epsilon at level %u (initial root = %.15f)\n", qsize, lev, t->rsize);
                 t->structureError = TRUE; /* FIXME: Not quite the same as the other structure error */
             }
             return;
@@ -304,7 +304,7 @@ static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeR
         case InvalidCriterion:
         default:
             rc = 0.0; /* Stop clang static analysis warning */
-            fail("Bad criterion: %d\n", ctx->criterion);
+            mw_fail("Bad criterion: %d\n", ctx->criterion);
     }
 }
 
@@ -320,18 +320,18 @@ static inline void checkTreeDim(NBodyTree* tree, real pPos, real cmPos, real hal
              * already. The error will be caught later and this
              * otherwise could print a lot of noise */
             tree->structureError = TRUE;
-            warn("hackCofM: tree structure error.\n"
-                 "    cmPos out of bounds\n"
-                 "    Pos(p)           = %.15e\n"
-                 "    psize/2          = %.15e\n"
-                 "    Pos(p) + psize/2 = %.15e\n"
-                 "    cmpos            = %.15e\n"
-                 "    Pos(p) - psize/2 = %.15e\n",
-                 pPos,
-                 halfPsize,
-                 pPos + halfPsize,
-                 cmPos,
-                 pPos - halfPsize);
+            mw_printf("hackCofM: tree structure error.\n"
+                      "    cmPos out of bounds\n"
+                      "    Pos(p)           = %.15e\n"
+                      "    psize/2          = %.15e\n"
+                      "    Pos(p) + psize/2 = %.15e\n"
+                      "    cmpos            = %.15e\n"
+                      "    Pos(p) - psize/2 = %.15e\n",
+                      pPos,
+                      halfPsize,
+                      pPos + halfPsize,
+                      cmPos,
+                      pPos - halfPsize);
         }
     }
 }
@@ -379,7 +379,7 @@ static void hackCofM(const NBodyCtx* ctx, NBodyTree* tree, NBodyCell* p, real ps
     }
     else                                        /* but if no mass inside    */
     {
-        warn("Found massless cell\n"); /* Debugging */
+        mw_printf("Found massless cell\n"); /* Debugging */
         cmpos = Pos(p);                /* use geo. center for now  */
     }
 

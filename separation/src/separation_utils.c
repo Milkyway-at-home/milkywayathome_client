@@ -197,7 +197,7 @@ int checkSeparationResults(const SeparationResults* results, unsigned int number
     }
 
     if (rc)
-        warn("Non-finite result\n");
+        mw_printf("Non-finite result\n");
 
     return rc;
 }

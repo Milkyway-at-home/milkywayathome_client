@@ -745,7 +745,7 @@ ProbabilityFunc INIT_PROBABILITIES(const AstronomyParameters* ap, int forceNoInt
 
     if (forceNoIntrinsics)
     {
-        warn("Forced to not use intrinsics functions\n");
+        mw_printf("Forced to not use intrinsics functions\n");
     }
 
     if (ap->fast_h_prob && !ap->aux_bg_profile && !forceNoIntrinsics)

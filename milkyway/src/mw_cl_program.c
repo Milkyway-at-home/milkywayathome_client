@@ -59,7 +59,7 @@ static char* mwGetBuildLog(CLInfo* ci)
     }
 
     if (readSize != logSize)
-        warn("Failed to read complete build log\n");
+        mw_printf("Failed to read complete build log\n");
 
     return buildLog;
 }
@@ -73,7 +73,7 @@ static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
 
     if (!user_data)
     {
-        warn("milkywayBuildCB got null user_data\n");
+        mw_printf("milkywayBuildCB got null user_data\n");
         return;
     }
 
@@ -88,11 +88,11 @@ static void CL_CALLBACK milkywayBuildCB(cl_program prog, void* user_data)
     if (infoErr != CL_SUCCESS)
         mwCLWarn("Get build status failed", infoErr);
     else
-        warn("Build status: %s\n", showCLBuildStatus(stat));
+        mw_printf("Build status: %s\n", showCLBuildStatus(stat));
 
     buildLog = mwGetBuildLog(ci);
 
-    warn("Build log: \n%s\n", buildLog);
+    mw_printf("Build log: \n%s\n", buildLog);
     free(buildLog);
 }
 

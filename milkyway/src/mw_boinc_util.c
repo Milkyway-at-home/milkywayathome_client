@@ -82,7 +82,7 @@ int mwBoincInit(MWInitType type)
     }
 
     if (rc)
-        warn("Failed to init BOINC\n");
+        mw_printf("Failed to init BOINC\n");
 
     return rc;
 }
@@ -95,7 +95,7 @@ FILE* mwOpenResolved(const char* filename, const char* mode)
     ret = boinc_resolve_filename(filename, resolvedPath, sizeof(resolvedPath));
     if (ret)
     {
-        warn("Error resolving file '%s': %d\n", filename, ret);
+        mw_printf("Error resolving file '%s': %d\n", filename, ret);
         return NULL;
     }
 
@@ -206,7 +206,7 @@ static char* matchTagName(const char* prefs, const char* name)
     openPos = strstr(prefs, openTag);
     if (!openPos)
     {
-        warn("Didn't find opening tag for preference '%s'\n", name);
+        mw_printf("Didn't find opening tag for preference '%s'\n", name);
         return NULL;
     }
 
@@ -214,7 +214,7 @@ static char* matchTagName(const char* prefs, const char* name)
     closePos = strstr(beginItem, closeTag);
     if (!closePos)
     {
-        warn("Didn't find close tag for preference '%s'\n", name);
+        mw_printf("Didn't find close tag for preference '%s'\n", name);
         return NULL;
     }
 

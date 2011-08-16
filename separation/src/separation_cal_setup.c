@@ -144,14 +144,14 @@ static CALresult mwGetDevice(MWCALInfo* ci, CALuint devID)
 
     if (ci->numDevices == 0)
     {
-        warn("Didn't find any CAL devices\n");
+        mw_printf("Didn't find any CAL devices\n");
         return CAL_RESULT_ERROR;
     }
 
     if (devID + 1 > ci->numDevices)
     {
-        warn("Requested device ID %u > found number of devices (%u)\n",
-             devID, ci->numDevices);
+        mw_printf("Requested device ID %u > found number of devices (%u)\n",
+                  devID, ci->numDevices);
         return CAL_RESULT_ERROR;
     }
 
@@ -220,7 +220,7 @@ static CALresult getMemoryHandle(MWMemRes* mr, MWCALInfo* ci)
     {
         cal_warn("Failed to get memory handle", err);
         if (calResFree(mr->res) != CAL_RESULT_OK)
-            warn("Failed to release CAL resource\n");
+            mw_printf("Failed to release CAL resource\n");
         else
             mr->res = 0;
     }
@@ -238,7 +238,7 @@ CALresult mapMWMemRes(MWMemRes* mr, CALvoid** pPtr, CALuint* pitch)
     {
         cal_warn("Failed to map resource", err);
         if (calResFree(mr->res) != CAL_RESULT_OK)
-            warn("Failed to release CAL resource\n");
+            mw_printf("Failed to release CAL resource\n");
         else
             mr->res = 0;
     }
@@ -256,7 +256,7 @@ CALresult unmapMWMemRes(MWMemRes* mr)
     {
         cal_warn("Failed to unmap resource", err);
         if (calResFree(mr->res) != CAL_RESULT_OK)
-            warn("Failed to release CAL resource\n");
+            mw_printf("Failed to release CAL resource\n");
         else
             mr->res = 0;
     }
@@ -310,8 +310,8 @@ static CALresult printBufferDouble(MWMemRes* mr,
         for (j = 0; j < width; ++j)
         {
             for (k = 0; k < numberElements; ++k)
-                warn("%22.16lf", tmp[numberElements * j + k]);
-            warn(" \n");
+                mw_printf("%22.16lf", tmp[numberElements * j + k]);
+            mw_printf(" \n");
         }
     }
 
@@ -345,7 +345,7 @@ static CALuint formatToNumElements(CALformat x)
         case constantFormatReal2:
             return 2;
         default:
-            warn("Unhandled format to number elements: %d\n", x);
+            mw_printf("Unhandled format to number elements: %d\n", x);
             return 0;
     }
 }
@@ -361,7 +361,7 @@ static size_t formatToSize(CALformat x)
         case constantFormatReal2:
             return 2 * sizeof(real);
         default:
-            warn("Unhandled format to size: %d\n", x);
+            mw_printf("Unhandled format to size: %d\n", x);
             return 0;
     }
 }
@@ -708,7 +708,7 @@ static CALboolean checkDeviceCapabilities(const struct CALdeviceattribsRec* attr
   #if DOUBLEPREC
     if (!attrs->doublePrecision)
     {
-        warn("Device does not support double precision\n");
+        mw_printf("Device does not support double precision\n");
         return CAL_FALSE;
     }
   #endif
@@ -720,41 +720,40 @@ static CALboolean checkDeviceCapabilities(const struct CALdeviceattribsRec* attr
 
 static void printCALInfo(const MWCALInfo* ci)
 {
-    warn("Found %u CAL devices\n"
-         "Chose device %u\n"
-         "\n"
-         "Device target:         %s\n"
-         "Revision:              %u\n"
-         "CAL Version:           %u.%u.%u\n"
-         "Engine clock:          %u Mhz\n"
-         "Memory clock:          %u Mhz\n"
-         "GPU RAM:               %u\n"
-         "Wavefront size:        %u\n"
-         "Double precision:      %s\n"
-         "Compute shader:        %s\n"
-         "Number SIMD:           %u\n"
-         "Number shader engines: %u\n"
-         "Pitch alignment:       %u\n"
-         "Surface alignment:     %u\n"
-         "Max size 2D:           { %u, %u }\n"
-         "\n"
-         ,
-         ci->numDevices,
-         ci->devID,
-         showCALtargetEnum(ci->devInfo.target),
-         ci->devAttribs.targetRevision,
-         ci->version.major, ci->version.minor, ci->version.patchLevel,
-         ci->devAttribs.engineClock,
-         ci->devAttribs.memoryClock,
-         ci->devAttribs.localRAM,
-         ci->devAttribs.wavefrontSize,
-         showCALboolean(ci->devAttribs.doublePrecision),
-         showCALboolean(ci->devAttribs.computeShader),
-         ci->devAttribs.numberOfSIMD,
-         ci->devAttribs.numberOfShaderEngines,
-         ci->devAttribs.pitch_alignment,
-         ci->devAttribs.surface_alignment,
-         ci->devInfo.maxResource2DWidth, ci->devInfo.maxResource2DHeight
+    mw_printf("Found %u CAL devices\n"
+              "Chose device %u\n"
+              "\n"
+              "Device target:         %s\n"
+              "Revision:              %u\n"
+              "CAL Version:           %u.%u.%u\n"
+              "Engine clock:          %u Mhz\n"
+              "Memory clock:          %u Mhz\n"
+              "GPU RAM:               %u\n"
+              "Wavefront size:        %u\n"
+              "Double precision:      %s\n"
+              "Compute shader:        %s\n"
+              "Number SIMD:           %u\n"
+              "Number shader engines: %u\n"
+              "Pitch alignment:       %u\n"
+              "Surface alignment:     %u\n"
+              "Max size 2D:           { %u, %u }\n"
+              "\n",
+              ci->numDevices,
+              ci->devID,
+              showCALtargetEnum(ci->devInfo.target),
+              ci->devAttribs.targetRevision,
+              ci->version.major, ci->version.minor, ci->version.patchLevel,
+              ci->devAttribs.engineClock,
+              ci->devAttribs.memoryClock,
+              ci->devAttribs.localRAM,
+              ci->devAttribs.wavefrontSize,
+              showCALboolean(ci->devAttribs.doublePrecision),
+              showCALboolean(ci->devAttribs.computeShader),
+              ci->devAttribs.numberOfSIMD,
+              ci->devAttribs.numberOfShaderEngines,
+              ci->devAttribs.pitch_alignment,
+              ci->devAttribs.surface_alignment,
+              ci->devInfo.maxResource2DWidth, ci->devInfo.maxResource2DHeight
         );
 }
 
@@ -793,7 +792,7 @@ static CALimage createCALImage(const char* src, CALtarget target)
     calclFreeObject(obj);
     if (rc != CAL_RESULT_OK)
     {
-        warn("Error linking image (%d) : %s\n", rc, calclGetErrorString());
+        mw_printf("Error linking image (%d) : %s\n", rc, calclGetErrorString());
         return NULL;
     }
 
@@ -957,7 +956,7 @@ CALresult separationLoadKernel(MWCALInfo* ci,
     ci->image = createCALImageFromGeneratedKernel(ci, ap, sc);
     if (!ci->image)
     {
-        warn("Failed to load image\n");
+        mw_printf("Failed to load image\n");
         return CAL_RESULT_ERROR;
     }
 
@@ -1030,7 +1029,7 @@ CALresult separationCALInit(MWCALInfo* ci, const CLRequest* clr)
 
     if (!checkDeviceCapabilities(&ci->devAttribs))
     {
-        warn("Device failed capability check\n");
+        mw_printf("Device failed capability check\n");
         mwCALShutdown(ci);
         return CAL_RESULT_ERROR;
     }

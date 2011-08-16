@@ -158,11 +158,11 @@ static int versionMismatch(const SeparationVersionHeader* v)
         || v->cl    != SEPARATION_OPENCL
         || v->cal   != SEPARATION_CAL)
     {
-        warn("Checkpoint version does not match:\n"
-             "  Expected %d.%d, OpenCL = %d, CAL++ = %d,\n"
-             "  Got %d.%d, OpenCL = %d, CAL++ = %d\n",
-             SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR, SEPARATION_OPENCL, SEPARATION_CAL,
-             v->major, v->minor, v->cl, v->cal);
+        mw_printf("Checkpoint version does not match:\n"
+                  "  Expected %d.%d, OpenCL = %d, CAL++ = %d,\n"
+                  "  Got %d.%d, OpenCL = %d, CAL++ = %d\n",
+                  SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR, SEPARATION_OPENCL, SEPARATION_CAL,
+                  v->major, v->minor, v->cl, v->cal);
         return 1;
     }
 
@@ -178,7 +178,7 @@ static int readState(FILE* f, EvaluationState* es)
     fread(str_buf, sizeof(checkpoint_header), 1, f);
     if (strncmp(str_buf, checkpoint_header, sizeof(str_buf)))
     {
-        warn("Failed to find header in checkpoint file\n");
+        mw_printf("Failed to find header in checkpoint file\n");
         return 1;
     }
 
@@ -206,7 +206,7 @@ static int readState(FILE* f, EvaluationState* es)
     fread(str_buf, sizeof(checkpoint_tail), 1, f);
     if (strncmp(str_buf, checkpoint_tail, sizeof(str_buf)))
     {
-        warn("Failed to find tail in checkpoint file\n");
+        mw_printf("Failed to find tail in checkpoint file\n");
         return 1;
     }
 
@@ -244,7 +244,7 @@ int readCheckpoint(EvaluationState* es)
 
     rc = readState(f, es);
     if (rc)
-        warn("Failed to read state\n");
+        mw_printf("Failed to read state\n");
 
     fclose(f);
 
@@ -316,7 +316,7 @@ int resolveCheckpoint()
 
     rc = mw_resolve_filename(CHECKPOINT_FILE, resolvedCheckpointPath, sizeof(resolvedCheckpointPath));
     if (rc)
-        warn("Error resolving checkpoint file '%s': %d\n", CHECKPOINT_FILE, rc);
+        mw_printf("Error resolving checkpoint file '%s': %d\n", CHECKPOINT_FILE, rc);
     return rc;
 }
 

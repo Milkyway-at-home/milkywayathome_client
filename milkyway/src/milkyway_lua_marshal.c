@@ -116,7 +116,7 @@ static int mw_lua_equal_userdata_name(lua_State* luaSt, int idx, const char* typ
     lua_getfield(luaSt, LUA_REGISTRYINDEX, typeName);  /* get correct metatable */
     if (!lua_getmetatable(luaSt, idx))
     {
-        warn("Failed to get metatable from index %d\n", idx);
+        mw_printf("Failed to get metatable from index %d\n", idx);
         lua_pop(luaSt, 1);
         return 0;
     }
@@ -159,12 +159,12 @@ int mw_lua_typecheck(lua_State* luaSt, int idx, int expectedType, const char* ty
         && !mw_lua_equal_userdata_name(luaSt, idx, typeName))
     {
         /* TODO: Get typename of wong userdata type, which is kind of the point of checking for this */
-        warn("Type error: userdata %s expected, got other userdata\n", typeName);
+        mw_printf("Type error: userdata %s expected, got other userdata\n", typeName);
         return 1;
     }
     else if (type != expectedType) /* Anything else is wrong. */
     {
-        warn("Type error: %s expected, got %s\n", typeName, lua_typename(luaSt, type));
+        mw_printf("Type error: %s expected, got %s\n", typeName, lua_typename(luaSt, type));
         return 1;
     }
     else
@@ -741,7 +741,7 @@ int pushType(lua_State* luaSt, const char* typeName, size_t typeSize, void* p)
     lp = lua_newuserdata(luaSt, typeSize);
     if (!lp)
     {
-        warn("Creating userdata '%s' failed\n", typeName);
+        mw_printf("Creating userdata '%s' failed\n", typeName);
         return 0;
     }
 

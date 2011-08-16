@@ -30,7 +30,7 @@ const char* showCALboolean(CALboolean x)
         case CAL_FALSE:
             return "CAL_FALSE";
         default:
-            warn("Trying to show unhandled CALbool: %d\n", x);
+            mw_printf("Trying to show unhandled CALbool: %d\n", x);
             return "Unknown CALbool";
     }
 }
@@ -62,7 +62,7 @@ const char* showCALresult(CALresult x)
         case CAL_RESULT_WARNING:
             return "CAL_RESULT_WARNING";
         default:
-            warn("Trying to show unhandled CALresult: %d\n", x);
+            mw_printf("Trying to show unhandled CALresult: %d\n", x);
             return "Unknown CALresult";
     }
 }
@@ -108,7 +108,7 @@ const char* showCALtargetEnum(enum CALtargetEnum x)
         case CAL_TARGET_RESERVED2:
             return "CAL_TARGET_RESERVED2";
         default:
-            warn("Trying to show unhandled CALenumTarget: %d\n", x);
+            mw_printf("Trying to show unhandled CALenumTarget: %d\n", x);
             return "Unknown CALtargetEnum";
     }
 }

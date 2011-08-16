@@ -131,7 +131,7 @@ mwvector acceleration(const Potential* pot, const mwvector pos)
             break;
         case InvalidDisk:
         default:
-            fail("Invalid disk type in acceleration()\n");
+            mw_fail("Invalid disk type in acceleration()\n");
     }
 
     switch (pot->halo.type)
@@ -147,7 +147,7 @@ mwvector acceleration(const Potential* pot, const mwvector pos)
             break;
         case InvalidHalo:
         default:
-            fail("Invalid halo type in acceleration()\n");
+            mw_fail("Invalid halo type in acceleration()\n");
     }
 
     mw_incaddv(acc, acctmp);

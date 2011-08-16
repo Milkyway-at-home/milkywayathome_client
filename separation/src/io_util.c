@@ -79,7 +79,7 @@ real* fread_double_array(FILE* file, const char* array_name, unsigned int* sizeO
         rc = fscanf(file, READ_DOUBLE_ARRAY_READ_STR, &arr[i]);
         if (rc != 1)
         {
-            warn("Error reading into %s\n", array_name);
+            mw_printf("Error reading into %s\n", array_name);
             free(arr);
             return NULL;
         }
@@ -109,7 +109,7 @@ int* fread_int_array(FILE *file, const char *array_name, unsigned int* sizeOut)
     {
         if (fscanf(file, "%d", &arr[i]) != 1)
         {
-            warn("Error reading into %s\n", array_name);
+            mw_printf("Error reading into %s\n", array_name);
             free(arr);
             return NULL;
         }
@@ -228,21 +228,21 @@ void printSeparationResults(const SeparationResults* results, unsigned int numbe
     mw_begin_critical_section();
 
     /* Print integrals */
-    warn("<background_integral> %.15f </background_integral>\n", results->backgroundIntegral);
-    warn("<stream_integral> ");
+    mw_printf("<background_integral> %.15f </background_integral>\n", results->backgroundIntegral);
+    mw_printf("<stream_integral> ");
     for (i = 0; i < numberStreams; ++i)
-        warn(" %.15f ", results->streamIntegrals[i]);
-    warn("</stream_integral>\n");
+        mw_printf(" %.15f ", results->streamIntegrals[i]);
+    mw_printf("</stream_integral>\n");
 
     /* Print individual likelihoods */
-    warn("<background_likelihood> %.15f </background_likelihood>\n", results->backgroundLikelihood);
-    warn("<stream_only_likelihood> ");
+    mw_printf("<background_likelihood> %.15f </background_likelihood>\n", results->backgroundLikelihood);
+    mw_printf("<stream_only_likelihood> ");
     for (i = 0; i < numberStreams; ++i)
-        warn(" %.15f ", results->streamLikelihoods[i]);
-    warn("</stream_only_likelihood>\n");
+        mw_printf(" %.15f ", results->streamLikelihoods[i]);
+    mw_printf("</stream_only_likelihood>\n");
 
     /* Print overall likelihood */
-    warn("<search_likelihood> %.15f </search_likelihood>\n", results->likelihood);
+    mw_printf("<search_likelihood> %.15f </search_likelihood>\n", results->likelihood);
 
     mw_end_critical_section();
 }

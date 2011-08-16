@@ -61,7 +61,7 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
     if (nbodyTimeToCheckpoint(ctx, st))
     {
         if (writeCheckpoint(ctx, st))
-            fail("Failed to write checkpoint\n");
+            mw_fail("Failed to write checkpoint\n");
 
       #if BOINC_APPLICATION
         boinc_checkpoint_completed();
@@ -117,7 +117,7 @@ static NBodyStatus runSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
         mw_report("Making final checkpoint\n");
         if (writeCheckpoint(ctx, st))
         {
-            warn("Failed to write final checkpoint\n");
+            mw_printf("Failed to write final checkpoint\n");
             return NBODY_CHECKPOINT_ERROR;
         }
     }
@@ -129,7 +129,7 @@ static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, 
 {
     if (resolveCheckpoint(st, nbf->checkpointFileName))
     {
-        warn("Failed to resolve checkpoint\n");
+        mw_printf("Failed to resolve checkpoint\n");
         return NBODY_ERROR;
     }
 
@@ -138,7 +138,7 @@ static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, 
     {
         if (setupNBody(ctx, st, hp, nbf))
         {
-            warn("Failed to read input parameters file\n");
+            mw_printf("Failed to read input parameters file\n");
             return NBODY_ERROR;
         }
     }
@@ -147,7 +147,7 @@ static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, 
         mw_report("Checkpoint exists. Attempting to resume from it.\n");
 
         if (nbf->inputFile && !BOINC_APPLICATION)
-            warn("Warning: input file '%s' unused\n", nbf->inputFile);
+            mw_printf("Warning: input file '%s' unused\n", nbf->inputFile);
 
         if (readCheckpoint(ctx, st))
         {
@@ -178,10 +178,10 @@ int verifyFile(const NBodyFlags* nbf)
 
     rc = setupNBody(&ctx, &st, &ctx.histogramParams, nbf);
     if (rc)
-        warn("File failed\n");
+        mw_printf("File failed\n");
     else
     {
-        warn("File is OK\n");
+        mw_printf("File is OK\n");
         printNBodyCtx(&ctx);
         printHistogramParams(&ctx.histogramParams);
     }
@@ -207,20 +207,20 @@ int runNBodySimulation(const NBodyFlags* nbf)
 
     if (setupRun(ctx, st, &ctx->histogramParams, nbf))
     {
-        warn("Failed to setup run\n");
+        mw_printf("Failed to setup run\n");
         return NBODY_ERROR;
     }
 
     nbodySetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
     if (initOutput(st, nbf))
     {
-        warn("Failed to open output files\n");
+        mw_printf("Failed to open output files\n");
         return NBODY_ERROR;
     }
 
     if (createSharedScene(st, ctx))
     {
-        warn("Failed to create shared scene\n");
+        mw_printf("Failed to create shared scene\n");
     }
 
     ts = mwGetTime();
@@ -241,12 +241,12 @@ int runNBodySimulation(const NBodyFlags* nbf)
 
     if (nbodyStatusIsFatal(rc))
     {
-        warn("Error running system: %s (%d)\n", showNBodyStatus(rc), rc);
+        mw_printf("Error running system: %s (%d)\n", showNBodyStatus(rc), rc);
         return rc;
     }
     else if (nbodyStatusIsWarning(rc))
     {
-        warn("System complete with warnings: %s (%d)\n", showNBodyStatus(rc), rc);
+        mw_printf("System complete with warnings: %s (%d)\n", showNBodyStatus(rc), rc);
     }
     te = mwGetTime();
 
@@ -259,7 +259,7 @@ int runNBodySimulation(const NBodyFlags* nbf)
     chisq = nbodyChisq(ctx, st, nbf, &ctx->histogramParams);
     if (isnan(chisq))
     {
-        warn("Failed to calculate chisq\n");
+        mw_printf("Failed to calculate chisq\n");
         rc = NBODY_ERROR;
     }
 

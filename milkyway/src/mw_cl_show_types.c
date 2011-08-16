@@ -36,7 +36,7 @@ const char* showCLDeviceType(const cl_device_type x)
         case CL_DEVICE_TYPE_ALL:
             return "CL_DEVICE_TYPE_ALL";
         default:
-            warn("Trying to show unknown cl_device_type %d\n", (int) x);
+            mw_printf("Trying to show unknown cl_device_type %d\n", (int) x);
             return "Unhandled cl_device_type";
     }
 }
@@ -54,7 +54,7 @@ const char* showCLBuildStatus(const cl_build_status x)
         case CL_BUILD_IN_PROGRESS:
             return "CL_BUILD_IN_PROGRESS";
         default:
-            warn("Trying to show unknown cl_build_status %d\n", x);
+            mw_printf("Trying to show unknown cl_build_status %d\n", x);
             return "Unknown cl_build_status";
     }
 }
@@ -167,7 +167,7 @@ const char* showCLInt(const cl_int x)
      #endif /* CL_VERSION_1_1 */
 
         default:
-            warn("Trying to show unknown cl_int %d\n", x);
+            mw_printf("Trying to show unknown cl_int %d\n", x);
             return "Unknown cl_int";
     }
 }
@@ -187,7 +187,7 @@ const char* showCLMemFlags(const cl_mem_flags x)
         case CL_MEM_ALLOC_HOST_PTR:
             return "CL_ALLOC_USE_HOST_PTR";
         default:
-            warn("Trying to show unknown cl_mem_flags %d\n", (int) x);
+            mw_printf("Trying to show unknown cl_mem_flags %d\n", (int) x);
             return "Unhandled cl_mem_flags";
     }
 }
@@ -215,7 +215,7 @@ const char* showCLDeviceFPConfig(const cl_device_fp_config x)
             return "CL_FP_SOFT_FLOAT";
             */
         default:
-            warn("Trying to show unknown cl_device_local_mem_type %d\n", (int) x);
+            mw_printf("Trying to show unknown cl_device_local_mem_type %d\n", (int) x);
             return "Unhandled cl_local_mem_type";
     }
 }
@@ -229,7 +229,7 @@ const char* showCLDeviceLocalMemType(const cl_device_local_mem_type x)
         case CL_GLOBAL:
             return "CL_GLOBAL";
         default:
-            warn("Trying to show unknown cl_device_local_mem_type %d\n", (int) x);
+            mw_printf("Trying to show unknown cl_device_local_mem_type %d\n", (int) x);
             return "Unhandled cl_local_mem_type";
     }
 }
@@ -243,7 +243,7 @@ const char* showCLDeviceExecCapabilities(const cl_device_exec_capabilities x)
         case CL_EXEC_NATIVE_KERNEL:
             return "CL_EXEC_NATIVE_KERNEL";
         default:
-            warn("Trying to show unknown cl_device_exec_capabilities %d\n", (int) x);
+            mw_printf("Trying to show unknown cl_device_exec_capabilities %d\n", (int) x);
             return "Unhandled cl_device_exec_capabilities";
     }
 }
@@ -257,7 +257,7 @@ const char* showCLCommandQueueProperties(const cl_command_queue_properties x)
         case CL_QUEUE_PROFILING_ENABLE:
             return "CL_QUEUE_PROFILING_ENABLE";
         default:
-            warn("Trying to show unknown cl_command_queue_properties %d\n", (int) x);
+            mw_printf("Trying to show unknown cl_command_queue_properties %d\n", (int) x);
             return "Unhandled cl_command_queue_properties";
     }
 }
@@ -271,7 +271,7 @@ const char* showCLBool(const cl_bool x)
         case CL_FALSE:
             return "CL_FALSE";
         default:
-            warn("Trying to show unknown cl_bool %d\n", (int) x);
+            mw_printf("Trying to show unknown cl_bool %d\n", (int) x);
             return "Unhandled cl_bool";
     }
 }
@@ -287,7 +287,7 @@ const char* showCLDeviceMemCacheType(const cl_device_mem_cache_type x)
         case CL_READ_WRITE_CACHE:
             return "CL_READ_WRITE_CACHE";
         default:
-            warn("Trying to show unknown cl_device_mem_cache_type %d\n", (int) x);
+            mw_printf("Trying to show unknown cl_device_mem_cache_type %d\n", (int) x);
             return "Unhandled cl_device_mem_cache_type";
     }
 }
@@ -307,7 +307,7 @@ const char* showCLKernelInfo(const cl_kernel_info x)
         case CL_KERNEL_PROGRAM:
             return "CL_KERNEL_PROGRAM";
         default:
-            warn("Trying to show unknown cl_kernel_info %d\n", (int) x);
+            mw_printf("Trying to show unknown cl_kernel_info %d\n", (int) x);
             return "Unhandled cl_kernel_info";
     }
 }

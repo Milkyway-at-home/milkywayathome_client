@@ -69,7 +69,7 @@ lua_State* nbodyLuaOpen(mwbool debug)
     luaSt = lua_open();
     if (!luaSt)
     {
-        warn("Failed to get Lua state\n");
+        mw_printf("Failed to get Lua state\n");
         return NULL;
     }
 

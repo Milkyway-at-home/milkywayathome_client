@@ -81,22 +81,21 @@ static NBodyWorkSizes _workSizes;
 
 static void printNBodyWorkSizes(const NBodyWorkSizes* ws)
 {
-    warn("\n"
-         "Kernel launch sizes:\n"
-         "  Bounding box kernel:  "ZU", "ZU"\n"
-         "  Tree build kernel:    "ZU", "ZU"\n"
-         "  Summarization kernel: "ZU", "ZU"\n"
-         "  Sort kernel:          "ZU", "ZU"\n"
-         "  Force kernel:         "ZU", "ZU"\n"
-         "  Integration kernel:   "ZU", "ZU"\n"
-         "\n"
-         ,
-         ws->global[0], ws->local[0],
-         ws->global[1], ws->local[1],
-         ws->global[2], ws->local[2],
-         ws->global[3], ws->local[3],
-         ws->global[4], ws->local[4],
-         ws->global[5], ws->local[5]
+    mw_printf("\n"
+              "Kernel launch sizes:\n"
+              "  Bounding box kernel:  "ZU", "ZU"\n"
+              "  Tree build kernel:    "ZU", "ZU"\n"
+              "  Summarization kernel: "ZU", "ZU"\n"
+              "  Sort kernel:          "ZU", "ZU"\n"
+              "  Force kernel:         "ZU", "ZU"\n"
+              "  Integration kernel:   "ZU", "ZU"\n"
+              "\n",
+              ws->global[0], ws->local[0],
+              ws->global[1], ws->local[1],
+              ws->global[2], ws->local[2],
+              ws->global[3], ws->local[3],
+              ws->global[4], ws->local[4],
+              ws->global[5], ws->local[5]
         );
 }
 
@@ -189,29 +188,29 @@ static void printDebug(const Debug* d)
     int i;
     for (i = 0; i < 32; ++i)
     {
-        warn("Debug.int[%d] = %d\n", i, d->i[i]);
+        mw_printf("Debug.int[%d] = %d\n", i, d->i[i]);
     }
 
     for (i = 0; i < 32; ++i)
     {
-        warn("Debug.float[%d] = %.15f\n", i, d->f[i]);
+        mw_printf("Debug.float[%d] = %.15f\n", i, d->f[i]);
     }
 }
 
 static void printTreeStatus(const TreeStatus* ts)
 {
-    warn("TreeStatus = {\n"
-         "  radius    = %.15f\n"
-         "  bottom    = %d\n"
-         "  maxDepth  = %d\n"
-         "  errorCode = %d\n"
-         "  blckCnt   = %u\n"
-         "}\n",
-         ts->radius,
-         ts->bottom,
-         ts->maxDepth,
-         ts->errorCode,
-         ts->blkCnt);
+    mw_printf("TreeStatus = {\n"
+              "  radius    = %.15f\n"
+              "  bottom    = %d\n"
+              "  maxDepth  = %d\n"
+              "  errorCode = %d\n"
+              "  blckCnt   = %u\n"
+              "}\n",
+              ts->radius,
+              ts->bottom,
+              ts->maxDepth,
+              ts->errorCode,
+              ts->blkCnt);
 }
 
 
@@ -431,7 +430,7 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
                  hasNvidiaCompilerFlags(di) ? "-cl-nv-verbose" : ""
             ) < 1)
     {
-        warn("Error getting compile flags\n");
+        mw_printf("Error getting compile flags\n");
         return NULL;
     }
 
@@ -453,7 +452,7 @@ static cl_int loadKernels(CLInfo* ci, const NBodyCtx* ctx, const NBodyState* st)
     err = mwSetProgramFromSrc(ci, (const char**) &src, 1, compileFlags);
     if (err != CL_SUCCESS)
     {
-        warn("Failed build flags: %s\n", compileFlags);
+        mw_printf("Failed build flags: %s\n", compileFlags);
     }
 
     free(src);
@@ -481,7 +480,7 @@ static cl_int debug(CLInfo* ci, NBodyBuffers* nbb)
                               0, sizeof(d), &d,
                               0, NULL, NULL);
 
-    warn("Debug:\n");
+    mw_printf("Debug:\n");
     printDebug(&d);
     return err;
 }
@@ -511,7 +510,7 @@ static cl_int printBuffer(CLInfo* ci, cl_mem mem, size_t n, const char* name, in
         const real* pr = (const real*) p;
         for (i = 0; i < n; ++i)
         {
-            warn("%s["ZU"] = %.15f\n", name, i, pr[i]);
+            mw_printf("%s["ZU"] = %.15f\n", name, i, pr[i]);
         }
     }
     else
@@ -519,7 +518,7 @@ static cl_int printBuffer(CLInfo* ci, cl_mem mem, size_t n, const char* name, in
         const int* pi = (const int*) p;
         for (i = 0; i < n; ++i)
         {
-            warn("%s["ZU"] = %d\n", name, i, pi[i]);
+            mw_printf("%s["ZU"] = %d\n", name, i, pi[i]);
         }
     }
 
@@ -528,15 +527,15 @@ static cl_int printBuffer(CLInfo* ci, cl_mem mem, size_t n, const char* name, in
 
 static void stdDebugPrint(CLInfo* ci, NBodyState* st, NBodyBuffers* nbb)
 {
-    warn("--------------------------------------------------------------------------------\n");
+    mw_printf("--------------------------------------------------------------------------------\n");
     cl_int err;
     cl_uint nNode = findNNode(&ci->di, st->nbody);
-    warn("BEGIN CHILD\n");
+    mw_printf("BEGIN CHILD\n");
     printBuffer(ci, nbb->child, NSUB * (nNode + 1), "child", 1);
-    warn("BEGIN START\n");
+    mw_printf("BEGIN START\n");
     printBuffer(ci, nbb->start, nNode, "start", 1);
 
-    warn("BEGIN MASS\n");
+    mw_printf("BEGIN MASS\n");
     printBuffer(ci, nbb->masses, nNode + 1, "mass", 0);
 
     {
@@ -550,7 +549,7 @@ static void stdDebugPrint(CLInfo* ci, NBodyState* st, NBodyBuffers* nbb)
     }
 
     debug(ci, nbb);
-    warn("--------------------------------------------------------------------------------\n");
+    mw_printf("--------------------------------------------------------------------------------\n");
 }
 
 /* Check the error code */
@@ -565,7 +564,7 @@ static cl_bool checkKernelErrorCode(CLInfo* ci, NBodyBuffers* nbb)
 
     if (ts.errorCode != 0)
     {
-        warn("Kernel reported error: %d\n", ts.errorCode);
+        mw_printf("Kernel reported error: %d\n", ts.errorCode);
         return CL_TRUE;
     }
 
@@ -721,21 +720,21 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     if (err != CL_SUCCESS)
         return err;
 
-    warn("Step %d:\n"
-         "  boundingBox:      %15f ms\n"
-         "  buildTree:        %15f ms%15f ms\n"
-         "  summarization:    %15f ms\n"
-         "  sort:             %15f ms\n"
-         "  forceCalculation: %15f ms%15f ms\n"
-         "  integration:      %15f ms\n"
-         "\n",
-         st->step,
-         ws->timings[0],
-         ws->timings[1], ws->chunkTimings[1],
-         ws->timings[2],
-         ws->timings[3],
-         ws->timings[4], ws->chunkTimings[4],
-         ws->timings[5]);
+    mw_printf("Step %d:\n"
+              "  boundingBox:      %15f ms\n"
+              "  buildTree:        %15f ms%15f ms\n"
+              "  summarization:    %15f ms\n"
+              "  sort:             %15f ms\n"
+              "  forceCalculation: %15f ms%15f ms\n"
+              "  integration:      %15f ms\n"
+              "\n",
+              st->step,
+              ws->timings[0],
+              ws->timings[1], ws->chunkTimings[1],
+              ws->timings[2],
+              ws->timings[3],
+              ws->timings[4], ws->chunkTimings[4],
+              ws->timings[5]);
 
     for (i = 0; i < 6; ++i) /* Add timings to running totals */
     {
@@ -760,14 +759,14 @@ static cl_int nbodyMainLoop(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st, NBo
             break;
         }
 
-        warn("Running step %d (%f%%)\n",
-             st->step,
-             100.0 * st->tnow / tstop);
+        mw_printf("Running step %d (%f%%)\n",
+                  st->step,
+                  100.0 * st->tnow / tstop);
         err = stepSystemCL(ci, ctx, st);
         st->tnow += ctx->timestep;
         st->step++;
     }
-    warn("Broke on step %d, %s\n", st->step - 1, showCLInt(err));
+    mw_printf("Broke on step %d, %s\n", st->step - 1, showCLInt(err));
 
     return err;
 }
@@ -840,10 +839,10 @@ static cl_int createBuffers(const NBodyCtx* ctx, NBodyState* st, CLInfo* ci, NBo
     cl_uint nNode = findNNode(&ci->di, st->nbody);
     cl_uint inc = findInc(ci->di.warpSize, st->nbody);
 
-    warn("NNODE = %u, nbody = %d\n"
-         "(NNODE + 1) * NSUB = %u\n"
-         "inc %u\n",
-         nNode, st->nbody, NSUB * (nNode + 1), inc);
+    mw_printf("NNODE = %u, nbody = %d\n"
+              "(NNODE + 1) * NSUB = %u\n"
+              "inc %u\n",
+              nNode, st->nbody, NSUB * (nNode + 1), inc);
 
     for (i = 0; i < 3; ++i)
     {
@@ -987,25 +986,25 @@ static void printKernelTimings(const DevInfo* di, const NBodyState* st)
         totalTime += kernelTimings[i];
     }
 
-    warn("\n--------------------------------------------------------------------------------\n"
-         "Total timing over %d steps:\n"
-         "                         Average             Total            Fraction\n"
-         "                    ----------------   ----------------   ----------------\n"
-         "  boundingBox:      %16f   %16f   %15.4f%%\n"
-         "  buildTree:        %16f   %16f   %15.4f%%\n"
-         "  summarization:    %16f   %16f   %15.4f%%\n"
-         "  sort:             %16f   %16f   %15.4f%%\n"
-         "  forceCalculation: %16f   %16f   %15.4f%%\n"
-         "  integration:      %16f   %16f   %15.4f%%\n"
-         "\n--------------------------------------------------------------------------------\n"
-         "\n",
-         st->step,
-         kernelTimings[0] / nStep, kernelTimings[0], 100.0 * kernelTimings[0] / totalTime,
-         kernelTimings[1] / nStep, kernelTimings[1], 100.0 * kernelTimings[1] / totalTime,
-         kernelTimings[2] / nStep, kernelTimings[2], 100.0 * kernelTimings[2] / totalTime,
-         kernelTimings[3] / nStep, kernelTimings[3], 100.0 * kernelTimings[3] / totalTime,
-         kernelTimings[4] / nStep, kernelTimings[4], 100.0 * kernelTimings[4] / totalTime,
-         kernelTimings[5] / nStep, kernelTimings[5], 100.0 * kernelTimings[5] / totalTime
+    mw_printf("\n--------------------------------------------------------------------------------\n"
+              "Total timing over %d steps:\n"
+              "                         Average             Total            Fraction\n"
+              "                    ----------------   ----------------   ----------------\n"
+              "  boundingBox:      %16f   %16f   %15.4f%%\n"
+              "  buildTree:        %16f   %16f   %15.4f%%\n"
+              "  summarization:    %16f   %16f   %15.4f%%\n"
+              "  sort:             %16f   %16f   %15.4f%%\n"
+              "  forceCalculation: %16f   %16f   %15.4f%%\n"
+              "  integration:      %16f   %16f   %15.4f%%\n"
+              "\n--------------------------------------------------------------------------------\n"
+              "\n",
+              st->step,
+              kernelTimings[0] / nStep, kernelTimings[0], 100.0 * kernelTimings[0] / totalTime,
+              kernelTimings[1] / nStep, kernelTimings[1], 100.0 * kernelTimings[1] / totalTime,
+              kernelTimings[2] / nStep, kernelTimings[2], 100.0 * kernelTimings[2] / totalTime,
+              kernelTimings[3] / nStep, kernelTimings[3], 100.0 * kernelTimings[3] / totalTime,
+              kernelTimings[4] / nStep, kernelTimings[4], 100.0 * kernelTimings[4] / totalTime,
+              kernelTimings[5] / nStep, kernelTimings[5], 100.0 * kernelTimings[5] / totalTime
         );
 }
 

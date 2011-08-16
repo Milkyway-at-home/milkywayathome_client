@@ -783,7 +783,7 @@ static int alreadyAttached()
     oldVal = nbodyGraphicsTestVal(&scene->attached);
     if (oldVal != 0)
     {
-        warn("Screensaver already attached\n");
+        mw_printf("Screensaver already attached\n");
         return TRUE;
     }
 
@@ -839,7 +839,7 @@ static int attemptConnectSharedScene()
     scene = (scene_t*) mw_graphics_get_shmem(NBODY_BIN_NAME);
     if (!scene)
     {
-        warn("Failed to connect to shared scene\n");
+        mw_printf("Failed to connect to shared scene\n");
         return FALSE;
     }
 
@@ -865,7 +865,7 @@ int connectSharedScene(int instanceId)
         ++tries;
     }
 
-    warn("Could not attach to simulation after %d attempts\n", MAX_TRIES);
+    mw_printf("Could not attach to simulation after %d attempts\n", MAX_TRIES);
     return 1;
 }
 
@@ -964,11 +964,11 @@ int checkConnectedVersion()
     if (   scene->nbodyMajorVersion != MILKYWAY_NBODY_VERSION_MAJOR
         || scene->nbodyMinorVersion != MILKYWAY_NBODY_VERSION_MINOR)
     {
-        warn("Graphics version (%d.%d) does not match application version (%d.%d)\n",
-             MILKYWAY_NBODY_VERSION_MAJOR,
-             MILKYWAY_NBODY_VERSION_MINOR,
-             scene->nbodyMajorVersion,
-             scene->nbodyMinorVersion);
+        mw_printf("Graphics version (%d.%d) does not match application version (%d.%d)\n",
+                  MILKYWAY_NBODY_VERSION_MAJOR,
+                  MILKYWAY_NBODY_VERSION_MINOR,
+                  scene->nbodyMajorVersion,
+                  scene->nbodyMinorVersion);
         return 1;
     }
 

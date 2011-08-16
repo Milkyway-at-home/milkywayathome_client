@@ -31,7 +31,7 @@ static cl_int createOutBgBuffer(CLInfo* ci,
     cm->outBg = mwCreateZeroReadWriteBuffer(ci, sizes->outBg);
     if (!cm->outBg)
     {
-        warn("Error creating out bg buffer of size "ZU"\n", sizes->outBg);
+        mw_printf("Error creating out bg buffer of size "ZU"\n", sizes->outBg);
         return MW_CL_ERROR;
     }
 
@@ -43,7 +43,7 @@ static cl_int createOutStreamsBuffer(CLInfo* ci, SeparationCLMem* cm, const Sepa
     cm->outStreams = mwCreateZeroReadWriteBuffer(ci, sizes->outStreams);
     if (!cm->outStreams)
     {
-        warn("Error creating out probs buffer of size "ZU"\n", sizes->outStreams);
+        mw_printf("Error creating out probs buffer of size "ZU"\n", sizes->outStreams);
         return MW_CL_ERROR;
     }
 

@@ -67,7 +67,7 @@ void* mwCalloc(size_t count, size_t size)
 {
     void* mem = (void*) calloc(count, size);
     if (mem == NULL)
-        fail("calloc failed: "ZU" bytes\n", count * size);
+        mw_fail("calloc failed: "ZU" bytes\n", count * size);
     return mem;
 }
 
@@ -75,7 +75,7 @@ void* mwMalloc(size_t size)
 {
     void* mem = (void*) malloc(size);
     if (mem == NULL)
-        fail("malloc failed: "ZU" bytes\n", size);
+        mw_fail("malloc failed: "ZU" bytes\n", size);
     return mem;
 }
 
@@ -120,11 +120,11 @@ void* mwMallocA(size_t size)
     if (posix_memalign(&p, 16, size))
     {
         perror(__func__);
-        fail("Failed to allocate block of size %zu aligned to 16\n", size);
+        mw_fail("Failed to allocate block of size %zu aligned to 16\n", size);
     }
 
     if (!p)
-        fail("%s: NULL\n", __func__);
+        mw_fail("%s: NULL\n", __func__);
 
     return p;
 }
@@ -141,7 +141,7 @@ void* mwMallocA(size_t size)
 
     p = _aligned_malloc(size, 16);
     if (!p)
-        fail("%s: NULL: _aligned_malloc error = %ld\n", FUNC_NAME, GetLastError());
+        mw_fail("%s: NULL: _aligned_malloc error = %ld\n", FUNC_NAME, GetLastError());
 
     return p;
 }
@@ -151,7 +151,7 @@ void* mwRealloc(void* ptr, size_t size)
 {
     void* mem = (void*) realloc(ptr, size);
     if (mem == NULL)
-        fail("realloc failed: "ZU" bytes\n", size);
+        mw_fail("realloc failed: "ZU" bytes\n", size);
     return mem;
 }
 
@@ -171,7 +171,7 @@ char* mwFreadFile(FILE* f, const char* filename)
 
     if (!f)
     {
-        warn("Failed to open file '%s' for reading\n", filename);
+        mw_printf("Failed to open file '%s' for reading\n", filename);
         return NULL;
     }
 
@@ -191,8 +191,8 @@ char* mwFreadFile(FILE* f, const char* filename)
     readSize = fread(buf, sizeof(char), fsize, f);
     if (readSize != (size_t) fsize)
     {
-        warn("Failed to read file '%s': Expected to read %ld, but got "ZU"\n",
-             filename, fsize, readSize);
+        mw_printf("Failed to read file '%s': Expected to read %ld, but got "ZU"\n",
+                  filename, fsize, readSize);
         free(buf);
         buf = NULL;
     }
@@ -221,7 +221,7 @@ int mwWriteFile(const char* filename, const char* str)
 
     rc = fputs(str, f);
     if (rc == EOF)
-        warn("Error writing file '%s'\n", filename);
+        mw_printf("Error writing file '%s'\n", filename);
 
     fcloseVerbose(f, "Closing write file");
     return rc;
@@ -249,7 +249,7 @@ static UINT mwGetMinTimerResolution()
 
     if (timeGetDevCaps(&tc, sizeof(tc)) != TIMERR_NOERROR)
     {
-        warn("Failed to get timer resolution\n");
+        mw_printf("Failed to get timer resolution\n");
         return 0;
     }
 
@@ -261,7 +261,7 @@ int mwSetTimerMinResolution()
 {
     if (timeBeginPeriod(mwGetMinTimerResolution()) != TIMERR_NOERROR)
     {
-        warn("Failed to set timer resolution\n");
+        mw_printf("Failed to set timer resolution\n");
         return 1;
     }
 
@@ -272,7 +272,7 @@ int mwResetTimerResolution()
 {
     if (timeEndPeriod(mwGetMinTimerResolution()) != TIMERR_NOERROR)
     {
-        warn("Failed to end timer resolution\n");
+        mw_printf("Failed to end timer resolution\n");
         return 1;
     }
 
@@ -325,7 +325,7 @@ int mwDisableDenormalsSSE()
     int newMXCSR = oldMXCSR | 0x8040;
     _mm_setcsr(newMXCSR);
 
-    warn("Disabled denormals\n");
+    mw_printf("Disabled denormals\n");
     return oldMXCSR;
 }
 
@@ -407,9 +407,9 @@ int mwReadArguments(poptContext context)
 
     if (o < -1)
     {
-        warn("Argument parsing error: %s: %s\n",
-             poptBadOption(context, 0),
-             poptStrerror(o));
+        mw_printf("Argument parsing error: %s: %s\n",
+                  poptBadOption(context, 0),
+                  poptStrerror(o));
         return -1;
     }
 
@@ -459,14 +459,14 @@ const char** mwFixArgv(int argc, const char* argv[])
     remaining = (argc - 3) - npCheck;  /* All remaining arguments */
     if (np > remaining || np >= argc)  /* Careful of underflow */
     {
-        warn("Warning: Number of parameters remaining can't match expected: -np = %d\n", np);
+        mw_printf("Warning: Number of parameters remaining can't match expected: -np = %d\n", np);
         return NULL;
     }
 
     ++p;   /* Move on to the p argument */
     if (*p && strncmp(*p, "-p", 2))
     {
-        warn("Didn't find expected p argument\n");
+        mw_printf("Didn't find expected p argument\n");
         return NULL;
     }
 
@@ -577,7 +577,7 @@ static DWORD mwPriorityToPriorityClass(MWPriority x)
         case MW_PRIORITY_HIGH:
             return HIGH_PRIORITY_CLASS;
         default:
-            warn("Invalid priority: %d. Using default.\n", (int) x);
+            mw_printf("Invalid priority: %d. Using default.\n", (int) x);
             return mwPriorityToPriorityClass(MW_PRIORITY_DEFAULT);
     }
 }
@@ -594,13 +594,13 @@ int mwSetProcessPriority(MWPriority priority)
                          FALSE,
                          DUPLICATE_SAME_ACCESS))
     {
-        warn("Failed to get process handle: %ld\n", GetLastError());
+        mw_printf("Failed to get process handle: %ld\n", GetLastError());
         return 1;
     }
 
     if (!SetPriorityClass(handle, mwPriorityToPriorityClass(priority)))
     {
-        warn("Failed to set process priority class: %ld\n", GetLastError());
+        mw_printf("Failed to set process priority class: %ld\n", GetLastError());
         return 1;
     }
 

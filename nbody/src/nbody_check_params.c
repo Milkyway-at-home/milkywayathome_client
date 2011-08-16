@@ -26,8 +26,8 @@ mwbool checkSphericalConstants(Spherical* s)
 {
     if (mwCheckNormalPosNum(s->mass) || mwCheckNormalPosNum(s->scale))
     {
-        warn("Invalid parameters for '%s': mass = %.15f, scale = %.15f\n",
-             showSphericalT(s->type), s->mass, s->scale);
+        mw_printf("Invalid parameters for '%s': mass = %.15f, scale = %.15f\n",
+                  showSphericalT(s->type), s->mass, s->scale);
         return TRUE;
     }
 
@@ -40,7 +40,7 @@ mwbool checkDiskConstants(Disk* d)
 
     if (mwCheckNormalPosNum(d->mass))
     {
-        warn("Invalid disk mass (%.15f)\n", d->mass);
+        mw_printf("Invalid disk mass (%.15f)\n", d->mass);
         badDisk = TRUE;
     }
 
@@ -49,10 +49,10 @@ mwbool checkDiskConstants(Disk* d)
         case MiyamotoNagaiDisk:
             if (mwCheckNormalPosNum(d->scaleLength) || mwCheckNormalPosNum(d->scaleHeight))
             {
-                warn("Invalid parameters for disk type '%s': scaleLength = %.15f, scaleHeight = %.15f\n",
-                     showDiskT(d->type),
-                     d->scaleLength,
-                     d->scaleHeight);
+                mw_printf("Invalid parameters for disk type '%s': scaleLength = %.15f, scaleHeight = %.15f\n",
+                          showDiskT(d->type),
+                          d->scaleLength,
+                          d->scaleHeight);
                 badDisk = TRUE;
             }
             break;
@@ -60,15 +60,15 @@ mwbool checkDiskConstants(Disk* d)
         case ExponentialDisk:
             if (isnormal(d->scaleHeight))
             {
-                warn("Scale height unused for disk type '%s'\n", showDiskT(d->type));
+                mw_printf("Scale height unused for disk type '%s'\n", showDiskT(d->type));
                 badDisk = TRUE;
             }
 
             if (mwCheckNormalPosNum(d->scaleLength))
             {
-                warn("Invalid parameter for disk type '%s': scaleLength = %.15f\n",
-                     showDiskT(d->type),
-                     d->scaleLength);
+                mw_printf("Invalid parameter for disk type '%s': scaleLength = %.15f\n",
+                          showDiskT(d->type),
+                          d->scaleLength);
                 badDisk = TRUE;
             }
 
@@ -76,7 +76,7 @@ mwbool checkDiskConstants(Disk* d)
 
         case InvalidDisk:
         default:
-            warn("Invalid disk type: %s (%d)\n", showDiskT(d->type), d->type);
+            mw_printf("Invalid disk type: %s (%d)\n", showDiskT(d->type), d->type);
             return 1;
     }
 
@@ -85,7 +85,7 @@ mwbool checkDiskConstants(Disk* d)
 
 static mwbool invalidHaloWarning(halo_t type)
 {
-    warn("Got non-finite required field for halo type '%s'\n", showHaloT(type));
+    mw_printf("Got non-finite required field for halo type '%s'\n", showHaloT(type));
     return TRUE;
 }
 
@@ -137,7 +137,7 @@ mwbool checkHaloConstants(Halo* h)
 
         case InvalidHalo:
         default:
-            warn("Trying to use invalid halo type: %s (%d)\n", showHaloT(h->type), h->type);
+            mw_printf("Trying to use invalid halo type: %s (%d)\n", showHaloT(h->type), h->type);
             return TRUE;
     }
 
@@ -153,7 +153,7 @@ static int hasAcceptableTheta(const NBodyCtx* ctx)
 {
     if (ctx->theta < 0.0 || ctx->theta > 1.0)
     {
-        warn("Opening angle must be 0.0 <= theta <= 1.0 (theta = %f)\n", ctx->theta);
+        mw_printf("Opening angle must be 0.0 <= theta <= 1.0 (theta = %f)\n", ctx->theta);
         return TRUE;
     }
     else
@@ -166,7 +166,7 @@ static int hasAcceptableEps2(const NBodyCtx* ctx)
 {
     int rc = mwCheckNormalPosNumEps(ctx->eps2);
     if (rc)
-        warn("Got an absurd eps2 (%.15f)\n", ctx->eps2);
+        mw_printf("Got an absurd eps2 (%.15f)\n", ctx->eps2);
 
     return rc;
 }
@@ -175,7 +175,7 @@ static int hasAcceptableTimes(const NBodyCtx* ctx)
 {
     int rc = mwCheckNormalPosNumEps(ctx->timeEvolve);
     if (rc)
-        warn("Got an unacceptable evolution time (%.15f)\n", ctx->timeEvolve);
+        mw_printf("Got an unacceptable evolution time (%.15f)\n", ctx->timeEvolve);
     return rc;
 }
 
@@ -183,7 +183,7 @@ static int hasAcceptableSteps(const NBodyCtx* ctx)
 {
     int rc = mwCheckNormalPosNumEps(ctx->timestep);
     if (rc)
-        warn("Got an unacceptable timestep (%.15f)\n", ctx->timestep);
+        mw_printf("Got an unacceptable timestep (%.15f)\n", ctx->timestep);
 
     return rc;
 }

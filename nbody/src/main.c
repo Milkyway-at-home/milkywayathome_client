@@ -44,7 +44,7 @@ static int nbodyInit(const NBodyFlags* nbf) { return 0; }
 
 static void nbodyPrintVersion()
 {
-    warn("<search_application>" BOINC_NBODY_APP_VERSION "</search_application>\n");
+    mw_printf("<search_application>" BOINC_NBODY_APP_VERSION "</search_application>\n");
 }
 
 static int nbodyInit(const NBodyFlags* nbf)
@@ -279,7 +279,7 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
     rest = poptGetArgs(context);
     if ((params || numParams) && !rest)
     {
-        warn("Expected arguments to follow, got 0\n");
+        mw_printf("Expected arguments to follow, got 0\n");
         failed = TRUE;
     }
     else
@@ -324,9 +324,9 @@ static void setNumThreads(int numThreads)
     if (numThreads != 0)
     {
         omp_set_num_threads(numThreads);
-        warn("Using OpenMP %d max threads on a system with %d processors\n",
-             omp_get_max_threads(),
-             omp_get_num_procs());
+        mw_printf("Using OpenMP %d max threads on a system with %d processors\n",
+                  omp_get_max_threads(),
+                  omp_get_num_procs());
     }
 }
 #else

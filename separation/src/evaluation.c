@@ -92,12 +92,12 @@ static int probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRe
 
     if (clr->verbose)
     {
-        warn("CPU features:        SSE2 = %d, SSE3 = %d, SSE4.1 = %d\n"
-             "Available functions: SSE2 = %d, SSE3 = %d, SSE4.1 = %d, x87 = %d\n"
-             "Forcing:             SSE2 = %d, SSE3 = %d, SSE4.1 = %d, x87 = %d\n",
-             hasSSE2, hasSSE3, hasSSE41,
-             initSSE2 != NULL, initSSE3 != NULL, initSSE41 != NULL, initProbabilities != NULL,
-             clr->forceSSE2, clr->forceSSE3, clr->forceSSE41, clr->forceX87);
+        mw_printf("CPU features:        SSE2 = %d, SSE3 = %d, SSE4.1 = %d\n"
+                  "Available functions: SSE2 = %d, SSE3 = %d, SSE4.1 = %d, x87 = %d\n"
+                  "Forcing:             SSE2 = %d, SSE3 = %d, SSE4.1 = %d, x87 = %d\n",
+                  hasSSE2, hasSSE3, hasSSE41,
+                  initSSE2 != NULL, initSSE3 != NULL, initSSE41 != NULL, initProbabilities != NULL,
+                  clr->forceSSE2, clr->forceSSE3, clr->forceSSE41, clr->forceX87);
     }
 
     /* If multiple instructions are forced, the highest will take precedence */
@@ -105,27 +105,27 @@ static int probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRe
     {
         if (clr->forceSSE41 && hasSSE41 && initSSE41)
         {
-            warn("Using SSE4.1 path\n");
+            mw_printf("Using SSE4.1 path\n");
             probabilityFunc = initSSE41(ap, clr->forceNoIntrinsics);
         }
         else if (clr->forceSSE3 && hasSSE3 && initSSE3)
         {
-            warn("Using SSE3 path\n");
+            mw_printf("Using SSE3 path\n");
             probabilityFunc = initSSE3(ap, clr->forceNoIntrinsics);
         }
         else if (clr->forceSSE2 && hasSSE2 && initSSE2)
         {
-            warn("Using SSE2 path\n");
+            mw_printf("Using SSE2 path\n");
             probabilityFunc = initSSE2(ap, clr->forceNoIntrinsics);
         }
         else if (clr->forceX87 && initOther)
         {
-            warn("Using other path\n");
+            mw_printf("Using other path\n");
             probabilityFunc = initOther(ap, clr->forceNoIntrinsics);
         }
         else
         {
-            warn("Tried to force an unusable path\n");
+            mw_printf("Tried to force an unusable path\n");
             return 1;
         }
     }
@@ -134,27 +134,27 @@ static int probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRe
         /* Choose the highest level with available function and instructions */
         if (hasSSE41 && initSSE41)
         {
-            warn("Using SSE4.1 path\n");
+            mw_printf("Using SSE4.1 path\n");
             probabilityFunc = initSSE41(ap, clr->forceNoIntrinsics);
         }
         else if (hasSSE3 && initSSE3)
         {
-            warn("Using SSE3 path\n");
+            mw_printf("Using SSE3 path\n");
             probabilityFunc = initSSE3(ap, clr->forceNoIntrinsics);
         }
         else if (hasSSE2 && initSSE2)
         {
-            warn("Using SSE2 path\n");
+            mw_printf("Using SSE2 path\n");
             probabilityFunc = initSSE2(ap, clr->forceNoIntrinsics);
         }
         else if (initOther)
         {
-            warn("Using other path\n");
+            mw_printf("Using other path\n");
             probabilityFunc = initOther(ap, clr->forceNoIntrinsics);
         }
         else
         {
-            warn("No paths usable\n");
+            mw_printf("No paths usable\n");
             return 1;
         }
     }
@@ -259,7 +259,7 @@ static void finalCheckpoint(EvaluationState* es)
   #endif
 
     if (writeCheckpoint(es))
-        fail("Failed to write final checkpoint\n");
+        mw_fail("Failed to write final checkpoint\n");
 
   #if BOINC_APPLICATION
     boinc_end_critical_section();
@@ -281,7 +281,7 @@ static void calculateIntegrals(const AstronomyParameters* ap,
 
   #if SEPARATION_CAL
     if (separationLoadKernel(ci, ap, sc) != CAL_RESULT_OK)
-        fail("Failed to load integral kernel");
+        mw_fail("Failed to load integral kernel");
   #endif /* SEPARATION_OPENCL */
 
     for (; es->currentCut < es->numberCuts; es->currentCut++)
@@ -300,10 +300,10 @@ static void calculateIntegrals(const AstronomyParameters* ap,
       #endif /* SEPARATION_OPENCL */
 
         t2 = mwGetTime();
-        warn("Integral %u time = %f s\n", es->currentCut, t2 - t1);
+        mw_printf("Integral %u time = %f s\n", es->currentCut, t2 - t1);
 
         if (rc || isnan(es->cut->bgIntegral))
-            fail("Failed to calculate integral %u\n", es->currentCut);
+            mw_fail("Failed to calculate integral %u\n", es->currentCut);
 
         cleanStreamIntegrals(es->cut->streamIntegrals, sc, ap->number_streams);
         clearEvaluationStateTmpSums(es);
@@ -342,24 +342,24 @@ int evaluate(SeparationResults* results,
 
   #if SEPARATION_GRAPHICS
     if (separationInitSharedEvaluationState(es))
-        warn("Failed to initialize shared evaluation state\n");
+        mw_printf("Failed to initialize shared evaluation state\n");
   #endif /* SEPARATION_GRAPHICS */
 
     if (!ignoreCheckpoint)
     {
         if (resolveCheckpoint())
-            fail("Failed to resolve checkpoint file '%s'\n", CHECKPOINT_FILE);
+            mw_fail("Failed to resolve checkpoint file '%s'\n", CHECKPOINT_FILE);
 
         if (maybeResume(es))
-            fail("Failed to resume checkpoint\n");
+            mw_fail("Failed to resume checkpoint\n");
     }
 
   #if SEPARATION_OPENCL
     if (setupSeparationCL(&ci, ap, ias, clr, &useImages) != CL_SUCCESS)
-        fail("Failed to setup CL\n");
+        mw_fail("Failed to setup CL\n");
   #elif SEPARATION_CAL
     if (separationCALInit(&ci, clr) != CAL_RESULT_OK)
-        fail("Failed to setup CAL\n");
+        mw_fail("Failed to setup CAL\n");
   #endif
 
     calculateIntegrals(ap, ias, sc, sg, es, clr, &ci, useImages);
@@ -375,7 +375,7 @@ int evaluate(SeparationResults* results,
     if (readStarPoints(&sp, star_points_file))
     {
         rc = 1;
-        warn("Failed to read star points file\n");
+        mw_printf("Failed to read star points file\n");
     }
     else
     {

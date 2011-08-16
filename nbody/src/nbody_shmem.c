@@ -83,7 +83,7 @@ int createSharedScene(NBodyState* st, const NBodyCtx* ctx)
 
     if (instanceId >= MAX_INSTANCES)
     {
-        warn("Could not open new shm segment in %d tries\n", MAX_INSTANCES);
+        mw_printf("Could not open new shm segment in %d tries\n", MAX_INSTANCES);
         return 1;
     }
 
@@ -128,7 +128,7 @@ int createSharedScene(NBodyState* st, const NBodyCtx* ctx)
     st->scene = (scene_t*) mw_graphics_make_shmem(NBODY_BIN_NAME, (int) size);
     if (!st->scene)
     {
-        warn("Failed to get shmem of size %d\n", (int) size);
+        mw_printf("Failed to get shmem of size %d\n", (int) size);
         return 1;
     }
 
@@ -142,7 +142,7 @@ int createSharedScene(NBodyState* st, const NBodyCtx* ctx)
 
 int createSharedScene(NBodyState* st, const NBodyCtx* ctx)
 {
-    warn("Creating shared scene unimplemented for this system\n");
+    mw_printf("Creating shared scene unimplemented for this system\n");
     return 0;
 }
 
@@ -219,7 +219,7 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
 
     if (poptParseArgvString(buf, &argc, (const char***) &argv))
     {
-        warn("Error parsing arguments for visualizer '%s'\n", visArgs);
+        mw_printf("Error parsing arguments for visualizer '%s'\n", visArgs);
         free(buf);
         return;
     }
@@ -269,7 +269,7 @@ void launchVisualizer(NBodyState* st, const char* visArgs)
                        &startInfo,
                        &pInfo))
     {
-        warn("Error creating visualizer process: %ld\n", GetLastError());
+        mw_printf("Error creating visualizer process: %ld\n", GetLastError());
     }
 
     free(buf);

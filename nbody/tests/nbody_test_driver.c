@@ -105,7 +105,7 @@ static int hashValueFromType(lua_State* luaSt, EVP_MD_CTX* hashCtx, int type, in
 
     if (rc == 0)
     {
-        warn("Error updating hash of type\n");
+        mw_printf("Error updating hash of type\n");
         return 1;
     }
 
@@ -167,7 +167,7 @@ static int hashNBodyTestCore(EVP_MD_CTX* hashCtx, MWHash* hash, const NBodyTest*
 
     if (!EVP_DigestInit_ex(hashCtx, EVP_sha1(), NULL))
     {
-        warn("Initializing hash digest failed\n");
+        mw_printf("Initializing hash digest failed\n");
         return 1;
     }
 
@@ -187,19 +187,19 @@ static int hashNBodyTestCore(EVP_MD_CTX* hashCtx, MWHash* hash, const NBodyTest*
 
     if (rc)
     {
-        warn("Error updating hashing for NBodyTest\n");
+        mw_printf("Error updating hashing for NBodyTest\n");
         return 1;
     }
 
     if (!EVP_DigestFinal_ex(hashCtx, hash->md, NULL))
     {
-        warn("Error finalizing hash for NBodyTest\n");
+        mw_printf("Error finalizing hash for NBodyTest\n");
         return 1;
     }
 
     if (!EVP_MD_CTX_cleanup(hashCtx))
     {
-        warn("Error cleaning up hash context for NBodyCtxTest\n");
+        mw_printf("Error cleaning up hash context for NBodyCtxTest\n");
         return 1;
     }
 
@@ -215,7 +215,7 @@ int hashNBodyTest(MWHash* hash, NBodyTest* test)
     failed = hashNBodyTestCore(&hashCtx, hash, test);
     if (!EVP_MD_CTX_cleanup(&hashCtx))
     {
-        warn("Error cleaning up hash context\n");
+        mw_printf("Error cleaning up hash context\n");
         return 1;
     }
 
@@ -267,13 +267,13 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
 
     if (nbody == 0)
     {
-        warn("Can't hash 0 bodies\n");
+        mw_printf("Can't hash 0 bodies\n");
         return 1;
     }
 
     if (!EVP_DigestInit_ex(hashCtx, EVP_sha1(), NULL))
     {
-        warn("Initializing hash digest failed\n");
+        mw_printf("Initializing hash digest failed\n");
         return 1;
     }
 
@@ -293,14 +293,14 @@ static int hashBodiesCore(EVP_MD_CTX* hashCtx, MWHash* hash, const Body* bodies,
 
         if (!EVP_DigestUpdate(hashCtx, &hashableBody, sizeof(hashableBody)))
         {
-            warn("Error updating hash for body %u\n", i);
+            mw_printf("Error updating hash for body %u\n", i);
             return 1;
         }
     }
 
     if (!EVP_DigestFinal_ex(hashCtx, hash->md, &mdLen))
     {
-        warn("Error finalizing hash\n");
+        mw_printf("Error finalizing hash\n");
         return 1;
     }
 
@@ -328,7 +328,7 @@ int hashBodies(MWHash* hash, const Body* bodies, unsigned int nbody)
     failed = hashBodiesCore(&hashCtx, hash, bodies, nbody);
     if (!EVP_MD_CTX_cleanup(&hashCtx))
     {
-        warn("Error cleaning up hash context\n");
+        mw_printf("Error cleaning up hash context\n");
         return 1;
     }
 

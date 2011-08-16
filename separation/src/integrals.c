@@ -86,7 +86,7 @@ static inline void doBoincCheckpoint(const EvaluationState* es,
     if (boinc_time_to_checkpoint())
     {
         if (writeCheckpoint(es))
-            fail("Write checkpoint failed\n");
+            mw_fail("Write checkpoint failed\n");
         boinc_checkpoint_completed();
     }
 
@@ -107,7 +107,7 @@ static inline void doBoincCheckpoint(const EvaluationState* es,
     {
         lastCheckpoint = now;
         if (writeCheckpoint(es))
-            fail("Write checkpoint failed\n");
+            mw_fail("Write checkpoint failed\n");
     }
 
     _milkywaySeparationGlobalProgress = progress(es, ia, total_calc_probs);
@@ -256,7 +256,7 @@ int integrate(const AstronomyParameters* ap,
     {
         /* if q is 0, there is no probability */
         /* Short circuit the entire integral rather than add up -1 many times. */
-        warn("q is 0.0\n");
+        mw_printf("q is 0.0\n");
         es->cut->bgIntegral = -1.0 * ia->nu_steps * ia->mu_steps * ia->r_steps;
         return 1;
     }

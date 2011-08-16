@@ -138,7 +138,7 @@ static int nbodyGraphicsInit()
 #if BOINC_APPLICATION
     if (boinc_parse_init_data_file())
     {
-        warn("Error parsing init data file\n");
+        mw_printf("Error parsing init data file\n");
     }
 
     if (mwBoincInit(MW_GRAPHICS))
@@ -173,7 +173,7 @@ int main(int argc, char* argv[])
     rc = nbodyGLSetup(&flags);
     if (rc)
     {
-        warn("Failed to setup nbody graphics\n");
+        mw_printf("Failed to setup nbody graphics\n");
         freeVisArgs(&flags);
         mw_finish(rc);
     }

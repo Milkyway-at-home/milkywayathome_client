@@ -105,28 +105,28 @@ static void printRunSizes(const RunSizes* sizes, const IntegralArea* ia, cl_bool
 {
     size_t i;
 
-    warn("Range:          { nu_steps = %u, mu_steps = %u, r_steps = %u }\n"
-         "Iteration area: "ZU"\n"
-         "Chunk estimate: "ZU"\n"
-         "Num chunks:     "ZU"\n"
-         "Added area:      %u\n"
-         "Effective area: "ZU"\n",
-         ia->nu_steps, ia->mu_steps, ia->r_steps,
-         sizes->area,
-         sizes->nChunkEstimate,
-         sizes->nChunk,
-         sizes->extra,
-         sizes->effectiveArea);
+    mw_printf("Range:          { nu_steps = %u, mu_steps = %u, r_steps = %u }\n"
+              "Iteration area: "ZU"\n"
+              "Chunk estimate: "ZU"\n"
+              "Num chunks:     "ZU"\n"
+              "Added area:      %u\n"
+              "Effective area: "ZU"\n",
+              ia->nu_steps, ia->mu_steps, ia->r_steps,
+              sizes->area,
+              sizes->nChunkEstimate,
+              sizes->nChunk,
+              sizes->extra,
+              sizes->effectiveArea);
 
     if (!verbose)
         return;
 
-    warn("Using "ZU" chunks with size(s): ", sizes->nChunk);
+    mw_printf("Using "ZU" chunks with size(s): ", sizes->nChunk);
     for (i = 0; i < sizes->nChunk; ++i)
     {
-        warn(" "ZU" ", sizes->chunkBorders[i + 1] - sizes->chunkBorders[i]);
+        mw_printf(" "ZU" ", sizes->chunkBorders[i + 1] - sizes->chunkBorders[i]);
     }
-    warn("\n");
+    mw_printf("\n");
 
 }
 
@@ -169,12 +169,12 @@ cl_bool findRunSizes(RunSizes* sizes,
     sizes->effectiveArea = nMod * mwDivRoundup(sizes->area, nMod);
     sizes->extra = (cl_uint) (sizes->effectiveArea - sizes->area);
 
-    warn("Keeping chunk boundaries as multiples of "ZU"\n", nMod);
+    mw_printf("Keeping chunk boundaries as multiples of "ZU"\n", nMod);
 
     if (sizes->effectiveArea / sizes->nChunk < nMod)
     {
         sizes->nChunk = sizes->effectiveArea / nMod;
-        warn("Warning: Estimated number of chunks ("ZU") too large. Using "ZU"\n", sizes->nChunkEstimate, sizes->nChunk);
+        mw_printf("Warning: Estimated number of chunks ("ZU") too large. Using "ZU"\n", sizes->nChunkEstimate, sizes->nChunk);
     }
 
     if (nMod == 1)
@@ -185,7 +185,7 @@ cl_bool findRunSizes(RunSizes* sizes,
         {
             sizes->nChunk++;
         }
-        warn("Need to use "ZU" chunks to cover area using multiples of 1\n", sizes->nChunk);
+        mw_printf("Need to use "ZU" chunks to cover area using multiples of 1\n", sizes->nChunk);
     }
 
     sizes->chunkBorders = mwCallocA((sizes->nChunk + 1), sizeof(size_t));
@@ -216,7 +216,7 @@ cl_bool findRunSizes(RunSizes* sizes,
 
     if (sum != sizes->effectiveArea)  /* Assert that the divisions aren't broken */
     {
-        warn("Chunk total does not match: "ZU" != "ZU"\n", sum, sizes->effectiveArea);
+        mw_printf("Chunk total does not match: "ZU" != "ZU"\n", sum, sizes->effectiveArea);
         free(sizes->chunkBorders);
         return CL_TRUE;
     }
@@ -277,7 +277,7 @@ char* findKernelSrc()
     if (kernelSrc)
         return kernelSrc;
 
-    warn("Failed to read kernel file\n");
+    mw_printf("Failed to read kernel file\n");
 
     return kernelSrc;
 }
@@ -305,7 +305,7 @@ static cl_bool separationCheckDevMemory(const DevInfo* di, const SeparationSizes
     totalMem = totalOut + totalConstBuf + totalGlobalConst;
     if (totalMem > di->memSize)
     {
-        warn("Total required device memory ("ZU") > available ("LLU")\n", totalMem, di->memSize);
+        mw_printf("Total required device memory ("ZU") > available ("LLU")\n", totalMem, di->memSize);
         return CL_FALSE;
     }
 
@@ -314,31 +314,31 @@ static cl_bool separationCheckDevMemory(const DevInfo* di, const SeparationSizes
      * available. */
     if (totalOut > di->memSize)
     {
-        warn("Device has insufficient global memory for output buffers\n");
+        mw_printf("Device has insufficient global memory for output buffers\n");
         return CL_FALSE;
     }
 
     if (sizes->outBg > di->maxMemAlloc || sizes->outStreams > di->maxMemAlloc)
     {
-        warn("An output buffer would exceed CL_DEVICE_MAX_MEM_ALLOC_SIZE\n");
+        mw_printf("An output buffer would exceed CL_DEVICE_MAX_MEM_ALLOC_SIZE\n");
         return CL_FALSE;
     }
 
     if (sizes->lbts > di->maxMemAlloc || sizes->rPts > di->maxMemAlloc)
     {
-        warn("A global constant buffer would exceed CL_DEVICE_MAX_MEM_ALLOC_SIZE\n");
+        mw_printf("A global constant buffer would exceed CL_DEVICE_MAX_MEM_ALLOC_SIZE\n");
         return CL_FALSE;
     }
 
     if (NUM_CONST_BUF_ARGS > di->maxConstArgs)
     {
-        warn("Need more constant arguments than available\n");
+        mw_printf("Need more constant arguments than available\n");
         return CL_FALSE;
     }
 
     if (totalConstBuf > di-> maxConstBufSize)
     {
-        warn("Device doesn't have enough constant buffer space\n");
+        mw_printf("Device doesn't have enough constant buffer space\n");
         return CL_FALSE;
     }
 
@@ -354,7 +354,7 @@ cl_bool separationCheckDevCapabilities(const DevInfo* di, const AstronomyParamet
   #if DOUBLEPREC
     if (!mwSupportsDoubles(di))
     {
-        warn("Device doesn't support double precision\n");
+        mw_printf("Device doesn't support double precision\n");
         return MW_CL_ERROR;
     }
   #endif /* DOUBLEPREC */
@@ -364,7 +364,7 @@ cl_bool separationCheckDevCapabilities(const DevInfo* di, const AstronomyParamet
         calculateSizes(&sizes, ap, &ias[i]);
         if (!separationCheckDevMemory(di, &sizes))
         {
-            warn("Capability check failed for cut %u\n", i);
+            mw_printf("Capability check failed for cut %u\n", i);
             return CL_FALSE;
         }
     }
@@ -383,7 +383,7 @@ static const char* getNvidiaRegCount(const DevInfo* di)
 
     if (computeCapabilityIs(di, 1, 3)) /* 1.3 == GT200 */
     {
-        warn("Found a compute capability 1.3 device. Using %s\n", regCount32);
+        mw_printf("Found a compute capability 1.3 device. Using %s\n", regCount32);
         return regCount32;
     }
 
@@ -438,7 +438,7 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
 
                  useImages) < 0)
     {
-        warn("Error getting kernel constant definitions\n");
+        mw_printf("Error getting kernel constant definitions\n");
         return NULL;
     }
 
@@ -452,7 +452,7 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
                      "%s %s ",
                      nvidiaOptFlags, getNvidiaRegCount(di)) < 0)
         {
-            warn("Error getting extra Nvidia flags\n");
+            mw_printf("Error getting extra Nvidia flags\n");
             return NULL;
         }
     }
@@ -460,24 +460,24 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
     {
         if (snprintf(extraFlags, sizeof(extraFlags), "%s", atiOptFlags) < 0)
         {
-            warn("Error getting extra ATI flags\n");
+            mw_printf("Error getting extra ATI flags\n");
             return NULL;
         }
     }
     else
-        warn("Unknown vendor ID: 0x%x\n", di->vendorID);
+        mw_printf("Unknown vendor ID: 0x%x\n", di->vendorID);
 
     if (!inlinedIntegralKernelSrc)
     {
         if (!getcwd(cwd, sizeof(cwd)))
         {
-            warn("Failed to get header directory\n");
+            mw_printf("Failed to get header directory\n");
             return NULL;
         }
 
         if (snprintf(includeFlags, sizeof(includeFlags), includeStr, cwd, cwd) < 0)
         {
-            warn("Failed to get include flags\n");
+            mw_printf("Failed to get include flags\n");
             return NULL;
         }
     }
@@ -489,7 +489,7 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
                  precBuf,
                  kernelDefBuf) < 0)
     {
-        warn("Failed to get compile flags\n");
+        mw_printf("Failed to get compile flags\n");
         return NULL;
     }
 
@@ -530,7 +530,7 @@ cl_int setupSeparationCL(CLInfo* ci,
 
     if (!separationCheckDevCapabilities(&ci->di, ap, ias))
     {
-        warn("Device failed capability check\n");
+        mw_printf("Device failed capability check\n");
         return MW_CL_ERROR;
     }
 
@@ -539,18 +539,18 @@ cl_int setupSeparationCL(CLInfo* ci,
     compileFlags = getCompilerFlags(ap, &ci->di, *useImages);
     if (!compileFlags)
     {
-        warn("Failed to get compiler flags\n");
+        mw_printf("Failed to get compiler flags\n");
         return MW_CL_ERROR;
     }
 
     kernelSrc = findKernelSrc();
     if (!kernelSrc)
     {
-        warn("Failed to read CL kernel source\n");
+        mw_printf("Failed to read CL kernel source\n");
         return MW_CL_ERROR;
     }
 
-    warn("\nCompiler flags:\n%s\n\n", compileFlags);
+    mw_printf("\nCompiler flags:\n%s\n\n", compileFlags);
     err = mwSetProgramFromSrc(ci, (const char**) &kernelSrc, 1, compileFlags);
 
     freeKernelSrc(kernelSrc);

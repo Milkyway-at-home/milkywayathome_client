@@ -147,18 +147,18 @@ static void reportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
         {
             if (ctx->allowIncest)
             {
-                warn("[hackGrav: tree-incest detected at time %f / %f (%f%%)]\n",
-                     st->tnow,
-                     ctx->timeEvolve,
-                     100.0 * st->tnow / ctx->timeEvolve
+                mw_printf("[hackGrav: tree-incest detected at time %f / %f (%f%%)]\n",
+                          st->tnow,
+                          ctx->timeEvolve,
+                          100.0 * st->tnow / ctx->timeEvolve
                     );
             }
             else
             {
-                warn("hackGrav: tree-incest detected (fatal) at time %f / %f (%f%%)\n",
-                     st->tnow,
-                     ctx->timeEvolve,
-                     100.0 * st->tnow / ctx->timeEvolve
+                mw_printf("hackGrav: tree-incest detected (fatal) at time %f / %f (%f%%)\n",
+                          st->tnow,
+                          ctx->timeEvolve,
+                          100.0 * st->tnow / ctx->timeEvolve
                     );
             }
         }
@@ -220,7 +220,7 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
                 mw_panic("Implement me!\n");
 
             default:
-                fail("Bad external potential type: %d\n", ctx->potentialType);
+                mw_fail("Bad external potential type: %d\n", ctx->potentialType);
         }
     }
 

@@ -142,7 +142,7 @@ static cl_int readKernelResults(CLInfo* ci,
     bgResults = mapIntegralResults(ci, cm, resultSize);
     if (!bgResults)
     {
-        warn("Failed to map integral results\n");
+        mw_printf("Failed to map integral results\n");
         return MW_CL_ERROR;
     }
 
@@ -159,7 +159,7 @@ static cl_int readKernelResults(CLInfo* ci,
     streamsTmp = mapStreamsResults(ci, cm, streamsSize);
     if (!streamsTmp)
     {
-        warn("Failed to map stream results\n");
+        mw_printf("Failed to map stream results\n");
         return MW_CL_ERROR;
     }
 
@@ -185,7 +185,7 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
     err = setNuKernelArgs(ci, ia, nu_step);
     if (err != CL_SUCCESS)
     {
-        warn("Failed to set nu kernel argument\n");
+        mw_printf("Failed to set nu kernel argument\n");
         return err;
     }
 
@@ -283,14 +283,14 @@ static cl_int runIntegral(CLInfo* ci,
 
     es->nu_step = 0;
 
-    warn("Integration time: %f s. Average time per iteration = %f ms\n",
-         tAcc / 1000.0, tAcc / (double) ia->nu_steps);
+    mw_printf("Integration time: %f s. Average time per iteration = %f ms\n",
+              tAcc / 1000.0, tAcc / (double) ia->nu_steps);
 
     if (err == CL_SUCCESS)
     {
         err = readKernelResults(ci, cm, es, ia, ap->number_streams);
         if (err != CL_SUCCESS)
-            warn("Failed to read final kernel results\n");
+            mw_printf("Failed to read final kernel results\n");
 
         addTmpSums(es); /* Add final episode to running totals */
     }
@@ -317,7 +317,7 @@ cl_int integrateCL(const AstronomyParameters* ap,
 
     if (findRunSizes(&runSizes, ci, &ci->di, ia, clr))
     {
-        warn("Failed to find good run sizes\n");
+        mw_printf("Failed to find good run sizes\n");
         return MW_CL_ERROR;
     }
 

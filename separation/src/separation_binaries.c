@@ -61,13 +61,13 @@ static cl_bool checkBinaryHeader(const AstronomyParameters* ap,
     if (   hdr->versionMajor != SEPARATION_VERSION_MAJOR
         || hdr->versionMinor != SEPARATION_VERSION_MINOR)
     {
-        warn("Version of precompiled kernel doesn't match\n");
+        mw_printf("Version of precompiled kernel doesn't match\n");
         return CL_FALSE;
     }
 
     if (hdr->doublePrec != DOUBLEPREC)
     {
-        warn("Precompiled kernel precision does not match\n");
+        mw_printf("Precompiled kernel precision does not match\n");
         return CL_FALSE;
     }
 
@@ -75,31 +75,31 @@ static cl_bool checkBinaryHeader(const AstronomyParameters* ap,
         || hdr->fast_h_prob    != ap->fast_h_prob
         || hdr->aux_bg_profile != ap->aux_bg_profile)
     {
-        warn("Kernel compiled parameters do not match\n");
+        mw_printf("Kernel compiled parameters do not match\n");
         return CL_FALSE;
     }
 
     if (hdr->vendorID != di->vendorID)
     {
-        warn("Vendor ID of binary does not match\n");
+        mw_printf("Vendor ID of binary does not match\n");
         return CL_FALSE;
     }
 
     if (strncmp(hdr->devName, di->devName, sizeof(di->devName)))
     {
-        warn("Device does not match\n");
+        mw_printf("Device does not match\n");
         return CL_FALSE;
     }
 
     if (strncmp(hdr->deviceVersion, di->version, sizeof(di->version)))
     {
-        warn("Device version does not match\n");
+        mw_printf("Device version does not match\n");
         return CL_FALSE;
     }
 
     if (strncmp(hdr->driverVersion, di->driver, sizeof(di->driver)))
     {
-        warn("Device driver version does not match\n");
+        mw_printf("Device driver version does not match\n");
         return CL_FALSE;
     }
 
@@ -116,8 +116,8 @@ static unsigned char* readCoreBinary(FILE* f, SeparationBinaryHeader* hdr)
     readn = fread(bin, sizeof(unsigned char), hdr->binSize, f);
     if (readn != hdr->binSize)
     {
-        warn("Error reading program binary header: read "ZU", expected "ZU"\n",
-             readn, hdr->binSize);
+        mw_printf("Error reading program binary header: read "ZU", expected "ZU"\n",
+                  readn, hdr->binSize);
         hdr->binSize = 0;
         free(bin);
         bin = NULL;
@@ -133,13 +133,13 @@ static mwbool freadCheckedStr(char* buf, const char* str, size_t len, FILE* f)
     readn = fread(buf, sizeof(char), len, f);
     if (readn != len)
     {
-        warn("Failed to read '%s' from file: read "ZU", expected "ZU"\n", str, readn, len);
+        mw_printf("Failed to read '%s' from file: read "ZU", expected "ZU"\n", str, readn, len);
         return TRUE;
     }
 
     if (strncmp(buf, str, len))
     {
-        warn("Read string doesn't match '%s'\n", str);
+        mw_printf("Read string doesn't match '%s'\n", str);
         return TRUE;
     }
 
@@ -156,14 +156,14 @@ static unsigned char* separationLoadBinaryFile(FILE* f,
 
     if (freadCheckedStr(buf, SEPARATION_BINARY_HEADER, sizeof(SEPARATION_BINARY_HEADER), f))
     {
-        warn("Failed to find binary prefix\n");
+        mw_printf("Failed to find binary prefix\n");
         return NULL;
     }
 
     readn = fread(hdr, sizeof(SeparationBinaryHeader), 1, f);
     if (readn != 1)
     {
-        warn("Error reading program binary header: read "ZU", expected %d\n", readn, 1);
+        mw_printf("Error reading program binary header: read "ZU", expected %d\n", readn, 1);
         return NULL;
     }
 
@@ -171,7 +171,7 @@ static unsigned char* separationLoadBinaryFile(FILE* f,
 
     if (freadCheckedStr(buf, SEPARATION_BINARY_TAIL, sizeof(SEPARATION_BINARY_TAIL), f))
     {
-        warn("Failed to find end marker of program binary\n");
+        mw_printf("Failed to find end marker of program binary\n");
         free(bin);
         bin = NULL;
         hdr->binSize = 0;
@@ -204,7 +204,7 @@ unsigned char* separationLoadBinary(const AstronomyParameters* ap,
 
     if (!checkBinaryHeader(ap, di, &hdr))
     {
-        warn("Binary header invalid for this device\n");
+        mw_printf("Binary header invalid for this device\n");
         free(bin);
         return NULL;
     }

@@ -60,13 +60,13 @@ static void printVersion(int boincTag)
 
     if (boincTag)
     {
-        warn("<search_application> %s </search_application>\n", versionStr);
+        mw_printf("<search_application> %s </search_application>\n", versionStr);
     }
     else
     {
-        warn("%s %s\n",
-             versionStr,
-             BOINC_APPLICATION ? "BOINC" : "");
+        mw_printf("%s %s\n",
+                  versionStr,
+                  BOINC_APPLICATION ? "BOINC" : "");
     }
 }
 
@@ -157,7 +157,7 @@ static void separationReadPreferences(SeparationFlags* sf)
 
     if (mwGetMWAppInitData(&aid))
     {
-        warn("Error reading app init data. Project preferences will not be used\n");
+        mw_printf("Error reading app init data. Project preferences will not be used\n");
     }
     else
     {
@@ -405,14 +405,14 @@ static IntegralArea* prepareParameters(const SeparationFlags* sf,
     /* Try the new file first. If that doesn't work, try the old one. */
     if (!ias)
     {
-        warn("Error reading astronomy parameters from file '%s'\n"
-             "  Trying old parameters file\n", sf->ap_file);
+        mw_printf("Error reading astronomy parameters from file '%s'\n"
+                  "  Trying old parameters file\n", sf->ap_file);
         ias = readParameters(sf->ap_file, ap, bgp, streams);
     }
 
     if (!ias)
     {
-        warn("Failed to read parameters file\n");
+        mw_printf("Failed to read parameters file\n");
         return NULL;
     }
 
@@ -456,7 +456,7 @@ static int worker(const SeparationFlags* sf)
     sc = getStreamConstants(&ap, &streams);
     if (!sc)
     {
-        warn("Failed to get stream constants\n");
+        mw_printf("Failed to get stream constants\n");
         mwFreeA(ias);
         freeStreams(&streams);
         return 1;
@@ -467,7 +467,7 @@ static int worker(const SeparationFlags* sf)
     rc = evaluate(results, &ap, ias, &streams, sc, sf->star_points_file,
                   &clr, sf->do_separation, sf->ignoreCheckpoint, sf->separation_outfile);
     if (rc)
-        warn("Failed to calculate likelihood\n");
+        mw_printf("Failed to calculate likelihood\n");
 
     printSeparationResults(results, ap.number_streams);
 
@@ -559,7 +559,7 @@ int main(int argc, const char* argv[])
             parseParameters(argc, argvCopy, &sf);
         }
 
-        warn("Failed to parse parameters\n");
+        mw_printf("Failed to parse parameters\n");
         free(argvCopy);
         mw_finish(EXIT_FAILURE);
     }
