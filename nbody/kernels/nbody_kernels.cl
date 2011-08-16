@@ -124,6 +124,7 @@ typedef __global volatile int* restrict IVPtr;
     __global volatile TreeStatus* restrict _treeStatus, \
                                                         \
     int step,                                           \
+    int maxNBody,                                       \
     RVPtr _critRadii,                                   \
     __global volatile Debug* _debug                     \
     )
@@ -273,7 +274,7 @@ __kernel void NBODY_KERNEL(buildTree)
 
         /* Ugly hackery to prevent conditional barrier() for when some
          * items have another body and others don't */
-        if (i >= NBODY && !dead)
+        if (i >= maxNBody && !dead)
         {
             dead = true;
             (void) atom_inc(&deadCount);
@@ -823,7 +824,7 @@ __kernel void NBODY_KERNEL(forceCalculation)
       #endif /* BH86 || EXACT */
 
         /* iterate over all bodies assigned to thread */
-        for (int k = get_global_id(0); k < NBODY; k += get_local_size(0) * get_num_groups(0))
+        for (int k = get_global_id(0); k < maxNBody; k += get_local_size(0) * get_num_groups(0))
         {
             int i = _sort[k];  /* Get permuted index */
 

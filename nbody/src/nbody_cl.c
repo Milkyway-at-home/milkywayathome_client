@@ -65,68 +65,111 @@ typedef struct
     int i[64];
 } Debug;
 
+typedef struct
+{
+    size_t factors[6];
+    size_t threads[6];
+    double timings[6];        /* In a single iteration */
+    double chunkTimings[6];   /* Average time per chunk */
+    double kernelTimings[6];  /* Running totals */
 
-static size_t threads[6];
-static size_t factors[6];
+    size_t global[6];
+    size_t local[6];
+} NBodyWorkSizes;
 
-static double kernelTimings[6] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+static NBodyWorkSizes _workSizes;
+
+static void printNBodyWorkSizes(const NBodyWorkSizes* ws)
+{
+    warn("\n"
+         "Kernel launch sizes:\n"
+         "  Bounding box kernel:  "ZU", "ZU"\n"
+         "  Tree build kernel:    "ZU", "ZU"\n"
+         "  Summarization kernel: "ZU", "ZU"\n"
+         "  Sort kernel:          "ZU", "ZU"\n"
+         "  Force kernel:         "ZU", "ZU"\n"
+         "  Integration kernel:   "ZU", "ZU"\n"
+         "\n"
+         ,
+         ws->global[0], ws->local[0],
+         ws->global[1], ws->local[1],
+         ws->global[2], ws->local[2],
+         ws->global[3], ws->local[3],
+         ws->global[4], ws->local[4],
+         ws->global[5], ws->local[5]
+        );
+}
+
+static cl_bool setWorkSizes(NBodyWorkSizes* ws, const DevInfo* di)
+{
+    cl_uint blocks = di->maxCompUnits;
+
+    ws->global[0] = ws->threads[0] * ws->factors[0] * blocks;
+    ws->local[0] = ws->threads[0];
+
+    ws->global[1] = ws->threads[1] * ws->factors[1] * blocks;
+    ws->local[1] = ws->threads[1];
+
+    ws->global[2] = ws->threads[2] * ws->factors[2] * blocks;
+    ws->local[2] = ws->threads[2];
+
+    ws->global[3] = ws->threads[3] * ws->factors[3] * blocks;
+    ws->local[3] = ws->threads[3];
+
+    ws->global[4] = ws->threads[4] * ws->factors[4] * blocks;
+    ws->local[4] = ws->threads[4];
+
+    ws->global[5] = ws->threads[5] * ws->factors[5] * blocks;
+    ws->local[5] = ws->threads[5];
+
+    return CL_FALSE;
+}
 
 /* Return CL_TRUE if some error */
-static cl_bool setThreadCounts(const DevInfo* di)
+static cl_bool setThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
 {
-    factors[0] = 1;
-    factors[1] = 2;
-    factors[2] = 1;
-    factors[3] = 1;
-    factors[4] = 2;
-    factors[5] = 1;
+    ws->factors[0] = 1;
+    ws->factors[1] = 2;
+    ws->factors[2] = 1;
+    ws->factors[3] = 1;
+    ws->factors[4] = 1;
+    ws->factors[5] = 1;
 
     if (di->devType == CL_DEVICE_TYPE_CPU)
     {
-        threads[0] = 1;
-        threads[1] = 1;
-        threads[2] = 1;
-        threads[3] = 1;
-        threads[4] = 1;
-        threads[5] = 1;
+        ws->threads[0] = 1;
+        ws->threads[1] = 1;
+        ws->threads[2] = 1;
+        ws->threads[3] = 1;
+        ws->threads[4] = 1;
+        ws->threads[5] = 1;
     }
     else if (computeCapabilityIs(di, 1, 3))
     {
-        threads[0] = 512;
-        threads[1] = 288;
-        threads[2] = 256;
-        threads[3] = 512;
-        threads[4] = 384;
-        threads[5] = 512;
+        ws->threads[0] = 512;
+        ws->threads[1] = 288;
+        ws->threads[2] = 256;
+        ws->threads[3] = 512;
+        ws->threads[4] = 384;
+        ws->threads[5] = 512;
     }
     else if (minComputeCapabilityCheck(di, 2, 0))
     {
-        threads[0] = 512;
-        threads[1] = 1024;
-        threads[2] = 1024;
-        threads[3] = 256;
-        threads[4] = 256;
-        threads[5] = 512;
+        ws->threads[0] = 512;
+        ws->threads[1] = 1024;
+        ws->threads[2] = 1024;
+        ws->threads[3] = 256;
+        ws->threads[4] = 256;
+        ws->threads[5] = 512;
     }
     else
     {
-        /*
-        threads[0] = 256;
-        threads[1] = 256;
-        threads[2] = 256;
-        threads[3] = 256;
-        threads[4] = 256;
-        threads[5] = 256;
-        */
-
-        warn("This is what happens\n");
-        threads[0] = 64;
-        threads[1] = 64;
-        threads[2] = 256;
-        threads[3] = 256;
-        threads[4] = 256;
-        threads[5] = 256;
-
+        ws->threads[0] = 256;
+        ws->threads[1] = 256;
+        ws->threads[2] = 256;
+        ws->threads[3] = 256;
+        ws->threads[4] = 256;
+        ws->threads[5] = 256;
     }
 
     return CL_FALSE;
@@ -223,18 +266,21 @@ static cl_int setKernelArguments(cl_kernel kern, CLInfo* ci, NBodyBuffers* nbb)
      * actually cares. We'll set it before then. */
     err |= clSetKernelArg(kern, 21, sizeof(cl_int), &step);
 
+    /* Value also doesn't matter */
+    err |= clSetKernelArg(kern, 22, sizeof(cl_int), &step);
+
 
     if (nbb->critRadii)
     {
-        err |= clSetKernelArg(kern, 22, sizeof(cl_mem), &nbb->critRadii);
+        err |= clSetKernelArg(kern, 23, sizeof(cl_mem), &nbb->critRadii);
     }
     else
     {
         /* Just be anything. Won't be used, it just needs to be not null to not error */
-        err |= clSetKernelArg(kern, 22, sizeof(cl_mem), &nbb->treeStatus);
+        err |= clSetKernelArg(kern, 23, sizeof(cl_mem), &nbb->treeStatus);
     }
 
-    err |= clSetKernelArg(kern, 23, sizeof(cl_mem), &nbb->debug);
+    err |= clSetKernelArg(kern, 24, sizeof(cl_mem), &nbb->debug);
 
     return err;
 }
@@ -323,6 +369,7 @@ static cl_uint findNNode(const DevInfo* di, cl_int nbody)
 static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const DevInfo* di)
 {
     char* buf;
+    static NBodyWorkSizes* ws = &_workSizes;
 
     /* Put a space between the -D. if the thing begins with D, there's
      * an Apple OpenCL compiler bug where the D will be
@@ -365,12 +412,12 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
 
                  (di->devType == CL_DEVICE_TYPE_CPU),
 
-                 threads[0],
-                 threads[1],
-                 threads[2],
-                 threads[3],
-                 threads[4],
-                 threads[5],
+                 ws->threads[0],
+                 ws->threads[1],
+                 ws->threads[2],
+                 ws->threads[3],
+                 ws->threads[4],
+                 ws->threads[5],
                  MAXDEPTH,
 
                  ctx->timestep,
@@ -525,113 +572,174 @@ static cl_bool checkKernelErrorCode(CLInfo* ci, NBodyBuffers* nbb)
     return CL_FALSE;
 }
 
+static cl_double waitReleaseEventWithTime(cl_event ev)
+{
+    cl_double t;
+    cl_int err;
+
+    err = clWaitForEvents(1, &ev);
+    if (err != CL_SUCCESS)
+        return 0.0;
+
+    t = mwEventTimeMS(ev);
+
+    err = clReleaseEvent(ev);
+    if (err != CL_SUCCESS)
+        return 0.0;
+
+    return t;
+}
+
+/* If kernels are taking too long, try running with fewer threads if
+ * possible. Return CL_TRUE if anything changed
+ */
+static cl_bool reevaluateWorkSizes(NBodyWorkSizes* ws)
+{
+    cl_double buildTreeThreshold = 33.0;
+    cl_double forceThreshold = 33.0;
+
+    if (ws->chunkTimings[1] > buildTreeThreshold)
+    {
+        /* Try fewer threads if possible */
+    }
+
+    if (ws->chunkTimings[4] > forceThreshold)
+    {
+        /* Try fewer threads if possible */
+    }
+
+    return CL_FALSE;
+}
+
 static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
 {
     cl_int err;
     cl_uint i;
-    size_t global[1];
-    size_t local[1];
-    cl_uint blocks = ci->di.maxCompUnits;
-    cl_event events[6];
-    cl_double timings[6];
+    int upperBound;
+    size_t offset[1];
+    size_t chunk, nChunk;
+    cl_bool ignoreResponsive = CL_FALSE;
+    cl_event boxEv, sumEv, sortEv, integrateEv;
+    NBodyWorkSizes* ws = &_workSizes;
 
-    memset(events, 0, sizeof(events));
+    memset(ws->timings, 0, sizeof(ws->timings));
 
     err = clSetKernelArg(kernels.forceCalculation, 21, sizeof(int), &st->step);
     if (err != CL_SUCCESS)
         return err;
 
-    global[0] = threads[0] * factors[0] * blocks;
-    local[0] = threads[0];
-    warn("Bounding box kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.boundingBox, 1,
-                                 NULL, global, local,
-                                 0, NULL, &events[0]);
+                                 NULL, &ws->global[0], &ws->local[0],
+                                 0, NULL, &boxEv);
     if (err != CL_SUCCESS)
         return err;
 
-    global[0] = threads[1] * factors[1] * blocks;
-    local[0] = threads[1];
-    warn("Tree build kernel: %zu, %zu\n", global[0], local[0]);
-    err = clEnqueueNDRangeKernel(ci->queue, kernels.buildTree, 1,
-                                 NULL, global, local,
-                                 0, NULL, &events[1]);
-    if (err != CL_SUCCESS)
-        return err;
+    ws->timings[0] += waitReleaseEventWithTime(boxEv);
 
-    global[0] = threads[2] * factors[2] * blocks;
-    local[0] = threads[2];
-    warn("Summarization kernel: %zu, %zu\n", global[0], local[0]);
+    nChunk     = ignoreResponsive ?         1 : mwDivRoundup((size_t) st->nbody, ws->global[0]);
+    upperBound = ignoreResponsive ? st->nbody : (int) ws->global[0];
+    offset[0] = 0;
+    for (chunk = 0; chunk < nChunk; ++chunk)
+    {
+        cl_event ev;
+
+        if (upperBound > st->nbody)
+            upperBound = st->nbody;
+
+        err = clSetKernelArg(kernels.buildTree, 22, sizeof(int), &upperBound);
+        if (err != CL_SUCCESS)
+            return err;
+
+        err = clEnqueueNDRangeKernel(ci->queue, kernels.buildTree, 1,
+                                     offset, &ws->global[1], &ws->local[1],
+                                     0, NULL, &ev);
+        if (err != CL_SUCCESS)
+            return err;
+
+        ws->timings[1] += waitReleaseEventWithTime(ev);
+
+        upperBound += (int) ws->global[1];
+        offset[0] += ws->global[1];
+    }
+    ws->chunkTimings[1] = ws->timings[1] / (double) nChunk;
+
     err = clEnqueueNDRangeKernel(ci->queue, kernels.summarization, 1,
-                                 NULL, global, local,
-                                 0, NULL, &events[2]);
+                                 NULL, &ws->global[2], &ws->local[2],
+                                 0, NULL, &sumEv);
     if (err != CL_SUCCESS)
         return err;
-
 
     /* FIXME: This does not work unless ALL of the threads are
      * launched at once. This may be bad when we need
      * responsiveness. This also means it will always hang with
      * CPUs */
-    global[0] = threads[3] * factors[3] * blocks;
-    local[0] = threads[3];
-    warn("Sort kernel: %zu, %zu\n", global[0], local[0]);
     err = clEnqueueNDRangeKernel(ci->queue, kernels.sort, 1,
-                                 NULL, global, local,
-                                 0, NULL, &events[3]);
+                                 NULL, &ws->global[3], &ws->local[3],
+                                 0, NULL, &sortEv);
     if (err != CL_SUCCESS)
         return err;
 
+    ws->timings[3] += waitReleaseEventWithTime(sortEv);
 
-    global[0] = threads[4] * factors[4] * blocks;
-    local[0] = threads[4];
-    warn("Force kernel: %zu, %zu\n", global[0], local[0]);
-    err = clEnqueueNDRangeKernel(ci->queue, kernels.forceCalculation, 1,
-                                 NULL, global, local,
-                                 0, NULL, &events[4]);
-    if (err != CL_SUCCESS)
-        return err;
+    nChunk     = ignoreResponsive ?         1 : mwDivRoundup((size_t) st->nbody, ws->global[4]);
+    upperBound = ignoreResponsive ? st->nbody : (int) ws->global[4];
+    offset[0] = 0;
+    for (chunk = 0; chunk < nChunk; ++chunk)
+    {
+        cl_event ev;
+        double t;
 
-    global[0] = threads[5] * factors[5] * blocks;
-    local[0] = threads[5];
-    warn("Integration kernel: %zu, %zu\n", global[0], local[0]);
+        if (upperBound > st->nbody)
+            upperBound = st->nbody;
+
+        err = clSetKernelArg(kernels.forceCalculation, 22, sizeof(int), &upperBound);
+        if (err != CL_SUCCESS)
+            return err;
+        err = clEnqueueNDRangeKernel(ci->queue, kernels.forceCalculation, 1,
+                                     offset, &ws->global[4], &ws->local[4],
+                                     0, NULL, &ev);
+        if (err != CL_SUCCESS)
+            return err;
+
+        t = waitReleaseEventWithTime(ev);
+
+        ws->timings[4] += t;
+        upperBound += (int) ws->global[4];
+        offset[0] += ws->global[4];
+    }
+    ws->chunkTimings[4] = ws->timings[4] / (double) nChunk;
+
     err = clEnqueueNDRangeKernel(ci->queue, kernels.integration, 1,
-                                 NULL, global, local,
-                                 0, NULL, &events[5]);
+                                 NULL, &ws->global[5], &ws->local[5],
+                                 0, NULL, &integrateEv);
     if (err != CL_SUCCESS)
         return err;
 
-    err = clWaitForEvents(6, events);
-    if (err != CL_SUCCESS)
-    {
-        mwCLWarn("Failed to wait for events", err);
-    }
+    ws->timings[5] += waitReleaseEventWithTime(integrateEv);
 
-    for (i = 0; i < 6; ++i)
-    {
-        timings[i] = mwEventTimeMS(events[i]);
-        kernelTimings[i] += timings[i];
-    }
+    err = clFinish(ci->queue);
+    if (err != CL_SUCCESS)
+        return err;
 
     warn("Step %d:\n"
-         "  boundingBox:      %f ms\n"
-         "  buildTree:        %f ms\n"
-         "  summarization:    %f ms\n"
-         "  sort:             %f ms\n"
-         "  forceCalculation: %f ms\n"
-         "  integration:      %f ms\n"
+         "  boundingBox:      %15f ms\n"
+         "  buildTree:        %15f ms%15f ms\n"
+         "  summarization:    %15f ms\n"
+         "  sort:             %15f ms\n"
+         "  forceCalculation: %15f ms%15f ms\n"
+         "  integration:      %15f ms\n"
          "\n",
          st->step,
-         timings[0],
-         timings[1],
-         timings[2],
-         timings[3],
-         timings[4],
-         timings[5]);
+         ws->timings[0],
+         ws->timings[1], ws->chunkTimings[1],
+         ws->timings[2],
+         ws->timings[3],
+         ws->timings[4], ws->chunkTimings[4],
+         ws->timings[5]);
 
-    for (i = 0; i < 6; ++i)
+    for (i = 0; i < 6; ++i) /* Add timings to running totals */
     {
-        clReleaseEvent(events[i]);
+        ws->kernelTimings[i] += ws->timings[i];
     }
 
     return err;
@@ -872,6 +980,7 @@ static void printKernelTimings(const DevInfo* di, const NBodyState* st)
     double totalTime = 0.0;
     cl_uint i;
     double nStep = (double) st->step;
+    const double* kernelTimings = _workSizes.kernelTimings;
 
     for (i = 0; i < 6; ++i)
     {
@@ -957,8 +1066,10 @@ NBodyStatus runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* n
     if (!nbodyCheckDevCapabilities(&ci.di, ctx, st))
         return MW_CL_ERROR;
 
-    if (setThreadCounts(&ci.di))
+    if (setThreadCounts(&_workSizes, &ci.di) || setWorkSizes(&_workSizes, &ci.di))
         return MW_CL_ERROR;
+
+    printNBodyWorkSizes(&_workSizes);
 
     err = setupExec(&ci, ctx, st, &nbb);
     if (err != CL_SUCCESS)
