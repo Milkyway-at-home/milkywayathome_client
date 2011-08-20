@@ -80,12 +80,10 @@ double mw_div(double a, double b)  // accurate to 1 ulp, i.e the last bit of the
 double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double precision number
 {
     // cuts some corners on the numbers range but is significantly faster, employs "faithful rounding"
-    double x, res;
-
     // 22bit estimate for reciprocal square root, limits range to float range, but spares the exponent extraction
-    x = (double)rsqrt((float)y);
+    double x = (double)rsqrt((float)y);
     x = x * mad(-y, x * x, 3.0);  // first Newton iteration (44bit accurate)
-    res = x * y;                  // do final iteration directly on sqrt(y) and not on the inverse
+    double res = x * y;                  // do final iteration directly on sqrt(y) and not on the inverse
     return res * mad(-0.0625, res * x, 0.75);
 }   // same precision as division (1 ulp)
 
@@ -93,11 +91,8 @@ double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double 
   #define mw_fsqrt sqrt
 #endif /* USE_CUSTOM_SQRT && DOUBLEPREC */
 
-#if 0
-  #define MAX_CONST(n, type) __attribute__((max_constant_size(n * sizeof(type))))
-#else
-  #define MAX_CONST(n, type)
-#endif
+/* This doesn't seem to really help */
+#define MAX_CONST(n, type) __attribute__((max_constant_size(n * sizeof(type))))
 
 
 inline real aux_prob(__constant AstronomyParameters* ap, real r_in_mag)
@@ -119,7 +114,7 @@ __kernel void probabilities(__global real* restrict bgOut,
 
                             __constant StreamConstants* sc MAX_CONST(NSTREAM, StreamConstants),
                             __constant RConsts* rcs,
-                            __constant real* restrict sg_dx MAX_CONST(256, real),
+                            __constant real* restrict sg_dx MAX_CONST(CONVOLVE, real),
 
                           #if USE_IMAGES
                             __read_only image2d_t r_pts,
@@ -143,9 +138,7 @@ __kernel void probabilities(__global real* restrict bgOut,
     real bg_prob = 0.0;
     real st_probs[NSTREAM] = { 0.0 };
 
-    unsigned int i, j;
-
-    for (i = 0; i < CONVOLVE; ++i)
+    for (int i = 0; i < CONVOLVE; ++i)
     {
         RPoints r_pt = readRPts(r_pts, (int2) (r_step, i));
 
@@ -175,7 +168,7 @@ __kernel void probabilities(__global real* restrict bgOut,
       #endif /* AUX_BG_PROFILE */
 
         #pragma unroll NSTREAM
-        for (j = 0; j < NSTREAM; ++j)
+        for (int j = 0; j < NSTREAM; ++j)
         {
             real xs = x - X(sc[j].c);
             real ys = y - Y(sc[j].c);
@@ -206,7 +199,7 @@ __kernel void probabilities(__global real* restrict bgOut,
     bgOut[idx] += bg_prob;
 
     #pragma unroll NSTREAM
-    for (j = 0; j < NSTREAM; ++j)
+    for (int j = 0; j < NSTREAM; ++j)
     {
         streamsOut[NSTREAM * idx + j] += V_reff_xr_rp3 * st_probs[j];
     }
