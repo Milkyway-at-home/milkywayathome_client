@@ -84,7 +84,6 @@ typedef struct
     int forceSSE41;
 
     int verbose;
-    int printVersion;
 } SeparationFlags;
 
 /* Process priority to use for GPU version */
@@ -110,7 +109,7 @@ typedef struct
                                  DEFAULT_GPU_WAIT_FACTOR,                      \
                                  0, FALSE,                                     \
                                  FALSE, FALSE, FALSE, FALSE, FALSE,            \
-                                 FALSE, FALSE                                  \
+                                 FALSE                                         \
                                }
 
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
 /*
-Copyright 2008-2010 Travis Desell, Dave Przybylo, Nathan Cole, Matthew
+Copyright 2008-2011 Travis Desell, Dave Przybylo, Nathan Cole, Matthew
 Arsenault, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
 Magdon-Ismail and Rensselaer Polytechnic Institute.
 
@@ -42,6 +42,55 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define SEED_ARGUMENT (1 << 1)
 #define PRIORITY_ARGUMENT (1 << 2)
+
+static void printCopyright()
+{
+    warn(
+        "Milkyway@Home Separation client %d.%d\n\n"
+        "Copyright (c) 2008-2011 Travis Desell, Nathan Cole, Boleslaw Szymanski\n"
+        "Copyright (c) 2008-2011 Heidi Newberg, Carlos Varela, Malik Magdon-Ismail\n"
+        "Copyright (c) 2008-2011 Rensselaer Polytechnic Institute.\n"
+        "Copyright (c) 2010-2011 Matthew Arsenault\n"
+        "Copyright (c) 1991-2000 University of Groningen, The Netherlands.\n"
+        "Copyright (c) 2001-2009 The GROMACS Development Team\n"
+        "\n"
+        "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
+        "This is free software: you are free to change and redistribute it.\n"
+        "There is NO WARRANTY, to the extent permitted by law.\n"
+        "\n"
+        " Incorporates works covered by the following copyright and\n"
+        " permission notice:\n"
+        "\n"
+        "Copyright (C) 2007, 2008 Mutsuo Saito, Makoto Matsumoto and Hiroshima University\n"
+        "Copyright (c) 2010, Naoaki Okazaki\n"
+        "\n"
+        " Redistribution and use in source and binary forms, with or without\n"
+        " modification, are permitted provided that the following conditions are met:\n"
+        "     * Redistributions of source code must retain the above copyright\n"
+        "       notice, this list of conditions and the following disclaimer.\n"
+        "     * Redistributions in binary form must reproduce the above copyright\n"
+        "       notice, this list of conditions and the following disclaimer in the\n"
+        "       documentation and/or other materials provided with the distribution.\n"
+        "     * Neither the names of the authors nor the names of its contributors\n"
+        "       may be used to endorse or promote products derived from this\n"
+        "       software without specific prior written permission.\n"
+        "\n"
+        " THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
+        " \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+        " LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
+        " A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER\n"
+        " OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,\n"
+        " EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,\n"
+        " PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR\n"
+        " PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF\n"
+        " LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\n"
+        " NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\n"
+        " SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+        "\n",
+        SEPARATION_VERSION_MAJOR,
+        SEPARATION_VERSION_MINOR
+        );
+}
 
 
 static void printVersion(int boincTag)
@@ -185,6 +234,8 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
 {
     poptContext context;
     int argRead;
+    static int version = FALSE;
+    static int copyright = FALSE;
     static unsigned int numParams = 0;
     static int serverParams = 0;
     static const char** rest = NULL;
@@ -335,12 +386,6 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
             },
 
             {
-                "version", 'v',
-                POPT_ARG_NONE, &sf.printVersion,
-                0, "Print version information", NULL
-            },
-
-            {
                 "p", 'p',
                 POPT_ARG_NONE, &serverParams,
                 0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
@@ -350,6 +395,18 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
                 "np", '\0',
                 POPT_ARG_INT | POPT_ARGFLAG_ONEDASH, &numParams,
                 0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
+            },
+
+            {
+                "version", 'v',
+                POPT_ARG_NONE, &version,
+                0, "Print version information", NULL
+            },
+
+            {
+                "copyright", '\0',
+                POPT_ARG_NONE, &copyright,
+                0, "Print copyright information and exit", NULL
             },
 
             POPT_AUTOHELP
@@ -377,9 +434,18 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
         exit(EXIT_FAILURE);
     }
 
-    if (sf.printVersion)
+    if (version)
     {
         printVersion(FALSE);
+    }
+
+    if (copyright)
+    {
+        printCopyright();
+    }
+
+    if (version || copyright)
+    {
         exit(EXIT_SUCCESS);
     }
 
