@@ -106,9 +106,9 @@ cl_bool findRunSizes(RunSizes* sizes,
 {
     WGInfo wgi;
     cl_int err;
-
     size_t nWavefrontPerCU;
     size_t blockSize; /* Size chunks should be multiples of */
+    cl_bool forceOneChunk = clr->nonResponsive || di->nonOutput;
 
     /* I assume this is how this works for 1D limit */
     const cl_ulong maxWorkDim = (cl_ulong) di->maxWorkItemSizes[0] * di->maxWorkItemSizes[1] * di->maxWorkItemSizes[2];
@@ -187,13 +187,14 @@ cl_bool findRunSizes(RunSizes* sizes,
     }
 
     sizes->effectiveArea = sizes->chunkSize * mwDivRoundup(sizes->area, sizes->chunkSize);
-    sizes->nChunk = mwDivRoundup(sizes->effectiveArea, sizes->chunkSize);
+    sizes->nChunk = forceOneChunk ? 1 : mwDivRoundup(sizes->effectiveArea, sizes->chunkSize);
     sizes->extra = sizes->effectiveArea - sizes->area;
 
-    if (sizes->nChunk == 1) /* Magic factor probably too high or very small workunit */
+    if (sizes->nChunk == 1) /* Magic factor probably too high or very small workunit, or nonresponsive */
     {
-        sizes->chunkSize = blockSize;   /* magic == 1 */
+        /* Like using magic == 1 */
         sizes->effectiveArea = blockSize * mwDivRoundup(sizes->area, blockSize);
+        sizes->chunkSize = sizes->effectiveArea;
         sizes->extra = sizes->effectiveArea - sizes->area;
     }
 
@@ -392,11 +393,9 @@ static const char* getNvidiaRegCount(const DevInfo* di)
     const char* regCount32 = "-cl-nv-maxrregcount=32 ";
     const char* regDefault = "";
 
-    /* On the 285 GTX, max. 32 seems to help. Trying that on the 480
-       makes it quite a bit slower. */
-
     if (computeCapabilityIs(di, 1, 3)) /* 1.3 == GT200 */
     {
+        /* 32 allows for greatest number of threads at a time */
         warn("Found a compute capability 1.3 device. Using %s\n", regCount32);
         return regCount32;
     }
