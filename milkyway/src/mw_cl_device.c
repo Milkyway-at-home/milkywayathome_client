@@ -178,6 +178,7 @@ cl_double amdEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
     cl_uint vliw = amdVLIWPerSIMD(di);
     cl_uint doubleFrac = amdEstimateDoubleFrac(di);
     cl_ulong flops, flopsFloat, flopsDouble;
+    cl_double gflops;
 
     flopsFloat = 2 * (di->maxCompUnits * vliw * 16) * (cl_ulong) di->clockFreq * 1000000;
     flopsDouble = flopsFloat / doubleFrac;
@@ -189,7 +190,19 @@ cl_double amdEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
 
     flops = useDouble ? flopsDouble : flopsFloat;
 
-    return floor(1.0e-9 * (cl_double) flops);
+    gflops = floor(1.0e-9 * (cl_double) flops);
+
+    /* At different times the AMD drivers have reported 0 as the clock
+     * speed, so try to catch that. We could test the GPU and figure
+     * out what the FLOPs should be to get a better estimate.
+     */
+    if (gflops <= 100.0)
+    {
+        warn("Warning: Bizarrely low flops (%.0f). Defaulting to %.0f\n", gflops, 100.0);
+        gflops = 100.0;
+    }
+
+    return gflops;
 }
 
 cl_bool hasNvidiaCompilerFlags(const DevInfo* di)
@@ -269,12 +282,19 @@ cl_double cudaEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
     flopsDouble = flopsFloat / doubleRat;
 
     warn("Estimated Nvidia GPU GFLOP/s: %.0f SP GFLOP/s, %.0f DP FLOP/s\n",
-         (cl_double) flopsFloat, (cl_double) flopsDouble);
+         1.0e-9 * (cl_double) flopsFloat, 1.0e-9 * (cl_double) flopsDouble);
 
     flops = useDouble ? flopsDouble : flopsFloat;
     gflops = 1.0e-9 * (cl_double) flops;
 
-    return floor(gflops);
+
+    if (gflops <= 50.0)
+    {
+        warn("Warning: Bizarrely low flops (%.0f). Defaulting to %.0f\n", gflops, 50.0);
+        gflops = 50.0;
+    }
+
+    return gflops;
 }
 
 cl_double deviceEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
@@ -305,17 +325,6 @@ cl_double deviceEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
     {
         warn("Missing flops estimate for device type %s\n", showCLDeviceType(di->devType));
         return 1.0;
-    }
-
-    /* At different times the AMD drivers have reported 0 as the clock
-     * speed, so try to catch that. We could test the GPU and figure
-     * out what the FLOPs should be to get a better estimate.
-     */
-
-    if (gflops <= 100.0)
-    {
-        warn("Warning: Bizarrely low flops (%.0f). Defaulting to %.0f\n", gflops, 100.0);
-        gflops = 100.0;
     }
 
     return gflops;
