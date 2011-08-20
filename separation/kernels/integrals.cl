@@ -55,20 +55,18 @@ inline RPoints readRPts(__global const RPoints* r_pts, int2 i)
 
 #if USE_CUSTOM_DIVISION && DOUBLEPREC
 
-/* TODO: Move these */
-
 double mw_div(double a, double b)  // accurate to 1 ulp, i.e the last bit of the double precision number
 {
     // cuts some corners on the numbers range but is significantly faster, employs "faithful rounding"
-    double r;
-    double y;
-    double c;
-    y = (double)(1.0f / convert_float_rtn(b)); // 22bit estimate of reciprocal, limits range to float range, but spares the exponent extraction
-    c = 1.0 - b * y;
-    y += y * c;        // first Newton iteration => 44bit accurate
-    r = a * y;         // second iteration works directly on a/b, so it is effectively
-    c = a - b * r;     // a Newton-Markstein iteration without guaranteed round to nearest
-    return(r + y * c); // should be generally accurate to 1 ulp, i.e "faithful rounding" (or close to it, depending on definition)
+
+    // 22bit estimate of reciprocal, limits range to float range, but spares the exponent extraction
+    double y = (double)(1.0f / convert_float_rtn(b));
+    double c = mad(-b, y, 1.0);
+    y = mad(y, c, y);         // first Newton iteration => 44bit accurate
+    double r = a * y;         // second iteration works directly on a/b, so it is effectively
+    c = mad(-b, r, a);  // a Newton-Markstein iteration without guaranteed round to nearest
+
+    return mad(y, c, r); // should be generally accurate to 1 ulp, i.e "faithful rounding" (or close to it, depending on definition)
 }                      // on a GT200 should be round to nearest most of the time, albeit not guaranteed
                        // one would have to add a second Newton iteration before the Markstein rounding step,
                        // but one looses the gained half bit of precision in the following additions, so the added effort doesn't make sense
@@ -83,10 +81,12 @@ double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double 
 {
     // cuts some corners on the numbers range but is significantly faster, employs "faithful rounding"
     double x, res;
-    x = (double)rsqrt((float)y); // 22bit estimate for reciprocal square root, limits range to float range, but spares the exponent extraction
-    x = x * (3.0 - y * (x * x)); // first Newton iteration (44bit accurate)
-    res = x * y;  // do final iteration directly on sqrt(y) and not on the inverse
-    return(res * (0.75 - 0.0625 * (res * x)));
+
+    // 22bit estimate for reciprocal square root, limits range to float range, but spares the exponent extraction
+    x = (double)rsqrt((float)y);
+    x = x * mad(-y, x * x, 3.0);  // first Newton iteration (44bit accurate)
+    res = x * y;                  // do final iteration directly on sqrt(y) and not on the inverse
+    return res * mad(-0.0625, res * x, 0.75);
 }   // same precision as division (1 ulp)
 
 #else
