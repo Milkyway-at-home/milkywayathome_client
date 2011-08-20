@@ -100,16 +100,14 @@ double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double 
 #endif
 
 
-inline real aux_prob(__constant AstronomyParameters* ap,
-                     const real qw_r3_N,
-                     const real r_in_mag)
+inline real aux_prob(__constant AstronomyParameters* ap, real r_in_mag)
 {
     real tmp;
 
     tmp = mad(ap->bg_b, r_in_mag, ap->bg_c); /* bg_b * r_in_mag + bg_c */
     tmp = mad(ap->bg_a, sqr(r_in_mag), tmp); /* bg_a * r_in_mag2 + (bg_b * r_in_mag + bg_c)*/
 
-    return qw_r3_N * tmp;
+    return tmp;
 }
 
 
@@ -164,7 +162,7 @@ __kernel void probabilities(__global real* restrict bgOut,
         real rs = rg + R0;
 
       #if FAST_H_PROB
-        bg_prob += mw_div(QW_R3_N(r_pt), (rg * cube(rs)));
+        bg_prob += mw_div(QW_R3_N(r_pt), rg * cube(rs));
       #else
         bg_prob += mw_div(qw_r3_N, mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
       #endif /* FAST_H_PROB */
@@ -173,7 +171,7 @@ __kernel void probabilities(__global real* restrict bgOut,
         /* Currently not used */
         /* Add a quadratic term in g to the Hernquist profile */
         real g = GPRIME(rcs[r_step]) + sg_dx[i];
-        bg_prob += aux_prob(ap, QW_R3_N(r_pt), g);
+        bg_prob = mad(QW_R3_N(r_pt), aux_prob(ap, g), bg_prob);
       #endif /* AUX_BG_PROFILE */
 
         #pragma unroll NSTREAM
