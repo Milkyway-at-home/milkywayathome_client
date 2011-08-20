@@ -25,6 +25,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_math.h"
 #include "separation_kernel_types.h"
 
+#include <inttypes.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -97,7 +99,7 @@ typedef struct
 {
     StreamParameters* parameters;
     real sumExpWeights;
-    unsigned int number_streams;
+    int number_streams;
 } Streams;
 
 #define EMPTY_STREAMS { NULL, 0.0, 0 }

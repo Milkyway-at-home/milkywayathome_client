@@ -67,8 +67,8 @@ real calcG(real coords)
 static inline RPoints calc_r_point(real dx, real qgaus_W, real gPrime, real coeff)
 {
     RPoints r_pt;
-
-    real g, exponent, r3, N, stddev_l, stddev_r, stddev_i, A;
+    real g, exponent, r3, N;
+    //real stddev_l, stddev_r, stddev_i, A;
 
     g = gPrime + dx;
 
@@ -153,7 +153,8 @@ RPoints* precalculateRPts(const AstronomyParameters* ap,
                           RConsts** rc_out,
                           int transpose)
 {
-    unsigned int i, j, idx;
+    unsigned int i, idx;
+    int j;
     RPoints* r_pts;
     RPrime rp;
     RConsts* rc;

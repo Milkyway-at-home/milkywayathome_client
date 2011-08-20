@@ -702,11 +702,11 @@ static real bg_probability_slow_hprob(const AstronomyParameters* ap,
                                       real reff_xr_rp3,
                                       real* RESTRICT streamTmps)
 {
-    unsigned int i;
+    int i;
     real rg, g;
     mwvector xyz;
     real bg_prob = 0.0;
-    unsigned int convolve = ap->convolve;
+    int convolve = ap->convolve;
     int aux_bg_profile = ap->aux_bg_profile;
 
     zero_st_probs(streamTmps, ap->number_streams);

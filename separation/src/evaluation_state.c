@@ -35,7 +35,7 @@ void initializeCut(Cut* integral, unsigned int number_streams)
 
 static void initializeState(const AstronomyParameters* ap, EvaluationState* es)
 {
-    unsigned int i;
+    int i;
 
     es->currentCut = 0;
     es->cut = &es->cuts[0];
@@ -62,7 +62,7 @@ EvaluationState* newEvaluationState(const AstronomyParameters* ap)
 
 void copyEvaluationState(EvaluationState* esDest, const EvaluationState* esSrc)
 {
-    unsigned int i;
+    int i;
 
     assert(esDest && esSrc);
 
@@ -78,7 +78,7 @@ static void freeCut(Cut* i)
 
 void freeEvaluationState(EvaluationState* es)
 {
-    unsigned int i;
+    int i;
 
     for (i = 0; i < es->numberCuts; ++i)
         freeCut(&es->cuts[i]);
@@ -90,7 +90,7 @@ void freeEvaluationState(EvaluationState* es)
 
 void clearEvaluationStateTmpSums(EvaluationState* es)
 {
-    unsigned int i;
+    int i;
 
     CLEAR_KAHAN(es->bgSum);
     for (i = 0; i < es->numberStreams; ++i)
@@ -100,7 +100,7 @@ void clearEvaluationStateTmpSums(EvaluationState* es)
 void printEvaluationState(const EvaluationState* es)
 {
     Cut* c;
-    unsigned int j;
+    int j;
 
     printf("evaluation-state {\n"
            "  nu_step          = %u\n"
@@ -220,7 +220,7 @@ static int readState(FILE* f, EvaluationState* es)
 */
 void addTmpSums(EvaluationState* es)
 {
-    unsigned int i;
+    int i;
 
     KAHAN_ADD(es->bgSum, es->bgTmp);
     for (i = 0; i < es->numberStreams; ++i)

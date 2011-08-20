@@ -106,7 +106,7 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
 
 void setExpStreamWeights(const AstronomyParameters* ap, Streams* streams)
 {
-    unsigned int i;
+    int i;
 
     streams->sumExpWeights = ap->exp_background_weight;
     for (i = 0; i < streams->number_streams; i++)
@@ -121,7 +121,7 @@ void setExpStreamWeights(const AstronomyParameters* ap, Streams* streams)
 StreamConstants* getStreamConstants(const AstronomyParameters* ap, const Streams* streams)
 
 {
-    unsigned int i;
+    int i;
     StreamConstants* sc;
     real stream_sigma;
     real sigma_sq2;
@@ -151,9 +151,9 @@ void freeStreamGauss(StreamGauss sg)
     mwFreeA(sg.qgaus_W);
 }
 
-StreamGauss getStreamGauss(const unsigned int convolve)
+StreamGauss getStreamGauss(int convolve)
 {
-    unsigned int i;
+    int i;
     StreamGauss sg;
     real* qgaus_X;
 
@@ -172,7 +172,7 @@ StreamGauss getStreamGauss(const unsigned int convolve)
     return sg;
 }
 
-NuConstants* prepareNuConstants(const unsigned int nu_steps, const real nu_step_size, const real nu_min)
+NuConstants* prepareNuConstants(unsigned int nu_steps, real nu_step_size, real nu_min)
 {
     unsigned int i;
     real tmp1, tmp2;

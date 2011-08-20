@@ -33,7 +33,7 @@ typedef struct
     cl_uint versionMinor;
     cl_int doublePrec;
 
-    cl_uint number_streams;  /* Constants compiled into kernel */
+    cl_int number_streams;   /* Constants compiled into kernel */
     cl_int fast_h_prob;
     cl_int aux_bg_profile;
     cl_int zero_q;

@@ -112,6 +112,16 @@ cl_bool findRunSizes(RunSizes* sizes,
 
     /* I assume this is how this works for 1D limit */
     const cl_ulong maxWorkDim = (cl_ulong) di->maxWorkItemSizes[0] * di->maxWorkItemSizes[1] * di->maxWorkItemSizes[2];
+    const cl_ulong r = (cl_ulong) ia->r_steps;
+    const cl_ulong mu = (cl_ulong) ia->mu_steps;
+
+    sizes->area = r * mu;
+
+    if (r > CL_ULONG_MAX / mu)
+    {
+        warn("Integral area overflows cl_ulong\n");
+        return CL_TRUE;
+    }
 
     err = mwGetWorkGroupInfo(ci, &wgi);
     if (err != CL_SUCCESS)
@@ -149,8 +159,6 @@ cl_bool findRunSizes(RunSizes* sizes,
      */
 
     blockSize = nWavefrontPerCU * di->warpSize * di->maxCompUnits;
-    sizes->area = ia->r_steps * ia->mu_steps;
-
     {
         cl_uint magic = 1;
         sizes->nChunkEstimate = findNChunk(ap, ia, di, clr);
@@ -354,7 +362,7 @@ static cl_bool separationCheckDevMemory(const DevInfo* di, const SeparationSizes
 /* TODO: Should probably check for likelihood also */
 cl_bool separationCheckDevCapabilities(const DevInfo* di, const AstronomyParameters* ap, const IntegralArea* ias)
 {
-    cl_uint i;
+    cl_int i;
     SeparationSizes sizes;
 
   #if DOUBLEPREC

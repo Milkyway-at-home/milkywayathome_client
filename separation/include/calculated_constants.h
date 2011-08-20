@@ -32,12 +32,10 @@ StreamConstants* getStreamConstants(const AstronomyParameters* ap, const Streams
 int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* bgp);
 void setExpStreamWeights(const AstronomyParameters* ap, Streams* streams);
 
-StreamGauss getStreamGauss(const unsigned int convolve);
+StreamGauss getStreamGauss(int convolve);
 void freeStreamGauss(StreamGauss sg);
 
-NuConstants* prepareNuConstants(const unsigned int nu_steps,
-                                const real nu_step_size,
-                                const real nu_min);
+NuConstants* prepareNuConstants(unsigned int nu_steps, real nu_step_size, real nu_min);
 
 NuId calcNuStep(const IntegralArea* ia, const unsigned int nu_step);
 LBTrig* precalculateLBTrig(const AstronomyParameters* ap, const IntegralArea* ia, int transpose);

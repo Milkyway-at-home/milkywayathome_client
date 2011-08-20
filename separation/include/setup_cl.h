@@ -52,8 +52,8 @@ typedef struct
     size_t nChunkEstimate;  /* Target number of chunks to use */
     size_t nChunk;     /* Number of chunks to divide each iteration into */
     size_t extra;      /* Extra area added */
-    size_t area;
-    size_t effectiveArea;
+    cl_ulong area;
+    cl_ulong effectiveArea;
     size_t chunkSize;   /* effectiveArea / numChunks */
 } RunSizes;
 

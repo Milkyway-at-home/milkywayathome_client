@@ -50,12 +50,12 @@ typedef struct
     real* streamTmps;
 
     unsigned int lastCheckpointNuStep; /* Nu step of last checkpointed (only used by GPU) */
-    unsigned int current_calc_probs; /* progress of completed cuts */
+    uint64_t current_calc_probs; /* progress of completed cuts */
 
-    unsigned int currentCut;
+    int currentCut;
 
-    unsigned int numberCuts;
-    unsigned int numberStreams;
+    int numberCuts;
+    int numberStreams;
 } EvaluationState;
 
 EvaluationState* newEvaluationState(const AstronomyParameters* ap);

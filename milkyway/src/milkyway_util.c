@@ -492,11 +492,6 @@ const char** mwFixArgv(int argc, const char* argv[])
     return argvCopy;
 }
 
-size_t mwDivRoundup(size_t a, size_t b)
-{
-    return (a % b != 0) ? a / b + 1 : a / b;
-}
-
 /* Pick from unit cube. i.e. not normalized */
 mwvector mwRandomUnitPoint(dsfmt_t* dsfmtState)
 {

@@ -44,7 +44,7 @@ static const int twoPanel = 1;
 /* get stream & background weight constants */
 static real get_stream_bg_weight_consts(StreamStats* ss, const Streams* streams)
 {
-    unsigned int i;
+    int i;
     real epsilon_b;
     real denom = 1.0;
 
@@ -69,7 +69,7 @@ static void twoPanelSeparation(const AstronomyParameters* ap,
                                real bg_prob,
                                real epsilon_b)
 {
-    unsigned int i;
+    int i;
     real pbx, psgSum;
 
     pbx = epsilon_b * bg_prob / results->backgroundIntegral;
@@ -88,11 +88,11 @@ static void twoPanelSeparation(const AstronomyParameters* ap,
         ss[i].nstars += ss[i].sprob;
 }
 
-static void nonTwoPanelSeparation(StreamStats* ss, unsigned int number_streams)
+static void nonTwoPanelSeparation(StreamStats* ss, int nStream)
 {
-    unsigned int i;
+    int i;
 
-    for (i = 0; i < number_streams; i++)
+    for (i = 0; i < nStream; ++i)
     {
         ss[i].sprob = 1.0;
         ss[i].nstars += 1.0;
@@ -154,7 +154,7 @@ static real likelihood_probability(const AstronomyParameters* ap,
 
                                    real* RESTRICT bgProb) /* Out argument for thing needed by separation */
 {
-    unsigned int i;
+    int i;
     real starProb, streamOnly;
 
     /* if q is 0, there is no probability */
@@ -205,10 +205,10 @@ static void calculateLikelihoods(SeparationResults* results,
                                  Kahan* bgOnly,
                                  Kahan* streamOnly,
                                  unsigned int nStars,
-                                 unsigned int nStreams,
-                                 unsigned badJacobians)
+                                 int nStreams,
+                                 unsigned int badJacobians)
 {
-    unsigned int i;
+    int i;
 
     /* CHECKME: badJacobians supposed to only be for final? */
     results->backgroundLikelihood = calculateLikelihood(bgOnly, nStars, 0);
@@ -225,7 +225,7 @@ static void setSeparationConstants(const AstronomyParameters* ap,
                                    const SeparationResults* results,
                                    mwmatrix cmatrix)
 {
-    unsigned int i;
+    int i;
     mwvector dnormal = ZERO_VECTOR;
     const mwvector dortho = mw_vec(0.0, 0.0, 1.0);
 
@@ -247,20 +247,20 @@ static void setSeparationConstants(const AstronomyParameters* ap,
 }
 
 static void printSeparationStats(const StreamStats* ss,
-                                 const unsigned int number_stars,
-                                 const unsigned int number_streams)
+                                 unsigned int nStars,
+                                 int nStream)
 {
-    unsigned int i;
+    int i;
     real percent;
 
-    printf("%d total stars\n", number_stars);
-    for (i = 0; i < number_streams; ++i)
+    printf("%d total stars\n", nStars);
+    for (i = 0; i < nStream; ++i)
     {
-        percent = 100.0 * (ss[i].nstars / (real) number_stars);
+        percent = 100.0 * (ss[i].nstars / (real) nStars);
         printf("%lf in stream[%d] (%lf%%)\n", ss[i].nstars, i, percent);
     }
 
-    for (i = 0; i < number_streams; ++i)
+    for (i = 0; i < nStream; ++i)
         printf("%d stars separated into stream\n", ss[i].q);
 }
 

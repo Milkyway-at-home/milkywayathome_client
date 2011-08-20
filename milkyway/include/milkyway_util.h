@@ -214,9 +214,11 @@ mwvector mwRandomUnitPoint(dsfmt_t* dsfmtState);
 mwvector mwRandomPoint(dsfmt_t* dsfmtState, real r);
 
 
-size_t mwDivRoundup(size_t a, size_t b);
 #define mwEven(x) ((x) % 2 == 0)
 #define mwDivisible(x, n) ((x) % (n) == 0)
+
+/* integer ceil(a / b) */
+#define mwDivRoundup(a, b) (((a) % (b) != 0) ? (a) / (b) + 1 : (a) / (b))
 
 /* Find next multiple of b that is >= n */
 #define mwNextMultiple(b, n) (((n) % (b)) ? ((n) + ((b) - (n) % (b))) : (n))

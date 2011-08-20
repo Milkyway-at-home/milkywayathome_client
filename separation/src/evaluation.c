@@ -222,15 +222,16 @@ static void printStreamIntegrals(const FinalStreamIntegrals* fsi, const unsigned
 #endif
 
 /* Add up completed integrals for progress reporting */
-static inline unsigned int completedIntegralProgress(const IntegralArea* ias, const EvaluationState* es)
+static uint64_t completedIntegralProgress(const IntegralArea* ias, const EvaluationState* es)
 {
     const IntegralArea* ia;
-    unsigned int i, current_calc_probs = 0;
+    int i;
+    uint64_t current_calc_probs = 0;
 
     for (i = 0; i < es->currentCut; ++i)
     {
         ia = &ias[i];
-        current_calc_probs += ia->r_steps * ia->mu_steps * ia->nu_steps;
+        current_calc_probs += (uint64_t) ia->r_steps * ia->mu_steps * ia->nu_steps;
     }
 
     return current_calc_probs;

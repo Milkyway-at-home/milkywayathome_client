@@ -216,9 +216,9 @@ static inline void reportProgress(const AstronomyParameters* ap,
                                   double dt)
 {
   #if BOINC_APPLICATION
-    cl_uint prog;
-    prog = es->current_calc_probs + ia->mu_steps * ia->r_steps * step;
-    boinc_fraction_done((double) prog / ap->total_calc_probs);
+    cl_long prog;
+    prog = es->current_calc_probs + (cl_ulong) ia->mu_steps * ia->r_steps * step;
+    boinc_fraction_done((cl_double) prog / ap->total_calc_probs);
   #else
     printf("Step %u: %fms\n", step, dt);
   #endif /* BOINC_APPLICATION */

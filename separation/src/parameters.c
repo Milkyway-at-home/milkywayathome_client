@@ -36,9 +36,9 @@ void calcIntegralStepSizes(IntegralArea* i)
     i->nu_step_size = (i->nu_max - i->nu_min) / (real) i->nu_steps;
 }
 
-static int checkIntegralAreasOK(const IntegralArea* ias, unsigned int n)
+static int checkIntegralAreasOK(const IntegralArea* ias, int n)
 {
-    unsigned int i;
+    int i;
     const IntegralArea* ia;
 
     for (i = 0; i < n; ++i)
@@ -53,7 +53,7 @@ static int checkIntegralAreasOK(const IntegralArea* ias, unsigned int n)
 
         if (!mwEven(ia->nu_steps) || !mwEven(ia->r_steps) || !mwEven(ia->mu_steps))
         {
-            warn("Integral area dimensions must be even: cut %u: "
+            warn("Integral area dimensions must be even: cut %d: "
                  "{ nu_steps = %u, mu_steps = %u, r_steps = %u }\n",
                  i, ia->nu_steps, ia->mu_steps, ia->r_steps);
             return 1;
@@ -68,14 +68,15 @@ static IntegralArea* freadParameters(FILE* file,
                                      BackgroundParameters* bgp,
                                      Streams* streams)
 {
-    unsigned int i, temp;
+    int i;
+    unsigned int temp;
     double tmp1, tmp2;
     double parametersVersion;
     IntegralArea integralTmp;
     IntegralArea* integrals;
     const IntegralArea* ia;
-    unsigned int total_calc_probs;
-    unsigned int integralNumTmp;
+    uint64_t total_calc_probs;
+    int integralNumTmp;
     int iTmp;
     int sgr_coordinates = 0;
     real* tmpArr = NULL;
@@ -105,7 +106,7 @@ static IntegralArea* freadParameters(FILE* file,
     free(fread_double_array(file, "background_max", NULL));
     free(fread_int_array(file, "optimize_parameter", NULL));
 
-    if (fscanf(file, "number_streams: %u, %u\n", &streams->number_streams, &temp) < 2)
+    if (fscanf(file, "number_streams: %d, %u\n", &streams->number_streams, &temp) < 2)
         fail("Error reading number_streams\n");
 
     ap->number_streams = streams->number_streams;
@@ -115,20 +116,20 @@ static IntegralArea* freadParameters(FILE* file,
     for (i = 0; i < streams->number_streams; ++i)
     {
         if (fscanf(file, "stream_weight: %lf\n", &tmp1) < 1)
-            fail("Error reading stream_weight for stream %u\n", i);
+            fail("Error reading stream_weight for stream %d\n", i);
         streams->parameters[i].epsilon = (real) tmp1;
 
         if (fscanf(file, "stream_weight_step: %lf\n", &tmp1) < 1)
-            fail("Error reading stream_weight_step for stream %u\n", i);
+            fail("Error reading stream_weight_step for stream %d\n", i);
 
         if (fscanf(file, "stream_weight_min: %lf\n", &tmp1) < 1)
-            fail("Error reading stream_weight_min for stream %u\n", i);
+            fail("Error reading stream_weight_min for stream %d\n", i);
 
         if (fscanf(file, "stream_weight_max: %lf\n", &tmp1) < 1)
-            fail("Error reading stream_weight_max for stream %u\n", i);
+            fail("Error reading stream_weight_max for stream %d\n", i);
 
         if (fscanf(file, "optimize_weight: %d\n", &iTmp) < 1)
-            fail("Error reading optimize_weight for stream %u\n", i);
+            fail("Error reading optimize_weight for stream %d\n", i);
 
         tmpArr = fread_double_array(file, "stream_parameters", NULL);
         if (!tmpArr)
@@ -146,7 +147,7 @@ static IntegralArea* freadParameters(FILE* file,
         free(fread_int_array(file, "optimize_parameter", NULL));
     }
 
-    if (fscanf(file, "convolve: %u\n", &ap->convolve) < 1)
+    if (fscanf(file, "convolve: %d\n", &ap->convolve) < 1)
         fail("Error reading convolve\n");
 
     if (fscanf(file, "sgr_coordinates: %d\n", &sgr_coordinates) < 1)
@@ -193,7 +194,7 @@ static IntegralArea* freadParameters(FILE* file,
     calcIntegralStepSizes(&integralTmp);
 
     ap->number_integrals = 1;
-    if (fscanf(file, "number_cuts: %u\n", &integralNumTmp) < 1)
+    if (fscanf(file, "number_cuts: %d\n", &integralNumTmp) < 1)
         fail("Error reading number_cuts\n");
     ap->number_integrals += integralNumTmp;
 
@@ -244,8 +245,22 @@ static IntegralArea* freadParameters(FILE* file,
     total_calc_probs = 0;
     for (i = 0; i < ap->number_integrals; ++i)
     {
+        uint64_t r, mu, nu;
         ia = &integrals[i];
-        total_calc_probs += ia->mu_steps * ia->nu_steps * ia->r_steps;
+
+        r = (uint64_t) ia->r_steps;
+        mu = (uint64_t) ia->mu_steps;
+        nu = (uint64_t) ia->nu_steps;
+
+        if ((r > UINT64_MAX / mu) || ((r * mu) > UINT64_MAX / nu))
+        {
+            warn("Integral area { %u, %u, %u } will overflow progress calculation\n",
+                 ia->nu_steps, ia->mu_steps, ia->r_steps);
+            free(integrals);
+            return NULL;
+        }
+
+        total_calc_probs += (uint64_t) ia->mu_steps * ia->nu_steps * ia->r_steps;
     }
 
     ap->total_calc_probs = (real) total_calc_probs;
@@ -289,10 +304,11 @@ int setParameters(AstronomyParameters* ap,
                   const real* parameters,
                   unsigned int numberParameters)
 {
-    unsigned int i, idx;
+    int i;
+    unsigned int idx;
     const unsigned int nBGParams = 2;
     const unsigned int nStreamParams = 6;
-    unsigned int nStream = (numberParameters - nBGParams) / nStreamParams;
+    int nStream = (numberParameters - nBGParams) / nStreamParams;
 
     if (nStream != ap->number_streams)
     {
