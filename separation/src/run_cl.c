@@ -64,7 +64,6 @@ static void sumStreamResults(real* streamResults,
 }
 
 static cl_int enqueueIntegralKernel(CLInfo* ci,
-                                    cl_bool useDefault,
                                     const size_t offset[],
                                     const size_t global[],
                                     const size_t local[])
@@ -74,7 +73,7 @@ static cl_int enqueueIntegralKernel(CLInfo* ci,
     err = clEnqueueNDRangeKernel(ci->queue,
                                  ci->kern,
                                  2,
-                                 offset, global, useDefault ? NULL : local,
+                                 offset, global, local,
                                  0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
@@ -180,7 +179,6 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
     cl_uint i;
     cl_int err = CL_SUCCESS;
     size_t offset[2];
-    size_t global[2];
 
     err = setNuKernelArgs(ci, ia, nu_step);
     if (err != CL_SUCCESS)
@@ -189,16 +187,12 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
         return err;
     }
 
+    offset[0] = 0;
     offset[1] = nu_step;
-    global[1] = 1;
     for (i = 0; i < runSizes->nChunk && err == CL_SUCCESS; ++i)
     {
-        offset[0] = runSizes->chunkBorders[i];
-        global[0] = runSizes->chunkBorders[i + 1] - runSizes->chunkBorders[i];
-
         mw_begin_critical_section();
-        err = enqueueIntegralKernel(ci, mwDivisible(global[0], runSizes->local[0]) ,
-                                    offset, global, runSizes->local);
+        err = enqueueIntegralKernel(ci, offset, runSizes->global, runSizes->local);
         if (err == CL_SUCCESS)
         {
             /* Give the screen a chance to redraw */
@@ -208,6 +202,8 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
         }
 
         mw_end_critical_section();
+
+        offset[0] += runSizes->global[0];
     }
 
     return err;
@@ -315,7 +311,7 @@ cl_int integrateCL(const AstronomyParameters* ap,
     /* Need to test sizes for each integral, since the area size can change */
     calculateSizes(&sizes, ap, ia);
 
-    if (findRunSizes(&runSizes, ci, &ci->di, ia, clr))
+    if (findRunSizes(&runSizes, ci, &ci->di, ap, ia, clr))
     {
         warn("Failed to find good run sizes\n");
         return MW_CL_ERROR;

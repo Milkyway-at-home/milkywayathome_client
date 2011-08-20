@@ -108,6 +108,7 @@ static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->targetFrequency = sf->targetFrequency <= 0.01 ? DEFAULT_TARGET_FREQUENCY : sf->targetFrequency;
     clr->pollingMode = sf->pollingMode;
     clr->gpuWaitFactor = sf->waitFactor;
+    clr->magicFactor = sf->magicFactor;
 }
 
 #if BOINC_APPLICATION
@@ -247,6 +248,12 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
                 "device", 'd',
                 POPT_ARG_INT, &sf.useDevNumber,
                 0, "Device number passed by BOINC to use", NULL
+            },
+
+            {
+                "magic-factor", 'm',
+                POPT_ARG_INT, &sf.magicFactor,
+                0, "Number of blocks to run on GPU at once.", NULL
             },
 
             {

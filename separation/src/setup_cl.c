@@ -43,80 +43,75 @@ static char* inlinedIntegralKernelSrc = NULL;
 #endif /* SEPARATION_INLINE_KERNEL */
 
 
-/* Find an optimum block size to use and use that as the basis for the chunk estimate. Smaller number of chunks on a non-block size can be quite a bit slower. */
-static cl_uint nvidiaNumChunks(const IntegralArea* ia, const DevInfo* di)
+static void printRunSizes(const RunSizes* sizes, const IntegralArea* ia)
 {
-    cl_uint n;
-
-    n = (ia->mu_steps * ia->r_steps) / mwBlockSize(di);
-
-    /* The 480 seems to be fine with half, although this doesn't help that much. */
-    if (minComputeCapabilityCheck(di, 2, 0))
-        n /= 2;
-
-    n += 1;  /* ceil, avoid 0 in tiny cases like the small tests */
-
-    return (cl_uint) n;
-}
-
-static cl_uint chooseNumChunk(const IntegralArea* ia, const CLRequest* clr, const DevInfo* di)
-{
-    /* If not being used for output, 1 has the least overhead */
-    if (di->nonOutput || clr->nonResponsive)
-        return 1;
-
-    if (di->vendorID == MW_NVIDIA)
-        return nvidiaNumChunks(ia, di);
-
-    return 1; /* FIXME: others */
-}
-
-void freeRunSizes(RunSizes* sizes)
-{
-    mwFreeA(sizes->chunkBorders);
-}
-
-static void printRunSizes(const RunSizes* sizes, const IntegralArea* ia, cl_bool verbose)
-{
-    size_t i;
-
     warn("Range:          { nu_steps = %u, mu_steps = %u, r_steps = %u }\n"
          "Iteration area: "ZU"\n"
          "Chunk estimate: "ZU"\n"
          "Num chunks:     "ZU"\n"
+         "Chunk size:     "ZU"\n"
          "Added area:     "ZU"\n"
-         "Effective area: "ZU"\n",
+         "Effective area: "ZU"\n"
+         ,
          ia->nu_steps, ia->mu_steps, ia->r_steps,
          sizes->area,
          sizes->nChunkEstimate,
          sizes->nChunk,
+         sizes->chunkSize,
          sizes->extra,
          sizes->effectiveArea);
+}
 
-    if (!verbose)
-        return;
+static cl_double estimateWUGFLOPsPerIter(const AstronomyParameters* ap, const IntegralArea* ia)
+{
+    cl_ulong perItem, perIter;
+    cl_ulong tmp = 32 + ap->number_streams * 68;
+    if (ap->aux_bg_profile)
+        tmp += 8;
 
-    warn("Using "ZU" chunks with size(s): ", sizes->nChunk);
-    for (i = 0; i < sizes->nChunk; ++i)
-    {
-        warn(" "ZU" ", sizes->chunkBorders[i + 1] - sizes->chunkBorders[i]);
-    }
-    warn("\n");
+    perItem = tmp * ap->convolve + 1 + (ap->number_streams * 2);
+    perIter = perItem * ia->mu_steps * ia->r_steps;
 
+    return 1.0e-9 * (cl_double) perIter;
+}
+
+#define GPU_EFFICIENCY_ESTIMATE (0.95)
+
+/* Based on the flops of the device and workunit, pick a target number of chunks */
+static cl_uint findNChunk(const AstronomyParameters* ap,
+                          const IntegralArea* ia,
+                          const DevInfo* di,
+                          const CLRequest* clr)
+{
+    cl_double gflops = deviceEstimateGFLOPs(di, DOUBLEPREC);
+    cl_double effFlops = GPU_EFFICIENCY_ESTIMATE * (cl_double) gflops;
+    cl_double iterFlops = estimateWUGFLOPsPerIter(ap, ia);
+
+    cl_double estIterTime = 1000.0 * (cl_double) iterFlops / effFlops; /* milliseconds */
+
+    cl_double timePerIter = 1000.0 / clr->targetFrequency;
+
+    cl_uint nChunk = (cl_uint) (estIterTime / timePerIter);
+
+    return nChunk == 0 ? 1 : nChunk;
 }
 
 /* Returns CL_TRUE on error */
 cl_bool findRunSizes(RunSizes* sizes,
                      const CLInfo* ci,
                      const DevInfo* di,
+                     const AstronomyParameters* ap,
                      const IntegralArea* ia,
                      const CLRequest* clr)
 {
     WGInfo wgi;
     cl_int err;
-    cl_uint groupSize;
-    size_t i, nMod;
-    size_t sum = 0;
+
+    size_t nWavefrontPerCU;
+    size_t blockSize; /* Size chunks should be multiples of */
+
+    /* I assume this is how this works for 1D limit */
+    const cl_ulong maxWorkDim = (cl_ulong) di->maxWorkItemSizes[0] * di->maxWorkItemSizes[1] * di->maxWorkItemSizes[2];
 
     err = mwGetWorkGroupInfo(ci, &wgi);
     if (err != CL_SUCCESS)
@@ -125,74 +120,110 @@ cl_bool findRunSizes(RunSizes* sizes,
         return CL_TRUE;
     }
 
-    mwPrintWorkGroupInfo(&wgi);
-    groupSize = mwFindGroupSize(di);
+    if (clr->verbose)
+    {
+        mwPrintWorkGroupInfo(&wgi);
+    }
 
-    sizes->local[0] = groupSize;
+    if (!mwDivisible(wgi.wgs, (size_t) di->warpSize))
+    {
+        warn("Kernel reported work group size ("ZU") not a multiple of warp size (%u)\n",
+             wgi.wgs,
+             di->warpSize);
+        return CL_TRUE;
+    }
+
+    /* This should give a good occupancy. If the global size isn't a
+     * multiple of this bad performance things happen. */
+    nWavefrontPerCU = wgi.wgs / di->warpSize;
+
+    /* Since we don't use any workgroup features, it makes sense to
+     * use the wavefront size as the workgroup size */
+    sizes->local[0] = di->warpSize;
     sizes->local[1] = 1;
 
-    sizes->nChunkEstimate = chooseNumChunk(ia, clr, di);
-    sizes->nChunk = sizes->nChunkEstimate;
 
-    /* Best for performance.
-       Be a bit more flexible if chunking.
-       Using the whole block size seems a bit better when attacking everything at once.
-    */
-    nMod = sizes->nChunk == 1 ? mwBlockSize(di) : groupSize * di->maxCompUnits;
+    /* For maximum efficiency, we want global work sizes to be multiples of
+     * (warp size) * (number compute units) * (number of warps for good occupancy)
+     * Then we throw in another factor since we can realistically do more work at once
+     */
 
+    blockSize = nWavefrontPerCU * di->warpSize * di->maxCompUnits;
     sizes->area = ia->r_steps * ia->mu_steps;
-    sizes->effectiveArea = nMod * mwDivRoundup(sizes->area, nMod);
+
+    {
+        cl_uint magic = 1;
+        sizes->nChunkEstimate = findNChunk(ap, ia, di, clr);
+
+        /* If specified and acceptable, use a user specified factor for the
+         * number of blocks to use. Otherwise, make a guess appropriate for the hardware. */
+
+        if (clr->magicFactor < 0)
+        {
+            warn("Invalid magic factor %d. Magic factor must be >= 0\n", clr->magicFactor);
+        }
+
+        if (clr->magicFactor <= 0) /* Use default calculation */
+        {
+            /*   m * b ~= area / n   */
+            magic = sizes->area / (sizes->nChunkEstimate * blockSize);
+            if (magic == 0)
+                magic = 1;
+        }
+        else   /* Use user setting */
+        {
+            magic = (cl_uint) clr->magicFactor;
+        }
+
+        sizes->chunkSize = magic * blockSize;
+    }
+
+    sizes->effectiveArea = sizes->chunkSize * mwDivRoundup(sizes->area, sizes->chunkSize);
+    sizes->nChunk = mwDivRoundup(sizes->effectiveArea, sizes->chunkSize);
     sizes->extra = sizes->effectiveArea - sizes->area;
 
-    warn("Keeping chunk boundaries as multiples of "ZU"\n", nMod);
-
-    if (sizes->effectiveArea / sizes->nChunk < nMod)
+    if (sizes->nChunk == 1) /* Magic factor probably too high or very small workunit */
     {
-        sizes->nChunk = sizes->effectiveArea / nMod;
-        warn("Warning: Estimated number of chunks ("ZU") too large. Using "ZU"\n", sizes->nChunkEstimate, sizes->nChunk);
+        sizes->chunkSize = blockSize;   /* magic == 1 */
+        sizes->effectiveArea = blockSize * mwDivRoundup(sizes->area, blockSize);
+        sizes->extra = sizes->effectiveArea - sizes->area;
     }
 
-    if (nMod == 1)
+    warn("Using a block size of "ZU" with a magic factor of "ZU"\n",
+         blockSize,
+         sizes->chunkSize / blockSize);
+
+    sizes->chunkSize = sizes->effectiveArea / sizes->nChunk;
+
+    /* We should be hitting memory size limits before we ever get to this */
+    if (sizes->chunkSize > maxWorkDim)
     {
-        /* When nMod = 1 we need to avoid losing pieces at the
-         * beginning and end; the normal method doesn't quite work. */
-        while (sizes->nChunk * (sizes->effectiveArea / sizes->nChunk) < sizes->effectiveArea)
+        warn("Warning: Area too large for one chunk (max size = "LLU")\n", maxWorkDim);
+        while (sizes->chunkSize > maxWorkDim)
         {
-            sizes->nChunk++;
-        }
-        warn("Need to use "ZU" chunks to cover area using multiples of 1\n", sizes->nChunk);
-    }
-
-    sizes->chunkBorders = mwCallocA((sizes->nChunk + 1), sizeof(size_t));
-    for (i = 0; i <= sizes->nChunk; ++i)
-    {
-        if (nMod == 1)
-        {
-            /* Avoid losing out the 0 border */
-            sizes->chunkBorders[i] = i * (sizes->effectiveArea / sizes->nChunk);
-        }
-        else
-        {
-            sizes->chunkBorders[i] = (i * sizes->effectiveArea + sizes->nChunk) / (sizes->nChunk * nMod);
-            sizes->chunkBorders[i] *= nMod;
+            sizes->nChunk *= 2;
+            sizes->chunkSize = sizes->effectiveArea / sizes->nChunk;
         }
 
-        if (sizes->chunkBorders[i] > sizes->effectiveArea)
-            sizes->chunkBorders[i] = sizes->effectiveArea;
-
-        if (i > 0)
+        if (!mwDivisible(sizes->chunkSize, sizes->local[0]))
         {
-            sum += sizes->chunkBorders[i] - sizes->chunkBorders[i - 1];
-            assert(sizes->chunkBorders[i] - sizes->chunkBorders[i - 1] > 0);
+            warn("FIXME: I'm too lazy to handle very large workunits properly\n");
+            return CL_TRUE;
+        }
+        else if (!mwDivisible(sizes->chunkSize, blockSize))
+        {
+            warn("FIXME: Very large workunit potentially slower than it should be\n");
         }
     }
 
-    printRunSizes(sizes, ia, clr->verbose);
+    sizes->global[0] = sizes->chunkSize;
+    sizes->global[1] = 1;
 
-    if (sum != sizes->effectiveArea)  /* Assert that the divisions aren't broken */
+    printRunSizes(sizes, ia);
+
+    if (sizes->effectiveArea < sizes->area)
     {
-        warn("Chunk total does not match: "ZU" != "ZU"\n", sum, sizes->effectiveArea);
-        free(sizes->chunkBorders);
+        warn("Effective area less than actual area!\n");
         return CL_TRUE;
     }
 
@@ -421,7 +452,7 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
              DOUBLEPREC, DOUBLEPREC ? "" : "-cl-single-precision-constant");
 
     /* FIXME: Device vendor not necessarily the platform vendor */
-    if (di->vendorID == MW_NVIDIA)
+    if (hasNvidiaCompilerFlags(di))
     {
         if (snprintf(extraFlags, sizeof(extraFlags),
                      "%s %s ",

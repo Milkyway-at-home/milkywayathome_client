@@ -66,6 +66,7 @@ typedef struct
     int ignoreCheckpoint;  /* Ignoring checkpoint is not the same as disabling GPU checkpoints */
     unsigned int usePlatform;
     unsigned int useDevNumber;  /* Choose CL platform and device */
+    int magicFactor;
     int nonResponsive;
     double targetFrequency;
     int pollingMode;
@@ -102,7 +103,7 @@ typedef struct
 
 #define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL,           \
                                  0, FALSE, FALSE, FALSE, 0, FALSE, FALSE,      \
-                                 UINT_MAX, 0, DEFAULT_NON_RESPONSIVE,          \
+                                 UINT_MAX, 0, 0, DEFAULT_NON_RESPONSIVE,       \
                                  DEFAULT_TARGET_FREQUENCY,                     \
                                  DEFAULT_POLLING_MODE,                         \
                                  DEFAULT_DISABLE_GPU_CHECKPOINTING,            \

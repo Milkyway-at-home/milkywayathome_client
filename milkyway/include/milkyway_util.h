@@ -63,6 +63,7 @@ typedef struct
     unsigned int platform;
     unsigned int devNum;
 
+    int magicFactor;      /* Factor for number of blocks for GPU */
     int nonResponsive;    /* If screen redraws aren't important. Either don't care or something like an outputless Tesla */
     double targetFrequency;
     int pollingMode;
@@ -216,6 +217,9 @@ mwvector mwRandomPoint(dsfmt_t* dsfmtState, real r);
 size_t mwDivRoundup(size_t a, size_t b);
 #define mwEven(x) ((x) % 2 == 0)
 #define mwDivisible(x, n) ((x) % (n) == 0)
+
+/* Find next multiple of b that is >= n */
+#define mwNextMultiple(b, n) (((n) % (b)) ? ((n) + ((b) - (n) % (b))) : (n))
 
 
 int mwCheckNormalPosNum(real n);

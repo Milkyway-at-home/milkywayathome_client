@@ -126,8 +126,10 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
         }
     }
 
-    /* TODO: Check for Tesla or similar */
-    di->nonOutput = (di->devType != CL_DEVICE_TYPE_GPU);
+    /* TODO: Correct way to test for Tesla type things?
+       Is there a way we can find if a GPU is connected to a display in general?
+     */
+    di->nonOutput = ((di->devType != CL_DEVICE_TYPE_GPU) || (strstr(di->devName, "Tesla") != NULL));
 
     if (err)
         mwCLWarn("Error getting device information", err);
@@ -137,12 +139,75 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
     return err;
 }
 
+
+cl_uint amdEstimateDoubleFrac(const DevInfo* di)
+{
+    if (strstr(di->devName, "Cayman"))
+    {
+        return 4;
+    }
+    else
+    {
+        return 5;
+    }
+}
+
+cl_uint amdVLIWPerSIMD(const DevInfo* di)
+{
+    static const char* vliw4Devs[] = { "Cayman", NULL  };
+    //static const char* vliw5Devs[] = { "Cypress", "Hemlock", "Juniper", "Redwood", "Blackcomb", "Barts", "Turks", "Whistler", "Seymour", "Caicos", NULL };
+
+    const char** p = vliw4Devs;
+    while (*p)
+    {
+        if (strstr(di->devName, *p))
+        {
+            return 4;
+        }
+
+        ++p;
+    }
+
+    /* Everything else has been 5. In the next major revision, they're switching to a scalar architecture */
+
+    return 5;
+}
+
+cl_double amdEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
+{
+    cl_uint vliw = amdVLIWPerSIMD(di);
+    cl_uint doubleFrac = amdEstimateDoubleFrac(di);
+    cl_ulong flops, flopsFloat, flopsDouble;
+
+    flopsFloat = 2 * (di->maxCompUnits * vliw * 16) * (cl_ulong) di->clockFreq * 1000000;
+    flopsDouble = flopsFloat / doubleFrac;
+
+    warn("Estimated AMD GPU (VLIW%d) GFLOP/s: %.0f SP GFLOP/s, %.0f DP FLOP/s\n",
+         vliw,
+         1.0e-9 * (cl_double) flopsFloat,
+         1.0e-9 * (cl_double) flopsDouble);
+
+    flops = useDouble ? flopsDouble : flopsFloat;
+
+    return floor(1.0e-9 * (cl_double) flops);
+}
+
+cl_bool hasNvidiaCompilerFlags(const DevInfo* di)
+{
+    return strstr(di->exts, "cl_nv_compiler_options") != NULL;
+}
+
+cl_bool deviceVendorIsAMD(const DevInfo* di)
+{
+    return (strncmp(di->vendor, "Advanced Micro Devices, Inc.", sizeof(di->vendor)) == 0);
+}
+
 /* True if devices compute capability >= requested version */
 cl_bool minComputeCapabilityCheck(const DevInfo* di, cl_uint major, cl_uint minor)
 {
     return     di->computeCapabilityMajor > major
-           || (di->computeCapabilityMajor == major
-                && di->computeCapabilityMinor >= minor);
+           || (   di->computeCapabilityMajor == major
+               && di->computeCapabilityMinor >= minor);
 }
 
 /* Exact check on compute capability version */
@@ -151,9 +216,40 @@ cl_bool computeCapabilityIs(const DevInfo* di, cl_uint major, cl_uint minor)
     return di->computeCapabilityMajor == major && di->computeCapabilityMinor == minor;
 }
 
+/* approximate ratio of float : double flops */
+cl_uint cudaEstimateDoubleFrac(const DevInfo* di)
+{
+    /* FIXME: This also differs with generation.
+       Is there a better way to find out the generation and if
+     */
+
+    if (minComputeCapabilityCheck(di, 2, 0))
+    {
+        if (strstr(di->devName, "Tesla") != NULL)
+        {
+            return 2;
+        }
+        else
+        {
+            return 8;
+        }
+    }
+    else
+    {
+        if (strstr(di->devName, "Tesla") != NULL)
+        {
+            return 2;
+        }
+        else
+        {
+            return 8;
+        }
+    }
+}
+
 /* Different on different Nvidia architectures.
    Uses numbers from appendix of Nvidia OpenCL programming guide. */
-cl_uint cudaCoresPerComputeUnit(const DevInfo* di)
+static cl_uint cudaCoresPerComputeUnit(const DevInfo* di)
 {
     if (minComputeCapabilityCheck(di, 2, 0))
         return 32;
@@ -161,85 +257,68 @@ cl_uint cudaCoresPerComputeUnit(const DevInfo* di)
     return 8;     /* 1.x is 8 */
 }
 
-size_t mwFindGroupSize(const DevInfo* di)
+cl_double cudaEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
 {
-    return di->devType == CL_DEVICE_TYPE_CPU ? 1 : 64;
-}
+    cl_ulong flopsFloat, flopsDouble, flops;
+    cl_uint doubleRat = cudaEstimateDoubleFrac(di);
+    cl_uint corePerCU = cudaCoresPerComputeUnit(di);
+    cl_uint numCUDACores = di->maxCompUnits * corePerCU;
+    cl_double gflops;
 
-cl_uint mwFindGroupsPerCU(const DevInfo* di)
-{
-    if (di->devType == CL_DEVICE_TYPE_CPU)
-        return 1;
+    flopsFloat = 2 * numCUDACores * (cl_ulong) di->clockFreq * 1000000;
+    flopsDouble = flopsFloat / doubleRat;
 
-    if (di->vendorID == MW_NVIDIA)
-        return cudaCoresPerComputeUnit(di);
+    warn("Estimated Nvidia GPU GFLOP/s: %.0f SP GFLOP/s, %.0f DP FLOP/s\n",
+         (cl_double) flopsFloat, (cl_double) flopsDouble);
 
-    return 1; /* TODO: ATI, etc. */
-}
-
-cl_uint mwBlockSize(const DevInfo* di)
-{
-    cl_uint groupSize, groupsPerCU, threadsPerCU;
-
-    groupSize   = mwFindGroupSize(di);
-    groupsPerCU = mwFindGroupsPerCU(di);
-    threadsPerCU = groupSize * groupsPerCU;
-
-    return threadsPerCU * di->maxCompUnits;
-}
-
-
-/* approximate ratio of float : double flops */
-cl_uint cudaEstimateDoubleFrac(const DevInfo* di)
-{
-    /* FIXME: This is smaller for Teslas */
-    return 8;
-}
-
-cl_double cudaEstimateGFLOPs(const DevInfo* di)
-{
-    cl_uint corePerCU;
-    cl_uint numCUDACores;
-    cl_double freq, gflops;
-    cl_double flopsFloat, flopsDouble, flops;
-    cl_double flopsFactor;
-    cl_uint doubleRat;
-
-    corePerCU = cudaCoresPerComputeUnit(di);
-    numCUDACores = di->maxCompUnits * corePerCU;
-    freq = (cl_double) di->clockFreq * 1.0e6;
-
-    flopsFactor = 2;
-    doubleRat = cudaEstimateDoubleFrac(di);
-
-    flopsFloat = flopsFactor * numCUDACores * freq;
-    flopsDouble = flopsFactor * numCUDACores * freq / doubleRat;
-
-    flops = DOUBLEPREC ? flopsDouble : flopsFloat;
-    gflops = flops * 1.0e-9;
-
-    flopsFloat *= 1.0e-9;  /* FLOPS -> GFLOPS */
-    flopsDouble *= 1.0e-9;
-
-    warn("Estimated Nvidia device GFLOP/s: %.0f SP GFLOP/s, %.0f DP FLOP/s\n",
-         flopsFloat, flopsDouble);
+    flops = useDouble ? flopsDouble : flopsFloat;
+    gflops = 1.0e-9 * (cl_double) flops;
 
     return floor(gflops);
 }
 
-cl_double referenceGFLOPsGTX480(cl_bool doubleprec)
+cl_double deviceEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
 {
-    return doubleprec ? 168.0 : 1350.0;
-}
+    cl_double gflops = 0.0;
 
-cl_double referenceGFLOPsGTX285(cl_bool doubleprec)
-{
-    return doubleprec ? 88.5 : 708.0;
-}
+    if (di->devType == CL_DEVICE_TYPE_GPU)
+    {
+        if (di->vendorID == MW_NVIDIA)
+        {
+            gflops = cudaEstimateGFLOPs(di, useDouble);
+        }
+        else if (di->vendorID == MW_AMD_ATI || deviceVendorIsAMD(di))
+        {
+            /* Not sure if the vendor ID for AMD is the same with their
+               CPUs.  Also something else weird was going on with the
+               vendor ID, so check the name just in case.
+            */
+            gflops = amdEstimateGFLOPs(di, useDouble);
+        }
+        else
+        {
+            warn("Unhandled GPU vendor '%s' (0x%x)\n", di->vendor, di->vendorID);
+            gflops = 100.0;
+        }
+    }
+    else
+    {
+        warn("Missing flops estimate for device type %s\n", showCLDeviceType(di->devType));
+        return 1.0;
+    }
 
-cl_double referenceGFLOPsRadeon5870(cl_bool doubleprec)
-{
-    return doubleprec ? 544.0 : 2720.0;
+    /* At different times the AMD drivers have reported 0 as the clock
+     * speed, so try to catch that. We could test the GPU and figure
+     * out what the FLOPs should be to get a better estimate.
+     */
+
+    if (gflops <= 100.0)
+    {
+        warn("Warning: Bizarrely low flops (%.0f). Defaulting to %.0f\n", gflops, 100.0);
+        gflops = 100.0;
+    }
+
+    return gflops;
 }
 
 void mwPrintDevInfo(const DevInfo* di)

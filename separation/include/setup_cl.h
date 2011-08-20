@@ -46,11 +46,7 @@ typedef struct
 
 typedef struct
 {
-
-    size_t* chunkBorders;
-
     size_t global[2];
-
     size_t local[2];
     size_t groupSize;
     size_t nChunkEstimate;  /* Target number of chunks to use */
@@ -90,11 +86,10 @@ cl_bool separationCheckDevCapabilities(const DevInfo* di, const AstronomyParamet
 
 cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* runSizes);
 
-void freeRunSizes(RunSizes* sizes);
-
 cl_bool findRunSizes(RunSizes* sizes,
                      const CLInfo* ci,
                      const DevInfo* di,
+                     const AstronomyParameters* ap,
                      const IntegralArea* ia,
                      const CLRequest* clr);
 

@@ -46,22 +46,19 @@ cl_bool mwSupportsDoubles(const DevInfo* di);
 cl_device_id* mwGetAllDevices(cl_platform_id platform, cl_uint* numDevOut);
 cl_platform_id* mwGetAllPlatformIDs(CLInfo* ci, cl_uint* n_platforms_out);
 
+cl_double deviceEstimateGFLOPs(const DevInfo* di, cl_bool useDouble);
 
-size_t mwFindGroupSize(const DevInfo* di);
-cl_uint mwFindGroupsPerCU(const DevInfo* di);
-cl_uint mwBlockSize(const DevInfo* di);
-
+/* AMD specific functions */
+cl_double amdEstimateGFLOPs(const DevInfo* di, cl_bool useDouble);
+cl_bool deviceVendorIsAMD(const DevInfo* di);
 
 /* Nvidia specific functions */
 cl_bool minComputeCapabilityCheck(const DevInfo* di, cl_uint major, cl_uint minor);
 cl_bool computeCapabilityIs(const DevInfo* di, cl_uint major, cl_uint minor);
-cl_uint cudaCoresPerComputeUnit(const DevInfo* di);
-cl_double cudaEstimateGFLOPs(const DevInfo* di);
+cl_double cudaEstimateGFLOPs(const DevInfo* di, cl_bool useDouble);
 cl_uint cudaEstimateDoubleFrac(const DevInfo* di);
+cl_bool hasNvidiaCompilerFlags(const DevInfo* di);
 
-cl_double referenceGFLOPsGTX285(cl_bool doubleprec);
-cl_double referenceGFLOPsGTX480(cl_bool doubleprec);
-cl_double referenceGFLOPsRadeon5870(cl_bool doubleprec);
 
 #ifdef __cplusplus
 }
