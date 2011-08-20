@@ -30,19 +30,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #if !defined(__Cypress__) && !defined(__ATI_RV770__) && !defined(__CPU__)
   #define USE_CUSTOM_DIVISION 1
-
-  /* It's faster to load the stream constants into private memory on
-   * Nvidia, which I think there spills into shared stuff. It seems
-   * much slower on ATI though. */
-  #define LOAD_STREAM_CONSTANTS 1
 #endif
 
-
-#if LOAD_STREAM_CONSTANTS
-  #define __SC_CONSTANT __private
-#else
-  #define __SC_CONSTANT __constant
-#endif /* LOAD_STREAM_CONSTANTS */
 
 #if USE_IMAGES
 
@@ -63,21 +52,6 @@ inline RPoints readRPts(__global const RPoints* r_pts, int2 i)
 }
 
 #endif /* USE_IMAGES */
-
-#if LOAD_STREAM_CONSTANTS
-
-inline void set_sc_priv(StreamConstants* sc, __constant StreamConstants* sc_c)
-{
-    unsigned int i;
-
-    #pragma unroll NSTREAM
-    for (i = 0; i < NSTREAM; ++i)
-    {
-        sc[i] = sc_c[i];
-    }
-}
-
-#endif /* LOAD_STREAM_CONSTANTS */
 
 #if USE_CUSTOM_DIVISION && DOUBLEPREC
 
@@ -125,12 +99,6 @@ double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double 
   #define MAX_CONST(n, type)
 #endif
 
-#if LOAD_STREAM_CONSTANTS
-  #define SC_ARG sc_c
-#else
-  #define SC_ARG sc
-#endif /* LOAD_STREAM_CONSTANTS */
-
 
 inline real aux_prob(__constant AstronomyParameters* ap,
                      const real qw_r3_N,
@@ -151,7 +119,7 @@ __kernel void mu_sum_kernel(__global real* restrict bgOut,
                             __constant AstronomyParameters* ap MAX_CONST(1, AstronomyParameters),
                             __constant IntegralArea* ia MAX_CONST(1, IntegralArea),
 
-                            __constant StreamConstants* SC_ARG MAX_CONST(NSTREAM, StreamConstants),
+                            __constant StreamConstants* sc MAX_CONST(NSTREAM, StreamConstants),
                             __constant RConsts* rcs,
                             __constant real* restrict sg_dx MAX_CONST(256, real),
 
@@ -176,11 +144,6 @@ __kernel void mu_sum_kernel(__global real* restrict bgOut,
 
     real bg_prob = 0.0;
     real st_probs[NSTREAM] = { 0.0 };
-
-  #if LOAD_STREAM_CONSTANTS
-    StreamConstants sc[NSTREAM];
-    set_sc_priv(sc, sc_c);
-  #endif /* LOAD_STREAM_CONSTANTS */
 
     unsigned int i, j;
 
