@@ -50,8 +50,8 @@ typedef struct
     size_t local[2];
     size_t groupSize;
     size_t nChunkEstimate;  /* Target number of chunks to use */
-    size_t nChunk;     /* Number of chunks to divide each iteration into */
-    size_t extra;      /* Extra area added */
+    size_t nChunk;          /* Number of chunks to divide each iteration into */
+    cl_uint extra;          /* Extra area added */
     cl_ulong area;
     cl_ulong effectiveArea;
     size_t chunkSize;   /* effectiveArea / numChunks */

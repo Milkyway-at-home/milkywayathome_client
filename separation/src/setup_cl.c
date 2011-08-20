@@ -50,7 +50,7 @@ static void printRunSizes(const RunSizes* sizes, const IntegralArea* ia)
          "Chunk estimate: "ZU"\n"
          "Num chunks:     "ZU"\n"
          "Chunk size:     "ZU"\n"
-         "Added area:     "ZU"\n"
+         "Added area:     %u\n"
          "Effective area: "ZU"\n"
          ,
          ia->nu_steps, ia->mu_steps, ia->r_steps,
@@ -188,7 +188,7 @@ cl_bool findRunSizes(RunSizes* sizes,
 
     sizes->effectiveArea = sizes->chunkSize * mwDivRoundup(sizes->area, sizes->chunkSize);
     sizes->nChunk = forceOneChunk ? 1 : mwDivRoundup(sizes->effectiveArea, sizes->chunkSize);
-    sizes->extra = sizes->effectiveArea - sizes->area;
+    sizes->extra = (cl_uint) (sizes->effectiveArea - sizes->area);
 
     if (sizes->nChunk == 1) /* Magic factor probably too high or very small workunit, or nonresponsive */
     {
