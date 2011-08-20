@@ -113,7 +113,7 @@ inline real aux_prob(__constant AstronomyParameters* ap,
 }
 
 
-__kernel void mu_sum_kernel(__global real* restrict bgOut,
+__kernel void probabilities(__global real* restrict bgOut,
                             __global real* restrict streamsOut,
 
                             __constant AstronomyParameters* ap MAX_CONST(1, AstronomyParameters),

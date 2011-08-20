@@ -580,7 +580,7 @@ cl_int setupSeparationCL(CLInfo* ci,
     }
 
     warn("\nCompiler flags:\n%s\n\n", compileFlags);
-    err = mwSetProgramFromSrc(ci, "mu_sum_kernel", (const char**) &kernelSrc, 1, compileFlags);
+    err = mwSetProgramFromSrc(ci, "probabilities", (const char**) &kernelSrc, 1, compileFlags);
 
     freeKernelSrc(kernelSrc);
     free(compileFlags);
