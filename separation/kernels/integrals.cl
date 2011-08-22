@@ -33,26 +33,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 
-#if USE_IMAGES
-
-const sampler_t sample = CLK_ADDRESS_NONE
-                       | CLK_NORMALIZED_COORDS_FALSE
-                       | CLK_FILTER_NEAREST;
-
-inline RPoints readRPts(__read_only image2d_t r_pts, int2 i)
-{
-    return as_double2((read_imageui(r_pts, sample, i)));
-}
-
-#else
-
-inline RPoints readRPts(__global const RPoints* r_pts, int2 i)
-{
-    return r_pts[i.x * CONVOLVE + i.y];
-}
-
-#endif /* USE_IMAGES */
-
 #if USE_CUSTOM_DIVISION && DOUBLEPREC
 
 double mw_div(double a, double b)  // accurate to 1 ulp, i.e the last bit of the double precision number
@@ -116,12 +96,7 @@ __kernel void probabilities(__global real* restrict bgOut,
                             __constant RConsts* rcs,
                             __constant real* restrict sg_dx MAX_CONST(CONVOLVE, real),
 
-                          #if USE_IMAGES
-                            __read_only image2d_t r_pts,
-                          #else
                             __global const __read_only RPoints* r_pts,
-                          #endif
-
                             __global const __read_only LBTrig* lbts,
                             const unsigned int extra,
                             const real nu_id)
@@ -140,7 +115,7 @@ __kernel void probabilities(__global real* restrict bgOut,
 
     for (int i = 0; i < CONVOLVE; ++i)
     {
-        RPoints r_pt = readRPts(r_pts, (int2) (r_step, i));
+        RPoints r_pt = r_pts[CONVOLVE * r_step + i];
 
         real x = mad(R_POINT(r_pt), LCOS_BCOS(lbt), (real) -SUN_R0);
         real y = R_POINT(r_pt) * LSIN_BCOS(lbt);
