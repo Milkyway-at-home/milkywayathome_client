@@ -38,7 +38,7 @@ inline static int idxof(int i);
 static void initial_mask(dsfmt_t *dsfmt);
 static void period_certification(dsfmt_t *dsfmt);
 
-#if defined(HAVE_SSE2)
+#if defined(__SSE2__)
 #  include <emmintrin.h>
 /** mask data for sse2 */
 static __m128i sse2_param_mask;
@@ -73,7 +73,7 @@ inline static int idxof(int i) {
  * @param b a 128-bit part of the internal state array
  * @param lung a 128-bit part of the internal state array
  */
-#if defined(HAVE_ALTIVEC)
+#if defined(ALTIVEC)
 inline static void do_recursion(w128_t *r, w128_t *a, w128_t * b,
 				w128_t *lung) {
     const vector unsigned char sl1 = ALTI_SL1;
@@ -102,7 +102,7 @@ inline static void do_recursion(w128_t *r, w128_t *a, w128_t * b,
     r->s = vec_xor(z, x);
     lung->s = w;
 }
-#elif defined(HAVE_SSE2)
+#elif defined(__SSE2__)
 /**
  * This function setup some constant variables for SSE2.
  */
@@ -165,7 +165,7 @@ inline static void do_recursion(w128_t *r, w128_t *a, w128_t * b,
 }
 #endif
 
-#if defined(HAVE_SSE2)
+#if defined(__SSE2__)
 /**
  * This function converts the double precision floating point numbers which
  * distribute uniformly in the range [1, 2) to those which distribute uniformly
@@ -634,13 +634,13 @@ void dsfmt_chk_init_gen_rand(dsfmt_t *dsfmt, uint32_t seed, int mexp) {
     psfmt = &dsfmt->status[0].u32[0];
     psfmt[idxof(0)] = seed;
     for (i = 1; i < (DSFMT_N + 1) * 4; i++) {
-        psfmt[idxof(i)] = 1812433253UL 
+        psfmt[idxof(i)] = 1812433253UL
 	    * (psfmt[idxof(i - 1)] ^ (psfmt[idxof(i - 1)] >> 30)) + i;
     }
     initial_mask(dsfmt);
     period_certification(dsfmt);
     dsfmt->idx = DSFMT_N64;
-#if defined(HAVE_SSE2)
+#if defined(__SSE2__)
     setup_const();
 #endif
 }
@@ -725,7 +725,7 @@ void dsfmt_chk_init_by_array(dsfmt_t *dsfmt, uint32_t init_key[],
     initial_mask(dsfmt);
     period_certification(dsfmt);
     dsfmt->idx = DSFMT_N64;
-#if defined(HAVE_SSE2)
+#if defined(__SSE2__)
     setup_const();
 #endif
 }
