@@ -46,12 +46,12 @@ static char* inlinedIntegralKernelSrc = NULL;
 static void printRunSizes(const RunSizes* sizes, const IntegralArea* ia)
 {
     warn("Range:          { nu_steps = %u, mu_steps = %u, r_steps = %u }\n"
-         "Iteration area: "ZU"\n"
+         "Iteration area: "LLU"\n"
          "Chunk estimate: "ZU"\n"
          "Num chunks:     "ZU"\n"
          "Chunk size:     "ZU"\n"
          "Added area:     %u\n"
-         "Effective area: "ZU"\n"
+         "Effective area: "LLU"\n"
          ,
          ia->nu_steps, ia->mu_steps, ia->r_steps,
          sizes->area,
