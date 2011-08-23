@@ -25,7 +25,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_math.h"
 #include "separation_kernel_types.h"
 
-#include <inttypes.h>
+#include <stdint.h>
 
 
 #ifdef __cplusplus
