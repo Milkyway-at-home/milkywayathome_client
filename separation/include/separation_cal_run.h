@@ -32,6 +32,7 @@ extern "C" {
 
 CALresult integrateCAL(const AstronomyParameters* ap,
                        const IntegralArea* ia,
+                       const StreamConstants* sc,
                        const StreamGauss sg,
                        EvaluationState* es,
                        const CLRequest* clr,

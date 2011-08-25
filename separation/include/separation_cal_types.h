@@ -57,6 +57,8 @@ typedef struct
     CALname* inStreams;
 
     CALname nuBuf;
+    CALname consts;
+    CALname streamConsts;
     CALname rPts;
     CALname rc;
     CALname sg_dx;
@@ -114,6 +116,8 @@ typedef struct
     MWMemRes lTrig;      /* sin, cos of l */
     MWMemRes bTrig;      /* sin, cos of b */
     MWMemRes nuBuf;
+    MWMemRes consts;
+    MWMemRes streamConsts;
     CALuint numberStreams;
 } SeparationCALMem;
 

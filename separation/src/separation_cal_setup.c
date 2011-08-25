@@ -326,6 +326,54 @@ static CALresult createNuCB(MWMemRes* mr, MWCALInfo* ci)
     err = calResAllocRemote1D(&mr->res, &ci->dev, 1, 1, constantFormatReal2, CAL_RESALLOC_CACHEABLE);
     if (err != CAL_RESULT_OK)
     {
+        cal_warn("Failed to allocate nu buffer", err);
+        releaseMWMemRes(ci->calctx, mr);
+        return err;
+    }
+
+    return getMemoryHandle(mr, ci);
+}
+
+
+static CALresult setConstants(SeparationCALMem* cm,
+                              const AstronomyParameters* ap,
+                              const StreamConstants* sc)
+{
+    CALresult err;
+    CALdouble* cPtr;
+    CALuint pitch = 0;
+
+    err = mapMWMemRes(&cm->consts, (CALvoid**) &cPtr, &pitch);
+    if (err != CAL_RESULT_OK)
+        return err;
+
+
+    cPtr[0] = ap->m_sun_r0;
+    cPtr[1] = ap->r0;
+
+    cPtr[2] = ap->q_inv_sqr;
+    cPtr[3] = 0.0;
+
+    cPtr[4] = ap->bg_a;
+    cPtr[5] = ap->bg_b;
+
+    cPtr[6] = ap->bg_c;
+    cPtr[7] = 0.0;
+
+    err = unmapMWMemRes(&cm->consts);
+    if (err != CAL_RESULT_OK)
+        return err;
+
+    return CAL_RESULT_OK;
+}
+
+static CALresult createConstsCB(MWMemRes* mr, MWCALInfo* ci)
+{
+    CALresult err;
+
+    err = calResAllocLocal1D(&mr->res, ci->dev, 10, constantFormatReal2, CAL_RESALLOC_CACHEABLE);
+    if (err != CAL_RESULT_OK)
+    {
         cal_warn("Failed to allocate constant buffer", err);
         releaseMWMemRes(ci->calctx, mr);
         return err;
@@ -662,13 +710,48 @@ CALresult releaseSeparationBuffers(MWCALInfo* ci, SeparationCALMem* cm)
     err |= releaseMWMemRes(ci->calctx, &cm->lTrig);
     err |= releaseMWMemRes(ci->calctx, &cm->bTrig);
     err |= releaseMWMemRes(ci->calctx, &cm->nuBuf);
-
-    err |= releaseMWMemRes(ci->calctx, &cm->sg_qgauss_W);
     err |= releaseMWMemRes(ci->calctx, &cm->starsXY);
     err |= releaseMWMemRes(ci->calctx, &cm->starsZ);
+    err |= releaseMWMemRes(ci->calctx, &cm->consts);
+    err |= releaseMWMemRes(ci->calctx, &cm->streamConsts);
 
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to release buffers", err);
+
+    return err;
+}
+
+CALresult createStreamConstantBuffers(MWCALInfo* ci, SeparationCALMem* cm, const StreamConstants* sc)
+{
+    CALdouble* buf;
+    CALresult err = CAL_RESULT_OK;
+    CALuint i;
+
+    buf = mwMallocA(cm->numberStreams * 8 * sizeof(real));
+
+    /* Need 7 constants per stream + 1 extra to round to 8 */
+    for (i = 0; i < cm->numberStreams; ++i)
+    {
+        buf[8 * i + 0] = X(sc[i].a);
+        buf[8 * i + 1] = X(sc[i].c);
+
+        buf[8 * i + 2] = Y(sc[i].a);
+        buf[8 * i + 3] = Y(sc[i].c);
+
+        buf[8 * i + 4] = Z(sc[i].a);
+        buf[8 * i + 5] = Z(sc[i].c);
+
+        buf[8 * i + 6] = sc[i].sigma_sq2_inv;
+        buf[8 * i + 7] = 0.0;
+    }
+
+    err = createConstantBuffer1D(&cm->streamConsts, ci, buf, formatReal2, 4 * cm->numberStreams);
+    if (err != CAL_RESULT_OK)
+    {
+        cal_warn("Failed to create rc buffer", err);
+    }
+
+    mwFreeA(buf);
 
     return err;
 }
@@ -677,6 +760,7 @@ CALresult createSeparationBuffers(MWCALInfo* ci,
                                   SeparationCALMem* cm,
                                   const AstronomyParameters* ap,
                                   const IntegralArea* ia,
+                                  const StreamConstants* sc,
                                   const StreamGauss sg,
                                   const CALSeparationSizes* sizes)
 {
@@ -691,6 +775,10 @@ CALresult createSeparationBuffers(MWCALInfo* ci,
     err |= createLBTrigBuffers(ci, cm, ap, ia);
 
     err |= createNuCB(&cm->nuBuf, ci);
+
+    err |= createStreamConstantBuffers(ci, cm, sc);
+    err |= createConstsCB(&cm->consts, ci);
+    err |= setConstants(cm, ap, sc);
 
     if (err != CAL_RESULT_OK)
     {
@@ -864,11 +952,12 @@ static CALimage createCALImageFromGeneratedKernel(const MWCALInfo* ci,
 
     src = separationIntegralKernelSrc(ap, sc, ci->devID);
     img = createCALImage(src, ci->devInfo.target);
-    free(src);
 
   #ifndef NDEBUG
     writeDebugKernels(src, img, IL_INTEGRAL_OUT_FILE, ISA_INTEGRAL_OUT_FILE);
   #endif /* NDEBUG */
+
+    free(src);
 
     return img;
 }
@@ -899,6 +988,8 @@ CALresult getModuleNames(MWCALInfo* ci, SeparationCALNames* cn, CALuint numberSt
 
     err |= getNameMWCALInfo(ci, &cn->nuBuf, "cb0");
     err |= getNameMWCALInfo(ci, &cn->sg_dx, "cb1");
+    err |= getNameMWCALInfo(ci, &cn->consts, "cb2");
+    err |= getNameMWCALInfo(ci, &cn->streamConsts, "cb3");
 
     err |= getNameMWCALInfo(ci, &cn->rPts,  "i0");
     err |= getNameMWCALInfo(ci, &cn->rc,    "i1");
@@ -941,6 +1032,9 @@ CALresult setKernelArguments(MWCALInfo* ci, SeparationCALMem* cm, SeparationCALN
     err |= calCtxSetMem(ci->calctx, cn->bTrig, cm->bTrig.mem);
     err |= calCtxSetMem(ci->calctx, cn->sg_dx, cm->sg_dx.mem);
     err |= calCtxSetMem(ci->calctx, cn->nuBuf, cm->nuBuf.mem);
+    err |= calCtxSetMem(ci->calctx, cn->consts, cm->consts.mem);
+    err |= calCtxSetMem(ci->calctx, cn->streamConsts, cm->streamConsts.mem);
+
 
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to set kernel arguments", err);

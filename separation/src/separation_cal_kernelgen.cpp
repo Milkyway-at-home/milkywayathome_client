@@ -143,11 +143,21 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
     for (j = 0; j < ap->number_streams; ++j)
         streamInputs.push_back(input2d<double2>(5 + j));
 
-    indexed_register<double1> sg_dx("cb0");
-    indexed_register<double1> sg_qgaus_W("cb1");
+    named_variable<float2> pos("vWinCoord0"); /* .x() = r, .y() = mu in integral kernel */
+
     named_variable<float1> nuStep("cb0[0].x");
     named_variable<double1> nuId("cb0[0].zw");
-    named_variable<float2> pos("vWinCoord0"); /* .x() = r, .y() = mu in integral kernel */
+
+    indexed_register<double1> sg_dx("cb1");
+
+    named_variable<double1> m_sun_r0("cb2[0].xy");
+    named_variable<double1> r0("cb2[0].zw");
+
+    named_variable<double1> q_inv_sqr("cb2[1].xy");
+
+    named_variable<double1> bg_a("cb2[2].xy");
+    named_variable<double1> bg_b("cb2[2].zw");
+    named_variable<double1> bg_c("cb2[3].xy");
 
     named_variable<double2> bgOut("o0");
     std::vector< named_variable<double2> > streamOutputRegisters;
@@ -166,21 +176,22 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
     for (j = 0; j < ap->number_streams; ++j)
         streamIntegrals.push_back(double1(0.0));
 
+
     il_whileloop
     {
         double2 rPt = rPts[i];
 
-        double1 x = mad(rPt.x(), lTrig.x(), ap->m_sun_r0);
+        double1 x = mad(rPt.x(), lTrig.x(), m_sun_r0);
         double1 y = rPt.x() * lTrig.y();
         double1 z = rPt.x() * bSin;
 
         double1 tmp1 = x * x;
         double1 tmp3 = mad(y, y, tmp1);
         double1 tmp2 = z * z;
-        double1 tmp4 = mad(ap->q_inv_sqr, tmp2, tmp3);
+        double1 tmp4 = mad(q_inv_sqr, tmp2, tmp3);
 
         double1 rg = sqrt_custom(tmp4);
-        double1 rs = rg + ap->r0;
+        double1 rs = rg + r0;
 
         bg_int += div_custom(rPt.y(), rg * rs * rs * rs);
 
@@ -188,33 +199,51 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
         {
             /* TODO: Checkme */
             double1 r_in_mag = sg_dx[cast_type<int1>(i.y())] + rConsts[pos.x()].y();
-            double1 tmp = mad(ap->bg_b, r_in_mag, ap->bg_c);
-            tmp = mad(ap->bg_a, r_in_mag * r_in_mag, tmp);
+            double1 tmp = mad(bg_b, r_in_mag, bg_c);
+            tmp = mad(bg_a, r_in_mag * r_in_mag, tmp);
             bg_int = mad(tmp, rPt.y(), bg_int);
         }
 
         emit_comment("stream loops");
         for (j = 0; j < ap->number_streams; ++j)
         {
-            emit_comment("begin stream");
-            double1 xs = x - X(sc[j].c);
-            double1 ys = y - Y(sc[j].c);
-            double1 zs = z - Z(sc[j].c);
+            /*
+            std::string r1 = str(format"cb3[%u]") % (4 * j + 0);
+            std::string r2 = str(format"cb3[%u]") % (4 * j + 1);
+            std::string r3 = str(format"cb3[%u]") % (4 * j + 2);
+            std::string r4 = str(format"cb3[%u]") % (4 * j + 3);
+            */
+
+            // a.x, c.x
+            named_variable<double2> streamX(str(format("cb3[%u]") % (4 * j + 0)));
+
+            // a.y, c.y
+            named_variable<double2> streamY(str(format("cb3[%u]") % (4 * j + 1)));
+
+            // a.z, c.z
+            named_variable<double2> streamZ(str(format("cb3[%u]") % (4 * j + 2)));
+
+            // sigma_sq2_inv, unused
+            named_variable<double1> sigma_sq2_inv(str(format("cb3[%u].xy") % (4 * j + 3)));
+
+            double1 xs = x - streamX.y(); // x - c
+            double1 ys = y - streamY.y();
+            double1 zs = z - streamZ.y();
 
             /* Dot product */
-            double1 dotted = X(sc[j].a) * xs;
-            dotted = mad(Y(sc[j].a), ys, dotted);
-            dotted = mad(Z(sc[j].a), zs, dotted);
+            double1 dotted = streamX.x() * xs;
+            dotted = mad(streamY.x(), ys, dotted);
+            dotted = mad(streamZ.x(), zs, dotted);
 
-            xs = mad(dotted, -X(sc[j].a), xs);
-            ys = mad(dotted, -Y(sc[j].a), ys);
-            zs = mad(dotted, -Z(sc[j].a), zs);
+            xs = mad(dotted, -streamX.x(), xs);
+            ys = mad(dotted, -streamY.x(), ys);
+            zs = mad(dotted, -streamZ.x(), zs);
 
             double1 sqrv = xs * xs;
             sqrv = mad(ys, ys, sqrv);
             sqrv = mad(zs, zs, sqrv);
 
-            sqrv *= -sc[j].sigma_sq2_inv;
+            sqrv *= -sigma_sq2_inv;
 
             streamIntegrals[j] = mad(rPt.y(), exp_custom(sqrv), streamIntegrals[j]);
         }
@@ -272,10 +301,17 @@ static int separationKernelHeader(const AstronomyParameters* ap,
         return 1;
     }
 
+    if (4 * ap->number_streams > 1024)
+    {
+        warn("Too many streams (%d)\n", ap->number_streams);
+        return 1;
+    }
+
     code << "il_ps_2_0\n";
     code << "dcl_cb cb0[1]\n";
     code << format("dcl_cb cb1[%u]\n") % numRegSgDx;
-
+    code << "dcl_cb cb2[10]\n";
+    code << format("dcl_cb cb3[%u]\n") % (4 * ap->number_streams);
 
     code << "dcl_output_usage(generic) o0\n";
     for (i = 0; i < ap->number_streams; ++i)

@@ -63,6 +63,7 @@ CALresult createSeparationBuffers(MWCALInfo* ci,
                                   SeparationCALMem* cm,
                                   const AstronomyParameters* ap,
                                   const IntegralArea* ia,
+                                  const StreamConstants* sc,
                                   const StreamGauss sg,
                                   const CALSeparationSizes* sizes);
 

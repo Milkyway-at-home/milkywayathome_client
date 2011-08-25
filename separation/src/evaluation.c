@@ -295,7 +295,7 @@ static void calculateIntegrals(const AstronomyParameters* ap,
       #if SEPARATION_OPENCL
         rc = integrateCL(ap, ia, sc, sg, es, clr, ci, (cl_bool) useImages);
       #elif SEPARATION_CAL
-        rc = integrateCAL(ap, ia, sg, es, clr, ci);
+        rc = integrateCAL(ap, ia, sc, sg, es, clr, ci);
       #else
         rc = integrate(ap, ia, sc, sg, es, clr);
       #endif /* SEPARATION_OPENCL */
