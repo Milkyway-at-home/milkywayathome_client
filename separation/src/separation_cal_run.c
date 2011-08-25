@@ -326,22 +326,26 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
     CALuint nChunk;
 
     if (clr->nonResponsive)
-        return 1;
-
-    flops = deviceFlopsEstimate(devAttribs);
-    effFlops = 0.8 * (CALdouble) flops;
-    iterFlops = estimateWUFLOPsPerIter(ap, ia);
-
-    estIterTime = 1000.0 * (CALdouble) iterFlops / effFlops; /* milliseconds */
-
-    timePerIter = 1000.0 / clr->targetFrequency;
-
-    nChunk = (CALuint) (estIterTime / timePerIter);
-    if (nChunk <= 0)
+    {
         nChunk = 1;
+    }
+    else
+    {
+        flops = deviceFlopsEstimate(devAttribs);
+        effFlops = 0.8 * (CALdouble) flops;
+        iterFlops = estimateWUFLOPsPerIter(ap, ia);
 
-    if (nChunk >= ia->mu_steps)
-        return ia->mu_steps;
+        estIterTime = 1000.0 * (CALdouble) iterFlops / effFlops; /* milliseconds */
+
+        timePerIter = 1000.0 / clr->targetFrequency;
+
+        nChunk = (CALuint) (estIterTime / timePerIter);
+        if (nChunk <= 0)
+            nChunk = 1;
+
+        if (nChunk >= ia->mu_steps)
+            nChunk = ia->mu_steps;
+    }
 
     /* Sleep for some fraction of estimated time before polling */
     *chunkWaitEstimate = (CALuint) (clr->gpuWaitFactor * estIterTime / nChunk);
@@ -572,6 +576,7 @@ static void calculateCALSeparationSizes(CALSeparationSizes* sizes,
 
 CALresult integrateCAL(const AstronomyParameters* ap,
                        const IntegralArea* ia,
+                       const StreamConstants* sc,
                        const StreamGauss sg,
                        EvaluationState* es,
                        const CLRequest* clr,
@@ -584,7 +589,7 @@ CALresult integrateCAL(const AstronomyParameters* ap,
     calculateCALSeparationSizes(&sizes, ap, ia);
 
     memset(&cm, 0, sizeof(cm));
-    err = createSeparationBuffers(ci, &cm, ap, ia, sg, &sizes);
+    err = createSeparationBuffers(ci, &cm, ap, ia, sc, sg, &sizes);
     if (err != CAL_RESULT_OK)
         return err;
 
