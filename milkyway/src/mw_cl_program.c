@@ -19,6 +19,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
+#include <errno.h>
 
 #include "milkyway_util.h"
 #include "mw_cl_show_types.h"
@@ -125,7 +126,7 @@ cl_int mwBuildProgram(CLInfo* ci, const char* options, const char* kernName)
 unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
 {
     cl_int err;
-    size_t binSize;
+    size_t binSize = 0;
     unsigned char* bin = NULL;
 
     err = clGetProgramInfo(ci->prog, CL_PROGRAM_BINARY_SIZES, sizeof(binSize), &binSize, NULL);
@@ -135,8 +136,14 @@ unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
         return NULL;
     }
 
-    bin = (unsigned char*) mwMalloc(binSize);
-    err = clGetProgramInfo(ci->prog, CL_PROGRAM_BINARIES, binSize, &bin, NULL);
+    if (binSize == 0)
+    {
+        warn("Program binary size == 0\n");
+        return NULL;
+    }
+
+    bin = (unsigned char*) mwCalloc(binSize + 1, 1);
+    err = clGetProgramInfo(ci->prog, CL_PROGRAM_BINARIES, sizeof(bin), &bin, NULL);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error getting program binary", err);
@@ -149,6 +156,28 @@ unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
         *binSizeOut = binSize;
     return bin;
 }
+
+int mwSaveProgramBinaryToFile(CLInfo* ci, const char* filename)
+{
+    size_t binSize;
+    unsigned char* bin;
+    FILE* f;
+
+    bin = mwGetProgramBinary(ci, &binSize);
+    f = fopen(filename, "wb");
+    if (!f)
+    {
+        perror("Opening CL binary output");
+        return errno;
+    }
+
+    fwrite(bin, binSize, 1, f);
+    fclose(f);
+    free(bin);
+
+    return 0;
+}
+
 
 
 cl_int mwSetProgramFromBin(CLInfo* ci, const char* kernName, const unsigned char* bin, size_t binSize)

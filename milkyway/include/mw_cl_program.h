@@ -32,6 +32,7 @@ extern "C" {
 #endif
 
 unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut);
+int mwSaveProgramBinaryToFile(CLInfo* ci, const char* filename);
 
 cl_int mwSetProgramFromBin(CLInfo* ci, const char* kernName, const unsigned char* bin, size_t binSize);
 cl_int mwSetProgramFromSrc(CLInfo* ci,
