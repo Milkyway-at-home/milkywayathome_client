@@ -297,22 +297,33 @@ cl_double cudaEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
     return gflops;
 }
 
+cl_bool isNvidiaGPUDevice(const DevInfo* di)
+{
+    return (di->vendorID == MW_NVIDIA);
+}
+
+cl_bool isAMDGPUDevice(const DevInfo* di)
+{
+    /* Not sure if the vendor ID for AMD is the same with their
+       CPUs.  Also something else weird was going on with the
+       vendor ID, so check the name just in case.
+    */
+
+    return (di->vendorID == MW_AMD_ATI || deviceVendorIsAMD(di));
+}
+
 cl_double deviceEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
 {
     cl_double gflops = 0.0;
 
     if (di->devType == CL_DEVICE_TYPE_GPU)
     {
-        if (di->vendorID == MW_NVIDIA)
+        if (isNvidiaGPUDevice(di))
         {
             gflops = cudaEstimateGFLOPs(di, useDouble);
         }
-        else if (di->vendorID == MW_AMD_ATI || deviceVendorIsAMD(di))
+        else if (isAMDGPUDevice(di))
         {
-            /* Not sure if the vendor ID for AMD is the same with their
-               CPUs.  Also something else weird was going on with the
-               vendor ID, so check the name just in case.
-            */
             gflops = amdEstimateGFLOPs(di, useDouble);
         }
         else
@@ -580,4 +591,19 @@ cl_int mwSelectDevice(CLInfo* ci, const cl_device_id* devs, const CLRequest* clr
     return err;
 }
 
+cl_bool mwPlatformSupportsAMDOfflineDevices(const CLInfo* ci)
+{
+    cl_int err;
+    char exts[4096];
+    size_t readSize = 0;
+
+    err = clGetPlatformInfo(ci->plat, CL_PLATFORM_EXTENSIONS, sizeof(exts), exts, &readSize);
+    if ((err != CL_SUCCESS) || (readSize >= sizeof(exts)))
+    {
+        mwCLWarn("Error reading platform extensions (readSize = "ZU")\n", err, readSize);
+        return CL_FALSE;
+    }
+
+    return (strstr(exts, "cl_amd_offline_devices") != NULL);
+}
 

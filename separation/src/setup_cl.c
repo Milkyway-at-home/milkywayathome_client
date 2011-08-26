@@ -404,6 +404,13 @@ static const char* getNvidiaRegCount(const DevInfo* di)
     return regDefault;
 }
 
+/* We want only the IL in the binary */
+static const char* amdBinaryCompileFlags(const CLInfo* di)
+{
+
+    return "-fbin-amdil -fno-bin-exe -fno-bin-source -fno-bin-llvmir ";
+}
+
 /* Get string of options to pass to the CL compiler. */
 static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, cl_bool useImages)
 {
@@ -522,6 +529,24 @@ cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_dou
      * the theoretical flops compared to the reference devices. */
 
     return 1000.0 * devFactor * flopsPerIter / flops;
+}
+
+static cl_bool usingILKernelIsAcceptable(const CLInfo* ci, const AstronomyParameters* ap, const CLRequest* clr)
+{
+    const DevInfo* di = &ci->di;
+
+    /*
+      // If we don't want it, don't use it
+      if (clr->disableILKernel)
+          return CL_FALSE;
+     */
+
+    /* Supporting these unused options with the IL kernel is too much work */
+    if (ap->number_streams > 5 || ap->aux_bg_profile)
+        return CL_FALSE;
+
+    /* Make sure an acceptable device */
+    return (isAMDGPUDevice(di) && mwPlatformSupportsAMDOfflineDevices(ci));
 }
 
 cl_int setupSeparationCL(CLInfo* ci,

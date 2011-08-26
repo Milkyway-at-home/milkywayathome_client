@@ -133,8 +133,9 @@ static cl_int mwGetCLInfo(CLInfo* ci, const CLRequest* clr)
     }
 
     warn("Using device %u on platform %u\n", clr->devNum, platformChoice);
+    ci->plat = ids[platformChoice];
 
-    devs = mwGetAllDevices(ids[platformChoice], &nDev);
+    devs = mwGetAllDevices(ci->plat, &nDev);
     if (!devs)
     {
         warn("Error getting devices\n");

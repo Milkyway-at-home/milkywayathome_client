@@ -91,6 +91,7 @@ typedef struct
 
 typedef struct
 {
+    cl_platform_id plat;
     cl_device_id dev;
     cl_device_type devType;
     cl_uint devCount;
