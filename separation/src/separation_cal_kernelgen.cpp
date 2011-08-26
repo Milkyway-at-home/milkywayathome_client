@@ -165,6 +165,7 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
     for (j = 0; j < ap->number_streams; ++j)
         streamOutputRegisters.push_back(str(format("o%u") % (j + 1)));
 
+    emit_comment("read trig");
     double2 lTrig = lTrigBuf(nuStep, pos.y());
     double1 bSin = bTrigBuf(nuStep, pos.y());
 
@@ -181,18 +182,22 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
     {
         double2 rPt = rPts[i];
 
+        emit_comment("coordinate conversion");
         double1 x = mad(rPt.x(), lTrig.x(), m_sun_r0);
         double1 y = rPt.x() * lTrig.y();
         double1 z = rPt.x() * bSin;
 
+        emit_comment("x^2 + y^2 + z^2 / q^2");
         double1 tmp1 = x * x;
         double1 tmp3 = mad(y, y, tmp1);
         double1 tmp2 = z * z;
         double1 tmp4 = mad(q_inv_sqr, tmp2, tmp3);
 
+        emit_comment("sqrt()");
         double1 rg = sqrt_custom(tmp4);
         double1 rs = rg + r0;
 
+        emit_comment("qw_r3_N / (rg *rs^3)");
         bg_int += div_custom(rPt.y(), rg * rs * rs * rs);
 
         if (ap->aux_bg_profile)
@@ -207,13 +212,7 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
         emit_comment("stream loops");
         for (j = 0; j < ap->number_streams; ++j)
         {
-            /*
-            std::string r1 = str(format"cb3[%u]") % (4 * j + 0);
-            std::string r2 = str(format"cb3[%u]") % (4 * j + 1);
-            std::string r3 = str(format"cb3[%u]") % (4 * j + 2);
-            std::string r4 = str(format"cb3[%u]") % (4 * j + 3);
-            */
-
+            emit_comment("Begin stream");
             // a.x, c.x
             named_variable<double2> streamX(str(format("cb3[%u]") % (4 * j + 0)));
 
@@ -226,25 +225,31 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
             // sigma_sq2_inv, unused
             named_variable<double1> sigma_sq2_inv(str(format("cb3[%u].xy") % (4 * j + 3)));
 
-            double1 xs = x - streamX.y(); // x - c
+            emit_comment("x - c");
+            double1 xs = x - streamX.y();
             double1 ys = y - streamY.y();
             double1 zs = z - streamZ.y();
 
+            emit_comment("a . x");
             /* Dot product */
             double1 dotted = streamX.x() * xs;
             dotted = mad(streamY.x(), ys, dotted);
             dotted = mad(streamZ.x(), zs, dotted);
 
+            emit_comment("xs += dotted * (-a)");
             xs = mad(dotted, -streamX.x(), xs);
             ys = mad(dotted, -streamY.x(), ys);
             zs = mad(dotted, -streamZ.x(), zs);
 
+            emit_comment("sqrv");
             double1 sqrv = xs * xs;
             sqrv = mad(ys, ys, sqrv);
             sqrv = mad(zs, zs, sqrv);
 
+            emit_comment("sqrv *= -sigma_sq2_inv");
             sqrv *= -sigma_sq2_inv;
 
+            emit_comment("increment stream integral");
             streamIntegrals[j] = mad(rPt.y(), exp_custom(sqrv), streamIntegrals[j]);
         }
         emit_comment("End streams");
@@ -256,11 +261,14 @@ static void createSeparationKernelCore(const AstronomyParameters* ap,
 
     double1 V_reff_xr_rp3 = nuId * rConsts(pos.x()).x();
 
+    emit_comment("read streams");
     std::vector<double2> streamRead;
     double2 bgRead = bgInput[pos];
     for (j = 0; j < ap->number_streams; ++j)
         streamRead.push_back(streamInputs[j][pos]);
 
+
+    emit_comment("multiply bg_prob streams");
     /* Put these multiplies together */
     bg_int *= V_reff_xr_rp3;
     for (j = 0; j < ap->number_streams; ++j)
