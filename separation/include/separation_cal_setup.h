@@ -46,13 +46,13 @@ CALresult createConstantBuffer1D(MWMemRes* mr,
                                  MWCALInfo* ci,
                                  const CALvoid* src,
                                  CALformat format,
-                                 CALuint width);
+                                 CALuint width,
+                                 CALuint flags);
 
 CALresult mwUnloadKernel(MWCALInfo* ci);
 CALresult mwCALShutdown(MWCALInfo* ci);
 
 CALresult getModuleNames(MWCALInfo* ci, SeparationCALNames* cn, CALuint numberStreams);
-void destroyModuleNames(SeparationCALNames* cn);
 
 CALresult mapMWMemRes(MWMemRes* mr, CALvoid** pPtr, CALuint* pitch);
 CALresult unmapMWMemRes(MWMemRes* mr);

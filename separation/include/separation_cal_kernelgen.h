@@ -25,17 +25,18 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 
 
+#define USE_KAHAN 0
+
+/* Create a flexible kernel that can handle 0 .. IL_MAX_STREAMS, but is ~10% slower (at 3 streams) */
+#define FLEXIBLE_KERNEL 0
+#define IL_MAX_STREAMS 4
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-char* separationIntegralKernelSrc(const AstronomyParameters* ap,
-                                  const StreamConstants* sc,
-                                  CALuint device);
-
-char* separationLikelihoodKernelSrc(const AstronomyParameters* ap,
-                                    const StreamConstants* sc,
-                                    CALuint device);
+char* separationIntegralKernelSrc(CALuint device, CALuint maxStreams);
 
 
 #ifdef __cplusplus
@@ -44,13 +45,7 @@ char* separationLikelihoodKernelSrc(const AstronomyParameters* ap,
 
 
 #ifdef __cplusplus
-std::string createSeparationIntegralKernel(const AstronomyParameters* ap,
-                                           const StreamConstants* sc,
-                                           CALuint device);
-
-std::string createSeparationLikelihoodKernel(const AstronomyParameters* ap,
-                                             const StreamConstants* sc,
-                                             CALuint device);
+std::string createSeparationIntegralKernel(CALuint device, CALuint maxStreams);
 
 #endif
 

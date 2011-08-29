@@ -63,11 +63,8 @@ static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain, CALint pollin
     CALresult err;
     CALevent ev = 0;
 
-#if 1
-    err = calCtxRunProgram(&ev, ci->calctx, ci->func, domain);
-#else
-    CALdomain3D global = { domain->width, domain->height, 1 };
-    CALdomain3D local = { 64, 28, 1 };
+    CALdomain3D global = { domain->width, 1, 1 };
+    CALdomain3D local = { 64, 1, 1 };
     CALprogramGrid grid;
 
     grid.func = ci->func;
@@ -76,20 +73,10 @@ static CALresult runKernel(MWCALInfo* ci, const CALdomain* domain, CALint pollin
     grid.gridBlock = local;
 
     grid.gridSize.width  = (global.width + local.width - 1) / local.width;
-    grid.gridSize.height = (global.height + local.height - 1) / local.height;
-    grid.gridSize.depth  = (global.depth + local.depth - 1) / local.depth;
-
-    #if 0
-    warn("arst %u %u %u -> { %u %u }\n", grid.gridSize.width, grid.gridSize.height, grid.gridSize.depth,
-
-         grid.gridSize.width * local.width,
-         grid.gridSize.height * local.height
-        );
-    #endif
+    grid.gridSize.height = 1;
+    grid.gridSize.depth  = 1;
 
     err = calCtxRunProgramGrid(&ev, ci->calctx, &grid);
-#endif
-
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Error running kernel", err);
@@ -102,7 +89,7 @@ static CALresult setNuKernelArgs(SeparationCALMem* cm, const IntegralArea* ia, C
 {
     CALresult err;
     CALvoid* nuBufPtr;
-    CALfloat* nuStepPtr;
+    CALuint* nuStepPtr;
     CALdouble* nuIdPtr;
     CALuint pitch = 0;
     NuId nuid;
@@ -113,10 +100,10 @@ static CALresult setNuKernelArgs(SeparationCALMem* cm, const IntegralArea* ia, C
 
     nuid = calcNuStep(ia, nuStep);
 
-    nuStepPtr = (CALfloat*) nuBufPtr;
+    nuStepPtr = (CALuint*) nuBufPtr;
     nuIdPtr = (CALdouble*) nuBufPtr;
 
-    nuStepPtr[0] = (CALfloat) nuStep;
+    nuStepPtr[0] = nuStep;
     nuIdPtr[1] = nuid.id;
 
     err = unmapMWMemRes(&cm->nuBuf);
@@ -129,10 +116,14 @@ static CALresult setNuKernelArgs(SeparationCALMem* cm, const IntegralArea* ia, C
 static real sumResults(MWMemRes* mr, const IntegralArea* ia)
 {
     CALuint i, j, pitch;
-    Kahan* bufPtr;
-    Kahan* tmp;
+    //Kahan* bufPtr;
+    //Kahan* tmp;
+    real* bufPtr;
+    real* tmp;
+
     Kahan ksum = ZERO_KAHAN;
     CALresult err = CAL_RESULT_OK;
+    CALuint step;
 
     err = mapMWMemRes(mr, (CALvoid**) &bufPtr, &pitch);
     if (err != CAL_RESULT_OK)
@@ -140,10 +131,9 @@ static real sumResults(MWMemRes* mr, const IntegralArea* ia)
 
     for (i = 0; i < ia->mu_steps; ++i)
     {
-        tmp = &bufPtr[i * pitch];
         for (j = 0; j < ia->r_steps; ++j)
         {
-            KAHAN_ADD(ksum, tmp[j].sum);
+            KAHAN_ADD(ksum, bufPtr[ia->r_steps * i + j]);
         }
     }
 
@@ -154,16 +144,50 @@ static real sumResults(MWMemRes* mr, const IntegralArea* ia)
     return ksum.sum + ksum.correction;
 }
 
+static CALresult sumStreamResults(real* results, MWMemRes* mr, const IntegralArea* ia, CALuint nStream)
+{
+    CALuint i, j, k, idx, pitch;
+    real* bufPtr;
+    Kahan* tmp;
+    Kahan ksum = ZERO_KAHAN;
+    CALresult err = CAL_RESULT_OK;
+    Kahan* sums;
+
+    err = mapMWMemRes(mr, (CALvoid**) &bufPtr, &pitch);
+    if (err != CAL_RESULT_OK)
+        return err;
+
+    sums = (Kahan*) mwCallocA(nStream, sizeof(Kahan));
+
+    for (i = 0; i < ia->mu_steps; ++i)
+    {
+        for (j = 0; j < ia->r_steps; ++j)
+        {
+            idx = (i * ia->r_steps * nStream) + (j * nStream);
+            for (k = 0; k < nStream; ++k)
+            {
+                KAHAN_ADD(sums[k], bufPtr[idx + k]);
+            }
+        }
+    }
+
+    for (k = 0; k < nStream; ++k)
+    {
+        results[k] = sums[k].sum + sums[k].correction;
+    }
+
+    mwFreeA(sums);
+    err = unmapMWMemRes(mr);
+    if (err != CAL_RESULT_OK)
+        return err;
+
+    return CAL_RESULT_OK;
+}
+
 static void readResults(SeparationCALMem* cm, const IntegralArea* ia, EvaluationState* es)
 {
-    CALuint i;
-
     es->bgTmp = sumResults(&cm->outBg, ia);
-
-    for (i = 0; i < es->numberStreams; ++i)
-    {
-        es->streamTmps[i] = sumResults(&cm->outStreams[i], ia);
-    }
+    sumStreamResults(es->streamTmps, &cm->outStreams, ia, cm->numberStreams);
 }
 
 static void printChunks(const IntegralArea* ia, const SeparationCALChunks* chunks)
@@ -369,7 +393,6 @@ static CALuint deviceChunkEstimate(const AstronomyParameters* ap,
 static void freeCALChunks(SeparationCALChunks* chunks)
 {
     free(chunks->chunkMuBorders);
-    //free(chunks->chunkRBorders);
 }
 
 
@@ -401,7 +424,6 @@ static CALresult findCALChunks(const AstronomyParameters* ap,
     }
 
     chunks->chunkMuBorders = mwCalloc((chunks->nChunkMu + 1), sizeof(CALuint));
-    //chunks->chunkRBorders = mwCalloc((chunks->nChunkR + 1), sizeof(CALuint));
 
     for (i = 0; i <= chunks->nChunkMu; ++i)
     {
@@ -443,12 +465,14 @@ static CALresult runNuStep(MWCALInfo* ci,
         return err;
 
     domain.x = 0;
-    domain.width = ia->r_steps;
+    domain.width = mwNextMultiple(ia->r_steps * ia->mu_steps, 64);
+    domain.height = 1;
 
-    for (i = 0; i < chunks->nChunkMu && err == CAL_RESULT_OK; ++i)
+
+    //for (i = 0; i < chunks->nChunkMu && err == CAL_RESULT_OK; ++i)
     {
-        domain.y = chunks->chunkMuBorders[i];
-        domain.height = chunks->chunkMuBorders[i + 1] - chunks->chunkMuBorders[i];
+        //domain.y = chunks->chunkMuBorders[i];
+        //domain.height = chunks->chunkMuBorders[i + 1] - chunks->chunkMuBorders[i];
 
         mw_begin_critical_section();
         err = runKernel(ci, &domain, pollingMode, chunks->chunkWaitTime);
@@ -511,7 +535,6 @@ static CALresult runIntegral(const AstronomyParameters* ap,
     err = setKernelArguments(ci, cm, &cn);
     if (err != CAL_RESULT_OK)
     {
-        destroyModuleNames(&cn);
         return err;
     }
 
@@ -544,7 +567,6 @@ static CALresult runIntegral(const AstronomyParameters* ap,
 
     warn("Integration time = %f s, average per iteration = %f ms\n", 1.0e-3 * tAcc, tAcc / ia->nu_steps);
 
-    destroyModuleNames(&cn);
     freeCALChunks(&chunks);
 
     if (err == CAL_RESULT_OK)
@@ -564,7 +586,6 @@ static void calculateCALSeparationSizes(CALSeparationSizes* sizes,
     sizes->outStreams = sizeof(Kahan) * ia->mu_steps * ia->r_steps * ap->number_streams;
     sizes->rPts = sizeof(RPoints) * ap->convolve * ia->r_steps;
     sizes->rc = sizeof(RConsts) * ia->r_steps;
-    sizes->sg_dx = sizeof(real) * ap->convolve;
     sizes->lTrig = sizeof(LTrigPair) * ia->mu_steps * ia->nu_steps;
     sizes->bTrig = sizeof(real) * ia->mu_steps * ia->nu_steps;
 

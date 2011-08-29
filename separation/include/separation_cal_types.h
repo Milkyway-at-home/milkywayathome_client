@@ -42,7 +42,6 @@ typedef struct
 
     size_t rPts;
     size_t rc;
-    size_t sg_dx;
     size_t lTrig;
     size_t bTrig;
 } CALSeparationSizes;
@@ -51,17 +50,13 @@ typedef struct
 typedef struct
 {
     CALname outBg;
-    CALname* outStreams;
-
-    CALname inMu;
-    CALname* inStreams;
+    CALname outStreams;
 
     CALname nuBuf;
     CALname consts;
     CALname streamConsts;
     CALname rPts;
     CALname rc;
-    CALname sg_dx;
     CALname lTrig;
     CALname bTrig;
 } SeparationCALNames;
@@ -101,13 +96,12 @@ typedef struct
 typedef struct
 {
     MWMemRes outBg;
-    MWMemRes* outStreams;
+    MWMemRes outStreams;
 
     /* constant, read only buffers */
     MWMemRes rc;        /* r constants */
     MWMemRes rPts;
 
-    MWMemRes sg_dx;
     MWMemRes sg_qgauss_W;
 
     MWMemRes starsXY;

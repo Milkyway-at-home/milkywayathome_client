@@ -58,7 +58,9 @@ static void sumStreamResults(real* streamResults,
     }
 
     for (i = 0; i < number_streams; ++i)
+    {
         streamResults[i] = streamSums[i].sum + streamSums[i].correction;
+    }
 
     mwFreeA(streamSums);
 }

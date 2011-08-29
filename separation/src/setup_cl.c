@@ -534,6 +534,7 @@ cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_dou
 static cl_bool usingILKernelIsAcceptable(const CLInfo* ci, const AstronomyParameters* ap, const CLRequest* clr)
 {
     const DevInfo* di = &ci->di;
+    static const cl_int maxILKernelStreams = 4;
 
     /*
       // If we don't want it, don't use it
@@ -542,7 +543,7 @@ static cl_bool usingILKernelIsAcceptable(const CLInfo* ci, const AstronomyParame
      */
 
     /* Supporting these unused options with the IL kernel is too much work */
-    if (ap->number_streams > 5 || ap->aux_bg_profile)
+    if (ap->number_streams > maxILKernelStreams || ap->aux_bg_profile)
         return CL_FALSE;
 
     /* Make sure an acceptable device */

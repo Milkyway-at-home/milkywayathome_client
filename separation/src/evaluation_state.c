@@ -224,7 +224,9 @@ void addTmpSums(EvaluationState* es)
 
     KAHAN_ADD(es->bgSum, es->bgTmp);
     for (i = 0; i < es->numberStreams; ++i)
+    {
         KAHAN_ADD(es->streamSums[i], es->streamTmps[i]);
+    }
 
     es->bgTmp = 0.0;
     memset(es->streamTmps, 0, sizeof(es->streamTmps[0]) * es->numberStreams);

@@ -31,6 +31,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 
+
 PFNCALCTXWAITFOREVENTS mw_calCtxWaitForEvents = NULL;
 
 static FILE* _isaLogFunctionFile = NULL;
@@ -264,32 +265,6 @@ CALresult unmapMWMemRes(MWMemRes* mr)
     return err;
 }
 
-static CALresult writeConstantBufferDouble(MWMemRes* mr,
-                                           const CALdouble* dataPtr,
-                                           CALuint numberElements,
-                                           CALuint width,
-                                           CALuint height)
-{
-    CALuint i, pitch;
-    CALdouble* bufPtr;
-    size_t rowWidth;
-    CALresult err = CAL_RESULT_OK;
-
-    err = mapMWMemRes(mr, (CALvoid**) &bufPtr, &pitch);
-    if (err != CAL_RESULT_OK)
-        return err;
-
-    rowWidth = sizeof(real) * numberElements * width;
-    for (i = 0; i < height; ++i)
-    {
-        memcpy(&bufPtr[i * numberElements * pitch],
-               &dataPtr[i * numberElements * width],
-               rowWidth);
-    }
-
-    return unmapMWMemRes(mr);
-}
-
 static CALresult printBufferDouble(MWMemRes* mr,
                                    CALuint numberElements,
                                    CALuint width,
@@ -337,28 +312,60 @@ static CALresult createNuCB(MWMemRes* mr, MWCALInfo* ci)
 
 static CALresult setConstants(SeparationCALMem* cm,
                               const AstronomyParameters* ap,
+                              const IntegralArea* ia,
                               const StreamConstants* sc)
 {
     CALresult err;
     CALdouble* cPtr;
     CALuint pitch = 0;
 
+    union
+    {
+        CALdouble d;
+        CALuint size[2];
+    } area;
+
+    const CALuint extra = mwNextMultiple(ia->r_steps * ia->mu_steps, 64) - ia->r_steps * ia->mu_steps;
+
+    warn("Extra = %u\n", extra);
+
+
     err = mapMWMemRes(&cm->consts, (CALvoid**) &cPtr, &pitch);
     if (err != CAL_RESULT_OK)
         return err;
 
+    area.size[0] = ia->mu_steps;
+    area.size[1] = ia->r_steps;
+    cPtr[0] = area.d;        // cb2[0].xy
 
-    cPtr[0] = ap->m_sun_r0;
-    cPtr[1] = ap->r0;
+    area.size[0] = ia->nu_steps;
+    area.size[1] = extra;
+    cPtr[1] = area.d;        // cb2[0].zw
 
-    cPtr[2] = ap->q_inv_sqr;
-    cPtr[3] = 0.0;
 
-    cPtr[4] = ap->bg_a;
-    cPtr[5] = ap->bg_b;
+    area.size[0] = ap->convolve;
+    area.size[1] = ap->number_streams;
+    cPtr[2] = area.d;        // cb2[1].xy
+    cPtr[3] = 0.0;           // cb2[1].zw
 
-    cPtr[6] = ap->bg_c;
-    cPtr[7] = 0.0;
+
+    cPtr[4] = ap->m_sun_r0;  // cb2[2].xy
+    cPtr[5] = ap->r0;        // cb2[2].zw
+
+    cPtr[6] = ap->q_inv_sqr; // cb2[3].xy
+    cPtr[7] = 0.0;           // cb2[3].zw
+
+    cPtr[8] = ap->bg_a;      // cb2[4].xy
+    cPtr[9] = ap->bg_b;      // cb2[4].zw
+
+    cPtr[10] = ap->bg_c;     // cb2[5].xy
+    cPtr[11] = 0.0;          // cb2[5].zw
+
+    cPtr[12] = 0.0;
+    cPtr[13] = 0.0;
+
+    cPtr[14] = 0.0;
+    cPtr[15] = 0.0;
 
     err = unmapMWMemRes(&cm->consts);
     if (err != CAL_RESULT_OK)
@@ -371,7 +378,7 @@ static CALresult createConstsCB(MWMemRes* mr, MWCALInfo* ci)
 {
     CALresult err;
 
-    err = calResAllocLocal1D(&mr->res, ci->dev, 10, constantFormatReal2, CAL_RESALLOC_CACHEABLE);
+    err = calResAllocLocal1D(&mr->res, ci->dev, 8, constantFormatReal2, CAL_RESALLOC_CACHEABLE);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to allocate constant buffer", err);
@@ -414,49 +421,21 @@ static size_t formatToSize(CALformat x)
     }
 }
 
-static CALresult createConstantBuffer2D(MWMemRes* mr,
-                                        MWCALInfo* ci,
-                                        const CALdouble* dataPtr,
-                                        CALformat format,
-                                        CALboolean linearBuffer,
-                                        CALuint width,
-                                        CALuint height)
-{
-    CALresult err;
-    CALuint flags = linearBuffer ? CAL_RESALLOC_GLOBAL_BUFFER : 0;
-
-    err = calResAllocLocal2D(&mr->res, ci->dev, width, height, format, flags);
-    if (err != CAL_RESULT_OK)
-    {
-        cal_warn("Failed to create 2D constant resource", err);
-        releaseMWMemRes(ci->calctx, mr);
-        return err;
-    }
-
-    err = writeConstantBufferDouble(mr, dataPtr, formatToNumElements(format), width, height);
-    if (err != CAL_RESULT_OK)
-        return err;
-
-    err = getMemoryHandle(mr, ci);
-    if (err != CAL_RESULT_OK)
-        return err;
-
-    return CAL_RESULT_OK;
-}
-
-
 CALresult createConstantBuffer1D(MWMemRes* mr,
                                  MWCALInfo* ci,
                                  const CALvoid* src,
                                  CALformat format,
-                                 CALuint width)
+                                 CALuint width,
+                                 CALuint flags)
 {
     CALresult err;
     CALvoid* bufPtr;
     CALuint pitch;
 
     /* Create buffer */
-    err = calResAllocLocal1D(&mr->res, ci->dev, width, format, 0);
+    err = calResAllocLocal1D(&mr->res, ci->dev,
+                             formatToSize(format) * formatToNumElements(format) * width,
+                             CAL_FORMAT_UINT_1, flags);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create constant 1D resource", err);
@@ -467,17 +446,26 @@ CALresult createConstantBuffer1D(MWMemRes* mr,
     /* Map and write to the buffer */
     err = mapMWMemRes(mr, &bufPtr, &pitch);
     if (err != CAL_RESULT_OK)
+    {
+        releaseMWMemRes(ci->calctx, mr);
         return err;
+    }
 
     memcpy(bufPtr, src, formatToSize(format) * width);
 
     err = unmapMWMemRes(mr);
     if (err != CAL_RESULT_OK)
+    {
+        releaseMWMemRes(ci->calctx, mr);
         return err;
+    }
 
     err = getMemoryHandle(mr, ci);
     if (err != CAL_RESULT_OK)
+    {
+        releaseMWMemRes(ci->calctx, mr);
         return err;
+    }
 
     return CAL_RESULT_OK;
 }
@@ -492,7 +480,7 @@ static CALresult zeroBuffer(MWMemRes* mr, CALuint numberElements, CALuint width,
     if (err != CAL_RESULT_OK)
         return err;
 
-    memset(ptr, 0, height * pitch * numberElements * sizeof(real));
+    memset(ptr, 0, width * height * numberElements * sizeof(real));
 
     err = unmapMWMemRes(mr);
     if (err != CAL_RESULT_OK)
@@ -505,10 +493,16 @@ static CALresult zeroBuffer(MWMemRes* mr, CALuint numberElements, CALuint width,
 static CALresult createOutputBuffer2D(MWMemRes* mr, MWCALInfo* ci, CALuint width, CALuint height)
 {
     CALresult err;
-    CALuint flags = 0;
-    //CALuint flags = CAL_RESALLOC_GLOBAL_BUFFER;
+    const CALuint nElem = USE_KAHAN ? 2 : 1;
 
-    err = calResAllocLocal2D(&mr->res, ci->dev, width, height, formatReal2, flags);
+#if USE_KAHAN
+    #warning SETUP KAHAN
+#else
+    #warning SETUP NO KAHAN
+#endif
+
+    /* 2*sizeof(uint1) = sizeof(double) */
+    err = calResAllocLocal1D(&mr->res, ci->dev, 2 * nElem * width * height, CAL_FORMAT_UINT_1, CAL_RESALLOC_GLOBAL_BUFFER);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create output resource", err);
@@ -516,7 +510,7 @@ static CALresult createOutputBuffer2D(MWMemRes* mr, MWCALInfo* ci, CALuint width
         return err;
     }
 
-    err = zeroBuffer(mr, 2, width, height);
+    err = zeroBuffer(mr, nElem, width, height);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to zero output buffer", err);
@@ -552,27 +546,12 @@ static CALresult createOutStreamBuffers(MWCALInfo* ci,
                                         SeparationCALMem* cm,
                                         const CALSeparationSizes* sizes)
 {
-    CALuint i, numberAllocated;
     CALresult err = CAL_RESULT_OK;
 
-    cm->outStreams = (MWMemRes*) mwCalloc(cm->numberStreams, sizeof(MWMemRes));
-    for (i = 0; i < cm->numberStreams; ++i)
+    err = createOutputBuffer2D(&cm->outStreams, ci, sizes->rSteps, cm->numberStreams * sizes->muSteps);
+    if (err != CAL_RESULT_OK)
     {
-        err = createOutputBuffer2D(&cm->outStreams[i], ci, sizes->rSteps, sizes->muSteps);
-        if (err != CAL_RESULT_OK)
-        {
-            cal_warn("Failed to create out streams buffer", err);
-            break;
-        }
-    }
-
-    /* Clean up if any failed before */
-    numberAllocated = i;
-    if (numberAllocated < cm->numberStreams)
-    {
-        for (i = 0; i < numberAllocated; ++i)
-            releaseMWMemRes(ci->calctx, &cm->outStreams[i]);
-        free(cm->outStreams);
+        cal_warn("Failed to create out streams buffer", err);
     }
 
     return err;
@@ -588,25 +567,23 @@ static CALresult createRBuffers(MWCALInfo* ci,
     RConsts* rc;
     CALresult err = CAL_RESULT_OK;
 
-    r_pts = precalculateRPts(ap, ia, sg, &rc, TRUE);
+    r_pts = precalculateRPts(ap, ia, sg, &rc, FALSE);
 
-    err = createConstantBuffer2D(&cm->rPts, ci, (CALdouble*) r_pts, formatReal2, CAL_FALSE, ia->r_steps, ap->convolve);
+    err = createConstantBuffer1D(&cm->rPts, ci, (CALdouble*) r_pts,
+                                 formatReal2, ap->convolve * ia->r_steps, CAL_RESALLOC_GLOBAL_BUFFER);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create r_pts buffer", err);
         goto fail;
     }
 
-    err = createConstantBuffer1D(&cm->rc, ci, (CALdouble*) rc, formatReal2, ia->r_steps);
+    err = createConstantBuffer1D(&cm->rc, ci, (CALdouble*) rc,
+                                 formatReal2, ia->r_steps, CAL_RESALLOC_GLOBAL_BUFFER);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create rc buffer", err);
         goto fail;
     }
-
-    err = createConstantBuffer1D(&cm->sg_dx, ci, sg.dx, constantFormatReal1, ap->convolve);
-    if (err != CAL_RESULT_OK)
-        cal_warn("Failed to create sg_dx buffer", err);
 
 fail:
     mwFreeA(r_pts);
@@ -626,7 +603,7 @@ static void getSplitLBTrig(const AstronomyParameters* ap,
     real* bTrig;
     LBTrig* lbts;
     size_t idx;
-    CALboolean transpose = CAL_TRUE;
+    CALboolean transpose = CAL_FALSE;
 
     lTrigBCos = (LTrigPair*) mwMallocA(ia->mu_steps * ia->nu_steps * sizeof(LTrigPair));
     bTrig = (real*) mwMallocA(ia->mu_steps * ia->nu_steps * sizeof(real));
@@ -663,14 +640,16 @@ static CALresult createLBTrigBuffers(MWCALInfo* ci,
 
     getSplitLBTrig(ap, ia, &lTrig, &bTrig);
 
-    err = createConstantBuffer2D(&cm->lTrig, ci, (CALdouble*) lTrig, formatReal2, CAL_FALSE, ia->nu_steps, ia->mu_steps);
+    err = createConstantBuffer1D(&cm->lTrig, ci, (CALdouble*) lTrig,
+                                 formatReal2, ia->nu_steps * ia->mu_steps, CAL_RESALLOC_GLOBAL_BUFFER);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create l trig buffer", err);
         goto fail;
     }
 
-    err = createConstantBuffer2D(&cm->bTrig, ci, (CALdouble*) bTrig, formatReal1, CAL_FALSE, ia->nu_steps, ia->mu_steps);
+    err = createConstantBuffer1D(&cm->bTrig, ci, (CALdouble*) bTrig,
+                                 formatReal1, ia->nu_steps * ia->mu_steps, CAL_RESALLOC_GLOBAL_BUFFER);
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to create b trig buffer", err);
 
@@ -681,32 +660,14 @@ fail:
     return err;
 }
 
-static CALresult releaseStreamBuffers(MWCALInfo* ci, SeparationCALMem* cm)
-{
-    CALuint i;
-    CALresult err = CAL_RESULT_OK;
-
-    if (!cm->outStreams) /* Nothing to free */
-        return err;
-
-    for (i = 0; i < cm->numberStreams; ++i)
-        err |= releaseMWMemRes(ci->calctx, &cm->outStreams[i]);
-
-    free(cm->outStreams);
-    cm->outStreams = NULL;
-
-    return err;
-}
-
 CALresult releaseSeparationBuffers(MWCALInfo* ci, SeparationCALMem* cm)
 {
     CALresult err = CAL_RESULT_OK;
 
     err |= releaseMWMemRes(ci->calctx, &cm->outBg);
-    err |= releaseStreamBuffers(ci, cm);
+    err |= releaseMWMemRes(ci->calctx, &cm->outStreams);
     err |= releaseMWMemRes(ci->calctx, &cm->rPts);
     err |= releaseMWMemRes(ci->calctx, &cm->rc);
-    err |= releaseMWMemRes(ci->calctx, &cm->sg_dx);
     err |= releaseMWMemRes(ci->calctx, &cm->lTrig);
     err |= releaseMWMemRes(ci->calctx, &cm->bTrig);
     err |= releaseMWMemRes(ci->calctx, &cm->nuBuf);
@@ -727,7 +688,7 @@ CALresult createStreamConstantBuffers(MWCALInfo* ci, SeparationCALMem* cm, const
     CALresult err = CAL_RESULT_OK;
     CALuint i;
 
-    buf = mwMallocA(cm->numberStreams * 8 * sizeof(real));
+    buf = mwCallocA(5 * 8, sizeof(real));
 
     /* Need 7 constants per stream + 1 extra to round to 8 */
     for (i = 0; i < cm->numberStreams; ++i)
@@ -745,7 +706,7 @@ CALresult createStreamConstantBuffers(MWCALInfo* ci, SeparationCALMem* cm, const
         buf[8 * i + 7] = 0.0;
     }
 
-    err = createConstantBuffer1D(&cm->streamConsts, ci, buf, formatReal2, 4 * cm->numberStreams);
+    err = createConstantBuffer1D(&cm->streamConsts, ci, buf, formatReal2, 4 * 5, CAL_RESALLOC_GLOBAL_BUFFER);
     if (err != CAL_RESULT_OK)
     {
         cal_warn("Failed to create rc buffer", err);
@@ -778,7 +739,7 @@ CALresult createSeparationBuffers(MWCALInfo* ci,
 
     err |= createStreamConstantBuffers(ci, cm, sc);
     err |= createConstsCB(&cm->consts, ci);
-    err |= setConstants(cm, ap, sc);
+    err |= setConstants(cm, ap, ia, sc);
 
     if (err != CAL_RESULT_OK)
     {
@@ -950,7 +911,8 @@ static CALimage createCALImageFromGeneratedKernel(const MWCALInfo* ci,
     CALimage img;
     char* src;
 
-    src = separationIntegralKernelSrc(ap, sc, ci->devID);
+    //src = separationIntegralKernelSrc(ci->devID, IL_MAX_STREAMS);
+    src = separationIntegralKernelSrc(ci->devID, ap->number_streams);
     img = createCALImage(src, ci->devInfo.target);
 
   #ifndef NDEBUG
@@ -968,44 +930,22 @@ static inline CALresult getNameMWCALInfo(MWCALInfo* ci, CALname* name, const CAL
     return calModuleGetName(name, ci->calctx, ci->module, varName);
 }
 
-void destroyModuleNames(SeparationCALNames* cn)
-{
-    free(cn->outStreams);
-    cn->outStreams = NULL;
-
-    free(cn->inStreams);
-    cn->inStreams = NULL;
-}
-
 CALresult getModuleNames(MWCALInfo* ci, SeparationCALNames* cn, CALuint numberStreams)
 {
     CALresult err = CAL_RESULT_OK;
     CALuint i;
     char buf[20] = "";
 
-    cn->outStreams = (CALname*) mwCalloc(numberStreams, sizeof(CALname));
-    cn->inStreams = (CALname*) mwCalloc(numberStreams, sizeof(CALname));
-
     err |= getNameMWCALInfo(ci, &cn->nuBuf, "cb0");
-    err |= getNameMWCALInfo(ci, &cn->sg_dx, "cb1");
-    err |= getNameMWCALInfo(ci, &cn->consts, "cb2");
-    err |= getNameMWCALInfo(ci, &cn->streamConsts, "cb3");
+    err |= getNameMWCALInfo(ci, &cn->consts, "cb1");
+    err |= getNameMWCALInfo(ci, &cn->streamConsts, "cb2");
 
-    err |= getNameMWCALInfo(ci, &cn->rPts,  "i0");
-    err |= getNameMWCALInfo(ci, &cn->rc,    "i1");
-    err |= getNameMWCALInfo(ci, &cn->lTrig, "i2");
-    err |= getNameMWCALInfo(ci, &cn->bTrig, "i3");
-
-    err |= getNameMWCALInfo(ci, &cn->outBg, "o0");
-    err |= getNameMWCALInfo(ci, &cn->inMu, "i4");
-    for (i = 0; i < numberStreams; ++i)
-    {
-        sprintf(buf, "i%u", i + 5);
-        err |= getNameMWCALInfo(ci, &cn->inStreams[i], buf);
-
-        sprintf(buf, "o%u", i + 1);
-        err |= getNameMWCALInfo(ci, &cn->outStreams[i], buf);
-    }
+    err |= getNameMWCALInfo(ci, &cn->outBg, "uav0");
+    err |= getNameMWCALInfo(ci, &cn->outStreams, "uav1");
+    err |= getNameMWCALInfo(ci, &cn->rPts,  "uav2");
+    err |= getNameMWCALInfo(ci, &cn->rc,    "uav3");
+    err |= getNameMWCALInfo(ci, &cn->lTrig, "uav4");
+    err |= getNameMWCALInfo(ci, &cn->bTrig, "uav5");
 
     if (err != CAL_RESULT_OK)
         cal_warn("Failed to get module names", err);
@@ -1018,22 +958,45 @@ CALresult setKernelArguments(MWCALInfo* ci, SeparationCALMem* cm, SeparationCALN
     CALresult err = CAL_RESULT_OK;
     CALuint i;
 
+
+    err |= calCtxSetMem(ci->calctx, cn->nuBuf, cm->nuBuf.mem);
+    if (err != CAL_RESULT_OK)
+        cal_warn("nubuf", err);
+
+    err |= calCtxSetMem(ci->calctx, cn->consts, cm->consts.mem);
+    if (err != CAL_RESULT_OK)
+        cal_warn("consts", err);
+
+    err |= calCtxSetMem(ci->calctx, cn->streamConsts, cm->streamConsts.mem);
+    if (err != CAL_RESULT_OK)
+        cal_warn("STREAM consts", err);
+
+    if (err != CAL_RESULT_OK)
+        cal_warn("OK?", err);
+
     err |= calCtxSetMem(ci->calctx, cn->outBg, cm->outBg.mem);
-    err |= calCtxSetMem(ci->calctx, cn->inMu, cm->outBg.mem);
-    for (i = 0; i < cm->numberStreams; ++i)
-    {
-        err |= calCtxSetMem(ci->calctx, cn->outStreams[i], cm->outStreams[i].mem);
-        err |= calCtxSetMem(ci->calctx, cn->inStreams[i],  cm->outStreams[i].mem);
-    }
+    if (err != CAL_RESULT_OK)
+        cal_warn("SHOOP", err);
+
+    err |= calCtxSetMem(ci->calctx, cn->outStreams, cm->outStreams.mem);
+    if (err != CAL_RESULT_OK)
+        cal_warn("DA", err);
+
 
     err |= calCtxSetMem(ci->calctx, cn->rPts, cm->rPts.mem);
+
+    if (err != CAL_RESULT_OK)
+        cal_warn("WOOP", err);
+
+
     err |= calCtxSetMem(ci->calctx, cn->rc, cm->rc.mem);
+    if (err != CAL_RESULT_OK)
+        cal_warn("OK 1", err);
+
     err |= calCtxSetMem(ci->calctx, cn->lTrig, cm->lTrig.mem);
     err |= calCtxSetMem(ci->calctx, cn->bTrig, cm->bTrig.mem);
-    err |= calCtxSetMem(ci->calctx, cn->sg_dx, cm->sg_dx.mem);
-    err |= calCtxSetMem(ci->calctx, cn->nuBuf, cm->nuBuf.mem);
-    err |= calCtxSetMem(ci->calctx, cn->consts, cm->consts.mem);
-    err |= calCtxSetMem(ci->calctx, cn->streamConsts, cm->streamConsts.mem);
+    if (err != CAL_RESULT_OK)
+        cal_warn("OK 2", err);
 
 
     if (err != CAL_RESULT_OK)
