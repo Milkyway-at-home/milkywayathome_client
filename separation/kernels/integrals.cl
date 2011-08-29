@@ -96,8 +96,9 @@ __kernel void probabilities(__global real* restrict bgOut,
                             __constant RConsts* rcs,
                             __constant real* restrict sg_dx MAX_CONST(CONVOLVE, real),
 
-                            __global const __read_only RPoints* r_pts,
-                            __global const __read_only LBTrig* lbts,
+                            __global const __read_only real2* restrict rPts,
+                            __global const __read_only real2* restrict lTrigBuf,
+                            __global const __read_only real* restrict bSinBuf,
                             const unsigned int extra,
                             const real nu_id)
 {
@@ -108,18 +109,21 @@ __kernel void probabilities(__global real* restrict bgOut,
     if (r_step >= ia->r_steps || mu_step >= ia->mu_steps) /* Avoid out of bounds from roundup */
         return;
 
-    LBTrig lbt = lbts[nu_step * ia->mu_steps + mu_step]; /* 32-byte read */
+    size_t trigIdx = nu_step * ia->mu_steps + mu_step;
+
+    real2 lTrig = lTrigBuf[trigIdx];
+    real bSin = bSinBuf[trigIdx];
 
     real bg_prob = 0.0;
     real st_probs[NSTREAM] = { 0.0 };
 
     for (int i = 0; i < CONVOLVE; ++i)
     {
-        RPoints r_pt = r_pts[CONVOLVE * r_step + i];
+        RPoints rPt = rPts[CONVOLVE * r_step + i];
 
-        real x = mad(R_POINT(r_pt), LCOS_BCOS(lbt), (real) -SUN_R0);
-        real y = R_POINT(r_pt) * LSIN_BCOS(lbt);
-        real z = R_POINT(r_pt) * BSIN(lbt);
+        real x = mad(rPt.x, lTrig.x, (real) -SUN_R0);
+        real y = rPt.x * lTrig.y;
+        real z = rPt.x * bSin;
 
         /* sqrt(x^2 + y^2 + q_inv_sqr * z^2) */
         real tmp = x * x;
@@ -130,7 +134,7 @@ __kernel void probabilities(__global real* restrict bgOut,
         real rs = rg + R0;
 
       #if FAST_H_PROB
-        bg_prob += mw_div(QW_R3_N(r_pt), rg * cube(rs));
+        bg_prob += mw_div(rPt.y, rg * cube(rs));
       #else
         bg_prob += mw_div(qw_r3_N, mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
       #endif /* FAST_H_PROB */
@@ -139,7 +143,7 @@ __kernel void probabilities(__global real* restrict bgOut,
         /* Currently not used */
         /* Add a quadratic term in g to the Hernquist profile */
         real g = GPRIME(rcs[r_step]) + sg_dx[i];
-        bg_prob = mad(QW_R3_N(r_pt), aux_prob(ap, g), bg_prob);
+        bg_prob = mad(rPt.y, aux_prob(ap, g), bg_prob);
       #endif /* AUX_BG_PROFILE */
 
         #pragma unroll NSTREAM
@@ -163,7 +167,7 @@ __kernel void probabilities(__global real* restrict bgOut,
 
             real tmp = exp(-sqrv * sc[j].sigma_sq2_inv);
 
-            st_probs[j] = mad(QW_R3_N(r_pt), tmp, st_probs[j]);
+            st_probs[j] = mad(rPt.y, tmp, st_probs[j]);
         }
     }
 

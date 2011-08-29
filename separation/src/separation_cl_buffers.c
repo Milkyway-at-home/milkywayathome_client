@@ -197,6 +197,42 @@ static cl_int createRBuffers(CLInfo* ci,
     return CL_SUCCESS;
 }
 
+/* Might be more convenient to split l and b stuff for CAL */
+static void getSplitLBTrig(const AstronomyParameters* ap,
+                           const IntegralArea* ia,
+                           LTrigPair** lTrigOut,
+                           real** bSinOut)
+{
+    cl_uint i, j;
+    LTrigPair* lTrig;
+    real* bSin;
+    LBTrig* lbts;
+    size_t idx;
+
+    lbts = precalculateLBTrig(ap, ia, FALSE);
+
+    lTrig = (LTrigPair*) mwMallocA(ia->mu_steps * ia->nu_steps * sizeof(LTrigPair));
+    bSin = (real*) mwMallocA(ia->mu_steps * ia->nu_steps * sizeof(real));
+
+    for (i = 0; i < ia->nu_steps; ++i)
+    {
+        for (j = 0; j < ia->mu_steps; ++j)
+        {
+            idx = i * ia->mu_steps + j;
+
+            lTrig[idx].lCosBCos = lbts[idx].lCosBCos;
+            lTrig[idx].lSinBCos = lbts[idx].lSinBCos;
+
+            bSin[idx] = lbts[idx].bSin;
+        }
+    }
+
+    mwFreeA(lbts);
+
+    *lTrigOut = lTrig;
+    *bSinOut = bSin;
+}
+
 static cl_int createLBTrigBuffer(CLInfo* ci,
                                  SeparationCLMem* cm,
                                  const AstronomyParameters* ap,
@@ -204,18 +240,28 @@ static cl_int createLBTrigBuffer(CLInfo* ci,
                                  const SeparationSizes* sizes,
                                  const cl_mem_flags constBufFlags)
 {
-    cl_int err;
-    LBTrig* lbts;
+    cl_int err = CL_SUCCESS;
+    LTrigPair* lTrig = NULL;
+    real* bSin = NULL;
 
-    lbts = precalculateLBTrig(ap, ia, CL_FALSE);
-    cm->lbts = clCreateBuffer(ci->clctx, constBufFlags, sizes->lbts, lbts, &err);
+    getSplitLBTrig(ap, ia, &lTrig, &bSin);
+
+    cm->lTrig = clCreateBuffer(ci->clctx, constBufFlags, sizes->lTrig, lTrig, &err);
     if (err != CL_SUCCESS)
     {
-        mwCLWarn("Error creating lb_trig buffer of size "ZU, err, sizes->lbts);
+        mwCLWarn("Error creating lTrig buffer of size "ZU, err, sizes->lTrig);
         return err;
     }
 
-    mwFreeA(lbts);
+    cm->bSin = clCreateBuffer(ci->clctx, constBufFlags, sizes->bSin, bSin, &err);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Error creating bSin buffer of size "ZU, err, sizes->bSin);
+        return err;
+    }
+
+    mwFreeA(lTrig);
+    mwFreeA(bSin);
 
     return CL_SUCCESS;
 }
@@ -227,7 +273,8 @@ void calculateSizes(SeparationSizes* sizes, const AstronomyParameters* ap, const
     sizes->outStreams = sizeof(real) * ia->mu_steps * ia->r_steps * ap->number_streams;
 
     sizes->rPts = sizeof(RPoints) * ap->convolve * ia->r_steps;
-    sizes->lbts = sizeof(LBTrig) * ia->mu_steps * ia->nu_steps;
+    sizes->lTrig = sizeof(LTrigPair) * ia->mu_steps * ia->nu_steps;
+    sizes->bSin = sizeof(real) * ia->mu_steps * ia->nu_steps;
 
     /* Constant buffer things */
     sizes->ap = sizeof(AstronomyParameters);
@@ -271,7 +318,8 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
     clReleaseMemObject(cm->rPts);
     clReleaseMemObject(cm->rc);
     clReleaseMemObject(cm->sg_dx);
-    clReleaseMemObject(cm->lbts);
+    clReleaseMemObject(cm->lTrig);
+    clReleaseMemObject(cm->bSin);
 }
 
 real* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSize)

@@ -41,7 +41,8 @@ typedef struct
     size_t rc;
     size_t rPts;
     size_t sg_dx;
-    size_t lbts;
+    size_t lTrig;
+    size_t bSin;
 } SeparationSizes;
 
 typedef struct
@@ -70,10 +71,11 @@ typedef struct
     cl_mem rc;        /* r constants */
     cl_mem rPts;
     cl_mem sg_dx;
-    cl_mem lbts;
+    cl_mem lTrig;
+    cl_mem bSin;
 } SeparationCLMem;
 
-#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 
 
 cl_int setupSeparationCL(CLInfo* ci,
