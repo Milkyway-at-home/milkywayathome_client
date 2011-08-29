@@ -183,7 +183,6 @@ set(lib_source_file_list src/evaluation_state.c
 
 set(separation_headers include/calculated_constants.h
                        include/separation_types.h
-                       include/separation_kernel_types.h
                        include/coordinates.h
                        include/separation.h
                        include/evaluation.h
@@ -227,9 +226,7 @@ if(SEPARATION_OPENCL)
     # preprocessor with -MM flag.  However, some of the files only purpose
     # is to include some other files in the kernel, so we have to exclude
     # those ones.
-    set(all_cl_files
-          ${SEPARATION_INCLUDE_DIR}/separation_kernel_types.h
-          ${SEPARATION_KERNEL_DIR}/integrals.cl)
+    set(all_cl_files ${SEPARATION_KERNEL_DIR}/integrals.cl)
 
 
     set(SEPARATION_INLINE_KERNEL_FILE "${LIBRARY_OUTPUT_PATH}/AllInOneFile.c")

@@ -98,46 +98,33 @@ static cl_int createSCBuffer(CLInfo* ci,
                              const cl_mem_flags constBufFlags)
 {
     cl_int err;
+    real* buf;
+    cl_int i;
 
-    cm->sc = clCreateBuffer(ci->clctx, constBufFlags, sizes->sc, (void*) sc, &err);
+    buf = mwCallocA(sizes->nStream * 8, sizeof(real));
+
+    /* Pack into format used by kernel */
+    for (i = 0; i < sizes->nStream; ++i)
+    {
+        buf[8 * i + 0] = X(sc[i].a);
+        buf[8 * i + 1] = X(sc[i].c);
+
+        buf[8 * i + 2] = Y(sc[i].a);
+        buf[8 * i + 3] = Y(sc[i].c);
+
+        buf[8 * i + 4] = Z(sc[i].a);
+        buf[8 * i + 5] = Z(sc[i].c);
+
+        buf[8 * i + 6] = sc[i].sigma_sq2_inv;
+        buf[8 * i + 7] = 0.0;
+    }
+
+    cm->sc = clCreateBuffer(ci->clctx, constBufFlags, sizes->sc, (void*) buf, &err);
+    mwFreeA(buf);
+
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error creating stream constants buffer of size "ZU, err, sizes->sc);
-        return err;
-    }
-
-    return CL_SUCCESS;
-}
-
-static cl_int createAPBuffer(CLInfo* ci,
-                             SeparationCLMem* cm,
-                             const AstronomyParameters* ap,
-                             const SeparationSizes* sizes,
-                             const cl_mem_flags constBufFlags)
-{
-    cl_int err;
-    cm->ap = clCreateBuffer(ci->clctx, constBufFlags, sizes->ap, (void*) ap, &err);
-    if (err != CL_SUCCESS)
-    {
-        mwCLWarn("Error creating astronomy parameters buffer of size "ZU, err, sizes->ap);
-        return err;
-    }
-
-    return CL_SUCCESS;
-}
-
-static cl_int createIABuffer(CLInfo* ci,
-                             SeparationCLMem* cm,
-                             const IntegralArea* ia,
-                             const SeparationSizes* sizes,
-                             const cl_mem_flags constBufFlags)
-{
-    cl_int err;
-
-    cm->ia = clCreateBuffer(ci->clctx, constBufFlags, sizes->ia, (void*) ia, &err);
-    if (err != CL_SUCCESS)
-    {
-        mwCLWarn("Error creating integral area buffer of size "ZU, err, sizes->ia);
         return err;
     }
 
@@ -268,6 +255,8 @@ static cl_int createLBTrigBuffer(CLInfo* ci,
 
 void calculateSizes(SeparationSizes* sizes, const AstronomyParameters* ap, const IntegralArea* ia)
 {
+    sizes->nStream = ap->number_streams;
+
     /* globals */
     sizes->outBg = sizeof(real) * ia->mu_steps * ia->r_steps;
     sizes->outStreams = sizeof(real) * ia->mu_steps * ia->r_steps * ap->number_streams;
@@ -279,7 +268,7 @@ void calculateSizes(SeparationSizes* sizes, const AstronomyParameters* ap, const
     /* Constant buffer things */
     sizes->ap = sizeof(AstronomyParameters);
     sizes->ia = sizeof(IntegralArea);
-    sizes->sc = sizeof(StreamConstants) * ap->number_streams;
+    sizes->sc = 8 * sizeof(real) * ap->number_streams;
     sizes->rc = sizeof(RConsts) * ia->r_steps;
     sizes->sg_dx = sizeof(real) * ap->convolve;
 }
@@ -298,8 +287,6 @@ cl_int createSeparationBuffers(CLInfo* ci,
 
     err |= createOutBgBuffer(ci, cm, sizes);
     err |= createOutStreamsBuffer(ci, cm, sizes);
-    err |= createAPBuffer(ci, cm, ap, sizes, constBufFlags);
-    err |= createIABuffer(ci, cm, ia, sizes, constBufFlags);
     err |= createSCBuffer(ci, cm, sc, sizes, constBufFlags);
     err |= createRBuffers(ci, cm, ap, ia, sg, sizes, constBufFlags, useImages);
     err |= createLBTrigBuffer(ci, cm, ap, ia, sizes, constBufFlags);
@@ -312,8 +299,6 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
     clReleaseMemObject(cm->outStreams);
     clReleaseMemObject(cm->outBg);
 
-    clReleaseMemObject(cm->ap);
-    clReleaseMemObject(cm->ia);
     clReleaseMemObject(cm->sc);
     clReleaseMemObject(cm->rPts);
     clReleaseMemObject(cm->rc);

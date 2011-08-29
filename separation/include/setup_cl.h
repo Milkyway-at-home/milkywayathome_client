@@ -43,6 +43,8 @@ typedef struct
     size_t sg_dx;
     size_t lTrig;
     size_t bSin;
+
+    cl_int nStream;
 } SeparationSizes;
 
 typedef struct
@@ -53,6 +55,7 @@ typedef struct
     size_t nChunkEstimate;  /* Target number of chunks to use */
     size_t nChunk;          /* Number of chunks to divide each iteration into */
     cl_uint extra;          /* Extra area added */
+    cl_uint r, mu, nu;
     cl_ulong area;
     cl_ulong effectiveArea;
     size_t chunkSize;   /* effectiveArea / numChunks */
@@ -65,8 +68,6 @@ typedef struct
     cl_mem outStreams;  /* stream_probs * V * reff_xr_rp3 */
 
     /* constant, read only buffers */
-    cl_mem ap;
-    cl_mem ia;
     cl_mem sc;        /* Stream Constants */
     cl_mem rc;        /* r constants */
     cl_mem rPts;
@@ -75,7 +76,7 @@ typedef struct
     cl_mem bSin;
 } SeparationCLMem;
 
-#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 
 
 cl_int setupSeparationCL(CLInfo* ci,

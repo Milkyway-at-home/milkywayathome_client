@@ -19,7 +19,27 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "separation_kernel_types.h"
+#ifndef DOUBLEPREC
+  #error DOUBLEPREC not defined
+#endif
+
+
+#ifdef cl_amd_fp64
+  #pragma OPENCL EXTENSION cl_amd_fp64 : enable
+#else
+  #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#endif /* cl_amd_fp64 */
+
+
+#if DOUBLEPREC
+typedef double real;
+typedef double2 real2;
+typedef double4 real4;
+#else
+typedef float real;
+typedef float2 real2;
+typedef float4 real4;
+#endif /* DOUBLEPREC */
 
 
 #define cube(x) ((x) * (x) * (x))
@@ -75,40 +95,54 @@ double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double 
 #define MAX_CONST(n, type) __attribute__((max_constant_size(n * sizeof(type))))
 
 
-inline real aux_prob(__constant AstronomyParameters* ap, real r_in_mag)
+inline real aux_prob(real r_in_mag)
 {
     real tmp;
 
-    tmp = mad(ap->bg_b, r_in_mag, ap->bg_c); /* bg_b * r_in_mag + bg_c */
-    tmp = mad(ap->bg_a, sqr(r_in_mag), tmp); /* bg_a * r_in_mag2 + (bg_b * r_in_mag + bg_c)*/
+    tmp = mad(BG_B, r_in_mag, BG_C); /* bg_b * r_in_mag + bg_c */
+    tmp = mad(BG_A, sqr(r_in_mag), tmp); /* bg_a * r_in_mag2 + (bg_b * r_in_mag + bg_c)*/
 
     return tmp;
 }
+
+typedef struct
+{
+    real x_a, x_c;
+    real y_a, y_c;
+    real z_a, z_c;
+    real sigma_sq2_inv;
+    real _pad;
+} SC;
+
+
 
 
 __kernel void probabilities(__global real* restrict bgOut,
                             __global real* restrict streamsOut,
 
-                            __constant AstronomyParameters* ap MAX_CONST(1, AstronomyParameters),
-                            __constant IntegralArea* ia MAX_CONST(1, IntegralArea),
-                            __constant StreamConstants* sc MAX_CONST(NSTREAM, StreamConstants),
-                            __constant real* restrict sg_dx MAX_CONST(CONVOLVE, real),
-
                             __global const __read_only real2* restrict rConsts,
                             __global const __read_only real2* restrict rPts,
                             __global const __read_only real2* restrict lTrigBuf,
                             __global const __read_only real* restrict bSinBuf,
+
+                            __constant SC* sc MAX_CONST(NSTREAM, SC),
+                            __constant real* restrict sg_dx MAX_CONST(CONVOLVE, real),
+
                             const unsigned int extra,
+                            const unsigned int r_steps,
+                            const unsigned int mu_steps,
+                            const unsigned int nu_steps,
                             const real nu_id)
 {
     size_t nu_step = get_global_id(1);
-    size_t mu_step = (get_global_id(0) - extra) % ia->mu_steps;
-    size_t r_step  = (get_global_id(0) - extra) / ia->mu_steps;
+    size_t mu_step = (get_global_id(0) - extra) % mu_steps;
+    size_t r_step  = (get_global_id(0) - extra) / mu_steps;
 
-    if (r_step >= ia->r_steps || mu_step >= ia->mu_steps) /* Avoid out of bounds from roundup */
+    if (r_step >= r_steps || mu_step >= mu_steps) /* Avoid out of bounds from roundup */
         return;
 
-    size_t trigIdx = nu_step * ia->mu_steps + mu_step;
+    size_t trigIdx = nu_step * mu_steps + mu_step;
+
 
     real2 lTrig = lTrigBuf[trigIdx];
     real bSin = bSinBuf[trigIdx];
@@ -144,23 +178,23 @@ __kernel void probabilities(__global real* restrict bgOut,
         /* Currently not used */
         /* Add a quadratic term in g to the Hernquist profile */
         real g = rc.y + sg_dx[i];
-        bg_prob = mad(rPt.y, aux_prob(ap, g), bg_prob);
+        bg_prob = mad(rPt.y, aux_prob(g), bg_prob);
       #endif /* AUX_BG_PROFILE */
 
         #pragma unroll NSTREAM
         for (int j = 0; j < NSTREAM; ++j)
         {
-            real xs = x - X(sc[j].c);
-            real ys = y - Y(sc[j].c);
-            real zs = z - Z(sc[j].c);
+            real xs = x - sc[j].x_c;
+            real ys = y - sc[j].y_c;
+            real zs = z - sc[j].z_c;
 
-            real dotted = X(sc[j].a) * xs;
-            dotted = mad(Y(sc[j].a), ys, dotted);
-            dotted = mad(Z(sc[j].a), zs, dotted);
+            real dotted = sc[j].x_a * xs;
+            dotted = mad(sc[j].y_a, ys, dotted);
+            dotted = mad(sc[j].z_a, zs, dotted);
 
-            xs = mad(dotted, -X(sc[j].a), xs);
-            ys = mad(dotted, -Y(sc[j].a), ys);
-            zs = mad(dotted, -Z(sc[j].a), zs);
+            xs = mad(dotted, -sc[j].x_a, xs);
+            ys = mad(dotted, -sc[j].y_a, ys);
+            zs = mad(dotted, -sc[j].z_a, zs);
 
             real sqrv = xs * xs;
             sqrv = mad(ys, ys, sqrv);
@@ -173,7 +207,7 @@ __kernel void probabilities(__global real* restrict bgOut,
     }
 
     real V_reff_xr_rp3 = nu_id * rc.x;
-    size_t idx = mu_step * ia->r_steps + r_step; /* Index into output buffers */
+    size_t idx = mu_step * r_steps + r_step; /* Index into output buffers */
 
     bg_prob *= V_reff_xr_rp3;
     bgOut[idx] += bg_prob;

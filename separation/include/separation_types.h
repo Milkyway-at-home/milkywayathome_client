@@ -23,7 +23,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "separation_config.h"
 #include "milkyway_math.h"
-#include "separation_kernel_types.h"
 
 #include <stdint.h>
 
@@ -159,6 +158,96 @@ typedef struct
 
     real* streamLikelihoods;
 } SeparationResults;
+
+
+
+
+
+
+#ifndef _MSC_VER
+  #define SEPARATION_ALIGN(x) __attribute__ ((aligned(x)))
+#else
+  #define SEPARATION_ALIGN(x) __declspec(align(x))
+#endif /* _MSC_VER */
+
+
+#ifdef __OPENCL_VERSION__
+
+
+typedef struct
+{
+    real x, y, z, w;
+} mwvector;
+
+#define X(v) ((v).x)
+#define Y(v) ((v).y)
+#define Z(v) ((v).z)
+#define W(v) ((v).w)
+#endif /* __OPENCL_VERSION__ */
+
+
+
+
+typedef struct SEPARATION_ALIGN(128)
+{
+    mwvector a;
+    mwvector c;
+    real sigma_sq2_inv;
+    int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
+} StreamConstants;
+
+
+
+/* Parameter related types */
+
+typedef struct SEPARATION_ALIGN(128)
+{
+    real r_min, r_max, r_step_size;
+    real nu_min, nu_max, nu_step_size;
+    real mu_min, mu_max, mu_step_size;
+    unsigned int r_steps, nu_steps, mu_steps;
+} IntegralArea;
+
+
+/* Kitchen sink of constants, etc. */
+typedef struct SEPARATION_ALIGN(128)
+{
+    /* Constants determined by other parameters */
+    real m_sun_r0;
+    real q_inv;
+    real q_inv_sqr;  /* 1 / q^2 */
+    real r0;
+
+    int convolve;
+    int number_streams;
+    int fast_h_prob;
+    int aux_bg_profile;
+
+    real alpha;
+    real delta;
+    real alpha_delta3;
+    real bg_a, bg_b, bg_c;
+
+    int wedge;
+    real sun_r0;
+    real q;
+    real coeff;
+
+    real total_calc_probs;  /* sum of (r_steps * mu_steps * nu_steps) for all integrals */
+    int number_integrals;
+
+    real exp_background_weight;
+} AstronomyParameters;
+
+typedef struct SEPARATION_ALIGN(16)
+{
+    real sum;
+    real correction;
+} Kahan;
+
+#define ZERO_KAHAN { 0.0, 0.0 }
+
+#define CLEAR_KAHAN(k) { (k).sum = 0.0; (k).correction = 0.0; }
 
 
 #ifdef __cplusplus

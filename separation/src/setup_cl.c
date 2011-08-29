@@ -115,6 +115,9 @@ cl_bool findRunSizes(RunSizes* sizes,
     const cl_ulong r = (cl_ulong) ia->r_steps;
     const cl_ulong mu = (cl_ulong) ia->mu_steps;
 
+    sizes->r = ia->r_steps;
+    sizes->mu = ia->mu_steps;
+    sizes->nu = ia->nu_steps;
     sizes->area = r * mu;
 
     if (r > CL_ULONG_MAX / mu)
@@ -249,17 +252,21 @@ cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* 
     err |= clSetKernelArg(ci->kern, 0, sizeof(cl_mem), &cm->outBg);
     err |= clSetKernelArg(ci->kern, 1, sizeof(cl_mem), &cm->outStreams);
 
-    /* The constant arguments */
-    err |= clSetKernelArg(ci->kern, 2, sizeof(cl_mem), &cm->ap);
-    err |= clSetKernelArg(ci->kern, 3, sizeof(cl_mem), &cm->ia);
-    err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->sc);
-    err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->sg_dx);
+    /* The constant, global arguments */
+    err |= clSetKernelArg(ci->kern, 2, sizeof(cl_mem), &cm->rc);
+    err |= clSetKernelArg(ci->kern, 3, sizeof(cl_mem), &cm->rPts);
+    err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->lTrig);
+    err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->bSin);
 
-    err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->rc);
-    err |= clSetKernelArg(ci->kern, 7, sizeof(cl_mem), &cm->rPts);
-    err |= clSetKernelArg(ci->kern, 8, sizeof(cl_mem), &cm->lTrig);
-    err |= clSetKernelArg(ci->kern, 9, sizeof(cl_mem), &cm->bSin);
-    err |= clSetKernelArg(ci->kern, 10, sizeof(cl_uint), &runSizes->extra);
+
+    /* The __constant arguments */
+    err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->sc);
+    err |= clSetKernelArg(ci->kern, 7, sizeof(cl_mem), &cm->sg_dx);
+
+    err |= clSetKernelArg(ci->kern, 8, sizeof(cl_uint), &runSizes->extra);
+    err |= clSetKernelArg(ci->kern, 9, sizeof(cl_uint), &runSizes->r);
+    err |= clSetKernelArg(ci->kern, 10, sizeof(cl_uint), &runSizes->mu);
+    err |= clSetKernelArg(ci->kern, 11, sizeof(cl_uint), &runSizes->nu);
 
     if (err != CL_SUCCESS)
     {
@@ -316,7 +323,7 @@ static cl_bool separationCheckDevMemory(const DevInfo* di, const SeparationSizes
     size_t totalMem;
 
     totalOut = sizes->outBg + sizes->outStreams;
-    totalConstBuf = sizes->ap + sizes->ia + sizes->sc + sizes->sg_dx;
+    totalConstBuf = sizes->ia + sizes->sc + sizes->sg_dx;
     totalGlobalConst = sizes->lTrig + sizes->bSin + sizes->rPts + sizes->rc;
 
     totalMem = totalOut + totalConstBuf + totalGlobalConst;
@@ -445,6 +452,11 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
                                 "-DR0=%.15f "
                                 "-DSUN_R0=%.15f "
                                 "-DQ_INV_SQR=%.15f "
+
+                                "-DBG_A=%.15f "
+                                "-DBG_B=%.15f "
+                                "-DBG_C=%.15f "
+
                                 "-DUSE_IMAGES=%d ";
 
     const char includeStr[] = "-I%s "
@@ -460,6 +472,10 @@ static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, 
                  ap->r0,
                  ap->sun_r0,
                  ap->q_inv_sqr,
+                 ap->bg_a,
+                 ap->bg_b,
+                 ap->bg_c,
+
 
                  useImages) < 0)
     {
