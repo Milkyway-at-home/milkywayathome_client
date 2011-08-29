@@ -135,8 +135,8 @@ static cl_int readKernelResults(CLInfo* ci,
                                 const cl_uint number_streams)
 {
     cl_int err;
-    real* bgResults;
-    real* streamsTmp;
+    const real* bgResults;
+    const real* streamsTmp;
     size_t resultSize, streamsSize;
 
     resultSize = sizeof(real) * ia->mu_steps * ia->r_steps;
@@ -149,7 +149,7 @@ static cl_int readKernelResults(CLInfo* ci,
 
     es->bgTmp = sumBgResults(bgResults, ia->mu_steps, ia->r_steps);
 
-    err = clEnqueueUnmapMemObject(ci->queue, cm->outBg, bgResults, 0, NULL, NULL);
+    err = clEnqueueUnmapMemObject(ci->queue, cm->outBg, (void*) bgResults, 0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Failed to unmap results buffer", err);
@@ -166,7 +166,7 @@ static cl_int readKernelResults(CLInfo* ci,
 
     sumStreamResults(es->streamTmps, streamsTmp, ia->mu_steps, ia->r_steps, number_streams);
 
-    err = clEnqueueUnmapMemObject(ci->queue, cm->outStreams, streamsTmp, 0, NULL, NULL);
+    err = clEnqueueUnmapMemObject(ci->queue, cm->outStreams, (void*) streamsTmp, 0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Failed to unmap streams buffer", err);

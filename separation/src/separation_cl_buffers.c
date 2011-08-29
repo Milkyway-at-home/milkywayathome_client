@@ -322,7 +322,7 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
     clReleaseMemObject(cm->bSin);
 }
 
-real* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSize)
+const real* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSize)
 {
     cl_int err;
     real* mapOutBg;
@@ -340,7 +340,7 @@ real* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSize)
     return mapOutBg;
 }
 
-real* mapStreamsResults(CLInfo* ci, SeparationCLMem* cm, size_t streamsResultsSize)
+const real* mapStreamsResults(CLInfo* ci, SeparationCLMem* cm, size_t streamsResultsSize)
 {
     cl_int err;
     real* mapOutStreams;
