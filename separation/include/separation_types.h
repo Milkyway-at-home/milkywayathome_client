@@ -124,6 +124,27 @@ typedef struct
     real rPrime;
 } RPrime;
 
+typedef struct
+{
+    real irv_reff_xr_rp3;
+    real gPrime;
+} RConsts;
+
+
+typedef struct
+{
+    real r_point;
+    real qw_r3_N;
+} RPoints;
+
+typedef struct
+{
+    real lCosBCos;
+    real lSinBCos;
+    real bSin;
+    real _pad;
+} LBTrig;
+
 
 
 

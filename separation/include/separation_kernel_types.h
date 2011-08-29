@@ -62,24 +62,6 @@ typedef struct
 
 
 
-#ifndef __OPENCL_VERSION__
-typedef struct
-{
-    real irv_reff_xr_rp3;
-    real gPrime;
-} RConsts;
-
-  #define IRV_REFF_XR_RP3(r) ((r).irv_reff_xr_rp3)
-  #define GPRIME(r) ((r).gPrime)
-#else
-
-typedef real2 RConsts;
-
-  #define IRV_REFF_XR_RP3(r) ((r).x)
-  #define GPRIME(r) ((r).y)
-#endif
-
-
 
 typedef struct SEPARATION_ALIGN(128)
 {
@@ -89,44 +71,6 @@ typedef struct SEPARATION_ALIGN(128)
     int large_sigma;          /* abs(stream_sigma) > SIGMA_LIMIT */
 } StreamConstants;
 
-#ifndef __OPENCL_VERSION__
-typedef struct
-{
-    real r_point;
-    real qw_r3_N;
-} RPoints;
-
-#define R_POINT(r) ((r).r_point)
-#define QW_R3_N(r) ((r).qw_r3_N)
-
-typedef struct
-{
-    real lCosBCos;
-    real lSinBCos;
-    real bSin;
-    real _pad;
-} LBTrig;
-
-#define LCOS_BCOS(x) ((x).lCosBCos)
-#define LSIN_BCOS(x) ((x).lSinBCos)
-#define BSIN(x) ((x).bSin)
-
-#else
-
-/* x = r_point; y = qw_r3_N */
-typedef real2 RPoints;
-
-#define R_POINT(r) ((r).x)
-#define QW_R3_N(r) ((r).y)
-
-
-typedef real4 LBTrig;
-
-#define LCOS_BCOS(l) ((l).x)
-#define LSIN_BCOS(l) ((l).y)
-#define BSIN(l) ((l).z)
-
-#endif /* __OPENCL_VERSION__ */
 
 
 /* Parameter related types */

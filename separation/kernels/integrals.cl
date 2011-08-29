@@ -91,11 +91,10 @@ __kernel void probabilities(__global real* restrict bgOut,
 
                             __constant AstronomyParameters* ap MAX_CONST(1, AstronomyParameters),
                             __constant IntegralArea* ia MAX_CONST(1, IntegralArea),
-
                             __constant StreamConstants* sc MAX_CONST(NSTREAM, StreamConstants),
-                            __constant RConsts* rcs,
                             __constant real* restrict sg_dx MAX_CONST(CONVOLVE, real),
 
+                            __global const __read_only real2* restrict rConsts,
                             __global const __read_only real2* restrict rPts,
                             __global const __read_only real2* restrict lTrigBuf,
                             __global const __read_only real* restrict bSinBuf,
@@ -113,13 +112,15 @@ __kernel void probabilities(__global real* restrict bgOut,
 
     real2 lTrig = lTrigBuf[trigIdx];
     real bSin = bSinBuf[trigIdx];
+    real2 rc = rConsts[r_step];
+
 
     real bg_prob = 0.0;
     real st_probs[NSTREAM] = { 0.0 };
 
     for (int i = 0; i < CONVOLVE; ++i)
     {
-        RPoints rPt = rPts[CONVOLVE * r_step + i];
+        real2 rPt = rPts[CONVOLVE * r_step + i];
 
         real x = mad(rPt.x, lTrig.x, (real) -SUN_R0);
         real y = rPt.x * lTrig.y;
@@ -142,7 +143,7 @@ __kernel void probabilities(__global real* restrict bgOut,
       #if AUX_BG_PROFILE
         /* Currently not used */
         /* Add a quadratic term in g to the Hernquist profile */
-        real g = GPRIME(rcs[r_step]) + sg_dx[i];
+        real g = rc.y + sg_dx[i];
         bg_prob = mad(rPt.y, aux_prob(ap, g), bg_prob);
       #endif /* AUX_BG_PROFILE */
 
@@ -171,7 +172,7 @@ __kernel void probabilities(__global real* restrict bgOut,
         }
     }
 
-    real V_reff_xr_rp3 = nu_id * IRV_REFF_XR_RP3(rcs[r_step]);
+    real V_reff_xr_rp3 = nu_id * rc.x;
     size_t idx = mu_step * ia->r_steps + r_step; /* Index into output buffers */
 
     bg_prob *= V_reff_xr_rp3;

@@ -253,8 +253,9 @@ cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* 
     err |= clSetKernelArg(ci->kern, 2, sizeof(cl_mem), &cm->ap);
     err |= clSetKernelArg(ci->kern, 3, sizeof(cl_mem), &cm->ia);
     err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->sc);
-    err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->rc);
-    err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->sg_dx);
+    err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->sg_dx);
+
+    err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->rc);
     err |= clSetKernelArg(ci->kern, 7, sizeof(cl_mem), &cm->rPts);
     err |= clSetKernelArg(ci->kern, 8, sizeof(cl_mem), &cm->lTrig);
     err |= clSetKernelArg(ci->kern, 9, sizeof(cl_mem), &cm->bSin);
@@ -315,8 +316,8 @@ static cl_bool separationCheckDevMemory(const DevInfo* di, const SeparationSizes
     size_t totalMem;
 
     totalOut = sizes->outBg + sizes->outStreams;
-    totalConstBuf = sizes->ap + sizes->ia + sizes->sc + sizes->rc + sizes->sg_dx;
-    totalGlobalConst = sizes->lTrig + sizes->bSin + sizes->rPts;
+    totalConstBuf = sizes->ap + sizes->ia + sizes->sc + sizes->sg_dx;
+    totalGlobalConst = sizes->lTrig + sizes->bSin + sizes->rPts + sizes->rc;
 
     totalMem = totalOut + totalConstBuf + totalGlobalConst;
     if (totalMem > di->memSize)
@@ -340,7 +341,10 @@ static cl_bool separationCheckDevMemory(const DevInfo* di, const SeparationSizes
         return CL_FALSE;
     }
 
-    if (sizes->lTrig > di->maxMemAlloc || sizes->bSin > di->maxMemAlloc || sizes->rPts > di->maxMemAlloc)
+    if (   sizes->lTrig > di->maxMemAlloc
+        || sizes->bSin > di->maxMemAlloc
+        || sizes->rPts > di->maxMemAlloc
+        || sizes->rc > di->maxMemAlloc)
     {
         warn("A global constant buffer would exceed CL_DEVICE_MAX_MEM_ALLOC_SIZE\n");
         return CL_FALSE;

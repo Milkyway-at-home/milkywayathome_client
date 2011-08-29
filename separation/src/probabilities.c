@@ -570,9 +570,9 @@ static inline mwvector lbr2xyz_2(const AstronomyParameters* ap, real rPoint, LBT
 {
     mwvector xyz;
 
-    xyz.x = mw_mad(rPoint, LCOS_BCOS(lbt), ap->m_sun_r0);
-    xyz.y = rPoint * LSIN_BCOS(lbt);
-    xyz.z = rPoint * BSIN(lbt);
+    xyz.x = mw_mad(rPoint, lbt.lCosBCos, ap->m_sun_r0);
+    xyz.y = rPoint * lbt.lSinBCos;
+    xyz.z = rPoint * lbt.bSin;
 
     return xyz;
 }
