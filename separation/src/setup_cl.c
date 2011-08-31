@@ -258,15 +258,15 @@ cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* 
     err |= clSetKernelArg(ci->kern, 4, sizeof(cl_mem), &cm->lTrig);
     err |= clSetKernelArg(ci->kern, 5, sizeof(cl_mem), &cm->bSin);
 
-
     /* The __constant arguments */
-    err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->sc);
-    err |= clSetKernelArg(ci->kern, 7, sizeof(cl_mem), &cm->sg_dx);
+    err |= clSetKernelArg(ci->kern, 6, sizeof(cl_mem), &cm->ap);
+    err |= clSetKernelArg(ci->kern, 7, sizeof(cl_mem), &cm->sc);
+    err |= clSetKernelArg(ci->kern, 8, sizeof(cl_mem), &cm->sg_dx);
 
-    err |= clSetKernelArg(ci->kern, 8, sizeof(cl_uint), &runSizes->extra);
-    err |= clSetKernelArg(ci->kern, 9, sizeof(cl_uint), &runSizes->r);
-    err |= clSetKernelArg(ci->kern, 10, sizeof(cl_uint), &runSizes->mu);
-    err |= clSetKernelArg(ci->kern, 11, sizeof(cl_uint), &runSizes->nu);
+    err |= clSetKernelArg(ci->kern, 9, sizeof(cl_uint), &runSizes->extra);
+    err |= clSetKernelArg(ci->kern, 10, sizeof(cl_uint), &runSizes->r);
+    err |= clSetKernelArg(ci->kern, 11, sizeof(cl_uint), &runSizes->mu);
+    err |= clSetKernelArg(ci->kern, 12, sizeof(cl_uint), &runSizes->nu);
 
     if (err != CL_SUCCESS)
     {
@@ -323,7 +323,7 @@ static cl_bool separationCheckDevMemory(const DevInfo* di, const SeparationSizes
     size_t totalMem;
 
     totalOut = sizes->outBg + sizes->outStreams;
-    totalConstBuf = sizes->ia + sizes->sc + sizes->sg_dx;
+    totalConstBuf = sizes->ap + sizes->ia + sizes->sc + sizes->sg_dx;
     totalGlobalConst = sizes->lTrig + sizes->bSin + sizes->rPts + sizes->rc;
 
     totalMem = totalOut + totalConstBuf + totalGlobalConst;
@@ -557,6 +557,8 @@ static cl_bool usingILKernelIsAcceptable(const CLInfo* ci, const AstronomyParame
     const DevInfo* di = &ci->di;
     static const cl_int maxILKernelStreams = 4;
 
+    if (!DOUBLEPREC)
+        return CL_FALSE;
     /*
       // If we don't want it, don't use it
       if (clr->disableILKernel)

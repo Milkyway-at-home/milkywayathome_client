@@ -120,13 +120,14 @@ typedef struct
 __kernel void probabilities(__global real* restrict bgOut,
                             __global real* restrict streamsOut,
 
-                            __global const __read_only real2* restrict rConsts,
-                            __global const __read_only real2* restrict rPts,
-                            __global const __read_only real2* restrict lTrigBuf,
-                            __global const __read_only real* restrict bSinBuf,
+                            __global const real2* restrict rConsts,
+                            __global const real2* restrict rPts,
+                            __global const real2* restrict lTrigBuf,
+                            __global const real* restrict bSinBuf,
 
-                            __constant SC* sc MAX_CONST(NSTREAM, SC),
-                            __constant real* restrict sg_dx MAX_CONST(CONVOLVE, real),
+                            __constant real* _ap_consts, /* Placeholder for IL kernel */
+                            __constant SC sc[NSTREAM],
+                            __constant real sg_dx[CONVOLVE],
 
                             const unsigned int extra,
                             const unsigned int r_steps,

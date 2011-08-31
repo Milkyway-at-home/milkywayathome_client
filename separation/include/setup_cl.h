@@ -65,18 +65,20 @@ typedef struct
 typedef struct
 {
     cl_mem outBg;
-    cl_mem outStreams;  /* stream_probs * V * reff_xr_rp3 */
+    cl_mem outStreams;  /* stream_probs */
 
-    /* constant, read only buffers */
-    cl_mem sc;        /* Stream Constants */
-    cl_mem rc;        /* r constants */
+    cl_mem rc;          /* r constants */
     cl_mem rPts;
-    cl_mem sg_dx;
     cl_mem lTrig;
     cl_mem bSin;
+
+    /* constant, read only buffers */
+    cl_mem ap;
+    cl_mem sc;        /* Stream Constants */
+    cl_mem sg_dx;
 } SeparationCLMem;
 
-#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+#define EMPTY_SEPARATION_CL_MEM { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 
 
 cl_int setupSeparationCL(CLInfo* ci,

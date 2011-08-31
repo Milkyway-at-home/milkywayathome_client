@@ -253,6 +253,53 @@ static cl_int createLBTrigBuffer(CLInfo* ci,
     return CL_SUCCESS;
 }
 
+static cl_int createAPBuffer(CLInfo* ci,
+                             SeparationCLMem* cm,
+                             const AstronomyParameters* ap,
+                             const SeparationSizes* sizes,
+                             const cl_mem_flags constBufFlags)
+{
+    cl_int err = CL_SUCCESS;
+    double buf[16];
+    union
+    {
+        double d;
+        cl_uint i[2];
+    } item;
+
+    memset(buf, 0, sizeof(buf));
+
+    buf[0] = 0.0;
+    buf[1] = 0.0;
+
+    item.i[0] = ap->convolve;
+    item.i[1] = ap->number_streams;
+    buf[2] = item.d;
+    buf[3] = 0.0;
+
+    buf[4] = ap->m_sun_r0;
+    buf[5] = ap->r0;
+
+    buf[6] = ap->q_inv_sqr;
+    buf[7] = 0.0;
+
+    buf[8] = ap->bg_a;
+    buf[9] = ap->bg_b;
+
+    buf[10] = ap->bg_c;
+    buf[11] = 0.0;
+
+
+    cm->ap = clCreateBuffer(ci->clctx, constBufFlags, sizeof(buf), (void*) buf, &err);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Error creating astronomy parameters buffer of size "ZU, err, sizes->ap);
+        return err;
+    }
+
+    return CL_SUCCESS;
+}
+
 void calculateSizes(SeparationSizes* sizes, const AstronomyParameters* ap, const IntegralArea* ia)
 {
     sizes->nStream = ap->number_streams;
@@ -266,7 +313,7 @@ void calculateSizes(SeparationSizes* sizes, const AstronomyParameters* ap, const
     sizes->bSin = sizeof(real) * ia->mu_steps * ia->nu_steps;
 
     /* Constant buffer things */
-    sizes->ap = sizeof(AstronomyParameters);
+    sizes->ap = 16 * sizeof(double);
     sizes->ia = sizeof(IntegralArea);
     sizes->sc = 8 * sizeof(real) * ap->number_streams;
     sizes->rc = sizeof(RConsts) * ia->r_steps;
@@ -287,9 +334,12 @@ cl_int createSeparationBuffers(CLInfo* ci,
 
     err |= createOutBgBuffer(ci, cm, sizes);
     err |= createOutStreamsBuffer(ci, cm, sizes);
-    err |= createSCBuffer(ci, cm, sc, sizes, constBufFlags);
+
     err |= createRBuffers(ci, cm, ap, ia, sg, sizes, constBufFlags, useImages);
     err |= createLBTrigBuffer(ci, cm, ap, ia, sizes, constBufFlags);
+
+    err |= createSCBuffer(ci, cm, sc, sizes, constBufFlags);
+    err |= createAPBuffer(ci, cm, ap, sizes, constBufFlags);
 
     return err;
 }
@@ -299,12 +349,14 @@ void releaseSeparationBuffers(SeparationCLMem* cm)
     clReleaseMemObject(cm->outStreams);
     clReleaseMemObject(cm->outBg);
 
-    clReleaseMemObject(cm->sc);
-    clReleaseMemObject(cm->rPts);
     clReleaseMemObject(cm->rc);
-    clReleaseMemObject(cm->sg_dx);
+    clReleaseMemObject(cm->rPts);
     clReleaseMemObject(cm->lTrig);
     clReleaseMemObject(cm->bSin);
+
+    clReleaseMemObject(cm->ap);
+    clReleaseMemObject(cm->sc);
+    clReleaseMemObject(cm->sg_dx);
 }
 
 const real* mapIntegralResults(CLInfo* ci, SeparationCLMem* cm, size_t resultsSize)

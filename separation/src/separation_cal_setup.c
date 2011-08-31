@@ -336,30 +336,30 @@ static CALresult setConstants(SeparationCALMem* cm,
 
     area.size[0] = ia->mu_steps;
     area.size[1] = ia->r_steps;
-    cPtr[0] = area.d;        // cb2[0].xy
+    cPtr[0] = area.d;        // cb1[0].xy
 
     area.size[0] = ia->nu_steps;
     area.size[1] = extra;
-    cPtr[1] = area.d;        // cb2[0].zw
+    cPtr[1] = area.d;        // cb1[0].zw
 
 
     area.size[0] = ap->convolve;
     area.size[1] = ap->number_streams;
-    cPtr[2] = area.d;        // cb2[1].xy
-    cPtr[3] = 0.0;           // cb2[1].zw
+    cPtr[2] = area.d;        // cb1[1].xy
+    cPtr[3] = 0.0;           // cb1[1].zw
 
 
-    cPtr[4] = ap->m_sun_r0;  // cb2[2].xy
-    cPtr[5] = ap->r0;        // cb2[2].zw
+    cPtr[4] = ap->m_sun_r0;  // cb1[2].xy
+    cPtr[5] = ap->r0;        // cb1[2].zw
 
-    cPtr[6] = ap->q_inv_sqr; // cb2[3].xy
-    cPtr[7] = 0.0;           // cb2[3].zw
+    cPtr[6] = ap->q_inv_sqr; // cb1[3].xy
+    cPtr[7] = 0.0;           // cb1[3].zw
 
-    cPtr[8] = ap->bg_a;      // cb2[4].xy
-    cPtr[9] = ap->bg_b;      // cb2[4].zw
+    cPtr[8] = ap->bg_a;      // cb1[4].xy
+    cPtr[9] = ap->bg_b;      // cb1[4].zw
 
-    cPtr[10] = ap->bg_c;     // cb2[5].xy
-    cPtr[11] = 0.0;          // cb2[5].zw
+    cPtr[10] = ap->bg_c;     // cb1[5].xy
+    cPtr[11] = 0.0;          // cb1[5].zw
 
     cPtr[12] = 0.0;
     cPtr[13] = 0.0;

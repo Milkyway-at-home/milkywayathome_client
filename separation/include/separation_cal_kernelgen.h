@@ -31,6 +31,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define FLEXIBLE_KERNEL 0
 #define IL_MAX_STREAMS 4
 
+#define OPENCL_KERNEL 0
+
 
 #ifdef __cplusplus
 extern "C" {

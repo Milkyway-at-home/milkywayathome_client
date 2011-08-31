@@ -128,11 +128,11 @@ static double2 kahanAdd(double2 kSum, double1 x)
 /* warning: sizeof(double2) etc. will not work as expected! */
 #if USE_KAHAN
 typedef double2 SumType;
-#define SIZEOF_SUM_TYPE 16
+#define SIZEOF_SUM_TYPE uint1(16)
 #else
 
 typedef double1 SumType;
-#define SIZEOF_SUM_TYPE 8
+#define SIZEOF_SUM_TYPE uint1(8)
 #endif
 
 
@@ -140,30 +140,57 @@ typedef double1 SumType;
 static void createSeparationKernelCore(CALuint maxStreams)
 {
     CALuint j;
+
+/* Variables/kernel arguments etc. */
+#if OPENCL_KERNEL
+    named_variable<uint1> extra("cb1[9].x");
+    named_variable<uint1> rSteps("cb1[10].x");
+    named_variable<uint1> muSteps("cb1[11].x");
+    named_variable<uint1> nuSteps("cb1[12].x");
+
+    named_variable<uint1> nuStep("cb0[9].x");
+    named_variable<double1> nuId("cb1[13].xy");
+
+    named_variable<uint1> _nConvolve("cb4[1].x");
+    named_variable<uint1> _nStream("cb4[1].y");
+
+    named_variable<double1> m_sun_r0("cb4[2].xy");
+    named_variable<double1> r0("cb4[3].zw");
+    named_variable<double1> q_inv_sqr("cb4[4].xy");
+#else
     named_variable<uint1> nuStep("cb0[0].x");
     named_variable<double1> nuId("cb0[0].zw");
 
-
-    /* cb2[] */
-    named_variable<uint1> muSteps("cb1[0].x");
-    named_variable<uint1> rSteps("cb1[0].y");
-    named_variable<uint1> nuSteps("cb1[0].z");
     named_variable<uint1> extra("cb1[0].w");
-
+    named_variable<uint1> rSteps("cb1[0].y");
+    named_variable<uint1> muSteps("cb1[0].x");
+    named_variable<uint1> nuSteps("cb1[0].z");
 
     named_variable<uint1> _nConvolve("cb1[1].x");
     named_variable<uint1> _nStream("cb1[1].y");
 
     named_variable<double1> m_sun_r0("cb1[2].xy");
     named_variable<double1> r0("cb1[2].zw");
-
     named_variable<double1> q_inv_sqr("cb1[3].xy");
+#endif /* OPENCL_KERNEL */
 
-    /*
-    named_variable<double1> bg_a("cb1[4].xy");
-    named_variable<double1> bg_b("cb1[4].zw");
-    named_variable<double1> bg_c("cb1[5].xy");
-    */
+
+/* Buffer base addresses */
+#if OPENCL_KERNEL
+    named_variable<uint1> bgOutBase("cb1[0].x");
+    named_variable<uint1> streamsOutBase("cb1[1].x");
+    named_variable<uint1> rConstsBase("cb1[2].x");
+    named_variable<uint1> rPtsBase("cb1[3].x");
+    named_variable<uint1> lTrigBase("cb1[4].x");
+    named_variable<uint1> bSinBase("cb1[5].x");
+#else
+    uint1 bgOutBase = uint1(0);
+    uint1 streamsOutBase = uint1(0);
+    uint1 rConstsBase = uint1(0);
+    uint1 rPtsBase = uint1(0);
+    uint1 lTrigBase = uint1(0);
+    uint1 bSinBase = uint1(0);
+#endif /* OPENCL_KERNEL */
 
     const uint1 nConvolve = _nConvolve;
     const uint1 nStream = _nStream;
@@ -182,16 +209,11 @@ static void createSeparationKernelCore(CALuint maxStreams)
     const uint1 rStep = (get_global_id(0) - extra) / muSteps;
 
     uint1 inBounds = (muStep < muSteps) && (rStep < rSteps);
+
+    const uint1 sizeOfDouble2 = uint1(2 * sizeof(CALdouble));
+    const uint1 sizeOfDouble1 = uint1(sizeof(CALdouble));
     il_if (inBounds)
     {
-        uint1 trigIdx = nuStep * muSteps + muStep;
-
-        emit_comment("read lTrig");
-        const double2 lTrig = lTrigBuf[2 * sizeof(CALdouble) * trigIdx];
-
-        emit_comment("Read bSin");
-        const double1 bSin = bTrigBuf[sizeof(CALdouble) * trigIdx];
-
         /* 0 integrals and get stream constants */
         double1 bg_int = double1(0.0);
         std::vector<double1> streamIntegrals;
@@ -201,12 +223,22 @@ static void createSeparationKernelCore(CALuint maxStreams)
             streamIntegrals.push_back(double1(0.0));
 
 
-        uint1 i = uint1(0);
+        const uint1 rPtsOffset = sizeOfDouble2 * nConvolve * rStep;
+        uint1 i = rPtsOffset + rPtsBase;
+        const uint1 rPtsMax = i + sizeOfDouble2 * nConvolve;
+
+        uint1 trigIdx = nuStep * muSteps + muStep;
+
+        uint1 lTrigIdx = sizeOfDouble2 * trigIdx + lTrigBase;
+        uint1 bSinIdx = sizeOfDouble1 * trigIdx + bSinBase;
+
+        emit_comment("Read Trig");
+        const double2 lTrig = lTrigBuf[lTrigIdx];
+        const double1 bSin = bTrigBuf[bSinIdx];
 
         il_whileloop
         {
-            uint1 rPtIdx = nConvolve * rStep + i;
-            double2 rPt = rPts[2 * sizeof(CALdouble) * rPtIdx];
+            double2 rPt = rPts[i];
 
             emit_comment("coordinate conversion");
             double1 x = mad(rPt.x(), lTrig.x(), m_sun_r0);
@@ -225,18 +257,6 @@ static void createSeparationKernelCore(CALuint maxStreams)
 
             emit_comment("qw_r3_N / (rg *rs^3)");
             bg_int += div_custom(rPt.y(), rg * rs * rs * rs);
-
-            /*
-            //if (ap->aux_bg_profile)
-            if (0) // We can just fall back to OpenCL from source if this actually gets used
-            {
-
-            double1 r_in_mag = sg_dx[cast_type<int1>(i.y())] + rConsts[pos.x()].y();
-            double1 tmp = mad(bg_b, r_in_mag, bg_c);
-            tmp = mad(bg_a, r_in_mag * r_in_mag, tmp);
-            bg_int = mad(tmp, rPt.y(), bg_int);
-            }
-            */
 
             emit_comment("stream loops");
             for (j = 0; j < maxStreams; ++j)
@@ -292,18 +312,18 @@ static void createSeparationKernelCore(CALuint maxStreams)
             }
             emit_comment("End streams");
 
-            i += uint1(1);
-            il_breakc(i >= nConvolve);
+            i += sizeOfDouble2;
+            il_breakc(i >= rPtsMax);
         }
         il_endloop
 
 
-        double1 V_reff_xr_rp3 = nuId * rConsts[2 * sizeof(CALdouble) * rStep].x();
+        double1 V_reff_xr_rp3 = nuId * rConsts[sizeOfDouble2 * rStep + rConstsBase].x();
         uint1 idx = muStep * rSteps + rStep;
 
         emit_comment("read old values");
 
-        SumType bgRead = bgOut[SIZEOF_SUM_TYPE * idx];
+        SumType bgRead = bgOut[SIZEOF_SUM_TYPE * idx + bgOutBase];
         std::vector<SumType> streamRead;
         for (j = 0; j < maxStreams; ++j)
         {
@@ -313,7 +333,7 @@ static void createSeparationKernelCore(CALuint maxStreams)
             il_if (nStream > uint1(j))
           #endif
             {
-                val = streamsOut[SIZEOF_SUM_TYPE * (nStream * idx + uint1(j))];
+                val = streamsOut[SIZEOF_SUM_TYPE * (nStream * idx + uint1(j)) + streamsOutBase];
             }
           #if FLEXIBLE_KERNEL
             il_endif
@@ -368,10 +388,8 @@ static void createSeparationKernelCore(CALuint maxStreams)
     il_endif
 }
 
-static int separationKernelHeader(CALuint maxStreams, std::stringstream& code)
+static int separationKernelHeader(std::stringstream& code, CALuint maxStreams)
 {
-    CALuint numRegSgDx;
-
     if (4 * maxStreams > 1024)
     {
         warn("Too many streams (%u)\n", maxStreams);
@@ -391,7 +409,7 @@ std::string createSeparationIntegralKernel(CALuint device, CALuint maxStreams)
 {
     std::stringstream code;
 
-    if (separationKernelHeader(maxStreams, code))
+    if (separationKernelHeader(code, maxStreams))
         return "";
 
     Source::begin(device);
@@ -412,5 +430,4 @@ char* separationIntegralKernelSrc(CALuint device, CALuint maxStreams)
     std::string src = createSeparationIntegralKernel(device, maxStreams);
     return strdup(src.c_str());
 }
-
 

@@ -118,7 +118,7 @@ static cl_int setNuKernelArgs(CLInfo* ci, const IntegralArea* ia, const cl_uint 
      * enough threads to hide the horrible latency of the other
      * required reads. */
     nuid = calcNuStep(ia, nu_step);
-    err = clSetKernelArg(ci->kern, 12, sizeof(real), &nuid.id);
+    err = clSetKernelArg(ci->kern, 13, sizeof(real), &nuid.id);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error setting nu_id argument for step %u", err, nu_step);
