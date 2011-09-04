@@ -52,5 +52,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define CHECKPOINT_FILE "separation_checkpoint"
 #define CHECKPOINT_FILE_TMP "separation_checkpoint_tmp"
 
+#define MAX_CONVOLVE 256
+
 #endif /* _SEPARATION_CONSTANTS_H_ */
 

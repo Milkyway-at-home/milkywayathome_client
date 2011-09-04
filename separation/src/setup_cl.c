@@ -153,7 +153,6 @@ cl_bool findRunSizes(RunSizes* sizes,
     /* Since we don't use any workgroup features, it makes sense to
      * use the wavefront size as the workgroup size */
     sizes->local[0] = di->warpSize;
-    sizes->local[1] = 1;
 
 
     /* For maximum efficiency, we want global work sizes to be multiples of
@@ -229,7 +228,6 @@ cl_bool findRunSizes(RunSizes* sizes,
     }
 
     sizes->global[0] = sizes->chunkSize;
-    sizes->global[1] = 1;
 
     printRunSizes(sizes, ia);
 

@@ -289,7 +289,6 @@ static cl_int createAPBuffer(CLInfo* ci,
     buf[10] = ap->bg_c;
     buf[11] = 0.0;
 
-
     cm->ap = clCreateBuffer(ci->clctx, constBufFlags, sizeof(buf), (void*) buf, &err);
     if (err != CL_SUCCESS)
     {

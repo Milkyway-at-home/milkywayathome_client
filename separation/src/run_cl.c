@@ -66,15 +66,15 @@ static void sumStreamResults(real* streamResults,
 }
 
 static cl_int enqueueIntegralKernel(CLInfo* ci,
-                                    const size_t offset[],
-                                    const size_t global[],
-                                    const size_t local[])
+                                    const size_t offset[1],
+                                    const size_t global[1],
+                                    const size_t local[1])
 {
     cl_int err;
 
     err = clEnqueueNDRangeKernel(ci->queue,
                                  ci->kern,
-                                 2,
+                                 1,
                                  offset, global, local,
                                  0, NULL, NULL);
     if (err != CL_SUCCESS)
@@ -119,6 +119,13 @@ static cl_int setNuKernelArgs(CLInfo* ci, const IntegralArea* ia, const cl_uint 
      * required reads. */
     nuid = calcNuStep(ia, nu_step);
     err = clSetKernelArg(ci->kern, 13, sizeof(real), &nuid.id);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Error setting nu_id argument for step %u", err, nu_step);
+        return err;
+    }
+
+    err = clSetKernelArg(ci->kern, 14, sizeof(cl_uint), &nu_step);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error setting nu_id argument for step %u", err, nu_step);
@@ -180,7 +187,7 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
 {
     cl_uint i;
     cl_int err = CL_SUCCESS;
-    size_t offset[2];
+    size_t offset[1];
 
     err = setNuKernelArgs(ci, ia, nu_step);
     if (err != CL_SUCCESS)
@@ -190,9 +197,9 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
     }
 
     offset[0] = 0;
-    offset[1] = nu_step;
     for (i = 0; i < runSizes->nChunk && err == CL_SUCCESS; ++i)
     {
+
         mw_begin_critical_section();
         err = enqueueIntegralKernel(ci, offset, runSizes->global, runSizes->local);
         if (err == CL_SUCCESS)
@@ -202,6 +209,7 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
             if (err != CL_SUCCESS)
                 mwCLWarn("Failed to finish", err);
         }
+
 
         mw_end_critical_section();
 

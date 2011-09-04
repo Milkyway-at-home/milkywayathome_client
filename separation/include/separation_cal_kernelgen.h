@@ -30,6 +30,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 /* Create a flexible kernel that can handle 0 .. IL_MAX_STREAMS, but is ~10% slower (at 3 streams) */
 #define FLEXIBLE_KERNEL 0
 #define IL_MAX_STREAMS 4
+#define IL_MAX_CONVOLVE 256
 
 #define OPENCL_KERNEL 0
 

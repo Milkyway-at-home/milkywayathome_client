@@ -130,10 +130,22 @@ static double2 kahanAdd(double2 kSum, double1 x)
 typedef double2 SumType;
 #define SIZEOF_SUM_TYPE uint1(16)
 #else
-
 typedef double1 SumType;
 #define SIZEOF_SUM_TYPE uint1(8)
 #endif
+
+static uint1 get_global_id0_with_offset()
+{
+    if (OPENCL_KERNEL)
+    {
+        named_variable<uint1> offset0("cb0[6].x");
+        return get_global_id(0) + offset0;
+    }
+    else /* Doesn't have / only sort of makes sense */
+    {
+        return get_global_id(0);
+    }
+}
 
 
 /* For reference: ATI application register usage in 1, 2, 3 stream cases: 13, 19, 25 respectively */
@@ -148,32 +160,31 @@ static void createSeparationKernelCore(CALuint maxStreams)
     named_variable<uint1> muSteps("cb1[11].x");
     named_variable<uint1> nuSteps("cb1[12].x");
 
-    named_variable<uint1> nuStep("cb0[9].x");
     named_variable<double1> nuId("cb1[13].xy");
+    named_variable<uint1> nuStep("cb1[14].x");
 
-    named_variable<uint1> _nConvolve("cb4[1].x");
-    named_variable<uint1> _nStream("cb4[1].y");
+    named_variable<uint1> _nConvolve("cb3[1].x");
+    named_variable<uint1> _nStream("cb3[1].y");
 
-    named_variable<double1> m_sun_r0("cb4[2].xy");
-    named_variable<double1> r0("cb4[3].zw");
-    named_variable<double1> q_inv_sqr("cb4[4].xy");
+    named_variable<double1> m_sun_r0("cb3[2].xy");
+    named_variable<double1> r0("cb3[2].zw");
+    named_variable<double1> q_inv_sqr("cb3[3].xy");
 #else
     named_variable<uint1> nuStep("cb0[0].x");
     named_variable<double1> nuId("cb0[0].zw");
 
-    named_variable<uint1> extra("cb1[0].w");
-    named_variable<uint1> rSteps("cb1[0].y");
-    named_variable<uint1> muSteps("cb1[0].x");
-    named_variable<uint1> nuSteps("cb1[0].z");
+    named_variable<uint1> extra("cb1[9].x");
+    named_variable<uint1> rSteps("cb1[10].y");
+    named_variable<uint1> muSteps("cb1[11].z");
+    named_variable<uint1> nuSteps("cb1[12].w");
 
-    named_variable<uint1> _nConvolve("cb1[1].x");
-    named_variable<uint1> _nStream("cb1[1].y");
+    named_variable<uint1> _nConvolve("cb3[1].x");
+    named_variable<uint1> _nStream("cb3[1].y");
 
     named_variable<double1> m_sun_r0("cb1[2].xy");
     named_variable<double1> r0("cb1[2].zw");
     named_variable<double1> q_inv_sqr("cb1[3].xy");
 #endif /* OPENCL_KERNEL */
-
 
 /* Buffer base addresses */
 #if OPENCL_KERNEL
@@ -195,6 +206,15 @@ static void createSeparationKernelCore(CALuint maxStreams)
     const uint1 nConvolve = _nConvolve;
     const uint1 nStream = _nStream;
 
+#if OPENCL_KERNEL
+    uav_raw<SumType> bgOut(11);
+    uav_raw<SumType> streamsOut(11);
+
+    uav_raw<double2> rPts(11);
+    uav_raw<double2> rConsts(11);
+    uav_raw<double2> lTrigBuf(11);
+    uav_raw<double1> bTrigBuf(11);
+#else
     uav_raw<SumType> bgOut(0);
     uav_raw<SumType> streamsOut(1);
 
@@ -202,16 +222,17 @@ static void createSeparationKernelCore(CALuint maxStreams)
     uav_raw<double2> rConsts(3);
     uav_raw<double2> lTrigBuf(4);
     uav_raw<double1> bTrigBuf(5);
+#endif
 
-    //const uint1 nuStep = get_global_id(1);
-
-    const uint1 muStep = (get_global_id(0) - extra) % muSteps;
-    const uint1 rStep = (get_global_id(0) - extra) / muSteps;
-
-    uint1 inBounds = (muStep < muSteps) && (rStep < rSteps);
+    const uint1 gid = get_global_id0_with_offset() - extra;
+    const uint1 muStep = gid % muSteps;
+    const uint1 rStep = gid / muSteps;
 
     const uint1 sizeOfDouble2 = uint1(2 * sizeof(CALdouble));
     const uint1 sizeOfDouble1 = uint1(sizeof(CALdouble));
+
+    uint1 inBounds = (rStep < rSteps) && (muStep < muSteps);
+
     il_if (inBounds)
     {
         /* 0 integrals and get stream constants */
@@ -268,16 +289,16 @@ static void createSeparationKernelCore(CALuint maxStreams)
               #endif
                 {
                     // a.x, c.x
-                    named_variable<double2> streamX(str(format("cb2[%u]") % (4 * j + 0)));
+                    named_variable<double2> streamX(str(format("cb4[%u]") % (4 * j + 0)));
 
                     // a.y, c.y
-                    named_variable<double2> streamY(str(format("cb2[%u]") % (4 * j + 1)));
+                    named_variable<double2> streamY(str(format("cb4[%u]") % (4 * j + 1)));
 
                     // a.z, c.z
-                    named_variable<double2> streamZ(str(format("cb2[%u]") % (4 * j + 2)));
+                    named_variable<double2> streamZ(str(format("cb4[%u]") % (4 * j + 2)));
 
                     // sigma_sq2_inv, unused
-                    named_variable<double1> sigma_sq2_inv(str(format("cb2[%u].xy") % (4 * j + 3)));
+                    named_variable<double1> sigma_sq2_inv(str(format("cb4[%u].xy") % (4 * j + 3)));
 
                     emit_comment("x - c");
                     double1 xs = x - streamX.y();
@@ -317,9 +338,8 @@ static void createSeparationKernelCore(CALuint maxStreams)
         }
         il_endloop
 
-
-        double1 V_reff_xr_rp3 = nuId * rConsts[sizeOfDouble2 * rStep + rConstsBase].x();
         uint1 idx = muStep * rSteps + rStep;
+        double1 V_reff_xr_rp3 = nuId * rConsts[sizeOfDouble2 * rStep + rConstsBase].x();
 
         emit_comment("read old values");
 
@@ -369,7 +389,7 @@ static void createSeparationKernelCore(CALuint maxStreams)
       #endif /* USE_KAHAN */
 
         emit_comment("Output");
-        bgOut[SIZEOF_SUM_TYPE * idx] = bg_int;
+        bgOut[SIZEOF_SUM_TYPE * idx + bgOutBase] = bg_int;
 
         for (j = 0; j < maxStreams; ++j)
         {
@@ -377,7 +397,7 @@ static void createSeparationKernelCore(CALuint maxStreams)
             il_if (nStream > uint1(j))
           #endif
             {
-                streamsOut[SIZEOF_SUM_TYPE * (nStream * idx + uint1(j))] = streamIntegrals[j];
+                streamsOut[SIZEOF_SUM_TYPE * (nStream * idx + uint1(j)) + streamsOutBase] = streamIntegrals[j];
             }
           #if FLEXIBLE_KERNEL
             il_endif
@@ -396,11 +416,23 @@ static int separationKernelHeader(std::stringstream& code, CALuint maxStreams)
         return 1;
     }
 
+
+#if OPENCL_KERNEL
+    code << "il_cs_2_0\n";
+    code << format("dcl_num_thread_per_group %i\n") % 64;
+    code << "dcl_cb cb0[10]  ; Constant buffer that holds ABI data\n";
+    code << "dcl_cb cb1[15]  ; Kernel arguments\n";
+    code << "dcl_cb cb2[72]  ; I'm guessing the math constants AMD uses\n";
+    code << "dcl_cb cb3[8]   ; ap constants\n";
+    code << format("dcl_cb cb4[%i]  ; stream constants\n") % (4 * maxStreams);
+    code << format("dcl_cb cb5[%i] ; sg_dx\n") % (IL_MAX_CONVOLVE / 2);
+#else
     code << "il_cs\n";
     code << format("dcl_num_thread_per_group %i\n") % 64;
     code << "dcl_cb cb0[1]\n";
     code << "dcl_cb cb1[8]\n";
     code << format("dcl_cb cb2[%u]\n") % (4 * maxStreams);
+#endif /* OPENCL_KERNEL */
 
     return 0;
 }
@@ -419,6 +451,12 @@ std::string createSeparationIntegralKernel(CALuint device, CALuint maxStreams)
     Source::end();
 
     Source::emitHeader(code);
+
+  #if OPENCL_KERNEL
+    /* This must follow the UAV declaration, and CAL++ seems to be missing it. */
+    code << "dcl_arena_uav_id(8)\n";
+  #endif
+
     Source::emitCode(code);
 
     return code.str();

@@ -86,7 +86,7 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
     ap->bg_b = bgp->b;
     ap->bg_c = bgp->c;
 
-    if (ap->convolve == 0 || ap->convolve > 256 || !mwEven(ap->convolve))
+    if (ap->convolve == 0 || ap->convolve > MAX_CONVOLVE || !mwEven(ap->convolve))
     {
         warn("convolve (%u) must be > 0, <= 256 and even\n", ap->convolve);
         return 1;

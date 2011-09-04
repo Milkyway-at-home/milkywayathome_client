@@ -30,6 +30,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 #endif /* cl_amd_fp64 */
 
+#define MAX_CONVOLVE 256
+
 
 #if DOUBLEPREC
 typedef double real;
@@ -117,6 +119,7 @@ typedef struct
 
 
 
+/* Be careful of changing the arguments. It will most likely break the IL kernel */
 __kernel void probabilities(__global real* restrict bgOut,
                             __global real* restrict streamsOut,
 
@@ -125,22 +128,30 @@ __kernel void probabilities(__global real* restrict bgOut,
                             __global const real2* restrict lTrigBuf,
                             __global const real* restrict bSinBuf,
 
-                            __constant real* _ap_consts, /* Placeholder for IL kernel */
-                            __constant SC sc[NSTREAM],
-                            __constant real sg_dx[CONVOLVE],
+
+                            /* Placeholder for IL kernel */
+                            __constant real* _ap_consts __attribute__((max_constant_size(16 * sizeof(real)))),
+
+                            __constant SC sc[NSTREAM] __attribute__((max_constant_size(NSTREAM * sizeof(SC)))),
+                            __constant real sg_dx[CONVOLVE] __attribute__((max_constant_size(256 * sizeof(real)))),
 
                             const unsigned int extra,
                             const unsigned int r_steps,
                             const unsigned int mu_steps,
                             const unsigned int nu_steps,
-                            const real nu_id)
+                            const real nu_id,
+                            const unsigned int nu_step)
 {
-    size_t nu_step = get_global_id(1);
-    size_t mu_step = (get_global_id(0) - extra) % mu_steps;
-    size_t r_step  = (get_global_id(0) - extra) / mu_steps;
+    size_t gid = get_global_id(0) - extra;
+    size_t mu_step = gid % mu_steps;
+    size_t r_step  = gid / mu_steps;
 
     if (r_step >= r_steps || mu_step >= mu_steps) /* Avoid out of bounds from roundup */
         return;
+
+
+//    bgOut[mu_step * r_steps + r_step] = 1337.0;
+//    return;
 
     size_t trigIdx = nu_step * mu_steps + mu_step;
 
