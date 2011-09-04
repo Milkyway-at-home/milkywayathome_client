@@ -140,7 +140,11 @@ void* mwCallocA(size_t count, size_t size);
 #define stringDefault(s, d) ((s) = (s) ? (s) : strdup((d)))
 
 char* mwReadFile(const char* filename);
+char* mwReadFileWithSize(const char* filename, size_t* sizeOut);
+
 char* mwFreadFile(FILE* f, const char* filename);
+char* mwFreadFileWithSize(FILE* f, const char* filename, size_t* sizeOut);
+
 int mwWriteFile(const char* filename, const char* str);
 
 double mwGetTime();

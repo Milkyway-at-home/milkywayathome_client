@@ -163,7 +163,7 @@ static char* fcloseVerbose(FILE* f, const char* err)
     return NULL;
 }
 
-char* mwFreadFile(FILE* f, const char* filename)
+char* mwFreadFileWithSize(FILE* f, const char* filename, size_t* sizeOut)
 {
     long fsize;
     size_t readSize;
@@ -199,13 +199,27 @@ char* mwFreadFile(FILE* f, const char* filename)
 
     fcloseVerbose(f, "Closing read file");
 
+    if (sizeOut)
+        *sizeOut = readSize;
+
     return buf;
+}
+
+char* mwFreadFile(FILE* f, const char* filename)
+{
+    return mwFreadFileWithSize(f, filename, NULL);
+}
+
+char* mwReadFileWithSize(const char* filename, size_t* sizeOut)
+{
+    return mwFreadFileWithSize(mw_fopen(filename, "rb"), filename, sizeOut);
 }
 
 char* mwReadFile(const char* filename)
 {
-    return mwFreadFile(mw_fopen(filename, "rb"), filename);
+    return mwFreadFileWithSize(mw_fopen(filename, "rb"), filename, NULL);
 }
+
 
 int mwWriteFile(const char* filename, const char* str)
 {
