@@ -69,9 +69,7 @@ typedef struct
     int magicFactor;
     int nonResponsive;
     double targetFrequency;
-    int pollingMode;
     int disableGPUCheckpointing;
-    double waitFactor;
 
     MWPriority processPriority;
     int setPriority;
@@ -94,19 +92,15 @@ typedef struct
 #endif /* _WIN32 */
 
 #define DEFAULT_NON_RESPONSIVE FALSE
-#define DEFAULT_POLLING_MODE 0
 #define DEFAULT_TARGET_FREQUENCY 30.0
 #define DEFAULT_DISABLE_GPU_CHECKPOINTING 0
-#define DEFAULT_GPU_WAIT_FACTOR 0.8
 
 
 #define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL,           \
                                  0, FALSE, FALSE, FALSE, 0, FALSE, FALSE,      \
                                  UINT_MAX, 0, 0, DEFAULT_NON_RESPONSIVE,       \
                                  DEFAULT_TARGET_FREQUENCY,                     \
-                                 DEFAULT_POLLING_MODE,                         \
                                  DEFAULT_DISABLE_GPU_CHECKPOINTING,            \
-                                 DEFAULT_GPU_WAIT_FACTOR,                      \
                                  0, FALSE,                                     \
                                  FALSE, FALSE, FALSE, FALSE, FALSE,            \
                                  FALSE                                         \

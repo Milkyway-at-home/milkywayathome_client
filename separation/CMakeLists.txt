@@ -55,8 +55,6 @@ endif()
 option(SEPARATION_STATIC "Build separation as fully static binary" OFF)
 mark_as_advanced(SEPARATION_STATIC)
 
-option(SEPARATION_CAL "Use CAL++ voodoo" OFF)
-
 #FIXME: Still need to make it re-inline if kernel changed
 cmake_dependent_option(SEPARATION_INLINE_KERNEL "Inline the CL kernel" ON
                          "SEPARATION_OPENCL" OFF)
@@ -88,22 +86,14 @@ if(NOT BOINC_APPLICATION AND SEPARATION_GRAPHICS)
   set(SEPARATION_GRAPHICS OFF)
 endif()
 
-if(SEPARATION_CAL AND (NOT CAL++_FOUND OR NOT CAL_FOUND))
-  message(FATAL_ERROR "Separation CAL was requested, but CAL or CAL++ not found.")
-endif()
-
 if(SEPARATION_OPENCL AND NOT OPENCL_FOUND)
   message(FATAL_ERROR "Separation OpenCL was requested, but OpenCL not found.")
 else()
   include_directories(${OPENCL_DIRECTORIES})
 endif()
 
-if(SEPARATION_OPENCL AND SEPARATION_CAL)
-  message(FATAL_ERROR "Can only choose one of OpenCL or CAL at a time")
-endif()
 
-
-if(SEPARATION_CAL OR SEPARATION_OPENCL)
+if(SEPARATION_OPENCL)
   set(SEPARATION_GPU 1)
 endif()
 
@@ -144,7 +134,6 @@ message("Separation build:")
 message("   Double precision:    ${DOUBLEPREC}")
 message("   Separation crlibm:   ${SEPARATION_CRLIBM}")
 message("   Separation OpenCL:   ${SEPARATION_OPENCL}")
-message("   Separation CAL:      ${SEPARATION_CAL}")
 print_libs()
 print_separator()
 
@@ -156,13 +145,6 @@ set(cl_source_list src/separation_cl_buffers.c
                    src/separation_binaries.c
                    src/setup_cl.c
                    src/run_cl.c)
-
-set(cal_source_list #src/separation_cal.cpp
-                    src/separation_cal_kernelgen.cpp
-                    src/separation_cal_setup.c
-                    src/separation_cal_run.c
-                    src/show_cal_types.c)
-
 
 set(graphics_src_list src/separation_graphics.cc)
 set(graphics_hdr_list include/separation_graphics.h)
@@ -204,13 +186,6 @@ set(separation_cl_headers include/setup_cl.h
                           include/separation_cl_defs.h
                           include/separation_cl_buffers.h)
 
-set(separation_cal_headers include/separation_cal.h
-                           include/separation_cal_kernelgen.h
-                           include/separation_cal_types.h
-                           include/separation_cal_setup.h
-                           include/separation_cal_run.h
-                           include/show_cal_types.h)
-
 if(SEPARATION_GRAPHICS)
   list(APPEND lib_source_file_list ${graphics_src_list})
   list(APPEND separation_headers ${graphics_hdr_list})
@@ -242,11 +217,6 @@ if(SEPARATION_OPENCL)
     add_library(all_in_one_library STATIC "${SEPARATION_INLINE_KERNEL_FILE}")
     list(APPEND separation_link_libs all_in_one_library)
   endif()
-elseif(SEPARATION_CAL)
-  include_directories(${Boost_INCLUDE_DIR})
-
-  list(APPEND lib_source_file_list ${cal_source_list})
-  list(APPEND separation_headers ${separation_cal_headers})
 endif()
 
 list(APPEND separation_link_libs milkyway milkyway_lua)
@@ -276,12 +246,6 @@ list(APPEND exe_link_libs ${SEPARATION_LIBM_LIBRARY})
 if(SEPARATION_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
   list(APPEND exe_link_libs milkyway_cl ${OPENCL_LIBRARIES})
-elseif(SEPARATION_CAL)
-  include_directories(${ATICAL_INCLUDE_DIR})
-  include_directories(${ATICAL_INCLUDE_DIR}/CAL)
-  include_directories(${CAL++_INCLUDE_DIR})
-  include_directories(${Boost_INCLUDE_DIR})
-  list(APPEND exe_link_libs ${ATICALCL_LIBRARY} ${ATICALRT_LIBRARY})
 endif()
 
 set(separation_main_src src/separation_main.c)
@@ -298,8 +262,6 @@ if(SEPARATION_OPENCL)
   else()
     set(CL_PLAN_CLASS "opencl")
   endif()
-elseif(SEPARATION_CAL)
-  set(CL_PLAN_CLASS "ati14")
 else()
   set(CL_PLAN_CLASS "")
 endif()

@@ -147,7 +147,7 @@ static const SeparationVersionHeader versionHeader =
     SEPARATION_VERSION_MAJOR,
     SEPARATION_VERSION_MINOR,
     SEPARATION_OPENCL,
-    SEPARATION_CAL
+    FALSE
 };
 
 
@@ -156,12 +156,12 @@ static int versionMismatch(const SeparationVersionHeader* v)
     if (   v->major != SEPARATION_VERSION_MAJOR
         || v->minor != SEPARATION_VERSION_MINOR
         || v->cl    != SEPARATION_OPENCL
-        || v->cal   != SEPARATION_CAL)
+        || v->cal   != FALSE)
     {
         warn("Checkpoint version does not match:\n"
-             "  Expected %d.%d, OpenCL = %d, CAL++ = %d,\n"
+             "  Expected %d.%d, OpenCL = %d, CAL++ = 0,\n"
              "  Got %d.%d, OpenCL = %d, CAL++ = %d\n",
-             SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR, SEPARATION_OPENCL, SEPARATION_CAL,
+             SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR, SEPARATION_OPENCL,
              v->major, v->minor, v->cl, v->cal);
         return 1;
     }

@@ -184,7 +184,6 @@ static cl_int createRBuffers(CLInfo* ci,
     return CL_SUCCESS;
 }
 
-/* Might be more convenient to split l and b stuff for CAL */
 static void getSplitLBTrig(const AstronomyParameters* ap,
                            const IntegralArea* ia,
                            LTrigPair** lTrigOut,

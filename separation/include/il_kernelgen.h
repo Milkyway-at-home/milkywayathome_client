@@ -32,7 +32,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define IL_MAX_STREAMS 4
 #define IL_MAX_CONVOLVE 256
 
-#define OPENCL_KERNEL 0
+#define OPENCL_KERNEL 1
 
 
 #ifdef __cplusplus

@@ -112,11 +112,6 @@ static cl_int setNuKernelArgs(CLInfo* ci, const IntegralArea* ia, const cl_uint 
     cl_int err;
     NuId nuid;
 
-    /* Avoid doing any trig in the broken ATI math. Also trig seems to
-     * be more expensive there. Not doing the coordinate conversion
-     * there also halves number of required registers, which prevents
-     * enough threads to hide the horrible latency of the other
-     * required reads. */
     nuid = calcNuStep(ia, nu_step);
     err = clSetKernelArg(ci->kern, 13, sizeof(real), &nuid.id);
     if (err != CL_SUCCESS)

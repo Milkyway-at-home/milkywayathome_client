@@ -148,15 +148,11 @@ static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->nonResponsive = sf->nonResponsive;
     clr->enableCheckpointing = !sf->disableGPUCheckpointing;
 
-
     clr->devNum = sf->useDevNumber;
     clr->platform = sf->usePlatform;
     clr->preferredPlatformVendor = sf->preferredPlatformVendor;
 
-    /* Used by CAL only */
     clr->targetFrequency = sf->targetFrequency <= 0.01 ? DEFAULT_TARGET_FREQUENCY : sf->targetFrequency;
-    clr->pollingMode = sf->pollingMode;
-    clr->gpuWaitFactor = sf->waitFactor;
     clr->magicFactor = sf->magicFactor;
 }
 
@@ -180,29 +176,23 @@ static void separationReadPreferences(SeparationFlags* sf)
     static struct
     {
         double gpuTargetFrequency;
-        double gpuWaitFactor;
         int gpuNonResponsive;
         int gpuProcessPriority;
-        int gpuPollingMode;
         int gpuDisableCheckpoint;
     } prefs;
 
     static MWProjectPrefs sepPrefs[] =
         {
             { "gpu_target_frequency", MW_PREF_DOUBLE, FALSE, &prefs.gpuTargetFrequency   },
-            { "gpu_wait_factor",      MW_PREF_DOUBLE, FALSE, &prefs.gpuWaitFactor        },
             { "gpu_non_responsive",   MW_PREF_BOOL,   FALSE, &prefs.gpuNonResponsive     },
             { GPU_PRIORITY_SETTING,   MW_PREF_INT,    FALSE, &prefs.gpuProcessPriority   },
-            { "gpu_polling_mode",     MW_PREF_INT,    FALSE, &prefs.gpuPollingMode       },
             { "no_gpu_checkpoint",    MW_PREF_BOOL,   FALSE, &prefs.gpuDisableCheckpoint },
             END_MW_PROJECT_PREFS
         };
 
     prefs.gpuTargetFrequency   = DEFAULT_TARGET_FREQUENCY;
-    prefs.gpuWaitFactor        = DEFAULT_GPU_WAIT_FACTOR;
     prefs.gpuNonResponsive     = DEFAULT_NON_RESPONSIVE;
     prefs.gpuProcessPriority   = DEFAULT_GPU_PRIORITY;
-    prefs.gpuPollingMode       = DEFAULT_POLLING_MODE;
     prefs.gpuDisableCheckpoint = DEFAULT_DISABLE_GPU_CHECKPOINTING;
 
     if (mwGetMWAppInitData(&aid))
@@ -317,18 +307,6 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
                 "gpu-target-frequency", 'q',
                 POPT_ARG_DOUBLE, &sf.targetFrequency,
                 0, "Target frequency for GPU tasks" , NULL
-            },
-
-            {
-                "gpu-polling-mode", 'm',
-                POPT_ARG_INT, &sf.pollingMode,
-                0, "Interval for polling GPU (< 0 for busy wait, 0 for calCtxWaitForEvents(), > 1 sets interval in ms)" , NULL
-            },
-
-            {
-                "gpu-wait-factor", 'w',
-                POPT_ARG_DOUBLE, &sf.waitFactor,
-                0, "Factor applied to initial wait before polling GPU (CAL only)" , NULL
             },
 
             {
@@ -566,9 +544,6 @@ static int separationInit(int debugBOINC, MWPriority priority, int setPriority)
     if (debugBOINC)
         initType |= MW_DEBUG;
 
-    if (SEPARATION_CAL)
-        initType |= MW_CAL;
-
     if (SEPARATION_OPENCL)
         initType |= MW_OPENCL;
 
@@ -583,25 +558,15 @@ static int separationInit(int debugBOINC, MWPriority priority, int setPriority)
     {
         mwSetProcessPriority(priority);
     }
-    else if (SEPARATION_OPENCL || SEPARATION_CAL)
+    else if (SEPARATION_OPENCL)
     {
         mwSetProcessPriority(DEFAULT_GPU_PRIORITY);
     }
 
-  #if (SEPARATION_CAL || SEPARATION_OPENCL) && defined(_WIN32)
+  #if (SEPARATION_OPENCL) && defined(_WIN32)
     /* We need to increase timer resolution to prevent big slowdown on windows when CPU is loaded. */
     mwSetTimerMinResolution();
-  #endif /* SEPARATION_CAL && defined(_WIN32) */
-
-    return 0;
-}
-
-
-static int separationSpecialCleanup()
-{
-  #if SEPARATION_CAL && defined(_WIN32)
-    mwResetTimerResolution();
-  #endif /* SEPARATION_CAL && defined(_WIN32) */
+  #endif /* defined(_WIN32) */
 
     return 0;
 }
@@ -658,8 +623,6 @@ int main(int argc, const char* argv[])
     printVersion(TRUE);
     mw_finish(rc);
   #endif
-
-    separationSpecialCleanup();
 
     return rc;
 }
