@@ -64,3 +64,4 @@ install_manifest.txt
 include/luaconf.h
 boinc/boinc
 AllInOneFile.c
+tools/separation_il_kernelgen/il_kernelgen

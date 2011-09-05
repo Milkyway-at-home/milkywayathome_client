@@ -507,7 +507,6 @@ int main(int argc, const char* argv[])
         return 1;
     }
 
-
     CALuint nStream = (CALuint) strtoul(argv[1], &endp, 10);
     if (*endp != '\0')
     {
@@ -531,9 +530,7 @@ int main(int argc, const char* argv[])
     }
 
     outfile << src;
-
     outfile.close();
-
 
     return 0;
 }
