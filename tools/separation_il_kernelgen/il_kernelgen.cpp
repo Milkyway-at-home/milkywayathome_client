@@ -27,8 +27,14 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include <cal/cal_il_math.hpp>
 #include <fstream>
 
-#include "separation_cal.h"
-#include "separation_cal_kernelgen.h"
+#define USE_KAHAN 0
+
+/* Create a flexible kernel that can handle 0 .. IL_MAX_STREAMS, but is ~10% slower (at 3 streams) */
+#define FLEXIBLE_KERNEL 0
+#define IL_MAX_STREAMS 4
+#define IL_MAX_CONVOLVE 256
+
+
 
 using namespace boost;
 using namespace cal;
@@ -136,15 +142,8 @@ typedef double1 SumType;
 
 static uint1 get_global_id0_with_offset()
 {
-    if (OPENCL_KERNEL)
-    {
-        named_variable<uint1> offset0("cb0[6].x");
-        return get_global_id(0) + offset0;
-    }
-    else /* Doesn't have / only sort of makes sense */
-    {
-        return get_global_id(0);
-    }
+    named_variable<uint1> offset0("cb0[6].x");
+    return get_global_id(0) + offset0;
 }
 
 
@@ -154,7 +153,6 @@ static void createSeparationKernelCore(CALuint maxStreams)
     CALuint j;
 
 /* Variables/kernel arguments etc. */
-#if OPENCL_KERNEL
     named_variable<uint1> extra("cb1[9].x");
     named_variable<uint1> rSteps("cb1[10].x");
     named_variable<uint1> muSteps("cb1[11].x");
@@ -169,44 +167,18 @@ static void createSeparationKernelCore(CALuint maxStreams)
     named_variable<double1> m_sun_r0("cb3[2].xy");
     named_variable<double1> r0("cb3[2].zw");
     named_variable<double1> q_inv_sqr("cb3[3].xy");
-#else
-    named_variable<uint1> nuStep("cb0[0].x");
-    named_variable<double1> nuId("cb0[0].zw");
-
-    named_variable<uint1> extra("cb1[9].x");
-    named_variable<uint1> rSteps("cb1[10].y");
-    named_variable<uint1> muSteps("cb1[11].z");
-    named_variable<uint1> nuSteps("cb1[12].w");
-
-    named_variable<uint1> _nConvolve("cb3[1].x");
-    named_variable<uint1> _nStream("cb3[1].y");
-
-    named_variable<double1> m_sun_r0("cb1[2].xy");
-    named_variable<double1> r0("cb1[2].zw");
-    named_variable<double1> q_inv_sqr("cb1[3].xy");
-#endif /* OPENCL_KERNEL */
 
 /* Buffer base addresses */
-#if OPENCL_KERNEL
     named_variable<uint1> bgOutBase("cb1[0].x");
     named_variable<uint1> streamsOutBase("cb1[1].x");
     named_variable<uint1> rConstsBase("cb1[2].x");
     named_variable<uint1> rPtsBase("cb1[3].x");
     named_variable<uint1> lTrigBase("cb1[4].x");
     named_variable<uint1> bSinBase("cb1[5].x");
-#else
-    uint1 bgOutBase = uint1(0);
-    uint1 streamsOutBase = uint1(0);
-    uint1 rConstsBase = uint1(0);
-    uint1 rPtsBase = uint1(0);
-    uint1 lTrigBase = uint1(0);
-    uint1 bSinBase = uint1(0);
-#endif /* OPENCL_KERNEL */
 
     const uint1 nConvolve = _nConvolve;
     const uint1 nStream = _nStream;
 
-#if OPENCL_KERNEL
     uav_raw<SumType> bgOut(11);
     uav_raw<SumType> streamsOut(11);
 
@@ -214,15 +186,6 @@ static void createSeparationKernelCore(CALuint maxStreams)
     uav_raw<double2> rConsts(11);
     uav_raw<double2> lTrigBuf(11);
     uav_raw<double1> bTrigBuf(11);
-#else
-    uav_raw<SumType> bgOut(0);
-    uav_raw<SumType> streamsOut(1);
-
-    uav_raw<double2> rPts(2);
-    uav_raw<double2> rConsts(3);
-    uav_raw<double2> lTrigBuf(4);
-    uav_raw<double1> bTrigBuf(5);
-#endif
 
     const uint1 gid = get_global_id0_with_offset() - extra;
     const uint1 muStep = gid % muSteps;
@@ -412,27 +375,20 @@ static int separationKernelHeader(std::stringstream& code, CALuint maxStreams)
 {
     if (4 * maxStreams > 1024)
     {
-        warn("Too many streams (%u)\n", maxStreams);
+        std::cerr << format("Too many streams (%u)\n") % maxStreams << std::endl;
         return 1;
     }
 
-
-#if OPENCL_KERNEL
     code << "il_cs_2_0\n";
-    code << format("dcl_num_thread_per_group %i\n") % 64;
+  //code << format("dcl_max_thread_per_group %i\n") % 256;  // Only on Evergreen and later
+    code << format("dcl_num_thread_per_group %i\n") % 256;  // R7XX and later
+    code << format("; %i stream kernel\n") % maxStreams;
     code << "dcl_cb cb0[10]  ; Constant buffer that holds ABI data\n";
     code << "dcl_cb cb1[15]  ; Kernel arguments\n";
     code << "dcl_cb cb2[72]  ; I'm guessing the math constants AMD uses\n";
     code << "dcl_cb cb3[8]   ; ap constants\n";
     code << format("dcl_cb cb4[%i]  ; stream constants\n") % (4 * maxStreams);
     code << format("dcl_cb cb5[%i] ; sg_dx\n") % (IL_MAX_CONVOLVE / 2);
-#else
-    code << "il_cs\n";
-    code << format("dcl_num_thread_per_group %i\n") % 64;
-    code << "dcl_cb cb0[1]\n";
-    code << "dcl_cb cb1[8]\n";
-    code << format("dcl_cb cb2[%u]\n") % (4 * maxStreams);
-#endif /* OPENCL_KERNEL */
 
     return 0;
 }
@@ -452,20 +408,133 @@ std::string createSeparationIntegralKernel(CALuint device, CALuint maxStreams)
 
     Source::emitHeader(code);
 
-  #if OPENCL_KERNEL
     /* This must follow the UAV declaration, and CAL++ seems to be missing it. */
     code << "dcl_arena_uav_id(8)\n";
-  #endif
 
     Source::emitCode(code);
 
     return code.str();
 }
 
-
-char* separationIntegralKernelSrc(CALuint device, CALuint maxStreams)
+static CALtargetEnum strToDeviceType(const char* str)
 {
-    std::string src = createSeparationIntegralKernel(device, maxStreams);
-    return strdup(src.c_str());
+    if (!strcasecmp(str, "600"))
+    {
+        return CAL_TARGET_600;
+    }
+    else if (!strcasecmp(str, "610"))
+    {
+        return CAL_TARGET_610;
+    }
+    else if (!strcasecmp(str, "630"))
+    {
+        return CAL_TARGET_630;
+    }
+    else if (!strcasecmp(str, "670"))
+    {
+        return CAL_TARGET_670;
+    }
+    else if (!strcasecmp(str, "7XX"))
+    {
+        return CAL_TARGET_7XX;
+    }
+    else if (!strcasecmp(str, "770"))
+    {
+        return CAL_TARGET_770;
+    }
+    else if (!strcasecmp(str, "710"))
+    {
+        return CAL_TARGET_710;
+    }
+    else if (!strcasecmp(str, "730"))
+    {
+        return CAL_TARGET_730;
+    }
+    else if (!strcasecmp(str, "CYPRESS"))
+    {
+        return CAL_TARGET_CYPRESS;
+    }
+    else if (!strcasecmp(str, "JUNIPER"))
+    {
+        return CAL_TARGET_JUNIPER;
+    }
+    else if (!strcasecmp(str, "REDWOOD"))
+    {
+        return CAL_TARGET_REDWOOD;
+    }
+    else if (!strcasecmp(str, "CEDAR "))
+    {
+        return CAL_TARGET_CEDAR;
+    }
+    else if (!strcasecmp(str, "WRESTLER"))
+    {
+        return CAL_TARGET_WRESTLER;
+    }
+    else if (!strcasecmp(str, "CAYMAN"))
+    {
+        return CAL_TARGET_CAYMAN;
+    }
+    else if (!strcasecmp(str, "BARTS"))
+    {
+        return CAL_TARGET_BARTS;
+    }
+    else if (!strcasecmp(str, "RESERVED0"))
+    {
+        return CAL_TARGET_RESERVED0;
+    }
+    else if (!strcasecmp(str, "RESERVED1"))
+    {
+        return CAL_TARGET_RESERVED1;
+    }
+    else if (!strcasecmp(str, "RESERVED2"))
+    {
+        return CAL_TARGET_RESERVED2;
+    }
+    else
+    {
+        std::cerr << "Unknown device name " << str << std::endl;
+        exit(EXIT_FAILURE);
+    }
+}
+
+int main(int argc, const char* argv[])
+{
+    char* endp = NULL;
+
+    if (argc != 4)
+    {
+        fprintf(stderr, "Usage: %s <number of streams> <device type> <output file>\n", argc >= 1 ? argv[0] : "il_kernelgen");
+        return 1;
+    }
+
+
+    CALuint nStream = (CALuint) strtoul(argv[1], &endp, 10);
+    if (*endp != '\0')
+    {
+        perror("Reading number of streams");
+        return 1;
+    }
+
+    CALuint deviceType = strToDeviceType(argv[2]);
+
+    std::cout << "Creating a kernel with " << nStream << " for device type " << deviceType << std::endl;
+
+    std::string src = createSeparationIntegralKernel(deviceType, nStream);
+
+    std::ofstream outfile;
+    outfile.open(argv[3], std:: ios::out);
+
+    if (!outfile.is_open())
+    {
+        std::cerr << "Failed to open output file" << std::endl;
+        return 1;
+    }
+
+    outfile << src;
+
+    outfile.close();
+
+
+    return 0;
 }
 

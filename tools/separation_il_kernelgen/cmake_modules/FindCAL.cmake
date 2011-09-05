@@ -19,9 +19,7 @@
 #
 
 
-include(CPUNameTest)
-
-if(WIN32 AND SYSTEM_IS_64)
+if(WIN32 AND (CMAKE_SIZEOF_VOID_P EQUAL 8))
   set(ATICALCL_LIB_NAME aticalcl64)
   set(ATICALRT_LIB_NAME aticalrt64)
 else()
