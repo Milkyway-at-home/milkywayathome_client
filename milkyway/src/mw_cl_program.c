@@ -162,6 +162,7 @@ int mwSaveProgramBinaryToFile(CLInfo* ci, const char* filename)
     size_t binSize;
     unsigned char* bin;
     FILE* f;
+    int rc;
 
     bin = mwGetProgramBinary(ci, &binSize);
     f = fopen(filename, "wb");
@@ -171,11 +172,20 @@ int mwSaveProgramBinaryToFile(CLInfo* ci, const char* filename)
         return errno;
     }
 
-    fwrite(bin, binSize, 1, f);
-    fclose(f);
+    if (fwrite(bin, binSize, 1, f) != binSize)
+    {
+        warn("Error writing program binary to file '%s'", filename);
+        rc = errno;
+    }
+
+    if (fclose(f) < 0)
+    {
+        warn("Error closing program binary to file '%s'", filename);
+        rc = errno;
+    }
     free(bin);
 
-    return 0;
+    return rc;
 }
 
 

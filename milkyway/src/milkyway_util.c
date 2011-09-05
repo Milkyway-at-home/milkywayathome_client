@@ -226,7 +226,12 @@ int mwWriteFile(const char* filename, const char* str)
     FILE* f;
     int rc;
 
-    f = mw_fopen(filename, "w");
+    if (!str || !filename)
+    {
+        return 1;
+    }
+
+    f = mw_fopen(filename, "wb");
     if (!f)
     {
         perror("Writing file");
