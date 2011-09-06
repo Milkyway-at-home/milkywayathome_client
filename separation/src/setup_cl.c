@@ -25,7 +25,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "mw_cl.h"
 #include "setup_cl.h"
 #include "separation_cl_buffers.h"
-#include "separation_cl_defs.h"
 #include "separation_binaries.h"
 #include "cl_compile_flags.h"
 
