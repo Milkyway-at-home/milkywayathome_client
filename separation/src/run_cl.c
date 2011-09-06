@@ -305,8 +305,7 @@ cl_int integrateCL(const AstronomyParameters* ap,
                    const StreamGauss sg,
                    EvaluationState* es,
                    const CLRequest* clr,
-                   CLInfo* ci,
-                   cl_bool useImages)
+                   CLInfo* ci)
 {
     cl_int err;
     RunSizes runSizes;
@@ -322,7 +321,7 @@ cl_int integrateCL(const AstronomyParameters* ap,
         return MW_CL_ERROR;
     }
 
-    err = createSeparationBuffers(ci, &cm, ap, ia, sc, sg, &sizes, useImages);
+    err = createSeparationBuffers(ci, &cm, ap, ia, sc, sg, &sizes);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Failed to create CL buffers", err);

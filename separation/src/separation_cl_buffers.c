@@ -137,26 +137,15 @@ static cl_int createRBuffers(CLInfo* ci,
                              const IntegralArea* ia,
                              const StreamGauss sg,
                              const SeparationSizes* sizes,
-                             cl_mem_flags constBufFlags,
-                             cl_bool useImages)
+                             cl_mem_flags constBufFlags)
 {
     cl_int err;
     RPoints* r_pts;
     RConsts* rc;
-    cl_image_format format = { CL_RGBA, CL_UNSIGNED_INT32 };
 
-    r_pts = precalculateRPts(ap, ia, sg, &rc, useImages);
+    r_pts = precalculateRPts(ap, ia, sg, &rc, FALSE);
 
-    if (useImages)
-    {
-        cm->rPts = clCreateImage2D(ci->clctx, constBufFlags, &format,
-                                   ia->r_steps, ap->convolve,
-                                   0, r_pts, &err);
-    }
-    else
-    {
-        cm->rPts = clCreateBuffer(ci->clctx, constBufFlags, sizes->rPts, r_pts, &err);
-    }
+    cm->rPts = clCreateBuffer(ci->clctx, constBufFlags, sizes->rPts, r_pts, &err);
 
     if (err != CL_SUCCESS)
     {
@@ -324,8 +313,7 @@ cl_int createSeparationBuffers(CLInfo* ci,
                                const IntegralArea* ia,
                                const StreamConstants* sc,
                                const StreamGauss sg,
-                               const SeparationSizes* sizes,
-                               cl_bool useImages)  /* Use images for some buffers if wanted / available. */
+                               const SeparationSizes* sizes)
 {
     cl_int err = CL_SUCCESS;
     cl_mem_flags constBufFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
@@ -333,7 +321,7 @@ cl_int createSeparationBuffers(CLInfo* ci,
     err |= createOutBgBuffer(ci, cm, sizes);
     err |= createOutStreamsBuffer(ci, cm, sizes);
 
-    err |= createRBuffers(ci, cm, ap, ia, sg, sizes, constBufFlags, useImages);
+    err |= createRBuffers(ci, cm, ap, ia, sg, sizes, constBufFlags);
     err |= createLBTrigBuffer(ci, cm, ap, ia, sizes, constBufFlags);
 
     err |= createSCBuffer(ci, cm, sc, sizes, constBufFlags);

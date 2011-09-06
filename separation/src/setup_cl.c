@@ -574,8 +574,7 @@ static cl_bool usingILKernelIsAcceptable(const CLInfo* ci, const AstronomyParame
 cl_int setupSeparationCL(CLInfo* ci,
                          const AstronomyParameters* ap,
                          const IntegralArea* ias,
-                         const CLRequest* clr,
-                         cl_int* useImages)
+                         const CLRequest* clr)
 {
     cl_int err;
     char* compileFlags;
@@ -610,9 +609,7 @@ cl_int setupSeparationCL(CLInfo* ci,
         return MW_CL_ERROR;
     }
 
-    *useImages = *useImages && ci->di.imgSupport;
-
-    compileFlags = getCompilerFlags(ap, &ci->di, *useImages);
+    compileFlags = getCompilerFlags(ci, ap, clr);
     if (!compileFlags)
     {
         warn("Failed to get compiler flags\n");

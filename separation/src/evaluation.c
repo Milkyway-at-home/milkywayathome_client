@@ -260,8 +260,7 @@ static void calculateIntegrals(const AstronomyParameters* ap,
                                const StreamGauss sg,
                                EvaluationState* es,
                                const CLRequest* clr,
-                               CLInfo* ci,
-                               int useImages)
+                               CLInfo* ci)
 {
     const IntegralArea* ia;
     double t1, t2;
@@ -275,7 +274,7 @@ static void calculateIntegrals(const AstronomyParameters* ap,
 
         t1 = mwGetTime();
       #if SEPARATION_OPENCL
-        rc = integrateCL(ap, ia, sc, sg, es, clr, ci, (cl_bool) useImages);
+        rc = integrateCL(ap, ia, sc, sg, es, clr, ci);
       #else
         rc = integrate(ap, ia, sc, sg, es, clr);
       #endif /* SEPARATION_OPENCL */
@@ -307,8 +306,6 @@ int evaluate(SeparationResults* results,
     StreamGauss sg;
     CLInfo ci;
     StarPoints sp = EMPTY_STAR_POINTS;
-    int useImages = FALSE; /* Only applies to CL version */
-
     memset(&ci, 0, sizeof(ci));
 
     if (probabilityFunctionDispatch(ap, clr))
@@ -332,11 +329,11 @@ int evaluate(SeparationResults* results,
     }
 
   #if SEPARATION_OPENCL
-    if (setupSeparationCL(&ci, ap, ias, clr, &useImages) != CL_SUCCESS)
+    if (setupSeparationCL(&ci, ap, ias, clr) != CL_SUCCESS)
         fail("Failed to setup CL\n");
   #endif
 
-    calculateIntegrals(ap, ias, sc, sg, es, clr, &ci, useImages);
+    calculateIntegrals(ap, ias, sc, sg, es, clr, &ci);
 
     if (!ignoreCheckpoint)
     {

@@ -35,8 +35,7 @@ cl_int integrateCL(const AstronomyParameters* ap,
                    const StreamGauss sg,
                    EvaluationState* es,
                    const CLRequest* clr,
-                   CLInfo* ci,
-                   cl_bool useImages);
+                   CLInfo* ci);
 
 #ifdef __cplusplus
 }
