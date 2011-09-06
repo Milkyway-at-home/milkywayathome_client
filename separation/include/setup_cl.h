@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2010-2011 Matthew Arsenault
- * Copyright (c) 2010-2011 Rensselaer Polytechnic Institute.
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
  *
  *  This file is part of Milkway@Home.
  *
@@ -16,7 +16,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 #ifndef _SETUP_CL_H_

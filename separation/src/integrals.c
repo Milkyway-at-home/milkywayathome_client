@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Boleslaw
- * Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
- * Rensselaer Polytechnic Institute.
- * Copyright (c) 2010-2011 Matthew Arsenault
+ *  Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Dave Przybylo
+ *  Copyright (c) 2008-2010 Boleslaw Szymanski, Heidi Newberg
+ *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
+ *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
  *
  *  This file is part of Milkway@Home.
  *
@@ -18,7 +19,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 #include "evaluation_state.h"
