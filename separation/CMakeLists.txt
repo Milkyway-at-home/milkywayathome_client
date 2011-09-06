@@ -143,6 +143,7 @@ configure_file (
 
 set(cl_source_list src/separation_cl_buffers.c
                    src/separation_binaries.c
+                   src/cl_compile_flags.cpp
                    src/setup_cl.c
                    src/run_cl.c)
 
@@ -182,6 +183,7 @@ set(separation_headers include/calculated_constants.h
                        include/separation_lua.h)
 
 set(separation_cl_headers include/setup_cl.h
+                          include/cl_compile_flags.h
                           include/run_cl.h
                           include/separation_cl_defs.h
                           include/separation_cl_buffers.h)

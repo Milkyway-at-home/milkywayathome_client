@@ -27,6 +27,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "separation_cl_buffers.h"
 #include "separation_cl_defs.h"
 #include "separation_binaries.h"
+#include "cl_compile_flags.h"
 
 
 #include <assert.h>
@@ -42,6 +43,10 @@ extern char* inlinedIntegralKernelSrc;
 static char* inlinedIntegralKernelSrc = NULL;
 #endif /* SEPARATION_INLINE_KERNEL */
 
+cl_bool haveInlinedKernel()
+{
+    return (inlinedIntegralKernelSrc != NULL);
+}
 
 static void printRunSizes(const RunSizes* sizes, const IntegralArea* ia)
 {
@@ -397,144 +402,6 @@ cl_bool separationCheckDevCapabilities(const DevInfo* di, const AstronomyParamet
     return CL_TRUE;
 }
 
-/* Return flag for Nvidia compiler for maximum registers to use. */
-static const char* getNvidiaRegCount(const DevInfo* di)
-{
-    const char* regCount32 = "-cl-nv-maxrregcount=32 ";
-    const char* regDefault = "";
-
-    if (computeCapabilityIs(di, 1, 3)) /* 1.3 == GT200 */
-    {
-        /* 32 allows for greatest number of threads at a time */
-        warn("Found a compute capability 1.3 device. Using %s\n", regCount32);
-        return regCount32;
-    }
-
-    /* Higher or other is Fermi or unknown, */
-    return regDefault;
-}
-
-/* We want only the IL in the binary */
-static const char* amdBinaryCompileFlags(const CLInfo* di)
-{
-
-    return "-fbin-amdil -fno-bin-exe -fno-bin-source -fno-bin-llvmir ";
-}
-
-/* Get string of options to pass to the CL compiler. */
-static char* getCompilerFlags(const AstronomyParameters* ap, const DevInfo* di, cl_bool useImages)
-{
-    char* compileFlags = NULL;
-    char cwd[1024] = "";
-    char extraFlags[1024] = "";
-    char includeFlags[1024] = "";
-    char precBuf[1024] = "";
-    char kernelDefBuf[4096] = "";
-
-    /* Math options for CL compiler */
-    const char mathFlags[] = "-cl-mad-enable "
-                             "-cl-no-signed-zeros "
-                             "-cl-strict-aliasing "
-                             "-cl-finite-math-only ";
-
-    /* Extra flags for different compilers */
-    const char nvidiaOptFlags[] = "-cl-nv-verbose ";
-    const char atiOptFlags[]    = "";
-
-    const char kernelDefStr[] = "-DFAST_H_PROB=%d "
-                                "-DAUX_BG_PROFILE=%d "
-
-                                "-DNSTREAM=%u "
-                                "-DCONVOLVE=%u "
-
-                                "-DR0=%.15f "
-                                "-DSUN_R0=%.15f "
-                                "-DQ_INV_SQR=%.15f "
-
-                                "-DBG_A=%.15f "
-                                "-DBG_B=%.15f "
-                                "-DBG_C=%.15f "
-
-                                "-DUSE_IMAGES=%d ";
-
-    const char includeStr[] = "-I%s "
-                              "-I%s/../include ";
-
-    if (snprintf(kernelDefBuf, sizeof(kernelDefBuf), kernelDefStr,
-                 ap->fast_h_prob,
-                 ap->aux_bg_profile,
-
-                 ap->number_streams,
-                 ap->convolve,
-
-                 ap->r0,
-                 ap->sun_r0,
-                 ap->q_inv_sqr,
-                 ap->bg_a,
-                 ap->bg_b,
-                 ap->bg_c,
-
-
-                 useImages) < 0)
-    {
-        warn("Error getting kernel constant definitions\n");
-        return NULL;
-    }
-
-    snprintf(precBuf, sizeof(precBuf), "-DDOUBLEPREC=%d %s ",
-             DOUBLEPREC, DOUBLEPREC ? "" : "-cl-single-precision-constant");
-
-    /* FIXME: Device vendor not necessarily the platform vendor */
-    if (hasNvidiaCompilerFlags(di))
-    {
-        if (snprintf(extraFlags, sizeof(extraFlags),
-                     "%s %s ",
-                     nvidiaOptFlags, getNvidiaRegCount(di)) < 0)
-        {
-            warn("Error getting extra Nvidia flags\n");
-            return NULL;
-        }
-    }
-    else if (di->vendorID == MW_AMD_ATI)
-    {
-        if (snprintf(extraFlags, sizeof(extraFlags), "%s", atiOptFlags) < 0)
-        {
-            warn("Error getting extra ATI flags\n");
-            return NULL;
-        }
-    }
-    else
-        warn("Unknown vendor ID: 0x%x\n", di->vendorID);
-
-    if (!inlinedIntegralKernelSrc)
-    {
-        if (!getcwd(cwd, sizeof(cwd)))
-        {
-            warn("Failed to get header directory\n");
-            return NULL;
-        }
-
-        if (snprintf(includeFlags, sizeof(includeFlags), includeStr, cwd, cwd) < 0)
-        {
-            warn("Failed to get include flags\n");
-            return NULL;
-        }
-    }
-
-    if (asprintf(&compileFlags, "%s%s%s%s%s ",
-                 includeFlags,
-                 mathFlags,
-                 extraFlags,
-                 precBuf,
-                 kernelDefBuf) < 0)
-    {
-        warn("Failed to get compile flags\n");
-        return NULL;
-    }
-
-    return compileFlags;
-}
-
 /* Estimate time for a nu step in milliseconds */
 cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_double flops)
 {
@@ -548,27 +415,6 @@ cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_dou
      * the theoretical flops compared to the reference devices. */
 
     return 1000.0 * devFactor * flopsPerIter / flops;
-}
-
-static cl_bool usingILKernelIsAcceptable(const CLInfo* ci, const AstronomyParameters* ap, const CLRequest* clr)
-{
-    const DevInfo* di = &ci->di;
-    static const cl_int maxILKernelStreams = 4;
-
-    if (!DOUBLEPREC)
-        return CL_FALSE;
-    /*
-      // If we don't want it, don't use it
-      if (clr->disableILKernel)
-          return CL_FALSE;
-     */
-
-    /* Supporting these unused options with the IL kernel is too much work */
-    if (ap->number_streams > maxILKernelStreams || ap->aux_bg_profile)
-        return CL_FALSE;
-
-    /* Make sure an acceptable device */
-    return (isAMDGPUDevice(di) && mwPlatformSupportsAMDOfflineDevices(ci));
 }
 
 cl_int setupSeparationCL(CLInfo* ci,
