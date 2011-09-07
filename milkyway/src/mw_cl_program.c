@@ -172,9 +172,9 @@ int mwSaveProgramBinaryToFile(CLInfo* ci, const char* filename)
         return errno;
     }
 
-    if (fwrite(bin, binSize, 1, f) != binSize)
+    if (fwrite(bin, binSize, 1, f) != 1)
     {
-        warn("Error writing program binary to file '%s'", filename);
+        warn("Error writing program binary to file '%s'\n", filename);
         rc = errno;
     }
 
