@@ -185,7 +185,6 @@ set(separation_headers include/calculated_constants.h
 set(separation_cl_headers include/setup_cl.h
                           include/cl_compile_flags.h
                           include/run_cl.h
-                          include/separation_cl_defs.h
                           include/separation_cl_buffers.h)
 
 if(SEPARATION_GRAPHICS)

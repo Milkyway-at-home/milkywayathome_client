@@ -58,12 +58,13 @@ cl_bool isAMDGPUDevice(const DevInfo* di);
 cl_double amdEstimateGFLOPs(const DevInfo* di, cl_bool useDouble);
 cl_bool deviceVendorIsAMD(const DevInfo* di);
 
+
 /* Nvidia specific functions */
 cl_bool minComputeCapabilityCheck(const DevInfo* di, cl_uint major, cl_uint minor);
 cl_bool computeCapabilityIs(const DevInfo* di, cl_uint major, cl_uint minor);
 cl_double cudaEstimateGFLOPs(const DevInfo* di, cl_bool useDouble);
-cl_uint cudaEstimateDoubleFrac(const DevInfo* di);
 cl_bool hasNvidiaCompilerFlags(const DevInfo* di);
+cl_bool deviceVendorIsNvidia(const DevInfo* di);
 
 
 #ifdef __cplusplus

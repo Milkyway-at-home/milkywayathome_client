@@ -35,148 +35,98 @@
 #endif
 
 
-/* Read the double supported extensions; i.e. AMD's subset or the actual Khronos one. */
-MWDoubleExts mwGetDoubleExts(const char* exts)
+typedef struct
 {
-    MWDoubleExts found = MW_NONE_DOUBLE;
+    const char* name;
+    MWCALtargetEnum target;
+    cl_uint vliw;
+    cl_uint doubleFrac;
+    cl_uint wavefrontSize;
+} AMDGPUData;
 
-    if (strstr(exts, "cl_amd_fp64"))
-        found |= MW_CL_AMD_FP64;
-    if (strstr(exts, "cl_khr_fp64"))
-        found |= MW_CL_KHR_FP64;
+/* A reasonable guess */
+static const AMDGPUData invalidAMDGPUData = { "Invalid", MW_CAL_TARGET_INVALID, 5, 5, 64 };
 
-    return found;
-}
-
-cl_bool mwSupportsDoubles(const DevInfo* di)
+/* Table of more detailed info we want that OpenCL won't give us */
+static const AMDGPUData amdGPUData[] =
 {
-    return di->doubleExts != MW_NONE_DOUBLE;
-}
-
-cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
-{
-    cl_int err = CL_SUCCESS;
-
-    di->devID = dev;
-
-    err |= clGetDeviceInfo(dev, CL_DEVICE_TYPE,                     sizeof(di->devType),  &di->devType, NULL);
-
-    err |= clGetDeviceInfo(dev, CL_DEVICE_NAME,                     sizeof(di->devName),  di->devName, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_VENDOR,                   sizeof(di->vendor),   di->vendor, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_VENDOR_ID,                sizeof(cl_uint),  &di->vendorID, NULL);
-    err |= clGetDeviceInfo(dev, CL_DRIVER_VERSION,                  sizeof(di->driver),   di->driver, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_VERSION,                  sizeof(di->version),  di->version, NULL);
-  //err |= clGetDeviceInfo(dev, CL_DEVICE_OPENCL_C_VERSION,         sizeof(di->clCVer),   di->clCVer, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_ENDIAN_LITTLE,            sizeof(cl_bool),  &di->littleEndian, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_ERROR_CORRECTION_SUPPORT, sizeof(cl_bool),  &di->errCorrect, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_IMAGE_SUPPORT, sizeof(cl_bool),  &di->imgSupport, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_ADDRESS_BITS,             sizeof(cl_uint),  &di->addrBits, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_COMPUTE_UNITS,        sizeof(cl_uint),  &di->maxCompUnits, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_CLOCK_FREQUENCY,      sizeof(cl_uint),  &di->clockFreq, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_GLOBAL_MEM_SIZE,          sizeof(cl_ulong), &di->memSize, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_MEM_ALLOC_SIZE,       sizeof(cl_ulong), &di->maxMemAlloc, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_GLOBAL_MEM_CACHE_SIZE,    sizeof(cl_ulong), &di->gMemCache, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE, sizeof(cl_uint), &di->cachelineSize, NULL);
-
-  //err |= clGetDeviceInfo(dev, CL_DEVICE_HOST_UNIFIED_MEMORY,      sizeof(cl_ulong), &unifiedMem, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_LOCAL_MEM_TYPE, sizeof(cl_device_local_mem_type), &di->localMemType, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_LOCAL_MEM_SIZE,           sizeof(cl_ulong), &di->localMemSize, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_CONSTANT_ARGS,        sizeof(cl_uint),  &di->maxConstArgs, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE, sizeof(cl_ulong), &di->maxConstBufSize, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_PARAMETER_SIZE, sizeof(size_t), &di->maxParamSize, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &di->maxWorkGroupSize, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(cl_uint), &di->maxWorkItemDim, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(di->maxWorkItemSizes), di->maxWorkItemSizes, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_MEM_BASE_ADDR_ALIGN, sizeof(cl_uint), &di->memBaseAddrAlign, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE, sizeof(cl_uint), &di->minAlignSize, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_PROFILING_TIMER_RESOLUTION, sizeof(size_t), &di->timerRes, NULL);
-    err |= clGetDeviceInfo(dev, CL_DEVICE_EXTENSIONS, sizeof(di->exts), &di->exts, NULL);
-
-    di->computeCapabilityMajor = di->computeCapabilityMinor = 0;
-    di->warpSize = 0;
-    if (err == CL_SUCCESS)
-    {
-        if (strstr(di->exts, "cl_nv_device_attribute_query") != NULL)
-        {
-            err |= clGetDeviceInfo(dev, CL_DEVICE_WARP_SIZE_NV,
-                                   sizeof(di->warpSize), &di->warpSize, NULL);
-            err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV,
-                                   sizeof(cl_uint), &di->computeCapabilityMajor, NULL);
-            err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV,
-                                   sizeof(cl_uint), &di->computeCapabilityMinor, NULL);
-        }
-        else
-        {
-            if (di->devType == CL_DEVICE_TYPE_CPU)
-            {
-                di->warpSize = 1;
-            }
-            else if (di->devType == CL_DEVICE_TYPE_GPU)
-            {
-                /* FIXME: How do I get this on AMD? It's 64 for all of
-                 * the high end stuff, but 32 for lower. I think it's
-                 * 64 for all the GPUs that do have doubles */
-                di->warpSize = 64;
-            }
-            else
-            {
-                warn("Unknown device type, using warp size = 1\n");
-                di->warpSize = 1;
-            }
-        }
-    }
-
-    /* TODO: Correct way to test for Tesla type things?
-       Is there a way we can find if a GPU is connected to a display in general?
+    /* I found these names from strings on amdocl.dll/libamdocl64.so
+       There are a bunch more extra ones in fglrx.ko (e.g. "Hemlock"),
+       but I don't think they're relevant.
      */
-    di->nonOutput = ((di->devType != CL_DEVICE_TYPE_GPU) || (strstr(di->devName, "Tesla") != NULL));
 
-    if (err)
-        mwCLWarn("Error getting device information", err);
-    else
-        di->doubleExts = mwGetDoubleExts(di->exts);
+    /* R600 */
+    { "ATI RV670",  MW_CAL_TARGET_670,      5, 0, 64 },
+    { "ATI RV630",  MW_CAL_TARGET_630,      5, 0, 32 },
+    { "ATI RV610",  MW_CAL_TARGET_610,      5, 0, 32 },
+    { "ATI RV600",  MW_CAL_TARGET_600,      5, 0, 16 },
 
-    return err;
+    /* R700 */
+    { "ATI RV770",  MW_CAL_TARGET_770,      5, 5, 64 },
+    { "ATI RV730",  MW_CAL_TARGET_730,      5, 0, 32 },
+    { "ATI RV710",  MW_CAL_TARGET_710,      5, 0, 16 },
+
+    /* Evergreen */
+    { "Cypress",    MW_CAL_TARGET_CYPRESS,  5, 5, 64 },
+    { "Juniper",    MW_CAL_TARGET_JUNIPER,  5, 0, 64 },
+    { "Redwood",    MW_CAL_TARGET_REDWOOD,  5, 0, 64 },
+    { "Cedar",      MW_CAL_TARGET_CEDAR,    5, 0, 32 },
+
+    /* Northern Islands */
+    { "Cayman",     MW_CAL_TARGET_CAYMAN,   4, 4, 64 },
+    { "Barts",      MW_CAL_TARGET_BARTS,    5, 0, 64 },
+    { "Turks",      MW_CAL_TARGET_TURKS,    5, 0, 64 },
+    { "Caicos",     MW_CAL_TARGET_CAICOS,   5, 0, 64 },
+
+
+    /* Southern Islands */
+    /*
+      Not actually out yet, so not really sure
+    { "Tahiti",     MW_CAL_TARGET_TAHITI,   4, 4, 64 },
+    { "Thames",     MW_CAL_TARGET_THAMES,   5, 0, 64 },
+    { "Lombok",     MW_CAL_TARGET_LOMBOK,   5, 0, 64 },
+    */
+
+#if 0
+    /* These are there, but I don't know about them */
+    { "WinterPark",                        , 5, 0, 64 },
+    { "BeaverCreek",                       , 5, 0, 64 },
+    { "Loveland",                          , 5, 0, 64 },
+
+    { "Lions",                             , 5, 0, 64 },
+    { "Tigers",                            , 5, 0, 64 },
+    { "Bears",                             , 5, 0, 64 },
+#endif
+
+    { NULL,          MW_CAL_TARGET_INVALID, 5, 0, 64 }
+};
+
+static cl_uint uavIdFromMWCALtargetEnum(MWCALtargetEnum x)
+{
+    return (x >= MW_CAL_TARGET_CYPRESS) ? 11 : 1;
 }
 
-
-cl_uint amdEstimateDoubleFrac(const DevInfo* di)
+static const AMDGPUData* lookupAMDGPUInfo(const DevInfo* di)
 {
-    if (strstr(di->devName, "Cayman"))
-    {
-        return 4;
-    }
-    else
-    {
-        return 5;
-    }
-}
+    const AMDGPUData* p = amdGPUData;
 
-cl_uint amdVLIWPerSIMD(const DevInfo* di)
-{
-    static const char* vliw4Devs[] = { "Cayman", NULL  };
-    //static const char* vliw5Devs[] = { "Cypress", "Hemlock", "Juniper", "Redwood", "Blackcomb", "Barts", "Turks", "Whistler", "Seymour", "Caicos", NULL };
-
-    const char** p = vliw4Devs;
-    while (*p)
+    while (p->name)
     {
-        if (strstr(di->devName, *p))
+        if (!strncasecmp(di->devName, p->name, sizeof(di->devName)))
         {
-            return 4;
+            return p;
         }
 
         ++p;
     }
 
-    /* Everything else has been 5. In the next major revision, they're switching to a scalar architecture */
-
-    return 5;
+    return &invalidAMDGPUData;
 }
 
 cl_double amdEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
 {
-    cl_uint vliw = amdVLIWPerSIMD(di);
-    cl_uint doubleFrac = amdEstimateDoubleFrac(di);
+    cl_uint vliw = di->vliw;
+    cl_uint doubleFrac = di->doubleFrac;
     cl_ulong flops, flopsFloat, flopsDouble;
     cl_double gflops;
 
@@ -215,6 +165,11 @@ cl_bool deviceVendorIsAMD(const DevInfo* di)
     return (strncmp(di->vendor, "Advanced Micro Devices, Inc.", sizeof(di->vendor)) == 0);
 }
 
+cl_bool deviceVendorIsNvidia(const DevInfo* di)
+{
+    return (strncmp(di->vendor, "Nvidia Corporation", sizeof(di->vendor)) == 0);
+}
+
 /* True if devices compute capability >= requested version */
 cl_bool minComputeCapabilityCheck(const DevInfo* di, cl_uint major, cl_uint minor)
 {
@@ -230,7 +185,7 @@ cl_bool computeCapabilityIs(const DevInfo* di, cl_uint major, cl_uint minor)
 }
 
 /* approximate ratio of float : double flops */
-cl_uint cudaEstimateDoubleFrac(const DevInfo* di)
+static cl_uint cudaEstimateDoubleFrac(const DevInfo* di)
 {
     /* FIXME: This also differs with generation.
        Is there a better way to find out the generation and if
@@ -299,7 +254,7 @@ cl_double cudaEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
 
 cl_bool isNvidiaGPUDevice(const DevInfo* di)
 {
-    return (di->vendorID == MW_NVIDIA);
+    return (di->vendorID == MW_NVIDIA) && (di->devType == CL_DEVICE_TYPE_GPU);
 }
 
 cl_bool isAMDGPUDevice(const DevInfo* di)
@@ -341,9 +296,120 @@ cl_double deviceEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
     return gflops;
 }
 
+/* Read the double supported extensions; i.e. AMD's subset or the actual Khronos one. */
+MWDoubleExts mwGetDoubleExts(const char* exts)
+{
+    MWDoubleExts found = MW_NONE_DOUBLE;
+
+    if (strstr(exts, "cl_amd_fp64"))
+        found |= MW_CL_AMD_FP64;
+    if (strstr(exts, "cl_khr_fp64"))
+        found |= MW_CL_KHR_FP64;
+
+    return found;
+}
+
+cl_bool mwSupportsDoubles(const DevInfo* di)
+{
+    return di->doubleExts != MW_NONE_DOUBLE;
+}
+
+cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
+{
+    const AMDGPUData* amdData;
+    cl_int err = CL_SUCCESS;
+
+    di->devID = dev;
+
+    err |= clGetDeviceInfo(dev, CL_DEVICE_TYPE,                     sizeof(di->devType),  &di->devType, NULL);
+
+    err |= clGetDeviceInfo(dev, CL_DEVICE_NAME,                     sizeof(di->devName),  di->devName, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_VENDOR,                   sizeof(di->vendor),   di->vendor, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_VENDOR_ID,                sizeof(cl_uint),  &di->vendorID, NULL);
+    err |= clGetDeviceInfo(dev, CL_DRIVER_VERSION,                  sizeof(di->driver),   di->driver, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_VERSION,                  sizeof(di->version),  di->version, NULL);
+  //err |= clGetDeviceInfo(dev, CL_DEVICE_OPENCL_C_VERSION,         sizeof(di->clCVer),   di->clCVer, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_ENDIAN_LITTLE,            sizeof(cl_bool),  &di->littleEndian, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_ERROR_CORRECTION_SUPPORT, sizeof(cl_bool),  &di->errCorrect, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_IMAGE_SUPPORT, sizeof(cl_bool),  &di->imgSupport, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_ADDRESS_BITS,             sizeof(cl_uint),  &di->addrBits, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_COMPUTE_UNITS,        sizeof(cl_uint),  &di->maxCompUnits, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_CLOCK_FREQUENCY,      sizeof(cl_uint),  &di->clockFreq, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_GLOBAL_MEM_SIZE,          sizeof(cl_ulong), &di->memSize, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_MEM_ALLOC_SIZE,       sizeof(cl_ulong), &di->maxMemAlloc, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_GLOBAL_MEM_CACHE_SIZE,    sizeof(cl_ulong), &di->gMemCache, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE, sizeof(cl_uint), &di->cachelineSize, NULL);
+
+  //err |= clGetDeviceInfo(dev, CL_DEVICE_HOST_UNIFIED_MEMORY,      sizeof(cl_ulong), &unifiedMem, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_LOCAL_MEM_TYPE, sizeof(cl_device_local_mem_type), &di->localMemType, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_LOCAL_MEM_SIZE,           sizeof(cl_ulong), &di->localMemSize, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_CONSTANT_ARGS,        sizeof(cl_uint),  &di->maxConstArgs, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE, sizeof(cl_ulong), &di->maxConstBufSize, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_PARAMETER_SIZE, sizeof(size_t), &di->maxParamSize, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &di->maxWorkGroupSize, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(cl_uint), &di->maxWorkItemDim, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(di->maxWorkItemSizes), di->maxWorkItemSizes, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MEM_BASE_ADDR_ALIGN, sizeof(cl_uint), &di->memBaseAddrAlign, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE, sizeof(cl_uint), &di->minAlignSize, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_PROFILING_TIMER_RESOLUTION, sizeof(size_t), &di->timerRes, NULL);
+    err |= clGetDeviceInfo(dev, CL_DEVICE_EXTENSIONS, sizeof(di->exts), &di->exts, NULL);
+
+    di->computeCapabilityMajor = di->computeCapabilityMinor = 0;
+    di->warpSize = 0;
+    /* TODO: Correct way to test for Tesla type things?
+       Is there a way we can find if a GPU is connected to a display in general?
+     */
+    di->nonOutput = ((di->devType != CL_DEVICE_TYPE_GPU) || (strstr(di->devName, "Tesla") != NULL));
+
+
+    if (isNvidiaGPUDevice(di))
+    {
+        di->vliw = 1;
+        di->doubleFrac = cudaEstimateDoubleFrac(di);
+        di->calTarget = MW_CAL_TARGET_INVALID;
+
+        if (strstr(di->exts, "cl_nv_device_attribute_query") != NULL)
+        {
+            err |= clGetDeviceInfo(dev, CL_DEVICE_WARP_SIZE_NV,
+                                   sizeof(di->warpSize), &di->warpSize, NULL);
+            err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV,
+                                   sizeof(cl_uint), &di->computeCapabilityMajor, NULL);
+            err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV,
+                                   sizeof(cl_uint), &di->computeCapabilityMinor, NULL);
+        }
+    }
+    else if (isAMDGPUDevice(di))
+    {
+        amdData = lookupAMDGPUInfo(di);
+
+        di->vliw       = amdData->vliw;
+        di->doubleFrac = amdData->doubleFrac;
+        di->calTarget  = amdData->target;
+        di->warpSize   = amdData->wavefrontSize;
+    }
+
+    if (di->warpSize == 0)
+    {
+        warn("Unknown device type, using warp size = 1\n");
+        di->warpSize = 1;
+    }
+
+    if (err)
+    {
+        mwCLWarn("Error getting device information", err);
+    }
+    else
+    {
+        di->doubleExts = mwGetDoubleExts(di->exts);
+    }
+
+    return err;
+}
+
+
 void mwPrintDevInfo(const DevInfo* di)
 {
-    warn("Device %s (%s:0x%x) (%s)\n"
+    warn("Device '%s' (%s:0x%x) (%s)\n"
          "Driver version:      %s\n"
          "Version:             %s\n"
          "Compute capability:  %u.%u\n"
@@ -369,8 +435,10 @@ void mwPrintDevInfo(const DevInfo* di)
          "Min type align size: %u\n"
          "Timer resolution:    "ZU" ns\n"
          "Warp size:           %u\n"
+         "VLIW:                %u\n"
          "Double extension:    %s\n"
-         "Extensions:          %s\n" ,
+         "Double fraction:     1/%u\n"
+         "Extensions:          %s\n",
          di->devName,
          di->vendor,
          di->vendorID,
@@ -401,7 +469,9 @@ void mwPrintDevInfo(const DevInfo* di)
          di->minAlignSize,
          di->timerRes,
          di->warpSize,
+         di->vliw,
          showMWDoubleExts(di->doubleExts),
+         di->doubleFrac,
          di->exts
         );
 }

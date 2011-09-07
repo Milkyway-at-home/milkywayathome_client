@@ -332,3 +332,60 @@ const char* showMWDoubleExts(const MWDoubleExts x)
     return NULL;
 }
 
+const char* showMWCALtargetEnum(const MWCALtargetEnum x)
+{
+    switch (x)
+    {
+        case MW_CAL_TARGET_UNKNOWN:
+            return "MW_CAL_TARGET_UNKNOWN";
+        case MW_CAL_TARGET_INVALID:
+            return "MW_CAL_TARGET_INVALID";
+        case MW_CAL_TARGET_600:
+            return "MW_CAL_TARGET_600";
+        case MW_CAL_TARGET_610:
+            return "MW_CAL_TARGET_610";
+        case MW_CAL_TARGET_630:
+            return "MW_CAL_TARGET_630";
+        case MW_CAL_TARGET_670:
+            return "MW_CAL_TARGET_670";
+        case MW_CAL_TARGET_7XX:
+            return "MW_CAL_TARGET_7XX";
+        case MW_CAL_TARGET_770:
+            return "MW_CAL_TARGET_770";
+        case MW_CAL_TARGET_710:
+            return "MW_CAL_TARGET_710";
+        case MW_CAL_TARGET_730:
+            return "MW_CAL_TARGET_730";
+        case MW_CAL_TARGET_CYPRESS:
+            return "MW_CAL_TARGET_CYPRESS";
+        case MW_CAL_TARGET_JUNIPER:
+            return "MW_CAL_TARGET_JUNIPER";
+        case MW_CAL_TARGET_REDWOOD:
+            return "MW_CAL_TARGET_REDWOOD";
+        case MW_CAL_TARGET_CEDAR:
+            return "MW_CAL_TARGET_CEDAR";
+
+        case MW_CAL_TARGET_SUMO:
+            return "MW_CAL_TARGET_SUMO";
+        case MW_CAL_TARGET_SUPERSUMO:
+            return "MW_CAL_TARGET_SUPERSUMO";
+
+        case MW_CAL_TARGET_WRESTLER:
+            return "MW_CAL_TARGET_WRESTLER";
+        case MW_CAL_TARGET_CAYMAN:
+            return "MW_CAL_TARGET_CAYMAN";
+        case MW_CAL_TARGET_RESERVED2:
+            return "MW_CAL_TARGET_RESERVED2";
+        case MW_CAL_TARGET_BARTS:
+            return "MW_CAL_TARGET_BARTS";
+
+        case MW_CAL_TARGET_TURKS:
+            return "MW_CAL_TARGET_TURKS";
+        case MW_CAL_TARGET_CAICOS:
+            return "MW_CAL_TARGET_CAICOS";
+
+        default:
+            return "Invalid MWCALtargetEnum";
+    }
+}
+

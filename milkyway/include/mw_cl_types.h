@@ -47,6 +47,34 @@ typedef enum
     MW_NVIDIA = 0x10de
 } MW_VENDOR_ID;
 
+typedef enum MWCALtargetEnum {
+    MW_CAL_TARGET_UNKNOWN   = -2,
+    MW_CAL_TARGET_INVALID   = -1,
+    MW_CAL_TARGET_600       = 0,      /**< R600 GPU ISA */
+    MW_CAL_TARGET_610       = 1,      /**< RV610 GPU ISA */
+    MW_CAL_TARGET_630       = 2,      /**< RV630 GPU ISA */
+    MW_CAL_TARGET_670       = 3,      /**< RV670 GPU ISA */
+    MW_CAL_TARGET_7XX       = 4,      /**< R700 class GPU ISA */
+    MW_CAL_TARGET_770       = 5,      /**< RV770 GPU ISA */
+    MW_CAL_TARGET_710       = 6,      /**< RV710 GPU ISA */
+    MW_CAL_TARGET_730       = 7,      /**< RV730 GPU ISA */
+    MW_CAL_TARGET_CYPRESS   = 8,      /**< CYPRESS GPU ISA */
+    MW_CAL_TARGET_JUNIPER   = 9,      /**< JUNIPER GPU ISA */
+    MW_CAL_TARGET_REDWOOD   = 10,     /**< REDWOOD GPU ISA */
+    MW_CAL_TARGET_CEDAR     = 11,     /**< CEDAR GPU ISA */
+
+    MW_CAL_TARGET_SUMO      = 12,
+    MW_CAL_TARGET_SUPERSUMO = 13,
+
+    MW_CAL_TARGET_WRESTLER  = 14,     /**< WRESTLER GPU ISA */
+    MW_CAL_TARGET_CAYMAN    = 15,     /**< CAYMAN GPU ISA */
+    MW_CAL_TARGET_RESERVED2 = 16,
+    MW_CAL_TARGET_BARTS     = 17,     /**< BARTS GPU ISA */
+
+    MW_CAL_TARGET_TURKS     = 18,
+    MW_CAL_TARGET_CAICOS    = 19
+} MWCALtargetEnum;
+
 typedef struct
 {
     cl_device_id devID;
@@ -80,8 +108,10 @@ typedef struct
     char driver[128];
     cl_uint computeCapabilityMajor; /* Nvidia only */
     cl_uint computeCapabilityMinor;
+    MWCALtargetEnum calTarget;       /* AMD Only */
 
-    //char clCVer[128];
+    cl_uint doubleFrac; /* Estimated speed of doubles relative to float */
+    cl_uint vliw;
 
     size_t maxWorkItemSizes[3];
     MWDoubleExts doubleExts;

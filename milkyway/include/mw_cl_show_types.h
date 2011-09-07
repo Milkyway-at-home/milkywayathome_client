@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-/* TODO: clint and memflags are usually or'd, so most of the time these won't work right */
+/* TODO: cl_int and memflags are usually or'd, so most of the time these won't work right */
 const char* showCLDeviceType(const cl_device_type x) CONST_F;
 const char* showCLBuildStatus(const cl_build_status x) CONST_F;
 const char* showCLInt(const cl_int x) CONST_F;
@@ -45,6 +45,7 @@ const char* showCLBool(const cl_bool x) CONST_F;
 const char* showCLDeviceMemCacheType(const cl_device_mem_cache_type x) CONST_F;
 const char* showCLKernelInfo(const cl_kernel_info x) CONST_F;
 const char* showMWDoubleExts(const MWDoubleExts x)  CONST_F;
+const char* showMWCALtargetEnum(const MWCALtargetEnum x);
 
 #ifdef __cplusplus
 }
