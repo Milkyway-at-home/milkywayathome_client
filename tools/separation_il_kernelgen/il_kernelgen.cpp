@@ -381,7 +381,7 @@ static int separationKernelHeader(std::stringstream& code, CALuint maxStreams)
 
     code << "il_cs_2_0\n";
   //code << format("dcl_max_thread_per_group %i\n") % 256;  // Only on Evergreen and later
-    code << format("dcl_num_thread_per_group %i\n") % 256;  // R7XX and later
+    code << format("dcl_num_thread_per_group %i\n") % 64;  // R7XX and later
     code << format("; %i stream kernel\n") % maxStreams;
     code << "dcl_cb cb0[10]  ; Constant buffer that holds ABI data\n";
     code << "dcl_cb cb1[15]  ; Kernel arguments\n";
