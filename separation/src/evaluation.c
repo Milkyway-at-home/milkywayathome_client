@@ -38,6 +38,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#if !SEPARATION_OPENCL
+/* FIXME */
+typedef int CLInfo;
+#endif
+
 
 ProbabilityFunc probabilityFunc = NULL;
 

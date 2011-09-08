@@ -211,10 +211,8 @@ static void separationReadPreferences(SeparationFlags* sf)
 
     /* Any successfully found setting will be used; otherwise it will get the default */
     sf->targetFrequency = prefs.gpuTargetFrequency;
-    sf->waitFactor = prefs.gpuWaitFactor;
     sf->nonResponsive = prefs.gpuNonResponsive;
     sf->processPriority = prefs.gpuProcessPriority;
-    sf->pollingMode = prefs.gpuPollingMode;
     sf->disableGPUCheckpointing = prefs.gpuDisableCheckpoint;
 }
 
