@@ -24,10 +24,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 
-#ifdef cl_amd_fp64
+#ifdef cl_khr_fp64
+  #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#elif cl_amd_fp64
   #pragma OPENCL EXTENSION cl_amd_fp64 : enable
 #else
-  #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+  #error No double extension available
 #endif /* cl_amd_fp64 */
 
 #define MAX_CONVOLVE 256
