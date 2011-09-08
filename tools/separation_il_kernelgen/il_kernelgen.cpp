@@ -148,7 +148,7 @@ static uint1 get_global_id0_with_offset()
 
 
 /* For reference: ATI application register usage in 1, 2, 3 stream cases: 13, 19, 25 respectively */
-static void createSeparationKernelCore(CALuint maxStreams)
+static void createSeparationKernelCore(CALuint maxStreams, CALuint uavid)
 {
     CALuint j;
 
@@ -179,13 +179,13 @@ static void createSeparationKernelCore(CALuint maxStreams)
     const uint1 nConvolve = _nConvolve;
     const uint1 nStream = _nStream;
 
-    uav_raw<SumType> bgOut(11);
-    uav_raw<SumType> streamsOut(11);
+    uav_raw<SumType> bgOut(uavid);
+    uav_raw<SumType> streamsOut(uavid);
 
-    uav_raw<double2> rPts(11);
-    uav_raw<double2> rConsts(11);
-    uav_raw<double2> lTrigBuf(11);
-    uav_raw<double1> bTrigBuf(11);
+    uav_raw<double2> rPts(uavid);
+    uav_raw<double2> rConsts(uavid);
+    uav_raw<double2> lTrigBuf(uavid);
+    uav_raw<double1> bTrigBuf(uavid);
 
     const uint1 gid = get_global_id0_with_offset() - extra;
     const uint1 muStep = gid % muSteps;
@@ -395,6 +395,7 @@ static int separationKernelHeader(std::stringstream& code, CALuint maxStreams)
 
 std::string createSeparationIntegralKernel(CALuint device, CALuint maxStreams)
 {
+    CALuint uavid = device >= CAL_TARGET_CYPRESS ? 11 : 1;
     std::stringstream code;
 
     if (separationKernelHeader(code, maxStreams))
@@ -402,7 +403,7 @@ std::string createSeparationIntegralKernel(CALuint device, CALuint maxStreams)
 
     Source::begin(device);
 
-    createSeparationKernelCore(maxStreams);
+    createSeparationKernelCore(maxStreams, uavid);
 
     Source::end();
 
