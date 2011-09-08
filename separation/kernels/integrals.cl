@@ -150,12 +150,7 @@ __kernel void probabilities(__global real* restrict bgOut,
         return;
 
 
-//    bgOut[mu_step * r_steps + r_step] = 1337.0;
-//    return;
-
     size_t trigIdx = nu_step * mu_steps + mu_step;
-
-
     real2 lTrig = lTrigBuf[trigIdx];
     real bSin = bSinBuf[trigIdx];
     real2 rc = rConsts[r_step];

@@ -40,6 +40,13 @@ static const char* getNvidiaRegCount(const DevInfo* di)
     return regDefault;
 }
 
+static cl_bool isILKernelTarget(const DevInfo* di)
+{
+    MWCALtargetEnum t = di->calTarget;
+
+    return (t == MW_CAL_TARGET_770) || (t == MW_CAL_TARGET_CYPRESS) || (t == MW_CAL_TARGET_CAYMAN);
+}
+
 static cl_bool usingILKernelIsAcceptable(const CLInfo* ci, const AstronomyParameters* ap, const CLRequest* clr)
 {
     const DevInfo* di = &ci->di;
@@ -58,7 +65,7 @@ static cl_bool usingILKernelIsAcceptable(const CLInfo* ci, const AstronomyParame
         return CL_FALSE;
 
     /* Make sure an acceptable device */
-    return (isAMDGPUDevice(di) && mwPlatformSupportsAMDOfflineDevices(ci));
+    return (isAMDGPUDevice(di) && isILKernelTarget(di) && mwPlatformSupportsAMDOfflineDevices(ci));
 }
 
 /* Get string of options to pass to the CL compiler. Result must be freed */
