@@ -70,6 +70,8 @@ typedef struct
     int enableCheckpointing;
     double gpuWaitFactor;
 
+    int forceNoOpenCL;
+    int forceNoILKernel;
     int forceNoIntrinsics;
     int forceX87;
     int forceSSE2;

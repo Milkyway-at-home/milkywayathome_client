@@ -78,6 +78,9 @@ typedef struct
     MWPriority processPriority;
     int setPriority;
 
+    int forceNoOpenCL;
+    int forceNoILKernel;
+
     /* Force between normal, SSE2, SSE3 paths */
     int forceNoIntrinsics;
     int forceX87;
@@ -97,7 +100,9 @@ typedef struct
 
 #define DEFAULT_NON_RESPONSIVE FALSE
 #define DEFAULT_TARGET_FREQUENCY 30.0
-#define DEFAULT_DISABLE_GPU_CHECKPOINTING 0
+#define DEFAULT_DISABLE_GPU_CHECKPOINTING FALSE
+#define DEFAULT_DISABLE_OPENCL FALSE
+#define DEFAULT_DISABLE_IL_KERNEL FALSE
 
 
 #define EMPTY_SEPARATION_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL,           \
@@ -106,6 +111,8 @@ typedef struct
                                  DEFAULT_TARGET_FREQUENCY,                     \
                                  DEFAULT_DISABLE_GPU_CHECKPOINTING,            \
                                  0, FALSE,                                     \
+                                 DEFAULT_DISABLE_OPENCL,                       \
+                                 DEFAULT_DISABLE_IL_KERNEL,                    \
                                  FALSE, FALSE, FALSE, FALSE, FALSE,            \
                                  FALSE                                         \
                                }

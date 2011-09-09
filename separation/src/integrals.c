@@ -245,7 +245,8 @@ int integrate(const AstronomyParameters* ap,
               const StreamConstants* sc,
               const StreamGauss sg,
               EvaluationState* es,
-              const CLRequest* clr)
+              const CLRequest* clr,
+              const CLInfo* _ci)
 {
     RConsts* rc;
     real* RESTRICT rPoints;

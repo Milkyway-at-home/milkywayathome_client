@@ -26,6 +26,15 @@
 
 #include "separation_config.h"
 #include "milkyway_math.h"
+#include "milkyway_util.h"
+
+#if SEPARATION_OPENCL
+  #include "milkyway_cl.h"
+#else
+/* FIXME */
+typedef int CLInfo;
+#endif
+
 
 #include <stdint.h>
 
@@ -251,6 +260,47 @@ typedef struct SEPARATION_ALIGN(16)
 #define ZERO_KAHAN { 0.0, 0.0 }
 
 #define CLEAR_KAHAN(k) { (k).sum = 0.0; (k).correction = 0.0; }
+
+
+
+/* Completed integral state */
+typedef struct
+{
+    real bgIntegral;       /* Background integral */
+    real* streamIntegrals;
+} Cut;
+
+typedef struct
+{
+    /* State for integral calculation. */
+    Cut* cuts;
+    Cut* cut;                        /* es->cuts[es->currentCut] */
+    unsigned int nu_step, mu_step;   /* r_steps aren't checkpointed */
+    Kahan bgSum;
+    Kahan* streamSums;
+
+    real bgTmp;
+    real* streamTmps;
+
+    unsigned int lastCheckpointNuStep; /* Nu step of last checkpointed (only used by GPU) */
+    uint64_t current_calc_probs; /* progress of completed cuts */
+
+    int currentCut;
+
+    int numberCuts;
+    int numberStreams;
+} EvaluationState;
+
+
+
+
+typedef int (*IntegrationFunc) (const AstronomyParameters* ap,
+                                const IntegralArea* ia,
+                                const StreamConstants* sc,
+                                const StreamGauss sg,
+                                EvaluationState* es,
+                                const CLRequest* clr,
+                                const CLInfo* ci);
 
 
 #ifdef __cplusplus

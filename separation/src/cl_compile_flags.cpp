@@ -54,11 +54,9 @@ static cl_bool usingILKernelIsAcceptable(const CLInfo* ci, const AstronomyParame
 
     if (!DOUBLEPREC)
         return CL_FALSE;
-    /*
-      // If we don't want it, don't use it
-      if (clr->disableILKernel)
+
+      if (clr->forceNoILKernel)
           return CL_FALSE;
-     */
 
     /* Supporting these unused options with the IL kernel is too much work */
     if (ap->number_streams > maxILKernelStreams || ap->aux_bg_profile)

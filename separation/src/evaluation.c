@@ -38,12 +38,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#if !SEPARATION_OPENCL
-/* FIXME */
-typedef int CLInfo;
-#endif
-
-
 ProbabilityFunc probabilityFunc = NULL;
 
 /* MSVC can't do weak imports */
@@ -280,10 +274,18 @@ static void calculateIntegrals(const AstronomyParameters* ap,
         es->current_calc_probs = completedIntegralProgress(ias, es);
 
         t1 = mwGetTime();
+
       #if SEPARATION_OPENCL
-        rc = integrateCL(ap, ia, sc, sg, es, clr, ci);
+        if (clr->forceNoOpenCL)
+        {
+            rc = integrate(ap, ia, sc, sg, es, clr, ci);
+        }
+        else
+        {
+            rc = integrateCL(ap, ia, sc, sg, es, clr, ci);
+        }
       #else
-        rc = integrate(ap, ia, sc, sg, es, clr);
+        rc = integrate(ap, ia, sc, sg, es, clr, ci);
       #endif /* SEPARATION_OPENCL */
 
         t2 = mwGetTime();
@@ -336,8 +338,11 @@ int evaluate(SeparationResults* results,
     }
 
   #if SEPARATION_OPENCL
-    if (setupSeparationCL(&ci, ap, ias, clr) != CL_SUCCESS)
-        fail("Failed to setup CL\n");
+    if (!clr->forceNoOpenCL)
+    {
+        if (setupSeparationCL(&ci, ap, ias, clr) != CL_SUCCESS)
+            fail("Failed to setup CL\n");
+    }
   #endif
 
     calculateIntegrals(ap, ias, sc, sg, es, clr, &ci);
@@ -357,12 +362,7 @@ int evaluate(SeparationResults* results,
     }
     else
     {
-        /* TODO: likelihood on GPU with OpenCL. Make this less of a
-         * mess. The different versions should appear to be the
-         * same. */
-
         rc = likelihood(results, ap, &sp, sc, streams, sg, do_separation, separation_outfile);
-
         rc |= checkSeparationResults(results, ap->number_streams);
     }
 
@@ -370,7 +370,10 @@ int evaluate(SeparationResults* results,
     freeStreamGauss(sg);
 
   #if SEPARATION_OPENCL
-    mwDestroyCLInfo(&ci);
+    if (!clr->forceNoOpenCL)
+    {
+        mwDestroyCLInfo(&ci);
+    }
   #endif
 
     return rc;

@@ -30,35 +30,6 @@
 extern "C" {
 #endif
 
-
-/* Completed integral state */
-typedef struct
-{
-    real bgIntegral;       /* Background integral */
-    real* streamIntegrals;
-} Cut;
-
-typedef struct
-{
-    /* State for integral calculation. */
-    Cut* cuts;
-    Cut* cut;                        /* es->cuts[es->currentCut] */
-    unsigned int nu_step, mu_step;   /* r_steps aren't checkpointed */
-    Kahan bgSum;
-    Kahan* streamSums;
-
-    real bgTmp;
-    real* streamTmps;
-
-    unsigned int lastCheckpointNuStep; /* Nu step of last checkpointed (only used by GPU) */
-    uint64_t current_calc_probs; /* progress of completed cuts */
-
-    int currentCut;
-
-    int numberCuts;
-    int numberStreams;
-} EvaluationState;
-
 EvaluationState* newEvaluationState(const AstronomyParameters* ap);
 void freeEvaluationState(EvaluationState* es);
 void copyEvaluationState(EvaluationState* esDest, const EvaluationState* esSrc);

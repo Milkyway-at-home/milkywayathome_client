@@ -156,6 +156,9 @@ static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)
 
     clr->targetFrequency = sf->targetFrequency <= 0.01 ? DEFAULT_TARGET_FREQUENCY : sf->targetFrequency;
     clr->magicFactor = sf->magicFactor;
+
+    clr->forceNoILKernel = sf->forceNoILKernel;
+    clr->forceNoOpenCL = sf->forceNoOpenCL;
 }
 
 #if BOINC_APPLICATION
@@ -331,6 +334,18 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
                 "verbose", '\0',
                 POPT_ARG_NONE, &sf.verbose,
                 0, "Print some extra debugging information", NULL
+            },
+
+            {
+                "force-no-opencl", '\0',
+                POPT_ARG_NONE, &sf.forceNoOpenCL,
+                0, "Use regular CPU path instead of OpenCL if available", NULL
+            },
+
+            {
+                "force-no-il-kernel", '\0',
+                POPT_ARG_NONE, &sf.forceNoILKernel,
+                0, "Do not use AMD IL replacement kernels if available", NULL
             },
 
             {
