@@ -75,21 +75,6 @@ char* getCompilerFlags(const CLInfo* ci, const AstronomyParameters* ap, const CL
     std::stringstream flags(std::stringstream::out);
     flags.precision(15);
 
-    if (!haveInlinedKernel()) /* Add include paths */
-    {
-        char* cwd = getcwd(NULL, 0);
-        if (!cwd)
-        {
-            perror("Failed to get working directory");
-            return NULL;
-        }
-
-        flags << "-I" << cwd << " ";
-        flags << "-I" << cwd << "/../include ";
-
-        free(cwd);
-    }
-
     if (DOUBLEPREC)
     {
         flags << "-D DOUBLEPREC=1 ";

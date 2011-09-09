@@ -130,6 +130,18 @@ cl_bool findRunSizes(RunSizes* sizes,
         return CL_TRUE;
     }
 
+    if (di->devType == CL_DEVICE_TYPE_CPU)
+    {
+        sizes->nChunk = sizes->nChunkEstimate = 1;
+        sizes->chunkSize = sizes->effectiveArea = sizes->area;
+        sizes->extra = 0;
+
+        sizes->local[0] = 1;
+        sizes->global[0] = sizes->area;
+
+        return CL_FALSE;
+    }
+
     err = mwGetWorkGroupInfo(ci, &wgi);
     if (err != CL_SUCCESS)
     {

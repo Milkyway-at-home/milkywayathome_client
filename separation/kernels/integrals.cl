@@ -95,9 +95,6 @@ double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double 
   #define mw_fsqrt sqrt
 #endif /* USE_CUSTOM_SQRT && DOUBLEPREC */
 
-/* This doesn't seem to really help */
-#define MAX_CONST(n, type) __attribute__((max_constant_size(n * sizeof(type))))
-
 
 inline real aux_prob(real r_in_mag)
 {
