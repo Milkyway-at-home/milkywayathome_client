@@ -1060,13 +1060,13 @@ NBodyStatus runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* n
 
     err = mwSetupCL(&ci, &clr);
     if (err != CL_SUCCESS)
-        return err;
+        return NBODY_ERROR;
 
     if (!nbodyCheckDevCapabilities(&ci.di, ctx, st))
-        return MW_CL_ERROR;
+        return NBODY_ERROR;
 
     if (setThreadCounts(&_workSizes, &ci.di) || setWorkSizes(&_workSizes, &ci.di))
-        return MW_CL_ERROR;
+        return NBODY_ERROR;
 
     printNBodyWorkSizes(&_workSizes);
 
