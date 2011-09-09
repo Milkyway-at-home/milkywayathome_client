@@ -144,6 +144,7 @@ configure_file (
 set(cl_source_list src/separation_cl_buffers.c
                    src/separation_binaries.c
                    src/cl_compile_flags.cpp
+                   src/replace_amd_il.c
                    src/setup_cl.c
                    src/run_cl.c)
 
@@ -184,6 +185,7 @@ set(separation_headers include/calculated_constants.h
 
 set(separation_cl_headers include/setup_cl.h
                           include/cl_compile_flags.h
+                          include/replace_amd_il.h
                           include/run_cl.h
                           include/separation_cl_buffers.h)
 
@@ -246,7 +248,8 @@ list(APPEND exe_link_libs ${SEPARATION_LIBM_LIBRARY})
 
 if(SEPARATION_OPENCL)
   include_directories(${OPENCL_INCLUDE_DIRS})
-  list(APPEND exe_link_libs milkyway_cl ${OPENCL_LIBRARIES})
+  include_directories(${LIBELF_INCLUDE_DIR})
+  list(APPEND exe_link_libs milkyway_cl ${OPENCL_LIBRARIES} ${LIBELF_LIBRARY})
 endif()
 
 set(separation_main_src src/separation_main.c)

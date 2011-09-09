@@ -344,6 +344,7 @@ find_package(GLUT)
 
 add_subdirectory(popt)
 add_subdirectory(lua)
+add_subdirectory(libelf)
 
 add_subdirectory(dSFMT)
 add_definitions("${DSFMT_FLAGS}")

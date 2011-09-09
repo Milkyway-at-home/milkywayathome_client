@@ -27,7 +27,7 @@
 #include "separation_cl_buffers.h"
 #include "separation_binaries.h"
 #include "cl_compile_flags.h"
-
+#include "replace_amd_il.h"
 
 #include <assert.h>
 
@@ -469,16 +469,78 @@ cl_int setupSeparationCL(CLInfo* ci,
     }
 
     warn("\nCompiler flags:\n%s\n\n", compileFlags);
+
+#if 0
+    size_t binSize = 0;
+    unsigned char* bin = (unsigned char*) mwReadFileWithSize("../inject_kernel.bin", &binSize);
+    if (!bin)
+    {
+        mw_panic("No bin\n");
+    }
+
+    err = mwSetProgramFromBin(ci, "probabilities", bin, binSize);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Error creating program from binary", err);
+        return err;
+    }
+#endif
+
+
+#if 1
     err = mwSetProgramFromSrc(ci, "probabilities", (const char**) &kernelSrc, 1, compileFlags);
-
-    freeKernelSrc(kernelSrc);
-    free(compileFlags);
-
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error creating program from source", err);
         return err;
     }
+
+    freeKernelSrc(kernelSrc);
+    free(compileFlags);
+
+    if (0)
+    {
+        unsigned char* bin;
+        unsigned char* modBin;
+        char* ilSrc;
+        size_t binSize = 0;
+        size_t modBinSize = 0;
+
+
+        ilSrc = mwReadFile("../kernel_3_Cayman.il");
+        if (!ilSrc)
+        {
+            mw_panic("No source\n");
+        }
+
+        bin = mwGetProgramBinary(ci, &binSize);
+        if (!bin)
+        {
+            mw_panic("Implement me");
+        }
+
+        modBin = getModifiedAMDBinary(bin, binSize, ilSrc, strlen(ilSrc), &modBinSize);
+        free(bin);
+        if (!modBin)
+        {
+            warn("Error getting modified binary. Falling back to source kernel\n");
+
+            mw_panic("Implement me");
+        }
+        else
+        {
+            /* FIXME: leaking kernel when setting binary */
+            err = mwSetProgramFromBin(ci, "probabilities", modBin, modBinSize);
+            if (err != CL_SUCCESS)
+            {
+                mwCLWarn("Error creating program from binary", err);
+                return err;
+            }
+
+            free(modBin);
+        }
+    }
+    #endif
 
     return CL_SUCCESS;
 }
