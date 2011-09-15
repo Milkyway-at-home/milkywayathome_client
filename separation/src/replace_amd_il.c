@@ -19,7 +19,6 @@
  */
 
 
-
 #include <err.h>
 #include <errno.h>
 #include <sysexits.h>
@@ -28,7 +27,6 @@
 #include <string.h>
 
 #include <libelf.h>
-#include <gelf.h>
 
 #include "replace_amd_il.h"
 #include "milkyway_util.h"
@@ -60,18 +58,19 @@ static int replaceAMDILSection(Elf* e, const char* ilBuf, size_t ilLen)
     /* Iterate through all the sections */
     while ((scn = elf_nextscn(e, scn)))
     {
-        GElf_Shdr shdr;
+        Elf32_Shdr* shdr;
         const char* name;
 
         /* Get the header for this section */
-        if (gelf_getshdr(scn, &shdr) != &shdr)
+        shdr = elf32_getshdr(scn);
+        if (!shdr)
         {
-            warnx("getshdr() failed: %s.", elf_errmsg(-1));
+            warnx("elf32_getshdr() failed: %s.", elf_errmsg(-1));
             return EX_SOFTWARE;
         }
 
         /* Look up the name of the section in the string table */
-        name = elf_strptr(e, shstrndx, shdr.sh_name);
+        name = elf_strptr(e, shstrndx, shdr->sh_name);
         if (!name)
         {
             warnx("elf_strptr() failed: %s.", elf_errmsg(-1));
@@ -247,7 +246,6 @@ static int getTmpBinaryName(char* buf, size_t size)
     return snprintf(buf, size, "tmp_cl_binary_%d.bin", (int) getpid());
 }
 
-
 /* Take a program binary from clGetPropramInfo() and a replacement IL source as a string.
    Replace the .amdil section in the ELF image and return a new copy of the binary.
  */
@@ -286,8 +284,6 @@ unsigned char* getModifiedAMDBinary(unsigned char* bin, size_t binSize, const ch
     char tmpBinFile[128];
 
     getTmpBinaryName(tmpBinFile, sizeof(tmpBinFile));
-
-    printf("Using temp name %s\n", tmpBinFile);
 
     if (!bin || !ilSrc)
         return NULL;
