@@ -48,7 +48,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #undef __LIBELF64_IRIX
 
 /* Define if you want 64-bit support, and are running Linux */
-#cmakedefine01 __LIBELF64_LINUX
+//#cmakedefine01 __LIBELF64_LINUX
 
 /* Define if you want symbol versioning (and your system supports it) */
 #undef __LIBELF_SYMBOL_VERSIONS

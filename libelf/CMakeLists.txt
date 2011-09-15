@@ -246,15 +246,18 @@ check_header_stdc()
 add_definitions(-DHAVE_CONFIG_H=1)
 
 # Some stuff is defined in config.h and then again in sys_elf.h, and I don't know why
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/lib/sys_elf.h.in ${CMAKE_CURRENT_SOURCE_DIR}/lib/sys_elf.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${PROJECT_INCLUDE_DIR}/libelf/config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/lib/sys_elf.h.in ${PROJECT_INCLUDE_DIR}/libelf/sys_elf.h)
+
+include_directories(${PROJECT_INCLUDE_DIR})
+include_directories(${PROJECT_INCLUDE_DIR}/libelf)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 add_library(elf STATIC ${elf_src} ${elf_headers})
 
 
-set(LIBELF_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "libelf headers")
+set(LIBELF_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/lib" CACHE INTERNAL "libelf headers")
 set(LIBELF_LIBRARY elf CACHE INTERNAL "libelf library")
 
 
