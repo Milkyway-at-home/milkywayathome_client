@@ -32,13 +32,6 @@
 #include "milkyway_util.h"
 
 
-#define STANDALONE 0
-
-#define DEFAULT_BIN_FILE "amd_binary.bin"
-#define DEFAULT_INPUT_IL_FILE "kernel.il"
-#define DEFAULT_OUTPUT_FILE "mod_binary.bin"
-
-
 
 static int replaceAMDILSection(Elf* e, const char* ilBuf, size_t ilLen)
 {
@@ -137,42 +130,41 @@ static int replaceAMDILSection(Elf* e, const char* ilBuf, size_t ilLen)
     return 0;
 }
 
-static char* readFile(const char* filename, size_t* lenOut)
+static char* readFD(int fd, size_t* lenOut)
 {
     char* strBuf = NULL;
     struct stat props;
-    int fdKern = -1;
     size_t len = 0;
 
-    fdKern = open(filename, O_RDONLY, 0);
-    if (fdKern < 0)
+    if (fd < 0)
     {
-        warn("Error opening kernel file '%s'", filename);
+        return NULL;
     }
 
-    if (fstat(fdKern, &props) < 0)
+    if (fstat(fd, &props) < 0)
     {
-        warn("fstat on kernel file '%s'", filename);
+        warn("fstat on temporary AMD binary file");
+    }
+
+    if (props.st_size <= 0)
+    {
+        warn("Modified binary file is empty\n");
+        return NULL;
     }
 
     len = props.st_size + 1;
+
+    warn("SIZE IS %zu\n", len);
     strBuf = malloc(len);
     if (!strBuf)
     {
-        err(errno, "Failed to allocate space for kernel file '%s'\n", filename);
+        err(errno, "Failed to allocate space for AMD binary file\n");
     }
     strBuf[props.st_size] = '\0';
 
-    if (read(fdKern, strBuf, props.st_size) < 0)
+    if (read(fd, strBuf, props.st_size) < 0)
     {
-        warn("Error reading from kernel file '%s'\n", filename);
-        free(strBuf);
-        strBuf = NULL;
-    }
-
-    if (close(fdKern))
-    {
-        warn("Failed to close file '%s'", filename);
+        warn("Error reading from AMD Binary file\n");
         free(strBuf);
         strBuf = NULL;
     }
@@ -249,75 +241,53 @@ static int getTmpBinaryName(char* buf, size_t size)
 /* Take a program binary from clGetPropramInfo() and a replacement IL source as a string.
    Replace the .amdil section in the ELF image and return a new copy of the binary.
  */
-static int modifyAMDBinary(const char* tmpBinFile, unsigned char* bin, size_t binSize, const char* ilSrc, size_t ilLen)
+unsigned char* getModifiedAMDBinary(unsigned char* bin, size_t binSize, const char* ilSrc, size_t ilLen, size_t* newBinSizeOut)
 {
     int fd = -1;
     int rc = 0;
+    char tmpBinFile[128];
+    unsigned char* newBin = NULL;
+
+    if (!bin || !ilSrc)
+        return NULL;
+
+    getTmpBinaryName(tmpBinFile, sizeof(tmpBinFile));
 
     /* Write binary to a temporary file since we need a file descriptor for libelf */
     fd = open(tmpBinFile, O_RDWR | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (fd < 0)
     {
         warn("Failed to open AMD binary file '%s'", tmpBinFile);
-        return errno;
+        return NULL;
     }
 
     if (write(fd, bin, binSize) <= 0)
     {
         warn("Failed to write temporary binary file '%s'", tmpBinFile);
-        return errno;
+        return NULL;
     }
 
     rc = processElf(fd, ilSrc, ilLen);
 
+    if (rc == 0)
+    {
+        if (lseek(fd, 0, SEEK_SET) != 0)
+        {
+
+            warn("Failed to seek temporary binary file");
+            return NULL;
+        }
+
+        newBin = (unsigned char*) readFD(fd, newBinSizeOut);
+    }
+
     if (close(fd) < 0)
     {
         warn("Failed to close binary file '%s'", tmpBinFile);
-        return EX_SOFTWARE;
+        free(newBin);
+        return NULL;
     }
 
-    return rc;
+    return newBin;
 }
-
-unsigned char* getModifiedAMDBinary(unsigned char* bin, size_t binSize, const char* ilSrc, size_t ilLen, size_t* newBinLenOut)
-{
-    char tmpBinFile[128];
-
-    getTmpBinaryName(tmpBinFile, sizeof(tmpBinFile));
-
-    if (!bin || !ilSrc)
-        return NULL;
-
-    if (modifyAMDBinary(tmpBinFile, bin, binSize, ilSrc, ilLen))
-        return NULL;
-
-     return (unsigned char*) readFile(tmpBinFile, newBinLenOut);
-}
-
-#if STANDALONE
-
-int main(int argc, const char* argv[])
-{
-    int rc = 0;
-    char* ilSrc = NULL;
-    size_t ilLen = 0;
-    unsigned char* bin = NULL;
-    size_t binSize = 0;
-
-    const char* ilFile = (argc >= 2) ? argv[1] : DEFAULT_INPUT_IL_FILE;
-    const char* binFile = (argc >= 3) ? argv[2] : DEFAULT_BIN_FILE;
-    const char* outFile = (argc >= 4) ? argv[3] : DEFAULT_OUTPUT_FILE;
-
-
-    ilSrc = readFile(ilFile, &ilLen);
-    bin = (unsigned char*) readFile(binFile, &binSize);
-
-    rc = modifyAMDBinary(outFile, bin, binSize, ilSrc, ilLen);
-    free(ilSrc);
-    free(bin);
-
-    return rc;
-}
-
-#endif /* STANDALONE */
 
