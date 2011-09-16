@@ -70,16 +70,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_extra.h"
 #include "milkyway_util.h"
 #include "nbody_graphics.h"
+#include "nbody_potential_types.h"
 
 #include <lua.h>
 #include <time.h>
 
-
-#ifndef _MSC_VER
-  #define NBODY_ALIGN __attribute__((aligned))
-#else
-  #define NBODY_ALIGN
-#endif /* _MSC_VER */
 
 /* There are bodies and cells. Cells are 0, bodies are nonzero. Bodies
    will be set to 1 or -1 if the body is to be ignored in the final
@@ -151,88 +146,6 @@ typedef enum
     Exact
 } criterion_t;
 
-#define _SPHERICAL 0
-
-typedef enum
-{
-    InvalidSpherical   = InvalidEnum,
-    SphericalPotential = _SPHERICAL
-} spherical_t;
-
-/* Spherical potential */
-typedef struct NBODY_ALIGN
-{
-    spherical_t type;
-    real mass;
-    real scale;
-} Spherical;
-
-#define SPHERICAL_TYPE "Spherical"
-
-
-/* Can't get the enum value in preprocessor, so do this */
-#define _MN_DISK 0
-#define _EXP_DISK 1
-
-
-/* Supported disk models */
-typedef enum
-{
-    InvalidDisk       = InvalidEnum,
-    MiyamotoNagaiDisk = _MN_DISK,
-    ExponentialDisk   = _EXP_DISK
-} disk_t;
-
-typedef struct NBODY_ALIGN
-{
-    disk_t type;
-    real mass;         /* disk mass */
-    real scaleLength;  /* "a" for M-N, "b" for exp disk */
-    real scaleHeight;  /* unused for exponential disk. "b" for Miyamoto-Nagai disk */
-} Disk;
-
-#define DISK_TYPE "Disk"
-
-/* Supported halo models */
-
-/* Can't get the enum value in preprocessor, so do this */
-#define _LOG_HALO 0
-#define _NFW_HALO 1
-#define _TRIAXIAL_HALO 2
-typedef enum
-{
-    InvalidHalo     = InvalidEnum,
-    LogarithmicHalo = _LOG_HALO,
-    NFWHalo         = _NFW_HALO,
-    TriaxialHalo    = _TRIAXIAL_HALO
-} halo_t;
-
-typedef struct NBODY_ALIGN
-{
-    halo_t type;
-    real vhalo;         /* common to all 3 halos */
-    real scaleLength;   /* common to all 3 halos */
-    real flattenZ;      /* used by logarithmic and triaxial */
-    real flattenY;      /* used by triaxial */
-    real flattenX;      /* used by triaxial */
-    real triaxAngle;    /* used by triaxial */
-
-    real c1;           /* Constants calculated for triaxial from other params */
-    real c2;           /* TODO: Lots more stuff could be cached, but should be done less stupidly */
-    real c3;
-} Halo;
-
-#define HALO_TYPE "Halo"
-
-typedef struct NBODY_ALIGN
-{
-    Spherical sphere[1];
-    Disk disk;
-    Halo halo;
-    void* rings;       /* currently unused */
-} Potential;
-
-#define POTENTIAL_TYPE "Potential"
 
 typedef enum
 {
@@ -386,12 +299,6 @@ typedef enum
 #define SET_TYPE(x, y) (((Disk*)x)->type = y)
 #define NBODY_TYPEOF(x) (((Disk*)x)->type)
 
-
-/* Useful initializers */
-#define EMPTY_SPHERICAL { InvalidSpherical, 0.0, 0.0 }
-#define EMPTY_DISK { InvalidDisk, 0.0, 0.0, 0.0 }
-#define EMPTY_HALO { InvalidHalo, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
-#define EMPTY_POTENTIAL { {EMPTY_SPHERICAL}, EMPTY_DISK, EMPTY_HALO, NULL }
 
 #define EMPTY_TREE { NULL, 0.0, 0, 0, FALSE }
 #define EMPTY_NBODYCTX { EMPTY_POTENTIAL, EXTERNAL_POTENTIAL_DEFAULT, 0.0, \
