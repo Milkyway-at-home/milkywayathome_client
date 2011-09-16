@@ -489,23 +489,6 @@ cl_int setupSeparationCL(CLInfo* ci,
     mw_printf("\nCompiler flags:\n%s\n\n", compileFlags);
     err = mwSetProgramFromSrc(ci, (const char**) &kernelSrc, 1, compileFlags);
 
-#if 0
-    size_t binSize = 0;
-    unsigned char* bin = (unsigned char*) mwReadFileWithSize("../inject_kernel.bin", &binSize);
-    if (!bin)
-    {
-        mw_panic("No bin\n");
-    }
-
-    err = mwSetProgramFromBin(ci, "probabilities", bin, binSize);
-    if (err != CL_SUCCESS)
-    {
-        mwCLWarn("Error creating program from binary", err);
-        return err;
-    }
-#endif
-
-
 #if 1
     err = mwSetProgramFromSrc(ci, (const char**) &kernelSrc, 1, compileFlags);
     if (err != CL_SUCCESS)

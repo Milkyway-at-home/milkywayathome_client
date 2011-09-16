@@ -47,7 +47,7 @@
 
 static void printCopyright()
 {
-    warn(
+    mw_printf(
         "Milkyway@Home Separation client %d.%d\n\n"
         "Copyright (c) 2008-2011 Travis Desell, Nathan Cole, Boleslaw Szymanski\n"
         "Copyright (c) 2008-2011 Heidi Newberg, Carlos Varela, Malik Magdon-Ismail\n"

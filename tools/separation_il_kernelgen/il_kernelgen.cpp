@@ -48,10 +48,10 @@ static double1 div_custom(double1 x, double1 y)
     il_func(_out(result), x, y)
     {
         emit_comment("div_custom");
-        //float1 yf = cast_type<float1>(y);
-        //double1 tmp = cast_type<double1>(reciprocal(yf));
+        float1 yf = cast_type<float1>(y);
+        double1 tmp = cast_type<double1>(reciprocal(yf));
 
-        double1 tmp = native_reciprocal(y);
+        //double1 tmp = native_reciprocal(y);
 
         double1 tmp2 = mad(-y, tmp, 1.0);
         double1 tmp3 = mad(tmp, tmp2, tmp);
