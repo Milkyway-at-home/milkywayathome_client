@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Boleslaw
- * Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
- * Rensselaer Polytechnic Institute.
- * Copyright (c) 2010-2011 Matthew Arsenault
- * Copyright (c) 1991-2000, University of Groningen, The Netherlands.
- * Copyright (c) 2001-2009, The GROMACS Development Team
+ *  Copyright (c) 2008-2010 Travis Desell, Nathan Cole
+ *  Copyright (c) 2008-2010 Boleslaw Szymanski, Heidi Newbergb
+ *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
+ *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *  Copyright (c) 1991-2000 University of Groningen, The Netherlands
+ *  Copyright (c) 2001-2009 The GROMACS Development Team
  *
  *  This file is part of Milkway@Home.
  *
@@ -22,36 +23,36 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *
- * This file incorporates work covered by the following copyright and
- * permission notice:
+ *  This file incorporates work covered by the following copyright and
+ *  permission notice:
  *
- *      Fast exp(x) computation (with SSE2 optimizations).
+ *    Fast exp(x) computation (with SSE2 optimizations).
  *
- * Copyright (c) 2010, Naoaki Okazaki
- * All rights reserved.
+ *  Copyright (c) 2010, Naoaki Okazaki
+ *  All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the names of the authors nor the names of its contributors
- *       may be used to endorse or promote products derived from this
- *       software without specific prior written permission.
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are met:
+ *      * Redistributions of source code must retain the above copyright
+ *        notice, this list of conditions and the following disclaimer.
+ *      * Redistributions in binary form must reproduce the above copyright
+ *        notice, this list of conditions and the following disclaimer in the
+ *        documentation and/or other materials provided with the distribution.
+ *      * Neither the names of the authors nor the names of its contributors
+ *        may be used to endorse or promote products derived from this
+ *        software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
- * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+ *  OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ *  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ *  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ *  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "evaluation_state.h"
@@ -570,9 +571,9 @@ static inline mwvector lbr2xyz_2(const AstronomyParameters* ap, real rPoint, LBT
 {
     mwvector xyz;
 
-    xyz.x = mw_mad(rPoint, LCOS_BCOS(lbt), ap->m_sun_r0);
-    xyz.y = rPoint * LSIN_BCOS(lbt);
-    xyz.z = rPoint * BSIN(lbt);
+    xyz.x = mw_mad(rPoint, lbt.lCosBCos, ap->m_sun_r0);
+    xyz.y = rPoint * lbt.lSinBCos;
+    xyz.z = rPoint * lbt.bSin;
 
     return xyz;
 }
@@ -702,11 +703,11 @@ static real bg_probability_slow_hprob(const AstronomyParameters* ap,
                                       real reff_xr_rp3,
                                       real* RESTRICT streamTmps)
 {
-    unsigned int i;
+    int i;
     real rg, g;
     mwvector xyz;
     real bg_prob = 0.0;
-    unsigned int convolve = ap->convolve;
+    int convolve = ap->convolve;
     int aux_bg_profile = ap->aux_bg_profile;
 
     zero_st_probs(streamTmps, ap->number_streams);

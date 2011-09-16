@@ -334,8 +334,6 @@ set(MILKYWAY_INSTALL_INCLUDE_DIR "${MILKYWAY_ROOT}/include" CACHE INTERNAL "Loca
 
 
 # Look for GPU things first. This way we can continue normally if not found.
-find_package(CAL)
-find_package(CAL++)
 find_package(OpenCL)
 find_package(OpenMP)
 find_package_static(Fdlibm)
@@ -345,6 +343,10 @@ find_package(GLUT)
 
 add_subdirectory(popt)
 add_subdirectory(lua)
+
+if(SEPARATION_OPENCL)
+  add_subdirectory(libelf)
+endif()
 
 add_subdirectory(dSFMT)
 add_definitions("${DSFMT_FLAGS}")

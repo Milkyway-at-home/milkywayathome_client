@@ -1,22 +1,22 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <string.h>
 #include <stdlib.h>
@@ -28,7 +28,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_cl.h"
 #include "mw_cl.h"
 #include "separation_cl_buffers.h"
-#include "separation_cl_defs.h"
 #include "calculated_constants.h"
 #include "run_cl.h"
 #include "r_points.h"
@@ -58,23 +57,24 @@ static void sumStreamResults(real* streamResults,
     }
 
     for (i = 0; i < number_streams; ++i)
+    {
         streamResults[i] = streamSums[i].sum + streamSums[i].correction;
+    }
 
     mwFreeA(streamSums);
 }
 
 static cl_int enqueueIntegralKernel(CLInfo* ci,
-                                    cl_bool useDefault,
-                                    const size_t offset[],
-                                    const size_t global[],
-                                    const size_t local[])
+                                    const size_t offset[1],
+                                    const size_t global[1],
+                                    const size_t local[1])
 {
     cl_int err;
 
     err = clEnqueueNDRangeKernel(ci->queue,
                                  _separationKernel,
-                                 2,
-                                 offset, global, useDefault ? NULL : local,
+                                 1,
+                                 offset, global, local,
                                  0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
@@ -111,13 +111,15 @@ static cl_int setNuKernelArgs(CLInfo* ci, const IntegralArea* ia, const cl_uint 
     cl_int err;
     NuId nuid;
 
-    /* Avoid doing any trig in the broken ATI math. Also trig seems to
-     * be more expensive there. Not doing the coordinate conversion
-     * there also halves number of required registers, which prevents
-     * enough threads to hide the horrible latency of the other
-     * required reads. */
     nuid = calcNuStep(ia, nu_step);
-    err = clSetKernelArg(_separationKernel, 10, sizeof(real), &nuid.id);
+    err = clSetKernelArg(_separationKernel, 13, sizeof(real), &nuid.id);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Error setting nu_id argument for step %u", err, nu_step);
+        return err;
+    }
+
+    err = clSetKernelArg(_separationKernel, 14, sizeof(cl_uint), &nu_step);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error setting nu_id argument for step %u", err, nu_step);
@@ -134,8 +136,8 @@ static cl_int readKernelResults(CLInfo* ci,
                                 const cl_uint number_streams)
 {
     cl_int err;
-    real* bgResults;
-    real* streamsTmp;
+    const real* bgResults;
+    const real* streamsTmp;
     size_t resultSize, streamsSize;
 
     resultSize = sizeof(real) * ia->mu_steps * ia->r_steps;
@@ -148,7 +150,7 @@ static cl_int readKernelResults(CLInfo* ci,
 
     es->bgTmp = sumBgResults(bgResults, ia->mu_steps, ia->r_steps);
 
-    err = clEnqueueUnmapMemObject(ci->queue, cm->outBg, bgResults, 0, NULL, NULL);
+    err = clEnqueueUnmapMemObject(ci->queue, cm->outBg, (void*) bgResults, 0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Failed to unmap results buffer", err);
@@ -165,7 +167,7 @@ static cl_int readKernelResults(CLInfo* ci,
 
     sumStreamResults(es->streamTmps, streamsTmp, ia->mu_steps, ia->r_steps, number_streams);
 
-    err = clEnqueueUnmapMemObject(ci->queue, cm->outStreams, streamsTmp, 0, NULL, NULL);
+    err = clEnqueueUnmapMemObject(ci->queue, cm->outStreams, (void*) streamsTmp, 0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Failed to unmap streams buffer", err);
@@ -179,8 +181,7 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
 {
     cl_uint i;
     cl_int err = CL_SUCCESS;
-    size_t offset[2];
-    size_t global[2];
+    size_t offset[1];
 
     err = setNuKernelArgs(ci, ia, nu_step);
     if (err != CL_SUCCESS)
@@ -189,16 +190,12 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
         return err;
     }
 
-    offset[1] = nu_step;
-    global[1] = 1;
+    offset[0] = 0;
     for (i = 0; i < runSizes->nChunk && err == CL_SUCCESS; ++i)
     {
-        offset[0] = runSizes->chunkBorders[i];
-        global[0] = runSizes->chunkBorders[i + 1] - runSizes->chunkBorders[i];
 
         mw_begin_critical_section();
-        err = enqueueIntegralKernel(ci, mwDivisible(global[0], runSizes->local[0]) ,
-                                    offset, global, runSizes->local);
+        err = enqueueIntegralKernel(ci, offset, runSizes->global, runSizes->local);
         if (err == CL_SUCCESS)
         {
             /* Give the screen a chance to redraw */
@@ -207,7 +204,10 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
                 mwCLWarn("Failed to finish", err);
         }
 
+
         mw_end_critical_section();
+
+        offset[0] += runSizes->global[0];
     }
 
     return err;
@@ -220,9 +220,9 @@ static inline void reportProgress(const AstronomyParameters* ap,
                                   double dt)
 {
   #if BOINC_APPLICATION
-    cl_uint prog;
-    prog = es->current_calc_probs + ia->mu_steps * ia->r_steps * step;
-    boinc_fraction_done((double) prog / ap->total_calc_probs);
+    cl_long prog;
+    prog = es->current_calc_probs + (cl_ulong) ia->mu_steps * ia->r_steps * step;
+    boinc_fraction_done((cl_double) prog / ap->total_calc_probs);
   #else
     printf("Step %u: %fms\n", step, dt);
   #endif /* BOINC_APPLICATION */
@@ -304,8 +304,7 @@ cl_int integrateCL(const AstronomyParameters* ap,
                    const StreamGauss sg,
                    EvaluationState* es,
                    const CLRequest* clr,
-                   CLInfo* ci,
-                   cl_bool useImages)
+                   CLInfo* ci)
 {
     cl_int err;
     RunSizes runSizes;
@@ -315,13 +314,13 @@ cl_int integrateCL(const AstronomyParameters* ap,
     /* Need to test sizes for each integral, since the area size can change */
     calculateSizes(&sizes, ap, ia);
 
-    if (findRunSizes(&runSizes, ci, &ci->di, ia, clr))
+    if (findRunSizes(&runSizes, ci, &ci->di, ap, ia, clr))
     {
         mw_printf("Failed to find good run sizes\n");
         return MW_CL_ERROR;
     }
 
-    err = createSeparationBuffers(ci, &cm, ap, ia, sc, sg, &sizes, useImages);
+    err = createSeparationBuffers(ci, &cm, ap, ia, sc, sg, &sizes);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Failed to create CL buffers", err);

@@ -1,24 +1,25 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <stdio.h>
+#include <errno.h>
 
 #include "milkyway_util.h"
 #include "mw_cl_show_types.h"
@@ -111,7 +112,7 @@ cl_int mwBuildProgram(CLInfo* ci, const char* options)
 unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
 {
     cl_int err;
-    size_t binSize;
+    size_t binSize = 0;
     unsigned char* bin = NULL;
 
     err = clGetProgramInfo(ci->prog, CL_PROGRAM_BINARY_SIZES, sizeof(binSize), &binSize, NULL);
@@ -121,8 +122,14 @@ unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
         return NULL;
     }
 
-    bin = (unsigned char*) mwMalloc(binSize);
-    err = clGetProgramInfo(ci->prog, CL_PROGRAM_BINARIES, binSize, &bin, NULL);
+    if (binSize == 0)
+    {
+        mw_printf("Program binary size == 0\n");
+        return NULL;
+    }
+
+    bin = (unsigned char*) mwCalloc(binSize + 1, 1);
+    err = clGetProgramInfo(ci->prog, CL_PROGRAM_BINARIES, sizeof(bin), &bin, NULL);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error getting program binary", err);
@@ -135,6 +142,38 @@ unsigned char* mwGetProgramBinary(CLInfo* ci, size_t* binSizeOut)
         *binSizeOut = binSize;
     return bin;
 }
+
+int mwSaveProgramBinaryToFile(CLInfo* ci, const char* filename)
+{
+    size_t binSize;
+    unsigned char* bin;
+    FILE* f;
+    int rc;
+
+    bin = mwGetProgramBinary(ci, &binSize);
+    f = fopen(filename, "wb");
+    if (!f)
+    {
+        perror("Opening CL binary output");
+        return errno;
+    }
+
+    if (fwrite(bin, binSize, 1, f) != 1)
+    {
+        mw_printf("Error writing program binary to file '%s'\n", filename);
+        rc = errno;
+    }
+
+    if (fclose(f) < 0)
+    {
+        mw_printf("Error closing program binary to file '%s'", filename);
+        rc = errno;
+    }
+    free(bin);
+
+    return rc;
+}
+
 
 
 cl_int mwSetProgramFromBin(CLInfo* ci,const unsigned char* bin, size_t binSize)
@@ -190,6 +229,21 @@ cl_int mwSetProgramFromSrc(CLInfo* ci,
     clUnloadCompiler();
 
     return CL_SUCCESS;
+}
+
+
+cl_int mwCreateKernel(cl_kernel* kern, CLInfo* ci, const char* name)
+{
+    cl_int err = CL_SUCCESS;
+
+    *kern = clCreateKernel(ci->prog, name, &err);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Failed to create kernel '%s'", err, name);
+        return err;
+    }
+
+    return err;
 }
 
 

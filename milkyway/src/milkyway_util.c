@@ -1,22 +1,22 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef _WIN32
   #include <sys/time.h>
@@ -163,7 +163,7 @@ static char* fcloseVerbose(FILE* f, const char* err)
     return NULL;
 }
 
-char* mwFreadFile(FILE* f, const char* filename)
+char* mwFreadFileWithSize(FILE* f, const char* filename, size_t* sizeOut)
 {
     long fsize;
     size_t readSize;
@@ -199,20 +199,39 @@ char* mwFreadFile(FILE* f, const char* filename)
 
     fcloseVerbose(f, "Closing read file");
 
+    if (sizeOut)
+        *sizeOut = readSize;
+
     return buf;
+}
+
+char* mwFreadFile(FILE* f, const char* filename)
+{
+    return mwFreadFileWithSize(f, filename, NULL);
+}
+
+char* mwReadFileWithSize(const char* filename, size_t* sizeOut)
+{
+    return mwFreadFileWithSize(mw_fopen(filename, "rb"), filename, sizeOut);
 }
 
 char* mwReadFile(const char* filename)
 {
-    return mwFreadFile(mw_fopen(filename, "rb"), filename);
+    return mwFreadFileWithSize(mw_fopen(filename, "rb"), filename, NULL);
 }
+
 
 int mwWriteFile(const char* filename, const char* str)
 {
     FILE* f;
     int rc;
 
-    f = mw_fopen(filename, "w");
+    if (!str || !filename)
+    {
+        return 1;
+    }
+
+    f = mw_fopen(filename, "wb");
     if (!f)
     {
         perror("Writing file");
@@ -490,11 +509,6 @@ const char** mwFixArgv(int argc, const char* argv[])
         argvCopy[i++] = argv[j++];
 
     return argvCopy;
-}
-
-size_t mwDivRoundup(size_t a, size_t b)
-{
-    return (a % b != 0) ? a / b + 1 : a / b;
 }
 
 /* Pick from unit cube. i.e. not normalized */

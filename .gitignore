@@ -64,3 +64,9 @@ install_manifest.txt
 include/luaconf.h
 boinc/boinc
 AllInOneFile.c
+tools/separation_il_kernelgen/il_kernelgen
+libelf/config.h
+libelf/lib/sys_elf.h
+tmp_cl_binary*.bin
+TAGS
+tags

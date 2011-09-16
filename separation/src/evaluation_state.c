@@ -1,23 +1,25 @@
 /*
-Copyright 2008-2010 Travis Desell, Matthew Arsenault, Dave Przybylo,
-Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
-Magdon-Ismail and Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ *  Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Dave Przybylo
+ *  Copyright (c) 2008-2010 Boleslaw Szymanski, Heidi Newberg
+ *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
+ *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "milkyway_util.h"
 #include "separation.h"
@@ -35,7 +37,7 @@ void initializeCut(Cut* integral, unsigned int number_streams)
 
 static void initializeState(const AstronomyParameters* ap, EvaluationState* es)
 {
-    unsigned int i;
+    int i;
 
     es->currentCut = 0;
     es->cut = &es->cuts[0];
@@ -62,7 +64,7 @@ EvaluationState* newEvaluationState(const AstronomyParameters* ap)
 
 void copyEvaluationState(EvaluationState* esDest, const EvaluationState* esSrc)
 {
-    unsigned int i;
+    int i;
 
     assert(esDest && esSrc);
 
@@ -78,7 +80,7 @@ static void freeCut(Cut* i)
 
 void freeEvaluationState(EvaluationState* es)
 {
-    unsigned int i;
+    int i;
 
     for (i = 0; i < es->numberCuts; ++i)
         freeCut(&es->cuts[i]);
@@ -90,7 +92,7 @@ void freeEvaluationState(EvaluationState* es)
 
 void clearEvaluationStateTmpSums(EvaluationState* es)
 {
-    unsigned int i;
+    int i;
 
     CLEAR_KAHAN(es->bgSum);
     for (i = 0; i < es->numberStreams; ++i)
@@ -100,7 +102,7 @@ void clearEvaluationStateTmpSums(EvaluationState* es)
 void printEvaluationState(const EvaluationState* es)
 {
     Cut* c;
-    unsigned int j;
+    int j;
 
     printf("evaluation-state {\n"
            "  nu_step          = %u\n"
@@ -147,7 +149,7 @@ static const SeparationVersionHeader versionHeader =
     SEPARATION_VERSION_MAJOR,
     SEPARATION_VERSION_MINOR,
     SEPARATION_OPENCL,
-    SEPARATION_CAL
+    FALSE
 };
 
 
@@ -156,12 +158,12 @@ static int versionMismatch(const SeparationVersionHeader* v)
     if (   v->major != SEPARATION_VERSION_MAJOR
         || v->minor != SEPARATION_VERSION_MINOR
         || v->cl    != SEPARATION_OPENCL
-        || v->cal   != SEPARATION_CAL)
+        || v->cal   != FALSE)
     {
         mw_printf("Checkpoint version does not match:\n"
-                  "  Expected %d.%d, OpenCL = %d, CAL++ = %d,\n"
+                  "  Expected %d.%d, OpenCL = %d, CAL++ = 0,\n"
                   "  Got %d.%d, OpenCL = %d, CAL++ = %d\n",
-                  SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR, SEPARATION_OPENCL, SEPARATION_CAL,
+                  SEPARATION_VERSION_MAJOR, SEPARATION_VERSION_MINOR, SEPARATION_OPENCL,
                   v->major, v->minor, v->cl, v->cal);
         return 1;
     }
@@ -220,11 +222,13 @@ static int readState(FILE* f, EvaluationState* es)
 */
 void addTmpSums(EvaluationState* es)
 {
-    unsigned int i;
+    int i;
 
     KAHAN_ADD(es->bgSum, es->bgTmp);
     for (i = 0; i < es->numberStreams; ++i)
+    {
         KAHAN_ADD(es->streamSums[i], es->streamTmps[i]);
+    }
 
     es->bgTmp = 0.0;
     memset(es->streamTmps, 0, sizeof(es->streamTmps[0]) * es->numberStreams);

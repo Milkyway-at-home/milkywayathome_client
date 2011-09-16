@@ -1,22 +1,22 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "milkyway_util.h"
 #include "mw_cl_show_types.h"
@@ -330,5 +330,62 @@ const char* showMWDoubleExts(const MWDoubleExts x)
 
     mw_unreachable();
     return NULL;
+}
+
+const char* showMWCALtargetEnum(const MWCALtargetEnum x)
+{
+    switch (x)
+    {
+        case MW_CAL_TARGET_UNKNOWN:
+            return "MW_CAL_TARGET_UNKNOWN";
+        case MW_CAL_TARGET_INVALID:
+            return "MW_CAL_TARGET_INVALID";
+        case MW_CAL_TARGET_600:
+            return "MW_CAL_TARGET_600";
+        case MW_CAL_TARGET_610:
+            return "MW_CAL_TARGET_610";
+        case MW_CAL_TARGET_630:
+            return "MW_CAL_TARGET_630";
+        case MW_CAL_TARGET_670:
+            return "MW_CAL_TARGET_670";
+        case MW_CAL_TARGET_7XX:
+            return "MW_CAL_TARGET_7XX";
+        case MW_CAL_TARGET_770:
+            return "MW_CAL_TARGET_770";
+        case MW_CAL_TARGET_710:
+            return "MW_CAL_TARGET_710";
+        case MW_CAL_TARGET_730:
+            return "MW_CAL_TARGET_730";
+        case MW_CAL_TARGET_CYPRESS:
+            return "MW_CAL_TARGET_CYPRESS";
+        case MW_CAL_TARGET_JUNIPER:
+            return "MW_CAL_TARGET_JUNIPER";
+        case MW_CAL_TARGET_REDWOOD:
+            return "MW_CAL_TARGET_REDWOOD";
+        case MW_CAL_TARGET_CEDAR:
+            return "MW_CAL_TARGET_CEDAR";
+
+        case MW_CAL_TARGET_SUMO:
+            return "MW_CAL_TARGET_SUMO";
+        case MW_CAL_TARGET_SUPERSUMO:
+            return "MW_CAL_TARGET_SUPERSUMO";
+
+        case MW_CAL_TARGET_WRESTLER:
+            return "MW_CAL_TARGET_WRESTLER";
+        case MW_CAL_TARGET_CAYMAN:
+            return "MW_CAL_TARGET_CAYMAN";
+        case MW_CAL_TARGET_RESERVED2:
+            return "MW_CAL_TARGET_RESERVED2";
+        case MW_CAL_TARGET_BARTS:
+            return "MW_CAL_TARGET_BARTS";
+
+        case MW_CAL_TARGET_TURKS:
+            return "MW_CAL_TARGET_TURKS";
+        case MW_CAL_TARGET_CAICOS:
+            return "MW_CAL_TARGET_CAICOS";
+
+        default:
+            return "Invalid MWCALtargetEnum";
+    }
 }
 

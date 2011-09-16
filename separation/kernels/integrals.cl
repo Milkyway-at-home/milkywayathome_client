@@ -19,7 +19,31 @@ You should have received a copy of the GNU General Public License
 along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "separation_kernel_types.h"
+#ifndef DOUBLEPREC
+  #error DOUBLEPREC not defined
+#endif
+
+
+#ifdef cl_khr_fp64
+  #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#elif cl_amd_fp64
+  #pragma OPENCL EXTENSION cl_amd_fp64 : enable
+#else
+  #error No double extension available
+#endif /* cl_amd_fp64 */
+
+#define MAX_CONVOLVE 256
+
+
+#if DOUBLEPREC
+typedef double real;
+typedef double2 real2;
+typedef double4 real4;
+#else
+typedef float real;
+typedef float2 real2;
+typedef float4 real4;
+#endif /* DOUBLEPREC */
 
 
 #define cube(x) ((x) * (x) * (x))
@@ -30,71 +54,23 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #if !defined(__Cypress__) && !defined(__ATI_RV770__) && !defined(__CPU__)
   #define USE_CUSTOM_DIVISION 1
-
-  /* It's faster to load the stream constants into private memory on
-   * Nvidia, which I think there spills into shared stuff. It seems
-   * much slower on ATI though. */
-  #define LOAD_STREAM_CONSTANTS 1
 #endif
 
 
-#if LOAD_STREAM_CONSTANTS
-  #define __SC_CONSTANT __private
-#else
-  #define __SC_CONSTANT __constant
-#endif /* LOAD_STREAM_CONSTANTS */
-
-#if USE_IMAGES
-
-const sampler_t sample = CLK_ADDRESS_NONE
-                       | CLK_NORMALIZED_COORDS_FALSE
-                       | CLK_FILTER_NEAREST;
-
-inline RPoints readRPts(__read_only image2d_t r_pts, int2 i)
-{
-    return as_double2((read_imageui(r_pts, sample, i)));
-}
-
-#else
-
-inline RPoints readRPts(__global const RPoints* r_pts, int2 i)
-{
-    return r_pts[i.x * CONVOLVE + i.y];
-}
-
-#endif /* USE_IMAGES */
-
-#if LOAD_STREAM_CONSTANTS
-
-inline void set_sc_priv(StreamConstants* sc, __constant StreamConstants* sc_c)
-{
-    unsigned int i;
-
-    #pragma unroll NSTREAM
-    for (i = 0; i < NSTREAM; ++i)
-    {
-        sc[i] = sc_c[i];
-    }
-}
-
-#endif /* LOAD_STREAM_CONSTANTS */
-
 #if USE_CUSTOM_DIVISION && DOUBLEPREC
-
-/* TODO: Move these */
 
 double mw_div(double a, double b)  // accurate to 1 ulp, i.e the last bit of the double precision number
 {
     // cuts some corners on the numbers range but is significantly faster, employs "faithful rounding"
-    double r;
-    double y;
-    double c;
-    y = (double)(1.0f / convert_float_rtn(b)); // 22bit estimate of reciprocal, limits range to float range, but spares the exponent extraction
-    c = 1.0 - b * y;
-    y += y * c;        // first Newton iteration => 44bit accurate
-    r = a * y;         // second iteration works directly on a/b, so it is effectively
-    c = a - b * r;     // a Newton-Markstein iteration without guaranteed round to nearest
-    return(r + y * c); // should be generally accurate to 1 ulp, i.e "faithful rounding" (or close to it, depending on definition)
+
+    // 22bit estimate of reciprocal, limits range to float range, but spares the exponent extraction
+    double y = (double)(1.0f / convert_float_rtn(b));
+    double c = mad(-b, y, 1.0);
+    y = mad(y, c, y);         // first Newton iteration => 44bit accurate
+    double r = a * y;         // second iteration works directly on a/b, so it is effectively
+    c = mad(-b, r, a);  // a Newton-Markstein iteration without guaranteed round to nearest
+
+    return mad(y, c, r); // should be generally accurate to 1 ulp, i.e "faithful rounding" (or close to it, depending on definition)
 }                      // on a GT200 should be round to nearest most of the time, albeit not guaranteed
                        // one would have to add a second Newton iteration before the Markstein rounding step,
                        // but one looses the gained half bit of precision in the following additions, so the added effort doesn't make sense
@@ -108,89 +84,87 @@ double mw_div(double a, double b)  // accurate to 1 ulp, i.e the last bit of the
 double mw_fsqrt(double y)  // accurate to 1 ulp, i.e the last bit of the double precision number
 {
     // cuts some corners on the numbers range but is significantly faster, employs "faithful rounding"
-    double x, res;
-    x = (double)rsqrt((float)y); // 22bit estimate for reciprocal square root, limits range to float range, but spares the exponent extraction
-    x = x * (3.0 - y * (x * x)); // first Newton iteration (44bit accurate)
-    res = x * y;  // do final iteration directly on sqrt(y) and not on the inverse
-    return(res * (0.75 - 0.0625 * (res * x)));
+    // 22bit estimate for reciprocal square root, limits range to float range, but spares the exponent extraction
+    double x = (double)rsqrt((float)y);
+    x = x * mad(-y, x * x, 3.0);  // first Newton iteration (44bit accurate)
+    double res = x * y;                  // do final iteration directly on sqrt(y) and not on the inverse
+    return res * mad(-0.0625, res * x, 0.75);
 }   // same precision as division (1 ulp)
 
 #else
   #define mw_fsqrt sqrt
 #endif /* USE_CUSTOM_SQRT && DOUBLEPREC */
 
-#if 0
-  #define MAX_CONST(n, type) __attribute__((max_constant_size(n * sizeof(type))))
-#else
-  #define MAX_CONST(n, type)
-#endif
 
-#if LOAD_STREAM_CONSTANTS
-  #define SC_ARG sc_c
-#else
-  #define SC_ARG sc
-#endif /* LOAD_STREAM_CONSTANTS */
-
-
-inline real aux_prob(__constant AstronomyParameters* ap,
-                     const real qw_r3_N,
-                     const real r_in_mag)
+inline real aux_prob(real r_in_mag)
 {
     real tmp;
 
-    tmp = mad(ap->bg_b, r_in_mag, ap->bg_c); /* bg_b * r_in_mag + bg_c */
-    tmp = mad(ap->bg_a, sqr(r_in_mag), tmp); /* bg_a * r_in_mag2 + (bg_b * r_in_mag + bg_c)*/
+    tmp = mad(BG_B, r_in_mag, BG_C); /* bg_b * r_in_mag + bg_c */
+    tmp = mad(BG_A, sqr(r_in_mag), tmp); /* bg_a * r_in_mag2 + (bg_b * r_in_mag + bg_c)*/
 
-    return qw_r3_N * tmp;
+    return tmp;
 }
 
+typedef struct
+{
+    real x_a, x_c;
+    real y_a, y_c;
+    real z_a, z_c;
+    real sigma_sq2_inv;
+    real _pad;
+} SC;
 
-__kernel void mu_sum_kernel(__global real* restrict bgOut,
+
+
+
+/* Be careful of changing the arguments. It will most likely break the IL kernel */
+__kernel void probabilities(__global real* restrict bgOut,
                             __global real* restrict streamsOut,
 
-                            __constant AstronomyParameters* ap MAX_CONST(1, AstronomyParameters),
-                            __constant IntegralArea* ia MAX_CONST(1, IntegralArea),
+                            __global const real2* restrict rConsts,
+                            __global const real2* restrict rPts,
+                            __global const real2* restrict lTrigBuf,
+                            __global const real* restrict bSinBuf,
 
-                            __constant StreamConstants* SC_ARG MAX_CONST(NSTREAM, StreamConstants),
-                            __constant RConsts* rcs,
-                            __constant real* restrict sg_dx MAX_CONST(256, real),
 
-                          #if USE_IMAGES
-                            __read_only image2d_t r_pts,
-                          #else
-                            __global const __read_only RPoints* r_pts,
-                          #endif
+                            /* Placeholder for IL kernel */
+                            __constant real* _ap_consts __attribute__((max_constant_size(16 * sizeof(real)))),
 
-                            __global const __read_only LBTrig* lbts,
+                            __constant SC sc[NSTREAM] __attribute__((max_constant_size(NSTREAM * sizeof(SC)))),
+                            __constant real sg_dx[CONVOLVE] __attribute__((max_constant_size(256 * sizeof(real)))),
+
                             const unsigned int extra,
-                            const real nu_id)
+                            const unsigned int r_steps,
+                            const unsigned int mu_steps,
+                            const unsigned int nu_steps,
+                            const real nu_id,
+                            const unsigned int nu_step)
 {
-    size_t nu_step = get_global_id(1);
-    size_t mu_step = (get_global_id(0) - extra) % ia->mu_steps;
-    size_t r_step  = (get_global_id(0) - extra) / ia->mu_steps;
+    size_t gid = get_global_id(0) - extra;
+    size_t mu_step = gid % mu_steps;
+    size_t r_step  = gid / mu_steps;
 
-    if (r_step >= ia->r_steps || mu_step >= ia->mu_steps) /* Avoid out of bounds from roundup */
+    if (r_step >= r_steps || mu_step >= mu_steps) /* Avoid out of bounds from roundup */
         return;
 
-    LBTrig lbt = lbts[nu_step * ia->mu_steps + mu_step]; /* 32-byte read */
+
+    size_t trigIdx = nu_step * mu_steps + mu_step;
+    real2 lTrig = lTrigBuf[trigIdx];
+    real bSin = bSinBuf[trigIdx];
+    real2 rc = rConsts[r_step];
+
 
     real bg_prob = 0.0;
     real st_probs[NSTREAM] = { 0.0 };
 
-  #if LOAD_STREAM_CONSTANTS
-    StreamConstants sc[NSTREAM];
-    set_sc_priv(sc, sc_c);
-  #endif /* LOAD_STREAM_CONSTANTS */
-
-    unsigned int i, j;
-
-    for (i = 0; i < CONVOLVE; ++i)
+    for (int i = 0; i < CONVOLVE; ++i)
     {
-        RPoints r_pt = readRPts(r_pts, (int2) (r_step, i));
+        real2 rPt = rPts[CONVOLVE * r_step + i];
 
-        real x = mad(R_POINT(r_pt), LCOS_BCOS(lbt), (real) -SUN_R0);
-        real y = R_POINT(r_pt) * LSIN_BCOS(lbt);
-        real z = R_POINT(r_pt) * BSIN(lbt);
+        real x = mad(rPt.x, lTrig.x, (real) -SUN_R0);
+        real y = rPt.x * lTrig.y;
+        real z = rPt.x * bSin;
 
         /* sqrt(x^2 + y^2 + q_inv_sqr * z^2) */
         real tmp = x * x;
@@ -201,7 +175,7 @@ __kernel void mu_sum_kernel(__global real* restrict bgOut,
         real rs = rg + R0;
 
       #if FAST_H_PROB
-        bg_prob += mw_div(QW_R3_N(r_pt), (rg * cube(rs)));
+        bg_prob += mw_div(rPt.y, rg * cube(rs));
       #else
         bg_prob += mw_div(qw_r3_N, mw_powr(rg, ap->alpha) * mw_powr(rs, ap->alpha_delta3));
       #endif /* FAST_H_PROB */
@@ -209,24 +183,24 @@ __kernel void mu_sum_kernel(__global real* restrict bgOut,
       #if AUX_BG_PROFILE
         /* Currently not used */
         /* Add a quadratic term in g to the Hernquist profile */
-        real g = GPRIME(rcs[r_step]) + sg_dx[i];
-        bg_prob += aux_prob(ap, QW_R3_N(r_pt), g);
+        real g = rc.y + sg_dx[i];
+        bg_prob = mad(rPt.y, aux_prob(g), bg_prob);
       #endif /* AUX_BG_PROFILE */
 
         #pragma unroll NSTREAM
-        for (j = 0; j < NSTREAM; ++j)
+        for (int j = 0; j < NSTREAM; ++j)
         {
-            real xs = x - X(sc[j].c);
-            real ys = y - Y(sc[j].c);
-            real zs = z - Z(sc[j].c);
+            real xs = x - sc[j].x_c;
+            real ys = y - sc[j].y_c;
+            real zs = z - sc[j].z_c;
 
-            real dotted = X(sc[j].a) * xs;
-            dotted = mad(Y(sc[j].a), ys, dotted);
-            dotted = mad(Z(sc[j].a), zs, dotted);
+            real dotted = sc[j].x_a * xs;
+            dotted = mad(sc[j].y_a, ys, dotted);
+            dotted = mad(sc[j].z_a, zs, dotted);
 
-            xs = mad(dotted, -X(sc[j].a), xs);
-            ys = mad(dotted, -Y(sc[j].a), ys);
-            zs = mad(dotted, -Z(sc[j].a), zs);
+            xs = mad(dotted, -sc[j].x_a, xs);
+            ys = mad(dotted, -sc[j].y_a, ys);
+            zs = mad(dotted, -sc[j].z_a, zs);
 
             real sqrv = xs * xs;
             sqrv = mad(ys, ys, sqrv);
@@ -234,18 +208,18 @@ __kernel void mu_sum_kernel(__global real* restrict bgOut,
 
             real tmp = exp(-sqrv * sc[j].sigma_sq2_inv);
 
-            st_probs[j] = mad(QW_R3_N(r_pt), tmp, st_probs[j]);
+            st_probs[j] = mad(rPt.y, tmp, st_probs[j]);
         }
     }
 
-    real V_reff_xr_rp3 = nu_id * IRV_REFF_XR_RP3(rcs[r_step]);
-    size_t idx = mu_step * ia->r_steps + r_step; /* Index into output buffers */
+    real V_reff_xr_rp3 = nu_id * rc.x;
+    size_t idx = mu_step * r_steps + r_step; /* Index into output buffers */
 
     bg_prob *= V_reff_xr_rp3;
     bgOut[idx] += bg_prob;
 
     #pragma unroll NSTREAM
-    for (j = 0; j < NSTREAM; ++j)
+    for (int j = 0; j < NSTREAM; ++j)
     {
         streamsOut[NSTREAM * idx + j] += V_reff_xr_rp3 * st_probs[j];
     }

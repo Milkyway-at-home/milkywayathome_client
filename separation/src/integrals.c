@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Boleslaw
- * Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
- * Rensselaer Polytechnic Institute.
- * Copyright (c) 2010-2011 Matthew Arsenault
+ *  Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Dave Przybylo
+ *  Copyright (c) 2008-2010 Boleslaw Szymanski, Heidi Newberg
+ *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
+ *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
  *
  *  This file is part of Milkway@Home.
  *
@@ -18,7 +19,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 #include "evaluation_state.h"
@@ -38,7 +38,8 @@ static RConsts* initRPoints(const AstronomyParameters* ap,
                             real* RESTRICT rPoints,
                             real* RESTRICT qw_r3_N)
 {
-    unsigned int i, j, idx;
+    unsigned int i, idx;
+    int j;
     RPoints* rPts;
     RConsts* rc;
 
@@ -64,16 +65,14 @@ double _milkywaySeparationGlobalProgress = 0.0;
 #endif
 
 
-static inline real progress(const EvaluationState* es,
-                            const IntegralArea* ia,
-                            real total_calc_probs)
+static real progress(const EvaluationState* es, const IntegralArea* ia, real totalCalcProbs)
 {
     /* This integral's progress */
     /* When checkpointing is done, ia->mu_step would always be 0 */
-    unsigned int i_prog =  (es->nu_step * ia->mu_steps * ia->r_steps)
-                         + (es->mu_step * ia->r_steps); /* + es->r_step */
+    unsigned int i_prog =  ((uint64_t) es->nu_step * ia->mu_steps * ia->r_steps)
+                        + ((uint64_t) es->mu_step * ia->r_steps); /* + es->r_step */
 
-    return (real)(i_prog + es->current_calc_probs) / total_calc_probs;
+    return (real)(i_prog + es->current_calc_probs) / totalCalcProbs;
 }
 
 
@@ -122,7 +121,7 @@ static inline void doBoincCheckpoint(const EvaluationState* es,
 HOT
 static inline void sumProbs(EvaluationState* es)
 {
-    unsigned int i;
+    int i;
 
     KAHAN_ADD(es->bgSum, es->bgTmp);
     for (i = 0; i < es->numberStreams; ++i)
@@ -232,7 +231,7 @@ static void nuSum(const AstronomyParameters* ap,
 
 void separationIntegralApplyCorrection(EvaluationState* es)
 {
-    unsigned int i;
+    int i;
 
     es->cut->bgIntegral = es->bgSum.sum + es->bgSum.correction;
     for (i  = 0; i < es->numberStreams; ++i)
@@ -246,7 +245,8 @@ int integrate(const AstronomyParameters* ap,
               const StreamConstants* sc,
               const StreamGauss sg,
               EvaluationState* es,
-              const CLRequest* clr)
+              const CLRequest* clr,
+              const CLInfo* _ci)
 {
     RConsts* rc;
     real* RESTRICT rPoints;

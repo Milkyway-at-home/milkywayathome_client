@@ -1,22 +1,22 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef _MILKYWAY_UTIL_H_
 #define _MILKYWAY_UTIL_H_
@@ -63,12 +63,15 @@ typedef struct
     unsigned int platform;
     unsigned int devNum;
 
+    int magicFactor;      /* Factor for number of blocks for GPU */
     int nonResponsive;    /* If screen redraws aren't important. Either don't care or something like an outputless Tesla */
     double targetFrequency;
     int pollingMode;
     int enableCheckpointing;
     double gpuWaitFactor;
 
+    int forceNoOpenCL;
+    int forceNoILKernel;
     int forceNoIntrinsics;
     int forceX87;
     int forceSSE2;
@@ -139,7 +142,11 @@ void* mwCallocA(size_t count, size_t size);
 #define stringDefault(s, d) ((s) = (s) ? (s) : strdup((d)))
 
 char* mwReadFile(const char* filename);
+char* mwReadFileWithSize(const char* filename, size_t* sizeOut);
+
 char* mwFreadFile(FILE* f, const char* filename);
+char* mwFreadFileWithSize(FILE* f, const char* filename, size_t* sizeOut);
+
 int mwWriteFile(const char* filename, const char* str);
 
 double mwGetTime();
@@ -213,10 +220,15 @@ mwvector mwRandomUnitPoint(dsfmt_t* dsfmtState);
 mwvector mwRandomPoint(dsfmt_t* dsfmtState, real r);
 
 
-size_t mwDivRoundup(size_t a, size_t b);
 #define mwEven(x) ((x) % 2 == 0)
 #define mwDivisible(x, n) ((x) % (n) == 0)
 #define mwIsPowerOfTwo(x) (((x) != 0) && (((x) & (~(x) + 1)) == (x)));
+
+/* integer ceil(a / b) */
+#define mwDivRoundup(a, b) (((a) % (b) != 0) ? (a) / (b) + 1 : (a) / (b))
+
+/* Find next multiple of b that is >= n */
+#define mwNextMultiple(b, n) (((n) % (b)) ? ((n) + ((b) - (n) % (b))) : (n))
 
 
 int mwCheckNormalPosNum(real n);
@@ -239,6 +251,13 @@ int mwDisableDenormalsSSE();
 unsigned long long mwFixFPUPrecision();
 void mwDisableErrorBoxes();
 
+#ifdef __GNUC__
+  #define mw_likely(x)    __builtin_expect((x), 1)
+  #define mw_unlikely(x)  __builtin_expect((x), 0)
+#else
+  #define mw_likely(x)
+  #define mw_unlikely(x)
+#endif /* __GNUC__ */
 
 
 #ifdef __cplusplus

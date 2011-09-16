@@ -1,22 +1,22 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #if !defined(_MILKYWAY_CL_H_INSIDE_) && !defined(MILKYWAY_CL_COMPILATION)
   #error "Only milkyway_cl.h can be included directly."
@@ -46,6 +46,34 @@ typedef enum
     MW_AMD_ATI = 0x1002,
     MW_NVIDIA = 0x10de
 } MW_VENDOR_ID;
+
+typedef enum MWCALtargetEnum {
+    MW_CAL_TARGET_UNKNOWN   = -2,
+    MW_CAL_TARGET_INVALID   = -1,
+    MW_CAL_TARGET_600       = 0,      /**< R600 GPU ISA */
+    MW_CAL_TARGET_610       = 1,      /**< RV610 GPU ISA */
+    MW_CAL_TARGET_630       = 2,      /**< RV630 GPU ISA */
+    MW_CAL_TARGET_670       = 3,      /**< RV670 GPU ISA */
+    MW_CAL_TARGET_7XX       = 4,      /**< R700 class GPU ISA */
+    MW_CAL_TARGET_770       = 5,      /**< RV770 GPU ISA */
+    MW_CAL_TARGET_710       = 6,      /**< RV710 GPU ISA */
+    MW_CAL_TARGET_730       = 7,      /**< RV730 GPU ISA */
+    MW_CAL_TARGET_CYPRESS   = 8,      /**< CYPRESS GPU ISA */
+    MW_CAL_TARGET_JUNIPER   = 9,      /**< JUNIPER GPU ISA */
+    MW_CAL_TARGET_REDWOOD   = 10,     /**< REDWOOD GPU ISA */
+    MW_CAL_TARGET_CEDAR     = 11,     /**< CEDAR GPU ISA */
+
+    MW_CAL_TARGET_SUMO      = 12,
+    MW_CAL_TARGET_SUPERSUMO = 13,
+
+    MW_CAL_TARGET_WRESTLER  = 14,     /**< WRESTLER GPU ISA */
+    MW_CAL_TARGET_CAYMAN    = 15,     /**< CAYMAN GPU ISA */
+    MW_CAL_TARGET_RESERVED2 = 16,
+    MW_CAL_TARGET_BARTS     = 17,     /**< BARTS GPU ISA */
+
+    MW_CAL_TARGET_TURKS     = 18,
+    MW_CAL_TARGET_CAICOS    = 19
+} MWCALtargetEnum;
 
 typedef struct
 {
@@ -80,8 +108,10 @@ typedef struct
     char driver[128];
     cl_uint computeCapabilityMajor; /* Nvidia only */
     cl_uint computeCapabilityMinor;
+    MWCALtargetEnum calTarget;       /* AMD Only */
 
-    //char clCVer[128];
+    cl_uint doubleFrac; /* Estimated speed of doubles relative to float */
+    cl_uint vliw;
 
     size_t maxWorkItemSizes[3];
     MWDoubleExts doubleExts;
@@ -91,6 +121,7 @@ typedef struct
 
 typedef struct
 {
+    cl_platform_id plat;
     cl_device_id dev;
     cl_device_type devType;
     cl_uint devCount;

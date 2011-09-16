@@ -1,23 +1,25 @@
 /*
-Copyright 2008-2010 Travis Desell, Dave Przybylo, Nathan Cole, Matthew
-Arsenault, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
-Magdon-Ismail and Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ *  Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Dave Przybylo
+ *  Copyright (c) 2008-2010 Boleslaw Szymanski, Heidi Newberg
+ *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
+ *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "separation.h"
 #include "separation_utils.h"
@@ -27,10 +29,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #if SEPARATION_OPENCL
   #include "run_cl.h"
   #include "setup_cl.h"
-#elif SEPARATION_CAL
-  #include "separation_cal_types.h"
-  #include "separation_cal_setup.h"
-  #include "separation_cal_run.h"
 #endif /* SEPARATION_OPENCL */
 
 #if SEPARATION_GRAPHICS
@@ -39,16 +37,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdlib.h>
 #include <stdio.h>
-
-/* FIXME: deal with this correctly */
-#if SEPARATION_CAL
-typedef MWCALInfo GPUInfo;
-#elif SEPARATION_OPENCL
-typedef CLInfo GPUInfo;
-#else
-typedef int GPUInfo;
-#endif
-
 
 ProbabilityFunc probabilityFunc = NULL;
 
@@ -222,15 +210,16 @@ static void printStreamIntegrals(const FinalStreamIntegrals* fsi, const unsigned
 #endif
 
 /* Add up completed integrals for progress reporting */
-static inline unsigned int completedIntegralProgress(const IntegralArea* ias, const EvaluationState* es)
+static uint64_t completedIntegralProgress(const IntegralArea* ias, const EvaluationState* es)
 {
     const IntegralArea* ia;
-    unsigned int i, current_calc_probs = 0;
+    int i;
+    uint64_t current_calc_probs = 0;
 
     for (i = 0; i < es->currentCut; ++i)
     {
         ia = &ias[i];
-        current_calc_probs += ia->r_steps * ia->mu_steps * ia->nu_steps;
+        current_calc_probs += (uint64_t) ia->r_steps * ia->mu_steps * ia->nu_steps;
     }
 
     return current_calc_probs;
@@ -272,17 +261,11 @@ static void calculateIntegrals(const AstronomyParameters* ap,
                                const StreamGauss sg,
                                EvaluationState* es,
                                const CLRequest* clr,
-                               GPUInfo* ci,
-                               int useImages)
+                               CLInfo* ci)
 {
     const IntegralArea* ia;
     double t1, t2;
     int rc;
-
-  #if SEPARATION_CAL
-    if (separationLoadKernel(ci, ap, sc) != CAL_RESULT_OK)
-        mw_fail("Failed to load integral kernel");
-  #endif /* SEPARATION_OPENCL */
 
     for (; es->currentCut < es->numberCuts; es->currentCut++)
     {
@@ -291,12 +274,18 @@ static void calculateIntegrals(const AstronomyParameters* ap,
         es->current_calc_probs = completedIntegralProgress(ias, es);
 
         t1 = mwGetTime();
+
       #if SEPARATION_OPENCL
-        rc = integrateCL(ap, ia, sc, sg, es, clr, ci, (cl_bool) useImages);
-      #elif SEPARATION_CAL
-        rc = integrateCAL(ap, ia, sg, es, clr, ci);
+        if (clr->forceNoOpenCL)
+        {
+            rc = integrate(ap, ia, sc, sg, es, clr, ci);
+        }
+        else
+        {
+            rc = integrateCL(ap, ia, sc, sg, es, clr, ci);
+        }
       #else
-        rc = integrate(ap, ia, sc, sg, es, clr);
+        rc = integrate(ap, ia, sc, sg, es, clr, ci);
       #endif /* SEPARATION_OPENCL */
 
         t2 = mwGetTime();
@@ -308,10 +297,6 @@ static void calculateIntegrals(const AstronomyParameters* ap,
         cleanStreamIntegrals(es->cut->streamIntegrals, sc, ap->number_streams);
         clearEvaluationStateTmpSums(es);
     }
-
-  #if SEPARATION_CAL
-    mwUnloadKernel(ci);
-  #endif /* SEPARATION_CAL */
 }
 
 int evaluate(SeparationResults* results,
@@ -328,10 +313,8 @@ int evaluate(SeparationResults* results,
     int rc = 0;
     EvaluationState* es;
     StreamGauss sg;
-    GPUInfo ci;
+    CLInfo ci;
     StarPoints sp = EMPTY_STAR_POINTS;
-    int useImages = FALSE; /* Only applies to CL version */
-
     memset(&ci, 0, sizeof(ci));
 
     if (probabilityFunctionDispatch(ap, clr))
@@ -355,14 +338,14 @@ int evaluate(SeparationResults* results,
     }
 
   #if SEPARATION_OPENCL
-    if (setupSeparationCL(&ci, ap, ias, clr, &useImages) != CL_SUCCESS)
-        mw_fail("Failed to setup CL\n");
-  #elif SEPARATION_CAL
-    if (separationCALInit(&ci, clr) != CAL_RESULT_OK)
-        mw_fail("Failed to setup CAL\n");
-  #endif
+    if (!clr->forceNoOpenCL)
+    {
+        if (setupSeparationCL(&ci, ap, ias, clr) != CL_SUCCESS)
+            mw_fail("Failed to setup CL\n");
+    }
+  #endif /* SEPARATION_OPENCL */
 
-    calculateIntegrals(ap, ias, sc, sg, es, clr, &ci, useImages);
+    calculateIntegrals(ap, ias, sc, sg, es, clr, &ci);
 
     if (!ignoreCheckpoint)
     {
@@ -379,25 +362,7 @@ int evaluate(SeparationResults* results,
     }
     else
     {
-        /* TODO: likelihood on GPU with OpenCL. Make this less of a
-         * mess. The different versions should appear to be the
-         * same. */
-
-      #if SEPARATION_CAL
-        if (do_separation)
-        {
-            /* No separation on GPU */
-            rc = likelihood(results, ap, &sp, sc, streams, sg, do_separation, separation_outfile);
-        }
-        else
-        {
-            //rc = likelihoodCAL(results, ap, &sp, sc, streams, sg, clr, &ci);
-            rc = likelihood(results, ap, &sp, sc, streams, sg, do_separation, separation_outfile);
-        }
-      #else
         rc = likelihood(results, ap, &sp, sc, streams, sg, do_separation, separation_outfile);
-      #endif /* SEPARATION_CAL */
-
         rc |= checkSeparationResults(results, ap->number_streams);
     }
 
@@ -405,9 +370,10 @@ int evaluate(SeparationResults* results,
     freeStreamGauss(sg);
 
   #if SEPARATION_OPENCL
-    mwDestroyCLInfo(&ci);
-  #elif SEPARATION_CAL
-    mwCALShutdown(&ci);
+    if (!clr->forceNoOpenCL)
+    {
+        mwDestroyCLInfo(&ci);
+    }
   #endif
 
     return rc;

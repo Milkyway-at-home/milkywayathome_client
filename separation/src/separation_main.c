@@ -1,23 +1,25 @@
 /*
-Copyright 2008-2010 Travis Desell, Dave Przybylo, Nathan Cole, Matthew
-Arsenault, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
-Magdon-Ismail and Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ *  Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Dave Przybylo
+ *  Copyright (c) 2008-2010 Boleslaw Szymanski, Heidi Newberg
+ *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
+ *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "separation.h"
 #include "separation_lua.h"
@@ -42,6 +44,55 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #define SEED_ARGUMENT (1 << 1)
 #define PRIORITY_ARGUMENT (1 << 2)
+
+static void printCopyright()
+{
+    warn(
+        "Milkyway@Home Separation client %d.%d\n\n"
+        "Copyright (c) 2008-2011 Travis Desell, Nathan Cole, Boleslaw Szymanski\n"
+        "Copyright (c) 2008-2011 Heidi Newberg, Carlos Varela, Malik Magdon-Ismail\n"
+        "Copyright (c) 2008-2011 Rensselaer Polytechnic Institute.\n"
+        "Copyright (c) 2010-2011 Matthew Arsenault\n"
+        "Copyright (c) 1991-2000 University of Groningen, The Netherlands.\n"
+        "Copyright (c) 2001-2009 The GROMACS Development Team\n"
+        "\n"
+        "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
+        "This is free software: you are free to change and redistribute it.\n"
+        "There is NO WARRANTY, to the extent permitted by law.\n"
+        "\n"
+        " Incorporates works covered by the following copyright and\n"
+        " permission notice:\n"
+        "\n"
+        "Copyright (C) 2007, 2008 Mutsuo Saito, Makoto Matsumoto and Hiroshima University\n"
+        "Copyright (c) 2010, Naoaki Okazaki\n"
+        "\n"
+        " Redistribution and use in source and binary forms, with or without\n"
+        " modification, are permitted provided that the following conditions are met:\n"
+        "     * Redistributions of source code must retain the above copyright\n"
+        "       notice, this list of conditions and the following disclaimer.\n"
+        "     * Redistributions in binary form must reproduce the above copyright\n"
+        "       notice, this list of conditions and the following disclaimer in the\n"
+        "       documentation and/or other materials provided with the distribution.\n"
+        "     * Neither the names of the authors nor the names of its contributors\n"
+        "       may be used to endorse or promote products derived from this\n"
+        "       software without specific prior written permission.\n"
+        "\n"
+        " THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
+        " \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+        " LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
+        " A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER\n"
+        " OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,\n"
+        " EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,\n"
+        " PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR\n"
+        " PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF\n"
+        " LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\n"
+        " NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\n"
+        " SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+        "\n",
+        SEPARATION_VERSION_MAJOR,
+        SEPARATION_VERSION_MINOR
+        );
+}
 
 
 static void printVersion(int boincTag)
@@ -99,15 +150,15 @@ static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->nonResponsive = sf->nonResponsive;
     clr->enableCheckpointing = !sf->disableGPUCheckpointing;
 
-
     clr->devNum = sf->useDevNumber;
     clr->platform = sf->usePlatform;
     clr->preferredPlatformVendor = sf->preferredPlatformVendor;
 
-    /* Used by CAL only */
     clr->targetFrequency = sf->targetFrequency <= 0.01 ? DEFAULT_TARGET_FREQUENCY : sf->targetFrequency;
-    clr->pollingMode = sf->pollingMode;
-    clr->gpuWaitFactor = sf->waitFactor;
+    clr->magicFactor = sf->magicFactor;
+
+    clr->forceNoILKernel = sf->forceNoILKernel;
+    clr->forceNoOpenCL = sf->forceNoOpenCL;
 }
 
 #if BOINC_APPLICATION
@@ -130,29 +181,23 @@ static void separationReadPreferences(SeparationFlags* sf)
     static struct
     {
         double gpuTargetFrequency;
-        double gpuWaitFactor;
         int gpuNonResponsive;
         int gpuProcessPriority;
-        int gpuPollingMode;
         int gpuDisableCheckpoint;
     } prefs;
 
     static MWProjectPrefs sepPrefs[] =
         {
             { "gpu_target_frequency", MW_PREF_DOUBLE, FALSE, &prefs.gpuTargetFrequency   },
-            { "gpu_wait_factor",      MW_PREF_DOUBLE, FALSE, &prefs.gpuWaitFactor        },
             { "gpu_non_responsive",   MW_PREF_BOOL,   FALSE, &prefs.gpuNonResponsive     },
             { GPU_PRIORITY_SETTING,   MW_PREF_INT,    FALSE, &prefs.gpuProcessPriority   },
-            { "gpu_polling_mode",     MW_PREF_INT,    FALSE, &prefs.gpuPollingMode       },
             { "no_gpu_checkpoint",    MW_PREF_BOOL,   FALSE, &prefs.gpuDisableCheckpoint },
             END_MW_PROJECT_PREFS
         };
 
     prefs.gpuTargetFrequency   = DEFAULT_TARGET_FREQUENCY;
-    prefs.gpuWaitFactor        = DEFAULT_GPU_WAIT_FACTOR;
     prefs.gpuNonResponsive     = DEFAULT_NON_RESPONSIVE;
     prefs.gpuProcessPriority   = DEFAULT_GPU_PRIORITY;
-    prefs.gpuPollingMode       = DEFAULT_POLLING_MODE;
     prefs.gpuDisableCheckpoint = DEFAULT_DISABLE_GPU_CHECKPOINTING;
 
     if (mwGetMWAppInitData(&aid))
@@ -169,10 +214,8 @@ static void separationReadPreferences(SeparationFlags* sf)
 
     /* Any successfully found setting will be used; otherwise it will get the default */
     sf->targetFrequency = prefs.gpuTargetFrequency;
-    sf->waitFactor = prefs.gpuWaitFactor;
     sf->nonResponsive = prefs.gpuNonResponsive;
     sf->processPriority = prefs.gpuProcessPriority;
-    sf->pollingMode = prefs.gpuPollingMode;
     sf->disableGPUCheckpointing = prefs.gpuDisableCheckpoint;
 }
 
@@ -184,6 +227,8 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
 {
     poptContext context;
     int argRead;
+    static int version = FALSE;
+    static int copyright = FALSE;
     static unsigned int numParams = 0;
     static int serverParams = 0;
     static const char** rest = NULL;
@@ -250,6 +295,12 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
             },
 
             {
+                "magic-factor", 'm',
+                POPT_ARG_INT, &sf.magicFactor,
+                0, "Number of blocks to run on GPU at once.", NULL
+            },
+
+            {
                 "non-responsive", 'r',
                 POPT_ARG_NONE, &sf.nonResponsive,
                 0, "Do not care about display responsiveness (use with caution)", NULL
@@ -259,18 +310,6 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
                 "gpu-target-frequency", 'q',
                 POPT_ARG_DOUBLE, &sf.targetFrequency,
                 0, "Target frequency for GPU tasks" , NULL
-            },
-
-            {
-                "gpu-polling-mode", 'm',
-                POPT_ARG_INT, &sf.pollingMode,
-                0, "Interval for polling GPU (< 0 for busy wait, 0 for calCtxWaitForEvents(), > 1 sets interval in ms)" , NULL
-            },
-
-            {
-                "gpu-wait-factor", 'w',
-                POPT_ARG_DOUBLE, &sf.waitFactor,
-                0, "Factor applied to initial wait before polling GPU (CAL only)" , NULL
             },
 
             {
@@ -295,6 +334,18 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
                 "verbose", '\0',
                 POPT_ARG_NONE, &sf.verbose,
                 0, "Print some extra debugging information", NULL
+            },
+
+            {
+                "force-no-opencl", '\0',
+                POPT_ARG_NONE, &sf.forceNoOpenCL,
+                0, "Use regular CPU path instead of OpenCL if available", NULL
+            },
+
+            {
+                "force-no-il-kernel", '\0',
+                POPT_ARG_NONE, &sf.forceNoILKernel,
+                0, "Do not use AMD IL replacement kernels if available", NULL
             },
 
             {
@@ -328,12 +379,6 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
             },
 
             {
-                "version", 'v',
-                POPT_ARG_NONE, &sf.printVersion,
-                0, "Print version information", NULL
-            },
-
-            {
                 "p", 'p',
                 POPT_ARG_NONE, &serverParams,
                 0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
@@ -343,6 +388,18 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
                 "np", '\0',
                 POPT_ARG_INT | POPT_ARGFLAG_ONEDASH, &numParams,
                 0, "Unused dummy argument to satisfy primitive arguments the server sends", NULL
+            },
+
+            {
+                "version", 'v',
+                POPT_ARG_NONE, &version,
+                0, "Print version information", NULL
+            },
+
+            {
+                "copyright", '\0',
+                POPT_ARG_NONE, &copyright,
+                0, "Print copyright information and exit", NULL
             },
 
             POPT_AUTOHELP
@@ -370,9 +427,18 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
         exit(EXIT_FAILURE);
     }
 
-    if (sf.printVersion)
+    if (version)
     {
         printVersion(FALSE);
+    }
+
+    if (copyright)
+    {
+        printCopyright();
+    }
+
+    if (version || copyright)
+    {
         exit(EXIT_SUCCESS);
     }
 
@@ -493,9 +559,6 @@ static int separationInit(int debugBOINC, MWPriority priority, int setPriority)
     if (debugBOINC)
         initType |= MW_DEBUG;
 
-    if (SEPARATION_CAL)
-        initType |= MW_CAL;
-
     if (SEPARATION_OPENCL)
         initType |= MW_OPENCL;
 
@@ -510,25 +573,15 @@ static int separationInit(int debugBOINC, MWPriority priority, int setPriority)
     {
         mwSetProcessPriority(priority);
     }
-    else if (SEPARATION_OPENCL || SEPARATION_CAL)
+    else if (SEPARATION_OPENCL)
     {
         mwSetProcessPriority(DEFAULT_GPU_PRIORITY);
     }
 
-  #if (SEPARATION_CAL || SEPARATION_OPENCL) && defined(_WIN32)
+  #if (SEPARATION_OPENCL) && defined(_WIN32)
     /* We need to increase timer resolution to prevent big slowdown on windows when CPU is loaded. */
     mwSetTimerMinResolution();
-  #endif /* SEPARATION_CAL && defined(_WIN32) */
-
-    return 0;
-}
-
-
-static int separationSpecialCleanup()
-{
-  #if SEPARATION_CAL && defined(_WIN32)
-    mwResetTimerResolution();
-  #endif /* SEPARATION_CAL && defined(_WIN32) */
+  #endif /* defined(_WIN32) */
 
     return 0;
 }
@@ -585,8 +638,6 @@ int main(int argc, const char* argv[])
     printVersion(TRUE);
     mw_finish(rc);
   #endif
-
-    separationSpecialCleanup();
 
     return rc;
 }

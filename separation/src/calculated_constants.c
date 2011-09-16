@@ -1,23 +1,25 @@
 /*
-Copyright 2008-2010 Travis Desell, Dave Przybylo, Nathan Cole, Matthew Arsenault,
-Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail
-and Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ *  Copyright (c) 2008-2010 Travis Desell, Nathan Cole, Dave Przybylo
+ *  Copyright (c) 2008-2010 Boleslaw Szymanski, Heidi Newberg
+ *  Copyright (c) 2008-2010 Carlos Varela, Malik Magdon-Ismail
+ *  Copyright (c) 2008-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "separation_constants.h"
 #include "calculated_constants.h"
@@ -86,7 +88,7 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
     ap->bg_b = bgp->b;
     ap->bg_c = bgp->c;
 
-    if (ap->convolve == 0 || ap->convolve > 256 || !mwEven(ap->convolve))
+    if (ap->convolve == 0 || ap->convolve > MAX_CONVOLVE || !mwEven(ap->convolve))
     {
         mw_printf("convolve (%u) must be > 0, <= 256 and even\n", ap->convolve);
         return 1;
@@ -106,7 +108,7 @@ int setAstronomyParameters(AstronomyParameters* ap, const BackgroundParameters* 
 
 void setExpStreamWeights(const AstronomyParameters* ap, Streams* streams)
 {
-    unsigned int i;
+    int i;
 
     streams->sumExpWeights = ap->exp_background_weight;
     for (i = 0; i < streams->number_streams; i++)
@@ -121,7 +123,7 @@ void setExpStreamWeights(const AstronomyParameters* ap, Streams* streams)
 StreamConstants* getStreamConstants(const AstronomyParameters* ap, const Streams* streams)
 
 {
-    unsigned int i;
+    int i;
     StreamConstants* sc;
     real stream_sigma;
     real sigma_sq2;
@@ -151,9 +153,9 @@ void freeStreamGauss(StreamGauss sg)
     mwFreeA(sg.qgaus_W);
 }
 
-StreamGauss getStreamGauss(const unsigned int convolve)
+StreamGauss getStreamGauss(int convolve)
 {
-    unsigned int i;
+    int i;
     StreamGauss sg;
     real* qgaus_X;
 
@@ -172,7 +174,7 @@ StreamGauss getStreamGauss(const unsigned int convolve)
     return sg;
 }
 
-NuConstants* prepareNuConstants(const unsigned int nu_steps, const real nu_step_size, const real nu_min)
+NuConstants* prepareNuConstants(unsigned int nu_steps, real nu_step_size, real nu_min)
 {
     unsigned int i;
     real tmp1, tmp2;

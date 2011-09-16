@@ -1,21 +1,21 @@
 /*
-Copyright (C) 2011  Matthew Arsenault
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ *  Copyright (c) 2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "milkyway_lua.h"
 #include "milkyway_util.h"
@@ -43,24 +43,25 @@ static Streams* _streams = NULL;
 static BackgroundParameters* _bg = NULL;
 
 static IntegralArea* _ias = NULL;
-static unsigned int _nCut = 0;
+static int _nCut = 0;
 
 static const SeparationConstant constants[] =
 {
-    { "sun_r0",   TRUE, &_sun_r0   },
-    { "convolve", TRUE, &_convolve },
+    { "sun_r0",   TRUE,  &_sun_r0   },
+    { "convolve", TRUE,  &_convolve },
     { "wedge",    FALSE, &_wedge   },
     { NULL, FALSE, NULL }
 };
 
 /* Calculate total probability calculations for checkpointing */
-static unsigned int findTotalCalcProbs(const IntegralArea* cuts, unsigned int nCut)
+static uint64_t findTotalCalcProbs(const IntegralArea* cuts, int nCut)
 {
-    unsigned int i, total_calc_probs = 0;
+    int i;
+    uint64_t total_calc_probs = 0;
 
     for (i = 0; i < nCut; ++i)
     {
-        total_calc_probs += cuts[i].mu_steps * cuts[i].nu_steps * cuts[i].r_steps;
+        total_calc_probs += (uint64_t) cuts[i].mu_steps * cuts[i].nu_steps * cuts[i].r_steps;
     }
 
     return total_calc_probs;
@@ -72,7 +73,7 @@ static void setAPConstants(AstronomyParameters* ap)
     ap->number_streams = _streams->number_streams;
     ap->number_integrals = _nCut;
 
-    ap->convolve = (unsigned int) _convolve;
+    ap->convolve = (int) _convolve;
     ap->sun_r0 = _sun_r0;
 
     ap->wedge = (int) _wedge;
@@ -137,6 +138,7 @@ static lua_State* separationOpenLuaStateWithScript(const SeparationFlags* sf)
 
 static int readIntegralArea(lua_State* luaSt, IntegralArea* iaOut, int table)
 {
+    uint64_t r, mu, nu;
     static IntegralArea ia;
     static real nuStepsf, muStepsf, rStepsf;
     static const MWNamedArg iaArgTable[] =
@@ -160,6 +162,18 @@ static int readIntegralArea(lua_State* luaSt, IntegralArea* iaOut, int table)
     ia.nu_steps = (unsigned int) nuStepsf;
     ia.mu_steps = (unsigned int) muStepsf;
     ia.r_steps = (unsigned int) rStepsf;
+
+    r = (uint64_t) ia.r_steps;
+    mu = (uint64_t) ia.mu_steps;
+    nu = (uint64_t) ia.nu_steps;
+
+    if ((r > UINT64_MAX / mu) || ((r * mu) > UINT64_MAX / nu))
+    {
+        warn("Integral size { %u, %u, %u } will overflow progress calculation\n",
+             ia.nu_steps, ia.mu_steps, ia.r_steps);
+        return 1;
+    }
+
     calcIntegralStepSizes(&ia);
 
     *iaOut = ia;

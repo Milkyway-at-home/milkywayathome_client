@@ -24,6 +24,10 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_show.h"
 #include "nbody_defaults.h"
 
+#if USE_SHMEM
+  #include <sys/mman.h>
+#endif
+
 static void freeNBodyTree(NBodyTree* t)
 {
     NBodyNode* p;

@@ -11,6 +11,14 @@
 #include <limits.h>
 #include <stddef.h>
 
+#if defined(__AVX__)
+  #include <immintrin.h>
+#endif
+
+#if defined(__SSE__)
+  #include <xmmintrin.h>
+#endif
+
 
 /*
 ** ==================================================================
@@ -553,7 +561,15 @@ union luai_Cast { double l_d; long l_l; };
 ** aligned in 16-byte boundaries, then you should add long double in the
 ** union.) Probably you do not need to change this.
 */
-#define LUAI_USER_ALIGNMENT_T	union { double u; void *s; long l; }
+
+/* We rely on allocations aligned properly for intrinsics */
+#if defined(__AVX__)
+  #define LUAI_USER_ALIGNMENT_T	union { __m256 i8; double u; void *s; long l; }
+#elif defined(__SSE__)
+  #define LUAI_USER_ALIGNMENT_T	union { __m128 i4; double u; void *s; long l; }
+#else
+  #define LUAI_USER_ALIGNMENT_T	union { double u; void *s; long l; }
+#endif
 
 
 /*

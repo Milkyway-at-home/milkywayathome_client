@@ -298,32 +298,16 @@ static cl_int setAllKernelArguments(CLInfo* ci, NBodyBuffers* nbb)
     return err;
 }
 
-
-static cl_int createKernel(cl_kernel* kern, CLInfo* ci, const char* name)
-{
-    cl_int err = CL_SUCCESS;
-
-    *kern = clCreateKernel(ci->prog, name, &err);
-    if (err != CL_SUCCESS)
-    {
-        mwCLWarn("Failed to create kernel '%s'", err, name);
-        return err;
-    }
-
-    return err;
-}
-
-
 static cl_int createKernels(CLInfo* ci)
 {
     cl_int err = CL_SUCCESS;
 
-    err |= createKernel(&kernels.boundingBox, ci, "boundingBox");
-    err |= createKernel(&kernels.buildTree, ci, "buildTree");
-    err |= createKernel(&kernels.summarization, ci, "summarization");
-    err |= createKernel(&kernels.sort, ci, "sort");
-    err |= createKernel(&kernels.forceCalculation, ci, "forceCalculation");
-    err |= createKernel(&kernels.integration, ci, "integration");
+    err |= mwCreateKernel(&kernels.boundingBox, ci, "boundingBox");
+    err |= mwCreateKernel(&kernels.buildTree, ci, "buildTree");
+    err |= mwCreateKernel(&kernels.summarization, ci, "summarization");
+    err |= mwCreateKernel(&kernels.sort, ci, "sort");
+    err |= mwCreateKernel(&kernels.forceCalculation, ci, "forceCalculation");
+    err |= mwCreateKernel(&kernels.integration, ci, "integration");
 
     return err;
 }

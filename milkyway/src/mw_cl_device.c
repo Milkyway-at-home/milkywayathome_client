@@ -1,22 +1,22 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "mw_cl_device.h"
 #include "mw_cl_util.h"
@@ -34,6 +34,266 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #define CL_DEVICE_WARP_SIZE_NV 0x4003
 #endif
 
+typedef struct
+{
+    const char* name;
+    MWCALtargetEnum target;
+    cl_uint vliw;
+    cl_uint doubleFrac;
+    cl_uint wavefrontSize;
+} AMDGPUData;
+
+/* A reasonable guess */
+static const AMDGPUData invalidAMDGPUData = { "Invalid", MW_CAL_TARGET_INVALID, 5, 5, 64 };
+
+/* Table of more detailed info we want that OpenCL won't give us */
+static const AMDGPUData amdGPUData[] =
+{
+    /* I found these names from strings on amdocl.dll/libamdocl64.so
+       There are a bunch more extra ones in fglrx.ko (e.g. "Hemlock"),
+       but I don't think they're relevant.
+     */
+
+    /* R600 */
+    { "ATI RV670",  MW_CAL_TARGET_670,      5, 0, 64 },
+    { "ATI RV630",  MW_CAL_TARGET_630,      5, 0, 32 },
+    { "ATI RV610",  MW_CAL_TARGET_610,      5, 0, 32 },
+    { "ATI RV600",  MW_CAL_TARGET_600,      5, 0, 16 },
+
+    /* R700 */
+    { "ATI RV770",  MW_CAL_TARGET_770,      5, 5, 64 },
+    { "ATI RV730",  MW_CAL_TARGET_730,      5, 0, 32 },
+    { "ATI RV710",  MW_CAL_TARGET_710,      5, 0, 16 },
+
+    /* Evergreen */
+    { "Cypress",    MW_CAL_TARGET_CYPRESS,  5, 5, 64 },
+    { "Juniper",    MW_CAL_TARGET_JUNIPER,  5, 0, 64 },
+    { "Redwood",    MW_CAL_TARGET_REDWOOD,  5, 0, 64 },
+    { "Cedar",      MW_CAL_TARGET_CEDAR,    5, 0, 32 },
+
+    /* Northern Islands */
+    { "Cayman",     MW_CAL_TARGET_CAYMAN,   4, 4, 64 },
+    { "Barts",      MW_CAL_TARGET_BARTS,    5, 0, 64 },
+    { "Turks",      MW_CAL_TARGET_TURKS,    5, 0, 64 },
+    { "Caicos",     MW_CAL_TARGET_CAICOS,   5, 0, 64 },
+
+
+    /* Southern Islands */
+    /*
+      Not actually out yet, so not really sure
+    { "Tahiti",     MW_CAL_TARGET_TAHITI,   4, 4, 64 },
+    { "Thames",     MW_CAL_TARGET_THAMES,   5, 0, 64 },
+    { "Lombok",     MW_CAL_TARGET_LOMBOK,   5, 0, 64 },
+    */
+
+#if 0
+    /* These are there, but I don't know about them */
+    { "WinterPark",                        , 5, 0, 64 },
+    { "BeaverCreek",                       , 5, 0, 64 },
+    { "Loveland",                          , 5, 0, 64 },
+
+    { "Lions",                             , 5, 0, 64 },
+    { "Tigers",                            , 5, 0, 64 },
+    { "Bears",                             , 5, 0, 64 },
+#endif
+
+    { NULL,          MW_CAL_TARGET_INVALID, 5, 0, 64 }
+};
+
+static cl_uint uavIdFromMWCALtargetEnum(MWCALtargetEnum x)
+{
+    return (x >= MW_CAL_TARGET_CYPRESS) ? 11 : 1;
+}
+
+static const AMDGPUData* lookupAMDGPUInfo(const DevInfo* di)
+{
+    const AMDGPUData* p = amdGPUData;
+
+    while (p->name)
+    {
+        if (!strncasecmp(di->devName, p->name, sizeof(di->devName)))
+        {
+            return p;
+        }
+
+        ++p;
+    }
+
+    return &invalidAMDGPUData;
+}
+
+cl_double amdEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
+{
+    cl_uint vliw = di->vliw;
+    cl_uint doubleFrac = di->doubleFrac;
+    cl_ulong flops, flopsFloat, flopsDouble;
+    cl_double gflops;
+
+    flopsFloat = 2 * (di->maxCompUnits * vliw * 16) * (cl_ulong) di->clockFreq * 1000000;
+    flopsDouble = flopsFloat / doubleFrac;
+
+    mw_printf("Estimated AMD GPU (VLIW%d) GFLOP/s: %.0f SP GFLOP/s, %.0f DP FLOP/s\n",
+              vliw,
+              1.0e-9 * (cl_double) flopsFloat,
+              1.0e-9 * (cl_double) flopsDouble);
+
+    flops = useDouble ? flopsDouble : flopsFloat;
+
+    gflops = floor(1.0e-9 * (cl_double) flops);
+
+    /* At different times the AMD drivers have reported 0 as the clock
+     * speed, so try to catch that. We could test the GPU and figure
+     * out what the FLOPs should be to get a better estimate.
+     */
+    if (gflops <= 100.0)
+    {
+        mw_printf("Warning: Bizarrely low flops (%.0f). Defaulting to %.0f\n", gflops, 100.0);
+        gflops = 100.0;
+    }
+
+    return gflops;
+}
+
+cl_bool hasNvidiaCompilerFlags(const DevInfo* di)
+{
+    return strstr(di->exts, "cl_nv_compiler_options") != NULL;
+}
+
+cl_bool deviceVendorIsAMD(const DevInfo* di)
+{
+    return (strncmp(di->vendor, "Advanced Micro Devices, Inc.", sizeof(di->vendor)) == 0);
+}
+
+cl_bool deviceVendorIsNvidia(const DevInfo* di)
+{
+    return (strncmp(di->vendor, "Nvidia Corporation", sizeof(di->vendor)) == 0);
+}
+
+/* True if devices compute capability >= requested version */
+cl_bool minComputeCapabilityCheck(const DevInfo* di, cl_uint major, cl_uint minor)
+{
+    return     di->computeCapabilityMajor > major
+           || (   di->computeCapabilityMajor == major
+               && di->computeCapabilityMinor >= minor);
+}
+
+/* Exact check on compute capability version */
+cl_bool computeCapabilityIs(const DevInfo* di, cl_uint major, cl_uint minor)
+{
+    return di->computeCapabilityMajor == major && di->computeCapabilityMinor == minor;
+}
+
+/* approximate ratio of float : double flops */
+static cl_uint cudaEstimateDoubleFrac(const DevInfo* di)
+{
+    /* FIXME: This also differs with generation.
+       Is there a better way to find out the generation and if
+     */
+
+    if (minComputeCapabilityCheck(di, 2, 0))
+    {
+        if (strstr(di->devName, "Tesla") != NULL)
+        {
+            return 2;
+        }
+        else
+        {
+            return 8;
+        }
+    }
+    else
+    {
+        if (strstr(di->devName, "Tesla") != NULL)
+        {
+            return 2;
+        }
+        else
+        {
+            return 8;
+        }
+    }
+}
+
+/* Different on different Nvidia architectures.
+   Uses numbers from appendix of Nvidia OpenCL programming guide. */
+static cl_uint cudaCoresPerComputeUnit(const DevInfo* di)
+{
+    if (minComputeCapabilityCheck(di, 2, 0))
+        return 32;
+
+    return 8;     /* 1.x is 8 */
+}
+
+cl_double cudaEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
+{
+    cl_ulong flopsFloat, flopsDouble, flops;
+    cl_uint doubleRat = cudaEstimateDoubleFrac(di);
+    cl_uint corePerCU = cudaCoresPerComputeUnit(di);
+    cl_uint numCUDACores = di->maxCompUnits * corePerCU;
+    cl_double gflops;
+
+    flopsFloat = 2 * numCUDACores * (cl_ulong) di->clockFreq * 1000000;
+    flopsDouble = flopsFloat / doubleRat;
+
+    mw_printf("Estimated Nvidia GPU GFLOP/s: %.0f SP GFLOP/s, %.0f DP FLOP/s\n",
+              1.0e-9 * (cl_double) flopsFloat, 1.0e-9 * (cl_double) flopsDouble);
+
+    flops = useDouble ? flopsDouble : flopsFloat;
+    gflops = 1.0e-9 * (cl_double) flops;
+
+
+    if (gflops <= 50.0)
+    {
+        mw_printf("Warning: Bizarrely low flops (%.0f). Defaulting to %.0f\n", gflops, 50.0);
+        gflops = 50.0;
+    }
+
+    return gflops;
+}
+
+cl_bool isNvidiaGPUDevice(const DevInfo* di)
+{
+    return (di->vendorID == MW_NVIDIA) && (di->devType == CL_DEVICE_TYPE_GPU);
+}
+
+cl_bool isAMDGPUDevice(const DevInfo* di)
+{
+    /* Not sure if the vendor ID for AMD is the same with their
+       CPUs.  Also something else weird was going on with the
+       vendor ID, so check the name just in case.
+    */
+
+    return (di->vendorID == MW_AMD_ATI || deviceVendorIsAMD(di));
+}
+
+cl_double deviceEstimateGFLOPs(const DevInfo* di, cl_bool useDouble)
+{
+    cl_double gflops = 0.0;
+
+    if (di->devType == CL_DEVICE_TYPE_GPU)
+    {
+        if (isNvidiaGPUDevice(di))
+        {
+            gflops = cudaEstimateGFLOPs(di, useDouble);
+        }
+        else if (isAMDGPUDevice(di))
+        {
+            gflops = amdEstimateGFLOPs(di, useDouble);
+        }
+        else
+        {
+            mw_printf("Unhandled GPU vendor '%s' (0x%x)\n", di->vendor, di->vendorID);
+            gflops = 100.0;
+        }
+    }
+    else
+    {
+        mw_printf("Missing flops estimate for device type %s\n", showCLDeviceType(di->devType));
+        return 1.0;
+    }
+
+    return gflops;
+}
 
 /* Read the double supported extensions; i.e. AMD's subset or the actual Khronos one. */
 MWDoubleExts mwGetDoubleExts(const char* exts)
@@ -55,6 +315,7 @@ cl_bool mwSupportsDoubles(const DevInfo* di)
 
 cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
 {
+    const AMDGPUData* amdData;
     cl_int err = CL_SUCCESS;
 
     di->devID = dev;
@@ -126,130 +387,59 @@ cl_int mwGetDevInfo(DevInfo* di, cl_device_id dev)
         }
     }
 
-    /* TODO: Check for Tesla or similar */
-    di->nonOutput = (di->devType != CL_DEVICE_TYPE_GPU);
+    /* TODO: Correct way to test for Tesla type things?
+       Is there a way we can find if a GPU is connected to a display in general?
+     */
+    di->nonOutput = ((di->devType != CL_DEVICE_TYPE_GPU) || (strstr(di->devName, "Tesla") != NULL));
 
-    if (err)
+
+    if (isNvidiaGPUDevice(di))
+    {
+        di->vliw = 1;
+        di->doubleFrac = cudaEstimateDoubleFrac(di);
+        di->calTarget = MW_CAL_TARGET_INVALID;
+
+        if (strstr(di->exts, "cl_nv_device_attribute_query") != NULL)
+        {
+            err |= clGetDeviceInfo(dev, CL_DEVICE_WARP_SIZE_NV,
+                                   sizeof(di->warpSize), &di->warpSize, NULL);
+            err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV,
+                                   sizeof(cl_uint), &di->computeCapabilityMajor, NULL);
+            err |= clGetDeviceInfo(di->devID, CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV,
+                                   sizeof(cl_uint), &di->computeCapabilityMinor, NULL);
+        }
+    }
+    else if (isAMDGPUDevice(di))
+    {
+        amdData = lookupAMDGPUInfo(di);
+
+        di->vliw       = amdData->vliw;
+        di->doubleFrac = amdData->doubleFrac;
+        di->calTarget  = amdData->target;
+        di->warpSize   = amdData->wavefrontSize;
+    }
+
+    if (di->warpSize == 0)
+    {
+        mw_printf("Unknown device type, using warp size = 1\n");
+        di->warpSize = 1;
+    }
+
+    if (err != CL_SUCCESS)
+    {
         mwCLWarn("Error getting device information", err);
+    }
     else
+    {
         di->doubleExts = mwGetDoubleExts(di->exts);
+    }
 
     return err;
 }
 
-/* True if devices compute capability >= requested version */
-cl_bool minComputeCapabilityCheck(const DevInfo* di, cl_uint major, cl_uint minor)
-{
-    return     di->computeCapabilityMajor > major
-           || (di->computeCapabilityMajor == major
-                && di->computeCapabilityMinor >= minor);
-}
-
-/* Exact check on compute capability version */
-cl_bool computeCapabilityIs(const DevInfo* di, cl_uint major, cl_uint minor)
-{
-    return di->computeCapabilityMajor == major && di->computeCapabilityMinor == minor;
-}
-
-/* Different on different Nvidia architectures.
-   Uses numbers from appendix of Nvidia OpenCL programming guide. */
-cl_uint cudaCoresPerComputeUnit(const DevInfo* di)
-{
-    if (minComputeCapabilityCheck(di, 2, 0))
-        return 32;
-
-    return 8;     /* 1.x is 8 */
-}
-
-size_t mwFindGroupSize(const DevInfo* di)
-{
-    return di->devType == CL_DEVICE_TYPE_CPU ? 1 : 64;
-}
-
-cl_uint mwFindGroupsPerCU(const DevInfo* di)
-{
-    if (di->devType == CL_DEVICE_TYPE_CPU)
-        return 1;
-
-    if (di->vendorID == MW_NVIDIA)
-        return cudaCoresPerComputeUnit(di);
-
-    return 1; /* TODO: ATI, etc. */
-}
-
-cl_uint mwBlockSize(const DevInfo* di)
-{
-    cl_uint groupSize, groupsPerCU, threadsPerCU;
-
-    groupSize   = mwFindGroupSize(di);
-    groupsPerCU = mwFindGroupsPerCU(di);
-    threadsPerCU = groupSize * groupsPerCU;
-
-    return threadsPerCU * di->maxCompUnits;
-}
-
-
-/* approximate ratio of float : double flops */
-cl_uint cudaEstimateDoubleFrac(const DevInfo* di)
-{
-    /* FIXME: This is smaller for Teslas */
-    return 8;
-}
-
-cl_double cudaEstimateGFLOPs(const DevInfo* di)
-{
-    cl_uint corePerCU;
-    cl_uint numCUDACores;
-    cl_double freq, gflops;
-    cl_double flopsFloat, flopsDouble, flops;
-    cl_double flopsFactor;
-    cl_uint doubleRat;
-
-    corePerCU = cudaCoresPerComputeUnit(di);
-    numCUDACores = di->maxCompUnits * corePerCU;
-    freq = (cl_double) di->clockFreq * 1.0e6;
-
-    flopsFactor = 2;
-    doubleRat = cudaEstimateDoubleFrac(di);
-
-    flopsFloat = flopsFactor * numCUDACores * freq;
-    flopsDouble = flopsFactor * numCUDACores * freq / doubleRat;
-
-    flops = DOUBLEPREC ? flopsDouble : flopsFloat;
-    gflops = flops * 1.0e-9;
-
-    flopsFloat *= 1.0e-9;  /* FLOPS -> GFLOPS */
-    flopsDouble *= 1.0e-9;
-
-    mw_printf("Estimated Nvidia device GFLOP/s: %.0f SP GFLOP/s, %.0f DP FLOP/s\n",
-              flopsFloat, flopsDouble);
-
-    return floor(gflops);
-}
-
-cl_double referenceGFLOPsGTX480(cl_bool doubleprec)
-{
-    return doubleprec ? 168.0 : 1350.0;
-}
-
-cl_double referenceGFLOPsGTX285(cl_bool doubleprec)
-{
-    return doubleprec ? 88.5 : 708.0;
-}
-
-cl_double referenceGFLOPsRadeon5870(cl_bool doubleprec)
-{
-    return doubleprec ? 544.0 : 2720.0;
-}
-
-cl_bool hasNvidiaCompilerFlags(const DevInfo* di)
-{
-    return strstr(di->exts, "cl_nv_compiler_options") != NULL;
-}
-
 void mwPrintDevInfo(const DevInfo* di)
 {
-    mw_printf("Device %s (%s:0x%x) (%s)\n"
+    mw_printf("Device '%s' (%s:0x%x) (%s)\n"
               "Driver version:      %s\n"
               "Version:             %s\n"
               "Compute capability:  %u.%u\n"
@@ -275,8 +465,10 @@ void mwPrintDevInfo(const DevInfo* di)
               "Min type align size: %u\n"
               "Timer resolution:    "ZU" ns\n"
               "Warp size:           %u\n"
+              "VLIW:                %u\n"
               "Double extension:    %s\n"
-              "Extensions:          %s\n" ,
+              "Double fraction:     1/%u\n"
+              "Extensions:          %s\n",
               di->devName,
               di->vendor,
               di->vendorID,
@@ -307,7 +499,9 @@ void mwPrintDevInfo(const DevInfo* di)
               di->minAlignSize,
               di->timerRes,
               di->warpSize,
+              di->vliw,
               showMWDoubleExts(di->doubleExts),
+              di->doubleFrac,
               di->exts
         );
 }
@@ -497,4 +691,19 @@ cl_int mwSelectDevice(CLInfo* ci, const cl_device_id* devs, const CLRequest* clr
     return err;
 }
 
+cl_bool mwPlatformSupportsAMDOfflineDevices(const CLInfo* ci)
+{
+    cl_int err;
+    char exts[4096];
+    size_t readSize = 0;
+
+    err = clGetPlatformInfo(ci->plat, CL_PLATFORM_EXTENSIONS, sizeof(exts), exts, &readSize);
+    if ((err != CL_SUCCESS) || (readSize >= sizeof(exts)))
+    {
+        mwCLWarn("Error reading platform extensions (readSize = "ZU")\n", err, readSize);
+        return CL_FALSE;
+    }
+
+    return (strstr(exts, "cl_amd_offline_devices") != NULL);
+}
 
