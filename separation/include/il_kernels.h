@@ -18,8 +18,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CL_COMPILER_FLAGS_H_
-#define _CL_COMPILER_FLAGS_H_
+#ifndef _IL_KERNELS_H_
+#define _IL_KERNELS_H_
 
 #include "milkyway_cl.h"
 #include "mw_cl.h"
@@ -30,11 +30,16 @@
 extern "C" {
 #endif
 
-char* getCompilerFlags(const CLInfo* ci, const AstronomyParameters* ap, cl_bool useILernel);
+extern const char* ilKernelSrc1;
+extern const char* ilKernelSrc2;
+extern const char* ilKernelSrc3;
+extern const char* ilKernelSrc4;
+
+
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _CL_COMPILER_FLAGS_H_ */
+#endif /* _IL_KERNELS_H_ */
 

@@ -154,7 +154,6 @@ static char* readFD(int fd, size_t* lenOut)
 
     len = props.st_size + 1;
 
-    warn("SIZE IS %zu\n", len);
     strBuf = malloc(len);
     if (!strBuf)
     {

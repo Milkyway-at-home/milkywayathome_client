@@ -40,36 +40,12 @@ static const char* getNvidiaRegCount(const DevInfo* di)
     return regDefault;
 }
 
-static cl_bool isILKernelTarget(const DevInfo* di)
-{
-    MWCALtargetEnum t = di->calTarget;
-
-    return (t == MW_CAL_TARGET_770) || (t == MW_CAL_TARGET_CYPRESS) || (t == MW_CAL_TARGET_CAYMAN);
-}
-
-static cl_bool usingILKernelIsAcceptable(const CLInfo* ci, const AstronomyParameters* ap, const CLRequest* clr)
-{
-    const DevInfo* di = &ci->di;
-    static const cl_int maxILKernelStreams = 4;
-
-    if (!DOUBLEPREC)
-        return CL_FALSE;
-
-      if (clr->forceNoILKernel)
-          return CL_FALSE;
-
-    /* Supporting these unused options with the IL kernel is too much work */
-    if (ap->number_streams > maxILKernelStreams || ap->aux_bg_profile)
-        return CL_FALSE;
-
-    /* Make sure an acceptable device */
-    return (isAMDGPUDevice(di) && isILKernelTarget(di) && mwPlatformSupportsAMDOfflineDevices(ci));
-}
-
 /* Get string of options to pass to the CL compiler. Result must be freed */
-char* getCompilerFlags(const CLInfo* ci, const AstronomyParameters* ap, const CLRequest* clr)
+char* getCompilerFlags(const CLInfo* ci, const AstronomyParameters* ap, cl_bool useILKernel)
 {
     const DevInfo* di = &ci->di;
+    std::string flagStr;
+    const char* str;
     std::stringstream flags(std::stringstream::out);
     flags.precision(15);
 
@@ -108,11 +84,14 @@ char* getCompilerFlags(const CLInfo* ci, const AstronomyParameters* ap, const CL
         flags << getNvidiaRegCount(di);
     }
 
-    if (usingILKernelIsAcceptable(ci, ap, clr))
+    if (useILKernel)
     {
         /* Options to only emit AMD IL in the binary */
         flags << "-fno-bin-exe -fno-bin-llvmir -fno-bin-source -fbin-amdil ";
     }
 
-    return strdup(flags.str().c_str());
+    flagStr = flags.str();
+    str = flagStr.c_str();
+    return str ? strdup(str) : NULL;
 }
+

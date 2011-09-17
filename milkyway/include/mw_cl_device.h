@@ -57,7 +57,7 @@ cl_bool isAMDGPUDevice(const DevInfo* di);
 /* AMD specific functions */
 cl_double amdEstimateGFLOPs(const DevInfo* di, cl_bool useDouble);
 cl_bool deviceVendorIsAMD(const DevInfo* di);
-
+cl_uint uavIdFromMWCALtargetEnum(MWCALtargetEnum x);
 
 /* Nvidia specific functions */
 cl_bool minComputeCapabilityCheck(const DevInfo* di, cl_uint major, cl_uint minor);
