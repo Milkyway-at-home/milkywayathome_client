@@ -28,6 +28,7 @@
 #include "separation_binaries.h"
 #include "cl_compile_flags.h"
 #include "replace_amd_il.h"
+#include "il_kernels.h"
 
 #include <assert.h>
 
@@ -450,14 +451,162 @@ cl_double cudaEstimateIterTime(const DevInfo* di, cl_double flopsPerIter, cl_dou
     return 1000.0 * devFactor * flopsPerIter / flops;
 }
 
+static char* replaceUAVIds(const char* ilSrc, size_t* lenOut, ...)
+{
+    char* buf;
+    va_list argPtr;
+    size_t len;
+    int rc;
+
+    len = strlen(ilSrc);
+    buf = mwMalloc(len + 1);
+    buf[len] = '\0';
+
+    va_start(argPtr, lenOut);
+    rc = vsprintf(buf, ilSrc, argPtr);
+    va_end(argPtr);
+
+    if ((size_t) rc != len)
+    {
+        free(buf);
+        return NULL;
+    }
+
+    if (lenOut)
+    {
+        *lenOut = len;
+    }
+
+    return buf;
+}
+
+/* Different UAV IDs are used for different GPUs, and it must match */
+static char* getILSrc(int nStream, MWCALtargetEnum target, size_t* len)
+{
+    char* ilSrc = NULL;
+    cl_uint u = uavIdFromMWCALtargetEnum(target);
+
+    /* Should we be checking which UAV is used from the binary? */
+    if (u > 99)
+    {
+        /* We rely on the size of a 2 digit UAV id being the same as the '%d' format,
+           but there are only a few UAVs anyway
+         */
+        mw_printf("UAV id %u is absurd\n", u);
+        return NULL;
+    }
+
+    /* This is pretty special */
+    switch (nStream)
+    {
+        case 1:   /* 9 */
+            ilSrc = replaceUAVIds(ilKernelSrc1, len, u, u, u, u, u, u, u, u, u);
+            break;
+
+        case 2:  /* 11 */
+            ilSrc = replaceUAVIds(ilKernelSrc2, len, u, u, u, u, u, u, u, u, u, u, u);
+            break;
+
+        case 3:  /* 13 */
+            ilSrc = replaceUAVIds(ilKernelSrc3, len, u, u, u, u, u, u, u, u, u, u, u, u, u);
+            break;
+
+        case 4:  /* 15 */
+            ilSrc = replaceUAVIds(ilKernelSrc4, len, u, u, u, u, u, u, u, u, u, u, u, u, u, u, u);
+            break;
+
+        default:
+            mw_unreachable();
+    }
+
+    if (!ilSrc)
+    {
+        mw_printf("Error getting processed IL kernel source\n");
+    }
+
+    return ilSrc;
+}
+
+static cl_int setProgramFromILKernel(CLInfo* ci, const AstronomyParameters* ap, const CLRequest* clr)
+{
+    unsigned char* bin;
+    unsigned char* modBin;
+    char* ilSrc;
+    size_t ilLen = 0;
+    size_t binSize = 0;
+    size_t modBinSize = 0;
+    cl_int err;
+
+    bin = mwGetProgramBinary(ci, &binSize);
+    if (!bin)
+    {
+        return MW_CL_ERROR;
+    }
+
+    err = clReleaseProgram(ci->prog);
+    if (err != CL_SUCCESS)
+    {
+        free(bin);
+        return err;
+    }
+
+    ilSrc = getILSrc(ap->number_streams, ci->di.calTarget, &ilLen);
+    modBin = getModifiedAMDBinary(bin, binSize, ilSrc, ilLen, &modBinSize);
+    free(bin);
+    free(ilSrc);
+
+    if (!modBin)
+    {
+        mw_printf("Error getting modified binary or IL source\n");
+        return MW_CL_ERROR;
+    }
+
+    err = mwSetProgramFromBin(ci, modBin, modBinSize);
+    free(modBin);
+    if (err != CL_SUCCESS)
+    {
+        mwCLWarn("Error creating program from binary", err);
+        return err;
+    }
+
+    return CL_SUCCESS;
+}
+
+static cl_bool isILKernelTarget(const DevInfo* di)
+{
+    MWCALtargetEnum t = di->calTarget;
+
+    return (t == MW_CAL_TARGET_770) || (t == MW_CAL_TARGET_CYPRESS) || (t == MW_CAL_TARGET_CAYMAN);
+}
+
+static cl_bool usingILKernelIsAcceptable(const CLInfo* ci, const AstronomyParameters* ap, const CLRequest* clr)
+{
+    const DevInfo* di = &ci->di;
+    static const cl_int maxILKernelStreams = 4;
+
+    if (!DOUBLEPREC)
+        return CL_FALSE;
+
+      if (clr->forceNoILKernel)
+          return CL_FALSE;
+
+    /* Supporting these unused options with the IL kernel is too much work */
+    if (ap->number_streams > maxILKernelStreams || ap->aux_bg_profile)
+        return CL_FALSE;
+
+    /* Make sure an acceptable device */
+    return (isAMDGPUDevice(di) && isILKernelTarget(di) && mwPlatformSupportsAMDOfflineDevices(ci));
+}
+
 cl_int setupSeparationCL(CLInfo* ci,
                          const AstronomyParameters* ap,
                          const IntegralArea* ias,
                          const CLRequest* clr)
 {
-    cl_int err;
     char* compileFlags;
     char* kernelSrc;
+    cl_bool useILKernel;
+    cl_int err;
 
     err = mwSetupCL(ci, clr);
     if (err != CL_SUCCESS)
@@ -472,87 +621,50 @@ cl_int setupSeparationCL(CLInfo* ci,
         return MW_CL_ERROR;
     }
 
-    compileFlags = getCompilerFlags(ci, ap, clr);
-    if (!compileFlags)
-    {
-        mw_printf("Failed to get compiler flags\n");
-        return MW_CL_ERROR;
-    }
-
+    useILKernel = usingILKernelIsAcceptable(ci, ap, clr);
     kernelSrc = findKernelSrc();
-    if (!kernelSrc)
+    compileFlags = getCompilerFlags(ci, ap, useILKernel);
+
+    if (!compileFlags || !kernelSrc)
     {
-        mw_printf("Failed to read CL kernel source\n");
-        return MW_CL_ERROR;
+        mw_printf("Failed to get kernel source or compiler flags\n");
+        err = MW_CL_ERROR;
+        goto setup_exit;
     }
 
     mw_printf("\nCompiler flags:\n%s\n\n", compileFlags);
     err = mwSetProgramFromSrc(ci, (const char**) &kernelSrc, 1, compileFlags);
-
-#if 1
-    err = mwSetProgramFromSrc(ci, (const char**) &kernelSrc, 1, compileFlags);
     if (err != CL_SUCCESS)
     {
         mwCLWarn("Error creating program from source", err);
-        return err;
+        goto setup_exit;
     }
 
-    freeKernelSrc(kernelSrc);
-    free(compileFlags);
-
-    if (0)
+    if (useILKernel)
     {
-        unsigned char* bin;
-        unsigned char* modBin;
-        char* ilSrc;
-        size_t binSize = 0;
-        size_t modBinSize = 0;
-
-
-        ilSrc = mwReadFile("../kernel_3_Cayman.il");
-        if (!ilSrc)
+        mw_printf("Using AMD IL kernel\n");
+        err = setProgramFromILKernel(ci, ap, clr);
+        if (err != CL_SUCCESS)
         {
-            mw_panic("No source\n");
-        }
-
-        bin = mwGetProgramBinary(ci, &binSize);
-        if (!bin)
-        {
-            mw_panic("Implement me");
-        }
-
-        modBin = getModifiedAMDBinary(bin, binSize, ilSrc, strlen(ilSrc), &modBinSize);
-        free(bin);
-        if (!modBin)
-        {
-            mw_printf("Error getting modified binary. Falling back to source kernel\n");
-
-            mw_panic("Implement me");
-        }
-        else
-        {
-            /* FIXME: leaking kernel when setting binary */
-            err = mwSetProgramFromBin(ci, modBin, modBinSize);
+            /* Recompiles again but I don't really care. */
+            mw_printf("Failed to create IL kernel. Falling back to source kernel\n");
+            err = mwSetProgramFromSrc(ci, (const char**) &kernelSrc, 1, compileFlags);
             if (err != CL_SUCCESS)
             {
-                mwCLWarn("Error creating program from binary", err);
-                return err;
+                mwCLWarn("Error creating program from source", err);
             }
-
-            free(modBin);
         }
     }
-#endif
 
     if (err == CL_SUCCESS)
     {
         err = mwCreateKernel(&_separationKernel, ci, "probabilities");
-        if (err != CL_SUCCESS)
-            return err;
     }
 
+setup_exit:
+    freeKernelSrc(kernelSrc);
+    free(compileFlags);
 
-
-    return CL_SUCCESS;
+    return err;
 }
 

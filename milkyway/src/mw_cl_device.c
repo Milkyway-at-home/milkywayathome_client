@@ -100,7 +100,7 @@ static const AMDGPUData amdGPUData[] =
     { NULL,          MW_CAL_TARGET_INVALID, 5, 0, 64 }
 };
 
-static cl_uint uavIdFromMWCALtargetEnum(MWCALtargetEnum x)
+cl_uint uavIdFromMWCALtargetEnum(MWCALtargetEnum x)
 {
     return (x >= MW_CAL_TARGET_CYPRESS) ? 11 : 1;
 }

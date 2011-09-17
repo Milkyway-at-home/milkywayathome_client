@@ -146,7 +146,11 @@ set(cl_source_list src/separation_cl_buffers.c
                    src/cl_compile_flags.cpp
                    src/replace_amd_il.c
                    src/setup_cl.c
-                   src/run_cl.c)
+                   src/run_cl.c
+                   src/il_kernel_1.c
+                   src/il_kernel_2.c
+                   src/il_kernel_3.c
+                   src/il_kernel_4.c)
 
 set(graphics_src_list src/separation_graphics.cc)
 set(graphics_hdr_list include/separation_graphics.h)
@@ -186,6 +190,7 @@ set(separation_headers include/calculated_constants.h
 set(separation_cl_headers include/setup_cl.h
                           include/cl_compile_flags.h
                           include/replace_amd_il.h
+                          include/il_kernels.h
                           include/run_cl.h
                           include/separation_cl_buffers.h)
 
