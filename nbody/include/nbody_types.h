@@ -255,18 +255,15 @@ typedef struct
  */
 typedef struct NBODY_ALIGN
 {
-    Potential pot;
-    ExternalPotentialType potentialType;
-
+    real eps2;                /* (potential softening parameter)^2 */
+    real theta;               /* accuracy parameter: 0.0 */
     real timestep;
     real timeEvolve;
-
-    real theta;               /* accuracy parameter: 0.0 */
-    real eps2;                /* (potential softening parameter)^2 */
     real treeRSize;
-
     real sunGCDist;
+
     criterion_t criterion;
+    ExternalPotentialType potentialType;
 
     mwbool useQuad;           /* use quadrupole corrections */
     mwbool allowIncest;
@@ -274,6 +271,8 @@ typedef struct NBODY_ALIGN
 
     time_t checkpointT;       /* Period to checkpoint when not using BOINC */
     unsigned int freqOut;
+
+    Potential pot;
     HistogramParams histogramParams;
 } NBodyCtx;
 
@@ -304,11 +303,13 @@ typedef enum
 
 
 #define EMPTY_TREE { NULL, 0.0, 0, 0, FALSE }
-#define EMPTY_NBODYCTX { EMPTY_POTENTIAL, EXTERNAL_POTENTIAL_DEFAULT, 0.0, \
-                         0.0, 0.0, 0.0, 0.0,                               \
-                         0.0, InvalidCriterion,                            \
-                         FALSE, FALSE, FALSE,                              \
-                         0, 0, EMPTY_HISTOGRAM_PARAMS }
+#define EMPTY_NBODYCTX { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,                  \
+                         InvalidCriterion, EXTERNAL_POTENTIAL_DEFAULT,  \
+                         FALSE, FALSE, FALSE,                           \
+                         0, 0,                                          \
+                         EMPTY_POTENTIAL, EMPTY_HISTOGRAM_PARAMS }
+
+
 
 int destroyNBodyState(NBodyState* st);
 int detachSharedScene(NBodyState* st);

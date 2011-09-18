@@ -28,8 +28,10 @@
 
 #ifndef _MSC_VER
   #define NBODY_ALIGN __attribute__((aligned))
+  #define NBODY_ALIGN_V(x) __attribute__((aligned(x)))
 #else
   #define NBODY_ALIGN
+  #define NBODY_ALIGN_V(x) __attribute__((aligned(x)))
 #endif /* _MSC_VER */
 
 #define _SPHERICAL 0

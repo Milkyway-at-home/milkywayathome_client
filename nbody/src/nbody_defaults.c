@@ -23,23 +23,27 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 const NBodyCtx defaultNBodyCtx =
 {
     /* Grr lack of C99 named struct initializers in MSVC */
-    /* .pot             */  EMPTY_POTENTIAL,
-    /* .potentialType   */  EXTERNAL_POTENTIAL_DEFAULT,
+    /* .eps2            */  0.0,
+    /* .theta           */  0.0,
+
     /* .timestep        */  0.0,
     /* .timeEvolve      */  0.0,
-
-    /* .theta           */  0.0,
-    /* .eps2            */  0.0,
-
     /* .treeRSize       */  DEFAULT_TREE_ROOT_SIZE,
     /* .sunGCDist       */  DEFAULT_SUN_GC_DISTANCE,
+
     /* .criterion       */  DEFAULT_CRITERION,
+    /* .potentialType   */  EXTERNAL_POTENTIAL_DEFAULT,
+
+
     /* .useQuad         */  DEFAULT_USE_QUADRUPOLE_MOMENTS,
     /* .allowIncest     */  DEFAULT_ALLOW_INCEST,
     /* .quietErrors     */  DEFAULT_QUIET_ERRORS,
 
-    /* .freqout         */  DEFAULT_OUTPUT_FREQUENCY,
+
     /* .checkpointT     */  NOBOINC_DEFAULT_CHECKPOINT_PERIOD,
+    /* .freqout         */  DEFAULT_OUTPUT_FREQUENCY,
+
+    /* .pot             */  EMPTY_POTENTIAL,
     /* .histogramParams */  EMPTY_HISTOGRAM_PARAMS
 };
 
