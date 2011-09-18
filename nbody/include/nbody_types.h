@@ -93,13 +93,13 @@ typedef short body_t;
 /* node: data common to BODY and CELL structures. */
 typedef struct NBODY_ALIGN _NBodyNode
 {
-    body_t type;              /* code for node type */
-    real mass;                /* total mass of node */
     mwvector pos;             /* position of node */
     struct _NBodyNode* next;  /* link to next force-calc */
+    real mass;                /* total mass of node */
+    body_t type;              /* code for node type */
 } NBodyNode;
 
-#define EMPTY_NODE { 0, 0.0, ZERO_VECTOR, NULL }
+#define EMPTY_NODE { ZERO_VECTOR, NULL, 0.0, 0  }
 
 #define Type(x) (((NBodyNode*) (x))->type)
 #define Mass(x) (((NBodyNode*) (x))->mass)
@@ -203,26 +203,26 @@ typedef struct NBODY_ALIGN
 typedef struct NBODY_ALIGN
 {
     NBodyTree tree;
-    NBodyNode* freecell;   /* list of free cells */
+    NBodyNode* freecell;      /* list of free cells */
+    FILE* outFile;            /* file for snapshot output */
+    char* checkpointResolved;
+    Body* bodytab;            /* points to array of bodies */
+    mwvector* acctab;         /* Corresponding accelerations of bodies */
+    mwvector* orbitTrace;     /* Trail of center of masses for display purposes */
+    scene_t* scene;
     time_t lastCheckpoint;
+
     real tnow;
     int step;
     int nbody;
-    Body* bodytab;      /* points to array of bodies */
-    mwvector* acctab;   /* Corresponding accelerations of bodies */
     int treeIncest;     /* Tree incest has occured */
 
-    FILE* outFile;            /* file for snapshot output */
-    char* checkpointResolved;
-
-    mwvector* orbitTrace;  /* Trail of center of masses for display purposes */
-    scene_t* scene;
-    int shmId; /* shmid, key when using shmem */
+    int shmId;          /* shmid, key when using shmem */
 } NBodyState;
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, 0, 0.0, 0, 0, NULL, NULL, FALSE, NULL, NULL, NULL, NULL, -1 }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.0, 0, 0, 0, -1 }
 
 
 typedef struct

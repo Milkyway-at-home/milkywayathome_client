@@ -134,8 +134,9 @@ static void expandBox(NBodyTree* t, const Body* btab, int nbody)
 {
     real xyzmax;
     const Body* p;
-
     const NBodyCell* root = t->root;
+
+    assert(t->rsize > 0.0);
 
     xyzmax = 0.0;
     for (p = btab; p < btab + nbody; ++p)
@@ -146,7 +147,9 @@ static void expandBox(NBodyTree* t, const Body* btab, int nbody)
     }
 
     while (t->rsize < 2.0 * xyzmax)
+    {
         t->rsize *= 2.0;
+    }
 }
 
 /* makecell: return pointer to free cell. */
