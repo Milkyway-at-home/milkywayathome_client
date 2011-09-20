@@ -52,11 +52,8 @@ static int getBodiesFunc(lua_State* luaSt)
 
 static int bindArgSeed(lua_State* luaSt, const NBodyFlags* nbf)
 {
-    if (nbf->setSeed)
-    {
-        lua_pushinteger(luaSt, nbf->setSeed);
-        lua_setglobal(luaSt, "argSeed");
-    }
+    lua_pushinteger(luaSt, nbf->seed);
+    lua_setglobal(luaSt, "argSeed");
 
     return 0;
 }

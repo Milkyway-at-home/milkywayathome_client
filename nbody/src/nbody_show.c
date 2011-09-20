@@ -126,6 +126,21 @@ const char* showNBodyStatus(NBodyStatus x)
     }
 }
 
+const char* showExternalPotentialType(ExternalPotentialType x)
+{
+    switch (x)
+    {
+        case EXTERNAL_POTENTIAL_DEFAULT:
+            return "Milkyway@Home N-body potential";
+        case EXTERNAL_POTENTIAL_NONE:
+            return "None";
+        case EXTERNAL_POTENTIAL_CUSTOM_LUA:
+            return "Lua";
+        default:
+            return "Unknown ExternalPotentialType";
+    }
+}
+
 char* showSpherical(const Spherical* s)
 {
     char* buf;

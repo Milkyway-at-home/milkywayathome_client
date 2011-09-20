@@ -442,8 +442,8 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
         exit(EXIT_SUCCESS);
     }
 
-    sf.setSeed = argRead & SEED_ARGUMENT; /* Check if these flags were used */
-    sf.setPriority = argRead & PRIORITY_ARGUMENT;
+    sf.setSeed = !!(argRead & SEED_ARGUMENT); /* Check if these flags were used */
+    sf.setPriority = !!(argRead & PRIORITY_ARGUMENT);
 
     sf.do_separation = (sf.separation_outfile && strcmp(sf.separation_outfile, ""));
     if (sf.do_separation)

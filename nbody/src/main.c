@@ -34,11 +34,13 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <crlibm.h>
 #endif /* NBODY_CRLIBM */
 
+#define SEED_ARGUMENT (1 << 1)
+
 
 #if !BOINC_APPLICATION
 static void nbodyPrintVersion() { }
 
-static int nbodyInit(const NBodyFlags* nbf) { return 0; }
+static int nbodyInit(const NBodyFlags* nbf) { (void) nbf; return 0; }
 
 #else
 
@@ -93,126 +95,127 @@ static void setForwardedArguments(NBodyFlags* nbf, const char** args)
 }
 
 /* Read the command line arguments, and do the inital parsing of the parameter file. */
-static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf)
+static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbfOut)
 {
     int argRead;
     poptContext context;
     const char** rest = NULL;   /* Leftover arguments */
     mwbool failed = FALSE;
 
-    unsigned int numParams = 0, params = 0;
+    static NBodyFlags nbf = EMPTY_NBODY_FLAGS;
+    static unsigned int numParams = 0, params = 0;
 
     /* FIXME: There's a small leak of the inputFile from use of
        poptGetNextOpt(). Some mailing list post suggestst that this
        is some kind of semi-intended bug to work around something or other */
-    const struct poptOption options[] =
+    static const struct poptOption options[] =
     {
         {
             "input-file", 'f',
-            POPT_ARG_STRING, &nbf->inputFile,
+            POPT_ARG_STRING, &nbf.inputFile,
             0, "Input Lua file to read", NULL
         },
 
         {
             "histoout-file", 'z',
-            POPT_ARG_STRING, &nbf->histoutFileName,
+            POPT_ARG_STRING, &nbf.histoutFileName,
             0, "Output histogram file", NULL
         },
 
         {
             "histogram-file", 'h',
-            POPT_ARG_STRING, &nbf->histogramFileName,
+            POPT_ARG_STRING, &nbf.histogramFileName,
             0, "Histogram file", NULL
         },
 
         {
             "output-file", 'o',
-            POPT_ARG_STRING, &nbf->outFileName,
+            POPT_ARG_STRING, &nbf.outFileName,
             0, "Output file", NULL
         },
 
         {
             "output-cartesian", 'x',
-            POPT_ARG_NONE, &nbf->outputCartesian,
+            POPT_ARG_NONE, &nbf.outputCartesian,
             0, "Output Cartesian coordinates instead of lbR", NULL
         },
 
         {
             "timing", 't',
-            POPT_ARG_NONE, &nbf->printTiming,
+            POPT_ARG_NONE, &nbf.printTiming,
             0, "Print timing of actual run", NULL
         },
 
         {
             "verify-file", 'v',
-            POPT_ARG_NONE, &nbf->verifyOnly,
+            POPT_ARG_NONE, &nbf.verifyOnly,
             0, "Check that the input file is valid only; perform no calculation.", NULL
         },
 
         {
             "checkpoint", 'c',
-            POPT_ARG_STRING, &nbf->checkpointFileName,
+            POPT_ARG_STRING, &nbf.checkpointFileName,
             0, "Checkpoint file to use", NULL
         },
 
         {
             "clean-checkpoint", '\0',
-            POPT_ARG_NONE, &nbf->cleanCheckpoint,
+            POPT_ARG_NONE, &nbf.cleanCheckpoint,
             0, "Cleanup checkpoint after finishing run", NULL
         },
 
         {
             "checkpoint-interval", 'w',
-            POPT_ARG_INT, &nbf->checkpointPeriod,
+            POPT_ARG_INT, &nbf.checkpointPeriod,
             0, "Period (in seconds) to checkpoint. -1 to disable", NULL
         },
 
         {
             "debug-boinc", 'g',
-            POPT_ARG_NONE, &nbf->debugBOINC,
+            POPT_ARG_NONE, &nbf.debugBOINC,
             0, "Init BOINC with debugging. No effect if not built with BOINC_APPLICATION", NULL
         },
 
         {
             "lua-debug-libraries", 'a',
-            POPT_ARG_NONE, &nbf->debugLuaLibs,
+            POPT_ARG_NONE, &nbf.debugLuaLibs,
             0, "Load extra Lua libraries not normally allowed (e.g. io) ", NULL
         },
 
         {
             "visualizer", 'u',
-            POPT_ARG_NONE, &nbf->visualizer,
+            POPT_ARG_NONE, &nbf.visualizer,
             0, "Try to run N-body visualization", NULL
         },
 
         {
             "visualizer-args", '\0',
-            POPT_ARG_STRING, &nbf->visArgs,
+            POPT_ARG_STRING, &nbf.visArgs,
             0, "Command line to pass on to visualizer", NULL
         },
 
         {
             "ignore-checkpoint", 'i',
-            POPT_ARG_NONE, &nbf->ignoreCheckpoint,
+            POPT_ARG_NONE, &nbf.ignoreCheckpoint,
             0, "Ignore the checkpoint file", NULL
         },
 
         {
             "print-bodies", 'b',
-            POPT_ARG_NONE, &nbf->printBodies,
+            POPT_ARG_NONE, &nbf.printBodies,
             0, "Print bodies", NULL
         },
 
         {
             "print-histogram", 'm',
-            POPT_ARG_NONE, &nbf->printHistogram,
+            POPT_ARG_NONE, &nbf.printHistogram,
             0, "Print histogram", NULL
         },
 
       #ifdef _OPENMP
         {
             "nthreads", 'n',
-            POPT_ARG_INT, &nbf->numThreads,
+            POPT_ARG_INT, &nbf.numThreads,
             0, "BOINC argument for number of threads", NULL
         },
       #endif /* _OPENMP */
@@ -231,26 +234,26 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
 
         {
             "seed", 'e',
-            POPT_ARG_INT, &nbf->setSeed,
-            'e', "seed for PRNG", NULL
+            POPT_ARG_INT, &nbf.seed,
+            SEED_ARGUMENT, "seed for PRNG", NULL
         },
 
         {
             "device", 'd',
-            POPT_ARG_INT, &nbf->devNum,
+            POPT_ARG_INT, &nbf.devNum,
             0, "OpenCL device number", NULL
         },
 
 
         {
             "platform", 'p',
-            POPT_ARG_INT, &nbf->platform,
+            POPT_ARG_INT, &nbf.platform,
             0, "OpenCL platform", NULL
         },
 
         {
             "disable-opencl", '\0',
-            POPT_ARG_NONE, &nbf->noCL,
+            POPT_ARG_NONE, &nbf.noCL,
             0, "Use normal CPU path instead of OpenCL", NULL
         },
 
@@ -270,11 +273,13 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
     /* Check for invalid options, and must have the input file or a
      * checkpoint to resume from */
     argRead = mwReadArguments(context);
-    if (argRead < 0 || (!nbf->inputFile && !nbf->checkpointFileName))
+    if (argRead < 0 || (!nbf.inputFile && !nbf.checkpointFileName))
     {
         poptPrintHelp(context, stderr, 0);
         failed = TRUE;
     }
+
+    nbf.setSeed = !!(argRead & SEED_ARGUMENT);
 
     rest = poptGetArgs(context);
     if ((params || numParams) && !rest)
@@ -284,19 +289,24 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
     }
     else
     {
-        setForwardedArguments(nbf, rest);
+        setForwardedArguments(&nbf, rest);
     }
 
     poptFreeContext(context);
+
+    *nbfOut = nbf;
 
     return failed;
 }
 
 static void setDefaultFlags(NBodyFlags* nbf)
 {
-   /* Use default if checkpoint file not specified */
+    /* Use default if checkpoint file not specified */
     stringDefault(nbf->checkpointFileName, DEFAULT_CHECKPOINT_FILE);
     stringDefault(nbf->histogramFileName,  DEFAULT_HISTOGRAM_FILE);
+
+    /* Use a specified seed or time seeding */
+    nbf->seed = nbf->setSeed ? nbf->seed : (uint32_t) time(NULL);
 
     /* Specifying output files implies using them */
     if (!nbf->printBodies)
@@ -337,7 +347,7 @@ static void setNumThreads(int numThreads) { }
 
 int main(int argc, const char* argv[])
 {
-    NBodyFlags nbf = EMPTY_NBODY_FLAGS;
+    NBodyFlags nbf;
     int rc = 0;
     const char** argvCopy = mwFixArgv(argc, argv);
 

@@ -40,6 +40,8 @@ void printDisk(const Disk*);
 char* showPotential(const Potential*);
 void printPotential(const Potential*);
 
+const char* showExternalPotentialType(ExternalPotentialType x);
+
 char* showNBodyCtx(const NBodyCtx*);
 void printNBodyCtx(const NBodyCtx*);
 

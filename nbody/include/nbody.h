@@ -45,7 +45,8 @@ typedef struct
     const char** forwardedArgs;
     unsigned int numForwardedArgs;
 
-    uint32_t setSeed;
+    mwbool setSeed;  /* If the seed was specified or not */
+    uint32_t seed;   /* Seed value */
     int visualizer;
     int debugBOINC;
     int outputCartesian;
@@ -64,7 +65,7 @@ typedef struct
     unsigned int devNum;
 } NBodyFlags;
 
-#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 
 int verifyFile(const NBodyFlags* nbf);
 int runNBodySimulation(const NBodyFlags* nbf);
