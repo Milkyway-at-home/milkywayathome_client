@@ -24,30 +24,6 @@
 #include "nbody_show.h"
 #include "nbody_util.h"
 
-#define MAXDEPTH 26
-
-typedef struct
-{
-    cl_mem pos[3];
-    cl_mem vel[3];
-    cl_mem acc[3];
-    cl_mem max[3];
-    cl_mem min[3];
-    cl_mem masses;
-    cl_mem treeStatus;
-
-    cl_mem start; /* TODO: We can reuse other buffers with this later to save memory */
-    cl_mem count;
-    cl_mem child;
-    cl_mem sort;
-
-    cl_mem critRadii; /* Used by the alternative cell opening criterion.
-                         Unnecessary for BH86.
-                         BH86 will be the fastest option since it won't need to load from this
-                       */
-
-    cl_mem debug;
-} NBodyBuffers;
 
 /* CHECKME: Padding between these fields might be a good idea */
 typedef struct NBODY_ALIGN
@@ -65,17 +41,6 @@ typedef struct
     int i[64];
 } Debug;
 
-typedef struct
-{
-    size_t factors[6];
-    size_t threads[6];
-    double timings[6];        /* In a single iteration */
-    double chunkTimings[6];   /* Average time per chunk */
-    double kernelTimings[6];  /* Running totals */
-
-    size_t global[6];
-    size_t local[6];
-} NBodyWorkSizes;
 
 static NBodyWorkSizes _workSizes;
 
@@ -145,7 +110,7 @@ static cl_bool setThreadCounts(NBodyWorkSizes* ws, const DevInfo* di)
     }
     else if (computeCapabilityIs(di, 1, 3))
     {
-        ws->threads[0] = 512;
+        ws->threads[0] = 256;
         ws->threads[1] = 288;
         ws->threads[2] = 256;
         ws->threads[3] = 512;
@@ -353,6 +318,7 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
 {
     char* buf;
     static NBodyWorkSizes* ws = &_workSizes;
+    const Potential* p = &ctx->pot;
 
     /* Put a space between the -D. if the thing begins with D, there's
      * an Apple OpenCL compiler bug where the D will be
@@ -386,6 +352,34 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
                  "-D BH86=%d "
                  "-D EXACT=%d "
 
+                 /* Potential */
+                 "-D USE_EXTERNAL_POTENTIAL=%d "
+                 "-D MIYAMOTO_NAGAI_DISK=%d "
+                 "-D EXPONENTIAL_DISK=%d "
+                 "-D LOG_HALO=%d "
+                 "-D NFW_HALO=%d "
+                 "-D TRIAXIAL_HALO=%d "
+
+                 /* Spherical constants */
+                 "-DSPHERICAL_MASS=%a "
+                 "-DSPHERICAL_SCALE=%a "
+
+                 /* Disk constants */
+                 "-DDISK_MASS=%a "
+                 "-DDISK_SCALE_LENGTH=%a "
+                 "-DDISK_SCALE_HEIGHT=%a "
+
+                 /* Halo constants */
+                 "-DHALO_VHALO=%a "
+                 "-DHALO_SCALE_LENGTH=%a "
+                 "-DHALO_FLATTEN_Z=%a "
+                 "-DHALO_FLATTEN_Y=%a "
+                 "-DHALO_FLATTEN_X=%a "
+                 "-DHALO_TRIAX_ANGLE=%a "
+                 "-DHALO_C1=%a "
+                 "-DHALO_C2=%a "
+                 "-DHALO_C3=%a "
+
                  "%s ",
                  DOUBLEPREC,
 
@@ -401,16 +395,50 @@ static char* getCompileFlags(const NBodyCtx* ctx, const NBodyState* st, const De
                  ws->threads[3],
                  ws->threads[4],
                  ws->threads[5],
-                 MAXDEPTH,
+                 NBODY_MAXDEPTH,
 
                  ctx->timestep,
                  ctx->eps2,
                  ctx->theta,
 
+                 /* SEt criterion */
                  ctx->criterion == NewCriterion,
                  ctx->criterion == SW93,
                  ctx->criterion == BH86,
                  ctx->criterion == Exact,
+
+
+                 /* Set potential */
+                 ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT,
+
+                 p->disk.type == MiyamotoNagaiDisk,
+                 p->disk.type == ExponentialDisk,
+                 p->halo.type == LogarithmicHalo,
+                 p->halo.type == NFWHalo,
+                 p->halo.type == TriaxialHalo,
+
+                 /* Set potential constants */
+                 /* Spherical constants */
+                 p->sphere[0].mass,
+                 p->sphere[0].scale,
+
+                 /* Disk constants */
+                 p->disk.mass,
+                 p->disk.scaleLength,
+                 p->disk.scaleHeight,
+
+                 /* Halo constants */
+                 p->halo.vhalo,
+                 p->halo.scaleLength,
+                 p->halo.flattenZ,
+                 p->halo.flattenY,
+                 p->halo.flattenX,
+                 p->halo.triaxAngle,
+                 p->halo.c1,
+                 p->halo.c2,
+                 p->halo.c3,
+
+                 /* Misc. other stuff */
                  hasNvidiaCompilerFlags(di) ? "-cl-nv-verbose" : ""
             ) < 1)
     {
@@ -651,6 +679,8 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
                                  0, NULL, &sumEv);
     if (err != CL_SUCCESS)
         return err;
+
+    ws->timings[2] += waitReleaseEventWithTime(sumEv);
 
     /* FIXME: This does not work unless ALL of the threads are
      * launched at once. This may be bad when we need

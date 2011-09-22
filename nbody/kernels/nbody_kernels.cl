@@ -29,6 +29,12 @@
   #error Opening criterion not set
 #endif
 
+#if USE_EXTERNAL_POTENTIAL && ((!MIYAMOTO_NAGAI_DISK && !EXPONENTIAL_DISK) || (!LOG_HALO && !NFW_HALO && !TRIAXIAL_HALO))
+  #error Potential defines misspecified
+#endif
+
+
+
 /* Reserve positive numbers for reporting depth > MAXDEPTH */
 typedef enum
 {
@@ -40,10 +46,10 @@ typedef enum
 } NBodyKernelError;
 
 #if DOUBLEPREC
-  #if cl_amd_fp64
-    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
-  #elif cl_khr_fp64
+  #if cl_khr_fp64
     #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+  #elif cl_amd_fp64
+    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
   #else
     #error Missing double precision extension
   #endif
@@ -75,9 +81,17 @@ typedef enum
 
 #if DOUBLEPREC
 typedef double real;
+typedef double2 real2;
+typedef double4 real4;
 #else
 typedef float real;
+typedef float2 real2;
+typedef float4 real4;
 #endif /* DOUBLEPREC */
+
+
+#define sqr(x) ((x) * (x))
+#define cube(x) ((x) * (x) * (x))
 
 
 /* FIXME: This needs to be the same as on the host */
@@ -107,6 +121,139 @@ typedef __global volatile int* restrict IVPtr;
 
 //typedef __global real* restrict RVPtr;
 //typedef __global int* restrict IVPtr;
+
+
+
+
+inline real4 sphericalAccel(real4 pos, real r)
+{
+    const real tmp = SPHERICAL_SCALE + r;
+
+    return (-SPHERICAL_MASS / (r * sqr(tmp))) * pos;
+}
+
+/* gets negative of the acceleration vector of this disk component */
+inline real4 miyamotoNagaiDiskAccel(real4 pos, real r)
+{
+    real4 acc;
+    const real a   = DISK_SCALE_LENGTH;
+    const real b   = DISK_SCALE_HEIGHT;
+    const real zp  = sqrt(sqr(pos.z) + sqr(b));
+    const real azp = a + zp;
+
+    const real rp  = sqr(pos.x) + sqr(pos.y) + sqr(azp);
+    const real rth = sqrt(cube(rp));  /* rp ^ (3/2) */
+
+    acc.x = -DISK_MASS * pos.x / rth;
+    acc.y = -DISK_MASS * pos.y / rth;
+    acc.z = -DISK_MASS * pos.z * azp / (zp * rth);
+    acc.w = 0.0;
+
+    return acc;
+}
+
+inline real4 exponentialDiskAccel(real4 pos, real r)
+{
+    const real b = DISK_SCALE_LENGTH;
+
+    const real expPiece = exp(-r / b) * (r + b) / b;
+    const real factor   = DISK_MASS * (expPiece - 1.0) / cube(r);
+
+    return factor * pos;
+}
+
+inline real4 logHaloAccel(real4 pos, real r)
+{
+    real4 acc;
+
+    const real tvsqr = -2.0 * sqr(HALO_VHALO);
+    const real qsqr  = sqr(HALO_FLATTEN_Z);
+    const real d     = HALO_SCALE_LENGTH;
+    const real zsqr  = sqr(pos.z);
+
+    const real arst  = sqr(d) + sqr(pos.x) + sqr(pos.y);
+    const real denom = (zsqr / qsqr) +  arst;
+
+    acc.x = tvsqr * pos.x / denom;
+    acc.y = tvsqr * pos.y / denom;
+    acc.z = tvsqr * pos.z / ((qsqr * arst) + zsqr);
+
+    return acc;
+}
+
+inline real4 nfwHaloAccel(real4 pos, real r)
+{
+    const real a  = HALO_SCALE_LENGTH;
+    const real ar = a + r;
+    const real c  = a * sqr(HALO_VHALO) * ((-ar * mw_log1p(r / a)) + r) / (0.2162165954 * cube(r) * ar);
+
+    return c * pos;
+}
+
+inline real4 triaxialHaloAccel(real4 pos, real r)
+{
+    real4 acc;
+
+    const real qzs      = sqr(HALO_FLATTEN_Z);
+    const real rhalosqr = sqr(HALO_SCALE_LENGTH);
+    const real mvsqr    = -sqr(HALO_VHALO);
+
+    const real xsqr = sqr(pos.x);
+    const real ysqr = sqr(pos.y);
+    const real zsqr = sqr(pos.z);
+
+    const real c1 = HALO_C1;
+    const real c2 = HALO_C2;
+    const real c3 = HALO_C3;
+
+    const real arst  = rhalosqr + (c1 * xsqr) + (c3 * pos.x * pos.y) + (c2 * ysqr);
+    const real arst2 = (zsqr / qzs) + arst;
+
+    acc.x = mvsqr * (((2.0 * c1) * pos.x) + (c3 * pos.y) ) / arst2;
+
+    acc.y = mvsqr * (((2.0 * c2) * pos.y) + (c3 * pos.x) ) / arst2;
+
+    acc.z = (2.0 * mvsqr * pos.z) / ((qzs * arst) + zsqr);
+
+    acc.w = 0.0;
+
+    return acc;
+}
+
+inline real4 externalAcceleration(real x, real y, real z)
+{
+    real4 pos = { x, y, z, 0.0 };
+    real r = length(pos);
+    real4 acc;
+
+    if (MIYAMOTO_NAGAI_DISK)
+    {
+        acc = miyamotoNagaiDiskAccel(pos, r);
+    }
+    else if (EXPONENTIAL_DISK)
+    {
+        acc = exponentialDiskAccel(pos, r);
+    }
+
+    if (LOG_HALO)
+    {
+        acc += logHaloAccel(pos, r);
+    }
+    else if (NFW_HALO)
+    {
+        acc += nfwHaloAccel(pos, r);
+    }
+    else if (TRIAXIAL_HALO)
+    {
+        acc += triaxHaloAccel(pos, r);
+    }
+
+    acc += sphericalAccel(pos, r);
+
+    return acc;
+}
+
+
 
 
 /* All kernels will use the same parameters for now */
@@ -925,6 +1072,12 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 }
                 --depth;  /* Done with this level */
             }
+
+            real4 acc = externalAcceleration(px, py, pz);
+
+            ax += acc.x;
+            ay += acc.y;
+            az += acc.z;
 
             if (step > 0)
             {

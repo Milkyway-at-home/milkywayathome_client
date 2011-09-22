@@ -23,21 +23,20 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_potential.h"
 #include "milkyway_util.h"
 
-static inline mwvector sphericalAccel(const Spherical* sph, const mwvector pos)
+static inline mwvector sphericalAccel(const Spherical* sph, mwvector pos, real r)
 {
-    const real r   = mw_absv(pos);
     const real tmp = sph->scale + r;
 
     return mw_mulvs(pos, -sph->mass / (r * sqr(tmp)));
 }
 
 /* gets negative of the acceleration vector of this disk component */
-static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, const mwvector pos)
+static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, mwvector pos, real r)
 {
     mwvector acc;
     const real a   = disk->scaleLength;
     const real b   = disk->scaleHeight;
-    const real zp  = mw_sqrt( sqr(Z(pos)) + sqr(b) );
+    const real zp  = mw_sqrt(sqr(Z(pos)) + sqr(b));
     const real azp = a + zp;
 
     const real rp  = sqr(X(pos)) + sqr(Y(pos)) + sqr(azp);
@@ -50,10 +49,9 @@ static inline mwvector miyamotoNagaiDiskAccel(const Disk* disk, const mwvector p
     return acc;
 }
 
-static inline mwvector exponentialDiskAccel(const Disk* disk, const mwvector pos)
+static inline mwvector exponentialDiskAccel(const Disk* disk, mwvector pos, real r)
 {
     const real b = disk->scaleLength;
-    const real r = mw_absv(pos);
 
     const real expPiece = mw_exp(-r / b) * (r + b) / b;
     const real factor   = disk->mass * (expPiece - 1.0) / cube(r);
@@ -61,7 +59,7 @@ static inline mwvector exponentialDiskAccel(const Disk* disk, const mwvector pos
     return mw_mulvs(pos, factor);
 }
 
-static inline mwvector logHaloAccel(const Halo* halo, const mwvector pos)
+static inline mwvector logHaloAccel(const Halo* halo, mwvector pos, real r)
 {
     mwvector acc;
 
@@ -80,9 +78,8 @@ static inline mwvector logHaloAccel(const Halo* halo, const mwvector pos)
     return acc;
 }
 
-static inline mwvector nfwHaloAccel(const Halo* halo, const mwvector pos)
+static inline mwvector nfwHaloAccel(const Halo* halo, mwvector pos, real r)
 {
-    const real r  = mw_absv(pos);
     const real a  = halo->scaleLength;
     const real ar = a + r;
     const real c  = a * sqr(halo->vhalo) * ((-ar * mw_log1p(r / a)) + r) / (0.2162165954 * cube(r) * ar);
@@ -91,7 +88,7 @@ static inline mwvector nfwHaloAccel(const Halo* halo, const mwvector pos)
 }
 
 /* CHECKME: Seems to have precision related issues for a small number of cases for very small qy */
-static inline mwvector triaxialHaloAccel(const Halo* h, const mwvector pos)
+static inline mwvector triaxialHaloAccel(const Halo* h, mwvector pos, real r)
 {
     mwvector acc;
 
@@ -116,18 +113,19 @@ static inline mwvector triaxialHaloAccel(const Halo* h, const mwvector pos)
     return acc;
 }
 
-mwvector acceleration(const Potential* pot, const mwvector pos)
+mwvector acceleration(const Potential* pot, mwvector pos)
 {
     mwvector acc, acctmp;
+    const real r = mw_absv(pos);
 
     /* GCC and clang both turn these into jump tables */
     switch (pot->disk.type)
     {
         case ExponentialDisk:
-            acc = exponentialDiskAccel(&pot->disk, pos);
+            acc = exponentialDiskAccel(&pot->disk, pos, r);
             break;
         case MiyamotoNagaiDisk:
-            acc = miyamotoNagaiDiskAccel(&pot->disk, pos);
+            acc = miyamotoNagaiDiskAccel(&pot->disk, pos, r);
             break;
         case InvalidDisk:
         default:
@@ -137,13 +135,13 @@ mwvector acceleration(const Potential* pot, const mwvector pos)
     switch (pot->halo.type)
     {
         case LogarithmicHalo:
-            acctmp = logHaloAccel(&pot->halo, pos);
+            acctmp = logHaloAccel(&pot->halo, pos, r);
             break;
         case NFWHalo:
-            acctmp = nfwHaloAccel(&pot->halo, pos);
+            acctmp = nfwHaloAccel(&pot->halo, pos, r);
             break;
         case TriaxialHalo:
-            acctmp = triaxialHaloAccel(&pot->halo, pos);
+            acctmp = triaxialHaloAccel(&pot->halo, pos, r);
             break;
         case InvalidHalo:
         default:
@@ -151,7 +149,7 @@ mwvector acceleration(const Potential* pot, const mwvector pos)
     }
 
     mw_incaddv(acc, acctmp);
-    acctmp = sphericalAccel(&pot->sphere[0], pos);
+    acctmp = sphericalAccel(&pot->sphere[0], pos, r);
     mw_incaddv(acc, acctmp);
 
     return acc;

@@ -24,7 +24,59 @@
 #include "nbody.h"
 #include "mw_cl.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+
+#define NBODY_MAXDEPTH 26
+
+typedef struct
+{
+    cl_mem pos[3];
+    cl_mem vel[3];
+    cl_mem acc[3];
+    cl_mem max[3];
+    cl_mem min[3];
+    cl_mem masses;
+    cl_mem treeStatus;
+
+    cl_mem start; /* TODO: We can reuse other buffers with this later to save memory */
+    cl_mem count;
+    cl_mem child;
+    cl_mem sort;
+
+    cl_mem critRadii; /* Used by the alternative cell opening criterion.
+                         Unnecessary for BH86.
+                         BH86 will be the fastest option since it won't need to load from this
+                       */
+
+    cl_mem debug;
+} NBodyBuffers;
+
+
+typedef struct
+{
+    size_t factors[6];
+    size_t threads[6];
+    double timings[6];        /* In a single iteration */
+    double chunkTimings[6];   /* Average time per chunk */
+    double kernelTimings[6];  /* Running totals */
+
+    size_t global[6];
+    size_t local[6];
+} NBodyWorkSizes;
+
+
+
 NBodyStatus runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _NBODY_CL_H_ */
 
