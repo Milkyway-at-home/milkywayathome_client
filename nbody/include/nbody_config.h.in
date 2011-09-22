@@ -33,6 +33,8 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define ENABLE_CRLIBM NBODY_CRLIBM
 #define ENABLE_OPENCL NBODY_OPENCL
 
+#cmakedefine01 ENABLE_CURSES
+
 #if defined(_OPENMP)
   #define EXTRAVER " OpenMP"
 #elif NBODY_OPENCL

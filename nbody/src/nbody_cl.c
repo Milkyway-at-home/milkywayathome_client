@@ -23,7 +23,7 @@
 #include "nbody_cl.h"
 #include "nbody_show.h"
 #include "nbody_util.h"
-
+#include "nbody_curses.h"
 
 /* CHECKME: Padding between these fields might be a good idea */
 typedef struct NBODY_ALIGN
@@ -43,6 +43,7 @@ typedef struct
 
 
 static NBodyWorkSizes _workSizes;
+static cl_bool reportProgress = CL_FALSE;
 
 static void printNBodyWorkSizes(const NBodyWorkSizes* ws)
 {
@@ -734,21 +735,26 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     if (err != CL_SUCCESS)
         return err;
 
-    mw_printf("Step %d:\n"
-              "  boundingBox:      %15f ms\n"
-              "  buildTree:        %15f ms%15f ms\n"
-              "  summarization:    %15f ms\n"
-              "  sort:             %15f ms\n"
-              "  forceCalculation: %15f ms%15f ms\n"
-              "  integration:      %15f ms\n"
-              "\n",
-              st->step,
-              ws->timings[0],
-              ws->timings[1], ws->chunkTimings[1],
-              ws->timings[2],
-              ws->timings[3],
-              ws->timings[4], ws->chunkTimings[4],
-              ws->timings[5]);
+    if (reportProgress)
+    {
+        mw_printw("Step %d (%f%%):\n"
+                  "  boundingBox:      %15f ms\n"
+                  "  buildTree:        %15f ms%15f ms\n"
+                  "  summarization:    %15f ms\n"
+                  "  sort:             %15f ms\n"
+                  "  forceCalculation: %15f ms%15f ms\n"
+                  "  integration:      %15f ms\n"
+                  "\n",
+                  st->step,
+                  100.0 * st->tnow / ctx->timeEvolve,
+                  ws->timings[0],
+                  ws->timings[1], ws->chunkTimings[1],
+                  ws->timings[2],
+                  ws->timings[3],
+                  ws->timings[4], ws->chunkTimings[4],
+                  ws->timings[5]);
+        mw_refresh();
+    }
 
     for (i = 0; i < 6; ++i) /* Add timings to running totals */
     {
@@ -773,9 +779,6 @@ static cl_int nbodyMainLoop(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st, NBo
             break;
         }
 
-        mw_printf("Running step %d (%f%%)\n",
-                  st->step,
-                  100.0 * st->tnow / tstop);
         err = stepSystemCL(ci, ctx, st);
         st->tnow += ctx->timestep;
         st->step++;
@@ -1027,7 +1030,10 @@ static void setCLRequestFromFlags(CLRequest* clr, const NBodyFlags* nbf)
     clr->platform = nbf->platform;
     clr->devNum = nbf->devNum;
     clr->verbose = TRUE;
+    clr->reportProgress = nbf->reportProgress;
     clr->enableCheckpointing = FALSE;
+
+    reportProgress = clr->reportProgress;
 }
 
 /* Setup kernels and buffers */
@@ -1092,9 +1098,20 @@ NBodyStatus runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* n
     if (err != CL_SUCCESS)
         goto fail;
 
-    err = nbodyMainLoop(&ci, ctx, st, &nbb);
+    if (reportProgress)
+    {
+        mw_initscr();
+        err = nbodyMainLoop(&ci, ctx, st, &nbb);
+        mw_endwin();
+    }
+    else
+    {
+        err = nbodyMainLoop(&ci, ctx, st, &nbb);
+    }
+
     if (err != CL_SUCCESS)
         goto fail;
+
 
     err = marshalBodies(&nbb, &ci, st, CL_FALSE);
     if (err != CL_SUCCESS)

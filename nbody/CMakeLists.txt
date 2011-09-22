@@ -36,6 +36,11 @@ include(CheckSSE2)
 include(BOINCPaths)
 include(CMakeDependentOption)
 
+
+cmake_dependent_option(ENABLE_CURSES "Report progress with curses" ON
+                                       "NOT BOINC_APPLICATION;CURSES_FOUND" OFF)
+
+
 cmake_dependent_option(NBODY_STATIC "Build Nbody as fully static binary" OFF
                                       "NOT NBODY_OPENCL" OFF)
 mark_as_advanced(NBODY_STATIC)
@@ -48,6 +53,10 @@ endif()
 include_directories(${MILKYWAY_INCLUDE_DIR})
 include_directories(${MILKYWAY_INSTALL_INCLUDE_DIR})
 include_directories(${DSFMT_INCLUDE_DIR})
+
+if(ENABLE_CURSES)
+  include_directories(${CURSES_INCLUDE_DIR})
+endif()
 
 
 set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include")
@@ -221,10 +230,16 @@ if(NBODY_OPENCL)
   list(APPEND nbody_link_libs ${OPENCL_LIBRARIES})
 endif()
 
+if(ENABLE_CURSES)
+  list(APPEND nbody_link_libs ${CURSES_LIBRARIES})
+endif()
+
+
 add_library(nbody_simulation STATIC ${nbody_lib_src} ${nbody_lib_headers})
 if(SYSTEM_IS_X86)
   enable_sse2(nbody_simulation)
 endif()
+
 
 
 set(nbody_exe_link_libs nbody_simulation

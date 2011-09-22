@@ -257,6 +257,12 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
             0, "Use normal CPU path instead of OpenCL", NULL
         },
 
+        {
+            "progress", 'r',
+            POPT_ARG_NONE, &nbf.reportProgress,
+            0, "Print verbose progress information, possibly with curses", NULL
+        },
+
         POPT_AUTOHELP
         POPT_TABLEEND
     };

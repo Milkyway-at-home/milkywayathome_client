@@ -340,6 +340,7 @@ find_package_static(Fdlibm)
 find_package(Boost)
 find_package(OpenGL)
 find_package(GLUT)
+find_package(Curses)
 
 add_subdirectory(popt)
 add_subdirectory(lua)
