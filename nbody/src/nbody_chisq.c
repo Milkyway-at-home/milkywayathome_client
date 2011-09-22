@@ -332,6 +332,35 @@ static unsigned int* createHistogram(const NBodyCtx* ctx,       /* Simulation co
     return histogram;
 }
 
+static size_t countLinesInFile(FILE* f)
+{
+    int c;
+    size_t lineCount = 0;
+
+    while ((c = fgetc(f)) != EOF)
+    {
+        if (c == '\n')
+        {
+            ++lineCount;
+        }
+    }
+
+    if (!feof(f))
+    {
+        perror("Error counting histogram lines");
+        return 0;
+    }
+
+    if (fseek(f, 0L, SEEK_SET) < 0)
+    {
+        perror("Error seeking histogram");
+        return 0;
+    }
+
+    return lineCount;
+}
+
+
 /* The chisq is calculated by reading a histogram file of normalized data.
    Returns null on failure.
  */
@@ -344,6 +373,7 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
     unsigned int fileCount = 0;
     unsigned int lineNum = 0;
     mwbool error = FALSE;
+    mwbool readParams = FALSE;
     char lineBuf[1024];
 
     f = mwOpenResolved(histogram, "r");
@@ -353,10 +383,12 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
         return NULL;
     }
 
-    fseek(f, 0L, SEEK_END);
-    /* Make sure it's big enough */
-    fsize = (size_t) mwDivRoundup(ftell(f) + 1, 3);
-    fseek(f, 0L, SEEK_SET);
+    fsize = countLinesInFile(f);
+    if (fsize == 0)
+    {
+        mw_printf("Histogram line count = 0\n");
+        return NULL;
+    }
 
     histData = (HistData*) mwCalloc(sizeof(HistData), fsize);
 
@@ -364,12 +396,33 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
     {
         ++lineNum;
 
+        if (strlen(lineBuf) + 1 >= sizeof(lineBuf))
+        {
+            mw_printf("Error reading histogram line %d (Line buffer too small): %s", lineNum, lineBuf);
+            error = TRUE;
+            break;
+        }
+
         /* Skip comments and blank lines */
         if (lineBuf[0] == '#' || lineBuf[0] == '\n')
             continue;
 
+        if (!readParams)  /* One line is allowed for information on the histogram */
+        {
+            real phi, theta, psi;
+
+            rc = sscanf(lineBuf,
+                        DOUBLEPREC ? " phi = %lf , theta = %lf , psi = %lf \n" : " phi = %f , theta = %f , psi = %f \n",
+                        &phi, &theta, &psi);
+            if (rc == 3)
+            {
+                readParams = TRUE;
+                continue;
+            }
+        }
+
         rc = sscanf(lineBuf,
-                    DOUBLEPREC ? "%d %lf %lf %lf\n" : "%d %f %f %f\n",
+                    DOUBLEPREC ? "%d %lf %lf %lf \n" : "%d %f %f %f \n",
                     &histData[fileCount].useBin,
                     &histData[fileCount].lambda,
                     &histData[fileCount].count,
