@@ -731,28 +731,38 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
 
     ws->timings[5] += waitReleaseEventWithTime(integrateEv);
 
+    static unsigned int arst = 0;
+    arst = (arst + 1) % 1000;
+
+    if (arst == 0)
+    {
+        printf("arstarstarstarst error orrrr\n");
+        return MW_CL_ERROR;
+    }
+
     err = clFinish(ci->queue);
     if (err != CL_SUCCESS)
         return err;
 
     if (reportProgress)
     {
-        mw_printw("Step %d (%f%%):\n"
-                  "  boundingBox:      %15f ms\n"
-                  "  buildTree:        %15f ms%15f ms\n"
-                  "  summarization:    %15f ms\n"
-                  "  sort:             %15f ms\n"
-                  "  forceCalculation: %15f ms%15f ms\n"
-                  "  integration:      %15f ms\n"
-                  "\n",
-                  st->step,
-                  100.0 * st->tnow / ctx->timeEvolve,
-                  ws->timings[0],
-                  ws->timings[1], ws->chunkTimings[1],
-                  ws->timings[2],
-                  ws->timings[3],
-                  ws->timings[4], ws->chunkTimings[4],
-                  ws->timings[5]);
+        mw_mvprintw(0, 0,
+                    "Step %d (%f%%):\n"
+                    "  boundingBox:      %15f ms\n"
+                    "  buildTree:        %15f ms%15f ms\n"
+                    "  summarization:    %15f ms\n"
+                    "  sort:             %15f ms\n"
+                    "  forceCalculation: %15f ms%15f ms\n"
+                    "  integration:      %15f ms\n"
+                    "\n",
+                    st->step,
+                    100.0 * st->tnow / ctx->timeEvolve,
+                    ws->timings[0],
+                    ws->timings[1], ws->chunkTimings[1],
+                    ws->timings[2],
+                    ws->timings[3],
+                    ws->timings[4], ws->chunkTimings[4],
+                    ws->timings[5]);
         mw_refresh();
     }
 

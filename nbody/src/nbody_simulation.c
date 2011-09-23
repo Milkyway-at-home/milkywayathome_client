@@ -74,13 +74,15 @@ static inline void nbodyReportProgress(const NBodyCtx* ctx, NBodyState* st, int 
 {
     mw_fraction_done(st->tnow / ctx->timeEvolve);
 
-    if (ENABLE_CURSES)
+    if (reportProgress)
     {
-        mw_printw("Running: %f / %f (%f%%)\n",
-                  st->tnow,
-                  ctx->timeEvolve,
-                  100.0 * st->tnow / ctx->timeEvolve
+        mw_mvprintw(0, 0,
+                    "Running: %f / %f (%f%%)\n",
+                    st->tnow,
+                    ctx->timeEvolve,
+                    100.0 * st->tnow / ctx->timeEvolve
             );
+
         mw_refresh();
     }
 }
@@ -212,7 +214,6 @@ int verifyFile(const NBodyFlags* nbf)
 static NBodyCtx _ctx = EMPTY_NBODYCTX;
 static NBodyState _st = EMPTY_NBODYSTATE;
 
-
 int runNBodySimulation(const NBodyFlags* nbf)
 {
     NBodyCtx* ctx = &_ctx;
@@ -240,13 +241,12 @@ int runNBodySimulation(const NBodyFlags* nbf)
         mw_printf("Failed to create shared scene\n");
     }
 
-    ts = mwGetTime();
-
     if (nbf->reportProgress)
     {
-        mw_initscr();
+        setupCursesOutput();
     }
 
+    ts = mwGetTime();
   #if NBODY_OPENCL
     if (nbf->noCL)
     {
@@ -275,7 +275,6 @@ int runNBodySimulation(const NBodyFlags* nbf)
     {
         mw_printf("System complete with warnings: %s (%d)\n", showNBodyStatus(rc), rc);
     }
-    te = mwGetTime();
 
     if (nbf->printTiming)
     {

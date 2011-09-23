@@ -112,6 +112,7 @@ set(NBODY_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include/")
 set(nbody_lib_src ${NBODY_SRC_DIR}/nbody_chisq.c
                   ${NBODY_SRC_DIR}/nbody_grav.c
                   ${NBODY_SRC_DIR}/nbody_io.c
+                  ${NBODY_SRC_DIR}/nbody_curses.c
                   ${NBODY_SRC_DIR}/nbody_types.c
                   ${NBODY_SRC_DIR}/nbody_tree.c
                   ${NBODY_SRC_DIR}/nbody_orbit_integrator.c
@@ -131,6 +132,7 @@ set(nbody_lib_headers ${NBODY_INCLUDE_DIR}/nbody_chisq.h
                       ${NBODY_INCLUDE_DIR}/nbody_grav.h
                       ${NBODY_INCLUDE_DIR}/nbody_config.h.in
                       ${NBODY_INCLUDE_DIR}/nbody_io.h
+                      ${NBODY_INCLUDE_DIR}/nbody_curses.h
                       ${NBODY_INCLUDE_DIR}/nbody_tree.h
                       ${NBODY_INCLUDE_DIR}/nbody_orbit_integrator.h
                       ${NBODY_INCLUDE_DIR}/nbody_potential.h

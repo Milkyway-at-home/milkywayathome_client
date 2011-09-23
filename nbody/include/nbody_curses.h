@@ -35,16 +35,31 @@ extern "C" {
 
 
 #if ENABLE_CURSES
-  #define mw_printw(...) mvprintw(0, 0, ##__VA_ARGS__)
+  #define mw_mvprintw(y, x, ...) mvprintw(y, x, ##__VA_ARGS__)
+  #define mw_printw(...) printw(__VA_ARGS__)
   #define mw_initscr() initscr()
-  #define mw_endwin() endwin()
   #define mw_refresh() refresh()
+  #define mw_def_shell_mode() def_shell_mode()
+  #define mw_def_prog_mode() def_prog_mode()
+  #define mw_reset_prog_mode() reset_prog_mode()
+  #define mw_reset_shell_mode() reset_shell_mode()
+  #define mw_getch() getch()
 #else
   #define mw_printw mw_printf
+  #define mw_mvprintw(y, x, ...) mw_printf(__VA_ARGS__)
   #define mw_initscr()
-  #define mw_endwin()
+  #define mw_delscreen()
   #define mw_refresh()
+  #define mw_def_shell_mode()
+  #define mw_def_prog_mode()
+  #define mw_reset_prog_mode()
+  #define mw_reset_shell_mode()
+  #define mw_getch()
 #endif /* ENABLE_CURSES */
+
+
+int setupCursesOutput(void);
+void cleanupCursesOutput(void);
 
 
 #ifdef __cplusplus
