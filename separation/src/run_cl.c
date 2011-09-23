@@ -204,7 +204,6 @@ static cl_int runNuStep(CLInfo* ci, const IntegralArea* ia, const RunSizes* runS
                 mwCLWarn("Failed to finish", err);
         }
 
-
         mw_end_critical_section();
 
         offset[0] += runSizes->global[0];
@@ -219,13 +218,15 @@ static inline void reportProgress(const AstronomyParameters* ap,
                                   cl_uint step,
                                   double dt)
 {
-  #if BOINC_APPLICATION
     cl_long prog;
     prog = es->current_calc_probs + (cl_ulong) ia->mu_steps * ia->r_steps * step;
-    boinc_fraction_done((cl_double) prog / ap->total_calc_probs);
-  #else
-    printf("Step %u: %fms\n", step, dt);
-  #endif /* BOINC_APPLICATION */
+    mw_fraction_done((cl_double) prog / ap->total_calc_probs);
+
+    if (!BOINC_APPLICATION)
+    {
+        printf("Step %u: %fms\n", step, dt);
+    }
+
 }
 
 static cl_int checkpointCL(CLInfo* ci, SeparationCLMem* cm, const IntegralArea* ia, EvaluationState* es)
@@ -237,10 +238,7 @@ static cl_int checkpointCL(CLInfo* ci, SeparationCLMem* cm, const IntegralArea* 
         return err;
 
     err = writeCheckpoint(es) ? MW_CL_ERROR : CL_SUCCESS;
-
-  #if BOINC_APPLICATION
-    boinc_checkpoint_completed();
-  #endif
+    mw_checkpoint_completed();
 
     return err;
 }
