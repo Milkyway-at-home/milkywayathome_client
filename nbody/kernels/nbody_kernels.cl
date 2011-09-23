@@ -185,7 +185,7 @@ inline real4 nfwHaloAccel(real4 pos, real r)
 {
     const real a  = HALO_SCALE_LENGTH;
     const real ar = a + r;
-    const real c  = a * sqr(HALO_VHALO) * ((-ar * mw_log1p(r / a)) + r) / (0.2162165954 * cube(r) * ar);
+    const real c  = a * sqr(HALO_VHALO) * ((-ar * log1p(r / a)) + r) / (0.2162165954 * cube(r) * ar);
 
     return c * pos;
 }
@@ -245,7 +245,7 @@ inline real4 externalAcceleration(real x, real y, real z)
     }
     else if (TRIAXIAL_HALO)
     {
-        acc += triaxHaloAccel(pos, r);
+        acc += triaxialHaloAccel(pos, r);
     }
 
     acc += sphericalAccel(pos, r);
