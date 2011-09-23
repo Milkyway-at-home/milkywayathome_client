@@ -300,7 +300,7 @@ void updateDisplayedBodies(NBodyState* st)
     i = scene->currentTracePoint;
     if (i < N_ORBIT_TRACE_POINTS && i < MAX_DRAW_TRACE_POINTS)
     {
-        if (X(st->orbitTrace[i]) < DBL_MAX)
+        if (X(st->orbitTrace[i]) < REAL_MAX)
         {
             scene->orbitTrace[i].x = (float) X(st->orbitTrace[i]);
             scene->orbitTrace[i].y = (float) Y(st->orbitTrace[i]);

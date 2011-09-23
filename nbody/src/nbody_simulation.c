@@ -93,7 +93,7 @@ static void addTracePoint(const NBodyCtx* ctx, NBodyState* st)
     if (i >= N_ORBIT_TRACE_POINTS) /* Just in case */
         return;
 
-    if (X(st->orbitTrace[i]) < DBL_MAX)
+    if (X(st->orbitTrace[i]) < REAL_MAX)
         return;
 
     st->orbitTrace[i] = Pos(st->tree.root);

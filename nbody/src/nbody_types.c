@@ -113,7 +113,7 @@ int destroyNBodyState(NBodyState* st)
 void setInitialNBodyState(NBodyState* st, const NBodyCtx* ctx, Body* bodies, int nbody)
 {
     static const NBodyTree emptyTree = EMPTY_TREE;
-    static const mwvector maxV = mw_vec(DBL_MAX, DBL_MAX, DBL_MAX);
+    static const mwvector maxV = mw_vec(REAL_MAX, REAL_MAX, REAL_MAX);
     int i;
 
     st->tree = emptyTree;
