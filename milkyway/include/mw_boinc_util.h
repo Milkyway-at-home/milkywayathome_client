@@ -67,6 +67,9 @@ typedef struct
   #define mw_remove(x) boinc_delete_file((x))
   #define mw_begin_critical_section() boinc_begin_critical_section()
   #define mw_end_critical_section() boinc_end_critical_section()
+  #define mw_fraction_done(x) boinc_fraction_done(x)
+  #define mw_time_to_checkpoint() boinc_time_to_checkpoint()
+  #define mw_checkpoint_completed() boinc_checkpoint_completed()
 #else
   #define mw_boinc_print(f, msg, ...)
   #define mw_finish(x) exit(x)
@@ -74,6 +77,9 @@ typedef struct
   #define mw_remove(x) remove((x))
   #define mw_begin_critical_section()
   #define mw_end_critical_section()
+  #define mw_fraction_done(x)
+  #define mw_time_to_checkpoint() (FALSE)
+  #define mw_checkpoint_completed()
 #endif /* BOINC_APPLICATION */
 
 typedef enum

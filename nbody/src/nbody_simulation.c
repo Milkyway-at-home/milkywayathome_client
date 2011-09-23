@@ -28,7 +28,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_show.h"
 #include "nbody_lua.h"
 #include "nbody_shmem.h"
+#include "nbody_curses.h"
 #include "nbody_defaults.h"
+
 
 #if NBODY_OPENCL
   #include "nbody_cl.h"
@@ -37,10 +39,12 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 static inline int nbodyTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
 {
-  #if BOINC_APPLICATION
-    return boinc_time_to_checkpoint();
-  #else
     time_t now;
+
+    if (BOINC_APPLICATION)
+    {
+        return mw_time_to_checkpoint();
+    }
 
     if (ctx->checkpointT < 0)
         return FALSE;
@@ -53,7 +57,6 @@ static inline int nbodyTimeToCheckpoint(const NBodyCtx* ctx, NBodyState* st)
     }
 
     return FALSE;
-  #endif /* BOINC_APPLICATION */
 }
 
 static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
@@ -63,14 +66,23 @@ static inline void nbodyCheckpoint(const NBodyCtx* ctx, NBodyState* st)
         if (writeCheckpoint(ctx, st))
             mw_fail("Failed to write checkpoint\n");
 
-      #if BOINC_APPLICATION
-        boinc_checkpoint_completed();
-      #endif /* BOINC_APPLICATION */
+        mw_checkpoint_completed();
     }
+}
 
-  #if BOINC_APPLICATION
-    boinc_fraction_done(st->tnow / ctx->timeEvolve);
-  #endif /* BOINC_APPLICATION */
+static inline void nbodyReportProgress(const NBodyCtx* ctx, NBodyState* st, int reportProgress)
+{
+    mw_fraction_done(st->tnow / ctx->timeEvolve);
+
+    if (ENABLE_CURSES)
+    {
+        mw_printw("Running: %f / %f (%f%%)\n",
+                  st->tnow,
+                  ctx->timeEvolve,
+                  100.0 * st->tnow / ctx->timeEvolve
+            );
+        mw_refresh();
+    }
 }
 
 /* If enough time has passed, record the next center of mass position */
@@ -110,6 +122,7 @@ static NBodyStatus runSystem(const NBodyCtx* ctx, NBodyState* st, const NBodyFla
             return rc;
 
         nbodyCheckpoint(ctx, st);
+        nbodyReportProgress(ctx, st, nbf->reportProgress);
     }
 
     if (BOINC_APPLICATION || ctx->checkpointT >= 0)
@@ -147,7 +160,9 @@ static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, 
         mw_report("Checkpoint exists. Attempting to resume from it.\n");
 
         if (nbf->inputFile && !BOINC_APPLICATION)
+        {
             mw_printf("Warning: input file '%s' unused\n", nbf->inputFile);
+        }
 
         if (readCheckpoint(ctx, st))
         {
@@ -178,7 +193,9 @@ int verifyFile(const NBodyFlags* nbf)
 
     rc = setupNBody(&ctx, &st, &ctx.histogramParams, nbf);
     if (rc)
+    {
         mw_printf("File failed\n");
+    }
     else
     {
         mw_printf("File is OK\n");
@@ -225,6 +242,11 @@ int runNBodySimulation(const NBodyFlags* nbf)
 
     ts = mwGetTime();
 
+    if (nbf->reportProgress)
+    {
+        mw_initscr();
+    }
+
   #if NBODY_OPENCL
     if (nbf->noCL)
     {
@@ -238,6 +260,11 @@ int runNBodySimulation(const NBodyFlags* nbf)
   #else
     rc = runSystem(ctx, st, nbf);
   #endif /* NBODY_OPENCL */
+
+    if (nbf->reportProgress)
+    {
+        mw_endwin();
+    }
 
     if (nbodyStatusIsFatal(rc))
     {

@@ -1098,20 +1098,9 @@ NBodyStatus runSystemCL(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* n
     if (err != CL_SUCCESS)
         goto fail;
 
-    if (reportProgress)
-    {
-        mw_initscr();
-        err = nbodyMainLoop(&ci, ctx, st, &nbb);
-        mw_endwin();
-    }
-    else
-    {
-        err = nbodyMainLoop(&ci, ctx, st, &nbb);
-    }
-
+    err = nbodyMainLoop(&ci, ctx, st, &nbb);
     if (err != CL_SUCCESS)
         goto fail;
-
 
     err = marshalBodies(&nbb, &ci, st, CL_FALSE);
     if (err != CL_SUCCESS)

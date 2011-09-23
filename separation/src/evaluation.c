@@ -243,16 +243,12 @@ static void cleanStreamIntegrals(real* stream_integrals,
 
 static void finalCheckpoint(EvaluationState* es)
 {
-  #if BOINC_APPLICATION
-    boinc_begin_critical_section();
-  #endif
-
+    mw_begin_critical_section();
     if (writeCheckpoint(es))
+    {
         mw_fail("Failed to write final checkpoint\n");
-
-  #if BOINC_APPLICATION
-    boinc_end_critical_section();
-  #endif
+    }
+    mw_end_critical_section();
 }
 
 static void calculateIntegrals(const AstronomyParameters* ap,
