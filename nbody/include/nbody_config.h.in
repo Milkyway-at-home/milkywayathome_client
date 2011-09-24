@@ -1,31 +1,31 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Dave Przybylo,
-Nathan Cole, Boleslaw Szymanski, Heidi Newberg, Carlos Varela, Malik
-Magdon-Ismail and Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef _NBODY_CONFIG_H_
 #define _NBODY_CONFIG_H_
 
 #include "milkyway_config.h"
 
-#define MILKYWAY_NBODY_VERSION_MAJOR ${nbody_VERSION_MAJOR}
-#define MILKYWAY_NBODY_VERSION_MINOR ${nbody_VERSION_MINOR}
-#define MILKYWAY_NBODY_VERSION       ${nbody_VERSION}
+#define NBODY_VERSION_MAJOR ${nbody_VERSION_MAJOR}
+#define NBODY_VERSION_MINOR ${nbody_VERSION_MINOR}
+#define NBODY_VERSION       ${nbody_VERSION}
 
 #cmakedefine01 NBODY_OPENCL
 #cmakedefine01 NBODY_CRLIBM
@@ -35,18 +35,20 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 
 #cmakedefine01 ENABLE_CURSES
 
-#if defined(_OPENMP)
-  #define EXTRAVER " OpenMP"
+#if defined(_OPENMP) && NBODY_OPENCL
+#define NBODY_EXTRAVER "OpenCL and OpenMP"
 #elif NBODY_OPENCL
-  #define EXTRAVER " OpenCL"
+  #define NBODY_EXTRAVER "OpenCL"
+#elif defined(_OPENMP)
+  #define NBODY_EXTRAVER "OpenMP"
 #else
-  #define EXTRAVER
+  #define EXTRAVER ""
 #endif /* defined(_OPENMP) */
 
 #if ENABLE_CRLIBM
-  #define EXTRALIB " Crlibm"
+  #define NBODY_EXTRALIB "Crlibm"
 #else
-  #define EXTRALIB
+  #define NBODY_EXTRALIB ""
 #endif
 
 
@@ -60,9 +62,9 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define NBODY_GRAPHICS_NAME "${NBODY_GRAPHICS_BIN_NAME}"
 
 
-#define BOINC_NBODY_APP_VERSION "milkywayathome nbody ${nbody_VERSION} ${CMAKE_SYSTEM_NAME} " ARCH_STRING " " PRECSTRING EXTRAVER EXTRALIB
+#define BOINC_NBODY_APP_VERSION "milkywayathome nbody ${nbody_VERSION} ${CMAKE_SYSTEM_NAME} " ARCH_STRING " " PRECSTRING NBODY_EXTRAVER NBODY_EXTRALIB
 
-#define DEFAULT_OUTPUT_FILE stderr
+#define DEFAULT_OUTPUT_FILE (stderr)
 
 #endif /* NBODY_CONFIG_H_ */
 

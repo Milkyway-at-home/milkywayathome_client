@@ -1,22 +1,22 @@
-/* Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -37,17 +37,109 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define SEED_ARGUMENT (1 << 1)
 
 
+static void nbodyPrintCopyright(void)
+{
+    mw_printf(
+        "Milkyway@Home N-body client %d.%d\n\n"
+        "Copyright (c) 1993, 2001 Joshua E. Barnes, Honolulu, HI.\n"
+        "Copyright (c) 2010-2011 Rensselaer Polytechnic Institute.\n"
+        "Copyright (c) 2010-2011 Matthew Arsenault\n"
+        "Copyright (c) 2010 The University of Texas at Austin\n"
+        "Copyright (c) 2010 Dr. Martin Burtscher\n"
+        "\n"
+        "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
+        "This is free software: you are free to change and redistribute it.\n"
+        "There is NO WARRANTY, to the extent permitted by law.\n"
+        "\n"
+        " Incorporates works covered by the following copyright and\n"
+        " permission notices:\n"
+        "\n"
+        "Copyright (C) 2007, 2008 Mutsuo Saito, Makoto Matsumoto and Hiroshima University\n"
+        "\n"
+        " Redistribution and use in source and binary forms, with or without\n"
+        " modification, are permitted provided that the following conditions are met:\n"
+        "     * Redistributions of source code must retain the above copyright\n"
+        "       notice, this list of conditions and the following disclaimer.\n"
+        "     * Redistributions in binary form must reproduce the above copyright\n"
+        "       notice, this list of conditions and the following disclaimer in the\n"
+        "       documentation and/or other materials provided with the distribution.\n"
+        "     * Neither the names of the authors nor the names of its contributors\n"
+        "       may be used to endorse or promote products derived from this\n"
+        "       software without specific prior written permission.\n"
+        "\n"
+        " THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
+        " \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+        " LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
+        " A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER\n"
+        " OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,\n"
+        " EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,\n"
+        " PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR\n"
+        " PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF\n"
+        " LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\n"
+        " NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\n"
+        " SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+        "\n"
+        "\n"
+        "Copyright (C) 1994-2008 Lua.org, PUC-Rio.\n"
+        "\n"
+        " Permission is hereby granted, free of charge, to any person obtaining a copy\n"
+        " of this software and associated documentation files (the \"Software\"), to deal\n"
+        " in the Software without restriction, including without limitation the rights\n"
+        " to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n"
+        " copies of the Software, and to permit persons to whom the Software is\n"
+        " furnished to do so, subject to the following conditions:\n"
+        "\n"
+        " The above copyright notice and this permission notice shall be included in\n"
+        " all copies or substantial portions of the Software.\n"
+        "\n"
+        " THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n"
+        " IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n"
+        " FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE\n"
+        " AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n"
+        " LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n"
+        " OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\n"
+        " THE SOFTWARE.\n"
+        "\n",
+        NBODY_VERSION_MAJOR,
+        NBODY_VERSION_MINOR
+        );
+}
+
+static void nbodyPrintVersion(int boincTag)
+{
+    char versionStr[2048];
+
+    snprintf(versionStr, sizeof(versionStr),
+             "%s %u.%u %s %s %s %s %s, %s",
+             NBODY_BIN_NAME,
+             NBODY_VERSION_MAJOR, NBODY_VERSION_MINOR,
+             MILKYWAY_SYSTEM_NAME,
+             ARCH_STRING,
+             PRECSTRING,
+             DENORMAL_STRING,
+             NBODY_EXTRAVER,
+             NBODY_EXTRALIB);
+
+    if (boincTag)
+    {
+        mw_printf("<search_application> %s </search_application>\n", versionStr);
+    }
+    else
+    {
+        mw_printf("%s %s\n",
+                  versionStr,
+                  BOINC_APPLICATION ? "BOINC" : "");
+    }
+}
+
+
+
 #if !BOINC_APPLICATION
-static void nbodyPrintVersion() { }
 
 static int nbodyInit(const NBodyFlags* nbf) { (void) nbf; return 0; }
 
 #else
 
-static void nbodyPrintVersion()
-{
-    mw_printf("<search_application>" BOINC_NBODY_APP_VERSION "</search_application>\n");
-}
 
 static int nbodyInit(const NBodyFlags* nbf)
 {
@@ -100,8 +192,8 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
     int argRead;
     poptContext context;
     const char** rest = NULL;   /* Leftover arguments */
-    mwbool failed = FALSE;
-
+    static int version = FALSE;
+    static int copyright = FALSE;
     static NBodyFlags nbf = EMPTY_NBODY_FLAGS;
     static unsigned int numParams = 0, params = 0;
 
@@ -269,6 +361,18 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
             0, "Print verbose progress information, possibly with curses", NULL
         },
 
+        {
+            "version", 'v',
+            POPT_ARG_NONE, &version,
+            0, "Print version information", NULL
+        },
+
+        {
+            "copyright", '\0',
+            POPT_ARG_NONE, &copyright,
+            0, "Print copyright information and exit", NULL
+        },
+
         POPT_AUTOHELP
         POPT_TABLEEND
     };
@@ -285,10 +389,34 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
     /* Check for invalid options, and must have the input file or a
      * checkpoint to resume from */
     argRead = mwReadArguments(context);
-    if (argRead < 0 || (!nbf.inputFile && !nbf.checkpointFileName))
+
+    if (argRead < 0)
     {
         poptPrintHelp(context, stderr, 0);
-        failed = TRUE;
+        poptFreeContext(context);
+        return TRUE;
+    }
+
+    if (version)
+    {
+        nbodyPrintVersion(FALSE);
+    }
+
+    if (copyright)
+    {
+        nbodyPrintCopyright();
+    }
+
+    if (version || copyright)
+    {
+        poptFreeContext(context);
+        exit(EXIT_SUCCESS);
+    }
+
+
+    if (!nbf.inputFile && !nbf.checkpointFileName)
+    {
+        poptPrintHelp(context, stderr, 0);
     }
 
     nbf.setSeed = !!(argRead & SEED_ARGUMENT);
@@ -297,7 +425,6 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
     if ((params || numParams) && !rest)
     {
         mw_printf("Expected arguments to follow, got 0\n");
-        failed = TRUE;
     }
     else
     {
@@ -308,7 +435,7 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
 
     *nbfOut = nbf;
 
-    return failed;
+    return FALSE;
 }
 
 static void setDefaultFlags(NBodyFlags* nbf)
@@ -402,8 +529,11 @@ int main(int argc, const char* argv[])
 
     freeNBodyFlags(&nbf);
 
-    nbodyPrintVersion();
-    mw_finish(rc);
+    if (BOINC_APPLICATION)
+    {
+        nbodyPrintVersion(TRUE);
+        mw_finish(rc);
+    }
 
     return rc;
 }

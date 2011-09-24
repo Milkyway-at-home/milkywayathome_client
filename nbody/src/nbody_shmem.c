@@ -46,8 +46,8 @@ static const char nbodyGraphicsName[] = NBODY_GRAPHICS_NAME;
 
 static void prepareSceneFromState(const NBodyCtx* ctx, const NBodyState* st)
 {
-    st->scene->nbodyMajorVersion = MILKYWAY_NBODY_VERSION_MAJOR;
-    st->scene->nbodyMinorVersion = MILKYWAY_NBODY_VERSION_MINOR;
+    st->scene->nbodyMajorVersion = NBODY_VERSION_MAJOR;
+    st->scene->nbodyMinorVersion = NBODY_VERSION_MINOR;
     st->scene->nbody = st->nbody;
     st->scene->info.timeEvolve = (float) ctx->timeEvolve;
     st->scene->drawGalaxy = (ctx->potentialType == EXTERNAL_POTENTIAL_DEFAULT);

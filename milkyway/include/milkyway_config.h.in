@@ -165,5 +165,8 @@
   #define HAVE_OTHER_MATH_X87 1
 #endif
 
+#define MILKYWAY_SYSTEM_NAME "${CMAKE_SYSTEM_NAME}"
+
+
 #endif /* _MILKYWAY_CONFIG_H_ */
 
