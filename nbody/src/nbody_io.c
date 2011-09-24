@@ -23,18 +23,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "milkyway_util.h"
 #include "nbody_coordinates.h"
 
-int initOutput(NBodyState* st, const NBodyFlags* nbf)
-{
-    st->outFile = nbf->outFileName ? mwOpenResolved(nbf->outFileName, "w") : DEFAULT_OUTPUT_FILE;
-    if (st->outFile == NULL)
-    {
-        mw_printf("initOutput: cannot open output file %s\n", nbf->outFileName);
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
 /* Low-level input and output operations. */
 
 static void out_2vectors(FILE* str, mwvector vec1, mwvector vec2)
@@ -56,7 +44,9 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, cons
     {
         fprintf(f, "%d ", ignoreBody(p));  /* Print if model it belongs to is ignored */
         if (nbf->outputCartesian)     /* Probably useful for making movies and such */
+        {
             out_2vectors(f, Pos(p), Vel(p));
+        }
         else
         {
             lbR = cartesianToLbr(Pos(p), ctx->sunGCDist);
@@ -73,36 +63,35 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, cons
     return FALSE;
 }
 
-int outputBodyPositionBin(NBodyState* st)
-{
-    Body* p;
-    const Body* endp = st->bodytab + st->nbody;
-
-    for (p = st->bodytab; p < endp; p++)
-        fwrite(&Pos(p), sizeof(mwvector), 1, st->outFile);
-
-    if (fflush(st->outFile))
-    {
-        perror("Body output flush");
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
 int finalOutput(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, real chisq)
 {
+    FILE* f;
     int rc = 0;
+
+    if (nbf->outFileName)
+    {
+        f = mwOpenResolved(nbf->outFileName, "w");
+        if (!f)
+        {
+            mw_printf("Failed to open output file '%s'. Using default output\n", nbf->outFileName);
+            f = DEFAULT_OUTPUT_FILE;
+        }
+    }
 
     /* Printing out the bodies will food the server. */
     if (nbf->printBodies)
     {
-        mw_boinc_print(st->outFile, "<bodies>\n");
-        rc = outputBodies(st->outFile, ctx, st, nbf);
-        mw_boinc_print(st->outFile, "</bodies>\n");
+        mw_boinc_print(f, "<bodies>\n");
+        rc = outputBodies(f, ctx, st, nbf);
+        mw_boinc_print(f, "</bodies>\n");
     }
 
-    fprintf(st->outFile, "<search_likelihood>%.15g</search_likelihood>\n", chisq);
+    fprintf(f, "<search_likelihood>%.15f</search_likelihood>\n", chisq);
+
+    if (fclose(f) < 0)
+    {
+        perror("Error closing output file");
+    }
 
     return rc;
 }

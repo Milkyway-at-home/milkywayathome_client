@@ -24,12 +24,16 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "nbody_types.h"
 #include "nbody.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/* Basic IO and initialization */
-int initOutput(NBodyState* st, const NBodyFlags* nbf);
+
 int finalOutput(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, real chisq);
 
-int outputBodyPositionBin(NBodyState* st);
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _NBODY_IO_H_ */
 
