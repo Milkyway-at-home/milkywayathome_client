@@ -236,11 +236,6 @@ int runNBodySimulation(const NBodyFlags* nbf)
 
     nbodySetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
     nbodySetStateFromFlags(st, nbf);
-    if (initOutput(st, nbf))
-    {
-        mw_printf("Failed to open output files\n");
-        return NBODY_ERROR;
-    }
 
     if (createSharedScene(st, ctx))
     {
