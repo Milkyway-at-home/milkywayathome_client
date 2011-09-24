@@ -260,10 +260,11 @@ int runNBodySimulation(const NBodyFlags* nbf)
   #else
     rc = runSystem(ctx, st, nbf);
   #endif /* NBODY_OPENCL */
+    te = mwGetTime();
 
     if (nbf->reportProgress)
     {
-        mw_endwin();
+        cleanupCursesOutput();
     }
 
     if (nbodyStatusIsFatal(rc))
