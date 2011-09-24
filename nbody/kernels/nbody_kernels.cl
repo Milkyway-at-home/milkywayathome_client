@@ -223,7 +223,8 @@ inline real4 triaxialHaloAccel(real4 pos, real r)
 inline real4 externalAcceleration(real x, real y, real z)
 {
     real4 pos = { x, y, z, 0.0 };
-    real r = length(pos);
+    real r = sqrt(sqr(x) + sqr(y) + sqr(z));
+    //real r = length(pos); // crashes AMD compiler
     real4 acc;
 
     if (MIYAMOTO_NAGAI_DISK)
@@ -298,7 +299,7 @@ __kernel void NBODY_KERNEL(boundingBox)
     minZ[i] = maxZ[i] = minZ[0];
 
     int inc = get_local_size(0) * get_num_groups(0);
-    int j = i + get_group_id(0) * get_local_size(0); // = get_global_id(0);
+    int j = i + get_group_id(0) * get_local_size(0); // = get_global_id(0) (- get_global_offset(0))
     while (j < NBODY) /* Scan bodies */
     {
         real tmp = _posX[j];
@@ -1073,11 +1074,14 @@ __kernel void NBODY_KERNEL(forceCalculation)
                 --depth;  /* Done with this level */
             }
 
-            real4 acc = externalAcceleration(px, py, pz);
+            if (USE_EXTERNAL_POTENTIAL)
+            {
+                real4 acc = externalAcceleration(px, py, pz);
 
-            ax += acc.x;
-            ay += acc.y;
-            az += acc.z;
+                ax += acc.x;
+                ay += acc.y;
+                az += acc.z;
+            }
 
             if (step > 0)
             {
