@@ -630,7 +630,6 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
     int upperBound;
     size_t offset[1];
     size_t chunk, nChunk;
-    cl_bool ignoreResponsive = CL_FALSE;
     cl_event boxEv, sumEv, sortEv, integrateEv;
     NBodyWorkSizes* ws = &_workSizes;
 
@@ -648,8 +647,8 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
 
     ws->timings[0] += waitReleaseEventWithTime(boxEv);
 
-    nChunk     = ignoreResponsive ?         1 : mwDivRoundup((size_t) st->nbody, ws->global[0]);
-    upperBound = ignoreResponsive ? st->nbody : (int) ws->global[0];
+    nChunk     = st->ignoreResponsive ?         1 : mwDivRoundup((size_t) st->nbody, ws->global[1]);
+    upperBound = st->ignoreResponsive ? st->nbody : (int) ws->global[1];
     offset[0] = 0;
     for (chunk = 0; chunk < nChunk; ++chunk)
     {
@@ -695,8 +694,8 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
 
     ws->timings[3] += waitReleaseEventWithTime(sortEv);
 
-    nChunk     = ignoreResponsive ?         1 : mwDivRoundup((size_t) st->nbody, ws->global[4]);
-    upperBound = ignoreResponsive ? st->nbody : (int) ws->global[4];
+    nChunk     = st->ignoreResponsive ?         1 : mwDivRoundup((size_t) st->nbody, ws->global[4]);
+    upperBound = st->ignoreResponsive ? st->nbody : (int) ws->global[4];
     offset[0] = 0;
     for (chunk = 0; chunk < nChunk; ++chunk)
     {
@@ -793,7 +792,6 @@ static cl_int nbodyMainLoop(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st, NBo
         st->tnow += ctx->timestep;
         st->step++;
     }
-    mw_printf("Broke on step %d, %s\n", st->step - 1, showCLInt(err));
 
     return err;
 }

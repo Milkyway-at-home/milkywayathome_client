@@ -182,9 +182,14 @@ static NBodyStatus setupRun(NBodyCtx* ctx, NBodyState* st, HistogramParams* hp, 
 }
 
 /* Set context fields read from command line flags */
-static inline void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
+static void nbodySetCtxFromFlags(NBodyCtx* ctx, const NBodyFlags* nbf)
 {
     ctx->checkpointT = nbf->checkpointPeriod;
+}
+
+static void nbodySetStateFromFlags(NBodyState* st, const NBodyFlags* nbf)
+{
+    st->ignoreResponsive = nbf->ignoreResponsive;
 }
 
 int verifyFile(const NBodyFlags* nbf)
@@ -230,6 +235,7 @@ int runNBodySimulation(const NBodyFlags* nbf)
     }
 
     nbodySetCtxFromFlags(ctx, nbf); /* Do this after setup to avoid the setup clobbering the flags */
+    nbodySetStateFromFlags(st, nbf);
     if (initOutput(st, nbf))
     {
         mw_printf("Failed to open output files\n");

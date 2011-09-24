@@ -47,26 +47,30 @@ typedef struct
 
     mwbool setSeed;  /* If the seed was specified or not */
     uint32_t seed;   /* Seed value */
-    int visualizer;
-    int debugBOINC;
-    int outputCartesian;
-    int printTiming;
-    int verifyOnly;
-    int printBodies;
-    int printHistogram;
-    int cleanCheckpoint;
-    int ignoreCheckpoint;
-    int numThreads;
-    int debugLuaLibs;   /* Open IO libraries etc. */
-    int noCL;
-    int reportProgress;
-    time_t checkpointPeriod;
 
+    int numThreads;
+
+    time_t checkpointPeriod;
     unsigned int platform;
     unsigned int devNum;
+
+    mwbool visualizer;
+    mwbool debugBOINC;
+    mwbool outputCartesian;
+    mwbool printTiming;
+    mwbool verifyOnly;
+    mwbool printBodies;
+    mwbool printHistogram;
+    mwbool cleanCheckpoint;
+    mwbool ignoreCheckpoint;
+
+    mwbool debugLuaLibs;   /* Open IO libraries etc. */
+    mwbool noCL;
+    mwbool reportProgress;
+    mwbool ignoreResponsive;
 } NBodyFlags;
 
-#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 
 int verifyFile(const NBodyFlags* nbf);
 int runNBodySimulation(const NBodyFlags* nbf);

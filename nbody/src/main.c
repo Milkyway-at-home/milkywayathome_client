@@ -258,7 +258,13 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
         },
 
         {
-            "progress", 'r',
+            "non-responsive", 'r',
+            POPT_ARG_NONE, &nbf.ignoreResponsive,
+            0, "Do not care about display responsiveness (use with caution)", NULL
+        },
+
+        {
+            "progress", 'P',
             POPT_ARG_NONE, &nbf.reportProgress,
             0, "Print verbose progress information, possibly with curses", NULL
         },

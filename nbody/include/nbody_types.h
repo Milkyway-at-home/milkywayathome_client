@@ -218,11 +218,13 @@ typedef struct NBODY_ALIGN
     int treeIncest;     /* Tree incest has occured */
 
     int shmId;          /* shmid, key when using shmem */
+
+    mwbool ignoreResponsive;
 } NBodyState;
 
 #define NBODYSTATE_TYPE "NBodyState"
 
-#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.0, 0, 0, 0, -1 }
+#define EMPTY_NBODYSTATE { EMPTY_TREE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0.0, 0, 0, 0, -1, FALSE }
 
 
 typedef struct
