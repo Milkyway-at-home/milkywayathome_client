@@ -730,15 +730,6 @@ static cl_int stepSystemCL(CLInfo* ci, const NBodyCtx* ctx, NBodyState* st)
 
     ws->timings[5] += waitReleaseEventWithTime(integrateEv);
 
-    static unsigned int arst = 0;
-    arst = (arst + 1) % 1000;
-
-    if (arst == 0)
-    {
-        printf("arstarstarstarst error orrrr\n");
-        return MW_CL_ERROR;
-    }
-
     err = clFinish(ci->queue);
     if (err != CL_SUCCESS)
         return err;
@@ -844,8 +835,6 @@ static cl_int setInitialTreeStatus(CLInfo* ci, NBodyBuffers* nbb)
     iniTreeStatus.errorCode = 0;
     iniTreeStatus.blkCnt = 0;
 
-    printTreeStatus(&iniTreeStatus);
-
     return clEnqueueWriteBuffer(ci->queue,
                                 nbb->treeStatus,
                                 CL_TRUE,
@@ -863,11 +852,6 @@ static cl_int createBuffers(const NBodyCtx* ctx, NBodyState* st, CLInfo* ci, NBo
     cl_uint i;
     cl_uint nNode = findNNode(&ci->di, st->nbody);
     cl_uint inc = findInc(ci->di.warpSize, st->nbody);
-
-    mw_printf("NNODE = %u, nbody = %d\n"
-              "(NNODE + 1) * NSUB = %u\n"
-              "inc %u\n",
-              nNode, st->nbody, NSUB * (nNode + 1), inc);
 
     for (i = 0; i < 3; ++i)
     {
