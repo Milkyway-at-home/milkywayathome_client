@@ -66,7 +66,7 @@ static int outputBodies(FILE* f, const NBodyCtx* ctx, const NBodyState* st, cons
 
 int finalOutput(const NBodyCtx* ctx, NBodyState* st, const NBodyFlags* nbf, real chisq)
 {
-    FILE* f;
+    FILE* f = DEFAULT_OUTPUT_FILE;
     int rc = 0;
 
     if (nbf->outFileName)
