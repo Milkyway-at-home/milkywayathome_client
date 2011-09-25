@@ -1,23 +1,23 @@
-/* Copyright (c) 1993, 2001 Joshua E. Barnes, Honolulu, HI.
-   Copyright 2010 Matthew Arsenault, Travis Desell, Boleslaw
-Szymanski, Heidi Newberg, Carlos Varela, Malik Magdon-Ismail and
-Rensselaer Polytechnic Institute.
-
-This file is part of Milkway@Home.
-
-Milkyway@Home is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Milkyway@Home is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ *  Copyright (c) 1993, 2001 Joshua E. Barnes, Honolulu, HI.
+ *  Copyright (c) 2010-2011 Rensselaer Polytechnic Institute
+ *  Copyright (c) 2010-2011 Matthew Arsenault
+ *
+ *  This file is part of Milkway@Home.
+ *
+ *  Milkway@Home is free software: you may copy, redistribute and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or (at your
+ *  option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "nbody_priv.h"
 #include "milkyway_util.h"
@@ -27,115 +27,6 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
   #include <omp.h>
 #endif /* _OPENMP */
 
-typedef struct
-{
-    mwvector pos0;      /* point to evaluate field */
-    mwvector acc0;      /* resulting acceleration */
-    mwvector dr;        /* vector from q to pos0 */
-    const Body* pskip;  /* skip in force evaluation */
-    NBodyCell* qmem;    /* data shared with gravSub */
-    real drsq;          /* squared distance to pos0 */
-} ForceEvalState;
-
-#define EMPTY_FORCE_EVAL_STATE(p) { Pos((p)), ZERO_VECTOR, ZERO_VECTOR, p, NULL, 0.0 }
-
-static const mwvector _zeroVector = ZERO_VECTOR;
-
-static inline void initForceEvalState(ForceEvalState* fest, const Body* p)
-{
-    fest->pos0 = Pos(p);
-    fest->acc0 = _zeroVector;
-    fest->dr = _zeroVector;
-    fest->pskip = p;
-    fest->qmem = NULL;
-    fest->drsq = 0.0;
-}
-
-
-/* subDivP: decide if cell q is too close to accept as a single
- * term. Also sets qmem, dr, and drsq for use by gravsub.
- */
-HOT
-static inline mwbool subDivP(ForceEvalState* fest, NBodyCell* q)
-{
-    fest->dr = mw_subv(Pos(q), fest->pos0);   /* compute displacement */
-    fest->drsq = mw_sqrv(fest->dr);           /* and find dist squared */
-    fest->qmem = q;                           /* remember we know them */
-    return (fest->drsq < Rcrit2(q));          /* apply standard rule */
-}
-
-HOT
-static inline void cellQuadTerm(ForceEvalState* fest, const NBodyNode* q, const real drab)
-{
-    real dr5inv, drquaddr, phiquad;
-    mwvector ai, quaddr;
-
-    dr5inv = 1.0 / (sqr(fest->drsq) * drab); /* form dr^-5 */
-    quaddr = mw_mulmv(Quad(q), fest->dr);    /* form Q * dr */
-    drquaddr = mw_dotv(fest->dr, quaddr);    /* form dr * Q * dr */
-    phiquad = -0.5 * dr5inv * drquaddr;      /* get quad. part of phi */
-    phiquad = 5.0 * phiquad / fest->drsq;    /* save for acceleration */
-    ai = mw_mulvs(fest->dr, phiquad);        /* components of acc. */
-    mw_incsubv(fest->acc0, ai);              /* increment */
-    mw_incmulvs(quaddr, dr5inv);
-    mw_incsubv(fest->acc0, quaddr);          /* acceleration */
-}
-
-/* gravSub: compute contribution of node q to gravitational field at
- * point pos0, and add to running totals phi0 and acc0.
- */
-HOT
-static inline void gravSub(const NBodyCtx* ctx, ForceEvalState* fest, const NBodyNode* q)
-{
-    real drab, phii, mor3;
-    mwvector ai;
-
-    if (q != (NBodyNode*) fest->qmem)                    /* cant use memorized data? */
-    {
-        fest->dr = mw_subv(Pos(q), fest->pos0);       /* then compute sep. */
-        fest->drsq = mw_sqrv(fest->dr);               /* and sep. squared */
-    }
-
-    fest->drsq += ctx->eps2;   /* use standard softening */
-    drab = mw_sqrt(fest->drsq);
-    phii = Mass(q) / drab;
-    mor3 = phii / fest->drsq;
-    ai = mw_mulvs(fest->dr, mor3);
-    mw_incaddv(fest->acc0, ai);         /* ... and to total accel. */
-
-    if (ctx->useQuad && isCell(q))      /* if cell, add quad term */
-        cellQuadTerm(fest, q, drab);
-}
-
-/* treeScan: iterative routine to do force calculation, starting with
- * node q, which is typically the t.root cell. Watches for tree
- * incest.
- */
-static inline mwbool treeScan(const NBodyCtx* ctx,
-                              ForceEvalState* fest,
-                              const NBodyNode* q)
-{
-    mwbool skipself = FALSE;
-
-    while (q != NULL)               /* while not at end of scan */
-    {
-        if (   isCell(q)                       /* is node a cell and... */
-            && subDivP(fest, (NBodyCell*) q))       /* too close to accept? */
-        {
-            q = More(q);            /* follow to next level */
-        }
-        else                    /* else accept this term */
-        {
-            if (q == (NBodyNode*) fest->pskip)    /* self-interaction? */
-                skipself = TRUE;             /* then just skip it */
-            else                             /* not self-interaction */
-                gravSub(ctx, fest, q);       /* so compute gravity */
-            q = Next(q);                     /* follow next link */
-        }
-    }
-
-    return skipself;
-}
 
 static void reportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
 {
@@ -165,25 +56,85 @@ static void reportTreeIncest(const NBodyCtx* ctx, NBodyState* st)
     }
 }
 
-/* hackGrav: evaluate gravitational field on body p; checks to be
- * sure self-interaction was handled correctly if intree is true.
+
+/*
+ * nbodyGravity: Walk the tree starting at the root to do force
+ * calculations.
+ *
+ *
+ * Random notes:
+ *   - Not inlined without inline from multiple calls in
+ *     mapForceBody(). Measurably better with the inline, but only
+ *     slightly.
  */
-
-/* Not inlined without inline from multiple calls in
- * mapForceBody(). Measurably better with the inline, but only
- * slightly. */
-static inline mwvector hackGrav(const NBodyCtx* ctx, NBodyState* st, const NBodyNode* root, const Body* p)
+static inline mwvector nbodyGravity(const NBodyCtx* ctx, NBodyState* st, const Body* p)
 {
-    ForceEvalState fest;
-    mwbool intree = Mass(p) > 0.0;
+    mwbool skipSelf = FALSE;
 
-    initForceEvalState(&fest, p);
+    mwvector pos0 = Pos(p);
+    mwvector acc0 = ZERO_VECTOR;
 
-    /* scan tree from root, watch for tree incest */
-    if (intree && !treeScan(ctx, &fest, root))
+    const NBodyNode* q = (const NBodyNode*) st->tree.root; /* Start at the root */
+
+    while (q != NULL)               /* while not at end of scan */
+    {
+        mwvector dr = mw_subv(Pos(q), pos0);   /* Then compute distance */
+        real drsq = mw_sqrv(dr);               /* and distance squared */
+
+        if (isBody(q) || (drsq >= Rcrit2(q)))      /* If is a body or far enough away to approximate */
+        {
+            if (mw_likely((const Body*) q != p))   /* self-interaction? */
+            {
+                real drab, phii, mor3;
+
+                /* Compute gravity */
+
+                drsq += ctx->eps2;   /* use standard softening */
+                drab = mw_sqrt(drsq);
+                phii = Mass(q) / drab;
+                mor3 = phii / drsq;
+
+                mw_incaddv(acc0, mw_mulvs(dr, mor3));   /* ... and to total accel. */
+
+                if (ctx->useQuad && isCell(q))          /* if cell, add quad term */
+                {
+                    real dr5inv, drquaddr, phiquad;
+                    mwvector quaddr;
+                    mwvector ai;
+
+                    dr5inv = 1.0 / (sqr(drsq) * drab);  /* form dr^-5 */
+                    quaddr = mw_mulmv(Quad(q), dr);     /* form Q * dr */
+                    drquaddr = mw_dotv(dr, quaddr);     /* form dr * Q * dr */
+                    phiquad = -0.5 * dr5inv * drquaddr; /* get quad. part of phi */
+                    phiquad = 5.0 * phiquad / drsq;     /* save for acceleration */
+                    ai = mw_mulvs(dr, phiquad);         /* components of acc. */
+                    mw_incsubv(acc0, ai);               /* increment */
+                    mw_incmulvs(quaddr, dr5inv);
+                    mw_incsubv(acc0, quaddr);           /* acceleration */
+                }
+            }
+            else
+            {
+                skipSelf = TRUE;   /* Encountered self */
+            }
+
+            q = Next(q);  /* Follow next link */
+        }
+        else
+        {
+             q = More(q); /* Follow to the next level if need to go deeper */
+        }
+    }
+
+    if (!skipSelf)
+    {
+        /* If a body does not encounter itself in its traversal of the
+         * tree, it is "tree incest" */
+
         reportTreeIncest(ctx, st);
+    }
 
-    return fest.acc0;         /* and acceleration */
+    return acc0;
 }
 
 static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
@@ -206,14 +157,14 @@ static inline void mapForceBody(const NBodyCtx* ctx, NBodyState* st)
             case EXTERNAL_POTENTIAL_DEFAULT:
                 /* Include the external potential */
                 b = &st->bodytab[i];
-                a = hackGrav(ctx, st, (NBodyNode*) st->tree.root, b);
+                a = nbodyGravity(ctx, st, b);
 
                 externAcc = acceleration(&ctx->pot, Pos(b));
                 st->acctab[i] = mw_addv(a, externAcc);
                 break;
 
             case EXTERNAL_POTENTIAL_NONE:
-                st->acctab[i] = hackGrav(ctx, st, (NBodyNode*) st->tree.root, &st->bodytab[i]);
+                st->acctab[i] = nbodyGravity(ctx, st, &st->bodytab[i]);
                 break;
 
             case EXTERNAL_POTENTIAL_CUSTOM_LUA:
