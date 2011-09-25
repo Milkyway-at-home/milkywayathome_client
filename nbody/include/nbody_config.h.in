@@ -42,7 +42,7 @@
 #elif defined(_OPENMP)
   #define NBODY_EXTRAVER "OpenMP"
 #else
-  #define EXTRAVER ""
+  #define NBODY_EXTRAVER ""
 #endif /* defined(_OPENMP) */
 
 #if ENABLE_CRLIBM

@@ -236,6 +236,10 @@ if(ENABLE_CURSES)
   list(APPEND nbody_link_libs ${CURSES_LIBRARIES})
 endif()
 
+if(NOT BOINC_APPLICATION AND NOT WIN32)
+  list(APPEND nbody_link_libs rt)
+endif()
+
 
 add_library(nbody_simulation STATIC ${nbody_lib_src} ${nbody_lib_headers})
 if(SYSTEM_IS_X86)
@@ -299,6 +303,10 @@ if(NBODY_GL)
   if(BOINC_APPLICATION)
     list(APPEND vis_link_libs ${BOINC_GRAPHICS_LIBRARY} ${BOINC_LIBRARIES})
   endif()
+  if(NOT BOINC_APPLICATION AND NOT WIN32)
+    list(APPEND vis_link_libs rt)
+  endif()
+
   list(APPEND vis_link_libs ${OS_SPECIFIC_LIBS} m)
 
   add_executable(milkyway_nbody_graphics ${nbody_screensaver_src} ${nbody_screensaver_headers})
