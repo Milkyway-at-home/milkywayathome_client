@@ -235,7 +235,7 @@ static void writeHistogram(const NBodyCtx* ctx,
                            real chisq,
                            real totalNum)                 /* Total number in range */
 {
-    FILE* f = st->outFile;
+    FILE* f = DEFAULT_OUTPUT_FILE;
 
     if (nbf->histoutFileName && strcmp(nbf->histoutFileName, ""))  /* If file specified, try to open it */
     {
@@ -243,14 +243,14 @@ static void writeHistogram(const NBodyCtx* ctx,
         if (f == NULL)
         {
             perror("Writing histout. Using output file instead");
-            f = st->outFile;
+            f = DEFAULT_OUTPUT_FILE;
         }
     }
 
     printHistogramHeader(f, ctx, hp, st->nbody, nbf->seed, chisq);
     printHistogram(f, hp, histData, histogram, maxIdx, start, totalNum);
 
-    if (f != st->outFile)
+    if (f != DEFAULT_OUTPUT_FILE)
         fclose(f);
 }
 
@@ -379,7 +379,7 @@ static HistData* readHistData(const char* histogram, const unsigned int maxIdx)
     f = mwOpenResolved(histogram, "r");
     if (f == NULL)
     {
-        perror("Opening histogram");
+        mw_printf("Opening histogram file '%s'\n", histogram);
         return NULL;
     }
 

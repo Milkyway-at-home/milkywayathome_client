@@ -45,7 +45,7 @@ typedef struct
     const char** forwardedArgs;
     unsigned int numForwardedArgs;
 
-    mwbool setSeed;  /* If the seed was specified or not */
+    int setSeed;  /* If the seed was specified or not */
     uint32_t seed;   /* Seed value */
 
     int numThreads;
@@ -54,20 +54,21 @@ typedef struct
     unsigned int platform;
     unsigned int devNum;
 
-    mwbool visualizer;
-    mwbool debugBOINC;
-    mwbool outputCartesian;
-    mwbool printTiming;
-    mwbool verifyOnly;
-    mwbool printBodies;
-    mwbool printHistogram;
-    mwbool cleanCheckpoint;
-    mwbool ignoreCheckpoint;
+    /* These all must be int since that's the type popt expects them to be */
+    int visualizer;
+    int debugBOINC;
+    int outputCartesian;
+    int printTiming;
+    int verifyOnly;
+    int printBodies;
+    int printHistogram;
+    int cleanCheckpoint;
+    int ignoreCheckpoint;
 
-    mwbool debugLuaLibs;   /* Open IO libraries etc. */
-    mwbool noCL;
-    mwbool reportProgress;
-    mwbool ignoreResponsive;
+    int debugLuaLibs;   /* Open IO libraries etc. */
+    int noCL;
+    int reportProgress;
+    int ignoreResponsive;
 } NBodyFlags;
 
 #define EMPTY_NBODY_FLAGS { NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }

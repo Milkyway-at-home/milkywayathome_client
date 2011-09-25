@@ -336,7 +336,6 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
             0, "OpenCL device number", NULL
         },
 
-
         {
             "platform", 'p',
             POPT_ARG_INT, &nbf.platform,
@@ -389,7 +388,6 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
     /* Check for invalid options, and must have the input file or a
      * checkpoint to resume from */
     argRead = mwReadArguments(context);
-
     if (argRead < 0)
     {
         poptPrintHelp(context, stderr, 0);
@@ -412,7 +410,6 @@ static mwbool readParameters(const int argc, const char* argv[], NBodyFlags* nbf
         poptFreeContext(context);
         exit(EXIT_SUCCESS);
     }
-
 
     if (!nbf.inputFile && !nbf.checkpointFileName)
     {

@@ -96,15 +96,6 @@ int destroyNBodyState(NBodyState* st)
 
     free(st->checkpointResolved);
 
-    if (st->outFile && st->outFile != DEFAULT_OUTPUT_FILE)
-    {
-        if (fclose(st->outFile))
-        {
-            perror("closing output\n");
-            failed = TRUE;
-        }
-    }
-
     failed |= detachSharedScene(st);
 
     return failed;
