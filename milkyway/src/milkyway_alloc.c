@@ -53,7 +53,7 @@ void* mwMallocA(size_t size)
 {
     void* p;
 
-    if (posix_memalign(&p, 16, size))
+    if (posix_memalign(&p, 32, size))
     {
         perror(__func__);
         mw_fail("Failed to allocate block of size %zu aligned to 16\n", size);
@@ -71,7 +71,7 @@ void* mwMallocA(size_t size)
 {
     void* p;
 
-    p = _aligned_malloc(size, 16);
+    p = _aligned_malloc(size, 32);
     if (!p)
         mw_fail("%s: NULL: _aligned_malloc error = %ld\n", FUNC_NAME, GetLastError());
 
