@@ -87,6 +87,7 @@ typedef struct
     int forceSSE2;
     int forceSSE3;
     int forceSSE41;
+    int forceAVX;
 
     int verbose;
 } SeparationFlags;
@@ -113,7 +114,7 @@ typedef struct
                                  0, FALSE,                                     \
                                  DEFAULT_DISABLE_OPENCL,                       \
                                  DEFAULT_DISABLE_IL_KERNEL,                    \
-                                 FALSE, FALSE, FALSE, FALSE, FALSE,            \
+                                 FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,     \
                                  FALSE                                         \
                                }
 

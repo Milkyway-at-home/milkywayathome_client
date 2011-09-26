@@ -28,6 +28,7 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #define bit_SSE2 (1 << 26)
 #define bit_SSE3 (1 << 0)
 #define bit_SSE41 (1 << 19)
+#define bit_AVX (1 << 28)
 #define bit_CMPXCHG16B (1 << 13)
 #define bit_3DNOW (1 << 31)
 #define bit_3DNOWP (1 << 30)
@@ -85,6 +86,11 @@ void mw_cpuid(int abcd[4], int a, int c)
 }
 
 #endif /* MW_IS_X86 */
+
+int mwHasAVX(const int abcd[4])
+{
+    return !!(abcd[2] & bit_AVX);
+}
 
 int mwHasSSE41(const int abcd[4])
 {

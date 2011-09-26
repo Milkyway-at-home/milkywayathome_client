@@ -27,6 +27,7 @@ void mw_cpuid(int abcd[4], int a, int c);
 int mwHasSSE41(const int abcd[4]);
 int mwHasSSE3(const int abcd[4]);
 int mwHasSSE2(const int abcd[4]);
+int mwHasAVX(const int abcd[4]);
 
 #endif /* _MW_CPUID_H_ */
 

@@ -28,18 +28,24 @@ if(SYSTEM_IS_X86)
     set(SSE3_FLAGS "${SSE2_FLAGS} -msse3")
     set(SSE4_FLAGS "${SSE3_FLAGS} -msse4")
     set(SSE41_FLAGS "${SSE4_FLAGS} -msse4.1")
+    set(AVX_FLAGS "${SSE41_FLAGS} -mavx")
 
     set(DISABLE_SSE2_FLAGS "-mno-sse2")
+    set(DISABLE_SSE2_FLAGS "-mfpmath=387 -mno-sse ${DISABLE_SSE2_FLAGS}")
     set(DISABLE_SSE3_FLAGS "-mno-sse3")
     set(DISABLE_SSE41_FLAGS "-mno-sse4.1")
-    set(DISABLE_SSE2_FLAGS "-mfpmath=387 -mno-sse ${DISABLE_SSE2_FLAGS}")
+    set(DISABLE_AVX_FLAGS "-mno-avx")
   else()
     set(SSE2_FLAGS "/arch:SSE2 /D__SSE2__=1")
-    set(DISABLE_SSE3_FLAGS "")
     set(DISABLE_SSE2_FLAGS "")
+    set(DISABLE_SSE3_FLAGS "")
+    set(DISABLE_SSE41_FLAGS "")
+    set(DISABLE_AVX_FLAGS "")
+
     # MSVC doesn't generate SSE3 itself, and doesn't define this
     set(SSE3_FLAGS "${SSE2_FLAGS} /D__SSE3__=1")
     set(SSE41_FLAGS "${SSE3_FLAGS} /D__SSE4_1__=1")
+    set(AVX_FLAGS "${SSE41_FLAGS} /D__AVX__=1")
   endif()
 endif()
 
@@ -134,6 +140,18 @@ function(enable_sse2 target)
   set_target_properties(${target}
                           PROPERTIES
                             COMPILE_FLAGS "${comp_flags} ${SSE2_FLAGS}")
+endfunction()
+
+function(enable_avx target)
+  get_target_property(comp_flags ${target} COMPILE_FLAGS)
+  if(comp_flags STREQUAL "comp_flags-NOTFOUND")
+    set(comp_flags "")
+  endif()
+
+  set_target_properties(${target}
+                          PROPERTIES
+                            COMPILE_FLAGS "${comp_flags} ${AVX_FLAGS}")
+  get_target_property(new_comp_flags ${target} COMPILE_FLAGS)
 endfunction()
 
 

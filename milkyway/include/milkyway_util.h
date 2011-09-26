@@ -73,10 +73,11 @@ typedef struct
     int forceNoOpenCL;
     int forceNoILKernel;
     int forceNoIntrinsics;
-    int forceX87;
+    int forceX87; /* FIXME: Not always x87. More like a weird "other" kind of thing */
     int forceSSE2;
     int forceSSE3;
     int forceSSE41;
+    int forceAVX;
     int verbose;
     int enableProfiling;
 } CLRequest;

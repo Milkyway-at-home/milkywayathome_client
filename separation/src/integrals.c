@@ -28,6 +28,7 @@
 #include "milkyway_util.h"
 #include "calculated_constants.h"
 #include "evaluation.h"
+#include "probabilities_dispatch.h"
 
 #include <time.h>
 

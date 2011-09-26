@@ -27,6 +27,7 @@
 #include "separation_types.h"
 #include "evaluation_state.h"
 #include "evaluation.h"
+#include "probabilities_dispatch.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +35,9 @@ extern "C" {
 
 /* probabilities will be rebuilt for each SSE level */
 #if MW_IS_X86
-  #if defined(__SSE4_1__)
+  #if defined(__AVX__)
+    #define INIT_PROBABILITIES initProbabilities_AVX
+  #elif defined(__SSE4_1__)
     #define INIT_PROBABILITIES initProbabilities_SSE41
   #elif defined(__SSE3__)
     #define INIT_PROBABILITIES initProbabilities_SSE3
@@ -47,17 +50,35 @@ extern "C" {
   #define INIT_PROBABILITIES initProbabilities
 #endif /* MW_IS_X86 */
 
-typedef ProbabilityFunc (*ProbInitFunc)(const AstronomyParameters*, int);
-
-#define DEFINE_INIT_PROBABILITIES(level) ProbabilityFunc initProbabilities##level(const AstronomyParameters* ap, int useIntrinsics)
-
-DEFINE_INIT_PROBABILITIES();
+#define DEFINE_INIT_PROBABILITIES(level) ProbabilityFunc initProbabilities##level()
 
 #if MW_IS_X86
-DEFINE_INIT_PROBABILITIES(_SSE2);
-DEFINE_INIT_PROBABILITIES(_SSE3);
+DEFINE_INIT_PROBABILITIES(_AVX);
 DEFINE_INIT_PROBABILITIES(_SSE41);
+DEFINE_INIT_PROBABILITIES(_SSE3);
+DEFINE_INIT_PROBABILITIES(_SSE2);
 #endif /* MW_IS_X86 */
+
+
+real probabilities_fast_hprob(const AstronomyParameters* ap,
+                               const StreamConstants* sc,
+                               const real* RESTRICT sg_dx,
+                               const real* RESTRICT r_point,
+                               const real* RESTRICT qw_r3_N,
+                               LBTrig lbt,
+                               real gPrime,
+                               real reff_xr_rp3,
+                               real* RESTRICT streamTmps);
+
+real probabilities_slow_hprob(const AstronomyParameters* ap,
+                              const StreamConstants* sc,
+                              const real* RESTRICT sg_dx,
+                              const real* RESTRICT r_point,
+                              const real* RESTRICT qw_r3_N,
+                              LBTrig lbt,
+                              real gPrime,
+                              real reff_xr_rp3,
+                              real* RESTRICT streamTmps);
 
 
 #ifdef __cplusplus

@@ -159,6 +159,8 @@ set(lib_source_file_list src/evaluation_state.c
                          src/io_util.c
                          src/gauss_legendre.c
                          src/evaluation.c
+                         src/probabilities.c
+                         src/probabilities_dispatch.c
                          src/parameters.c
                          src/star_points.c
                          src/likelihood.c
@@ -174,6 +176,7 @@ set(separation_headers include/calculated_constants.h
                        include/coordinates.h
                        include/separation.h
                        include/evaluation.h
+                       include/probabilities_dispatch.h
                        include/io_util.h
                        include/star_points.h
                        include/evaluation_state.h
@@ -279,7 +282,7 @@ set(separation_core_libs )
 # Build the critical area separately for SSE2, SSE3, no SSE2
 if(SYSTEM_IS_X86)
   if(HAVE_SSE2)
-    add_library(separation_core_sse2 STATIC src/probabilities.c)
+    add_library(separation_core_sse2 STATIC src/probabilities_sse2.c)
     enable_sse2(separation_core_sse2)
     disable_sse3(separation_core_sse2)
     disable_sse41(separation_core_sse2)
@@ -287,7 +290,7 @@ if(SYSTEM_IS_X86)
   endif()
 
   if(HAVE_SSE3)
-    add_library(separation_core_sse3 STATIC src/probabilities.c)
+    add_library(separation_core_sse3 STATIC src/probabilities_sse2.c)
     enable_sse2(separation_core_sse3)
     enable_sse3(separation_core_sse3)
     disable_sse41(separation_core_sse3)
@@ -295,20 +298,12 @@ if(SYSTEM_IS_X86)
   endif()
 
   if(HAVE_SSE41)
-    add_library(separation_core_sse41 STATIC src/probabilities.c)
+    add_library(separation_core_sse41 STATIC src/probabilities_sse2.c)
     enable_sse2(separation_core_sse41)
     enable_sse3(separation_core_sse41)
     enable_sse41(separation_core_sse41)
     list(APPEND separation_core_libs separation_core_sse41)
   endif()
-
-  if(SYSTEM_IS_32 AND NOT APPLE)
-    add_library(separation_core STATIC src/probabilities.c)
-    list(APPEND separation_core_libs separation_core)
-  endif()
-else()
-  add_library(separation_core STATIC src/probabilities.c)
-  list(APPEND separation_core_libs separation_core)
 endif()
 
 add_library(separation STATIC ${lib_source_file_list} ${separation_headers})

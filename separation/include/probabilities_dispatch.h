@@ -21,30 +21,35 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _EVALUATION_H_
-#define _EVALUATION_H_
+#ifndef _PROBABILITIES_DISPATCH_H_
+#define _PROBABILITIES_DISPATCH_H_
 
 #include "separation_types.h"
 #include "milkyway_util.h"
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int evaluate(SeparationResults* results,
-             const AstronomyParameters* ap,
-             const IntegralArea* ias,
-             const Streams* streams,
-             const StreamConstants* sc,
-             const char* star_points_file,
-             const CLRequest* clr,
-             int do_separation,
-             int ignoreCheckpoint,
-             const char* separation_outfile);
+
+typedef real (*ProbabilityFunc)(const AstronomyParameters* ap,
+                                const StreamConstants* sc,
+                                const real* RESTRICT sg_dx,
+                                const real* RESTRICT r_point,
+                                const real* RESTRICT qw_r3_N,
+                                LBTrig lbt,
+                                real gPrime,
+                                real reff_xr_rp3,
+                                real* RESTRICT streamTmps);
+
+typedef ProbabilityFunc (*ProbInitFunc)();
+
+extern ProbabilityFunc probabilityFunc;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _EVALUATION_H_ */
+#endif /* _PROBABILITIES_DISPATCH_H_ */
 

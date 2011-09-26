@@ -146,6 +146,7 @@ static void setCLReqFlags(CLRequest* clr, const SeparationFlags* sf)
     clr->forceSSE2 = sf->forceSSE2;
     clr->forceSSE3 = sf->forceSSE3;
     clr->forceSSE41 = sf->forceSSE41;
+    clr->forceAVX = sf->forceAVX;
     clr->verbose = sf->verbose;
     clr->nonResponsive = sf->nonResponsive;
     clr->enableCheckpointing = !sf->disableGPUCheckpointing;
@@ -376,6 +377,12 @@ static int parseParameters(int argc, const char** argv, SeparationFlags* sfOut)
                 "force-sse4.1", '\0',
                 POPT_ARG_NONE, &sf.forceSSE41,
                 0, "Force to use SSE4.1 path", NULL
+            },
+
+            {
+                "force-avx", '\0',
+                POPT_ARG_NONE, &sf.forceAVX,
+                0, "Force to use AVX path", NULL
             },
 
             {
