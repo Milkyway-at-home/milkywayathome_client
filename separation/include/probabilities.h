@@ -50,25 +50,24 @@ extern "C" {
   #define INIT_PROBABILITIES initProbabilities
 #endif /* MW_IS_X86 */
 
-#define DEFINE_INIT_PROBABILITIES(level) ProbabilityFunc initProbabilities##level()
 
 #if MW_IS_X86
-DEFINE_INIT_PROBABILITIES(_AVX);
-DEFINE_INIT_PROBABILITIES(_SSE41);
-DEFINE_INIT_PROBABILITIES(_SSE3);
-DEFINE_INIT_PROBABILITIES(_SSE2);
+ProbabilityFunc initProbabilities_AVX();
+ProbabilityFunc initProbabilities_SSE41();
+ProbabilityFunc initProbabilities_SSE3();
+ProbabilityFunc initProbabilities_SSE2();
 #endif /* MW_IS_X86 */
 
 
 real probabilities_fast_hprob(const AstronomyParameters* ap,
-                               const StreamConstants* sc,
-                               const real* RESTRICT sg_dx,
-                               const real* RESTRICT r_point,
-                               const real* RESTRICT qw_r3_N,
-                               LBTrig lbt,
-                               real gPrime,
-                               real reff_xr_rp3,
-                               real* RESTRICT streamTmps);
+                              const StreamConstants* sc,
+                              const real* RESTRICT sg_dx,
+                              const real* RESTRICT r_point,
+                              const real* RESTRICT qw_r3_N,
+                              LBTrig lbt,
+                              real gPrime,
+                              real reff_xr_rp3,
+                              real* RESTRICT streamTmps);
 
 real probabilities_slow_hprob(const AstronomyParameters* ap,
                               const StreamConstants* sc,

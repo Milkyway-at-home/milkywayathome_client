@@ -29,10 +29,11 @@
 
 ProbabilityFunc probabilityFunc = NULL;
 
+
 /* MSVC can't do weak imports. Using dlsym()/GetProcAddress() etc. would be better */
-//#if !HAVE_AVX
-#define initProbabilities_AVX NULL
-//#endif
+#if !HAVE_AVX
+  #define initProbabilities_AVX NULL
+#endif
 
 #if !HAVE_SSE41
 #define initProbabilities_SSE41 NULL
@@ -117,7 +118,7 @@ int probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* 
             mw_printf("Using AVX path\n");
             probabilityFunc = initAVX();
         }
-        if (clr->forceSSE41 && hasSSE41 && initSSE41)
+        else if (clr->forceSSE41 && hasSSE41 && initSSE41)
         {
             mw_printf("Using SSE4.1 path\n");
             probabilityFunc = initSSE41();

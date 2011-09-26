@@ -304,6 +304,12 @@ if(SYSTEM_IS_X86)
     enable_sse41(separation_core_sse41)
     list(APPEND separation_core_libs separation_core_sse41)
   endif()
+
+  if(HAVE_AVX)
+    add_library(separation_core_avx STATIC src/probabilities_avx.c)
+    enable_avx(separation_core_avx)
+    list(APPEND separation_core_libs separation_core_avx)
+  endif()
 endif()
 
 add_library(separation STATIC ${lib_source_file_list} ${separation_headers})

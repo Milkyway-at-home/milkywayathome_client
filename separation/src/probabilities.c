@@ -55,16 +55,9 @@
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "evaluation_state.h"
-#include "evaluation.h"
-#include "coordinates.h"
-#include "r_points.h"
 #include "milkyway_util.h"
-#include "calculated_constants.h"
 #include "probabilities.h"
 #include "probabilities_intrin.h"
-
-#include <time.h>
 
 
 static inline mwvector lbr2xyz_2(const AstronomyParameters* ap, real rPoint, LBTrig lbt)
