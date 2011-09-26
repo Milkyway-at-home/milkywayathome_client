@@ -23,7 +23,6 @@
   #include <sys/resource.h>
 #else
   #include <stdlib.h>
-  #include <malloc.h>
   #include <windows.h>
 #endif /* _WIN32 */
 
@@ -62,98 +61,6 @@
   #endif
 #endif /* MW_IS_X86 */
 
-
-void* mwCalloc(size_t count, size_t size)
-{
-    void* mem = (void*) calloc(count, size);
-    if (mem == NULL)
-        mw_fail("calloc failed: "ZU" bytes\n", count * size);
-    return mem;
-}
-
-void* mwMalloc(size_t size)
-{
-    void* mem = (void*) malloc(size);
-    if (mem == NULL)
-        mw_fail("malloc failed: "ZU" bytes\n", size);
-    return mem;
-}
-
-
-#ifndef __APPLE__
-
-void* mwCallocA(size_t count, size_t size)
-{
-    void* p;
-    size_t totalSize = count * size;
-
-    p = mwMallocA(totalSize);
-    memset(p, 0, totalSize);
-
-    return p;
-}
-
-#else
-
-void* mwCallocA(size_t count, size_t size)
-{
-    return mwCalloc(count, size);
-}
-
-
-#endif /* __APPLE__ */
-
-#if defined(__APPLE__)
-
-/* OS X already aligns everything to 16 bytes */
-void* mwMallocA(size_t size)
-{
-    return mwMalloc(size);
-}
-
-#elif !defined(_WIN32)
-
-void* mwMallocA(size_t size)
-{
-    void* p;
-
-    if (posix_memalign(&p, 16, size))
-    {
-        perror(__func__);
-        mw_fail("Failed to allocate block of size %zu aligned to 16\n", size);
-    }
-
-    if (!p)
-        mw_fail("%s: NULL\n", __func__);
-
-    return p;
-}
-
-#else
-
-#if defined(__MINGW32__) && !defined(__MINGW64__)
-  #define _aligned_malloc __mingw_aligned_malloc
-#endif
-
-void* mwMallocA(size_t size)
-{
-    void* p;
-
-    p = _aligned_malloc(size, 16);
-    if (!p)
-        mw_fail("%s: NULL: _aligned_malloc error = %ld\n", FUNC_NAME, GetLastError());
-
-    return p;
-}
-#endif /* defined(__APPLE__) */
-
-void* mwRealloc(void* ptr, size_t size)
-{
-    void* mem = (void*) realloc(ptr, size);
-    if (mem == NULL)
-        mw_fail("realloc failed: "ZU" bytes\n", size);
-    return mem;
-}
 
 static char* fcloseVerbose(FILE* f, const char* err)
 {

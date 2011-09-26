@@ -197,6 +197,7 @@ static real probabilities_intrinsics(const AstronomyParameters* ap,
 
 ProbabilityFunc INIT_PROBABILITIES()
 {
+    assert(mwAllocA16Safe());
   #ifdef __SSE2__
     initExpTable();
     return probabilities_intrinsics;

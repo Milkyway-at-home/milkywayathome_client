@@ -49,6 +49,10 @@ if(SYSTEM_IS_X86)
   endif()
 endif()
 
+set(CMAKE_REQUIRED_FLAGS "${AVX_FLAGS}")
+check_include_files(immintrin.h HAVE_AVX CACHE INTERNAL "Compiler has AVX headers")
+mark_as_advanced(HAVE_AVX)
+
 set(CMAKE_REQUIRED_FLAGS "${SSE41_FLAGS}")
 check_include_files(smmintrin.h HAVE_SSE41 CACHE INTERNAL "Compiler has SSE4.1 headers")
 mark_as_advanced(HAVE_SSE41)

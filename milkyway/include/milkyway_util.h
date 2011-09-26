@@ -45,6 +45,7 @@
 #include "milkyway_extra.h"
 #include "milkyway_math.h"
 #include "milkyway_show.h"
+#include "milkyway_alloc.h"
 #include "mw_boinc_util.h"
 #include "mw_asprintf.h"
 #include "dSFMT.h"
@@ -92,14 +93,6 @@ typedef struct
   #define mw_debugmsg(msg, ...) ((void) 0)
 #endif
 
-/* Allocations with that abort everything on failure */
-void* mwMalloc(size_t size);
-void* mwCalloc(size_t count, size_t size);
-void* mwRealloc(void* ptr, size_t size);
-
-/* Safe allocations aligned to 16 */
-void* mwMallocA(size_t size);
-void* mwCallocA(size_t count, size_t size);
 
 #ifndef _WIN32
   #define mwFreeA free

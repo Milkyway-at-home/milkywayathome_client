@@ -50,6 +50,12 @@ check_function_exists(exp10 HAVE_EXP10)
 check_function_exists(exp2 HAVE_EXP2)
 check_function_exists(sincos HAVE_SINCOS)
 
+set(CMAKE_REQUIRED_INCLUDES "malloc.h")
+check_function_exists(posix_memalign HAVE_POSIX_MEMALIGN)
+check_function_exists(_aligned_malloc HAVE__ALIGNED_MALLOC)
+check_function_exists(__mingw_aligned_malloc HAVE___MINGW_ALIGNED_MALLOC)
+set(CMAKE_REQUIRED_INCLUDES )
+
 configure_file (
   "${MILKYWAY_INCLUDE_DIR}/milkyway_config.h.in"
   "${PROJECT_INCLUDE_DIR}/milkyway_config.h")
@@ -60,6 +66,7 @@ include_directories(${MILKYWAY_INCLUDE_DIR})
 # is individual for separation vs. nbody. Math here won't be compiled
 # with crlibm, leading to unexpected results
 set(mw_lib_src src/milkyway_util.c
+               src/milkyway_alloc.c
                src/mw_boinc_util.c
                src/milkyway_cpp_util.cc
                src/milkyway_show.c
@@ -84,6 +91,7 @@ set(mw_lib_headers include/milkyway_config.h.in
                    include/milkyway_math.h
                    include/milkyway_math_functions.h
                    include/milkyway_util.h
+                   include/milkyway_alloc.h
                    include/mw_boinc_util.h
                    include/milkyway_cpp_util.h
                    include/milkyway_vectors.h
