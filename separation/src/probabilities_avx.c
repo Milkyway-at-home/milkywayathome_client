@@ -182,12 +182,11 @@ static real probabilities_avx(const AstronomyParameters* ap,
 {
     double bg_prob, dotted, xyz_norm;
     int i, j, k, convolve, nStreams;
-    SEPARATION_ALIGN(32) double psgt[256], psgf[256], xyzstr[256];
-    SEPARATION_ALIGN(32) mwvector xyz[256];
+    SEPARATION_ALIGN(64) double psgt[256], psgf[256], xyzstr[256];
+    SEPARATION_ALIGN(64) double xs[256], ys[256], zs[256];
 
     const __m256d REF_XR = _mm256_set1_pd(reff_xr_rp3);
 
-    //__m256d ALPHAV = _mm_set1_pd(alpha);
     const __m256d COSBL    = _mm256_set1_pd(lbt.lCosBCos);
     const __m256d SINB     = _mm256_set1_pd(lbt.bSin);
     const __m256d SINCOSBL = _mm256_set1_pd(lbt.lSinBCos);
@@ -208,26 +207,15 @@ static real probabilities_avx(const AstronomyParameters* ap,
         QI = _mm256_load_pd(&qw_r3_N[i]);
 
         xyz0.d = _mm256_sub_pd(_mm256_mul_pd(RI, COSBL), SUNR0);
-
-        _mm_storel_pd(&X(xyz[i]),     xyz0.d128[0]);
-        _mm_storeh_pd(&X(xyz[i + 1]), xyz0.d128[0]);
-        _mm_storel_pd(&X(xyz[i + 2]), xyz0.d128[1]);
-        _mm_storeh_pd(&X(xyz[i + 3]), xyz0.d128[1]);
+        _mm256_store_pd(&xs[i], xyz0.d);
 
         xyz1.d = _mm256_mul_pd(RI, SINCOSBL);
-
-        _mm_storel_pd(&Y(xyz[i]),     xyz1.d128[0]);
-        _mm_storeh_pd(&Y(xyz[i + 1]), xyz1.d128[0]);
-        _mm_storel_pd(&Y(xyz[i + 2]), xyz1.d128[1]);
-        _mm_storeh_pd(&Y(xyz[i + 3]), xyz1.d128[1]);
+        _mm256_store_pd(&ys[i], xyz1.d);
 
         xyz2.d = _mm256_mul_pd(RI, SINB);
         tmp0.d = _mm256_mul_pd(xyz2.d, QV_RECIP);
 
-        _mm_storel_pd(&Z(xyz[i]),     xyz2.d128[0]);
-        _mm_storeh_pd(&Z(xyz[i + 1]), xyz2.d128[0]);
-        _mm_storel_pd(&Z(xyz[i + 2]), xyz2.d128[1]);
-        _mm_storeh_pd(&Z(xyz[i + 3]), xyz2.d128[1]);
+        _mm256_store_pd(&zs[i], xyz2.d);
 
 
         xyz0.d = _mm256_mul_pd(xyz0.d, xyz0.d);
@@ -247,21 +235,17 @@ static real probabilities_avx(const AstronomyParameters* ap,
     }
 
     BGP.d = _mm256_mul_pd(BGP.d, REF_XR);
-
     BGP.d = _mm256_hadd_pd(BGP.d, BGP.d);
-
-    // checkme
     BGP.d128[0] = _mm_add_pd(BGP.d128[0], BGP.d128[1]);
     _mm_store_sd(&bg_prob, BGP.d128[0]);
 
-    // TODO: AVX this stuff
     for (i = 0; i < nStreams; ++i)
     {
         for (j = 0; j < convolve; ++j)
         {
-            xyzstr[0] = X(xyz[j]) - X(sc[i].c);
-            xyzstr[1] = Y(xyz[j]) - Y(sc[i].c);
-            xyzstr[2] = Z(xyz[j]) - Z(sc[i].c);
+            xyzstr[0] = xs[j] - X(sc[i].c);
+            xyzstr[1] = ys[j] - Y(sc[i].c);
+            xyzstr[2] = zs[j] - Z(sc[i].c);
 
             dotted = X(sc[i].a) * xyzstr[0] + Y(sc[i].a) * xyzstr[1] + Z(sc[i].a) * xyzstr[2];
 
