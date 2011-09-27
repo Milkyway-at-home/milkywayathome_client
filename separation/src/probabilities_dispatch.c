@@ -76,8 +76,6 @@ static ProbabilityFunc selectStandardFunction(const AstronomyParameters* ap)
     return ap->fast_h_prob ? probabilities_fast_hprob : probabilities_slow_hprob;
 }
 
-
-#include <dlfcn.h>
 #if MW_IS_X86
 
 /* Use one of the faster functions if available, or use something forced */
@@ -95,7 +93,7 @@ int probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* 
 
     mw_cpuid(abcd, 1, 0);
 
-    hasAVX = mwHasAVX(abcd);
+    hasAVX = mwHasAVX(abcd) && mwOSHasAVXSupport();
     hasSSE41 = mwHasSSE41(abcd);
     hasSSE3 = mwHasSSE3(abcd);
     hasSSE2 = mwHasSSE2(abcd);

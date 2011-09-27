@@ -169,8 +169,8 @@ static int readIntegralArea(lua_State* luaSt, IntegralArea* iaOut, int table)
 
     if ((r > UINT64_MAX / mu) || ((r * mu) > UINT64_MAX / nu))
     {
-        warn("Integral size { %u, %u, %u } will overflow progress calculation\n",
-             ia.nu_steps, ia.mu_steps, ia.r_steps);
+        mw_printf("Integral size { %u, %u, %u } will overflow progress calculation\n",
+		  ia.nu_steps, ia.mu_steps, ia.r_steps);
         return 1;
     }
 

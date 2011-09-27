@@ -94,17 +94,6 @@ typedef struct
 #endif
 
 
-#ifndef _WIN32
-  #define mwFreeA free
-#else
-  #if defined(_MSC_VER) || defined(__MINGW64__)
-    #define mwFreeA _aligned_free
-  #elif defined(__MINGW32__)
-    #define mwFreeA __mingw_aligned_free
-  #endif
-#endif /* _WIN32 */
-
-
 /* BOINC likes things on stderr */
 #define mw_printf(msg, ...) fprintf(stderr, msg, ##__VA_ARGS__)
 

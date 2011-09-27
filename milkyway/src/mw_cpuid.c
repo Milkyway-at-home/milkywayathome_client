@@ -21,6 +21,11 @@ along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
 #include "mw_cpuid.h"
 #include "milkyway_util.h"
 
+#if defined(__APPLE__) && MW_IS_X86
+  #include <sys/param.h>
+  #include <sys/sysctl.h>
+#endif
+
 #define bit_CMPXCHG8B (1 << 8)
 #define bit_CMOV (1 << 15)
 #define bit_MMX (1 << 23)
@@ -106,4 +111,111 @@ int mwHasSSE2(const int abcd[4])
 {
     return !!(abcd[3] & bit_SSE2);
 }
+
+
+
+#if defined(_WIN32)
+int mwOSHasAVXSupport()
+{
+    OSVERSIONINFO vInfo;
+
+    if (GetVersionEx(&vInfo))
+    {
+        mw_printf("Error getting Windows version info: %ld\n", GetLastError());
+        return FALSE;
+    }
+
+    /* Windows 7 SP1 or greater required */
+    return (vInfo.dwMajorVersion >= 6 && vInfo.dwMinorVersion > 1);
+}
+
+#elif defined(__linux__)
+
+/* Scan through /proc/cpuinfo to see if the kernel supports AVX */
+int mwOSHasAVXSupport()
+{
+    FILE* f;
+    char lineBuf[4096];
+    int support = FALSE;
+
+    f = fopen("/proc/cpuinfo", "r");
+    if (!f)
+    {
+        return FALSE;
+    }
+
+    while (fgets(lineBuf, (int) sizeof(lineBuf), f))
+    {
+        if (strncmp(lineBuf, "flags", sizeof(lineBuf)))
+        {
+            if (strnstr(lineBuf, "avx"))
+            {
+                support = TRUE;
+                break;
+            }
+        }
+    }
+
+    fclose(f);
+
+    return SUPPORT;
+}
+
+#elif  defined(__APPLE__) && MW_IS_X86
+
+int mwOSHasAVXSupport()
+{
+    size_t len;
+    char* kernelVersion;
+    int major = 0;
+    int minor = 0;
+    int patchLevel = 0;
+    static int mib[2] = { CTL_KERN, KERN_OSRELEASE };
+
+    if (sysctl(mib, 2, NULL, &len, NULL, 0) < 0)
+    {
+        perror("sysctl kernel version size");
+        return FALSE;
+    }
+
+    kernelVersion = malloc(len * sizeof(char));
+    if (!kernelVersion)
+    {
+        perror("malloc");
+        return FALSE;
+    }
+
+    if (sysctl(mib, 2, kernelVersion, &len, NULL, 0) < 0)
+    {
+        perror("sysctl kernel version");
+        free(kernelVersion);
+        return FALSE;
+    }
+
+    if (sscanf(kernelVersion, "%d.%d.%d", &major, &minor, &patchLevel) != 3)
+    {
+        major = minor = patchLevel = 0;
+        /* Old examples seem to say it was 2 digits */
+        if (sscanf(kernelVersion, "%d.%d", &major, &minor) != 2)
+        {
+            major = minor = patchLevel = 0;
+        }
+    }
+
+    free(kernelVersion);
+
+   /* AVX support added in 10.6.8, which has kernel 10.8 */
+    return (major >= 10 && minor >= 8);
+}
+
+#else
+
+int mwOSHasAVXSupport()
+{
+    return FALSE;
+}
+
+#endif /* _WIN32 */
+
+
 

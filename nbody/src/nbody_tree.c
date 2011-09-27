@@ -305,6 +305,7 @@ static inline real findRCrit(const NBodyCtx* ctx, const NBodyCell* p, real treeR
         default:
             rc = 0.0; /* Stop clang static analysis warning */
             mw_fail("Bad criterion: %d\n", ctx->criterion);
+	    return 0.0;
     }
 }
 
