@@ -45,7 +45,7 @@ if(SYSTEM_IS_X86)
     # MSVC doesn't generate SSE3 itself, and doesn't define this
     set(SSE3_FLAGS "${SSE2_FLAGS} /D__SSE3__=1")
     set(SSE41_FLAGS "${SSE3_FLAGS} /D__SSE4_1__=1")
-    set(AVX_FLAGS "${SSE41_FLAGS} /D__AVX__=1")
+    set(AVX_FLAGS "/arch:AVX /D__AVX__=1 ${SSE2_FLAGS}")
   endif()
 endif()
 

@@ -29,8 +29,8 @@ IF (APPLE)
 ELSE (APPLE)
 
   IF (WIN32)
-    FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h)
-    FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp)
+    #FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h)
+    #FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp)
 
     IF(NVIDIA_OPENCL)
       # We could use CUDA_LIB_PATH, but this breaks when compiling 32 on 64

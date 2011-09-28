@@ -7,6 +7,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 include(CheckTypeSize)
 include(CheckIncludeFiles)
 include(CheckFunctionExists)
+include(CheckSymbolExists)
 include(CheckHeaderSTDC)
 
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -190,10 +191,13 @@ check_function_exists(catgets HAVE_CATGETS)
 check_function_exists(dgettext HAVE_DGETTEXT)
 check_function_exists(ftruncate HAVE_FTRUNCATE)
 check_function_exists(getpagesize HAVE_GETPAGESIZE)
-check_function_exists(memcmp HAVE_MEMCMP)
-check_function_exists(memcpy HAVE_MEMCPY)
-check_function_exists(memmove HAVE_MEMMOVE)
-check_function_exists(memset HAVE_MEMSET)
+
+check_symbol_exists(memcmp stirng.h HAVE_MEMCMP)
+check_symbol_exists(memcpy string.h HAVE_MEMCPY)
+check_symbol_exists(memmove string.h HAVE_MEMMOVE)
+check_symbol_exists(memset string.h HAVE_MEMSET)
+
+
 
 check_include_files(ar.h HAVE_AR_H)
 check_include_files(elf.h HAVE_ELF_H)
@@ -257,7 +261,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 add_library(elf STATIC ${elf_src} ${elf_headers})
 
 
-set(LIBELF_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/lib" CACHE INTERNAL "libelf headers")
+set(LIBELF_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/lib;${PROJECT_INCLUDE_DIR}" CACHE INTERNAL "libelf headers")
 set(LIBELF_LIBRARY elf CACHE INTERNAL "libelf library")
 
 

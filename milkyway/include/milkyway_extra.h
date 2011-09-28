@@ -45,6 +45,12 @@ typedef short int mwbool;
   #define getcwd _getcwd
   #define strncasecmp(a, b, n) _strnicmp(a, b, n)
   #define strcasecmp(a, b) _stricmp(a, b)
+  #define getpid _getpid
+  #define open _open
+  #define close _close
+  #define read _read
+  #define write _write
+  #define lseek _lseek
 #endif /* _MSC_VER */
 
 /* Horrible workaround for lack of C99 in MSVCRT and it being

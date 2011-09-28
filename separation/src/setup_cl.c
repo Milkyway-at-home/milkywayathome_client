@@ -300,10 +300,10 @@ cl_int separationSetKernelArgs(CLInfo* ci, SeparationCLMem* cm, const RunSizes* 
     err |= clSetKernelArg(_separationKernel, 7, sizeof(cl_mem), &cm->sc);
     err |= clSetKernelArg(_separationKernel, 8, sizeof(cl_mem), &cm->sg_dx);
 
-    err |= clSetKernelArg(_separationKernel, 9, sizeof(cl_uint), &runSizes->extra);
-    err |= clSetKernelArg(_separationKernel, 10, sizeof(cl_uint), &runSizes->r);
-    err |= clSetKernelArg(_separationKernel, 11, sizeof(cl_uint), &runSizes->mu);
-    err |= clSetKernelArg(_separationKernel, 12, sizeof(cl_uint), &runSizes->nu);
+    err |= clSetKernelArg(_separationKernel, 9,  sizeof(runSizes->extra), &runSizes->extra);
+    err |= clSetKernelArg(_separationKernel, 10, sizeof(runSizes->r), &runSizes->r);
+    err |= clSetKernelArg(_separationKernel, 11, sizeof(runSizes->mu), &runSizes->mu);
+    err |= clSetKernelArg(_separationKernel, 12, sizeof(runSizes->nu), &runSizes->nu);
 
     if (err != CL_SUCCESS)
     {
@@ -459,15 +459,17 @@ static char* replaceUAVIds(const char* ilSrc, size_t* lenOut, ...)
     int rc;
 
     len = strlen(ilSrc);
-    buf = mwMalloc(len + 1);
+    buf = (char*) mwMalloc(len + 1);
     buf[len] = '\0';
 
     va_start(argPtr, lenOut);
     rc = vsprintf(buf, ilSrc, argPtr);
     va_end(argPtr);
 
-    if ((size_t) rc != len)
+    /* Should be == len when uavid = 2 digits, slighly less when uavid = 1 digit */
+    if ((size_t) rc > len)
     {
+        mw_printf("Error with this shit: %d, "ZU"\n", rc, len);
         free(buf);
         return NULL;
     }

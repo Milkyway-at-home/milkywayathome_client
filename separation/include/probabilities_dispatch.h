@@ -47,6 +47,9 @@ typedef ProbabilityFunc (*ProbInitFunc)();
 
 extern ProbabilityFunc probabilityFunc;
 
+
+int probabilityFunctionDispatch(const AstronomyParameters* ap, const CLRequest* clr);
+
 #ifdef __cplusplus
 }
 #endif

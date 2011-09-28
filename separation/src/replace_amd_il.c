@@ -18,19 +18,12 @@
  * along with Milkyway@Home.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <err.h>
-#include <errno.h>
-#include <sysexits.h>
 #include <sys/stat.h>
-#include <inttypes.h>
 #include <string.h>
-
 #include <libelf.h>
 
 #include "replace_amd_il.h"
 #include "milkyway_util.h"
-
 
 
 static int replaceAMDILSection(Elf* e, const char* ilBuf, size_t ilLen)
@@ -39,13 +32,13 @@ static int replaceAMDILSection(Elf* e, const char* ilBuf, size_t ilLen)
     size_t shstrndx = 0;
     static const int verbose = 1;
     static const int verboseDebug = 0;
-
+    
 
     /* Get section index of section containing the string table of section names */
     if (elf_getshdrstrndx(e, &shstrndx) != 0)
     {
-        warnx("elf_getshdrstrndx failed: %s.", elf_errmsg(-1));
-        return EX_SOFTWARE;
+        mw_printf("elf_getshdrstrndx failed: %s\n", elf_errmsg(-1));
+        return 1;
     }
 
     /* Iterate through all the sections */
@@ -58,16 +51,16 @@ static int replaceAMDILSection(Elf* e, const char* ilBuf, size_t ilLen)
         shdr = elf32_getshdr(scn);
         if (!shdr)
         {
-            warnx("elf32_getshdr() failed: %s.", elf_errmsg(-1));
-            return EX_SOFTWARE;
+            mw_printf("elf32_getshdr() failed: %s\n", elf_errmsg(-1));
+            return 1;
         }
 
         /* Look up the name of the section in the string table */
         name = elf_strptr(e, shstrndx, shdr->sh_name);
         if (!name)
         {
-            warnx("elf_strptr() failed: %s.", elf_errmsg(-1));
-            return EX_SOFTWARE;
+            mw_printf("elf_strptr() failed: %s\n", elf_errmsg(-1));
+            return 1;
         }
 
         if (strstr(name, ".amdil") != NULL)
@@ -76,13 +69,13 @@ static int replaceAMDILSection(Elf* e, const char* ilBuf, size_t ilLen)
 
             if (!data)
             {
-                warnx("Failed to get data for section: %s.", elf_errmsg(-1));
-                return EX_SOFTWARE;
+                mw_printf("Failed to get data for section: %s\n", elf_errmsg(-1));
+                return 1;
             }
 
             if (verbose)
             {
-                printf("Replacing section data of type %d, off %d align %zu\n", data->d_type, (int) data->d_off, data->d_align);
+                mw_printf("Replacing section data of type %d, off %d align %zu\n", data->d_type, (int) data->d_off, data->d_align);
             }
 
             //memset(data->d_buf, 0, data->d_size);
@@ -91,27 +84,27 @@ static int replaceAMDILSection(Elf* e, const char* ilBuf, size_t ilLen)
 
             if (!elf_flagdata(data, ELF_C_SET, ELF_F_DIRTY))
             {
-                warnx("elf_flagdata() failed: %s.", elf_errmsg(-1));
-                return EX_SOFTWARE;
+                mw_printf("elf_flagdata() failed: %s\n", elf_errmsg(-1));
+                return 1;
             }
 
             if (!elf_flagscn(scn, ELF_C_SET, ELF_F_DIRTY))
             {
-                warnx("elf_flagscn() failed: %s.", elf_errmsg(-1));
-                return EX_SOFTWARE;
+                mw_printf("elf_flagscn() failed: %s\n", elf_errmsg(-1));
+                return 1;
             }
 
             /* Don't let libelf rearrange the sections when writing. Not sure if necessary. */
             if (!elf_flagelf(e, ELF_C_SET, ELF_F_LAYOUT))
             {
-                warnx("elf_flagelf() failed: %s.", elf_errmsg(-1));
-                return EX_SOFTWARE;
+                mw_printf("elf_flagelf() failed: %s\n", elf_errmsg(-1));
+                return 1;
             }
 
             if (elf_update(e, ELF_C_NULL) < 0)
             {
-                warnx("elf_update(NULL) failed: %s.", elf_errmsg(-1));
-                return EX_SOFTWARE;
+                mw_printf("elf_update(NULL) failed: %s\n", elf_errmsg(-1));
+                return 1;
             }
         }
 
@@ -123,8 +116,8 @@ static int replaceAMDILSection(Elf* e, const char* ilBuf, size_t ilLen)
 
     if (elf_update(e, ELF_C_WRITE) < 0)
     {
-        warnx("elf_update(ELF_C_WRITE) failed: %s.", elf_errmsg(-1));
-        return EX_SOFTWARE;
+        mw_printf("elf_update(ELF_C_WRITE) failed: %s\n", elf_errmsg(-1));
+        return 1;
     }
 
     return 0;
@@ -143,27 +136,28 @@ static char* readFD(int fd, size_t* lenOut)
 
     if (fstat(fd, &props) < 0)
     {
-        warn("fstat on temporary AMD binary file");
+        perror("fstat on temporary AMD binary file");
     }
 
     if (props.st_size <= 0)
     {
-        warn("Modified binary file is empty\n");
+        mw_printf("Modified binary file is empty\n");
         return NULL;
     }
 
     len = props.st_size + 1;
 
-    strBuf = malloc(len);
+    strBuf = (char*) malloc(len);
     if (!strBuf)
     {
-        err(errno, "Failed to allocate space for AMD binary file\n");
+        perror("Failed to allocate space for AMD binary file");
+        return NULL;
     }
     strBuf[props.st_size] = '\0';
 
     if (read(fd, strBuf, props.st_size) < 0)
     {
-        warn("Error reading from AMD Binary file\n");
+        perror("Error reading from AMD Binary file");
         free(strBuf);
         strBuf = NULL;
     }
@@ -202,28 +196,28 @@ static int processElf(int fd, const char* ilBuf, size_t ilLen)
 
     if (elf_version(EV_CURRENT) == EV_NONE)
     {
-        warnx("ELF library initialization failed: %s", elf_errmsg(-1));
-        return EX_SOFTWARE;
+        mw_printf("ELF library initialization failed: %s", elf_errmsg(-1));
+        return 1;
     }
 
     e = elf_begin(fd, ELF_C_RDWR, NULL);
     if (!e)
     {
-        warnx("elf_begin() failed: %s.", elf_errmsg(-1));
-        return EX_SOFTWARE;
+        mw_printf("elf_begin() failed: %s\n", elf_errmsg(-1));
+        return 1;
     }
 
     ek = elf_kind(e);
     if (ek != ELF_K_ELF)
     {
-        warnx("ELF object is wrong kind: %s", showElfKind(ek));
-        return EX_SOFTWARE;
+        mw_printf("ELF object is wrong kind: %s\n", showElfKind(ek));
+        return 1;
     }
 
     if (replaceAMDILSection(e, ilBuf, ilLen) < 0)
     {
-        warnx("Failed to replace .amdil section");
-        return EX_SOFTWARE;
+        mw_printf("Failed to replace .amdil section\n");
+        return 1;
     }
 
     elf_end(e);
@@ -236,6 +230,12 @@ static int getTmpBinaryName(char* buf, size_t size)
 {
     return snprintf(buf, size, "tmp_cl_binary_%d.bin", (int) getpid());
 }
+
+#ifdef _WIN32
+static const int openPermMode = _S_IREAD | _S_IWRITE;
+#else
+static const int openPermMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+#endif /* _WIN32 */
 
 /* Take a program binary from clGetPropramInfo() and a replacement IL source as a string.
    Replace the .amdil section in the ELF image and return a new copy of the binary.
@@ -253,27 +253,25 @@ unsigned char* getModifiedAMDBinary(unsigned char* bin, size_t binSize, const ch
     getTmpBinaryName(tmpBinFile, sizeof(tmpBinFile));
 
     /* Write binary to a temporary file since we need a file descriptor for libelf */
-    fd = open(tmpBinFile, O_RDWR | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    fd = open(tmpBinFile, O_RDWR | O_TRUNC | O_CREAT, openPermMode);
     if (fd < 0)
     {
-        warn("Failed to open AMD binary file '%s'", tmpBinFile);
+        perror("Failed to open AMD binary file");
         return NULL;
     }
 
     if (write(fd, bin, binSize) <= 0)
     {
-        warn("Failed to write temporary binary file '%s'", tmpBinFile);
+        perror("Failed to write temporary binary file");
         return NULL;
     }
 
     rc = processElf(fd, ilSrc, ilLen);
-
     if (rc == 0)
     {
         if (lseek(fd, 0, SEEK_SET) != 0)
         {
-
-            warn("Failed to seek temporary binary file");
+            perror("Failed to seek temporary binary file");
             return NULL;
         }
 
@@ -282,7 +280,7 @@ unsigned char* getModifiedAMDBinary(unsigned char* bin, size_t binSize, const ch
 
     if (close(fd) < 0)
     {
-        warn("Failed to close binary file '%s'", tmpBinFile);
+        perror("Failed to close binary file");
         free(newBin);
         return NULL;
     }

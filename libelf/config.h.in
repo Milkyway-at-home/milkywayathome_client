@@ -49,14 +49,6 @@
 /* Define if Elf32_Dyn is declared in <sys/link.h> */
 #cmakedefine01 __LIBELF_NEED_SYS_LINK_H
 
-/* Define to `<elf.h>' or `<sys/elf.h>' if one of them is present */
-#if HAVE_ELF_H
-  #define __LIBELF_HEADER_ELF_H <elf.h>
-#elif HAVE_SYS_ELF_H
-  #define __LIBELF_HEADER_ELF_H <sys/elf.h>
-#endif
-
-
 
 /* Define if you want 64-bit support (and your system supports it) */
 #cmakedefine01 __LIBELF64
@@ -145,5 +137,13 @@
 
 /* Define if you have the <unistd.h> header file.  */
 #cmakedefine01 HAVE_UNISTD_H
+
+
+/* Define to `<elf.h>' or `<sys/elf.h>' if one of them is present */
+#if HAVE_ELF_H
+  #define __LIBELF_HEADER_ELF_H <elf.h>
+#elif HAVE_SYS_ELF_H
+  #define __LIBELF_HEADER_ELF_H <sys/elf.h>
+#endif
 
 

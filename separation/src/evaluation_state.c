@@ -327,6 +327,7 @@ int resolveCheckpoint()
 int writeCheckpoint(EvaluationState* es)
 {
     FILE* f;
+    int rc;
 
     /* Avoid corrupting the checkpoint file by writing to a temporary file, and moving that */
     f = mw_fopen(CHECKPOINT_FILE_TMP, "wb");

@@ -23,6 +23,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
  * DO NOT USE THIS IN APPLICATIONS - #include <libelf.h> INSTEAD!
  */
 
+#cmakedefine01 HAVE_STDINT_H
+#if HAVE_STDINT_H
+  #include <stdint.h>
+#endif
+
 /* Define to `<elf.h>' or `<sys/elf.h>' if one of them is present */
 
 #cmakedefine01 HAVE_ELF_H
@@ -32,6 +37,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
   #define __LIBELF_HEADER_ELF_H <elf.h>
 #elif HAVE_SYS_ELF_H
   #define __LIBELF_HEADER_ELF_H <sys/elf.h>
+#endif
+
+
+#cmakedefine01 HAVE_STDINT_H
+#if HAVE_STDINT_H
+  #include <stdint.h>
 #endif
 
 
@@ -80,7 +91,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 # if __LIBELF_INTERNAL__
 #  include <elf_repl.h>
 # else /* __LIBELF_INTERNAL__ */
-#  include <libelf/elf_repl.h>
+#  include <elf_repl.h>
 # endif /* __LIBELF_INTERNAL__ */
 #endif /* __LIBELF_HEADER_ELF_H */
 
