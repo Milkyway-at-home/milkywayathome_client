@@ -469,7 +469,6 @@ static char* replaceUAVIds(const char* ilSrc, size_t* lenOut, ...)
     /* Should be == len when uavid = 2 digits, slighly less when uavid = 1 digit */
     if ((size_t) rc > len)
     {
-        mw_printf("Error with this shit: %d, "ZU"\n", rc, len);
         free(buf);
         return NULL;
     }

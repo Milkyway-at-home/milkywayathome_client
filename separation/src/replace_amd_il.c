@@ -32,7 +32,6 @@ static int replaceAMDILSection(Elf* e, const char* ilBuf, size_t ilLen)
     size_t shstrndx = 0;
     static const int verbose = 1;
     static const int verboseDebug = 0;
-    
 
     /* Get section index of section containing the string table of section names */
     if (elf_getshdrstrndx(e, &shstrndx) != 0)

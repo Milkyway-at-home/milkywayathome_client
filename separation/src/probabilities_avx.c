@@ -226,7 +226,7 @@ static real probabilities_avx(const AstronomyParameters* ap,
 
         // I don't see any noticeable difference in speed using
         // _mm256_fsqrt_pd() vs. _mm256_sqrt_pd()
-        //PROD.d = _mm256_fsqrt_pd(tmp.d);
+        //PROD.d = _mm256_fsqrt_pd(tmp1.d);
         PROD.d = _mm256_sqrt_pd(tmp1.d);
         tmp2.d = _mm256_add_pd(PROD.d, R0);
 

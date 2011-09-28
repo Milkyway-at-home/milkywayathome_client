@@ -148,7 +148,7 @@ int mwOSHasAVXSupport()
     {
         if (strncmp(lineBuf, "flags", sizeof(lineBuf)))
         {
-            if (strnstr(lineBuf, "avx"))
+            if (strstr(lineBuf, " avx "))
             {
                 support = TRUE;
                 break;
@@ -158,7 +158,7 @@ int mwOSHasAVXSupport()
 
     fclose(f);
 
-    return SUPPORT;
+    return support;
 }
 
 #elif  defined(__APPLE__) && MW_IS_X86

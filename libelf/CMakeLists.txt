@@ -192,7 +192,7 @@ check_function_exists(dgettext HAVE_DGETTEXT)
 check_function_exists(ftruncate HAVE_FTRUNCATE)
 check_function_exists(getpagesize HAVE_GETPAGESIZE)
 
-check_symbol_exists(memcmp stirng.h HAVE_MEMCMP)
+check_symbol_exists(memcmp string.h HAVE_MEMCMP)
 check_symbol_exists(memcpy string.h HAVE_MEMCPY)
 check_symbol_exists(memmove string.h HAVE_MEMMOVE)
 check_symbol_exists(memset string.h HAVE_MEMSET)
