@@ -325,7 +325,6 @@ int main(int argc, const char* argv[])
 
     if (readParameters(argc, argv, &nbf))
         exit(EXIT_FAILURE);
-    free(argvCopy);
 
     if (nbodyInit(&nbf))
     {
